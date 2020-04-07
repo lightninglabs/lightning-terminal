@@ -1,28 +1,33 @@
 > This document is currently a scratchpad for developer setup and temporary hacks to run the project. It will be made more user-friendly in the future
 
-## Setup
+Requirements: [Go](https://golang.org/doc/install), [protoc](https://github.com/protocolbuffers/protobuf/releases), [nodejs](https://nodejs.org/en/download/)
+
+## One-time Setup
 
 Create certificate for browser to backend proxy communication
 ```
-openssl genrsa -out proxy.key 2048
-openssl req -new -x509 -key proxy.key -out proxy.cert -days 365
+openssl genrsa -out https.key 2048
+openssl req -new -x509 -key https.key -out https.cert -days 365
+```
+
+Install client app dependencies
+```sh
+npm install -g yarn # if yarn isn't already installed
+cd app/
+yarn
 ```
 
 ## Development
 
-Requirements: [Go](https://golang.org/doc/install), [protoc](https://github.com/protocolbuffers/protobuf/releases), [nodejs](https://nodejs.org/en/download/)
-
-- Start your LND node
-- Manually update macaroon hex in main.go `buildGrpcProxyServer` func
+- Spin up a local regtest env with nautilus and loopd (See [docker-regtest](https://github.com/lightninglabs/dev-resources/tree/master/docker-regtest))
+- Copy admin.macaroon hex into App.tsx
 - Start backend server
-  ```
-  go run . --backend_addr=localhost:10001 --server_tls_cert_file=./proxy.cert --server_tls_key_file=./proxy.key --backend_tls=true --backend_tls_noverify=true
+  ```sh
+  go run . --lndhost=localhost:10011 --loophost=localhost:11010
   ```  
-> Replace `localhost:10001` with the host:port of the LND node RPC
 - Run the client app in a separate terminal
-  ```
+  ```sh
   cd app
-  yarn
   yarn start
   ```
 

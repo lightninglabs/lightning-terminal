@@ -31,4 +31,5 @@ protoc \
   --ts_out=service=grpc-web:./src/types/generated \
   ../proto/google/api/annotations.proto \
   ../proto/google/api/http.proto \
-  ../proto/lnd.proto
+  ../proto/lnd.proto \
+  ../proto/loop.proto

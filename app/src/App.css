@@ -9,8 +9,9 @@
 
 .App-info {
   width: auto;
-  height: 40vmin;
-  margin: 0 auto;
+  min-width: 40vmin;
+  height: 20vmin;
+  margin: 0 auto 20px;
   overflow-y: scroll;
   font-size: 14px;
   text-align: left;
