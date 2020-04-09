@@ -8,15 +8,27 @@
 }
 
 .App-info {
-  width: auto;
+  width: 800px;
   min-width: 40vmin;
   height: 20vmin;
-  margin: 0 auto 20px;
+  margin: 20px auto;
   overflow-y: scroll;
   font-size: 14px;
   text-align: left;
-  background-color: #ccc;
-  color: black;
+  border: 1px solid #ddd;
+}
+
+.App-table {
+  margin: 0 auto;
+  border: 1px solid #ddd;
+  border-collapse: collapse;
+}
+
+.App-table th,
+.App-table td {
+  padding: 5px 10px;
+  border: 1px solid #ddd;
+  text-align: left;
 }
 
 @media (prefers-reduced-motion: no-preference) {
