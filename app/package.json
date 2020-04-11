@@ -8,6 +8,7 @@
     "start": "BROWSER=none react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
+    "test:ci": "CI=true yarn test --coverage",
     "eject": "react-scripts eject",
     "protos": "./scripts/build-protos.sh"
   },
@@ -40,6 +41,14 @@
     "extends": "react-app",
     "ignorePatterns": [
       "src/types/generated/**/*.js"
+    ]
+  },
+  "jest": {
+    "collectCoverageFrom": [
+      "src/**/*.{js,jsx,ts,tsx}",
+      "!src/**/*.d.ts",
+      "!src/types/**/*.{js,ts}",
+      "!src/index.tsx"
     ]
   },
   "browserslist": {

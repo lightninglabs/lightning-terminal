@@ -21,18 +21,11 @@ export const grpcRequest = <TReq extends ProtobufMessage, TRes extends ProtobufM
       request,
       metadata,
       onEnd: ({ status, statusMessage, headers, message, trailers }) => {
-        console.log(
-          `GRPC Request: ${methodDescriptor.service.serviceName}.${methodDescriptor.methodName}`,
-        );
-        console.log(' - status', status, statusMessage);
-        console.log(' - headers', headers);
         if (status === grpc.Code.OK && message) {
           resolve(message as TRes);
-          console.log(' - message', message.toObject());
         } else {
-          reject(new Error(statusMessage));
+          reject(new Error(`${status}: ${statusMessage}`));
         }
-        console.log(' - trailers', trailers);
       },
     });
   });

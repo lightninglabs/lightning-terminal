@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
-import './App.css';
-import { channel, swap, node } from 'action';
-import store from 'store';
 import { observer } from 'mobx-react';
+import './App.css';
+import { channel, node, swap } from 'action';
+import store from 'store';
 
 const App = () => {
   useEffect(() => {
@@ -13,9 +13,9 @@ const App = () => {
 
   return (
     <div className="App">
+      <p>Node Info</p>
       {store.info && (
         <>
-          <p>Node Info</p>
           <table className="App-table">
             <tbody>
               <tr>

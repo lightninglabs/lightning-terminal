@@ -5,12 +5,14 @@ Requirements: [Go](https://golang.org/doc/install), [protoc](https://github.com/
 ## One-time Setup
 
 Create certificate for browser to backend proxy communication
+
 ```
 openssl genrsa -out https.key 2048
 openssl req -new -x509 -key https.key -out https.cert -days 365
 ```
 
 Install client app dependencies
+
 ```sh
 npm install -g yarn # if yarn isn't already installed
 cd app/
@@ -24,7 +26,7 @@ yarn
 - Start backend server
   ```sh
   go run . --lndhost=localhost:10011 --loophost=localhost:11010
-  ```  
+  ```
 - Run the client app in a separate terminal
   ```sh
   cd app
@@ -32,3 +34,14 @@ yarn
   ```
 
 Open browser at https://localhost:3000 and accept invalid cert (may not work in Chrome, use Firefox)
+
+## Testing
+
+- Run all unit tests and output coverage
+  ```sh
+  yarn test:ci
+  ```
+- Run tests on locally modified files in watch mode
+  ```sh
+  yarn test
+  ```
