@@ -1,0 +1,7 @@
+{
+  "App.nodeInfo": "Node Info",
+  "App.pubkey": "Pubkey",
+  "App.alias": "Alias",
+  "App.version": "Version",
+  "App.numChannels": "# Channels"
+}
