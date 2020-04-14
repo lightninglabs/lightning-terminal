@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - "master"
+  pull_request:
+    branches:
+      - "*"
+
+jobs:
+  test:
+    name: nodejs v${{ matrix.node_version }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        node_version: [10.x, 12.x]
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+
+    steps:
+      - name: set git config
+        run: |
+          git config --global core.eol lf
+          git config --global core.autocrlf false
+
+      - uses: actions/checkout@v1
+
+      - name: setup nodejs
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node_version }}
+
+      - name: install yarn
+        run: npm install -g yarn
+
+      - name: get yarn cache dir
+        id: yarn-cache-dir
+        run: echo "::set-output name=dir::$(yarn cache dir)"
+
+      - uses: actions/cache@v1
+        id: yarn-cache
+        with:
+          path: ${{ steps.yarn-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-${{ runner.node_version }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.node_version }}-yarn-
+
+      - name: install dependencies
+        working-directory: ./app
+        run: yarn
+
+      - name: lint code
+        working-directory: ./app
+        run: yarn lint
+
+      - name: typescript compile
+        working-directory: ./app
+        run: yarn tsc
+
+      - name: unit tests
+        working-directory: ./app
+        run: yarn test:ci
+
+      - name: build app
+        working-directory: ./app
+        run: yarn build
