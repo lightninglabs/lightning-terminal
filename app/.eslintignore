@@ -1,0 +1,11 @@
+# testing
+/coverage
+
+# production
+/build
+
+# generated from GRPC proto compiler
+/src/types/generated/
+
+# mocks for dependencies
+/src/__mocks__
