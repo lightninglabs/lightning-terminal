@@ -1,3 +1,6 @@
 # generated proxy commands
 https.cert
 https.key
+
+# local environment vars to ignore
+.env*.local

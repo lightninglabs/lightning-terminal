@@ -22,8 +22,12 @@ yarn
 ## Development
 
 - Spin up a local regtest env with nautilus and loopd (See [docker-regtest](https://github.com/lightninglabs/dev-resources/tree/master/docker-regtest))
-- Copy admin.macaroon hex into App.tsx
-- Start backend server
+- Create a `.env.local` file in the `app/` directory with the following content. Replace `<macaroon>` with the HEX encoded admin.macaroon of the LND node to connect to
+  ```
+  REACT_APP_DEV_MACAROON=<macaroon>
+  REACT_APP_DEV_HOST=http://localhost:3000
+  ```
+- Start backend server, updating the ports for the LND and Loop nodes if necessary
   ```sh
   go run . --lndhost=localhost:10011 --loophost=localhost:11010
   ```
@@ -33,7 +37,7 @@ yarn
   yarn start
   ```
 
-Open browser at https://localhost:3000 and accept invalid cert (may not work in Chrome, use Firefox)
+Open browser at http://localhost:3000
 
 ## Testing
 
