@@ -16,7 +16,7 @@ class LndApi {
    * call the LND `GetInfo` RPC and return the response
    */
   async getInfo(): Promise<LND.GetInfoResponse.AsObject> {
-    const req = new LND.GetInfoResponse();
+    const req = new LND.GetInfoRequest();
     const res = await grpcRequest(Lightning.GetInfo, req, this._meta);
     return res.toObject();
   }

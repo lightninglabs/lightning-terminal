@@ -43,6 +43,9 @@ const config: InitOptions = {
   interpolation: {
     escapeValue: false,
   },
+  detection: {
+    lookupLocalStorage: 'lang',
+  },
 };
 
 i18n.use(LanguageDetector).use(initReactI18next).init(config);
