@@ -1,4 +1,5 @@
-import { action } from 'mobx';
+import { action, toJS } from 'mobx';
+import { actionLog as log } from 'util/log';
 import LndApi from 'api/lnd';
 import { Store } from 'store';
 
@@ -19,7 +20,9 @@ class NodeAction {
    * fetch node info from the LND RPC
    */
   @action.bound async getInfo() {
+    log.info('fetching node information');
     this._store.info = await this._lnd.getInfo();
+    log.info('updated store.info', toJS(this._store.info));
   }
 }
 

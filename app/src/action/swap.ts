@@ -1,5 +1,6 @@
-import { action } from 'mobx';
+import { action, toJS } from 'mobx';
 import { SwapState, SwapType } from 'types/generated/loop_pb';
+import { actionLog as log } from 'util/log';
 import LoopApi from 'api/loop';
 import { Store } from 'store';
 
@@ -20,6 +21,7 @@ class SwapAction {
    * fetch swaps from the Loop RPC
    */
   @action.bound async listSwaps() {
+    log.info('fetching Loop history');
     const loopSwaps = await this._loop.listSwaps();
     this._store.swaps = loopSwaps.swapsList
       // sort the list with newest first as the API returns them out of order
@@ -31,6 +33,7 @@ class SwapAction {
         createdOn: new Date(s.initiationTime / 1000 / 1000),
         status: this._stateToString(s.state),
       }));
+    log.info('updated store.swaps', toJS(this._store.swaps));
   }
 
   /**

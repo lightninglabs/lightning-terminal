@@ -1,4 +1,5 @@
-import { action } from 'mobx';
+import { action, toJS } from 'mobx';
+import { actionLog as log } from 'util/log';
 import LndApi from 'api/lnd';
 import { Store } from 'store';
 
@@ -19,6 +20,7 @@ class ChannelAction {
    * fetch channels from the LND RPC
    */
   @action.bound async getChannels() {
+    log.info('fetching channels');
     const channels = await this._lnd.listChannels();
     this._store.channels = channels.channelsList.map(c => ({
       chanId: c.chanId,
@@ -29,6 +31,7 @@ class ChannelAction {
       uptime: c.uptime,
       active: c.active,
     }));
+    log.info('updated store.channels', toJS(this._store.channels));
   }
 }
 

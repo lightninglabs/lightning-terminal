@@ -49,3 +49,21 @@ Open browser at http://localhost:3000
   ```sh
   yarn test
   ```
+
+## Logging
+
+Client-side logs are disabled by default in production builds and enabled by default in a development environment. In production, logging can be turned on by adding a couple keys to your browser's `localStorage`. Simply run these two JS statements in you browser's DevTools console:
+
+```
+localStorage.setItem('debug', '*'); localStorage.setItem('debug-level', 'debug');
+```
+
+The value for `debug` is a namespace filter which determines which portions of the app to display logs for. The namespaces currently used by the app are as follows:
+
+- `main`: logs general application messages
+- `action`: logs all actions that modify the internal application state
+- `grpc`: logs all GRPC API requests and responses
+
+Example filters: `main,action` will only log main and action messages. `*,-action` will log everything except action messages.
+
+The value for `debug-level` determines the verbosity of the logs. The value can be one of `debug`, `info`, `warn`, or `error`.

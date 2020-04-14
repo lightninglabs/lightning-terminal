@@ -5,3 +5,5 @@ import 'mobx-react-lite/batchingForReactDom';
 // expect(element).toHaveTextContent(/react/i)
 // learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom/extend-expect';
+// enable i18n translations in unit tests
+import './i18n';

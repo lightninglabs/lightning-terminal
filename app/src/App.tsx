@@ -1,10 +1,12 @@
 import React, { useEffect } from 'react';
 import { observer } from 'mobx-react';
 import './App.css';
+import usePrefixedTranslation from 'hooks/usePrefixedTranslation';
 import { channel, node, swap } from 'action';
 import store from 'store';
 
 const App = () => {
+  const { l } = usePrefixedTranslation('App');
   useEffect(() => {
     // fetch node info when the component is mounted
     const fetchInfo = async () => await node.getInfo();
@@ -13,25 +15,25 @@ const App = () => {
 
   return (
     <div className="App">
-      <p>Node Info</p>
+      <p>{l('App.nodeInfo')}</p>
       {store.info && (
         <>
           <table className="App-table">
             <tbody>
               <tr>
-                <th>Pubkey</th>
+                <th>{l('pubkey')}</th>
                 <td>{store.info.identityPubkey}</td>
               </tr>
               <tr>
-                <th>Alias</th>
+                <th>{l('alias')}</th>
                 <td>{store.info.alias}</td>
               </tr>
               <tr>
-                <th>Version</th>
+                <th>{l('version')}</th>
                 <td>{store.info.version}</td>
               </tr>
               <tr>
-                <th># Channels</th>
+                <th>{l('numChannels')}</th>
                 <td>{store.info.numActiveChannels}</td>
               </tr>
             </tbody>
