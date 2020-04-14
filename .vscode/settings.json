@@ -1,0 +1,66 @@
+{
+  "files.associations": {
+    ".commitlintrc": "jsonc",
+    ".electronbuildrc": "jsonc",
+    ".eslintrc": "jsonc",
+    ".lintstagedrc": "jsonc",
+    ".prettierrc": "jsonc",
+    ".renovaterc": "jsonc",
+    ".stylelintrc": "json",
+    ".versionrc": "json",
+    ".tsimportsorter": "json"
+  },
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
+  "importSorter.generalConfiguration.sortOnBeforeSave": true,
+  "importSorter.sortConfiguration.removeUnusedImports": true,
+  "importSorter.importStringConfiguration.tabSize": 2,
+  "importSorter.importStringConfiguration.trailingComma": "multiLine",
+  "importSorter.importStringConfiguration.maximumNumberOfImportExpressionsPerLine.count": 90,
+  "importSorter.importStringConfiguration.maximumNumberOfImportExpressionsPerLine.type": "newLineEachExpressionAfterCountLimit",
+  "importSorter.sortConfiguration.customOrderingRules.defaultNumberOfEmptyLinesAfterGroup": 0,
+  "importSorter.sortConfiguration.customOrderingRules.defaultOrderLevel": 50,
+  "importSorter.sortConfiguration.customOrderingRules.rules": [
+    {
+      "regex": "^(first entry ignored by the plugin. idk why)",
+      "orderLevel": 0
+    },
+    {
+      "regex": "^(react)",
+      "orderLevel": 10
+    },
+    {
+      "regex": "^(mobx|mobx-react|types)",
+      "orderLevel": 20
+    },
+    {
+      "regex": "^[@]",
+      "orderLevel": 30
+    },
+    {
+      "type": "importMember",
+      "regex": "^$",
+      "orderLevel": 40,
+      "disableSort": true
+    },
+    {
+      "regex": "^(action|api|store)",
+      "orderLevel": 60
+    },
+    {
+      "regex": "^(components|resources)",
+      "orderLevel": 70
+    },
+    {
+      "regex": "^[.]",
+      "orderLevel": 80
+    }
+  ],
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  }
+}
