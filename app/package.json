@@ -12,7 +12,9 @@
     "eject": "react-scripts eject",
     "lint": "eslint --ext .ts,.tsx --ignore-path .eslintignore .",
     "tsc": "tsc --noEmit",
-    "protos": "./scripts/build-protos.sh"
+    "protos": "./scripts/build-protos.sh",
+    "storybook": "start-storybook -p 9009 -s public",
+    "build-storybook": "build-storybook -s public"
   },
   "proxy": "https://localhost:8443",
   "dependencies": {
@@ -28,6 +30,12 @@
     "react-scripts": "3.4.1"
   },
   "devDependencies": {
+    "@storybook/addon-actions": "^5.3.18",
+    "@storybook/addon-docs": "5.3.18",
+    "@storybook/addon-links": "^5.3.18",
+    "@storybook/addons": "^5.3.18",
+    "@storybook/preset-create-react-app": "^2.1.1",
+    "@storybook/react": "^5.3.18",
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.3.2",
     "@testing-library/user-event": "^7.1.2",
