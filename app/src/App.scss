@@ -1,17 +1,16 @@
 @charset "utf-8";
 
-// @import '../node_modules/bootstrap/scss/bootstrap';
-
+// required bootstrap styles
 @import '../node_modules/bootstrap/scss/functions';
 @import '../node_modules/bootstrap/scss/variables';
 @import '../node_modules/bootstrap/scss/mixins';
 @import '../node_modules/bootstrap/scss/utilities';
+
+// optional bootstrap styles
 @import '../node_modules/bootstrap/scss/reboot';
 @import '../node_modules/bootstrap/scss/buttons';
 @import '../node_modules/bootstrap/scss/tables';
 @import '../node_modules/bootstrap/scss/nav';
-
-/* Open Sans */
 
 @font-face {
   font-family: 'OpenSans Light';
@@ -45,13 +44,8 @@
 }
 
 html,
-body {
-  min-height: 100vh;
-}
-
+body,
 #root {
   min-height: 100vh;
   width: 100%;
-  color: #ffffff;
-  font-family: 'OpenSans Regular';
 }

@@ -1,11 +1,14 @@
 import React from 'react';
-import styled from '@emotion/styled/macro';
+import { styled } from 'components/theme';
 import Sidebar from './Sidebar';
 
 const Styled = {
   Background: styled.div`
     min-height: 100vh;
-    background-color: #252f4a;
+    color: ${props => props.theme.colors.white};
+    background-color: ${props => props.theme.colors.blue};
+    font-family: ${props => props.theme.fonts.regular};
+    font-size: ${props => props.theme.sizes.m};
   `,
   Container: styled.div`
     min-height: 100vh;
@@ -16,7 +19,7 @@ const Styled = {
     position: fixed;
     top: 0;
     height: 100vh;
-    background-color: #212133;
+    background-color: ${props => props.theme.colors.darkBlue};
     width: 285px;
     padding: 17px;
   `,

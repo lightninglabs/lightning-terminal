@@ -1,13 +1,13 @@
 import React from 'react';
-import styled from '@emotion/styled/macro';
+import { styled } from 'components/theme';
 
 const Title = styled.div`
-  font-size: 14px;
-  font-family: 'OpenSans SemiBold';
+  font-size: ${props => props.theme.sizes.s};
+  font-family: ${props => props.theme.fonts.semiBold};
   letter-spacing: 0;
   line-height: 19px;
   padding: 8px 14px;
-  color: #848a99; // gray
+  color: ${props => props.theme.colors.gray};
 `;
 
 const Nav = styled.ul`
@@ -17,26 +17,30 @@ const Nav = styled.ul`
 `;
 
 const NavItem = styled.li`
-  font-size: 14px;
-  border-left: 3px solid transparent;
+  font-size: ${props => props.theme.sizes.s};
 
   a {
     display: block;
     height: 50px;
     line-height: 50px;
     padding: 0 12px;
-    color: #f5f5f5; // white
+    border-left: 3px solid transparent;
+    color: ${props => props.theme.colors.whitish};
 
-    &:active,
     &:hover {
       text-decoration: none;
+      border-left: 3px solid ${props => props.theme.colors.pink};
     }
   }
 
-  &.active {
-    border-left: 3px solid #f5f5f5; // white
-    background-color: #252f4a; // dark blue
+  &.active a {
+    border-left: 3px solid ${props => props.theme.colors.whitish};
+    background-color: ${props => props.theme.colors.blue};
     margin-right: -17px;
+
+    &:hover {
+      border-left: 3px solid ${props => props.theme.colors.pink};
+    }
   }
 `;
 
