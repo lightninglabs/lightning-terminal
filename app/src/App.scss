@@ -1,6 +1,48 @@
 @charset "utf-8";
 
-@import '../node_modules/bootstrap/scss/bootstrap';
+// @import '../node_modules/bootstrap/scss/bootstrap';
+
+@import '../node_modules/bootstrap/scss/functions';
+@import '../node_modules/bootstrap/scss/variables';
+@import '../node_modules/bootstrap/scss/mixins';
+@import '../node_modules/bootstrap/scss/utilities';
+@import '../node_modules/bootstrap/scss/reboot';
+@import '../node_modules/bootstrap/scss/buttons';
+@import '../node_modules/bootstrap/scss/tables';
+@import '../node_modules/bootstrap/scss/nav';
+
+/* Open Sans */
+
+@font-face {
+  font-family: 'OpenSans Light';
+  src: url('./assets/fonts/OpenSans-Light.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 300;
+}
+@font-face {
+  font-family: 'OpenSans Regular';
+  src: url('./assets/fonts/OpenSans-Regular.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 400;
+}
+@font-face {
+  font-family: 'OpenSans SemiBold';
+  src: url('./assets/fonts/OpenSans-SemiBold.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 600;
+}
+@font-face {
+  font-family: 'OpenSans Bold';
+  src: url('./assets/fonts/OpenSans-Bold.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 700;
+}
+@font-face {
+  font-family: 'OpenSans ExtraBold';
+  src: url('./assets/fonts/OpenSans-ExtraBold.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 800;
+}
 
 html,
 body {
@@ -11,4 +53,5 @@ body {
   min-height: 100vh;
   width: 100%;
   color: #ffffff;
+  font-family: 'OpenSans Regular';
 }

@@ -18,7 +18,7 @@ const Styled = {
     height: 100vh;
     background-color: #212133;
     width: 285px;
-    padding: 15px;
+    padding: 17px;
   `,
   Content: styled.div`
     margin-left: 285px;
