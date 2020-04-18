@@ -1,0 +1,14 @@
+@charset "utf-8";
+
+@import '../node_modules/bootstrap/scss/bootstrap';
+
+html,
+body {
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+  width: 100%;
+  color: #ffffff;
+}
