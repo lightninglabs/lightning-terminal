@@ -1,10 +1,11 @@
 import React, { useEffect } from 'react';
-import { observer } from 'mobx-react';
+import { observer } from 'mobx-react-lite';
 import usePrefixedTranslation from 'hooks/usePrefixedTranslation';
-import { channel, node, swap } from 'action';
-import store from 'store';
+import { useActions, useStore } from 'store/provider';
 
 const SamplePage: React.FC = () => {
+  const store = useStore();
+  const { node, channel, swap } = useActions();
   const { l } = usePrefixedTranslation('App');
   useEffect(() => {
     // fetch node info when the component is mounted
@@ -17,7 +18,7 @@ const SamplePage: React.FC = () => {
     };
 
     fetchInfo();
-  }, []);
+  }, [node]);
 
   return (
     <>

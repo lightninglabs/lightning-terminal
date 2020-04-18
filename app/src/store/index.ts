@@ -9,5 +9,3 @@ export class Store {
   @observable channels: Channel[] = [];
   @observable swaps: Swap[] = [];
 }
-
-export default new Store();
