@@ -1,6 +1,6 @@
 import { action, toJS } from 'mobx';
 import { actionLog as log } from 'util/log';
-import LndApi from 'api/lnd';
+import { LndApi } from 'api';
 import { Store } from 'store';
 
 /**

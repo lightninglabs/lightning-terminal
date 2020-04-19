@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import 'mobx-react/batchingForReactDom';
+import 'mobx-react-lite/batchingForReactDom';
 import './i18n';
 import './index.css';
 import { log } from 'util/log';

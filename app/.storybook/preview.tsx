@@ -3,11 +3,15 @@ import { action } from 'mobx';
 import { addDecorator } from '@storybook/react';
 import { ThemeProvider } from '../src/components/theme';
 import { Store, StoreProvider } from '../src/store';
+import * as sampleData from '../src/util/sampleData';
 
 /**
  * Create a store with dummy data to use for stories
  */
 const store = new Store();
+store.info = sampleData.lndGetInfo;
+store.channels = sampleData.lndListChannels;
+store.swaps = sampleData.loopListSwaps;
 
 /**
  * Create dummy actions to use for stories
