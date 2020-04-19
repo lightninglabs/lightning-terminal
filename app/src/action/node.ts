@@ -24,6 +24,20 @@ class NodeAction {
     this._store.info = await this._lnd.getInfo();
     log.info('updated store.info', toJS(this._store.info));
   }
+
+  /**
+   * fetch node balances from the LND RPC
+   */
+  @action.bound async getBalances() {
+    log.info('fetching node balances');
+    const channels = await this._lnd.channelBalance();
+    const wallet = await this._lnd.walletBalance();
+    this._store.balances = {
+      channelBalance: channels.balance,
+      walletBalance: wallet.totalBalance,
+    };
+    log.info('updated store.info', toJS(this._store.info));
+  }
 }
 
 export default NodeAction;

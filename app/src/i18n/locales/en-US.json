@@ -3,5 +3,6 @@
   "App.pubkey": "Pubkey",
   "App.alias": "Alias",
   "App.version": "Version",
-  "App.numChannels": "# Channels"
+  "App.numChannels": "# Channels",
+  "App.balances": "Balances"
 }

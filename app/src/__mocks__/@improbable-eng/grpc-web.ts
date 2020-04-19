@@ -1,7 +1,7 @@
 import { ProtobufMessage } from '@improbable-eng/grpc-web/dist/typings/message';
 import { UnaryMethodDefinition } from '@improbable-eng/grpc-web/dist/typings/service';
 import { UnaryRpcOptions } from '@improbable-eng/grpc-web/dist/typings/unary';
-import * as samples from 'util/sampleData';
+import { sampleApiResponses } from 'util/sampleData';
 
 // mock grpc module
 export const grpc = {
@@ -21,17 +21,10 @@ export const grpc = {
       statusMessage: '',
       // the message returned should have a toObject function
       message: {
-        toObject: () => mockApiResponses[path],
+        toObject: () => sampleApiResponses[path],
       } as TRes,
       headers: {} as any,
       trailers: {} as any,
     });
   },
-};
-
-// collection of mock API responses
-const mockApiResponses: Record<string, any> = {
-  'lnrpc.Lightning.GetInfo': samples.lndGetInfo,
-  'lnrpc.Lightning.ListChannels': samples.lndListChannels,
-  'looprpc.SwapClient.ListSwaps': samples.loopListSwaps,
 };

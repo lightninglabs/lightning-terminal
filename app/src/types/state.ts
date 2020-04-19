@@ -7,6 +7,11 @@ export interface NodeInfo {
   version: string;
 }
 
+export interface NodeBalances {
+  walletBalance: number;
+  channelBalance: number;
+}
+
 export interface Channel {
   chanId: string;
   remotePubkey: string;

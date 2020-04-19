@@ -36,6 +36,17 @@ export const lndGetInfo: LND.GetInfoResponse.AsObject = {
   ],
 };
 
+export const lndChannelBalance: LND.ChannelBalanceResponse.AsObject = {
+  balance: 9990950,
+  pendingOpenBalance: 0,
+};
+
+export const lndWalletBalance: LND.WalletBalanceResponse.AsObject = {
+  totalBalance: 84992363,
+  confirmedBalance: 84992363,
+  unconfirmedBalance: 0,
+};
+
 export const lndListChannels: LND.ListChannelsResponse.AsObject = {
   channelsList: [
     {
@@ -76,7 +87,7 @@ export const lndListChannels: LND.ListChannelsResponse.AsObject = {
 };
 
 //
-// LND API Responses
+// Loop API Responses
 //
 
 export const loopListSwaps: LOOP.ListSwapsResponse.AsObject = {
@@ -93,4 +104,13 @@ export const loopListSwaps: LOOP.ListSwapsResponse.AsObject = {
     costOnchain: 6812,
     costOffchain: 2,
   })),
+};
+
+// collection of sample API responses
+export const sampleApiResponses: Record<string, any> = {
+  'lnrpc.Lightning.GetInfo': lndGetInfo,
+  'lnrpc.Lightning.ChannelBalance': lndChannelBalance,
+  'lnrpc.Lightning.WalletBalance': lndWalletBalance,
+  'lnrpc.Lightning.ListChannels': lndListChannels,
+  'looprpc.SwapClient.ListSwaps': loopListSwaps,
 };
