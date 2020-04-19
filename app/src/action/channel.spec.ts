@@ -1,5 +1,5 @@
 import ChannelAction from 'action/channel';
-import LndApi from 'api/lnd';
+import { GrpcClient, LndApi } from 'api';
 import { Store } from 'store';
 
 describe('ChannelAction', () => {
@@ -7,7 +7,8 @@ describe('ChannelAction', () => {
   let channel: ChannelAction;
 
   beforeEach(() => {
-    const lndApiMock = new LndApi();
+    const grpc = new GrpcClient();
+    const lndApiMock = new LndApi(grpc);
     store = new Store();
     channel = new ChannelAction(store, lndApiMock);
   });

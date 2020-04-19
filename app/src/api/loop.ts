@@ -1,6 +1,6 @@
 import * as LOOP from 'types/generated/loop_pb';
 import { SwapClient } from 'types/generated/loop_pb_service';
-import { grpcRequest } from './grpc';
+import GrpcClient from './grpc';
 
 /**
  * An API wrapper to communicate with the Loop daemon via GRPC
@@ -10,12 +10,18 @@ class LoopApi {
     'X-Grpc-Backend': 'loop',
   };
 
+  private _grpc: GrpcClient;
+
+  constructor(grpc: GrpcClient) {
+    this._grpc = grpc;
+  }
+
   /**
    * call the LND `ListSwaps` RPC and return the response
    */
   async listSwaps(): Promise<LOOP.ListSwapsResponse.AsObject> {
     const req = new LOOP.ListSwapsRequest();
-    const res = await grpcRequest(SwapClient.ListSwaps, req, this._meta);
+    const res = await this._grpc.request(SwapClient.ListSwaps, req, this._meta);
     return res.toObject();
   }
 }

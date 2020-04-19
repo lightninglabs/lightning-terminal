@@ -9,3 +9,6 @@ export class Store {
   @observable channels: Channel[] = [];
   @observable swaps: Swap[] = [];
 }
+
+// re-export from provider
+export { StoreProvider, useStore, useActions } from './provider';

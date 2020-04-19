@@ -1,5 +1,5 @@
 import NodeAction from 'action/node';
-import LndApi from 'api/lnd';
+import { GrpcClient, LndApi } from 'api';
 import { Store } from 'store';
 
 describe('NodeAction', () => {
@@ -7,7 +7,8 @@ describe('NodeAction', () => {
   let node: NodeAction;
 
   beforeEach(() => {
-    const lndApiMock = new LndApi();
+    const grpc = new GrpcClient();
+    const lndApiMock = new LndApi(grpc);
     store = new Store();
     node = new NodeAction(store, lndApiMock);
   });
