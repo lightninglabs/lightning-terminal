@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="10px" height="10px" viewBox="0 0 10 10" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: sketchtool 64 (101010) - https://sketch.com -->
+    <title>BF2E6425-3766-4AB7-B1A7-221A153A9A9C</title>
+    <desc>Created with sketchtool.</desc>
+    <defs>
+        <path d="M9.39492236,4.12 C9.30916635,3.94833333 9.18053234,3.8625 9.00902032,3.8625 L5.62165804,3.8625 L6.00756007,0.90125 C6.05043808,0.729583333 5.92180406,0.515 5.75029205,0.472083333 C5.57878004,0.38625 5.36439002,0.429166667 5.23575601,0.600833333 L0.947955648,5.75083333 C0.862199641,5.87958333 0.819321637,6.05125 0.905077644,6.22291667 C0.990833651,6.35166667 1.11946766,6.4375 1.29097968,6.4375 L4.67834196,6.4375 L4.29243993,9.39875 C4.24956192,9.57041667 4.37819594,9.785 4.54970795,9.82791667 C4.59258595,9.87083333 4.67834196,9.87083333 4.72121996,9.87083333 C4.84985397,9.87083333 4.97848799,9.82791667 5.06424399,9.69916667 L9.35204435,4.54916667 C9.43780036,4.42041667 9.48067836,4.24875 9.39492236,4.12 Z" id="path-1"></path>
+    </defs>
+    <g id="Phase1-Delivery" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Icon-extract" transform="translate(-16.000000, -123.000000)">
+            <g id="Bolt-Alert" transform="translate(16.000000, 122.999582)">
+                <mask id="mask-2" fill="white">
+                    <use xlink:href="#path-1"></use>
+                </mask>
+                <use id="Mask" fill="#000000" fill-rule="nonzero" xlink:href="#path-1"></use>
+                <g id="Icon-🎨" mask="url(#mask-2)" fill="#F5406E">
+                    <rect id="Shape" x="0" y="0" width="10.3" height="10.3"></rect>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>
