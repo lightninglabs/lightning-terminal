@@ -10,4 +10,5 @@ export class Store {
   @observable swaps: Swap[] = [];
 }
 
-export default new Store();
+// re-export from provider
+export { StoreProvider, useStore, useActions } from './provider';

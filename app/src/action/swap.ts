@@ -1,7 +1,7 @@
 import { action, toJS } from 'mobx';
 import { SwapState, SwapType } from 'types/generated/loop_pb';
 import { actionLog as log } from 'util/log';
-import LoopApi from 'api/loop';
+import { LoopApi } from 'api';
 import { Store } from 'store';
 
 /**

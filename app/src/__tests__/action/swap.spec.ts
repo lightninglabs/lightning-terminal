@@ -1,5 +1,5 @@
 import SwapAction from 'action/swap';
-import LoopApi from 'api/loop';
+import { GrpcClient, LoopApi } from 'api';
 import { Store } from 'store';
 
 describe('SwapAction', () => {
@@ -7,7 +7,8 @@ describe('SwapAction', () => {
   let loop: SwapAction;
 
   beforeEach(() => {
-    const loopApiMock = new LoopApi();
+    const grpc = new GrpcClient();
+    const loopApiMock = new LoopApi(grpc);
     store = new Store();
     loop = new SwapAction(store, loopApiMock);
   });
