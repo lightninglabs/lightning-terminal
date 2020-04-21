@@ -56,7 +56,7 @@ const Layout: React.FC = ({ children }) => {
   return (
     <Background>
       <Container>
-        <MenuIcon onClick={app.toggleSidebar} />
+        <MenuIcon title="menu" onClick={app.toggleSidebar} />
         <Aside collapsed={sidebarCollapsed}>
           <Sidebar />
         </Aside>

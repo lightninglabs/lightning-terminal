@@ -43,11 +43,11 @@ const NodeStatus: React.FC = () => {
     <Wrapper>
       <StatusTitle>Node Status</StatusTitle>
       <XLargeText block>
-        <BoltIcon />
+        <BoltIcon title="bolt" />
         {channelBalance.toLocaleString()} SAT
       </XLargeText>
       <SmallText block>
-        <BitcoinIcon />
+        <BitcoinIcon title="bitcoin" />
         {walletBalance.toLocaleString()}
       </SmallText>
       <Divider />
