@@ -2,6 +2,7 @@ import React from 'react';
 import 'mobx-react-lite/batchingForReactDom';
 import { addDecorator, addParameters } from '@storybook/react';
 import '../src/App.scss';
+import '../src/i18n';
 import { createActions } from '../src/action';
 import { Background } from '../src/components/common/base';
 import { ThemeProvider } from '../src/components/theme';

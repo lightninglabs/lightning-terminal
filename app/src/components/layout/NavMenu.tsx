@@ -1,4 +1,5 @@
 import React from 'react';
+import { usePrefixedTranslation } from 'hooks';
 import { Title } from 'components/common/text';
 import { styled } from 'components/theme';
 
@@ -43,15 +44,17 @@ const Styled = {
 const NavMenu: React.FC = () => {
   const { NavTitle, Nav, NavItem } = Styled;
 
+  const { l } = usePrefixedTranslation('cmps.layout.NavMenu');
+
   return (
     <>
-      <NavTitle>Menu</NavTitle>
+      <NavTitle>{l('menu')}</NavTitle>
       <Nav>
         <NavItem className="active">
-          <a href="#temp">Lightning Loop</a>
+          <a href="#temp">{l('loop')}</a>
         </NavItem>
         <NavItem>
-          <a href="#temp">Settings</a>
+          <a href="#temp">{l('settings')}</a>
         </NavItem>
       </Nav>
     </>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
+import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { SmallText, Title, XLargeText } from 'components/common/text';
 import { Bitcoin, Bolt } from './common/icons';
@@ -33,6 +34,8 @@ const Styled = {
 const NodeStatus: React.FC = () => {
   const { Wrapper, StatusTitle, BoltIcon, BitcoinIcon, Divider } = Styled;
 
+  const { l } = usePrefixedTranslation('cmps.NodeStatus');
+
   const store = useStore();
   const { channelBalance, walletBalance } = store.balances || {
     channelBalance: 0,
@@ -41,7 +44,7 @@ const NodeStatus: React.FC = () => {
 
   return (
     <Wrapper>
-      <StatusTitle>Node Status</StatusTitle>
+      <StatusTitle>{l('title')}</StatusTitle>
       <XLargeText block>
         <BoltIcon title="bolt" />
         {channelBalance.toLocaleString()} SAT

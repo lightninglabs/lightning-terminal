@@ -38,7 +38,7 @@ const Styled = {
 
     /* set a width on the child to improve the collapse animation */
     & > div {
-      width: 285px;
+      width: 255px;
     }
   `,
   Content: styled.div<CollapsedProps>`

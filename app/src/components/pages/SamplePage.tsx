@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
-import usePrefixedTranslation from 'hooks/usePrefixedTranslation';
+import { usePrefixedTranslation } from 'hooks';
 import { useActions, useStore } from 'store/provider';
 
 const SamplePage: React.FC = () => {
