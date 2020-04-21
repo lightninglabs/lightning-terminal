@@ -1,13 +1,22 @@
 import React from 'react';
 import { Background } from 'components/common/base';
+import { Menu } from 'components/common/icons';
 import { styled } from 'components/theme';
 import Sidebar from './Sidebar';
 
 const Styled = {
   Container: styled.div`
+    position: relative;
     min-height: 100vh;
     width: 1440px;
     margin: 0 auto;
+  `,
+  MenuIcon: styled(Menu)`
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 1;
+    cursor: pointer;
   `,
   Aside: styled.aside`
     position: fixed;
@@ -24,10 +33,11 @@ const Styled = {
 };
 
 const Layout: React.FC = ({ children }) => {
-  const { Container, Aside, Content } = Styled;
+  const { Container, MenuIcon, Aside, Content } = Styled;
   return (
     <Background>
       <Container>
+        <MenuIcon />
         <Aside>
           <Sidebar />
         </Aside>
