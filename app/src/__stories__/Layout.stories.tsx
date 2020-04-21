@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { StoryContext } from '@storybook/addons';
+import { Store } from 'store';
 import { Layout } from '../components/layout';
 
 export default {
@@ -6,11 +8,9 @@ export default {
   component: Layout,
 };
 
-export const Empty = () => <Layout />;
-
-export const WithContent = () => (
-  <Layout>
-    <h1>Lorem ipsum dolor sit amet</h1>
+const SampleContent = () => (
+  <>
+    <h1 style={{ textAlign: 'center' }}>Lorem ipsum dolor sit amet</h1>
     {[...Array(10)].map((_, i) => (
       <p key={i}>
         At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis
@@ -26,5 +26,32 @@ export const WithContent = () => (
         consequatur aut perferendis doloribus asperiores repellat.
       </p>
     ))}
+  </>
+);
+
+export const Default = () => <Layout />;
+
+export const WithContent = () => (
+  <Layout>
+    <SampleContent />
   </Layout>
 );
+
+export const Collapsed = (ctx: StoryContext) => {
+  useEffect(() => {
+    // grab the store from the Storybook parameter defined in preview.tsx
+    const store = ctx.parameters.store as Store;
+    store.sidebarCollapsed = true;
+
+    // change back to expanded when the component is unmounted
+    return () => {
+      store.sidebarCollapsed = false;
+    };
+  }, []);
+
+  return (
+    <Layout>
+      <SampleContent />
+    </Layout>
+  );
+};

@@ -1,11 +1,8 @@
 import React from 'react';
 import 'mobx-react-lite/batchingForReactDom';
-import { addDecorator } from '@storybook/react';
+import { addDecorator, addParameters } from '@storybook/react';
 import '../src/App.scss';
-import ChannelAction from '../src/action/channel';
-import NodeAction from '../src/action/node';
-import SwapAction from '../src/action/swap';
-import { LndApi, LoopApi } from '../src/api';
+import { createActions } from '../src/action';
 import { Background } from '../src/components/common/base';
 import { ThemeProvider } from '../src/components/theme';
 import { Store, StoreProvider } from '../src/store';
@@ -31,22 +28,12 @@ const grpc = {
     return Promise.resolve(response);
   },
 };
-const lndApi = new LndApi(grpc);
-const loopApi = new LoopApi(grpc);
-
-// actions exposed to UI components
-const node = new NodeAction(store, lndApi);
-const channel = new ChannelAction(store, lndApi);
-const swap = new SwapAction(store, loopApi);
-
-const actions = {
-  node,
-  channel,
-  swap,
-};
+const actions = createActions(store, grpc);
 
 // execute actions to populate the store data with the sample API responses
 actions.node.getBalances();
+
+addParameters({ store });
 
 /**
  * decorator function to wrap all stories with the necessary providers
