@@ -1,15 +1,9 @@
 import React from 'react';
+import { Background } from 'components/common/base';
 import { styled } from 'components/theme';
 import Sidebar from './Sidebar';
 
 const Styled = {
-  Background: styled.div`
-    min-height: 100vh;
-    color: ${props => props.theme.colors.white};
-    background-color: ${props => props.theme.colors.blue};
-    font-family: ${props => props.theme.fonts.regular};
-    font-size: ${props => props.theme.sizes.m};
-  `,
   Container: styled.div`
     min-height: 100vh;
     width: 1440px;
@@ -21,7 +15,7 @@ const Styled = {
     height: 100vh;
     background-color: ${props => props.theme.colors.darkBlue};
     width: 285px;
-    padding: 17px;
+    padding: 15px;
   `,
   Content: styled.div`
     margin-left: 285px;
@@ -30,7 +24,7 @@ const Styled = {
 };
 
 const Layout: React.FC = ({ children }) => {
-  const { Background, Container, Aside, Content } = Styled;
+  const { Container, Aside, Content } = Styled;
   return (
     <Background>
       <Container>
