@@ -4,6 +4,6 @@ import App from '../App';
 
 it('renders the App', () => {
   const { getByText } = render(<App />);
-  const linkElement = getByText('Node Info');
+  const linkElement = getByText('Node Status');
   expect(linkElement).toBeInTheDocument();
 });
