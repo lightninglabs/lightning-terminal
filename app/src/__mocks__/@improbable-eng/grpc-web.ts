@@ -1,7 +1,7 @@
 import { ProtobufMessage } from '@improbable-eng/grpc-web/dist/typings/message';
 import { UnaryMethodDefinition } from '@improbable-eng/grpc-web/dist/typings/service';
 import { UnaryRpcOptions } from '@improbable-eng/grpc-web/dist/typings/unary';
-import { sampleApiResponses } from 'util/sampleData';
+import { sampleApiResponses } from 'util/tests/sampleData';
 
 // mock grpc module
 export const grpc = {

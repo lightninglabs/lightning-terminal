@@ -1,4 +1,4 @@
-import { lndChannelBalance, lndWalletBalance } from 'util/sampleData';
+import { lndChannelBalance, lndWalletBalance } from 'util/tests/sampleData';
 import NodeAction from 'action/node';
 import { GrpcClient, LndApi } from 'api';
 import { Store } from 'store';

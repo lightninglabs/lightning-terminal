@@ -7,7 +7,7 @@ import { createActions } from '../src/action';
 import { Background } from '../src/components/common/base';
 import { ThemeProvider } from '../src/components/theme';
 import { Store, StoreProvider } from '../src/store';
-import { sampleApiResponses } from '../src/util/sampleData';
+import { sampleApiResponses } from '../src/util/tests/sampleData';
 
 /**
  * Create a store with dummy data to use for stories

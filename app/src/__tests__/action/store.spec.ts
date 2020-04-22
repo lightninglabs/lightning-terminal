@@ -1,4 +1,4 @@
-import { lndListChannels } from 'util/sampleData';
+import { lndListChannels } from 'util/tests/sampleData';
 import { createActions, StoreActions } from 'action';
 import { Store } from 'store';
 
