@@ -23,6 +23,7 @@ const theme = {
     white: '#ffffff',
     whitish: '#f5f5f5',
     pink: '#f5406e',
+    tileBack: 'rgba(245,245,245,0.04)',
   },
 };
 
