@@ -6,6 +6,7 @@ import { Column, Row } from 'components/common/grid';
 import { PageTitle } from 'components/common/text';
 import Tile from 'components/common/Tile';
 import { styled } from 'components/theme';
+import LoopHistory from './LoopHistory';
 
 const Styled = {
   PageWrap: styled.div`
@@ -36,6 +37,11 @@ const LoopPage: React.FC = () => {
       <PageTitle>{l('pageTitle')}</PageTitle>
       <TileSection>
         <Row>
+          <Column>
+            <Tile title={l('history')} onArrowClick={() => null}>
+              <LoopHistory swaps={store.swaps} />
+            </Tile>
+          </Column>
           <Column cols={4}>
             <Tile
               title={l('inbound')}

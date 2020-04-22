@@ -32,6 +32,7 @@ const actions = createActions(store, grpc);
 
 // execute actions to populate the store data with the sample API responses
 actions.node.getBalances();
+actions.swap.listSwaps();
 
 /**
  * add the mobx store to Storybook parameters so that stories can manipulate it
@@ -44,10 +45,13 @@ addParameters({ store });
 addDecorator((storyFn, ctx) => (
   <StoreProvider store={store} actions={actions}>
     <ThemeProvider>
-      <Background>
+      {/* modify the bg styles so it isn't too big in docs mode */}
+      <Background style={{ minHeight: 'inherit', height: '100%' }}>
         {/* wrap the component in a centered div for small components */}
         {ctx.parameters.centered ? (
-          <div style={{ width: 300, margin: 'auto', paddingTop: 100 }}>{storyFn()}</div>
+          <div style={{ width: 300, margin: 'auto', padding: '100px 0' }}>
+            {storyFn()}
+          </div>
         ) : (
           storyFn()
         )}

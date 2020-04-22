@@ -25,7 +25,7 @@ export interface Channel {
 export interface Swap {
   id: string;
   type: string;
-  amount: BigInt;
+  amount: number;
   createdOn: Date;
   status: string;
 }
