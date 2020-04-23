@@ -1,5 +1,7 @@
 import React from 'react';
+import { SwapStatus } from 'types/generated/loop_pb';
 import { renderWithProviders } from 'util/tests';
+import { loopListSwaps } from 'util/tests/sampleData';
 import LoopPage from 'components/loop/LoopPage';
 
 describe('LoopPage component', () => {
@@ -28,10 +30,14 @@ describe('LoopPage component', () => {
 
   it('should display the loop history records', async () => {
     const { findByText } = render();
-    // these values are defined in sampleData.ts
-    expect(await findByText('4/15/2020')).toBeInTheDocument();
+    // convert from numeric timestamp to string (1586390353623905000 -> '4/15/2020')
+    const formatDate = (s: SwapStatus.AsObject) =>
+      new Date(s.initiationTime / 1000 / 1000).toLocaleDateString();
+    const [swap1, swap2] = loopListSwaps.swapsList;
+
+    expect(await findByText(formatDate(swap1))).toBeInTheDocument();
     expect(await findByText('530,000 SAT')).toBeInTheDocument();
-    expect(await findByText('4/14/2020')).toBeInTheDocument();
+    expect(await findByText(formatDate(swap2))).toBeInTheDocument();
     expect(await findByText('525,000 SAT')).toBeInTheDocument();
   });
 });
