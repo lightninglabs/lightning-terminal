@@ -30,3 +30,12 @@ export const XLargeText = styled.span<BlockProps>`
   font-size: ${props => props.theme.sizes.xl};
   letter-spacing: 0.43px;
 `;
+
+export const PageTitle = styled.h2`
+  font-family: ${props => props.theme.fonts.light};
+  font-size: ${props => props.theme.sizes.l};
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 2.7px;
+  line-height: 30px;
+`;

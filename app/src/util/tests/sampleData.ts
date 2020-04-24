@@ -92,12 +92,12 @@ export const lndListChannels: LND.ListChannelsResponse.AsObject = {
 
 export const loopListSwaps: LOOP.ListSwapsResponse.AsObject = {
   swapsList: [...Array(7)].map((x, i) => ({
-    amt: 500000,
-    id: 'f4eb118383c2b09d8c7289ce21c25900cfb4545d46c47ed23a31ad2aa57ce835',
+    amt: 500000 + i * 5000,
+    id: `f4eb118383c2b09d8c7289ce21c25900cfb4545d46c47ed23a31ad2aa57ce83${i}`,
     idBytes: '9OsRg4PCsJ2MconOIcJZAM+0VF1GxH7SOjGtKqV86DU=',
     type: (i % 3) as any,
     state: i as any,
-    initiationTime: 1586390353623905000,
+    initiationTime: 1586390353623905000 + i * 100000000000000,
     lastUpdateTime: 1586398369729857000,
     htlcAddress: 'bcrt1qzu4077erkr78k52yuf2rwkk6ayr6m3wtazdfz2qqmd7taa5vvy9s5d75gd',
     costServer: 66,

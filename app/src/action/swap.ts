@@ -29,7 +29,7 @@ class SwapAction {
       .map(s => ({
         id: s.id,
         type: this._typeToString(s.type),
-        amount: BigInt(s.amt),
+        amount: s.amt,
         createdOn: new Date(s.initiationTime / 1000 / 1000),
         status: this._stateToString(s.state),
       }));

@@ -1,4 +1,8 @@
 {
+  "cmps.loop.LoopPage.pageTitle": "Lightning Loop",
+  "cmps.loop.LoopPage.history": "Loop History",
+  "cmps.loop.LoopPage.inbound": "Total Inbound Liquidity",
+  "cmps.loop.LoopPage.outbound": "Total Outbound Liquidity",
   "App.nodeInfo": "Node Info",
   "App.pubkey": "Pubkey",
   "App.alias": "Alias",

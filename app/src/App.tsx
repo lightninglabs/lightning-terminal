@@ -2,7 +2,7 @@ import React from 'react';
 import './App.scss';
 import { Store, StoreProvider } from 'store';
 import { Layout } from 'components/layout';
-import SamplePage from 'components/pages/SamplePage';
+import LoopPage from 'components/loop/LoopPage';
 import { ThemeProvider } from 'components/theme';
 
 const App = () => {
@@ -11,7 +11,7 @@ const App = () => {
     <StoreProvider store={store}>
       <ThemeProvider>
         <Layout>
-          <SamplePage />
+          <LoopPage />
         </Layout>
       </ThemeProvider>
     </StoreProvider>
