@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
-import usePrefixedTranslation from 'hooks/usePrefixedTranslation';
+import { usePrefixedTranslation } from 'hooks';
 import { useActions, useStore } from 'store/provider';
 
 const SamplePage: React.FC = () => {
@@ -12,6 +12,7 @@ const SamplePage: React.FC = () => {
     const fetchInfo = async () => {
       try {
         await node.getInfo();
+        await node.getBalances();
       } catch (error) {
         console.log('Failed to fetch node info', error);
       }
@@ -19,6 +20,8 @@ const SamplePage: React.FC = () => {
 
     fetchInfo();
   }, [node]);
+
+  const balances = store.balances || { channelBalance: 0, walletBalance: 0 };
 
   return (
     <>
@@ -45,6 +48,10 @@ const SamplePage: React.FC = () => {
               <tr>
                 <th>{l('numChannels')}</th>
                 <td>{store.info.numActiveChannels}</td>
+              </tr>
+              <tr>
+                <th>{l('balances')}</th>
+                <td>{`${balances.channelBalance} in channels, ${balances.walletBalance} in wallet`}</td>
               </tr>
             </tbody>
           </table>

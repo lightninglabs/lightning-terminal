@@ -1,3 +1,4 @@
+import { lndChannelBalance, lndWalletBalance } from 'util/sampleData';
 import NodeAction from 'action/node';
 import { GrpcClient, LndApi } from 'api';
 import { Store } from 'store';
@@ -18,5 +19,13 @@ describe('NodeAction', () => {
     await node.getInfo();
     expect(store.info).toBeDefined();
     expect(store.info?.alias).toEqual('alice');
+  });
+
+  it('should fetch node balances', async () => {
+    expect(store.balances).toBeUndefined();
+    await node.getBalances();
+    expect(store.balances).toBeDefined();
+    expect(store.balances?.channelBalance).toEqual(lndChannelBalance.balance);
+    expect(store.balances?.walletBalance).toEqual(lndWalletBalance.totalBalance);
   });
 });

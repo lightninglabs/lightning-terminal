@@ -1,11 +1,15 @@
 import { observable } from 'mobx';
-import { Channel, NodeInfo, Swap } from 'types/state';
+import { Channel, NodeBalances, NodeInfo, Swap } from 'types/state';
 
 /**
  * The store used to manage global app state
  */
 export class Store {
+  // App state
+  @observable sidebarCollapsed = false;
+  // API data
   @observable info?: NodeInfo = undefined;
+  @observable balances?: NodeBalances = undefined;
   @observable channels: Channel[] = [];
   @observable swaps: Swap[] = [];
 }

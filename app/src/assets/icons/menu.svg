@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="20px" height="14px" viewBox="0 0 20 14" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <defs>
+        <path id="path-menu" d="M20,7 C20,7.6 19.6,8 19,8 L1,8 C0.4,8 0,7.6 0,7 C0,6.4 0.4,6 1,6 L19,6 C19.6,6 20,6.4 20,7 Z M1,2 L19,2 C19.6,2 20,1.6 20,1 C20,0.4 19.6,0 19,0 L1,0 C0.4,0 0,0.4 0,1 C0,1.6 0.4,2 1,2 Z M19,12 L1,12 C0.4,12 0,12.4 0,13 C0,13.6 0.4,14 1,14 L19,14 C19.6,14 20,13.6 20,13 C20,12.4 19.6,12 19,12 Z"></path>
+    </defs>
+    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g transform="translate(-18.000000, -20.000000)">
+            <g transform="translate(18.000000, 20.000000)">
+                <mask id="mask-menu" fill="white">
+                    <use xlink:href="#path-menu"></use>
+                </mask>
+                <use id="Mask" fill="#000000" fill-rule="nonzero" xlink:href="#path-menu"></use>
+                <g mask="url(#mask-menu)" fill="#F5F5F5">
+                    <g transform="translate(-2.000000, -5.000000)">
+                        <rect x="0" y="0" width="24" height="24"></rect>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

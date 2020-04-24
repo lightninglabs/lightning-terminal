@@ -3,5 +3,10 @@
   "App.pubkey": "Pubkey",
   "App.alias": "Alias",
   "App.version": "Version",
-  "App.numChannels": "# Channels"
+  "App.numChannels": "# Channels",
+  "App.balances": "Balances",
+  "cmps.NodeStatus.title": "Node Status",
+  "cmps.layout.NavMenu.menu": "Menu",
+  "cmps.layout.NavMenu.loop": "Lightning Loop",
+  "cmps.layout.NavMenu.settings": "Settings"
 }

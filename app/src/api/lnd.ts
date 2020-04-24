@@ -28,6 +28,24 @@ class LndApi {
   }
 
   /**
+   * call the LND `ChannelBalance` RPC and return the response
+   */
+  async channelBalance(): Promise<LND.ChannelBalanceResponse.AsObject> {
+    const req = new LND.ChannelBalanceRequest();
+    const res = await this._grpc.request(Lightning.ChannelBalance, req, this._meta);
+    return res.toObject();
+  }
+
+  /**
+   * call the LND `WalletBalance` RPC and return the response
+   */
+  async walletBalance(): Promise<LND.WalletBalanceResponse.AsObject> {
+    const req = new LND.WalletBalanceRequest();
+    const res = await this._grpc.request(Lightning.WalletBalance, req, this._meta);
+    return res.toObject();
+  }
+
+  /**
    * call the LND `ListChannels` RPC and return the response
    */
   async listChannels(): Promise<LND.ListChannelsResponse.AsObject> {
