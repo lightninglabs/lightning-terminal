@@ -38,7 +38,7 @@ const Styled = {
 
 interface Props {
   channel: Channel;
-  style: CSSProperties;
+  style?: CSSProperties;
 }
 
 export const ChannelRowHeader: React.FC = () => (

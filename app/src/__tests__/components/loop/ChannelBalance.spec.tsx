@@ -60,4 +60,15 @@ describe('ChannelBalance component', () => {
     expect(bgColor(local)).toBe('rgb(245, 64, 110)');
     expect(bgColor(remote)).toBe('rgb(245, 64, 110)');
   });
+
+  it('should display an inactive channel', () => {
+    channel.active = false;
+    channel.localPercent = 55;
+    channel.balanceLevel = BalanceLevel.good;
+    const { el, remote, local } = render();
+    expect(el.children.length).toBe(3);
+    expect(width(local)).toBe('55%');
+    expect(bgColor(local)).toBe('rgb(132, 138, 153)');
+    expect(bgColor(remote)).toBe('rgb(132, 138, 153)');
+  });
 });
