@@ -4,7 +4,7 @@ import { Store } from 'store';
 import ChannelList from 'components/loop/ChannelList';
 
 export default {
-  title: 'Channel List',
+  title: 'Components/Channel List',
   component: ChannelList,
   parameters: { contained: true },
 };

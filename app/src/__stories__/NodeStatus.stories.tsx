@@ -4,7 +4,7 @@ import { Store } from 'store';
 import NodeStatus from 'components/NodeStatus';
 
 export default {
-  title: 'Node Status',
+  title: 'Components/Node Status',
   component: NodeStatus,
   parameters: { centered: true },
 };

@@ -3,7 +3,7 @@ import { action } from '@storybook/addon-actions';
 import Tile from 'components/common/Tile';
 
 export default {
-  title: 'Tile',
+  title: 'Components/Tile',
   component: Tile,
   parameters: { centered: true },
 };

@@ -5,7 +5,7 @@ import { Store } from 'store';
 import ChannelRow, { ChannelRowHeader } from 'components/loop/ChannelRow';
 
 export default {
-  title: 'Channel Row',
+  title: 'Components/Channel Row',
   component: ChannelRow,
   parameters: { contained: true },
 };

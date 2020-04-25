@@ -5,7 +5,7 @@ import { Store } from 'store';
 import ChannelBalance from 'components/loop/ChannelBalance';
 
 export default {
-  title: 'Channel Balance',
+  title: 'Components/Channel Balance',
   component: ChannelBalance,
   parameters: { centered: true },
 };
