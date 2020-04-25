@@ -62,7 +62,7 @@ const Layout: React.FC = ({ children }) => {
           <Sidebar />
         </Aside>
         <Content collapsed={sidebarCollapsed}>
-          <div className="container">{children}</div>
+          <div className="container-fluid">{children}</div>
         </Content>
       </Container>
     </Background>

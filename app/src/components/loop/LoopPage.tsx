@@ -11,7 +11,7 @@ import LoopHistory from './LoopHistory';
 
 const Styled = {
   PageWrap: styled.div`
-    padding: 40px 50px;
+    padding: 40px 0;
   `,
   TileSection: styled.section`
     margin-top: 90px;
