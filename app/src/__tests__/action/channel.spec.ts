@@ -1,3 +1,4 @@
+import { lndListChannels } from 'util/tests/sampleData';
 import ChannelAction from 'action/channel';
 import { GrpcClient, LndApi } from 'api';
 import { Store } from 'store';
@@ -16,6 +17,6 @@ describe('ChannelAction', () => {
   it('should fetch list of channels', async () => {
     expect(store.channels).toEqual([]);
     await channel.getChannels();
-    expect(store.channels).toHaveLength(1);
+    expect(store.channels).toHaveLength(lndListChannels.channelsList.length);
   });
 });

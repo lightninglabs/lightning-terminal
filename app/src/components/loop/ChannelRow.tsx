@@ -4,6 +4,7 @@ import { Column, Row } from 'components/common/grid';
 import { Dot } from 'components/common/icons';
 import { Title } from 'components/common/text';
 import { styled } from 'components/theme';
+import ChannelBalance from './ChannelBalance';
 
 /**
  * the virtualized list requires each row to have a specified
@@ -30,12 +31,8 @@ const Styled = {
     margin-left: 15px;
     color: ${props => props.theme.colors.pink};
   `,
-  Balance: styled.div`
+  Balance: styled(ChannelBalance)`
     margin-top: ${ROW_HEIGHT / 2 - 2}px;
-    height: 4px;
-    width: 100%;
-    background-color: ${props => props.theme.colors.pink};
-    border-radius: 2px;
   `,
 };
 
@@ -73,12 +70,12 @@ const ChannelRow: React.FC<Props> = ({ channel, style }) => {
         <StatusIcon>
           <Dot />
         </StatusIcon>
-        {channel.localBalance.toLocaleString()}
+        {channel.remoteBalance.toLocaleString()}
       </Column>
       <Column cols={3}>
-        <Balance />
+        <Balance channel={channel} />
       </Column>
-      <Column>{channel.remoteBalance.toLocaleString()}</Column>
+      <Column>{channel.localBalance.toLocaleString()}</Column>
       <Column>{channel.uptime}</Column>
       <Column>{channel.remotePubkey}</Column>
       <Column right>{channel.capacity.toLocaleString()}</Column>

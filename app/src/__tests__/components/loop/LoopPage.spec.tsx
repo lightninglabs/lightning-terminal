@@ -1,5 +1,6 @@
 import React from 'react';
 import { SwapStatus } from 'types/generated/loop_pb';
+import { wait } from '@testing-library/react';
 import { renderWithProviders } from 'util/tests';
 import { loopListSwaps } from 'util/tests/sampleData';
 import LoopPage from 'components/loop/LoopPage';
@@ -22,10 +23,11 @@ describe('LoopPage component', () => {
   });
 
   it('should display the liquidity numbers', async () => {
-    const { findByText } = render();
-    // these values are defined in sampleData.ts
-    expect(await findByText('4,501,409 SAT')).toBeInTheDocument();
-    expect(await findByText('9,988,660 SAT')).toBeInTheDocument();
+    const { getByText, store } = render();
+    // wait for the channels to be fetched async before checking the UI labels
+    await wait(() => expect(store.totalInbound).toBeGreaterThan(0));
+    expect(getByText(`${store.totalInbound.toLocaleString()} SAT`)).toBeInTheDocument();
+    expect(getByText(`${store.totalOutbound.toLocaleString()} SAT`)).toBeInTheDocument();
   });
 
   it('should display the loop history records', async () => {
