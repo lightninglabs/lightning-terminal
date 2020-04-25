@@ -28,7 +28,7 @@ class ChannelAction {
       capacity: c.capacity,
       localBalance: c.localBalance,
       remoteBalance: c.remoteBalance,
-      uptime: c.uptime,
+      uptime: Math.floor((c.uptime * 100) / c.lifetime),
       active: c.active,
     }));
     log.info('updated store.channels', toJS(this._store.channels));

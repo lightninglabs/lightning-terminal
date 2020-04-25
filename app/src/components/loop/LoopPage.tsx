@@ -6,6 +6,7 @@ import { Column, Row } from 'components/common/grid';
 import { PageTitle } from 'components/common/text';
 import Tile from 'components/common/Tile';
 import { styled } from 'components/theme';
+import ChannelList from './ChannelList';
 import LoopHistory from './LoopHistory';
 
 const Styled = {
@@ -56,6 +57,7 @@ const LoopPage: React.FC = () => {
           </Column>
         </Row>
       </TileSection>
+      <ChannelList channels={store.channels} />
     </PageWrap>
   );
 };

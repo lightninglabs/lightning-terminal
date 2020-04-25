@@ -47,7 +47,7 @@ export const lndWalletBalance: LND.WalletBalanceResponse.AsObject = {
   unconfirmedBalance: 0,
 };
 
-export const lndListChannels: LND.ListChannelsResponse.AsObject = {
+export const lndListChannelsOne: LND.ListChannelsResponse.AsObject = {
   channelsList: [
     {
       active: true,
@@ -84,6 +84,25 @@ export const lndListChannels: LND.ListChannelsResponse.AsObject = {
       closeAddress: '',
     },
   ],
+};
+
+export const lndListChannels: LND.ListChannelsResponse.AsObject = {
+  channelsList: [...Array(500)].map((_, i) => {
+    const c = lndListChannelsOne.channelsList[0];
+    // pick a random capacity between 0.5 and 1 BTC
+    const cap = Math.floor(Math.random() * 50000000) + 50000000;
+    // pick a local balance that is at least 100K sats
+    const local = Math.max(100000, Math.floor(Math.random() * cap - 100000));
+    return {
+      ...c,
+      chanId: `${i}${c.chanId}`,
+      remotePubkey: `${i}${c.remotePubkey}`,
+      localBalance: local,
+      remoteBalance: cap - local,
+      capacity: cap,
+      uptime: Math.floor(Math.random() * (c.lifetime / 2)) + c.lifetime / 2,
+    };
+  }),
 };
 
 //

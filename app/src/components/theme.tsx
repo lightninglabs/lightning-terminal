@@ -20,6 +20,7 @@ const theme = {
     blue: '#252f4a',
     darkBlue: '#212133',
     gray: '#848a99',
+    darkGray: '#6b6969',
     white: '#ffffff',
     whitish: '#f5f5f5',
     pink: '#f5406e',
