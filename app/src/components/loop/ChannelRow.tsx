@@ -1,7 +1,7 @@
 import React, { CSSProperties } from 'react';
-import { Channel } from 'types/state';
+import { BalanceLevel, Channel } from 'types/state';
 import { Column, Row } from 'components/common/grid';
-import { Dot } from 'components/common/icons';
+import StatusDot from 'components/common/StatusDot';
 import { Title } from 'components/common/text';
 import { styled } from 'components/theme';
 import ChannelBalance from './ChannelBalance';
@@ -36,11 +36,6 @@ const Styled = {
   `,
 };
 
-interface Props {
-  channel: Channel;
-  style?: CSSProperties;
-}
-
 export const ChannelRowHeader: React.FC = () => (
   <Row>
     <Column right>
@@ -62,13 +57,31 @@ export const ChannelRowHeader: React.FC = () => (
   </Row>
 );
 
+const ChannelDot: React.FC<{ channel: Channel }> = ({ channel }) => {
+  if (!channel.active) return <StatusDot status="idle" />;
+
+  switch (channel.balanceLevel) {
+    case BalanceLevel.good:
+      return <StatusDot status="success" />;
+    case BalanceLevel.warn:
+      return <StatusDot status="warn" />;
+    case BalanceLevel.bad:
+      return <StatusDot status="error" />;
+  }
+};
+
+interface Props {
+  channel: Channel;
+  style?: CSSProperties;
+}
+
 const ChannelRow: React.FC<Props> = ({ channel, style }) => {
   const { Row, Column, StatusIcon, Balance } = Styled;
   return (
     <Row style={style}>
       <Column right>
         <StatusIcon>
-          <Dot />
+          <ChannelDot channel={channel} />
         </StatusIcon>
         {channel.remoteBalance.toLocaleString()}
       </Column>

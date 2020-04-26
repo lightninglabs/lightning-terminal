@@ -4,18 +4,7 @@ import { renderWithProviders } from 'util/tests';
 import ChannelRow from 'components/loop/ChannelRow';
 
 describe('ChannelRow component', () => {
-  const channel: Channel = {
-    active: true,
-    capacity: 15000000,
-    chanId: '150633093070848',
-    localBalance: 9990950,
-    remoteBalance: 5000000,
-    remotePubkey: '02ac59099da6d4bd818e6a81098f5d54580b7c3aa8255c707fa0f95ca89b02cb8c',
-    uptime: 97,
-    localPercent: 67,
-    balancePercent: 67,
-    balanceLevel: BalanceLevel.warn,
-  };
+  let channel: Channel;
 
   const render = () => {
     const result = renderWithProviders(<ChannelRow channel={channel} />);
@@ -23,6 +12,21 @@ describe('ChannelRow component', () => {
       ...result,
     };
   };
+
+  beforeEach(() => {
+    channel = {
+      active: true,
+      capacity: 15000000,
+      chanId: '150633093070848',
+      localBalance: 9990950,
+      remoteBalance: 5000000,
+      remotePubkey: '02ac59099da6d4bd818e6a81098f5d54580b7c3aa8255c707fa0f95ca89b02cb8c',
+      uptime: 97,
+      localPercent: 67,
+      balancePercent: 67,
+      balanceLevel: BalanceLevel.warn,
+    };
+  });
 
   it('should display the remote balance', () => {
     const { getByText } = render();
@@ -47,5 +51,23 @@ describe('ChannelRow component', () => {
   it('should display the capacity', () => {
     const { getByText } = render();
     expect(getByText(channel.capacity.toLocaleString())).toBeInTheDocument();
+  });
+
+  it('should display correct dot icon for an inactive channel', () => {
+    channel.active = false;
+    const { getByText, getByLabelText } = render();
+    expect(getByText('dot.svg')).toBeInTheDocument();
+    expect(getByLabelText('idle')).toBeInTheDocument();
+  });
+
+  it.each<[BalanceLevel, string]>([
+    [BalanceLevel.good, 'success'],
+    [BalanceLevel.warn, 'warn'],
+    [BalanceLevel.bad, 'error'],
+  ])('should display correct dot icon for a "%s" balance', (level, label) => {
+    channel.balanceLevel = level;
+    const { getByText, getByLabelText } = render();
+    expect(getByText('dot.svg')).toBeInTheDocument();
+    expect(getByLabelText(label)).toBeInTheDocument();
   });
 });
