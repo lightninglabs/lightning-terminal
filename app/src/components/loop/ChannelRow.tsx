@@ -1,5 +1,6 @@
 import React, { CSSProperties } from 'react';
 import { BalanceLevel, Channel } from 'types/state';
+import { ellipseInside } from 'util/strings';
 import { Column, Row } from 'components/common/grid';
 import StatusDot from 'components/common/StatusDot';
 import { Title } from 'components/common/text';
@@ -90,7 +91,7 @@ const ChannelRow: React.FC<Props> = ({ channel, style }) => {
       </Column>
       <Column>{channel.localBalance.toLocaleString()}</Column>
       <Column>{channel.uptime}</Column>
-      <Column>{channel.remotePubkey}</Column>
+      <Column>{ellipseInside(channel.remotePubkey)}</Column>
       <Column right>{channel.capacity.toLocaleString()}</Column>
     </Row>
   );

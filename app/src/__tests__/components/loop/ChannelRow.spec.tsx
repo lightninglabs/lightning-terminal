@@ -1,5 +1,6 @@
 import React from 'react';
 import { BalanceLevel, Channel } from 'types/state';
+import { ellipseInside } from 'util/strings';
 import { renderWithProviders } from 'util/tests';
 import ChannelRow from 'components/loop/ChannelRow';
 
@@ -45,7 +46,7 @@ describe('ChannelRow component', () => {
 
   it('should display the peer pubkey', () => {
     const { getByText } = render();
-    expect(getByText(channel.remotePubkey)).toBeInTheDocument();
+    expect(getByText(ellipseInside(channel.remotePubkey))).toBeInTheDocument();
   });
 
   it('should display the capacity', () => {
