@@ -32,6 +32,7 @@ const actions = createActions(store, grpc);
 
 // execute actions to populate the store data with the sample API responses
 actions.node.getBalances();
+actions.channel.getChannels();
 actions.swap.listSwaps();
 
 /**
@@ -47,12 +48,25 @@ addDecorator((storyFn, ctx) => (
     <ThemeProvider>
       {/* modify the bg styles so it isn't too big in docs mode */}
       <Background style={{ minHeight: 'inherit', height: '100%' }}>
-        {/* wrap the component in a centered div for small components */}
         {ctx.parameters.centered ? (
+          // wrap the component in a centered div for small components
           <div style={{ width: 300, margin: 'auto', padding: '100px 0' }}>
             {storyFn()}
           </div>
+        ) : ctx.parameters.contained ? (
+          // or wrap in a full width container for larger components
+          <div
+            style={{
+              width: '98%',
+              maxWidth: '1440px',
+              margin: 'auto',
+              overflow: 'hidden',
+            }}
+          >
+            {storyFn()}
+          </div>
         ) : (
+          // or don't wrap for the layout
           storyFn()
         )}
       </Background>

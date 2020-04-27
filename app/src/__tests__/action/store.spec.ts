@@ -2,7 +2,7 @@ import { lndListChannels } from 'util/tests/sampleData';
 import { createActions, StoreActions } from 'action';
 import { Store } from 'store';
 
-describe('SwapAction', () => {
+describe('Store', () => {
   let store: Store;
   let actions: StoreActions;
 

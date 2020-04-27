@@ -47,7 +47,7 @@ export const lndWalletBalance: LND.WalletBalanceResponse.AsObject = {
   unconfirmedBalance: 0,
 };
 
-export const lndListChannels: LND.ListChannelsResponse.AsObject = {
+export const lndListChannelsOne: LND.ListChannelsResponse.AsObject = {
   channelsList: [
     {
       active: true,
@@ -86,6 +86,25 @@ export const lndListChannels: LND.ListChannelsResponse.AsObject = {
   ],
 };
 
+export const lndListChannels: LND.ListChannelsResponse.AsObject = {
+  channelsList: [...Array(500)].map((_, i) => {
+    const c = lndListChannelsOne.channelsList[0];
+    // pick a random capacity between 0.5 and 1 BTC
+    const cap = Math.floor(Math.random() * 50000000) + 50000000;
+    // pick a local balance that is at least 100K sats
+    const local = Math.max(100000, Math.floor(Math.random() * cap - 100000));
+    return {
+      ...c,
+      chanId: `${i}${c.chanId}`,
+      remotePubkey: `${i}${c.remotePubkey}`,
+      localBalance: local,
+      remoteBalance: cap - local,
+      capacity: cap,
+      uptime: Math.floor(Math.random() * (c.lifetime / 2)) + c.lifetime / 2,
+    };
+  }),
+};
+
 //
 // Loop API Responses
 //
@@ -95,8 +114,8 @@ export const loopListSwaps: LOOP.ListSwapsResponse.AsObject = {
     amt: 500000 + i * 5000,
     id: `f4eb118383c2b09d8c7289ce21c25900cfb4545d46c47ed23a31ad2aa57ce83${i}`,
     idBytes: '9OsRg4PCsJ2MconOIcJZAM+0VF1GxH7SOjGtKqV86DU=',
-    type: (i % 3) as any,
-    state: i as any,
+    type: (i % 3) as LOOP.SwapStatus.AsObject['type'],
+    state: (i % 7) as LOOP.SwapStatus.AsObject['state'],
     initiationTime: 1586390353623905000 + i * 100000000000000,
     lastUpdateTime: 1586398369729857000,
     htlcAddress: 'bcrt1qzu4077erkr78k52yuf2rwkk6ayr6m3wtazdfz2qqmd7taa5vvy9s5d75gd',

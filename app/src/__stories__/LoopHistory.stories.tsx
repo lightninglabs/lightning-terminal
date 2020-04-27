@@ -5,7 +5,7 @@ import Tile from 'components/common/Tile';
 import LoopHistory from 'components/loop/LoopHistory';
 
 export default {
-  title: 'Loop History',
+  title: 'Components/Loop History',
   component: LoopHistory,
   parameters: { centered: true },
 };

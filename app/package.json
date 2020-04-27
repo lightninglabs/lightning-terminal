@@ -21,6 +21,7 @@
     "@emotion/core": "10.0.28",
     "@emotion/styled": "10.0.27",
     "@improbable-eng/grpc-web": "0.12.0",
+    "@types/react-virtualized": "^9.21.9",
     "debug": "4.1.1",
     "emotion-theming": "10.0.27",
     "i18next": "19.4.1",
@@ -30,7 +31,8 @@
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-i18next": "11.3.4",
-    "react-scripts": "3.4.1"
+    "react-scripts": "3.4.1",
+    "react-virtualized": "^9.21.2"
   },
   "devDependencies": {
     "@storybook/addon-actions": "^5.3.18",
@@ -74,6 +76,7 @@
       "!src/__(stories|mocks)__/**/*.{ts,tsx}",
       "!src/types/**/*.{js,ts}",
       "!src/i18n/**/*.{js,ts}",
+      "!src/util/tests/**/*.{ts,tsx}",
       "!src/index.tsx"
     ]
   },

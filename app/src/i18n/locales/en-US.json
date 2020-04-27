@@ -1,16 +1,15 @@
 {
+  "cmps.loop.ChannelRowHeader.canReceive": "Can Receive",
+  "cmps.loop.ChannelRowHeader.canSend": "Can Send",
+  "cmps.loop.ChannelRowHeader.upTime": "Up Time %",
+  "cmps.loop.ChannelRowHeader.peer": "Peer/Alias",
+  "cmps.loop.ChannelRowHeader.capacity": "Capacity",
   "cmps.loop.LoopPage.pageTitle": "Lightning Loop",
   "cmps.loop.LoopPage.history": "Loop History",
   "cmps.loop.LoopPage.inbound": "Total Inbound Liquidity",
   "cmps.loop.LoopPage.outbound": "Total Outbound Liquidity",
-  "App.nodeInfo": "Node Info",
-  "App.pubkey": "Pubkey",
-  "App.alias": "Alias",
-  "App.version": "Version",
-  "App.numChannels": "# Channels",
-  "App.balances": "Balances",
-  "cmps.NodeStatus.title": "Node Status",
   "cmps.layout.NavMenu.menu": "Menu",
   "cmps.layout.NavMenu.loop": "Lightning Loop",
-  "cmps.layout.NavMenu.settings": "Settings"
+  "cmps.layout.NavMenu.settings": "Settings",
+  "cmps.NodeStatus.title": "Node Status"
 }

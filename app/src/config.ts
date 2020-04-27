@@ -12,7 +12,7 @@ export const IS_PROD = process.env.NODE_ENV === 'production';
 export const DEV_MACAROON = process.env.REACT_APP_DEV_MACAROON || '';
 
 // detect the host currently serving the app files
-const { protocol, hostname, port = '' } = window.location;
+const { protocol, hostname, port } = window.location;
 const host = `${protocol}//${hostname}:${port}`;
 // the GRPC server to make requests to
 export const DEV_HOST = process.env.REACT_APP_DEV_HOST || host;

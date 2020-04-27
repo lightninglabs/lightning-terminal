@@ -6,11 +6,12 @@ import { Column, Row } from 'components/common/grid';
 import { PageTitle } from 'components/common/text';
 import Tile from 'components/common/Tile';
 import { styled } from 'components/theme';
+import ChannelList from './ChannelList';
 import LoopHistory from './LoopHistory';
 
 const Styled = {
   PageWrap: styled.div`
-    padding: 40px 50px;
+    padding: 40px 0;
   `,
   TileSection: styled.section`
     margin-top: 90px;
@@ -56,6 +57,7 @@ const LoopPage: React.FC = () => {
           </Column>
         </Row>
       </TileSection>
+      <ChannelList channels={store.channels} />
     </PageWrap>
   );
 };

@@ -67,7 +67,7 @@ class SwapAction {
       case SwapState.FAILED:
         return 'Failed';
       case SwapState.INVOICE_SETTLED:
-        return 'Invoice Settles';
+        return 'Invoice Settled';
     }
 
     return 'Unknown';

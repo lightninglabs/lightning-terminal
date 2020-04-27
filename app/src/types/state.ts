@@ -12,6 +12,12 @@ export interface NodeBalances {
   channelBalance: number;
 }
 
+export enum BalanceLevel {
+  good = 'good',
+  warn = 'warn',
+  bad = 'bad',
+}
+
 export interface Channel {
   chanId: string;
   remotePubkey: string;
@@ -20,6 +26,9 @@ export interface Channel {
   remoteBalance: number;
   uptime: number;
   active: boolean;
+  localPercent: number;
+  balancePercent: number;
+  balanceLevel: BalanceLevel;
 }
 
 export interface Swap {
