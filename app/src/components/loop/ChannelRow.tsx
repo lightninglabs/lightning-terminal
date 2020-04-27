@@ -1,5 +1,6 @@
 import React, { CSSProperties } from 'react';
 import { BalanceLevel, Channel } from 'types/state';
+import { usePrefixedTranslation } from 'hooks';
 import { ellipseInside } from 'util/strings';
 import { Column, Row } from 'components/common/grid';
 import StatusDot from 'components/common/StatusDot';
@@ -37,26 +38,29 @@ const Styled = {
   `,
 };
 
-export const ChannelRowHeader: React.FC = () => (
-  <Row>
-    <Column right>
-      <Title>Can Receive</Title>
-    </Column>
-    <Column cols={3}></Column>
-    <Column>
-      <Title>Can Send</Title>
-    </Column>
-    <Column>
-      <Title>Up Time %</Title>
-    </Column>
-    <Column>
-      <Title>Peer/Alias</Title>
-    </Column>
-    <Column right>
-      <Title>Capacity</Title>
-    </Column>
-  </Row>
-);
+export const ChannelRowHeader: React.FC = () => {
+  const { l } = usePrefixedTranslation('cmps.loop.ChannelRowHeader');
+  return (
+    <Row>
+      <Column right>
+        <Title>{l('canReceive')}</Title>
+      </Column>
+      <Column cols={3}></Column>
+      <Column>
+        <Title>{l('canSend')}</Title>
+      </Column>
+      <Column>
+        <Title>{l('upTime')}</Title>
+      </Column>
+      <Column>
+        <Title>{l('peer')}</Title>
+      </Column>
+      <Column right>
+        <Title>{l('capacity')}</Title>
+      </Column>
+    </Row>
+  );
+};
 
 const ChannelDot: React.FC<{ channel: Channel }> = ({ channel }) => {
   if (!channel.active) return <StatusDot status="idle" />;
