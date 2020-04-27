@@ -52,6 +52,16 @@ Open browser at http://localhost:3000
   yarn test
   ```
 
+## Storybook Explorer
+
+Storybook allows you to view the app's UI components using sample data. It is helpful when building components as you do not need to spin up a full development environment. It also allows you to get quick previews of how the components will be displayed in multiple different states, based on the props and data provided to them.
+
+- Launch Storybook explorer
+  ```sh
+  yarn
+  yarn storybook
+  ```
+
 ## Logging
 
 Client-side logs are disabled by default in production builds and enabled by default in a development environment. In production, logging can be turned on by adding a couple keys to your browser's `localStorage`. Simply run these two JS statements in you browser's DevTools console:
