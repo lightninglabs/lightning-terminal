@@ -1,17 +1,22 @@
 import React from 'react';
+import styled from '@emotion/styled';
+
+const Styled = {
+  BackSection: styled.div``,
+};
 
 interface Props {
-  onBack: () => void;
   onNext: () => void;
 }
 
-const SwapConfigStep: React.FC<Props> = ({ onBack, onNext }) => {
+const SwapConfigStep: React.FC<Props> = ({ onNext }) => {
   return (
-    <div>
-      Swap Config Step
-      <button onClick={onBack}>back</button>
-      <button onClick={onNext}>next</button>
-    </div>
+    <>
+      <div>
+        Swap Config Step
+        <button onClick={onNext}>next</button>
+      </div>
+    </>
   );
 };
 

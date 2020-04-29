@@ -1,11 +1,10 @@
 import React, { useEffect } from 'react';
 
 interface Props {
-  onBack: () => void;
   onFinish: () => void;
 }
 
-const SwapProcessingStep: React.FC<Props> = ({ onBack, onFinish }) => {
+const SwapProcessingStep: React.FC<Props> = ({ onFinish }) => {
   useEffect(() => {
     setTimeout(() => {
       // wait for 3 secs then finish
@@ -13,12 +12,7 @@ const SwapProcessingStep: React.FC<Props> = ({ onBack, onFinish }) => {
     }, 3000);
   }, [onFinish]);
 
-  return (
-    <div>
-      Swap Processing Step
-      <button onClick={onBack}>back</button>
-    </div>
-  );
+  return <div>Swap Processing Step</div>;
 };
 
 export default SwapProcessingStep;
