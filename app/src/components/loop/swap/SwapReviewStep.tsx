@@ -1,6 +1,7 @@
 import React from 'react';
 import { usePrefixedTranslation } from 'hooks';
 import { styled } from 'components/theme';
+import StepButtons from './StepButtons';
 import StepSummary from './StepSummary';
 
 const Styled = {
@@ -10,22 +11,29 @@ const Styled = {
     justify-content: space-between;
   `,
   Summary: styled.div`
+    flex-grow: 1;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    max-width: 240px;
+  `,
+  Invoice: styled.div`
+    flex-grow: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
   `,
 };
 
 interface Props {
   channelCount: number;
   onNext: () => void;
+  onCancel: () => void;
 }
 
-const SwapReviewStep: React.FC<Props> = ({ channelCount, onNext }) => {
+const SwapReviewStep: React.FC<Props> = ({ channelCount, onNext, onCancel }) => {
   const { l } = usePrefixedTranslation('cmps.loop.swaps.SwapReviewStep');
 
-  const { Wrapper, Summary } = Styled;
+  const { Wrapper, Summary, Invoice } = Styled;
   return (
     <Wrapper>
       <Summary>
@@ -36,10 +44,10 @@ const SwapReviewStep: React.FC<Props> = ({ channelCount, onNext }) => {
           channelCount={channelCount}
         />
       </Summary>
-      <div>
-        Swap Review Step
-        <button onClick={onNext}>next</button>
-      </div>
+      <Invoice>
+        <div>Invoice Details</div>
+        <StepButtons onCancel={onCancel} onNext={onNext} />
+      </Invoice>
     </Wrapper>
   );
 };

@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
+import StepButtons from './StepButtons';
 import StepSummary from './StepSummary';
 
 const Styled = {
@@ -10,23 +11,29 @@ const Styled = {
     justify-content: space-between;
   `,
   Summary: styled.div`
+    flex-grow: 1;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    max-width: 240px;
   `,
-  Config: styled.div``,
+  Config: styled.div`
+    flex-grow: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  `,
 };
 
 interface Props {
   channelCount: number;
   onNext: () => void;
+  onCancel: () => void;
 }
 
-const SwapConfigStep: React.FC<Props> = ({ channelCount, onNext }) => {
+const SwapConfigStep: React.FC<Props> = ({ channelCount, onNext, onCancel }) => {
   const { l } = usePrefixedTranslation('cmps.loop.swaps.SwapConfigStep');
 
-  const { Wrapper, Summary } = Styled;
+  const { Wrapper, Summary, Config } = Styled;
   return (
     <Wrapper>
       <Summary>
@@ -37,10 +44,10 @@ const SwapConfigStep: React.FC<Props> = ({ channelCount, onNext }) => {
           channelCount={channelCount}
         />
       </Summary>
-      <div>
-        Swap Config Step
-        <button onClick={onNext}>next</button>
-      </div>
+      <Config>
+        <div>Slider</div>
+        <StepButtons onCancel={onCancel} onNext={onNext} />
+      </Config>
     </Wrapper>
   );
 };

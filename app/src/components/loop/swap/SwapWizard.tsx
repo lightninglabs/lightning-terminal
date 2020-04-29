@@ -52,10 +52,22 @@ const SwapWizard: React.FC<Props> = ({ channelIds, onClose }) => {
   let cmp: ReactNode;
   switch (currentStep) {
     case 1:
-      cmp = <SwapConfigStep channelCount={channelIds.length} onNext={goToNext} />;
+      cmp = (
+        <SwapConfigStep
+          channelCount={channelIds.length}
+          onNext={goToNext}
+          onCancel={onClose}
+        />
+      );
       break;
     case 2:
-      cmp = <SwapReviewStep channelCount={channelIds.length} onNext={goToNext} />;
+      cmp = (
+        <SwapReviewStep
+          channelCount={channelIds.length}
+          onNext={goToNext}
+          onCancel={onClose}
+        />
+      );
       break;
     case 3:
       cmp = <SwapProcessingStep onFinish={onClose} />;
