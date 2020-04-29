@@ -15,7 +15,7 @@ const Styled = {
     box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.5);
   `,
   Nav: styled.div`
-    width: 40px;
+    width: 30px;
   `,
   BackIcon: styled(ArrowLeft)`
     height: 16px;
@@ -28,7 +28,10 @@ const Styled = {
     }
   `,
   Content: styled.div`
-    flex: 1;
+    flex-grow: 1;
+    display: flex;
+    align-items: stretch;
+    flex-direction: row;
   `,
 };
 
@@ -49,10 +52,10 @@ const SwapWizard: React.FC<Props> = ({ channelIds, onClose }) => {
   let cmp: ReactNode;
   switch (currentStep) {
     case 1:
-      cmp = <SwapConfigStep onNext={goToNext} />;
+      cmp = <SwapConfigStep channelCount={channelIds.length} onNext={goToNext} />;
       break;
     case 2:
-      cmp = <SwapReviewStep onNext={goToNext} />;
+      cmp = <SwapReviewStep channelCount={channelIds.length} onNext={goToNext} />;
       break;
     case 3:
       cmp = <SwapProcessingStep onFinish={onClose} />;

@@ -39,3 +39,8 @@ export const PageTitle = styled.h2`
   letter-spacing: 2.7px;
   line-height: 30px;
 `;
+
+export const H3Text = styled.h3`
+  font-family: ${props => props.theme.fonts.bold};
+  font-size: ${props => props.theme.sizes.m};
+`;
