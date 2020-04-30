@@ -9,15 +9,16 @@ const Styled = {
     flex-grow: 1;
     display: flex;
     justify-content: space-between;
+    padding-top: 5px;
   `,
   Summary: styled.div`
-    flex-grow: 1;
+    flex-grow: 2;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
   `,
   Invoice: styled.div`
-    flex-grow: 2;
+    flex-grow: 3;
     display: flex;
     flex-direction: column;
     justify-content: space-between;

@@ -1,4 +1,5 @@
 import React, { ReactNode, useState } from 'react';
+import { Channel } from 'types/state';
 import { ArrowLeft } from 'components/common/icons';
 import { styled } from 'components/theme';
 import SwapConfigStep from './SwapConfigStep';
@@ -36,11 +37,11 @@ const Styled = {
 };
 
 interface Props {
-  channelIds: string[];
+  channels: Channel[];
   onClose: () => void;
 }
 
-const SwapWizard: React.FC<Props> = ({ channelIds, onClose }) => {
+const SwapWizard: React.FC<Props> = ({ channels, onClose }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const goToNext = () => setCurrentStep(Math.min(currentStep + 1, 3));
   const goToPrev = () => setCurrentStep(Math.max(currentStep - 1, 1));
@@ -49,12 +50,18 @@ const SwapWizard: React.FC<Props> = ({ channelIds, onClose }) => {
     else goToPrev();
   };
 
+  const [amount, setAmount] = useState(600000);
+
   let cmp: ReactNode;
   switch (currentStep) {
     case 1:
       cmp = (
         <SwapConfigStep
-          channelCount={channelIds.length}
+          amount={amount}
+          onAmountChange={v => setAmount(v)}
+          minAmount={250000}
+          maxAmount={1000000}
+          channelCount={channels.length}
           onNext={goToNext}
           onCancel={onClose}
         />
@@ -63,7 +70,7 @@ const SwapWizard: React.FC<Props> = ({ channelIds, onClose }) => {
     case 2:
       cmp = (
         <SwapReviewStep
-          channelCount={channelIds.length}
+          channelCount={channels.length}
           onNext={goToNext}
           onCancel={onClose}
         />

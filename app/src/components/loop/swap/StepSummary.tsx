@@ -11,9 +11,6 @@ const Styled = {
     justify-content: space-between;
     max-width: 240px;
   `,
-  Title: styled(Title)`
-    margin-top: 5px;
-  `,
   Heading: styled(H3Text)`
     margin-top: 10px;
   `,
@@ -45,7 +42,7 @@ interface Props {
 const StepSummary: React.FC<Props> = ({ title, heading, description, channelCount }) => {
   const { l } = usePrefixedTranslation('cmps.loop.swaps.StepSummary');
 
-  const { Wrapper, Title, Heading, Description, Pill } = Styled;
+  const { Wrapper, Heading, Description, Pill } = Styled;
   return (
     <Wrapper>
       <div>

@@ -1,3 +1,4 @@
+import Chevrons from 'assets/icons/chevrons.svg';
 import { styled } from 'components/theme';
 
 export const Background = styled.div`
@@ -32,5 +33,105 @@ export const Button = styled.button<ButtonProps>`
 
   &:hover {
     opacity: 80%;
+  }
+`;
+
+/**
+ * the input[type=range] element. Vendor-specific rules for pseudo
+ * elements cannot be mixed. As such, there are no shared styles for focus or
+ * active states on prefixed selectors.
+ */
+export const RangeInput = styled.input`
+  &:focus {
+    outline: none;
+
+    /* 
+     * Pseudo-elements must be split across multiple rule sets to have an effect.
+     */
+    &::-webkit-slider-thumb {
+      border: 0.2rem solid ${props => props.theme.colors.darkBlue};
+      box-shadow: 0 0 0 2px ${props => props.theme.colors.pink};
+    }
+    &::-moz-range-thumb {
+      border: 0.2rem solid ${props => props.theme.colors.darkBlue};
+      box-shadow: 0 0 0 2px ${props => props.theme.colors.pink};
+    }
+    &::-ms-thumb {
+      border: 0.2rem solid ${props => props.theme.colors.darkBlue};
+      box-shadow: 0 0 0 2px ${props => props.theme.colors.pink};
+    }
+  }
+  &::-webkit-slider-thumb {
+    width: 2rem;
+    height: 2rem;
+    margin-top: -0.9rem; /* (track-height - thumb-height) / 2 */
+    color: ${props => props.theme.colors.darkBlue};
+    background-color: ${props => props.theme.colors.whitish};
+    background-image: url(${Chevrons});
+    border: 0.2rem solid ${props => props.theme.colors.darkBlue};
+    box-shadow: 0 0 0 2px ${props => props.theme.colors.pink};
+    border-radius: 2rem;
+
+    &:active,
+    &:hover {
+      background-color: ${props => props.theme.colors.whitish}dd;
+    }
+  }
+
+  &::-webkit-slider-runnable-track {
+    background-color: ${props => props.theme.colors.pink};
+    height: 0.2rem;
+    border-radius: 2px;
+  }
+
+  &::-moz-range-thumb {
+    width: 2rem;
+    height: 2rem;
+    color: ${props => props.theme.colors.darkBlue};
+    background-color: ${props => props.theme.colors.whitish};
+    border: 0.2rem solid ${props => props.theme.colors.darkBlue};
+    box-shadow: 0 0 0 2px ${props => props.theme.colors.pink};
+    border-radius: 2rem;
+
+    &:active,
+    &:hover {
+      background-color: ${props => props.theme.colors.whitish}dd;
+    }
+  }
+
+  &::-moz-range-track {
+    background-color: ${props => props.theme.colors.pink};
+    height: 0.2rem;
+    border-radius: 2px;
+  }
+
+  &::-ms-thumb {
+    width: 2rem;
+    height: 2rem;
+    color: ${props => props.theme.colors.darkBlue};
+    background-color: ${props => props.theme.colors.whitish};
+    border: 0.2rem solid ${props => props.theme.colors.darkBlue};
+    box-shadow: 0 0 0 2px ${props => props.theme.colors.pink};
+    border-radius: 2rem;
+
+    &:active,
+    &:hover {
+      background-color: ${props => props.theme.colors.whitish}dd;
+    }
+  }
+
+  &::-ms-track {
+    height: 0.2rem;
+    height: 1rem;
+  }
+
+  &::-ms-fill-lower {
+    background-color: ${props => props.theme.colors.pink};
+    border-radius: 2px;
+  }
+
+  &::-ms-fill-upper {
+    background-color: ${props => props.theme.colors.pink};
+    border-radius: 2px;
   }
 `;
