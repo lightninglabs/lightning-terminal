@@ -1,5 +1,6 @@
 import React from 'react';
 import { usePrefixedTranslation } from 'hooks';
+import { Pill } from 'components/common/base';
 import { H3Text, SmallText, Title } from 'components/common/text';
 import { styled } from 'components/theme';
 
@@ -20,16 +21,6 @@ const Styled = {
   Channels: styled.div`
     line-height: 40px;
   `,
-  Pill: styled.span`
-    display: inline-block;
-    width: 40px;
-    height: 40px;
-    padding: 5px;
-    margin-right: 10px;
-    text-align: center;
-    background-color: ${props => props.theme.colors.tileBack};
-    border-radius: 40px;
-  `,
 };
 
 interface Props {
@@ -42,7 +33,7 @@ interface Props {
 const StepSummary: React.FC<Props> = ({ title, heading, description, channelCount }) => {
   const { l } = usePrefixedTranslation('cmps.loop.swaps.StepSummary');
 
-  const { Wrapper, Heading, Description, Pill } = Styled;
+  const { Wrapper, Heading, Description } = Styled;
   return (
     <Wrapper>
       <div>

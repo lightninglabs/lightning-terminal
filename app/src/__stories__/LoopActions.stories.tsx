@@ -2,23 +2,25 @@ import React from 'react';
 import { action } from '@storybook/addon-actions';
 import { StoryContext } from '@storybook/addons';
 import { Store } from 'store';
-import SwapWizard from 'components/loop/swap/SwapWizard';
+import LoopActions from 'components/loop/LoopActions';
 
 export default {
-  title: 'Components/Swap Wizard',
-  component: SwapWizard,
+  title: 'Components/Loop Actions',
+  component: LoopActions,
   parameters: { contained: true },
-  decorators: [(storyFn: any) => <div style={{ padding: 100 }}>{storyFn()}</div>],
+  decorators: [
+    (storyFn: any) => <div style={{ width: 600, margin: 'auto' }}>{storyFn()}</div>,
+  ],
 };
 
 export const Default = (ctx: StoryContext) => {
   // grab the store from the Storybook parameter defined in preview.tsx
   const { channels } = ctx.parameters.store as Store;
   return (
-    <SwapWizard
+    <LoopActions
       swapType="Loop Out"
       channels={channels.slice(0, 3)}
-      onClose={() => action('onClose')}
+      onLoop={() => action('onLoop')}
     />
   );
 };

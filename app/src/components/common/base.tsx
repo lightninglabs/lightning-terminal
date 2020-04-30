@@ -9,6 +9,17 @@ export const Background = styled.div`
   font-size: ${props => props.theme.sizes.m};
 `;
 
+export const Pill = styled.span`
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  padding: 5px;
+  margin-right: 10px;
+  text-align: center;
+  background-color: ${props => props.theme.colors.tileBack};
+  border-radius: 40px;
+`;
+
 interface ButtonProps {
   primary?: boolean;
   ghost?: boolean;
@@ -18,8 +29,8 @@ interface ButtonProps {
 export const Button = styled.button<ButtonProps>`
   min-width: 120px;
   height: 44px;
-  line-height: 44px;
-  padding: 0;
+  padding-left: 15px;
+  padding-right: 15px;
   margin-left: 10px;
   text-align: center;
   color: ${props => props.theme.colors.white};
@@ -33,6 +44,10 @@ export const Button = styled.button<ButtonProps>`
 
   &:hover {
     opacity: 80%;
+  }
+
+  svg {
+    margin-right: 10px;
   }
 `;
 

@@ -38,10 +38,11 @@ const Styled = {
 
 interface Props {
   channels: Channel[];
+  swapType: string;
   onClose: () => void;
 }
 
-const SwapWizard: React.FC<Props> = ({ channels, onClose }) => {
+const SwapWizard: React.FC<Props> = ({ channels, swapType, onClose }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const goToNext = () => setCurrentStep(Math.min(currentStep + 1, 3));
   const goToPrev = () => setCurrentStep(Math.max(currentStep - 1, 1));
@@ -72,7 +73,7 @@ const SwapWizard: React.FC<Props> = ({ channels, onClose }) => {
         <SwapReviewStep
           amount={amount}
           fee={9000}
-          type="Loop Out"
+          type={swapType}
           channelCount={channels.length}
           onNext={goToNext}
           onCancel={onClose}

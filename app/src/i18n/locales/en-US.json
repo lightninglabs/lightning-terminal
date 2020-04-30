@@ -4,6 +4,7 @@
   "cmps.loop.ChannelRowHeader.upTime": "Up Time %",
   "cmps.loop.ChannelRowHeader.peer": "Peer/Alias",
   "cmps.loop.ChannelRowHeader.capacity": "Capacity",
+  "cmps.loop.LoopActions.channelsSelected": "channels selected",
   "cmps.loop.LoopPage.pageTitle": "Lightning Loop",
   "cmps.loop.LoopPage.history": "Loop History",
   "cmps.loop.LoopPage.inbound": "Total Inbound Liquidity",

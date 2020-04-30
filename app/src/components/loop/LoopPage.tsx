@@ -7,6 +7,7 @@ import { PageTitle } from 'components/common/text';
 import Tile from 'components/common/Tile';
 import { styled } from 'components/theme';
 import ChannelList from './ChannelList';
+import LoopActions from './LoopActions';
 import LoopHistory from './LoopHistory';
 import SwapWizard from './swap/SwapWizard';
 
@@ -23,7 +24,9 @@ const LoopPage: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.LoopPage');
   const store = useStore();
   const { node, channel, swap } = useActions();
-  const [showSwap, setShowSwap] = useState(true);
+  const [showSwap, setShowSwap] = useState(false);
+  const [swapType, setSwapType] = useState('Loop Out');
+  const [selectedChannels] = useState(store.channels.slice(0, 3));
 
   useEffect(() => {
     // fetch RPC data when the component mounts if there is no
@@ -34,12 +37,18 @@ const LoopPage: React.FC = () => {
     }
   }, [store, node, channel, swap]);
 
+  const handleLoop = (swapType: string) => {
+    setSwapType(swapType);
+    setShowSwap(true);
+  };
+
   const { PageWrap, TileSection } = Styled;
   return (
     <PageWrap>
       {showSwap ? (
         <SwapWizard
-          channels={store.channels.slice(0, 3)}
+          swapType={swapType}
+          channels={selectedChannels}
           onClose={() => setShowSwap(false)}
         />
       ) : (
@@ -66,6 +75,11 @@ const LoopPage: React.FC = () => {
               </Column>
             </Row>
           </TileSection>
+          <LoopActions
+            channels={selectedChannels}
+            swapType={swapType}
+            onLoop={handleLoop}
+          />
         </>
       )}
       <ChannelList channels={store.channels} />
