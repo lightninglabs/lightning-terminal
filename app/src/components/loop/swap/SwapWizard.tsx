@@ -70,6 +70,9 @@ const SwapWizard: React.FC<Props> = ({ channels, onClose }) => {
     case 2:
       cmp = (
         <SwapReviewStep
+          amount={amount}
+          fee={9000}
+          type="Loop Out"
           channelCount={channels.length}
           onNext={goToNext}
           onCancel={onClose}

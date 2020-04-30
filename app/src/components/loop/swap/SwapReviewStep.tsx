@@ -1,5 +1,6 @@
 import React from 'react';
 import { usePrefixedTranslation } from 'hooks';
+import { Title, XLargeText } from 'components/common/text';
 import { styled } from 'components/theme';
 import StepButtons from './StepButtons';
 import StepSummary from './StepSummary';
@@ -12,29 +13,48 @@ const Styled = {
     padding-top: 5px;
   `,
   Summary: styled.div`
-    flex-grow: 2;
+    flex-grow: 1;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
   `,
   Invoice: styled.div`
-    flex-grow: 3;
+    flex-grow: 1;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
   `,
+  InvoiceRow: styled.div`
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 30px;
+  `,
+  Divider: styled.div`
+    border-top: 1px solid ${props => props.theme.colors.darkGray};
+    margin-bottom: 30px;
+  `,
 };
 
 interface Props {
+  amount: number;
+  fee: number;
+  type: string;
   channelCount: number;
   onNext: () => void;
   onCancel: () => void;
 }
 
-const SwapReviewStep: React.FC<Props> = ({ channelCount, onNext, onCancel }) => {
+const SwapReviewStep: React.FC<Props> = ({
+  amount,
+  fee,
+  type,
+  channelCount,
+  onNext,
+  onCancel,
+}) => {
   const { l } = usePrefixedTranslation('cmps.loop.swaps.SwapReviewStep');
 
-  const { Wrapper, Summary, Invoice } = Styled;
+  const { Wrapper, Summary, Invoice, InvoiceRow, Divider } = Styled;
   return (
     <Wrapper>
       <Summary>
@@ -46,8 +66,24 @@ const SwapReviewStep: React.FC<Props> = ({ channelCount, onNext, onCancel }) => 
         />
       </Summary>
       <Invoice>
-        <div>Invoice Details</div>
-        <StepButtons onCancel={onCancel} onNext={onNext} />
+        <div>
+          <InvoiceRow>
+            <Title>{l('amount', { type })}</Title>
+            <span>{amount.toLocaleString()} SAT</span>
+          </InvoiceRow>
+          <InvoiceRow>
+            <Title>{l('fees')}</Title>
+            <span>
+              {fee.toLocaleString()} SAT ({((100 * fee) / amount).toFixed(2)}%)
+            </span>
+          </InvoiceRow>
+          <Divider />
+          <InvoiceRow>
+            <Title>{l('fees')}</Title>
+            <XLargeText>{(amount + fee).toLocaleString()} SAT</XLargeText>
+          </InvoiceRow>
+        </div>
+        <StepButtons onCancel={onCancel} onNext={onNext} confirm />
       </Invoice>
     </Wrapper>
   );
