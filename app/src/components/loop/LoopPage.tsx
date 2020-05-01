@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
+import { Channel } from 'types/state';
 import { usePrefixedTranslation } from 'hooks';
 import { useActions, useStore } from 'store';
 import { Column, Row } from 'components/common/grid';
@@ -26,7 +27,8 @@ const LoopPage: React.FC = () => {
   const { node, channel, swap } = useActions();
   const [showSwap, setShowSwap] = useState(false);
   const [swapType, setSwapType] = useState('Loop Out');
-  const [selectedChannels] = useState(store.channels.slice(0, 3));
+  const [listEditable, setListEditable] = useState(false);
+  const [selectedChannels, setSelectedChannels] = useState<Channel[]>([]);
 
   useEffect(() => {
     // fetch RPC data when the component mounts if there is no
@@ -37,9 +39,14 @@ const LoopPage: React.FC = () => {
     }
   }, [store, node, channel, swap]);
 
-  const handleLoop = (swapType: string) => {
+  const handleLoopClicked = (swapType: string) => {
     setSwapType(swapType);
     setShowSwap(true);
+  };
+
+  const handleSwapClose = () => {
+    setListEditable(false);
+    setShowSwap(false);
   };
 
   const { PageWrap, TileSection } = Styled;
@@ -49,7 +56,7 @@ const LoopPage: React.FC = () => {
         <SwapWizard
           swapType={swapType}
           channels={selectedChannels}
-          onClose={() => setShowSwap(false)}
+          onClose={handleSwapClose}
         />
       ) : (
         <>
@@ -78,11 +85,19 @@ const LoopPage: React.FC = () => {
           <LoopActions
             channels={selectedChannels}
             swapType={swapType}
-            onLoop={handleLoop}
+            onLoopClick={() => setListEditable(true)}
+            onTypeClick={handleLoopClicked}
+            onCancelClick={() => setListEditable(false)}
           />
         </>
       )}
-      <ChannelList channels={store.channels} />
+      <ChannelList
+        channels={store.channels}
+        enableSelection={listEditable}
+        selectedChannels={selectedChannels}
+        onSelectionChange={channels => setSelectedChannels(channels)}
+        disabled={showSwap}
+      />
     </PageWrap>
   );
 };

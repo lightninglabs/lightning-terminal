@@ -24,6 +24,7 @@ interface ButtonProps {
   primary?: boolean;
   ghost?: boolean;
   borderless?: boolean;
+  disabled?: boolean;
 }
 
 export const Button = styled.button<ButtonProps>`
@@ -41,9 +42,10 @@ export const Button = styled.button<ButtonProps>`
     props.primary ? props.theme.colors.green : props.theme.colors.white};
   border-style: solid;
   border-radius: 22px;
+  opacity: ${props => (props.disabled ? '0.5' : '1')};
 
   &:hover {
-    opacity: 80%;
+    opacity: ${props => (props.disabled ? '0.6' : '0.8')};
   }
 
   svg {

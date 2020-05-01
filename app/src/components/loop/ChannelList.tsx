@@ -19,14 +19,40 @@ const Styled = {
     .col:last-child {
       padding-right: 0;
     }
+
+    *:focus {
+      outline: none;
+    }
   `,
 };
 
 interface Props {
   channels: Channel[];
+  enableSelection: boolean;
+  selectedChannels: Channel[];
+  onSelectionChange: (selectedChannels: Channel[]) => void;
+  disabled: boolean;
 }
 
-const ChannelList: React.FC<Props> = ({ channels }) => {
+const ChannelList: React.FC<Props> = ({
+  channels,
+  enableSelection,
+  selectedChannels,
+  onSelectionChange,
+  disabled,
+}) => {
+  const handleRowChecked = (channel: Channel, checked: boolean) => {
+    if (checked) {
+      onSelectionChange([...selectedChannels, channel]);
+    } else {
+      onSelectionChange(selectedChannels.filter(c => c.chanId !== channel.chanId));
+    }
+  };
+
+  const sortedChannels = channels
+    .slice()
+    .sort((a, b) => b.balancePercent - a.balancePercent);
+
   const { Wrapper, ListContainer } = Styled;
   return (
     <Wrapper>
@@ -41,10 +67,21 @@ const ChannelList: React.FC<Props> = ({ channels }) => {
                   height={height}
                   isScrolling={isScrolling}
                   onScroll={onChildScroll}
-                  rowCount={channels.length}
+                  rowCount={sortedChannels.length}
                   rowHeight={ROW_HEIGHT}
                   rowRenderer={({ index, key, style }) => (
-                    <ChannelRow key={key} channel={channels[index]} style={style} />
+                    <ChannelRow
+                      key={key}
+                      style={style}
+                      channel={sortedChannels[index]}
+                      editable={enableSelection}
+                      checked={selectedChannels.includes(sortedChannels[index])}
+                      disabled={disabled}
+                      dimmed={
+                        disabled && !selectedChannels.includes(sortedChannels[index])
+                      }
+                      onChange={handleRowChecked}
+                    />
                   )}
                   scrollTop={scrollTop}
                   width={width}

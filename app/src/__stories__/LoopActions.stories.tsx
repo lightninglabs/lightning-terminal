@@ -20,7 +20,9 @@ export const Default = (ctx: StoryContext) => {
     <LoopActions
       swapType="Loop Out"
       channels={channels.slice(0, 3)}
-      onLoop={() => action('onLoop')}
+      onLoopClick={() => action('onLoopClick')}
+      onTypeClick={() => action('onTypeClick')}
+      onCancelClick={() => action('onCancelClick')}
     />
   );
 };

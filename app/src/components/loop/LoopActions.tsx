@@ -11,6 +11,7 @@ const Styled = {
   `,
   Actions: styled.div`
     display: inline-block;
+    margin-top: -15px;
     padding: 15px;
     background-color: ${props => props.theme.colors.darkBlue};
     box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.5);
@@ -31,16 +32,34 @@ const Styled = {
 interface Props {
   channels: Channel[];
   swapType: string;
-  onLoop: (swapType: string) => void;
+  onLoopClick: () => void;
+  onTypeClick: (swapType: string) => void;
+  onCancelClick: () => void;
 }
 
-const LoopActions: React.FC<Props> = ({ channels, swapType, onLoop }) => {
+const LoopActions: React.FC<Props> = ({
+  channels,
+  swapType,
+  onLoopClick,
+  onTypeClick,
+  onCancelClick,
+}) => {
   const { l } = usePrefixedTranslation('cmps.loop.LoopActions');
   const [showTypes, setShowTypes] = useState(false);
 
-  const handleLoopClick = (type: string) => {
+  const handleLoopClick = () => {
+    setShowTypes(true);
+    onLoopClick();
+  };
+
+  const handleTypeClick = (type: string) => {
     setShowTypes(false);
-    onLoop(type);
+    onTypeClick(type);
+  };
+
+  const handleCancelClick = () => {
+    onCancelClick();
+    setShowTypes(false);
   };
 
   const { Wrapper, Actions, CloseIcon, Selected } = Styled;
@@ -48,26 +67,28 @@ const LoopActions: React.FC<Props> = ({ channels, swapType, onLoop }) => {
     <Wrapper>
       {showTypes ? (
         <Actions>
-          <CloseIcon onClick={() => setShowTypes(false)} />
+          <CloseIcon onClick={handleCancelClick} />
           <Pill>{channels.length}</Pill>
           <Selected>{l('channelsSelected')}</Selected>
           <Button
             primary={swapType === 'Loop Out'}
             borderless={swapType !== 'Loop Out'}
-            onClick={() => handleLoopClick('Loop Out')}
+            onClick={() => handleTypeClick('Loop Out')}
+            disabled={channels.length === 0}
           >
             Loop out
           </Button>
           <Button
             primary={swapType === 'Loop In'}
             borderless={swapType !== 'Loop In'}
-            onClick={() => handleLoopClick('Loop In')}
+            onClick={() => handleTypeClick('Loop In')}
+            disabled={channels.length === 0}
           >
             Loop in
           </Button>
         </Actions>
       ) : (
-        <Button onClick={() => setShowTypes(true)}>
+        <Button onClick={handleLoopClick}>
           <Refresh />
           Loop
         </Button>
