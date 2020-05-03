@@ -31,6 +31,11 @@ export interface Channel {
   balanceLevel: BalanceLevel;
 }
 
+export enum SwapDirection {
+  IN = 'Loop In',
+  OUT = 'Loop Out',
+}
+
 export interface Swap {
   id: string;
   type: string;

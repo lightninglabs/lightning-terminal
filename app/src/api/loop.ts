@@ -17,11 +17,31 @@ class LoopApi {
   }
 
   /**
-   * call the LND `ListSwaps` RPC and return the response
+   * call the Loop `ListSwaps` RPC and return the response
    */
   async listSwaps(): Promise<LOOP.ListSwapsResponse.AsObject> {
     const req = new LOOP.ListSwapsRequest();
     const res = await this._grpc.request(SwapClient.ListSwaps, req, this._meta);
+    return res.toObject();
+  }
+
+  /**
+   * call the Loop `GetLoopInQuote` RPC and return the response
+   */
+  async getLoopInQuote(amount: number): Promise<LOOP.QuoteResponse.AsObject> {
+    const req = new LOOP.QuoteRequest();
+    req.setAmt(amount);
+    const res = await this._grpc.request(SwapClient.GetLoopInQuote, req, this._meta);
+    return res.toObject();
+  }
+
+  /**
+   * call the Loop `LoopOutQuote` RPC and return the response
+   */
+  async getLoopOutQuote(amount: number): Promise<LOOP.QuoteResponse.AsObject> {
+    const req = new LOOP.QuoteRequest();
+    req.setAmt(amount);
+    const res = await this._grpc.request(SwapClient.LoopOutQuote, req, this._meta);
     return res.toObject();
   }
 }

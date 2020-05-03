@@ -1,5 +1,6 @@
 import { action, toJS } from 'mobx';
 import { SwapState, SwapType } from 'types/generated/loop_pb';
+import { SwapDirection } from 'types/state';
 import { actionLog as log } from 'util/log';
 import { LoopApi } from 'api';
 import { Store } from 'store';
@@ -34,6 +35,20 @@ class SwapAction {
         status: this._stateToString(s.state),
       }));
     log.info('updated store.swaps', toJS(this._store.swaps));
+  }
+
+  /**
+   * get a loop quote from the Loop RPC
+   */
+  @action.bound async getQuote() {
+    const { amount, direction } = this._store.buildSwapStore;
+    log.info(`fetching ${direction} quote for ${amount} sats`);
+    const quote =
+      direction === SwapDirection.IN
+        ? await this._loop.getLoopInQuote(amount)
+        : await this._loop.getLoopOutQuote(amount);
+    this._store.buildSwapStore.fee = quote.swapFee + quote.minerFee;
+    log.info('updated buildSwapStore.quoteFee', toJS(this._store.buildSwapStore.fee));
   }
 
   /**
