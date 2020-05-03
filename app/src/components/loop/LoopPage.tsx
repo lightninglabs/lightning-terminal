@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Channel } from 'types/state';
 import { usePrefixedTranslation } from 'hooks';
 import { useActions, useStore } from 'store';
 import { Column, Row } from 'components/common/grid';
@@ -24,11 +23,8 @@ const Styled = {
 const LoopPage: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.LoopPage');
   const store = useStore();
+  const build = store.buildSwapStore;
   const { node, channel, swap } = useActions();
-  const [showSwap, setShowSwap] = useState(false);
-  const [swapType, setSwapType] = useState('Loop Out');
-  const [listEditable, setListEditable] = useState(false);
-  const [selectedChannels, setSelectedChannels] = useState<Channel[]>([]);
 
   useEffect(() => {
     // fetch RPC data when the component mounts if there is no
@@ -39,24 +35,27 @@ const LoopPage: React.FC = () => {
     }
   }, [store, node, channel, swap]);
 
-  const handleLoopClicked = (swapType: string) => {
-    setSwapType(swapType);
-    setShowSwap(true);
-  };
-
-  const handleSwapClose = () => {
-    setListEditable(false);
-    setShowSwap(false);
-  };
+  const handleWizardNext = useCallback(() => {
+    if (build.currentStep === 1) {
+      swap.getQuote();
+    }
+    build.goToNextStep();
+  }, [build, swap]);
 
   const { PageWrap, TileSection } = Styled;
   return (
     <PageWrap>
-      {showSwap ? (
+      {build.showWizard ? (
         <SwapWizard
-          swapType={swapType}
-          channels={selectedChannels}
-          onClose={handleSwapClose}
+          direction={build.direction}
+          channels={build.channels}
+          amount={build.amount}
+          setAmount={build.setAmount}
+          fee={build.fee}
+          currentStep={build.currentStep}
+          onNext={handleWizardNext}
+          onPrev={build.goToPrevStep}
+          onClose={build.cancel}
         />
       ) : (
         <>
@@ -83,20 +82,20 @@ const LoopPage: React.FC = () => {
             </Row>
           </TileSection>
           <LoopActions
-            channels={selectedChannels}
-            swapType={swapType}
-            onLoopClick={() => setListEditable(true)}
-            onTypeClick={handleLoopClicked}
-            onCancelClick={() => setListEditable(false)}
+            channels={build.channels}
+            direction={build.direction}
+            onLoopClick={build.toggleShowActions}
+            onDirectionClick={build.setDirection}
+            onCancelClick={build.cancel}
           />
         </>
       )}
       <ChannelList
         channels={store.channels}
-        enableSelection={listEditable}
-        selectedChannels={selectedChannels}
-        onSelectionChange={channels => setSelectedChannels(channels)}
-        disabled={showSwap}
+        enableSelection={build.listEditable}
+        selectedChannels={build.channels}
+        onSelectionChange={build.setSelectedChannels}
+        disabled={build.showWizard}
       />
     </PageWrap>
   );

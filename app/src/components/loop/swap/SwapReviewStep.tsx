@@ -1,4 +1,5 @@
 import React from 'react';
+import { SwapDirection } from 'types/state';
 import { usePrefixedTranslation } from 'hooks';
 import { Title, XLargeText } from 'components/common/text';
 import { styled } from 'components/theme';
@@ -38,7 +39,7 @@ const Styled = {
 interface Props {
   amount: number;
   fee: number;
-  type: string;
+  direction: SwapDirection;
   channelCount: number;
   onNext: () => void;
   onCancel: () => void;
@@ -47,7 +48,7 @@ interface Props {
 const SwapReviewStep: React.FC<Props> = ({
   amount,
   fee,
-  type,
+  direction,
   channelCount,
   onNext,
   onCancel,
@@ -68,7 +69,7 @@ const SwapReviewStep: React.FC<Props> = ({
       <Invoice>
         <div>
           <InvoiceRow>
-            <Title>{l('amount', { type })}</Title>
+            <Title>{l('amount', { type: direction })}</Title>
             <span>{amount.toLocaleString()} SAT</span>
           </InvoiceRow>
           <InvoiceRow>

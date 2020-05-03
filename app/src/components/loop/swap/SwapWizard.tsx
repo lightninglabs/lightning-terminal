@@ -1,5 +1,5 @@
-import React, { ReactNode, useState } from 'react';
-import { Channel } from 'types/state';
+import React, { ReactNode } from 'react';
+import { Channel, SwapDirection } from 'types/state';
 import { ArrowLeft } from 'components/common/icons';
 import { styled } from 'components/theme';
 import SwapConfigStep from './SwapConfigStep';
@@ -38,32 +38,38 @@ const Styled = {
 
 interface Props {
   channels: Channel[];
-  swapType: string;
+  direction: SwapDirection;
+  amount: number;
+  setAmount: (amount: number) => void;
+  fee: number;
+  currentStep: number;
+  onNext: () => void;
+  onPrev: () => void;
   onClose: () => void;
 }
 
-const SwapWizard: React.FC<Props> = ({ channels, swapType, onClose }) => {
-  const [currentStep, setCurrentStep] = useState(1);
-  const goToNext = () => setCurrentStep(Math.min(currentStep + 1, 3));
-  const goToPrev = () => setCurrentStep(Math.max(currentStep - 1, 1));
-  const navBack = () => {
-    if (currentStep === 1) onClose();
-    else goToPrev();
-  };
-
-  const [amount, setAmount] = useState(600000);
-
+const SwapWizard: React.FC<Props> = ({
+  channels,
+  direction,
+  amount,
+  setAmount,
+  fee,
+  currentStep,
+  onNext,
+  onPrev,
+  onClose,
+}) => {
   let cmp: ReactNode;
   switch (currentStep) {
     case 1:
       cmp = (
         <SwapConfigStep
           amount={amount}
-          onAmountChange={v => setAmount(v)}
+          onAmountChange={setAmount}
           minAmount={250000}
           maxAmount={1000000}
           channelCount={channels.length}
-          onNext={goToNext}
+          onNext={onNext}
           onCancel={onClose}
         />
       );
@@ -72,10 +78,10 @@ const SwapWizard: React.FC<Props> = ({ channels, swapType, onClose }) => {
       cmp = (
         <SwapReviewStep
           amount={amount}
-          fee={9000}
-          type={swapType}
+          fee={fee}
+          direction={direction}
           channelCount={channels.length}
-          onNext={goToNext}
+          onNext={onNext}
           onCancel={onClose}
         />
       );
@@ -89,7 +95,7 @@ const SwapWizard: React.FC<Props> = ({ channels, swapType, onClose }) => {
   return (
     <Wrapper>
       <Nav>
-        <BackIcon onClick={navBack} />
+        <BackIcon onClick={onPrev} />
       </Nav>
       <Content>{cmp}</Content>
     </Wrapper>

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { Channel } from 'types/state';
+import React from 'react';
+import { Channel, SwapDirection } from 'types/state';
 import { usePrefixedTranslation } from 'hooks';
+import { useStore } from 'store';
 import { Button, Pill } from 'components/common/base';
 import { Close, Refresh } from 'components/common/icons';
 import { styled } from 'components/theme';
@@ -31,64 +32,49 @@ const Styled = {
 
 interface Props {
   channels: Channel[];
-  swapType: string;
+  direction: SwapDirection;
   onLoopClick: () => void;
-  onTypeClick: (swapType: string) => void;
+  onDirectionClick: (direction: SwapDirection) => void;
   onCancelClick: () => void;
 }
 
 const LoopActions: React.FC<Props> = ({
   channels,
-  swapType,
+  direction,
   onLoopClick,
-  onTypeClick,
+  onDirectionClick,
   onCancelClick,
 }) => {
   const { l } = usePrefixedTranslation('cmps.loop.LoopActions');
-  const [showTypes, setShowTypes] = useState(false);
-
-  const handleLoopClick = () => {
-    setShowTypes(true);
-    onLoopClick();
-  };
-
-  const handleTypeClick = (type: string) => {
-    setShowTypes(false);
-    onTypeClick(type);
-  };
-
-  const handleCancelClick = () => {
-    onCancelClick();
-    setShowTypes(false);
-  };
+  const { buildSwapStore } = useStore();
 
   const { Wrapper, Actions, CloseIcon, Selected } = Styled;
   return (
     <Wrapper>
-      {showTypes ? (
+      {buildSwapStore.showActions ? (
         <Actions>
-          <CloseIcon onClick={handleCancelClick} />
+          <CloseIcon onClick={onCancelClick} />
           <Pill>{channels.length}</Pill>
           <Selected>{l('channelsSelected')}</Selected>
           <Button
-            primary={swapType === 'Loop Out'}
-            borderless={swapType !== 'Loop Out'}
-            onClick={() => handleTypeClick('Loop Out')}
+            primary={direction === SwapDirection.OUT}
+            borderless={direction !== SwapDirection.OUT}
+            onClick={() => onDirectionClick(SwapDirection.OUT)}
             disabled={channels.length === 0}
           >
             Loop out
           </Button>
           <Button
-            primary={swapType === 'Loop In'}
-            borderless={swapType !== 'Loop In'}
-            onClick={() => handleTypeClick('Loop In')}
+            primary={direction === SwapDirection.IN}
+            borderless={direction !== SwapDirection.IN}
+            onClick={() => onDirectionClick(SwapDirection.IN)}
             disabled={channels.length === 0}
           >
             Loop in
           </Button>
         </Actions>
       ) : (
-        <Button onClick={handleLoopClick}>
+        <Button onClick={onLoopClick}>
           <Refresh />
           Loop
         </Button>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { SwapDirection } from 'types/state';
 import { action } from '@storybook/addon-actions';
 import { StoryContext } from '@storybook/addons';
 import { Store } from 'store';
@@ -18,10 +19,10 @@ export const Default = (ctx: StoryContext) => {
   const { channels } = ctx.parameters.store as Store;
   return (
     <LoopActions
-      swapType="Loop Out"
+      direction={SwapDirection.OUT}
       channels={channels.slice(0, 3)}
       onLoopClick={() => action('onLoopClick')}
-      onTypeClick={() => action('onTypeClick')}
+      onDirectionClick={() => action('onTypeClick')}
       onCancelClick={() => action('onCancelClick')}
     />
   );
