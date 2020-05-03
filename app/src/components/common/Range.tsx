@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ChangeEvent, useCallback } from 'react';
 import { styled } from 'components/theme';
 import { RangeInput } from './base';
 import Radio from './Radio';
@@ -16,15 +16,29 @@ const Styled = {
 };
 
 interface Props {
-  value: number;
-  min: number;
-  max: number;
+  value?: number;
+  min?: number;
+  max?: number;
   step?: number;
   showRadios?: boolean;
-  onChange: (value: number) => void;
+  onChange?: (value: number) => void;
 }
 
-const Range: React.FC<Props> = ({ value, min, max, step = 1, showRadios, onChange }) => {
+const Range: React.FC<Props> = ({
+  value = 50,
+  min = 0,
+  max = 100,
+  step = 1,
+  showRadios,
+  onChange,
+}) => {
+  const handleMinClicked = useCallback(() => onChange && onChange(min), [min, onChange]);
+  const handleMaxClicked = useCallback(() => onChange && onChange(max), [max, onChange]);
+  const handleInputClicked = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => onChange && onChange(parseInt(e.target.value)),
+    [onChange],
+  );
+
   const { RadioGroup, DisplayValue } = Styled;
   return (
     <div>
@@ -33,13 +47,13 @@ const Range: React.FC<Props> = ({ value, min, max, step = 1, showRadios, onChang
           <Radio
             text="Min"
             description={`${min.toLocaleString()} SAT`}
-            onClick={() => onChange(min)}
+            onClick={handleMinClicked}
             active={min === value}
           />
           <Radio
             text="Max"
             description={`${max.toLocaleString()} SAT`}
-            onClick={() => onChange(max)}
+            onClick={handleMaxClicked}
             active={max === value}
             right
           />
@@ -53,7 +67,7 @@ const Range: React.FC<Props> = ({ value, min, max, step = 1, showRadios, onChang
           min={min}
           max={max}
           step={step}
-          onChange={e => onChange(parseInt(e.target.value))}
+          onChange={handleInputClicked}
         />
       </div>
       <DisplayValue>{value.toLocaleString()} SAT</DisplayValue>
