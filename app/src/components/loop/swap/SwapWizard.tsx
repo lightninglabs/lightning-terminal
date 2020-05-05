@@ -41,6 +41,8 @@ interface Props {
   direction: SwapDirection;
   amount: number;
   setAmount: (amount: number) => void;
+  minAmount: number;
+  maxAmount: number;
   fee: number;
   currentStep: number;
   onNext: () => void;
@@ -53,6 +55,8 @@ const SwapWizard: React.FC<Props> = ({
   direction,
   amount,
   setAmount,
+  minAmount,
+  maxAmount,
   fee,
   currentStep,
   onNext,
@@ -66,8 +70,8 @@ const SwapWizard: React.FC<Props> = ({
         <SwapConfigStep
           amount={amount}
           onAmountChange={setAmount}
-          minAmount={250000}
-          maxAmount={1000000}
+          minAmount={minAmount}
+          maxAmount={maxAmount}
           channelCount={channels.length}
           onNext={onNext}
           onCancel={onClose}

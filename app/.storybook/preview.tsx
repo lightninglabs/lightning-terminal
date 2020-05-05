@@ -34,6 +34,7 @@ const actions = createActions(store, grpc);
 actions.node.getBalances();
 actions.channel.getChannels();
 actions.swap.listSwaps();
+actions.swap.getTerms();
 
 /**
  * add the mobx store to Storybook parameters so that stories can manipulate it

@@ -125,6 +125,11 @@ export const loopListSwaps: LOOP.ListSwapsResponse.AsObject = {
   })),
 };
 
+export const loopTerms: LOOP.TermsResponse.AsObject = {
+  minSwapAmount: 250000,
+  maxSwapAmount: 1000000,
+};
+
 // collection of sample API responses
 export const sampleApiResponses: Record<string, any> = {
   'lnrpc.Lightning.GetInfo': lndGetInfo,
@@ -132,4 +137,6 @@ export const sampleApiResponses: Record<string, any> = {
   'lnrpc.Lightning.WalletBalance': lndWalletBalance,
   'lnrpc.Lightning.ListChannels': lndListChannels,
   'looprpc.SwapClient.ListSwaps': loopListSwaps,
+  'looprpc.SwapClient.LoopOutTerms': loopTerms,
+  'looprpc.SwapClient.GetLoopInTerms': loopTerms,
 };

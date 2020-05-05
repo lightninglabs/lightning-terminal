@@ -52,6 +52,26 @@ class SwapAction {
   }
 
   /**
+   * get a loop terms from the Loop RPC
+   */
+  @action.bound async getTerms() {
+    log.info(`fetching loop terms`);
+    const inTerms = await this._loop.getLoopInTerms();
+    const outTerms = await this._loop.getLoopOutTerms();
+    this._store.terms = {
+      in: {
+        min: inTerms.minSwapAmount,
+        max: inTerms.maxSwapAmount,
+      },
+      out: {
+        min: outTerms.minSwapAmount,
+        max: outTerms.maxSwapAmount,
+      },
+    };
+    log.info('updated store.terms', toJS(this._store.terms));
+  }
+
+  /**
    * Converts a swap type number to a user friendly string
    * @param type the type to convert
    */

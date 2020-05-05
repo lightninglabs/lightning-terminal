@@ -32,6 +32,7 @@ const LoopPage: React.FC = () => {
       channel.getChannels();
       node.getBalances();
       swap.listSwaps();
+      swap.getTerms();
     }
   }, [store, node, channel, swap]);
 
@@ -51,6 +52,8 @@ const LoopPage: React.FC = () => {
           channels={build.channels}
           amount={build.amount}
           setAmount={build.setAmount}
+          minAmount={build.termsMinMax.min}
+          maxAmount={build.termsMinMax.max}
           fee={build.fee}
           currentStep={build.currentStep}
           onNext={handleWizardNext}

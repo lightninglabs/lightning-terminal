@@ -26,6 +26,24 @@ class LoopApi {
   }
 
   /**
+   * call the Loop `GetLoopInTerms` RPC and return the response
+   */
+  async getLoopInTerms(): Promise<LOOP.TermsResponse.AsObject> {
+    const req = new LOOP.TermsRequest();
+    const res = await this._grpc.request(SwapClient.GetLoopInTerms, req, this._meta);
+    return res.toObject();
+  }
+
+  /**
+   * call the Loop `LoopOutTerms` RPC and return the response
+   */
+  async getLoopOutTerms(): Promise<LOOP.TermsResponse.AsObject> {
+    const req = new LOOP.TermsRequest();
+    const res = await this._grpc.request(SwapClient.LoopOutTerms, req, this._meta);
+    return res.toObject();
+  }
+
+  /**
    * call the Loop `GetLoopInQuote` RPC and return the response
    */
   async getLoopInQuote(amount: number): Promise<LOOP.QuoteResponse.AsObject> {

@@ -21,6 +21,8 @@ export const Default = (ctx: StoryContext) => {
       direction={SwapDirection.OUT}
       amount={build.amount}
       setAmount={build.setAmount}
+      minAmount={build.termsMinMax.min}
+      maxAmount={build.termsMinMax.max}
       fee={build.fee}
       currentStep={build.currentStep}
       onNext={build.goToNextStep}

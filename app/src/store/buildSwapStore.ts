@@ -38,6 +38,21 @@ class BuildSwapStore {
     return this.showActions || this.showWizard;
   }
 
+  @computed
+  get termsMinMax() {
+    let termsMax = { min: 0, max: 0 };
+    switch (this.direction) {
+      case SwapDirection.IN:
+        termsMax = this._rootStore.terms.in;
+        break;
+      case SwapDirection.OUT:
+        termsMax = this._rootStore.terms.out;
+        break;
+    }
+
+    return termsMax;
+  }
+
   @action.bound
   toggleShowActions() {
     this.showActions = !this.showActions;
@@ -48,6 +63,8 @@ class BuildSwapStore {
     this.direction = direction;
     this.showActions = false;
     this.showWizard = true;
+    const { min, max } = this.termsMinMax;
+    this.amount = Math.floor((min + max) / 2);
   }
 
   @action.bound

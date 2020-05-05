@@ -43,3 +43,14 @@ export interface Swap {
   createdOn: Date;
   status: string;
 }
+
+export interface Terms {
+  in: {
+    min: number;
+    max: number;
+  };
+  out: {
+    min: number;
+    max: number;
+  };
+}
