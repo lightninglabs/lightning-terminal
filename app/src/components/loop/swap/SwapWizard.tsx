@@ -45,6 +45,7 @@ interface Props {
   maxAmount: number;
   fee: number;
   currentStep: number;
+  swapError?: Error;
   onNext: () => void;
   onPrev: () => void;
   onClose: () => void;
@@ -59,6 +60,7 @@ const SwapWizard: React.FC<Props> = ({
   maxAmount,
   fee,
   currentStep,
+  swapError,
   onNext,
   onPrev,
   onClose,
@@ -91,7 +93,7 @@ const SwapWizard: React.FC<Props> = ({
       );
       break;
     case 3:
-      cmp = <SwapProcessingStep onFinish={onClose} />;
+      cmp = <SwapProcessingStep swapError={swapError} />;
       break;
   }
 

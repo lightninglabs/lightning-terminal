@@ -1,28 +1,26 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { styled } from 'components/theme';
 
 const Styled = {
   Wrapper: styled.div`
     flex-grow: 1;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+  `,
+  ErrorMessage: styled.div`
+    padding: 10px;
+    color: red;
   `,
 };
 
 interface Props {
-  onFinish: () => void;
+  swapError?: Error;
 }
 
-const SwapProcessingStep: React.FC<Props> = ({ onFinish }) => {
-  useEffect(() => {
-    setTimeout(() => {
-      // wait for 3 secs then finish
-      onFinish();
-    }, 3000);
-  }, [onFinish]);
-
-  const { Wrapper } = Styled;
+const SwapProcessingStep: React.FC<Props> = ({ swapError }) => {
+  const { Wrapper, ErrorMessage } = Styled;
   return (
     <Wrapper>
       <span style={{ textAlign: 'center' }}>
@@ -30,6 +28,7 @@ const SwapProcessingStep: React.FC<Props> = ({ onFinish }) => {
         <br />
         ** show loader here **
       </span>
+      {swapError && <ErrorMessage>{swapError.message}</ErrorMessage>}
     </Wrapper>
   );
 };

@@ -44,6 +44,12 @@ export interface Swap {
   status: string;
 }
 
+export interface Quote {
+  swapFee: number;
+  minerFee: number;
+  prepayAmount: number;
+}
+
 export interface Terms {
   in: {
     min: number;

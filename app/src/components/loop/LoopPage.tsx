@@ -37,8 +37,11 @@ const LoopPage: React.FC = () => {
   }, [store, node, channel, swap]);
 
   const handleWizardNext = useCallback(() => {
+    // the actions need to be executed from the component
     if (build.currentStep === 1) {
       swap.getQuote();
+    } else if (build.currentStep === 2) {
+      build.executeSwap(() => swap.loop());
     }
     build.goToNextStep();
   }, [build, swap]);
@@ -56,6 +59,7 @@ const LoopPage: React.FC = () => {
           maxAmount={build.termsMinMax.max}
           fee={build.fee}
           currentStep={build.currentStep}
+          swapError={build.swapError}
           onNext={handleWizardNext}
           onPrev={build.goToPrevStep}
           onClose={build.cancel}

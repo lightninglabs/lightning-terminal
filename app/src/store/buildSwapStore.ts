@@ -1,5 +1,5 @@
 import { action, computed, observable } from 'mobx';
-import { Channel, SwapDirection } from 'types/state';
+import { Channel, Quote, SwapDirection } from 'types/state';
 import { Store } from 'store';
 
 /**
@@ -26,8 +26,18 @@ class BuildSwapStore {
   /** the amount to swap */
   @observable amount = 0;
 
-  /** the fee to perform the swap */
-  @observable fee = 0;
+  /** the quote for the swap */
+  @observable quote: Quote = {
+    swapFee: 0,
+    prepayAmount: 0,
+    minerFee: 0,
+  };
+
+  /** the reference to the timeout used to allow cancelling a swap */
+  @observable processingTimeout?: NodeJS.Timeout;
+
+  /** the error error returned from LoopIn/LoopOut if any */
+  @observable swapError?: Error;
 
   constructor(rootStore: Store) {
     this._rootStore = rootStore;
@@ -51,6 +61,11 @@ class BuildSwapStore {
     }
 
     return termsMax;
+  }
+
+  @computed
+  get fee() {
+    return this.quote.swapFee + this.quote.minerFee;
   }
 
   @action.bound
@@ -88,6 +103,10 @@ class BuildSwapStore {
       this.showActions = true;
       this.showWizard = false;
     } else {
+      if (this.currentStep === 3) {
+        // if back is clicked on the processing step
+        this.abortSwap();
+      }
       this.currentStep--;
     }
   }
@@ -97,8 +116,26 @@ class BuildSwapStore {
     this.showActions = false;
     this.showWizard = false;
     this.channels = [];
-    this.fee = 0;
+    this.quote.swapFee = 0;
+    this.quote.minerFee = 0;
+    this.quote.prepayAmount = 0;
     this.currentStep = 1;
+  }
+
+  @action.bound
+  executeSwap(swapAction: () => void) {
+    this.processingTimeout = setTimeout(() => {
+      swapAction();
+      this.cancel();
+    }, 3000);
+  }
+
+  @action.bound
+  abortSwap() {
+    if (this.processingTimeout) {
+      clearTimeout(this.processingTimeout);
+      this.processingTimeout = undefined;
+    }
   }
 }
 

@@ -1,5 +1,7 @@
 import * as LOOP from 'types/generated/loop_pb';
 import { SwapClient } from 'types/generated/loop_pb_service';
+import { Quote } from 'types/state';
+import { IS_PROD } from 'config';
 import GrpcClient from './grpc';
 
 /**
@@ -60,6 +62,45 @@ class LoopApi {
     const req = new LOOP.QuoteRequest();
     req.setAmt(amount);
     const res = await this._grpc.request(SwapClient.LoopOutQuote, req, this._meta);
+    return res.toObject();
+  }
+
+  /**
+   * call the Loop `LoopIn` RPC and return the response
+   */
+  async loopIn(amount: number, quote: Quote): Promise<LOOP.SwapResponse.AsObject> {
+    const req = new LOOP.LoopInRequest();
+    req.setAmt(amount);
+    req.setMaxSwapFee(quote.swapFee);
+    req.setMaxMinerFee(quote.minerFee);
+    const res = await this._grpc.request(SwapClient.LoopIn, req, this._meta);
+    return res.toObject();
+  }
+
+  /**
+   * call the Loop `LoopOut` RPC and return the response
+   */
+  async loopOut(amount: number, quote: Quote): Promise<LOOP.SwapResponse.AsObject> {
+    const req = new LOOP.LoopOutRequest();
+    req.setAmt(amount);
+    req.setMaxSwapFee(quote.swapFee);
+    req.setMaxMinerFee(quote.minerFee);
+    req.setMaxPrepayAmt(quote.prepayAmount);
+    if (IS_PROD) {
+      // in prod env, push the deadline out for 30 mins for lower fees
+      const thirtyMins = 30 * 60 * 1000;
+      req.setSwapPublicationDeadline(Date.now() + thirtyMins);
+    } else {
+      // use the --fast option in dev env
+      req.setSwapPublicationDeadline(0);
+    }
+
+    // the request defaults the below values to zero which will cause the loop to fail
+    // TODO: figure out how to set the optional values to undefined
+    req.setMaxPrepayRoutingFee(100000);
+    req.setMaxSwapRoutingFee(100000);
+
+    const res = await this._grpc.request(SwapClient.LoopOut, req, this._meta);
     return res.toObject();
   }
 }
