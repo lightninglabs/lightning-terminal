@@ -39,6 +39,7 @@ export const Step1Amount = () => {
 
 export const Step2Fees = () => {
   const { channels, buildSwapStore: build } = useStore();
+  build.setAmount(50000);
   return useObserver(() => (
     <SwapWizard
       channels={channels.slice(0, 3)}
