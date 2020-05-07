@@ -2,7 +2,7 @@
 
 ![CI](https://github.com/lightninglabs/shushtar/workflows/CI/badge.svg)
 
-Requirements: [Go](https://golang.org/doc/install), [protoc](https://github.com/protocolbuffers/protobuf/releases), [nodejs](https://nodejs.org/en/download/)
+Requirements: [Go](https://golang.org/doc/install), [protoc](https://github.com/protocolbuffers/protobuf/releases), [nodejs v12+](https://nodejs.org/en/download/)
 
 ## One-time Setup
 
