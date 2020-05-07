@@ -130,6 +130,14 @@ export const loopTerms: LOOP.TermsResponse.AsObject = {
   maxSwapAmount: 1000000,
 };
 
+export const loopQuote: LOOP.QuoteResponse.AsObject = {
+  cltvDelta: 50,
+  minerFee: 7387,
+  prepayAmt: 1337,
+  swapFee: 83,
+  swapPaymentDest: 'Au1a9/hEsbxHUOwFC1QwxZq6EnnKYtpAdc74OZK8/syU',
+};
+
 // collection of sample API responses
 export const sampleApiResponses: Record<string, any> = {
   'lnrpc.Lightning.GetInfo': lndGetInfo,
@@ -139,4 +147,6 @@ export const sampleApiResponses: Record<string, any> = {
   'looprpc.SwapClient.ListSwaps': loopListSwaps,
   'looprpc.SwapClient.LoopOutTerms': loopTerms,
   'looprpc.SwapClient.GetLoopInTerms': loopTerms,
+  'looprpc.SwapClient.LoopOutQuote': loopQuote,
+  'looprpc.SwapClient.GetLoopInQuote': loopQuote,
 };

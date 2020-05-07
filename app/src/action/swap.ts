@@ -54,7 +54,7 @@ class SwapAction {
       minerFee: quote.minerFee,
       prepayAmount: quote.prepayAmt,
     };
-    log.info('updated buildSwapStore.quoteFee', toJS(this._store.buildSwapStore.fee));
+    log.info('updated buildSwapStore.quote', toJS(this._store.buildSwapStore.quote));
   }
 
   /**

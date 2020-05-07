@@ -7,3 +7,7 @@ import 'mobx-react-lite/batchingForReactDom';
 import '@testing-library/jest-dom/extend-expect';
 // enable i18n translations in unit tests
 import './i18n';
+
+beforeEach(() => {
+  jest.clearAllMocks();
+});
