@@ -9,7 +9,7 @@ const Styled = {
     justify-content: space-between;
     margin-bottom: 40px;
   `,
-  DisplayValue: styled.div`
+  DisplayValue: styled.label`
     text-align: center;
     font-size: ${props => props.theme.sizes.xl};
   `,
@@ -61,6 +61,7 @@ const Range: React.FC<Props> = ({
       )}
       <div>
         <RangeInput
+          aria-label="range-slider"
           className="custom-range"
           type="range"
           value={value}

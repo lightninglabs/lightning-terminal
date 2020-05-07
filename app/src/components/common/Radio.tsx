@@ -40,7 +40,7 @@ const Radio: React.FC<Props> = ({ text, description, active, right, onClick }) =
   const { Wrapper, RadioBlock } = Styled;
   return (
     <Wrapper right={right}>
-      <RadioBlock active={active} onClick={onClick}>
+      <RadioBlock active={active} onClick={onClick} role="switch" aria-checked={!!active}>
         {text}
       </RadioBlock>
       <SmallText>{description}</SmallText>

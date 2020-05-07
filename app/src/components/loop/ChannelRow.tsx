@@ -84,11 +84,11 @@ const ChannelDot: React.FC<{ channel: Channel }> = ({ channel }) => {
 
 interface Props {
   channel: Channel;
-  editable: boolean;
-  checked: boolean;
+  editable?: boolean;
+  checked?: boolean;
   onChange: (channel: Channel, checked: boolean) => void;
-  disabled: boolean;
-  dimmed: boolean;
+  disabled?: boolean;
+  dimmed?: boolean;
   style?: CSSProperties;
 }
 

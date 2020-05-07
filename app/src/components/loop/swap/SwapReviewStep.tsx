@@ -80,7 +80,7 @@ const SwapReviewStep: React.FC<Props> = ({
           </InvoiceRow>
           <Divider />
           <InvoiceRow>
-            <Title>{l('fees')}</Title>
+            <Title>{l('total')}</Title>
             <XLargeText>{(amount + fee).toLocaleString()} SAT</XLargeText>
           </InvoiceRow>
         </div>

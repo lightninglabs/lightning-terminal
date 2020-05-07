@@ -72,7 +72,7 @@ describe('SwapAction', () => {
     await loop.loop();
     expect(grpcMock.unary).toHaveBeenCalledWith(
       expect.objectContaining({ methodName: 'LoopOut' }),
-      expect.any(Object),
+      expect.anything(),
     );
   });
 

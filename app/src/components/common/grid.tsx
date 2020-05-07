@@ -1,17 +1,16 @@
-import React, { HTMLAttributes } from 'react';
+import React, { CSSProperties } from 'react';
 
 /**
  * This component represents a Row in the bootstrap Grid layout
  */
-export const Row: React.FC<HTMLAttributes<HTMLDivElement>> = ({
-  children,
-  className,
-  ...rest
-}) => {
+export const Row: React.FC<{
+  className?: string;
+  style?: CSSProperties;
+}> = ({ children, className, style }) => {
   const cn: string[] = ['row'];
   className && cn.push(className);
   return (
-    <div className={cn.join(' ')} {...rest}>
+    <div className={cn.join(' ')} style={style}>
       {children}
     </div>
   );

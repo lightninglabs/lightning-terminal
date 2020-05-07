@@ -124,10 +124,11 @@ class BuildSwapStore {
 
   @action.bound
   executeSwap(swapAction: () => void) {
+    const delay = process.env.NODE_ENV !== 'test' ? 3000 : 1;
     this.processingTimeout = setTimeout(() => {
       swapAction();
       this.cancel();
-    }, 3000);
+    }, delay);
   }
 
   @action.bound

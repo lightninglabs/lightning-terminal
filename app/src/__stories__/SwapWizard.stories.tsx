@@ -1,21 +1,26 @@
 import React from 'react';
+import { useObserver } from 'mobx-react-lite';
 import { SwapDirection } from 'types/state';
 import { action } from '@storybook/addon-actions';
-import { StoryContext } from '@storybook/addons';
-import { Store } from 'store';
+import { useStore } from 'store';
 import SwapWizard from 'components/loop/swap/SwapWizard';
 
 export default {
   title: 'Components/Swap Wizard',
   component: SwapWizard,
   parameters: { contained: true },
-  decorators: [(storyFn: any) => <div style={{ padding: 100 }}>{storyFn()}</div>],
+  decorators: [
+    (StoryFn: any) => (
+      <div style={{ padding: 100 }}>
+        <StoryFn />
+      </div>
+    ),
+  ],
 };
 
-export const Default = (ctx: StoryContext) => {
-  // grab the store from the Storybook parameter defined in preview.tsx
-  const { channels, buildSwapStore: build } = ctx.parameters.store as Store;
-  return (
+export const Step1Amount = () => {
+  const { channels, buildSwapStore: build } = useStore();
+  return useObserver(() => (
     <SwapWizard
       channels={channels.slice(0, 3)}
       direction={SwapDirection.OUT}
@@ -24,10 +29,48 @@ export const Default = (ctx: StoryContext) => {
       minAmount={build.termsMinMax.min}
       maxAmount={build.termsMinMax.max}
       fee={build.fee}
-      currentStep={build.currentStep}
+      currentStep={1}
       onNext={build.goToNextStep}
       onPrev={build.goToPrevStep}
       onClose={() => action('onClose')}
     />
-  );
+  ));
+};
+
+export const Step2Fees = () => {
+  const { channels, buildSwapStore: build } = useStore();
+  return useObserver(() => (
+    <SwapWizard
+      channels={channels.slice(0, 3)}
+      direction={SwapDirection.OUT}
+      amount={build.amount}
+      setAmount={build.setAmount}
+      minAmount={build.termsMinMax.min}
+      maxAmount={build.termsMinMax.max}
+      fee={1234}
+      currentStep={2}
+      onNext={build.goToNextStep}
+      onPrev={build.goToPrevStep}
+      onClose={() => action('onClose')}
+    />
+  ));
+};
+
+export const Step3Processing = () => {
+  const { channels, buildSwapStore: build } = useStore();
+  return useObserver(() => (
+    <SwapWizard
+      channels={channels.slice(0, 3)}
+      direction={SwapDirection.OUT}
+      amount={build.amount}
+      setAmount={build.setAmount}
+      minAmount={build.termsMinMax.min}
+      maxAmount={build.termsMinMax.max}
+      fee={build.fee}
+      currentStep={3}
+      onNext={build.goToNextStep}
+      onPrev={build.goToPrevStep}
+      onClose={() => action('onClose')}
+    />
+  ));
 };

@@ -44,7 +44,7 @@ addParameters({ store });
 /**
  * decorator function to wrap all stories with the necessary providers
  */
-addDecorator((storyFn, ctx) => (
+addDecorator((StoryFn, ctx) => (
   <StoreProvider store={store} actions={actions}>
     <ThemeProvider>
       {/* modify the bg styles so it isn't too big in docs mode */}
@@ -52,7 +52,7 @@ addDecorator((storyFn, ctx) => (
         {ctx.parameters.centered ? (
           // wrap the component in a centered div for small components
           <div style={{ width: 300, margin: 'auto', padding: '100px 0' }}>
-            {storyFn()}
+            <StoryFn {...ctx} />
           </div>
         ) : ctx.parameters.contained ? (
           // or wrap in a full width container for larger components
@@ -64,11 +64,11 @@ addDecorator((storyFn, ctx) => (
               overflow: 'hidden',
             }}
           >
-            {storyFn()}
+            <StoryFn {...ctx} />
           </div>
         ) : (
           // or don't wrap for the layout
-          storyFn()
+          <StoryFn {...ctx} />
         )}
       </Background>
     </ThemeProvider>

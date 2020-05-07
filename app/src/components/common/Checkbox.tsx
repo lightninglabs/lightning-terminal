@@ -39,7 +39,14 @@ const Checkbox: React.FC<Props> = ({ checked, disabled, onChange, className }) =
 
   const { Box, CheckIcon } = Styled;
   return (
-    <Box className={className} disabled={disabled} onClick={handleClick}>
+    <Box
+      role="checkbox"
+      aria-checked={!!checked}
+      aria-disabled={!!disabled}
+      className={className}
+      disabled={disabled}
+      onClick={handleClick}
+    >
       {checked && <CheckIcon />}
     </Box>
   );
