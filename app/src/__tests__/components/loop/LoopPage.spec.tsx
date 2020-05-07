@@ -1,13 +1,26 @@
 import React from 'react';
 import { SwapStatus } from 'types/generated/loop_pb';
-import { wait } from '@testing-library/react';
+import { grpc } from '@improbable-eng/grpc-web';
+import { fireEvent, wait } from '@testing-library/react';
 import { renderWithProviders } from 'util/tests';
 import { loopListSwaps } from 'util/tests/sampleData';
+import { createActions, StoreActions } from 'action';
+import { Store } from 'store';
 import LoopPage from 'components/loop/LoopPage';
 
+const grpcMock = grpc as jest.Mocked<typeof grpc>;
+
 describe('LoopPage component', () => {
+  let store: Store;
+  let actions: StoreActions;
+
+  beforeEach(async () => {
+    store = new Store();
+    actions = createActions(store);
+  });
+
   const render = () => {
-    return renderWithProviders(<LoopPage />);
+    return renderWithProviders(<LoopPage />, store);
   };
 
   it('should display the page title', () => {
@@ -41,5 +54,85 @@ describe('LoopPage component', () => {
     expect(await findByText('530,000 SAT')).toBeInTheDocument();
     expect(await findByText(formatDate(swap2))).toBeInTheDocument();
     expect(await findByText('525,000 SAT')).toBeInTheDocument();
+  });
+
+  describe('Swap Process', () => {
+    beforeEach(async () => {
+      await actions.channel.getChannels();
+      await actions.swap.getTerms();
+    });
+
+    it('should display actions bar when Loop button is clicked', () => {
+      const { getByText } = render();
+      expect(getByText('Loop')).toBeInTheDocument();
+      fireEvent.click(getByText('Loop'));
+      expect(getByText('Loop out')).toBeInTheDocument();
+      expect(getByText('Loop in')).toBeInTheDocument();
+    });
+
+    it('should display swap wizard when Loop out is clicked', async () => {
+      const { getByText } = render();
+      expect(getByText('Loop')).toBeInTheDocument();
+      fireEvent.click(getByText('Loop'));
+      store.buildSwapStore.setSelectedChannels(store.channels.slice(0, 3));
+      fireEvent.click(getByText('Loop out'));
+      expect(getByText('Step 1 of 2')).toBeInTheDocument();
+    });
+
+    it('should display the swap wizard when Loop in is clicked', async () => {
+      const { getByText } = render();
+      expect(getByText('Loop')).toBeInTheDocument();
+      fireEvent.click(getByText('Loop'));
+      store.buildSwapStore.setSelectedChannels(store.channels.slice(0, 3));
+      fireEvent.click(getByText('Loop in'));
+      expect(getByText('Step 1 of 2')).toBeInTheDocument();
+    });
+
+    it('should hide the swap wizard when the back arrow is clicked', async () => {
+      const { getByText } = render();
+      expect(getByText('Loop')).toBeInTheDocument();
+      fireEvent.click(getByText('Loop'));
+      store.buildSwapStore.setSelectedChannels(store.channels.slice(0, 3));
+      fireEvent.click(getByText('Loop in'));
+      expect(getByText('Step 1 of 2')).toBeInTheDocument();
+      fireEvent.click(getByText('arrow-left.svg'));
+      expect(getByText('Loop History')).toBeInTheDocument();
+    });
+
+    it('should execute the swap', async () => {
+      const { getByText } = render();
+      expect(getByText('Loop')).toBeInTheDocument();
+      fireEvent.click(getByText('Loop'));
+      store.buildSwapStore.setSelectedChannels(store.channels.slice(0, 3));
+      fireEvent.click(getByText('Loop out'));
+      expect(getByText('Step 1 of 2')).toBeInTheDocument();
+      fireEvent.click(getByText('Next'));
+      expect(getByText('Step 2 of 2')).toBeInTheDocument();
+      fireEvent.click(getByText('Confirm'));
+      expect(getByText(/Swap Processing/)).toBeInTheDocument();
+      await wait(() => {
+        expect(grpcMock.unary).toHaveBeenCalledWith(
+          expect.objectContaining({ methodName: 'LoopOut' }),
+          expect.anything(),
+        );
+      });
+    });
+
+    it('should abort the swap if back is clicked on the processing step', () => {
+      const { getByText } = render();
+      expect(getByText('Loop')).toBeInTheDocument();
+      fireEvent.click(getByText('Loop'));
+      store.buildSwapStore.setSelectedChannels(store.channels.slice(0, 3));
+      fireEvent.click(getByText('Loop out'));
+      expect(getByText('Step 1 of 2')).toBeInTheDocument();
+      fireEvent.click(getByText('Next'));
+      expect(getByText('Step 2 of 2')).toBeInTheDocument();
+      fireEvent.click(getByText('Confirm'));
+      expect(getByText(/Swap Processing/)).toBeInTheDocument();
+      expect(store.buildSwapStore.processingTimeout).toBeDefined();
+      fireEvent.click(getByText('arrow-left.svg'));
+      expect(getByText('Review the quote')).toBeInTheDocument();
+      expect(store.buildSwapStore.processingTimeout).toBeUndefined();
+    });
   });
 });

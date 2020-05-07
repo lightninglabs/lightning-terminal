@@ -10,21 +10,25 @@ export const grpc = {
     Canceled: 1,
   },
   // mock unary function to simulate GRPC requests
-  unary: <TReq extends ProtobufMessage, TRes extends ProtobufMessage>(
-    methodDescriptor: UnaryMethodDefinition<TReq, TRes>,
-    props: UnaryRpcOptions<TReq, TRes>,
-  ) => {
-    const path = `${methodDescriptor.service.serviceName}.${methodDescriptor.methodName}`;
-    // return a response by calling the onEnd function
-    props.onEnd({
-      status: 0,
-      statusMessage: '',
-      // the message returned should have a toObject function
-      message: {
-        toObject: () => sampleApiResponses[path],
-      } as TRes,
-      headers: {} as any,
-      trailers: {} as any,
-    });
-  },
+  unary: jest
+    .fn()
+    .mockImplementation(
+      <TReq extends ProtobufMessage, TRes extends ProtobufMessage>(
+        methodDescriptor: UnaryMethodDefinition<TReq, TRes>,
+        props: UnaryRpcOptions<TReq, TRes>,
+      ) => {
+        const path = `${methodDescriptor.service.serviceName}.${methodDescriptor.methodName}`;
+        // return a response by calling the onEnd function
+        props.onEnd({
+          status: 0,
+          statusMessage: '',
+          // the message returned should have a toObject function
+          message: {
+            toObject: () => sampleApiResponses[path],
+          } as TRes,
+          headers: {} as any,
+          trailers: {} as any,
+        });
+      },
+    ),
 };

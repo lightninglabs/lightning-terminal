@@ -2,6 +2,7 @@ import React, { CSSProperties } from 'react';
 import { BalanceLevel, Channel } from 'types/state';
 import { usePrefixedTranslation } from 'hooks';
 import { ellipseInside } from 'util/strings';
+import Checkbox from 'components/common/Checkbox';
 import { Column, Row } from 'components/common/grid';
 import StatusDot from 'components/common/StatusDot';
 import { Title } from 'components/common/text';
@@ -15,8 +16,9 @@ import ChannelBalance from './ChannelBalance';
 export const ROW_HEIGHT = 60;
 
 const Styled = {
-  Row: styled(Row)`
+  Row: styled(Row)<{ dimmed?: boolean }>`
     border-bottom: 0.5px solid ${props => props.theme.colors.darkGray};
+    opacity: ${props => (props.dimmed ? '0.4' : '1')};
 
     &:last-child {
       border-bottom-width: 0;
@@ -32,6 +34,11 @@ const Styled = {
     margin-top: -1px;
     margin-left: 15px;
     color: ${props => props.theme.colors.pink};
+  `,
+  Check: styled(Checkbox)`
+    float: left;
+    margin-top: 18px;
+    margin-left: 15px;
   `,
   Balance: styled(ChannelBalance)`
     margin-top: ${ROW_HEIGHT / 2 - 2}px;
@@ -77,17 +84,38 @@ const ChannelDot: React.FC<{ channel: Channel }> = ({ channel }) => {
 
 interface Props {
   channel: Channel;
+  editable?: boolean;
+  checked?: boolean;
+  onChange: (channel: Channel, checked: boolean) => void;
+  disabled?: boolean;
+  dimmed?: boolean;
   style?: CSSProperties;
 }
 
-const ChannelRow: React.FC<Props> = ({ channel, style }) => {
-  const { Row, Column, StatusIcon, Balance } = Styled;
+const ChannelRow: React.FC<Props> = ({
+  channel,
+  editable,
+  checked,
+  onChange,
+  disabled,
+  dimmed,
+  style,
+}) => {
+  const { Row, Column, StatusIcon, Check, Balance } = Styled;
   return (
-    <Row style={style}>
+    <Row dimmed={dimmed} style={style}>
       <Column right>
-        <StatusIcon>
-          <ChannelDot channel={channel} />
-        </StatusIcon>
+        {editable ? (
+          <Check
+            checked={checked}
+            disabled={disabled}
+            onChange={checked => onChange(channel, checked)}
+          />
+        ) : (
+          <StatusIcon>
+            <ChannelDot channel={channel} />
+          </StatusIcon>
+        )}
         {channel.remoteBalance.toLocaleString()}
       </Column>
       <Column cols={3}>

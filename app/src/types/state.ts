@@ -31,10 +31,32 @@ export interface Channel {
   balanceLevel: BalanceLevel;
 }
 
+export enum SwapDirection {
+  IN = 'Loop In',
+  OUT = 'Loop Out',
+}
+
 export interface Swap {
   id: string;
   type: string;
   amount: number;
   createdOn: Date;
   status: string;
+}
+
+export interface Quote {
+  swapFee: number;
+  minerFee: number;
+  prepayAmount: number;
+}
+
+export interface Terms {
+  in: {
+    min: number;
+    max: number;
+  };
+  out: {
+    min: number;
+    max: number;
+  };
 }

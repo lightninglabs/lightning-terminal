@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useActions, useStore } from 'store';
@@ -7,7 +7,9 @@ import { PageTitle } from 'components/common/text';
 import Tile from 'components/common/Tile';
 import { styled } from 'components/theme';
 import ChannelList from './ChannelList';
+import LoopActions from './LoopActions';
 import LoopHistory from './LoopHistory';
+import SwapWizard from './swap/SwapWizard';
 
 const Styled = {
   PageWrap: styled.div`
@@ -19,9 +21,10 @@ const Styled = {
 };
 
 const LoopPage: React.FC = () => {
-  const store = useStore();
-  const { node, channel, swap } = useActions();
   const { l } = usePrefixedTranslation('cmps.loop.LoopPage');
+  const store = useStore();
+  const build = store.buildSwapStore;
+  const { node, channel, swap } = useActions();
 
   useEffect(() => {
     // fetch RPC data when the component mounts if there is no
@@ -29,35 +32,78 @@ const LoopPage: React.FC = () => {
       channel.getChannels();
       node.getBalances();
       swap.listSwaps();
+      swap.getTerms();
     }
   }, [store, node, channel, swap]);
+
+  const handleWizardNext = useCallback(() => {
+    // the actions need to be executed from the component
+    if (build.currentStep === 1) {
+      swap.getQuote();
+    } else if (build.currentStep === 2) {
+      build.executeSwap(() => swap.loop());
+    }
+    build.goToNextStep();
+  }, [build, swap]);
 
   const { PageWrap, TileSection } = Styled;
   return (
     <PageWrap>
-      <PageTitle>{l('pageTitle')}</PageTitle>
-      <TileSection>
-        <Row>
-          <Column>
-            <Tile title={l('history')} onArrowClick={() => null}>
-              <LoopHistory swaps={store.swaps} />
-            </Tile>
-          </Column>
-          <Column cols={4}>
-            <Tile
-              title={l('inbound')}
-              text={`${store.totalInbound.toLocaleString()} SAT`}
-            />
-          </Column>
-          <Column cols={4}>
-            <Tile
-              title={l('outbound')}
-              text={`${store.totalOutbound.toLocaleString()} SAT`}
-            />
-          </Column>
-        </Row>
-      </TileSection>
-      <ChannelList channels={store.channels} />
+      {build.showWizard ? (
+        <SwapWizard
+          direction={build.direction}
+          channels={build.channels}
+          amount={build.amount}
+          setAmount={build.setAmount}
+          minAmount={build.termsMinMax.min}
+          maxAmount={build.termsMinMax.max}
+          fee={build.fee}
+          currentStep={build.currentStep}
+          swapError={build.swapError}
+          onNext={handleWizardNext}
+          onPrev={build.goToPrevStep}
+          onClose={build.cancel}
+        />
+      ) : (
+        <>
+          <PageTitle>{l('pageTitle')}</PageTitle>
+          <TileSection>
+            <Row>
+              <Column>
+                <Tile title={l('history')} onArrowClick={() => null}>
+                  <LoopHistory swaps={store.swaps} />
+                </Tile>
+              </Column>
+              <Column cols={4}>
+                <Tile
+                  title={l('inbound')}
+                  text={`${store.totalInbound.toLocaleString()} SAT`}
+                />
+              </Column>
+              <Column cols={4}>
+                <Tile
+                  title={l('outbound')}
+                  text={`${store.totalOutbound.toLocaleString()} SAT`}
+                />
+              </Column>
+            </Row>
+          </TileSection>
+          <LoopActions
+            channels={build.channels}
+            direction={build.direction}
+            onLoopClick={build.toggleShowActions}
+            onDirectionClick={build.setDirection}
+            onCancelClick={build.cancel}
+          />
+        </>
+      )}
+      <ChannelList
+        channels={store.channels}
+        enableSelection={build.listEditable}
+        selectedChannels={build.channels}
+        onSelectionChange={build.setSelectedChannels}
+        disabled={build.showWizard}
+      />
     </PageWrap>
   );
 };
