@@ -86,6 +86,9 @@ class LoopApi {
     req.setMaxSwapFee(quote.swapFee);
     req.setMaxMinerFee(quote.minerFee);
     req.setMaxPrepayAmt(quote.prepayAmount);
+    req.setMaxSwapRoutingFee(this._calcRoutingFee(quote.swapFee));
+    req.setMaxPrepayRoutingFee(this._calcRoutingFee(quote.prepayAmount));
+
     if (IS_PROD) {
       // in prod env, push the deadline out for 30 mins for lower fees
       const thirtyMins = 30 * 60 * 1000;
@@ -95,13 +98,19 @@ class LoopApi {
       req.setSwapPublicationDeadline(0);
     }
 
-    // the request defaults the below values to zero which will cause the loop to fail
-    // TODO: figure out how to set the optional values to undefined
-    req.setMaxPrepayRoutingFee(100000);
-    req.setMaxSwapRoutingFee(100000);
-
     const res = await this._grpc.request(SwapClient.LoopOut, req, this._meta);
     return res.toObject();
+  }
+
+  /**
+   * Calculates the max routing fee params for loop out. this mimics the loop cli
+   * behavior of using 2% of the amount
+   * @param amount the amount of the payment
+   */
+  private _calcRoutingFee(amount: number) {
+    const routingFeePct = 2;
+    // round up to avoid decimals
+    return Math.ceil(amount * (routingFeePct / 100));
   }
 }
 
