@@ -1,7 +1,7 @@
 import React from 'react';
 import { SwapStatus } from 'types/generated/loop_pb';
 import { grpc } from '@improbable-eng/grpc-web';
-import { fireEvent, wait } from '@testing-library/react';
+import { fireEvent, waitFor } from '@testing-library/react';
 import { renderWithProviders } from 'util/tests';
 import { loopListSwaps } from 'util/tests/sampleData';
 import { createActions, StoreActions } from 'action';
@@ -38,7 +38,7 @@ describe('LoopPage component', () => {
   it('should display the liquidity numbers', async () => {
     const { getByText, store } = render();
     // wait for the channels to be fetched async before checking the UI labels
-    await wait(() => expect(store.totalInbound).toBeGreaterThan(0));
+    await waitFor(() => expect(store.totalInbound).toBeGreaterThan(0));
     expect(getByText(`${store.totalInbound.toLocaleString()} SAT`)).toBeInTheDocument();
     expect(getByText(`${store.totalOutbound.toLocaleString()} SAT`)).toBeInTheDocument();
   });
@@ -110,7 +110,7 @@ describe('LoopPage component', () => {
       expect(getByText('Step 2 of 2')).toBeInTheDocument();
       fireEvent.click(getByText('Confirm'));
       expect(getByText(/Swap Processing/)).toBeInTheDocument();
-      await wait(() => {
+      await waitFor(() => {
         expect(grpcMock.unary).toHaveBeenCalledWith(
           expect.objectContaining({ methodName: 'LoopOut' }),
           expect.anything(),
