@@ -5,7 +5,7 @@ import { fireEvent, waitFor } from '@testing-library/react';
 import { renderWithProviders } from 'util/tests';
 import { loopListSwaps } from 'util/tests/sampleData';
 import { createActions, StoreActions } from 'action';
-import { Store } from 'store';
+import { createStore, Store } from 'store';
 import LoopPage from 'components/loop/LoopPage';
 
 const grpcMock = grpc as jest.Mocked<typeof grpc>;
@@ -15,7 +15,7 @@ describe('LoopPage component', () => {
   let actions: StoreActions;
 
   beforeEach(async () => {
-    store = new Store();
+    store = createStore();
     actions = createActions(store);
   });
 

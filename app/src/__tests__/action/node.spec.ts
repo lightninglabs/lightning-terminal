@@ -1,7 +1,7 @@
 import { lndChannelBalance, lndWalletBalance } from 'util/tests/sampleData';
 import NodeAction from 'action/node';
 import { GrpcClient, LndApi } from 'api';
-import { Store } from 'store';
+import { createStore, Store } from 'store';
 
 describe('NodeAction', () => {
   let store: Store;
@@ -10,7 +10,7 @@ describe('NodeAction', () => {
   beforeEach(() => {
     const grpc = new GrpcClient();
     const lndApiMock = new LndApi(grpc);
-    store = new Store();
+    store = createStore();
     node = new NodeAction(store, lndApiMock);
   });
 

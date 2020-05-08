@@ -1,12 +1,12 @@
 import React from 'react';
 import './App.scss';
-import { Store, StoreProvider } from 'store';
+import { createStore, StoreProvider } from 'store';
 import { Layout } from 'components/layout';
 import LoopPage from 'components/loop/LoopPage';
 import { ThemeProvider } from 'components/theme';
 
 const App = () => {
-  const store = new Store();
+  const store = createStore();
   return (
     <StoreProvider store={store}>
       <ThemeProvider>

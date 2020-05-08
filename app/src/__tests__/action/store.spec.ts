@@ -1,13 +1,13 @@
 import { lndListChannels } from 'util/tests/sampleData';
 import { createActions, StoreActions } from 'action';
-import { Store } from 'store';
+import { createStore, Store } from 'store';
 
 describe('Store', () => {
   let store: Store;
   let actions: StoreActions;
 
   beforeEach(() => {
-    store = new Store();
+    store = createStore();
     actions = createActions(store);
   });
 

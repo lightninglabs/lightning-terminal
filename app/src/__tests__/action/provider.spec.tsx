@@ -2,14 +2,14 @@ import React from 'react';
 import { render } from '@testing-library/react';
 import { suppressConsoleErrors } from 'util/tests';
 import { createActions, StoreActions } from 'action';
-import { Store, StoreProvider, useActions, useStore } from 'store';
+import { createStore, Store, StoreProvider, useActions, useStore } from 'store';
 
 describe('StoreProvider', () => {
   let store: Store;
   let actions: StoreActions;
 
   beforeEach(() => {
-    store = new Store();
+    store = createStore();
     actions = createActions(store);
   });
 

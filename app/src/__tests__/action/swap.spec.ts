@@ -3,7 +3,7 @@ import { grpc } from '@improbable-eng/grpc-web';
 import * as config from 'config';
 import SwapAction from 'action/swap';
 import { GrpcClient, LoopApi } from 'api';
-import { Store } from 'store';
+import { createStore, Store } from 'store';
 
 const grpcMock = grpc as jest.Mocked<typeof grpc>;
 
@@ -14,7 +14,7 @@ describe('SwapAction', () => {
   beforeEach(() => {
     const grpc = new GrpcClient();
     const loopApiMock = new LoopApi(grpc);
-    store = new Store();
+    store = createStore();
     loop = new SwapAction(store, loopApiMock);
   });
 

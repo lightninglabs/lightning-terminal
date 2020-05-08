@@ -4,7 +4,7 @@ import { SwapDirection } from 'types/state';
 import { fireEvent } from '@testing-library/react';
 import { renderWithProviders } from 'util/tests';
 import { createActions, StoreActions } from 'action';
-import { Store } from 'store';
+import { createStore, Store } from 'store';
 import SwapWizard from 'components/loop/swap/SwapWizard';
 
 describe('SwapWizard component', () => {
@@ -12,7 +12,7 @@ describe('SwapWizard component', () => {
   let actions: StoreActions;
 
   beforeEach(async () => {
-    store = new Store();
+    store = createStore();
     actions = createActions(store);
 
     await actions.channel.getChannels();
