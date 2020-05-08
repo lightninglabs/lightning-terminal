@@ -53,7 +53,7 @@ const SwapReviewStep: React.FC<Props> = ({
   onNext,
   onCancel,
 }) => {
-  const { l } = usePrefixedTranslation('cmps.loop.swaps.SwapReviewStep');
+  const { l } = usePrefixedTranslation('cmps.loop.swap.SwapReviewStep');
 
   const { Wrapper, Summary, Invoice, InvoiceRow, Divider } = Styled;
   return (

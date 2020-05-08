@@ -31,7 +31,7 @@ interface Props {
 }
 
 const SwapProcessingStep: React.FC<Props> = ({ swapError }) => {
-  const { l } = usePrefixedTranslation('cmps.loop.swaps.SwapProcessingStep');
+  const { l } = usePrefixedTranslation('cmps.loop.swap.SwapProcessingStep');
   const { Wrapper, Loader, LoadingMessage, ErrorMessage } = Styled;
   return (
     <Wrapper>
