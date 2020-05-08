@@ -1,4 +1,8 @@
 import React from 'react';
+import loadingJson from 'assets/animations/loading.json';
+import { usePrefixedTranslation } from 'hooks';
+import Animation from 'components/common/Animation';
+import { Title } from 'components/common/text';
 import { styled } from 'components/theme';
 
 const Styled = {
@@ -8,6 +12,13 @@ const Styled = {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+  `,
+  Loader: styled(Animation)`
+    width: 150px;
+    height: 150px;
+  `,
+  LoadingMessage: styled.div`
+    text-align: center;
   `,
   ErrorMessage: styled.div`
     padding: 10px;
@@ -20,14 +31,14 @@ interface Props {
 }
 
 const SwapProcessingStep: React.FC<Props> = ({ swapError }) => {
-  const { Wrapper, ErrorMessage } = Styled;
+  const { l } = usePrefixedTranslation('cmps.loop.swaps.SwapProcessingStep');
+  const { Wrapper, Loader, LoadingMessage, ErrorMessage } = Styled;
   return (
     <Wrapper>
-      <span style={{ textAlign: 'center' }}>
-        Swap Processing. Please wait...
-        <br />
-        ** show loader here **
-      </span>
+      <Loader animationData={loadingJson} />
+      <LoadingMessage>
+        <Title>{l('loadingMsg')}</Title>
+      </LoadingMessage>
       {swapError && <ErrorMessage>{swapError.message}</ErrorMessage>}
     </Wrapper>
   );

@@ -16,6 +16,7 @@
   "cmps.loop.swaps.SwapConfigStep.title": "Step 1 of 2",
   "cmps.loop.swaps.SwapConfigStep.heading": "Set Liquidity Parameters",
   "cmps.loop.swaps.SwapConfigStep.description": "Use the slider to prevent errors receiving or forwarding payments on the channels selected below.",
+  "cmps.loop.swaps.SwapProcessingStep.loadingMsg": "Configuring Loops",
   "cmps.loop.swaps.SwapReviewStep.title": "Step 2 of 2",
   "cmps.loop.swaps.SwapReviewStep.heading": "Review the quote",
   "cmps.loop.swaps.SwapReviewStep.description": "Confirm. the invoice total for increasing your inbound liquidity. If you'd like to make adjustments, click the back arrow above.",
