@@ -5,6 +5,7 @@ import { GrpcClient, LndApi, LoopApi } from 'api';
 import BuildSwapStore from './buildSwapStore';
 import ChannelStore from './channelStore';
 import NodeStore from './nodeStore';
+import SettingsStore from './settingsStore';
 import SwapStore from './swapStore';
 
 /**
@@ -18,6 +19,7 @@ export class Store {
   @observable channelStore = new ChannelStore(this);
   @observable swapStore = new SwapStore(this);
   @observable nodeStore = new NodeStore(this);
+  @observable settingsStore = new SettingsStore(this);
 
   /** the backend api services to be used by child stores */
   api: {
@@ -32,10 +34,6 @@ export class Store {
     this.api = { lnd, loop };
     this.log = log;
   }
-  //
-  // App state
-  //
-  @observable sidebarCollapsed = false;
 
   /**
    * load initial data to populate the store

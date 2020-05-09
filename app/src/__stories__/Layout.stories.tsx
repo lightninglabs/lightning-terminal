@@ -18,7 +18,7 @@ export const WithContent = () => (
 
 export const Collapsed = () => {
   const store = useStore();
-  store.sidebarCollapsed = true;
+  store.settingsStore.sidebarVisible = false;
 
   return (
     <Layout>
