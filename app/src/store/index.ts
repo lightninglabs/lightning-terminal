@@ -65,4 +65,4 @@ export const createStore = (grpcClient?: GrpcClient) => {
 };
 
 // re-export from provider
-export { StoreProvider, useStore, useActions } from './provider';
+export { StoreProvider, useStore } from './provider';
