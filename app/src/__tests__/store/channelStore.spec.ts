@@ -1,7 +1,7 @@
 import { observable } from 'mobx';
 import { lndListChannels } from 'util/tests/sampleData';
 import { createStore } from 'store';
-import ChannelStore from 'store/channelStore';
+import ChannelStore from 'store/stores/channelStore';
 
 describe('Store', () => {
   let store: ChannelStore;

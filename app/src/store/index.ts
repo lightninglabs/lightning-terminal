@@ -1,49 +1,7 @@
-import { observable } from 'mobx';
 import { IS_DEV } from 'config';
-import { actionLog, Logger } from 'util/log';
+import { actionLog } from 'util/log';
 import { GrpcClient, LndApi, LoopApi } from 'api';
-import BuildSwapStore from './buildSwapStore';
-import ChannelStore from './channelStore';
-import NodeStore from './nodeStore';
-import SettingsStore from './settingsStore';
-import SwapStore from './swapStore';
-
-/**
- * The store used to manage global app state
- */
-export class Store {
-  //
-  // Child Stores
-  //
-  @observable buildSwapStore = new BuildSwapStore(this);
-  @observable channelStore = new ChannelStore(this);
-  @observable swapStore = new SwapStore(this);
-  @observable nodeStore = new NodeStore(this);
-  @observable settingsStore = new SettingsStore(this);
-
-  /** the backend api services to be used by child stores */
-  api: {
-    lnd: LndApi;
-    loop: LoopApi;
-  };
-
-  /** the logger for actions to use when modifying state */
-  log: Logger;
-
-  constructor(lnd: LndApi, loop: LoopApi, log: Logger) {
-    this.api = { lnd, loop };
-    this.log = log;
-  }
-
-  /**
-   * load initial data to populate the store
-   */
-  async init() {
-    await this.channelStore.fetchChannels();
-    await this.swapStore.fetchSwaps();
-    await this.nodeStore.fetchBalances();
-  }
-}
+import { Store } from './store';
 
 /**
  * Creates an initialized Store instance with the dependencies injected
@@ -66,3 +24,7 @@ export const createStore = (grpcClient?: GrpcClient) => {
 
 // re-export from provider
 export { StoreProvider, useStore } from './provider';
+// re-export all of the child stores
+export * from './stores';
+// export the root store
+export { Store };

@@ -1,6 +1,6 @@
 import { action, observable, toJS } from 'mobx';
 import { Store } from 'store';
-import { Wallet } from './models';
+import { Wallet } from '../models';
 
 export default class NodeStore {
   private _store: Store;

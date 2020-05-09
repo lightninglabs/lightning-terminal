@@ -8,7 +8,7 @@ import {
   values,
 } from 'mobx';
 import { Store } from 'store';
-import Channel from './models/channel';
+import { Channel } from '../models';
 
 export default class ChannelStore {
   private _store: Store;

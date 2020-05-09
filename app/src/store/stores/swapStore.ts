@@ -8,7 +8,7 @@ import {
   values,
 } from 'mobx';
 import { Store } from 'store';
-import { Swap } from './models';
+import { Swap } from '../models';
 
 export default class SwapStore {
   private _store: Store;
