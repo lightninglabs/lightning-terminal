@@ -10,15 +10,15 @@ export default {
 };
 
 export const Default = () => {
-  const { swaps } = useStore();
-  return <LoopHistory swaps={swaps} />;
+  const { swapStore } = useStore();
+  return <LoopHistory swaps={swapStore.sortedSwaps} />;
 };
 
 export const InsideTile = () => {
-  const { swaps } = useStore();
+  const { swapStore } = useStore();
   return (
     <Tile title="Loop History">
-      <LoopHistory swaps={swaps} />
+      <LoopHistory swaps={swapStore.sortedSwaps} />
     </Tile>
   );
 };

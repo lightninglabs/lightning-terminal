@@ -1,10 +1,11 @@
 import { observable } from 'mobx';
-import { NodeBalances, NodeInfo, Swap, Terms } from 'types/state';
+import { NodeBalances, NodeInfo, Terms } from 'types/state';
 import { IS_DEV } from 'config';
 import { actionLog, Logger } from 'util/log';
 import { GrpcClient, LndApi, LoopApi } from 'api';
 import BuildSwapStore from './buildSwapStore';
 import ChannelStore from './channelStore';
+import SwapStore from './swapStore';
 
 /**
  * The store used to manage global app state
@@ -15,6 +16,7 @@ export class Store {
   //
   @observable buildSwapStore = new BuildSwapStore(this);
   @observable channelStore = new ChannelStore(this);
+  @observable swapStore = new SwapStore(this);
 
   /** the backend api services to be used by child stores */
   api: {
@@ -42,7 +44,6 @@ export class Store {
   //
   @observable info?: NodeInfo = undefined;
   @observable balances?: NodeBalances = undefined;
-  @observable swaps: Swap[] = [];
   @observable terms: Terms = {
     in: { min: 0, max: 0 },
     out: { min: 0, max: 0 },
@@ -53,6 +54,7 @@ export class Store {
    */
   async init() {
     await this.channelStore.fetchChannels();
+    await this.swapStore.fetchSwaps();
   }
 }
 

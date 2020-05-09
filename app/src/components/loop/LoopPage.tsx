@@ -28,9 +28,8 @@ const LoopPage: React.FC = () => {
 
   useEffect(() => {
     // fetch RPC data when the component mounts if there is no
-    if (store.swaps.length === 0) {
+    if (!store.balances) {
       node.getBalances();
-      swap.listSwaps();
       swap.getTerms();
     }
   }, [store, node, swap]);
@@ -70,7 +69,7 @@ const LoopPage: React.FC = () => {
             <Row>
               <Column>
                 <Tile title={l('history')} onArrowClick={() => null}>
-                  <LoopHistory swaps={store.swaps} />
+                  <LoopHistory swaps={store.swapStore.sortedSwaps} />
                 </Tile>
               </Column>
               <Column cols={4}>
