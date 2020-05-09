@@ -1,8 +1,7 @@
 import React from 'react';
 import { SwapDirection } from 'types/state';
 import { action } from '@storybook/addon-actions';
-import { StoryContext } from '@storybook/addons';
-import { Store } from 'store';
+import { useStore } from 'store';
 import LoopActions from 'components/loop/LoopActions';
 
 export default {
@@ -14,16 +13,43 @@ export default {
   ],
 };
 
-export const Default = (ctx: StoryContext) => {
-  // grab the store from the Storybook parameter defined in preview.tsx
-  const { channels } = ctx.parameters.store as Store;
+export const Default = () => {
+  const store = useStore();
+  store.buildSwapStore.showActions = false;
   return (
     <LoopActions
       direction={SwapDirection.OUT}
-      channels={channels.slice(0, 3)}
+      channels={store.channelStore.channels.slice(0, 3)}
       onLoopClick={() => action('onLoopClick')}
       onDirectionClick={() => action('onTypeClick')}
       onCancelClick={() => action('onCancelClick')}
+    />
+  );
+};
+
+export const Opened = () => {
+  const store = useStore();
+  store.buildSwapStore.showActions = true;
+  return (
+    <LoopActions
+      direction={SwapDirection.OUT}
+      channels={store.channelStore.channels.slice(0, 3)}
+      onLoopClick={() => action('onLoopClick')}
+      onDirectionClick={() => action('onTypeClick')}
+      onCancelClick={() => action('onCancelClick')}
+    />
+  );
+};
+
+export const Interactive = () => {
+  const store = useStore();
+  return (
+    <LoopActions
+      direction={SwapDirection.OUT}
+      channels={store.channelStore.channels.slice(0, 3)}
+      onLoopClick={store.buildSwapStore.toggleShowActions}
+      onDirectionClick={() => action('onTypeClick')}
+      onCancelClick={store.buildSwapStore.cancel}
     />
   );
 };

@@ -1,5 +1,6 @@
 import { observable } from 'mobx';
 import { NodeBalances, NodeInfo, Swap, Terms } from 'types/state';
+import { IS_DEV } from 'config';
 import { actionLog, Logger } from 'util/log';
 import { GrpcClient, LndApi, LoopApi } from 'api';
 import BuildSwapStore from './buildSwapStore';
@@ -21,12 +22,14 @@ export class Store {
     loop: LoopApi;
   };
 
+  /** the logger for actions to use when modifying state */
   log: Logger;
 
   constructor(lnd: LndApi, loop: LoopApi, log: Logger) {
     this.api = { lnd, loop };
     this.log = log;
 
+    // initialize the store immediately
     this.init();
   }
   //
@@ -62,7 +65,12 @@ export const createStore = (grpcClient?: GrpcClient) => {
   const lndApi = new LndApi(grpc);
   const loopApi = new LoopApi(grpc);
 
-  return new Store(lndApi, loopApi, actionLog);
+  const store = new Store(lndApi, loopApi, actionLog);
+
+  // in dev env, make the store accessible via the browser DevTools console
+  if (IS_DEV) (global as any).store = store;
+
+  return store;
 };
 
 // re-export from provider

@@ -1,4 +1,5 @@
 import React, { ReactNode } from 'react';
+import { observer } from 'mobx-react-lite';
 import { SwapDirection } from 'types/state';
 import { Channel } from 'store/models';
 import { ArrowLeft } from 'components/common/icons';
@@ -109,4 +110,4 @@ const SwapWizard: React.FC<Props> = ({
   );
 };
 
-export default SwapWizard;
+export default observer(SwapWizard);

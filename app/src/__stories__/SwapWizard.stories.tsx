@@ -19,10 +19,10 @@ export default {
 };
 
 export const Step1Amount = () => {
-  const { channels, buildSwapStore: build } = useStore();
-  return useObserver(() => (
+  const { channelStore, buildSwapStore: build } = useStore();
+  return (
     <SwapWizard
-      channels={channels.slice(0, 3)}
+      channels={channelStore.channels.slice(0, 3)}
       direction={SwapDirection.OUT}
       amount={build.amount}
       setAmount={build.setAmount}
@@ -34,15 +34,15 @@ export const Step1Amount = () => {
       onPrev={build.goToPrevStep}
       onClose={() => action('onClose')}
     />
-  ));
+  );
 };
 
 export const Step2Fees = () => {
-  const { channels, buildSwapStore: build } = useStore();
+  const { channelStore, buildSwapStore: build } = useStore();
   build.setAmount(50000);
-  return useObserver(() => (
+  return (
     <SwapWizard
-      channels={channels.slice(0, 3)}
+      channels={channelStore.channels.slice(0, 3)}
       direction={SwapDirection.OUT}
       amount={build.amount}
       setAmount={build.setAmount}
@@ -54,14 +54,14 @@ export const Step2Fees = () => {
       onPrev={build.goToPrevStep}
       onClose={() => action('onClose')}
     />
-  ));
+  );
 };
 
 export const Step3Processing = () => {
-  const { channels, buildSwapStore: build } = useStore();
-  return useObserver(() => (
+  const { channelStore, buildSwapStore: build } = useStore();
+  return (
     <SwapWizard
-      channels={channels.slice(0, 3)}
+      channels={channelStore.channels.slice(0, 3)}
       direction={SwapDirection.OUT}
       amount={build.amount}
       setAmount={build.setAmount}
@@ -72,6 +72,25 @@ export const Step3Processing = () => {
       onNext={build.goToNextStep}
       onPrev={build.goToPrevStep}
       onClose={() => action('onClose')}
+    />
+  );
+};
+
+export const Interactive = () => {
+  const { channelStore, buildSwapStore: build } = useStore();
+  return useObserver(() => (
+    <SwapWizard
+      channels={channelStore.channels.slice(0, 3)}
+      direction={SwapDirection.OUT}
+      amount={build.amount}
+      setAmount={build.setAmount}
+      minAmount={build.termsMinMax.min}
+      maxAmount={build.termsMinMax.max}
+      fee={build.fee}
+      currentStep={build.currentStep}
+      onNext={build.goToNextStep}
+      onPrev={build.goToPrevStep}
+      onClose={build.cancel}
     />
   ));
 };

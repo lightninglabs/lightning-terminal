@@ -1,4 +1,5 @@
 import React from 'react';
+import { observer } from 'mobx-react-lite';
 import { Swap } from 'types/state';
 import { Column, Row } from 'components/common/grid';
 import StatusDot from 'components/common/StatusDot';
@@ -51,4 +52,4 @@ const LoopHistory: React.FC<Props> = ({ swaps }) => {
   );
 };
 
-export default LoopHistory;
+export default observer(LoopHistory);
