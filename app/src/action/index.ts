@@ -1,15 +1,12 @@
 import GrpcClient from 'api/grpc';
 import LndApi from 'api/lnd';
-import LoopApi from 'api/loop';
 import { Store } from 'store';
 import AppAction from './app';
 import NodeAction from './node';
-import SwapAction from './swap';
 
 export interface StoreActions {
   app: AppAction;
   node: NodeAction;
-  swap: SwapAction;
 }
 
 /**
@@ -21,16 +18,13 @@ export const createActions = (store: Store, grpcClient?: GrpcClient): StoreActio
   // low level dependencies
   const grpc = grpcClient || new GrpcClient();
   const lndApi = new LndApi(grpc);
-  const loopApi = new LoopApi(grpc);
 
   // actions exposed to UI components
   const app = new AppAction(store);
   const node = new NodeAction(store, lndApi);
-  const swap = new SwapAction(store, loopApi);
 
   return {
     app,
     node,
-    swap,
   };
 };

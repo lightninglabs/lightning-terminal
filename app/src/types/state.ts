@@ -23,14 +23,6 @@ export enum SwapDirection {
   OUT = 'Loop Out',
 }
 
-export interface Swap {
-  id: string;
-  type: string;
-  amount: number;
-  createdOn: Date;
-  status: string;
-}
-
 export interface Quote {
   swapFee: number;
   minerFee: number;

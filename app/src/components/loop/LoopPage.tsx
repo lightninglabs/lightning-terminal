@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useActions, useStore } from 'store';
@@ -24,24 +24,14 @@ const LoopPage: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.LoopPage');
   const store = useStore();
   const build = store.buildSwapStore;
-  const { node, swap } = useActions();
+  const { node } = useActions();
 
   useEffect(() => {
     // fetch RPC data when the component mounts if there is no
     if (!store.balances) {
       node.getBalances();
     }
-  }, [store, node, swap]);
-
-  const handleWizardNext = useCallback(() => {
-    // the actions need to be executed from the component
-    if (build.currentStep === 1) {
-      swap.getQuote();
-    } else if (build.currentStep === 2) {
-      build.executeSwap(() => swap.loop());
-    }
-    build.goToNextStep();
-  }, [build, swap]);
+  }, [store, node]);
 
   const { PageWrap, TileSection } = Styled;
   return (
@@ -57,7 +47,7 @@ const LoopPage: React.FC = () => {
           fee={build.fee}
           currentStep={build.currentStep}
           swapError={build.swapError}
-          onNext={handleWizardNext}
+          onNext={build.goToNextStep}
           onPrev={build.goToPrevStep}
           onClose={build.cancel}
         />

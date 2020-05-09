@@ -1,4 +1,4 @@
-import { action, computed, observable, toJS } from 'mobx';
+import { action, computed, observable, runInAction, toJS } from 'mobx';
 import { Quote, SwapDirection, SwapTerms } from 'types/state';
 import { Store } from 'store';
 import { Channel } from './models';
@@ -86,12 +86,19 @@ class BuildSwapStore {
   // Actions
   //
 
+  /**
+   * display the Loop actions bar
+   */
   @action.bound
   toggleShowActions() {
     this.showActions = !this.showActions;
     this.getTerms();
   }
 
+  /**
+   * Set the direction, In or Out, for the pending swap
+   * @param direction the direction of the swap
+   */
   @action.bound
   setDirection(direction: SwapDirection) {
     this.direction = direction;
@@ -101,21 +108,41 @@ class BuildSwapStore {
     this.amount = Math.floor((min + max) / 2);
   }
 
+  /**
+   * Set the selected channels to use for the pending swap
+   * @param channels the selected channels
+   */
   @action.bound
   setSelectedChannels(channels: Channel[]) {
     this.channels = channels;
   }
 
+  /**
+   * Set the amount for the swap
+   * @param amount the amount in sats
+   */
   @action.bound
   setAmount(amount: number) {
     this.amount = amount;
   }
 
+  /**
+   * Navigate to the next step in the wizard
+   */
   @action.bound
   goToNextStep() {
+    if (this.currentStep === 1) {
+      this.getQuote();
+    } else if (this.currentStep === 2) {
+      this.executeSwap();
+    }
+
     this.currentStep++;
   }
 
+  /**
+   * Navigate to the previous step in the wizard
+   */
   @action.bound
   goToPrevStep() {
     if (this.currentStep === 1) {
@@ -130,6 +157,9 @@ class BuildSwapStore {
     }
   }
 
+  /**
+   * hide the swap wizard
+   */
   @action.bound
   cancel() {
     this.showActions = false;
@@ -141,6 +171,9 @@ class BuildSwapStore {
     this.currentStep = 1;
   }
 
+  /**
+   * fetch the terms, minimum/maximum swap amount allowed, from the Loop API
+   */
   @action.bound
   async getTerms() {
     this._store.log.info(`fetching loop terms`);
@@ -159,15 +192,57 @@ class BuildSwapStore {
     this._store.log.info('updated store.terms', toJS(this.terms));
   }
 
+  /**
+   * get a loop quote from the Loop RPC
+   */
   @action.bound
-  executeSwap(swapAction: () => void) {
+  async getQuote() {
+    const { amount, direction } = this;
+    this._store.log.info(`fetching ${direction} quote for ${amount} sats`);
+
+    const quote =
+      direction === SwapDirection.IN
+        ? await this._store.api.loop.getLoopInQuote(amount)
+        : await this._store.api.loop.getLoopOutQuote(amount);
+
+    this.quote = {
+      swapFee: quote.swapFee,
+      minerFee: quote.minerFee,
+      prepayAmount: quote.prepayAmt,
+    };
+    this._store.log.info('updated buildSwapStore.quote', toJS(this.quote));
+  }
+
+  /**
+   * submit a request to the Loop API to perform a swap. There will be a 3 second
+   * delay added to allow the swap to be aborted
+   */
+  @action.bound
+  executeSwap() {
     const delay = process.env.NODE_ENV !== 'test' ? 3000 : 1;
+    const { amount, direction, quote } = this;
+    this._store.log.info(`executing ${direction} for ${amount} sats in ${delay}ms`);
     this.processingTimeout = setTimeout(() => {
-      swapAction();
-      this.cancel();
+      runInAction(async () => {
+        try {
+          const res =
+            direction === SwapDirection.IN
+              ? await this._store.api.loop.loopIn(amount, quote)
+              : await this._store.api.loop.loopOut(amount, quote);
+          this._store.log.info('completed loop', toJS(res));
+          // hide the swap UI after it is complete
+          this.cancel();
+        } catch (error) {
+          this.swapError = error;
+          this._store.log.error(`failed to perform ${direction}`, error);
+        }
+      });
     }, delay);
   }
 
+  /**
+   * abort a swap that has been submitted
+   */
   @action.bound
   abortSwap() {
     if (this.processingTimeout) {
