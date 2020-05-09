@@ -30,7 +30,6 @@ const LoopPage: React.FC = () => {
     // fetch RPC data when the component mounts if there is no
     if (!store.balances) {
       node.getBalances();
-      swap.getTerms();
     }
   }, [store, node, swap]);
 

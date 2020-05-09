@@ -37,7 +37,7 @@ export interface Quote {
   prepayAmount: number;
 }
 
-export interface Terms {
+export interface SwapTerms {
   in: {
     min: number;
     max: number;

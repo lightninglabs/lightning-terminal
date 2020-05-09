@@ -25,7 +25,6 @@ const createStoryActions = (store: Store) => {
 
   // execute actions to initialize the store data with the sample API responses
   actions.node.getBalances();
-  actions.swap.getTerms();
 
   return actions;
 };

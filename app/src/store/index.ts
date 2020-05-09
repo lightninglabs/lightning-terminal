@@ -1,5 +1,5 @@
 import { observable } from 'mobx';
-import { NodeBalances, NodeInfo, Terms } from 'types/state';
+import { NodeBalances, NodeInfo } from 'types/state';
 import { IS_DEV } from 'config';
 import { actionLog, Logger } from 'util/log';
 import { GrpcClient, LndApi, LoopApi } from 'api';
@@ -44,10 +44,6 @@ export class Store {
   //
   @observable info?: NodeInfo = undefined;
   @observable balances?: NodeBalances = undefined;
-  @observable terms: Terms = {
-    in: { min: 0, max: 0 },
-    out: { min: 0, max: 0 },
-  };
 
   /**
    * load initial data to populate the store
