@@ -1,5 +1,6 @@
 import React, { ReactNode } from 'react';
-import { Channel, SwapDirection } from 'types/state';
+import { SwapDirection } from 'types/state';
+import { Channel } from 'store/models';
 import { ArrowLeft } from 'components/common/icons';
 import { styled } from 'components/theme';
 import SwapConfigStep from './SwapConfigStep';

@@ -24,17 +24,16 @@ const LoopPage: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.LoopPage');
   const store = useStore();
   const build = store.buildSwapStore;
-  const { node, channel, swap } = useActions();
+  const { node, swap } = useActions();
 
   useEffect(() => {
     // fetch RPC data when the component mounts if there is no
-    if (store.channels.length === 0) {
-      channel.getChannels();
+    if (store.swaps.length === 0) {
       node.getBalances();
       swap.listSwaps();
       swap.getTerms();
     }
-  }, [store, node, channel, swap]);
+  }, [store, node, swap]);
 
   const handleWizardNext = useCallback(() => {
     // the actions need to be executed from the component
@@ -77,13 +76,13 @@ const LoopPage: React.FC = () => {
               <Column cols={4}>
                 <Tile
                   title={l('inbound')}
-                  text={`${store.totalInbound.toLocaleString()} SAT`}
+                  text={`${store.channelStore.totalInbound.toLocaleString()} SAT`}
                 />
               </Column>
               <Column cols={4}>
                 <Tile
                   title={l('outbound')}
-                  text={`${store.totalOutbound.toLocaleString()} SAT`}
+                  text={`${store.channelStore.totalOutbound.toLocaleString()} SAT`}
                 />
               </Column>
             </Row>
@@ -98,7 +97,7 @@ const LoopPage: React.FC = () => {
         </>
       )}
       <ChannelList
-        channels={store.channels}
+        channels={store.channelStore.channels}
         enableSelection={build.listEditable}
         selectedChannels={build.channels}
         onSelectionChange={build.setSelectedChannels}

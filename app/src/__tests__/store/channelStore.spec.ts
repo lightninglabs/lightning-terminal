@@ -1,14 +1,19 @@
 import { lndListChannels } from 'util/tests/sampleData';
-import { createActions, StoreActions } from 'action';
-import { createStore, Store } from 'store';
+import { createStore } from 'store';
+import ChannelStore from 'store/channelStore';
 
 describe('Store', () => {
-  let store: Store;
-  let actions: StoreActions;
+  let store: ChannelStore;
 
   beforeEach(() => {
-    store = createStore();
-    actions = createActions(store);
+    store = createStore().channelStore;
+  });
+
+  it('should fetch list of channels', async () => {
+    store.channels = [];
+    expect(store.channels).toEqual([]);
+    await store.fetchChannels();
+    expect(store.channels).toHaveLength(lndListChannels.channelsList.length);
   });
 
   it('should compute inbound liquidity', async () => {
@@ -17,7 +22,6 @@ describe('Store', () => {
       0,
     );
 
-    await actions.channel.getChannels();
     expect(store.totalInbound).toBe(inbound);
   });
 
@@ -26,7 +30,7 @@ describe('Store', () => {
       (sum, chan) => sum + chan.localBalance,
       0,
     );
-    await actions.channel.getChannels();
+
     expect(store.totalOutbound).toBe(outbound);
   });
 });

@@ -1,6 +1,7 @@
 import { action, computed, observable } from 'mobx';
-import { Channel, Quote, SwapDirection } from 'types/state';
+import { Quote, SwapDirection } from 'types/state';
 import { Store } from 'store';
+import { Channel } from './models';
 
 /**
  * The store to manage the state of a Loop swap being created

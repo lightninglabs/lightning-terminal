@@ -18,19 +18,6 @@ export enum BalanceLevel {
   bad = 'bad',
 }
 
-export interface Channel {
-  chanId: string;
-  remotePubkey: string;
-  capacity: number;
-  localBalance: number;
-  remoteBalance: number;
-  uptime: number;
-  active: boolean;
-  localPercent: number;
-  balancePercent: number;
-  balanceLevel: BalanceLevel;
-}
-
 export enum SwapDirection {
   IN = 'Loop In',
   OUT = 'Loop Out',

@@ -1,7 +1,8 @@
 import React from 'react';
 import { AutoSizer, List, WindowScroller } from 'react-virtualized';
-import { Channel } from 'types/state';
+import { observer } from 'mobx-react-lite';
 import styled from '@emotion/styled';
+import { Channel } from 'store/models';
 import ChannelRow, { ChannelRowHeader, ROW_HEIGHT } from './ChannelRow';
 
 const Styled = {
@@ -9,7 +10,7 @@ const Styled = {
     margin: 50px 0;
   `,
   ListContainer: styled.div`
-    /** 
+    /**
      * the virtualized list doesn't play nice with the bootstrap row -15px
      * margin. We need to manually offset the container and remove the
      * padding from the last column to get the alignment correct
@@ -95,4 +96,4 @@ const ChannelList: React.FC<Props> = ({
   );
 };
 
-export default ChannelList;
+export default observer(ChannelList);

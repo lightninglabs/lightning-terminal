@@ -1,6 +1,7 @@
 import { SwapDirection } from 'types/state';
 import { grpc } from '@improbable-eng/grpc-web';
 import * as config from 'config';
+import { sampleApiResponses } from 'util/tests/sampleData';
 import SwapAction from 'action/swap';
 import { GrpcClient, LoopApi } from 'api';
 import { createStore, Store } from 'store';
@@ -80,16 +81,30 @@ describe('SwapAction', () => {
     store.buildSwapStore.setDirection(SwapDirection.OUT);
     store.buildSwapStore.setAmount(600);
     // mock the grpc unary function in order to capture the supplied deadline
+    // passed in with the API request
     let deadline = 0;
     grpcMock.unary.mockImplementation((desc, props) => {
       deadline = (props.request.toObject() as any).swapPublicationDeadline;
-      props.onEnd({} as any);
+      const path = `${desc.service.serviceName}.${desc.methodName}`;
+      // return a response by calling the onEnd function
+      props.onEnd({
+        status: 0,
+        statusMessage: '',
+        // the message returned should have a toObject function
+        message: {
+          toObject: () => sampleApiResponses[path],
+        } as any,
+        headers: {} as any,
+        trailers: {} as any,
+      });
       return undefined as any;
     });
+
     // run a loop in production and verify the deadline
     Object.defineProperty(config, 'IS_PROD', { get: () => true });
     await loop.loop();
     expect(deadline).toBeGreaterThan(0);
+
     // run a loop not in production and verify the deadline
     Object.defineProperty(config, 'IS_PROD', { get: () => false });
     await loop.loop();

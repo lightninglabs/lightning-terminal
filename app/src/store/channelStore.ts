@@ -52,6 +52,6 @@ export default class ChannelStore {
       .filter(c => !serverIds.includes(c.chanId))
       .forEach(c => this.channels.splice(this.channels.indexOf(c), 1));
 
-    this._store.log.info('updated channelStore.channels', toJS(this._store.channels));
+    this._store.log.info('updated channelStore.channels', toJS(this.channels));
   }
 }

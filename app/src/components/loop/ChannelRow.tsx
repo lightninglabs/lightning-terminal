@@ -1,7 +1,9 @@
 import React, { CSSProperties } from 'react';
-import { BalanceLevel, Channel } from 'types/state';
+import { observer } from 'mobx-react-lite';
+import { BalanceLevel } from 'types/state';
 import { usePrefixedTranslation } from 'hooks';
 import { ellipseInside } from 'util/strings';
+import { Channel } from 'store/models';
 import Checkbox from 'components/common/Checkbox';
 import { Column, Row } from 'components/common/grid';
 import StatusDot from 'components/common/StatusDot';
@@ -122,11 +124,11 @@ const ChannelRow: React.FC<Props> = ({
         <Balance channel={channel} />
       </Column>
       <Column>{channel.localBalance.toLocaleString()}</Column>
-      <Column>{channel.uptime}</Column>
+      <Column>{channel.uptimePercent}</Column>
       <Column>{ellipseInside(channel.remotePubkey)}</Column>
       <Column right>{channel.capacity.toLocaleString()}</Column>
     </Row>
   );
 };
 
-export default ChannelRow;
+export default observer(ChannelRow);

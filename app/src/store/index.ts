@@ -1,5 +1,5 @@
-import { computed, observable } from 'mobx';
-import { Channel, NodeBalances, NodeInfo, Swap, Terms } from 'types/state';
+import { observable } from 'mobx';
+import { NodeBalances, NodeInfo, Swap, Terms } from 'types/state';
 import { actionLog, Logger } from 'util/log';
 import { GrpcClient, LndApi, LoopApi } from 'api';
 import BuildSwapStore from './buildSwapStore';
@@ -26,6 +26,8 @@ export class Store {
   constructor(lnd: LndApi, loop: LoopApi, log: Logger) {
     this.api = { lnd, loop };
     this.log = log;
+
+    this.init();
   }
   //
   // App state
@@ -37,29 +39,17 @@ export class Store {
   //
   @observable info?: NodeInfo = undefined;
   @observable balances?: NodeBalances = undefined;
-  @observable channels: Channel[] = [];
   @observable swaps: Swap[] = [];
   @observable terms: Terms = {
     in: { min: 0, max: 0 },
     out: { min: 0, max: 0 },
   };
 
-  //
-  // computed data
-  //
-
   /**
-   * the sum of remote balance of all channels
+   * load initial data to populate the store
    */
-  @computed get totalInbound() {
-    return this.channels.reduce((sum, chan) => sum + chan.remoteBalance, 0);
-  }
-
-  /**
-   * the sum of local balance of all channels
-   */
-  @computed get totalOutbound() {
-    return this.channels.reduce((sum, chan) => sum + chan.localBalance, 0);
+  async init() {
+    await this.channelStore.fetchChannels();
   }
 }
 

@@ -1,8 +1,8 @@
 import React from 'react';
-import { BalanceLevel, Channel } from 'types/state';
 import { fireEvent } from '@testing-library/react';
 import { ellipseInside } from 'util/strings';
 import { renderWithProviders } from 'util/tests';
+import { Channel } from 'store/models';
 import ChannelRow from 'components/loop/ChannelRow';
 
 describe('ChannelRow component', () => {
@@ -28,18 +28,16 @@ describe('ChannelRow component', () => {
   };
 
   beforeEach(() => {
-    channel = {
-      active: true,
-      capacity: 15000000,
+    channel = new Channel({
       chanId: '150633093070848',
+      remotePubkey: '02ac59099da6d4bd818e6a81098f5d54580b7c3aa8255c707fa0f95ca89b02cb8c',
+      capacity: 15000000,
       localBalance: 9990950,
       remoteBalance: 5000000,
-      remotePubkey: '02ac59099da6d4bd818e6a81098f5d54580b7c3aa8255c707fa0f95ca89b02cb8c',
+      active: true,
       uptime: 97,
-      localPercent: 67,
-      balancePercent: 67,
-      balanceLevel: BalanceLevel.warn,
-    };
+      lifetime: 100,
+    } as any);
   });
 
   it('should display the remote balance', () => {
@@ -74,12 +72,14 @@ describe('ChannelRow component', () => {
     expect(getByLabelText('idle')).toBeInTheDocument();
   });
 
-  it.each<[BalanceLevel, string]>([
-    [BalanceLevel.good, 'success'],
-    [BalanceLevel.warn, 'warn'],
-    [BalanceLevel.bad, 'error'],
-  ])('should display correct dot icon for a "%s" balance', (level, label) => {
-    channel.balanceLevel = level;
+  it.each<[number, string]>([
+    [55, 'success'],
+    [75, 'warn'],
+    [90, 'error'],
+  ])('should display correct dot icon for a "%s" balance', (localPct, label) => {
+    channel.localBalance = channel.capacity * (localPct / 100);
+    channel.remoteBalance = channel.capacity * ((100 - localPct) / 100);
+
     const { getByText, getByLabelText } = render();
     expect(getByText('dot.svg')).toBeInTheDocument();
     expect(getByLabelText(label)).toBeInTheDocument();

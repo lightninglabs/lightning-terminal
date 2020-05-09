@@ -1,7 +1,9 @@
 import React from 'react';
-import { Channel, SwapDirection } from 'types/state';
+import { observer } from 'mobx-react-lite';
+import { SwapDirection } from 'types/state';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
+import { Channel } from 'store/models';
 import { Button, Pill } from 'components/common/base';
 import { Close, Refresh } from 'components/common/icons';
 import { styled } from 'components/theme';
@@ -83,4 +85,4 @@ const LoopActions: React.FC<Props> = ({
   );
 };
 
-export default LoopActions;
+export default observer(LoopActions);

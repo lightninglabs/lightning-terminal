@@ -38,9 +38,13 @@ describe('LoopPage component', () => {
   it('should display the liquidity numbers', async () => {
     const { getByText, store } = render();
     // wait for the channels to be fetched async before checking the UI labels
-    await waitFor(() => expect(store.totalInbound).toBeGreaterThan(0));
-    expect(getByText(`${store.totalInbound.toLocaleString()} SAT`)).toBeInTheDocument();
-    expect(getByText(`${store.totalOutbound.toLocaleString()} SAT`)).toBeInTheDocument();
+    await waitFor(() => expect(store.channelStore.totalInbound).toBeGreaterThan(0));
+    expect(
+      getByText(`${store.channelStore.totalInbound.toLocaleString()} SAT`),
+    ).toBeInTheDocument();
+    expect(
+      getByText(`${store.channelStore.totalOutbound.toLocaleString()} SAT`),
+    ).toBeInTheDocument();
   });
 
   it('should display the loop history records', async () => {
@@ -58,7 +62,6 @@ describe('LoopPage component', () => {
 
   describe('Swap Process', () => {
     beforeEach(async () => {
-      await actions.channel.getChannels();
       await actions.swap.getTerms();
     });
 
@@ -74,7 +77,7 @@ describe('LoopPage component', () => {
       const { getByText } = render();
       expect(getByText('Loop')).toBeInTheDocument();
       fireEvent.click(getByText('Loop'));
-      store.buildSwapStore.setSelectedChannels(store.channels.slice(0, 3));
+      store.buildSwapStore.setSelectedChannels(store.channelStore.channels.slice(0, 3));
       fireEvent.click(getByText('Loop out'));
       expect(getByText('Step 1 of 2')).toBeInTheDocument();
     });
@@ -83,7 +86,7 @@ describe('LoopPage component', () => {
       const { getByText } = render();
       expect(getByText('Loop')).toBeInTheDocument();
       fireEvent.click(getByText('Loop'));
-      store.buildSwapStore.setSelectedChannels(store.channels.slice(0, 3));
+      store.buildSwapStore.setSelectedChannels(store.channelStore.channels.slice(0, 3));
       fireEvent.click(getByText('Loop in'));
       expect(getByText('Step 1 of 2')).toBeInTheDocument();
     });
@@ -92,7 +95,7 @@ describe('LoopPage component', () => {
       const { getByText } = render();
       expect(getByText('Loop')).toBeInTheDocument();
       fireEvent.click(getByText('Loop'));
-      store.buildSwapStore.setSelectedChannels(store.channels.slice(0, 3));
+      store.buildSwapStore.setSelectedChannels(store.channelStore.channels.slice(0, 3));
       fireEvent.click(getByText('Loop in'));
       expect(getByText('Step 1 of 2')).toBeInTheDocument();
       fireEvent.click(getByText('arrow-left.svg'));
@@ -103,7 +106,7 @@ describe('LoopPage component', () => {
       const { getByText } = render();
       expect(getByText('Loop')).toBeInTheDocument();
       fireEvent.click(getByText('Loop'));
-      store.buildSwapStore.setSelectedChannels(store.channels.slice(0, 3));
+      store.buildSwapStore.setSelectedChannels(store.channelStore.channels.slice(0, 3));
       fireEvent.click(getByText('Loop out'));
       expect(getByText('Step 1 of 2')).toBeInTheDocument();
       fireEvent.click(getByText('Next'));
@@ -122,7 +125,7 @@ describe('LoopPage component', () => {
       const { getByText } = render();
       expect(getByText('Loop')).toBeInTheDocument();
       fireEvent.click(getByText('Loop'));
-      store.buildSwapStore.setSelectedChannels(store.channels.slice(0, 3));
+      store.buildSwapStore.setSelectedChannels(store.channelStore.channels.slice(0, 3));
       fireEvent.click(getByText('Loop out'));
       expect(getByText('Step 1 of 2')).toBeInTheDocument();
       fireEvent.click(getByText('Next'));

@@ -1,4 +1,4 @@
-import { action, observable } from 'mobx';
+import { action, computed, observable } from 'mobx';
 import * as LND from 'types/generated/lnd_pb';
 import { BalanceLevel } from 'types/state';
 
@@ -9,17 +9,25 @@ export default class Channel {
   @observable localBalance = 0;
   @observable remoteBalance = 0;
   @observable active = false;
-  @observable uptimePercent = 0;
+  @observable uptime = 0;
+  @observable lifetime = 0;
 
   constructor(lndChannel: LND.Channel.AsObject) {
     this.update(lndChannel);
   }
 
   /**
+   * The uptime of the channel as a percentage of lifetime
+   */
+  @computed get uptimePercent() {
+    return Math.floor((this.uptime * 100) / this.lifetime);
+  }
+
+  /**
    * Determines the local balance percentage of a channel based on the local and
    * remote balances
    */
-  @observable get localPercent() {
+  @computed get localPercent() {
     return Math.round(
       (this.localBalance * 100) / (this.localBalance + this.remoteBalance),
     );
@@ -28,7 +36,7 @@ export default class Channel {
   /**
    * The imbalance percentage irregardless of direction
    */
-  @observable get balancePercent() {
+  @computed get balancePercent() {
     const pct = this.localPercent;
     return pct >= 50 ? pct : 100 - pct;
   }
@@ -36,7 +44,7 @@ export default class Channel {
   /**
    * Determines the balance level of a channel based on the percentage on each side
    */
-  @observable get balanceLevel() {
+  @computed get balanceLevel() {
     const pct = this.balancePercent;
 
     if (pct > 85) return BalanceLevel.bad;
@@ -56,6 +64,7 @@ export default class Channel {
     this.localBalance = lndChannel.localBalance;
     this.remoteBalance = lndChannel.remoteBalance;
     this.active = lndChannel.active;
-    this.uptimePercent = Math.floor((lndChannel.uptime * 100) / lndChannel.lifetime);
+    this.uptime = lndChannel.uptime;
+    this.lifetime = lndChannel.lifetime;
   }
 }
