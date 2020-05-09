@@ -50,10 +50,6 @@ const ChannelList: React.FC<Props> = ({
     }
   };
 
-  const sortedChannels = channels
-    .slice()
-    .sort((a, b) => b.balancePercent - a.balancePercent);
-
   const { Wrapper, ListContainer } = Styled;
   return (
     <Wrapper>
@@ -68,19 +64,17 @@ const ChannelList: React.FC<Props> = ({
                   height={height}
                   isScrolling={isScrolling}
                   onScroll={onChildScroll}
-                  rowCount={sortedChannels.length}
+                  rowCount={channels.length}
                   rowHeight={ROW_HEIGHT}
                   rowRenderer={({ index, key, style }) => (
                     <ChannelRow
                       key={key}
                       style={style}
-                      channel={sortedChannels[index]}
+                      channel={channels[index]}
                       editable={enableSelection}
-                      checked={selectedChannels.includes(sortedChannels[index])}
+                      checked={selectedChannels.includes(channels[index])}
                       disabled={disabled}
-                      dimmed={
-                        disabled && !selectedChannels.includes(sortedChannels[index])
-                      }
+                      dimmed={disabled && !selectedChannels.includes(channels[index])}
                       onChange={handleRowChecked}
                     />
                   )}

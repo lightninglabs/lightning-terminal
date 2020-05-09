@@ -13,7 +13,7 @@ export const Default = () => {
   const store = useStore();
   useEffect(() => {
     // only use a small set of channels
-    store.channelStore.channels.splice(10);
+    store.channelStore.sortedChannels.splice(10);
 
     // change back to sample data when the component is unmounted
     return () => {

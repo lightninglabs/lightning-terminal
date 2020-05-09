@@ -19,7 +19,7 @@ export const Default = () => {
   return (
     <LoopActions
       direction={SwapDirection.OUT}
-      channels={store.channelStore.channels.slice(0, 3)}
+      channels={store.channelStore.sortedChannels.slice(0, 3)}
       onLoopClick={() => action('onLoopClick')}
       onDirectionClick={() => action('onTypeClick')}
       onCancelClick={() => action('onCancelClick')}
@@ -33,7 +33,7 @@ export const Opened = () => {
   return (
     <LoopActions
       direction={SwapDirection.OUT}
-      channels={store.channelStore.channels.slice(0, 3)}
+      channels={store.channelStore.sortedChannels.slice(0, 3)}
       onLoopClick={() => action('onLoopClick')}
       onDirectionClick={() => action('onTypeClick')}
       onCancelClick={() => action('onCancelClick')}
@@ -46,7 +46,7 @@ export const Interactive = () => {
   return (
     <LoopActions
       direction={SwapDirection.OUT}
-      channels={store.channelStore.channels.slice(0, 3)}
+      channels={store.channelStore.sortedChannels.slice(0, 3)}
       onLoopClick={store.buildSwapStore.toggleShowActions}
       onDirectionClick={() => action('onTypeClick')}
       onCancelClick={store.buildSwapStore.cancel}

@@ -25,7 +25,7 @@ export const FewChannels = () => {
   const store = useStore();
   return (
     <ChannelList
-      channels={store.channelStore.channels.slice(0, 10)}
+      channels={store.channelStore.sortedChannels.slice(0, 10)}
       enableSelection={false}
       selectedChannels={[]}
       onSelectionChange={() => action('onSelectionChange')}
@@ -38,7 +38,7 @@ export const ManyChannels = () => {
   const store = useStore();
   return (
     <ChannelList
-      channels={store.channelStore.channels}
+      channels={store.channelStore.sortedChannels}
       enableSelection={false}
       selectedChannels={[]}
       onSelectionChange={() => action('onSelectionChange')}

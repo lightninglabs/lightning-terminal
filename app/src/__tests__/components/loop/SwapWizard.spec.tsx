@@ -15,7 +15,9 @@ describe('SwapWizard component', () => {
     store = createStore();
     actions = createActions(store);
 
-    store.buildSwapStore.setSelectedChannels(store.channelStore.channels.slice(0, 3));
+    store.buildSwapStore.setSelectedChannels(
+      store.channelStore.sortedChannels.slice(0, 3),
+    );
     await actions.swap.getTerms();
     store.buildSwapStore.setDirection(SwapDirection.OUT);
   });

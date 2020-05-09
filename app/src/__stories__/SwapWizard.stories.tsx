@@ -20,10 +20,11 @@ export default {
 
 export const Step1Amount = () => {
   const { channelStore, buildSwapStore: build } = useStore();
+  build.setDirection(SwapDirection.OUT);
   return (
     <SwapWizard
-      channels={channelStore.channels.slice(0, 3)}
-      direction={SwapDirection.OUT}
+      channels={channelStore.sortedChannels.slice(0, 3)}
+      direction={build.direction}
       amount={build.amount}
       setAmount={build.setAmount}
       minAmount={build.termsMinMax.min}
@@ -40,10 +41,11 @@ export const Step1Amount = () => {
 export const Step2Fees = () => {
   const { channelStore, buildSwapStore: build } = useStore();
   build.setAmount(50000);
+  build.setDirection(SwapDirection.OUT);
   return (
     <SwapWizard
-      channels={channelStore.channels.slice(0, 3)}
-      direction={SwapDirection.OUT}
+      channels={channelStore.sortedChannels.slice(0, 3)}
+      direction={build.direction}
       amount={build.amount}
       setAmount={build.setAmount}
       minAmount={build.termsMinMax.min}
@@ -59,10 +61,11 @@ export const Step2Fees = () => {
 
 export const Step3Processing = () => {
   const { channelStore, buildSwapStore: build } = useStore();
+  build.setDirection(SwapDirection.OUT);
   return (
     <SwapWizard
-      channels={channelStore.channels.slice(0, 3)}
-      direction={SwapDirection.OUT}
+      channels={channelStore.sortedChannels.slice(0, 3)}
+      direction={build.direction}
       amount={build.amount}
       setAmount={build.setAmount}
       minAmount={build.termsMinMax.min}
@@ -78,10 +81,11 @@ export const Step3Processing = () => {
 
 export const Interactive = () => {
   const { channelStore, buildSwapStore: build } = useStore();
+  build.setDirection(SwapDirection.OUT);
   return useObserver(() => (
     <SwapWizard
-      channels={channelStore.channels.slice(0, 3)}
-      direction={SwapDirection.OUT}
+      channels={channelStore.sortedChannels.slice(0, 3)}
+      direction={build.direction}
       amount={build.amount}
       setAmount={build.setAmount}
       minAmount={build.termsMinMax.min}

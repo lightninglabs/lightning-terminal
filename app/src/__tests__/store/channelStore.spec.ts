@@ -1,3 +1,4 @@
+import { observable } from 'mobx';
 import { lndListChannels } from 'util/tests/sampleData';
 import { createStore } from 'store';
 import ChannelStore from 'store/channelStore';
@@ -10,10 +11,10 @@ describe('Store', () => {
   });
 
   it('should fetch list of channels', async () => {
-    store.channels = [];
-    expect(store.channels).toEqual([]);
+    store.channels = observable.map();
+    expect(store.channels.size).toEqual(0);
     await store.fetchChannels();
-    expect(store.channels).toHaveLength(lndListChannels.channelsList.length);
+    expect(store.channels.size).toEqual(lndListChannels.channelsList.length);
   });
 
   it('should compute inbound liquidity', async () => {

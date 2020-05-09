@@ -41,42 +41,42 @@ const render = (
 
 export const Good = () => {
   const store = useStore();
-  const channel = store.channelStore.channels[0];
+  const channel = store.channelStore.sortedChannels[0];
   return render(channel, { ratio: 0.59 });
 };
 
 export const Warn = () => {
   const store = useStore();
-  const channel = store.channelStore.channels[1];
+  const channel = store.channelStore.sortedChannels[1];
   return render(channel, { ratio: 0.28 });
 };
 
 export const Bad = () => {
   const store = useStore();
-  const channel = store.channelStore.channels[2];
+  const channel = store.channelStore.sortedChannels[2];
   return render(channel, { ratio: 0.91 });
 };
 
 export const Inactive = () => {
   const store = useStore();
-  const channel = store.channelStore.channels[3];
+  const channel = store.channelStore.sortedChannels[3];
   channel.active = false;
   return render(channel);
 };
 
 export const Editable = () => {
   const store = useStore();
-  return render(store.channelStore.channels[4], { editable: true });
+  return render(store.channelStore.sortedChannels[4], { editable: true });
 };
 
 export const Selected = () => {
   const store = useStore();
-  return render(store.channelStore.channels[5], { editable: true, checked: true });
+  return render(store.channelStore.sortedChannels[5], { editable: true, checked: true });
 };
 
 export const Disabled = () => {
   const store = useStore();
-  return render(store.channelStore.channels[6], {
+  return render(store.channelStore.sortedChannels[6], {
     editable: true,
     checked: true,
     disabled: true,
@@ -85,7 +85,7 @@ export const Disabled = () => {
 
 export const Dimmed = () => {
   const store = useStore();
-  return render(store.channelStore.channels[7], {
+  return render(store.channelStore.sortedChannels[7], {
     editable: true,
     disabled: true,
     dimmed: true,

@@ -97,7 +97,7 @@ const LoopPage: React.FC = () => {
         </>
       )}
       <ChannelList
-        channels={store.channelStore.channels}
+        channels={store.channelStore.sortedChannels}
         enableSelection={build.listEditable}
         selectedChannels={build.channels}
         onSelectionChange={build.setSelectedChannels}

@@ -1,29 +1,38 @@
-import { action, computed, observable, toJS } from 'mobx';
+import { action, computed, observable, ObservableMap, toJS, values } from 'mobx';
 import { Store } from 'store';
 import Channel from './models/channel';
 
 export default class ChannelStore {
   private _store: Store;
 
-  /** the list of channels */
-  @observable channels: Channel[] = [];
+  /** the collection of channels */
+  @observable channels: ObservableMap<string, Channel> = observable.map();
 
   constructor(store: Store) {
     this._store = store;
   }
 
   /**
+   * an array of channels sorted by balance percent descending
+   */
+  @computed get sortedChannels() {
+    return values(this.channels)
+      .slice()
+      .sort((a, b) => b.balancePercent - a.balancePercent);
+  }
+
+  /**
    * the sum of remote balance for all channels
    */
   @computed get totalInbound() {
-    return this.channels.reduce((sum, chan) => sum + chan.remoteBalance, 0);
+    return this.sortedChannels.reduce((sum, chan) => sum + chan.remoteBalance, 0);
   }
 
   /**
    * the sum of local balance for all channels
    */
   @computed get totalOutbound() {
-    return this.channels.reduce((sum, chan) => sum + chan.localBalance, 0);
+    return this.sortedChannels.reduce((sum, chan) => sum + chan.localBalance, 0);
   }
 
   /**
@@ -39,18 +48,19 @@ export default class ChannelStore {
       // update existing channels or create new ones in state. using this
       // approach instead of overwriting the array will cause fewer state
       // mutations, resulting in better react rendering performance
-      const existing = this.channels.find(c => c.chanId === lndChan.chanId);
+      const existing = this.channels.get(lndChan.chanId);
       if (existing) {
         existing.update(lndChan);
       } else {
-        this.channels.push(new Channel(lndChan));
+        this.channels.set(lndChan.chanId, new Channel(lndChan));
       }
     });
     // remove any channels in state that are not in the API response
     const serverIds = channelsList.map(c => c.chanId);
-    this.channels
-      .filter(c => !serverIds.includes(c.chanId))
-      .forEach(c => this.channels.splice(this.channels.indexOf(c), 1));
+    const localIds = Object.keys(this.channels);
+    localIds
+      .filter(id => !serverIds.includes(id))
+      .forEach(id => this.channels.delete(id));
 
     this._store.log.info('updated channelStore.channels', toJS(this.channels));
   }
