@@ -1,4 +1,5 @@
 import React from 'react';
+import { useObserver } from 'mobx-react-lite';
 import { action } from '@storybook/addon-actions';
 import { useStore } from 'store';
 import ChannelList from 'components/loop/ChannelList';
@@ -23,7 +24,7 @@ export const NoChannels = () => {
 
 export const FewChannels = () => {
   const store = useStore();
-  return (
+  return useObserver(() => (
     <ChannelList
       channels={store.channelStore.sortedChannels.slice(0, 10)}
       enableSelection={false}
@@ -31,12 +32,12 @@ export const FewChannels = () => {
       onSelectionChange={() => action('onSelectionChange')}
       disabled={false}
     />
-  );
+  ));
 };
 
 export const ManyChannels = () => {
   const store = useStore();
-  return (
+  return useObserver(() => (
     <ChannelList
       channels={store.channelStore.sortedChannels}
       enableSelection={false}
@@ -44,5 +45,5 @@ export const ManyChannels = () => {
       onSelectionChange={() => action('onSelectionChange')}
       disabled={false}
     />
-  );
+  ));
 };

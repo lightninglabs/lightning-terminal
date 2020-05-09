@@ -71,7 +71,7 @@ export const ChannelRowHeader: React.FC = () => {
   );
 };
 
-const ChannelDot: React.FC<{ channel: Channel }> = ({ channel }) => {
+const ChannelDot: React.FC<{ channel: Channel }> = observer(({ channel }) => {
   if (!channel.active) return <StatusDot status="idle" />;
 
   switch (channel.balanceLevel) {
@@ -82,7 +82,7 @@ const ChannelDot: React.FC<{ channel: Channel }> = ({ channel }) => {
     case BalanceLevel.bad:
       return <StatusDot status="error" />;
   }
-};
+});
 
 interface Props {
   channel: Channel;

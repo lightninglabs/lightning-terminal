@@ -1,7 +1,7 @@
-import React, { CSSProperties } from 'react';
+import React, { CSSProperties, useMemo } from 'react';
 import { sampleApiResponses } from 'util/tests/sampleData';
 import { createActions } from 'action';
-import { createStore, StoreProvider } from 'store';
+import { createStore, Store, StoreProvider } from 'store';
 import { Background } from 'components/common/base';
 import { ThemeProvider } from 'components/theme';
 
@@ -17,14 +17,19 @@ const grpc = {
 };
 
 // Create a store that pulls data from the mock GRPC for stories
-const store = createStore(grpc);
-// Create dummy actions to use for stories
-const actions = createActions(store, grpc);
+const createStoryStore = () => createStore(grpc);
 
-// execute actions to initialize the store data with the sample API responses
-actions.node.getBalances();
-actions.swap.listSwaps();
-actions.swap.getTerms();
+// Create actions using mock GRPC client to use for stories
+const createStoryActions = (store: Store) => {
+  const actions = createActions(store, grpc);
+
+  // execute actions to initialize the store data with the sample API responses
+  actions.node.getBalances();
+  actions.swap.listSwaps();
+  actions.swap.getTerms();
+
+  return actions;
+};
 
 //
 // Component
@@ -41,7 +46,11 @@ const StoryWrapper: React.FC<{
     // or wrap in a full width container for larger components
     style = { width: '98%', maxWidth: '1440px', margin: 'auto', overflow: 'hidden' };
   }
-  // const { store, actions } = useStorybookStore();
+
+  // Create store and actions which live for the lifetime of the story
+  const store = useMemo(createStoryStore, [createStoryStore]);
+  const actions = useMemo(() => createStoryActions(store), [store]);
+
   return (
     <StoreProvider store={store} actions={actions}>
       <ThemeProvider>

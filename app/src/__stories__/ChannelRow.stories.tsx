@@ -1,6 +1,6 @@
 import React from 'react';
 import { action } from '@storybook/addon-actions';
-import { useStore } from 'store';
+import { lndListChannels } from 'util/tests/sampleData';
 import { Channel } from 'store/models';
 import ChannelRow, { ChannelRowHeader } from 'components/loop/ChannelRow';
 
@@ -20,6 +20,7 @@ const render = (
     dimmed?: boolean;
   },
 ) => {
+  // const channel = new Channel(lndListChannels.channelsList[0]);
   if (options && options.ratio) {
     channel.localBalance = channel.capacity * options.ratio;
     channel.remoteBalance = channel.capacity * (1 - options.ratio);
@@ -40,43 +41,39 @@ const render = (
 };
 
 export const Good = () => {
-  const store = useStore();
-  const channel = store.channelStore.sortedChannels[0];
+  const channel = new Channel(lndListChannels.channelsList[0]);
   return render(channel, { ratio: 0.59 });
 };
 
 export const Warn = () => {
-  const store = useStore();
-  const channel = store.channelStore.sortedChannels[1];
+  const channel = new Channel(lndListChannels.channelsList[1]);
   return render(channel, { ratio: 0.28 });
 };
 
 export const Bad = () => {
-  const store = useStore();
-  const channel = store.channelStore.sortedChannels[2];
+  const channel = new Channel(lndListChannels.channelsList[2]);
   return render(channel, { ratio: 0.91 });
 };
 
 export const Inactive = () => {
-  const store = useStore();
-  const channel = store.channelStore.sortedChannels[3];
+  const channel = new Channel(lndListChannels.channelsList[3]);
   channel.active = false;
   return render(channel);
 };
 
 export const Editable = () => {
-  const store = useStore();
-  return render(store.channelStore.sortedChannels[4], { editable: true });
+  return render(new Channel(lndListChannels.channelsList[4]), { editable: true });
 };
 
 export const Selected = () => {
-  const store = useStore();
-  return render(store.channelStore.sortedChannels[5], { editable: true, checked: true });
+  return render(new Channel(lndListChannels.channelsList[5]), {
+    editable: true,
+    checked: true,
+  });
 };
 
 export const Disabled = () => {
-  const store = useStore();
-  return render(store.channelStore.sortedChannels[6], {
+  return render(new Channel(lndListChannels.channelsList[6]), {
     editable: true,
     checked: true,
     disabled: true,
@@ -84,8 +81,7 @@ export const Disabled = () => {
 };
 
 export const Dimmed = () => {
-  const store = useStore();
-  return render(store.channelStore.sortedChannels[7], {
+  return render(new Channel(lndListChannels.channelsList[7]), {
     editable: true,
     disabled: true,
     dimmed: true,

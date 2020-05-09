@@ -1,7 +1,9 @@
 import React from 'react';
 import { SwapDirection } from 'types/state';
 import { action } from '@storybook/addon-actions';
+import { lndListChannels } from 'util/tests/sampleData';
 import { useStore } from 'store';
+import { Channel } from 'store/models';
 import LoopActions from 'components/loop/LoopActions';
 
 export default {
@@ -13,13 +15,16 @@ export default {
   ],
 };
 
+// only use 3 channels for these stories
+const channels = lndListChannels.channelsList.slice(0, 3).map(c => new Channel(c));
+
 export const Default = () => {
   const store = useStore();
   store.buildSwapStore.showActions = false;
   return (
     <LoopActions
       direction={SwapDirection.OUT}
-      channels={store.channelStore.sortedChannels.slice(0, 3)}
+      channels={channels}
       onLoopClick={() => action('onLoopClick')}
       onDirectionClick={() => action('onTypeClick')}
       onCancelClick={() => action('onCancelClick')}
@@ -33,7 +38,21 @@ export const Opened = () => {
   return (
     <LoopActions
       direction={SwapDirection.OUT}
-      channels={store.channelStore.sortedChannels.slice(0, 3)}
+      channels={channels}
+      onLoopClick={() => action('onLoopClick')}
+      onDirectionClick={() => action('onTypeClick')}
+      onCancelClick={() => action('onCancelClick')}
+    />
+  );
+};
+
+export const ZeroChannels = () => {
+  const store = useStore();
+  store.buildSwapStore.showActions = true;
+  return (
+    <LoopActions
+      direction={SwapDirection.OUT}
+      channels={[]}
       onLoopClick={() => action('onLoopClick')}
       onDirectionClick={() => action('onTypeClick')}
       onCancelClick={() => action('onCancelClick')}
@@ -46,7 +65,7 @@ export const Interactive = () => {
   return (
     <LoopActions
       direction={SwapDirection.OUT}
-      channels={store.channelStore.sortedChannels.slice(0, 3)}
+      channels={channels}
       onLoopClick={store.buildSwapStore.toggleShowActions}
       onDirectionClick={() => action('onTypeClick')}
       onCancelClick={store.buildSwapStore.cancel}

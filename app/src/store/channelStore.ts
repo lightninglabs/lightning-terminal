@@ -1,4 +1,12 @@
-import { action, computed, observable, ObservableMap, toJS, values } from 'mobx';
+import {
+  action,
+  computed,
+  observable,
+  ObservableMap,
+  runInAction,
+  toJS,
+  values,
+} from 'mobx';
 import { Store } from 'store';
 import Channel from './models/channel';
 
@@ -44,24 +52,26 @@ export default class ChannelStore {
     this._store.log.info('fetching channels');
 
     const { channelsList } = await this._store.api.lnd.listChannels();
-    channelsList.forEach(lndChan => {
-      // update existing channels or create new ones in state. using this
-      // approach instead of overwriting the array will cause fewer state
-      // mutations, resulting in better react rendering performance
-      const existing = this.channels.get(lndChan.chanId);
-      if (existing) {
-        existing.update(lndChan);
-      } else {
-        this.channels.set(lndChan.chanId, new Channel(lndChan));
-      }
-    });
-    // remove any channels in state that are not in the API response
-    const serverIds = channelsList.map(c => c.chanId);
-    const localIds = Object.keys(this.channels);
-    localIds
-      .filter(id => !serverIds.includes(id))
-      .forEach(id => this.channels.delete(id));
+    runInAction(() => {
+      channelsList.forEach(lndChan => {
+        // update existing channels or create new ones in state. using this
+        // approach instead of overwriting the array will cause fewer state
+        // mutations, resulting in better react rendering performance
+        const existing = this.channels.get(lndChan.chanId);
+        if (existing) {
+          existing.update(lndChan);
+        } else {
+          this.channels.set(lndChan.chanId, new Channel(lndChan));
+        }
+      });
+      // remove any channels in state that are not in the API response
+      const serverIds = channelsList.map(c => c.chanId);
+      const localIds = Object.keys(this.channels);
+      localIds
+        .filter(id => !serverIds.includes(id))
+        .forEach(id => this.channels.delete(id));
 
-    this._store.log.info('updated channelStore.channels', toJS(this.channels));
+      this._store.log.info('updated channelStore.channels', toJS(this.channels));
+    });
   }
 }
