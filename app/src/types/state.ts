@@ -1,17 +1,3 @@
-export interface NodeInfo {
-  identityPubkey: string;
-  alias: string;
-  numActiveChannels: number;
-  numPeers: number;
-  blockHeight: number;
-  version: string;
-}
-
-export interface NodeBalances {
-  walletBalance: number;
-  channelBalance: number;
-}
-
 export enum BalanceLevel {
   good = 'good',
   warn = 'warn',

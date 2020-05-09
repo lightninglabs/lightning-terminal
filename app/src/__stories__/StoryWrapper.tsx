@@ -20,14 +20,7 @@ const grpc = {
 const createStoryStore = () => createStore(grpc);
 
 // Create actions using mock GRPC client to use for stories
-const createStoryActions = (store: Store) => {
-  const actions = createActions(store, grpc);
-
-  // execute actions to initialize the store data with the sample API responses
-  actions.node.getBalances();
-
-  return actions;
-};
+const createStoryActions = (store: Store) => createActions(store, grpc);
 
 //
 // Component

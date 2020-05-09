@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
-import { useActions, useStore } from 'store';
+import { useStore } from 'store';
 import { Column, Row } from 'components/common/grid';
 import { PageTitle } from 'components/common/text';
 import Tile from 'components/common/Tile';
@@ -24,14 +24,6 @@ const LoopPage: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.LoopPage');
   const store = useStore();
   const build = store.buildSwapStore;
-  const { node } = useActions();
-
-  useEffect(() => {
-    // fetch RPC data when the component mounts if there is no
-    if (!store.balances) {
-      node.getBalances();
-    }
-  }, [store, node]);
 
   const { PageWrap, TileSection } = Styled;
   return (
