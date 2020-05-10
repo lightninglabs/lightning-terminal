@@ -1,5 +1,5 @@
 import React from 'react';
-import { SwapDirection } from 'types/state';
+import { BuildSwapSteps, SwapDirection } from 'types/state';
 import { action } from '@storybook/addon-actions';
 import { lndListChannels } from 'util/tests/sampleData';
 import { useStore } from 'store';
@@ -20,7 +20,7 @@ const channels = lndListChannels.channelsList.slice(0, 3).map(c => new Channel(c
 
 export const Default = () => {
   const store = useStore();
-  store.buildSwapStore.showActions = false;
+  store.buildSwapStore.currentStep = BuildSwapSteps.Closed;
   return (
     <LoopActions
       direction={SwapDirection.OUT}
@@ -34,7 +34,7 @@ export const Default = () => {
 
 export const Opened = () => {
   const store = useStore();
-  store.buildSwapStore.showActions = true;
+  store.buildSwapStore.currentStep = BuildSwapSteps.SelectDirection;
   return (
     <LoopActions
       direction={SwapDirection.OUT}
@@ -48,7 +48,7 @@ export const Opened = () => {
 
 export const ZeroChannels = () => {
   const store = useStore();
-  store.buildSwapStore.showActions = true;
+  store.buildSwapStore.currentStep = BuildSwapSteps.SelectDirection;
   return (
     <LoopActions
       direction={SwapDirection.OUT}
@@ -66,7 +66,7 @@ export const Interactive = () => {
     <LoopActions
       direction={SwapDirection.OUT}
       channels={channels}
-      onLoopClick={store.buildSwapStore.toggleShowActions}
+      onLoopClick={store.buildSwapStore.startSwap}
       onDirectionClick={() => action('onTypeClick')}
       onCancelClick={store.buildSwapStore.cancel}
     />

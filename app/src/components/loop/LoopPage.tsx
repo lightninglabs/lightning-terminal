@@ -70,7 +70,7 @@ const LoopPage: React.FC = () => {
           <LoopActions
             channels={build.channels}
             direction={build.direction}
-            onLoopClick={build.toggleShowActions}
+            onLoopClick={build.startSwap}
             onDirectionClick={build.setDirection}
             onCancelClick={build.cancel}
           />

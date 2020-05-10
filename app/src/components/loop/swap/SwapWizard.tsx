@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 import { observer } from 'mobx-react-lite';
-import { SwapDirection } from 'types/state';
+import { BuildSwapSteps, SwapDirection } from 'types/state';
 import { Channel } from 'store/models';
 import { ArrowLeft } from 'components/common/icons';
 import { styled } from 'components/theme';
@@ -69,7 +69,7 @@ const SwapWizard: React.FC<Props> = ({
 }) => {
   let cmp: ReactNode;
   switch (currentStep) {
-    case 1:
+    case BuildSwapSteps.ChooseAmount:
       cmp = (
         <SwapConfigStep
           amount={amount}
@@ -82,7 +82,7 @@ const SwapWizard: React.FC<Props> = ({
         />
       );
       break;
-    case 2:
+    case BuildSwapSteps.ReviewQuote:
       cmp = (
         <SwapReviewStep
           amount={amount}
@@ -94,7 +94,7 @@ const SwapWizard: React.FC<Props> = ({
         />
       );
       break;
-    case 3:
+    case BuildSwapSteps.Processing:
       cmp = <SwapProcessingStep swapError={swapError} />;
       break;
   }

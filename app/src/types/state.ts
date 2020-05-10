@@ -25,3 +25,11 @@ export interface SwapTerms {
     max: number;
   };
 }
+
+export enum BuildSwapSteps {
+  Closed = 0,
+  SelectDirection = 1,
+  ChooseAmount = 2,
+  ReviewQuote = 3,
+  Processing = 4,
+}
