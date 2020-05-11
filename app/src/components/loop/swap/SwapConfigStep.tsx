@@ -45,7 +45,7 @@ const SwapConfigStep: React.FC<Props> = ({
   onNext,
   onCancel,
 }) => {
-  const { l } = usePrefixedTranslation('cmps.loop.swaps.SwapConfigStep');
+  const { l } = usePrefixedTranslation('cmps.loop.swap.SwapConfigStep');
 
   const { Wrapper, Summary, Config } = Styled;
   return (

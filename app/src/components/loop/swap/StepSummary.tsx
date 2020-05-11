@@ -31,7 +31,7 @@ interface Props {
 }
 
 const StepSummary: React.FC<Props> = ({ title, heading, description, channelCount }) => {
-  const { l } = usePrefixedTranslation('cmps.loop.swaps.StepSummary');
+  const { l } = usePrefixedTranslation('cmps.loop.swap.StepSummary');
 
   const { Wrapper, Heading, Description } = Styled;
   return (
