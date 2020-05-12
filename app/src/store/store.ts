@@ -21,6 +21,9 @@ export class Store {
   @observable swapStore = new SwapStore(this);
   @observable nodeStore = new NodeStore(this);
   @observable settingsStore = new SettingsStore(this);
+  // a flag to indicate when the store has completed all of its
+  // API requests requested during initialization
+  @observable initialized = false;
 
   /** the backend api services to be used by child stores */
   api: {
@@ -43,5 +46,6 @@ export class Store {
     await this.channelStore.fetchChannels();
     await this.swapStore.fetchSwaps();
     await this.nodeStore.fetchBalances();
+    this.initialized = true;
   }
 }

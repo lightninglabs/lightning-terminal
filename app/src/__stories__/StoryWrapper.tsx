@@ -1,4 +1,5 @@
 import React, { CSSProperties, useMemo } from 'react';
+import { observer } from 'mobx-react-lite';
 import { sampleApiResponses } from 'util/tests/sampleData';
 import { createStore, StoreProvider } from 'store';
 import { Background } from 'components/common/base';
@@ -18,9 +19,11 @@ const grpc = {
 // Create a store that pulls data from the mock GRPC for stories
 const createStoryStore = () => createStore(grpc);
 
-//
-// Component
-//
+/**
+ * This component is used to wrap every story. It provides the app theme
+ * and store via React context. This component is referenced by the Storybook
+ * decorator configured in /.storybook/preview.tsx
+ */
 const StoryWrapper: React.FC<{
   centered?: boolean;
   contained?: boolean;
@@ -42,11 +45,12 @@ const StoryWrapper: React.FC<{
       <ThemeProvider>
         {/* modify the bg styles so it isn't too big in docs mode */}
         <Background style={{ minHeight: 'inherit', height: '100%' }}>
-          <div style={style}>{children}</div>
+          {/* render the Story after the store has been initialized */}
+          {store.initialized ? <div style={style}>{children}</div> : null}
         </Background>
       </ThemeProvider>
     </StoreProvider>
   );
 };
 
-export default StoryWrapper;
+export default observer(StoryWrapper);

@@ -1,7 +1,7 @@
 import React from 'react';
 import { observable } from 'mobx';
-import { useObserver } from 'mobx-react-lite';
 import { useStore } from 'store';
+import { Channel } from 'store/models';
 import ChannelList from 'components/loop/ChannelList';
 
 export default {
@@ -18,13 +18,15 @@ export const NoChannels = () => {
 
 export const FewChannels = () => {
   const store = useStore();
-  store.channelStore.channels = observable.map();
-  store.channelStore.sortedChannels.slice(0, 10).map(c => {
-    store.channelStore.channels.set(c.chanId, c);
-  });
-  return useObserver(() => <ChannelList />);
+  const channels = store.channelStore.sortedChannels.slice(0, 10).reduce((result, c) => {
+    result[c.chanId] = c;
+    return result;
+    // store.channelStore.channels.set(c.chanId, c);
+  }, {} as Record<string, Channel>);
+  store.channelStore.channels = observable.map(channels);
+  return <ChannelList />;
 };
 
 export const ManyChannels = () => {
-  return useObserver(() => <ChannelList />);
+  return <ChannelList />;
 };
