@@ -1,9 +1,8 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import { SwapDirection } from 'types/state';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
-import { Channel } from 'store/models';
 import { Button, Pill } from 'components/common/base';
 import { Close, Refresh } from 'components/common/icons';
 import { styled } from 'components/theme';
@@ -32,51 +31,44 @@ const Styled = {
   `,
 };
 
-interface Props {
-  channels: Channel[];
-  direction: SwapDirection;
-  onLoopClick: () => void;
-  onDirectionClick: (direction: SwapDirection) => void;
-  onCancelClick: () => void;
-}
-
-const LoopActions: React.FC<Props> = ({
-  channels,
-  direction,
-  onLoopClick,
-  onDirectionClick,
-  onCancelClick,
-}) => {
+const LoopActions: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.LoopActions');
   const { buildSwapStore } = useStore();
+  const handleLoopOut = useCallback(
+    () => buildSwapStore.setDirection(SwapDirection.OUT),
+    [buildSwapStore],
+  );
+  const handleLoopIn = useCallback(() => buildSwapStore.setDirection(SwapDirection.IN), [
+    buildSwapStore,
+  ]);
 
   const { Wrapper, Actions, CloseIcon, Selected } = Styled;
   return (
     <Wrapper>
       {buildSwapStore.showActions ? (
         <Actions>
-          <CloseIcon onClick={onCancelClick} />
-          <Pill>{channels.length}</Pill>
+          <CloseIcon onClick={buildSwapStore.cancel} />
+          <Pill>{buildSwapStore.channels.length}</Pill>
           <Selected>{l('channelsSelected')}</Selected>
           <Button
-            primary={direction === SwapDirection.OUT}
-            borderless={direction !== SwapDirection.OUT}
-            onClick={() => onDirectionClick(SwapDirection.OUT)}
-            disabled={channels.length === 0}
+            primary={buildSwapStore.direction === SwapDirection.OUT}
+            borderless={buildSwapStore.direction !== SwapDirection.OUT}
+            onClick={handleLoopOut}
+            disabled={buildSwapStore.channels.length === 0}
           >
             Loop out
           </Button>
           <Button
-            primary={direction === SwapDirection.IN}
-            borderless={direction !== SwapDirection.IN}
-            onClick={() => onDirectionClick(SwapDirection.IN)}
-            disabled={channels.length === 0}
+            primary={buildSwapStore.direction === SwapDirection.IN}
+            borderless={buildSwapStore.direction !== SwapDirection.IN}
+            onClick={handleLoopIn}
+            disabled={buildSwapStore.channels.length === 0}
           >
             Loop in
           </Button>
         </Actions>
       ) : (
-        <Button onClick={onLoopClick}>
+        <Button onClick={buildSwapStore.startSwap}>
           <Refresh />
           Loop
         </Button>

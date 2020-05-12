@@ -1,6 +1,4 @@
 import React from 'react';
-import { BuildSwapSteps, SwapDirection } from 'types/state';
-import { action } from '@storybook/addon-actions';
 import { lndListChannels } from 'util/tests/sampleData';
 import { useStore } from 'store';
 import { Channel } from 'store/models';
@@ -15,60 +13,22 @@ export default {
   ],
 };
 
-// only use 3 channels for these stories
-const channels = lndListChannels.channelsList.slice(0, 3).map(c => new Channel(c));
-
 export const Default = () => {
-  const store = useStore();
-  store.buildSwapStore.currentStep = BuildSwapSteps.Closed;
-  return (
-    <LoopActions
-      direction={SwapDirection.OUT}
-      channels={channels}
-      onLoopClick={() => action('onLoopClick')}
-      onDirectionClick={() => action('onTypeClick')}
-      onCancelClick={() => action('onCancelClick')}
-    />
-  );
+  return <LoopActions />;
 };
 
 export const Opened = () => {
+  // only use 3 channels for this story
+  const channels = lndListChannels.channelsList.slice(0, 3).map(c => new Channel(c));
+
   const store = useStore();
-  store.buildSwapStore.currentStep = BuildSwapSteps.SelectDirection;
-  return (
-    <LoopActions
-      direction={SwapDirection.OUT}
-      channels={channels}
-      onLoopClick={() => action('onLoopClick')}
-      onDirectionClick={() => action('onTypeClick')}
-      onCancelClick={() => action('onCancelClick')}
-    />
-  );
+  store.buildSwapStore.startSwap();
+  store.buildSwapStore.setSelectedChannels(channels);
+  return <LoopActions />;
 };
 
 export const ZeroChannels = () => {
   const store = useStore();
-  store.buildSwapStore.currentStep = BuildSwapSteps.SelectDirection;
-  return (
-    <LoopActions
-      direction={SwapDirection.OUT}
-      channels={[]}
-      onLoopClick={() => action('onLoopClick')}
-      onDirectionClick={() => action('onTypeClick')}
-      onCancelClick={() => action('onCancelClick')}
-    />
-  );
-};
-
-export const Interactive = () => {
-  const store = useStore();
-  return (
-    <LoopActions
-      direction={SwapDirection.OUT}
-      channels={channels}
-      onLoopClick={store.buildSwapStore.startSwap}
-      onDirectionClick={() => action('onTypeClick')}
-      onCancelClick={store.buildSwapStore.cancel}
-    />
-  );
+  store.buildSwapStore.startSwap();
+  return <LoopActions />;
 };
