@@ -1,5 +1,6 @@
 import React from 'react';
 import { usePrefixedTranslation } from 'hooks';
+import { useStore } from 'store';
 import { Pill } from 'components/common/base';
 import { H3Text, SmallText, Title } from 'components/common/text';
 import { styled } from 'components/theme';
@@ -27,11 +28,11 @@ interface Props {
   title: string;
   heading: string;
   description: string;
-  channelCount: number;
 }
 
-const StepSummary: React.FC<Props> = ({ title, heading, description, channelCount }) => {
+const StepSummary: React.FC<Props> = ({ title, heading, description }) => {
   const { l } = usePrefixedTranslation('cmps.loop.swap.StepSummary');
+  const { buildSwapStore } = useStore();
 
   const { Wrapper, Heading, Description } = Styled;
   return (
@@ -42,7 +43,7 @@ const StepSummary: React.FC<Props> = ({ title, heading, description, channelCoun
         <Description>{description}</Description>
       </div>
       <div>
-        <Pill>{channelCount}</Pill>
+        <Pill>{buildSwapStore.channels.length}</Pill>
         {l('channelsSelected')}
       </div>
     </Wrapper>

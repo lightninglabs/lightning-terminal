@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 import { observer } from 'mobx-react-lite';
-import { BuildSwapSteps, SwapDirection } from 'types/state';
-import { Channel } from 'store/models';
+import { BuildSwapSteps } from 'types/state';
+import { useStore } from 'store';
 import { ArrowLeft } from 'components/common/icons';
 import { styled } from 'components/theme';
 import SwapConfigStep from './SwapConfigStep';
@@ -38,72 +38,29 @@ const Styled = {
   `,
 };
 
-interface Props {
-  channels: Channel[];
-  direction: SwapDirection;
-  amount: number;
-  setAmount: (amount: number) => void;
-  minAmount: number;
-  maxAmount: number;
-  fee: number;
-  currentStep: number;
-  swapError?: Error;
-  onNext: () => void;
-  onPrev: () => void;
-  onClose: () => void;
-}
+const SwapWizard: React.FC = () => {
+  const { buildSwapStore } = useStore();
 
-const SwapWizard: React.FC<Props> = ({
-  channels,
-  direction,
-  amount,
-  setAmount,
-  minAmount,
-  maxAmount,
-  fee,
-  currentStep,
-  swapError,
-  onNext,
-  onPrev,
-  onClose,
-}) => {
   let cmp: ReactNode;
-  switch (currentStep) {
+  switch (buildSwapStore.currentStep) {
     case BuildSwapSteps.ChooseAmount:
-      cmp = (
-        <SwapConfigStep
-          amount={amount}
-          onAmountChange={setAmount}
-          minAmount={minAmount}
-          maxAmount={maxAmount}
-          channelCount={channels.length}
-          onNext={onNext}
-          onCancel={onClose}
-        />
-      );
+      cmp = <SwapConfigStep />;
       break;
     case BuildSwapSteps.ReviewQuote:
-      cmp = (
-        <SwapReviewStep
-          amount={amount}
-          fee={fee}
-          direction={direction}
-          channelCount={channels.length}
-          onNext={onNext}
-          onCancel={onClose}
-        />
-      );
+      cmp = <SwapReviewStep />;
       break;
     case BuildSwapSteps.Processing:
-      cmp = <SwapProcessingStep swapError={swapError} />;
+      cmp = <SwapProcessingStep />;
       break;
+    default:
+      return null;
   }
 
   const { Wrapper, Nav, BackIcon, Content } = Styled;
   return (
     <Wrapper>
       <Nav>
-        <BackIcon onClick={onPrev} />
+        <BackIcon onClick={buildSwapStore.goToPrevStep} />
       </Nav>
       <Content>{cmp}</Content>
     </Wrapper>

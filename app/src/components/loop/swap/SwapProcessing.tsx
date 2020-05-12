@@ -1,6 +1,8 @@
 import React from 'react';
+import { observer } from 'mobx-react-lite';
 import loadingJson from 'assets/animations/loading.json';
 import { usePrefixedTranslation } from 'hooks';
+import { useStore } from 'store';
 import Animation from 'components/common/Animation';
 import { Title } from 'components/common/text';
 import { styled } from 'components/theme';
@@ -26,12 +28,10 @@ const Styled = {
   `,
 };
 
-interface Props {
-  swapError?: Error;
-}
-
-const SwapProcessingStep: React.FC<Props> = ({ swapError }) => {
+const SwapProcessingStep: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.swap.SwapProcessingStep');
+  const { buildSwapStore } = useStore();
+
   const { Wrapper, Loader, LoadingMessage, ErrorMessage } = Styled;
   return (
     <Wrapper>
@@ -39,9 +39,11 @@ const SwapProcessingStep: React.FC<Props> = ({ swapError }) => {
       <LoadingMessage>
         <Title>{l('loadingMsg')}</Title>
       </LoadingMessage>
-      {swapError && <ErrorMessage>{swapError.message}</ErrorMessage>}
+      {buildSwapStore.swapError && (
+        <ErrorMessage>{buildSwapStore.swapError.message}</ErrorMessage>
+      )}
     </Wrapper>
   );
 };
 
-export default SwapProcessingStep;
+export default observer(SwapProcessingStep);

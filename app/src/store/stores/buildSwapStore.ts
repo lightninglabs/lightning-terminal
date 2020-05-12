@@ -70,26 +70,39 @@ class BuildSwapStore {
     return this.currentStep !== BuildSwapSteps.Closed;
   }
 
-  /** the min/max amounts this node is allowed to swap */
+  /** the min/max amounts this node is allowed to swap based on the current direction */
   @computed
-  get termsMinMax() {
-    let termsMax = { min: 0, max: 0 };
+  get termsForDirection() {
+    let terms = { min: 0, max: 0 };
     switch (this.direction) {
       case SwapDirection.IN:
-        termsMax = this.terms.in;
+        terms = this.terms.in;
         break;
       case SwapDirection.OUT:
-        termsMax = this.terms.out;
+        terms = this.terms.out;
         break;
     }
 
-    return termsMax;
+    return terms;
   }
 
   /** the total quoted fee to perform the current swap */
   @computed
   get fee() {
     return this.quote.swapFee + this.quote.minerFee;
+  }
+
+  /** a string containing the fee as an absolute value and a percentage */
+  @computed
+  get feesLabel() {
+    const feesPct = ((100 * this.fee) / this.amount).toFixed(2);
+    return `${this.fee.toLocaleString()} SAT (${feesPct}%)`;
+  }
+
+  /** the invoice total including the swap amount and fee */
+  @computed
+  get invoiceTotal() {
+    return this.amount + this.fee;
   }
 
   //
@@ -103,6 +116,7 @@ class BuildSwapStore {
   startSwap() {
     this.currentStep = BuildSwapSteps.SelectDirection;
     this.getTerms();
+    this._store.log.info(`updated buildSwapStore.currentStep`, this.currentStep);
   }
 
   /**
@@ -112,8 +126,7 @@ class BuildSwapStore {
   @action.bound
   setDirection(direction: SwapDirection) {
     this.direction = direction;
-    const { min, max } = this.termsMinMax;
-    this.amount = Math.floor((min + max) / 2);
+    this._store.log.info(`updated buildSwapStore.direction`, direction);
     this.goToNextStep();
   }
 
@@ -124,6 +137,7 @@ class BuildSwapStore {
   @action.bound
   setSelectedChannels(channels: Channel[]) {
     this.channels = channels;
+    this._store.log.info(`updated buildSwapStore.channels`, channels);
   }
 
   /**
@@ -147,6 +161,7 @@ class BuildSwapStore {
     }
 
     this.currentStep++;
+    this._store.log.info(`updated buildSwapStore.currentStep`, this.currentStep);
   }
 
   /**
@@ -154,11 +169,16 @@ class BuildSwapStore {
    */
   @action.bound
   goToPrevStep() {
+    if (this.currentStep === BuildSwapSteps.ChooseAmount) {
+      this.cancel();
+      return;
+    }
     if (this.currentStep === BuildSwapSteps.Processing) {
       // if back is clicked on the processing step
       this.abortSwap();
     }
     this.currentStep--;
+    this._store.log.info(`updated buildSwapStore.currentStep`, this.currentStep);
   }
 
   /**
@@ -171,6 +191,7 @@ class BuildSwapStore {
     this.quote.swapFee = 0;
     this.quote.minerFee = 0;
     this.quote.prepayAmount = 0;
+    this._store.log.info(`reset buildSwapStore`, toJS(this));
   }
 
   /**
@@ -192,6 +213,13 @@ class BuildSwapStore {
       },
     };
     this._store.log.info('updated store.terms', toJS(this.terms));
+
+    // restrict the amount whenever the terms are updated
+    const { min, max } = this.termsForDirection;
+    if (this.amount < min || this.amount > max) {
+      this.setAmount(Math.floor((min + max) / 2));
+      this._store.log.info(`updated buildSwapStore.amount`, this.amount);
+    }
   }
 
   /**
@@ -223,7 +251,9 @@ class BuildSwapStore {
   requestSwap() {
     const delay = process.env.NODE_ENV !== 'test' ? 3000 : 1;
     const { amount, direction, quote } = this;
-    this._store.log.info(`executing ${direction} for ${amount} sats in ${delay}ms`);
+    this._store.log.info(
+      `executing ${direction} for ${amount} sats (delaying for ${delay}ms)`,
+    );
     this.processingTimeout = setTimeout(async () => {
       try {
         const res =

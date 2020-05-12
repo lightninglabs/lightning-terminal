@@ -22,6 +22,6 @@ export default class NodeStore {
     const onChain = await this._store.api.lnd.walletBalance();
     this.wallet.channelBalance = offChain.balance;
     this.wallet.walletBalance = onChain.totalBalance;
-    this._store.log.info('updated nodeStore.info', toJS(this.wallet));
+    this._store.log.info('updated nodeStore.wallet', toJS(this.wallet));
   }
 }

@@ -1,8 +1,8 @@
 import React from 'react';
-import { useObserver } from 'mobx-react-lite';
 import { SwapDirection } from 'types/state';
-import { action } from '@storybook/addon-actions';
+import { lndListChannels } from 'util/tests/sampleData';
 import { useStore } from 'store';
+import { Channel } from 'store/models';
 import SwapWizard from 'components/loop/swap/SwapWizard';
 
 export default {
@@ -18,83 +18,34 @@ export default {
   ],
 };
 
+const mockChannels = lndListChannels.channelsList.slice(0, 3).map(c => new Channel(c));
+
 export const Step1Amount = () => {
-  const { channelStore, buildSwapStore: build } = useStore();
+  console.warn('render1');
+  const { buildSwapStore: build } = useStore();
+  build.startSwap();
+  build.setSelectedChannels(mockChannels);
   build.setDirection(SwapDirection.OUT);
-  return (
-    <SwapWizard
-      channels={channelStore.sortedChannels.slice(0, 3)}
-      direction={build.direction}
-      amount={build.amount}
-      setAmount={build.setAmount}
-      minAmount={build.termsMinMax.min}
-      maxAmount={build.termsMinMax.max}
-      fee={build.fee}
-      currentStep={1}
-      onNext={build.goToNextStep}
-      onPrev={build.goToPrevStep}
-      onClose={() => action('onClose')}
-    />
-  );
+  return <SwapWizard />;
 };
 
 export const Step2Fees = () => {
-  const { channelStore, buildSwapStore: build } = useStore();
-  build.setAmount(50000);
+  const { buildSwapStore: build } = useStore();
+  build.startSwap();
+  build.setSelectedChannels(mockChannels);
   build.setDirection(SwapDirection.OUT);
-  return (
-    <SwapWizard
-      channels={channelStore.sortedChannels.slice(0, 3)}
-      direction={build.direction}
-      amount={build.amount}
-      setAmount={build.setAmount}
-      minAmount={build.termsMinMax.min}
-      maxAmount={build.termsMinMax.max}
-      fee={1234}
-      currentStep={2}
-      onNext={build.goToNextStep}
-      onPrev={build.goToPrevStep}
-      onClose={() => action('onClose')}
-    />
-  );
+  build.setAmount(500000);
+  build.goToNextStep();
+  return <SwapWizard />;
 };
 
 export const Step3Processing = () => {
-  const { channelStore, buildSwapStore: build } = useStore();
+  const { buildSwapStore: build } = useStore();
+  build.startSwap();
+  build.setSelectedChannels(mockChannels);
   build.setDirection(SwapDirection.OUT);
-  return (
-    <SwapWizard
-      channels={channelStore.sortedChannels.slice(0, 3)}
-      direction={build.direction}
-      amount={build.amount}
-      setAmount={build.setAmount}
-      minAmount={build.termsMinMax.min}
-      maxAmount={build.termsMinMax.max}
-      fee={build.fee}
-      currentStep={3}
-      onNext={build.goToNextStep}
-      onPrev={build.goToPrevStep}
-      onClose={() => action('onClose')}
-    />
-  );
-};
-
-export const Interactive = () => {
-  const { channelStore, buildSwapStore: build } = useStore();
-  build.setDirection(SwapDirection.OUT);
-  return useObserver(() => (
-    <SwapWizard
-      channels={channelStore.sortedChannels.slice(0, 3)}
-      direction={build.direction}
-      amount={build.amount}
-      setAmount={build.setAmount}
-      minAmount={build.termsMinMax.min}
-      maxAmount={build.termsMinMax.max}
-      fee={build.fee}
-      currentStep={build.currentStep}
-      onNext={build.goToNextStep}
-      onPrev={build.goToPrevStep}
-      onClose={build.cancel}
-    />
-  ));
+  build.setAmount(500000);
+  build.goToNextStep();
+  build.goToNextStep();
+  return <SwapWizard />;
 };

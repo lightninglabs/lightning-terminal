@@ -1,6 +1,7 @@
 import React from 'react';
-import { SwapDirection } from 'types/state';
+import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
+import { useStore } from 'store';
 import { Title, XLargeText } from 'components/common/text';
 import { styled } from 'components/theme';
 import StepButtons from './StepButtons';
@@ -36,24 +37,9 @@ const Styled = {
   `,
 };
 
-interface Props {
-  amount: number;
-  fee: number;
-  direction: SwapDirection;
-  channelCount: number;
-  onNext: () => void;
-  onCancel: () => void;
-}
-
-const SwapReviewStep: React.FC<Props> = ({
-  amount,
-  fee,
-  direction,
-  channelCount,
-  onNext,
-  onCancel,
-}) => {
+const SwapReviewStep: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.swap.SwapReviewStep');
+  const { buildSwapStore } = useStore();
 
   const { Wrapper, Summary, Invoice, InvoiceRow, Divider } = Styled;
   return (
@@ -63,31 +49,32 @@ const SwapReviewStep: React.FC<Props> = ({
           title={l('title')}
           heading={l('heading')}
           description={l('description')}
-          channelCount={channelCount}
         />
       </Summary>
       <Invoice>
         <div>
           <InvoiceRow>
-            <Title>{l('amount', { type: direction })}</Title>
-            <span>{amount.toLocaleString()} SAT</span>
+            <Title>{l('amount', { type: buildSwapStore.direction })}</Title>
+            <span>{buildSwapStore.amount.toLocaleString()} SAT</span>
           </InvoiceRow>
           <InvoiceRow>
             <Title>{l('fees')}</Title>
-            <span>
-              {fee.toLocaleString()} SAT ({((100 * fee) / amount).toFixed(2)}%)
-            </span>
+            <span>{buildSwapStore.feesLabel}</span>
           </InvoiceRow>
           <Divider />
           <InvoiceRow>
             <Title>{l('total')}</Title>
-            <XLargeText>{(amount + fee).toLocaleString()} SAT</XLargeText>
+            <XLargeText>{buildSwapStore.invoiceTotal.toLocaleString()} SAT</XLargeText>
           </InvoiceRow>
         </div>
-        <StepButtons onCancel={onCancel} onNext={onNext} confirm />
+        <StepButtons
+          confirm
+          onCancel={buildSwapStore.cancel}
+          onNext={buildSwapStore.goToNextStep}
+        />
       </Invoice>
     </Wrapper>
   );
 };
 
-export default SwapReviewStep;
+export default observer(SwapReviewStep);

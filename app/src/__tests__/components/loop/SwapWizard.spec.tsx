@@ -32,8 +32,8 @@ describe('SwapWizard component', () => {
           channels={build.channels}
           amount={build.amount}
           setAmount={build.setAmount}
-          minAmount={build.termsMinMax.min}
-          maxAmount={build.termsMinMax.max}
+          minAmount={build.termsForDirection.min}
+          maxAmount={build.termsForDirection.max}
           fee={build.fee}
           currentStep={build.currentStep}
           swapError={build.swapError}
@@ -70,7 +70,7 @@ describe('SwapWizard component', () => {
   describe('Config Step', () => {
     it('should display the correct min an max values', () => {
       const { getByText } = renderWrap();
-      const { min, max } = store.buildSwapStore.termsMinMax;
+      const { min, max } = store.buildSwapStore.termsForDirection;
       expect(getByText(`${min.toLocaleString()} SAT`)).toBeInTheDocument();
       expect(getByText(`${max.toLocaleString()} SAT`)).toBeInTheDocument();
     });

@@ -29,20 +29,7 @@ const LoopPage: React.FC = () => {
   return (
     <PageWrap>
       {build.showWizard ? (
-        <SwapWizard
-          direction={build.direction}
-          channels={build.channels}
-          amount={build.amount}
-          setAmount={build.setAmount}
-          minAmount={build.termsMinMax.min}
-          maxAmount={build.termsMinMax.max}
-          fee={build.fee}
-          currentStep={build.currentStep}
-          swapError={build.swapError}
-          onNext={build.goToNextStep}
-          onPrev={build.goToPrevStep}
-          onClose={build.cancel}
-        />
+        <SwapWizard />
       ) : (
         <>
           <PageTitle>{l('pageTitle')}</PageTitle>
