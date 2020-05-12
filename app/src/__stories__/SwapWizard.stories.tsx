@@ -1,8 +1,8 @@
 import React from 'react';
+import { observable } from 'mobx';
 import { SwapDirection } from 'types/state';
 import { lndListChannels } from 'util/tests/sampleData';
 import { useStore } from 'store';
-import { Channel } from 'store/models';
 import SwapWizard from 'components/loop/swap/SwapWizard';
 
 export default {
@@ -18,13 +18,14 @@ export default {
   ],
 };
 
-const mockChannels = lndListChannels.channelsList.slice(0, 3).map(c => new Channel(c));
+const selectedChannels = observable.array(
+  lndListChannels.channelsList.slice(0, 3).map(c => c.chanId),
+);
 
 export const Step1Amount = () => {
-  console.warn('render1');
   const { buildSwapStore: build } = useStore();
   build.startSwap();
-  build.setSelectedChannels(mockChannels);
+  build.selectedChanIds = selectedChannels;
   build.setDirection(SwapDirection.OUT);
   return <SwapWizard />;
 };
@@ -32,7 +33,7 @@ export const Step1Amount = () => {
 export const Step2Fees = () => {
   const { buildSwapStore: build } = useStore();
   build.startSwap();
-  build.setSelectedChannels(mockChannels);
+  build.selectedChanIds = selectedChannels;
   build.setDirection(SwapDirection.OUT);
   build.setAmount(500000);
   build.goToNextStep();
@@ -42,7 +43,7 @@ export const Step2Fees = () => {
 export const Step3Processing = () => {
   const { buildSwapStore: build } = useStore();
   build.startSwap();
-  build.setSelectedChannels(mockChannels);
+  build.selectedChanIds = selectedChannels;
   build.setDirection(SwapDirection.OUT);
   build.setAmount(500000);
   build.goToNextStep();

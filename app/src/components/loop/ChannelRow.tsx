@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { BalanceLevel } from 'types/state';
 import { usePrefixedTranslation } from 'hooks';
 import { ellipseInside } from 'util/strings';
+import { useStore } from 'store';
 import { Channel } from 'store/models';
 import Checkbox from 'components/common/Checkbox';
 import { Column, Row } from 'components/common/grid';
@@ -86,33 +87,27 @@ const ChannelDot: React.FC<{ channel: Channel }> = observer(({ channel }) => {
 
 interface Props {
   channel: Channel;
-  editable?: boolean;
-  checked?: boolean;
-  onChange: (channel: Channel, checked: boolean) => void;
-  disabled?: boolean;
-  dimmed?: boolean;
   style?: CSSProperties;
 }
 
-const ChannelRow: React.FC<Props> = ({
-  channel,
-  editable,
-  checked,
-  onChange,
-  disabled,
-  dimmed,
-  style,
-}) => {
+const ChannelRow: React.FC<Props> = ({ channel, style }) => {
+  const store = useStore();
+
+  const editable = store.buildSwapStore.listEditable;
+  const disabled = store.buildSwapStore.showWizard;
+  const checked = store.buildSwapStore.selectedChanIds.includes(channel.chanId);
+  const dimmed = editable && disabled && !checked;
+
+  const handleRowChecked = () => {
+    store.buildSwapStore.toggleSelectedChannel(channel.chanId);
+  };
+
   const { Row, Column, StatusIcon, Check, Balance } = Styled;
   return (
     <Row dimmed={dimmed} style={style}>
       <Column right>
         {editable ? (
-          <Check
-            checked={checked}
-            disabled={disabled}
-            onChange={checked => onChange(channel, checked)}
-          />
+          <Check checked={checked} disabled={disabled} onChange={handleRowChecked} />
         ) : (
           <StatusIcon>
             <ChannelDot channel={channel} />

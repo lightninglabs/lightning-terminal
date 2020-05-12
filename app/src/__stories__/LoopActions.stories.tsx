@@ -1,7 +1,6 @@
 import React from 'react';
 import { lndListChannels } from 'util/tests/sampleData';
 import { useStore } from 'store';
-import { Channel } from 'store/models';
 import LoopActions from 'components/loop/LoopActions';
 
 export default {
@@ -18,12 +17,12 @@ export const Default = () => {
 };
 
 export const Opened = () => {
-  // only use 3 channels for this story
-  const channels = lndListChannels.channelsList.slice(0, 3).map(c => new Channel(c));
-
   const store = useStore();
   store.buildSwapStore.startSwap();
-  store.buildSwapStore.setSelectedChannels(channels);
+  // select 3 channels
+  lndListChannels.channelsList.slice(0, 3).forEach(c => {
+    store.buildSwapStore.toggleSelectedChannel(c.chanId);
+  });
   return <LoopActions />;
 };
 

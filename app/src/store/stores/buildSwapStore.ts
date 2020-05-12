@@ -1,7 +1,6 @@
 import { action, computed, observable, toJS } from 'mobx';
 import { BuildSwapSteps, Quote, SwapDirection, SwapTerms } from 'types/state';
 import { Store } from 'store';
-import { Channel } from '../models';
 
 /**
  * The store to manage the state of a Loop swap being created
@@ -16,7 +15,7 @@ class BuildSwapStore {
   @observable direction: SwapDirection = SwapDirection.IN;
 
   /** the channels selected */
-  @observable channels: Channel[] = [];
+  @observable selectedChanIds: string[] = [];
 
   /** the amount to swap */
   @observable amount = 0;
@@ -131,13 +130,20 @@ class BuildSwapStore {
   }
 
   /**
-   * Set the selected channels to use for the pending swap
+   * Toggles a selected channel to use for the pending swap
    * @param channels the selected channels
    */
   @action.bound
-  setSelectedChannels(channels: Channel[]) {
-    this.channels = channels;
-    this._store.log.info(`updated buildSwapStore.channels`, channels);
+  toggleSelectedChannel(channelId: string) {
+    if (this.selectedChanIds.includes(channelId)) {
+      this.selectedChanIds = this.selectedChanIds.filter(id => id !== channelId);
+    } else {
+      this.selectedChanIds.push(channelId);
+    }
+    this._store.log.info(
+      `updated buildSwapStore.selectedChanIds`,
+      toJS(this.selectedChanIds),
+    );
   }
 
   /**
@@ -187,7 +193,7 @@ class BuildSwapStore {
   @action.bound
   cancel() {
     this.currentStep = BuildSwapSteps.Closed;
-    this.channels = [];
+    this.selectedChanIds = [];
     this.quote.swapFee = 0;
     this.quote.minerFee = 0;
     this.quote.prepayAmount = 0;

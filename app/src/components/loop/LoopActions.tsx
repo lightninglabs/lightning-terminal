@@ -41,6 +41,7 @@ const LoopActions: React.FC = () => {
   const handleLoopIn = useCallback(() => buildSwapStore.setDirection(SwapDirection.IN), [
     buildSwapStore,
   ]);
+  const selectedCount = buildSwapStore.selectedChanIds.length;
 
   const { Wrapper, Actions, CloseIcon, Selected } = Styled;
   return (
@@ -48,13 +49,13 @@ const LoopActions: React.FC = () => {
       {buildSwapStore.showActions ? (
         <Actions>
           <CloseIcon onClick={buildSwapStore.cancel} />
-          <Pill>{buildSwapStore.channels.length}</Pill>
+          <Pill>{selectedCount}</Pill>
           <Selected>{l('channelsSelected')}</Selected>
           <Button
             primary={buildSwapStore.direction === SwapDirection.OUT}
             borderless={buildSwapStore.direction !== SwapDirection.OUT}
             onClick={handleLoopOut}
-            disabled={buildSwapStore.channels.length === 0}
+            disabled={selectedCount === 0}
           >
             Loop out
           </Button>
@@ -62,7 +63,7 @@ const LoopActions: React.FC = () => {
             primary={buildSwapStore.direction === SwapDirection.IN}
             borderless={buildSwapStore.direction !== SwapDirection.IN}
             onClick={handleLoopIn}
-            disabled={buildSwapStore.channels.length === 0}
+            disabled={selectedCount === 0}
           >
             Loop in
           </Button>

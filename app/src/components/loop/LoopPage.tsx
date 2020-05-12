@@ -32,13 +32,7 @@ const LoopPage: React.FC = () => {
           <LoopActions />
         </>
       )}
-      <ChannelList
-        channels={store.channelStore.sortedChannels}
-        enableSelection={build.listEditable}
-        selectedChannels={build.channels}
-        onSelectionChange={build.setSelectedChannels}
-        disabled={build.showWizard}
-      />
+      <ChannelList />
     </PageWrap>
   );
 };

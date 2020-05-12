@@ -43,7 +43,7 @@ const StepSummary: React.FC<Props> = ({ title, heading, description }) => {
         <Description>{description}</Description>
       </div>
       <div>
-        <Pill>{buildSwapStore.channels.length}</Pill>
+        <Pill>{buildSwapStore.selectedChanIds.length}</Pill>
         {l('channelsSelected')}
       </div>
     </Wrapper>

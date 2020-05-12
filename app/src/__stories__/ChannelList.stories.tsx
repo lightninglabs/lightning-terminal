@@ -1,6 +1,6 @@
 import React from 'react';
+import { observable } from 'mobx';
 import { useObserver } from 'mobx-react-lite';
-import { action } from '@storybook/addon-actions';
 import { useStore } from 'store';
 import ChannelList from 'components/loop/ChannelList';
 
@@ -11,39 +11,20 @@ export default {
 };
 
 export const NoChannels = () => {
-  return (
-    <ChannelList
-      channels={[]}
-      enableSelection={false}
-      selectedChannels={[]}
-      onSelectionChange={() => action('onSelectionChange')}
-      disabled={false}
-    />
-  );
+  const store = useStore();
+  store.channelStore.channels = observable.map();
+  return <ChannelList />;
 };
 
 export const FewChannels = () => {
   const store = useStore();
-  return useObserver(() => (
-    <ChannelList
-      channels={store.channelStore.sortedChannels.slice(0, 10)}
-      enableSelection={false}
-      selectedChannels={[]}
-      onSelectionChange={() => action('onSelectionChange')}
-      disabled={false}
-    />
-  ));
+  store.channelStore.channels = observable.map();
+  store.channelStore.sortedChannels.slice(0, 10).map(c => {
+    store.channelStore.channels.set(c.chanId, c);
+  });
+  return useObserver(() => <ChannelList />);
 };
 
 export const ManyChannels = () => {
-  const store = useStore();
-  return useObserver(() => (
-    <ChannelList
-      channels={store.channelStore.sortedChannels}
-      enableSelection={false}
-      selectedChannels={[]}
-      onSelectionChange={() => action('onSelectionChange')}
-      disabled={false}
-    />
-  ));
+  return useObserver(() => <ChannelList />);
 };
