@@ -1,4 +1,3 @@
-import { observable } from 'mobx';
 import { lndListChannels } from 'util/tests/sampleData';
 import { createStore } from 'store';
 import ChannelStore from 'store/stores/channelStore';
@@ -11,14 +10,13 @@ describe('Store', () => {
   });
 
   it('should fetch list of channels', async () => {
-    store.channels = observable.map();
     expect(store.channels.size).toEqual(0);
     await store.fetchChannels();
     expect(store.channels.size).toEqual(lndListChannels.channelsList.length);
   });
 
   it('should update existing channels with the same id', async () => {
-    expect(store.channels.size).toEqual(500);
+    expect(store.channels.size).toEqual(0);
     await store.fetchChannels();
     expect(store.channels.size).toEqual(lndListChannels.channelsList.length);
     const prevChan = store.sortedChannels[0];
@@ -32,6 +30,7 @@ describe('Store', () => {
   });
 
   it('should compute inbound liquidity', async () => {
+    await store.fetchChannels();
     const inbound = lndListChannels.channelsList.reduce(
       (sum, chan) => sum + chan.remoteBalance,
       0,
@@ -41,6 +40,7 @@ describe('Store', () => {
   });
 
   it('should compute outbound liquidity', async () => {
+    await store.fetchChannels();
     const outbound = lndListChannels.channelsList.reduce(
       (sum, chan) => sum + chan.localBalance,
       0,

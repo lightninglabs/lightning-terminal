@@ -9,6 +9,7 @@ describe('LoopHistory component', () => {
 
   beforeEach(async () => {
     store = createStore();
+    await store.init();
   });
 
   const render = () => {

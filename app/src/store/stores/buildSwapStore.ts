@@ -1,6 +1,9 @@
-import { action, computed, observable, toJS } from 'mobx';
+import { action, computed, observable, runInAction, toJS } from 'mobx';
 import { BuildSwapSteps, Quote, SwapDirection, SwapTerms } from 'types/state';
 import { Store } from 'store';
+
+// an artificial delay to allow the user to abort a swap before it executed
+export const SWAP_ABORT_DELAY = 3000;
 
 /**
  * The store to manage the state of a Loop swap being created
@@ -112,9 +115,9 @@ class BuildSwapStore {
    * display the Loop actions bar
    */
   @action.bound
-  startSwap() {
+  async startSwap(): Promise<void> {
     this.currentStep = BuildSwapSteps.SelectDirection;
-    this.getTerms();
+    await this.getTerms();
     this._store.log.info(`updated buildSwapStore.currentStep`, this.currentStep);
   }
 
@@ -123,7 +126,7 @@ class BuildSwapStore {
    * @param direction the direction of the swap
    */
   @action.bound
-  setDirection(direction: SwapDirection) {
+  async setDirection(direction: SwapDirection): Promise<void> {
     this.direction = direction;
     this._store.log.info(`updated buildSwapStore.direction`, direction);
     this.goToNextStep();
@@ -204,35 +207,37 @@ class BuildSwapStore {
    * fetch the terms, minimum/maximum swap amount allowed, from the Loop API
    */
   @action.bound
-  async getTerms() {
+  async getTerms(): Promise<void> {
     this._store.log.info(`fetching loop terms`);
     const inTerms = await this._store.api.loop.getLoopInTerms();
     const outTerms = await this._store.api.loop.getLoopOutTerms();
-    this.terms = {
-      in: {
-        min: inTerms.minSwapAmount,
-        max: inTerms.maxSwapAmount,
-      },
-      out: {
-        min: outTerms.minSwapAmount,
-        max: outTerms.maxSwapAmount,
-      },
-    };
-    this._store.log.info('updated store.terms', toJS(this.terms));
+    runInAction(() => {
+      this.terms = {
+        in: {
+          min: inTerms.minSwapAmount,
+          max: inTerms.maxSwapAmount,
+        },
+        out: {
+          min: outTerms.minSwapAmount,
+          max: outTerms.maxSwapAmount,
+        },
+      };
+      this._store.log.info('updated store.terms', toJS(this.terms));
 
-    // restrict the amount whenever the terms are updated
-    const { min, max } = this.termsForDirection;
-    if (this.amount < min || this.amount > max) {
-      this.setAmount(Math.floor((min + max) / 2));
-      this._store.log.info(`updated buildSwapStore.amount`, this.amount);
-    }
+      // restrict the amount whenever the terms are updated
+      const { min, max } = this.termsForDirection;
+      if (this.amount < min || this.amount > max) {
+        this.setAmount(Math.floor((min + max) / 2));
+        this._store.log.info(`updated buildSwapStore.amount`, this.amount);
+      }
+    });
   }
 
   /**
    * get a loop quote from the Loop RPC
    */
   @action.bound
-  async getQuote() {
+  async getQuote(): Promise<void> {
     const { amount, direction } = this;
     this._store.log.info(`fetching ${direction} quote for ${amount} sats`);
 
@@ -241,12 +246,14 @@ class BuildSwapStore {
         ? await this._store.api.loop.getLoopInQuote(amount)
         : await this._store.api.loop.getLoopOutQuote(amount);
 
-    this.quote = {
-      swapFee: quote.swapFee,
-      minerFee: quote.minerFee,
-      prepayAmount: quote.prepayAmt,
-    };
-    this._store.log.info('updated buildSwapStore.quote', toJS(this.quote));
+    runInAction(() => {
+      this.quote = {
+        swapFee: quote.swapFee,
+        minerFee: quote.minerFee,
+        prepayAmount: quote.prepayAmt,
+      };
+      this._store.log.info('updated buildSwapStore.quote', toJS(this.quote));
+    });
   }
 
   /**
@@ -255,7 +262,7 @@ class BuildSwapStore {
    */
   @action.bound
   requestSwap() {
-    const delay = process.env.NODE_ENV !== 'test' ? 3000 : 1;
+    const delay = process.env.NODE_ENV !== 'test' ? SWAP_ABORT_DELAY : 1;
     const { amount, direction, quote } = this;
     this._store.log.info(
       `executing ${direction} for ${amount} sats (delaying for ${delay}ms)`,

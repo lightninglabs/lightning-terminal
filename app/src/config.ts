@@ -4,6 +4,9 @@ export const IS_DEV = process.env.NODE_ENV === 'development';
 // flag to check if the app is running in a a production environment
 export const IS_PROD = process.env.NODE_ENV === 'production';
 
+// flag to check if the app is running in a a test environment
+export const IS_TEST = process.env.NODE_ENV === 'test';
+
 //
 // temporary placeholder values. these will be supplied via the UI in the future
 //

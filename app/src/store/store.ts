@@ -1,6 +1,7 @@
 import { observable } from 'mobx';
-import { Logger } from 'util/log';
-import { LndApi, LoopApi } from 'api';
+import { IS_DEV, IS_TEST } from 'config';
+import { actionLog, Logger } from 'util/log';
+import { GrpcClient, LndApi, LoopApi } from 'api';
 import {
   BuildSwapStore,
   ChannelStore,
@@ -49,3 +50,22 @@ export class Store {
     this.initialized = true;
   }
 }
+
+/**
+ * Creates an initialized Store instance with the dependencies injected
+ * @param grpcClient an alternate GrpcClient to use instead of the default
+ */
+export const createStore = (grpcClient?: GrpcClient) => {
+  const grpc = grpcClient || new GrpcClient();
+  const lndApi = new LndApi(grpc);
+  const loopApi = new LoopApi(grpc);
+
+  const store = new Store(lndApi, loopApi, actionLog);
+  // initialize the store immediately to fetch API data, except when running unit tests
+  if (!IS_TEST) store.init();
+
+  // in dev env, make the store accessible via the browser DevTools console
+  if (IS_DEV) (global as any).store = store;
+
+  return store;
+};

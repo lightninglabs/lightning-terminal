@@ -2,16 +2,19 @@ import { SwapDirection } from 'types/state';
 import { grpc } from '@improbable-eng/grpc-web';
 import { waitFor } from '@testing-library/react';
 import * as config from 'config';
-import { sampleApiResponses } from 'util/tests/sampleData';
+import { injectIntoGrpcUnary } from 'util/tests';
 import { BuildSwapStore, createStore } from 'store';
+import { SWAP_ABORT_DELAY } from 'store/stores/buildSwapStore';
 
 const grpcMock = grpc as jest.Mocked<typeof grpc>;
 
 describe('SwapStore', () => {
   let store: BuildSwapStore;
 
-  beforeEach(() => {
-    store = createStore().buildSwapStore;
+  beforeEach(async () => {
+    const rootStore = createStore();
+    await rootStore.init();
+    store = rootStore.buildSwapStore;
   });
 
   it('should toggle the selected channels', () => {
@@ -93,24 +96,12 @@ describe('SwapStore', () => {
   it('should set the correct swap deadline in production', async () => {
     store.setDirection(SwapDirection.OUT);
     store.setAmount(600);
+
+    let deadline = 0;
     // mock the grpc unary function in order to capture the supplied deadline
     // passed in with the API request
-    let deadline = 0;
-    grpcMock.unary.mockImplementation((desc, props) => {
+    injectIntoGrpcUnary((desc, props) => {
       deadline = (props.request.toObject() as any).swapPublicationDeadline;
-      const path = `${desc.service.serviceName}.${desc.methodName}`;
-      // return a response by calling the onEnd function
-      props.onEnd({
-        status: 0,
-        statusMessage: '',
-        // the message returned should have a toObject function
-        message: {
-          toObject: () => sampleApiResponses[path],
-        } as any,
-        headers: {} as any,
-        trailers: {} as any,
-      });
-      return undefined as any;
     });
 
     // run a loop in production and verify the deadline
@@ -118,14 +109,19 @@ describe('SwapStore', () => {
     store.requestSwap();
     await waitFor(() => expect(deadline).toBeGreaterThan(0));
 
-    // run a loop not in production and verify the deadline
+    // inject again for the next swap
+    injectIntoGrpcUnary((desc, props) => {
+      deadline = (props.request.toObject() as any).swapPublicationDeadline;
+    });
+
+    // run a loop NOT in production and verify the deadline
     Object.defineProperty(config, 'IS_PROD', { get: () => false });
     store.requestSwap();
     await waitFor(() => expect(deadline).toEqual(0));
   });
 
   it('should handle loop errors', async () => {
-    grpcMock.unary.mockImplementation(desc => {
+    grpcMock.unary.mockImplementationOnce(desc => {
       if (desc.methodName === 'LoopIn') throw new Error('asdf');
       return undefined as any;
     });
@@ -142,37 +138,27 @@ describe('SwapStore', () => {
   it('should delay for 3 seconds before performing a swap in production', async () => {
     store.setDirection(SwapDirection.OUT);
     store.setAmount(600);
-    // mock the grpc unary function in order to time the delay of the API request
-    const start = Date.now();
-    let delay = 0;
-    grpcMock.unary.mockImplementation((desc, props) => {
-      delay = Date.now() - start;
-      const path = `${desc.service.serviceName}.${desc.methodName}`;
-      // return a response by calling the onEnd function
-      props.onEnd({
-        status: 0,
-        statusMessage: '',
-        // the message returned should have a toObject function
-        message: {
-          toObject: () => sampleApiResponses[path],
-        } as any,
-        headers: {} as any,
-        trailers: {} as any,
-      });
-      return undefined as any;
-    });
 
+    let executed = false;
+    // mock the grpc unary function in order to know when the API request is executed
+    injectIntoGrpcUnary(() => (executed = true));
+
+    // use mock timers so the test doesn't actually need to run for 3 seconds
+    jest.useFakeTimers();
     // run a loop in production and verify the delay
-    Object.defineProperty(process.env, 'NODE_ENV', { get: () => 'production' });
+    Object.defineProperty(process, 'env', { get: () => ({ NODE_ENV: 'production' }) });
+
     store.requestSwap();
-    await waitFor(
-      () => {
-        expect(delay).toBeGreaterThan(2900);
-        expect(delay).toBeLessThan(3100);
-      },
-      { timeout: 3500 },
-    );
-    Object.defineProperty(process.env, 'NODE_ENV', { get: () => 'test' });
+    jest.advanceTimersByTime(SWAP_ABORT_DELAY - 1);
+    // the loop still should not have executed here
+    expect(executed).toBe(false);
+    // this should trigger the timeout at 3000
+    jest.advanceTimersByTime(1);
+    expect(executed).toBe(true);
+
+    // reset the env and mock timers
+    Object.defineProperty(process, 'env', { get: () => ({ NODE_ENV: 'test' }) });
+    jest.useRealTimers();
   });
 
   it('should do nothing when abortSwap is called without requestSwap', async () => {
