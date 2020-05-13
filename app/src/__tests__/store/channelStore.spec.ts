@@ -17,6 +17,20 @@ describe('Store', () => {
     expect(store.channels.size).toEqual(lndListChannels.channelsList.length);
   });
 
+  it('should update existing channels with the same id', async () => {
+    expect(store.channels.size).toEqual(500);
+    await store.fetchChannels();
+    expect(store.channels.size).toEqual(lndListChannels.channelsList.length);
+    const prevChan = store.sortedChannels[0];
+    const prevUptime = prevChan.uptime;
+    prevChan.uptime = 123;
+    await store.fetchChannels();
+    const updatedChan = store.sortedChannels[0];
+    // the existing channel should be updated
+    expect(prevChan).toBe(updatedChan);
+    expect(updatedChan.uptime).toBe(prevUptime);
+  });
+
   it('should compute inbound liquidity', async () => {
     const inbound = lndListChannels.channelsList.reduce(
       (sum, chan) => sum + chan.remoteBalance,

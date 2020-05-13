@@ -19,15 +19,6 @@ class LndApi {
   }
 
   /**
-   * call the LND `GetInfo` RPC and return the response
-   */
-  async getInfo(): Promise<LND.GetInfoResponse.AsObject> {
-    const req = new LND.GetInfoRequest();
-    const res = await this._grpc.request(Lightning.GetInfo, req, this._meta);
-    return res.toObject();
-  }
-
-  /**
    * call the LND `ChannelBalance` RPC and return the response
    */
   async channelBalance(): Promise<LND.ChannelBalanceResponse.AsObject> {

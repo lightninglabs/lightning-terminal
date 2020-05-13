@@ -1,30 +1,22 @@
 import React from 'react';
+import { SwapDirection } from 'types/state';
 import { fireEvent } from '@testing-library/react';
 import { ellipseInside } from 'util/strings';
 import { renderWithProviders } from 'util/tests';
+import { createStore, Store } from 'store';
 import { Channel } from 'store/models';
 import ChannelRow from 'components/loop/ChannelRow';
 
 describe('ChannelRow component', () => {
   let channel: Channel;
-  const onChange = jest.fn();
+  let store: Store;
 
-  const render = (options?: {
-    editable?: boolean;
-    checked?: boolean;
-    disabled?: boolean;
-    dimmed?: boolean;
-  }) => {
-    return renderWithProviders(
-      <ChannelRow
-        channel={channel}
-        editable={options && options.editable}
-        checked={options && options.checked}
-        disabled={options && options.disabled}
-        dimmed={options && options.dimmed}
-        onChange={onChange}
-      />,
-    );
+  beforeEach(async () => {
+    store = createStore();
+  });
+
+  const render = () => {
+    return renderWithProviders(<ChannelRow channel={channel} />, store);
   };
 
   beforeEach(() => {
@@ -86,27 +78,43 @@ describe('ChannelRow component', () => {
   });
 
   it('should display a checkbox when it is editable', () => {
-    const { getByRole } = render({ editable: true });
+    store.buildSwapStore.startSwap();
+    const { getByRole } = render();
     expect(getByRole('checkbox')).toBeInTheDocument();
     expect(getByRole('checkbox')).toHaveAttribute('aria-checked', 'false');
   });
 
   it('should display a checked checkbox when it is checked', () => {
-    const { getByRole } = render({ editable: true, checked: true });
+    store.buildSwapStore.startSwap();
+    store.buildSwapStore.toggleSelectedChannel(channel.chanId);
+    const { getByRole } = render();
     expect(getByRole('checkbox')).toBeInTheDocument();
     expect(getByRole('checkbox')).toHaveAttribute('aria-checked', 'true');
   });
 
   it('should display a disabled checkbox', () => {
-    const { getByRole } = render({ editable: true, disabled: true, dimmed: true });
+    store.buildSwapStore.startSwap();
+    store.buildSwapStore.toggleSelectedChannel(channel.chanId);
+    store.buildSwapStore.setDirection(SwapDirection.OUT);
+    const { getByRole } = render();
     expect(getByRole('checkbox')).toBeInTheDocument();
     expect(getByRole('checkbox')).toHaveAttribute('aria-disabled', 'true');
   });
 
   it('should trigger onChange when it is clicked', () => {
-    const { getByRole } = render({ editable: true });
+    store.buildSwapStore.startSwap();
+    const { getByRole } = render();
     expect(getByRole('checkbox')).toBeInTheDocument();
     fireEvent.click(getByRole('checkbox'));
-    expect(onChange).toBeCalledWith(channel, true);
+    expect(store.buildSwapStore.selectedChanIds).toEqual([channel.chanId]);
+  });
+
+  it('should not trigger onChange when it is disabled and clicked', () => {
+    store.buildSwapStore.startSwap();
+    store.buildSwapStore.setDirection(SwapDirection.OUT);
+    const { getByRole } = render();
+    expect(getByRole('checkbox')).toBeInTheDocument();
+    fireEvent.click(getByRole('checkbox'));
+    expect(store.buildSwapStore.selectedChanIds).toEqual([]);
   });
 });

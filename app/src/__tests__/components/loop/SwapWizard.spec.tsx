@@ -3,45 +3,26 @@ import { observer } from 'mobx-react-lite';
 import { SwapDirection } from 'types/state';
 import { fireEvent } from '@testing-library/react';
 import { renderWithProviders } from 'util/tests';
-import { createActions, StoreActions } from 'action';
 import { createStore, Store } from 'store';
 import SwapWizard from 'components/loop/swap/SwapWizard';
 
 describe('SwapWizard component', () => {
   let store: Store;
-  let actions: StoreActions;
 
   beforeEach(async () => {
     store = createStore();
-    actions = createActions(store);
 
-    store.buildSwapStore.setSelectedChannels(
-      store.channelStore.sortedChannels.slice(0, 3),
-    );
-    await actions.swap.getTerms();
+    store.buildSwapStore.startSwap();
     store.buildSwapStore.setDirection(SwapDirection.OUT);
+    store.channelStore.sortedChannels.slice(0, 3).forEach(c => {
+      store.buildSwapStore.toggleSelectedChannel(c.chanId);
+    });
   });
 
   const renderWrap = () => {
-    const build = store.buildSwapStore;
     // create a wrapper component to use the useObserver hook
     const Wrapper = observer(() => {
-      return (
-        <SwapWizard
-          direction={build.direction}
-          channels={build.channels}
-          amount={build.amount}
-          setAmount={build.setAmount}
-          minAmount={build.termsForDirection.min}
-          maxAmount={build.termsForDirection.max}
-          fee={build.fee}
-          currentStep={build.currentStep}
-          swapError={build.swapError}
-          onNext={build.goToNextStep}
-          onPrev={build.goToPrevStep}
-          onClose={build.cancel}
-        />
-      );
+      return <SwapWizard />;
     });
     return renderWithProviders(<Wrapper />, store);
   };
@@ -77,8 +58,8 @@ describe('SwapWizard component', () => {
 
     it('should display the correct number of channels', () => {
       const { getByText } = renderWrap();
-      const { channels } = store.buildSwapStore;
-      expect(getByText(`${channels.length}`)).toBeInTheDocument();
+      const { selectedChanIds } = store.buildSwapStore;
+      expect(getByText(`${selectedChanIds.length}`)).toBeInTheDocument();
     });
 
     it('should update the amount when the slider changes', () => {
@@ -96,7 +77,7 @@ describe('SwapWizard component', () => {
     beforeEach(async () => {
       store.buildSwapStore.setAmount(500000);
       store.buildSwapStore.goToNextStep();
-      await actions.swap.getQuote();
+      await store.buildSwapStore.getQuote();
     });
 
     it('should display the description labels', () => {
@@ -123,7 +104,7 @@ describe('SwapWizard component', () => {
     beforeEach(async () => {
       store.buildSwapStore.setAmount(500000);
       store.buildSwapStore.goToNextStep();
-      await actions.swap.getQuote();
+      await store.buildSwapStore.getQuote();
       store.buildSwapStore.goToNextStep();
     });
 
