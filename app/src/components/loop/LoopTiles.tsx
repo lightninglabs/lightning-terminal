@@ -23,7 +23,7 @@ const LoopTiles: React.FC = () => {
       <Row>
         <Column>
           <Tile title={l('history')} onArrowClick={() => null}>
-            <LoopHistory swaps={store.swapStore.sortedSwaps} />
+            <LoopHistory />
           </Tile>
         </Column>
         <Column cols={4}>

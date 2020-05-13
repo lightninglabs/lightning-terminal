@@ -115,7 +115,7 @@ export const loopListSwaps: LOOP.ListSwapsResponse.AsObject = {
     id: `f4eb118383c2b09d8c7289ce21c25900cfb4545d46c47ed23a31ad2aa57ce83${i}`,
     idBytes: '9OsRg4PCsJ2MconOIcJZAM+0VF1GxH7SOjGtKqV86DU=',
     type: (i % 3) as LOOP.SwapStatus.AsObject['type'],
-    state: (i % 7) as LOOP.SwapStatus.AsObject['state'],
+    state: i % 2 ? LOOP.SwapState.SUCCESS : LOOP.SwapState.FAILED,
     initiationTime: 1586390353623905000 + i * 100000000000000,
     lastUpdateTime: 1586398369729857000,
     htlcAddress: 'bcrt1qzu4077erkr78k52yuf2rwkk6ayr6m3wtazdfz2qqmd7taa5vvy9s5d75gd',

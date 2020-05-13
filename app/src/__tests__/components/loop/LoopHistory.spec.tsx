@@ -10,11 +10,16 @@ describe('LoopHistory component', () => {
   beforeEach(async () => {
     store = createStore();
     await store.init();
+
+    // remove all but one swap to prevent `getByText` from
+    // complaining about multiple elements in tests
+    const swap = store.swapStore.recentSwaps[0];
+    store.swapStore.swaps.clear();
+    store.swapStore.swaps.set(swap.id, swap);
   });
 
   const render = () => {
-    const swaps = store.swapStore.sortedSwaps.slice(0, 1);
-    return renderWithProviders(<LoopHistory swaps={swaps} />);
+    return renderWithProviders(<LoopHistory />, store);
   };
 
   it('should display a successful swap', async () => {

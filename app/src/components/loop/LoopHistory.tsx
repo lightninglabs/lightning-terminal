@@ -1,5 +1,6 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
+import { useStore } from 'store';
 import { Swap } from 'store/models';
 import { Column, Row } from 'components/common/grid';
 import StatusDot from 'components/common/StatusDot';
@@ -16,7 +17,7 @@ const Styled = {
   `,
 };
 
-const SwapDot: React.FC<{ swap: Swap }> = ({ swap }) => {
+const SwapDot: React.FC<{ swap: Swap }> = observer(({ swap }) => {
   switch (swap.stateLabel) {
     case 'Success':
       return <StatusDot status="success" />;
@@ -25,19 +26,15 @@ const SwapDot: React.FC<{ swap: Swap }> = ({ swap }) => {
     default:
       return <StatusDot status="warn" />;
   }
-};
+});
 
-interface Props {
-  swaps: Swap[];
-}
-
-const LoopHistory: React.FC<Props> = ({ swaps }) => {
-  const recentSwaps = swaps.slice(0, 2);
+const LoopHistory: React.FC = () => {
+  const store = useStore();
 
   const { RightColumn, SmallText } = Styled;
   return (
     <>
-      {recentSwaps.map(swap => (
+      {store.swapStore.recentSwaps.map(swap => (
         <Row key={swap.id}>
           <Column cols={6}>
             <SwapDot swap={swap} />

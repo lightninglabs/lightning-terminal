@@ -14,6 +14,13 @@ export default class Swap {
   }
 
   /**
+   * True when the state of this swap is not Success or Failed
+   */
+  @computed get isPending() {
+    return this.state !== LOOP.SwapState.SUCCESS && this.state !== LOOP.SwapState.FAILED;
+  }
+
+  /**
    * The numeric swap type as a user friendly string
    */
   @computed get typeName() {

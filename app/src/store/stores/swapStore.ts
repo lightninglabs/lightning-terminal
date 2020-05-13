@@ -3,6 +3,7 @@ import {
   computed,
   observable,
   ObservableMap,
+  reaction,
   runInAction,
   toJS,
   values,
@@ -16,8 +17,22 @@ export default class SwapStore {
   /** the collection of swaps */
   @observable swaps: ObservableMap<string, Swap> = observable.map();
 
+  pollingInterval?: NodeJS.Timeout;
+
   constructor(store: Store) {
     this._store = store;
+
+    // automatically start & stop polling for swaps if there are any pending
+    reaction(
+      () => this.pendingSwaps.length,
+      (length: number) => {
+        if (length > 0) {
+          this.startPolling();
+        } else {
+          this.stopPolling();
+        }
+      },
+    );
   }
 
   /**
@@ -27,6 +42,20 @@ export default class SwapStore {
     return values(this.swaps)
       .slice()
       .sort((a, b) => b.initiationTime - a.initiationTime);
+  }
+
+  /**
+   * an array of the two most recent swaps
+   */
+  @computed get recentSwaps() {
+    return this.sortedSwaps.slice(0, 2);
+  }
+
+  /**
+   * an array of swaps that are currently pending
+   */
+  @computed get pendingSwaps() {
+    return this.sortedSwaps.filter(s => s.isPending);
   }
 
   /**
@@ -57,5 +86,24 @@ export default class SwapStore {
 
       this._store.log.info('updated swapStore.swaps', toJS(this.swaps));
     });
+  }
+
+  @action.bound
+  startPolling() {
+    if (this.pollingInterval) this.stopPolling();
+    this._store.log.info('start polling for swap updates');
+    this.pollingInterval = setInterval(this.fetchSwaps, 1000);
+  }
+
+  @action.bound
+  stopPolling() {
+    this._store.log.info('stop polling for swap updates');
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = undefined;
+      this._store.log.info('polling stopped');
+    } else {
+      this._store.log.info('polling was already stopped');
+    }
   }
 }
