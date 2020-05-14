@@ -22,7 +22,7 @@ const LoopHistory: React.FC = () => {
   const { RightColumn, SmallText } = Styled;
   return (
     <>
-      {store.swapStore.recentSwaps.map(swap => (
+      {store.swapStore.lastTwoSwaps.map(swap => (
         <Row key={swap.id}>
           <Column cols={6}>
             <SwapDot swap={swap} />

@@ -9,6 +9,7 @@ import {
   toJS,
   values,
 } from 'mobx';
+import { IS_PROD } from 'config';
 import { Store } from 'store';
 import { Swap } from '../models';
 
@@ -30,40 +31,47 @@ export default class SwapStore {
 
     // automatically start & stop polling for swaps if there are any pending
     this.stopAutoPolling = reaction(
-      () => this.processingSwaps.length,
+      () => this.pendingSwaps.length,
       (length: number) => {
         if (length > 0) {
           this.startPolling();
         } else {
           this.stopPolling();
+          // also update our channels and balances when the loop is complete
+          this._store.channelStore.fetchChannels();
+          this._store.nodeStore.fetchBalances();
         }
       },
     );
   }
 
-  /**
-   * an array of swaps sorted by created date descending
-   */
+  /** swaps sorted by created date descending */
   @computed get sortedSwaps() {
     return values(this.swaps)
       .slice()
       .sort((a, b) => b.initiationTime - a.initiationTime);
   }
 
-  /**
-   * an array of the two most recent swaps
-   */
-  @computed get recentSwaps() {
+  /** the last two swaps */
+  @computed get lastTwoSwaps() {
     return this.sortedSwaps.slice(0, 2);
   }
 
-  /**
-   * an array of swaps that are currently processing
-   */
+  /** swaps that are currently processing or recently completed */
   @computed get processingSwaps() {
     return this.sortedSwaps.filter(
-      s => s.isProcessing || this.dismissedSwapIds.includes(s.id),
+      s => s.isPending || (s.isRecent && !this.dismissedSwapIds.includes(s.id)),
     );
+  }
+
+  /** swaps that are currently pending */
+  @computed get pendingSwaps() {
+    return this.sortedSwaps.filter(s => s.isPending);
+  }
+
+  /** swaps that were completed in the past 5 minutes */
+  @computed get recentSwaps() {
+    return this.sortedSwaps.filter(s => s.isRecent);
   }
 
   @action.bound
@@ -105,7 +113,8 @@ export default class SwapStore {
   startPolling() {
     if (this.pollingInterval) this.stopPolling();
     this._store.log.info('start polling for swap updates');
-    this.pollingInterval = setInterval(this.fetchSwaps, 1000);
+    const ms = IS_PROD ? 60 * 1000 : 1000;
+    this.pollingInterval = setInterval(this.fetchSwaps, ms);
   }
 
   @action.bound

@@ -8,6 +8,7 @@ import {
   NodeStore,
   SettingsStore,
   SwapStore,
+  UiStore,
 } from './stores';
 
 /**
@@ -17,14 +18,12 @@ export class Store {
   //
   // Child Stores
   //
-  @observable buildSwapStore = new BuildSwapStore(this);
-  @observable channelStore = new ChannelStore(this);
-  @observable swapStore = new SwapStore(this);
-  @observable nodeStore = new NodeStore(this);
-  @observable settingsStore = new SettingsStore(this);
-  // a flag to indicate when the store has completed all of its
-  // API requests requested during initialization
-  @observable initialized = false;
+  buildSwapStore = new BuildSwapStore(this);
+  channelStore = new ChannelStore(this);
+  swapStore = new SwapStore(this);
+  nodeStore = new NodeStore(this);
+  settingsStore = new SettingsStore(this);
+  uiStore = new UiStore(this);
 
   /** the backend api services to be used by child stores */
   api: {
@@ -34,6 +33,10 @@ export class Store {
 
   /** the logger for actions to use when modifying state */
   log: Logger;
+
+  // a flag to indicate when the store has completed all of its
+  // API requests requested during initialization
+  @observable initialized = false;
 
   constructor(lnd: LndApi, loop: LoopApi, log: Logger) {
     this.api = { lnd, loop };

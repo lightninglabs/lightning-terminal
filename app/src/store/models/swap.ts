@@ -9,6 +9,7 @@ export default class Swap {
   @observable type = 0;
   @observable amount = 0;
   @observable initiationTime = 0;
+  @observable lastUpdateTime = 0;
   @observable state = 0;
 
   constructor(loopSwap: LOOP.SwapStatus.AsObject) {
@@ -25,18 +26,18 @@ export default class Swap {
     return this.state === LOOP.SwapState.FAILED;
   }
 
-  /**
-   * True when the state of this swap is not Success/Failed or the swap
-   * was completed less than 5 minutes ago
-   */
-  @computed get isProcessing() {
+  /** True if the swap */
+  @computed get isRecent() {
     const fiveMinutes = 5 * 60 * 1000;
-    const recent = now() - this.createdOn.getTime() < fiveMinutes;
+    return now() - this.updatedOn.getTime() < fiveMinutes;
+  }
 
+  /** True when the state of this swap is not Success or Failed */
+  @computed get isPending() {
     const pending =
       this.state !== LOOP.SwapState.SUCCESS && this.state !== LOOP.SwapState.FAILED;
 
-    return recent || pending;
+    return pending;
   }
 
   /**
@@ -79,6 +80,11 @@ export default class Swap {
     return new Date(this.initiationTime / 1000 / 1000);
   }
 
+  /** The date this swap was last updated as a JS Date object */
+  @computed get updatedOn() {
+    return new Date(this.lastUpdateTime / 1000 / 1000);
+  }
+
   /**
    * Updates this swap model using data provided from the Loop GRPC api
    * @param loopSwap the swap data
@@ -89,6 +95,7 @@ export default class Swap {
     this.type = loopSwap.type;
     this.amount = loopSwap.amt;
     this.initiationTime = loopSwap.initiationTime;
+    this.lastUpdateTime = loopSwap.lastUpdateTime;
     this.state = loopSwap.state;
   }
 }

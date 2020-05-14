@@ -8,7 +8,7 @@ describe('Tile component', () => {
 
   const render = (text?: string, children?: ReactNode) => {
     const cmp = (
-      <Tile title="Test Tile" text={text} onArrowClick={handleArrowClick}>
+      <Tile title="Test Tile" text={text} onMaximizeClick={handleArrowClick}>
         {children}
       </Tile>
     );
@@ -32,7 +32,7 @@ describe('Tile component', () => {
 
   it('should handle the arrow click event', () => {
     const { getByText } = render();
-    fireEvent.click(getByText('arrow-right.svg'));
+    fireEvent.click(getByText('maximize.svg'));
     expect(handleArrowClick).toBeCalled();
   });
 });

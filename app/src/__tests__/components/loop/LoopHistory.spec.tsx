@@ -13,7 +13,7 @@ describe('LoopHistory component', () => {
 
     // remove all but one swap to prevent `getByText` from
     // complaining about multiple elements in tests
-    const swap = store.swapStore.recentSwaps[0];
+    const swap = store.swapStore.sortedSwaps[0];
     store.swapStore.swaps.clear();
     store.swapStore.swaps.set(swap.id, swap);
   });

@@ -2,6 +2,7 @@ import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
+import { Minimize } from 'components/common/icons';
 import { Title } from 'components/common/text';
 import { styled } from 'components/theme';
 import ProcessingSwapRow from './ProcessingSwapRow';
@@ -21,6 +22,16 @@ const Styled = {
     justify-content: space-between;
     margin-bottom: 20px;
   `,
+  MinimizeIcon: styled(Minimize)`
+    display: inline-block;
+    padding: 4px;
+    cursor: pointer;
+
+    &:hover {
+      border-radius: 24px;
+      background-color: ${props => props.theme.colors.purple};
+    }
+  `,
   Content: styled.div`
     display: flex;
     flex-direction: column;
@@ -29,13 +40,14 @@ const Styled = {
 
 const ProcessingSwaps: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.processing.ProcessingSwaps');
-  const { swapStore } = useStore();
+  const { swapStore, uiStore } = useStore();
 
-  const { Wrapper, Header, Content } = Styled;
+  const { Wrapper, Header, MinimizeIcon, Content } = Styled;
   return (
     <Wrapper>
       <Header>
         <Title>{l('title')}</Title>
+        <MinimizeIcon onClick={uiStore.toggleProcessingSwaps} />
       </Header>
       <Content>
         {swapStore.processingSwaps.map(swap => (

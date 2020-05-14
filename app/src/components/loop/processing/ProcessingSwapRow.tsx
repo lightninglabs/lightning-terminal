@@ -11,6 +11,9 @@ const Styled = {
   Row: styled(Row)`
     margin-bottom: 10px;
   `,
+  InfoCol: styled(Column)`
+    min-width: 200px;
+  `,
 };
 
 interface Props {
@@ -18,12 +21,12 @@ interface Props {
 }
 
 const ProcessingSwapRow: React.FC<Props> = ({ swap }) => {
-  const { Row } = Styled;
+  const { Row, InfoCol } = Styled;
   return (
     <Row>
-      <Column cols={2}>
+      <InfoCol cols={2}>
         <SwapInfo swap={swap} />
-      </Column>
+      </InfoCol>
       <Column>
         {swap.isFailed ? <FailedSwap swap={swap} /> : <SwapProgress swap={swap} />}
       </Column>

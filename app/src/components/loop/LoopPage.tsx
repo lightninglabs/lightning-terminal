@@ -18,15 +18,14 @@ const Styled = {
 
 const LoopPage: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.LoopPage');
-  const store = useStore();
-  const build = store.buildSwapStore;
+  const { uiStore, buildSwapStore } = useStore();
 
   const { PageWrap } = Styled;
   return (
     <PageWrap>
-      {store.swapStore.processingSwaps.length ? (
+      {uiStore.processingSwapsVisible ? (
         <ProcessingSwaps />
-      ) : build.showWizard ? (
+      ) : buildSwapStore.showWizard ? (
         <SwapWizard />
       ) : (
         <>

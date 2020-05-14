@@ -7,4 +7,6 @@ export { ReactComponent as Chevrons } from 'assets/icons/chevrons.svg';
 export { ReactComponent as Close } from 'assets/icons/close.svg';
 export { ReactComponent as Dot } from 'assets/icons/dot.svg';
 export { ReactComponent as Menu } from 'assets/icons/menu.svg';
+export { ReactComponent as Minimize } from 'assets/icons/minimize.svg';
+export { ReactComponent as Maximize } from 'assets/icons/maximize.svg';
 export { ReactComponent as Refresh } from 'assets/icons/refresh-cw.svg';

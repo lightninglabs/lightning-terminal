@@ -28,6 +28,7 @@ export interface Theme {
     green: string;
     orange: string;
     tileBack: string;
+    purple: string;
   };
 }
 
@@ -56,6 +57,7 @@ const theme: Theme = {
     green: '#46E80E',
     orange: '#f66b1c',
     tileBack: 'rgba(245,245,245,0.04)',
+    purple: '#57038d',
   },
 };
 
