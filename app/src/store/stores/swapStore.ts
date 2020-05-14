@@ -9,7 +9,7 @@ import {
   toJS,
   values,
 } from 'mobx';
-import { IS_PROD } from 'config';
+import { IS_PROD, IS_TEST } from 'config';
 import { Store } from 'store';
 import { Swap } from '../models';
 
@@ -69,11 +69,6 @@ export default class SwapStore {
     return this.sortedSwaps.filter(s => s.isPending);
   }
 
-  /** swaps that were completed in the past 5 minutes */
-  @computed get recentSwaps() {
-    return this.sortedSwaps.filter(s => s.isRecent);
-  }
-
   @action.bound
   dismissSwap(swapId: string) {
     this.dismissedSwapIds.push(swapId);
@@ -113,7 +108,7 @@ export default class SwapStore {
   startPolling() {
     if (this.pollingInterval) this.stopPolling();
     this._store.log.info('start polling for swap updates');
-    const ms = IS_PROD ? 60 * 1000 : 1000;
+    const ms = IS_PROD ? 60 * 1000 : IS_TEST ? 100 : 1000;
     this.pollingInterval = setInterval(this.fetchSwaps, ms);
   }
 

@@ -47,7 +47,7 @@ const mockSwap = (type: number, state: number, id?: string) => {
   swap.id = `${id || ''}${swap.id}`;
   swap.type = type;
   swap.state = state;
-  swap.initiationTime = Date.now() * 1000 * 1000;
+  swap.lastUpdateTime = Date.now() * 1000 * 1000;
   return swap;
 };
 // create a list of swaps to use for stories

@@ -1,4 +1,5 @@
 import * as LOOP from 'types/generated/loop_pb';
+import { waitFor } from '@testing-library/react';
 import { loopListSwaps } from 'util/tests/sampleData';
 import { createStore, SwapStore } from 'store';
 
@@ -54,5 +55,38 @@ describe('SwapStore', () => {
     const swap = store.sortedSwaps[0];
     swap.type = type;
     expect(swap.typeName).toEqual(label);
+  });
+
+  it('should poll for swap updates', async () => {
+    await store.fetchSwaps();
+    const swap = store.sortedSwaps[0];
+    // create a pending swap to trigger auto-polling
+    swap.state = LOOP.SwapState.INITIATED;
+    expect(store.pendingSwaps).toHaveLength(1);
+    // wait for polling to start
+    await waitFor(() => {
+      expect(store.pollingInterval).toBeDefined();
+    });
+    // change the swap to complete
+    swap.state = LOOP.SwapState.SUCCESS;
+    expect(store.pendingSwaps).toHaveLength(0);
+    // confirm polling has stopped
+    await waitFor(() => {
+      expect(store.pollingInterval).toBeUndefined();
+    });
+  });
+
+  it('should handle startPolling when polling is already running', () => {
+    expect(store.pollingInterval).toBeUndefined();
+    store.startPolling();
+    expect(store.pollingInterval).toBeDefined();
+    store.startPolling();
+    expect(store.pollingInterval).toBeDefined();
+  });
+
+  it('should handle stopPolling when polling is already stopped', () => {
+    expect(store.pollingInterval).toBeUndefined();
+    store.stopPolling();
+    expect(store.pollingInterval).toBeUndefined();
   });
 });
