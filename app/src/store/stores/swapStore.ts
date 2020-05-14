@@ -1,6 +1,7 @@
 import {
   action,
   computed,
+  IReactionDisposer,
   observable,
   ObservableMap,
   reaction,
@@ -13,18 +14,23 @@ import { Swap } from '../models';
 
 export default class SwapStore {
   private _store: Store;
+  /** a reference to the polling timer, needed to stop polling */
+  pollingInterval?: NodeJS.Timeout;
+  /** the mobx disposer func to cancel automatic polling */
+  stopAutoPolling: IReactionDisposer;
 
   /** the collection of swaps */
   @observable swaps: ObservableMap<string, Swap> = observable.map();
 
-  pollingInterval?: NodeJS.Timeout;
+  /** the ids of failed swaps that have been dismissed */
+  @observable dismissedSwapIds: string[] = [];
 
   constructor(store: Store) {
     this._store = store;
 
     // automatically start & stop polling for swaps if there are any pending
-    reaction(
-      () => this.pendingSwaps.length,
+    this.stopAutoPolling = reaction(
+      () => this.processingSwaps.length,
       (length: number) => {
         if (length > 0) {
           this.startPolling();
@@ -52,10 +58,17 @@ export default class SwapStore {
   }
 
   /**
-   * an array of swaps that are currently pending
+   * an array of swaps that are currently processing
    */
-  @computed get pendingSwaps() {
-    return this.sortedSwaps.filter(s => s.isPending);
+  @computed get processingSwaps() {
+    return this.sortedSwaps.filter(
+      s => s.isProcessing || this.dismissedSwapIds.includes(s.id),
+    );
+  }
+
+  @action.bound
+  dismissSwap(swapId: string) {
+    this.dismissedSwapIds.push(swapId);
   }
 
   /**

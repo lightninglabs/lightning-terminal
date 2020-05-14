@@ -1,11 +1,10 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { useStore } from 'store';
-import { Swap } from 'store/models';
 import { Column, Row } from 'components/common/grid';
-import StatusDot from 'components/common/StatusDot';
 import { SmallText } from 'components/common/text';
 import { styled } from 'components/theme';
+import SwapDot from './SwapDot';
 
 const Styled = {
   RightColumn: styled(Column)`
@@ -16,17 +15,6 @@ const Styled = {
     margin-left: 10px;
   `,
 };
-
-const SwapDot: React.FC<{ swap: Swap }> = observer(({ swap }) => {
-  switch (swap.stateLabel) {
-    case 'Success':
-      return <StatusDot status="success" />;
-    case 'Failed':
-      return <StatusDot status="error" />;
-    default:
-      return <StatusDot status="warn" />;
-  }
-});
 
 const LoopHistory: React.FC = () => {
   const store = useStore();

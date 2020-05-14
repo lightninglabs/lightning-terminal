@@ -1,5 +1,7 @@
 import { action, computed, observable } from 'mobx';
+import { now } from 'mobx-utils';
 import * as LOOP from 'types/generated/loop_pb';
+import { ellipseInside } from 'util/strings';
 
 export default class Swap {
   // native values from the Loop api
@@ -13,11 +15,28 @@ export default class Swap {
     this.update(loopSwap);
   }
 
+  /** the first and last 6 chars of the swap id */
+  @computed get idEllipsed() {
+    return ellipseInside(this.id);
+  }
+
+  /** True if the swap's state is Failed */
+  @computed get isFailed() {
+    return this.state === LOOP.SwapState.FAILED;
+  }
+
   /**
-   * True when the state of this swap is not Success or Failed
+   * True when the state of this swap is not Success/Failed or the swap
+   * was completed less than 5 minutes ago
    */
-  @computed get isPending() {
-    return this.state !== LOOP.SwapState.SUCCESS && this.state !== LOOP.SwapState.FAILED;
+  @computed get isProcessing() {
+    const fiveMinutes = 5 * 60 * 1000;
+    const recent = now() - this.createdOn.getTime() < fiveMinutes;
+
+    const pending =
+      this.state !== LOOP.SwapState.SUCCESS && this.state !== LOOP.SwapState.FAILED;
+
+    return recent || pending;
   }
 
   /**
@@ -55,6 +74,7 @@ export default class Swap {
     return 'Unknown';
   }
 
+  /** The date this swap was created as a JS Date object */
   @computed get createdOn() {
     return new Date(this.initiationTime / 1000 / 1000);
   }

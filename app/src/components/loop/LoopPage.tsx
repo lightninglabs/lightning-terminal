@@ -7,6 +7,7 @@ import { styled } from 'components/theme';
 import ChannelList from './ChannelList';
 import LoopActions from './LoopActions';
 import LoopTiles from './LoopTiles';
+import ProcessingSwaps from './processing/ProcessingSwaps';
 import SwapWizard from './swap/SwapWizard';
 
 const Styled = {
@@ -23,7 +24,9 @@ const LoopPage: React.FC = () => {
   const { PageWrap } = Styled;
   return (
     <PageWrap>
-      {build.showWizard ? (
+      {store.swapStore.processingSwaps.length ? (
+        <ProcessingSwaps />
+      ) : build.showWizard ? (
         <SwapWizard />
       ) : (
         <>
