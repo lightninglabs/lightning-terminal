@@ -15,10 +15,10 @@ describe('Layout component', () => {
 
   it('should toggle collapsed state', () => {
     const { getByTitle, store } = render();
-    expect(store.sidebarCollapsed).toBe(false);
+    expect(store.settingsStore.sidebarVisible).toBe(true);
     fireEvent.click(getByTitle('menu'));
-    expect(store.sidebarCollapsed).toBe(true);
+    expect(store.settingsStore.sidebarVisible).toBe(false);
     fireEvent.click(getByTitle('menu'));
-    expect(store.sidebarCollapsed).toBe(false);
+    expect(store.settingsStore.sidebarVisible).toBe(true);
   });
 });

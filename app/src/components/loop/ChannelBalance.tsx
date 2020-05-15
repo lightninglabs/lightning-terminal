@@ -1,5 +1,7 @@
 import React from 'react';
-import { BalanceLevel, Channel } from 'types/state';
+import { observer } from 'mobx-react-lite';
+import { BalanceLevel } from 'types/state';
+import { Channel } from 'store/models';
 import { levelToColor, styled } from 'components/theme';
 
 const Styled = {
@@ -39,14 +41,12 @@ interface Props {
 }
 
 const ChannelBalance: React.FC<Props> = ({ channel, className }) => {
-  const { active, localPercent, balanceLevel } = channel;
-
   const { Wrapper, Section, Gap } = Styled;
   return (
     <Wrapper
-      pct={localPercent}
-      level={balanceLevel}
-      active={active}
+      pct={channel.localPercent}
+      level={channel.balanceLevel}
+      active={channel.active}
       className={className}
     >
       <Section />
@@ -56,4 +56,4 @@ const ChannelBalance: React.FC<Props> = ({ channel, className }) => {
   );
 };
 
-export default ChannelBalance;
+export default observer(ChannelBalance);

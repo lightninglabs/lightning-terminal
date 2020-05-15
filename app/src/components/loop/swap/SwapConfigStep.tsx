@@ -1,6 +1,8 @@
 import React from 'react';
+import { observer } from 'mobx-react-lite';
 import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
+import { useStore } from 'store';
 import Range from 'components/common/Range';
 import StepButtons from './StepButtons';
 import StepSummary from './StepSummary';
@@ -26,26 +28,9 @@ const Styled = {
   `,
 };
 
-interface Props {
-  amount: number;
-  minAmount: number;
-  maxAmount: number;
-  onAmountChange: (amount: number) => void;
-  channelCount: number;
-  onNext: () => void;
-  onCancel: () => void;
-}
-
-const SwapConfigStep: React.FC<Props> = ({
-  amount,
-  minAmount,
-  maxAmount,
-  onAmountChange,
-  channelCount,
-  onNext,
-  onCancel,
-}) => {
+const SwapConfigStep: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.swap.SwapConfigStep');
+  const { buildSwapStore } = useStore();
 
   const { Wrapper, Summary, Config } = Styled;
   return (
@@ -55,22 +40,24 @@ const SwapConfigStep: React.FC<Props> = ({
           title={l('title')}
           heading={l('heading')}
           description={l('description')}
-          channelCount={channelCount}
         />
       </Summary>
       <Config>
         <Range
           showRadios
-          value={amount}
-          min={minAmount}
-          max={maxAmount}
+          value={buildSwapStore.amount}
+          min={buildSwapStore.termsForDirection.min}
+          max={buildSwapStore.termsForDirection.max}
           step={10000}
-          onChange={onAmountChange}
+          onChange={buildSwapStore.setAmount}
         />
-        <StepButtons onCancel={onCancel} onNext={onNext} />
+        <StepButtons
+          onCancel={buildSwapStore.cancel}
+          onNext={buildSwapStore.goToNextStep}
+        />
       </Config>
     </Wrapper>
   );
 };
 
-export default SwapConfigStep;
+export default observer(SwapConfigStep);

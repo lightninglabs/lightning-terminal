@@ -12,7 +12,7 @@ enum LogLevel {
 /**
  * A logger class with support for multiple namespaces and log levels.
  */
-class Logger {
+export class Logger {
   private _levelToOutput: LogLevel;
   private _logger: Debugger;
 

@@ -1,7 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react';
-import { createActions } from 'action';
-import { Store, StoreProvider } from 'store';
+import { createStore, Store, StoreProvider } from 'store';
 import { ThemeProvider } from 'components/theme';
 
 /**
@@ -11,14 +10,13 @@ import { ThemeProvider } from 'components/theme';
  * @param withStore the store to use in the provider
  */
 const renderWithProviders = (component: React.ReactElement, withStore?: Store) => {
-  const store = withStore || new Store();
-  const actions = createActions(store);
+  const store = withStore || createStore();
   const result = render(
-    <StoreProvider store={store} actions={actions}>
+    <StoreProvider store={store}>
       <ThemeProvider>{component}</ThemeProvider>
     </StoreProvider>,
   );
-  return { ...result, store, actions };
+  return { ...result, store };
 };
 
 export default renderWithProviders;

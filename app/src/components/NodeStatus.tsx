@@ -37,10 +37,7 @@ const NodeStatus: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.NodeStatus');
 
   const store = useStore();
-  const { channelBalance, walletBalance } = store.balances || {
-    channelBalance: 0,
-    walletBalance: 0,
-  };
+  const { channelBalance, walletBalance } = store.nodeStore.wallet;
 
   return (
     <Wrapper>

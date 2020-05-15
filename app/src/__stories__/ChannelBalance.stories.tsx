@@ -1,7 +1,6 @@
 import React from 'react';
-import { BalanceLevel } from 'types/state';
-import { StoryContext } from '@storybook/addons';
-import { Store } from 'store';
+import { lndListChannelsOne } from 'util/tests/sampleData';
+import { Channel } from 'store/models';
 import ChannelBalance from 'components/loop/ChannelBalance';
 
 export default {
@@ -10,45 +9,27 @@ export default {
   parameters: { centered: true },
 };
 
-export const Good = (ctx: StoryContext) => {
-  // grab the store from the Storybook parameter defined in preview.tsx
-  const store = ctx.parameters.store as Store;
-  const channel = {
-    ...store.channels[0],
-    localPercent: 59,
-    balanceLevel: BalanceLevel.good,
-  };
-  return <ChannelBalance channel={channel} />;
+const getChannel = (ratio: number) => {
+  const channel = new Channel(lndListChannelsOne.channelsList[0]);
+  channel.localBalance = channel.capacity * ratio;
+  channel.remoteBalance = channel.capacity * (1 - ratio);
+  return channel;
 };
 
-export const Warn = (ctx: StoryContext) => {
-  // grab the store from the Storybook parameter defined in preview.tsx
-  const store = ctx.parameters.store as Store;
-  const channel = {
-    ...store.channels[0],
-    localPercent: 28,
-    balanceLevel: BalanceLevel.warn,
-  };
-  return <ChannelBalance channel={channel} />;
+export const Good = () => {
+  return <ChannelBalance channel={getChannel(0.59)} />;
 };
 
-export const Bad = (ctx: StoryContext) => {
-  // grab the store from the Storybook parameter defined in preview.tsx
-  const store = ctx.parameters.store as Store;
-  const channel = {
-    ...store.channels[0],
-    localPercent: 91,
-    balanceLevel: BalanceLevel.bad,
-  };
-  return <ChannelBalance channel={channel} />;
+export const Warn = () => {
+  return <ChannelBalance channel={getChannel(0.28)} />;
 };
 
-export const Inactive = (ctx: StoryContext) => {
-  // grab the store from the Storybook parameter defined in preview.tsx
-  const store = ctx.parameters.store as Store;
-  const channel = {
-    ...store.channels[0],
-    active: false,
-  };
+export const Bad = () => {
+  return <ChannelBalance channel={getChannel(0.91)} />;
+};
+
+export const Inactive = () => {
+  const channel = getChannel(0.45);
+  channel.active = false;
   return <ChannelBalance channel={channel} />;
 };

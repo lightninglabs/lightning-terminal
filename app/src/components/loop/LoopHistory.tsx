@@ -1,5 +1,6 @@
 import React from 'react';
-import { Swap } from 'types/state';
+import { observer } from 'mobx-react-lite';
+import { Swap } from 'store/models';
 import { Column, Row } from 'components/common/grid';
 import StatusDot from 'components/common/StatusDot';
 import { SmallText } from 'components/common/text';
@@ -16,7 +17,7 @@ const Styled = {
 };
 
 const SwapDot: React.FC<{ swap: Swap }> = ({ swap }) => {
-  switch (swap.status) {
+  switch (swap.stateLabel) {
     case 'Success':
       return <StatusDot status="success" />;
     case 'Failed':
@@ -51,4 +52,4 @@ const LoopHistory: React.FC<Props> = ({ swaps }) => {
   );
 };
 
-export default LoopHistory;
+export default observer(LoopHistory);

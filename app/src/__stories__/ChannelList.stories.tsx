@@ -1,7 +1,7 @@
 import React from 'react';
-import { action } from '@storybook/addon-actions';
-import { StoryContext } from '@storybook/addons';
-import { Store } from 'store';
+import { observable } from 'mobx';
+import { useStore } from 'store';
+import { Channel } from 'store/models';
 import ChannelList from 'components/loop/ChannelList';
 
 export default {
@@ -11,58 +11,21 @@ export default {
 };
 
 export const NoChannels = () => {
-  return (
-    <ChannelList
-      channels={[]}
-      enableSelection={false}
-      selectedChannels={[]}
-      onSelectionChange={() => action('onSelectionChange')}
-      disabled={false}
-    />
-  );
+  const store = useStore();
+  store.channelStore.channels = observable.map();
+  return <ChannelList />;
 };
 
-export const FewChannels = (ctx: StoryContext) => {
-  // grab the store from the Storybook parameter defined in preview.tsx
-  const store = ctx.parameters.store as Store;
-  return (
-    <ChannelList
-      channels={store.channels.slice(0, 10)}
-      enableSelection={false}
-      selectedChannels={[]}
-      onSelectionChange={() => action('onSelectionChange')}
-      disabled={false}
-    />
-  );
+export const FewChannels = () => {
+  const store = useStore();
+  const channels = store.channelStore.sortedChannels.slice(0, 10).reduce((result, c) => {
+    result[c.chanId] = c;
+    return result;
+  }, {} as Record<string, Channel>);
+  store.channelStore.channels = observable.map(channels);
+  return <ChannelList />;
 };
 
-export const ManyChannels = (ctx: StoryContext) => {
-  // grab the store from the Storybook parameter defined in preview.tsx
-  const store = ctx.parameters.store as Store;
-  return (
-    <ChannelList
-      channels={store.channels}
-      enableSelection={false}
-      selectedChannels={[]}
-      onSelectionChange={() => action('onSelectionChange')}
-      disabled={false}
-    />
-  );
-};
-
-export const SortedChannels = (ctx: StoryContext) => {
-  // grab the store from the Storybook parameter defined in preview.tsx
-  const store = ctx.parameters.store as Store;
-  const channels = store.channels
-    .slice()
-    .sort((a, b) => b.balancePercent - a.balancePercent);
-  return (
-    <ChannelList
-      channels={channels}
-      enableSelection={false}
-      selectedChannels={[]}
-      onSelectionChange={() => action('onSelectionChange')}
-      disabled={false}
-    />
-  );
+export const ManyChannels = () => {
+  return <ChannelList />;
 };

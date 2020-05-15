@@ -1,8 +1,9 @@
 import React from 'react';
-import { BalanceLevel, Channel } from 'types/state';
-import { action } from '@storybook/addon-actions';
-import { StoryContext } from '@storybook/addons';
-import { Store } from 'store';
+import { useObserver } from 'mobx-react-lite';
+import { SwapDirection } from 'types/state';
+import { lndListChannels } from 'util/tests/sampleData';
+import { useStore } from 'store';
+import { Channel } from 'store/models';
 import ChannelRow, { ChannelRowHeader } from 'components/loop/ChannelRow';
 
 export default {
@@ -10,91 +11,75 @@ export default {
   component: ChannelRow,
   parameters: { contained: true },
 };
-const render = (
+
+const renderStory = (
   channel: Channel,
   options?: {
-    editable?: boolean;
-    checked?: boolean;
-    disabled?: boolean;
-    dimmed?: boolean;
+    ratio?: number;
+    active?: boolean;
   },
-) => (
-  <div style={{ paddingTop: 50 }}>
-    <ChannelRowHeader />
-    <ChannelRow
-      channel={channel}
-      editable={(options && options.editable) || false}
-      checked={(options && options.checked) || false}
-      disabled={(options && options.disabled) || false}
-      dimmed={(options && options.dimmed) || false}
-      onChange={() => action('onChange')}
-    />
-  </div>
-);
-
-export const Good = (ctx: StoryContext) => {
-  // grab the store from the Storybook parameter defined in preview.tsx
-  const store = ctx.parameters.store as Store;
-  const channel = {
-    ...store.channels[0],
-    localPercent: 59,
-    balanceLevel: BalanceLevel.good,
-  };
-  return render(channel);
+) => {
+  if (options && options.ratio) {
+    channel.localBalance = channel.capacity * options.ratio;
+    channel.remoteBalance = channel.capacity * (1 - options.ratio);
+  }
+  return useObserver(() => (
+    <div style={{ paddingTop: 50 }}>
+      <ChannelRowHeader />
+      <ChannelRow channel={channel} />
+    </div>
+  ));
 };
 
-export const Warn = (ctx: StoryContext) => {
-  // grab the store from the Storybook parameter defined in preview.tsx
-  const store = ctx.parameters.store as Store;
-  const channel = {
-    ...store.channels[1],
-    localPercent: 28,
-    balanceLevel: BalanceLevel.warn,
-  };
-  return render(channel);
+export const Good = () => {
+  const channel = new Channel(lndListChannels.channelsList[0]);
+  return renderStory(channel, { ratio: 0.59 });
 };
 
-export const Bad = (ctx: StoryContext) => {
-  // grab the store from the Storybook parameter defined in preview.tsx
-  const store = ctx.parameters.store as Store;
-  const channel = {
-    ...store.channels[2],
-    localPercent: 91,
-    balanceLevel: BalanceLevel.bad,
-  };
-  return render(channel);
+export const Warn = () => {
+  const channel = new Channel(lndListChannels.channelsList[1]);
+  return renderStory(channel, { ratio: 0.28 });
 };
 
-export const Inactive = (ctx: StoryContext) => {
-  // grab the store from the Storybook parameter defined in preview.tsx
-  const store = ctx.parameters.store as Store;
-  const channel = {
-    ...store.channels[3],
-    active: false,
-  };
-  return render(channel);
+export const Bad = () => {
+  const channel = new Channel(lndListChannels.channelsList[2]);
+  return renderStory(channel, { ratio: 0.91 });
 };
 
-export const Editable = (ctx: StoryContext) => {
-  // grab the store from the Storybook parameter defined in preview.tsx
-  const store = ctx.parameters.store as Store;
-  return render(store.channels[0], { editable: true });
+export const Inactive = () => {
+  const channel = new Channel(lndListChannels.channelsList[3]);
+  channel.active = false;
+  return renderStory(channel);
 };
 
-export const Selected = (ctx: StoryContext) => {
-  // grab the store from the Storybook parameter defined in preview.tsx
-  const store = ctx.parameters.store as Store;
-  return render(store.channels[0], { editable: true, checked: true });
+export const Editable = () => {
+  const channel = new Channel(lndListChannels.channelsList[4]);
+  const store = useStore();
+  store.buildSwapStore.startSwap();
+  return renderStory(channel);
 };
 
-export const Disabled = (ctx: StoryContext) => {
-  // grab the store from the Storybook parameter defined in preview.tsx
-  const store = ctx.parameters.store as Store;
-  return render(store.channels[0], { editable: true, checked: true, disabled: true });
+export const Selected = () => {
+  const channel = new Channel(lndListChannels.channelsList[5]);
+  const store = useStore();
+  store.buildSwapStore.startSwap();
+  store.buildSwapStore.toggleSelectedChannel(channel.chanId);
+  return renderStory(channel);
 };
 
-export const Dimmed = (ctx: StoryContext) => {
-  // grab the store from the Storybook parameter defined in preview.tsx
-  const store = ctx.parameters.store as Store;
-  return render(store.channels[0], { editable: true, disabled: true, dimmed: true });
+export const Disabled = () => {
+  const channel = new Channel(lndListChannels.channelsList[6]);
+  const store = useStore();
+  store.buildSwapStore.startSwap();
+  store.buildSwapStore.toggleSelectedChannel(channel.chanId);
+  store.buildSwapStore.setDirection(SwapDirection.OUT);
+  return renderStory(channel);
+};
+
+export const Dimmed = () => {
+  const channel = new Channel(lndListChannels.channelsList[6]);
+  const store = useStore();
+  store.buildSwapStore.startSwap();
+  store.buildSwapStore.setDirection(SwapDirection.OUT);
+  return renderStory(channel);
 };

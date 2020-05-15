@@ -14,13 +14,13 @@ describe('NodeStatus component', () => {
 
   it('should display the lightning balance', () => {
     const { getByText, store } = render();
-    store.balances = { channelBalance: 123, walletBalance: 0 };
+    store.nodeStore.wallet = { channelBalance: 123, walletBalance: 0 };
     expect(getByText('123 SAT')).toBeInTheDocument();
   });
 
   it('should display the bitcoin balance', () => {
     const { getByText, store } = render();
-    store.balances = { channelBalance: 0, walletBalance: 234 };
+    store.nodeStore.wallet = { channelBalance: 0, walletBalance: 234 };
     expect(getByText('234')).toBeInTheDocument();
   });
 });

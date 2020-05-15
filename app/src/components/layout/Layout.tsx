@@ -1,6 +1,6 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
-import { useActions, useStore } from 'store';
+import { useStore } from 'store';
 import { Background } from 'components/common/base';
 import { Menu } from 'components/common/icons';
 import { styled } from 'components/theme';
@@ -50,18 +50,17 @@ const Styled = {
 };
 
 const Layout: React.FC = ({ children }) => {
-  const { sidebarCollapsed } = useStore();
-  const { app } = useActions();
+  const { settingsStore } = useStore();
 
   const { Container, MenuIcon, Aside, Content } = Styled;
   return (
     <Background>
       <Container>
-        <MenuIcon title="menu" onClick={app.toggleSidebar} />
-        <Aside collapsed={sidebarCollapsed}>
+        <MenuIcon title="menu" onClick={settingsStore.toggleSidebar} />
+        <Aside collapsed={!settingsStore.sidebarVisible}>
           <Sidebar />
         </Aside>
-        <Content collapsed={sidebarCollapsed}>
+        <Content collapsed={!settingsStore.sidebarVisible}>
           <div className="container-fluid">{children}</div>
         </Content>
       </Container>

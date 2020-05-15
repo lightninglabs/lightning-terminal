@@ -1,6 +1,5 @@
-import React, { useEffect } from 'react';
-import { StoryContext } from '@storybook/addons';
-import { Store } from 'store';
+import React from 'react';
+import { useStore } from 'store';
 import LoopPage from 'components/loop/LoopPage';
 import { Layout } from '../components/layout';
 
@@ -17,17 +16,9 @@ export const WithContent = () => (
   </Layout>
 );
 
-export const Collapsed = (ctx: StoryContext) => {
-  useEffect(() => {
-    // grab the store from the Storybook parameter defined in preview.tsx
-    const store = ctx.parameters.store as Store;
-    store.sidebarCollapsed = true;
-
-    // change back to expanded when the component is unmounted
-    return () => {
-      store.sidebarCollapsed = false;
-    };
-  }, []);
+export const Collapsed = () => {
+  const store = useStore();
+  store.settingsStore.sidebarVisible = false;
 
   return (
     <Layout>

@@ -1,45 +1,35 @@
 import React from 'react';
-import { BalanceLevel, Channel } from 'types/state';
+import { SwapDirection } from 'types/state';
 import { fireEvent } from '@testing-library/react';
 import { ellipseInside } from 'util/strings';
 import { renderWithProviders } from 'util/tests';
+import { createStore, Store } from 'store';
+import { Channel } from 'store/models';
 import ChannelRow from 'components/loop/ChannelRow';
 
 describe('ChannelRow component', () => {
   let channel: Channel;
-  const onChange = jest.fn();
+  let store: Store;
 
-  const render = (options?: {
-    editable?: boolean;
-    checked?: boolean;
-    disabled?: boolean;
-    dimmed?: boolean;
-  }) => {
-    return renderWithProviders(
-      <ChannelRow
-        channel={channel}
-        editable={options && options.editable}
-        checked={options && options.checked}
-        disabled={options && options.disabled}
-        dimmed={options && options.dimmed}
-        onChange={onChange}
-      />,
-    );
+  beforeEach(async () => {
+    store = createStore();
+  });
+
+  const render = () => {
+    return renderWithProviders(<ChannelRow channel={channel} />, store);
   };
 
   beforeEach(() => {
-    channel = {
-      active: true,
-      capacity: 15000000,
+    channel = new Channel({
       chanId: '150633093070848',
+      remotePubkey: '02ac59099da6d4bd818e6a81098f5d54580b7c3aa8255c707fa0f95ca89b02cb8c',
+      capacity: 15000000,
       localBalance: 9990950,
       remoteBalance: 5000000,
-      remotePubkey: '02ac59099da6d4bd818e6a81098f5d54580b7c3aa8255c707fa0f95ca89b02cb8c',
+      active: true,
       uptime: 97,
-      localPercent: 67,
-      balancePercent: 67,
-      balanceLevel: BalanceLevel.warn,
-    };
+      lifetime: 100,
+    } as any);
   });
 
   it('should display the remote balance', () => {
@@ -74,39 +64,57 @@ describe('ChannelRow component', () => {
     expect(getByLabelText('idle')).toBeInTheDocument();
   });
 
-  it.each<[BalanceLevel, string]>([
-    [BalanceLevel.good, 'success'],
-    [BalanceLevel.warn, 'warn'],
-    [BalanceLevel.bad, 'error'],
-  ])('should display correct dot icon for a "%s" balance', (level, label) => {
-    channel.balanceLevel = level;
+  it.each<[number, string]>([
+    [55, 'success'],
+    [75, 'warn'],
+    [90, 'error'],
+  ])('should display correct dot icon for a "%s" balance', (localPct, label) => {
+    channel.localBalance = channel.capacity * (localPct / 100);
+    channel.remoteBalance = channel.capacity * ((100 - localPct) / 100);
+
     const { getByText, getByLabelText } = render();
     expect(getByText('dot.svg')).toBeInTheDocument();
     expect(getByLabelText(label)).toBeInTheDocument();
   });
 
   it('should display a checkbox when it is editable', () => {
-    const { getByRole } = render({ editable: true });
+    store.buildSwapStore.startSwap();
+    const { getByRole } = render();
     expect(getByRole('checkbox')).toBeInTheDocument();
     expect(getByRole('checkbox')).toHaveAttribute('aria-checked', 'false');
   });
 
   it('should display a checked checkbox when it is checked', () => {
-    const { getByRole } = render({ editable: true, checked: true });
+    store.buildSwapStore.startSwap();
+    store.buildSwapStore.toggleSelectedChannel(channel.chanId);
+    const { getByRole } = render();
     expect(getByRole('checkbox')).toBeInTheDocument();
     expect(getByRole('checkbox')).toHaveAttribute('aria-checked', 'true');
   });
 
   it('should display a disabled checkbox', () => {
-    const { getByRole } = render({ editable: true, disabled: true, dimmed: true });
+    store.buildSwapStore.startSwap();
+    store.buildSwapStore.toggleSelectedChannel(channel.chanId);
+    store.buildSwapStore.setDirection(SwapDirection.OUT);
+    const { getByRole } = render();
     expect(getByRole('checkbox')).toBeInTheDocument();
     expect(getByRole('checkbox')).toHaveAttribute('aria-disabled', 'true');
   });
 
   it('should trigger onChange when it is clicked', () => {
-    const { getByRole } = render({ editable: true });
+    store.buildSwapStore.startSwap();
+    const { getByRole } = render();
     expect(getByRole('checkbox')).toBeInTheDocument();
     fireEvent.click(getByRole('checkbox'));
-    expect(onChange).toBeCalledWith(channel, true);
+    expect(store.buildSwapStore.selectedChanIds).toEqual([channel.chanId]);
+  });
+
+  it('should not trigger onChange when it is disabled and clicked', () => {
+    store.buildSwapStore.startSwap();
+    store.buildSwapStore.setDirection(SwapDirection.OUT);
+    const { getByRole } = render();
+    expect(getByRole('checkbox')).toBeInTheDocument();
+    fireEvent.click(getByRole('checkbox'));
+    expect(store.buildSwapStore.selectedChanIds).toEqual([]);
   });
 });

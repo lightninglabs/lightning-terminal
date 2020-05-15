@@ -4,19 +4,17 @@ import { grpc } from '@improbable-eng/grpc-web';
 import { fireEvent, waitFor } from '@testing-library/react';
 import { renderWithProviders } from 'util/tests';
 import { loopListSwaps } from 'util/tests/sampleData';
-import { createActions, StoreActions } from 'action';
-import { Store } from 'store';
+import { createStore, Store } from 'store';
 import LoopPage from 'components/loop/LoopPage';
 
 const grpcMock = grpc as jest.Mocked<typeof grpc>;
 
 describe('LoopPage component', () => {
   let store: Store;
-  let actions: StoreActions;
 
   beforeEach(async () => {
-    store = new Store();
-    actions = createActions(store);
+    store = createStore();
+    await store.init();
   });
 
   const render = () => {
@@ -38,9 +36,13 @@ describe('LoopPage component', () => {
   it('should display the liquidity numbers', async () => {
     const { getByText, store } = render();
     // wait for the channels to be fetched async before checking the UI labels
-    await waitFor(() => expect(store.totalInbound).toBeGreaterThan(0));
-    expect(getByText(`${store.totalInbound.toLocaleString()} SAT`)).toBeInTheDocument();
-    expect(getByText(`${store.totalOutbound.toLocaleString()} SAT`)).toBeInTheDocument();
+    await waitFor(() => expect(store.channelStore.totalInbound).toBeGreaterThan(0));
+    expect(
+      getByText(`${store.channelStore.totalInbound.toLocaleString()} SAT`),
+    ).toBeInTheDocument();
+    expect(
+      getByText(`${store.channelStore.totalOutbound.toLocaleString()} SAT`),
+    ).toBeInTheDocument();
   });
 
   it('should display the loop history records', async () => {
@@ -48,7 +50,9 @@ describe('LoopPage component', () => {
     // convert from numeric timestamp to string (1586390353623905000 -> '4/15/2020')
     const formatDate = (s: SwapStatus.AsObject) =>
       new Date(s.initiationTime / 1000 / 1000).toLocaleDateString();
-    const [swap1, swap2] = loopListSwaps.swapsList;
+    const [swap1, swap2] = loopListSwaps.swapsList.sort(
+      (a, b) => b.initiationTime - a.initiationTime,
+    );
 
     expect(await findByText(formatDate(swap1))).toBeInTheDocument();
     expect(await findByText('530,000 SAT')).toBeInTheDocument();
@@ -57,11 +61,6 @@ describe('LoopPage component', () => {
   });
 
   describe('Swap Process', () => {
-    beforeEach(async () => {
-      await actions.channel.getChannels();
-      await actions.swap.getTerms();
-    });
-
     it('should display actions bar when Loop button is clicked', () => {
       const { getByText } = render();
       expect(getByText('Loop')).toBeInTheDocument();
@@ -74,7 +73,9 @@ describe('LoopPage component', () => {
       const { getByText } = render();
       expect(getByText('Loop')).toBeInTheDocument();
       fireEvent.click(getByText('Loop'));
-      store.buildSwapStore.setSelectedChannels(store.channels.slice(0, 3));
+      store.channelStore.sortedChannels.slice(0, 3).forEach(c => {
+        store.buildSwapStore.toggleSelectedChannel(c.chanId);
+      });
       fireEvent.click(getByText('Loop out'));
       expect(getByText('Step 1 of 2')).toBeInTheDocument();
     });
@@ -83,7 +84,9 @@ describe('LoopPage component', () => {
       const { getByText } = render();
       expect(getByText('Loop')).toBeInTheDocument();
       fireEvent.click(getByText('Loop'));
-      store.buildSwapStore.setSelectedChannels(store.channels.slice(0, 3));
+      store.channelStore.sortedChannels.slice(0, 3).forEach(c => {
+        store.buildSwapStore.toggleSelectedChannel(c.chanId);
+      });
       fireEvent.click(getByText('Loop in'));
       expect(getByText('Step 1 of 2')).toBeInTheDocument();
     });
@@ -92,7 +95,9 @@ describe('LoopPage component', () => {
       const { getByText } = render();
       expect(getByText('Loop')).toBeInTheDocument();
       fireEvent.click(getByText('Loop'));
-      store.buildSwapStore.setSelectedChannels(store.channels.slice(0, 3));
+      store.channelStore.sortedChannels.slice(0, 3).forEach(c => {
+        store.buildSwapStore.toggleSelectedChannel(c.chanId);
+      });
       fireEvent.click(getByText('Loop in'));
       expect(getByText('Step 1 of 2')).toBeInTheDocument();
       fireEvent.click(getByText('arrow-left.svg'));
@@ -103,7 +108,9 @@ describe('LoopPage component', () => {
       const { getByText } = render();
       expect(getByText('Loop')).toBeInTheDocument();
       fireEvent.click(getByText('Loop'));
-      store.buildSwapStore.setSelectedChannels(store.channels.slice(0, 3));
+      store.channelStore.sortedChannels.slice(0, 3).forEach(c => {
+        store.buildSwapStore.toggleSelectedChannel(c.chanId);
+      });
       fireEvent.click(getByText('Loop out'));
       expect(getByText('Step 1 of 2')).toBeInTheDocument();
       fireEvent.click(getByText('Next'));
@@ -122,7 +129,9 @@ describe('LoopPage component', () => {
       const { getByText } = render();
       expect(getByText('Loop')).toBeInTheDocument();
       fireEvent.click(getByText('Loop'));
-      store.buildSwapStore.setSelectedChannels(store.channels.slice(0, 3));
+      store.channelStore.sortedChannels.slice(0, 3).forEach(c => {
+        store.buildSwapStore.toggleSelectedChannel(c.chanId);
+      });
       fireEvent.click(getByText('Loop out'));
       expect(getByText('Step 1 of 2')).toBeInTheDocument();
       fireEvent.click(getByText('Next'));

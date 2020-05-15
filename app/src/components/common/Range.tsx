@@ -10,6 +10,7 @@ const Styled = {
     margin-bottom: 40px;
   `,
   DisplayValue: styled.label`
+    display: block;
     text-align: center;
     font-size: ${props => props.theme.sizes.xl};
   `,

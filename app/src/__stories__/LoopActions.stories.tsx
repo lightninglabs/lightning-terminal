@@ -1,8 +1,6 @@
 import React from 'react';
-import { SwapDirection } from 'types/state';
-import { action } from '@storybook/addon-actions';
-import { StoryContext } from '@storybook/addons';
-import { Store } from 'store';
+import { lndListChannels } from 'util/tests/sampleData';
+import { useStore } from 'store';
 import LoopActions from 'components/loop/LoopActions';
 
 export default {
@@ -14,16 +12,22 @@ export default {
   ],
 };
 
-export const Default = (ctx: StoryContext) => {
-  // grab the store from the Storybook parameter defined in preview.tsx
-  const { channels } = ctx.parameters.store as Store;
-  return (
-    <LoopActions
-      direction={SwapDirection.OUT}
-      channels={channels.slice(0, 3)}
-      onLoopClick={() => action('onLoopClick')}
-      onDirectionClick={() => action('onTypeClick')}
-      onCancelClick={() => action('onCancelClick')}
-    />
-  );
+export const Default = () => {
+  return <LoopActions />;
+};
+
+export const Opened = () => {
+  const store = useStore();
+  store.buildSwapStore.startSwap();
+  // select 3 channels
+  lndListChannels.channelsList.slice(0, 3).forEach(c => {
+    store.buildSwapStore.toggleSelectedChannel(c.chanId);
+  });
+  return <LoopActions />;
+};
+
+export const ZeroChannels = () => {
+  const store = useStore();
+  store.buildSwapStore.startSwap();
+  return <LoopActions />;
 };
