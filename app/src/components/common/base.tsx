@@ -54,6 +54,23 @@ export const Button = styled.button<ButtonProps>`
 `;
 
 /**
+ * the react-virtualized list doesn't play nice with the bootstrap row -15px
+ * margin. We need to manually offset the container and remove the
+ * padding from the last column to get the alignment correct
+ */
+export const ListContainer = styled.div`
+  margin-right: -15px;
+
+  .col:last-child {
+    padding-right: 0;
+  }
+
+  *:focus {
+    outline: none;
+  }
+`;
+
+/**
  * the input[type=range] element. Vendor-specific rules for pseudo
  * elements cannot be mixed. As such, there are no shared styles for focus or
  * active states on prefixed selectors.

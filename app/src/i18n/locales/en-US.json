@@ -1,4 +1,11 @@
 {
+  "cmps.history.HistoryPage.backText": "Lightning Loop",
+  "cmps.history.HistoryPage.pageTitle": "Loop History",
+  "cmps.history.HistoryRowHeader.status": "Status",
+  "cmps.history.HistoryRowHeader.amount": "amount",
+  "cmps.history.HistoryRowHeader.type": "Loop Type",
+  "cmps.history.HistoryRowHeader.created": "Created",
+  "cmps.history.HistoryRowHeader.updated": "Updated",
   "cmps.loop.ChannelRowHeader.canReceive": "Can Receive",
   "cmps.loop.ChannelRowHeader.canSend": "Can Send",
   "cmps.loop.ChannelRowHeader.upTime": "Up Time %",
