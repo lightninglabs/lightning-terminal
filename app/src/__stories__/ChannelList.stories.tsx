@@ -21,7 +21,6 @@ export const FewChannels = () => {
   const channels = store.channelStore.sortedChannels.slice(0, 10).reduce((result, c) => {
     result[c.chanId] = c;
     return result;
-    // store.channelStore.channels.set(c.chanId, c);
   }, {} as Record<string, Channel>);
   store.channelStore.channels = observable.map(channels);
   return <ChannelList />;
