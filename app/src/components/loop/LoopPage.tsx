@@ -31,6 +31,7 @@ const LoopPage: React.FC = () => {
         <>
           <PageHeader
             title={l('pageTitle')}
+            onHistoryClick={uiStore.goToHistory}
             onExportClick={() => alert('TODO: Export CSV of Channels')}
           />
           <LoopTiles />

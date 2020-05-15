@@ -2,16 +2,17 @@ import React from 'react';
 import './App.scss';
 import { createStore, StoreProvider } from 'store';
 import { Layout } from 'components/layout';
-import LoopPage from 'components/loop/LoopPage';
+import Pages from 'components/Pages';
 import { ThemeProvider } from 'components/theme';
 
 const App = () => {
   const store = createStore();
+
   return (
     <StoreProvider store={store}>
       <ThemeProvider>
         <Layout>
-          <LoopPage />
+          <Pages />
         </Layout>
       </ThemeProvider>
     </StoreProvider>

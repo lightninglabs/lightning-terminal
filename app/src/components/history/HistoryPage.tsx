@@ -1,6 +1,7 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
+import { useStore } from 'store';
 import PageHeader from 'components/common/PageHeader';
 import { styled } from 'components/theme';
 import HistoryList from './HistoryList';
@@ -13,6 +14,7 @@ const Styled = {
 
 const HistoryPage: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.history.HistoryPage');
+  const { uiStore } = useStore();
 
   const { Wrapper } = Styled;
   return (
@@ -20,8 +22,7 @@ const HistoryPage: React.FC = () => {
       <PageHeader
         title={l('pageTitle')}
         backText={l('backText')}
-        onBackClick={() => alert('TODO: Navigate to Loop page')}
-        onHistoryClick={() => alert('TODO: Navigate to History page')}
+        onBackClick={uiStore.goToLoop}
         onExportClick={() => alert('TODO: Export CSV of Swaps')}
       />
       <HistoryList />

@@ -33,6 +33,7 @@
   "cmps.loop.swap.SwapReviewStep.total": "Invoice Total",
   "cmps.layout.NavMenu.menu": "Menu",
   "cmps.layout.NavMenu.loop": "Lightning Loop",
+  "cmps.layout.NavMenu.history": "History",
   "cmps.layout.NavMenu.settings": "Settings",
   "cmps.NodeStatus.title": "Node Status"
 }
