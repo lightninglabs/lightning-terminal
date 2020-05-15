@@ -1,7 +1,7 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
-import { PageTitle } from 'components/common/text';
+import PageHeader from 'components/common/PageHeader';
 import { styled } from 'components/theme';
 import HistoryList from './HistoryList';
 
@@ -17,7 +17,13 @@ const HistoryPage: React.FC = () => {
   const { Wrapper } = Styled;
   return (
     <Wrapper>
-      <PageTitle>{l('pageTitle')}</PageTitle>
+      <PageHeader
+        title={l('pageTitle')}
+        backText={l('backText')}
+        onBackClick={() => alert('TODO: Navigate to Loop page')}
+        onHistoryClick={() => alert('TODO: Navigate to History page')}
+        onExportClick={() => alert('TODO: Export CSV of Swaps')}
+      />
       <HistoryList />
     </Wrapper>
   );
