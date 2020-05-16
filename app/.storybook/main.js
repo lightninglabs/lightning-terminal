@@ -1,5 +1,9 @@
 module.exports = {
-  stories: ['../src/**/*.stories.(ts|tsx|js|jsx|mdx)'],
+  stories: [
+    // display the Loop page as the first story int he list
+    '../src/__stories__/LoopPage.stories.tsx',
+    '../src/**/*.stories.(ts|tsx|js|jsx|mdx)',
+  ],
   addons: [
     '@storybook/preset-create-react-app',
     '@storybook/addon-actions',

@@ -4,7 +4,7 @@ import LoopPage from 'components/loop/LoopPage';
 import { Layout } from '../components/layout';
 
 export default {
-  title: 'Layout',
+  title: 'Components/Layout',
   component: Layout,
 };
 
