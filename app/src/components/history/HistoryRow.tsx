@@ -76,12 +76,8 @@ const HistoryRow: React.FC<Props> = ({ swap, style }) => {
       </Column>
       <Column>{swap.typeName}</Column>
       <Column>{swap.amount.toLocaleString()}</Column>
-      <Column right>
-        {swap.createdOn.toLocaleDateString()} {swap.createdOn.toLocaleTimeString()}
-      </Column>
-      <Column right>
-        {swap.updatedOn.toLocaleDateString()} {swap.updatedOn.toLocaleTimeString()}
-      </Column>
+      <Column right>{swap.createdOnLabel}</Column>
+      <Column right>{swap.updatedOnLabel}</Column>
     </Row>
   );
 };

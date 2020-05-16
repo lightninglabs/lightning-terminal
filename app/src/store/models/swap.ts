@@ -80,9 +80,19 @@ export default class Swap {
     return new Date(this.initiationTime / 1000 / 1000);
   }
 
+  /** The date this swap was created as formatted string */
+  @computed get createdOnLabel() {
+    return `${this.createdOn.toLocaleDateString()} ${this.createdOn.toLocaleTimeString()}`;
+  }
+
   /** The date this swap was last updated as a JS Date object */
   @computed get updatedOn() {
     return new Date(this.lastUpdateTime / 1000 / 1000);
+  }
+
+  /** The date this swap was last updated as formatted string */
+  @computed get updatedOnLabel() {
+    return `${this.updatedOn.toLocaleDateString()} ${this.updatedOn.toLocaleTimeString()}`;
   }
 
   /**
