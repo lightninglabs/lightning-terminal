@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { styled } from 'components/theme';
 import { Maximize } from './icons';
 import { Title } from './text';
@@ -43,7 +43,7 @@ interface Props {
    * optional text to display in the tile. if this is not
    * provided, then the `children` will be displayed instead
    */
-  text?: string;
+  text?: ReactNode;
   /**
    * optional click handler for the icon which will not be
    * visible if this prop is not defined

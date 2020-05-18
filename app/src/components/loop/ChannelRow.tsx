@@ -9,6 +9,7 @@ import Checkbox from 'components/common/Checkbox';
 import { Column, Row } from 'components/common/grid';
 import StatusDot from 'components/common/StatusDot';
 import { Title } from 'components/common/text';
+import Unit from 'components/common/Unit';
 import { styled } from 'components/theme';
 import ChannelBalance from './ChannelBalance';
 
@@ -113,15 +114,19 @@ const ChannelRow: React.FC<Props> = ({ channel, style }) => {
             <ChannelDot channel={channel} />
           </StatusIcon>
         )}
-        {channel.remoteBalance.toLocaleString()}
+        <Unit sats={channel.remoteBalance} suffix={false} />
       </Column>
       <Column cols={3}>
         <Balance channel={channel} />
       </Column>
-      <Column>{channel.localBalance.toLocaleString()}</Column>
+      <Column>
+        <Unit sats={channel.localBalance} suffix={false} />
+      </Column>
       <Column>{channel.uptimePercent}</Column>
       <Column>{ellipseInside(channel.remotePubkey)}</Column>
-      <Column right>{channel.capacity.toLocaleString()}</Column>
+      <Column right>
+        <Unit sats={channel.capacity} suffix={false} />
+      </Column>
     </Row>
   );
 };

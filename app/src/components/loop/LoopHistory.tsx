@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { useStore } from 'store';
 import { Column, Row } from 'components/common/grid';
 import { SmallText } from 'components/common/text';
+import Unit from 'components/common/Unit';
 import { styled } from 'components/theme';
 import SwapDot from './SwapDot';
 
@@ -29,7 +30,9 @@ const LoopHistory: React.FC = () => {
             <SmallText>{swap.createdOn.toLocaleDateString()}</SmallText>
           </Column>
           <RightColumn cols={6}>
-            <SmallText>{`${swap.amount.toLocaleString()} SAT`}</SmallText>
+            <SmallText>
+              <Unit sats={swap.amount} />
+            </SmallText>
           </RightColumn>
         </Row>
       ))}
