@@ -42,7 +42,7 @@ const Styled = {
   Check: styled(Checkbox)`
     float: left;
     margin-top: 18px;
-    margin-left: 15px;
+    margin-left: 10px;
   `,
   Balance: styled(ChannelBalance)`
     margin-top: ${ROW_HEIGHT / 2 - 2}px;

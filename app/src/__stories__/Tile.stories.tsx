@@ -23,5 +23,5 @@ export const WithArrowIcon = () => (
 );
 
 export const InboundLiquidity = () => (
-  <Tile title="Inbound Liquidity" text="123,456,789 SAT" />
+  <Tile title="Inbound Liquidity" text="123,456,789 sats" />
 );

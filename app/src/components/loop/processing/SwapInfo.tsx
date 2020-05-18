@@ -2,6 +2,7 @@ import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { Swap } from 'store/models';
 import { Title } from 'components/common/text';
+import Unit from 'components/common/Unit';
 import { styled } from 'components/theme';
 import SwapDot from '../SwapDot';
 
@@ -36,7 +37,9 @@ const SwapInfo: React.FC<Props> = ({ swap }) => {
       </Dot>
       <Details>
         <Title>{swap.idEllipsed}</Title>
-        <div>{swap.amount.toLocaleString()} SAT</div>
+        <div>
+          <Unit sats={swap.amount} />
+        </div>
       </Details>
     </Wrapper>
   );
