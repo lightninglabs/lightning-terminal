@@ -1,7 +1,7 @@
 import { action, observable } from 'mobx';
 import { Store } from 'store';
 
-type PageName = 'loop' | 'history';
+type PageName = 'loop' | 'history' | 'settings';
 
 export default class UiStore {
   private _store: Store;
@@ -15,21 +15,25 @@ export default class UiStore {
     this._store = store;
   }
 
-  /**
-   * Change to the Loop page
-   */
+  /** Change to the Loop page */
   @action.bound
   goToLoop() {
     this.page = 'loop';
     this._store.log.info('Go to the Loop page');
   }
 
-  /**
-   * Change to the History page
-   */
+  /** Change to the History page */
   @action.bound
   goToHistory() {
     this.page = 'history';
+    this._store.log.info('Go to the History page');
+  }
+
+  /** Change to the History page */
+  @action.bound
+  goToSettings() {
+    this.page = 'settings';
+    this._store.log.info('Go to the Settings page');
   }
 
   /**

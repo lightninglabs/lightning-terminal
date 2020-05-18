@@ -35,5 +35,6 @@
   "cmps.layout.NavMenu.loop": "Lightning Loop",
   "cmps.layout.NavMenu.history": "History",
   "cmps.layout.NavMenu.settings": "Settings",
-  "cmps.NodeStatus.title": "Node Status"
+  "cmps.NodeStatus.title": "Node Status",
+  "cmps.settings.SettingsPage.pageTitle": "Settings"
 }
