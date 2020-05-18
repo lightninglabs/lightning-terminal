@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { styled } from 'components/theme';
 import { SmallText } from './text';
 
@@ -30,7 +30,7 @@ const Styled = {
 
 interface Props {
   text: string;
-  description?: string;
+  description?: ReactNode;
   active?: boolean;
   right?: boolean;
   onClick?: () => void;

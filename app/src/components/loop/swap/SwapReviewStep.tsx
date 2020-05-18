@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Title, XLargeText } from 'components/common/text';
+import Unit from 'components/common/Unit';
 import { styled } from 'components/theme';
 import StepButtons from './StepButtons';
 import StepSummary from './StepSummary';
@@ -55,7 +56,9 @@ const SwapReviewStep: React.FC = () => {
         <div>
           <InvoiceRow>
             <Title>{l('amount', { type: buildSwapStore.direction })}</Title>
-            <span>{buildSwapStore.amount.toLocaleString()} SAT</span>
+            <span>
+              <Unit sats={buildSwapStore.amount} />
+            </span>
           </InvoiceRow>
           <InvoiceRow>
             <Title>{l('fees')}</Title>
@@ -64,7 +67,9 @@ const SwapReviewStep: React.FC = () => {
           <Divider />
           <InvoiceRow>
             <Title>{l('total')}</Title>
-            <XLargeText>{buildSwapStore.invoiceTotal.toLocaleString()} SAT</XLargeText>
+            <XLargeText>
+              <Unit sats={buildSwapStore.invoiceTotal} />
+            </XLargeText>
           </InvoiceRow>
         </div>
         <StepButtons

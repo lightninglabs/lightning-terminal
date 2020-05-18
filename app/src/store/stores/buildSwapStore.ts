@@ -1,5 +1,6 @@
 import { action, computed, observable, runInAction, toJS } from 'mobx';
 import { BuildSwapSteps, Quote, SwapDirection, SwapTerms } from 'types/state';
+import { formatSats } from 'util/formatters';
 import { Store } from 'store';
 
 // an artificial delay to allow the user to abort a swap before it executed
@@ -98,7 +99,8 @@ class BuildSwapStore {
   @computed
   get feesLabel() {
     const feesPct = ((100 * this.fee) / this.amount).toFixed(2);
-    return `${this.fee.toLocaleString()} SAT (${feesPct}%)`;
+    const amount = formatSats(this.fee, { unit: this._store.settingsStore.unit });
+    return `${amount} (${feesPct}%)`;
   }
 
   /** the invoice total including the swap amount and fee */
