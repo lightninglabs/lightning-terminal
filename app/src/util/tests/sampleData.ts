@@ -117,7 +117,7 @@ export const loopListSwaps: LOOP.ListSwapsResponse.AsObject = {
     type: (i % 3) as LOOP.SwapStatus.AsObject['type'],
     state: i % 2 ? LOOP.SwapState.SUCCESS : LOOP.SwapState.FAILED,
     initiationTime: 1586390353623905000 + i * 100000000000000,
-    lastUpdateTime: 1586398369729857000,
+    lastUpdateTime: 1586398369729857000 + i * 200000000000000,
     htlcAddress: 'bcrt1qzu4077erkr78k52yuf2rwkk6ayr6m3wtazdfz2qqmd7taa5vvy9s5d75gd',
     costServer: 66,
     costOnchain: 6812,

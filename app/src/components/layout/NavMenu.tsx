@@ -1,5 +1,7 @@
 import React from 'react';
+import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
+import { useStore } from 'store';
 import { Title } from 'components/common/text';
 import { styled } from 'components/theme';
 
@@ -14,14 +16,16 @@ const Styled = {
   `,
   NavItem: styled.li`
     font-size: ${props => props.theme.sizes.s};
+    margin-right: -17px;
 
-    a {
+    span {
       display: block;
       height: 50px;
       line-height: 50px;
       padding: 0 12px;
       border-left: 3px solid transparent;
       color: ${props => props.theme.colors.whitish};
+      cursor: pointer;
 
       &:hover {
         text-decoration: none;
@@ -29,10 +33,9 @@ const Styled = {
       }
     }
 
-    &.active a {
+    &.active span {
       border-left: 3px solid ${props => props.theme.colors.whitish};
       background-color: ${props => props.theme.colors.blue};
-      margin-right: -17px;
 
       &:hover {
         border-left: 3px solid ${props => props.theme.colors.pink};
@@ -42,23 +45,26 @@ const Styled = {
 };
 
 const NavMenu: React.FC = () => {
-  const { NavTitle, Nav, NavItem } = Styled;
-
   const { l } = usePrefixedTranslation('cmps.layout.NavMenu');
+  const { uiStore } = useStore();
 
+  const { NavTitle, Nav, NavItem } = Styled;
   return (
     <>
       <NavTitle>{l('menu')}</NavTitle>
       <Nav>
-        <NavItem className="active">
-          <a href="#temp">{l('loop')}</a>
+        <NavItem className={uiStore.page === 'loop' ? 'active' : ''}>
+          <span onClick={uiStore.goToLoop}>{l('loop')}</span>
+        </NavItem>
+        <NavItem className={uiStore.page === 'history' ? 'active' : ''}>
+          <span onClick={uiStore.goToHistory}>{l('history')}</span>
         </NavItem>
         <NavItem>
-          <a href="#temp">{l('settings')}</a>
+          <span>{l('settings')}</span>
         </NavItem>
       </Nav>
     </>
   );
 };
 
-export default NavMenu;
+export default observer(NavMenu);

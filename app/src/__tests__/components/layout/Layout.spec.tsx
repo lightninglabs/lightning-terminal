@@ -21,4 +21,23 @@ describe('Layout component', () => {
     fireEvent.click(getByTitle('menu'));
     expect(store.settingsStore.sidebarVisible).toBe(true);
   });
+
+  it('should navigate to the History page', () => {
+    const { getByText, store } = render();
+    expect(store.uiStore.page).toBe('loop');
+    fireEvent.click(getByText('History'));
+    expect(store.uiStore.page).toBe('history');
+    expect(getByText('History').parentElement).toHaveClass('active');
+  });
+
+  it('should navigate back to the Loop page', () => {
+    const { getByText, store } = render();
+    expect(store.uiStore.page).toBe('loop');
+    fireEvent.click(getByText('History'));
+    expect(store.uiStore.page).toBe('history');
+    expect(getByText('History').parentElement).toHaveClass('active');
+    fireEvent.click(getByText('Lightning Loop'));
+    expect(store.uiStore.page).toBe('loop');
+    expect(getByText('Lightning Loop').parentElement).toHaveClass('active');
+  });
 });

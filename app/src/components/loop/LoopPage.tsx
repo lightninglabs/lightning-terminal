@@ -2,7 +2,7 @@ import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
-import { PageTitle } from 'components/common/text';
+import PageHeader from 'components/common/PageHeader';
 import { styled } from 'components/theme';
 import ChannelList from './ChannelList';
 import LoopActions from './LoopActions';
@@ -29,7 +29,11 @@ const LoopPage: React.FC = () => {
         <SwapWizard />
       ) : (
         <>
-          <PageTitle>{l('pageTitle')}</PageTitle>
+          <PageHeader
+            title={l('pageTitle')}
+            onHistoryClick={uiStore.goToHistory}
+            onExportClick={() => alert('TODO: Export CSV of Channels')}
+          />
           <LoopTiles />
           <LoopActions />
         </>

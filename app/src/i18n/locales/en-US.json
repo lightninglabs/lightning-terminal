@@ -1,4 +1,11 @@
 {
+  "cmps.history.HistoryPage.backText": "Lightning Loop",
+  "cmps.history.HistoryPage.pageTitle": "Loop History",
+  "cmps.history.HistoryRowHeader.status": "Status",
+  "cmps.history.HistoryRowHeader.amount": "Amount",
+  "cmps.history.HistoryRowHeader.type": "Loop Type",
+  "cmps.history.HistoryRowHeader.created": "Created",
+  "cmps.history.HistoryRowHeader.updated": "Updated",
   "cmps.loop.ChannelRowHeader.canReceive": "Can Receive",
   "cmps.loop.ChannelRowHeader.canSend": "Can Send",
   "cmps.loop.ChannelRowHeader.upTime": "Up Time %",
@@ -26,6 +33,7 @@
   "cmps.loop.swap.SwapReviewStep.total": "Invoice Total",
   "cmps.layout.NavMenu.menu": "Menu",
   "cmps.layout.NavMenu.loop": "Lightning Loop",
+  "cmps.layout.NavMenu.history": "History",
   "cmps.layout.NavMenu.settings": "Settings",
   "cmps.NodeStatus.title": "Node Status"
 }
