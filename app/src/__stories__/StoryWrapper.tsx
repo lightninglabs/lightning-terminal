@@ -1,5 +1,6 @@
 import React, { CSSProperties, useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
+import MockAppStorage from 'util/tests/mockAppStorage';
 import { sampleApiResponses } from 'util/tests/sampleData';
 import { createStore, StoreProvider } from 'store';
 import { Background } from 'components/common/base';
@@ -16,8 +17,9 @@ const grpc = {
   },
 };
 
-// Create a store that pulls data from the mock GRPC for stories
-const createStoryStore = () => createStore(grpc);
+// Create a store that pulls data from the mock GRPC and doesn't use
+// the real localStorage to save settings
+const createStoryStore = () => createStore(grpc, new MockAppStorage());
 
 /**
  * This component is used to wrap every story. It provides the app theme

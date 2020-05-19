@@ -1,6 +1,12 @@
-import { action, observable, toJS } from 'mobx';
+import { action, autorun, observable, toJS } from 'mobx';
 import { BalanceMode, Unit } from 'util/constants';
 import { Store } from 'store';
+
+export interface PersistentSettings {
+  sidebarVisible: boolean;
+  unit: Unit;
+  balanceMode: BalanceMode;
+}
 
 export default class SettingsStore {
   private _store: Store;
@@ -42,5 +48,37 @@ export default class SettingsStore {
    */
   @action.bound setBalanceMode(mode: BalanceMode) {
     this.balanceMode = mode;
+  }
+
+  /**
+   * initialized the settings and auto-save when a setting is changed
+   */
+  @action.bound
+  init() {
+    this.load();
+    autorun(() => {
+      const settings: PersistentSettings = {
+        sidebarVisible: this.sidebarVisible,
+        unit: this.unit,
+        balanceMode: this.balanceMode,
+      };
+      this._store.storage.set('settings', settings);
+      this._store.log.info('saved settings to localStorage', settings);
+    });
+  }
+
+  /**
+   * load settings from the browser's local storage
+   */
+  @action.bound
+  load() {
+    this._store.log.info('loading settings from localStorage');
+    const settings = this._store.storage.get('settings');
+    if (settings) {
+      this.sidebarVisible = settings.sidebarVisible;
+      this.unit = settings.unit;
+      this.balanceMode = settings.balanceMode;
+      this._store.log.info('loaded settings', settings);
+    }
   }
 }
