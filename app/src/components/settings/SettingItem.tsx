@@ -49,7 +49,9 @@ const SettingItem: React.FC<Props> = ({ name, value, icon, checked, onClick }) =
     <Wrapper onClick={onClick}>
       <Name>{name}</Name>
       {value && <Value>{value}</Value>}
-      {icon === 'radio' && <Radio checked={checked} />}
+      {icon === 'radio' && (
+        <Radio role="switch" checked={checked} aria-checked={checked} />
+      )}
       {icon === 'arrow' && <Icon icon="arrow-right" />}
     </Wrapper>
   );

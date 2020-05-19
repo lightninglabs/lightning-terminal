@@ -7,12 +7,12 @@ const storySettings: PersistentSettings = {
   balanceMode: BalanceMode.receive,
 };
 
+// export mock functions to use in tests
+export const mockStorageSet = jest.fn(() => storySettings);
+export const mockStorageGet = jest.fn(() => storySettings);
+
 // mock the AppStorage dependency so that settings aren't shared across tests
 export default class MockAppStorage {
-  set() {
-    return undefined;
-  }
-  get() {
-    return storySettings as any;
-  }
+  set = mockStorageSet;
+  get = mockStorageGet;
 }
