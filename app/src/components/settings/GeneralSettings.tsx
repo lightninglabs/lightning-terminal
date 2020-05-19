@@ -17,10 +17,11 @@ const Styled = {
 
 const GeneralSettings: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.settings.GeneralSettings');
+  const { l: lbm } = usePrefixedTranslation('enums.BalanceMode');
   const { uiStore, settingsStore } = useStore();
 
-  const handleUnitClick = useCallback(() => uiStore.showSettings('unit'), [uiStore]);
-  const handleColorsClick = useCallback(() => uiStore.showSettings('colors'), [uiStore]);
+  const handleUnit = useCallback(() => uiStore.showSettings('unit'), [uiStore]);
+  const handleBalance = useCallback(() => uiStore.showSettings('balance'), [uiStore]);
 
   const { Wrapper, Content } = Styled;
   return (
@@ -31,13 +32,13 @@ const GeneralSettings: React.FC = () => {
         <SettingItem
           name={l('bitcoinUnit')}
           value={formatUnit(settingsStore.unit)}
-          onClick={handleUnitClick}
+          onClick={handleUnit}
           icon="arrow"
         />
         <SettingItem
           name={l('balances')}
-          value="Receive Optimized"
-          onClick={handleColorsClick}
+          value={l('balancesValue', { mode: lbm(settingsStore.balanceMode) })}
+          onClick={handleBalance}
           icon="arrow"
         />
       </Content>

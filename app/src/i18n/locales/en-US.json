@@ -1,4 +1,7 @@
 {
+  "enums.BalanceMode.receive": "Receiving",
+  "enums.BalanceMode.send": "Sending",
+  "enums.BalanceMode.routing": "Routing",
   "cmps.history.HistoryPage.backText": "Lightning Loop",
   "cmps.history.HistoryPage.pageTitle": "Loop History",
   "cmps.history.HistoryRowHeader.status": "Status",
@@ -36,9 +39,13 @@
   "cmps.layout.NavMenu.history": "History",
   "cmps.layout.NavMenu.settings": "Settings",
   "cmps.NodeStatus.title": "Node Status",
+  "cmps.settings.BalanceSettings.pageTitle": "Channel Balance Mode",
+  "cmps.settings.BalanceSettings.backText": "Settings",
+  "cmps.settings.BalanceSettings.title": "Optimize For",
   "cmps.settings.GeneralSettings.title": "General",
   "cmps.settings.GeneralSettings.bitcoinUnit": "Bitcoin Unit",
-  "cmps.settings.GeneralSettings.balances": "Channel Balances",
+  "cmps.settings.GeneralSettings.balances": "Channel Balance Mode",
+  "cmps.settings.GeneralSettings.balancesValue": "Optimize for {{mode}}",
   "cmps.settings.GeneralSettings.pageTitle": "Settings",
   "cmps.settings.UnitSettings.pageTitle": "Bitcoin Unit",
   "cmps.settings.UnitSettings.backText": "Settings"

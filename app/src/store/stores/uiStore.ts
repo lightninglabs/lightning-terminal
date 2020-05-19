@@ -3,7 +3,7 @@ import { Store } from 'store';
 
 type PageName = 'loop' | 'history' | 'settings';
 
-type SettingName = 'general' | 'unit' | 'colors';
+type SettingName = 'general' | 'unit' | 'balance';
 
 export default class UiStore {
   private _store: Store;
@@ -37,6 +37,7 @@ export default class UiStore {
   @action.bound
   goToSettings() {
     this.page = 'settings';
+    this.selectedSetting = 'general';
     this._store.log.info('Go to the Settings page');
   }
 
