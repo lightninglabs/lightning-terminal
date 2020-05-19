@@ -17,7 +17,7 @@ export const WithChildren = () => (
 );
 
 export const WithArrowIcon = () => (
-  <Tile title="Tile With Arrow" onArrowClick={() => action('ArrowIcon')}>
+  <Tile title="Tile With Arrow" onMaximizeClick={() => action('ArrowIcon')}>
     Sample Text
   </Tile>
 );

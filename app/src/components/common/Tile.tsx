@@ -1,6 +1,6 @@
 import React from 'react';
 import { styled } from 'components/theme';
-import { ArrowRight } from './icons';
+import { Maximize } from './icons';
 import { Title } from './text';
 
 const Styled = {
@@ -14,10 +14,17 @@ const Styled = {
     display: flex;
     justify-content: space-between;
   `,
-  ArrowIcon: styled(ArrowRight)`
-    width: 16px;
+  MaximizeIcon: styled(Maximize)`
+    width: 20px;
+    height: 20px;
+    padding: 4px;
     margin-top: -5px;
     cursor: pointer;
+
+    &:hover {
+      border-radius: 24px;
+      background-color: ${props => props.theme.colors.purple};
+    }
   `,
   Text: styled.div`
     font-size: ${props => props.theme.sizes.xl};
@@ -38,20 +45,20 @@ interface Props {
    */
   text?: string;
   /**
-   * optional click handler for the arrow which will not be
+   * optional click handler for the icon which will not be
    * visible if this prop is not defined
    */
-  onArrowClick?: () => void;
+  onMaximizeClick?: () => void;
 }
 
-const Tile: React.FC<Props> = ({ title, text, onArrowClick, children }) => {
-  const { TileWrap, Header, ArrowIcon, Text } = Styled;
+const Tile: React.FC<Props> = ({ title, text, onMaximizeClick, children }) => {
+  const { TileWrap, Header, MaximizeIcon, Text } = Styled;
 
   return (
     <TileWrap>
       <Header>
         <Title>{title}</Title>
-        {onArrowClick && <ArrowIcon title="arrow-right" onClick={onArrowClick} />}
+        {onMaximizeClick && <MaximizeIcon title="maximize" onClick={onMaximizeClick} />}
       </Header>
       {text ? <Text>{text}</Text> : children}
     </TileWrap>

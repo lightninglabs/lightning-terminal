@@ -15,27 +15,27 @@ const Styled = {
 
 const LoopTiles: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.LoopTiles');
-  const store = useStore();
+  const { channelStore, uiStore } = useStore();
 
   const { TileSection } = Styled;
   return (
     <TileSection>
       <Row>
         <Column>
-          <Tile title={l('history')} onArrowClick={() => null}>
-            <LoopHistory swaps={store.swapStore.sortedSwaps} />
+          <Tile title={l('history')} onMaximizeClick={uiStore.toggleProcessingSwaps}>
+            <LoopHistory />
           </Tile>
         </Column>
         <Column cols={4}>
           <Tile
             title={l('inbound')}
-            text={`${store.channelStore.totalInbound.toLocaleString()} SAT`}
+            text={`${channelStore.totalInbound.toLocaleString()} SAT`}
           />
         </Column>
         <Column cols={4}>
           <Tile
             title={l('outbound')}
-            text={`${store.channelStore.totalOutbound.toLocaleString()} SAT`}
+            text={`${channelStore.totalOutbound.toLocaleString()} SAT`}
           />
         </Column>
       </Row>

@@ -276,6 +276,8 @@ class BuildSwapStore {
         this._store.log.info('completed loop', toJS(res));
         // hide the swap UI after it is complete
         this.cancel();
+        this._store.uiStore.toggleProcessingSwaps();
+        this._store.swapStore.fetchSwaps();
       } catch (error) {
         this.swapError = error;
         this._store.log.error(`failed to perform ${direction}`, error);

@@ -7,6 +7,7 @@ import { styled } from 'components/theme';
 import ChannelList from './ChannelList';
 import LoopActions from './LoopActions';
 import LoopTiles from './LoopTiles';
+import ProcessingSwaps from './processing/ProcessingSwaps';
 import SwapWizard from './swap/SwapWizard';
 
 const Styled = {
@@ -17,13 +18,14 @@ const Styled = {
 
 const LoopPage: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.LoopPage');
-  const store = useStore();
-  const build = store.buildSwapStore;
+  const { uiStore, buildSwapStore } = useStore();
 
   const { PageWrap } = Styled;
   return (
     <PageWrap>
-      {build.showWizard ? (
+      {uiStore.processingSwapsVisible ? (
+        <ProcessingSwaps />
+      ) : buildSwapStore.showWizard ? (
         <SwapWizard />
       ) : (
         <>
