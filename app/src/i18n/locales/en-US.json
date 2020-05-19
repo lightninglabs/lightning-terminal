@@ -39,5 +39,7 @@
   "cmps.settings.GeneralSettings.title": "General",
   "cmps.settings.GeneralSettings.bitcoinUnit": "Bitcoin Unit",
   "cmps.settings.GeneralSettings.balances": "Channel Balances",
-  "cmps.settings.GeneralSettings.pageTitle": "Settings"
+  "cmps.settings.GeneralSettings.pageTitle": "Settings",
+  "cmps.settings.UnitSettings.pageTitle": "Bitcoin Unit",
+  "cmps.settings.UnitSettings.backText": "Settings"
 }

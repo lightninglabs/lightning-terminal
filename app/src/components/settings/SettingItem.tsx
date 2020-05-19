@@ -1,5 +1,6 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
+import { RadioButton } from 'components/common/base';
 import { Icon } from 'components/common/icons';
 import { styled } from 'components/theme';
 
@@ -29,23 +30,27 @@ const Styled = {
   Icon: styled(Icon)`
     line-height: 80px;
   `,
+  Radio: styled(RadioButton)`
+    margin-top: 32px;
+  `,
 };
 
 interface Props {
   name: string;
   value?: string;
-  arrow?: boolean;
+  icon: 'arrow' | 'radio';
+  checked?: boolean;
   onClick: () => void;
 }
 
-const SettingItem: React.FC<Props> = ({ name, value, arrow, children, onClick }) => {
-  const { Wrapper, Name, Value, Icon } = Styled;
+const SettingItem: React.FC<Props> = ({ name, value, icon, checked, onClick }) => {
+  const { Wrapper, Name, Value, Radio, Icon } = Styled;
   return (
     <Wrapper onClick={onClick}>
       <Name>{name}</Name>
       {value && <Value>{value}</Value>}
-      {children}
-      {arrow && <Icon icon="arrow-right" />}
+      {icon === 'radio' && <Radio checked={checked} />}
+      {icon === 'arrow' && <Icon icon="arrow-right" />}
     </Wrapper>
   );
 };

@@ -32,13 +32,13 @@ const GeneralSettings: React.FC = () => {
           name={l('bitcoinUnit')}
           value={formatUnit(settingsStore.unit)}
           onClick={handleUnitClick}
-          arrow
+          icon="arrow"
         />
         <SettingItem
           name={l('balances')}
           value="Receive Optimized"
           onClick={handleColorsClick}
-          arrow
+          icon="arrow"
         />
       </Content>
     </Wrapper>

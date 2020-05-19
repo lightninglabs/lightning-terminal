@@ -29,6 +29,7 @@ export interface Theme {
     orange: string;
     tileBack: string;
     purple: string;
+    lightPurple: string;
   };
 }
 
@@ -58,6 +59,7 @@ const theme: Theme = {
     orange: '#f66b1c',
     tileBack: 'rgba(245,245,245,0.04)',
     purple: '#57038d',
+    lightPurple: '#a540cd',
   },
 };
 

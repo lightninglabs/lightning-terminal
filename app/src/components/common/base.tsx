@@ -53,6 +53,23 @@ export const Button = styled.button<ButtonProps>`
   }
 `;
 
+interface RadioButtonProps {
+  checked?: boolean;
+}
+
+export const RadioButton = styled.span<RadioButtonProps>`
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 14px;
+  border: 1px solid ${props => props.theme.colors.lightPurple};
+  background-color: ${props => (props.checked ? props.theme.colors.lightPurple : 'none')};
+
+  &:hover {
+    opacity: 0.8;
+  }
+`;
+
 /**
  * the react-virtualized list doesn't play nice with the bootstrap row -15px
  * margin. We need to manually offset the container and remove the
