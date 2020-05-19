@@ -1,7 +1,7 @@
 import React, { CSSProperties } from 'react';
 import { observer } from 'mobx-react-lite';
-import { BalanceLevel } from 'types/state';
 import { usePrefixedTranslation } from 'hooks';
+import { BalanceStatus } from 'util/constants';
 import { ellipseInside } from 'util/strings';
 import { useStore } from 'store';
 import { Channel } from 'store/models';
@@ -76,12 +76,12 @@ export const ChannelRowHeader: React.FC = () => {
 const ChannelDot: React.FC<{ channel: Channel }> = observer(({ channel }) => {
   if (!channel.active) return <StatusDot status="idle" />;
 
-  switch (channel.balanceLevel) {
-    case BalanceLevel.good:
+  switch (channel.balanceStatus) {
+    case BalanceStatus.ok:
       return <StatusDot status="success" />;
-    case BalanceLevel.warn:
+    case BalanceStatus.warn:
       return <StatusDot status="warn" />;
-    case BalanceLevel.bad:
+    case BalanceStatus.danger:
       return <StatusDot status="error" />;
   }
 });

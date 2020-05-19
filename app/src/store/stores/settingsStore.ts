@@ -40,7 +40,7 @@ export default class SettingsStore {
   /**
    * sets the balance mode
    */
-  @action.bound setBalanceMode(unit: Unit) {
-    this.unit = unit;
+  @action.bound setBalanceMode(mode: BalanceMode) {
+    this.balanceMode = mode;
   }
 }

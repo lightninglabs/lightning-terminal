@@ -1,3 +1,4 @@
+import { Theme } from 'components/theme';
 import { BalanceConfig, BalanceConstraint, BalanceStatus } from './constants';
 
 /**
@@ -32,4 +33,18 @@ export const getBalanceStatus = (
   if (satisfies(pct, config.warn)) return BalanceStatus.warn;
 
   return BalanceStatus.ok;
+};
+
+/**
+ * Converts a channel balance status to a theme color
+ * @param level the status of the channel
+ * @param active whether the channel is active or not
+ * @param theme the app theme containing colors
+ */
+export const statusToColor = (level: BalanceStatus, active: boolean, theme: Theme) => {
+  if (!active) return theme.colors.gray;
+
+  if (level === BalanceStatus.danger) return theme.colors.pink;
+  if (level === BalanceStatus.warn) return theme.colors.orange;
+  return theme.colors.green;
 };

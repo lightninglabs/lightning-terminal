@@ -26,7 +26,7 @@ export default class ChannelStore {
   @computed get sortedChannels() {
     return values(this.channels)
       .slice()
-      .sort((a, b) => b.balancePercent - a.balancePercent);
+      .sort((a, b) => b.sortOrder - a.sortOrder);
   }
 
   /**
@@ -61,7 +61,7 @@ export default class ChannelStore {
         if (existing) {
           existing.update(lndChan);
         } else {
-          this.channels.set(lndChan.chanId, new Channel(lndChan));
+          this.channels.set(lndChan.chanId, new Channel(this._store, lndChan));
         }
       });
       // remove any channels in state that are not in the API response

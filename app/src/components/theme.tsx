@@ -1,5 +1,5 @@
 import React from 'react';
-import { BalanceLevel } from 'types/state';
+
 import emotionStyled, { CreateStyled } from '@emotion/styled/macro';
 import { ThemeProvider as EmotionThemeProvider } from 'emotion-theming';
 
@@ -61,14 +61,6 @@ const theme: Theme = {
     purple: '#57038d',
     lightPurple: '#a540cd',
   },
-};
-
-export const levelToColor = (level: BalanceLevel, active: boolean, theme: Theme) => {
-  if (!active) return theme.colors.gray;
-
-  if (level === BalanceLevel.bad) return theme.colors.pink;
-  if (level === BalanceLevel.warn) return theme.colors.orange;
-  return theme.colors.green;
 };
 
 export const styled = emotionStyled as CreateStyled<Theme>;

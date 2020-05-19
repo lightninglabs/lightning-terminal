@@ -32,44 +32,48 @@ const renderStory = (
 };
 
 export const Good = () => {
-  const channel = new Channel(lndListChannels.channelsList[0]);
-  return renderStory(channel, { ratio: 0.59 });
+  const store = useStore();
+  const channel = new Channel(store, lndListChannels.channelsList[0]);
+  return renderStory(channel, { ratio: 0.3 });
 };
 
 export const Warn = () => {
-  const channel = new Channel(lndListChannels.channelsList[1]);
-  return renderStory(channel, { ratio: 0.28 });
+  const store = useStore();
+  const channel = new Channel(store, lndListChannels.channelsList[1]);
+  return renderStory(channel, { ratio: 0.5 });
 };
 
 export const Bad = () => {
-  const channel = new Channel(lndListChannels.channelsList[2]);
+  const store = useStore();
+  const channel = new Channel(store, lndListChannels.channelsList[2]);
   return renderStory(channel, { ratio: 0.91 });
 };
 
 export const Inactive = () => {
-  const channel = new Channel(lndListChannels.channelsList[3]);
+  const store = useStore();
+  const channel = new Channel(store, lndListChannels.channelsList[3]);
   channel.active = false;
   return renderStory(channel);
 };
 
 export const Editable = () => {
-  const channel = new Channel(lndListChannels.channelsList[4]);
   const store = useStore();
+  const channel = new Channel(store, lndListChannels.channelsList[4]);
   store.buildSwapStore.startSwap();
   return renderStory(channel);
 };
 
 export const Selected = () => {
-  const channel = new Channel(lndListChannels.channelsList[5]);
   const store = useStore();
+  const channel = new Channel(store, lndListChannels.channelsList[5]);
   store.buildSwapStore.startSwap();
   store.buildSwapStore.toggleSelectedChannel(channel.chanId);
   return renderStory(channel);
 };
 
 export const Disabled = () => {
-  const channel = new Channel(lndListChannels.channelsList[6]);
   const store = useStore();
+  const channel = new Channel(store, lndListChannels.channelsList[6]);
   store.buildSwapStore.startSwap();
   store.buildSwapStore.toggleSelectedChannel(channel.chanId);
   store.buildSwapStore.setDirection(SwapDirection.OUT);
@@ -77,8 +81,8 @@ export const Disabled = () => {
 };
 
 export const Dimmed = () => {
-  const channel = new Channel(lndListChannels.channelsList[6]);
   const store = useStore();
+  const channel = new Channel(store, lndListChannels.channelsList[6]);
   store.buildSwapStore.startSwap();
   store.buildSwapStore.setDirection(SwapDirection.OUT);
   return renderStory(channel);

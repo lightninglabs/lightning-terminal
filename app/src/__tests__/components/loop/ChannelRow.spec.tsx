@@ -14,7 +14,7 @@ describe('ChannelRow component', () => {
 
   beforeEach(async () => {
     store = createStore();
-    channel = new Channel({
+    channel = new Channel(store, {
       chanId: '150633093070848',
       remotePubkey: '02ac59099da6d4bd818e6a81098f5d54580b7c3aa8255c707fa0f95ca89b02cb8c',
       capacity: 15000000,
@@ -69,8 +69,8 @@ describe('ChannelRow component', () => {
   });
 
   it.each<[number, string]>([
-    [55, 'success'],
-    [75, 'warn'],
+    [20, 'success'],
+    [50, 'warn'],
     [90, 'error'],
   ])('should display correct dot icon for a "%s" balance', (localPct, label) => {
     channel.localBalance = channel.capacity * (localPct / 100);
