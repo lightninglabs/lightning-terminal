@@ -10,10 +10,11 @@ const satisfies = (pct: number, constraint: BalanceConstraint) => {
   const { min, max, bidirectional } = constraint;
 
   if (bidirectional && pct < 50) {
-    pct = 100 - pct;
+    // 99 is the highest since we use Math.floor()
+    pct = 99 - pct;
   }
 
-  return min < pct && pct <= max;
+  return min <= pct && pct < max;
 };
 
 /**

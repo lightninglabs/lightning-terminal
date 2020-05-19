@@ -33,7 +33,7 @@ export default class Channel {
    * remote balances
    */
   @computed get localPercent() {
-    return Math.round((this.localBalance * 100) / this.capacity);
+    return Math.floor((this.localBalance * 100) / this.capacity);
   }
 
   /**
@@ -51,7 +51,8 @@ export default class Channel {
       case BalanceMode.routing:
         const pct = this.localPercent;
         // disregard direction. the highest local percentage first
-        return pct >= 50 ? pct : 100 - pct;
+        // 99 is the highest since we use Math.floor()
+        return pct >= 50 ? pct : 99 - pct;
       default:
         return 0;
     }

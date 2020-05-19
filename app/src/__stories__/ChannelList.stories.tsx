@@ -11,14 +11,14 @@ export default {
   parameters: { contained: true },
 };
 
-const firstTen = (channels: ObservableMap<string, Channel>) => {
-  const ten = values(channels)
-    .slice(0, 10)
+const channelSubset = (channels: ObservableMap<string, Channel>) => {
+  const few = values(channels)
+    .slice(0, 20)
     .reduce((result, c) => {
       result[c.chanId] = c;
       return result;
     }, {} as Record<string, Channel>);
-  return observable.map(ten);
+  return observable.map(few);
 };
 
 export const NoChannels = () => {
@@ -30,24 +30,26 @@ export const NoChannels = () => {
 export const ReceiveMode = () => {
   const { channelStore, settingsStore } = useStore();
   settingsStore.balanceMode = BalanceMode.receive;
-  channelStore.channels = firstTen(channelStore.channels);
+  channelStore.channels = channelSubset(channelStore.channels);
   return <ChannelList />;
 };
 
 export const SendMode = () => {
   const { channelStore, settingsStore } = useStore();
   settingsStore.balanceMode = BalanceMode.send;
-  channelStore.channels = firstTen(channelStore.channels);
+  channelStore.channels = channelSubset(channelStore.channels);
   return <ChannelList />;
 };
 
 export const RoutingMode = () => {
   const { channelStore, settingsStore } = useStore();
   settingsStore.balanceMode = BalanceMode.routing;
-  channelStore.channels = firstTen(channelStore.channels);
+  channelStore.channels = channelSubset(channelStore.channels);
   return <ChannelList />;
 };
 
 export const ManyChannels = () => {
+  const { settingsStore } = useStore();
+  settingsStore.balanceMode = BalanceMode.routing;
   return <ChannelList />;
 };

@@ -11,7 +11,7 @@ const Styled = {
     width: 100%;
 
     > div {
-      min-width: 10px;
+      min-width: 6px;
 
       &:first-of-type {
         flex-grow: 1;
