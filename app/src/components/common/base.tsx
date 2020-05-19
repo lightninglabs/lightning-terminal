@@ -37,7 +37,7 @@ export const Button = styled.button<ButtonProps>`
   color: ${props => props.theme.colors.white};
   background-color: ${props =>
     props.ghost ? 'transparent' : props.theme.colors.tileBack};
-  border-width: ${props => (props.borderless ? '0' : '1px')};
+  border-width: ${props => (props.borderless && !props.primary ? '0' : '1px')};
   border-color: ${props =>
     props.primary ? props.theme.colors.green : props.theme.colors.white};
   border-style: solid;

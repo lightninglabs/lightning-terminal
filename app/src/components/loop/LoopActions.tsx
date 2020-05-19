@@ -34,13 +34,11 @@ const Styled = {
 const LoopActions: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.LoopActions');
   const { buildSwapStore } = useStore();
-  const handleLoopOut = useCallback(
-    () => buildSwapStore.setDirection(SwapDirection.OUT),
-    [buildSwapStore],
-  );
-  const handleLoopIn = useCallback(() => buildSwapStore.setDirection(SwapDirection.IN), [
-    buildSwapStore,
+  const { setDirection, inferredDirection } = buildSwapStore;
+  const handleLoopOut = useCallback(() => setDirection(SwapDirection.OUT), [
+    setDirection,
   ]);
+  const handleLoopIn = useCallback(() => setDirection(SwapDirection.IN), [setDirection]);
   const selectedCount = buildSwapStore.selectedChanIds.length;
 
   const { Wrapper, Actions, CloseIcon, Selected } = Styled;
@@ -52,16 +50,16 @@ const LoopActions: React.FC = () => {
           <Pill>{selectedCount}</Pill>
           <Selected>{l('channelsSelected')}</Selected>
           <Button
-            primary={buildSwapStore.direction === SwapDirection.OUT}
-            borderless={buildSwapStore.direction !== SwapDirection.OUT}
+            primary={inferredDirection === SwapDirection.OUT}
+            borderless
             onClick={handleLoopOut}
             disabled={selectedCount === 0}
           >
             Loop out
           </Button>
           <Button
-            primary={buildSwapStore.direction === SwapDirection.IN}
-            borderless={buildSwapStore.direction !== SwapDirection.IN}
+            primary={inferredDirection === SwapDirection.IN}
+            borderless
             onClick={handleLoopIn}
             disabled={selectedCount === 0}
           >
