@@ -1,5 +1,5 @@
 import { action, observable, toJS } from 'mobx';
-import { Unit } from 'util/constants';
+import { BalanceMode, Unit } from 'util/constants';
 import { Store } from 'store';
 
 export default class SettingsStore {
@@ -10,6 +10,9 @@ export default class SettingsStore {
 
   /** specifies which denomination to show units in */
   @observable unit: Unit = Unit.sats;
+
+  /** specifies the mode to use to determine channel balance status */
+  @observable balanceMode: BalanceMode = BalanceMode.receive;
 
   /** the chosen language */
   @observable lang = 'en-US';
@@ -29,9 +32,15 @@ export default class SettingsStore {
 
   /**
    * sets the unit to display throughout the app
-   * @param unit the new unit to use
    */
   @action.bound setUnit(unit: Unit) {
+    this.unit = unit;
+  }
+
+  /**
+   * sets the balance mode
+   */
+  @action.bound setBalanceMode(unit: Unit) {
     this.unit = unit;
   }
 }
