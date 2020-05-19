@@ -1,9 +1,9 @@
 import React, { ReactNode } from 'react';
+import { ReactComponent as ArrowRight } from 'assets/icons/arrow-right.svg';
 import { ReactComponent as Clock } from 'assets/icons/clock.svg';
 import { ReactComponent as Download } from 'assets/icons/download.svg';
 import { styled } from 'components/theme';
 
-export { ReactComponent as ArrowRight } from 'assets/icons/arrow-right.svg';
 export { ReactComponent as ArrowLeft } from 'assets/icons/arrow-left.svg';
 export { ReactComponent as Bolt } from 'assets/icons/bolt.svg';
 export { ReactComponent as Bitcoin } from 'assets/icons/bitcoin.svg';
@@ -17,11 +17,13 @@ export { ReactComponent as Maximize } from 'assets/icons/maximize.svg';
 export { ReactComponent as Refresh } from 'assets/icons/refresh-cw.svg';
 
 interface IconComponents {
+  'arrow-right': ReactNode;
   clock: ReactNode;
   download: ReactNode;
 }
 
 const components: IconComponents = {
+  'arrow-right': <ArrowRight />,
   clock: <Clock />,
   download: <Download />,
 };

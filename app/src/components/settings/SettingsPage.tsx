@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { observer } from 'mobx-react-lite';
-import { usePrefixedTranslation } from 'hooks';
-import PageHeader from 'components/common/PageHeader';
+import { useStore } from 'store';
 import { styled } from 'components/theme';
+import GeneralSettings from './GeneralSettings';
 
 const Styled = {
   Wrapper: styled.div`
@@ -10,15 +10,18 @@ const Styled = {
   `,
 };
 
-const HistoryPage: React.FC = () => {
-  const { l } = usePrefixedTranslation('cmps.settings.SettingsPage');
+const SettingsPage: React.FC = () => {
+  const { uiStore } = useStore();
+
+  let cmp: ReactNode;
+  switch (uiStore.selectedSetting) {
+    case 'general':
+    default:
+      cmp = <GeneralSettings />;
+  }
 
   const { Wrapper } = Styled;
-  return (
-    <Wrapper>
-      <PageHeader title={l('pageTitle')} />
-    </Wrapper>
-  );
+  return <Wrapper>{cmp}</Wrapper>;
 };
 
-export default observer(HistoryPage);
+export default observer(SettingsPage);

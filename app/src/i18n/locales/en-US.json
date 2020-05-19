@@ -36,5 +36,8 @@
   "cmps.layout.NavMenu.history": "History",
   "cmps.layout.NavMenu.settings": "Settings",
   "cmps.NodeStatus.title": "Node Status",
-  "cmps.settings.SettingsPage.pageTitle": "Settings"
+  "cmps.settings.GeneralSettings.title": "General",
+  "cmps.settings.GeneralSettings.bitcoinUnit": "Bitcoin Unit",
+  "cmps.settings.GeneralSettings.balances": "Channel Balances",
+  "cmps.settings.GeneralSettings.pageTitle": "Settings"
 }

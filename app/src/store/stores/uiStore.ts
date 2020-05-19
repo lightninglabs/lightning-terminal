@@ -3,6 +3,8 @@ import { Store } from 'store';
 
 type PageName = 'loop' | 'history' | 'settings';
 
+type SettingName = 'general' | 'unit' | 'colors';
+
 export default class UiStore {
   private _store: Store;
 
@@ -10,6 +12,8 @@ export default class UiStore {
   @observable page: PageName = 'loop';
   /** indicates if the Processing Loops section is displayed on the Loop page */
   @observable processingSwapsVisible = false;
+  /** the selected setting on the Settings page */
+  @observable selectedSetting: SettingName = 'general';
 
   constructor(store: Store) {
     this._store = store;
@@ -36,11 +40,15 @@ export default class UiStore {
     this._store.log.info('Go to the Settings page');
   }
 
-  /**
-   * Toggle displaying of the Processing Loops section
-   */
+  /** Toggle displaying of the Processing Loops section */
   @action.bound
   toggleProcessingSwaps() {
     this.processingSwapsVisible = !this.processingSwapsVisible;
+  }
+
+  /** sets the selected setting to display */
+  @action.bound
+  showSettings(name: SettingName) {
+    this.selectedSetting = name;
   }
 }

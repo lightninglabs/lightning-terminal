@@ -32,3 +32,14 @@ export const formatSats = (sats: number, options?: FormatSatsOptions) => {
   if (withSuffix) text = `${text} ${suffix}`;
   return text;
 };
+
+/**
+ * Formats a specific unit to display the name and amount in BTC
+ * ex: Satoshis (0.00000001 BTC)
+ * @param unit the unit to describe
+ */
+export const formatUnit = (unit: Unit) => {
+  const { name, denominator } = Units[unit];
+  const btcValue = formatSats(denominator, { unit: Unit.btc });
+  return `${name} (${btcValue} BTC)`;
+};
