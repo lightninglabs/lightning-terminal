@@ -3,7 +3,7 @@ export default class AppStorage<T> {
    * stores data in the browser local storage
    */
   set(key: string, data: T) {
-    localStorage.setItem('settings', JSON.stringify(data));
+    localStorage.setItem(key, JSON.stringify(data));
   }
 
   /**

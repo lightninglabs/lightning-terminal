@@ -22,7 +22,7 @@ const defaultFormatSatsOptions = {
  * @param options the format options
  */
 export const formatSats = (sats: number, options?: FormatSatsOptions) => {
-  const { unit, withSuffix, lang } = Object.assign(defaultFormatSatsOptions, options);
+  const { unit, withSuffix, lang } = Object.assign({}, defaultFormatSatsOptions, options);
   const { suffix, denominator, decimals } = Units[unit];
   const formatter = Intl.NumberFormat(lang, {
     minimumFractionDigits: decimals,
@@ -41,5 +41,5 @@ export const formatSats = (sats: number, options?: FormatSatsOptions) => {
 export const formatUnit = (unit: Unit) => {
   const { name, denominator } = Units[unit];
   const btcValue = formatSats(denominator, { unit: Unit.btc });
-  return `${name} (${btcValue} BTC)`;
+  return `${name} (${btcValue})`;
 };
