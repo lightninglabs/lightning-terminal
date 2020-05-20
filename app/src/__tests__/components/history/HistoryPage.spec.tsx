@@ -1,5 +1,6 @@
 import React from 'react';
 import { fireEvent } from '@testing-library/react';
+import { saveAs } from 'file-saver';
 import { renderWithProviders } from 'util/tests';
 import { createStore, Store } from 'store';
 import HistoryPage from 'components/history/HistoryPage';
@@ -49,5 +50,11 @@ describe('HistoryPage', () => {
     const { getByText } = render();
     fireEvent.click(getByText('arrow-left.svg'));
     expect(store.uiStore.page).toEqual('loop');
+  });
+
+  it('should export channels', () => {
+    const { getByText } = render();
+    fireEvent.click(getByText('download.svg'));
+    expect(saveAs).toBeCalledWith(expect.any(Blob), 'swaps.csv');
   });
 });
