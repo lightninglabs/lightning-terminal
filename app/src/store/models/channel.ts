@@ -42,19 +42,18 @@ export default class Channel {
   @computed get sortOrder() {
     const mode = this._store.settingsStore.balanceMode;
     switch (mode) {
-      case BalanceMode.receive:
-        // the highest local percentage first
-        return this.localPercent;
-      case BalanceMode.send:
-        // the lowest local percentage first
-        return 100 - this.localPercent;
       case BalanceMode.routing:
         const pct = this.localPercent;
         // disregard direction. the highest local percentage first
         // 99 is the highest since we use Math.floor()
-        return pct >= 50 ? pct : 99 - pct;
+        return Math.max(pct, 99 - pct);
+      case BalanceMode.send:
+        // the lowest local percentage first
+        return 100 - this.localPercent;
+      case BalanceMode.receive:
       default:
-        return 0;
+        // the highest local percentage first
+        return this.localPercent;
     }
   }
 

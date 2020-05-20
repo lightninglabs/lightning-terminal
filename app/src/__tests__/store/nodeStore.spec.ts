@@ -1,7 +1,7 @@
 import { lndChannelBalance, lndWalletBalance } from 'util/tests/sampleData';
 import { createStore, NodeStore } from 'store';
 
-describe('NodeAction', () => {
+describe('NodeStore', () => {
   let store: NodeStore;
 
   beforeEach(() => {

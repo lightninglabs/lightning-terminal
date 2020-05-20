@@ -1,7 +1,7 @@
 import { IS_DEV } from 'config';
 import debug, { Debugger } from 'debug';
 
-enum LogLevel {
+export enum LogLevel {
   debug = 1,
   info = 2,
   warn = 3,
