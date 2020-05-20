@@ -18,7 +18,7 @@ const Styled = {
 
 const LoopPage: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.LoopPage');
-  const { uiStore, buildSwapStore } = useStore();
+  const { uiStore, buildSwapStore, channelStore } = useStore();
 
   const { PageWrap } = Styled;
   return (
@@ -32,7 +32,7 @@ const LoopPage: React.FC = () => {
           <PageHeader
             title={l('pageTitle')}
             onHistoryClick={uiStore.goToHistory}
-            onExportClick={() => alert('TODO: Export CSV of Channels')}
+            onExportClick={channelStore.exportChannels}
           />
           <LoopTiles />
           <LoopActions />

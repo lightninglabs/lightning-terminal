@@ -2,6 +2,7 @@ import { action, computed, observable } from 'mobx';
 import * as LND from 'types/generated/lnd_pb';
 import { getBalanceStatus } from 'util/balances';
 import { BalanceMode, BalanceModes } from 'util/constants';
+import { CsvColumns } from 'util/csv';
 import { Store } from 'store/store';
 
 export default class Channel {
@@ -80,4 +81,19 @@ export default class Channel {
     this.uptime = lndChannel.uptime;
     this.lifetime = lndChannel.lifetime;
   }
+
+  /**
+   * Specifies which properties of this class should be exported to CSV
+   * @param key must match the name of a property on this class
+   * @param value the user-friendly name displayed in the CSV header
+   */
+  static csvColumns: CsvColumns = {
+    chanId: 'Channel ID',
+    remotePubkey: 'Remote Pubkey',
+    capacity: 'Capacity',
+    localBalance: 'Local Balance',
+    remoteBalance: 'Remote Balance',
+    active: 'Active',
+    uptimePercent: 'Uptime Percent',
+  };
 }

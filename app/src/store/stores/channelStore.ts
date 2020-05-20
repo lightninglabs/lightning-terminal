@@ -74,4 +74,11 @@ export default class ChannelStore {
       this._store.log.info('updated channelStore.channels', toJS(this.channels));
     });
   }
+
+  /** exports the sorted list of channels to CSV file */
+  @action.bound
+  exportChannels() {
+    this._store.log.info('exporting Channels to a CSV file');
+    this._store.csv.export('channels', Channel.csvColumns, toJS(this.sortedChannels));
+  }
 }
