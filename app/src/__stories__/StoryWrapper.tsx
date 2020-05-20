@@ -1,8 +1,9 @@
 import React, { CSSProperties, useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
-import MockAppStorage from 'util/tests/mockAppStorage';
+import { BalanceMode, Unit } from 'util/constants';
 import { sampleApiResponses } from 'util/tests/sampleData';
 import { createStore, StoreProvider } from 'store';
+import { PersistentSettings } from 'store/stores/settingsStore';
 import { Background } from 'components/common/base';
 import { ThemeProvider } from 'components/theme';
 
@@ -17,9 +18,19 @@ const grpc = {
   },
 };
 
+// fake the AppStorage dependency so that settings aren't shared across stories
+class StoryAppStorage {
+  set = () => undefined;
+  get = (): PersistentSettings => ({
+    sidebarVisible: true,
+    unit: Unit.sats,
+    balanceMode: BalanceMode.receive,
+  });
+}
+
 // Create a store that pulls data from the mock GRPC and doesn't use
 // the real localStorage to save settings
-const createStoryStore = () => createStore(grpc, new MockAppStorage());
+const createStoryStore = () => createStore(grpc, new StoryAppStorage());
 
 /**
  * This component is used to wrap every story. It provides the app theme

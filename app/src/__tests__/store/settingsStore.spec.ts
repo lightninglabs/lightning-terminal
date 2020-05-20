@@ -1,6 +1,9 @@
+import AppStorage from 'util/appStorage';
 import { BalanceMode, Unit } from 'util/constants';
-import { mockStorageGet } from 'util/tests/mockAppStorage';
 import { createStore, SettingsStore } from 'store';
+import { PersistentSettings } from 'store/stores/settingsStore';
+
+const appStorageMock = AppStorage as jest.Mock<AppStorage<PersistentSettings>>;
 
 describe('SettingsStore', () => {
   let store: SettingsStore;
@@ -10,7 +13,8 @@ describe('SettingsStore', () => {
   });
 
   it('should load settings', async () => {
-    mockStorageGet.mockImplementation(() => ({
+    const getMock = appStorageMock.mock.instances[0].get as jest.Mock;
+    getMock.mockImplementation(() => ({
       sidebarVisible: false,
       unit: Unit.bits,
       balanceMode: BalanceMode.routing,
@@ -24,7 +28,8 @@ describe('SettingsStore', () => {
   });
 
   it('should do nothing if nothing is saved in storage', () => {
-    mockStorageGet.mockReturnValue(undefined as any);
+    const getMock = appStorageMock.mock.instances[0].get as jest.Mock;
+    getMock.mockReturnValue(undefined as any);
 
     store.load();
 

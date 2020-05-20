@@ -9,10 +9,9 @@ import '@testing-library/jest-dom/extend-expect';
 import './i18n';
 // adds support for lottie-web animations in unit test env
 import 'jest-canvas-mock';
-// don't use the real localStorage in unit tests
-import MockAppStorage from 'util/tests/mockAppStorage';
 
-jest.mock('util/appStorage', () => MockAppStorage);
+// don't use the real localStorage in unit tests
+jest.mock('util/appStorage');
 
 beforeEach(() => {
   jest.clearAllMocks();
