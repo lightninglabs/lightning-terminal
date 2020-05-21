@@ -1,11 +1,15 @@
 import Chevrons from 'assets/icons/chevrons.svg';
 import { styled } from 'components/theme';
 
+//
+// Misc
+//
+
 export const Background = styled.div`
   min-height: 100vh;
   color: ${props => props.theme.colors.white};
   background-color: ${props => props.theme.colors.blue};
-  font-family: ${props => props.theme.fonts.regular};
+  font-family: ${props => props.theme.fonts.open.regular};
   font-size: ${props => props.theme.sizes.m};
 `;
 
@@ -19,6 +23,10 @@ export const Pill = styled.span`
   background-color: ${props => props.theme.colors.tileBack};
   border-radius: 40px;
 `;
+
+//
+// Button
+//
 
 interface ButtonProps {
   primary?: boolean;
@@ -53,6 +61,10 @@ export const Button = styled.button<ButtonProps>`
   }
 `;
 
+//
+// Radio Button
+//
+
 interface RadioButtonProps {
   checked?: boolean;
 }
@@ -70,6 +82,10 @@ export const RadioButton = styled.span<RadioButtonProps>`
   }
 `;
 
+//
+// List
+//
+
 /**
  * the react-virtualized list doesn't play nice with the bootstrap row -15px
  * margin. We need to manually offset the container and remove the
@@ -86,6 +102,10 @@ export const ListContainer = styled.div`
     outline: none;
   }
 `;
+
+//
+// Range
+//
 
 /**
  * the input[type=range] element. Vendor-specific rules for pseudo

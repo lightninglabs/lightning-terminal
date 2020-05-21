@@ -1,21 +1,28 @@
 import React from 'react';
-
 import emotionStyled, { CreateStyled } from '@emotion/styled/macro';
 import { ThemeProvider as EmotionThemeProvider } from 'emotion-theming';
 
 export interface Theme {
   fonts: {
-    light: string;
-    regular: string;
-    semiBold: string;
-    bold: string;
-    extraBold: string;
+    open: {
+      light: string;
+      regular: string;
+      semiBold: string;
+      bold: string;
+      extraBold: string;
+    };
+    work: {
+      light: string;
+      medium: string;
+      semiBold: string;
+    };
   };
   sizes: {
     s: string;
     m: string;
     l: string;
     xl: string;
+    xxl: string;
   };
   colors: {
     blue: string;
@@ -35,17 +42,25 @@ export interface Theme {
 
 const theme: Theme = {
   fonts: {
-    light: "'OpenSans Light'",
-    regular: "'OpenSans Regular'",
-    semiBold: "'OpenSans SemiBold'",
-    bold: "'OpenSans Bold'",
-    extraBold: "'OpenSans ExtraBold'",
+    open: {
+      light: "'OpenSans Light'",
+      regular: "'OpenSans Regular'",
+      semiBold: "'OpenSans SemiBold'",
+      bold: "'OpenSans Bold'",
+      extraBold: "'OpenSans ExtraBold'",
+    },
+    work: {
+      light: "'WorkSans Light'",
+      medium: "'WorkSans Medium'",
+      semiBold: "'WorkSans SemiBold'",
+    },
   },
   sizes: {
     s: '14px',
     m: '18px',
     l: '22px',
     xl: '27px',
+    xxl: '45px',
   },
   colors: {
     blue: '#252f4a',
