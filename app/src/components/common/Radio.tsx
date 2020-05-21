@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 import { styled } from 'components/theme';
-import { SmallText } from './text';
+import { Small } from './text';
 
 const Styled = {
   Wrapper: styled.div<{ right?: boolean }>`
@@ -43,7 +43,7 @@ const Radio: React.FC<Props> = ({ text, description, active, right, onClick }) =
       <RadioBlock active={active} onClick={onClick} role="switch" aria-checked={!!active}>
         {text}
       </RadioBlock>
-      <SmallText>{description}</SmallText>
+      <Small>{description}</Small>
     </Wrapper>
   );
 };

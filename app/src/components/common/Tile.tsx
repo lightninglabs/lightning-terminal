@@ -57,7 +57,7 @@ const Tile: React.FC<Props> = ({ title, text, onMaximizeClick, children }) => {
   return (
     <TileWrap>
       <Header>
-        <HeaderFour>{title}</HeaderFour>
+        <HeaderFour marginless>{title}</HeaderFour>
         {onMaximizeClick && <MaximizeIcon title="maximize" onClick={onMaximizeClick} />}
       </Header>
       {text ? <Text>{text}</Text> : children}

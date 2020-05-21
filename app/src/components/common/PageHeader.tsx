@@ -2,7 +2,7 @@ import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { styled } from 'components/theme';
 import { ArrowLeft, Icon } from './icons';
-import { PageTitle } from './text';
+import { HeaderThree } from './text';
 
 const Styled = {
   Wrapper: styled.div`
@@ -66,7 +66,7 @@ const PageHeader: React.FC<Props> = ({
         )}
       </Left>
       <Center>
-        <PageTitle>{title}</PageTitle>
+        <HeaderThree>{title}</HeaderThree>
       </Center>
       <Right>
         {onHistoryClick && <ActionIcon icon="clock" onClick={onHistoryClick} />}

@@ -2,7 +2,7 @@ import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
-import { HeaderFour, XLargeText } from 'components/common/text';
+import { HeaderFour, Jumbo } from 'components/common/text';
 import Unit from 'components/common/Unit';
 import { styled } from 'components/theme';
 import StepButtons from './StepButtons';
@@ -70,9 +70,9 @@ const SwapReviewStep: React.FC = () => {
           <Divider />
           <InvoiceRow>
             <HeaderFour marginless>{l('total')}</HeaderFour>
-            <XLargeText>
+            <Jumbo>
               <Unit sats={buildSwapStore.invoiceTotal} />
-            </XLargeText>
+            </Jumbo>
           </InvoiceRow>
         </div>
         <StepButtons
