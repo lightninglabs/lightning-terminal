@@ -4,7 +4,7 @@ import { usePrefixedTranslation } from 'hooks';
 import { BalanceMode } from 'util/constants';
 import { useStore } from 'store';
 import PageHeader from 'components/common/PageHeader';
-import { Title } from 'components/common/text';
+import { HeaderFour } from 'components/common/text';
 import { styled } from 'components/theme';
 import SettingItem from './SettingItem';
 
@@ -49,7 +49,7 @@ const BalanceSettings: React.FC = () => {
         onBackClick={handleBack}
       />
       <Content>
-        <Title>{l('title')}</Title>
+        <HeaderFour>{l('title')}</HeaderFour>
         <BalanceModeItem mode={BalanceMode.receive} />
         <BalanceModeItem mode={BalanceMode.send} />
         <BalanceModeItem mode={BalanceMode.routing} />

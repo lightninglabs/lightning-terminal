@@ -4,6 +4,10 @@ interface BlockProps {
   block?: boolean;
 }
 
+interface HeaderProps {
+  marginless?: boolean;
+}
+
 export const HeaderOne = styled.h1`
   font-family: ${props => props.theme.fonts.work.medium};
   font-size: ${props => props.theme.sizes.xxl};
@@ -24,11 +28,13 @@ export const HeaderThree = styled.h3`
   text-transform: uppercase;
 `;
 
-export const HeaderFour = styled.h4`
+export const HeaderFour = styled.h4<HeaderProps>`
   font-family: ${props => props.theme.fonts.open.semiBold};
   font-size: ${props => props.theme.sizes.s};
   line-height: 20px;
   text-transform: uppercase;
+  color: ${props => props.theme.colors.gray};
+  margin-bottom: ${props => (props.marginless ? '0' : '0.5rem')};
 `;
 
 export const Small = styled.p`
@@ -39,15 +45,6 @@ export const Small = styled.p`
 export const Jumbo = styled.span`
   font-size: ${props => props.theme.sizes.xl};
   line-height: 38px;
-`;
-
-export const Title = styled.div`
-  font-size: ${props => props.theme.sizes.s};
-  font-family: ${props => props.theme.fonts.open.semiBold};
-  text-transform: uppercase;
-  letter-spacing: 0;
-  line-height: 19px;
-  color: ${props => props.theme.colors.gray};
 `;
 
 export const SmallText = styled.span<BlockProps>`

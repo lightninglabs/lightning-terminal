@@ -8,7 +8,7 @@ import { Channel } from 'store/models';
 import Checkbox from 'components/common/Checkbox';
 import { Column, Row } from 'components/common/grid';
 import StatusDot from 'components/common/StatusDot';
-import { Title } from 'components/common/text';
+import { HeaderFour } from 'components/common/text';
 import Unit from 'components/common/Unit';
 import { styled } from 'components/theme';
 import ChannelBalance from './ChannelBalance';
@@ -54,20 +54,20 @@ export const ChannelRowHeader: React.FC = () => {
   return (
     <Row>
       <Column right>
-        <Title>{l('canReceive')}</Title>
+        <HeaderFour>{l('canReceive')}</HeaderFour>
       </Column>
       <Column cols={3}></Column>
       <Column>
-        <Title>{l('canSend')}</Title>
+        <HeaderFour>{l('canSend')}</HeaderFour>
       </Column>
       <Column>
-        <Title>{l('upTime')}</Title>
+        <HeaderFour>{l('upTime')}</HeaderFour>
       </Column>
       <Column>
-        <Title>{l('peer')}</Title>
+        <HeaderFour>{l('peer')}</HeaderFour>
       </Column>
       <Column right>
-        <Title>{l('capacity')}</Title>
+        <HeaderFour>{l('capacity')}</HeaderFour>
       </Column>
     </Row>
   );

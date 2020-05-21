@@ -2,7 +2,7 @@ import React from 'react';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Pill } from 'components/common/base';
-import { H3Text, SmallText, Title } from 'components/common/text';
+import { H3Text, HeaderFour, SmallText } from 'components/common/text';
 import { styled } from 'components/theme';
 
 const Styled = {
@@ -38,7 +38,7 @@ const StepSummary: React.FC<Props> = ({ title, heading, description }) => {
   return (
     <Wrapper>
       <div>
-        <Title>{title}</Title>
+        <HeaderFour>{title}</HeaderFour>
         <Heading>{heading}</Heading>
         <Description>{description}</Description>
       </div>

@@ -4,7 +4,7 @@ import { usePrefixedTranslation } from 'hooks';
 import { formatUnit } from 'util/formatters';
 import { useStore } from 'store';
 import PageHeader from 'components/common/PageHeader';
-import { Title } from 'components/common/text';
+import { HeaderFour } from 'components/common/text';
 import { styled } from 'components/theme';
 import SettingItem from './SettingItem';
 
@@ -17,7 +17,6 @@ const Styled = {
 
 const GeneralSettings: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.settings.GeneralSettings');
-  const { l: lbm } = usePrefixedTranslation('enums.BalanceMode');
   const { uiStore, settingsStore } = useStore();
 
   const handleUnit = useCallback(() => uiStore.showSettings('unit'), [uiStore]);
@@ -28,7 +27,7 @@ const GeneralSettings: React.FC = () => {
     <Wrapper>
       <PageHeader title={l('pageTitle')} />
       <Content>
-        <Title>{l('title')}</Title>
+        <HeaderFour>{l('title')}</HeaderFour>
         <SettingItem
           name={l('bitcoinUnit')}
           value={formatUnit(settingsStore.unit)}
@@ -37,7 +36,9 @@ const GeneralSettings: React.FC = () => {
         />
         <SettingItem
           name={l('balances')}
-          value={l('balancesValue', { mode: lbm(settingsStore.balanceMode) })}
+          value={l('balancesValue', {
+            mode: l(`enums.BalanceMode.${settingsStore.balanceMode}`),
+          })}
           onClick={handleBalance}
           icon="arrow"
         />

@@ -2,11 +2,11 @@ import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
-import { Title } from 'components/common/text';
+import { HeaderFour } from 'components/common/text';
 import { styled } from 'components/theme';
 
 const Styled = {
-  NavTitle: styled(Title)`
+  NavHeader: styled(HeaderFour)`
     padding: 8px 14px;
   `,
   Nav: styled.ul`
@@ -60,10 +60,10 @@ const NavMenu: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.layout.NavMenu');
   const { uiStore } = useStore();
 
-  const { NavTitle, Nav } = Styled;
+  const { NavHeader, Nav } = Styled;
   return (
     <>
-      <NavTitle>{l('menu')}</NavTitle>
+      <NavHeader>{l('menu')}</NavHeader>
       <Nav>
         <NavItem page="loop" onClick={uiStore.goToLoop} />
         <NavItem page="history" onClick={uiStore.goToHistory} />

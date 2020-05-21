@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { Swap } from 'store/models';
 import { Column, Row } from 'components/common/grid';
-import { Title } from 'components/common/text';
+import { HeaderFour } from 'components/common/text';
 import Unit from 'components/common/Unit';
 import SwapDot from 'components/loop/SwapDot';
 import { styled } from 'components/theme';
@@ -27,7 +27,7 @@ const Styled = {
     text-overflow: ellipsis;
     line-height: ${ROW_HEIGHT}px;
   `,
-  StatusTitle: styled(Title)`
+  StatusHeader: styled(HeaderFour)`
     margin-left: 35px;
   `,
   StatusIcon: styled.span`
@@ -38,23 +38,23 @@ const Styled = {
 
 export const HistoryRowHeader: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.history.HistoryRowHeader');
-  const { StatusTitle } = Styled;
+  const { StatusHeader } = Styled;
   return (
     <Row>
       <Column>
-        <StatusTitle>{l('status')}</StatusTitle>
+        <StatusHeader>{l('status')}</StatusHeader>
       </Column>
       <Column>
-        <Title>{l('type')}</Title>
+        <HeaderFour>{l('type')}</HeaderFour>
       </Column>
       <Column>
-        <Title>{l('amount')} (sats)</Title>
+        <HeaderFour>{l('amount')} (sats)</HeaderFour>
       </Column>
       <Column right>
-        <Title>{l('created')}</Title>
+        <HeaderFour>{l('created')}</HeaderFour>
       </Column>
       <Column right>
-        <Title>{l('updated')}</Title>
+        <HeaderFour>{l('updated')}</HeaderFour>
       </Column>
     </Row>
   );

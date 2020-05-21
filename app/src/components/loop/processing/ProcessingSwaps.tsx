@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Minimize } from 'components/common/icons';
-import { Title } from 'components/common/text';
+import { HeaderFour } from 'components/common/text';
 import { styled } from 'components/theme';
 import ProcessingSwapRow from './ProcessingSwapRow';
 
@@ -46,7 +46,7 @@ const ProcessingSwaps: React.FC = () => {
   return (
     <Wrapper>
       <Header>
-        <Title>{l('title')}</Title>
+        <HeaderFour>{l('title')}</HeaderFour>
         <MinimizeIcon onClick={uiStore.toggleProcessingSwaps} />
       </Header>
       <Content>
