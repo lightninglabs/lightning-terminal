@@ -17,32 +17,22 @@ const Styled = {
     margin: 20px 0;
     opacity: 0.5;
   `,
-  BoltIcon: styled(Bolt)`
-    width: 10px;
-    height: 10px;
-    margin-right: 5px;
-  `,
-  BitcoinIcon: styled(Bitcoin)`
-    width: 10px;
-    height: 10px;
-    margin-right: 5px;
-  `,
 };
 
 const NodeStatus: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.NodeStatus');
   const { nodeStore } = useStore();
 
-  const { Wrapper, BoltIcon, BitcoinIcon, Divider } = Styled;
+  const { Wrapper, Divider } = Styled;
   return (
     <Wrapper>
       <HeaderFour>{l('title')}</HeaderFour>
       <Jumbo>
-        <BoltIcon title="bolt" />
+        <Bolt title="bolt" size="small" />
         <Unit sats={nodeStore.wallet.channelBalance} />
       </Jumbo>
       <Small>
-        <BitcoinIcon title="bitcoin" />
+        <Bitcoin title="bitcoin" size="small" />
         <Unit sats={nodeStore.wallet.walletBalance} suffix={false} />
       </Small>
       <Divider />

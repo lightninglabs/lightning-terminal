@@ -18,17 +18,7 @@ const Styled = {
     box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.5);
   `,
   Nav: styled.div`
-    width: 30px;
-  `,
-  BackIcon: styled(ArrowLeft)`
-    height: 16px;
-    width: 16px;
-    cursor: pointer;
-    color: ${props => props.theme.colors.whitish};
-
-    &:hover {
-      opacity: 20%;
-    }
+    width: 36px;
   `,
   Content: styled.div`
     flex-grow: 1;
@@ -56,11 +46,11 @@ const SwapWizard: React.FC = () => {
       return null;
   }
 
-  const { Wrapper, Nav, BackIcon, Content } = Styled;
+  const { Wrapper, Nav, Content } = Styled;
   return (
     <Wrapper>
       <Nav>
-        <BackIcon onClick={buildSwapStore.goToPrevStep} />
+        <ArrowLeft onClick={buildSwapStore.goToPrevStep} />
       </Nav>
       <Content>{cmp}</Content>
     </Wrapper>

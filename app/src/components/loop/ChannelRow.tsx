@@ -20,13 +20,22 @@ import ChannelBalance from './ChannelBalance';
 export const ROW_HEIGHT = 60;
 
 const Styled = {
-  Row: styled(Row)<{ dimmed?: boolean }>`
+  Row: styled(Row)<{ dimmed?: boolean; selectable?: boolean }>`
     border-bottom: 0.5px solid ${props => props.theme.colors.darkGray};
     opacity: ${props => (props.dimmed ? '0.4' : '1')};
 
     &:last-child {
       border-bottom-width: 0;
     }
+
+    ${props =>
+      props.selectable &&
+      `
+      &:hover {
+        cursor: pointer;
+        background-color: ${props.theme.colors.tileBack};
+      }
+    `}
   `,
   Column: styled(Column)<{ last?: boolean }>`
     overflow: hidden;
@@ -105,10 +114,15 @@ const ChannelRow: React.FC<Props> = ({ channel, style }) => {
 
   const { Row, Column, StatusIcon, Check, Balance } = Styled;
   return (
-    <Row dimmed={dimmed} style={style}>
+    <Row
+      dimmed={dimmed}
+      style={style}
+      selectable={editable && !disabled}
+      onClick={editable && !disabled ? handleRowChecked : undefined}
+    >
       <Column right>
         {editable ? (
-          <Check checked={checked} disabled={disabled} onChange={handleRowChecked} />
+          <Check checked={checked} disabled={disabled} />
         ) : (
           <StatusIcon>
             <ChannelDot channel={channel} />

@@ -42,7 +42,6 @@ export const Button = styled.button<ButtonProps>`
   height: 44px;
   padding-left: 15px;
   padding-right: 15px;
-  margin-left: 10px;
   text-align: center;
   color: ${props => props.theme.colors.whitish};
   background-color: ${props => props.theme.colors.blue};
@@ -98,9 +97,11 @@ export const Button = styled.button<ButtonProps>`
   `}
 
   svg {
-    margin-right: 10px;
-    width: ${props => props.theme.sizes.m};
-    height: ${props => props.theme.sizes.m};
+    margin: 0 5px 0 0;
+
+    &:hover {
+      background-color: transparent;
+    }
   }
 `;
 
@@ -117,8 +118,8 @@ export const RadioButton = styled.span<RadioButtonProps>`
   width: 14px;
   height: 14px;
   border-radius: 14px;
-  border: 1px solid ${props => props.theme.colors.lightPurple};
-  background-color: ${props => (props.checked ? props.theme.colors.lightPurple : 'none')};
+  border: 1px solid ${props => props.theme.colors.whitish};
+  background-color: ${props => (props.checked ? props.theme.colors.whitish : 'none')};
 
   &:hover {
     opacity: 0.8;

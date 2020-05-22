@@ -1,62 +1,71 @@
-import React, { ReactNode } from 'react';
-import { ReactComponent as ArrowRight } from 'assets/icons/arrow-right.svg';
-import { ReactComponent as Clock } from 'assets/icons/clock.svg';
-import { ReactComponent as Download } from 'assets/icons/download.svg';
+import { ReactComponent as ArrowLeftIcon } from 'assets/icons/arrow-left.svg';
+import { ReactComponent as ArrowRightIcon } from 'assets/icons/arrow-right.svg';
+import { ReactComponent as BitcoinIcon } from 'assets/icons/bitcoin.svg';
+import { ReactComponent as BoltIcon } from 'assets/icons/bolt.svg';
+import { ReactComponent as CheckIcon } from 'assets/icons/check.svg';
+import { ReactComponent as ChevronsIcon } from 'assets/icons/chevrons.svg';
+import { ReactComponent as ClockIcon } from 'assets/icons/clock.svg';
+import { ReactComponent as CloseIcon } from 'assets/icons/close.svg';
+import { ReactComponent as DotIcon } from 'assets/icons/dot.svg';
+import { ReactComponent as DownloadIcon } from 'assets/icons/download.svg';
+import { ReactComponent as MaximizeIcon } from 'assets/icons/maximize.svg';
+import { ReactComponent as MenuIcon } from 'assets/icons/menu.svg';
+import { ReactComponent as MinimizeIcon } from 'assets/icons/minimize.svg';
+import { ReactComponent as RefreshIcon } from 'assets/icons/refresh-cw.svg';
 import { styled } from 'components/theme';
 
-export { ReactComponent as ArrowLeft } from 'assets/icons/arrow-left.svg';
-export { ReactComponent as Bolt } from 'assets/icons/bolt.svg';
-export { ReactComponent as Bitcoin } from 'assets/icons/bitcoin.svg';
-export { ReactComponent as Check } from 'assets/icons/check.svg';
-export { ReactComponent as Chevrons } from 'assets/icons/chevrons.svg';
-export { ReactComponent as Close } from 'assets/icons/close.svg';
-export { ReactComponent as Dot } from 'assets/icons/dot.svg';
-export { ReactComponent as Menu } from 'assets/icons/menu.svg';
-export { ReactComponent as Minimize } from 'assets/icons/minimize.svg';
-export { ReactComponent as Maximize } from 'assets/icons/maximize.svg';
-export { ReactComponent as Refresh } from 'assets/icons/refresh-cw.svg';
-
-interface IconComponents {
-  'arrow-right': ReactNode;
-  clock: ReactNode;
-  download: ReactNode;
-}
-
-const components: IconComponents = {
-  'arrow-right': <ArrowRight />,
-  clock: <Clock />,
-  download: <Download />,
-};
-
-const Styled = {
-  Wrapper: styled.span`
-    display: inline-block;
-    cursor: pointer;
-    color: ${props => props.theme.colors.whitish};
-
-    &:hover {
-      opacity: 80%;
-    }
-  `,
-  Label: styled.span`
-    margin-left: 5px;
-  `,
-};
-
-interface Props {
-  icon: keyof IconComponents;
-  text?: string;
+interface IconProps {
+  size?: 'small' | 'medium' | 'large';
   onClick?: () => void;
-  className?: string;
 }
 
-export const Icon: React.FC<Props> = ({ icon, text, onClick, className }) => {
-  const { Wrapper, Label } = Styled;
+const Icon = styled.span<IconProps>`
+  display: inline-block;
+  padding: 6px;
 
-  return (
-    <Wrapper onClick={onClick} className={className}>
-      {components[icon]}
-      {text && <Label>{text}</Label>}
-    </Wrapper>
-  );
-};
+  ${props =>
+    props.onClick &&
+    `
+    border-radius: 36px;
+    cursor: pointer;
+    &:hover {
+      background-color: ${props.theme.colors.purple};
+    }
+  `}
+
+  ${props =>
+    props.size === 'small' &&
+    `
+      width: 24px;
+      height: 24px;
+    `}
+
+  ${props =>
+    (props.size === 'medium' || !props.size) &&
+    `
+      width: 30px;
+      height: 30px;
+    `}
+
+  ${props =>
+    props.size === 'large' &&
+    `
+      width: 36px;
+      height: 36px;
+    `}
+`;
+
+export const ArrowRight = Icon.withComponent(ArrowRightIcon);
+export const Clock = Icon.withComponent(ClockIcon);
+export const Download = Icon.withComponent(DownloadIcon);
+export const ArrowLeft = Icon.withComponent(ArrowLeftIcon);
+export const Bolt = Icon.withComponent(BoltIcon);
+export const Bitcoin = Icon.withComponent(BitcoinIcon);
+export const Check = Icon.withComponent(CheckIcon);
+export const Chevrons = Icon.withComponent(ChevronsIcon);
+export const Close = Icon.withComponent(CloseIcon);
+export const Dot = Icon.withComponent(DotIcon);
+export const Menu = Icon.withComponent(MenuIcon);
+export const Minimize = Icon.withComponent(MinimizeIcon);
+export const Maximize = Icon.withComponent(MaximizeIcon);
+export const Refresh = Icon.withComponent(RefreshIcon);

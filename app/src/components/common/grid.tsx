@@ -6,11 +6,12 @@ import React, { CSSProperties } from 'react';
 export const Row: React.FC<{
   className?: string;
   style?: CSSProperties;
-}> = ({ children, className, style }) => {
+  onClick?: () => void;
+}> = ({ children, className, style, onClick }) => {
   const cn: string[] = ['row'];
   className && cn.push(className);
   return (
-    <div className={cn.join(' ')} style={style}>
+    <div className={cn.join(' ')} style={style} onClick={onClick}>
       {children}
     </div>
   );
