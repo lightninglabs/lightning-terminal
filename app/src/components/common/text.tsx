@@ -26,7 +26,7 @@ export const HeaderThree = styled.h3`
 
 export const HeaderFour = styled.h4<HeaderProps>`
   font-family: ${props => props.theme.fonts.open.semiBold};
-  font-size: ${props => props.theme.sizes.s};
+  font-size: ${props => props.theme.sizes.xs};
   line-height: 20px;
   text-transform: uppercase;
   color: ${props => props.theme.colors.gray};
@@ -39,7 +39,7 @@ export const HeaderFive = styled.h5`
 `;
 
 export const Small = styled.p`
-  font-size: ${props => props.theme.sizes.s};
+  font-size: ${props => props.theme.sizes.xs};
   line-height: 19px;
 `;
 

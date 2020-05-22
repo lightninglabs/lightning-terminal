@@ -36,28 +36,71 @@ interface ButtonProps {
 }
 
 export const Button = styled.button<ButtonProps>`
+  font-family: ${props => props.theme.fonts.work.medium};
+  font-size: ${props => props.theme.sizes.s};
   min-width: 120px;
   height: 44px;
   padding-left: 15px;
   padding-right: 15px;
   margin-left: 10px;
   text-align: center;
-  color: ${props => props.theme.colors.white};
-  background-color: ${props =>
-    props.ghost ? 'transparent' : props.theme.colors.tileBack};
-  border-width: ${props => (props.borderless && !props.primary ? '0' : '1px')};
-  border-color: ${props =>
-    props.primary ? props.theme.colors.green : props.theme.colors.white};
-  border-style: solid;
+  color: ${props => props.theme.colors.whitish};
+  background-color: ${props => props.theme.colors.blue};
+  border: 1px solid ${props => props.theme.colors.whitish};
   border-radius: 22px;
-  opacity: ${props => (props.disabled ? '0.5' : '1')};
 
   &:hover {
-    opacity: ${props => (props.disabled ? '0.6' : '0.8')};
+    color: ${props => props.theme.colors.blue};
+    background-color: ${props => props.theme.colors.white};
+    cursor: pointer;
   }
+
+  &:active,
+  &:focus {
+    outline: none;
+  }
+
+  ${props =>
+    props.ghost &&
+    `
+    background-color: transparent;
+    &:hover {
+      color: ${props.theme.colors.whitish};
+      text-decoration: underline;
+      background-color: transparent;
+    }
+  `}
+
+  ${props =>
+    props.disabled &&
+    `
+    opacity: 0.5;
+    &:hover {
+      cursor: not-allowed;
+    }
+  `}
+
+  ${props =>
+    props.borderless &&
+    `
+    border-width: 0;
+  `}
+
+  ${props =>
+    props.primary &&
+    `
+    border: 1px solid ${props.theme.colors.green};
+    &:hover {
+      color: ${props.theme.colors.blue};
+      text-decoration: none;
+      background-color: ${props.theme.colors.green};
+    }
+  `}
 
   svg {
     margin-right: 10px;
+    width: ${props => props.theme.sizes.m};
+    height: ${props => props.theme.sizes.m};
   }
 `;
 

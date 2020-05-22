@@ -23,7 +23,7 @@ const Styled = {
   `,
   BackLink: styled.a`
     text-transform: uppercase;
-    font-size: ${props => props.theme.sizes.s};
+    font-size: ${props => props.theme.sizes.xs};
     cursor: pointer;
     color: ${props => props.theme.colors.whitish};
 

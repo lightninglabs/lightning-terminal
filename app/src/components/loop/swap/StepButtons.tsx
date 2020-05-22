@@ -24,7 +24,7 @@ const StepButtons: React.FC<Props> = ({ confirm, onCancel, onNext }) => {
       <Button ghost borderless onClick={onCancel}>
         {l('cancel')}
       </Button>
-      <Button primary onClick={onNext}>
+      <Button primary ghost onClick={onNext}>
         {confirm ? l('confirm') : l('next')}
       </Button>
     </Wrapper>

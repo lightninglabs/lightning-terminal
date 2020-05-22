@@ -15,7 +15,7 @@ const Styled = {
     list-style: none;
   `,
   NavItem: styled.li`
-    font-size: ${props => props.theme.sizes.s};
+    font-size: ${props => props.theme.sizes.xs};
     margin-right: -17px;
 
     span {
