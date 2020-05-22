@@ -1,7 +1,9 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
+import confirmJson from 'assets/animations/confirm.json';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
+import Animation from 'components/common/Animation';
 import { Minimize } from 'components/common/icons';
 import { HeaderFour } from 'components/common/text';
 import { styled } from 'components/theme';
@@ -36,13 +38,22 @@ const Styled = {
     display: flex;
     flex-direction: column;
   `,
+  Complete: styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  `,
+  ConfirmAnimation: styled(Animation)`
+    width: 200px;
+    height: 200px;
+  `,
 };
 
 const ProcessingSwaps: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.processing.ProcessingSwaps');
   const { swapStore, uiStore } = useStore();
 
-  const { Wrapper, Header, MinimizeIcon, Content } = Styled;
+  const { Wrapper, Header, MinimizeIcon, Content, Complete, ConfirmAnimation } = Styled;
   return (
     <Wrapper>
       <Header>
@@ -53,6 +64,12 @@ const ProcessingSwaps: React.FC = () => {
         {swapStore.processingSwaps.map(swap => (
           <ProcessingSwapRow key={swap.id} swap={swap} />
         ))}
+        {swapStore.processingSwaps.length === 0 && (
+          <Complete>
+            <ConfirmAnimation animationData={confirmJson} />
+            <HeaderFour>{l('complete')}</HeaderFour>
+          </Complete>
+        )}
       </Content>
     </Wrapper>
   );

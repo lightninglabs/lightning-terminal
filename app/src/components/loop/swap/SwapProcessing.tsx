@@ -35,7 +35,7 @@ const SwapProcessingStep: React.FC = () => {
   const { Wrapper, Loader, LoadingMessage, ErrorMessage } = Styled;
   return (
     <Wrapper>
-      <Loader animationData={loadingJson} />
+      <Loader animationData={loadingJson} loop />
       <LoadingMessage>
         <HeaderFour>{l('loadingMsg')}</HeaderFour>
       </LoadingMessage>
