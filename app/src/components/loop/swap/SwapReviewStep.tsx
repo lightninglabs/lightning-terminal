@@ -2,7 +2,7 @@ import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
-import { Title, XLargeText } from 'components/common/text';
+import { HeaderFour, Jumbo } from 'components/common/text';
 import Unit from 'components/common/Unit';
 import { styled } from 'components/theme';
 import StepButtons from './StepButtons';
@@ -30,6 +30,7 @@ const Styled = {
   InvoiceRow: styled.div`
     display: flex;
     justify-content: space-between;
+    align-items: center;
     margin-bottom: 30px;
   `,
   Divider: styled.div`
@@ -55,21 +56,23 @@ const SwapReviewStep: React.FC = () => {
       <Invoice>
         <div>
           <InvoiceRow>
-            <Title>{l('amount', { type: buildSwapStore.direction })}</Title>
+            <HeaderFour marginless>
+              {l('amount', { type: buildSwapStore.direction })}
+            </HeaderFour>
             <span>
               <Unit sats={buildSwapStore.amount} />
             </span>
           </InvoiceRow>
           <InvoiceRow>
-            <Title>{l('fees')}</Title>
+            <HeaderFour marginless>{l('fees')}</HeaderFour>
             <span>{buildSwapStore.feesLabel}</span>
           </InvoiceRow>
           <Divider />
           <InvoiceRow>
-            <Title>{l('total')}</Title>
-            <XLargeText>
+            <HeaderFour marginless>{l('total')}</HeaderFour>
+            <Jumbo>
               <Unit sats={buildSwapStore.invoiceTotal} />
-            </XLargeText>
+            </Jumbo>
           </InvoiceRow>
         </div>
         <StepButtons

@@ -18,12 +18,17 @@ const Styled = {
     width: 100%;
     margin: 0 auto;
   `,
-  MenuIcon: styled(Menu)`
+  Hamburger: styled.span`
+    display: inline-block;
     position: absolute;
     top: 20px;
     left: 20px;
     z-index: 1;
     cursor: pointer;
+
+    &:hover {
+      opacity: 0.8;
+    }
   `,
   Aside: styled.aside<CollapsedProps>`
     position: fixed;
@@ -52,11 +57,13 @@ const Styled = {
 const Layout: React.FC = ({ children }) => {
   const { settingsStore } = useStore();
 
-  const { Container, MenuIcon, Aside, Content } = Styled;
+  const { Container, Hamburger, Aside, Content } = Styled;
   return (
     <Background>
       <Container>
-        <MenuIcon title="menu" onClick={settingsStore.toggleSidebar} />
+        <Hamburger onClick={settingsStore.toggleSidebar}>
+          <Menu title="menu" />
+        </Hamburger>
         <Aside collapsed={!settingsStore.sidebarVisible}>
           <Sidebar />
         </Aside>

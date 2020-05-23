@@ -2,11 +2,11 @@ import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
-import { Title } from 'components/common/text';
+import { HeaderFour } from 'components/common/text';
 import { styled } from 'components/theme';
 
 const Styled = {
-  NavTitle: styled(Title)`
+  NavHeader: styled(HeaderFour)`
     padding: 8px 14px;
   `,
   Nav: styled.ul`
@@ -15,7 +15,7 @@ const Styled = {
     list-style: none;
   `,
   NavItem: styled.li`
-    font-size: ${props => props.theme.sizes.s};
+    font-size: ${props => props.theme.sizes.xs};
     margin-right: -17px;
 
     span {
@@ -24,17 +24,18 @@ const Styled = {
       line-height: 50px;
       padding: 0 12px;
       border-left: 3px solid transparent;
-      color: ${props => props.theme.colors.whitish};
+      color: ${props => props.theme.colors.offWhite};
       cursor: pointer;
 
       &:hover {
         text-decoration: none;
         border-left: 3px solid ${props => props.theme.colors.pink};
+        background-color: ${props => props.theme.colors.overlay};
       }
     }
 
     &.active span {
-      border-left: 3px solid ${props => props.theme.colors.whitish};
+      border-left: 3px solid ${props => props.theme.colors.offWhite};
       background-color: ${props => props.theme.colors.blue};
 
       &:hover {
@@ -60,10 +61,10 @@ const NavMenu: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.layout.NavMenu');
   const { uiStore } = useStore();
 
-  const { NavTitle, Nav } = Styled;
+  const { NavHeader, Nav } = Styled;
   return (
     <>
-      <NavTitle>{l('menu')}</NavTitle>
+      <NavHeader>{l('menu')}</NavHeader>
       <Nav>
         <NavItem page="loop" onClick={uiStore.goToLoop} />
         <NavItem page="history" onClick={uiStore.goToHistory} />

@@ -2,7 +2,7 @@ import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { useStore } from 'store';
 import { Column, Row } from 'components/common/grid';
-import { SmallText } from 'components/common/text';
+import { Small } from 'components/common/text';
 import Unit from 'components/common/Unit';
 import { styled } from 'components/theme';
 import SwapDot from './SwapDot';
@@ -11,9 +11,11 @@ const Styled = {
   RightColumn: styled(Column)`
     text-align: right;
   `,
-  SmallText: styled(SmallText)`
+  SmallText: styled(Small)`
+    display: inline-block;
     line-height: 1;
     margin-left: 10px;
+    margin-bottom: 0;
   `,
 };
 

@@ -18,6 +18,7 @@ const Styled = {
     }
   `,
   CheckIcon: styled(Check)`
+    padding: 0;
     width: 20px;
     height: 20px;
   `,
@@ -47,7 +48,7 @@ const Checkbox: React.FC<Props> = ({ checked, disabled, onChange, className }) =
       disabled={disabled}
       onClick={handleClick}
     >
-      {checked && <CheckIcon />}
+      {checked && <CheckIcon size="small" />}
     </Box>
   );
 };

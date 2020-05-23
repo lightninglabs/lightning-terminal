@@ -20,6 +20,7 @@
   "cmps.loop.LoopTiles.inbound": "Total Inbound Liquidity",
   "cmps.loop.LoopTiles.outbound": "Total Outbound Liquidity",
   "cmps.loop.processing.ProcessingSwaps.title": "Processing Loops",
+  "cmps.loop.processing.ProcessingSwaps.complete": "Loops Complete",
   "cmps.loop.swap.StepButtons.cancel": "Cancel",
   "cmps.loop.swap.StepButtons.next": "Next",
   "cmps.loop.swap.StepButtons.confirm": "Confirm",

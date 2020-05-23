@@ -4,7 +4,7 @@ import loadingJson from 'assets/animations/loading.json';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import Animation from 'components/common/Animation';
-import { Title } from 'components/common/text';
+import { HeaderFour } from 'components/common/text';
 import { styled } from 'components/theme';
 
 const Styled = {
@@ -35,9 +35,9 @@ const SwapProcessingStep: React.FC = () => {
   const { Wrapper, Loader, LoadingMessage, ErrorMessage } = Styled;
   return (
     <Wrapper>
-      <Loader animationData={loadingJson} />
+      <Loader animationData={loadingJson} loop />
       <LoadingMessage>
-        <Title>{l('loadingMsg')}</Title>
+        <HeaderFour>{l('loadingMsg')}</HeaderFour>
       </LoadingMessage>
       {buildSwapStore.swapError && (
         <ErrorMessage>{buildSwapStore.swapError.message}</ErrorMessage>

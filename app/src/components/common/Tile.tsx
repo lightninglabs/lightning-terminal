@@ -1,13 +1,13 @@
 import React, { ReactNode } from 'react';
 import { styled } from 'components/theme';
 import { Maximize } from './icons';
-import { Title } from './text';
+import { HeaderFour } from './text';
 
 const Styled = {
   TileWrap: styled.div`
     min-height: 105px;
     padding: 15px;
-    background-color: ${props => props.theme.colors.tileBack};
+    background-color: ${props => props.theme.colors.overlay};
     border-radius: 4px;
   `,
   Header: styled.div`
@@ -57,7 +57,7 @@ const Tile: React.FC<Props> = ({ title, text, onMaximizeClick, children }) => {
   return (
     <TileWrap>
       <Header>
-        <Title>{title}</Title>
+        <HeaderFour marginless>{title}</HeaderFour>
         {onMaximizeClick && <MaximizeIcon title="maximize" onClick={onMaximizeClick} />}
       </Header>
       {text ? <Text>{text}</Text> : children}

@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 import { styled } from 'components/theme';
-import { SmallText } from './text';
+import { Small } from './text';
 
 const Styled = {
   Wrapper: styled.div<{ right?: boolean }>`
@@ -13,17 +13,17 @@ const Styled = {
     display: inline-block;
     padding: 5px 15px;
     margin-bottom: 10px;
-    border: 1px solid ${props => props.theme.colors.whitish};
+    border: 1px solid ${props => props.theme.colors.offWhite};
     color: ${props =>
-      props.active ? props.theme.colors.darkBlue : props.theme.colors.whitish};
+      props.active ? props.theme.colors.darkBlue : props.theme.colors.offWhite};
     background-color: ${props =>
       props.active ? props.theme.colors.white : props.theme.colors.darkBlue};
     cursor: pointer;
 
     &:hover {
-      color: ${props => props.theme.colors.whitish};
+      color: ${props => props.theme.colors.offWhite};
       background-color: ${props => props.theme.colors.darkBlue};
-      border: 1px solid ${props => props.theme.colors.whitish}33;
+      border: 1px solid ${props => props.theme.colors.offWhite}33;
     }
   `,
 };
@@ -43,7 +43,7 @@ const Radio: React.FC<Props> = ({ text, description, active, right, onClick }) =
       <RadioBlock active={active} onClick={onClick} role="switch" aria-checked={!!active}>
         {text}
       </RadioBlock>
-      <SmallText>{description}</SmallText>
+      <Small>{description}</Small>
     </Wrapper>
   );
 };

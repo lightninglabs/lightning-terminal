@@ -2,7 +2,7 @@ import React from 'react';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Pill } from 'components/common/base';
-import { H3Text, SmallText, Title } from 'components/common/text';
+import { HeaderFive, HeaderFour, Small } from 'components/common/text';
 import { styled } from 'components/theme';
 
 const Styled = {
@@ -13,10 +13,7 @@ const Styled = {
     justify-content: space-between;
     max-width: 240px;
   `,
-  Heading: styled(H3Text)`
-    margin-top: 10px;
-  `,
-  Description: styled(SmallText)`
+  Description: styled(Small)`
     opacity: 0.5;
   `,
   Channels: styled.div`
@@ -34,12 +31,12 @@ const StepSummary: React.FC<Props> = ({ title, heading, description }) => {
   const { l } = usePrefixedTranslation('cmps.loop.swap.StepSummary');
   const { buildSwapStore } = useStore();
 
-  const { Wrapper, Heading, Description } = Styled;
+  const { Wrapper, Description } = Styled;
   return (
     <Wrapper>
       <div>
-        <Title>{title}</Title>
-        <Heading>{heading}</Heading>
+        <HeaderFour>{title}</HeaderFour>
+        <HeaderFive>{heading}</HeaderFive>
         <Description>{description}</Description>
       </div>
       <div>

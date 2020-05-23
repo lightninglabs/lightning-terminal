@@ -18,11 +18,13 @@ const Styled = {
     background-color: ${props => props.theme.colors.darkBlue};
     box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.5);
     border-radius: 35px;
+
+    > button {
+      margin-left: 10px;
+      background-color: ${props => props.theme.colors.overlay};
+    }
   `,
   CloseIcon: styled(Close)`
-    cursor: pointer;
-    width: 16px;
-    height: 16px;
     margin-right: 25px;
   `,
   Selected: styled.span`

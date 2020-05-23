@@ -118,3 +118,7 @@ export const LoopOutProgress = () => {
 
   return <ProcessingSwaps />;
 };
+
+export const Complete = () => {
+  return <ProcessingSwaps />;
+};

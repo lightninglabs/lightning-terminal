@@ -25,7 +25,7 @@ interface Props {
 
 const StatusDot: React.FC<Props> = ({ status }) => {
   const { DotIcon } = Styled;
-  return <DotIcon className={status} aria-label={status} />;
+  return <DotIcon size="small" className={status} aria-label={status} />;
 };
 
 export default StatusDot;

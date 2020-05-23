@@ -3,16 +3,17 @@ import { grpc } from '@improbable-eng/grpc-web';
 import { waitFor } from '@testing-library/react';
 import * as config from 'config';
 import { injectIntoGrpcUnary } from 'util/tests';
-import { BuildSwapStore, createStore } from 'store';
+import { BuildSwapStore, createStore, Store } from 'store';
 import { SWAP_ABORT_DELAY } from 'store/stores/buildSwapStore';
 
 const grpcMock = grpc as jest.Mocked<typeof grpc>;
 
 describe('BuildSwapStore', () => {
+  let rootStore: Store;
   let store: BuildSwapStore;
 
   beforeEach(async () => {
-    const rootStore = createStore();
+    rootStore = createStore();
     await rootStore.init();
     store = rootStore.buildSwapStore;
   });
@@ -23,6 +24,14 @@ describe('BuildSwapStore', () => {
     expect(store.selectedChanIds).toHaveLength(1);
     store.toggleSelectedChannel('test');
     expect(store.selectedChanIds).toHaveLength(0);
+  });
+
+  it('should infer the swap direction based on the selected channels', () => {
+    const channels = rootStore.channelStore.sortedChannels;
+    store.toggleSelectedChannel(channels[0].chanId);
+    expect(store.inferredDirection).toEqual(SwapDirection.OUT);
+    store.toggleSelectedChannel(channels[channels.length - 1].chanId);
+    expect(store.inferredDirection).toEqual(SwapDirection.IN);
   });
 
   it('should fetch loop terms', async () => {

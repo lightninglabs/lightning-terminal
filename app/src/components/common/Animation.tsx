@@ -4,9 +4,10 @@ import lottie from 'lottie-web';
 interface Props {
   className?: string;
   animationData: any;
+  loop?: boolean;
 }
 
-const Animation: React.FC<Props> = ({ className, animationData }) => {
+const Animation: React.FC<Props> = ({ className, animationData, loop = false }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -15,11 +16,11 @@ const Animation: React.FC<Props> = ({ className, animationData }) => {
     lottie.loadAnimation({
       container: containerRef.current,
       renderer: 'svg',
-      loop: true,
+      loop,
       autoplay: true,
       animationData,
     });
-  }, [animationData]);
+  }, [animationData, loop]);
 
   return <div ref={containerRef} className={className} />;
 };

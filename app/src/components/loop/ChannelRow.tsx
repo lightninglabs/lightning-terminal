@@ -8,7 +8,7 @@ import { Channel } from 'store/models';
 import Checkbox from 'components/common/Checkbox';
 import { Column, Row } from 'components/common/grid';
 import StatusDot from 'components/common/StatusDot';
-import { Title } from 'components/common/text';
+import { HeaderFour } from 'components/common/text';
 import Unit from 'components/common/Unit';
 import { styled } from 'components/theme';
 import ChannelBalance from './ChannelBalance';
@@ -20,17 +20,25 @@ import ChannelBalance from './ChannelBalance';
 export const ROW_HEIGHT = 60;
 
 const Styled = {
-  Row: styled(Row)<{ dimmed?: boolean }>`
+  Row: styled(Row)<{ dimmed?: boolean; selectable?: boolean }>`
     border-bottom: 0.5px solid ${props => props.theme.colors.darkGray};
     opacity: ${props => (props.dimmed ? '0.4' : '1')};
 
     &:last-child {
       border-bottom-width: 0;
     }
+
+    ${props =>
+      props.selectable &&
+      `
+      &:hover {
+        cursor: pointer;
+        background-color: ${props.theme.colors.overlay};
+      }
+    `}
   `,
   Column: styled(Column)<{ last?: boolean }>`
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: nowrap;
     line-height: ${ROW_HEIGHT}px;
   `,
   StatusIcon: styled.span`
@@ -54,20 +62,20 @@ export const ChannelRowHeader: React.FC = () => {
   return (
     <Row>
       <Column right>
-        <Title>{l('canReceive')}</Title>
+        <HeaderFour>{l('canReceive')}</HeaderFour>
       </Column>
       <Column cols={3}></Column>
       <Column>
-        <Title>{l('canSend')}</Title>
+        <HeaderFour>{l('canSend')}</HeaderFour>
       </Column>
       <Column>
-        <Title>{l('upTime')}</Title>
+        <HeaderFour>{l('upTime')}</HeaderFour>
       </Column>
       <Column>
-        <Title>{l('peer')}</Title>
+        <HeaderFour>{l('peer')}</HeaderFour>
       </Column>
       <Column right>
-        <Title>{l('capacity')}</Title>
+        <HeaderFour>{l('capacity')}</HeaderFour>
       </Column>
     </Row>
   );
@@ -105,10 +113,15 @@ const ChannelRow: React.FC<Props> = ({ channel, style }) => {
 
   const { Row, Column, StatusIcon, Check, Balance } = Styled;
   return (
-    <Row dimmed={dimmed} style={style}>
+    <Row
+      dimmed={dimmed}
+      style={style}
+      selectable={editable && !disabled}
+      onClick={editable && !disabled ? handleRowChecked : undefined}
+    >
       <Column right>
         {editable ? (
-          <Check checked={checked} disabled={disabled} onChange={handleRowChecked} />
+          <Check checked={checked} disabled={disabled} />
         ) : (
           <StatusIcon>
             <ChannelDot channel={channel} />
