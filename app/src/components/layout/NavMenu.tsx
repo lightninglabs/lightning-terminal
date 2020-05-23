@@ -24,17 +24,18 @@ const Styled = {
       line-height: 50px;
       padding: 0 12px;
       border-left: 3px solid transparent;
-      color: ${props => props.theme.colors.whitish};
+      color: ${props => props.theme.colors.offWhite};
       cursor: pointer;
 
       &:hover {
         text-decoration: none;
         border-left: 3px solid ${props => props.theme.colors.pink};
+        background-color: ${props => props.theme.colors.overlay};
       }
     }
 
     &.active span {
-      border-left: 3px solid ${props => props.theme.colors.whitish};
+      border-left: 3px solid ${props => props.theme.colors.offWhite};
       background-color: ${props => props.theme.colors.blue};
 
       &:hover {

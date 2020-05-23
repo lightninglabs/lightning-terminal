@@ -33,7 +33,7 @@ const Styled = {
       `
       &:hover {
         cursor: pointer;
-        background-color: ${props.theme.colors.tileBack};
+        background-color: ${props.theme.colors.overlay};
       }
     `}
   `,

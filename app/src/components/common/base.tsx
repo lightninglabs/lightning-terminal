@@ -20,7 +20,7 @@ export const Pill = styled.span`
   padding: 5px;
   margin-right: 10px;
   text-align: center;
-  background-color: ${props => props.theme.colors.tileBack};
+  background-color: ${props => props.theme.colors.overlay};
   border-radius: 40px;
 `;
 
@@ -43,9 +43,9 @@ export const Button = styled.button<ButtonProps>`
   padding-left: 15px;
   padding-right: 15px;
   text-align: center;
-  color: ${props => props.theme.colors.whitish};
+  color: ${props => props.theme.colors.offWhite};
   background-color: ${props => props.theme.colors.blue};
-  border: 1px solid ${props => props.theme.colors.whitish};
+  border: 1px solid ${props => props.theme.colors.offWhite};
   border-radius: 22px;
 
   &:hover {
@@ -64,7 +64,7 @@ export const Button = styled.button<ButtonProps>`
     `
     background-color: transparent;
     &:hover {
-      color: ${props.theme.colors.whitish};
+      color: ${props.theme.colors.offWhite};
       text-decoration: underline;
       background-color: transparent;
     }
@@ -118,8 +118,8 @@ export const RadioButton = styled.span<RadioButtonProps>`
   width: 14px;
   height: 14px;
   border-radius: 14px;
-  border: 1px solid ${props => props.theme.colors.whitish};
-  background-color: ${props => (props.checked ? props.theme.colors.whitish : 'none')};
+  border: 1px solid ${props => props.theme.colors.offWhite};
+  background-color: ${props => (props.checked ? props.theme.colors.offWhite : 'none')};
 
   &:hover {
     opacity: 0.8;
@@ -181,7 +181,7 @@ export const RangeInput = styled.input`
     height: 2rem;
     margin-top: -0.9rem; /* (track-height - thumb-height) / 2 */
     color: ${props => props.theme.colors.darkBlue};
-    background-color: ${props => props.theme.colors.whitish};
+    background-color: ${props => props.theme.colors.offWhite};
     background-image: url(${Chevrons});
     border: 0.2rem solid ${props => props.theme.colors.darkBlue};
     box-shadow: 0 0 0 2px ${props => props.theme.colors.pink};
@@ -189,7 +189,7 @@ export const RangeInput = styled.input`
 
     &:active,
     &:hover {
-      background-color: ${props => props.theme.colors.whitish}dd;
+      background-color: ${props => props.theme.colors.offWhite}dd;
     }
   }
 
@@ -203,14 +203,14 @@ export const RangeInput = styled.input`
     width: 2rem;
     height: 2rem;
     color: ${props => props.theme.colors.darkBlue};
-    background-color: ${props => props.theme.colors.whitish};
+    background-color: ${props => props.theme.colors.offWhite};
     border: 0.2rem solid ${props => props.theme.colors.darkBlue};
     box-shadow: 0 0 0 2px ${props => props.theme.colors.pink};
     border-radius: 2rem;
 
     &:active,
     &:hover {
-      background-color: ${props => props.theme.colors.whitish}dd;
+      background-color: ${props => props.theme.colors.offWhite}dd;
     }
   }
 
@@ -224,14 +224,14 @@ export const RangeInput = styled.input`
     width: 2rem;
     height: 2rem;
     color: ${props => props.theme.colors.darkBlue};
-    background-color: ${props => props.theme.colors.whitish};
+    background-color: ${props => props.theme.colors.offWhite};
     border: 0.2rem solid ${props => props.theme.colors.darkBlue};
     box-shadow: 0 0 0 2px ${props => props.theme.colors.pink};
     border-radius: 2rem;
 
     &:active,
     &:hover {
-      background-color: ${props => props.theme.colors.whitish}dd;
+      background-color: ${props => props.theme.colors.offWhite}dd;
     }
   }
 

@@ -17,7 +17,7 @@ const Styled = {
   `,
   Divider: styled.div`
     height: 2px;
-    background-color: ${props => props.theme.colors.gray};
+    background-color: ${props => props.theme.colors.darkGray};
     margin: 20px 0;
     opacity: 0.5;
   `,

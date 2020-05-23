@@ -7,7 +7,7 @@ const Styled = {
   TileWrap: styled.div`
     min-height: 105px;
     padding: 15px;
-    background-color: ${props => props.theme.colors.tileBack};
+    background-color: ${props => props.theme.colors.overlay};
     border-radius: 4px;
   `,
   Header: styled.div`

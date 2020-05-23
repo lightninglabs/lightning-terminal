@@ -17,7 +17,7 @@ const Styled = {
     height: 34px;
     text-align: center;
     line-height: 30px;
-    background-color: ${props => props.theme.colors.darkGray};
+    background-color: ${props => props.theme.colors.gray};
     border-radius: 34px;
     margin-right: 10px;
     cursor: pointer;

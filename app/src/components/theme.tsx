@@ -31,12 +31,12 @@ export interface Theme {
     gray: string;
     darkGray: string;
     white: string;
-    whitish: string;
+    offWhite: string;
     pink: string;
     green: string;
     orange: string;
-    tileBack: string;
     purple: string;
+    overlay: string;
   };
 }
 
@@ -67,14 +67,14 @@ const theme: Theme = {
     blue: '#252f4a',
     darkBlue: '#212133',
     gray: '#848a99',
-    darkGray: '#6b6969',
+    darkGray: '#6b6969ef',
     white: '#ffffff',
-    whitish: '#f5f5f5',
+    offWhite: '#f5f5f5',
     pink: '#f5406e',
     green: '#46E80E',
     orange: '#f66b1c',
-    tileBack: 'rgba(245,245,245,0.04)',
     purple: '#57038d',
+    overlay: 'rgba(245,245,245,0.04)',
   },
 };
 

@@ -21,7 +21,7 @@ const Styled = {
 
     > button {
       margin-left: 10px;
-      background-color: ${props => props.theme.colors.tileBack};
+      background-color: ${props => props.theme.colors.overlay};
     }
   `,
   CloseIcon: styled(Close)`
