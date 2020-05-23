@@ -38,8 +38,7 @@ const Styled = {
     `}
   `,
   Column: styled(Column)<{ last?: boolean }>`
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: nowrap;
     line-height: ${ROW_HEIGHT}px;
   `,
   StatusIcon: styled.span`

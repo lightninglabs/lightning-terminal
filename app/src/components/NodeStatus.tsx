@@ -11,6 +11,10 @@ const Styled = {
   Wrapper: styled.div`
     line-height: 32px;
   `,
+  Balance: styled.span`
+    display: flex;
+    align-items: center;
+  `,
   Divider: styled.div`
     height: 2px;
     background-color: ${props => props.theme.colors.gray};
@@ -23,17 +27,21 @@ const NodeStatus: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.NodeStatus');
   const { nodeStore } = useStore();
 
-  const { Wrapper, Divider } = Styled;
+  const { Wrapper, Balance, Divider } = Styled;
   return (
     <Wrapper>
       <HeaderFour>{l('title')}</HeaderFour>
       <Jumbo>
-        <Bolt title="bolt" size="small" />
-        <Unit sats={nodeStore.wallet.channelBalance} />
+        <Balance>
+          <Bolt title="bolt" size="small" />
+          <Unit sats={nodeStore.wallet.channelBalance} />
+        </Balance>
       </Jumbo>
       <Small>
-        <Bitcoin title="bitcoin" size="small" />
-        <Unit sats={nodeStore.wallet.walletBalance} suffix={false} />
+        <Balance>
+          <Bitcoin title="bitcoin" size="small" />
+          <Unit sats={nodeStore.wallet.walletBalance} suffix={false} />
+        </Balance>
       </Small>
       <Divider />
     </Wrapper>

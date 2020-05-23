@@ -40,7 +40,7 @@ export const HeaderFive = styled.h5`
 
 export const Small = styled.p`
   font-size: ${props => props.theme.sizes.xs};
-  line-height: 19px;
+  line-height: 20px;
 `;
 
 export const Jumbo = styled.span`
