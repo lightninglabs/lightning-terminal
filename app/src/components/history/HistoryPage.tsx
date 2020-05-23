@@ -14,7 +14,7 @@ const Styled = {
 
 const HistoryPage: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.history.HistoryPage');
-  const { uiStore } = useStore();
+  const { uiStore, swapStore } = useStore();
 
   const { Wrapper } = Styled;
   return (
@@ -23,7 +23,7 @@ const HistoryPage: React.FC = () => {
         title={l('pageTitle')}
         backText={l('backText')}
         onBackClick={uiStore.goToLoop}
-        onExportClick={() => alert('TODO: Export CSV of Swaps')}
+        onExportClick={swapStore.exportSwaps}
       />
       <HistoryList />
     </Wrapper>

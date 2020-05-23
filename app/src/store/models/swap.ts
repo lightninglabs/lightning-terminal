@@ -1,6 +1,7 @@
 import { action, computed, observable } from 'mobx';
 import { now } from 'mobx-utils';
 import * as LOOP from 'types/generated/loop_pb';
+import { CsvColumns } from 'util/csv';
 import { ellipseInside } from 'util/strings';
 
 export default class Swap {
@@ -108,4 +109,18 @@ export default class Swap {
     this.lastUpdateTime = loopSwap.lastUpdateTime;
     this.state = loopSwap.state;
   }
+
+  /**
+   * Specifies which properties of this class should be exported to CSV
+   * @param key must match the name of a property on this class
+   * @param value the user-friendly name displayed in the CSV header
+   */
+  static csvColumns: CsvColumns = {
+    id: 'Swap ID',
+    typeName: 'Type',
+    amount: 'Amount',
+    stateLabel: 'Status',
+    createdOnLabel: 'Created On',
+    updatedOnLabel: 'Updated On',
+  };
 }

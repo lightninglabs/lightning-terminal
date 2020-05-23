@@ -1,6 +1,7 @@
 import { observable } from 'mobx';
 import { IS_DEV, IS_TEST } from 'config';
 import AppStorage from 'util/appStorage';
+import CsvExporter from 'util/csv';
 import { actionLog, Logger } from 'util/log';
 import { GrpcClient, LndApi, LoopApi } from 'api';
 import {
@@ -39,6 +40,9 @@ export class Store {
   /** the wrapper class around persistent storage */
   storage: AppStorage<PersistentSettings>;
 
+  /** the class to use for exporting lists of models to CSV */
+  csv: CsvExporter;
+
   // a flag to indicate when the store has completed all of its
   // API requests requested during initialization
   @observable initialized = false;
@@ -47,11 +51,13 @@ export class Store {
     lnd: LndApi,
     loop: LoopApi,
     storage: AppStorage<PersistentSettings>,
+    csv: CsvExporter,
     log: Logger,
   ) {
     this.api = { lnd, loop };
-    this.log = log;
     this.storage = storage;
+    this.csv = csv;
+    this.log = log;
   }
 
   /**
@@ -69,6 +75,7 @@ export class Store {
 /**
  * Creates an initialized Store instance with the dependencies injected
  * @param grpcClient an alternate GrpcClient to use instead of the default
+ * @param appStorage an alternate AppStorage to use instead of the default
  */
 export const createStore = (
   grpcClient?: GrpcClient,
@@ -78,8 +85,9 @@ export const createStore = (
   const storage = appStorage || new AppStorage();
   const lndApi = new LndApi(grpc);
   const loopApi = new LoopApi(grpc);
+  const csv = new CsvExporter();
 
-  const store = new Store(lndApi, loopApi, storage, actionLog);
+  const store = new Store(lndApi, loopApi, storage, csv, actionLog);
   // initialize the store immediately to fetch API data, except when running unit tests
   if (!IS_TEST) store.init();
 

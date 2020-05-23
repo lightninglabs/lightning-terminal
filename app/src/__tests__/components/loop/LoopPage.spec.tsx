@@ -2,6 +2,7 @@ import React from 'react';
 import { SwapStatus } from 'types/generated/loop_pb';
 import { grpc } from '@improbable-eng/grpc-web';
 import { fireEvent, waitFor } from '@testing-library/react';
+import { saveAs } from 'file-saver';
 import { formatSats } from 'util/formatters';
 import { renderWithProviders } from 'util/tests';
 import { loopListSwaps } from 'util/tests/sampleData';
@@ -55,6 +56,17 @@ describe('LoopPage component', () => {
     expect(await findByText('530,000 sats')).toBeInTheDocument();
     expect(await findByText(formatDate(swap2))).toBeInTheDocument();
     expect(await findByText('525,000 sats')).toBeInTheDocument();
+  });
+
+  it('should display the export icon', () => {
+    const { getByText } = render();
+    expect(getByText('download.svg')).toBeInTheDocument();
+  });
+
+  it('should export channels', () => {
+    const { getByText } = render();
+    fireEvent.click(getByText('download.svg'));
+    expect(saveAs).toBeCalledWith(expect.any(Blob), 'channels.csv');
   });
 
   describe('Swap Process', () => {

@@ -123,4 +123,11 @@ export default class SwapStore {
       this._store.log.info('polling was already stopped');
     }
   }
+
+  /** exports the sorted list of swaps to CSV file */
+  @action.bound
+  exportSwaps() {
+    this._store.log.info('exporting Swaps to a CSV file');
+    this._store.csv.export('swaps', Swap.csvColumns, toJS(this.sortedSwaps));
+  }
 }
