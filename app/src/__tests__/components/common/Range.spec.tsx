@@ -29,7 +29,7 @@ describe('Range component', () => {
   it('should display slider and value by default', () => {
     const { getByText, getByLabelText } = render();
     expect(getByLabelText('range-slider')).toBeInTheDocument();
-    expect(getByText('50 SAT')).toBeInTheDocument();
+    expect(getByText('50 sats')).toBeInTheDocument();
   });
 
   it('should accept custom props', () => {
@@ -41,9 +41,9 @@ describe('Range component', () => {
       showRadios: true,
     });
     expect(getByLabelText('range-slider')).toBeInTheDocument();
-    expect(getByText('5,000 SAT')).toBeInTheDocument();
-    expect(getByText('2,500 SAT')).toBeInTheDocument();
-    expect(getByText('7,500 SAT')).toBeInTheDocument();
+    expect(getByText('5,000 sats')).toBeInTheDocument();
+    expect(getByText('2,500 sats')).toBeInTheDocument();
+    expect(getByText('7,500 sats')).toBeInTheDocument();
     expect(getByText('Min')).toHaveAttribute('aria-checked', 'false');
     expect(getByText('Max')).toHaveAttribute('aria-checked', 'false');
   });

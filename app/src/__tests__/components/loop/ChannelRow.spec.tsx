@@ -1,6 +1,7 @@
 import React from 'react';
 import { SwapDirection } from 'types/state';
 import { fireEvent } from '@testing-library/react';
+import { formatSats } from 'util/formatters';
 import { ellipseInside } from 'util/strings';
 import { renderWithProviders } from 'util/tests';
 import { createStore, Store } from 'store';
@@ -13,14 +14,7 @@ describe('ChannelRow component', () => {
 
   beforeEach(async () => {
     store = createStore();
-  });
-
-  const render = () => {
-    return renderWithProviders(<ChannelRow channel={channel} />, store);
-  };
-
-  beforeEach(() => {
-    channel = new Channel({
+    channel = new Channel(store, {
       chanId: '150633093070848',
       remotePubkey: '02ac59099da6d4bd818e6a81098f5d54580b7c3aa8255c707fa0f95ca89b02cb8c',
       capacity: 15000000,
@@ -32,14 +26,22 @@ describe('ChannelRow component', () => {
     } as any);
   });
 
+  const render = () => {
+    return renderWithProviders(<ChannelRow channel={channel} />, store);
+  };
+
   it('should display the remote balance', () => {
     const { getByText } = render();
-    expect(getByText(channel.remoteBalance.toLocaleString())).toBeInTheDocument();
+    expect(
+      getByText(formatSats(channel.remoteBalance, { withSuffix: false })),
+    ).toBeInTheDocument();
   });
 
   it('should display the local balance', () => {
     const { getByText } = render();
-    expect(getByText(channel.localBalance.toLocaleString())).toBeInTheDocument();
+    expect(
+      getByText(formatSats(channel.localBalance, { withSuffix: false })),
+    ).toBeInTheDocument();
   });
 
   it('should display the uptime', () => {
@@ -54,7 +56,9 @@ describe('ChannelRow component', () => {
 
   it('should display the capacity', () => {
     const { getByText } = render();
-    expect(getByText(channel.capacity.toLocaleString())).toBeInTheDocument();
+    expect(
+      getByText(formatSats(channel.capacity, { withSuffix: false })),
+    ).toBeInTheDocument();
   });
 
   it('should display correct dot icon for an inactive channel', () => {
@@ -65,8 +69,8 @@ describe('ChannelRow component', () => {
   });
 
   it.each<[number, string]>([
-    [55, 'success'],
-    [75, 'warn'],
+    [20, 'success'],
+    [50, 'warn'],
     [90, 'error'],
   ])('should display correct dot icon for a "%s" balance', (localPct, label) => {
     channel.localBalance = channel.capacity * (localPct / 100);

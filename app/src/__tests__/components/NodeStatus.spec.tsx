@@ -15,7 +15,7 @@ describe('NodeStatus component', () => {
   it('should display the lightning balance', () => {
     const { getByText, store } = render();
     store.nodeStore.wallet = { channelBalance: 123, walletBalance: 0 };
-    expect(getByText('123 SAT')).toBeInTheDocument();
+    expect(getByText('123 sats')).toBeInTheDocument();
   });
 
   it('should display the bitcoin balance', () => {

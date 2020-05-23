@@ -1,8 +1,12 @@
 import { action, computed, observable } from 'mobx';
 import * as LND from 'types/generated/lnd_pb';
-import { BalanceLevel } from 'types/state';
+import { getBalanceStatus } from 'util/balances';
+import { BalanceMode, BalanceModes } from 'util/constants';
+import { Store } from 'store/store';
 
 export default class Channel {
+  private _store: Store;
+
   @observable chanId = '';
   @observable remotePubkey = '';
   @observable capacity = 0;
@@ -12,7 +16,8 @@ export default class Channel {
   @observable uptime = 0;
   @observable lifetime = 0;
 
-  constructor(lndChannel: LND.Channel.AsObject) {
+  constructor(store: Store, lndChannel: LND.Channel.AsObject) {
+    this._store = store;
     this.update(lndChannel);
   }
 
@@ -28,28 +33,36 @@ export default class Channel {
    * remote balances
    */
   @computed get localPercent() {
-    return Math.round(
-      (this.localBalance * 100) / (this.localBalance + this.remoteBalance),
-    );
+    return Math.floor((this.localBalance * 100) / this.capacity);
   }
 
   /**
-   * The imbalance percentage irregardless of direction
+   * The order to sort this channel based on the current mode
    */
-  @computed get balancePercent() {
-    const pct = this.localPercent;
-    return pct >= 50 ? pct : 100 - pct;
+  @computed get sortOrder() {
+    const mode = this._store.settingsStore.balanceMode;
+    switch (mode) {
+      case BalanceMode.routing:
+        const pct = this.localPercent;
+        // disregard direction. the highest local percentage first
+        // 99 is the highest since we use Math.floor()
+        return Math.max(pct, 99 - pct);
+      case BalanceMode.send:
+        // the lowest local percentage first
+        return 100 - this.localPercent;
+      case BalanceMode.receive:
+      default:
+        // the highest local percentage first
+        return this.localPercent;
+    }
   }
 
   /**
-   * Determines the balance level of a channel based on the percentage on each side
+   * The balance status of this channel (ok, warn, or danger)
    */
-  @computed get balanceLevel() {
-    const pct = this.balancePercent;
-
-    if (pct > 85) return BalanceLevel.bad;
-    if (pct > 65) return BalanceLevel.warn;
-    return BalanceLevel.good;
+  @computed get balanceStatus() {
+    const mode = this._store.settingsStore.balanceMode;
+    return getBalanceStatus(this.localBalance, this.capacity, BalanceModes[mode]);
   }
 
   /**

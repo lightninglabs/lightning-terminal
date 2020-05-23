@@ -37,7 +37,7 @@ export const Button = styled.button<ButtonProps>`
   color: ${props => props.theme.colors.white};
   background-color: ${props =>
     props.ghost ? 'transparent' : props.theme.colors.tileBack};
-  border-width: ${props => (props.borderless ? '0' : '1px')};
+  border-width: ${props => (props.borderless && !props.primary ? '0' : '1px')};
   border-color: ${props =>
     props.primary ? props.theme.colors.green : props.theme.colors.white};
   border-style: solid;
@@ -50,6 +50,23 @@ export const Button = styled.button<ButtonProps>`
 
   svg {
     margin-right: 10px;
+  }
+`;
+
+interface RadioButtonProps {
+  checked?: boolean;
+}
+
+export const RadioButton = styled.span<RadioButtonProps>`
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 14px;
+  border: 1px solid ${props => props.theme.colors.lightPurple};
+  background-color: ${props => (props.checked ? props.theme.colors.lightPurple : 'none')};
+
+  &:hover {
+    opacity: 0.8;
   }
 `;
 

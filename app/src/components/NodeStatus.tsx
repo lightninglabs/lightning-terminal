@@ -4,6 +4,7 @@ import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { SmallText, Title, XLargeText } from 'components/common/text';
 import { Bitcoin, Bolt } from './common/icons';
+import Unit from './common/Unit';
 import { styled } from './theme';
 
 const Styled = {
@@ -32,23 +33,20 @@ const Styled = {
 };
 
 const NodeStatus: React.FC = () => {
-  const { Wrapper, StatusTitle, BoltIcon, BitcoinIcon, Divider } = Styled;
-
   const { l } = usePrefixedTranslation('cmps.NodeStatus');
+  const { nodeStore } = useStore();
 
-  const store = useStore();
-  const { channelBalance, walletBalance } = store.nodeStore.wallet;
-
+  const { Wrapper, StatusTitle, BoltIcon, BitcoinIcon, Divider } = Styled;
   return (
     <Wrapper>
       <StatusTitle>{l('title')}</StatusTitle>
       <XLargeText block>
         <BoltIcon title="bolt" />
-        {channelBalance.toLocaleString()} SAT
+        <Unit sats={nodeStore.wallet.channelBalance} />
       </XLargeText>
       <SmallText block>
         <BitcoinIcon title="bitcoin" />
-        {walletBalance.toLocaleString()}
+        <Unit sats={nodeStore.wallet.walletBalance} suffix={false} />
       </SmallText>
       <Divider />
     </Wrapper>

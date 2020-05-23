@@ -40,4 +40,15 @@ describe('Layout component', () => {
     expect(store.uiStore.page).toBe('loop');
     expect(getByText('Lightning Loop').parentElement).toHaveClass('active');
   });
+
+  it('should navigate back to the Settings page', () => {
+    const { getByText, store } = render();
+    expect(store.uiStore.page).toBe('loop');
+    fireEvent.click(getByText('Settings'));
+    expect(store.uiStore.page).toBe('settings');
+    expect(getByText('Settings').parentElement).toHaveClass('active');
+    fireEvent.click(getByText('Lightning Loop'));
+    expect(store.uiStore.page).toBe('loop');
+    expect(getByText('Lightning Loop').parentElement).toHaveClass('active');
+  });
 });

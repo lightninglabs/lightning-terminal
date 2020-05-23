@@ -2,6 +2,7 @@ import React, { ChangeEvent, useCallback } from 'react';
 import { styled } from 'components/theme';
 import { RangeInput } from './base';
 import Radio from './Radio';
+import Unit from './Unit';
 
 const Styled = {
   RadioGroup: styled.div`
@@ -47,13 +48,13 @@ const Range: React.FC<Props> = ({
         <RadioGroup>
           <Radio
             text="Min"
-            description={`${min.toLocaleString()} SAT`}
+            description={<Unit sats={min} />}
             onClick={handleMinClicked}
             active={min === value}
           />
           <Radio
             text="Max"
-            description={`${max.toLocaleString()} SAT`}
+            description={<Unit sats={max} />}
             onClick={handleMaxClicked}
             active={max === value}
             right
@@ -72,7 +73,9 @@ const Range: React.FC<Props> = ({
           onChange={handleInputClicked}
         />
       </div>
-      <DisplayValue>{value.toLocaleString()} SAT</DisplayValue>
+      <DisplayValue>
+        <Unit sats={value} />
+      </DisplayValue>
     </div>
   );
 };

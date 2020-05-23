@@ -1,27 +1,28 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
-import { BalanceLevel } from 'types/state';
+import { statusToColor } from 'util/balances';
+import { BalanceStatus } from 'util/constants';
 import { Channel } from 'store/models';
-import { levelToColor, styled } from 'components/theme';
+import { styled } from 'components/theme';
 
 const Styled = {
-  Wrapper: styled.div<{ pct: number; level: BalanceLevel; active: boolean }>`
+  Wrapper: styled.div<{ pct: number; status: BalanceStatus; active: boolean }>`
     display: flex;
     width: 100%;
 
     > div {
-      min-width: 10px;
+      min-width: 6px;
 
       &:first-of-type {
         flex-grow: 1;
         background-color: ${props =>
-          levelToColor(props.level, props.active, props.theme)};
+          statusToColor(props.status, props.active, props.theme)};
       }
 
       &:last-of-type {
         width: ${props => props.pct}%;
         background-color: ${props =>
-          levelToColor(props.level, props.active, props.theme)};
+          statusToColor(props.status, props.active, props.theme)};
       }
     }
   `,
@@ -45,7 +46,7 @@ const ChannelBalance: React.FC<Props> = ({ channel, className }) => {
   return (
     <Wrapper
       pct={channel.localPercent}
-      level={channel.balanceLevel}
+      status={channel.balanceStatus}
       active={channel.active}
       className={className}
     >

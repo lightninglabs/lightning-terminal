@@ -44,24 +44,30 @@ const Styled = {
   `,
 };
 
+const NavItem: React.FC<{ page: string; onClick: () => void }> = observer(
+  ({ page, onClick }) => {
+    const { l } = usePrefixedTranslation('cmps.layout.NavMenu');
+    const { uiStore } = useStore();
+    return (
+      <Styled.NavItem className={uiStore.page === page ? 'active' : ''}>
+        <span onClick={onClick}>{l(page)}</span>
+      </Styled.NavItem>
+    );
+  },
+);
+
 const NavMenu: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.layout.NavMenu');
   const { uiStore } = useStore();
 
-  const { NavTitle, Nav, NavItem } = Styled;
+  const { NavTitle, Nav } = Styled;
   return (
     <>
       <NavTitle>{l('menu')}</NavTitle>
       <Nav>
-        <NavItem className={uiStore.page === 'loop' ? 'active' : ''}>
-          <span onClick={uiStore.goToLoop}>{l('loop')}</span>
-        </NavItem>
-        <NavItem className={uiStore.page === 'history' ? 'active' : ''}>
-          <span onClick={uiStore.goToHistory}>{l('history')}</span>
-        </NavItem>
-        <NavItem>
-          <span>{l('settings')}</span>
-        </NavItem>
+        <NavItem page="loop" onClick={uiStore.goToLoop} />
+        <NavItem page="history" onClick={uiStore.goToHistory} />
+        <NavItem page="settings" onClick={uiStore.goToSettings} />
       </Nav>
     </>
   );

@@ -4,6 +4,7 @@ import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Column, Row } from 'components/common/grid';
 import Tile from 'components/common/Tile';
+import Unit from 'components/common/Unit';
 import { styled } from 'components/theme';
 import LoopHistory from './LoopHistory';
 
@@ -27,16 +28,10 @@ const LoopTiles: React.FC = () => {
           </Tile>
         </Column>
         <Column cols={4}>
-          <Tile
-            title={l('inbound')}
-            text={`${channelStore.totalInbound.toLocaleString()} SAT`}
-          />
+          <Tile title={l('inbound')} text={<Unit sats={channelStore.totalInbound} />} />
         </Column>
         <Column cols={4}>
-          <Tile
-            title={l('outbound')}
-            text={`${channelStore.totalOutbound.toLocaleString()} SAT`}
-          />
+          <Tile title={l('outbound')} text={<Unit sats={channelStore.totalOutbound} />} />
         </Column>
       </Row>
     </TileSection>

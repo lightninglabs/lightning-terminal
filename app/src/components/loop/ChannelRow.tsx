@@ -1,7 +1,7 @@
 import React, { CSSProperties } from 'react';
 import { observer } from 'mobx-react-lite';
-import { BalanceLevel } from 'types/state';
 import { usePrefixedTranslation } from 'hooks';
+import { BalanceStatus } from 'util/constants';
 import { ellipseInside } from 'util/strings';
 import { useStore } from 'store';
 import { Channel } from 'store/models';
@@ -9,6 +9,7 @@ import Checkbox from 'components/common/Checkbox';
 import { Column, Row } from 'components/common/grid';
 import StatusDot from 'components/common/StatusDot';
 import { Title } from 'components/common/text';
+import Unit from 'components/common/Unit';
 import { styled } from 'components/theme';
 import ChannelBalance from './ChannelBalance';
 
@@ -41,7 +42,7 @@ const Styled = {
   Check: styled(Checkbox)`
     float: left;
     margin-top: 18px;
-    margin-left: 15px;
+    margin-left: 10px;
   `,
   Balance: styled(ChannelBalance)`
     margin-top: ${ROW_HEIGHT / 2 - 2}px;
@@ -75,12 +76,12 @@ export const ChannelRowHeader: React.FC = () => {
 const ChannelDot: React.FC<{ channel: Channel }> = observer(({ channel }) => {
   if (!channel.active) return <StatusDot status="idle" />;
 
-  switch (channel.balanceLevel) {
-    case BalanceLevel.good:
+  switch (channel.balanceStatus) {
+    case BalanceStatus.ok:
       return <StatusDot status="success" />;
-    case BalanceLevel.warn:
+    case BalanceStatus.warn:
       return <StatusDot status="warn" />;
-    case BalanceLevel.bad:
+    case BalanceStatus.danger:
       return <StatusDot status="error" />;
   }
 });
@@ -113,15 +114,19 @@ const ChannelRow: React.FC<Props> = ({ channel, style }) => {
             <ChannelDot channel={channel} />
           </StatusIcon>
         )}
-        {channel.remoteBalance.toLocaleString()}
+        <Unit sats={channel.remoteBalance} suffix={false} />
       </Column>
       <Column cols={3}>
         <Balance channel={channel} />
       </Column>
-      <Column>{channel.localBalance.toLocaleString()}</Column>
+      <Column>
+        <Unit sats={channel.localBalance} suffix={false} />
+      </Column>
       <Column>{channel.uptimePercent}</Column>
       <Column>{ellipseInside(channel.remotePubkey)}</Column>
-      <Column right>{channel.capacity.toLocaleString()}</Column>
+      <Column right>
+        <Unit sats={channel.capacity} suffix={false} />
+      </Column>
     </Row>
   );
 };

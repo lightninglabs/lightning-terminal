@@ -2,6 +2,7 @@ import React from 'react';
 import { SwapStatus } from 'types/generated/loop_pb';
 import { grpc } from '@improbable-eng/grpc-web';
 import { fireEvent, waitFor } from '@testing-library/react';
+import { formatSats } from 'util/formatters';
 import { renderWithProviders } from 'util/tests';
 import { loopListSwaps } from 'util/tests/sampleData';
 import { createStore, Store } from 'store';
@@ -37,12 +38,8 @@ describe('LoopPage component', () => {
     const { getByText, store } = render();
     // wait for the channels to be fetched async before checking the UI labels
     await waitFor(() => expect(store.channelStore.totalInbound).toBeGreaterThan(0));
-    expect(
-      getByText(`${store.channelStore.totalInbound.toLocaleString()} SAT`),
-    ).toBeInTheDocument();
-    expect(
-      getByText(`${store.channelStore.totalOutbound.toLocaleString()} SAT`),
-    ).toBeInTheDocument();
+    expect(getByText(formatSats(store.channelStore.totalInbound))).toBeInTheDocument();
+    expect(getByText(formatSats(store.channelStore.totalOutbound))).toBeInTheDocument();
   });
 
   it('should display the loop history records', async () => {
@@ -55,9 +52,9 @@ describe('LoopPage component', () => {
     );
 
     expect(await findByText(formatDate(swap1))).toBeInTheDocument();
-    expect(await findByText('530,000 SAT')).toBeInTheDocument();
+    expect(await findByText('530,000 sats')).toBeInTheDocument();
     expect(await findByText(formatDate(swap2))).toBeInTheDocument();
-    expect(await findByText('525,000 SAT')).toBeInTheDocument();
+    expect(await findByText('525,000 sats')).toBeInTheDocument();
   });
 
   describe('Swap Process', () => {

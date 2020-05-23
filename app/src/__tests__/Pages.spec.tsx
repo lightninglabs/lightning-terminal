@@ -19,4 +19,11 @@ describe('Pages Component', () => {
     expect(getByText('Loop History')).toBeInTheDocument();
     expect(store.uiStore.page).toBe('history');
   });
+
+  it('should display the Settings page', () => {
+    const { getByText, store } = render();
+    store.uiStore.goToSettings();
+    expect(getByText('Settings')).toBeInTheDocument();
+    expect(store.uiStore.page).toBe('settings');
+  });
 });

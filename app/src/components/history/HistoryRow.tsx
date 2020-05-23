@@ -4,6 +4,7 @@ import { usePrefixedTranslation } from 'hooks';
 import { Swap } from 'store/models';
 import { Column, Row } from 'components/common/grid';
 import { Title } from 'components/common/text';
+import Unit from 'components/common/Unit';
 import SwapDot from 'components/loop/SwapDot';
 import { styled } from 'components/theme';
 
@@ -75,7 +76,9 @@ const HistoryRow: React.FC<Props> = ({ swap, style }) => {
         {swap.stateLabel}
       </Column>
       <Column>{swap.typeName}</Column>
-      <Column>{swap.amount.toLocaleString()}</Column>
+      <Column>
+        <Unit sats={swap.amount} suffix={false} />
+      </Column>
       <Column right>{swap.createdOnLabel}</Column>
       <Column right>{swap.updatedOnLabel}</Column>
     </Row>

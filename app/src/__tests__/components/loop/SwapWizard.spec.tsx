@@ -1,6 +1,7 @@
 import React from 'react';
 import { SwapDirection } from 'types/state';
 import { fireEvent } from '@testing-library/react';
+import { formatSats } from 'util/formatters';
 import { renderWithProviders } from 'util/tests';
 import { createStore, Store } from 'store';
 import SwapWizard from 'components/loop/swap/SwapWizard';
@@ -48,8 +49,8 @@ describe('SwapWizard component', () => {
     it('should display the correct min an max values', () => {
       const { getByText } = render();
       const { min, max } = store.buildSwapStore.termsForDirection;
-      expect(getByText(`${min.toLocaleString()} SAT`)).toBeInTheDocument();
-      expect(getByText(`${max.toLocaleString()} SAT`)).toBeInTheDocument();
+      expect(getByText(formatSats(min))).toBeInTheDocument();
+      expect(getByText(formatSats(max))).toBeInTheDocument();
     });
 
     it('should display the correct number of channels', () => {
@@ -62,10 +63,10 @@ describe('SwapWizard component', () => {
       const { getByText, getByLabelText } = render();
       const build = store.buildSwapStore;
       expect(build.amount).toEqual(625000);
-      expect(getByText(`625,000 SAT`)).toBeInTheDocument();
+      expect(getByText(`625,000 sats`)).toBeInTheDocument();
       fireEvent.change(getByLabelText('range-slider'), { target: { value: '575000' } });
       expect(build.amount).toEqual(575000);
-      expect(getByText(`575,000 SAT`)).toBeInTheDocument();
+      expect(getByText(`575,000 sats`)).toBeInTheDocument();
     });
   });
 
@@ -88,11 +89,9 @@ describe('SwapWizard component', () => {
     it('should display the correct values', () => {
       const { getByText } = render();
       const build = store.buildSwapStore;
-      const toLabel = (x: number) => `${x.toLocaleString()} SAT`;
-      expect(getByText(toLabel(build.amount))).toBeInTheDocument();
-      const pct = ((100 * build.fee) / build.amount).toFixed(2);
-      expect(getByText(toLabel(build.fee) + ` (${pct}%)`)).toBeInTheDocument();
-      expect(getByText(toLabel(build.amount + build.fee))).toBeInTheDocument();
+      expect(getByText(formatSats(build.amount))).toBeInTheDocument();
+      expect(getByText(build.feesLabel)).toBeInTheDocument();
+      expect(getByText(formatSats(build.invoiceTotal))).toBeInTheDocument();
     });
   });
 

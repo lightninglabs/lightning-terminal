@@ -1,5 +1,6 @@
-import { action, computed, observable, runInAction, toJS } from 'mobx';
+import { action, computed, observable, runInAction, toJS, values } from 'mobx';
 import { BuildSwapSteps, Quote, SwapDirection, SwapTerms } from 'types/state';
+import { formatSats } from 'util/formatters';
 import { Store } from 'store';
 
 // an artificial delay to allow the user to abort a swap before it executed
@@ -98,13 +99,30 @@ class BuildSwapStore {
   @computed
   get feesLabel() {
     const feesPct = ((100 * this.fee) / this.amount).toFixed(2);
-    return `${this.fee.toLocaleString()} SAT (${feesPct}%)`;
+    const amount = formatSats(this.fee, { unit: this._store.settingsStore.unit });
+    return `${amount} (${feesPct}%)`;
   }
 
   /** the invoice total including the swap amount and fee */
   @computed
   get invoiceTotal() {
     return this.amount + this.fee;
+  }
+
+  /** infer a swap direction based on the selected channels */
+  @computed
+  get inferredDirection(): SwapDirection | undefined {
+    if (this.selectedChanIds.length === 0) return undefined;
+
+    // calculate the average local balance percent
+    const percents = values(this._store.channelStore.channels)
+      .filter(c => this.selectedChanIds.includes(c.chanId))
+      .map(c => c.localPercent);
+    const sum = percents.reduce((s, p) => s + p, 0);
+    const avgPct = sum / percents.length;
+
+    // if the average is low, suggest Loop In. Otherwise, suggest Loop Out
+    return avgPct < 50 ? SwapDirection.IN : SwapDirection.OUT;
   }
 
   //

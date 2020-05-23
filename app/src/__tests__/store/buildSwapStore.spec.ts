@@ -8,7 +8,7 @@ import { SWAP_ABORT_DELAY } from 'store/stores/buildSwapStore';
 
 const grpcMock = grpc as jest.Mocked<typeof grpc>;
 
-describe('SwapStore', () => {
+describe('BuildSwapStore', () => {
   let store: BuildSwapStore;
 
   beforeEach(async () => {
