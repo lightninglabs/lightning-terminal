@@ -1,8 +1,10 @@
 import React, { useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
+import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Swap } from 'store/models';
 import { Close } from 'components/common/icons';
+import Tip from 'components/common/Tip';
 import { styled } from 'components/theme';
 
 const Styled = {
@@ -11,20 +13,9 @@ const Styled = {
     display: flex;
     align-items: center;
   `,
-  Circle: styled.span`
-    display: inline-block;
-    width: 34px;
-    height: 34px;
-    text-align: center;
-    line-height: 30px;
+  CloseIcon: styled(Close)`
     background-color: ${props => props.theme.colors.gray};
-    border-radius: 34px;
     margin-right: 10px;
-    cursor: pointer;
-
-    &:hover {
-      opacity: 0.8;
-    }
   `,
   ErrorMessage: styled.span`
     color: ${props => props.theme.colors.pink};
@@ -36,18 +27,20 @@ interface Props {
 }
 
 const FailedSwap: React.FC<Props> = ({ swap }) => {
+  const { l } = usePrefixedTranslation('cmps.loop.processing.FailedSwap');
+
   const { swapStore } = useStore();
   const handleCloseClick = useCallback(() => swapStore.dismissSwap(swap.id), [
     swapStore,
     swap,
   ]);
 
-  const { Wrapper, Circle, ErrorMessage } = Styled;
+  const { Wrapper, CloseIcon, ErrorMessage } = Styled;
   return (
     <Wrapper>
-      <Circle onClick={handleCloseClick}>
-        <Close />
-      </Circle>
+      <Tip overlay={l('dismissTip')}>
+        <CloseIcon onClick={handleCloseClick} />
+      </Tip>
       <ErrorMessage>{swap.stateLabel}</ErrorMessage>
     </Wrapper>
   );

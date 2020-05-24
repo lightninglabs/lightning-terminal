@@ -38,7 +38,7 @@ export const HeaderFive = styled.h5`
   font-size: ${props => props.theme.sizes.m};
 `;
 
-export const Small = styled.p`
+export const Small = styled.span`
   font-size: ${props => props.theme.sizes.xs};
   line-height: 20px;
 `;

@@ -29,7 +29,8 @@ const Icon = styled.span<IconProps>`
     border-radius: 36px;
     cursor: pointer;
     &:hover {
-      background-color: ${props.theme.colors.purple};
+      color: ${props.theme.colors.blue};
+      background-color: ${props.theme.colors.offWhite}; 
     }
   `}
 
