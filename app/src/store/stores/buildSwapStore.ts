@@ -40,9 +40,6 @@ class BuildSwapStore {
   /** the reference to the timeout used to allow cancelling a swap */
   @observable processingTimeout?: NodeJS.Timeout;
 
-  /** the error error returned from LoopIn/LoopOut if any */
-  @observable swapError?: Error;
-
   constructor(store: Store) {
     this._store = store;
   }
@@ -227,28 +224,34 @@ class BuildSwapStore {
   @action.bound
   async getTerms(): Promise<void> {
     this._store.log.info(`fetching loop terms`);
-    const inTerms = await this._store.api.loop.getLoopInTerms();
-    const outTerms = await this._store.api.loop.getLoopOutTerms();
-    runInAction(() => {
-      this.terms = {
-        in: {
-          min: inTerms.minSwapAmount,
-          max: inTerms.maxSwapAmount,
-        },
-        out: {
-          min: outTerms.minSwapAmount,
-          max: outTerms.maxSwapAmount,
-        },
-      };
-      this._store.log.info('updated store.terms', toJS(this.terms));
+    try {
+      const inTerms = await this._store.api.loop.getLoopInTerms();
+      const outTerms = await this._store.api.loop.getLoopOutTerms();
+      runInAction('getTermsContinuation', () => {
+        this.terms = {
+          in: {
+            min: inTerms.minSwapAmount,
+            max: inTerms.maxSwapAmount,
+          },
+          out: {
+            min: outTerms.minSwapAmount,
+            max: outTerms.maxSwapAmount,
+          },
+        };
+        this._store.log.info('updated store.terms', toJS(this.terms));
 
-      // restrict the amount whenever the terms are updated
-      const { min, max } = this.termsForDirection;
-      if (this.amount < min || this.amount > max) {
-        this.setAmount(Math.floor((min + max) / 2));
-        this._store.log.info(`updated buildSwapStore.amount`, this.amount);
-      }
-    });
+        // restrict the amount whenever the terms are updated
+        const { min, max } = this.termsForDirection;
+        if (this.amount < min || this.amount > max) {
+          this.setAmount(Math.floor((min + max) / 2));
+          this._store.log.info(`updated buildSwapStore.amount`, this.amount);
+        }
+      });
+    } catch (error) {
+      runInAction('getTermsError', () => {
+        this._store.uiStore.notify(error.message, 'Unable to fetch Loop Terms');
+      });
+    }
   }
 
   /**
@@ -259,19 +262,25 @@ class BuildSwapStore {
     const { amount, direction } = this;
     this._store.log.info(`fetching ${direction} quote for ${amount} sats`);
 
-    const quote =
-      direction === SwapDirection.IN
-        ? await this._store.api.loop.getLoopInQuote(amount)
-        : await this._store.api.loop.getLoopOutQuote(amount);
+    try {
+      const quote =
+        direction === SwapDirection.IN
+          ? await this._store.api.loop.getLoopInQuote(amount)
+          : await this._store.api.loop.getLoopOutQuote(amount);
 
-    runInAction(() => {
-      this.quote = {
-        swapFee: quote.swapFee,
-        minerFee: quote.minerFee,
-        prepayAmount: quote.prepayAmt,
-      };
-      this._store.log.info('updated buildSwapStore.quote', toJS(this.quote));
-    });
+      runInAction('getQuoteContinuation', () => {
+        this.quote = {
+          swapFee: quote.swapFee,
+          minerFee: quote.minerFee,
+          prepayAmount: quote.prepayAmt,
+        };
+        this._store.log.info('updated buildSwapStore.quote', toJS(this.quote));
+      });
+    } catch (error) {
+      runInAction('getQuoteError', () => {
+        this._store.uiStore.notify(error.message, 'Unable to fetch Quote');
+      });
+    }
   }
 
   /**
@@ -292,13 +301,17 @@ class BuildSwapStore {
             ? await this._store.api.loop.loopIn(amount, quote)
             : await this._store.api.loop.loopOut(amount, quote);
         this._store.log.info('completed loop', toJS(res));
-        // hide the swap UI after it is complete
-        this.cancel();
-        this._store.uiStore.toggleProcessingSwaps();
-        this._store.swapStore.fetchSwaps();
+        runInAction('requestSwapContinuation', () => {
+          // hide the swap UI after it is complete
+          this.cancel();
+          this._store.uiStore.toggleProcessingSwaps();
+          this._store.swapStore.fetchSwaps();
+        });
       } catch (error) {
-        this.swapError = error;
-        this._store.log.error(`failed to perform ${direction}`, error);
+        runInAction('requestSwapError', () => {
+          this._store.uiStore.notify(error.message, `Unable to Perform ${direction}`);
+          this.goToPrevStep();
+        });
       }
     }, delay);
   }

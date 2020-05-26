@@ -62,7 +62,8 @@ export default class UiStore {
   notify(message: string, title?: string) {
     const alert: Alert = { id: Date.now(), type: 'error', message, title };
     this.alerts.set(alert.id, alert);
-    this._store.log.info('Added alert', message, toJS(this.alerts));
+    this._store.log.info('Added alert', toJS(this.alerts));
+    this._store.log.error(`[${title}] ${message}`);
   }
 
   /** removes an existing alert */

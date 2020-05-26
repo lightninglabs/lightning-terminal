@@ -51,28 +51,34 @@ export default class ChannelStore {
   async fetchChannels() {
     this._store.log.info('fetching channels');
 
-    const { channelsList } = await this._store.api.lnd.listChannels();
-    runInAction(() => {
-      channelsList.forEach(lndChan => {
-        // update existing channels or create new ones in state. using this
-        // approach instead of overwriting the array will cause fewer state
-        // mutations, resulting in better react rendering performance
-        const existing = this.channels.get(lndChan.chanId);
-        if (existing) {
-          existing.update(lndChan);
-        } else {
-          this.channels.set(lndChan.chanId, new Channel(this._store, lndChan));
-        }
-      });
-      // remove any channels in state that are not in the API response
-      const serverIds = channelsList.map(c => c.chanId);
-      const localIds = Object.keys(this.channels);
-      localIds
-        .filter(id => !serverIds.includes(id))
-        .forEach(id => this.channels.delete(id));
+    try {
+      const { channelsList } = await this._store.api.lnd.listChannels();
+      runInAction('fetchChannelsContinuation', () => {
+        channelsList.forEach(lndChan => {
+          // update existing channels or create new ones in state. using this
+          // approach instead of overwriting the array will cause fewer state
+          // mutations, resulting in better react rendering performance
+          const existing = this.channels.get(lndChan.chanId);
+          if (existing) {
+            existing.update(lndChan);
+          } else {
+            this.channels.set(lndChan.chanId, new Channel(this._store, lndChan));
+          }
+        });
+        // remove any channels in state that are not in the API response
+        const serverIds = channelsList.map(c => c.chanId);
+        const localIds = Object.keys(this.channels);
+        localIds
+          .filter(id => !serverIds.includes(id))
+          .forEach(id => this.channels.delete(id));
 
-      this._store.log.info('updated channelStore.channels', toJS(this.channels));
-    });
+        this._store.log.info('updated channelStore.channels', toJS(this.channels));
+      });
+    } catch (error) {
+      runInAction('fetchChannelsError', () => {
+        this._store.uiStore.notify(error.message, 'Unable to fetch Channels');
+      });
+    }
   }
 
   /** exports the sorted list of channels to CSV file */
