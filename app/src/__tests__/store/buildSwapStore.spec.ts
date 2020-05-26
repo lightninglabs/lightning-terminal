@@ -1,3 +1,4 @@
+import { values } from 'mobx';
 import { SwapDirection } from 'types/state';
 import { grpc } from '@improbable-eng/grpc-web';
 import { waitFor } from '@testing-library/react';
@@ -42,6 +43,19 @@ describe('BuildSwapStore', () => {
     expect(store.terms.out).toEqual({ min: 250000, max: 1000000 });
   });
 
+  it('should handle errors fetching loop terms', async () => {
+    grpcMock.unary.mockImplementationOnce(desc => {
+      if (desc.methodName === 'GetLoopInTerms') throw new Error('test-err');
+      return undefined as any;
+    });
+    expect(rootStore.uiStore.alerts.size).toBe(0);
+    await store.getTerms();
+    await waitFor(() => {
+      expect(rootStore.uiStore.alerts.size).toBe(1);
+      expect(values(rootStore.uiStore.alerts)[0].message).toBe('test-err');
+    });
+  });
+
   it('should adjust the amount after fetching the loop terms', async () => {
     store.setAmount(100);
     await store.getTerms();
@@ -76,6 +90,21 @@ describe('BuildSwapStore', () => {
     expect(store.quote.swapFee).toEqual(83);
     expect(store.quote.minerFee).toEqual(7387);
     expect(store.quote.prepayAmount).toEqual(1337);
+  });
+
+  it('should handle errors fetching loop quote', async () => {
+    grpcMock.unary.mockImplementationOnce(desc => {
+      if (desc.methodName === 'LoopOutQuote') throw new Error('test-err');
+      return undefined as any;
+    });
+    store.setDirection(SwapDirection.OUT);
+    store.setAmount(600);
+    expect(rootStore.uiStore.alerts.size).toBe(0);
+    await store.getQuote();
+    await waitFor(() => {
+      expect(rootStore.uiStore.alerts.size).toBe(1);
+      expect(values(rootStore.uiStore.alerts)[0].message).toBe('test-err');
+    });
   });
 
   it('should perform a loop in', async () => {
@@ -129,18 +158,18 @@ describe('BuildSwapStore', () => {
     await waitFor(() => expect(deadline).toEqual(0));
   });
 
-  it('should handle loop errors', async () => {
+  it('should handle errors when performing a loop', async () => {
     grpcMock.unary.mockImplementationOnce(desc => {
-      if (desc.methodName === 'LoopIn') throw new Error('asdf');
+      if (desc.methodName === 'LoopIn') throw new Error('test-err');
       return undefined as any;
     });
     store.setDirection(SwapDirection.IN);
     store.setAmount(600);
-
-    expect(store.swapError).toBeUndefined();
+    expect(rootStore.uiStore.alerts.size).toBe(0);
     store.requestSwap();
     await waitFor(() => {
-      expect(store.swapError).toBeDefined();
+      expect(rootStore.uiStore.alerts.size).toBe(1);
+      expect(values(rootStore.uiStore.alerts)[0].message).toBe('test-err');
     });
   });
 

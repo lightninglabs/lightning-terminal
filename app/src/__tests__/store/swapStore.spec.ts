@@ -1,13 +1,18 @@
+import { values } from 'mobx';
 import * as LOOP from 'types/generated/loop_pb';
+import { grpc } from '@improbable-eng/grpc-web';
 import { waitFor } from '@testing-library/react';
 import { loopListSwaps } from 'util/tests/sampleData';
-import { createStore, SwapStore } from 'store';
+import { createStore, Store, SwapStore } from 'store';
+
+const grpcMock = grpc as jest.Mocked<typeof grpc>;
 
 describe('SwapStore', () => {
+  let rootStore: Store;
   let store: SwapStore;
 
   beforeEach(async () => {
-    const rootStore = createStore();
+    rootStore = createStore();
     store = rootStore.swapStore;
   });
 
@@ -15,6 +20,19 @@ describe('SwapStore', () => {
     expect(store.sortedSwaps).toHaveLength(0);
     await store.fetchSwaps();
     expect(store.sortedSwaps).toHaveLength(7);
+  });
+
+  it('should handle errors fetching channels', async () => {
+    grpcMock.unary.mockImplementationOnce(desc => {
+      if (desc.methodName === 'ListSwaps') throw new Error('test-err');
+      return undefined as any;
+    });
+    expect(rootStore.uiStore.alerts.size).toBe(0);
+    await store.fetchSwaps();
+    await waitFor(() => {
+      expect(rootStore.uiStore.alerts.size).toBe(1);
+      expect(values(rootStore.uiStore.alerts)[0].message).toBe('test-err');
+    });
   });
 
   it('should update existing swaps with the same id', async () => {

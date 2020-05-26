@@ -107,11 +107,5 @@ describe('SwapWizard component', () => {
       const { getByText } = render();
       expect(getByText('Configuring Loops')).toBeInTheDocument();
     });
-
-    it('should display an error message', () => {
-      store.buildSwapStore.swapError = new Error('error-test');
-      const { getByText } = render();
-      expect(getByText('error-test')).toBeInTheDocument();
-    });
   });
 });
