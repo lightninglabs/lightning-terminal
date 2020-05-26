@@ -27,3 +27,10 @@ export enum BuildSwapSteps {
   ReviewQuote = 3,
   Processing = 4,
 }
+
+export interface Alert {
+  id: number;
+  type: 'info' | 'success' | 'warning' | 'error' | 'default';
+  title?: string;
+  message: string;
+}

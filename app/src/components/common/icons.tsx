@@ -22,6 +22,7 @@ interface IconProps {
 const Icon = styled.span<IconProps>`
   display: inline-block;
   padding: 6px;
+  transition: all 0.3s;
 
   ${props =>
     props.onClick &&
