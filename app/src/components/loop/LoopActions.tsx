@@ -55,7 +55,6 @@ const LoopActions: React.FC = () => {
             primary={inferredDirection === SwapDirection.OUT}
             borderless
             onClick={handleLoopOut}
-            disabled={selectedCount === 0}
           >
             Loop out
           </Button>
@@ -63,7 +62,6 @@ const LoopActions: React.FC = () => {
             primary={inferredDirection === SwapDirection.IN}
             borderless
             onClick={handleLoopIn}
-            disabled={selectedCount === 0}
           >
             Loop in
           </Button>
