@@ -2,7 +2,7 @@ import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
-import { Column, Row } from 'components/common/grid';
+import { Column, Row } from 'components/base';
 import Tile from 'components/common/Tile';
 import Unit from 'components/common/Unit';
 import { styled } from 'components/theme';

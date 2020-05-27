@@ -1,6 +1,6 @@
 import React from 'react';
 import { styled } from 'components/theme';
-import { Dot } from './icons';
+import { Dot } from '../base';
 
 const Styled = {
   DotIcon: styled(Dot)`

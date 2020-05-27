@@ -1,8 +1,7 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { useStore } from 'store';
-import { Background } from 'components/common/base';
-import { Menu } from 'components/common/icons';
+import { Background, Menu } from 'components/base';
 import { styled } from 'components/theme';
 import Sidebar from './Sidebar';
 

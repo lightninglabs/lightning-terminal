@@ -2,7 +2,7 @@ import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
-import { HeaderFour } from 'components/common/text';
+import { HeaderFour } from 'components/base';
 import { styled } from 'components/theme';
 
 const Styled = {

@@ -3,8 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { SwapDirection } from 'types/state';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
-import { Button, Pill } from 'components/common/base';
-import { Close, Refresh } from 'components/common/icons';
+import { Button, Close, Pill, Refresh } from 'components/base';
 import { styled } from 'components/theme';
 
 const Styled = {

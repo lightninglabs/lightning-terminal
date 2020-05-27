@@ -3,8 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { styled } from 'components/theme';
-import { ArrowLeft, Clock, Download } from './icons';
-import { HeaderThree } from './text';
+import { ArrowLeft, Clock, Download, HeaderThree } from '../base';
 import Tip from './Tip';
 
 const Styled = {

@@ -1,6 +1,6 @@
 import React, { ChangeEvent, useCallback } from 'react';
 import { styled } from 'components/theme';
-import { RangeInput } from './base';
+import { RangeInput } from '../base';
 import Radio from './Radio';
 import Unit from './Unit';
 

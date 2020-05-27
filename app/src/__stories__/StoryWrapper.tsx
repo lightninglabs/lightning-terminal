@@ -4,7 +4,7 @@ import { BalanceMode, Unit } from 'util/constants';
 import { sampleApiResponses } from 'util/tests/sampleData';
 import { createStore, StoreProvider } from 'store';
 import { PersistentSettings } from 'store/stores/settingsStore';
-import { Background } from 'components/common/base';
+import { Background } from 'components/base';
 import { ThemeProvider } from 'components/theme';
 
 // mock the GRPC client to return sample data instead of making an actual request

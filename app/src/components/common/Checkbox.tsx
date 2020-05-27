@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { styled } from 'components/theme';
-import { Check } from './icons';
+import { Check } from '../base';
 
 const Styled = {
   Box: styled.span<{ disabled?: boolean }>`

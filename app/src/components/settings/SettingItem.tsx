@@ -1,7 +1,6 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
-import { RadioButton } from 'components/common/base';
-import { ArrowRight } from 'components/common/icons';
+import { ArrowRight, RadioButton } from 'components/base';
 import { styled } from 'components/theme';
 
 const Styled = {

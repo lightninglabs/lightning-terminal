@@ -3,7 +3,7 @@ import { AutoSizer, List, WindowScroller } from 'react-virtualized';
 import { observer, Observer } from 'mobx-react-lite';
 import styled from '@emotion/styled';
 import { useStore } from 'store';
-import { ListContainer } from 'components/common/base';
+import { ListContainer } from 'components/base';
 import HistoryRow, { HistoryRowHeader, ROW_HEIGHT } from './HistoryRow';
 
 const Styled = {
