@@ -1,5 +1,6 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
+import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Column, Row } from 'components/common/grid';
 import { Small } from 'components/common/text';
@@ -20,12 +21,14 @@ const Styled = {
 };
 
 const LoopHistory: React.FC = () => {
-  const store = useStore();
+  const { l } = usePrefixedTranslation('cmps.loop.LoopHistory');
+  const { swapStore } = useStore();
 
   const { RightColumn, SmallText } = Styled;
   return (
     <>
-      {store.swapStore.lastTwoSwaps.map(swap => (
+      {swapStore.lastTwoSwaps.length === 0 && <Small>{l('emptyMsg')}</Small>}
+      {swapStore.lastTwoSwaps.map(swap => (
         <Row key={swap.id}>
           <Column cols={6}>
             <SwapDot swap={swap} />

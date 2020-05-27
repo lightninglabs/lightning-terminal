@@ -19,6 +19,7 @@
   "cmps.loop.ChannelRowHeader.capacity": "Capacity",
   "cmps.loop.LoopActions.channelsSelected": "channels selected",
   "cmps.loop.LoopPage.pageTitle": "Lightning Loop",
+  "cmps.loop.LoopHistory.emptyMsg": "After performing swaps, you will see ongoing loops and history here.",
   "cmps.loop.LoopTiles.history": "Loop History",
   "cmps.loop.LoopTiles.inbound": "Total Inbound Liquidity",
   "cmps.loop.LoopTiles.outbound": "Total Outbound Liquidity",
