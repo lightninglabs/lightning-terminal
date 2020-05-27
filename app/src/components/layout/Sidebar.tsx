@@ -5,7 +5,7 @@ import NavMenu from './NavMenu';
 
 const Styled = {
   Wrapper: styled.div`
-    padding-top: 75px;
+    padding-top: 95px;
   `,
 };
 

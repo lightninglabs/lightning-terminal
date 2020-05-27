@@ -18,6 +18,7 @@ export interface Theme {
     };
   };
   sizes: {
+    xxs: string;
     xs: string;
     s: string;
     m: string;
@@ -56,6 +57,7 @@ const theme: Theme = {
     },
   },
   sizes: {
+    xxs: '11px',
     xs: '14px',
     s: '16px',
     m: '18px',

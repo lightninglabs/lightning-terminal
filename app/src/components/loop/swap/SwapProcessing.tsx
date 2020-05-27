@@ -2,7 +2,6 @@ import React from 'react';
 import { observer } from 'mobx-react-lite';
 import loadingJson from 'assets/animations/loading.json';
 import { usePrefixedTranslation } from 'hooks';
-import { useStore } from 'store';
 import Animation from 'components/common/Animation';
 import { HeaderFour } from 'components/common/text';
 import { styled } from 'components/theme';
@@ -22,26 +21,18 @@ const Styled = {
   LoadingMessage: styled.div`
     text-align: center;
   `,
-  ErrorMessage: styled.div`
-    padding: 10px;
-    color: red;
-  `,
 };
 
 const SwapProcessingStep: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.swap.SwapProcessingStep');
-  const { buildSwapStore } = useStore();
 
-  const { Wrapper, Loader, LoadingMessage, ErrorMessage } = Styled;
+  const { Wrapper, Loader, LoadingMessage } = Styled;
   return (
     <Wrapper>
       <Loader animationData={loadingJson} loop />
       <LoadingMessage>
         <HeaderFour>{l('loadingMsg')}</HeaderFour>
       </LoadingMessage>
-      {buildSwapStore.swapError && (
-        <ErrorMessage>{buildSwapStore.swapError.message}</ErrorMessage>
-      )}
     </Wrapper>
   );
 };

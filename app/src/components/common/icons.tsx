@@ -22,6 +22,7 @@ interface IconProps {
 const Icon = styled.span<IconProps>`
   display: inline-block;
   padding: 6px;
+  transition: all 0.3s;
 
   ${props =>
     props.onClick &&
@@ -29,7 +30,8 @@ const Icon = styled.span<IconProps>`
     border-radius: 36px;
     cursor: pointer;
     &:hover {
-      background-color: ${props.theme.colors.purple};
+      color: ${props.theme.colors.blue};
+      background-color: ${props.theme.colors.offWhite}; 
     }
   `}
 

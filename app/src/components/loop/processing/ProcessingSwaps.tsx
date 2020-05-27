@@ -6,6 +6,7 @@ import { useStore } from 'store';
 import Animation from 'components/common/Animation';
 import { Minimize } from 'components/common/icons';
 import { HeaderFour } from 'components/common/text';
+import Tip from 'components/common/Tip';
 import { styled } from 'components/theme';
 import ProcessingSwapRow from './ProcessingSwapRow';
 
@@ -23,16 +24,6 @@ const Styled = {
     display: flex;
     justify-content: space-between;
     margin-bottom: 20px;
-  `,
-  MinimizeIcon: styled(Minimize)`
-    display: inline-block;
-    padding: 4px;
-    cursor: pointer;
-
-    &:hover {
-      border-radius: 24px;
-      background-color: ${props => props.theme.colors.purple};
-    }
   `,
   Content: styled.div`
     display: flex;
@@ -53,12 +44,14 @@ const ProcessingSwaps: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.processing.ProcessingSwaps');
   const { swapStore, uiStore } = useStore();
 
-  const { Wrapper, Header, MinimizeIcon, Content, Complete, ConfirmAnimation } = Styled;
+  const { Wrapper, Header, Content, Complete, ConfirmAnimation } = Styled;
   return (
     <Wrapper>
       <Header>
         <HeaderFour>{l('title')}</HeaderFour>
-        <MinimizeIcon onClick={uiStore.toggleProcessingSwaps} />
+        <Tip overlay={l('minimizeTip')}>
+          <Minimize onClick={uiStore.toggleProcessingSwaps} />
+        </Tip>
       </Header>
       <Content>
         {swapStore.processingSwaps.map(swap => (

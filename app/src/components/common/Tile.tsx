@@ -1,7 +1,9 @@
 import React, { ReactNode } from 'react';
+import { usePrefixedTranslation } from 'hooks';
 import { styled } from 'components/theme';
 import { Maximize } from './icons';
 import { HeaderFour } from './text';
+import Tip from './Tip';
 
 const Styled = {
   TileWrap: styled.div`
@@ -19,11 +21,9 @@ const Styled = {
     height: 20px;
     padding: 4px;
     margin-top: -5px;
-    cursor: pointer;
 
     &:hover {
       border-radius: 24px;
-      background-color: ${props => props.theme.colors.purple};
     }
   `,
   Text: styled.div`
@@ -52,13 +52,18 @@ interface Props {
 }
 
 const Tile: React.FC<Props> = ({ title, text, onMaximizeClick, children }) => {
-  const { TileWrap, Header, MaximizeIcon, Text } = Styled;
+  const { l } = usePrefixedTranslation('cmps.common.Tile');
 
+  const { TileWrap, Header, MaximizeIcon, Text } = Styled;
   return (
     <TileWrap>
       <Header>
         <HeaderFour marginless>{title}</HeaderFour>
-        {onMaximizeClick && <MaximizeIcon title="maximize" onClick={onMaximizeClick} />}
+        {onMaximizeClick && (
+          <Tip overlay={l('maximizeTip')}>
+            <MaximizeIcon onClick={onMaximizeClick} />
+          </Tip>
+        )}
       </Header>
       {text ? <Text>{text}</Text> : children}
     </TileWrap>

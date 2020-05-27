@@ -1,4 +1,5 @@
-import { action, observable } from 'mobx';
+import { action, observable, toJS } from 'mobx';
+import { Alert } from 'types/state';
 import { Store } from 'store';
 
 type PageName = 'loop' | 'history' | 'settings';
@@ -14,6 +15,8 @@ export default class UiStore {
   @observable processingSwapsVisible = false;
   /** the selected setting on the Settings page */
   @observable selectedSetting: SettingName = 'general';
+  /** a collection of alerts to display as toasts */
+  @observable alerts = observable.map<number, Alert>();
 
   constructor(store: Store) {
     this._store = store;
@@ -51,5 +54,22 @@ export default class UiStore {
   @action.bound
   showSettings(name: SettingName) {
     this.selectedSetting = name;
+    this._store.log.info('Switch to Setting screen', name);
+  }
+
+  /** adds a alert to the store */
+  @action.bound
+  notify(message: string, title?: string) {
+    const alert: Alert = { id: Date.now(), type: 'error', message, title };
+    this.alerts.set(alert.id, alert);
+    this._store.log.info('Added alert', toJS(this.alerts));
+    this._store.log.error(`[${title}] ${message}`);
+  }
+
+  /** removes an existing alert */
+  @action.bound
+  clearAlert(id: number) {
+    this.alerts.delete(id);
+    this._store.log.info('Cleared alert', id, toJS(this.alerts));
   }
 }

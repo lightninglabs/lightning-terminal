@@ -1,12 +1,16 @@
 import { observable, ObservableMap, values } from 'mobx';
+import { grpc } from '@improbable-eng/grpc-web';
+import { waitFor } from '@testing-library/react';
 import { BalanceMode } from 'util/constants';
 import { lndListChannels } from 'util/tests/sampleData';
-import { createStore, SettingsStore } from 'store';
+import { createStore, Store } from 'store';
 import Channel from 'store/models/channel';
 import ChannelStore from 'store/stores/channelStore';
 
+const grpcMock = grpc as jest.Mocked<typeof grpc>;
+
 describe('ChannelStore', () => {
-  let settingsStore: SettingsStore;
+  let rootStore: Store;
   let store: ChannelStore;
 
   const channelSubset = (channels: ObservableMap<string, Channel>) => {
@@ -20,15 +24,27 @@ describe('ChannelStore', () => {
   };
 
   beforeEach(() => {
-    const rootStore = createStore();
+    rootStore = createStore();
     store = rootStore.channelStore;
-    settingsStore = rootStore.settingsStore;
   });
 
   it('should fetch list of channels', async () => {
     expect(store.channels.size).toEqual(0);
     await store.fetchChannels();
     expect(store.channels.size).toEqual(lndListChannels.channelsList.length);
+  });
+
+  it('should handle errors fetching channels', async () => {
+    grpcMock.unary.mockImplementationOnce(desc => {
+      if (desc.methodName === 'ListChannels') throw new Error('test-err');
+      return undefined as any;
+    });
+    expect(rootStore.uiStore.alerts.size).toBe(0);
+    await store.fetchChannels();
+    await waitFor(() => {
+      expect(rootStore.uiStore.alerts.size).toBe(1);
+      expect(values(rootStore.uiStore.alerts)[0].message).toBe('test-err');
+    });
   });
 
   it('should update existing channels with the same id', async () => {
@@ -47,7 +63,7 @@ describe('ChannelStore', () => {
 
   it('should sort channels correctly when using receive mode', async () => {
     await store.fetchChannels();
-    settingsStore.setBalanceMode(BalanceMode.receive);
+    rootStore.settingsStore.setBalanceMode(BalanceMode.receive);
     store.channels = channelSubset(store.channels);
     store.sortedChannels.forEach((c, i) => {
       if (i === 0) return;
@@ -59,7 +75,7 @@ describe('ChannelStore', () => {
 
   it('should sort channels correctly when using send mode', async () => {
     await store.fetchChannels();
-    settingsStore.setBalanceMode(BalanceMode.send);
+    rootStore.settingsStore.setBalanceMode(BalanceMode.send);
     store.channels = channelSubset(store.channels);
     store.sortedChannels.forEach((c, i) => {
       if (i === 0) return;
@@ -71,7 +87,7 @@ describe('ChannelStore', () => {
 
   it('should sort channels correctly when using routing mode', async () => {
     await store.fetchChannels();
-    settingsStore.setBalanceMode(BalanceMode.routing);
+    rootStore.settingsStore.setBalanceMode(BalanceMode.routing);
     store.channels = channelSubset(store.channels);
     store.sortedChannels.forEach((c, i) => {
       if (i === 0) return;

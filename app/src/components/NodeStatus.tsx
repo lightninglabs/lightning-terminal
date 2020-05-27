@@ -4,6 +4,7 @@ import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { HeaderFour, Jumbo, Small } from 'components/common/text';
 import { Bitcoin, Bolt } from './common/icons';
+import Tip from './common/Tip';
 import Unit from './common/Unit';
 import { styled } from './theme';
 
@@ -31,18 +32,22 @@ const NodeStatus: React.FC = () => {
   return (
     <Wrapper>
       <HeaderFour>{l('title')}</HeaderFour>
-      <Jumbo>
-        <Balance>
-          <Bolt title="bolt" size="small" />
-          <Unit sats={nodeStore.wallet.channelBalance} />
-        </Balance>
-      </Jumbo>
-      <Small>
-        <Balance>
-          <Bitcoin title="bitcoin" size="small" />
-          <Unit sats={nodeStore.wallet.walletBalance} suffix={false} />
-        </Balance>
-      </Small>
+      <Tip overlay={l('offchainTip')}>
+        <Jumbo>
+          <Balance>
+            <Bolt title="bolt" size="small" />
+            <Unit sats={nodeStore.wallet.channelBalance} />
+          </Balance>
+        </Jumbo>
+      </Tip>
+      <Tip overlay={l('onchainTip')}>
+        <Small>
+          <Balance>
+            <Bitcoin title="bitcoin" size="small" />
+            <Unit sats={nodeStore.wallet.walletBalance} suffix={false} />
+          </Balance>
+        </Small>
+      </Tip>
       <Divider />
     </Wrapper>
   );

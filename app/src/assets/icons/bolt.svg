@@ -10,7 +10,7 @@
                     <use xlink:href="#path-bolt"></use>
                 </mask>
                 <use fill="#000000" fill-rule="nonzero" xlink:href="#path-bolt"></use>
-                <g mask="url(#mask-bolt)" fill="#F5406E">
+                <g mask="url(#mask-bolt)" fill="currentColor">
                     <rect x="0" y="0" width="10.3" height="10.3"></rect>
                 </g>
             </g>

@@ -9,16 +9,16 @@ describe('Layout component', () => {
   };
 
   it('should display the hamburger menu', () => {
-    const { getByTitle } = render();
-    expect(getByTitle('menu')).toBeInTheDocument();
+    const { getByText } = render();
+    expect(getByText('menu.svg')).toBeInTheDocument();
   });
 
   it('should toggle collapsed state', () => {
-    const { getByTitle, store } = render();
+    const { getByText, store } = render();
     expect(store.settingsStore.sidebarVisible).toBe(true);
-    fireEvent.click(getByTitle('menu'));
+    fireEvent.click(getByText('menu.svg'));
     expect(store.settingsStore.sidebarVisible).toBe(false);
-    fireEvent.click(getByTitle('menu'));
+    fireEvent.click(getByText('menu.svg'));
     expect(store.settingsStore.sidebarVisible).toBe(true);
   });
 

@@ -32,10 +32,12 @@
     "mobx": "5.15.4",
     "mobx-react-lite": "2.0.6",
     "mobx-utils": "5.5.7",
+    "rc-tooltip": "4.2.0",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-i18next": "11.4.0",
     "react-scripts": "3.4.1",
+    "react-toastify": "6.0.5",
     "react-virtualized": "^9.21.2"
   },
   "devDependencies": {

@@ -1,8 +1,10 @@
 import React, { ReactNode } from 'react';
 import { observer } from 'mobx-react-lite';
 import { BuildSwapSteps } from 'types/state';
+import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { ArrowLeft } from 'components/common/icons';
+import Tip from 'components/common/Tip';
 import { styled } from 'components/theme';
 import SwapConfigStep from './SwapConfigStep';
 import SwapProcessingStep from './SwapProcessing';
@@ -29,6 +31,8 @@ const Styled = {
 };
 
 const SwapWizard: React.FC = () => {
+  const { l } = usePrefixedTranslation('cmps.loop.swap.SwapWizard');
+
   const { buildSwapStore } = useStore();
 
   let cmp: ReactNode;
@@ -50,7 +54,9 @@ const SwapWizard: React.FC = () => {
   return (
     <Wrapper>
       <Nav>
-        <ArrowLeft onClick={buildSwapStore.goToPrevStep} />
+        <Tip overlay={l('backTip')}>
+          <ArrowLeft onClick={buildSwapStore.goToPrevStep} />
+        </Tip>
       </Nav>
       <Content>{cmp}</Content>
     </Wrapper>

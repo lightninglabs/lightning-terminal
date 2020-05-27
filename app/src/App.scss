@@ -14,6 +14,12 @@
 @import '../node_modules/bootstrap/scss/grid';
 @import '../node_modules/bootstrap/scss/custom-forms';
 
+// rc-tooltip component styles
+@import '../node_modules/rc-tooltip/assets/bootstrap_white.css';
+
+// react-toastify styles
+@import '../node_modules/react-toastify/dist/ReactToastify.css';
+
 @font-face {
   font-family: 'OpenSans Light';
   src: url('./assets/fonts/OpenSans-Light.ttf') format('truetype');
