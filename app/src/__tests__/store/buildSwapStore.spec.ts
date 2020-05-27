@@ -2,7 +2,6 @@ import { values } from 'mobx';
 import { SwapDirection } from 'types/state';
 import { grpc } from '@improbable-eng/grpc-web';
 import { waitFor } from '@testing-library/react';
-import * as config from 'config';
 import { injectIntoGrpcUnary } from 'util/tests';
 import { BuildSwapStore, createStore, Store } from 'store';
 import { SWAP_ABORT_DELAY } from 'store/stores/buildSwapStore';
@@ -149,8 +148,8 @@ describe('BuildSwapStore', () => {
       deadline = (props.request.toObject() as any).swapPublicationDeadline;
     });
 
-    // run a loop in production and verify the deadline
-    Object.defineProperty(config, 'IS_PROD', { get: () => true });
+    // run a loop on mainnet and verify the deadline
+    rootStore.nodeStore.network = 'mainnet';
     store.requestSwap();
     await waitFor(() => expect(deadline).toBeGreaterThan(0));
 
@@ -159,8 +158,8 @@ describe('BuildSwapStore', () => {
       deadline = (props.request.toObject() as any).swapPublicationDeadline;
     });
 
-    // run a loop NOT in production and verify the deadline
-    Object.defineProperty(config, 'IS_PROD', { get: () => false });
+    // run a loop on regtest and verify the deadline
+    rootStore.nodeStore.network = 'regtest';
     store.requestSwap();
     await waitFor(() => expect(deadline).toEqual(0));
   });

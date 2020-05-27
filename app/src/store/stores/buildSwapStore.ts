@@ -1,4 +1,5 @@
 import { action, computed, observable, runInAction, toJS, values } from 'mobx';
+import { SwapResponse } from 'types/generated/loop_pb';
 import { BuildSwapSteps, Quote, SwapDirection, SwapTerms } from 'types/state';
 import { formatSats } from 'util/formatters';
 import { Store } from 'store';
@@ -326,11 +327,19 @@ class BuildSwapStore {
     );
     this.processingTimeout = setTimeout(async () => {
       try {
-        const chanIds = this.selectedChanIds.map(v => parseInt(v));
-        const res =
-          direction === SwapDirection.IN
-            ? await this._store.api.loop.loopIn(amount, quote, this.loopInLastHop)
-            : await this._store.api.loop.loopOut(amount, quote, chanIds);
+        let res: SwapResponse.AsObject;
+        if (direction === SwapDirection.IN) {
+          res = await this._store.api.loop.loopIn(amount, quote, this.loopInLastHop);
+        } else {
+          // on regtest, set the publication deadline to 0 for faster swaps, otherwise
+          // set it to 30 minutes in the future to reduce swap fees
+          const thirtyMins = 30 * 60 * 1000;
+          const deadline =
+            this._store.nodeStore.network === 'regtest' ? 0 : Date.now() + thirtyMins;
+          // convert the selected channel ids to numbers
+          const chanIds = this.selectedChanIds.map(v => parseInt(v));
+          res = await this._store.api.loop.loopOut(amount, quote, chanIds, deadline);
+        }
         this._store.log.info('completed loop', toJS(res));
         runInAction('requestSwapContinuation', () => {
           // hide the swap UI after it is complete

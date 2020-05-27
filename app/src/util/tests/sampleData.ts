@@ -7,7 +7,7 @@ import * as LOOP from 'types/generated/loop_pb';
 //
 
 export const lndGetInfo: LND.GetInfoResponse.AsObject = {
-  version: '0.9.0-beta commit=v0.9.0-beta',
+  version: '0.10.0-beta commit=v0.10.0-beta',
   identityPubkey: '038b3fc29cfc195c9b190d86ad2d40ce7550a5c6f13941f53c7d7ac5b25c912a6c',
   alias: 'alice',
   color: '#cccccc',

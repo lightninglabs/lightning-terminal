@@ -1,7 +1,7 @@
 import * as LOOP from 'types/generated/loop_pb';
 import { SwapClient } from 'types/generated/loop_pb_service';
 import { Quote } from 'types/state';
-import { IS_PROD } from 'config';
+
 import GrpcClient from './grpc';
 
 /**
@@ -89,6 +89,7 @@ class LoopApi {
     amount: number,
     quote: Quote,
     chanIds: number[],
+    deadline: number,
   ): Promise<LOOP.SwapResponse.AsObject> {
     const req = new LOOP.LoopOutRequest();
     req.setAmt(amount);
@@ -98,15 +99,7 @@ class LoopApi {
     req.setMaxSwapRoutingFee(this._calcRoutingFee(quote.swapFee));
     req.setMaxPrepayRoutingFee(this._calcRoutingFee(quote.prepayAmount));
     req.setOutgoingChanSetList(chanIds);
-
-    if (IS_PROD) {
-      // in prod env, push the deadline out for 30 mins for lower fees
-      const thirtyMins = 30 * 60 * 1000;
-      req.setSwapPublicationDeadline(Date.now() + thirtyMins);
-    } else {
-      // use the --fast option in dev env
-      req.setSwapPublicationDeadline(0);
-    }
+    req.setSwapPublicationDeadline(deadline);
 
     const res = await this._grpc.request(SwapClient.LoopOut, req, this._meta);
     return res.toObject();
