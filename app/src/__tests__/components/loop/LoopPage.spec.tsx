@@ -93,7 +93,7 @@ describe('LoopPage component', () => {
       const { getByText } = render();
       expect(getByText('Loop')).toBeInTheDocument();
       fireEvent.click(getByText('Loop'));
-      store.channelStore.sortedChannels.slice(0, 3).forEach(c => {
+      store.channelStore.sortedChannels.slice(0, 1).forEach(c => {
         store.buildSwapStore.toggleSelectedChannel(c.chanId);
       });
       fireEvent.click(getByText('Loop in'));
@@ -104,7 +104,7 @@ describe('LoopPage component', () => {
       const { getByText } = render();
       expect(getByText('Loop')).toBeInTheDocument();
       fireEvent.click(getByText('Loop'));
-      store.channelStore.sortedChannels.slice(0, 3).forEach(c => {
+      store.channelStore.sortedChannels.slice(0, 1).forEach(c => {
         store.buildSwapStore.toggleSelectedChannel(c.chanId);
       });
       fireEvent.click(getByText('Loop in'));

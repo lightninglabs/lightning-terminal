@@ -18,6 +18,7 @@
   "cmps.loop.ChannelRowHeader.peer": "Peer/Alias",
   "cmps.loop.ChannelRowHeader.capacity": "Capacity",
   "cmps.loop.LoopActions.channelsSelected": "channels selected",
+  "cmps.loop.LoopActions.loopInNote": "For multi Loop In, all channels must use the same peer.",
   "cmps.loop.LoopPage.pageTitle": "Lightning Loop",
   "cmps.loop.LoopHistory.emptyMsg": "After performing swaps, you will see ongoing loops and history here.",
   "cmps.loop.LoopTiles.history": "Loop History",

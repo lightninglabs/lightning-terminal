@@ -2,6 +2,7 @@ import { action, computed, observable, runInAction, toJS, values } from 'mobx';
 import { BuildSwapSteps, Quote, SwapDirection, SwapTerms } from 'types/state';
 import { formatSats } from 'util/formatters';
 import { Store } from 'store';
+import Channel from 'store/models/channel';
 
 // an artificial delay to allow the user to abort a swap before it executed
 export const SWAP_ABORT_DELAY = 3000;
@@ -122,6 +123,39 @@ class BuildSwapStore {
     return avgPct < 50 ? SwapDirection.IN : SwapDirection.OUT;
   }
 
+  /**
+   * determines if Loop In is allowed, which is only true when the selected
+   * channels are using a single peer. If multiple peers are chosen, then
+   * Loop in should not be allowed
+   */
+  @computed
+  get loopInAllowed() {
+    if (this.selectedChanIds.length > 0) {
+      return this.loopInLastHop !== undefined;
+    }
+
+    return true;
+  }
+
+  /**
+   * Returns the unique peer pubkey of the selected channels. If no channels
+   * are selected OR the selected channels are using more than one peer, then
+   * undefined is returned
+   */
+  @computed
+  get loopInLastHop(): string | undefined {
+    const channels = this.selectedChanIds
+      .map(id => this._store.channelStore.channels.get(id))
+      .filter(c => !!c) as Channel[];
+    const peers = channels.reduce((peers, c) => {
+      if (!peers.includes(c.remotePubkey)) {
+        peers.push(c.remotePubkey);
+      }
+      return peers;
+    }, [] as string[]);
+    return peers.length === 1 ? peers[0] : undefined;
+  }
+
   //
   // Actions
   //
@@ -193,10 +227,6 @@ class BuildSwapStore {
    */
   @action.bound
   goToPrevStep() {
-    if (this.currentStep === BuildSwapSteps.ChooseAmount) {
-      this.cancel();
-      return;
-    }
     if (this.currentStep === BuildSwapSteps.Processing) {
       // if back is clicked on the processing step
       this.abortSwap();
@@ -299,7 +329,7 @@ class BuildSwapStore {
         const chanIds = this.selectedChanIds.map(v => parseInt(v));
         const res =
           direction === SwapDirection.IN
-            ? await this._store.api.loop.loopIn(amount, quote)
+            ? await this._store.api.loop.loopIn(amount, quote, this.loopInLastHop)
             : await this._store.api.loop.loopOut(amount, quote, chanIds);
         this._store.log.info('completed loop', toJS(res));
         runInAction('requestSwapContinuation', () => {

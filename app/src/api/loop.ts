@@ -68,11 +68,16 @@ class LoopApi {
   /**
    * call the Loop `LoopIn` RPC and return the response
    */
-  async loopIn(amount: number, quote: Quote): Promise<LOOP.SwapResponse.AsObject> {
+  async loopIn(
+    amount: number,
+    quote: Quote,
+    lastHop?: string,
+  ): Promise<LOOP.SwapResponse.AsObject> {
     const req = new LOOP.LoopInRequest();
     req.setAmt(amount);
     req.setMaxSwapFee(quote.swapFee);
     req.setMaxMinerFee(quote.minerFee);
+    if (lastHop) req.setLastHop(Buffer.from(lastHop, 'hex').toString('base64'));
     const res = await this._grpc.request(SwapClient.LoopIn, req, this._meta);
     return res.toObject();
   }

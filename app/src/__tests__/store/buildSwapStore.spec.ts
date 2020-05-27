@@ -108,6 +108,11 @@ describe('BuildSwapStore', () => {
   });
 
   it('should perform a loop in', async () => {
+    const channels = rootStore.channelStore.sortedChannels;
+    // the pubkey in the sampleData is not valid, so hard-code this valid one
+    channels[0].remotePubkey =
+      '035c82e14eb74d2324daa17eebea8c58b46a9eabac87191cc83ee26275b514e6a0';
+    store.toggleSelectedChannel(channels[0].chanId);
     store.setDirection(SwapDirection.IN);
     store.setAmount(600);
     store.requestSwap();
@@ -120,6 +125,8 @@ describe('BuildSwapStore', () => {
   });
 
   it('should perform a loop out', async () => {
+    const channels = rootStore.channelStore.sortedChannels;
+    store.toggleSelectedChannel(channels[0].chanId);
     store.setDirection(SwapDirection.OUT);
     store.setAmount(600);
     store.requestSwap();
