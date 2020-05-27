@@ -20,8 +20,8 @@ const renderStory = (
   },
 ) => {
   if (options && options.ratio) {
-    channel.localBalance = channel.capacity * options.ratio;
-    channel.remoteBalance = channel.capacity * (1 - options.ratio);
+    channel.localBalance = channel.capacity.mul(options.ratio);
+    channel.remoteBalance = channel.capacity.mul(1 - options.ratio);
   }
   return useObserver(() => (
     <div style={{ paddingTop: 50 }}>

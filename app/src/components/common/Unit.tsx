@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
+import Big from 'big.js';
 import { formatSats } from 'util/formatters';
 import { useStore } from 'store';
 
 interface Props {
-  sats: number;
+  sats: Big;
   suffix?: boolean;
 }
 

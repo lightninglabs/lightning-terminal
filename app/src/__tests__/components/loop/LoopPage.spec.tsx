@@ -38,7 +38,7 @@ describe('LoopPage component', () => {
   it('should display the liquidity numbers', async () => {
     const { getByText, store } = render();
     // wait for the channels to be fetched async before checking the UI labels
-    await waitFor(() => expect(store.channelStore.totalInbound).toBeGreaterThan(0));
+    await waitFor(() => expect(+store.channelStore.totalInbound).toBeGreaterThan(0));
     expect(getByText(formatSats(store.channelStore.totalInbound))).toBeInTheDocument();
     expect(getByText(formatSats(store.channelStore.totalOutbound))).toBeInTheDocument();
   });

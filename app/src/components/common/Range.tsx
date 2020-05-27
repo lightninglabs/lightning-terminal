@@ -1,4 +1,5 @@
 import React, { ChangeEvent, useCallback } from 'react';
+import Big from 'big.js';
 import { styled } from 'components/theme';
 import { RangeInput } from '../base';
 import Radio from './Radio';
@@ -18,18 +19,18 @@ const Styled = {
 };
 
 interface Props {
-  value?: number;
-  min?: number;
-  max?: number;
+  value?: Big;
+  min?: Big;
+  max?: Big;
   step?: number;
   showRadios?: boolean;
-  onChange?: (value: number) => void;
+  onChange?: (value: Big) => void;
 }
 
 const Range: React.FC<Props> = ({
-  value = 50,
-  min = 0,
-  max = 100,
+  value = Big(50),
+  min = Big(0),
+  max = Big(100),
   step = 1,
   showRadios,
   onChange,
@@ -37,7 +38,7 @@ const Range: React.FC<Props> = ({
   const handleMinClicked = useCallback(() => onChange && onChange(min), [min, onChange]);
   const handleMaxClicked = useCallback(() => onChange && onChange(max), [max, onChange]);
   const handleInputClicked = useCallback(
-    (e: ChangeEvent<HTMLInputElement>) => onChange && onChange(parseInt(e.target.value)),
+    (e: ChangeEvent<HTMLInputElement>) => onChange && onChange(Big(e.target.value)),
     [onChange],
   );
 
@@ -50,13 +51,13 @@ const Range: React.FC<Props> = ({
             text="Min"
             description={<Unit sats={min} />}
             onClick={handleMinClicked}
-            active={min === value}
+            active={min.eq(value)}
           />
           <Radio
             text="Max"
             description={<Unit sats={max} />}
             onClick={handleMaxClicked}
-            active={max === value}
+            active={max.eq(value)}
             right
           />
         </RadioGroup>
@@ -66,9 +67,9 @@ const Range: React.FC<Props> = ({
           aria-label="range-slider"
           className="custom-range"
           type="range"
-          value={value}
-          min={min}
-          max={max}
+          value={+value}
+          min={+min}
+          max={+max}
           step={step}
           onChange={handleInputClicked}
         />

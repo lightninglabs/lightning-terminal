@@ -2,6 +2,7 @@ import { values } from 'mobx';
 import * as LOOP from 'types/generated/loop_pb';
 import { grpc } from '@improbable-eng/grpc-web';
 import { waitFor } from '@testing-library/react';
+import Big from 'big.js';
 import { loopListSwaps } from 'util/tests/sampleData';
 import { createStore, Store, SwapStore } from 'store';
 
@@ -41,12 +42,12 @@ describe('SwapStore', () => {
     expect(store.swaps.size).toEqual(loopListSwaps.swapsList.length);
     const prevSwap = store.sortedSwaps[0];
     const prevAmount = prevSwap.amount;
-    prevSwap.amount = 123;
+    prevSwap.amount = Big(123);
     await store.fetchSwaps();
     const updatedSwap = store.sortedSwaps[0];
     // the existing swap should be updated
     expect(prevSwap).toBe(updatedSwap);
-    expect(updatedSwap.amount).toBe(prevAmount);
+    expect(updatedSwap.amount).toEqual(prevAmount);
   });
 
   it.each<[number, string]>([

@@ -1,22 +1,24 @@
+import Big from 'big.js';
+
 export enum SwapDirection {
   IN = 'Loop In',
   OUT = 'Loop Out',
 }
 
 export interface Quote {
-  swapFee: number;
-  minerFee: number;
-  prepayAmount: number;
+  swapFee: Big;
+  minerFee: Big;
+  prepayAmount: Big;
 }
 
 export interface SwapTerms {
   in: {
-    min: number;
-    max: number;
+    min: Big;
+    max: Big;
   };
   out: {
-    min: number;
-    max: number;
+    min: Big;
+    max: Big;
   };
 }
 

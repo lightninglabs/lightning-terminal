@@ -1,6 +1,7 @@
 import { observable, ObservableMap, values } from 'mobx';
 import { grpc } from '@improbable-eng/grpc-web';
 import { waitFor } from '@testing-library/react';
+import Big from 'big.js';
 import { BalanceMode } from 'util/constants';
 import { lndListChannels } from 'util/tests/sampleData';
 import { createStore, Store } from 'store';
@@ -53,12 +54,12 @@ describe('ChannelStore', () => {
     expect(store.channels.size).toEqual(lndListChannels.channelsList.length);
     const prevChan = store.sortedChannels[0];
     const prevUptime = prevChan.uptime;
-    prevChan.uptime = 123;
+    prevChan.uptime = Big(123);
     await store.fetchChannels();
     const updatedChan = store.sortedChannels[0];
     // the existing channel should be updated
     expect(prevChan).toBe(updatedChan);
-    expect(updatedChan.uptime).toBe(prevUptime);
+    expect(updatedChan.uptime).toEqual(prevUptime);
   });
 
   it('should sort channels correctly when using receive mode', async () => {
@@ -105,7 +106,7 @@ describe('ChannelStore', () => {
       0,
     );
 
-    expect(store.totalInbound).toBe(inbound);
+    expect(+store.totalInbound).toBe(inbound);
   });
 
   it('should compute outbound liquidity', async () => {
@@ -115,6 +116,6 @@ describe('ChannelStore', () => {
       0,
     );
 
-    expect(store.totalOutbound).toBe(outbound);
+    expect(+store.totalOutbound).toBe(outbound);
   });
 });

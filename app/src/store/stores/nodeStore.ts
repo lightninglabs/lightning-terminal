@@ -1,4 +1,5 @@
 import { action, observable, runInAction, toJS } from 'mobx';
+import Big from 'big.js';
 import { Store } from 'store';
 import { Wallet } from '../models';
 
@@ -57,8 +58,8 @@ export default class NodeStore {
       const offChain = await this._store.api.lnd.channelBalance();
       const onChain = await this._store.api.lnd.walletBalance();
       runInAction('fetchBalancesContinuation', () => {
-        this.wallet.channelBalance = offChain.balance;
-        this.wallet.walletBalance = onChain.totalBalance;
+        this.wallet.channelBalance = Big(offChain.balance);
+        this.wallet.walletBalance = Big(onChain.totalBalance);
         this._store.log.info('updated nodeStore.wallet', toJS(this.wallet));
       });
     } catch (error) {

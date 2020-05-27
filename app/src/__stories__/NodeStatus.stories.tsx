@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import Big from 'big.js';
 import { useStore } from 'store';
 import NodeStatus from 'components/NodeStatus';
 
@@ -12,7 +13,7 @@ export const Default = () => {
   const store = useStore();
   useEffect(() => {
     const { channelBalance, walletBalance } = store.nodeStore.wallet;
-    store.nodeStore.wallet = { channelBalance: 0, walletBalance: 0 };
+    store.nodeStore.wallet = { channelBalance: Big(0), walletBalance: Big(0) };
 
     // change back to sample data when the component is unmounted
     return () => {
