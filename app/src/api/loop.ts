@@ -80,7 +80,11 @@ class LoopApi {
   /**
    * call the Loop `LoopOut` RPC and return the response
    */
-  async loopOut(amount: number, quote: Quote): Promise<LOOP.SwapResponse.AsObject> {
+  async loopOut(
+    amount: number,
+    quote: Quote,
+    chanIds: number[],
+  ): Promise<LOOP.SwapResponse.AsObject> {
     const req = new LOOP.LoopOutRequest();
     req.setAmt(amount);
     req.setMaxSwapFee(quote.swapFee);
@@ -88,6 +92,7 @@ class LoopApi {
     req.setMaxPrepayAmt(quote.prepayAmount);
     req.setMaxSwapRoutingFee(this._calcRoutingFee(quote.swapFee));
     req.setMaxPrepayRoutingFee(this._calcRoutingFee(quote.prepayAmount));
+    req.setOutgoingChanSetList(chanIds);
 
     if (IS_PROD) {
       // in prod env, push the deadline out for 30 mins for lower fees

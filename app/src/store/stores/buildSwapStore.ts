@@ -296,10 +296,11 @@ class BuildSwapStore {
     );
     this.processingTimeout = setTimeout(async () => {
       try {
+        const chanIds = this.selectedChanIds.map(v => parseInt(v));
         const res =
           direction === SwapDirection.IN
             ? await this._store.api.loop.loopIn(amount, quote)
-            : await this._store.api.loop.loopOut(amount, quote);
+            : await this._store.api.loop.loopOut(amount, quote, chanIds);
         this._store.log.info('completed loop', toJS(res));
         runInAction('requestSwapContinuation', () => {
           // hide the swap UI after it is complete
