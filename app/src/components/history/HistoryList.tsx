@@ -23,26 +23,28 @@ const HistoryList: React.FC = () => {
         <AutoSizer disableHeight>
           {({ width }) => (
             <WindowScroller>
-              {({ height, isScrolling, onChildScroll, scrollTop }) => (
+              {({ height, isScrolling, onChildScroll, scrollTop, registerChild }) => (
                 <Observer>
                   {() => (
-                    <List
-                      autoHeight
-                      height={height}
-                      isScrolling={isScrolling}
-                      onScroll={onChildScroll}
-                      rowCount={swapStore.sortedSwaps.length}
-                      rowHeight={ROW_HEIGHT}
-                      rowRenderer={({ index, key, style }) => (
-                        <HistoryRow
-                          key={key}
-                          style={style}
-                          swap={swapStore.sortedSwaps[index]}
-                        />
-                      )}
-                      scrollTop={scrollTop}
-                      width={width}
-                    />
+                    <div ref={ref => ref && registerChild(ref)}>
+                      <List
+                        autoHeight
+                        height={height}
+                        isScrolling={isScrolling}
+                        onScroll={onChildScroll}
+                        rowCount={swapStore.sortedSwaps.length}
+                        rowHeight={ROW_HEIGHT}
+                        rowRenderer={({ index, key, style }) => (
+                          <HistoryRow
+                            key={key}
+                            style={style}
+                            swap={swapStore.sortedSwaps[index]}
+                          />
+                        )}
+                        scrollTop={scrollTop}
+                        width={width}
+                      />
+                    </div>
                   )}
                 </Observer>
               )}
