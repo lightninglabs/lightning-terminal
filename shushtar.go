@@ -3,6 +3,7 @@ package shushtar
 import (
 	"context"
 	"crypto/tls"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -30,9 +31,11 @@ import (
 	"github.com/rakyll/statik/fs"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 	"gopkg.in/macaroon.v2"
 
 	// Import generated go package that contains all static files for the
@@ -41,7 +44,6 @@ import (
 )
 
 const (
-	defaultHTTPSListen    = "127.0.0.1:8443"
 	defaultServerTimeout  = 10 * time.Second
 	defaultStartupTimeout = 5 * time.Second
 )
@@ -50,6 +52,10 @@ var (
 	// maxMsgRecvSize is the largest message our REST proxy will receive. We
 	// set this to 200MiB atm.
 	maxMsgRecvSize = grpc.MaxCallRecvMsgSize(1 * 1024 * 1024 * 200)
+
+	authError = status.Error(
+		codes.Unauthenticated, "authentication required",
+	)
 
 	lndDefaultConfig     = lnd.DefaultConfig()
 	faradayDefaultConfig = faraday.DefaultConfig()
@@ -100,6 +106,15 @@ func (g *Shushtar) Run() error {
 	_, err := flags.Parse(g.cfg)
 	if err != nil {
 		return err
+	}
+
+	err = readUIPassword(g.cfg)
+	if err != nil {
+		return fmt.Errorf("could not read UI password: %v", err)
+	}
+	if len(g.cfg.UIPassword) < uiPasswordMinLength {
+		return fmt.Errorf("please set a strong password for the UI, "+
+			"at least %d characters long", uiPasswordMinLength)
 	}
 
 	// Load the configuration, and parse any command line options. This
@@ -416,7 +431,7 @@ func (g *Shushtar) startGrpcWebProxy() error {
 	// admin macaroon and converts the browser's gRPC web calls into native
 	// gRPC.
 	lndGrpcServer, grpcServer, err := buildGrpcWebProxyServer(
-		g.lndAddr, g.cfg.Lnd,
+		g.lndAddr, g.cfg.UIPassword, g.cfg.Lnd,
 	)
 	if err != nil {
 		return fmt.Errorf("could not create gRPC web proxy: %v", err)
@@ -480,7 +495,7 @@ func (g *Shushtar) startGrpcWebProxy() error {
 // buildGrpcWebProxyServer creates a gRPC server that will serve gRPC web to the
 // browser and translate all incoming gRPC web calls into native gRPC that are
 // then forwarded to lnd's RPC interface.
-func buildGrpcWebProxyServer(lndAddr string,
+func buildGrpcWebProxyServer(lndAddr, uiPassword string,
 	config *lnd.Config) (*grpcweb.WrappedGrpcServer, *grpc.Server, error) {
 
 	// Apply gRPC-wide changes.
@@ -489,6 +504,13 @@ func buildGrpcWebProxyServer(lndAddr string,
 		config.LogWriter, GrpcLogSubsystem,
 	))
 
+	// The gRPC web calls are protected by HTTP basic auth which is defined
+	// by base64(username:password). Because we only have a password, we
+	// just use base64(password:password).
+	basicAuth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(
+		"%s:%s", uiPassword, uiPassword,
+	)))
+
 	// Setup the connection to lnd. GRPC web has a few kinks that need to be
 	// addressed with a custom director that just takes care of a few HTTP
 	// header fields.
@@ -496,7 +518,7 @@ func buildGrpcWebProxyServer(lndAddr string,
 	if err != nil {
 		return nil, nil, fmt.Errorf("could not dial lnd: %v", err)
 	}
-	director := newDirector(backendConn)
+	director := newDirector(backendConn, basicAuth)
 
 	// Set up the final gRPC server that will serve gRPC web to the browser
 	// and translate all incoming gRPC web calls into native gRPC that are
@@ -515,16 +537,30 @@ func buildGrpcWebProxyServer(lndAddr string,
 
 // newDirector returns a new director function that fixes some common known
 // issues when using gRPC web from the browser.
-func newDirector(backendConn *grpc.ClientConn) proxy.StreamDirector {
+func newDirector(backendConn *grpc.ClientConn,
+	basicAuth string) proxy.StreamDirector {
+
 	return func(ctx context.Context, fullMethodName string) (context.Context,
 		*grpc.ClientConn, error) {
 
 		md, _ := metadata.FromIncomingContext(ctx)
-		mdCopy := md.Copy()
+
+		authHeaders := md.Get("authorization")
+		if len(authHeaders) == 0 {
+			return nil, nil, authError
+		}
+		authHeaderParts := strings.Split(authHeaders[0], " ")
+		if len(authHeaderParts) != 2 {
+			return nil, nil, authError
+		}
+		if authHeaderParts[1] != basicAuth {
+			return nil, nil, authError
+		}
 
 		// If this header is present in the request from the web client,
 		// the actual connection to the backend will not be established.
 		// https://github.com/improbable-eng/grpc-web/issues/568
+		mdCopy := md.Copy()
 		delete(mdCopy, "connection")
 
 		outCtx := metadata.NewOutgoingContext(ctx, mdCopy)

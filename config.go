@@ -3,6 +3,7 @@ package shushtar
 import (
 	"crypto/tls"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -18,14 +19,23 @@ import (
 	"github.com/mwitkow/go-conntrack/connhelpers"
 )
 
+const (
+	defaultHTTPSListen = "127.0.0.1:8443"
+
+	uiPasswordMinLength = 8
+)
+
 // Config is the main configuration struct of shushtar. It contains all config
 // items of its enveloping subservers, each prefixed with their daemon's short
 // name.
 type Config struct {
-	HTTPSListen string          `long:"httpslisten" description:"host:port to listen for incoming HTTP/2 connections on"`
-	Lnd         *lnd.Config     `group:"lnd" namespace:"lnd"`
-	Faraday     *faraday.Config `group:"faraday" namespace:"faraday"`
-	Loop        *loopd.Config   `group:"loop" namespace:"loop"`
+	HTTPSListen    string          `long:"httpslisten" description:"host:port to listen for incoming HTTP/2 connections on"`
+	UIPassword     string          `long:"uipassword" description:"the password that must be entered when using the loop UI. use a strong password to protect your node from unauthorized access through the web UI"`
+	UIPasswordFile string          `long:"uipassword_file" description:"same as uipassword but instead of passing in the value directly, read the password from the specified file"`
+	UIPasswordEnv  string          `long:"uipassword_env" description:"same as uipassword but instead of passing in the value directly, read the password from the specified environment variable"`
+	Lnd            *lnd.Config     `group:"lnd" namespace:"lnd"`
+	Faraday        *faraday.Config `group:"faraday" namespace:"faraday"`
+	Loop           *loopd.Config   `group:"loop" namespace:"loop"`
 }
 
 // loadLndConfig loads and sanitizes the lnd main configuration and hooks up all
@@ -112,6 +122,45 @@ func getNetwork(cfg *lncfg.Chain) (string, error) {
 	default:
 		return "", fmt.Errorf("no network selected")
 	}
+}
+
+// readUIPassword reads the password for the UI either from the command line
+// flag, a file specified or an environment variable.
+func readUIPassword(config *Config) error {
+	// A password is passed in as a command line flag (or config file
+	// variable) directly.
+	if len(strings.TrimSpace(config.UIPassword)) > 0 {
+		config.UIPassword = strings.TrimSpace(config.UIPassword)
+		return nil
+	}
+
+	// A file that contains the password is specified.
+	if len(strings.TrimSpace(config.UIPasswordFile)) > 0 {
+		content, err := ioutil.ReadFile(strings.TrimSpace(
+			config.UIPasswordFile,
+		))
+		if err != nil {
+			return fmt.Errorf("could not read file %s: %v",
+				config.UIPasswordFile, err)
+		}
+		config.UIPassword = strings.TrimSpace(string(content))
+		return nil
+	}
+
+	// The name of an environment variable was specified.
+	if len(strings.TrimSpace(config.UIPasswordEnv)) > 0 {
+		content := os.Getenv(strings.TrimSpace(config.UIPasswordEnv))
+		if len(content) == 0 {
+			return fmt.Errorf("environment variable %s is empty",
+				config.UIPasswordEnv)
+		}
+		config.UIPassword = strings.TrimSpace(content)
+		return nil
+	}
+
+	return fmt.Errorf("mandatory password for UI not configured. specify " +
+		"either a password directly or a file or environment " +
+		"variable that contains the password")
 }
 
 func buildTLSConfigForHttp2(config *lnd.Config) (*tls.Config, error) {
