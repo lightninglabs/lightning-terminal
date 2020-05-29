@@ -17,12 +17,12 @@ import (
 	restProxy "github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/jessevdk/go-flags"
-	"github.com/lightninglabs/faraday"
 	"github.com/lightninglabs/faraday/frdrpc"
 	"github.com/lightninglabs/loop/lndclient"
 	"github.com/lightninglabs/loop/loopd"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/lightningnetwork/lnd"
+	"github.com/lightningnetwork/lnd/lncfg"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntest/wait"
 	"github.com/lightningnetwork/lnd/macaroons"
@@ -45,6 +45,7 @@ import (
 
 const (
 	defaultServerTimeout  = 10 * time.Second
+	defaultConnectTimeout = 5 * time.Second
 	defaultStartupTimeout = 5 * time.Second
 )
 
@@ -56,10 +57,6 @@ var (
 	authError = status.Error(
 		codes.Unauthenticated, "authentication required",
 	)
-
-	lndDefaultConfig     = lnd.DefaultConfig()
-	faradayDefaultConfig = faraday.DefaultConfig()
-	loopDefaultConfig    = loopd.DefaultConfig()
 )
 
 // Shushtar is the main grand unified binary instance. Its task is to start an
@@ -88,12 +85,7 @@ type Shushtar struct {
 // New creates a new instance of the shushtar daemon.
 func New() *Shushtar {
 	return &Shushtar{
-		cfg: &Config{
-			HTTPSListen: defaultHTTPSListen,
-			Lnd:         &lndDefaultConfig,
-			Faraday:     &faradayDefaultConfig,
-			Loop:        &loopDefaultConfig,
-		},
+		cfg:        defaultConfig(),
 		lndErrChan: make(chan error, 1),
 	}
 }
@@ -108,6 +100,11 @@ func (g *Shushtar) Run() error {
 		return err
 	}
 
+	// Validate the shushtar config options.
+	g.cfg.LetsEncryptDir = lncfg.CleanAndExpandPath(g.cfg.LetsEncryptDir)
+	if g.cfg.LetsEncrypt && g.cfg.LetsEncryptHost == "" {
+		return fmt.Errorf("host must be set when using let's encrypt")
+	}
 	err = readUIPassword(g.cfg)
 	if err != nil {
 		return fmt.Errorf("could not read UI password: %v", err)
@@ -472,7 +469,7 @@ func (g *Shushtar) startGrpcWebProxy() error {
 		return fmt.Errorf("unable to listen on %v: %v",
 			g.cfg.HTTPSListen, err)
 	}
-	tlsConfig, err := buildTLSConfigForHttp2(g.cfg.Lnd)
+	tlsConfig, err := buildTLSConfigForHttp2(g.cfg)
 	if err != nil {
 		return fmt.Errorf("unable to create TLS config: %v", err)
 	}
@@ -590,7 +587,7 @@ func dialLnd(lndAddr string, config *lnd.Config) (*grpc.ClientConn, error) {
 		grpc.WithDefaultCallOptions(maxMsgRecvSize),
 		grpc.WithConnectParams(grpc.ConnectParams{
 			Backoff:           backoff.DefaultConfig,
-			MinConnectTimeout: 5 * time.Second,
+			MinConnectTimeout: defaultConnectTimeout,
 		}),
 	}
 

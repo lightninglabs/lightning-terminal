@@ -2,9 +2,11 @@ package shushtar
 
 import (
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -17,6 +19,7 @@ import (
 	"github.com/lightningnetwork/lnd/cert"
 	"github.com/lightningnetwork/lnd/lncfg"
 	"github.com/mwitkow/go-conntrack/connhelpers"
+	"golang.org/x/crypto/acme/autocert"
 )
 
 const (
@@ -25,17 +28,41 @@ const (
 	uiPasswordMinLength = 8
 )
 
+var (
+	lndDefaultConfig     = lnd.DefaultConfig()
+	faradayDefaultConfig = faraday.DefaultConfig()
+	loopDefaultConfig    = loopd.DefaultConfig()
+
+	defaultLetsEncryptDir = filepath.Join(lnd.DefaultLndDir, "letsencrypt")
+)
+
 // Config is the main configuration struct of shushtar. It contains all config
 // items of its enveloping subservers, each prefixed with their daemon's short
 // name.
 type Config struct {
-	HTTPSListen    string          `long:"httpslisten" description:"host:port to listen for incoming HTTP/2 connections on"`
-	UIPassword     string          `long:"uipassword" description:"the password that must be entered when using the loop UI. use a strong password to protect your node from unauthorized access through the web UI"`
-	UIPasswordFile string          `long:"uipassword_file" description:"same as uipassword but instead of passing in the value directly, read the password from the specified file"`
-	UIPasswordEnv  string          `long:"uipassword_env" description:"same as uipassword but instead of passing in the value directly, read the password from the specified environment variable"`
-	Lnd            *lnd.Config     `group:"lnd" namespace:"lnd"`
-	Faraday        *faraday.Config `group:"faraday" namespace:"faraday"`
-	Loop           *loopd.Config   `group:"loop" namespace:"loop"`
+	HTTPSListen    string `long:"httpslisten" description:"host:port to listen for incoming HTTP/2 connections on"`
+	UIPassword     string `long:"uipassword" description:"the password that must be entered when using the loop UI. use a strong password to protect your node from unauthorized access through the web UI"`
+	UIPasswordFile string `long:"uipassword_file" description:"same as uipassword but instead of passing in the value directly, read the password from the specified file"`
+	UIPasswordEnv  string `long:"uipassword_env" description:"same as uipassword but instead of passing in the value directly, read the password from the specified environment variable"`
+
+	LetsEncrypt     bool   `long:"letsencrypt" description:"use Let's Encrypt to create a TLS certificate for the UI instead of using lnd's TLS certificate. port 80 must be free to listen on and must be reachable from the internet for this to work"`
+	LetsEncryptHost string `long:"letsencrypthost" description:"the host name to create a Let's Encrypt certificate for'"`
+	LetsEncryptDir  string `long:"letsencryptdir" description:"the directory where the Let's Encrypt library will store its key and certificate"`
+
+	Lnd     *lnd.Config     `group:"lnd" namespace:"lnd"`
+	Faraday *faraday.Config `group:"faraday" namespace:"faraday"`
+	Loop    *loopd.Config   `group:"loop" namespace:"loop"`
+}
+
+// defaultConfig returns a configuration struct with all default values set.
+func defaultConfig() *Config {
+	return &Config{
+		HTTPSListen:    defaultHTTPSListen,
+		LetsEncryptDir: defaultLetsEncryptDir,
+		Lnd:            &lndDefaultConfig,
+		Faraday:        &faradayDefaultConfig,
+		Loop:           &loopDefaultConfig,
+	}
 }
 
 // loadLndConfig loads and sanitizes the lnd main configuration and hooks up all
@@ -163,18 +190,57 @@ func readUIPassword(config *Config) error {
 		"variable that contains the password")
 }
 
-func buildTLSConfigForHttp2(config *lnd.Config) (*tls.Config, error) {
-	tlsCert, _, err := cert.LoadCert(config.TLSCertPath, config.TLSKeyPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed reading TLS server keys: %v",
-			err)
+func buildTLSConfigForHttp2(config *Config) (*tls.Config, error) {
+	var tlsConfig *tls.Config
+
+	switch {
+	case config.LetsEncrypt:
+		serverName := config.LetsEncryptHost
+		if serverName == "" {
+			return nil, errors.New("let's encrypt host name " +
+				"option is required for using let's encrypt")
+		}
+
+		log.Infof("Setting up Let's Encrypt for server %v", serverName)
+
+		certDir := config.LetsEncryptDir
+		log.Infof("Setting up Let's Encrypt with cache dir %v", certDir)
+
+		manager := autocert.Manager{
+			Cache:      autocert.DirCache(certDir),
+			Prompt:     autocert.AcceptTOS,
+			HostPolicy: autocert.HostWhitelist(serverName),
+		}
+
+		go func() {
+			err := http.ListenAndServe(
+				":http", manager.HTTPHandler(nil),
+			)
+			if err != nil {
+				log.Errorf("Error starting Let's Encrypt "+
+					"HTTP listener on port 80: %v", err)
+			}
+		}()
+		tlsConfig = &tls.Config{
+			GetCertificate: manager.GetCertificate,
+		}
+
+	default:
+		tlsCert, _, err := cert.LoadCert(
+			config.Lnd.TLSCertPath, config.Lnd.TLSKeyPath,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed reading TLS server keys: %v",
+				err)
+		}
+		tlsConfig = cert.TLSConfFromCert(tlsCert)
+		tlsConfig.CipherSuites = append(
+			tlsConfig.CipherSuites,
+			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+		)
 	}
-	tlsConfig := cert.TLSConfFromCert(tlsCert)
-	tlsConfig.CipherSuites = append(
-		tlsConfig.CipherSuites,
-		tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-	)
-	tlsConfig, err = connhelpers.TlsConfigWithHttp2Enabled(tlsConfig)
+
+	tlsConfig, err := connhelpers.TlsConfigWithHttp2Enabled(tlsConfig)
 	if err != nil {
 		return nil, fmt.Errorf("can't configure h2 handling: %v", err)
 	}
