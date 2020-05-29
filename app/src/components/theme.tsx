@@ -38,6 +38,7 @@ export interface Theme {
     orange: string;
     purple: string;
     overlay: string;
+    gradient: string;
   };
 }
 
@@ -77,6 +78,7 @@ const theme: Theme = {
     orange: '#f66b1c',
     purple: '#57038d',
     overlay: 'rgba(245,245,245,0.04)',
+    gradient: 'linear-gradient(325.53deg, #252F4A 0%, #46547B 100%);',
   },
 };
 

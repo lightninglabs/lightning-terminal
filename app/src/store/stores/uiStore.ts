@@ -2,7 +2,7 @@ import { action, observable, toJS } from 'mobx';
 import { Alert } from 'types/state';
 import { Store } from 'store';
 
-type PageName = 'loop' | 'history' | 'settings';
+type PageName = 'auth' | 'loop' | 'history' | 'settings';
 
 type SettingName = 'general' | 'unit' | 'balance';
 
@@ -10,7 +10,7 @@ export default class UiStore {
   private _store: Store;
 
   /** the current page being displayed */
-  @observable page: PageName = 'loop';
+  @observable page: PageName = 'auth';
   /** indicates if the Processing Loops section is displayed on the Loop page */
   @observable processingSwapsVisible = false;
   /** the selected setting on the Settings page */

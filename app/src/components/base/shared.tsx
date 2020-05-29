@@ -5,10 +5,11 @@ import { styled } from 'components/theme';
 // Misc
 //
 
-export const Background = styled.div`
+export const Background = styled.div<{ gradient?: boolean }>`
   min-height: 100vh;
   color: ${props => props.theme.colors.white};
-  background-color: ${props => props.theme.colors.blue};
+  background: ${props =>
+    props.gradient ? props.theme.colors.gradient : props.theme.colors.blue};
   font-family: ${props => props.theme.fonts.open.regular};
   font-size: ${props => props.theme.sizes.m};
 `;
@@ -102,6 +103,24 @@ export const Button = styled.button<ButtonProps>`
     &:hover {
       background-color: transparent;
     }
+  }
+`;
+
+export const Input = styled.input`
+  font-family: ${props => props.theme.fonts.work.light};
+  font-weight: 300;
+  font-size: ${props => props.theme.sizes.xxl};
+  color: ${props => props.theme.colors.offWhite};
+  background-color: transparent;
+  border-width: 0;
+  border-bottom: 3px solid ${props => props.theme.colors.offWhite};
+  padding: 5px;
+  text-align: center;
+
+  &:active,
+  &:focus {
+    outline: none;
+    background-color: ${props => props.theme.colors.overlay};
   }
 `;
 
