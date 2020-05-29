@@ -2,8 +2,8 @@ import React from 'react';
 import { observer } from 'mobx-react-lite';
 import loadingJson from 'assets/animations/loading.json';
 import { usePrefixedTranslation } from 'hooks';
+import { HeaderFour } from 'components/base';
 import Animation from 'components/common/Animation';
-import { HeaderFour } from 'components/common/text';
 import { styled } from 'components/theme';
 
 const Styled = {

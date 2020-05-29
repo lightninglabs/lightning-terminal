@@ -1,7 +1,7 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { Swap } from 'store/models';
-import { Column, Row } from 'components/common/grid';
+import { Column, Row } from 'components/base';
 import { styled } from 'components/theme';
 import FailedSwap from './FailedSwap';
 import SwapInfo from './SwapInfo';

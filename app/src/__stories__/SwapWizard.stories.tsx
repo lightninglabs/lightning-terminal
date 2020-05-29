@@ -1,6 +1,7 @@
 import React from 'react';
 import { observable } from 'mobx';
 import { SwapDirection } from 'types/state';
+import Big from 'big.js';
 import { lndListChannels } from 'util/tests/sampleData';
 import { useStore } from 'store';
 import SwapWizard from 'components/loop/swap/SwapWizard';
@@ -35,7 +36,7 @@ export const Step2Fees = () => {
   build.startSwap();
   build.selectedChanIds = selectedChannels;
   build.setDirection(SwapDirection.OUT);
-  build.setAmount(500000);
+  build.setAmount(Big(500000));
   build.goToNextStep();
   return <SwapWizard />;
 };
@@ -45,7 +46,7 @@ export const Step3Processing = () => {
   build.startSwap();
   build.selectedChanIds = selectedChannels;
   build.setDirection(SwapDirection.OUT);
-  build.setAmount(500000);
+  build.setAmount(Big(500000));
   build.goToNextStep();
   build.goToNextStep();
   return <SwapWizard />;

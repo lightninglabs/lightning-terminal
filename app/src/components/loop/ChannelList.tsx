@@ -38,26 +38,28 @@ const ChannelList: React.FC = () => {
         <AutoSizer disableHeight>
           {({ width }) => (
             <WindowScroller>
-              {({ height, isScrolling, onChildScroll, scrollTop }) => (
+              {({ height, isScrolling, onChildScroll, scrollTop, registerChild }) => (
                 <Observer>
                   {() => (
-                    <List
-                      autoHeight
-                      height={height}
-                      isScrolling={isScrolling}
-                      onScroll={onChildScroll}
-                      rowCount={channelStore.sortedChannels.length}
-                      rowHeight={ROW_HEIGHT}
-                      rowRenderer={({ index, key, style }) => (
-                        <ChannelRow
-                          key={key}
-                          style={style}
-                          channel={channelStore.sortedChannels[index]}
-                        />
-                      )}
-                      scrollTop={scrollTop}
-                      width={width}
-                    />
+                    <div ref={ref => ref && registerChild(ref)}>
+                      <List
+                        autoHeight
+                        height={height}
+                        isScrolling={isScrolling}
+                        onScroll={onChildScroll}
+                        rowCount={channelStore.sortedChannels.length}
+                        rowHeight={ROW_HEIGHT}
+                        rowRenderer={({ index, key, style }) => (
+                          <ChannelRow
+                            key={key}
+                            style={style}
+                            channel={channelStore.sortedChannels[index]}
+                          />
+                        )}
+                        scrollTop={scrollTop}
+                        width={width}
+                      />
+                    </div>
                   )}
                 </Observer>
               )}

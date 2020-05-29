@@ -1,8 +1,7 @@
 import React from 'react';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
-import { Pill } from 'components/common/base';
-import { HeaderFive, HeaderFour, Small } from 'components/common/text';
+import { HeaderFive, HeaderFour, Pill, Small } from 'components/base';
 import { styled } from 'components/theme';
 
 const Styled = {

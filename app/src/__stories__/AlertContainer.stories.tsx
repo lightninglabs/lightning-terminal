@@ -1,7 +1,7 @@
 import React from 'react';
 import { useStore } from 'store';
+import { Button } from 'components/base';
 import AlertContainer from 'components/common/AlertContainer';
-import { Button } from 'components/common/base';
 
 export default {
   title: 'Components/Alerts',

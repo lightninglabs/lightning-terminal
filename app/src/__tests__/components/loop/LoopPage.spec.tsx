@@ -38,7 +38,7 @@ describe('LoopPage component', () => {
   it('should display the liquidity numbers', async () => {
     const { getByText, store } = render();
     // wait for the channels to be fetched async before checking the UI labels
-    await waitFor(() => expect(store.channelStore.totalInbound).toBeGreaterThan(0));
+    await waitFor(() => expect(+store.channelStore.totalInbound).toBeGreaterThan(0));
     expect(getByText(formatSats(store.channelStore.totalInbound))).toBeInTheDocument();
     expect(getByText(formatSats(store.channelStore.totalOutbound))).toBeInTheDocument();
   });
@@ -93,7 +93,7 @@ describe('LoopPage component', () => {
       const { getByText } = render();
       expect(getByText('Loop')).toBeInTheDocument();
       fireEvent.click(getByText('Loop'));
-      store.channelStore.sortedChannels.slice(0, 3).forEach(c => {
+      store.channelStore.sortedChannels.slice(0, 1).forEach(c => {
         store.buildSwapStore.toggleSelectedChannel(c.chanId);
       });
       fireEvent.click(getByText('Loop in'));
@@ -104,7 +104,7 @@ describe('LoopPage component', () => {
       const { getByText } = render();
       expect(getByText('Loop')).toBeInTheDocument();
       fireEvent.click(getByText('Loop'));
-      store.channelStore.sortedChannels.slice(0, 3).forEach(c => {
+      store.channelStore.sortedChannels.slice(0, 1).forEach(c => {
         store.buildSwapStore.toggleSelectedChannel(c.chanId);
       });
       fireEvent.click(getByText('Loop in'));

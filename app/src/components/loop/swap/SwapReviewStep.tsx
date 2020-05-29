@@ -2,7 +2,7 @@ import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
-import { HeaderFour, Jumbo } from 'components/common/text';
+import { HeaderFour, Jumbo } from 'components/base';
 import Unit from 'components/common/Unit';
 import { styled } from 'components/theme';
 import StepButtons from './StepButtons';

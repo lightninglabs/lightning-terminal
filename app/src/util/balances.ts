@@ -1,4 +1,6 @@
+import Big from 'big.js';
 import { Theme } from 'components/theme';
+import { percentage } from './bigmath';
 import { BalanceConfig, BalanceConstraint, BalanceStatus } from './constants';
 
 /**
@@ -24,11 +26,11 @@ const satisfies = (pct: number, constraint: BalanceConstraint) => {
  * @param config the balance configuration (receive, send, routing)
  */
 export const getBalanceStatus = (
-  local: number,
-  capacity: number,
+  local: Big,
+  capacity: Big,
   config: BalanceConfig,
 ): BalanceStatus => {
-  const pct = Math.floor((local * 100) / capacity);
+  const pct = percentage(local, capacity);
 
   if (satisfies(pct, config.danger)) return BalanceStatus.danger;
   if (satisfies(pct, config.warn)) return BalanceStatus.warn;

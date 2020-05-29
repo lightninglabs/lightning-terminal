@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 import { styled } from 'components/theme';
-import { Small } from './text';
+import { Small } from '../base';
 
 const Styled = {
   Wrapper: styled.div<{ right?: boolean }>`

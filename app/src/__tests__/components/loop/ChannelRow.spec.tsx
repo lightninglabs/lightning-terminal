@@ -73,8 +73,8 @@ describe('ChannelRow component', () => {
     [50, 'warn'],
     [90, 'error'],
   ])('should display correct dot icon for a "%s" balance', (localPct, label) => {
-    channel.localBalance = channel.capacity * (localPct / 100);
-    channel.remoteBalance = channel.capacity * ((100 - localPct) / 100);
+    channel.localBalance = channel.capacity.mul(localPct).div(100);
+    channel.remoteBalance = channel.capacity.mul(100 - localPct).div(100);
 
     const { getByText, getByLabelText } = render();
     expect(getByText('dot.svg')).toBeInTheDocument();

@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
-import { Button } from 'components/common/base';
+import { Button } from 'components/base';
 
 const Styled = {
   Wrapper: styled.div`

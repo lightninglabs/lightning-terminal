@@ -1,4 +1,5 @@
 import React from 'react';
+import { observable } from 'mobx';
 import * as LOOP from 'types/generated/loop_pb';
 import { renderWithProviders } from 'util/tests';
 import { createStore, Store } from 'store';
@@ -38,5 +39,13 @@ describe('LoopHistory component', () => {
     store.swapStore.sortedSwaps[0].state = LOOP.SwapState.INITIATED;
     const { getByText } = render();
     expect(getByText('dot.svg')).toHaveClass('warn');
+  });
+
+  it('should display the empty message', async () => {
+    store.swapStore.swaps = observable.map();
+    const { getByText } = render();
+    expect(
+      getByText('After performing swaps, you will see ongoing loops and history here.'),
+    ).toBeInTheDocument();
   });
 });

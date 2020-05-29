@@ -1,7 +1,11 @@
 import { action, computed, observable, runInAction, toJS, values } from 'mobx';
+import { SwapResponse } from 'types/generated/loop_pb';
 import { BuildSwapSteps, Quote, SwapDirection, SwapTerms } from 'types/state';
+import Big from 'big.js';
+import { percentage } from 'util/bigmath';
 import { formatSats } from 'util/formatters';
 import { Store } from 'store';
+import Channel from 'store/models/channel';
 
 // an artificial delay to allow the user to abort a swap before it executed
 export const SWAP_ABORT_DELAY = 3000;
@@ -22,19 +26,19 @@ class BuildSwapStore {
   @observable selectedChanIds: string[] = [];
 
   /** the amount to swap */
-  @observable amount = 0;
+  @observable amount: Big = Big(0);
 
   /** the min/max amount this node is allowed to swap */
   @observable terms: SwapTerms = {
-    in: { min: 0, max: 0 },
-    out: { min: 0, max: 0 },
+    in: { min: Big(0), max: Big(0) },
+    out: { min: Big(0), max: Big(0) },
   };
 
   /** the quote for the swap */
   @observable quote: Quote = {
-    swapFee: 0,
-    prepayAmount: 0,
-    minerFee: 0,
+    swapFee: Big(0),
+    prepayAmount: Big(0),
+    minerFee: Big(0),
   };
 
   /** the reference to the timeout used to allow cancelling a swap */
@@ -73,7 +77,7 @@ class BuildSwapStore {
   /** the min/max amounts this node is allowed to swap based on the current direction */
   @computed
   get termsForDirection() {
-    let terms = { min: 0, max: 0 };
+    let terms = { min: Big(0), max: Big(0) };
     switch (this.direction) {
       case SwapDirection.IN:
         terms = this.terms.in;
@@ -89,13 +93,13 @@ class BuildSwapStore {
   /** the total quoted fee to perform the current swap */
   @computed
   get fee() {
-    return this.quote.swapFee + this.quote.minerFee;
+    return this.quote.swapFee.plus(this.quote.minerFee);
   }
 
   /** a string containing the fee as an absolute value and a percentage */
   @computed
   get feesLabel() {
-    const feesPct = ((100 * this.fee) / this.amount).toFixed(2);
+    const feesPct = percentage(this.fee, this.amount, 2);
     const amount = formatSats(this.fee, { unit: this._store.settingsStore.unit });
     return `${amount} (${feesPct}%)`;
   }
@@ -103,7 +107,7 @@ class BuildSwapStore {
   /** the invoice total including the swap amount and fee */
   @computed
   get invoiceTotal() {
-    return this.amount + this.fee;
+    return this.amount.plus(this.fee);
   }
 
   /** infer a swap direction based on the selected channels */
@@ -120,6 +124,39 @@ class BuildSwapStore {
 
     // if the average is low, suggest Loop In. Otherwise, suggest Loop Out
     return avgPct < 50 ? SwapDirection.IN : SwapDirection.OUT;
+  }
+
+  /**
+   * determines if Loop In is allowed, which is only true when the selected
+   * channels are using a single peer. If multiple peers are chosen, then
+   * Loop in should not be allowed
+   */
+  @computed
+  get loopInAllowed() {
+    if (this.selectedChanIds.length > 0) {
+      return this.loopInLastHop !== undefined;
+    }
+
+    return true;
+  }
+
+  /**
+   * Returns the unique peer pubkey of the selected channels. If no channels
+   * are selected OR the selected channels are using more than one peer, then
+   * undefined is returned
+   */
+  @computed
+  get loopInLastHop(): string | undefined {
+    const channels = this.selectedChanIds
+      .map(id => this._store.channelStore.channels.get(id))
+      .filter(c => !!c) as Channel[];
+    const peers = channels.reduce((peers, c) => {
+      if (!peers.includes(c.remotePubkey)) {
+        peers.push(c.remotePubkey);
+      }
+      return peers;
+    }, [] as string[]);
+    return peers.length === 1 ? peers[0] : undefined;
   }
 
   //
@@ -169,7 +206,7 @@ class BuildSwapStore {
    * @param amount the amount in sats
    */
   @action.bound
-  setAmount(amount: number) {
+  setAmount(amount: Big) {
     this.amount = amount;
   }
 
@@ -193,10 +230,6 @@ class BuildSwapStore {
    */
   @action.bound
   goToPrevStep() {
-    if (this.currentStep === BuildSwapSteps.ChooseAmount) {
-      this.cancel();
-      return;
-    }
     if (this.currentStep === BuildSwapSteps.Processing) {
       // if back is clicked on the processing step
       this.abortSwap();
@@ -212,9 +245,9 @@ class BuildSwapStore {
   cancel() {
     this.currentStep = BuildSwapSteps.Closed;
     this.selectedChanIds = [];
-    this.quote.swapFee = 0;
-    this.quote.minerFee = 0;
-    this.quote.prepayAmount = 0;
+    this.quote.swapFee = Big(0);
+    this.quote.minerFee = Big(0);
+    this.quote.prepayAmount = Big(0);
     this._store.log.info(`reset buildSwapStore`, toJS(this));
   }
 
@@ -230,20 +263,20 @@ class BuildSwapStore {
       runInAction('getTermsContinuation', () => {
         this.terms = {
           in: {
-            min: inTerms.minSwapAmount,
-            max: inTerms.maxSwapAmount,
+            min: Big(inTerms.minSwapAmount),
+            max: Big(inTerms.maxSwapAmount),
           },
           out: {
-            min: outTerms.minSwapAmount,
-            max: outTerms.maxSwapAmount,
+            min: Big(outTerms.minSwapAmount),
+            max: Big(outTerms.maxSwapAmount),
           },
         };
         this._store.log.info('updated store.terms', toJS(this.terms));
 
         // restrict the amount whenever the terms are updated
         const { min, max } = this.termsForDirection;
-        if (this.amount < min || this.amount > max) {
-          this.setAmount(Math.floor((min + max) / 2));
+        if (this.amount.lt(min) || this.amount.gt(max)) {
+          this.setAmount(min.plus(max).div(2).round(0));
           this._store.log.info(`updated buildSwapStore.amount`, this.amount);
         }
       });
@@ -270,9 +303,9 @@ class BuildSwapStore {
 
       runInAction('getQuoteContinuation', () => {
         this.quote = {
-          swapFee: quote.swapFee,
-          minerFee: quote.minerFee,
-          prepayAmount: quote.prepayAmt,
+          swapFee: Big(quote.swapFee),
+          minerFee: Big(quote.minerFee),
+          prepayAmount: Big(quote.prepayAmt),
         };
         this._store.log.info('updated buildSwapStore.quote', toJS(this.quote));
       });
@@ -296,10 +329,19 @@ class BuildSwapStore {
     );
     this.processingTimeout = setTimeout(async () => {
       try {
-        const res =
-          direction === SwapDirection.IN
-            ? await this._store.api.loop.loopIn(amount, quote)
-            : await this._store.api.loop.loopOut(amount, quote);
+        let res: SwapResponse.AsObject;
+        if (direction === SwapDirection.IN) {
+          res = await this._store.api.loop.loopIn(amount, quote, this.loopInLastHop);
+        } else {
+          // on regtest, set the publication deadline to 0 for faster swaps, otherwise
+          // set it to 30 minutes in the future to reduce swap fees
+          const thirtyMins = 30 * 60 * 1000;
+          const deadline =
+            this._store.nodeStore.network === 'regtest' ? 0 : Date.now() + thirtyMins;
+          // convert the selected channel ids to numbers
+          const chanIds = this.selectedChanIds.map(v => parseInt(v));
+          res = await this._store.api.loop.loopOut(amount, quote, chanIds, deadline);
+        }
         this._store.log.info('completed loop', toJS(res));
         runInAction('requestSwapContinuation', () => {
           // hide the swap UI after it is complete

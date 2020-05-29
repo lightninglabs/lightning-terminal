@@ -65,6 +65,7 @@ export class Store {
    */
   async init() {
     this.settingsStore.init();
+    await this.nodeStore.fetchInfo();
     await this.channelStore.fetchChannels();
     await this.swapStore.fetchSwaps();
     await this.nodeStore.fetchBalances();

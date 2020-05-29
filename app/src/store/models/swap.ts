@@ -1,6 +1,7 @@
 import { action, computed, observable } from 'mobx';
 import { now } from 'mobx-utils';
 import * as LOOP from 'types/generated/loop_pb';
+import Big from 'big.js';
 import { CsvColumns } from 'util/csv';
 import { ellipseInside } from 'util/strings';
 
@@ -8,7 +9,7 @@ export default class Swap {
   // native values from the Loop api
   @observable id = '';
   @observable type = 0;
-  @observable amount = 0;
+  @observable amount = Big(0);
   @observable initiationTime = 0;
   @observable lastUpdateTime = 0;
   @observable state = 0;
@@ -104,7 +105,7 @@ export default class Swap {
   update(loopSwap: LOOP.SwapStatus.AsObject) {
     this.id = loopSwap.id;
     this.type = loopSwap.type;
-    this.amount = loopSwap.amt;
+    this.amount = Big(loopSwap.amt);
     this.initiationTime = loopSwap.initiationTime;
     this.lastUpdateTime = loopSwap.lastUpdateTime;
     this.state = loopSwap.state;

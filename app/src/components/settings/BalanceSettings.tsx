@@ -3,8 +3,8 @@ import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { BalanceMode } from 'util/constants';
 import { useStore } from 'store';
+import { HeaderFour } from 'components/base';
 import PageHeader from 'components/common/PageHeader';
-import { HeaderFour } from 'components/common/text';
 import { styled } from 'components/theme';
 import SettingItem from './SettingItem';
 

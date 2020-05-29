@@ -7,6 +7,7 @@ import {
   toJS,
   values,
 } from 'mobx';
+import Big from 'big.js';
 import { Store } from 'store';
 import { Channel } from '../models';
 
@@ -33,14 +34,17 @@ export default class ChannelStore {
    * the sum of remote balance for all channels
    */
   @computed get totalInbound() {
-    return this.sortedChannels.reduce((sum, chan) => sum + chan.remoteBalance, 0);
+    return this.sortedChannels.reduce(
+      (sum, chan) => sum.plus(chan.remoteBalance),
+      Big(0),
+    );
   }
 
   /**
    * the sum of local balance for all channels
    */
   @computed get totalOutbound() {
-    return this.sortedChannels.reduce((sum, chan) => sum + chan.localBalance, 0);
+    return this.sortedChannels.reduce((sum, chan) => sum.plus(chan.localBalance), Big(0));
   }
 
   /**

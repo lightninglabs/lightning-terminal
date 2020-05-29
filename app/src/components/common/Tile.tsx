@@ -1,8 +1,7 @@
 import React, { ReactNode } from 'react';
 import { usePrefixedTranslation } from 'hooks';
 import { styled } from 'components/theme';
-import { Maximize } from './icons';
-import { HeaderFour } from './text';
+import { HeaderFour, Maximize } from '../base';
 import Tip from './Tip';
 
 const Styled = {

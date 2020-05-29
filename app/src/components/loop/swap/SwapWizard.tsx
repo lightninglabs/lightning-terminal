@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { BuildSwapSteps } from 'types/state';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
-import { ArrowLeft } from 'components/common/icons';
+import { ArrowLeft } from 'components/base';
 import Tip from 'components/common/Tip';
 import { styled } from 'components/theme';
 import SwapConfigStep from './SwapConfigStep';

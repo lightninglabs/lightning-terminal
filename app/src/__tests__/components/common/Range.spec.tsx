@@ -1,5 +1,6 @@
 import React from 'react';
 import { fireEvent } from '@testing-library/react';
+import Big from 'big.js';
 import { renderWithProviders } from 'util/tests';
 import Range from 'components/common/Range';
 
@@ -7,9 +8,9 @@ describe('Range component', () => {
   const handleChange = jest.fn();
 
   const render = (options?: {
-    value?: number;
-    min?: number;
-    max?: number;
+    value?: Big;
+    min?: Big;
+    max?: Big;
     step?: number;
     showRadios?: boolean;
   }) => {
@@ -34,9 +35,9 @@ describe('Range component', () => {
 
   it('should accept custom props', () => {
     const { getByText, getByLabelText } = render({
-      value: 5000,
-      min: 2500,
-      max: 7500,
+      value: Big(5000),
+      min: Big(2500),
+      max: Big(7500),
       step: 100,
       showRadios: true,
     });
@@ -49,30 +50,30 @@ describe('Range component', () => {
   });
 
   it('should highlight Min radio when value equals min', () => {
-    const { getByText } = render({ value: 0, showRadios: true });
+    const { getByText } = render({ value: Big(0), showRadios: true });
     expect(getByText('Min')).toHaveAttribute('aria-checked', 'true');
   });
 
   it('should highlight Max radio when value equals max', () => {
-    const { getByText } = render({ value: 100, showRadios: true });
+    const { getByText } = render({ value: Big(100), showRadios: true });
     expect(getByText('Max')).toHaveAttribute('aria-checked', 'true');
   });
 
   it('should trigger the event when slider changed', () => {
     const { getByLabelText } = render();
     fireEvent.change(getByLabelText('range-slider'), { target: { value: '25' } });
-    expect(handleChange).toBeCalledWith(25);
+    expect(handleChange).toBeCalledWith(Big(25));
   });
 
   it('should trigger the event when min button clicked', () => {
     const { getByText } = render({ showRadios: true });
     fireEvent.click(getByText('Min'));
-    expect(handleChange).toBeCalledWith(0);
+    expect(handleChange).toBeCalledWith(Big(0));
   });
 
   it('should trigger the event when max button clicked', () => {
     const { getByText } = render({ showRadios: true });
     fireEvent.click(getByText('Max'));
-    expect(handleChange).toBeCalledWith(100);
+    expect(handleChange).toBeCalledWith(Big(100));
   });
 });

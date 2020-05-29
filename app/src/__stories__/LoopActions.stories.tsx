@@ -7,9 +7,6 @@ export default {
   title: 'Components/Loop Actions',
   component: LoopActions,
   parameters: { contained: true },
-  decorators: [
-    (storyFn: any) => <div style={{ width: 600, margin: 'auto' }}>{storyFn()}</div>,
-  ],
 };
 
 export const Default = () => {
@@ -19,7 +16,15 @@ export const Default = () => {
 export const Opened = () => {
   const store = useStore();
   store.buildSwapStore.startSwap();
-  // select 3 channels
+  lndListChannels.channelsList.slice(0, 1).forEach(c => {
+    store.buildSwapStore.toggleSelectedChannel(c.chanId);
+  });
+  return <LoopActions />;
+};
+
+export const LoopInWarn = () => {
+  const store = useStore();
+  store.buildSwapStore.startSwap();
   lndListChannels.channelsList.slice(0, 3).forEach(c => {
     store.buildSwapStore.toggleSelectedChannel(c.chanId);
   });

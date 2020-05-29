@@ -29,6 +29,11 @@ export class LoopOutRequest extends jspb.Message {
   getLoopOutChannel(): number;
   setLoopOutChannel(value: number): void;
 
+  clearOutgoingChanSetList(): void;
+  getOutgoingChanSetList(): Array<number>;
+  setOutgoingChanSetList(value: Array<number>): void;
+  addOutgoingChanSet(value: number, index?: number): number;
+
   getSweepConfTarget(): number;
   setSweepConfTarget(value: number): void;
 
@@ -55,6 +60,7 @@ export namespace LoopOutRequest {
     maxPrepayAmt: number,
     maxMinerFee: number,
     loopOutChannel: number,
+    outgoingChanSetList: Array<number>,
     sweepConfTarget: number,
     swapPublicationDeadline: number,
   }
@@ -78,6 +84,9 @@ export class LoopInRequest extends jspb.Message {
   getExternalHtlc(): boolean;
   setExternalHtlc(value: boolean): void;
 
+  getHtlcConfTarget(): number;
+  setHtlcConfTarget(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LoopInRequest.AsObject;
   static toObject(includeInstance: boolean, msg: LoopInRequest): LoopInRequest.AsObject;
@@ -95,6 +104,7 @@ export namespace LoopInRequest {
     maxMinerFee: number,
     lastHop: Uint8Array | string,
     externalHtlc: boolean,
+    htlcConfTarget: number,
   }
 }
 
@@ -109,6 +119,12 @@ export class SwapResponse extends jspb.Message {
 
   getHtlcAddress(): string;
   setHtlcAddress(value: string): void;
+
+  getHtlcAddressNp2wsh(): string;
+  setHtlcAddressNp2wsh(value: string): void;
+
+  getHtlcAddressP2wsh(): string;
+  setHtlcAddressP2wsh(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): SwapResponse.AsObject;
@@ -125,6 +141,8 @@ export namespace SwapResponse {
     id: string,
     idBytes: Uint8Array | string,
     htlcAddress: string,
+    htlcAddressNp2wsh: string,
+    htlcAddressP2wsh: string,
   }
 }
 
@@ -171,6 +189,12 @@ export class SwapStatus extends jspb.Message {
   getHtlcAddress(): string;
   setHtlcAddress(value: string): void;
 
+  getHtlcAddressP2wsh(): string;
+  setHtlcAddressP2wsh(value: string): void;
+
+  getHtlcAddressNp2wsh(): string;
+  setHtlcAddressNp2wsh(value: string): void;
+
   getCostServer(): number;
   setCostServer(value: number): void;
 
@@ -200,6 +224,8 @@ export namespace SwapStatus {
     initiationTime: number,
     lastUpdateTime: number,
     htlcAddress: string,
+    htlcAddressP2wsh: string,
+    htlcAddressNp2wsh: string,
     costServer: number,
     costOnchain: number,
     costOffchain: number,

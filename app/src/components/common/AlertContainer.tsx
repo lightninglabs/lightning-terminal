@@ -5,7 +5,7 @@ import { observer } from 'mobx-react-lite';
 import { Alert } from 'types/state';
 import { useStore } from 'store';
 import { styled } from 'components/theme';
-import { Close } from './icons';
+import { Close } from '../base';
 
 const Styled = {
   Body: styled.div`

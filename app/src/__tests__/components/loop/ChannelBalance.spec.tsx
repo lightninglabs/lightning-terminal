@@ -14,8 +14,8 @@ describe('ChannelBalance component', () => {
   const render = (ratio: number, active = true) => {
     const store = createStore();
     channel = new Channel(store, lndListChannelsOne.channelsList[0]);
-    channel.localBalance = channel.capacity * ratio;
-    channel.remoteBalance = channel.capacity * (1 - ratio);
+    channel.localBalance = channel.capacity.mul(ratio);
+    channel.remoteBalance = channel.capacity.mul(1 - ratio);
     channel.active = active;
 
     const result = renderWithProviders(<ChannelBalance channel={channel} />, store);

@@ -7,7 +7,7 @@ import * as LOOP from 'types/generated/loop_pb';
 //
 
 export const lndGetInfo: LND.GetInfoResponse.AsObject = {
-  version: '0.9.0-beta commit=v0.9.0-beta',
+  version: '0.10.0-beta commit=v0.10.0-beta',
   identityPubkey: '038b3fc29cfc195c9b190d86ad2d40ce7550a5c6f13941f53c7d7ac5b25c912a6c',
   alias: 'alice',
   color: '#cccccc',
@@ -119,6 +119,8 @@ export const loopListSwaps: LOOP.ListSwapsResponse.AsObject = {
     initiationTime: 1586390353623905000 + i * 100000000000000,
     lastUpdateTime: 1586398369729857000 + i * 200000000000000,
     htlcAddress: 'bcrt1qzu4077erkr78k52yuf2rwkk6ayr6m3wtazdfz2qqmd7taa5vvy9s5d75gd',
+    htlcAddressP2wsh: 'bcrt1qzu4077erkr78k52yuf2rwkk6ayr6m3wtazdfz2qqmd7taa5vvy9s5d75gd',
+    htlcAddressNp2wsh: '',
     costServer: 66,
     costOnchain: 6812,
     costOffchain: 2,

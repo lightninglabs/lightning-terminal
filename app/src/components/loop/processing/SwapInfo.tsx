@@ -1,7 +1,7 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { Swap } from 'store/models';
-import { HeaderFour } from 'components/common/text';
+import { HeaderFour } from 'components/base';
 import Unit from 'components/common/Unit';
 import { styled } from 'components/theme';
 import SwapDot from '../SwapDot';

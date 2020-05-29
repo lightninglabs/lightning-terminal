@@ -1,6 +1,7 @@
 import React from 'react';
 import { SwapDirection } from 'types/state';
 import { fireEvent } from '@testing-library/react';
+import Big from 'big.js';
 import { formatSats } from 'util/formatters';
 import { renderWithProviders } from 'util/tests';
 import { createStore, Store } from 'store';
@@ -62,17 +63,17 @@ describe('SwapWizard component', () => {
     it('should update the amount when the slider changes', () => {
       const { getByText, getByLabelText } = render();
       const build = store.buildSwapStore;
-      expect(build.amount).toEqual(625000);
+      expect(+build.amount).toEqual(625000);
       expect(getByText(`625,000 sats`)).toBeInTheDocument();
       fireEvent.change(getByLabelText('range-slider'), { target: { value: '575000' } });
-      expect(build.amount).toEqual(575000);
+      expect(+build.amount).toEqual(575000);
       expect(getByText(`575,000 sats`)).toBeInTheDocument();
     });
   });
 
   describe('Review Step', () => {
     beforeEach(async () => {
-      store.buildSwapStore.setAmount(500000);
+      store.buildSwapStore.setAmount(Big(500000));
       store.buildSwapStore.goToNextStep();
       await store.buildSwapStore.getQuote();
     });
@@ -97,7 +98,7 @@ describe('SwapWizard component', () => {
 
   describe('Processing Step', () => {
     beforeEach(async () => {
-      store.buildSwapStore.setAmount(500000);
+      store.buildSwapStore.setAmount(Big(500000));
       store.buildSwapStore.goToNextStep();
       await store.buildSwapStore.getQuote();
       store.buildSwapStore.goToNextStep();

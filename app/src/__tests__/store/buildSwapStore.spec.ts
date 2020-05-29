@@ -2,7 +2,7 @@ import { values } from 'mobx';
 import { SwapDirection } from 'types/state';
 import { grpc } from '@improbable-eng/grpc-web';
 import { waitFor } from '@testing-library/react';
-import * as config from 'config';
+import Big from 'big.js';
 import { injectIntoGrpcUnary } from 'util/tests';
 import { BuildSwapStore, createStore, Store } from 'store';
 import { SWAP_ABORT_DELAY } from 'store/stores/buildSwapStore';
@@ -36,11 +36,11 @@ describe('BuildSwapStore', () => {
   });
 
   it('should fetch loop terms', async () => {
-    expect(store.terms.in).toEqual({ min: 0, max: 0 });
-    expect(store.terms.out).toEqual({ min: 0, max: 0 });
+    expect(store.terms.in).toEqual({ min: Big(0), max: Big(0) });
+    expect(store.terms.out).toEqual({ min: Big(0), max: Big(0) });
     await store.getTerms();
-    expect(store.terms.in).toEqual({ min: 250000, max: 1000000 });
-    expect(store.terms.out).toEqual({ min: 250000, max: 1000000 });
+    expect(store.terms.in).toEqual({ min: Big(250000), max: Big(1000000) });
+    expect(store.terms.out).toEqual({ min: Big(250000), max: Big(1000000) });
   });
 
   it('should handle errors fetching loop terms', async () => {
@@ -57,39 +57,39 @@ describe('BuildSwapStore', () => {
   });
 
   it('should adjust the amount after fetching the loop terms', async () => {
-    store.setAmount(100);
+    store.setAmount(Big(100));
     await store.getTerms();
-    expect(store.amount).toBe(625000);
-    store.setAmount(5000000);
+    expect(+store.amount).toBe(625000);
+    store.setAmount(Big(5000000));
     await store.getTerms();
-    expect(store.amount).toBe(625000);
-    store.setAmount(500000);
+    expect(+store.amount).toBe(625000);
+    store.setAmount(Big(500000));
     await store.getTerms();
-    expect(store.amount).toBe(500000);
+    expect(+store.amount).toBe(500000);
   });
 
   it('should fetch a loop in quote', async () => {
-    expect(store.quote.swapFee).toEqual(0);
-    expect(store.quote.minerFee).toEqual(0);
-    expect(store.quote.prepayAmount).toEqual(0);
+    expect(+store.quote.swapFee).toEqual(0);
+    expect(+store.quote.minerFee).toEqual(0);
+    expect(+store.quote.prepayAmount).toEqual(0);
     store.setDirection(SwapDirection.IN);
-    store.setAmount(600);
+    store.setAmount(Big(600));
     await store.getQuote();
-    expect(store.quote.swapFee).toEqual(83);
-    expect(store.quote.minerFee).toEqual(7387);
-    expect(store.quote.prepayAmount).toEqual(1337);
+    expect(+store.quote.swapFee).toEqual(83);
+    expect(+store.quote.minerFee).toEqual(7387);
+    expect(+store.quote.prepayAmount).toEqual(1337);
   });
 
   it('should fetch a loop out quote', async () => {
-    expect(store.quote.swapFee).toEqual(0);
-    expect(store.quote.minerFee).toEqual(0);
-    expect(store.quote.prepayAmount).toEqual(0);
+    expect(+store.quote.swapFee).toEqual(0);
+    expect(+store.quote.minerFee).toEqual(0);
+    expect(+store.quote.prepayAmount).toEqual(0);
     store.setDirection(SwapDirection.OUT);
-    store.setAmount(600);
+    store.setAmount(Big(600));
     await store.getQuote();
-    expect(store.quote.swapFee).toEqual(83);
-    expect(store.quote.minerFee).toEqual(7387);
-    expect(store.quote.prepayAmount).toEqual(1337);
+    expect(+store.quote.swapFee).toEqual(83);
+    expect(+store.quote.minerFee).toEqual(7387);
+    expect(+store.quote.prepayAmount).toEqual(1337);
   });
 
   it('should handle errors fetching loop quote', async () => {
@@ -98,7 +98,7 @@ describe('BuildSwapStore', () => {
       return undefined as any;
     });
     store.setDirection(SwapDirection.OUT);
-    store.setAmount(600);
+    store.setAmount(Big(600));
     expect(rootStore.uiStore.alerts.size).toBe(0);
     await store.getQuote();
     await waitFor(() => {
@@ -108,8 +108,13 @@ describe('BuildSwapStore', () => {
   });
 
   it('should perform a loop in', async () => {
+    const channels = rootStore.channelStore.sortedChannels;
+    // the pubkey in the sampleData is not valid, so hard-code this valid one
+    channels[0].remotePubkey =
+      '035c82e14eb74d2324daa17eebea8c58b46a9eabac87191cc83ee26275b514e6a0';
+    store.toggleSelectedChannel(channels[0].chanId);
     store.setDirection(SwapDirection.IN);
-    store.setAmount(600);
+    store.setAmount(Big(600));
     store.requestSwap();
     await waitFor(() => {
       expect(grpcMock.unary).toHaveBeenCalledWith(
@@ -120,8 +125,10 @@ describe('BuildSwapStore', () => {
   });
 
   it('should perform a loop out', async () => {
+    const channels = rootStore.channelStore.sortedChannels;
+    store.toggleSelectedChannel(channels[0].chanId);
     store.setDirection(SwapDirection.OUT);
-    store.setAmount(600);
+    store.setAmount(Big(600));
     store.requestSwap();
     await waitFor(() => {
       expect(grpcMock.unary).toHaveBeenCalledWith(
@@ -133,7 +140,7 @@ describe('BuildSwapStore', () => {
 
   it('should set the correct swap deadline in production', async () => {
     store.setDirection(SwapDirection.OUT);
-    store.setAmount(600);
+    store.setAmount(Big(600));
 
     let deadline = 0;
     // mock the grpc unary function in order to capture the supplied deadline
@@ -142,8 +149,8 @@ describe('BuildSwapStore', () => {
       deadline = (props.request.toObject() as any).swapPublicationDeadline;
     });
 
-    // run a loop in production and verify the deadline
-    Object.defineProperty(config, 'IS_PROD', { get: () => true });
+    // run a loop on mainnet and verify the deadline
+    rootStore.nodeStore.network = 'mainnet';
     store.requestSwap();
     await waitFor(() => expect(deadline).toBeGreaterThan(0));
 
@@ -152,8 +159,8 @@ describe('BuildSwapStore', () => {
       deadline = (props.request.toObject() as any).swapPublicationDeadline;
     });
 
-    // run a loop NOT in production and verify the deadline
-    Object.defineProperty(config, 'IS_PROD', { get: () => false });
+    // run a loop on regtest and verify the deadline
+    rootStore.nodeStore.network = 'regtest';
     store.requestSwap();
     await waitFor(() => expect(deadline).toEqual(0));
   });
@@ -164,7 +171,7 @@ describe('BuildSwapStore', () => {
       return undefined as any;
     });
     store.setDirection(SwapDirection.IN);
-    store.setAmount(600);
+    store.setAmount(Big(600));
     expect(rootStore.uiStore.alerts.size).toBe(0);
     store.requestSwap();
     await waitFor(() => {
@@ -175,7 +182,7 @@ describe('BuildSwapStore', () => {
 
   it('should delay for 3 seconds before performing a swap in production', async () => {
     store.setDirection(SwapDirection.OUT);
-    store.setAmount(600);
+    store.setAmount(Big(600));
 
     let executed = false;
     // mock the grpc unary function in order to know when the API request is executed
