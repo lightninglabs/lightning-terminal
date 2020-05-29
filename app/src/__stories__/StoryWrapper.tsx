@@ -26,6 +26,8 @@ class StoryAppStorage {
     unit: Unit.sats,
     balanceMode: BalanceMode.receive,
   });
+  setSession = () => undefined;
+  getSession = () => '';
 }
 
 // Create a store that pulls data from the mock GRPC and doesn't use

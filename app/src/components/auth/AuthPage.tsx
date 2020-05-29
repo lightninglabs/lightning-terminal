@@ -55,7 +55,7 @@ const Styled = {
 
 const AuthPage: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.auth.AuthPage');
-  const { uiStore } = useStore();
+  const store = useStore();
   const [pass, setPass] = useState('');
   const [error, setError] = useState('');
 
@@ -64,16 +64,18 @@ const AuthPage: React.FC = () => {
     setError('');
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      if (!pass) throw new Error('oops, password is required');
-      // TODO: send password to backend to validate
-      uiStore.goToLoop();
-    } catch (e) {
-      setError(e.message);
+      await store.authStore.login(pass);
+    } catch (err) {
+      setError(err.message);
     }
   };
+
+  // don't display the login UI until the app is fully initialized this prevents
+  // a UI flicker while validating credentials stored in session storage
+  if (!store.initialized) return null;
 
   const { Wrapper, Logo, Title, Subtitle, Form, Label, ErrMessage, Submit } = Styled;
   return (

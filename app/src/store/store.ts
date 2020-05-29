@@ -1,4 +1,4 @@
-import { observable } from 'mobx';
+import { observable, when } from 'mobx';
 import { IS_DEV, IS_TEST } from 'config';
 import AppStorage from 'util/appStorage';
 import CsvExporter from 'util/csv';
@@ -12,6 +12,7 @@ import {
   SwapStore,
   UiStore,
 } from './stores';
+import AuthStore from './stores/authStore';
 import { PersistentSettings } from './stores/settingsStore';
 
 /**
@@ -21,6 +22,7 @@ export class Store {
   //
   // Child Stores
   //
+  authStore = new AuthStore(this);
   buildSwapStore = new BuildSwapStore(this);
   channelStore = new ChannelStore(this);
   swapStore = new SwapStore(this);
@@ -65,11 +67,22 @@ export class Store {
    */
   async init() {
     this.settingsStore.init();
-    await this.nodeStore.fetchInfo();
-    await this.channelStore.fetchChannels();
-    await this.swapStore.fetchSwaps();
-    await this.nodeStore.fetchBalances();
+    await this.authStore.init();
     this.initialized = true;
+
+    // go to the Loop page when the user is authenticated. it can be from
+    // entering a password or from loading the credentials from storage
+    when(
+      () => this.authStore.authenticated,
+      async () => {
+        this.uiStore.goToLoop();
+        // also fetch all the data we need
+        await this.nodeStore.fetchInfo();
+        await this.channelStore.fetchChannels();
+        await this.swapStore.fetchSwaps();
+        await this.nodeStore.fetchBalances();
+      },
+    );
   }
 }
 
