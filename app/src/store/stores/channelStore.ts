@@ -79,9 +79,7 @@ export default class ChannelStore {
         this._store.log.info('updated channelStore.channels', toJS(this.channels));
       });
     } catch (error) {
-      runInAction('fetchChannelsError', () => {
-        this._store.uiStore.notify(error.message, 'Unable to fetch Channels');
-      });
+      this._store.uiStore.handleError(error, 'Unable to fetch Channels');
     }
   }
 

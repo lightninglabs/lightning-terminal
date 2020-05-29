@@ -63,5 +63,7 @@
   "cmps.settings.GeneralSettings.balancesValue": "Optimize for {{mode}}",
   "cmps.settings.GeneralSettings.pageTitle": "Settings",
   "cmps.settings.UnitSettings.pageTitle": "Bitcoin Unit",
-  "cmps.settings.UnitSettings.backText": "Settings"
+  "cmps.settings.UnitSettings.backText": "Settings",
+  "stores.uiStore.authErrorTitle": "Your session has expired",
+  "stores.uiStore.authErrorMsg": "Please enter you password to continue"
 }

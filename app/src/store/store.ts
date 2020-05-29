@@ -1,4 +1,4 @@
-import { observable, when } from 'mobx';
+import { autorun, observable } from 'mobx';
 import { IS_DEV, IS_TEST } from 'config';
 import AppStorage from 'util/appStorage';
 import CsvExporter from 'util/csv';
@@ -70,19 +70,23 @@ export class Store {
     await this.authStore.init();
     this.initialized = true;
 
-    // go to the Loop page when the user is authenticated. it can be from
-    // entering a password or from loading the credentials from storage
-    when(
-      () => this.authStore.authenticated,
-      async () => {
+    // this function will automatically run whenever the authenticated
+    // flag is changed
+    autorun(async () => {
+      if (this.authStore.authenticated) {
+        // go to the Loop page when the user is authenticated. it can be from
+        // entering a password or from loading the credentials from storage
         this.uiStore.goToLoop();
         // also fetch all the data we need
         await this.nodeStore.fetchInfo();
         await this.channelStore.fetchChannels();
         await this.swapStore.fetchSwaps();
         await this.nodeStore.fetchBalances();
-      },
-    );
+      } else {
+        // go to auth page if we are not authenticated
+        this.uiStore.gotoAuth();
+      }
+    });
   }
 }
 

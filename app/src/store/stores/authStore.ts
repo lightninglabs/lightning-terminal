@@ -1,4 +1,4 @@
-import { action, observable, toJS } from 'mobx';
+import { action, observable } from 'mobx';
 import { Store } from 'store';
 
 export default class AuthStore {
@@ -54,7 +54,8 @@ export default class AuthStore {
   async validate() {
     // test the credentials by making an API call to getInfo
     await this._store.api.lnd.getInfo();
-    this._store.log.info('authentication successful', toJS(this));
+    this._store.log.info('authentication successful');
+    // setting this to true will automatically show the Loop page
     this.authenticated = true;
   }
 

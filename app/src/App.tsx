@@ -14,8 +14,8 @@ const App = () => {
       <ThemeProvider>
         <Layout>
           <Pages />
-          <AlertContainer />
         </Layout>
+        <AlertContainer />
       </ThemeProvider>
     </StoreProvider>
   );
