@@ -1,6 +1,7 @@
 import React, { CSSProperties, useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 import { BalanceMode, Unit } from 'util/constants';
+import { AuthenticationError } from 'util/errors';
 import { sampleApiResponses } from 'util/tests/sampleData';
 import { createStore, StoreProvider } from 'store';
 import { PersistentSettings } from 'store/stores/settingsStore';
@@ -9,7 +10,10 @@ import { ThemeProvider } from 'components/theme';
 
 // mock the GRPC client to return sample data instead of making an actual request
 const grpc = {
-  request: (methodDescriptor: any) => {
+  request: (methodDescriptor: any, opts: any, metadata: any) => {
+    // fail any authenticated requests to simulate incorrect login attempts
+    if (metadata && metadata.authorization) throw new AuthenticationError();
+
     const endpoint = `${methodDescriptor.service.serviceName}.${methodDescriptor.methodName}`;
     const data = sampleApiResponses[endpoint] || {};
     // the calling function expects the return value to have a `toObject` function
@@ -32,7 +36,11 @@ class StoryAppStorage {
 
 // Create a store that pulls data from the mock GRPC and doesn't use
 // the real localStorage to save settings
-const createStoryStore = () => createStore(grpc, new StoryAppStorage());
+const createStoryStore = () => {
+  const store = createStore(grpc, new StoryAppStorage());
+  store.fetchAllData();
+  return store;
+};
 
 /**
  * This component is used to wrap every story. It provides the app theme
