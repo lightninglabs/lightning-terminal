@@ -5,6 +5,7 @@ import CsvExporter from 'util/csv';
 import { actionLog, Logger } from 'util/log';
 import { GrpcClient, LndApi, LoopApi } from 'api';
 import {
+  AuthStore,
   BuildSwapStore,
   ChannelStore,
   NodeStore,
@@ -12,7 +13,6 @@ import {
   SwapStore,
   UiStore,
 } from './stores';
-import AuthStore from './stores/authStore';
 import { PersistentSettings } from './stores/settingsStore';
 
 /**
@@ -78,15 +78,22 @@ export class Store {
         // entering a password or from loading the credentials from storage
         this.uiStore.goToLoop();
         // also fetch all the data we need
-        await this.nodeStore.fetchInfo();
-        await this.channelStore.fetchChannels();
-        await this.swapStore.fetchSwaps();
-        await this.nodeStore.fetchBalances();
+        this.fetchAllData();
       } else {
         // go to auth page if we are not authenticated
         this.uiStore.gotoAuth();
       }
     });
+  }
+
+  /**
+   * makes the initial API calls to fetch the data we need to display in the app
+   */
+  async fetchAllData() {
+    await this.nodeStore.fetchInfo();
+    await this.channelStore.fetchChannels();
+    await this.swapStore.fetchSwaps();
+    await this.nodeStore.fetchBalances();
   }
 }
 

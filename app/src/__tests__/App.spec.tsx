@@ -1,5 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react';
+import * as config from 'config';
 import App from '../App';
 
 describe('App Component', () => {
@@ -7,9 +8,13 @@ describe('App Component', () => {
     return render(<App />);
   };
 
-  it('should render the App', () => {
-    const { getByText } = renderApp();
-    const linkElement = getByText('Node Status');
-    expect(linkElement).toBeInTheDocument();
+  it('should render the App', async () => {
+    // ensure init is called in the store so the UI is displayed
+    Object.defineProperty(config, 'IS_TEST', { get: () => false });
+    const { findByText } = renderApp();
+    expect(await findByText('Shushtar')).toBeInTheDocument();
+    expect(await findByText('logo.svg')).toBeInTheDocument();
+    // revert IS_DEV
+    Object.defineProperty(config, 'IS_TEST', { get: () => true });
   });
 });

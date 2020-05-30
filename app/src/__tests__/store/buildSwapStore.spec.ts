@@ -15,7 +15,7 @@ describe('BuildSwapStore', () => {
 
   beforeEach(async () => {
     rootStore = createStore();
-    await rootStore.init();
+    await rootStore.fetchAllData();
     store = rootStore.buildSwapStore;
   });
 

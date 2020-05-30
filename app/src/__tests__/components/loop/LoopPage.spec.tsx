@@ -16,7 +16,7 @@ describe('LoopPage component', () => {
 
   beforeEach(async () => {
     store = createStore();
-    await store.init();
+    await store.fetchAllData();
   });
 
   const render = () => {

@@ -1,11 +1,14 @@
 import { values } from 'mobx';
-import { createStore, UiStore } from 'store';
+import { AuthenticationError } from 'util/errors';
+import { createStore, Store, UiStore } from 'store';
 
 describe('UiStore', () => {
+  let rootStore: Store;
   let store: UiStore;
 
   beforeEach(() => {
-    store = createStore().uiStore;
+    rootStore = createStore();
+    store = rootStore.uiStore;
   });
 
   it('should add an alert', async () => {
@@ -25,5 +28,18 @@ describe('UiStore', () => {
     const alert = values(store.alerts)[0];
     store.clearAlert(alert.id);
     expect(store.alerts.size).toBe(0);
+  });
+
+  it('should handle errors', () => {
+    store.handleError(new Error('message'), 'title');
+    expect(store.alerts.size).toBe(1);
+  });
+
+  it('should handle authentication errors', () => {
+    rootStore.authStore.authenticated = true;
+    expect(store.alerts.size).toBe(0);
+    store.handleError(new AuthenticationError());
+    expect(rootStore.authStore.authenticated).toBe(false);
+    expect(store.alerts.size).toBe(1);
   });
 });

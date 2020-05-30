@@ -1,11 +1,14 @@
 import React from 'react';
 import { fireEvent } from '@testing-library/react';
 import { renderWithProviders } from 'util/tests';
+import { createStore } from 'store';
 import Layout from 'components/layout/Layout';
 
 describe('Layout component', () => {
   const render = () => {
-    return renderWithProviders(<Layout />);
+    const store = createStore();
+    store.uiStore.page = 'loop';
+    return renderWithProviders(<Layout />, store);
   };
 
   it('should display the hamburger menu', () => {
@@ -41,7 +44,7 @@ describe('Layout component', () => {
     expect(getByText('Lightning Loop').parentElement).toHaveClass('active');
   });
 
-  it('should navigate back to the Settings page', () => {
+  it('should navigate to the Settings page', () => {
     const { getByText, store } = render();
     expect(store.uiStore.page).toBe('loop');
     fireEvent.click(getByText('Settings'));
@@ -50,5 +53,12 @@ describe('Layout component', () => {
     fireEvent.click(getByText('Lightning Loop'));
     expect(store.uiStore.page).toBe('loop');
     expect(getByText('Lightning Loop').parentElement).toHaveClass('active');
+  });
+
+  it('should not display the sidebar on the auth page', () => {
+    const { getByText, queryByText, store } = render();
+    expect(getByText('menu.svg')).toBeInTheDocument();
+    store.uiStore.page = 'auth';
+    expect(queryByText('menu.svg')).not.toBeInTheDocument();
   });
 });

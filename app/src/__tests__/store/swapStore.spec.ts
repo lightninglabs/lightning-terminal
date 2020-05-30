@@ -23,7 +23,7 @@ describe('SwapStore', () => {
     expect(store.sortedSwaps).toHaveLength(7);
   });
 
-  it('should handle errors fetching channels', async () => {
+  it('should handle errors fetching swaps', async () => {
     grpcMock.unary.mockImplementationOnce(desc => {
       if (desc.methodName === 'ListSwaps') throw new Error('test-err');
       return undefined as any;
@@ -107,5 +107,26 @@ describe('SwapStore', () => {
     expect(store.pollingInterval).toBeUndefined();
     store.stopPolling();
     expect(store.pollingInterval).toBeUndefined();
+  });
+
+  it('should stop polling if there is an error fetching swaps', async () => {
+    await store.fetchSwaps();
+    const swap = store.sortedSwaps[0];
+    // create a pending swap to trigger auto-polling
+    swap.state = LOOP.SwapState.INITIATED;
+    expect(store.pendingSwaps).toHaveLength(1);
+    // wait for polling to start
+    await waitFor(() => {
+      expect(store.pollingInterval).toBeDefined();
+    });
+    // induce a failure when fetching swaps
+    grpcMock.unary.mockImplementationOnce(desc => {
+      if (desc.methodName === 'ListSwaps') throw new Error('test-err');
+      return undefined as any;
+    });
+    // confirm polling has stopped
+    await waitFor(() => {
+      expect(store.pollingInterval).toBeUndefined();
+    });
   });
 });

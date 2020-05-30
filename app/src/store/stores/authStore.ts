@@ -54,6 +54,7 @@ export default class AuthStore {
   async validate() {
     // test the credentials by making an API call to getInfo
     await this._store.api.lnd.getInfo();
+    // if no error is thrown above then the credentials are valid
     this._store.log.info('authentication successful');
     // setting this to true will automatically show the Loop page
     this.authenticated = true;

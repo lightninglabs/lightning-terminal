@@ -84,8 +84,12 @@ const AuthPage: React.FC = () => {
       <Title>{l('title')}</Title>
       <Subtitle>{l('subtitle')}</Subtitle>
       <Form onSubmit={handleSubmit}>
-        <Input type="password" autoFocus value={pass} onChange={handleChange} />
-        {error ? <ErrMessage>{error}</ErrMessage> : <Label>{l('passLabel')}</Label>}
+        <Input id="auth" type="password" autoFocus value={pass} onChange={handleChange} />
+        {error ? (
+          <ErrMessage>{error}</ErrMessage>
+        ) : (
+          <Label htmlFor="auth">{l('passLabel')}</Label>
+        )}
         <Submit>{l('submitBtn')}</Submit>
       </Form>
     </Wrapper>
