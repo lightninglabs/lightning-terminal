@@ -74,8 +74,8 @@ describe('LoopPage component', () => {
       const { getByText } = render();
       expect(getByText('Loop')).toBeInTheDocument();
       fireEvent.click(getByText('Loop'));
-      expect(getByText('Loop out')).toBeInTheDocument();
-      expect(getByText('Loop in')).toBeInTheDocument();
+      expect(getByText('Loop Out')).toBeInTheDocument();
+      expect(getByText('Loop In')).toBeInTheDocument();
     });
 
     it('should display swap wizard when Loop out is clicked', async () => {
@@ -85,7 +85,7 @@ describe('LoopPage component', () => {
       store.channelStore.sortedChannels.slice(0, 3).forEach(c => {
         store.buildSwapStore.toggleSelectedChannel(c.chanId);
       });
-      fireEvent.click(getByText('Loop out'));
+      fireEvent.click(getByText('Loop Out'));
       expect(getByText('Step 1 of 2')).toBeInTheDocument();
     });
 
@@ -96,7 +96,7 @@ describe('LoopPage component', () => {
       store.channelStore.sortedChannels.slice(0, 1).forEach(c => {
         store.buildSwapStore.toggleSelectedChannel(c.chanId);
       });
-      fireEvent.click(getByText('Loop in'));
+      fireEvent.click(getByText('Loop In'));
       expect(getByText('Step 1 of 2')).toBeInTheDocument();
     });
 
@@ -107,7 +107,7 @@ describe('LoopPage component', () => {
       store.channelStore.sortedChannels.slice(0, 1).forEach(c => {
         store.buildSwapStore.toggleSelectedChannel(c.chanId);
       });
-      fireEvent.click(getByText('Loop in'));
+      fireEvent.click(getByText('Loop In'));
       expect(getByText('Step 1 of 2')).toBeInTheDocument();
       fireEvent.click(getByText('arrow-left.svg'));
       expect(getByText('Loop History')).toBeInTheDocument();
@@ -120,7 +120,7 @@ describe('LoopPage component', () => {
       store.channelStore.sortedChannels.slice(0, 3).forEach(c => {
         store.buildSwapStore.toggleSelectedChannel(c.chanId);
       });
-      fireEvent.click(getByText('Loop out'));
+      fireEvent.click(getByText('Loop Out'));
       expect(getByText('Step 1 of 2')).toBeInTheDocument();
       fireEvent.click(getByText('Next'));
       expect(getByText('Step 2 of 2')).toBeInTheDocument();
@@ -141,7 +141,7 @@ describe('LoopPage component', () => {
       store.channelStore.sortedChannels.slice(0, 3).forEach(c => {
         store.buildSwapStore.toggleSelectedChannel(c.chanId);
       });
-      fireEvent.click(getByText('Loop out'));
+      fireEvent.click(getByText('Loop Out'));
       expect(getByText('Step 1 of 2')).toBeInTheDocument();
       fireEvent.click(getByText('Next'));
       expect(getByText('Step 2 of 2')).toBeInTheDocument();

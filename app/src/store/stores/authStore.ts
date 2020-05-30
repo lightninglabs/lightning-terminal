@@ -1,5 +1,8 @@
 import { action, observable } from 'mobx';
+import { prefixTranslation } from 'util/translate';
 import { Store } from 'store';
+
+const { l } = prefixTranslation('stores.authStore');
 
 export default class AuthStore {
   private _store: Store;
@@ -32,7 +35,7 @@ export default class AuthStore {
   @action.bound
   async login(password: string) {
     this._store.log.info('attempting to login with password');
-    if (!password) throw new Error('oops, password is required');
+    if (!password) throw new Error(l('emptyPassErr'));
 
     // encode the password and update the store
     const encoded = Buffer.from(`${password}:${password}`).toString('base64');
@@ -46,7 +49,7 @@ export default class AuthStore {
       // clear the credentials if incorrect
       this.setCredentials('');
       this._store.log.error('incorrect credentials');
-      throw new Error('oops, that password is incorrect');
+      throw new Error(l('invalidPassErr'));
     }
   }
 

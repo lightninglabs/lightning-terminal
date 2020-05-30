@@ -1,4 +1,7 @@
 {
+  "common.loop": "Loop",
+  "common.loopIn": "Loop In",
+  "common.loopOut": "Loop Out",
   "enums.BalanceMode.receive": "Receiving",
   "enums.BalanceMode.send": "Sending",
   "enums.BalanceMode.routing": "Routing",
@@ -64,6 +67,8 @@
   "cmps.settings.GeneralSettings.pageTitle": "Settings",
   "cmps.settings.UnitSettings.pageTitle": "Bitcoin Unit",
   "cmps.settings.UnitSettings.backText": "Settings",
+  "stores.authStore.emptyPassErr": "oops, password is required",
+  "stores.authStore.invalidPassErr": "oops, that password is incorrect",
   "stores.uiStore.authErrorTitle": "Your session has expired",
   "stores.uiStore.authErrorMsg": "Please enter you password to continue"
 }
