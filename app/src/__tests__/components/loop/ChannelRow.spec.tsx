@@ -2,7 +2,6 @@ import React from 'react';
 import { SwapDirection } from 'types/state';
 import { fireEvent } from '@testing-library/react';
 import { formatSats } from 'util/formatters';
-import { ellipseInside } from 'util/strings';
 import { renderWithProviders } from 'util/tests';
 import { createStore, Store } from 'store';
 import { Channel } from 'store/models';
@@ -52,7 +51,7 @@ describe('ChannelRow component', () => {
 
   it('should display the peer pubkey', () => {
     const { getByText } = render();
-    expect(getByText(ellipseInside(channel.remotePubkey))).toBeInTheDocument();
+    expect(getByText(channel.ellipsedPubkey)).toBeInTheDocument();
   });
 
   it('should display the capacity', () => {

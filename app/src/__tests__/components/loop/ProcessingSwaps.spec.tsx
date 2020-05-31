@@ -1,7 +1,6 @@
 import React from 'react';
 import * as LOOP from 'types/generated/loop_pb';
 import { fireEvent } from '@testing-library/react';
-import { ellipseInside } from 'util/strings';
 import { renderWithProviders } from 'util/tests';
 import { loopListSwaps } from 'util/tests/sampleData';
 import { createStore, Store } from 'store';
@@ -49,7 +48,7 @@ describe('ProcessingSwaps component', () => {
     const { getByText, getByTitle } = render();
     const swap = addSwap(LOOP_IN, INITIATED);
     expect(getByText('dot.svg')).toHaveClass('warn');
-    expect(getByText(ellipseInside(swap.id))).toBeInTheDocument();
+    expect(getByText(swap.ellipsedId)).toBeInTheDocument();
     expect(getByTitle(swap.stateLabel)).toBeInTheDocument();
     expect(width(getByTitle(swap.stateLabel))).toBe('25%');
   });
@@ -58,7 +57,7 @@ describe('ProcessingSwaps component', () => {
     const { getByText, getByTitle } = render();
     const swap = addSwap(LOOP_IN, HTLC_PUBLISHED);
     expect(getByText('dot.svg')).toHaveClass('warn');
-    expect(getByText(ellipseInside(swap.id))).toBeInTheDocument();
+    expect(getByText(swap.ellipsedId)).toBeInTheDocument();
     expect(getByTitle(swap.stateLabel)).toBeInTheDocument();
     expect(width(getByTitle(swap.stateLabel))).toBe('50%');
   });
@@ -67,7 +66,7 @@ describe('ProcessingSwaps component', () => {
     const { getByText, getByTitle } = render();
     const swap = addSwap(LOOP_IN, INVOICE_SETTLED);
     expect(getByText('dot.svg')).toHaveClass('warn');
-    expect(getByText(ellipseInside(swap.id))).toBeInTheDocument();
+    expect(getByText(swap.ellipsedId)).toBeInTheDocument();
     expect(getByTitle(swap.stateLabel)).toBeInTheDocument();
     expect(width(getByTitle(swap.stateLabel))).toBe('75%');
   });
@@ -75,7 +74,7 @@ describe('ProcessingSwaps component', () => {
   it('should display an SUCCESS Loop In', () => {
     const { getByText, getByTitle } = render();
     const swap = addSwap(LOOP_IN, SUCCESS);
-    expect(getByText(ellipseInside(swap.id))).toBeInTheDocument();
+    expect(getByText(swap.ellipsedId)).toBeInTheDocument();
     expect(getByTitle(swap.stateLabel)).toBeInTheDocument();
     expect(width(getByTitle(swap.stateLabel))).toBe('100%');
   });
@@ -83,7 +82,7 @@ describe('ProcessingSwaps component', () => {
   it('should display an FAILED Loop In', () => {
     const { getByText } = render();
     const swap = addSwap(LOOP_IN, FAILED);
-    expect(getByText(ellipseInside(swap.id))).toBeInTheDocument();
+    expect(getByText(swap.ellipsedId)).toBeInTheDocument();
     expect(getByText(swap.stateLabel)).toBeInTheDocument();
     expect(getByText('close.svg')).toBeInTheDocument();
   });
@@ -92,7 +91,7 @@ describe('ProcessingSwaps component', () => {
     const { getByText, getByTitle } = render();
     const swap = addSwap(LOOP_OUT, INITIATED);
     expect(getByText('dot.svg')).toHaveClass('warn');
-    expect(getByText(ellipseInside(swap.id))).toBeInTheDocument();
+    expect(getByText(swap.ellipsedId)).toBeInTheDocument();
     expect(getByTitle(swap.stateLabel)).toBeInTheDocument();
     expect(width(getByTitle(swap.stateLabel))).toBe('33%');
   });
@@ -101,7 +100,7 @@ describe('ProcessingSwaps component', () => {
     const { getByText, getByTitle } = render();
     const swap = addSwap(LOOP_OUT, PREIMAGE_REVEALED);
     expect(getByText('dot.svg')).toHaveClass('warn');
-    expect(getByText(ellipseInside(swap.id))).toBeInTheDocument();
+    expect(getByText(swap.ellipsedId)).toBeInTheDocument();
     expect(getByTitle(swap.stateLabel)).toBeInTheDocument();
     expect(width(getByTitle(swap.stateLabel))).toBe('66%');
   });
@@ -110,7 +109,7 @@ describe('ProcessingSwaps component', () => {
     const { getByText, getByTitle } = render();
     const swap = addSwap(LOOP_OUT, SUCCESS);
     expect(getByText('dot.svg')).toHaveClass('success');
-    expect(getByText(ellipseInside(swap.id))).toBeInTheDocument();
+    expect(getByText(swap.ellipsedId)).toBeInTheDocument();
     expect(getByTitle(swap.stateLabel)).toBeInTheDocument();
     expect(width(getByTitle(swap.stateLabel))).toBe('100%');
   });
@@ -118,7 +117,7 @@ describe('ProcessingSwaps component', () => {
   it('should display an FAILED Loop Out', () => {
     const { getByText } = render();
     const swap = addSwap(LOOP_OUT, FAILED);
-    expect(getByText(ellipseInside(swap.id))).toBeInTheDocument();
+    expect(getByText(swap.ellipsedId)).toBeInTheDocument();
     expect(getByText(swap.stateLabel)).toBeInTheDocument();
     expect(getByText('close.svg')).toBeInTheDocument();
   });
