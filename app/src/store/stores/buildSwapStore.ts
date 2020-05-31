@@ -55,6 +55,15 @@ class BuildSwapStore {
   // Computed properties
   //
 
+  /** returns the list of all channels. filters out inactive channels when performing a swap */
+  @computed
+  get channels() {
+    const { channelStore } = this._store;
+    return this.currentStep === BuildSwapSteps.Closed
+      ? channelStore.sortedChannels
+      : channelStore.activeChannels;
+  }
+
   /** determines whether to show the options for Loop In or Loop Out */
   @computed
   get showActions(): boolean {
