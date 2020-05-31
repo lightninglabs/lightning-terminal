@@ -10,7 +10,7 @@ import { styled } from 'components/theme';
 import ProcessingSwapRow from './ProcessingSwapRow';
 
 const Styled = {
-  Wrapper: styled.section`
+  Wrapper: styled.section<{ sidebar?: boolean }>`
     display: flex;
     flex-direction: column;
     min-height: 360px;
@@ -18,6 +18,7 @@ const Styled = {
     background-color: ${props => props.theme.colors.darkBlue};
     border-radius: 35px;
     box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.5);
+    margin-left: ${props => (props.sidebar ? '0' : '40px')};
   `,
   Header: styled.div`
     display: flex;
@@ -41,11 +42,11 @@ const Styled = {
 
 const ProcessingSwaps: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.processing.ProcessingSwaps');
-  const { swapStore, uiStore } = useStore();
+  const { swapStore, uiStore, settingsStore } = useStore();
 
   const { Wrapper, Header, Content, Complete, ConfirmAnimation } = Styled;
   return (
-    <Wrapper>
+    <Wrapper sidebar={settingsStore.sidebarVisible}>
       <Header>
         <HeaderFour>{l('title')}</HeaderFour>
         <Tip overlay={l('minimizeTip')}>
