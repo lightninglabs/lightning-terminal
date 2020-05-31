@@ -22,8 +22,7 @@ const Styled = {
     }
   `,
   Column: styled(Column)`
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: nowrap;
     line-height: ${ROW_HEIGHT}px;
   `,
   StatusHeader: styled(HeaderFour)`
