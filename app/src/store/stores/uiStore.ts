@@ -85,6 +85,7 @@ export default class UiStore {
   }
 
   /** handle errors by showing a notification and/or the auth screen */
+  @action.bound
   handleError(error: Error, title?: string) {
     if (error instanceof AuthenticationError) {
       // this will automatically redirect to the auth page

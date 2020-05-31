@@ -1,4 +1,4 @@
-import { autorun, observable } from 'mobx';
+import { action, autorun, observable, runInAction } from 'mobx';
 import { IS_DEV, IS_TEST } from 'config';
 import AppStorage from 'util/appStorage';
 import CsvExporter from 'util/csv';
@@ -65,30 +65,37 @@ export class Store {
   /**
    * load initial data to populate the store
    */
+  @action.bound
   async init() {
     this.settingsStore.init();
     await this.authStore.init();
-    this.initialized = true;
+    runInAction('init', () => {
+      this.initialized = true;
+    });
 
     // this function will automatically run whenever the authenticated
     // flag is changed
-    autorun(async () => {
-      if (this.authStore.authenticated) {
-        // go to the Loop page when the user is authenticated. it can be from
-        // entering a password or from loading the credentials from storage
-        this.uiStore.goToLoop();
-        // also fetch all the data we need
-        this.fetchAllData();
-      } else {
-        // go to auth page if we are not authenticated
-        this.uiStore.gotoAuth();
-      }
-    });
+    autorun(
+      async () => {
+        if (this.authStore.authenticated) {
+          // go to the Loop page when the user is authenticated. it can be from
+          // entering a password or from loading the credentials from storage
+          this.uiStore.goToLoop();
+          // also fetch all the data we need
+          this.fetchAllData();
+        } else {
+          // go to auth page if we are not authenticated
+          this.uiStore.gotoAuth();
+        }
+      },
+      { name: 'authenticatedAutorun' },
+    );
   }
 
   /**
    * makes the initial API calls to fetch the data we need to display in the app
    */
+  @action.bound
   async fetchAllData() {
     await this.nodeStore.fetchInfo();
     await this.channelStore.fetchChannels();

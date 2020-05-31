@@ -1,4 +1,4 @@
-import { action, observable } from 'mobx';
+import { action, observable, runInAction } from 'mobx';
 import { prefixTranslation } from 'util/translate';
 import { Store } from 'store';
 
@@ -59,8 +59,10 @@ export default class AuthStore {
     await this._store.api.lnd.getInfo();
     // if no error is thrown above then the credentials are valid
     this._store.log.info('authentication successful');
-    // setting this to true will automatically show the Loop page
-    this.authenticated = true;
+    runInAction('validateContinuation', () => {
+      // setting this to true will automatically show the Loop page
+      this.authenticated = true;
+    });
   }
 
   /**
