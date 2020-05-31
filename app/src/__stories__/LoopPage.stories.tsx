@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useStore } from 'store';
 import { Layout } from 'components/layout';
 import LoopPage from 'components/loop/LoopPage';
@@ -11,23 +11,20 @@ export default {
 
 export const Default = () => {
   const store = useStore();
-  useEffect(() => {
-    // only use a small set of channels
-    store.channelStore.sortedChannels.splice(10);
-
-    // change back to sample data when the component is unmounted
-    return () => {
-      store.channelStore.fetchChannels();
-    };
-  }, []);
+  // only use a small set of channels
+  store.channelStore.sortedChannels.splice(10);
 
   return <LoopPage />;
 };
 
 export const ManyChannels = () => <LoopPage />;
 
-export const InsideLayout = () => (
-  <Layout>
-    <LoopPage />
-  </Layout>
-);
+export const InsideLayout = () => {
+  const store = useStore();
+  store.uiStore.goToLoop();
+  return (
+    <Layout>
+      <LoopPage />
+    </Layout>
+  );
+};
