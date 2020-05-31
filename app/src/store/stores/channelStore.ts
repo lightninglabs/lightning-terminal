@@ -31,6 +31,13 @@ export default class ChannelStore {
   }
 
   /**
+   * an array of channels that are currently active
+   */
+  @computed get activeChannels() {
+    return this.sortedChannels.filter(c => c.active);
+  }
+
+  /**
    * the sum of remote balance for all channels
    */
   @computed get totalInbound() {
