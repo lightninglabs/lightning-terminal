@@ -1,54 +1,148 @@
-> This document is currently a scratchpad for developer setup and temporary hacks to run the project. It will be made more user-friendly in the future
+# Shushtar
 
 ![CI](https://github.com/lightninglabs/shushtar/workflows/CI/badge.svg)
 
-Requirements: [Go](https://golang.org/doc/install), [protoc](https://github.com/protocolbuffers/protobuf/releases), [nodejs v12+](https://nodejs.org/en/download/)
+** insert screenshot here **
 
-## One-time Setup
+Shushtar is a browser-based interface for managing the off-chain liquidity of your `lnd` Lightning Network node. It presents a visual representation of your channels and balances, while allowing you to perform submarine swaps via the [Lightning Loop](https://lightning.engineering/loop) service using a graphical interface. With a bird's eye view of all of your open channels, you can instantly see which ones need your immediate attention.
 
-Install client app dependencies
+You can configure the UI to classify channels according to your node's operating mode.
 
-```sh
-npm install -g yarn # if yarn isn't already installed
-cd app/
-yarn
+- **Optimize for Receiving**: For merchants who primarily receive inbound Lightning payments, the channels with high local balances will be shaded red.
+- **Optimize for Routing**: For routing node operators, that want to keep their channels balanced close to 50%, the channels with a high balance in either direction will be flagged.
+- **Optimize for Sending**: For exchanges, fiat gateways, and other operators who primarily send outgoing Lightning payments, the channels with high local balances will be shaded red.
+
+## Architecture
+
+Shustar is packaged as a single binary which contains the [`lnd`](https://github.com/lightningnetwork/lnd), [`loopd`](https://github.com/lightninglabs/loop) and [`faraday`](https://github.com/lightninglabs/faraday) daemons all in one. It also contains an https server to serve the web assets (html/js/css) and a GRPC proxy to forward web requests from the browser to the appropriate GRPC server. This deployment strategy was chosen as it greatly simplifies the operational overhead of installation, configuration and maintenance that would be necessary to run each of these servers independently. You only need to download one executable and run one command to get Shushtar up and running. We include the CLI binaries `lncli`, `loop` and `frcli` for convenience in the downloadable archives as well.
+
+## Installation
+
+There are two methods you may use to install Shushtar, either by downloading the published binaries for your platform or by compiling from the source code.
+
+#### Download Binaries
+
+Shushtar binaries for many platforms are made available on the GitHub [Releases](https://github.com/lightninglabs/shushtar/releases) page in this repo. There you can download the latest version and extract the archive into a directory on your computer.
+
+#### Compile from Source Code
+
+To compile from source code, you will need to have some pre-requisite developer tooling installed on your machine.
+
+- **Go**: Shushtar's backend web server is written in Go. Instructions for installing Go for your operating system can be found on the [golang install](https://golang.org/doc/install) page. The minimum version supported is Go v1.13.
+- **NodeJS**: Shushtar's frontend is written in TypeScript and built on top of the React JS web framework. To bundle the assets into Javascript & CSS compatible with web browsers, NodeJS is required. It can be downloaded and installed by following the instructions in the [NodeJS download](https://nodejs.org/en/download/) page.
+
+Once you have the necessary pre-requisites, Shushtar can be compiled by running just a few commands:
+
+```
+git clone https://github.com/lightninglabs/shushtar.git
+cd shushtar
+make && make install
 ```
 
-## Development
+This will produce the `shushtar-debug` executable and add it to your `GOPATH`.
 
-- Compile and start the GrUB (see [Run the GrUB](#run-the-grub))
-- Run the client app in a separate terminal
-  ```sh
-  cd app
-  yarn start
-  ```
+## Configuration
 
-Open browser at http://localhost:3000
+Shushtar only has a few configuration parameters itself.
 
-## Testing
+#### Required
 
-- Run all unit tests and output coverage
-  ```sh
-  yarn test:ci
-  ```
-- Run tests on locally modified files in watch mode
-  ```sh
-  yarn test
-  ```
+You must set `httpslisten` to the host & port that the https server should listen on. Also set `uipassword` to a strong password to use to login to the website in your browser. A minimum of 8 characters is required. In a production environment, it is recommended to store this password as an environment variable.
 
-## Storybook Explorer
+#### Optional
 
-Storybook allows you to view the app's UI components using sample data. It is helpful when building components as you do not need to spin up a full development environment. It also allows you to get quick previews of how the components will be displayed in multiple different states, based on the props and data provided to them.
+You can also configure the https server to automatically install a free SSL certificate provided by [LetsEncrypt](https://letsencrypt.org/). This is recommended if you plan to access the website from a remote computer and do not want to deal with the browser warning you about the self-signed certificate. You just need to specify the domain name you wish to use, and make sure port 80 is open in your in your firewall. LetsEncrypt requires this to verify that you own the domain name. Shushtar will listen on port 80 to handle the verification requests.
 
-- Launch Storybook explorer
-  ```sh
-  yarn
-  yarn storybook
-  ```
+> Note: Shushtar only serves content over **HTTPS**. If you do not use `letsencrypt`, Shushtar will use the self-signed certificate that is auto-generated by `lnd` to encrypt the browser-to-server communication.
 
-## Logging
+```
+Application Options:
+      --httpslisten=      host:port to listen for incoming HTTP/2 connections on (default: 127.0.0.1:8443)
+      --uipassword=       the password that must be entered when using the loop UI. use a strong
+                          password to protect your node from unauthorized access through the web UI
+      --letsencrypt       use Let's Encrypt to create a TLS certificate for the UI instead of using
+                          lnd's TLS certificate. port 80 must be free to listen on and must be reachable
+                          from the internet for this to work
+      --letsencrypthost=  the host name to create a Let's Encrypt certificate for'
+      --letsencryptdir=   the directory where the Let's Encrypt library will store its key and
+                          certificate (default: /Users/jamal/Library/Application Support/Lnd/letsencrypt)
+```
 
-Client-side logs are disabled by default in production builds and enabled by default in a development environment. In production, logging can be turned on by adding a couple keys to your browser's `localStorage`. Simply run these two JS statements in you browser's DevTools console:
+You must also provide configuration to the `lnd` daemon. Each flag must be prefixed with `lnd.` (ex: `lnd.lnddir=~/.lnd`). Please see the [sample-lnd.conf](https://github.com/lightningnetwork/lnd/blob/master/sample-lnd.conf) file for more details on the available parameters. Note that `loopd` and `faraday` will automatically connect to the in-process `lnd` node, so you do not need to provide them with any additional parameters unless you want to override them. If you do override them, be sure to add the `loop.` and `faraday.` prefixes.
+
+Here is an example command to start `shushtar-debug` on testnet with a local `bitcoind` node:
+
+```
+./shushtar-debug \
+  --httpslisten=0.0.0.0:443 \
+  --uipassword=My$trongPassword \
+  --letsencrypt \
+  --letsencrypthost=loop.merchant.com \
+  --lnd.lnddir=/root/.lnd \
+  --lnd.alias=merchant \
+  --lnd.externalip=loop.merchant.com \
+  --lnd.rpclisten=0.0.0.0:10009 \
+  --lnd.listen=0.0.0.0:9735 \
+  --lnd.bitcoin.active \
+  --lnd.bitcoin.testnet \
+  --lnd.bitcoin.node=bitcoind \
+  --lnd.bitcoind.rpchost=localhost \
+  --lnd.bitcoind.rpcuser=testnetuser \
+  --lnd.bitcoind.rpcpass=testnetpw \
+  --lnd.bitcoind.zmqpubrawblock=localhost:28332 \
+  --lnd.bitcoind.zmqpubrawtx=localhost:28333 \
+  --lnd.debuglevel=debug \
+```
+
+You can also store the configuration in a persistent 'lnd.conf' file so you do not need to type in the command line arguments every time you start the server. Just remember to use the `lnd.` prefix.
+
+Example `lnd.conf`:
+
+```
+[Application Options]
+httpslisten=0.0.0.0:443
+letsencrypt=1
+letsencrypthost=loop.merchant.com
+
+[Lnd]
+lnd.lnddir=/root/.lnd
+lnd.alias=merchant
+lnd.externalip=loop.merchant.com
+lnd.rpclisten=0.0.0.0:10009
+lnd.listen=0.0.0.0:9735
+lnd.debuglevel=debug
+
+[Bitcoin]
+lnd.bitcoin.active
+lnd.bitcoin.testnet
+lnd.bitcoin.node=bitcoind
+
+[Bitcoind]
+lnd.bitcoind.rpchost=localhost
+lnd.bitcoind.rpcuser=testnetuser
+lnd.bitcoind.rpcpass=testnetpw
+lnd.bitcoind.zmqpubrawblock=localhost:28332
+lnd.bitcoind.zmqpubrawtx=localhost:28333
+
+```
+
+The default location for the `lnd.conf` file will depend on your operating system:
+
+- **On MacOS**: `~/Library/Application Support/Lnd/lnd.conf`
+- **On Linux**: `~/.lnd/lnd.conf`
+- **On Windows**: `~/AppData/Roaming/Lnd/lnd.conf`
+
+### Troubleshooting
+
+If you have trouble running your node, please first check the logs for warning or errors.
+
+#### Server
+
+Server-side logs are stored in the directory specified by `lnd.lnddir` in your configuration. Inside, there is a `logs` dir containing the log files in subdirectories.
+
+#### Browser
+
+Client-side logs are disabled by default in production builds. Logging can be turned on by adding a couple keys to your browser's `localStorage`. Simply run these two JS statements in you browser's DevTools console then refresh the page:
 
 ```
 localStorage.setItem('debug', '*'); localStorage.setItem('debug-level', 'debug');
@@ -63,33 +157,3 @@ The value for `debug` is a namespace filter which determines which portions of t
 Example filters: `main,action` will only log main and action messages. `*,-action` will log everything except action messages.
 
 The value for `debug-level` determines the verbosity of the logs. The value can be one of `debug`, `info`, `warn`, or `error`.
-
-# Run the GrUB
-
-- Compile the GrUB binary:
-  ```sh
-  make build
-  ```
-- Start the GrUB binary. The following is an example for testnet that starts an
-  lnd node called `zane` on port `10020` (REST: `8100`), change this to your
-  needs:
-  ```sh
-  ./shushtar-debug \
-    --httpslisten=8443 \
-    --lnd.lnddir=/home/$USER/.lnd-dev-zane \
-    --lnd.alias=zane \
-    --lnd.noseedbackup \
-    --lnd.rpclisten=localhost:10020 \
-    --lnd.listen=0.0.0.0:9750 \
-    --lnd.restlisten=localhost:8100 \
-    --lnd.bitcoin.active \
-    --lnd.bitcoin.testnet \
-    --lnd.bitcoin.node=bitcoind \
-    --lnd.bitcoind.rpchost=localhost \
-    --lnd.bitcoind.rpcuser=lightning \
-    --lnd.bitcoind.rpcpass=lightning \
-    --lnd.bitcoind.zmqpubrawblock=localhost:28332 \
-    --lnd.bitcoind.zmqpubrawtx=localhost:28333 \
-    --lnd.debuglevel=debug
-  ```
-- You can now access the web interface on https://localhost:8443
