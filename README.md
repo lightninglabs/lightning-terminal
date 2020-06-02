@@ -14,11 +14,11 @@ You can configure the UI to classify channels according to your node's operating
 
 ## Architecture
 
-Shustar is packaged as a single binary which contains the [`lnd`](https://github.com/lightningnetwork/lnd), [`loopd`](https://github.com/lightninglabs/loop) and [`faraday`](https://github.com/lightninglabs/faraday) daemons all in one. It also contains an https server to serve the web assets (html/js/css) and a GRPC proxy to forward web requests from the browser to the appropriate GRPC server. This deployment strategy was chosen as it greatly simplifies the operational overhead of installation, configuration and maintenance that would be necessary to run each of these servers independently. You only need to download one executable and run one command to get Shushtar up and running. We include the CLI binaries `lncli`, `loop` and `frcli` for convenience in the downloadable archives as well.
+Shustar is packaged as a single binary which contains the [`lnd`](https://github.com/lightningnetwork/lnd), [`loopd`](https://github.com/lightninglabs/loop) and [`faraday`](https://github.com/lightninglabs/faraday) daemons all in one. It also contains an HTTP server to serve the web assets (html/js/css) and a GRPC proxy to forward web requests from the browser to the appropriate GRPC server. This deployment strategy was chosen as it greatly simplifies the operational overhead of installation, configuration and maintenance that would be necessary to run each of these servers independently. You only need to download one executable and run one command to get Shushtar up and running. We include the CLI binaries `lncli`, `loop` and `frcli` for convenience in the downloadable archives as well.
 
 ## Installation
 
-There are two methods you may use to install Shushtar, either by downloading the published binaries for your platform or by compiling from the source code.
+There are two options for installing Shushtar: download the published binaries for your platform, or compile from source code.
 
 #### Download Binaries
 
@@ -26,12 +26,12 @@ Shushtar binaries for many platforms are made available on the GitHub [Releases]
 
 #### Compile from Source Code
 
-To compile from source code, you will need to have some pre-requisite developer tooling installed on your machine.
+To compile from source code, you'll need to have some prerequisite developer tooling installed on your machine.
 
 - **Go**: Shushtar's backend web server is written in Go. Instructions for installing Go for your operating system can be found on the [golang install](https://golang.org/doc/install) page. The minimum version supported is Go v1.13.
-- **NodeJS**: Shushtar's frontend is written in TypeScript and built on top of the React JS web framework. To bundle the assets into Javascript & CSS compatible with web browsers, NodeJS is required. It can be downloaded and installed by following the instructions in the [NodeJS download](https://nodejs.org/en/download/) page.
+- **NodeJS**: Shushtar's frontend is written in TypeScript and built on top of the React JS web framework. To bundle the assets into Javascript & CSS compatible with web browsers, NodeJS is required. It can be downloaded and installed by following the instructions on the [NodeJS download](https://nodejs.org/en/download/) page.
 
-Once you have the necessary pre-requisites, Shushtar can be compiled by running just a few commands:
+Once you have the necessary prerequisites, Shushtar can be compiled by running the following commands:
 
 ```
 git clone https://github.com/lightninglabs/shushtar.git
@@ -47,13 +47,13 @@ Shushtar only has a few configuration parameters itself.
 
 #### Required
 
-You must set `httpslisten` to the host & port that the https server should listen on. Also set `uipassword` to a strong password to use to login to the website in your browser. A minimum of 8 characters is required. In a production environment, it is recommended to store this password as an environment variable.
+You must set `httpslisten` to the host & port that the https server should listen on. Also set `uipassword` to a strong password to use to login to the website in your browser. A minimum of 8 characters is required. In a production environment, it's recommended that you store this password as an environment variable.
 
 #### Optional
 
-You can also configure the https server to automatically install a free SSL certificate provided by [LetsEncrypt](https://letsencrypt.org/). This is recommended if you plan to access the website from a remote computer and do not want to deal with the browser warning you about the self-signed certificate. You just need to specify the domain name you wish to use, and make sure port 80 is open in your in your firewall. LetsEncrypt requires this to verify that you own the domain name. Shushtar will listen on port 80 to handle the verification requests.
+You can also configure the HTTP server to automatically install a free SSL certificate provided by [LetsEncrypt](https://letsencrypt.org/). This is recommended if you plan to access the website from a remote computer and do not want to deal with the browser warning you about the self-signed certificate. You just need to specify the domain name you wish to use, and make sure port 80 is open in your in your firewall. LetsEncrypt requires this to verify that you own the domain name. Shushtar will listen on port 80 to handle the verification requests. On some linux-based platforms, you may need to run Shushtar with superuser privileges since port 80 is a system port.
 
-> Note: Shushtar only serves content over **HTTPS**. If you do not use `letsencrypt`, Shushtar will use the self-signed certificate that is auto-generated by `lnd` to encrypt the browser-to-server communication.
+> Note: Shushtar only serves content over **HTTPS**. If you do not use `letsencrypt`, Shushtar will use the self-signed certificate that is auto-generated by `lnd` to encrypt the browser-to-server communication. Web browsers will display a warning when using the self-signed certificate.
 
 ```
 Application Options:
@@ -73,9 +73,9 @@ You must also provide configuration to the `lnd` daemon. Each flag must be prefi
 Here is an example command to start `shushtar-debug` on testnet with a local `bitcoind` node:
 
 ```
-./shushtar-debug \
+$ ./shushtar-debug \
   --httpslisten=0.0.0.0:443 \
-  --uipassword=My$trongPassword \
+  --uipassword=My$trongP@ssword \
   --letsencrypt \
   --letsencrypthost=loop.merchant.com \
   --lnd.lnddir=/root/.lnd \
@@ -92,6 +92,8 @@ Here is an example command to start `shushtar-debug` on testnet with a local `bi
   --lnd.bitcoind.zmqpubrawblock=localhost:28332 \
   --lnd.bitcoind.zmqpubrawtx=localhost:28333 \
   --lnd.debuglevel=debug \
+  --loop.loopoutmaxparts=5 \
+  --faraday.min_monitored=48h
 ```
 
 You can also store the configuration in a persistent 'lnd.conf' file so you do not need to type in the command line arguments every time you start the server. Just remember to use the `lnd.` prefix.
@@ -105,7 +107,7 @@ letsencrypt=1
 letsencrypthost=loop.merchant.com
 
 [Lnd]
-lnd.lnddir=/root/.lnd
+lnd.lnddir=~/.lnd
 lnd.alias=merchant
 lnd.externalip=loop.merchant.com
 lnd.rpclisten=0.0.0.0:10009
@@ -124,6 +126,12 @@ lnd.bitcoind.rpcpass=testnetpw
 lnd.bitcoind.zmqpubrawblock=localhost:28332
 lnd.bitcoind.zmqpubrawtx=localhost:28333
 
+[Loop]
+loopoutmaxparts=5
+
+[Faraday]
+min_monitored=48h
+
 ```
 
 The default location for the `lnd.conf` file will depend on your operating system:
@@ -131,6 +139,88 @@ The default location for the `lnd.conf` file will depend on your operating syste
 - **On MacOS**: `~/Library/Application Support/Lnd/lnd.conf`
 - **On Linux**: `~/.lnd/lnd.conf`
 - **On Windows**: `~/AppData/Roaming/Lnd/lnd.conf`
+
+### Upgrade Existing Nodes
+
+If you already have existing `lnd`, `loop`, or `faraday` nodes, you can easily upgrade them of them with the Shushtar single executable while keeping all of your past data.
+
+For `lnd`:
+
+- if you use an `lnd.conf` file for configurations, add the `lnd.` prefix to each of the configuration parameters.
+  Before:
+  ```
+  [Application Options]
+  alias=merchant
+  ```
+  After:
+  ```
+  [Application Options]
+  lnd.alias=merchant
+  ```
+- if you use command line arguments for configuration, add the `lnd.` prefix to each argument to `shushtar-debug`
+  Before:
+  ```
+  $ lnd --lnddir=~/.lnd --alias=merchant ...
+  ```
+  After:
+  ```
+  $ shushtar-debug lnd.lnddir=~/.lnd --lnd.alias=merchant ...
+  ```
+
+For `loop`:
+
+- if you use an `loop.conf` file for configurations, copy the parameters into the `lnd.conf` file that `shushtar-debug` uses. Also add the `loop.` prefix to each of the configuration parameters.
+
+  Before: (in `loop.conf`)
+
+  ```
+  [Application Options]
+  loopoutmaxparts=5
+  ```
+
+  After: (in `lnd.conf`)
+
+  ```
+  [Loop]
+  loop.loopoutmaxparts=5
+  ```
+
+- if you use command line arguments for configuration, add the `loop.` prefix to each argument to `shushtar-debug`
+  Before:
+  ```
+  $ loop --loopoutmaxparts=5 --debuglevel=debug ...
+  ```
+  After:
+  ```
+  $ shushtar-debug --loop.loopoutmaxparts=5 --loop.debuglevel=debug ...
+  ```
+
+For `faraday`:
+
+- the standalone `faraday` daemon does not load configuration from file, but you can now store the parameters into the `lnd.conf` file that `shushtar-debug` uses. Just add the `faraday.` prefix to each of the configuration parameters.
+
+  Before: (from command line)
+
+  ```
+  $ faraday --min_monitored=48h
+  ```
+
+  After: (in `lnd.conf`)
+
+  ```
+  [Faraday]
+  faraday.min_monitored=48h
+  ```
+
+- if you use command line arguments for configuration, add the `faraday.` prefix to each argument to `shushtar-debug`
+  Before:
+  ```
+  $ faraday --min_monitored=48h --debuglevel=debug ...
+  ```
+  After:
+  ```
+  $ shushtar-debug --faraday.min_monitored=48h --faraday.debuglevel=debug...
+  ```
 
 ### Troubleshooting
 
