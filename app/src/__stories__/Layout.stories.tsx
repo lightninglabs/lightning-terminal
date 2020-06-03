@@ -8,17 +8,27 @@ export default {
   component: Layout,
 };
 
-export const Default = () => <Layout />;
+export const Default = () => {
+  const { uiStore } = useStore();
+  uiStore.goToLoop();
 
-export const WithContent = () => (
-  <Layout>
-    <LoopPage />
-  </Layout>
-);
+  return <Layout />;
+};
+
+export const WithContent = () => {
+  const { uiStore } = useStore();
+  uiStore.goToLoop();
+  return (
+    <Layout>
+      <LoopPage />
+    </Layout>
+  );
+};
 
 export const Collapsed = () => {
-  const store = useStore();
-  store.settingsStore.sidebarVisible = false;
+  const { uiStore, settingsStore } = useStore();
+  uiStore.goToLoop();
+  settingsStore.sidebarVisible = false;
 
   return (
     <Layout>

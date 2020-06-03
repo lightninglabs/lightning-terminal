@@ -4,8 +4,11 @@ import { BuildSwapSteps, Quote, SwapDirection, SwapTerms } from 'types/state';
 import Big from 'big.js';
 import { percentage } from 'util/bigmath';
 import { formatSats } from 'util/formatters';
+import { prefixTranslation } from 'util/translate';
 import { Store } from 'store';
 import Channel from 'store/models/channel';
+
+const { l } = prefixTranslation('stores.buildSwapStore');
 
 // an artificial delay to allow the user to abort a swap before it executed
 export const SWAP_ABORT_DELAY = 3000;
@@ -51,6 +54,15 @@ class BuildSwapStore {
   //
   // Computed properties
   //
+
+  /** returns the list of all channels. filters out inactive channels when performing a swap */
+  @computed
+  get channels() {
+    const { channelStore } = this._store;
+    return this.currentStep === BuildSwapSteps.Closed
+      ? channelStore.sortedChannels
+      : channelStore.activeChannels;
+  }
 
   /** determines whether to show the options for Loop In or Loop Out */
   @computed
@@ -168,6 +180,10 @@ class BuildSwapStore {
    */
   @action.bound
   async startSwap(): Promise<void> {
+    if (this._store.channelStore.activeChannels.length === 0) {
+      this._store.uiStore.notify(l('noChannelsMsg'));
+      return;
+    }
     this.currentStep = BuildSwapSteps.SelectDirection;
     await this.getTerms();
     this._store.log.info(`updated buildSwapStore.currentStep`, this.currentStep);

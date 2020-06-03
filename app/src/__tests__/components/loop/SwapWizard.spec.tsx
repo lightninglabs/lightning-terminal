@@ -12,7 +12,7 @@ describe('SwapWizard component', () => {
 
   beforeEach(async () => {
     store = createStore();
-    await store.init();
+    await store.fetchAllData();
 
     await store.buildSwapStore.startSwap();
     store.channelStore.sortedChannels.slice(0, 3).forEach(c => {

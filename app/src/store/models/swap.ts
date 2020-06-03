@@ -19,7 +19,7 @@ export default class Swap {
   }
 
   /** the first and last 6 chars of the swap id */
-  @computed get idEllipsed() {
+  @computed get ellipsedId() {
     return ellipseInside(this.id);
   }
 

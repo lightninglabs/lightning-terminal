@@ -28,6 +28,16 @@ describe('LoopPage component', () => {
     expect(getByText('Lightning Loop')).toBeInTheDocument();
   });
 
+  it('should display the network badge', () => {
+    const { getByText, queryByText } = render();
+    store.nodeStore.network = 'regtest';
+    expect(getByText('regtest')).toBeInTheDocument();
+    store.nodeStore.network = 'testnet';
+    expect(getByText('testnet')).toBeInTheDocument();
+    store.nodeStore.network = 'mainnet';
+    expect(queryByText('mainnet')).not.toBeInTheDocument();
+  });
+
   it('should display the three tiles', () => {
     const { getByText } = render();
     expect(getByText('Loop History')).toBeInTheDocument();

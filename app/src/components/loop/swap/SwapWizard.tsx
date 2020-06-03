@@ -11,13 +11,14 @@ import SwapProcessingStep from './SwapProcessing';
 import SwapReviewStep from './SwapReviewStep';
 
 const Styled = {
-  Wrapper: styled.section`
+  Wrapper: styled.section<{ sidebar?: boolean }>`
     display: flex;
     min-height: 360px;
     padding: 30px;
     background-color: ${props => props.theme.colors.darkBlue};
     border-radius: 35px;
     box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.5);
+    margin-left: ${props => (props.sidebar ? '0' : '40px')};
   `,
   Nav: styled.div`
     width: 36px;
@@ -33,7 +34,7 @@ const Styled = {
 const SwapWizard: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.swap.SwapWizard');
 
-  const { buildSwapStore } = useStore();
+  const { buildSwapStore, settingsStore } = useStore();
 
   let cmp: ReactNode;
   switch (buildSwapStore.currentStep) {
@@ -52,7 +53,7 @@ const SwapWizard: React.FC = () => {
 
   const { Wrapper, Nav, Content } = Styled;
   return (
-    <Wrapper>
+    <Wrapper sidebar={settingsStore.sidebarVisible}>
       <Nav>
         <Tip overlay={l('backTip')}>
           <ArrowLeft onClick={buildSwapStore.goToPrevStep} />

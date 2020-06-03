@@ -2,6 +2,7 @@ import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { Swap } from 'store/models';
 import { HeaderFour } from 'components/base';
+import Tip from 'components/common/Tip';
 import Unit from 'components/common/Unit';
 import { styled } from 'components/theme';
 import SwapDot from '../SwapDot';
@@ -36,7 +37,11 @@ const SwapInfo: React.FC<Props> = ({ swap }) => {
         <SwapDot swap={swap} />
       </Dot>
       <Details>
-        <HeaderFour marginless>{swap.idEllipsed}</HeaderFour>
+        <HeaderFour marginless>
+          <Tip overlay={swap.id}>
+            <span>{swap.ellipsedId}</span>
+          </Tip>
+        </HeaderFour>
         <div>
           <Unit sats={swap.amount} />
         </div>

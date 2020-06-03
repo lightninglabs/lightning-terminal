@@ -25,13 +25,18 @@ const Styled = {
     height: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: center;
   `,
   Track: styled.div`
     height: 3px;
     background-color: #464d62;
     border: 1px solid #5a6276;
     border-radius: 2px;
+  `,
+  Status: styled.div<{ pct: number }>`
+    width: ${props => props.pct}%;
+    text-align: right;
+    font-size: ${props => props.theme.sizes.xs};
+    transition: all 1s;
   `,
   Fill: styled.div<{ state: number; pct: number }>`
     height: 1px;
@@ -50,9 +55,10 @@ const SwapProgress: React.FC<Props> = ({ swap }) => {
   const steps = progressSteps[swap.type];
   const pct = Math.floor(((steps.indexOf(swap.state) + 1) / steps.length) * 100);
 
-  const { Wrapper, Track, Fill } = Styled;
+  const { Wrapper, Status, Track, Fill } = Styled;
   return (
     <Wrapper>
+      <Status pct={pct}>{swap.stateLabel}</Status>
       <Track>
         <Fill state={swap.state} pct={pct} title={swap.stateLabel} />
       </Track>

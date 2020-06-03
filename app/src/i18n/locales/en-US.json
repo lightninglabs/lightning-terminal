@@ -22,7 +22,7 @@
   "cmps.loop.ChannelRowHeader.canReceive": "Can Receive",
   "cmps.loop.ChannelRowHeader.canSend": "Can Send",
   "cmps.loop.ChannelRowHeader.upTime": "Up Time %",
-  "cmps.loop.ChannelRowHeader.peer": "Peer/Alias",
+  "cmps.loop.ChannelRowHeader.peer": "Peer Pubkey",
   "cmps.loop.ChannelRowHeader.capacity": "Capacity",
   "cmps.loop.LoopActions.channelsSelected": "channels selected",
   "cmps.loop.LoopActions.loopInNote": "For multi Loop In, all channels must use the same peer.",
@@ -69,6 +69,7 @@
   "cmps.settings.UnitSettings.backText": "Settings",
   "stores.authStore.emptyPassErr": "oops, password is required",
   "stores.authStore.invalidPassErr": "oops, that password is incorrect",
+  "stores.buildSwapStore.noChannelsMsg": "You cannot perform a swap without any active channels",
   "stores.uiStore.authErrorTitle": "Your session has expired",
   "stores.uiStore.authErrorMsg": "Please enter you password to continue"
 }

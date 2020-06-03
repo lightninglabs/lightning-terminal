@@ -56,15 +56,18 @@ export default class SettingsStore {
   @action.bound
   init() {
     this.load();
-    autorun(() => {
-      const settings: PersistentSettings = {
-        sidebarVisible: this.sidebarVisible,
-        unit: this.unit,
-        balanceMode: this.balanceMode,
-      };
-      this._store.storage.set('settings', settings);
-      this._store.log.info('saved settings to localStorage', settings);
-    });
+    autorun(
+      () => {
+        const settings: PersistentSettings = {
+          sidebarVisible: this.sidebarVisible,
+          unit: this.unit,
+          balanceMode: this.balanceMode,
+        };
+        this._store.storage.set('settings', settings);
+        this._store.log.info('saved settings to localStorage', settings);
+      },
+      { name: 'settingsAutorun' },
+    );
   }
 
   /**

@@ -1,5 +1,5 @@
 import { values } from 'mobx';
-import { SwapDirection } from 'types/state';
+import { BuildSwapSteps, SwapDirection } from 'types/state';
 import { grpc } from '@improbable-eng/grpc-web';
 import { waitFor } from '@testing-library/react';
 import Big from 'big.js';
@@ -17,6 +17,15 @@ describe('BuildSwapStore', () => {
     rootStore = createStore();
     await rootStore.fetchAllData();
     store = rootStore.buildSwapStore;
+  });
+
+  it('should not start a swap if there are no channels', async () => {
+    rootStore.channelStore.channels.clear();
+    expect(store.currentStep).toBe(BuildSwapSteps.Closed);
+    expect(rootStore.uiStore.alerts.size).toBe(0);
+    await store.startSwap();
+    expect(store.currentStep).toBe(BuildSwapSteps.Closed);
+    expect(rootStore.uiStore.alerts.size).toBe(1);
   });
 
   it('should toggle the selected channels', () => {

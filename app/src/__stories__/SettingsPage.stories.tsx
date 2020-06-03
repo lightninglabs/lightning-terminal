@@ -26,6 +26,8 @@ export const BalanceMode = () => {
 };
 
 export const InsideLayout = () => {
+  const { uiStore } = useStore();
+  uiStore.goToSettings();
   return (
     <Layout>
       <SettingsPage />

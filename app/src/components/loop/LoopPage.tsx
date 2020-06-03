@@ -2,6 +2,7 @@ import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
+import { Badge } from 'components/base';
 import PageHeader from 'components/common/PageHeader';
 import { styled } from 'components/theme';
 import ChannelList from './ChannelList';
@@ -18,7 +19,18 @@ const Styled = {
 
 const LoopPage: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.LoopPage');
-  const { uiStore, buildSwapStore, channelStore } = useStore();
+  const { uiStore, buildSwapStore, channelStore, nodeStore } = useStore();
+
+  const title = (
+    <>
+      {l('pageTitle')}
+      {nodeStore.network !== 'mainnet' && (
+        <sup>
+          <Badge>{nodeStore.network}</Badge>
+        </sup>
+      )}
+    </>
+  );
 
   const { PageWrap } = Styled;
   return (
@@ -30,7 +42,7 @@ const LoopPage: React.FC = () => {
       ) : (
         <>
           <PageHeader
-            title={l('pageTitle')}
+            title={title}
             onHistoryClick={uiStore.goToHistory}
             onExportClick={channelStore.exportChannels}
           />

@@ -5,6 +5,7 @@ import { getBalanceStatus } from 'util/balances';
 import { percentage } from 'util/bigmath';
 import { BalanceMode, BalanceModes } from 'util/constants';
 import { CsvColumns } from 'util/csv';
+import { ellipseInside } from 'util/strings';
 import { Store } from 'store/store';
 
 export default class Channel {
@@ -22,6 +23,13 @@ export default class Channel {
   constructor(store: Store, lndChannel: LND.Channel.AsObject) {
     this._store = store;
     this.update(lndChannel);
+  }
+
+  /**
+   * The remotePubkey shortened to ~20 chars with ellipses inside
+   */
+  @computed get ellipsedPubkey() {
+    return ellipseInside(this.remotePubkey);
   }
 
   /**

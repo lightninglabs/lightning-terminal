@@ -2,12 +2,12 @@ import React, { CSSProperties } from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { BalanceStatus } from 'util/constants';
-import { ellipseInside } from 'util/strings';
 import { useStore } from 'store';
 import { Channel } from 'store/models';
 import { Column, HeaderFour, Row } from 'components/base';
 import Checkbox from 'components/common/Checkbox';
 import StatusDot from 'components/common/StatusDot';
+import Tip from 'components/common/Tip';
 import Unit from 'components/common/Unit';
 import { styled } from 'components/theme';
 import ChannelBalance from './ChannelBalance';
@@ -135,7 +135,11 @@ const ChannelRow: React.FC<Props> = ({ channel, style }) => {
         <Unit sats={channel.localBalance} suffix={false} />
       </Column>
       <Column>{channel.uptimePercent}</Column>
-      <Column>{ellipseInside(channel.remotePubkey)}</Column>
+      <Column>
+        <Tip overlay={channel.remotePubkey} placement="left">
+          <span>{channel.ellipsedPubkey}</span>
+        </Tip>
+      </Column>
       <Column right>
         <Unit sats={channel.capacity} suffix={false} />
       </Column>
