@@ -31,4 +31,6 @@ export const grpc = {
         });
       },
     ),
+  // mock client function to simulate server-side streaming
+  client: jest.fn(),
 };
