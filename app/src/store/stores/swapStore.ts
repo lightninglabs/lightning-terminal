@@ -100,7 +100,10 @@ export default class SwapStore {
   @action.bound
   onSwapUpdate(loopSwap: SwapStatus.AsObject) {
     this.addOrUpdateSwap(loopSwap);
-    this._store.channelStore.fetchChannels();
+    // the swap update likely caused a change in onchain/offchain balances
+    // so fetch updated data from the server
+    this._store.channelStore.fetchChannelsThrottled();
+    this._store.nodeStore.fetchBalancesThrottled();
   }
 
   /** exports the sorted list of swaps to CSV file */

@@ -1,6 +1,7 @@
 import { action, observable, runInAction, toJS } from 'mobx';
 import { Transaction } from 'types/generated/lnd_pb';
 import Big from 'big.js';
+import debounce from 'lodash/debounce';
 import { Store } from 'store';
 import { Wallet } from '../models';
 
@@ -70,6 +71,9 @@ export default class NodeStore {
       this._store.uiStore.handleError(error, 'Unable to fetch balances');
     }
   }
+
+  /** fetch balances at most once every 2 seconds when using this func  */
+  fetchBalancesThrottled = debounce(this.fetchBalances, 2000);
 
   /**
    * updates the wallet balance from the transaction provided

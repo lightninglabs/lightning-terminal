@@ -9,6 +9,7 @@ import {
 } from 'mobx';
 import { ChannelEventUpdate, ChannelPoint } from 'types/generated/lnd_pb';
 import Big from 'big.js';
+import debounce from 'lodash/debounce';
 import { Store } from 'store';
 import { Channel } from '../models';
 
@@ -98,6 +99,9 @@ export default class ChannelStore {
     }
   }
 
+  /** fetch channels at most once every 2 seconds when using this func  */
+  fetchChannelsThrottled = debounce(this.fetchChannels, 2000);
+
   /** update the channel list based on events from the API */
   @action.bound
   onChannelEvent(event: ChannelEventUpdate.AsObject) {
@@ -125,11 +129,13 @@ export default class ChannelStore {
       const channel = this.channels.get(event.closedChannel.chanId);
       this.channels.delete(event.closedChannel.chanId);
       this._store.log.info('removed closed channel', toJS(channel));
+      this._store.nodeStore.fetchBalancesThrottled();
     } else if (event.type === OPEN_CHANNEL && event.openChannel) {
       // add the new opened channel
       const channel = new Channel(this._store, event.openChannel);
       this.channels.set(channel.chanId, channel);
       this._store.log.info('added new open channel', toJS(channel));
+      this._store.nodeStore.fetchBalancesThrottled();
     }
   }
 
