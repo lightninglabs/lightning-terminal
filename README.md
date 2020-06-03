@@ -2,7 +2,7 @@
 
 ![CI](https://github.com/lightninglabs/shushtar/workflows/CI/badge.svg)
 
-** insert screenshot here **
+![screenshot](./app/src/assets/images/screenshot.png)
 
 Shushtar is a browser-based interface for managing the off-chain liquidity of your `lnd` Lightning Network node. It presents a visual representation of your channels and balances, while allowing you to perform submarine swaps via the [Lightning Loop](https://lightning.engineering/loop) service using a graphical interface. With a bird's eye view of all of your open channels, you can instantly see which ones need your immediate attention.
 
