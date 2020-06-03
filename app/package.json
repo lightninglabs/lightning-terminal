@@ -16,7 +16,6 @@
     "storybook": "start-storybook -p 9009 -s public",
     "build-storybook": "build-storybook -s public"
   },
-  "proxy": "https://localhost:8443",
   "dependencies": {
     "@emotion/core": "10.0.28",
     "@emotion/styled": "10.0.27",
@@ -28,6 +27,7 @@
     "debug": "4.1.1",
     "emotion-theming": "10.0.27",
     "file-saver": "2.0.2",
+    "http-proxy-middleware": "1.0.4",
     "i18next": "19.4.4",
     "i18next-browser-languagedetector": "4.1.1",
     "lottie-web": "5.6.8",
