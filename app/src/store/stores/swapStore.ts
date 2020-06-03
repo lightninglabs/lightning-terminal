@@ -1,26 +1,18 @@
 import {
   action,
   computed,
-  IReactionDisposer,
   observable,
   ObservableMap,
-  reaction,
   runInAction,
   toJS,
   values,
 } from 'mobx';
 import { SwapStatus } from 'types/generated/loop_pb';
-import { IS_PROD, IS_TEST } from 'config';
 import { Store } from 'store';
 import { Swap } from '../models';
 
 export default class SwapStore {
   private _store: Store;
-  /** a reference to the polling timer, needed to stop polling */
-  pollingInterval?: NodeJS.Timeout;
-  /** the mobx disposer func to cancel automatic polling */
-  stopAutoPolling: IReactionDisposer;
-
   /** the collection of swaps */
   @observable swaps: ObservableMap<string, Swap> = observable.map();
 
@@ -29,21 +21,6 @@ export default class SwapStore {
 
   constructor(store: Store) {
     this._store = store;
-
-    // automatically start & stop polling for swaps if there are any pending
-    this.stopAutoPolling = reaction(
-      () => this.pendingSwaps.length,
-      (length: number) => {
-        if (length > 0) {
-          this.startPolling();
-        } else {
-          this.stopPolling();
-          // also update our channels and balances when the loop is complete
-          this._store.channelStore.fetchChannels();
-          this._store.nodeStore.fetchBalances();
-        }
-      },
-    );
   }
 
   /** swaps sorted by created date descending */
@@ -103,7 +80,6 @@ export default class SwapStore {
       });
     } catch (error) {
       this._store.uiStore.handleError(error, 'Unable to fetch Swaps');
-      if (this.pollingInterval) this.stopPolling();
     }
   }
 
@@ -125,26 +101,6 @@ export default class SwapStore {
   onSwapUpdate(loopSwap: SwapStatus.AsObject) {
     this.addOrUpdateSwap(loopSwap);
     this._store.channelStore.fetchChannels();
-  }
-
-  @action.bound
-  startPolling() {
-    if (this.pollingInterval) this.stopPolling();
-    this._store.log.info('start polling for swap updates');
-    const ms = IS_PROD ? 60 * 1000 : IS_TEST ? 100 : 1000;
-    this.pollingInterval = setInterval(this.fetchSwaps, ms);
-  }
-
-  @action.bound
-  stopPolling() {
-    this._store.log.info('stop polling for swap updates');
-    if (this.pollingInterval) {
-      clearInterval(this.pollingInterval);
-      this.pollingInterval = undefined;
-      this._store.log.info('polling stopped');
-    } else {
-      this._store.log.info('polling was already stopped');
-    }
   }
 
   /** exports the sorted list of swaps to CSV file */

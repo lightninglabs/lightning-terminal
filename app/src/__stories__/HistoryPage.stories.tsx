@@ -23,7 +23,6 @@ const updateSwapsStatus = (swaps: Swap[]) => {
 
 export const Default = () => {
   const store = useStore();
-  store.swapStore.stopAutoPolling();
   updateSwapsStatus(store.swapStore.sortedSwaps);
   return <HistoryPage />;
 };
@@ -31,7 +30,6 @@ export const Default = () => {
 export const InsideLayout = () => {
   const store = useStore();
   store.uiStore.page = 'history';
-  store.swapStore.stopAutoPolling();
   updateSwapsStatus(store.swapStore.sortedSwaps);
   return (
     <Layout>
