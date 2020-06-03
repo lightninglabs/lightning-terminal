@@ -68,7 +68,7 @@ Application Options:
                           certificate (default: /Users/jamal/Library/Application Support/Lnd/letsencrypt)
 ```
 
-You must also provide configuration to the `lnd` daemon. Each flag must be prefixed with `lnd.` (ex: `lnd.lnddir=~/.lnd`). Please see the [sample-lnd.conf](https://github.com/lightningnetwork/lnd/blob/master/sample-lnd.conf) file for more details on the available parameters. Note that `loopd` and `faraday` will automatically connect to the in-process `lnd` node, so you do not need to provide them with any additional parameters unless you want to override them. If you do override them, be sure to add the `loop.` and `faraday.` prefixes.
+In addition to the Shushtar specific parameters, you must also provide configuration to the `lnd`, `loop` and `faraday` daemons. For `lnd`, each flag must be prefixed with `lnd.` (ex: `lnd.lnddir=~/.lnd`). Please see the [sample-lnd.conf](https://github.com/lightningnetwork/lnd/blob/master/sample-lnd.conf) file for more details on the available parameters. Note that `loopd` and `faraday` will automatically connect to the in-process `lnd` node, so you do not need to provide them with any additional parameters unless you want to override them. If you do override them, be sure to add the `loop.` and `faraday.` prefixes.
 
 Here is an example command to start `shushtar` on testnet with a local `bitcoind` node:
 
@@ -96,7 +96,7 @@ $ ./shushtar \
   --faraday.min_monitored=48h
 ```
 
-You can also store the configuration in a persistent 'lnd.conf' file so you do not need to type in the command line arguments every time you start the server. Just remember to use the `lnd.` prefix.
+You can also store the configuration in a persistent `lnd.conf` file so you do not need to type in the command line arguments every time you start the server. Just remember to use the appropriate prefixes as necessary.
 
 Example `lnd.conf`:
 
@@ -127,10 +127,10 @@ lnd.bitcoind.zmqpubrawblock=localhost:28332
 lnd.bitcoind.zmqpubrawtx=localhost:28333
 
 [Loop]
-loopoutmaxparts=5
+loop.loopoutmaxparts=5
 
 [Faraday]
-min_monitored=48h
+faraday.min_monitored=48h
 
 ```
 
@@ -147,6 +147,7 @@ If you already have existing `lnd`, `loop`, or `faraday` nodes, you can easily u
 For `lnd`:
 
 - if you use an `lnd.conf` file for configurations, add the `lnd.` prefix to each of the configuration parameters.
+  
   Before:
   ```
   [Application Options]
@@ -158,6 +159,7 @@ For `lnd`:
   lnd.alias=merchant
   ```
 - if you use command line arguments for configuration, add the `lnd.` prefix to each argument to `shushtar`
+  
   Before:
   ```
   $ lnd --lnddir=~/.lnd --alias=merchant ...
@@ -186,6 +188,7 @@ For `loop`:
   ```
 
 - if you use command line arguments for configuration, add the `loop.` prefix to each argument to `shushtar`
+  
   Before:
   ```
   $ loop --loopoutmaxparts=5 --debuglevel=debug ...
@@ -197,22 +200,20 @@ For `loop`:
 
 For `faraday`:
 
-- the standalone `faraday` daemon does not load configuration from file, but you can now store the parameters into the `lnd.conf` file that `shushtar` uses. Just add the `faraday.` prefix to each of the configuration parameters.
+- the standalone `faraday` daemon does not load configuration from a file, but you can now store the parameters into the `lnd.conf` file that `shushtar` uses. Just add the `faraday.` prefix to each of the configuration parameters.
 
   Before: (from command line)
-
   ```
   $ faraday --min_monitored=48h
   ```
-
   After: (in `lnd.conf`)
-
   ```
   [Faraday]
   faraday.min_monitored=48h
   ```
 
 - if you use command line arguments for configuration, add the `faraday.` prefix to each argument to `shushtar`
+  
   Before:
   ```
   $ faraday --min_monitored=48h --debuglevel=debug ...
@@ -224,11 +225,11 @@ For `faraday`:
 
 ### Troubleshooting
 
-If you have trouble running your node, please first check the logs for warnings or errors.
+If you have trouble running your node, please first check the logs for warnings or errors. If there are errors relating to one of the embedded servers, then you should open an issue in their respective GitHub repos ([lnd](https://github.com/lightningnetwork/lnd/issues), [loop](https://github.com/lightninglabs/loop/issues), [faraday](https://github.com/lightninglabs/faraday/issues). If the issue is related to the web app, then you should open an [issue](https://github.com/lightninglabs/shushtar/issues) here in this repo.
 
 #### Server
 
-Server-side logs are stored in the directory specified by `lnd.lnddir` in your configuration. Inside, there is a `logs` dir containing the log files in subdirectories.
+Server-side logs are stored in the directory specified by `lnd.lnddir` in your configuration. Inside, there is a `logs` dir containing the log files in subdirectories. Be sure to set `lnd.debuglevel=debug` in your configuration to see the most verbose logging information.
 
 #### Browser
 
