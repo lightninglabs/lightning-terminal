@@ -1,10 +1,11 @@
-import { observable } from 'mobx';
+import { autorun, observable } from 'mobx';
 import { IS_DEV, IS_TEST } from 'config';
 import AppStorage from 'util/appStorage';
 import CsvExporter from 'util/csv';
 import { actionLog, Logger } from 'util/log';
 import { GrpcClient, LndApi, LoopApi } from 'api';
 import {
+  AuthStore,
   BuildSwapStore,
   ChannelStore,
   NodeStore,
@@ -21,6 +22,7 @@ export class Store {
   //
   // Child Stores
   //
+  authStore = new AuthStore(this);
   buildSwapStore = new BuildSwapStore(this);
   channelStore = new ChannelStore(this);
   swapStore = new SwapStore(this);
@@ -65,11 +67,33 @@ export class Store {
    */
   async init() {
     this.settingsStore.init();
+    await this.authStore.init();
+    this.initialized = true;
+
+    // this function will automatically run whenever the authenticated
+    // flag is changed
+    autorun(async () => {
+      if (this.authStore.authenticated) {
+        // go to the Loop page when the user is authenticated. it can be from
+        // entering a password or from loading the credentials from storage
+        this.uiStore.goToLoop();
+        // also fetch all the data we need
+        this.fetchAllData();
+      } else {
+        // go to auth page if we are not authenticated
+        this.uiStore.gotoAuth();
+      }
+    });
+  }
+
+  /**
+   * makes the initial API calls to fetch the data we need to display in the app
+   */
+  async fetchAllData() {
     await this.nodeStore.fetchInfo();
     await this.channelStore.fetchChannels();
     await this.swapStore.fetchSwaps();
     await this.nodeStore.fetchBalances();
-    this.initialized = true;
   }
 }
 

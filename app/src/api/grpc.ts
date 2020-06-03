@@ -3,6 +3,7 @@ import { ProtobufMessage } from '@improbable-eng/grpc-web/dist/typings/message';
 import { Metadata } from '@improbable-eng/grpc-web/dist/typings/metadata';
 import { UnaryMethodDefinition } from '@improbable-eng/grpc-web/dist/typings/service';
 import { DEV_HOST } from 'config';
+import { AuthenticationError } from 'util/errors';
 import { grpcLog as log } from 'util/log';
 
 class GrpcClient {
@@ -32,6 +33,8 @@ class GrpcClient {
           if (status === grpc.Code.OK && message) {
             log.debug(' - message', message.toObject());
             resolve(message as TRes);
+          } else if (status === grpc.Code.Unauthenticated) {
+            reject(new AuthenticationError(`${statusMessage}`));
           } else {
             reject(new Error(`${status}: ${statusMessage}`));
           }

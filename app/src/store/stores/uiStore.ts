@@ -1,8 +1,12 @@
 import { action, observable, toJS } from 'mobx';
 import { Alert } from 'types/state';
+import { AuthenticationError } from 'util/errors';
+import { prefixTranslation } from 'util/translate';
 import { Store } from 'store';
 
-type PageName = 'loop' | 'history' | 'settings';
+const { l } = prefixTranslation('stores.uiStore');
+
+type PageName = 'auth' | 'loop' | 'history' | 'settings';
 
 type SettingName = 'general' | 'unit' | 'balance';
 
@@ -10,7 +14,7 @@ export default class UiStore {
   private _store: Store;
 
   /** the current page being displayed */
-  @observable page: PageName = 'loop';
+  @observable page: PageName = 'auth';
   /** indicates if the Processing Loops section is displayed on the Loop page */
   @observable processingSwapsVisible = false;
   /** the selected setting on the Settings page */
@@ -20,6 +24,13 @@ export default class UiStore {
 
   constructor(store: Store) {
     this._store = store;
+  }
+
+  /** Change to the Auth page */
+  @action.bound
+  gotoAuth() {
+    this.page = 'auth';
+    this._store.log.info('Go to the Auth page');
   }
 
   /** Change to the Loop page */
@@ -71,5 +82,16 @@ export default class UiStore {
   clearAlert(id: number) {
     this.alerts.delete(id);
     this._store.log.info('Cleared alert', id, toJS(this.alerts));
+  }
+
+  /** handle errors by showing a notification and/or the auth screen */
+  handleError(error: Error, title?: string) {
+    if (error instanceof AuthenticationError) {
+      // this will automatically redirect to the auth page
+      this._store.authStore.authenticated = false;
+      this.notify(l('authErrorMsg'), l('authErrorTitle'));
+    } else {
+      this.notify(error.message, title);
+    }
   }
 }

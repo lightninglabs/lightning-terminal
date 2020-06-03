@@ -15,4 +15,17 @@ export default class AppStorage<T> {
       return JSON.parse(json) as T;
     }
   }
+  /**
+   * stores data in the browser session storage
+   */
+  setSession(key: string, data: string) {
+    sessionStorage.setItem(key, data);
+  }
+
+  /**
+   * retrieves data from the browser session storage
+   */
+  getSession(key: string): string | undefined {
+    return sessionStorage.getItem(key) || undefined;
+  }
 }

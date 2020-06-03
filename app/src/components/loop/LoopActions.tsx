@@ -36,7 +36,6 @@ const Styled = {
     margin-left: 20px;
     font-size: ${props => props.theme.sizes.s};
     color: ${props => props.theme.colors.gray};
-    /* font-style: italic; */
   `,
 };
 
@@ -64,7 +63,7 @@ const LoopActions: React.FC = () => {
               borderless
               onClick={handleLoopOut}
             >
-              Loop out
+              {l('common.loopOut')}
             </Button>
             <Button
               primary={
@@ -74,7 +73,7 @@ const LoopActions: React.FC = () => {
               onClick={handleLoopIn}
               disabled={!buildSwapStore.loopInAllowed}
             >
-              Loop in
+              {l('common.loopIn')}
             </Button>
           </ActionBar>
           {!buildSwapStore.loopInAllowed && <Note>{l('loopInNote')}</Note>}
@@ -82,7 +81,7 @@ const LoopActions: React.FC = () => {
       ) : (
         <Button onClick={buildSwapStore.startSwap}>
           <Refresh />
-          Loop
+          {l('common.loop')}
         </Button>
       )}
     </Wrapper>

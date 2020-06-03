@@ -1,15 +1,16 @@
 import * as LND from 'types/generated/lnd_pb';
 import { Lightning } from 'types/generated/lnd_pb_service';
+import AuthenticatedApi from './auth';
 import GrpcClient from './grpc';
 
 /**
  * An API wrapper to communicate with the LND node via GRPC
  */
-class LndApi {
-
+class LndApi extends AuthenticatedApi {
   private _grpc: GrpcClient;
 
   constructor(grpc: GrpcClient) {
+    super();
     this._grpc = grpc;
   }
 
@@ -18,7 +19,7 @@ class LndApi {
    */
   async getInfo(): Promise<LND.GetInfoResponse.AsObject> {
     const req = new LND.GetInfoRequest();
-    const res = await this._grpc.request(Lightning.GetInfo, req);
+    const res = await this._grpc.request(Lightning.GetInfo, req, this._meta);
     return res.toObject();
   }
 
@@ -27,7 +28,7 @@ class LndApi {
    */
   async channelBalance(): Promise<LND.ChannelBalanceResponse.AsObject> {
     const req = new LND.ChannelBalanceRequest();
-    const res = await this._grpc.request(Lightning.ChannelBalance, req);
+    const res = await this._grpc.request(Lightning.ChannelBalance, req, this._meta);
     return res.toObject();
   }
 
@@ -36,7 +37,7 @@ class LndApi {
    */
   async walletBalance(): Promise<LND.WalletBalanceResponse.AsObject> {
     const req = new LND.WalletBalanceRequest();
-    const res = await this._grpc.request(Lightning.WalletBalance, req);
+    const res = await this._grpc.request(Lightning.WalletBalance, req, this._meta);
     return res.toObject();
   }
 
@@ -45,7 +46,7 @@ class LndApi {
    */
   async listChannels(): Promise<LND.ListChannelsResponse.AsObject> {
     const req = new LND.ListChannelsRequest();
-    const res = await this._grpc.request(Lightning.ListChannels, req);
+    const res = await this._grpc.request(Lightning.ListChannels, req, this._meta);
     return res.toObject();
   }
 }

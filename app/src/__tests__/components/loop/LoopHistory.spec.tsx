@@ -10,7 +10,7 @@ describe('LoopHistory component', () => {
 
   beforeEach(async () => {
     store = createStore();
-    await store.init();
+    await store.fetchAllData();
 
     // remove all but one swap to prevent `getByText` from
     // complaining about multiple elements in tests

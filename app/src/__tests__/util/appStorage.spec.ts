@@ -35,8 +35,27 @@ describe('appStorage util', () => {
     expect(data.someBool).toEqual(settings.someBool);
   });
 
-  it('should return undefined for a missing key', () => {
+  it('should return undefined for a missing key in localStorage', () => {
     const data = appStorage.get('invalid-key');
+    expect(data).toBeUndefined();
+  });
+
+  it('should save an value to sessionStorage', () => {
+    appStorage.setSession(key, 'test-value');
+
+    const value = sessionStorage.getItem(key);
+    expect(value).toBe('test-value');
+  });
+
+  it('should load a value from sessionStorage', () => {
+    sessionStorage.setItem(key, 'test-value');
+
+    const value = appStorage.getSession(key);
+    expect(value).toBe('test-value');
+  });
+
+  it('should return undefined for a missing key in sessionStorage', () => {
+    const data = appStorage.getSession('invalid-key');
     expect(data).toBeUndefined();
   });
 });

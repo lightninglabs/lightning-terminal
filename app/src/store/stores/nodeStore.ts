@@ -42,9 +42,7 @@ export default class NodeStore {
         this._store.log.info('updated nodeStore info', toJS(this));
       });
     } catch (error) {
-      runInAction('getInfoError', () => {
-        this._store.uiStore.notify(error.message, 'Unable to fetch node info');
-      });
+      this._store.uiStore.handleError(error, 'Unable to fetch node info');
     }
   }
 
@@ -63,9 +61,7 @@ export default class NodeStore {
         this._store.log.info('updated nodeStore.wallet', toJS(this.wallet));
       });
     } catch (error) {
-      runInAction('fetchBalancesError', () => {
-        this._store.uiStore.notify(error.message, 'Unable to fetch balances');
-      });
+      this._store.uiStore.handleError(error, 'Unable to fetch balances');
     }
   }
 }

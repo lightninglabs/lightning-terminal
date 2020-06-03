@@ -5,7 +5,8 @@ interface HeaderProps {
 }
 
 export const HeaderOne = styled.h1`
-  font-family: ${props => props.theme.fonts.work.medium};
+  font-family: ${props => props.theme.fonts.work.light};
+  font-weight: 300;
   font-size: ${props => props.theme.sizes.xxl};
   line-height: 52px;
 `;

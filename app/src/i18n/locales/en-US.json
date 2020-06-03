@@ -1,7 +1,14 @@
 {
+  "common.loop": "Loop",
+  "common.loopIn": "Loop In",
+  "common.loopOut": "Loop Out",
   "enums.BalanceMode.receive": "Receiving",
   "enums.BalanceMode.send": "Sending",
   "enums.BalanceMode.routing": "Routing",
+  "cmps.auth.AuthPage.title": "Shushtar",
+  "cmps.auth.AuthPage.subtitle": "A tool to help you more effectively and efficiently manage inbound and outbound liquidity on your Lightning node",
+  "cmps.auth.AuthPage.passLabel": "Enter your password in the field above",
+  "cmps.auth.AuthPage.submitBtn": "Submit",
   "cmps.common.Tile.maximizeTip": "Maximize",
   "cmps.common.PageHeader.historyTip": "Loop History",
   "cmps.common.PageHeader.exportTip": "Download CSV",
@@ -38,7 +45,7 @@
   "cmps.loop.swap.SwapProcessingStep.loadingMsg": "Configuring Loops",
   "cmps.loop.swap.SwapReviewStep.title": "Step 2 of 2",
   "cmps.loop.swap.SwapReviewStep.heading": "Review the quote",
-  "cmps.loop.swap.SwapReviewStep.description": "Confirm. the invoice total for increasing your inbound liquidity. If you'd like to make adjustments, click the back arrow above.",
+  "cmps.loop.swap.SwapReviewStep.description": "Confirm the invoice total for increasing your inbound liquidity. If you'd like to make adjustments, click the back arrow above.",
   "cmps.loop.swap.SwapReviewStep.amount": "{{type}} Amount",
   "cmps.loop.swap.SwapReviewStep.fees": "Fees",
   "cmps.loop.swap.SwapReviewStep.total": "Invoice Total",
@@ -59,5 +66,9 @@
   "cmps.settings.GeneralSettings.balancesValue": "Optimize for {{mode}}",
   "cmps.settings.GeneralSettings.pageTitle": "Settings",
   "cmps.settings.UnitSettings.pageTitle": "Bitcoin Unit",
-  "cmps.settings.UnitSettings.backText": "Settings"
+  "cmps.settings.UnitSettings.backText": "Settings",
+  "stores.authStore.emptyPassErr": "oops, password is required",
+  "stores.authStore.invalidPassErr": "oops, that password is incorrect",
+  "stores.uiStore.authErrorTitle": "Your session has expired",
+  "stores.uiStore.authErrorMsg": "Please enter you password to continue"
 }

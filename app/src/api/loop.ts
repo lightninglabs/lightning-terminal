@@ -2,16 +2,17 @@ import * as LOOP from 'types/generated/loop_pb';
 import { SwapClient } from 'types/generated/loop_pb_service';
 import { Quote } from 'types/state';
 import Big from 'big.js';
+import AuthenticatedApi from './auth';
 import GrpcClient from './grpc';
 
 /**
  * An API wrapper to communicate with the Loop daemon via GRPC
  */
-class LoopApi {
-
+class LoopApi extends AuthenticatedApi {
   private _grpc: GrpcClient;
 
   constructor(grpc: GrpcClient) {
+    super();
     this._grpc = grpc;
   }
 
@@ -20,7 +21,7 @@ class LoopApi {
    */
   async listSwaps(): Promise<LOOP.ListSwapsResponse.AsObject> {
     const req = new LOOP.ListSwapsRequest();
-    const res = await this._grpc.request(SwapClient.ListSwaps, req);
+    const res = await this._grpc.request(SwapClient.ListSwaps, req, this._meta);
     return res.toObject();
   }
 
@@ -29,7 +30,7 @@ class LoopApi {
    */
   async getLoopInTerms(): Promise<LOOP.TermsResponse.AsObject> {
     const req = new LOOP.TermsRequest();
-    const res = await this._grpc.request(SwapClient.GetLoopInTerms, req);
+    const res = await this._grpc.request(SwapClient.GetLoopInTerms, req, this._meta);
     return res.toObject();
   }
 
@@ -38,7 +39,7 @@ class LoopApi {
    */
   async getLoopOutTerms(): Promise<LOOP.TermsResponse.AsObject> {
     const req = new LOOP.TermsRequest();
-    const res = await this._grpc.request(SwapClient.LoopOutTerms, req);
+    const res = await this._grpc.request(SwapClient.LoopOutTerms, req, this._meta);
     return res.toObject();
   }
 
@@ -48,7 +49,7 @@ class LoopApi {
   async getLoopInQuote(amount: Big): Promise<LOOP.QuoteResponse.AsObject> {
     const req = new LOOP.QuoteRequest();
     req.setAmt(+amount);
-    const res = await this._grpc.request(SwapClient.GetLoopInQuote, req);
+    const res = await this._grpc.request(SwapClient.GetLoopInQuote, req, this._meta);
     return res.toObject();
   }
 
@@ -58,7 +59,7 @@ class LoopApi {
   async getLoopOutQuote(amount: Big): Promise<LOOP.QuoteResponse.AsObject> {
     const req = new LOOP.QuoteRequest();
     req.setAmt(+amount);
-    const res = await this._grpc.request(SwapClient.LoopOutQuote, req);
+    const res = await this._grpc.request(SwapClient.LoopOutQuote, req, this._meta);
     return res.toObject();
   }
 
@@ -75,7 +76,7 @@ class LoopApi {
     req.setMaxSwapFee(+quote.swapFee);
     req.setMaxMinerFee(+quote.minerFee);
     if (lastHop) req.setLastHop(Buffer.from(lastHop, 'hex').toString('base64'));
-    const res = await this._grpc.request(SwapClient.LoopIn, req);
+    const res = await this._grpc.request(SwapClient.LoopIn, req, this._meta);
     return res.toObject();
   }
 
@@ -98,7 +99,7 @@ class LoopApi {
     req.setOutgoingChanSetList(chanIds);
     req.setSwapPublicationDeadline(deadline);
 
-    const res = await this._grpc.request(SwapClient.LoopOut, req);
+    const res = await this._grpc.request(SwapClient.LoopOut, req, this._meta);
     return res.toObject();
   }
 

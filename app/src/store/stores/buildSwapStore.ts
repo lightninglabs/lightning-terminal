@@ -281,9 +281,8 @@ class BuildSwapStore {
         }
       });
     } catch (error) {
-      runInAction('getTermsError', () => {
-        this._store.uiStore.notify(error.message, 'Unable to fetch Loop Terms');
-      });
+      this._store.uiStore.handleError(error, 'Unable to fetch Loop Terms');
+      this.goToPrevStep();
     }
   }
 
@@ -310,9 +309,8 @@ class BuildSwapStore {
         this._store.log.info('updated buildSwapStore.quote', toJS(this.quote));
       });
     } catch (error) {
-      runInAction('getQuoteError', () => {
-        this._store.uiStore.notify(error.message, 'Unable to fetch Quote');
-      });
+      this._store.uiStore.handleError(error, 'Unable to fetch Quote');
+      this.goToPrevStep();
     }
   }
 
@@ -350,10 +348,8 @@ class BuildSwapStore {
           this._store.swapStore.fetchSwaps();
         });
       } catch (error) {
-        runInAction('requestSwapError', () => {
-          this._store.uiStore.notify(error.message, `Unable to Perform ${direction}`);
-          this.goToPrevStep();
-        });
+        this._store.uiStore.handleError(error, `Unable to Perform ${direction}`);
+        this.goToPrevStep();
       }
     }, delay);
   }
