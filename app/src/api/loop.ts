@@ -109,6 +109,17 @@ class LoopApi extends BaseApi<LoopEvents> {
   }
 
   /**
+   * Connect to the Loop streaming endpoint
+   */
+  connectStreams() {
+    this._grpc.subscribe(
+      SwapClient.Monitor,
+      new LOOP.MonitorRequest(),
+      swapStatus => this.emit('monitor', swapStatus.toObject()),
+      this._meta,
+    );
+  }
+  /**
    * Calculates the max routing fee params for loop out. this mimics the loop cli
    * behavior of using 2% of the amount
    * @param amount the amount of the payment

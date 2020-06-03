@@ -9,6 +9,7 @@ import {
   toJS,
   values,
 } from 'mobx';
+import { SwapStatus } from 'types/generated/loop_pb';
 import { IS_PROD, IS_TEST } from 'config';
 import { Store } from 'store';
 import { Swap } from '../models';
@@ -89,12 +90,7 @@ export default class SwapStore {
           // update existing swaps or create new ones in state. using this
           // approach instead of overwriting the array will cause fewer state
           // mutations, resulting in better react rendering performance
-          const existing = this.swaps.get(loopSwap.id);
-          if (existing) {
-            existing.update(loopSwap);
-          } else {
-            this.swaps.set(loopSwap.id, new Swap(loopSwap));
-          }
+          this.addOrUpdateSwap(loopSwap);
         });
         // remove any swaps in state that are not in the API response
         const serverIds = swapsList.map(c => c.id);
@@ -109,6 +105,26 @@ export default class SwapStore {
       this._store.uiStore.handleError(error, 'Unable to fetch Swaps');
       if (this.pollingInterval) this.stopPolling();
     }
+  }
+
+  /** adds a new swap or updates an existing one */
+  @action.bound
+  addOrUpdateSwap(loopSwap: SwapStatus.AsObject) {
+    const existing = this.swaps.get(loopSwap.id);
+    if (existing) {
+      existing.update(loopSwap);
+      this._store.log.info('updated existing swap', toJS(loopSwap));
+    } else {
+      this.swaps.set(loopSwap.id, new Swap(loopSwap));
+      this._store.log.info('added new swap', toJS(loopSwap));
+    }
+  }
+
+  /** updates the swap and refreshes the channel list */
+  @action.bound
+  onSwapUpdate(loopSwap: SwapStatus.AsObject) {
+    this.addOrUpdateSwap(loopSwap);
+    this._store.channelStore.fetchChannels();
   }
 
   @action.bound

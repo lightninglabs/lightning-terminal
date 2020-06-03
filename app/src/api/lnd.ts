@@ -7,7 +7,6 @@ import GrpcClient from './grpc';
 interface LndEvents {
   transaction: LND.Transaction.AsObject;
   channel: LND.ChannelEventUpdate.AsObject;
-  invoice: LND.Invoice.AsObject;
 }
 
 /**
@@ -55,6 +54,24 @@ class LndApi extends BaseApi<LndEvents> {
     const req = new LND.ListChannelsRequest();
     const res = await this._grpc.request(Lightning.ListChannels, req, this._meta);
     return res.toObject();
+  }
+
+  /**
+   * Connect to the LND streaming endpoints
+   */
+  connectStreams() {
+    this._grpc.subscribe(
+      Lightning.SubscribeTransactions,
+      new LND.GetTransactionsRequest(),
+      transaction => this.emit('transaction', transaction.toObject()),
+      this._meta,
+    );
+    this._grpc.subscribe(
+      Lightning.SubscribeChannelEvents,
+      new LND.ChannelEventSubscription(),
+      channelEvent => this.emit('channel', channelEvent.toObject()),
+      this._meta,
+    );
   }
 }
 

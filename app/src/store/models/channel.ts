@@ -13,6 +13,7 @@ export default class Channel {
 
   @observable chanId = '';
   @observable remotePubkey = '';
+  @observable channelPoint = '';
   @observable capacity = Big(0);
   @observable localBalance = Big(0);
   @observable remoteBalance = Big(0);
@@ -84,6 +85,7 @@ export default class Channel {
   update(lndChannel: LND.Channel.AsObject) {
     this.chanId = lndChannel.chanId;
     this.remotePubkey = lndChannel.remotePubkey;
+    this.channelPoint = lndChannel.channelPoint;
     this.capacity = Big(lndChannel.capacity);
     this.localBalance = Big(lndChannel.localBalance);
     this.remoteBalance = Big(lndChannel.remoteBalance);

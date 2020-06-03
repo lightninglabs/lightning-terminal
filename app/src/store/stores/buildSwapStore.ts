@@ -361,7 +361,6 @@ class BuildSwapStore {
           // hide the swap UI after it is complete
           this.cancel();
           this._store.uiStore.toggleProcessingSwaps();
-          this._store.swapStore.fetchSwaps();
         });
       } catch (error) {
         this._store.uiStore.handleError(error, `Unable to Perform ${direction}`);
