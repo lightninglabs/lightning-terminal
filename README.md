@@ -14,7 +14,7 @@ You can configure the UI to classify channels according to your node's operating
 
 ## Architecture
 
-Shustar is packaged as a single binary which contains the [`lnd`](https://github.com/lightningnetwork/lnd), [`loopd`](https://github.com/lightninglabs/loop) and [`faraday`](https://github.com/lightninglabs/faraday) daemons all in one. It also contains an HTTP server to serve the web assets (html/js/css) and a GRPC proxy to forward web requests from the browser to the appropriate GRPC server. This deployment strategy was chosen as it greatly simplifies the operational overhead of installation, configuration and maintenance that would be necessary to run each of these servers independently. You only need to download one executable and run one command to get Shushtar up and running. We include the CLI binaries `lncli`, `loop` and `frcli` for convenience in the downloadable archives as well.
+Shushtar is packaged as a single binary which contains the [`lnd`](https://github.com/lightningnetwork/lnd), [`loopd`](https://github.com/lightninglabs/loop) and [`faraday`](https://github.com/lightninglabs/faraday) daemons all in one. It also contains an HTTP server to serve the web assets (html/js/css) and a GRPC proxy to forward web requests from the browser to the appropriate GRPC server. This deployment strategy was chosen as it greatly simplifies the operational overhead of installation, configuration and maintenance that would be necessary to run each of these servers independently. You only need to download one executable and run one command to get Shushtar up and running. We include the CLI binaries `lncli`, `loop` and `frcli` for convenience in the downloadable archives as well.
 
 ## Installation
 
@@ -39,7 +39,7 @@ cd shushtar
 make && make install
 ```
 
-This will produce the `shushtar-debug` executable and add it to your `GOPATH`.
+This will produce the `shushtar` executable and add it to your `GOPATH`.
 
 ## Configuration
 
@@ -70,10 +70,10 @@ Application Options:
 
 You must also provide configuration to the `lnd` daemon. Each flag must be prefixed with `lnd.` (ex: `lnd.lnddir=~/.lnd`). Please see the [sample-lnd.conf](https://github.com/lightningnetwork/lnd/blob/master/sample-lnd.conf) file for more details on the available parameters. Note that `loopd` and `faraday` will automatically connect to the in-process `lnd` node, so you do not need to provide them with any additional parameters unless you want to override them. If you do override them, be sure to add the `loop.` and `faraday.` prefixes.
 
-Here is an example command to start `shushtar-debug` on testnet with a local `bitcoind` node:
+Here is an example command to start `shushtar` on testnet with a local `bitcoind` node:
 
 ```
-$ ./shushtar-debug \
+$ ./shushtar \
   --httpslisten=0.0.0.0:443 \
   --uipassword=My$trongP@ssword \
   --letsencrypt \
@@ -142,7 +142,7 @@ The default location for the `lnd.conf` file will depend on your operating syste
 
 ### Upgrade Existing Nodes
 
-If you already have existing `lnd`, `loop`, or `faraday` nodes, you can easily upgrade them of them with the Shushtar single executable while keeping all of your past data.
+If you already have existing `lnd`, `loop`, or `faraday` nodes, you can easily upgrade them to the Shushtar single executable while keeping all of your past data.
 
 For `lnd`:
 
@@ -157,19 +157,19 @@ For `lnd`:
   [Application Options]
   lnd.alias=merchant
   ```
-- if you use command line arguments for configuration, add the `lnd.` prefix to each argument to `shushtar-debug`
+- if you use command line arguments for configuration, add the `lnd.` prefix to each argument to `shushtar`
   Before:
   ```
   $ lnd --lnddir=~/.lnd --alias=merchant ...
   ```
   After:
   ```
-  $ shushtar-debug lnd.lnddir=~/.lnd --lnd.alias=merchant ...
+  $ shushtar lnd.lnddir=~/.lnd --lnd.alias=merchant ...
   ```
 
 For `loop`:
 
-- if you use an `loop.conf` file for configurations, copy the parameters into the `lnd.conf` file that `shushtar-debug` uses. Also add the `loop.` prefix to each of the configuration parameters.
+- if you use an `loop.conf` file for configurations, copy the parameters into the `lnd.conf` file that `shushtar` uses, and add the `loop.` prefix to each of the configuration parameters.
 
   Before: (in `loop.conf`)
 
@@ -185,19 +185,19 @@ For `loop`:
   loop.loopoutmaxparts=5
   ```
 
-- if you use command line arguments for configuration, add the `loop.` prefix to each argument to `shushtar-debug`
+- if you use command line arguments for configuration, add the `loop.` prefix to each argument to `shushtar`
   Before:
   ```
   $ loop --loopoutmaxparts=5 --debuglevel=debug ...
   ```
   After:
   ```
-  $ shushtar-debug --loop.loopoutmaxparts=5 --loop.debuglevel=debug ...
+  $ shushtar --loop.loopoutmaxparts=5 --loop.debuglevel=debug ...
   ```
 
 For `faraday`:
 
-- the standalone `faraday` daemon does not load configuration from file, but you can now store the parameters into the `lnd.conf` file that `shushtar-debug` uses. Just add the `faraday.` prefix to each of the configuration parameters.
+- the standalone `faraday` daemon does not load configuration from file, but you can now store the parameters into the `lnd.conf` file that `shushtar` uses. Just add the `faraday.` prefix to each of the configuration parameters.
 
   Before: (from command line)
 
@@ -212,19 +212,19 @@ For `faraday`:
   faraday.min_monitored=48h
   ```
 
-- if you use command line arguments for configuration, add the `faraday.` prefix to each argument to `shushtar-debug`
+- if you use command line arguments for configuration, add the `faraday.` prefix to each argument to `shushtar`
   Before:
   ```
   $ faraday --min_monitored=48h --debuglevel=debug ...
   ```
   After:
   ```
-  $ shushtar-debug --faraday.min_monitored=48h --faraday.debuglevel=debug...
+  $ shushtar --faraday.min_monitored=48h --faraday.debuglevel=debug...
   ```
 
 ### Troubleshooting
 
-If you have trouble running your node, please first check the logs for warning or errors.
+If you have trouble running your node, please first check the logs for warnings or errors.
 
 #### Server
 
