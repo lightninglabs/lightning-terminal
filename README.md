@@ -6,13 +6,6 @@ Requirements: [Go](https://golang.org/doc/install), [protoc](https://github.com/
 
 ## One-time Setup
 
-Create certificate for browser to backend proxy communication
-
-```
-openssl genrsa -out https.key 2048
-openssl req -new -x509 -key https.key -out https.cert -days 365
-```
-
 Install client app dependencies
 
 ```sh
@@ -23,16 +16,7 @@ yarn
 
 ## Development
 
-- Spin up a local regtest env with nautilus and loopd (See [docker-regtest](https://github.com/lightninglabs/dev-resources/tree/master/docker-regtest))
-- Create a `.env.local` file in the `app/` directory with the following content. Replace `<macaroon>` with the HEX encoded admin.macaroon of the LND node to connect to
-  ```
-  REACT_APP_DEV_MACAROON=<macaroon>
-  REACT_APP_DEV_HOST=http://localhost:3000
-  ```
-- Start backend server, updating the ports for the LND and Loop nodes if necessary
-  ```sh
-  go run . --lndhost=localhost:10011 --loophost=localhost:11010
-  ```
+- Compile and start the GrUB (see [Run the GrUB](#run-the-grub))
 - Run the client app in a separate terminal
   ```sh
   cd app
@@ -79,3 +63,33 @@ The value for `debug` is a namespace filter which determines which portions of t
 Example filters: `main,action` will only log main and action messages. `*,-action` will log everything except action messages.
 
 The value for `debug-level` determines the verbosity of the logs. The value can be one of `debug`, `info`, `warn`, or `error`.
+
+# Run the GrUB
+
+- Compile the GrUB binary:
+  ```sh
+  make build
+  ```
+- Start the GrUB binary. The following is an example for testnet that starts an
+  lnd node called `zane` on port `10020` (REST: `8100`), change this to your
+  needs:
+  ```sh
+  ./shushtar-debug \
+    --httpslisten=8443 \
+    --lnd.lnddir=/home/$USER/.lnd-dev-zane \
+    --lnd.alias=zane \
+    --lnd.noseedbackup \
+    --lnd.rpclisten=localhost:10020 \
+    --lnd.listen=0.0.0.0:9750 \
+    --lnd.restlisten=localhost:8100 \
+    --lnd.bitcoin.active \
+    --lnd.bitcoin.testnet \
+    --lnd.bitcoin.node=bitcoind \
+    --lnd.bitcoind.rpchost=localhost \
+    --lnd.bitcoind.rpcuser=lightning \
+    --lnd.bitcoind.rpcpass=lightning \
+    --lnd.bitcoind.zmqpubrawblock=localhost:28332 \
+    --lnd.bitcoind.zmqpubrawtx=localhost:28333 \
+    --lnd.debuglevel=debug
+  ```
+- You can now access the web interface on https://localhost:8443
