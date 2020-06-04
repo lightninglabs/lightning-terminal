@@ -42,11 +42,6 @@ export default class SwapStore {
     );
   }
 
-  /** swaps that are currently pending */
-  @computed get pendingSwaps() {
-    return this.sortedSwaps.filter(s => s.isPending);
-  }
-
   @action.bound
   dismissSwap(swapId: string) {
     this.dismissedSwapIds.push(swapId);

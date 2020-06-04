@@ -9,6 +9,7 @@ export const grpc = {
     OK: 0,
     Canceled: 1,
   },
+  WebsocketTransport: jest.fn(),
   // mock unary function to simulate GRPC requests
   unary: jest
     .fn()
@@ -32,5 +33,13 @@ export const grpc = {
       },
     ),
   // mock client function to simulate server-side streaming
-  client: jest.fn(),
+  client: jest.fn().mockImplementation(() => {
+    return {
+      onHeaders: jest.fn(func => func()),
+      onMessage: jest.fn(func => func({ toObject: jest.fn() })),
+      onEnd: jest.fn(func => func()),
+      start: jest.fn(),
+      send: jest.fn(),
+    };
+  }),
 };

@@ -47,55 +47,54 @@ export const lndWalletBalance: LND.WalletBalanceResponse.AsObject = {
   unconfirmedBalance: 0,
 };
 
-export const lndListChannelsOne: LND.ListChannelsResponse.AsObject = {
-  channelsList: [
+const txId = '6ee4e45870ac6191e25173f29804851e9f4bcf10f65f8b63100f488989e1e7a8';
+const outIndex = 0;
+export const lndChannel: LND.Channel.AsObject = {
+  active: true,
+  remotePubkey: '037136742c67e24681f36542f7c8916aa6f6fdf665c1dca2a107425503cff94501',
+  channelPoint: `${txId}:${outIndex}`,
+  chanId: '124244814004224',
+  capacity: 15000000,
+  localBalance: 9988660,
+  remoteBalance: 4501409,
+  commitFee: 11201,
+  commitWeight: 896,
+  feePerKw: 12500,
+  unsettledBalance: 498730,
+  totalSatoshisSent: 1338,
+  totalSatoshisReceived: 499929,
+  numUpdates: 6,
+  pendingHtlcsList: [
     {
-      active: true,
-      remotePubkey: '037136742c67e24681f36542f7c8916aa6f6fdf665c1dca2a107425503cff94501',
-      channelPoint: '0ef6a4ae3d8f800f4eb736f0776f5d3a72571615a1b7218ab17c9a43f85d8949:0',
-      chanId: '124244814004224',
-      capacity: 15000000,
-      localBalance: 9988660,
-      remoteBalance: 4501409,
-      commitFee: 11201,
-      commitWeight: 896,
-      feePerKw: 12500,
-      unsettledBalance: 498730,
-      totalSatoshisSent: 1338,
-      totalSatoshisReceived: 499929,
-      numUpdates: 6,
-      pendingHtlcsList: [
-        {
-          incoming: false,
-          amount: 498730,
-          hashLock: 'pl8fmsyoSqEQFQCw6Zu9e1aIlFnMz5H+hW2mmh3kRlI=',
-          expirationHeight: 285,
-        },
-      ],
-      csvDelay: 1802,
-      pb_private: false,
-      initiator: true,
-      chanStatusFlags: 'ChanStatusDefault',
-      localChanReserveSat: 150000,
-      remoteChanReserveSat: 150000,
-      staticRemoteKey: true,
-      lifetime: 21802,
-      uptime: 21802,
-      closeAddress: '',
+      incoming: false,
+      amount: 498730,
+      hashLock: 'pl8fmsyoSqEQFQCw6Zu9e1aIlFnMz5H+hW2mmh3kRlI=',
+      expirationHeight: 285,
     },
   ],
+  csvDelay: 1802,
+  pb_private: false,
+  initiator: true,
+  chanStatusFlags: 'ChanStatusDefault',
+  localChanReserveSat: 150000,
+  remoteChanReserveSat: 150000,
+  staticRemoteKey: true,
+  lifetime: 21802,
+  uptime: 21802,
+  closeAddress: '',
 };
 
 export const lndListChannels: LND.ListChannelsResponse.AsObject = {
   channelsList: [...Array(500)].map((_, i) => {
-    const c = lndListChannelsOne.channelsList[0];
+    const c = lndChannel;
     // pick a random capacity between 0.5 and 1 BTC
     const cap = Math.floor(Math.random() * 50000000) + 50000000;
     // pick a local balance that is at least 100K sats
     const local = Math.max(100000, Math.floor(Math.random() * cap - 100000));
     return {
       ...c,
-      chanId: `${i}${c.chanId}`,
+      chanId: `${i || ''}${c.chanId}`,
+      channelPoint: `${c.channelPoint.substring(0, c.channelPoint.length - 2)}:${i}`,
       remotePubkey: `${i}${c.remotePubkey}`,
       localBalance: local,
       remoteBalance: cap - local,
@@ -103,6 +102,50 @@ export const lndListChannels: LND.ListChannelsResponse.AsObject = {
       uptime: Math.floor(Math.random() * (c.lifetime / 2)) + c.lifetime / 2,
     };
   }),
+};
+
+const txIdBytes = Buffer.from(txId, 'hex').reverse().toString('base64');
+export const lndChannelEvent: Required<LND.ChannelEventUpdate.AsObject> = {
+  type: LND.ChannelEventUpdate.UpdateType.OPEN_CHANNEL,
+  openChannel: lndChannel,
+  closedChannel: {
+    capacity: 15000000,
+    chainHash: '0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206',
+    chanId: lndChannel.chanId,
+    channelPoint: lndChannel.channelPoint,
+    closeHeight: 191,
+    closeType: 0,
+    closingTxHash: '1f765f45f2a6d33837a203e3fc911915c891e9b86f9c9d91a1931b92efdedf5b',
+    remotePubkey: '030e98fdacf2464bdfb027b866a018d6cdc5108514208988873abea7eff59afd91',
+    settledBalance: 12990950,
+    timeLockedBalance: 0,
+  },
+  activeChannel: {
+    fundingTxidBytes: txIdBytes,
+    fundingTxidStr: '',
+    outputIndex: outIndex,
+  },
+  inactiveChannel: {
+    fundingTxidBytes: txIdBytes,
+    fundingTxidStr: '',
+    outputIndex: outIndex,
+  },
+};
+
+export const lndTransaction: LND.Transaction.AsObject = {
+  amount: 12990950,
+  blockHash: '',
+  blockHeight: 0,
+  destAddressesList: [
+    'bcrt1qgrvqm263gra5t02cvvkxmp9520rkann0cedzz8',
+    'bcrt1qkggx6pzd768hn6psc5tmwuvv4c2nzvpd3ax9a9',
+  ],
+  numConfirmations: 0,
+  rawTxHex:
+    '02000000000101a8e7e18989480f10638b5ff610cf4b9f1e850498f27351e29161ac7058e4e46e0000000000ffffffff0280841e000000000016001440d80dab5140fb45bd58632c6d84b453c76ece6fe639c60000000000160014b2106d044df68f79e830c517b7718cae1531302d040047304402207e17f9938f04a2379300a5c0f37305c902855fa000726bb7f0ad78d084acfcee02206d3da5edd73624d6ecfa27ae61e994e75bd0ad8cca6c9b7dda087bcf34b2bbbc0148304502210086d0b7e77b1d81f210d55bc13f9eef975774ac1509a22ff649bd2baac85b3fd702203bb272d6372450159b89ca41d97efbf6bdac076bc271696a1bd556efc31b5cda01475221028d084ada5554c83421bfac35bc78332f3c1f6ae980dea1e0eb3220411b7b83972103c60b39c8558f280fe2f0dfa7cb6a04f016470c4670e631458b400774a667610052ae00000000',
+  timeStamp: 1591226124,
+  totalFees: 0,
+  txHash: '1f765f45f2a6d33837a203e3fc911915c891e9b86f9c9d91a1931b92efdedf5b',
 };
 
 //

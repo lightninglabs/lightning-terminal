@@ -1,7 +1,12 @@
 import { values } from 'mobx';
 import { grpc } from '@improbable-eng/grpc-web';
 import { waitFor } from '@testing-library/react';
-import { lndChannelBalance, lndGetInfo, lndWalletBalance } from 'util/tests/sampleData';
+import {
+  lndChannelBalance,
+  lndGetInfo,
+  lndTransaction,
+  lndWalletBalance,
+} from 'util/tests/sampleData';
 import { createStore, NodeStore, Store } from 'store';
 
 const grpcMock = grpc as jest.Mocked<typeof grpc>;
@@ -59,5 +64,19 @@ describe('NodeStore', () => {
       expect(rootStore.uiStore.alerts.size).toBe(1);
       expect(values(rootStore.uiStore.alerts)[0].message).toBe('test-err');
     });
+  });
+
+  it('should handle a transaction event', () => {
+    expect(+store.wallet.walletBalance).toBe(0);
+    store.onTransaction(lndTransaction);
+    expect(+store.wallet.walletBalance).toBe(lndTransaction.amount);
+  });
+
+  it('should handle duplicate transaction events', () => {
+    expect(+store.wallet.walletBalance).toBe(0);
+    store.onTransaction(lndTransaction);
+    expect(+store.wallet.walletBalance).toBe(lndTransaction.amount);
+    store.onTransaction(lndTransaction);
+    expect(+store.wallet.walletBalance).toBe(lndTransaction.amount);
   });
 });

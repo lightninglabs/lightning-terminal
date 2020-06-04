@@ -75,4 +75,12 @@ describe('SwapStore', () => {
     swap.type = type;
     expect(swap.typeName).toEqual(label);
   });
+
+  it('should handle swap events', () => {
+    const swap = loopListSwaps.swapsList[0];
+    swap.id += 'test';
+    expect(store.sortedSwaps).toHaveLength(0);
+    store.onSwapUpdate(swap);
+    expect(store.sortedSwaps).toHaveLength(1);
+  });
 });

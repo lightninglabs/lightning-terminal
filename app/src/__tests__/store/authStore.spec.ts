@@ -1,5 +1,7 @@
 import { grpc } from '@improbable-eng/grpc-web';
+import { waitFor } from '@testing-library/react';
 import AppStorage from 'util/appStorage';
+import { lndListChannels } from 'util/tests/sampleData';
 import { AuthStore, createStore, Store } from 'store';
 import { PersistentSettings } from 'store/stores/settingsStore';
 
@@ -64,5 +66,17 @@ describe('AuthStore', () => {
     getMock.mockReturnValue('test-creds');
     await store.init();
     expect(store.credentials).toBe('');
+  });
+
+  it('should fetch data after authentication succeeds', async () => {
+    await rootStore.init();
+    expect(rootStore.channelStore.channels.size).toBe(0);
+    await store.login('test-pw');
+    expect(store.authenticated).toBe(true);
+    await waitFor(() => {
+      expect(rootStore.channelStore.channels.size).toBe(
+        lndListChannels.channelsList.length,
+      );
+    });
   });
 });

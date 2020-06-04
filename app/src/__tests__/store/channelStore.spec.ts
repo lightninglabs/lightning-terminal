@@ -1,9 +1,10 @@
 import { observable, ObservableMap, values } from 'mobx';
+import * as LND from 'types/generated/lnd_pb';
 import { grpc } from '@improbable-eng/grpc-web';
 import { waitFor } from '@testing-library/react';
 import Big from 'big.js';
 import { BalanceMode } from 'util/constants';
-import { lndListChannels } from 'util/tests/sampleData';
+import { lndChannelEvent, lndListChannels } from 'util/tests/sampleData';
 import { createStore, Store } from 'store';
 import Channel from 'store/models/channel';
 import ChannelStore from 'store/stores/channelStore';
@@ -117,5 +118,61 @@ describe('ChannelStore', () => {
     );
 
     expect(+store.totalOutbound).toBe(outbound);
+  });
+
+  describe('onChannelEvent', () => {
+    const {
+      OPEN_CHANNEL,
+      CLOSED_CHANNEL,
+      ACTIVE_CHANNEL,
+      INACTIVE_CHANNEL,
+    } = LND.ChannelEventUpdate.UpdateType;
+
+    beforeEach(async () => {
+      await store.fetchChannels();
+    });
+
+    it('should handle inactive channel event', async () => {
+      const event = { ...lndChannelEvent, type: INACTIVE_CHANNEL };
+      const len = lndListChannels.channelsList.length;
+      expect(store.activeChannels).toHaveLength(len);
+      store.onChannelEvent(event);
+      expect(store.activeChannels).toHaveLength(len - 1);
+    });
+
+    it('should handle active channel event', async () => {
+      await store.fetchChannels();
+      const chan = store.channels.get(lndListChannels.channelsList[0].chanId) as Channel;
+      chan.active = false;
+      const event = { ...lndChannelEvent, type: ACTIVE_CHANNEL };
+      const len = lndListChannels.channelsList.length;
+      expect(store.activeChannels).toHaveLength(len - 1);
+      store.onChannelEvent(event);
+      expect(store.activeChannels).toHaveLength(len);
+    });
+
+    it('should handle open channel event', async () => {
+      const event = { ...lndChannelEvent, type: OPEN_CHANNEL };
+      event.openChannel.chanId = '12345';
+      expect(store.channels.get('12345')).toBeUndefined();
+      store.onChannelEvent(event);
+      expect(store.channels.get('12345')).toBeDefined();
+    });
+
+    it('should handle close channel event', async () => {
+      const event = { ...lndChannelEvent, type: CLOSED_CHANNEL };
+      const chanId = event.closedChannel.chanId;
+      expect(store.channels.get(chanId)).toBeDefined();
+      store.onChannelEvent(event);
+      expect(store.channels.get(chanId)).toBeUndefined();
+    });
+
+    it('should do nothing for unknown channel event type', async () => {
+      const event = { ...lndChannelEvent, type: 99 };
+      const len = lndListChannels.channelsList.length;
+      expect(store.activeChannels).toHaveLength(len);
+      store.onChannelEvent(event as any);
+      expect(store.activeChannels).toHaveLength(len);
+    });
   });
 });

@@ -90,6 +90,7 @@
       "!src/types/**/*.{js,ts}",
       "!src/i18n/**/*.{js,ts}",
       "!src/util/tests/**/*.{ts,tsx}",
+      "!src/setupProxy.js",
       "!src/index.tsx"
     ]
   },

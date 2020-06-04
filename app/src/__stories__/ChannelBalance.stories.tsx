@@ -1,5 +1,5 @@
 import React from 'react';
-import { lndListChannelsOne } from 'util/tests/sampleData';
+import { lndChannel } from 'util/tests/sampleData';
 import { Store, useStore } from 'store';
 import { Channel } from 'store/models';
 import ChannelBalance from 'components/loop/ChannelBalance';
@@ -11,7 +11,7 @@ export default {
 };
 
 const getChannel = (store: Store, ratio: number) => {
-  const channel = new Channel(store, lndListChannelsOne.channelsList[0]);
+  const channel = new Channel(store, lndChannel);
   channel.localBalance = channel.capacity.mul(ratio);
   channel.remoteBalance = channel.capacity.mul(1 - ratio);
   return channel;
