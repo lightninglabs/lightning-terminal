@@ -1,12 +1,18 @@
 import * as LND from 'types/generated/lnd_pb';
 import { Lightning } from 'types/generated/lnd_pb_service';
-import AuthenticatedApi from './auth';
+import BaseApi from './base';
 import GrpcClient from './grpc';
+
+/** the names and argument types for the subscription events */
+interface LndEvents {
+  transaction: LND.Transaction.AsObject;
+  channel: LND.ChannelEventUpdate.AsObject;
+}
 
 /**
  * An API wrapper to communicate with the LND node via GRPC
  */
-class LndApi extends AuthenticatedApi {
+class LndApi extends BaseApi<LndEvents> {
   private _grpc: GrpcClient;
 
   constructor(grpc: GrpcClient) {
@@ -48,6 +54,24 @@ class LndApi extends AuthenticatedApi {
     const req = new LND.ListChannelsRequest();
     const res = await this._grpc.request(Lightning.ListChannels, req, this._meta);
     return res.toObject();
+  }
+
+  /**
+   * Connect to the LND streaming endpoints
+   */
+  connectStreams() {
+    this._grpc.subscribe(
+      Lightning.SubscribeTransactions,
+      new LND.GetTransactionsRequest(),
+      transaction => this.emit('transaction', transaction.toObject()),
+      this._meta,
+    );
+    this._grpc.subscribe(
+      Lightning.SubscribeChannelEvents,
+      new LND.ChannelEventSubscription(),
+      channelEvent => this.emit('channel', channelEvent.toObject()),
+      this._meta,
+    );
   }
 }
 

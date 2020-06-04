@@ -66,14 +66,12 @@ const delay = (timeout: number) =>
 
 export const AllSwapStates = () => {
   const store = useStore();
-  store.swapStore.stopAutoPolling();
   store.swapStore.swaps = createSwaps();
   return <ProcessingSwaps />;
 };
 
 export const LoopInProgress = () => {
   const store = useStore();
-  store.swapStore.stopAutoPolling();
   const swap = mockSwap(LOOP_IN, INITIATED);
   store.swapStore.swaps = observable.map({ [swap.id]: swap });
 
@@ -98,7 +96,6 @@ export const LoopInProgress = () => {
 
 export const LoopOutProgress = () => {
   const store = useStore();
-  store.swapStore.stopAutoPolling();
   const swap = mockSwap(LOOP_OUT, INITIATED);
   store.swapStore.swaps = observable.map({ [swap.id]: swap });
 

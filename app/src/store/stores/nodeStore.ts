@@ -1,5 +1,7 @@
 import { action, observable, runInAction, toJS } from 'mobx';
+import { Transaction } from 'types/generated/lnd_pb';
 import Big from 'big.js';
+import debounce from 'lodash/debounce';
 import { Store } from 'store';
 import { Wallet } from '../models';
 
@@ -8,6 +10,11 @@ type NodeNetwork = 'mainnet' | 'testnet' | 'regtest';
 
 export default class NodeStore {
   private _store: Store;
+  /**
+   * an internal list of txn ids used to prevent updating the balance
+   * multiple times for the same transaction.
+   */
+  private _knownTxns: string[] = [];
 
   /** the pubkey of the LND node */
   @observable pubkey = '';
@@ -63,5 +70,20 @@ export default class NodeStore {
     } catch (error) {
       this._store.uiStore.handleError(error, 'Unable to fetch balances');
     }
+  }
+
+  /** fetch balances at most once every 2 seconds when using this func  */
+  fetchBalancesThrottled = debounce(this.fetchBalances, 2000);
+
+  /**
+   * updates the wallet balance from the transaction provided
+   */
+  @action.bound
+  onTransaction(transaction: Transaction.AsObject) {
+    this._store.log.info('handle incoming transaction', transaction);
+    if (this._knownTxns.includes(transaction.txHash)) return;
+    this._knownTxns.push(transaction.txHash);
+    this.wallet.walletBalance = this.wallet.walletBalance.plus(transaction.amount);
+    this._store.log.info('updated nodeStore.wallet', toJS(this.wallet));
   }
 }

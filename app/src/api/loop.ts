@@ -2,13 +2,18 @@ import * as LOOP from 'types/generated/loop_pb';
 import { SwapClient } from 'types/generated/loop_pb_service';
 import { Quote } from 'types/state';
 import Big from 'big.js';
-import AuthenticatedApi from './auth';
+import BaseApi from './base';
 import GrpcClient from './grpc';
+
+/** the names and argument types for the subscription events */
+interface LoopEvents {
+  monitor: LOOP.SwapStatus.AsObject;
+}
 
 /**
  * An API wrapper to communicate with the Loop daemon via GRPC
  */
-class LoopApi extends AuthenticatedApi {
+class LoopApi extends BaseApi<LoopEvents> {
   private _grpc: GrpcClient;
 
   constructor(grpc: GrpcClient) {
@@ -103,6 +108,17 @@ class LoopApi extends AuthenticatedApi {
     return res.toObject();
   }
 
+  /**
+   * Connect to the Loop streaming endpoint
+   */
+  connectStreams() {
+    this._grpc.subscribe(
+      SwapClient.Monitor,
+      new LOOP.MonitorRequest(),
+      swapStatus => this.emit('monitor', swapStatus.toObject()),
+      this._meta,
+    );
+  }
   /**
    * Calculates the max routing fee params for loop out. this mimics the loop cli
    * behavior of using 2% of the amount

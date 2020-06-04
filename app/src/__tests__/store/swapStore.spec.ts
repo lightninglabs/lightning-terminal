@@ -76,57 +76,11 @@ describe('SwapStore', () => {
     expect(swap.typeName).toEqual(label);
   });
 
-  it('should poll for swap updates', async () => {
-    await store.fetchSwaps();
-    const swap = store.sortedSwaps[0];
-    // create a pending swap to trigger auto-polling
-    swap.state = LOOP.SwapState.INITIATED;
-    expect(store.pendingSwaps).toHaveLength(1);
-    // wait for polling to start
-    await waitFor(() => {
-      expect(store.pollingInterval).toBeDefined();
-    });
-    // change the swap to complete
-    swap.state = LOOP.SwapState.SUCCESS;
-    expect(store.pendingSwaps).toHaveLength(0);
-    // confirm polling has stopped
-    await waitFor(() => {
-      expect(store.pollingInterval).toBeUndefined();
-    });
-  });
-
-  it('should handle startPolling when polling is already running', () => {
-    expect(store.pollingInterval).toBeUndefined();
-    store.startPolling();
-    expect(store.pollingInterval).toBeDefined();
-    store.startPolling();
-    expect(store.pollingInterval).toBeDefined();
-  });
-
-  it('should handle stopPolling when polling is already stopped', () => {
-    expect(store.pollingInterval).toBeUndefined();
-    store.stopPolling();
-    expect(store.pollingInterval).toBeUndefined();
-  });
-
-  it('should stop polling if there is an error fetching swaps', async () => {
-    await store.fetchSwaps();
-    const swap = store.sortedSwaps[0];
-    // create a pending swap to trigger auto-polling
-    swap.state = LOOP.SwapState.INITIATED;
-    expect(store.pendingSwaps).toHaveLength(1);
-    // wait for polling to start
-    await waitFor(() => {
-      expect(store.pollingInterval).toBeDefined();
-    });
-    // induce a failure when fetching swaps
-    grpcMock.unary.mockImplementationOnce(desc => {
-      if (desc.methodName === 'ListSwaps') throw new Error('test-err');
-      return undefined as any;
-    });
-    // confirm polling has stopped
-    await waitFor(() => {
-      expect(store.pollingInterval).toBeUndefined();
-    });
+  it('should handle swap events', () => {
+    const swap = loopListSwaps.swapsList[0];
+    swap.id += 'test';
+    expect(store.sortedSwaps).toHaveLength(0);
+    store.onSwapUpdate(swap);
+    expect(store.sortedSwaps).toHaveLength(1);
   });
 });

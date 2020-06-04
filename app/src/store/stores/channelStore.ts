@@ -7,9 +7,18 @@ import {
   toJS,
   values,
 } from 'mobx';
+import { ChannelEventUpdate, ChannelPoint } from 'types/generated/lnd_pb';
 import Big from 'big.js';
+import debounce from 'lodash/debounce';
 import { Store } from 'store';
 import { Channel } from '../models';
+
+const {
+  OPEN_CHANNEL,
+  CLOSED_CHANNEL,
+  ACTIVE_CHANNEL,
+  INACTIVE_CHANNEL,
+} = ChannelEventUpdate.UpdateType;
 
 export default class ChannelStore {
   private _store: Store;
@@ -90,10 +99,57 @@ export default class ChannelStore {
     }
   }
 
+  /** fetch channels at most once every 2 seconds when using this func  */
+  fetchChannelsThrottled = debounce(this.fetchChannels, 2000);
+
+  /** update the channel list based on events from the API */
+  @action.bound
+  onChannelEvent(event: ChannelEventUpdate.AsObject) {
+    this._store.log.info('handle incoming channel event', event);
+    if (event.type === INACTIVE_CHANNEL && event.inactiveChannel) {
+      // set the channel in state to inactive
+      const point = this._channelPointToString(event.inactiveChannel);
+      values(this.channels)
+        .filter(c => c.channelPoint === point)
+        .forEach(c => {
+          c.active = false;
+          this._store.log.info('updated channel', toJS(c));
+        });
+    } else if (event.type === ACTIVE_CHANNEL && event.activeChannel) {
+      // set the channel in state to active
+      const point = this._channelPointToString(event.activeChannel);
+      values(this.channels)
+        .filter(c => c.channelPoint === point)
+        .forEach(c => {
+          c.active = true;
+          this._store.log.info('updated channel', toJS(c));
+        });
+    } else if (event.type === CLOSED_CHANNEL && event.closedChannel) {
+      // delete the closed channel
+      const channel = this.channels.get(event.closedChannel.chanId);
+      this.channels.delete(event.closedChannel.chanId);
+      this._store.log.info('removed closed channel', toJS(channel));
+      this._store.nodeStore.fetchBalancesThrottled();
+    } else if (event.type === OPEN_CHANNEL && event.openChannel) {
+      // add the new opened channel
+      const channel = new Channel(this._store, event.openChannel);
+      this.channels.set(channel.chanId, channel);
+      this._store.log.info('added new open channel', toJS(channel));
+      this._store.nodeStore.fetchBalancesThrottled();
+    }
+  }
+
   /** exports the sorted list of channels to CSV file */
   @action.bound
   exportChannels() {
     this._store.log.info('exporting Channels to a CSV file');
     this._store.csv.export('channels', Channel.csvColumns, toJS(this.sortedChannels));
+  }
+
+  /** converts a base64 encoded channel point to a hex encoded channel point */
+  private _channelPointToString(channelPoint: ChannelPoint.AsObject) {
+    const txidBytes = channelPoint.fundingTxidBytes as string;
+    const txid = Buffer.from(txidBytes, 'base64').reverse().toString('hex');
+    return `${txid}:${channelPoint.outputIndex}`;
   }
 }

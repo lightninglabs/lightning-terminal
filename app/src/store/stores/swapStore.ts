@@ -1,25 +1,18 @@
 import {
   action,
   computed,
-  IReactionDisposer,
   observable,
   ObservableMap,
-  reaction,
   runInAction,
   toJS,
   values,
 } from 'mobx';
-import { IS_PROD, IS_TEST } from 'config';
+import { SwapStatus } from 'types/generated/loop_pb';
 import { Store } from 'store';
 import { Swap } from '../models';
 
 export default class SwapStore {
   private _store: Store;
-  /** a reference to the polling timer, needed to stop polling */
-  pollingInterval?: NodeJS.Timeout;
-  /** the mobx disposer func to cancel automatic polling */
-  stopAutoPolling: IReactionDisposer;
-
   /** the collection of swaps */
   @observable swaps: ObservableMap<string, Swap> = observable.map();
 
@@ -28,21 +21,6 @@ export default class SwapStore {
 
   constructor(store: Store) {
     this._store = store;
-
-    // automatically start & stop polling for swaps if there are any pending
-    this.stopAutoPolling = reaction(
-      () => this.pendingSwaps.length,
-      (length: number) => {
-        if (length > 0) {
-          this.startPolling();
-        } else {
-          this.stopPolling();
-          // also update our channels and balances when the loop is complete
-          this._store.channelStore.fetchChannels();
-          this._store.nodeStore.fetchBalances();
-        }
-      },
-    );
   }
 
   /** swaps sorted by created date descending */
@@ -62,11 +40,6 @@ export default class SwapStore {
     return this.sortedSwaps.filter(
       s => s.isPending || (s.isRecent && !this.dismissedSwapIds.includes(s.id)),
     );
-  }
-
-  /** swaps that are currently pending */
-  @computed get pendingSwaps() {
-    return this.sortedSwaps.filter(s => s.isPending);
   }
 
   @action.bound
@@ -89,12 +62,7 @@ export default class SwapStore {
           // update existing swaps or create new ones in state. using this
           // approach instead of overwriting the array will cause fewer state
           // mutations, resulting in better react rendering performance
-          const existing = this.swaps.get(loopSwap.id);
-          if (existing) {
-            existing.update(loopSwap);
-          } else {
-            this.swaps.set(loopSwap.id, new Swap(loopSwap));
-          }
+          this.addOrUpdateSwap(loopSwap);
         });
         // remove any swaps in state that are not in the API response
         const serverIds = swapsList.map(c => c.id);
@@ -107,28 +75,30 @@ export default class SwapStore {
       });
     } catch (error) {
       this._store.uiStore.handleError(error, 'Unable to fetch Swaps');
-      if (this.pollingInterval) this.stopPolling();
     }
   }
 
+  /** adds a new swap or updates an existing one */
   @action.bound
-  startPolling() {
-    if (this.pollingInterval) this.stopPolling();
-    this._store.log.info('start polling for swap updates');
-    const ms = IS_PROD ? 60 * 1000 : IS_TEST ? 100 : 1000;
-    this.pollingInterval = setInterval(this.fetchSwaps, ms);
-  }
-
-  @action.bound
-  stopPolling() {
-    this._store.log.info('stop polling for swap updates');
-    if (this.pollingInterval) {
-      clearInterval(this.pollingInterval);
-      this.pollingInterval = undefined;
-      this._store.log.info('polling stopped');
+  addOrUpdateSwap(loopSwap: SwapStatus.AsObject) {
+    const existing = this.swaps.get(loopSwap.id);
+    if (existing) {
+      existing.update(loopSwap);
+      this._store.log.info('updated existing swap', toJS(loopSwap));
     } else {
-      this._store.log.info('polling was already stopped');
+      this.swaps.set(loopSwap.id, new Swap(loopSwap));
+      this._store.log.info('added new swap', toJS(loopSwap));
     }
+  }
+
+  /** updates the swap and refreshes the channel list */
+  @action.bound
+  onSwapUpdate(loopSwap: SwapStatus.AsObject) {
+    this.addOrUpdateSwap(loopSwap);
+    // the swap update likely caused a change in onchain/offchain balances
+    // so fetch updated data from the server
+    this._store.channelStore.fetchChannelsThrottled();
+    this._store.nodeStore.fetchBalancesThrottled();
   }
 
   /** exports the sorted list of swaps to CSV file */

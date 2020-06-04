@@ -48,6 +48,8 @@ export class Store {
   // a flag to indicate when the store has completed all of its
   // API requests requested during initialization
   @observable initialized = false;
+  // a flag to indicate when the websocket streams are connected
+  @observable streamsConnected = false;
 
   constructor(
     lnd: LndApi,
@@ -83,9 +85,14 @@ export class Store {
           this.uiStore.goToLoop();
           // also fetch all the data we need
           this.fetchAllData();
+          // connect and subscribe to the server-side streams
+          this.connectToStreams();
+          this.subscribeToStreams();
         } else {
           // go to auth page if we are not authenticated
           this.uiStore.gotoAuth();
+          // unsubscribe from streams since we are no longer authenticated
+          this.unsubscribeFromStreams();
         }
       },
       { name: 'authenticatedAutorun' },
@@ -101,6 +108,39 @@ export class Store {
     await this.channelStore.fetchChannels();
     await this.swapStore.fetchSwaps();
     await this.nodeStore.fetchBalances();
+  }
+
+  /** connects to the LND and Loop websocket streams if not already connected */
+  @action.bound
+  connectToStreams() {
+    if (this.streamsConnected) return;
+
+    const { lnd, loop } = this.api;
+    lnd.connectStreams();
+    loop.connectStreams();
+    this.streamsConnected = true;
+  }
+
+  /**
+   * subscribes to the LND and Loop streaming endpoints
+   */
+  @action.bound
+  subscribeToStreams() {
+    const { lnd, loop } = this.api;
+    lnd.on('transaction', this.nodeStore.onTransaction);
+    lnd.on('channel', this.channelStore.onChannelEvent);
+    loop.on('monitor', this.swapStore.onSwapUpdate);
+  }
+
+  /**
+   * unsubscribes from the LND and Loop streaming endpoints
+   */
+  @action.bound
+  unsubscribeFromStreams() {
+    const { lnd, loop } = this.api;
+    lnd.off('transaction', this.nodeStore.onTransaction);
+    lnd.off('channel', this.channelStore.onChannelEvent);
+    loop.off('monitor', this.swapStore.onSwapUpdate);
   }
 }
 

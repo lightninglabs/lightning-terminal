@@ -20,6 +20,7 @@ const grpc = {
     const response: any = { toObject: () => data };
     return Promise.resolve(response);
   },
+  subscribe: () => undefined,
 };
 
 // fake the AppStorage dependency so that settings aren't shared across stories
