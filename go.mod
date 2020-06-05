@@ -7,9 +7,9 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.12.2
 	github.com/improbable-eng/grpc-web v0.12.0
 	github.com/jessevdk/go-flags v1.4.0
-	github.com/lightninglabs/faraday v0.1.0-alpha.0.20200518080657-d3726a59507c
-	github.com/lightninglabs/loop v0.6.2-beta.0.20200528104150-c281cab8a036
-	github.com/lightningnetwork/lnd v0.10.1-beta.rc1
+	github.com/lightninglabs/faraday v0.2.0-alpha
+	github.com/lightninglabs/loop v0.6.3-beta
+	github.com/lightningnetwork/lnd v0.10.1
 	github.com/lightningnetwork/lnd/cert v1.0.2
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
 	github.com/mwitkow/grpc-proxy v0.0.0-20181017164139-0f1106ef9c76
@@ -26,11 +26,6 @@ require (
 
 // Manually solve the conflict between loop's lndclient version of lnd and what
 // we explicitly need for the unified binary to work.
-replace github.com/lightningnetwork/lnd => github.com/lightningnetwork/lnd v0.10.0-beta.rc6.0.20200528052558-24c865450a77
-
-// Needed because lnd now imports the etcd client which doesn't follow the go
-// mod guidelines. Unfortunately replace directives from dependency projects
-// aren't picked up so we need to specify this here and in lnd.
-replace github.com/coreos/go-systemd => github.com/coreos/go-systemd/v22 v22.0.0
+replace github.com/lightningnetwork/lnd => github.com/lightningnetwork/lnd v0.10.0-beta.rc6.0.20200603172101-595bb7c1ff14
 
 go 1.13
