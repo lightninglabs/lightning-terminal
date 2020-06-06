@@ -13,6 +13,7 @@ export default class Channel {
 
   @observable chanId = '';
   @observable remotePubkey = '';
+  @observable alias: string | undefined;
   @observable channelPoint = '';
   @observable capacity = Big(0);
   @observable localBalance = Big(0);
@@ -27,10 +28,10 @@ export default class Channel {
   }
 
   /**
-   * The remotePubkey shortened to ~20 chars with ellipses inside
+   * The alias or remotePubkey shortened to ~20 chars with ellipses inside
    */
-  @computed get ellipsedPubkey() {
-    return ellipseInside(this.remotePubkey);
+  @computed get aliasLabel() {
+    return this.alias || ellipseInside(this.remotePubkey);
   }
 
   /**

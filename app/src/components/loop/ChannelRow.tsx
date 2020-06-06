@@ -137,7 +137,7 @@ const ChannelRow: React.FC<Props> = ({ channel, style }) => {
       <Column>{channel.uptimePercent}</Column>
       <Column>
         <Tip overlay={channel.remotePubkey} placement="left">
-          <span>{channel.ellipsedPubkey}</span>
+          <span>{channel.aliasLabel}</span>
         </Tip>
       </Column>
       <Column right>

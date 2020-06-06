@@ -93,6 +93,8 @@ export default class ChannelStore {
           .forEach(id => this.channels.delete(id));
 
         this._store.log.info('updated channelStore.channels', toJS(this.channels));
+        // fetch the aliases for each of the channels
+        this.fetchAliases();
       });
     } catch (error) {
       this._store.uiStore.handleError(error, 'Unable to fetch Channels');
@@ -101,6 +103,35 @@ export default class ChannelStore {
 
   /** fetch channels at most once every 2 seconds when using this func  */
   fetchChannelsThrottled = debounce(this.fetchChannels, 2000);
+
+  /**
+   * queries the LND api to fetch the aliases for all of the peers we have
+   * channels opened with
+   */
+  @action.bound
+  async fetchAliases() {
+    const pubKeys = values(this.channels)
+      .map(c => c.remotePubkey)
+      .filter((r, i, a) => a.indexOf(r) === i); // remove duplicates
+    // call getNodeInfo for each pubkey and wait for all the requests to complete
+    const nodeInfos = await Promise.all(
+      pubKeys.map(pk => this._store.api.lnd.getNodeInfo(pk)),
+    );
+
+    // create a map of pubKey to alias
+    const aliases = nodeInfos.reduce((acc, { node }) => {
+      if (node) acc[node.pubKey] = node.alias;
+      return acc;
+    }, {} as Record<string, string>);
+
+    runInAction('fetchAliasesContinuation', () => {
+      values(this.channels).forEach(c => {
+        if (aliases[c.remotePubkey]) {
+          c.alias = aliases[c.remotePubkey];
+        }
+      });
+    });
+  }
 
   /** update the channel list based on events from the API */
   @action.bound
@@ -136,6 +167,8 @@ export default class ChannelStore {
       this.channels.set(channel.chanId, channel);
       this._store.log.info('added new open channel', toJS(channel));
       this._store.nodeStore.fetchBalancesThrottled();
+      // fetch the alias for the added channel
+      this.fetchAliases();
     }
   }
 

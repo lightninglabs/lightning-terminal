@@ -4,7 +4,12 @@ import { grpc } from '@improbable-eng/grpc-web';
 import { waitFor } from '@testing-library/react';
 import Big from 'big.js';
 import { BalanceMode } from 'util/constants';
-import { lndChannelEvent, lndListChannels } from 'util/tests/sampleData';
+import {
+  lndChannel,
+  lndChannelEvent,
+  lndGetNodeInfo,
+  lndListChannels,
+} from 'util/tests/sampleData';
 import { createStore, Store } from 'store';
 import Channel from 'store/models/channel';
 import ChannelStore from 'store/stores/channelStore';
@@ -118,6 +123,16 @@ describe('ChannelStore', () => {
     );
 
     expect(+store.totalOutbound).toBe(outbound);
+  });
+
+  it('should fetch aliases for channels', async () => {
+    await store.fetchChannels();
+    const channel = store.channels.get(lndChannel.chanId) as Channel;
+    expect(channel.alias).toBeUndefined();
+    // the alias is fetched from the API and should be updated after a few ticks
+    waitFor(() => {
+      expect(channel.alias).toBe(lndGetNodeInfo.node.alias);
+    });
   });
 
   describe('onChannelEvent', () => {
