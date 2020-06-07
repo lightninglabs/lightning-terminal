@@ -20,6 +20,14 @@ const {
   INACTIVE_CHANNEL,
 } = ChannelEventUpdate.UpdateType;
 
+interface AliasCache {
+  lastUpdated: number;
+  aliases: Record<string, string>;
+}
+
+/** cache alias data for 24 hours */
+const ALIAS_CACHE_TIMEOUT = 24 * 60 * 60 * 1000;
+
 export default class ChannelStore {
   private _store: Store;
 
@@ -110,26 +118,55 @@ export default class ChannelStore {
    */
   @action.bound
   async fetchAliases() {
-    const pubKeys = values(this.channels)
+    this._store.log.info('fetching aliases for channels');
+    // create an array of all channel pubkeys
+    let pubkeys = values(this.channels)
       .map(c => c.remotePubkey)
       .filter((r, i, a) => a.indexOf(r) === i); // remove duplicates
-    // call getNodeInfo for each pubkey and wait for all the requests to complete
-    const nodeInfos = await Promise.all(
-      pubKeys.map(pk => this._store.api.lnd.getNodeInfo(pk)),
-    );
 
-    // create a map of pubKey to alias
-    const aliases = nodeInfos.reduce((acc, { node }) => {
-      if (node) acc[node.pubKey] = node.alias;
-      return acc;
-    }, {} as Record<string, string>);
+    // create a map of pubkey to alias
+    let aliases: Record<string, string> = {};
+
+    // look up cached data in storage
+    let cachedAliases = this._store.storage.get<AliasCache>('aliases');
+    if (cachedAliases && cachedAliases.lastUpdated > Date.now() - ALIAS_CACHE_TIMEOUT) {
+      // there is cached data and it has not expired
+      aliases = cachedAliases.aliases;
+      // exclude pubkeys which we have aliases for already
+      pubkeys = pubkeys.filter(pk => !aliases[pk]);
+      this._store.log.info(`found aliases in cache. ${pubkeys.length} missing`, pubkeys);
+    }
+
+    // if there are any pubkeys that we do not have a cached alias for
+    if (pubkeys.length) {
+      // call getNodeInfo for each pubkey and wait for all the requests to complete
+      const nodeInfos = await Promise.all(
+        pubkeys.map(pk => this._store.api.lnd.getNodeInfo(pk)),
+      );
+
+      // add fetched aliases to the mapping
+      aliases = nodeInfos.reduce((acc, { node }) => {
+        if (node) acc[node.pubKey] = node.alias;
+        return acc;
+      }, aliases);
+
+      // save updated aliases to the cache in storage
+      cachedAliases = {
+        lastUpdated: Date.now(),
+        aliases,
+      };
+      this._store.storage.set('aliases', cachedAliases);
+      this._store.log.info(`updated cache with ${pubkeys.length} new aliases`);
+    }
 
     runInAction('fetchAliasesContinuation', () => {
+      // set the alias on each channel in the store
       values(this.channels).forEach(c => {
         if (aliases[c.remotePubkey]) {
           c.alias = aliases[c.remotePubkey];
         }
       });
+      this._store.log.info('updated channels with aliases', toJS(this.channels));
     });
   }
 

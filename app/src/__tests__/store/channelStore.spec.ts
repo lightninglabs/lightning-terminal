@@ -3,6 +3,7 @@ import * as LND from 'types/generated/lnd_pb';
 import { grpc } from '@improbable-eng/grpc-web';
 import { waitFor } from '@testing-library/react';
 import Big from 'big.js';
+import AppStorage from 'util/appStorage';
 import { BalanceMode } from 'util/constants';
 import {
   lndChannel,
@@ -15,6 +16,7 @@ import Channel from 'store/models/channel';
 import ChannelStore from 'store/stores/channelStore';
 
 const grpcMock = grpc as jest.Mocked<typeof grpc>;
+const appStorageMock = AppStorage as jest.Mock<AppStorage>;
 
 describe('ChannelStore', () => {
   let rootStore: Store;
@@ -133,6 +135,26 @@ describe('ChannelStore', () => {
     waitFor(() => {
       expect(channel.alias).toBe(lndGetNodeInfo.node.alias);
     });
+  });
+
+  it('should use cached aliases for channels', async () => {
+    const cache = {
+      lastUpdated: Date.now(),
+      aliases: {
+        [lndGetNodeInfo.node.pubKey]: lndGetNodeInfo.node.alias,
+      },
+    };
+    const getMock = appStorageMock.mock.instances[0].get as jest.Mock;
+    getMock.mockImplementationOnce(() => cache);
+
+    const channel = new Channel(rootStore, lndChannel);
+    store.channels = observable.map({
+      [channel.chanId]: channel,
+    });
+
+    await store.fetchAliases();
+    expect(channel.alias).toBe(lndGetNodeInfo.node.alias);
+    expect(grpcMock.unary).not.toBeCalled();
   });
 
   describe('onChannelEvent', () => {

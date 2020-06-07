@@ -1,9 +1,8 @@
 import AppStorage from 'util/appStorage';
 import { BalanceMode, Unit } from 'util/constants';
 import { createStore, SettingsStore } from 'store';
-import { PersistentSettings } from 'store/stores/settingsStore';
 
-const appStorageMock = AppStorage as jest.Mock<AppStorage<PersistentSettings>>;
+const appStorageMock = AppStorage as jest.Mock<AppStorage>;
 
 describe('SettingsStore', () => {
   let store: SettingsStore;

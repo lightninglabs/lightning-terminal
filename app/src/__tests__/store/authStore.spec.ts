@@ -3,10 +3,9 @@ import { waitFor } from '@testing-library/react';
 import AppStorage from 'util/appStorage';
 import { lndListChannels } from 'util/tests/sampleData';
 import { AuthStore, createStore, Store } from 'store';
-import { PersistentSettings } from 'store/stores/settingsStore';
 
 const grpcMock = grpc as jest.Mocked<typeof grpc>;
-const appStorageMock = AppStorage as jest.Mock<AppStorage<PersistentSettings>>;
+const appStorageMock = AppStorage as jest.Mock<AppStorage>;
 
 describe('AuthStore', () => {
   let rootStore: Store;

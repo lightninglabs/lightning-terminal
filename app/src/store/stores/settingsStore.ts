@@ -76,7 +76,7 @@ export default class SettingsStore {
   @action.bound
   load() {
     this._store.log.info('loading settings from localStorage');
-    const settings = this._store.storage.get('settings');
+    const settings = this._store.storage.get<PersistentSettings>('settings');
     if (settings) {
       this.sidebarVisible = settings.sidebarVisible;
       this.unit = settings.unit;

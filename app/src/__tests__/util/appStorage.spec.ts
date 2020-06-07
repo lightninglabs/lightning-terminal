@@ -9,7 +9,7 @@ describe('appStorage util', () => {
     someString: 'abc',
     someBool: false,
   };
-  const appStorage = new AppStorage<typeof settings>();
+  const appStorage = new AppStorage();
 
   it('should save an object to localStorage', () => {
     appStorage.set(key, settings);
