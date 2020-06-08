@@ -10,8 +10,11 @@ import './i18n';
 // adds support for lottie-web animations in unit test env
 import 'jest-canvas-mock';
 
-// don't use the real localStorage in unit tests
-jest.mock('util/appStorage');
+// mock localStorage & sessionStorage in unit tests
+jest.spyOn(window.localStorage.__proto__, 'setItem');
+jest.spyOn(window.localStorage.__proto__, 'getItem');
+jest.spyOn(window.sessionStorage.__proto__, 'setItem');
+jest.spyOn(window.sessionStorage.__proto__, 'getItem');
 
 beforeEach(() => {
   jest.clearAllMocks();

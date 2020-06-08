@@ -20,21 +20,6 @@ const {
   INACTIVE_CHANNEL,
 } = ChannelEventUpdate.UpdateType;
 
-interface AliasCache {
-  lastUpdated: number;
-  /** mapping from remove pubkey to alias */
-  aliases: Record<string, string>;
-}
-
-interface FeeCache {
-  lastUpdated: number;
-  /** mapping form channel id to fee rate */
-  feeRates: Record<string, number>;
-}
-
-/** cache alias data for 24 hours */
-const CACHE_TIMEOUT = 24 * 60 * 60 * 1000;
-
 export default class ChannelStore {
   private _store: Store;
 
@@ -127,46 +112,22 @@ export default class ChannelStore {
    */
   @action.bound
   async fetchAliases() {
-    this._store.log.info('fetching aliases for channels');
-    // create an array of all channel pubkeys
-    let pubkeys = values(this.channels)
-      .map(c => c.remotePubkey)
-      .filter((r, i, a) => a.indexOf(r) === i); // remove duplicates
-
-    // create a map of pubkey to alias
-    let aliases: Record<string, string> = {};
-
-    // look up cached data in storage
-    let cachedAliases = this._store.storage.get<AliasCache>('aliases');
-    if (cachedAliases && cachedAliases.lastUpdated > Date.now() - CACHE_TIMEOUT) {
-      // there is cached data and it has not expired
-      aliases = cachedAliases.aliases;
-      // exclude pubkeys which we have aliases for already
-      pubkeys = pubkeys.filter(pk => !aliases[pk]);
-      this._store.log.info(`found aliases in cache. ${pubkeys.length} missing`, pubkeys);
-    }
-
-    // if there are any pubkeys that we do not have a cached alias for
-    if (pubkeys.length) {
-      // call getNodeInfo for each pubkey and wait for all the requests to complete
-      const nodeInfos = await Promise.all(
-        pubkeys.map(pk => this._store.api.lnd.getNodeInfo(pk)),
-      );
-
-      // add fetched aliases to the mapping
-      aliases = nodeInfos.reduce((acc, { node }) => {
-        if (node) acc[node.pubKey] = node.alias;
-        return acc;
-      }, aliases);
-
-      // save updated aliases to the cache in storage
-      cachedAliases = {
-        lastUpdated: Date.now(),
-        aliases,
-      };
-      this._store.storage.set('aliases', cachedAliases);
-      this._store.log.info(`updated cache with ${pubkeys.length} new aliases`);
-    }
+    const aliases = await this._store.storage.getCached<string>({
+      cacheKey: 'aliases',
+      requiredKeys: values(this.channels).map(c => c.remotePubkey),
+      log: this._store.log,
+      fetchFromApi: async (missingKeys, data) => {
+        // call getNodeInfo for each pubkey and wait for all the requests to complete
+        const nodeInfos = await Promise.all(
+          missingKeys.map(id => this._store.api.lnd.getNodeInfo(id)),
+        );
+        // return a mapping from pubkey to alias
+        return nodeInfos.reduce((acc, { node }) => {
+          if (node) acc[node.pubKey] = node.alias;
+          return acc;
+        }, data);
+      },
+    });
 
     runInAction('fetchAliasesContinuation', () => {
       // set the alias on each channel in the store
@@ -186,60 +147,37 @@ export default class ChannelStore {
    */
   @action.bound
   async fetchFeeRates() {
-    this._store.log.info('fetching fees for channels');
-    // create an array of all channel ids
-    let chanIds = values(this.channels)
-      .map(c => c.chanId)
-      .filter((r, i, a) => a.indexOf(r) === i); // remove duplicates
-
-    // create a map of chan id to fee rate
-    let feeRates: Record<string, number> = {};
-
-    // look up cached data in storage
-    let cachedFees = this._store.storage.get<FeeCache>('fee-rates');
-    if (cachedFees && cachedFees.lastUpdated > Date.now() - CACHE_TIMEOUT) {
-      // there is cached data and it has not expired
-      feeRates = cachedFees.feeRates;
-      // exclude chanIds which we have feeRates for already
-      chanIds = chanIds.filter(id => !feeRates[id]);
-      this._store.log.info(`found feeRates in cache. ${chanIds.length} missing`, chanIds);
-    }
-
-    // if there are any chanIds that we do not have a cached fee rate for
-    if (chanIds.length) {
-      // call getNodeInfo for each chan id and wait for all the requests to complete
-      const chanInfos = await Promise.all(
-        chanIds.map(id => this._store.api.lnd.getChannelInfo(id)),
-      );
-
-      // add fetched feeRates to the mapping
-      feeRates = chanInfos.reduce((acc, info) => {
-        const { channelId, node1Pub, node1Policy, node2Policy } = info;
-        const localPubkey = this._store.nodeStore.pubkey;
-        const policy = node1Pub === localPubkey ? node2Policy : node1Policy;
-        if (policy) {
-          acc[channelId] = +Big(policy.feeRateMilliMsat).div(1000000).mul(100);
-        }
-        return acc;
-      }, feeRates);
-
-      // save updated feeRates to the cache in storage
-      cachedFees = {
-        lastUpdated: Date.now(),
-        feeRates,
-      };
-      this._store.storage.set('fee-rates', cachedFees);
-      this._store.log.info(`updated cache with ${chanIds.length} new feeRates`);
-    }
+    const feeRates = await this._store.storage.getCached<number>({
+      cacheKey: 'feeRates',
+      requiredKeys: values(this.channels).map(c => c.chanId),
+      log: this._store.log,
+      fetchFromApi: async (missingKeys, data) => {
+        // call getNodeInfo for each pubkey and wait for all the requests to complete
+        const chanInfos = await Promise.all(
+          missingKeys.map(id => this._store.api.lnd.getChannelInfo(id)),
+        );
+        // return an updated mapping from chanId to fee rate
+        return chanInfos.reduce((acc, info) => {
+          const { channelId, node1Pub, node1Policy, node2Policy } = info;
+          const localPubkey = this._store.nodeStore.pubkey;
+          const policy = node1Pub === localPubkey ? node2Policy : node1Policy;
+          if (policy) {
+            acc[channelId] = +Big(policy.feeRateMilliMsat).div(1000000).mul(100);
+          }
+          return acc;
+        }, data);
+      },
+    });
 
     runInAction('fetchFeesContinuation', () => {
       // set the fee on each channel in the store
       values(this.channels).forEach(c => {
-        if (feeRates[c.chanId]) {
-          c.remoteFeeRate = feeRates[c.chanId];
+        const rate = feeRates[c.chanId];
+        if (rate) {
+          c.remoteFeeRate = rate;
+          this._store.log.info(`updated channel ${c.chanId} with remoteFeeRate ${rate}`);
         }
       });
-      this._store.log.info('updated channels with feeRates', toJS(this.channels));
     });
   }
 

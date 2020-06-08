@@ -32,6 +32,7 @@ class StoryAppStorage {
   });
   setSession = () => undefined;
   getSession = () => '';
+  getCached = () => Promise.resolve({});
 }
 
 // Create a store that pulls data from the mock GRPC and doesn't use

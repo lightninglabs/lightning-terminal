@@ -3,7 +3,6 @@ import * as LND from 'types/generated/lnd_pb';
 import { grpc } from '@improbable-eng/grpc-web';
 import { waitFor } from '@testing-library/react';
 import Big from 'big.js';
-import AppStorage from 'util/appStorage';
 import { BalanceMode } from 'util/constants';
 import {
   lndChannel,
@@ -17,7 +16,6 @@ import Channel from 'store/models/channel';
 import ChannelStore from 'store/stores/channelStore';
 
 const grpcMock = grpc as jest.Mocked<typeof grpc>;
-const appStorageMock = AppStorage as jest.Mock<AppStorage>;
 
 describe('ChannelStore', () => {
   let rootStore: Store;
@@ -140,13 +138,14 @@ describe('ChannelStore', () => {
 
   it('should use cached aliases for channels', async () => {
     const cache = {
-      lastUpdated: Date.now(),
-      aliases: {
+      expires: Date.now() + 60 * 1000,
+      data: {
         [lndGetNodeInfo.node.pubKey]: lndGetNodeInfo.node.alias,
       },
     };
-    const getMock = appStorageMock.mock.instances[0].get as jest.Mock;
-    getMock.mockImplementationOnce(() => cache);
+    jest
+      .spyOn(window.sessionStorage.__proto__, 'getItem')
+      .mockReturnValue(JSON.stringify(cache));
 
     const channel = new Channel(rootStore, lndChannel);
     store.channels = observable.map({
@@ -174,13 +173,14 @@ describe('ChannelStore', () => {
   it('should use cached fee rates for channels', async () => {
     const rate = +Big(lndGetChanInfo.node1Policy.feeRateMilliMsat).div(1000000).mul(100);
     const cache = {
-      lastUpdated: Date.now(),
-      feeRates: {
+      expires: Date.now() + 60 * 1000,
+      data: {
         [lndGetChanInfo.channelId]: rate,
       },
     };
-    const getMock = appStorageMock.mock.instances[0].get as jest.Mock;
-    getMock.mockImplementationOnce(() => cache);
+    jest
+      .spyOn(window.sessionStorage.__proto__, 'getItem')
+      .mockReturnValue(JSON.stringify(cache));
 
     const channel = new Channel(rootStore, lndChannel);
     store.channels = observable.map({
