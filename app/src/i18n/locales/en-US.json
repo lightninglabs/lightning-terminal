@@ -21,6 +21,7 @@
   "cmps.history.HistoryRowHeader.updated": "Updated",
   "cmps.loop.ChannelRowHeader.canReceive": "Can Receive",
   "cmps.loop.ChannelRowHeader.canSend": "Can Send",
+  "cmps.loop.ChannelRowHeader.feeRate": "In Fee %",
   "cmps.loop.ChannelRowHeader.upTime": "Up Time %",
   "cmps.loop.ChannelRowHeader.peer": "Peer/Alias",
   "cmps.loop.ChannelRowHeader.capacity": "Capacity",

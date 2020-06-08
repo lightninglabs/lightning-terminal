@@ -175,6 +175,33 @@ export const lndTransaction: LND.Transaction.AsObject = {
   txHash: '1f765f45f2a6d33837a203e3fc911915c891e9b86f9c9d91a1931b92efdedf5b',
 };
 
+export const lndGetChanInfo: Required<LND.ChannelEdge.AsObject> = {
+  channelId: lndChannel.chanId,
+  chanPoint: lndChannel.channelPoint,
+  lastUpdate: 1591622793,
+  node1Pub: lndGetInfo.identityPubkey,
+  node2Pub: '021626ad63f6876f2baa6000739312690b027ec289b9d1bf9184f3194e8c923dad',
+  capacity: 1800000,
+  node1Policy: {
+    timeLockDelta: 3000,
+    minHtlc: 1000,
+    feeBaseMsat: 3000,
+    feeRateMilliMsat: 300,
+    disabled: false,
+    maxHtlcMsat: 1782000000,
+    lastUpdate: 1591622793,
+  },
+  node2Policy: {
+    timeLockDelta: 40,
+    minHtlc: 1000,
+    feeBaseMsat: 1000,
+    feeRateMilliMsat: 1,
+    disabled: false,
+    maxHtlcMsat: 1782000000,
+    lastUpdate: 1591622772,
+  },
+};
+
 //
 // Loop API Responses
 //
@@ -214,6 +241,7 @@ export const loopQuote: LOOP.QuoteResponse.AsObject = {
 export const sampleApiResponses: Record<string, any> = {
   'lnrpc.Lightning.GetInfo': lndGetInfo,
   'lnrpc.Lightning.GetNodeInfo': lndGetNodeInfo,
+  'lnrpc.Lightning.GetChanInfo': lndGetChanInfo,
   'lnrpc.Lightning.ChannelBalance': lndChannelBalance,
   'lnrpc.Lightning.WalletBalance': lndWalletBalance,
   'lnrpc.Lightning.ListChannels': lndListChannels,

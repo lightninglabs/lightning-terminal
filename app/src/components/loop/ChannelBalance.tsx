@@ -9,6 +9,7 @@ const Styled = {
   Wrapper: styled.div<{ pct: number; status: BalanceStatus; active: boolean }>`
     display: flex;
     width: 100%;
+    padding: 0 5%;
 
     > div {
       min-width: 6px;

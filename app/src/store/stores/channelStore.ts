@@ -22,11 +22,18 @@ const {
 
 interface AliasCache {
   lastUpdated: number;
+  /** mapping from remove pubkey to alias */
   aliases: Record<string, string>;
 }
 
+interface FeeCache {
+  lastUpdated: number;
+  /** mapping form channel id to fee rate */
+  feeRates: Record<string, number>;
+}
+
 /** cache alias data for 24 hours */
-const ALIAS_CACHE_TIMEOUT = 24 * 60 * 60 * 1000;
+const CACHE_TIMEOUT = 24 * 60 * 60 * 1000;
 
 export default class ChannelStore {
   private _store: Store;
@@ -103,6 +110,8 @@ export default class ChannelStore {
         this._store.log.info('updated channelStore.channels', toJS(this.channels));
         // fetch the aliases for each of the channels
         this.fetchAliases();
+        // fetch the remote fee rates for each of the channels
+        this.fetchFeeRates();
       });
     } catch (error) {
       this._store.uiStore.handleError(error, 'Unable to fetch Channels');
@@ -129,7 +138,7 @@ export default class ChannelStore {
 
     // look up cached data in storage
     let cachedAliases = this._store.storage.get<AliasCache>('aliases');
-    if (cachedAliases && cachedAliases.lastUpdated > Date.now() - ALIAS_CACHE_TIMEOUT) {
+    if (cachedAliases && cachedAliases.lastUpdated > Date.now() - CACHE_TIMEOUT) {
       // there is cached data and it has not expired
       aliases = cachedAliases.aliases;
       // exclude pubkeys which we have aliases for already
@@ -162,11 +171,75 @@ export default class ChannelStore {
     runInAction('fetchAliasesContinuation', () => {
       // set the alias on each channel in the store
       values(this.channels).forEach(c => {
-        if (aliases[c.remotePubkey]) {
-          c.alias = aliases[c.remotePubkey];
+        const alias = aliases[c.remotePubkey];
+        if (alias) {
+          c.alias = alias;
+          this._store.log.info(`updated channel ${c.chanId} with alias ${alias}`);
         }
       });
-      this._store.log.info('updated channels with aliases', toJS(this.channels));
+    });
+  }
+
+  /**
+   * queries the LND api to fetch the fees for all of the peers we have
+   * channels opened with
+   */
+  @action.bound
+  async fetchFeeRates() {
+    this._store.log.info('fetching fees for channels');
+    // create an array of all channel ids
+    let chanIds = values(this.channels)
+      .map(c => c.chanId)
+      .filter((r, i, a) => a.indexOf(r) === i); // remove duplicates
+
+    // create a map of chan id to fee rate
+    let feeRates: Record<string, number> = {};
+
+    // look up cached data in storage
+    let cachedFees = this._store.storage.get<FeeCache>('fee-rates');
+    if (cachedFees && cachedFees.lastUpdated > Date.now() - CACHE_TIMEOUT) {
+      // there is cached data and it has not expired
+      feeRates = cachedFees.feeRates;
+      // exclude chanIds which we have feeRates for already
+      chanIds = chanIds.filter(id => !feeRates[id]);
+      this._store.log.info(`found feeRates in cache. ${chanIds.length} missing`, chanIds);
+    }
+
+    // if there are any chanIds that we do not have a cached fee rate for
+    if (chanIds.length) {
+      // call getNodeInfo for each chan id and wait for all the requests to complete
+      const chanInfos = await Promise.all(
+        chanIds.map(id => this._store.api.lnd.getChannelInfo(id)),
+      );
+
+      // add fetched feeRates to the mapping
+      feeRates = chanInfos.reduce((acc, info) => {
+        const { channelId, node1Pub, node1Policy, node2Policy } = info;
+        const localPubkey = this._store.nodeStore.pubkey;
+        const policy = node1Pub === localPubkey ? node2Policy : node1Policy;
+        if (policy) {
+          acc[channelId] = +Big(policy.feeRateMilliMsat).div(1000000).mul(100);
+        }
+        return acc;
+      }, feeRates);
+
+      // save updated feeRates to the cache in storage
+      cachedFees = {
+        lastUpdated: Date.now(),
+        feeRates,
+      };
+      this._store.storage.set('fee-rates', cachedFees);
+      this._store.log.info(`updated cache with ${chanIds.length} new feeRates`);
+    }
+
+    runInAction('fetchFeesContinuation', () => {
+      // set the fee on each channel in the store
+      values(this.channels).forEach(c => {
+        if (feeRates[c.chanId]) {
+          c.remoteFeeRate = feeRates[c.chanId];
+        }
+      });
+      this._store.log.info('updated channels with feeRates', toJS(this.channels));
     });
   }
 
@@ -206,6 +279,8 @@ export default class ChannelStore {
       this._store.nodeStore.fetchBalancesThrottled();
       // fetch the alias for the added channel
       this.fetchAliases();
+      // fetch the remote fee rates for the added channel
+      this.fetchFeeRates();
     }
   }
 

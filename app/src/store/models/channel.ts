@@ -18,6 +18,7 @@ export default class Channel {
   @observable capacity = Big(0);
   @observable localBalance = Big(0);
   @observable remoteBalance = Big(0);
+  @observable remoteFeeRate = 0;
   @observable active = false;
   @observable uptime = Big(0);
   @observable lifetime = Big(0);

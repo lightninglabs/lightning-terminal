@@ -8,6 +8,7 @@ import { BalanceMode } from 'util/constants';
 import {
   lndChannel,
   lndChannelEvent,
+  lndGetChanInfo,
   lndGetNodeInfo,
   lndListChannels,
 } from 'util/tests/sampleData';
@@ -132,7 +133,7 @@ describe('ChannelStore', () => {
     const channel = store.channels.get(lndChannel.chanId) as Channel;
     expect(channel.alias).toBeUndefined();
     // the alias is fetched from the API and should be updated after a few ticks
-    waitFor(() => {
+    await waitFor(() => {
       expect(channel.alias).toBe(lndGetNodeInfo.node.alias);
     });
   });
@@ -154,6 +155,40 @@ describe('ChannelStore', () => {
 
     await store.fetchAliases();
     expect(channel.alias).toBe(lndGetNodeInfo.node.alias);
+    expect(grpcMock.unary).not.toBeCalled();
+  });
+
+  it('should fetch fee rates for channels', async () => {
+    await store.fetchChannels();
+    const channel = store.channels.get(lndChannel.chanId) as Channel;
+    expect(channel.remoteFeeRate).toBe(0);
+    // the alias is fetched from the API and should be updated after a few ticks
+    await waitFor(() => {
+      const rate = +Big(lndGetChanInfo.node1Policy.feeRateMilliMsat)
+        .div(1000000)
+        .mul(100);
+      expect(channel.remoteFeeRate).toBe(rate);
+    });
+  });
+
+  it('should use cached fee rates for channels', async () => {
+    const rate = +Big(lndGetChanInfo.node1Policy.feeRateMilliMsat).div(1000000).mul(100);
+    const cache = {
+      lastUpdated: Date.now(),
+      feeRates: {
+        [lndGetChanInfo.channelId]: rate,
+      },
+    };
+    const getMock = appStorageMock.mock.instances[0].get as jest.Mock;
+    getMock.mockImplementationOnce(() => cache);
+
+    const channel = new Channel(rootStore, lndChannel);
+    store.channels = observable.map({
+      [channel.chanId]: channel,
+    });
+
+    await store.fetchFeeRates();
+    expect(channel.remoteFeeRate).toBe(rate);
     expect(grpcMock.unary).not.toBeCalled();
   });
 
