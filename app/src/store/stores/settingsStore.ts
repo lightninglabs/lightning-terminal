@@ -14,6 +14,9 @@ export default class SettingsStore {
   /** determines if the sidebar nav is visible */
   @observable sidebarVisible = true;
 
+  /** determines if the sidebar should collapse automatically for smaller screen widths */
+  @observable autoCollapse = false;
+
   /** specifies which denomination to show units in */
   @observable unit: Unit = Unit.sats;
 
@@ -34,6 +37,15 @@ export default class SettingsStore {
     this._store.log.info('toggling sidebar');
     this.sidebarVisible = !this.sidebarVisible;
     this._store.log.info('updated SettingsStore.showSidebar', toJS(this.sidebarVisible));
+  }
+
+  /**
+   * collapses the sidebar if `autoCollapse` is enabled
+   */
+  @action.bound autoCollapseSidebar() {
+    if (this.autoCollapse && this.sidebarVisible) {
+      this.sidebarVisible = false;
+    }
   }
 
   /**
@@ -82,6 +94,12 @@ export default class SettingsStore {
       this.unit = settings.unit;
       this.balanceMode = settings.balanceMode;
       this._store.log.info('loaded settings', settings);
+    }
+
+    // enable automatic sidebar collapsing for smaller screens
+    if (window.innerWidth && window.innerWidth <= 1200) {
+      this.autoCollapse = true;
+      this.sidebarVisible = false;
     }
   }
 }

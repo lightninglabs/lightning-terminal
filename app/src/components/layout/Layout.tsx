@@ -22,7 +22,7 @@ const Styled = {
     position: absolute;
     top: 35px;
     left: 10px;
-    z-index: 1;
+    z-index: 2;
     padding: 4px;
 
     &:hover {
@@ -36,6 +36,7 @@ const Styled = {
     position: fixed;
     top: 0;
     height: 100vh;
+    z-index: 1;
     background-color: ${props => props.theme.colors.darkBlue};
     overflow: hidden;
 
@@ -53,6 +54,10 @@ const Styled = {
     margin-left: ${props => (props.collapsed ? '0' : '285px')};
     padding: 0 15px;
     transition: all 0.2s;
+
+    @media (max-width: 1200px) {
+      margin-left: 0;
+    }
   `,
 };
 
