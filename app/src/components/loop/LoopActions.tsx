@@ -2,6 +2,7 @@ import React, { useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import { SwapDirection } from 'types/state';
 import { usePrefixedTranslation } from 'hooks';
+import { formatSats } from 'util/formatters';
 import { useStore } from 'store';
 import { Button, Close, Pill, Refresh } from 'components/base';
 import { styled } from 'components/theme';
@@ -15,6 +16,7 @@ const Styled = {
   `,
   ActionBar: styled.div`
     display: inline-block;
+    width: 595px;
     padding: 15px;
     background-color: ${props => props.theme.colors.darkBlue};
     box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.5);
@@ -33,6 +35,7 @@ const Styled = {
     margin-right: 50px;
   `,
   Note: styled.span`
+    display: inline-block;
     margin-left: 20px;
     font-size: ${props => props.theme.sizes.s};
     color: ${props => props.theme.colors.gray};
@@ -42,7 +45,12 @@ const Styled = {
 const LoopActions: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.LoopActions');
   const { buildSwapStore } = useStore();
-  const { setDirection, inferredDirection } = buildSwapStore;
+  const {
+    setDirection,
+    inferredDirection,
+    loopOutAllowed,
+    loopInAllowed,
+  } = buildSwapStore;
   const handleLoopOut = useCallback(() => setDirection(SwapDirection.OUT), [
     setDirection,
   ]);
@@ -59,24 +67,31 @@ const LoopActions: React.FC = () => {
             <Pill>{selectedCount}</Pill>
             <Selected>{l('channelsSelected')}</Selected>
             <Button
-              primary={inferredDirection === SwapDirection.OUT}
+              primary={loopOutAllowed && inferredDirection === SwapDirection.OUT}
               borderless
               onClick={handleLoopOut}
+              disabled={!loopOutAllowed}
             >
               {l('common.loopOut')}
             </Button>
             <Button
-              primary={
-                buildSwapStore.loopInAllowed && inferredDirection === SwapDirection.IN
-              }
+              primary={loopInAllowed && inferredDirection === SwapDirection.IN}
               borderless
               onClick={handleLoopIn}
-              disabled={!buildSwapStore.loopInAllowed}
+              disabled={!loopInAllowed}
             >
               {l('common.loopIn')}
             </Button>
           </ActionBar>
-          {!buildSwapStore.loopInAllowed && <Note>{l('loopInNote')}</Note>}
+          {!loopOutAllowed && !loopInAllowed ? (
+            <Note>
+              {l('loopMinimumNote', {
+                min: formatSats(buildSwapStore.termsForDirection.min),
+              })}
+            </Note>
+          ) : !loopInAllowed ? (
+            <Note>{l('loopInNote')}</Note>
+          ) : null}
         </Actions>
       ) : (
         <Button onClick={buildSwapStore.startSwap}>

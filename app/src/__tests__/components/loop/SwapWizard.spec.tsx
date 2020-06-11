@@ -63,10 +63,10 @@ describe('SwapWizard component', () => {
     it('should update the amount when the slider changes', () => {
       const { getByText, getByLabelText } = render();
       const build = store.buildSwapStore;
-      expect(+build.amount).toEqual(625000);
+      expect(+build.amountForSelected).toEqual(625000);
       expect(getByText(`625,000 sats`)).toBeInTheDocument();
       fireEvent.change(getByLabelText('range-slider'), { target: { value: '575000' } });
-      expect(+build.amount).toEqual(575000);
+      expect(+build.amountForSelected).toEqual(575000);
       expect(getByText(`575,000 sats`)).toBeInTheDocument();
     });
   });
