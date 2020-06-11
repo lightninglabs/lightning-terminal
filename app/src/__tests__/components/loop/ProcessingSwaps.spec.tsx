@@ -49,6 +49,7 @@ describe('ProcessingSwaps component', () => {
     const swap = addSwap(LOOP_IN, INITIATED);
     expect(getByText('dot.svg')).toHaveClass('warn');
     expect(getByText(swap.ellipsedId)).toBeInTheDocument();
+    expect(getByText(swap.typeName)).toBeInTheDocument();
     expect(getByTitle(swap.stateLabel)).toBeInTheDocument();
     expect(width(getByTitle(swap.stateLabel))).toBe('25%');
   });
@@ -58,6 +59,7 @@ describe('ProcessingSwaps component', () => {
     const swap = addSwap(LOOP_IN, HTLC_PUBLISHED);
     expect(getByText('dot.svg')).toHaveClass('warn');
     expect(getByText(swap.ellipsedId)).toBeInTheDocument();
+    expect(getByText(swap.typeName)).toBeInTheDocument();
     expect(getByTitle(swap.stateLabel)).toBeInTheDocument();
     expect(width(getByTitle(swap.stateLabel))).toBe('50%');
   });
@@ -67,6 +69,7 @@ describe('ProcessingSwaps component', () => {
     const swap = addSwap(LOOP_IN, INVOICE_SETTLED);
     expect(getByText('dot.svg')).toHaveClass('warn');
     expect(getByText(swap.ellipsedId)).toBeInTheDocument();
+    expect(getByText(swap.typeName)).toBeInTheDocument();
     expect(getByTitle(swap.stateLabel)).toBeInTheDocument();
     expect(width(getByTitle(swap.stateLabel))).toBe('75%');
   });
@@ -75,6 +78,7 @@ describe('ProcessingSwaps component', () => {
     const { getByText, getByTitle } = render();
     const swap = addSwap(LOOP_IN, SUCCESS);
     expect(getByText(swap.ellipsedId)).toBeInTheDocument();
+    expect(getByText(swap.typeName)).toBeInTheDocument();
     expect(getByTitle(swap.stateLabel)).toBeInTheDocument();
     expect(width(getByTitle(swap.stateLabel))).toBe('100%');
   });
@@ -92,6 +96,7 @@ describe('ProcessingSwaps component', () => {
     const swap = addSwap(LOOP_OUT, INITIATED);
     expect(getByText('dot.svg')).toHaveClass('warn');
     expect(getByText(swap.ellipsedId)).toBeInTheDocument();
+    expect(getByText(swap.typeName)).toBeInTheDocument();
     expect(getByTitle(swap.stateLabel)).toBeInTheDocument();
     expect(width(getByTitle(swap.stateLabel))).toBe('33%');
   });
@@ -101,6 +106,7 @@ describe('ProcessingSwaps component', () => {
     const swap = addSwap(LOOP_OUT, PREIMAGE_REVEALED);
     expect(getByText('dot.svg')).toHaveClass('warn');
     expect(getByText(swap.ellipsedId)).toBeInTheDocument();
+    expect(getByText(swap.typeName)).toBeInTheDocument();
     expect(getByTitle(swap.stateLabel)).toBeInTheDocument();
     expect(width(getByTitle(swap.stateLabel))).toBe('66%');
   });
@@ -110,6 +116,7 @@ describe('ProcessingSwaps component', () => {
     const swap = addSwap(LOOP_OUT, SUCCESS);
     expect(getByText('dot.svg')).toHaveClass('success');
     expect(getByText(swap.ellipsedId)).toBeInTheDocument();
+    expect(getByText(swap.typeName)).toBeInTheDocument();
     expect(getByTitle(swap.stateLabel)).toBeInTheDocument();
     expect(width(getByTitle(swap.stateLabel))).toBe('100%');
   });
