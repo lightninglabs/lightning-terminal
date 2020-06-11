@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/lightningnetwork/lnd/lncfg"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -22,7 +23,6 @@ import (
 	"github.com/lightninglabs/loop/loopd"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/lightningnetwork/lnd"
-	"github.com/lightningnetwork/lnd/lncfg"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntest/wait"
 	"github.com/lightningnetwork/lnd/macaroons"
@@ -100,7 +100,19 @@ func (g *Shushtar) Run() error {
 		return err
 	}
 
+	// Load the configuration, and parse any command line options. This
+	// function will also set up logging properly.
+	g.cfg.Lnd, err = loadLndConfig(g.cfg)
+	if err != nil {
+		return err
+	}
+
 	// Validate the shushtar config options.
+	if g.cfg.LetsEncryptDir == "" {
+		g.cfg.LetsEncryptDir = filepath.Join(
+			g.cfg.Lnd.LndDir, defaultLetsEncryptDir,
+		)
+	}
 	g.cfg.LetsEncryptDir = lncfg.CleanAndExpandPath(g.cfg.LetsEncryptDir)
 	if g.cfg.LetsEncrypt && g.cfg.LetsEncryptHost == "" {
 		return fmt.Errorf("host must be set when using let's encrypt")
@@ -113,14 +125,7 @@ func (g *Shushtar) Run() error {
 		return fmt.Errorf("please set a strong password for the UI, "+
 			"at least %d characters long", uiPasswordMinLength)
 	}
-
-	// Load the configuration, and parse any command line options. This
-	// function will also set up logging properly.
-	g.cfg.Lnd, err = loadLndConfig(g.cfg)
-	if err != nil {
-		return err
-	}
-
+	
 	// Initiate our listeners. For now, we only support listening on one
 	// port at a time because we can only pass in one pre-configured RPC
 	// listener into lnd.
