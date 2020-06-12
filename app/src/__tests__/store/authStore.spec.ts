@@ -1,12 +1,9 @@
 import { grpc } from '@improbable-eng/grpc-web';
 import { waitFor } from '@testing-library/react';
-import AppStorage from 'util/appStorage';
 import { lndListChannels } from 'util/tests/sampleData';
 import { AuthStore, createStore, Store } from 'store';
-import { PersistentSettings } from 'store/stores/settingsStore';
 
 const grpcMock = grpc as jest.Mocked<typeof grpc>;
-const appStorageMock = AppStorage as jest.Mock<AppStorage<PersistentSettings>>;
 
 describe('AuthStore', () => {
   let rootStore: Store;
@@ -47,8 +44,9 @@ describe('AuthStore', () => {
   });
 
   it('should load credentials from session storage', async () => {
-    const getMock = appStorageMock.mock.instances[0].getSession as jest.Mock;
-    getMock.mockReturnValue('test-creds');
+    jest
+      .spyOn(window.sessionStorage.__proto__, 'getItem')
+      .mockReturnValueOnce('test-creds');
     await store.init();
     expect(store.credentials).toBe('test-creds');
   });
@@ -62,8 +60,9 @@ describe('AuthStore', () => {
       }
       return undefined as any;
     });
-    const getMock = appStorageMock.mock.instances[0].getSession as jest.Mock;
-    getMock.mockReturnValue('test-creds');
+    jest
+      .spyOn(window.sessionStorage.__proto__, 'getItem')
+      .mockReturnValueOnce('test-creds');
     await store.init();
     expect(store.credentials).toBe('');
   });

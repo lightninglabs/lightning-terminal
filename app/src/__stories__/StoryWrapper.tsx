@@ -4,7 +4,6 @@ import { BalanceMode, Unit } from 'util/constants';
 import { AuthenticationError } from 'util/errors';
 import { sampleApiResponses } from 'util/tests/sampleData';
 import { createStore, StoreProvider } from 'store';
-import { PersistentSettings } from 'store/stores/settingsStore';
 import { Background } from 'components/base';
 import { ThemeProvider } from 'components/theme';
 
@@ -26,13 +25,14 @@ const grpc = {
 // fake the AppStorage dependency so that settings aren't shared across stories
 class StoryAppStorage {
   set = () => undefined;
-  get = (): PersistentSettings => ({
+  get = (): any => ({
     sidebarVisible: true,
     unit: Unit.sats,
     balanceMode: BalanceMode.receive,
   });
   setSession = () => undefined;
   getSession = () => '';
+  getCached = () => Promise.resolve({});
 }
 
 // Create a store that pulls data from the mock GRPC and doesn't use

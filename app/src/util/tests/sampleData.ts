@@ -36,6 +36,33 @@ export const lndGetInfo: LND.GetInfoResponse.AsObject = {
   ],
 };
 
+export const lndGetNodeInfo: Required<LND.NodeInfo.AsObject> = {
+  channelsList: [],
+  node: {
+    addressesList: [
+      {
+        addr: '172.28.0.8:9735',
+        network: 'tcp',
+      },
+    ],
+    alias: 'alice',
+    color: '#cccccc',
+    featuresMap: [
+      [0, { name: 'data-loss-protect', isRequired: true, isKnown: true }],
+      [13, { name: 'static-remote-key', isRequired: false, isKnown: true }],
+      [15, { name: 'payment-addr', isRequired: false, isKnown: true }],
+      [17, { name: 'multi-path-payments', isRequired: false, isKnown: true }],
+      [5, { name: 'upfront-shutdown-script', isRequired: false, isKnown: true }],
+      [7, { name: 'gossip-queries', isRequired: false, isKnown: true }],
+      [9, { name: 'tlv-onion', isRequired: false, isKnown: true }],
+    ],
+    lastUpdate: 1591393224,
+    pubKey: '037136742c67e24681f36542f7c8916aa6f6fdf665c1dca2a107425503cff94501',
+  },
+  numChannels: 3,
+  totalCapacity: 47000000,
+};
+
 export const lndChannelBalance: LND.ChannelBalanceResponse.AsObject = {
   balance: 9990950,
   pendingOpenBalance: 0,
@@ -95,7 +122,7 @@ export const lndListChannels: LND.ListChannelsResponse.AsObject = {
       ...c,
       chanId: `${i || ''}${c.chanId}`,
       channelPoint: `${c.channelPoint.substring(0, c.channelPoint.length - 2)}:${i}`,
-      remotePubkey: `${i}${c.remotePubkey}`,
+      remotePubkey: `${i || ''}${c.remotePubkey}`,
       localBalance: local,
       remoteBalance: cap - local,
       capacity: cap,
@@ -148,6 +175,33 @@ export const lndTransaction: LND.Transaction.AsObject = {
   txHash: '1f765f45f2a6d33837a203e3fc911915c891e9b86f9c9d91a1931b92efdedf5b',
 };
 
+export const lndGetChanInfo: Required<LND.ChannelEdge.AsObject> = {
+  channelId: lndChannel.chanId,
+  chanPoint: lndChannel.channelPoint,
+  lastUpdate: 1591622793,
+  node1Pub: lndGetInfo.identityPubkey,
+  node2Pub: '021626ad63f6876f2baa6000739312690b027ec289b9d1bf9184f3194e8c923dad',
+  capacity: 1800000,
+  node1Policy: {
+    timeLockDelta: 3000,
+    minHtlc: 1000,
+    feeBaseMsat: 3000,
+    feeRateMilliMsat: 300,
+    disabled: false,
+    maxHtlcMsat: 1782000000,
+    lastUpdate: 1591622793,
+  },
+  node2Policy: {
+    timeLockDelta: 40,
+    minHtlc: 1000,
+    feeBaseMsat: 1000,
+    feeRateMilliMsat: 1,
+    disabled: false,
+    maxHtlcMsat: 1782000000,
+    lastUpdate: 1591622772,
+  },
+};
+
 //
 // Loop API Responses
 //
@@ -186,6 +240,8 @@ export const loopQuote: LOOP.QuoteResponse.AsObject = {
 // collection of sample API responses
 export const sampleApiResponses: Record<string, any> = {
   'lnrpc.Lightning.GetInfo': lndGetInfo,
+  'lnrpc.Lightning.GetNodeInfo': lndGetNodeInfo,
+  'lnrpc.Lightning.GetChanInfo': lndGetChanInfo,
   'lnrpc.Lightning.ChannelBalance': lndChannelBalance,
   'lnrpc.Lightning.WalletBalance': lndWalletBalance,
   'lnrpc.Lightning.ListChannels': lndListChannels,

@@ -39,6 +39,10 @@ const Styled = {
   Column: styled(Column)<{ last?: boolean }>`
     white-space: nowrap;
     line-height: ${ROW_HEIGHT}px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-left: 5px;
+    padding-right: ${props => (props.last ? '15' : '5')}px;
   `,
   StatusIcon: styled.span`
     float: left;
@@ -58,6 +62,7 @@ const Styled = {
 
 export const ChannelRowHeader: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.ChannelRowHeader');
+  const { Column } = Styled;
   return (
     <Row>
       <Column right>
@@ -67,13 +72,16 @@ export const ChannelRowHeader: React.FC = () => {
       <Column>
         <HeaderFour>{l('canSend')}</HeaderFour>
       </Column>
-      <Column>
+      <Column cols={1}>
+        <HeaderFour>{l('feeRate')}</HeaderFour>
+      </Column>
+      <Column cols={1}>
         <HeaderFour>{l('upTime')}</HeaderFour>
       </Column>
-      <Column>
+      <Column cols={2}>
         <HeaderFour>{l('peer')}</HeaderFour>
       </Column>
-      <Column right>
+      <Column right last>
         <HeaderFour>{l('capacity')}</HeaderFour>
       </Column>
     </Row>
@@ -134,10 +142,11 @@ const ChannelRow: React.FC<Props> = ({ channel, style }) => {
       <Column>
         <Unit sats={channel.localBalance} suffix={false} />
       </Column>
-      <Column>{channel.uptimePercent}</Column>
-      <Column>
+      <Column cols={1}>{channel.remoteFeeRate}</Column>
+      <Column cols={1}>{channel.uptimePercent}</Column>
+      <Column cols={2}>
         <Tip overlay={channel.remotePubkey} placement="left">
-          <span>{channel.ellipsedPubkey}</span>
+          <span>{channel.aliasLabel}</span>
         </Tip>
       </Column>
       <Column right>

@@ -13,10 +13,12 @@ export default class Channel {
 
   @observable chanId = '';
   @observable remotePubkey = '';
+  @observable alias: string | undefined;
   @observable channelPoint = '';
   @observable capacity = Big(0);
   @observable localBalance = Big(0);
   @observable remoteBalance = Big(0);
+  @observable remoteFeeRate = 0;
   @observable active = false;
   @observable uptime = Big(0);
   @observable lifetime = Big(0);
@@ -27,10 +29,15 @@ export default class Channel {
   }
 
   /**
-   * The remotePubkey shortened to ~20 chars with ellipses inside
+   * The alias or remotePubkey shortened to 12 chars with ellipses inside
    */
-  @computed get ellipsedPubkey() {
-    return ellipseInside(this.remotePubkey);
+  @computed get aliasLabel() {
+    // if the node does not specify an alias, it is set to a substring of
+    // the pubkey. we want to the display the ellipsed pubkey in this case
+    // instead of the substring.
+    return this.alias && !this.remotePubkey.includes(this.alias as string)
+      ? this.alias
+      : ellipseInside(this.remotePubkey);
   }
 
   /**

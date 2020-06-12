@@ -57,6 +57,26 @@ class LndApi extends BaseApi<LndEvents> {
   }
 
   /**
+   * call the LND `GetNodeInfo` RPC and return the response
+   */
+  async getNodeInfo(pubkey: string): Promise<LND.NodeInfo.AsObject> {
+    const req = new LND.NodeInfoRequest();
+    req.setPubKey(pubkey);
+    const res = await this._grpc.request(Lightning.GetNodeInfo, req, this._meta);
+    return res.toObject();
+  }
+
+  /**
+   * call the LND `GetChanInfo` RPC and return the response
+   */
+  async getChannelInfo(id: string): Promise<LND.ChannelEdge.AsObject> {
+    const req = new LND.ChanInfoRequest();
+    req.setChanId(id);
+    const res = await this._grpc.request(Lightning.GetChanInfo, req, this._meta);
+    return res.toObject();
+  }
+
+  /**
    * Connect to the LND streaming endpoints
    */
   connectStreams() {

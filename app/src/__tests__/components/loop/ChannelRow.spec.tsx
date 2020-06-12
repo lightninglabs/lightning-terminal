@@ -49,9 +49,9 @@ describe('ChannelRow component', () => {
     expect(getByText(channel.uptime.toString())).toBeInTheDocument();
   });
 
-  it('should display the peer pubkey', () => {
+  it('should display the peer pubkey or alias', () => {
     const { getByText } = render();
-    expect(getByText(channel.ellipsedPubkey)).toBeInTheDocument();
+    expect(getByText(channel.aliasLabel)).toBeInTheDocument();
   });
 
   it('should display the capacity', () => {

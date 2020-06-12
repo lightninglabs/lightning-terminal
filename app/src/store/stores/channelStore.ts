@@ -93,6 +93,10 @@ export default class ChannelStore {
           .forEach(id => this.channels.delete(id));
 
         this._store.log.info('updated channelStore.channels', toJS(this.channels));
+        // fetch the aliases for each of the channels
+        this.fetchAliases();
+        // fetch the remote fee rates for each of the channels
+        this.fetchFeeRates();
       });
     } catch (error) {
       this._store.uiStore.handleError(error, 'Unable to fetch Channels');
@@ -101,6 +105,81 @@ export default class ChannelStore {
 
   /** fetch channels at most once every 2 seconds when using this func  */
   fetchChannelsThrottled = debounce(this.fetchChannels, 2000);
+
+  /**
+   * queries the LND api to fetch the aliases for all of the peers we have
+   * channels opened with
+   */
+  @action.bound
+  async fetchAliases() {
+    const aliases = await this._store.storage.getCached<string>({
+      cacheKey: 'aliases',
+      requiredKeys: values(this.channels).map(c => c.remotePubkey),
+      log: this._store.log,
+      fetchFromApi: async (missingKeys, data) => {
+        // call getNodeInfo for each pubkey and wait for all the requests to complete
+        const nodeInfos = await Promise.all(
+          missingKeys.map(id => this._store.api.lnd.getNodeInfo(id)),
+        );
+        // return a mapping from pubkey to alias
+        return nodeInfos.reduce((acc, { node }) => {
+          if (node) acc[node.pubKey] = node.alias;
+          return acc;
+        }, data);
+      },
+    });
+
+    runInAction('fetchAliasesContinuation', () => {
+      // set the alias on each channel in the store
+      values(this.channels).forEach(c => {
+        const alias = aliases[c.remotePubkey];
+        if (alias) {
+          c.alias = alias;
+          this._store.log.info(`updated channel ${c.chanId} with alias ${alias}`);
+        }
+      });
+    });
+  }
+
+  /**
+   * queries the LND api to fetch the fees for all of the peers we have
+   * channels opened with
+   */
+  @action.bound
+  async fetchFeeRates() {
+    const feeRates = await this._store.storage.getCached<number>({
+      cacheKey: 'feeRates',
+      requiredKeys: values(this.channels).map(c => c.chanId),
+      log: this._store.log,
+      fetchFromApi: async (missingKeys, data) => {
+        // call getNodeInfo for each pubkey and wait for all the requests to complete
+        const chanInfos = await Promise.all(
+          missingKeys.map(id => this._store.api.lnd.getChannelInfo(id)),
+        );
+        // return an updated mapping from chanId to fee rate
+        return chanInfos.reduce((acc, info) => {
+          const { channelId, node1Pub, node1Policy, node2Policy } = info;
+          const localPubkey = this._store.nodeStore.pubkey;
+          const policy = node1Pub === localPubkey ? node2Policy : node1Policy;
+          if (policy) {
+            acc[channelId] = +Big(policy.feeRateMilliMsat).div(1000000).mul(100);
+          }
+          return acc;
+        }, data);
+      },
+    });
+
+    runInAction('fetchFeesContinuation', () => {
+      // set the fee on each channel in the store
+      values(this.channels).forEach(c => {
+        const rate = feeRates[c.chanId];
+        if (rate) {
+          c.remoteFeeRate = rate;
+          this._store.log.info(`updated channel ${c.chanId} with remoteFeeRate ${rate}`);
+        }
+      });
+    });
+  }
 
   /** update the channel list based on events from the API */
   @action.bound
@@ -136,6 +215,10 @@ export default class ChannelStore {
       this.channels.set(channel.chanId, channel);
       this._store.log.info('added new open channel', toJS(channel));
       this._store.nodeStore.fetchBalancesThrottled();
+      // fetch the alias for the added channel
+      this.fetchAliases();
+      // fetch the remote fee rates for the added channel
+      this.fetchFeeRates();
     }
   }
 

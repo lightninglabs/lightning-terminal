@@ -13,7 +13,6 @@ import {
   SwapStore,
   UiStore,
 } from './stores';
-import { PersistentSettings } from './stores/settingsStore';
 
 /**
  * The store used to manage global app state
@@ -40,7 +39,7 @@ export class Store {
   log: Logger;
 
   /** the wrapper class around persistent storage */
-  storage: AppStorage<PersistentSettings>;
+  storage: AppStorage;
 
   /** the class to use for exporting lists of models to CSV */
   csv: CsvExporter;
@@ -54,7 +53,7 @@ export class Store {
   constructor(
     lnd: LndApi,
     loop: LoopApi,
-    storage: AppStorage<PersistentSettings>,
+    storage: AppStorage,
     csv: CsvExporter,
     log: Logger,
   ) {
@@ -149,10 +148,7 @@ export class Store {
  * @param grpcClient an alternate GrpcClient to use instead of the default
  * @param appStorage an alternate AppStorage to use instead of the default
  */
-export const createStore = (
-  grpcClient?: GrpcClient,
-  appStorage?: AppStorage<PersistentSettings>,
-) => {
+export const createStore = (grpcClient?: GrpcClient, appStorage?: AppStorage) => {
   const grpc = grpcClient || new GrpcClient();
   const storage = appStorage || new AppStorage();
   const lndApi = new LndApi(grpc);
