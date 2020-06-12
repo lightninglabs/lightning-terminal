@@ -8,7 +8,7 @@ const Styled = {
       color: ${props => props.theme.colors.green};
     }
     &.warn {
-      color: ${props => props.theme.colors.orange};
+      color: ${props => props.theme.colors.yellow};
     }
     &.error {
       color: ${props => props.theme.colors.pink};

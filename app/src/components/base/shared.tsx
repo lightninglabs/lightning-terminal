@@ -30,8 +30,8 @@ export const Badge = styled.span`
   margin-left: 10px;
   font-family: ${props => props.theme.fonts.open.light};
   font-size: ${props => props.theme.sizes.xxs};
-  color: ${props => props.theme.colors.orange};
-  border: 1px solid ${props => props.theme.colors.orange};
+  color: ${props => props.theme.colors.pink};
+  border: 1px solid ${props => props.theme.colors.pink};
   border-radius: 4px;
   padding: 3px 5px 5px;
   text-transform: lowercase;

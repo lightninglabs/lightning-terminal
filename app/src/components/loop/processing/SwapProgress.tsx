@@ -48,7 +48,7 @@ const Styled = {
     height: 1px;
     width: ${props => props.pct}%;
     background-color: ${props =>
-      props.state === SUCCESS ? props.theme.colors.green : props.theme.colors.orange};
+      props.state === SUCCESS ? props.theme.colors.green : props.theme.colors.yellow};
     transition: all 1s;
   `,
 };
