@@ -51,14 +51,23 @@ const LoopActions: React.FC = () => {
   const {
     setDirection,
     inferredDirection,
-    loopOutAllowed,
-    loopInAllowed,
+    isLoopOutMinimumMet,
+    isLoopInMinimumMet,
+    hasValidLoopInPeers,
   } = buildSwapStore;
   const handleLoopOut = useCallback(() => setDirection(SwapDirection.OUT), [
     setDirection,
   ]);
   const handleLoopIn = useCallback(() => setDirection(SwapDirection.IN), [setDirection]);
   const selectedCount = buildSwapStore.selectedChanIds.length;
+
+  let note =
+    !isLoopOutMinimumMet || !isLoopInMinimumMet
+      ? l('loopMinimumNote', { min: formatSats(buildSwapStore.termsForDirection.min) })
+      : '';
+  if (!hasValidLoopInPeers) {
+    note = l('loopInNote');
+  }
 
   const { Wrapper, Actions, ActionBar, CloseIcon, Selected, Note } = Styled;
   return (
@@ -69,31 +78,27 @@ const LoopActions: React.FC = () => {
             <CloseIcon onClick={buildSwapStore.cancel} />
             <Selected count={selectedCount} />
             <Button
-              primary={loopOutAllowed && inferredDirection === SwapDirection.OUT}
+              primary={isLoopOutMinimumMet && inferredDirection === SwapDirection.OUT}
               borderless
               onClick={handleLoopOut}
-              disabled={!loopOutAllowed}
+              disabled={!isLoopOutMinimumMet}
             >
               {l('common.loopOut')}
             </Button>
             <Button
-              primary={loopInAllowed && inferredDirection === SwapDirection.IN}
+              primary={
+                hasValidLoopInPeers &&
+                isLoopInMinimumMet &&
+                inferredDirection === SwapDirection.IN
+              }
               borderless
               onClick={handleLoopIn}
-              disabled={!loopInAllowed}
+              disabled={!hasValidLoopInPeers || !isLoopInMinimumMet}
             >
               {l('common.loopIn')}
             </Button>
           </ActionBar>
-          {!loopOutAllowed && !loopInAllowed ? (
-            <Note>
-              {l('loopMinimumNote', {
-                min: formatSats(buildSwapStore.termsForDirection.min),
-              })}
-            </Note>
-          ) : !loopInAllowed ? (
-            <Note>{l('loopInNote')}</Note>
-          ) : null}
+          {note && <Note>{note}</Note>}
         </Actions>
       ) : (
         <Button onClick={buildSwapStore.startSwap}>

@@ -148,12 +148,24 @@ class BuildSwapStore {
   }
 
   /**
-   * determines if Loop In is allowed. the balance of selected (or all)
-   * channels must be greater than the minimum swap allowed. if multiple
-   * channels are selected, they must all be with the same peer
+   * determines if the selected channels all use the same peer. also
+   * return true if no channels are selected
    */
   @computed
-  get loopInAllowed() {
+  get hasValidLoopInPeers() {
+    if (this.selectedChanIds.length > 0) {
+      return this.loopInLastHop !== undefined;
+    }
+
+    return true;
+  }
+
+  /**
+   * determines if the balance of selected (or all) channels are
+   * greater than the minimum swap allowed
+   */
+  @computed
+  get isLoopInMinimumMet() {
     const { min, max } = this.getTermsForDirection(SwapDirection.IN);
     if (!max.gt(min)) return false;
 
@@ -169,7 +181,7 @@ class BuildSwapStore {
    * channels must be greater than the minimum swap allowed
    */
   @computed
-  get loopOutAllowed() {
+  get isLoopOutMinimumMet() {
     const { min, max } = this.getTermsForDirection(SwapDirection.OUT);
     if (!max.gt(min)) return false;
 
