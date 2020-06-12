@@ -52,7 +52,7 @@
   "cmps.loop.swap.SwapReviewStep.description": "Confirm the invoice total for increasing your inbound liquidity. If you'd like to make adjustments, click the back arrow above.",
   "cmps.loop.swap.SwapReviewStep.amount": "{{type}} Amount",
   "cmps.loop.swap.SwapReviewStep.fees": "Fees",
-  "cmps.loop.swap.SwapReviewStep.total": "Invoice Total",
+  "cmps.loop.swap.SwapReviewStep.total": "Total",
   "cmps.loop.swap.SwapWizard.backTip": "Back to Previous",
   "cmps.layout.NavMenu.menu": "Menu",
   "cmps.layout.NavMenu.loop": "Lightning Loop",

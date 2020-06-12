@@ -84,7 +84,7 @@ describe('SwapWizard component', () => {
       expect(getByText('Review the quote')).toBeInTheDocument();
       expect(getByText('Loop Out Amount')).toBeInTheDocument();
       expect(getByText('Fees')).toBeInTheDocument();
-      expect(getByText('Invoice Total')).toBeInTheDocument();
+      expect(getByText('Total')).toBeInTheDocument();
     });
 
     it('should display the correct values', () => {
