@@ -33,7 +33,7 @@ var (
 	faradayDefaultConfig = faraday.DefaultConfig()
 	loopDefaultConfig    = loopd.DefaultConfig()
 
-	defaultLetsEncryptDir = filepath.Join(lnd.DefaultLndDir, "letsencrypt")
+	defaultLetsEncryptDir = "letsencrypt"
 )
 
 // Config is the main configuration struct of shushtar. It contains all config
@@ -58,7 +58,6 @@ type Config struct {
 func defaultConfig() *Config {
 	return &Config{
 		HTTPSListen:    defaultHTTPSListen,
-		LetsEncryptDir: defaultLetsEncryptDir,
 		Lnd:            &lndDefaultConfig,
 		Faraday:        &faradayDefaultConfig,
 		Loop:           &loopDefaultConfig,
