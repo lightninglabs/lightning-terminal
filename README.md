@@ -96,7 +96,14 @@ $ ./shushtar \
   --faraday.min_monitored=48h
 ```
 
-You can also store the configuration in a persistent `lnd.conf` file so you do not need to type in the command line arguments every time you start the server. Just remember to use the appropriate prefixes as necessary.
+You can also store the configuration in a persistent `lnd.conf` file so you do
+not need to type in the command line arguments every time you start the server.
+Just remember to use the appropriate prefixes as necessary.
+
+Also. make sure to include the `lnd` general options in the `[Application Options]`
+section because the section name `[Lnd]` is not unique anymore because of how we
+combine the configurations of all daemons. This will hopefully be fixed in a
+future release.
 
 Example `lnd.conf`:
 
@@ -106,7 +113,6 @@ httpslisten=0.0.0.0:443
 letsencrypt=1
 letsencrypthost=loop.merchant.com
 
-[Lnd]
 lnd.lnddir=~/.lnd
 lnd.alias=merchant
 lnd.externalip=loop.merchant.com
