@@ -4,18 +4,22 @@ import { SwapDirection } from 'types/state';
 import { usePrefixedTranslation } from 'hooks';
 import { formatSats } from 'util/formatters';
 import { useStore } from 'store';
-import { Button, Close, Pill, Refresh } from 'components/base';
+import { Button, Close, Refresh } from 'components/base';
 import { styled } from 'components/theme';
+import SelectedChannels from './SelectedChannels';
 
 const Styled = {
   Wrapper: styled.section`
     margin: 50px 0;
   `,
   Actions: styled.div`
+    display: flex;
+    align-items: center;
     margin-top: -15px;
   `,
   ActionBar: styled.div`
-    display: inline-block;
+    display: flex;
+    align-items: center;
     width: 595px;
     padding: 15px;
     background-color: ${props => props.theme.colors.darkBlue};
@@ -30,9 +34,8 @@ const Styled = {
   CloseIcon: styled(Close)`
     margin-right: 25px;
   `,
-  Selected: styled.span`
-    display: inline-block;
-    margin-right: 50px;
+  Selected: styled(SelectedChannels)`
+    flex: 1;
   `,
   Note: styled.span`
     display: inline-block;
@@ -64,8 +67,7 @@ const LoopActions: React.FC = () => {
         <Actions>
           <ActionBar>
             <CloseIcon onClick={buildSwapStore.cancel} />
-            <Pill>{selectedCount}</Pill>
-            <Selected>{l('channelsSelected')}</Selected>
+            <Selected count={selectedCount} />
             <Button
               primary={loopOutAllowed && inferredDirection === SwapDirection.OUT}
               borderless
