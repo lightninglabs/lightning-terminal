@@ -68,11 +68,11 @@ const TooltipWrapper: React.FC<Props> = ({
  * prop. So we basically proxy the className using the TooltipWrapper
  * above, then export this styled component for the rest of the app to use
  */
-const Tip = styled(TooltipWrapper)`
+const Tip = styled(TooltipWrapper)<{ capitalize?: boolean }>`
   color: ${props => props.theme.colors.blue};
   font-family: ${props => props.theme.fonts.open.semiBold};
   font-size: ${props => props.theme.sizes.xs};
-  text-transform: uppercase;
+  text-transform: ${props => (props.capitalize === false ? 'none' : 'uppercase')};
   opacity: 0.95;
 
   &.rc-tooltip-placement-bottom .rc-tooltip-arrow,

@@ -73,7 +73,9 @@ export const ChannelRowHeader: React.FC = () => {
         <HeaderFour>{l('canSend')}</HeaderFour>
       </Column>
       <Column cols={1}>
-        <HeaderFour>{l('feeRate')}</HeaderFour>
+        <Tip overlay={l('feeRateTip')} capitalize={false}>
+          <HeaderFour>{l('feeRate')}</HeaderFour>
+        </Tip>
       </Column>
       <Column cols={1}>
         <HeaderFour>{l('upTime')}</HeaderFour>
@@ -145,7 +147,7 @@ const ChannelRow: React.FC<Props> = ({ channel, style }) => {
       <Column cols={1}>{channel.remoteFeeRate}</Column>
       <Column cols={1}>{channel.uptimePercent}</Column>
       <Column cols={2}>
-        <Tip overlay={channel.remotePubkey} placement="left">
+        <Tip overlay={channel.remotePubkey} placement="left" capitalize={false}>
           <span>{channel.aliasLabel}</span>
         </Tip>
       </Column>
