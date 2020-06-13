@@ -81,19 +81,23 @@ export default class AppStorage {
 
     // if there are any keys that are not in the cache
     if (keys.length) {
-      // call the API to get the missing data
-      data = await fetchFromApi(keys, data);
+      try {
+        // call the API to get the missing data
+        data = await fetchFromApi(keys, data);
 
-      // update the expiration date only if it has expired. this ensures
-      // that data will remain in the cache for up to the timeout
-      const expires =
-        cached && cached.expires > Date.now()
-          ? cached.expires
-          : Date.now() + CACHE_TIMEOUT;
+        // update the expiration date only if it has expired. this ensures
+        // that data will remain in the cache for up to the timeout
+        const expires =
+          cached && cached.expires > Date.now()
+            ? cached.expires
+            : Date.now() + CACHE_TIMEOUT;
 
-      // update localStorage with the new data
-      this.set(cacheKey, { expires, data });
-      log.info(`updated cache with ${keys.length} new ${cacheKey}`);
+        // update localStorage with the new data
+        this.set(cacheKey, { expires, data });
+        log.info(`updated cache with ${keys.length} new ${cacheKey}`);
+      } catch (error) {
+        log.error(`failed to fetch ${cacheKey} from the API`, error.message);
+      }
     }
 
     return data;

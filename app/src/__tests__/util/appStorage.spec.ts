@@ -1,7 +1,5 @@
 import AppStorage from 'util/appStorage';
 
-jest.unmock('util/appStorage');
-
 describe('appStorage util', () => {
   const key = 'test-data';
   const settings = {
