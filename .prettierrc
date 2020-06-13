@@ -8,6 +8,7 @@
     }
   ],
   "printWidth": 90,
+  "proseWrap": "always",
   "singleQuote": true,
   "useTabs": false,
   "semi": true,
