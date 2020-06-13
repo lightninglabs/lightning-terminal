@@ -23,11 +23,13 @@ export const Row: React.FC<{
  */
 export const Column: React.FC<{
   cols?: number;
+  colsXl?: number;
   right?: boolean;
   className?: string;
-}> = ({ cols, right, children, className }) => {
-  const cn: string[] = [];
-  cn.push(cols ? `col-${cols}` : 'col');
+}> = ({ cols, colsXl, right, children, className }) => {
+  const cn: string[] = ['col'];
+  cols && cn.push(`col-${cols}`);
+  colsXl && cn.push(`col-xl-${colsXl}`);
   className && cn.push(className);
   right && cn.push('text-right');
   return <div className={cn.join(' ')}>{children}</div>;
