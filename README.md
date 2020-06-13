@@ -30,6 +30,7 @@ To compile from source code, you'll need to have some prerequisite developer too
 
 - **Go**: Shushtar's backend web server is written in Go. Instructions for installing Go for your operating system can be found on the [golang install](https://golang.org/doc/install) page. The minimum version supported is Go v1.13.
 - **NodeJS**: Shushtar's frontend is written in TypeScript and built on top of the React JS web framework. To bundle the assets into Javascript & CSS compatible with web browsers, NodeJS is required. It can be downloaded and installed by following the instructions on the [NodeJS download](https://nodejs.org/en/download/) page.
+- **Yarn**: a popular package manager for NodeJS application dependencies. Installation information can be found on the [Yarn Installation](https://classic.yarnpkg.com/en/docs/install) page.
 
 Once you have the necessary prerequisites, Shushtar can be compiled by running the following commands:
 
@@ -100,7 +101,7 @@ You can also store the configuration in a persistent `lnd.conf` file so you do
 not need to type in the command line arguments every time you start the server.
 Just remember to use the appropriate prefixes as necessary.
 
-Also. make sure to include the `lnd` general options in the `[Application Options]`
+Also make sure to include the `lnd` general options in the `[Application Options]`
 section because the section name `[Lnd]` is not unique anymore because of how we
 combine the configurations of all daemons. This will hopefully be fixed in a
 future release.
