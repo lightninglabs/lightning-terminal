@@ -69,6 +69,7 @@ export class Store {
   @action.bound
   async init() {
     this.settingsStore.init();
+    this.swapStore.init();
     await this.authStore.init();
     runInAction('init', () => {
       this.initialized = true;

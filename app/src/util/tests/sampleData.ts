@@ -237,6 +237,14 @@ export const loopQuote: LOOP.QuoteResponse.AsObject = {
   swapPaymentDest: 'Au1a9/hEsbxHUOwFC1QwxZq6EnnKYtpAdc74OZK8/syU',
 };
 
+export const loopSwapResponse: LOOP.SwapResponse.AsObject = {
+  htlcAddress: 'bcrt1qkjct8aqxfwyla50mfxdnzlmuphg3zwuz2zmuy99c9sw67xj7tn2sfkflhw',
+  htlcAddressNp2wsh: '',
+  htlcAddressP2wsh: 'bcrt1qkjct8aqxfwyla50mfxdnzlmuphg3zwuz2zmuy99c9sw67xj7tn2sfkflhw',
+  id: '18e17a2f44efc7f344ef6330281765e569315f93d3eaf9b0f959b404836e3480',
+  idBytes: 'GOF6L0Tvx/NE72MwKBdl5WkxX5PT6vmw+Vm0BINuNIA=',
+};
+
 // collection of sample API responses
 export const sampleApiResponses: Record<string, any> = {
   'lnrpc.Lightning.GetInfo': lndGetInfo,
@@ -250,4 +258,6 @@ export const sampleApiResponses: Record<string, any> = {
   'looprpc.SwapClient.GetLoopInTerms': loopTerms,
   'looprpc.SwapClient.LoopOutQuote': loopQuote,
   'looprpc.SwapClient.GetLoopInQuote': loopQuote,
+  'looprpc.SwapClient.LoopIn': loopSwapResponse,
+  'looprpc.SwapClient.LoopOut': loopSwapResponse,
 };

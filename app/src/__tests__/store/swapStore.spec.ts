@@ -17,6 +17,41 @@ describe('SwapStore', () => {
     store = rootStore.swapStore;
   });
 
+  it('should add swapped channels', () => {
+    expect(store.swappedChannels.size).toBe(0);
+    store.addSwappedChannels('s1', ['c1', 'c2']);
+    expect(store.swappedChannels.size).toBe(2);
+    expect(store.swappedChannels.get('c1')).toEqual(['s1']);
+    expect(store.swappedChannels.get('c2')).toEqual(['s1']);
+    store.addSwappedChannels('s2', ['c2']);
+    expect(store.swappedChannels.size).toBe(2);
+    expect(store.swappedChannels.get('c2')).toEqual(['s1', 's2']);
+  });
+
+  it('should prune the swapped channels list', async () => {
+    await rootStore.channelStore.fetchChannels();
+    await store.fetchSwaps();
+    const swaps = store.sortedSwaps;
+    // make these swaps pending
+    swaps[0].state = LOOP.SwapState.HTLC_PUBLISHED;
+    swaps[1].state = LOOP.SwapState.INITIATED;
+    const channels = rootStore.channelStore.sortedChannels;
+    const [c1, c2, c3] = channels.map(c => c.chanId);
+    store.addSwappedChannels(swaps[0].id, [c1, c2]);
+    store.addSwappedChannels(swaps[1].id, [c2, c3]);
+    // confirm swapped channels are set
+    expect(store.swappedChannels.size).toBe(3);
+    expect(store.swappedChannels.get(c2)).toHaveLength(2);
+    // change one swap to complete
+    swaps[1].state = LOOP.SwapState.SUCCESS;
+    store.pruneSwappedChannels();
+    // confirm swap1 removed
+    expect(store.swappedChannels.size).toBe(2);
+    expect(store.swappedChannels.get(c1)).toHaveLength(1);
+    expect(store.swappedChannels.get(c2)).toHaveLength(1);
+    expect(store.swappedChannels.get(c3)).toBeUndefined();
+  });
+
   it('should fetch list of swaps', async () => {
     expect(store.sortedSwaps).toHaveLength(0);
     await store.fetchSwaps();

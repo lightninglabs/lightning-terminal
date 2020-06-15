@@ -1,16 +1,15 @@
 import React, { CSSProperties } from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
-import { BalanceStatus } from 'util/constants';
 import { useStore } from 'store';
 import { Channel } from 'store/models';
 import { Column, HeaderFour, Row } from 'components/base';
 import Checkbox from 'components/common/Checkbox';
-import StatusDot from 'components/common/StatusDot';
 import Tip from 'components/common/Tip';
 import Unit from 'components/common/Unit';
 import { styled } from 'components/theme';
 import ChannelBalance from './ChannelBalance';
+import ChannelIcon from './ChannelIcon';
 
 /**
  * the virtualized list requires each row to have a specified
@@ -94,19 +93,6 @@ export const ChannelRowHeader: React.FC = () => {
   );
 };
 
-const ChannelDot: React.FC<{ channel: Channel }> = observer(({ channel }) => {
-  if (!channel.active) return <StatusDot status="idle" />;
-
-  switch (channel.balanceStatus) {
-    case BalanceStatus.ok:
-      return <StatusDot status="success" />;
-    case BalanceStatus.warn:
-      return <StatusDot status="warn" />;
-    case BalanceStatus.danger:
-      return <StatusDot status="error" />;
-  }
-});
-
 interface Props {
   channel: Channel;
   style?: CSSProperties;
@@ -137,7 +123,7 @@ const ChannelRow: React.FC<Props> = ({ channel, style }) => {
           <Check checked={checked} disabled={disabled} />
         ) : (
           <StatusIcon>
-            <ChannelDot channel={channel} />
+            <ChannelIcon channel={channel} />
           </StatusIcon>
         )}
         <Unit sats={channel.remoteBalance} suffix={false} />

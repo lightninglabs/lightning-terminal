@@ -15,18 +15,6 @@ describe('BuildSwapStore', () => {
   let rootStore: Store;
   let store: BuildSwapStore;
 
-  const addChannel = (capacity: number, localBalance: number) => {
-    const remoteBalance = capacity - localBalance;
-    const lndChan = { ...lndChannel, capacity, localBalance, remoteBalance };
-    const channel = new Channel(rootStore, lndChan);
-    channel.chanId = `${channel.chanId}${rootStore.channelStore.channels.size}`;
-    rootStore.channelStore.channels.set(channel.chanId, channel);
-  };
-
-  const round = (amount: number) => {
-    return Math.floor(amount / store.AMOUNT_INCREMENT) * store.AMOUNT_INCREMENT;
-  };
-
   beforeEach(async () => {
     rootStore = createStore();
     await rootStore.fetchAllData();
@@ -94,6 +82,16 @@ describe('BuildSwapStore', () => {
     store.setAmount(Big(loopTerms.maxSwapAmount + 100));
     await store.getTerms();
     expect(+store.amountForSelected).toBe(loopTerms.maxSwapAmount);
+  });
+
+  it('should select all channels with the same peer for loop in', () => {
+    const channels = rootStore.channelStore.sortedChannels;
+    channels[1].remotePubkey = channels[0].remotePubkey;
+    channels[2].remotePubkey = channels[0].remotePubkey;
+    expect(store.selectedChanIds).toHaveLength(0);
+    store.toggleSelectedChannel(channels[0].chanId);
+    store.setDirection(SwapDirection.IN);
+    expect(store.selectedChanIds).toHaveLength(3);
   });
 
   it('should fetch a loop in quote', async () => {
@@ -164,6 +162,31 @@ describe('BuildSwapStore', () => {
         expect.anything(),
       );
     });
+  });
+
+  it('should store swapped channels after a loop in', async () => {
+    const channels = rootStore.channelStore.sortedChannels;
+    // the pubkey in the sampleData is not valid, so hard-code this valid one
+    channels[0].remotePubkey =
+      '035c82e14eb74d2324daa17eebea8c58b46a9eabac87191cc83ee26275b514e6a0';
+    store.toggleSelectedChannel(channels[0].chanId);
+    store.setDirection(SwapDirection.IN);
+    store.setAmount(Big(600));
+    expect(rootStore.swapStore.swappedChannels.size).toBe(0);
+    store.requestSwap();
+    await waitFor(() => expect(store.currentStep).toBe(BuildSwapSteps.Closed));
+    expect(rootStore.swapStore.swappedChannels.size).toBe(1);
+  });
+
+  it('should store swapped channels after a loop out', async () => {
+    const channels = rootStore.channelStore.sortedChannels;
+    store.toggleSelectedChannel(channels[0].chanId);
+    store.setDirection(SwapDirection.OUT);
+    store.setAmount(Big(600));
+    expect(rootStore.swapStore.swappedChannels.size).toBe(0);
+    store.requestSwap();
+    await waitFor(() => expect(store.currentStep).toBe(BuildSwapSteps.Closed));
+    expect(rootStore.swapStore.swappedChannels.size).toBe(1);
   });
 
   it('should set the correct swap deadline in production', async () => {
@@ -245,6 +268,19 @@ describe('BuildSwapStore', () => {
   });
 
   describe('min/max swap limits', () => {
+    const addChannel = (capacity: number, localBalance: number) => {
+      const remoteBalance = capacity - localBalance;
+      const lndChan = { ...lndChannel, capacity, localBalance, remoteBalance };
+      const channel = new Channel(rootStore, lndChan);
+      channel.chanId = `${channel.chanId}${rootStore.channelStore.channels.size}`;
+      channel.remotePubkey = `${channel.remotePubkey}${rootStore.channelStore.channels.size}`;
+      rootStore.channelStore.channels.set(channel.chanId, channel);
+    };
+
+    const round = (amount: number) => {
+      return Math.floor(amount / store.AMOUNT_INCREMENT) * store.AMOUNT_INCREMENT;
+    };
+
     beforeEach(() => {
       rootStore.channelStore.channels.clear();
       [

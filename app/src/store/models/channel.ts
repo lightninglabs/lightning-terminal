@@ -1,5 +1,6 @@
 import { action, computed, observable } from 'mobx';
 import * as LND from 'types/generated/lnd_pb';
+import * as LOOP from 'types/generated/loop_pb';
 import Big from 'big.js';
 import { getBalanceStatus } from 'util/balances';
 import { percentage } from 'util/bigmath';
@@ -7,6 +8,9 @@ import { BalanceMode, BalanceModes } from 'util/constants';
 import { CsvColumns } from 'util/csv';
 import { ellipseInside } from 'util/strings';
 import { Store } from 'store/store';
+import { Swap } from './';
+
+export type ProcessingSwapsDirection = 'in' | 'out' | 'both' | 'none';
 
 export default class Channel {
   private _store: Store;
@@ -82,6 +86,33 @@ export default class Channel {
   @computed get balanceStatus() {
     const mode = this._store.settingsStore.balanceMode;
     return getBalanceStatus(this.localBalance, this.capacity, BalanceModes[mode]);
+  }
+
+  /**
+   * An array of currently processing swaps that use this channel
+   */
+  @computed get processingSwaps(): Swap[] {
+    const swapIds = this._store.swapStore.swappedChannels.get(this.chanId);
+    if (!swapIds || swapIds.length === 0) return [];
+
+    return this._store.swapStore.processingSwaps.filter(s => swapIds.includes(s.id));
+  }
+
+  /**
+   * The direction of the currently processing swaps
+   */
+  @computed get processingSwapsDirection(): ProcessingSwapsDirection {
+    const directions = this.processingSwaps
+      .map(s => s.type)
+      .filter((d, i, a) => a.indexOf(d) === i); // filter out duplicates
+
+    if (directions.length === 0) {
+      return 'none';
+    } else if (directions.length > 1) {
+      return 'both';
+    } else {
+      return directions[0] === LOOP.SwapType.LOOP_IN ? 'in' : 'out';
+    }
   }
 
   /**

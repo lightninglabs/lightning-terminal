@@ -233,6 +233,10 @@ class BuildSwapStore {
   async setDirection(direction: SwapDirection): Promise<void> {
     this.direction = direction;
     this._store.log.info(`updated buildSwapStore.direction`, direction);
+    if (this.direction === SwapDirection.IN) {
+      // select all channels to the selected peer for Loop In
+      this.autoSelectPeerChannels();
+    }
     this.goToNextStep();
   }
 
@@ -251,6 +255,28 @@ class BuildSwapStore {
       `updated buildSwapStore.selectedChanIds`,
       toJS(this.selectedChanIds),
     );
+  }
+
+  /**
+   * When performing a Loop In, you can only specify the last hop of the payment,
+   * so all channels with the selected peer may be used. This function will ensure
+   * that all channels of the selected peer are selected
+   */
+  @action.bound
+  autoSelectPeerChannels() {
+    // create an array of pubkeys for the selected channels
+    const peers = this.channels
+      .filter(c => this.selectedChanIds.includes(c.chanId))
+      .map(c => c.remotePubkey)
+      .filter((c, i, a) => a.indexOf(c) === i); // filter out duplicates
+
+    // create a list of all channels with this peer
+    const peerChannels = this.channels
+      .filter(c => peers.includes(c.remotePubkey))
+      .map(c => c.chanId);
+
+    this.selectedChanIds = peerChannels;
+    this._store.log.info(`automatically selected peer channels`, this.selectedChanIds);
   }
 
   /**
@@ -377,6 +403,9 @@ class BuildSwapStore {
         let res: SwapResponse.AsObject;
         if (direction === SwapDirection.IN) {
           res = await this._store.api.loop.loopIn(amount, quote, this.loopInLastHop);
+          // save the channels that were used in the swap. for Loop In all channels
+          // with the same peer will be used
+          this._store.swapStore.addSwappedChannels(res.id, this.selectedChanIds);
         } else {
           // on regtest, set the publication deadline to 0 for faster swaps, otherwise
           // set it to 30 minutes in the future to reduce swap fees
@@ -386,6 +415,8 @@ class BuildSwapStore {
           // convert the selected channel ids to numbers
           const chanIds = this.selectedChanIds.map(v => parseInt(v));
           res = await this._store.api.loop.loopOut(amount, quote, chanIds, deadline);
+          // save the channels that were used in the swap
+          this._store.swapStore.addSwappedChannels(res.id, this.selectedChanIds);
         }
         this._store.log.info('completed loop', toJS(res));
         runInAction('requestSwapContinuation', () => {

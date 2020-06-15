@@ -133,6 +133,7 @@ describe('ChannelStore', () => {
     // the alias is fetched from the API and should be updated after a few ticks
     await waitFor(() => {
       expect(channel.alias).toBe(lndGetNodeInfo.node.alias);
+      expect(channel.aliasLabel).toBe(lndGetNodeInfo.node.alias);
     });
   });
 
