@@ -38,7 +38,7 @@ const SwapConfigStep: React.FC = () => {
       <Summary>
         <StepSummary
           title={l('title')}
-          heading={l('heading')}
+          heading={l('heading', { type: buildSwapStore.direction })}
           description={l('description')}
         />
       </Summary>

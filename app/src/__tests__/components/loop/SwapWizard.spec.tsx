@@ -29,7 +29,7 @@ describe('SwapWizard component', () => {
     it('should display the description labels', () => {
       const { getByText } = render();
       expect(getByText('Step 1 of 2')).toBeInTheDocument();
-      expect(getByText('Set Liquidity Parameters')).toBeInTheDocument();
+      expect(getByText('Loop Out Amount')).toBeInTheDocument();
     });
 
     it('should navigate forward and back through each step', async () => {
