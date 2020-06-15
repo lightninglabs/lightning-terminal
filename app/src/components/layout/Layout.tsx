@@ -17,11 +17,11 @@ const Styled = {
     width: 100%;
     margin: 0 auto;
   `,
-  Hamburger: styled.span`
+  Hamburger: styled.span<CollapsedProps>`
     display: inline-block;
-    position: absolute;
+    position: ${props => (props.collapsed ? 'absolute' : 'fixed')};
     top: 35px;
-    left: 10px;
+    margin-left: 10px;
     z-index: 2;
     padding: 4px;
 
@@ -72,7 +72,10 @@ const StandardLayout: React.FC = observer(({ children }) => {
   return (
     <Background>
       <Container>
-        <Hamburger onClick={settingsStore.toggleSidebar}>
+        <Hamburger
+          collapsed={!settingsStore.sidebarVisible}
+          onClick={settingsStore.toggleSidebar}
+        >
           <Menu size="large" />
         </Hamburger>
         <Aside collapsed={!settingsStore.sidebarVisible}>
