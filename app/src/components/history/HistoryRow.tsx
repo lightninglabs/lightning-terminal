@@ -48,10 +48,10 @@ export const HistoryRowHeader: React.FC = () => {
       <Column>
         <HeaderFour>{l('amount')} (sats)</HeaderFour>
       </Column>
-      <Column right>
+      <Column right cols={3}>
         <HeaderFour>{l('created')}</HeaderFour>
       </Column>
-      <Column right>
+      <Column right cols={3}>
         <HeaderFour>{l('updated')}</HeaderFour>
       </Column>
     </Row>
@@ -77,8 +77,12 @@ const HistoryRow: React.FC<Props> = ({ swap, style }) => {
       <Column>
         <Unit sats={swap.amount} suffix={false} />
       </Column>
-      <Column right>{swap.createdOnLabel}</Column>
-      <Column right>{swap.updatedOnLabel}</Column>
+      <Column right cols={3}>
+        {swap.createdOnLabel}
+      </Column>
+      <Column right cols={3}>
+        {swap.updatedOnLabel}
+      </Column>
     </Row>
   );
 };

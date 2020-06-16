@@ -17,6 +17,13 @@ import ChannelIcon from './ChannelIcon';
  */
 export const ROW_HEIGHT = 60;
 
+const BaseColumn = styled(Column)`
+  white-space: nowrap;
+  line-height: ${ROW_HEIGHT}px;
+  padding-left: 5px;
+  padding-right: 5px;
+`;
+
 const Styled = {
   Row: styled(Row)<{ dimmed?: boolean; selectable?: boolean }>`
     border-bottom: 0.5px solid ${props => props.theme.colors.darkGray};
@@ -35,28 +42,26 @@ const Styled = {
       }
     `}
   `,
-  Column: styled(Column)<{ last?: boolean; ellipse?: boolean }>`
-    white-space: nowrap;
-    line-height: ${ROW_HEIGHT}px;
-    padding-left: 5px;
+  Column: styled(BaseColumn)<{ last?: boolean }>`
     padding-right: ${props => (props.last ? '15' : '5')}px;
-    ${props =>
-      props.ellipse &&
-      `
-      overflow: hidden;
-      text-overflow: ellipsis;
-    `}
+  `,
+  ActionColumn: styled(BaseColumn)`
+    max-width: 50px;
+    padding-left: 24px;
+  `,
+  WideColumn: styled(BaseColumn)`
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    @media (min-width: 1200px) and (max-width: 1300px) {
+      max-width: 20%;
+    }
   `,
   StatusIcon: styled.span`
-    float: left;
-    margin-top: -1px;
-    margin-left: 15px;
     color: ${props => props.theme.colors.pink};
   `,
   Check: styled(Checkbox)`
-    float: left;
-    margin-top: 18px;
-    margin-left: 10px;
+    margin-top: 17px;
   `,
   Balance: styled(ChannelBalance)`
     margin-top: ${ROW_HEIGHT / 2 - 2}px;
@@ -78,13 +83,14 @@ const ChannelAliasTip: React.FC<{ channel: Channel }> = ({ channel }) => {
 
 export const ChannelRowHeader: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.ChannelRowHeader');
-  const { Column } = Styled;
+  const { Column, ActionColumn, WideColumn } = Styled;
   return (
     <Row>
+      <ActionColumn></ActionColumn>
       <Column right>
         <HeaderFour>{l('canReceive')}</HeaderFour>
       </Column>
-      <Column cols={2} colsXl={3}></Column>
+      <WideColumn cols={2} colsXl={3}></WideColumn>
       <Column>
         <HeaderFour>{l('canSend')}</HeaderFour>
       </Column>
@@ -96,9 +102,9 @@ export const ChannelRowHeader: React.FC = () => {
       <Column cols={1}>
         <HeaderFour>{l('upTime')}</HeaderFour>
       </Column>
-      <Column cols={2}>
+      <WideColumn cols={2}>
         <HeaderFour>{l('peer')}</HeaderFour>
-      </Column>
+      </WideColumn>
       <Column right last>
         <HeaderFour>{l('capacity')}</HeaderFour>
       </Column>
@@ -123,7 +129,7 @@ const ChannelRow: React.FC<Props> = ({ channel, style }) => {
     store.buildSwapStore.toggleSelectedChannel(channel.chanId);
   };
 
-  const { Row, Column, StatusIcon, Check, Balance } = Styled;
+  const { Row, Column, ActionColumn, WideColumn, StatusIcon, Check, Balance } = Styled;
   return (
     <Row
       dimmed={dimmed}
@@ -131,7 +137,7 @@ const ChannelRow: React.FC<Props> = ({ channel, style }) => {
       selectable={editable && !disabled}
       onClick={editable && !disabled ? handleRowChecked : undefined}
     >
-      <Column right>
+      <ActionColumn>
         {editable ? (
           <Check checked={checked} disabled={disabled} />
         ) : (
@@ -139,17 +145,19 @@ const ChannelRow: React.FC<Props> = ({ channel, style }) => {
             <ChannelIcon channel={channel} />
           </StatusIcon>
         )}
+      </ActionColumn>
+      <Column right>
         <Unit sats={channel.remoteBalance} suffix={false} />
       </Column>
-      <Column cols={2} colsXl={3}>
+      <WideColumn cols={2} colsXl={3}>
         <Balance channel={channel} />
-      </Column>
+      </WideColumn>
       <Column>
         <Unit sats={channel.localBalance} suffix={false} />
       </Column>
       <Column cols={1}>{channel.remoteFeeRate}</Column>
       <Column cols={1}>{channel.uptimePercent}</Column>
-      <Column cols={2} ellipse>
+      <WideColumn cols={2}>
         <Tip
           overlay={<ChannelAliasTip channel={channel} />}
           placement="left"
@@ -157,7 +165,7 @@ const ChannelRow: React.FC<Props> = ({ channel, style }) => {
         >
           <span>{channel.aliasLabel}</span>
         </Tip>
-      </Column>
+      </WideColumn>
       <Column right>
         <Unit sats={channel.capacity} suffix={false} />
       </Column>
