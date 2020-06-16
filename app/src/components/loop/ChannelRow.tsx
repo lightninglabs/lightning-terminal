@@ -61,6 +61,19 @@ const Styled = {
   Balance: styled(ChannelBalance)`
     margin-top: ${ROW_HEIGHT / 2 - 2}px;
   `,
+  AliasTip: styled.div`
+    text-align: right;
+  `,
+};
+
+const ChannelAliasTip: React.FC<{ channel: Channel }> = ({ channel }) => {
+  return (
+    <Styled.AliasTip>
+      {channel.aliasDetail.split('\n').map(text => (
+        <div key={text}>{text}</div>
+      ))}
+    </Styled.AliasTip>
+  );
 };
 
 export const ChannelRowHeader: React.FC = () => {
@@ -137,7 +150,11 @@ const ChannelRow: React.FC<Props> = ({ channel, style }) => {
       <Column cols={1}>{channel.remoteFeeRate}</Column>
       <Column cols={1}>{channel.uptimePercent}</Column>
       <Column cols={2} ellipse>
-        <Tip overlay={channel.remotePubkey} placement="left" capitalize={false}>
+        <Tip
+          overlay={<ChannelAliasTip channel={channel} />}
+          placement="left"
+          capitalize={false}
+        >
           <span>{channel.aliasLabel}</span>
         </Tip>
       </Column>

@@ -37,11 +37,23 @@ export default class Channel {
    */
   @computed get aliasLabel() {
     // if the node does not specify an alias, it is set to a substring of
-    // the pubkey. we want to the display the ellipsed pubkey in this case
+    // the pubkey, we want to the display the ellipsed pubkey in this case
     // instead of the substring.
     return this.alias && !this.remotePubkey.includes(this.alias as string)
       ? this.alias
       : ellipseInside(this.remotePubkey);
+  }
+
+  /**
+   * The remotePubkey and alias if one is defined
+   */
+  @computed get aliasDetail() {
+    // if the node does not specify an alias, it is set to a substring of
+    // the pubkey, we want to the display just the pubkey. Otherwise,
+    // display both
+    return this.alias && !this.remotePubkey.includes(this.alias as string)
+      ? `${this.alias}\n${this.remotePubkey}`
+      : this.remotePubkey;
   }
 
   /**

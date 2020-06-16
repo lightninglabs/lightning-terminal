@@ -55,6 +55,16 @@ describe('ChannelRow component', () => {
     expect(getByText(channel.aliasLabel)).toBeInTheDocument();
   });
 
+  it('should display the peer pubkey & alias tooltip', () => {
+    const { getByText, getAllByText } = render();
+    channel.alias = 'test-alias';
+    fireEvent.mouseEnter(getByText(channel.aliasLabel));
+    expect(getByText(channel.remotePubkey)).toBeInTheDocument();
+    expect(getAllByText(channel.alias)).toHaveLength(2);
+    channel.alias = channel.remotePubkey.substring(12);
+    expect(getByText(channel.remotePubkey)).toBeInTheDocument();
+  });
+
   it('should display the capacity', () => {
     const { getByText } = render();
     expect(
