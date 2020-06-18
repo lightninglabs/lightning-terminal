@@ -10,7 +10,6 @@ describe('HistoryPage', () => {
 
   beforeEach(() => {
     store = createStore();
-    store.uiStore.goToHistory();
   });
 
   const render = () => {
@@ -49,7 +48,7 @@ describe('HistoryPage', () => {
   it('should navigate back to the Loop Page', () => {
     const { getByText } = render();
     fireEvent.click(getByText('arrow-left.svg'));
-    expect(store.uiStore.page).toEqual('loop');
+    expect(store.router.location.pathname).toBe('/loop');
   });
 
   it('should export channels', () => {

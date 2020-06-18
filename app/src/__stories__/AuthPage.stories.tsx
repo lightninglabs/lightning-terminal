@@ -1,6 +1,5 @@
 import React from 'react';
 import AuthPage from 'components/auth/AuthPage';
-import { Layout } from 'components/layout';
 
 export default {
   title: 'Pages/Auth',
@@ -8,9 +7,5 @@ export default {
 };
 
 export const Default = () => {
-  return (
-    <Layout>
-      <AuthPage />
-    </Layout>
-  );
+  return <AuthPage />;
 };

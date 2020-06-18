@@ -6,15 +6,11 @@ import { Store } from 'store';
 
 const { l } = prefixTranslation('stores.uiStore');
 
-type PageName = 'auth' | 'loop' | 'history' | 'settings';
-
 type SettingName = 'general' | 'unit' | 'balance';
 
 export default class UiStore {
   private _store: Store;
 
-  /** the current page being displayed */
-  @observable page: PageName = 'auth';
   /** indicates if the Processing Loops section is displayed on the Loop page */
   @observable processingSwapsVisible = false;
   /** the selected setting on the Settings page */
@@ -29,14 +25,14 @@ export default class UiStore {
   /** Change to the Auth page */
   @action.bound
   gotoAuth() {
-    this.page = 'auth';
+    this._store.router.push('/');
     this._store.log.info('Go to the Auth page');
   }
 
   /** Change to the Loop page */
   @action.bound
   goToLoop() {
-    this.page = 'loop';
+    this._store.router.push('/loop');
     this._store.settingsStore.autoCollapseSidebar();
     this._store.log.info('Go to the Loop page');
   }
@@ -44,7 +40,7 @@ export default class UiStore {
   /** Change to the History page */
   @action.bound
   goToHistory() {
-    this.page = 'history';
+    this._store.router.push('/history');
     this._store.settingsStore.autoCollapseSidebar();
     this._store.log.info('Go to the History page');
   }
@@ -52,7 +48,7 @@ export default class UiStore {
   /** Change to the History page */
   @action.bound
   goToSettings() {
-    this.page = 'settings';
+    this._store.router.push('/settings');
     this.selectedSetting = 'general';
     this._store.settingsStore.autoCollapseSidebar();
     this._store.log.info('Go to the Settings page');

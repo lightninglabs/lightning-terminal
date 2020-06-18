@@ -48,9 +48,11 @@ const Styled = {
 const NavItem: React.FC<{ page: string; onClick: () => void }> = observer(
   ({ page, onClick }) => {
     const { l } = usePrefixedTranslation('cmps.layout.NavMenu');
-    const { uiStore } = useStore();
+    const { router } = useStore();
+    const className = router.location.pathname === `/${page}` ? 'active' : '';
+
     return (
-      <Styled.NavItem className={uiStore.page === page ? 'active' : ''}>
+      <Styled.NavItem className={className}>
         <span onClick={onClick}>{l(page)}</span>
       </Styled.NavItem>
     );

@@ -1,5 +1,7 @@
 import { action, autorun, observable, runInAction } from 'mobx';
+import { RouterStore, syncHistoryWithStore } from 'mobx-react-router';
 import { IS_DEV, IS_TEST } from 'config';
+import { createBrowserHistory } from 'history';
 import AppStorage from 'util/appStorage';
 import CsvExporter from 'util/csv';
 import { actionLog, Logger } from 'util/log';
@@ -28,6 +30,9 @@ export class Store {
   nodeStore = new NodeStore(this);
   settingsStore = new SettingsStore(this);
   uiStore = new UiStore(this);
+
+  /** the store which synchronizes with the browser history */
+  router = new RouterStore();
 
   /** the backend api services to be used by child stores */
   api: {
@@ -81,8 +86,12 @@ export class Store {
       async () => {
         if (this.authStore.authenticated) {
           // go to the Loop page when the user is authenticated. it can be from
-          // entering a password or from loading the credentials from storage
-          this.uiStore.goToLoop();
+          // entering a password or from loading the credentials from storage.
+          // only do this if the auth page is currently being viewed, otherwise
+          // stay on the current page (ex: history, settings)
+          if (this.router.location.pathname === '/') {
+            this.uiStore.goToLoop();
+          }
           // also fetch all the data we need
           this.fetchAllData();
           // connect and subscribe to the server-side streams
@@ -157,6 +166,10 @@ export const createStore = (grpcClient?: GrpcClient, appStorage?: AppStorage) =>
   const csv = new CsvExporter();
 
   const store = new Store(lndApi, loopApi, storage, csv, actionLog);
+
+  // connect router store to browser history
+  syncHistoryWithStore(createBrowserHistory(), store.router);
+
   // initialize the store immediately to fetch API data, except when running unit tests
   if (!IS_TEST) store.init();
 

@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { ReactComponent as LogoImage } from 'assets/images/logo.svg';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
-import { Button, HeaderOne, Input } from 'components/base';
+import { Background, Button, HeaderOne, Input } from 'components/base';
 import { styled } from 'components/theme';
 
 const Styled = {
@@ -79,20 +79,28 @@ const AuthPage: React.FC = () => {
 
   const { Wrapper, Logo, Title, Subtitle, Form, Label, ErrMessage, Submit } = Styled;
   return (
-    <Wrapper>
-      <Logo />
-      <Title>{l('title')}</Title>
-      <Subtitle>{l('subtitle')}</Subtitle>
-      <Form onSubmit={handleSubmit}>
-        <Input id="auth" type="password" autoFocus value={pass} onChange={handleChange} />
-        {error ? (
-          <ErrMessage>{error}</ErrMessage>
-        ) : (
-          <Label htmlFor="auth">{l('passLabel')}</Label>
-        )}
-        <Submit>{l('submitBtn')}</Submit>
-      </Form>
-    </Wrapper>
+    <Background gradient>
+      <Wrapper>
+        <Logo />
+        <Title>{l('title')}</Title>
+        <Subtitle>{l('subtitle')}</Subtitle>
+        <Form onSubmit={handleSubmit}>
+          <Input
+            id="auth"
+            type="password"
+            autoFocus
+            value={pass}
+            onChange={handleChange}
+          />
+          {error ? (
+            <ErrMessage>{error}</ErrMessage>
+          ) : (
+            <Label htmlFor="auth">{l('passLabel')}</Label>
+          )}
+          <Submit>{l('submitBtn')}</Submit>
+        </Form>
+      </Wrapper>
+    </Background>
   );
 };
 
