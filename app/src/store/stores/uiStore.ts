@@ -6,15 +6,13 @@ import { Store } from 'store';
 
 const { l } = prefixTranslation('stores.uiStore');
 
-type SettingName = 'general' | 'unit' | 'balance';
+type SettingName = '' | 'unit' | 'balance';
 
 export default class UiStore {
   private _store: Store;
 
   /** indicates if the Processing Loops section is displayed on the Loop page */
   @observable processingSwapsVisible = false;
-  /** the selected setting on the Settings page */
-  @observable selectedSetting: SettingName = 'general';
   /** a collection of alerts to display as toasts */
   @observable alerts = observable.map<number, Alert>();
 
@@ -22,17 +20,24 @@ export default class UiStore {
     this._store = store;
   }
 
+  /** navigate to the specified route */
+  goTo(route: string) {
+    if (this._store.router.location.pathname !== route) {
+      this._store.router.push(route);
+    }
+  }
+
   /** Change to the Auth page */
   @action.bound
   gotoAuth() {
-    this._store.router.push('/');
+    this.goTo('/');
     this._store.log.info('Go to the Auth page');
   }
 
   /** Change to the Loop page */
   @action.bound
   goToLoop() {
-    this._store.router.push('/loop');
+    this.goTo('/loop');
     this._store.settingsStore.autoCollapseSidebar();
     this._store.log.info('Go to the Loop page');
   }
@@ -40,7 +45,7 @@ export default class UiStore {
   /** Change to the History page */
   @action.bound
   goToHistory() {
-    this._store.router.push('/history');
+    this.goTo('/history');
     this._store.settingsStore.autoCollapseSidebar();
     this._store.log.info('Go to the History page');
   }
@@ -48,8 +53,7 @@ export default class UiStore {
   /** Change to the History page */
   @action.bound
   goToSettings() {
-    this._store.router.push('/settings');
-    this.selectedSetting = 'general';
+    this.goTo('/settings');
     this._store.settingsStore.autoCollapseSidebar();
     this._store.log.info('Go to the Settings page');
   }
@@ -63,7 +67,8 @@ export default class UiStore {
   /** sets the selected setting to display */
   @action.bound
   showSettings(name: SettingName) {
-    this.selectedSetting = name;
+    const path = name === '' ? '' : `/${name}`;
+    this.goTo(`/settings${path}`);
     this._store.log.info('Switch to Setting screen', name);
   }
 

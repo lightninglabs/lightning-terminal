@@ -10,18 +10,20 @@ export default {
 };
 
 export const Default = () => {
+  const { uiStore } = useStore();
+  uiStore.showSettings('');
   return <SettingsPage />;
 };
 
 export const BitcoinUnit = () => {
   const { uiStore } = useStore();
-  uiStore.selectedSetting = 'unit';
+  uiStore.showSettings('unit');
   return <SettingsPage />;
 };
 
 export const BalanceMode = () => {
   const { uiStore } = useStore();
-  uiStore.selectedSetting = 'balance';
+  uiStore.showSettings('balance');
   return <SettingsPage />;
 };
 

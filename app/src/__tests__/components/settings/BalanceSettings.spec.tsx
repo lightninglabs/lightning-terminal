@@ -41,7 +41,7 @@ describe('BalanceSettings', () => {
   it('should navigate back to the Settings screen', () => {
     const { getByText } = render();
     fireEvent.click(getByText('Settings'));
-    expect(store.uiStore.selectedSetting).toEqual('general');
+    expect(store.router.location.pathname).toEqual('/settings');
   });
 
   it('should update the Balance Mode to receive', () => {

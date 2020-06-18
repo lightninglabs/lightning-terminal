@@ -1,4 +1,5 @@
 import React from 'react';
+import { Router } from 'react-router';
 import { render } from '@testing-library/react';
 import { createStore, Store, StoreProvider } from 'store';
 import { ThemeProvider } from 'components/theme';
@@ -13,7 +14,9 @@ const renderWithProviders = (component: React.ReactElement, withStore?: Store) =
   const store = withStore || createStore();
   const result = render(
     <StoreProvider store={store}>
-      <ThemeProvider>{component}</ThemeProvider>
+      <ThemeProvider>
+        <Router history={store.router.history}>{component}</Router>
+      </ThemeProvider>
     </StoreProvider>,
   );
   return { ...result, store };

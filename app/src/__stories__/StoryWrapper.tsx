@@ -1,4 +1,5 @@
 import React, { CSSProperties, useMemo } from 'react';
+import { Router } from 'react-router';
 import { observer } from 'mobx-react-lite';
 import { BalanceMode, Unit } from 'util/constants';
 import { AuthenticationError } from 'util/errors';
@@ -67,11 +68,13 @@ const StoryWrapper: React.FC<{
   return (
     <StoreProvider store={store}>
       <ThemeProvider>
-        {/* modify the bg styles so it isn't too big in docs mode */}
-        <Background style={{ minHeight: 'inherit', height: '100%' }}>
-          {/* render the Story after the store has been initialized */}
-          {store.initialized ? <div style={style}>{children}</div> : null}
-        </Background>
+        <Router history={store.router.history}>
+          {/* modify the bg styles so it isn't too big in docs mode */}
+          <Background style={{ minHeight: 'inherit', height: '100%' }}>
+            {/* render the Story after the store has been initialized */}
+            {store.initialized ? <div style={style}>{children}</div> : null}
+          </Background>
+        </Router>
       </ThemeProvider>
     </StoreProvider>
   );

@@ -89,7 +89,7 @@ export class Store {
           // entering a password or from loading the credentials from storage.
           // only do this if the auth page is currently being viewed, otherwise
           // stay on the current page (ex: history, settings)
-          if (this.router.location.pathname === '/') {
+          if (document.location.pathname === '/') {
             this.uiStore.goToLoop();
           }
           // also fetch all the data we need
