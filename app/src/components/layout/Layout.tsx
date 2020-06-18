@@ -17,12 +17,12 @@ const Styled = {
     width: 100%;
     margin: 0 auto;
   `,
-  Hamburger: styled.span`
+  Hamburger: styled.span<CollapsedProps>`
     display: inline-block;
-    position: absolute;
+    position: ${props => (props.collapsed ? 'absolute' : 'fixed')};
     top: 35px;
-    left: 10px;
-    z-index: 1;
+    margin-left: 10px;
+    z-index: 2;
     padding: 4px;
 
     &:hover {
@@ -36,6 +36,7 @@ const Styled = {
     position: fixed;
     top: 0;
     height: 100vh;
+    z-index: 1;
     background-color: ${props => props.theme.colors.darkBlue};
     overflow: hidden;
 
@@ -53,6 +54,10 @@ const Styled = {
     margin-left: ${props => (props.collapsed ? '0' : '285px')};
     padding: 0 15px;
     transition: all 0.2s;
+
+    @media (max-width: 1200px) {
+      margin-left: 0;
+    }
   `,
 };
 
@@ -67,7 +72,10 @@ const StandardLayout: React.FC = observer(({ children }) => {
   return (
     <Background>
       <Container>
-        <Hamburger onClick={settingsStore.toggleSidebar}>
+        <Hamburger
+          collapsed={!settingsStore.sidebarVisible}
+          onClick={settingsStore.toggleSidebar}
+        >
           <Menu size="large" />
         </Hamburger>
         <Aside collapsed={!settingsStore.sidebarVisible}>

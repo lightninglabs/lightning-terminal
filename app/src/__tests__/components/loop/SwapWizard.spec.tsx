@@ -29,7 +29,7 @@ describe('SwapWizard component', () => {
     it('should display the description labels', () => {
       const { getByText } = render();
       expect(getByText('Step 1 of 2')).toBeInTheDocument();
-      expect(getByText('Set Liquidity Parameters')).toBeInTheDocument();
+      expect(getByText('Loop Out Amount')).toBeInTheDocument();
     });
 
     it('should navigate forward and back through each step', async () => {
@@ -63,10 +63,10 @@ describe('SwapWizard component', () => {
     it('should update the amount when the slider changes', () => {
       const { getByText, getByLabelText } = render();
       const build = store.buildSwapStore;
-      expect(+build.amount).toEqual(625000);
+      expect(+build.amountForSelected).toEqual(625000);
       expect(getByText(`625,000 sats`)).toBeInTheDocument();
       fireEvent.change(getByLabelText('range-slider'), { target: { value: '575000' } });
-      expect(+build.amount).toEqual(575000);
+      expect(+build.amountForSelected).toEqual(575000);
       expect(getByText(`575,000 sats`)).toBeInTheDocument();
     });
   });
@@ -84,7 +84,7 @@ describe('SwapWizard component', () => {
       expect(getByText('Review the quote')).toBeInTheDocument();
       expect(getByText('Loop Out Amount')).toBeInTheDocument();
       expect(getByText('Fees')).toBeInTheDocument();
-      expect(getByText('Invoice Total')).toBeInTheDocument();
+      expect(getByText('Total')).toBeInTheDocument();
     });
 
     it('should display the correct values', () => {

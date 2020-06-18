@@ -4,7 +4,9 @@ import { grpc } from '@improbable-eng/grpc-web';
 import { waitFor } from '@testing-library/react';
 import Big from 'big.js';
 import { injectIntoGrpcUnary } from 'util/tests';
+import { lndChannel, loopTerms } from 'util/tests/sampleData';
 import { BuildSwapStore, createStore, Store } from 'store';
+import { Channel } from 'store/models';
 import { SWAP_ABORT_DELAY } from 'store/stores/buildSwapStore';
 
 const grpcMock = grpc as jest.Mocked<typeof grpc>;
@@ -65,16 +67,31 @@ describe('BuildSwapStore', () => {
     });
   });
 
-  it('should adjust the amount after fetching the loop terms', async () => {
-    store.setAmount(Big(100));
+  it('should return the amount in between min/max by default', async () => {
     await store.getTerms();
-    expect(+store.amount).toBe(625000);
-    store.setAmount(Big(5000000));
+    expect(+store.amountForSelected).toBe(625000);
+  });
+
+  it('should ensure amount is greater than the min terms', async () => {
+    store.setAmount(Big(loopTerms.minSwapAmount - 100));
     await store.getTerms();
-    expect(+store.amount).toBe(625000);
-    store.setAmount(Big(500000));
+    expect(+store.amountForSelected).toBe(loopTerms.minSwapAmount);
+  });
+
+  it('should ensure amount is less than the max terms', async () => {
+    store.setAmount(Big(loopTerms.maxSwapAmount + 100));
     await store.getTerms();
-    expect(+store.amount).toBe(500000);
+    expect(+store.amountForSelected).toBe(loopTerms.maxSwapAmount);
+  });
+
+  it('should select all channels with the same peer for loop in', () => {
+    const channels = rootStore.channelStore.sortedChannels;
+    channels[1].remotePubkey = channels[0].remotePubkey;
+    channels[2].remotePubkey = channels[0].remotePubkey;
+    expect(store.selectedChanIds).toHaveLength(0);
+    store.toggleSelectedChannel(channels[0].chanId);
+    store.setDirection(SwapDirection.IN);
+    expect(store.selectedChanIds).toHaveLength(3);
   });
 
   it('should fetch a loop in quote', async () => {
@@ -145,6 +162,31 @@ describe('BuildSwapStore', () => {
         expect.anything(),
       );
     });
+  });
+
+  it('should store swapped channels after a loop in', async () => {
+    const channels = rootStore.channelStore.sortedChannels;
+    // the pubkey in the sampleData is not valid, so hard-code this valid one
+    channels[0].remotePubkey =
+      '035c82e14eb74d2324daa17eebea8c58b46a9eabac87191cc83ee26275b514e6a0';
+    store.toggleSelectedChannel(channels[0].chanId);
+    store.setDirection(SwapDirection.IN);
+    store.setAmount(Big(600));
+    expect(rootStore.swapStore.swappedChannels.size).toBe(0);
+    store.requestSwap();
+    await waitFor(() => expect(store.currentStep).toBe(BuildSwapSteps.Closed));
+    expect(rootStore.swapStore.swappedChannels.size).toBe(1);
+  });
+
+  it('should store swapped channels after a loop out', async () => {
+    const channels = rootStore.channelStore.sortedChannels;
+    store.toggleSelectedChannel(channels[0].chanId);
+    store.setDirection(SwapDirection.OUT);
+    store.setAmount(Big(600));
+    expect(rootStore.swapStore.swappedChannels.size).toBe(0);
+    store.requestSwap();
+    await waitFor(() => expect(store.currentStep).toBe(BuildSwapSteps.Closed));
+    expect(rootStore.swapStore.swappedChannels.size).toBe(1);
   });
 
   it('should set the correct swap deadline in production', async () => {
@@ -223,5 +265,61 @@ describe('BuildSwapStore', () => {
     expect(store.processingTimeout).toBeUndefined();
     expect(spy).not.toBeCalled();
     spy.mockClear();
+  });
+
+  describe('min/max swap limits', () => {
+    const addChannel = (capacity: number, localBalance: number) => {
+      const remoteBalance = capacity - localBalance;
+      const lndChan = { ...lndChannel, capacity, localBalance, remoteBalance };
+      const channel = new Channel(rootStore, lndChan);
+      channel.chanId = `${channel.chanId}${rootStore.channelStore.channels.size}`;
+      channel.remotePubkey = `${channel.remotePubkey}${rootStore.channelStore.channels.size}`;
+      rootStore.channelStore.channels.set(channel.chanId, channel);
+    };
+
+    const round = (amount: number) => {
+      return Math.floor(amount / store.AMOUNT_INCREMENT) * store.AMOUNT_INCREMENT;
+    };
+
+    beforeEach(() => {
+      rootStore.channelStore.channels.clear();
+      [
+        { capacity: 200000, local: 100000 },
+        { capacity: 100000, local: 50000 },
+        { capacity: 100000, local: 20000 },
+      ].forEach(({ capacity, local }) => addChannel(capacity, local));
+    });
+
+    it('should limit Loop In max based on all remote balances', async () => {
+      await store.getTerms();
+      store.setDirection(SwapDirection.IN);
+      // should be the sum of all remote balances minus the reserve
+      expect(+store.termsForDirection.max).toBe(round(230000 * 0.99));
+    });
+
+    it('should limit Loop In max based on selected remote balances', async () => {
+      store.toggleSelectedChannel(store.channels[0].chanId);
+      store.toggleSelectedChannel(store.channels[1].chanId);
+      await store.getTerms();
+      store.setDirection(SwapDirection.IN);
+      // should be the sum of the first two remote balances minus the reserve
+      expect(+store.termsForDirection.max).toBe(round(150000 * 0.99));
+    });
+
+    it('should limit Loop Out max based on all local balances', async () => {
+      await store.getTerms();
+      store.setDirection(SwapDirection.OUT);
+      // should be the sum of all local balances minus the reserve
+      expect(+store.termsForDirection.max).toBe(round(170000 * 0.99));
+    });
+
+    it('should limit Loop Out max based on selected local balances', async () => {
+      store.toggleSelectedChannel(store.channels[0].chanId);
+      store.toggleSelectedChannel(store.channels[1].chanId);
+      await store.getTerms();
+      store.setDirection(SwapDirection.OUT);
+      // should be the sum of the first two local balances minus the reserve
+      expect(+store.termsForDirection.max).toBe(round(150000 * 0.99));
+    });
   });
 });

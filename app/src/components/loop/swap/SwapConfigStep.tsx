@@ -38,17 +38,17 @@ const SwapConfigStep: React.FC = () => {
       <Summary>
         <StepSummary
           title={l('title')}
-          heading={l('heading')}
+          heading={l('heading', { type: buildSwapStore.direction })}
           description={l('description')}
         />
       </Summary>
       <Config>
         <Range
           showRadios
-          value={buildSwapStore.amount}
+          value={buildSwapStore.amountForSelected}
           min={buildSwapStore.termsForDirection.min}
           max={buildSwapStore.termsForDirection.max}
-          step={10000}
+          step={buildSwapStore.AMOUNT_INCREMENT}
           onChange={buildSwapStore.setAmount}
         />
         <StepButtons

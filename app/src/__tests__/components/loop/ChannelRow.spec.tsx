@@ -1,10 +1,11 @@
 import React from 'react';
+import { SwapState, SwapType } from 'types/generated/loop_pb';
 import { SwapDirection } from 'types/state';
 import { fireEvent } from '@testing-library/react';
 import { formatSats } from 'util/formatters';
 import { renderWithProviders } from 'util/tests';
 import { createStore, Store } from 'store';
-import { Channel } from 'store/models';
+import { Channel, Swap } from 'store/models';
 import ChannelRow from 'components/loop/ChannelRow';
 
 describe('ChannelRow component', () => {
@@ -52,6 +53,16 @@ describe('ChannelRow component', () => {
   it('should display the peer pubkey or alias', () => {
     const { getByText } = render();
     expect(getByText(channel.aliasLabel)).toBeInTheDocument();
+  });
+
+  it('should display the peer pubkey & alias tooltip', () => {
+    const { getByText, getAllByText } = render();
+    channel.alias = 'test-alias';
+    fireEvent.mouseEnter(getByText(channel.aliasLabel));
+    expect(getByText(channel.remotePubkey)).toBeInTheDocument();
+    expect(getAllByText(channel.alias)).toHaveLength(2);
+    channel.alias = channel.remotePubkey.substring(12);
+    expect(getByText(channel.remotePubkey)).toBeInTheDocument();
   });
 
   it('should display the capacity', () => {
@@ -120,5 +131,45 @@ describe('ChannelRow component', () => {
     expect(getByRole('checkbox')).toBeInTheDocument();
     fireEvent.click(getByRole('checkbox'));
     expect(store.buildSwapStore.selectedChanIds).toEqual([]);
+  });
+
+  describe('pending swaps', () => {
+    let swap1: Swap;
+    let swap2: Swap;
+
+    beforeEach(() => {
+      swap1 = store.swapStore.sortedSwaps[0];
+      swap2 = store.swapStore.sortedSwaps[1];
+      swap1.state = swap2.state = SwapState.INITIATED;
+    });
+
+    it('should display the pending Loop In icon', () => {
+      swap1.type = SwapType.LOOP_IN;
+      store.swapStore.addSwappedChannels(swap1.id, [channel.chanId]);
+      const { getByText } = render();
+      expect(getByText('chevrons-right.svg')).toBeInTheDocument();
+      fireEvent.mouseEnter(getByText('chevrons-right.svg'));
+      expect(getByText('Loop In currently in progress')).toBeInTheDocument();
+    });
+
+    it('should display the pending Loop Out icon', () => {
+      swap1.type = SwapType.LOOP_OUT;
+      store.swapStore.addSwappedChannels(swap1.id, [channel.chanId]);
+      const { getByText } = render();
+      expect(getByText('chevrons-left.svg')).toBeInTheDocument();
+      fireEvent.mouseEnter(getByText('chevrons-left.svg'));
+      expect(getByText('Loop Out currently in progress')).toBeInTheDocument();
+    });
+
+    it('should display the pending Loop In and Loop Out icon', () => {
+      swap1.type = SwapType.LOOP_IN;
+      swap2.type = SwapType.LOOP_OUT;
+      store.swapStore.addSwappedChannels(swap1.id, [channel.chanId]);
+      store.swapStore.addSwappedChannels(swap2.id, [channel.chanId]);
+      const { getByText } = render();
+      expect(getByText('chevrons.svg')).toBeInTheDocument();
+      fireEvent.mouseEnter(getByText('chevrons.svg'));
+      expect(getByText('Loop In and Loop Out currently in progress')).toBeInTheDocument();
+    });
   });
 });

@@ -37,6 +37,7 @@ export default class UiStore {
   @action.bound
   goToLoop() {
     this.page = 'loop';
+    this._store.settingsStore.autoCollapseSidebar();
     this._store.log.info('Go to the Loop page');
   }
 
@@ -44,6 +45,7 @@ export default class UiStore {
   @action.bound
   goToHistory() {
     this.page = 'history';
+    this._store.settingsStore.autoCollapseSidebar();
     this._store.log.info('Go to the History page');
   }
 
@@ -52,6 +54,7 @@ export default class UiStore {
   goToSettings() {
     this.page = 'settings';
     this.selectedSetting = 'general';
+    this._store.settingsStore.autoCollapseSidebar();
     this._store.log.info('Go to the Settings page');
   }
 

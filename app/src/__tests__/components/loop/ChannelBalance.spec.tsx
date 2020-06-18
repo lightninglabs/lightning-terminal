@@ -40,8 +40,8 @@ describe('ChannelBalance component', () => {
     const { el, remote, local } = render(0.52);
     expect(el.children.length).toBe(3);
     expect(width(local)).toBe('52%');
-    expect(bgColor(local)).toBe('rgb(246, 107, 28)');
-    expect(bgColor(remote)).toBe('rgb(246, 107, 28)');
+    expect(bgColor(local)).toBe('rgb(255, 249, 23)');
+    expect(bgColor(remote)).toBe('rgb(255, 249, 23)');
   });
 
   it('should display a bad balance', () => {

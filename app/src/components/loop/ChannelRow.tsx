@@ -1,22 +1,28 @@
 import React, { CSSProperties } from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
-import { BalanceStatus } from 'util/constants';
 import { useStore } from 'store';
 import { Channel } from 'store/models';
 import { Column, HeaderFour, Row } from 'components/base';
 import Checkbox from 'components/common/Checkbox';
-import StatusDot from 'components/common/StatusDot';
 import Tip from 'components/common/Tip';
 import Unit from 'components/common/Unit';
 import { styled } from 'components/theme';
 import ChannelBalance from './ChannelBalance';
+import ChannelIcon from './ChannelIcon';
 
 /**
  * the virtualized list requires each row to have a specified
  * height. Defining a const here because it is used in multiple places
  */
 export const ROW_HEIGHT = 60;
+
+const BaseColumn = styled(Column)`
+  white-space: nowrap;
+  line-height: ${ROW_HEIGHT}px;
+  padding-left: 5px;
+  padding-right: 5px;
+`;
 
 const Styled = {
   Row: styled(Row)<{ dimmed?: boolean; selectable?: boolean }>`
@@ -36,70 +42,75 @@ const Styled = {
       }
     `}
   `,
-  Column: styled(Column)<{ last?: boolean }>`
-    white-space: nowrap;
-    line-height: ${ROW_HEIGHT}px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    padding-left: 5px;
+  Column: styled(BaseColumn)<{ last?: boolean }>`
     padding-right: ${props => (props.last ? '15' : '5')}px;
   `,
+  ActionColumn: styled(BaseColumn)`
+    max-width: 50px;
+    padding-left: 24px;
+  `,
+  WideColumn: styled(BaseColumn)`
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    @media (min-width: 1200px) and (max-width: 1300px) {
+      max-width: 20%;
+    }
+  `,
   StatusIcon: styled.span`
-    float: left;
-    margin-top: -1px;
-    margin-left: 15px;
     color: ${props => props.theme.colors.pink};
   `,
   Check: styled(Checkbox)`
-    float: left;
-    margin-top: 18px;
-    margin-left: 10px;
+    margin-top: 17px;
   `,
   Balance: styled(ChannelBalance)`
     margin-top: ${ROW_HEIGHT / 2 - 2}px;
   `,
+  AliasTip: styled.div`
+    text-align: right;
+  `,
+};
+
+const ChannelAliasTip: React.FC<{ channel: Channel }> = ({ channel }) => {
+  return (
+    <Styled.AliasTip>
+      {channel.aliasDetail.split('\n').map(text => (
+        <div key={text}>{text}</div>
+      ))}
+    </Styled.AliasTip>
+  );
 };
 
 export const ChannelRowHeader: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.ChannelRowHeader');
-  const { Column } = Styled;
+  const { Column, ActionColumn, WideColumn } = Styled;
   return (
     <Row>
+      <ActionColumn></ActionColumn>
       <Column right>
         <HeaderFour>{l('canReceive')}</HeaderFour>
       </Column>
-      <Column cols={3}></Column>
+      <WideColumn cols={2} colsXl={3}></WideColumn>
       <Column>
         <HeaderFour>{l('canSend')}</HeaderFour>
       </Column>
       <Column cols={1}>
-        <HeaderFour>{l('feeRate')}</HeaderFour>
+        <Tip overlay={l('feeRateTip')} capitalize={false}>
+          <HeaderFour>{l('feeRate')}</HeaderFour>
+        </Tip>
       </Column>
       <Column cols={1}>
         <HeaderFour>{l('upTime')}</HeaderFour>
       </Column>
-      <Column cols={2}>
+      <WideColumn cols={2}>
         <HeaderFour>{l('peer')}</HeaderFour>
-      </Column>
+      </WideColumn>
       <Column right last>
         <HeaderFour>{l('capacity')}</HeaderFour>
       </Column>
     </Row>
   );
 };
-
-const ChannelDot: React.FC<{ channel: Channel }> = observer(({ channel }) => {
-  if (!channel.active) return <StatusDot status="idle" />;
-
-  switch (channel.balanceStatus) {
-    case BalanceStatus.ok:
-      return <StatusDot status="success" />;
-    case BalanceStatus.warn:
-      return <StatusDot status="warn" />;
-    case BalanceStatus.danger:
-      return <StatusDot status="error" />;
-  }
-});
 
 interface Props {
   channel: Channel;
@@ -118,7 +129,7 @@ const ChannelRow: React.FC<Props> = ({ channel, style }) => {
     store.buildSwapStore.toggleSelectedChannel(channel.chanId);
   };
 
-  const { Row, Column, StatusIcon, Check, Balance } = Styled;
+  const { Row, Column, ActionColumn, WideColumn, StatusIcon, Check, Balance } = Styled;
   return (
     <Row
       dimmed={dimmed}
@@ -126,29 +137,35 @@ const ChannelRow: React.FC<Props> = ({ channel, style }) => {
       selectable={editable && !disabled}
       onClick={editable && !disabled ? handleRowChecked : undefined}
     >
-      <Column right>
+      <ActionColumn>
         {editable ? (
           <Check checked={checked} disabled={disabled} />
         ) : (
           <StatusIcon>
-            <ChannelDot channel={channel} />
+            <ChannelIcon channel={channel} />
           </StatusIcon>
         )}
+      </ActionColumn>
+      <Column right>
         <Unit sats={channel.remoteBalance} suffix={false} />
       </Column>
-      <Column cols={3}>
+      <WideColumn cols={2} colsXl={3}>
         <Balance channel={channel} />
-      </Column>
+      </WideColumn>
       <Column>
         <Unit sats={channel.localBalance} suffix={false} />
       </Column>
       <Column cols={1}>{channel.remoteFeeRate}</Column>
       <Column cols={1}>{channel.uptimePercent}</Column>
-      <Column cols={2}>
-        <Tip overlay={channel.remotePubkey} placement="left">
+      <WideColumn cols={2}>
+        <Tip
+          overlay={<ChannelAliasTip channel={channel} />}
+          placement="left"
+          capitalize={false}
+        >
           <span>{channel.aliasLabel}</span>
         </Tip>
-      </Column>
+      </WideColumn>
       <Column right>
         <Unit sats={channel.capacity} suffix={false} />
       </Column>

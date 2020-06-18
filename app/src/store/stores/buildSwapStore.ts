@@ -19,6 +19,9 @@ export const SWAP_ABORT_DELAY = 3000;
 class BuildSwapStore {
   _store: Store;
 
+  // the increments between swap amounts that may be chosen by the user
+  AMOUNT_INCREMENT = 10000;
+
   /** determines whether to show the swap wizard */
   @observable currentStep = BuildSwapSteps.Closed;
 
@@ -89,17 +92,23 @@ class BuildSwapStore {
   /** the min/max amounts this node is allowed to swap based on the current direction */
   @computed
   get termsForDirection() {
-    let terms = { min: Big(0), max: Big(0) };
-    switch (this.direction) {
-      case SwapDirection.IN:
-        terms = this.terms.in;
-        break;
-      case SwapDirection.OUT:
-        terms = this.terms.out;
-        break;
-    }
+    return this.getTermsForDirection(this.direction);
+  }
 
-    return terms;
+  /** returns the stored amount but ensures it is between the terms min & max */
+  @computed
+  get amountForSelected() {
+    const { min, max } = this.termsForDirection;
+    if (this.amount.eq(0)) {
+      return min.plus(max).div(2).round(0);
+    }
+    if (this.amount.lt(min)) {
+      return min;
+    }
+    if (this.amount.gt(max)) {
+      return max;
+    }
+    return this.amount;
   }
 
   /** the total quoted fee to perform the current swap */
@@ -139,15 +148,42 @@ class BuildSwapStore {
   }
 
   /**
-   * determines if Loop In is allowed, which is only true when the selected
-   * channels are using a single peer. If multiple peers are chosen, then
-   * Loop in should not be allowed
+   * determines if the selected channels all use the same peer. also
+   * return true if no channels are selected
    */
   @computed
-  get loopInAllowed() {
+  get hasValidLoopInPeers() {
     if (this.selectedChanIds.length > 0) {
       return this.loopInLastHop !== undefined;
     }
+
+    return true;
+  }
+
+  /**
+   * determines if the balance of selected (or all) channels are
+   * greater than the minimum swap allowed
+   */
+  @computed
+  get isLoopInMinimumMet() {
+    const { min, max } = this.getTermsForDirection(SwapDirection.IN);
+    if (!max.gt(min)) return false;
+
+    if (this.selectedChanIds.length > 0) {
+      return this.loopInLastHop !== undefined;
+    }
+
+    return true;
+  }
+
+  /**
+   * determines if Loop Out is allowed. the balance of selected (or all)
+   * channels must be greater than the minimum swap allowed
+   */
+  @computed
+  get isLoopOutMinimumMet() {
+    const { min, max } = this.getTermsForDirection(SwapDirection.OUT);
+    if (!max.gt(min)) return false;
 
     return true;
   }
@@ -197,6 +233,10 @@ class BuildSwapStore {
   async setDirection(direction: SwapDirection): Promise<void> {
     this.direction = direction;
     this._store.log.info(`updated buildSwapStore.direction`, direction);
+    if (this.direction === SwapDirection.IN) {
+      // select all channels to the selected peer for Loop In
+      this.autoSelectPeerChannels();
+    }
     this.goToNextStep();
   }
 
@@ -218,6 +258,28 @@ class BuildSwapStore {
   }
 
   /**
+   * When performing a Loop In, you can only specify the last hop of the payment,
+   * so all channels with the selected peer may be used. This function will ensure
+   * that all channels of the selected peer are selected
+   */
+  @action.bound
+  autoSelectPeerChannels() {
+    // create an array of pubkeys for the selected channels
+    const peers = this.channels
+      .filter(c => this.selectedChanIds.includes(c.chanId))
+      .map(c => c.remotePubkey)
+      .filter((c, i, a) => a.indexOf(c) === i); // filter out duplicates
+
+    // create a list of all channels with this peer
+    const peerChannels = this.channels
+      .filter(c => peers.includes(c.remotePubkey))
+      .map(c => c.chanId);
+
+    this.selectedChanIds = peerChannels;
+    this._store.log.info(`automatically selected peer channels`, this.selectedChanIds);
+  }
+
+  /**
    * Set the amount for the swap
    * @param amount the amount in sats
    */
@@ -232,6 +294,7 @@ class BuildSwapStore {
   @action.bound
   goToNextStep() {
     if (this.currentStep === BuildSwapSteps.ChooseAmount) {
+      this.amount = this.amountForSelected;
       this.getQuote();
     } else if (this.currentStep === BuildSwapSteps.ReviewQuote) {
       this.requestSwap();
@@ -261,6 +324,7 @@ class BuildSwapStore {
   cancel() {
     this.currentStep = BuildSwapSteps.Closed;
     this.selectedChanIds = [];
+    this.amount = Big(0);
     this.quote.swapFee = Big(0);
     this.quote.minerFee = Big(0);
     this.quote.prepayAmount = Big(0);
@@ -288,13 +352,6 @@ class BuildSwapStore {
           },
         };
         this._store.log.info('updated store.terms', toJS(this.terms));
-
-        // restrict the amount whenever the terms are updated
-        const { min, max } = this.termsForDirection;
-        if (this.amount.lt(min) || this.amount.gt(max)) {
-          this.setAmount(min.plus(max).div(2).round(0));
-          this._store.log.info(`updated buildSwapStore.amount`, this.amount);
-        }
       });
     } catch (error) {
       this._store.uiStore.handleError(error, 'Unable to fetch Loop Terms');
@@ -346,6 +403,9 @@ class BuildSwapStore {
         let res: SwapResponse.AsObject;
         if (direction === SwapDirection.IN) {
           res = await this._store.api.loop.loopIn(amount, quote, this.loopInLastHop);
+          // save the channels that were used in the swap. for Loop In all channels
+          // with the same peer will be used
+          this._store.swapStore.addSwappedChannels(res.id, this.selectedChanIds);
         } else {
           // on regtest, set the publication deadline to 0 for faster swaps, otherwise
           // set it to 30 minutes in the future to reduce swap fees
@@ -355,6 +415,8 @@ class BuildSwapStore {
           // convert the selected channel ids to numbers
           const chanIds = this.selectedChanIds.map(v => parseInt(v));
           res = await this._store.api.loop.loopOut(amount, quote, chanIds, deadline);
+          // save the channels that were used in the swap
+          this._store.swapStore.addSwappedChannels(res.id, this.selectedChanIds);
         }
         this._store.log.info('completed loop', toJS(res));
         runInAction('requestSwapContinuation', () => {
@@ -378,6 +440,47 @@ class BuildSwapStore {
       clearTimeout(this.processingTimeout);
       this.processingTimeout = undefined;
     }
+  }
+
+  /**
+   * Returns the swap terms after adjusting the max based on channel balances
+   * @param direction the swap direction
+   */
+  getTermsForDirection(direction: SwapDirection) {
+    const selectors = {
+      [SwapDirection.IN]: {
+        directionTerms: { ...this.terms.in },
+        balanceSelector: (channel: Channel) => channel.remoteBalance,
+        totalBalance: this._store.channelStore.totalInbound,
+      },
+      [SwapDirection.OUT]: {
+        directionTerms: { ...this.terms.out },
+        balanceSelector: (channel: Channel) => channel.localBalance,
+        totalBalance: this._store.channelStore.totalOutbound,
+      },
+    };
+
+    const { directionTerms, balanceSelector, totalBalance } = selectors[direction];
+
+    // set the terms based on the chosen direction
+    const terms = directionTerms;
+
+    // get the total balance of the selected or all channels
+    let total = this.selectedChanIds.length
+      ? this.channels
+          .filter(c => this.selectedChanIds.includes(c.chanId))
+          .map(balanceSelector)
+          .reduce((sum, bal) => sum.plus(bal), Big(0))
+      : totalBalance;
+
+    // subtract the 1% reserve balance that cannot be spent
+    total = total.mul(0.99);
+    // decrease the max amount if it is lower than the server terms
+    if (terms.max.gt(total)) {
+      terms.max = total.div(this.AMOUNT_INCREMENT).round(0, 0).mul(this.AMOUNT_INCREMENT);
+    }
+
+    return terms;
   }
 }
 

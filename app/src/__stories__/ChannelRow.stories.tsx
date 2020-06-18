@@ -1,5 +1,6 @@
 import React from 'react';
 import { useObserver } from 'mobx-react-lite';
+import { SwapState, SwapType } from 'types/generated/loop_pb';
 import { SwapDirection } from 'types/state';
 import { lndListChannels } from 'util/tests/sampleData';
 import { useStore } from 'store';
@@ -86,4 +87,38 @@ export const Dimmed = () => {
   store.buildSwapStore.startSwap();
   store.buildSwapStore.setDirection(SwapDirection.OUT);
   return renderStory(channel);
+};
+
+export const LoopingIn = () => {
+  const store = useStore();
+  const channel = new Channel(store, lndListChannels.channelsList[0]);
+  const swap = store.swapStore.sortedSwaps[0];
+  swap.type = SwapType.LOOP_IN;
+  swap.state = SwapState.INITIATED;
+  store.swapStore.addSwappedChannels(swap.id, [channel.chanId]);
+  return renderStory(channel, { ratio: 0.3 });
+};
+
+export const LoopingOut = () => {
+  const store = useStore();
+  const channel = new Channel(store, lndListChannels.channelsList[0]);
+  const swap = store.swapStore.sortedSwaps[0];
+  swap.type = SwapType.LOOP_OUT;
+  swap.state = SwapState.INITIATED;
+  store.swapStore.addSwappedChannels(swap.id, [channel.chanId]);
+  return renderStory(channel, { ratio: 0.3 });
+};
+
+export const LoopingInAndOut = () => {
+  const store = useStore();
+  const channel = new Channel(store, lndListChannels.channelsList[0]);
+  const swap1 = store.swapStore.sortedSwaps[0];
+  swap1.type = SwapType.LOOP_IN;
+  swap1.state = SwapState.INITIATED;
+  store.swapStore.addSwappedChannels(swap1.id, [channel.chanId]);
+  const swap2 = store.swapStore.sortedSwaps[1];
+  swap2.type = SwapType.LOOP_OUT;
+  swap2.state = SwapState.INITIATED;
+  store.swapStore.addSwappedChannels(swap2.id, [channel.chanId]);
+  return renderStory(channel, { ratio: 0.3 });
 };

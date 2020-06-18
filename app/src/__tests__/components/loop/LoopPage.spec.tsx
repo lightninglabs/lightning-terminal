@@ -17,6 +17,7 @@ describe('LoopPage component', () => {
   beforeEach(async () => {
     store = createStore();
     await store.fetchAllData();
+    await store.buildSwapStore.getTerms();
   });
 
   const render = () => {
@@ -106,7 +107,7 @@ describe('LoopPage component', () => {
       store.channelStore.sortedChannels.slice(0, 1).forEach(c => {
         store.buildSwapStore.toggleSelectedChannel(c.chanId);
       });
-      fireEvent.click(getByText('Loop In'));
+      fireEvent.click(getByText('Loop Out'));
       expect(getByText('Step 1 of 2')).toBeInTheDocument();
     });
 
@@ -117,7 +118,7 @@ describe('LoopPage component', () => {
       store.channelStore.sortedChannels.slice(0, 1).forEach(c => {
         store.buildSwapStore.toggleSelectedChannel(c.chanId);
       });
-      fireEvent.click(getByText('Loop In'));
+      fireEvent.click(getByText('Loop Out'));
       expect(getByText('Step 1 of 2')).toBeInTheDocument();
       fireEvent.click(getByText('arrow-left.svg'));
       expect(getByText('Loop History')).toBeInTheDocument();
