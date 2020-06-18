@@ -14,6 +14,7 @@ GOACC_BIN := $(GO_BIN)/go-acc
 STATIK_BIN := $(GO_BIN)/statik
 
 COMMIT := $(shell git describe --abbrev=40 --dirty --tags)
+COMMIT_HASH := $(shell git rev-parse HEAD)
 
 LINT_COMMIT := v1.18.0
 GOACC_COMMIT := ddc355013f90fea78d83d3a6c71f1d37ac07ecd5
@@ -40,7 +41,7 @@ include make/release_flags.mk
 # We only return the part inside the double quote here to avoid escape issues
 # when calling the external release script. The second parameter can be used to
 # add additional ldflags if needed (currently only used for the release).
-make_ldflags = $(2) -X $(LND_PKG)/build.Commit=$(COMMIT) \
+make_ldflags = $(2) -X $(LND_PKG)/build.Commit=shushtar-$(COMMIT) \
 	-X $(LND_PKG)/build.CommitHash=$(COMMIT_HASH) \
 	-X $(LND_PKG)/build.GoVersion=$(GOVERSION) \
 	-X $(LND_PKG)/build.RawTags=$(shell echo $(1) | sed -e 's/ /,/g')
