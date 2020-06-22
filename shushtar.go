@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -125,7 +126,7 @@ func (g *Shushtar) Run() error {
 		return fmt.Errorf("please set a strong password for the UI, "+
 			"at least %d characters long", uiPasswordMinLength)
 	}
-	
+
 	// Initiate our listeners. For now, we only support listening on one
 	// port at a time because we can only pass in one pre-configured RPC
 	// listener into lnd.
@@ -427,7 +428,7 @@ func (g *Shushtar) startGrpcWebProxy() error {
 	if err != nil {
 		return fmt.Errorf("could not load statik file system: %v", err)
 	}
-	staticFileServer := http.FileServer(statikFS)
+	staticFileServer := http.FileServer(&ClientRouteWrapper{statikFS})
 
 	// Create the gRPC web proxy that connects to lnd internally using the
 	// admin macaroon and converts the browser's gRPC web calls into native
@@ -621,4 +622,23 @@ func readMacaroon(macPath string) (grpc.DialOption, error) {
 	// Now we append the macaroon credentials to the dial options.
 	cred := macaroons.NewMacaroonCredential(mac)
 	return grpc.WithPerRPCCredentials(cred), nil
+}
+
+// ClientRouteWrapper is a wrapper around a FileSystem which properly handles
+// URL routes that are defined in the client app but unknown to the backend
+// http server
+type ClientRouteWrapper struct {
+	assets http.FileSystem
+}
+
+// Open intercepts requests to open files. If the file does not exist and there
+// is no file extension, then assume this is a client side route and return the
+// contents of index.html
+func (i *ClientRouteWrapper) Open(name string) (http.File, error) {
+	ret, err := i.assets.Open(name)
+	if !os.IsNotExist(err) || filepath.Ext(name) != "" {
+		return ret, err
+	}
+
+	return i.assets.Open("/index.html")
 }
