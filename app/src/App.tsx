@@ -2,9 +2,8 @@ import React from 'react';
 import './App.scss';
 import { createStore, StoreProvider } from 'store';
 import AlertContainer from 'components/common/AlertContainer';
-import { Layout } from 'components/layout';
-import Pages from 'components/Pages';
 import { ThemeProvider } from 'components/theme';
+import Routes from './Routes';
 
 const App = () => {
   const store = createStore();
@@ -12,9 +11,7 @@ const App = () => {
   return (
     <StoreProvider store={store}>
       <ThemeProvider>
-        <Layout>
-          <Pages />
-        </Layout>
+        <Routes />
         <AlertContainer />
       </ThemeProvider>
     </StoreProvider>

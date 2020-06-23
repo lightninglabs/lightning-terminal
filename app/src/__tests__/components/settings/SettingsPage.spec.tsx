@@ -9,6 +9,7 @@ describe('SettingsPage', () => {
 
   beforeEach(() => {
     store = createStore();
+    store.uiStore.showSettings('');
   });
 
   const render = () => {
@@ -36,12 +37,12 @@ describe('SettingsPage', () => {
   it('should navigate to the Bitcoin Unit screen', () => {
     const { getByText } = render();
     fireEvent.click(getByText('Bitcoin Unit'));
-    expect(store.uiStore.selectedSetting).toEqual('unit');
+    expect(store.router.location.pathname).toEqual('/settings/unit');
   });
 
   it('should navigate to the Channel Balance Mode screen', () => {
     const { getByText } = render();
     fireEvent.click(getByText('Channel Balance Mode'));
-    expect(store.uiStore.selectedSetting).toEqual('balance');
+    expect(store.router.location.pathname).toEqual('/settings/balance');
   });
 });

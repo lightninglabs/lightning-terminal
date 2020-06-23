@@ -1,6 +1,6 @@
-import React, { ReactNode } from 'react';
+import React from 'react';
+import { Route, Switch } from 'react-router';
 import { observer } from 'mobx-react-lite';
-import { useStore } from 'store';
 import { styled } from 'components/theme';
 import BalanceSettings from './BalanceSettings';
 import GeneralSettings from './GeneralSettings';
@@ -13,23 +13,17 @@ const Styled = {
 };
 
 const SettingsPage: React.FC = () => {
-  const { uiStore } = useStore();
-
-  let cmp: ReactNode;
-  switch (uiStore.selectedSetting) {
-    case 'unit':
-      cmp = <UnitSettings />;
-      break;
-    case 'balance':
-      cmp = <BalanceSettings />;
-      break;
-    case 'general':
-    default:
-      cmp = <GeneralSettings />;
-  }
-
   const { Wrapper } = Styled;
-  return <Wrapper>{cmp}</Wrapper>;
+
+  return (
+    <Wrapper>
+      <Switch>
+        <Route path="/settings" exact component={GeneralSettings} />
+        <Route path="/settings/unit" component={UnitSettings} />
+        <Route path="/settings/balance" component={BalanceSettings} />
+      </Switch>
+    </Wrapper>
+  );
 };
 
 export default observer(SettingsPage);

@@ -29,7 +29,6 @@ export const Default = () => {
 
 export const InsideLayout = () => {
   const store = useStore();
-  store.uiStore.page = 'history';
   updateSwapsStatus(store.swapStore.sortedSwaps);
   return (
     <Layout>

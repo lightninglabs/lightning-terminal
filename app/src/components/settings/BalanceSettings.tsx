@@ -38,7 +38,7 @@ const BalanceSettings: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.settings.BalanceSettings');
   const { uiStore } = useStore();
 
-  const handleBack = useCallback(() => uiStore.showSettings('general'), [uiStore]);
+  const handleBack = useCallback(() => uiStore.showSettings(''), [uiStore]);
 
   const { Wrapper, Content } = Styled;
   return (

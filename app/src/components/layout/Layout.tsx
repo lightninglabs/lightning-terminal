@@ -61,11 +61,7 @@ const Styled = {
   `,
 };
 
-const AuthLayout: React.FC = ({ children }) => (
-  <Background gradient>{children}</Background>
-);
-
-const StandardLayout: React.FC = observer(({ children }) => {
+export const Layout: React.FC = ({ children }) => {
   const { settingsStore } = useStore();
 
   const { Container, Hamburger, Aside, Content } = Styled;
@@ -86,16 +82,6 @@ const StandardLayout: React.FC = observer(({ children }) => {
         </Content>
       </Container>
     </Background>
-  );
-});
-
-const Layout: React.FC = ({ children }) => {
-  const { uiStore } = useStore();
-
-  return uiStore.page === 'auth' ? (
-    <AuthLayout>{children}</AuthLayout>
-  ) : (
-    <StandardLayout>{children}</StandardLayout>
   );
 };
 

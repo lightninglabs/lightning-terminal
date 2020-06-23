@@ -7,7 +7,7 @@ import Layout from 'components/layout/Layout';
 describe('Layout component', () => {
   const render = () => {
     const store = createStore();
-    store.uiStore.page = 'loop';
+    store.uiStore.goToLoop();
     return renderWithProviders(<Layout />, store);
   };
 
@@ -27,38 +27,31 @@ describe('Layout component', () => {
 
   it('should navigate to the History page', () => {
     const { getByText, store } = render();
-    expect(store.uiStore.page).toBe('loop');
+    expect(store.router.location.pathname).toBe('/loop');
     fireEvent.click(getByText('History'));
-    expect(store.uiStore.page).toBe('history');
+    expect(store.router.location.pathname).toBe('/history');
     expect(getByText('History').parentElement).toHaveClass('active');
   });
 
   it('should navigate back to the Loop page', () => {
     const { getByText, store } = render();
-    expect(store.uiStore.page).toBe('loop');
+    expect(store.router.location.pathname).toBe('/loop');
     fireEvent.click(getByText('History'));
-    expect(store.uiStore.page).toBe('history');
+    expect(store.router.location.pathname).toBe('/history');
     expect(getByText('History').parentElement).toHaveClass('active');
     fireEvent.click(getByText('Lightning Loop'));
-    expect(store.uiStore.page).toBe('loop');
+    expect(store.router.location.pathname).toBe('/loop');
     expect(getByText('Lightning Loop').parentElement).toHaveClass('active');
   });
 
   it('should navigate to the Settings page', () => {
     const { getByText, store } = render();
-    expect(store.uiStore.page).toBe('loop');
+    expect(store.router.location.pathname).toBe('/loop');
     fireEvent.click(getByText('Settings'));
-    expect(store.uiStore.page).toBe('settings');
+    expect(store.router.location.pathname).toBe('/settings');
     expect(getByText('Settings').parentElement).toHaveClass('active');
     fireEvent.click(getByText('Lightning Loop'));
-    expect(store.uiStore.page).toBe('loop');
+    expect(store.router.location.pathname).toBe('/loop');
     expect(getByText('Lightning Loop').parentElement).toHaveClass('active');
-  });
-
-  it('should not display the sidebar on the auth page', () => {
-    const { getByText, queryByText, store } = render();
-    expect(getByText('menu.svg')).toBeInTheDocument();
-    store.uiStore.page = 'auth';
-    expect(queryByText('menu.svg')).not.toBeInTheDocument();
   });
 });

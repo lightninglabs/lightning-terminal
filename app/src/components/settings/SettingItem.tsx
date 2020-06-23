@@ -1,5 +1,4 @@
 import React from 'react';
-import { observer } from 'mobx-react-lite';
 import { ArrowRight, RadioButton } from 'components/base';
 import { styled } from 'components/theme';
 
@@ -51,4 +50,4 @@ const SettingItem: React.FC<Props> = ({ name, value, icon, checked, onClick }) =
   );
 };
 
-export default observer(SettingItem);
+export default SettingItem;
