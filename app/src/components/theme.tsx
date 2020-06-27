@@ -35,7 +35,7 @@ export interface Theme {
     offWhite: string;
     pink: string;
     green: string;
-    yellow: string;
+    gold: string;
     purple: string;
     overlay: string;
     gradient: string;
@@ -75,7 +75,7 @@ const theme: Theme = {
     offWhite: '#f5f5f5',
     pink: '#f5406e',
     green: '#46E80E',
-    yellow: '#fff917',
+    gold: '#efa00b',
     purple: '#57038d',
     overlay: 'rgba(245,245,245,0.04)',
     gradient: 'linear-gradient(325.53deg, #252F4A 0%, #46547B 100%);',

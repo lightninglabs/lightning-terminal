@@ -48,6 +48,6 @@ export const statusToColor = (level: BalanceStatus, active: boolean, theme: Them
   if (!active) return theme.colors.gray;
 
   if (level === BalanceStatus.danger) return theme.colors.pink;
-  if (level === BalanceStatus.warn) return theme.colors.yellow;
+  if (level === BalanceStatus.warn) return theme.colors.gold;
   return theme.colors.green;
 };
