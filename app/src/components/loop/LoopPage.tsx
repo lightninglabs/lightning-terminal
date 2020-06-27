@@ -41,11 +41,7 @@ const LoopPage: React.FC = () => {
         <SwapWizard />
       ) : (
         <>
-          <PageHeader
-            title={title}
-            onHistoryClick={uiStore.goToHistory}
-            onExportClick={channelStore.exportChannels}
-          />
+          <PageHeader title={title} onExportClick={channelStore.exportChannels} />
           <LoopTiles />
           <LoopActions />
         </>
