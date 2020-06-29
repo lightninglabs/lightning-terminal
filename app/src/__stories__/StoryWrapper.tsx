@@ -6,6 +6,7 @@ import { AuthenticationError } from 'util/errors';
 import { sampleApiResponses } from 'util/tests/sampleData';
 import { createStore, StoreProvider } from 'store';
 import { Background } from 'components/base';
+import AlertContainer from 'components/common/AlertContainer';
 import { ThemeProvider } from 'components/theme';
 
 // mock the GRPC client to return sample data instead of making an actual request
@@ -75,6 +76,7 @@ const StoryWrapper: React.FC<{
             {store.initialized ? <div style={style}>{children}</div> : null}
           </Background>
         </Router>
+        <AlertContainer />
       </ThemeProvider>
     </StoreProvider>
   );

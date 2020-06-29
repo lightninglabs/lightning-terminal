@@ -8,6 +8,7 @@ import { ReactComponent as ChevronsRightIcon } from 'assets/icons/chevrons-right
 import { ReactComponent as ChevronsIcon } from 'assets/icons/chevrons.svg';
 import { ReactComponent as ClockIcon } from 'assets/icons/clock.svg';
 import { ReactComponent as CloseIcon } from 'assets/icons/close.svg';
+import { ReactComponent as CopyIcon } from 'assets/icons/copy.svg';
 import { ReactComponent as DotIcon } from 'assets/icons/dot.svg';
 import { ReactComponent as DownloadIcon } from 'assets/icons/download.svg';
 import { ReactComponent as MaximizeIcon } from 'assets/icons/maximize.svg';
@@ -70,6 +71,7 @@ export const Chevrons = Icon.withComponent(ChevronsIcon);
 export const ChevronsLeft = Icon.withComponent(ChevronsLeftIcon);
 export const ChevronsRight = Icon.withComponent(ChevronsRightIcon);
 export const Close = Icon.withComponent(CloseIcon);
+export const Copy = Icon.withComponent(CopyIcon);
 export const Dot = Icon.withComponent(DotIcon);
 export const Menu = Icon.withComponent(MenuIcon);
 export const Minimize = Icon.withComponent(MinimizeIcon);
