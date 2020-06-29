@@ -50,6 +50,14 @@ describe('ChannelRow component', () => {
     expect(getByText(channel.uptime.toString())).toBeInTheDocument();
   });
 
+  it('should display the fee rate', () => {
+    const { getByText } = render();
+    channel.remoteFeeRate = 500;
+    expect(getByText(channel.remoteFeePct)).toBeInTheDocument();
+    fireEvent.mouseEnter(getByText(channel.remoteFeePct));
+    expect(getByText(`${channel.remoteFeeRate} ppm`)).toBeInTheDocument();
+  });
+
   it('should display the peer pubkey or alias', () => {
     const { getByText } = render();
     expect(getByText(channel.aliasLabel)).toBeInTheDocument();

@@ -155,7 +155,11 @@ const ChannelRow: React.FC<Props> = ({ channel, style }) => {
       <Column>
         <Unit sats={channel.localBalance} suffix={false} />
       </Column>
-      <Column cols={1}>{channel.remoteFeeRate}</Column>
+      <Column cols={1}>
+        <Tip overlay={`${channel.remoteFeeRate} ppm`} placement="left" capitalize={false}>
+          <span>{channel.remoteFeePct}</span>
+        </Tip>
+      </Column>
       <Column cols={1}>{channel.uptimePercent}</Column>
       <WideColumn cols={2}>
         <Tip

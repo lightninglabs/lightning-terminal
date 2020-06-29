@@ -164,10 +164,7 @@ describe('ChannelStore', () => {
     expect(channel.remoteFeeRate).toBe(0);
     // the alias is fetched from the API and should be updated after a few ticks
     await waitFor(() => {
-      const rate = +Big(lndGetChanInfo.node1Policy.feeRateMilliMsat)
-        .div(1000000)
-        .mul(100);
-      expect(channel.remoteFeeRate).toBe(rate);
+      expect(channel.remoteFeeRate).toBe(lndGetChanInfo.node1Policy.feeRateMilliMsat);
     });
   });
 

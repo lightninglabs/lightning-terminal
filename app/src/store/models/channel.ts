@@ -72,6 +72,16 @@ export default class Channel {
   }
 
   /**
+   * The remote peer's fee as a percentage
+   */
+  @computed get remoteFeePct(): string {
+    // the fee returned from the RPC is a number representing the amount of
+    // msats charged as a fee per one million msats to forward. To convert to
+    // a percentage, the value must be divided by 1M
+    return Big(this.remoteFeeRate).div(1000000).mul(100).round(2).toFixed(2);
+  }
+
+  /**
    * The order to sort this channel based on the current mode
    */
   @computed get sortOrder() {
