@@ -39,8 +39,8 @@ describe('HistoryPage', () => {
   it('should display the table headers', () => {
     const { getByText } = render();
     expect(getByText('Status')).toBeInTheDocument();
-    expect(getByText('Loop Type')).toBeInTheDocument();
-    expect(getByText('Amount (sats)')).toBeInTheDocument();
+    expect(getByText('Type')).toBeInTheDocument();
+    expect(getByText('Amount')).toBeInTheDocument();
     expect(getByText('Created')).toBeInTheDocument();
     expect(getByText('Updated')).toBeInTheDocument();
   });

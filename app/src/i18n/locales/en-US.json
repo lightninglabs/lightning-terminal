@@ -15,7 +15,7 @@
   "cmps.history.HistoryPage.pageTitle": "Loop History",
   "cmps.history.HistoryRowHeader.status": "Status",
   "cmps.history.HistoryRowHeader.amount": "Amount",
-  "cmps.history.HistoryRowHeader.type": "Loop Type",
+  "cmps.history.HistoryRowHeader.type": "Type",
   "cmps.history.HistoryRowHeader.created": "Created",
   "cmps.history.HistoryRowHeader.updated": "Updated",
   "cmps.loop.ChannelIcon.processing.in": "Loop In currently in progress",
