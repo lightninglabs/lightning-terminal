@@ -3,6 +3,7 @@ import { SwapResponse } from 'types/generated/loop_pb';
 import { BuildSwapSteps, Quote, SwapDirection, SwapTerms } from 'types/state';
 import Big from 'big.js';
 import { percentage } from 'util/bigmath';
+import { BalanceMode } from 'util/constants';
 import { formatSats } from 'util/formatters';
 import { prefixTranslation } from 'util/translate';
 import { Store } from 'store';
@@ -134,17 +135,29 @@ class BuildSwapStore {
   /** infer a swap direction based on the selected channels */
   @computed
   get inferredDirection(): SwapDirection | undefined {
-    if (this.selectedChanIds.length === 0) return undefined;
+    const mode = this._store.settingsStore.balanceMode;
+    switch (mode) {
+      case BalanceMode.routing:
+        // unable to infer a direction with no selection
+        if (this.selectedChanIds.length === 0) return undefined;
 
-    // calculate the average local balance percent
-    const percents = values(this._store.channelStore.channels)
-      .filter(c => this.selectedChanIds.includes(c.chanId))
-      .map(c => c.localPercent);
-    const sum = percents.reduce((s, p) => s + p, 0);
-    const avgPct = sum / percents.length;
+        // calculate the average local balance percent
+        const percents = values(this._store.channelStore.channels)
+          .filter(c => this.selectedChanIds.includes(c.chanId))
+          .map(c => c.localPercent);
+        const sum = percents.reduce((s, p) => s + p, 0);
+        const avgPct = sum / percents.length;
 
-    // if the average is low, suggest Loop In. Otherwise, suggest Loop Out
-    return avgPct < 50 ? SwapDirection.IN : SwapDirection.OUT;
+        // if the average is low, suggest Loop In. Otherwise, suggest Loop Out
+        return avgPct < 50 ? SwapDirection.IN : SwapDirection.OUT;
+      case BalanceMode.send:
+        // always infer Loop In when using Sending mode
+        return SwapDirection.IN;
+      case BalanceMode.receive:
+      default:
+        // always suggest Loop Out when using Receiving mode
+        return SwapDirection.OUT;
+    }
   }
 
   /**
