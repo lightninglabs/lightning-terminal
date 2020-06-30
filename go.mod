@@ -9,7 +9,7 @@ require (
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/lightninglabs/faraday v0.1.0-alpha.0.20200518080657-d3726a59507c
 	github.com/lightninglabs/loop v0.6.3-beta
-	github.com/lightningnetwork/lnd v0.10.2-beta.rc2
+	github.com/lightningnetwork/lnd v0.10.3-beta.rc1
 	github.com/lightningnetwork/lnd/cert v1.0.2
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
 	github.com/mwitkow/grpc-proxy v0.0.0-20181017164139-0f1106ef9c76
@@ -26,6 +26,6 @@ require (
 
 // Manually solve the conflict between loop's lndclient version of lnd and what
 // we explicitly need for the unified binary to work.
-replace github.com/lightningnetwork/lnd => github.com/lightningnetwork/lnd v0.10.2-beta.rc2
+replace github.com/lightningnetwork/lnd => github.com/lightningnetwork/lnd v0.10.3-beta.rc1
 
 go 1.13
