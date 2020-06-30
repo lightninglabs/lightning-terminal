@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { observable, ObservableMap, values } from 'mobx';
 import { useStore } from 'store';
 import { Channel } from 'store/models';
@@ -23,8 +23,10 @@ const channelSubset = (channels: ObservableMap<string, Channel>) => {
 
 export const Default = () => {
   const { channelStore } = useStore();
-  // only use a small set of channels
-  channelStore.channels = channelSubset(channelStore.channels);
+  useEffect(() => {
+    // only use a small set of channels
+    channelStore.channels = channelSubset(channelStore.channels);
+  }, [channelStore]);
 
   return <LoopPage />;
 };
@@ -32,8 +34,12 @@ export const Default = () => {
 export const ManyChannels = () => <LoopPage />;
 
 export const InsideLayout = () => {
-  const store = useStore();
-  store.uiStore.goToLoop();
+  const { channelStore } = useStore();
+  useEffect(() => {
+    // only use a small set of channels
+    channelStore.channels = channelSubset(channelStore.channels);
+  }, [channelStore]);
+
   return (
     <Layout>
       <LoopPage />
