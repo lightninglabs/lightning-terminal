@@ -63,5 +63,8 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": true
   },
-  "eslint.workingDirectories": ["./app"]
+  "eslint.workingDirectories": [
+    "./app"
+  ],
+  "eslint.enable": true
 }

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 import * as LND from 'types/generated/lnd_pb';
 import * as LOOP from 'types/generated/loop_pb';
 
