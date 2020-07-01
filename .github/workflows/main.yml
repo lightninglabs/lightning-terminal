@@ -9,13 +9,13 @@ on:
       - "*"
 
 jobs:
-  test:
-    name: nodejs v${{ matrix.node_version }} on ${{ matrix.os }}
+  frontend:
+    name: frontend tests on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
-        node_version: [12.x, 14.x]
+        node_version: [12.x]
         os: [ubuntu-latest, windows-latest, macOS-latest]
 
     steps:
@@ -24,9 +24,10 @@ jobs:
           git config --global core.eol lf
           git config --global core.autocrlf false
 
-      - uses: actions/checkout@v1
+      - name: git checkout
+        uses: actions/checkout@v2
 
-      - name: setup nodejs
+      - name: setup nodejs v${{ matrix.node_version }}
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node_version }}
@@ -38,13 +39,15 @@ jobs:
         id: yarn-cache-dir
         run: echo "::set-output name=dir::$(yarn cache dir)"
 
-      - uses: actions/cache@v1
+      - name: yarn cache
+        uses: actions/cache@v2
         id: yarn-cache
         with:
           path: ${{ steps.yarn-cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-${{ runner.node_version }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-yarn-${{ matrix.node_version }}-${{ hashFiles('**/yarn.lock') }}
           restore-keys: |
-            ${{ runner.os }}-${{ runner.node_version }}-yarn-
+            ${{ runner.os }}-yarn-${{ matrix.node_version }}-
+            ${{ runner.os }}-yarn-
 
       - name: install dependencies
         working-directory: ./app
@@ -62,6 +65,33 @@ jobs:
         working-directory: ./app
         run: yarn test:ci
 
-      - name: build app
-        working-directory: ./app
-        run: yarn build
+  backend:
+    name: backend build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        go_version: [1.14.x]
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+
+    steps:
+      - name: git checkout
+        uses: actions/checkout@v2
+
+      - name: go cache
+        uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ matrix.go_version }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-${{ matrix.go_version }}-${{ hashFiles('**/go.sum') }}
+            ${{ runner.os }}-go-${{ matrix.go_version }}-
+            ${{ runner.os }}-go-
+
+      - name: setup go v${{ matrix.go_version }}
+        uses: actions/setup-go@v2
+        with:
+          go-version: '~${{ matrix.go_version }}'
+
+      - name: build backend binary
+        run: make build
