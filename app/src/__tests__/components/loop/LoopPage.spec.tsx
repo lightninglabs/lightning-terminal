@@ -160,7 +160,7 @@ describe('LoopPage component', () => {
       expect(getByText('Configuring Loops')).toBeInTheDocument();
       expect(store.buildSwapStore.processingTimeout).toBeDefined();
       fireEvent.click(getByText('arrow-left.svg'));
-      expect(getByText('Review the quote')).toBeInTheDocument();
+      expect(getByText('Review Loop amount and fee')).toBeInTheDocument();
       expect(store.buildSwapStore.processingTimeout).toBeUndefined();
     });
   });

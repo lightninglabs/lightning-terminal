@@ -81,7 +81,7 @@ describe('SwapWizard component', () => {
     it('should display the description labels', () => {
       const { getByText } = render();
       expect(getByText('Step 2 of 2')).toBeInTheDocument();
-      expect(getByText('Review the quote')).toBeInTheDocument();
+      expect(getByText('Review Loop amount and fee')).toBeInTheDocument();
       expect(getByText('Loop Out Amount')).toBeInTheDocument();
       expect(getByText('Fees')).toBeInTheDocument();
       expect(getByText('Total')).toBeInTheDocument();

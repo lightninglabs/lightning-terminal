@@ -1,5 +1,4 @@
 import React from 'react';
-
 import { useStore } from 'store';
 import { HeaderFive, HeaderFour, Small } from 'components/base';
 import { styled } from 'components/theme';
@@ -11,7 +10,7 @@ const Styled = {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    max-width: 240px;
+    max-width: 265px;
   `,
   Description: styled(Small)`
     opacity: 0.5;
@@ -24,7 +23,7 @@ const Styled = {
 interface Props {
   title: string;
   heading: string;
-  description: string;
+  description?: string;
 }
 
 const StepSummary: React.FC<Props> = ({ title, heading, description }) => {
@@ -36,7 +35,7 @@ const StepSummary: React.FC<Props> = ({ title, heading, description }) => {
       <div>
         <HeaderFour>{title}</HeaderFour>
         <HeaderFive>{heading}</HeaderFive>
-        <Description>{description}</Description>
+        {description && <Description>{description}</Description>}
       </div>
       <div>
         <SelectedChannels count={buildSwapStore.selectedChanIds.length} />
