@@ -1,30 +1,36 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Route, Router, Switch } from 'react-router';
 import { useStore } from 'store';
-import AuthPage from 'components/auth/AuthPage';
-import HistoryPage from 'components/history/HistoryPage';
+import Loading from 'components/common/Loading';
 import { Layout } from 'components/layout';
-import LoopPage from 'components/loop/LoopPage';
-import SettingsPage from 'components/settings/SettingsPage';
+
+const LazyAuthPage = React.lazy(() => import('components/auth/AuthPage'));
+const LazyLoopPage = React.lazy(() => import('components/loop/LoopPage'));
+const LazyHistoryPage = React.lazy(() => import('components/history/HistoryPage'));
+const LazySettingsPage = React.lazy(() => import('components/settings/SettingsPage'));
 
 const Routes: React.FC = () => {
   const { router } = useStore();
 
   return (
-    <Router history={router.history}>
-      <Switch>
-        <Route path="/" exact component={AuthPage} />
-        <Route>
-          <Layout>
-            <Switch>
-              <Route path="/loop" component={LoopPage} />
-              <Route path="/history" component={HistoryPage} />
-              <Route path="/settings" component={SettingsPage} />
-            </Switch>
-          </Layout>
-        </Route>
-      </Switch>
-    </Router>
+    <Suspense fallback={<Loading delay={500} />}>
+      <Router history={router.history}>
+        <Switch>
+          <Route path="/" exact component={LazyAuthPage} />
+          <Route>
+            <Layout>
+              <Switch>
+                <Suspense fallback={<Loading delay={500} />}>
+                  <Route path="/loop" component={LazyLoopPage} />
+                  <Route path="/history" component={LazyHistoryPage} />
+                  <Route path="/settings" component={LazySettingsPage} />
+                </Suspense>
+              </Switch>
+            </Layout>
+          </Route>
+        </Switch>
+      </Router>
+    </Suspense>
   );
 };
 
