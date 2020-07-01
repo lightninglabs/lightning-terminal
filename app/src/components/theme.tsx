@@ -42,19 +42,23 @@ export interface Theme {
   };
 }
 
+// use the bootstrap font-families as a fallback while custom fonts are being downloaded
+const fallbackFont =
+  "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'";
+
 const theme: Theme = {
   fonts: {
     open: {
-      light: "'OpenSans Light'",
-      regular: "'OpenSans Regular'",
-      semiBold: "'OpenSans SemiBold'",
-      bold: "'OpenSans Bold'",
-      extraBold: "'OpenSans ExtraBold'",
+      light: `'OpenSans Light', ${fallbackFont}`,
+      regular: `'OpenSans Regular', ${fallbackFont}`,
+      semiBold: `'OpenSans SemiBold', ${fallbackFont}`,
+      bold: `'OpenSans Bold', ${fallbackFont}`,
+      extraBold: `'OpenSans ExtraBold', ${fallbackFont}`,
     },
     work: {
-      light: "'WorkSans Light'",
-      medium: "'WorkSans Medium'",
-      semiBold: "'WorkSans SemiBold'",
+      light: `'WorkSans Light', ${fallbackFont}`,
+      medium: `'WorkSans Medium', ${fallbackFont}`,
+      semiBold: `'WorkSans SemiBold', ${fallbackFont}`,
     },
   },
   sizes: {
