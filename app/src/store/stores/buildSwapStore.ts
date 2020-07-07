@@ -180,7 +180,7 @@ class BuildSwapStore {
   @computed
   get isLoopInMinimumMet() {
     const { min, max } = this.getTermsForDirection(SwapDirection.IN);
-    if (!max.gt(min)) return false;
+    if (!max.gte(min)) return false;
 
     if (this.selectedChanIds.length > 0) {
       return this.loopInLastHop !== undefined;
@@ -196,7 +196,7 @@ class BuildSwapStore {
   @computed
   get isLoopOutMinimumMet() {
     const { min, max } = this.getTermsForDirection(SwapDirection.OUT);
-    if (!max.gt(min)) return false;
+    if (!max.gte(min)) return false;
 
     return true;
   }
