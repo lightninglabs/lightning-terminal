@@ -74,11 +74,16 @@ export default class UiStore {
 
   /** adds a alert to the store */
   @action.bound
-  notify(message: string, title?: string) {
-    const alert: Alert = { id: Date.now(), type: 'error', message, title };
+  notify(message: string, title?: string, type: Alert['type'] = 'error') {
+    const alert: Alert = { id: Date.now(), type, message, title };
+    if (type === 'success') alert.ms = 3000;
     this.alerts.set(alert.id, alert);
     this._store.log.info('Added alert', toJS(this.alerts));
-    this._store.log.error(`[${title}] ${message}`);
+    if (type === 'error') {
+      this._store.log.error(`[${title}] ${message}`);
+    } else {
+      this._store.log.info(`[${title}] ${message}`);
+    }
   }
 
   /** removes an existing alert */

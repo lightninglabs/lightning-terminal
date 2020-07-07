@@ -9,7 +9,7 @@ const BaseIcon = styled.span`
     color: ${props => props.theme.colors.green};
   }
   &.warn {
-    color: ${props => props.theme.colors.yellow};
+    color: ${props => props.theme.colors.gold};
   }
   &.error {
     color: ${props => props.theme.colors.pink};

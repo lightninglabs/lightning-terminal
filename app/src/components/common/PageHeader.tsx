@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { styled } from 'components/theme';
-import { ArrowLeft, Clock, Download, HeaderThree } from '../base';
+import { ArrowLeft, Download, HeaderThree } from '../base';
 import Tip from './Tip';
 
 const Styled = {
@@ -44,17 +44,10 @@ interface Props {
   title: ReactNode;
   onBackClick?: () => void;
   backText?: string;
-  onHistoryClick?: () => void;
   onExportClick?: () => void;
 }
 
-const PageHeader: React.FC<Props> = ({
-  title,
-  onBackClick,
-  backText,
-  onHistoryClick,
-  onExportClick,
-}) => {
+const PageHeader: React.FC<Props> = ({ title, onBackClick, backText, onExportClick }) => {
   const { l } = usePrefixedTranslation('cmps.common.PageHeader');
   const { settingsStore } = useStore();
 
@@ -73,11 +66,6 @@ const PageHeader: React.FC<Props> = ({
         <HeaderThree>{title}</HeaderThree>
       </Center>
       <Right>
-        {onHistoryClick && (
-          <Tip placement="bottom" overlay={l('historyTip')}>
-            <Clock size="large" onClick={onHistoryClick} />
-          </Tip>
-        )}
         {onExportClick && (
           <Tip placement="bottomRight" overlay={l('exportTip')}>
             <Download size="large" onClick={onExportClick} />

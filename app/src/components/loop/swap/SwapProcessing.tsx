@@ -1,40 +1,12 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
-import loadingJson from 'assets/animations/loading.json';
 import { usePrefixedTranslation } from 'hooks';
-import { HeaderFour } from 'components/base';
-import Animation from 'components/common/Animation';
-import { styled } from 'components/theme';
-
-const Styled = {
-  Wrapper: styled.div`
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  `,
-  Loader: styled(Animation)`
-    width: 150px;
-    height: 150px;
-  `,
-  LoadingMessage: styled.div`
-    text-align: center;
-  `,
-};
+import Loading from 'components/common/Loading';
 
 const SwapProcessingStep: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.swap.SwapProcessingStep');
 
-  const { Wrapper, Loader, LoadingMessage } = Styled;
-  return (
-    <Wrapper>
-      <Loader animationData={loadingJson} loop />
-      <LoadingMessage>
-        <HeaderFour>{l('loadingMsg')}</HeaderFour>
-      </LoadingMessage>
-    </Wrapper>
-  );
+  return <Loading message={l('loadingMsg')} />;
 };
 
 export default observer(SwapProcessingStep);

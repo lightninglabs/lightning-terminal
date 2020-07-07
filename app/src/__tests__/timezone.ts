@@ -16,7 +16,7 @@ describe('Timezone', () => {
 
   it('should format the swap timestamps correctly', () => {
     const swap = new Swap(loopListSwaps.swapsList[0]);
-    expect(swap.createdOnLabel).toEqual('4/8/2020 11:59:13 PM');
-    expect(swap.updatedOnLabel).toEqual('4/9/2020 2:12:49 AM');
+    expect(swap.createdOnLabel).toEqual('Apr 8, 11:59 PM');
+    expect(swap.updatedOnLabel).toEqual('Apr 9, 2:12 AM');
   });
 });

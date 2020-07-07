@@ -6,12 +6,12 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/lightningnetwork/lnd/lncfg"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -24,6 +24,7 @@ import (
 	"github.com/lightninglabs/loop/loopd"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/lightningnetwork/lnd"
+	"github.com/lightningnetwork/lnd/lncfg"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntest/wait"
 	"github.com/lightningnetwork/lnd/macaroons"
@@ -460,7 +461,16 @@ func (g *Shushtar) startGrpcWebProxy() error {
 		// something we don't know in which case the static file server
 		// will answer with a 404.
 		log.Infof("Handling static file request: %s", req.URL.Path)
-		staticFileServer.ServeHTTP(resp, req)
+		// add 1-year cache header for static files. React uses content-based
+		// hashes in file names, so when any file is updated, the url will
+		// change causing the browser cached version to be invalidated
+		var re = regexp.MustCompile(`^\/(static|fonts|icons)\/.*`)
+		if re.MatchString(req.URL.Path) {
+			resp.Header().Set("Cache-Control", "max-age=31536000")
+		}
+		// transfer static files using gzip to save up to 70% of bandwidth
+		gzipHandler := makeGzipHandler(staticFileServer.ServeHTTP)
+		gzipHandler(resp, req)
 	}
 
 	// Create and start our HTTPS server now that will handle both gRPC web

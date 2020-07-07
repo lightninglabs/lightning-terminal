@@ -3,6 +3,7 @@ import { BuildSwapSteps, SwapDirection } from 'types/state';
 import { grpc } from '@improbable-eng/grpc-web';
 import { waitFor } from '@testing-library/react';
 import Big from 'big.js';
+import { BalanceMode } from 'util/constants';
 import { injectIntoGrpcUnary } from 'util/tests';
 import { lndChannel, loopTerms } from 'util/tests/sampleData';
 import { BuildSwapStore, createStore, Store } from 'store';
@@ -38,12 +39,43 @@ describe('BuildSwapStore', () => {
     expect(store.selectedChanIds).toHaveLength(0);
   });
 
-  it('should infer the swap direction based on the selected channels', () => {
+  it('should infer the swap direction based on the selected channels (receiving mode)', () => {
+    rootStore.settingsStore.setBalanceMode(BalanceMode.receive);
     const channels = rootStore.channelStore.sortedChannels;
     store.toggleSelectedChannel(channels[0].chanId);
     expect(store.inferredDirection).toEqual(SwapDirection.OUT);
     store.toggleSelectedChannel(channels[channels.length - 1].chanId);
+    expect(store.inferredDirection).toEqual(SwapDirection.OUT);
+  });
+
+  it('should infer the swap direction based on the selected channels (sending mode)', () => {
+    rootStore.settingsStore.setBalanceMode(BalanceMode.send);
+    const channels = rootStore.channelStore.sortedChannels;
+    store.toggleSelectedChannel(channels[0].chanId);
     expect(store.inferredDirection).toEqual(SwapDirection.IN);
+    store.toggleSelectedChannel(channels[channels.length - 1].chanId);
+    expect(store.inferredDirection).toEqual(SwapDirection.IN);
+  });
+
+  it('should infer the swap direction based on the selected channels (routing mode)', () => {
+    rootStore.settingsStore.setBalanceMode(BalanceMode.routing);
+    const channels = rootStore.channelStore.sortedChannels;
+    let c = channels[0];
+    c.localBalance = c.capacity.mul(0.2);
+    c.remoteBalance = c.capacity.sub(c.localBalance);
+    store.toggleSelectedChannel(c.chanId);
+    expect(store.inferredDirection).toEqual(SwapDirection.IN);
+
+    c = channels[channels.length - 1];
+    c.localBalance = c.capacity.mul(0.85);
+    c.remoteBalance = c.capacity.sub(c.localBalance);
+    store.toggleSelectedChannel(channels[channels.length - 1].chanId);
+    expect(store.inferredDirection).toEqual(SwapDirection.OUT);
+  });
+
+  it('should not infer the swap direction with no selected channels (routing mode)', () => {
+    rootStore.settingsStore.setBalanceMode(BalanceMode.routing);
+    expect(store.inferredDirection).toBeUndefined();
   });
 
   it('should fetch loop terms', async () => {

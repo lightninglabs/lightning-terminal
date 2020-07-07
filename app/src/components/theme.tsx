@@ -35,26 +35,30 @@ export interface Theme {
     offWhite: string;
     pink: string;
     green: string;
-    yellow: string;
+    gold: string;
     purple: string;
     overlay: string;
     gradient: string;
   };
 }
 
+// use the bootstrap font-families as a fallback while custom fonts are being downloaded
+const fallbackFont =
+  "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'";
+
 const theme: Theme = {
   fonts: {
     open: {
-      light: "'OpenSans Light'",
-      regular: "'OpenSans Regular'",
-      semiBold: "'OpenSans SemiBold'",
-      bold: "'OpenSans Bold'",
-      extraBold: "'OpenSans ExtraBold'",
+      light: `'OpenSans Light', ${fallbackFont}`,
+      regular: `'OpenSans Regular', ${fallbackFont}`,
+      semiBold: `'OpenSans SemiBold', ${fallbackFont}`,
+      bold: `'OpenSans Bold', ${fallbackFont}`,
+      extraBold: `'OpenSans ExtraBold', ${fallbackFont}`,
     },
     work: {
-      light: "'WorkSans Light'",
-      medium: "'WorkSans Medium'",
-      semiBold: "'WorkSans SemiBold'",
+      light: `'WorkSans Light', ${fallbackFont}`,
+      medium: `'WorkSans Medium', ${fallbackFont}`,
+      semiBold: `'WorkSans SemiBold', ${fallbackFont}`,
     },
   },
   sizes: {
@@ -75,7 +79,7 @@ const theme: Theme = {
     offWhite: '#f5f5f5',
     pink: '#f5406e',
     green: '#46E80E',
-    yellow: '#fff917',
+    gold: '#efa00b',
     purple: '#57038d',
     overlay: 'rgba(245,245,245,0.04)',
     gradient: 'linear-gradient(325.53deg, #252F4A 0%, #46547B 100%);',

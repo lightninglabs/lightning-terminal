@@ -20,7 +20,7 @@ const Styled = {
   ActionBar: styled.div`
     display: flex;
     align-items: center;
-    width: 595px;
+    min-width: 595px;
     padding: 15px;
     background-color: ${props => props.theme.colors.darkBlue};
     box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.5);

@@ -21,40 +21,50 @@ const Styled = {
       border-bottom-width: 0;
     }
   `,
-  Column: styled(Column)`
+  HeaderRow: styled(Row)`
+    margin-right: 0;
+  `,
+  HeaderColumn: styled(Column)`
     white-space: nowrap;
+    padding: 0 5px;
+
+    &:last-child {
+      padding-right: 0;
+    }
+  `,
+  Column: styled(Column)`
     line-height: ${ROW_HEIGHT}px;
+    padding: 0 5px;
   `,
-  StatusHeader: styled(HeaderFour)`
-    margin-left: 35px;
-  `,
-  StatusIcon: styled.span`
-    display: inline-block;
-    margin-right: 20px;
+  ActionColumn: styled(Column)`
+    max-width: 50px;
+    padding: 0 20px;
+    line-height: ${ROW_HEIGHT}px;
   `,
 };
 
 export const HistoryRowHeader: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.history.HistoryRowHeader');
-  const { StatusHeader } = Styled;
+  const { HeaderRow, ActionColumn, HeaderColumn } = Styled;
   return (
-    <Row>
-      <Column>
-        <StatusHeader>{l('status')}</StatusHeader>
-      </Column>
-      <Column>
+    <HeaderRow>
+      <ActionColumn />
+      <HeaderColumn cols={3}>
+        <HeaderFour>{l('status')}</HeaderFour>
+      </HeaderColumn>
+      <HeaderColumn>
         <HeaderFour>{l('type')}</HeaderFour>
-      </Column>
-      <Column>
-        <HeaderFour>{l('amount')} (sats)</HeaderFour>
-      </Column>
-      <Column right cols={3}>
+      </HeaderColumn>
+      <HeaderColumn right>
+        <HeaderFour>{l('amount')}</HeaderFour>
+      </HeaderColumn>
+      <HeaderColumn right>
         <HeaderFour>{l('created')}</HeaderFour>
-      </Column>
-      <Column right cols={3}>
+      </HeaderColumn>
+      <HeaderColumn right>
         <HeaderFour>{l('updated')}</HeaderFour>
-      </Column>
-    </Row>
+      </HeaderColumn>
+    </HeaderRow>
   );
 };
 
@@ -64,25 +74,19 @@ interface Props {
 }
 
 const HistoryRow: React.FC<Props> = ({ swap, style }) => {
-  const { Row, Column, StatusIcon } = Styled;
+  const { Row, Column, ActionColumn } = Styled;
   return (
     <Row style={style}>
-      <Column>
-        <StatusIcon>
-          <SwapDot swap={swap} />
-        </StatusIcon>
-        {swap.stateLabel}
-      </Column>
+      <ActionColumn>
+        <SwapDot swap={swap} />
+      </ActionColumn>
+      <Column cols={3}>{swap.stateLabel}</Column>
       <Column>{swap.typeName}</Column>
-      <Column>
+      <Column right>
         <Unit sats={swap.amount} suffix={false} />
       </Column>
-      <Column right cols={3}>
-        {swap.createdOnLabel}
-      </Column>
-      <Column right cols={3}>
-        {swap.updatedOnLabel}
-      </Column>
+      <Column right>{swap.createdOnLabel}</Column>
+      <Column right>{swap.updatedOnLabel}</Column>
     </Row>
   );
 };

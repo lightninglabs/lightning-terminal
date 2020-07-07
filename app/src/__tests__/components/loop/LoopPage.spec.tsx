@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { SwapStatus } from 'types/generated/loop_pb';
 import { grpc } from '@improbable-eng/grpc-web';
 import { fireEvent, waitFor } from '@testing-library/react';
@@ -21,7 +21,12 @@ describe('LoopPage component', () => {
   });
 
   const render = () => {
-    return renderWithProviders(<LoopPage />, store);
+    const cmp = (
+      <Suspense fallback={null}>
+        <LoopPage />
+      </Suspense>
+    );
+    return renderWithProviders(cmp, store);
   };
 
   it('should display the page title', () => {
@@ -90,14 +95,14 @@ describe('LoopPage component', () => {
     });
 
     it('should display swap wizard when Loop out is clicked', async () => {
-      const { getByText } = render();
+      const { getByText, findByText } = render();
       expect(getByText('Loop')).toBeInTheDocument();
       fireEvent.click(getByText('Loop'));
       store.channelStore.sortedChannels.slice(0, 3).forEach(c => {
         store.buildSwapStore.toggleSelectedChannel(c.chanId);
       });
       fireEvent.click(getByText('Loop Out'));
-      expect(getByText('Step 1 of 2')).toBeInTheDocument();
+      expect(await findByText('Step 1 of 2')).toBeInTheDocument();
     });
 
     it('should display the swap wizard when Loop in is clicked', async () => {
@@ -160,7 +165,7 @@ describe('LoopPage component', () => {
       expect(getByText('Configuring Loops')).toBeInTheDocument();
       expect(store.buildSwapStore.processingTimeout).toBeDefined();
       fireEvent.click(getByText('arrow-left.svg'));
-      expect(getByText('Review the quote')).toBeInTheDocument();
+      expect(getByText('Review Loop amount and fee')).toBeInTheDocument();
       expect(store.buildSwapStore.processingTimeout).toBeUndefined();
     });
   });

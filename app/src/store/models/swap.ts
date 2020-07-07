@@ -2,6 +2,7 @@ import { action, computed, observable } from 'mobx';
 import { now } from 'mobx-utils';
 import * as LOOP from 'types/generated/loop_pb';
 import Big from 'big.js';
+import formatDate from 'date-fns/format';
 import { CsvColumns } from 'util/csv';
 import { ellipseInside } from 'util/strings';
 
@@ -84,7 +85,7 @@ export default class Swap {
 
   /** The date this swap was created as formatted string */
   @computed get createdOnLabel() {
-    return `${this.createdOn.toLocaleDateString()} ${this.createdOn.toLocaleTimeString()}`;
+    return formatDate(this.createdOn, 'MMM d, h:mm a');
   }
 
   /** The date this swap was last updated as a JS Date object */
@@ -94,7 +95,7 @@ export default class Swap {
 
   /** The date this swap was last updated as formatted string */
   @computed get updatedOnLabel() {
-    return `${this.updatedOn.toLocaleDateString()} ${this.updatedOn.toLocaleTimeString()}`;
+    return formatDate(this.updatedOn, 'MMM d, h:mm a');
   }
 
   /**

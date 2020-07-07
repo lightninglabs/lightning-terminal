@@ -1,7 +1,9 @@
-import { action, observable, runInAction, toJS } from 'mobx';
+import { action, computed, observable, runInAction, toJS } from 'mobx';
 import { Transaction } from 'types/generated/lnd_pb';
 import Big from 'big.js';
+import copyToClipboard from 'copy-to-clipboard';
 import debounce from 'lodash/debounce';
+import { ellipseInside } from 'util/strings';
 import { Store } from 'store';
 import { Wallet } from '../models';
 
@@ -20,6 +22,8 @@ export default class NodeStore {
   @observable pubkey = '';
   /** the alias of the LND node */
   @observable alias = '';
+  /** the url of the LND node */
+  @observable url = '';
   /** the chain that the LND node is connected to */
   @observable chain: NodeChain = 'bitcoin';
   /** the network that the LND node is connected to */
@@ -29,6 +33,31 @@ export default class NodeStore {
 
   constructor(store: Store) {
     this._store = store;
+  }
+
+  /** the pubkey shortened to 12 chars with ellipses inside */
+  @computed get pubkeyLabel() {
+    return ellipseInside(this.pubkey);
+  }
+
+  /** the url with the pubkey shortened to 12 chars with ellipses inside */
+  @computed get urlLabel() {
+    if (!this.url) return '';
+
+    const [pubkey, host] = this.url.split('@');
+    if (!host) return '';
+
+    return `${ellipseInside(pubkey)}@${host}`;
+  }
+
+  /**
+   * Copies the value specified by the key to the user's clipboard
+   */
+  @action.bound
+  copy(key: 'pubkey' | 'alias' | 'url') {
+    copyToClipboard(this[key]);
+    const msg = `Copied ${key} to clipboard`;
+    this._store.uiStore.notify(msg, '', 'success');
   }
 
   /**
@@ -45,6 +74,9 @@ export default class NodeStore {
         if (info.chainsList && info.chainsList[0]) {
           this.chain = info.chainsList[0].chain as NodeChain;
           this.network = info.chainsList[0].network as NodeNetwork;
+        }
+        if (info.urisList && info.urisList.length > 0) {
+          this.url = info.urisList[0];
         }
         this._store.log.info('updated nodeStore info', toJS(this));
       });

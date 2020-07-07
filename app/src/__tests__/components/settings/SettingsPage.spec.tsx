@@ -1,14 +1,18 @@
 import React from 'react';
 import { fireEvent } from '@testing-library/react';
+import copyToClipboard from 'copy-to-clipboard';
 import { renderWithProviders } from 'util/tests';
 import { createStore, Store } from 'store';
 import SettingsPage from 'components/settings/SettingsPage';
 
+jest.mock('copy-to-clipboard');
+
 describe('SettingsPage', () => {
   let store: Store;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     store = createStore();
+    await store.nodeStore.fetchInfo();
     store.uiStore.showSettings('');
   });
 
@@ -44,5 +48,45 @@ describe('SettingsPage', () => {
     const { getByText } = render();
     fireEvent.click(getByText('Channel Balance Mode'));
     expect(store.router.location.pathname).toEqual('/settings/balance');
+  });
+
+  it('should display the My Node list', () => {
+    const { getByText } = render();
+    const { pubkeyLabel, alias, urlLabel } = store.nodeStore;
+    expect(getByText('My Node')).toBeInTheDocument();
+    expect(getByText('Pubkey')).toBeInTheDocument();
+    expect(getByText(pubkeyLabel)).toBeInTheDocument();
+    expect(getByText('Alias')).toBeInTheDocument();
+    expect(getByText(alias)).toBeInTheDocument();
+    expect(getByText('Url')).toBeInTheDocument();
+    expect(getByText(urlLabel)).toBeInTheDocument();
+  });
+
+  it('should not display the url if it is not defined', () => {
+    const { queryByText } = render();
+    expect(queryByText('Url')).toBeInTheDocument();
+    store.nodeStore.url = '';
+    expect(queryByText('Url')).not.toBeInTheDocument();
+    // an invalid url
+    store.nodeStore.url = 'url-without-at-sign';
+    expect(queryByText('Url')).not.toBeInTheDocument();
+  });
+
+  it('should copy the pubkey to the clipboard', async () => {
+    const { getByText } = render();
+    fireEvent.click(getByText('Pubkey'));
+    expect(copyToClipboard).toBeCalledWith(store.nodeStore.pubkey);
+  });
+
+  it('should copy the alias to the clipboard', async () => {
+    const { getByText } = render();
+    fireEvent.click(getByText('Alias'));
+    expect(copyToClipboard).toBeCalledWith(store.nodeStore.alias);
+  });
+
+  it('should copy the url to the clipboard', async () => {
+    const { getByText } = render();
+    fireEvent.click(getByText('Url'));
+    expect(copyToClipboard).toBeCalledWith(store.nodeStore.url);
   });
 });

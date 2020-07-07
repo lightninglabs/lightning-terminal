@@ -62,7 +62,7 @@ interface AlertToastProps {
 const AlertToast: React.FC<AlertToastProps> = ({ alert, onClose }) => {
   // use useEffect to only run the side-effect one time
   useEffect(() => {
-    const { id, type, message, title } = alert;
+    const { id, type, message, title, ms: autoClose } = alert;
     // create a component to display inside of the toast
     const { Body, Title, Message } = Styled;
     const body = (
@@ -72,7 +72,7 @@ const AlertToast: React.FC<AlertToastProps> = ({ alert, onClose }) => {
       </Body>
     );
     // display the toast popup containing the styled body
-    toast(body, { type, onClose: () => onClose(id) });
+    toast(body, { type, autoClose, onClose: () => onClose(id) });
   }, [alert, onClose]);
 
   // do not render anything to the dom. the toast() func will display the content

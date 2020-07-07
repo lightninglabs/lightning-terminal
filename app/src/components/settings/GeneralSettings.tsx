@@ -17,17 +17,20 @@ const Styled = {
 
 const GeneralSettings: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.settings.GeneralSettings');
-  const { uiStore, settingsStore } = useStore();
+  const { uiStore, settingsStore, nodeStore } = useStore();
 
   const handleUnit = useCallback(() => uiStore.showSettings('unit'), [uiStore]);
   const handleBalance = useCallback(() => uiStore.showSettings('balance'), [uiStore]);
+  const handleCopyPubkey = useCallback(() => nodeStore.copy('pubkey'), [nodeStore]);
+  const handleCopyAlias = useCallback(() => nodeStore.copy('alias'), [nodeStore]);
+  const handleCopyUrl = useCallback(() => nodeStore.copy('url'), [nodeStore]);
 
   const { Wrapper, Content } = Styled;
   return (
     <Wrapper>
       <PageHeader title={l('pageTitle')} />
       <Content>
-        <HeaderFour>{l('title')}</HeaderFour>
+        <HeaderFour>{l('general')}</HeaderFour>
         <SettingItem
           name={l('bitcoinUnit')}
           value={formatUnit(settingsStore.unit)}
@@ -42,6 +45,29 @@ const GeneralSettings: React.FC = () => {
           onClick={handleBalance}
           icon="arrow"
         />
+      </Content>
+      <Content>
+        <HeaderFour>{l('myNode')}</HeaderFour>
+        <SettingItem
+          name={l('pubkey')}
+          value={nodeStore.pubkeyLabel}
+          onClick={handleCopyPubkey}
+          icon="copy"
+        />
+        <SettingItem
+          name={l('alias')}
+          value={nodeStore.alias}
+          onClick={handleCopyAlias}
+          icon="copy"
+        />
+        {nodeStore.urlLabel && (
+          <SettingItem
+            name={l('url')}
+            value={nodeStore.urlLabel}
+            onClick={handleCopyUrl}
+            icon="copy"
+          />
+        )}
       </Content>
     </Wrapper>
   );

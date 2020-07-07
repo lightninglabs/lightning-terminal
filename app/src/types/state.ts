@@ -35,4 +35,6 @@ export interface Alert {
   type: 'info' | 'success' | 'warning' | 'error' | 'default';
   title?: string;
   message: string;
+  /** the number of milliseconds before the toast closes automatically */
+  ms?: number;
 }

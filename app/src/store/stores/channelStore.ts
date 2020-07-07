@@ -133,11 +133,11 @@ export default class ChannelStore {
       // set the alias on each channel in the store
       values(this.channels).forEach(c => {
         const alias = aliases[c.remotePubkey];
-        if (alias) {
+        if (alias && alias !== c.alias) {
           c.alias = alias;
-          this._store.log.info(`updated channel ${c.chanId} with alias ${alias}`);
         }
       });
+      this._store.log.info('updated channels with aliases', aliases);
     });
   }
 
@@ -162,7 +162,7 @@ export default class ChannelStore {
           const localPubkey = this._store.nodeStore.pubkey;
           const policy = node1Pub === localPubkey ? node2Policy : node1Policy;
           if (policy) {
-            acc[channelId] = +Big(policy.feeRateMilliMsat).div(1000000).mul(100);
+            acc[channelId] = policy.feeRateMilliMsat;
           }
           return acc;
         }, data);
@@ -173,11 +173,11 @@ export default class ChannelStore {
       // set the fee on each channel in the store
       values(this.channels).forEach(c => {
         const rate = feeRates[c.chanId];
-        if (rate) {
+        if (rate && c.remoteFeeRate !== rate) {
           c.remoteFeeRate = rate;
-          this._store.log.info(`updated channel ${c.chanId} with remoteFeeRate ${rate}`);
         }
       });
+      this._store.log.info('updated channels with feeRates', feeRates);
     });
   }
 

@@ -47,11 +47,7 @@ const SwapReviewStep: React.FC = () => {
   return (
     <Wrapper>
       <Summary>
-        <StepSummary
-          title={l('title')}
-          heading={l('heading')}
-          description={l('description')}
-        />
+        <StepSummary title={l('title')} heading={l('heading')} />
       </Summary>
       <Invoice>
         <div>

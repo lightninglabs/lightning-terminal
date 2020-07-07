@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, RadioButton } from 'components/base';
+import { ArrowRight, Copy, RadioButton } from 'components/base';
 import { styled } from 'components/theme';
 
 const Styled = {
@@ -31,7 +31,7 @@ const Styled = {
 interface Props {
   name: string;
   value?: string;
-  icon: 'arrow' | 'radio';
+  icon: 'arrow' | 'radio' | 'copy';
   checked?: boolean;
   onClick: () => void;
 }
@@ -46,6 +46,7 @@ const SettingItem: React.FC<Props> = ({ name, value, icon, checked, onClick }) =
         <RadioButton role="switch" checked={checked} aria-checked={checked} />
       )}
       {icon === 'arrow' && <ArrowRight size="large" />}
+      {icon === 'copy' && <Copy size="large" />}
     </Wrapper>
   );
 };
