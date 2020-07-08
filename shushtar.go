@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/lightningnetwork/lnd/lncfg"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -20,10 +19,11 @@ import (
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/jessevdk/go-flags"
 	"github.com/lightninglabs/faraday/frdrpc"
-	"github.com/lightninglabs/loop/lndclient"
+	"github.com/lightninglabs/lndclient"
 	"github.com/lightninglabs/loop/loopd"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/lightningnetwork/lnd"
+	"github.com/lightningnetwork/lnd/lncfg"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntest/wait"
 	"github.com/lightningnetwork/lnd/macaroons"
@@ -275,7 +275,7 @@ func (g *Shushtar) startSubservers(network string) error {
 		g.lndClient, err = lndclient.NewLndServices(
 			&lndclient.LndServicesConfig{
 				LndAddress:  g.lndAddr,
-				Network:     network,
+				Network:     lndclient.Network(network),
 				MacaroonDir: filepath.Dir(g.cfg.Lnd.AdminMacPath),
 				TLSPath:     g.cfg.Lnd.TLSCertPath,
 			},
@@ -324,7 +324,7 @@ func (g *Shushtar) startSubservers(network string) error {
 		return err
 	}
 
-	err = g.faradayServer.StartAsSubserver(basicClient)
+	err = g.faradayServer.StartAsSubserver(g.lndClient.LndServices)
 	if err != nil {
 		return err
 	}

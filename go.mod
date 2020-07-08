@@ -4,12 +4,13 @@ require (
 	github.com/btcsuite/btclog v0.0.0-20170628155309-84c8d2346e9f
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
-	github.com/grpc-ecosystem/grpc-gateway v1.12.2
+	github.com/grpc-ecosystem/grpc-gateway v1.14.3
 	github.com/improbable-eng/grpc-web v0.12.0
 	github.com/jessevdk/go-flags v1.4.0
-	github.com/lightninglabs/faraday v0.1.0-alpha.0.20200518080657-d3726a59507c
-	github.com/lightninglabs/loop v0.6.3-beta
-	github.com/lightningnetwork/lnd v0.10.3-beta.rc1
+	github.com/lightninglabs/faraday v0.2.0-alpha.0.20200708222452-2fe6222047a4
+	github.com/lightninglabs/lndclient v1.0.1-0.20200708220508-33580b267beb
+	github.com/lightninglabs/loop v0.6.5-beta
+	github.com/lightningnetwork/lnd v0.10.3-beta
 	github.com/lightningnetwork/lnd/cert v1.0.2
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
 	github.com/mwitkow/grpc-proxy v0.0.0-20181017164139-0f1106ef9c76
@@ -26,6 +27,10 @@ require (
 
 // Manually solve the conflict between loop's lndclient version of lnd and what
 // we explicitly need for the unified binary to work.
-replace github.com/lightningnetwork/lnd => github.com/lightningnetwork/lnd v0.10.3-beta.rc1
+replace (
+	github.com/lightninglabs/lndclient => github.com/lightninglabs/lndclient v1.0.1-0.20200708223031-76709c25d859
+	github.com/lightninglabs/loop => github.com/lightninglabs/loop v0.6.5-beta
+	github.com/lightningnetwork/lnd => github.com/lightningnetwork/lnd v0.10.3-beta
+)
 
 go 1.13
