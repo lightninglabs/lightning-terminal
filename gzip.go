@@ -1,4 +1,4 @@
-package shushtar
+package terminal
 
 import (
 	"compress/gzip"

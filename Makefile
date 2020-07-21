@@ -1,5 +1,5 @@
-PKG := github.com/lightninglabs/shushtar
-ESCPKG := github.com\/lightninglabs\/shushtar
+PKG := github.com/lightninglabs/lightning-terminal
+ESCPKG := github.com\/lightninglabs\/lightning-terminal
 LND_PKG := github.com/lightningnetwork/lnd
 
 LINT_PKG := github.com/golangci/golangci-lint/cmd/golangci-lint
@@ -41,7 +41,7 @@ include make/release_flags.mk
 # We only return the part inside the double quote here to avoid escape issues
 # when calling the external release script. The second parameter can be used to
 # add additional ldflags if needed (currently only used for the release).
-make_ldflags = $(2) -X $(LND_PKG)/build.Commit=shushtar-$(COMMIT) \
+make_ldflags = $(2) -X $(LND_PKG)/build.Commit=lightning-terminal-$(COMMIT) \
 	-X $(LND_PKG)/build.CommitHash=$(COMMIT_HASH) \
 	-X $(LND_PKG)/build.GoVersion=$(GOVERSION) \
 	-X $(LND_PKG)/build.RawTags=$(shell echo $(1) | sed -e 's/ /,/g')
@@ -97,19 +97,19 @@ build: statik-build go-build
 install: statik-build go-install
 
 go-build:
-	@$(call print, "Building shushtar.")
-	$(GOBUILD) -tags="$(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" -o shushtar-debug $(PKG)/cmd/shushtar
+	@$(call print, "Building lightning-terminal.")
+	$(GOBUILD) -tags="$(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" -o litd-debug $(PKG)/cmd/litd
 
 go-install:
-	@$(call print, "Installing shushtar.")
-	$(GOINSTALL) -tags="$(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" $(PKG)/cmd/shushtar
+	@$(call print, "Installing lightning-terminal.")
+	$(GOINSTALL) -tags="$(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" $(PKG)/cmd/litd
 
 app-build: yarn-install
 	@$(call print, "Building production app.")
 	cd app; yarn build
 
 release: statik-build
-	@$(call print, "Creating release of shushtar.")
+	@$(call print, "Creating release of lightning-terminal.")
 	./release.sh build-release "$(VERSION_TAG)" "$(BUILD_SYSTEM)" "$(LND_RELEASE_TAGS)" "$(RELEASE_LDFLAGS)"
 
 scratch: build
@@ -179,6 +179,6 @@ list:
 
 clean:
 	@$(call print, "Cleaning source.$(NC)")
-	$(RM) ./shushtar-debug
+	$(RM) ./lightning-terminal-debug
 	$(RM) coverage.txt
 	$(RM) -r statik

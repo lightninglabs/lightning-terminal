@@ -1,4 +1,4 @@
-package shushtar
+package terminal
 
 import (
 	"context"
@@ -42,7 +42,7 @@ import (
 
 	// Import generated go package that contains all static files for the
 	// UI in a compressed format.
-	_ "github.com/lightninglabs/shushtar/statik"
+	_ "github.com/lightninglabs/lightning-terminal/statik"
 )
 
 const (
@@ -61,9 +61,9 @@ var (
 	)
 )
 
-// Shushtar is the main grand unified binary instance. Its task is to start an
-// lnd node then start and register external subservers to it.
-type Shushtar struct {
+// LightningTerminal is the main grand unified binary instance. Its task is to
+// start an lnd node then start and register external subservers to it.
+type LightningTerminal struct {
 	cfg         *Config
 	lndAddr     string
 	listenerCfg lnd.ListenerCfg
@@ -84,9 +84,9 @@ type Shushtar struct {
 	httpServer   *http.Server
 }
 
-// New creates a new instance of the shushtar daemon.
-func New() *Shushtar {
-	return &Shushtar{
+// New creates a new instance of the lightning-terminal daemon.
+func New() *LightningTerminal {
+	return &LightningTerminal{
 		cfg:        defaultConfig(),
 		lndErrChan: make(chan error, 1),
 	}
@@ -94,7 +94,7 @@ func New() *Shushtar {
 
 // Run starts everything and then blocks until either the application is shut
 // down or a critical error happens.
-func (g *Shushtar) Run() error {
+func (g *LightningTerminal) Run() error {
 	// Pre-parse the command line options to pick up an alternative config
 	// file.
 	_, err := flags.Parse(g.cfg)
@@ -109,7 +109,7 @@ func (g *Shushtar) Run() error {
 		return err
 	}
 
-	// Validate the shushtar config options.
+	// Validate the lightning-terminal config options.
 	if g.cfg.LetsEncryptDir == "" {
 		g.cfg.LetsEncryptDir = filepath.Join(
 			g.cfg.Lnd.LndDir, defaultLetsEncryptDir,
@@ -253,7 +253,7 @@ func (g *Shushtar) Run() error {
 // startSubservers creates an internal connection to lnd and then starts all
 // embedded daemons as external subservers that hook into the same gRPC and REST
 // servers that lnd started.
-func (g *Shushtar) startSubservers(network string) error {
+func (g *LightningTerminal) startSubservers(network string) error {
 	var basicClient lnrpc.LightningClient
 
 	// The main RPC listener of lnd might need some time to start, it could
@@ -344,7 +344,7 @@ func (g *Shushtar) startSubservers(network string) error {
 // called once lnd has initialized its main gRPC server instance. It gives the
 // daemons (or external subservers) the possibility to register themselves to
 // the same server instance.
-func (g *Shushtar) RegisterGrpcSubserver(grpcServer *grpc.Server) error {
+func (g *LightningTerminal) RegisterGrpcSubserver(grpcServer *grpc.Server) error {
 	g.lndGrpcServer = grpcServer
 	frdrpc.RegisterFaradayServerServer(grpcServer, g.faradayServer)
 	looprpc.RegisterSwapClientServer(grpcServer, g.loopServer)
@@ -355,7 +355,7 @@ func (g *Shushtar) RegisterGrpcSubserver(grpcServer *grpc.Server) error {
 // called once lnd has initialized its main REST server instance. It gives the
 // daemons (or external subservers) the possibility to register themselves to
 // the same server instance.
-func (g *Shushtar) RegisterRestSubserver(ctx context.Context,
+func (g *LightningTerminal) RegisterRestSubserver(ctx context.Context,
 	mux *restProxy.ServeMux, endpoint string,
 	dialOpts []grpc.DialOption) error {
 
@@ -372,7 +372,7 @@ func (g *Shushtar) RegisterRestSubserver(ctx context.Context,
 }
 
 // shutdown stops all subservers that were started and attached to lnd.
-func (g *Shushtar) shutdown() error {
+func (g *LightningTerminal) shutdown() error {
 	var returnErr error
 
 	if g.faradayStarted {
@@ -422,7 +422,7 @@ func (g *Shushtar) shutdown() error {
 // startGrpcWebProxy creates a proxy that speaks gRPC web on one side and native
 // gRPC on the other side. This allows gRPC web requests from the browser to be
 // forwarded to lnd's native gRPC interface.
-func (g *Shushtar) startGrpcWebProxy() error {
+func (g *LightningTerminal) startGrpcWebProxy() error {
 	// Initialize the in-memory file server from the content compiled by
 	// the statik library.
 	statikFS, err := fs.New()

@@ -1,4 +1,4 @@
-package shushtar
+package terminal
 
 import (
 	"crypto/tls"
@@ -36,9 +36,9 @@ var (
 	defaultLetsEncryptDir = "letsencrypt"
 )
 
-// Config is the main configuration struct of shushtar. It contains all config
-// items of its enveloping subservers, each prefixed with their daemon's short
-// name.
+// Config is the main configuration struct of lightning-terminal. It contains
+// all config items of its enveloping subservers, each prefixed with their
+// daemon's short name.
 type Config struct {
 	HTTPSListen    string `long:"httpslisten" description:"host:port to listen for incoming HTTP/2 connections on"`
 	UIPassword     string `long:"uipassword" description:"the password that must be entered when using the loop UI. use a strong password to protect your node from unauthorized access through the web UI"`

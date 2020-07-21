@@ -1,7 +1,7 @@
 FROM golang:1.13-alpine as builder
 
 # Copy in the local repository to build from.
-COPY . /go/src/github.com/lightninglabs/shushtar
+COPY . /go/src/github.com/lightninglabs/lightning-terminal
 
 # Force Go to use the cgo based DNS resolver. This is required to ensure DNS
 # queries required to connect to linked containers succeed.
@@ -12,7 +12,7 @@ ENV GO111MODULE on
 
 ENV NODE_VERSION=v12.17.0
 
-# Install dependencies and install/build shushtar.
+# Install dependencies and install/build lightning-terminal.
 RUN apk add --no-cache --update alpine-sdk \
     git \
     make \
@@ -27,7 +27,7 @@ RUN apk add --no-cache --update alpine-sdk \
 && curl -o- -L https://yarnpkg.com/install.sh | bash \
 && /bin/bash \
 && . ~/.bashrc \
-&&  cd /go/src/github.com/lightninglabs/shushtar \
+&&  cd /go/src/github.com/lightninglabs/lightning-terminal \
 &&  make install \
 && go install -v -trimpath github.com/lightningnetwork/lnd/cmd/lncli \
 && go install -v -trimpath github.com/lightninglabs/faraday/cmd/frcli \
@@ -39,11 +39,11 @@ FROM alpine as final
 # Define a root volume for data persistence.
 VOLUME /root/.lnd
 
-# Expose shushtar and lnd ports (server, rpc).
+# Expose lightning-terminal and lnd ports (server, rpc).
 EXPOSE 8443 10009 9735
 
 # Copy the binaries and entrypoint from the builder image.
-COPY --from=builder /go/bin/shushtar /bin/
+COPY --from=builder /go/bin/lightning-terminal /bin/
 COPY --from=builder /go/bin/lncli /bin/
 COPY --from=builder /go/bin/frcli /bin/
 COPY --from=builder /go/bin/loop /bin/
@@ -54,5 +54,5 @@ RUN apk add --no-cache \
     jq \
     ca-certificates
 
-# Specify the start command and entrypoint as the shushtar daemon.
-ENTRYPOINT ["shushtar"]
+# Specify the start command and entrypoint as the lightning-terminal daemon.
+ENTRYPOINT ["lightning-terminal"]

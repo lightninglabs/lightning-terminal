@@ -9,11 +9,11 @@
 
 set -e
 
-PKG="github.com/lightninglabs/shushtar"
+PKG="github.com/lightninglabs/lightning-terminal"
 LND_PKG="github.com/lightningnetwork/lnd"
 FARADAY_PKG="github.com/lightninglabs/faraday"
 LOOP_PKG="github.com/lightninglabs/loop"
-PACKAGE=shushtar
+PACKAGE=lightning-terminal
 
 # green prints one line of green text (if the terminal supports it).
 function green() {
@@ -68,7 +68,7 @@ function build_release() {
     pushd "${dir}"
 
     green " - Building: ${os} ${arch} ${arm} with build tags '${buildtags}'"
-    env CGO_ENABLED=0 GOOS=$os GOARCH=$arch GOARM=$arm go build -v -trimpath -ldflags="${ldflags}" -tags="${buildtags}" ${PKG}/cmd/shushtar
+    env CGO_ENABLED=0 GOOS=$os GOARCH=$arch GOARM=$arm go build -v -trimpath -ldflags="${ldflags}" -tags="${buildtags}" ${PKG}/cmd/litd
     env CGO_ENABLED=0 GOOS=$os GOARCH=$arch GOARM=$arm go build -v -trimpath -ldflags="${ldflags}" -tags="${buildtags}" ${LND_PKG}/cmd/lncli
     env CGO_ENABLED=0 GOOS=$os GOARCH=$arch GOARM=$arm go build -v -trimpath -ldflags="${ldflags}" -tags="${buildtags}" ${FARADAY_PKG}/cmd/frcli
     env CGO_ENABLED=0 GOOS=$os GOARCH=$arch GOARM=$arm go build -v -trimpath -ldflags="${ldflags}" -tags="${buildtags}" ${LOOP_PKG}/cmd/loop
