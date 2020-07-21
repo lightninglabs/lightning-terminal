@@ -43,7 +43,7 @@ VOLUME /root/.lnd
 EXPOSE 8443 10009 9735
 
 # Copy the binaries and entrypoint from the builder image.
-COPY --from=builder /go/bin/lightning-terminal /bin/
+COPY --from=builder /go/bin/litd /bin/
 COPY --from=builder /go/bin/lncli /bin/
 COPY --from=builder /go/bin/frcli /bin/
 COPY --from=builder /go/bin/loop /bin/
@@ -55,4 +55,4 @@ RUN apk add --no-cache \
     ca-certificates
 
 # Specify the start command and entrypoint as the lightning-terminal daemon.
-ENTRYPOINT ["lightning-terminal"]
+ENTRYPOINT ["litd"]
