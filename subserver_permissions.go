@@ -1,4 +1,4 @@
-package shushtar
+package terminal
 
 import "gopkg.in/macaroon-bakery.v2/bakery"
 

@@ -5,12 +5,12 @@ import (
 	"os"
 
 	"github.com/jessevdk/go-flags"
-	"github.com/lightninglabs/shushtar"
+	"github.com/lightninglabs/lightning-terminal"
 )
 
-// main starts the shushtar application.
+// main starts the lightning-terminal application.
 func main() {
-	err := shushtar.New().Run()
+	err := terminal.New().Run()
 	if e, ok := err.(*flags.Error); err != nil &&
 		(!ok || e.Type != flags.ErrHelp) {
 

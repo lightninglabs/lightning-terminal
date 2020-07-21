@@ -1,4 +1,4 @@
-package shushtar
+package terminal
 
 import (
 	"github.com/btcsuite/btclog"
@@ -26,7 +26,7 @@ var (
 
 const (
 	// Subsystem defines the logging code for this subsystem.
-	Subsystem = "GRUB"
+	Subsystem = "LITD"
 
 	// GrpcLogSubsystem defines the logging code for the gRPC subsystem.
 	GrpcLogSubsystem = "GRPC"
