@@ -32,7 +32,8 @@ RUN apk add --no-cache --update alpine-sdk \
 &&  make install \
 && go install -v -trimpath github.com/lightningnetwork/lnd/cmd/lncli \
 && go install -v -trimpath github.com/lightninglabs/faraday/cmd/frcli \
-&& go install -v -trimpath github.com/lightninglabs/loop/cmd/loop
+&& go install -v -trimpath github.com/lightninglabs/loop/cmd/loop \
+&& go install -v -trimpath github.com/lightninglabs/pool/cmd/pool
 
 # Start a new, final image to reduce size.
 FROM alpine as final
@@ -48,6 +49,7 @@ COPY --from=builder /go/bin/litd /bin/
 COPY --from=builder /go/bin/lncli /bin/
 COPY --from=builder /go/bin/frcli /bin/
 COPY --from=builder /go/bin/loop /bin/
+COPY --from=builder /go/bin/pool /bin/
 
 # Add bash.
 RUN apk add --no-cache \

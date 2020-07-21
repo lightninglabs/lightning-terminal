@@ -2,6 +2,7 @@ package terminal
 
 import (
 	"github.com/btcsuite/btclog"
+	apertureLsat "github.com/lightninglabs/aperture/lsat"
 	"github.com/lightninglabs/faraday"
 	"github.com/lightninglabs/faraday/dataset"
 	"github.com/lightninglabs/faraday/fiat"
@@ -12,8 +13,13 @@ import (
 	"github.com/lightninglabs/loop"
 	"github.com/lightninglabs/loop/loopdb"
 	"github.com/lightninglabs/loop/lsat"
+	"github.com/lightninglabs/pool/account"
+	"github.com/lightninglabs/pool/auctioneer"
+	"github.com/lightninglabs/pool/clientdb"
+	"github.com/lightninglabs/pool/order"
 	"github.com/lightningnetwork/lnd"
 	"github.com/lightningnetwork/lnd/build"
+	"github.com/lightningnetwork/lnd/signal"
 	"google.golang.org/grpc/grpclog"
 )
 
@@ -70,6 +76,14 @@ func SetupLoggers(root *build.RotatingLogWriter) {
 
 	// Setup the gRPC loggers too.
 	grpclog.SetLoggerV2(NewGrpcLogLogger(root, GrpcLogSubsystem))
+
+	// Add llm loggers to lnd's root logger.
+	lnd.AddSubLogger(root, auctioneer.Subsystem, auctioneer.UseLogger)
+	lnd.AddSubLogger(root, order.Subsystem, order.UseLogger)
+	lnd.AddSubLogger(root, "SGNL", signal.UseLogger)
+	lnd.AddSubLogger(root, account.Subsystem, account.UseLogger)
+	lnd.AddSubLogger(root, apertureLsat.Subsystem, apertureLsat.UseLogger)
+	lnd.AddSubLogger(root, clientdb.Subsystem, clientdb.UseLogger)
 }
 
 // NewGrpcLogLogger creates a new grpclog compatible logger and attaches it as

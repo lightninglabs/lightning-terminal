@@ -109,7 +109,7 @@ func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 //    | director                 |    | local subserver    |
 //    +---+----------------------+    |  - loop            |
 //        |                           |  - faraday         |
-//        v authenticated call        |                    |
+//        v authenticated call        |  - pool            |
 //    +---+----------------------+    +--------------------+
 //    | lnd (remote or local)    |
 //    +--------------------------+
@@ -323,6 +323,9 @@ func (p *rpcProxy) basicAuthToMacaroon(ctx context.Context,
 
 	case isFaradayURI(requestURI):
 		macPath = p.cfg.Faraday.MacaroonPath
+
+	case isPoolURI(requestURI):
+		macPath = p.cfg.Pool.MacaroonPath
 
 	default:
 		return ctx, fmt.Errorf("unknown gRPC web request: %v",
