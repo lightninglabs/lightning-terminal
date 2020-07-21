@@ -98,11 +98,11 @@ install: statik-build go-install
 
 go-build:
 	@$(call print, "Building lightning-terminal.")
-	$(GOBUILD) -tags="$(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" -o lightning-terminal-debug $(PKG)/cmd/lightning-terminal
+	$(GOBUILD) -tags="$(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" -o litd-debug $(PKG)/cmd/litd
 
 go-install:
 	@$(call print, "Installing lightning-terminal.")
-	$(GOINSTALL) -tags="$(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" $(PKG)/cmd/lightning-terminal
+	$(GOINSTALL) -tags="$(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" $(PKG)/cmd/litd
 
 app-build: yarn-install
 	@$(call print, "Building production app.")
