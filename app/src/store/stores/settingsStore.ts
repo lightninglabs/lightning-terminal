@@ -6,6 +6,7 @@ export interface PersistentSettings {
   sidebarVisible: boolean;
   unit: Unit;
   balanceMode: BalanceMode;
+  tourAutoShown: boolean;
 }
 
 export default class SettingsStore {
@@ -16,6 +17,9 @@ export default class SettingsStore {
 
   /** determines if the sidebar should collapse automatically for smaller screen widths */
   @observable autoCollapse = false;
+
+  /** determines if the tour was automatically displayed on the first visit */
+  @observable tourAutoShown = false;
 
   /** specifies which denomination to show units in */
   @observable unit: Unit = Unit.sats;
@@ -74,6 +78,7 @@ export default class SettingsStore {
           sidebarVisible: this.sidebarVisible,
           unit: this.unit,
           balanceMode: this.balanceMode,
+          tourAutoShown: this.tourAutoShown,
         };
         this._store.storage.set('settings', settings);
         this._store.log.info('saved settings to localStorage', settings);
@@ -93,6 +98,7 @@ export default class SettingsStore {
       this.sidebarVisible = settings.sidebarVisible;
       this.unit = settings.unit;
       this.balanceMode = settings.balanceMode;
+      this.tourAutoShown = settings.tourAutoShown;
       this._store.log.info('loaded settings', settings);
     }
 

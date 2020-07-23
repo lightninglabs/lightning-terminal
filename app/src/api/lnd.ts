@@ -13,7 +13,7 @@ interface LndEvents {
  * An API wrapper to communicate with the LND node via GRPC
  */
 class LndApi extends BaseApi<LndEvents> {
-  private _grpc: GrpcClient;
+  _grpc: GrpcClient;
 
   constructor(grpc: GrpcClient) {
     super();

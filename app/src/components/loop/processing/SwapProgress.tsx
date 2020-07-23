@@ -63,7 +63,7 @@ const SwapProgress: React.FC<Props> = ({ swap }) => {
 
   const { Wrapper, Status, Track, Fill } = Styled;
   return (
-    <Wrapper>
+    <Wrapper data-tour="swap-progress">
       <Status pct={pct}>
         <span>{swap.typeName}</span>
         <span>{swap.stateLabel}</span>

@@ -50,10 +50,10 @@ const ProcessingSwaps: React.FC = () => {
       <Header>
         <HeaderFour>{l('title')}</HeaderFour>
         <Tip overlay={l('minimizeTip')}>
-          <Minimize onClick={uiStore.toggleProcessingSwaps} />
+          <Minimize data-tour="swap-minimize" onClick={uiStore.toggleProcessingSwaps} />
         </Tip>
       </Header>
-      <Content>
+      <Content data-tour="processing-swaps">
         {swapStore.processingSwaps.map(swap => (
           <ProcessingSwapRow key={swap.id} swap={swap} />
         ))}

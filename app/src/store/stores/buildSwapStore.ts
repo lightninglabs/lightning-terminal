@@ -233,6 +233,7 @@ class BuildSwapStore {
       this._store.uiStore.notify(l('noChannelsMsg'));
       return;
     }
+    this._store.uiStore.tourGoToNext();
     this.currentStep = BuildSwapSteps.SelectDirection;
     await this.getTerms();
     this._store.log.info(`updated buildSwapStore.currentStep`, this.currentStep);
@@ -315,6 +316,7 @@ class BuildSwapStore {
 
     this.currentStep++;
     this._store.log.info(`updated buildSwapStore.currentStep`, this.currentStep);
+    this._store.uiStore.tourGoToNext();
   }
 
   /**
@@ -436,6 +438,7 @@ class BuildSwapStore {
           // hide the swap UI after it is complete
           this.cancel();
           this._store.uiStore.toggleProcessingSwaps();
+          this._store.uiStore.tourGoToNext();
         });
       } catch (error) {
         this._store.uiStore.handleError(error, `Unable to Perform ${direction}`);

@@ -23,15 +23,27 @@ const LoopTiles: React.FC = () => {
     <TileSection>
       <Row>
         <Column>
-          <Tile title={l('history')} onMaximizeClick={uiStore.toggleProcessingSwaps}>
+          <Tile
+            tour="history"
+            title={l('history')}
+            onMaximizeClick={uiStore.toggleProcessingSwaps}
+          >
             <LoopHistory />
           </Tile>
         </Column>
         <Column cols={4}>
-          <Tile title={l('inbound')} text={<Unit sats={channelStore.totalInbound} />} />
+          <Tile
+            tour="inbound"
+            title={l('inbound')}
+            text={<Unit sats={channelStore.totalInbound} />}
+          />
         </Column>
         <Column cols={4}>
-          <Tile title={l('outbound')} text={<Unit sats={channelStore.totalOutbound} />} />
+          <Tile
+            tour="outbound"
+            title={l('outbound')}
+            text={<Unit sats={channelStore.totalOutbound} />}
+          />
         </Column>
       </Row>
     </TileSection>

@@ -110,7 +110,7 @@ export const lndChannel: LND.Channel.AsObject = {
   closeAddress: '',
 };
 
-export const lndListChannels: LND.ListChannelsResponse.AsObject = {
+export const lndListChannelsMany: LND.ListChannelsResponse.AsObject = {
   channelsList: [...Array(500)].map((_, i) => {
     const c = lndChannel;
     // pick a random capacity between 0.5 and 1 BTC
@@ -128,6 +128,10 @@ export const lndListChannels: LND.ListChannelsResponse.AsObject = {
       uptime: Math.floor(Math.random() * (c.lifetime / 2)) + c.lifetime / 2,
     };
   }),
+};
+
+export const lndListChannels: LND.ListChannelsResponse.AsObject = {
+  channelsList: lndListChannelsMany.channelsList.slice(0, 10),
 };
 
 const txIdBytes = Buffer.from(txId, 'hex').reverse().toString('base64');

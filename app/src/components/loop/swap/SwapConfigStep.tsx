@@ -34,7 +34,7 @@ const SwapConfigStep: React.FC = () => {
 
   const { Wrapper, Summary, Config } = Styled;
   return (
-    <Wrapper>
+    <Wrapper data-tour="loop-amount">
       <Summary>
         <StepSummary
           title={l('title')}

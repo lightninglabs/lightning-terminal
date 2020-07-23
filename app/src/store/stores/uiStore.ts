@@ -1,4 +1,5 @@
 import { action, observable, toJS } from 'mobx';
+import { SwapState } from 'types/generated/loop_pb';
 import { Alert } from 'types/state';
 import { AuthenticationError } from 'util/errors';
 import { prefixTranslation } from 'util/translate';
@@ -13,6 +14,9 @@ export default class UiStore {
 
   /** indicates if the Processing Loops section is displayed on the Loop page */
   @observable processingSwapsVisible = false;
+  /** indicates if the tour is visible */
+  @observable tourVisible = false;
+  @observable tourActiveStep = 0;
   /** a collection of alerts to display as toasts */
   @observable alerts = observable.map<number, Alert>();
 
@@ -39,6 +43,10 @@ export default class UiStore {
   goToLoop() {
     this.goTo('/loop');
     this._store.settingsStore.autoCollapseSidebar();
+    if (!this._store.settingsStore.tourAutoShown) {
+      this.showTour();
+      this._store.settingsStore.tourAutoShown = true;
+    }
     this._store.log.info('Go to the Loop page');
   }
 
@@ -62,6 +70,81 @@ export default class UiStore {
   @action.bound
   toggleProcessingSwaps() {
     this.processingSwapsVisible = !this.processingSwapsVisible;
+    if (!this.processingSwapsVisible) {
+      this.tourGoToNext();
+    }
+  }
+
+  /** Display the tour */
+  @action.bound
+  showTour() {
+    this.tourVisible = true;
+    this.tourActiveStep = 0;
+    this._store.buildSwapStore.cancel();
+  }
+
+  /** Close the tour and switch back to using real data */
+  @action.bound
+  closeTour() {
+    this.tourVisible = false;
+    if (this._store.api.lnd._grpc.useSampleData) {
+      // when the tour is closed, clear the sample data and load the real data
+      this._store.api.lnd._grpc.useSampleData = false;
+      // clear the sample data
+      this._store.channelStore.channels.clear();
+      this._store.swapStore.swaps.clear();
+      // fetch all the real data from the backend
+      this._store.fetchAllData();
+      // connect and subscribe to the server-side streams
+      this._store.connectToStreams();
+      this._store.subscribeToStreams();
+    }
+  }
+
+  /** set the current step in the tour */
+  @action.bound
+  setTourActiveStep(step: number) {
+    this.tourActiveStep = step;
+
+    if (step === 1) {
+      // #1 is the node-status step
+      // show the sidebar if autoCollapse is enabled
+      if (!this._store.settingsStore.sidebarVisible) {
+        this._store.settingsStore.sidebarVisible = true;
+      }
+      // clear the real data from the UI and load sample data
+      this._store.api.lnd._grpc.useSampleData = true;
+      // clear the real data
+      this._store.channelStore.channels.clear();
+      this._store.swapStore.swaps.clear();
+      // unsubscribe from streams since we are no longer authenticated
+      this._store.unsubscribeFromStreams();
+      // fetch all the sample data from the backend
+      this._store.fetchAllData();
+    } else if (step === 2) {
+      // #2 is the export icon
+      // hide the sidebar if autoCollapse is enabled
+      if (this._store.settingsStore.autoCollapse) {
+        this._store.settingsStore.sidebarVisible = false;
+      }
+    } else if (step === 3) {
+      // #3 is the history step
+      // change the most recent swap to be pending
+      this._store.swapStore.sortedSwaps[0].state = SwapState.INITIATED;
+      this._store.swapStore.sortedSwaps[0].lastUpdateTime = Date.now() * 1000 * 1000;
+    } else if (step === 21 /* swap-progress */) {
+      // #21 is the swap-progress step
+      // force the swap to be 100% complete
+      this._store.swapStore.sortedSwaps[0].state = SwapState.SUCCESS;
+    }
+  }
+
+  /** Go to the next step in the tour */
+  @action.bound
+  tourGoToNext() {
+    if (this.tourVisible) {
+      this.tourActiveStep = this.tourActiveStep + 1;
+    }
   }
 
   /** sets the selected setting to display */

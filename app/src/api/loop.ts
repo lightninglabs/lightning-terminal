@@ -14,7 +14,7 @@ interface LoopEvents {
  * An API wrapper to communicate with the Loop daemon via GRPC
  */
 class LoopApi extends BaseApi<LoopEvents> {
-  private _grpc: GrpcClient;
+  _grpc: GrpcClient;
 
   constructor(grpc: GrpcClient) {
     super();

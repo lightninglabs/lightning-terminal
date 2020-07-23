@@ -88,25 +88,25 @@ export const ChannelRowHeader: React.FC = () => {
     <Row>
       <ActionColumn></ActionColumn>
       <Column right>
-        <HeaderFour>{l('canReceive')}</HeaderFour>
+        <HeaderFour data-tour="channel-list-receive">{l('canReceive')}</HeaderFour>
       </Column>
       <WideColumn cols={2} colsXl={3}></WideColumn>
       <Column>
-        <HeaderFour>{l('canSend')}</HeaderFour>
+        <HeaderFour data-tour="channel-list-send">{l('canSend')}</HeaderFour>
       </Column>
       <Column cols={1}>
         <Tip overlay={l('feeRateTip')} capitalize={false}>
-          <HeaderFour>{l('feeRate')}</HeaderFour>
+          <HeaderFour data-tour="channel-list-fee">{l('feeRate')}</HeaderFour>
         </Tip>
       </Column>
       <Column cols={1}>
-        <HeaderFour>{l('upTime')}</HeaderFour>
+        <HeaderFour data-tour="channel-list-uptime">{l('upTime')}</HeaderFour>
       </Column>
       <WideColumn cols={2}>
-        <HeaderFour>{l('peer')}</HeaderFour>
+        <HeaderFour data-tour="channel-list-peer">{l('peer')}</HeaderFour>
       </WideColumn>
       <Column right last>
-        <HeaderFour>{l('capacity')}</HeaderFour>
+        <HeaderFour data-tour="channel-list-capacity">{l('capacity')}</HeaderFour>
       </Column>
     </Row>
   );
