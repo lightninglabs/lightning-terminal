@@ -18,9 +18,9 @@ import (
 )
 
 var (
-	// log is a logger that is initialized with no output filters.  This means the
-	// package will not perform any logging by default until the caller requests
-	// it.
+	// log is a logger that is initialized with no output filters. This
+	// means the package will not perform any logging by default until the
+	// caller requests it.
 	log btclog.Logger
 )
 
@@ -50,7 +50,7 @@ func UseLogger(logger btclog.Logger) {
 
 // SetupLoggers initializes all package-global logger variables.
 func SetupLoggers(root *build.RotatingLogWriter) {
-	// Add the GrUB logger.
+	// Add the lightning-terminal root logger.
 	lnd.AddSubLogger(root, Subsystem, UseLogger)
 
 	// Add faraday loggers to lnd's root logger.
