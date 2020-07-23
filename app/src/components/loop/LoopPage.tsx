@@ -25,9 +25,9 @@ const LoopPage: React.FC = () => {
     <>
       {l('pageTitle')}
       {nodeStore.network !== 'mainnet' && (
-        <sup>
+        <div>
           <Badge>{nodeStore.network}</Badge>
-        </sup>
+        </div>
       )}
     </>
   );
