@@ -1,7 +1,6 @@
 import React, { ReactNode } from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
-import { useStore } from 'store';
 import { styled } from 'components/theme';
 import { ArrowLeft, Download, HeaderThree, HelpCircle } from '../base';
 import Tip from './Tip';
@@ -11,10 +10,9 @@ const Styled = {
     display: flex;
     justify-content: space-between;
   `,
-  Left: styled.span<{ sidebar?: boolean }>`
+  Left: styled.span`
     flex: 1;
     text-align: left;
-    padding-left: ${props => (props.sidebar ? '0' : '40px')};
   `,
   Center: styled.span`
     flex: 1;
@@ -56,12 +54,11 @@ const PageHeader: React.FC<Props> = ({
   onExportClick,
 }) => {
   const { l } = usePrefixedTranslation('cmps.common.PageHeader');
-  const { settingsStore } = useStore();
 
   const { Wrapper, Left, Center, Right, BackLink } = Styled;
   return (
     <Wrapper>
-      <Left sidebar={settingsStore.sidebarVisible}>
+      <Left>
         {onBackClick && (
           <BackLink onClick={onBackClick}>
             <ArrowLeft />

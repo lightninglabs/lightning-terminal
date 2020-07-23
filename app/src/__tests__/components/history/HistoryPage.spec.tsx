@@ -21,16 +21,6 @@ describe('HistoryPage', () => {
     expect(getByText('Loop History')).toBeInTheDocument();
   });
 
-  it('should display the back link', () => {
-    const { getByText } = render();
-    expect(getByText('Lightning Loop')).toBeInTheDocument();
-  });
-
-  it('should display the back icon', () => {
-    const { getByText } = render();
-    expect(getByText('arrow-left.svg')).toBeInTheDocument();
-  });
-
   it('should display the export icon', () => {
     const { getByText } = render();
     expect(getByText('download.svg')).toBeInTheDocument();
@@ -43,12 +33,6 @@ describe('HistoryPage', () => {
     expect(getByText('Amount')).toBeInTheDocument();
     expect(getByText('Created')).toBeInTheDocument();
     expect(getByText('Updated')).toBeInTheDocument();
-  });
-
-  it('should navigate back to the Loop Page', () => {
-    const { getByText } = render();
-    fireEvent.click(getByText('arrow-left.svg'));
-    expect(store.router.location.pathname).toBe('/loop');
   });
 
   it('should export channels', () => {
