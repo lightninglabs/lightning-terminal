@@ -132,7 +132,7 @@ func (g *LightningTerminal) Run() error {
 	// port at a time because we can only pass in one pre-configured RPC
 	// listener into lnd.
 	if len(g.cfg.Lnd.RPCListeners) > 1 {
-		return fmt.Errorf("grub only supports one RPC listener at a " +
+		return fmt.Errorf("litd only supports one RPC listener at a " +
 			"time")
 	}
 	rpcAddr := g.cfg.Lnd.RPCListeners[0]
