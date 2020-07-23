@@ -27,7 +27,7 @@
   "cmps.loop.ChannelRowHeader.canSend": "Can Send",
   "cmps.loop.ChannelRowHeader.feeRate": "In Fee %",
   "cmps.loop.ChannelRowHeader.feeRateTip": "The fee charged by the peer to route inbound payments through the channel",
-  "cmps.loop.ChannelRowHeader.upTime": "Up Time %",
+  "cmps.loop.ChannelRowHeader.upTime": "Uptime %",
   "cmps.loop.ChannelRowHeader.peer": "Peer/Alias",
   "cmps.loop.ChannelRowHeader.capacity": "Capacity",
   "cmps.loop.SelectedChannels.channelSelected": "channel selected",
