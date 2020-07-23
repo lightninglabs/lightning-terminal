@@ -105,8 +105,8 @@ const tourSteps: ReactourStep[] = [
     content: createTextStep('swapProgress'),
   },
   {
-    selector: '[data-tour="swap-minimize"]',
-    content: createTextStep('swapMinimize', false),
+    selector: '[data-tour="swap-close"]',
+    content: createTextStep('swapClose', false),
   },
   {
     // eslint-disable-next-line react/display-name

@@ -127,9 +127,9 @@ describe('TourHost component', () => {
     expect(getByText(l('swapProgress'))).toBeInTheDocument();
 
     fireEvent.click(getByText('Next'));
-    expect(getByText(firstLine(l('swapMinimize')))).toBeInTheDocument();
+    expect(getByText(firstLine(l('swapClose')))).toBeInTheDocument();
 
-    fireEvent.click(getByText('minimize.svg'));
+    fireEvent.click(getByText('close.svg'));
     expect(getByText('Congratulations!')).toBeInTheDocument();
 
     fireEvent.click(getByText('Close'));
