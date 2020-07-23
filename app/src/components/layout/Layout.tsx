@@ -42,7 +42,7 @@ const Styled = {
 
     /* change sidebar dimensions based on collapsed toggle */
     width: ${props => (props.collapsed ? '0' : '285px')};
-    padding: ${props => (props.collapsed ? '0' : '15px')};
+    padding: ${props => (props.collapsed ? '0' : '0 15px')};
     transition: all 0.2s;
 
     /* set a width on the child to improve the collapse animation */
