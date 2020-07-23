@@ -31,7 +31,7 @@ describe('LoopPage component', () => {
 
   it('should display the page title', () => {
     const { getByText } = render();
-    expect(getByText('Lightning Loop')).toBeInTheDocument();
+    expect(getByText('Lightning Terminal')).toBeInTheDocument();
   });
 
   it('should display the network badge', () => {

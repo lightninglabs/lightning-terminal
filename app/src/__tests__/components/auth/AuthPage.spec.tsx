@@ -21,7 +21,8 @@ describe('AuthPage ', () => {
 
   it('should display the title', () => {
     const { getByText } = render();
-    expect(getByText('Shushtar')).toBeInTheDocument();
+    expect(getByText('Lightning')).toBeInTheDocument();
+    expect(getByText('Terminal')).toBeInTheDocument();
   });
 
   it('should display the password field', () => {
@@ -36,9 +37,11 @@ describe('AuthPage ', () => {
 
   it('should display nothing when the store is not initialized', () => {
     const { getByText, queryByText } = render();
-    expect(getByText('Shushtar')).toBeInTheDocument();
+    expect(getByText('Lightning')).toBeInTheDocument();
+    expect(getByText('Terminal')).toBeInTheDocument();
     store.initialized = false;
-    expect(queryByText('Shushtar')).not.toBeInTheDocument();
+    expect(queryByText('Lightning')).not.toBeInTheDocument();
+    expect(queryByText('Terminal')).not.toBeInTheDocument();
   });
 
   it('should display an error when submitting an empty password', async () => {
