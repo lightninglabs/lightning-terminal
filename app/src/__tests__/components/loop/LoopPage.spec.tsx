@@ -79,6 +79,11 @@ describe('LoopPage component', () => {
     expect(getByText('download.svg')).toBeInTheDocument();
   });
 
+  it('should display the help icon', () => {
+    const { getByText } = render();
+    expect(getByText('help-circle.svg')).toBeInTheDocument();
+  });
+
   it('should export channels', () => {
     const { getByText } = render();
     fireEvent.click(getByText('download.svg'));
