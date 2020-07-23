@@ -1,12 +1,12 @@
-# Shushtar
+# Lightning Terminal (LiT)
 
-![CI](https://github.com/lightninglabs/shushtar/workflows/CI/badge.svg)
+![CI](https://github.com/lightninglabs/lightning-terminal/workflows/CI/badge.svg)
 
 ![screenshot](./app/src/assets/images/screenshot.png)
 
-Shushtar is a browser-based interface for managing the off-chain liquidity of your `lnd`
-Lightning Network node. It presents a visual representation of your channels and balances,
-while allowing you to perform submarine swaps via the
+Lightning Terminal (LiT) is a browser-based interface for managing the off-chain liquidity
+of your `lnd` Lightning Network node. It presents a visual representation of your channels
+and balances, while allowing you to perform submarine swaps via the
 [Lightning Loop](https://lightning.engineering/loop) service using a graphical interface.
 With a bird's eye view of all of your open channels, you can instantly see which ones need
 your immediate attention.
@@ -24,7 +24,7 @@ You can configure the UI to classify channels according to your node's operating
 
 ## Architecture
 
-Shushtar is packaged as a single binary which contains the
+LiT is packaged as a single binary which contains the
 [`lnd`](https://github.com/lightningnetwork/lnd),
 [`loopd`](https://github.com/lightninglabs/loop) and
 [`faraday`](https://github.com/lightninglabs/faraday) daemons all in one. It also contains
@@ -32,53 +32,53 @@ an HTTP server to serve the web assets (html/js/css) and a GRPC proxy to forward
 requests from the browser to the appropriate GRPC server. This deployment strategy was
 chosen as it greatly simplifies the operational overhead of installation, configuration
 and maintenance that would be necessary to run each of these servers independently. You
-only need to download one executable and run one command to get Shushtar up and running.
-We include the CLI binaries `lncli`, `loop` and `frcli` for convenience in the
-downloadable archives as well.
+only need to download one executable and run one command to get LiT up and running. We
+include the CLI binaries `lncli`, `loop` and `frcli` for convenience in the downloadable
+archives as well.
 
 ## Installation
 
-There are two options for installing Shushtar: download the published binaries for your
+There are two options for installing LiT: download the published binaries for your
 platform, or compile from source code.
 
 #### Download Binaries
 
-Shushtar binaries for many platforms are made available on the GitHub
-[Releases](https://github.com/lightninglabs/shushtar/releases) page in this repo. There
-you can download the latest version and extract the archive into a directory on your
-computer.
+LiT binaries for many platforms are made available on the GitHub
+[Releases](https://github.com/lightninglabs/lightning-terminal/releases) page in this
+repo. There you can download the latest version and extract the archive into a directory
+on your computer.
 
 #### Compile from Source Code
 
 To compile from source code, you'll need to have some prerequisite developer tooling
 installed on your machine.
 
-- **Go**: Shushtar's backend web server is written in Go. Instructions for installing Go
-  for your operating system can be found on the
+- **Go**: LiT's backend web server is written in Go. Instructions for installing Go for
+  your operating system can be found on the
   [golang install](https://golang.org/doc/install) page. The minimum version supported is
   Go v1.13.
-- **NodeJS**: Shushtar's frontend is written in TypeScript and built on top of the React
-  JS web framework. To bundle the assets into Javascript & CSS compatible with web
-  browsers, NodeJS is required. It can be downloaded and installed by following the
-  instructions on the [NodeJS download](https://nodejs.org/en/download/) page.
+- **NodeJS**: LiT's frontend is written in TypeScript and built on top of the React JS web
+  framework. To bundle the assets into Javascript & CSS compatible with web browsers,
+  NodeJS is required. It can be downloaded and installed by following the instructions on
+  the [NodeJS download](https://nodejs.org/en/download/) page.
 - **Yarn**: a popular package manager for NodeJS application dependencies. Installation
   information can be found on the
   [Yarn Installation](https://classic.yarnpkg.com/en/docs/install) page.
 
-Once you have the necessary prerequisites, Shushtar can be compiled by running the
-following commands:
+Once you have the necessary prerequisites, LiT can be compiled by running the following
+commands:
 
 ```
-git clone https://github.com/lightninglabs/shushtar.git
-cd shushtar
+git clone https://github.com/lightninglabs/lightning-terminal.git
+cd lightning-terminal
 make && make install
 ```
 
-This will produce the `shushtar` executable and add it to your `GOPATH`.
+This will produce the `litd` executable and add it to your `GOPATH`.
 
 ## Configuration
 
-Shushtar only has a few configuration parameters itself.
+LiT only has a few configuration parameters itself.
 
 #### Required
 
@@ -94,18 +94,18 @@ provided by [LetsEncrypt](https://letsencrypt.org/). This is recommended if you 
 access the website from a remote computer and do not want to deal with the browser warning
 you about the self-signed certificate. You just need to specify the domain name you wish
 to use, and make sure port 80 is open in your in your firewall. LetsEncrypt requires this
-to verify that you own the domain name. Shushtar will listen on port 80 to handle the
+to verify that you own the domain name. LiT will listen on port 80 to handle the
 verification requests.
 
-On some linux-based platforms, you may need to run Shushtar with superuser privileges
-since port 80 is a system port. You can permit the
+On some linux-based platforms, you may need to run LiT with superuser privileges since
+port 80 is a system port. You can permit the
 [`CAP_NET_BIND_SERVICE`](https://www.man7.org/linux/man-pages/man7/capabilities.7.html)
-capability using `setcap 'CAP_NET_BIND_SERVICE=+eip' /path/to/shushtar` to allow binding
-on port 80 without needing to run the daemon as root.
+capability using `setcap 'CAP_NET_BIND_SERVICE=+eip' /path/to/litd` to allow binding on
+port 80 without needing to run the daemon as root.
 
-> Note: Shushtar only serves content over **HTTPS**. If you do not use `letsencrypt`,
-> Shushtar will use the self-signed certificate that is auto-generated by `lnd` to encrypt
-> the browser-to-server communication. Web browsers will display a warning when using the
+> Note: LiT only serves content over **HTTPS**. If you do not use `letsencrypt`, LiT will
+> use the self-signed certificate that is auto-generated by `lnd` to encrypt the
+> browser-to-server communication. Web browsers will display a warning when using the
 > self-signed certificate.
 
 ```
@@ -121,8 +121,8 @@ Application Options:
                           certificate (default: /Users/jamal/Library/Application Support/Lnd/letsencrypt)
 ```
 
-In addition to the Shushtar specific parameters, you must also provide configuration to
-the `lnd`, `loop` and `faraday` daemons. For `lnd`, each flag must be prefixed with `lnd.`
+In addition to the LiT specific parameters, you must also provide configuration to the
+`lnd`, `loop` and `faraday` daemons. For `lnd`, each flag must be prefixed with `lnd.`
 (ex: `lnd.lnddir=~/.lnd`). Please see the
 [sample-lnd.conf](https://github.com/lightningnetwork/lnd/blob/master/sample-lnd.conf)
 file for more details on the available parameters. Note that `loopd` and `faraday` will
@@ -130,10 +130,10 @@ automatically connect to the in-process `lnd` node, so you do not need to provid
 with any additional parameters unless you want to override them. If you do override them,
 be sure to add the `loop.` and `faraday.` prefixes.
 
-Here is an example command to start `shushtar` on testnet with a local `bitcoind` node:
+Here is an example command to start `litd` on testnet with a local `bitcoind` node:
 
 ```
-$ ./shushtar \
+$ ./litd \
   --httpslisten=0.0.0.0:443 \
   --uipassword=My$trongP@ssword \
   --letsencrypt \
@@ -208,7 +208,7 @@ The default location for the `lnd.conf` file will depend on your operating syste
 ### Upgrade Existing Nodes
 
 If you already have existing `lnd`, `loop`, or `faraday` nodes, you can easily upgrade
-them to the Shushtar single executable while keeping all of your past data.
+them to the LiT single executable while keeping all of your past data.
 
 For `lnd`:
 
@@ -230,7 +230,7 @@ For `lnd`:
   ```
 
 - if you use command line arguments for configuration, add the `lnd.` prefix to each
-  argument to `shushtar`
+  argument to `litd`
 
   Before:
 
@@ -241,13 +241,13 @@ For `lnd`:
   After:
 
   ```
-  $ shushtar lnd.lnddir=~/.lnd --lnd.alias=merchant ...
+  $ litd lnd.lnddir=~/.lnd --lnd.alias=merchant ...
   ```
 
 For `loop`:
 
 - if you use an `loop.conf` file for configurations, copy the parameters into the
-  `lnd.conf` file that `shushtar` uses, and add the `loop.` prefix to each of the
+  `lnd.conf` file that `litd` uses, and add the `loop.` prefix to each of the
   configuration parameters.
 
   Before: (in `loop.conf`)
@@ -265,7 +265,7 @@ For `loop`:
   ```
 
 - if you use command line arguments for configuration, add the `loop.` prefix to each
-  argument to `shushtar`
+  argument to `litd`
 
   Before:
 
@@ -276,14 +276,14 @@ For `loop`:
   After:
 
   ```
-  $ shushtar --loop.loopoutmaxparts=5 --loop.debuglevel=debug ...
+  $ litd --loop.loopoutmaxparts=5 --loop.debuglevel=debug ...
   ```
 
 For `faraday`:
 
 - the standalone `faraday` daemon does not load configuration from a file, but you can now
-  store the parameters into the `lnd.conf` file that `shushtar` uses. Just add the
-  `faraday.` prefix to each of the configuration parameters.
+  store the parameters into the `lnd.conf` file that `litd` uses. Just add the `faraday.`
+  prefix to each of the configuration parameters.
 
   Before: (from command line)
 
@@ -299,7 +299,7 @@ For `faraday`:
   ```
 
 - if you use command line arguments for configuration, add the `faraday.` prefix to each
-  argument to `shushtar`
+  argument to `litd`
 
   Before:
 
@@ -310,7 +310,7 @@ For `faraday`:
   After:
 
   ```
-  $ shushtar --faraday.min_monitored=48h --faraday.debuglevel=debug...
+  $ litd --faraday.min_monitored=48h --faraday.debuglevel=debug...
   ```
 
 ### Troubleshooting
@@ -320,8 +320,8 @@ If there are errors relating to one of the embedded servers, then you should ope
 in their respective GitHub repos ([lnd](https://github.com/lightningnetwork/lnd/issues),
 [loop](https://github.com/lightninglabs/loop/issues),
 [faraday](https://github.com/lightninglabs/faraday/issues). If the issue is related to the
-web app, then you should open an [issue](https://github.com/lightninglabs/shushtar/issues)
-here in this repo.
+web app, then you should open an
+[issue](https://github.com/lightninglabs/lightning-terminal/issues) here in this repo.
 
 #### Server
 

@@ -12,7 +12,8 @@ describe('Routes Component', () => {
 
   it('should display the Auth page by default', async () => {
     const { findByText, store } = await render();
-    expect(await findByText('Shushtar')).toBeInTheDocument();
+    expect(await findByText('Lightning')).toBeInTheDocument();
+    expect(await findByText('Terminal')).toBeInTheDocument();
     expect(store.router.location.pathname).toBe('/');
   });
 

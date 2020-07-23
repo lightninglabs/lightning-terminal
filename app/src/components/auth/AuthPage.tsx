@@ -82,7 +82,8 @@ const AuthPage: React.FC = () => {
     <Background gradient>
       <Wrapper>
         <Logo />
-        <Title>{l('title')}</Title>
+        <Title>{l('lightning')}</Title>
+        <Title>{l('terminal')}</Title>
         <Subtitle>{l('subtitle')}</Subtitle>
         <Form onSubmit={handleSubmit}>
           <Input

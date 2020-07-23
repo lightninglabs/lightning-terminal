@@ -12,7 +12,8 @@ describe('App Component', () => {
     // ensure init is called in the store so the UI is displayed
     Object.defineProperty(config, 'IS_TEST', { get: () => false });
     const { findByText } = renderApp();
-    expect(await findByText('Shushtar')).toBeInTheDocument();
+    expect(await findByText('Lightning')).toBeInTheDocument();
+    expect(await findByText('Terminal')).toBeInTheDocument();
     expect(await findByText('logo.svg')).toBeInTheDocument();
     // revert IS_DEV
     Object.defineProperty(config, 'IS_TEST', { get: () => true });
