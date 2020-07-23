@@ -27,7 +27,7 @@ describe('Routes Component', () => {
   it('should display the History page', async () => {
     const { findByText, store } = await render();
     store.uiStore.goToHistory();
-    expect(await findByText('Loop History')).toBeInTheDocument();
+    expect(await findByText('History')).toBeInTheDocument();
     expect(store.router.location.pathname).toBe('/history');
   });
 

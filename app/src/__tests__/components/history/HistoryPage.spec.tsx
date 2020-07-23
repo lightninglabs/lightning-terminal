@@ -18,7 +18,7 @@ describe('HistoryPage', () => {
 
   it('should display the title', () => {
     const { getByText } = render();
-    expect(getByText('Loop History')).toBeInTheDocument();
+    expect(getByText('History')).toBeInTheDocument();
   });
 
   it('should display the export icon', () => {
