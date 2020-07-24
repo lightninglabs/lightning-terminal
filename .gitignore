@@ -1,6 +1,5 @@
-# generated proxy commands
-https.cert
-https.key
+# generated proto scripts
+/app/src/types/generated
 
 # local environment vars to ignore
 .env*.local
