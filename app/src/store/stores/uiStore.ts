@@ -131,11 +131,18 @@ export default class UiStore {
       // #3 is the history step
       // change the most recent swap to be pending
       this._store.swapStore.sortedSwaps[0].state = SwapState.INITIATED;
-      this._store.swapStore.sortedSwaps[0].lastUpdateTime = Date.now() * 1000 * 1000;
+      // set the timestamp far in the future so it doesn't automatically disappear
+      // from the Processing Loops list after 5 mins
+      const tomorrow = Date.now() + 24 * 60 * 60 * 1000;
+      this._store.swapStore.sortedSwaps[0].lastUpdateTime = tomorrow * 1000 * 1000;
     } else if (step === 21 /* swap-progress */) {
       // #21 is the swap-progress step
       // force the swap to be 100% complete
       this._store.swapStore.sortedSwaps[0].state = SwapState.SUCCESS;
+    } else if (step === 22 /* congrats */) {
+      // #22 is the congrats step
+      // hide the processing swaps section
+      this.processingSwapsVisible = false;
     }
   }
 

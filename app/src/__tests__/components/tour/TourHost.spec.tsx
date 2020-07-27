@@ -99,7 +99,7 @@ describe('TourHost component', () => {
     expect(getByText(l('export'))).toBeInTheDocument();
 
     fireEvent.click(getByText('Next'));
-    expect(getByText(firstLine(l('loop')))).toBeInTheDocument();
+    expect(getByText('Lightning Loop')).toBeInTheDocument();
 
     fireEvent.click(getByText('Loop', { selector: 'button' }));
     expect(getByText(l('loopActions'))).toBeInTheDocument();
@@ -125,9 +125,6 @@ describe('TourHost component', () => {
 
     fireEvent.click(getByText('Next'));
     expect(getByText(l('swapProgress'))).toBeInTheDocument();
-
-    fireEvent.click(getByText('Next'));
-    expect(getByText(firstLine(l('swapClose')))).toBeInTheDocument();
 
     fireEvent.click(getByText('close.svg'));
     expect(getByText('Congratulations!')).toBeInTheDocument();

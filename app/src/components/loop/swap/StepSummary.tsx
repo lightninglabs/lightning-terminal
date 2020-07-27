@@ -10,7 +10,7 @@ const Styled = {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    max-width: 265px;
+    max-width: 300px;
   `,
   Description: styled(Small)`
     opacity: 0.5;

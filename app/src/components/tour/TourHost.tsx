@@ -66,6 +66,7 @@ const tourSteps: ReactourStep[] = [
   {
     selector: '[data-tour="loop"]',
     content: createTextStep('loop', false),
+    style: { maxWidth: 500 },
   },
   {
     selector: '[data-tour="loop-actions"]',
@@ -103,10 +104,6 @@ const tourSteps: ReactourStep[] = [
   {
     selector: '[data-tour="swap-progress"]',
     content: createTextStep('swapProgress'),
-  },
-  {
-    selector: '[data-tour="swap-close"]',
-    content: createTextStep('swapClose', false),
   },
   {
     // eslint-disable-next-line react/display-name
