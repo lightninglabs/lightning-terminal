@@ -8,8 +8,14 @@ import {
 import { DEV_HOST } from 'config';
 import { AuthenticationError } from 'util/errors';
 import { grpcLog as log } from 'util/log';
+import { sampleApiResponses } from 'util/tests/sampleData';
 
 class GrpcClient {
+  /**
+   * Indicates if the API should return sample data instead of making real GRPC requests
+   */
+  useSampleData = false;
+
   /**
    * Executes a single GRPC request and returns a promise which will resolve with the response
    * @param methodDescriptor the GRPC method to call on the service
@@ -22,6 +28,15 @@ class GrpcClient {
     metadata?: Metadata.ConstructorArg,
   ): Promise<TRes> {
     return new Promise((resolve, reject) => {
+      if (this.useSampleData) {
+        const endpoint = `${methodDescriptor.service.serviceName}.${methodDescriptor.methodName}`;
+        const data = sampleApiResponses[endpoint] || {};
+        // the calling function expects the return value to have a `toObject` function
+        const response: any = { toObject: () => data };
+        resolve(response);
+        return;
+      }
+
       const method = `${methodDescriptor.methodName}`;
       log.debug(`${method} request`, request.toObject());
       grpc.unary(methodDescriptor, {
@@ -59,6 +74,8 @@ class GrpcClient {
     onMessage: (res: TRes) => void,
     metadata?: Metadata.ConstructorArg,
   ) {
+    if (this.useSampleData) return;
+
     const method = `${methodDescriptor.methodName}`;
     const client = grpc.client(methodDescriptor, {
       host: DEV_HOST,

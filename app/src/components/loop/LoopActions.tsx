@@ -71,7 +71,7 @@ const LoopActions: React.FC = () => {
 
   const { Wrapper, Actions, ActionBar, CloseIcon, Selected, Note } = Styled;
   return (
-    <Wrapper>
+    <Wrapper data-tour="loop-actions">
       {buildSwapStore.showActions ? (
         <Actions>
           <ActionBar>
@@ -82,6 +82,7 @@ const LoopActions: React.FC = () => {
               borderless
               onClick={handleLoopOut}
               disabled={!isLoopOutMinimumMet}
+              data-tour="loop-out"
             >
               {l('common.loopOut')}
             </Button>
@@ -101,7 +102,7 @@ const LoopActions: React.FC = () => {
           {note && <Note>{note}</Note>}
         </Actions>
       ) : (
-        <Button onClick={buildSwapStore.startSwap}>
+        <Button data-tour="loop" onClick={buildSwapStore.startSwap}>
           <Refresh />
           {l('common.loop')}
         </Button>

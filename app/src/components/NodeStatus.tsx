@@ -30,7 +30,7 @@ const NodeStatus: React.FC = () => {
 
   const { Wrapper, Balance, Divider } = Styled;
   return (
-    <Wrapper>
+    <Wrapper data-tour="node-status">
       <HeaderFour>{l('title')}</HeaderFour>
       <Tip overlay={l('offchainTip')}>
         <Jumbo>

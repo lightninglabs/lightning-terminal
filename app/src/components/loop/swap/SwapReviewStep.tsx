@@ -45,7 +45,7 @@ const SwapReviewStep: React.FC = () => {
 
   const { Wrapper, Summary, Invoice, InvoiceRow, Divider } = Styled;
   return (
-    <Wrapper>
+    <Wrapper data-tour="loop-review">
       <Summary>
         <StepSummary title={l('title')} heading={l('heading')} />
       </Summary>

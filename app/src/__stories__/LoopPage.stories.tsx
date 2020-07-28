@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { observable, ObservableMap, values } from 'mobx';
+import { observable } from 'mobx';
+import { lndListChannelsMany } from 'util/tests/sampleData';
 import { useStore } from 'store';
 import { Channel } from 'store/models';
 import { Layout } from 'components/layout';
@@ -11,35 +12,23 @@ export default {
   parameters: { contained: true },
 };
 
-const channelSubset = (channels: ObservableMap<string, Channel>) => {
-  const few = values(channels)
-    .slice(0, 20)
-    .reduce((result, c) => {
-      result[c.chanId] = c;
-      return result;
-    }, {} as Record<string, Channel>);
-  return observable.map(few);
-};
-
 export const Default = () => {
-  const { channelStore } = useStore();
-  useEffect(() => {
-    // only use a small set of channels
-    channelStore.channels = channelSubset(channelStore.channels);
-  }, [channelStore]);
-
   return <LoopPage />;
 };
 
-export const ManyChannels = () => <LoopPage />;
+export const ManyChannels = () => {
+  const store = useStore();
+  useEffect(() => {
+    store.channelStore.channels = observable.map();
+    lndListChannelsMany.channelsList.forEach(c => {
+      const chan = new Channel(store, c);
+      store.channelStore.channels.set(chan.chanId, chan);
+    });
+  });
+  return <LoopPage />;
+};
 
 export const InsideLayout = () => {
-  const { channelStore } = useStore();
-  useEffect(() => {
-    // only use a small set of channels
-    channelStore.channels = channelSubset(channelStore.channels);
-  }, [channelStore]);
-
   return (
     <Layout>
       <LoopPage />

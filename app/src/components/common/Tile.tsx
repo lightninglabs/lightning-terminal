@@ -44,18 +44,23 @@ interface Props {
    */
   text?: ReactNode;
   /**
+   * optional value to set as the `data-tour` attribute on
+   * the tile's dom element
+   */
+  tour?: string;
+  /**
    * optional click handler for the icon which will not be
    * visible if this prop is not defined
    */
   onMaximizeClick?: () => void;
 }
 
-const Tile: React.FC<Props> = ({ title, text, onMaximizeClick, children }) => {
+const Tile: React.FC<Props> = ({ title, text, tour, onMaximizeClick, children }) => {
   const { l } = usePrefixedTranslation('cmps.common.Tile');
 
   const { TileWrap, Header, MaximizeIcon, Text } = Styled;
   return (
-    <TileWrap>
+    <TileWrap data-tour={tour}>
       <Header>
         <HeaderFour marginless>{title}</HeaderFour>
         {onMaximizeClick && (

@@ -32,7 +32,7 @@ const ChannelList: React.FC = () => {
 
   const { Wrapper, ListContainer } = Styled;
   return (
-    <Wrapper>
+    <Wrapper data-tour="channel-list">
       <ChannelRowHeader />
       <ListContainer>
         <AutoSizer disableHeight>

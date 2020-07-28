@@ -44,7 +44,9 @@
     "react-router": "5.2.0",
     "react-scripts": "3.4.1",
     "react-toastify": "6.0.6",
-    "react-virtualized": "9.21.2"
+    "react-virtualized": "9.21.2",
+    "reactour": "1.18.0",
+    "styled-components": "5.1.1"
   },
   "devDependencies": {
     "@storybook/addon-actions": "5.3.19",
@@ -68,6 +70,7 @@
     "@types/react-dom": "16.9.8",
     "@types/react-router": "5.1.8",
     "@types/react-virtualized": "9.21.10",
+    "@types/reactour": "1.17.1",
     "@typescript-eslint/eslint-plugin": "3.5.0",
     "@typescript-eslint/parser": "3.5.0",
     "cross-env": "7.0.2",

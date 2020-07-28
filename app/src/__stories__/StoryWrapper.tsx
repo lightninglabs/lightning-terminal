@@ -11,6 +11,7 @@ import { ThemeProvider } from 'components/theme';
 
 // mock the GRPC client to return sample data instead of making an actual request
 const grpc = {
+  useSampleData: true,
   request: (methodDescriptor: any, opts: any, metadata: any) => {
     // fail any authenticated requests to simulate incorrect login attempts
     if (metadata && metadata.authorization) throw new AuthenticationError();

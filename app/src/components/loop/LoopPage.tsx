@@ -8,9 +8,8 @@ import { styled } from 'components/theme';
 import ChannelList from './ChannelList';
 import LoopActions from './LoopActions';
 import LoopTiles from './LoopTiles';
-
-const LazySwapWizard = React.lazy(() => import('./swap/SwapWizard'));
-const LazyProcessingSwaps = React.lazy(() => import('./processing/ProcessingSwaps'));
+import ProcessingSwaps from './processing/ProcessingSwaps';
+import SwapWizard from './swap/SwapWizard';
 
 const Styled = {
   PageWrap: styled.div`
@@ -37,12 +36,16 @@ const LoopPage: React.FC = () => {
   return (
     <PageWrap>
       {uiStore.processingSwapsVisible ? (
-        <LazyProcessingSwaps />
+        <ProcessingSwaps />
       ) : buildSwapStore.showWizard ? (
-        <LazySwapWizard />
+        <SwapWizard />
       ) : (
         <>
-          <PageHeader title={title} onExportClick={channelStore.exportChannels} />
+          <PageHeader
+            title={title}
+            onHelpClick={uiStore.showTour}
+            onExportClick={channelStore.exportChannels}
+          />
           <LoopTiles />
           <LoopActions />
         </>

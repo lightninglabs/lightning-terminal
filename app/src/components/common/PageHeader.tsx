@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { styled } from 'components/theme';
-import { ArrowLeft, Download, HeaderThree } from '../base';
+import { ArrowLeft, Download, HeaderThree, HelpCircle } from '../base';
 import Tip from './Tip';
 
 const Styled = {
@@ -25,7 +25,7 @@ const Styled = {
     text-align: right;
 
     svg {
-      margin-left: 50px;
+      margin-left: 20px;
     }
   `,
   BackLink: styled.a`
@@ -44,10 +44,17 @@ interface Props {
   title: ReactNode;
   onBackClick?: () => void;
   backText?: string;
+  onHelpClick?: () => void;
   onExportClick?: () => void;
 }
 
-const PageHeader: React.FC<Props> = ({ title, onBackClick, backText, onExportClick }) => {
+const PageHeader: React.FC<Props> = ({
+  title,
+  onBackClick,
+  backText,
+  onHelpClick,
+  onExportClick,
+}) => {
   const { l } = usePrefixedTranslation('cmps.common.PageHeader');
   const { settingsStore } = useStore();
 
@@ -63,12 +70,17 @@ const PageHeader: React.FC<Props> = ({ title, onBackClick, backText, onExportCli
         )}
       </Left>
       <Center>
-        <HeaderThree>{title}</HeaderThree>
+        <HeaderThree data-tour="welcome">{title}</HeaderThree>
       </Center>
       <Right>
+        {onHelpClick && (
+          <Tip placement="bottomRight" overlay={l('helpTip')}>
+            <HelpCircle size="large" onClick={onHelpClick} />
+          </Tip>
+        )}
         {onExportClick && (
           <Tip placement="bottomRight" overlay={l('exportTip')}>
-            <Download size="large" onClick={onExportClick} />
+            <Download data-tour="export" size="large" onClick={onExportClick} />
           </Tip>
         )}
       </Right>
