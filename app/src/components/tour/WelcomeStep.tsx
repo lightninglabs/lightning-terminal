@@ -11,17 +11,17 @@ const Styled = {
     font-size: ${props => props.theme.sizes.xs};
     font-style: italic;
     opacity: 0.8;
-    margin-bottom: 50px;
+    margin-bottom: 40px;
   `,
   Footer: styled.div`
-    display: flex;
-    justify-content: space-between;
+    margin-top: 30px;
   `,
   LinkButton: styled(Button)`
-    color: ${props => props.theme.colors.darkBlue};
+    color: ${props => props.theme.colors.gray};
     padding: 0;
     min-width: auto;
     height: auto;
+    margin-left: 40px;
 
     &:hover {
       color: ${props => props.theme.colors.blue};
@@ -47,6 +47,7 @@ const WelcomeStep: React.FC<ReactourStepContentArgs> = props => {
   return (
     <TextStep header={l('header')} showNext={false} {...props}>
       <p>{l('desc')}</p>
+      <p>{l('tour')}</p>
       <p>
         {l('walkthrough1')}{' '}
         <a
