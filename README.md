@@ -36,6 +36,11 @@ only need to download one executable and run one command to get LiT up and runni
 include the CLI binaries `lncli`, `loop` and `frcli` for convenience in the downloadable
 archives as well.
 
+## Usage
+
+Read the [Walkthrough](doc/WALKTHROUGH.md) document to learn more about how to use
+Lightning Terminal.
+
 ## Installation
 
 There are two options for installing LiT: download the published binaries for your
