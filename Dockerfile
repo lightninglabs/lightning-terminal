@@ -20,6 +20,7 @@ RUN apk add --no-cache --update alpine-sdk \
     bash \
     binutils \
     tar \
+    protobuf-dev \
 && touch ~/.bashrc \
 && curl -sfSLO https://unofficial-builds.nodejs.org/download/release/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64-musl.tar.xz \
 && tar -xf node-${NODE_VERSION}-linux-x64-musl.tar.xz -C /usr --strip 1 \
