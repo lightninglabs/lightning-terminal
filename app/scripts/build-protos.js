@@ -82,6 +82,7 @@ const main = async () => {
     await patch();
   } catch (error) {
     console.error(error);
+    process.exit(1);
   }
 };
 
