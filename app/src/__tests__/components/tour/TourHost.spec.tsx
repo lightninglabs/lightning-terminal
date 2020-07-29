@@ -46,6 +46,7 @@ describe('TourHost component', () => {
     expect(getByText('Welcome to Lightning Terminal!')).toBeInTheDocument();
 
     fireEvent.click(getByText("Yes! Let's Go"));
+    fireEvent.click(getByText('Next'));
     expect(store.settingsStore.sidebarVisible).toBe(true);
 
     fireEvent.click(getByText('Next'));
@@ -60,13 +61,16 @@ describe('TourHost component', () => {
     expect(getByText('Welcome to Lightning Terminal!')).toBeInTheDocument();
 
     fireEvent.click(getByText("Yes! Let's Go"));
+    expect(getByText('New to Loop?')).toBeInTheDocument();
+
+    fireEvent.click(getByText('Next'));
     expect(getByText(l('nodeStatus'))).toBeInTheDocument();
 
     // sample data is fetch after step #1 and we need to wait for it
     await waitFor(() => expect(store.swapStore.sortedSwaps).toHaveLength(7));
 
     fireEvent.click(getByText('Next'));
-    expect(getByText(l('history'))).toBeInTheDocument();
+    expect(getByText(firstLine(l('history')))).toBeInTheDocument();
 
     fireEvent.click(getByText('Next'));
     expect(getByText(l('inbound'))).toBeInTheDocument();
@@ -75,7 +79,7 @@ describe('TourHost component', () => {
     expect(getByText(l('outbound'))).toBeInTheDocument();
 
     fireEvent.click(getByText('Next'));
-    expect(getByText(l('channelList'))).toBeInTheDocument();
+    expect(getByText('channel needs your immediate attention')).toBeInTheDocument();
 
     fireEvent.click(getByText('Next'));
     expect(getByText(l('channelListReceive'))).toBeInTheDocument();
@@ -84,13 +88,13 @@ describe('TourHost component', () => {
     expect(getByText(l('channelListSend'))).toBeInTheDocument();
 
     fireEvent.click(getByText('Next'));
-    expect(getByText(l('channelListFee'))).toBeInTheDocument();
+    expect(getByText(firstLine(l('channelListFee')))).toBeInTheDocument();
 
     fireEvent.click(getByText('Next'));
     expect(getByText(l('channelListUptime'))).toBeInTheDocument();
 
     fireEvent.click(getByText('Next'));
-    expect(getByText(l('channelListPeer'))).toBeInTheDocument();
+    expect(getByText(firstLine(l('channelListPeer')))).toBeInTheDocument();
 
     fireEvent.click(getByText('Next'));
     expect(getByText(l('channelListCapacity'))).toBeInTheDocument();
@@ -99,10 +103,10 @@ describe('TourHost component', () => {
     expect(getByText(l('export'))).toBeInTheDocument();
 
     fireEvent.click(getByText('Next'));
-    expect(getByText(firstLine(l('loop')))).toBeInTheDocument();
+    expect(getByText("Let's perform a Loop!")).toBeInTheDocument();
 
     fireEvent.click(getByText('Loop', { selector: 'button' }));
-    expect(getByText(l('loopActions'))).toBeInTheDocument();
+    expect(getByText(firstLine(l('loopActions')))).toBeInTheDocument();
 
     fireEvent.click(getByText('Next'));
     expect(getByText(firstLine(l('channelListSelect')))).toBeInTheDocument();
@@ -126,10 +130,7 @@ describe('TourHost component', () => {
     fireEvent.click(getByText('Next'));
     expect(getByText(l('swapProgress'))).toBeInTheDocument();
 
-    fireEvent.click(getByText('Next'));
-    expect(getByText(firstLine(l('swapMinimize')))).toBeInTheDocument();
-
-    fireEvent.click(getByText('minimize.svg'));
+    fireEvent.click(getByText('close.svg'));
     expect(getByText('Congratulations!')).toBeInTheDocument();
 
     fireEvent.click(getByText('Close'));

@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 import confirmJson from 'assets/animations/confirm.json';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
-import { HeaderFour, Minimize } from 'components/base';
+import { Close, HeaderFour } from 'components/base';
 import Animation from 'components/common/Animation';
 import Tip from 'components/common/Tip';
 import { styled } from 'components/theme';
@@ -49,8 +49,8 @@ const ProcessingSwaps: React.FC = () => {
     <Wrapper sidebar={settingsStore.sidebarVisible}>
       <Header>
         <HeaderFour>{l('title')}</HeaderFour>
-        <Tip overlay={l('minimizeTip')}>
-          <Minimize data-tour="swap-minimize" onClick={uiStore.toggleProcessingSwaps} />
+        <Tip overlay={l('closeTip')}>
+          <Close data-tour="swap-close" onClick={uiStore.toggleProcessingSwaps} />
         </Tip>
       </Header>
       <Content data-tour="processing-swaps">

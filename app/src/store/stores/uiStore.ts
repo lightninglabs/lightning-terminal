@@ -106,7 +106,7 @@ export default class UiStore {
   setTourActiveStep(step: number) {
     this.tourActiveStep = step;
 
-    if (step === 1) {
+    if (step === 2) {
       // #1 is the node-status step
       // show the sidebar if autoCollapse is enabled
       if (!this._store.settingsStore.sidebarVisible) {
@@ -121,21 +121,28 @@ export default class UiStore {
       this._store.unsubscribeFromStreams();
       // fetch all the sample data from the backend
       this._store.fetchAllData();
-    } else if (step === 2) {
-      // #2 is the export icon
+    } else if (step === 3) {
+      // #3 is the export icon
       // hide the sidebar if autoCollapse is enabled
       if (this._store.settingsStore.autoCollapse) {
         this._store.settingsStore.sidebarVisible = false;
       }
-    } else if (step === 3) {
-      // #3 is the history step
+    } else if (step === 4) {
+      // #4 is the history step
       // change the most recent swap to be pending
       this._store.swapStore.sortedSwaps[0].state = SwapState.INITIATED;
-      this._store.swapStore.sortedSwaps[0].lastUpdateTime = Date.now() * 1000 * 1000;
-    } else if (step === 21 /* swap-progress */) {
-      // #21 is the swap-progress step
+      // set the timestamp far in the future so it doesn't automatically disappear
+      // from the Processing Loops list after 5 mins
+      const tomorrow = Date.now() + 24 * 60 * 60 * 1000;
+      this._store.swapStore.sortedSwaps[0].lastUpdateTime = tomorrow * 1000 * 1000;
+    } else if (step === 22 /* swap-progress */) {
+      // #22 is the swap-progress step
       // force the swap to be 100% complete
       this._store.swapStore.sortedSwaps[0].state = SwapState.SUCCESS;
+    } else if (step === 23 /* congrats */) {
+      // #23 is the congrats step
+      // hide the processing swaps section
+      this.processingSwapsVisible = false;
     }
   }
 

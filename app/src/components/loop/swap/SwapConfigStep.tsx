@@ -1,5 +1,6 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
+import { SwapDirection } from 'types/state';
 import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
@@ -39,7 +40,11 @@ const SwapConfigStep: React.FC = () => {
         <StepSummary
           title={l('title')}
           heading={l('heading', { type: buildSwapStore.direction })}
-          description={l('description')}
+          description={
+            buildSwapStore.direction === SwapDirection.IN
+              ? l('loopInDesc')
+              : l('loopOutDesc')
+          }
         />
       </Summary>
       <Config>

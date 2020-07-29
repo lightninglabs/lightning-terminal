@@ -38,7 +38,7 @@ describe('SwapWizard component', () => {
       fireEvent.click(getByText('Next'));
       expect(getByText('Step 2 of 2')).toBeInTheDocument();
       fireEvent.click(getByText('Confirm'));
-      expect(getByText('Configuring Loops')).toBeInTheDocument();
+      expect(getByText('Submitting Loop')).toBeInTheDocument();
       fireEvent.click(getByText('arrow-left.svg'));
       expect(getByText('Step 2 of 2')).toBeInTheDocument();
       fireEvent.click(getByText('arrow-left.svg'));
@@ -106,7 +106,7 @@ describe('SwapWizard component', () => {
 
     it('should display the description label', () => {
       const { getByText } = render();
-      expect(getByText('Configuring Loops')).toBeInTheDocument();
+      expect(getByText('Submitting Loop')).toBeInTheDocument();
     });
   });
 });

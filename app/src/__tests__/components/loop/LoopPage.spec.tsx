@@ -146,7 +146,7 @@ describe('LoopPage component', () => {
       fireEvent.click(getByText('Next'));
       expect(getByText('Step 2 of 2')).toBeInTheDocument();
       fireEvent.click(getByText('Confirm'));
-      expect(getByText('Configuring Loops')).toBeInTheDocument();
+      expect(getByText('Submitting Loop')).toBeInTheDocument();
       await waitFor(() => {
         expect(grpcMock.unary).toHaveBeenCalledWith(
           expect.objectContaining({ methodName: 'LoopOut' }),
@@ -167,7 +167,7 @@ describe('LoopPage component', () => {
       fireEvent.click(getByText('Next'));
       expect(getByText('Step 2 of 2')).toBeInTheDocument();
       fireEvent.click(getByText('Confirm'));
-      expect(getByText('Configuring Loops')).toBeInTheDocument();
+      expect(getByText('Submitting Loop')).toBeInTheDocument();
       expect(store.buildSwapStore.processingTimeout).toBeDefined();
       fireEvent.click(getByText('arrow-left.svg'));
       expect(getByText('Review Loop amount and fee')).toBeInTheDocument();

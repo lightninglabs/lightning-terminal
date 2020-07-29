@@ -84,11 +84,11 @@ describe('ProcessingSwaps component', () => {
   });
 
   it('should display an FAILED Loop In', () => {
-    const { getByText } = render();
+    const { getByText, getAllByText } = render();
     const swap = addSwap(LOOP_IN, FAILED);
     expect(getByText(swap.ellipsedId)).toBeInTheDocument();
     expect(getByText(swap.stateLabel)).toBeInTheDocument();
-    expect(getByText('close.svg')).toBeInTheDocument();
+    expect(getAllByText('close.svg')).toHaveLength(2);
   });
 
   it('should display an INITIATED Loop Out', () => {
@@ -122,18 +122,18 @@ describe('ProcessingSwaps component', () => {
   });
 
   it('should display an FAILED Loop Out', () => {
-    const { getByText } = render();
+    const { getByText, getAllByText } = render();
     const swap = addSwap(LOOP_OUT, FAILED);
     expect(getByText(swap.ellipsedId)).toBeInTheDocument();
     expect(getByText(swap.stateLabel)).toBeInTheDocument();
-    expect(getByText('close.svg')).toBeInTheDocument();
+    expect(getAllByText('close.svg')).toHaveLength(2);
   });
 
   it('should dismiss a failed Loop', () => {
-    const { getByText } = render();
+    const { getAllByText } = render();
     addSwap(LOOP_OUT, FAILED);
     expect(store.swapStore.dismissedSwapIds).toHaveLength(0);
-    fireEvent.click(getByText('close.svg'));
+    fireEvent.click(getAllByText('close.svg')[1]);
     expect(store.swapStore.dismissedSwapIds).toHaveLength(1);
   });
 });

@@ -39,9 +39,9 @@ describe('Layout component', () => {
     fireEvent.click(getByText('History'));
     expect(store.router.location.pathname).toBe('/history');
     expect(getByText('History').parentElement).toHaveClass('active');
-    fireEvent.click(getByText('Lightning Loop'));
+    fireEvent.click(getByText('Lightning Terminal'));
     expect(store.router.location.pathname).toBe('/loop');
-    expect(getByText('Lightning Loop').parentElement).toHaveClass('active');
+    expect(getByText('Lightning Terminal').parentElement).toHaveClass('active');
   });
 
   it('should navigate to the Settings page', () => {
@@ -50,8 +50,8 @@ describe('Layout component', () => {
     fireEvent.click(getByText('Settings'));
     expect(store.router.location.pathname).toBe('/settings');
     expect(getByText('Settings').parentElement).toHaveClass('active');
-    fireEvent.click(getByText('Lightning Loop'));
+    fireEvent.click(getByText('Lightning Terminal'));
     expect(store.router.location.pathname).toBe('/loop');
-    expect(getByText('Lightning Loop').parentElement).toHaveClass('active');
+    expect(getByText('Lightning Terminal').parentElement).toHaveClass('active');
   });
 });

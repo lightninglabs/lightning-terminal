@@ -1,22 +1,29 @@
+/* eslint-disable react/display-name */
 import React from 'react';
 import Tour, { ReactourStep } from 'reactour';
 import { observer } from 'mobx-react-lite';
 import { useTheme } from 'emotion-theming';
 import { useStore } from 'store';
 import { styled, Theme } from 'components/theme';
+import ChannelListStep from './ChannelListStep';
+import LoopInfoStep from './LoopInfoStep';
+import NodeStatusStep from './NodeStatusStep';
 import SuccessStep from './SuccessStep';
 import { createTextStep } from './TextStep';
 import WelcomeStep from './WelcomeStep';
 
 const tourSteps: ReactourStep[] = [
   {
-    // eslint-disable-next-line react/display-name
     content: p => <WelcomeStep {...p} />,
     style: { maxWidth: 900 },
   },
   {
+    content: p => <LoopInfoStep {...p} />,
+    style: { maxWidth: 900 },
+  },
+  {
     selector: '[data-tour="node-status"]',
-    content: createTextStep('nodeStatus'),
+    content: p => <NodeStatusStep {...p} />,
   },
   {
     selector: '[data-tour="history"]',
@@ -33,7 +40,8 @@ const tourSteps: ReactourStep[] = [
   },
   {
     selector: '[data-tour="channel-list"]',
-    content: createTextStep('channelList'),
+    content: p => <ChannelListStep {...p} />,
+    style: { maxWidth: 600 },
   },
   {
     selector: '[data-tour="channel-list-receive"]',
@@ -66,10 +74,12 @@ const tourSteps: ReactourStep[] = [
   {
     selector: '[data-tour="loop"]',
     content: createTextStep('loop', false),
+    style: { maxWidth: 500 },
   },
   {
     selector: '[data-tour="loop-actions"]',
     content: createTextStep('loopActions'),
+    style: { maxWidth: 500 },
     stepInteraction: false,
   },
   {
@@ -105,11 +115,6 @@ const tourSteps: ReactourStep[] = [
     content: createTextStep('swapProgress'),
   },
   {
-    selector: '[data-tour="swap-minimize"]',
-    content: createTextStep('swapMinimize', false),
-  },
-  {
-    // eslint-disable-next-line react/display-name
     content: p => <SuccessStep {...p} />,
     style: { maxWidth: 900 },
   },
@@ -117,6 +122,10 @@ const tourSteps: ReactourStep[] = [
 
 const Styled = {
   Tour: styled(Tour)`
+    &.reactour__helper {
+      border-radius: 10px;
+    }
+
     [data-tour-elem='badge'] {
       font-family: ${props => props.theme.fonts.open.regular};
       font-size: ${props => props.theme.sizes.xxs};

@@ -14,17 +14,12 @@ const Styled = {
 
 const HistoryPage: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.history.HistoryPage');
-  const { uiStore, swapStore } = useStore();
+  const { swapStore } = useStore();
 
   const { Wrapper } = Styled;
   return (
     <Wrapper>
-      <PageHeader
-        title={l('pageTitle')}
-        backText={l('backText')}
-        onBackClick={uiStore.goToLoop}
-        onExportClick={swapStore.exportSwaps}
-      />
+      <PageHeader title={l('pageTitle')} onExportClick={swapStore.exportSwaps} />
       <HistoryList />
     </Wrapper>
   );

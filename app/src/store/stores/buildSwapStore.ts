@@ -408,7 +408,12 @@ class BuildSwapStore {
    */
   @action.bound
   requestSwap() {
-    const delay = process.env.NODE_ENV !== 'test' ? SWAP_ABORT_DELAY : 1;
+    const delay =
+      process.env.NODE_ENV === 'test'
+        ? 1 // use a 1 ms delay for unit tests
+        : this._store.uiStore.tourVisible
+        ? 1500 // use a 1.5 second delay during the tour
+        : SWAP_ABORT_DELAY;
     const { amount, direction, quote } = this;
     this._store.log.info(
       `executing ${direction} for ${amount} sats (delaying for ${delay}ms)`,
