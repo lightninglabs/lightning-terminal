@@ -38,9 +38,9 @@ archives as well.
 
 ### Daemon Versions packaged with LiT
 
-| LiT              | LND         | Loop        | Faraday      |
-| ---------------- | ----------- | ----------- | ------------ |
-| **v0.1.0-alpha** | v0.6.3-beta | v0.6.5-beta | v0.2.0-alpha |
+| LiT              | LND          | Loop        | Faraday      |
+| ---------------- | ------------ | ----------- | ------------ |
+| **v0.1.0-alpha** | v0.10.3-beta | v0.6.5-beta | v0.2.0-alpha |
 
 ## Usage
 
