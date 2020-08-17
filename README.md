@@ -99,7 +99,7 @@ You can also configure the HTTP server to automatically install a free SSL certi
 provided by [LetsEncrypt](https://letsencrypt.org/). This is recommended if you plan to
 access the website from a remote computer and do not want to deal with the browser warning
 you about the self-signed certificate. You just need to specify the domain name you wish
-to use, and make sure port 80 is open in your in your firewall. LetsEncrypt requires this
+to use, and make sure port 80 is open in your firewall. LetsEncrypt requires this
 to verify that you own the domain name. LiT will listen on port 80 to handle the
 verification requests.
 
