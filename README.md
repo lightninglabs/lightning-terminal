@@ -19,7 +19,7 @@ You can configure the UI to classify channels according to your node's operating
   balanced close to 50%, the channels with a high balance in either direction will be
   flagged.
 - **Optimize for Sending**: For exchanges, fiat gateways, and other operators who
-  primarily send outgoing Lightning payments, the channels with high local balances will
+  primarily send outgoing Lightning payments, the channels with low local balances will
   be shaded red.
 
 ## Architecture
