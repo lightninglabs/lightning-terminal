@@ -38,3 +38,8 @@ export interface Alert {
   /** the number of milliseconds before the toast closes automatically */
   ms?: number;
 }
+
+export interface SortParams<T> {
+  field?: keyof T;
+  descending: boolean;
+}

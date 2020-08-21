@@ -1,12 +1,15 @@
 import { action, autorun, observable, toJS } from 'mobx';
+import { SortParams } from 'types/state';
 import { BalanceMode, Unit } from 'util/constants';
 import { Store } from 'store';
+import { Channel } from 'store/models';
 
 export interface PersistentSettings {
   sidebarVisible: boolean;
   unit: Unit;
   balanceMode: BalanceMode;
   tourAutoShown: boolean;
+  channelSort: SortParams<Channel>;
 }
 
 export default class SettingsStore {
@@ -26,6 +29,12 @@ export default class SettingsStore {
 
   /** specifies the mode to use to determine channel balance status */
   @observable balanceMode: BalanceMode = BalanceMode.receive;
+
+  /** specifies the sorting field and direction for the channel list */
+  @observable channelSort: SortParams<Channel> = {
+    field: undefined,
+    descending: true,
+  };
 
   /** the chosen language */
   @observable lang = 'en-US';
@@ -67,6 +76,29 @@ export default class SettingsStore {
   }
 
   /**
+   * Sets the sort field and direction that the channel list should use
+   * @param field the channel field to sort by
+   * @param descending true of the order should be descending, otherwise false
+   */
+  @action.bound
+  setChannelSort(field: SortParams<Channel>['field'], descending: boolean) {
+    this.channelSort = { field, descending };
+    this._store.log.info('updated channel list sort order', toJS(this.channelSort));
+  }
+
+  /**
+   * Resets the channel list sort order
+   */
+  @action.bound
+  resetChannelSort() {
+    this.channelSort = {
+      field: undefined,
+      descending: true,
+    };
+    this._store.log.info('reset channel list sort order', toJS(this.channelSort));
+  }
+
+  /**
    * initialized the settings and auto-save when a setting is changed
    */
   @action.bound
@@ -79,6 +111,7 @@ export default class SettingsStore {
           unit: this.unit,
           balanceMode: this.balanceMode,
           tourAutoShown: this.tourAutoShown,
+          channelSort: toJS(this.channelSort),
         };
         this._store.storage.set('settings', settings);
         this._store.log.info('saved settings to localStorage', settings);
@@ -99,6 +132,7 @@ export default class SettingsStore {
       this.unit = settings.unit;
       this.balanceMode = settings.balanceMode;
       this.tourAutoShown = settings.tourAutoShown;
+      if (settings.channelSort) this.channelSort = settings.channelSort;
       this._store.log.info('loaded settings', settings);
     }
 

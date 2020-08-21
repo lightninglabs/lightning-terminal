@@ -1,6 +1,7 @@
 import { action, computed, observable } from 'mobx';
 import * as LND from 'types/generated/lnd_pb';
 import * as LOOP from 'types/generated/loop_pb';
+import { SortParams } from 'types/state';
 import Big from 'big.js';
 import { getBalanceStatus } from 'util/balances';
 import { percentage } from 'util/bigmath';
@@ -84,7 +85,7 @@ export default class Channel {
   /**
    * The order to sort this channel based on the current mode
    */
-  @computed get sortOrder() {
+  @computed get balanceModeOrder() {
     const mode = this._store.settingsStore.balanceMode;
     switch (mode) {
       case BalanceMode.routing:
@@ -152,6 +153,44 @@ export default class Channel {
     this.active = lndChannel.active;
     this.uptime = Big(lndChannel.uptime);
     this.lifetime = Big(lndChannel.lifetime);
+  }
+
+  /**
+   * Compares a specific field of two channels for sorting
+   * @param a the first channel to compare
+   * @param b the second channel to compare
+   * @param sortBy the field and direction to sort the two channels by
+   * @returns a positive number if `a`'s field is greater than `b`'s,
+   * a negative number if `a`'s field is less than `b`'s, or zero otherwise
+   */
+  static compare(a: Channel, b: Channel, field: SortParams<Channel>['field']): number {
+    let order = 0;
+    switch (field) {
+      case 'remoteBalance':
+        order = +a.remoteBalance.sub(b.remoteBalance);
+        break;
+      case 'localBalance':
+        order = +a.localBalance.sub(b.localBalance);
+        break;
+      case 'remoteFeeRate':
+        order = a.remoteFeeRate - b.remoteFeeRate;
+        break;
+      case 'uptimePercent':
+        order = a.uptimePercent - b.uptimePercent;
+        break;
+      case 'aliasLabel':
+        order = a.aliasLabel.toLowerCase() > b.aliasLabel.toLowerCase() ? 1 : -1;
+        break;
+      case 'capacity':
+        order = +a.capacity.sub(b.capacity);
+        break;
+      case 'balanceModeOrder':
+      default:
+        order = a.balanceModeOrder - b.balanceModeOrder;
+        break;
+    }
+
+    return order;
   }
 
   /**

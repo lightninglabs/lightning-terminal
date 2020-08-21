@@ -3,8 +3,9 @@ import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Channel } from 'store/models';
-import { Column, HeaderFour, Row } from 'components/base';
+import { Cancel, Column, HeaderFour, Row } from 'components/base';
 import Checkbox from 'components/common/Checkbox';
+import SortableHeader from 'components/common/SortableHeader';
 import Tip from 'components/common/Tip';
 import Unit from 'components/common/Unit';
 import { styled } from 'components/theme';
@@ -57,6 +58,10 @@ const Styled = {
       max-width: 20%;
     }
   `,
+  ClearSortIcon: styled(Cancel)`
+    padding: 2px;
+    margin-left: 4px;
+  `,
   StatusIcon: styled.span`
     color: ${props => props.theme.colors.pink};
   `,
@@ -81,36 +86,84 @@ const ChannelAliasTip: React.FC<{ channel: Channel }> = ({ channel }) => {
   );
 };
 
-export const ChannelRowHeader: React.FC = () => {
+const RowHeader: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.ChannelRowHeader');
-  const { Column, ActionColumn, WideColumn } = Styled;
+  const { settingsStore } = useStore();
+
+  const { Column, ActionColumn, WideColumn, ClearSortIcon } = Styled;
   return (
     <Row>
-      <ActionColumn></ActionColumn>
+      <ActionColumn>
+        {settingsStore.channelSort.field && (
+          <Tip overlay={l('resetSort')} placement="right">
+            <HeaderFour>
+              <ClearSortIcon size="x-small" onClick={settingsStore.resetChannelSort} />
+            </HeaderFour>
+          </Tip>
+        )}
+      </ActionColumn>
       <Column right>
-        <HeaderFour data-tour="channel-list-receive">{l('canReceive')}</HeaderFour>
+        <SortableHeader<Channel>
+          field="remoteBalance"
+          sort={settingsStore.channelSort}
+          onSort={settingsStore.setChannelSort}
+        >
+          <span data-tour="channel-list-receive">{l('canReceive')}</span>
+        </SortableHeader>
       </Column>
-      <WideColumn cols={2} colsXl={3}></WideColumn>
+      <WideColumn cols={2} colsXl={3} />
       <Column>
-        <HeaderFour data-tour="channel-list-send">{l('canSend')}</HeaderFour>
+        <SortableHeader<Channel>
+          field="localBalance"
+          sort={settingsStore.channelSort}
+          onSort={settingsStore.setChannelSort}
+        >
+          <span data-tour="channel-list-send">{l('canSend')}</span>
+        </SortableHeader>
       </Column>
-      <Column cols={1}>
-        <Tip overlay={l('feeRateTip')} capitalize={false}>
-          <HeaderFour data-tour="channel-list-fee">{l('feeRate')}</HeaderFour>
-        </Tip>
+      <Column>
+        <SortableHeader<Channel>
+          field="remoteFeeRate"
+          sort={settingsStore.channelSort}
+          onSort={settingsStore.setChannelSort}
+        >
+          <Tip overlay={l('feeRateTip')} capitalize={false}>
+            <span data-tour="channel-list-fee">{l('feeRate')}</span>
+          </Tip>
+        </SortableHeader>
       </Column>
-      <Column cols={1}>
-        <HeaderFour data-tour="channel-list-uptime">{l('upTime')}</HeaderFour>
+      <Column>
+        <SortableHeader<Channel>
+          field="uptimePercent"
+          sort={settingsStore.channelSort}
+          onSort={settingsStore.setChannelSort}
+        >
+          <span data-tour="channel-list-uptime">{l('upTime')}</span>
+        </SortableHeader>
       </Column>
       <WideColumn cols={2}>
-        <HeaderFour data-tour="channel-list-peer">{l('peer')}</HeaderFour>
+        <SortableHeader<Channel>
+          field="aliasLabel"
+          sort={settingsStore.channelSort}
+          onSort={settingsStore.setChannelSort}
+        >
+          <span data-tour="channel-list-peer">{l('peer')}</span>
+        </SortableHeader>
       </WideColumn>
       <Column right last>
-        <HeaderFour data-tour="channel-list-capacity">{l('capacity')}</HeaderFour>
+        <SortableHeader<Channel>
+          field="capacity"
+          sort={settingsStore.channelSort}
+          onSort={settingsStore.setChannelSort}
+        >
+          <span data-tour="channel-list-capacity">{l('capacity')}</span>
+        </SortableHeader>
       </Column>
     </Row>
   );
 };
+
+export const ChannelRowHeader = observer(RowHeader);
 
 interface Props {
   channel: Channel;
@@ -118,15 +171,15 @@ interface Props {
 }
 
 const ChannelRow: React.FC<Props> = ({ channel, style }) => {
-  const store = useStore();
+  const { buildSwapStore } = useStore();
 
-  const editable = store.buildSwapStore.listEditable;
-  const disabled = store.buildSwapStore.showWizard;
-  const checked = store.buildSwapStore.selectedChanIds.includes(channel.chanId);
+  const editable = buildSwapStore.listEditable;
+  const disabled = buildSwapStore.showWizard;
+  const checked = buildSwapStore.selectedChanIds.includes(channel.chanId);
   const dimmed = editable && disabled && !checked;
 
   const handleRowChecked = () => {
-    store.buildSwapStore.toggleSelectedChannel(channel.chanId);
+    buildSwapStore.toggleSelectedChannel(channel.chanId);
   };
 
   const { Row, Column, ActionColumn, WideColumn, StatusIcon, Check, Balance } = Styled;
@@ -155,12 +208,12 @@ const ChannelRow: React.FC<Props> = ({ channel, style }) => {
       <Column>
         <Unit sats={channel.localBalance} suffix={false} />
       </Column>
-      <Column cols={1}>
+      <Column>
         <Tip overlay={`${channel.remoteFeeRate} ppm`} placement="left" capitalize={false}>
           <span>{channel.remoteFeePct}</span>
         </Tip>
       </Column>
-      <Column cols={1}>{channel.uptimePercent}</Column>
+      <Column>{channel.uptimePercent}</Column>
       <WideColumn cols={2}>
         <Tip
           overlay={<ChannelAliasTip channel={channel} />}
