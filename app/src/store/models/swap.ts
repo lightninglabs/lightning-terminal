@@ -1,6 +1,7 @@
 import { action, computed, observable } from 'mobx';
 import { now } from 'mobx-utils';
 import * as LOOP from 'types/generated/loop_pb';
+import { SortParams } from 'types/state';
 import Big from 'big.js';
 import formatDate from 'date-fns/format';
 import { CsvColumns } from 'util/csv';
@@ -110,6 +111,30 @@ export default class Swap {
     this.initiationTime = loopSwap.initiationTime;
     this.lastUpdateTime = loopSwap.lastUpdateTime;
     this.state = loopSwap.state;
+  }
+
+  /**
+   * Compares a specific field of two swaps for sorting
+   * @param a the first swap to compare
+   * @param b the second swap to compare
+   * @param sortBy the field and direction to sort the two swaps by
+   * @returns a positive number if `a`'s field is greater than `b`'s,
+   * a negative number if `a`'s field is less than `b`'s, or zero otherwise
+   */
+  static compare(a: Swap, b: Swap, field: SortParams<Swap>['field']): number {
+    switch (field) {
+      case 'stateLabel':
+        return a.stateLabel.toLowerCase() > b.stateLabel.toLowerCase() ? 1 : -1;
+      case 'typeName':
+        return a.typeName.toLowerCase() > b.typeName.toLowerCase() ? 1 : -1;
+      case 'amount':
+        return +a.amount.sub(b.amount);
+      case 'initiationTime':
+        return a.initiationTime - b.initiationTime;
+      case 'lastUpdateTime':
+      default:
+        return a.lastUpdateTime - b.lastUpdateTime;
+    }
   }
 
   /**

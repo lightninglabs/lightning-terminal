@@ -2,7 +2,7 @@ import { action, autorun, observable, toJS } from 'mobx';
 import { SortParams } from 'types/state';
 import { BalanceMode, Unit } from 'util/constants';
 import { Store } from 'store';
-import { Channel } from 'store/models';
+import { Channel, Swap } from 'store/models';
 
 export interface PersistentSettings {
   sidebarVisible: boolean;
@@ -10,6 +10,7 @@ export interface PersistentSettings {
   balanceMode: BalanceMode;
   tourAutoShown: boolean;
   channelSort: SortParams<Channel>;
+  historySort: SortParams<Swap>;
 }
 
 export default class SettingsStore {
@@ -33,6 +34,12 @@ export default class SettingsStore {
   /** specifies the sorting field and direction for the channel list */
   @observable channelSort: SortParams<Channel> = {
     field: undefined,
+    descending: true,
+  };
+
+  /** specifies the sorting field and direction for the channel list */
+  @observable historySort: SortParams<Swap> = {
+    field: 'lastUpdateTime',
     descending: true,
   };
 
@@ -99,6 +106,17 @@ export default class SettingsStore {
   }
 
   /**
+   * Sets the sort field and direction that the swap history list should use
+   * @param field the swap field to sort by
+   * @param descending true of the order should be descending, otherwise false
+   */
+  @action.bound
+  setHistorySort(field: SortParams<Swap>['field'], descending: boolean) {
+    this.historySort = { field, descending };
+    this._store.log.info('updated history list sort order', toJS(this.historySort));
+  }
+
+  /**
    * initialized the settings and auto-save when a setting is changed
    */
   @action.bound
@@ -112,6 +130,7 @@ export default class SettingsStore {
           balanceMode: this.balanceMode,
           tourAutoShown: this.tourAutoShown,
           channelSort: toJS(this.channelSort),
+          historySort: toJS(this.historySort),
         };
         this._store.storage.set('settings', settings);
         this._store.log.info('saved settings to localStorage', settings);
@@ -133,6 +152,7 @@ export default class SettingsStore {
       this.balanceMode = settings.balanceMode;
       this.tourAutoShown = settings.tourAutoShown;
       if (settings.channelSort) this.channelSort = settings.channelSort;
+      if (settings.historySort) this.historySort = settings.historySort;
       this._store.log.info('loaded settings', settings);
     }
 
