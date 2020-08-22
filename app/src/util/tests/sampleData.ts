@@ -6,7 +6,8 @@ import * as LOOP from 'types/generated/loop_pb';
 //
 
 export const lndGetInfo: LND.GetInfoResponse.AsObject = {
-  version: '0.10.0-beta commit=v0.10.0-beta',
+  version: '0.11.0-beta commit=lightning-terminal-v0.1.0-alpha',
+  commitHash: '9d5c264e7f0fd6751aeb41da497923512ac8fbea',
   identityPubkey: '038b3fc29cfc195c9b190d86ad2d40ce7550a5c6f13941f53c7d7ac5b25c912a6c',
   alias: 'alice',
   color: '#cccccc',
@@ -105,9 +106,12 @@ export const lndChannel: LND.Channel.AsObject = {
   localChanReserveSat: 150000,
   remoteChanReserveSat: 150000,
   staticRemoteKey: true,
+  commitmentType: LND.CommitmentType.STATIC_REMOTE_KEY,
   lifetime: 21802,
   uptime: 21802,
   closeAddress: '',
+  pushAmountSat: 5000000,
+  thawHeight: 0,
 };
 
 export const lndListChannelsMany: LND.ListChannelsResponse.AsObject = {
@@ -149,6 +153,9 @@ export const lndChannelEvent: Required<LND.ChannelEventUpdate.AsObject> = {
     remotePubkey: '030e98fdacf2464bdfb027b866a018d6cdc5108514208988873abea7eff59afd91',
     settledBalance: 12990950,
     timeLockedBalance: 0,
+    openInitiator: 1,
+    closeInitiator: 1,
+    resolutionsList: [],
   },
   activeChannel: {
     fundingTxidBytes: txIdBytes,
@@ -159,6 +166,10 @@ export const lndChannelEvent: Required<LND.ChannelEventUpdate.AsObject> = {
     fundingTxidBytes: txIdBytes,
     fundingTxidStr: '',
     outputIndex: outIndex,
+  },
+  pendingOpenChannel: {
+    txid: '1f765f45f2a6d33837a203e3fc911915c891e9b86f9c9d91a1931b92efdedf5b',
+    outputIndex: 0,
   },
 };
 
@@ -176,6 +187,7 @@ export const lndTransaction: LND.Transaction.AsObject = {
   timeStamp: 1591226124,
   totalFees: 0,
   txHash: '1f765f45f2a6d33837a203e3fc911915c891e9b86f9c9d91a1931b92efdedf5b',
+  label: '',
 };
 
 export const lndGetChanInfo: Required<LND.ChannelEdge.AsObject> = {
