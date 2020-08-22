@@ -216,6 +216,7 @@ export const loopListSwaps: LOOP.ListSwapsResponse.AsObject = {
     idBytes: '9OsRg4PCsJ2MconOIcJZAM+0VF1GxH7SOjGtKqV86DU=',
     type: (i % 3) as LOOP.SwapStatus.AsObject['type'],
     state: i % 2 ? LOOP.SwapState.SUCCESS : LOOP.SwapState.FAILED,
+    failureReason: (i % 2 === 0 ? 0 : i % 7) as LOOP.SwapStatus.AsObject['failureReason'],
     initiationTime: 1586390353623905000 + i * 100000000000000,
     lastUpdateTime: 1586398369729857000 + i * 200000000000000,
     htlcAddress: 'bcrt1qzu4077erkr78k52yuf2rwkk6ayr6m3wtazdfz2qqmd7taa5vvy9s5d75gd',
@@ -224,20 +225,34 @@ export const loopListSwaps: LOOP.ListSwapsResponse.AsObject = {
     costServer: 66,
     costOnchain: 6812,
     costOffchain: 2,
+    label: `Sample Swap #${i + 1}`,
   })),
 };
 
-export const loopTerms: LOOP.TermsResponse.AsObject = {
+export const loopOutTerms: LOOP.OutTermsResponse.AsObject = {
+  minSwapAmount: 250000,
+  maxSwapAmount: 1000000,
+  minCltvDelta: 20,
+  maxCltvDelta: 60,
+};
+
+export const loopInTerms: LOOP.InTermsResponse.AsObject = {
   minSwapAmount: 250000,
   maxSwapAmount: 1000000,
 };
 
-export const loopQuote: LOOP.QuoteResponse.AsObject = {
+export const loopOutQuote: LOOP.OutQuoteResponse.AsObject = {
   cltvDelta: 50,
-  minerFee: 7387,
-  prepayAmt: 1337,
-  swapFee: 83,
+  htlcSweepFeeSat: 7387,
+  prepayAmtSat: 1337,
+  swapFeeSat: 83,
   swapPaymentDest: 'Au1a9/hEsbxHUOwFC1QwxZq6EnnKYtpAdc74OZK8/syU',
+};
+
+export const loopInQuote: LOOP.InQuoteResponse.AsObject = {
+  cltvDelta: 50,
+  htlcPublishFeeSat: 7387,
+  swapFeeSat: 83,
 };
 
 export const loopSwapResponse: LOOP.SwapResponse.AsObject = {
@@ -246,6 +261,7 @@ export const loopSwapResponse: LOOP.SwapResponse.AsObject = {
   htlcAddressP2wsh: 'bcrt1qkjct8aqxfwyla50mfxdnzlmuphg3zwuz2zmuy99c9sw67xj7tn2sfkflhw',
   id: '18e17a2f44efc7f344ef6330281765e569315f93d3eaf9b0f959b404836e3480',
   idBytes: 'GOF6L0Tvx/NE72MwKBdl5WkxX5PT6vmw+Vm0BINuNIA=',
+  serverMessage: 'Loop, there it is!',
 };
 
 // collection of sample API responses
@@ -257,10 +273,10 @@ export const sampleApiResponses: Record<string, any> = {
   'lnrpc.Lightning.WalletBalance': lndWalletBalance,
   'lnrpc.Lightning.ListChannels': lndListChannels,
   'looprpc.SwapClient.ListSwaps': loopListSwaps,
-  'looprpc.SwapClient.LoopOutTerms': loopTerms,
-  'looprpc.SwapClient.GetLoopInTerms': loopTerms,
-  'looprpc.SwapClient.LoopOutQuote': loopQuote,
-  'looprpc.SwapClient.GetLoopInQuote': loopQuote,
+  'looprpc.SwapClient.LoopOutTerms': loopOutTerms,
+  'looprpc.SwapClient.GetLoopInTerms': loopInTerms,
+  'looprpc.SwapClient.LoopOutQuote': loopOutQuote,
+  'looprpc.SwapClient.GetLoopInQuote': loopInQuote,
   'looprpc.SwapClient.LoopIn': loopSwapResponse,
   'looprpc.SwapClient.LoopOut': loopSwapResponse,
 };

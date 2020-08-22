@@ -5,7 +5,7 @@ import { waitFor } from '@testing-library/react';
 import Big from 'big.js';
 import { BalanceMode } from 'util/constants';
 import { injectIntoGrpcUnary } from 'util/tests';
-import { lndChannel, loopTerms } from 'util/tests/sampleData';
+import { lndChannel, loopInTerms } from 'util/tests/sampleData';
 import { BuildSwapStore, createStore, Store } from 'store';
 import { Channel } from 'store/models';
 import { SWAP_ABORT_DELAY } from 'store/stores/buildSwapStore';
@@ -105,15 +105,15 @@ describe('BuildSwapStore', () => {
   });
 
   it('should ensure amount is greater than the min terms', async () => {
-    store.setAmount(Big(loopTerms.minSwapAmount - 100));
+    store.setAmount(Big(loopInTerms.minSwapAmount - 100));
     await store.getTerms();
-    expect(+store.amountForSelected).toBe(loopTerms.minSwapAmount);
+    expect(+store.amountForSelected).toBe(loopInTerms.minSwapAmount);
   });
 
   it('should ensure amount is less than the max terms', async () => {
-    store.setAmount(Big(loopTerms.maxSwapAmount + 100));
+    store.setAmount(Big(loopInTerms.maxSwapAmount + 100));
     await store.getTerms();
-    expect(+store.amountForSelected).toBe(loopTerms.maxSwapAmount);
+    expect(+store.amountForSelected).toBe(loopInTerms.maxSwapAmount);
   });
 
   it('should select all channels with the same peer for loop in', () => {
@@ -135,7 +135,7 @@ describe('BuildSwapStore', () => {
     await store.getQuote();
     expect(+store.quote.swapFee).toEqual(83);
     expect(+store.quote.minerFee).toEqual(7387);
-    expect(+store.quote.prepayAmount).toEqual(1337);
+    expect(+store.quote.prepayAmount).toEqual(0);
   });
 
   it('should fetch a loop out quote', async () => {

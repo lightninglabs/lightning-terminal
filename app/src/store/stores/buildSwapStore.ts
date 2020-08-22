@@ -383,17 +383,25 @@ class BuildSwapStore {
     this._store.log.info(`fetching ${direction} quote for ${amount} sats`);
 
     try {
-      const quote =
-        direction === SwapDirection.IN
-          ? await this._store.api.loop.getLoopInQuote(amount)
-          : await this._store.api.loop.getLoopOutQuote(amount);
+      let quote: Quote;
+      if (direction === SwapDirection.IN) {
+        const inQuote = await this._store.api.loop.getLoopInQuote(amount);
+        quote = {
+          swapFee: Big(inQuote.swapFeeSat),
+          minerFee: Big(inQuote.htlcPublishFeeSat),
+          prepayAmount: Big(0),
+        };
+      } else {
+        const outQuote = await this._store.api.loop.getLoopOutQuote(amount);
+        quote = {
+          swapFee: Big(outQuote.swapFeeSat),
+          minerFee: Big(outQuote.htlcSweepFeeSat),
+          prepayAmount: Big(outQuote.prepayAmtSat),
+        };
+      }
 
       runInAction('getQuoteContinuation', () => {
-        this.quote = {
-          swapFee: Big(quote.swapFee),
-          minerFee: Big(quote.minerFee),
-          prepayAmount: Big(quote.prepayAmt),
-        };
+        this.quote = quote;
         this._store.log.info('updated buildSwapStore.quote', toJS(this.quote));
       });
     } catch (error) {
