@@ -9,7 +9,7 @@ require (
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/lightninglabs/faraday v0.2.0-alpha.0.20200708222452-2fe6222047a4
 	github.com/lightninglabs/lndclient v1.0.1-0.20200708220508-33580b267beb
-	github.com/lightninglabs/loop v0.6.5-beta
+	github.com/lightninglabs/loop v0.8.0-beta
 	github.com/lightningnetwork/lnd v0.10.3-beta
 	github.com/lightningnetwork/lnd/cert v1.0.2
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
@@ -29,7 +29,7 @@ require (
 // we explicitly need for the unified binary to work.
 replace (
 	github.com/lightninglabs/lndclient => github.com/lightninglabs/lndclient v1.0.1-0.20200708223031-76709c25d859
-	github.com/lightninglabs/loop => github.com/lightninglabs/loop v0.6.5-beta
+	github.com/lightninglabs/loop => github.com/lightninglabs/loop v0.8.0-beta
 	github.com/lightningnetwork/lnd => github.com/lightningnetwork/lnd v0.10.3-beta
 )
 
