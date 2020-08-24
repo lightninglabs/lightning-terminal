@@ -99,7 +99,7 @@ class LoopApi extends BaseApi<LoopEvents> {
     req.setMaxSwapFee(+quote.swapFee);
     req.setMaxMinerFee(+quote.minerFee);
     req.setMaxPrepayAmt(+quote.prepayAmount);
-    req.setMaxSwapRoutingFee(this._calcRoutingFee(+quote.swapFee));
+    req.setMaxSwapRoutingFee(this._calcRoutingFee(+amount));
     req.setMaxPrepayRoutingFee(this._calcRoutingFee(+quote.prepayAmount));
     req.setOutgoingChanSetList(chanIds);
     req.setSwapPublicationDeadline(deadline);
