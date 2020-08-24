@@ -33,7 +33,7 @@ class LoopApi extends BaseApi<LoopEvents> {
   /**
    * call the Loop `GetLoopInTerms` RPC and return the response
    */
-  async getLoopInTerms(): Promise<LOOP.TermsResponse.AsObject> {
+  async getLoopInTerms(): Promise<LOOP.InTermsResponse.AsObject> {
     const req = new LOOP.TermsRequest();
     const res = await this._grpc.request(SwapClient.GetLoopInTerms, req, this._meta);
     return res.toObject();
@@ -42,7 +42,7 @@ class LoopApi extends BaseApi<LoopEvents> {
   /**
    * call the Loop `LoopOutTerms` RPC and return the response
    */
-  async getLoopOutTerms(): Promise<LOOP.TermsResponse.AsObject> {
+  async getLoopOutTerms(): Promise<LOOP.OutTermsResponse.AsObject> {
     const req = new LOOP.TermsRequest();
     const res = await this._grpc.request(SwapClient.LoopOutTerms, req, this._meta);
     return res.toObject();
@@ -51,7 +51,7 @@ class LoopApi extends BaseApi<LoopEvents> {
   /**
    * call the Loop `GetLoopInQuote` RPC and return the response
    */
-  async getLoopInQuote(amount: Big): Promise<LOOP.QuoteResponse.AsObject> {
+  async getLoopInQuote(amount: Big): Promise<LOOP.InQuoteResponse.AsObject> {
     const req = new LOOP.QuoteRequest();
     req.setAmt(+amount);
     const res = await this._grpc.request(SwapClient.GetLoopInQuote, req, this._meta);
@@ -61,7 +61,7 @@ class LoopApi extends BaseApi<LoopEvents> {
   /**
    * call the Loop `LoopOutQuote` RPC and return the response
    */
-  async getLoopOutQuote(amount: Big): Promise<LOOP.QuoteResponse.AsObject> {
+  async getLoopOutQuote(amount: Big): Promise<LOOP.OutQuoteResponse.AsObject> {
     const req = new LOOP.QuoteRequest();
     req.setAmt(+amount);
     const res = await this._grpc.request(SwapClient.LoopOutQuote, req, this._meta);
