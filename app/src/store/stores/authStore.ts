@@ -25,8 +25,8 @@ export default class AuthStore {
   setCredentials(credentials: string) {
     this.credentials = credentials;
     this._store.storage.setSession('credentials', this.credentials);
-    this._store.api.lnd.setCredentials(credentials);
-    this._store.api.loop.setCredentials(credentials);
+    // set the credentials in all API wrappers
+    Object.values(this._store.api).forEach(api => api.setCredentials(credentials));
   }
 
   /**
