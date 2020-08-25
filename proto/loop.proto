@@ -62,7 +62,7 @@ service SwapClient {
     /** loop: `terms`
     LoopOutTerms returns the terms that the server enforces for a loop out swap.
     */
-    rpc LoopOutTerms (TermsRequest) returns (TermsResponse) {
+    rpc LoopOutTerms (TermsRequest) returns (OutTermsResponse) {
         option (google.api.http) = {
             get: "/v1/loop/out/terms"
         };
@@ -72,7 +72,7 @@ service SwapClient {
     LoopOutQuote returns a quote for a loop out swap with the provided
     parameters.
     */
-    rpc LoopOutQuote (QuoteRequest) returns (QuoteResponse) {
+    rpc LoopOutQuote (QuoteRequest) returns (OutQuoteResponse) {
         option (google.api.http) = {
             get: "/v1/loop/out/quote/{amt}"
         };
@@ -81,7 +81,7 @@ service SwapClient {
     /** loop: `terms`
     GetTerms returns the terms that the server enforces for swaps.
     */
-    rpc GetLoopInTerms (TermsRequest) returns (TermsResponse) {
+    rpc GetLoopInTerms (TermsRequest) returns (InTermsResponse) {
         option (google.api.http) = {
             get: "/v1/loop/in/terms"
         };
@@ -90,7 +90,7 @@ service SwapClient {
     /** loop: `quote`
     GetQuote returns a quote for a swap with the provided parameters.
     */
-    rpc GetLoopInQuote (QuoteRequest) returns (QuoteResponse) {
+    rpc GetLoopInQuote (QuoteRequest) returns (InQuoteResponse) {
         option (google.api.http) = {
             get: "/v1/loop/in/quote/{amt}"
         };
@@ -118,14 +118,14 @@ message LoopOutRequest {
     string dest = 2;
 
     /**
-    Maximum off-chain fee in msat that may be paid for payment to the server.
+    Maximum off-chain fee in sat that may be paid for swap payment to the server.
     This limit is applied during path finding. Typically this value is taken
     from the response of the GetQuote call.
     */
     int64 max_swap_routing_fee = 3;
 
     /**
-    Maximum off-chain fee in msat that may be paid for payment to the server.
+    Maximum off-chain fee in sat that may be paid for the prepay to the server.
     This limit is applied during path finding. Typically this value is taken
     from the response of the GetQuote call.
     */
@@ -145,7 +145,7 @@ message LoopOutRequest {
     int64 max_prepay_amt = 6;
 
     /**
-    Maximum in on-chain fees that we are willing to spent. If we want to
+    Maximum in on-chain fees that we are willing to spend. If we want to
     sweep the on-chain htlc and the fee estimate turns out higher than this
     value, we cancel the swap. If the fee estimate is lower, we publish the
     sweep tx.
@@ -182,6 +182,12 @@ message LoopOutRequest {
     */
     int32 sweep_conf_target = 9;
 
+    /*
+    The number of confirmations that we require for the on chain htlc that will
+    be published by the server before we reveal the preimage.
+    */
+    int32 htlc_confirmations = 13;
+
     /**
     The latest time (in unix seconds) we allow the server to wait before
     publishing the HTLC on chain. Setting this to a larger value will give the
@@ -190,6 +196,13 @@ message LoopOutRequest {
     lower total swap fee.
     */
     uint64 swap_publication_deadline = 10;
+
+    /*
+    An optional label for this swap. This field is limited to 500 characters
+    and may not start with the prefix [reserved], which is used to tag labels
+    produced by the daemon.
+    */
+    string label = 12;
 }
 
 message LoopInRequest {
@@ -208,7 +221,7 @@ message LoopInRequest {
     int64 max_swap_fee = 2;
 
     /**
-    Maximum in on-chain fees that we are willing to spent. If we want to
+    Maximum in on-chain fees that we are willing to spend. If we want to
     publish the on-chain htlc and the fee estimate turns out higher than this
     value, we cancel the swap. 
 
@@ -232,6 +245,12 @@ message LoopInRequest {
     The number of blocks that the on chain htlc should confirm within.
     */
     int32 htlc_conf_target = 6;
+
+    /*
+    An optional label for this swap. This field is limited to 500 characters
+    and may not be one of the reserved values in loop/labels Reserved list.
+    */
+    string label = 7;
 }
 
 message SwapResponse {
@@ -272,6 +291,9 @@ message SwapResponse {
     Used for both loop-in and loop-out.
     */
     string htlc_address_p2wsh = 5;
+
+    // A human-readable message received from the loop server.
+    string server_message = 6;
 }
 
 message MonitorRequest {
@@ -308,6 +330,11 @@ message SwapStatus {
     */
     SwapState state = 4;
 
+    /*
+    A failure reason for the swap, only set if the swap has failed.
+    */
+    FailureReason failure_reason = 14;
+
     /**
     Initiation time of the swap.
     */
@@ -343,6 +370,9 @@ message SwapStatus {
 
     // Off-chain routing fees
     int64 cost_offchain = 10;
+
+    // An optional label given to the swap on creation.
+    string label = 15;
 }
 
 enum SwapType {
@@ -389,10 +419,57 @@ enum SwapState {
     FAILED = 4;
 
     /**
-   INVOICE_SETTLED is reached when the swap invoice in a loop in swap has been
-   paid, but we are still waiting for the htlc spend to confirm.
-   */
+    INVOICE_SETTLED is reached when the swap invoice in a loop in swap has been
+    paid, but we are still waiting for the htlc spend to confirm.
+    */
     INVOICE_SETTLED = 5;
+}
+
+enum FailureReason{
+    /*
+    FAILURE_REASON_NONE is set when the swap did not fail, it is either in
+    progress or succeeded.
+    */
+    FAILURE_REASON_NONE = 0;
+
+    /*
+    FAILURE_REASON_OFFCHAIN indicates that a loop out failed because it wasn't
+    possible to find a route for one or both off chain payments that met the fee
+    and timelock limits required.
+    */
+    FAILURE_REASON_OFFCHAIN = 1;
+
+    /*
+    FAILURE_REASON_TIMEOUT indicates that the swap failed because on chain htlc
+    did not confirm before its expiry, or it confirmed too late for us to reveal
+    our preimage and claim.
+    */
+    FAILURE_REASON_TIMEOUT = 2;
+
+    /*
+    FAILURE_REASON_SWEEP_TIMEOUT indicates that a loop out permanently failed
+    because the on chain htlc wasn't swept before the server revoked the
+    htlc.
+    */
+    FAILURE_REASON_SWEEP_TIMEOUT = 3;
+
+    /*
+    FAILURE_REASON_INSUFFICIENT_VALUE indicates that a loop out has failed
+    because the on chain htlc had a lower value than requested.
+    */
+    FAILURE_REASON_INSUFFICIENT_VALUE = 4;
+
+    /*
+    FAILURE_REASON_TEMPORARY indicates that a swap cannot continue due to an
+    internal error. Manual intervention such as a restart is required.
+    */
+    FAILURE_REASON_TEMPORARY = 5;
+
+    /*
+    FAILURE_REASON_INCORRECT_AMOUNT indicates that a loop in permanently failed
+    because the amount extended by an external loop in htlc is insufficient.
+    */
+    FAILURE_REASON_INCORRECT_AMOUNT = 6;
 }
 
 message ListSwapsRequest {
@@ -416,7 +493,7 @@ message SwapInfoRequest {
 message TermsRequest {
 }
 
-message TermsResponse {
+message InTermsResponse {
 
     reserved 1, 2, 3, 4, 7;
 
@@ -429,6 +506,27 @@ message TermsResponse {
     Maximum swap amount (sat)
     */
     int64 max_swap_amount = 6;
+}
+
+message OutTermsResponse {
+
+    reserved 1, 2, 3, 4, 7;
+
+    /**
+    Minimum swap amount (sat)
+    */
+    int64 min_swap_amount = 5;
+
+    /**
+    Maximum swap amount (sat)
+    */
+    int64 max_swap_amount = 6;
+
+    // The minimally accepted cltv delta of the on-chain htlc.
+    int32 min_cltv_delta = 8;
+
+    // The maximally accepted cltv delta of the on-chain htlc.
+    int32 max_cltv_delta = 9;
 }
 
 message QuoteRequest {
@@ -461,27 +559,46 @@ message QuoteRequest {
     uint64 swap_publication_deadline = 4;
 }
 
-message QuoteResponse {
+message InQuoteResponse {
+    reserved 2, 4;
+
     /**
     The fee that the swap server is charging for the swap.
     */
-    int64 swap_fee = 1;
+    int64 swap_fee_sat = 1;
+
+    /*
+    An estimate of the on-chain fee that needs to be paid to publish the HTLC
+    If a miner fee of 0 is returned, it means the external_htlc flag was set for
+    a loop in and the fee estimation was skipped. If a miner fee of -1 is
+    returned, it means lnd's wallet tried to estimate the fee but was unable to
+    create a sample estimation transaction because not enough funds are
+    available. An information message should be shown to the user in this case.
+    */
+    int64 htlc_publish_fee_sat = 3;
+
+    /**
+    On-chain cltv expiry delta
+    */
+    int32 cltv_delta = 5;
+}
+
+message OutQuoteResponse {
+    /**
+    The fee that the swap server is charging for the swap.
+    */
+    int64 swap_fee_sat = 1;
 
     /**
     The part of the swap fee that is requested as a prepayment.
     */
-    int64 prepay_amt = 2;
+    int64 prepay_amt_sat = 2;
 
     /**
     An estimate of the on-chain fee that needs to be paid to sweep the HTLC for
-    a loop out or to pay to the HTLC for loop in. If a miner fee of 0 is
-    returned, it means the external_htlc flag was set for a loop in and the fee
-    estimation was skipped. If a miner fee of -1 is returned, it means lnd's
-    wallet tried to estimate the fee but was unable to create a sample
-    estimation transaction because not enough funds are available. An
-    information message should be shown to the user in this case.
+    a loop out.
     */
-    int64 miner_fee = 3;
+    int64 htlc_sweep_fee_sat = 3;
 
     /**
     The node pubkey where the swap payment needs to be paid
