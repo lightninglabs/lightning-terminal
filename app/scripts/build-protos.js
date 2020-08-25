@@ -41,6 +41,8 @@ const protoSources = async () => {
 const filePatches = {
   lnd: 'lnrpc: {}',
   loop: 'looprpc: {}',
+  trader: 'poolrpc: {}',
+  auctioneer: 'poolrpc: {}',
   'google/api/annotations': 'google: { api: {} }',
   'google/api/http': 'google: { api: {} }',
 };

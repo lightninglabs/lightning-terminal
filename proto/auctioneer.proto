@@ -1,0 +1,1089 @@
+syntax = "proto3";
+
+package poolrpc;
+
+option go_package = "github.com/lightninglabs/pool/poolrpc";
+
+service ChannelAuctioneer {
+    rpc ReserveAccount (ReserveAccountRequest) returns (ReserveAccountResponse);
+    rpc InitAccount (ServerInitAccountRequest) returns (ServerInitAccountResponse);
+    rpc ModifyAccount (ServerModifyAccountRequest) returns (ServerModifyAccountResponse);
+    rpc SubmitOrder (ServerSubmitOrderRequest) returns (ServerSubmitOrderResponse);
+    rpc CancelOrder (ServerCancelOrderRequest) returns (ServerCancelOrderResponse);
+    rpc OrderState (ServerOrderStateRequest) returns (ServerOrderStateResponse);
+    rpc SubscribeBatchAuction (stream ClientAuctionMessage) returns (stream ServerAuctionMessage);
+    rpc Terms (TermsRequest) returns (TermsResponse);
+    rpc RelevantBatchSnapshot (RelevantBatchRequest) returns (RelevantBatch);
+    rpc BatchSnapshot (BatchSnapshotRequest) returns (BatchSnapshotResponse);
+}
+
+message ReserveAccountRequest {
+    /*
+    The desired value of the account in satoshis.
+    */
+    uint64 account_value = 1;
+
+    /*
+    The block height at which the account should expire.
+    */
+    uint32 account_expiry = 2;
+
+    /*
+    The trader's account key.
+    */
+    bytes trader_key = 3;
+}
+message ReserveAccountResponse {
+    /*
+    The base key of the auctioneer. This key should be tweaked with the trader's
+    per-batch tweaked key to obtain the corresponding per-batch tweaked
+    auctioneer key.
+    */
+    bytes auctioneer_key = 1;
+
+    /*
+    The initial per-batch key to be used for the account. For every cleared
+    batch that the account participates in, this key will be incremented by the
+    base point of its curve, resulting in a new key for both the trader and
+    auctioneer in every batch.
+    */
+    bytes initial_batch_key = 2;
+}
+
+message ServerInitAccountRequest {
+    /*
+    Transaction output of the account. Has to be unspent and be a P2WSH of
+    the account script below. The amount must also exactly correspond to the
+    account value below.
+    */
+    OutPoint account_point = 1;
+
+    /*
+    The script used to create the account point.
+    */
+    bytes account_script = 2;
+
+    /*
+    The value of the account in satoshis. Must match the amount of the
+    account_point output.
+    */
+    uint64 account_value = 3;
+
+    /*
+    The block height at which the account should expire.
+    */
+    uint32 account_expiry = 4;
+
+    /*
+    The trader's account key.
+    */
+    bytes trader_key = 5;
+}
+message ServerInitAccountResponse {
+}
+
+message ServerSubmitOrderRequest {
+    oneof details {
+        /*
+        Submit an ask order.
+        */
+        ServerAsk ask = 1;
+
+        /*
+        Submit a bid order.
+        */
+        ServerBid bid = 2;
+    }
+}
+message ServerSubmitOrderResponse {
+    oneof details {
+        /*
+        Order failed with the given reason.
+        */
+        InvalidOrder invalid_order = 1;
+
+        /*
+        Order was accepted.
+        */
+        bool accepted = 2;
+    }
+}
+
+message ServerCancelOrderRequest {
+    /*
+    The order's unique 32 byte identifier.
+    */
+    bytes order_nonce = 1;
+}
+message ServerCancelOrderResponse {
+}
+
+message ClientAuctionMessage {
+    oneof msg {
+        /*
+        Signal the intent to receive updates about a certain account and start
+        by sending the commitment part of the authentication handshake. This is
+        step 1 of the 3-way handshake.
+        */
+        AccountCommitment commit = 1;
+
+        /*
+        Subscribe to update and interactive order execution events for account
+        given and all its orders. Contains the final signature and is step 3 of
+        the 3-way authentication handshake.
+        */
+        AccountSubscription subscribe = 2;
+
+        /*
+        Accept the orders to be matched.
+        */
+        OrderMatchAccept accept = 3;
+
+        /*
+        Reject a whole batch.
+        */
+        OrderMatchReject reject = 4;
+
+        /*
+        The channel funding negotiations with the matched peer were successful
+        and the inputs to spend from the accounts are now signed.
+        */
+        OrderMatchSign sign = 5;
+
+        /*
+        The trader has lost its database and is trying to recover their
+        accounts. This message can be sent after the successful completion of
+        the 3-way authentication handshake where it will be established if the
+        account exists on the auctioneer's side. This message must only be sent
+        if the auctioneer knows of the account, otherwise it will regard it as a
+        critical error and terminate the connection.
+        */
+        AccountRecovery recover = 6;
+    }
+}
+
+message AccountCommitment {
+    /*
+    The SHA256 hash of the trader's account key and a 32 byte random nonce.
+    commit_hash = SHA256(accountPubKey || nonce)
+    */
+    bytes commit_hash = 1;
+
+    /*
+    The batch verification protocol version the client is using. Clients that
+    don't use the latest version will be declined to connect and participate in
+    an auction. The user should then be informed that a software update is
+    required.
+    */
+    uint32 batch_version = 2;
+}
+
+message AccountSubscription {
+    /*
+    The trader's account key of the account to subscribe to.
+    */
+    bytes trader_key = 1;
+
+    /*
+    The random 32 byte nonce the trader used to create the commitment hash.
+    */
+    bytes commit_nonce = 2;
+
+    /*
+    The signature over the auth_hash which is the hash of the commitment and
+    challenge. The signature is created with the trader's account key they
+    committed to.
+    auth_hash = SHA256(SHA256(accountPubKey || nonce) || challenge)
+    */
+    bytes auth_sig = 3;
+}
+
+message OrderMatchAccept {
+    /*
+    The batch ID this acceptance message refers to. Must be set to avoid out-of-
+    order responses from disrupting the batching process.
+    */
+    bytes batch_id = 1;
+}
+
+message OrderMatchReject {
+    enum RejectReason {
+        // The reason cannot be mapped to a specific code.
+        UNKNOWN = 0;
+
+        /*
+        The client didn't come up with the same result as the server and is
+        rejecting the batch because of that.
+        */
+        SERVER_MISBEHAVIOR = 1;
+
+        /*
+        The client doesn't support the current batch verification version the
+        server is using.
+        */
+        BATCH_VERSION_MISMATCH = 2;
+
+        /*
+        The client rejects some of the orders, not the full batch. When this
+        code is set, the rejected_orders map must be set.
+        */
+        PARTIAL_REJECT = 3;
+    }
+
+    /*
+    The ID of the batch to reject.
+    */
+    bytes batch_id = 1;
+
+    /*
+    The reason/error string for the rejection.
+    */
+    string reason = 2;
+
+    /*
+    The reason as a code.
+    */
+    RejectReason reason_code = 3;
+
+    /*
+    The map of order nonces the trader was matched with but doesn't accept. The
+    map contains the _other_ trader's order nonces and the reason for rejecting
+    them. This can be a subset of the whole list of orders presented as matches
+    if the trader only wants to reject some of them. This map is only
+    considered by the auctioneer if the main reason_code is set to
+    PARTIAL_REJECT. Otherwise it is assumed that the whole batch was faulty for
+    some reason and that the trader rejects all orders contained. The auctioneer
+    will only accept a certain number of these partial rejects before a trader's
+    account is removed completely from the current batch. Abusing this
+    functionality can also lead to a ban of the trader.
+
+    The order nonces are hex encoded strings because the protobuf map doesn't
+    allow raw bytes to be the map key type.
+    */
+    map<string, OrderReject> rejected_orders = 4;
+}
+
+message OrderReject {
+    enum OrderRejectReason {
+        /*
+        The trader's client has a preference to only match orders with peers it
+        doesn't already have channels with. The order that is rejected with this
+        reason type comes from a peer that the trader already has channels with.
+        */
+        DUPLICATE_PEER = 0;
+
+        /*
+        The trader's client couldn't connect to the remote node of the matched
+        order or the channel funding could not be initialized for another
+        reason. This could also be the rejecting node's fault if their
+        connection is not stable. Using this code can have a negative impact on
+        the reputation score of both nodes, depending on the number of errors
+        recorded.
+        */
+        CHANNEL_FUNDING_FAILED = 1;
+    }
+
+    /*
+    The reason/error string for the rejection.
+    */
+    string reason = 1;
+
+    /*
+    The reason as a code.
+    */
+    OrderRejectReason reason_code = 2;
+}
+
+enum ChannelType {
+    // The channel supports static to_remote keys.
+    TWEAKLESS = 0;
+
+    // The channel uses an anchor-based commitment.
+    ANCHORS = 1;
+}
+
+message ChannelInfo {
+    // The identifying type of the channel.
+    ChannelType type = 1;
+
+    // The node's identifying public key.
+    bytes local_node_key = 2;
+
+    // The remote node's identifying public key.
+    bytes remote_node_key = 3;
+
+    /*
+    The node's base public key used within the non-delayed pay-to-self output on
+    the commitment transaction.
+    */
+    bytes local_payment_base_point = 4;
+
+    /*
+    RemotePaymentBasePoint is the remote node's base public key used within the
+    non-delayed pay-to-self output on the commitment transaction.
+    */
+    bytes remote_payment_base_point = 5;
+}
+
+message OrderMatchSign {
+    /*
+    The ID of the batch that the signatures are meant for.
+    */
+    bytes batch_id = 1;
+
+    /*
+    A map with the signatures to spend the accounts being spent in a batch
+    transaction. The map key corresponds to the trader's account key of the
+    account in the batch transaction. The account key/ID has to be hex encoded
+    into a string because protobuf doesn't allow bytes as a map key data type.
+    */
+    map<string, bytes> account_sigs = 2;
+
+    /*
+    The information for each channel created as part of a batch that's submitted
+    to the auctioneer to ensure they can properly enforce a channel's service
+    lifetime. Entries are indexed by the string representation of a channel's
+    outpoint.
+    */
+    map<string, ChannelInfo> channel_infos = 3;
+}
+
+message AccountRecovery {
+    /*
+    The trader's account key of the account to recover.
+    */
+    bytes trader_key = 1;
+}
+
+message ServerAuctionMessage {
+    oneof msg {
+        /*
+        Step 2 of the 3-way authentication handshake. Contains the
+        authentication challenge. Subscriptions sent by the trader must sign
+        the message SHA256(SHA256(accountPubKey || nonce) || challenge)
+        with their account key to prove ownership of said key.
+        */
+        ServerChallenge challenge = 1;
+
+        /*
+        The trader has subscribed to account updates successfully, the 3-way
+        authentication handshake completed normally.
+        */
+        SubscribeSuccess success = 2;
+
+        /*
+        An error occurred during any part of the communication. The trader
+        should inspect the error code and act accordingly.
+        */
+        SubscribeError error = 3;
+
+        /*
+        The auctioneer has matched a set of orders into a batch and now
+        instructs the traders to validate the batch and prepare for order
+        execution. Because traders have the possibility of backing out of a
+        batch, multiple of these messages with the SAME batch_id can be sent.
+        */
+        OrderMatchPrepare prepare = 4;
+
+        /*
+        This message is sent after all traders send back an OrderMatchAccept
+        method. It signals that the traders should execute their local funding
+        protocol, then send signatures for their account inputs.
+        */
+        OrderMatchSignBegin sign = 5;
+
+        /*
+        All traders have accepted and signed the batch and the final transaction
+        was broadcast.
+        */
+        OrderMatchFinalize finalize = 6;
+
+        /*
+        The answer to a trader's request for account recovery. This message
+        contains all information that is needed to restore the account to
+        working order on the trader side.
+        */
+        AuctionAccount account = 7;
+    }
+}
+
+message ServerChallenge {
+    /*
+    The unique challenge for each stream that has to be signed with the trader's
+    account key for each account subscription.
+    */
+    bytes challenge = 1;
+
+    /*
+    The commit hash the challenge was created for.
+    */
+    bytes commit_hash = 2;
+}
+
+message SubscribeSuccess {
+    /*
+    The trader's account key this message is referring to.
+    */
+    bytes trader_key = 1;
+}
+
+message OrderMatchPrepare {
+    /*
+    Maps a user's own order_nonce to the opposite order type they were matched
+    with. The order_nonce is a 32 byte hex encoded string because bytes is not
+    allowed as a map key data type in protobuf.
+    */
+    map<string, MatchedOrder> matched_orders = 1;
+
+    /*
+    The uniform clearing price rate in parts per billion that was used for this
+    batch.
+    */
+    uint32 clearing_price_rate = 2;
+
+    /*
+    A list of the user's own accounts that are being spent by the matched
+    orders. The list contains the differences that would be applied by the
+    server when executing the orders.
+    */
+    repeated AccountDiff charged_accounts = 3;
+
+    /*
+    The fee parameters used to calculate the execution fees.
+    */
+    ExecutionFee execution_fee = 4;
+
+    /*
+    The batch transaction with all non-witness data.
+    */
+    bytes batch_transaction = 5;
+
+    /*
+    Fee rate of the batch transaction, expressed in satoshis per 1000 weight
+    units (sat/kW).
+    */
+    uint64 fee_rate_sat_per_kw = 6;
+
+    /*
+    Fee rebate in satoshis, offered if another batch participant wants to pay
+    more fees for a faster confirmation.
+    */
+    uint64 fee_rebate_sat = 7;
+
+    /*
+    The 32 byte unique identifier of this batch.
+    */
+    bytes batch_id = 8;
+
+    /*
+    The batch verification protocol version the server is using. Clients that
+    don't support this version MUST return an `OrderMatchAccept` message with
+    an empty list of orders so the batch can continue. The user should then be
+    informed that a software update is required.
+    */
+    uint32 batch_version = 9;
+}
+
+message OrderMatchSignBegin {
+    /*
+    The 32 byte unique identifier of this batch.
+    */
+    bytes batch_id = 1;
+}
+
+message OrderMatchFinalize {
+    /*
+    The unique identifier of the finalized batch.
+    */
+    bytes batch_id = 1;
+
+    /*
+    The final transaction ID of the published batch transaction.
+    */
+    bytes batch_txid = 2;
+
+    /*
+    The current block height at the time the batch transaction was published to
+    the network.
+    */
+    uint32 height_hint = 3;
+}
+
+message SubscribeError {
+    enum Error {
+        /*
+        The error cannot be mapped to a specific code.
+        */
+        UNKNOWN = 0;
+
+        /*
+        The server is shutting down for maintenance. Traders should close the
+        long-lived stream/connection and try to connect again after some time.
+        */
+        SERVER_SHUTDOWN = 1;
+
+        /*
+        The account the trader tried to subscribe to does not exist in the
+        auctioneer's database. 
+        */
+        ACCOUNT_DOES_NOT_EXIST = 2;
+
+        /*
+        The account the trader tried to subscribe to was never completed and a
+        reservation for it is still pending.
+        */
+        INCOMPLETE_ACCOUNT_RESERVATION = 3;
+    }
+
+    /*
+    The string representation of the subscription error.
+    */
+    string error = 1;
+
+    /*
+    The error code of the subscription error.
+    */
+    Error error_code = 2;
+
+    /*
+    The trader's account key this error is referring to. This is not set if
+    the error code is SERVER_SHUTDOWN as that error is only sent once per
+    connection and not per individual subscription.
+    */
+    bytes trader_key = 3;
+
+    /*
+    The auctioneer's partial account information as it was stored when creating
+    the reservation. This is only set if the error code is
+    INCOMPLETE_ACCOUNT_RESERVATION. Only the fields value, expiry, trader_key,
+    auctioneer_key, batch_key and height_hint will be set in that
+    case.
+    */
+    AuctionAccount account_reservation = 4;
+}
+
+enum AuctionAccountState {
+    /*
+    The account's funding transaction is not yet confirmed on-chain.
+    */
+    STATE_PENDING_OPEN = 0;
+
+    /*
+    The account is fully open and confirmed on-chain.
+    */
+    STATE_OPEN = 1;
+
+    /*
+    The account is still open but the CLTV expiry has passed and the trader can
+    close it without the auctioneer's key. Orders for accounts in this state
+    won't be accepted.
+    */
+    STATE_EXPIRED = 2;
+
+    /*
+    The account was modified by a deposit or withdrawal and is currently waiting
+    for the modifying transaction to confirm.
+    */
+    STATE_PENDING_UPDATE = 3;
+
+    /*
+    The account is closed. The auctioneer doesn't track whether the closing
+    transaction is already confirmed on-chain or not.
+    */
+    STATE_CLOSED = 4;
+
+    /*
+    The account has recently participated in a batch and is not yet confirmed.
+    */
+    STATE_PENDING_BATCH = 5;
+}
+
+message AuctionAccount {
+    /*
+    The value of the account in satoshis. Must match the amount of the
+    account_point output.
+    */
+    uint64 value = 1;
+
+    /*
+    The block height at which the account should expire.
+    */
+    uint32 expiry = 2;
+
+    /*
+    The trader's account key.
+    */
+    bytes trader_key = 3;
+
+    /*
+    The long term auctioneer's account key.
+    */
+    bytes auctioneer_key = 4;
+
+    /*
+    The current batch key used to create the account output.
+    */
+    bytes batch_key = 5;
+
+    /*
+    The current state of the account as the auctioneer sees it.
+    */
+    AuctionAccountState state = 6;
+
+    /*
+    The block height of the last change to the account's output. Can be used to
+    scan the chain for the output's spend state more efficiently.
+    */
+    uint32 height_hint = 7;
+
+    /*
+    Transaction output of the account. Depending on the state of the account,
+    this output might have been spent.
+    */
+    OutPoint outpoint = 8;
+
+    /*
+    The latest transaction of an account. This is only known by the auctioneer
+    after the account has met its initial funding confirmation.
+    */
+    bytes latest_tx = 9;
+}
+
+message MatchedOrder {
+    /*
+    The bids the trader's own order was matched against. This list is empty if
+    the trader's order was a bid order itself.
+    */
+    repeated MatchedBid matched_bids = 1;
+
+    /*
+    The asks the trader's own order was matched against. This list is empty if
+    the trader's order was an ask order itself.
+    */
+    repeated MatchedAsk matched_asks = 2;
+}
+
+message MatchedAsk {
+    /*
+    The ask order that was matched against.
+    */
+    ServerAsk ask = 1;
+
+    /*
+    The number of units that were filled from/by this matched order.
+    */
+    uint32 units_filled = 2;
+}
+message MatchedBid {
+    /*
+    The ask order that was matched against.
+    */
+    ServerBid bid = 1;
+
+    /*
+    The number of units that were filled from/by this matched order.
+    */
+    uint32 units_filled = 2;
+}
+
+message AccountDiff {
+    enum AccountState {
+        OUTPUT_RECREATED = 0;
+        OUTPUT_DUST_EXTENDED_OFFCHAIN = 1;
+        OUTPUT_DUST_ADDED_TO_FEES = 2;
+        OUTPUT_FULLY_SPENT = 3;
+    }
+
+    /*
+    The final balance of the account after the executed batch.
+    */
+    uint64 ending_balance = 1;
+
+    /*
+    Depending on the amount of the final balance of the account, the remainder
+    is either sent to a new on-chain output, extended off-chain or fully
+    consumed by the batch and its fees.
+    */
+    AccountState ending_state = 2;
+
+    /*
+    If the account was re-created on-chain then the new account's index in the
+    transaction is set here. If the account was fully spent or the remainder was
+    extended off-chain then no new account outpoint is created and -1 is
+    returned here.
+    */
+    int32 outpoint_index = 3;
+
+    /*
+    The trader's account key this diff is referring to.
+    */
+    bytes trader_key = 4;
+}
+
+message ServerOrder {
+    /*
+    The trader's account key of the account to use for the order.
+    */
+    bytes trader_key = 1;
+
+    /*
+    Fixed order rate in parts per billion.
+    */
+    uint32 rate_fixed = 2;
+
+    /*
+    Order amount in satoshis.
+    */
+    uint64 amt = 3;
+
+    // TODO(guggero): implement
+    // bool kill_or_fill = 4;
+    // repeated bytes must_fill_pub = 5;
+    reserved 4, 5;
+
+    /*
+    Order nonce of 32 byte length, acts as unique order identifier.
+    */
+    bytes order_nonce = 6;
+
+    /*
+    Signature of the order's digest, signed with the user's account key. The
+    signature must be fixed-size LN wire format encoded. Version 0 includes the
+    fields version, rate_fixed, amt, max_batch_fee_rate_sat_per_kw and
+    min/max_duration_blocks in the order digest.
+    */
+    bytes order_sig = 7;
+
+    /*
+    The multi signature key of the node creating the order, will be used for the
+    target channel's funding TX 2-of-2 multi signature output. 
+    */
+    bytes multi_sig_key = 8;
+
+    /*
+    The pubkey of the node creating the order.
+    */
+    bytes node_pub = 9;
+
+    /*
+    The network addresses of the node creating the order.
+    */
+    repeated NodeAddress node_addr = 10;
+
+    /*
+    // TODO(guggero): implement 
+    int64 min_node_score = 11;
+    */
+    reserved 11;
+
+    /*
+    The type of the channel that should be opened.
+    */
+    uint32 chan_type = 12;
+
+    /*
+    Maximum fee rate the trader is willing to pay for the batch transaction,
+    expressed in satoshis per 1000 weight units (sat/kW).
+    */
+    uint64 max_batch_fee_rate_sat_per_kw = 13;
+}
+
+message ServerBid {
+    /*
+    The common fields shared between both ask and bid order types.
+    */
+    ServerOrder details = 1;
+
+    /*
+    Required minimum number of blocks that a channel opened as a result of this
+    bid should be kept open.
+    */
+    uint32 min_duration_blocks = 2;
+
+    // TODO(guggero): implement
+    // bool instant = 3;
+    reserved 3;
+
+    /*
+    The version of the order format that is used. Will be increased once new
+    features are added.
+    */
+    uint32 version = 4;
+}
+
+message ServerAsk {
+    /*
+    The common fields shared between both ask and bid order types.
+    */
+    ServerOrder details = 1;
+
+    /*
+    The maximum number of blocks the liquidity provider is willing to provide
+    the channel funds for.
+    */
+    uint32 max_duration_blocks = 4;
+
+    /*
+    The version of the order format that is used. Will be increased once new
+    features are added.
+    */
+    uint32 version = 5;
+}
+
+message CancelOrder {
+    bytes order_nonce = 1;
+}
+
+message InvalidOrder {
+    enum FailReason {
+        INVALID_AMT = 0;
+    }
+
+    bytes order_nonce = 1;
+    FailReason fail_reason = 2;
+    string fail_string = 3;
+}
+
+message ServerInput {
+    // The outpoint that the input corresponds to.
+    OutPoint outpoint = 1;
+}
+
+message ServerOutput {
+    // The value, in satoshis, of the output.
+    uint64 value = 1;
+
+    // The script of the output to send the value to.
+    bytes script = 2;
+}
+
+message ServerModifyAccountRequest {
+    /*
+    The trader's account key of the account to be modified.
+    */
+    bytes trader_key = 1;
+
+    /*
+    An additional set of inputs that can be included in the spending transaction
+    of an account. These can be used to deposit more funds into an account.
+    These must be under control of the backing lnd node's wallet.
+    */
+    repeated ServerInput new_inputs = 2;
+
+    /*
+    An additional set of outputs that can be included in the spending
+    transaction of an account. These can be used to withdraw funds from an
+    account.
+    */
+    repeated ServerOutput new_outputs = 3;
+
+    message NewAccountParameters {
+        // The new value of the account.
+        uint64 value = 1;
+    }
+
+    // The new parameters to apply for the account.
+    NewAccountParameters new_params = 4;
+}
+
+message ServerModifyAccountResponse {
+    /*
+    The auctioneer's signature that allows a trader to broadcast a transaction
+    spending from an account output.
+    */
+    bytes account_sig = 1;
+}
+
+message ServerOrderStateRequest {
+    bytes order_nonce = 1;
+}
+
+enum OrderState {
+    ORDER_SUBMITTED = 0;
+    ORDER_CLEARED = 1;
+    ORDER_PARTIALLY_FILLED = 2;
+    ORDER_EXECUTED = 3;
+    ORDER_CANCELED = 4;
+    ORDER_EXPIRED = 5;
+    ORDER_FAILED = 6;
+}
+
+message ServerOrderStateResponse {
+    /*
+    The state the order currently is in.
+    */
+    OrderState state = 1;
+
+    /*
+    The number of currently unfilled units of this order. This will be equal to
+    the total amount of units until the order has reached the state PARTIAL_FILL
+    or EXECUTED.
+    */
+    uint32 units_unfulfilled = 2;
+}
+
+message TermsRequest {
+}
+
+message TermsResponse {
+    /*
+    The maximum account size in satoshis currently allowed by the auctioneer.
+    */
+    uint64 max_account_value = 1;
+
+    /*
+    The maximum order duration in blocks currently allowed by the auctioneer.
+    */
+    uint32 max_order_duration_blocks = 2;
+
+    /*
+    The execution fee charged per matched order.
+    */
+    ExecutionFee execution_fee = 3;
+}
+
+message RelevantBatchRequest {
+    // The unique identifier of the batch.
+    bytes id = 1;
+
+    /*
+    The set of accounts the trader is interested in retrieving information
+    for within the batch. Each account is identified by its trader key.
+    */
+    repeated bytes accounts = 2;
+}
+
+message RelevantBatch {
+    // The version of the batch.
+    uint32 version = 1;
+
+    // The unique identifier of the batch.
+    bytes id = 2;
+
+    /*
+    The set of modifications that should be applied to the requested accounts as
+    a result of this batch.
+    */
+    repeated AccountDiff charged_accounts = 3;
+
+    /*
+    The set of orders that were matched against the orders belonging to the
+    requested accounts.
+    */
+    map<string, MatchedOrder> matched_orders = 4;
+
+    // The uniform clearing price rate in parts per billion of the batch.
+    uint32 clearing_price_rate = 5;
+
+    // The fee parameters used to calculate the execution fees.
+    ExecutionFee execution_fee = 6;
+
+    // The batch transaction including all witness data.
+    bytes transaction = 7;
+
+    /*
+    Fee rate of the batch transaction, expressed in satoshis per 1000 weight
+    units (sat/kW).
+    */
+    uint64 fee_rate_sat_per_kw = 8;
+}
+
+message ExecutionFee {
+    /*
+    The base fee in satoshis charged per order, regardless of the matched size.
+    */
+    uint64 base_fee = 1;
+
+    /*
+    The fee rate in parts per million.
+    */
+    uint64 fee_rate = 2;
+}
+
+message NodeAddress {
+    string network = 1;
+    string addr = 2;
+}
+
+message OutPoint {
+    /*
+    Raw bytes representing the transaction id.
+    */
+    bytes txid = 1;
+
+    /*
+    The index of the output on the transaction.
+    */
+    uint32 output_index = 2;
+}
+
+message AskSnapshot {
+    // The version of the order.
+    uint32 version = 1;
+
+    // The longest period of time the channel will survive for.
+    uint32 max_duration_blocks = 2;
+
+    // The true bid price of the order in parts per billion.
+    uint32 rate_fixed = 3;
+
+    // The channel type to be created.
+    uint32 chan_type = 4;
+}
+message BidSnapshot {
+    // The version of the order.
+    uint32 version = 1;
+
+    // The shortest period of time the matched channel should be allocated for.
+    uint32 min_duration_blocks = 2;
+
+    // The true bid price of the order in parts per billion.
+    uint32 rate_fixed = 3;
+
+    // The channel type to be created.
+    uint32 chan_type = 4;
+}
+message MatchedOrderSnapshot {
+    // The full ask order that was matched.
+    AskSnapshot ask = 1;
+
+    // The full bid order that was matched.
+    BidSnapshot bid = 2;
+
+    // The fixed rate premium that was matched, expressed in parts-ber-billion.
+    uint32 matching_rate = 3;
+
+    // The total number of satoshis that were bought.
+    uint64 total_sats_cleared = 4;
+
+    // The total number of units that were matched.
+    uint32 units_matched = 5;
+}
+
+message BatchSnapshotRequest {
+    // The unique identifier of the batch encoded as a compressed pubkey.
+    bytes batch_id = 1;
+}
+
+message BatchSnapshotResponse {
+    // The version of the batch.
+    uint32 version = 1;
+
+    // The unique identifier of the batch.
+    bytes batch_id = 2;
+
+    // The unique identifier of the prior batch.
+    bytes prev_batch_id = 3;
+
+    // The uniform clearing price rate in parts per billion of the batch.
+    uint32 clearing_price_rate = 4;
+
+    // The set of all orders matched in the batch.
+    repeated MatchedOrderSnapshot matched_orders = 5;
+
+    // The txid of the batch transaction.
+    string batch_tx_id = 7;
+
+    // The batch transaction including all witness data.
+    bytes batch_tx = 6;
+}

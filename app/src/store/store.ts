@@ -5,7 +5,7 @@ import { createBrowserHistory } from 'history';
 import AppStorage from 'util/appStorage';
 import CsvExporter from 'util/csv';
 import { actionLog, Logger } from 'util/log';
-import { GrpcClient, LndApi, LoopApi } from 'api';
+import { GrpcClient, PoolApi, LndApi, LoopApi } from 'api';
 import {
   AuthStore,
   BuildSwapStore,
@@ -38,6 +38,7 @@ export class Store {
   api: {
     lnd: LndApi;
     loop: LoopApi;
+    pool: PoolApi;
   };
 
   /** the logger for actions to use when modifying state */
@@ -58,11 +59,12 @@ export class Store {
   constructor(
     lnd: LndApi,
     loop: LoopApi,
+    pool: PoolApi,
     storage: AppStorage,
     csv: CsvExporter,
     log: Logger,
   ) {
-    this.api = { lnd, loop };
+    this.api = { lnd, loop, pool };
     this.storage = storage;
     this.csv = csv;
     this.log = log;
@@ -163,9 +165,10 @@ export const createStore = (grpcClient?: GrpcClient, appStorage?: AppStorage) =>
   const storage = appStorage || new AppStorage();
   const lndApi = new LndApi(grpc);
   const loopApi = new LoopApi(grpc);
+  const poolApi = new PoolApi(grpc);
   const csv = new CsvExporter();
 
-  const store = new Store(lndApi, loopApi, storage, csv, actionLog);
+  const store = new Store(lndApi, loopApi, poolApi, storage, csv, actionLog);
 
   // connect router store to browser history
   syncHistoryWithStore(createBrowserHistory(), store.router);
