@@ -325,12 +325,21 @@ export const poolListAccounts: POOL.ListAccountsResponse.AsObject = {
   ],
 };
 
-export const poolDepositAccount: POOL.DepositAccountResponse.AsObject = {
+export const poolDepositAccount: Required<POOL.DepositAccountResponse.AsObject> = {
   depositTxid: '+BQm/hnM0SleT2NxS7bdw0JNDuvIMhL4qxLUkdbCJdo=',
   account: {
     ...poolInitAccount,
     state: POOL.AccountState.PENDING_UPDATE,
     value: poolInitAccount.value + 1,
+  },
+};
+
+export const poolWithdrawAccount: Required<POOL.WithdrawAccountResponse.AsObject> = {
+  withdrawTxid: '+BQm/hnM0SleT2NxS7bdw0JNDuvIMhL4qxLUkdbCJdo=',
+  account: {
+    ...poolInitAccount,
+    state: POOL.AccountState.PENDING_UPDATE,
+    value: poolInitAccount.value - 1,
   },
 };
 
@@ -352,4 +361,5 @@ export const sampleApiResponses: Record<string, any> = {
   'poolrpc.Trader.ListAccounts': poolListAccounts,
   'poolrpc.Trader.InitAccount': poolInitAccount,
   'poolrpc.Trader.DepositAccount': poolDepositAccount,
+  'poolrpc.Trader.WithdrawAccount': poolWithdrawAccount,
 };
