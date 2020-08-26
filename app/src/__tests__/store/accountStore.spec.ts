@@ -2,7 +2,7 @@ import { values } from 'mobx';
 import { grpc } from '@improbable-eng/grpc-web';
 import { waitFor } from '@testing-library/react';
 import Big from 'big.js';
-import { poolListAccounts } from 'util/tests/sampleData';
+import { poolDepositAccount, poolListAccounts } from 'util/tests/sampleData';
 import { AccountStore, createStore, Store } from 'store';
 
 const grpcMock = grpc as jest.Mocked<typeof grpc>;
@@ -69,6 +69,26 @@ describe('AccountStore', () => {
     });
     expect(rootStore.uiStore.alerts.size).toBe(0);
     await store.createAccount(3000000, 4032);
+    await waitFor(() => {
+      expect(rootStore.uiStore.alerts.size).toBe(1);
+      expect(values(rootStore.uiStore.alerts)[0].message).toBe('test-err');
+    });
+  });
+
+  it('should deposit funds into an account', async () => {
+    await store.fetchAccounts();
+    const txid = await store.deposit(1);
+    expect(+store.activeAccount.totalBalance).toBe(poolDepositAccount.account?.value);
+    expect(txid).toEqual(poolDepositAccount.depositTxid);
+  });
+
+  it('should handle errors depositing funds', async () => {
+    await store.fetchAccounts();
+    grpcMock.unary.mockImplementationOnce(() => {
+      throw new Error('test-err');
+    });
+    expect(rootStore.uiStore.alerts.size).toBe(0);
+    await store.deposit(1);
     await waitFor(() => {
       expect(rootStore.uiStore.alerts.size).toBe(1);
       expect(values(rootStore.uiStore.alerts)[0].message).toBe('test-err');
