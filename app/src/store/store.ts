@@ -7,6 +7,7 @@ import CsvExporter from 'util/csv';
 import { actionLog, Logger } from 'util/log';
 import { GrpcClient, PoolApi, LndApi, LoopApi } from 'api';
 import {
+  AccountStore,
   AuthStore,
   BuildSwapStore,
   ChannelStore,
@@ -23,6 +24,7 @@ export class Store {
   //
   // Child Stores
   //
+  accountStore = new AccountStore(this);
   authStore = new AuthStore(this);
   buildSwapStore = new BuildSwapStore(this);
   channelStore = new ChannelStore(this);
