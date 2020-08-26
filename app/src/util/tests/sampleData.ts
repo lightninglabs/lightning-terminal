@@ -1,5 +1,7 @@
 import * as LND from 'types/generated/lnd_pb';
 import * as LOOP from 'types/generated/loop_pb';
+import * as POOL from 'types/generated/trader_pb';
+import { b64 } from 'util/strings';
 
 //
 // LND API Responses
@@ -138,7 +140,7 @@ export const lndListChannels: LND.ListChannelsResponse.AsObject = {
   channelsList: lndListChannelsMany.channelsList.slice(0, 10),
 };
 
-const txIdBytes = Buffer.from(txId, 'hex').reverse().toString('base64');
+const txIdBytes = b64(txId, true);
 export const lndChannelEvent: Required<LND.ChannelEventUpdate.AsObject> = {
   type: LND.ChannelEventUpdate.UpdateType.OPEN_CHANNEL,
   openChannel: lndChannel,
@@ -276,6 +278,52 @@ export const loopSwapResponse: LOOP.SwapResponse.AsObject = {
   serverMessage: 'Loop, there it is!',
 };
 
+//
+// Pool API Responses
+//
+
+export const poolListAccounts: POOL.ListAccountsResponse.AsObject = {
+  accountsList: [
+    {
+      availableBalance: 15000000,
+      latestTxid: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+      expirationHeight: 4331,
+      outpoint: {
+        outputIndex: 0,
+        txid: 'AEf0nMpgbBL4ugP59b6MAV0eSZ+OQsHpae1j9gWPcQ0=',
+      },
+      state: POOL.AccountState.OPEN,
+      traderKey: 'A1XCKczWrUUjZg4rmtYoQnji2mGEyLxM8FvIPZ9ZnRCk',
+      value: 15000000,
+    },
+    {
+      availableBalance: 7773185,
+      latestTxid: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+      expirationHeight: 4328,
+      outpoint: {
+        outputIndex: 0,
+        txid: 'r+q2xqhXJ4PoyOffB73PdFMtiiszxuot05zJ3UTnI1M=',
+      },
+      state: POOL.AccountState.OPEN,
+      traderKey: 'A9Mua6d2a+1NZZ8knxJ/XtE3VENxQO4erD9Y3igCmH9q',
+      value: 10000000,
+    },
+  ],
+};
+
+export const poolInitAccount: POOL.Account.AsObject = {
+  availableBalance: 0,
+  latestTxid: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+  expirationHeight: 4334,
+  outpoint: {
+    outputIndex: 0,
+    txid: 'fY/L3gq49iu3bykuK32Ar95ewk3a2wUkFSOGfmGFncc=',
+  },
+  state: POOL.AccountState.OPEN,
+  traderKey: 'Ap+9XjK2X8EOrmAJvcvWS1B9jt3xLYka0S7aMru0Bude',
+  value: 3000000,
+};
+
 // collection of sample API responses
 export const sampleApiResponses: Record<string, any> = {
   'lnrpc.Lightning.GetInfo': lndGetInfo,
@@ -291,4 +339,6 @@ export const sampleApiResponses: Record<string, any> = {
   'looprpc.SwapClient.GetLoopInQuote': loopInQuote,
   'looprpc.SwapClient.LoopIn': loopSwapResponse,
   'looprpc.SwapClient.LoopOut': loopSwapResponse,
+  'poolrpc.Trader.ListAccounts': poolListAccounts,
+  'poolrpc.Trader.InitAccount': poolInitAccount,
 };

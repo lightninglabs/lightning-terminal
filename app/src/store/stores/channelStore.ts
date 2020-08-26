@@ -10,6 +10,7 @@ import {
 import { ChannelEventUpdate, ChannelPoint } from 'types/generated/lnd_pb';
 import Big from 'big.js';
 import debounce from 'lodash/debounce';
+import { hex } from 'util/strings';
 import { Store } from 'store';
 import { Channel } from '../models';
 
@@ -234,7 +235,7 @@ export default class ChannelStore {
   /** converts a base64 encoded channel point to a hex encoded channel point */
   private _channelPointToString(channelPoint: ChannelPoint.AsObject) {
     const txidBytes = channelPoint.fundingTxidBytes as string;
-    const txid = Buffer.from(txidBytes, 'base64').reverse().toString('hex');
+    const txid = hex(txidBytes, true);
     return `${txid}:${channelPoint.outputIndex}`;
   }
 }
