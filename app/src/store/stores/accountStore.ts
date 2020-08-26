@@ -114,4 +114,29 @@ export default class AccountStore {
       this._store.uiStore.handleError(error, 'Unable to fetch Accounts');
     }
   }
+
+  /**
+   * submits a deposit of the specified amount to the pool api
+   */
+  @action.bound
+  async deposit(amount: number, feeRate?: number) {
+    try {
+      const acct = this.activeAccount;
+      this._store.log.info(`depositing ${amount}sats into account ${acct.traderKey}`);
+
+      const res = await this._store.api.pool.deposit(acct.traderKey, amount, feeRate);
+      runInAction('depositContinuation', () => {
+        // the account should always be defined but if not, fetch all accounts as a fallback
+        if (res.account) {
+          acct.update(res.account);
+        } else {
+          this.fetchAccounts();
+        }
+        this._store.log.info('deposit successful', toJS(acct));
+      });
+      return res.depositTxid;
+    } catch (error) {
+      this._store.uiStore.handleError(error, 'Unable to deposit funds');
+    }
+  }
 }
