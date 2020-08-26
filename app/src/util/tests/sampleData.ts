@@ -282,8 +282,22 @@ export const loopSwapResponse: LOOP.SwapResponse.AsObject = {
 // Pool API Responses
 //
 
+export const poolInitAccount: POOL.Account.AsObject = {
+  availableBalance: 0,
+  latestTxid: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+  expirationHeight: 4334,
+  outpoint: {
+    outputIndex: 0,
+    txid: 'fY/L3gq49iu3bykuK32Ar95ewk3a2wUkFSOGfmGFncc=',
+  },
+  state: POOL.AccountState.OPEN,
+  traderKey: 'Ap+9XjK2X8EOrmAJvcvWS1B9jt3xLYka0S7aMru0Bude',
+  value: 30000000,
+};
+
 export const poolListAccounts: POOL.ListAccountsResponse.AsObject = {
   accountsList: [
+    poolInitAccount,
     {
       availableBalance: 15000000,
       latestTxid: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
@@ -311,17 +325,13 @@ export const poolListAccounts: POOL.ListAccountsResponse.AsObject = {
   ],
 };
 
-export const poolInitAccount: POOL.Account.AsObject = {
-  availableBalance: 0,
-  latestTxid: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
-  expirationHeight: 4334,
-  outpoint: {
-    outputIndex: 0,
-    txid: 'fY/L3gq49iu3bykuK32Ar95ewk3a2wUkFSOGfmGFncc=',
+export const poolDepositAccount: POOL.DepositAccountResponse.AsObject = {
+  depositTxid: '+BQm/hnM0SleT2NxS7bdw0JNDuvIMhL4qxLUkdbCJdo=',
+  account: {
+    ...poolInitAccount,
+    state: POOL.AccountState.PENDING_UPDATE,
+    value: poolInitAccount.value + 1,
   },
-  state: POOL.AccountState.OPEN,
-  traderKey: 'Ap+9XjK2X8EOrmAJvcvWS1B9jt3xLYka0S7aMru0Bude',
-  value: 3000000,
 };
 
 // collection of sample API responses
@@ -341,4 +351,5 @@ export const sampleApiResponses: Record<string, any> = {
   'looprpc.SwapClient.LoopOut': loopSwapResponse,
   'poolrpc.Trader.ListAccounts': poolListAccounts,
   'poolrpc.Trader.InitAccount': poolInitAccount,
+  'poolrpc.Trader.DepositAccount': poolDepositAccount,
 };
