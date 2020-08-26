@@ -58,6 +58,24 @@ class PoolApi extends BaseApi<PoolEvents> {
     const res = await this._grpc.request(Trader.DepositAccount, req, this._meta);
     return res.toObject();
   }
+
+  /**
+   * call the pool `WithdrawAccount` RPC and return the response
+   */
+  async withdraw(
+    traderKey: string,
+    amount: number,
+    feeRateSatPerKw = 253,
+  ): Promise<POOL.WithdrawAccountResponse.AsObject> {
+    const req = new POOL.WithdrawAccountRequest();
+    req.setTraderKey(Buffer.from(traderKey, 'hex').toString('base64'));
+    req.setFeeRateSatPerKw(feeRateSatPerKw);
+    const output = new POOL.Output();
+    output.setValueSat(amount);
+    req.setOutputsList([output]);
+    const res = await this._grpc.request(Trader.WithdrawAccount, req, this._meta);
+    return res.toObject();
+  }
 }
 
 export default PoolApi;

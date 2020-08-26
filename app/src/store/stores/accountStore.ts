@@ -139,4 +139,28 @@ export default class AccountStore {
       this._store.uiStore.handleError(error, 'Unable to deposit funds');
     }
   }
+
+  /**
+   * submits a withdraw of the specified amount to the pool api
+   */
+  @action.bound
+  async withdraw(amount: number, feeRate?: number) {
+    try {
+      const acct = this.activeAccount;
+      this._store.log.info(`withdrawing ${amount}sats into account ${acct.traderKey}`);
+
+      const res = await this._store.api.pool.withdraw(acct.traderKey, amount, feeRate);
+      runInAction('withdrawContinuation', () => {
+        if (res.account) {
+          acct.update(res.account);
+        } else {
+          this.fetchAccounts();
+        }
+        this._store.log.info('withdraw successful', toJS(acct));
+      });
+      return res.withdrawTxid;
+    } catch (error) {
+      this._store.uiStore.handleError(error, 'Unable to withdraw funds');
+    }
+  }
 }
