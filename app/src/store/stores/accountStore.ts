@@ -70,6 +70,23 @@ export default class AccountStore {
   }
 
   /**
+   * Closes an account via the pool API
+   */
+  @action.bound
+  async closeAccount(feeRate?: number) {
+    try {
+      const acct = this.activeAccount;
+      this._store.log.info(`closing account ${acct.traderKey}`);
+
+      const res = await this._store.api.pool.closeAccount(acct.traderKey, feeRate);
+      await this.fetchAccounts();
+      return res.closeTxid;
+    } catch (error) {
+      this._store.uiStore.handleError(error, 'Unable to close the account');
+    }
+  }
+
+  /**
    * queries the pool api to fetch the list of accounts and stores them
    * in the state
    */

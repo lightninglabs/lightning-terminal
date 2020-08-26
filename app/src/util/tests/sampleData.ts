@@ -298,6 +298,10 @@ export const poolInitAccount: POOL.Account.AsObject = {
   value: 30000000,
 };
 
+export const poolCloseAccount: POOL.CloseAccountResponse.AsObject = {
+  closeTxid: '+BQm/hnM0SleT2NxS7bdw0JNDuvIMhL4qxLUkdbCJdo=',
+};
+
 export const poolListAccounts: POOL.ListAccountsResponse.AsObject = {
   accountsList: [
     poolInitAccount,
@@ -363,6 +367,7 @@ export const sampleApiResponses: Record<string, any> = {
   'looprpc.SwapClient.LoopOut': loopSwapResponse,
   'poolrpc.Trader.ListAccounts': poolListAccounts,
   'poolrpc.Trader.InitAccount': poolInitAccount,
+  'poolrpc.Trader.CloseAccount': poolCloseAccount,
   'poolrpc.Trader.DepositAccount': poolDepositAccount,
   'poolrpc.Trader.WithdrawAccount': poolWithdrawAccount,
 };
