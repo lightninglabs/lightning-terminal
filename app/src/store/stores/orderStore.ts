@@ -1,4 +1,12 @@
-import { action, observable, ObservableMap, runInAction, toJS } from 'mobx';
+import {
+  action,
+  computed,
+  observable,
+  ObservableMap,
+  runInAction,
+  toJS,
+  values,
+} from 'mobx';
 import { hex } from 'util/strings';
 import { Store } from 'store';
 import { Order } from 'store/models';
@@ -12,6 +20,14 @@ export default class OrderStore {
 
   constructor(store: Store) {
     this._store = store;
+  }
+
+  /** the list of orders for the currently active account */
+  @computed
+  get accountOrders() {
+    return values(this.orders)
+      .slice()
+      .filter(o => o.traderKey === this._store.accountStore.activeTraderKey);
   }
 
   /**
