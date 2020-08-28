@@ -1,4 +1,5 @@
 import { values } from 'mobx';
+import * as POOL from 'types/generated/trader_pb';
 import { grpc } from '@improbable-eng/grpc-web';
 import { waitFor } from '@testing-library/react';
 import Big from 'big.js';
@@ -9,6 +10,7 @@ import {
   poolWithdrawAccount,
 } from 'util/tests/sampleData';
 import { AccountStore, createStore, Store } from 'store';
+import { Account } from 'store/models';
 
 const grpcMock = grpc as jest.Mocked<typeof grpc>;
 
@@ -37,6 +39,24 @@ describe('AccountStore', () => {
       expect(rootStore.uiStore.alerts.size).toBe(1);
       expect(values(rootStore.uiStore.alerts)[0].message).toBe('test-err');
     });
+  });
+
+  it.each<[number, string]>([
+    [POOL.AccountState.PENDING_OPEN, 'Pending Open'],
+    [POOL.AccountState.PENDING_UPDATE, 'Pending Update'],
+    [POOL.AccountState.OPEN, 'Open'],
+    [POOL.AccountState.EXPIRED, 'Expired'],
+    [POOL.AccountState.PENDING_CLOSED, 'Pending Closed'],
+    [POOL.AccountState.CLOSED, 'Closed'],
+    [POOL.AccountState.RECOVERY_FAILED, 'Recovery Failed'],
+    [-1, 'Unknown'],
+  ])('should return the correct account state label', (state: number, label: string) => {
+    const poolAccount = {
+      ...poolListAccounts.accountsList[0],
+      state: state as any,
+    };
+    const account = new Account(poolAccount);
+    expect(account.stateLabel).toBe(label);
   });
 
   it('should update existing accounts with the same id', async () => {
