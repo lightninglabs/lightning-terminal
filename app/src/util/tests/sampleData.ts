@@ -370,7 +370,7 @@ export const poolListOrders: POOL.ListOrdersResponse.AsObject = {
     },
     {
       details: {
-        traderKey: 'A9Mua6d2a+1NZZ8knxJ/XtE3VENxQO4erD9Y3igCmH9q',
+        traderKey: 'A1XCKczWrUUjZg4rmtYoQnji2mGEyLxM8FvIPZ9ZnRCk',
         rateFixed: 496,
         amt: 1000000,
         maxBatchFeeRateSatPerKw: 125000,
@@ -402,7 +402,7 @@ export const poolListOrders: POOL.ListOrdersResponse.AsObject = {
     },
     {
       details: {
-        traderKey: 'A9Mua6d2a+1NZZ8knxJ/XtE3VENxQO4erD9Y3igCmH9q',
+        traderKey: 'A1XCKczWrUUjZg4rmtYoQnji2mGEyLxM8FvIPZ9ZnRCk',
         rateFixed: 744,
         amt: 300000,
         maxBatchFeeRateSatPerKw: 125000,
