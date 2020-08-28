@@ -12,6 +12,7 @@ import {
   BuildSwapStore,
   ChannelStore,
   NodeStore,
+  OrderStore,
   SettingsStore,
   SwapStore,
   UiStore,
@@ -30,6 +31,7 @@ export class Store {
   channelStore = new ChannelStore(this);
   swapStore = new SwapStore(this);
   nodeStore = new NodeStore(this);
+  orderStore = new OrderStore(this);
   settingsStore = new SettingsStore(this);
   uiStore = new UiStore(this);
 
