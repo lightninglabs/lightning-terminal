@@ -1,3 +1,4 @@
+import * as AUCT from 'types/generated/auctioneer_pb';
 import * as LND from 'types/generated/lnd_pb';
 import * as LOOP from 'types/generated/loop_pb';
 import * as POOL from 'types/generated/trader_pb';
@@ -350,6 +351,73 @@ export const poolWithdrawAccount: Required<POOL.WithdrawAccountResponse.AsObject
   },
 };
 
+export const poolListOrders: POOL.ListOrdersResponse.AsObject = {
+  asksList: [
+    {
+      details: {
+        traderKey: 'A9Mua6d2a+1NZZ8knxJ/XtE3VENxQO4erD9Y3igCmH9q',
+        rateFixed: 372,
+        amt: 1500000,
+        maxBatchFeeRateSatPerKw: 125000,
+        orderNonce: 'HuKK1bRqo62yzG1mymSNaF9xi70fVWk4PZD98pglCgA=',
+        state: AUCT.OrderState.ORDER_SUBMITTED,
+        units: 15,
+        unitsUnfulfilled: 15,
+        reservedValueSat: 0,
+      },
+      maxDurationBlocks: 8064,
+      version: 0,
+    },
+    {
+      details: {
+        traderKey: 'A9Mua6d2a+1NZZ8knxJ/XtE3VENxQO4erD9Y3igCmH9q',
+        rateFixed: 496,
+        amt: 1000000,
+        maxBatchFeeRateSatPerKw: 125000,
+        orderNonce: '7ScYDUtk+CY5tTCjrxLF0Hu35mTC9d5WaKLIOO5T3Zw=',
+        state: AUCT.OrderState.ORDER_SUBMITTED,
+        units: 10,
+        unitsUnfulfilled: 10,
+        reservedValueSat: 0,
+      },
+      maxDurationBlocks: 4032,
+      version: 0,
+    },
+  ],
+  bidsList: [
+    {
+      details: {
+        traderKey: 'A9Mua6d2a+1NZZ8knxJ/XtE3VENxQO4erD9Y3igCmH9q',
+        rateFixed: 992,
+        amt: 500000,
+        maxBatchFeeRateSatPerKw: 125000,
+        orderNonce: 'W4XLkXhEKMcKfzV+Ex+jXQJeaVXoCoKQzptMRi6g+ZA=',
+        state: AUCT.OrderState.ORDER_SUBMITTED,
+        units: 5,
+        unitsUnfulfilled: 5,
+        reservedValueSat: 0,
+      },
+      minDurationBlocks: 2016,
+      version: 0,
+    },
+    {
+      details: {
+        traderKey: 'A9Mua6d2a+1NZZ8knxJ/XtE3VENxQO4erD9Y3igCmH9q',
+        rateFixed: 744,
+        amt: 300000,
+        maxBatchFeeRateSatPerKw: 125000,
+        orderNonce: 'bQ8sbc9+HtMVoBD86YMbyOH8GvugrAWhULU2J4dGZQ0=',
+        state: AUCT.OrderState.ORDER_SUBMITTED,
+        units: 3,
+        unitsUnfulfilled: 3,
+        reservedValueSat: 0,
+      },
+      minDurationBlocks: 2016,
+      version: 0,
+    },
+  ],
+};
+
 // collection of sample API responses
 export const sampleApiResponses: Record<string, any> = {
   'lnrpc.Lightning.GetInfo': lndGetInfo,
@@ -370,4 +438,5 @@ export const sampleApiResponses: Record<string, any> = {
   'poolrpc.Trader.CloseAccount': poolCloseAccount,
   'poolrpc.Trader.DepositAccount': poolDepositAccount,
   'poolrpc.Trader.WithdrawAccount': poolWithdrawAccount,
+  'poolrpc.Trader.ListOrders': poolListOrders,
 };

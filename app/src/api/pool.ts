@@ -95,6 +95,15 @@ class PoolApi extends BaseApi<PoolEvents> {
     const res = await this._grpc.request(Trader.WithdrawAccount, req, this._meta);
     return res.toObject();
   }
+
+  /**
+   * call the pool `ListOrders` RPC and return the response
+   */
+  async listOrders(): Promise<POOL.ListOrdersResponse.AsObject> {
+    const req = new POOL.ListOrdersRequest();
+    const res = await this._grpc.request(Trader.ListOrders, req, this._meta);
+    return res.toObject();
+  }
 }
 
 export default PoolApi;
