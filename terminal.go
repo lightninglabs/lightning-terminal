@@ -257,7 +257,10 @@ func (g *LightningTerminal) startSubservers(network string) error {
 	var basicClient lnrpc.LightningClient
 
 	// The main RPC listener of lnd might need some time to start, it could
-	// be that we run into a connection refused a few times.
+	// be that we run into a connection refused a few times. We use the
+	// basic client connection to find out if the RPC server is started yet
+	// because that doesn't do anything else than just connect. We'll check
+	// if lnd is also ready to be used in the next step.
 	err := wait.NoError(func() error {
 		// Create an lnd client now that we have the full configuration.
 		// We'll need a basic client and a full client because not all
@@ -270,61 +273,52 @@ func (g *LightningTerminal) startSubservers(network string) error {
 				g.cfg.Lnd.AdminMacPath,
 			)),
 		)
-		if err != nil {
-			return err
-		}
-		g.lndClient, err = lndclient.NewLndServices(
-			&lndclient.LndServicesConfig{
-				LndAddress:  g.lndAddr,
-				Network:     lndclient.Network(network),
-				MacaroonDir: filepath.Dir(g.cfg.Lnd.AdminMacPath),
-				TLSPath:     g.cfg.Lnd.TLSCertPath,
-			},
-		)
 		return err
-
 	}, defaultStartupTimeout)
 	if err != nil {
 		return err
 	}
 
-	// The chain notifier also needs some time to start. Loop will subscribe
-	// to the notifier and crash if it isn't ready yet, so we need to wait
-	// here as a workaround.
-	//
-	// TODO(guggero): Remove once loop can retry itself.
-	err = wait.NoError(func() error {
-		ctxt, cancel := context.WithTimeout(
-			context.Background(), defaultStartupTimeout,
-		)
-		defer cancel()
+	// Now we know that the connection itself is ready. But we also need to
+	// wait for two things: The chain notifier to be ready and the lnd
+	// wallet being fully synced to its chain backend. The chain notifier
+	// will always be ready first so if we instruct the lndclient to wait
+	// for the wallet sync, we should be fully ready to start all our
+	// subservers. This will just block until lnd signals readiness. But we
+	// still want to react to shutdown requests, so we need to listen for
+	// those.
+	ctxc, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-		notifier := g.lndClient.ChainNotifier
-		resChan, errChan, err := notifier.RegisterBlockEpochNtfn(
-			ctxt,
-		)
-		if err != nil {
-			return err
-		}
-
-		// Block until we get a positive/negative answer or the timeout
-		// is reached.
+	// Make sure the context is canceled if the user requests shutdown.
+	go func() {
 		select {
-		case <-resChan:
-			return nil
+		// Client requests shutdown, cancel the wait.
+		case <-signal.ShutdownChannel():
+			cancel()
 
-		case err := <-errChan:
-			return err
-
-		case <-ctxt.Done():
-			return fmt.Errorf("wait for chain notifier to be " +
-				"ready timed out")
+		// The check was completed and the above defer canceled the
+		// context. We can just exit the goroutine, nothing more to do.
+		case <-ctxc.Done():
 		}
-	}, defaultStartupTimeout)
+	}()
+	g.lndClient, err = lndclient.NewLndServices(
+		&lndclient.LndServicesConfig{
+			LndAddress: g.lndAddr,
+			Network:    lndclient.Network(network),
+			MacaroonDir: filepath.Dir(
+				g.cfg.Lnd.AdminMacPath,
+			),
+			TLSPath:               g.cfg.Lnd.TLSCertPath,
+			BlockUntilChainSynced: true,
+			ChainSyncCtx:          ctxc,
+		},
+	)
 	if err != nil {
 		return err
 	}
 
+	// Both connection types are ready now, let's start our subservers.
 	err = g.faradayServer.StartAsSubserver(g.lndClient.LndServices)
 	if err != nil {
 		return err
