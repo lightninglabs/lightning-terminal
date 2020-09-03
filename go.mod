@@ -6,9 +6,9 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.14.3
 	github.com/improbable-eng/grpc-web v0.12.0
 	github.com/jessevdk/go-flags v1.4.0
-	github.com/lightninglabs/faraday v0.2.0-alpha.0.20200811090810-93547d433a66
-	github.com/lightninglabs/lndclient v1.0.1-0.20200629081038-bb0726595df9
-	github.com/lightninglabs/loop v0.8.0-beta
+	github.com/lightninglabs/faraday v0.2.0-alpha.0.20200901065614-d72fdaeff888
+	github.com/lightninglabs/lndclient v0.11.0-0
+	github.com/lightninglabs/loop v0.8.1-beta.0.20200831113239-d4d9aa102455
 	github.com/lightningnetwork/lnd v0.11.0-beta
 	github.com/lightningnetwork/lnd/cert v1.0.2
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
