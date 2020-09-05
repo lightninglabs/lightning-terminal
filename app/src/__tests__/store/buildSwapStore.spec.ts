@@ -5,7 +5,7 @@ import { waitFor } from '@testing-library/react';
 import Big from 'big.js';
 import { BalanceMode } from 'util/constants';
 import { injectIntoGrpcUnary } from 'util/tests';
-import { lndChannel, loopInTerms } from 'util/tests/sampleData';
+import { lndChannel, loopInTerms, loopOutTerms } from 'util/tests/sampleData';
 import { BuildSwapStore, createStore, Store } from 'store';
 import { Channel } from 'store/models';
 import { SWAP_ABORT_DELAY } from 'store/stores/buildSwapStore';
@@ -83,7 +83,12 @@ describe('BuildSwapStore', () => {
     expect(store.terms.out).toEqual({ min: Big(0), max: Big(0) });
     await store.getTerms();
     expect(store.terms.in).toEqual({ min: Big(250000), max: Big(1000000) });
-    expect(store.terms.out).toEqual({ min: Big(250000), max: Big(1000000) });
+    expect(store.terms.out).toEqual({
+      min: Big(250000),
+      max: Big(1000000),
+      minCltv: 20,
+      maxCltv: 60,
+    });
   });
 
   it('should handle errors fetching loop terms', async () => {
@@ -114,6 +119,68 @@ describe('BuildSwapStore', () => {
     store.setAmount(Big(loopInTerms.maxSwapAmount + 100));
     await store.getTerms();
     expect(+store.amountForSelected).toBe(loopInTerms.maxSwapAmount);
+  });
+
+  it('should validate the conf target', async () => {
+    const { minCltvDelta, maxCltvDelta } = loopOutTerms;
+    expect(store.confTarget).toBeUndefined();
+
+    let target = maxCltvDelta - 10;
+    store.setConfTarget(target);
+    expect(store.confTarget).toBe(target);
+
+    store.setDirection(SwapDirection.OUT);
+    await store.getTerms();
+
+    store.setConfTarget(target);
+    expect(store.confTarget).toBe(target);
+
+    target = minCltvDelta - 10;
+    expect(() => store.setConfTarget(target)).toThrow();
+
+    target = maxCltvDelta + 10;
+    expect(() => store.setConfTarget(target)).toThrow();
+  });
+
+  it('should submit the Loop Out conf target', async () => {
+    const target = 23;
+    store.setDirection(SwapDirection.OUT);
+    store.setAmount(Big(500000));
+
+    expect(store.confTarget).toBeUndefined();
+    store.setConfTarget(target);
+    expect(store.confTarget).toBe(target);
+
+    let reqTarget = '';
+    // mock the grpc unary function in order to capture the supplied dest
+    // passed in with the API request
+    injectIntoGrpcUnary((desc, props) => {
+      reqTarget = (props.request.toObject() as any).sweepConfTarget;
+    });
+
+    store.requestSwap();
+    await waitFor(() => expect(reqTarget).toBe(target));
+  });
+
+  it('should submit the Loop Out address', async () => {
+    const addr = 'xyzabc';
+    store.setDirection(SwapDirection.OUT);
+    store.setAmount(Big(500000));
+
+    expect(store.loopOutAddress).toBeUndefined();
+    store.setLoopOutAddress(addr);
+    expect(store.loopOutAddress).toBe(addr);
+    // store.goToNextStep();
+
+    let reqAddr = '';
+    // mock the grpc unary function in order to capture the supplied dest
+    // passed in with the API request
+    injectIntoGrpcUnary((desc, props) => {
+      reqAddr = (props.request.toObject() as any).dest;
+    });
+
+    store.requestSwap();
+    await waitFor(() => expect(reqAddr).toBe(addr));
   });
 
   it('should select all channels with the same peer for loop in', () => {

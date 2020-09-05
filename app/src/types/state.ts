@@ -19,6 +19,8 @@ export interface SwapTerms {
   out: {
     min: Big;
     max: Big;
+    minCltv?: number;
+    maxCltv?: number;
   };
 }
 

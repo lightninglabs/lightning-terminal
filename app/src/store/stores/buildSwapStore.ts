@@ -35,6 +35,12 @@ class BuildSwapStore {
   /** the amount to swap */
   @observable amount: Big = Big(0);
 
+  /** the confirmation target of the on-chain txn used in the swap */
+  @observable confTarget?: number;
+
+  /** the on-chain address to send funds to during a loop out swap */
+  @observable loopOutAddress?: string;
+
   /** the min/max amount this node is allowed to swap */
   @observable terms: SwapTerms = {
     in: { min: Big(0), max: Big(0) },
@@ -303,6 +309,38 @@ class BuildSwapStore {
   }
 
   /**
+   * Set the confirmation target for the swap
+   */
+  @action.bound
+  setConfTarget(target?: number) {
+    // ensure the Loop Out target is between the CLTV min & max
+    if (
+      this.direction === SwapDirection.OUT &&
+      this.terms.out.minCltv &&
+      this.terms.out.maxCltv &&
+      target !== undefined &&
+      (isNaN(target) ||
+        this.terms.out.minCltv > target ||
+        this.terms.out.maxCltv < target)
+    ) {
+      throw new Error(
+        `Confirmation target must be between ${this.terms.out.minCltv} and ${this.terms.out.maxCltv}.`,
+      );
+    }
+    this.confTarget = target;
+    this._store.log.info(`updated buildSwapStore.confTarget`, this.confTarget);
+  }
+
+  /**
+   * Set the on-chain destination address for the loop out swap
+   */
+  @action.bound
+  setLoopOutAddress(address: string) {
+    this.loopOutAddress = address;
+    this._store.log.info(`updated buildSwapStore.loopOutAddress`, this.loopOutAddress);
+  }
+
+  /**
    * Navigate to the next step in the wizard
    */
   @action.bound
@@ -340,6 +378,8 @@ class BuildSwapStore {
     this.currentStep = BuildSwapSteps.Closed;
     this.selectedChanIds = [];
     this.amount = Big(0);
+    this.confTarget = undefined;
+    this.loopOutAddress = undefined;
     this.quote.swapFee = Big(0);
     this.quote.minerFee = Big(0);
     this.quote.prepayAmount = Big(0);
@@ -364,6 +404,8 @@ class BuildSwapStore {
           out: {
             min: Big(outTerms.minSwapAmount),
             max: Big(outTerms.maxSwapAmount),
+            minCltv: outTerms.minCltvDelta,
+            maxCltv: outTerms.maxCltvDelta,
           },
         };
         this._store.log.info('updated store.terms', toJS(this.terms));
@@ -385,14 +427,20 @@ class BuildSwapStore {
     try {
       let quote: Quote;
       if (direction === SwapDirection.IN) {
-        const inQuote = await this._store.api.loop.getLoopInQuote(amount);
+        const inQuote = await this._store.api.loop.getLoopInQuote(
+          amount,
+          this.confTarget,
+        );
         quote = {
           swapFee: Big(inQuote.swapFeeSat),
           minerFee: Big(inQuote.htlcPublishFeeSat),
           prepayAmount: Big(0),
         };
       } else {
-        const outQuote = await this._store.api.loop.getLoopOutQuote(amount);
+        const outQuote = await this._store.api.loop.getLoopOutQuote(
+          amount,
+          this.confTarget,
+        );
         quote = {
           swapFee: Big(outQuote.swapFeeSat),
           minerFee: Big(outQuote.htlcSweepFeeSat),
@@ -430,7 +478,12 @@ class BuildSwapStore {
       try {
         let res: SwapResponse.AsObject;
         if (direction === SwapDirection.IN) {
-          res = await this._store.api.loop.loopIn(amount, quote, this.loopInLastHop);
+          res = await this._store.api.loop.loopIn(
+            amount,
+            quote,
+            this.loopInLastHop,
+            this.confTarget,
+          );
           // save the channels that were used in the swap. for Loop In all channels
           // with the same peer will be used
           this._store.swapStore.addSwappedChannels(res.id, this.selectedChanIds);
@@ -442,7 +495,14 @@ class BuildSwapStore {
             this._store.nodeStore.network === 'regtest' ? 0 : Date.now() + thirtyMins;
           // convert the selected channel ids to numbers
           const chanIds = this.selectedChanIds.map(v => parseInt(v));
-          res = await this._store.api.loop.loopOut(amount, quote, chanIds, deadline);
+          res = await this._store.api.loop.loopOut(
+            amount,
+            quote,
+            chanIds,
+            deadline,
+            this.confTarget,
+            this.loopOutAddress,
+          );
           // save the channels that were used in the swap
           this._store.swapStore.addSwappedChannels(res.id, this.selectedChanIds);
         }
