@@ -1,8 +1,10 @@
 import React, { CSSProperties } from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
+import { useStore } from 'store';
 import { Swap } from 'store/models';
-import { Column, HeaderFour, Row } from 'components/base';
+import { Column, Row } from 'components/base';
+import SortableHeader from 'components/common/SortableHeader';
 import Unit from 'components/common/Unit';
 import SwapDot from 'components/loop/SwapDot';
 import { styled } from 'components/theme';
@@ -43,30 +45,64 @@ const Styled = {
   `,
 };
 
-export const HistoryRowHeader: React.FC = () => {
+const RowHeader: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.history.HistoryRowHeader');
+  const { settingsStore } = useStore();
+
   const { HeaderRow, ActionColumn, HeaderColumn } = Styled;
   return (
     <HeaderRow>
       <ActionColumn />
       <HeaderColumn cols={3}>
-        <HeaderFour>{l('status')}</HeaderFour>
+        <SortableHeader<Swap>
+          field="stateLabel"
+          sort={settingsStore.historySort}
+          onSort={settingsStore.setHistorySort}
+        >
+          {l('status')}
+        </SortableHeader>
       </HeaderColumn>
       <HeaderColumn>
-        <HeaderFour>{l('type')}</HeaderFour>
+        <SortableHeader<Swap>
+          field="typeName"
+          sort={settingsStore.historySort}
+          onSort={settingsStore.setHistorySort}
+        >
+          {l('type')}
+        </SortableHeader>
       </HeaderColumn>
       <HeaderColumn right>
-        <HeaderFour>{l('amount')}</HeaderFour>
+        <SortableHeader<Swap>
+          field="amount"
+          sort={settingsStore.historySort}
+          onSort={settingsStore.setHistorySort}
+        >
+          {l('amount')}
+        </SortableHeader>
       </HeaderColumn>
       <HeaderColumn right>
-        <HeaderFour>{l('created')}</HeaderFour>
+        <SortableHeader<Swap>
+          field="initiationTime"
+          sort={settingsStore.historySort}
+          onSort={settingsStore.setHistorySort}
+        >
+          {l('created')}
+        </SortableHeader>
       </HeaderColumn>
       <HeaderColumn right>
-        <HeaderFour>{l('updated')}</HeaderFour>
+        <SortableHeader<Swap>
+          field="lastUpdateTime"
+          sort={settingsStore.historySort}
+          onSort={settingsStore.setHistorySort}
+        >
+          {l('updated')}
+        </SortableHeader>
       </HeaderColumn>
     </HeaderRow>
   );
 };
+
+export const HistoryRowHeader = observer(RowHeader);
 
 interface Props {
   swap: Swap;

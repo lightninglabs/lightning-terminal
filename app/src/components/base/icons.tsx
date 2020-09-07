@@ -1,5 +1,7 @@
+import { ReactComponent as ArrowDownIcon } from 'assets/icons/arrow-down.svg';
 import { ReactComponent as ArrowLeftIcon } from 'assets/icons/arrow-left.svg';
 import { ReactComponent as ArrowRightIcon } from 'assets/icons/arrow-right.svg';
+import { ReactComponent as ArrowUpIcon } from 'assets/icons/arrow-up.svg';
 import { ReactComponent as BitcoinIcon } from 'assets/icons/bitcoin.svg';
 import { ReactComponent as BoltIcon } from 'assets/icons/bolt.svg';
 import { ReactComponent as CheckIcon } from 'assets/icons/check.svg';
@@ -16,10 +18,11 @@ import { ReactComponent as MaximizeIcon } from 'assets/icons/maximize.svg';
 import { ReactComponent as MenuIcon } from 'assets/icons/menu.svg';
 import { ReactComponent as MinimizeIcon } from 'assets/icons/minimize.svg';
 import { ReactComponent as RefreshIcon } from 'assets/icons/refresh-cw.svg';
+import { ReactComponent as CancelIcon } from 'assets/icons/slash.svg';
 import { styled } from 'components/theme';
 
 interface IconProps {
-  size?: 'small' | 'medium' | 'large';
+  size?: 'x-small' | 'small' | 'medium' | 'large';
   onClick?: () => void;
 }
 
@@ -38,6 +41,13 @@ const Icon = styled.span<IconProps>`
       background-color: ${props.theme.colors.offWhite}; 
     }
   `}
+
+  ${props =>
+    props.size === 'x-small' &&
+    `
+      width: 16px;
+      height: 16px;
+    `}
 
   ${props =>
     props.size === 'small' &&
@@ -61,10 +71,13 @@ const Icon = styled.span<IconProps>`
     `}
 `;
 
+export const ArrowLeft = Icon.withComponent(ArrowLeftIcon);
 export const ArrowRight = Icon.withComponent(ArrowRightIcon);
+export const ArrowUp = Icon.withComponent(ArrowUpIcon);
+export const ArrowDown = Icon.withComponent(ArrowDownIcon);
+export const Cancel = Icon.withComponent(CancelIcon);
 export const Clock = Icon.withComponent(ClockIcon);
 export const Download = Icon.withComponent(DownloadIcon);
-export const ArrowLeft = Icon.withComponent(ArrowLeftIcon);
 export const Bolt = Icon.withComponent(BoltIcon);
 export const Bitcoin = Icon.withComponent(BitcoinIcon);
 export const Check = Icon.withComponent(CheckIcon);

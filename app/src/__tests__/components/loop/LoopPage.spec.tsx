@@ -173,5 +173,40 @@ describe('LoopPage component', () => {
       expect(getByText('Review Loop amount and fee')).toBeInTheDocument();
       expect(store.buildSwapStore.processingTimeout).toBeUndefined();
     });
+
+    it('should sort the channel list', () => {
+      const { getByText, store } = render();
+      expect(getByText('Capacity')).toBeInTheDocument();
+      expect(store.settingsStore.channelSort.field).toBeUndefined();
+      expect(store.settingsStore.channelSort.descending).toBe(true);
+
+      fireEvent.click(getByText('Can Receive'));
+      expect(store.settingsStore.channelSort.field).toBe('remoteBalance');
+
+      fireEvent.click(getByText('Can Send'));
+      expect(store.settingsStore.channelSort.field).toBe('localBalance');
+
+      fireEvent.click(getByText('In Fee %'));
+      expect(store.settingsStore.channelSort.field).toBe('remoteFeeRate');
+
+      fireEvent.click(getByText('Uptime %'));
+      expect(store.settingsStore.channelSort.field).toBe('uptimePercent');
+
+      fireEvent.click(getByText('Peer/Alias'));
+      expect(store.settingsStore.channelSort.field).toBe('aliasLabel');
+
+      fireEvent.click(getByText('Capacity'));
+      expect(store.settingsStore.channelSort.field).toBe('capacity');
+      expect(store.settingsStore.channelSort.descending).toBe(false);
+
+      fireEvent.click(getByText('Capacity'));
+      expect(store.settingsStore.channelSort.field).toBe('capacity');
+      expect(store.settingsStore.channelSort.descending).toBe(true);
+
+      expect(getByText('slash.svg')).toBeInTheDocument();
+      fireEvent.click(getByText('slash.svg'));
+      expect(store.settingsStore.channelSort.field).toBeUndefined();
+      expect(store.settingsStore.channelSort.descending).toBe(true);
+    });
   });
 });

@@ -34,9 +34,11 @@ export default class ChannelStore {
    * an array of channels sorted by balance percent descending
    */
   @computed get sortedChannels() {
-    return values(this.channels)
+    const { field, descending } = this._store.settingsStore.channelSort;
+    const channels = values(this.channels)
       .slice()
-      .sort((a, b) => b.sortOrder - a.sortOrder);
+      .sort((a, b) => Channel.compare(a, b, field));
+    return descending ? channels.reverse() : channels;
   }
 
   /**

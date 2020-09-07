@@ -37,9 +37,12 @@ export default class SwapStore {
 
   /** swaps sorted by created date descending */
   @computed get sortedSwaps() {
-    return values(this.swaps)
+    const { field, descending } = this._store.settingsStore.historySort;
+    const swaps = values(this.swaps)
       .slice()
-      .sort((a, b) => b.initiationTime - a.initiationTime);
+      .sort((a, b) => Swap.compare(a, b, field));
+
+    return descending ? swaps.reverse() : swaps;
   }
 
   /** the last two swaps */

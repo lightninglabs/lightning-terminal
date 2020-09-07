@@ -23,6 +23,7 @@
   "cmps.loop.ChannelIcon.processing.in": "Loop In currently in progress",
   "cmps.loop.ChannelIcon.processing.out": "Loop Out currently in progress",
   "cmps.loop.ChannelIcon.processing.both": "Loop In and Loop Out currently in progress",
+  "cmps.loop.ChannelRowHeader.resetSort": "Reset Sorting",
   "cmps.loop.ChannelRowHeader.canReceive": "Can Receive",
   "cmps.loop.ChannelRowHeader.canSend": "Can Send",
   "cmps.loop.ChannelRowHeader.feeRate": "In Fee %",
