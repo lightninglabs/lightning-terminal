@@ -68,7 +68,8 @@ const TooltipWrapper: React.FC<Props> = ({
  * prop. So we basically proxy the className using the TooltipWrapper
  * above, then export this styled component for the rest of the app to use
  */
-const Tip = styled(TooltipWrapper)<{ capitalize?: boolean }>`
+const Tip = styled(TooltipWrapper)<{ capitalize?: boolean; maxWidth?: number }>`
+  max-width: ${props => (props.maxWidth ? `${props.maxWidth}px` : 'auto')};
   color: ${props => props.theme.colors.blue};
   font-family: ${props => props.theme.fonts.open.semiBold};
   font-size: ${props => props.theme.sizes.xs};

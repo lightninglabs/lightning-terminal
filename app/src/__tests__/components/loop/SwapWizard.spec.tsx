@@ -1,4 +1,5 @@
 import React from 'react';
+import { values } from 'mobx';
 import { SwapDirection } from 'types/state';
 import { fireEvent } from '@testing-library/react';
 import Big from 'big.js';
@@ -68,6 +69,46 @@ describe('SwapWizard component', () => {
       fireEvent.change(getByLabelText('range-slider'), { target: { value: '575000' } });
       expect(+build.amountForSelected).toEqual(575000);
       expect(getByText(`575,000 sats`)).toBeInTheDocument();
+    });
+
+    it('should show additional options', () => {
+      const { getByText } = render();
+      fireEvent.click(getByText('Additional Options'));
+      expect(getByText('Hide Options')).toBeInTheDocument();
+    });
+
+    it('should store the specified conf target', () => {
+      const { getByText, getByPlaceholderText } = render();
+      fireEvent.click(getByText('Additional Options'));
+      fireEvent.change(getByPlaceholderText('number of blocks (ex: 6)'), {
+        target: { value: 20 },
+      });
+      expect(store.buildSwapStore.confTarget).toBeUndefined();
+      fireEvent.click(getByText('Next'));
+      expect(store.buildSwapStore.confTarget).toBe(20);
+    });
+
+    it('should store the specified destination address', () => {
+      const { getByText, getByPlaceholderText } = render();
+      fireEvent.click(getByText('Additional Options'));
+      fireEvent.change(getByPlaceholderText('segwit address'), {
+        target: { value: 'abcdef' },
+      });
+      expect(store.buildSwapStore.loopOutAddress).toBeUndefined();
+      fireEvent.click(getByText('Next'));
+      expect(store.buildSwapStore.loopOutAddress).toBe('abcdef');
+    });
+
+    it('should handle invalid conf target', () => {
+      const { getByText, getByPlaceholderText } = render();
+      fireEvent.click(getByText('Additional Options'));
+      fireEvent.change(getByPlaceholderText('number of blocks (ex: 6)'), {
+        target: { value: 'asdf' },
+      });
+      fireEvent.click(getByText('Next'));
+      expect(values(store.uiStore.alerts)[0].message).toBe(
+        'Confirmation target must be between 20 and 60.',
+      );
     });
   });
 

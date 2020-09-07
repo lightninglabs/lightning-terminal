@@ -35,6 +35,9 @@ class BuildSwapStore {
   /** the amount to swap */
   @observable amount: Big = Big(0);
 
+  /** determines whether to show the swap advanced options */
+  @observable addlOptionsVisible = false;
+
   /** the confirmation target of the on-chain txn used in the swap */
   @observable confTarget?: number;
 
@@ -309,6 +312,18 @@ class BuildSwapStore {
   }
 
   /**
+   * toggles the advanced options section in the swap config step
+   */
+  @action.bound
+  toggleAddlOptions() {
+    this.addlOptionsVisible = !this.addlOptionsVisible;
+    this._store.log.info(
+      `updated buildSwapStore.addlOptionsVisible`,
+      this.addlOptionsVisible,
+    );
+  }
+
+  /**
    * Set the confirmation target for the swap
    */
   @action.bound
@@ -348,6 +363,11 @@ class BuildSwapStore {
     if (this.currentStep === BuildSwapSteps.ChooseAmount) {
       this.amount = this.amountForSelected;
       this.getQuote();
+      // clear the advanced options if values were set, then hidden
+      if (!this.addlOptionsVisible) {
+        this.confTarget = undefined;
+        this.loopOutAddress = undefined;
+      }
     } else if (this.currentStep === BuildSwapSteps.ReviewQuote) {
       this.requestSwap();
     }
@@ -378,6 +398,7 @@ class BuildSwapStore {
     this.currentStep = BuildSwapSteps.Closed;
     this.selectedChanIds = [];
     this.amount = Big(0);
+    this.addlOptionsVisible = false;
     this.confTarget = undefined;
     this.loopOutAddress = undefined;
     this.quote.swapFee = Big(0);

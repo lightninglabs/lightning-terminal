@@ -5,7 +5,11 @@ import { Button } from 'components/base';
 
 const Styled = {
   Wrapper: styled.div`
-    text-align: right;
+    display: flex;
+    justify-content: flex-end;
+  `,
+  ExtraContent: styled.div`
+    flex: 1;
   `,
 };
 
@@ -13,14 +17,16 @@ interface Props {
   confirm?: boolean;
   onCancel: () => void;
   onNext: () => void;
+  extra?: React.ReactNode;
 }
 
-const StepButtons: React.FC<Props> = ({ confirm, onCancel, onNext }) => {
+const StepButtons: React.FC<Props> = ({ confirm, onCancel, onNext, extra }) => {
   const { l } = usePrefixedTranslation('cmps.loop.swap.StepButtons');
 
-  const { Wrapper } = Styled;
+  const { Wrapper, ExtraContent } = Styled;
   return (
     <Wrapper>
+      <ExtraContent>{extra}</ExtraContent>
       <Button ghost borderless onClick={onCancel}>
         {l('cancel')}
       </Button>
