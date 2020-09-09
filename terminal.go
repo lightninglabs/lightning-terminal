@@ -19,6 +19,8 @@ import (
 	restProxy "github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/jessevdk/go-flags"
+	"github.com/lightninglabs/faraday"
+	"github.com/lightninglabs/faraday/chain"
 	"github.com/lightninglabs/faraday/frdrpc"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightninglabs/loop/loopd"
@@ -149,11 +151,15 @@ func (g *LightningTerminal) Run() error {
 
 	// Create the instances of our subservers now so we can hook them up to
 	// lnd once it's fully started.
-	g.faradayServer = frdrpc.NewRPCServer(&frdrpc.Config{})
+	g.cfg.frdrpcCfg = &frdrpc.Config{}
+	g.faradayServer = frdrpc.NewRPCServer(g.cfg.frdrpcCfg)
 	g.loopServer = loopd.New(g.cfg.Loop, nil)
 
 	// Hook interceptor for os signals.
-	signal.Intercept()
+	err = signal.Intercept()
+	if err != nil {
+		return fmt.Errorf("could not intercept signals: %v", err)
+	}
 
 	// Call the "real" main in a nested manner so the defers will properly
 	// be executed in the case of a graceful shutdown.
@@ -240,6 +246,23 @@ func (g *LightningTerminal) startSubservers() error {
 	g.cfg.Loop.Network = string(network)
 	if err := loopd.Validate(g.cfg.Loop); err != nil {
 		return err
+	}
+
+	g.cfg.Faraday.Network = string(network)
+	if err := faraday.ValidateConfig(g.cfg.Faraday); err != nil {
+		return err
+	}
+	g.cfg.frdrpcCfg.FaradayDir = g.cfg.Faraday.FaradayDir
+	g.cfg.frdrpcCfg.MacaroonPath = g.cfg.Faraday.MacaroonPath
+
+	// If the client chose to connect to a bitcoin client, get one now.
+	if g.cfg.Faraday.ChainConn {
+		g.cfg.frdrpcCfg.BitcoinClient, err = chain.NewBitcoinClient(
+			g.cfg.Faraday.Bitcoin,
+		)
+		if err != nil {
+			return err
+		}
 	}
 
 	// The main RPC listener of lnd might need some time to start, it could
