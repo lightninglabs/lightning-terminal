@@ -65,7 +65,6 @@ var (
 // start an lnd node then start and register external subservers to it.
 type LightningTerminal struct {
 	cfg         *Config
-	lndAddr     string
 	listenerCfg lnd.ListenerCfg
 
 	wg         sync.WaitGroup
@@ -148,33 +147,6 @@ func (g *LightningTerminal) Run() error {
 		},
 	}
 
-	// With TLS enabled by default, we cannot call 0.0.0.0 internally when
-	// dialing lnd as that IP address isn't in the cert. We need to rewrite
-	// it to the loopback address.
-	lndDialAddr := rpcAddr.String()
-	switch {
-	case strings.Contains(lndDialAddr, "0.0.0.0"):
-		lndDialAddr = strings.Replace(
-			lndDialAddr, "0.0.0.0", "127.0.0.1", 1,
-		)
-
-	case strings.Contains(lndDialAddr, "[::]"):
-		lndDialAddr = strings.Replace(
-			lndDialAddr, "[::]", "[::1]", 1,
-		)
-	}
-	g.lndAddr = lndDialAddr
-
-	// Some of the subservers' configuration options won't have any effect
-	// (like the log or lnd options) as they will be taken from lnd's config
-	// struct. Others we want to force to be the same as lnd so the user
-	// doesn't have to set them manually, like the network for example.
-	network, err := getNetwork(g.cfg.Lnd.Bitcoin)
-	if err != nil {
-		return err
-	}
-	g.cfg.Loop.Network = network
-
 	// Create the instances of our subservers now so we can hook them up to
 	// lnd once it's fully started.
 	g.faradayServer = frdrpc.NewRPCServer(&frdrpc.Config{})
@@ -216,7 +188,7 @@ func (g *LightningTerminal) Run() error {
 	case <-signal.ShutdownChannel():
 		return errors.New("shutting down")
 	}
-	err = g.startSubservers(network)
+	err = g.startSubservers()
 	if err != nil {
 		log.Errorf("Could not start subservers: %v", err)
 		return err
@@ -253,25 +225,36 @@ func (g *LightningTerminal) Run() error {
 // startSubservers creates an internal connection to lnd and then starts all
 // embedded daemons as external subservers that hook into the same gRPC and REST
 // servers that lnd started.
-func (g *LightningTerminal) startSubservers(network string) error {
+func (g *LightningTerminal) startSubservers() error {
 	var basicClient lnrpc.LightningClient
+
+	host, network, tlsPath, macPath, err := g.cfg.lndConnectParams()
+	if err != nil {
+		return err
+	}
+
+	// Some of the subservers' configuration options won't have any effect
+	// (like the log or lnd options) as they will be taken from lnd's config
+	// struct. Others we want to force to be the same as lnd so the user
+	// doesn't have to set them manually, like the network for example.
+	g.cfg.Loop.Network = string(network)
+	if err := loopd.Validate(g.cfg.Loop); err != nil {
+		return err
+	}
 
 	// The main RPC listener of lnd might need some time to start, it could
 	// be that we run into a connection refused a few times. We use the
 	// basic client connection to find out if the RPC server is started yet
 	// because that doesn't do anything else than just connect. We'll check
 	// if lnd is also ready to be used in the next step.
-	err := wait.NoError(func() error {
+	err = wait.NoError(func() error {
 		// Create an lnd client now that we have the full configuration.
 		// We'll need a basic client and a full client because not all
 		// subservers have the same requirements.
 		var err error
 		basicClient, err = lndclient.NewBasicClient(
-			g.lndAddr, g.cfg.Lnd.TLSCertPath,
-			filepath.Dir(g.cfg.Lnd.AdminMacPath), network,
-			lndclient.MacFilename(filepath.Base(
-				g.cfg.Lnd.AdminMacPath,
-			)),
+			host, tlsPath, filepath.Dir(macPath), string(network),
+			lndclient.MacFilename(filepath.Base(macPath)),
 		)
 		return err
 	}, defaultStartupTimeout)
@@ -304,12 +287,10 @@ func (g *LightningTerminal) startSubservers(network string) error {
 	}()
 	g.lndClient, err = lndclient.NewLndServices(
 		&lndclient.LndServicesConfig{
-			LndAddress: g.lndAddr,
-			Network:    lndclient.Network(network),
-			MacaroonDir: filepath.Dir(
-				g.cfg.Lnd.AdminMacPath,
-			),
-			TLSPath:               g.cfg.Lnd.TLSCertPath,
+			LndAddress:            host,
+			Network:               network,
+			MacaroonDir:           filepath.Dir(macPath),
+			TLSPath:               tlsPath,
 			BlockUntilChainSynced: true,
 			ChainSyncCtx:          ctxc,
 		},
@@ -429,7 +410,7 @@ func (g *LightningTerminal) startGrpcWebProxy() error {
 	// admin macaroon and converts the browser's gRPC web calls into native
 	// gRPC.
 	lndGrpcServer, grpcServer, err := buildGrpcWebProxyServer(
-		g.lndAddr, g.cfg.UIPassword, g.cfg.Lnd,
+		g.cfg.Lnd.RPCListeners[0].String(), g.cfg.UIPassword, g.cfg.Lnd,
 	)
 	if err != nil {
 		return fmt.Errorf("could not create gRPC web proxy: %v", err)
