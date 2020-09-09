@@ -67,6 +67,9 @@ func SetupLoggers(root *build.RotatingLogWriter) {
 	lnd.AddSubLogger(root, "LNDC", lndclient.UseLogger)
 	lnd.AddSubLogger(root, "STORE", loopdb.UseLogger)
 	lnd.AddSubLogger(root, lsat.Subsystem, lsat.UseLogger)
+
+	// Setup the gRPC loggers too.
+	grpclog.SetLoggerV2(NewGrpcLogLogger(root, GrpcLogSubsystem))
 }
 
 // NewGrpcLogLogger creates a new grpclog compatible logger and attaches it as
