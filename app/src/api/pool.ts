@@ -151,6 +151,16 @@ class PoolApi extends BaseApi<PoolEvents> {
   }
 
   /**
+   * call the pool `CancelOrder` RPC and return the response
+   */
+  async cancelOrder(orderNonce: string): Promise<POOL.CancelOrderResponse.AsObject> {
+    const req = new POOL.CancelOrderRequest();
+    req.setOrderNonce(b64(orderNonce));
+    const res = await this._grpc.request(Trader.CancelOrder, req, this._meta);
+    return res.toObject();
+  }
+
+  /**
    * convert the percentage interest rate to the per block "rate_fixed" unit
    * @param ratePct the rate between 0 and 100
    * @param duration the number of blocks
