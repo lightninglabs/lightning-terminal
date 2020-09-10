@@ -428,6 +428,8 @@ export const poolInvalidOrder: AUCT.InvalidOrder.AsObject = {
   failString: 'Invalid Amount',
 };
 
+export const poolCancelOrder: POOL.CancelOrderResponse.AsObject = {};
+
 // collection of sample API responses
 export const sampleApiResponses: Record<string, any> = {
   'lnrpc.Lightning.GetInfo': lndGetInfo,
@@ -450,4 +452,5 @@ export const sampleApiResponses: Record<string, any> = {
   'poolrpc.Trader.WithdrawAccount': poolWithdrawAccount,
   'poolrpc.Trader.ListOrders': poolListOrders,
   'poolrpc.Trader.SubmitOrder': poolSubmitOrder,
+  'poolrpc.Trader.CancelOrder': poolCancelOrder,
 };

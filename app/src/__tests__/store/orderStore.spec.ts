@@ -146,4 +146,28 @@ describe('OrderStore', () => {
     expect(rootStore.uiStore.alerts.size).toBe(1);
     expect(values(rootStore.uiStore.alerts)[0].message).toMatch(/The rate is too low.*/);
   });
+
+  it('should cancel an order', async () => {
+    await rootStore.accountStore.fetchAccounts();
+    await store.fetchOrders();
+    await store.cancelOrder(values(store.orders)[0].nonce);
+    expect(grpcMock.unary).toBeCalledWith(
+      expect.objectContaining({ methodName: 'CancelOrder' }),
+      expect.anything(),
+    );
+  });
+
+  it('should handle errors cancelling an order', async () => {
+    await rootStore.accountStore.fetchAccounts();
+    await store.fetchOrders();
+    grpcMock.unary.mockImplementationOnce(() => {
+      throw new Error('test-err');
+    });
+    expect(rootStore.uiStore.alerts.size).toBe(0);
+    await store.cancelOrder(values(store.orders)[0].nonce);
+    await waitFor(() => {
+      expect(rootStore.uiStore.alerts.size).toBe(1);
+      expect(values(rootStore.uiStore.alerts)[0].message).toBe('test-err');
+    });
+  });
 });
