@@ -80,6 +80,13 @@ export default class OrderStore {
     }
   }
 
+  /**
+   * Submits an order to the market
+   * @param type the type of order (bid or ask)
+   * @param amount the amount of the order
+   * @param ratePct the interest rate as a percent of the total amount (from 0 to 100)
+   * @param duration the number of blocks to keep the channel open for
+   */
   @action.bound
   async submitOrder(type: OrderType, amount: number, ratePct: number, duration: number) {
     try {
@@ -107,6 +114,23 @@ export default class OrderStore {
       return acceptedOrderNonce;
     } catch (error) {
       this._store.uiStore.handleError(error, 'Unable to submit the order');
+    }
+  }
+
+  /**
+   * Cancels a pending order
+   * @param nonce the order's nonce value
+   */
+  @action.bound
+  async cancelOrder(nonce: string) {
+    try {
+      const traderKey = this._store.accountStore.activeAccount.traderKey;
+      this._store.log.info(`cancelling order with nonce ${nonce} for ${traderKey}`);
+
+      await this._store.api.pool.cancelOrder(nonce);
+      await this.fetchOrders();
+    } catch (error) {
+      this._store.uiStore.handleError(error, 'Unable to cancel the order');
     }
   }
 }
