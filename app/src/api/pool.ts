@@ -1,8 +1,15 @@
 import * as POOL from 'types/generated/trader_pb';
 import { Trader } from 'types/generated/trader_pb_service';
 import { b64 } from 'util/strings';
+import { OrderType } from 'store/models/order';
 import BaseApi from './base';
 import GrpcClient from './grpc';
+
+// The granularity of the fixed rate used to compute the per-block interest rate.
+// This needs to be large enough to ensure the the smallest possible order (100K sats),
+// for the smallest possible premium (or smallest acceptable) is expressible over
+// our current max lease period (6 months)
+const FEE_RATE_TOTAL_PARTS = 1e9;
 
 /** the names and argument types for the subscription events */
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -103,6 +110,66 @@ class PoolApi extends BaseApi<PoolEvents> {
     const req = new POOL.ListOrdersRequest();
     const res = await this._grpc.request(Trader.ListOrders, req, this._meta);
     return res.toObject();
+  }
+
+  /**
+   * call the pool `SubmitOrder` RPC and return the response
+   */
+  async submitOrder(
+    traderKey: string,
+    type: OrderType,
+    amount: number,
+    ratePct: number,
+    duration: number,
+    feeRateSatPerKw = 125000,
+  ): Promise<POOL.SubmitOrderResponse.AsObject> {
+    const req = new POOL.SubmitOrderRequest();
+
+    const order = new POOL.Order();
+    order.setTraderKey(b64(traderKey));
+    order.setAmt(amount);
+    order.setRateFixed(this._pctRateToFixed(ratePct, duration));
+    order.setMaxBatchFeeRateSatPerKw(feeRateSatPerKw);
+
+    switch (type) {
+      case OrderType.Bid:
+        const bid = new POOL.Bid();
+        bid.setMinDurationBlocks(duration);
+        bid.setDetails(order);
+        req.setBid(bid);
+        break;
+      case OrderType.Ask:
+        const ask = new POOL.Ask();
+        ask.setMaxDurationBlocks(duration);
+        ask.setDetails(order);
+        req.setAsk(ask);
+        break;
+    }
+
+    const res = await this._grpc.request(Trader.SubmitOrder, req, this._meta);
+    return res.toObject();
+  }
+
+  /**
+   * convert the percentage interest rate to the per block "rate_fixed" unit
+   * @param ratePct the rate between 0 and 100
+   * @param duration the number of blocks
+   */
+  private _pctRateToFixed(ratePct: number, duration: number) {
+    // rate = % / 100
+    // rate = rateFixed / totalParts
+    // rateFixed = rate * totalParts
+    const interestRate = ratePct / 100;
+    const rateFixedFloat = interestRate * FEE_RATE_TOTAL_PARTS;
+    // We then take this rate fixed, and divide it by the number of blocks
+    // as the user wants this rate to be the final lump sum they pay.
+    const rateFixed = Math.floor(rateFixedFloat / duration);
+
+    if (rateFixed < 1) {
+      throw new Error(`The rate is too low. it must equate to at least 1 sat per block`);
+    }
+
+    return rateFixed;
   }
 }
 

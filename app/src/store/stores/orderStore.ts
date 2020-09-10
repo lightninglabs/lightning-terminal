@@ -76,7 +76,37 @@ export default class OrderStore {
         this._store.log.info('updated orderStore.orders', toJS(this.orders));
       });
     } catch (error) {
-      this._store.uiStore.handleError(error, 'Unable to fetch Orders');
+      this._store.uiStore.handleError(error, 'Unable to fetch orders');
+    }
+  }
+
+  @action.bound
+  async submitOrder(type: OrderType, amount: number, ratePct: number, duration: number) {
+    try {
+      const traderKey = this._store.accountStore.activeAccount.traderKey;
+      this._store.log.info(
+        `submitting ${type} order for ${amount}sats at ${ratePct}% for ${duration} blocks`,
+      );
+
+      const { acceptedOrderNonce, invalidOrder } = await this._store.api.pool.submitOrder(
+        traderKey,
+        type,
+        amount,
+        ratePct,
+        duration,
+      );
+
+      // fetch all orders to update the store's state
+      await this.fetchOrders();
+
+      if (invalidOrder) {
+        this._store.log.error('invalid order', invalidOrder);
+        throw new Error(invalidOrder.failString);
+      }
+
+      return acceptedOrderNonce;
+    } catch (error) {
+      this._store.uiStore.handleError(error, 'Unable to submit the order');
     }
   }
 }

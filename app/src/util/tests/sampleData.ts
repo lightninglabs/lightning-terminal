@@ -418,6 +418,16 @@ export const poolListOrders: POOL.ListOrdersResponse.AsObject = {
   ],
 };
 
+export const poolSubmitOrder: POOL.SubmitOrderResponse.AsObject = {
+  acceptedOrderNonce: 'W4XLkXhEKMcKfzV+Ex+jXQJeaVXoCoKQzptMRi6g+ZA=',
+};
+
+export const poolInvalidOrder: AUCT.InvalidOrder.AsObject = {
+  orderNonce: 'W4XLkXhEKMcKfzV+Ex+jXQJeaVXoCoKQzptMRi6g+ZA=',
+  failReason: AUCT.InvalidOrder.FailReason.INVALID_AMT,
+  failString: 'Invalid Amount',
+};
+
 // collection of sample API responses
 export const sampleApiResponses: Record<string, any> = {
   'lnrpc.Lightning.GetInfo': lndGetInfo,
@@ -439,4 +449,5 @@ export const sampleApiResponses: Record<string, any> = {
   'poolrpc.Trader.DepositAccount': poolDepositAccount,
   'poolrpc.Trader.WithdrawAccount': poolWithdrawAccount,
   'poolrpc.Trader.ListOrders': poolListOrders,
+  'poolrpc.Trader.SubmitOrder': poolSubmitOrder,
 };
