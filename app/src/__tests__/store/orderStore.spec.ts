@@ -5,7 +5,13 @@ import { grpc } from '@improbable-eng/grpc-web';
 import { waitFor } from '@testing-library/react';
 import Big from 'big.js';
 import { hex } from 'util/strings';
-import { poolListAccounts, poolListOrders } from 'util/tests/sampleData';
+import { injectIntoGrpcUnary } from 'util/tests';
+import {
+  poolInvalidOrder,
+  poolListAccounts,
+  poolListOrders,
+  poolSubmitOrder,
+} from 'util/tests/sampleData';
 import { createStore, OrderStore, Store } from 'store';
 import { Order } from 'store/models';
 import { OrderType } from 'store/models/order';
@@ -80,5 +86,64 @@ describe('OrderStore', () => {
 
     await store.fetchOrders();
     expect(store.accountOrders.length).toBeLessThan(store.orders.size);
+  });
+
+  it('should submit an ask order', async () => {
+    await rootStore.accountStore.fetchAccounts();
+    const nonce = await store.submitOrder(OrderType.Ask, 100000, 2, 2016);
+    expect(nonce).toBe(poolSubmitOrder.acceptedOrderNonce);
+  });
+
+  it('should submit a bid order', async () => {
+    await rootStore.accountStore.fetchAccounts();
+    const nonce = await store.submitOrder(OrderType.Bid, 100000, 2, 2016);
+    expect(nonce).toBe(poolSubmitOrder.acceptedOrderNonce);
+  });
+
+  it('should handle invalid orders', async () => {
+    await rootStore.accountStore.fetchAccounts();
+    grpcMock.unary.mockImplementationOnce((desc, opts) => {
+      if (desc.methodName === 'SubmitOrder') {
+        const res = {
+          ...poolSubmitOrder,
+          invalidOrder: poolInvalidOrder,
+        };
+        opts.onEnd({
+          status: grpc.Code.OK,
+          message: { toObject: () => res },
+        } as any);
+      }
+      return undefined as any;
+    });
+    await store.submitOrder(OrderType.Bid, 100000, 2, 2016);
+    expect(rootStore.uiStore.alerts.size).toBe(1);
+    expect(values(rootStore.uiStore.alerts)[0].message).toBe(poolInvalidOrder.failString);
+  });
+
+  it.each<[number, number, number]>([
+    [2, 2016, 9920],
+    [1, 2016, 4960],
+    [1, 4000, 2500],
+  ])(
+    'should convert from interest percent to per block fixed rate correctly',
+    async (ratePct: number, duration: number, expectedRateFixed: number) => {
+      await rootStore.accountStore.fetchAccounts();
+
+      let actualRate;
+      // capture the rate that is sent to the API
+      injectIntoGrpcUnary((_, props) => {
+        actualRate = (props.request.toObject() as any).bid.details.rateFixed;
+      });
+
+      await store.submitOrder(OrderType.Bid, 10000000, ratePct, duration);
+      expect(actualRate).toBe(expectedRateFixed);
+    },
+  );
+
+  it('should throw if the interest rate percent is too low', async () => {
+    await rootStore.accountStore.fetchAccounts();
+    await store.submitOrder(OrderType.Bid, 100000, 0.001, 20000);
+    expect(rootStore.uiStore.alerts.size).toBe(1);
+    expect(values(rootStore.uiStore.alerts)[0].message).toMatch(/The rate is too low.*/);
   });
 });
