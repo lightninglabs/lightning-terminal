@@ -40,6 +40,7 @@ archives as well.
 
 | LiT              | LND          | Loop        | Faraday      |
 | ---------------- | ------------ | ----------- | ------------ |
+| **v0.1.1-alpha** | v0.11.0-beta | v0.8.1-beta | v0.2.0-alpha |
 | **v0.1.0-alpha** | v0.10.3-beta | v0.6.5-beta | v0.2.0-alpha |
 
 ## Usage
@@ -80,7 +81,26 @@ cd lightning-terminal
 make install
 ```
 
-This will produce the `litd` executable and add it to your `GOPATH`.
+This will produce the `litd` executable and add it to your `GOPATH`. The CLI binaries for
+`lncli`, `loop`, and `frcli` are not created by `make install`. You will need to download
+those binaries from the [lnd](https://github.com/lightningnetwork/lnd/releases),
+[loop](https://github.com/lightninglabs/loop/releases), and
+[faraday](https://github.com/lightninglabs/faraday/releases) repos manually.
+
+#### Executing CLI Commands
+
+When executing `loop` and `frcli` commands, you will need to specify the connection info
+since the daemons are now integrated into `lnd`'s GRPC server.
+
+Examples:
+
+```
+loop --rpcserver=localhost:10009 --tlscertpath=$HOME/.lnd/tls.cert --macaroonpath=$HOME/.lnd/data/chain/bitcoin/mainnet/admin.macaroon
+```
+
+```
+frcli --rpcserver=localhost:10009 --tlscertpath=$HOME/.lnd/tls.cert --macaroonpath=$HOME/.lnd/data/chain/bitcoin/mainnet/admin.macaroon
+```
 
 ## Configuration
 
@@ -124,7 +144,7 @@ Application Options:
                           from the internet for this to work
       --letsencrypthost=  the host name to create a Let's Encrypt certificate for'
       --letsencryptdir=   the directory where the Let's Encrypt library will store its key and
-                          certificate (default: /Users/jamal/Library/Application Support/Lnd/letsencrypt)
+                          certificate (default: /Users/<username>/Library/Application Support/Lnd/letsencrypt)
 ```
 
 In addition to the LiT specific parameters, you must also provide configuration to the
@@ -166,14 +186,12 @@ You can also store the configuration in a persistent `lnd.conf` file so you do n
 type in the command line arguments every time you start the server. Just remember to use
 the appropriate prefixes as necessary.
 
-Also make sure to include the `lnd` general options in the `[Application Options]` section
-because the section name `[Lnd]` is not unique anymore because of how we combine the
-configurations of all daemons. This will hopefully be fixed in a future release.
+Do not include section headers, such as `[Application Options]` or `[Bitcoin]`, in the
+config file. Doing so will produce an error on startup.
 
 Example `lnd.conf`:
 
 ```
-[Application Options]
 httpslisten=0.0.0.0:443
 letsencrypt=1
 letsencrypthost=loop.merchant.com
@@ -185,22 +203,18 @@ lnd.rpclisten=0.0.0.0:10009
 lnd.listen=0.0.0.0:9735
 lnd.debuglevel=debug
 
-[Bitcoin]
-lnd.bitcoin.active
-lnd.bitcoin.testnet
+lnd.bitcoin.active=1
+lnd.bitcoin.testnet=1
 lnd.bitcoin.node=bitcoind
 
-[Bitcoind]
 lnd.bitcoind.rpchost=localhost
 lnd.bitcoind.rpcuser=testnetuser
 lnd.bitcoind.rpcpass=testnetpw
 lnd.bitcoind.zmqpubrawblock=localhost:28332
 lnd.bitcoind.zmqpubrawtx=localhost:28333
 
-[Loop]
 loop.loopoutmaxparts=5
 
-[Faraday]
 faraday.min_monitored=48h
 
 ```
