@@ -1,3 +1,4 @@
+import * as AUCT from 'types/generated/auctioneer_pb';
 import * as POOL from 'types/generated/trader_pb';
 import { Trader } from 'types/generated/trader_pb_service';
 import { b64 } from 'util/strings';
@@ -157,6 +158,16 @@ class PoolApi extends BaseApi<PoolEvents> {
     const req = new POOL.CancelOrderRequest();
     req.setOrderNonce(b64(orderNonce));
     const res = await this._grpc.request(Trader.CancelOrder, req, this._meta);
+    return res.toObject();
+  }
+
+  /**
+   * call the pool `BatchSnapshot` RPC and return the response
+   */
+  async batchSnapshot(batchId?: string): Promise<AUCT.BatchSnapshotResponse.AsObject> {
+    const req = new AUCT.BatchSnapshotRequest();
+    if (batchId) req.setBatchId(batchId);
+    const res = await this._grpc.request(Trader.BatchSnapshot, req, this._meta);
     return res.toObject();
   }
 

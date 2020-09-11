@@ -430,6 +430,52 @@ export const poolInvalidOrder: AUCT.InvalidOrder.AsObject = {
 
 export const poolCancelOrder: POOL.CancelOrderResponse.AsObject = {};
 
+export const poolBatchSnapshot: AUCT.BatchSnapshotResponse.AsObject = {
+  version: 0,
+  batchId: '0260ad81d3108e011dfb7ec3be22cacf2e6406419ae210ed4e7a4a294a87b840c8',
+  prevBatchId: '02df8606a074ccec54ff17cd62bff9351f3bcf0fabdab0ccc60b44a878b1b051b9',
+  clearingPriceRate: 19841,
+  matchedOrdersList: [
+    {
+      ask: {
+        version: 0,
+        maxDurationBlocks: 8640,
+        rateFixed: 347,
+        chanType: 0,
+      },
+      bid: {
+        version: 0,
+        minDurationBlocks: 1008,
+        rateFixed: 19841,
+        chanType: 0,
+      },
+      matchingRate: 19841,
+      totalSatsCleared: 7700000,
+      unitsMatched: 77,
+    },
+    {
+      ask: {
+        version: 0,
+        maxDurationBlocks: 8640,
+        rateFixed: 347,
+        chanType: 0,
+      },
+      bid: {
+        version: 0,
+        minDurationBlocks: 1008,
+        rateFixed: 19841,
+        chanType: 0,
+      },
+      matchingRate: 19841,
+      totalSatsCleared: 30000000,
+      unitsMatched: 300,
+    },
+  ],
+  batchTxId: '6f29af3cb54480fec52d3a48ba94a5327aa31ed2c3b85ee8f0fd0da2f5ea8620',
+  batchTx:
+    '02000000000103f1a75ac5d0fdd52393410f71ead0bd9ab8d0af3974d47e86dde91c76cab46bb9010000000000000000f1a75ac5d0fdd52393410f71ead0bd9ab8d0af3974d47e86dde91c76cab46bb90300000000000000004324d5c4a412675ee5262aaa5afcca95ecdeb94764145823b93a41c53a7d07ef0600000000000000000523751100000000002200200dd535051271e7718bedb65e6861b31815a644b91d3a5107a74fa8ee16c823ed207e750000000000220020a70ab73d7d1c2efaeb280e26b98df9761d8e37cb3160cafc29381e8086254f7180c3c9010000000022002050dba23ca20d53adf5f94695040839c0be1ef609b70e19713c1d88d7d0db04f5c008fe0200000000220020bb8bc3b7c011060ff4002ab1c995a4eddcd1b4ef41aee5dca690a2903ede53ea24819e0300000000220020a3e3dfb76e7a4e72634bb5ee3006491fffbaecafe8882554d9a6b434f0b841aa02473044022066fe9cc1b0ecc84367839cdbaad606888260e6349d6c21f22186660f78dbe38202206fa0066fd0a4385348c615777b3e751db5f5d8306771522445a873dc7bed56a101232103d7c453a1aefcbbc6043372036db9d76816f830865392f97a262c447b59eb332eac03483045022100db6895c68e4cbd5fb83af7c37164dbf3da0c1222fb55177c4c367f05e9bed55902206b4775bb1c978380f95a9c444f392a53803b8b6d5508d41d0982a540d0c9062601483045022100ecc4ccaf440eae13e2afb8461f1c28d66af87f7e5d880732ae2fe72f85d5572302204656d5dbc963166c7bd92a93631fe49e20e4b1121914ca76e7cb87c3d983ee5a014e2103c736dec8b8f45cecd32fcedfcb8c0be92a2a3b40bffa8b1ce64640972a19fc49ad2102c642aaf70c56aa156db9546fc6e76c484b6a091b645fb848fd51916bd1e931caac736403cc531cb16803483045022100ed30c4f090dbe19d4f1dcb28f2701cf8a0bbf671a360d217384332248502de6c022025dac44cd380eda709bda3cbe6dbbe7a916549994bd72e48470a322a89fbbfba01473044022070c7e4909786fe5d482f35e1301d5cd2b5932c91b23d16bf699fe6bf455165220220015a3241a84620a27c110f307906f7047262947694c29b4752891d8b00153054014e2103305a3323068e66461ac3b247a2bfdc339959c3975da0ac4677e4d027462aaa14ad2102e2ec3f93e098e073490ad19fda9c11a92e2ed02ed3eecc5527972dba99b6d4e1ac736403a4f51bb16800000000',
+};
+
 // collection of sample API responses
 export const sampleApiResponses: Record<string, any> = {
   'lnrpc.Lightning.GetInfo': lndGetInfo,
@@ -453,4 +499,5 @@ export const sampleApiResponses: Record<string, any> = {
   'poolrpc.Trader.ListOrders': poolListOrders,
   'poolrpc.Trader.SubmitOrder': poolSubmitOrder,
   'poolrpc.Trader.CancelOrder': poolCancelOrder,
+  'poolrpc.Trader.BatchSnapshot': poolBatchSnapshot,
 };
