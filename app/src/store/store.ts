@@ -9,6 +9,7 @@ import { GrpcClient, PoolApi, LndApi, LoopApi } from 'api';
 import {
   AccountStore,
   AuthStore,
+  BatchStore,
   BuildSwapStore,
   ChannelStore,
   NodeStore,
@@ -27,6 +28,7 @@ export class Store {
   //
   accountStore = new AccountStore(this);
   authStore = new AuthStore(this);
+  batchStore = new BatchStore(this);
   buildSwapStore = new BuildSwapStore(this);
   channelStore = new ChannelStore(this);
   swapStore = new SwapStore(this);
