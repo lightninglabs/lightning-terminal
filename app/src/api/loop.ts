@@ -51,9 +51,13 @@ class LoopApi extends BaseApi<LoopEvents> {
   /**
    * call the Loop `GetLoopInQuote` RPC and return the response
    */
-  async getLoopInQuote(amount: Big): Promise<LOOP.InQuoteResponse.AsObject> {
+  async getLoopInQuote(
+    amount: Big,
+    confTarget?: number,
+  ): Promise<LOOP.InQuoteResponse.AsObject> {
     const req = new LOOP.QuoteRequest();
     req.setAmt(+amount);
+    if (confTarget) req.setConfTarget(confTarget);
     const res = await this._grpc.request(SwapClient.GetLoopInQuote, req, this._meta);
     return res.toObject();
   }
@@ -61,9 +65,13 @@ class LoopApi extends BaseApi<LoopEvents> {
   /**
    * call the Loop `LoopOutQuote` RPC and return the response
    */
-  async getLoopOutQuote(amount: Big): Promise<LOOP.OutQuoteResponse.AsObject> {
+  async getLoopOutQuote(
+    amount: Big,
+    confTarget?: number,
+  ): Promise<LOOP.OutQuoteResponse.AsObject> {
     const req = new LOOP.QuoteRequest();
     req.setAmt(+amount);
+    if (confTarget) req.setConfTarget(confTarget);
     const res = await this._grpc.request(SwapClient.LoopOutQuote, req, this._meta);
     return res.toObject();
   }
@@ -75,12 +83,14 @@ class LoopApi extends BaseApi<LoopEvents> {
     amount: Big,
     quote: Quote,
     lastHop?: string,
+    confTarget?: number,
   ): Promise<LOOP.SwapResponse.AsObject> {
     const req = new LOOP.LoopInRequest();
     req.setAmt(+amount);
     req.setMaxSwapFee(+quote.swapFee);
     req.setMaxMinerFee(+quote.minerFee);
     if (lastHop) req.setLastHop(Buffer.from(lastHop, 'hex').toString('base64'));
+    if (confTarget) req.setHtlcConfTarget(confTarget);
     const res = await this._grpc.request(SwapClient.LoopIn, req, this._meta);
     return res.toObject();
   }
@@ -93,6 +103,8 @@ class LoopApi extends BaseApi<LoopEvents> {
     quote: Quote,
     chanIds: number[],
     deadline: number,
+    confTarget?: number,
+    destAddress?: string,
   ): Promise<LOOP.SwapResponse.AsObject> {
     const req = new LOOP.LoopOutRequest();
     req.setAmt(+amount);
@@ -103,6 +115,8 @@ class LoopApi extends BaseApi<LoopEvents> {
     req.setMaxPrepayRoutingFee(this._calcRoutingFee(+quote.prepayAmount));
     req.setOutgoingChanSetList(chanIds);
     req.setSwapPublicationDeadline(deadline);
+    if (confTarget) req.setSweepConfTarget(confTarget);
+    if (destAddress) req.setDest(destAddress);
 
     const res = await this._grpc.request(SwapClient.LoopOut, req, this._meta);
     return res.toObject();

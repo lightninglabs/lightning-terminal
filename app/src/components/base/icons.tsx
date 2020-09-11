@@ -18,6 +18,7 @@ import { ReactComponent as MaximizeIcon } from 'assets/icons/maximize.svg';
 import { ReactComponent as MenuIcon } from 'assets/icons/menu.svg';
 import { ReactComponent as MinimizeIcon } from 'assets/icons/minimize.svg';
 import { ReactComponent as RefreshIcon } from 'assets/icons/refresh-cw.svg';
+import { ReactComponent as SettingsIcon } from 'assets/icons/settings.svg';
 import { ReactComponent as CancelIcon } from 'assets/icons/slash.svg';
 import { styled } from 'components/theme';
 
@@ -92,3 +93,4 @@ export const Menu = Icon.withComponent(MenuIcon);
 export const Minimize = Icon.withComponent(MinimizeIcon);
 export const Maximize = Icon.withComponent(MaximizeIcon);
 export const Refresh = Icon.withComponent(RefreshIcon);
+export const Settings = Icon.withComponent(SettingsIcon);

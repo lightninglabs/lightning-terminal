@@ -135,6 +135,11 @@ export const Input = styled.input`
   &:focus {
     outline: none;
     background-color: ${props => props.theme.colors.overlay};
+    border-bottom-color: ${props => props.theme.colors.white};
+  }
+
+  &::placeholder {
+    color: ${props => props.theme.colors.gray};
   }
 `;
 
