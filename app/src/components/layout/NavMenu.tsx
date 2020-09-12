@@ -70,6 +70,7 @@ const NavMenu: React.FC = () => {
       <Nav>
         <NavItem page="loop" onClick={uiStore.goToLoop} />
         <NavItem page="history" onClick={uiStore.goToHistory} />
+        <NavItem page="pool" onClick={uiStore.goToPool} />
         <NavItem page="settings" onClick={uiStore.goToSettings} />
       </Nav>
     </>

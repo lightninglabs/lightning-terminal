@@ -1,4 +1,4 @@
-import { action, observable, toJS } from 'mobx';
+import { action, computed, observable, toJS } from 'mobx';
 import { SwapState } from 'types/generated/loop_pb';
 import { Alert } from 'types/state';
 import { AuthenticationError } from 'util/errors';
@@ -22,6 +22,11 @@ export default class UiStore {
 
   constructor(store: Store) {
     this._store = store;
+  }
+
+  @computed
+  get fullWidth() {
+    return this._store.router.location.pathname === '/pool';
   }
 
   /** navigate to the specified route */
@@ -58,7 +63,16 @@ export default class UiStore {
     this._store.log.info('Go to the History page');
   }
 
-  /** Change to the History page */
+  /** Change to the Pool page */
+  @action.bound
+  goToPool() {
+    this.goTo('/pool');
+    // always collapse the sidebar to make room for the Pool sidebar
+    this._store.settingsStore.sidebarVisible = false;
+    this._store.log.info('Go to the Pool page');
+  }
+
+  /** Change to the Settings page */
   @action.bound
   goToSettings() {
     this.goTo('/settings');
