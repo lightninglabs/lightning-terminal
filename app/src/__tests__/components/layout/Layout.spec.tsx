@@ -44,6 +44,17 @@ describe('Layout component', () => {
     expect(getByText('Lightning Terminal').parentElement).toHaveClass('active');
   });
 
+  it('should navigate to the Pool page', () => {
+    const { getByText, store } = render();
+    expect(store.router.location.pathname).toBe('/loop');
+    fireEvent.click(getByText('Lightning Pool'));
+    expect(store.router.location.pathname).toBe('/pool');
+    expect(getByText('Lightning Pool').parentElement).toHaveClass('active');
+    fireEvent.click(getByText('Lightning Terminal'));
+    expect(store.router.location.pathname).toBe('/loop');
+    expect(getByText('Lightning Terminal').parentElement).toHaveClass('active');
+  });
+
   it('should navigate to the Settings page', () => {
     const { getByText, store } = render();
     expect(store.router.location.pathname).toBe('/loop');

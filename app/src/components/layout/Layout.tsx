@@ -7,14 +7,15 @@ import Sidebar from './Sidebar';
 
 interface CollapsedProps {
   collapsed: boolean;
+  fullWidth?: boolean;
 }
 
 const Styled = {
-  Container: styled.div`
+  Container: styled.div<{ fullWidth: boolean }>`
     position: relative;
     min-height: 100vh;
-    max-width: 1440px;
-    width: 100%;
+    max-width: ${props => (props.fullWidth ? '100%' : '1440px')};
+    width: ${props => (props.fullWidth ? '100%' : '100%')};
     margin: 0 auto;
   `,
   Hamburger: styled.span<CollapsedProps>`
@@ -52,7 +53,7 @@ const Styled = {
   `,
   Content: styled.div<CollapsedProps>`
     margin-left: ${props => (props.collapsed ? '0' : '285px')};
-    padding: 0 15px;
+    padding: ${props => (props.fullWidth ? '0' : '0 15px')};
     transition: all 0.2s;
 
     @media (max-width: 1200px) {
@@ -62,12 +63,12 @@ const Styled = {
 };
 
 export const Layout: React.FC = ({ children }) => {
-  const { settingsStore } = useStore();
+  const { settingsStore, uiStore } = useStore();
 
   const { Container, Hamburger, Aside, Content } = Styled;
   return (
     <Background>
-      <Container>
+      <Container fullWidth={uiStore.fullWidth}>
         <Hamburger
           collapsed={!settingsStore.sidebarVisible}
           onClick={settingsStore.toggleSidebar}
@@ -77,7 +78,7 @@ export const Layout: React.FC = ({ children }) => {
         <Aside collapsed={!settingsStore.sidebarVisible}>
           <Sidebar />
         </Aside>
-        <Content collapsed={!settingsStore.sidebarVisible}>
+        <Content collapsed={!settingsStore.sidebarVisible} fullWidth={uiStore.fullWidth}>
           <div className="container-fluid">{children}</div>
         </Content>
       </Container>
