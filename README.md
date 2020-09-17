@@ -40,6 +40,7 @@ archives as well.
 
 | LiT              | LND          | Loop        | Faraday      |
 | ---------------- | ------------ | ----------- | ------------ |
+/ **v0.2.0-alpha** | v0.11.1-beta | v0.9.0-beta | v0.2.1-alpha |
 | **v0.1.1-alpha** | v0.11.0-beta | v0.8.1-beta | v0.2.0-alpha |
 | **v0.1.0-alpha** | v0.10.3-beta | v0.6.5-beta | v0.2.0-alpha |
 
@@ -157,14 +158,16 @@ Because that single decision has an impact on the configuration options that
 need to be used, the documentation has been split into two parts, each
 explaining one mode in detail.
 
-* Lnd mode **"integrated"**
-  + Start everything (the UI, `lnd`, `loop`, `faraday`) in one single process.
-  + [Please read the `lnd` **integrated** mode configuration guide here.](doc/config-lnd-integrated.md)
-
 * Lnd mode **"remote"**
   + Connect to a remote `lnd` instance, start the rest (the UI, `loop`, 
   `faraday`) in the same process.
   + [Please read the `lnd` **remote** mode configuration guide here.](doc/config-lnd-remote.md)
+  + This is the default mode that is used if the `--lnd-mode=` command line
+    or `lnd-mode=` configuration option is not set explicitly.
+
+* Lnd mode **"integrated"**
+  + Start everything (the UI, `lnd`, `loop`, `faraday`) in one single process.
+  + [Please read the `lnd` **integrated** mode configuration guide here.](doc/config-lnd-integrated.md)
 
 ### Troubleshooting
 

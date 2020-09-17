@@ -181,7 +181,7 @@ For `loop`:
   loopoutmaxparts=5
   ```
 
-  After: (in `lnd.conf`)
+  After: (in `lit.conf`)
 
   ```text
   # Loop
