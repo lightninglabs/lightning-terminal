@@ -40,6 +40,7 @@ archives as well.
 
 | LiT              | LND          | Loop        | Faraday      |
 | ---------------- | ------------ | ----------- | ------------ |
+/ **v0.2.0-alpha** | v0.11.1-beta | v0.9.0-beta | v0.2.1-alpha |
 | **v0.1.1-alpha** | v0.11.0-beta | v0.8.1-beta | v0.2.0-alpha |
 | **v0.1.0-alpha** | v0.10.3-beta | v0.6.5-beta | v0.2.0-alpha |
 
