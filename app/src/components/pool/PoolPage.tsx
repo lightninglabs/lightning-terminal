@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
+import { useStore } from 'store';
 import { Column, Row } from 'components/base';
 import PageHeader from 'components/common/PageHeader';
 import { styled } from 'components/theme';
@@ -31,21 +32,29 @@ const Styled = {
 
 const PoolPage: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.pool.PoolPage');
+  const { accountStore, orderStore } = useStore();
+
+  useEffect(() => {
+    accountStore.fetchAccounts();
+    orderStore.fetchOrders();
+  }, [accountStore, orderStore]);
 
   const { Wrapper, Row, Col } = Styled;
   return (
     <Wrapper>
       <PageHeader title={l('pageTitle')} />
-      <Row>
-        <Col cols={4} colsXl={3}>
-          <AccountSection />
-          <OrderFormSection />
-        </Col>
-        <Col>
-          <ChartSection />
-          <DetailsSection />
-        </Col>
-      </Row>
+      {accountStore.activeTraderKey && (
+        <Row>
+          <Col cols={4} colsXl={3}>
+            <AccountSection />
+            <OrderFormSection />
+          </Col>
+          <Col>
+            <ChartSection />
+            <DetailsSection />
+          </Col>
+        </Row>
+      )}
     </Wrapper>
   );
 };

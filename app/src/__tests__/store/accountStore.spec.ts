@@ -6,6 +6,7 @@ import Big from 'big.js';
 import {
   poolCloseAccount,
   poolDepositAccount,
+  poolInitAccount,
   poolListAccounts,
   poolWithdrawAccount,
 } from 'util/tests/sampleData';
@@ -39,6 +40,36 @@ describe('AccountStore', () => {
       expect(rootStore.uiStore.alerts.size).toBe(1);
       expect(values(rootStore.uiStore.alerts)[0].message).toBe('test-err');
     });
+  });
+
+  it('should return sorted accounts', async () => {
+    const a = new Account({ ...poolInitAccount, value: 300 });
+    const b = new Account({ ...poolInitAccount, value: 100 });
+    const c = new Account({
+      ...poolInitAccount,
+      expirationHeight: 5000,
+      state: POOL.AccountState.CLOSED,
+    });
+    const d = new Account({
+      ...poolInitAccount,
+      expirationHeight: 2000,
+      state: POOL.AccountState.CLOSED,
+    });
+
+    // make the traderKey's unique
+    [a, b, c, d].forEach((acct, i) => {
+      acct.traderKey = `${i}${acct.traderKey}`;
+    });
+
+    store.accounts.set(d.traderKey, d);
+    store.accounts.set(c.traderKey, c);
+    store.accounts.set(b.traderKey, b);
+    store.accounts.set(a.traderKey, a);
+
+    const expected = [a, b, c, d].map(x => x.traderKey);
+    const actual = store.sortedAccounts.map(x => x.traderKey);
+
+    expect(actual).toEqual(expected);
   });
 
   it.each<[number, string]>([

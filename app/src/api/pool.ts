@@ -10,7 +10,7 @@ import GrpcClient from './grpc';
 // This needs to be large enough to ensure the the smallest possible order (100K sats),
 // for the smallest possible premium (or smallest acceptable) is expressible over
 // our current max lease period (6 months)
-const FEE_RATE_TOTAL_PARTS = 1e9;
+export const FEE_RATE_TOTAL_PARTS = 1e9;
 
 /** the names and argument types for the subscription events */
 // eslint-disable-next-line @typescript-eslint/no-empty-interface

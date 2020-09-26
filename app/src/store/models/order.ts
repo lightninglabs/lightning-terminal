@@ -19,10 +19,22 @@ export default class Order {
   @observable maxBatchFeeRateSatPerKw = 0;
   @observable units = 0;
   @observable unitsUnfulfilled = 0;
+  @observable reserved = Big(0);
   // custom app values
   @observable type: OrderType = OrderType.Bid;
   // for bids, this is the minimum. for asks this is the maximum
-  @observable duration?: number;
+  @observable duration = 0;
+
+  /**
+   * true if this order's state is submitted or partially filled
+   */
+  @computed get isPending() {
+    const pendingStates: number[] = [
+      AUCT.OrderState.ORDER_SUBMITTED,
+      AUCT.OrderState.ORDER_PARTIALLY_FILLED,
+    ];
+    return pendingStates.includes(this.state);
+  }
 
   /**
    * The numeric account `state` as a user friendly string
@@ -62,6 +74,7 @@ export default class Order {
     this.maxBatchFeeRateSatPerKw = poolOrder.maxBatchFeeRateSatPerKw;
     this.units = poolOrder.units;
     this.unitsUnfulfilled = poolOrder.unitsUnfulfilled;
+    this.reserved = Big(poolOrder.reservedValueSat);
 
     this.type = type;
     this.duration = duration;
