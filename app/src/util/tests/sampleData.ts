@@ -284,7 +284,7 @@ export const loopSwapResponse: LOOP.SwapResponse.AsObject = {
 //
 
 export const poolInitAccount: POOL.Account.AsObject = {
-  availableBalance: 0,
+  availableBalance: 10000000,
   latestTxid: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
   expirationHeight: 4334,
   outpoint: {
@@ -367,7 +367,7 @@ export const poolListOrders: POOL.ListOrdersResponse.AsObject = {
     },
     {
       details: {
-        traderKey: 'A1XCKczWrUUjZg4rmtYoQnji2mGEyLxM8FvIPZ9ZnRCk',
+        traderKey: 'Ap+9XjK2X8EOrmAJvcvWS1B9jt3xLYka0S7aMru0Bude',
         rateFixed: 496,
         amt: 1000000,
         maxBatchFeeRateSatPerKw: 125000,
@@ -399,7 +399,7 @@ export const poolListOrders: POOL.ListOrdersResponse.AsObject = {
     },
     {
       details: {
-        traderKey: 'A1XCKczWrUUjZg4rmtYoQnji2mGEyLxM8FvIPZ9ZnRCk',
+        traderKey: 'Ap+9XjK2X8EOrmAJvcvWS1B9jt3xLYka0S7aMru0Bude',
         rateFixed: 744,
         amt: 300000,
         maxBatchFeeRateSatPerKw: 125000,

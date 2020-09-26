@@ -1,7 +1,7 @@
 import { action, computed, observable } from 'mobx';
 import * as POOL from 'types/generated/trader_pb';
 import Big from 'big.js';
-import { hex } from 'util/strings';
+import { ellipseInside, hex } from 'util/strings';
 
 export default class Account {
   // native values from the pool api
@@ -13,6 +13,11 @@ export default class Account {
 
   constructor(poolAccount: POOL.Account.AsObject) {
     this.update(poolAccount);
+  }
+
+  /** the first and last 6 chars of the traderKey */
+  @computed get traderKeyEllipsed() {
+    return ellipseInside(this.traderKey);
   }
 
   /**

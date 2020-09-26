@@ -7,6 +7,7 @@ import {
   toJS,
   values,
 } from 'mobx';
+import { AccountState } from 'types/generated/trader_pb';
 import { hex } from 'util/strings';
 import { Store } from 'store';
 import { Account } from 'store/models';
@@ -38,10 +39,30 @@ export default class AccountStore {
     return account;
   }
 
+  /** an array of accounts with opened first */
+  @computed
+  get sortedAccounts() {
+    const accts = values(this.accounts).slice();
+    // sort opened accounts by the account balance
+    const open = accts
+      .filter(a => a.state === AccountState.OPEN)
+      .sort((a, b) => +b.totalBalance.minus(a.totalBalance));
+    // sort unopened accounts by the expiration height descending
+    const other = accts
+      .filter(a => a.state !== AccountState.OPEN)
+      .sort((a, b) => b.expirationHeight - a.expirationHeight);
+    // return the opened accounts before the unopened accounts
+    return [...open, ...other];
+  }
+
   /** switch to a different account */
   @action.bound
   setActiveTraderKey(traderKey: string) {
     this.activeTraderKey = traderKey;
+    this._store.log.info(
+      'updated accountStore.activeTraderKey',
+      toJS(this.activeTraderKey),
+    );
   }
 
   /**
