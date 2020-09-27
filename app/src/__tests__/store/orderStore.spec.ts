@@ -90,14 +90,14 @@ describe('OrderStore', () => {
 
   it('should submit an ask order', async () => {
     await rootStore.accountStore.fetchAccounts();
-    const nonce = await store.submitOrder(OrderType.Ask, 100000, 2, 2016);
-    expect(nonce).toBe(poolSubmitOrder.acceptedOrderNonce);
+    const nonce = await store.submitOrder(OrderType.Ask, 100000, 2, 2016, 253);
+    expect(nonce).toBe(hex(poolSubmitOrder.acceptedOrderNonce));
   });
 
   it('should submit a bid order', async () => {
     await rootStore.accountStore.fetchAccounts();
-    const nonce = await store.submitOrder(OrderType.Bid, 100000, 2, 2016);
-    expect(nonce).toBe(poolSubmitOrder.acceptedOrderNonce);
+    const nonce = await store.submitOrder(OrderType.Bid, 100000, 2, 2016, 253);
+    expect(nonce).toBe(hex(poolSubmitOrder.acceptedOrderNonce));
   });
 
   it('should handle invalid orders', async () => {
@@ -115,7 +115,7 @@ describe('OrderStore', () => {
       }
       return undefined as any;
     });
-    await store.submitOrder(OrderType.Bid, 100000, 2, 2016);
+    await store.submitOrder(OrderType.Bid, 100000, 2, 2016, 253);
     expect(rootStore.uiStore.alerts.size).toBe(1);
     expect(values(rootStore.uiStore.alerts)[0].message).toBe(poolInvalidOrder.failString);
   });
@@ -135,14 +135,14 @@ describe('OrderStore', () => {
         actualRate = (props.request.toObject() as any).bid.details.rateFixed;
       });
 
-      await store.submitOrder(OrderType.Bid, 10000000, ratePct, duration);
+      await store.submitOrder(OrderType.Bid, 10000000, ratePct, duration, 253);
       expect(actualRate).toBe(expectedRateFixed);
     },
   );
 
   it('should throw if the interest rate percent is too low', async () => {
     await rootStore.accountStore.fetchAccounts();
-    await store.submitOrder(OrderType.Bid, 100000, 0.001, 20000);
+    await store.submitOrder(OrderType.Bid, 100000, 0.001, 20000, 253);
     expect(rootStore.uiStore.alerts.size).toBe(1);
     expect(values(rootStore.uiStore.alerts)[0].message).toMatch(/The rate is too low.*/);
   });
