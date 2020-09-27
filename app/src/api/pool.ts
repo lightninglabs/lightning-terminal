@@ -122,7 +122,7 @@ class PoolApi extends BaseApi<PoolEvents> {
     amount: number,
     ratePct: number,
     duration: number,
-    feeRateSatPerKw = 125000,
+    feeRateSatPerKw: number,
   ): Promise<POOL.SubmitOrderResponse.AsObject> {
     const req = new POOL.SubmitOrderRequest();
 

@@ -13,7 +13,7 @@ import OrderFormSection from './OrderFormSection';
 const Styled = {
   Wrapper: styled.div`
     padding: 40px 0 0;
-    height: 100vh;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
   `,

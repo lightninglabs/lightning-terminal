@@ -5,7 +5,7 @@ import { createBrowserHistory } from 'history';
 import AppStorage from 'util/appStorage';
 import CsvExporter from 'util/csv';
 import { actionLog, Logger } from 'util/log';
-import { GrpcClient, PoolApi, LndApi, LoopApi } from 'api';
+import { GrpcClient, LndApi, LoopApi, PoolApi } from 'api';
 import {
   AccountStore,
   AuthStore,
@@ -13,6 +13,7 @@ import {
   BuildSwapStore,
   ChannelStore,
   NodeStore,
+  OrderFormStore,
   OrderStore,
   SettingsStore,
   SwapStore,
@@ -36,6 +37,7 @@ export class Store {
   orderStore = new OrderStore(this);
   settingsStore = new SettingsStore(this);
   uiStore = new UiStore(this);
+  orderFormStore = new OrderFormStore(this);
 
   /** the store which synchronizes with the browser history */
   router = new RouterStore();
