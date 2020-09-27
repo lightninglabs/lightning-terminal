@@ -117,7 +117,13 @@ export default class OrderStore {
    * @param duration the number of blocks to keep the channel open for
    */
   @action.bound
-  async submitOrder(type: OrderType, amount: number, ratePct: number, duration: number) {
+  async submitOrder(
+    type: OrderType,
+    amount: number,
+    ratePct: number,
+    duration: number,
+    feeRateSatPerKw: number,
+  ) {
     try {
       const traderKey = this._store.accountStore.activeAccount.traderKey;
       this._store.log.info(
@@ -130,6 +136,7 @@ export default class OrderStore {
         amount,
         ratePct,
         duration,
+        feeRateSatPerKw,
       );
 
       // fetch all orders to update the store's state
@@ -142,7 +149,7 @@ export default class OrderStore {
         throw new Error(invalidOrder.failString);
       }
 
-      return acceptedOrderNonce;
+      return hex(acceptedOrderNonce);
     } catch (error) {
       this._store.uiStore.handleError(error, 'Unable to submit the order');
     }

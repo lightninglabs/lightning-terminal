@@ -2,6 +2,7 @@ import React from 'react';
 import { Router } from 'react-router';
 import { render } from '@testing-library/react';
 import { createStore, Store, StoreProvider } from 'store';
+import AlertContainer from 'components/common/AlertContainer';
 import { ThemeProvider } from 'components/theme';
 
 /**
@@ -16,6 +17,7 @@ const renderWithProviders = (component: React.ReactElement, withStore?: Store) =
     <StoreProvider store={store}>
       <ThemeProvider>
         <Router history={store.router.history}>{component}</Router>
+        <AlertContainer />
       </ThemeProvider>
     </StoreProvider>,
   );
