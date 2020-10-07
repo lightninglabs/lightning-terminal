@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"sync"
 	"time"
 
@@ -20,11 +21,14 @@ import (
 	"github.com/lightninglabs/loop/loopd"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/lightningnetwork/lnd"
+	"github.com/lightningnetwork/lnd/build"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntest/wait"
 	"github.com/lightningnetwork/lnd/signal"
 	"github.com/rakyll/statik/fs"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 
 	// Import generated go package that contains all static files for the
@@ -181,6 +185,12 @@ func (g *LightningTerminal) Run() error {
 	}
 	if err := g.startMainWebServer(); err != nil {
 		return fmt.Errorf("error starting UI HTTP server: %v", err)
+	}
+
+	// Now that we have started the main UI web server, show some useful
+	// information to the user so they can access the web UI easily.
+	if err := g.showStartupInfo(); err != nil {
+		return fmt.Errorf("error displaying startup info: %v", err)
 	}
 
 	// Wait for lnd to be unlocked, then start all clients.
@@ -540,6 +550,86 @@ func (g *LightningTerminal) startMainWebServer() error {
 			log.Errorf("http_tls server error: %v", err)
 		}
 	}()
+
+	return nil
+}
+
+// showStartupInfo shows useful information to the user to easily access the
+// web UI that was just started.
+func (g *LightningTerminal) showStartupInfo() error {
+	info := struct {
+		mode    string
+		status  string
+		alias   string
+		version string
+		webURI  string
+	}{
+		mode:    g.cfg.LndMode,
+		status:  "locked",
+		alias:   g.cfg.Lnd.Alias,
+		version: build.Version(),
+		webURI: fmt.Sprintf("https://%s", strings.ReplaceAll(
+			strings.ReplaceAll(
+				g.cfg.HTTPSListen, "0.0.0.0", "127.0.0.1",
+			), "[::]", "[::1]",
+		)),
+	}
+
+	// In remote mode we try to query the info.
+	if g.cfg.LndMode == ModeRemote {
+		// We try to query GetInfo on the remote node to find out the
+		// alias. But the wallet might be locked.
+		host, network, tlsPath, macPath, _ := g.cfg.lndConnectParams()
+		basicClient, err := lndclient.NewBasicClient(
+			host, tlsPath, filepath.Dir(macPath), string(network),
+			lndclient.MacFilename(filepath.Base(macPath)),
+		)
+		if err != nil {
+			return fmt.Errorf("error querying remote node: %v", err)
+		}
+
+		ctx := context.Background()
+		res, err := basicClient.GetInfo(ctx, &lnrpc.GetInfoRequest{})
+		if err != nil {
+			s, ok := status.FromError(err)
+			if !ok || s.Code() != codes.Unimplemented {
+				// Some other error that we didn't expect at
+				// this moment.
+				return fmt.Errorf("error querying remote "+
+					"node : %v", err)
+			}
+
+			// Node is locked.
+			info.status = "locked"
+			info.alias = "???? (node is locked)"
+		} else {
+			info.status = "online"
+			info.alias = res.Alias
+			info.version = res.Version
+		}
+	}
+
+	// In integrated mode, we can derive the state from our configuration.
+	if g.cfg.LndMode == ModeIntegrated {
+		// If the integrated node is running with no seed backup, the
+		// wallet cannot be locked and the node is online right away.
+		if g.cfg.Lnd.NoSeedBackup {
+			info.status = "online"
+		}
+	}
+
+	str := "" +
+		"----------------------------------------------------------\n" +
+		" Lightning Terminal (LiT) by Lightning Labs               \n" +
+		"                                                          \n" +
+		" Operating mode      %s                                   \n" +
+		" Node status         %s                                   \n" +
+		" Alias               %s                                   \n" +
+		" Version             %s                                   \n" +
+		" Web interface       %s                                   \n" +
+		"----------------------------------------------------------\n"
+	fmt.Printf(str, info.mode, info.status, info.alias, info.version,
+		info.webURI)
 
 	return nil
 }
