@@ -85,13 +85,22 @@ func NewGrpcLogLogger(root *build.RotatingLogWriter,
 }
 
 // GrpcLogLogger is a wrapper around a btclog logger to make it compatible with
-// the grpclog logger package.
+// the grpclog logger package. By default we downgrade the info level to debug
+// to reduce the verbosity of the logger.
 type GrpcLogLogger struct {
 	btclog.Logger
 }
 
+func (l GrpcLogLogger) Info(args ...interface{}) {
+	l.Logger.Debug(args...)
+}
+
 func (l GrpcLogLogger) Infoln(args ...interface{}) {
-	l.Logger.Error(args...)
+	l.Logger.Debug(args...)
+}
+
+func (l GrpcLogLogger) Infof(format string, args ...interface{}) {
+	l.Logger.Debugf(format, args...)
 }
 
 func (l GrpcLogLogger) Warning(args ...interface{}) {
