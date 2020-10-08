@@ -28,6 +28,8 @@ const (
 	defaultHTTPSListen = "127.0.0.1:8443"
 
 	uiPasswordMinLength = 8
+
+	defaultLndMacaroon = "admin.macaroon"
 )
 
 var (
