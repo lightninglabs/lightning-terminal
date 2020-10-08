@@ -28,6 +28,8 @@ import (
 	"github.com/lightningnetwork/lnd/signal"
 	"github.com/rakyll/statik/fs"
 	"google.golang.org/grpc"
+	"gopkg.in/macaroon-bakery.v2/bakery"
+
 	// Import generated go package that contains all static files for the
 	// UI in a compressed format.
 	_ "github.com/lightninglabs/lightning-terminal/statik"
@@ -136,7 +138,7 @@ func (g *LightningTerminal) Run() error {
 	g.cfg.frdrpcCfg = &frdrpc.Config{}
 	g.faradayServer = frdrpc.NewRPCServer(g.cfg.frdrpcCfg)
 	g.loopServer = loopd.New(g.cfg.Loop, nil)
-	g.rpcProxy = newRpcProxy(g.cfg, nil, getAllPermissions())
+	g.rpcProxy = newRpcProxy(g.cfg, g, getAllPermissions())
 
 	// Hook interceptor for os signals.
 	err = signal.Intercept()
@@ -356,6 +358,36 @@ func (g *LightningTerminal) RegisterRestSubserver(ctx context.Context,
 	return looprpc.RegisterSwapClientHandlerFromEndpoint(
 		ctx, mux, endpoint, dialOpts,
 	)
+}
+
+// ValidateMacaroon extracts the macaroon from the context's gRPC metadata,
+// checks its signature, makes sure all specified permissions for the called
+// method are contained within and finally ensures all caveat conditions are
+// met. A non-nil error is returned if any of the checks fail.
+func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
+	requiredPermissions []bakery.Op, fullMethod string) error {
+
+	// Validate all macaroons for services that are running in the local
+	// process. Calls that we proxy to a remote host don't need to be
+	// checked as they'll have their own interceptor.
+	switch {
+	case isLoopURI(fullMethod):
+		return g.loopServer.ValidateMacaroon(
+			ctx, requiredPermissions, fullMethod,
+		)
+
+	case isFaradayURI(fullMethod):
+		return g.faradayServer.ValidateMacaroon(
+			ctx, requiredPermissions, fullMethod,
+		)
+	}
+
+	// Because lnd will spin up its own gRPC server with macaroon
+	// interceptors if it is running in this process, it will check its
+	// macaroons there. If lnd is running remotely, that process will check
+	// the macaroons. So we don't need to worry about anything other than
+	// the subservers that are running in the local process.
+	return nil
 }
 
 // shutdown stops all subservers that were started and attached to lnd.
