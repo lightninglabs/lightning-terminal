@@ -15,14 +15,11 @@ import (
 
 	restProxy "github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/jessevdk/go-flags"
-	"github.com/lightninglabs/faraday"
-	"github.com/lightninglabs/faraday/chain"
 	"github.com/lightninglabs/faraday/frdrpc"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightninglabs/loop/loopd"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/lightningnetwork/lnd"
-	"github.com/lightningnetwork/lnd/lncfg"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntest/wait"
 	"github.com/lightningnetwork/lnd/signal"
@@ -50,8 +47,7 @@ var (
 // LightningTerminal is the main grand unified binary instance. Its task is to
 // start an lnd node then start and register external subservers to it.
 type LightningTerminal struct {
-	cfg         *Config
-	listenerCfg lnd.ListenerCfg
+	cfg *Config
 
 	wg         sync.WaitGroup
 	lndErrChan chan error
@@ -72,7 +68,6 @@ type LightningTerminal struct {
 // New creates a new instance of the lightning-terminal daemon.
 func New() *LightningTerminal {
 	return &LightningTerminal{
-		cfg:        defaultConfig(),
 		lndErrChan: make(chan error, 1),
 	}
 }
@@ -80,63 +75,15 @@ func New() *LightningTerminal {
 // Run starts everything and then blocks until either the application is shut
 // down or a critical error happens.
 func (g *LightningTerminal) Run() error {
-	// Pre-parse the command line options to pick up an alternative config
-	// file.
-	_, err := flags.Parse(g.cfg)
+	cfg, err := loadAndValidateConfig()
 	if err != nil {
-		return err
+		return fmt.Errorf("could not load config: %w", err)
 	}
-
-	// Load the configuration, and parse any command line options. This
-	// function will also set up logging properly.
-	g.cfg.Lnd, err = loadLndConfig(g.cfg)
-	if err != nil {
-		return err
-	}
-
-	// Validate the lightning-terminal config options.
-	if g.cfg.LetsEncryptDir == "" {
-		g.cfg.LetsEncryptDir = filepath.Join(
-			g.cfg.Lnd.LndDir, defaultLetsEncryptDir,
-		)
-	}
-	g.cfg.LetsEncryptDir = lncfg.CleanAndExpandPath(g.cfg.LetsEncryptDir)
-	if g.cfg.LetsEncrypt && g.cfg.LetsEncryptHost == "" {
-		return fmt.Errorf("host must be set when using let's encrypt")
-	}
-	err = readUIPassword(g.cfg)
-	if err != nil {
-		return fmt.Errorf("could not read UI password: %v", err)
-	}
-	if len(g.cfg.UIPassword) < uiPasswordMinLength {
-		return fmt.Errorf("please set a strong password for the UI, "+
-			"at least %d characters long", uiPasswordMinLength)
-	}
-
-	// Initiate our listeners. For now, we only support listening on one
-	// port at a time because we can only pass in one pre-configured RPC
-	// listener into lnd.
-	if len(g.cfg.Lnd.RPCListeners) > 1 {
-		return fmt.Errorf("litd only supports one RPC listener at a " +
-			"time")
-	}
-	rpcAddr := g.cfg.Lnd.RPCListeners[0]
-	g.listenerCfg = lnd.ListenerCfg{
-		RPCListener: &lnd.ListenerWithSignal{
-			Listener: &onDemandListener{addr: rpcAddr},
-			Ready:    make(chan struct{}),
-			ExternalRPCSubserverCfg: &lnd.RPCSubserverConfig{
-				Permissions: getSubserverPermissions(),
-				Registrar:   g,
-			},
-			ExternalRestRegistrar: g,
-		},
-	}
+	g.cfg = cfg
 
 	// Create the instances of our subservers now so we can hook them up to
 	// lnd once it's fully started.
-	g.cfg.frdrpcCfg = &frdrpc.Config{}
-	g.faradayServer = frdrpc.NewRPCServer(g.cfg.frdrpcCfg)
+	g.faradayServer = frdrpc.NewRPCServer(g.cfg.faradayRpcConfig)
 	g.loopServer = loopd.New(g.cfg.Loop, nil)
 	g.rpcProxy = newRpcProxy(g.cfg, g, getAllPermissions())
 
@@ -148,23 +95,75 @@ func (g *LightningTerminal) Run() error {
 
 	// Call the "real" main in a nested manner so the defers will properly
 	// be executed in the case of a graceful shutdown.
-	g.wg.Add(1)
-	go func() {
-		defer g.wg.Done()
+	readyChan := make(chan struct{})
+	unlockChan := make(chan struct{})
+	if g.cfg.LndMode == ModeIntegrated {
+		g.wg.Add(1)
+		go func() {
+			defer g.wg.Done()
 
-		err := lnd.Main(
-			g.cfg.Lnd, g.listenerCfg, signal.ShutdownChannel(),
-		)
-		if e, ok := err.(*flags.Error); err != nil &&
-			(!ok || e.Type != flags.ErrHelp) {
+			extSubCfg := &lnd.RPCSubserverConfig{
+				Permissions:       getSubserverPermissions(),
+				Registrar:         g,
+				MacaroonValidator: g,
+			}
+			lisCfg := lnd.ListenerCfg{
+				RPCListener: &lnd.ListenerWithSignal{
+					Listener: &onDemandListener{
+						addr: g.cfg.Lnd.RPCListeners[0],
+					},
+					Ready:                   readyChan,
+					ExternalRPCSubserverCfg: extSubCfg,
+					ExternalRestRegistrar:   g,
+				},
+				WalletUnlocker: &lnd.ListenerWithSignal{
+					Listener: &onDemandListener{
+						addr: g.cfg.Lnd.RPCListeners[0],
+					},
+					Ready: unlockChan,
+				},
+			}
 
-			log.Errorf("Error running main lnd: %v", err)
-			g.lndErrChan <- err
-			return
-		}
+			err := lnd.Main(
+				g.cfg.Lnd, lisCfg, signal.ShutdownChannel(),
+			)
+			if e, ok := err.(*flags.Error); err != nil &&
+				(!ok || e.Type != flags.ErrHelp) {
 
-		close(g.lndErrChan)
-	}()
+				log.Errorf("Error running main lnd: %v", err)
+				g.lndErrChan <- err
+				return
+			}
+
+			close(g.lndErrChan)
+		}()
+	} else {
+		close(unlockChan)
+		close(readyChan)
+
+		_ = g.RegisterGrpcSubserver(g.rpcProxy.grpcServer)
+	}
+
+	// Wait for lnd to be started up so we know we have a TLS cert.
+	select {
+	// If lnd needs to be unlocked we get the signal that it's ready to do
+	// so. We then go ahead and start the UI so we can unlock it there as
+	// well.
+	case <-unlockChan:
+
+	// If lnd is running with --noseedbackup and doesn't need unlocking, we
+	// get the ready signal immediately.
+	case <-readyChan:
+
+	case err := <-g.lndErrChan:
+		return err
+
+	case <-signal.ShutdownChannel():
+		return errors.New("shutting down")
+	}
+
+	// We now know that starting lnd was successful. If we now run into an
+	// error, we must shut down lnd correctly.
 	defer func() {
 		err := g.shutdown()
 		if err != nil {
@@ -172,21 +171,32 @@ func (g *LightningTerminal) Run() error {
 		}
 	}()
 
+	// Now start the RPC proxy that will handle all incoming gRPC, grpc-web
+	// and REST requests. We also start the main web server that dispatches
+	// requests either to the static UI file server or the RPC proxy. This
+	// makes it possible to unlock lnd through the UI. 
+	if err := g.rpcProxy.Start(); err != nil {
+		return fmt.Errorf("error starting lnd gRPC proxy server: %v",
+			err)
+	}
+	if err := g.startMainWebServer(); err != nil {
+		return fmt.Errorf("error starting UI HTTP server: %v", err)
+	}
+
 	// Wait for lnd to be unlocked, then start all clients.
 	select {
-	case <-g.listenerCfg.RPCListener.Ready:
+	case <-readyChan:
+
+	case err := <-g.lndErrChan:
+		return err
 
 	case <-signal.ShutdownChannel():
 		return errors.New("shutting down")
 	}
+
 	err = g.startSubservers()
 	if err != nil {
 		log.Errorf("Could not start subservers: %v", err)
-		return err
-	}
-
-	if err := g.startMainWebServer(); err != nil {
-		log.Errorf("Could not start gRPC web proxy server: %v", err)
 		return err
 	}
 
@@ -218,42 +228,9 @@ func (g *LightningTerminal) Run() error {
 func (g *LightningTerminal) startSubservers() error {
 	var basicClient lnrpc.LightningClient
 
-	host, network, tlsPath, macPath, err := g.cfg.lndConnectParams()
+	host, network, tlsPath, macDir, err := g.cfg.lndConnectParams()
 	if err != nil {
 		return err
-	}
-
-	// Some of the subservers' configuration options won't have any effect
-	// (like the log or lnd options) as they will be taken from lnd's config
-	// struct. Others we want to force to be the same as lnd so the user
-	// doesn't have to set them manually, like the network for example.
-	g.cfg.Loop.Network = string(network)
-	if err := loopd.Validate(g.cfg.Loop); err != nil {
-		return err
-	}
-
-	g.cfg.Faraday.Network = string(network)
-	if err := faraday.ValidateConfig(g.cfg.Faraday); err != nil {
-		return err
-	}
-	g.cfg.frdrpcCfg.FaradayDir = g.cfg.Faraday.FaradayDir
-	g.cfg.frdrpcCfg.MacaroonPath = g.cfg.Faraday.MacaroonPath
-
-	// If the client chose to connect to a bitcoin client, get one now.
-	if g.cfg.Faraday.ChainConn {
-		g.cfg.frdrpcCfg.BitcoinClient, err = chain.NewBitcoinClient(
-			g.cfg.Faraday.Bitcoin,
-		)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Now start the RPC proxy that will handle all incoming gRPC, grpc-web
-	// and REST requests.
-	if err := g.rpcProxy.Start(); err != nil {
-		return fmt.Errorf("error starting lnd gRPC proxy server: %v",
-			err)
 	}
 
 	// The main RPC listener of lnd might need some time to start, it could
@@ -267,8 +244,8 @@ func (g *LightningTerminal) startSubservers() error {
 		// subservers have the same requirements.
 		var err error
 		basicClient, err = lndclient.NewBasicClient(
-			host, tlsPath, filepath.Dir(macPath), string(network),
-			lndclient.MacFilename(filepath.Base(macPath)),
+			host, tlsPath, macDir, string(network),
+			lndclient.MacFilename(defaultLndMacaroon),
 		)
 		return err
 	}, defaultStartupTimeout)
@@ -303,7 +280,7 @@ func (g *LightningTerminal) startSubservers() error {
 		&lndclient.LndServicesConfig{
 			LndAddress:            host,
 			Network:               network,
-			MacaroonDir:           filepath.Dir(macPath),
+			MacaroonDir:           macDir,
 			TLSPath:               tlsPath,
 			BlockUntilChainSynced: true,
 			ChainSyncCtx:          ctxc,
@@ -372,11 +349,23 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 	// checked as they'll have their own interceptor.
 	switch {
 	case isLoopURI(fullMethod):
+		if !g.loopStarted {
+			return fmt.Errorf("loop is not yet ready for " +
+				"requests, lnd possibly still starting or " +
+				"syncing")
+		}
+
 		return g.loopServer.ValidateMacaroon(
 			ctx, requiredPermissions, fullMethod,
 		)
 
 	case isFaradayURI(fullMethod):
+		if !g.faradayStarted {
+			return fmt.Errorf("faraday is not yet ready for " +
+				"requests, lnd possibly still starting or " +
+				"syncing")
+		}
+
 		return g.faradayServer.ValidateMacaroon(
 			ctx, requiredPermissions, fullMethod,
 		)
@@ -420,8 +409,11 @@ func (g *LightningTerminal) shutdown() error {
 			log.Errorf("Error stopping lnd proxy: %v", err)
 			returnErr = err
 		}
+	}
+
+	if g.httpServer != nil {
 		if err := g.httpServer.Close(); err != nil {
-			log.Errorf("Error stopping lnd: %v", err)
+			log.Errorf("Error stopping UI server: %v", err)
 			returnErr = err
 		}
 	}
@@ -431,10 +423,14 @@ func (g *LightningTerminal) shutdown() error {
 
 	g.wg.Wait()
 
-	err := <-g.lndErrChan
-	if err != nil {
-		log.Errorf("Error stopping lnd: %v", err)
-		returnErr = err
+	// The lnd error channel is only used if we are actually running lnd in
+	// the same process.
+	if g.cfg.LndMode == ModeIntegrated {
+		err := <-g.lndErrChan
+		if err != nil {
+			log.Errorf("Error stopping lnd: %v", err)
+			returnErr = err
+		}
 	}
 
 	return returnErr
