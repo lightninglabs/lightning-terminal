@@ -13,6 +13,7 @@ import (
 
 	"github.com/jessevdk/go-flags"
 	"github.com/lightninglabs/faraday"
+	"github.com/lightninglabs/lndclient"
 	"github.com/lightninglabs/loop/loopd"
 	"github.com/lightningnetwork/lnd"
 	"github.com/lightningnetwork/lnd/build"
@@ -54,13 +55,45 @@ type Config struct {
 	Loop    *loopd.Config   `group:"loop" namespace:"loop"`
 }
 
+// lndConnectParams returns the connection parameters to connect to the local
+// lnd instance.
+func (c *Config) lndConnectParams() (string, lndclient.Network, string, string,
+	error) {
+
+	network, err := getNetwork(c.Lnd.Bitcoin)
+	if err != nil {
+		return "", "", "", "", err
+	}
+
+	// When we start lnd internally, we take the listen address as
+	// the client dial address. But with TLS enabled by default, we
+	// cannot call 0.0.0.0 internally when dialing lnd as that IP
+	// address isn't in the cert. We need to rewrite it to the
+	// loopback address.
+	lndDialAddr := c.Lnd.RPCListeners[0].String()
+	switch {
+	case strings.Contains(lndDialAddr, "0.0.0.0"):
+		lndDialAddr = strings.Replace(
+			lndDialAddr, "0.0.0.0", "127.0.0.1", 1,
+		)
+
+	case strings.Contains(lndDialAddr, "[::]"):
+		lndDialAddr = strings.Replace(
+			lndDialAddr, "[::]", "[::1]", 1,
+		)
+	}
+
+	return lndDialAddr, lndclient.Network(network),
+		c.Lnd.TLSCertPath, c.Lnd.AdminMacPath, nil
+}
+
 // defaultConfig returns a configuration struct with all default values set.
 func defaultConfig() *Config {
 	return &Config{
-		HTTPSListen:    defaultHTTPSListen,
-		Lnd:            &lndDefaultConfig,
-		Faraday:        &faradayDefaultConfig,
-		Loop:           &loopDefaultConfig,
+		HTTPSListen: defaultHTTPSListen,
+		Lnd:         &lndDefaultConfig,
+		Faraday:     &faradayDefaultConfig,
+		Loop:        &loopDefaultConfig,
 	}
 }
 
