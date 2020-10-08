@@ -6,11 +6,11 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.14.3
 	github.com/improbable-eng/grpc-web v0.12.0
 	github.com/jessevdk/go-flags v1.4.0
-	github.com/lightninglabs/faraday v0.2.0-alpha.0.20200901065614-d72fdaeff888
+	github.com/lightninglabs/faraday v0.2.1-alpha.0.20200918072230-7ec3f67ed2f0
 	github.com/lightninglabs/lndclient v0.11.0-0
-	github.com/lightninglabs/loop v0.8.1-beta.0.20200831113239-d4d9aa102455
-	github.com/lightningnetwork/lnd v0.11.0-beta
-	github.com/lightningnetwork/lnd/cert v1.0.2
+	github.com/lightninglabs/loop v0.9.0-beta.0.20200918101140-4bb59f87bf95
+	github.com/lightningnetwork/lnd v0.11.1-beta.rc3
+	github.com/lightningnetwork/lnd/cert v1.0.3
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
 	github.com/mwitkow/grpc-proxy v0.0.0-20181017164139-0f1106ef9c76
 	github.com/prometheus/client_golang v1.5.1 // indirect

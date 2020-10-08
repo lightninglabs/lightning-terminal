@@ -13,6 +13,7 @@ import (
 
 	"github.com/jessevdk/go-flags"
 	"github.com/lightninglabs/faraday"
+	"github.com/lightninglabs/faraday/frdrpc"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightninglabs/loop/loopd"
 	"github.com/lightningnetwork/lnd"
@@ -53,6 +54,8 @@ type Config struct {
 	Lnd     *lnd.Config     `group:"lnd" namespace:"lnd"`
 	Faraday *faraday.Config `group:"faraday" namespace:"faraday"`
 	Loop    *loopd.Config   `group:"loop" namespace:"loop"`
+
+	frdrpcCfg *frdrpc.Config
 }
 
 // lndConnectParams returns the connection parameters to connect to the local
