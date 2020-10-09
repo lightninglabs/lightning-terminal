@@ -13,13 +13,7 @@ Lightning Terminal (LiT) is a browser-based interface for managing channel liqui
 - Run a single binary that integrates both [`loopd`](https://github.com/lightninglabs/loop) and [`faraday`](https://github.com/lightninglabs/faraday) daemons all in one
 
 ## Installation
-Download the latest binaries from the [releases](https://github.com/lightninglabs/lightning-terminal/releases) page. You can also download the latest binaries from the command line:
-
-```
-TARBALL="lightning-terminal-linux-amd64-v0.2.0-alpha"
-BASE="https://github.com/lightninglabs/lightning-terminal/releases/latest/download"
-wget -q $BASE/$TARBALL.tar.gz -O - | tar -xz && cd $TARBALL
-```
+Download the latest binaries from the [releases](https://github.com/lightninglabs/lightning-terminal/releases) page.
 
 ## Execution
 Run Lightning Terminal with a local LND instance:
