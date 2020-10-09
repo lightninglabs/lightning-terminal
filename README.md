@@ -33,7 +33,7 @@ If you plan to access the website from a remote computer and don’t want to dea
 [Let's Encrypt Configuration](./doc/letsencrypt.md) doc for instructions on how to
 configure this.
 
-For more configuration options please see [configuring Terminal](./doc/configuring.md).
+If you would like to replace your existing LND instance with the one bundled with Terminal please see [configuring Terminal](./doc/configuring.md).
 
 ## Usage
 Read the [walkthrough](doc/WALKTHROUGH.md) document to learn more about how to use Lightning Terminal.
