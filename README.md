@@ -52,6 +52,9 @@ Move all the configuration settings specific to LiT from `lnd.conf` to `lit.conf
 ## Usage
 Read the [walkthrough](doc/WALKTHROUGH.md) document to learn more about how to use LiT.
 
+## Troubleshooting
+If you encounter any issues please see our [troubleshooting guide](./doc/troubleshooting.md).
+
 ## Build from source
 If you’d prefer to compile from source code please follow [these instructions](./doc/compile.md).
 
