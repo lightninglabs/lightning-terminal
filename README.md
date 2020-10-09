@@ -26,6 +26,8 @@ Visit https://localhost:8443 to access Terminal.
 
 Note that a password with a minimum of 8 characters is required to run Terminal. In a production environment, it's recommended that you store this password as an environment variable.
 
+To use Terminal with a remote LND instance please [follow these instructions](./doc/remote.md). 
+
 ## Configuration
 If you plan to access the website from a remote computer and don’t want to deal with the browser warning you about the self-signed certificate, you can configure the HTTP server to use a certificate from [Let's Encrypt](https://letsencrypt.org/). View the
 [Let's Encrypt Configuration](./doc/letsencrypt.md) doc for instructions on how to
