@@ -16,7 +16,7 @@ wget -q $BASE/$TARBALL.tar.gz -O - | tar -xz && cd $TARBALL
 ```
 
 ## Execution
-Run Terminal with a local LND instance:
+Run Lightning Terminal with a local LND instance:
 
 ```
 ./litd --uipassword=UP48lm4VjqxmOxB9X9stry6VTKBRQI
@@ -24,21 +24,21 @@ Run Terminal with a local LND instance:
 
 Visit https://localhost:8443 to access Terminal.
 
-Note that a password with a minimum of 8 characters is required to run Terminal. In a production environment, it's recommended that you store this password as an environment variable.
+Note that a password with a minimum of 8 characters is required to run Lightning Terminal. In a production environment, it's recommended that you store this password as an environment variable.
 
-To use Terminal with a remote LND instance please [follow these instructions](./doc/remote.md). 
+To use LiT with a remote LND instance please [follow these instructions](./doc/remote.md). 
 
 ## Configuration
 If you plan to access the website from a remote computer and don’t want to deal with the browser warning you about the self-signed certificate, you can configure the HTTP server to use a certificate from [Let's Encrypt](https://letsencrypt.org/). View the
 [Let's Encrypt Configuration](./doc/letsencrypt.md) doc for instructions on how to
 configure this.
 
-If you would like to replace your existing LND instance with the one bundled with Terminal please see [configuring Terminal](./doc/configuring.md).
+If you would like to replace your existing LND instance with the one integrated within LiT please see [configuring Terminal](./doc/config-lnd-integrated.md).
 
 ## Upgrading
 If you used command line arguments with previous versions then you don't need to change anything when upgrading. 
 
-To upgrade from v0.1.1-alpha or earlier simply create a `lit.conf` file in your LiT directory. The default location Terminal uses depends on your operating system:
+To upgrade from v0.1.1-alpha or earlier simply create a `lit.conf` file in your LiT directory. The default location LiT uses depends on your operating system:
 - MacOS: `~/Library/Application Support/Lit/lit.conf`
 - Linux: `~/.lit/lit.conf`
 - Windows: `~/AppData/Roaming/Lit/lit.conf`
@@ -46,7 +46,7 @@ To upgrade from v0.1.1-alpha or earlier simply create a `lit.conf` file in your 
 Move all the configuration settings specific to LiT from `lnd.conf` to `lit.conf` and remove the `lnd.` prefix from the configuration settings in `lnd.conf`. Note that any section headers (`[ Example ]`) in `lit.conf` should be removed or changed to comments (`# Example`). 
 
 ## Usage
-Read the [walkthrough](doc/WALKTHROUGH.md) document to learn more about how to use Lightning Terminal.
+Read the [walkthrough](doc/WALKTHROUGH.md) document to learn more about how to use LiT.
 
 ## Build from source
 If you’d prefer to compile from source code please follow [these instructions](./doc/compile.md).
