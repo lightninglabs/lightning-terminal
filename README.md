@@ -53,8 +53,8 @@ If you’d prefer to compile from source code please follow [these instructions]
 
 ## Compatibility
 
-Lightning Terminal is backwards compatible with LND back to version v0.10.3-beta
+Lightning Terminal is backwards compatible with LND back to version v0.11.0-beta
 
 | LiT              | LND          |
 | ---------------- | ------------ |
-| **v0.2.0-alpha** | v0.10.3-beta |
+| **v0.2.0-alpha** | v0.11.0-beta |
