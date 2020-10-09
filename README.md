@@ -35,6 +35,16 @@ configure this.
 
 If you would like to replace your existing LND instance with the one bundled with Terminal please see [configuring Terminal](./doc/configuring.md).
 
+## Upgrading
+If you used command line arguments with previous versions then you don't need to change anything when upgrading. 
+
+To upgrade from v0.1.1-alpha or earlier simply create a `lit.conf` file in your LiT directory. The default location Terminal uses depends on your operating system:
+- MacOS: `~/Library/Application Support/Lit/lit.conf`
+- Linux: `~/.lit/lit.conf`
+- Windows: `~/AppData/Roaming/Lit/lit.conf`
+
+Move all the configuration settings specific to LiT from `lnd.conf` to `lit.conf` and remove the `lnd.` prefix from the configuration settings in `lnd.conf`. Note that any section headers (`[ Example ]`) in `lit.conf` should be removed or changed to comments (`# Example`). 
+
 ## Usage
 Read the [walkthrough](doc/WALKTHROUGH.md) document to learn more about how to use Lightning Terminal.
 
