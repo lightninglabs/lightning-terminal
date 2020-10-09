@@ -6,6 +6,12 @@ Lightning Terminal (LiT) is a browser-based interface for managing channel liqui
 
 ![screenshot](./app/src/assets/images/screenshot.png)
 
+## Features
+- Visualize your channels and balances
+- Perform submarine swaps via the [Lightning Loop](https://lightning.engineering/loop) service
+- Classify channels according to your node's operating mode
+- Run a single binary that integrates both [`loopd`](https://github.com/lightninglabs/loop) and [`faraday`](https://github.com/lightninglabs/faraday) daemons all in one
+
 ## Installation
 Download the latest binaries from the [releases](https://github.com/lightninglabs/lightning-terminal/releases) page. You can also download the latest binaries from the command line:
 
@@ -58,3 +64,12 @@ Lightning Terminal is backwards compatible with LND back to version v0.11.0-beta
 | LiT              | LND          |
 | ---------------- | ------------ |
 | **v0.2.0-alpha** | v0.11.0-beta |
+
+## Daemon Versions packaged with LiT
+
+| LiT              | LND          | Loop        | Faraday      |
+| ---------------- | ------------ | ----------- | ------------ |
+| **v0.2.0-alpha** | v0.11.1-beta | v0.9.0-beta | v0.2.0-alpha |
+| **v0.1.1-alpha** | v0.11.0-beta | v0.8.1-beta | v0.2.0-alpha |
+| **v0.1.0-alpha** | v0.10.3-beta | v0.6.5-beta | v0.2.0-alpha |
+
