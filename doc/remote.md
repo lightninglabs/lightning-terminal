@@ -1,12 +1,12 @@
-## Run Terminal with a remote LND instance
-To connect Terminal to a remote LND instance first make sure your `lnd.conf` file contains the following additional configuration settings:
+## Run Lightning Terminal with a remote LND instance
+To connect Lightning Terminal to a remote LND instance first make sure your `lnd.conf` file contains the following additional configuration settings:
 ```
 tlsextraip=<remote-ip-address>
 rpclisten=0.0.0.0:10009
 externalip=<remote-ip-address>
 ```
 
-Copy the following files that are located in your `~/.lnd/data/chain/bitcoin/mainnet` directory on your remote machine to `/some/folder/with/lnd/data/` on your local machine (where you’ll be running Terminal):
+Copy the following files that are located in your `~/.lnd/data/chain/bitcoin/mainnet` directory on your remote machine to `/some/folder/with/lnd/data/` on your local machine (where you’ll be running LiT):
 - tls.cert
 - admin.macaroon
 - chainnotifier.macaroon
@@ -16,7 +16,7 @@ Copy the following files that are located in your `~/.lnd/data/chain/bitcoin/mai
 - signer.macaroon
 - walletkit.macaroon
 
-Create a `lit.conf` file. The default location Terminal will look for the configuration file depends on your operating system:
+Create a `lit.conf` file. The default location LiT will look for the configuration file depends on your operating system:
 - MacOS: `~/Library/Application Support/Lit/lit.conf`
 - Linux: `~/.lit/lit.conf`
 - Windows: `~/AppData/Roaming/Lit/lit.conf`
@@ -28,9 +28,11 @@ remote.lnd.macaroonpath=/some/folder/with/lnd/data/admin.macaroon
 remote.lnd.tlscertpath=/some/folder/with/lnd/data/tls.cert
 ```
 
-Run Terminal:
+Run LiT:
 ```
 ./litd --uipassword=UP48lm4VjqxmOxB9X9stry6VTKBRQI
 ```
 
-Visit https://localhost:8443 to access Terminal.
+Visit https://localhost:8443 to access LiT.
+
+For further information on configuring LiT in remote mode see [these instructions](config-lnd-remote.md).
