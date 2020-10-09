@@ -50,7 +50,7 @@ Run LiT:
 
 Visit https://localhost:8443 to access LiT.
 
-## Configuring LiT with remote lnd node
+## Additional Configuration
 
 The "remote" mode means that `lnd` is started as a standalone process, possibly on another
 host, and `litd` connects to it, right after starting its UI server. Once the connection
