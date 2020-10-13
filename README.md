@@ -19,7 +19,7 @@ Download the latest binaries from the [releases](https://github.com/lightninglab
 Run Lightning Terminal with a local `lnd` instance:
 
 ```
-./litd --uipassword=UP48lm4VjqxmOxB9X9stry6VTKBRQI
+./litd --uipassword=UP48lm4Vjqxy<change_this_or_you_will_get_robbed>
 ```
 
 Visit https://localhost:8443 to access Terminal.
