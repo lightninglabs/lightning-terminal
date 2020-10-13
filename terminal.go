@@ -18,6 +18,7 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/lightninglabs/faraday/frdrpc"
 	"github.com/lightninglabs/lndclient"
+	"github.com/lightninglabs/loop"
 	"github.com/lightninglabs/loop/loopd"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/lightningnetwork/lnd"
@@ -90,6 +91,10 @@ func (g *LightningTerminal) Run() error {
 	g.faradayServer = frdrpc.NewRPCServer(g.cfg.faradayRpcConfig)
 	g.loopServer = loopd.New(g.cfg.Loop, nil)
 	g.rpcProxy = newRpcProxy(g.cfg, g, getAllPermissions())
+
+	// Overwrite the loop daemon's user agent name so it sends "litd"
+	// instead of "loopd".
+	loop.AgentName = "litd"
 
 	// Hook interceptor for os signals.
 	err = signal.Intercept()
