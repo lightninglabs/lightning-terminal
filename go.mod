@@ -7,9 +7,9 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.14.3
 	github.com/improbable-eng/grpc-web v0.12.0
 	github.com/jessevdk/go-flags v1.4.0
-	github.com/lightninglabs/faraday v0.2.1-alpha.0.20200918072230-7ec3f67ed2f0
+	github.com/lightninglabs/faraday v0.2.1-alpha.0.20201012084956-438cb323aa24
 	github.com/lightninglabs/lndclient v0.11.0-0
-	github.com/lightninglabs/loop v0.9.0-beta.0.20200918101140-4bb59f87bf95
+	github.com/lightninglabs/loop v0.10.0-beta
 	github.com/lightningnetwork/lnd v0.11.1-beta.rc3
 	github.com/lightningnetwork/lnd/cert v1.0.3
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
@@ -24,5 +24,7 @@ require (
 	gopkg.in/macaroon-bakery.v2 v2.1.0
 	gopkg.in/macaroon.v2 v2.1.0
 )
+
+replace github.com/lightningnetwork/lnd => github.com/lightningnetwork/lnd v0.11.1-beta
 
 go 1.13
