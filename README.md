@@ -28,6 +28,13 @@ Note that a password with a minimum of 8 characters is required to run Lightning
 
 To use LiT with a remote `lnd` instance please [follow these instructions](./doc/config-lnd-remote.md). If you would like to replace your existing LND instance with the one integrated within LiT please see [configuring Terminal](./doc/config-lnd-integrated.md).
 
+## LND
+Note that LiT requires `lnd` to be built with **all of its subservers** and requires running at least v0.11.0. Download the latest [official release binary](https://github.com/lightningnetwork/lnd/releases/latest) or build `lnd` from source by following the [installation instructions](https://github.com/lightningnetwork/lnd/blob/master/docs/INSTALL.md). If you choose to build `lnd` from source, use the following command to enable all the relevant subservers:
+
+```
+make install tags="signrpc walletrpc chainrpc invoicesrpc"
+```
+
 ## Interaction
 If you plan to run LiT on a remote machine but access the web-interface from your computer you may not want to deal with self-signed certificate browser warnings. To avoid these warnings configure the HTTP server to use a certificate from [Let's Encrypt](https://letsencrypt.org/). View the
 [Let's Encrypt Configuration](./doc/letsencrypt.md) doc for instructions on how to configure this.
