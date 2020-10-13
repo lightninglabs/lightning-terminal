@@ -16,7 +16,7 @@ Lightning Terminal (LiT) is a browser-based interface for managing channel liqui
 Download the latest binaries from the [releases](https://github.com/lightninglabs/lightning-terminal/releases) page.
 
 ## Execution
-Run Lightning Terminal with a local LND instance:
+Run Lightning Terminal with a local `lnd` instance:
 
 ```
 ./litd --uipassword=UP48lm4VjqxmOxB9X9stry6VTKBRQI
@@ -24,9 +24,9 @@ Run Lightning Terminal with a local LND instance:
 
 Visit https://localhost:8443 to access Terminal.
 
-Note that a password with a minimum of 8 characters is required to run Lightning Terminal. In a production environment, it's recommended that you store this password as an environment variable.
+Note that a password with a minimum of 8 characters is required to run Lightning Terminal. In a production environment, it's recommended that you store this password as an environment variable to avoid it being recorded in the command history.
 
-To use LiT with a remote LND instance please [follow these instructions](./doc/config-lnd-remote.md). If you would like to replace your existing LND instance with the one integrated within LiT please see [configuring Terminal](./doc/config-lnd-integrated.md).
+To use LiT with a remote `lnd` instance please [follow these instructions](./doc/config-lnd-remote.md). If you would like to replace your existing LND instance with the one integrated within LiT please see [configuring Terminal](./doc/config-lnd-integrated.md).
 
 ## Interaction
 If you plan to run LiT on a remote machine but access the web-interface from your computer you may not want to deal with self-signed certificate browser warnings. To avoid these warnings configure the HTTP server to use a certificate from [Let's Encrypt](https://letsencrypt.org/). View the
@@ -40,7 +40,7 @@ To upgrade from v0.1.1-alpha or earlier simply create a `lit.conf` file in your 
 - Linux: `~/.lit/lit.conf`
 - Windows: `~/AppData/Roaming/Lit/lit.conf`
 
-Move all the configuration settings specific to LiT from `lnd.conf` to `lit.conf` and remove the `lnd.` prefix from the configuration settings in `lnd.conf`. Note that any section headers (`[ Example ]`) in `lit.conf` should be removed or changed to comments (`# Example`). 
+Move all the configuration settings specific to LiT from `lnd.conf` to `lit.conf` and remove any previous LiT-specific customizations from the configuration settings in `lnd.conf`. Note that any section headers (`[ Example ]`) in `lit.conf` should be removed or changed to comments (`# Example`). 
 
 ## Usage
 Read the [walkthrough](doc/WALKTHROUGH.md) document to learn more about how to use LiT.
@@ -53,7 +53,7 @@ If you’d prefer to compile from source code please follow [these instructions]
 
 ## Compatibility
 
-Lightning Terminal is backwards compatible with LND back to version v0.11.0-beta
+Lightning Terminal is backwards compatible with `lnd` back to version v0.11.0-beta
 
 | LiT              | LND          |
 | ---------------- | ------------ |
