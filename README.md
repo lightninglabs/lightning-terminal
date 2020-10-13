@@ -40,6 +40,7 @@ archives as well.
 
 | LiT              | LND          | Loop        | Faraday      |
 | ---------------- | ------------ | ----------- | ------------ |
+| **v0.2.0-alpha** | v0.11.1-beta | v0.9.0-beta | v0.2.1-alpha |
 | **v0.1.1-alpha** | v0.11.0-beta | v0.8.1-beta | v0.2.0-alpha |
 | **v0.1.0-alpha** | v0.10.3-beta | v0.6.5-beta | v0.2.0-alpha |
 
@@ -75,10 +76,10 @@ installed on your machine.
 Once you have the necessary prerequisites, LiT can be compiled by running the following
 commands:
 
-```
-git clone https://github.com/lightninglabs/lightning-terminal.git
-cd lightning-terminal
-make install
+```shell script
+$ git clone https://github.com/lightninglabs/lightning-terminal.git
+$ cd lightning-terminal
+$ make install
 ```
 
 This will produce the `litd` executable and add it to your `GOPATH`. The CLI binaries for
@@ -94,12 +95,12 @@ since the daemons are now integrated into `lnd`'s GRPC server.
 
 Examples:
 
-```
-loop --rpcserver=localhost:10009 --tlscertpath=$HOME/.lnd/tls.cert --macaroonpath=$HOME/.lnd/data/chain/bitcoin/mainnet/admin.macaroon
+```shell script
+$ loop --rpcserver=localhost:10009 --tlscertpath=$HOME/.lnd/tls.cert --macaroonpath=$HOME/.lnd/data/chain/bitcoin/mainnet/admin.macaroon
 ```
 
-```
-frcli --rpcserver=localhost:10009 --tlscertpath=$HOME/.lnd/tls.cert --macaroonpath=$HOME/.lnd/data/chain/bitcoin/mainnet/admin.macaroon
+```shell script
+$ frcli --rpcserver=localhost:10009 --tlscertpath=$HOME/.lnd/tls.cert --macaroonpath=$HOME/.lnd/data/chain/bitcoin/mainnet/admin.macaroon
 ```
 
 ## Configuration
@@ -134,7 +135,7 @@ port 80 without needing to run the daemon as root.
 > browser-to-server communication. Web browsers will display a warning when using the
 > self-signed certificate.
 
-```
+```text
 Application Options:
       --httpslisten=      host:port to listen for incoming HTTP/2 connections on (default: 127.0.0.1:8443)
       --uipassword=       the password that must be entered when using the loop UI. use a strong
@@ -147,191 +148,26 @@ Application Options:
                           certificate (default: /Users/<username>/Library/Application Support/Lnd/letsencrypt)
 ```
 
-In addition to the LiT specific parameters, you must also provide configuration to the
-`lnd`, `loop` and `faraday` daemons. For `lnd`, each flag must be prefixed with `lnd.`
-(ex: `lnd.lnddir=~/.lnd`). Please see the
-[sample-lnd.conf](https://github.com/lightningnetwork/lnd/blob/master/sample-lnd.conf)
-file for more details on the available parameters. Note that `loopd` and `faraday` will
-automatically connect to the in-process `lnd` node, so you do not need to provide them
-with any additional parameters unless you want to override them. If you do override them,
-be sure to add the `loop.` and `faraday.` prefixes.
+### Lnd mode
 
-Here is an example command to start `litd` on testnet with a local `bitcoind` node:
+Starting with LiT `v0.2.0-alpha`, you now have the choice of either running an
+`lnd` node in the same process as the UI (which is called the "integrated" `lnd`
+mode) or connect the UI to an already running `lnd` node (called "remote" mode).
 
-```
-$ ./litd \
-  --httpslisten=0.0.0.0:443 \
-  --uipassword=My$trongP@ssword \
-  --letsencrypt \
-  --letsencrypthost=loop.merchant.com \
-  --lnd.lnddir=/root/.lnd \
-  --lnd.alias=merchant \
-  --lnd.externalip=loop.merchant.com \
-  --lnd.rpclisten=0.0.0.0:10009 \
-  --lnd.listen=0.0.0.0:9735 \
-  --lnd.bitcoin.active \
-  --lnd.bitcoin.testnet \
-  --lnd.bitcoin.node=bitcoind \
-  --lnd.bitcoind.rpchost=localhost \
-  --lnd.bitcoind.rpcuser=testnetuser \
-  --lnd.bitcoind.rpcpass=testnetpw \
-  --lnd.bitcoind.zmqpubrawblock=localhost:28332 \
-  --lnd.bitcoind.zmqpubrawtx=localhost:28333 \
-  --lnd.debuglevel=debug \
-  --loop.loopoutmaxparts=5 \
-  --faraday.min_monitored=48h
-```
+Because that single decision has an impact on the configuration options that
+need to be used, the documentation has been split into two parts, each
+explaining one mode in detail.
 
-You can also store the configuration in a persistent `lnd.conf` file so you do not need to
-type in the command line arguments every time you start the server. Just remember to use
-the appropriate prefixes as necessary.
+* Lnd mode **"remote"**
+  + Connect to a remote `lnd` instance, start the rest (the UI, `loop`, 
+  `faraday`) in the same process.
+  + [Please read the `lnd` **remote** mode configuration guide here.](doc/config-lnd-remote.md)
+  + This is the default mode that is used if the `--lnd-mode=` command line
+    or `lnd-mode=` configuration option is not set explicitly.
 
-Do not include section headers, such as `[Application Options]` or `[Bitcoin]`, in the
-config file. Doing so will produce an error on startup.
-
-Example `lnd.conf`:
-
-```
-httpslisten=0.0.0.0:443
-letsencrypt=1
-letsencrypthost=loop.merchant.com
-
-lnd.lnddir=~/.lnd
-lnd.alias=merchant
-lnd.externalip=loop.merchant.com
-lnd.rpclisten=0.0.0.0:10009
-lnd.listen=0.0.0.0:9735
-lnd.debuglevel=debug
-
-lnd.bitcoin.active=1
-lnd.bitcoin.testnet=1
-lnd.bitcoin.node=bitcoind
-
-lnd.bitcoind.rpchost=localhost
-lnd.bitcoind.rpcuser=testnetuser
-lnd.bitcoind.rpcpass=testnetpw
-lnd.bitcoind.zmqpubrawblock=localhost:28332
-lnd.bitcoind.zmqpubrawtx=localhost:28333
-
-loop.loopoutmaxparts=5
-
-faraday.min_monitored=48h
-
-```
-
-The default location for the `lnd.conf` file will depend on your operating system:
-
-- **On MacOS**: `~/Library/Application Support/Lnd/lnd.conf`
-- **On Linux**: `~/.lnd/lnd.conf`
-- **On Windows**: `~/AppData/Roaming/Lnd/lnd.conf`
-
-### Upgrade Existing Nodes
-
-If you already have existing `lnd`, `loop`, or `faraday` nodes, you can easily upgrade
-them to the LiT single executable while keeping all of your past data.
-
-For `lnd`:
-
-- if you use an `lnd.conf` file for configurations, add the `lnd.` prefix to each of the
-  configuration parameters.
-
-  Before:
-
-  ```
-  [Application Options]
-  alias=merchant
-  ```
-
-  After:
-
-  ```
-  [Application Options]
-  lnd.alias=merchant
-  ```
-
-- if you use command line arguments for configuration, add the `lnd.` prefix to each
-  argument to `litd`
-
-  Before:
-
-  ```
-  $ lnd --lnddir=~/.lnd --alias=merchant ...
-  ```
-
-  After:
-
-  ```
-  $ litd lnd.lnddir=~/.lnd --lnd.alias=merchant ...
-  ```
-
-For `loop`:
-
-- if you use an `loop.conf` file for configurations, copy the parameters into the
-  `lnd.conf` file that `litd` uses, and add the `loop.` prefix to each of the
-  configuration parameters.
-
-  Before: (in `loop.conf`)
-
-  ```
-  [Application Options]
-  loopoutmaxparts=5
-  ```
-
-  After: (in `lnd.conf`)
-
-  ```
-  [Loop]
-  loop.loopoutmaxparts=5
-  ```
-
-- if you use command line arguments for configuration, add the `loop.` prefix to each
-  argument to `litd`
-
-  Before:
-
-  ```
-  $ loop --loopoutmaxparts=5 --debuglevel=debug ...
-  ```
-
-  After:
-
-  ```
-  $ litd --loop.loopoutmaxparts=5 --loop.debuglevel=debug ...
-  ```
-
-For `faraday`:
-
-- the standalone `faraday` daemon does not load configuration from a file, but you can now
-  store the parameters into the `lnd.conf` file that `litd` uses. Just add the `faraday.`
-  prefix to each of the configuration parameters.
-
-  Before: (from command line)
-
-  ```
-  $ faraday --min_monitored=48h
-  ```
-
-  After: (in `lnd.conf`)
-
-  ```
-  [Faraday]
-  faraday.min_monitored=48h
-  ```
-
-- if you use command line arguments for configuration, add the `faraday.` prefix to each
-  argument to `litd`
-
-  Before:
-
-  ```
-  $ faraday --min_monitored=48h --debuglevel=debug ...
-  ```
-
-  After:
-
-  ```
-  $ litd --faraday.min_monitored=48h --faraday.debuglevel=debug...
-  ```
+* Lnd mode **"integrated"**
+  + Start everything (the UI, `lnd`, `loop`, `faraday`) in one single process.
+  + [Please read the `lnd` **integrated** mode configuration guide here.](doc/config-lnd-integrated.md)
 
 ### Troubleshooting
 
@@ -356,7 +192,7 @@ Client-side logs are disabled by default in production builds. Logging can be tu
 adding a couple keys to your browser's `localStorage`. Simply run these two JS statements
 in you browser's DevTools console then refresh the page:
 
-```
+```js
 localStorage.setItem('debug', '*'); localStorage.setItem('debug-level', 'debug');
 ```
 

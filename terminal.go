@@ -3,10 +3,8 @@ package terminal
 import (
 	"context"
 	"crypto/tls"
-	"encoding/base64"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
@@ -17,28 +15,21 @@ import (
 	"time"
 
 	restProxy "github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/jessevdk/go-flags"
 	"github.com/lightninglabs/faraday/frdrpc"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightninglabs/loop/loopd"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/lightningnetwork/lnd"
-	"github.com/lightningnetwork/lnd/lncfg"
+	"github.com/lightningnetwork/lnd/build"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntest/wait"
-	"github.com/lightningnetwork/lnd/macaroons"
 	"github.com/lightningnetwork/lnd/signal"
-	"github.com/mwitkow/grpc-proxy/proxy"
 	"github.com/rakyll/statik/fs"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/grpclog"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
-	"gopkg.in/macaroon.v2"
+	"gopkg.in/macaroon-bakery.v2/bakery"
 
 	// Import generated go package that contains all static files for the
 	// UI in a compressed format.
@@ -55,18 +46,12 @@ var (
 	// maxMsgRecvSize is the largest message our REST proxy will receive. We
 	// set this to 200MiB atm.
 	maxMsgRecvSize = grpc.MaxCallRecvMsgSize(1 * 1024 * 1024 * 200)
-
-	authError = status.Error(
-		codes.Unauthenticated, "authentication required",
-	)
 )
 
 // LightningTerminal is the main grand unified binary instance. Its task is to
 // start an lnd node then start and register external subservers to it.
 type LightningTerminal struct {
-	cfg         *Config
-	lndAddr     string
-	listenerCfg lnd.ListenerCfg
+	cfg *Config
 
 	wg         sync.WaitGroup
 	lndErrChan chan error
@@ -80,14 +65,13 @@ type LightningTerminal struct {
 	loopServer  *loopd.Daemon
 	loopStarted bool
 
-	grpcWebProxy *grpc.Server
-	httpServer   *http.Server
+	rpcProxy   *rpcProxy
+	httpServer *http.Server
 }
 
 // New creates a new instance of the lightning-terminal daemon.
 func New() *LightningTerminal {
 	return &LightningTerminal{
-		cfg:        defaultConfig(),
 		lndErrChan: make(chan error, 1),
 	}
 }
@@ -95,113 +79,95 @@ func New() *LightningTerminal {
 // Run starts everything and then blocks until either the application is shut
 // down or a critical error happens.
 func (g *LightningTerminal) Run() error {
-	// Pre-parse the command line options to pick up an alternative config
-	// file.
-	_, err := flags.Parse(g.cfg)
+	cfg, err := loadAndValidateConfig()
 	if err != nil {
-		return err
+		return fmt.Errorf("could not load config: %w", err)
 	}
-
-	// Load the configuration, and parse any command line options. This
-	// function will also set up logging properly.
-	g.cfg.Lnd, err = loadLndConfig(g.cfg)
-	if err != nil {
-		return err
-	}
-
-	// Validate the lightning-terminal config options.
-	if g.cfg.LetsEncryptDir == "" {
-		g.cfg.LetsEncryptDir = filepath.Join(
-			g.cfg.Lnd.LndDir, defaultLetsEncryptDir,
-		)
-	}
-	g.cfg.LetsEncryptDir = lncfg.CleanAndExpandPath(g.cfg.LetsEncryptDir)
-	if g.cfg.LetsEncrypt && g.cfg.LetsEncryptHost == "" {
-		return fmt.Errorf("host must be set when using let's encrypt")
-	}
-	err = readUIPassword(g.cfg)
-	if err != nil {
-		return fmt.Errorf("could not read UI password: %v", err)
-	}
-	if len(g.cfg.UIPassword) < uiPasswordMinLength {
-		return fmt.Errorf("please set a strong password for the UI, "+
-			"at least %d characters long", uiPasswordMinLength)
-	}
-
-	// Initiate our listeners. For now, we only support listening on one
-	// port at a time because we can only pass in one pre-configured RPC
-	// listener into lnd.
-	if len(g.cfg.Lnd.RPCListeners) > 1 {
-		return fmt.Errorf("litd only supports one RPC listener at a " +
-			"time")
-	}
-	rpcAddr := g.cfg.Lnd.RPCListeners[0]
-	g.listenerCfg = lnd.ListenerCfg{
-		RPCListener: &lnd.ListenerWithSignal{
-			Listener: &onDemandListener{addr: rpcAddr},
-			Ready:    make(chan struct{}),
-			ExternalRPCSubserverCfg: &lnd.RPCSubserverConfig{
-				Permissions: getSubserverPermissions(),
-				Registrar:   g,
-			},
-			ExternalRestRegistrar: g,
-		},
-	}
-
-	// With TLS enabled by default, we cannot call 0.0.0.0 internally when
-	// dialing lnd as that IP address isn't in the cert. We need to rewrite
-	// it to the loopback address.
-	lndDialAddr := rpcAddr.String()
-	switch {
-	case strings.Contains(lndDialAddr, "0.0.0.0"):
-		lndDialAddr = strings.Replace(
-			lndDialAddr, "0.0.0.0", "127.0.0.1", 1,
-		)
-
-	case strings.Contains(lndDialAddr, "[::]"):
-		lndDialAddr = strings.Replace(
-			lndDialAddr, "[::]", "[::1]", 1,
-		)
-	}
-	g.lndAddr = lndDialAddr
-
-	// Some of the subservers' configuration options won't have any effect
-	// (like the log or lnd options) as they will be taken from lnd's config
-	// struct. Others we want to force to be the same as lnd so the user
-	// doesn't have to set them manually, like the network for example.
-	network, err := getNetwork(g.cfg.Lnd.Bitcoin)
-	if err != nil {
-		return err
-	}
-	g.cfg.Loop.Network = network
+	g.cfg = cfg
 
 	// Create the instances of our subservers now so we can hook them up to
 	// lnd once it's fully started.
-	g.faradayServer = frdrpc.NewRPCServer(&frdrpc.Config{})
+	g.faradayServer = frdrpc.NewRPCServer(g.cfg.faradayRpcConfig)
 	g.loopServer = loopd.New(g.cfg.Loop, nil)
+	g.rpcProxy = newRpcProxy(g.cfg, g, getAllPermissions())
 
 	// Hook interceptor for os signals.
-	signal.Intercept()
+	err = signal.Intercept()
+	if err != nil {
+		return fmt.Errorf("could not intercept signals: %v", err)
+	}
 
 	// Call the "real" main in a nested manner so the defers will properly
 	// be executed in the case of a graceful shutdown.
-	g.wg.Add(1)
-	go func() {
-		defer g.wg.Done()
+	readyChan := make(chan struct{})
+	unlockChan := make(chan struct{})
+	if g.cfg.LndMode == ModeIntegrated {
+		g.wg.Add(1)
+		go func() {
+			defer g.wg.Done()
 
-		err := lnd.Main(
-			g.cfg.Lnd, g.listenerCfg, signal.ShutdownChannel(),
-		)
-		if e, ok := err.(*flags.Error); err != nil &&
-			(!ok || e.Type != flags.ErrHelp) {
+			extSubCfg := &lnd.RPCSubserverConfig{
+				Permissions:       getSubserverPermissions(),
+				Registrar:         g,
+				MacaroonValidator: g,
+			}
+			lisCfg := lnd.ListenerCfg{
+				RPCListener: &lnd.ListenerWithSignal{
+					Listener: &onDemandListener{
+						addr: g.cfg.Lnd.RPCListeners[0],
+					},
+					Ready:                   readyChan,
+					ExternalRPCSubserverCfg: extSubCfg,
+					ExternalRestRegistrar:   g,
+				},
+				WalletUnlocker: &lnd.ListenerWithSignal{
+					Listener: &onDemandListener{
+						addr: g.cfg.Lnd.RPCListeners[0],
+					},
+					Ready: unlockChan,
+				},
+			}
 
-			log.Errorf("Error running main lnd: %v", err)
-			g.lndErrChan <- err
-			return
-		}
+			err := lnd.Main(
+				g.cfg.Lnd, lisCfg, signal.ShutdownChannel(),
+			)
+			if e, ok := err.(*flags.Error); err != nil &&
+				(!ok || e.Type != flags.ErrHelp) {
 
-		close(g.lndErrChan)
-	}()
+				log.Errorf("Error running main lnd: %v", err)
+				g.lndErrChan <- err
+				return
+			}
+
+			close(g.lndErrChan)
+		}()
+	} else {
+		close(unlockChan)
+		close(readyChan)
+
+		_ = g.RegisterGrpcSubserver(g.rpcProxy.grpcServer)
+	}
+
+	// Wait for lnd to be started up so we know we have a TLS cert.
+	select {
+	// If lnd needs to be unlocked we get the signal that it's ready to do
+	// so. We then go ahead and start the UI so we can unlock it there as
+	// well.
+	case <-unlockChan:
+
+	// If lnd is running with --noseedbackup and doesn't need unlocking, we
+	// get the ready signal immediately.
+	case <-readyChan:
+
+	case err := <-g.lndErrChan:
+		return err
+
+	case <-signal.ShutdownChannel():
+		return errors.New("shutting down")
+	}
+
+	// We now know that starting lnd was successful. If we now run into an
+	// error, we must shut down lnd correctly.
 	defer func() {
 		err := g.shutdown()
 		if err != nil {
@@ -209,22 +175,38 @@ func (g *LightningTerminal) Run() error {
 		}
 	}()
 
+	// Now start the RPC proxy that will handle all incoming gRPC, grpc-web
+	// and REST requests. We also start the main web server that dispatches
+	// requests either to the static UI file server or the RPC proxy. This
+	// makes it possible to unlock lnd through the UI. 
+	if err := g.rpcProxy.Start(); err != nil {
+		return fmt.Errorf("error starting lnd gRPC proxy server: %v",
+			err)
+	}
+	if err := g.startMainWebServer(); err != nil {
+		return fmt.Errorf("error starting UI HTTP server: %v", err)
+	}
+
+	// Now that we have started the main UI web server, show some useful
+	// information to the user so they can access the web UI easily.
+	if err := g.showStartupInfo(); err != nil {
+		return fmt.Errorf("error displaying startup info: %v", err)
+	}
+
 	// Wait for lnd to be unlocked, then start all clients.
 	select {
-	case <-g.listenerCfg.RPCListener.Ready:
+	case <-readyChan:
+
+	case err := <-g.lndErrChan:
+		return err
 
 	case <-signal.ShutdownChannel():
 		return errors.New("shutting down")
 	}
-	err = g.startSubservers(network)
+
+	err = g.startSubservers()
 	if err != nil {
 		log.Errorf("Could not start subservers: %v", err)
-		return err
-	}
-
-	err = g.startGrpcWebProxy()
-	if err != nil {
-		log.Errorf("Could not start gRPC web proxy server: %v", err)
 		return err
 	}
 
@@ -253,25 +235,27 @@ func (g *LightningTerminal) Run() error {
 // startSubservers creates an internal connection to lnd and then starts all
 // embedded daemons as external subservers that hook into the same gRPC and REST
 // servers that lnd started.
-func (g *LightningTerminal) startSubservers(network string) error {
+func (g *LightningTerminal) startSubservers() error {
 	var basicClient lnrpc.LightningClient
+
+	host, network, tlsPath, macDir, err := g.cfg.lndConnectParams()
+	if err != nil {
+		return err
+	}
 
 	// The main RPC listener of lnd might need some time to start, it could
 	// be that we run into a connection refused a few times. We use the
 	// basic client connection to find out if the RPC server is started yet
 	// because that doesn't do anything else than just connect. We'll check
 	// if lnd is also ready to be used in the next step.
-	err := wait.NoError(func() error {
+	err = wait.NoError(func() error {
 		// Create an lnd client now that we have the full configuration.
 		// We'll need a basic client and a full client because not all
 		// subservers have the same requirements.
 		var err error
 		basicClient, err = lndclient.NewBasicClient(
-			g.lndAddr, g.cfg.Lnd.TLSCertPath,
-			filepath.Dir(g.cfg.Lnd.AdminMacPath), network,
-			lndclient.MacFilename(filepath.Base(
-				g.cfg.Lnd.AdminMacPath,
-			)),
+			host, tlsPath, macDir, string(network),
+			lndclient.MacFilename(defaultLndMacaroon),
 		)
 		return err
 	}, defaultStartupTimeout)
@@ -304,12 +288,10 @@ func (g *LightningTerminal) startSubservers(network string) error {
 	}()
 	g.lndClient, err = lndclient.NewLndServices(
 		&lndclient.LndServicesConfig{
-			LndAddress: g.lndAddr,
-			Network:    lndclient.Network(network),
-			MacaroonDir: filepath.Dir(
-				g.cfg.Lnd.AdminMacPath,
-			),
-			TLSPath:               g.cfg.Lnd.TLSCertPath,
+			LndAddress:            host,
+			Network:               network,
+			MacaroonDir:           macDir,
+			TLSPath:               tlsPath,
 			BlockUntilChainSynced: true,
 			ChainSyncCtx:          ctxc,
 		},
@@ -365,6 +347,48 @@ func (g *LightningTerminal) RegisterRestSubserver(ctx context.Context,
 	)
 }
 
+// ValidateMacaroon extracts the macaroon from the context's gRPC metadata,
+// checks its signature, makes sure all specified permissions for the called
+// method are contained within and finally ensures all caveat conditions are
+// met. A non-nil error is returned if any of the checks fail.
+func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
+	requiredPermissions []bakery.Op, fullMethod string) error {
+
+	// Validate all macaroons for services that are running in the local
+	// process. Calls that we proxy to a remote host don't need to be
+	// checked as they'll have their own interceptor.
+	switch {
+	case isLoopURI(fullMethod):
+		if !g.loopStarted {
+			return fmt.Errorf("loop is not yet ready for " +
+				"requests, lnd possibly still starting or " +
+				"syncing")
+		}
+
+		return g.loopServer.ValidateMacaroon(
+			ctx, requiredPermissions, fullMethod,
+		)
+
+	case isFaradayURI(fullMethod):
+		if !g.faradayStarted {
+			return fmt.Errorf("faraday is not yet ready for " +
+				"requests, lnd possibly still starting or " +
+				"syncing")
+		}
+
+		return g.faradayServer.ValidateMacaroon(
+			ctx, requiredPermissions, fullMethod,
+		)
+	}
+
+	// Because lnd will spin up its own gRPC server with macaroon
+	// interceptors if it is running in this process, it will check its
+	// macaroons there. If lnd is running remotely, that process will check
+	// the macaroons. So we don't need to worry about anything other than
+	// the subservers that are running in the local process.
+	return nil
+}
+
 // shutdown stops all subservers that were started and attached to lnd.
 func (g *LightningTerminal) shutdown() error {
 	var returnErr error
@@ -390,11 +414,16 @@ func (g *LightningTerminal) shutdown() error {
 		g.lndClient.Close()
 	}
 
-	if g.grpcWebProxy != nil {
-		g.grpcWebProxy.Stop()
-		err := g.httpServer.Close()
-		if err != nil {
-			log.Errorf("Error stopping loop: %v", err)
+	if g.rpcProxy != nil {
+		if err := g.rpcProxy.Stop(); err != nil {
+			log.Errorf("Error stopping lnd proxy: %v", err)
+			returnErr = err
+		}
+	}
+
+	if g.httpServer != nil {
+		if err := g.httpServer.Close(); err != nil {
+			log.Errorf("Error stopping UI server: %v", err)
 			returnErr = err
 		}
 	}
@@ -404,19 +433,56 @@ func (g *LightningTerminal) shutdown() error {
 
 	g.wg.Wait()
 
-	err := <-g.lndErrChan
-	if err != nil {
-		log.Errorf("Error stopping lnd: %v", err)
-		returnErr = err
+	// The lnd error channel is only used if we are actually running lnd in
+	// the same process.
+	if g.cfg.LndMode == ModeIntegrated {
+		err := <-g.lndErrChan
+		if err != nil {
+			log.Errorf("Error stopping lnd: %v", err)
+			returnErr = err
+		}
 	}
 
 	return returnErr
 }
 
-// startGrpcWebProxy creates a proxy that speaks gRPC web on one side and native
-// gRPC on the other side. This allows gRPC web requests from the browser to be
-// forwarded to lnd's native gRPC interface.
-func (g *LightningTerminal) startGrpcWebProxy() error {
+// startMainWebServer creates the main web HTTP server that delegates requests
+// between the Statik HTTP server and the RPC proxy. An incoming request will
+// go through the following chain of components:
+//
+//    Request on port 8443
+//        |
+//        v
+//    +---+----------------------+ other  +----------------+
+//    | Main web HTTP server     +------->+ Statik HTTP    |
+//    +---+----------------------+        +----------------+
+//        |
+//        v any RPC or REST call
+//    +---+----------------------+
+//    | grpc-web proxy           |
+//    +---+----------------------+
+//        |
+//        v native gRPC call with basic auth
+//    +---+----------------------+
+//    | interceptors             |
+//    +---+----------------------+
+//        |
+//        v native gRPC call with macaroon
+//    +---+----------------------+ registered call
+//    | gRPC server              +--------------+
+//    +---+----------------------+              |
+//        |                                     |
+//        v non-registered call                 |
+//    +---+----------------------+    +---------v----------+
+//    | director                 |    | local subserver    |
+//    +---+----------------------+    |  - loop            |
+//        |                           |  - faraday         |
+//        v authenticated call        |                    |
+//    +---+----------------------+    +--------------------+
+//    | lnd (remote or local)    |
+//    +--------------------------+
+//
+func (g *LightningTerminal) startMainWebServer() error {
 	// Initialize the in-memory file server from the content compiled by
 	// the statik library.
 	statikFS, err := fs.New()
@@ -425,29 +491,14 @@ func (g *LightningTerminal) startGrpcWebProxy() error {
 	}
 	staticFileServer := http.FileServer(&ClientRouteWrapper{statikFS})
 
-	// Create the gRPC web proxy that connects to lnd internally using the
-	// admin macaroon and converts the browser's gRPC web calls into native
-	// gRPC.
-	lndGrpcServer, grpcServer, err := buildGrpcWebProxyServer(
-		g.lndAddr, g.cfg.UIPassword, g.cfg.Lnd,
-	)
-	if err != nil {
-		return fmt.Errorf("could not create gRPC web proxy: %v", err)
-	}
-	g.grpcWebProxy = grpcServer
-
 	// Both gRPC (web) and static file requests will come into through the
 	// main UI HTTP server. We use this simple switching handler to send the
 	// requests to the correct implementation.
 	httpHandler := func(resp http.ResponseWriter, req *http.Request) {
-		// gRPC requests are easy to identify. Send them to the gRPC web
-		// proxy.
-		if lndGrpcServer.IsGrpcWebRequest(req) ||
-			lndGrpcServer.IsGrpcWebSocketRequest(req) {
-
-			log.Infof("Handling gRPC request: %s", req.URL.Path)
-			lndGrpcServer.ServeHTTP(resp, req)
-
+		// If this is some kind of gRPC, gRPC Web or REST call that
+		// should go to lnd or one of the daemons, pass it to the proxy
+		// that handles all those calls.
+		if g.rpcProxy.isHandling(resp, req) {
 			return
 		}
 
@@ -455,14 +506,18 @@ func (g *LightningTerminal) startGrpcWebProxy() error {
 		// something we don't know in which case the static file server
 		// will answer with a 404.
 		log.Infof("Handling static file request: %s", req.URL.Path)
-		// add 1-year cache header for static files. React uses content-based
-		// hashes in file names, so when any file is updated, the url will
-		// change causing the browser cached version to be invalidated
-		var re = regexp.MustCompile(`^\/(static|fonts|icons)\/.*`)
+
+		// Add 1-year cache header for static files. React uses content-
+		// based hashes in file names, so when any file is updated, the
+		// url will change causing the browser cached version to be
+		// invalidated.
+		var re = regexp.MustCompile(`^/(static|fonts|icons)/.*`)
 		if re.MatchString(req.URL.Path) {
 			resp.Header().Set("Cache-Control", "max-age=31536000")
 		}
-		// transfer static files using gzip to save up to 70% of bandwidth
+
+		// Transfer static files using gzip to save up to 70% of
+		// bandwidth.
 		gzipHandler := makeGzipHandler(staticFileServer.ServeHTTP)
 		gzipHandler(resp, req)
 	}
@@ -499,133 +554,84 @@ func (g *LightningTerminal) startGrpcWebProxy() error {
 	return nil
 }
 
-// buildGrpcWebProxyServer creates a gRPC server that will serve gRPC web to the
-// browser and translate all incoming gRPC web calls into native gRPC that are
-// then forwarded to lnd's RPC interface.
-func buildGrpcWebProxyServer(lndAddr, uiPassword string,
-	config *lnd.Config) (*grpcweb.WrappedGrpcServer, *grpc.Server, error) {
-
-	// Apply gRPC-wide changes.
-	grpc.EnableTracing = true
-	grpclog.SetLoggerV2(NewGrpcLogLogger(
-		config.LogWriter, GrpcLogSubsystem,
-	))
-
-	// The gRPC web calls are protected by HTTP basic auth which is defined
-	// by base64(username:password). Because we only have a password, we
-	// just use base64(password:password).
-	basicAuth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(
-		"%s:%s", uiPassword, uiPassword,
-	)))
-
-	// Setup the connection to lnd. GRPC web has a few kinks that need to be
-	// addressed with a custom director that just takes care of a few HTTP
-	// header fields.
-	backendConn, err := dialLnd(lndAddr, config)
-	if err != nil {
-		return nil, nil, fmt.Errorf("could not dial lnd: %v", err)
+// showStartupInfo shows useful information to the user to easily access the
+// web UI that was just started.
+func (g *LightningTerminal) showStartupInfo() error {
+	info := struct {
+		mode    string
+		status  string
+		alias   string
+		version string
+		webURI  string
+	}{
+		mode:    g.cfg.LndMode,
+		status:  "locked",
+		alias:   g.cfg.Lnd.Alias,
+		version: build.Version(),
+		webURI: fmt.Sprintf("https://%s", strings.ReplaceAll(
+			strings.ReplaceAll(
+				g.cfg.HTTPSListen, "0.0.0.0", "127.0.0.1",
+			), "[::]", "[::1]",
+		)),
 	}
-	director := newDirector(backendConn, basicAuth)
 
-	// Set up the final gRPC server that will serve gRPC web to the browser
-	// and translate all incoming gRPC web calls into native gRPC that are
-	// then forwarded to lnd's RPC interface.
-	grpcServer := grpc.NewServer(
-		grpc.CustomCodec(proxy.Codec()),
-		grpc.UnknownServiceHandler(proxy.TransparentHandler(director)),
-	)
-	options := []grpcweb.Option{
-		grpcweb.WithWebsockets(true),
-		grpcweb.WithWebsocketPingInterval(2 * time.Minute),
-		grpcweb.WithCorsForRegisteredEndpointsOnly(false),
-	}
-	return grpcweb.WrapServer(grpcServer, options...), grpcServer, nil
-}
-
-// newDirector returns a new director function that fixes some common known
-// issues when using gRPC web from the browser.
-func newDirector(backendConn *grpc.ClientConn,
-	basicAuth string) proxy.StreamDirector {
-
-	return func(ctx context.Context, fullMethodName string) (context.Context,
-		*grpc.ClientConn, error) {
-
-		md, _ := metadata.FromIncomingContext(ctx)
-
-		authHeaders := md.Get("authorization")
-		if len(authHeaders) == 0 {
-			return nil, nil, authError
-		}
-		authHeaderParts := strings.Split(authHeaders[0], " ")
-		if len(authHeaderParts) != 2 {
-			return nil, nil, authError
-		}
-		if authHeaderParts[1] != basicAuth {
-			return nil, nil, authError
+	// In remote mode we try to query the info.
+	if g.cfg.LndMode == ModeRemote {
+		// We try to query GetInfo on the remote node to find out the
+		// alias. But the wallet might be locked.
+		host, network, tlsPath, macDir, _ := g.cfg.lndConnectParams()
+		basicClient, err := lndclient.NewBasicClient(
+			host, tlsPath, macDir, string(network),
+			lndclient.MacFilename(defaultLndMacaroon),
+		)
+		if err != nil {
+			return fmt.Errorf("error querying remote node: %v", err)
 		}
 
-		// If this header is present in the request from the web client,
-		// the actual connection to the backend will not be established.
-		// https://github.com/improbable-eng/grpc-web/issues/568
-		mdCopy := md.Copy()
-		delete(mdCopy, "connection")
+		ctx := context.Background()
+		res, err := basicClient.GetInfo(ctx, &lnrpc.GetInfoRequest{})
+		if err != nil {
+			s, ok := status.FromError(err)
+			if !ok || s.Code() != codes.Unimplemented {
+				// Some other error that we didn't expect at
+				// this moment.
+				return fmt.Errorf("error querying remote "+
+					"node : %v", err)
+			}
 
-		outCtx := metadata.NewOutgoingContext(ctx, mdCopy)
-		return outCtx, backendConn, nil
-	}
-}
-
-// dialLnd connects to lnd through the given address and uses the admin macaroon
-// to authenticate.
-func dialLnd(lndAddr string, config *lnd.Config) (*grpc.ClientConn, error) {
-	dialAdminMac, err := readMacaroon(config.AdminMacPath)
-	if err != nil {
-		return nil, fmt.Errorf("could not read admin macaroon: %v", err)
-	}
-
-	tlsConfig, err := credentials.NewClientTLSFromFile(
-		config.TLSCertPath, "",
-	)
-	if err != nil {
-		return nil, fmt.Errorf("could not read lnd TLS cert: %v", err)
+			// Node is locked.
+			info.status = "locked"
+			info.alias = "???? (node is locked)"
+		} else {
+			info.status = "online"
+			info.alias = res.Alias
+			info.version = res.Version
+		}
 	}
 
-	opt := []grpc.DialOption{
-		dialAdminMac,
-		grpc.WithCodec(proxy.Codec()), // nolint
-		grpc.WithTransportCredentials(tlsConfig),
-		grpc.WithDefaultCallOptions(maxMsgRecvSize),
-		grpc.WithConnectParams(grpc.ConnectParams{
-			Backoff:           backoff.DefaultConfig,
-			MinConnectTimeout: defaultConnectTimeout,
-		}),
+	// In integrated mode, we can derive the state from our configuration.
+	if g.cfg.LndMode == ModeIntegrated {
+		// If the integrated node is running with no seed backup, the
+		// wallet cannot be locked and the node is online right away.
+		if g.cfg.Lnd.NoSeedBackup {
+			info.status = "online"
+		}
 	}
 
-	log.Infof("Dialing lnd gRPC server at %s", lndAddr)
-	cc, err := grpc.Dial(lndAddr, opt...)
-	if err != nil {
-		return nil, fmt.Errorf("failed dialing backend: %v", err)
-	}
-	return cc, nil
-}
+	str := "" +
+		"----------------------------------------------------------\n" +
+		" Lightning Terminal (LiT) by Lightning Labs               \n" +
+		"                                                          \n" +
+		" Operating mode      %s                                   \n" +
+		" Node status         %s                                   \n" +
+		" Alias               %s                                   \n" +
+		" Version             %s                                   \n" +
+		" Web interface       %s                                   \n" +
+		"----------------------------------------------------------\n"
+	fmt.Printf(str, info.mode, info.status, info.alias, info.version,
+		info.webURI)
 
-// readMacaroon tries to read the macaroon file at the specified path and create
-// gRPC dial options from it.
-func readMacaroon(macPath string) (grpc.DialOption, error) {
-	// Load the specified macaroon file.
-	macBytes, err := ioutil.ReadFile(macPath)
-	if err != nil {
-		return nil, fmt.Errorf("unable to read macaroon path : %v", err)
-	}
-
-	mac := &macaroon.Macaroon{}
-	if err = mac.UnmarshalBinary(macBytes); err != nil {
-		return nil, fmt.Errorf("unable to decode macaroon: %v", err)
-	}
-
-	// Now we append the macaroon credentials to the dial options.
-	cred := macaroons.NewMacaroonCredential(mac)
-	return grpc.WithPerRPCCredentials(cred), nil
+	return nil
 }
 
 // ClientRouteWrapper is a wrapper around a FileSystem which properly handles
