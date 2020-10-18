@@ -19,11 +19,11 @@ class MatchedOrder {
     this.unitsMatched = llmMatch.unitsMatched;
     this.totalSatsCleared = llmMatch.totalSatsCleared;
     this.ask = {
-      maxDurationBlocks: llmMatch.ask.maxDurationBlocks,
+      maxDurationBlocks: llmMatch.ask.leaseDurationBlocks,
       rateFixed: llmMatch.ask.rateFixed,
     };
     this.bid = {
-      minDurationBlocks: llmMatch.bid.minDurationBlocks,
+      minDurationBlocks: llmMatch.bid.leaseDurationBlocks,
       rateFixed: llmMatch.bid.rateFixed,
     };
   }

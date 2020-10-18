@@ -140,6 +140,16 @@ service Trader {
         };
     };
 
+    /* pool: `auction leasedurations`
+    LeaseDurations returns the current set of valid lease duration in the
+    market as is, and also information w.r.t if the market is currently active.
+    */
+    rpc LeaseDurations(LeaseDurationRequest) returns (LeaseDurationResponse) {
+        option (google.api.http) = {
+            get: "/v1/pool/lease_durations"
+        };
+    }
+
     /* pool: `auction snapshot`
     BatchSnapshot returns the snapshot of a past batch identified by its ID.
     */
@@ -149,7 +159,7 @@ service Trader {
         };
     };
 
-    /** pool: `listauth`
+    /* pool: `listauth`
     GetLsatTokens returns all LSAT tokens the daemon ever paid for.
     */
     rpc GetLsatTokens (TokensRequest) returns (TokensResponse) {
@@ -157,6 +167,26 @@ service Trader {
             get: "/v1/lsat/tokens"
         };
     }
+
+    /* pool: `auction leases`
+    Leases returns the list of channels that were either purchased or sold by
+    the trader within the auction.
+    */
+    rpc Leases (LeasesRequest) returns (LeasesResponse) {
+        option (google.api.http) = {
+            get: "/v1/pool/leases"
+        };
+    };
+
+    /* pool: `auction ratings`
+    Returns the Node Tier information for this target Lightning node, and other
+    related ranking information.
+    */
+    rpc NodeRatings(NodeRatingRequest) returns (NodeRatingResponse) {
+        option (google.api.http) = {
+            get: "/v1/pool/node_ratings"
+        };
+    };
 }
 
 message InitAccountRequest {
@@ -418,6 +448,16 @@ message SubmitOrderResponse {
 }
 
 message ListOrdersRequest {
+    /*
+    Can be set to true to list the orders including all events, which can be
+    very verbose.
+    */
+    bool verbose = 1;
+
+    /*
+    Only list orders that are still active.
+    */
+    bool active_only = 2;
 }
 message ListOrdersResponse {
     repeated Ask asks = 1;
@@ -450,7 +490,7 @@ message Order {
     Maximum fee rate the trader is willing to pay for the batch transaction,
     expressed in satoshis per 1000 weight units (sat/KW).
     */
-    uint64 max_batch_fee_rate_sat_per_kw= 4;
+    uint64 max_batch_fee_rate_sat_per_kw = 4;
 
     /*
     Order nonce, acts as unique order identifier.
@@ -477,6 +517,18 @@ message Order {
     // The value reserved from the account by this order to ensure the account
     // can pay execution and chain fees in case it gets matched.
     uint64 reserved_value_sat = 9;
+
+    // The unix timestamp in nanoseconds the order was first created/submitted.
+    uint64 creation_timestamp_ns = 10;
+
+    /*
+    A list of events that were emitted for this order. This field is only set
+    when the verbose flag is set to true in the request.
+    */
+    repeated OrderEvent events = 11;
+
+    // The minimum number of order units that must be matched per order pair.
+    uint32 min_units_match = 12;
 }
 
 message Bid {
@@ -486,16 +538,23 @@ message Bid {
     Order details = 1;
 
     /*
-    Required minimum number of blocks that a channel opened as a result of this
-    bid should be kept open.
+    Required number of blocks that a channel opened as a result of this bid
+    should be kept open.
     */
-    uint32 min_duration_blocks = 2;
+    uint32 lease_duration_blocks = 2;
 
     /*
     The version of the order format that is used. Will be increased once new
     features are added.
     */
     uint32 version = 3;
+
+
+    /*
+    The minium node tier this order should be matched with. Only asks backed by
+    a node this tier or higher will be eligible for matching with this bid.
+    */
+    NodeTier min_node_tier = 4;
 }
 
 message Ask {
@@ -505,16 +564,141 @@ message Ask {
     Order details = 1;
 
     /*
-    The maximum number of blocks the liquidity provider is willing to provide
-    the channel funds for.
+    The number of blocks the liquidity provider is willing to provide the
+    channel funds for.
     */
-    uint32 max_duration_blocks = 2;
+    uint32 lease_duration_blocks = 2;
 
     /*
     The version of the order format that is used. Will be increased once new
     features are added.
     */
     uint32 version = 3;
+}
+
+message OrderEvent {
+    /*
+    The unix timestamp in nanoseconds the event was emitted at. This is the
+    primary key of the event and is unique across the database.
+    */
+    int64 timestamp_ns = 1;
+
+    // The human readable representation of the event.
+    string event_str = 2;
+
+    oneof event {
+        // The order was updated in the database.
+        UpdatedEvent state_change = 3;
+
+        // The order was involved in a match making attempt.
+        MatchEvent matched = 4;
+    }
+}
+
+message UpdatedEvent {
+    /*
+    The state of the order previous to the change. This is what the state
+    changed from.
+    */
+    OrderState previous_state = 1;
+
+    /*
+    The new state of the order after the change. This is what the state changed
+    to.
+    */
+    OrderState new_state = 2;
+
+    // The units that were filled at the time of the event.
+    uint32 units_filled = 3;
+}
+
+message MatchEvent {
+    // The state of the match making process the order went through.
+    MatchState match_state = 1;
+
+    // The number of units that would be (or were) filled with this match.
+    uint32 units_filled = 2;
+
+    // The nonce of the order we were matched to.
+    bytes matched_order = 3;
+
+    /*
+    The reason why the trader daemon rejected the order. Is only set if
+    match_state is set to REJECTED.
+    */
+    MatchRejectReason reject_reason = 4;
+}
+
+enum MatchState {
+    /*
+    The OrderMatchPrepare message from the auctioneer was received initially.
+    */
+    PREPARE = 0;
+
+    /*
+    The OrderMatchPrepare message from the auctioneer was processed successfully
+    and the batch was accepted.
+    */
+    ACCEPTED = 1;
+
+    /*
+    The order was rejected by the trader daemon, either as an answer to a
+    OrderMatchSignBegin or OrderMatchFinalize message from the auctioneer.
+    */
+    REJECTED = 2;
+
+    /*
+    The OrderMatchSignBegin message from the auctioneer was processed
+    successfully.
+    */
+    SIGNED = 3;
+
+    /*
+    The OrderMatchFinalize message from the auctioneer was processed
+    successfully.
+    */
+    FINALIZED = 4;
+}
+
+enum MatchRejectReason {
+    // No reject occurred, this is the default value.
+    NONE = 0;
+
+    /*
+    The client didn't come up with the same result as the server and is
+    rejecting the batch because of that.
+    */
+    SERVER_MISBEHAVIOR = 1;
+
+    /*
+    The client doesn't support the current batch verification version the
+    server is using.
+    */
+    BATCH_VERSION_MISMATCH = 2;
+
+    /*
+    The client rejects some of the orders, not the full batch. This reason is
+    set on matches for orders that were in the same batch as partial reject ones
+    but were not themselves rejected.
+    */
+    PARTIAL_REJECT_COLLATERAL = 3;
+
+    /*
+    The trader's client has a preference to only match orders with peers it
+    doesn't already have channels with. The order that is rejected with this
+    reason type comes from a peer that the trader already has channels with.
+    */
+    PARTIAL_REJECT_DUPLICATE_PEER = 4;
+
+    /*
+    The trader's client couldn't connect to the remote node of the matched
+    order or the channel funding could not be initialized for another
+    reason. This could also be the rejecting node's fault if their
+    connection is not stable. Using this code can have a negative impact on
+    the reputation score of both nodes, depending on the number of errors
+    recorded.
+    */
+    PARTIAL_REJECT_CHANNEL_FUNDING_FAILED = 5;
 }
 
 message RecoverAccountsRequest {
@@ -533,6 +717,86 @@ message AuctionFeeResponse {
     The execution fee charged per matched order.
     */
     ExecutionFee execution_fee = 1;
+}
+
+message Lease {
+    // The outpoint of the channel created.
+    OutPoint channel_point = 1;
+
+    // The amount, in satoshis, of the channel created.
+    uint64 channel_amt_sat = 2;
+
+    // The intended duration, in blocks, of the channel created.
+    uint32 channel_duration_blocks = 3;
+
+    // The absolute height that this channel lease expires.
+    uint32 channel_lease_expiry = 4;
+
+    /*
+    The premium, in satoshis, either paid or received for the offered liquidity.
+    */
+    uint64 premium_sat = 5;
+
+    /*
+    The execution fee, in satoshis, charged by the auctioneer for the channel
+    created.
+    */
+    uint64 execution_fee_sat = 6;
+
+    /*
+    The fee, in satoshis, charged by the auctioneer for the batch execution
+    transaction that created this lease.
+    */
+    uint64 chain_fee_sat = 7;
+
+    /*
+    The actual fixed rate expressed in parts per billionth this lease was
+    bought/sold at.
+    */
+    uint64 clearing_rate_price = 8;
+
+    /*
+    The actual fixed rate of the bid/ask, this should always be 'better' than
+    the clearing_rate_price.
+    */
+    uint64 order_fixed_rate = 9;
+
+    // The order executed that resulted in the channel created.
+    bytes order_nonce = 10;
+
+    // Whether this channel was purchased from another trader or not.
+    bool purchased = 11;
+
+    // The pubkey of the node that this channel was bought/sold from.
+    bytes channel_remote_node_key = 12;
+
+    // The tier of the node that this channel was bought/sold from.
+    NodeTier channel_node_tier = 13;
+}
+
+message LeasesRequest {
+    /*
+    An optional list of batches to retrieve the leases of. If empty, leases
+    throughout all batches are returned.
+    */
+    repeated bytes batch_ids = 1;
+
+    /*
+    An optional list of accounts to retrieve the leases of. If empty, leases
+    for all accounts are returned.
+    */
+    repeated bytes accounts = 2;
+}
+
+message LeasesResponse {
+    // The relevant list of leases purchased or sold within the auction.
+    repeated Lease leases = 1;
+
+    // The total amount of satoshis earned from the leases returned.
+    uint64 total_amt_earned_sat = 2;
+
+    // The total amount of satoshis paid for the leases returned.
+    uint64 total_amt_paid_sat = 3;
 }
 
 message TokensRequest {
@@ -588,4 +852,21 @@ message LsatToken {
     file name of the token where it's stored on the file system.
     */
     string storage_name = 8;
+}
+
+message LeaseDurationRequest {
+}
+
+message LeaseDurationResponse {
+    map<uint32, bool> lease_durations = 1;
+}
+
+message NodeRatingRequest {
+    // The target node to obtain ratings information for.
+    repeated bytes node_pubkeys = 1;
+}
+
+message NodeRatingResponse {
+    // A series of node ratings for each of the queried nodes.
+    repeated NodeRating node_ratings = 1;
 }
