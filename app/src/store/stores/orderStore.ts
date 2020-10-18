@@ -72,26 +72,26 @@ export default class OrderStore {
       runInAction('fetchOrdersContinuation', () => {
         const serverIds: string[] = [];
 
-        asksList.forEach(({ details: poolOrder, maxDurationBlocks }) => {
+        asksList.forEach(({ details: poolOrder, leaseDurationBlocks }) => {
           if (!poolOrder) return;
           // update existing orders or create new ones in state. using this
           // approach instead of overwriting the array will cause fewer state
           // mutations, resulting in better react rendering performance
           const nonce = hex(poolOrder.orderNonce);
           const order = this.orders.get(nonce) || new Order();
-          order.update(poolOrder, OrderType.Ask, maxDurationBlocks);
+          order.update(poolOrder, OrderType.Ask, leaseDurationBlocks);
           this.orders.set(nonce, order);
           serverIds.push(nonce);
         });
 
-        bidsList.forEach(({ details: poolOrder, minDurationBlocks }) => {
+        bidsList.forEach(({ details: poolOrder, leaseDurationBlocks }) => {
           if (!poolOrder) return;
           // update existing orders or create new ones in state. using this
           // approach instead of overwriting the array will cause fewer state
           // mutations, resulting in better react rendering performance
           const nonce = hex(poolOrder.orderNonce);
           const order = this.orders.get(nonce) || new Order();
-          order.update(poolOrder, OrderType.Bid, minDurationBlocks);
+          order.update(poolOrder, OrderType.Bid, leaseDurationBlocks);
           this.orders.set(nonce, order);
           serverIds.push(nonce);
         });
