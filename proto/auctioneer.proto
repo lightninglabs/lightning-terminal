@@ -15,6 +15,7 @@ service ChannelAuctioneer {
     rpc Terms (TermsRequest) returns (TermsResponse);
     rpc RelevantBatchSnapshot (RelevantBatchRequest) returns (RelevantBatch);
     rpc BatchSnapshot (BatchSnapshotRequest) returns (BatchSnapshotResponse);
+    rpc NodeRating(ServerNodeRatingRequest) returns (ServerNodeRatingResponse);
 }
 
 message ReserveAccountRequest {
@@ -736,10 +737,11 @@ message ServerOrder {
     */
     uint64 amt = 3;
 
+    uint64 min_chan_amt = 4;
+
     // TODO(guggero): implement
-    // bool kill_or_fill = 4;
     // repeated bytes must_fill_pub = 5;
-    reserved 4, 5;
+    reserved 5;
 
     /*
     Order nonce of 32 byte length, acts as unique order identifier.
@@ -750,7 +752,7 @@ message ServerOrder {
     Signature of the order's digest, signed with the user's account key. The
     signature must be fixed-size LN wire format encoded. Version 0 includes the
     fields version, rate_fixed, amt, max_batch_fee_rate_sat_per_kw and
-    min/max_duration_blocks in the order digest.
+    lease_duration_blocks in the order digest.
     */
     bytes order_sig = 7;
 
@@ -788,6 +790,23 @@ message ServerOrder {
     uint64 max_batch_fee_rate_sat_per_kw = 13;
 }
 
+enum NodeTier {
+    // The default node tier. This value will be determined at run-time by the
+    // current order version.
+    TIER_DEFAULT = 0;
+
+    // Tier 0, bid with this tier are opting out of the smaller "higher
+    // quality" pool of nodes to match their bids. Nodes in this tier are
+    // considered to have "no rating".
+    TIER_0 = 1;
+
+    // Tier 1, the "base" node tier. Nodes in this tier are shown to have a
+    // higher degree of up time and route-ability compared to the rest of the
+    // nodes in the network. This is the current default node tier when
+    // submitting bid orders.
+    TIER_1 = 2;
+}
+
 message ServerBid {
     /*
     The common fields shared between both ask and bid order types.
@@ -795,10 +814,10 @@ message ServerBid {
     ServerOrder details = 1;
 
     /*
-    Required minimum number of blocks that a channel opened as a result of this
-    bid should be kept open.
+    Required number of blocks that a channel opened as a result of this bid
+    should be kept open.
     */
-    uint32 min_duration_blocks = 2;
+    uint32 lease_duration_blocks = 2;
 
     // TODO(guggero): implement
     // bool instant = 3;
@@ -809,6 +828,12 @@ message ServerBid {
     features are added.
     */
     uint32 version = 4;
+
+    /*
+    The minium node tier this order should be matched with. Only asks backed by
+    a node this tier or higher will be eligible for matching with this bid.
+    */
+    NodeTier min_node_tier = 5;
 }
 
 message ServerAsk {
@@ -818,10 +843,10 @@ message ServerAsk {
     ServerOrder details = 1;
 
     /*
-    The maximum number of blocks the liquidity provider is willing to provide
-    the channel funds for.
+    The number of blocks the liquidity provider is willing to provide the
+    channel funds for.
     */
-    uint32 max_duration_blocks = 4;
+    uint32 lease_duration_blocks = 4;
 
     /*
     The version of the order format that is used. Will be increased once new
@@ -934,12 +959,21 @@ message TermsResponse {
     /*
     The maximum order duration in blocks currently allowed by the auctioneer.
     */
-    uint32 max_order_duration_blocks = 2;
+    uint32 max_order_duration_blocks = 2 [deprecated=true];
 
     /*
     The execution fee charged per matched order.
     */
     ExecutionFee execution_fee = 3;
+
+    /*
+    The set of lease durations the market is currently accepting. If a duration
+    is mapped to false, then this means the durations are being accepted, but
+    the market may be paused (not clearing batches). This might happen if a new
+    duration is added, and the auction wishes to build of sufficient market
+    thickness before starting to clear batches.
+    */
+    map<uint32, bool> lease_durations = 4;
 }
 
 message RelevantBatchRequest {
@@ -1021,8 +1055,8 @@ message AskSnapshot {
     // The version of the order.
     uint32 version = 1;
 
-    // The longest period of time the channel will survive for.
-    uint32 max_duration_blocks = 2;
+    // The period of time the channel will survive for.
+    uint32 lease_duration_blocks = 2;
 
     // The true bid price of the order in parts per billion.
     uint32 rate_fixed = 3;
@@ -1034,8 +1068,8 @@ message BidSnapshot {
     // The version of the order.
     uint32 version = 1;
 
-    // The shortest period of time the matched channel should be allocated for.
-    uint32 min_duration_blocks = 2;
+    // The period of time the matched channel should be allocated for.
+    uint32 lease_duration_blocks = 2;
 
     // The true bid price of the order in parts per billion.
     uint32 rate_fixed = 3;
@@ -1086,4 +1120,22 @@ message BatchSnapshotResponse {
 
     // The batch transaction including all witness data.
     bytes batch_tx = 6;
+}
+
+message ServerNodeRatingRequest {
+    // The target node to obtain ratings information for.
+    repeated bytes node_pubkeys = 1;
+}
+
+message NodeRating {
+    // The pubkey for the node these ratings belong to.
+    bytes node_pubkey = 1;
+
+    // The tier of the target node.
+    NodeTier node_tier = 2;
+}
+
+message ServerNodeRatingResponse {
+    // A series of node ratings for each of the queried nodes.
+    repeated NodeRating node_ratings = 1;
 }

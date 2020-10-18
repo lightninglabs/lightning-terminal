@@ -135,13 +135,13 @@ class PoolApi extends BaseApi<PoolEvents> {
     switch (type) {
       case OrderType.Bid:
         const bid = new POOL.Bid();
-        bid.setMinDurationBlocks(duration);
+        bid.setLeaseDurationBlocks(duration);
         bid.setDetails(order);
         req.setBid(bid);
         break;
       case OrderType.Ask:
         const ask = new POOL.Ask();
-        ask.setMaxDurationBlocks(duration);
+        ask.setLeaseDurationBlocks(duration);
         ask.setDetails(order);
         req.setAsk(ask);
         break;

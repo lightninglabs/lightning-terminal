@@ -59,7 +59,7 @@ describe('OrderFormSection', () => {
 
     fireEvent.click(getByText('Place Buy Order'));
     expect(bid!.details.amt).toBe(1000000);
-    expect(bid!.minDurationBlocks).toBe(1008);
+    expect(bid!.leaseDurationBlocks).toBe(1008);
     expect(bid!.details.rateFixed).toBe(9920);
   });
 
@@ -80,7 +80,7 @@ describe('OrderFormSection', () => {
 
     fireEvent.click(getByText('Place Sell Order'));
     expect(ask!.details.amt).toBe(1000000);
-    expect(ask!.maxDurationBlocks).toBe(1008);
+    expect(ask!.leaseDurationBlocks).toBe(1008);
     expect(ask!.details.rateFixed).toBe(9920);
   });
 
