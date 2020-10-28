@@ -2,19 +2,15 @@ import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
-import { HeaderFour } from 'components/base';
+import { HeaderFour, Section } from 'components/base';
 import Tip from 'components/common/Tip';
 import Unit from 'components/common/Unit';
 import { styled } from 'components/theme';
 
 const Styled = {
-  Wrapper: styled.section`
+  Section: styled(Section)`
     flex: 1;
     min-height: 325px;
-    padding: 15px;
-    margin: 15px 0;
-    background-color: ${props => props.theme.colors.overlay};
-    border-radius: 4px;
   `,
   Stat: styled.div`
     font-size: ${props => props.theme.sizes.xl};
@@ -28,9 +24,9 @@ const AccountSection: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.pool.AccountSection');
   const { accountStore, orderStore } = useStore();
 
-  const { Wrapper, Stat } = Styled;
+  const { Section, Stat } = Styled;
   return (
-    <Wrapper>
+    <Section>
       <HeaderFour>{l('account')}</HeaderFour>
       <Stat>
         <Tip
@@ -53,7 +49,7 @@ const AccountSection: React.FC = () => {
       <Stat>
         <Unit sats={orderStore.pendingOrdersAmount} />
       </Stat>
-    </Wrapper>
+    </Section>
   );
 };
 
