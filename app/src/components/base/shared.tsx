@@ -39,6 +39,13 @@ export const Badge = styled.span`
   letter-spacing: 1.8px;
 `;
 
+export const Section = styled.section`
+  padding: 15px;
+  background-color: ${props => props.theme.colors.overlay};
+  border: 1px solid ${props => props.theme.colors.blue};
+  border-radius: 5px;
+`;
+
 //
 // Button
 //
