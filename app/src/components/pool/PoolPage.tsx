@@ -19,14 +19,12 @@ const Styled = {
   `,
   Row: styled(Row)`
     flex: 1;
+    margin-top: 10px;
   `,
   Col: styled(Column)`
     display: flex;
     flex-direction: column;
-
-    &:first-of-type {
-      width: 400px;
-    }
+    padding: 0;
   `,
 };
 

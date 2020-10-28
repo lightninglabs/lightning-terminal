@@ -3,19 +3,15 @@ import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { Unit, Units } from 'util/constants';
 import { useStore } from 'store';
-import { Button, HeaderFour } from 'components/base';
+import { Button, HeaderFour, Section } from 'components/base';
 import FormField from 'components/common/FormField';
 import FormInputNumber from 'components/common/FormInputNumber';
 import Toggle from 'components/common/Toggle';
 import { styled } from 'components/theme';
 
 const Styled = {
-  Wrapper: styled.section`
+  Section: styled(Section)`
     flex: 4;
-    padding: 15px;
-    margin: 15px 0;
-    background-color: ${props => props.theme.colors.overlay};
-    border-radius: 4px;
   `,
   Actions: styled.div`
     margin: 30px auto;
@@ -27,9 +23,9 @@ const OrderFormSection: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.pool.OrderFormSection');
   const { orderFormStore } = useStore();
 
-  const { Wrapper, Actions } = Styled;
+  const { Section, Actions } = Styled;
   return (
-    <Wrapper>
+    <Section>
       <HeaderFour>{l('title')}</HeaderFour>
       <Actions>
         <Toggle
@@ -83,7 +79,7 @@ const OrderFormSection: React.FC = () => {
           {orderFormStore.placeOrderLabel}
         </Button>
       </Actions>
-    </Wrapper>
+    </Section>
   );
 };
 
