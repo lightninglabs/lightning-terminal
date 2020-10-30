@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { Unit, Units } from 'util/constants';
 import { useStore } from 'store';
-import { Button, HeaderFour, Section } from 'components/base';
+import { Button, Section } from 'components/base';
 import FormField from 'components/common/FormField';
 import FormInputNumber from 'components/common/FormInputNumber';
 import Toggle from 'components/common/Toggle';
@@ -26,17 +26,15 @@ const OrderFormSection: React.FC = () => {
   const { Section, Actions } = Styled;
   return (
     <Section>
-      <HeaderFour>{l('title')}</HeaderFour>
       <Actions>
         <Toggle
-          options={orderFormStore.options}
+          options={orderFormStore.orderOptions}
           value={orderFormStore.orderType}
           onChange={orderFormStore.setOrderType}
         />
       </Actions>
       <FormField
-        label={l('amountLabel')}
-        info={orderFormStore.amountInfo}
+        label={l(`amountLabel${orderFormStore.orderType}`)}
         error={orderFormStore.amountError}
       >
         <FormInputNumber
@@ -46,32 +44,28 @@ const OrderFormSection: React.FC = () => {
           onChange={orderFormStore.setAmount}
         />
       </FormField>
-      <FormField label={orderFormStore.durationLabel} info={orderFormStore.durationInfo}>
+      <FormField label={l(`premiumLabel${orderFormStore.orderType}`)}>
         <FormInputNumber
-          placeholder={l('durationPlaceholder')}
-          suffix={l('durationSuffix')}
-          value={orderFormStore.duration}
-          onChange={orderFormStore.setDuration}
+          placeholder={l('premiumPlaceholder')}
+          suffix={Units[Unit.sats].suffix}
+          value={orderFormStore.premium}
+          onChange={orderFormStore.setPremium}
         />
       </FormField>
-      <FormField
-        label={l('interestLabel')}
-        info={orderFormStore.interestRateInfo}
-        error={orderFormStore.interestRateError}
-      >
+      <FormField label={l('minChanSizeLabel')} error={orderFormStore.minChanSizeError}>
         <FormInputNumber
-          placeholder={l('interestPlaceholder')}
-          suffix="%"
-          value={orderFormStore.interestRate}
-          onChange={orderFormStore.setInterestRate}
+          placeholder={l('minChanSizePlaceholder')}
+          suffix={Units[Unit.sats].suffix}
+          value={orderFormStore.minChanSize}
+          onChange={orderFormStore.setMinChanSize}
         />
       </FormField>
       <FormField label={l('feeLabel')} error={orderFormStore.feeRateError}>
         <FormInputNumber
           placeholder={l('feePlaceholder')}
-          suffix="sats/kw"
-          value={orderFormStore.feeRate}
-          onChange={orderFormStore.setFeeRate}
+          suffix="sats/vByte"
+          value={orderFormStore.maxBatchFeeRate}
+          onChange={orderFormStore.setMaxBatchFeeRate}
         />
       </FormField>
       <Actions>

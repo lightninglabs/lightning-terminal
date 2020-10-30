@@ -25,6 +25,10 @@ const Styled = {
     display: flex;
     flex-direction: column;
     padding: 0;
+
+    &:first-of-type {
+      max-width: 400px;
+    }
   `,
 };
 

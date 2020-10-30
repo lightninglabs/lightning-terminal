@@ -112,9 +112,9 @@ message ServerSubmitOrderResponse {
 
 message ServerCancelOrderRequest {
     /*
-    The order's unique 32 byte identifier.
+    The preimage to the order's unique nonce.
     */
-    bytes order_nonce = 1;
+    bytes order_nonce_preimage = 1;
 }
 message ServerCancelOrderResponse {
 }
