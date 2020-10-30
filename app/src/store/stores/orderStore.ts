@@ -115,6 +115,8 @@ export default class OrderStore {
    * @param amount the amount of the order
    * @param ratePct the interest rate as a percent of the total amount (from 0 to 100)
    * @param duration the number of blocks to keep the channel open for
+   * @param minUnitsMatch the minimum number of units required to match this order
+   * @param maxBatchFeeRate the maximum batch fee rate to allowed
    */
   @action.bound
   async submitOrder(
@@ -122,13 +124,16 @@ export default class OrderStore {
     amount: number,
     ratePct: number,
     duration: number,
-    feeRateSatPerKw: number,
+    minUnitsMatch: number,
+    maxBatchFeeRate: number,
   ) {
     try {
       const traderKey = this._store.accountStore.activeAccount.traderKey;
-      this._store.log.info(
-        `submitting ${type} order for ${amount}sats at ${ratePct}% for ${duration} blocks`,
-      );
+      this._store.log.info(`submitting ${type} order for ${amount}sats at ${ratePct}%`, {
+        duration,
+        minUnitsMatch,
+        maxBatchFeeRate,
+      });
 
       const { acceptedOrderNonce, invalidOrder } = await this._store.api.pool.submitOrder(
         traderKey,
@@ -136,7 +141,8 @@ export default class OrderStore {
         amount,
         ratePct,
         duration,
-        feeRateSatPerKw,
+        minUnitsMatch,
+        maxBatchFeeRate,
       );
 
       // fetch all orders to update the store's state
