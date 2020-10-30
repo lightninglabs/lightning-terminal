@@ -1,7 +1,6 @@
 import { action, computed, observable, runInAction } from 'mobx';
-import Big from 'big.js';
-import { formatSats } from 'util/formatters';
 import { prefixTranslation } from 'util/translate';
+import { DURATION, ONE_UNIT } from 'api/pool';
 import { Store } from 'store';
 import { OrderType } from 'store/models/order';
 
@@ -15,84 +14,46 @@ export default class OrderFormStore {
   /** the currently selected type of the order */
   @observable orderType: OrderType = OrderType.Bid;
   @observable amount = 0;
-  @observable duration = 0;
-  @observable interestRate = 0;
-  @observable feeRate = 0;
+  @observable premium = 0;
+  @observable minChanSize = 0;
+  @observable maxBatchFeeRate = 0;
 
   constructor(store: Store) {
     this._store = store;
   }
 
-  @computed get options() {
+  @computed get orderOptions() {
     return [
       { label: l('buy'), value: OrderType.Bid },
       { label: l('sell'), value: OrderType.Ask },
     ];
   }
 
-  /** the formatted amount in the chosen unit */
-  @computed get amountInfo() {
-    return formatSats(Big(this.amount), { unit: this._store.settingsStore.unit });
-  }
-
   /** the error message if the amount is invalid */
   @computed get amountError() {
     if (!this.amount) return '';
-    if (this.amount % 100000 !== 0) {
-      return l('amountErrorMultiple');
+    if (this.amount % ONE_UNIT !== 0) {
+      return l('errorMultiple');
     }
     return '';
   }
 
-  /** the label for the duration field */
-  @computed get durationLabel() {
-    return this.orderType === OrderType.Bid ? l('durationMin') : l('durationMax');
-  }
-
-  /** the duration expressed in weeks or months */
-  @computed get durationInfo() {
-    if (!this.duration) return '';
-    const weeks = Math.floor(this.duration / 144 / 7);
-    if (weeks < 8) {
-      return l('durationWeeks', { count: weeks });
+  /** the error message if the min chan size is invalid */
+  @computed get minChanSizeError() {
+    if (!this.minChanSize) return '';
+    if (this.minChanSize % ONE_UNIT !== 0) {
+      return l('errorMultiple');
     }
-    const months = weeks / 4.3;
-    return l('durationMonths', { count: months.toFixed(1) });
-  }
-
-  /** the total and per-block premium for the order */
-  @computed get interestRateInfo() {
-    if ([this.amount, this.interestRate, this.duration].includes(0)) return '';
-
-    const premium = Big(this.amount).mul(this.interestRate / 100);
-    const perBlock = premium.div(this.duration);
-    if (+perBlock < 1) return '';
-
-    const premiumSats = formatSats(premium);
-    const perBlockSats = formatSats(perBlock, { withSuffix: false });
-    const action =
-      this.orderType === OrderType.Bid
-        ? l('interestRateActionPay')
-        : l('interestRateActionEarn');
-    return l('interestRateInfo', { action, premiumSats, perBlockSats });
-  }
-
-  /** the error message if the rate is invalid */
-  @computed get interestRateError() {
-    if ([this.amount, this.duration, this.interestRate].includes(0)) return '';
-
-    const earned = Big(this.amount).mul(this.interestRate / 100);
-    const perBlock = earned.div(this.duration);
-    if (+perBlock < 1) {
-      return l('interestRateErrorPerBlock', { rate: perBlock.toFixed(2) });
+    if (this.amount && this.minChanSize > this.amount) {
+      return l('errorLiquidity');
     }
     return '';
   }
 
   /** the error message if the fee rate is invalid */
   @computed get feeRateError() {
-    if (!this.feeRate) return '';
-    if (this.feeRate < FEE_RATE_MINIMUM) {
+    if (!this.maxBatchFeeRate) return '';
+    if (this.maxBatchFeeRate < FEE_RATE_MINIMUM) {
       return l('feeRateErrorMin', { min: FEE_RATE_MINIMUM });
     }
     return '';
@@ -107,9 +68,9 @@ export default class OrderFormStore {
   /** determines if the current values are all valid */
   @computed get isValid() {
     return (
-      ![this.amount, this.duration, this.interestRate, this.feeRate].includes(0) &&
+      ![this.amount, this.premium, this.minChanSize, this.maxBatchFeeRate].includes(0) &&
       !this.amountError &&
-      !this.interestRateError &&
+      !this.minChanSizeError &&
       !this.feeRateError
     );
   }
@@ -125,35 +86,39 @@ export default class OrderFormStore {
   }
 
   @action.bound
-  setDuration(duration: number) {
-    this.duration = duration;
+  setPremium(premium: number) {
+    this.premium = premium;
   }
 
   @action.bound
-  setInterestRate(interestRate: number) {
-    this.interestRate = interestRate;
+  setMinChanSize(minChanSize: number) {
+    this.minChanSize = minChanSize;
   }
 
   @action.bound
-  setFeeRate(feeRate: number) {
-    this.feeRate = feeRate;
+  setMaxBatchFeeRate(feeRate: number) {
+    this.maxBatchFeeRate = feeRate;
   }
 
   /** submits the order to the API and resets the form values if successful */
   @action.bound
   async placeOrder() {
+    const ratePct = Math.floor((this.premium * 100) / this.amount);
+    const minUnitsMatch = Math.floor(this.minChanSize / ONE_UNIT);
     const nonce = await this._store.orderStore.submitOrder(
       this.orderType,
       this.amount,
-      this.interestRate,
-      this.duration,
-      this.feeRate,
+      ratePct,
+      DURATION,
+      minUnitsMatch,
+      this.maxBatchFeeRate,
     );
     runInAction('placeOrderContinuation', () => {
       if (nonce) {
         this.amount = 0;
-        this.duration = 0;
-        this.interestRate = 0;
+        this.premium = 0;
+        this.minChanSize = 0;
+        this.maxBatchFeeRate = 0;
       }
     });
 

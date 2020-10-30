@@ -5,7 +5,6 @@ import { styled } from 'components/theme';
 const Styled = {
   Wrapper: styled.div``,
   Info: styled.div<{ error?: boolean }>`
-    min-height: 34px;
     width: 100%;
     margin: 0 0 30px;
     padding: 5px 0;

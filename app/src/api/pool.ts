@@ -12,6 +12,13 @@ import GrpcClient from './grpc';
 // our current max lease period (6 months)
 export const FEE_RATE_TOTAL_PARTS = 1e9;
 
+// The amount of satoshis in one unit
+export const ONE_UNIT = 100000;
+
+// The duration of each order. This value is temporarily constant in the initial
+// release of Pool
+export const DURATION = 2016;
+
 /** the names and argument types for the subscription events */
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface PoolEvents {}
@@ -122,6 +129,7 @@ class PoolApi extends BaseApi<PoolEvents> {
     amount: number,
     ratePct: number,
     duration: number,
+    minUnitsMatch: number,
     feeRateSatPerKw: number,
   ): Promise<POOL.SubmitOrderResponse.AsObject> {
     const req = new POOL.SubmitOrderRequest();
@@ -130,6 +138,7 @@ class PoolApi extends BaseApi<PoolEvents> {
     order.setTraderKey(b64(traderKey));
     order.setAmt(amount);
     order.setRateFixed(this._pctRateToFixed(ratePct, duration));
+    order.setMinUnitsMatch(minUnitsMatch);
     order.setMaxBatchFeeRateSatPerKw(feeRateSatPerKw);
 
     switch (type) {

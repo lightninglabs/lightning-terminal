@@ -19,36 +19,34 @@ describe('OrderFormSection', () => {
     return renderWithProviders(<OrderFormSection />, store);
   };
 
-  it('should display the Buy form fields', () => {
+  it('should display the Bid form fields', () => {
     const { getByText } = render();
 
-    fireEvent.click(getByText('Buy'));
+    fireEvent.click(getByText('Bid'));
 
-    expect(getByText('Place Order')).toBeInTheDocument();
-    expect(getByText('Amount')).toBeInTheDocument();
-    expect(getByText('Minimum Duration')).toBeInTheDocument();
-    expect(getByText('Interest Rate')).toBeInTheDocument();
-    expect(getByText('Place Buy Order')).toBeInTheDocument();
+    expect(getByText('Desired Inbound Liquidity')).toBeInTheDocument();
+    expect(getByText('Bid Premium')).toBeInTheDocument();
+    expect(getByText('Minimum Channel Size')).toBeInTheDocument();
+    expect(getByText('Place Bid Order')).toBeInTheDocument();
   });
 
-  it('should display the Sell form fields', () => {
+  it('should display the Ask form fields', () => {
     const { getByText } = render();
 
-    fireEvent.click(getByText('Sell'));
+    fireEvent.click(getByText('Ask'));
 
-    expect(getByText('Place Order')).toBeInTheDocument();
-    expect(getByText('Amount')).toBeInTheDocument();
-    expect(getByText('Maximum Duration')).toBeInTheDocument();
-    expect(getByText('Interest Rate')).toBeInTheDocument();
-    expect(getByText('Place Sell Order')).toBeInTheDocument();
+    expect(getByText('Offered Outbound Liquidity')).toBeInTheDocument();
+    expect(getByText('Ask Premium')).toBeInTheDocument();
+    expect(getByText('Minimum Channel Size')).toBeInTheDocument();
+    expect(getByText('Place Ask Order')).toBeInTheDocument();
   });
 
-  it('should submit a buy order', async () => {
+  it('should submit a bid order', async () => {
     const { getByText, getByPlaceholderText } = render();
 
     fireEvent.change(getByPlaceholderText('500,000'), { target: { value: '1000000' } });
-    fireEvent.change(getByPlaceholderText('2016'), { target: { value: '1008' } });
-    fireEvent.change(getByPlaceholderText('0.5'), { target: { value: '1' } });
+    fireEvent.change(getByPlaceholderText('5,000'), { target: { value: '10000' } });
+    fireEvent.change(getByPlaceholderText('100,000'), { target: { value: '100000' } });
     fireEvent.change(getByPlaceholderText('253'), { target: { value: '255' } });
 
     let bid: Required<POOL.Bid.AsObject>;
@@ -57,19 +55,21 @@ describe('OrderFormSection', () => {
       bid = (props.request.toObject() as any).bid;
     });
 
-    fireEvent.click(getByText('Place Buy Order'));
+    fireEvent.click(getByText('Place Bid Order'));
     expect(bid!.details.amt).toBe(1000000);
-    expect(bid!.leaseDurationBlocks).toBe(1008);
-    expect(bid!.details.rateFixed).toBe(9920);
+    expect(bid!.details.rateFixed).toBe(4960);
+    expect(bid!.details.minUnitsMatch).toBe(1);
+    expect(bid!.leaseDurationBlocks).toBe(2016);
+    expect(bid!.details.maxBatchFeeRateSatPerKw).toBe(255);
   });
 
-  it('should submit a sell order', async () => {
+  it('should submit an ask order', async () => {
     const { getByText, getByPlaceholderText } = render();
 
-    fireEvent.click(getByText('Sell'));
+    fireEvent.click(getByText('Ask'));
     fireEvent.change(getByPlaceholderText('500,000'), { target: { value: '1000000' } });
-    fireEvent.change(getByPlaceholderText('2016'), { target: { value: '1008' } });
-    fireEvent.change(getByPlaceholderText('0.5'), { target: { value: '1' } });
+    fireEvent.change(getByPlaceholderText('5,000'), { target: { value: '10000' } });
+    fireEvent.change(getByPlaceholderText('100,000'), { target: { value: '100000' } });
     fireEvent.change(getByPlaceholderText('253'), { target: { value: '255' } });
 
     let ask: Required<POOL.Ask.AsObject>;
@@ -78,75 +78,54 @@ describe('OrderFormSection', () => {
       ask = (props.request.toObject() as any).ask;
     });
 
-    fireEvent.click(getByText('Place Sell Order'));
+    fireEvent.click(getByText('Place Ask Order'));
     expect(ask!.details.amt).toBe(1000000);
-    expect(ask!.leaseDurationBlocks).toBe(1008);
-    expect(ask!.details.rateFixed).toBe(9920);
+    expect(ask!.details.rateFixed).toBe(4960);
+    expect(ask!.details.minUnitsMatch).toBe(1);
+    expect(ask!.leaseDurationBlocks).toBe(2016);
+    expect(ask!.details.maxBatchFeeRateSatPerKw).toBe(255);
   });
 
   it('should display an error if order submission fails', async () => {
     const { getByText, findByText, getByPlaceholderText } = render();
 
-    fireEvent.click(getByText('Sell'));
+    fireEvent.click(getByText('Ask'));
     fireEvent.change(getByPlaceholderText('500,000'), { target: { value: '1000000' } });
-    fireEvent.change(getByPlaceholderText('2016'), { target: { value: '1008' } });
-    fireEvent.change(getByPlaceholderText('0.5'), { target: { value: '1' } });
+    fireEvent.change(getByPlaceholderText('5,000'), { target: { value: '10000' } });
+    fireEvent.change(getByPlaceholderText('100,000'), { target: { value: '100000' } });
     fireEvent.change(getByPlaceholderText('253'), { target: { value: '255' } });
 
     injectIntoGrpcUnary(() => {
       throw new Error('test-error');
     });
 
-    fireEvent.click(getByText('Place Sell Order'));
+    fireEvent.click(getByText('Place Ask Order'));
     expect(await findByText('Unable to submit the order')).toBeInTheDocument();
     expect(await findByText('test-error')).toBeInTheDocument();
   });
 
-  it('should display info and error for amount field', () => {
+  it('should display an error for amount field', () => {
     const { getByText, getByPlaceholderText } = render();
 
-    fireEvent.change(getByPlaceholderText('500,000'), { target: { value: '100000' } });
-    expect(getByText('100,000 sats')).toBeInTheDocument();
     fireEvent.change(getByPlaceholderText('500,000'), { target: { value: '1' } });
     expect(getByText('must be a multiple of 100,000')).toBeInTheDocument();
-
-    fireEvent.change(getByPlaceholderText('500,000'), { target: { value: 'abc' } });
-    expect(getByText('0 sats')).toBeInTheDocument();
   });
 
-  it('should display info and error for duration field', () => {
+  it('should display an error for min chan size field', () => {
     const { getByText, getByPlaceholderText } = render();
 
-    fireEvent.change(getByPlaceholderText('2016'), { target: { value: '1008' } });
-    expect(getByText('~1 week')).toBeInTheDocument();
-    fireEvent.change(getByPlaceholderText('2016'), { target: { value: '4032' } });
-    expect(getByText('~4 weeks')).toBeInTheDocument();
-    fireEvent.change(getByPlaceholderText('2016'), { target: { value: '12096' } });
-    expect(getByText('~2.8 months')).toBeInTheDocument();
-  });
-
-  it('should display info and error for interest rate field', () => {
-    const { getByText, getByPlaceholderText } = render();
+    fireEvent.change(getByPlaceholderText('100,000'), { target: { value: '1' } });
+    expect(getByText('must be a multiple of 100,000')).toBeInTheDocument();
 
     fireEvent.change(getByPlaceholderText('500,000'), { target: { value: '1000000' } });
-    fireEvent.change(getByPlaceholderText('2016'), { target: { value: '1008' } });
-    fireEvent.change(getByPlaceholderText('0.5'), { target: { value: '1' } });
-
-    expect(getByText('pay 10,000 sats (10 per block)')).toBeInTheDocument();
-    fireEvent.change(getByPlaceholderText('0.5'), { target: { value: '2' } });
-    expect(getByText('pay 20,000 sats (20 per block)')).toBeInTheDocument();
-    fireEvent.change(getByPlaceholderText('0.5'), { target: { value: '0.1' } });
-    expect(getByText('per block fixed rate of 0.99 is too small')).toBeInTheDocument();
+    fireEvent.change(getByPlaceholderText('100,000'), { target: { value: '1100000' } });
+    expect(getByText('must be less than liquidity amount')).toBeInTheDocument();
   });
 
-  it('should display info and error for interest rate field', () => {
+  it('should display an error for batch fee rate field', () => {
     const { getByText, getByPlaceholderText } = render();
 
-    fireEvent.change(getByPlaceholderText('500,000'), { target: { value: '1000000' } });
-    fireEvent.change(getByPlaceholderText('2016'), { target: { value: '1008' } });
-    fireEvent.change(getByPlaceholderText('0.5'), { target: { value: '1' } });
-    fireEvent.change(getByPlaceholderText('253'), { target: { value: '252' } });
-
+    fireEvent.change(getByPlaceholderText('253'), { target: { value: '1' } });
     expect(getByText('minimum 253 sats/kw')).toBeInTheDocument();
   });
 });
