@@ -5,7 +5,6 @@ import { grpc } from '@improbable-eng/grpc-web';
 import { waitFor } from '@testing-library/react';
 import Big from 'big.js';
 import { hex } from 'util/strings';
-import { injectIntoGrpcUnary } from 'util/tests';
 import {
   poolInvalidOrder,
   poolListAccounts,
@@ -90,13 +89,13 @@ describe('OrderStore', () => {
 
   it('should submit an ask order', async () => {
     await rootStore.accountStore.fetchAccounts();
-    const nonce = await store.submitOrder(OrderType.Ask, 100000, 2, 2016, 253);
+    const nonce = await store.submitOrder(OrderType.Ask, 100000, 2000, 2016, 100000, 253);
     expect(nonce).toBe(hex(poolSubmitOrder.acceptedOrderNonce));
   });
 
   it('should submit a bid order', async () => {
     await rootStore.accountStore.fetchAccounts();
-    const nonce = await store.submitOrder(OrderType.Bid, 100000, 2, 2016, 253);
+    const nonce = await store.submitOrder(OrderType.Bid, 100000, 2000, 2016, 100000, 253);
     expect(nonce).toBe(hex(poolSubmitOrder.acceptedOrderNonce));
   });
 
@@ -115,34 +114,14 @@ describe('OrderStore', () => {
       }
       return undefined as any;
     });
-    await store.submitOrder(OrderType.Bid, 100000, 2, 2016, 253);
+    await store.submitOrder(OrderType.Bid, 100000, 2000, 2016, 100000, 253);
     expect(rootStore.uiStore.alerts.size).toBe(1);
     expect(values(rootStore.uiStore.alerts)[0].message).toBe(poolInvalidOrder.failString);
   });
 
-  it.each<[number, number, number]>([
-    [2, 2016, 9920],
-    [1, 2016, 4960],
-    [1, 4000, 2500],
-  ])(
-    'should convert from interest percent to per block fixed rate correctly',
-    async (ratePct: number, duration: number, expectedRateFixed: number) => {
-      await rootStore.accountStore.fetchAccounts();
-
-      let actualRate;
-      // capture the rate that is sent to the API
-      injectIntoGrpcUnary((_, props) => {
-        actualRate = (props.request.toObject() as any).bid.details.rateFixed;
-      });
-
-      await store.submitOrder(OrderType.Bid, 10000000, ratePct, duration, 253);
-      expect(actualRate).toBe(expectedRateFixed);
-    },
-  );
-
-  it('should throw if the interest rate percent is too low', async () => {
+  it('should throw if the fixed rate rate is too low', async () => {
     await rootStore.accountStore.fetchAccounts();
-    await store.submitOrder(OrderType.Bid, 100000, 0.001, 20000, 253);
+    await store.submitOrder(OrderType.Bid, 100000, 0.9, 20000, 100000, 253);
     expect(rootStore.uiStore.alerts.size).toBe(1);
     expect(values(rootStore.uiStore.alerts)[0].message).toMatch(/The rate is too low.*/);
   });

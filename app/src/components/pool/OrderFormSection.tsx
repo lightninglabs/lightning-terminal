@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { Unit, Units } from 'util/constants';
 import { useStore } from 'store';
-import { Button, Section } from 'components/base';
+import { Button, Section, Small } from 'components/base';
 import FormField from 'components/common/FormField';
 import FormInputNumber from 'components/common/FormInputNumber';
 import Toggle from 'components/common/Toggle';
@@ -12,6 +12,19 @@ import { styled } from 'components/theme';
 const Styled = {
   Section: styled(Section)`
     flex: 4;
+  `,
+  SummaryItem: styled.div<{ strong?: boolean }>`
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: ${props => (props.strong ? '50px' : '0')};
+    margin-bottom: 10px;
+    line-height: 1.2;
+    font-size: ${props => props.theme.sizes.s};
+    font-weight: ${props => (props.strong ? 'bold' : 'normal')};
+  `,
+  Small: styled(Small)`
+    color: ${props => props.theme.colors.gray};
   `,
   Actions: styled.div`
     margin: 30px auto;
@@ -23,11 +36,12 @@ const OrderFormSection: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.pool.OrderFormSection');
   const { orderFormStore } = useStore();
 
-  const { Section, Actions } = Styled;
+  const { Section, SummaryItem, Small, Actions } = Styled;
   return (
     <Section>
       <Actions>
         <Toggle
+          flex
           options={orderFormStore.orderOptions}
           value={orderFormStore.orderType}
           onChange={orderFormStore.setOrderType}
@@ -44,7 +58,10 @@ const OrderFormSection: React.FC = () => {
           onChange={orderFormStore.setAmount}
         />
       </FormField>
-      <FormField label={l(`premiumLabel${orderFormStore.orderType}`)}>
+      <FormField
+        label={l(`premiumLabel${orderFormStore.orderType}`)}
+        error={orderFormStore.premiumError}
+      >
         <FormInputNumber
           placeholder={l('premiumPlaceholder')}
           suffix={Units[Unit.sats].suffix}
@@ -68,6 +85,26 @@ const OrderFormSection: React.FC = () => {
           onChange={orderFormStore.setMaxBatchFeeRate}
         />
       </FormField>
+      <SummaryItem>
+        <span>{l('durationLabel')}</span>
+        <span className="text-right">
+          2016
+          <br />
+          <Small>(~{l('durationWeeks')})</Small>
+        </span>
+      </SummaryItem>
+      <SummaryItem>
+        <span>{l('fixedRateLabel')}</span>
+        <span>
+          {orderFormStore.perBlockFixedRate < 1
+            ? `< 1`
+            : `${orderFormStore.perBlockFixedRate}`}
+        </span>
+      </SummaryItem>
+      <SummaryItem strong>
+        <span>{l('apyLabel')}</span>
+        <span>{orderFormStore.apy}%</span>
+      </SummaryItem>
       <Actions>
         <Button disabled={!orderFormStore.isValid} onClick={orderFormStore.placeOrder}>
           {orderFormStore.placeOrderLabel}
