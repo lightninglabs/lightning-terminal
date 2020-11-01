@@ -19,6 +19,9 @@ export const ONE_UNIT = 100000;
 // release of Pool
 export const DURATION = 2016;
 
+// The minimum batch fee rate in sats/kw
+export const MIN_FEE_RATE_KW = 253;
+
 /** the names and argument types for the subscription events */
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface PoolEvents {}
@@ -127,17 +130,21 @@ class PoolApi extends BaseApi<PoolEvents> {
     traderKey: string,
     type: OrderType,
     amount: number,
-    ratePct: number,
+    rateFixed: number,
     duration: number,
     minUnitsMatch: number,
     feeRateSatPerKw: number,
   ): Promise<POOL.SubmitOrderResponse.AsObject> {
+    if (rateFixed < 1) {
+      throw new Error(`The rate is too low. it must equate to at least 1 sat per block`);
+    }
+
     const req = new POOL.SubmitOrderRequest();
 
     const order = new POOL.Order();
     order.setTraderKey(b64(traderKey));
     order.setAmt(amount);
-    order.setRateFixed(this._pctRateToFixed(ratePct, duration));
+    order.setRateFixed(rateFixed);
     order.setMinUnitsMatch(minUnitsMatch);
     order.setMaxBatchFeeRateSatPerKw(feeRateSatPerKw);
 
@@ -180,12 +187,30 @@ class PoolApi extends BaseApi<PoolEvents> {
     return res.toObject();
   }
 
+  //
+  // Utility functions to convert user-facing units to API units
+  //
+
   /**
-   * convert the percentage interest rate to the per block "rate_fixed" unit
-   * @param ratePct the rate between 0 and 100
-   * @param duration the number of blocks
+   * Converts from sats per vByte to sats per kilo-weight
+   * @param satsPerVByte the number of sats per vByte
    */
-  private _pctRateToFixed(ratePct: number, duration: number) {
+  satsPerVByteToKWeight(satsPerVByte: number) {
+    // convert to sats per kilo-vbyte
+    const satsPerKVByte = satsPerVByte * 1000;
+    // convert to sats per kilo-weight
+    const satsPerKWeight = satsPerKVByte / 4;
+    // ensure the kw value is above the fee rate floor
+    return Math.max(satsPerKWeight, MIN_FEE_RATE_KW);
+  }
+
+  /**
+   * Calculates the per block fixed rate given an amount and premium
+   * @param amount the amount of the order
+   * @param premium the premium being paid
+   */
+  calcFixedRate(amount: number, premium: number) {
+    const ratePct = (premium * 100) / amount;
     // rate = % / 100
     // rate = rateFixed / totalParts
     // rateFixed = rate * totalParts
@@ -193,13 +218,7 @@ class PoolApi extends BaseApi<PoolEvents> {
     const rateFixedFloat = interestRate * FEE_RATE_TOTAL_PARTS;
     // We then take this rate fixed, and divide it by the number of blocks
     // as the user wants this rate to be the final lump sum they pay.
-    const rateFixed = Math.floor(rateFixedFloat / duration);
-
-    if (rateFixed < 1) {
-      throw new Error(`The rate is too low. it must equate to at least 1 sat per block`);
-    }
-
-    return rateFixed;
+    return Math.floor(rateFixedFloat / DURATION);
   }
 }
 

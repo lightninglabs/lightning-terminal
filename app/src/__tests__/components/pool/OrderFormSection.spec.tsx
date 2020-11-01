@@ -47,7 +47,7 @@ describe('OrderFormSection', () => {
     fireEvent.change(getByPlaceholderText('500,000'), { target: { value: '1000000' } });
     fireEvent.change(getByPlaceholderText('5,000'), { target: { value: '10000' } });
     fireEvent.change(getByPlaceholderText('100,000'), { target: { value: '100000' } });
-    fireEvent.change(getByPlaceholderText('253'), { target: { value: '255' } });
+    fireEvent.change(getByPlaceholderText('100'), { target: { value: '1' } });
 
     let bid: Required<POOL.Bid.AsObject>;
     // capture the rate that is sent to the API
@@ -60,7 +60,7 @@ describe('OrderFormSection', () => {
     expect(bid!.details.rateFixed).toBe(4960);
     expect(bid!.details.minUnitsMatch).toBe(1);
     expect(bid!.leaseDurationBlocks).toBe(2016);
-    expect(bid!.details.maxBatchFeeRateSatPerKw).toBe(255);
+    expect(bid!.details.maxBatchFeeRateSatPerKw).toBe(253);
   });
 
   it('should submit an ask order', async () => {
@@ -70,7 +70,7 @@ describe('OrderFormSection', () => {
     fireEvent.change(getByPlaceholderText('500,000'), { target: { value: '1000000' } });
     fireEvent.change(getByPlaceholderText('5,000'), { target: { value: '10000' } });
     fireEvent.change(getByPlaceholderText('100,000'), { target: { value: '100000' } });
-    fireEvent.change(getByPlaceholderText('253'), { target: { value: '255' } });
+    fireEvent.change(getByPlaceholderText('100'), { target: { value: '1' } });
 
     let ask: Required<POOL.Ask.AsObject>;
     // capture the rate that is sent to the API
@@ -83,7 +83,7 @@ describe('OrderFormSection', () => {
     expect(ask!.details.rateFixed).toBe(4960);
     expect(ask!.details.minUnitsMatch).toBe(1);
     expect(ask!.leaseDurationBlocks).toBe(2016);
-    expect(ask!.details.maxBatchFeeRateSatPerKw).toBe(255);
+    expect(ask!.details.maxBatchFeeRateSatPerKw).toBe(253);
   });
 
   it('should display an error if order submission fails', async () => {
@@ -93,7 +93,7 @@ describe('OrderFormSection', () => {
     fireEvent.change(getByPlaceholderText('500,000'), { target: { value: '1000000' } });
     fireEvent.change(getByPlaceholderText('5,000'), { target: { value: '10000' } });
     fireEvent.change(getByPlaceholderText('100,000'), { target: { value: '100000' } });
-    fireEvent.change(getByPlaceholderText('253'), { target: { value: '255' } });
+    fireEvent.change(getByPlaceholderText('100'), { target: { value: '1' } });
 
     injectIntoGrpcUnary(() => {
       throw new Error('test-error');
@@ -111,6 +111,14 @@ describe('OrderFormSection', () => {
     expect(getByText('must be a multiple of 100,000')).toBeInTheDocument();
   });
 
+  it('should display an error for premium field', () => {
+    const { getByText, getByPlaceholderText } = render();
+
+    fireEvent.change(getByPlaceholderText('500,000'), { target: { value: '1000000' } });
+    fireEvent.change(getByPlaceholderText('5,000'), { target: { value: '1' } });
+    expect(getByText('per block fixed rate is too small')).toBeInTheDocument();
+  });
+
   it('should display an error for min chan size field', () => {
     const { getByText, getByPlaceholderText } = render();
 
@@ -125,7 +133,54 @@ describe('OrderFormSection', () => {
   it('should display an error for batch fee rate field', () => {
     const { getByText, getByPlaceholderText } = render();
 
-    fireEvent.change(getByPlaceholderText('253'), { target: { value: '1' } });
-    expect(getByText('minimum 253 sats/kw')).toBeInTheDocument();
+    fireEvent.change(getByPlaceholderText('100'), { target: { value: '0.11' } });
+    expect(getByText('minimum 1 sats/vByte')).toBeInTheDocument();
+  });
+
+  it('should display the channel duration', () => {
+    const { getByText } = render();
+    expect(getByText('Channel Duration (blocks)')).toBeInTheDocument();
+    expect(getByText('2016')).toBeInTheDocument();
+    expect(getByText('(~2 wks)')).toBeInTheDocument();
+  });
+
+  it('should calculate the per block rate', () => {
+    const { getByText, getByPlaceholderText } = render();
+
+    expect(getByText('Per Block Fixed Rate')).toBeInTheDocument();
+
+    fireEvent.change(getByPlaceholderText('500,000'), { target: { value: '1000000' } });
+    fireEvent.change(getByPlaceholderText('5,000'), { target: { value: '1000' } });
+    expect(getByText('496')).toBeInTheDocument();
+
+    fireEvent.change(getByPlaceholderText('500,000'), { target: { value: '5000000' } });
+    fireEvent.change(getByPlaceholderText('5,000'), { target: { value: '1000' } });
+    expect(getByText('99')).toBeInTheDocument();
+
+    fireEvent.change(getByPlaceholderText('500,000'), { target: { value: '50000000' } });
+    fireEvent.change(getByPlaceholderText('5,000'), { target: { value: '100' } });
+    expect(getByText('< 1')).toBeInTheDocument();
+  });
+
+  it('should calculate the APY correctly', () => {
+    const { getByText, getByPlaceholderText } = render();
+
+    expect(getByText('Effective Interest Rate (APY)')).toBeInTheDocument();
+
+    fireEvent.change(getByPlaceholderText('500,000'), { target: { value: '1000000' } });
+    fireEvent.change(getByPlaceholderText('5,000'), { target: { value: '1000' } });
+    expect(getByText('2.64%')).toBeInTheDocument();
+
+    fireEvent.change(getByPlaceholderText('500,000'), { target: { value: '1000000' } });
+    fireEvent.change(getByPlaceholderText('5,000'), { target: { value: '500' } });
+    expect(getByText('1.31%')).toBeInTheDocument();
+
+    fireEvent.change(getByPlaceholderText('500,000'), { target: { value: '1000000' } });
+    fireEvent.change(getByPlaceholderText('5,000'), { target: { value: '1234' } });
+    expect(getByText('3.27%')).toBeInTheDocument();
+
+    fireEvent.change(getByPlaceholderText('500,000'), { target: { value: '1000000' } });
+    fireEvent.change(getByPlaceholderText('5,000'), { target: { value: '' } });
+    expect(getByText('0%')).toBeInTheDocument();
   });
 });
