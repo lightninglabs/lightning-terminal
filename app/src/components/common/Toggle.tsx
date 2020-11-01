@@ -2,8 +2,18 @@ import React, { useCallback } from 'react';
 import { styled } from 'components/theme';
 
 const Styled = {
-  Wrapper: styled.div`
+  Wrapper: styled.div<{ flex?: boolean }>`
     display: inline-block;
+    ${props =>
+      props.flex &&
+      `
+      width: 100%;
+      display: flex;
+
+      > span {
+        flex-grow: 1;
+      }
+    `}
   `,
   Item: styled.span<{ selected?: boolean }>`
     padding: 5px 15px;
@@ -31,16 +41,17 @@ export interface ToggleOption {
 
 interface Props {
   options: ToggleOption[];
+  flex?: boolean;
   value?: string;
   onChange: (value: string) => void;
 }
 
-const Toggle: React.FC<Props> = ({ options, value, onChange }) => {
+const Toggle: React.FC<Props> = ({ options, flex, value, onChange }) => {
   const handleClick = useCallback((v: string) => () => onChange(v), [onChange]);
 
   const { Wrapper, Item } = Styled;
   return (
-    <Wrapper>
+    <Wrapper flex={flex}>
       {options.map(o => (
         <Item key={o.value} selected={o.value === value} onClick={handleClick(o.value)}>
           {o.label}

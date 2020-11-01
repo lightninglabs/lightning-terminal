@@ -7,6 +7,7 @@ import {
   toJS,
   values,
 } from 'mobx';
+import * as POOL from 'types/generated/trader_pb';
 import Big from 'big.js';
 import { hex } from 'util/strings';
 import { FEE_RATE_TOTAL_PARTS } from 'api/pool';
@@ -72,8 +73,8 @@ export default class OrderStore {
       runInAction('fetchOrdersContinuation', () => {
         const serverIds: string[] = [];
 
-        asksList.forEach(({ details: poolOrder, leaseDurationBlocks }) => {
-          if (!poolOrder) return;
+        asksList.forEach(({ details, leaseDurationBlocks }) => {
+          const poolOrder = details as POOL.Order.AsObject;
           // update existing orders or create new ones in state. using this
           // approach instead of overwriting the array will cause fewer state
           // mutations, resulting in better react rendering performance
@@ -84,8 +85,8 @@ export default class OrderStore {
           serverIds.push(nonce);
         });
 
-        bidsList.forEach(({ details: poolOrder, leaseDurationBlocks }) => {
-          if (!poolOrder) return;
+        bidsList.forEach(({ details, leaseDurationBlocks }) => {
+          const poolOrder = details as POOL.Order.AsObject;
           // update existing orders or create new ones in state. using this
           // approach instead of overwriting the array will cause fewer state
           // mutations, resulting in better react rendering performance
@@ -113,23 +114,24 @@ export default class OrderStore {
    * Submits an order to the market
    * @param type the type of order (bid or ask)
    * @param amount the amount of the order
-   * @param ratePct the interest rate as a percent of the total amount (from 0 to 100)
+   * @param rateFixed the per block fixed rate
    * @param duration the number of blocks to keep the channel open for
    * @param minUnitsMatch the minimum number of units required to match this order
-   * @param maxBatchFeeRate the maximum batch fee rate to allowed
+   * @param maxBatchFeeRate the maximum batch fee rate to allowed as sats per vByte
    */
   @action.bound
   async submitOrder(
     type: OrderType,
     amount: number,
-    ratePct: number,
+    rateFixed: number,
     duration: number,
     minUnitsMatch: number,
     maxBatchFeeRate: number,
   ) {
     try {
       const traderKey = this._store.accountStore.activeAccount.traderKey;
-      this._store.log.info(`submitting ${type} order for ${amount}sats at ${ratePct}%`, {
+      this._store.log.info(`submitting ${type} order for ${amount}sats`, {
+        rateFixed,
         duration,
         minUnitsMatch,
         maxBatchFeeRate,
@@ -139,7 +141,7 @@ export default class OrderStore {
         traderKey,
         type,
         amount,
-        ratePct,
+        rateFixed,
         duration,
         minUnitsMatch,
         maxBatchFeeRate,

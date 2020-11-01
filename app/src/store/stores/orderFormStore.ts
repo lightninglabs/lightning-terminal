@@ -1,10 +1,9 @@
 import { action, computed, observable, runInAction } from 'mobx';
+import { annualPercentYield, toPercent } from 'util/bigmath';
 import { prefixTranslation } from 'util/translate';
 import { DURATION, ONE_UNIT } from 'api/pool';
 import { Store } from 'store';
 import { OrderType } from 'store/models/order';
-
-const FEE_RATE_MINIMUM = 253;
 
 const { l } = prefixTranslation('stores.orderFormStore');
 
@@ -38,6 +37,15 @@ export default class OrderFormStore {
     return '';
   }
 
+  /** the error message if the premium is invalid */
+  @computed get premiumError() {
+    if (!this.premium || !this.amount) return '';
+    if (this.perBlockFixedRate < 1) {
+      return l('premiumLowError');
+    }
+    return '';
+  }
+
   /** the error message if the min chan size is invalid */
   @computed get minChanSizeError() {
     if (!this.minChanSize) return '';
@@ -53,10 +61,26 @@ export default class OrderFormStore {
   /** the error message if the fee rate is invalid */
   @computed get feeRateError() {
     if (!this.maxBatchFeeRate) return '';
-    if (this.maxBatchFeeRate < FEE_RATE_MINIMUM) {
-      return l('feeRateErrorMin', { min: FEE_RATE_MINIMUM });
+    if (this.maxBatchFeeRate < 1) {
+      return l('feeRateErrorMin', { min: 1 });
     }
     return '';
+  }
+
+  /** the per block fixed rate */
+  @computed get perBlockFixedRate() {
+    if ([this.amount, this.premium].includes(0)) return 0;
+
+    return this._store.api.pool.calcFixedRate(this.amount, this.premium);
+  }
+
+  /** the APY given the amount and premium */
+  @computed get apy() {
+    if ([this.amount, this.premium].includes(0)) return 0;
+    const blocksPerDay = 144;
+    const termInDays = DURATION / blocksPerDay;
+    const apy = annualPercentYield(this.amount, this.premium, termInDays);
+    return toPercent(apy);
   }
 
   /** the label for the place order button */
@@ -103,15 +127,17 @@ export default class OrderFormStore {
   /** submits the order to the API and resets the form values if successful */
   @action.bound
   async placeOrder() {
-    const ratePct = Math.floor((this.premium * 100) / this.amount);
     const minUnitsMatch = Math.floor(this.minChanSize / ONE_UNIT);
+    const satsPerKWeight = this._store.api.pool.satsPerVByteToKWeight(
+      this.maxBatchFeeRate,
+    );
     const nonce = await this._store.orderStore.submitOrder(
       this.orderType,
       this.amount,
-      ratePct,
+      this.perBlockFixedRate,
       DURATION,
       minUnitsMatch,
-      this.maxBatchFeeRate,
+      satsPerKWeight,
     );
     runInAction('placeOrderContinuation', () => {
       if (nonce) {

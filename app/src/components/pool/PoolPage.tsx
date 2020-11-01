@@ -27,7 +27,7 @@ const Styled = {
     padding: 0;
 
     &:first-of-type {
-      max-width: 400px;
+      max-width: 350px;
     }
   `,
 };
