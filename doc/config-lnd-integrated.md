@@ -2,12 +2,12 @@
 
 The "integrated" mode means that `lnd` is started within the same process as
 `litd`, alongside the UI server. Once the integrated `lnd` has been unlocked,
-`litd` then goes ahead and starts `faraday` and `loop` and connects them to the
-integrated `lnd` node.
+`litd` then goes ahead and starts `faraday`, `pool` and `loop` and connects them
+to the integrated `lnd` node.
 
-Currently the UI server cannot connect to `loop` or `faraday` daemons that
-aren't running in the same process. But that feature will also be available in
-future versions.
+Currently the UI server cannot connect to `loop`, `pool` or `faraday` daemons
+that aren't running in the same process. But that feature will also be available
+in future versions.
 
 ## Use command line parameters only
 
@@ -98,6 +98,9 @@ lnd.bitcoind.zmqpubrawtx=localhost:28333
 
 # Loop
 loop.loopoutmaxparts=5
+
+# Pool
+pool.newnodesonly=true
 
 # Faraday
 faraday.min_monitored=48h
@@ -312,6 +315,25 @@ You can easily create an alias for this by adding the following line to your
 
 ```shell script
 alias lit-loop="loop --rpcserver=localhost:10009 --tlscertpath=~/.lnd/tls.cert --macaroonpath=~/.loop/testnet/loop.macaroon"
+```
+
+### Example `pool` command
+
+Again, `poold` also runs on the same gRPC server as `lnd` and we have to specify
+the `host:port` and the TLS certificate of `lnd` but use the macaroon from the
+`.pool` directory.
+
+```shell script
+$ pool --rpcserver=localhost:10009 --tlscertpath=~/.lnd/tls.cert \
+  --macaroonpath=~/.pool/testnet/pool.macaroon \
+  accounts list
+```
+
+You can easily create an alias for this by adding the following line to your
+`~/.bashrc` file:
+
+```shell script
+alias lit-pool="pool --rpcserver=localhost:10009 --tlscertpath=~/.lnd/tls.cert --macaroonpath=~/.pool/testnet/pool.macaroon"
 ```
 
 ### Example `frcli` command

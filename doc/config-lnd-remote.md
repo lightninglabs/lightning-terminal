@@ -54,25 +54,26 @@ Visit https://localhost:8443 to access LiT.
 
 The "remote" mode means that `lnd` is started as a standalone process, possibly on another
 host, and `litd` connects to it, right after starting its UI server. Once the connection
-to the remote `lnd` node has been established, `litd` then goes ahead and starts `faraday`
-and `loop` and connects them to that `lnd` node as well.
+to the remote `lnd` node has been established, `litd` then goes ahead and starts
+`faraday`, `pool` and `loop` and connects them to that `lnd` node as well.
 
-Currently the UI server cannot connect to `loop` or `faraday` daemons that aren't running
-in the same process. But that feature will also be available in future versions.
+Currently the UI server cannot connect to `loop`, `pool` or `faraday` daemons
+that aren't running in the same process. But that feature will also be available
+in future versions.
 
 ## Use command line parameters only
 
 In addition to the LiT specific and remote `lnd` parameters, you must also provide
-configuration to the `loop` and `faraday` daemons. For the remote `lnd` node, all
+configuration to the `loop`, `pool`, and `faraday` daemons. For the remote `lnd` node, all
 `remote.lnd` flags must be specified. Note that `loopd` and `faraday` will automatically
 connect to the same remote `lnd` node, so you do not need to provide them with any
 additional parameters unless you want to override them. If you do override them, be sure
-to add the `loop.` and `faraday.` prefixes.
+to add the `loop.`, `pool.`, and `faraday.` prefixes.
 
 To see all available command line options, run `litd --help`.
 
-The most minimal example command to start `litd` and connect it to a local `lnd` node that
-is running with default configuration settings is:
+The most minimal example command to start `litd` and connect it to a local `lnd`
+node that is running with default configuration settings is:
 
 ```shell script
 $ litd --uipassword=My$trongP@ssword
@@ -80,8 +81,9 @@ $ litd --uipassword=My$trongP@ssword
 
 All other command line flags are only needed to overwrite the default behavior.
 
-Here is an example command to start `litd` connected to a testnet `lnd` that is running on
-another host and overwrites a few default settings in `loop` and `faraday` (optional):
+Here is an example command to start `litd` connected to a testnet `lnd` that is
+running on another host and overwrites a few default settings in `loop`, `pool`,
+and `faraday` (optional):
 
 ```shell script
 $ litd \
@@ -96,6 +98,7 @@ $ litd \
   --remote.lnd.macaroondir=/some/folder/with/lnd/data \
   --remote.lnd.tlscertpath=/some/folder/with/lnd/data/tls.cert \
   --loop.loopoutmaxparts=5 \
+  --pool.newnodesonly=true \
   --faraday.min_monitored=48h \
   --faraday.connect_bitcoin \
   --faraday.bitcoin.host=some-other-host \
@@ -103,10 +106,11 @@ $ litd \
   --faraday.bitcoin.password=testnetpw
 ```
 
-NOTE: Even though LiT itself only needs `lnd`'s `admin.macaroon`, the `loop` and `faraday`
-daemons will require other macaroons and will look for them in the folder specified with
-`--remote.lnd.macaroondir`. It is advised to copy all `*.macaroon` files and the
-`tls.cert` file from the remote host to the host that is running `litd`.
+NOTE: Even though LiT itself only needs `lnd`'s `admin.macaroon`, the `loop`,
+`pool`, and `faraday` daemons will require other macaroons and will look for
+them in the folder specified with `--remote.lnd.macaroondir`. It is advised to
+copy all `*.macaroon` files and the `tls.cert` file from the remote host to the
+host that is running `litd`.
 
 ## Use a configuration file
 
@@ -130,8 +134,8 @@ uipassword=My$trongP@ssword
 All other configuration settings are only needed to overwrite the default behavior.
 
 Here is an example `~/.lit/lit.conf` file that connects LiT to a testnet `lnd` node
-running on another host and overwrites a few default settings in `loop` and `faraday`
-(optional):
+running on another host and overwrites a few default settings in `loop`, `pool`,
+ and `faraday` (optional):
 
 ```text
 # Application Options
@@ -152,6 +156,9 @@ remote.lnd.tlscertpath=/some/folder/with/lnd/data/tls.cert
 
 # Loop
 loop.loopoutmaxparts=5
+
+# Pool
+pool.newnodesonly=true
 
 # Faraday
 faraday.min_monitored=48h
@@ -189,10 +196,10 @@ remote.lnd.macaroondir=/some/folder/with/lnd/data
 remote.lnd.tlscertpath=/some/folder/with/lnd/data/tls.cert
 ```
 
-Because in the remote `lnd` mode all other LiT components (`loop`, `faraday` and the UI
-server) listen on the same port (`443` in this example) and use the same TLS certificate
-(`~/.lit/tls.cert` in this example), some command line calls now need some extra options
-that weren't necessary before.
+Because in the remote `lnd` mode all other LiT components (`loop`, `pool`,
+`faraday` and the UI server) listen on the same port (`443` in this example) and
+use the same TLS certificate (`~/.lit/tls.cert` in this example), some command
+line calls now need some extra options that weren't necessary before.
 
 **NOTE**: All mentioned command line tools have the following behavior in common: You
 either specify the `--network` flag and the `--tlscertpath` and `--macaroonpath` are
@@ -231,6 +238,25 @@ file:
 
 ```shell script
 alias lit-loop="loop --rpcserver=localhost:443 --tlscertpath=~/.lit/tls.cert --macaroonpath=~/.loop/testnet/loop.macaroon"
+```
+
+### Example `pool` command
+
+Again, `poold` also runs on the same port as the UI server and we have to
+specify the `host:port` and the TLS certificate of LiT but use the macaroon from
+the `.pool` directory.
+
+```shell script
+$ pool --rpcserver=localhost:443 --tlscertpath=~/.lit/tls.cert \
+  --macaroonpath=~/.pool/testnet/pool.macaroon \
+  accounts list
+```
+
+You can easily create an alias for this by adding the following line to your
+`~/.bashrc` file:
+
+```shell script
+alias lit-pool="pool --rpcserver=localhost:443 --tlscertpath=~/.lit/tls.cert --macaroonpath=~/.pool/testnet/pool.macaroon"
 ```
 
 ### Example `frcli` command

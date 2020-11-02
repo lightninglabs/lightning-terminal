@@ -20,7 +20,9 @@ $ make install
 ```
 
 This will produce the `litd` executable and add it to your `GOPATH`. The CLI binaries for
-`lncli`, `loop`, and `frcli` are not created by `make install`. You will need to download
-those binaries from the [lnd](https://github.com/lightningnetwork/lnd/releases),
-[loop](https://github.com/lightninglabs/loop/releases), and
+`lncli`, `loop`, `pool`, and `frcli` are not created by `make install`. You will
+need to download those binaries from the
+[lnd](https://github.com/lightningnetwork/lnd/releases),
+[loop](https://github.com/lightninglabs/loop/releases),
+[pool](https://github.com/lightninglabs/pool/releases), and
 [faraday](https://github.com/lightninglabs/faraday/releases) repos manually.

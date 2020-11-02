@@ -3,6 +3,7 @@ package terminal
 import (
 	"github.com/lightninglabs/faraday/frdrpc"
 	"github.com/lightninglabs/loop/loopd"
+	"github.com/lightninglabs/pool"
 	"github.com/lightningnetwork/lnd"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 )
@@ -11,12 +12,15 @@ import (
 // permissions.
 func getSubserverPermissions() map[string][]bakery.Op {
 	mapSize := len(frdrpc.RequiredPermissions) +
-		len(loopd.RequiredPermissions)
+		len(loopd.RequiredPermissions) + len(pool.RequiredPermissions)
 	result := make(map[string][]bakery.Op, mapSize)
 	for key, value := range frdrpc.RequiredPermissions {
 		result[key] = value
 	}
 	for key, value := range loopd.RequiredPermissions {
+		result[key] = value
+	}
+	for key, value := range pool.RequiredPermissions {
 		result[key] = value
 	}
 	return result
@@ -53,5 +57,11 @@ func isLoopURI(uri string) bool {
 // isFaradayURI returns true if the given URI belongs to an RPC of faraday.
 func isFaradayURI(uri string) bool {
 	_, ok := frdrpc.RequiredPermissions[uri]
+	return ok
+}
+
+// isPoolURI returns true if the given URI belongs to an RPC of poold.
+func isPoolURI(uri string) bool {
+	_, ok := pool.RequiredPermissions[uri]
 	return ok
 }
