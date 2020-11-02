@@ -4,6 +4,7 @@ If you have trouble running your node, please first check the logs for warnings 
 If there are errors relating to one of the embedded servers, then you should open an issue
 in their respective GitHub repos ([lnd](https://github.com/lightningnetwork/lnd/issues),
 [loop](https://github.com/lightninglabs/loop/issues),
+[pool](https://github.com/lightninglabs/pool/issues),
 [faraday](https://github.com/lightninglabs/faraday/issues). If the issue is related to the
 web app, then you should open an
 [issue](https://github.com/lightninglabs/lightning-terminal/issues) here in this repo.
