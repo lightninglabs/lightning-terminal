@@ -220,6 +220,14 @@ class PoolApi extends BaseApi<PoolEvents> {
     // as the user wants this rate to be the final lump sum they pay.
     return Math.floor(rateFixedFloat / DURATION);
   }
+
+  /**
+   * Calculates the percentage interest rate for a given fixed rate
+   * @param fixedRate the per block fixed rate
+   */
+  calcPctRate(fixedRate: number) {
+    return (fixedRate * DURATION) / FEE_RATE_TOTAL_PARTS;
+  }
 }
 
 export default PoolApi;

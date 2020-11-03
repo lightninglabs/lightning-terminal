@@ -13,6 +13,9 @@ const Styled = {
   Section: styled(Section)`
     flex: 4;
   `,
+  SuggestButton: styled(Button)`
+    height: auto;
+  `,
   SummaryItem: styled.div<{ strong?: boolean }>`
     display: flex;
     flex-direction: row;
@@ -36,7 +39,7 @@ const OrderFormSection: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.pool.OrderFormSection');
   const { orderFormStore } = useStore();
 
-  const { Section, SummaryItem, Small, Actions } = Styled;
+  const { Section, SuggestButton, SummaryItem, Small, Actions } = Styled;
   return (
     <Section>
       <Actions>
@@ -53,7 +56,7 @@ const OrderFormSection: React.FC = () => {
       >
         <FormInputNumber
           placeholder={l('amountPlaceholder')}
-          suffix={Units[Unit.sats].suffix}
+          extra={Units[Unit.sats].suffix}
           value={orderFormStore.amount}
           onChange={orderFormStore.setAmount}
         />
@@ -64,15 +67,26 @@ const OrderFormSection: React.FC = () => {
       >
         <FormInputNumber
           placeholder={l('premiumPlaceholder')}
-          suffix={Units[Unit.sats].suffix}
           value={orderFormStore.premium}
           onChange={orderFormStore.setPremium}
+          extra={
+            <>
+              <SuggestButton
+                ghost
+                borderless
+                onClick={orderFormStore.setSuggestedPremium}
+              >
+                {l('premiumSuggested')}
+              </SuggestButton>
+              <span>{Units[Unit.sats].suffix}</span>
+            </>
+          }
         />
       </FormField>
       <FormField label={l('minChanSizeLabel')} error={orderFormStore.minChanSizeError}>
         <FormInputNumber
           placeholder={l('minChanSizePlaceholder')}
-          suffix={Units[Unit.sats].suffix}
+          extra={Units[Unit.sats].suffix}
           value={orderFormStore.minChanSize}
           onChange={orderFormStore.setMinChanSize}
         />
@@ -80,7 +94,7 @@ const OrderFormSection: React.FC = () => {
       <FormField label={l('feeLabel')} error={orderFormStore.feeRateError}>
         <FormInputNumber
           placeholder={l('feePlaceholder')}
-          suffix="sats/vByte"
+          extra="sats/vByte"
           value={orderFormStore.maxBatchFeeRate}
           onChange={orderFormStore.setMaxBatchFeeRate}
         />

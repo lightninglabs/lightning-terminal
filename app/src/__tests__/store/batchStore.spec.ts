@@ -17,12 +17,13 @@ describe('BatchStore', () => {
 
     // mock the BatchSnapshot response to return a unique id for each batch
     // to avoid overwriting the same record in the store
-    index = 1;
+    index = 0;
     grpcMock.unary.mockImplementation((_, opts) => {
+      index++;
       const res = {
         ...poolBatchSnapshot,
-        batchId: `${index++}${poolBatchSnapshot.batchId}`,
-        prevBatchId: `${index++}${poolBatchSnapshot.prevBatchId}`,
+        batchId: `${index}-${poolBatchSnapshot.batchId}`,
+        prevBatchId: `${index}-${poolBatchSnapshot.prevBatchId}`,
       };
       opts.onEnd({
         status: grpc.Code.OK,
@@ -57,6 +58,31 @@ describe('BatchStore', () => {
     expect(store.orderedIds.length).toBe(BATCH_QUERY_LIMIT * 2);
   });
 
+  it('should handle a number of batches less than the query limit', async () => {
+    // mock the BatchSnapshot response to return a unique id for for the
+    // first 5 batches, then return a blank prevBatchId to signify that
+    // there are no more batches available
+    index = 0;
+    grpcMock.unary.mockImplementation((_, opts) => {
+      index++;
+      const res = {
+        ...poolBatchSnapshot,
+        batchId: `${index}${poolBatchSnapshot.batchId}`,
+        prevBatchId: index < 5 ? `${index}${poolBatchSnapshot.prevBatchId}` : '',
+      };
+      opts.onEnd({
+        status: grpc.Code.OK,
+        message: { toObject: () => res },
+      } as any);
+      return undefined as any;
+    });
+
+    expect(store.batches.size).toBe(0);
+
+    await store.fetchBatches();
+    expect(store.batches.size).toBe(5);
+  });
+
   it('should handle errors when fetching batches', async () => {
     grpcMock.unary.mockImplementationOnce(() => {
       throw new Error('test-err');
@@ -67,14 +93,31 @@ describe('BatchStore', () => {
     expect(values(rootStore.uiStore.alerts)[0].message).toBe('test-err');
   });
 
+  it('should not show error when last snapshot is not found', async () => {
+    grpcMock.unary.mockImplementationOnce(() => {
+      throw new Error('batch snapshot not found');
+    });
+    expect(rootStore.uiStore.alerts.size).toBe(0);
+    await store.fetchBatches();
+    expect(rootStore.uiStore.alerts.size).toBe(0);
+  });
+
   it('should fetch the latest batch', async () => {
     await store.fetchBatches();
     expect(store.orderedIds.length).toBe(BATCH_QUERY_LIMIT);
 
+    // return the same last batch to ensure no new data is added
+    const lastBatchId = store.sortedBatches[0].batchId;
+    index--;
+    await store.fetchLatestBatch();
+    expect(store.orderedIds.length).toBe(BATCH_QUERY_LIMIT);
+    expect(store.sortedBatches[0].batchId).toBe(lastBatchId);
+
+    // return a new batch as the latest
     index = 100;
     await store.fetchLatestBatch();
     expect(store.orderedIds.length).toBe(BATCH_QUERY_LIMIT + 1);
-    expect(store.orderedIds[0]).toBe(`100${poolBatchSnapshot.batchId}`);
+    expect(store.orderedIds[0]).toBe(`101-${poolBatchSnapshot.batchId}`);
   });
 
   it('should handle errors when fetching the latest batch', async () => {
@@ -89,16 +132,16 @@ describe('BatchStore', () => {
 
   it('should return the sorted batches', async () => {
     await store.fetchBatches();
-    expect(store.sortedBatches[0].batchId).toBe(`1${poolBatchSnapshot.batchId}`);
+    expect(store.sortedBatches[0].batchId).toBe(`1-${poolBatchSnapshot.batchId}`);
     expect(store.sortedBatches[BATCH_QUERY_LIMIT - 1].batchId).toBe(
-      `39${poolBatchSnapshot.batchId}`,
+      `20-${poolBatchSnapshot.batchId}`,
     );
 
     index = 500;
     await store.fetchLatestBatch();
-    expect(store.sortedBatches[0].batchId).toBe(`500${poolBatchSnapshot.batchId}`);
+    expect(store.sortedBatches[0].batchId).toBe(`501-${poolBatchSnapshot.batchId}`);
     expect(store.sortedBatches[BATCH_QUERY_LIMIT].batchId).toBe(
-      `39${poolBatchSnapshot.batchId}`,
+      `20-${poolBatchSnapshot.batchId}`,
     );
   });
 });
