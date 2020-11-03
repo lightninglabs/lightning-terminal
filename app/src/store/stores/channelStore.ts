@@ -76,7 +76,7 @@ export default class ChannelStore {
 
     try {
       const { channelsList } = await this._store.api.lnd.listChannels();
-      runInAction('fetchChannelsContinuation', () => {
+      runInAction(() => {
         channelsList.forEach(lndChan => {
           // update existing channels or create new ones in state. using this
           // approach instead of overwriting the array will cause fewer state
@@ -132,7 +132,7 @@ export default class ChannelStore {
       },
     });
 
-    runInAction('fetchAliasesContinuation', () => {
+    runInAction(() => {
       // set the alias on each channel in the store
       values(this.channels).forEach(c => {
         const alias = aliases[c.remotePubkey];
@@ -172,7 +172,7 @@ export default class ChannelStore {
       },
     });
 
-    runInAction('fetchFeesContinuation', () => {
+    runInAction(() => {
       // set the fee on each channel in the store
       values(this.channels).forEach(c => {
         const rate = feeRates[c.chanId];

@@ -112,7 +112,7 @@ export default class SwapStore {
 
     try {
       const { swapsList } = await this._store.api.loop.listSwaps();
-      runInAction('fetchSwapsContinuation', () => {
+      runInAction(() => {
         swapsList.forEach(loopSwap => {
           // update existing swaps or create new ones in state. using this
           // approach instead of overwriting the array will cause fewer state
@@ -178,7 +178,10 @@ export default class SwapStore {
     autorun(
       () => {
         const swapState: PersistentSwapState = {
-          swappedChannels: this.swappedChannels.toPOJO(),
+          swappedChannels: (this.swappedChannels.toJSON() as unknown) as Record<
+            string,
+            string[]
+          >,
           dismissedSwapIds: this.dismissedSwapIds,
         };
         this._store.storage.set('swapState', swapState);

@@ -59,7 +59,7 @@ export default class AuthStore {
     await this._store.api.lnd.getInfo();
     // if no error is thrown above then the credentials are valid
     this._store.log.info('authentication successful');
-    runInAction('validateContinuation', () => {
+    runInAction(() => {
       // setting this to true will automatically show the Loop page
       this.authenticated = true;
     });

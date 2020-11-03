@@ -68,7 +68,7 @@ export default class NodeStore {
     this._store.log.info('fetching node info');
     try {
       const info = await this._store.api.lnd.getInfo();
-      runInAction('getInfoContinuation', () => {
+      runInAction(() => {
         this.pubkey = info.identityPubkey;
         this.alias = info.alias;
         if (info.chainsList && info.chainsList[0]) {
@@ -94,7 +94,7 @@ export default class NodeStore {
     try {
       const offChain = await this._store.api.lnd.channelBalance();
       const onChain = await this._store.api.lnd.walletBalance();
-      runInAction('fetchBalancesContinuation', () => {
+      runInAction(() => {
         this.wallet.channelBalance = Big(offChain.balance);
         this.wallet.walletBalance = Big(onChain.totalBalance);
         this._store.log.info('updated nodeStore.wallet', toJS(this.wallet));

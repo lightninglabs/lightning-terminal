@@ -416,7 +416,7 @@ class BuildSwapStore {
     try {
       const inTerms = await this._store.api.loop.getLoopInTerms();
       const outTerms = await this._store.api.loop.getLoopOutTerms();
-      runInAction('getTermsContinuation', () => {
+      runInAction(() => {
         this.terms = {
           in: {
             min: Big(inTerms.minSwapAmount),
@@ -469,7 +469,7 @@ class BuildSwapStore {
         };
       }
 
-      runInAction('getQuoteContinuation', () => {
+      runInAction(() => {
         this.quote = quote;
         this._store.log.info('updated buildSwapStore.quote', toJS(this.quote));
       });
@@ -528,7 +528,7 @@ class BuildSwapStore {
           this._store.swapStore.addSwappedChannels(res.id, this.selectedChanIds);
         }
         this._store.log.info('completed loop', toJS(res));
-        runInAction('requestSwapContinuation', () => {
+        runInAction(() => {
           // hide the swap UI after it is complete
           this.cancel();
           this._store.uiStore.toggleProcessingSwaps();
