@@ -86,7 +86,7 @@ export class Store {
     this.settingsStore.init();
     this.swapStore.init();
     await this.authStore.init();
-    runInAction('init', () => {
+    runInAction(() => {
       this.initialized = true;
     });
 
