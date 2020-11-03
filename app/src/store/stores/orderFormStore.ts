@@ -124,6 +124,23 @@ export default class OrderFormStore {
     this.maxBatchFeeRate = feeRate;
   }
 
+  @action.bound
+  setSuggestedPremium() {
+    try {
+      if (!this.amount) throw new Error('Must specify amount first');
+      const prevBatch = this._store.batchStore.sortedBatches[0];
+      if (!prevBatch) throw new Error('Previous batch not found');
+      const prevFixedRate = prevBatch.clearingPriceRate;
+      // get the percentage rate of the previous batch and apply to the current amount
+      const prevPctRate = this._store.api.pool.calcPctRate(prevFixedRate);
+      const suggested = this.amount * prevPctRate;
+      // round to the nearest 100 to offset lose of precision in calculating percentages
+      this.premium = Math.round(suggested / 100) * 100;
+    } catch (error) {
+      this._store.uiStore.handleError(error, 'Unable to suggest premium');
+    }
+  }
+
   /** submits the order to the API and resets the form values if successful */
   @action.bound
   async placeOrder() {

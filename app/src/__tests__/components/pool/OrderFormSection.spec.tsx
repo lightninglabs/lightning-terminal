@@ -119,6 +119,38 @@ describe('OrderFormSection', () => {
     expect(getByText('per block fixed rate is too small')).toBeInTheDocument();
   });
 
+  it('should suggest the correct premium', async () => {
+    const { getByText, getByPlaceholderText } = render();
+    await store.batchStore.fetchLatestBatch();
+
+    store.batchStore.sortedBatches[0].clearingPriceRate = 496;
+    fireEvent.change(getByPlaceholderText('500,000'), { target: { value: '1000000' } });
+    fireEvent.click(getByText('Suggested'));
+    expect(getByPlaceholderText('5,000')).toHaveValue('1000');
+
+    store.batchStore.sortedBatches[0].clearingPriceRate = 1884;
+    fireEvent.change(getByPlaceholderText('500,000'), { target: { value: '1000000' } });
+    fireEvent.click(getByText('Suggested'));
+    expect(getByPlaceholderText('5,000')).toHaveValue('3800');
+
+    store.batchStore.sortedBatches[0].clearingPriceRate = 2480;
+    fireEvent.change(getByPlaceholderText('500,000'), { target: { value: '1000000' } });
+    fireEvent.click(getByText('Suggested'));
+    expect(getByPlaceholderText('5,000')).toHaveValue('5000');
+  });
+
+  it('should display an error for suggested premium', async () => {
+    const { getByText, findByText, getByPlaceholderText } = render();
+    fireEvent.click(getByText('Suggested'));
+    expect(await findByText('Unable to suggest premium')).toBeInTheDocument();
+    expect(await findByText('Must specify amount first')).toBeInTheDocument();
+
+    fireEvent.change(getByPlaceholderText('500,000'), { target: { value: '1000000' } });
+    fireEvent.click(getByText('Suggested'));
+    expect(await findByText('Unable to suggest premium')).toBeInTheDocument();
+    expect(await findByText('Previous batch not found')).toBeInTheDocument();
+  });
+
   it('should display an error for min chan size field', () => {
     const { getByText, getByPlaceholderText } = render();
 

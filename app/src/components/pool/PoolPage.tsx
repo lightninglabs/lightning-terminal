@@ -34,12 +34,13 @@ const Styled = {
 
 const PoolPage: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.pool.PoolPage');
-  const { accountStore, orderStore } = useStore();
+  const { accountStore, orderStore, batchStore } = useStore();
 
   useEffect(() => {
     accountStore.fetchAccounts();
     orderStore.fetchOrders();
-  }, [accountStore, orderStore]);
+    batchStore.fetchBatches();
+  }, [accountStore, orderStore, batchStore]);
 
   const { Wrapper, Row, Col } = Styled;
   return (

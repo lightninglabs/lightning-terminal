@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { styled } from 'components/theme';
 
 const Styled = {
@@ -28,7 +28,7 @@ const Styled = {
       color: ${props => props.theme.colors.gray};
     }
   `,
-  Suffix: styled.div`
+  Extra: styled.div`
     position: absolute;
     top: 0;
     right: 0;
@@ -39,13 +39,13 @@ const Styled = {
 
 interface Props {
   value?: string;
-  suffix?: string;
+  extra?: ReactNode;
   placeholder?: string;
   onChange?: (value: string) => void;
 }
 
-const FormInput: React.FC<Props> = ({ value, placeholder, suffix, onChange }) => {
-  const { Wrapper, Input, Suffix } = Styled;
+const FormInput: React.FC<Props> = ({ value, placeholder, extra, onChange }) => {
+  const { Wrapper, Input, Extra } = Styled;
   return (
     <Wrapper>
       <Input
@@ -53,7 +53,7 @@ const FormInput: React.FC<Props> = ({ value, placeholder, suffix, onChange }) =>
         onChange={e => onChange && onChange(e.target.value)}
         placeholder={placeholder}
       />
-      {suffix && <Suffix>{suffix}</Suffix>}
+      {extra && <Extra>{extra}</Extra>}
     </Wrapper>
   );
 };

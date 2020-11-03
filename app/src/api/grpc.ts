@@ -30,7 +30,7 @@ class GrpcClient {
     return new Promise((resolve, reject) => {
       if (this.useSampleData) {
         const endpoint = `${methodDescriptor.service.serviceName}.${methodDescriptor.methodName}`;
-        const data = sampleApiResponses[endpoint] || {};
+        const data = sampleApiResponses[endpoint];
         // the calling function expects the return value to have a `toObject` function
         const response: any = { toObject: () => data };
         resolve(response);
@@ -50,9 +50,9 @@ class GrpcClient {
             log.debug(`${method} message`, message.toObject());
             resolve(message as TRes);
           } else if (status === grpc.Code.Unauthenticated) {
-            reject(new AuthenticationError(`${statusMessage}`));
+            reject(new AuthenticationError(statusMessage));
           } else {
-            reject(new Error(`${status}: ${statusMessage}`));
+            reject(new Error(statusMessage));
           }
           log.debug(`${method} trailers`, trailers);
         },
