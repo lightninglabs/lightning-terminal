@@ -1,14 +1,14 @@
-import React, { useCallback, useState } from 'react';
+import React, { ReactNode, useCallback, useState } from 'react';
 import FormInput from './FormInput';
 
 interface Props {
   value?: number;
-  suffix?: string;
+  extra?: ReactNode;
   placeholder?: string;
   onChange: (value: number) => void;
 }
 
-const FormInputNumber: React.FC<Props> = ({ value, suffix, placeholder, onChange }) => {
+const FormInputNumber: React.FC<Props> = ({ value, extra, placeholder, onChange }) => {
   const [displayValue, setDisplayValue] = useState(value ? value.toString() : '');
 
   const handleChange = useCallback(
@@ -28,7 +28,7 @@ const FormInputNumber: React.FC<Props> = ({ value, suffix, placeholder, onChange
   return (
     <FormInput
       value={value ? value.toString() : displayValue}
-      suffix={suffix}
+      extra={extra}
       placeholder={placeholder}
       onChange={handleChange}
     />

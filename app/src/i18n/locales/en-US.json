@@ -88,6 +88,7 @@
   "cmps.pool.OrderFormSection.premiumLabelBid": "Bid Premium",
   "cmps.pool.OrderFormSection.premiumLabelAsk": "Ask Premium",
   "cmps.pool.OrderFormSection.premiumPlaceholder": "5,000",
+  "cmps.pool.OrderFormSection.premiumSuggested": "Suggested",
   "cmps.pool.OrderFormSection.minChanSizeLabel": "Minimum Channel Size",
   "cmps.pool.OrderFormSection.minChanSizePlaceholder": "100,000",
   "cmps.pool.OrderFormSection.feeLabel": "Max Batch Fee Rate",

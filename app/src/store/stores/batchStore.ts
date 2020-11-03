@@ -1,4 +1,12 @@
-import { action, computed, keys, observable, ObservableMap, runInAction } from 'mobx';
+import {
+  action,
+  computed,
+  keys,
+  observable,
+  ObservableMap,
+  runInAction,
+  toJS,
+} from 'mobx';
 import { Store } from 'store';
 import { Batch } from 'store/models';
 
@@ -47,6 +55,7 @@ export default class BatchStore {
    */
   @action.bound
   async fetchBatches() {
+    this._store.log.info('fetching batches');
     let prevId = '';
     if (this.oldestBatch) prevId = this.oldestBatch.prevBatchId;
     const newBatches: Batch[] = [];
@@ -56,8 +65,14 @@ export default class BatchStore {
         const batch = new Batch(poolBatch);
         newBatches.push(batch);
         prevId = batch.prevBatchId;
+        if (!prevId) break;
       } catch (error) {
-        this._store.uiStore.handleError(error, `Unable to fetch batch with id ${prevId}`);
+        if (error.message !== 'batch snapshot not found') {
+          this._store.uiStore.handleError(
+            error,
+            `Unable to fetch batch with id ${prevId}`,
+          );
+        }
         break;
       }
     }
@@ -70,6 +85,7 @@ export default class BatchStore {
       if (!this.selectedBatchId && this.batches.size > 0) {
         this.selectedBatchId = keys(this.batches)[0];
       }
+      this._store.log.info('updated batchStore.batches', toJS(this.batches));
     });
   }
 
@@ -78,6 +94,7 @@ export default class BatchStore {
    */
   @action.bound
   async fetchLatestBatch() {
+    this._store.log.info('fetching latest batch');
     try {
       const poolBatch = await this._store.api.pool.batchSnapshot();
       runInAction('fetchLatestBatch', () => {
@@ -88,6 +105,7 @@ export default class BatchStore {
           // add this batch's id to the front of the orderedIds array
           this.orderedIds.unshift(batch.batchId);
         }
+        this._store.log.info('updated batchStore.batches', toJS(this.batches));
       });
     } catch (error) {
       this._store.uiStore.handleError(error, 'Unable to fetch the latest batch');
