@@ -13,6 +13,7 @@ PKG="github.com/lightninglabs/lightning-terminal"
 LND_PKG="github.com/lightningnetwork/lnd"
 FARADAY_PKG="github.com/lightninglabs/faraday"
 LOOP_PKG="github.com/lightninglabs/loop"
+POOL_PKG="github.com/lightninglabs/pool"
 PACKAGE=lightning-terminal
 
 # green prints one line of green text (if the terminal supports it).
@@ -72,6 +73,7 @@ function build_release() {
     env CGO_ENABLED=0 GOOS=$os GOARCH=$arch GOARM=$arm go build -v -trimpath -ldflags="${ldflags}" -tags="${buildtags}" ${LND_PKG}/cmd/lncli
     env CGO_ENABLED=0 GOOS=$os GOARCH=$arch GOARM=$arm go build -v -trimpath -ldflags="${ldflags}" -tags="${buildtags}" ${FARADAY_PKG}/cmd/frcli
     env CGO_ENABLED=0 GOOS=$os GOARCH=$arch GOARM=$arm go build -v -trimpath -ldflags="${ldflags}" -tags="${buildtags}" ${LOOP_PKG}/cmd/loop
+    env CGO_ENABLED=0 GOOS=$os GOARCH=$arch GOARM=$arm go build -v -trimpath -ldflags="${ldflags}" -tags="${buildtags}" ${POOL_PKG}/cmd/pool
     popd
 
     if [[ $os == "windows" ]]; then
