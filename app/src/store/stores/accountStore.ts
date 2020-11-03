@@ -79,7 +79,7 @@ export default class AccountStore {
         expiryBlocks,
         confTarget,
       );
-      runInAction('createAccountContinuation', () => {
+      runInAction(() => {
         const traderKey = hex(acct.traderKey);
         this.accounts.set(traderKey, new Account(acct));
         this.setActiveTraderKey(traderKey);
@@ -117,7 +117,7 @@ export default class AccountStore {
 
     try {
       const { accountsList } = await this._store.api.pool.listAccounts();
-      runInAction('fetchAccountsContinuation', () => {
+      runInAction(() => {
         accountsList.forEach(poolAcct => {
           // update existing accounts or create new ones in state. using this
           // approach instead of overwriting the array will cause fewer state
@@ -163,7 +163,7 @@ export default class AccountStore {
       this._store.log.info(`depositing ${amount}sats into account ${acct.traderKey}`);
 
       const res = await this._store.api.pool.deposit(acct.traderKey, amount, feeRate);
-      runInAction('depositContinuation', () => {
+      runInAction(() => {
         // the account should always be defined but if not, fetch all accounts as a fallback
         if (res.account) {
           acct.update(res.account);
@@ -188,7 +188,7 @@ export default class AccountStore {
       this._store.log.info(`withdrawing ${amount}sats into account ${acct.traderKey}`);
 
       const res = await this._store.api.pool.withdraw(acct.traderKey, amount, feeRate);
-      runInAction('withdrawContinuation', () => {
+      runInAction(() => {
         if (res.account) {
           acct.update(res.account);
         } else {

@@ -70,7 +70,7 @@ export default class OrderStore {
 
     try {
       const { asksList, bidsList } = await this._store.api.pool.listOrders();
-      runInAction('fetchOrdersContinuation', () => {
+      runInAction(() => {
         const serverIds: string[] = [];
 
         asksList.forEach(({ details, leaseDurationBlocks }) => {

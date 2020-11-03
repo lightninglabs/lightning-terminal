@@ -76,7 +76,7 @@ export default class BatchStore {
         break;
       }
     }
-    runInAction('fetchBatchesContinuation', () => {
+    runInAction(() => {
       newBatches.forEach(batch => {
         this.batches.set(batch.batchId, batch);
         this.orderedIds.push(batch.batchId);
@@ -97,7 +97,7 @@ export default class BatchStore {
     this._store.log.info('fetching latest batch');
     try {
       const poolBatch = await this._store.api.pool.batchSnapshot();
-      runInAction('fetchLatestBatch', () => {
+      runInAction(() => {
         const batch = new Batch(poolBatch);
         // add the latest one if it's not already stored in state
         if (!this.batches.get(batch.batchId)) {

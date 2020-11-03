@@ -156,7 +156,7 @@ export default class OrderFormStore {
       minUnitsMatch,
       satsPerKWeight,
     );
-    runInAction('placeOrderContinuation', () => {
+    runInAction(() => {
       if (nonce) {
         this.amount = 0;
         this.premium = 0;

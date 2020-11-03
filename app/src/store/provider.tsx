@@ -1,5 +1,4 @@
 import React, { useContext } from 'react';
-import { useLocalStore } from 'mobx-react-lite';
 import { Store } from 'store';
 
 /**
@@ -18,8 +17,7 @@ const StoreContext = React.createContext<Store | undefined>(undefined);
 export const StoreProvider: React.FC<{
   store: Store;
 }> = ({ children, store }) => {
-  const localStore = useLocalStore(() => store);
-  return <StoreContext.Provider value={localStore}>{children}</StoreContext.Provider>;
+  return <StoreContext.Provider value={store}>{children}</StoreContext.Provider>;
 };
 
 /**
