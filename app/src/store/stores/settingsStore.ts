@@ -1,4 +1,4 @@
-import { action, autorun, observable, toJS } from 'mobx';
+import { autorun, makeAutoObservable, toJS } from 'mobx';
 import { SortParams } from 'types/state';
 import { BalanceMode, Unit } from 'util/constants';
 import { Store } from 'store';
@@ -17,43 +17,45 @@ export default class SettingsStore {
   private _store: Store;
 
   /** determines if the sidebar nav is visible */
-  @observable sidebarVisible = true;
+  sidebarVisible = true;
 
   /** determines if the sidebar should collapse automatically for smaller screen widths */
-  @observable autoCollapse = false;
+  autoCollapse = false;
 
   /** determines if the tour was automatically displayed on the first visit */
-  @observable tourAutoShown = false;
+  tourAutoShown = false;
 
   /** specifies which denomination to show units in */
-  @observable unit: Unit = Unit.sats;
+  unit: Unit = Unit.sats;
 
   /** specifies the mode to use to determine channel balance status */
-  @observable balanceMode: BalanceMode = BalanceMode.receive;
+  balanceMode: BalanceMode = BalanceMode.receive;
 
   /** specifies the sorting field and direction for the channel list */
-  @observable channelSort: SortParams<Channel> = {
+  channelSort: SortParams<Channel> = {
     field: undefined,
     descending: true,
   };
 
   /** specifies the sorting field and direction for the channel list */
-  @observable historySort: SortParams<Swap> = {
+  historySort: SortParams<Swap> = {
     field: 'lastUpdateTime',
     descending: true,
   };
 
   /** the chosen language */
-  @observable lang = 'en-US';
+  lang = 'en-US';
 
   constructor(store: Store) {
+    makeAutoObservable(this, {}, { deep: false, autoBind: true });
+
     this._store = store;
   }
 
   /**
    * toggle the sidebar to be collapsed or expanded
    */
-  @action.bound toggleSidebar() {
+  toggleSidebar() {
     this._store.log.info('toggling sidebar');
     this.sidebarVisible = !this.sidebarVisible;
     this._store.log.info('updated SettingsStore.showSidebar', toJS(this.sidebarVisible));
@@ -62,7 +64,7 @@ export default class SettingsStore {
   /**
    * collapses the sidebar if `autoCollapse` is enabled
    */
-  @action.bound autoCollapseSidebar() {
+  autoCollapseSidebar() {
     if (this.autoCollapse && this.sidebarVisible) {
       this.sidebarVisible = false;
     }
@@ -71,14 +73,14 @@ export default class SettingsStore {
   /**
    * sets the unit to display throughout the app
    */
-  @action.bound setUnit(unit: Unit) {
+  setUnit(unit: Unit) {
     this.unit = unit;
   }
 
   /**
    * sets the balance mode
    */
-  @action.bound setBalanceMode(mode: BalanceMode) {
+  setBalanceMode(mode: BalanceMode) {
     this.balanceMode = mode;
   }
 
@@ -87,7 +89,6 @@ export default class SettingsStore {
    * @param field the channel field to sort by
    * @param descending true of the order should be descending, otherwise false
    */
-  @action.bound
   setChannelSort(field: SortParams<Channel>['field'], descending: boolean) {
     this.channelSort = { field, descending };
     this._store.log.info('updated channel list sort order', toJS(this.channelSort));
@@ -96,7 +97,6 @@ export default class SettingsStore {
   /**
    * Resets the channel list sort order
    */
-  @action.bound
   resetChannelSort() {
     this.channelSort = {
       field: undefined,
@@ -110,7 +110,6 @@ export default class SettingsStore {
    * @param field the swap field to sort by
    * @param descending true of the order should be descending, otherwise false
    */
-  @action.bound
   setHistorySort(field: SortParams<Swap>['field'], descending: boolean) {
     this.historySort = { field, descending };
     this._store.log.info('updated history list sort order', toJS(this.historySort));
@@ -119,7 +118,6 @@ export default class SettingsStore {
   /**
    * initialized the settings and auto-save when a setting is changed
    */
-  @action.bound
   init() {
     this.load();
     autorun(
@@ -142,7 +140,6 @@ export default class SettingsStore {
   /**
    * load settings from the browser's local storage
    */
-  @action.bound
   load() {
     this._store.log.info('loading settings from localStorage');
     const settings = this._store.storage.get<PersistentSettings>('settings');

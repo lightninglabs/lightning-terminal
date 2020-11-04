@@ -1,8 +1,7 @@
 import {
-  action,
   autorun,
-  computed,
   entries,
+  makeAutoObservable,
   observable,
   ObservableMap,
   runInAction,
@@ -23,20 +22,22 @@ export default class SwapStore {
   private _store: Store;
 
   /** the collection of swaps */
-  @observable swaps: ObservableMap<string, Swap> = observable.map();
+  swaps: ObservableMap<string, Swap> = observable.map();
 
   /** a list of channels used in pending swaps. mapping of chanId to an array of swap IDs */
-  @observable swappedChannels: ObservableMap<string, string[]> = observable.map();
+  swappedChannels: ObservableMap<string, string[]> = observable.map();
 
   /** the ids of failed swaps that have been dismissed */
-  @observable dismissedSwapIds: string[] = [];
+  dismissedSwapIds: string[] = [];
 
   constructor(store: Store) {
+    makeAutoObservable(this, {}, { deep: false, autoBind: true });
+
     this._store = store;
   }
 
   /** swaps sorted by created date descending */
-  @computed get sortedSwaps() {
+  get sortedSwaps() {
     const { field, descending } = this._store.settingsStore.historySort;
     const swaps = values(this.swaps)
       .slice()
@@ -46,25 +47,23 @@ export default class SwapStore {
   }
 
   /** the last two swaps */
-  @computed get lastTwoSwaps() {
+  get lastTwoSwaps() {
     return this.sortedSwaps.slice(0, 2);
   }
 
   /** swaps that are currently processing or recently completed */
-  @computed get processingSwaps() {
+  get processingSwaps() {
     return this.sortedSwaps.filter(
       s => s.isPending || (s.isRecent && !this.dismissedSwapIds.includes(s.id)),
     );
   }
 
   /** stores the id of a dismissed swap */
-  @action.bound
   dismissSwap(swapId: string) {
     this.dismissedSwapIds.push(swapId);
   }
 
   /** stores the channels that were used in a swap to the state */
-  @action.bound
   addSwappedChannels(swapId: string, channelIds: string[]) {
     channelIds.forEach(chanId => {
       const swapIds = this.swappedChannels.get(chanId) || [];
@@ -75,7 +74,6 @@ export default class SwapStore {
   }
 
   /** removes completed swap IDs from the swappedChannels list */
-  @action.bound
   pruneSwappedChannels() {
     this._store.log.info('pruning swapped channels list');
     // create a list of the currently pending swaps
@@ -106,7 +104,6 @@ export default class SwapStore {
    * queries the Loop api to fetch the list of swaps and stores them
    * in the state
    */
-  @action.bound
   async fetchSwaps() {
     this._store.log.info('fetching swaps');
 
@@ -135,7 +132,6 @@ export default class SwapStore {
   }
 
   /** adds a new swap or updates an existing one */
-  @action.bound
   addOrUpdateSwap(loopSwap: SwapStatus.AsObject) {
     const existing = this.swaps.get(loopSwap.id);
     if (existing) {
@@ -148,7 +144,6 @@ export default class SwapStore {
   }
 
   /** updates the swap and refreshes the channel list */
-  @action.bound
   onSwapUpdate(loopSwap: SwapStatus.AsObject) {
     this.addOrUpdateSwap(loopSwap);
     // throttled functions should be used below because this function will
@@ -163,7 +158,6 @@ export default class SwapStore {
   }
 
   /** exports the sorted list of swaps to CSV file */
-  @action.bound
   exportSwaps() {
     this._store.log.info('exporting Swaps to a CSV file');
     this._store.csv.export('swaps', Swap.csvColumns, toJS(this.sortedSwaps));
@@ -172,7 +166,6 @@ export default class SwapStore {
   /**
    * initialize the swap state and auto-save when the state is changed
    */
-  @action.bound
   init() {
     this.load();
     autorun(
@@ -194,7 +187,6 @@ export default class SwapStore {
   /**
    * load swap state from the browser's local storage
    */
-  @action.bound
   load() {
     this._store.log.info('loading swapState from localStorage');
     const swapState = this._store.storage.get<PersistentSwapState>('swapState');

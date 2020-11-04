@@ -1,4 +1,4 @@
-import { action, observable, runInAction } from 'mobx';
+import { makeAutoObservable, runInAction } from 'mobx';
 import { prefixTranslation } from 'util/translate';
 import { Store } from 'store';
 
@@ -8,12 +8,14 @@ export default class AuthStore {
   private _store: Store;
 
   /** true if the credentials have been validated by the backend */
-  @observable authenticated = false;
+  authenticated = false;
 
   /** the password encoded to base64 */
-  @observable credentials = '';
+  credentials = '';
 
   constructor(store: Store) {
+    makeAutoObservable(this, {}, { deep: false, autoBind: true });
+
     this._store = store;
   }
 
@@ -21,7 +23,6 @@ export default class AuthStore {
    * Updates the credentials in the store, session storage, and API wrappers
    * @param credentials the encoded password
    */
-  @action.bound
   setCredentials(credentials: string) {
     this.credentials = credentials;
     this._store.storage.setSession('credentials', this.credentials);
@@ -32,7 +33,6 @@ export default class AuthStore {
   /**
    * Validate the supplied password and save for later if successful
    */
-  @action.bound
   async login(password: string) {
     this._store.log.info('attempting to login with password');
     if (!password) throw new Error(l('emptyPassErr'));
@@ -53,7 +53,6 @@ export default class AuthStore {
     }
   }
 
-  @action.bound
   async validate() {
     // test the credentials by making an API call to getInfo
     await this._store.api.lnd.getInfo();
@@ -68,7 +67,6 @@ export default class AuthStore {
   /**
    * load and validate credentials from the browser's session storage
    */
-  @action.bound
   async init() {
     this._store.log.info('loading credentials from sessionStorage');
     const creds = this._store.storage.getSession('credentials');
