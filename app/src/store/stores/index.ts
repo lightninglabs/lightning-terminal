@@ -9,3 +9,4 @@ export { default as SettingsStore } from './settingsStore';
 export { default as SwapStore } from './swapStore';
 export { default as UiStore } from './uiStore';
 export { default as OrderFormStore } from './orderFormStore';
+export { default as RouterStore } from './routerStore';
