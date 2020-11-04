@@ -1,4 +1,4 @@
-import { action, computed, observable, runInAction } from 'mobx';
+import { makeAutoObservable, runInAction } from 'mobx';
 import { annualPercentYield, toPercent } from 'util/bigmath';
 import { prefixTranslation } from 'util/translate';
 import { DURATION, ONE_UNIT } from 'api/pool';
@@ -11,17 +11,19 @@ export default class OrderFormStore {
   private _store: Store;
 
   /** the currently selected type of the order */
-  @observable orderType: OrderType = OrderType.Bid;
-  @observable amount = 0;
-  @observable premium = 0;
-  @observable minChanSize = 0;
-  @observable maxBatchFeeRate = 0;
+  orderType: OrderType = OrderType.Bid;
+  amount = 0;
+  premium = 0;
+  minChanSize = 0;
+  maxBatchFeeRate = 0;
 
   constructor(store: Store) {
+    makeAutoObservable(this, {}, { deep: false, autoBind: true });
+
     this._store = store;
   }
 
-  @computed get orderOptions() {
+  get orderOptions() {
     return [
       { label: l('buy'), value: OrderType.Bid },
       { label: l('sell'), value: OrderType.Ask },
@@ -29,7 +31,7 @@ export default class OrderFormStore {
   }
 
   /** the error message if the amount is invalid */
-  @computed get amountError() {
+  get amountError() {
     if (!this.amount) return '';
     if (this.amount % ONE_UNIT !== 0) {
       return l('errorMultiple');
@@ -38,7 +40,7 @@ export default class OrderFormStore {
   }
 
   /** the error message if the premium is invalid */
-  @computed get premiumError() {
+  get premiumError() {
     if (!this.premium || !this.amount) return '';
     if (this.perBlockFixedRate < 1) {
       return l('premiumLowError');
@@ -47,7 +49,7 @@ export default class OrderFormStore {
   }
 
   /** the error message if the min chan size is invalid */
-  @computed get minChanSizeError() {
+  get minChanSizeError() {
     if (!this.minChanSize) return '';
     if (this.minChanSize % ONE_UNIT !== 0) {
       return l('errorMultiple');
@@ -59,7 +61,7 @@ export default class OrderFormStore {
   }
 
   /** the error message if the fee rate is invalid */
-  @computed get feeRateError() {
+  get feeRateError() {
     if (!this.maxBatchFeeRate) return '';
     if (this.maxBatchFeeRate < 1) {
       return l('feeRateErrorMin', { min: 1 });
@@ -68,14 +70,14 @@ export default class OrderFormStore {
   }
 
   /** the per block fixed rate */
-  @computed get perBlockFixedRate() {
+  get perBlockFixedRate() {
     if ([this.amount, this.premium].includes(0)) return 0;
 
     return this._store.api.pool.calcFixedRate(this.amount, this.premium);
   }
 
   /** the APY given the amount and premium */
-  @computed get apy() {
+  get apy() {
     if ([this.amount, this.premium].includes(0)) return 0;
     const blocksPerDay = 144;
     const termInDays = DURATION / blocksPerDay;
@@ -84,13 +86,13 @@ export default class OrderFormStore {
   }
 
   /** the label for the place order button */
-  @computed get placeOrderLabel() {
+  get placeOrderLabel() {
     const action = this.orderType === OrderType.Bid ? l('buy') : l('sell');
     return l('placeOrderLabel', { action });
   }
 
   /** determines if the current values are all valid */
-  @computed get isValid() {
+  get isValid() {
     return (
       ![this.amount, this.premium, this.minChanSize, this.maxBatchFeeRate].includes(0) &&
       !this.amountError &&
@@ -99,32 +101,26 @@ export default class OrderFormStore {
     );
   }
 
-  @action.bound
   setOrderType(orderType: string) {
     this.orderType = orderType as OrderType;
   }
 
-  @action.bound
   setAmount(amount: number) {
     this.amount = amount;
   }
 
-  @action.bound
   setPremium(premium: number) {
     this.premium = premium;
   }
 
-  @action.bound
   setMinChanSize(minChanSize: number) {
     this.minChanSize = minChanSize;
   }
 
-  @action.bound
   setMaxBatchFeeRate(feeRate: number) {
     this.maxBatchFeeRate = feeRate;
   }
 
-  @action.bound
   setSuggestedPremium() {
     try {
       if (!this.amount) throw new Error('Must specify amount first');
@@ -142,7 +138,6 @@ export default class OrderFormStore {
   }
 
   /** submits the order to the API and resets the form values if successful */
-  @action.bound
   async placeOrder() {
     const minUnitsMatch = Math.floor(this.minChanSize / ONE_UNIT);
     const satsPerKWeight = this._store.api.pool.satsPerVByteToKWeight(

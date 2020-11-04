@@ -1,29 +1,31 @@
-import { action, computed, observable } from 'mobx';
+import { makeAutoObservable } from 'mobx';
 import * as POOL from 'types/generated/trader_pb';
 import Big from 'big.js';
 import { ellipseInside, hex } from 'util/strings';
 
 export default class Account {
   // native values from the pool api
-  @observable traderKey = '';
-  @observable totalBalance = Big(0);
-  @observable availableBalance = Big(0);
-  @observable expirationHeight = 0;
-  @observable state = 0;
+  traderKey = '';
+  totalBalance = Big(0);
+  availableBalance = Big(0);
+  expirationHeight = 0;
+  state = 0;
 
   constructor(poolAccount: POOL.Account.AsObject) {
+    makeAutoObservable(this, {}, { deep: false, autoBind: true });
+
     this.update(poolAccount);
   }
 
   /** the first and last 6 chars of the traderKey */
-  @computed get traderKeyEllipsed() {
+  get traderKeyEllipsed() {
     return ellipseInside(this.traderKey);
   }
 
   /**
    * The numeric account `state` as a user friendly string
    */
-  @computed get stateLabel() {
+  get stateLabel() {
     switch (this.state) {
       case POOL.AccountState.PENDING_OPEN:
         return 'Pending Open';
@@ -48,7 +50,6 @@ export default class Account {
    * Updates this account model using data provided from the pool GRPC api
    * @param poolAccount the account data
    */
-  @action.bound
   update(poolAccount: POOL.Account.AsObject) {
     this.traderKey = hex(poolAccount.traderKey);
     this.totalBalance = Big(poolAccount.value);

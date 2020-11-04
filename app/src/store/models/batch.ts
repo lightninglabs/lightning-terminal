@@ -1,20 +1,22 @@
-import { action, observable } from 'mobx';
+import { makeAutoObservable, observable } from 'mobx';
 import * as AUCT from 'types/generated/auctioneer_pb';
 
 class MatchedOrder {
-  @observable matchingRate = 0;
-  @observable unitsMatched = 0;
-  @observable totalSatsCleared = 0;
-  @observable ask = {
+  matchingRate = 0;
+  unitsMatched = 0;
+  totalSatsCleared = 0;
+  ask = {
     maxDurationBlocks: 0,
     rateFixed: 0,
   };
-  @observable bid = {
+  bid = {
     minDurationBlocks: 0,
     rateFixed: 0,
   };
 
   constructor(llmMatch: Required<AUCT.MatchedOrderSnapshot.AsObject>) {
+    makeAutoObservable(this, {}, { deep: false, autoBind: true });
+
     this.matchingRate = llmMatch.matchingRate;
     this.unitsMatched = llmMatch.unitsMatched;
     this.totalSatsCleared = llmMatch.totalSatsCleared;
@@ -31,13 +33,19 @@ class MatchedOrder {
 
 export default class Batch {
   // native values from the POOL api
-  @observable batchId = '';
-  @observable prevBatchId = '';
-  @observable clearingPriceRate = 0;
-  @observable batchTxId = '';
-  @observable matchedOrders: MatchedOrder[] = [];
+  batchId = '';
+  prevBatchId = '';
+  clearingPriceRate = 0;
+  batchTxId = '';
+  matchedOrders: MatchedOrder[] = [];
 
   constructor(llmBatch: AUCT.BatchSnapshotResponse.AsObject) {
+    makeAutoObservable(
+      this,
+      { matchedOrders: observable },
+      { deep: false, autoBind: true },
+    );
+
     this.update(llmBatch);
   }
 
@@ -45,7 +53,6 @@ export default class Batch {
    * Updates this batch model using data provided from the POOL GRPC api
    * @param llmBatch the batch data
    */
-  @action.bound
   update(llmBatch: AUCT.BatchSnapshotResponse.AsObject) {
     this.batchId = llmBatch.batchId.toString();
     this.prevBatchId = llmBatch.prevBatchId.toString();

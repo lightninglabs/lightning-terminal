@@ -1,7 +1,11 @@
-import { observable } from 'mobx';
+import { makeAutoObservable } from 'mobx';
 import Big from 'big.js';
 
 export default class Wallet {
-  @observable channelBalance: Big = Big(0);
-  @observable walletBalance: Big = Big(0);
+  channelBalance: Big = Big(0);
+  walletBalance: Big = Big(0);
+
+  constructor() {
+    makeAutoObservable(this, {}, { deep: false, autoBind: true });
+  }
 }

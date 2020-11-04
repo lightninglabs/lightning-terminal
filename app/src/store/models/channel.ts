@@ -1,4 +1,4 @@
-import { action, computed, observable } from 'mobx';
+import { makeAutoObservable } from 'mobx';
 import * as LND from 'types/generated/lnd_pb';
 import * as LOOP from 'types/generated/loop_pb';
 import { SortParams } from 'types/state';
@@ -16,19 +16,21 @@ export type ProcessingSwapsDirection = 'in' | 'out' | 'both' | 'none';
 export default class Channel {
   private _store: Store;
 
-  @observable chanId = '';
-  @observable remotePubkey = '';
-  @observable alias: string | undefined;
-  @observable channelPoint = '';
-  @observable capacity = Big(0);
-  @observable localBalance = Big(0);
-  @observable remoteBalance = Big(0);
-  @observable remoteFeeRate = 0;
-  @observable active = false;
-  @observable uptime = Big(0);
-  @observable lifetime = Big(0);
+  chanId = '';
+  remotePubkey = '';
+  alias: string | undefined;
+  channelPoint = '';
+  capacity = Big(0);
+  localBalance = Big(0);
+  remoteBalance = Big(0);
+  remoteFeeRate = 0;
+  active = false;
+  uptime = Big(0);
+  lifetime = Big(0);
 
   constructor(store: Store, lndChannel: LND.Channel.AsObject) {
+    makeAutoObservable(this, {}, { deep: false, autoBind: true });
+
     this._store = store;
     this.update(lndChannel);
   }
@@ -36,7 +38,7 @@ export default class Channel {
   /**
    * The alias or remotePubkey shortened to 12 chars with ellipses inside
    */
-  @computed get aliasLabel() {
+  get aliasLabel() {
     // if the node does not specify an alias, it is set to a substring of
     // the pubkey, we want to the display the ellipsed pubkey in this case
     // instead of the substring.
@@ -48,7 +50,7 @@ export default class Channel {
   /**
    * The remotePubkey and alias if one is defined
    */
-  @computed get aliasDetail() {
+  get aliasDetail() {
     // if the node does not specify an alias, it is set to a substring of
     // the pubkey, we want to the display just the pubkey. Otherwise,
     // display both
@@ -60,7 +62,7 @@ export default class Channel {
   /**
    * The uptime of the channel as a percentage of lifetime
    */
-  @computed get uptimePercent(): number {
+  get uptimePercent(): number {
     return percentage(this.uptime, this.lifetime);
   }
 
@@ -68,14 +70,14 @@ export default class Channel {
    * Determines the local balance percentage of a channel based on the local and
    * remote balances
    */
-  @computed get localPercent(): number {
+  get localPercent(): number {
     return percentage(this.localBalance, this.capacity);
   }
 
   /**
    * The remote peer's fee as a percentage
    */
-  @computed get remoteFeePct(): string {
+  get remoteFeePct(): string {
     // the fee returned from the RPC is a number representing the amount of
     // msats charged as a fee per one million msats to forward. To convert to
     // a percentage, the value must be divided by 1M
@@ -85,7 +87,7 @@ export default class Channel {
   /**
    * The order to sort this channel based on the current mode
    */
-  @computed get balanceModeOrder() {
+  get balanceModeOrder() {
     const mode = this._store.settingsStore.balanceMode;
     switch (mode) {
       case BalanceMode.routing:
@@ -106,7 +108,7 @@ export default class Channel {
   /**
    * The balance status of this channel (ok, warn, or danger)
    */
-  @computed get balanceStatus() {
+  get balanceStatus() {
     const mode = this._store.settingsStore.balanceMode;
     return getBalanceStatus(this.localBalance, this.capacity, BalanceModes[mode]);
   }
@@ -114,7 +116,7 @@ export default class Channel {
   /**
    * An array of currently processing swaps that use this channel
    */
-  @computed get processingSwaps(): Swap[] {
+  get processingSwaps(): Swap[] {
     const swapIds = this._store.swapStore.swappedChannels.get(this.chanId);
     if (!swapIds || swapIds.length === 0) return [];
 
@@ -124,7 +126,7 @@ export default class Channel {
   /**
    * The direction of the currently processing swaps
    */
-  @computed get processingSwapsDirection(): ProcessingSwapsDirection {
+  get processingSwapsDirection(): ProcessingSwapsDirection {
     const directions = this.processingSwaps
       .map(s => s.type)
       .filter((d, i, a) => a.indexOf(d) === i); // filter out duplicates
@@ -142,7 +144,6 @@ export default class Channel {
    * Updates this channel model using data provided from the LND GRPC api
    * @param lndChannel the channel data
    */
-  @action.bound
   update(lndChannel: LND.Channel.AsObject) {
     this.chanId = lndChannel.chanId;
     this.remotePubkey = lndChannel.remotePubkey;
