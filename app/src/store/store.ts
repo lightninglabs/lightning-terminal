@@ -1,4 +1,4 @@
-import { action, autorun, observable, runInAction } from 'mobx';
+import { autorun, makeAutoObservable, runInAction } from 'mobx';
 import { RouterStore, syncHistoryWithStore } from 'mobx-react-router';
 import { IS_DEV, IS_TEST } from 'config';
 import { createBrowserHistory } from 'history';
@@ -60,9 +60,9 @@ export class Store {
 
   // a flag to indicate when the store has completed all of its
   // API requests requested during initialization
-  @observable initialized = false;
+  initialized = false;
   // a flag to indicate when the websocket streams are connected
-  @observable streamsConnected = false;
+  streamsConnected = false;
 
   constructor(
     lnd: LndApi,
@@ -72,6 +72,8 @@ export class Store {
     csv: CsvExporter,
     log: Logger,
   ) {
+    makeAutoObservable(this, {}, { deep: false, autoBind: true });
+
     this.api = { lnd, loop, pool };
     this.storage = storage;
     this.csv = csv;
@@ -81,7 +83,6 @@ export class Store {
   /**
    * load initial data to populate the store
    */
-  @action.bound
   async init() {
     this.settingsStore.init();
     this.swapStore.init();
@@ -121,7 +122,6 @@ export class Store {
   /**
    * makes the initial API calls to fetch the data we need to display in the app
    */
-  @action.bound
   async fetchAllData() {
     await this.nodeStore.fetchInfo();
     await this.channelStore.fetchChannels();
@@ -130,7 +130,6 @@ export class Store {
   }
 
   /** connects to the LND and Loop websocket streams if not already connected */
-  @action.bound
   connectToStreams() {
     if (this.streamsConnected) return;
 
@@ -143,7 +142,6 @@ export class Store {
   /**
    * subscribes to the LND and Loop streaming endpoints
    */
-  @action.bound
   subscribeToStreams() {
     const { lnd, loop } = this.api;
     lnd.on('transaction', this.nodeStore.onTransaction);
@@ -154,7 +152,6 @@ export class Store {
   /**
    * unsubscribes from the LND and Loop streaming endpoints
    */
-  @action.bound
   unsubscribeFromStreams() {
     const { lnd, loop } = this.api;
     lnd.off('transaction', this.nodeStore.onTransaction);

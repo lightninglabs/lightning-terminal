@@ -1,6 +1,5 @@
 import {
-  action,
-  computed,
+  makeAutoObservable,
   observable,
   ObservableMap,
   runInAction,
@@ -19,14 +18,15 @@ export default class OrderStore {
   private _store: Store;
 
   /** the collection of orders */
-  @observable orders: ObservableMap<string, Order> = observable.map();
+  orders: ObservableMap<string, Order> = observable.map();
 
   constructor(store: Store) {
+    makeAutoObservable(this, {}, { deep: false, autoBind: true });
+
     this._store = store;
   }
 
   /** the list of orders for the currently active account */
-  @computed
   get accountOrders() {
     return values(this.orders)
       .slice()
@@ -34,13 +34,11 @@ export default class OrderStore {
   }
 
   /** the number of pending orders for the active account */
-  @computed
   get pendingOrdersCount() {
     return this.accountOrders.filter(o => o.isPending).length;
   }
 
   /** the amount of funds currently allocated to pending orders for the active account */
-  @computed
   get pendingOrdersAmount() {
     return this.accountOrders
       .filter(o => o.isPending)
@@ -64,7 +62,6 @@ export default class OrderStore {
    * queries the POOL api to fetch the list of orders and stores them
    * in the state
    */
-  @action.bound
   async fetchOrders() {
     this._store.log.info('fetching orders');
 
@@ -119,7 +116,6 @@ export default class OrderStore {
    * @param minUnitsMatch the minimum number of units required to match this order
    * @param maxBatchFeeRate the maximum batch fee rate to allowed as sats per vByte
    */
-  @action.bound
   async submitOrder(
     type: OrderType,
     amount: number,
@@ -167,7 +163,6 @@ export default class OrderStore {
    * Cancels a pending order
    * @param nonce the order's nonce value
    */
-  @action.bound
   async cancelOrder(nonce: string) {
     try {
       const traderKey = this._store.accountStore.activeAccount.traderKey;

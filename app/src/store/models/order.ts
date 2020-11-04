@@ -1,4 +1,4 @@
-import { action, computed, observable } from 'mobx';
+import { makeAutoObservable } from 'mobx';
 import * as AUCT from 'types/generated/auctioneer_pb';
 import * as POOL from 'types/generated/trader_pb';
 import Big from 'big.js';
@@ -11,24 +11,28 @@ export enum OrderType {
 
 export default class Order {
   // native values from the POOL api
-  @observable nonce = '';
-  @observable traderKey = '';
-  @observable amount = Big(0);
-  @observable state = 0;
-  @observable rateFixed = 0;
-  @observable maxBatchFeeRateSatPerKw = 0;
-  @observable units = 0;
-  @observable unitsUnfulfilled = 0;
-  @observable reserved = Big(0);
+  nonce = '';
+  traderKey = '';
+  amount = Big(0);
+  state = 0;
+  rateFixed = 0;
+  maxBatchFeeRateSatPerKw = 0;
+  units = 0;
+  unitsUnfulfilled = 0;
+  reserved = Big(0);
   // custom app values
-  @observable type: OrderType = OrderType.Bid;
+  type: OrderType = OrderType.Bid;
   // for bids, this is the minimum. for asks this is the maximum
-  @observable duration = 0;
+  duration = 0;
+
+  constructor() {
+    makeAutoObservable(this, {}, { deep: false, autoBind: true });
+  }
 
   /**
    * true if this order's state is submitted or partially filled
    */
-  @computed get isPending() {
+  get isPending() {
     const pendingStates: number[] = [
       AUCT.OrderState.ORDER_SUBMITTED,
       AUCT.OrderState.ORDER_PARTIALLY_FILLED,
@@ -39,7 +43,7 @@ export default class Order {
   /**
    * The numeric account `state` as a user friendly string
    */
-  @computed get stateLabel() {
+  get stateLabel() {
     switch (this.state) {
       case AUCT.OrderState.ORDER_SUBMITTED:
         return 'Submitted';
@@ -64,7 +68,6 @@ export default class Order {
    * Updates this order model using data provided from the POOL GRPC api
    * @param poolOrder the order data
    */
-  @action.bound
   update(poolOrder: POOL.Order.AsObject, type: OrderType, duration: number) {
     this.nonce = hex(poolOrder.orderNonce);
     this.traderKey = hex(poolOrder.traderKey);

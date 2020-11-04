@@ -1,4 +1,4 @@
-import { action, computed, observable } from 'mobx';
+import { makeAutoObservable } from 'mobx';
 import { now } from 'mobx-utils';
 import * as LOOP from 'types/generated/loop_pb';
 import { SortParams } from 'types/state';
@@ -9,35 +9,37 @@ import { ellipseInside } from 'util/strings';
 
 export default class Swap {
   // native values from the Loop api
-  @observable id = '';
-  @observable type = 0;
-  @observable amount = Big(0);
-  @observable initiationTime = 0;
-  @observable lastUpdateTime = 0;
-  @observable state = 0;
+  id = '';
+  type = 0;
+  amount = Big(0);
+  initiationTime = 0;
+  lastUpdateTime = 0;
+  state = 0;
 
   constructor(loopSwap: LOOP.SwapStatus.AsObject) {
+    makeAutoObservable(this, {}, { deep: false, autoBind: true });
+
     this.update(loopSwap);
   }
 
   /** the first and last 6 chars of the swap id */
-  @computed get ellipsedId() {
+  get ellipsedId() {
     return ellipseInside(this.id);
   }
 
   /** True if the swap's state is Failed */
-  @computed get isFailed() {
+  get isFailed() {
     return this.state === LOOP.SwapState.FAILED;
   }
 
   /** True if the swap */
-  @computed get isRecent() {
+  get isRecent() {
     const fiveMinutes = 5 * 60 * 1000;
     return now() - this.updatedOn.getTime() < fiveMinutes;
   }
 
   /** True when the state of this swap is not Success or Failed */
-  @computed get isPending() {
+  get isPending() {
     const pending =
       this.state !== LOOP.SwapState.SUCCESS && this.state !== LOOP.SwapState.FAILED;
 
@@ -47,7 +49,7 @@ export default class Swap {
   /**
    * The numeric swap type as a user friendly string
    */
-  @computed get typeName() {
+  get typeName() {
     switch (this.type) {
       case LOOP.SwapType.LOOP_IN:
         return 'Loop In';
@@ -60,7 +62,7 @@ export default class Swap {
   /**
    * The numeric swap `state` as a user friendly string
    */
-  @computed get stateLabel() {
+  get stateLabel() {
     switch (this.state) {
       case LOOP.SwapState.INITIATED:
         return 'Initiated';
@@ -80,22 +82,22 @@ export default class Swap {
   }
 
   /** The date this swap was created as a JS Date object */
-  @computed get createdOn() {
+  get createdOn() {
     return new Date(this.initiationTime / 1000 / 1000);
   }
 
   /** The date this swap was created as formatted string */
-  @computed get createdOnLabel() {
+  get createdOnLabel() {
     return formatDate(this.createdOn, 'MMM d, h:mm a');
   }
 
   /** The date this swap was last updated as a JS Date object */
-  @computed get updatedOn() {
+  get updatedOn() {
     return new Date(this.lastUpdateTime / 1000 / 1000);
   }
 
   /** The date this swap was last updated as formatted string */
-  @computed get updatedOnLabel() {
+  get updatedOnLabel() {
     return formatDate(this.updatedOn, 'MMM d, h:mm a');
   }
 
@@ -103,7 +105,6 @@ export default class Swap {
    * Updates this swap model using data provided from the Loop GRPC api
    * @param loopSwap the swap data
    */
-  @action.bound
   update(loopSwap: LOOP.SwapStatus.AsObject) {
     this.id = loopSwap.id;
     this.type = loopSwap.type;

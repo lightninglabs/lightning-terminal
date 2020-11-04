@@ -1,4 +1,4 @@
-import { action, computed, observable, runInAction, toJS, values } from 'mobx';
+import { makeAutoObservable, runInAction, toJS, values } from 'mobx';
 import { SwapResponse } from 'types/generated/loop_pb';
 import { BuildSwapSteps, Quote, SwapDirection, SwapTerms } from 'types/state';
 import Big from 'big.js';
@@ -24,43 +24,45 @@ class BuildSwapStore {
   AMOUNT_INCREMENT = 10000;
 
   /** determines whether to show the swap wizard */
-  @observable currentStep = BuildSwapSteps.Closed;
+  currentStep = BuildSwapSteps.Closed;
 
   /** the chosen direction for the loop */
-  @observable direction: SwapDirection = SwapDirection.IN;
+  direction: SwapDirection = SwapDirection.IN;
 
   /** the channels selected */
-  @observable selectedChanIds: string[] = [];
+  selectedChanIds: string[] = [];
 
   /** the amount to swap */
-  @observable amount: Big = Big(0);
+  amount: Big = Big(0);
 
   /** determines whether to show the swap advanced options */
-  @observable addlOptionsVisible = false;
+  addlOptionsVisible = false;
 
   /** the confirmation target of the on-chain txn used in the swap */
-  @observable confTarget?: number;
+  confTarget?: number;
 
   /** the on-chain address to send funds to during a loop out swap */
-  @observable loopOutAddress?: string;
+  loopOutAddress?: string;
 
   /** the min/max amount this node is allowed to swap */
-  @observable terms: SwapTerms = {
+  terms: SwapTerms = {
     in: { min: Big(0), max: Big(0) },
     out: { min: Big(0), max: Big(0) },
   };
 
   /** the quote for the swap */
-  @observable quote: Quote = {
+  quote: Quote = {
     swapFee: Big(0),
     prepayAmount: Big(0),
     minerFee: Big(0),
   };
 
   /** the reference to the timeout used to allow cancelling a swap */
-  @observable processingTimeout?: NodeJS.Timeout;
+  processingTimeout?: NodeJS.Timeout;
 
   constructor(store: Store) {
+    makeAutoObservable(this, {}, { deep: false, autoBind: true });
+
     this._store = store;
   }
 
@@ -69,7 +71,6 @@ class BuildSwapStore {
   //
 
   /** returns the list of all channels. filters out inactive channels when performing a swap */
-  @computed
   get channels() {
     const { channelStore } = this._store;
     return this.currentStep === BuildSwapSteps.Closed
@@ -78,13 +79,11 @@ class BuildSwapStore {
   }
 
   /** determines whether to show the options for Loop In or Loop Out */
-  @computed
   get showActions(): boolean {
     return this.currentStep === BuildSwapSteps.SelectDirection;
   }
 
   /** determines whether to show the swap wizard UI */
-  @computed
   get showWizard(): boolean {
     return [
       BuildSwapSteps.ChooseAmount,
@@ -94,19 +93,16 @@ class BuildSwapStore {
   }
 
   /** determines if the channel list should be editable */
-  @computed
   get listEditable(): boolean {
     return this.currentStep !== BuildSwapSteps.Closed;
   }
 
   /** the min/max amounts this node is allowed to swap based on the current direction */
-  @computed
   get termsForDirection() {
     return this.getTermsForDirection(this.direction);
   }
 
   /** returns the stored amount but ensures it is between the terms min & max */
-  @computed
   get amountForSelected() {
     const { min, max } = this.termsForDirection;
     if (this.amount.eq(0)) {
@@ -122,13 +118,11 @@ class BuildSwapStore {
   }
 
   /** the total quoted fee to perform the current swap */
-  @computed
   get fee() {
     return this.quote.swapFee.plus(this.quote.minerFee);
   }
 
   /** a string containing the fee as an absolute value and a percentage */
-  @computed
   get feesLabel() {
     const feesPct = percentage(this.fee, this.amount, 2);
     const amount = formatSats(this.fee, { unit: this._store.settingsStore.unit });
@@ -136,13 +130,11 @@ class BuildSwapStore {
   }
 
   /** the invoice total including the swap amount and fee */
-  @computed
   get invoiceTotal() {
     return this.amount.plus(this.fee);
   }
 
   /** infer a swap direction based on the selected channels */
-  @computed
   get inferredDirection(): SwapDirection | undefined {
     const mode = this._store.settingsStore.balanceMode;
     switch (mode) {
@@ -173,7 +165,6 @@ class BuildSwapStore {
    * determines if the selected channels all use the same peer. also
    * return true if no channels are selected
    */
-  @computed
   get hasValidLoopInPeers() {
     if (this.selectedChanIds.length > 0) {
       return this.loopInLastHop !== undefined;
@@ -186,7 +177,6 @@ class BuildSwapStore {
    * determines if the balance of selected (or all) channels are
    * greater than the minimum swap allowed
    */
-  @computed
   get isLoopInMinimumMet() {
     const { min, max } = this.getTermsForDirection(SwapDirection.IN);
     if (!max.gte(min)) return false;
@@ -202,7 +192,6 @@ class BuildSwapStore {
    * determines if Loop Out is allowed. the balance of selected (or all)
    * channels must be greater than the minimum swap allowed
    */
-  @computed
   get isLoopOutMinimumMet() {
     const { min, max } = this.getTermsForDirection(SwapDirection.OUT);
     if (!max.gte(min)) return false;
@@ -215,7 +204,6 @@ class BuildSwapStore {
    * are selected OR the selected channels are using more than one peer, then
    * undefined is returned
    */
-  @computed
   get loopInLastHop(): string | undefined {
     const channels = this.selectedChanIds
       .map(id => this._store.channelStore.channels.get(id))
@@ -236,7 +224,6 @@ class BuildSwapStore {
   /**
    * display the Loop actions bar
    */
-  @action.bound
   async startSwap(): Promise<void> {
     if (this._store.channelStore.activeChannels.length === 0) {
       this._store.uiStore.notify(l('noChannelsMsg'));
@@ -252,7 +239,6 @@ class BuildSwapStore {
    * Set the direction, In or Out, for the pending swap
    * @param direction the direction of the swap
    */
-  @action.bound
   async setDirection(direction: SwapDirection): Promise<void> {
     this.direction = direction;
     this._store.log.info(`updated buildSwapStore.direction`, direction);
@@ -267,7 +253,6 @@ class BuildSwapStore {
    * Toggles a selected channel to use for the pending swap
    * @param channels the selected channels
    */
-  @action.bound
   toggleSelectedChannel(channelId: string) {
     if (this.selectedChanIds.includes(channelId)) {
       this.selectedChanIds = this.selectedChanIds.filter(id => id !== channelId);
@@ -285,7 +270,6 @@ class BuildSwapStore {
    * so all channels with the selected peer may be used. This function will ensure
    * that all channels of the selected peer are selected
    */
-  @action.bound
   autoSelectPeerChannels() {
     // create an array of pubkeys for the selected channels
     const peers = this.channels
@@ -306,7 +290,6 @@ class BuildSwapStore {
    * Set the amount for the swap
    * @param amount the amount in sats
    */
-  @action.bound
   setAmount(amount: Big) {
     this.amount = amount;
   }
@@ -314,7 +297,6 @@ class BuildSwapStore {
   /**
    * toggles the advanced options section in the swap config step
    */
-  @action.bound
   toggleAddlOptions() {
     this.addlOptionsVisible = !this.addlOptionsVisible;
     this._store.log.info(
@@ -326,7 +308,6 @@ class BuildSwapStore {
   /**
    * Set the confirmation target for the swap
    */
-  @action.bound
   setConfTarget(target?: number) {
     // ensure the Loop Out target is between the CLTV min & max
     if (
@@ -349,7 +330,6 @@ class BuildSwapStore {
   /**
    * Set the on-chain destination address for the loop out swap
    */
-  @action.bound
   setLoopOutAddress(address: string) {
     this.loopOutAddress = address;
     this._store.log.info(`updated buildSwapStore.loopOutAddress`, this.loopOutAddress);
@@ -358,7 +338,6 @@ class BuildSwapStore {
   /**
    * Navigate to the next step in the wizard
    */
-  @action.bound
   goToNextStep() {
     if (this.currentStep === BuildSwapSteps.ChooseAmount) {
       this.amount = this.amountForSelected;
@@ -380,7 +359,6 @@ class BuildSwapStore {
   /**
    * Navigate to the previous step in the wizard
    */
-  @action.bound
   goToPrevStep() {
     if (this.currentStep === BuildSwapSteps.Processing) {
       // if back is clicked on the processing step
@@ -393,7 +371,6 @@ class BuildSwapStore {
   /**
    * hide the swap wizard
    */
-  @action.bound
   cancel() {
     this.currentStep = BuildSwapSteps.Closed;
     this.selectedChanIds = [];
@@ -410,7 +387,6 @@ class BuildSwapStore {
   /**
    * fetch the terms, minimum/maximum swap amount allowed, from the Loop API
    */
-  @action.bound
   async getTerms(): Promise<void> {
     this._store.log.info(`fetching loop terms`);
     try {
@@ -440,7 +416,6 @@ class BuildSwapStore {
   /**
    * get a loop quote from the Loop RPC
    */
-  @action.bound
   async getQuote(): Promise<void> {
     const { amount, direction } = this;
     this._store.log.info(`fetching ${direction} quote for ${amount} sats`);
@@ -483,7 +458,6 @@ class BuildSwapStore {
    * submit a request to the Loop API to perform a swap. There will be a 3 second
    * delay added to allow the swap to be aborted
    */
-  @action.bound
   requestSwap() {
     const delay =
       process.env.NODE_ENV === 'test'
@@ -544,7 +518,6 @@ class BuildSwapStore {
   /**
    * abort a swap that has been submitted
    */
-  @action.bound
   abortSwap() {
     if (this.processingTimeout) {
       clearTimeout(this.processingTimeout);
