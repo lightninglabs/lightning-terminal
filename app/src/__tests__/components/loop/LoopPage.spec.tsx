@@ -1,4 +1,5 @@
 import React, { Suspense } from 'react';
+import { runInAction } from 'mobx';
 import { SwapStatus } from 'types/generated/loop_pb';
 import { grpc } from '@improbable-eng/grpc-web';
 import { fireEvent, waitFor } from '@testing-library/react';
@@ -36,11 +37,17 @@ describe('LoopPage component', () => {
 
   it('should display the network badge', () => {
     const { getByText, queryByText } = render();
-    store.nodeStore.network = 'regtest';
+
+    const setNetwork = (network: string) => {
+      runInAction(() => {
+        store.nodeStore.network = network as any;
+      });
+    };
+    setNetwork('regtest');
     expect(getByText('regtest')).toBeInTheDocument();
-    store.nodeStore.network = 'testnet';
+    setNetwork('testnet');
     expect(getByText('testnet')).toBeInTheDocument();
-    store.nodeStore.network = 'mainnet';
+    setNetwork('mainnet');
     expect(queryByText('mainnet')).not.toBeInTheDocument();
   });
 

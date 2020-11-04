@@ -1,7 +1,6 @@
 import { autorun, makeAutoObservable, runInAction } from 'mobx';
-import { RouterStore, syncHistoryWithStore } from 'mobx-react-router';
 import { IS_DEV, IS_TEST } from 'config';
-import { createBrowserHistory } from 'history';
+import { createBrowserHistory, History } from 'history';
 import AppStorage from 'util/appStorage';
 import CsvExporter from 'util/csv';
 import { actionLog, Logger } from 'util/log';
@@ -15,6 +14,7 @@ import {
   NodeStore,
   OrderFormStore,
   OrderStore,
+  RouterStore,
   SettingsStore,
   SwapStore,
   UiStore,
@@ -40,7 +40,7 @@ export class Store {
   orderFormStore = new OrderFormStore(this);
 
   /** the store which synchronizes with the browser history */
-  router = new RouterStore();
+  router: RouterStore;
 
   /** the backend api services to be used by child stores */
   api: {
@@ -69,6 +69,7 @@ export class Store {
     loop: LoopApi,
     pool: PoolApi,
     storage: AppStorage,
+    history: History,
     csv: CsvExporter,
     log: Logger,
   ) {
@@ -76,6 +77,7 @@ export class Store {
 
     this.api = { lnd, loop, pool };
     this.storage = storage;
+    this.router = new RouterStore(history);
     this.csv = csv;
     this.log = log;
   }
@@ -172,11 +174,9 @@ export const createStore = (grpcClient?: GrpcClient, appStorage?: AppStorage) =>
   const loopApi = new LoopApi(grpc);
   const poolApi = new PoolApi(grpc);
   const csv = new CsvExporter();
+  const history = createBrowserHistory();
 
-  const store = new Store(lndApi, loopApi, poolApi, storage, csv, actionLog);
-
-  // connect router store to browser history
-  syncHistoryWithStore(createBrowserHistory(), store.router);
+  const store = new Store(lndApi, loopApi, poolApi, storage, history, csv, actionLog);
 
   // initialize the store immediately to fetch API data, except when running unit tests
   if (!IS_TEST) store.init();
