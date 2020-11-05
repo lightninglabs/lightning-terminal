@@ -38,7 +38,7 @@ creating `lit.conf` populate it with the following configuration settings:
 
 ```
 remote.lnd.rpcserver=<externally-reachable-ip-address>:10009
-remote.lnd.macaroonpath=/some/folder/with/lnd/data/admin.macaroon
+remote.lnd.macaroondir=/some/folder/with/lnd/data
 remote.lnd.tlscertpath=/some/folder/with/lnd/data/tls.cert
 ```
 
