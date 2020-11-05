@@ -1,4 +1,5 @@
 import React from 'react';
+import { runInAction } from 'mobx';
 import * as LOOP from 'types/generated/loop_pb';
 import { fireEvent } from '@testing-library/react';
 import { renderWithProviders } from 'util/tests';
@@ -27,7 +28,10 @@ describe('ProcessingSwaps component', () => {
     swap.type = type;
     swap.state = state;
     swap.lastUpdateTime = Date.now() * 1000 * 1000;
-    store.swapStore.swaps.set(swap.id, swap);
+    runInAction(() => {
+      store.swapStore.swaps.set(swap.id, swap);
+    });
+
     return swap;
   };
 
