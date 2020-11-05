@@ -1,4 +1,5 @@
 import React from 'react';
+import { runInAction } from 'mobx';
 import { grpc } from '@improbable-eng/grpc-web';
 import { fireEvent } from '@testing-library/react';
 import { renderWithProviders } from 'util/tests';
@@ -39,7 +40,9 @@ describe('AuthPage ', () => {
     const { getByText, queryByText } = render();
     expect(getByText('Lightning')).toBeInTheDocument();
     expect(getByText('Terminal')).toBeInTheDocument();
-    store.initialized = false;
+    runInAction(() => {
+      store.initialized = false;
+    });
     expect(queryByText('Lightning')).not.toBeInTheDocument();
     expect(queryByText('Terminal')).not.toBeInTheDocument();
   });

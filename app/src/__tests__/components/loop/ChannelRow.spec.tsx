@@ -1,4 +1,5 @@
 import React from 'react';
+import { runInAction } from 'mobx';
 import { SwapState, SwapType } from 'types/generated/loop_pb';
 import { SwapDirection } from 'types/state';
 import { fireEvent } from '@testing-library/react';
@@ -52,7 +53,9 @@ describe('ChannelRow component', () => {
 
   it('should display the fee rate', () => {
     const { getByText } = render();
-    channel.remoteFeeRate = 500;
+    runInAction(() => {
+      channel.remoteFeeRate = 500;
+    });
     expect(getByText(channel.remoteFeePct)).toBeInTheDocument();
     fireEvent.mouseEnter(getByText(channel.remoteFeePct));
     expect(getByText(`${channel.remoteFeeRate} ppm`)).toBeInTheDocument();
@@ -65,11 +68,15 @@ describe('ChannelRow component', () => {
 
   it('should display the peer pubkey & alias tooltip', () => {
     const { getByText, getAllByText } = render();
-    channel.alias = 'test-alias';
+    runInAction(() => {
+      channel.alias = 'test-alias';
+    });
     fireEvent.mouseEnter(getByText(channel.aliasLabel));
     expect(getByText(channel.remotePubkey)).toBeInTheDocument();
-    expect(getAllByText(channel.alias)).toHaveLength(2);
-    channel.alias = channel.remotePubkey.substring(12);
+    expect(getAllByText(channel.alias as string)).toHaveLength(2);
+    runInAction(() => {
+      channel.alias = channel.remotePubkey.substring(12);
+    });
     expect(getByText(channel.remotePubkey)).toBeInTheDocument();
   });
 
