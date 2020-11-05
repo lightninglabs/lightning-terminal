@@ -1,4 +1,5 @@
 import React from 'react';
+import { runInAction } from 'mobx';
 import { OrderState } from 'types/generated/auctioneer_pb';
 import { formatSats } from 'util/formatters';
 import { renderWithProviders } from 'util/tests';
@@ -36,8 +37,10 @@ describe('AccountSection', () => {
       getByText(formatSats(store.orderStore.pendingOrdersAmount)),
     ).toBeInTheDocument();
 
-    // cancel one of the orders to check the pending label changes
-    store.orderStore.accountOrders[0].state = OrderState.ORDER_CANCELED;
+    runInAction(() => {
+      // cancel one of the orders to check the pending label changes
+      store.orderStore.accountOrders[0].state = OrderState.ORDER_CANCELED;
+    });
     expect(getByText('1 Pending Order')).toBeInTheDocument();
     expect(
       getByText(formatSats(store.orderStore.pendingOrdersAmount)),

@@ -103,7 +103,9 @@ export class Store {
           // only do this if the auth page is currently being viewed, otherwise
           // stay on the current page (ex: history, settings)
           if (document.location.pathname === '/') {
-            this.uiStore.goToLoop();
+            runInAction(() => {
+              this.uiStore.goToLoop();
+            });
           }
           // also fetch all the data we need
           this.fetchAllData();

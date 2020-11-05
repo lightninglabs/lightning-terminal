@@ -1,4 +1,5 @@
 import React from 'react';
+import { runInAction } from 'mobx';
 import { fireEvent } from '@testing-library/react';
 import copyToClipboard from 'copy-to-clipboard';
 import { renderWithProviders } from 'util/tests';
@@ -65,10 +66,14 @@ describe('SettingsPage', () => {
   it('should not display the url if it is not defined', () => {
     const { queryByText } = render();
     expect(queryByText('Url')).toBeInTheDocument();
-    store.nodeStore.url = '';
+    runInAction(() => {
+      store.nodeStore.url = '';
+    });
     expect(queryByText('Url')).not.toBeInTheDocument();
-    // an invalid url
-    store.nodeStore.url = 'url-without-at-sign';
+    runInAction(() => {
+      // an invalid url
+      store.nodeStore.url = 'url-without-at-sign';
+    });
     expect(queryByText('Url')).not.toBeInTheDocument();
   });
 
