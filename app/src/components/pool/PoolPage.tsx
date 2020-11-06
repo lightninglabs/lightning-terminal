@@ -46,18 +46,16 @@ const PoolPage: React.FC = () => {
   return (
     <Wrapper>
       <PageHeader title={l('pageTitle')} />
-      {accountStore.activeTraderKey && (
-        <Row>
-          <Col cols={4} colsXl={3}>
-            <AccountSection />
-            <OrderFormSection />
-          </Col>
-          <Col>
-            <ChartSection />
-            <DetailsSection />
-          </Col>
-        </Row>
-      )}
+      <Row>
+        <Col cols={4} colsXl={3}>
+          <AccountSection />
+          <OrderFormSection />
+        </Col>
+        <Col>
+          <ChartSection />
+          <DetailsSection />
+        </Col>
+      </Row>
     </Wrapper>
   );
 };

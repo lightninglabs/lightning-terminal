@@ -85,6 +85,7 @@ export default class AccountStore {
         this.setActiveTraderKey(traderKey);
         this._store.log.info('updated accountStore.accounts', toJS(this.accounts));
       });
+      return acct.traderKey;
     } catch (error) {
       this._store.uiStore.handleError(error, 'Unable to create the account');
     }

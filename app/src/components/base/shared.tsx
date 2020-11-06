@@ -46,6 +46,17 @@ export const Section = styled.section`
   border-radius: 5px;
 `;
 
+export const SummaryItem = styled.div<{ strong?: boolean }>`
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  line-height: 1.2;
+  font-size: ${props => props.theme.sizes.xs};
+  font-weight: ${props => (props.strong ? 'bold' : 'normal')};
+`;
+
 //
 // Button
 //
@@ -55,13 +66,14 @@ interface ButtonProps {
   ghost?: boolean;
   borderless?: boolean;
   disabled?: boolean;
+  compact?: boolean;
 }
 
 export const Button = styled.button<ButtonProps>`
   font-family: ${props => props.theme.fonts.work.medium};
   font-size: ${props => props.theme.sizes.s};
-  min-width: 120px;
-  height: 44px;
+  min-width: ${props => (props.compact ? '0' : '120px')};
+  height: ${props => (props.compact ? 'auto' : '44px')};
   padding-left: 15px;
   padding-right: 15px;
   text-align: center;
