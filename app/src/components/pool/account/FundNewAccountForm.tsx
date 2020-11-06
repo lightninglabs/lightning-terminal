@@ -70,7 +70,7 @@ const FundNewAccountForm: React.FC = () => {
       <Actions>
         <Button
           disabled={!fundNewAccountView.isValid}
-          onClick={fundNewAccountView.fundAccount}
+          onClick={fundNewAccountView.confirm}
         >
           {l('fund')}
         </Button>
