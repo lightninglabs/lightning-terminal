@@ -30,6 +30,8 @@ export default class NodeStore {
   network: NodeNetwork = 'mainnet';
   /** the channel and wallet balances */
   wallet: Wallet = new Wallet();
+  /** the current block height */
+  blockHeight = 0;
 
   constructor(store: Store) {
     makeAutoObservable(this, {}, { deep: false, autoBind: true });
@@ -71,6 +73,7 @@ export default class NodeStore {
       runInAction(() => {
         this.pubkey = info.identityPubkey;
         this.alias = info.alias;
+        this.blockHeight = info.blockHeight;
         if (info.chainsList && info.chainsList[0]) {
           this.chain = info.chainsList[0].chain as NodeChain;
           this.network = info.chainsList[0].network as NodeNetwork;
