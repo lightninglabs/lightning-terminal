@@ -1,7 +1,12 @@
 import { makeAutoObservable } from 'mobx';
 import { Store } from 'store';
 
-export type VisibleSection = 'summary' | 'fund-new' | 'fund-new-confirm' | 'fund';
+export type VisibleSection =
+  | 'summary'
+  | 'fund-new'
+  | 'fund-new-confirm'
+  | 'fund'
+  | 'fund-confirm';
 
 export default class AccountSectionView {
   private _store: Store;
@@ -55,5 +60,9 @@ export default class AccountSectionView {
 
   showFundNewConfirm() {
     this.setSection('fund-new-confirm');
+  }
+
+  showFundConfirm() {
+    this.section = 'fund-confirm';
   }
 }
