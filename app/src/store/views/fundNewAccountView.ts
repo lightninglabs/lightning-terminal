@@ -12,6 +12,8 @@ export default class FundNewAccountView {
   amount = 0;
   confTarget = 0;
   expireBlocks = 0;
+  // response from quote
+  minerFee = 0;
 
   constructor(store: Store) {
     makeAutoObservable(this, {}, { deep: false, autoBind: true });
@@ -35,6 +37,10 @@ export default class FundNewAccountView {
     return this.hasActiveAccount
       ? this._store.accountStore.activeAccount.availableBalance
       : Big(0);
+  }
+
+  get newBalance() {
+    return this.accountBalance.plus(this.amount);
   }
 
   /** the error message if the amount is invalid */
@@ -104,6 +110,33 @@ export default class FundNewAccountView {
     this.amount = +this.walletBalance;
   }
 
+  /** shows the summary view */
+  cancel() {
+    this.amount = 0;
+    this.confTarget = 0;
+    this.expireBlocks = 0;
+    this._store.accountSectionView.showSummary();
+  }
+
+  /** shows the confirmation view */
+  async confirm() {
+    try {
+      // query for the miner fee before showing the confirm view
+      const { minerFeeTotal } = await this._store.api.pool.quoteAccount(
+        this.amount,
+        this.confTarget,
+      );
+
+      runInAction(() => {
+        this.minerFee = minerFeeTotal;
+      });
+
+      this._store.accountSectionView.showFundNewConfirm();
+    } catch (error) {
+      this._store.uiStore.handleError(error, 'Unable to estimate miner fee');
+    }
+  }
+
   /** submits the order to the API and resets the form values if successful */
   async fundAccount() {
     if (!this.isValid) return;
@@ -116,11 +149,7 @@ export default class FundNewAccountView {
     );
 
     if (traderKey) {
-      runInAction(() => {
-        this.amount = 0;
-        this.confTarget = 0;
-        this.expireBlocks = 0;
-      });
+      this.cancel();
     }
   }
 }
