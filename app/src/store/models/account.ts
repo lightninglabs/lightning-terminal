@@ -10,6 +10,7 @@ export default class Account {
   availableBalance = Big(0);
   expirationHeight = 0;
   state = 0;
+  fundingTxnId = '';
 
   constructor(poolAccount: POOL.Account.AsObject) {
     makeAutoObservable(this, {}, { deep: false, autoBind: true });
@@ -20,6 +21,16 @@ export default class Account {
   /** the first and last 6 chars of the traderKey */
   get traderKeyEllipsed() {
     return ellipseInside(this.traderKey);
+  }
+
+  /** the first and last 6 chars of the funding txn id */
+  get fundingTxnIdEllipsed() {
+    return ellipseInside(this.fundingTxnId);
+  }
+
+  /** the pending balance of the account */
+  get pendingBalance() {
+    return this.totalBalance.minus(this.availableBalance);
   }
 
   /**
@@ -56,5 +67,6 @@ export default class Account {
     this.availableBalance = Big(poolAccount.availableBalance);
     this.expirationHeight = poolAccount.expirationHeight;
     this.state = poolAccount.state;
+    this.fundingTxnId = hex(poolAccount.latestTxid);
   }
 }

@@ -8,6 +8,7 @@ import {
   values,
 } from 'mobx';
 import { AccountState } from 'types/generated/trader_pb';
+import copyToClipboard from 'copy-to-clipboard';
 import { hex } from 'util/strings';
 import { Store } from 'store';
 import { Account } from 'store/models';
@@ -64,6 +65,12 @@ export default class AccountStore {
       'updated accountStore.activeTraderKey',
       toJS(this.activeTraderKey),
     );
+  }
+
+  copyTxnId() {
+    copyToClipboard(this.activeAccount.fundingTxnId);
+    const msg = `Copied funding txn ID to clipboard`;
+    this._store.uiStore.notify(msg, '', 'success');
   }
 
   /**
@@ -137,14 +144,8 @@ export default class AccountStore {
           .forEach(id => this.accounts.delete(id));
 
         // pre-select the open account with the highest balance
-        const account = values(this.accounts)
-          .slice()
-          .sort((a, b) => {
-            return +b.totalBalance.sub(a.totalBalance);
-          })
-          .find(a => a.stateLabel === 'Open');
-        if (account) {
-          this.setActiveTraderKey(account.traderKey);
+        if (this.sortedAccounts.length) {
+          this.setActiveTraderKey(this.sortedAccounts[0].traderKey);
         }
 
         this._store.log.info('updated accountStore.accounts', toJS(this.accounts));

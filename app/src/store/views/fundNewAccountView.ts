@@ -23,7 +23,7 @@ export default class FundNewAccountView {
   // Computed properties
   //
 
-  get hasOpenAccount() {
+  get hasActiveAccount() {
     return !!this._store.accountStore.activeTraderKey;
   }
 
@@ -32,7 +32,7 @@ export default class FundNewAccountView {
   }
 
   get accountBalance() {
-    return this.hasOpenAccount
+    return this.hasActiveAccount
       ? this._store.accountStore.activeAccount.availableBalance
       : Big(0);
   }
