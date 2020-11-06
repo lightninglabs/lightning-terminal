@@ -6,7 +6,10 @@ export type VisibleSection =
   | 'fund-new'
   | 'fund-new-confirm'
   | 'fund'
-  | 'fund-confirm';
+  | 'fund-confirm'
+  | 'expired'
+  | 'close'
+  | 'close-confirm';
 
 export default class AccountSectionView {
   private _store: Store;
@@ -28,6 +31,13 @@ export default class AccountSectionView {
   get visibleSection(): VisibleSection {
     if (!this._store.accountStore.activeTraderKey) {
       return this.section === 'fund-new-confirm' ? 'fund-new-confirm' : 'fund-new';
+    }
+    if (
+      this._store.accountStore.activeAccount.stateLabel === 'Expired' &&
+      !['close', 'close-confirm'].includes(this.section)
+    ) {
+      // show the expired view unless the close flow is chosen
+      return 'expired';
     }
     return this.section;
   }
@@ -64,5 +74,9 @@ export default class AccountSectionView {
 
   showFundConfirm() {
     this.section = 'fund-confirm';
+  }
+
+  showCloseAccount() {
+    this.section = 'close';
   }
 }
