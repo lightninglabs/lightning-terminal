@@ -19,6 +19,7 @@ import {
   SwapStore,
   UiStore,
 } from './stores';
+import { FundNewAccountView } from './views';
 
 /**
  * The store used to manage global app state
@@ -41,6 +42,11 @@ export class Store {
 
   /** the store which synchronizes with the browser history */
   router: RouterStore;
+
+  //
+  // UI Views state
+  //
+  fundNewAccountView = new FundNewAccountView(this);
 
   /** the backend api services to be used by child stores */
   api: {

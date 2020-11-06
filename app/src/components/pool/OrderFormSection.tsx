@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { Unit, Units } from 'util/constants';
 import { useStore } from 'store';
-import { Button, Section, Small } from 'components/base';
+import { Button, Section, Small, SummaryItem } from 'components/base';
 import FormField from 'components/common/FormField';
 import FormInputNumber from 'components/common/FormInputNumber';
 import Toggle from 'components/common/Toggle';
@@ -11,20 +11,10 @@ import { styled } from 'components/theme';
 
 const Styled = {
   Section: styled(Section)`
-    flex: 4;
+    flex: 1;
   `,
-  SuggestButton: styled(Button)`
-    height: auto;
-  `,
-  SummaryItem: styled.div<{ strong?: boolean }>`
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    margin-top: ${props => (props.strong ? '50px' : '0')};
-    margin-bottom: 10px;
-    line-height: 1.2;
-    font-size: ${props => props.theme.sizes.s};
-    font-weight: ${props => (props.strong ? 'bold' : 'normal')};
+  ApySummaryItem: styled(SummaryItem)`
+    margin-top: 50px;
   `,
   Small: styled(Small)`
     color: ${props => props.theme.colors.gray};
@@ -39,7 +29,7 @@ const OrderFormSection: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.pool.OrderFormSection');
   const { orderFormStore } = useStore();
 
-  const { Section, SuggestButton, SummaryItem, Small, Actions } = Styled;
+  const { Section, ApySummaryItem, Small, Actions } = Styled;
   return (
     <Section>
       <Actions>
@@ -71,13 +61,14 @@ const OrderFormSection: React.FC = () => {
           onChange={orderFormStore.setPremium}
           extra={
             <>
-              <SuggestButton
+              <Button
                 ghost
                 borderless
+                compact
                 onClick={orderFormStore.setSuggestedPremium}
               >
                 {l('premiumSuggested')}
-              </SuggestButton>
+              </Button>
               <span>{Units[Unit.sats].suffix}</span>
             </>
           }
@@ -115,10 +106,10 @@ const OrderFormSection: React.FC = () => {
             : `${orderFormStore.perBlockFixedRate}`}
         </span>
       </SummaryItem>
-      <SummaryItem strong>
+      <ApySummaryItem strong>
         <span>{l('apyLabel')}</span>
         <span>{orderFormStore.apy}%</span>
-      </SummaryItem>
+      </ApySummaryItem>
       <Actions>
         <Button disabled={!orderFormStore.isValid} onClick={orderFormStore.placeOrder}>
           {orderFormStore.placeOrderLabel}
