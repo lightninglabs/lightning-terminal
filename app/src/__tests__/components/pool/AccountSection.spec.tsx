@@ -33,17 +33,12 @@ describe('AccountSection', () => {
     expect(getByText(formatSats(account.availableBalance))).toBeInTheDocument();
 
     expect(getByText('2 Pending Orders')).toBeInTheDocument();
-    expect(
-      getByText(formatSats(store.orderStore.pendingOrdersAmount)),
-    ).toBeInTheDocument();
+    expect(getByText(formatSats(account.pendingBalance))).toBeInTheDocument();
 
     runInAction(() => {
       // cancel one of the orders to check the pending label changes
       store.orderStore.accountOrders[0].state = OrderState.ORDER_CANCELED;
     });
     expect(getByText('1 Pending Order')).toBeInTheDocument();
-    expect(
-      getByText(formatSats(store.orderStore.pendingOrdersAmount)),
-    ).toBeInTheDocument();
   });
 });

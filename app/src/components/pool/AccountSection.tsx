@@ -1,22 +1,23 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { observer } from 'mobx-react-lite';
+import { useStore } from 'store';
 import { Section } from 'components/base';
-import { styled } from 'components/theme';
-import FundNewAccountForm from './account/FundNewAccountForm';
-
-const Styled = {
-  Section: styled(Section)`
-    min-height: 325px;
-  `,
-};
+import { AccountSummary, FundNewAccountForm } from './account';
 
 const AccountSection: React.FC = () => {
-  const { Section } = Styled;
-  return (
-    <Section>
-      <FundNewAccountForm />
-    </Section>
-  );
+  const { accountSectionView } = useStore();
+
+  let view: ReactNode;
+  switch (accountSectionView.visibleSection) {
+    case 'summary':
+      view = <AccountSummary />;
+      break;
+    case 'fund-new':
+      view = <FundNewAccountForm />;
+      break;
+  }
+
+  return <Section>{view}</Section>;
 };
 
 export default observer(AccountSection);
