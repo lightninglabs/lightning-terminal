@@ -4,6 +4,7 @@ import { useStore } from 'store';
 import { Section } from 'components/base';
 import {
   AccountSummary,
+  ExpiredAccount,
   FundAccountConfirm,
   FundAccountForm,
   FundNewAccountConfirm,
@@ -29,6 +30,9 @@ const AccountSection: React.FC = () => {
       break;
     case 'fund-confirm':
       view = <FundAccountConfirm />;
+      break;
+    case 'expired':
+      view = <ExpiredAccount />;
       break;
   }
 
