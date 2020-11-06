@@ -2,7 +2,7 @@ import React, { ReactNode } from 'react';
 import { observer } from 'mobx-react-lite';
 import { useStore } from 'store';
 import { Section } from 'components/base';
-import { AccountSummary, FundNewAccountForm } from './account';
+import { AccountSummary, FundNewAccountConfirm, FundNewAccountForm } from './account';
 
 const AccountSection: React.FC = () => {
   const { accountSectionView } = useStore();
@@ -14,6 +14,9 @@ const AccountSection: React.FC = () => {
       break;
     case 'fund-new':
       view = <FundNewAccountForm />;
+      break;
+    case 'fund-new-confirm':
+      view = <FundNewAccountConfirm />;
       break;
   }
 

@@ -38,6 +38,20 @@ class PoolApi extends BaseApi<PoolEvents> {
   }
 
   /**
+   * call the pool `QuoteAccount` RPC and return the response
+   */
+  async quoteAccount(
+    amount: number,
+    confTarget: number,
+  ): Promise<POOL.QuoteAccountResponse.AsObject> {
+    const req = new POOL.QuoteAccountRequest();
+    req.setAccountValue(amount);
+    req.setConfTarget(confTarget);
+    const res = await this._grpc.request(Trader.QuoteAccount, req, this._meta);
+    return res.toObject();
+  }
+
+  /**
    * call the pool `InitAccount` RPC and return the response
    */
   async initAccount(

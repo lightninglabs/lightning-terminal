@@ -1,7 +1,7 @@
 import { makeAutoObservable } from 'mobx';
 import { Store } from 'store';
 
-export type VisibleSection = 'summary' | 'fund-new' | 'fund';
+export type VisibleSection = 'summary' | 'fund-new' | 'fund-new-confirm' | 'fund';
 
 export default class AccountSectionView {
   private _store: Store;
@@ -22,7 +22,7 @@ export default class AccountSectionView {
   /** the calculated section to display */
   get visibleSection(): VisibleSection {
     if (!this._store.accountStore.activeTraderKey) {
-      return 'fund-new';
+      return this.section === 'fund-new-confirm' ? 'fund-new-confirm' : 'fund-new';
     }
     return this.section;
   }
@@ -31,8 +31,15 @@ export default class AccountSectionView {
   // Actions
   //
 
+  setSection(section: VisibleSection) {
+    this.section = section;
+    this._store.log.info(
+      `Updated AccountSectionView.section to '${section}' with '${this.visibleSection}' visible`,
+    );
+  }
+
   showSummary() {
-    this.section = 'summary';
+    this.setSection('summary');
   }
 
   showFundAccount() {
@@ -40,9 +47,13 @@ export default class AccountSectionView {
       this._store.accountStore.activeTraderKey &&
       this._store.accountStore.activeAccount.stateLabel === 'Open'
     ) {
-      this.section = 'fund';
+      this.setSection('fund');
     } else {
-      this.section = 'fund-new';
+      this.setSection('fund-new');
     }
+  }
+
+  showFundNewConfirm() {
+    this.setSection('fund-new-confirm');
   }
 }
