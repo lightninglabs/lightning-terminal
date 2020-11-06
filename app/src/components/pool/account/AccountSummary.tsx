@@ -3,10 +3,15 @@ import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Button, HeaderFour, SummaryItem } from 'components/base';
+import Tip from 'components/common/Tip';
 import Unit from 'components/common/Unit';
 import { styled } from 'components/theme';
 
 const Styled = {
+  Expires: styled.span`
+    float: right;
+    text-transform: none;
+  `,
   Summary: styled.div`
     margin: 20px 0 30px;
   `,
@@ -25,10 +30,25 @@ const AccountSummary: React.FC = () => {
 
   if (!accountStore.activeTraderKey) return null;
 
-  const { Summary, CopyButton, Actions } = Styled;
+  const { Expires, Summary, CopyButton, Actions } = Styled;
   return (
     <>
-      <HeaderFour>{l('account')}</HeaderFour>
+      <HeaderFour>
+        {l('account')}
+        {accountStore.activeAccount.stateLabel !== 'Expired' && (
+          <Expires>
+            <Tip
+              overlay={l('expiresHeight', {
+                height: accountStore.activeAccount.expirationHeight,
+              })}
+            >
+              <span>
+                {l('expiresIn')} {accountStore.accountExpiresIn}
+              </span>
+            </Tip>
+          </Expires>
+        )}
+      </HeaderFour>
       <Summary>
         <SummaryItem strong>
           <span>{l('accountStatus')}</span>

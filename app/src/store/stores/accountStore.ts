@@ -10,8 +10,11 @@ import {
 import { AccountState } from 'types/generated/trader_pb';
 import copyToClipboard from 'copy-to-clipboard';
 import { hex } from 'util/strings';
+import { prefixTranslation } from 'util/translate';
 import { Store } from 'store';
 import { Account } from 'store/models';
+
+const { l } = prefixTranslation('stores.AccountStore');
 
 export default class AccountStore {
   private _store: Store;
@@ -56,6 +59,29 @@ export default class AccountStore {
       .sort((a, b) => b.expirationHeight - a.expirationHeight);
     // return the opened accounts before the unopened accounts
     return [...open, ...other];
+  }
+
+  /** the estimated amount of time until the active account expires */
+  get accountExpiresIn() {
+    if (!this.activeTraderKey) return 0;
+
+    const blocksPerDay = 144;
+    const currentHeight = this._store.nodeStore.blockHeight;
+    const expiresHeight = this.activeAccount.expirationHeight;
+    const blocks = expiresHeight - currentHeight;
+
+    const days = Math.round(blocks / blocksPerDay);
+    const weeks = Math.floor(days / 7);
+    if (days <= 1) {
+      return `${blocks} ${l('common.blocks', { count: blocks })}`;
+    } else if (days < 14) {
+      return `~${days} ${l('common.days', { count: days })}`;
+    } else if (weeks < 8) {
+      return `~${weeks} ${l('common.weeks', { count: weeks })}`;
+    }
+    const months = weeks / 4.3;
+
+    return `~${months} ${l('common.months', { count: months.toFixed(1) })}`;
   }
 
   /** switch to a different account */

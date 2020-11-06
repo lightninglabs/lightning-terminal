@@ -7,7 +7,7 @@ import i18n, { StringMap } from 'i18next';
 export const prefixTranslation = (prefix: string) => {
   // the new `t` function that will append the prefix
   const translate = (key: string, options?: string | StringMap) => {
-    return i18n.t(`${prefix}.${key}`, options);
+    return key.includes('.') ? i18n.t(key, options) : i18n.t(`${prefix}.${key}`, options);
   };
 
   return {
