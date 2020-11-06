@@ -1,3 +1,4 @@
+import { ReactComponent as AlertTriangleIcon } from 'assets/icons/alert-triangle.svg';
 import { ReactComponent as ArrowDownIcon } from 'assets/icons/arrow-down.svg';
 import { ReactComponent as ArrowLeftIcon } from 'assets/icons/arrow-left.svg';
 import { ReactComponent as ArrowRightIcon } from 'assets/icons/arrow-right.svg';
@@ -72,6 +73,7 @@ const Icon = styled.span<IconProps>`
     `}
 `;
 
+export const AlertTriangle = Icon.withComponent(AlertTriangleIcon);
 export const ArrowLeft = Icon.withComponent(ArrowLeftIcon);
 export const ArrowRight = Icon.withComponent(ArrowRightIcon);
 export const ArrowUp = Icon.withComponent(ArrowUpIcon);
