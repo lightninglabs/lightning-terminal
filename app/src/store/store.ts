@@ -19,7 +19,7 @@ import {
   SwapStore,
   UiStore,
 } from './stores';
-import { FundNewAccountView } from './views';
+import { AccountSectionView, FundNewAccountView } from './views';
 
 /**
  * The store used to manage global app state
@@ -46,6 +46,7 @@ export class Store {
   //
   // UI Views state
   //
+  accountSectionView = new AccountSectionView(this);
   fundNewAccountView = new FundNewAccountView(this);
 
   /** the backend api services to be used by child stores */
