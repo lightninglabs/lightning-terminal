@@ -1,6 +1,6 @@
 import React from 'react';
 import { Router } from 'react-router';
-import { render } from '@testing-library/react';
+import { fireEvent, render } from '@testing-library/react';
 import { createStore, Store, StoreProvider } from 'store';
 import AlertContainer from 'components/common/AlertContainer';
 import { ThemeProvider } from 'components/theme';
@@ -21,7 +21,12 @@ const renderWithProviders = (component: React.ReactElement, withStore?: Store) =
       </ThemeProvider>
     </StoreProvider>,
   );
-  return { ...result, store };
+
+  const changeInput = (label: string, value: string) => {
+    fireEvent.change(result.getByLabelText(label), { target: { value } });
+  };
+
+  return { ...result, store, changeInput };
 };
 
 export default renderWithProviders;

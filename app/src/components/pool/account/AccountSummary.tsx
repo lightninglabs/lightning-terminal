@@ -35,7 +35,7 @@ const AccountSummary: React.FC = () => {
     <>
       <HeaderFour>
         {l('account')}
-        {accountStore.activeAccount.stateLabel !== 'Expired' && (
+        {accountStore.accountExpiresIn && (
           <Expires>
             <Tip
               overlay={l('expiresHeight', {

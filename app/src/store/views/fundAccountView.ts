@@ -88,7 +88,6 @@ export default class FundAccountView {
 
   /** submits the deposit to the API and resets the form values if successful */
   async fundAccount() {
-    if (!this.isValid) return;
     const satsPerKWeight = this._store.api.pool.satsPerVByteToKWeight(this.satsPerVbyte);
 
     // if there is an error, it will be displayed by deposit

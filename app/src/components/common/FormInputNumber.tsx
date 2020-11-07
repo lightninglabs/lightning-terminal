@@ -2,13 +2,20 @@ import React, { ReactNode, useCallback, useState } from 'react';
 import FormInput from './FormInput';
 
 interface Props {
+  label?: string;
   value?: number;
   extra?: ReactNode;
   placeholder?: string;
   onChange: (value: number) => void;
 }
 
-const FormInputNumber: React.FC<Props> = ({ value, extra, placeholder, onChange }) => {
+const FormInputNumber: React.FC<Props> = ({
+  label,
+  value,
+  extra,
+  placeholder,
+  onChange,
+}) => {
   const [displayValue, setDisplayValue] = useState(value ? value.toString() : '');
 
   const handleChange = useCallback(
@@ -27,6 +34,7 @@ const FormInputNumber: React.FC<Props> = ({ value, extra, placeholder, onChange 
 
   return (
     <FormInput
+      label={label}
       value={value ? value.toString() : displayValue}
       extra={extra}
       placeholder={placeholder}

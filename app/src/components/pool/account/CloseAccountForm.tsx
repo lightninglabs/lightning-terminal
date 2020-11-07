@@ -35,6 +35,7 @@ const CloseAccountForm: React.FC = () => {
       </Balances>
       <FormField label={l('destination')} tip={l('destinationTip')}>
         <FormInput
+          label={l('destination')}
           placeholder={l('destinationPlaceholder')}
           value={closeAccountView.destination}
           onChange={closeAccountView.setDestination}
@@ -42,6 +43,7 @@ const CloseAccountForm: React.FC = () => {
       </FormField>
       <FormField label={l(`satsPerVbyteLabel`)}>
         <FormInputNumber
+          label={l(`satsPerVbyteLabel`)}
           placeholder={l('satsPerVbytePlaceholder')}
           extra="sats/vByte"
           value={closeAccountView.satsPerVbyte}

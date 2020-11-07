@@ -35,6 +35,7 @@ const FundAccountForm: React.FC = () => {
       </Balances>
       <FormField label={l(`amountLabel`)} error={fundAccountView.amountError}>
         <FormInputNumber
+          label={l(`amountLabel`)}
           placeholder={l('amountPlaceholder')}
           extra={
             <>
@@ -50,6 +51,7 @@ const FundAccountForm: React.FC = () => {
       </FormField>
       <FormField label={l(`satsPerVbyteLabel`)}>
         <FormInputNumber
+          label={l(`satsPerVbyteLabel`)}
           placeholder={l('satsPerVbytePlaceholder')}
           extra="sats/vByte"
           value={fundAccountView.satsPerVbyte}
