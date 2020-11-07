@@ -1,8 +1,9 @@
-import { values } from 'mobx';
+import { runInAction, values } from 'mobx';
 import * as POOL from 'types/generated/trader_pb';
 import { grpc } from '@improbable-eng/grpc-web';
 import { waitFor } from '@testing-library/react';
 import Big from 'big.js';
+import copyToClipboard from 'copy-to-clipboard';
 import {
   poolCloseAccount,
   poolDepositAccount,
@@ -12,6 +13,8 @@ import {
 } from 'util/tests/sampleData';
 import { AccountStore, createStore, Store } from 'store';
 import { Account } from 'store/models';
+
+jest.mock('copy-to-clipboard');
 
 const grpcMock = grpc as jest.Mocked<typeof grpc>;
 
@@ -48,12 +51,12 @@ describe('AccountStore', () => {
     const c = new Account({
       ...poolInitAccount,
       expirationHeight: 5000,
-      state: POOL.AccountState.CLOSED,
+      state: POOL.AccountState.PENDING_OPEN,
     });
     const d = new Account({
       ...poolInitAccount,
       expirationHeight: 2000,
-      state: POOL.AccountState.CLOSED,
+      state: POOL.AccountState.PENDING_UPDATE,
     });
 
     // make the traderKey's unique
@@ -67,6 +70,36 @@ describe('AccountStore', () => {
     store.accounts.set(a.traderKey, a);
 
     const expected = [a, b, c, d].map(x => x.traderKey);
+    const actual = store.sortedAccounts.map(x => x.traderKey);
+
+    expect(actual).toEqual(expected);
+  });
+
+  it('should excluded closed accounts in sorted accounts', async () => {
+    const a = new Account({ ...poolInitAccount, value: 300 });
+    const b = new Account({ ...poolInitAccount, value: 100 });
+    const c = new Account({
+      ...poolInitAccount,
+      expirationHeight: 5000,
+      state: POOL.AccountState.CLOSED,
+    });
+    const d = new Account({
+      ...poolInitAccount,
+      expirationHeight: 2000,
+      state: POOL.AccountState.PENDING_OPEN,
+    });
+
+    // make the traderKey's unique
+    [a, b, c, d].forEach((acct, i) => {
+      acct.traderKey = `${i}${acct.traderKey}`;
+    });
+
+    store.accounts.set(d.traderKey, d);
+    store.accounts.set(c.traderKey, c);
+    store.accounts.set(b.traderKey, b);
+    store.accounts.set(a.traderKey, a);
+
+    const expected = [a, b, d].map(x => x.traderKey);
     const actual = store.sortedAccounts.map(x => x.traderKey);
 
     expect(actual).toEqual(expected);
@@ -112,6 +145,34 @@ describe('AccountStore', () => {
     expect(() => store.activeAccount).toThrow();
   });
 
+  it('should return account expiration estimates', async () => {
+    expect(store.accountExpiresIn).toBe('');
+    await store.fetchAccounts();
+    const expectExpires = (blocksTilExpire: number, expected: string) => {
+      runInAction(() => {
+        const currHeight = rootStore.nodeStore.blockHeight;
+        store.activeAccount.expirationHeight = currHeight + blocksTilExpire;
+      });
+      expect(store.accountExpiresIn).toBe(expected);
+    };
+    expectExpires(0, '');
+    expectExpires(100, '100 blocks');
+    expectExpires(288, '~2 days');
+    expectExpires(2016, '~2 weeks');
+    expectExpires(4032, '~4 weeks');
+    expectExpires(8064, '~1.9 months');
+  });
+
+  it('should copy the txn id to clipboard', async () => {
+    await store.fetchAccounts();
+    store.copyTxnId();
+    expect(copyToClipboard).toBeCalledWith(store.activeAccount.fundingTxnId);
+    expect(rootStore.uiStore.alerts.size).toBe(1);
+    expect(values(rootStore.uiStore.alerts)[0].message).toBe(
+      'Copied funding txn ID to clipboard',
+    );
+  });
+
   it('should create a new Account', async () => {
     expect(store.accounts.size).toEqual(0);
     await store.createAccount(3000000, 4032);
@@ -133,7 +194,7 @@ describe('AccountStore', () => {
 
   it('should close an Account', async () => {
     await store.fetchAccounts();
-    const txid = await store.closeAccount();
+    const txid = await store.closeAccount(100);
     expect(txid).toEqual(poolCloseAccount.closeTxid);
   });
 
@@ -143,7 +204,7 @@ describe('AccountStore', () => {
       throw new Error('test-err');
     });
     expect(rootStore.uiStore.alerts.size).toBe(0);
-    await store.closeAccount();
+    await store.closeAccount(100);
     await waitFor(() => {
       expect(rootStore.uiStore.alerts.size).toBe(1);
       expect(values(rootStore.uiStore.alerts)[0].message).toBe('test-err');

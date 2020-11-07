@@ -139,8 +139,6 @@ export default class FundNewAccountView {
 
   /** submits the order to the API and resets the form values if successful */
   async fundAccount() {
-    if (!this.isValid) return;
-
     // if there is an error, it will be displayed by createAccount
     const traderKey = await this._store.accountStore.createAccount(
       this.amount,

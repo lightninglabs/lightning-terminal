@@ -38,13 +38,14 @@ const Styled = {
 };
 
 interface Props {
+  label?: string;
   value?: string;
   extra?: ReactNode;
   placeholder?: string;
   onChange?: (value: string) => void;
 }
 
-const FormInput: React.FC<Props> = ({ value, placeholder, extra, onChange }) => {
+const FormInput: React.FC<Props> = ({ label, value, placeholder, extra, onChange }) => {
   const { Wrapper, Input, Extra } = Styled;
   return (
     <Wrapper>
@@ -52,6 +53,7 @@ const FormInput: React.FC<Props> = ({ value, placeholder, extra, onChange }) => 
         value={value}
         onChange={e => onChange && onChange(e.target.value)}
         placeholder={placeholder}
+        aria-label={label}
       />
       {extra && <Extra>{extra}</Extra>}
     </Wrapper>
