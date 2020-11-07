@@ -296,6 +296,11 @@ export const poolInitAccount: POOL.Account.AsObject = {
   value: 30000000,
 };
 
+export const poolQuoteAccount: POOL.QuoteAccountResponse.AsObject = {
+  minerFeeRateSatPerKw: 12500,
+  minerFeeTotal: 7650,
+};
+
 export const poolCloseAccount: POOL.CloseAccountResponse.AsObject = {
   closeTxid: '+BQm/hnM0SleT2NxS7bdw0JNDuvIMhL4qxLUkdbCJdo=',
 };
@@ -503,6 +508,7 @@ export const sampleApiResponses: Record<string, any> = {
   'looprpc.SwapClient.LoopIn': loopSwapResponse,
   'looprpc.SwapClient.LoopOut': loopSwapResponse,
   'poolrpc.Trader.ListAccounts': poolListAccounts,
+  'poolrpc.Trader.QuoteAccount': poolQuoteAccount,
   'poolrpc.Trader.InitAccount': poolInitAccount,
   'poolrpc.Trader.CloseAccount': poolCloseAccount,
   'poolrpc.Trader.DepositAccount': poolDepositAccount,

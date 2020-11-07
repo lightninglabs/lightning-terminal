@@ -1,9 +1,3 @@
-import { grpc } from '@improbable-eng/grpc-web';
-import { ProtobufMessage } from '@improbable-eng/grpc-web/dist/typings/message';
-import { UnaryMethodDefinition } from '@improbable-eng/grpc-web/dist/typings/service';
-import { UnaryRpcOptions } from '@improbable-eng/grpc-web/dist/typings/unary';
-import { sampleApiResponses } from './sampleData';
-
 /**
  * Suppresses console errors when executing some code.
  * For example: when testing that an error is thrown during a component's
@@ -21,35 +15,5 @@ export const suppressConsoleErrors = async (func: () => any | Promise<any>) => {
   console.error = oldConsoleErr;
 };
 
-// the type for the injection function so that it can be passed the args
-type UnaryFunc = (
-  methodDescriptor: UnaryMethodDefinition<any, any>,
-  props: UnaryRpcOptions<ProtobufMessage, ProtobufMessage>,
-) => void;
-
-/**
- * Injects a function into the scope of the grpc.unary function. This is helpful
- * to inspect request params or track calls to the API inside of unit tests
- * @param func the function to execute inside of the grpc call
- */
-export const injectIntoGrpcUnary = (func: UnaryFunc) => {
-  const grpcMock = grpc as jest.Mocked<typeof grpc>;
-  grpcMock.unary.mockImplementationOnce((desc, props) => {
-    func(desc, props);
-    const path = `${desc.service.serviceName}.${desc.methodName}`;
-    // return a response by calling the onEnd function
-    props.onEnd({
-      status: 0,
-      statusMessage: '',
-      // the message returned should have a toObject function
-      message: {
-        toObject: () => sampleApiResponses[path],
-      } as any,
-      headers: {} as any,
-      trailers: {} as any,
-    });
-    return undefined as any;
-  });
-};
-
 export { default as renderWithProviders } from './renderWithProviders';
+export * from './grpcHelpers';

@@ -63,12 +63,14 @@ export default class AccountStore {
 
   /** the estimated amount of time until the active account expires */
   get accountExpiresIn() {
-    if (!this.activeTraderKey) return 0;
+    if (!this.activeTraderKey) return '';
+    if (this.activeAccount.state === AccountState.EXPIRED) return '';
 
     const blocksPerDay = 144;
     const currentHeight = this._store.nodeStore.blockHeight;
     const expiresHeight = this.activeAccount.expirationHeight;
     const blocks = expiresHeight - currentHeight;
+    if (blocks <= 0) return '';
 
     const days = Math.round(blocks / blocksPerDay);
     const weeks = Math.floor(days / 7);
@@ -81,7 +83,7 @@ export default class AccountStore {
     }
     const months = weeks / 4.3;
 
-    return `~${months} ${l('common.months', { count: months.toFixed(1) })}`;
+    return `~${months.toFixed(1)} ${l('common.months', { count: months })}`;
   }
 
   /** switch to a different account */

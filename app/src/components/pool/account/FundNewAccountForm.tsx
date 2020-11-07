@@ -35,6 +35,7 @@ const FundNewAccountForm: React.FC = () => {
       </Balances>
       <FormField label={l(`amountLabel`)} error={fundNewAccountView.amountError}>
         <FormInputNumber
+          label={l(`amountLabel`)}
           placeholder={l('amountPlaceholder')}
           extra={
             <>
@@ -53,6 +54,7 @@ const FundNewAccountForm: React.FC = () => {
         error={fundNewAccountView.expireBlocksError}
       >
         <FormInputNumber
+          label={l(`expireBlocksLabel`)}
           placeholder={l('expireBlocksPlaceholder')}
           extra={l('common.blocks', { count: fundNewAccountView.expireBlocks })}
           value={fundNewAccountView.expireBlocks}
@@ -61,6 +63,7 @@ const FundNewAccountForm: React.FC = () => {
       </FormField>
       <FormField label={l(`confTargetLabel`)} error={fundNewAccountView.confTargetError}>
         <FormInputNumber
+          label={l(`confTargetLabel`)}
           placeholder={l('confTargetPlaceholder')}
           extra={l('common.blocks', { count: fundNewAccountView.confTarget })}
           value={fundNewAccountView.confTarget}
