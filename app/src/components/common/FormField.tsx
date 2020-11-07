@@ -1,6 +1,7 @@
 import React from 'react';
-import { HeaderFour } from 'components/base';
+import { HeaderFour, HelpCircle } from 'components/base';
 import { styled } from 'components/theme';
+import Tip from './Tip';
 
 const Styled = {
   Wrapper: styled.div``,
@@ -20,13 +21,21 @@ interface Props {
   label: string;
   info?: string;
   error?: string;
+  tip?: string;
 }
 
-const FormField: React.FC<Props> = ({ label, info, error, children }) => {
+const FormField: React.FC<Props> = ({ label, info, error, tip, children }) => {
   const { Wrapper, Info } = Styled;
   return (
     <Wrapper>
-      <HeaderFour>{label}</HeaderFour>
+      <HeaderFour>
+        {label}
+        {tip && (
+          <Tip overlay={tip} placement="right" capitalize={false}>
+            <HelpCircle size="medium" />
+          </Tip>
+        )}
+      </HeaderFour>
       {children}
       <Info error={!!error}>{error || info}</Info>
     </Wrapper>
