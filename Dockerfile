@@ -26,7 +26,6 @@ RUN apk add --no-cache --update alpine-sdk \
 && tar -xf node-${NODE_VERSION}-linux-x64-musl.tar.xz -C /usr --strip 1 \
 && rm node-${NODE_VERSION}-linux-x64-musl.tar.xz \
 && curl -o- -L https://yarnpkg.com/install.sh | bash \
-&& /bin/bash \
 && . ~/.bashrc \
 &&  cd /go/src/github.com/lightninglabs/lightning-terminal \
 &&  make install \
