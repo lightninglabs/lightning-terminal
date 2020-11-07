@@ -156,4 +156,21 @@ export default class OrderStore {
       this._store.uiStore.handleError(error, 'Unable to cancel the order');
     }
   }
+
+  /**
+   * Cancels all open orders for the active account
+   */
+  async cancelAllOrders() {
+    const traderKey = this._store.accountStore.activeAccount.traderKey;
+    this._store.log.info(`cancelling all pending orders for ${traderKey}`);
+    const orders = this.accountOrders.filter(o => o.isPending);
+    for (const order of orders) {
+      this._store.log.info(`cancelling order with nonce ${order.nonce} for ${traderKey}`);
+      await this._store.api.pool.cancelOrder(order.nonce);
+    }
+    // fetch all orders to update the store's state
+    await this.fetchOrders();
+    // also update account balances in the store
+    await this._store.accountStore.fetchAccounts();
+  }
 }

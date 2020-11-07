@@ -73,12 +73,16 @@ class PoolApi extends BaseApi<PoolEvents> {
   async closeAccount(
     traderKey: string,
     feeRateSatPerKw = 253,
+    destinationAddr?: string,
   ): Promise<POOL.CloseAccountResponse.AsObject> {
     const req = new POOL.CloseAccountRequest();
     req.setTraderKey(b64(traderKey));
 
     const output = new POOL.OutputWithFee();
     output.setFeeRateSatPerKw(feeRateSatPerKw);
+    if (destinationAddr) {
+      output.setAddress(destinationAddr);
+    }
     req.setOutputWithFee(output);
 
     const res = await this._grpc.request(Trader.CloseAccount, req, this._meta);
