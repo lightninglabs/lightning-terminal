@@ -53,9 +53,9 @@ export default class AccountStore {
       .sort((a, b) => {
         return +b.totalBalance.minus(a.totalBalance);
       });
-    // sort unopened accounts by the expiration height descending
+    // sort unopened accounts (excluding closed) by the expiration height descending
     const other = accts
-      .filter(a => a.state !== AccountState.OPEN)
+      .filter(a => a.state !== AccountState.OPEN && a.state !== AccountState.CLOSED)
       .sort((a, b) => b.expirationHeight - a.expirationHeight);
     // return the opened accounts before the unopened accounts
     return [...open, ...other];
@@ -127,12 +127,16 @@ export default class AccountStore {
   /**
    * Closes an account via the pool API
    */
-  async closeAccount(feeRate?: number) {
+  async closeAccount(feeRate: number, destination?: string) {
     try {
       const acct = this.activeAccount;
       this._store.log.info(`closing account ${acct.traderKey}`);
 
-      const res = await this._store.api.pool.closeAccount(acct.traderKey, feeRate);
+      const res = await this._store.api.pool.closeAccount(
+        acct.traderKey,
+        feeRate,
+        destination,
+      );
       await this.fetchAccounts();
       return res.closeTxid;
     } catch (error) {

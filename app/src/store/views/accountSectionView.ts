@@ -79,4 +79,8 @@ export default class AccountSectionView {
   showCloseAccount() {
     this.section = 'close';
   }
+
+  showCloseConfirm() {
+    this.section = 'close-confirm';
+  }
 }
