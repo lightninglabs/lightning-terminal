@@ -56,24 +56,24 @@ const Styled = {
 
 const SwapConfigStep: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.swap.SwapConfigStep');
-  const { buildSwapStore, uiStore } = useStore();
+  const { buildSwapView, uiStore } = useStore();
   const [confTarget, setConfTarget] = useState(
-    (buildSwapStore.confTarget || '').toString(),
+    (buildSwapView.confTarget || '').toString(),
   );
-  const [destAddress, setDestAddress] = useState(buildSwapStore.loopOutAddress || '');
+  const [destAddress, setDestAddress] = useState(buildSwapView.loopOutAddress || '');
 
   const handleNext = useCallback(() => {
     try {
-      if (buildSwapStore.addlOptionsVisible) {
+      if (buildSwapView.addlOptionsVisible) {
         const target = confTarget !== '' ? parseInt(confTarget) : undefined;
-        buildSwapStore.setConfTarget(target);
-        buildSwapStore.setLoopOutAddress(destAddress);
+        buildSwapView.setConfTarget(target);
+        buildSwapView.setLoopOutAddress(destAddress);
       }
-      buildSwapStore.goToNextStep();
+      buildSwapView.goToNextStep();
     } catch (error) {
       uiStore.handleError(error);
     }
-  }, [buildSwapStore, confTarget, destAddress, uiStore]);
+  }, [buildSwapView, confTarget, destAddress, uiStore]);
 
   const { Wrapper, Summary, Config, Options, SmallInput } = Styled;
   return (
@@ -81,9 +81,9 @@ const SwapConfigStep: React.FC = () => {
       <Summary>
         <StepSummary
           title={l('title')}
-          heading={l('heading', { type: buildSwapStore.direction })}
+          heading={l('heading', { type: buildSwapView.direction })}
           description={
-            buildSwapStore.direction === SwapDirection.IN
+            buildSwapView.direction === SwapDirection.IN
               ? l('loopInDesc')
               : l('loopOutDesc')
           }
@@ -92,13 +92,13 @@ const SwapConfigStep: React.FC = () => {
       <Config>
         <Range
           showRadios
-          value={buildSwapStore.amountForSelected}
-          min={buildSwapStore.termsForDirection.min}
-          max={buildSwapStore.termsForDirection.max}
-          step={buildSwapStore.AMOUNT_INCREMENT}
-          onChange={buildSwapStore.setAmount}
+          value={buildSwapView.amountForSelected}
+          min={buildSwapView.termsForDirection.min}
+          max={buildSwapView.termsForDirection.max}
+          step={buildSwapView.AMOUNT_INCREMENT}
+          onChange={buildSwapView.setAmount}
         />
-        <Options visible={buildSwapStore.addlOptionsVisible}>
+        <Options visible={buildSwapView.addlOptionsVisible}>
           <div>
             <HeaderFour>
               {l('confTargetLabel')}
@@ -112,7 +112,7 @@ const SwapConfigStep: React.FC = () => {
               onChange={e => setConfTarget(e.target.value)}
             />
           </div>
-          {buildSwapStore.direction === SwapDirection.OUT && (
+          {buildSwapView.direction === SwapDirection.OUT && (
             <div>
               <HeaderFour>
                 {l('destAddrLabel')}
@@ -129,12 +129,12 @@ const SwapConfigStep: React.FC = () => {
           )}
         </Options>
         <StepButtons
-          onCancel={buildSwapStore.cancel}
+          onCancel={buildSwapView.cancel}
           onNext={handleNext}
           extra={
-            <Button ghost borderless onClick={buildSwapStore.toggleAddlOptions}>
+            <Button ghost borderless onClick={buildSwapView.toggleAddlOptions}>
               <Settings />
-              {buildSwapStore.addlOptionsVisible ? l('hideOptions') : l('addlOptions')}
+              {buildSwapView.addlOptionsVisible ? l('hideOptions') : l('addlOptions')}
             </Button>
           }
         />

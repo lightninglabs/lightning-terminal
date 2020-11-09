@@ -28,7 +28,7 @@ const Styled = {
 };
 
 const ChannelList: React.FC = () => {
-  const { buildSwapStore } = useStore();
+  const { buildSwapView } = useStore();
 
   const { Wrapper, ListContainer } = Styled;
   return (
@@ -47,13 +47,13 @@ const ChannelList: React.FC = () => {
                         height={height}
                         isScrolling={isScrolling}
                         onScroll={onChildScroll}
-                        rowCount={buildSwapStore.channels.length}
+                        rowCount={buildSwapView.channels.length}
                         rowHeight={ROW_HEIGHT}
                         rowRenderer={({ index, key, style }) => (
                           <ChannelRow
                             key={key}
                             style={style}
-                            channel={buildSwapStore.channels[index]}
+                            channel={buildSwapView.channels[index]}
                           />
                         )}
                         scrollTop={scrollTop}

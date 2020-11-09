@@ -34,10 +34,10 @@ const Styled = {
 const SwapWizard: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.swap.SwapWizard');
 
-  const { buildSwapStore, settingsStore } = useStore();
+  const { buildSwapView, settingsStore } = useStore();
 
   let cmp: ReactNode;
-  switch (buildSwapStore.currentStep) {
+  switch (buildSwapView.currentStep) {
     case BuildSwapSteps.ChooseAmount:
       cmp = <SwapConfigStep />;
       break;
@@ -56,7 +56,7 @@ const SwapWizard: React.FC = () => {
     <Wrapper sidebar={settingsStore.sidebarVisible}>
       <Nav>
         <Tip overlay={l('backTip')}>
-          <ArrowLeft onClick={buildSwapStore.goToPrevStep} />
+          <ArrowLeft onClick={buildSwapView.goToPrevStep} />
         </Tip>
       </Nav>
       <Content>{cmp}</Content>

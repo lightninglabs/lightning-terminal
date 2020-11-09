@@ -6,20 +6,21 @@ import Big from 'big.js';
 import { BalanceMode } from 'util/constants';
 import { injectIntoGrpcUnary } from 'util/tests';
 import { lndChannel, loopInTerms, loopOutTerms } from 'util/tests/sampleData';
-import { BuildSwapStore, createStore, Store } from 'store';
+import { createStore, Store } from 'store';
 import { Channel } from 'store/models';
-import { SWAP_ABORT_DELAY } from 'store/stores/buildSwapStore';
+import { BuildSwapView } from 'store/views';
+import { SWAP_ABORT_DELAY } from 'store/views/buildSwapView';
 
 const grpcMock = grpc as jest.Mocked<typeof grpc>;
 
-describe('BuildSwapStore', () => {
+describe('BuildSwapView', () => {
   let rootStore: Store;
-  let store: BuildSwapStore;
+  let store: BuildSwapView;
 
   beforeEach(async () => {
     rootStore = createStore();
     await rootStore.fetchAllData();
-    store = rootStore.buildSwapStore;
+    store = rootStore.buildSwapView;
   });
 
   it('should not start a swap if there are no channels', async () => {

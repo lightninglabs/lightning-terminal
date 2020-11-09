@@ -60,32 +60,32 @@ export const Inactive = () => {
 export const Editable = () => {
   const store = useStore();
   const channel = new Channel(store, lndListChannels.channelsList[4]);
-  store.buildSwapStore.startSwap();
+  store.buildSwapView.startSwap();
   return renderStory(channel);
 };
 
 export const Selected = () => {
   const store = useStore();
   const channel = new Channel(store, lndListChannels.channelsList[5]);
-  store.buildSwapStore.startSwap();
-  store.buildSwapStore.toggleSelectedChannel(channel.chanId);
+  store.buildSwapView.startSwap();
+  store.buildSwapView.toggleSelectedChannel(channel.chanId);
   return renderStory(channel);
 };
 
 export const Disabled = () => {
   const store = useStore();
   const channel = new Channel(store, lndListChannels.channelsList[6]);
-  store.buildSwapStore.startSwap();
-  store.buildSwapStore.toggleSelectedChannel(channel.chanId);
-  store.buildSwapStore.setDirection(SwapDirection.OUT);
+  store.buildSwapView.startSwap();
+  store.buildSwapView.toggleSelectedChannel(channel.chanId);
+  store.buildSwapView.setDirection(SwapDirection.OUT);
   return renderStory(channel);
 };
 
 export const Dimmed = () => {
   const store = useStore();
   const channel = new Channel(store, lndListChannels.channelsList[6]);
-  store.buildSwapStore.startSwap();
-  store.buildSwapStore.setDirection(SwapDirection.OUT);
+  store.buildSwapView.startSwap();
+  store.buildSwapView.setDirection(SwapDirection.OUT);
   return renderStory(channel);
 };
 

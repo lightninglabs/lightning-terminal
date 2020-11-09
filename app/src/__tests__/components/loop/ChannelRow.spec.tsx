@@ -108,44 +108,44 @@ describe('ChannelRow component', () => {
   });
 
   it('should display a checkbox when it is editable', () => {
-    store.buildSwapStore.startSwap();
+    store.buildSwapView.startSwap();
     const { getByRole } = render();
     expect(getByRole('checkbox')).toBeInTheDocument();
     expect(getByRole('checkbox')).toHaveAttribute('aria-checked', 'false');
   });
 
   it('should display a checked checkbox when it is checked', () => {
-    store.buildSwapStore.startSwap();
-    store.buildSwapStore.toggleSelectedChannel(channel.chanId);
+    store.buildSwapView.startSwap();
+    store.buildSwapView.toggleSelectedChannel(channel.chanId);
     const { getByRole } = render();
     expect(getByRole('checkbox')).toBeInTheDocument();
     expect(getByRole('checkbox')).toHaveAttribute('aria-checked', 'true');
   });
 
   it('should display a disabled checkbox', () => {
-    store.buildSwapStore.startSwap();
-    store.buildSwapStore.toggleSelectedChannel(channel.chanId);
-    store.buildSwapStore.setDirection(SwapDirection.OUT);
+    store.buildSwapView.startSwap();
+    store.buildSwapView.toggleSelectedChannel(channel.chanId);
+    store.buildSwapView.setDirection(SwapDirection.OUT);
     const { getByRole } = render();
     expect(getByRole('checkbox')).toBeInTheDocument();
     expect(getByRole('checkbox')).toHaveAttribute('aria-disabled', 'true');
   });
 
   it('should trigger onChange when it is clicked', () => {
-    store.buildSwapStore.startSwap();
+    store.buildSwapView.startSwap();
     const { getByRole } = render();
     expect(getByRole('checkbox')).toBeInTheDocument();
     fireEvent.click(getByRole('checkbox'));
-    expect(store.buildSwapStore.selectedChanIds).toEqual([channel.chanId]);
+    expect(store.buildSwapView.selectedChanIds).toEqual([channel.chanId]);
   });
 
   it('should not trigger onChange when it is disabled and clicked', () => {
-    store.buildSwapStore.startSwap();
-    store.buildSwapStore.setDirection(SwapDirection.OUT);
+    store.buildSwapView.startSwap();
+    store.buildSwapView.setDirection(SwapDirection.OUT);
     const { getByRole } = render();
     expect(getByRole('checkbox')).toBeInTheDocument();
     fireEvent.click(getByRole('checkbox'));
-    expect(store.buildSwapStore.selectedChanIds).toEqual([]);
+    expect(store.buildSwapView.selectedChanIds).toEqual([]);
   });
 
   describe('pending swaps', () => {

@@ -41,7 +41,7 @@ const Styled = {
 
 const SwapReviewStep: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.swap.SwapReviewStep');
-  const { buildSwapStore } = useStore();
+  const { buildSwapView } = useStore();
 
   const { Wrapper, Summary, Invoice, InvoiceRow, Divider } = Styled;
   return (
@@ -53,28 +53,28 @@ const SwapReviewStep: React.FC = () => {
         <div>
           <InvoiceRow>
             <HeaderFour marginless>
-              {l('amount', { type: buildSwapStore.direction })}
+              {l('amount', { type: buildSwapView.direction })}
             </HeaderFour>
             <span>
-              <Unit sats={buildSwapStore.amount} />
+              <Unit sats={buildSwapView.amount} />
             </span>
           </InvoiceRow>
           <InvoiceRow>
             <HeaderFour marginless>{l('fees')}</HeaderFour>
-            <span>{buildSwapStore.feesLabel}</span>
+            <span>{buildSwapView.feesLabel}</span>
           </InvoiceRow>
           <Divider />
           <InvoiceRow>
             <HeaderFour marginless>{l('total')}</HeaderFour>
             <Jumbo>
-              <Unit sats={buildSwapStore.invoiceTotal} />
+              <Unit sats={buildSwapView.invoiceTotal} />
             </Jumbo>
           </InvoiceRow>
         </div>
         <StepButtons
           confirm
-          onCancel={buildSwapStore.cancel}
-          onNext={buildSwapStore.goToNextStep}
+          onCancel={buildSwapView.cancel}
+          onNext={buildSwapView.goToNextStep}
         />
       </Invoice>
     </Wrapper>

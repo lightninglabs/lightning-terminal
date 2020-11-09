@@ -47,23 +47,23 @@ const Styled = {
 
 const LoopActions: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.LoopActions');
-  const { buildSwapStore } = useStore();
+  const { buildSwapView } = useStore();
   const {
     setDirection,
     inferredDirection,
     isLoopOutMinimumMet,
     isLoopInMinimumMet,
     hasValidLoopInPeers,
-  } = buildSwapStore;
+  } = buildSwapView;
   const handleLoopOut = useCallback(() => setDirection(SwapDirection.OUT), [
     setDirection,
   ]);
   const handleLoopIn = useCallback(() => setDirection(SwapDirection.IN), [setDirection]);
-  const selectedCount = buildSwapStore.selectedChanIds.length;
+  const selectedCount = buildSwapView.selectedChanIds.length;
 
   let note =
     !isLoopOutMinimumMet || !isLoopInMinimumMet
-      ? l('loopMinimumNote', { min: formatSats(buildSwapStore.termsForDirection.min) })
+      ? l('loopMinimumNote', { min: formatSats(buildSwapView.termsForDirection.min) })
       : '';
   if (!hasValidLoopInPeers) {
     note = l('loopInNote');
@@ -72,10 +72,10 @@ const LoopActions: React.FC = () => {
   const { Wrapper, Actions, ActionBar, CloseIcon, Selected, Note } = Styled;
   return (
     <Wrapper data-tour="loop-actions">
-      {buildSwapStore.showActions ? (
+      {buildSwapView.showActions ? (
         <Actions>
           <ActionBar>
-            <CloseIcon onClick={buildSwapStore.cancel} />
+            <CloseIcon onClick={buildSwapView.cancel} />
             <Selected count={selectedCount} />
             <Button
               primary={isLoopOutMinimumMet && inferredDirection === SwapDirection.OUT}
@@ -102,7 +102,7 @@ const LoopActions: React.FC = () => {
           {note && <Note>{note}</Note>}
         </Actions>
       ) : (
-        <Button data-tour="loop" onClick={buildSwapStore.startSwap}>
+        <Button data-tour="loop" onClick={buildSwapView.startSwap}>
           <Refresh />
           {l('common.loop')}
         </Button>

@@ -9,7 +9,6 @@ import {
   AccountStore,
   AuthStore,
   BatchStore,
-  BuildSwapStore,
   ChannelStore,
   NodeStore,
   OrderStore,
@@ -20,6 +19,7 @@ import {
 } from './stores';
 import {
   AccountSectionView,
+  BuildSwapView,
   CloseAccountView,
   FundAccountView,
   FundNewAccountView,
@@ -36,7 +36,6 @@ export class Store {
   accountStore = new AccountStore(this);
   authStore = new AuthStore(this);
   batchStore = new BatchStore(this);
-  buildSwapStore = new BuildSwapStore(this);
   channelStore = new ChannelStore(this);
   swapStore = new SwapStore(this);
   nodeStore = new NodeStore(this);
@@ -50,6 +49,7 @@ export class Store {
   //
   // UI Views state
   //
+  buildSwapView = new BuildSwapView(this);
   accountSectionView = new AccountSectionView(this);
   fundNewAccountView = new FundNewAccountView(this);
   fundAccountView = new FundAccountView(this);
