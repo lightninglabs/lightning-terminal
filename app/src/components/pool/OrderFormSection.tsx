@@ -27,7 +27,7 @@ const Styled = {
 
 const OrderFormSection: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.pool.OrderFormSection');
-  const { orderFormStore } = useStore();
+  const { orderFormView } = useStore();
 
   const { Section, ApySummaryItem, Small, Actions } = Styled;
   return (
@@ -35,37 +35,37 @@ const OrderFormSection: React.FC = () => {
       <Actions>
         <Toggle
           flex
-          options={orderFormStore.orderOptions}
-          value={orderFormStore.orderType}
-          onChange={orderFormStore.setOrderType}
+          options={orderFormView.orderOptions}
+          value={orderFormView.orderType}
+          onChange={orderFormView.setOrderType}
         />
       </Actions>
       <FormField
-        label={l(`amountLabel${orderFormStore.orderType}`)}
-        error={orderFormStore.amountError}
+        label={l(`amountLabel${orderFormView.orderType}`)}
+        error={orderFormView.amountError}
       >
         <FormInputNumber
           placeholder={l('amountPlaceholder')}
           extra={Units[Unit.sats].suffix}
-          value={orderFormStore.amount}
-          onChange={orderFormStore.setAmount}
+          value={orderFormView.amount}
+          onChange={orderFormView.setAmount}
         />
       </FormField>
       <FormField
-        label={l(`premiumLabel${orderFormStore.orderType}`)}
-        error={orderFormStore.premiumError}
+        label={l(`premiumLabel${orderFormView.orderType}`)}
+        error={orderFormView.premiumError}
       >
         <FormInputNumber
           placeholder={l('premiumPlaceholder')}
-          value={orderFormStore.premium}
-          onChange={orderFormStore.setPremium}
+          value={orderFormView.premium}
+          onChange={orderFormView.setPremium}
           extra={
             <>
               <Button
                 ghost
                 borderless
                 compact
-                onClick={orderFormStore.setSuggestedPremium}
+                onClick={orderFormView.setSuggestedPremium}
               >
                 {l('premiumSuggested')}
               </Button>
@@ -74,20 +74,20 @@ const OrderFormSection: React.FC = () => {
           }
         />
       </FormField>
-      <FormField label={l('minChanSizeLabel')} error={orderFormStore.minChanSizeError}>
+      <FormField label={l('minChanSizeLabel')} error={orderFormView.minChanSizeError}>
         <FormInputNumber
           placeholder={l('minChanSizePlaceholder')}
           extra={Units[Unit.sats].suffix}
-          value={orderFormStore.minChanSize}
-          onChange={orderFormStore.setMinChanSize}
+          value={orderFormView.minChanSize}
+          onChange={orderFormView.setMinChanSize}
         />
       </FormField>
-      <FormField label={l('feeLabel')} error={orderFormStore.feeRateError}>
+      <FormField label={l('feeLabel')} error={orderFormView.feeRateError}>
         <FormInputNumber
           placeholder={l('feePlaceholder')}
           extra="sats/vByte"
-          value={orderFormStore.maxBatchFeeRate}
-          onChange={orderFormStore.setMaxBatchFeeRate}
+          value={orderFormView.maxBatchFeeRate}
+          onChange={orderFormView.setMaxBatchFeeRate}
         />
       </FormField>
       <SummaryItem>
@@ -101,18 +101,18 @@ const OrderFormSection: React.FC = () => {
       <SummaryItem>
         <span>{l('fixedRateLabel')}</span>
         <span>
-          {orderFormStore.perBlockFixedRate < 1
+          {orderFormView.perBlockFixedRate < 1
             ? `< 1`
-            : `${orderFormStore.perBlockFixedRate}`}
+            : `${orderFormView.perBlockFixedRate}`}
         </span>
       </SummaryItem>
       <ApySummaryItem strong>
         <span>{l('apyLabel')}</span>
-        <span>{orderFormStore.apy}%</span>
+        <span>{orderFormView.apy}%</span>
       </ApySummaryItem>
       <Actions>
-        <Button disabled={!orderFormStore.isValid} onClick={orderFormStore.placeOrder}>
-          {orderFormStore.placeOrderLabel}
+        <Button disabled={!orderFormView.isValid} onClick={orderFormView.placeOrder}>
+          {orderFormView.placeOrderLabel}
         </Button>
       </Actions>
     </Section>

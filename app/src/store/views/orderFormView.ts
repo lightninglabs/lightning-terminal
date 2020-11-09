@@ -5,9 +5,9 @@ import { DURATION, ONE_UNIT } from 'api/pool';
 import { Store } from 'store';
 import { OrderType } from 'store/models/order';
 
-const { l } = prefixTranslation('stores.orderFormStore');
+const { l } = prefixTranslation('stores.orderFormView');
 
-export default class OrderFormStore {
+export default class OrderFormView {
   private _store: Store;
 
   /** the currently selected type of the order */
