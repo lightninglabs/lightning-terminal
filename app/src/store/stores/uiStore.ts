@@ -88,7 +88,7 @@ export default class UiStore {
   showTour() {
     this.tourVisible = true;
     this.tourActiveStep = 0;
-    this._store.buildSwapStore.cancel();
+    this._store.buildSwapView.cancel();
   }
 
   /** Close the tour and switch back to using real data */

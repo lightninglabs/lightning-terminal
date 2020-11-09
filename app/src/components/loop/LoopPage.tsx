@@ -19,7 +19,7 @@ const Styled = {
 
 const LoopPage: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.LoopPage');
-  const { uiStore, buildSwapStore, channelStore, nodeStore } = useStore();
+  const { uiStore, buildSwapView, channelStore, nodeStore } = useStore();
 
   const title = (
     <>
@@ -37,7 +37,7 @@ const LoopPage: React.FC = () => {
     <PageWrap>
       {uiStore.processingSwapsVisible ? (
         <ProcessingSwaps />
-      ) : buildSwapStore.showWizard ? (
+      ) : buildSwapView.showWizard ? (
         <SwapWizard />
       ) : (
         <>

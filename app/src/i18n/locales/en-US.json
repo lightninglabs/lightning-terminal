@@ -214,7 +214,7 @@
   "cmps.tour.SuccessStep.close": "Close",
   "stores.authStore.emptyPassErr": "oops, password is required",
   "stores.authStore.invalidPassErr": "oops, that password is incorrect",
-  "stores.buildSwapStore.noChannelsMsg": "You cannot perform a swap without any active channels",
+  "stores.buildSwapView.noChannelsMsg": "You cannot perform a swap without any active channels",
   "stores.orderFormView.buy": "Bid",
   "stores.orderFormView.sell": "Ask",
   "stores.orderFormView.errorMultiple": "must be a multiple of 100,000",
