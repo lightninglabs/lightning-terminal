@@ -127,7 +127,7 @@ export default class SwapStore {
         this._store.log.info('updated swapStore.swaps', toJS(this.swaps));
       });
     } catch (error) {
-      this._store.uiStore.handleError(error, 'Unable to fetch Swaps');
+      this._store.appView.handleError(error, 'Unable to fetch Swaps');
     }
   }
 

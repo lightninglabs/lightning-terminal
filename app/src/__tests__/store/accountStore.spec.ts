@@ -37,11 +37,11 @@ describe('AccountStore', () => {
     grpcMock.unary.mockImplementationOnce(() => {
       throw new Error('test-err');
     });
-    expect(rootStore.uiStore.alerts.size).toBe(0);
+    expect(rootStore.appView.alerts.size).toBe(0);
     await store.fetchAccounts();
     await waitFor(() => {
-      expect(rootStore.uiStore.alerts.size).toBe(1);
-      expect(values(rootStore.uiStore.alerts)[0].message).toBe('test-err');
+      expect(rootStore.appView.alerts.size).toBe(1);
+      expect(values(rootStore.appView.alerts)[0].message).toBe('test-err');
     });
   });
 
@@ -167,8 +167,8 @@ describe('AccountStore', () => {
     await store.fetchAccounts();
     store.copyTxnId();
     expect(copyToClipboard).toBeCalledWith(store.activeAccount.fundingTxnId);
-    expect(rootStore.uiStore.alerts.size).toBe(1);
-    expect(values(rootStore.uiStore.alerts)[0].message).toBe(
+    expect(rootStore.appView.alerts.size).toBe(1);
+    expect(values(rootStore.appView.alerts)[0].message).toBe(
       'Copied funding txn ID to clipboard',
     );
   });
@@ -184,11 +184,11 @@ describe('AccountStore', () => {
     grpcMock.unary.mockImplementationOnce(() => {
       throw new Error('test-err');
     });
-    expect(rootStore.uiStore.alerts.size).toBe(0);
+    expect(rootStore.appView.alerts.size).toBe(0);
     await store.createAccount(3000000, 4032);
     await waitFor(() => {
-      expect(rootStore.uiStore.alerts.size).toBe(1);
-      expect(values(rootStore.uiStore.alerts)[0].message).toBe('test-err');
+      expect(rootStore.appView.alerts.size).toBe(1);
+      expect(values(rootStore.appView.alerts)[0].message).toBe('test-err');
     });
   });
 
@@ -203,11 +203,11 @@ describe('AccountStore', () => {
     grpcMock.unary.mockImplementationOnce(() => {
       throw new Error('test-err');
     });
-    expect(rootStore.uiStore.alerts.size).toBe(0);
+    expect(rootStore.appView.alerts.size).toBe(0);
     await store.closeAccount(100);
     await waitFor(() => {
-      expect(rootStore.uiStore.alerts.size).toBe(1);
-      expect(values(rootStore.uiStore.alerts)[0].message).toBe('test-err');
+      expect(rootStore.appView.alerts.size).toBe(1);
+      expect(values(rootStore.appView.alerts)[0].message).toBe('test-err');
     });
   });
 
@@ -223,11 +223,11 @@ describe('AccountStore', () => {
     grpcMock.unary.mockImplementationOnce(() => {
       throw new Error('test-err');
     });
-    expect(rootStore.uiStore.alerts.size).toBe(0);
+    expect(rootStore.appView.alerts.size).toBe(0);
     await store.deposit(1);
     await waitFor(() => {
-      expect(rootStore.uiStore.alerts.size).toBe(1);
-      expect(values(rootStore.uiStore.alerts)[0].message).toBe('test-err');
+      expect(rootStore.appView.alerts.size).toBe(1);
+      expect(values(rootStore.appView.alerts)[0].message).toBe('test-err');
     });
   });
 
@@ -243,11 +243,11 @@ describe('AccountStore', () => {
     grpcMock.unary.mockImplementationOnce(() => {
       throw new Error('test-err');
     });
-    expect(rootStore.uiStore.alerts.size).toBe(0);
+    expect(rootStore.appView.alerts.size).toBe(0);
     await store.withdraw(1);
     await waitFor(() => {
-      expect(rootStore.uiStore.alerts.size).toBe(1);
-      expect(values(rootStore.uiStore.alerts)[0].message).toBe('test-err');
+      expect(rootStore.appView.alerts.size).toBe(1);
+      expect(values(rootStore.appView.alerts)[0].message).toBe('test-err');
     });
   });
 });

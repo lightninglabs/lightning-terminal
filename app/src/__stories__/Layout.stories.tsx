@@ -9,15 +9,15 @@ export default {
 };
 
 export const Default = () => {
-  const { uiStore } = useStore();
-  uiStore.goToLoop();
+  const { appView } = useStore();
+  appView.goToLoop();
 
   return <Layout />;
 };
 
 export const WithContent = () => {
-  const { uiStore } = useStore();
-  uiStore.goToLoop();
+  const { appView } = useStore();
+  appView.goToLoop();
   return (
     <Layout>
       <LoopPage />
@@ -26,8 +26,8 @@ export const WithContent = () => {
 };
 
 export const Collapsed = () => {
-  const { uiStore, settingsStore } = useStore();
-  uiStore.goToLoop();
+  const { appView, settingsStore } = useStore();
+  appView.goToLoop();
   settingsStore.sidebarVisible = false;
 
   return (

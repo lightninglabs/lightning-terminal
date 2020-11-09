@@ -42,7 +42,7 @@ const Styled = {
 
 const ProcessingSwaps: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.processing.ProcessingSwaps');
-  const { swapStore, uiStore, settingsStore } = useStore();
+  const { swapStore, appView, settingsStore } = useStore();
 
   const { Wrapper, Header, Content, Complete, ConfirmAnimation } = Styled;
   return (
@@ -50,7 +50,7 @@ const ProcessingSwaps: React.FC = () => {
       <Header>
         <HeaderFour>{l('title')}</HeaderFour>
         <Tip overlay={l('closeTip')}>
-          <Close data-tour="swap-close" onClick={uiStore.toggleProcessingSwaps} />
+          <Close data-tour="swap-close" onClick={appView.toggleProcessingSwaps} />
         </Tip>
       </Header>
       <Content data-tour="processing-swaps">

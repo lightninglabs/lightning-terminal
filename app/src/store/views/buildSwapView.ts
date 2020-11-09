@@ -226,10 +226,10 @@ class BuildSwapView {
    */
   async startSwap(): Promise<void> {
     if (this._store.channelStore.activeChannels.length === 0) {
-      this._store.uiStore.notify(l('noChannelsMsg'));
+      this._store.appView.notify(l('noChannelsMsg'));
       return;
     }
-    this._store.uiStore.tourGoToNext();
+    this._store.appView.tourGoToNext();
     this.currentStep = BuildSwapSteps.SelectDirection;
     await this.getTerms();
     this._store.log.info(`updated buildSwapView.currentStep`, this.currentStep);
@@ -353,7 +353,7 @@ class BuildSwapView {
 
     this.currentStep++;
     this._store.log.info(`updated buildSwapView.currentStep`, this.currentStep);
-    this._store.uiStore.tourGoToNext();
+    this._store.appView.tourGoToNext();
   }
 
   /**
@@ -408,7 +408,7 @@ class BuildSwapView {
         this._store.log.info('updated store.terms', toJS(this.terms));
       });
     } catch (error) {
-      this._store.uiStore.handleError(error, 'Unable to fetch Loop Terms');
+      this._store.appView.handleError(error, 'Unable to fetch Loop Terms');
       this.goToPrevStep();
     }
   }
@@ -449,7 +449,7 @@ class BuildSwapView {
         this._store.log.info('updated buildSwapView.quote', toJS(this.quote));
       });
     } catch (error) {
-      this._store.uiStore.handleError(error, 'Unable to fetch Quote');
+      this._store.appView.handleError(error, 'Unable to fetch Quote');
       this.goToPrevStep();
     }
   }
@@ -462,7 +462,7 @@ class BuildSwapView {
     const delay =
       process.env.NODE_ENV === 'test'
         ? 1 // use a 1 ms delay for unit tests
-        : this._store.uiStore.tourVisible
+        : this._store.appView.tourVisible
         ? 1500 // use a 1.5 second delay during the tour
         : SWAP_ABORT_DELAY;
     const { amount, direction, quote } = this;
@@ -505,11 +505,11 @@ class BuildSwapView {
         runInAction(() => {
           // hide the swap UI after it is complete
           this.cancel();
-          this._store.uiStore.toggleProcessingSwaps();
-          this._store.uiStore.tourGoToNext();
+          this._store.appView.toggleProcessingSwaps();
+          this._store.appView.tourGoToNext();
         });
       } catch (error) {
-        this._store.uiStore.handleError(error, `Unable to Perform ${direction}`);
+        this._store.appView.handleError(error, `Unable to Perform ${direction}`);
         this.goToPrevStep();
       }
     }, delay);

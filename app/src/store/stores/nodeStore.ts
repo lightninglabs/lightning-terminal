@@ -60,7 +60,7 @@ export default class NodeStore {
   copy(key: 'pubkey' | 'alias' | 'url') {
     copyToClipboard(this[key]);
     const msg = `Copied ${key} to clipboard`;
-    this._store.uiStore.notify(msg, '', 'success');
+    this._store.appView.notify(msg, '', 'success');
   }
 
   /**
@@ -84,7 +84,7 @@ export default class NodeStore {
         this._store.log.info('updated nodeStore info', toJS(this));
       });
     } catch (error) {
-      this._store.uiStore.handleError(error, 'Unable to fetch node info');
+      this._store.appView.handleError(error, 'Unable to fetch node info');
     }
   }
 
@@ -102,7 +102,7 @@ export default class NodeStore {
         this._store.log.info('updated nodeStore.wallet', toJS(this.wallet));
       });
     } catch (error) {
-      this._store.uiStore.handleError(error, 'Unable to fetch balances');
+      this._store.appView.handleError(error, 'Unable to fetch balances');
     }
   }
 

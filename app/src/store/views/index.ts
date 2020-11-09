@@ -1,3 +1,4 @@
+export { default as AppView } from './appView';
 export { default as BuildSwapView } from './buildSwapView';
 export { default as AccountSectionView } from './accountSectionView';
 export { default as CloseAccountView } from './closeAccountView';

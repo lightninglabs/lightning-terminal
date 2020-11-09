@@ -35,9 +35,9 @@ const UnitItem: React.FC<{ unit: Unit }> = observer(({ unit }) => {
 
 const UnitSettings: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.settings.UnitSettings');
-  const { uiStore } = useStore();
+  const { appView } = useStore();
 
-  const handleBack = useCallback(() => uiStore.showSettings(''), [uiStore]);
+  const handleBack = useCallback(() => appView.showSettings(''), [appView]);
 
   const { Wrapper, Content } = Styled;
   return (

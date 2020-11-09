@@ -41,7 +41,7 @@ const Styled = {
 
 const WelcomeStep: React.FC<ReactourStepContentArgs> = props => {
   const { l } = usePrefixedTranslation('cmps.tour.WelcomeStep');
-  const { uiStore } = useStore();
+  const { appView } = useStore();
 
   const { Note, Footer, LinkButton, SmallButton } = Styled;
   return (
@@ -62,8 +62,8 @@ const WelcomeStep: React.FC<ReactourStepContentArgs> = props => {
       <Note>{l('note')}</Note>
       <p>{l('question')}</p>
       <Footer>
-        <SmallButton onClick={uiStore.tourGoToNext}>{l('yes')}</SmallButton>
-        <LinkButton ghost borderless onClick={uiStore.closeTour}>
+        <SmallButton onClick={appView.tourGoToNext}>{l('yes')}</SmallButton>
+        <LinkButton ghost borderless onClick={appView.closeTour}>
           {l('noThanks')}
         </LinkButton>
       </Footer>

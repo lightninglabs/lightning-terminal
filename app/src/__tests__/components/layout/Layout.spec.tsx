@@ -7,7 +7,7 @@ import Layout from 'components/layout/Layout';
 describe('Layout component', () => {
   const render = () => {
     const store = createStore();
-    store.uiStore.goToLoop();
+    store.appView.goToLoop();
     return renderWithProviders(<Layout />, store);
   };
 
