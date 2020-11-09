@@ -17,10 +17,10 @@ const Styled = {
 
 const GeneralSettings: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.settings.GeneralSettings');
-  const { uiStore, settingsStore, nodeStore } = useStore();
+  const { appView, settingsStore, nodeStore } = useStore();
 
-  const handleUnit = useCallback(() => uiStore.showSettings('unit'), [uiStore]);
-  const handleBalance = useCallback(() => uiStore.showSettings('balance'), [uiStore]);
+  const handleUnit = useCallback(() => appView.showSettings('unit'), [appView]);
+  const handleBalance = useCallback(() => appView.showSettings('balance'), [appView]);
   const handleCopyPubkey = useCallback(() => nodeStore.copy('pubkey'), [nodeStore]);
   const handleCopyAlias = useCallback(() => nodeStore.copy('alias'), [nodeStore]);
   const handleCopyUrl = useCallback(() => nodeStore.copy('url'), [nodeStore]);

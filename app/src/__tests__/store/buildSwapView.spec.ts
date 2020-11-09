@@ -26,10 +26,10 @@ describe('BuildSwapView', () => {
   it('should not start a swap if there are no channels', async () => {
     rootStore.channelStore.channels.clear();
     expect(store.currentStep).toBe(BuildSwapSteps.Closed);
-    expect(rootStore.uiStore.alerts.size).toBe(0);
+    expect(rootStore.appView.alerts.size).toBe(0);
     await store.startSwap();
     expect(store.currentStep).toBe(BuildSwapSteps.Closed);
-    expect(rootStore.uiStore.alerts.size).toBe(1);
+    expect(rootStore.appView.alerts.size).toBe(1);
   });
 
   it('should toggle the selected channels', () => {
@@ -97,11 +97,11 @@ describe('BuildSwapView', () => {
       if (desc.methodName === 'GetLoopInTerms') throw new Error('test-err');
       return undefined as any;
     });
-    expect(rootStore.uiStore.alerts.size).toBe(0);
+    expect(rootStore.appView.alerts.size).toBe(0);
     await store.getTerms();
     await waitFor(() => {
-      expect(rootStore.uiStore.alerts.size).toBe(1);
-      expect(values(rootStore.uiStore.alerts)[0].message).toBe('test-err');
+      expect(rootStore.appView.alerts.size).toBe(1);
+      expect(values(rootStore.appView.alerts)[0].message).toBe('test-err');
     });
   });
 
@@ -225,11 +225,11 @@ describe('BuildSwapView', () => {
     });
     store.setDirection(SwapDirection.OUT);
     store.setAmount(Big(600));
-    expect(rootStore.uiStore.alerts.size).toBe(0);
+    expect(rootStore.appView.alerts.size).toBe(0);
     await store.getQuote();
     await waitFor(() => {
-      expect(rootStore.uiStore.alerts.size).toBe(1);
-      expect(values(rootStore.uiStore.alerts)[0].message).toBe('test-err');
+      expect(rootStore.appView.alerts.size).toBe(1);
+      expect(values(rootStore.appView.alerts)[0].message).toBe('test-err');
     });
   });
 
@@ -323,11 +323,11 @@ describe('BuildSwapView', () => {
     });
     store.setDirection(SwapDirection.IN);
     store.setAmount(Big(600));
-    expect(rootStore.uiStore.alerts.size).toBe(0);
+    expect(rootStore.appView.alerts.size).toBe(0);
     store.requestSwap();
     await waitFor(() => {
-      expect(rootStore.uiStore.alerts.size).toBe(1);
-      expect(values(rootStore.uiStore.alerts)[0].message).toBe('test-err');
+      expect(rootStore.appView.alerts.size).toBe(1);
+      expect(values(rootStore.appView.alerts)[0].message).toBe('test-err');
     });
   });
 

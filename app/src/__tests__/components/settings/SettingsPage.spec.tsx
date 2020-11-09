@@ -14,7 +14,7 @@ describe('SettingsPage', () => {
   beforeEach(async () => {
     store = createStore();
     await store.nodeStore.fetchInfo();
-    store.uiStore.showSettings('');
+    store.appView.showSettings('');
   });
 
   const render = () => {

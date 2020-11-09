@@ -133,7 +133,7 @@ export default class OrderFormView {
       // round to the nearest 100 to offset lose of precision in calculating percentages
       this.premium = Math.round(suggested / 100) * 100;
     } catch (error) {
-      this._store.uiStore.handleError(error, 'Unable to suggest premium');
+      this._store.appView.handleError(error, 'Unable to suggest premium');
     }
   }
 

@@ -10,26 +10,26 @@ export default {
 };
 
 export const Default = () => {
-  const { uiStore } = useStore();
-  uiStore.showSettings('');
+  const { appView } = useStore();
+  appView.showSettings('');
   return <SettingsPage />;
 };
 
 export const BitcoinUnit = () => {
-  const { uiStore } = useStore();
-  uiStore.showSettings('unit');
+  const { appView } = useStore();
+  appView.showSettings('unit');
   return <SettingsPage />;
 };
 
 export const BalanceMode = () => {
-  const { uiStore } = useStore();
-  uiStore.showSettings('balance');
+  const { appView } = useStore();
+  appView.showSettings('balance');
   return <SettingsPage />;
 };
 
 export const InsideLayout = () => {
-  const { uiStore } = useStore();
-  uiStore.goToSettings();
+  const { appView } = useStore();
+  appView.goToSettings();
   return (
     <Layout>
       <SettingsPage />

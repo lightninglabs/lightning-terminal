@@ -37,11 +37,11 @@ describe('NodeStore', () => {
       if (desc.methodName === 'GetInfo') throw new Error('test-err');
       return undefined as any;
     });
-    expect(rootStore.uiStore.alerts.size).toBe(0);
+    expect(rootStore.appView.alerts.size).toBe(0);
     await store.fetchInfo();
     await waitFor(() => {
-      expect(rootStore.uiStore.alerts.size).toBe(1);
-      expect(values(rootStore.uiStore.alerts)[0].message).toBe('test-err');
+      expect(rootStore.appView.alerts.size).toBe(1);
+      expect(values(rootStore.appView.alerts)[0].message).toBe('test-err');
     });
   });
 
@@ -58,11 +58,11 @@ describe('NodeStore', () => {
       if (desc.methodName === 'ChannelBalance') throw new Error('test-err');
       return undefined as any;
     });
-    expect(rootStore.uiStore.alerts.size).toBe(0);
+    expect(rootStore.appView.alerts.size).toBe(0);
     await store.fetchBalances();
     await waitFor(() => {
-      expect(rootStore.uiStore.alerts.size).toBe(1);
-      expect(values(rootStore.uiStore.alerts)[0].message).toBe('test-err');
+      expect(rootStore.appView.alerts.size).toBe(1);
+      expect(values(rootStore.appView.alerts)[0].message).toBe('test-err');
     });
   });
 

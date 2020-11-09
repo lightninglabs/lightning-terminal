@@ -56,7 +56,7 @@ const Styled = {
 
 const SwapConfigStep: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.swap.SwapConfigStep');
-  const { buildSwapView, uiStore } = useStore();
+  const { buildSwapView, appView } = useStore();
   const [confTarget, setConfTarget] = useState(
     (buildSwapView.confTarget || '').toString(),
   );
@@ -71,9 +71,9 @@ const SwapConfigStep: React.FC = () => {
       }
       buildSwapView.goToNextStep();
     } catch (error) {
-      uiStore.handleError(error);
+      appView.handleError(error);
     }
-  }, [buildSwapView, confTarget, destAddress, uiStore]);
+  }, [buildSwapView, confTarget, destAddress, appView]);
 
   const { Wrapper, Summary, Config, Options, SmallInput } = Styled;
   return (

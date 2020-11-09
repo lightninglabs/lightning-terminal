@@ -102,7 +102,7 @@ export default class ChannelStore {
         this.fetchFeeRates();
       });
     } catch (error) {
-      this._store.uiStore.handleError(error, 'Unable to fetch Channels');
+      this._store.appView.handleError(error, 'Unable to fetch Channels');
     }
   }
 

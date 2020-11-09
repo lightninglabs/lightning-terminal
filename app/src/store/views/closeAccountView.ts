@@ -77,7 +77,7 @@ export default class CloseAccountView {
     try {
       await this._store.orderStore.cancelAllOrders();
     } catch (error) {
-      this._store.uiStore.handleError(error, 'Unable to cancel all open orders');
+      this._store.appView.handleError(error, 'Unable to cancel all open orders');
       return;
     }
 

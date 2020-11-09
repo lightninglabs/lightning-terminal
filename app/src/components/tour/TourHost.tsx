@@ -134,18 +134,18 @@ const Styled = {
 };
 
 const TourHost: React.FC = () => {
-  const { uiStore } = useStore();
+  const { appView } = useStore();
   const theme = useTheme<Theme>();
 
   const { Tour } = Styled;
   return (
     <Tour
       steps={tourSteps}
-      isOpen={uiStore.tourVisible}
-      onRequestClose={uiStore.closeTour}
+      isOpen={appView.tourVisible}
+      onRequestClose={appView.closeTour}
       accentColor={theme.colors.pink}
-      goToStep={uiStore.tourActiveStep}
-      getCurrentStep={uiStore.setTourActiveStep}
+      goToStep={appView.tourActiveStep}
+      getCurrentStep={appView.setTourActiveStep}
       showNavigation={false}
       showButtons={false}
       closeWithMask={false}

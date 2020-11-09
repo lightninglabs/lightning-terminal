@@ -32,7 +32,7 @@ const Styled = {
 
 const SuccessStep: React.FC<ReactourStepContentArgs> = props => {
   const { l } = usePrefixedTranslation('cmps.tour.SuccessStep');
-  const { uiStore } = useStore();
+  const { appView } = useStore();
 
   const { Centered, ConfirmAnimation, SmallButton } = Styled;
   return (
@@ -42,7 +42,7 @@ const SuccessStep: React.FC<ReactourStepContentArgs> = props => {
         <HeaderThree>{l('header')}</HeaderThree>
         <p>{l('complete')}</p>
         <p>
-          <SmallButton onClick={uiStore.closeTour}>{l('close')}</SmallButton>
+          <SmallButton onClick={appView.closeTour}>{l('close')}</SmallButton>
         </p>
       </Centered>
     </TextStep>

@@ -84,7 +84,7 @@ const AlertToast: React.FC<AlertToastProps> = ({ alert, onClose }) => {
  * each toast message based on the alerts in the mobx store
  */
 const AlertContainer: React.FC = () => {
-  const { uiStore } = useStore();
+  const { appView } = useStore();
 
   const { Container, CloseIcon } = Styled;
   const closeButton = (
@@ -94,8 +94,8 @@ const AlertContainer: React.FC = () => {
   );
   return (
     <>
-      {values(uiStore.alerts).map(n => (
-        <AlertToast key={n.id} alert={n} onClose={uiStore.clearAlert} />
+      {values(appView.alerts).map(n => (
+        <AlertToast key={n.id} alert={n} onClose={appView.clearAlert} />
       ))}
       <Container position="top-right" autoClose={5 * 1000} closeButton={closeButton} />
     </>

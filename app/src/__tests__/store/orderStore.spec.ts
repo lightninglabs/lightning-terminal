@@ -37,11 +37,11 @@ describe('OrderStore', () => {
     grpcMock.unary.mockImplementationOnce(() => {
       throw new Error('test-err');
     });
-    expect(rootStore.uiStore.alerts.size).toBe(0);
+    expect(rootStore.appView.alerts.size).toBe(0);
     await store.fetchOrders();
     await waitFor(() => {
-      expect(rootStore.uiStore.alerts.size).toBe(1);
-      expect(values(rootStore.uiStore.alerts)[0].message).toBe('test-err');
+      expect(rootStore.appView.alerts.size).toBe(1);
+      expect(values(rootStore.appView.alerts)[0].message).toBe('test-err');
     });
   });
 
@@ -115,15 +115,15 @@ describe('OrderStore', () => {
       return undefined as any;
     });
     await store.submitOrder(OrderType.Bid, 100000, 2000, 2016, 100000, 253);
-    expect(rootStore.uiStore.alerts.size).toBe(1);
-    expect(values(rootStore.uiStore.alerts)[0].message).toBe(poolInvalidOrder.failString);
+    expect(rootStore.appView.alerts.size).toBe(1);
+    expect(values(rootStore.appView.alerts)[0].message).toBe(poolInvalidOrder.failString);
   });
 
   it('should throw if the fixed rate rate is too low', async () => {
     await rootStore.accountStore.fetchAccounts();
     await store.submitOrder(OrderType.Bid, 100000, 0.9, 20000, 100000, 253);
-    expect(rootStore.uiStore.alerts.size).toBe(1);
-    expect(values(rootStore.uiStore.alerts)[0].message).toMatch(/The rate is too low.*/);
+    expect(rootStore.appView.alerts.size).toBe(1);
+    expect(values(rootStore.appView.alerts)[0].message).toMatch(/The rate is too low.*/);
   });
 
   it('should cancel an order', async () => {
@@ -142,11 +142,11 @@ describe('OrderStore', () => {
     grpcMock.unary.mockImplementationOnce(() => {
       throw new Error('test-err');
     });
-    expect(rootStore.uiStore.alerts.size).toBe(0);
+    expect(rootStore.appView.alerts.size).toBe(0);
     await store.cancelOrder(values(store.orders)[0].nonce);
     await waitFor(() => {
-      expect(rootStore.uiStore.alerts.size).toBe(1);
-      expect(values(rootStore.uiStore.alerts)[0].message).toBe('test-err');
+      expect(rootStore.appView.alerts.size).toBe(1);
+      expect(values(rootStore.appView.alerts)[0].message).toBe('test-err');
     });
   });
 });

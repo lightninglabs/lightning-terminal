@@ -133,7 +133,7 @@ export default class FundNewAccountView {
 
       this._store.accountSectionView.showFundNewConfirm();
     } catch (error) {
-      this._store.uiStore.handleError(error, 'Unable to estimate miner fee');
+      this._store.appView.handleError(error, 'Unable to estimate miner fee');
     }
   }
 
