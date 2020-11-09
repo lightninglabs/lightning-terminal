@@ -87,19 +87,19 @@ describe('BatchStore', () => {
     grpcMock.unary.mockImplementationOnce(() => {
       throw new Error('test-err');
     });
-    expect(rootStore.uiStore.alerts.size).toBe(0);
+    expect(rootStore.appView.alerts.size).toBe(0);
     await store.fetchBatches();
-    expect(rootStore.uiStore.alerts.size).toBe(1);
-    expect(values(rootStore.uiStore.alerts)[0].message).toBe('test-err');
+    expect(rootStore.appView.alerts.size).toBe(1);
+    expect(values(rootStore.appView.alerts)[0].message).toBe('test-err');
   });
 
   it('should not show error when last snapshot is not found', async () => {
     grpcMock.unary.mockImplementationOnce(() => {
       throw new Error('batch snapshot not found');
     });
-    expect(rootStore.uiStore.alerts.size).toBe(0);
+    expect(rootStore.appView.alerts.size).toBe(0);
     await store.fetchBatches();
-    expect(rootStore.uiStore.alerts.size).toBe(0);
+    expect(rootStore.appView.alerts.size).toBe(0);
   });
 
   it('should fetch the latest batch', async () => {
@@ -124,10 +124,10 @@ describe('BatchStore', () => {
     grpcMock.unary.mockImplementationOnce(() => {
       throw new Error('test-err');
     });
-    expect(rootStore.uiStore.alerts.size).toBe(0);
+    expect(rootStore.appView.alerts.size).toBe(0);
     await store.fetchLatestBatch();
-    expect(rootStore.uiStore.alerts.size).toBe(1);
-    expect(values(rootStore.uiStore.alerts)[0].message).toBe('test-err');
+    expect(rootStore.appView.alerts.size).toBe(1);
+    expect(values(rootStore.appView.alerts)[0].message).toBe('test-err');
   });
 
   it('should return the sorted batches', async () => {

@@ -13,7 +13,7 @@ describe('AlertContainer component', () => {
 
   it('should display an alert when added to the store', async () => {
     const { findByText } = render();
-    store.uiStore.notify('test error', 'test title');
+    store.appView.notify('test error', 'test title');
     expect(await findByText('test error')).toBeInTheDocument();
     expect(await findByText('test title')).toBeInTheDocument();
   });

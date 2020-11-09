@@ -98,7 +98,7 @@ export default class AccountStore {
   copyTxnId() {
     copyToClipboard(this.activeAccount.fundingTxnId);
     const msg = `Copied funding txn ID to clipboard`;
-    this._store.uiStore.notify(msg, '', 'success');
+    this._store.appView.notify(msg, '', 'success');
   }
 
   /**
@@ -122,7 +122,7 @@ export default class AccountStore {
       });
       return acct.traderKey;
     } catch (error) {
-      this._store.uiStore.handleError(error, 'Unable to create the account');
+      this._store.appView.handleError(error, 'Unable to create the account');
     }
   }
 
@@ -142,7 +142,7 @@ export default class AccountStore {
       await this.fetchAccounts();
       return res.closeTxid;
     } catch (error) {
-      this._store.uiStore.handleError(error, 'Unable to close the account');
+      this._store.appView.handleError(error, 'Unable to close the account');
     }
   }
 
@@ -183,7 +183,7 @@ export default class AccountStore {
         this._store.log.info('updated accountStore.accounts', toJS(this.accounts));
       });
     } catch (error) {
-      this._store.uiStore.handleError(error, 'Unable to fetch Accounts');
+      this._store.appView.handleError(error, 'Unable to fetch Accounts');
     }
   }
 
@@ -207,7 +207,7 @@ export default class AccountStore {
       });
       return res.depositTxid;
     } catch (error) {
-      this._store.uiStore.handleError(error, 'Unable to deposit funds');
+      this._store.appView.handleError(error, 'Unable to deposit funds');
     }
   }
 
@@ -230,7 +230,7 @@ export default class AccountStore {
       });
       return res.withdrawTxid;
     } catch (error) {
-      this._store.uiStore.handleError(error, 'Unable to withdraw funds');
+      this._store.appView.handleError(error, 'Unable to withdraw funds');
     }
   }
 }

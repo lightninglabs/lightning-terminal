@@ -15,10 +15,10 @@ import {
   RouterStore,
   SettingsStore,
   SwapStore,
-  UiStore,
 } from './stores';
 import {
   AccountSectionView,
+  AppView,
   BuildSwapView,
   CloseAccountView,
   FundAccountView,
@@ -41,7 +41,6 @@ export class Store {
   nodeStore = new NodeStore(this);
   orderStore = new OrderStore(this);
   settingsStore = new SettingsStore(this);
-  uiStore = new UiStore(this);
 
   /** the store which synchronizes with the browser history */
   router: RouterStore;
@@ -49,6 +48,7 @@ export class Store {
   //
   // UI Views state
   //
+  appView = new AppView(this);
   buildSwapView = new BuildSwapView(this);
   accountSectionView = new AccountSectionView(this);
   fundNewAccountView = new FundNewAccountView(this);
@@ -118,7 +118,7 @@ export class Store {
           // stay on the current page (ex: history, settings)
           if (document.location.pathname === '/') {
             runInAction(() => {
-              this.uiStore.goToLoop();
+              this.appView.goToLoop();
             });
           }
           // also fetch all the data we need
@@ -128,7 +128,7 @@ export class Store {
           this.subscribeToStreams();
         } else {
           // go to auth page if we are not authenticated
-          this.uiStore.gotoAuth();
+          this.appView.gotoAuth();
           // unsubscribe from streams since we are no longer authenticated
           this.unsubscribeFromStreams();
         }

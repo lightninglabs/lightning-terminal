@@ -66,7 +66,7 @@ export default class BatchStore {
         if (!prevId) break;
       } catch (error) {
         if (error.message !== 'batch snapshot not found') {
-          this._store.uiStore.handleError(
+          this._store.appView.handleError(
             error,
             `Unable to fetch batch with id ${prevId}`,
           );
@@ -105,7 +105,7 @@ export default class BatchStore {
         this._store.log.info('updated batchStore.batches', toJS(this.batches));
       });
     } catch (error) {
-      this._store.uiStore.handleError(error, 'Unable to fetch the latest batch');
+      this._store.appView.handleError(error, 'Unable to fetch the latest batch');
     }
   }
 }

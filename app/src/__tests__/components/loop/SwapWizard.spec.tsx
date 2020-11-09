@@ -106,7 +106,7 @@ describe('SwapWizard component', () => {
         target: { value: 'asdf' },
       });
       fireEvent.click(getByText('Next'));
-      expect(values(store.uiStore.alerts)[0].message).toBe(
+      expect(values(store.appView.alerts)[0].message).toBe(
         'Confirmation target must be between 20 and 60.',
       );
     });

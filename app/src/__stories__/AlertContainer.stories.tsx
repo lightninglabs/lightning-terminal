@@ -12,7 +12,7 @@ export default {
 export const Default = () => {
   const store = useStore();
   const handleClick = () => {
-    store.uiStore.notify(
+    store.appView.notify(
       'This is a sample message to be displayed inside of a toast alert',
       'Sample Alert Title',
     );

@@ -61,17 +61,17 @@ const NavItem: React.FC<{ page: string; onClick: () => void }> = observer(
 
 const NavMenu: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.layout.NavMenu');
-  const { uiStore } = useStore();
+  const { appView } = useStore();
 
   const { NavHeader, Nav } = Styled;
   return (
     <>
       <NavHeader>{l('menu')}</NavHeader>
       <Nav>
-        <NavItem page="loop" onClick={uiStore.goToLoop} />
-        <NavItem page="history" onClick={uiStore.goToHistory} />
-        <NavItem page="pool" onClick={uiStore.goToPool} />
-        <NavItem page="settings" onClick={uiStore.goToSettings} />
+        <NavItem page="loop" onClick={appView.goToLoop} />
+        <NavItem page="history" onClick={appView.goToHistory} />
+        <NavItem page="pool" onClick={appView.goToPool} />
+        <NavItem page="settings" onClick={appView.goToSettings} />
       </Nav>
     </>
   );

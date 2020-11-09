@@ -81,7 +81,7 @@ export default class OrderStore {
         this._store.log.info('updated orderStore.orders', toJS(this.orders));
       });
     } catch (error) {
-      this._store.uiStore.handleError(error, 'Unable to fetch orders');
+      this._store.appView.handleError(error, 'Unable to fetch orders');
     }
   }
 
@@ -133,7 +133,7 @@ export default class OrderStore {
 
       return hex(acceptedOrderNonce);
     } catch (error) {
-      this._store.uiStore.handleError(error, 'Unable to submit the order');
+      this._store.appView.handleError(error, 'Unable to submit the order');
     }
   }
 
@@ -153,7 +153,7 @@ export default class OrderStore {
       // also update account balances in the store
       await this._store.accountStore.fetchAccounts();
     } catch (error) {
-      this._store.uiStore.handleError(error, 'Unable to cancel the order');
+      this._store.appView.handleError(error, 'Unable to cancel the order');
     }
   }
 

@@ -5,11 +5,11 @@ import { AuthenticationError } from 'util/errors';
 import { prefixTranslation } from 'util/translate';
 import { Store } from 'store';
 
-const { l } = prefixTranslation('stores.uiStore');
+const { l } = prefixTranslation('stores.appView');
 
 type SettingName = '' | 'unit' | 'balance';
 
-export default class UiStore {
+export default class AppView {
   private _store: Store;
 
   /** indicates if the Processing Loops section is displayed on the Loop page */
