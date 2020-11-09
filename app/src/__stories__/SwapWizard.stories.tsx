@@ -24,7 +24,7 @@ const selectedChannels = observable.array(
 );
 
 export const Step1Amount = () => {
-  const { buildSwapStore: build } = useStore();
+  const { buildSwapView: build } = useStore();
   build.startSwap();
   build.selectedChanIds = selectedChannels;
   build.setDirection(SwapDirection.OUT);
@@ -32,7 +32,7 @@ export const Step1Amount = () => {
 };
 
 export const Step2Fees = () => {
-  const { buildSwapStore: build } = useStore();
+  const { buildSwapView: build } = useStore();
   build.startSwap();
   build.selectedChanIds = selectedChannels;
   build.setDirection(SwapDirection.OUT);
@@ -42,7 +42,7 @@ export const Step2Fees = () => {
 };
 
 export const Step3Processing = () => {
-  const { buildSwapStore: build } = useStore();
+  const { buildSwapView: build } = useStore();
   build.startSwap();
   build.selectedChanIds = selectedChannels;
   build.setDirection(SwapDirection.OUT);

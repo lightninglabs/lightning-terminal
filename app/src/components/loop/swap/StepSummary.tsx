@@ -27,7 +27,7 @@ interface Props {
 }
 
 const StepSummary: React.FC<Props> = ({ title, heading, description }) => {
-  const { buildSwapStore } = useStore();
+  const { buildSwapView } = useStore();
 
   const { Wrapper, Description } = Styled;
   return (
@@ -38,7 +38,7 @@ const StepSummary: React.FC<Props> = ({ title, heading, description }) => {
         {description && <Description>{description}</Description>}
       </div>
       <div>
-        <SelectedChannels count={buildSwapStore.selectedChanIds.length} />
+        <SelectedChannels count={buildSwapView.selectedChanIds.length} />
       </div>
     </Wrapper>
   );

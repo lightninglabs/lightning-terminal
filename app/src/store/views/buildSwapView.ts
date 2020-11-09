@@ -9,7 +9,7 @@ import { prefixTranslation } from 'util/translate';
 import { Store } from 'store';
 import Channel from 'store/models/channel';
 
-const { l } = prefixTranslation('stores.buildSwapStore');
+const { l } = prefixTranslation('stores.buildSwapView');
 
 // an artificial delay to allow the user to abort a swap before it executed
 export const SWAP_ABORT_DELAY = 3000;
@@ -17,7 +17,7 @@ export const SWAP_ABORT_DELAY = 3000;
 /**
  * The store to manage the state of a Loop swap being created
  */
-class BuildSwapStore {
+class BuildSwapView {
   _store: Store;
 
   // the increments between swap amounts that may be chosen by the user
@@ -232,7 +232,7 @@ class BuildSwapStore {
     this._store.uiStore.tourGoToNext();
     this.currentStep = BuildSwapSteps.SelectDirection;
     await this.getTerms();
-    this._store.log.info(`updated buildSwapStore.currentStep`, this.currentStep);
+    this._store.log.info(`updated buildSwapView.currentStep`, this.currentStep);
   }
 
   /**
@@ -241,7 +241,7 @@ class BuildSwapStore {
    */
   async setDirection(direction: SwapDirection): Promise<void> {
     this.direction = direction;
-    this._store.log.info(`updated buildSwapStore.direction`, direction);
+    this._store.log.info(`updated buildSwapView.direction`, direction);
     if (this.direction === SwapDirection.IN) {
       // select all channels to the selected peer for Loop In
       this.autoSelectPeerChannels();
@@ -260,7 +260,7 @@ class BuildSwapStore {
       this.selectedChanIds.push(channelId);
     }
     this._store.log.info(
-      `updated buildSwapStore.selectedChanIds`,
+      `updated buildSwapView.selectedChanIds`,
       toJS(this.selectedChanIds),
     );
   }
@@ -300,7 +300,7 @@ class BuildSwapStore {
   toggleAddlOptions() {
     this.addlOptionsVisible = !this.addlOptionsVisible;
     this._store.log.info(
-      `updated buildSwapStore.addlOptionsVisible`,
+      `updated buildSwapView.addlOptionsVisible`,
       this.addlOptionsVisible,
     );
   }
@@ -324,7 +324,7 @@ class BuildSwapStore {
       );
     }
     this.confTarget = target;
-    this._store.log.info(`updated buildSwapStore.confTarget`, this.confTarget);
+    this._store.log.info(`updated buildSwapView.confTarget`, this.confTarget);
   }
 
   /**
@@ -332,7 +332,7 @@ class BuildSwapStore {
    */
   setLoopOutAddress(address: string) {
     this.loopOutAddress = address;
-    this._store.log.info(`updated buildSwapStore.loopOutAddress`, this.loopOutAddress);
+    this._store.log.info(`updated buildSwapView.loopOutAddress`, this.loopOutAddress);
   }
 
   /**
@@ -352,7 +352,7 @@ class BuildSwapStore {
     }
 
     this.currentStep++;
-    this._store.log.info(`updated buildSwapStore.currentStep`, this.currentStep);
+    this._store.log.info(`updated buildSwapView.currentStep`, this.currentStep);
     this._store.uiStore.tourGoToNext();
   }
 
@@ -365,7 +365,7 @@ class BuildSwapStore {
       this.abortSwap();
     }
     this.currentStep--;
-    this._store.log.info(`updated buildSwapStore.currentStep`, this.currentStep);
+    this._store.log.info(`updated buildSwapView.currentStep`, this.currentStep);
   }
 
   /**
@@ -381,7 +381,7 @@ class BuildSwapStore {
     this.quote.swapFee = Big(0);
     this.quote.minerFee = Big(0);
     this.quote.prepayAmount = Big(0);
-    this._store.log.info(`reset buildSwapStore`, toJS(this));
+    this._store.log.info(`reset buildSwapView`, toJS(this));
   }
 
   /**
@@ -446,7 +446,7 @@ class BuildSwapStore {
 
       runInAction(() => {
         this.quote = quote;
-        this._store.log.info('updated buildSwapStore.quote', toJS(this.quote));
+        this._store.log.info('updated buildSwapView.quote', toJS(this.quote));
       });
     } catch (error) {
       this._store.uiStore.handleError(error, 'Unable to fetch Quote');
@@ -567,4 +567,4 @@ class BuildSwapStore {
   }
 }
 
-export default BuildSwapStore;
+export default BuildSwapView;

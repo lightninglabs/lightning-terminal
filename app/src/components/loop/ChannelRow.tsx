@@ -171,15 +171,15 @@ interface Props {
 }
 
 const ChannelRow: React.FC<Props> = ({ channel, style }) => {
-  const { buildSwapStore } = useStore();
+  const { buildSwapView } = useStore();
 
-  const editable = buildSwapStore.listEditable;
-  const disabled = buildSwapStore.showWizard;
-  const checked = buildSwapStore.selectedChanIds.includes(channel.chanId);
+  const editable = buildSwapView.listEditable;
+  const disabled = buildSwapView.showWizard;
+  const checked = buildSwapView.selectedChanIds.includes(channel.chanId);
   const dimmed = editable && disabled && !checked;
 
   const handleRowChecked = () => {
-    buildSwapStore.toggleSelectedChannel(channel.chanId);
+    buildSwapView.toggleSelectedChannel(channel.chanId);
   };
 
   const { Row, Column, ActionColumn, WideColumn, StatusIcon, Check, Balance } = Styled;

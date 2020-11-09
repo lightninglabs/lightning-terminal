@@ -18,7 +18,7 @@ describe('LoopPage component', () => {
   beforeEach(async () => {
     store = createStore();
     await store.fetchAllData();
-    await store.buildSwapStore.getTerms();
+    await store.buildSwapView.getTerms();
   });
 
   const render = () => {
@@ -111,7 +111,7 @@ describe('LoopPage component', () => {
       expect(getByText('Loop')).toBeInTheDocument();
       fireEvent.click(getByText('Loop'));
       store.channelStore.sortedChannels.slice(0, 3).forEach(c => {
-        store.buildSwapStore.toggleSelectedChannel(c.chanId);
+        store.buildSwapView.toggleSelectedChannel(c.chanId);
       });
       fireEvent.click(getByText('Loop Out'));
       expect(await findByText('Step 1 of 2')).toBeInTheDocument();
@@ -122,7 +122,7 @@ describe('LoopPage component', () => {
       expect(getByText('Loop')).toBeInTheDocument();
       fireEvent.click(getByText('Loop'));
       store.channelStore.sortedChannels.slice(0, 1).forEach(c => {
-        store.buildSwapStore.toggleSelectedChannel(c.chanId);
+        store.buildSwapView.toggleSelectedChannel(c.chanId);
       });
       fireEvent.click(getByText('Loop Out'));
       expect(getByText('Step 1 of 2')).toBeInTheDocument();
@@ -133,7 +133,7 @@ describe('LoopPage component', () => {
       expect(getByText('Loop')).toBeInTheDocument();
       fireEvent.click(getByText('Loop'));
       store.channelStore.sortedChannels.slice(0, 1).forEach(c => {
-        store.buildSwapStore.toggleSelectedChannel(c.chanId);
+        store.buildSwapView.toggleSelectedChannel(c.chanId);
       });
       fireEvent.click(getByText('Loop Out'));
       expect(getByText('Step 1 of 2')).toBeInTheDocument();
@@ -146,7 +146,7 @@ describe('LoopPage component', () => {
       expect(getByText('Loop')).toBeInTheDocument();
       fireEvent.click(getByText('Loop'));
       store.channelStore.sortedChannels.slice(0, 3).forEach(c => {
-        store.buildSwapStore.toggleSelectedChannel(c.chanId);
+        store.buildSwapView.toggleSelectedChannel(c.chanId);
       });
       fireEvent.click(getByText('Loop Out'));
       expect(getByText('Step 1 of 2')).toBeInTheDocument();
@@ -167,7 +167,7 @@ describe('LoopPage component', () => {
       expect(getByText('Loop')).toBeInTheDocument();
       fireEvent.click(getByText('Loop'));
       store.channelStore.sortedChannels.slice(0, 3).forEach(c => {
-        store.buildSwapStore.toggleSelectedChannel(c.chanId);
+        store.buildSwapView.toggleSelectedChannel(c.chanId);
       });
       fireEvent.click(getByText('Loop Out'));
       expect(getByText('Step 1 of 2')).toBeInTheDocument();
@@ -175,10 +175,10 @@ describe('LoopPage component', () => {
       expect(getByText('Step 2 of 2')).toBeInTheDocument();
       fireEvent.click(getByText('Confirm'));
       expect(getByText('Submitting Loop')).toBeInTheDocument();
-      expect(store.buildSwapStore.processingTimeout).toBeDefined();
+      expect(store.buildSwapView.processingTimeout).toBeDefined();
       fireEvent.click(getByText('arrow-left.svg'));
       expect(getByText('Review Loop amount and fee')).toBeInTheDocument();
-      expect(store.buildSwapStore.processingTimeout).toBeUndefined();
+      expect(store.buildSwapView.processingTimeout).toBeUndefined();
     });
 
     it('should sort the channel list', () => {

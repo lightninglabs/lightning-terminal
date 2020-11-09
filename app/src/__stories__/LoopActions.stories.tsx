@@ -15,24 +15,24 @@ export const Default = () => {
 
 export const Opened = () => {
   const store = useStore();
-  store.buildSwapStore.startSwap();
+  store.buildSwapView.startSwap();
   lndListChannels.channelsList.slice(0, 1).forEach(c => {
-    store.buildSwapStore.toggleSelectedChannel(c.chanId);
+    store.buildSwapView.toggleSelectedChannel(c.chanId);
   });
   return <LoopActions />;
 };
 
 export const LoopInWarn = () => {
   const store = useStore();
-  store.buildSwapStore.startSwap();
+  store.buildSwapView.startSwap();
   lndListChannels.channelsList.slice(0, 3).forEach(c => {
-    store.buildSwapStore.toggleSelectedChannel(c.chanId);
+    store.buildSwapView.toggleSelectedChannel(c.chanId);
   });
   return <LoopActions />;
 };
 
 export const ZeroChannels = () => {
   const store = useStore();
-  store.buildSwapStore.startSwap();
+  store.buildSwapView.startSwap();
   return <LoopActions />;
 };
