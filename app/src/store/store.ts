@@ -12,7 +12,6 @@ import {
   BuildSwapStore,
   ChannelStore,
   NodeStore,
-  OrderFormStore,
   OrderStore,
   RouterStore,
   SettingsStore,
@@ -24,6 +23,7 @@ import {
   CloseAccountView,
   FundAccountView,
   FundNewAccountView,
+  OrderFormView,
 } from './views';
 
 /**
@@ -43,7 +43,6 @@ export class Store {
   orderStore = new OrderStore(this);
   settingsStore = new SettingsStore(this);
   uiStore = new UiStore(this);
-  orderFormStore = new OrderFormStore(this);
 
   /** the store which synchronizes with the browser history */
   router: RouterStore;
@@ -55,6 +54,7 @@ export class Store {
   fundNewAccountView = new FundNewAccountView(this);
   fundAccountView = new FundAccountView(this);
   closeAccountView = new CloseAccountView(this);
+  orderFormView = new OrderFormView(this);
 
   /** the backend api services to be used by child stores */
   api: {
