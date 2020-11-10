@@ -37,11 +37,11 @@
     "mobx-react-lite": "3.0.1",
     "mobx-utils": "5.6.1",
     "rc-tooltip": "4.2.1",
-    "react": "16.13.1",
-    "react-dom": "16.13.1",
+    "react": "17.0.1",
+    "react-dom": "17.0.1",
     "react-i18next": "11.7.0",
     "react-router": "5.2.0",
-    "react-scripts": "3.4.1",
+    "react-scripts": "4.0.0",
     "react-toastify": "6.0.6",
     "react-virtualized": "9.21.2",
     "reactour": "1.18.0",
@@ -92,6 +92,7 @@
   },
   "jest": {
     "globalSetup": "./src/setupTestsGlobal.ts",
+    "resetMocks": false,
     "collectCoverageFrom": [
       "src/**/*.{js,jsx,ts,tsx}",
       "!src/**/*.d.ts",
