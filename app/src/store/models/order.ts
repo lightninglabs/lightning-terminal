@@ -1,7 +1,9 @@
 import { makeAutoObservable } from 'mobx';
 import * as AUCT from 'types/generated/auctioneer_pb';
 import * as POOL from 'types/generated/trader_pb';
+import { SortParams } from 'types/state';
 import Big from 'big.js';
+import formatDate from 'date-fns/format';
 import { hex } from 'util/strings';
 
 export enum OrderType {
@@ -20,6 +22,7 @@ export default class Order {
   units = 0;
   unitsUnfulfilled = 0;
   reserved = Big(0);
+  creationTimestamp = 0;
   // custom app values
   type: OrderType = OrderType.Bid;
   // for bids, this is the minimum. for asks this is the maximum
@@ -64,6 +67,16 @@ export default class Order {
     return 'Unknown';
   }
 
+  /** The date this swap was created as a JS Date object */
+  get createdOn() {
+    return new Date(this.creationTimestamp / 1000 / 1000);
+  }
+
+  /** The date this swap was created as formatted string */
+  get createdOnLabel() {
+    return formatDate(this.createdOn, 'MMM d, h:mm a');
+  }
+
   /**
    * Updates this order model using data provided from the POOL GRPC api
    * @param poolOrder the order data
@@ -78,8 +91,29 @@ export default class Order {
     this.units = poolOrder.units;
     this.unitsUnfulfilled = poolOrder.unitsUnfulfilled;
     this.reserved = Big(poolOrder.reservedValueSat);
+    this.creationTimestamp = poolOrder.creationTimestampNs;
 
     this.type = type;
     this.duration = duration;
+  }
+
+  /**
+   * Compares a specific field of two orders for sorting
+   * @param a the first order to compare
+   * @param b the second order to compare
+   * @param sortBy the field and direction to sort the two orders by
+   * @returns a positive number if `a`'s field is greater than `b`'s,
+   * a negative number if `a`'s field is less than `b`'s, or zero otherwise
+   */
+  static compare(a: Order, b: Order, field: SortParams<Order>['field']): number {
+    switch (field) {
+      case 'stateLabel':
+        return a.stateLabel.toLowerCase() > b.stateLabel.toLowerCase() ? 1 : -1;
+      case 'amount':
+        return +a.amount.sub(b.amount);
+      case 'creationTimestamp':
+      default:
+        return a.creationTimestamp - b.creationTimestamp;
+    }
   }
 }

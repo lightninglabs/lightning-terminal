@@ -2,6 +2,7 @@ import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { HeaderFour, Section } from 'components/base';
 import { styled } from 'components/theme';
+import OrdersList from './orders/OrdersList';
 
 const Styled = {
   Section: styled(Section)`
@@ -13,7 +14,8 @@ const DetailsSection: React.FC = () => {
   const { Section } = Styled;
   return (
     <Section>
-      <HeaderFour>TODO: Order and Batch Details</HeaderFour>
+      <HeaderFour>Orders</HeaderFour>
+      <OrdersList />
     </Section>
   );
 };

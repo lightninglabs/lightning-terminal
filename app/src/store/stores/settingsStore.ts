@@ -2,7 +2,7 @@ import { autorun, makeAutoObservable, toJS } from 'mobx';
 import { SortParams } from 'types/state';
 import { BalanceMode, Unit } from 'util/constants';
 import { Store } from 'store';
-import { Channel, Swap } from 'store/models';
+import { Channel, Order, Swap } from 'store/models';
 
 export interface PersistentSettings {
   sidebarVisible: boolean;
@@ -11,6 +11,7 @@ export interface PersistentSettings {
   tourAutoShown: boolean;
   channelSort: SortParams<Channel>;
   historySort: SortParams<Swap>;
+  orderSort: SortParams<Order>;
 }
 
 export default class SettingsStore {
@@ -40,6 +41,12 @@ export default class SettingsStore {
   /** specifies the sorting field and direction for the channel list */
   historySort: SortParams<Swap> = {
     field: 'lastUpdateTime',
+    descending: true,
+  };
+
+  /** specifies the sorting field and direction for the Pool orders list */
+  orderSort: SortParams<Order> = {
+    field: 'creationTimestamp',
     descending: true,
   };
 
@@ -116,6 +123,16 @@ export default class SettingsStore {
   }
 
   /**
+   * Sets the sort field and direction that the orders list should use
+   * @param field the order field to sort by
+   * @param descending true of the order should be descending, otherwise false
+   */
+  setOrderSort(field: SortParams<Order>['field'], descending: boolean) {
+    this.orderSort = { field, descending };
+    this._store.log.info('updated orders list sort order', toJS(this.orderSort));
+  }
+
+  /**
    * initialized the settings and auto-save when a setting is changed
    */
   init() {
@@ -129,6 +146,7 @@ export default class SettingsStore {
           tourAutoShown: this.tourAutoShown,
           channelSort: toJS(this.channelSort),
           historySort: toJS(this.historySort),
+          orderSort: toJS(this.orderSort),
         };
         this._store.storage.set('settings', settings);
         this._store.log.info('saved settings to localStorage', settings);
@@ -150,6 +168,7 @@ export default class SettingsStore {
       this.tourAutoShown = settings.tourAutoShown;
       if (settings.channelSort) this.channelSort = settings.channelSort;
       if (settings.historySort) this.historySort = settings.historySort;
+      if (settings.orderSort) this.orderSort = settings.orderSort;
       this._store.log.info('loaded settings', settings);
     }
 

@@ -24,11 +24,21 @@ export default class OrderStore {
     this._store = store;
   }
 
+  /** all orders sorted by created date descending */
+  get sortedOrders() {
+    const { field, descending } = this._store.settingsStore.orderSort;
+    const orders = values(this.orders)
+      .slice()
+      .sort((a, b) => Order.compare(a, b, field));
+
+    return descending ? orders.reverse() : orders;
+  }
+
   /** the list of orders for the currently active account */
   get accountOrders() {
-    return values(this.orders)
-      .slice()
-      .filter(o => o.traderKey === this._store.accountStore.activeTraderKey);
+    return this.sortedOrders.filter(
+      o => o.traderKey === this._store.accountStore.activeTraderKey,
+    );
   }
 
   /** the number of pending orders for the active account */
