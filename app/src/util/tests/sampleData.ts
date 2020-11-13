@@ -495,6 +495,89 @@ export const poolBatchSnapshot: AUCT.BatchSnapshotResponse.AsObject = {
     '02000000000103f1a75ac5d0fdd52393410f71ead0bd9ab8d0af3974d47e86dde91c76cab46bb9010000000000000000f1a75ac5d0fdd52393410f71ead0bd9ab8d0af3974d47e86dde91c76cab46bb90300000000000000004324d5c4a412675ee5262aaa5afcca95ecdeb94764145823b93a41c53a7d07ef0600000000000000000523751100000000002200200dd535051271e7718bedb65e6861b31815a644b91d3a5107a74fa8ee16c823ed207e750000000000220020a70ab73d7d1c2efaeb280e26b98df9761d8e37cb3160cafc29381e8086254f7180c3c9010000000022002050dba23ca20d53adf5f94695040839c0be1ef609b70e19713c1d88d7d0db04f5c008fe0200000000220020bb8bc3b7c011060ff4002ab1c995a4eddcd1b4ef41aee5dca690a2903ede53ea24819e0300000000220020a3e3dfb76e7a4e72634bb5ee3006491fffbaecafe8882554d9a6b434f0b841aa02473044022066fe9cc1b0ecc84367839cdbaad606888260e6349d6c21f22186660f78dbe38202206fa0066fd0a4385348c615777b3e751db5f5d8306771522445a873dc7bed56a101232103d7c453a1aefcbbc6043372036db9d76816f830865392f97a262c447b59eb332eac03483045022100db6895c68e4cbd5fb83af7c37164dbf3da0c1222fb55177c4c367f05e9bed55902206b4775bb1c978380f95a9c444f392a53803b8b6d5508d41d0982a540d0c9062601483045022100ecc4ccaf440eae13e2afb8461f1c28d66af87f7e5d880732ae2fe72f85d5572302204656d5dbc963166c7bd92a93631fe49e20e4b1121914ca76e7cb87c3d983ee5a014e2103c736dec8b8f45cecd32fcedfcb8c0be92a2a3b40bffa8b1ce64640972a19fc49ad2102c642aaf70c56aa156db9546fc6e76c484b6a091b645fb848fd51916bd1e931caac736403cc531cb16803483045022100ed30c4f090dbe19d4f1dcb28f2701cf8a0bbf671a360d217384332248502de6c022025dac44cd380eda709bda3cbe6dbbe7a916549994bd72e48470a322a89fbbfba01473044022070c7e4909786fe5d482f35e1301d5cd2b5932c91b23d16bf699fe6bf455165220220015a3241a84620a27c110f307906f7047262947694c29b4752891d8b00153054014e2103305a3323068e66461ac3b247a2bfdc339959c3975da0ac4677e4d027462aaa14ad2102e2ec3f93e098e073490ad19fda9c11a92e2ed02ed3eecc5527972dba99b6d4e1ac736403a4f51bb16800000000',
 };
 
+export const poolLeases: POOL.LeasesResponse.AsObject = {
+  leasesList: [
+    {
+      channelPoint: {
+        txid: '8f900c6414c5c27231080f46168105e9fec20f9fb2f11b25ee0312d89bc022c0',
+        outputIndex: 2,
+      },
+      channelAmtSat: 300000,
+      channelDurationBlocks: 2016,
+      channelLeaseExpiry: 652200,
+      channelRemoteNodeKey:
+        '0256812a1cb2539a5500f3c1c20db5ed7626e3878a552e3356c032c7bec2b3060e',
+      channelNodeTier: AUCT.NodeTier.TIER_0,
+      premiumSat: 2999,
+      clearingRatePrice: 2480,
+      orderFixedRate: 2480,
+      executionFeeSat: 301,
+      chainFeeSat: 516,
+      orderNonce: 'e7a8ac333c6883aead49057c79b7475b9eb9bae09f139edc5244b7ce317ccf19',
+      purchased: true,
+    },
+    {
+      channelPoint: {
+        txid: '2131bd736973a02345d5691e0492b74436e3f14f642ce878c6581b46590f612a',
+        outputIndex: 3,
+      },
+      channelAmtSat: 1000000,
+      channelDurationBlocks: 2016,
+      channelLeaseExpiry: 0,
+      channelRemoteNodeKey:
+        '0326968a0d33f7b57b4997a5aee7681c429d2470b3e04a5974f54230f84edf9899',
+      channelNodeTier: AUCT.NodeTier.TIER_0,
+      premiumSat: 3999,
+      clearingRatePrice: 1984,
+      orderFixedRate: 4960,
+      executionFeeSat: 1001,
+      chainFeeSat: 926,
+      orderNonce: 'c5546500c7df49c3b1a0f51cafd68ceea17d4bb0bac083f45dd7a3b39b4b7017',
+      purchased: true,
+    },
+    {
+      channelPoint: {
+        txid: '2131bd736973a02345d5691e0492b74436e3f14f642ce878c6581b46590f612a',
+        outputIndex: 2,
+      },
+      channelAmtSat: 1000000,
+      channelDurationBlocks: 2016,
+      channelLeaseExpiry: 0,
+      channelRemoteNodeKey:
+        '0326968a0d33f7b57b4997a5aee7681c429d2470b3e04a5974f54230f84edf9899',
+      channelNodeTier: AUCT.NodeTier.TIER_0,
+      premiumSat: 3999,
+      clearingRatePrice: 1984,
+      orderFixedRate: 4960,
+      executionFeeSat: 1001,
+      chainFeeSat: 926,
+      orderNonce: '37baf1d0cd020c12f6ac7f4ffb91fe453fa28ea8dc696c8ba1e21871639c4391',
+      purchased: true,
+    },
+    {
+      channelPoint: {
+        txid: '1886dfa2f695aab9c5e877236bfeb206b2f9e5f9af496bd87d6f715f934dea25',
+        outputIndex: 2,
+      },
+      channelAmtSat: 2000000,
+      channelDurationBlocks: 2016,
+      channelLeaseExpiry: 657195,
+      channelRemoteNodeKey:
+        '02dfdcca40725ca204eec5d43a9201ff13fcd057c369c058ce4f19e5c178da09f3',
+      channelNodeTier: AUCT.NodeTier.TIER_0,
+      premiumSat: 9999,
+      clearingRatePrice: 2480,
+      orderFixedRate: 2480,
+      executionFeeSat: 2001,
+      chainFeeSat: 25330,
+      orderNonce: 'c17a65f1f441db964737d3e4b0626891cdc39465a65afd902a74ed58682ccd87',
+      purchased: true,
+    },
+  ],
+  totalAmtEarnedSat: 0,
+  totalAmtPaidSat: 54638,
+};
+
 // collection of sample API responses
 export const sampleApiResponses: Record<string, any> = {
   'lnrpc.Lightning.GetInfo': lndGetInfo,
@@ -520,4 +603,5 @@ export const sampleApiResponses: Record<string, any> = {
   'poolrpc.Trader.SubmitOrder': poolSubmitOrder,
   'poolrpc.Trader.CancelOrder': poolCancelOrder,
   'poolrpc.Trader.BatchSnapshot': poolBatchSnapshot,
+  'poolrpc.Trader.Leases': poolLeases,
 };
