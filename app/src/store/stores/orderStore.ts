@@ -1,4 +1,5 @@
 import {
+  keys,
   makeAutoObservable,
   observable,
   ObservableMap,
@@ -9,7 +10,7 @@ import {
 import * as POOL from 'types/generated/trader_pb';
 import { hex } from 'util/strings';
 import { Store } from 'store';
-import { Order } from 'store/models';
+import { Lease, Order } from 'store/models';
 import { OrderType } from 'store/models/order';
 
 export default class OrderStore {
@@ -17,6 +18,8 @@ export default class OrderStore {
 
   /** the collection of orders */
   orders: ObservableMap<string, Order> = observable.map();
+  /** the collection of leases */
+  leases: ObservableMap<string, Lease> = observable.map();
 
   constructor(store: Store) {
     makeAutoObservable(this, {}, { deep: false, autoBind: true });
@@ -90,8 +93,47 @@ export default class OrderStore {
 
         this._store.log.info('updated orderStore.orders', toJS(this.orders));
       });
+
+      // fetch leases whenever orders are fetched
+      await this.fetchLeases();
     } catch (error) {
       this._store.appView.handleError(error, 'Unable to fetch orders');
+    }
+  }
+
+  /**
+   * queries the POOL api to fetch the list of leases and stores them
+   * in the state
+   */
+  async fetchLeases() {
+    this._store.log.info('fetching leases');
+
+    try {
+      const { leasesList } = await this._store.api.pool.listLeases();
+
+      runInAction(() => {
+        leasesList.forEach(poolLease => {
+          // update existing leases or create new ones in state. using this
+          // approach instead of overwriting the array will cause fewer state
+          // mutations, resulting in better react rendering performance
+          const channelPoint = Lease.channelPointToString(poolLease.channelPoint);
+          const existing = this.leases.get(channelPoint);
+          if (existing) {
+            existing.update(poolLease);
+          } else {
+            this.leases.set(channelPoint, new Lease(poolLease));
+          }
+        });
+        // remove any leases in state that are not in the API response
+        const serverIds = leasesList.map(a => Lease.channelPointToString(a.channelPoint));
+        const localIds = keys(this.leases);
+        localIds
+          .filter(id => !serverIds.includes(id))
+          .forEach(id => this.leases.delete(id));
+        this._store.log.info('updated orderStore.orders', toJS(this.orders));
+      });
+    } catch (error) {
+      this._store.appView.handleError(error, 'Unable to fetch leases');
     }
   }
 

@@ -24,6 +24,7 @@ import {
   FundAccountView,
   FundNewAccountView,
   OrderFormView,
+  OrderListView,
 } from './views';
 
 /**
@@ -55,6 +56,7 @@ export class Store {
   fundAccountView = new FundAccountView(this);
   closeAccountView = new CloseAccountView(this);
   orderFormView = new OrderFormView(this);
+  orderListView = new OrderListView(this);
 
   /** the backend api services to be used by child stores */
   api: {

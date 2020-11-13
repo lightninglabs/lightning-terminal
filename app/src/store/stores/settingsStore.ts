@@ -3,6 +3,7 @@ import { SortParams } from 'types/state';
 import { BalanceMode, Unit } from 'util/constants';
 import { Store } from 'store';
 import { Channel, Order, Swap } from 'store/models';
+import { LeaseView } from 'store/views';
 
 export interface PersistentSettings {
   sidebarVisible: boolean;
@@ -12,6 +13,7 @@ export interface PersistentSettings {
   channelSort: SortParams<Channel>;
   historySort: SortParams<Swap>;
   orderSort: SortParams<Order>;
+  leaseSort: SortParams<LeaseView>;
 }
 
 export default class SettingsStore {
@@ -47,6 +49,12 @@ export default class SettingsStore {
   /** specifies the sorting field and direction for the Pool orders list */
   orderSort: SortParams<Order> = {
     field: 'creationTimestamp',
+    descending: true,
+  };
+
+  /** specifies the sorting field and direction for the Pool leases list */
+  leaseSort: SortParams<LeaseView> = {
+    field: 'duration',
     descending: true,
   };
 
@@ -133,6 +141,16 @@ export default class SettingsStore {
   }
 
   /**
+   * Sets the sort field and direction that the leases list should use
+   * @param field the lease field to sort by
+   * @param descending true of the lease should be descending, otherwise false
+   */
+  setLeaseSort(field: SortParams<LeaseView>['field'], descending: boolean) {
+    this.leaseSort = { field, descending };
+    this._store.log.info('updated leases list sort lease', toJS(this.leaseSort));
+  }
+
+  /**
    * initialized the settings and auto-save when a setting is changed
    */
   init() {
@@ -147,6 +165,7 @@ export default class SettingsStore {
           channelSort: toJS(this.channelSort),
           historySort: toJS(this.historySort),
           orderSort: toJS(this.orderSort),
+          leaseSort: toJS(this.leaseSort),
         };
         this._store.storage.set('settings', settings);
         this._store.log.info('saved settings to localStorage', settings);
@@ -169,6 +188,7 @@ export default class SettingsStore {
       if (settings.channelSort) this.channelSort = settings.channelSort;
       if (settings.historySort) this.historySort = settings.historySort;
       if (settings.orderSort) this.orderSort = settings.orderSort;
+      if (settings.leaseSort) this.leaseSort = settings.leaseSort;
       this._store.log.info('loaded settings', settings);
     }
 
