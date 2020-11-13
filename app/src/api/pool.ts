@@ -22,6 +22,9 @@ export const DURATION = 2016;
 // The minimum batch fee rate in sats/kw
 export const MIN_FEE_RATE_KW = 253;
 
+// The latest order version. This should be updated along with pool CLI
+export const ORDER_VERSION = 1;
+
 /** the names and argument types for the subscription events */
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface PoolEvents {}
@@ -170,12 +173,21 @@ class PoolApi extends BaseApi<PoolEvents> {
       case OrderType.Bid:
         const bid = new POOL.Bid();
         bid.setLeaseDurationBlocks(duration);
+        bid.setVersion(ORDER_VERSION);
+        // TODO(jamal): add node tier to bid/ask form
+        // temporarily use tier 0 for development and tier 1 for prod
+        bid.setMinNodeTier(
+          process.env.NODE_ENV === 'development'
+            ? AUCT.NodeTier.TIER_0
+            : AUCT.NodeTier.TIER_1,
+        );
         bid.setDetails(order);
         req.setBid(bid);
         break;
       case OrderType.Ask:
         const ask = new POOL.Ask();
         ask.setLeaseDurationBlocks(duration);
+        ask.setVersion(ORDER_VERSION);
         ask.setDetails(order);
         req.setAsk(ask);
         break;
@@ -192,6 +204,15 @@ class PoolApi extends BaseApi<PoolEvents> {
     const req = new POOL.CancelOrderRequest();
     req.setOrderNonce(b64(orderNonce));
     const res = await this._grpc.request(Trader.CancelOrder, req, this._meta);
+    return res.toObject();
+  }
+
+  /**
+   * call the pool `Leases` RPC and return the response
+   */
+  async listLeases(): Promise<POOL.LeasesResponse.AsObject> {
+    const req = new POOL.LeasesRequest();
+    const res = await this._grpc.request(Trader.Leases, req, this._meta);
     return res.toObject();
   }
 

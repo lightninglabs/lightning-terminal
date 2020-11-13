@@ -18,7 +18,10 @@ export const TableHeader = styled.th<{ right?: boolean }>`
   }
 `;
 
-export const TableRow = styled.tr<{ selectable?: boolean }>`
+export const TableRow = styled.tr<{ selectable?: boolean; selected?: boolean }>`
+  background-color: ${props =>
+    props.selected ? props.theme.colors.overlay : 'transparent'};
+
   ${props =>
     props.selectable &&
     `  
