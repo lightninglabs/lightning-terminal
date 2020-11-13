@@ -257,7 +257,7 @@ class BuildSwapView {
     if (this.selectedChanIds.includes(channelId)) {
       this.selectedChanIds = this.selectedChanIds.filter(id => id !== channelId);
     } else {
-      this.selectedChanIds.push(channelId);
+      this.selectedChanIds = [...this.selectedChanIds, channelId];
     }
     this._store.log.info(
       `updated buildSwapView.selectedChanIds`,
