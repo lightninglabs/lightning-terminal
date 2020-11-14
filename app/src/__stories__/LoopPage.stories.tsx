@@ -21,7 +21,7 @@ export const ManyChannels = () => {
   useEffect(() => {
     store.channelStore.channels = observable.map();
     lndListChannelsMany.channelsList.forEach(c => {
-      const chan = new Channel(store, c);
+      const chan = Channel.create(store, c);
       store.channelStore.channels.set(chan.chanId, chan);
     });
   });

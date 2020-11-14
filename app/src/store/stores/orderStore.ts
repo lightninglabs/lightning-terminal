@@ -130,7 +130,7 @@ export default class OrderStore {
         localIds
           .filter(id => !serverIds.includes(id))
           .forEach(id => this.leases.delete(id));
-        this._store.log.info('updated orderStore.orders', toJS(this.orders));
+        this._store.log.info('updated orderStore.leases', toJS(this.leases));
       });
     } catch (error) {
       this._store.appView.handleError(error, 'Unable to fetch leases');

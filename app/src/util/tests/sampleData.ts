@@ -144,6 +144,63 @@ export const lndListChannels: LND.ListChannelsResponse.AsObject = {
   channelsList: lndListChannelsMany.channelsList.slice(0, 10),
 };
 
+export const lndPendingChannel: LND.PendingChannelsResponse.PendingChannel.AsObject = {
+  capacity: 500000,
+  channelPoint: '987da7ae4e56a30ee841edc5a4ccf61112e98bce7d4acfdf8e71a670296d16a7:0',
+  commitmentType: 1,
+  initiator: 2,
+  localBalance: 0,
+  localChanReserveSat: 5000,
+  remoteBalance: 490950,
+  remoteChanReserveSat: 5000,
+  remoteNodePub: '03bb934930cdcd25576aa61d08cc95214e0036f1219c435c06976e561558703290',
+};
+
+export const lndPendingChannels: LND.PendingChannelsResponse.AsObject = {
+  totalLimboBalance: 0,
+  pendingOpenChannelsList: [
+    {
+      channel: lndPendingChannel,
+      commitFee: 9050,
+      commitWeight: 552,
+      confirmationHeight: 0,
+      feePerKw: 12500,
+    },
+  ],
+  pendingClosingChannelsList: [
+    {
+      channel: lndPendingChannel,
+      closingTxid: 'fe65f668a1efe1c088b0e7d44abb707cb0171ebbbe43e8f6bb985a98643f1672',
+    },
+  ],
+  waitingCloseChannelsList: [
+    {
+      channel: lndPendingChannel,
+      commitments: {
+        localCommitFeeSat: 9050,
+        localTxid: 'fe65f668a1efe1c088b0e7d44abb707cb0171ebbbe43e8f6bb985a98643f1672',
+        remoteCommitFeeSat: 9050,
+        remotePendingCommitFeeSat: 0,
+        remotePendingTxid: '',
+        remoteTxid: '9850a4b1cfcfbf972f8541b26b8061ed3091ee8cbed5875167080be4be9524e7',
+      },
+      limboBalance: 0,
+    },
+  ],
+  pendingForceClosingChannelsList: [
+    {
+      channel: lndPendingChannel,
+      anchor: 0,
+      blocksTilMaturity: 142,
+      closingTxid: '6c151252215b73547a5415051c82dd25c725c4309b93fed4f38c4c5b610c3fb0',
+      limboBalance: 990950,
+      maturityHeight: 440,
+      pendingHtlcsList: [],
+      recoveredBalance: 0,
+    },
+  ],
+};
+
 const txIdBytes = b64(txId, true);
 export const lndChannelEvent: Required<LND.ChannelEventUpdate.AsObject> = {
   type: LND.ChannelEventUpdate.UpdateType.OPEN_CHANNEL,
@@ -586,6 +643,7 @@ export const sampleApiResponses: Record<string, any> = {
   'lnrpc.Lightning.ChannelBalance': lndChannelBalance,
   'lnrpc.Lightning.WalletBalance': lndWalletBalance,
   'lnrpc.Lightning.ListChannels': lndListChannels,
+  'lnrpc.Lightning.PendingChannels': lndPendingChannels,
   'looprpc.SwapClient.ListSwaps': loopListSwaps,
   'looprpc.SwapClient.LoopOutTerms': loopOutTerms,
   'looprpc.SwapClient.GetLoopInTerms': loopInTerms,

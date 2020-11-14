@@ -148,7 +148,7 @@ describe('ChannelStore', () => {
       .spyOn(window.sessionStorage.__proto__, 'getItem')
       .mockReturnValue(JSON.stringify(cache));
 
-    const channel = new Channel(rootStore, lndChannel);
+    const channel = Channel.create(rootStore, lndChannel);
     store.channels = observable.map({
       [channel.chanId]: channel,
     });
@@ -180,7 +180,7 @@ describe('ChannelStore', () => {
       .spyOn(window.sessionStorage.__proto__, 'getItem')
       .mockReturnValue(JSON.stringify(cache));
 
-    const channel = new Channel(rootStore, lndChannel);
+    const channel = Channel.create(rootStore, lndChannel);
     store.channels = observable.map({
       [channel.chanId]: channel,
     });

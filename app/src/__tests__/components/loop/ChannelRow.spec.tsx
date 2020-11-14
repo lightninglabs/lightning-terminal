@@ -16,7 +16,7 @@ describe('ChannelRow component', () => {
   beforeEach(async () => {
     store = createStore();
     await store.fetchAllData();
-    channel = new Channel(store, {
+    channel = Channel.create(store, {
       chanId: '150633093070848',
       remotePubkey: '02ac59099da6d4bd818e6a81098f5d54580b7c3aa8255c707fa0f95ca89b02cb8c',
       capacity: 15000000,

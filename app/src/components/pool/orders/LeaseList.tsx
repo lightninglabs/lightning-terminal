@@ -74,7 +74,7 @@ const LeaseList: React.FC = () => {
         {orderListView.selectedLeases.map(lease => (
           <TableRow key={lease.channelPoint} selectable>
             <TableCell right>{lease.balances}</TableCell>
-            <TableCell right>{lease.apy}</TableCell>
+            <TableCell right>{lease.apyLabel}</TableCell>
             <TableCell right>{lease.premium}</TableCell>
             <TableCell right>{lease.status}</TableCell>
             <TableCell right>{lease.duration}</TableCell>

@@ -371,7 +371,7 @@ describe('BuildSwapView', () => {
     const addChannel = (capacity: number, localBalance: number) => {
       const remoteBalance = capacity - localBalance;
       const lndChan = { ...lndChannel, capacity, localBalance, remoteBalance };
-      const channel = new Channel(rootStore, lndChan);
+      const channel = Channel.create(rootStore, lndChan);
       channel.chanId = `${channel.chanId}${rootStore.channelStore.channels.size}`;
       channel.remotePubkey = `${channel.remotePubkey}${rootStore.channelStore.channels.size}`;
       rootStore.channelStore.channels.set(channel.chanId, channel);
