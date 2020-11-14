@@ -1,4 +1,4 @@
-import { makeAutoObservable, observable, values } from 'mobx';
+import { makeAutoObservable, observable } from 'mobx';
 import { Store } from 'store';
 import { Channel } from 'store/models';
 import { LeaseView } from './';
@@ -7,7 +7,7 @@ export default class OrderListView {
   private _store: Store;
 
   // the currently selected order
-  selectedNonce = '';
+  chosenNonce = '';
 
   constructor(store: Store) {
     makeAutoObservable(this, {}, { deep: false, autoBind: true });
@@ -36,13 +36,16 @@ export default class OrderListView {
     return channels;
   }
 
+  /** the manually chosen order nonce, or the nonce of the first order */
+  get selectedNonce() {
+    return this.chosenNonce || (this.orders.length ? this.orders[0].nonce : '');
+  }
+
   /** the list of leases for the selected order */
   get selectedLeases() {
-    if (!this.selectedNonce) return [];
-
     const { field, descending } = this._store.settingsStore.leaseSort;
-    const leases = values(this._store.orderStore.leases)
-      .filter(lease => lease.orderNonce === this.selectedNonce)
+    const leases = this._store.orderStore.leasesByNonce[this.selectedNonce] || [];
+    const leaseViews = leases
       .map(lease => {
         const currHeight = this._store.nodeStore.blockHeight;
         const channel = this.channelsByPoint.get(lease.channelPoint);
@@ -50,14 +53,14 @@ export default class OrderListView {
       })
       .sort((a, b) => LeaseView.compare(a, b, field));
 
-    return descending ? leases.reverse() : leases;
+    return descending ? leaseViews.reverse() : leaseViews;
   }
 
   //
   // Actions
   //
 
-  setSelectedNonce(nonce: string) {
-    this.selectedNonce = nonce;
+  setChosenNonce(nonce: string) {
+    this.chosenNonce = nonce;
   }
 }
