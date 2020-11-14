@@ -8,6 +8,7 @@ import {
   values,
 } from 'mobx';
 import * as POOL from 'types/generated/trader_pb';
+import debounce from 'lodash/debounce';
 import { hex } from 'util/strings';
 import { Store } from 'store';
 import { Lease, Order } from 'store/models';
@@ -118,6 +119,9 @@ export default class OrderStore {
     }
   }
 
+  /** fetch orders at most once every 2 seconds when using this func  */
+  fetchOrdersThrottled = debounce(this.fetchOrders, 2000);
+
   /**
    * queries the POOL api to fetch the list of leases and stores them
    * in the state
@@ -153,6 +157,9 @@ export default class OrderStore {
       this._store.appView.handleError(error, 'Unable to fetch leases');
     }
   }
+
+  /** fetch leases at most once every 2 seconds when using this func  */
+  fetchLeasesThrottled = debounce(this.fetchLeases, 2000);
 
   /**
    * Submits an order to the market

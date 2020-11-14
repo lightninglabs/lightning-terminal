@@ -125,10 +125,12 @@ export default class Order {
    */
   static compare(a: Order, b: Order, field: SortParams<Order>['field']): number {
     switch (field) {
-      case 'stateLabel':
-        return a.stateLabel.toLowerCase() > b.stateLabel.toLowerCase() ? 1 : -1;
+      case 'type':
+        return a.type.toLowerCase() > b.type.toLowerCase() ? 1 : -1;
       case 'amount':
         return +a.amount.sub(b.amount);
+      case 'stateLabel':
+        return a.stateLabel.toLowerCase() > b.stateLabel.toLowerCase() ? 1 : -1;
       case 'creationTimestamp':
       default:
         return a.creationTimestamp - b.creationTimestamp;

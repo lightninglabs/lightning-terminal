@@ -302,6 +302,9 @@ export default class ChannelStore {
       // add or update the pending channels by fetching the full list from the
       // API, since the event doesn't contain the channel data
       this.fetchPendingChannelsThrottled();
+      // fetch orders & leases whenever a channel is updated
+      this._store.orderStore.fetchOrdersThrottled();
+      this._store.orderStore.fetchLeasesThrottled();
     }
   }
 

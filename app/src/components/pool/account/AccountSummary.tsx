@@ -28,8 +28,6 @@ const AccountSummary: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.pool.account.AccountSummary');
   const { orderStore, accountStore, accountSectionView } = useStore();
 
-  if (!accountStore.activeTraderKey) return null;
-
   const { Expires, Summary, CopyButton, Actions } = Styled;
   return (
     <>

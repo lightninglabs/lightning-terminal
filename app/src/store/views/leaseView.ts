@@ -6,9 +6,9 @@ import { ellipseInside } from 'util/strings';
 import { Channel, Lease } from 'store/models';
 
 export default class LeaseView {
-  private lease: Lease;
-  private currHeight: number;
-  private channel?: Channel;
+  lease: Lease;
+  currHeight: number;
+  channel?: Channel;
 
   constructor(lease: Lease, currHeight: number, channel?: Channel) {
     makeAutoObservable(this, {}, { deep: false, autoBind: true });
