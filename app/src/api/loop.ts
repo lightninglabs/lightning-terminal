@@ -5,6 +5,8 @@ import Big from 'big.js';
 import BaseApi from './base';
 import GrpcClient from './grpc';
 
+const LOOP_INITIATOR = 'lit-ui';
+
 /** the names and argument types for the subscription events */
 interface LoopEvents {
   monitor: LOOP.SwapStatus.AsObject;
@@ -89,6 +91,7 @@ class LoopApi extends BaseApi<LoopEvents> {
     req.setAmt(+amount);
     req.setMaxSwapFee(+quote.swapFee);
     req.setMaxMinerFee(+quote.minerFee);
+    req.setInitiator(LOOP_INITIATOR);
     if (lastHop) req.setLastHop(Buffer.from(lastHop, 'hex').toString('base64'));
     if (confTarget) req.setHtlcConfTarget(confTarget);
     const res = await this._grpc.request(SwapClient.LoopIn, req, this._meta);
@@ -115,6 +118,7 @@ class LoopApi extends BaseApi<LoopEvents> {
     req.setMaxPrepayRoutingFee(this._calcRoutingFee(+quote.prepayAmount));
     req.setOutgoingChanSetList(chanIds);
     req.setSwapPublicationDeadline(deadline);
+    req.setInitiator(LOOP_INITIATOR);
     if (confTarget) req.setSweepConfTarget(confTarget);
     if (destAddress) req.setDest(destAddress);
 

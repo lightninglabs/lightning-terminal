@@ -1,6 +1,7 @@
 PKG := github.com/lightninglabs/lightning-terminal
 ESCPKG := github.com\/lightninglabs\/lightning-terminal
 LND_PKG := github.com/lightningnetwork/lnd
+LOOP_PKG := github.com/lightninglabs/loop
 
 LINT_PKG := github.com/golangci/golangci-lint/cmd/golangci-lint
 GOVERALLS_PKG := github.com/mattn/goveralls
@@ -15,6 +16,12 @@ STATIK_BIN := $(GO_BIN)/statik
 
 COMMIT := $(shell git describe --abbrev=40 --dirty --tags)
 COMMIT_HASH := $(shell git rev-parse HEAD)
+
+LOOP_COMMIT := $(shell cat go.mod | \
+		grep $(LOOP_PKG) | \
+		head -n1 | \
+		awk -F " " '{ print $$2 }' | \
+		awk -F "/" '{ print $$1 }')
 
 LINT_COMMIT := v1.18.0
 GOACC_COMMIT := ddc355013f90fea78d83d3a6c71f1d37ac07ecd5
@@ -44,7 +51,8 @@ include make/release_flags.mk
 make_ldflags = $(2) -X $(LND_PKG)/build.Commit=lightning-terminal-$(COMMIT) \
 	-X $(LND_PKG)/build.CommitHash=$(COMMIT_HASH) \
 	-X $(LND_PKG)/build.GoVersion=$(GOVERSION) \
-	-X $(LND_PKG)/build.RawTags=$(shell echo $(1) | sed -e 's/ /,/g')
+	-X $(LND_PKG)/build.RawTags=$(shell echo $(1) | sed -e 's/ /,/g') \
+	-X $(LOOP_PKG).Commit=$(LOOP_COMMIT)
 
 LDFLAGS := $(call make_ldflags, $(LND_RELEASE_TAGS))
 
