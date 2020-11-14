@@ -66,7 +66,7 @@ export default class Order {
       case AUCT.OrderState.ORDER_PARTIALLY_FILLED:
         return 'Partially Filled';
       case AUCT.OrderState.ORDER_EXECUTED:
-        return 'Executed';
+        return 'Filled';
       case AUCT.OrderState.ORDER_CANCELED:
         return 'Cancelled';
       case AUCT.OrderState.ORDER_EXPIRED:
