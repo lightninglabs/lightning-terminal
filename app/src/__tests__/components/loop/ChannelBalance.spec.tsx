@@ -13,7 +13,7 @@ describe('ChannelBalance component', () => {
 
   const render = (ratio: number, active = true) => {
     const store = createStore();
-    channel = new Channel(store, lndChannel);
+    channel = Channel.create(store, lndChannel);
     channel.localBalance = channel.capacity.mul(ratio);
     channel.remoteBalance = channel.capacity.mul(1 - ratio);
     channel.active = active;

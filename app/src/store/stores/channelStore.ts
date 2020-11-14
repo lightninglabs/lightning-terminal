@@ -6,7 +6,12 @@ import {
   toJS,
   values,
 } from 'mobx';
-import { ChannelEventUpdate, ChannelPoint } from 'types/generated/lnd_pb';
+import {
+  ChannelEventUpdate,
+  ChannelPoint,
+  PendingChannelsResponse,
+} from 'types/generated/lnd_pb';
+import { ChannelStatus } from 'types/state';
 import Big from 'big.js';
 import debounce from 'lodash/debounce';
 import { hex } from 'util/strings';
@@ -18,13 +23,17 @@ const {
   CLOSED_CHANNEL,
   ACTIVE_CHANNEL,
   INACTIVE_CHANNEL,
+  PENDING_OPEN_CHANNEL,
 } = ChannelEventUpdate.UpdateType;
 
 export default class ChannelStore {
   private _store: Store;
 
-  /** the collection of channels */
+  /** the collection of open channels mapped by chanId */
   channels: ObservableMap<string, Channel> = observable.map();
+
+  /** the collection of pending channels mapped by channelPoint */
+  pendingChannels: ObservableMap<string, Channel> = observable.map();
 
   constructor(store: Store) {
     makeAutoObservable(this, {}, { deep: false, autoBind: true });
@@ -33,11 +42,22 @@ export default class ChannelStore {
   }
 
   /**
-   * an array of channels sorted by balance percent descending
+   * an array of channels sorted
    */
   get sortedChannels() {
     const { field, descending } = this._store.settingsStore.channelSort;
     const channels = values(this.channels)
+      .slice()
+      .sort((a, b) => Channel.compare(a, b, field));
+    return descending ? channels.reverse() : channels;
+  }
+
+  /**
+   * an array of pending channels sorted
+   */
+  get sortedPendingChannels() {
+    const { field, descending } = this._store.settingsStore.channelSort;
+    const channels = values(this.pendingChannels)
       .slice()
       .sort((a, b) => Channel.compare(a, b, field));
     return descending ? channels.reverse() : channels;
@@ -85,17 +105,19 @@ export default class ChannelStore {
           if (existing) {
             existing.update(lndChan);
           } else {
-            this.channels.set(lndChan.chanId, new Channel(this._store, lndChan));
+            this.channels.set(lndChan.chanId, Channel.create(this._store, lndChan));
           }
         });
         // remove any channels in state that are not in the API response
         const serverIds = channelsList.map(c => c.chanId);
-        const localIds = Object.keys(this.channels);
+        const localIds = this.sortedChannels.map(c => c.chanId);
         localIds
           .filter(id => !serverIds.includes(id))
           .forEach(id => this.channels.delete(id));
 
         this._store.log.info('updated channelStore.channels', toJS(this.channels));
+        // fetch the pending channels
+        this.fetchPendingChannels();
         // fetch the aliases for each of the channels
         this.fetchAliases();
         // fetch the remote fee rates for each of the channels
@@ -108,6 +130,61 @@ export default class ChannelStore {
 
   /** fetch channels at most once every 2 seconds when using this func  */
   fetchChannelsThrottled = debounce(this.fetchChannels, 2000);
+
+  /**
+   * queries the LND api to fetch the list of pending channels and stores
+   * them in the state
+   */
+  async fetchPendingChannels() {
+    this._store.log.info('fetching pending channels');
+
+    try {
+      const {
+        pendingOpenChannelsList: opening,
+        pendingClosingChannelsList: closing,
+        waitingCloseChannelsList: waitingClose,
+        pendingForceClosingChannelsList: forceClosing,
+      } = await this._store.api.lnd.pendingChannels();
+      runInAction(() => {
+        const mapPending = (status: ChannelStatus) => (c: any) => ({
+          pendingChannel: c.channel as PendingChannelsResponse.PendingChannel.AsObject,
+          status,
+        });
+        // convert all of the pending channels into mobx Channel objects
+        const pending = [
+          ...opening.map(mapPending(ChannelStatus.OPENING)),
+          ...closing.map(mapPending(ChannelStatus.CLOSING)),
+          ...waitingClose.map(mapPending(ChannelStatus.WAITING_TO_CLOSE)),
+          ...forceClosing.map(mapPending(ChannelStatus.FORCE_CLOSING)),
+        ];
+        pending.forEach(({ status, pendingChannel }) => {
+          // update existing channels or create new ones in state. using this
+          // approach instead of overwriting the array will cause fewer state
+          // mutations, resulting in better react rendering performance
+          const existing = this.pendingChannels.get(pendingChannel.channelPoint);
+          if (existing) {
+            existing.updatePending(status, pendingChannel);
+          } else {
+            const channel = Channel.createPending(this._store, status, pendingChannel);
+            this.pendingChannels.set(channel.chanId, channel);
+          }
+        });
+        // remove any pending channels in state that are not in the API response
+        const serverIds = pending.map(c => c.pendingChannel.channelPoint);
+        const localIds = this.sortedPendingChannels.map(c => c.channelPoint);
+        localIds
+          .filter(id => !serverIds.includes(id))
+          .forEach(id => this.pendingChannels.delete(id));
+
+        this._store.log.info('updated channelStore.channels', toJS(this.pendingChannels));
+      });
+    } catch (error) {
+      this._store.appView.handleError(error, 'Unable to fetch Pending Channels');
+    }
+  }
+
+  /** fetch channels at most once every 2 seconds when using this func  */
+  fetchPendingChannelsThrottled = debounce(this.fetchPendingChannels, 2000);
 
   /**
    * queries the LND api to fetch the aliases for all of the peers we have
@@ -211,14 +288,20 @@ export default class ChannelStore {
       this._store.nodeStore.fetchBalancesThrottled();
     } else if (event.type === OPEN_CHANNEL && event.openChannel) {
       // add the new opened channel
-      const channel = new Channel(this._store, event.openChannel);
+      const channel = Channel.create(this._store, event.openChannel);
       this.channels.set(channel.chanId, channel);
       this._store.log.info('added new open channel', toJS(channel));
       this._store.nodeStore.fetchBalancesThrottled();
+      // update the pending channels list to remove any pending
+      this.fetchPendingChannelsThrottled();
       // fetch the alias for the added channel
       this.fetchAliases();
       // fetch the remote fee rates for the added channel
       this.fetchFeeRates();
+    } else if (event.type === PENDING_OPEN_CHANNEL && event.pendingOpenChannel) {
+      // add or update the pending channels by fetching the full list from the
+      // API, since the event doesn't contain the channel data
+      this.fetchPendingChannelsThrottled();
     }
   }
 
