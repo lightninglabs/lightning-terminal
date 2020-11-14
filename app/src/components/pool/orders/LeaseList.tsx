@@ -72,7 +72,7 @@ const LeaseList: React.FC = () => {
       </thead>
       <tbody>
         {orderListView.selectedLeases.map(lease => (
-          <TableRow key={lease.channelPoint} selectable>
+          <TableRow key={lease.channelPoint}>
             <TableCell right>{lease.balances}</TableCell>
             <TableCell right>{lease.apyLabel}</TableCell>
             <TableCell right>{lease.premium}</TableCell>

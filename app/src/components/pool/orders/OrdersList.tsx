@@ -11,7 +11,7 @@ const OrderRow: React.FC<{
   order: Order;
   selected: boolean;
   onClick: (nonce: string) => void;
-}> = ({ order, selected, onClick }) => {
+}> = observer(({ order, selected, onClick }) => {
   const handleClick = useCallback(() => {
     onClick(order.nonce);
   }, [order, onClick]);
@@ -22,11 +22,11 @@ const OrderRow: React.FC<{
       <TableCell right>
         <Unit sats={order.amount} suffix={false} />
       </TableCell>
-      <TableCell right>{order.stateLabel}</TableCell>
+      <TableCell>{order.stateWithCount}</TableCell>
       <TableCell right>{order.createdOnLabel}</TableCell>
     </TableRow>
   );
-};
+});
 
 const OrdersList: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.pool.orders.OrdersList');
@@ -54,7 +54,7 @@ const OrdersList: React.FC = () => {
               {l('amount')}
             </SortableHeader>
           </TableHeader>
-          <TableHeader right>
+          <TableHeader>
             <SortableHeader<Order>
               field="stateLabel"
               sort={settingsStore.orderSort}
@@ -80,7 +80,7 @@ const OrdersList: React.FC = () => {
             key={order.nonce}
             order={order}
             selected={order.nonce === orderListView.selectedNonce}
-            onClick={orderListView.setSelectedNonce}
+            onClick={orderListView.setChosenNonce}
           />
         ))}
       </tbody>

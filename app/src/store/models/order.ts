@@ -5,6 +5,7 @@ import { SortParams } from 'types/state';
 import Big from 'big.js';
 import formatDate from 'date-fns/format';
 import { hex } from 'util/strings';
+import { Store } from 'store/store';
 
 export enum OrderType {
   Bid = 'Bid',
@@ -12,6 +13,7 @@ export enum OrderType {
 }
 
 export default class Order {
+  private _store: Store;
   // native values from the POOL api
   nonce = '';
   traderKey = '';
@@ -28,8 +30,17 @@ export default class Order {
   // for bids, this is the minimum. for asks this is the maximum
   duration = 0;
 
-  constructor() {
+  constructor(store: Store) {
     makeAutoObservable(this, {}, { deep: false, autoBind: true });
+
+    this._store = store;
+  }
+
+  /** the number of leases for this order */
+  get leaseCount() {
+    const leasesByNonce = this._store.orderStore.leasesByNonce;
+    const leases = leasesByNonce[this.nonce] || [];
+    return leases.length;
   }
 
   /**
@@ -65,6 +76,13 @@ export default class Order {
     }
 
     return 'Unknown';
+  }
+
+  /** the state label with the number of associated leases */
+  get stateWithCount() {
+    return this.leaseCount === 0
+      ? this.stateLabel
+      : `${this.stateLabel} (${this.leaseCount})`;
   }
 
   /** The date this swap was created as a JS Date object */

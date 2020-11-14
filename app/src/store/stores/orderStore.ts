@@ -49,6 +49,23 @@ export default class OrderStore {
     return this.accountOrders.filter(o => o.isPending).length;
   }
 
+  /** the leases grouped by orderNonce */
+  get leasesByNonce() {
+    const leases: Record<string, Lease[]> = {};
+    values(this.leases)
+      .slice()
+      .forEach(lease => {
+        if (!leases[lease.orderNonce]) {
+          // create a new array with the lease
+          leases[lease.orderNonce] = [lease];
+        } else {
+          // append the lease to the existing array
+          leases[lease.orderNonce] = [...leases[lease.orderNonce], lease];
+        }
+      });
+    return leases;
+  }
+
   /**
    * queries the POOL api to fetch the list of orders and stores them
    * in the state
@@ -67,7 +84,7 @@ export default class OrderStore {
           // approach instead of overwriting the array will cause fewer state
           // mutations, resulting in better react rendering performance
           const nonce = hex(poolOrder.orderNonce);
-          const order = this.orders.get(nonce) || new Order();
+          const order = this.orders.get(nonce) || new Order(this._store);
           order.update(poolOrder, OrderType.Ask, leaseDurationBlocks);
           this.orders.set(nonce, order);
           serverIds.push(nonce);
@@ -79,7 +96,7 @@ export default class OrderStore {
           // approach instead of overwriting the array will cause fewer state
           // mutations, resulting in better react rendering performance
           const nonce = hex(poolOrder.orderNonce);
-          const order = this.orders.get(nonce) || new Order();
+          const order = this.orders.get(nonce) || new Order(this._store);
           order.update(poolOrder, OrderType.Bid, leaseDurationBlocks);
           this.orders.set(nonce, order);
           serverIds.push(nonce);
