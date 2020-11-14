@@ -1,13 +1,23 @@
 import { makeAutoObservable, observable } from 'mobx';
+import { OrderState } from 'types/generated/auctioneer_pb';
 import { Store } from 'store';
 import { Channel } from 'store/models';
 import { LeaseView } from './';
+
+type OrdersFilter = '' | 'open' | 'filled';
+
+const OPEN_STATES: number[] = [
+  OrderState.ORDER_SUBMITTED,
+  OrderState.ORDER_PARTIALLY_FILLED,
+];
 
 export default class OrderListView {
   private _store: Store;
 
   // the currently selected order
   chosenNonce = '';
+  // the filter to apply to the orders list
+  filter: OrdersFilter = 'open';
 
   constructor(store: Store) {
     makeAutoObservable(this, {}, { deep: false, autoBind: true });
@@ -21,7 +31,15 @@ export default class OrderListView {
 
   /** the list of orders for the active account */
   get orders() {
-    return this._store.orderStore.accountOrders;
+    const orders = this._store.orderStore.accountOrders;
+    switch (this.filter) {
+      case '':
+        return orders;
+      case 'open':
+        return orders.filter(o => OPEN_STATES.includes(o.state));
+      case 'filled':
+        return orders.filter(o => o.state === OrderState.ORDER_EXECUTED);
+    }
   }
 
   /** the channels in the store indexed by channelPoint */
@@ -62,5 +80,22 @@ export default class OrderListView {
 
   setChosenNonce(nonce: string) {
     this.chosenNonce = nonce;
+  }
+
+  setFilter(filter: OrdersFilter) {
+    this.filter = filter;
+    this.chosenNonce = '';
+  }
+
+  filterByOpen() {
+    this.setFilter('open');
+  }
+
+  filterByFilled() {
+    this.setFilter('filled');
+  }
+
+  clearFilter() {
+    this.setFilter('');
   }
 }

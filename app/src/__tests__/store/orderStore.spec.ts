@@ -49,7 +49,7 @@ describe('OrderStore', () => {
     [AUCT.OrderState.ORDER_SUBMITTED, 'Submitted'],
     [AUCT.OrderState.ORDER_CLEARED, 'Cleared'],
     [AUCT.OrderState.ORDER_PARTIALLY_FILLED, 'Partially Filled'],
-    [AUCT.OrderState.ORDER_EXECUTED, 'Executed'],
+    [AUCT.OrderState.ORDER_EXECUTED, 'Filled'],
     [AUCT.OrderState.ORDER_CANCELED, 'Cancelled'],
     [AUCT.OrderState.ORDER_EXPIRED, 'Expired'],
     [AUCT.OrderState.ORDER_FAILED, 'Failed'],
@@ -59,7 +59,7 @@ describe('OrderStore', () => {
       ...(poolListOrders.asksList[0].details as POOL.Order.AsObject),
       state: state as any,
     };
-    const order = new Order();
+    const order = new Order(rootStore);
     order.update(poolOrder, OrderType.Ask, 2016);
     expect(order.stateLabel).toBe(label);
   });
