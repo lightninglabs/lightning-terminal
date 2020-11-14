@@ -7,8 +7,8 @@ import PageHeader from 'components/common/PageHeader';
 import { styled } from 'components/theme';
 import AccountSection from './AccountSection';
 import ChartSection from './ChartSection';
-import DetailsSection from './DetailsSection';
 import OrderFormSection from './OrderFormSection';
+import OrderListSection from './OrderListSection';
 
 const Styled = {
   Wrapper: styled.div`
@@ -53,7 +53,7 @@ const PoolPage: React.FC = () => {
         </Col>
         <Col>
           <ChartSection />
-          <DetailsSection />
+          <OrderListSection />
         </Col>
       </Row>
     </Wrapper>
