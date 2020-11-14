@@ -2,6 +2,7 @@ import { makeAutoObservable } from 'mobx';
 import { SortParams } from 'types/state';
 import { annualPercentYield, toPercent } from 'util/bigmath';
 import { formatSats } from 'util/formatters';
+import { ellipseInside } from 'util/strings';
 import { Channel, Lease } from 'store/models';
 
 export default class LeaseView {
@@ -24,7 +25,7 @@ export default class LeaseView {
 
   /** the lease's channel's balance as "local / capacity" */
   get balances() {
-    if (!this.channel) return '';
+    if (!this.channel) return formatSats(this.lease.channelAmtSat, { withSuffix: false });
 
     const local = formatSats(this.channel.localBalance, { withSuffix: false });
     const capacity = formatSats(this.channel.capacity, { withSuffix: false });
@@ -49,8 +50,8 @@ export default class LeaseView {
 
   /** the status of this lease's channel */
   get status() {
-    if (!this.channel) return '';
-    return this.channel.active ? 'active' : 'inactive';
+    if (!this.channel) return 'Closed';
+    return this.channel.status;
   }
 
   /** the number of blocks since this lease was created */
@@ -59,6 +60,10 @@ export default class LeaseView {
       channelLeaseExpiry: expireHeight,
       channelDurationBlocks: duration,
     } = this.lease;
+
+    // lease expiry may not be set if the channel opening txn isn't confirmed
+    if (expireHeight === 0) return 0;
+
     return Math.max(duration - (expireHeight - this.currHeight), 0);
   }
 
@@ -69,7 +74,7 @@ export default class LeaseView {
 
   /** the lease's channel's peer alias, or ellipsed pubkey */
   get alias() {
-    if (!this.channel) return '';
+    if (!this.channel) return ellipseInside(this.lease.channelRemoteNodeKey, 3);
     return this.channel.aliasLabel;
   }
 

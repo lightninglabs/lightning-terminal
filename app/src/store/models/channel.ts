@@ -1,7 +1,7 @@
 import { makeAutoObservable } from 'mobx';
 import * as LND from 'types/generated/lnd_pb';
 import * as LOOP from 'types/generated/loop_pb';
-import { SortParams } from 'types/state';
+import { ChannelStatus, SortParams } from 'types/state';
 import Big from 'big.js';
 import { getBalanceStatus } from 'util/balances';
 import { percentage } from 'util/bigmath';
@@ -16,6 +16,7 @@ export type ProcessingSwapsDirection = 'in' | 'out' | 'both' | 'none';
 export default class Channel {
   private _store: Store;
 
+  status = ChannelStatus.UNKNOWN;
   chanId = '';
   remotePubkey = '';
   alias: string | undefined;
@@ -28,11 +29,10 @@ export default class Channel {
   uptime = Big(0);
   lifetime = Big(0);
 
-  constructor(store: Store, lndChannel: LND.Channel.AsObject) {
+  constructor(store: Store) {
     makeAutoObservable(this, {}, { deep: false, autoBind: true });
 
     this._store = store;
-    this.update(lndChannel);
   }
 
   /**
@@ -154,6 +154,48 @@ export default class Channel {
     this.active = lndChannel.active;
     this.uptime = Big(lndChannel.uptime);
     this.lifetime = Big(lndChannel.lifetime);
+  }
+
+  /**
+   * Updates this channel model using pending channel data provided from the LND GRPC api
+   */
+  updatePending(
+    status: ChannelStatus,
+    pendingChannel: LND.PendingChannelsResponse.PendingChannel.AsObject,
+  ) {
+    this.status = status;
+    this.chanId = pendingChannel.channelPoint;
+    this.remotePubkey = pendingChannel.remoteNodePub;
+    this.channelPoint = pendingChannel.channelPoint;
+    this.capacity = Big(pendingChannel.capacity);
+    this.localBalance = Big(pendingChannel.localBalance);
+    this.remoteBalance = Big(pendingChannel.remoteBalance);
+    this.active = false;
+    this.uptime = Big(0);
+    this.lifetime = Big(0);
+  }
+
+  /**
+   * Creates a channel model with the Open status using data provided from the LND GRPC api
+   */
+  static create(store: Store, lndChannel: LND.Channel.AsObject) {
+    const channel = new Channel(store);
+    channel.update(lndChannel);
+    channel.status = ChannelStatus.OPEN;
+    return channel;
+  }
+
+  /**
+   * Creates a channel model with a pending using data provided from the LND GRPC api
+   */
+  static createPending(
+    store: Store,
+    status: ChannelStatus,
+    pendingChannel: LND.PendingChannelsResponse.PendingChannel.AsObject,
+  ) {
+    const channel = new Channel(store);
+    channel.updatePending(status, pendingChannel);
+    return channel;
   }
 
   /**

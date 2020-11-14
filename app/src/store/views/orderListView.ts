@@ -30,6 +30,9 @@ export default class OrderListView {
     this._store.channelStore.sortedChannels.forEach(channel =>
       channels.set(channel.channelPoint, channel),
     );
+    this._store.channelStore.sortedPendingChannels.forEach(channel =>
+      channels.set(channel.channelPoint, channel),
+    );
     return channels;
   }
 

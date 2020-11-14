@@ -45,3 +45,12 @@ export interface SortParams<T> {
   field?: keyof T;
   descending: boolean;
 }
+
+export enum ChannelStatus {
+  UNKNOWN = 'Unknown',
+  OPEN = 'Open',
+  OPENING = 'Opening',
+  CLOSING = 'Closing',
+  FORCE_CLOSING = 'Force Closing',
+  WAITING_TO_CLOSE = 'Waiting To Close',
+}

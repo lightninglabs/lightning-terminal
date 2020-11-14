@@ -57,6 +57,15 @@ class LndApi extends BaseApi<LndEvents> {
   }
 
   /**
+   * call the LND `PendingChannels` RPC and return the response
+   */
+  async pendingChannels(): Promise<LND.PendingChannelsResponse.AsObject> {
+    const req = new LND.PendingChannelsRequest();
+    const res = await this._grpc.request(Lightning.PendingChannels, req, this._meta);
+    return res.toObject();
+  }
+
+  /**
    * call the LND `GetNodeInfo` RPC and return the response
    */
   async getNodeInfo(pubkey: string): Promise<LND.NodeInfo.AsObject> {
