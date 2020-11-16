@@ -149,6 +149,10 @@ For `lnd`:
   After:
 
   ```text
+  # New flag to tell LiT to run its own lnd in integrated mode. We need to set
+  # this because "remote" is the new default value if we don't specify anything.
+  lnd-mode=integrated
+
   # Application Options
   lnd.alias=merchant
   
