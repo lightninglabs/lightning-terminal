@@ -555,9 +555,20 @@ func (g *LightningTerminal) startMainWebServer() error {
 	// Create and start our HTTPS server now that will handle both gRPC web
 	// and static file requests.
 	g.httpServer = &http.Server{
-		WriteTimeout: defaultServerTimeout,
-		ReadTimeout:  defaultServerTimeout,
-		Handler:      http.HandlerFunc(httpHandler),
+		// To make sure that long-running calls and indefinitely opened
+		// streaming connections aren't terminated by the internal
+		// proxy, we need to disable all timeouts except the one for
+		// reading the HTTP headers. That timeout shouldn't be removed
+		// as we would otherwise be prone to the slowloris attack where
+		// an attacker takes too long to send the headers and uses up
+		// connections that way. Once the headers are read, we either
+		// know it's a static resource and can deliver that very cheaply
+		// or check the authentication for other calls.
+		WriteTimeout:      0,
+		IdleTimeout:       0,
+		ReadTimeout:       0,
+		ReadHeaderTimeout: defaultServerTimeout,
+		Handler:           http.HandlerFunc(httpHandler),
 	}
 	httpListener, err := net.Listen("tcp", g.cfg.HTTPSListen)
 	if err != nil {
