@@ -6,6 +6,7 @@ import { Column, HeaderFour, Row } from 'components/base';
 import Tip from 'components/common/Tip';
 import Unit from 'components/common/Unit';
 import { styled } from 'components/theme';
+import BatchDeltaIcon from './BatchDeltaIcon';
 
 /**
  * the virtualized list requires each row to have a specified
@@ -37,8 +38,7 @@ const Styled = {
     line-height: ${ROW_HEIGHT}px;
   `,
   ActionColumn: styled(Column)`
-    max-width: 50px;
-    padding: 0 20px;
+    max-width: 75px;
     line-height: ${ROW_HEIGHT}px;
   `,
 };
@@ -86,12 +86,12 @@ const BatchRow: React.FC<Props> = ({ batch, style }) => {
   const { Row, Column, ActionColumn } = Styled;
   return (
     <Row style={style}>
-      <Column>
+      <Column truncate>
         <Tip overlay={batch.batchId} capitalize={false}>
           <span>{batch.batchIdEllipsed}</span>
         </Tip>
       </Column>
-      <Column>
+      <Column truncate>
         <Tip overlay={batch.batchTxId} capitalize={false}>
           <span>{batch.batchTxIdEllipsed}</span>
         </Tip>
@@ -109,7 +109,9 @@ const BatchRow: React.FC<Props> = ({ batch, style }) => {
         <Unit sats={batch.volume} suffix={false} />
       </Column>
       <Column right>{batch.clearingPriceRate}</Column>
-      <ActionColumn></ActionColumn>
+      <ActionColumn>
+        <BatchDeltaIcon delta={batch.delta} />
+      </ActionColumn>
     </Row>
   );
 };
