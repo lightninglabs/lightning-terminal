@@ -1,4 +1,4 @@
-FROM golang:1.13-alpine as builder
+FROM golang:1.15.5-alpine as builder
 
 # Copy in the local repository to build from.
 COPY . /go/src/github.com/lightninglabs/lightning-terminal
