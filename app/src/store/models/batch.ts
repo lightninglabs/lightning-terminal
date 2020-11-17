@@ -4,6 +4,8 @@ import Big from 'big.js';
 import { ellipseInside, hex } from 'util/strings';
 import { Store } from 'store/store';
 
+export type BatchDelta = 'neutral' | 'positive' | 'negative';
+
 class MatchedOrder {
   matchingRate = 0;
   unitsMatched = 0;
@@ -102,6 +104,20 @@ export default class Batch {
       this.batchTxFeeRateSatPerKw,
     );
     return satsPerVByte;
+  }
+
+  /** the directionality of this batch's rate compared to the previous batch */
+  get delta() {
+    let delta: BatchDelta = 'neutral';
+    const prevBatch = this._store.batchStore.batches.get(this.prevBatchId);
+    if (prevBatch) {
+      if (this.clearingPriceRate > prevBatch.clearingPriceRate) {
+        delta = 'positive';
+      } else if (this.clearingPriceRate < prevBatch.clearingPriceRate) {
+        delta = 'negative';
+      }
+    }
+    return delta;
   }
 
   /**

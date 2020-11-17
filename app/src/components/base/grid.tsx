@@ -26,13 +26,15 @@ export const Column: React.FC<{
   colsXl?: number;
   right?: boolean;
   center?: boolean;
+  truncate?: boolean;
   className?: string;
-}> = ({ cols, colsXl, right, center, children, className }) => {
+}> = ({ cols, colsXl, right, center, truncate, children, className }) => {
   const cn: string[] = ['col'];
   cols && cn.push(`col-${cols}`);
   colsXl && cn.push(`col-xl-${colsXl}`);
   className && cn.push(className);
   right && cn.push('text-right');
   center && cn.push('text-center');
+  truncate && cn.push('text-truncate');
   return <div className={cn.join(' ')}>{children}</div>;
 };
