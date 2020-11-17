@@ -1,11 +1,5 @@
-import {
-  keys,
-  makeAutoObservable,
-  observable,
-  ObservableMap,
-  runInAction,
-  toJS,
-} from 'mobx';
+import { makeAutoObservable, observable, ObservableMap, runInAction, toJS } from 'mobx';
+import debounce from 'lodash/debounce';
 import { Store } from 'store';
 import { Batch } from 'store/models';
 
@@ -23,8 +17,8 @@ export default class BatchStore {
    */
   orderedIds: string[] = [];
 
-  /** the id of the active batch */
-  selectedBatchId?: string;
+  /** indicates when batches are being fetched from the backend */
+  loading = false;
 
   constructor(store: Store) {
     makeAutoObservable(this, {}, { deep: false, autoBind: true });
@@ -44,9 +38,23 @@ export default class BatchStore {
    */
   get oldestBatch() {
     let batch: Batch | undefined;
-    // loops over the map in insertion order to get the last batch
-    this.batches.forEach(b => (batch = b));
+    const oldestId = this.orderedIds[this.orderedIds.length - 1];
+    if (oldestId) {
+      batch = this.batches.get(oldestId);
+    }
     return batch;
+  }
+
+  /**
+   * determines if there are more batches that can be fetched from the backend
+   */
+  get hasMoreBatches() {
+    // we don't have any batches fetched, so there should be more
+    if (!this.oldestBatch) return true;
+    // the oldest batch has a prevBatchId defined, so there should be more
+    if (this.oldestBatch.prevBatchId) return true;
+    // the oldest batch has an empty prevBatchId, so there is no more
+    return false;
   }
 
   /**
@@ -54,13 +62,19 @@ export default class BatchStore {
    */
   async fetchBatches() {
     this._store.log.info('fetching batches');
+    if (!this.hasMoreBatches) {
+      this._store.log.info('no more batches to fetch');
+      return;
+    }
     let prevId = '';
     if (this.oldestBatch) prevId = this.oldestBatch.prevBatchId;
+
+    this.loading = true;
     const newBatches: Batch[] = [];
     for (let i = 0; i < BATCH_QUERY_LIMIT; i++) {
       try {
         const poolBatch = await this._store.api.pool.batchSnapshot(prevId);
-        const batch = new Batch(poolBatch);
+        const batch = new Batch(this._store, poolBatch);
         newBatches.push(batch);
         prevId = batch.prevBatchId;
         if (!prevId) break;
@@ -77,13 +91,10 @@ export default class BatchStore {
     runInAction(() => {
       newBatches.forEach(batch => {
         this.batches.set(batch.batchId, batch);
-        this.orderedIds.push(batch.batchId);
+        this.orderedIds = [...this.orderedIds, batch.batchId];
       });
-      // set the selected batch to the latest one if it is not already set
-      if (!this.selectedBatchId && this.batches.size > 0) {
-        this.selectedBatchId = keys(this.batches)[0];
-      }
       this._store.log.info('updated batchStore.batches', toJS(this.batches));
+      this.loading = false;
     });
   }
 
@@ -95,12 +106,12 @@ export default class BatchStore {
     try {
       const poolBatch = await this._store.api.pool.batchSnapshot();
       runInAction(() => {
-        const batch = new Batch(poolBatch);
+        const batch = new Batch(this._store, poolBatch);
         // add the latest one if it's not already stored in state
         if (!this.batches.get(batch.batchId)) {
           this.batches.set(batch.batchId, batch);
           // add this batch's id to the front of the orderedIds array
-          this.orderedIds.unshift(batch.batchId);
+          this.orderedIds = [batch.batchId, ...this.orderedIds];
         }
         this._store.log.info('updated batchStore.batches', toJS(this.batches));
       });
@@ -108,4 +119,7 @@ export default class BatchStore {
       this._store.appView.handleError(error, 'Unable to fetch the latest batch');
     }
   }
+
+  /** fetch the latest at most once every 2 seconds when using this func  */
+  fetchLatestBatchThrottled = debounce(this.fetchLatestBatch, 2000);
 }

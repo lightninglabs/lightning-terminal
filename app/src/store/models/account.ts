@@ -42,6 +42,8 @@ export default class Account {
         return 'Pending Open';
       case POOL.AccountState.PENDING_UPDATE:
         return 'Pending Update';
+      case POOL.AccountState.PENDING_BATCH:
+        return 'Pending Batch';
       case POOL.AccountState.OPEN:
         return 'Open';
       case POOL.AccountState.EXPIRED:
