@@ -1,4 +1,4 @@
-import React, { ReactNode, useCallback, useState } from 'react';
+import React, { ReactNode, useCallback } from 'react';
 import FormInput from './FormInput';
 
 interface Props {
@@ -16,15 +16,10 @@ const FormInputNumber: React.FC<Props> = ({
   placeholder,
   onChange,
 }) => {
-  const [displayValue, setDisplayValue] = useState(value ? value.toString() : '');
-
   const handleChange = useCallback(
     (v: string) => {
       // only allow numbers and periods
       const stripped = v.replace(/[^\d.]/g, '');
-      // update the value displayed in the field
-      setDisplayValue(stripped);
-
       // bubble up the numeric value
       const num = parseFloat(stripped);
       onChange(isNaN(num) ? 0 : num);
@@ -35,7 +30,7 @@ const FormInputNumber: React.FC<Props> = ({
   return (
     <FormInput
       label={label}
-      value={value ? value.toString() : displayValue}
+      value={!value ? '' : value.toString()}
       extra={extra}
       placeholder={placeholder}
       onChange={handleChange}

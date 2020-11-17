@@ -45,6 +45,7 @@ const OrderFormSection: React.FC = () => {
         error={orderFormView.amountError}
       >
         <FormInputNumber
+          label={l(`amountLabel${orderFormView.orderType}`)}
           placeholder={l('amountPlaceholder')}
           extra={Units[Unit.sats].suffix}
           value={orderFormView.amount}
@@ -56,6 +57,7 @@ const OrderFormSection: React.FC = () => {
         error={orderFormView.premiumError}
       >
         <FormInputNumber
+          label={l(`premiumLabel${orderFormView.orderType}`)}
           placeholder={l('premiumPlaceholder')}
           value={orderFormView.premium}
           onChange={orderFormView.setPremium}
@@ -76,6 +78,7 @@ const OrderFormSection: React.FC = () => {
       </FormField>
       <FormField label={l('minChanSizeLabel')} error={orderFormView.minChanSizeError}>
         <FormInputNumber
+          label={l('minChanSizeLabel')}
           placeholder={l('minChanSizePlaceholder')}
           extra={Units[Unit.sats].suffix}
           value={orderFormView.minChanSize}
@@ -84,6 +87,7 @@ const OrderFormSection: React.FC = () => {
       </FormField>
       <FormField label={l('feeLabel')} error={orderFormView.feeRateError}>
         <FormInputNumber
+          label={l('feeLabel')}
           placeholder={l('feePlaceholder')}
           extra="sats/vbyte"
           value={orderFormView.maxBatchFeeRate}
