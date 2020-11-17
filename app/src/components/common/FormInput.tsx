@@ -11,16 +11,15 @@ const Styled = {
   `,
   Input: styled.input`
     color: ${props => props.theme.colors.offWhite};
-    background-color: transparent;
+    background-color: ${props => props.theme.colors.overlay};
     border-width: 0;
-    border-bottom: 1px solid ${props => props.theme.colors.offWhite};
+    border-bottom: 1px solid ${props => props.theme.colors.gray};
     padding: 5px 40px 5px 5px;
     width: 100%;
 
     &:active,
     &:focus {
       outline: none;
-      background-color: ${props => props.theme.colors.overlay};
       border-bottom-color: ${props => props.theme.colors.white};
     }
 
