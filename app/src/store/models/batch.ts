@@ -6,11 +6,11 @@ class MatchedOrder {
   unitsMatched = 0;
   totalSatsCleared = 0;
   ask = {
-    maxDurationBlocks: 0,
+    leaseDurationBlocks: 0,
     rateFixed: 0,
   };
   bid = {
-    minDurationBlocks: 0,
+    leaseDurationBlocks: 0,
     rateFixed: 0,
   };
 
@@ -21,11 +21,11 @@ class MatchedOrder {
     this.unitsMatched = llmMatch.unitsMatched;
     this.totalSatsCleared = llmMatch.totalSatsCleared;
     this.ask = {
-      maxDurationBlocks: llmMatch.ask.leaseDurationBlocks,
+      leaseDurationBlocks: llmMatch.ask.leaseDurationBlocks,
       rateFixed: llmMatch.ask.rateFixed,
     };
     this.bid = {
-      minDurationBlocks: llmMatch.bid.leaseDurationBlocks,
+      leaseDurationBlocks: llmMatch.bid.leaseDurationBlocks,
       rateFixed: llmMatch.bid.rateFixed,
     };
   }
@@ -37,6 +37,7 @@ export default class Batch {
   prevBatchId = '';
   clearingPriceRate = 0;
   batchTxId = '';
+  batchTxFeeRateSatPerKw = 0;
   matchedOrders: MatchedOrder[] = [];
 
   constructor(llmBatch: AUCT.BatchSnapshotResponse.AsObject) {
@@ -58,6 +59,7 @@ export default class Batch {
     this.prevBatchId = llmBatch.prevBatchId.toString();
     this.clearingPriceRate = llmBatch.clearingPriceRate;
     this.batchTxId = llmBatch.batchTxId;
+    this.batchTxFeeRateSatPerKw = llmBatch.batchTxFeeRateSatPerKw;
     this.matchedOrders = llmBatch.matchedOrdersList
       // there should never be a match that does not have both a bid and an ask, but
       // the proto -> TS compiler makes these objects optional. This filter is just

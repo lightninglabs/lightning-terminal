@@ -150,6 +150,16 @@ service Trader {
         };
     }
 
+    /* pool: `auction nextbatchinfo`
+    NextBatchInfo returns information about the next batch the auctioneer will
+    perform.
+    */
+    rpc NextBatchInfo(NextBatchInfoRequest) returns (NextBatchInfoResponse) {
+        option (google.api.http) = {
+            get: "/v1/pool/batch/next"
+        };
+    }
+
     /* pool: `auction snapshot`
     BatchSnapshot returns the snapshot of a past batch identified by its ID.
     */
@@ -859,6 +869,29 @@ message LeaseDurationRequest {
 
 message LeaseDurationResponse {
     map<uint32, bool> lease_durations = 1;
+}
+
+message NextBatchInfoRequest {
+}
+
+message NextBatchInfoResponse {
+    /*
+    The confirmation target the auctioneer will use for fee estimation of the
+    next batch.
+    */
+    uint32 conf_target = 5;
+
+    /*
+    The fee rate, in satoshis per kiloweight, estimated by the auctioneer to use
+    for the next batch.
+    */
+    uint64 fee_rate_sat_per_kw = 6;
+
+    /*
+    The absolute unix timestamp in seconds at which the auctioneer will attempt
+    to clear the next batch.
+    */
+    uint64 clear_timestamp = 7;
 }
 
 message NodeRatingRequest {

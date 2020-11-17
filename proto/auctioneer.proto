@@ -872,6 +872,12 @@ message InvalidOrder {
 message ServerInput {
     // The outpoint that the input corresponds to.
     OutPoint outpoint = 1;
+
+    /*
+    The signature script required by the input. This only applies to NP2WKH
+    inputs.
+    */
+    bytes sig_script = 2;
 }
 
 message ServerOutput {
@@ -974,6 +980,21 @@ message TermsResponse {
     thickness before starting to clear batches.
     */
     map<uint32, bool> lease_durations = 4;
+
+    // The confirmation target to use for fee estimation of the next batch.
+    uint32 next_batch_conf_target = 5;
+
+    /*
+    The fee rate, in satoshis per kiloweight, estimated to use for the next
+    batch.
+    */
+    uint64 next_batch_fee_rate_sat_per_kw = 6;
+
+    /*
+    The absolute unix timestamp at which the auctioneer will attempt to clear
+    the next batch.
+    */
+    uint64 next_batch_clear_timestamp = 7;
 }
 
 message RelevantBatchRequest {
@@ -1120,6 +1141,9 @@ message BatchSnapshotResponse {
 
     // The batch transaction including all witness data.
     bytes batch_tx = 6;
+
+    // The fee rate, in satoshis per kiloweight, of the batch transaction.
+    uint64 batch_tx_fee_rate_sat_per_kw = 8;
 }
 
 message ServerNodeRatingRequest {
