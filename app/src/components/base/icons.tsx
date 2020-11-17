@@ -1,7 +1,9 @@
 import { ReactComponent as AlertTriangleIcon } from 'assets/icons/alert-triangle.svg';
+import { ReactComponent as ArrowDownCircleIcon } from 'assets/icons/arrow-down-circle.svg';
 import { ReactComponent as ArrowDownIcon } from 'assets/icons/arrow-down.svg';
 import { ReactComponent as ArrowLeftIcon } from 'assets/icons/arrow-left.svg';
 import { ReactComponent as ArrowRightIcon } from 'assets/icons/arrow-right.svg';
+import { ReactComponent as ArrowUpCircleIcon } from 'assets/icons/arrow-up-circle.svg';
 import { ReactComponent as ArrowUpIcon } from 'assets/icons/arrow-up.svg';
 import { ReactComponent as BitcoinIcon } from 'assets/icons/bitcoin.svg';
 import { ReactComponent as BoltIcon } from 'assets/icons/bolt.svg';
@@ -78,6 +80,8 @@ export const ArrowLeft = Icon.withComponent(ArrowLeftIcon);
 export const ArrowRight = Icon.withComponent(ArrowRightIcon);
 export const ArrowUp = Icon.withComponent(ArrowUpIcon);
 export const ArrowDown = Icon.withComponent(ArrowDownIcon);
+export const ArrowUpCircle = Icon.withComponent(ArrowUpCircleIcon);
+export const ArrowDownCircle = Icon.withComponent(ArrowDownCircleIcon);
 export const Cancel = Icon.withComponent(CancelIcon);
 export const Clock = Icon.withComponent(ClockIcon);
 export const Download = Icon.withComponent(DownloadIcon);
