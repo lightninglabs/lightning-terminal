@@ -1,10 +1,13 @@
 import { makeAutoObservable, observable } from 'mobx';
 import * as AUCT from 'types/generated/auctioneer_pb';
+import Big from 'big.js';
+import { ellipseInside, hex } from 'util/strings';
+import { Store } from 'store/store';
 
 class MatchedOrder {
   matchingRate = 0;
   unitsMatched = 0;
-  totalSatsCleared = 0;
+  totalSatsCleared = Big(0);
   ask = {
     leaseDurationBlocks: 0,
     rateFixed: 0,
@@ -19,7 +22,7 @@ class MatchedOrder {
 
     this.matchingRate = llmMatch.matchingRate;
     this.unitsMatched = llmMatch.unitsMatched;
-    this.totalSatsCleared = llmMatch.totalSatsCleared;
+    this.totalSatsCleared = Big(llmMatch.totalSatsCleared);
     this.ask = {
       leaseDurationBlocks: llmMatch.ask.leaseDurationBlocks,
       rateFixed: llmMatch.ask.rateFixed,
@@ -32,6 +35,7 @@ class MatchedOrder {
 }
 
 export default class Batch {
+  private _store: Store;
   // native values from the POOL api
   batchId = '';
   prevBatchId = '';
@@ -40,14 +44,64 @@ export default class Batch {
   batchTxFeeRateSatPerKw = 0;
   matchedOrders: MatchedOrder[] = [];
 
-  constructor(llmBatch: AUCT.BatchSnapshotResponse.AsObject) {
+  constructor(store: Store, llmBatch: AUCT.BatchSnapshotResponse.AsObject) {
     makeAutoObservable(
       this,
       { matchedOrders: observable },
       { deep: false, autoBind: true },
     );
 
+    this._store = store;
     this.update(llmBatch);
+  }
+
+  /** the first and last 6 chars of the batch id */
+  get batchIdEllipsed() {
+    return ellipseInside(this.batchId, 4);
+  }
+
+  /** the first and last 6 chars of the batch tx id */
+  get batchTxIdEllipsed() {
+    return ellipseInside(this.batchTxId, 4);
+  }
+
+  /** the sum of the cleared amounts for all orders */
+  get volume() {
+    return this.matchedOrders.reduce(
+      (sum, order) => sum.add(order.totalSatsCleared),
+      Big(0),
+    );
+  }
+
+  /** the number of matched orders in this batch */
+  get ordersCount() {
+    return this.matchedOrders.length;
+  }
+
+  /** the total amount of sats earned in this batch */
+  get earnedSats() {
+    const pctRate = this._store.api.pool.calcPctRate(this.clearingPriceRate);
+    return this.volume.mul(pctRate);
+  }
+
+  /** the fee in sats/vbyte rounded to the nearest whole number */
+  get feeLabel() {
+    return `~${Math.round(this.feeInVBytes)}`;
+  }
+
+  /** a label containing the batch fee in both sats/kw and sats/vbyte */
+  get feeDescription() {
+    // round the fee to 2 decimal places
+    const fee = Math.round(this.feeInVBytes * 100) / 100;
+    return `${this.batchTxFeeRateSatPerKw} sats/kw - ${fee} sats/vbyte`;
+  }
+
+  /** the batch fee in sats/vbyte */
+  get feeInVBytes() {
+    const satsPerVByte = this._store.api.pool.satsPerKWeightToVByte(
+      this.batchTxFeeRateSatPerKw,
+    );
+    return satsPerVByte;
   }
 
   /**
@@ -55,8 +109,8 @@ export default class Batch {
    * @param llmBatch the batch data
    */
   update(llmBatch: AUCT.BatchSnapshotResponse.AsObject) {
-    this.batchId = llmBatch.batchId.toString();
-    this.prevBatchId = llmBatch.prevBatchId.toString();
+    this.batchId = hex(llmBatch.batchId);
+    this.prevBatchId = hex(llmBatch.prevBatchId);
     this.clearingPriceRate = llmBatch.clearingPriceRate;
     this.batchTxId = llmBatch.batchTxId;
     this.batchTxFeeRateSatPerKw = llmBatch.batchTxFeeRateSatPerKw;

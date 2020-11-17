@@ -1,21 +1,24 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
-import { HeaderFour, Section } from 'components/base';
+import { Section } from 'components/base';
 import { styled } from 'components/theme';
+import BatchList from './batches/BatchList';
 
 const Styled = {
   Section: styled(Section)`
     flex: 1;
+    display: flex;
+    background-color: transparent;
   `,
 };
 
-const Chart: React.FC = () => {
+const BatchSection: React.FC = () => {
   const { Section } = Styled;
   return (
     <Section>
-      <HeaderFour>TODO: Chart</HeaderFour>
+      <BatchList />
     </Section>
   );
 };
 
-export default observer(Chart);
+export default observer(BatchSection);
