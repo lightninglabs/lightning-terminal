@@ -9,7 +9,7 @@ const Styled = {
     width: 100%;
     margin: 0 0 30px;
     padding: 5px 0;
-    font-size: ${props => props.theme.sizes.s};
+    font-size: ${props => props.theme.sizes.xs};
     background-color: ${props => (props.error ? props.theme.colors.pink : 'transparent')};
     color: ${props =>
       props.error ? props.theme.colors.offWhite : props.theme.colors.gray};

@@ -85,7 +85,7 @@ const OrderFormSection: React.FC = () => {
       <FormField label={l('feeLabel')} error={orderFormView.feeRateError}>
         <FormInputNumber
           placeholder={l('feePlaceholder')}
-          extra="sats/vByte"
+          extra="sats/vbyte"
           value={orderFormView.maxBatchFeeRate}
           onChange={orderFormView.setMaxBatchFeeRate}
         />
