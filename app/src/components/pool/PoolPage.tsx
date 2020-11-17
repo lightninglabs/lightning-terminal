@@ -6,7 +6,7 @@ import { Column, Row } from 'components/base';
 import PageHeader from 'components/common/PageHeader';
 import { styled } from 'components/theme';
 import AccountSection from './AccountSection';
-import ChartSection from './ChartSection';
+import BatchSection from './BatchSection';
 import OrderFormSection from './OrderFormSection';
 import OrderListSection from './OrderListSection';
 
@@ -52,7 +52,7 @@ const PoolPage: React.FC = () => {
           <OrderFormSection />
         </Col>
         <Col>
-          <ChartSection />
+          <BatchSection />
           <OrderListSection />
         </Col>
       </Row>

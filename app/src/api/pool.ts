@@ -221,7 +221,7 @@ class PoolApi extends BaseApi<PoolEvents> {
    */
   async batchSnapshot(batchId?: string): Promise<AUCT.BatchSnapshotResponse.AsObject> {
     const req = new AUCT.BatchSnapshotRequest();
-    if (batchId) req.setBatchId(batchId);
+    if (batchId) req.setBatchId(b64(batchId));
     const res = await this._grpc.request(Trader.BatchSnapshot, req, this._meta);
     return res.toObject();
   }
@@ -241,6 +241,17 @@ class PoolApi extends BaseApi<PoolEvents> {
     const satsPerKWeight = satsPerKVByte / 4;
     // ensure the kw value is above the fee rate floor
     return Math.max(satsPerKWeight, MIN_FEE_RATE_KW);
+  }
+
+  /**
+   * Converts from sats per kilo-weight to sats per vByte
+   * @param satsPerVByte the number of sats per kilo-weight
+   */
+  satsPerKWeightToVByte(satsPerKWeight: number) {
+    // convert to kilo-vbyte
+    const satsPerKVByte = satsPerKWeight * 4;
+    // convert to vbyte
+    return satsPerKVByte / 1000;
   }
 
   /**
