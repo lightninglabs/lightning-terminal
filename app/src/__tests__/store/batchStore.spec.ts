@@ -1,5 +1,6 @@
 import { values } from 'mobx';
 import { grpc } from '@improbable-eng/grpc-web';
+import { hex } from 'util/strings';
 import { poolBatchSnapshot } from 'util/tests/sampleData';
 import { BatchStore, createStore, Store } from 'store';
 import { BATCH_QUERY_LIMIT } from 'store/stores/batchStore';
@@ -36,12 +37,10 @@ describe('BatchStore', () => {
   it('should fetch batches', async () => {
     expect(store.batches.size).toBe(0);
     expect(store.orderedIds.length).toBe(0);
-    expect(store.selectedBatchId).toBeUndefined();
 
     await store.fetchBatches();
     expect(store.batches.size).toBe(BATCH_QUERY_LIMIT);
     expect(store.orderedIds.length).toBe(BATCH_QUERY_LIMIT);
-    expect(store.selectedBatchId).toBeDefined();
   });
 
   it('should append start from the oldest batch when fetching batches multiple times', async () => {
@@ -117,7 +116,7 @@ describe('BatchStore', () => {
     index = 100;
     await store.fetchLatestBatch();
     expect(store.orderedIds.length).toBe(BATCH_QUERY_LIMIT + 1);
-    expect(store.orderedIds[0]).toBe(`101-${poolBatchSnapshot.batchId}`);
+    expect(store.orderedIds[0]).toBe(hex(`101-${poolBatchSnapshot.batchId}`));
   });
 
   it('should handle errors when fetching the latest batch', async () => {
@@ -132,16 +131,16 @@ describe('BatchStore', () => {
 
   it('should return the sorted batches', async () => {
     await store.fetchBatches();
-    expect(store.sortedBatches[0].batchId).toBe(`1-${poolBatchSnapshot.batchId}`);
+    expect(store.sortedBatches[0].batchId).toBe(hex(`1-${poolBatchSnapshot.batchId}`));
     expect(store.sortedBatches[BATCH_QUERY_LIMIT - 1].batchId).toBe(
-      `20-${poolBatchSnapshot.batchId}`,
+      hex(`20-${poolBatchSnapshot.batchId}`),
     );
 
     index = 500;
     await store.fetchLatestBatch();
-    expect(store.sortedBatches[0].batchId).toBe(`501-${poolBatchSnapshot.batchId}`);
+    expect(store.sortedBatches[0].batchId).toBe(hex(`501-${poolBatchSnapshot.batchId}`));
     expect(store.sortedBatches[BATCH_QUERY_LIMIT].batchId).toBe(
-      `20-${poolBatchSnapshot.batchId}`,
+      hex(`20-${poolBatchSnapshot.batchId}`),
     );
   });
 });
