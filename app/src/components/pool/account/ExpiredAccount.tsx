@@ -43,7 +43,7 @@ const ExpiredAccount: React.FC = () => {
         <Title>{l('title')}</Title>
         <div>{l('message')}</div>
         <Actions>
-          <Button onClick={accountSectionView.showCloseAccount}>
+          <Button primary ghost onClick={accountSectionView.showCloseAccount}>
             {l('closeAccount')}
           </Button>
         </Actions>

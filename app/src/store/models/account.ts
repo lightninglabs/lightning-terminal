@@ -33,6 +33,16 @@ export default class Account {
     return this.totalBalance.minus(this.availableBalance);
   }
 
+  /** determines if the account is in one of the pending states */
+  get isPending() {
+    return (
+      this.state === POOL.AccountState.PENDING_OPEN ||
+      this.state === POOL.AccountState.PENDING_UPDATE ||
+      this.state === POOL.AccountState.PENDING_BATCH ||
+      this.state === POOL.AccountState.PENDING_CLOSED
+    );
+  }
+
   /**
    * The numeric account `state` as a user friendly string
    */

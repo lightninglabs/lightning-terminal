@@ -1,17 +1,42 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
+import { ChannelStatus } from 'types/state';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { LeaseView } from 'store/views';
 import { Scrollable } from 'components/base';
 import SortableHeader from 'components/common/SortableHeader';
 import Tip from 'components/common/Tip';
-import { styled } from 'components/theme';
+import { styled, Theme } from 'components/theme';
 import { Table, TableCell, TableHeader, TableRow } from './OrderTable';
+
+/** maps a lease status to the theme color */
+const statusToColor = (theme: Theme, status: LeaseView['status']) => {
+  switch (status) {
+    case ChannelStatus.OPEN:
+      return theme.colors.green;
+    case ChannelStatus.OPENING:
+    case ChannelStatus.CLOSING:
+    case ChannelStatus.FORCE_CLOSING:
+    case ChannelStatus.WAITING_TO_CLOSE:
+      return theme.colors.gold;
+    case ChannelStatus.UNKNOWN:
+    case 'Closed':
+      return theme.colors.pink;
+    default:
+      return '';
+  }
+};
 
 const Styled = {
   Scrollable: styled(Scrollable)`
     padding-right: 15px;
+  `,
+  ChannelStatus: styled.span<{ status: LeaseView['status'] }>`
+    color: ${props => statusToColor(props.theme, props.status)};
+  `,
+  Duration: styled.span<{ exceeded: boolean }>`
+    color: ${props => (props.exceeded ? props.theme.colors.pink : 'inherit')};
   `,
 };
 
@@ -19,7 +44,7 @@ const LeaseList: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.pool.orders.LeaseList');
   const { orderListView, settingsStore } = useStore();
 
-  const { Scrollable } = Styled;
+  const { Scrollable, ChannelStatus, Duration } = Styled;
   return (
     <Scrollable>
       <Table>
@@ -63,7 +88,7 @@ const LeaseList: React.FC = () => {
             </TableHeader>
             <TableHeader right>
               <SortableHeader<LeaseView>
-                field="duration"
+                field="blocksSoFar"
                 sort={settingsStore.leaseSort}
                 onSort={settingsStore.setLeaseSort}
               >
@@ -87,8 +112,13 @@ const LeaseList: React.FC = () => {
               <TableCell right>{lease.balances}</TableCell>
               <TableCell right>{lease.apyLabel}</TableCell>
               <TableCell right>{lease.premium}</TableCell>
-              <TableCell right>{lease.status}</TableCell>
-              <TableCell right>{lease.duration}</TableCell>
+              <TableCell right>
+                <ChannelStatus status={lease.status}>{lease.status}</ChannelStatus>
+              </TableCell>
+              <TableCell right>
+                <Duration exceeded={lease.exceededDuration}>{lease.blocksSoFar}</Duration>{' '}
+                / {lease.lease.channelDurationBlocks}
+              </TableCell>
               <TableCell right>
                 <Tip
                   overlay={lease.lease.channelRemoteNodeKey}

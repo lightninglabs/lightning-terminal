@@ -127,7 +127,13 @@ const OrderFormSection: React.FC = () => {
         <span>{orderFormView.apy}%</span>
       </ApySummaryItem>
       <Actions>
-        <Button disabled={!orderFormView.isValid} onClick={orderFormView.placeOrder}>
+        <Button
+          primary={orderFormView.orderType === 'Bid'}
+          danger={orderFormView.orderType === 'Ask'}
+          ghost
+          disabled={!orderFormView.isValid}
+          onClick={orderFormView.placeOrder}
+        >
           {orderFormView.placeOrderLabel}
         </Button>
       </Actions>

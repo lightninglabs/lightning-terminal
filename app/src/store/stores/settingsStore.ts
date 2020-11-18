@@ -54,7 +54,7 @@ export default class SettingsStore {
 
   /** specifies the sorting field and direction for the Pool leases list */
   leaseSort: SortParams<LeaseView> = {
-    field: 'duration',
+    field: 'blocksSoFar',
     descending: true,
   };
 

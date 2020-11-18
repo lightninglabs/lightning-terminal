@@ -72,6 +72,8 @@ const FundNewAccountForm: React.FC = () => {
       </FormField>
       <Actions>
         <Button
+          primary
+          ghost
           disabled={!fundNewAccountView.isValid}
           onClick={fundNewAccountView.confirm}
         >
