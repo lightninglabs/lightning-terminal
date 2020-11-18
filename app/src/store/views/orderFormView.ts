@@ -1,11 +1,18 @@
 import { makeAutoObservable, runInAction } from 'mobx';
+import { NodeTier } from 'types/generated/auctioneer_pb';
 import { annualPercentYield, toPercent } from 'util/bigmath';
 import { prefixTranslation } from 'util/translate';
 import { DURATION, ONE_UNIT } from 'api/pool';
 import { Store } from 'store';
-import { OrderType } from 'store/models/order';
+import { OrderType, Tier } from 'store/models/order';
 
 const { l } = prefixTranslation('stores.orderFormView');
+
+export const NODE_TIERS: Record<Tier, string> = {
+  [NodeTier.TIER_DEFAULT]: 'Default',
+  [NodeTier.TIER_0]: 'Tier 0',
+  [NodeTier.TIER_1]: 'Tier 1',
+};
 
 export default class OrderFormView {
   private _store: Store;
@@ -16,6 +23,7 @@ export default class OrderFormView {
   premium = 0;
   minChanSize = 0;
   maxBatchFeeRate = 0;
+  minNodeTier: Tier = NodeTier.TIER_DEFAULT;
 
   constructor(store: Store) {
     makeAutoObservable(this, {}, { deep: false, autoBind: true });
@@ -67,6 +75,11 @@ export default class OrderFormView {
       return l('feeRateErrorMin', { min: 1 });
     }
     return '';
+  }
+
+  /** the available options for the minNodeTier field */
+  get nodeTierOptions() {
+    return Object.entries(NODE_TIERS).map(([value, label]) => ({ label, value }));
   }
 
   /** the per block fixed rate */
@@ -121,6 +134,10 @@ export default class OrderFormView {
     this.maxBatchFeeRate = feeRate;
   }
 
+  setMinNodeTier(minNodeTier: Tier) {
+    this.minNodeTier = minNodeTier;
+  }
+
   setSuggestedPremium() {
     try {
       if (!this.amount) throw new Error('Must specify amount first');
@@ -150,6 +167,7 @@ export default class OrderFormView {
       DURATION,
       minUnitsMatch,
       satsPerKWeight,
+      this.minNodeTier,
     );
     runInAction(() => {
       if (nonce) {
@@ -157,6 +175,7 @@ export default class OrderFormView {
         this.premium = 0;
         this.minChanSize = 0;
         this.maxBatchFeeRate = 0;
+        this.minNodeTier = NodeTier.TIER_DEFAULT;
       }
     });
 

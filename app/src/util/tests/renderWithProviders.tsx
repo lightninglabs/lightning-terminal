@@ -26,7 +26,13 @@ const renderWithProviders = (component: React.ReactElement, withStore?: Store) =
     fireEvent.change(result.getByLabelText(label), { target: { value } });
   };
 
-  return { ...result, store, changeInput };
+  const changeSelect = async (label: string, value: string) => {
+    // rc-select adds labels to multiple dom elements. we want the second one
+    fireEvent.mouseDown(result.getAllByLabelText(label)[1]);
+    fireEvent.click(await result.findByText(value));
+  };
+
+  return { ...result, store, changeInput, changeSelect };
 };
 
 export default renderWithProviders;

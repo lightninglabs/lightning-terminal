@@ -2,7 +2,7 @@ import * as AUCT from 'types/generated/auctioneer_pb';
 import * as POOL from 'types/generated/trader_pb';
 import { Trader } from 'types/generated/trader_pb_service';
 import { b64 } from 'util/strings';
-import { OrderType } from 'store/models/order';
+import { OrderType, Tier } from 'store/models/order';
 import BaseApi from './base';
 import GrpcClient from './grpc';
 
@@ -155,6 +155,7 @@ class PoolApi extends BaseApi<PoolEvents> {
     duration: number,
     minUnitsMatch: number,
     feeRateSatPerKw: number,
+    minNodeTier?: Tier,
   ): Promise<POOL.SubmitOrderResponse.AsObject> {
     if (rateFixed < 1) {
       throw new Error(`The rate is too low. it must equate to at least 1 sat per block`);
@@ -174,13 +175,7 @@ class PoolApi extends BaseApi<PoolEvents> {
         const bid = new POOL.Bid();
         bid.setLeaseDurationBlocks(duration);
         bid.setVersion(ORDER_VERSION);
-        // TODO(jamal): add node tier to bid/ask form
-        // temporarily use tier 0 for development and tier 1 for prod
-        bid.setMinNodeTier(
-          process.env.NODE_ENV === 'development'
-            ? AUCT.NodeTier.TIER_0
-            : AUCT.NodeTier.TIER_1,
-        );
+        if (minNodeTier !== undefined) bid.setMinNodeTier(minNodeTier);
         bid.setDetails(order);
         req.setBid(bid);
         break;
