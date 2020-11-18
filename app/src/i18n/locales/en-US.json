@@ -167,6 +167,7 @@
   "cmps.pool.OrderFormSection.minChanSizePlaceholder": "100,000",
   "cmps.pool.OrderFormSection.feeLabel": "Max Batch Fee Rate",
   "cmps.pool.OrderFormSection.feePlaceholder": "100",
+  "cmps.pool.OrderFormSection.tierLabel": "Min Node Tier",
   "cmps.pool.OrderFormSection.durationLabel": "Channel Duration (blocks)",
   "cmps.pool.OrderFormSection.durationWeeks": "2 wks",
   "cmps.pool.OrderFormSection.fixedRateLabel": "Per Block Fixed Rate",

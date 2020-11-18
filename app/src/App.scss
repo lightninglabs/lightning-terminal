@@ -14,8 +14,9 @@
 @import '../node_modules/bootstrap/scss/grid';
 @import '../node_modules/bootstrap/scss/custom-forms';
 
-// rc-tooltip component styles
+// react-component component styles
 @import '../node_modules/rc-tooltip/assets/bootstrap_white.css';
+@import './assets/styles/rc-select.scss';
 
 // react-toastify styles
 @import '../node_modules/react-toastify/dist/ReactToastify.css';

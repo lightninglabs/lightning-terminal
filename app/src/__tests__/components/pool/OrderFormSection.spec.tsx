@@ -27,6 +27,8 @@ describe('OrderFormSection', () => {
     expect(getByText('Desired Inbound Liquidity')).toBeInTheDocument();
     expect(getByText('Bid Premium')).toBeInTheDocument();
     expect(getByText('Minimum Channel Size')).toBeInTheDocument();
+    expect(getByText('Max Batch Fee Rate')).toBeInTheDocument();
+    expect(getByText('Min Node Tier')).toBeInTheDocument();
     expect(getByText('Place Bid Order')).toBeInTheDocument();
   });
 
@@ -38,16 +40,18 @@ describe('OrderFormSection', () => {
     expect(getByText('Offered Outbound Liquidity')).toBeInTheDocument();
     expect(getByText('Ask Premium')).toBeInTheDocument();
     expect(getByText('Minimum Channel Size')).toBeInTheDocument();
+    expect(getByText('Max Batch Fee Rate')).toBeInTheDocument();
     expect(getByText('Place Ask Order')).toBeInTheDocument();
   });
 
   it('should submit a bid order', async () => {
-    const { getByText, changeInput } = render();
+    const { getByText, changeInput, changeSelect } = render();
 
     changeInput('Desired Inbound Liquidity', '1000000');
     changeInput('Bid Premium', '10000');
     changeInput('Minimum Channel Size', '100000');
     changeInput('Max Batch Fee Rate', '1');
+    await changeSelect('Min Node Tier', 'Tier 0');
 
     let bid: Required<POOL.Bid.AsObject>;
     // capture the rate that is sent to the API
@@ -60,6 +64,7 @@ describe('OrderFormSection', () => {
     expect(bid!.details.rateFixed).toBe(4960);
     expect(bid!.details.minUnitsMatch).toBe(1);
     expect(bid!.leaseDurationBlocks).toBe(2016);
+    expect(bid!.minNodeTier).toBe(1);
     expect(bid!.details.maxBatchFeeRateSatPerKw).toBe(253);
   });
 

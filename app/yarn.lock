@@ -12564,6 +12564,38 @@ rc-motion@^1.0.0:
     raf "^3.4.1"
     rc-util "^5.0.6"
 
+rc-motion@^2.0.0, rc-motion@^2.0.1:
+  version "2.3.4"
+  resolved "https://registry.yarnpkg.com/rc-motion/-/rc-motion-2.3.4.tgz#69fe1313754ee1e746e42ec971e361cbc755456e"
+  integrity sha512-La9JjfM58Vrwds1wM9OAkRTWsGeVqNnftI1YFti2WtaA2Ernk2vjbVio9hGbzhF0EvGrEvrzS96Mx/6lGT6Z0w==
+  dependencies:
+    "@babel/runtime" "^7.11.1"
+    classnames "^2.2.1"
+    rc-util "^5.2.1"
+
+rc-resize-observer@^0.2.3:
+  version "0.2.6"
+  resolved "https://registry.yarnpkg.com/rc-resize-observer/-/rc-resize-observer-0.2.6.tgz#c1b642f6d1293e34c4e3715f47f69443a167b825"
+  integrity sha512-YX6nYnd6fk7zbuvT6oSDMKiZjyngjHoy+fz+vL3Tez38d/G5iGdaDJa2yE7345G6sc4Mm1IGRUIwclvltddhmA==
+  dependencies:
+    "@babel/runtime" "^7.10.1"
+    classnames "^2.2.1"
+    rc-util "^5.0.0"
+    resize-observer-polyfill "^1.5.1"
+
+rc-select@11.5.0:
+  version "11.5.0"
+  resolved "https://registry.yarnpkg.com/rc-select/-/rc-select-11.5.0.tgz#360d2762207c2fef2622e7fcc542fc94dfc9d10f"
+  integrity sha512-izVcxMMo64ZbuYDaB+zsybPjli5Ub6fKM4OeChDqn4MwrHnPjCEsO3bXjeSEXK2LCC2DXQAdr1oYvHGw9QAGVw==
+  dependencies:
+    "@babel/runtime" "^7.10.1"
+    classnames "2.x"
+    rc-motion "^2.0.1"
+    rc-trigger "^5.0.4"
+    rc-util "^5.0.1"
+    rc-virtual-list "^3.2.0"
+    warning "^4.0.3"
+
 rc-tooltip@4.2.1:
   version "4.2.1"
   resolved "https://registry.yarnpkg.com/rc-tooltip/-/rc-tooltip-4.2.1.tgz#c1a2d5017ee03a771a9301c0dfdb46dfdf8fef94"
@@ -12583,13 +12615,33 @@ rc-trigger@^4.2.1:
     rc-motion "^1.0.0"
     rc-util "^5.0.1"
 
-rc-util@^5.0.1, rc-util@^5.0.6, rc-util@^5.3.0:
+rc-trigger@^5.0.4:
+  version "5.1.2"
+  resolved "https://registry.yarnpkg.com/rc-trigger/-/rc-trigger-5.1.2.tgz#f0f89bba2318699e704492bddb20506ecd8f8916"
+  integrity sha512-A6UdDy95masAEIaNmazPtqHW1EOFDWi2C2bJGDpr9OYpmObDpWKdxyNijVbFb6l1viTkAU9d3FyStgNPddgFzw==
+  dependencies:
+    "@babel/runtime" "^7.11.2"
+    classnames "^2.2.6"
+    rc-align "^4.0.0"
+    rc-motion "^2.0.0"
+    rc-util "^5.5.0"
+
+rc-util@^5.0.0, rc-util@^5.0.1, rc-util@^5.0.6, rc-util@^5.0.7, rc-util@^5.2.1, rc-util@^5.3.0, rc-util@^5.5.0:
   version "5.5.0"
   resolved "https://registry.yarnpkg.com/rc-util/-/rc-util-5.5.0.tgz#76321bcb5c12f01f42bff9b971f170ff19506e5a"
   integrity sha512-YJB+zZGvCll/bhxXRVLAekr7lOvTgqMlRIhgINoINfUek7wQvi5sft46NOi3yYUYhocpuW4k8+5okW46sBsZAQ==
   dependencies:
     react-is "^16.12.0"
     shallowequal "^1.1.0"
+
+rc-virtual-list@^3.2.0:
+  version "3.2.2"
+  resolved "https://registry.yarnpkg.com/rc-virtual-list/-/rc-virtual-list-3.2.2.tgz#95f8f0c4238e081f4a998354492632eed6d71924"
+  integrity sha512-OepvZDQGUbQQBFk5m2Ds32rfO/tSj9gZkLbzwaIw/hwGgvatDmW+j97YQvFkUQp/XDgdSGcfFfj/6XTKpz0J4g==
+  dependencies:
+    classnames "^2.2.6"
+    rc-resize-observer "^0.2.3"
+    rc-util "^5.0.7"
 
 react-app-polyfill@^2.0.0:
   version "2.0.0"
