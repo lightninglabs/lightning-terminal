@@ -2,6 +2,7 @@ import { makeAutoObservable } from 'mobx';
 import { Store } from 'store';
 
 export type VisibleSection =
+  | 'none'
   | 'summary'
   | 'fund-new'
   | 'fund-new-confirm'
@@ -29,16 +30,20 @@ export default class AccountSectionView {
 
   /** the calculated section to display */
   get visibleSection(): VisibleSection {
+    // force fund new account flow when trader key is undefined
     if (!this._store.accountStore.activeTraderKey) {
-      return this.section === 'fund-new-confirm' ? 'fund-new-confirm' : 'fund-new';
+      const inFundingFlow = ['fund-new-confirm', 'fund-new'].includes(this.section);
+      return inFundingFlow ? this.section : 'none';
     }
+    // force close account flow when expired
     if (
       this._store.accountStore.activeAccount.stateLabel === 'Expired' &&
       !['close', 'close-confirm'].includes(this.section)
     ) {
-      // show the expired view unless the close flow is chosen
       return 'expired';
     }
+
+    // display the selected section
     return this.section;
   }
 
@@ -66,6 +71,10 @@ export default class AccountSectionView {
     } else {
       this.setSection('fund-new');
     }
+  }
+
+  showFundNew() {
+    this.setSection('fund-new');
   }
 
   showFundNewConfirm() {

@@ -53,7 +53,12 @@ export default class AccountStore {
       });
     // sort unopened accounts (excluding closed) by the expiration height descending
     const other = accts
-      .filter(a => a.state !== AccountState.OPEN && a.state !== AccountState.CLOSED)
+      .filter(
+        a =>
+          a.state !== AccountState.OPEN &&
+          a.state !== AccountState.CLOSED &&
+          a.state !== AccountState.PENDING_CLOSED,
+      )
       .sort((a, b) => b.expirationHeight - a.expirationHeight);
     // return the opened accounts before the unopened accounts
     return [...open, ...other];
@@ -112,6 +117,9 @@ export default class AccountStore {
         feeRate,
         destination,
       );
+      runInAction(() => {
+        this.activeTraderKey = undefined;
+      });
       await this.fetchAccounts();
       return res.closeTxid;
     } catch (error) {
