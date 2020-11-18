@@ -63,6 +63,7 @@ export const SummaryItem = styled.div<{ strong?: boolean }>`
 
 interface ButtonProps {
   primary?: boolean;
+  danger?: boolean;
   ghost?: boolean;
   borderless?: boolean;
   disabled?: boolean;
@@ -117,6 +118,17 @@ export const Button = styled.button<ButtonProps>`
     props.borderless &&
     `
     border-width: 0;
+  `}
+
+  ${props =>
+    props.danger &&
+    `
+    border: 1px solid ${props.theme.colors.pink};
+    &:hover {
+      color: ${props.theme.colors.blue};
+      text-decoration: none;
+      background-color: ${props.theme.colors.pink};
+    }
   `}
 
   ${props =>

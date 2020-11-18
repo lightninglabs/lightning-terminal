@@ -7,10 +7,29 @@ import { Close, Scrollable } from 'components/base';
 import SortableHeader from 'components/common/SortableHeader';
 import Tip from 'components/common/Tip';
 import Unit from 'components/common/Unit';
-import { styled } from 'components/theme';
+import { styled, Theme } from 'components/theme';
 import { Table, TableCell, TableHeader, TableRow } from './OrderTable';
 
+/** maps a order status to a theme color */
+const statusToColor = (theme: Theme, status: Order['stateLabel']) => {
+  switch (status) {
+    case 'Partially Filled':
+      return theme.colors.gold;
+    case 'Filled':
+      return theme.colors.green;
+    case 'Failed':
+    case 'Cancelled':
+    case 'Expired':
+      return theme.colors.pink;
+    default:
+      return '';
+  }
+};
+
 const Styled = {
+  OrderStatus: styled.span<{ status: Order['stateLabel'] }>`
+    color: ${props => statusToColor(props.theme, props.status)};
+  `,
   CloseIcon: styled(Close)`
     width: 18px;
     height: 18px;
@@ -34,15 +53,10 @@ const OrderRow: React.FC<{
 }> = observer(({ order, selected, onClick, onCancel }) => {
   const { l } = usePrefixedTranslation('cmps.pool.orders.OrdersList');
 
-  const handleClick = useCallback(() => {
-    onClick(order.nonce);
-  }, [order, onClick]);
+  const handleClick = useCallback(() => onClick(order.nonce), [order, onClick]);
+  const handleCancel = useCallback(() => onCancel(order.nonce), [order, onCancel]);
 
-  const handleCancel = useCallback(() => {
-    onCancel(order.nonce);
-  }, [order, onCancel]);
-
-  const { IconCell, CloseIcon } = Styled;
+  const { OrderStatus, IconCell, CloseIcon } = Styled;
   return (
     <TableRow key={order.nonce} selectable selected={selected} onClick={handleClick}>
       <TableCell>{order.type}</TableCell>
@@ -50,7 +64,9 @@ const OrderRow: React.FC<{
         <Unit sats={order.amount} suffix={false} />
       </TableCell>
       <TableCell right>{order.rateFixed}</TableCell>
-      <TableCell>{order.stateWithCount}</TableCell>
+      <TableCell>
+        <OrderStatus status={order.stateLabel}>{order.stateWithCount}</OrderStatus>
+      </TableCell>
       <TableCell right>{order.createdOnLabel}</TableCell>
       <IconCell>
         {order.isPending && (

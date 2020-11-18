@@ -54,7 +54,12 @@ const CloseAccountForm: React.FC = () => {
         <Button ghost borderless onClick={closeAccountView.cancel}>
           {l('common.cancel')}
         </Button>
-        <Button disabled={!closeAccountView.isValid} onClick={closeAccountView.confirm}>
+        <Button
+          primary
+          ghost
+          disabled={!closeAccountView.isValid}
+          onClick={closeAccountView.confirm}
+        >
           {l('close')}
         </Button>
       </SummaryItem>

@@ -67,9 +67,9 @@ export default class LeaseView {
     return Math.max(duration - (expireHeight - this.currHeight), 0);
   }
 
-  /** the duration of this lease as "blocks_so_far / total_duration" */
-  get duration() {
-    return `${this.blocksSoFar} / ${this.lease.channelDurationBlocks}`;
+  /** indicates if the sold channel has exceeded the duration */
+  get exceededDuration() {
+    return !this.lease.purchased && this.blocksSoFar > this.lease.channelDurationBlocks;
   }
 
   /** the lease's channel's peer alias, or ellipsed pubkey */
@@ -104,7 +104,7 @@ export default class LeaseView {
         return a.status > b.status ? 1 : -1;
       case 'alias':
         return a.alias > b.alias ? 1 : -1;
-      case 'duration':
+      case 'blocksSoFar':
       default:
         return a.blocksSoFar - b.blocksSoFar;
     }
