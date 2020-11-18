@@ -28,6 +28,7 @@ describe('OrderListSection', () => {
     expect(getByText('Orders')).toBeInTheDocument();
     expect(store.orderListView.filter).toBe('open');
     store.orderListView.orders.forEach(o => {
+      expect(getByText(o.rateFixed.toString())).toBeInTheDocument();
       expect(getByText(o.stateWithCount)).toBeInTheDocument();
       expect(getByText(o.createdOnLabel)).toBeInTheDocument();
     });
@@ -55,7 +56,8 @@ describe('OrderListSection', () => {
 
   it.each<[string, number[]]>([
     ['Type', [2, 0, 6, 9, 3]],
-    ['Total Liquidity', [3, 9, 0, 2, 6]],
+    ['Liquidity', [3, 9, 0, 2, 6]],
+    ['Rate', [6, 0, 9, 2, 3]],
     ['Status', [6, 3, 2, 9, 0]],
     ['Created On', [2, 3, 0, 6, 9]],
   ])('should sort the orders list by %s', (sortBy, values) => {
