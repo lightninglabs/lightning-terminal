@@ -11,6 +11,7 @@ import {
   FundAccountForm,
   FundNewAccountConfirm,
   FundNewAccountForm,
+  NoAccount,
 } from './account';
 
 const AccountSection: React.FC = () => {
@@ -18,6 +19,9 @@ const AccountSection: React.FC = () => {
 
   let view: ReactNode;
   switch (accountSectionView.visibleSection) {
+    case 'none':
+      view = <NoAccount />;
+      break;
     case 'summary':
       view = <AccountSummary />;
       break;
