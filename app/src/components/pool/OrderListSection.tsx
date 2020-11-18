@@ -12,25 +12,7 @@ const Styled = {
     display: flex;
     flex-direction: column;
     height: 400px;
-    overflow: auto;
-
-    // use consistent scrollbars across different platforms
-    &::-webkit-scrollbar {
-      width: 8px;
-      background-color: rgba(0, 0, 0, 0);
-      border-radius: 10px;
-    }
-    &::-webkit-scrollbar:hover {
-      background-color: rgba(0, 0, 0, 0.1);
-    }
-    &::-webkit-scrollbar-thumb:vertical {
-      background-color: rgba(0, 0, 0, 0.2);
-      border-radius: 10px;
-    }
-    &::-webkit-scrollbar-thumb:vertical:active {
-      background-color: rgba(0, 0, 0, 0.6);
-      border-radius: 10px;
-    }
+    padding-bottom: 0;
   `,
   Header: styled(HeaderFour)`
     color: ${props => props.theme.colors.white};
@@ -60,8 +42,12 @@ const Styled = {
     flex: 1;
   `,
   Column: styled(Column)`
+    display: flex;
+    flex-direction: column;
+
     &:first-of-type {
       border-right: 1px solid ${props => props.theme.colors.blue};
+      padding-right: 0;
     }
   `,
 };

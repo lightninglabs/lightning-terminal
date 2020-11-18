@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Order } from 'store/models';
-import { Close } from 'components/base';
+import { Close, Scrollable } from 'components/base';
 import SortableHeader from 'components/common/SortableHeader';
 import Tip from 'components/common/Tip';
 import Unit from 'components/common/Unit';
@@ -68,69 +68,71 @@ const OrdersList: React.FC = () => {
   const { orderListView, orderStore, settingsStore } = useStore();
 
   return (
-    <Table>
-      <thead>
-        <tr>
-          <TableHeader>
-            <SortableHeader<Order>
-              field="type"
-              sort={settingsStore.orderSort}
-              onSort={settingsStore.setOrderSort}
-            >
-              {l('type')}
-            </SortableHeader>
-          </TableHeader>
-          <TableHeader right>
-            <SortableHeader<Order>
-              field="amount"
-              sort={settingsStore.orderSort}
-              onSort={settingsStore.setOrderSort}
-            >
-              {l('amount')}
-            </SortableHeader>
-          </TableHeader>
-          <TableHeader right>
-            <SortableHeader<Order>
-              field="rateFixed"
-              sort={settingsStore.orderSort}
-              onSort={settingsStore.setOrderSort}
-            >
-              {l('rate')}
-            </SortableHeader>
-          </TableHeader>
-          <TableHeader>
-            <SortableHeader<Order>
-              field="stateLabel"
-              sort={settingsStore.orderSort}
-              onSort={settingsStore.setOrderSort}
-            >
-              {l('status')}
-            </SortableHeader>
-          </TableHeader>
-          <TableHeader right>
-            <SortableHeader<Order>
-              field="creationTimestamp"
-              sort={settingsStore.orderSort}
-              onSort={settingsStore.setOrderSort}
-            >
-              {l('created')}
-            </SortableHeader>
-          </TableHeader>
-          <TableHeader />
-        </tr>
-      </thead>
-      <tbody>
-        {orderListView.orders.map(order => (
-          <OrderRow
-            key={order.nonce}
-            order={order}
-            selected={order.nonce === orderListView.selectedNonce}
-            onClick={orderListView.setChosenNonce}
-            onCancel={orderStore.cancelOrder}
-          />
-        ))}
-      </tbody>
-    </Table>
+    <Scrollable>
+      <Table>
+        <thead>
+          <tr>
+            <TableHeader>
+              <SortableHeader<Order>
+                field="type"
+                sort={settingsStore.orderSort}
+                onSort={settingsStore.setOrderSort}
+              >
+                {l('type')}
+              </SortableHeader>
+            </TableHeader>
+            <TableHeader right>
+              <SortableHeader<Order>
+                field="amount"
+                sort={settingsStore.orderSort}
+                onSort={settingsStore.setOrderSort}
+              >
+                {l('amount')}
+              </SortableHeader>
+            </TableHeader>
+            <TableHeader right>
+              <SortableHeader<Order>
+                field="rateFixed"
+                sort={settingsStore.orderSort}
+                onSort={settingsStore.setOrderSort}
+              >
+                {l('rate')}
+              </SortableHeader>
+            </TableHeader>
+            <TableHeader>
+              <SortableHeader<Order>
+                field="stateLabel"
+                sort={settingsStore.orderSort}
+                onSort={settingsStore.setOrderSort}
+              >
+                {l('status')}
+              </SortableHeader>
+            </TableHeader>
+            <TableHeader right>
+              <SortableHeader<Order>
+                field="creationTimestamp"
+                sort={settingsStore.orderSort}
+                onSort={settingsStore.setOrderSort}
+              >
+                {l('created')}
+              </SortableHeader>
+            </TableHeader>
+            <TableHeader />
+          </tr>
+        </thead>
+        <tbody>
+          {orderListView.orders.map(order => (
+            <OrderRow
+              key={order.nonce}
+              order={order}
+              selected={order.nonce === orderListView.selectedNonce}
+              onClick={orderListView.setChosenNonce}
+              onCancel={orderStore.cancelOrder}
+            />
+          ))}
+        </tbody>
+      </Table>
+    </Scrollable>
   );
 };
 
