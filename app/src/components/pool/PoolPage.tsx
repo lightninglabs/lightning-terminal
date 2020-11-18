@@ -40,6 +40,13 @@ const PoolPage: React.FC = () => {
     accountStore.fetchAccounts();
     orderStore.fetchOrders();
     batchStore.fetchBatches();
+
+    // start polling when this component is mounted
+    batchStore.startPolling();
+    // stop polling when this component is unmounted
+    return () => {
+      batchStore.stopPolling();
+    };
   }, [accountStore, orderStore, batchStore]);
 
   const { Wrapper, Row, Col } = Styled;

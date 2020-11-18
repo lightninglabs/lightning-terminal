@@ -1,6 +1,9 @@
 import { values } from 'mobx';
 import { grpc } from '@improbable-eng/grpc-web';
+import { waitFor } from '@testing-library/react';
+import * as config from 'config';
 import { hex } from 'util/strings';
+import { injectIntoGrpcUnary } from 'util/tests';
 import { poolBatchSnapshot } from 'util/tests/sampleData';
 import { BatchStore, createStore, Store } from 'store';
 import { BATCH_QUERY_LIMIT } from 'store/stores/batchStore';
@@ -142,5 +145,35 @@ describe('BatchStore', () => {
     expect(store.sortedBatches[BATCH_QUERY_LIMIT].batchId).toBe(
       hex(`20-${poolBatchSnapshot.batchId}`),
     );
+  });
+
+  it('should start and stop polling', async () => {
+    let callCount = 0;
+    injectIntoGrpcUnary(desc => {
+      if (desc.methodName === 'BatchSnapshot') callCount++;
+    });
+
+    // allow polling in this test
+    Object.defineProperty(config, 'IS_TEST', { get: () => false });
+    jest.useFakeTimers();
+
+    store.startPolling();
+    expect(window.setInterval).toBeCalled();
+    expect(callCount).toBe(0);
+    // fast forward 1 minute
+    jest.runTimersToTime(60 * 1000);
+    await waitFor(() => {
+      expect(callCount).toBe(1);
+    });
+
+    store.stopPolling();
+    expect(window.clearInterval).toBeCalled();
+    // fast forward 1 more minute
+    jest.runTimersToTime(120 * 1000);
+    expect(callCount).toBe(1);
+
+    // revert IS_TEST
+    Object.defineProperty(config, 'IS_TEST', { get: () => true });
+    jest.useRealTimers();
   });
 });
