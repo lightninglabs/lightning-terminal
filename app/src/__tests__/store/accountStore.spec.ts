@@ -46,14 +46,14 @@ describe('AccountStore', () => {
   });
 
   it('should return sorted accounts', async () => {
-    const a = new Account({ ...poolInitAccount, value: 300 });
-    const b = new Account({ ...poolInitAccount, value: 100 });
-    const c = new Account({
+    const a = new Account(rootStore, { ...poolInitAccount, value: 300 });
+    const b = new Account(rootStore, { ...poolInitAccount, value: 100 });
+    const c = new Account(rootStore, {
       ...poolInitAccount,
       expirationHeight: 5000,
       state: POOL.AccountState.PENDING_OPEN,
     });
-    const d = new Account({
+    const d = new Account(rootStore, {
       ...poolInitAccount,
       expirationHeight: 2000,
       state: POOL.AccountState.PENDING_UPDATE,
@@ -76,14 +76,14 @@ describe('AccountStore', () => {
   });
 
   it('should excluded closed accounts in sorted accounts', async () => {
-    const a = new Account({ ...poolInitAccount, value: 300 });
-    const b = new Account({ ...poolInitAccount, value: 100 });
-    const c = new Account({
+    const a = new Account(rootStore, { ...poolInitAccount, value: 300 });
+    const b = new Account(rootStore, { ...poolInitAccount, value: 100 });
+    const c = new Account(rootStore, {
       ...poolInitAccount,
       expirationHeight: 5000,
       state: POOL.AccountState.CLOSED,
     });
-    const d = new Account({
+    const d = new Account(rootStore, {
       ...poolInitAccount,
       expirationHeight: 2000,
       state: POOL.AccountState.PENDING_OPEN,
@@ -108,6 +108,7 @@ describe('AccountStore', () => {
   it.each<[number, string]>([
     [POOL.AccountState.PENDING_OPEN, 'Pending Open'],
     [POOL.AccountState.PENDING_UPDATE, 'Pending Update'],
+    [POOL.AccountState.PENDING_BATCH, 'Pending Batch'],
     [POOL.AccountState.OPEN, 'Open'],
     [POOL.AccountState.EXPIRED, 'Expired'],
     [POOL.AccountState.PENDING_CLOSED, 'Pending Closed'],
@@ -119,7 +120,7 @@ describe('AccountStore', () => {
       ...poolListAccounts.accountsList[0],
       state: state as any,
     };
-    const account = new Account(poolAccount);
+    const account = new Account(rootStore, poolAccount);
     expect(account.stateLabel).toBe(label);
   });
 
@@ -146,21 +147,25 @@ describe('AccountStore', () => {
   });
 
   it('should return account expiration estimates', async () => {
-    expect(store.accountExpiresIn).toBe('');
     await store.fetchAccounts();
     const expectExpires = (blocksTilExpire: number, expected: string) => {
       runInAction(() => {
         const currHeight = rootStore.nodeStore.blockHeight;
         store.activeAccount.expirationHeight = currHeight + blocksTilExpire;
       });
-      expect(store.accountExpiresIn).toBe(expected);
+      expect(store.activeAccount.expiresInLabel).toBe(expected);
     };
     expectExpires(0, '');
-    expectExpires(100, '100 blocks');
+    expectExpires(100, '~16 hours');
     expectExpires(288, '~2 days');
     expectExpires(2016, '~2 weeks');
     expectExpires(4032, '~4 weeks');
     expectExpires(8064, '~1.9 months');
+
+    runInAction(() => {
+      store.activeAccount.state = POOL.AccountState.EXPIRED;
+    });
+    expectExpires(100, '');
   });
 
   it('should copy the txn id to clipboard', async () => {

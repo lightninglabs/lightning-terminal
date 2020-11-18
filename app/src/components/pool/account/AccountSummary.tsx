@@ -8,9 +8,11 @@ import Unit from 'components/common/Unit';
 import { styled } from 'components/theme';
 
 const Styled = {
-  Expires: styled.span`
+  Expires: styled.span<{ warn: boolean }>`
     float: right;
     text-transform: none;
+
+    ${props => props.warn && `color: ${props.theme.colors.gold}`}
   `,
   Summary: styled.div`
     margin: 20px 0 30px;
@@ -29,26 +31,31 @@ const Styled = {
     margin: 30px auto;
     text-align: center;
   `,
+  ExpiresSoon: styled.p`
+    font-size: ${props => props.theme.sizes.xs};
+  `,
 };
 
 const AccountSummary: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.pool.account.AccountSummary');
   const { orderStore, accountStore, accountSectionView } = useStore();
+  const account = accountStore.activeAccount;
 
-  const { Expires, Summary, StatusBadge, CopyButton, Actions } = Styled;
+  const { Expires, Summary, StatusBadge, CopyButton, Actions, ExpiresSoon } = Styled;
   return (
     <>
       <HeaderFour>
         {l('account')}
-        {accountStore.accountExpiresIn && (
-          <Expires>
+        {account.expiresInLabel && (
+          <Expires warn={account.expiresSoon}>
             <Tip
               overlay={l('expiresHeight', {
-                height: accountStore.activeAccount.expirationHeight,
+                height: account.expirationHeight,
+                remaining: account.expiresInBlocks,
               })}
             >
               <span>
-                {l('expiresIn')} {accountStore.accountExpiresIn}
+                {l('expiresIn')} {account.expiresInLabel}
               </span>
             </Tip>
           </Expires>
@@ -57,19 +64,17 @@ const AccountSummary: React.FC = () => {
       <Summary>
         <SummaryItem strong>
           <span>{l('accountStatus')}</span>
-          <StatusBadge pending={accountStore.activeAccount.isPending}>
-            {accountStore.activeAccount.stateLabel}
-          </StatusBadge>
+          <StatusBadge pending={account.isPending}>{account.stateLabel}</StatusBadge>
         </SummaryItem>
         <SummaryItem>
           <span>{l('fundingTxn')}</span>
           <CopyButton ghost borderless compact onClick={accountStore.copyTxnId}>
-            {accountStore.activeAccount.fundingTxnIdEllipsed}
+            {account.fundingTxnIdEllipsed}
           </CopyButton>
         </SummaryItem>
         <SummaryItem>
           <span>{l('currentBalance')}</span>
-          <Unit sats={accountStore.activeAccount.totalBalance} />
+          <Unit sats={account.totalBalance} />
         </SummaryItem>
         <SummaryItem>
           <span>{l('openOrdersCount')}</span>
@@ -77,24 +82,38 @@ const AccountSummary: React.FC = () => {
         </SummaryItem>
         <SummaryItem>
           <span>{l('pendingBalance')}</span>
-          <Unit sats={accountStore.activeAccount.pendingBalance} />
+          <Unit sats={account.pendingBalance} />
         </SummaryItem>
         <SummaryItem strong>
           <span>{l('availableBalance')}</span>
           <span>
-            <Unit sats={accountStore.activeAccount.availableBalance} />
+            <Unit sats={account.availableBalance} />
           </span>
         </SummaryItem>
       </Summary>
       <Actions>
-        <Button
-          primary
-          ghost
-          disabled={accountStore.activeAccount.stateLabel !== 'Open'}
-          onClick={accountSectionView.showFundAccount}
-        >
-          {l('fundAccount')}
-        </Button>
+        {account.expiresSoon && account.stateLabel === 'Open' ? (
+          <>
+            <ExpiresSoon>{l('expiresSoon')}</ExpiresSoon>
+            <Button
+              danger
+              ghost
+              disabled={account.stateLabel !== 'Open'}
+              onClick={accountSectionView.showCloseAccount}
+            >
+              {l('close')}
+            </Button>
+          </>
+        ) : (
+          <Button
+            primary
+            ghost
+            disabled={account.stateLabel !== 'Open'}
+            onClick={accountSectionView.showFundAccount}
+          >
+            {l('fundAccount')}
+          </Button>
+        )}
       </Actions>
     </>
   );

@@ -227,6 +227,18 @@ describe('AccountSection', () => {
     expect(getByText('Confirm')).toBeInTheDocument();
   });
 
+  it('should display warning when account is near expiration', () => {
+    runInAction(() => {
+      const currHeight = store.nodeStore.blockHeight;
+      store.accountStore.activeAccount.expirationHeight = currHeight + 144 * 2;
+    });
+    const { getByText } = render();
+
+    expect(getByText('Expires in ~2 days')).toBeInTheDocument();
+    expect(getByText(/Orders will no longer be matched/)).toBeInTheDocument();
+    expect(getByText('Close Account')).toBeInTheDocument();
+  });
+
   it('should close an expired account', async () => {
     // set the account as expired
     runInAction(() => {

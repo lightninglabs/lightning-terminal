@@ -114,9 +114,13 @@ export default class NodeStore {
    */
   onTransaction(transaction: Transaction.AsObject) {
     this._store.log.info('handle incoming transaction', transaction);
-    if (this._knownTxns.includes(transaction.txHash)) return;
-    this._knownTxns.push(transaction.txHash);
-    this.wallet.walletBalance = this.wallet.walletBalance.plus(transaction.amount);
-    this._store.log.info('updated nodeStore.wallet', toJS(this.wallet));
+    if (!this._knownTxns.includes(transaction.txHash)) {
+      this._knownTxns.push(transaction.txHash);
+      this.wallet.walletBalance = this.wallet.walletBalance.plus(transaction.amount);
+      this._store.log.info('updated nodeStore.wallet', toJS(this.wallet));
+    }
+
+    // fetch Pool accounts whenever there is an onchain txn
+    this._store.accountStore.fetchAccountsThrottled();
   }
 }

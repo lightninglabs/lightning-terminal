@@ -2,8 +2,14 @@ import { makeAutoObservable } from 'mobx';
 import * as POOL from 'types/generated/trader_pb';
 import Big from 'big.js';
 import { ellipseInside, hex } from 'util/strings';
+import { prefixTranslation } from 'util/translate';
+import { Store } from 'store/store';
+
+const { l } = prefixTranslation('stores.AccountStore');
 
 export default class Account {
+  private _store: Store;
+
   // native values from the pool api
   traderKey = '';
   totalBalance = Big(0);
@@ -12,20 +18,16 @@ export default class Account {
   state = 0;
   fundingTxnId = '';
 
-  constructor(poolAccount: POOL.Account.AsObject) {
+  constructor(store: Store, poolAccount: POOL.Account.AsObject) {
     makeAutoObservable(this, {}, { deep: false, autoBind: true });
 
+    this._store = store;
     this.update(poolAccount);
-  }
-
-  /** the first and last 6 chars of the traderKey */
-  get traderKeyEllipsed() {
-    return ellipseInside(this.traderKey);
   }
 
   /** the first and last 6 chars of the funding txn id */
   get fundingTxnIdEllipsed() {
-    return ellipseInside(this.fundingTxnId);
+    return ellipseInside(this.fundingTxnId, 4);
   }
 
   /** the pending balance of the account */
@@ -41,6 +43,43 @@ export default class Account {
       this.state === POOL.AccountState.PENDING_BATCH ||
       this.state === POOL.AccountState.PENDING_CLOSED
     );
+  }
+
+  /** the number of blocks until this account expires */
+  get expiresInBlocks() {
+    const currentHeight = this._store.nodeStore.blockHeight;
+    const expiresHeight = this.expirationHeight;
+    return Math.max(expiresHeight - currentHeight, 0);
+  }
+
+  /** the estimated amount of time until the active account expires */
+  get expiresInLabel() {
+    if (this.state === POOL.AccountState.EXPIRED) return '';
+
+    const blocksPerDay = 144;
+    const blocks = this.expiresInBlocks;
+    if (blocks <= 0) return '';
+
+    const days = Math.round(blocks / blocksPerDay);
+    const weeks = Math.floor(days / 7);
+    if (days <= 1) {
+      const hours = Math.floor(blocks / 6);
+      return `~${hours} ${l('common.hours', { count: hours })}`;
+    } else if (days < 14) {
+      return `~${days} ${l('common.days', { count: days })}`;
+    } else if (weeks < 8) {
+      return `~${weeks} ${l('common.weeks', { count: weeks })}`;
+    }
+    const months = weeks / 4.3;
+
+    return `~${months.toFixed(1)} ${l('common.months', { count: months })}`;
+  }
+
+  /** indicates if this account is going to expire soon */
+  get expiresSoon() {
+    // warn if the account expires in under 3 days
+    const limit = 144 * 3;
+    return this.expiresInBlocks <= limit;
   }
 
   /**
