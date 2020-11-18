@@ -36,6 +36,7 @@
     "mobx": "6.0.2",
     "mobx-react-lite": "3.0.1",
     "mobx-utils": "5.6.1",
+    "rc-select": "11.5.0",
     "rc-tooltip": "4.2.1",
     "react": "17.0.1",
     "react-dom": "17.0.1",

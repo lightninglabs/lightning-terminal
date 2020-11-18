@@ -3,9 +3,11 @@ import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { Unit, Units } from 'util/constants';
 import { useStore } from 'store';
+import { Tier } from 'store/models/order';
 import { Button, Section, Small, SummaryItem } from 'components/base';
 import FormField from 'components/common/FormField';
 import FormInputNumber from 'components/common/FormInputNumber';
+import FormSelect from 'components/common/FormSelect';
 import Toggle from 'components/common/Toggle';
 import { styled } from 'components/theme';
 
@@ -94,6 +96,16 @@ const OrderFormSection: React.FC = () => {
           onChange={orderFormView.setMaxBatchFeeRate}
         />
       </FormField>
+      {orderFormView.orderType === 'Bid' && (
+        <FormField label={l('tierLabel')}>
+          <FormSelect
+            label={l('tierLabel')}
+            value={orderFormView.minNodeTier.toString()}
+            onChange={v => orderFormView.setMinNodeTier(parseInt(v) as Tier)}
+            options={orderFormView.nodeTierOptions}
+          />
+        </FormField>
+      )}
       <SummaryItem>
         <span>{l('durationLabel')}</span>
         <span className="text-right">
