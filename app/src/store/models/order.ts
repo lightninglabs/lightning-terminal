@@ -138,6 +138,8 @@ export default class Order {
         return a.type.toLowerCase() > b.type.toLowerCase() ? 1 : -1;
       case 'amount':
         return +a.amount.sub(b.amount);
+      case 'rateFixed':
+        return a.rateFixed - b.rateFixed;
       case 'stateLabel':
         return a.stateLabel.toLowerCase() > b.stateLabel.toLowerCase() ? 1 : -1;
       case 'creationTimestamp':
