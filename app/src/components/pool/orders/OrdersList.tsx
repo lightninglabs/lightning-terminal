@@ -22,6 +22,7 @@ const OrderRow: React.FC<{
       <TableCell right>
         <Unit sats={order.amount} suffix={false} />
       </TableCell>
+      <TableCell right>{order.rateFixed}</TableCell>
       <TableCell>{order.stateWithCount}</TableCell>
       <TableCell right>{order.createdOnLabel}</TableCell>
     </TableRow>
@@ -52,6 +53,15 @@ const OrdersList: React.FC = () => {
               onSort={settingsStore.setOrderSort}
             >
               {l('amount')}
+            </SortableHeader>
+          </TableHeader>
+          <TableHeader right>
+            <SortableHeader<Order>
+              field="rateFixed"
+              sort={settingsStore.orderSort}
+              onSort={settingsStore.setOrderSort}
+            >
+              {l('rate')}
             </SortableHeader>
           </TableHeader>
           <TableHeader>
