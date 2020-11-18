@@ -307,3 +307,27 @@ export const RangeInput = styled.input`
     border-radius: 2px;
   }
 `;
+
+export const Scrollable = styled.div`
+  flex: 1 1 auto;
+  height: 0px;
+  overflow: auto;
+
+  // use consistent scrollbars across different platforms
+  &::-webkit-scrollbar {
+    width: 8px;
+    background-color: rgba(0, 0, 0, 0);
+    border-radius: 10px;
+  }
+  &::-webkit-scrollbar:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  &::-webkit-scrollbar-thumb:vertical {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+  }
+  &::-webkit-scrollbar-thumb:vertical:active {
+    background-color: rgba(255, 255, 255, 0.6);
+    border-radius: 10px;
+  }
+`;
