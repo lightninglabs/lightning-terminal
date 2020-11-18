@@ -1,4 +1,5 @@
 import { makeAutoObservable, observable, ObservableMap, runInAction, toJS } from 'mobx';
+import { IS_DEV, IS_TEST } from 'config';
 import debounce from 'lodash/debounce';
 import { Store } from 'store';
 import { Batch } from 'store/models';
@@ -7,6 +8,7 @@ export const BATCH_QUERY_LIMIT = 20;
 
 export default class BatchStore {
   private _store: Store;
+  private _pollingInterval?: NodeJS.Timeout;
 
   /** the collection of batches */
   batches: ObservableMap<string, Batch> = observable.map();
@@ -116,10 +118,35 @@ export default class BatchStore {
         this._store.log.info('updated batchStore.batches', toJS(this.batches));
       });
     } catch (error) {
+      if (error.message === 'batch snapshot not found') return;
       this._store.appView.handleError(error, 'Unable to fetch the latest batch');
     }
   }
 
   /** fetch the latest at most once every 2 seconds when using this func  */
   fetchLatestBatchThrottled = debounce(this.fetchLatestBatch, 2000);
+
+  startPolling() {
+    if (IS_TEST) return;
+    if (this._pollingInterval) this.stopPolling();
+    this._store.log.info('start polling for Pool data');
+    // create timer to poll for new Pool data every minute
+    this._pollingInterval = setInterval(async () => {
+      this._store.log.info('polling for latest Pool data');
+      await this.fetchLatestBatch();
+      await this._store.accountStore.fetchAccounts();
+      await this._store.orderStore.fetchOrders();
+    }, (IS_DEV ? 15 : 60) * 1000);
+  }
+
+  stopPolling() {
+    this._store.log.info('stop polling for Pool data');
+    if (this._pollingInterval) {
+      clearInterval(this._pollingInterval);
+      this._pollingInterval = undefined;
+      this._store.log.info('polling stopped');
+    } else {
+      this._store.log.info('polling was already stopped');
+    }
+  }
 }
