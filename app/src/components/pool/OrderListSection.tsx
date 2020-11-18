@@ -11,8 +11,12 @@ const Styled = {
   Section: styled(Section)`
     display: flex;
     flex-direction: column;
-    height: 400px;
+    height: 300px;
     padding-bottom: 0;
+
+    @media (min-height: 1025px) {
+      height: 400px;
+    }
   `,
   Header: styled(HeaderFour)`
     color: ${props => props.theme.colors.white};
@@ -46,8 +50,9 @@ const Styled = {
     flex-direction: column;
 
     &:first-of-type {
-      border-right: 1px solid ${props => props.theme.colors.blue};
       padding-right: 0;
+      border-right: 1px solid ${props => props.theme.colors.blue};
+      border-bottom: 1px solid ${props => props.theme.colors.blue};
     }
   `,
 };
@@ -92,10 +97,10 @@ const OrderListSection: React.FC = () => {
         </Actions>
       </Header>
       <Row>
-        <Column cols={5}>
+        <Column cols={12} colsXl={6}>
           <OrdersList />
         </Column>
-        <Column>
+        <Column cols={12} colsXl={6}>
           <LeaseList />
         </Column>
       </Row>
