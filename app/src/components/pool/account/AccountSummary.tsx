@@ -2,7 +2,7 @@ import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
-import { Button, HeaderFour, SummaryItem } from 'components/base';
+import { Badge, Button, HeaderFour, SummaryItem } from 'components/base';
 import Tip from 'components/common/Tip';
 import Unit from 'components/common/Unit';
 import { styled } from 'components/theme';
@@ -14,6 +14,13 @@ const Styled = {
   `,
   Summary: styled.div`
     margin: 20px 0 30px;
+  `,
+  StatusBadge: styled(Badge)<{ pending?: boolean }>`
+    color: ${props =>
+      props.pending ? props.theme.colors.gold : props.theme.colors.green};
+    border-color: ${props =>
+      props.pending ? props.theme.colors.gold : props.theme.colors.green};
+    font-family: ${props => props.theme.fonts.open.regular};
   `,
   CopyButton: styled(Button)`
     padding: 0;
@@ -28,7 +35,7 @@ const AccountSummary: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.pool.account.AccountSummary');
   const { orderStore, accountStore, accountSectionView } = useStore();
 
-  const { Expires, Summary, CopyButton, Actions } = Styled;
+  const { Expires, Summary, StatusBadge, CopyButton, Actions } = Styled;
   return (
     <>
       <HeaderFour>
@@ -50,7 +57,9 @@ const AccountSummary: React.FC = () => {
       <Summary>
         <SummaryItem strong>
           <span>{l('accountStatus')}</span>
-          <span>{accountStore.activeAccount.stateLabel}</span>
+          <StatusBadge pending={accountStore.activeAccount.isPending}>
+            {accountStore.activeAccount.stateLabel}
+          </StatusBadge>
         </SummaryItem>
         <SummaryItem>
           <span>{l('fundingTxn')}</span>
@@ -79,6 +88,8 @@ const AccountSummary: React.FC = () => {
       </Summary>
       <Actions>
         <Button
+          primary
+          ghost
           disabled={accountStore.activeAccount.stateLabel !== 'Open'}
           onClick={accountSectionView.showFundAccount}
         >

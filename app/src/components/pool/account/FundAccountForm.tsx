@@ -62,7 +62,12 @@ const FundAccountForm: React.FC = () => {
         <Button ghost borderless onClick={fundAccountView.cancel}>
           {l('common.cancel')}
         </Button>
-        <Button disabled={!fundAccountView.isValid} onClick={fundAccountView.confirm}>
+        <Button
+          primary
+          ghost
+          disabled={!fundAccountView.isValid}
+          onClick={fundAccountView.confirm}
+        >
           {l('fund')}
         </Button>
       </SummaryItem>
