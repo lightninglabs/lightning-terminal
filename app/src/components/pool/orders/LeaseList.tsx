@@ -5,6 +5,7 @@ import { useStore } from 'store';
 import { LeaseView } from 'store/views';
 import { Scrollable } from 'components/base';
 import SortableHeader from 'components/common/SortableHeader';
+import Tip from 'components/common/Tip';
 import { styled } from 'components/theme';
 import { Table, TableCell, TableHeader, TableRow } from './OrderTable';
 
@@ -88,7 +89,15 @@ const LeaseList: React.FC = () => {
               <TableCell right>{lease.premium}</TableCell>
               <TableCell right>{lease.status}</TableCell>
               <TableCell right>{lease.duration}</TableCell>
-              <TableCell right>{lease.alias}</TableCell>
+              <TableCell right>
+                <Tip
+                  overlay={lease.lease.channelRemoteNodeKey}
+                  capitalize={false}
+                  placement="left"
+                >
+                  <span>{lease.alias}</span>
+                </Tip>
+              </TableCell>
             </TableRow>
           ))}
         </tbody>
