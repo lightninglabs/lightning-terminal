@@ -1,5 +1,4 @@
 import React from 'react';
-import 'mobx-react-lite/batchingForReactDom';
 import { addDecorator } from '@storybook/react';
 import '../src/App.scss';
 import '../src/i18n';
