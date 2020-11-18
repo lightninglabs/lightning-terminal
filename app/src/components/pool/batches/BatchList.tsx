@@ -3,6 +3,7 @@ import { AutoSizer, List } from 'react-virtualized';
 import { Observer, observer } from 'mobx-react-lite';
 import { useStore } from 'store';
 import { Button } from 'components/base';
+import LoaderLines from 'components/common/LoaderLines';
 import { styled } from 'components/theme';
 import BatchRow, { BatchRowHeader, ROW_HEIGHT } from './BatchRow';
 
@@ -78,14 +79,18 @@ const BatchList: React.FC = () => {
       </Content>
       {batchStore.hasMoreBatches && (
         <More>
-          <Button
-            borderless
-            ghost
-            onClick={batchStore.fetchBatches}
-            disabled={batchStore.loading}
-          >
-            Load Older Batches
-          </Button>
+          {batchStore.loading ? (
+            <LoaderLines />
+          ) : (
+            <Button
+              borderless
+              ghost
+              onClick={batchStore.fetchBatches}
+              disabled={batchStore.loading}
+            >
+              Load Older Batches
+            </Button>
+          )}
         </More>
       )}
     </Wrapper>
