@@ -1,8 +1,9 @@
 import React from 'react';
 import { runInAction } from 'mobx';
-import { fireEvent } from '@testing-library/react';
+import { fireEvent, waitFor } from '@testing-library/react';
 import Big from 'big.js';
-import { renderWithProviders } from 'util/tests';
+import { hex } from 'util/strings';
+import { injectIntoGrpcUnary, renderWithProviders } from 'util/tests';
 import { createStore, Store } from 'store';
 import OrderListSection from 'components/pool/OrderListSection';
 
@@ -52,6 +53,22 @@ describe('OrderListSection', () => {
 
     fireEvent.click(getByText('Open', { selector: 'button' }));
     expect(store.orderListView.filter).toBe('open');
+  });
+
+  it('should cancel an open order', async () => {
+    const { getAllByText } = render();
+
+    let nonce: string;
+    injectIntoGrpcUnary((_, props) => {
+      nonce = (props.request.toObject() as any).orderNonce;
+    });
+
+    expect(getAllByText('close.svg')).toHaveLength(2);
+    fireEvent.click(getAllByText('close.svg')[0]);
+
+    await waitFor(() => {
+      expect(hex(nonce)).toBe(store.orderListView.orders[0].nonce);
+    });
   });
 
   it.each<[string, number[]]>([

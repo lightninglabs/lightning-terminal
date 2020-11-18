@@ -147,6 +147,7 @@
   "cmps.pool.orders.OrdersList.rate": "Rate",
   "cmps.pool.orders.OrdersList.status": "Status",
   "cmps.pool.orders.OrdersList.created": "Created On",
+  "cmps.pool.orders.OrdersList.cancelOrder": "Cancel Order",
   "cmps.pool.orders.LeaseList.balances": "Balances",
   "cmps.pool.orders.LeaseList.apy": "APY",
   "cmps.pool.orders.LeaseList.premium": "Premium",
