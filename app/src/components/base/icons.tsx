@@ -23,6 +23,7 @@ import { ReactComponent as MinimizeIcon } from 'assets/icons/minimize.svg';
 import { ReactComponent as RefreshIcon } from 'assets/icons/refresh-cw.svg';
 import { ReactComponent as SettingsIcon } from 'assets/icons/settings.svg';
 import { ReactComponent as CancelIcon } from 'assets/icons/slash.svg';
+import { ReactComponent as UserPlusIcon } from 'assets/icons/user-plus.svg';
 import { styled } from 'components/theme';
 
 interface IconProps {
@@ -100,3 +101,4 @@ export const Minimize = Icon.withComponent(MinimizeIcon);
 export const Maximize = Icon.withComponent(MaximizeIcon);
 export const Refresh = Icon.withComponent(RefreshIcon);
 export const Settings = Icon.withComponent(SettingsIcon);
+export const UserPlus = Icon.withComponent(UserPlusIcon);

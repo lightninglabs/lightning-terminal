@@ -42,6 +42,8 @@ describe('AccountSection', () => {
 
     const { getByText, changeInput } = render();
 
+    expect(getByText('Welcome to Pool')).toBeInTheDocument();
+    fireEvent.click(getByText('Open an Account'));
     expect(getByText('Fund Account')).toBeInTheDocument();
     // should show amount errors
     changeInput('Amount', '1');
@@ -65,6 +67,8 @@ describe('AccountSection', () => {
     });
     const { getByText, getByLabelText, queryAllByText, changeInput } = render();
 
+    expect(getByText('Welcome to Pool')).toBeInTheDocument();
+    fireEvent.click(getByText('Open an Account'));
     expect(getByText('Fund Account')).toBeInTheDocument();
 
     fireEvent.click(getByText('Max'));
@@ -112,6 +116,8 @@ describe('AccountSection', () => {
     });
     const { getByText, getByLabelText, changeInput } = render();
 
+    expect(getByText('Welcome to Pool')).toBeInTheDocument();
+    fireEvent.click(getByText('Open an Account'));
     expect(getByText('Fund Account')).toBeInTheDocument();
 
     fireEvent.click(getByText('Max'));
