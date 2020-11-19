@@ -13,7 +13,7 @@ import OrderListSection from './OrderListSection';
 const Styled = {
   Wrapper: styled.div`
     padding: 40px 0 0;
-    min-height: 100vh;
+    height: 100%;
     display: flex;
     flex-direction: column;
   `,
@@ -27,7 +27,7 @@ const Styled = {
     padding: 0;
 
     &:first-of-type {
-      max-width: 350px;
+      max-width: 300px;
     }
   `,
 };

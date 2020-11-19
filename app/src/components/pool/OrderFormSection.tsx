@@ -22,6 +22,10 @@ const Styled = {
       padding: 15px;
     }
   `,
+  OrderType: styled.div`
+    margin: 15px auto 30px;
+    text-align: center;
+  `,
   ApySummaryItem: styled(SummaryItem)`
     margin-top: 50px;
   `,
@@ -38,18 +42,18 @@ const OrderFormSection: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.pool.OrderFormSection');
   const { orderFormView } = useStore();
 
-  const { Section, ApySummaryItem, Small, Actions } = Styled;
+  const { Section, OrderType, ApySummaryItem, Small, Actions } = Styled;
   return (
     <Section>
       <Scrollable>
-        <Actions>
+        <OrderType>
           <Toggle
             flex
             options={orderFormView.orderOptions}
             value={orderFormView.orderType}
             onChange={orderFormView.setOrderType}
           />
-        </Actions>
+        </OrderType>
         <FormField
           label={l(`amountLabel${orderFormView.orderType}`)}
           error={orderFormView.amountError}

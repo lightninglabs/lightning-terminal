@@ -28,7 +28,7 @@ const Styled = {
     padding: 0;
   `,
   Actions: styled.div`
-    margin: 30px auto;
+    margin: 30px auto 10px;
     text-align: center;
   `,
   ExpiresSoon: styled.p`
