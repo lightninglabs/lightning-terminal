@@ -7,7 +7,7 @@ const Styled = {
   Wrapper: styled.div``,
   Info: styled.div<{ error?: boolean }>`
     width: 100%;
-    margin: 0 0 30px;
+    margin: 0 0 15px;
     padding: 5px 0;
     font-size: ${props => props.theme.sizes.xs};
     background-color: ${props => (props.error ? props.theme.colors.pink : 'transparent')};
