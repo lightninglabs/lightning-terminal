@@ -15,6 +15,10 @@ import {
   sampleApiResponses,
 } from 'util/tests/sampleData';
 import { createStore, Store } from 'store';
+import {
+  DEFAULT_CONF_TARGET,
+  DEFAULT_EXPIRE_BLOCKS,
+} from 'store/views/fundNewAccountView';
 import AccountSection from 'components/pool/AccountSection';
 
 const grpcMock = grpc as jest.Mocked<typeof grpc>;
@@ -105,8 +109,8 @@ describe('AccountSection', () => {
 
     expect(store.accountStore.activeTraderKey).toBe(hex(poolInitAccount.traderKey));
     expect(store.fundNewAccountView.amount).toBe(0);
-    expect(store.fundNewAccountView.confTarget).toBe(0);
-    expect(store.fundNewAccountView.expireBlocks).toBe(0);
+    expect(store.fundNewAccountView.confTarget).toBe(DEFAULT_CONF_TARGET);
+    expect(store.fundNewAccountView.expireBlocks).toBe(DEFAULT_EXPIRE_BLOCKS);
   });
 
   it('should handle errors funding a new account', async () => {
@@ -231,6 +235,35 @@ describe('AccountSection', () => {
 
     // should remain on the same view
     expect(getByText('Confirm')).toBeInTheDocument();
+  });
+
+  it('should return account expiration estimates', async () => {
+    const { getByText, queryByText } = render();
+
+    const expectExpires = (blocksTilExpire: number, expected: string) => {
+      runInAction(() => {
+        const currHeight = store.nodeStore.blockHeight;
+        store.accountStore.activeAccount.expirationHeight = currHeight + blocksTilExpire;
+      });
+      if (expected) {
+        expect(getByText(`Expires in ${expected}`)).toBeInTheDocument();
+      } else {
+        expect(queryByText(/Expires in/)).not.toBeInTheDocument();
+      }
+    };
+    expectExpires(0, '');
+    expectExpires(100, '~16 hours');
+    expectExpires(288, '~2 days');
+    expectExpires(2016, '~2 weeks');
+    expectExpires(4032, '~4 weeks');
+    expectExpires(4320, '~30 days');
+    expectExpires(8064, '~1.9 months');
+    expectExpires(8640, '~60 days');
+
+    runInAction(() => {
+      store.accountStore.activeAccount.state = POOL.AccountState.EXPIRED;
+    });
+    expectExpires(100, '');
   });
 
   it('should display warning when account is near expiration', () => {

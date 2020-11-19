@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { HeaderFour, HelpCircle } from 'components/base';
 import { styled } from 'components/theme';
 import Tip from './Tip';
@@ -19,8 +19,8 @@ const Styled = {
 
 interface Props {
   label: string;
-  info?: string;
-  error?: string;
+  info?: ReactNode;
+  error?: ReactNode;
   tip?: string;
 }
 

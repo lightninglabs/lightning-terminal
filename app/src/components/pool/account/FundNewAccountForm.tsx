@@ -4,6 +4,7 @@ import { usePrefixedTranslation } from 'hooks';
 import { Unit, Units } from 'util/constants';
 import { useStore } from 'store';
 import { Button, HeaderFour, SummaryItem } from 'components/base';
+import BlockTime from 'components/common/BlockTime';
 import FormField from 'components/common/FormField';
 import FormInputNumber from 'components/common/FormInputNumber';
 import UnitCmp from 'components/common/Unit';
@@ -47,6 +48,7 @@ const FundNewAccountForm: React.FC = () => {
       </FormField>
       <FormField
         label={l(`expireBlocksLabel`)}
+        info={<BlockTime blocks={fundNewAccountView.expireBlocks} />}
         error={fundNewAccountView.expireBlocksError}
       >
         <FormInputNumber
