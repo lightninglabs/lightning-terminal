@@ -26,9 +26,6 @@ const Styled = {
     margin: 15px auto 30px;
     text-align: center;
   `,
-  ApySummaryItem: styled(SummaryItem)`
-    margin-top: 50px;
-  `,
   Small: styled(Small)`
     color: ${props => props.theme.colors.gray};
   `,
@@ -42,7 +39,7 @@ const OrderFormSection: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.pool.OrderFormSection');
   const { orderFormView } = useStore();
 
-  const { Section, OrderType, ApySummaryItem, Small, Actions } = Styled;
+  const { Section, OrderType, Small, Actions } = Styled;
   return (
     <Section>
       <Scrollable>
@@ -119,14 +116,6 @@ const OrderFormSection: React.FC = () => {
           </FormField>
         )}
         <SummaryItem>
-          <span>{l('durationLabel')}</span>
-          <span className="text-right">
-            2016
-            <br />
-            <Small>(~{l('durationWeeks')})</Small>
-          </span>
-        </SummaryItem>
-        <SummaryItem>
           <span>{l('fixedRateLabel')}</span>
           <span>
             {orderFormView.perBlockFixedRate < 1
@@ -134,10 +123,18 @@ const OrderFormSection: React.FC = () => {
               : `${orderFormView.perBlockFixedRate}`}
           </span>
         </SummaryItem>
-        <ApySummaryItem strong>
+        <SummaryItem>
+          <span>{l('durationLabel')}</span>
+          <span className="text-right">
+            2016
+            <br />
+            <Small>(~{l('durationWeeks')})</Small>
+          </span>
+        </SummaryItem>
+        <SummaryItem strong>
           <span>{l('apyLabel')}</span>
           <span>{orderFormView.apy}%</span>
-        </ApySummaryItem>
+        </SummaryItem>
         <Actions>
           <Button
             primary={orderFormView.orderType === 'Bid'}
