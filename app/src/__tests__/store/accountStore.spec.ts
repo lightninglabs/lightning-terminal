@@ -1,4 +1,4 @@
-import { runInAction, values } from 'mobx';
+import { values } from 'mobx';
 import * as POOL from 'types/generated/trader_pb';
 import { grpc } from '@improbable-eng/grpc-web';
 import { waitFor } from '@testing-library/react';
@@ -144,28 +144,6 @@ describe('AccountStore', () => {
     expect(() => store.activeAccount).not.toThrow();
     store.activeTraderKey = 'invalid';
     expect(() => store.activeAccount).toThrow();
-  });
-
-  it('should return account expiration estimates', async () => {
-    await store.fetchAccounts();
-    const expectExpires = (blocksTilExpire: number, expected: string) => {
-      runInAction(() => {
-        const currHeight = rootStore.nodeStore.blockHeight;
-        store.activeAccount.expirationHeight = currHeight + blocksTilExpire;
-      });
-      expect(store.activeAccount.expiresInLabel).toBe(expected);
-    };
-    expectExpires(0, '');
-    expectExpires(100, '~16 hours');
-    expectExpires(288, '~2 days');
-    expectExpires(2016, '~2 weeks');
-    expectExpires(4032, '~4 weeks');
-    expectExpires(8064, '~1.9 months');
-
-    runInAction(() => {
-      store.activeAccount.state = POOL.AccountState.EXPIRED;
-    });
-    expectExpires(100, '');
   });
 
   it('should copy the txn id to clipboard', async () => {
