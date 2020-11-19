@@ -6,7 +6,7 @@ import { styled } from 'components/theme';
 //
 
 export const Background = styled.div<{ gradient?: boolean }>`
-  min-height: 100vh;
+  height: 100%;
   color: ${props => props.theme.colors.white};
   background: ${props =>
     props.gradient ? props.theme.colors.gradient : props.theme.colors.blue};
