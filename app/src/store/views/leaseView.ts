@@ -1,6 +1,7 @@
 import { makeAutoObservable } from 'mobx';
 import { SortParams } from 'types/state';
 import { annualPercentYield, toPercent } from 'util/bigmath';
+import { BLOCKS_PER_DAY } from 'util/constants';
 import { formatSats } from 'util/formatters';
 import { ellipseInside } from 'util/strings';
 import { Channel, Lease } from 'store/models';
@@ -35,8 +36,7 @@ export default class LeaseView {
   /** the APY of this lease */
   get apy() {
     const { channelAmtSat, premiumSat, channelDurationBlocks } = this.lease;
-    const blocksPerDay = 144;
-    const termInDays = channelDurationBlocks / blocksPerDay;
+    const termInDays = channelDurationBlocks / BLOCKS_PER_DAY;
     return annualPercentYield(+channelAmtSat, +premiumSat, termInDays);
   }
 
