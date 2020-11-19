@@ -6,13 +6,16 @@ import { Store } from 'store';
 
 const { l } = prefixTranslation('views.fundNewAccountView');
 
+export const DEFAULT_EXPIRE_BLOCKS = 12960;
+export const DEFAULT_CONF_TARGET = 6;
+
 export default class FundNewAccountView {
   private _store: Store;
 
   // editable form fields
   amount = 0;
-  confTarget = 0;
-  expireBlocks = 0;
+  confTarget = DEFAULT_CONF_TARGET;
+  expireBlocks = DEFAULT_EXPIRE_BLOCKS;
   // response from quote
   minerFee = 0;
 
@@ -113,8 +116,8 @@ export default class FundNewAccountView {
   /** shows the summary view */
   cancel() {
     this.amount = 0;
-    this.confTarget = 0;
-    this.expireBlocks = 0;
+    this.confTarget = DEFAULT_CONF_TARGET;
+    this.expireBlocks = DEFAULT_EXPIRE_BLOCKS;
     this._store.accountSectionView.showSummary();
   }
 

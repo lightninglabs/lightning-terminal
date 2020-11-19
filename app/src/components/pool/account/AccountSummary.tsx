@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Badge, Button, HeaderFour, SummaryItem } from 'components/base';
+import BlockTime from 'components/common/BlockTime';
 import Tip from 'components/common/Tip';
 import Unit from 'components/common/Unit';
 import { styled } from 'components/theme';
@@ -46,7 +47,7 @@ const AccountSummary: React.FC = () => {
     <>
       <HeaderFour>
         {l('account')}
-        {account.expiresInLabel && (
+        {account.expiresInBlocks && account.stateLabel !== 'Expired' && (
           <Expires warn={account.expiresSoon}>
             <Tip
               overlay={l('expiresHeight', {
@@ -55,7 +56,7 @@ const AccountSummary: React.FC = () => {
               })}
             >
               <span>
-                {l('expiresIn')} {account.expiresInLabel}
+                {l('expiresIn')} <BlockTime blocks={account.expiresInBlocks} />
               </span>
             </Tip>
           </Expires>

@@ -1,12 +1,8 @@
 import { makeAutoObservable } from 'mobx';
 import * as POOL from 'types/generated/trader_pb';
 import Big from 'big.js';
-import { BLOCKS_PER_DAY } from 'util/constants';
 import { ellipseInside, hex } from 'util/strings';
-import { prefixTranslation } from 'util/translate';
 import { Store } from 'store/store';
-
-const { l } = prefixTranslation('stores.AccountStore');
 
 export default class Account {
   private _store: Store;
@@ -51,28 +47,6 @@ export default class Account {
     const currentHeight = this._store.nodeStore.blockHeight;
     const expiresHeight = this.expirationHeight;
     return Math.max(expiresHeight - currentHeight, 0);
-  }
-
-  /** the estimated amount of time until the active account expires */
-  get expiresInLabel() {
-    if (this.state === POOL.AccountState.EXPIRED) return '';
-
-    const blocks = this.expiresInBlocks;
-    if (blocks <= 0) return '';
-
-    const days = Math.round(blocks / BLOCKS_PER_DAY);
-    const weeks = Math.floor(days / 7);
-    if (days <= 1) {
-      const hours = Math.floor(blocks / 6);
-      return `~${hours} ${l('common.hours', { count: hours })}`;
-    } else if (days < 14) {
-      return `~${days} ${l('common.days', { count: days })}`;
-    } else if (weeks < 8) {
-      return `~${weeks} ${l('common.weeks', { count: weeks })}`;
-    }
-    const months = weeks / 4.3;
-
-    return `~${months.toFixed(1)} ${l('common.months', { count: months })}`;
   }
 
   /** indicates if this account is going to expire soon */
