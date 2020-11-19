@@ -1,6 +1,7 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import { NodeTier } from 'types/generated/auctioneer_pb';
 import { annualPercentYield, toPercent } from 'util/bigmath';
+import { BLOCKS_PER_DAY } from 'util/constants';
 import { prefixTranslation } from 'util/translate';
 import { DURATION, ONE_UNIT } from 'api/pool';
 import { Store } from 'store';
@@ -92,8 +93,7 @@ export default class OrderFormView {
   /** the APY given the amount and premium */
   get apy() {
     if ([this.amount, this.premium].includes(0)) return 0;
-    const blocksPerDay = 144;
-    const termInDays = DURATION / blocksPerDay;
+    const termInDays = DURATION / BLOCKS_PER_DAY;
     const apy = annualPercentYield(this.amount, this.premium, termInDays);
     return toPercent(apy);
   }

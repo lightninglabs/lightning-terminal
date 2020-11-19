@@ -1,3 +1,6 @@
+/** estimated number of blocks mined per day */
+export const BLOCKS_PER_DAY = 144;
+
 /** the enumeration of unit supported in the app */
 export enum Unit {
   sats = 'sats',

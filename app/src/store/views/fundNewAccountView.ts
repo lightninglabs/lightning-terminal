@@ -1,5 +1,6 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import Big from 'big.js';
+import { BLOCKS_PER_DAY } from 'util/constants';
 import { prefixTranslation } from 'util/translate';
 import { Store } from 'store';
 
@@ -59,12 +60,11 @@ export default class FundNewAccountView {
   /** the error message if the expireBlocks is invalid */
   get expireBlocksError() {
     if (!this.expireBlocks) return '';
-    const blocksPerDay = 144;
-    if (this.expireBlocks < blocksPerDay) {
-      return l('lowExpireBlocks', { blocks: blocksPerDay });
+    if (this.expireBlocks < BLOCKS_PER_DAY) {
+      return l('lowExpireBlocks', { blocks: BLOCKS_PER_DAY });
     }
-    if (this.expireBlocks > blocksPerDay * 365) {
-      return l('highExpireBlocks', { blocks: blocksPerDay * 365 });
+    if (this.expireBlocks > BLOCKS_PER_DAY * 365) {
+      return l('highExpireBlocks', { blocks: BLOCKS_PER_DAY * 365 });
     }
     return '';
   }

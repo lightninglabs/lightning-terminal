@@ -1,6 +1,7 @@
 import { makeAutoObservable } from 'mobx';
 import * as POOL from 'types/generated/trader_pb';
 import Big from 'big.js';
+import { BLOCKS_PER_DAY } from 'util/constants';
 import { ellipseInside, hex } from 'util/strings';
 import { prefixTranslation } from 'util/translate';
 import { Store } from 'store/store';
@@ -56,11 +57,10 @@ export default class Account {
   get expiresInLabel() {
     if (this.state === POOL.AccountState.EXPIRED) return '';
 
-    const blocksPerDay = 144;
     const blocks = this.expiresInBlocks;
     if (blocks <= 0) return '';
 
-    const days = Math.round(blocks / blocksPerDay);
+    const days = Math.round(blocks / BLOCKS_PER_DAY);
     const weeks = Math.floor(days / 7);
     if (days <= 1) {
       const hours = Math.floor(blocks / 6);
