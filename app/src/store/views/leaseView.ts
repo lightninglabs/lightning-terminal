@@ -35,7 +35,9 @@ export default class LeaseView {
   /** the APY of this lease */
   get apy() {
     const { channelAmtSat, premiumSat, channelDurationBlocks } = this.lease;
-    return annualPercentYield(+channelAmtSat, +premiumSat, channelDurationBlocks);
+    const blocksPerDay = 144;
+    const termInDays = channelDurationBlocks / blocksPerDay;
+    return annualPercentYield(+channelAmtSat, +premiumSat, termInDays);
   }
 
   /** the APY of lease as a percentage */
