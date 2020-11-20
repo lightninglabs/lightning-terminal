@@ -21,6 +21,8 @@ export default class AccountStore {
   accounts: ObservableMap<string, Account> = observable.map();
   /** the currently active account */
   activeTraderKey?: string;
+  /** indicates when accounts have been initially fetched from the backend */
+  loaded = false;
 
   constructor(store: Store) {
     makeAutoObservable(this, {}, { deep: false, autoBind: true });
@@ -165,6 +167,7 @@ export default class AccountStore {
         }
 
         this._store.log.info('updated accountStore.accounts', toJS(this.accounts));
+        this.loaded = true;
       });
     } catch (error) {
       this._store.appView.handleError(error, 'Unable to fetch Accounts');
