@@ -5,12 +5,7 @@ import { grpc } from '@improbable-eng/grpc-web';
 import { waitFor } from '@testing-library/react';
 import Big from 'big.js';
 import { hex } from 'util/strings';
-import {
-  poolInvalidOrder,
-  poolListAccounts,
-  poolListOrders,
-  poolSubmitOrder,
-} from 'util/tests/sampleData';
+import { poolInvalidOrder, poolListOrders, poolSubmitOrder } from 'util/tests/sampleData';
 import { createStore, OrderStore, Store } from 'store';
 import { Order } from 'store/models';
 import { OrderType } from 'store/models/order';
@@ -76,15 +71,6 @@ describe('OrderStore', () => {
     // the existing order should be updated
     expect(prevOrder).toBe(updatedOrder);
     expect(+updatedOrder.amount).toEqual(prevAmount);
-  });
-
-  it('should return a list of orders for the active account', async () => {
-    await rootStore.accountStore.fetchAccounts();
-    const account3 = hex(poolListAccounts.accountsList[2].traderKey);
-    rootStore.accountStore.setActiveTraderKey(account3);
-
-    await store.fetchOrders();
-    expect(store.accountOrders.length).toBeLessThan(store.orders.size);
   });
 
   it('should submit an ask order', async () => {
