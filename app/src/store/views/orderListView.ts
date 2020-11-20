@@ -26,7 +26,7 @@ export default class OrderListView {
 
   /** the list of orders for the active account */
   get orders() {
-    const orders = this._store.orderStore.accountOrders;
+    const orders = this._store.orderStore.sortedOrders;
     switch (this.filter) {
       case '':
         return orders;

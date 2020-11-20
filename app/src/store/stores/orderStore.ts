@@ -38,16 +38,9 @@ export default class OrderStore {
     return descending ? orders.reverse() : orders;
   }
 
-  /** the list of orders for the currently active account */
-  get accountOrders() {
-    return this.sortedOrders.filter(
-      o => o.traderKey === this._store.accountStore.activeTraderKey,
-    );
-  }
-
   /** the number of pending orders for the active account */
   get pendingOrdersCount() {
-    return this.accountOrders.filter(o => o.isPending).length;
+    return this.sortedOrders.filter(o => o.isPending).length;
   }
 
   /** the leases grouped by orderNonce */
@@ -243,7 +236,7 @@ export default class OrderStore {
   async cancelAllOrders() {
     const traderKey = this._store.accountStore.activeAccount.traderKey;
     this._store.log.info(`cancelling all pending orders for ${traderKey}`);
-    const orders = this.accountOrders.filter(o => o.isPending);
+    const orders = this.sortedOrders.filter(o => o.isPending);
     for (const order of orders) {
       this._store.log.info(`cancelling order with nonce ${order.nonce} for ${traderKey}`);
       await this._store.api.pool.cancelOrder(order.nonce);
