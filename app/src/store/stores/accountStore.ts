@@ -136,6 +136,9 @@ export default class AccountStore {
 
     try {
       const { accountsList } = await this._store.api.pool.listAccounts();
+      // also update the node info since accounts rely on current block height
+      // to calculate the time/blocks remaining until expiration
+      await this._store.nodeStore.fetchInfo();
       runInAction(() => {
         accountsList.forEach(poolAcct => {
           // update existing accounts or create new ones in state. using this
