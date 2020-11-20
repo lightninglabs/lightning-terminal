@@ -55,6 +55,7 @@ const TooltipWrapper: React.FC<Props> = ({
       placement={placement}
       align={{ targetOffset }}
       overlayClassName={className}
+      mouseEnterDelay={0.5}
     >
       {children}
     </Tooltip>
