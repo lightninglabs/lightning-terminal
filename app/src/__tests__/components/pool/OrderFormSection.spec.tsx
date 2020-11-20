@@ -4,6 +4,7 @@ import * as POOL from 'types/generated/trader_pb';
 import { fireEvent, waitFor } from '@testing-library/react';
 import { injectIntoGrpcUnary, renderWithProviders } from 'util/tests';
 import { createStore, Store } from 'store';
+import { DEFAULT_MAX_BATCH_FEE, DEFAULT_MIN_CHAN_SIZE } from 'store/views/orderFormView';
 import OrderFormSection from 'components/pool/OrderFormSection';
 
 describe('OrderFormSection', () => {
@@ -51,7 +52,7 @@ describe('OrderFormSection', () => {
     changeInput('Bid Premium', '10000');
     changeInput('Minimum Channel Size', '100000');
     changeInput('Max Batch Fee Rate', '1');
-    await changeSelect('Min Node Tier', 'Tier 0');
+    await changeSelect('Min Node Tier', 'T0 - All Nodes');
 
     let bid: Required<POOL.Bid.AsObject>;
     // capture the rate that is sent to the API
@@ -103,8 +104,12 @@ describe('OrderFormSection', () => {
     await waitFor(() => {
       expect(getByLabelText('Desired Inbound Liquidity')).toHaveValue('');
       expect(getByLabelText('Bid Premium')).toHaveValue('');
-      expect(getByLabelText('Minimum Channel Size')).toHaveValue('');
-      expect(getByLabelText('Max Batch Fee Rate')).toHaveValue('');
+      expect(getByLabelText('Minimum Channel Size')).toHaveValue(
+        `${DEFAULT_MIN_CHAN_SIZE}`,
+      );
+      expect(getByLabelText('Max Batch Fee Rate')).toHaveValue(
+        `${DEFAULT_MAX_BATCH_FEE}`,
+      );
     });
   });
 
