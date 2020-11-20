@@ -10,10 +10,13 @@ import { OrderType, Tier } from 'store/models/order';
 const { l } = prefixTranslation('stores.orderFormView');
 
 export const NODE_TIERS: Record<Tier, string> = {
-  [NodeTier.TIER_DEFAULT]: 'Default',
-  [NodeTier.TIER_0]: 'Tier 0',
-  [NodeTier.TIER_1]: 'Tier 1',
+  [NodeTier.TIER_DEFAULT]: 'Default - T1',
+  [NodeTier.TIER_0]: 'T0 - All Nodes',
+  [NodeTier.TIER_1]: 'T1 - Preferred Nodes',
 };
+
+export const DEFAULT_MIN_CHAN_SIZE = 100000;
+export const DEFAULT_MAX_BATCH_FEE = 100;
 
 export default class OrderFormView {
   private _store: Store;
@@ -22,8 +25,8 @@ export default class OrderFormView {
   orderType: OrderType = OrderType.Bid;
   amount = 0;
   premium = 0;
-  minChanSize = 0;
-  maxBatchFeeRate = 0;
+  minChanSize = DEFAULT_MIN_CHAN_SIZE;
+  maxBatchFeeRate = DEFAULT_MAX_BATCH_FEE;
   minNodeTier: Tier = NodeTier.TIER_DEFAULT;
 
   constructor(store: Store) {
@@ -173,8 +176,8 @@ export default class OrderFormView {
       if (nonce) {
         this.amount = 0;
         this.premium = 0;
-        this.minChanSize = 0;
-        this.maxBatchFeeRate = 0;
+        this.minChanSize = DEFAULT_MIN_CHAN_SIZE;
+        this.maxBatchFeeRate = DEFAULT_MAX_BATCH_FEE;
         this.minNodeTier = NodeTier.TIER_DEFAULT;
       }
     });
