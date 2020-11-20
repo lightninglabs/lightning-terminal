@@ -3,9 +3,16 @@ import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Button, UserPlus } from 'components/base';
+import LoaderLines from 'components/common/LoaderLines';
 import { styled } from 'components/theme';
 
 const Styled = {
+  Loading: styled.div`
+    min-height: 200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  `,
   Content: styled.div`
     font-size: ${props => props.theme.sizes.xs};
     text-align: center;
@@ -29,9 +36,16 @@ const Styled = {
 
 const NoAccount: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.pool.account.NoAccount');
-  const { accountSectionView } = useStore();
+  const { accountSectionView, accountStore } = useStore();
 
-  const { Content, UserIcon, Title, Actions } = Styled;
+  const { Loading, Content, UserIcon, Title, Actions } = Styled;
+  if (!accountStore.loaded) {
+    return (
+      <Loading>
+        <LoaderLines />
+      </Loading>
+    );
+  }
   return (
     <>
       <Content>
