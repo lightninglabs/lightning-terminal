@@ -257,4 +257,11 @@ export default class OrderStore {
     // also update account balances in the store
     await this._store.accountStore.fetchAccounts();
   }
+
+  /** exports the list of leases to CSV file */
+  exportLeases() {
+    this._store.log.info('exporting Leases to a CSV file');
+    const leases = values(this.leases).slice();
+    this._store.csv.export('leases', Lease.csvColumns, toJS(leases));
+  }
 }

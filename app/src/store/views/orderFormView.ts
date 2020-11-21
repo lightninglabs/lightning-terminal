@@ -5,15 +5,9 @@ import { BLOCKS_PER_DAY } from 'util/constants';
 import { prefixTranslation } from 'util/translate';
 import { DURATION, ONE_UNIT } from 'api/pool';
 import { Store } from 'store';
-import { OrderType, Tier } from 'store/models/order';
+import { NODE_TIERS, OrderType, Tier } from 'store/models/order';
 
 const { l } = prefixTranslation('stores.orderFormView');
-
-export const NODE_TIERS: Record<Tier, string> = {
-  [NodeTier.TIER_DEFAULT]: 'Default - T1',
-  [NodeTier.TIER_0]: 'T0 - All Nodes',
-  [NodeTier.TIER_1]: 'T1 - Preferred Nodes',
-};
 
 export const DEFAULT_MIN_CHAN_SIZE = 100000;
 export const DEFAULT_MAX_BATCH_FEE = 100;

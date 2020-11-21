@@ -89,6 +89,7 @@
   "cmps.NodeStatus.offchainTip": "Off-chain Funds",
   "cmps.NodeStatus.onchainTip": "On-chain Funds",
   "cmps.pool.PoolPage.pageTitle": "Lightning Pool",
+  "cmps.pool.PoolPage.exportTip": "Download CSV of Leases",
   "cmps.pool.account.AccountSummary.account": "Account",
   "cmps.pool.account.AccountSummary.expiresIn": "Expires in",
   "cmps.pool.account.AccountSummary.expiresHeight": "{{remaining}} blocks (Height #{{height}})",
