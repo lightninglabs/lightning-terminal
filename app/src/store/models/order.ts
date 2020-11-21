@@ -12,6 +12,12 @@ export enum OrderType {
   Ask = 'Ask',
 }
 
+export const NODE_TIERS: Record<Tier, string> = {
+  [AUCT.NodeTier.TIER_DEFAULT]: 'Default - T1',
+  [AUCT.NodeTier.TIER_0]: 'T0 - All Nodes',
+  [AUCT.NodeTier.TIER_1]: 'T1 - Preferred Nodes',
+};
+
 export type Tier = AUCT.NodeTierMap[keyof AUCT.NodeTierMap];
 
 export default class Order {
