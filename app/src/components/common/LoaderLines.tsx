@@ -54,7 +54,7 @@ const LoaderLines: React.FC<Props> = ({ className }) => {
   return (
     <Wrapper className={className}>
       {[1, 2, 3].map(i => (
-        <Line key={i} className={`line-${i}`}></Line>
+        <Line key={i} className={`line line-${i}`}></Line>
       ))}
     </Wrapper>
   );

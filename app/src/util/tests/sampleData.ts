@@ -582,6 +582,12 @@ export const poolBatchSnapshot: AUCT.BatchSnapshotResponse.AsObject = {
   batchTxFeeRateSatPerKw: 12574,
 };
 
+export const poolNextBatchInfo: POOL.NextBatchInfoResponse.AsObject = {
+  clearTimestamp: 1605936138,
+  confTarget: 6,
+  feeRateSatPerKw: 12500,
+};
+
 const stringToChannelPoint = (cp: string) => ({
   txid: b64(cp.split(':')[0], true),
   outputIndex: parseInt(cp.split(':')[1]),
@@ -694,5 +700,6 @@ export const sampleApiResponses: Record<string, any> = {
   'poolrpc.Trader.SubmitOrder': poolSubmitOrder,
   'poolrpc.Trader.CancelOrder': poolCancelOrder,
   'poolrpc.Trader.BatchSnapshot': poolBatchSnapshot,
+  'poolrpc.Trader.NextBatchInfo': poolNextBatchInfo,
   'poolrpc.Trader.Leases': poolLeases,
 };
