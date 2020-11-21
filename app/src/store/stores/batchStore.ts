@@ -1,6 +1,7 @@
 import { makeAutoObservable, observable, ObservableMap, runInAction, toJS } from 'mobx';
 import { IS_DEV, IS_TEST } from 'config';
 import debounce from 'lodash/debounce';
+import { toPercent } from 'util/bigmath';
 import { Store } from 'store';
 import { Batch } from 'store/models';
 
@@ -9,6 +10,7 @@ export const BATCH_QUERY_LIMIT = 20;
 export default class BatchStore {
   private _store: Store;
   private _pollingInterval?: NodeJS.Timeout;
+  private _nextBatchTimer?: NodeJS.Timeout;
 
   /** the collection of batches */
   batches: ObservableMap<string, Batch> = observable.map();
@@ -18,6 +20,9 @@ export default class BatchStore {
    * and old batches appended at the end
    */
   orderedIds: string[] = [];
+
+  /** the timestamp of the next batch in seconds */
+  nextBatchTimestamp = 0;
 
   /** indicates when batches are being fetched from the backend */
   loading = false;
@@ -32,19 +37,37 @@ export default class BatchStore {
    * all batches sorted by newest first
    */
   get sortedBatches() {
-    return this.orderedIds.map(id => this.batches.get(id)).filter(b => !!b) as Batch[];
+    return (
+      this.orderedIds
+        .map(id => this.batches.get(id))
+        // filter out empty batches
+        .filter(b => !!b && b.clearingPriceRate > 0) as Batch[]
+    );
   }
 
   /**
    * the oldest batch that we have queried from the API
    */
   get oldestBatch() {
-    let batch: Batch | undefined;
-    const oldestId = this.orderedIds[this.orderedIds.length - 1];
-    if (oldestId) {
-      batch = this.batches.get(oldestId);
-    }
-    return batch;
+    return this.sortedBatches[this.sortedBatches.length - 1];
+  }
+
+  /**
+   * the cleared rate on the last batch
+   */
+  get currentRate() {
+    return this.sortedBatches.length ? this.sortedBatches[0].clearingPriceRate : 0;
+  }
+
+  /**
+   * the percentage change between the last batch and the prior one
+   */
+  get currentRateChange() {
+    if (this.sortedBatches.length < 2) return 0;
+    const currentRate = this.sortedBatches[0].clearingPriceRate;
+    const priorRate = this.sortedBatches[1].clearingPriceRate;
+
+    return toPercent((currentRate - priorRate) / priorRate);
   }
 
   /**
@@ -107,6 +130,8 @@ export default class BatchStore {
     this._store.log.info('fetching latest batch');
     try {
       const poolBatch = await this._store.api.pool.batchSnapshot();
+      // update the timestamp of the next batch when fetching the latest batch
+      await this.fetchNextBatchTimestamp();
       runInAction(() => {
         const batch = new Batch(this._store, poolBatch);
         // add the latest one if it's not already stored in state
@@ -125,6 +150,45 @@ export default class BatchStore {
 
   /** fetch the latest at most once every 2 seconds when using this func  */
   fetchLatestBatchThrottled = debounce(this.fetchLatestBatch, 2000);
+
+  /**
+   * fetches the next batch timestamp from the API
+   */
+  async fetchNextBatchTimestamp() {
+    this._store.log.info('fetching next batch info');
+    try {
+      const { clearTimestamp } = await this._store.api.pool.nextBatchInfo();
+      runInAction(() => {
+        this.setNextBatchTimestamp(clearTimestamp);
+        this._store.log.info(
+          'updated batchStore.nextBatchTimestamp',
+          this.nextBatchTimestamp,
+        );
+      });
+    } catch (error) {
+      this._store.appView.handleError(error, 'Unable to fetch the next batch timestamp');
+    }
+  }
+
+  /**
+   * sets the nextBatchTimestamp and creates a timer to fetch the latest batch, which
+   * will trigger 3 seconds after the next batch timestamp to allow some time for the
+   * batched to be processed
+   * @param timestamp the next batch timestamp in seconds since epoch
+   */
+  setNextBatchTimestamp(timestamp: number) {
+    // if the value is the same, then just return immediately
+    if (this.nextBatchTimestamp === timestamp) return;
+
+    this.nextBatchTimestamp = timestamp;
+
+    if (this._nextBatchTimer) clearTimeout(this._nextBatchTimer);
+    // calc the number of ms between now and the next batch timestamp
+    let ms = timestamp * 1000 - Date.now();
+    // if the timestamp is somehow in the past, use 10 mins as a default
+    if (ms < 0) ms = 10 * 60 * 1000;
+    this._nextBatchTimer = setTimeout(this.fetchLatestBatch, ms + 3000);
+  }
 
   startPolling() {
     if (IS_TEST) return;

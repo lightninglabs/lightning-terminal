@@ -109,7 +109,8 @@ export default class Batch {
   /** the directionality of this batch's rate compared to the previous batch */
   get delta() {
     let delta: BatchDelta = 'neutral';
-    const prevBatch = this._store.batchStore.batches.get(this.prevBatchId);
+    const index = this._store.batchStore.sortedBatches.indexOf(this);
+    const prevBatch = this._store.batchStore.sortedBatches[index + 1];
     if (prevBatch) {
       if (this.clearingPriceRate > prevBatch.clearingPriceRate) {
         delta = 'positive';

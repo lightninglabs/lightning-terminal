@@ -8,6 +8,7 @@ import {
   values,
 } from 'mobx';
 import * as POOL from 'types/generated/trader_pb';
+import Big from 'big.js';
 import debounce from 'lodash/debounce';
 import { hex } from 'util/strings';
 import { Store } from 'store';
@@ -21,6 +22,10 @@ export default class OrderStore {
   orders: ObservableMap<string, Order> = observable.map();
   /** the collection of leases */
   leases: ObservableMap<string, Lease> = observable.map();
+  /** that amount earned from sold leases */
+  earnedSats = Big(0);
+  /** the amount paid from purchased leases */
+  paidSats = Big(0);
 
   constructor(store: Store) {
     makeAutoObservable(this, {}, { deep: false, autoBind: true });
@@ -123,9 +128,15 @@ export default class OrderStore {
     this._store.log.info('fetching leases');
 
     try {
-      const { leasesList } = await this._store.api.pool.listLeases();
+      const {
+        leasesList,
+        totalAmtEarnedSat,
+        totalAmtPaidSat,
+      } = await this._store.api.pool.listLeases();
 
       runInAction(() => {
+        this.earnedSats = Big(totalAmtEarnedSat);
+        this.paidSats = Big(totalAmtPaidSat);
         leasesList.forEach(poolLease => {
           // update existing leases or create new ones in state. using this
           // approach instead of overwriting the array will cause fewer state

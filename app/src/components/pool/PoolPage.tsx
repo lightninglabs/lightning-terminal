@@ -40,6 +40,7 @@ const PoolPage: React.FC = () => {
     accountStore.fetchAccounts();
     orderStore.fetchOrders();
     batchStore.fetchBatches();
+    batchStore.fetchNextBatchTimestamp();
 
     // start polling when this component is mounted
     batchStore.startPolling();
