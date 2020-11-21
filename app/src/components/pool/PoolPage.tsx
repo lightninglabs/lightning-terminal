@@ -53,7 +53,11 @@ const PoolPage: React.FC = () => {
   const { Wrapper, Row, Col } = Styled;
   return (
     <Wrapper>
-      <PageHeader title={l('pageTitle')} />
+      <PageHeader
+        title={l('pageTitle')}
+        exportTip={l('exportTip')}
+        onExportClick={orderStore.exportLeases}
+      />
       <Row>
         <Col cols={4} colsXl={3}>
           <AccountSection />

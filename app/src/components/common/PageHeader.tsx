@@ -43,6 +43,7 @@ interface Props {
   onBackClick?: () => void;
   backText?: string;
   onHelpClick?: () => void;
+  exportTip?: string;
   onExportClick?: () => void;
 }
 
@@ -51,6 +52,7 @@ const PageHeader: React.FC<Props> = ({
   onBackClick,
   backText,
   onHelpClick,
+  exportTip,
   onExportClick,
 }) => {
   const { l } = usePrefixedTranslation('cmps.common.PageHeader');
@@ -76,7 +78,7 @@ const PageHeader: React.FC<Props> = ({
           </Tip>
         )}
         {onExportClick && (
-          <Tip placement="bottomRight" overlay={l('exportTip')}>
+          <Tip placement="bottomRight" overlay={exportTip || l('exportTip')}>
             <Download data-tour="export" size="large" onClick={onExportClick} />
           </Tip>
         )}
