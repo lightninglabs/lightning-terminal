@@ -44,3 +44,24 @@ export const formatUnit = (unit: Unit) => {
   const btcValue = formatSats(Big(denominator), { unit: Unit.btc });
   return `${name} (${btcValue})`;
 };
+
+/**
+ * Converts a number of seconds into human-readable text
+ * ex: 2h 34m 15s
+ * @param totalSeconds the total number of seconds to format
+ */
+export const formatTime = (totalSeconds: number) => {
+  if (totalSeconds <= 0) return '-';
+
+  const hours = Math.floor(totalSeconds / 3600);
+  const remainingSecs = totalSeconds % 3600;
+  const minutes = Math.floor(remainingSecs / 60);
+  const seconds = remainingSecs % 60;
+
+  const parts: string[] = [];
+  if (hours) parts.push(`${hours}h`);
+  if (hours || minutes) parts.push(`${minutes}m`);
+  parts.push(`${seconds}s`);
+
+  return parts.join(' ');
+};

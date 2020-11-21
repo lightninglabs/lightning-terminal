@@ -221,6 +221,15 @@ class PoolApi extends BaseApi<PoolEvents> {
     return res.toObject();
   }
 
+  /**
+   * call the pool `NextBatchInfo` RPC and return the response
+   */
+  async nextBatchInfo(): Promise<POOL.NextBatchInfoResponse.AsObject> {
+    const req = new POOL.NextBatchInfoRequest();
+    const res = await this._grpc.request(Trader.NextBatchInfo, req, this._meta);
+    return res.toObject();
+  }
+
   //
   // Utility functions to convert user-facing units to API units
   //

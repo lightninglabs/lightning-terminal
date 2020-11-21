@@ -1,6 +1,6 @@
 import Big from 'big.js';
 import { Unit } from 'util/constants';
-import { formatSats, formatUnit } from 'util/formatters';
+import { formatSats, formatTime, formatUnit } from 'util/formatters';
 
 describe('formatters Util', () => {
   describe('formatSats', () => {
@@ -69,6 +69,24 @@ describe('formatters Util', () => {
 
     it('should format BTC', () => {
       expect(formatUnit(Unit.btc)).toEqual('Bitcoin (1.00000000 BTC)');
+    });
+  });
+
+  describe('formatTime', () => {
+    it('should format time', () => {
+      expect(formatTime(30)).toEqual('30s');
+      expect(formatTime(59)).toEqual('59s');
+      expect(formatTime(60)).toEqual('1m 0s');
+      expect(formatTime(60 * 2 - 1)).toEqual('1m 59s');
+      expect(formatTime(60 * 2)).toEqual('2m 0s');
+      expect(formatTime(60 * 3 + 5)).toEqual('3m 5s');
+      expect(formatTime(60 * 10 - 1)).toEqual('9m 59s');
+      expect(formatTime(60 * 10)).toEqual('10m 0s');
+      expect(formatTime(60 * 10 + 1)).toEqual('10m 1s');
+      expect(formatTime(60 * 60 - 1)).toEqual('59m 59s');
+      expect(formatTime(60 * 60)).toEqual('1h 0m 0s');
+      expect(formatTime(60 * 60 + 1)).toEqual('1h 0m 1s');
+      expect(formatTime(60 * 70 + 1)).toEqual('1h 10m 1s');
     });
   });
 });
