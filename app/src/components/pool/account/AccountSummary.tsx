@@ -4,6 +4,7 @@ import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Badge, Button, HeaderFour, SummaryItem } from 'components/base';
 import BlockTime from 'components/common/BlockTime';
+import ExternalLink from 'components/common/ExternalLink';
 import Tip from 'components/common/Tip';
 import Unit from 'components/common/Unit';
 import { styled } from 'components/theme';
@@ -25,9 +26,6 @@ const Styled = {
       props.pending ? props.theme.colors.gold : props.theme.colors.green};
     font-family: ${props => props.theme.fonts.open.regular};
   `,
-  CopyButton: styled(Button)`
-    padding: 0;
-  `,
   Actions: styled.div`
     margin: 30px auto 10px;
     text-align: center;
@@ -42,7 +40,7 @@ const AccountSummary: React.FC = () => {
   const { orderStore, accountStore, accountSectionView } = useStore();
   const account = accountStore.activeAccount;
 
-  const { Expires, Summary, StatusBadge, CopyButton, Actions, ExpiresSoon } = Styled;
+  const { Expires, Summary, StatusBadge, Actions, ExpiresSoon } = Styled;
   return (
     <>
       <HeaderFour>
@@ -69,9 +67,13 @@ const AccountSummary: React.FC = () => {
         </SummaryItem>
         <SummaryItem>
           <span>{l('fundingTxn')}</span>
-          <CopyButton ghost borderless compact onClick={accountStore.copyTxnId}>
-            {account.fundingTxnIdEllipsed}
-          </CopyButton>
+          <Tip overlay={account.fundingTxnId} capitalize={false}>
+            <span>
+              <ExternalLink href={account.fundingTxnUrl}>
+                {account.fundingTxnIdEllipsed}
+              </ExternalLink>
+            </span>
+          </Tip>
         </SummaryItem>
         <SummaryItem>
           <span>{l('currentBalance')}</span>
