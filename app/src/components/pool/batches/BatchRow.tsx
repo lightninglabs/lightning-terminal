@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { Batch } from 'store/models';
 import { Column, HeaderFour, Row } from 'components/base';
+import ExternalLink from 'components/common/ExternalLink';
 import Tip from 'components/common/Tip';
 import Unit from 'components/common/Unit';
 import { styled } from 'components/theme';
@@ -93,7 +94,9 @@ const BatchRow: React.FC<Props> = ({ batch, style }) => {
       </Column>
       <Column truncate>
         <Tip overlay={batch.batchTxId} capitalize={false}>
-          <span>{batch.batchTxIdEllipsed}</span>
+          <span>
+            <ExternalLink href={batch.batchTxUrl}>{batch.batchTxIdEllipsed}</ExternalLink>
+          </span>
         </Tip>
       </Column>
       <Column center>

@@ -59,6 +59,11 @@ export default class Channel {
       : this.remotePubkey;
   }
 
+  /** the graph explorer url for the channel's remote node */
+  get remoteNodeUrl() {
+    return this._store.settingsStore.getLightningNodeUrl(this.remotePubkey);
+  }
+
   /**
    * The uptime of the channel as a percentage of lifetime
    */

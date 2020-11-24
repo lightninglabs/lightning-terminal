@@ -5,6 +5,7 @@ import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { LeaseView } from 'store/views';
 import { Scrollable } from 'components/base';
+import ExternalLink from 'components/common/ExternalLink';
 import SortableHeader from 'components/common/SortableHeader';
 import Tip from 'components/common/Tip';
 import { styled, Theme } from 'components/theme';
@@ -125,7 +126,9 @@ const LeaseList: React.FC = () => {
                   capitalize={false}
                   placement="left"
                 >
-                  <span>{lease.alias}</span>
+                  <span>
+                    <ExternalLink href={lease.remoteNodeUrl}>{lease.alias}</ExternalLink>
+                  </span>
                 </Tip>
               </TableCell>
             </TableRow>

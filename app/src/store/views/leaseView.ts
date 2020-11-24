@@ -5,15 +5,18 @@ import { BLOCKS_PER_DAY } from 'util/constants';
 import { formatSats } from 'util/formatters';
 import { ellipseInside } from 'util/strings';
 import { Channel, Lease } from 'store/models';
+import { Store } from 'store/store';
 
 export default class LeaseView {
+  private _store: Store;
   lease: Lease;
   currHeight: number;
   channel?: Channel;
 
-  constructor(lease: Lease, currHeight: number, channel?: Channel) {
+  constructor(store: Store, lease: Lease, currHeight: number, channel?: Channel) {
     makeAutoObservable(this, {}, { deep: false, autoBind: true });
 
+    this._store = store;
     this.lease = lease;
     this.currHeight = currHeight;
     this.channel = channel;
@@ -78,6 +81,11 @@ export default class LeaseView {
   get alias() {
     if (!this.channel) return ellipseInside(this.lease.channelRemoteNodeKey, 3);
     return this.channel.aliasLabel;
+  }
+
+  /** the graph explorer url for the channel's remote node */
+  get remoteNodeUrl() {
+    return this._store.settingsStore.getLightningNodeUrl(this.lease.channelRemoteNodeKey);
   }
 
   /**
