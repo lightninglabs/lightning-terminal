@@ -5,6 +5,7 @@ import { useStore } from 'store';
 import { Channel } from 'store/models';
 import { Cancel, Column, HeaderFour, Row } from 'components/base';
 import Checkbox from 'components/common/Checkbox';
+import ExternalLink from 'components/common/ExternalLink';
 import SortableHeader from 'components/common/SortableHeader';
 import Tip from 'components/common/Tip';
 import Unit from 'components/common/Unit';
@@ -220,7 +221,9 @@ const ChannelRow: React.FC<Props> = ({ channel, style }) => {
           placement="left"
           capitalize={false}
         >
-          <span>{channel.aliasLabel}</span>
+          <span>
+            <ExternalLink href={channel.remoteNodeUrl}>{channel.aliasLabel}</ExternalLink>
+          </span>
         </Tip>
       </WideColumn>
       <Column right>

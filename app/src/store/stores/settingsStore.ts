@@ -137,6 +137,22 @@ export default class SettingsStore {
   }
 
   /**
+   * returns the full url for a bitcoin transaction on the block explorer
+   * @param txid the id of the transaction
+   */
+  getBitcoinTxUrl(txid: string) {
+    return this.bitcoinTxUrl.replace('{txid}', txid);
+  }
+
+  /**
+   * returns the full url for a Lightning node on the graph explorer
+   * @param pubkey the pubkey of the node
+   */
+  getLightningNodeUrl(pubkey: string) {
+    return this.lnNodeUrl.replace('{pubkey}', pubkey);
+  }
+
+  /**
    * Sets the sort field and direction that the channel list should use
    * @param field the channel field to sort by
    * @param descending true of the order should be descending, otherwise false

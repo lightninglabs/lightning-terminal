@@ -67,6 +67,11 @@ export default class Batch {
     return ellipseInside(this.batchTxId, 4);
   }
 
+  /** the block explorer url for the batch tx */
+  get batchTxUrl() {
+    return this._store.settingsStore.getBitcoinTxUrl(this.batchTxId);
+  }
+
   /** the sum of the cleared amounts for all orders */
   get volume() {
     return this.matchedOrders.reduce(

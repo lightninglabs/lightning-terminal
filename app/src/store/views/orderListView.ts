@@ -62,7 +62,7 @@ export default class OrderListView {
       .map(lease => {
         const currHeight = this._store.nodeStore.blockHeight;
         const channel = this.channelsByPoint.get(lease.channelPoint);
-        return new LeaseView(lease, currHeight, channel);
+        return new LeaseView(this._store, lease, currHeight, channel);
       })
       .sort((a, b) => LeaseView.compare(a, b, field));
 

@@ -27,6 +27,11 @@ export default class Account {
     return ellipseInside(this.fundingTxnId, 4);
   }
 
+  /** the block explorer url for the funding tx */
+  get fundingTxnUrl() {
+    return this._store.settingsStore.getBitcoinTxUrl(this.fundingTxnId);
+  }
+
   /** the pending balance of the account */
   get pendingBalance() {
     return this.totalBalance.minus(this.availableBalance);
