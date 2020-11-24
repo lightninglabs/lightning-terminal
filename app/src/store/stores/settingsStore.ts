@@ -1,15 +1,25 @@
 import { autorun, makeAutoObservable, toJS } from 'mobx';
 import { SortParams } from 'types/state';
-import { BalanceMode, Unit } from 'util/constants';
+import {
+  BalanceMode,
+  BitcoinExplorerPresets,
+  LightningExplorerPresets,
+  Unit,
+} from 'util/constants';
+import { prefixTranslation } from 'util/translate';
 import { Store } from 'store';
 import { Channel, Order, Swap } from 'store/models';
 import { LeaseView } from 'store/views';
+
+const { l } = prefixTranslation('stores.settingsStore');
 
 export interface PersistentSettings {
   sidebarVisible: boolean;
   unit: Unit;
   balanceMode: BalanceMode;
   tourAutoShown: boolean;
+  bitcoinTxUrl: string;
+  lnNodeUrl: string;
   channelSort: SortParams<Channel>;
   historySort: SortParams<Swap>;
   orderSort: SortParams<Order>;
@@ -33,6 +43,12 @@ export default class SettingsStore {
 
   /** specifies the mode to use to determine channel balance status */
   balanceMode: BalanceMode = BalanceMode.receive;
+
+  /** url to a block explorer for onchain transactions */
+  bitcoinTxUrl = BitcoinExplorerPresets['mempool.space'];
+
+  /** url to a graph explorer for Lightning nodes */
+  lnNodeUrl = LightningExplorerPresets['1ml.com'];
 
   /** specifies the sorting field and direction for the channel list */
   channelSort: SortParams<Channel> = {
@@ -100,6 +116,27 @@ export default class SettingsStore {
   }
 
   /**
+   * sets the bitcoin and lightning explorer urls
+   */
+  setExplorerUrls(bitcoinTx: string, lnNode: string) {
+    this.bitcoinTxUrl = bitcoinTx;
+    this.lnNodeUrl = lnNode;
+    this._store.appView.showSettings('');
+  }
+
+  /**
+   * validates the specified network explorer url
+   * @param url the url to validate
+   * @param keyword a specific keyword that must be in the url
+   */
+  validateExplorerUrl(url: string, keyword: string) {
+    if (!url) return l('required');
+    if (!url.toLocaleLowerCase().startsWith('http')) return l('httpError');
+    if (!url.includes(keyword)) return l('keyword', { keyword });
+    return '';
+  }
+
+  /**
    * Sets the sort field and direction that the channel list should use
    * @param field the channel field to sort by
    * @param descending true of the order should be descending, otherwise false
@@ -162,6 +199,8 @@ export default class SettingsStore {
           unit: this.unit,
           balanceMode: this.balanceMode,
           tourAutoShown: this.tourAutoShown,
+          bitcoinTxUrl: this.bitcoinTxUrl,
+          lnNodeUrl: this.lnNodeUrl,
           channelSort: toJS(this.channelSort),
           historySort: toJS(this.historySort),
           orderSort: toJS(this.orderSort),
@@ -185,6 +224,8 @@ export default class SettingsStore {
       this.unit = settings.unit;
       this.balanceMode = settings.balanceMode;
       this.tourAutoShown = settings.tourAutoShown;
+      if (settings.bitcoinTxUrl) this.bitcoinTxUrl = settings.bitcoinTxUrl;
+      if (settings.lnNodeUrl) this.lnNodeUrl = settings.lnNodeUrl;
       if (settings.channelSort) this.channelSort = settings.channelSort;
       if (settings.historySort) this.historySort = settings.historySort;
       if (settings.orderSort) this.orderSort = settings.orderSort;

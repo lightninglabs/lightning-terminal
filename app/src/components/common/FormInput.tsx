@@ -41,13 +41,21 @@ interface Props {
   value?: string;
   extra?: ReactNode;
   placeholder?: string;
+  className?: string;
   onChange?: (value: string) => void;
 }
 
-const FormInput: React.FC<Props> = ({ label, value, placeholder, extra, onChange }) => {
+const FormInput: React.FC<Props> = ({
+  label,
+  value,
+  placeholder,
+  extra,
+  className,
+  onChange,
+}) => {
   const { Wrapper, Input, Extra } = Styled;
   return (
-    <Wrapper>
+    <Wrapper className={className}>
       <Input
         value={value}
         onChange={e => onChange && onChange(e.target.value)}
