@@ -26,6 +26,16 @@ export const ellipseInside = (
 };
 
 /**
+ * Extracts the domain name from a full url
+ */
+export const extractDomain = (url: string): string => {
+  const domainRegex = /^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n\?\=]+)/im;
+  const match = `${url}`.match(domainRegex);
+  if (match) return match[1];
+  return '';
+};
+
+/**
  * converts a base64 string into hex format
  */
 export const hex = (value: string | Uint8Array, reverse = false): string => {

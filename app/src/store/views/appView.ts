@@ -7,7 +7,7 @@ import { Store } from 'store';
 
 const { l } = prefixTranslation('stores.appView');
 
-type SettingName = '' | 'unit' | 'balance';
+type SettingName = '' | 'unit' | 'balance' | 'explorers';
 
 export default class AppView {
   private _store: Store;

@@ -2,6 +2,8 @@ import React from 'react';
 import { runInAction } from 'mobx';
 import { fireEvent } from '@testing-library/react';
 import copyToClipboard from 'copy-to-clipboard';
+import { BitcoinExplorerPresets } from 'util/constants';
+import { extractDomain } from 'util/strings';
 import { renderWithProviders } from 'util/tests';
 import { createStore, Store } from 'store';
 import SettingsPage from 'components/settings/SettingsPage';
@@ -93,5 +95,72 @@ describe('SettingsPage', () => {
     const { getByText } = render();
     fireEvent.click(getByText('Url'));
     expect(copyToClipboard).toBeCalledWith(store.nodeStore.url);
+  });
+
+  it('should navigate to the Network Explorers screen', () => {
+    const { getByText } = render();
+    fireEvent.click(getByText('Bitcoin Transaction Url'));
+    expect(store.router.location.pathname).toEqual('/settings/explorers');
+    fireEvent.click(getByText('Settings'));
+    expect(store.router.location.pathname).toEqual('/settings');
+    fireEvent.click(getByText('Lightning Node Url'));
+    expect(store.router.location.pathname).toEqual('/settings/explorers');
+  });
+
+  it('should display the Network Explorers list', () => {
+    const { getByText } = render();
+    const { bitcoinTxUrl, lnNodeUrl } = store.settingsStore;
+    expect(getByText('Bitcoin Transaction Url')).toBeInTheDocument();
+    expect(getByText(extractDomain(bitcoinTxUrl))).toBeInTheDocument();
+    expect(getByText('Lightning Node Url')).toBeInTheDocument();
+    expect(getByText(extractDomain(lnNodeUrl))).toBeInTheDocument();
+  });
+
+  it('should display the Explorer form fields', () => {
+    const { getByText, getByLabelText } = render();
+    fireEvent.click(getByText('Bitcoin Transaction Url'));
+    expect(getByLabelText('Bitcoin Transaction Url')).toBeInTheDocument();
+    expect(getByLabelText('Lightning Node Url')).toBeInTheDocument();
+    Object.keys(BitcoinExplorerPresets).forEach(domain => {
+      expect(getByText(domain)).toBeInTheDocument();
+    });
+    Object.keys(BitcoinExplorerPresets).forEach(domain => {
+      expect(getByText(domain)).toBeInTheDocument();
+    });
+  });
+
+  it('should fill the field with a preset', () => {
+    const { getByText, getByLabelText, changeInput } = render();
+    fireEvent.click(getByText('Bitcoin Transaction Url'));
+    changeInput('Bitcoin Transaction Url', 'http://test.com/{txid}');
+    expect(getByLabelText('Bitcoin Transaction Url')).toHaveValue(
+      'http://test.com/{txid}',
+    );
+    fireEvent.click(getByText('blockstream.info'));
+    expect(getByLabelText('Bitcoin Transaction Url')).toHaveValue(
+      BitcoinExplorerPresets['blockstream.info'],
+    );
+  });
+
+  it('should display validation errors', () => {
+    const { getByText, changeInput } = render();
+    fireEvent.click(getByText('Bitcoin Transaction Url'));
+    changeInput('Bitcoin Transaction Url', '');
+    expect(getByText('a valid url is required')).toBeInTheDocument();
+    changeInput('Bitcoin Transaction Url', 'asdf');
+    expect(getByText("url must start with 'http'")).toBeInTheDocument();
+    changeInput('Bitcoin Transaction Url', 'http://test.com/blah');
+    expect(getByText('url must contain {txid}')).toBeInTheDocument();
+  });
+
+  it('should update the Network Explorers', () => {
+    const { getByText, changeInput } = render();
+    fireEvent.click(getByText('Bitcoin Transaction Url'));
+    changeInput('Bitcoin Transaction Url', 'http://test.com/{txid}');
+    expect(store.settingsStore.bitcoinTxUrl).toEqual(
+      BitcoinExplorerPresets['mempool.space'],
+    );
+    fireEvent.click(getByText('Save Changes'));
+    expect(store.settingsStore.bitcoinTxUrl).toEqual('http://test.com/{txid}');
   });
 });
