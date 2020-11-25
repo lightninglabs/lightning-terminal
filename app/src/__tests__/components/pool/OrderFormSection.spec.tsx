@@ -221,25 +221,47 @@ describe('OrderFormSection', () => {
     expect(getByText('< 1')).toBeInTheDocument();
   });
 
-  it('should calculate the APY correctly', () => {
-    const { getByText, changeInput } = render();
+  it('should calculate the interest rate percent correctly', () => {
+    const { getByText, getAllByText, changeInput } = render();
 
-    expect(getByText('Effective Interest Rate (APY)')).toBeInTheDocument();
+    expect(getByText('Interest Rate Percent')).toBeInTheDocument();
 
     changeInput('Desired Inbound Liquidity', '1000000');
     changeInput('Bid Premium', '1000');
-    expect(getByText('2.64%')).toBeInTheDocument();
+    expect(getByText('0.1%')).toBeInTheDocument();
 
     changeInput('Desired Inbound Liquidity', '1000000');
     changeInput('Bid Premium', '500');
-    expect(getByText('1.31%')).toBeInTheDocument();
+    expect(getByText('0.05%')).toBeInTheDocument();
 
     changeInput('Desired Inbound Liquidity', '1000000');
     changeInput('Bid Premium', '1234');
-    expect(getByText('3.27%')).toBeInTheDocument();
+    expect(getByText('0.12%')).toBeInTheDocument();
 
     changeInput('Desired Inbound Liquidity', '1000000');
     changeInput('Bid Premium', '');
-    expect(getByText('0%')).toBeInTheDocument();
+    expect(getAllByText('0%')).toHaveLength(2);
+  });
+
+  it('should calculate the APR correctly', () => {
+    const { getByText, getAllByText, changeInput } = render();
+
+    expect(getByText('Annual Rate (APR)')).toBeInTheDocument();
+
+    changeInput('Desired Inbound Liquidity', '1000000');
+    changeInput('Bid Premium', '1000');
+    expect(getByText('2.61%')).toBeInTheDocument();
+
+    changeInput('Desired Inbound Liquidity', '1000000');
+    changeInput('Bid Premium', '500');
+    expect(getByText('1.3%')).toBeInTheDocument();
+
+    changeInput('Desired Inbound Liquidity', '1000000');
+    changeInput('Bid Premium', '1234');
+    expect(getByText('3.22%')).toBeInTheDocument();
+
+    changeInput('Desired Inbound Liquidity', '1000000');
+    changeInput('Bid Premium', '');
+    expect(getAllByText('0%')).toHaveLength(2);
   });
 });

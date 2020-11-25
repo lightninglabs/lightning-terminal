@@ -116,6 +116,14 @@ const OrderFormSection: React.FC = () => {
           </FormField>
         )}
         <SummaryItem>
+          <span>{l('durationLabel')}</span>
+          <span className="text-right">
+            2016
+            <br />
+            <Small>(~{l('durationWeeks')})</Small>
+          </span>
+        </SummaryItem>
+        <SummaryItem>
           <span>{l('fixedRateLabel')}</span>
           <span>
             {orderFormView.perBlockFixedRate < 1
@@ -124,16 +132,12 @@ const OrderFormSection: React.FC = () => {
           </span>
         </SummaryItem>
         <SummaryItem>
-          <span>{l('durationLabel')}</span>
-          <span className="text-right">
-            2016
-            <br />
-            <Small>(~{l('durationWeeks')})</Small>
-          </span>
+          <span>{l('interestLabel')}</span>
+          <span>{orderFormView.interestPercent}%</span>
         </SummaryItem>
         <SummaryItem strong>
-          <span>{l('apyLabel')}</span>
-          <span>{orderFormView.apy}%</span>
+          <span>{l('aprLabel')}</span>
+          <span>{orderFormView.apr}%</span>
         </SummaryItem>
         <Actions>
           <Button

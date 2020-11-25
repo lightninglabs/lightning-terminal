@@ -109,7 +109,7 @@ describe('OrderListSection', () => {
 
   it.each<[string, number[], number]>([
     ['Balances', [5, 6], 0],
-    ['APY', [6, 5], 0],
+    ['APR', [6, 5], 0],
     ['Premium', [5, 6], 0],
     ['Duration', [6, 5], 0],
     ['Status', [6, 5], 1],
