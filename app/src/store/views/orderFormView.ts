@@ -1,6 +1,6 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import { NodeTier } from 'types/generated/auctioneer_pb';
-import { annualPercentYield, toPercent } from 'util/bigmath';
+import { annualPercentRate, toPercent } from 'util/bigmath';
 import { BLOCKS_PER_DAY } from 'util/constants';
 import { prefixTranslation } from 'util/translate';
 import { DURATION, ONE_UNIT } from 'api/pool';
@@ -87,12 +87,18 @@ export default class OrderFormView {
     return this._store.api.pool.calcFixedRate(this.amount, this.premium);
   }
 
-  /** the APY given the amount and premium */
-  get apy() {
+  /** the premium interest percent ot the amount */
+  get interestPercent() {
+    if ([this.amount, this.premium].includes(0)) return 0;
+    return toPercent(this.premium / this.amount);
+  }
+
+  /** the APR given the amount and premium */
+  get apr() {
     if ([this.amount, this.premium].includes(0)) return 0;
     const termInDays = DURATION / BLOCKS_PER_DAY;
-    const apy = annualPercentYield(this.amount, this.premium, termInDays);
-    return toPercent(apy);
+    const apr = annualPercentRate(this.amount, this.premium, termInDays);
+    return toPercent(apr);
   }
 
   /** the label for the place order button */

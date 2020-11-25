@@ -62,11 +62,11 @@ const LeaseList: React.FC = () => {
             </TableHeader>
             <TableHeader right>
               <SortableHeader<LeaseView>
-                field="apy"
+                field="apr"
                 sort={settingsStore.leaseSort}
                 onSort={settingsStore.setLeaseSort}
               >
-                {l('apy')}
+                {l('apr')}
               </SortableHeader>
             </TableHeader>
             <TableHeader right>
@@ -111,7 +111,7 @@ const LeaseList: React.FC = () => {
           {orderListView.selectedLeases.map(lease => (
             <TableRow key={lease.channelPoint}>
               <TableCell right>{lease.balances}</TableCell>
-              <TableCell right>{lease.apyLabel}</TableCell>
+              <TableCell right>{lease.aprLabel}</TableCell>
               <TableCell right>{lease.premium}</TableCell>
               <TableCell right>
                 <ChannelStatus status={lease.status}>{lease.status}</ChannelStatus>

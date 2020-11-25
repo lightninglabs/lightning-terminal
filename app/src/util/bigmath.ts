@@ -24,23 +24,6 @@ export const percentage = (portion: Big, whole: Big, decimals = 0): number => {
 export const toPercent = (value: number) => Math.round(value * 100 * 100) / 100;
 
 /**
- * Calculates the annual interest yield. Returned as a decimal, not a percentage
- * @param principal the total principal amount being loaned
- * @param premium the premium being paid for the loan
- * @param termInDays the term of the loan in days
- */
-export const annualPercentYield = (
-  principal: number,
-  premium: number,
-  termInDays: number,
-): number => {
-  const apr = annualPercentRate(principal, premium, termInDays);
-  const timesPerYear = 365 / termInDays;
-  const apy = Math.pow(1 + apr / timesPerYear, timesPerYear) - 1;
-  return apy;
-};
-
-/**
  * Calculates the annual percentage rate. Returned as a decimal, not a percentage
  * @param principal the total principal amount being loaned
  * @param premium the premium being paid for the loan
