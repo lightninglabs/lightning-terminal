@@ -1,23 +1,16 @@
 FROM golang:1.15.5-alpine as builder
 
+# Copy in the local repository to build from.
+COPY . /go/src/github.com/lightninglabs/lightning-terminal
+
 # Force Go to use the cgo based DNS resolver. This is required to ensure DNS
 # queries required to connect to linked containers succeed.
 ENV GODEBUG netdns=cgo
-
-# Pass a tag, branch or a commit using build-arg. This allows a docker image to
-# be built from a specified Git state. The default image will use the Git tip of
-# master by default.
-ARG checkout="master"
 
 # Explicitly turn on the use of modules (until this becomes the default).
 ENV GO111MODULE on
 
 ENV NODE_VERSION=v12.17.0
-
-# We need some additional proto files with google annotations, the version
-# should match what's in lnd's scripts/install_travis_proto.sh
-ENV PROTOC_VERSION=3.4.0
-ENV PROTOC_URL="https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip"
 
 # Install dependencies and install/build lightning-terminal.
 RUN apk add --no-cache --update alpine-sdk \
@@ -28,19 +21,13 @@ RUN apk add --no-cache --update alpine-sdk \
     binutils \
     tar \
     protobuf-dev \
-    zip \
-&& curl -sfSLO ${PROTOC_URL} \
-&& unzip protoc-${PROTOC_VERSION}-linux-x86_64.zip -d /usr/local \
-&& rm /usr/local/bin/protoc /usr/local/readme.txt \
 && touch ~/.bashrc \
 && curl -sfSLO https://unofficial-builds.nodejs.org/download/release/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64-musl.tar.xz \
 && tar -xf node-${NODE_VERSION}-linux-x64-musl.tar.xz -C /usr --strip 1 \
 && rm node-${NODE_VERSION}-linux-x64-musl.tar.xz \
 && curl -o- -L https://yarnpkg.com/install.sh | bash \
 && . ~/.bashrc \
-&& git clone https://github.com/lightninglabs/lightning-terminal /go/src/github.com/lightninglabs/lightning-terminal \
 && cd /go/src/github.com/lightninglabs/lightning-terminal \
-&& git checkout $checkout \
 && make install \
 && make go-install-cli
 
