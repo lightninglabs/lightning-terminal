@@ -6,7 +6,7 @@ installed on your machine.
 | Dependency                                          | Description                                                                                                                                                                          |
 | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | [golang](https://golang.org/doc/install)            | LiT's backend web server is written in Go. The minimum version supported is Go v1.13.                                                                                                |
-| [protoc](https://grpc.io/docs/protoc-installation/) | Required to compile LND & Loop gRPC proto files at build time.                                                                                                                        |
+| [protoc 3.4.0](https://github.com/lightningnetwork/lnd/tree/master/lnrpc#generate-protobuf-definitions) | Required to compile LND & Loop gRPC proto files at build time. Must be installed according to step 1 of the linked guide.  |
 | [nodejs](https://nodejs.org/en/download/)           | LiT's frontend is written in TypeScript and built on top of the React JS web framework. To bundle the assets into Javascript & CSS compatible with web browsers, NodeJS is required. |
 | [yarn](https://classic.yarnpkg.com/en/docs/install) | A popular package manager for NodeJS application dependencies.                                                                                                                        |
 
