@@ -1,6 +1,6 @@
 import { makeAutoObservable } from 'mobx';
 import { SortParams } from 'types/state';
-import { annualPercentYield, toPercent } from 'util/bigmath';
+import { annualPercentRate, toPercent } from 'util/bigmath';
 import { BLOCKS_PER_DAY } from 'util/constants';
 import { formatSats } from 'util/formatters';
 import { ellipseInside } from 'util/strings';
@@ -36,16 +36,16 @@ export default class LeaseView {
     return `${local} / ${capacity}`;
   }
 
-  /** the APY of this lease */
-  get apy() {
+  /** the annual percentage rate of this lease */
+  get apr() {
     const { channelAmtSat, premiumSat, channelDurationBlocks } = this.lease;
     const termInDays = channelDurationBlocks / BLOCKS_PER_DAY;
-    return annualPercentYield(+channelAmtSat, +premiumSat, termInDays);
+    return annualPercentRate(+channelAmtSat, +premiumSat, termInDays);
   }
 
-  /** the APY of lease as a percentage */
-  get apyLabel() {
-    return `${toPercent(this.apy)}%`;
+  /** the annual percentage rate of this lease as a percentage */
+  get aprLabel() {
+    return `${toPercent(this.apr)}%`;
   }
 
   /** the formatted premium of this lease */
@@ -106,8 +106,8 @@ export default class LeaseView {
         const aBalance = a.channel?.localBalance || Big(0);
         const bBalance = b.channel?.localBalance || Big(0);
         return +aBalance.minus(bBalance);
-      case 'apy':
-        return a.apy - b.apy;
+      case 'apr':
+        return a.apr - b.apr;
       case 'premium':
         return +a.lease.premiumSat.minus(b.lease.premiumSat);
       case 'status':
