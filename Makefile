@@ -112,6 +112,13 @@ go-install:
 	@$(call print, "Installing lightning-terminal.")
 	$(GOINSTALL) -tags="$(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" $(PKG)/cmd/litd
 
+go-install-cli:
+	@$(call print, "Installing all CLI binaries.")
+	$(GOINSTALL) -trimpath -tags="$(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" github.com/lightningnetwork/lnd/cmd/lncli
+	$(GOINSTALL) -trimpath -ldflags "$(LDFLAGS)" github.com/lightninglabs/loop/cmd/loop
+	$(GOINSTALL) -trimpath github.com/lightninglabs/faraday/cmd/frcli
+	$(GOINSTALL) -trimpath github.com/lightninglabs/pool/cmd/pool
+
 app-build: yarn-install
 	@$(call print, "Building production app.")
 	cd app; yarn build
