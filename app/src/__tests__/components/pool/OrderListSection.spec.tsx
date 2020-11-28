@@ -143,4 +143,31 @@ describe('OrderListSection', () => {
     fireEvent.click(getAllByText(sortBy)[elIndex]);
     expect(ids()).toEqual(sortedOrder.reverse());
   });
+
+  it('should display the order list empty message', () => {
+    runInAction(() => {
+      store.orderStore.orders.clear();
+    });
+    const { getByText } = render();
+
+    expect(getByText('You do not have any open orders.')).toBeInTheDocument();
+    fireEvent.click(getByText('Filled'));
+    expect(getByText('You do not have any filled orders.')).toBeInTheDocument();
+    fireEvent.click(getByText('All'));
+    expect(
+      getByText(
+        'You do not have any orders. Submit an order using the form on the left.',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('should display the lease list empty message', () => {
+    runInAction(() => {
+      store.orderStore.leases.clear();
+    });
+    const { getByText } = render();
+    expect(
+      getByText('Select a filled order to view its leases here.'),
+    ).toBeInTheDocument();
+  });
 });

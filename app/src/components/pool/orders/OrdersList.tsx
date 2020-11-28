@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Order } from 'store/models';
-import { Close, Scrollable } from 'components/base';
+import { Close, Empty, Scrollable } from 'components/base';
 import SortableHeader from 'components/common/SortableHeader';
 import Tip from 'components/common/Tip';
 import Unit from 'components/common/Unit';
@@ -27,6 +27,10 @@ const statusToColor = (theme: Theme, status: Order['stateLabel']) => {
 };
 
 const Styled = {
+  Scrollable: styled(Scrollable)`
+    display: flex;
+    flex-direction: column;
+  `,
   OrderStatus: styled.span<{ status: Order['stateLabel'] }>`
     color: ${props => statusToColor(props.theme, props.status)};
   `,
@@ -83,6 +87,7 @@ const OrdersList: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.pool.orders.OrdersList');
   const { orderListView, orderStore, settingsStore } = useStore();
 
+  const { Scrollable } = Styled;
   return (
     <Scrollable>
       <Table>
@@ -148,6 +153,12 @@ const OrdersList: React.FC = () => {
           ))}
         </tbody>
       </Table>
+      {orderListView.orders.length === 0 && (
+        <Empty>
+          {l('emptyMsg', { filter: orderListView.filter })}{' '}
+          {orderListView.filter === '' && l('emptyAllMsg')}
+        </Empty>
+      )}
     </Scrollable>
   );
 };

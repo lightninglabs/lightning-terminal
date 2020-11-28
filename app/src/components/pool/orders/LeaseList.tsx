@@ -4,7 +4,7 @@ import { ChannelStatus } from 'types/state';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { LeaseView } from 'store/views';
-import { Scrollable } from 'components/base';
+import { Empty, Scrollable } from 'components/base';
 import ExternalLink from 'components/common/ExternalLink';
 import SortableHeader from 'components/common/SortableHeader';
 import Tip from 'components/common/Tip';
@@ -32,6 +32,8 @@ const statusToColor = (theme: Theme, status: LeaseView['status']) => {
 const Styled = {
   Scrollable: styled(Scrollable)`
     padding-right: 15px;
+    display: flex;
+    flex-direction: column;
   `,
   ChannelStatus: styled.span<{ status: LeaseView['status'] }>`
     color: ${props => statusToColor(props.theme, props.status)};
@@ -46,6 +48,7 @@ const LeaseList: React.FC = () => {
   const { orderListView, settingsStore } = useStore();
 
   const { Scrollable, ChannelStatus, Duration } = Styled;
+
   return (
     <Scrollable>
       <Table>
@@ -135,6 +138,7 @@ const LeaseList: React.FC = () => {
           ))}
         </tbody>
       </Table>
+      {orderListView.selectedLeases.length === 0 && <Empty>{l('emptyMsg')}</Empty>}
     </Scrollable>
   );
 };
