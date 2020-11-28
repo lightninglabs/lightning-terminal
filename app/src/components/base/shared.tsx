@@ -57,6 +57,15 @@ export const SummaryItem = styled.div<{ strong?: boolean }>`
   font-weight: ${props => (props.strong ? 'bold' : 'normal')};
 `;
 
+export const Empty = styled.div`
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: ${props => props.theme.sizes.xs};
+  color: ${props => props.theme.colors.gray};
+`;
+
 //
 // Button
 //
