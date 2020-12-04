@@ -1,6 +1,7 @@
 import { makeAutoObservable, observable } from 'mobx';
 import * as AUCT from 'types/generated/auctioneer_pb';
 import Big from 'big.js';
+import { toPercent } from 'util/bigmath';
 import { ellipseInside, hex } from 'util/strings';
 import { Store } from 'store/store';
 
@@ -124,6 +125,16 @@ export default class Batch {
       }
     }
     return delta;
+  }
+  /** the percentage change of this batch's rate compared to the previous batch */
+  get pctChange() {
+    let priorRate = this.clearingPriceRate;
+    const index = this._store.batchStore.sortedBatches.indexOf(this);
+    const prevBatch = this._store.batchStore.sortedBatches[index + 1];
+    if (prevBatch) {
+      priorRate = prevBatch.clearingPriceRate;
+    }
+    return toPercent((this.clearingPriceRate - priorRate) / priorRate);
   }
 
   /**
