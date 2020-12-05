@@ -1,17 +1,16 @@
-import * as d3 from 'd3';
 import Batch, { BatchDelta } from 'store/models/batch';
 
 export const ANIMATION_DURATION = 1000;
+
+const TOP_HEIGHT_RATIO = 0.6;
+const TOP_PADDING = 0.3;
 const MARGIN = {
   top: 0,
-  right: 40,
+  right: 30,
   bottom: 30,
-  left: 40,
+  left: 50,
 };
-
-// aliases for verbose D3 types
-export type D3ScaleLinear = d3.ScaleLinear<number, number, never>;
-export type D3ScaleBand = d3.ScaleBand<string>;
+const COL_WIDTH = 150;
 
 export interface BatchChartData {
   id: string;
@@ -22,25 +21,33 @@ export interface BatchChartData {
   delta: BatchDelta;
 }
 
-export interface Scales {
-  yLeft: D3ScaleLinear;
-}
-
 export interface ChartDimensions {
+  outerWidth: number;
+  outerHeight: number;
   width: number;
   height: number;
   margin: typeof MARGIN;
   blocksHeight: number;
+  blocksPadding: number;
   blockSize: number;
+  totalWidth: number;
 }
 
-export const getDimensions = (width: number, height: number): ChartDimensions => {
+export const getDimensions = (
+  outerWidth: number,
+  outerHeight: number,
+  batchCount: number,
+): ChartDimensions => {
   return {
-    width: width - MARGIN.left - MARGIN.right,
-    height: height - MARGIN.top - MARGIN.bottom,
+    outerWidth,
+    outerHeight,
+    width: outerWidth - MARGIN.left - MARGIN.right,
+    height: outerHeight - MARGIN.top - MARGIN.bottom,
     margin: MARGIN,
-    blocksHeight: height * 0.35,
-    blockSize: Math.max(width * 0.05, 100),
+    blocksHeight: outerHeight * TOP_HEIGHT_RATIO,
+    blocksPadding: outerHeight * TOP_HEIGHT_RATIO * TOP_PADDING,
+    blockSize: Math.max(outerWidth * 0.05, 100),
+    totalWidth: Math.max(batchCount * COL_WIDTH, outerWidth - MARGIN.left - MARGIN.right),
   };
 };
 
@@ -59,9 +66,11 @@ export const convertData = (batches: Batch[]): BatchChartData[] =>
 
 export const pctToText = (p: number) => (p === 0 ? '--' : `${p > 0 ? '+' : ''}${p}%`);
 
-// export const createScales = (data: BatchChartData[], dimensions: Dimensions): Scales => {
-//   const { height, blocksHeight } = dimensions;
-//   const yLeft = d3.scaleLinear().range([height, blocksHeight]);
-
-//   return { yLeft };
+// export const getUpdatingDirection = (
+//   oldData: BatchChartData[],
+//   newData: BatchChartData[],
+// ): 'forward' | 'backward' => {
+//   if (oldData.length === 0) return 'forward';
+//   const newest = oldData[0];
+//   const
 // };

@@ -3,12 +3,33 @@ import { observer } from 'mobx-react-lite';
 import useSize from 'hooks/useSize';
 import { useStore } from 'store';
 import { styled } from 'components/theme';
-import D3Chart from './chart/D3Chart';
+import D3Chart from './chart2/D3Chart';
 
 const Styled = {
   Wrapper: styled.div`
-    display: none;
-    flex: 1;
+    /* display: none; */
+    flex: 2;
+    margin-bottom: 20px;
+
+    text {
+      font-family: ${props => props.theme.fonts.open.regular};
+    }
+
+    .tick {
+      font-size: ${props => props.theme.sizes.xs};
+    }
+
+    .label-pct {
+      &.positive {
+        fill: ${props => props.theme.colors.green};
+      }
+      &.neutral {
+        fill: ${props => props.theme.colors.gray};
+      }
+      &.negative {
+        fill: ${props => props.theme.colors.pink};
+      }
+    }
   `,
 };
 
@@ -22,19 +43,19 @@ const BatchChart: React.FC = () => {
 
   useEffect(() => {
     if (!chartArea.current) return;
-    if (!width || !height) return;
+    if (!width || !height || !batchStore.sortedBatches.length) return;
 
     if (!chart || div !== chartArea.current) {
       setChart(new D3Chart(chartArea.current, batchStore.sortedBatches, width, height));
     } else {
       chart.update(batchStore.sortedBatches);
-      chart.updateSize(width, height);
+      chart.resize(width, height);
     }
     setDiv(chartArea.current);
   }, [chartArea.current, batchStore.sortedBatches, width, height]);
 
   console.log(
-    `D3Chart: render ${width} ${height}, ${batchStore.sortedBatches.length} batches`,
+    `D3Chart: BatchChart > render ${width} ${height}, ${batchStore.sortedBatches.length} batches`,
     chartArea.current,
   );
 

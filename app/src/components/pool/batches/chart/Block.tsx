@@ -50,7 +50,7 @@ const Block: React.FC<Props> = ({ dimensions, batch, xScale, yScale }) => {
         height={blockSize}
         rx={4}
         stroke="#fdc086"
-        fill="#252f4a"
+        fill="#d2dbf5"
       />
       <text
         className="label-rate"

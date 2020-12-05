@@ -13,7 +13,7 @@ import RightAxis from './chart2/RightAxis';
 const Styled = {
   Wrapper: styled.div`
     flex: 1;
-    display: flex;
+    display: none;
     justify-content: center;
     align-items: center;
   `,
@@ -29,7 +29,11 @@ const BatchD3Chart: React.FC = () => {
     batchStore.sortedBatches,
   ]);
 
-  const dimensions = useMemo(() => getDimensions(width, height), [width, height]);
+  const dimensions = useMemo(() => getDimensions(width, height, data.length), [
+    width,
+    height,
+    data.length,
+  ]);
   const totalWidth = data.length * 150;
   const initialRange = [0, totalWidth];
   // scale for the x-axis
