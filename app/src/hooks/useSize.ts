@@ -28,7 +28,7 @@ const useSize = (ref: React.RefObject<Element>) => {
       if (ref.current) {
         setSize(querySize(ref.current));
       }
-    }, 1000),
+    }, 0),
     [ref.current],
   );
 

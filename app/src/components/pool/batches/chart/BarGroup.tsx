@@ -52,10 +52,8 @@ const BarGroup: React.FC<Props> = ({ data, dimensions, batch, xScale }) => {
         .attr('height', height - yScaleOrders(batch.orders));
     }
     setInit(false);
-    console.log('D3Chart: setInit', init);
   }, [batch, height]);
 
-  console.log('D3Chart: height', height);
   return (
     <>
       <rect
