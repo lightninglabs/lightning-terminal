@@ -8,7 +8,7 @@ import {
   getDimensions,
 } from './chartUtils';
 
-type DataListener = (data: BatchChartData[], chart: D3Chart) => void;
+type DataListener = (data: BatchChartData[], chart: D3Chart, pastData: boolean) => void;
 type SizeListener = (dimensions: ChartDimensions, chart: D3Chart) => void;
 type MoveListener = (e: d3.D3ZoomEvent<SVGSVGElement, unknown>, chart: D3Chart) => void;
 
@@ -30,7 +30,6 @@ export default class D3Chart {
   dimensions: ChartDimensions;
   scales: Scales;
   data: BatchChartData[];
-  updatingDirection: 'backward' | 'forward' = 'forward';
 
   zoom: d3.ZoomBehavior<SVGSVGElement, unknown>;
   palette: d3.ScaleOrdinal<string, string, never>;
@@ -47,6 +46,7 @@ export default class D3Chart {
     const { width, height, margin } = this.dimensions;
 
     this.svg = d3.select(element).attr('width', outerWidth).attr('height', outerHeight);
+
     // add clipping
     this.svg
       .append('defs')
@@ -75,12 +75,18 @@ export default class D3Chart {
 
     this.zoom = d3
       .zoom<SVGSVGElement, unknown>()
-      .scaleExtent([1, 1]) // disable mouse-wheel zooming
       .on('zoom', (e: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
+        console.log('D3Chart: zoom', e.transform);
         const { left } = this.dimensions.margin;
         this.clipped.attr('transform', `translate(${left + e.transform.x}, 0)`);
       });
-    this.svg.call(this.zoom);
+    this.svg
+      .call(this.zoom)
+      .on('wheel.zoom', null) // disable mouse-wheel zooming
+      .on('wheel', (e: WheelEvent) => {
+        // pan left & right using the mouse wheel
+        this.zoom.translateBy(this.svg.transition().duration(10), e.deltaY, 0);
+      });
 
     // color palette = one color per subgroup
     this.palette = d3
@@ -103,23 +109,36 @@ export default class D3Chart {
   }
 
   update = (batches: Batch[]) => {
-    console.log('D3Chart: updating batches', batches.length);
-    this.data = convertData(batches);
-    const { outerWidth, outerHeight } = this.dimensions;
-    this.dimensions = getDimensions(outerWidth, outerHeight, batches.length);
-    this._listeners.data.forEach(func => func(this.data, this));
+    const data = convertData(batches);
+    // determine if we are loading batches from the past
+    const pastData = this.data.length !== 0 && this.data[0].id === data[0].id;
+    this.data = data;
+    console.log('D3Chart: updating batches', batches.length, pastData);
+
+    const prev = this.dimensions;
+    this.dimensions = getDimensions(prev.outerWidth, prev.outerHeight, batches.length);
+    this.resizeZoom(pastData, prev);
+
+    this._listeners.data.forEach(func => func(this.data, this, pastData));
   };
 
   resize = (outerWidth: number, outerHeight: number) => {
     this.dimensions = getDimensions(outerWidth, outerHeight, this.data.length);
     console.log(`D3Chart: updating dimensions to ${outerWidth} ${outerHeight}`);
 
-    const { width, height, totalWidth, margin } = this.dimensions;
+    const { width, height, margin } = this.dimensions;
     this.svg
       .select('#clip rect')
       .attr('width', width - 1)
       .attr('height', height + margin.bottom);
 
+    this.resizeZoom();
+
+    this._listeners.size.forEach(func => func(this.dimensions, this));
+  };
+
+  resizeZoom = (pastData?: boolean, prevDimensions?: ChartDimensions) => {
+    const { width, height, totalWidth, margin } = this.dimensions;
     this.zoom
       .translateExtent([
         [0, margin.top],
@@ -129,12 +148,28 @@ export default class D3Chart {
         [0, margin.top],
         [width, height],
       ]);
-    this.svg
-      .transition()
-      .duration(ANIMATION_DURATION)
-      .call(this.zoom.translateTo, 0, 0, [width - totalWidth, 0]);
 
-    this._listeners.size.forEach(func => func(this.dimensions, this));
+    if (!pastData) {
+      // show the new batch
+      const el = this.svg.transition().duration(ANIMATION_DURATION);
+      this.zoom.translateTo(el, 0, 0, [width - totalWidth, 0]);
+    } else if (pastData && prevDimensions) {
+      // loading old batches, stay in the same position. the total width of the
+      // clipped layer will increase due to there being more batches. in order
+      // to remain in the same position, we need to pan by the difference. the
+      // panning coords are anchored from the left
+      const diff = prevDimensions.totalWidth - this.dimensions.totalWidth;
+      console.log(
+        `D3Chart: resizeZoom by ${diff}`,
+        `prev ${prevDimensions.totalWidth}`,
+        `new ${this.dimensions.totalWidth}`,
+        width,
+        diff + width,
+      );
+      this.zoom.translateTo(this.svg, 0, 0, [diff, 0]);
+      const el = this.svg.transition().duration(ANIMATION_DURATION);
+      this.zoom.translateTo(el, 0, 0, [diff + width - 150, 0]);
+    }
   };
 
   moveChart = (e: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
@@ -166,7 +201,7 @@ class Scales {
   constructor(chart: D3Chart, data: BatchChartData[]) {
     const { totalWidth, height, blocksHeight, blocksPadding } = chart.dimensions;
     console.log('D3Chart: Scales.ctor totalWidth', totalWidth);
-    this.xScale = d3.scaleBand().range([0, totalWidth]).padding(0.6);
+    this.xScale = d3.scaleBand().range([totalWidth, 0]).padding(0.6);
     this.yScaleLeft = d3.scaleLinear().range([height, blocksHeight]);
     this.yScaleRight = d3.scaleLinear().range([height, blocksHeight]);
     this.yScaleBlocks = d3
@@ -182,7 +217,7 @@ class Scales {
   update = (data: BatchChartData[], chart: D3Chart) => {
     // bottom axis
     const { totalWidth } = chart.dimensions;
-    this.xScale.domain(data.map(b => b.id)).range([0, totalWidth]);
+    this.xScale.domain(data.map(b => b.id)).range([totalWidth, 0]);
     // left axis
     this.yScaleLeft.domain([0, d3.max(data.map(b => b.volume)) as number]);
     // right axis
@@ -193,7 +228,7 @@ class Scales {
 
   resize = (d: ChartDimensions) => {
     // update axis scales
-    this.xScale.range([0, d.totalWidth]);
+    this.xScale.range([d.totalWidth, 0]);
     this.yScaleLeft.range([d.height, d.blocksHeight]);
     this.yScaleRight.range([d.height, d.blocksHeight]);
     this.yScaleBlocks.range([d.blocksHeight - d.blocksPadding, d.blocksPadding]);
@@ -217,7 +252,7 @@ class BlocksChart {
     chart.onMove(this.move);
   }
 
-  update = (data: BatchChartData[], chart: D3Chart) => {
+  update = (data: BatchChartData[], chart: D3Chart, pastData: boolean) => {
     const { blockSize, blocksHeight } = chart.dimensions;
     const { xScale, yScaleBlocks } = chart.scales;
 
@@ -237,7 +272,8 @@ class BlocksChart {
     // UPDATE
     batchGroups
       .transition()
-      .duration(ANIMATION_DURATION)
+      // don't animate when updating with past batches
+      .duration(pastData ? 0 : ANIMATION_DURATION)
       .attr('transform', b => `translate(${getXY(b).x}, ${getXY(b).y})`);
 
     // ENTER
@@ -318,8 +354,8 @@ class LineChart {
     chart.onMove(this.move);
   }
 
-  update = (data: BatchChartData[], chart: D3Chart) => {
-    this.draw(chart, true);
+  update = (data: BatchChartData[], chart: D3Chart, pastData: boolean) => {
+    this.draw(chart, !pastData);
   };
 
   move = (e: d3.D3ZoomEvent<SVGSVGElement, unknown>, chart: D3Chart) => {
@@ -381,10 +417,13 @@ class BarChart {
       .exit<BatchChartData>()
       .transition()
       .duration(ANIMATION_DURATION)
-      .attr('transform', d => `translate(${xScale(d.id)}, 0)`);
+      .attr('transform', d => `translate(${xScale(d.id)}, 0)`)
+      .remove();
 
     // UPDATE
     bars
+      .attr('x', d => (xScale(d.id) || 0) + (this.innerScale('volume') || 0))
+      .attr('width', this.innerScale.bandwidth())
       .transition()
       .duration(ANIMATION_DURATION)
       .attr('y', d => yScaleLeft(d.volume))
@@ -420,10 +459,13 @@ class BarChart {
       .exit<BatchChartData>()
       .transition()
       .duration(ANIMATION_DURATION)
-      .attr('transform', d => `translate(${xScale(d.id)}, 0)`);
+      .attr('transform', d => `translate(${xScale(d.id)}, 0)`)
+      .remove();
 
     // UPDATE
     bars
+      .attr('width', this.innerScale.bandwidth())
+      .attr('x', d => (xScale(d.id) || 0) + (this.innerScale('orders') || 0))
       .transition()
       .duration(ANIMATION_DURATION)
       .attr('y', d => yScaleRight(d.orders))

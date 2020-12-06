@@ -46,7 +46,7 @@ export const getDimensions = (
     margin: MARGIN,
     blocksHeight: outerHeight * TOP_HEIGHT_RATIO,
     blocksPadding: outerHeight * TOP_HEIGHT_RATIO * TOP_PADDING,
-    blockSize: Math.max(outerWidth * 0.05, 100),
+    blockSize: 100,
     totalWidth: Math.max(batchCount * COL_WIDTH, outerWidth - MARGIN.left - MARGIN.right),
   };
 };
@@ -54,7 +54,7 @@ export const getDimensions = (
 export const convertData = (batches: Batch[]): BatchChartData[] =>
   batches
     .slice()
-    .reverse()
+    // .reverse()
     .map(b => ({
       id: b.batchIdEllipsed,
       volume: +b.volume,
@@ -65,12 +65,3 @@ export const convertData = (batches: Batch[]): BatchChartData[] =>
     }));
 
 export const pctToText = (p: number) => (p === 0 ? '--' : `${p > 0 ? '+' : ''}${p}%`);
-
-// export const getUpdatingDirection = (
-//   oldData: BatchChartData[],
-//   newData: BatchChartData[],
-// ): 'forward' | 'backward' => {
-//   if (oldData.length === 0) return 'forward';
-//   const newest = oldData[0];
-//   const
-// };

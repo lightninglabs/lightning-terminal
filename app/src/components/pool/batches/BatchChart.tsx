@@ -10,6 +10,7 @@ const Styled = {
     /* display: none; */
     flex: 2;
     margin-bottom: 20px;
+    cursor: move;
 
     text {
       font-family: ${props => props.theme.fonts.open.regular};
@@ -49,10 +50,15 @@ const BatchChart: React.FC = () => {
       setChart(new D3Chart(chartArea.current, batchStore.sortedBatches, width, height));
     } else {
       chart.update(batchStore.sortedBatches);
-      chart.resize(width, height);
     }
     setDiv(chartArea.current);
-  }, [chartArea.current, batchStore.sortedBatches, width, height]);
+  }, [chartArea.current, batchStore.sortedBatches]);
+
+  useEffect(() => {
+    if (!chart) return;
+
+    chart.resize(width, height);
+  }, [width, height]);
 
   console.log(
     `D3Chart: BatchChart > render ${width} ${height}, ${batchStore.sortedBatches.length} batches`,
