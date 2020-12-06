@@ -39,19 +39,17 @@ const BatchChart: React.FC = () => {
   const chartArea = useRef<SVGSVGElement>(null);
   const wrapper = useRef<HTMLDivElement>(null);
   const [chart, setChart] = useState<D3Chart>();
-  const [div, setDiv] = useState<SVGSVGElement>();
   const { width, height } = useSize(wrapper);
 
   useEffect(() => {
     if (!chartArea.current) return;
     if (!width || !height || !batchStore.sortedBatches.length) return;
 
-    if (!chart || div !== chartArea.current) {
+    if (!chart) {
       setChart(new D3Chart(chartArea.current, batchStore.sortedBatches, width, height));
     } else {
       chart.update(batchStore.sortedBatches);
     }
-    setDiv(chartArea.current);
   }, [chartArea.current, batchStore.sortedBatches]);
 
   useEffect(() => {
