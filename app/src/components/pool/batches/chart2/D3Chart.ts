@@ -73,7 +73,7 @@ export default class D3Chart {
     this.zoom = d3
       .zoom<SVGSVGElement, unknown>()
       .on('zoom', (e: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
-        console.log('D3Chart: zoom', e.transform);
+        // console.log('D3Chart: zoom', e.transform);
         const { left } = this.dimensions.margin;
         this.clipped.attr('transform', `translate(${left + e.transform.x}, 0)`);
       });
