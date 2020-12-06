@@ -13,9 +13,7 @@ export default class Scales {
     this.xScale = d3.scaleBand().range([totalWidth, 0]).padding(0.6);
     this.yScaleVolume = d3.scaleLinear().range([height, blocksHeight]);
     this.yScaleOrders = d3.scaleLinear().range([height, blocksHeight]);
-    this.yScaleRates = d3
-      .scaleLinear()
-      .range([blocksHeight - blocksPadding, blocksPadding]);
+    this.yScaleRates = d3.scaleLog().range([blocksHeight - blocksPadding, blocksPadding]);
 
     this.update({ data, chart, pastData: false, prevDimensions: chart.dimensions });
 
@@ -32,7 +30,10 @@ export default class Scales {
     // right axis
     this.yScaleOrders.domain([0, d3.max(data.map(b => b.orders)) as number]);
     // top y axis
-    this.yScaleRates.domain([0, d3.max(data.map(b => b.rate)) as number]);
+    this.yScaleRates.domain([
+      d3.min(data.map(b => b.rate)) as number,
+      d3.max(data.map(b => b.rate)) as number,
+    ]);
   };
 
   resize = ({ dimensions }: ChartResizeEvent) => {

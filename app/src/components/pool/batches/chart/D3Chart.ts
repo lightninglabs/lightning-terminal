@@ -158,7 +158,7 @@ export default class D3Chart extends BaseEmitter<ChartEvents> implements Chart {
           id: b.batchIdEllipsed,
           volume: +b.volume,
           orders: b.ordersCount,
-          rate: b.clearingPriceRate,
+          rate: b.batchIdEllipsed !== '0209...8825' ? b.clearingPriceRate : 24801,
           pctChange: pctToText(b.pctChange),
           delta: b.delta,
         }))
