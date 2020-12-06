@@ -6,12 +6,23 @@ import {
   ChartDimensions,
   convertData,
   getDimensions,
+  hasLoadedPastData,
 } from './chartUtils';
 
 type DataListener = (data: BatchChartData[], chart: D3Chart, pastData: boolean) => void;
 type SizeListener = (dimensions: ChartDimensions, chart: D3Chart) => void;
 
+export interface ChartConfig {
+  element: SVGSVGElement;
+  batches: Batch[];
+  outerWidth: number;
+  outerHeight: number;
+  fetchBatches: () => void;
+}
+
 export default class D3Chart {
+  private _loading = false;
+  private _fetchBatches: ChartConfig['fetchBatches'];
   private _listeners: {
     data: DataListener[];
     size: SizeListener[];
@@ -31,12 +42,8 @@ export default class D3Chart {
   zoom: d3.ZoomBehavior<SVGSVGElement, unknown>;
   palette: d3.ScaleOrdinal<string, string, never>;
 
-  constructor(
-    element: SVGSVGElement,
-    batches: Batch[],
-    outerWidth: number,
-    outerHeight: number,
-  ) {
+  constructor(config: ChartConfig) {
+    const { element, batches, outerWidth, outerHeight } = config;
     console.log(`D3Chart: creating chart ${outerWidth} ${outerHeight}`);
     this.data = convertData(batches);
     this.dimensions = getDimensions(outerWidth, outerHeight, batches.length);
@@ -70,20 +77,7 @@ export default class D3Chart {
       .attr('class', 'clipped-content')
       .attr('transform', `translate(${margin.left},0)`);
 
-    this.zoom = d3
-      .zoom<SVGSVGElement, unknown>()
-      .on('zoom', (e: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
-        // console.log('D3Chart: zoom', e.transform);
-        const { left } = this.dimensions.margin;
-        this.clipped.attr('transform', `translate(${left + e.transform.x}, 0)`);
-      });
-    this.svg
-      .call(this.zoom)
-      .on('wheel.zoom', null) // disable mouse-wheel zooming
-      .on('wheel', (e: WheelEvent) => {
-        // pan left & right using the mouse wheel
-        this.zoom.translateBy(this.svg.transition().duration(10), e.deltaY, 0);
-      });
+    this.zoom = this.createZoom();
 
     // color palette = one color per subgroup
     this.palette = d3
@@ -101,14 +95,18 @@ export default class D3Chart {
     new LineChart(this);
     new BlocksChart(this);
 
+    // keep a reference to the func this class should use to fetch past batches
+    this._fetchBatches = config.fetchBatches;
+
     this.update(batches);
     this.resize(outerWidth, outerHeight);
   }
 
   update = (batches: Batch[]) => {
+    this._loading = false;
     const data = convertData(batches);
     // determine if we are loading batches from the past
-    const pastData = this.data.length !== 0 && this.data[0].id === data[0].id;
+    const pastData = hasLoadedPastData(this.data, data);
     this.data = data;
     console.log('D3Chart: updating batches', batches.length, pastData);
 
@@ -132,6 +130,31 @@ export default class D3Chart {
     this.resizeZoom();
 
     this._listeners.size.forEach(func => func(this.dimensions, this));
+  };
+
+  createZoom = () => {
+    const zoom = d3
+      .zoom<SVGSVGElement, unknown>()
+      .on('zoom', (e: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
+        // console.log('D3Chart: zoom', e.transform);
+        const { left } = this.dimensions.margin;
+        this.clipped.attr('transform', `translate(${left + e.transform.x}, 0)`);
+        if (e.transform.x === 0 && !this._loading) {
+          console.log('D3Chart: zoom fetch batches');
+          this._loading = true;
+          this._fetchBatches();
+        }
+      });
+
+    this.svg
+      .call(zoom)
+      .on('wheel.zoom', null) // disable mouse-wheel zooming
+      .on('wheel', (e: WheelEvent) => {
+        // pan left & right using the mouse wheel
+        zoom.translateBy(this.svg.transition().duration(10), e.deltaY, 0);
+      });
+
+    return zoom;
   };
 
   resizeZoom = (pastData?: boolean, prevDimensions?: ChartDimensions) => {
@@ -163,7 +186,9 @@ export default class D3Chart {
         width,
         diff + width,
       );
+      // jump to the same position
       this.zoom.translateTo(this.svg, 0, 0, [diff, 0]);
+      // animate a bit less than one screen width to show the fetched batches
       const el = this.svg.transition().duration(ANIMATION_DURATION);
       this.zoom.translateTo(el, 0, 0, [diff + width - 150, 0]);
     }
@@ -322,10 +347,6 @@ class LineChart {
   }
 
   update = (data: BatchChartData[], chart: D3Chart, pastData: boolean) => {
-    this.draw(chart, !pastData);
-  };
-
-  draw = (chart: D3Chart, animated = false) => {
     const { xScale, yScaleRates } = chart.scales;
 
     this.line
@@ -334,7 +355,7 @@ class LineChart {
 
     this.path
       .transition()
-      .duration(animated ? ANIMATION_DURATION : 0)
+      .duration(pastData ? 0 : ANIMATION_DURATION)
       .attr('d', this.line(chart.data) || '');
   };
 }

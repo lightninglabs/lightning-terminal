@@ -2,14 +2,14 @@ import React, { useEffect, useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import useSize from 'hooks/useSize';
 import { useStore } from 'store';
+import LoaderLines from 'components/common/LoaderLines';
 import { styled } from 'components/theme';
-import D3Chart from './chart2/D3Chart';
+import D3Chart, { ChartConfig } from './chart2/D3Chart';
 
 const Styled = {
   Wrapper: styled.div`
-    /* display: none; */
     flex: 2;
-    margin-bottom: 20px;
+    position: relative;
     cursor: move;
 
     text {
@@ -32,6 +32,11 @@ const Styled = {
       }
     }
   `,
+  LoaderLines: styled(LoaderLines)`
+    position: absolute;
+    top: 10px;
+    left: 50%;
+  `,
 };
 
 const BatchChart: React.FC = () => {
@@ -46,16 +51,22 @@ const BatchChart: React.FC = () => {
     if (!width || !height || !batchStore.sortedBatches.length) return;
 
     if (!chart) {
-      setChart(new D3Chart(chartArea.current, batchStore.sortedBatches, width, height));
+      const config: ChartConfig = {
+        element: chartArea.current,
+        batches: batchStore.sortedBatches,
+        outerWidth: width,
+        outerHeight: height,
+        fetchBatches: batchStore.fetchBatches,
+      };
+      setChart(new D3Chart(config));
     } else {
       chart.update(batchStore.sortedBatches);
     }
   }, [chartArea.current, batchStore.sortedBatches]);
 
   useEffect(() => {
-    if (!chart) return;
-
-    chart.resize(width, height);
+    // resize the chart when the dimensions of the wrapper change
+    if (chart) chart.resize(width, height);
   }, [width, height]);
 
   console.log(
@@ -63,9 +74,10 @@ const BatchChart: React.FC = () => {
     chartArea.current,
   );
 
-  const { Wrapper } = Styled;
+  const { Wrapper, LoaderLines } = Styled;
   return (
     <Wrapper ref={wrapper}>
+      {batchStore.loading && <LoaderLines />}
       <svg ref={chartArea} width={width} height={height} />
     </Wrapper>
   );

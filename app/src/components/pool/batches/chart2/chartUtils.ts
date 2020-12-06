@@ -60,3 +60,17 @@ export const convertData = (batches: Batch[]): BatchChartData[] =>
     }));
 
 export const pctToText = (p: number) => (p === 0 ? '--' : `${p > 0 ? '+' : ''}${p}%`);
+
+export const hasLoadedPastData = (
+  oldData: BatchChartData[],
+  newData: BatchChartData[],
+) => {
+  // there is no local data, so this is all fresh data
+  if (oldData.length === 0) return false;
+  // the data is the same length so we didn't add anything
+  if (oldData.length === newData.length) return false;
+  // the first batches are different, so we addd to the front
+  if (oldData[0].id !== newData[0].id) return false;
+
+  return true;
+};

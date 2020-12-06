@@ -16,7 +16,7 @@ const Styled = {
     background-color: transparent;
 
     > div:last-of-type {
-      /* display: none; */
+      display: none;
     }
   `,
 };
