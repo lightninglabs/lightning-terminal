@@ -1,18 +1,17 @@
 import * as d3 from 'd3';
-
-import { ANIMATION_DURATION, BatchChartData } from '../chart/chartUtils';
-import { D3Chart } from './';
+import { ANIMATION_DURATION } from '../chart/chartUtils';
+import { BatchChartData, Chart } from './types';
 
 export default class BlocksChart {
   g: d3.Selection<SVGGElement, unknown, null, undefined>;
 
-  constructor(chart: D3Chart) {
+  constructor(chart: Chart) {
     this.g = chart.clipped.append('g').attr('class', 'blocks-group');
 
     chart.onData(this.update);
   }
 
-  update = (data: BatchChartData[], chart: D3Chart, pastData: boolean) => {
+  update = (data: BatchChartData[], chart: Chart, pastData: boolean) => {
     const { blockSize, blocksHeight } = chart.dimensions;
     const { xScale, yScaleRates } = chart.scales;
 
@@ -55,7 +54,7 @@ export default class BlocksChart {
 
   createBlock = (
     group: d3.Selection<SVGGElement, BatchChartData, SVGGElement, unknown>,
-    chart: D3Chart,
+    chart: Chart,
   ) => {
     const { blockSize } = chart.dimensions;
     group

@@ -1,13 +1,12 @@
 import * as d3 from 'd3';
-
-import { ANIMATION_DURATION, BatchChartData } from '../chart/chartUtils';
-import { D3Chart } from './';
+import { ANIMATION_DURATION } from './chartUtils';
+import { BatchChartData, Chart } from './types';
 
 export default class LineChart {
   path: d3.Selection<SVGPathElement, unknown, null, undefined>;
   line: d3.Line<BatchChartData>;
 
-  constructor(chart: D3Chart) {
+  constructor(chart: Chart) {
     const { xScale } = chart.scales;
     this.line = d3
       .line<BatchChartData>()
@@ -26,7 +25,7 @@ export default class LineChart {
     chart.onData(this.update);
   }
 
-  update = (data: BatchChartData[], chart: D3Chart, pastData: boolean) => {
+  update = (data: BatchChartData[], chart: Chart, pastData: boolean) => {
     const { xScale, yScaleRates } = chart.scales;
 
     this.line

@@ -1,4 +1,5 @@
-import Batch, { BatchDelta } from 'store/models/batch';
+import Batch from 'store/models/batch';
+import { BatchChartData, ChartDimensions } from './types';
 
 export const ANIMATION_DURATION = 1000;
 
@@ -6,27 +7,6 @@ const TOP_HEIGHT_RATIO = 0.6;
 const TOP_PADDING = 0.3;
 const MARGIN = { top: 0, right: 30, bottom: 30, left: 50 };
 const COL_WIDTH = 150;
-
-export interface BatchChartData {
-  id: string;
-  volume: number;
-  orders: number;
-  rate: number;
-  pctChange: string;
-  delta: BatchDelta;
-}
-
-export interface ChartDimensions {
-  outerWidth: number;
-  outerHeight: number;
-  width: number;
-  height: number;
-  margin: typeof MARGIN;
-  blocksHeight: number;
-  blocksPadding: number;
-  blockSize: number;
-  totalWidth: number;
-}
 
 export const getDimensions = (
   outerWidth: number,

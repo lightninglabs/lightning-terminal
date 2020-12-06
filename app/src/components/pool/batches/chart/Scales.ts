@@ -1,7 +1,5 @@
 import * as d3 from 'd3';
-
-import { BatchChartData, ChartDimensions } from '../chart/chartUtils';
-import { D3Chart } from './';
+import { BatchChartData, Chart, ChartDimensions } from './types';
 
 export default class Scales {
   xScale: d3.ScaleBand<string>;
@@ -9,7 +7,7 @@ export default class Scales {
   yScaleOrders: d3.ScaleLinear<number, number, never>;
   yScaleRates: d3.ScaleLinear<number, number, never>;
 
-  constructor(chart: D3Chart, data: BatchChartData[]) {
+  constructor(chart: Chart, data: BatchChartData[]) {
     const { totalWidth, height, blocksHeight, blocksPadding } = chart.dimensions;
     console.log('D3Chart: Scales.ctor totalWidth', totalWidth);
     this.xScale = d3.scaleBand().range([totalWidth, 0]).padding(0.6);
@@ -24,7 +22,7 @@ export default class Scales {
     chart.onSizeChange(this.resize);
   }
 
-  update = (data: BatchChartData[], chart: D3Chart) => {
+  update = (data: BatchChartData[], chart: Chart) => {
     // bottom axis
     const { totalWidth } = chart.dimensions;
     this.xScale.domain(data.map(b => b.id)).range([totalWidth, 0]);

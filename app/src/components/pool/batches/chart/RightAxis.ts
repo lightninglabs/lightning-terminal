@@ -1,13 +1,12 @@
 import * as d3 from 'd3';
-
-import { ANIMATION_DURATION, BatchChartData, ChartDimensions } from '../chart/chartUtils';
-import { D3Chart } from './';
+import { ANIMATION_DURATION } from './chartUtils';
+import { BatchChartData, Chart, ChartDimensions } from './types';
 
 export default class RightAxis {
   yAxisRight: d3.Selection<SVGGElement, unknown, null, undefined>;
   yLabelRight: d3.Selection<SVGTextElement, unknown, null, undefined>;
 
-  constructor(chart: D3Chart) {
+  constructor(chart: Chart) {
     this.yAxisRight = chart.g.append('g').attr('class', 'y-axis-right');
     this.yLabelRight = this.yAxisRight
       .append('text')
@@ -24,7 +23,7 @@ export default class RightAxis {
     chart.onSizeChange(this.resize);
   }
 
-  update = (data: BatchChartData[], chart: D3Chart) => {
+  update = (data: BatchChartData[], chart: Chart) => {
     let axis = d3.axisRight<number>(chart.scales.yScaleOrders);
     const max = d3.max(data.map(d => d.orders));
     if (max && max < 10) {

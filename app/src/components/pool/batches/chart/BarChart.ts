@@ -1,14 +1,13 @@
 import * as d3 from 'd3';
-
-import { ANIMATION_DURATION, BatchChartData, ChartDimensions } from '../chart/chartUtils';
-import { D3Chart } from './';
+import { ANIMATION_DURATION } from './chartUtils';
+import { BatchChartData, Chart, ChartDimensions } from './types';
 
 export default class BarChart {
   gVolume: d3.Selection<SVGGElement, unknown, null, undefined>;
   gOrders: d3.Selection<SVGGElement, unknown, null, undefined>;
   innerScale: d3.ScaleBand<string>;
 
-  constructor(chart: D3Chart) {
+  constructor(chart: Chart) {
     this.gVolume = chart.clipped.append('g').attr('class', 'bars-volume');
     this.gOrders = chart.clipped.append('g').attr('class', 'bars-orders');
     // a scale for just the two bars
@@ -22,14 +21,14 @@ export default class BarChart {
     chart.onSizeChange(this.resize);
   }
 
-  update = (data: BatchChartData[], chart: D3Chart) => {
+  update = (data: BatchChartData[], chart: Chart) => {
     this.innerScale.range([0, chart.scales.xScale.bandwidth()]);
 
     this.updateVolume(data, chart);
     this.updateOrders(data, chart);
   };
 
-  updateVolume = (data: BatchChartData[], chart: D3Chart) => {
+  updateVolume = (data: BatchChartData[], chart: Chart) => {
     const { xScale, yScaleVolume } = chart.scales;
     const { height } = chart.dimensions;
 
@@ -71,7 +70,7 @@ export default class BarChart {
       .attr('height', d => height - yScaleVolume(d.volume));
   };
 
-  updateOrders = (data: BatchChartData[], chart: D3Chart) => {
+  updateOrders = (data: BatchChartData[], chart: Chart) => {
     const { xScale, yScaleOrders } = chart.scales;
     const { height } = chart.dimensions;
 
@@ -113,7 +112,7 @@ export default class BarChart {
       .attr('height', d => height - yScaleOrders(d.orders));
   };
 
-  resize = (d: ChartDimensions, chart: D3Chart) => {
+  resize = (d: ChartDimensions, chart: Chart) => {
     const { xScale } = chart.scales;
     this.innerScale = d3
       .scaleBand()

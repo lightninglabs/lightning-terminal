@@ -1,13 +1,12 @@
 import * as d3 from 'd3';
-
-import { ANIMATION_DURATION, BatchChartData, ChartDimensions } from '../chart/chartUtils';
-import { D3Chart } from './';
+import { ANIMATION_DURATION } from './chartUtils';
+import { BatchChartData, Chart, ChartDimensions } from './types';
 
 export default class LeftAxis {
   yAxisLeft: d3.Selection<SVGGElement, unknown, null, undefined>;
   yLabelLeft: d3.Selection<SVGTextElement, unknown, null, undefined>;
 
-  constructor(chart: D3Chart) {
+  constructor(chart: Chart) {
     this.yAxisLeft = chart.g.append('g').attr('class', 'y-axis-left');
     this.yLabelLeft = this.yAxisLeft
       .append('text')
@@ -24,7 +23,7 @@ export default class LeftAxis {
     chart.onSizeChange(this.resize);
   }
 
-  update = (data: BatchChartData[], chart: D3Chart) => {
+  update = (data: BatchChartData[], chart: Chart) => {
     this.yAxisLeft
       .transition()
       .duration(ANIMATION_DURATION)
