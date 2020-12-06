@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { BatchChartData, Chart, ChartDimensions } from './types';
+import { Chart, ChartDimensions, ChartResizeEvent, ChartUpdateEvent } from './types';
 
 export default class Zoomer {
   private _loading = false;
@@ -29,24 +29,19 @@ export default class Zoomer {
         this.zoom.translateBy(chart.svg.transition().duration(10), e.deltaY, 0);
       });
 
-    chart.onData(this.update);
-    chart.onSizeChange(this.resize);
+    chart.on('update', this.update);
+    chart.on('resize', this.resize);
 
     // keep a reference to the func this class should use to fetch past batches
     this._fetchBatches = fetchBatches;
   }
 
-  update = (
-    data: BatchChartData[],
-    chart: Chart,
-    pastData: boolean,
-    prevDimensions?: ChartDimensions,
-  ) => {
+  update = ({ chart, pastData, prevDimensions }: ChartUpdateEvent) => {
     this._loading = false;
     this.resizeZoom(chart, pastData, prevDimensions);
   };
 
-  resize = (d: ChartDimensions, chart: Chart) => {
+  resize = ({ chart }: ChartResizeEvent) => {
     this.resizeZoom(chart);
   };
 

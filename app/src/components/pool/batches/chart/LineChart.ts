@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { BatchChartData, Chart } from './types';
+import { BatchChartData, Chart, ChartUpdateEvent } from './types';
 
 export default class LineChart {
   path: d3.Selection<SVGPathElement, unknown, null, undefined>;
@@ -21,10 +21,10 @@ export default class LineChart {
       .attr('stroke-dasharray', 4)
       .attr('d', this.line(chart.data) || '');
 
-    chart.onData(this.update);
+    chart.on('update', this.update);
   }
 
-  update = (data: BatchChartData[], chart: Chart, pastData: boolean) => {
+  update = ({ chart, pastData }: ChartUpdateEvent) => {
     const { xScale, yScaleRates } = chart.scales;
 
     this.line

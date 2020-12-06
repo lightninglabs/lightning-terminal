@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { BatchChartData, Chart, ChartDimensions } from './types';
+import { BatchChartData, Chart, ChartResizeEvent, ChartUpdateEvent } from './types';
 
 export default class BarChart {
   gVolume: d3.Selection<SVGGElement, unknown, null, undefined>;
@@ -16,11 +16,11 @@ export default class BarChart {
       .range([0, chart.scales.xScale.bandwidth()])
       .padding(0.8);
 
-    chart.onData(this.update);
-    chart.onSizeChange(this.resize);
+    chart.on('update', this.update);
+    chart.on('resize', this.resize);
   }
 
-  update = (data: BatchChartData[], chart: Chart) => {
+  update = ({ data, chart }: ChartUpdateEvent) => {
     this.innerScale.range([0, chart.scales.xScale.bandwidth()]);
 
     this.updateVolume(data, chart);
@@ -111,7 +111,7 @@ export default class BarChart {
       .attr('height', d => height - yScaleOrders(d.orders));
   };
 
-  resize = (d: ChartDimensions, chart: Chart) => {
+  resize = ({ chart }: ChartResizeEvent) => {
     const { xScale } = chart.scales;
     this.innerScale = d3
       .scaleBand()

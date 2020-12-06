@@ -1,4 +1,5 @@
 import * as d3 from 'd3';
+import BaseEmitter from 'util/BaseEmitter';
 import { Batch } from 'store/models';
 import {
   BarChart,
@@ -12,12 +13,11 @@ import {
 import LineChart from './LineChart';
 
 import type {
-  DataListener,
-  SizeListener,
   ChartConfig,
   ChartDimensions,
   BatchChartData,
   Chart,
+  ChartEvents,
 } from './types';
 
 const TOP_HEIGHT_RATIO = 0.6;
@@ -26,15 +26,7 @@ const MARGIN = { top: 0, right: 30, bottom: 30, left: 50 };
 const COL_WIDTH = 150;
 const ANIMATION_DURATION = 1000;
 
-export default class D3Chart implements Chart {
-  private _listeners: {
-    data: DataListener[];
-    size: SizeListener[];
-  } = {
-    data: [],
-    size: [],
-  };
-
+export default class D3Chart extends BaseEmitter<ChartEvents> implements Chart {
   svg: d3.Selection<SVGSVGElement, unknown, null, undefined>;
   g: d3.Selection<SVGGElement, unknown, null, undefined>;
   clipped: d3.Selection<SVGGElement, unknown, null, undefined>;
@@ -47,6 +39,8 @@ export default class D3Chart implements Chart {
   duration = ANIMATION_DURATION;
 
   constructor(config: ChartConfig) {
+    super();
+
     const { element, batches, outerWidth, outerHeight } = config;
     console.log(`D3Chart: creating chart ${outerWidth} ${outerHeight}`);
     this.data = this._convertData(batches);
@@ -116,7 +110,7 @@ export default class D3Chart implements Chart {
       batches.length,
     );
 
-    this._listeners.data.forEach(func => func(this.data, this, pastData, prev));
+    this.emit('update', { data: this.data, chart: this, pastData, prevDimensions: prev });
   };
 
   resize = (outerWidth: number, outerHeight: number) => {
@@ -129,11 +123,8 @@ export default class D3Chart implements Chart {
       .attr('width', width - 1)
       .attr('height', height + margin.bottom);
 
-    this._listeners.size.forEach(func => func(this.dimensions, this));
+    this.emit('resize', { dimensions: this.dimensions, chart: this });
   };
-
-  onData = (listener: DataListener) => this._listeners.data.push(listener);
-  onSizeChange = (listener: SizeListener) => this._listeners.size.push(listener);
 
   private _getDimensions = (
     outerWidth: number,

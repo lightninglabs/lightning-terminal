@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { BatchChartData, Chart, ChartDimensions } from './types';
+import { Chart, ChartResizeEvent, ChartUpdateEvent } from './types';
 
 export default class BottomAxis {
   xAxis: d3.Selection<SVGGElement, unknown, null, undefined>;
@@ -7,15 +7,15 @@ export default class BottomAxis {
   constructor(chart: Chart) {
     this.xAxis = chart.clipped.append('g').attr('class', 'axis-bottom');
 
-    chart.onData(this.update);
-    chart.onSizeChange(this.resize);
+    chart.on('update', this.update);
+    chart.on('resize', this.resize);
   }
 
-  update = (data: BatchChartData[], chart: Chart) => {
+  update = ({ chart }: ChartUpdateEvent) => {
     this.xAxis.call(d3.axisBottom(chart.scales.xScale));
   };
 
-  resize = (d: ChartDimensions) => {
-    this.xAxis.attr('transform', `translate(0, ${d.height})`);
+  resize = ({ dimensions }: ChartResizeEvent) => {
+    this.xAxis.attr('transform', `translate(0, ${dimensions.height})`);
   };
 }

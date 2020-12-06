@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { BatchChartData, Chart, ChartDimensions } from './types';
+import { BatchChartData, Chart, ChartResizeEvent, ChartUpdateEvent } from './types';
 
 export default class Scales {
   xScale: d3.ScaleBand<string>;
@@ -17,12 +17,13 @@ export default class Scales {
       .scaleLinear()
       .range([blocksHeight - blocksPadding, blocksPadding]);
 
-    this.update(data, chart);
-    chart.onData(this.update);
-    chart.onSizeChange(this.resize);
+    this.update({ data, chart, pastData: false, prevDimensions: chart.dimensions });
+
+    chart.on('update', this.update);
+    chart.on('resize', this.resize);
   }
 
-  update = (data: BatchChartData[], chart: Chart) => {
+  update = ({ data, chart }: ChartUpdateEvent) => {
     // bottom axis
     const { totalWidth } = chart.dimensions;
     this.xScale.domain(data.map(b => b.id)).range([totalWidth, 0]);
@@ -34,11 +35,12 @@ export default class Scales {
     this.yScaleRates.domain([0, d3.max(data.map(b => b.rate)) as number]);
   };
 
-  resize = (d: ChartDimensions) => {
+  resize = ({ dimensions }: ChartResizeEvent) => {
+    const { height, totalWidth, blocksHeight, blocksPadding } = dimensions;
     // update axis scales
-    this.xScale.range([d.totalWidth, 0]);
-    this.yScaleVolume.range([d.height, d.blocksHeight]);
-    this.yScaleOrders.range([d.height, d.blocksHeight]);
-    this.yScaleRates.range([d.blocksHeight - d.blocksPadding, d.blocksPadding]);
+    this.xScale.range([totalWidth, 0]);
+    this.yScaleVolume.range([height, blocksHeight]);
+    this.yScaleOrders.range([height, blocksHeight]);
+    this.yScaleRates.range([blocksHeight - blocksPadding, blocksPadding]);
   };
 }

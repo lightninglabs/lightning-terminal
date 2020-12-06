@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { BatchChartData, Chart, ChartDimensions } from './types';
+import { Chart, ChartResizeEvent, ChartUpdateEvent } from './types';
 
 export default class LeftAxis {
   yAxisLeft: d3.Selection<SVGGElement, unknown, null, undefined>;
@@ -18,11 +18,11 @@ export default class LeftAxis {
       .style('fill', chart.palette('volume'))
       .text('volume');
 
-    chart.onData(this.update);
-    chart.onSizeChange(this.resize);
+    chart.on('update', this.update);
+    chart.on('resize', this.resize);
   }
 
-  update = (data: BatchChartData[], chart: Chart) => {
+  update = ({ chart }: ChartUpdateEvent) => {
     this.yAxisLeft
       .transition()
       .duration(chart.duration)
@@ -34,7 +34,7 @@ export default class LeftAxis {
       );
   };
 
-  resize = (d: ChartDimensions) => {
-    this.yLabelLeft.attr('x', -d.blocksHeight);
+  resize = ({ dimensions }: ChartResizeEvent) => {
+    this.yLabelLeft.attr('x', -dimensions.blocksHeight);
   };
 }

@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { BatchChartData, Chart } from './types';
+import { BatchChartData, Chart, ChartUpdateEvent } from './types';
 
 export default class BlocksChart {
   g: d3.Selection<SVGGElement, unknown, null, undefined>;
@@ -7,10 +7,10 @@ export default class BlocksChart {
   constructor(chart: Chart) {
     this.g = chart.clipped.append('g').attr('class', 'blocks-group');
 
-    chart.onData(this.update);
+    chart.on('update', this.update);
   }
 
-  update = (data: BatchChartData[], chart: Chart, pastData: boolean) => {
+  update = ({ data, chart, pastData }: ChartUpdateEvent) => {
     const { blockSize, blocksHeight } = chart.dimensions;
     const { xScale, yScaleRates } = chart.scales;
 

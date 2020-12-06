@@ -1,16 +1,26 @@
+import { Emitter } from 'types/emitter';
 import { Batch } from 'store/models';
 import { BatchDelta } from 'store/models/batch';
 import { Scales } from './';
 
-export type DataListener = (
-  data: BatchChartData[],
-  chart: Chart,
-  pastData: boolean,
-  prevDimensions?: ChartDimensions,
-) => void;
-export type SizeListener = (dimensions: ChartDimensions, chart: Chart) => void;
+export interface ChartUpdateEvent {
+  chart: Chart;
+  data: BatchChartData[];
+  pastData: boolean;
+  prevDimensions: ChartDimensions;
+}
 
-export interface Chart {
+export interface ChartResizeEvent {
+  chart: Chart;
+  dimensions: ChartDimensions;
+}
+
+export interface ChartEvents {
+  update: ChartUpdateEvent;
+  resize: ChartResizeEvent;
+}
+
+interface BaseChart {
   svg: d3.Selection<SVGSVGElement, unknown, null, undefined>;
   g: d3.Selection<SVGGElement, unknown, null, undefined>;
   clipped: d3.Selection<SVGGElement, unknown, null, undefined>;
@@ -21,10 +31,9 @@ export interface Chart {
 
   palette: d3.ScaleOrdinal<string, string, never>;
   duration: number;
-
-  onData: (listener: DataListener) => void;
-  onSizeChange: (listener: SizeListener) => void;
 }
+
+export type Chart = BaseChart & Emitter<ChartEvents>;
 
 export interface ChartConfig {
   element: SVGSVGElement;
