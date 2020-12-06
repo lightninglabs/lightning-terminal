@@ -10,17 +10,14 @@ import {
 
 type DataListener = (data: BatchChartData[], chart: D3Chart, pastData: boolean) => void;
 type SizeListener = (dimensions: ChartDimensions, chart: D3Chart) => void;
-type MoveListener = (e: d3.D3ZoomEvent<SVGSVGElement, unknown>, chart: D3Chart) => void;
 
 export default class D3Chart {
   private _listeners: {
     data: DataListener[];
     size: SizeListener[];
-    move: MoveListener[];
   } = {
     data: [],
     size: [],
-    move: [],
   };
 
   svg: d3.Selection<SVGSVGElement, unknown, null, undefined>;
@@ -172,24 +169,8 @@ export default class D3Chart {
     }
   };
 
-  moveChart = (e: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
-    const dimensions = this.dimensions;
-    const xScale = this.scales.xScale;
-    console.log(
-      'D3Chart: moveChart',
-      e.transform,
-      xScale.range(),
-      dimensions.totalWidth,
-      dimensions.width,
-      [dimensions.width - dimensions.totalWidth, dimensions.width],
-    );
-    this.clipped.attr('transform', `translate(${e.transform.x}, 0)`);
-    // this._listeners.move.forEach(func => func(e, this));
-  };
-
   onData = (listener: DataListener) => this._listeners.data.push(listener);
   onSizeChange = (listener: SizeListener) => this._listeners.size.push(listener);
-  onMove = (listener: MoveListener) => this._listeners.move.push(listener);
 }
 
 class Scales {
@@ -211,7 +192,6 @@ class Scales {
     this.update(data, chart);
     chart.onData(this.update);
     chart.onSizeChange(this.resize);
-    chart.onMove(this.move);
   }
 
   update = (data: BatchChartData[], chart: D3Chart) => {
@@ -233,13 +213,6 @@ class Scales {
     this.yScaleRight.range([d.height, d.blocksHeight]);
     this.yScaleBlocks.range([d.blocksHeight - d.blocksPadding, d.blocksPadding]);
   };
-
-  move = (e: d3.D3ZoomEvent<SVGSVGElement, unknown>, chart: D3Chart) => {
-    const { totalWidth, margin } = chart.dimensions;
-    this.xScale.range(
-      [margin.left, totalWidth + margin.left].map(d => e.transform.applyX(d)),
-    );
-  };
 }
 
 class BlocksChart {
@@ -249,7 +222,6 @@ class BlocksChart {
     this.g = chart.clipped.append('g').attr('class', 'blocks-group');
 
     chart.onData(this.update);
-    chart.onMove(this.move);
   }
 
   update = (data: BatchChartData[], chart: D3Chart, pastData: boolean) => {
@@ -324,10 +296,6 @@ class BlocksChart {
       .attr('font-size', 18)
       .text(d => d.pctChange);
   };
-
-  move = (e: d3.D3ZoomEvent<SVGSVGElement, unknown>, chart: D3Chart) => {
-    // this.draw(chart);
-  };
 }
 
 class LineChart {
@@ -351,15 +319,10 @@ class LineChart {
       .attr('d', this.line(chart.data) || '');
 
     chart.onData(this.update);
-    chart.onMove(this.move);
   }
 
   update = (data: BatchChartData[], chart: D3Chart, pastData: boolean) => {
     this.draw(chart, !pastData);
-  };
-
-  move = (e: d3.D3ZoomEvent<SVGSVGElement, unknown>, chart: D3Chart) => {
-    this.draw(chart);
   };
 
   draw = (chart: D3Chart, animated = false) => {
@@ -393,7 +356,6 @@ class BarChart {
 
     chart.onData(this.update);
     chart.onSizeChange(this.resize);
-    chart.onMove(this.move);
   }
 
   update = (data: BatchChartData[], chart: D3Chart) => {
@@ -503,21 +465,6 @@ class BarChart {
       .attr('width', this.innerScale.bandwidth())
       .attr('x', d => (xScale(d.id) || 0) + (this.innerScale('orders') || 0));
   };
-
-  move = (e: d3.D3ZoomEvent<SVGSVGElement, unknown>, chart: D3Chart) => {
-    const { xScale } = chart.scales;
-    this.innerScale = d3
-      .scaleBand()
-      .domain(['volume', 'orders'])
-      .range([0, xScale.bandwidth()])
-      .padding(0.1);
-    this.gVolume
-      .selectAll<SVGRectElement, BatchChartData>('rect')
-      .attr('x', d => (xScale(d.id) || 0) + (this.innerScale('volume') || 0));
-    this.gOrders
-      .selectAll<SVGRectElement, BatchChartData>('rect')
-      .attr('x', d => (xScale(d.id) || 0) + (this.innerScale('orders') || 0));
-  };
 }
 
 class BottomAxis {
@@ -528,7 +475,6 @@ class BottomAxis {
 
     chart.onData(this.update);
     chart.onSizeChange(this.resize);
-    chart.onMove(this.move);
   }
 
   update = (data: BatchChartData[], chart: D3Chart) => {
@@ -537,10 +483,6 @@ class BottomAxis {
 
   resize = (d: ChartDimensions) => {
     this.xAxis.attr('transform', `translate(0, ${d.height})`);
-  };
-
-  move = (e: d3.D3ZoomEvent<SVGSVGElement, unknown>, chart: D3Chart) => {
-    this.xAxis.call(d3.axisBottom(chart.scales.xScale));
   };
 }
 
