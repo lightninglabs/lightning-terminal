@@ -30,7 +30,7 @@ export default class LeftAxis {
         d3
           .axisLeft<number>(chart.scales.yScaleVolume)
           .ticks(5)
-          .tickFormat(v => `${(v / 1000000).toFixed(1)}M`),
+          .tickFormat(v => `${Math.round(v / 1000000)}M`),
       );
   };
 
