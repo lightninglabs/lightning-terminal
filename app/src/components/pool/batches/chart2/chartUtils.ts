@@ -4,12 +4,7 @@ export const ANIMATION_DURATION = 1000;
 
 const TOP_HEIGHT_RATIO = 0.6;
 const TOP_PADDING = 0.3;
-const MARGIN = {
-  top: 0,
-  right: 30,
-  bottom: 30,
-  left: 50,
-};
+const MARGIN = { top: 0, right: 30, bottom: 30, left: 50 };
 const COL_WIDTH = 150;
 
 export interface BatchChartData {

@@ -175,17 +175,17 @@ export default class D3Chart {
 
 class Scales {
   xScale: d3.ScaleBand<string>;
-  yScaleLeft: d3.ScaleLinear<number, number, never>;
-  yScaleRight: d3.ScaleLinear<number, number, never>;
-  yScaleBlocks: d3.ScaleLinear<number, number, never>;
+  yScaleVolume: d3.ScaleLinear<number, number, never>;
+  yScaleOrders: d3.ScaleLinear<number, number, never>;
+  yScaleRates: d3.ScaleLinear<number, number, never>;
 
   constructor(chart: D3Chart, data: BatchChartData[]) {
     const { totalWidth, height, blocksHeight, blocksPadding } = chart.dimensions;
     console.log('D3Chart: Scales.ctor totalWidth', totalWidth);
     this.xScale = d3.scaleBand().range([totalWidth, 0]).padding(0.6);
-    this.yScaleLeft = d3.scaleLinear().range([height, blocksHeight]);
-    this.yScaleRight = d3.scaleLinear().range([height, blocksHeight]);
-    this.yScaleBlocks = d3
+    this.yScaleVolume = d3.scaleLinear().range([height, blocksHeight]);
+    this.yScaleOrders = d3.scaleLinear().range([height, blocksHeight]);
+    this.yScaleRates = d3
       .scaleLinear()
       .range([blocksHeight - blocksPadding, blocksPadding]);
 
@@ -199,19 +199,19 @@ class Scales {
     const { totalWidth } = chart.dimensions;
     this.xScale.domain(data.map(b => b.id)).range([totalWidth, 0]);
     // left axis
-    this.yScaleLeft.domain([0, d3.max(data.map(b => b.volume)) as number]);
+    this.yScaleVolume.domain([0, d3.max(data.map(b => b.volume)) as number]);
     // right axis
-    this.yScaleRight.domain([0, d3.max(data.map(b => b.orders)) as number]);
+    this.yScaleOrders.domain([0, d3.max(data.map(b => b.orders)) as number]);
     // top y axis
-    this.yScaleBlocks.domain([0, d3.max(data.map(b => b.rate)) as number]);
+    this.yScaleRates.domain([0, d3.max(data.map(b => b.rate)) as number]);
   };
 
   resize = (d: ChartDimensions) => {
     // update axis scales
     this.xScale.range([d.totalWidth, 0]);
-    this.yScaleLeft.range([d.height, d.blocksHeight]);
-    this.yScaleRight.range([d.height, d.blocksHeight]);
-    this.yScaleBlocks.range([d.blocksHeight - d.blocksPadding, d.blocksPadding]);
+    this.yScaleVolume.range([d.height, d.blocksHeight]);
+    this.yScaleOrders.range([d.height, d.blocksHeight]);
+    this.yScaleRates.range([d.blocksHeight - d.blocksPadding, d.blocksPadding]);
   };
 }
 
@@ -226,11 +226,11 @@ class BlocksChart {
 
   update = (data: BatchChartData[], chart: D3Chart, pastData: boolean) => {
     const { blockSize, blocksHeight } = chart.dimensions;
-    const { xScale, yScaleBlocks } = chart.scales;
+    const { xScale, yScaleRates } = chart.scales;
 
     const getXY = (batch: BatchChartData) => ({
       x: (xScale(batch.id) || 0) + xScale.bandwidth() / 2 - blockSize / 2,
-      y: yScaleBlocks(batch.rate) - blockSize / 2,
+      y: yScaleRates(batch.rate) - blockSize / 2,
     });
 
     // JOIN
@@ -326,11 +326,11 @@ class LineChart {
   };
 
   draw = (chart: D3Chart, animated = false) => {
-    const { xScale, yScaleBlocks } = chart.scales;
+    const { xScale, yScaleRates } = chart.scales;
 
     this.line
       .x(b => (xScale(b.id) || 0) + xScale.bandwidth() / 2)
-      .y(b => yScaleBlocks(b.rate));
+      .y(b => yScaleRates(b.rate));
 
     this.path
       .transition()
@@ -366,7 +366,7 @@ class BarChart {
   };
 
   updateVolume = (data: BatchChartData[], chart: D3Chart) => {
-    const { xScale, yScaleLeft } = chart.scales;
+    const { xScale, yScaleVolume } = chart.scales;
     const { height } = chart.dimensions;
 
     // JOIN
@@ -388,8 +388,8 @@ class BarChart {
       .attr('width', this.innerScale.bandwidth())
       .transition()
       .duration(ANIMATION_DURATION)
-      .attr('y', d => yScaleLeft(d.volume))
-      .attr('height', d => height - yScaleLeft(d.volume));
+      .attr('y', d => yScaleVolume(d.volume))
+      .attr('height', d => height - yScaleVolume(d.volume));
 
     // ENTER
     bars
@@ -403,12 +403,12 @@ class BarChart {
       .attr('fill', chart.palette('volume'))
       .transition()
       .duration(ANIMATION_DURATION)
-      .attr('y', d => yScaleLeft(d.volume))
-      .attr('height', d => height - yScaleLeft(d.volume));
+      .attr('y', d => yScaleVolume(d.volume))
+      .attr('height', d => height - yScaleVolume(d.volume));
   };
 
   updateOrders = (data: BatchChartData[], chart: D3Chart) => {
-    const { xScale, yScaleRight } = chart.scales;
+    const { xScale, yScaleOrders } = chart.scales;
     const { height } = chart.dimensions;
 
     // JOIN
@@ -430,8 +430,8 @@ class BarChart {
       .attr('x', d => (xScale(d.id) || 0) + (this.innerScale('orders') || 0))
       .transition()
       .duration(ANIMATION_DURATION)
-      .attr('y', d => yScaleRight(d.orders))
-      .attr('height', d => height - yScaleRight(d.orders));
+      .attr('y', d => yScaleOrders(d.orders))
+      .attr('height', d => height - yScaleOrders(d.orders));
 
     // ENTER
     bars
@@ -445,8 +445,8 @@ class BarChart {
       .attr('fill', chart.palette('orders'))
       .transition()
       .duration(ANIMATION_DURATION)
-      .attr('y', d => yScaleRight(d.orders))
-      .attr('height', d => height - yScaleRight(d.orders));
+      .attr('y', d => yScaleOrders(d.orders))
+      .attr('height', d => height - yScaleOrders(d.orders));
   };
 
   resize = (d: ChartDimensions, chart: D3Chart) => {
@@ -513,7 +513,7 @@ class LeftAxis {
       .duration(ANIMATION_DURATION)
       .call(
         d3
-          .axisLeft<number>(chart.scales.yScaleLeft)
+          .axisLeft<number>(chart.scales.yScaleVolume)
           .ticks(5)
           .tickFormat(v => `${(v / 1000000).toFixed(1)}M`),
       );
@@ -546,7 +546,7 @@ class RightAxis {
   }
 
   update = (data: BatchChartData[], chart: D3Chart) => {
-    let axis = d3.axisRight<number>(chart.scales.yScaleRight);
+    let axis = d3.axisRight<number>(chart.scales.yScaleOrders);
     const max = d3.max(data.map(d => d.orders));
     if (max && max < 10) {
       axis = axis.ticks(max);
