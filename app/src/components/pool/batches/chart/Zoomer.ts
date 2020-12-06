@@ -1,5 +1,4 @@
 import * as d3 from 'd3';
-import { ANIMATION_DURATION } from './chartUtils';
 import { BatchChartData, Chart, ChartDimensions } from './types';
 
 export default class Zoomer {
@@ -65,7 +64,7 @@ export default class Zoomer {
 
     if (!pastData) {
       // show the new batch
-      const el = chart.svg.transition().duration(ANIMATION_DURATION);
+      const el = chart.svg.transition().duration(chart.duration);
       this.zoom.translateTo(el, 0, 0, [width - totalWidth, 0]);
     } else if (pastData && prevDimensions) {
       // loading old batches, stay in the same position. the total width of the
@@ -83,7 +82,7 @@ export default class Zoomer {
       // jump to the same position
       this.zoom.translateTo(chart.svg, 0, 0, [diff, 0]);
       // animate a bit less than one screen width to show the fetched batches
-      const el = chart.svg.transition().duration(ANIMATION_DURATION);
+      const el = chart.svg.transition().duration(chart.duration);
       this.zoom.translateTo(el, 0, 0, [diff + width - 150, 0]);
     }
   };

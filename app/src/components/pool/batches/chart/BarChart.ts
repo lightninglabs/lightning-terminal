@@ -1,5 +1,4 @@
 import * as d3 from 'd3';
-import { ANIMATION_DURATION } from './chartUtils';
 import { BatchChartData, Chart, ChartDimensions } from './types';
 
 export default class BarChart {
@@ -41,7 +40,7 @@ export default class BarChart {
     bars
       .exit<BatchChartData>()
       .transition()
-      .duration(ANIMATION_DURATION)
+      .duration(chart.duration)
       .attr('transform', d => `translate(${xScale(d.id)}, 0)`)
       .remove();
 
@@ -50,7 +49,7 @@ export default class BarChart {
       .attr('x', d => (xScale(d.id) || 0) + (this.innerScale('volume') || 0))
       .attr('width', this.innerScale.bandwidth())
       .transition()
-      .duration(ANIMATION_DURATION)
+      .duration(chart.duration)
       .attr('y', d => yScaleVolume(d.volume))
       .attr('height', d => height - yScaleVolume(d.volume));
 
@@ -65,7 +64,7 @@ export default class BarChart {
       .attr('height', 0)
       .attr('fill', chart.palette('volume'))
       .transition()
-      .duration(ANIMATION_DURATION)
+      .duration(chart.duration)
       .attr('y', d => yScaleVolume(d.volume))
       .attr('height', d => height - yScaleVolume(d.volume));
   };
@@ -83,7 +82,7 @@ export default class BarChart {
     bars
       .exit<BatchChartData>()
       .transition()
-      .duration(ANIMATION_DURATION)
+      .duration(chart.duration)
       .attr('transform', d => `translate(${xScale(d.id)}, 0)`)
       .remove();
 
@@ -92,7 +91,7 @@ export default class BarChart {
       .attr('width', this.innerScale.bandwidth())
       .attr('x', d => (xScale(d.id) || 0) + (this.innerScale('orders') || 0))
       .transition()
-      .duration(ANIMATION_DURATION)
+      .duration(chart.duration)
       .attr('y', d => yScaleOrders(d.orders))
       .attr('height', d => height - yScaleOrders(d.orders));
 
@@ -107,7 +106,7 @@ export default class BarChart {
       .attr('height', 0)
       .attr('fill', chart.palette('orders'))
       .transition()
-      .duration(ANIMATION_DURATION)
+      .duration(chart.duration)
       .attr('y', d => yScaleOrders(d.orders))
       .attr('height', d => height - yScaleOrders(d.orders));
   };

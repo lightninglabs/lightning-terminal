@@ -1,5 +1,4 @@
 import * as d3 from 'd3';
-import { ANIMATION_DURATION } from './chartUtils';
 import { BatchChartData, Chart, ChartDimensions } from './types';
 
 export default class RightAxis {
@@ -29,7 +28,7 @@ export default class RightAxis {
     if (max && max < 10) {
       axis = axis.ticks(max);
     }
-    this.yAxisRight.transition().duration(ANIMATION_DURATION).call(axis);
+    this.yAxisRight.transition().duration(chart.duration).call(axis);
   };
 
   resize = (d: ChartDimensions) => {

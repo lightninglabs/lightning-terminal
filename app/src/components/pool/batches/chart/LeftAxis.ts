@@ -1,5 +1,4 @@
 import * as d3 from 'd3';
-import { ANIMATION_DURATION } from './chartUtils';
 import { BatchChartData, Chart, ChartDimensions } from './types';
 
 export default class LeftAxis {
@@ -26,7 +25,7 @@ export default class LeftAxis {
   update = (data: BatchChartData[], chart: Chart) => {
     this.yAxisLeft
       .transition()
-      .duration(ANIMATION_DURATION)
+      .duration(chart.duration)
       .call(
         d3
           .axisLeft<number>(chart.scales.yScaleVolume)

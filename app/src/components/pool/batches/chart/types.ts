@@ -20,6 +20,7 @@ export interface Chart {
   data: BatchChartData[];
 
   palette: d3.ScaleOrdinal<string, string, never>;
+  duration: number;
 
   onData: (listener: DataListener) => void;
   onSizeChange: (listener: SizeListener) => void;

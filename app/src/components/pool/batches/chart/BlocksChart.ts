@@ -1,5 +1,4 @@
 import * as d3 from 'd3';
-import { ANIMATION_DURATION } from '../chart/chartUtils';
 import { BatchChartData, Chart } from './types';
 
 export default class BlocksChart {
@@ -32,7 +31,7 @@ export default class BlocksChart {
     batchGroups
       .transition()
       // don't animate when updating with past batches
-      .duration(pastData ? 0 : ANIMATION_DURATION)
+      .duration(pastData ? 0 : chart.duration)
       .attr('transform', b => `translate(${getXY(b).x}, ${getXY(b).y})`);
 
     // ENTER
@@ -47,7 +46,7 @@ export default class BlocksChart {
       )
       .call(g => this.createBlock(g, chart))
       .transition()
-      .duration(ANIMATION_DURATION)
+      .duration(chart.duration)
       .style('opacity', 1)
       .attr('transform', b => `translate(${getXY(b).x}, ${getXY(b).y})`);
   };

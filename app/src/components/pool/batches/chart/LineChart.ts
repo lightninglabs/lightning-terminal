@@ -1,5 +1,4 @@
 import * as d3 from 'd3';
-import { ANIMATION_DURATION } from './chartUtils';
 import { BatchChartData, Chart } from './types';
 
 export default class LineChart {
@@ -34,7 +33,7 @@ export default class LineChart {
 
     this.path
       .transition()
-      .duration(pastData ? 0 : ANIMATION_DURATION)
+      .duration(pastData ? 0 : chart.duration)
       .attr('d', this.line(chart.data) || '');
   };
 }
