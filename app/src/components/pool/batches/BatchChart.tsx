@@ -4,7 +4,7 @@ import useSize from 'hooks/useSize';
 import { useStore } from 'store';
 import LoaderLines from 'components/common/LoaderLines';
 import { styled } from 'components/theme';
-import D3Chart, { ChartConfig } from './chart2/D3Chart';
+import D3Chart, { ChartConfig } from './chart/D3Chart';
 
 const Styled = {
   Wrapper: styled.div`
