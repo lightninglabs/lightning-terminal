@@ -11,7 +11,7 @@ require (
 	github.com/lightninglabs/faraday v0.2.2-alpha
 	github.com/lightninglabs/lndclient v0.11.0-3
 	github.com/lightninglabs/loop v0.11.1-beta
-	github.com/lightninglabs/pool v0.3.3-alpha
+	github.com/lightninglabs/pool v0.3.4-alpha
 	github.com/lightningnetwork/lnd v0.11.1-beta
 	github.com/lightningnetwork/lnd/cert v1.0.3
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
