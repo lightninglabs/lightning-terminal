@@ -14,11 +14,6 @@ ENV GO111MODULE on
 
 ENV NODE_VERSION=v12.17.0
 
-# We need some additional proto files with google annotations, the version
-# should match what's in lnd's scripts/install_travis_proto.sh
-ENV PROTOC_VERSION=3.4.0
-ENV PROTOC_URL="https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip"
-
 # Install dependencies and install/build lightning-terminal.
 RUN apk add --no-cache --update alpine-sdk \
     git \
@@ -27,11 +22,6 @@ RUN apk add --no-cache --update alpine-sdk \
     bash \
     binutils \
     tar \
-    protobuf-dev \
-    zip \
-&& curl -sfSLO ${PROTOC_URL} \
-&& unzip protoc-${PROTOC_VERSION}-linux-x86_64.zip -d /usr/local \
-&& rm /usr/local/bin/protoc /usr/local/readme.txt \
 && touch ~/.bashrc \
 && curl -sfSLO https://unofficial-builds.nodejs.org/download/release/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64-musl.tar.xz \
 && tar -xf node-${NODE_VERSION}-linux-x64-musl.tar.xz -C /usr --strip 1 \
