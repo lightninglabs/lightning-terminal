@@ -6,13 +6,25 @@ FROM node:12.17.0-alpine as nodejsbuilder
 # master by default.
 ARG checkout="master"
 
+# There seem to be multiple problems when using yarn for a build inside of a
+# docker image:
+#   1. For building and installing node-gyp, python is required. This seems to
+#      be missing from the NodeJS base image for ARM builds (or is just required
+#      when building for ARM?).
+#   2. Because of a problem in the docker internal network on ARM, some TCP
+#      packages are being dropped and the yarn installation times out. This can
+#      be mitigated by switching to HTTP and increasing the network timeout.
+#      See https://github.com/yarnpkg/yarn/issues/5259 for more info.
 RUN apk add --no-cache --update alpine-sdk \
+    python \
     git \
   && git clone https://github.com/lightninglabs/lightning-terminal /go/src/github.com/lightninglabs/lightning-terminal \
   && cd /go/src/github.com/lightninglabs/lightning-terminal \
   && git checkout $checkout \
   && cd app \
-  && yarn install \
+  && npm config set registry "http://registry.npmjs.org" \
+  && yarn config set registry "http://registry.npmjs.org" \
+  && yarn install --frozen-lockfile --network-timeout 1000000 \
   && yarn build
 
 # The first stage is already done and all static assets should now be generated
