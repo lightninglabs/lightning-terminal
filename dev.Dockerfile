@@ -4,8 +4,12 @@ FROM node:12.17.0-alpine as nodejsbuilder
 # Copy in the local repository to build from.
 COPY . /go/src/github.com/lightninglabs/lightning-terminal
 
-RUN cd /go/src/github.com/lightninglabs/lightning-terminal/app \
-  && yarn install \
+RUN apk add --no-cache --update alpine-sdk \
+    python \
+  && cd /go/src/github.com/lightninglabs/lightning-terminal/app \
+  && npm config set registry "http://registry.npmjs.org" \
+  && yarn config set registry "http://registry.npmjs.org" \
+  && yarn install --frozen-lockfile --network-timeout 1000000 \
   && yarn build
 
 # The first stage is already done and all static assets should now be generated
