@@ -192,6 +192,14 @@ list:
 		grep -v Makefile | \
 		sort
 
+protos:
+	@$(call print, "Compiling protos.")
+	cd ./app; yarn protos
+
+protos-check: protos
+	@$(call print, "Verifying compiled protos.")
+	if test -n "$$(git describe --dirty | grep dirty)"; then echo "Protos not properly formatted or not compiled with v3.4.0"; git status; git diff; exit 1; fi
+
 clean:
 	@$(call print, "Cleaning source.$(NC)")
 	$(RM) ./lightning-terminal-debug
