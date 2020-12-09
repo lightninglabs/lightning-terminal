@@ -97,9 +97,11 @@ yarn-install:
 # ============
 # INSTALLATION
 # ============
-statik-build: $(STATIK_BIN) app-build
+statik-only: $(STATIK_BIN)
 	@$(call print, "Building statik package.")
 	statik -src=app/build
+
+statik-build: app-build statik-only
 
 build: statik-build go-build
 install: statik-build go-install
