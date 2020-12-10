@@ -2,6 +2,7 @@ import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { Section } from 'components/base';
 import { styled } from 'components/theme';
+import BatchChart from './batches/BatchChart';
 import BatchList from './batches/BatchList';
 import BatchStats from './batches/BatchStats';
 
@@ -19,6 +20,7 @@ const BatchSection: React.FC = () => {
   return (
     <Section>
       <BatchStats />
+      <BatchChart />
       <BatchList />
     </Section>
   );
