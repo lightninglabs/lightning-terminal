@@ -6,7 +6,6 @@ installed on your machine.
 | Dependency                                          | Description                                                                                                                                                                          |
 | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | [golang](https://golang.org/doc/install)            | LiT's backend web server is written in Go. The minimum version supported is Go v1.13.                                                                                                |
-| [protoc 3.4.0](https://github.com/lightningnetwork/lnd/tree/master/lnrpc#generate-protobuf-definitions) | Required to compile LND & Loop gRPC proto files at build time. Must be installed according to step 1 of the linked guide.  |
 | [nodejs](https://nodejs.org/en/download/)           | LiT's frontend is written in TypeScript and built on top of the React JS web framework. To bundle the assets into Javascript & CSS compatible with web browsers, NodeJS is required. |
 | [yarn](https://classic.yarnpkg.com/en/docs/install) | A popular package manager for NodeJS application dependencies.                                                                                                                        |
 
@@ -67,3 +66,37 @@ GitHub so you don't need to install any dependencies:
 ```shell script
 $ docker build -t lightninglabs/lightning-terminal --build-arg checkout=v0.3.2-alpha .
 ```
+
+### Compiling gRPC proto files
+
+When the gRPC protocol buffer definition files for `lnd` or `loop` are
+updated with new releases, the [generated](../src/types/generated/) JS/TS files should be
+updated as well. This should only be done when the versions of the daemons packaged in
+Terminal are updated.
+
+To compile the proto files into JS/TS code, follow the following steps:
+
+1. Install `protoc` **v3.4.0** if you do not already have it installed. Follow the
+   instructions in
+   [this guide](https://github.com/lightningnetwork/lnd/tree/master/lnrpc#generate-protobuf-definitions).
+   Be sure to install the specific **v3.4.0** version of `protoc`. Newer versions will not
+   work properly.
+   
+   > Note: if you are running on a Mac, you only need to perform step 1
+1. Update the version of `lnd` and/or `loop` at the top of the [build-protos.js](../src/scripts/build-protos.js)
+   file.
+1. Run the following command to download the proto files from each repo and compile the
+   JS/TS code using the updated protos.
+   ```shell script
+   $ cd app
+   $ yarn protos
+   ```
+1. Fix any typing, linting, or unit test failures introduced by the update. Run the
+   commands below to find and fix these errors in the app code.
+   ```shell script
+   $ cd app
+   $ yarn tsc
+   $ yarn lint
+   $ yarn test:ci
+   ```
+1. Once all errors have been resolved, commit your changes and open a PR
