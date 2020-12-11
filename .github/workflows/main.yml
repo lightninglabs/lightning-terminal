@@ -8,6 +8,10 @@ on:
     branches:
       - "*"
 
+env:
+  # go needs absolute directories, using the $HOME variable doesn't work here.
+  DOWNLOAD_CACHE: /home/runner/work/download_cache
+
 jobs:
   frontend:
     name: frontend tests on ${{ matrix.os }}
@@ -118,3 +122,54 @@ jobs:
 
       - name: build backend binary
         run: make build
+
+  proto-compile-check:
+    name: RPC proto compilation check
+    runs-on: ubuntu-latest
+    steps:
+      - name: set git config
+        run: |
+          git config --global core.eol lf
+          git config --global core.autocrlf false
+
+      - name: git checkout
+        uses: actions/checkout@v2
+
+      - name: setup nodejs v${{ matrix.node_version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12.x
+
+      - name: download cache
+        uses: actions/cache@v1
+        with:
+          path: /home/runner/work/download_cache
+          key: lnd-${{ runner.os }}-download-${{ hashFiles('**/install_protoc.sh') }}
+          restore-keys: |
+            lnd-${{ runner.os }}-download-${{ hashFiles('**/install_protoc.sh') }}
+            lnd-${{ runner.os }}-download-
+
+      - name: install protoc and protobuf libraries
+        run: ./scripts/install_protoc.sh
+
+      - name: get yarn cache dir
+        id: yarn-cache-dir
+        run: echo "::set-output name=dir::$(yarn cache dir)"
+
+      - name: yarn cache
+        uses: actions/cache@v2
+        id: yarn-cache
+        with:
+          path: ${{ steps.yarn-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-yarn-${{ matrix.node_version }}-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-${{ matrix.node_version }}-${{ hashFiles('**/yarn.lock') }}
+            ${{ runner.os }}-yarn-${{ matrix.node_version }}-
+            ${{ runner.os }}-yarn-
+
+      - name: install dependencies
+        working-directory: ./app
+        run: yarn
+
+      - name: run check
+        run: make protos-check

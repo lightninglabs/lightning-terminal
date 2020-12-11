@@ -1,48 +1,54 @@
-FROM golang:1.15.5-alpine as builder
-
-# Force Go to use the cgo based DNS resolver. This is required to ensure DNS
-# queries required to connect to linked containers succeed.
-ENV GODEBUG netdns=cgo
+# Start with a NodeJS base image that also contains yarn.
+FROM node:12.17.0-alpine as nodejsbuilder
 
 # Pass a tag, branch or a commit using build-arg. This allows a docker image to
 # be built from a specified Git state. The default image will use the Git tip of
 # master by default.
 ARG checkout="master"
 
+# There seem to be multiple problems when using yarn for a build inside of a
+# docker image:
+#   1. For building and installing node-gyp, python is required. This seems to
+#      be missing from the NodeJS base image for ARM builds (or is just required
+#      when building for ARM?).
+#   2. Because of a problem in the docker internal network on ARM, some TCP
+#      packages are being dropped and the yarn installation times out. This can
+#      be mitigated by switching to HTTP and increasing the network timeout.
+#      See https://github.com/yarnpkg/yarn/issues/5259 for more info.
+RUN apk add --no-cache --update alpine-sdk \
+    python \
+    git \
+  && git clone https://github.com/lightninglabs/lightning-terminal /go/src/github.com/lightninglabs/lightning-terminal \
+  && cd /go/src/github.com/lightninglabs/lightning-terminal \
+  && git checkout $checkout \
+  && cd app \
+  && npm config set registry "http://registry.npmjs.org" \
+  && yarn config set registry "http://registry.npmjs.org" \
+  && yarn install --frozen-lockfile --network-timeout 1000000 \
+  && yarn build
+
+# The first stage is already done and all static assets should now be generated
+# in the app/build sub directory.
+FROM golang:1.15.5-alpine as golangbuilder
+
+# Instead of checking out from git again, we just copy the whole working
+# directory of the previous stage that includes the generated static assets.
+COPY --from=nodejsbuilder /go/src/github.com/lightninglabs/lightning-terminal /go/src/github.com/lightninglabs/lightning-terminal
+
+# Force Go to use the cgo based DNS resolver. This is required to ensure DNS
+# queries required to connect to linked containers succeed.
+ENV GODEBUG netdns=cgo
+
 # Explicitly turn on the use of modules (until this becomes the default).
 ENV GO111MODULE on
 
-ENV NODE_VERSION=v12.17.0
-
-# We need some additional proto files with google annotations, the version
-# should match what's in lnd's scripts/install_travis_proto.sh
-ENV PROTOC_VERSION=3.4.0
-ENV PROTOC_URL="https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip"
-
 # Install dependencies and install/build lightning-terminal.
 RUN apk add --no-cache --update alpine-sdk \
-    git \
     make \
-    curl \
-    bash \
-    binutils \
-    tar \
-    protobuf-dev \
-    zip \
-&& curl -sfSLO ${PROTOC_URL} \
-&& unzip protoc-${PROTOC_VERSION}-linux-x86_64.zip -d /usr/local \
-&& rm /usr/local/bin/protoc /usr/local/readme.txt \
-&& touch ~/.bashrc \
-&& curl -sfSLO https://unofficial-builds.nodejs.org/download/release/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64-musl.tar.xz \
-&& tar -xf node-${NODE_VERSION}-linux-x64-musl.tar.xz -C /usr --strip 1 \
-&& rm node-${NODE_VERSION}-linux-x64-musl.tar.xz \
-&& curl -o- -L https://yarnpkg.com/install.sh | bash \
-&& . ~/.bashrc \
-&& git clone https://github.com/lightninglabs/lightning-terminal /go/src/github.com/lightninglabs/lightning-terminal \
-&& cd /go/src/github.com/lightninglabs/lightning-terminal \
-&& git checkout $checkout \
-&& make install \
-&& make go-install-cli
+  && cd /go/src/github.com/lightninglabs/lightning-terminal \
+  && make statik-only \
+  && make go-install \
+  && make go-install-cli
 
 # Start a new, final image to reduce size.
 FROM alpine as final
@@ -54,11 +60,11 @@ VOLUME /root/.lnd
 EXPOSE 8443 10009 9735
 
 # Copy the binaries and entrypoint from the builder image.
-COPY --from=builder /go/bin/litd /bin/
-COPY --from=builder /go/bin/lncli /bin/
-COPY --from=builder /go/bin/frcli /bin/
-COPY --from=builder /go/bin/loop /bin/
-COPY --from=builder /go/bin/pool /bin/
+COPY --from=golangbuilder /go/bin/litd /bin/
+COPY --from=golangbuilder /go/bin/lncli /bin/
+COPY --from=golangbuilder /go/bin/frcli /bin/
+COPY --from=golangbuilder /go/bin/loop /bin/
+COPY --from=golangbuilder /go/bin/pool /bin/
 
 # Add bash.
 RUN apk add --no-cache \

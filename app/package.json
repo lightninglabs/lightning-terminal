@@ -12,7 +12,6 @@
     "eject": "react-scripts eject",
     "lint": "eslint --ext .ts,.tsx --ignore-path .eslintignore .",
     "tsc": "tsc --noEmit",
-    "postinstall": "yarn protos",
     "protos": "node ./scripts/build-protos.js",
     "storybook": "start-storybook -p 9009 -s public",
     "build-storybook": "build-storybook -s public"

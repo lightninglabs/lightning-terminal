@@ -97,9 +97,11 @@ yarn-install:
 # ============
 # INSTALLATION
 # ============
-statik-build: $(STATIK_BIN) app-build
+statik-only: $(STATIK_BIN)
 	@$(call print, "Building statik package.")
 	statik -src=app/build
+
+statik-build: app-build statik-only
 
 build: statik-build go-build
 install: statik-build go-install
@@ -191,6 +193,14 @@ list:
 		awk -F':' '/^[a-zA-Z0-9][^$$#\/\t=]*:([^=]|$$)/ {split($$1,A,/ /);for(i in A)print A[i]}' | \
 		grep -v Makefile | \
 		sort
+
+protos:
+	@$(call print, "Compiling protos.")
+	cd ./app; yarn protos
+
+protos-check: protos
+	@$(call print, "Verifying compiled protos.")
+	if test -n "$$(git describe --dirty | grep dirty)"; then echo "Protos not properly formatted or not compiled with v3.4.0"; git status; git diff; exit 1; fi
 
 clean:
 	@$(call print, "Cleaning source.$(NC)")
