@@ -508,6 +508,15 @@ type LightningBakeMacaroon = {
   readonly responseType: typeof lnd_pb.BakeMacaroonResponse;
 };
 
+type LightningListPermissions = {
+  readonly methodName: string;
+  readonly service: typeof Lightning;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof lnd_pb.ListPermissionsRequest;
+  readonly responseType: typeof lnd_pb.ListPermissionsResponse;
+};
+
 export class Lightning {
   static readonly serviceName: string;
   static readonly WalletBalance: LightningWalletBalance;
@@ -566,6 +575,7 @@ export class Lightning {
   static readonly RestoreChannelBackups: LightningRestoreChannelBackups;
   static readonly SubscribeChannelBackups: LightningSubscribeChannelBackups;
   static readonly BakeMacaroon: LightningBakeMacaroon;
+  static readonly ListPermissions: LightningListPermissions;
 }
 
 export type ServiceError = { message: string, code: number; metadata: grpc.Metadata }
@@ -1015,6 +1025,15 @@ export class LightningClient {
   bakeMacaroon(
     requestMessage: lnd_pb.BakeMacaroonRequest,
     callback: (error: ServiceError|null, responseMessage: lnd_pb.BakeMacaroonResponse|null) => void
+  ): UnaryResponse;
+  listPermissions(
+    requestMessage: lnd_pb.ListPermissionsRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: lnd_pb.ListPermissionsResponse|null) => void
+  ): UnaryResponse;
+  listPermissions(
+    requestMessage: lnd_pb.ListPermissionsRequest,
+    callback: (error: ServiceError|null, responseMessage: lnd_pb.ListPermissionsResponse|null) => void
   ): UnaryResponse;
 }
 

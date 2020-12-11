@@ -114,10 +114,14 @@ goog.exportSymbol('proto.lnrpc.ListPaymentsRequest', null, global);
 goog.exportSymbol('proto.lnrpc.ListPaymentsResponse', null, global);
 goog.exportSymbol('proto.lnrpc.ListPeersRequest', null, global);
 goog.exportSymbol('proto.lnrpc.ListPeersResponse', null, global);
+goog.exportSymbol('proto.lnrpc.ListPermissionsRequest', null, global);
+goog.exportSymbol('proto.lnrpc.ListPermissionsResponse', null, global);
 goog.exportSymbol('proto.lnrpc.ListUnspentRequest', null, global);
 goog.exportSymbol('proto.lnrpc.ListUnspentResponse', null, global);
 goog.exportSymbol('proto.lnrpc.MPPRecord', null, global);
+goog.exportSymbol('proto.lnrpc.MacaroonId', null, global);
 goog.exportSymbol('proto.lnrpc.MacaroonPermission', null, global);
+goog.exportSymbol('proto.lnrpc.MacaroonPermissionList', null, global);
 goog.exportSymbol('proto.lnrpc.MultiChanBackup', null, global);
 goog.exportSymbol('proto.lnrpc.NetworkInfo', null, global);
 goog.exportSymbol('proto.lnrpc.NetworkInfoRequest', null, global);
@@ -131,6 +135,7 @@ goog.exportSymbol('proto.lnrpc.NodeMetricsRequest', null, global);
 goog.exportSymbol('proto.lnrpc.NodeMetricsResponse', null, global);
 goog.exportSymbol('proto.lnrpc.NodePair', null, global);
 goog.exportSymbol('proto.lnrpc.NodeUpdate', null, global);
+goog.exportSymbol('proto.lnrpc.Op', null, global);
 goog.exportSymbol('proto.lnrpc.OpenChannelRequest', null, global);
 goog.exportSymbol('proto.lnrpc.OpenStatusUpdate', null, global);
 goog.exportSymbol('proto.lnrpc.OutPoint', null, global);
@@ -14247,7 +14252,8 @@ proto.lnrpc.OpenChannelRequest.toObject = function(includeInstance, msg) {
     spendUnconfirmed: jspb.Message.getFieldWithDefault(msg, 12, false),
     closeAddress: jspb.Message.getFieldWithDefault(msg, 13, ""),
     fundingShim: (f = msg.getFundingShim()) && proto.lnrpc.FundingShim.toObject(includeInstance, f),
-    remoteMaxValueInFlightMsat: jspb.Message.getFieldWithDefault(msg, 15, 0)
+    remoteMaxValueInFlightMsat: jspb.Message.getFieldWithDefault(msg, 15, 0),
+    remoteMaxHtlcs: jspb.Message.getFieldWithDefault(msg, 16, 0)
   };
 
   if (includeInstance) {
@@ -14340,6 +14346,10 @@ proto.lnrpc.OpenChannelRequest.deserializeBinaryFromReader = function(msg, reade
     case 15:
       var value = /** @type {number} */ (reader.readUint64());
       msg.setRemoteMaxValueInFlightMsat(value);
+      break;
+    case 16:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setRemoteMaxHtlcs(value);
       break;
     default:
       reader.skipField();
@@ -14466,6 +14476,13 @@ proto.lnrpc.OpenChannelRequest.serializeBinaryToWriter = function(message, write
   if (f !== 0) {
     writer.writeUint64(
       15,
+      f
+    );
+  }
+  f = message.getRemoteMaxHtlcs();
+  if (f !== 0) {
+    writer.writeUint32(
+      16,
       f
     );
   }
@@ -14722,6 +14739,21 @@ proto.lnrpc.OpenChannelRequest.prototype.getRemoteMaxValueInFlightMsat = functio
 /** @param {number} value */
 proto.lnrpc.OpenChannelRequest.prototype.setRemoteMaxValueInFlightMsat = function(value) {
   jspb.Message.setField(this, 15, value);
+};
+
+
+/**
+ * optional uint32 remote_max_htlcs = 16;
+ * @return {number}
+ */
+proto.lnrpc.OpenChannelRequest.prototype.getRemoteMaxHtlcs = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 16, 0));
+};
+
+
+/** @param {number} value */
+proto.lnrpc.OpenChannelRequest.prototype.setRemoteMaxHtlcs = function(value) {
+  jspb.Message.setField(this, 16, value);
 };
 
 
@@ -16694,7 +16726,8 @@ proto.lnrpc.FundingPsbtFinalize.prototype.toObject = function(opt_includeInstanc
 proto.lnrpc.FundingPsbtFinalize.toObject = function(includeInstance, msg) {
   var f, obj = {
     signedPsbt: msg.getSignedPsbt_asB64(),
-    pendingChanId: msg.getPendingChanId_asB64()
+    pendingChanId: msg.getPendingChanId_asB64(),
+    finalRawTx: msg.getFinalRawTx_asB64()
   };
 
   if (includeInstance) {
@@ -16739,6 +16772,10 @@ proto.lnrpc.FundingPsbtFinalize.deserializeBinaryFromReader = function(msg, read
       var value = /** @type {!Uint8Array} */ (reader.readBytes());
       msg.setPendingChanId(value);
       break;
+    case 3:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setFinalRawTx(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -16779,6 +16816,13 @@ proto.lnrpc.FundingPsbtFinalize.serializeBinaryToWriter = function(message, writ
   if (f.length > 0) {
     writer.writeBytes(
       2,
+      f
+    );
+  }
+  f = message.getFinalRawTx_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      3,
       f
     );
   }
@@ -16860,6 +16904,45 @@ proto.lnrpc.FundingPsbtFinalize.prototype.getPendingChanId_asU8 = function() {
 /** @param {!(string|Uint8Array)} value */
 proto.lnrpc.FundingPsbtFinalize.prototype.setPendingChanId = function(value) {
   jspb.Message.setField(this, 2, value);
+};
+
+
+/**
+ * optional bytes final_raw_tx = 3;
+ * @return {!(string|Uint8Array)}
+ */
+proto.lnrpc.FundingPsbtFinalize.prototype.getFinalRawTx = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
+};
+
+
+/**
+ * optional bytes final_raw_tx = 3;
+ * This is a type-conversion wrapper around `getFinalRawTx()`
+ * @return {string}
+ */
+proto.lnrpc.FundingPsbtFinalize.prototype.getFinalRawTx_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getFinalRawTx()));
+};
+
+
+/**
+ * optional bytes final_raw_tx = 3;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getFinalRawTx()`
+ * @return {!Uint8Array}
+ */
+proto.lnrpc.FundingPsbtFinalize.prototype.getFinalRawTx_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getFinalRawTx()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.lnrpc.FundingPsbtFinalize.prototype.setFinalRawTx = function(value) {
+  jspb.Message.setField(this, 3, value);
 };
 
 
@@ -31964,7 +32047,8 @@ proto.lnrpc.AbandonChannelRequest.prototype.toObject = function(opt_includeInsta
  */
 proto.lnrpc.AbandonChannelRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-    channelPoint: (f = msg.getChannelPoint()) && proto.lnrpc.ChannelPoint.toObject(includeInstance, f)
+    channelPoint: (f = msg.getChannelPoint()) && proto.lnrpc.ChannelPoint.toObject(includeInstance, f),
+    pendingFundingShimOnly: jspb.Message.getFieldWithDefault(msg, 2, false)
   };
 
   if (includeInstance) {
@@ -32006,6 +32090,10 @@ proto.lnrpc.AbandonChannelRequest.deserializeBinaryFromReader = function(msg, re
       reader.readMessage(value,proto.lnrpc.ChannelPoint.deserializeBinaryFromReader);
       msg.setChannelPoint(value);
       break;
+    case 2:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setPendingFundingShimOnly(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -32043,6 +32131,13 @@ proto.lnrpc.AbandonChannelRequest.serializeBinaryToWriter = function(message, wr
       proto.lnrpc.ChannelPoint.serializeBinaryToWriter
     );
   }
+  f = message.getPendingFundingShimOnly();
+  if (f) {
+    writer.writeBool(
+      2,
+      f
+    );
+  }
 };
 
 
@@ -32073,6 +32168,23 @@ proto.lnrpc.AbandonChannelRequest.prototype.clearChannelPoint = function() {
  */
 proto.lnrpc.AbandonChannelRequest.prototype.hasChannelPoint = function() {
   return jspb.Message.getField(this, 1) != null;
+};
+
+
+/**
+ * optional bool pending_funding_shim_only = 2;
+ * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
+ * You should avoid comparisons like {@code val === true/false} in those cases.
+ * @return {boolean}
+ */
+proto.lnrpc.AbandonChannelRequest.prototype.getPendingFundingShimOnly = function() {
+  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 2, false));
+};
+
+
+/** @param {boolean} value */
+proto.lnrpc.AbandonChannelRequest.prototype.setPendingFundingShimOnly = function(value) {
+  jspb.Message.setField(this, 2, value);
 };
 
 
@@ -37427,6 +37539,434 @@ proto.lnrpc.BakeMacaroonResponse.prototype.setMacaroon = function(value) {
  * @extends {jspb.Message}
  * @constructor
  */
+proto.lnrpc.MacaroonPermissionList = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.lnrpc.MacaroonPermissionList.repeatedFields_, null);
+};
+goog.inherits(proto.lnrpc.MacaroonPermissionList, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.lnrpc.MacaroonPermissionList.displayName = 'proto.lnrpc.MacaroonPermissionList';
+}
+/**
+ * List of repeated fields within this message type.
+ * @private {!Array<number>}
+ * @const
+ */
+proto.lnrpc.MacaroonPermissionList.repeatedFields_ = [1];
+
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.lnrpc.MacaroonPermissionList.prototype.toObject = function(opt_includeInstance) {
+  return proto.lnrpc.MacaroonPermissionList.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.lnrpc.MacaroonPermissionList} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.lnrpc.MacaroonPermissionList.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    permissionsList: jspb.Message.toObjectList(msg.getPermissionsList(),
+    proto.lnrpc.MacaroonPermission.toObject, includeInstance)
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.lnrpc.MacaroonPermissionList}
+ */
+proto.lnrpc.MacaroonPermissionList.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.lnrpc.MacaroonPermissionList;
+  return proto.lnrpc.MacaroonPermissionList.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.lnrpc.MacaroonPermissionList} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.lnrpc.MacaroonPermissionList}
+ */
+proto.lnrpc.MacaroonPermissionList.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = new proto.lnrpc.MacaroonPermission;
+      reader.readMessage(value,proto.lnrpc.MacaroonPermission.deserializeBinaryFromReader);
+      msg.addPermissions(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.lnrpc.MacaroonPermissionList.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.lnrpc.MacaroonPermissionList.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.lnrpc.MacaroonPermissionList} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.lnrpc.MacaroonPermissionList.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getPermissionsList();
+  if (f.length > 0) {
+    writer.writeRepeatedMessage(
+      1,
+      f,
+      proto.lnrpc.MacaroonPermission.serializeBinaryToWriter
+    );
+  }
+};
+
+
+/**
+ * repeated MacaroonPermission permissions = 1;
+ * @return {!Array.<!proto.lnrpc.MacaroonPermission>}
+ */
+proto.lnrpc.MacaroonPermissionList.prototype.getPermissionsList = function() {
+  return /** @type{!Array.<!proto.lnrpc.MacaroonPermission>} */ (
+    jspb.Message.getRepeatedWrapperField(this, proto.lnrpc.MacaroonPermission, 1));
+};
+
+
+/** @param {!Array.<!proto.lnrpc.MacaroonPermission>} value */
+proto.lnrpc.MacaroonPermissionList.prototype.setPermissionsList = function(value) {
+  jspb.Message.setRepeatedWrapperField(this, 1, value);
+};
+
+
+/**
+ * @param {!proto.lnrpc.MacaroonPermission=} opt_value
+ * @param {number=} opt_index
+ * @return {!proto.lnrpc.MacaroonPermission}
+ */
+proto.lnrpc.MacaroonPermissionList.prototype.addPermissions = function(opt_value, opt_index) {
+  return jspb.Message.addToRepeatedWrapperField(this, 1, opt_value, proto.lnrpc.MacaroonPermission, opt_index);
+};
+
+
+proto.lnrpc.MacaroonPermissionList.prototype.clearPermissionsList = function() {
+  this.setPermissionsList([]);
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.lnrpc.ListPermissionsRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.lnrpc.ListPermissionsRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.lnrpc.ListPermissionsRequest.displayName = 'proto.lnrpc.ListPermissionsRequest';
+}
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.lnrpc.ListPermissionsRequest.prototype.toObject = function(opt_includeInstance) {
+  return proto.lnrpc.ListPermissionsRequest.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.lnrpc.ListPermissionsRequest} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.lnrpc.ListPermissionsRequest.toObject = function(includeInstance, msg) {
+  var f, obj = {
+
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.lnrpc.ListPermissionsRequest}
+ */
+proto.lnrpc.ListPermissionsRequest.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.lnrpc.ListPermissionsRequest;
+  return proto.lnrpc.ListPermissionsRequest.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.lnrpc.ListPermissionsRequest} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.lnrpc.ListPermissionsRequest}
+ */
+proto.lnrpc.ListPermissionsRequest.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.lnrpc.ListPermissionsRequest.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.lnrpc.ListPermissionsRequest.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.lnrpc.ListPermissionsRequest} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.lnrpc.ListPermissionsRequest.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.lnrpc.ListPermissionsResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.lnrpc.ListPermissionsResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.lnrpc.ListPermissionsResponse.displayName = 'proto.lnrpc.ListPermissionsResponse';
+}
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.lnrpc.ListPermissionsResponse.prototype.toObject = function(opt_includeInstance) {
+  return proto.lnrpc.ListPermissionsResponse.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.lnrpc.ListPermissionsResponse} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.lnrpc.ListPermissionsResponse.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    methodPermissionsMap: (f = msg.getMethodPermissionsMap()) ? f.toObject(includeInstance, proto.lnrpc.MacaroonPermissionList.toObject) : []
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.lnrpc.ListPermissionsResponse}
+ */
+proto.lnrpc.ListPermissionsResponse.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.lnrpc.ListPermissionsResponse;
+  return proto.lnrpc.ListPermissionsResponse.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.lnrpc.ListPermissionsResponse} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.lnrpc.ListPermissionsResponse}
+ */
+proto.lnrpc.ListPermissionsResponse.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = msg.getMethodPermissionsMap();
+      reader.readMessage(value, function(message, reader) {
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.lnrpc.MacaroonPermissionList.deserializeBinaryFromReader);
+         });
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.lnrpc.ListPermissionsResponse.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.lnrpc.ListPermissionsResponse.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.lnrpc.ListPermissionsResponse} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.lnrpc.ListPermissionsResponse.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getMethodPermissionsMap(true);
+  if (f && f.getLength() > 0) {
+    f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.lnrpc.MacaroonPermissionList.serializeBinaryToWriter);
+  }
+};
+
+
+/**
+ * map<string, MacaroonPermissionList> method_permissions = 1;
+ * @param {boolean=} opt_noLazyCreate Do not create the map if
+ * empty, instead returning `undefined`
+ * @return {!jspb.Map<string,!proto.lnrpc.MacaroonPermissionList>}
+ */
+proto.lnrpc.ListPermissionsResponse.prototype.getMethodPermissionsMap = function(opt_noLazyCreate) {
+  return /** @type {!jspb.Map<string,!proto.lnrpc.MacaroonPermissionList>} */ (
+      jspb.Message.getMapField(this, 1, opt_noLazyCreate,
+      proto.lnrpc.MacaroonPermissionList));
+};
+
+
+proto.lnrpc.ListPermissionsResponse.prototype.clearMethodPermissionsMap = function() {
+  this.getMethodPermissionsMap().clear();
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
 proto.lnrpc.Failure = function(opt_data) {
   jspb.Message.initialize(this, opt_data, 0, -1, null, null);
 };
@@ -38329,6 +38869,466 @@ proto.lnrpc.ChannelUpdate.prototype.getExtraOpaqueData_asU8 = function() {
 /** @param {!(string|Uint8Array)} value */
 proto.lnrpc.ChannelUpdate.prototype.setExtraOpaqueData = function(value) {
   jspb.Message.setField(this, 12, value);
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.lnrpc.MacaroonId = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.lnrpc.MacaroonId.repeatedFields_, null);
+};
+goog.inherits(proto.lnrpc.MacaroonId, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.lnrpc.MacaroonId.displayName = 'proto.lnrpc.MacaroonId';
+}
+/**
+ * List of repeated fields within this message type.
+ * @private {!Array<number>}
+ * @const
+ */
+proto.lnrpc.MacaroonId.repeatedFields_ = [3];
+
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.lnrpc.MacaroonId.prototype.toObject = function(opt_includeInstance) {
+  return proto.lnrpc.MacaroonId.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.lnrpc.MacaroonId} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.lnrpc.MacaroonId.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    nonce: msg.getNonce_asB64(),
+    storageid: msg.getStorageid_asB64(),
+    opsList: jspb.Message.toObjectList(msg.getOpsList(),
+    proto.lnrpc.Op.toObject, includeInstance)
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.lnrpc.MacaroonId}
+ */
+proto.lnrpc.MacaroonId.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.lnrpc.MacaroonId;
+  return proto.lnrpc.MacaroonId.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.lnrpc.MacaroonId} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.lnrpc.MacaroonId}
+ */
+proto.lnrpc.MacaroonId.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setNonce(value);
+      break;
+    case 2:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setStorageid(value);
+      break;
+    case 3:
+      var value = new proto.lnrpc.Op;
+      reader.readMessage(value,proto.lnrpc.Op.deserializeBinaryFromReader);
+      msg.addOps(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.lnrpc.MacaroonId.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.lnrpc.MacaroonId.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.lnrpc.MacaroonId} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.lnrpc.MacaroonId.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getNonce_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      1,
+      f
+    );
+  }
+  f = message.getStorageid_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      2,
+      f
+    );
+  }
+  f = message.getOpsList();
+  if (f.length > 0) {
+    writer.writeRepeatedMessage(
+      3,
+      f,
+      proto.lnrpc.Op.serializeBinaryToWriter
+    );
+  }
+};
+
+
+/**
+ * optional bytes nonce = 1;
+ * @return {!(string|Uint8Array)}
+ */
+proto.lnrpc.MacaroonId.prototype.getNonce = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+};
+
+
+/**
+ * optional bytes nonce = 1;
+ * This is a type-conversion wrapper around `getNonce()`
+ * @return {string}
+ */
+proto.lnrpc.MacaroonId.prototype.getNonce_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getNonce()));
+};
+
+
+/**
+ * optional bytes nonce = 1;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getNonce()`
+ * @return {!Uint8Array}
+ */
+proto.lnrpc.MacaroonId.prototype.getNonce_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getNonce()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.lnrpc.MacaroonId.prototype.setNonce = function(value) {
+  jspb.Message.setField(this, 1, value);
+};
+
+
+/**
+ * optional bytes storageId = 2;
+ * @return {!(string|Uint8Array)}
+ */
+proto.lnrpc.MacaroonId.prototype.getStorageid = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+};
+
+
+/**
+ * optional bytes storageId = 2;
+ * This is a type-conversion wrapper around `getStorageid()`
+ * @return {string}
+ */
+proto.lnrpc.MacaroonId.prototype.getStorageid_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getStorageid()));
+};
+
+
+/**
+ * optional bytes storageId = 2;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getStorageid()`
+ * @return {!Uint8Array}
+ */
+proto.lnrpc.MacaroonId.prototype.getStorageid_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getStorageid()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.lnrpc.MacaroonId.prototype.setStorageid = function(value) {
+  jspb.Message.setField(this, 2, value);
+};
+
+
+/**
+ * repeated Op ops = 3;
+ * @return {!Array.<!proto.lnrpc.Op>}
+ */
+proto.lnrpc.MacaroonId.prototype.getOpsList = function() {
+  return /** @type{!Array.<!proto.lnrpc.Op>} */ (
+    jspb.Message.getRepeatedWrapperField(this, proto.lnrpc.Op, 3));
+};
+
+
+/** @param {!Array.<!proto.lnrpc.Op>} value */
+proto.lnrpc.MacaroonId.prototype.setOpsList = function(value) {
+  jspb.Message.setRepeatedWrapperField(this, 3, value);
+};
+
+
+/**
+ * @param {!proto.lnrpc.Op=} opt_value
+ * @param {number=} opt_index
+ * @return {!proto.lnrpc.Op}
+ */
+proto.lnrpc.MacaroonId.prototype.addOps = function(opt_value, opt_index) {
+  return jspb.Message.addToRepeatedWrapperField(this, 3, opt_value, proto.lnrpc.Op, opt_index);
+};
+
+
+proto.lnrpc.MacaroonId.prototype.clearOpsList = function() {
+  this.setOpsList([]);
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.lnrpc.Op = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.lnrpc.Op.repeatedFields_, null);
+};
+goog.inherits(proto.lnrpc.Op, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.lnrpc.Op.displayName = 'proto.lnrpc.Op';
+}
+/**
+ * List of repeated fields within this message type.
+ * @private {!Array<number>}
+ * @const
+ */
+proto.lnrpc.Op.repeatedFields_ = [2];
+
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.lnrpc.Op.prototype.toObject = function(opt_includeInstance) {
+  return proto.lnrpc.Op.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.lnrpc.Op} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.lnrpc.Op.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    entity: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    actionsList: jspb.Message.getRepeatedField(msg, 2)
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.lnrpc.Op}
+ */
+proto.lnrpc.Op.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.lnrpc.Op;
+  return proto.lnrpc.Op.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.lnrpc.Op} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.lnrpc.Op}
+ */
+proto.lnrpc.Op.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setEntity(value);
+      break;
+    case 2:
+      var value = /** @type {string} */ (reader.readString());
+      msg.addActions(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.lnrpc.Op.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.lnrpc.Op.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.lnrpc.Op} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.lnrpc.Op.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getEntity();
+  if (f.length > 0) {
+    writer.writeString(
+      1,
+      f
+    );
+  }
+  f = message.getActionsList();
+  if (f.length > 0) {
+    writer.writeRepeatedString(
+      2,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional string entity = 1;
+ * @return {string}
+ */
+proto.lnrpc.Op.prototype.getEntity = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+};
+
+
+/** @param {string} value */
+proto.lnrpc.Op.prototype.setEntity = function(value) {
+  jspb.Message.setField(this, 1, value);
+};
+
+
+/**
+ * repeated string actions = 2;
+ * @return {!Array.<string>}
+ */
+proto.lnrpc.Op.prototype.getActionsList = function() {
+  return /** @type {!Array.<string>} */ (jspb.Message.getRepeatedField(this, 2));
+};
+
+
+/** @param {!Array.<string>} value */
+proto.lnrpc.Op.prototype.setActionsList = function(value) {
+  jspb.Message.setField(this, 2, value || []);
+};
+
+
+/**
+ * @param {!string} value
+ * @param {number=} opt_index
+ */
+proto.lnrpc.Op.prototype.addActions = function(value, opt_index) {
+  jspb.Message.addToRepeatedField(this, 2, value, opt_index);
+};
+
+
+proto.lnrpc.Op.prototype.clearActionsList = function() {
+  this.setActionsList([]);
 };
 
 

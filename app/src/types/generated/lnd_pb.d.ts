@@ -2023,6 +2023,9 @@ export class OpenChannelRequest extends jspb.Message {
   getRemoteMaxValueInFlightMsat(): number;
   setRemoteMaxValueInFlightMsat(value: number): void;
 
+  getRemoteMaxHtlcs(): number;
+  setRemoteMaxHtlcs(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): OpenChannelRequest.AsObject;
   static toObject(includeInstance: boolean, msg: OpenChannelRequest): OpenChannelRequest.AsObject;
@@ -2049,6 +2052,7 @@ export namespace OpenChannelRequest {
     closeAddress: string,
     fundingShim?: FundingShim.AsObject,
     remoteMaxValueInFlightMsat: number,
+    remoteMaxHtlcs: number,
   }
 }
 
@@ -2328,6 +2332,11 @@ export class FundingPsbtFinalize extends jspb.Message {
   getPendingChanId_asB64(): string;
   setPendingChanId(value: Uint8Array | string): void;
 
+  getFinalRawTx(): Uint8Array | string;
+  getFinalRawTx_asU8(): Uint8Array;
+  getFinalRawTx_asB64(): string;
+  setFinalRawTx(value: Uint8Array | string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): FundingPsbtFinalize.AsObject;
   static toObject(includeInstance: boolean, msg: FundingPsbtFinalize): FundingPsbtFinalize.AsObject;
@@ -2342,6 +2351,7 @@ export namespace FundingPsbtFinalize {
   export type AsObject = {
     signedPsbt: Uint8Array | string,
     pendingChanId: Uint8Array | string,
+    finalRawTx: Uint8Array | string,
   }
 }
 
@@ -4486,6 +4496,9 @@ export class AbandonChannelRequest extends jspb.Message {
   getChannelPoint(): ChannelPoint | undefined;
   setChannelPoint(value?: ChannelPoint): void;
 
+  getPendingFundingShimOnly(): boolean;
+  setPendingFundingShimOnly(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): AbandonChannelRequest.AsObject;
   static toObject(includeInstance: boolean, msg: AbandonChannelRequest): AbandonChannelRequest.AsObject;
@@ -4499,6 +4512,7 @@ export class AbandonChannelRequest extends jspb.Message {
 export namespace AbandonChannelRequest {
   export type AsObject = {
     channelPoint?: ChannelPoint.AsObject,
+    pendingFundingShimOnly: boolean,
   }
 }
 
@@ -5247,6 +5261,63 @@ export namespace BakeMacaroonResponse {
   }
 }
 
+export class MacaroonPermissionList extends jspb.Message {
+  clearPermissionsList(): void;
+  getPermissionsList(): Array<MacaroonPermission>;
+  setPermissionsList(value: Array<MacaroonPermission>): void;
+  addPermissions(value?: MacaroonPermission, index?: number): MacaroonPermission;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): MacaroonPermissionList.AsObject;
+  static toObject(includeInstance: boolean, msg: MacaroonPermissionList): MacaroonPermissionList.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: MacaroonPermissionList, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): MacaroonPermissionList;
+  static deserializeBinaryFromReader(message: MacaroonPermissionList, reader: jspb.BinaryReader): MacaroonPermissionList;
+}
+
+export namespace MacaroonPermissionList {
+  export type AsObject = {
+    permissionsList: Array<MacaroonPermission.AsObject>,
+  }
+}
+
+export class ListPermissionsRequest extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListPermissionsRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: ListPermissionsRequest): ListPermissionsRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ListPermissionsRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListPermissionsRequest;
+  static deserializeBinaryFromReader(message: ListPermissionsRequest, reader: jspb.BinaryReader): ListPermissionsRequest;
+}
+
+export namespace ListPermissionsRequest {
+  export type AsObject = {
+  }
+}
+
+export class ListPermissionsResponse extends jspb.Message {
+  getMethodPermissionsMap(): jspb.Map<string, MacaroonPermissionList>;
+  clearMethodPermissionsMap(): void;
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListPermissionsResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: ListPermissionsResponse): ListPermissionsResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ListPermissionsResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListPermissionsResponse;
+  static deserializeBinaryFromReader(message: ListPermissionsResponse, reader: jspb.BinaryReader): ListPermissionsResponse;
+}
+
+export namespace ListPermissionsResponse {
+  export type AsObject = {
+    methodPermissionsMap: Array<[string, MacaroonPermissionList.AsObject]>,
+  }
+}
+
 export class Failure extends jspb.Message {
   getCode(): Failure.FailureCodeMap[keyof Failure.FailureCodeMap];
   setCode(value: Failure.FailureCodeMap[keyof Failure.FailureCodeMap]): void;
@@ -5398,6 +5469,66 @@ export namespace ChannelUpdate {
     feeRate: number,
     htlcMaximumMsat: number,
     extraOpaqueData: Uint8Array | string,
+  }
+}
+
+export class MacaroonId extends jspb.Message {
+  getNonce(): Uint8Array | string;
+  getNonce_asU8(): Uint8Array;
+  getNonce_asB64(): string;
+  setNonce(value: Uint8Array | string): void;
+
+  getStorageid(): Uint8Array | string;
+  getStorageid_asU8(): Uint8Array;
+  getStorageid_asB64(): string;
+  setStorageid(value: Uint8Array | string): void;
+
+  clearOpsList(): void;
+  getOpsList(): Array<Op>;
+  setOpsList(value: Array<Op>): void;
+  addOps(value?: Op, index?: number): Op;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): MacaroonId.AsObject;
+  static toObject(includeInstance: boolean, msg: MacaroonId): MacaroonId.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: MacaroonId, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): MacaroonId;
+  static deserializeBinaryFromReader(message: MacaroonId, reader: jspb.BinaryReader): MacaroonId;
+}
+
+export namespace MacaroonId {
+  export type AsObject = {
+    nonce: Uint8Array | string,
+    storageid: Uint8Array | string,
+    opsList: Array<Op.AsObject>,
+  }
+}
+
+export class Op extends jspb.Message {
+  getEntity(): string;
+  setEntity(value: string): void;
+
+  clearActionsList(): void;
+  getActionsList(): Array<string>;
+  setActionsList(value: Array<string>): void;
+  addActions(value: string, index?: number): string;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): Op.AsObject;
+  static toObject(includeInstance: boolean, msg: Op): Op.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: Op, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): Op;
+  static deserializeBinaryFromReader(message: Op, reader: jspb.BinaryReader): Op;
+}
+
+export namespace Op {
+  export type AsObject = {
+    entity: string,
+    actionsList: Array<string>,
   }
 }
 
