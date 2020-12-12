@@ -118,9 +118,9 @@ export default class Batch {
     const index = this._store.batchStore.sortedBatches.indexOf(this);
     const prevBatch = this._store.batchStore.sortedBatches[index + 1];
     if (prevBatch) {
-      if (this.clearingPriceRate > prevBatch.clearingPriceRate) {
+      if (this.basisPoints > prevBatch.basisPoints) {
         delta = 'positive';
-      } else if (this.clearingPriceRate < prevBatch.clearingPriceRate) {
+      } else if (this.basisPoints < prevBatch.basisPoints) {
         delta = 'negative';
       }
     }
@@ -135,13 +135,13 @@ export default class Batch {
 
   /** the percentage change of this batch's rate compared to the previous batch */
   get pctChange() {
-    let priorRate = this.clearingPriceRate;
+    let priorBps = this.basisPoints;
     const index = this._store.batchStore.sortedBatches.indexOf(this);
     const prevBatch = this._store.batchStore.sortedBatches[index + 1];
     if (prevBatch) {
-      priorRate = prevBatch.clearingPriceRate;
+      priorBps = prevBatch.basisPoints;
     }
-    return toPercent((this.clearingPriceRate - priorRate) / priorRate);
+    return toPercent((this.basisPoints - priorBps) / priorBps);
   }
 
   /**
