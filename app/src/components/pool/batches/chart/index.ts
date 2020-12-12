@@ -5,5 +5,6 @@ export { default as LeftAxis } from './LeftAxis';
 export { default as RightAxis } from './RightAxis';
 export { default as BarChart } from './BarChart';
 export { default as LineChart } from './LineChart';
+export { default as BlocksChart } from './BlocksChart';
 
 export * from './types';

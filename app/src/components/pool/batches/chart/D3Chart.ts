@@ -1,7 +1,15 @@
 import * as d3 from 'd3';
 import BaseEmitter from 'util/BaseEmitter';
 import { Batch } from 'store/models';
-import { BarChart, BottomAxis, LeftAxis, LineChart, RightAxis, Scales } from './';
+import {
+  BarChart,
+  BlocksChart,
+  BottomAxis,
+  LeftAxis,
+  LineChart,
+  RightAxis,
+  Scales,
+} from './';
 
 import type {
   ChartConfig,
@@ -85,6 +93,7 @@ export default class D3Chart extends BaseEmitter<ChartEvents> implements Chart {
     new RightAxis(this);
     new BarChart(this);
     new LineChart(this);
+    new BlocksChart(this);
 
     this.update(batches);
     this.resize(outerWidth, outerHeight);

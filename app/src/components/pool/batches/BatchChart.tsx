@@ -20,7 +20,26 @@ const Styled = {
       font-size: ${props => props.theme.sizes.xs};
     }
 
-    .label-pct {
+    .block {
+      fill: ${props => props.theme.colors.blue};
+    }
+
+    .block-label-rate {
+      fill: ${props => props.theme.colors.white};
+    }
+
+    .block-label-suffix {
+      fill: ${props => props.theme.colors.gray};
+      display: none;
+    }
+
+    .block-group:first-of-type {
+      .block-label-suffix {
+        display: block;
+      }
+    }
+
+    .block-label-pct {
       &.positive {
         fill: ${props => props.theme.colors.green};
       }
