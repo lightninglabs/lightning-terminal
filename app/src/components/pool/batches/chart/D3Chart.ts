@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 import BaseEmitter from 'util/BaseEmitter';
 import { Batch } from 'store/models';
-import { BottomAxis, LeftAxis, RightAxis, Scales } from './';
+import { BarChart, BottomAxis, LeftAxis, RightAxis, Scales } from './';
 
 import type {
   ChartConfig,
@@ -15,7 +15,7 @@ const TOP_HEIGHT_RATIO = 0.6;
 const TOP_PADDING = 0.2;
 const MARGIN = { top: 0, right: 30, bottom: 30, left: 50 };
 const COL_WIDTH = 150;
-const ANIMATION_DURATION = 1000;
+const ANIMATION_DURATION = process.env.NODE_ENV === 'test' ? 0 : 1000;
 
 /**
  * A wrapper class used to build the full d3 chart
@@ -83,6 +83,7 @@ export default class D3Chart extends BaseEmitter<ChartEvents> implements Chart {
     new BottomAxis(this);
     new LeftAxis(this);
     new RightAxis(this);
+    new BarChart(this);
 
     this.update(batches);
     this.resize(outerWidth, outerHeight);
