@@ -9,6 +9,7 @@ import {
   LineChart,
   RightAxis,
   Scales,
+  Zoomer,
 } from './';
 
 import type {
@@ -94,6 +95,7 @@ export default class D3Chart extends BaseEmitter<ChartEvents> implements Chart {
     new BarChart(this);
     new LineChart(this);
     new BlocksChart(this);
+    new Zoomer(this, config.fetchBatches);
 
     this.update(batches);
     this.resize(outerWidth, outerHeight);
