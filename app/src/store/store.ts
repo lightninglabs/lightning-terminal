@@ -19,6 +19,7 @@ import {
 import {
   AccountSectionView,
   AppView,
+  BatchesView,
   BuildSwapView,
   CloseAccountView,
   FundAccountView,
@@ -57,6 +58,7 @@ export class Store {
   closeAccountView = new CloseAccountView(this);
   orderFormView = new OrderFormView(this);
   orderListView = new OrderListView(this);
+  batchesView = new BatchesView(this);
 
   /** the backend api services to be used by child stores */
   api: {

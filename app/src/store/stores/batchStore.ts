@@ -1,7 +1,6 @@
 import { makeAutoObservable, observable, ObservableMap, runInAction, toJS } from 'mobx';
 import { IS_DEV, IS_TEST } from 'config';
 import debounce from 'lodash/debounce';
-import { toPercent } from 'util/bigmath';
 import { Store } from 'store';
 import { Batch } from 'store/models';
 
@@ -50,24 +49,6 @@ export default class BatchStore {
    */
   get oldestBatch() {
     return this.sortedBatches[this.sortedBatches.length - 1];
-  }
-
-  /**
-   * the cleared rate on the last batch
-   */
-  get currentRate() {
-    return this.sortedBatches.length ? this.sortedBatches[0].clearingPriceRate : 0;
-  }
-
-  /**
-   * the percentage change between the last batch and the prior one
-   */
-  get currentRateChange() {
-    if (this.sortedBatches.length < 2) return 0;
-    const currentRate = this.sortedBatches[0].clearingPriceRate;
-    const priorRate = this.sortedBatches[1].clearingPriceRate;
-
-    return toPercent((currentRate - priorRate) / priorRate);
   }
 
   /**
