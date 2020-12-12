@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
+import { BarChart, List } from 'components/base';
 import Stat from 'components/common/Stat';
 import Unit from 'components/common/Unit';
 import { styled } from 'components/theme';
@@ -11,6 +12,7 @@ const Styled = {
   Wrapper: styled.div`
     display: flex;
     justify-content: space-between;
+    position: relative;
     padding: 5px 0;
     background-color: ${props => props.theme.colors.overlay};
     border: 1px solid ${props => props.theme.colors.overlay};
@@ -23,38 +25,56 @@ const Styled = {
   BatchCountdown: styled(BatchCountdown)`
     margin: 0 30px;
   `,
+  ViewMode: styled.div`
+    position: absolute;
+    bottom: -40px;
+    right: 0;
+    z-index: 1;
+    opacity: 0.6;
+
+    &:hover {
+      opacity: 1;
+    }
+  `,
 };
 
 const BatchStats: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.pool.batches.BatchStats');
-  const { batchStore, orderStore } = useStore();
+  const { batchesView } = useStore();
 
-  const { Wrapper, Stat, BatchCountdown } = Styled;
+  const handleViewChart = useCallback(() => batchesView.setViewMode('chart'), []);
+  const handleViewList = useCallback(() => batchesView.setViewMode('list'), []);
+
+  const { Wrapper, Stat, BatchCountdown, ViewMode } = Styled;
   return (
     <Wrapper>
       <div>
         <BatchCountdown
           label={l('nextBatch')}
-          timestamp={batchStore.nextBatchTimestamp}
+          timestamp={batchesView.nextBatchTimestamp}
         />
-        <Stat label={l('prevRate')} value={`${batchStore.currentRate}`} />
+        <Stat label={l('prevRate')} value={`${batchesView.currentRate}`} />
         <Stat
           label={l('rateChange')}
-          value={`${batchStore.currentRateChange}%`}
-          positive={batchStore.currentRateChange > 0}
-          negative={batchStore.currentRateChange < 0}
+          value={`${batchesView.currentRateChange}%`}
+          positive={batchesView.currentRateChange > 0}
+          negative={batchesView.currentRateChange < 0}
         />
       </div>
       <div>
         <Stat
           label={l('earned')}
-          value={<Unit sats={orderStore.earnedSats} suffix={false} />}
+          value={<Unit sats={batchesView.earnedSats} suffix={false} />}
         />
         <Stat
           label={l('paid')}
-          value={<Unit sats={orderStore.paidSats} suffix={false} />}
+          value={<Unit sats={batchesView.paidSats} suffix={false} />}
         />
       </div>
+      <ViewMode>
+        <BarChart size="large" onClick={handleViewChart} />
+        <List size="large" onClick={handleViewList} />
+      </ViewMode>
     </Wrapper>
   );
 };

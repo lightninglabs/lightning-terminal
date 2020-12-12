@@ -94,7 +94,7 @@ export default class Batch {
 
   /** the fee in sats/vbyte rounded to the nearest whole number */
   get feeLabel() {
-    return `~${Math.round(this.feeInVBytes)}`;
+    return `${Math.round(this.feeInVBytes)}`;
   }
 
   /** a label containing the batch fee in both sats/kw and sats/vbyte */

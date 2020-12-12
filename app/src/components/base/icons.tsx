@@ -24,6 +24,8 @@ import { ReactComponent as RefreshIcon } from 'assets/icons/refresh-cw.svg';
 import { ReactComponent as SettingsIcon } from 'assets/icons/settings.svg';
 import { ReactComponent as CancelIcon } from 'assets/icons/slash.svg';
 import { ReactComponent as UserPlusIcon } from 'assets/icons/user-plus.svg';
+import { ReactComponent as BarChartIcon } from 'assets/icons/bar-chart.svg';
+import { ReactComponent as ListIcon } from 'assets/icons/list.svg';
 import { styled } from 'components/theme';
 
 interface IconProps {
@@ -102,3 +104,5 @@ export const Maximize = Icon.withComponent(MaximizeIcon);
 export const Refresh = Icon.withComponent(RefreshIcon);
 export const Settings = Icon.withComponent(SettingsIcon);
 export const UserPlus = Icon.withComponent(UserPlusIcon);
+export const BarChart = Icon.withComponent(BarChartIcon);
+export const List = Icon.withComponent(ListIcon);

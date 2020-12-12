@@ -111,7 +111,7 @@ const BatchRow: React.FC<Props> = ({ batch, style }) => {
       <Column right>
         <Unit sats={batch.volume} suffix={false} />
       </Column>
-      <Column right>{batch.clearingPriceRate}</Column>
+      <Column right>{batch.basisPoints} bps</Column>
       <ActionColumn>
         <BatchDeltaIcon delta={batch.delta} />
       </ActionColumn>
