@@ -212,12 +212,16 @@ class PoolApi extends BaseApi<PoolEvents> {
   }
 
   /**
-   * call the pool `BatchSnapshot` RPC and return the response
+   * call the pool `BatchSnapshots` RPC and return the response
    */
-  async batchSnapshot(batchId?: string): Promise<AUCT.BatchSnapshotResponse.AsObject> {
-    const req = new AUCT.BatchSnapshotRequest();
-    if (batchId) req.setBatchId(b64(batchId));
-    const res = await this._grpc.request(Trader.BatchSnapshot, req, this._meta);
+  async batchSnapshots(
+    numBatches: number,
+    batchId?: string,
+  ): Promise<AUCT.BatchSnapshotsResponse.AsObject> {
+    const req = new AUCT.BatchSnapshotsRequest();
+    req.setNumBatchesBack(numBatches);
+    if (batchId) req.setStartBatchId(b64(batchId));
+    const res = await this._grpc.request(Trader.BatchSnapshots, req, this._meta);
     return res.toObject();
   }
 

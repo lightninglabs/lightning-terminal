@@ -6,16 +6,33 @@ option go_package = "github.com/lightninglabs/pool/poolrpc";
 
 service ChannelAuctioneer {
     rpc ReserveAccount (ReserveAccountRequest) returns (ReserveAccountResponse);
-    rpc InitAccount (ServerInitAccountRequest) returns (ServerInitAccountResponse);
-    rpc ModifyAccount (ServerModifyAccountRequest) returns (ServerModifyAccountResponse);
-    rpc SubmitOrder (ServerSubmitOrderRequest) returns (ServerSubmitOrderResponse);
-    rpc CancelOrder (ServerCancelOrderRequest) returns (ServerCancelOrderResponse);
+
+    rpc InitAccount (ServerInitAccountRequest)
+        returns (ServerInitAccountResponse);
+
+    rpc ModifyAccount (ServerModifyAccountRequest)
+        returns (ServerModifyAccountResponse);
+
+    rpc SubmitOrder (ServerSubmitOrderRequest)
+        returns (ServerSubmitOrderResponse);
+
+    rpc CancelOrder (ServerCancelOrderRequest)
+        returns (ServerCancelOrderResponse);
+
     rpc OrderState (ServerOrderStateRequest) returns (ServerOrderStateResponse);
-    rpc SubscribeBatchAuction (stream ClientAuctionMessage) returns (stream ServerAuctionMessage);
+
+    rpc SubscribeBatchAuction (stream ClientAuctionMessage)
+        returns (stream ServerAuctionMessage);
+
     rpc Terms (TermsRequest) returns (TermsResponse);
+
     rpc RelevantBatchSnapshot (RelevantBatchRequest) returns (RelevantBatch);
+
     rpc BatchSnapshot (BatchSnapshotRequest) returns (BatchSnapshotResponse);
-    rpc NodeRating(ServerNodeRatingRequest) returns (ServerNodeRatingResponse);
+
+    rpc NodeRating (ServerNodeRatingRequest) returns (ServerNodeRatingResponse);
+
+    rpc BatchSnapshots (BatchSnapshotsRequest) returns (BatchSnapshotsResponse);
 }
 
 message ReserveAccountRequest {
@@ -525,7 +542,7 @@ message SubscribeError {
 
         /*
         The account the trader tried to subscribe to does not exist in the
-        auctioneer's database. 
+        auctioneer's database.
         */
         ACCOUNT_DOES_NOT_EXIST = 2;
 
@@ -758,7 +775,7 @@ message ServerOrder {
 
     /*
     The multi signature key of the node creating the order, will be used for the
-    target channel's funding TX 2-of-2 multi signature output. 
+    target channel's funding TX 2-of-2 multi signature output.
     */
     bytes multi_sig_key = 8;
 
@@ -773,7 +790,7 @@ message ServerOrder {
     repeated NodeAddress node_addr = 10;
 
     /*
-    // TODO(guggero): implement 
+    // TODO(guggero): implement
     int64 min_node_score = 11;
     */
     reserved 11;
@@ -860,9 +877,7 @@ message CancelOrder {
 }
 
 message InvalidOrder {
-    enum FailReason {
-        INVALID_AMT = 0;
-    }
+    enum FailReason { INVALID_AMT = 0; }
 
     bytes order_nonce = 1;
     FailReason fail_reason = 2;
@@ -965,7 +980,7 @@ message TermsResponse {
     /*
     The maximum order duration in blocks currently allowed by the auctioneer.
     */
-    uint32 max_order_duration_blocks = 2 [deprecated=true];
+    uint32 max_order_duration_blocks = 2 [deprecated = true];
 
     /*
     The execution fee charged per matched order.
@@ -1162,4 +1177,24 @@ message NodeRating {
 message ServerNodeRatingResponse {
     // A series of node ratings for each of the queried nodes.
     repeated NodeRating node_ratings = 1;
+}
+
+message BatchSnapshotsRequest {
+    /*
+    The unique identifier of the first batch to return, encoded as a compressed
+    pubkey. This represents the newest/most current batch to fetch. If this is
+    empty or a zero batch ID, the most recent finalized batch is used as the
+    starting point to go back from.
+    */
+    bytes start_batch_id = 1;
+
+    /*
+    The number of batches to return at most, including the start batch.
+    */
+    uint32 num_batches_back = 2;
+}
+
+message BatchSnapshotsResponse {
+    // The list of batches requested.
+    repeated BatchSnapshotResponse batches = 1;
 }

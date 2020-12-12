@@ -23,12 +23,14 @@ describe('BatchStore', () => {
     // to avoid overwriting the same record in the store
     index = 0;
     grpcMock.unary.mockImplementation((_, opts) => {
-      index++;
       const res = {
-        ...poolBatchSnapshot,
-        batchId: `${index}-${poolBatchSnapshot.batchId}`,
-        prevBatchId: `${index}-${poolBatchSnapshot.prevBatchId}`,
+        batchesList: [...Array(20)].map((_, i) => ({
+          ...poolBatchSnapshot,
+          batchId: `${index + i}-${poolBatchSnapshot.batchId}`,
+          prevBatchId: `${index + i}-${poolBatchSnapshot.prevBatchId}`,
+        })),
       };
+      index += BATCH_QUERY_LIMIT;
       opts.onEnd({
         status: grpc.Code.OK,
         message: { toObject: () => res },
@@ -61,16 +63,15 @@ describe('BatchStore', () => {
   });
 
   it('should handle a number of batches less than the query limit', async () => {
-    // mock the BatchSnapshot response to return a unique id for for the
-    // first 5 batches, then return a blank prevBatchId to signify that
-    // there are no more batches available
-    index = 0;
+    // mock the BatchSnapshot response to return 5 batches with the last one having a
+    // blank prevBatchId to signify that there are no more batches available
     grpcMock.unary.mockImplementation((_, opts) => {
-      index++;
       const res = {
-        ...poolBatchSnapshot,
-        batchId: `${index}${poolBatchSnapshot.batchId}`,
-        prevBatchId: index < 5 ? `${index}${poolBatchSnapshot.prevBatchId}` : '',
+        batchesList: [...Array(5)].map((_, i) => ({
+          ...poolBatchSnapshot,
+          batchId: `${i}-${poolBatchSnapshot.batchId}`,
+          prevBatchId: index < 4 ? `${i}-${poolBatchSnapshot.prevBatchId}` : '',
+        })),
       };
       opts.onEnd({
         status: grpc.Code.OK,
@@ -119,7 +120,7 @@ describe('BatchStore', () => {
     index = 100;
     await store.fetchLatestBatch();
     expect(store.orderedIds.length).toBe(BATCH_QUERY_LIMIT + 1);
-    expect(store.orderedIds[0]).toBe(hex(`101-${poolBatchSnapshot.batchId}`));
+    expect(store.orderedIds[0]).toBe(hex(`100-${poolBatchSnapshot.batchId}`));
   });
 
   it('should handle errors when fetching the latest batch', async () => {
@@ -134,23 +135,23 @@ describe('BatchStore', () => {
 
   it('should return the sorted batches', async () => {
     await store.fetchBatches();
-    expect(store.sortedBatches[0].batchId).toBe(hex(`1-${poolBatchSnapshot.batchId}`));
+    expect(store.sortedBatches[0].batchId).toBe(hex(`0-${poolBatchSnapshot.batchId}`));
     expect(store.sortedBatches[BATCH_QUERY_LIMIT - 1].batchId).toBe(
-      hex(`20-${poolBatchSnapshot.batchId}`),
+      hex(`19-${poolBatchSnapshot.batchId}`),
     );
 
     index = 500;
     await store.fetchLatestBatch();
-    expect(store.sortedBatches[0].batchId).toBe(hex(`501-${poolBatchSnapshot.batchId}`));
+    expect(store.sortedBatches[0].batchId).toBe(hex(`500-${poolBatchSnapshot.batchId}`));
     expect(store.sortedBatches[BATCH_QUERY_LIMIT].batchId).toBe(
-      hex(`20-${poolBatchSnapshot.batchId}`),
+      hex(`19-${poolBatchSnapshot.batchId}`),
     );
   });
 
   it('should start and stop polling', async () => {
     let callCount = 0;
     injectIntoGrpcUnary(desc => {
-      if (desc.methodName === 'BatchSnapshot') callCount++;
+      if (desc.methodName === 'BatchSnapshots') callCount++;
     });
 
     // allow polling in this test

@@ -582,6 +582,14 @@ export const poolBatchSnapshot: AUCT.BatchSnapshotResponse.AsObject = {
   batchTxFeeRateSatPerKw: 12574,
 };
 
+export const poolBatchSnapshots: AUCT.BatchSnapshotsResponse.AsObject = {
+  batchesList: [...Array(20)].map((_, i) => ({
+    ...poolBatchSnapshot,
+    batchId: `${i}-${poolBatchSnapshot.batchId}`,
+    prevBatchId: `${i + 1}-${poolBatchSnapshot.prevBatchId}`,
+  })),
+};
+
 export const poolNextBatchInfo: POOL.NextBatchInfoResponse.AsObject = {
   clearTimestamp: 1605936138,
   confTarget: 6,
@@ -700,6 +708,7 @@ export const sampleApiResponses: Record<string, any> = {
   'poolrpc.Trader.SubmitOrder': poolSubmitOrder,
   'poolrpc.Trader.CancelOrder': poolCancelOrder,
   'poolrpc.Trader.BatchSnapshot': poolBatchSnapshot,
+  'poolrpc.Trader.BatchSnapshots': poolBatchSnapshots,
   'poolrpc.Trader.NextBatchInfo': poolNextBatchInfo,
   'poolrpc.Trader.Leases': poolLeases,
 };
