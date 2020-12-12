@@ -53,9 +53,9 @@ const Styled = {
   `,
   Content: styled.div<CollapsedProps>`
     height: 100%;
-    margin-left: ${props => (props.collapsed ? '0' : '285px')};
+    margin-left: ${props => (props.collapsed || props.fullWidth ? '0' : '285px')};
     padding: ${props => (props.fullWidth ? '0' : '0 15px')};
-    transition: all 0.2s;
+    transition: ${props => (props.fullWidth ? '0' : 'all 0.2s')};
 
     @media (max-width: 1200px) {
       margin-left: 0;

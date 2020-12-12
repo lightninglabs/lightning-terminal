@@ -39,9 +39,11 @@ const PoolPage: React.FC = () => {
   useEffect(() => {
     accountStore.fetchAccounts();
     orderStore.fetchOrders();
-    batchStore.fetchBatches();
     batchStore.fetchNextBatchTimestamp();
-
+    if (!batchStore.batches.size) {
+      // fetch batches if there aren't any in the store
+      batchStore.fetchBatches();
+    }
     // start polling when this component is mounted
     batchStore.startPolling();
     // stop polling when this component is unmounted
