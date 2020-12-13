@@ -34,14 +34,7 @@ const FundNewAccountForm: React.FC = () => {
         <FormInputNumber
           label={l(`amountLabel`)}
           placeholder={l('amountPlaceholder')}
-          extra={
-            <>
-              <Button ghost borderless compact onClick={fundNewAccountView.setMaxAmount}>
-                {l('max')}
-              </Button>
-              <span>{Units[Unit.sats].suffix}</span>
-            </>
-          }
+          extra={Units[Unit.sats].suffix}
           value={fundNewAccountView.amount}
           onChange={fundNewAccountView.setAmount}
         />
