@@ -97,6 +97,6 @@ export default class Account {
     this.availableBalance = Big(poolAccount.availableBalance);
     this.expirationHeight = poolAccount.expirationHeight;
     this.state = poolAccount.state;
-    this.fundingTxnId = hex(poolAccount.latestTxid);
+    this.fundingTxnId = hex(poolAccount.latestTxid, true);
   }
 }
