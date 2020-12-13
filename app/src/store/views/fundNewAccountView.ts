@@ -108,11 +108,6 @@ export default class FundNewAccountView {
   // Actions
   //
 
-  /** sets the amount to the maximum available in the wallet */
-  setMaxAmount() {
-    this.amount = +this.walletBalance;
-  }
-
   /** shows the summary view */
   cancel() {
     this.amount = 0;

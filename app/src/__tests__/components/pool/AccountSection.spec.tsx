@@ -69,16 +69,11 @@ describe('AccountSection', () => {
       store.accountStore.accounts.clear();
       store.accountStore.activeTraderKey = '';
     });
-    const { getByText, getByLabelText, queryAllByText, changeInput } = render();
+    const { getByText, queryAllByText, changeInput } = render();
 
     expect(getByText('Welcome to Pool')).toBeInTheDocument();
     fireEvent.click(getByText('Open an Account'));
     expect(getByText('Fund Account')).toBeInTheDocument();
-
-    fireEvent.click(getByText('Max'));
-    expect(getByLabelText('Amount')).toHaveValue(
-      store.nodeStore.wallet.walletBalance.toString(),
-    );
 
     changeInput('Amount', '25000000');
     changeInput('Expires In', '2016');
@@ -118,16 +113,11 @@ describe('AccountSection', () => {
       store.accountStore.accounts.clear();
       store.accountStore.activeTraderKey = '';
     });
-    const { getByText, getByLabelText, changeInput } = render();
+    const { getByText, changeInput } = render();
 
     expect(getByText('Welcome to Pool')).toBeInTheDocument();
     fireEvent.click(getByText('Open an Account'));
     expect(getByText('Fund Account')).toBeInTheDocument();
-
-    fireEvent.click(getByText('Max'));
-    expect(getByLabelText('Amount')).toHaveValue(
-      store.nodeStore.wallet.walletBalance.toString(),
-    );
 
     changeInput('Amount', '25000000');
     changeInput('Expires In', '2016');
@@ -173,15 +163,10 @@ describe('AccountSection', () => {
   });
 
   it('should fund an existing account', async () => {
-    const { getByText, getByLabelText, changeInput } = render();
+    const { getByText, changeInput } = render();
 
     expect(getByText('Fund Account')).toBeInTheDocument();
     fireEvent.click(getByText('Fund Account'));
-
-    fireEvent.click(getByText('Max'));
-    expect(getByLabelText('Amount')).toHaveValue(
-      store.nodeStore.wallet.walletBalance.toString(),
-    );
 
     const amount = 25000000;
     changeInput('Amount', amount.toString());
