@@ -27,8 +27,13 @@ export default class BatchesView {
     return this._store.batchStore.nextBatchTimestamp;
   }
 
-  /** the cleared rate on the last batch */
+  /** the cleared rate, in basis points, on the last batch */
   get currentRate() {
+    return this.batches.length ? this.batches[0].basisPoints : 0;
+  }
+
+  /** the cleared fixed rate on the last batch */
+  get currentFixedRate() {
     return this.batches.length ? this.batches[0].clearingPriceRate : 0;
   }
 
@@ -39,6 +44,11 @@ export default class BatchesView {
     const priorRate = this.batches[1].clearingPriceRate;
 
     return toPercent((currentRate - priorRate) / priorRate);
+  }
+
+  /** the fee used for the last batch */
+  get currentFee() {
+    return this.batches.length ? this.batches[0].feeLabel : 0;
   }
 
   /** that amount earned from sold leases */

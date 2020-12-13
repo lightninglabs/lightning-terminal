@@ -42,13 +42,13 @@ describe('BatchStats', () => {
   });
 
   it('should display the previous rate', () => {
-    const { getByText } = render();
+    const { getByText, getAllByText } = render();
     expect(getByText('Previous Rate')).toBeInTheDocument();
     expect(getByText(`${store.batchesView.currentRate}`)).toBeInTheDocument();
     runInAction(() => {
       store.batchStore.batches.clear();
     });
-    expect(getByText(`0`)).toBeInTheDocument();
+    expect(getAllByText(`0`)).toHaveLength(2);
   });
 
   it('should display the percent rate changed', () => {
