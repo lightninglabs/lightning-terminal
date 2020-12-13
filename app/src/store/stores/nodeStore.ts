@@ -99,6 +99,7 @@ export default class NodeStore {
       runInAction(() => {
         this.wallet.channelBalance = Big(offChain.balance);
         this.wallet.walletBalance = Big(onChain.totalBalance);
+        this.wallet.confirmedBalance = Big(onChain.confirmedBalance);
         this._store.log.info('updated nodeStore.wallet', toJS(this.wallet));
       });
     } catch (error) {
