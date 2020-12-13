@@ -24,7 +24,7 @@ export default class CloseAccountView {
   }
 
   get walletBalance() {
-    return this._store.nodeStore.wallet.walletBalance;
+    return this._store.nodeStore.wallet.confirmedBalance;
   }
 
   get accountBalance() {
