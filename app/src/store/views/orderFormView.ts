@@ -150,8 +150,8 @@ export default class OrderFormView {
       // get the percentage rate of the previous batch and apply to the current amount
       const prevPctRate = this._store.api.pool.calcPctRate(prevFixedRate);
       const suggested = this.amount * prevPctRate;
-      // round to the nearest 100 to offset lose of precision in calculating percentages
-      this.premium = Math.round(suggested / 100) * 100;
+      // round to the nearest 10 to offset lose of precision in calculating percentages
+      this.premium = Math.round(suggested / 10) * 10;
     } catch (error) {
       this._store.appView.handleError(error, 'Unable to suggest premium');
     }
