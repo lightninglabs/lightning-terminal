@@ -66,5 +66,5 @@
   "eslint.workingDirectories": [
     "./app"
   ],
-  "eslint.enable": true
+  "typescript.tsdk": "./app/node_modules/typescript/lib"
 }
