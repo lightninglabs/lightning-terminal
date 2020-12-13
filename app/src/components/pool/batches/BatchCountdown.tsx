@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { ReactNode, useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { formatTime } from 'util/formatters';
 import LoaderLines from 'components/common/LoaderLines';
@@ -25,9 +25,10 @@ interface Props {
   label: string;
   timestamp: number;
   className?: string;
+  tip?: ReactNode;
 }
 
-const BatchCountdown: React.FC<Props> = ({ label, timestamp, className }) => {
+const BatchCountdown: React.FC<Props> = ({ label, timestamp, className, tip }) => {
   const [secondsLeft, setSecondsLeft] = useState(getSecsUntil(timestamp));
 
   useEffect(() => {
@@ -49,6 +50,9 @@ const BatchCountdown: React.FC<Props> = ({ label, timestamp, className }) => {
       warn={secondsLeft > 60}
       negative={secondsLeft > 0}
       className={className}
+      tip={tip}
+      tipPlacement="bottom"
+      tipCapitalize={false}
     />
   );
 };

@@ -8,6 +8,22 @@ import Unit from 'components/common/Unit';
 import { styled } from 'components/theme';
 import BatchCountdown from './BatchCountdown';
 
+const StyledStat = styled.div`
+  margin: 0 20px;
+
+  > h4 {
+    margin-bottom: 0;
+  }
+
+  @media (max-width: 1200px) {
+    margin: 0 10px;
+
+    > div {
+      font-size: ${props => props.theme.sizes.l};
+    }
+  }
+`;
+
 const Styled = {
   Wrapper: styled.div`
     display: flex;
@@ -19,12 +35,8 @@ const Styled = {
     border-radius: 5px;
     margin: -15px 0 15px;
   `,
-  Stat: styled(Stat)`
-    margin: 0 30px;
-  `,
-  BatchCountdown: styled(BatchCountdown)`
-    margin: 0 30px;
-  `,
+  Stat: StyledStat.withComponent(Stat),
+  BatchCountdown: StyledStat.withComponent(BatchCountdown),
   ViewMode: styled.div`
     position: absolute;
     bottom: -40px;
@@ -45,6 +57,8 @@ const BatchStats: React.FC = () => {
   const handleViewChart = useCallback(() => batchesView.setViewMode('chart'), []);
   const handleViewList = useCallback(() => batchesView.setViewMode('list'), []);
 
+  const tipProps = { tipPlacement: 'bottom', tipCapitalize: false };
+
   const { Wrapper, Stat, BatchCountdown, ViewMode } = Styled;
   return (
     <Wrapper>
@@ -52,13 +66,27 @@ const BatchStats: React.FC = () => {
         <BatchCountdown
           label={l('nextBatch')}
           timestamp={batchesView.nextBatchTimestamp}
+          tip={l('nextBatchTip')}
         />
-        <Stat label={l('prevRate')} value={`${batchesView.currentRate}`} />
+        <Stat
+          label={l('prevFee')}
+          value={`${batchesView.currentFee}`}
+          tip={l('prevFeeTip')}
+          {...tipProps}
+        />
+        <Stat
+          label={l('prevRate')}
+          value={`${batchesView.currentRate}`}
+          tip={l('prevRateTip', { fixedRate: batchesView.currentFixedRate })}
+          {...tipProps}
+        />
         <Stat
           label={l('rateChange')}
           value={`${batchesView.currentRateChange}%`}
           positive={batchesView.currentRateChange > 0}
           negative={batchesView.currentRateChange < 0}
+          tip={l('rateChangeTip')}
+          {...tipProps}
         />
       </div>
       <div>

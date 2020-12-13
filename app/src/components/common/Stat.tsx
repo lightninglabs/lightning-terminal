@@ -2,6 +2,7 @@ import React, { ReactNode } from 'react';
 import { useTheme } from 'emotion-theming';
 import { HeaderFour } from 'components/base';
 import { styled, Theme } from 'components/theme';
+import Tip from './Tip';
 
 const Styled = {
   Wrapper: styled.div`
@@ -22,9 +23,22 @@ interface Props {
   negative?: boolean;
   warn?: boolean;
   className?: string;
+  tip?: ReactNode;
+  tipPlacement?: string;
+  tipCapitalize?: boolean;
 }
 
-const Stat: React.FC<Props> = ({ label, value, positive, negative, warn, className }) => {
+const Stat: React.FC<Props> = ({
+  label,
+  value,
+  positive,
+  negative,
+  warn,
+  className,
+  tip,
+  tipPlacement,
+  tipCapitalize,
+}) => {
   const theme = useTheme<Theme>();
 
   let color = '';
@@ -33,12 +47,22 @@ const Stat: React.FC<Props> = ({ label, value, positive, negative, warn, classNa
   if (positive) color = theme.colors.green;
 
   const { Wrapper, Value } = Styled;
-  return (
+  let cmp = (
     <Wrapper className={className}>
       <Value color={color}>{value}</Value>
       <HeaderFour>{label}</HeaderFour>
     </Wrapper>
   );
+
+  if (tip) {
+    cmp = (
+      <Tip overlay={tip} placement={tipPlacement} capitalize={tipCapitalize}>
+        {cmp}
+      </Tip>
+    );
+  }
+
+  return cmp;
 };
 
 export default Stat;
