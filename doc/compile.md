@@ -83,8 +83,6 @@ To compile the proto files into JS/TS code, follow the following steps:
    work properly.
    
    > Note: if you are running on a Mac, you only need to perform step 1
-1. Update the version of `lnd` and/or `loop` at the top of the [build-protos.js](../src/scripts/build-protos.js)
-   file.
 1. Run the following command to download the proto files from each repo and compile the
    JS/TS code using the updated protos.
    ```shell script
