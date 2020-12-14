@@ -808,6 +808,20 @@ message LiquidityParameters {
     flight at any point in time.
     */
     uint64 auto_max_in_flight = 13;
+
+    /*
+    The minimum amount, expressed in satoshis, that the autoloop client will
+    dispatch a swap for. This value is subject to the server-side limits
+    specified by the LoopOutTerms endpoint.
+    */
+    uint64 min_swap_amount = 14;
+
+    /*
+    The maximum amount, expressed in satoshis, that the autoloop client will
+    dispatch a swap for. This value is subject to the server-side limits
+    specified by the LoopOutTerms endpoint.
+    */
+    uint64 max_swap_amount = 15;
 }
 
 enum LiquidityRuleType {

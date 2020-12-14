@@ -235,8 +235,10 @@ service Lightning {
     /* lncli: `abandonchannel`
     AbandonChannel removes all channel state from the database except for a
     close summary. This method can be used to get rid of permanently unusable
-    channels due to bugs fixed in newer versions of lnd. Only available
-    when in debug builds of lnd.
+    channels due to bugs fixed in newer versions of lnd. This method can also be
+    used to remove externally funded channels where the funding transaction was
+    never broadcast. Only available for non-externally funded channels in dev
+    build.
     */
     rpc AbandonChannel (AbandonChannelRequest) returns (AbandonChannelResponse);
 
@@ -491,6 +493,13 @@ service Lightning {
     offline.
     */
     rpc BakeMacaroon (BakeMacaroonRequest) returns (BakeMacaroonResponse);
+
+    /* lncli: `listpermissions`
+    ListPermissions lists all RPC method URIs and their required macaroon
+    permissions to access them.
+    */
+    rpc ListPermissions (ListPermissionsRequest)
+        returns (ListPermissionsResponse);
 }
 
 message Utxo {
@@ -1672,6 +1681,12 @@ message OpenChannelRequest {
     the channel. It only applies to the remote party.
     */
     uint64 remote_max_value_in_flight_msat = 15;
+
+    /*
+    The maximum number of concurrent HTLCs we will allow the remote party to add
+    to the commitment transaction.
+    */
+    uint32 remote_max_htlcs = 16;
 }
 message OpenStatusUpdate {
     oneof update {
@@ -1817,12 +1832,19 @@ message FundingPsbtFinalize {
     /*
     The funded PSBT that contains all witness data to send the exact channel
     capacity amount to the PK script returned in the open channel message in a
-    previous step.
+    previous step. Cannot be set at the same time as final_raw_tx.
     */
     bytes signed_psbt = 1;
 
     // The pending channel ID of the channel to get the PSBT for.
     bytes pending_chan_id = 2;
+
+    /*
+    As an alternative to the signed PSBT with all witness data, the final raw
+    wire format transaction can also be specified directly. Cannot be set at the
+    same time as signed_psbt.
+    */
+    bytes final_raw_tx = 3;
 }
 
 message FundingTransitionMsg {
@@ -3039,6 +3061,8 @@ message DeleteAllPaymentsResponse {
 
 message AbandonChannelRequest {
     ChannelPoint channel_point = 1;
+
+    bool pending_funding_shim_only = 2;
 }
 
 message AbandonChannelResponse {
@@ -3333,6 +3357,21 @@ message BakeMacaroonResponse {
     string macaroon = 1;
 }
 
+message MacaroonPermissionList {
+    // A list of macaroon permissions.
+    repeated MacaroonPermission permissions = 1;
+}
+
+message ListPermissionsRequest {
+}
+message ListPermissionsResponse {
+    /*
+    A map between all RPC method URIs and their required macaroon permissions to
+    access them.
+    */
+    map<string, MacaroonPermissionList> method_permissions = 1;
+}
+
 message Failure {
     enum FailureCode {
         /*
@@ -3494,4 +3533,15 @@ message ChannelUpdate {
     network in a forwards compatible manner.
     */
     bytes extra_opaque_data = 12;
+}
+
+message MacaroonId {
+    bytes nonce = 1;
+    bytes storageId = 2;
+    repeated Op ops = 3;
+}
+
+message Op {
+    string entity = 1;
+    repeated string actions = 2;
 }

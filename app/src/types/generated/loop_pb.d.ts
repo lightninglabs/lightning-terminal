@@ -644,6 +644,12 @@ export class LiquidityParameters extends jspb.Message {
   getAutoMaxInFlight(): number;
   setAutoMaxInFlight(value: number): void;
 
+  getMinSwapAmount(): number;
+  setMinSwapAmount(value: number): void;
+
+  getMaxSwapAmount(): number;
+  setMaxSwapAmount(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LiquidityParameters.AsObject;
   static toObject(includeInstance: boolean, msg: LiquidityParameters): LiquidityParameters.AsObject;
@@ -669,6 +675,8 @@ export namespace LiquidityParameters {
     autoOutBudgetSat: number,
     autoOutBudgetStartSec: number,
     autoMaxInFlight: number,
+    minSwapAmount: number,
+    maxSwapAmount: number,
   }
 }
 

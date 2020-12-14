@@ -4400,7 +4400,9 @@ proto.looprpc.LiquidityParameters.toObject = function(includeInstance, msg) {
     autoLoopOut: jspb.Message.getFieldWithDefault(msg, 10, false),
     autoOutBudgetSat: jspb.Message.getFieldWithDefault(msg, 11, 0),
     autoOutBudgetStartSec: jspb.Message.getFieldWithDefault(msg, 12, 0),
-    autoMaxInFlight: jspb.Message.getFieldWithDefault(msg, 13, 0)
+    autoMaxInFlight: jspb.Message.getFieldWithDefault(msg, 13, 0),
+    minSwapAmount: jspb.Message.getFieldWithDefault(msg, 14, 0),
+    maxSwapAmount: jspb.Message.getFieldWithDefault(msg, 15, 0)
   };
 
   if (includeInstance) {
@@ -4489,6 +4491,14 @@ proto.looprpc.LiquidityParameters.deserializeBinaryFromReader = function(msg, re
     case 13:
       var value = /** @type {number} */ (reader.readUint64());
       msg.setAutoMaxInFlight(value);
+      break;
+    case 14:
+      var value = /** @type {number} */ (reader.readUint64());
+      msg.setMinSwapAmount(value);
+      break;
+    case 15:
+      var value = /** @type {number} */ (reader.readUint64());
+      msg.setMaxSwapAmount(value);
       break;
     default:
       reader.skipField();
@@ -4608,6 +4618,20 @@ proto.looprpc.LiquidityParameters.serializeBinaryToWriter = function(message, wr
   if (f !== 0) {
     writer.writeUint64(
       13,
+      f
+    );
+  }
+  f = message.getMinSwapAmount();
+  if (f !== 0) {
+    writer.writeUint64(
+      14,
+      f
+    );
+  }
+  f = message.getMaxSwapAmount();
+  if (f !== 0) {
+    writer.writeUint64(
+      15,
       f
     );
   }
@@ -4824,6 +4848,36 @@ proto.looprpc.LiquidityParameters.prototype.getAutoMaxInFlight = function() {
 /** @param {number} value */
 proto.looprpc.LiquidityParameters.prototype.setAutoMaxInFlight = function(value) {
   jspb.Message.setField(this, 13, value);
+};
+
+
+/**
+ * optional uint64 min_swap_amount = 14;
+ * @return {number}
+ */
+proto.looprpc.LiquidityParameters.prototype.getMinSwapAmount = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 14, 0));
+};
+
+
+/** @param {number} value */
+proto.looprpc.LiquidityParameters.prototype.setMinSwapAmount = function(value) {
+  jspb.Message.setField(this, 14, value);
+};
+
+
+/**
+ * optional uint64 max_swap_amount = 15;
+ * @return {number}
+ */
+proto.looprpc.LiquidityParameters.prototype.getMaxSwapAmount = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 15, 0));
+};
+
+
+/** @param {number} value */
+proto.looprpc.LiquidityParameters.prototype.setMaxSwapAmount = function(value) {
+  jspb.Message.setField(this, 15, value);
 };
 
 

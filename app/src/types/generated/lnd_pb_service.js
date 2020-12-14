@@ -514,6 +514,15 @@ Lightning.BakeMacaroon = {
   responseType: lnd_pb.BakeMacaroonResponse
 };
 
+Lightning.ListPermissions = {
+  methodName: "ListPermissions",
+  service: Lightning,
+  requestStream: false,
+  responseStream: false,
+  requestType: lnd_pb.ListPermissionsRequest,
+  responseType: lnd_pb.ListPermissionsResponse
+};
+
 exports.Lightning = Lightning;
 
 function LightningClient(serviceHost, options) {
@@ -2337,6 +2346,37 @@ LightningClient.prototype.bakeMacaroon = function bakeMacaroon(requestMessage, m
     callback = arguments[1];
   }
   var client = grpc.unary(Lightning.BakeMacaroon, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+LightningClient.prototype.listPermissions = function listPermissions(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(Lightning.ListPermissions, {
     request: requestMessage,
     host: this.serviceHost,
     metadata: metadata,

@@ -2,4 +2,4 @@
 # that, generated. This will make sure the JS (and TS types for that matter)
 # will not show up in the repository's language statistics.
 
-app/src/types/generated* linguist-generated
+app/src/types/generated/** linguist-generated

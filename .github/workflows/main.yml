@@ -36,11 +36,6 @@ jobs:
         with:
           node-version: ${{ matrix.node_version }}
 
-      - name: setup protoc
-        uses: arduino/setup-protoc@master
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: get yarn cache dir
         id: yarn-cache-dir
         run: echo "::set-output name=dir::$(yarn cache dir)"
@@ -114,11 +109,6 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: '~${{ matrix.go_version }}'
-
-      - name: setup protoc
-        uses: arduino/setup-protoc@master
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: build backend binary
         run: make build
