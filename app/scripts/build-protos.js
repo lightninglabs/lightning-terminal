@@ -7,14 +7,34 @@ const { join, sep } = require('path');
 const { platform } = require('os');
 const appPath = join(__dirname, '..');
 
-/** Specify the versions of LND and Loop protos to download */
-const LND_VERSION = 'v0.11.1-beta';
-const LOOP_VERSION = 'v0.11.2-beta';
+/**
+ * Specify the pattern under which the project's version can be found in the
+ * root directory's go.mod file.
+ */
+const LND_VERSION_PATTERN = /^\tgithub\.com\/lightningnetwork\/lnd (v[\d.]+-beta)/ms;
+const LOOP_VERSION_PATTERN = /^\tgithub\.com\/lightninglabs\/loop (v[\d.]+-beta)/ms;
 
 /** mapping of proto files to the github url to download each from */
-const protoSources = {
-  lnd: `lightningnetwork/lnd/${LND_VERSION}/lnrpc/rpc.proto`,
-  loop: `lightninglabs/loop/${LOOP_VERSION}/looprpc/client.proto`,
+const protoSources = async () => {
+  console.log('Parsing go.mod for versions...');
+  const goModPath = join(appPath, '..', 'go.mod');
+  const goModSource = (await fs.readFile(goModPath)).toString();
+
+  const lndVersion = goModSource.match(LND_VERSION_PATTERN);
+  if (!lndVersion || lndVersion.length !== 2) {
+    throw new Error(`go.mod did not match pattern ${LND_VERSION_PATTERN}`);
+  }
+  
+  const loopVersion = goModSource.match(LOOP_VERSION_PATTERN);
+  if (!loopVersion || loopVersion.length !== 2) {
+    throw new Error(`go.mod did not match pattern ${LOOP_VERSION_PATTERN}`);
+  }
+
+  console.log(`Found lnd version ${lndVersion[1]} and loop version ${loopVersion[1]}.`);
+  return {
+    lnd: `lightningnetwork/lnd/${lndVersion[1]}/lnrpc/rpc.proto`,
+    loop: `lightninglabs/loop/${loopVersion[1]}/looprpc/client.proto`,
+  };
 };
 
 /** list of proto files and patches to apply */
@@ -30,7 +50,7 @@ const filePatches = {
  */
 const download = async () => {
   console.log('\nDownloading proto files...');
-  for ([name, urlPath] of Object.entries(protoSources)) {
+  for ([name, urlPath] of Object.entries(await protoSources())) {
     const url = `https://raw.githubusercontent.com/${urlPath}`;
     const filePath = join(appPath, '..', 'proto', `${name}.proto`);
     console.log(`${url}`);
