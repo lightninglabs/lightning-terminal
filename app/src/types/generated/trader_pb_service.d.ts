@@ -167,6 +167,15 @@ type TraderNodeRatings = {
   readonly responseType: typeof trader_pb.NodeRatingResponse;
 };
 
+type TraderBatchSnapshots = {
+  readonly methodName: string;
+  readonly service: typeof Trader;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof auctioneer_pb.BatchSnapshotsRequest;
+  readonly responseType: typeof auctioneer_pb.BatchSnapshotsResponse;
+};
+
 export class Trader {
   static readonly serviceName: string;
   static readonly QuoteAccount: TraderQuoteAccount;
@@ -187,6 +196,7 @@ export class Trader {
   static readonly GetLsatTokens: TraderGetLsatTokens;
   static readonly Leases: TraderLeases;
   static readonly NodeRatings: TraderNodeRatings;
+  static readonly BatchSnapshots: TraderBatchSnapshots;
 }
 
 export type ServiceError = { message: string, code: number; metadata: grpc.Metadata }
@@ -382,6 +392,15 @@ export class TraderClient {
   nodeRatings(
     requestMessage: trader_pb.NodeRatingRequest,
     callback: (error: ServiceError|null, responseMessage: trader_pb.NodeRatingResponse|null) => void
+  ): UnaryResponse;
+  batchSnapshots(
+    requestMessage: auctioneer_pb.BatchSnapshotsRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: auctioneer_pb.BatchSnapshotsResponse|null) => void
+  ): UnaryResponse;
+  batchSnapshots(
+    requestMessage: auctioneer_pb.BatchSnapshotsRequest,
+    callback: (error: ServiceError|null, responseMessage: auctioneer_pb.BatchSnapshotsResponse|null) => void
   ): UnaryResponse;
 }
 

@@ -109,6 +109,15 @@ ChannelAuctioneer.NodeRating = {
   responseType: auctioneer_pb.ServerNodeRatingResponse
 };
 
+ChannelAuctioneer.BatchSnapshots = {
+  methodName: "BatchSnapshots",
+  service: ChannelAuctioneer,
+  requestStream: false,
+  responseStream: false,
+  requestType: auctioneer_pb.BatchSnapshotsRequest,
+  responseType: auctioneer_pb.BatchSnapshotsResponse
+};
+
 exports.ChannelAuctioneer = ChannelAuctioneer;
 
 function ChannelAuctioneerClient(serviceHost, options) {
@@ -445,6 +454,37 @@ ChannelAuctioneerClient.prototype.nodeRating = function nodeRating(requestMessag
     callback = arguments[1];
   }
   var client = grpc.unary(ChannelAuctioneer.NodeRating, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+ChannelAuctioneerClient.prototype.batchSnapshots = function batchSnapshots(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(ChannelAuctioneer.BatchSnapshots, {
     request: requestMessage,
     host: this.serviceHost,
     metadata: metadata,

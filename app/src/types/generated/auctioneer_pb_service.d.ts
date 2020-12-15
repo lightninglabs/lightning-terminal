@@ -103,6 +103,15 @@ type ChannelAuctioneerNodeRating = {
   readonly responseType: typeof auctioneer_pb.ServerNodeRatingResponse;
 };
 
+type ChannelAuctioneerBatchSnapshots = {
+  readonly methodName: string;
+  readonly service: typeof ChannelAuctioneer;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof auctioneer_pb.BatchSnapshotsRequest;
+  readonly responseType: typeof auctioneer_pb.BatchSnapshotsResponse;
+};
+
 export class ChannelAuctioneer {
   static readonly serviceName: string;
   static readonly ReserveAccount: ChannelAuctioneerReserveAccount;
@@ -116,6 +125,7 @@ export class ChannelAuctioneer {
   static readonly RelevantBatchSnapshot: ChannelAuctioneerRelevantBatchSnapshot;
   static readonly BatchSnapshot: ChannelAuctioneerBatchSnapshot;
   static readonly NodeRating: ChannelAuctioneerNodeRating;
+  static readonly BatchSnapshots: ChannelAuctioneerBatchSnapshots;
 }
 
 export type ServiceError = { message: string, code: number; metadata: grpc.Metadata }
@@ -240,6 +250,15 @@ export class ChannelAuctioneerClient {
   nodeRating(
     requestMessage: auctioneer_pb.ServerNodeRatingRequest,
     callback: (error: ServiceError|null, responseMessage: auctioneer_pb.ServerNodeRatingResponse|null) => void
+  ): UnaryResponse;
+  batchSnapshots(
+    requestMessage: auctioneer_pb.BatchSnapshotsRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: auctioneer_pb.BatchSnapshotsResponse|null) => void
+  ): UnaryResponse;
+  batchSnapshots(
+    requestMessage: auctioneer_pb.BatchSnapshotsRequest,
+    callback: (error: ServiceError|null, responseMessage: auctioneer_pb.BatchSnapshotsResponse|null) => void
   ): UnaryResponse;
 }
 
