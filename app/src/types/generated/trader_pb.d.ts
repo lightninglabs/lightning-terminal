@@ -113,6 +113,9 @@ export namespace QuoteAccountResponse {
 }
 
 export class ListAccountsRequest extends jspb.Message {
+  getActiveOnly(): boolean;
+  setActiveOnly(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ListAccountsRequest.AsObject;
   static toObject(includeInstance: boolean, msg: ListAccountsRequest): ListAccountsRequest.AsObject;
@@ -125,6 +128,7 @@ export class ListAccountsRequest extends jspb.Message {
 
 export namespace ListAccountsRequest {
   export type AsObject = {
+    activeOnly: boolean,
   }
 }
 

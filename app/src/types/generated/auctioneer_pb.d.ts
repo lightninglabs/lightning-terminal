@@ -1852,6 +1852,54 @@ export namespace ServerNodeRatingResponse {
   }
 }
 
+export class BatchSnapshotsRequest extends jspb.Message {
+  getStartBatchId(): Uint8Array | string;
+  getStartBatchId_asU8(): Uint8Array;
+  getStartBatchId_asB64(): string;
+  setStartBatchId(value: Uint8Array | string): void;
+
+  getNumBatchesBack(): number;
+  setNumBatchesBack(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): BatchSnapshotsRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: BatchSnapshotsRequest): BatchSnapshotsRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: BatchSnapshotsRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): BatchSnapshotsRequest;
+  static deserializeBinaryFromReader(message: BatchSnapshotsRequest, reader: jspb.BinaryReader): BatchSnapshotsRequest;
+}
+
+export namespace BatchSnapshotsRequest {
+  export type AsObject = {
+    startBatchId: Uint8Array | string,
+    numBatchesBack: number,
+  }
+}
+
+export class BatchSnapshotsResponse extends jspb.Message {
+  clearBatchesList(): void;
+  getBatchesList(): Array<BatchSnapshotResponse>;
+  setBatchesList(value: Array<BatchSnapshotResponse>): void;
+  addBatches(value?: BatchSnapshotResponse, index?: number): BatchSnapshotResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): BatchSnapshotsResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: BatchSnapshotsResponse): BatchSnapshotsResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: BatchSnapshotsResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): BatchSnapshotsResponse;
+  static deserializeBinaryFromReader(message: BatchSnapshotsResponse, reader: jspb.BinaryReader): BatchSnapshotsResponse;
+}
+
+export namespace BatchSnapshotsResponse {
+  export type AsObject = {
+    batchesList: Array<BatchSnapshotResponse.AsObject>,
+  }
+}
+
 export interface ChannelTypeMap {
   TWEAKLESS: 0;
   ANCHORS: 1;

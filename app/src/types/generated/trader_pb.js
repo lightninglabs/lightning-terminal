@@ -794,7 +794,7 @@ proto.poolrpc.ListAccountsRequest.prototype.toObject = function(opt_includeInsta
  */
 proto.poolrpc.ListAccountsRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-
+    activeOnly: jspb.Message.getFieldWithDefault(msg, 1, false)
   };
 
   if (includeInstance) {
@@ -831,6 +831,10 @@ proto.poolrpc.ListAccountsRequest.deserializeBinaryFromReader = function(msg, re
     }
     var field = reader.getFieldNumber();
     switch (field) {
+    case 1:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setActiveOnly(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -860,6 +864,30 @@ proto.poolrpc.ListAccountsRequest.prototype.serializeBinary = function() {
  */
 proto.poolrpc.ListAccountsRequest.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
+  f = message.getActiveOnly();
+  if (f) {
+    writer.writeBool(
+      1,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional bool active_only = 1;
+ * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
+ * You should avoid comparisons like {@code val === true/false} in those cases.
+ * @return {boolean}
+ */
+proto.poolrpc.ListAccountsRequest.prototype.getActiveOnly = function() {
+  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 1, false));
+};
+
+
+/** @param {boolean} value */
+proto.poolrpc.ListAccountsRequest.prototype.setActiveOnly = function(value) {
+  jspb.Message.setField(this, 1, value);
 };
 
 
