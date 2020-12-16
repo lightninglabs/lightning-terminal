@@ -1,4 +1,5 @@
 import { autorun, makeAutoObservable, toJS } from 'mobx';
+import { NodeTier } from 'types/generated/auctioneer_pb';
 import { SortParams } from 'types/state';
 import {
   BalanceMode,
@@ -9,7 +10,9 @@ import {
 import { prefixTranslation } from 'util/translate';
 import { Store } from 'store';
 import { Channel, Order, Swap } from 'store/models';
+import { Tier } from 'store/models/order';
 import { LeaseView } from 'store/views';
+import { DEFAULT_MAX_BATCH_FEE, DEFAULT_MIN_CHAN_SIZE } from 'store/views/orderFormView';
 
 const { l } = prefixTranslation('stores.settingsStore');
 
@@ -20,6 +23,9 @@ export interface PersistentSettings {
   tourAutoShown: boolean;
   bitcoinTxUrl: string;
   lnNodeUrl: string;
+  minChanSize: number;
+  maxBatchFeeRate: number;
+  minNodeTier: Tier;
   channelSort: SortParams<Channel>;
   historySort: SortParams<Swap>;
   orderSort: SortParams<Order>;
@@ -49,6 +55,15 @@ export default class SettingsStore {
 
   /** url to a graph explorer for Lightning nodes */
   lnNodeUrl = LightningExplorerPresets['1ml.com'];
+
+  /** the order minimum channel size chosen by the user */
+  minChanSize = DEFAULT_MIN_CHAN_SIZE;
+
+  /** the order maximum batch fee rate chosen by the user */
+  maxBatchFeeRate = DEFAULT_MAX_BATCH_FEE;
+
+  /** the order minimum node tier chosen by the user */
+  minNodeTier: Tier = NodeTier.TIER_DEFAULT;
 
   /** specifies the sorting field and direction for the channel list */
   channelSort: SortParams<Channel> = {
@@ -153,6 +168,15 @@ export default class SettingsStore {
   }
 
   /**
+   * Sets the order options to be persisted in local storage
+   */
+  setOrderSettings(minChanSize: number, maxBatchFeeRate: number, minNodeTier: Tier) {
+    this.minChanSize = minChanSize;
+    this.maxBatchFeeRate = maxBatchFeeRate;
+    this.minNodeTier = minNodeTier;
+  }
+
+  /**
    * Sets the sort field and direction that the channel list should use
    * @param field the channel field to sort by
    * @param descending true of the order should be descending, otherwise false
@@ -217,6 +241,9 @@ export default class SettingsStore {
           tourAutoShown: this.tourAutoShown,
           bitcoinTxUrl: this.bitcoinTxUrl,
           lnNodeUrl: this.lnNodeUrl,
+          minChanSize: this.minChanSize,
+          maxBatchFeeRate: this.maxBatchFeeRate,
+          minNodeTier: this.minNodeTier,
           channelSort: toJS(this.channelSort),
           historySort: toJS(this.historySort),
           orderSort: toJS(this.orderSort),
@@ -246,6 +273,14 @@ export default class SettingsStore {
       if (settings.historySort) this.historySort = settings.historySort;
       if (settings.orderSort) this.orderSort = settings.orderSort;
       if (settings.leaseSort) this.leaseSort = settings.leaseSort;
+
+      if (settings.minChanSize) this.minChanSize = settings.minChanSize;
+      if (settings.maxBatchFeeRate) this.maxBatchFeeRate = settings.maxBatchFeeRate;
+      if (settings.minNodeTier) this.minNodeTier = settings.minNodeTier;
+      // update the default values of the order form
+      this._store.orderFormView.minChanSize = this.minChanSize;
+      this._store.orderFormView.maxBatchFeeRate = this.maxBatchFeeRate;
+      this._store.orderFormView.minNodeTier = this.minNodeTier;
       this._store.log.info('loaded settings', settings);
     }
 

@@ -183,9 +183,12 @@ export default class OrderFormView {
       if (nonce) {
         this.amount = 0;
         this.premium = 0;
-        this.minChanSize = DEFAULT_MIN_CHAN_SIZE;
-        this.maxBatchFeeRate = DEFAULT_MAX_BATCH_FEE;
-        this.minNodeTier = NodeTier.TIER_DEFAULT;
+        // persist the additional options so they can be used for future orders
+        this._store.settingsStore.setOrderSettings(
+          this.minChanSize,
+          this.maxBatchFeeRate,
+          this.minNodeTier,
+        );
       }
     });
 
