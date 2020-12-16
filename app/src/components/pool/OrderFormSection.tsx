@@ -44,7 +44,11 @@ const Styled = {
   `,
   OptionsButton: styled(Button)`
     opacity: 0.7;
-    padding: 0 0 30px;
+    padding: 0;
+  `,
+  Divider: styled.div`
+    margin: 15px 0 20px;
+    border-bottom: 2px solid ${props => props.theme.colors.blue};
   `,
   Actions: styled.div`
     margin: 30px auto;
@@ -56,7 +60,7 @@ const OrderFormSection: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.pool.OrderFormSection');
   const { orderFormView } = useStore();
 
-  const { Section, OrderType, Small, Options, OptionsButton, Actions } = Styled;
+  const { Section, OrderType, Small, Options, OptionsButton, Divider, Actions } = Styled;
   return (
     <Section>
       <Scrollable>
@@ -138,10 +142,11 @@ const OrderFormSection: React.FC = () => {
           {orderFormView.addlOptionsVisible ? <ChevronUp /> : <ChevronDown />}
           {orderFormView.addlOptionsVisible ? l('hideOptions') : l('viewOptions')}
         </OptionsButton>
+        <Divider />
         <SummaryItem>
           <span>{l('durationLabel')}</span>
           <span className="text-right">
-            2016
+            2016 blocks
             <br />
             <Small>(~{l('durationWeeks')})</Small>
           </span>
@@ -156,7 +161,7 @@ const OrderFormSection: React.FC = () => {
         </SummaryItem>
         <SummaryItem>
           <span>{l('interestLabel')}</span>
-          <span>{orderFormView.interestPercent}%</span>
+          <span>{orderFormView.interestBps} bps</span>
         </SummaryItem>
         <SummaryItem strong>
           <span>{l('aprLabel')}</span>

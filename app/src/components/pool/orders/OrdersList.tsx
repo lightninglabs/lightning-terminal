@@ -67,7 +67,7 @@ const OrderRow: React.FC<{
       <TableCell right>
         <Unit sats={order.amount} suffix={false} />
       </TableCell>
-      <TableCell right>{order.rateFixed}</TableCell>
+      <TableCell right>{order.basisPoints}</TableCell>
       <TableCell>
         <OrderStatus status={order.stateLabel}>{order.stateWithCount}</OrderStatus>
       </TableCell>

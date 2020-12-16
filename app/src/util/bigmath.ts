@@ -24,6 +24,12 @@ export const percentage = (portion: Big, whole: Big, decimals = 0): number => {
 export const toPercent = (value: number) => Math.round(value * 100 * 100) / 100;
 
 /**
+ * Converts a number to basis points, excluding the decimal places
+ * @param value the decimal value to convert
+ */
+export const toBasisPoints = (value: number) => Math.round(toPercent(value) * 100);
+
+/**
  * Calculates the annual percentage rate. Returned as a decimal, not a percentage
  * @param principal the total principal amount being loaned
  * @param premium the premium being paid for the loan

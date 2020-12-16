@@ -203,8 +203,8 @@ describe('OrderFormSection', () => {
 
   it('should display the channel duration', () => {
     const { getByText } = render();
-    expect(getByText('Channel Duration (blocks)')).toBeInTheDocument();
-    expect(getByText('2016')).toBeInTheDocument();
+    expect(getByText('Channel Duration')).toBeInTheDocument();
+    expect(getByText('2016 blocks')).toBeInTheDocument();
     expect(getByText('(~2 wks)')).toBeInTheDocument();
   });
 
@@ -227,29 +227,29 @@ describe('OrderFormSection', () => {
   });
 
   it('should calculate the interest rate percent correctly', () => {
-    const { getByText, getAllByText, changeInput } = render();
+    const { getByText, changeInput } = render();
 
-    expect(getByText('Interest Rate Percent')).toBeInTheDocument();
+    expect(getByText('Interest Rate')).toBeInTheDocument();
 
     changeInput('Desired Inbound Liquidity', '1000000');
     changeInput('Bid Premium', '1000');
-    expect(getByText('0.1%')).toBeInTheDocument();
+    expect(getByText('10 bps')).toBeInTheDocument();
 
     changeInput('Desired Inbound Liquidity', '1000000');
     changeInput('Bid Premium', '500');
-    expect(getByText('0.05%')).toBeInTheDocument();
+    expect(getByText('5 bps')).toBeInTheDocument();
 
     changeInput('Desired Inbound Liquidity', '1000000');
     changeInput('Bid Premium', '1234');
-    expect(getByText('0.12%')).toBeInTheDocument();
+    expect(getByText('12 bps')).toBeInTheDocument();
 
     changeInput('Desired Inbound Liquidity', '1000000');
     changeInput('Bid Premium', '');
-    expect(getAllByText('0%')).toHaveLength(2);
+    expect(getByText('0 bps')).toBeInTheDocument();
   });
 
   it('should calculate the APR correctly', () => {
-    const { getByText, getAllByText, changeInput } = render();
+    const { getByText, changeInput } = render();
 
     expect(getByText('Annual Rate (APR)')).toBeInTheDocument();
 
@@ -267,6 +267,6 @@ describe('OrderFormSection', () => {
 
     changeInput('Desired Inbound Liquidity', '1000000');
     changeInput('Bid Premium', '');
-    expect(getAllByText('0%')).toHaveLength(2);
+    expect(getByText('0%')).toBeInTheDocument();
   });
 });

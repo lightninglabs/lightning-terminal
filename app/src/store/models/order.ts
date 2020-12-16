@@ -52,6 +52,12 @@ export default class Order {
     return leases.length;
   }
 
+  /** the order fixed rate expressed as basis points */
+  get basisPoints() {
+    const pct = this._store.api.pool.calcPctRate(this.rateFixed);
+    return Math.round(pct * 100 * 100);
+  }
+
   /**
    * true if this order's state is submitted or partially filled
    */
