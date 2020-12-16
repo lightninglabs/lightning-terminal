@@ -186,6 +186,8 @@
   "cmps.pool.OrderFormSection.premiumSuggested": "Suggested",
   "cmps.pool.OrderFormSection.minChanSizeLabel": "Minimum Channel Size",
   "cmps.pool.OrderFormSection.minChanSizePlaceholder": "100,000",
+  "cmps.pool.OrderFormSection.viewOptions": "View Additional Options",
+  "cmps.pool.OrderFormSection.hideOptions": "Hide Additional Options",
   "cmps.pool.OrderFormSection.feeLabel": "Max Batch Fee Rate",
   "cmps.pool.OrderFormSection.feePlaceholder": "100",
   "cmps.pool.OrderFormSection.tierLabel": "Min Node Tier",

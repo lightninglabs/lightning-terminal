@@ -45,6 +45,16 @@ describe('OrderFormSection', () => {
     expect(getByText('Place Ask Order')).toBeInTheDocument();
   });
 
+  it('should toggle the additional options', () => {
+    const { getByText, store } = render();
+
+    expect(store.orderFormView.addlOptionsVisible).toBe(false);
+    fireEvent.click(getByText('View Additional Options'));
+    expect(store.orderFormView.addlOptionsVisible).toBe(true);
+    fireEvent.click(getByText('Hide Additional Options'));
+    expect(store.orderFormView.addlOptionsVisible).toBe(false);
+  });
+
   it('should submit a bid order', async () => {
     const { getByText, changeInput, changeSelect } = render();
 

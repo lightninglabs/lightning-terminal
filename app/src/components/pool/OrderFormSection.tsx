@@ -4,7 +4,15 @@ import { usePrefixedTranslation } from 'hooks';
 import { Unit, Units } from 'util/constants';
 import { useStore } from 'store';
 import { Tier } from 'store/models/order';
-import { Button, Scrollable, Section, Small, SummaryItem } from 'components/base';
+import {
+  Button,
+  ChevronDown,
+  ChevronUp,
+  Scrollable,
+  Section,
+  Small,
+  SummaryItem,
+} from 'components/base';
 import FormField from 'components/common/FormField';
 import FormInputNumber from 'components/common/FormInputNumber';
 import FormSelect from 'components/common/FormSelect';
@@ -29,6 +37,15 @@ const Styled = {
   Small: styled(Small)`
     color: ${props => props.theme.colors.gray};
   `,
+  Options: styled.div<{ visible: boolean }>`
+    overflow: hidden;
+    max-height: ${props => (props.visible ? '300px' : '0')};
+    transition: max-height 0.3s linear;
+  `,
+  OptionsButton: styled(Button)`
+    opacity: 0.7;
+    padding: 0 0 30px;
+  `,
   Actions: styled.div`
     margin: 30px auto;
     text-align: center;
@@ -39,7 +56,7 @@ const OrderFormSection: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.pool.OrderFormSection');
   const { orderFormView } = useStore();
 
-  const { Section, OrderType, Small, Actions } = Styled;
+  const { Section, OrderType, Small, Options, OptionsButton, Actions } = Styled;
   return (
     <Section>
       <Scrollable>
@@ -87,34 +104,40 @@ const OrderFormSection: React.FC = () => {
             }
           />
         </FormField>
-        <FormField label={l('minChanSizeLabel')} error={orderFormView.minChanSizeError}>
-          <FormInputNumber
-            label={l('minChanSizeLabel')}
-            placeholder={l('minChanSizePlaceholder')}
-            extra={Units[Unit.sats].suffix}
-            value={orderFormView.minChanSize}
-            onChange={orderFormView.setMinChanSize}
-          />
-        </FormField>
-        <FormField label={l('feeLabel')} error={orderFormView.feeRateError}>
-          <FormInputNumber
-            label={l('feeLabel')}
-            placeholder={l('feePlaceholder')}
-            extra="sats/vbyte"
-            value={orderFormView.maxBatchFeeRate}
-            onChange={orderFormView.setMaxBatchFeeRate}
-          />
-        </FormField>
-        {orderFormView.orderType === 'Bid' && (
-          <FormField label={l('tierLabel')}>
-            <FormSelect
-              label={l('tierLabel')}
-              value={orderFormView.minNodeTier.toString()}
-              onChange={v => orderFormView.setMinNodeTier(parseInt(v) as Tier)}
-              options={orderFormView.nodeTierOptions}
+        <Options visible={orderFormView.addlOptionsVisible}>
+          <FormField label={l('minChanSizeLabel')} error={orderFormView.minChanSizeError}>
+            <FormInputNumber
+              label={l('minChanSizeLabel')}
+              placeholder={l('minChanSizePlaceholder')}
+              extra={Units[Unit.sats].suffix}
+              value={orderFormView.minChanSize}
+              onChange={orderFormView.setMinChanSize}
             />
           </FormField>
-        )}
+          <FormField label={l('feeLabel')} error={orderFormView.feeRateError}>
+            <FormInputNumber
+              label={l('feeLabel')}
+              placeholder={l('feePlaceholder')}
+              extra="sats/vbyte"
+              value={orderFormView.maxBatchFeeRate}
+              onChange={orderFormView.setMaxBatchFeeRate}
+            />
+          </FormField>
+          {orderFormView.orderType === 'Bid' && (
+            <FormField label={l('tierLabel')}>
+              <FormSelect
+                label={l('tierLabel')}
+                value={orderFormView.minNodeTier.toString()}
+                onChange={v => orderFormView.setMinNodeTier(parseInt(v) as Tier)}
+                options={orderFormView.nodeTierOptions}
+              />
+            </FormField>
+          )}
+        </Options>
+        <OptionsButton ghost borderless compact onClick={orderFormView.toggleAddlOptions}>
+          {orderFormView.addlOptionsVisible ? <ChevronUp /> : <ChevronDown />}
+          {orderFormView.addlOptionsVisible ? l('hideOptions') : l('viewOptions')}
+        </OptionsButton>
         <SummaryItem>
           <span>{l('durationLabel')}</span>
           <span className="text-right">

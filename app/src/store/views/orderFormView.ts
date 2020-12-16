@@ -23,6 +23,9 @@ export default class OrderFormView {
   maxBatchFeeRate = DEFAULT_MAX_BATCH_FEE;
   minNodeTier: Tier = NodeTier.TIER_DEFAULT;
 
+  /** toggle to show or hide the additional options */
+  addlOptionsVisible = false;
+
   constructor(store: Store) {
     makeAutoObservable(this, {}, { deep: false, autoBind: true });
 
@@ -155,6 +158,10 @@ export default class OrderFormView {
     } catch (error) {
       this._store.appView.handleError(error, 'Unable to suggest premium');
     }
+  }
+
+  toggleAddlOptions() {
+    this.addlOptionsVisible = !this.addlOptionsVisible;
   }
 
   /** submits the order to the API and resets the form values if successful */
