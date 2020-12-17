@@ -1,4 +1,4 @@
-import React, { ReactNode, useCallback } from 'react';
+import React, { ReactNode, useCallback, useMemo } from 'react';
 import FormInput from './FormInput';
 
 interface Props {
@@ -27,10 +27,12 @@ const FormInputNumber: React.FC<Props> = ({
     [onChange],
   );
 
+  const valueText = useMemo(() => (!value ? '' : value.toLocaleString()), [value]);
+
   return (
     <FormInput
       label={label}
-      value={!value ? '' : value.toString()}
+      value={valueText}
       extra={extra}
       placeholder={placeholder}
       onChange={handleChange}

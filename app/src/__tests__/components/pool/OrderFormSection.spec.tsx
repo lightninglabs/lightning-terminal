@@ -113,7 +113,7 @@ describe('OrderFormSection', () => {
     await waitFor(() => {
       expect(getByLabelText('Desired Inbound Liquidity')).toHaveValue('');
       expect(getByLabelText('Bid Premium')).toHaveValue('');
-      expect(getByLabelText('Minimum Channel Size')).toHaveValue(`500000`);
+      expect(getByLabelText('Minimum Channel Size')).toHaveValue(`500,000`);
       expect(getByLabelText('Max Batch Fee Rate')).toHaveValue(`1`);
     });
   });
@@ -158,17 +158,17 @@ describe('OrderFormSection', () => {
     store.batchStore.sortedBatches[0].clearingPriceRate = 496;
     changeInput('Desired Inbound Liquidity', '1000000');
     fireEvent.click(getByText('Suggested'));
-    expect(getByLabelText('Bid Premium')).toHaveValue('1000');
+    expect(getByLabelText('Bid Premium')).toHaveValue('1,000');
 
     store.batchStore.sortedBatches[0].clearingPriceRate = 1884;
     changeInput('Desired Inbound Liquidity', '1000000');
     fireEvent.click(getByText('Suggested'));
-    expect(getByLabelText('Bid Premium')).toHaveValue('3800');
+    expect(getByLabelText('Bid Premium')).toHaveValue('3,800');
 
     store.batchStore.sortedBatches[0].clearingPriceRate = 2480;
     changeInput('Desired Inbound Liquidity', '1000000');
     fireEvent.click(getByText('Suggested'));
-    expect(getByLabelText('Bid Premium')).toHaveValue('5000');
+    expect(getByLabelText('Bid Premium')).toHaveValue('5,000');
   });
 
   it('should display an error for suggested premium', async () => {
