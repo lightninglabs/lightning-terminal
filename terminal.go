@@ -592,6 +592,28 @@ func (g *LightningTerminal) startMainWebServer() error {
 		}
 	}()
 
+	// We only enable an additional HTTP only listener if the user
+	// explicitly sets a value.
+	if g.cfg.HTTPListen != "" {
+		insecureListener, err := net.Listen("tcp", g.cfg.HTTPListen)
+		if err != nil {
+			return fmt.Errorf("unable to listen on %v: %v",
+				g.cfg.HTTPListen, err)
+		}
+
+		g.wg.Add(1)
+		go func() {
+			defer g.wg.Done()
+
+			log.Infof("Listening for http on: %v",
+				insecureListener.Addr())
+			err := g.httpServer.Serve(insecureListener)
+			if err != nil && err != http.ErrServerClosed {
+				log.Errorf("http server error: %v", err)
+			}
+		}()
+	}
+
 	return nil
 }
 
@@ -611,8 +633,8 @@ func (g *LightningTerminal) showStartupInfo() error {
 		version: build.Version(),
 		webURI: fmt.Sprintf("https://%s", strings.ReplaceAll(
 			strings.ReplaceAll(
-				g.cfg.HTTPSListen, "0.0.0.0", "127.0.0.1",
-			), "[::]", "[::1]",
+				g.cfg.HTTPSListen, "0.0.0.0", "localhost",
+			), "[::]", "localhost",
 		)),
 	}
 
@@ -657,6 +679,16 @@ func (g *LightningTerminal) showStartupInfo() error {
 		if g.cfg.Lnd.NoSeedBackup {
 			info.status = "online"
 		}
+	}
+
+	// If there's an additional HTTP listener, list it as well.
+	if g.cfg.HTTPListen != "" {
+		host := strings.ReplaceAll(
+			strings.ReplaceAll(
+				g.cfg.HTTPListen, "0.0.0.0", "localhost",
+			), "[::]", "localhost",
+		)
+		info.webURI = fmt.Sprintf("%s, http://%s", info.webURI, host)
 	}
 
 	str := "" +
