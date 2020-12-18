@@ -16,6 +16,7 @@ import {
 import FormField from 'components/common/FormField';
 import FormInputNumber from 'components/common/FormInputNumber';
 import FormSelect from 'components/common/FormSelect';
+import StatusDot from 'components/common/StatusDot';
 import Toggle from 'components/common/Toggle';
 import { styled } from 'components/theme';
 
@@ -46,6 +47,11 @@ const Styled = {
     opacity: 0.7;
     padding: 0;
   `,
+  OptionsStatus: styled(StatusDot)<{ visible: boolean }>`
+    margin-left: ${props => (props.visible ? '0' : '10px')} !important;
+    opacity: ${props => (props.visible ? '1' : '0')};
+    transition: all 0.5s;
+  `,
   Divider: styled.div`
     margin: 15px 0 20px;
     border-bottom: 2px solid ${props => props.theme.colors.blue};
@@ -60,7 +66,19 @@ const OrderFormSection: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.pool.OrderFormSection');
   const { orderFormView } = useStore();
 
-  const { Section, OrderType, Small, Options, OptionsButton, Divider, Actions } = Styled;
+  const addlOptionsError =
+    !!orderFormView.minChanSizeError || !!orderFormView.feeRateError;
+
+  const {
+    Section,
+    OrderType,
+    Small,
+    Options,
+    OptionsButton,
+    OptionsStatus,
+    Divider,
+    Actions,
+  } = Styled;
   return (
     <Section>
       <Scrollable>
@@ -141,6 +159,10 @@ const OrderFormSection: React.FC = () => {
         <OptionsButton ghost borderless compact onClick={orderFormView.toggleAddlOptions}>
           {orderFormView.addlOptionsVisible ? <ChevronUp /> : <ChevronDown />}
           {orderFormView.addlOptionsVisible ? l('hideOptions') : l('viewOptions')}
+          <OptionsStatus
+            status="error"
+            visible={!orderFormView.addlOptionsVisible && addlOptionsError}
+          />
         </OptionsButton>
         <Divider />
         <SummaryItem>
