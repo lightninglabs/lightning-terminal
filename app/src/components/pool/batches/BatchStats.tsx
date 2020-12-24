@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { BarChart, List } from 'components/base';
+import LoaderLines from 'components/common/LoaderLines';
 import Stat from 'components/common/Stat';
 import Unit from 'components/common/Unit';
 import { styled } from 'components/theme';
@@ -19,7 +20,11 @@ const StyledStat = styled.div`
     margin: 0 10px;
 
     > div {
-      font-size: ${props => props.theme.sizes.l};
+      font-size: ${props => props.theme.sizes.m};
+    }
+
+    > h4 {
+      font-size: ${props => props.theme.sizes.xxs};
     }
   }
 `;
@@ -48,6 +53,12 @@ const Styled = {
       opacity: 1;
     }
   `,
+  LoaderLines: styled(LoaderLines)`
+    .line {
+      margin: 10px 1px;
+      height: 10px;
+    }
+  `,
 };
 
 const BatchStats: React.FC = () => {
@@ -59,7 +70,7 @@ const BatchStats: React.FC = () => {
 
   const tipProps = { tipPlacement: 'bottom', tipCapitalize: false };
 
-  const { Wrapper, Stat, BatchCountdown, ViewMode } = Styled;
+  const { Wrapper, Stat, BatchCountdown, ViewMode, LoaderLines } = Styled;
   return (
     <Wrapper>
       <div>
@@ -90,6 +101,7 @@ const BatchStats: React.FC = () => {
         />
       </div>
       <div>
+        <Stat label={l('tier')} value={batchesView.tier || <LoaderLines />} />
         <Stat
           label={l('earned')}
           value={<Unit sats={batchesView.earnedSats} suffix={false} />}

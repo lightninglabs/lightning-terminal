@@ -106,6 +106,7 @@ export class Store {
   async init() {
     this.settingsStore.init();
     this.swapStore.init();
+    this.batchStore.init();
     await this.authStore.init();
     runInAction(() => {
       this.initialized = true;

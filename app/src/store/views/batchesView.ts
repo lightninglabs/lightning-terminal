@@ -1,4 +1,5 @@
 import { makeAutoObservable } from 'mobx';
+import { NodeTier } from 'types/generated/auctioneer_pb';
 import { toPercent } from 'util/bigmath';
 import { Store } from 'store';
 
@@ -49,6 +50,19 @@ export default class BatchesView {
   /** the fee used for the last batch */
   get currentFee() {
     return this.batches.length ? this.batches[0].feeLabel : 0;
+  }
+
+  /** the tier of the current LND node as a user-friendly string */
+  get tier() {
+    switch (this._store.batchStore.nodeTier) {
+      case NodeTier.TIER_1:
+        return 'T1';
+      case NodeTier.TIER_0:
+      case NodeTier.TIER_DEFAULT:
+        return 'T0';
+      default:
+        return '';
+    }
   }
 
   /** that amount earned from sold leases */

@@ -156,6 +156,7 @@
   "cmps.pool.batches.BatchStats.prevRateTip": "The rate cleared in the previous batch ({{fixedRate}} per block)",
   "cmps.pool.batches.BatchStats.rateChange": "Change",
   "cmps.pool.batches.BatchStats.rateChangeTip": "The percentage change in rate between the previous batch and the one prior",
+  "cmps.pool.batches.BatchStats.tier": "Node Tier",
   "cmps.pool.batches.BatchStats.earned": "Earned",
   "cmps.pool.batches.BatchStats.paid": "Paid",
   "cmps.pool.orders.OrdersList.emptyMsg": "You do not have any {{filter}} orders.",

@@ -599,6 +599,15 @@ export const poolNextBatchInfo: POOL.NextBatchInfoResponse.AsObject = {
   feeRateSatPerKw: 12500,
 };
 
+export const poolNodeRatings: POOL.NodeRatingResponse.AsObject = {
+  nodeRatingsList: [
+    {
+      nodePubkey: b64(lndGetInfo.identityPubkey),
+      nodeTier: AUCT.NodeTier.TIER_1,
+    },
+  ],
+};
+
 const stringToChannelPoint = (cp: string) => ({
   txid: b64(cp.split(':')[0], true),
   outputIndex: parseInt(cp.split(':')[1]),
@@ -713,5 +722,6 @@ export const sampleApiResponses: Record<string, any> = {
   'poolrpc.Trader.BatchSnapshot': poolBatchSnapshot,
   'poolrpc.Trader.BatchSnapshots': poolBatchSnapshots,
   'poolrpc.Trader.NextBatchInfo': poolNextBatchInfo,
+  'poolrpc.Trader.NodeRatings': poolNodeRatings,
   'poolrpc.Trader.Leases': poolLeases,
 };
