@@ -234,6 +234,16 @@ class PoolApi extends BaseApi<PoolEvents> {
     return res.toObject();
   }
 
+  /**
+   * call the pool `NodeRatings` RPC and return the response
+   */
+  async nodeRatings(pubkey: string): Promise<POOL.NodeRatingResponse.AsObject> {
+    const req = new POOL.NodeRatingRequest();
+    req.addNodePubkeys(b64(pubkey));
+    const res = await this._grpc.request(Trader.NodeRatings, req, this._meta);
+    return res.toObject();
+  }
+
   //
   // Utility functions to convert user-facing units to API units
   //

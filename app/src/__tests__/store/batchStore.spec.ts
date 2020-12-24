@@ -1,10 +1,11 @@
-import { values } from 'mobx';
+import { runInAction, values } from 'mobx';
+import * as AUCT from 'types/generated/auctioneer_pb';
 import { grpc } from '@improbable-eng/grpc-web';
 import { waitFor } from '@testing-library/react';
 import * as config from 'config';
 import { hex } from 'util/strings';
 import { injectIntoGrpcUnary } from 'util/tests';
-import { poolBatchSnapshot } from 'util/tests/sampleData';
+import { poolBatchSnapshot, sampleApiResponses } from 'util/tests/sampleData';
 import { BatchStore, createStore, Store } from 'store';
 import { BATCH_QUERY_LIMIT } from 'store/stores/batchStore';
 
@@ -146,6 +147,32 @@ describe('BatchStore', () => {
     expect(store.sortedBatches[BATCH_QUERY_LIMIT].batchId).toBe(
       hex(`19-${poolBatchSnapshot.batchId}`),
     );
+  });
+
+  it('should fetch node tier', async () => {
+    // return sample data from gRPC requests instead of the batches defined in beforeEach()
+    grpcMock.unary.mockImplementation((desc, opts) => {
+      const path = `${desc.service.serviceName}.${desc.methodName}`;
+      opts.onEnd({
+        status: grpc.Code.OK,
+        message: { toObject: () => sampleApiResponses[path] },
+      } as any);
+      return undefined as any;
+    });
+
+    await rootStore.nodeStore.fetchInfo();
+
+    expect(store.nodeTier).toBeUndefined();
+    await store.fetchNodeTier();
+    expect(store.nodeTier).toBe(AUCT.NodeTier.TIER_1);
+
+    // set the pubkey to a random value
+    runInAction(() => {
+      rootStore.nodeStore.pubkey = 'asdf';
+    });
+    await store.fetchNodeTier();
+    // confirm the tier is set to T0 if the pubkey is not found in the response
+    expect(store.nodeTier).toBe(AUCT.NodeTier.TIER_0);
   });
 
   it('should start and stop polling', async () => {
