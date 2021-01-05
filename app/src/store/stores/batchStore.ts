@@ -121,6 +121,8 @@ export default class BatchStore {
     this._store.log.info('fetching latest batch');
     try {
       const [poolBatch] = (await this._store.api.pool.batchSnapshots(1)).batchesList;
+      // handle edge case that should only be possible on regtest with no batches
+      if (!poolBatch) return;
       // update the timestamp of the next batch when fetching the latest batch
       await this.fetchNextBatchTimestamp();
       runInAction(() => {
