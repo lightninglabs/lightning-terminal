@@ -51,7 +51,7 @@ const WelcomeStep: React.FC<ReactourStepContentArgs> = props => {
       <p>
         {l('walkthrough1')}{' '}
         <a
-          href="https://github.com/lightninglabs/lightning-terminal/doc/WALKTHROUGH.md"
+          href="https://docs.lightning.engineering/intermediate-get-lit/walkthrough"
           target="_blank"
           rel="noopener noreferrer"
         >
