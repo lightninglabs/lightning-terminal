@@ -75,6 +75,16 @@ service Trader {
         };
     };
 
+    /* pool: `accounts renew`
+    RenewAccount renews the expiration of an account.
+    */
+    rpc RenewAccount (RenewAccountRequest) returns (RenewAccountResponse) {
+        option (google.api.http) = {
+            post: "/v1/pool/accounts/renew"
+            body: "*"
+        };
+    }
+
     /* pool: `accounts bumpfee`
     BumpAccountFee attempts to bump the fee of an account's transaction through
     child-pays-for-parent (CPFP). Since the CPFP is performed through the
@@ -368,6 +378,29 @@ message DepositAccountResponse {
 
     // The transaction used to deposit funds into the account.
     bytes deposit_txid = 2;
+}
+
+message RenewAccountRequest {
+    // The key associated with the account to renew.
+    bytes account_key = 1;
+
+    oneof account_expiry {
+        // The new absolute expiration height of the account.
+        uint32 absolute_expiry = 2;
+
+        // The new relative expiration height of the account.
+        uint32 relative_expiry = 3;
+    }
+
+    // The fee rate, in satoshis per kw, to use for the renewal transaction.
+    uint64 fee_rate_sat_per_kw = 4;
+}
+message RenewAccountResponse {
+    // The state of the account after processing the renewal.
+    Account account = 1;
+
+    // The transaction used to renew the expiration of the account.
+    bytes renewal_txid = 2;
 }
 
 message BumpAccountFeeRequest {
@@ -891,7 +924,16 @@ message LeaseDurationRequest {
 }
 
 message LeaseDurationResponse {
-    map<uint32, bool> lease_durations = 1;
+    /*
+    Deprecated, use lease_duration_buckets.
+    */
+    map<uint32, bool> lease_durations = 1 [deprecated = true];
+
+    /*
+    The set of lease durations the market is currently accepting and the state
+    the duration buckets currently are in.
+    */
+    map<uint32, DurationBucketState> lease_duration_buckets = 2;
 }
 
 message NextBatchInfoRequest {

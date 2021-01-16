@@ -445,7 +445,7 @@ message SubscribeSuccess {
     bytes trader_key = 1;
 }
 
-message OrderMatchPrepare {
+message MatchedMarket {
     /*
     Maps a user's own order_nonce to the opposite order type they were matched
     with. The order_nonce is a 32 byte hex encoded string because bytes is not
@@ -458,6 +458,18 @@ message OrderMatchPrepare {
     batch.
     */
     uint32 clearing_price_rate = 2;
+}
+
+message OrderMatchPrepare {
+    /*
+    Deprecated, use matched_markets.
+    */
+    map<string, MatchedOrder> matched_orders = 1 [deprecated = true];
+
+    /*
+    Deprecated, use matched_markets.
+    */
+    uint32 clearing_price_rate = 2 [deprecated = true];
 
     /*
     A list of the user's own accounts that are being spent by the matched
@@ -500,6 +512,12 @@ message OrderMatchPrepare {
     informed that a software update is required.
     */
     uint32 batch_version = 9;
+
+    /*
+    Maps the distinct lease duration markets to the orders that were matched
+    within and the discovered market clearing price.
+    */
+    map<uint32, MatchedMarket> matched_markets = 10;
 }
 
 message OrderMatchSignBegin {
@@ -926,6 +944,9 @@ message ServerModifyAccountRequest {
     message NewAccountParameters {
         // The new value of the account.
         uint64 value = 1;
+
+        // The new expiry of the account as an absolute height.
+        uint32 expiry = 2;
     }
 
     // The new parameters to apply for the account.
@@ -971,6 +992,32 @@ message ServerOrderStateResponse {
 message TermsRequest {
 }
 
+enum DurationBucketState {
+    /*
+    NO_MARKET indicates that this bucket doesn't actually exist, in that no
+    market is present for this market.
+    */
+    NO_MARKET = 0;
+
+    /*
+    MARKET_CLOSED indicates that this market exists, but that it isn't currently
+    running.
+    */
+    MARKET_CLOSED = 1;
+
+    /*
+    ACCEPTING_ORDERS indicates that we're accepting orders for this bucket, but
+    not yet clearing for this duration.
+    */
+    ACCEPTING_ORDERS = 2;
+
+    /*
+    MARKET_OPEN indicates that we're accepting orders, and fully clearing the
+    market for this duration.
+    */
+    MARKET_OPEN = 3;
+}
+
 message TermsResponse {
     /*
     The maximum account size in satoshis currently allowed by the auctioneer.
@@ -978,7 +1025,7 @@ message TermsResponse {
     uint64 max_account_value = 1;
 
     /*
-    The maximum order duration in blocks currently allowed by the auctioneer.
+    Deprecated, use explicit order duration from lease_duration_buckets.
     */
     uint32 max_order_duration_blocks = 2 [deprecated = true];
 
@@ -988,13 +1035,9 @@ message TermsResponse {
     ExecutionFee execution_fee = 3;
 
     /*
-    The set of lease durations the market is currently accepting. If a duration
-    is mapped to false, then this means the durations are being accepted, but
-    the market may be paused (not clearing batches). This might happen if a new
-    duration is added, and the auction wishes to build of sufficient market
-    thickness before starting to clear batches.
+    Deprecated, use lease_duration_buckets.
     */
-    map<uint32, bool> lease_durations = 4;
+    map<uint32, bool> lease_durations = 4 [deprecated = true];
 
     // The confirmation target to use for fee estimation of the next batch.
     uint32 next_batch_conf_target = 5;
@@ -1010,6 +1053,12 @@ message TermsResponse {
     the next batch.
     */
     uint64 next_batch_clear_timestamp = 7;
+
+    /*
+    The set of lease durations the market is currently accepting and the state
+    the duration buckets currently are in.
+    */
+    map<uint32, DurationBucketState> lease_duration_buckets = 8;
 }
 
 message RelevantBatchRequest {
@@ -1037,13 +1086,14 @@ message RelevantBatch {
     repeated AccountDiff charged_accounts = 3;
 
     /*
-    The set of orders that were matched against the orders belonging to the
-    requested accounts.
+    Deprecated, use matched_markets.
     */
-    map<string, MatchedOrder> matched_orders = 4;
+    map<string, MatchedOrder> matched_orders = 4 [deprecated = true];
 
-    // The uniform clearing price rate in parts per billion of the batch.
-    uint32 clearing_price_rate = 5;
+    /*
+    Deprecated, use matched_markets.
+    */
+    uint32 clearing_price_rate = 5 [deprecated = true];
 
     // The fee parameters used to calculate the execution fees.
     ExecutionFee execution_fee = 6;
@@ -1056,6 +1106,15 @@ message RelevantBatch {
     units (sat/kW).
     */
     uint64 fee_rate_sat_per_kw = 8;
+
+    // The unix timestamp in nanoseconds the batch was made.
+    uint64 creation_timestamp_ns = 9;
+
+    /*
+    Maps the distinct lease duration markets to the orders that were matched
+    within and the discovered market clearing price.
+    */
+    map<uint32, MatchedMarket> matched_markets = 10;
 }
 
 message ExecutionFee {
@@ -1135,6 +1194,19 @@ message BatchSnapshotRequest {
     bytes batch_id = 1;
 }
 
+message MatchedMarketSnapshot {
+    /*
+    The set of all orders matched in the batch.
+    */
+    repeated MatchedOrderSnapshot matched_orders = 1;
+
+    /*
+    The uniform clearing price rate in parts per billion that was used for this
+    batch.
+    */
+    uint32 clearing_price_rate = 2;
+}
+
 message BatchSnapshotResponse {
     // The version of the batch.
     uint32 version = 1;
@@ -1145,11 +1217,15 @@ message BatchSnapshotResponse {
     // The unique identifier of the prior batch.
     bytes prev_batch_id = 3;
 
-    // The uniform clearing price rate in parts per billion of the batch.
-    uint32 clearing_price_rate = 4;
+    /*
+    Deprecated, use matched_markets.
+    */
+    uint32 clearing_price_rate = 4 [deprecated = true];
 
-    // The set of all orders matched in the batch.
-    repeated MatchedOrderSnapshot matched_orders = 5;
+    /*
+    Deprecated, use matched_markets.
+    */
+    repeated MatchedOrderSnapshot matched_orders = 5 [deprecated = true];
 
     // The txid of the batch transaction.
     string batch_tx_id = 7;
@@ -1159,6 +1235,15 @@ message BatchSnapshotResponse {
 
     // The fee rate, in satoshis per kiloweight, of the batch transaction.
     uint64 batch_tx_fee_rate_sat_per_kw = 8;
+
+    // The unix timestamp in nanoseconds the batch was made.
+    uint64 creation_timestamp_ns = 9;
+
+    /*
+    Maps the distinct lease duration markets to the orders that were matched
+    within and the discovered market clearing price.
+    */
+    map<uint32, MatchedMarketSnapshot> matched_markets = 10;
 }
 
 message ServerNodeRatingRequest {

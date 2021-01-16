@@ -420,6 +420,79 @@ export namespace DepositAccountResponse {
   }
 }
 
+export class RenewAccountRequest extends jspb.Message {
+  getAccountKey(): Uint8Array | string;
+  getAccountKey_asU8(): Uint8Array;
+  getAccountKey_asB64(): string;
+  setAccountKey(value: Uint8Array | string): void;
+
+  hasAbsoluteExpiry(): boolean;
+  clearAbsoluteExpiry(): void;
+  getAbsoluteExpiry(): number;
+  setAbsoluteExpiry(value: number): void;
+
+  hasRelativeExpiry(): boolean;
+  clearRelativeExpiry(): void;
+  getRelativeExpiry(): number;
+  setRelativeExpiry(value: number): void;
+
+  getFeeRateSatPerKw(): number;
+  setFeeRateSatPerKw(value: number): void;
+
+  getAccountExpiryCase(): RenewAccountRequest.AccountExpiryCase;
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): RenewAccountRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: RenewAccountRequest): RenewAccountRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: RenewAccountRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): RenewAccountRequest;
+  static deserializeBinaryFromReader(message: RenewAccountRequest, reader: jspb.BinaryReader): RenewAccountRequest;
+}
+
+export namespace RenewAccountRequest {
+  export type AsObject = {
+    accountKey: Uint8Array | string,
+    absoluteExpiry: number,
+    relativeExpiry: number,
+    feeRateSatPerKw: number,
+  }
+
+  export enum AccountExpiryCase {
+    ACCOUNT_EXPIRY_NOT_SET = 0,
+    ABSOLUTE_EXPIRY = 2,
+    RELATIVE_EXPIRY = 3,
+  }
+}
+
+export class RenewAccountResponse extends jspb.Message {
+  hasAccount(): boolean;
+  clearAccount(): void;
+  getAccount(): Account | undefined;
+  setAccount(value?: Account): void;
+
+  getRenewalTxid(): Uint8Array | string;
+  getRenewalTxid_asU8(): Uint8Array;
+  getRenewalTxid_asB64(): string;
+  setRenewalTxid(value: Uint8Array | string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): RenewAccountResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: RenewAccountResponse): RenewAccountResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: RenewAccountResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): RenewAccountResponse;
+  static deserializeBinaryFromReader(message: RenewAccountResponse, reader: jspb.BinaryReader): RenewAccountResponse;
+}
+
+export namespace RenewAccountResponse {
+  export type AsObject = {
+    account?: Account.AsObject,
+    renewalTxid: Uint8Array | string,
+  }
+}
+
 export class BumpAccountFeeRequest extends jspb.Message {
   getTraderKey(): Uint8Array | string;
   getTraderKey_asU8(): Uint8Array;
@@ -1234,6 +1307,8 @@ export namespace LeaseDurationRequest {
 export class LeaseDurationResponse extends jspb.Message {
   getLeaseDurationsMap(): jspb.Map<number, boolean>;
   clearLeaseDurationsMap(): void;
+  getLeaseDurationBucketsMap(): jspb.Map<number, auctioneer_pb.DurationBucketState[keyof auctioneer_pb.DurationBucketState]>;
+  clearLeaseDurationBucketsMap(): void;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LeaseDurationResponse.AsObject;
   static toObject(includeInstance: boolean, msg: LeaseDurationResponse): LeaseDurationResponse.AsObject;
@@ -1247,6 +1322,7 @@ export class LeaseDurationResponse extends jspb.Message {
 export namespace LeaseDurationResponse {
   export type AsObject = {
     leaseDurationsMap: Array<[number, boolean]>,
+    leaseDurationBucketsMap: Array<[number, auctioneer_pb.DurationBucketState[keyof auctioneer_pb.DurationBucketState]]>,
   }
 }
 
