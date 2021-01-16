@@ -29,6 +29,10 @@ const Styled = {
   Actions: styled.div`
     margin: 30px auto 10px;
     text-align: center;
+
+    button {
+      min-width: auto;
+    }
   `,
   ExpiresSoon: styled.p`
     font-size: ${props => props.theme.sizes.xs};
@@ -98,14 +102,24 @@ const AccountSummary: React.FC = () => {
         {account.expiresSoon && account.stateLabel === 'Open' ? (
           <>
             <ExpiresSoon>{l('expiresSoon')}</ExpiresSoon>
-            <Button
-              danger
-              ghost
-              disabled={account.stateLabel !== 'Open'}
-              onClick={accountSectionView.showCloseAccount}
-            >
-              {l('close')}
-            </Button>
+            <SummaryItem>
+              <Button
+                danger
+                ghost
+                disabled={account.stateLabel !== 'Open'}
+                onClick={accountSectionView.showCloseAccount}
+              >
+                {l('close')}
+              </Button>
+              <Button
+                primary
+                ghost
+                disabled={account.stateLabel !== 'Open'}
+                onClick={accountSectionView.showRenewAccount}
+              >
+                {l('renewAccount')}
+              </Button>
+            </SummaryItem>
           </>
         ) : (
           <Button

@@ -10,7 +10,9 @@ export type VisibleSection =
   | 'fund-confirm'
   | 'expired'
   | 'close'
-  | 'close-confirm';
+  | 'close-confirm'
+  | 'renew'
+  | 'renew-confirm';
 
 export default class AccountSectionView {
   private _store: Store;
@@ -38,7 +40,7 @@ export default class AccountSectionView {
     // force close account flow when expired
     if (
       this._store.accountStore.activeAccount.stateLabel === 'Expired' &&
-      !['close', 'close-confirm'].includes(this.section)
+      !['close', 'close-confirm', 'renew', 'renew-confirm'].includes(this.section)
     ) {
       return 'expired';
     }
@@ -91,5 +93,13 @@ export default class AccountSectionView {
 
   showCloseConfirm() {
     this.section = 'close-confirm';
+  }
+
+  showRenewAccount() {
+    this.section = 'renew';
+  }
+
+  showRenewConfirm() {
+    this.section = 'renew-confirm';
   }
 }

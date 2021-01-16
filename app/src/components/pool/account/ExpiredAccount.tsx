@@ -2,7 +2,7 @@ import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
-import { AlertTriangle, Button, HeaderFour } from 'components/base';
+import { AlertTriangle, Button, HeaderFour, SummaryItem } from 'components/base';
 import { styled } from 'components/theme';
 
 const Styled = {
@@ -25,6 +25,10 @@ const Styled = {
   `,
   Actions: styled.div`
     margin: 30px auto;
+
+    button {
+      min-width: auto;
+    }
   `,
 };
 
@@ -43,9 +47,14 @@ const ExpiredAccount: React.FC = () => {
         <Title>{l('title')}</Title>
         <div>{l('message')}</div>
         <Actions>
-          <Button primary ghost onClick={accountSectionView.showCloseAccount}>
-            {l('closeAccount')}
-          </Button>
+          <SummaryItem>
+            <Button danger ghost onClick={accountSectionView.showCloseAccount}>
+              {l('close')}
+            </Button>
+            <Button primary ghost onClick={accountSectionView.showRenewAccount}>
+              {l('renewAccount')}
+            </Button>
+          </SummaryItem>
         </Actions>
       </Content>
     </>

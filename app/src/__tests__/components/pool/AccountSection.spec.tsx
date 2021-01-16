@@ -260,7 +260,7 @@ describe('AccountSection', () => {
 
     expect(getByText('Expires in ~2 days')).toBeInTheDocument();
     expect(getByText(/Orders will no longer be matched/)).toBeInTheDocument();
-    expect(getByText('Close Account')).toBeInTheDocument();
+    expect(getByText('Close')).toBeInTheDocument();
   });
 
   it('should close an expired account', async () => {
@@ -271,8 +271,8 @@ describe('AccountSection', () => {
 
     const { getByText, changeInput } = render();
 
-    expect(getByText('Close Account')).toBeInTheDocument();
-    fireEvent.click(getByText('Close Account'));
+    expect(getByText('Close')).toBeInTheDocument();
+    fireEvent.click(getByText('Close'));
 
     changeInput('Destination Address', 'abc123');
     changeInput('Fee', '10');
@@ -284,9 +284,6 @@ describe('AccountSection', () => {
 
     // capture the request that is sent to the API
     let req: POOL.CloseAccountRequest.AsObject;
-    // injectIntoGrpcUnary((desc, props) => {
-    //   req = props.request.toObject() as any;
-    // }, 'CloseAccount');
     grpcMock.unary.mockImplementation((desc, props) => {
       if (desc.methodName === 'CloseAccount') {
         req = props.request.toObject() as any;
@@ -313,5 +310,58 @@ describe('AccountSection', () => {
     expect(req!.traderKey).toBe(b64(store.accountStore.activeAccount.traderKey));
     expect(req!.outputWithFee?.feeRateSatPerKw).toBe(2500);
     expect(req!.outputWithFee?.address).toBe('abc123');
+  });
+
+  it('should renew an expired account', async () => {
+    // set the account to expire in less than 3 days
+    runInAction(() => {
+      const currHeight = store.nodeStore.blockHeight;
+      store.accountStore.activeAccount.expirationHeight = currHeight + 144 * 2;
+    });
+
+    const { getByText, changeInput } = render();
+
+    expect(getByText('Renew Account')).toBeInTheDocument();
+    fireEvent.click(getByText('Renew Account'));
+
+    changeInput('New Expiration', '2016');
+    changeInput('Fee Rate', '125');
+    fireEvent.click(getByText('Renew'));
+
+    // check confirmation values
+    expect(getByText('288 blocks')).toBeInTheDocument();
+    expect(getByText('~2 days')).toBeInTheDocument();
+    expect(getByText('2016 blocks')).toBeInTheDocument();
+    expect(getByText('~2 weeks')).toBeInTheDocument();
+    expect(getByText('125 sats/vByte')).toBeInTheDocument();
+
+    // capture the request that is sent to the API
+    let req: POOL.RenewAccountRequest.AsObject;
+    grpcMock.unary.mockImplementation((desc, props) => {
+      if (desc.methodName === 'RenewAccount') {
+        req = props.request.toObject() as any;
+      }
+      const path = `${desc.service.serviceName}.${desc.methodName}`;
+      const toObject = () => sampleApiResponses[path];
+      // return a response by calling the onEnd function
+      props.onEnd({
+        status: grpc.Code.OK,
+        // the message returned should have a toObject function
+        message: { toObject } as any,
+      } as any);
+      return undefined as any;
+    });
+
+    fireEvent.click(getByText('Confirm'));
+
+    // wait until the account view is displayed
+    await waitFor(() => {
+      expect(req).toBeDefined();
+      expect(getByText('Account')).toBeInTheDocument();
+    });
+
+    expect(req!.accountKey).toBe(b64(store.accountStore.activeAccount.traderKey));
+    expect(req!.feeRateSatPerKw).toBe(31250);
+    expect(req!.relativeExpiry).toBe(2016);
   });
 });

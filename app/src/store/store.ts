@@ -26,6 +26,7 @@ import {
   FundNewAccountView,
   OrderFormView,
   OrderListView,
+  RenewAccountView,
 } from './views';
 
 /**
@@ -56,6 +57,7 @@ export class Store {
   fundNewAccountView = new FundNewAccountView(this);
   fundAccountView = new FundAccountView(this);
   closeAccountView = new CloseAccountView(this);
+  renewAccountView = new RenewAccountView(this);
   orderFormView = new OrderFormView(this);
   orderListView = new OrderListView(this);
   batchesView = new BatchesView(this);

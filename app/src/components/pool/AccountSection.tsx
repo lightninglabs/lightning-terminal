@@ -12,6 +12,8 @@ import {
   FundNewAccountConfirm,
   FundNewAccountForm,
   NoAccount,
+  RenewAccountConfirm,
+  RenewAccountForm,
 } from './account';
 
 const AccountSection: React.FC = () => {
@@ -45,6 +47,12 @@ const AccountSection: React.FC = () => {
       break;
     case 'close-confirm':
       view = <CloseAccountConfirm />;
+      break;
+    case 'renew':
+      view = <RenewAccountForm />;
+      break;
+    case 'renew-confirm':
+      view = <RenewAccountConfirm />;
       break;
   }
 
