@@ -543,6 +543,7 @@ export const poolBatchSnapshot: AUCT.BatchSnapshotResponse.AsObject = {
   batchId: '0260ad81d3108e011dfb7ec3be22cacf2e6406419ae210ed4e7a4a294a87b840c8',
   prevBatchId: '02df8606a074ccec54ff17cd62bff9351f3bcf0fabdab0ccc60b44a878b1b051b9',
   clearingPriceRate: 19841,
+  creationTimestampNs: 1610763907325185500,
   matchedOrdersList: [
     {
       ask: {
@@ -578,6 +579,50 @@ export const poolBatchSnapshot: AUCT.BatchSnapshotResponse.AsObject = {
       totalSatsCleared: 30000000,
       unitsMatched: 300,
     },
+  ],
+  matchedMarketsMap: [
+    [
+      2016,
+      {
+        clearingPriceRate: 19841,
+        matchedOrdersList: [
+          {
+            ask: {
+              version: 0,
+              leaseDurationBlocks: 8640,
+              rateFixed: 347,
+              chanType: 0,
+            },
+            bid: {
+              version: 0,
+              leaseDurationBlocks: 1008,
+              rateFixed: 19841,
+              chanType: 0,
+            },
+            matchingRate: 19841,
+            totalSatsCleared: 7700000,
+            unitsMatched: 77,
+          },
+          {
+            ask: {
+              version: 0,
+              leaseDurationBlocks: 8640,
+              rateFixed: 347,
+              chanType: 0,
+            },
+            bid: {
+              version: 0,
+              leaseDurationBlocks: 1008,
+              rateFixed: 19841,
+              chanType: 0,
+            },
+            matchingRate: 19841,
+            totalSatsCleared: 30000000,
+            unitsMatched: 300,
+          },
+        ],
+      },
+    ],
   ],
   batchTxId: '6f29af3cb54480fec52d3a48ba94a5327aa31ed2c3b85ee8f0fd0da2f5ea8620',
   batchTx:
