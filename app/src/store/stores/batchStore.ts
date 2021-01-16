@@ -23,6 +23,12 @@ export default class BatchStore {
   private _pollingInterval?: NodeJS.Timeout;
   private _nextBatchTimer?: NodeJS.Timeout;
 
+  /** the selected lease duration */
+  selectedLeaseDuration = 0;
+
+  /** the collection of lease durations as a mapping from duration (blocks) to DurationBucketState */
+  leaseDurations: ObservableMap<number, number> = observable.map();
+
   /** the collection of batches */
   batches: ObservableMap<string, Batch> = observable.map();
 
@@ -182,6 +188,30 @@ export default class BatchStore {
       });
     } catch (error) {
       this._store.appView.handleError(error, 'Unable to fetch the node tier');
+    }
+  }
+
+  /**
+   * fetches the list of lease durations from the API
+   */
+  async fetchLeaseDurations() {
+    this._store.log.info('fetching lease durations');
+    try {
+      const res = await this._store.api.pool.leaseDurations();
+      runInAction(() => {
+        res.leaseDurationBucketsMap.forEach(([duration, state]) => {
+          this.leaseDurations.set(duration, state);
+
+          // set the active lease duration if it is not set
+          if (!this.selectedLeaseDuration) this.selectedLeaseDuration = duration;
+        });
+        this._store.log.info(
+          'updated batchStore.leaseDurations',
+          toJS(this.leaseDurations),
+        );
+      });
+    } catch (error) {
+      this._store.appView.handleError(error, 'Unable to fetch lease durations');
     }
   }
 

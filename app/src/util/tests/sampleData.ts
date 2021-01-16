@@ -643,6 +643,16 @@ export const poolBatchSnapshots: AUCT.BatchSnapshotsResponse.AsObject = {
   })),
 };
 
+export const poolLeaseDurations: POOL.LeaseDurationResponse.AsObject = {
+  leaseDurationsMap: [], // deprecated
+  leaseDurationBucketsMap: [
+    [2016, AUCT.DurationBucketState.MARKET_OPEN],
+    [4032, AUCT.DurationBucketState.MARKET_CLOSED],
+    [6048, AUCT.DurationBucketState.ACCEPTING_ORDERS],
+    [8064, AUCT.DurationBucketState.NO_MARKET],
+  ],
+};
+
 export const poolNextBatchInfo: POOL.NextBatchInfoResponse.AsObject = {
   clearTimestamp: 1605936138,
   confTarget: 6,
@@ -772,6 +782,7 @@ export const sampleApiResponses: Record<string, any> = {
   'poolrpc.Trader.CancelOrder': poolCancelOrder,
   'poolrpc.Trader.BatchSnapshot': poolBatchSnapshot,
   'poolrpc.Trader.BatchSnapshots': poolBatchSnapshots,
+  'poolrpc.Trader.LeaseDurations': poolLeaseDurations,
   'poolrpc.Trader.NextBatchInfo': poolNextBatchInfo,
   'poolrpc.Trader.NodeRatings': poolNodeRatings,
   'poolrpc.Trader.Leases': poolLeases,

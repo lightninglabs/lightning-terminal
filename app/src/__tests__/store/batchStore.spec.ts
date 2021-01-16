@@ -5,7 +5,11 @@ import { waitFor } from '@testing-library/react';
 import * as config from 'config';
 import { hex } from 'util/strings';
 import { injectIntoGrpcUnary } from 'util/tests';
-import { poolBatchSnapshot, sampleApiResponses } from 'util/tests/sampleData';
+import {
+  poolBatchSnapshot,
+  poolLeaseDurations,
+  sampleApiResponses,
+} from 'util/tests/sampleData';
 import { BatchStore, createStore, Store } from 'store';
 import { BATCH_QUERY_LIMIT } from 'store/stores/batchStore';
 
@@ -23,15 +27,20 @@ describe('BatchStore', () => {
     // mock the BatchSnapshot response to return a unique id for each batch
     // to avoid overwriting the same record in the store
     index = 0;
-    grpcMock.unary.mockImplementation((_, opts) => {
-      const res = {
-        batchesList: [...Array(20)].map((_, i) => ({
-          ...poolBatchSnapshot,
-          batchId: `${index + i}-${poolBatchSnapshot.batchId}`,
-          prevBatchId: `${index + i}-${poolBatchSnapshot.prevBatchId}`,
-        })),
-      };
-      index += BATCH_QUERY_LIMIT;
+    grpcMock.unary.mockImplementation((desc, opts) => {
+      let res: any;
+      if (desc.methodName === 'BatchSnapshots') {
+        res = {
+          batchesList: [...Array(20)].map((_, i) => ({
+            ...poolBatchSnapshot,
+            batchId: `${index + i}-${poolBatchSnapshot.batchId}`,
+            prevBatchId: `${index + i}-${poolBatchSnapshot.prevBatchId}`,
+          })),
+        };
+        index += BATCH_QUERY_LIMIT;
+      } else if (desc.methodName === 'LeaseDurations') {
+        res = poolLeaseDurations;
+      }
       opts.onEnd({
         status: grpc.Code.OK,
         message: { toObject: () => res },
@@ -147,6 +156,27 @@ describe('BatchStore', () => {
     expect(store.sortedBatches[BATCH_QUERY_LIMIT].batchId).toBe(
       hex(`19-${poolBatchSnapshot.batchId}`),
     );
+  });
+
+  it('should fetch lease durations', async () => {
+    expect(store.leaseDurations.size).toBe(0);
+    await store.fetchLeaseDurations();
+    expect(store.leaseDurations.size).toBe(
+      poolLeaseDurations.leaseDurationBucketsMap.length,
+    );
+    expect(store.selectedLeaseDuration).toBe(
+      poolLeaseDurations.leaseDurationBucketsMap[0][0],
+    );
+  });
+
+  it('should handle errors when fetching lease durations', async () => {
+    grpcMock.unary.mockImplementationOnce(() => {
+      throw new Error('test-err');
+    });
+    expect(rootStore.appView.alerts.size).toBe(0);
+    await store.fetchLeaseDurations();
+    expect(rootStore.appView.alerts.size).toBe(1);
+    expect(values(rootStore.appView.alerts)[0].message).toBe('test-err');
   });
 
   it('should fetch node tier', async () => {

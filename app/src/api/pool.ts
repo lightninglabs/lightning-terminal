@@ -261,6 +261,15 @@ class PoolApi extends BaseApi<PoolEvents> {
     return res.toObject();
   }
 
+  /**
+   * call the pool `LeaseDurations` RPC and return the response
+   */
+  async leaseDurations(): Promise<POOL.LeaseDurationResponse.AsObject> {
+    const req = new POOL.LeaseDurationRequest();
+    const res = await this._grpc.request(Trader.LeaseDurations, req, this._meta);
+    return res.toObject();
+  }
+
   //
   // Utility functions to convert user-facing units to API units
   //
