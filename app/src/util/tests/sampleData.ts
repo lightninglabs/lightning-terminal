@@ -377,6 +377,11 @@ export const poolCloseAccount: POOL.CloseAccountResponse.AsObject = {
   closeTxid: '+BQm/hnM0SleT2NxS7bdw0JNDuvIMhL4qxLUkdbCJdo=',
 };
 
+export const poolRenewAccount: POOL.RenewAccountResponse.AsObject = {
+  renewalTxid: '+BQm/hnM0SleT2NxS7bdw0JNDuvIMhL4qxLUkdbCJdo=',
+  account: poolInitAccount,
+};
+
 export const poolListAccounts: POOL.ListAccountsResponse.AsObject = {
   accountsList: [
     poolInitAccount,
@@ -759,6 +764,7 @@ export const sampleApiResponses: Record<string, any> = {
   'poolrpc.Trader.QuoteAccount': poolQuoteAccount,
   'poolrpc.Trader.InitAccount': poolInitAccount,
   'poolrpc.Trader.CloseAccount': poolCloseAccount,
+  'poolrpc.Trader.RenewAccount': poolRenewAccount,
   'poolrpc.Trader.DepositAccount': poolDepositAccount,
   'poolrpc.Trader.WithdrawAccount': poolWithdrawAccount,
   'poolrpc.Trader.ListOrders': poolListOrders,

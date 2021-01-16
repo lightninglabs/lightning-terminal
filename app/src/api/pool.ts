@@ -71,6 +71,23 @@ class PoolApi extends BaseApi<PoolEvents> {
   }
 
   /**
+   * call the pool `RenewAccount` RPC and return the response
+   */
+  async renewAccount(
+    traderKey: string,
+    expiryBlocks: number,
+    feeRateSatPerKw: number,
+  ): Promise<POOL.RenewAccountResponse.AsObject> {
+    const req = new POOL.RenewAccountRequest();
+    req.setAccountKey(b64(traderKey));
+    req.setRelativeExpiry(expiryBlocks);
+    req.setFeeRateSatPerKw(feeRateSatPerKw);
+
+    const res = await this._grpc.request(Trader.RenewAccount, req, this._meta);
+    return res.toObject();
+  }
+
+  /**
    * call the pool `CloseAccount` RPC and return the response
    */
   async closeAccount(

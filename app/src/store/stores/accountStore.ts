@@ -130,6 +130,35 @@ export default class AccountStore {
   }
 
   /**
+   * Renews an account via the pool API
+   */
+  async renewAccount(expiryBlocks: number, feeRate: number) {
+    try {
+      const acct = this.activeAccount;
+      this._store.log.info(
+        `renewing account ${acct.traderKey} to expire in ${expiryBlocks} blocks`,
+      );
+
+      const res = await this._store.api.pool.renewAccount(
+        acct.traderKey,
+        expiryBlocks,
+        feeRate,
+      );
+      runInAction(() => {
+        // the account should always be defined but if not, fetch all accounts as a fallback
+        if (res.account) {
+          acct.update(res.account);
+        } else {
+          this.fetchAccounts();
+        }
+      });
+      return res.renewalTxid;
+    } catch (error) {
+      this._store.appView.handleError(error, 'Unable to renew the account');
+    }
+  }
+
+  /**
    * queries the pool api to fetch the list of accounts and stores them
    * in the state
    */

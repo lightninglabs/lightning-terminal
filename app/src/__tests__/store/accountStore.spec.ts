@@ -194,6 +194,25 @@ describe('AccountStore', () => {
     });
   });
 
+  it('should renew an Account', async () => {
+    await store.fetchAccounts();
+    const txid = await store.renewAccount(100, 253);
+    expect(txid).toEqual(poolCloseAccount.closeTxid);
+  });
+
+  it('should handle errors renewing an Account', async () => {
+    await store.fetchAccounts();
+    grpcMock.unary.mockImplementationOnce(() => {
+      throw new Error('test-err');
+    });
+    expect(rootStore.appView.alerts.size).toBe(0);
+    await store.renewAccount(100, 253);
+    await waitFor(() => {
+      expect(rootStore.appView.alerts.size).toBe(1);
+      expect(values(rootStore.appView.alerts)[0].message).toBe('test-err');
+    });
+  });
+
   it('should deposit funds into an account', async () => {
     await store.fetchAccounts();
     const txid = await store.deposit(1);
