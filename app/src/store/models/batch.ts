@@ -100,7 +100,10 @@ export default class Batch {
 
   /** the total amount of sats earned in this batch */
   get earnedSats() {
-    const pctRate = this._store.api.pool.calcPctRate(this.clearingPriceRate);
+    const pctRate = this._store.api.pool.calcPctRate(
+      this.clearingPriceRate,
+      this.leaseDuration,
+    );
     return this.volume.mul(pctRate);
   }
 
@@ -141,7 +144,10 @@ export default class Batch {
 
   /** the batch clearing rate expressed as basis points */
   get basisPoints() {
-    const pct = this._store.api.pool.calcPctRate(this.clearingPriceRate);
+    const pct = this._store.api.pool.calcPctRate(
+      this.clearingPriceRate,
+      this.leaseDuration,
+    );
     return Math.round(pct * 100 * 100);
   }
 

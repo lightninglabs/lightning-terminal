@@ -1,5 +1,6 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
+import { LeaseDuration } from 'types/state';
 import { usePrefixedTranslation } from 'hooks';
 import { Unit, Units } from 'util/constants';
 import { useStore } from 'store';
@@ -13,6 +14,7 @@ import {
   Small,
   SummaryItem,
 } from 'components/base';
+import BlockTime from 'components/common/BlockTime';
 import FormField from 'components/common/FormField';
 import FormInputNumber from 'components/common/FormInputNumber';
 import FormSelect from 'components/common/FormSelect';
@@ -40,7 +42,7 @@ const Styled = {
   `,
   Options: styled.div<{ visible: boolean }>`
     overflow: hidden;
-    max-height: ${props => (props.visible ? '300px' : '0')};
+    max-height: ${props => (props.visible ? '360px' : '0')};
     transition: max-height 0.3s linear;
   `,
   OptionsButton: styled(Button)`
@@ -127,6 +129,14 @@ const OrderFormSection: React.FC = () => {
           />
         </FormField>
         <Options visible={orderFormView.addlOptionsVisible}>
+          <FormField label={l('durationLabel')}>
+            <FormSelect
+              label={l('durationLabel')}
+              value={orderFormView.duration.toString()}
+              onChange={v => orderFormView.setDuration(parseInt(v) as LeaseDuration)}
+              options={orderFormView.durationOptions}
+            />
+          </FormField>
           <FormField label={l('minChanSizeLabel')} error={orderFormView.minChanSizeError}>
             <FormInputNumber
               label={l('minChanSizeLabel')}
@@ -168,9 +178,11 @@ const OrderFormSection: React.FC = () => {
         <SummaryItem>
           <span>{l('durationLabel')}</span>
           <span className="text-right">
-            2016 blocks
+            {orderFormView.derivedDuration} blocks
             <br />
-            <Small>(~{l('durationWeeks')})</Small>
+            <Small>
+              (<BlockTime blocks={orderFormView.derivedDuration} />)
+            </Small>
           </span>
         </SummaryItem>
         <SummaryItem>

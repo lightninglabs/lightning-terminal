@@ -54,7 +54,7 @@ export default class Order {
 
   /** the order fixed rate expressed as basis points */
   get basisPoints() {
-    const pct = this._store.api.pool.calcPctRate(this.rateFixed);
+    const pct = this._store.api.pool.calcPctRate(this.rateFixed, this.duration);
     return Math.round(pct * 100 * 100);
   }
 

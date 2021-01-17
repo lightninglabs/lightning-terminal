@@ -15,15 +15,12 @@ export const FEE_RATE_TOTAL_PARTS = 1e9;
 // The amount of satoshis in one unit
 export const ONE_UNIT = 100000;
 
-// The duration of each order. This value is temporarily constant in the initial
-// release of Pool
-export const DURATION = 2016;
-
 // The minimum batch fee rate in sats/kw
 export const MIN_FEE_RATE_KW = 253;
 
 // The latest order version. This should be updated along with pool CLI
-export const ORDER_VERSION = 1;
+// see: https://github.com/lightninglabs/pool/blob/master/order/interface.go#L35
+export const ORDER_VERSION = 2;
 
 /** the names and argument types for the subscription events */
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -303,7 +300,7 @@ class PoolApi extends BaseApi<PoolEvents> {
    * @param amount the amount of the order
    * @param premium the premium being paid
    */
-  calcFixedRate(amount: number, premium: number) {
+  calcFixedRate(amount: number, premium: number, duration: number) {
     const ratePct = (premium * 100) / amount;
     // rate = % / 100
     // rate = rateFixed / totalParts
@@ -312,15 +309,15 @@ class PoolApi extends BaseApi<PoolEvents> {
     const rateFixedFloat = interestRate * FEE_RATE_TOTAL_PARTS;
     // We then take this rate fixed, and divide it by the number of blocks
     // as the user wants this rate to be the final lump sum they pay.
-    return Math.floor(rateFixedFloat / DURATION);
+    return Math.floor(rateFixedFloat / duration);
   }
 
   /**
    * Calculates the percentage interest rate for a given fixed rate
    * @param fixedRate the per block fixed rate
    */
-  calcPctRate(fixedRate: number) {
-    return (fixedRate * DURATION) / FEE_RATE_TOTAL_PARTS;
+  calcPctRate(fixedRate: number, duration: number) {
+    return (fixedRate * duration) / FEE_RATE_TOTAL_PARTS;
   }
 }
 

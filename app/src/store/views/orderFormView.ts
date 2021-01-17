@@ -1,9 +1,10 @@
-import { makeAutoObservable, runInAction } from 'mobx';
+import { keys, makeAutoObservable, runInAction } from 'mobx';
 import { NodeTier } from 'types/generated/auctioneer_pb';
+import { LeaseDuration } from 'types/state';
 import { annualPercentRate, toBasisPoints, toPercent } from 'util/bigmath';
 import { BLOCKS_PER_DAY } from 'util/constants';
 import { prefixTranslation } from 'util/translate';
-import { DURATION, ONE_UNIT } from 'api/pool';
+import { ONE_UNIT } from 'api/pool';
 import { Store } from 'store';
 import { NODE_TIERS, OrderType, Tier } from 'store/models/order';
 
@@ -19,6 +20,7 @@ export default class OrderFormView {
   orderType: OrderType = OrderType.Bid;
   amount = 0;
   premium = 0;
+  duration = 0;
   minChanSize = DEFAULT_MIN_CHAN_SIZE;
   maxBatchFeeRate = DEFAULT_MAX_BATCH_FEE;
   minNodeTier: Tier = NodeTier.TIER_DEFAULT;
@@ -78,6 +80,26 @@ export default class OrderFormView {
     return '';
   }
 
+  /** the available options for the lease duration field */
+  get durationOptions() {
+    // add a default option with a value of zero to signify that the duration
+    // currently being displayed should be used
+    const current = {
+      label: `${l('inView')} (${this._store.batchStore.selectedLeaseDuration})`,
+      value: '0',
+    };
+    const durations = keys(this._store.batchStore.leaseDurations).map(duration => ({
+      label: `${duration}`,
+      value: `${duration}`,
+    }));
+    return [current, ...durations];
+  }
+
+  /** the chosen duration or the value selected in the batch store */
+  get derivedDuration() {
+    return this.duration || this._store.batchStore.selectedLeaseDuration;
+  }
+
   /** the available options for the minNodeTier field */
   get nodeTierOptions() {
     return Object.entries(NODE_TIERS).map(([value, label]) => ({ label, value }));
@@ -87,7 +109,11 @@ export default class OrderFormView {
   get perBlockFixedRate() {
     if ([this.amount, this.premium].includes(0)) return 0;
 
-    return this._store.api.pool.calcFixedRate(this.amount, this.premium);
+    return this._store.api.pool.calcFixedRate(
+      this.amount,
+      this.premium,
+      this.derivedDuration,
+    );
   }
 
   /** the premium interest of the amount in basis points */
@@ -99,7 +125,7 @@ export default class OrderFormView {
   /** the APR given the amount and premium */
   get apr() {
     if ([this.amount, this.premium].includes(0)) return 0;
-    const termInDays = DURATION / BLOCKS_PER_DAY;
+    const termInDays = this.derivedDuration / BLOCKS_PER_DAY;
     const apr = annualPercentRate(this.amount, this.premium, termInDays);
     return toPercent(apr);
   }
@@ -132,6 +158,10 @@ export default class OrderFormView {
     this.premium = premium;
   }
 
+  setDuration(duration: LeaseDuration) {
+    this.duration = duration;
+  }
+
   setMinChanSize(minChanSize: number) {
     this.minChanSize = minChanSize;
   }
@@ -151,7 +181,10 @@ export default class OrderFormView {
       if (!prevBatch) throw new Error('Previous batch not found');
       const prevFixedRate = prevBatch.clearingPriceRate;
       // get the percentage rate of the previous batch and apply to the current amount
-      const prevPctRate = this._store.api.pool.calcPctRate(prevFixedRate);
+      const prevPctRate = this._store.api.pool.calcPctRate(
+        prevFixedRate,
+        this.derivedDuration,
+      );
       const suggested = this.amount * prevPctRate;
       // round to the nearest 10 to offset lose of precision in calculating percentages
       this.premium = Math.round(suggested / 10) * 10;
@@ -174,7 +207,7 @@ export default class OrderFormView {
       this.orderType,
       this.amount,
       this.perBlockFixedRate,
-      DURATION,
+      this.derivedDuration,
       minUnitsMatch,
       satsPerKWeight,
       this.minNodeTier,
@@ -183,6 +216,7 @@ export default class OrderFormView {
       if (nonce) {
         this.amount = 0;
         this.premium = 0;
+        this.duration = 0;
         // persist the additional options so they can be used for future orders
         this._store.settingsStore.setOrderSettings(
           this.minChanSize,
