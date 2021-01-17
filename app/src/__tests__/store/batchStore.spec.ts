@@ -1,9 +1,9 @@
-import { runInAction, values } from 'mobx';
+import { keys, runInAction, values } from 'mobx';
 import * as AUCT from 'types/generated/auctioneer_pb';
 import { grpc } from '@improbable-eng/grpc-web';
 import { waitFor } from '@testing-library/react';
 import * as config from 'config';
-import { hex } from 'util/strings';
+import { b64, hex } from 'util/strings';
 import { injectIntoGrpcUnary } from 'util/tests';
 import {
   poolBatchSnapshot,
@@ -30,8 +30,9 @@ describe('BatchStore', () => {
     grpcMock.unary.mockImplementation((desc, opts) => {
       let res: any;
       if (desc.methodName === 'BatchSnapshots') {
+        const count = (opts.request.toObject() as any).numBatchesBack;
         res = {
-          batchesList: [...Array(20)].map((_, i) => ({
+          batchesList: [...Array(count)].map((_, i) => ({
             ...poolBatchSnapshot,
             batchId: `${index + i}-${poolBatchSnapshot.batchId}`,
             prevBatchId: `${index + i}-${poolBatchSnapshot.prevBatchId}`,
@@ -51,38 +52,39 @@ describe('BatchStore', () => {
 
   it('should fetch batches', async () => {
     expect(store.batches.size).toBe(0);
-    expect(store.orderedIds.length).toBe(0);
 
     await store.fetchBatches();
     expect(store.batches.size).toBe(BATCH_QUERY_LIMIT);
-    expect(store.orderedIds.length).toBe(BATCH_QUERY_LIMIT);
   });
 
   it('should append start from the oldest batch when fetching batches multiple times', async () => {
     expect(store.batches.size).toBe(0);
-    expect(store.orderedIds.length).toBe(0);
 
     await store.fetchBatches();
     expect(store.batches.size).toBe(BATCH_QUERY_LIMIT);
-    expect(store.orderedIds.length).toBe(BATCH_QUERY_LIMIT);
 
     // calling a second time should append new batches to the list
     await store.fetchBatches();
     expect(store.batches.size).toBe(BATCH_QUERY_LIMIT * 2);
-    expect(store.orderedIds.length).toBe(BATCH_QUERY_LIMIT * 2);
   });
 
   it('should handle a number of batches less than the query limit', async () => {
     // mock the BatchSnapshot response to return 5 batches with the last one having a
     // blank prevBatchId to signify that there are no more batches available
-    grpcMock.unary.mockImplementation((_, opts) => {
-      const res = {
-        batchesList: [...Array(5)].map((_, i) => ({
-          ...poolBatchSnapshot,
-          batchId: `${i}-${poolBatchSnapshot.batchId}`,
-          prevBatchId: index < 4 ? `${i}-${poolBatchSnapshot.prevBatchId}` : '',
-        })),
-      };
+    grpcMock.unary.mockImplementation((desc, opts) => {
+      let res: any;
+      if (desc.methodName === 'BatchSnapshots') {
+        res = {
+          batchesList: [...Array(5)].map((_, i) => ({
+            ...poolBatchSnapshot,
+            batchId: b64(`${hex(poolBatchSnapshot.batchId)}0${i}`),
+            prevBatchId: i < 4 ? b64(`${hex(poolBatchSnapshot.prevBatchId)}0${i}`) : '',
+          })),
+        };
+        index += BATCH_QUERY_LIMIT;
+      } else if (desc.methodName === 'LeaseDurations') {
+        res = poolLeaseDurations;
+      }
       opts.onEnd({
         status: grpc.Code.OK,
         message: { toObject: () => res },
@@ -94,11 +96,21 @@ describe('BatchStore', () => {
 
     await store.fetchBatches();
     expect(store.batches.size).toBe(5);
+
+    await store.fetchBatches();
+    expect(store.batches.size).toBe(5);
   });
 
   it('should handle errors when fetching batches', async () => {
-    grpcMock.unary.mockImplementationOnce(() => {
-      throw new Error('test-err');
+    grpcMock.unary.mockImplementation((desc, opts) => {
+      if (desc.methodName === 'BatchSnapshots') {
+        throw new Error('test-err');
+      }
+      opts.onEnd({
+        status: grpc.Code.OK,
+        message: { toObject: () => poolLeaseDurations },
+      } as any);
+      return undefined as any;
     });
     expect(rootStore.appView.alerts.size).toBe(0);
     await store.fetchBatches();
@@ -107,8 +119,15 @@ describe('BatchStore', () => {
   });
 
   it('should not show error when last snapshot is not found', async () => {
-    grpcMock.unary.mockImplementationOnce(() => {
-      throw new Error('batch snapshot not found');
+    grpcMock.unary.mockImplementation((desc, opts) => {
+      if (desc.methodName === 'BatchSnapshots') {
+        throw new Error('batch snapshot not found');
+      }
+      opts.onEnd({
+        status: grpc.Code.OK,
+        message: { toObject: () => poolLeaseDurations },
+      } as any);
+      return undefined as any;
     });
     expect(rootStore.appView.alerts.size).toBe(0);
     await store.fetchBatches();
@@ -117,20 +136,19 @@ describe('BatchStore', () => {
 
   it('should fetch the latest batch', async () => {
     await store.fetchBatches();
-    expect(store.orderedIds.length).toBe(BATCH_QUERY_LIMIT);
+    expect(store.batches.size).toBe(BATCH_QUERY_LIMIT);
 
     // return the same last batch to ensure no new data is added
     const lastBatchId = store.sortedBatches[0].batchId;
     index--;
     await store.fetchLatestBatch();
-    expect(store.orderedIds.length).toBe(BATCH_QUERY_LIMIT);
+    expect(store.batches.size).toBe(BATCH_QUERY_LIMIT);
     expect(store.sortedBatches[0].batchId).toBe(lastBatchId);
 
     // return a new batch as the latest
     index = 100;
     await store.fetchLatestBatch();
-    expect(store.orderedIds.length).toBe(BATCH_QUERY_LIMIT + 1);
-    expect(store.orderedIds[0]).toBe(hex(`100-${poolBatchSnapshot.batchId}`));
+    expect(store.batches.size).toBe(BATCH_QUERY_LIMIT + 1);
   });
 
   it('should handle errors when fetching the latest batch', async () => {
@@ -203,6 +221,28 @@ describe('BatchStore', () => {
     await store.fetchNodeTier();
     // confirm the tier is set to T0 if the pubkey is not found in the response
     expect(store.nodeTier).toBe(AUCT.NodeTier.TIER_0);
+  });
+
+  it('should handle errors when fetching node tier', async () => {
+    grpcMock.unary.mockImplementationOnce(() => {
+      throw new Error('test-err');
+    });
+    expect(rootStore.appView.alerts.size).toBe(0);
+    await store.fetchNodeTier();
+    expect(rootStore.appView.alerts.size).toBe(1);
+    expect(values(rootStore.appView.alerts)[0].message).toBe('test-err');
+  });
+
+  it('should set the active market', async () => {
+    expect(store.selectedLeaseDuration).toBe(0);
+    await store.fetchBatches();
+    expect(store.selectedLeaseDuration).toBe(2016);
+    expect(keys(store.leaseDurations)).toEqual([2016, 4032, 6048, 8064]);
+    store.setActiveMarket(4032);
+    expect(store.selectedLeaseDuration).toBe(4032);
+    store.setActiveMarket(5000);
+    expect(store.selectedLeaseDuration).toBe(4032);
+    expect(rootStore.appView.alerts.size).toBe(1);
   });
 
   it('should start and stop polling', async () => {

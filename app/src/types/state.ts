@@ -54,3 +54,10 @@ export enum ChannelStatus {
   FORCE_CLOSING = 'Force Closing',
   WAITING_TO_CLOSE = 'Waiting To Close',
 }
+
+/**
+ * A type to signify that a number actually represents a lease duration.
+ * This just makes the code more readable since it will be clear that a
+ * duration is not just a random number.
+ */
+export type LeaseDuration = number;

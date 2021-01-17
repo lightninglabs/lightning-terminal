@@ -4,14 +4,16 @@ import {
   ObservableMap,
   runInAction,
   toJS,
+  values,
   when,
 } from 'mobx';
 import { NodeTier } from 'types/generated/auctioneer_pb';
+import { LeaseDuration } from 'types/state';
 import { IS_DEV, IS_TEST } from 'config';
 import debounce from 'lodash/debounce';
 import { hex } from 'util/strings';
 import { Store } from 'store';
-import { Batch } from 'store/models';
+import { Market } from 'store/models';
 import { Tier } from 'store/models/order';
 
 export const BATCH_QUERY_LIMIT = 20;
@@ -24,19 +26,13 @@ export default class BatchStore {
   private _nextBatchTimer?: NodeJS.Timeout;
 
   /** the selected lease duration */
-  selectedLeaseDuration = 0;
+  selectedLeaseDuration: LeaseDuration = 0;
 
   /** the collection of lease durations as a mapping from duration (blocks) to DurationBucketState */
-  leaseDurations: ObservableMap<number, number> = observable.map();
+  leaseDurations: ObservableMap<LeaseDuration, number> = observable.map();
 
-  /** the collection of batches */
-  batches: ObservableMap<string, Batch> = observable.map();
-
-  /**
-   * store the order of batches so that new batches can be inserted at the front
-   * and old batches appended at the end
-   */
-  orderedIds: string[] = [];
+  /** the collection of markets (batches grouped by lease duration) */
+  markets: ObservableMap<LeaseDuration, Market> = observable.map();
 
   /** the timestamp of the next batch in seconds */
   nextBatchTimestamp = 0;
@@ -54,22 +50,37 @@ export default class BatchStore {
   }
 
   /**
-   * all batches sorted by newest first
+   * the currently active market based on the selected lease duration
    */
-  get sortedBatches() {
+  get activeMarket() {
     return (
-      this.orderedIds
-        .map(id => this.batches.get(id))
-        // filter out empty batches
-        .filter(b => !!b && b.clearingPriceRate > 0) as Batch[]
+      this.markets.get(this.selectedLeaseDuration) ||
+      // return the first market if one hasn't been selected yet
+      values(this.markets)[0] ||
+      // return an empty market if none have been fetched yet
+      new Market(this._store, 0)
     );
   }
 
   /**
-   * the oldest batch that we have queried from the API
+   * the collection of batches for the active market
+   */
+  get batches() {
+    return this.activeMarket.batches;
+  }
+
+  /**
+   * an array of batches for the active market sorted by newest first
+   */
+  get sortedBatches() {
+    return this.activeMarket.sortedBatches;
+  }
+
+  /**
+   * the oldest batch  for the active market that we have fetched from the API
    */
   get oldestBatch() {
-    return this.sortedBatches[this.sortedBatches.length - 1];
+    return this.activeMarket.oldestBatch;
   }
 
   /**
@@ -100,17 +111,15 @@ export default class BatchStore {
     this.loading = true;
 
     try {
+      await this.fetchLeaseDurations();
       const poolBatches = await this._store.api.pool.batchSnapshots(
         BATCH_QUERY_LIMIT,
         prevId,
       );
       runInAction(() => {
-        poolBatches.batchesList.forEach(poolBatch => {
-          const batch = new Batch(this._store, poolBatch);
-          this.batches.set(batch.batchId, batch);
-          this.orderedIds = [...this.orderedIds, batch.batchId];
-        });
-        this._store.log.info('updated batchStore.batches', toJS(this.batches));
+        // update the batches in all markets
+        this.markets.forEach(m => m.update(poolBatches.batchesList, false));
+        this._store.log.info('updated batchStore.markets', toJS(this.markets));
         this.loading = false;
       });
     } catch (error) {
@@ -126,20 +135,13 @@ export default class BatchStore {
   async fetchLatestBatch() {
     this._store.log.info('fetching latest batch');
     try {
-      const [poolBatch] = (await this._store.api.pool.batchSnapshots(1)).batchesList;
-      // handle edge case that should only be possible on regtest with no batches
-      if (!poolBatch) return;
+      const poolBatches = await this._store.api.pool.batchSnapshots(1);
       // update the timestamp of the next batch when fetching the latest batch
       await this.fetchNextBatchTimestamp();
       runInAction(() => {
-        const batch = new Batch(this._store, poolBatch);
-        // add the latest one if it's not already stored in state
-        if (!this.batches.get(batch.batchId)) {
-          this.batches.set(batch.batchId, batch);
-          // add this batch's id to the front of the orderedIds array
-          this.orderedIds = [batch.batchId, ...this.orderedIds];
-        }
-        this._store.log.info('updated batchStore.batches', toJS(this.batches));
+        // update the batches in all markets
+        this.markets.forEach(m => m.update(poolBatches.batchesList, true));
+        this._store.log.info('updated batchStore.markets', toJS(this.markets));
       });
     } catch (error) {
       if (error.message === 'batch snapshot not found') return;
@@ -202,8 +204,16 @@ export default class BatchStore {
         res.leaseDurationBucketsMap.forEach(([duration, state]) => {
           this.leaseDurations.set(duration, state);
 
-          // set the active lease duration if it is not set
+          // set the selected lease duration to the first one if it is not set
           if (!this.selectedLeaseDuration) this.selectedLeaseDuration = duration;
+
+          // create a market for the lease duration if it hasn't
+          // already been created. initialize it with no batches. The
+          // batches for each market will be added by `fetchBatches()`
+          if (!this.markets.get(duration)) {
+            const list = new Market(this._store, duration);
+            this.markets.set(duration, list);
+          }
         });
         this._store.log.info(
           'updated batchStore.leaseDurations',
@@ -213,6 +223,21 @@ export default class BatchStore {
     } catch (error) {
       this._store.appView.handleError(error, 'Unable to fetch lease durations');
     }
+  }
+
+  /**
+   * Updates the active market using a specific lease duration
+   */
+  setActiveMarket(duration: LeaseDuration) {
+    if (!this.leaseDurations.get(duration)) {
+      this._store.appView.handleError(
+        new Error(`${duration} is not a valid lease duration`),
+        'Unable to switch markets',
+      );
+      return;
+    }
+
+    this.selectedLeaseDuration = duration;
   }
 
   /**

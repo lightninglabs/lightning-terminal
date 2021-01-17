@@ -153,7 +153,7 @@ describe('OrderFormSection', () => {
 
   it('should suggest the correct premium', async () => {
     const { getByText, getByLabelText, changeInput } = render();
-    await store.batchStore.fetchLatestBatch();
+    await store.batchStore.fetchBatches();
 
     store.batchStore.sortedBatches[0].clearingPriceRate = 496;
     changeInput('Desired Inbound Liquidity', '1000000');

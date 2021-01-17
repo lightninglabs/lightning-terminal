@@ -15,7 +15,7 @@ describe('BatchRow', () => {
   });
 
   const render = () => {
-    batch = new Batch(store, poolBatchSnapshot);
+    batch = new Batch(store, 2016, poolBatchSnapshot);
     return renderWithProviders(<BatchRow batch={batch} />, store);
   };
 
