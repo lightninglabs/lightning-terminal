@@ -19,6 +19,7 @@ describe('BatchSection', () => {
     await store.orderStore.fetchOrders();
     await store.batchStore.fetchBatches();
     await store.batchStore.fetchNextBatchTimestamp();
+    await store.batchStore.fetchNodeTier();
   });
 
   const render = () => {
@@ -32,5 +33,13 @@ describe('BatchSection', () => {
     expect(getByText('Cleared Rate')).toBeInTheDocument();
     fireEvent.click(getByText('bar-chart.svg'));
     expect(await findByText('volume')).toBeInTheDocument();
+  });
+
+  it('should toggle between markets', async () => {
+    const { getByText, findByText } = render();
+    expect(store.batchStore.selectedLeaseDuration).toBe(2016);
+    expect(await findByText('4032')).toBeInTheDocument();
+    fireEvent.click(getByText('4032'));
+    expect(store.batchStore.selectedLeaseDuration).toBe(4032);
   });
 });

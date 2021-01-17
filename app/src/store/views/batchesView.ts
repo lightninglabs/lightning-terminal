@@ -1,4 +1,4 @@
-import { makeAutoObservable } from 'mobx';
+import { keys, makeAutoObservable } from 'mobx';
 import { NodeTier } from 'types/generated/auctioneer_pb';
 import { toPercent } from 'util/bigmath';
 import { Store } from 'store';
@@ -75,11 +75,29 @@ export default class BatchesView {
     return this._store.orderStore.paidSats;
   }
 
+  /** the currently selected market */
+  get selectedMarket() {
+    return `${this._store.batchStore.selectedLeaseDuration}`;
+  }
+
+  /** the list of markets to display as badges */
+  get marketOptions() {
+    return keys(this._store.batchStore.leaseDurations).map(duration => ({
+      label: `${duration}`,
+      value: `${duration}`,
+    }));
+  }
+
   //
   // Actions
   //
 
   setViewMode(mode: BatchesView['viewMode']) {
     this.viewMode = mode;
+  }
+
+  changeMarket(value: string) {
+    const duration = parseInt(value);
+    this._store.batchStore.setActiveMarket(duration);
   }
 }

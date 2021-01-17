@@ -4,6 +4,7 @@ import { useStore } from 'store';
 import { Section } from 'components/base';
 import { styled } from 'components/theme';
 import BatchChart from './batches/BatchChart';
+import BatchControls from './batches/BatchControls';
 import BatchList from './batches/BatchList';
 import BatchStats from './batches/BatchStats';
 
@@ -23,6 +24,7 @@ const BatchSection: React.FC = () => {
   return (
     <Section>
       <BatchStats />
+      <BatchControls />
       {batchesView.viewMode === 'chart' ? <BatchChart /> : <BatchList />}
     </Section>
   );

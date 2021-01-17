@@ -1,8 +1,7 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
-import { BarChart, List } from 'components/base';
 import LoaderLines from 'components/common/LoaderLines';
 import Stat from 'components/common/Stat';
 import Unit from 'components/common/Unit';
@@ -42,17 +41,6 @@ const Styled = {
   `,
   Stat: StyledStat.withComponent(Stat),
   BatchCountdown: StyledStat.withComponent(BatchCountdown),
-  ViewMode: styled.div`
-    position: absolute;
-    bottom: -40px;
-    right: 0;
-    z-index: 1;
-    opacity: 0.6;
-
-    &:hover {
-      opacity: 1;
-    }
-  `,
   LoaderLines: styled(LoaderLines)`
     .line {
       margin: 10px 1px;
@@ -65,12 +53,9 @@ const BatchStats: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.pool.batches.BatchStats');
   const { batchesView } = useStore();
 
-  const handleViewChart = useCallback(() => batchesView.setViewMode('chart'), []);
-  const handleViewList = useCallback(() => batchesView.setViewMode('list'), []);
-
   const tipProps = { tipPlacement: 'bottom', tipCapitalize: false };
 
-  const { Wrapper, Stat, BatchCountdown, ViewMode, LoaderLines } = Styled;
+  const { Wrapper, Stat, BatchCountdown, LoaderLines } = Styled;
   return (
     <Wrapper>
       <div>
@@ -111,10 +96,6 @@ const BatchStats: React.FC = () => {
           value={<Unit sats={batchesView.paidSats} suffix={false} />}
         />
       </div>
-      <ViewMode>
-        <BarChart size="large" onClick={handleViewChart} />
-        <List size="large" onClick={handleViewList} />
-      </ViewMode>
     </Wrapper>
   );
 };
