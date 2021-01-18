@@ -75,13 +75,14 @@ const BatchChart: React.FC = () => {
         outerWidth: width,
         outerHeight: height,
         batches: batchStore.sortedBatches,
+        market: batchStore.selectedLeaseDuration,
         fetchBatches: batchStore.fetchBatches,
       };
       setChart(new D3Chart(config));
     } else {
-      chart.update(batchStore.sortedBatches);
+      chart.update(batchStore.sortedBatches, batchStore.selectedLeaseDuration);
     }
-  }, [chartArea.current, batchStore.sortedBatches]);
+  }, [chartArea.current, batchStore.sortedBatches, batchStore.selectedLeaseDuration]);
 
   useEffect(() => {
     // resize the chart when the dimensions of the wrapper change

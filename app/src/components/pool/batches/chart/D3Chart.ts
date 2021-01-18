@@ -1,3 +1,4 @@
+import { LeaseDuration } from 'types/state';
 import * as d3 from 'd3';
 import BaseEmitter from 'util/BaseEmitter';
 import { Batch } from 'store/models';
@@ -19,7 +20,6 @@ import type {
   Chart,
   ChartEvents,
 } from './types';
-
 const TOP_HEIGHT_RATIO = 0.6;
 const TOP_PADDING = 0.2;
 const MARGIN = { top: 0, right: 30, bottom: 30, left: 50 };
@@ -37,6 +37,7 @@ export default class D3Chart extends BaseEmitter<ChartEvents> implements Chart {
   dimensions: ChartDimensions;
   scales: Scales;
   data: BatchChartData[];
+  market: LeaseDuration;
 
   palette: d3.ScaleOrdinal<string, string, never>;
   duration = ANIMATION_DURATION;
@@ -44,8 +45,9 @@ export default class D3Chart extends BaseEmitter<ChartEvents> implements Chart {
   constructor(config: ChartConfig) {
     super();
 
-    const { element, batches, outerWidth, outerHeight } = config;
+    const { element, batches, market, outerWidth, outerHeight } = config;
     this.data = this._convertData(batches);
+    this.market = market;
     this.dimensions = this._getDimensions(outerWidth, outerHeight, batches.length);
     const { width, height, margin } = this.dimensions;
 
@@ -97,18 +99,24 @@ export default class D3Chart extends BaseEmitter<ChartEvents> implements Chart {
     new BlocksChart(this);
     new Zoomer(this, config.fetchBatches);
 
-    this.update(batches);
+    this.update(batches, market);
     this.resize(outerWidth, outerHeight);
   }
 
   /**
    * Updates the chart with a new list of batches
    */
-  update = (batches: Batch[]) => {
+  update = (batches: Batch[], market: number) => {
     const data = this._convertData(batches);
-    // determine if we are loading batches from the past
-    const pastData = this._hasLoadedPastData(this.data, data);
+    // determine if we are loading batches from the past. if the market changes, then
+    // we are not loading new data, just a different subset of batches
+    let pastData = this._hasLoadedPastData(this.data, data);
+    // if the market changes, then we are not loading new data, just a different
+    // subset of batches
+    if (this.market !== market) pastData = false;
+
     this.data = data;
+    this.market = market;
 
     const prev = this.dimensions;
     this.dimensions = this._getDimensions(

@@ -1,4 +1,5 @@
 import { Emitter } from 'types/emitter';
+import { LeaseDuration } from 'types/state';
 import { Batch } from 'store/models';
 import { BatchDelta } from 'store/models/batch';
 import { Scales } from './';
@@ -28,6 +29,7 @@ interface BaseChart {
   dimensions: ChartDimensions;
   scales: Scales;
   data: BatchChartData[];
+  market: LeaseDuration;
 
   palette: d3.ScaleOrdinal<string, string, never>;
   duration: number;
@@ -40,6 +42,7 @@ export interface ChartConfig {
   outerWidth: number;
   outerHeight: number;
   batches: Batch[];
+  market: LeaseDuration;
   fetchBatches: () => void;
 }
 
