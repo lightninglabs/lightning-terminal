@@ -28,7 +28,7 @@ node:
 
 ```shell script
 $ litd \
-  --httpslisten=0.0.0.0:443 \
+  --httpslisten=0.0.0.0:8443 \
   --uipassword=My$trongP@ssword \
   --letsencrypt \
   --letsencrypthost=loop.merchant.com \
@@ -71,7 +71,7 @@ Example `~/.lit/lit.conf`:
 
 ```text
 # Application Options
-httpslisten=0.0.0.0:443
+httpslisten=0.0.0.0:8443
 letsencrypt=true
 letsencrypthost=loop.merchant.com
 lnd-mode=integrated
