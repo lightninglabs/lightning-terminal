@@ -304,7 +304,7 @@ func (g *LightningTerminal) startSubservers() error {
 			MacaroonDir:           macDir,
 			TLSPath:               tlsPath,
 			BlockUntilChainSynced: true,
-			ChainSyncCtx:          ctxc,
+			CallerCtx:             ctxc,
 		},
 	)
 	if err != nil {
