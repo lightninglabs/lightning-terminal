@@ -357,3 +357,12 @@ You can easily create an alias for this by adding the following line to your
 ```shell script
 alias lit-frcli="frcli --rpcserver=localhost:10009 --tlscertpath=~/.lnd/tls.cert --macaroonpath=~/.faraday/testnet/faraday.macaroon"
 ```
+
+## Shutting down LiT
+
+In the integrated mode LiT can be shut down by stopping the integrated `lnd`
+node:
+
+```shell
+⛰  lncli stop
+```

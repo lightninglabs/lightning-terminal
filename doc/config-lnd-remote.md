@@ -276,3 +276,15 @@ file:
 ```shell script
 alias lit-frcli="frcli --rpcserver=localhost:8443 --tlscertpath=~/.lit/tls.cert --macaroonpath=~/.faraday/testnet/faraday.macaroon"
 ```
+
+## Shutting down LiT
+
+In the remote mode, there is no explicit command for stopping LiT yet. But a
+clean shutdown can be achieved by either pressing `<Ctrl> + c` in the terminal
+where LiT is running. Or, if LiT is running in the background, the following
+command can be used to send an interrupt signal which will trigger the clean
+shutdown:
+
+```shell
+⛰  kill -s INT $(pidof litd)
+```
