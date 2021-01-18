@@ -8,7 +8,7 @@ By default LiT assumes that `lnd` is running as a standalone process locally. Ho
 To connect Lightning Terminal to a remote LND instance first make sure your `lnd.conf`
 file contains the following additional configuration settings:
 
-```
+```text
 tlsextraip=<externally-reachable-ip-address>
 rpclisten=0.0.0.0:10009
 ```
@@ -36,7 +36,7 @@ depends on your operating system:
 Alternatively you can specify a different location by passing `--lit-dir=~/.lit`. After
 creating `lit.conf` populate it with the following configuration settings:
 
-```
+```text
 remote.lnd.rpcserver=<externally-reachable-ip-address>:10009
 remote.lnd.macaroondir=/some/folder/with/lnd/data
 remote.lnd.tlscertpath=/some/folder/with/lnd/data/tls.cert
@@ -44,8 +44,8 @@ remote.lnd.tlscertpath=/some/folder/with/lnd/data/tls.cert
 
 Run LiT:
 
-```
-./litd --uipassword=UP48lm4VjqxmOxB9X9stry6VTKBRQI
+```shell
+⛰  ./litd --uipassword=UP48lm4VjqxmOxB9X9stry6VTKBRQI
 ```
 
 Visit https://localhost:8443 to access LiT.
@@ -75,8 +75,8 @@ To see all available command line options, run `litd --help`.
 The most minimal example command to start `litd` and connect it to a local `lnd`
 node that is running with default configuration settings is:
 
-```shell script
-$ litd --uipassword=My$trongP@ssword
+```shell
+⛰  litd --uipassword=My$trongP@ssword
 ```
 
 All other command line flags are only needed to overwrite the default behavior.
@@ -85,8 +85,8 @@ Here is an example command to start `litd` connected to a testnet `lnd` that is
 running on another host and overwrites a few default settings in `loop`, `pool`,
 and `faraday` (optional):
 
-```shell script
-$ litd \
+```shell
+⛰  litd \
   --httpslisten=0.0.0.0:8443 \
   --uipassword=My$trongP@ssword \
   --letsencrypt \
@@ -213,8 +213,8 @@ implied by looking inside the default directories for that network. Or you speci
 The `lncli` commands in the "remote" mode are the same as if `lnd` was running standalone
 on a remote host. We need to specify all flags explicitly.
 
-```shell script
-$ lncli --rpcserver=some-other-host:10009 \
+```shell
+⛰  lncli --rpcserver=some-other-host:10009 \
   --tlscertpath=/some/folder/with/lnd/data/tls.cert \
   --macaroonpath=/some/folder/with/lnd/data/admin.macaroon \
   getinfo
@@ -227,8 +227,8 @@ the same port as the UI server. That's why we have to both specify the `host:por
 as the TLS certificate of LiT. But `loopd` verifies its own macaroon, so we have to
 specify that one from the `.loop` directory.
 
-```shell script
-$ loop --rpcserver=localhost:8443 --tlscertpath=~/.lit/tls.cert \
+```shell
+⛰  loop --rpcserver=localhost:8443 --tlscertpath=~/.lit/tls.cert \
   --macaroonpath=~/.loop/testnet/loop.macaroon \
   quote out 500000
 ```
@@ -236,8 +236,8 @@ $ loop --rpcserver=localhost:8443 --tlscertpath=~/.lit/tls.cert \
 You can easily create an alias for this by adding the following line to your `~/.bashrc`
 file:
 
-```shell script
-alias lit-loop="loop --rpcserver=localhost:8443 --tlscertpath=~/.lit/tls.cert --macaroonpath=~/.loop/testnet/loop.macaroon"
+```shell
+⛰  alias lit-loop="loop --rpcserver=localhost:8443 --tlscertpath=~/.lit/tls.cert --macaroonpath=~/.loop/testnet/loop.macaroon"
 ```
 
 ### Example `pool` command
@@ -246,8 +246,8 @@ Again, `poold` also runs on the same port as the UI server and we have to
 specify the `host:port` and the TLS certificate of LiT but use the macaroon from
 the `.pool` directory.
 
-```shell script
-$ pool --rpcserver=localhost:8443 --tlscertpath=~/.lit/tls.cert \
+```shell
+⛰  pool --rpcserver=localhost:8443 --tlscertpath=~/.lit/tls.cert \
   --macaroonpath=~/.pool/testnet/pool.macaroon \
   accounts list
 ```
@@ -255,8 +255,8 @@ $ pool --rpcserver=localhost:8443 --tlscertpath=~/.lit/tls.cert \
 You can easily create an alias for this by adding the following line to your
 `~/.bashrc` file:
 
-```shell script
-alias lit-pool="pool --rpcserver=localhost:8443 --tlscertpath=~/.lit/tls.cert --macaroonpath=~/.pool/testnet/pool.macaroon"
+```shell
+⛰  alias lit-pool="pool --rpcserver=localhost:8443 --tlscertpath=~/.lit/tls.cert --macaroonpath=~/.pool/testnet/pool.macaroon"
 ```
 
 ### Example `frcli` command
@@ -264,8 +264,8 @@ alias lit-pool="pool --rpcserver=localhost:8443 --tlscertpath=~/.lit/tls.cert --
 Faraday's command line tool follows the same pattern as loop. We also have to specify the
 server and TLS flags for `lnd` but use `faraday`'s macaroon:
 
-```shell script
-$ frcli --rpcserver=localhost:8443 --tlscertpath=~/.lit/tls.cert \
+```shell
+⛰  frcli --rpcserver=localhost:8443 --tlscertpath=~/.lit/tls.cert \
   --macaroonpath=~/.faraday/testnet/faraday.macaroon \
   audit
 ```
@@ -273,8 +273,8 @@ $ frcli --rpcserver=localhost:8443 --tlscertpath=~/.lit/tls.cert \
 You can easily create an alias for this by adding the following line to your `~/.bashrc`
 file:
 
-```shell script
-alias lit-frcli="frcli --rpcserver=localhost:8443 --tlscertpath=~/.lit/tls.cert --macaroonpath=~/.faraday/testnet/faraday.macaroon"
+```shell
+⛰  alias lit-frcli="frcli --rpcserver=localhost:8443 --tlscertpath=~/.lit/tls.cert --macaroonpath=~/.faraday/testnet/faraday.macaroon"
 ```
 
 ## Shutting down LiT

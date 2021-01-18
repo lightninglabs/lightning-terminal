@@ -20,8 +20,8 @@ Download the latest binaries from the [releases](https://github.com/lightninglab
 ## Execution
 Run Lightning Terminal with a local `lnd` instance:
 
-```
-./litd --uipassword=UP48lm4Vjqxy<change_this_or_you_will_get_robbed>
+```shell
+⛰  ./litd --uipassword=UP48lm4Vjqxy<change_this_or_you_will_get_robbed>
 ```
 
 Visit https://localhost:8443 to access Terminal.
@@ -33,8 +33,8 @@ To use LiT with a remote `lnd` instance please [follow these instructions](./doc
 ## LND
 Note that LiT requires `lnd` to be built with **all of its subservers** and requires running at least v0.11.0. Download the latest [official release binary](https://github.com/lightningnetwork/lnd/releases/latest) or build `lnd` from source by following the [installation instructions](https://github.com/lightningnetwork/lnd/blob/master/docs/INSTALL.md). If you choose to build `lnd` from source, use the following command to enable all the relevant subservers:
 
-```
-make install tags="signrpc walletrpc chainrpc invoicesrpc"
+```shell
+⛰  make install tags="signrpc walletrpc chainrpc invoicesrpc"
 ```
 
 ## Interaction

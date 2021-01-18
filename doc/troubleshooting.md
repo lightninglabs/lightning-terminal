@@ -22,7 +22,7 @@ Client-side logs are disabled by default in production builds. Logging can be tu
 adding a couple keys to your browser's `localStorage`. Simply run these two JS statements
 in you browser's DevTools console then refresh the page:
 
-```
+```javascript
 localStorage.setItem('debug', '*'); localStorage.setItem('debug-level', 'debug');
 ```
 
