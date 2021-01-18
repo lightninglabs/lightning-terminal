@@ -67,6 +67,7 @@ const OrderRow: React.FC<{
       <TableCell right>
         <Unit sats={order.amount} suffix={false} />
       </TableCell>
+      <TableCell className="text-center">{order.duration}</TableCell>
       <TableCell right>{order.basisPoints}</TableCell>
       <TableCell>
         <OrderStatus status={order.stateLabel}>{order.stateWithCount}</OrderStatus>
@@ -109,6 +110,15 @@ const OrdersList: React.FC = () => {
                 onSort={settingsStore.setOrderSort}
               >
                 {l('amount')}
+              </SortableHeader>
+            </TableHeader>
+            <TableHeader className="text-center">
+              <SortableHeader<Order>
+                field="duration"
+                sort={settingsStore.orderSort}
+                onSort={settingsStore.setOrderSort}
+              >
+                {l('duration')}
               </SortableHeader>
             </TableHeader>
             <TableHeader right>

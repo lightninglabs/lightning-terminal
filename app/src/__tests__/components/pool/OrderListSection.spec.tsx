@@ -74,6 +74,7 @@ describe('OrderListSection', () => {
   it.each<[string, number[]]>([
     ['Type', [2, 0, 6, 9, 3]],
     ['Liquidity', [3, 9, 0, 2, 6]],
+    ['Duration', [2, 3, 9, 6, 0]],
     ['Rate (bps)', [6, 0, 9, 2, 3]],
     ['Status', [6, 3, 2, 9, 0]],
     ['Created On', [2, 3, 0, 6, 9]],
@@ -111,7 +112,7 @@ describe('OrderListSection', () => {
     ['Balances', [5, 6], 0],
     ['APR', [6, 5], 0],
     ['Premium', [5, 6], 0],
-    ['Duration', [6, 5], 0],
+    ['Duration', [6, 5], 1],
     ['Status', [6, 5], 1],
     ['Alias', [5, 6], 0],
   ])('should sort the leases list by %s', (sortBy, sortedOrder, elIndex) => {
