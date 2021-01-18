@@ -151,9 +151,15 @@ export default class Batch {
   update(llmBatch: AUCT.BatchSnapshotResponse.AsObject) {
     this.batchId = hex(llmBatch.batchId);
     this.prevBatchId = hex(llmBatch.prevBatchId);
-    this.clearingPriceRate = llmBatch.clearingPriceRate;
     this.batchTxId = llmBatch.batchTxId;
     this.batchTxFeeRateSatPerKw = llmBatch.batchTxFeeRateSatPerKw;
+    // temporary fix to keep a batch level rate. Now that pool supports multiple
+    // durations, the rate per matched order will vary. The rate for orders with
+    // the same duration should be the same. In the future, we should group orders
+    // by their duration so they can be displayed in separate charts
+    if (llmBatch.matchedOrdersList.length > 0) {
+      this.clearingPriceRate = llmBatch.matchedOrdersList[0].matchingRate;
+    }
     this.matchedOrders = llmBatch.matchedOrdersList
       // there should never be a match that does not have both a bid and an ask, but
       // the proto -> TS compiler makes these objects optional. This filter is just
