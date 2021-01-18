@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -171,7 +172,14 @@ type RemoteDaemonConfig struct {
 
 	// MacaroonDir is the directory that contains all the macaroon files
 	// required for the remote connection.
-	MacaroonDir string `long:"macaroondir" description:"The directory containing all lnd macaroons to use for the remote connection."`
+	MacaroonDir string `long:"macaroondir" description:"DEPRECATED: Use macaroonpath. The directory containing all lnd macaroons to use for the remote connection."`
+
+	// MacaroonPath is the path to the single macaroon that should be used
+	// instead of needing to specify the macaroon directory that contains
+	// all of lnd's macaroons. The specified macaroon MUST have all
+	// permissions that all the subservers use, otherwise permission errors
+	// will occur.
+	MacaroonPath string `long:"macaroonpath" description:"The full path to the single macaroon to use, either the admin.macaroon or a custom baked one. Cannot be specified at the same time as macaroondir. A custom macaroon must contain ALL permissions required for all subservers to work, otherwise permission errors will occur."`
 
 	// TLSCertPath is the path to the tls cert of the remote daemon that
 	// should be used to verify the TLS identity of the remote RPC server.
@@ -186,10 +194,24 @@ func (c *Config) lndConnectParams() (string, lndclient.Network, string, string,
 	// In remote lnd mode, we just pass along what was configured in the
 	// remote section of the lnd config.
 	if c.LndMode == ModeRemote {
+		// Because we now have the option to specify a single, custom
+		// macaroon to the lndclient, we either use the single macaroon
+		// indicated by the user or the admin macaroon from the mac dir
+		// that was specified.
+		macPath := path.Join(
+			lncfg.CleanAndExpandPath(c.Remote.Lnd.MacaroonDir),
+			defaultLndMacaroon,
+		)
+		if c.Remote.Lnd.MacaroonPath != "" {
+			macPath = lncfg.CleanAndExpandPath(
+				c.Remote.Lnd.MacaroonPath,
+			)
+		}
+
 		return c.Remote.Lnd.RPCServer,
 			lndclient.Network(c.network),
 			lncfg.CleanAndExpandPath(c.Remote.Lnd.TLSCertPath),
-			lncfg.CleanAndExpandPath(c.Remote.Lnd.MacaroonDir), nil
+			macPath, nil
 	}
 
 	// When we start lnd internally, we take the listen address as
@@ -211,7 +233,7 @@ func (c *Config) lndConnectParams() (string, lndclient.Network, string, string,
 	}
 
 	return lndDialAddr, lndclient.Network(c.network),
-		c.Lnd.TLSCertPath, filepath.Dir(c.Lnd.AdminMacPath), nil
+		c.Lnd.TLSCertPath, c.Lnd.AdminMacPath, nil
 }
 
 // defaultConfig returns a configuration struct with all default values set.
@@ -441,6 +463,15 @@ func validateRemoteModeConfig(cfg *Config) error {
 		return fmt.Errorf("error validating lnd remote network: %v", err)
 	}
 	cfg.network = r.Lnd.Network
+
+	// Users can either specify the macaroon directory or the custom
+	// macaroon to use, but not both.
+	if r.Lnd.MacaroonDir != defaultRemoteLndMacDir &&
+		r.Lnd.MacaroonPath != "" {
+
+		return fmt.Errorf("cannot set both macaroon dir and macaroon " +
+			"path")
+	}
 
 	// If the remote lnd's network isn't the default, we also check if we
 	// need to adjust the default macaroon directory so the user can only

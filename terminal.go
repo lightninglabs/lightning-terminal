@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -249,7 +250,7 @@ func (g *LightningTerminal) Run() error {
 func (g *LightningTerminal) startSubservers() error {
 	var basicClient lnrpc.LightningClient
 
-	host, network, tlsPath, macDir, err := g.cfg.lndConnectParams()
+	host, network, tlsPath, macPath, err := g.cfg.lndConnectParams()
 	if err != nil {
 		return err
 	}
@@ -265,8 +266,8 @@ func (g *LightningTerminal) startSubservers() error {
 		// subservers have the same requirements.
 		var err error
 		basicClient, err = lndclient.NewBasicClient(
-			host, tlsPath, macDir, string(network),
-			lndclient.MacFilename(defaultLndMacaroon),
+			host, tlsPath, path.Dir(macPath), string(network),
+			lndclient.MacFilename(path.Base(macPath)),
 		)
 		return err
 	}, defaultStartupTimeout)
@@ -301,8 +302,8 @@ func (g *LightningTerminal) startSubservers() error {
 		&lndclient.LndServicesConfig{
 			LndAddress:            host,
 			Network:               network,
-			MacaroonDir:           macDir,
 			TLSPath:               tlsPath,
+			CustomMacaroonPath:    macPath,
 			BlockUntilChainSynced: true,
 			BlockUntilUnlocked:    true,
 			CallerCtx:             ctxc,
@@ -643,10 +644,10 @@ func (g *LightningTerminal) showStartupInfo() error {
 	if g.cfg.LndMode == ModeRemote {
 		// We try to query GetInfo on the remote node to find out the
 		// alias. But the wallet might be locked.
-		host, network, tlsPath, macDir, _ := g.cfg.lndConnectParams()
+		host, network, tlsPath, macPath, _ := g.cfg.lndConnectParams()
 		basicClient, err := lndclient.NewBasicClient(
-			host, tlsPath, macDir, string(network),
-			lndclient.MacFilename(defaultLndMacaroon),
+			host, tlsPath, path.Dir(macPath), string(network),
+			lndclient.MacFilename(path.Base(macPath)),
 		)
 		if err != nil {
 			return fmt.Errorf("error querying remote node: %v", err)

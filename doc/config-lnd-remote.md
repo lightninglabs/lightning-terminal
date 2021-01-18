@@ -19,12 +19,9 @@ directory on your remote machine to `/some/folder/with/lnd/data/` on your local 
 
 - tls.cert
 - admin.macaroon
-- chainnotifier.macaroon
-- invoices.macaroon
-- readonly.macaroon
-- router.macaroon
-- signer.macaroon
-- walletkit.macaroon
+
+(Note that with LiT prior to `v0.3.5-alpha` all `*.macaroon` files need to be
+copied from the lnd machine.)
 
 Create a `lit.conf` file. The default location LiT will look for the configuration file
 depends on your operating system:
@@ -38,7 +35,7 @@ creating `lit.conf` populate it with the following configuration settings:
 
 ```text
 remote.lnd.rpcserver=<externally-reachable-ip-address>:10009
-remote.lnd.macaroondir=/some/folder/with/lnd/data
+remote.lnd.macaroonpath=/some/folder/with/lnd/data/admin.macaroon
 remote.lnd.tlscertpath=/some/folder/with/lnd/data/tls.cert
 ```
 
@@ -95,7 +92,7 @@ and `faraday` (optional):
   --remote.lit-debuglevel=debug \
   --remote.lnd.network=testnet \
   --remote.lnd.rpcserver=some-other-host:10009 \
-  --remote.lnd.macaroondir=/some/folder/with/lnd/data \
+  --remote.lnd.macaroonpath=/some/folder/with/lnd/data/admin.macaroon \
   --remote.lnd.tlscertpath=/some/folder/with/lnd/data/tls.cert \
   --loop.loopoutmaxparts=5 \
   --pool.newnodesonly=true \
@@ -105,12 +102,6 @@ and `faraday` (optional):
   --faraday.bitcoin.user=testnetuser \
   --faraday.bitcoin.password=testnetpw
 ```
-
-NOTE: Even though LiT itself only needs `lnd`'s `admin.macaroon`, the `loop`,
-`pool`, and `faraday` daemons will require other macaroons and will look for
-them in the folder specified with `--remote.lnd.macaroondir`. It is advised to
-copy all `*.macaroon` files and the `tls.cert` file from the remote host to the
-host that is running `litd`.
 
 ## Use a configuration file
 
@@ -151,7 +142,7 @@ remote.lit-debuglevel=debug
 # Remote lnd options
 remote.lnd.network=testnet
 remote.lnd.rpcserver=some-other-host:10009
-remote.lnd.macaroondir=/some/folder/with/lnd/data
+remote.lnd.macaroonpath=/some/folder/with/lnd/data/admin.macaroon
 remote.lnd.tlscertpath=/some/folder/with/lnd/data/tls.cert
 
 # Loop
@@ -192,7 +183,7 @@ lit-dir=~/.lit
 
 remote.lnd.network=testnet
 remote.lnd.rpcserver=some-other-host:10009
-remote.lnd.macaroondir=/some/folder/with/lnd/data
+remote.lnd.macaroonpath=/some/folder/with/lnd/data/admin.macaroon
 remote.lnd.tlscertpath=/some/folder/with/lnd/data/tls.cert
 ```
 
