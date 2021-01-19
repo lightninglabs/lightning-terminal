@@ -25,11 +25,12 @@ export const Pill = styled.span`
   border-radius: 40px;
 `;
 
-export const Badge = styled.span`
+export const Badge = styled.span<{ muted?: boolean }>`
   display: inline-block;
   margin-left: 10px;
   font-family: ${props => props.theme.fonts.open.light};
   font-size: ${props => props.theme.sizes.xxs};
+  font-weight: 700;
   color: ${props => props.theme.colors.pink};
   border: 1px solid ${props => props.theme.colors.pink};
   border-radius: 4px;
@@ -37,6 +38,14 @@ export const Badge = styled.span`
   text-transform: lowercase;
   line-height: 1;
   letter-spacing: 1.8px;
+
+  ${props =>
+    props.muted &&
+    `
+    color: ${props.theme.colors.gray};
+    border: 1px solid ${props.theme.colors.gray};
+
+  `}
 `;
 
 export const Section = styled.section`

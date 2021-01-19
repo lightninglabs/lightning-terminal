@@ -2,7 +2,7 @@ import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
-import { HeaderFour } from 'components/base';
+import { Badge, HeaderFour } from 'components/base';
 import { styled } from 'components/theme';
 
 const Styled = {
@@ -18,7 +18,7 @@ const Styled = {
     font-size: ${props => props.theme.sizes.xs};
     margin-right: -17px;
 
-    span {
+    > span {
       display: block;
       height: 50px;
       line-height: 50px;
@@ -34,7 +34,7 @@ const Styled = {
       }
     }
 
-    &.active span {
+    &.active > span {
       border-left: 3px solid ${props => props.theme.colors.offWhite};
       background-color: ${props => props.theme.colors.blue};
 
@@ -45,19 +45,28 @@ const Styled = {
   `,
 };
 
-const NavItem: React.FC<{ page: string; onClick: () => void }> = observer(
-  ({ page, onClick }) => {
-    const { l } = usePrefixedTranslation('cmps.layout.NavMenu');
-    const { router } = useStore();
-    const className = router.location.pathname === `/${page}` ? 'active' : '';
+const NavItem: React.FC<{
+  page: string;
+  preview?: boolean;
+  onClick: () => void;
+}> = observer(({ page, preview, onClick }) => {
+  const { l } = usePrefixedTranslation('cmps.layout.NavMenu');
+  const { router } = useStore();
+  const className = router.location.pathname === `/${page}` ? 'active' : '';
 
-    return (
-      <Styled.NavItem className={className}>
-        <span onClick={onClick}>{l(page)}</span>
-      </Styled.NavItem>
-    );
-  },
-);
+  return (
+    <Styled.NavItem className={className}>
+      <span onClick={onClick}>
+        {l(page)}
+        {preview && (
+          <sup>
+            <Badge muted>{l('common.preview')}</Badge>
+          </sup>
+        )}
+      </span>
+    </Styled.NavItem>
+  );
+});
 
 const NavMenu: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.layout.NavMenu');
@@ -70,7 +79,7 @@ const NavMenu: React.FC = () => {
       <Nav>
         <NavItem page="loop" onClick={appView.goToLoop} />
         <NavItem page="history" onClick={appView.goToHistory} />
-        <NavItem page="pool" onClick={appView.goToPool} />
+        <NavItem page="pool" preview onClick={appView.goToPool} />
         <NavItem page="settings" onClick={appView.goToSettings} />
       </Nav>
     </>

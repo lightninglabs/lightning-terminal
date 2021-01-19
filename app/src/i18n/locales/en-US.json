@@ -14,6 +14,7 @@
   "common.weeks_plural": "weeks",
   "common.months": "month",
   "common.months_plural": "months",
+  "common.preview": "preview",
   "enums.BalanceMode.receive": "Receiving",
   "enums.BalanceMode.send": "Sending",
   "enums.BalanceMode.routing": "Routing",

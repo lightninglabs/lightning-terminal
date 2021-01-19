@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
-import { Column, Row } from 'components/base';
+import { Badge, Column, Row } from 'components/base';
 import PageHeader from 'components/common/PageHeader';
 import { styled } from 'components/theme';
 import AccountSection from './AccountSection';
@@ -52,11 +52,20 @@ const PoolPage: React.FC = () => {
     };
   }, [accountStore, orderStore, batchStore]);
 
+  const title = (
+    <>
+      {l('pageTitle')}
+      <sup>
+        <Badge muted>{l('common.preview')}</Badge>
+      </sup>
+    </>
+  );
+
   const { Wrapper, Row, Col } = Styled;
   return (
     <Wrapper>
       <PageHeader
-        title={l('pageTitle')}
+        title={title}
         exportTip={l('exportTip')}
         onExportClick={orderStore.exportLeases}
       />
