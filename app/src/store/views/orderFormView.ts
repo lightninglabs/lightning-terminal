@@ -95,6 +95,11 @@ export default class OrderFormView {
     return [current, ...durations];
   }
 
+  /** determines if the lease duration field should be visible */
+  get durationVisible() {
+    return this._store.batchStore.leaseDurations.size > 1;
+  }
+
   /** the chosen duration or the value selected in the batch store */
   get derivedDuration() {
     return this.duration || this._store.batchStore.selectedLeaseDuration;

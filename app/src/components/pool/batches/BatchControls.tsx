@@ -34,12 +34,16 @@ const BatchControls: React.FC = () => {
   return (
     <Wrapper>
       <div>
-        <Title>{l('markets')}</Title>
-        <BadgeList
-          options={batchesView.marketOptions}
-          value={batchesView.selectedMarket}
-          onChange={batchesView.changeMarket}
-        />
+        {batchesView.showMarketBadges && (
+          <>
+            <Title>{l('markets')}</Title>
+            <BadgeList
+              options={batchesView.marketOptions}
+              value={batchesView.selectedMarket}
+              onChange={batchesView.changeMarket}
+            />
+          </>
+        )}
       </div>
       <ViewMode>
         <BarChart size="large" onClick={handleViewChart} />

@@ -88,6 +88,11 @@ export default class BatchesView {
     }));
   }
 
+  /** determines if the market badges should be visible above the chart */
+  get showMarketBadges() {
+    return this._store.batchStore.leaseDurations.size > 1;
+  }
+
   //
   // Actions
   //

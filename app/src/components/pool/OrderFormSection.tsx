@@ -129,14 +129,16 @@ const OrderFormSection: React.FC = () => {
           />
         </FormField>
         <Options visible={orderFormView.addlOptionsVisible}>
-          <FormField label={l('durationLabel')}>
-            <FormSelect
-              label={l('durationLabel')}
-              value={orderFormView.duration.toString()}
-              onChange={v => orderFormView.setDuration(parseInt(v) as LeaseDuration)}
-              options={orderFormView.durationOptions}
-            />
-          </FormField>
+          {orderFormView.durationVisible && (
+            <FormField label={l('durationLabel')}>
+              <FormSelect
+                label={l('durationLabel')}
+                value={orderFormView.duration.toString()}
+                onChange={v => orderFormView.setDuration(parseInt(v) as LeaseDuration)}
+                options={orderFormView.durationOptions}
+              />
+            </FormField>
+          )}
           <FormField label={l('minChanSizeLabel')} error={orderFormView.minChanSizeError}>
             <FormInputNumber
               label={l('minChanSizeLabel')}
