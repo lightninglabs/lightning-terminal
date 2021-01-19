@@ -148,7 +148,10 @@ export default class Batch {
       this.clearingPriceRate,
       this.leaseDuration,
     );
-    return Math.round(pct * 100 * 100);
+    // convert the percentage to basis points. round up to prevent 0 bps
+    // which is the case for the first batch on testnet which has a
+    // clearingPriceRate of 6
+    return Math.ceil(pct * 100 * 100);
   }
 
   /** the percentage change of this batch's rate compared to the previous batch */
