@@ -1,5 +1,5 @@
-import { keys, makeAutoObservable, runInAction } from 'mobx';
-import { NodeTier } from 'types/generated/auctioneer_pb';
+import { entries, makeAutoObservable, runInAction } from 'mobx';
+import { DurationBucketState, NodeTier } from 'types/generated/auctioneer_pb';
 import { LeaseDuration } from 'types/state';
 import { annualPercentRate, toBasisPoints, toPercent } from 'util/bigmath';
 import { BLOCKS_PER_DAY } from 'util/constants';
@@ -80,6 +80,14 @@ export default class OrderFormView {
     return '';
   }
 
+  /** the markets currently open or accepting orders */
+  get marketsAcceptingOrders() {
+    const { MARKET_OPEN, ACCEPTING_ORDERS } = DurationBucketState;
+    return entries(this._store.batchStore.leaseDurations)
+      .map(([duration, state]) => ({ duration, state }))
+      .filter(({ state }) => state === MARKET_OPEN || state === ACCEPTING_ORDERS);
+  }
+
   /** the available options for the lease duration field */
   get durationOptions() {
     // add a default option with a value of zero to signify that the duration
@@ -88,7 +96,7 @@ export default class OrderFormView {
       label: `${l('inView')} (${this._store.batchStore.selectedLeaseDuration})`,
       value: '0',
     };
-    const durations = keys(this._store.batchStore.leaseDurations).map(duration => ({
+    const durations = this.marketsAcceptingOrders.map(({ duration }) => ({
       label: `${duration}`,
       value: `${duration}`,
     }));
@@ -97,7 +105,7 @@ export default class OrderFormView {
 
   /** determines if the lease duration field should be visible */
   get durationVisible() {
-    return this._store.batchStore.leaseDurations.size > 1;
+    return this.marketsAcceptingOrders.length > 1;
   }
 
   /** the chosen duration or the value selected in the batch store */

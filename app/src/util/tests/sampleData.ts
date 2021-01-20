@@ -654,9 +654,9 @@ export const poolLeaseDurations: POOL.LeaseDurationResponse.AsObject = {
   leaseDurationsMap: [], // deprecated
   leaseDurationBucketsMap: [
     [2016, AUCT.DurationBucketState.MARKET_OPEN],
-    [4032, AUCT.DurationBucketState.MARKET_CLOSED],
+    [4032, AUCT.DurationBucketState.MARKET_OPEN],
     [6048, AUCT.DurationBucketState.ACCEPTING_ORDERS],
-    [8064, AUCT.DurationBucketState.NO_MARKET],
+    [8064, AUCT.DurationBucketState.MARKET_CLOSED],
   ],
 };
 

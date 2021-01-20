@@ -1,5 +1,5 @@
-import { keys, makeAutoObservable } from 'mobx';
-import { NodeTier } from 'types/generated/auctioneer_pb';
+import { entries, makeAutoObservable } from 'mobx';
+import { DurationBucketState, NodeTier } from 'types/generated/auctioneer_pb';
 import { toPercent } from 'util/bigmath';
 import { Store } from 'store';
 
@@ -80,9 +80,16 @@ export default class BatchesView {
     return `${this._store.batchStore.selectedLeaseDuration}`;
   }
 
+  /** the markets that are currently open (accepting & matching orders) */
+  get openMarkets() {
+    return entries(this._store.batchStore.leaseDurations)
+      .map(([duration, state]) => ({ duration, state }))
+      .filter(({ state }) => state === DurationBucketState.MARKET_OPEN);
+  }
+
   /** the list of markets to display as badges */
   get marketOptions() {
-    return keys(this._store.batchStore.leaseDurations).map(duration => ({
+    return this.openMarkets.map(({ duration }) => ({
       label: `${duration}`,
       value: `${duration}`,
     }));
@@ -90,7 +97,7 @@ export default class BatchesView {
 
   /** determines if the market badges should be visible above the chart */
   get showMarketBadges() {
-    return this._store.batchStore.leaseDurations.size > 1;
+    return this.openMarkets.length > 1;
   }
 
   //
