@@ -88,19 +88,35 @@ export default class OrderFormView {
       .filter(({ state }) => state === MARKET_OPEN || state === ACCEPTING_ORDERS);
   }
 
+  /** the mapping of market states to user-friendly labels */
+  get marketStateLabels(): Record<number, string> {
+    return {
+      [DurationBucketState.MARKET_OPEN]: l('marketOpen'),
+      [DurationBucketState.ACCEPTING_ORDERS]: l('marketAccepting'),
+      [DurationBucketState.MARKET_CLOSED]: l('marketClosed'),
+      [DurationBucketState.NO_MARKET]: l('noMarket'),
+    };
+  }
+
   /** the available options for the lease duration field */
   get durationOptions() {
-    // add a default option with a value of zero to signify that the duration
-    // currently being displayed should be used
-    const current = {
-      label: `${l('inView')} (${this._store.batchStore.selectedLeaseDuration})`,
-      value: '0',
-    };
-    const durations = this.marketsAcceptingOrders.map(({ duration }) => ({
-      label: `${duration}`,
+    const labels = this.marketStateLabels;
+    const durations = this.marketsAcceptingOrders.map(({ duration, state }) => ({
+      label: `${duration} (${labels[state]})`,
       value: `${duration}`,
     }));
-    return [current, ...durations];
+
+    const selectedDuration = this._store.batchStore.selectedLeaseDuration;
+    const selectedState = this._store.batchStore.leaseDurations.get(selectedDuration);
+    if (selectedState) {
+      // add a default option with a value of zero to signify that the duration
+      // currently being displayed should be used
+      durations.unshift({
+        label: `${l('inView')} (${selectedDuration}, ${labels[selectedState]})`,
+        value: '0',
+      });
+    }
+    return durations;
   }
 
   /** determines if the lease duration field should be visible */
