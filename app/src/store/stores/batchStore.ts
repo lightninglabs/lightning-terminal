@@ -40,8 +40,11 @@ export default class BatchStore {
   /** the tier of the current LND node */
   nodeTier?: Tier;
 
-  /** indicates when batches are being fetched from the backend */
-  loading = false;
+  /**
+   * indicates when batches are being fetched from the backend, default to true to
+   * prevent UI flicker on initial load
+   */
+  loading = true;
 
   constructor(store: Store) {
     makeAutoObservable(this, {}, { deep: false, autoBind: true });

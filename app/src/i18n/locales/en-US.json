@@ -170,6 +170,7 @@
   "cmps.pool.batches.BatchStats.earned": "Earned",
   "cmps.pool.batches.BatchStats.paid": "Paid",
   "cmps.pool.batches.BatchControls.markets": "Markets",
+  "cmps.pool.BatchSection.empty": "There are currently no cleared batches in this market.",
   "cmps.pool.orders.OrdersList.emptyMsg": "You do not have any {{filter}} orders.",
   "cmps.pool.orders.OrdersList.emptyAllMsg": "Submit an order using the form on the left.",
   "cmps.pool.orders.OrdersList.type": "Type",

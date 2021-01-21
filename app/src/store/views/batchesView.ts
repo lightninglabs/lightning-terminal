@@ -95,6 +95,11 @@ export default class BatchesView {
     }));
   }
 
+  /** determines if there are no batches in the current market */
+  get isEmpty() {
+    return this.batches.length === 0 && !this._store.batchStore.loading;
+  }
+
   /** determines if the market badges should be visible above the chart */
   get showMarketBadges() {
     return this.openMarkets.length > 1;
