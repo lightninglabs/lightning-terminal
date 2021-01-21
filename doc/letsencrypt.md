@@ -54,14 +54,15 @@ These can be provided on the command line or via the `lit.conf` file.
 
 Command Line:
 
-`$ litd --letsencrypt --letsencrypthost=terminal.mydomain.com`
+```shell
+⛰  litd --letsencrypt --letsencrypthost=terminal.mydomain.com
+```
 
 Configuration file (`litd.conf`):
 
-```
+```text
 --letsencrypt=true
 --letsencrypthost=terminal.mydomain.com
-
 ```
 
 ## Example commands for interacting with the command line
@@ -73,7 +74,7 @@ Let's go through an example for each of the command line tools and will explain 
 reasons for the extra flags. The examples assume that LiT is started with the following
 configuration (only relevant parts shown here):
 
-```
+```text
 httpslisten=0.0.0.0:8443
 letsencrypt=1
 letsencrypthost=terminal.mydomain.com
@@ -87,8 +88,8 @@ lnd.bitcoin.testnet=true
 The `lncli` commands in the "integrated" mode are the same as if `lnd` was running
 standalone.
 
-```shell script
-$ lncli --network=testnet getinfo
+```shell
+⛰  lncli --network=testnet getinfo
 ```
 
 ### Example `loop` command
@@ -97,8 +98,8 @@ Since `loopd` also runs on the same gRPC server as `lnd`, we have to specify the
 **LetEncrypt** `host:port` and TLS certificate. But `loopd` verifies its own macaroon, so
 we have to specify that one from the `.loop` directory.
 
-```shell script
-$ loop \
+```shell
+⛰  loop \
   --rpcserver=terminal.mydomain.com:8443 \
   --tlscertpath=~/.lit/letsencrypt/terminal.mydomain.com \
   --macaroonpath=~/.loop/testnet/loop.macaroon \
@@ -108,8 +109,8 @@ $ loop \
 You can easily create an alias for this by adding the following line to your `~/.bashrc`
 file:
 
-```shell script
-alias lit-loop="loop --rpcserver=terminal.mydomain.com:8443 --tlscertpath=~/.lit/letsencrypt/terminal.mydomain.com --macaroonpath=~/.loop/testnet/loop.macaroon"
+```shell
+⛰  alias lit-loop="loop --rpcserver=terminal.mydomain.com:8443 --tlscertpath=~/.lit/letsencrypt/terminal.mydomain.com --macaroonpath=~/.loop/testnet/loop.macaroon"
 ```
 
 ### Example `pool` command
@@ -118,8 +119,8 @@ Since `poold` also runs on the same gRPC server as `lnd`, we have to specify the
 **LetEncrypt** `host:port` and TLS certificate. But `poold` verifies its own
 macaroon, so we have to specify that one from the `.pool` directory.
 
-```shell script
-$ pool \
+```shell
+⛰  pool \
   --rpcserver=terminal.mydomain.com:8443 \
   --tlscertpath=~/.lit/letsencrypt/terminal.mydomain.com \
   --macaroonpath=~/.pool/testnet/pool.macaroon \
@@ -129,8 +130,8 @@ $ pool \
 You can easily create an alias for this by adding the following line to your
 `~/.bashrc` file:
 
-```shell script
-alias lit-pool="pool --rpcserver=terminal.mydomain.com:8443 --tlscertpath=~/.lit/letsencrypt/terminal.mydomain.com --macaroonpath=~/.loop/testnet/loop.macaroon"
+```shell
+⛰  alias lit-pool="pool --rpcserver=terminal.mydomain.com:8443 --tlscertpath=~/.lit/letsencrypt/terminal.mydomain.com --macaroonpath=~/.loop/testnet/loop.macaroon"
 ```
 
 ### Example `frcli` command
@@ -138,8 +139,8 @@ alias lit-pool="pool --rpcserver=terminal.mydomain.com:8443 --tlscertpath=~/.lit
 Faraday's command line tool follows the same pattern as loop. We also have to specify the
 **LetEncrypt** `host:port` and TLS certificate but use `faraday`'s macaroon:
 
-```shell script
-$ frcli \
+```shell
+⛰  frcli \
   --rpcserver=terminal.mydomain.com:8443 \
   --tlscertpath=~/.lit/letsencrypt/terminal.mydomain.com \
   --macaroonpath=~/.faraday/testnet/faraday.macaroon \
@@ -149,6 +150,6 @@ $ frcli \
 You can easily create an alias for this by adding the following line to your `~/.bashrc`
 file:
 
-```shell script
-alias lit-frcli="frcli --rpcserver=terminal.mydomain.com:8443 --tlscertpath=~/.lit/letsencrypt/terminal.mydomain.com --macaroonpath=~/.faraday/testnet/faraday.macaroon"
+```shell
+⛰  alias lit-frcli="frcli --rpcserver=terminal.mydomain.com:8443 --tlscertpath=~/.lit/letsencrypt/terminal.mydomain.com --macaroonpath=~/.faraday/testnet/faraday.macaroon"
 ```

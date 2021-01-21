@@ -26,9 +26,9 @@ To see all available command line options, run `litd --help`.
 Here is an example command to start `litd` on testnet with a local `bitcoind`
 node:
 
-```shell script
-$ litd \
-  --httpslisten=0.0.0.0:443 \
+```shell
+⛰  litd \
+  --httpslisten=0.0.0.0:8443 \
   --uipassword=My$trongP@ssword \
   --letsencrypt \
   --letsencrypthost=loop.merchant.com \
@@ -71,7 +71,7 @@ Example `~/.lit/lit.conf`:
 
 ```text
 # Application Options
-httpslisten=0.0.0.0:443
+httpslisten=0.0.0.0:8443
 letsencrypt=true
 letsencrypthost=loop.merchant.com
 lnd-mode=integrated
@@ -165,14 +165,14 @@ For `lnd`:
 
   Before:
 
-  ```shell script
-  $ lnd --lnddir=~/.lnd --alias=merchant ...
+  ```shell
+  ⛰  lnd --lnddir=~/.lnd --alias=merchant ...
   ```
 
   After:
 
-  ```shell script
-  $ litd lnd.lnddir=~/.lnd --lnd.alias=merchant ...
+  ```shell
+  ⛰  litd lnd.lnddir=~/.lnd --lnd.alias=merchant ...
   ```
 
 For `loop`:
@@ -200,14 +200,14 @@ For `loop`:
 
   Before:
 
-  ```shell script
-  $ loop --loopoutmaxparts=5 --debuglevel=debug ...
+  ```shell
+  ⛰  loop --loopoutmaxparts=5 --debuglevel=debug ...
   ```
 
   After:
 
-  ```shell script
-  $ litd --loop.loopoutmaxparts=5 --loop.debuglevel=debug ...
+  ```shell
+  ⛰  litd --loop.loopoutmaxparts=5 --loop.debuglevel=debug ...
   ```
 
 For `faraday`:
@@ -218,8 +218,8 @@ For `faraday`:
 
   Before: (from command line)
 
-  ```shell script
-  $ faraday --min_monitored=48h
+  ```shell
+  ⛰  faraday --min_monitored=48h
   ```
 
   After: (in `lit.conf`)
@@ -234,14 +234,14 @@ For `faraday`:
 
   Before:
 
-  ```shell script
-  $ faraday --min_monitored=48h --debuglevel=debug ...
+  ```shell
+  ⛰  faraday --min_monitored=48h --debuglevel=debug ...
   ```
 
   After:
 
-  ```shell script
-  $ litd --faraday.min_monitored=48h --faraday.debuglevel=debug...
+  ```shell
+  ⛰  litd --faraday.min_monitored=48h --faraday.debuglevel=debug...
   ```
 
 ## Upgrading from LiT v0.1.1-alpha or earlier
@@ -297,8 +297,8 @@ The `lncli` commands in the "integrated" mode are the same as if `lnd` was
 running standalone. The `--lnddir` flag does not need to be specified as long
 as it is the default directory (`~/.lnd` on Linux).
 
-```shell script
-$ lncli --network=testnet getinfo
+```shell
+⛰  lncli --network=testnet getinfo
 ```
 
 ### Example `loop` command
@@ -308,8 +308,8 @@ runs on the same gRPC server as `lnd`. That's why we have to both specify the
 `host:port` as well as the TLS certificate of `lnd`. But `loopd` verifies its
 own macaroon, so we have to specify that one from the `.loop` directory.
 
-```shell script
-$ loop --rpcserver=localhost:10009 --tlscertpath=~/.lnd/tls.cert \
+```shell
+⛰  loop --rpcserver=localhost:10009 --tlscertpath=~/.lnd/tls.cert \
   --macaroonpath=~/.loop/testnet/loop.macaroon \
   quote out 500000
 ```
@@ -317,8 +317,8 @@ $ loop --rpcserver=localhost:10009 --tlscertpath=~/.lnd/tls.cert \
 You can easily create an alias for this by adding the following line to your
 `~/.bashrc` file:
 
-```shell script
-alias lit-loop="loop --rpcserver=localhost:10009 --tlscertpath=~/.lnd/tls.cert --macaroonpath=~/.loop/testnet/loop.macaroon"
+```shell
+⛰  alias lit-loop="loop --rpcserver=localhost:10009 --tlscertpath=~/.lnd/tls.cert --macaroonpath=~/.loop/testnet/loop.macaroon"
 ```
 
 ### Example `pool` command
@@ -327,8 +327,8 @@ Again, `poold` also runs on the same gRPC server as `lnd` and we have to specify
 the `host:port` and the TLS certificate of `lnd` but use the macaroon from the
 `.pool` directory.
 
-```shell script
-$ pool --rpcserver=localhost:10009 --tlscertpath=~/.lnd/tls.cert \
+```shell
+⛰  pool --rpcserver=localhost:10009 --tlscertpath=~/.lnd/tls.cert \
   --macaroonpath=~/.pool/testnet/pool.macaroon \
   accounts list
 ```
@@ -336,8 +336,8 @@ $ pool --rpcserver=localhost:10009 --tlscertpath=~/.lnd/tls.cert \
 You can easily create an alias for this by adding the following line to your
 `~/.bashrc` file:
 
-```shell script
-alias lit-pool="pool --rpcserver=localhost:10009 --tlscertpath=~/.lnd/tls.cert --macaroonpath=~/.pool/testnet/pool.macaroon"
+```shell
+⛰  alias lit-pool="pool --rpcserver=localhost:10009 --tlscertpath=~/.lnd/tls.cert --macaroonpath=~/.pool/testnet/pool.macaroon"
 ```
 
 ### Example `frcli` command
@@ -345,8 +345,8 @@ alias lit-pool="pool --rpcserver=localhost:10009 --tlscertpath=~/.lnd/tls.cert -
 Faraday's command line tool follows the same pattern as loop. We also have to
 specify the server and TLS flags for `lnd` but use `faraday`'s macaroon:
 
-```shell script
-$ frcli --rpcserver=localhost:10009 --tlscertpath=~/.lnd/tls.cert \
+```shell
+⛰  frcli --rpcserver=localhost:10009 --tlscertpath=~/.lnd/tls.cert \
   --macaroonpath=~/.faraday/testnet/faraday.macaroon \
   audit
 ```
@@ -354,6 +354,15 @@ $ frcli --rpcserver=localhost:10009 --tlscertpath=~/.lnd/tls.cert \
 You can easily create an alias for this by adding the following line to your
 `~/.bashrc` file:
 
-```shell script
-alias lit-frcli="frcli --rpcserver=localhost:10009 --tlscertpath=~/.lnd/tls.cert --macaroonpath=~/.faraday/testnet/faraday.macaroon"
+```shell
+⛰  alias lit-frcli="frcli --rpcserver=localhost:10009 --tlscertpath=~/.lnd/tls.cert --macaroonpath=~/.faraday/testnet/faraday.macaroon"
+```
+
+## Shutting down LiT
+
+In the integrated mode LiT can be shut down by stopping the integrated `lnd`
+node:
+
+```shell
+⛰  lncli stop
 ```
