@@ -65,9 +65,9 @@ const BatchStats: React.FC = () => {
           tip={l('nextBatchTip')}
         />
         <Stat
-          label={l('prevFee')}
-          value={`${batchesView.currentFee}`}
-          tip={l('prevFeeTip')}
+          label={l('nextFeeRate')}
+          value={`${batchesView.nextFeeRate}`}
+          tip={l('nextFeeRateTip')}
           {...tipProps}
         />
         <Stat

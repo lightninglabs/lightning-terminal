@@ -39,7 +39,7 @@ const PoolPage: React.FC = () => {
   useEffect(() => {
     accountStore.fetchAccounts();
     orderStore.fetchOrders();
-    batchStore.fetchNextBatchTimestamp();
+    batchStore.fetchNextBatchInfo();
     if (!batchStore.batches.size) {
       // fetch batches if there aren't any in the store
       batchStore.fetchBatches();

@@ -47,9 +47,9 @@ export default class BatchesView {
     return toPercent((currentRate - priorRate) / priorRate);
   }
 
-  /** the fee used for the last batch */
-  get currentFee() {
-    return this.batches.length ? this.batches[0].feeLabel : 0;
+  /** the fee rate (sats/vbyte) estimated by the auctioneer to use for the next batch */
+  get nextFeeRate() {
+    return this._store.batchStore.nextFeeRate;
   }
 
   /** the tier of the current LND node as a user-friendly string */

@@ -14,7 +14,7 @@ describe('BatchStats', () => {
     store = createStore();
     await store.orderStore.fetchOrders();
     await store.batchStore.fetchBatches();
-    await store.batchStore.fetchNextBatchTimestamp();
+    await store.batchStore.fetchNextBatchInfo();
   });
 
   const render = () => {
@@ -41,14 +41,24 @@ describe('BatchStats', () => {
     jest.useRealTimers();
   });
 
+  it('should display the next fee rate', () => {
+    const { getByText } = render();
+    expect(getByText('Next Fee')).toBeInTheDocument();
+    expect(getByText(`${store.batchesView.nextFeeRate}`)).toBeInTheDocument();
+    runInAction(() => {
+      store.batchStore.nextFeeRate = 25;
+    });
+    expect(getByText('25')).toBeInTheDocument();
+  });
+
   it('should display the previous rate', () => {
-    const { getByText, getAllByText } = render();
+    const { getByText } = render();
     expect(getByText('Previous Rate')).toBeInTheDocument();
     expect(getByText(`${store.batchesView.currentRate}`)).toBeInTheDocument();
     runInAction(() => {
       store.batchStore.batches.clear();
     });
-    expect(getAllByText(`0`)).toHaveLength(2);
+    expect(getByText('0')).toBeInTheDocument();
   });
 
   it('should display the percent rate changed', () => {

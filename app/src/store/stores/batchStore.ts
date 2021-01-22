@@ -37,6 +37,9 @@ export default class BatchStore {
   /** the timestamp of the next batch in seconds */
   nextBatchTimestamp = 0;
 
+  /** the fee rate (sats/vbyte) estimated by the auctioneer to use for the next batch */
+  nextFeeRate = 0;
+
   /** the tier of the current LND node */
   nodeTier?: Tier;
 
@@ -140,7 +143,7 @@ export default class BatchStore {
     try {
       const poolBatches = await this._store.api.pool.batchSnapshots(1);
       // update the timestamp of the next batch when fetching the latest batch
-      await this.fetchNextBatchTimestamp();
+      await this.fetchNextBatchInfo();
       runInAction(() => {
         // update the batches in all markets
         this.markets.forEach(m => m.update(poolBatches.batchesList, true));
@@ -156,26 +159,28 @@ export default class BatchStore {
   fetchLatestBatchThrottled = debounce(this.fetchLatestBatch, 2000);
 
   /**
-   * fetches the next batch timestamp from the API
+   * fetches the next batch info from the API and updates the next timestamp and fee rate
    */
-  async fetchNextBatchTimestamp() {
+  async fetchNextBatchInfo() {
     this._store.log.info('fetching next batch info');
     try {
-      const { clearTimestamp } = await this._store.api.pool.nextBatchInfo();
+      const res = await this._store.api.pool.nextBatchInfo();
       runInAction(() => {
-        this.setNextBatchTimestamp(clearTimestamp);
+        this.setNextBatchTimestamp(res.clearTimestamp);
         this._store.log.info(
           'updated batchStore.nextBatchTimestamp',
           this.nextBatchTimestamp,
         );
+        this.setNextFeeRate(res.feeRateSatPerKw);
+        this._store.log.info('updated batchStore.nextFeeRate', this.nextFeeRate);
       });
     } catch (error) {
-      this._store.appView.handleError(error, 'Unable to fetch the next batch timestamp');
+      this._store.appView.handleError(error, 'Unable to fetch the next batch info');
     }
   }
 
   /**
-   * fetches the next batch timestamp from the API
+   * fetches the current lnd node's tier from the API
    */
   async fetchNodeTier() {
     this._store.log.info('fetching node tier');
@@ -261,6 +266,14 @@ export default class BatchStore {
     // if the timestamp is somehow in the past, use 10 mins as a default
     if (ms < 0) ms = 10 * 60 * 1000;
     this._nextBatchTimer = setTimeout(this.fetchLatestBatch, ms + 3000);
+  }
+
+  /**
+   * sets the nextFeeRate by converting the provided sats/kw to sats/vbyte
+   */
+  setNextFeeRate(satsPerKWeight: number) {
+    const satsPerVbyte = this._store.api.pool.satsPerKWeightToVByte(satsPerKWeight);
+    this.nextFeeRate = Math.ceil(satsPerVbyte);
   }
 
   startPolling() {

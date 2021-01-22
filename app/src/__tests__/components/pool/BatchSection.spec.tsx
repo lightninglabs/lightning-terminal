@@ -18,7 +18,7 @@ describe('BatchSection', () => {
     store = createStore();
     await store.orderStore.fetchOrders();
     await store.batchStore.fetchBatches();
-    await store.batchStore.fetchNextBatchTimestamp();
+    await store.batchStore.fetchNextBatchInfo();
     await store.batchStore.fetchNodeTier();
   });
 
