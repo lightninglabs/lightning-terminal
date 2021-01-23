@@ -86,14 +86,24 @@ const BatchStats: React.FC = () => {
         />
       </div>
       <div>
-        <Stat label={l('tier')} value={batchesView.tier || <LoaderLines />} />
+        <Stat
+          label={l('tier')}
+          value={batchesView.tier || <LoaderLines />}
+          tip={l('tierTip')}
+          {...tipProps}
+        />
         <Stat
           label={l('earned')}
           value={<Unit sats={batchesView.earnedSats} suffix={false} />}
+          tip={l('earnedTip')}
+          {...tipProps}
         />
         <Stat
           label={l('paid')}
           value={<Unit sats={batchesView.paidSats} suffix={false} />}
+          tip={l('paidTip')}
+          {...tipProps}
+          tipPlacement="bottomRight"
         />
       </div>
     </Wrapper>

@@ -51,7 +51,7 @@ const BatchCountdown: React.FC<Props> = ({ label, timestamp, className, tip }) =
       negative={secondsLeft > 0}
       className={className}
       tip={tip}
-      tipPlacement="bottom"
+      tipPlacement="bottomLeft"
       tipCapitalize={false}
     />
   );
