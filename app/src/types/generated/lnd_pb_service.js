@@ -514,6 +514,24 @@ Lightning.BakeMacaroon = {
   responseType: lnd_pb.BakeMacaroonResponse
 };
 
+Lightning.ListMacaroonIDs = {
+  methodName: "ListMacaroonIDs",
+  service: Lightning,
+  requestStream: false,
+  responseStream: false,
+  requestType: lnd_pb.ListMacaroonIDsRequest,
+  responseType: lnd_pb.ListMacaroonIDsResponse
+};
+
+Lightning.DeleteMacaroonID = {
+  methodName: "DeleteMacaroonID",
+  service: Lightning,
+  requestStream: false,
+  responseStream: false,
+  requestType: lnd_pb.DeleteMacaroonIDRequest,
+  responseType: lnd_pb.DeleteMacaroonIDResponse
+};
+
 Lightning.ListPermissions = {
   methodName: "ListPermissions",
   service: Lightning,
@@ -2346,6 +2364,68 @@ LightningClient.prototype.bakeMacaroon = function bakeMacaroon(requestMessage, m
     callback = arguments[1];
   }
   var client = grpc.unary(Lightning.BakeMacaroon, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+LightningClient.prototype.listMacaroonIDs = function listMacaroonIDs(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(Lightning.ListMacaroonIDs, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+LightningClient.prototype.deleteMacaroonID = function deleteMacaroonID(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(Lightning.DeleteMacaroonID, {
     request: requestMessage,
     host: this.serviceHost,
     metadata: metadata,

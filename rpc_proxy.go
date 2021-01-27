@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"path"
 	"strings"
 	"time"
 
@@ -316,7 +315,6 @@ func (p *rpcProxy) basicAuthToMacaroon(ctx context.Context,
 	switch {
 	case isLndURI(requestURI):
 		_, _, _, macPath, err = p.cfg.lndConnectParams()
-		macPath = path.Join(macPath, defaultLndMacaroon)
 
 	case isLoopURI(requestURI):
 		macPath = p.cfg.Loop.MacaroonPath

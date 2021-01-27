@@ -508,6 +508,24 @@ type LightningBakeMacaroon = {
   readonly responseType: typeof lnd_pb.BakeMacaroonResponse;
 };
 
+type LightningListMacaroonIDs = {
+  readonly methodName: string;
+  readonly service: typeof Lightning;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof lnd_pb.ListMacaroonIDsRequest;
+  readonly responseType: typeof lnd_pb.ListMacaroonIDsResponse;
+};
+
+type LightningDeleteMacaroonID = {
+  readonly methodName: string;
+  readonly service: typeof Lightning;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof lnd_pb.DeleteMacaroonIDRequest;
+  readonly responseType: typeof lnd_pb.DeleteMacaroonIDResponse;
+};
+
 type LightningListPermissions = {
   readonly methodName: string;
   readonly service: typeof Lightning;
@@ -575,6 +593,8 @@ export class Lightning {
   static readonly RestoreChannelBackups: LightningRestoreChannelBackups;
   static readonly SubscribeChannelBackups: LightningSubscribeChannelBackups;
   static readonly BakeMacaroon: LightningBakeMacaroon;
+  static readonly ListMacaroonIDs: LightningListMacaroonIDs;
+  static readonly DeleteMacaroonID: LightningDeleteMacaroonID;
   static readonly ListPermissions: LightningListPermissions;
 }
 
@@ -1025,6 +1045,24 @@ export class LightningClient {
   bakeMacaroon(
     requestMessage: lnd_pb.BakeMacaroonRequest,
     callback: (error: ServiceError|null, responseMessage: lnd_pb.BakeMacaroonResponse|null) => void
+  ): UnaryResponse;
+  listMacaroonIDs(
+    requestMessage: lnd_pb.ListMacaroonIDsRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: lnd_pb.ListMacaroonIDsResponse|null) => void
+  ): UnaryResponse;
+  listMacaroonIDs(
+    requestMessage: lnd_pb.ListMacaroonIDsRequest,
+    callback: (error: ServiceError|null, responseMessage: lnd_pb.ListMacaroonIDsResponse|null) => void
+  ): UnaryResponse;
+  deleteMacaroonID(
+    requestMessage: lnd_pb.DeleteMacaroonIDRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: lnd_pb.DeleteMacaroonIDResponse|null) => void
+  ): UnaryResponse;
+  deleteMacaroonID(
+    requestMessage: lnd_pb.DeleteMacaroonIDRequest,
+    callback: (error: ServiceError|null, responseMessage: lnd_pb.DeleteMacaroonIDResponse|null) => void
   ): UnaryResponse;
   listPermissions(
     requestMessage: lnd_pb.ListPermissionsRequest,
