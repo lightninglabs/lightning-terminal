@@ -1,5 +1,5 @@
 import { autorun, makeAutoObservable, toJS } from 'mobx';
-import { NodeTier } from 'types/generated/auctioneer_pb';
+import { NodeTier } from 'types/generated/auctioneerrpc/auctioneer_pb';
 import { SortParams } from 'types/state';
 import {
   BalanceMode,

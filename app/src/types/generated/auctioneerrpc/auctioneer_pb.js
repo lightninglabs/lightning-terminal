@@ -572,7 +572,8 @@ proto.poolrpc.ServerInitAccountRequest.toObject = function(includeInstance, msg)
     accountScript: msg.getAccountScript_asB64(),
     accountValue: jspb.Message.getFieldWithDefault(msg, 3, 0),
     accountExpiry: jspb.Message.getFieldWithDefault(msg, 4, 0),
-    traderKey: msg.getTraderKey_asB64()
+    traderKey: msg.getTraderKey_asB64(),
+    userAgent: jspb.Message.getFieldWithDefault(msg, 6, "")
   };
 
   if (includeInstance) {
@@ -629,6 +630,10 @@ proto.poolrpc.ServerInitAccountRequest.deserializeBinaryFromReader = function(ms
     case 5:
       var value = /** @type {!Uint8Array} */ (reader.readBytes());
       msg.setTraderKey(value);
+      break;
+    case 6:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setUserAgent(value);
       break;
     default:
       reader.skipField();
@@ -692,6 +697,13 @@ proto.poolrpc.ServerInitAccountRequest.serializeBinaryToWriter = function(messag
   if (f.length > 0) {
     writer.writeBytes(
       5,
+      f
+    );
+  }
+  f = message.getUserAgent();
+  if (f.length > 0) {
+    writer.writeString(
+      6,
       f
     );
   }
@@ -833,6 +845,21 @@ proto.poolrpc.ServerInitAccountRequest.prototype.getTraderKey_asU8 = function() 
 /** @param {!(string|Uint8Array)} value */
 proto.poolrpc.ServerInitAccountRequest.prototype.setTraderKey = function(value) {
   jspb.Message.setField(this, 5, value);
+};
+
+
+/**
+ * optional string user_agent = 6;
+ * @return {string}
+ */
+proto.poolrpc.ServerInitAccountRequest.prototype.getUserAgent = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 6, ""));
+};
+
+
+/** @param {string} value */
+proto.poolrpc.ServerInitAccountRequest.prototype.setUserAgent = function(value) {
+  jspb.Message.setField(this, 6, value);
 };
 
 
@@ -1026,7 +1053,8 @@ proto.poolrpc.ServerSubmitOrderRequest.prototype.toObject = function(opt_include
 proto.poolrpc.ServerSubmitOrderRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
     ask: (f = msg.getAsk()) && proto.poolrpc.ServerAsk.toObject(includeInstance, f),
-    bid: (f = msg.getBid()) && proto.poolrpc.ServerBid.toObject(includeInstance, f)
+    bid: (f = msg.getBid()) && proto.poolrpc.ServerBid.toObject(includeInstance, f),
+    userAgent: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -1073,6 +1101,10 @@ proto.poolrpc.ServerSubmitOrderRequest.deserializeBinaryFromReader = function(ms
       reader.readMessage(value,proto.poolrpc.ServerBid.deserializeBinaryFromReader);
       msg.setBid(value);
       break;
+    case 3:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setUserAgent(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -1116,6 +1148,13 @@ proto.poolrpc.ServerSubmitOrderRequest.serializeBinaryToWriter = function(messag
       2,
       f,
       proto.poolrpc.ServerBid.serializeBinaryToWriter
+    );
+  }
+  f = message.getUserAgent();
+  if (f.length > 0) {
+    writer.writeString(
+      3,
+      f
     );
   }
 };
@@ -1178,6 +1217,21 @@ proto.poolrpc.ServerSubmitOrderRequest.prototype.clearBid = function() {
  */
 proto.poolrpc.ServerSubmitOrderRequest.prototype.hasBid = function() {
   return jspb.Message.getField(this, 2) != null;
+};
+
+
+/**
+ * optional string user_agent = 3;
+ * @return {string}
+ */
+proto.poolrpc.ServerSubmitOrderRequest.prototype.getUserAgent = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
+};
+
+
+/** @param {string} value */
+proto.poolrpc.ServerSubmitOrderRequest.prototype.setUserAgent = function(value) {
+  jspb.Message.setField(this, 3, value);
 };
 
 

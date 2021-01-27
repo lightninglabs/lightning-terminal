@@ -1,7 +1,7 @@
 // package: poolrpc
-// file: auctioneer.proto
+// file: auctioneerrpc/auctioneer.proto
 
-var auctioneer_pb = require("./auctioneer_pb");
+var auctioneerrpc_auctioneer_pb = require("../auctioneerrpc/auctioneer_pb");
 var grpc = require("@improbable-eng/grpc-web").grpc;
 
 var ChannelAuctioneer = (function () {
@@ -15,8 +15,8 @@ ChannelAuctioneer.ReserveAccount = {
   service: ChannelAuctioneer,
   requestStream: false,
   responseStream: false,
-  requestType: auctioneer_pb.ReserveAccountRequest,
-  responseType: auctioneer_pb.ReserveAccountResponse
+  requestType: auctioneerrpc_auctioneer_pb.ReserveAccountRequest,
+  responseType: auctioneerrpc_auctioneer_pb.ReserveAccountResponse
 };
 
 ChannelAuctioneer.InitAccount = {
@@ -24,8 +24,8 @@ ChannelAuctioneer.InitAccount = {
   service: ChannelAuctioneer,
   requestStream: false,
   responseStream: false,
-  requestType: auctioneer_pb.ServerInitAccountRequest,
-  responseType: auctioneer_pb.ServerInitAccountResponse
+  requestType: auctioneerrpc_auctioneer_pb.ServerInitAccountRequest,
+  responseType: auctioneerrpc_auctioneer_pb.ServerInitAccountResponse
 };
 
 ChannelAuctioneer.ModifyAccount = {
@@ -33,8 +33,8 @@ ChannelAuctioneer.ModifyAccount = {
   service: ChannelAuctioneer,
   requestStream: false,
   responseStream: false,
-  requestType: auctioneer_pb.ServerModifyAccountRequest,
-  responseType: auctioneer_pb.ServerModifyAccountResponse
+  requestType: auctioneerrpc_auctioneer_pb.ServerModifyAccountRequest,
+  responseType: auctioneerrpc_auctioneer_pb.ServerModifyAccountResponse
 };
 
 ChannelAuctioneer.SubmitOrder = {
@@ -42,8 +42,8 @@ ChannelAuctioneer.SubmitOrder = {
   service: ChannelAuctioneer,
   requestStream: false,
   responseStream: false,
-  requestType: auctioneer_pb.ServerSubmitOrderRequest,
-  responseType: auctioneer_pb.ServerSubmitOrderResponse
+  requestType: auctioneerrpc_auctioneer_pb.ServerSubmitOrderRequest,
+  responseType: auctioneerrpc_auctioneer_pb.ServerSubmitOrderResponse
 };
 
 ChannelAuctioneer.CancelOrder = {
@@ -51,8 +51,8 @@ ChannelAuctioneer.CancelOrder = {
   service: ChannelAuctioneer,
   requestStream: false,
   responseStream: false,
-  requestType: auctioneer_pb.ServerCancelOrderRequest,
-  responseType: auctioneer_pb.ServerCancelOrderResponse
+  requestType: auctioneerrpc_auctioneer_pb.ServerCancelOrderRequest,
+  responseType: auctioneerrpc_auctioneer_pb.ServerCancelOrderResponse
 };
 
 ChannelAuctioneer.OrderState = {
@@ -60,8 +60,8 @@ ChannelAuctioneer.OrderState = {
   service: ChannelAuctioneer,
   requestStream: false,
   responseStream: false,
-  requestType: auctioneer_pb.ServerOrderStateRequest,
-  responseType: auctioneer_pb.ServerOrderStateResponse
+  requestType: auctioneerrpc_auctioneer_pb.ServerOrderStateRequest,
+  responseType: auctioneerrpc_auctioneer_pb.ServerOrderStateResponse
 };
 
 ChannelAuctioneer.SubscribeBatchAuction = {
@@ -69,8 +69,8 @@ ChannelAuctioneer.SubscribeBatchAuction = {
   service: ChannelAuctioneer,
   requestStream: true,
   responseStream: true,
-  requestType: auctioneer_pb.ClientAuctionMessage,
-  responseType: auctioneer_pb.ServerAuctionMessage
+  requestType: auctioneerrpc_auctioneer_pb.ClientAuctionMessage,
+  responseType: auctioneerrpc_auctioneer_pb.ServerAuctionMessage
 };
 
 ChannelAuctioneer.Terms = {
@@ -78,8 +78,8 @@ ChannelAuctioneer.Terms = {
   service: ChannelAuctioneer,
   requestStream: false,
   responseStream: false,
-  requestType: auctioneer_pb.TermsRequest,
-  responseType: auctioneer_pb.TermsResponse
+  requestType: auctioneerrpc_auctioneer_pb.TermsRequest,
+  responseType: auctioneerrpc_auctioneer_pb.TermsResponse
 };
 
 ChannelAuctioneer.RelevantBatchSnapshot = {
@@ -87,8 +87,8 @@ ChannelAuctioneer.RelevantBatchSnapshot = {
   service: ChannelAuctioneer,
   requestStream: false,
   responseStream: false,
-  requestType: auctioneer_pb.RelevantBatchRequest,
-  responseType: auctioneer_pb.RelevantBatch
+  requestType: auctioneerrpc_auctioneer_pb.RelevantBatchRequest,
+  responseType: auctioneerrpc_auctioneer_pb.RelevantBatch
 };
 
 ChannelAuctioneer.BatchSnapshot = {
@@ -96,8 +96,8 @@ ChannelAuctioneer.BatchSnapshot = {
   service: ChannelAuctioneer,
   requestStream: false,
   responseStream: false,
-  requestType: auctioneer_pb.BatchSnapshotRequest,
-  responseType: auctioneer_pb.BatchSnapshotResponse
+  requestType: auctioneerrpc_auctioneer_pb.BatchSnapshotRequest,
+  responseType: auctioneerrpc_auctioneer_pb.BatchSnapshotResponse
 };
 
 ChannelAuctioneer.NodeRating = {
@@ -105,8 +105,8 @@ ChannelAuctioneer.NodeRating = {
   service: ChannelAuctioneer,
   requestStream: false,
   responseStream: false,
-  requestType: auctioneer_pb.ServerNodeRatingRequest,
-  responseType: auctioneer_pb.ServerNodeRatingResponse
+  requestType: auctioneerrpc_auctioneer_pb.ServerNodeRatingRequest,
+  responseType: auctioneerrpc_auctioneer_pb.ServerNodeRatingResponse
 };
 
 ChannelAuctioneer.BatchSnapshots = {
@@ -114,8 +114,8 @@ ChannelAuctioneer.BatchSnapshots = {
   service: ChannelAuctioneer,
   requestStream: false,
   responseStream: false,
-  requestType: auctioneer_pb.BatchSnapshotsRequest,
-  responseType: auctioneer_pb.BatchSnapshotsResponse
+  requestType: auctioneerrpc_auctioneer_pb.BatchSnapshotsRequest,
+  responseType: auctioneerrpc_auctioneer_pb.BatchSnapshotsResponse
 };
 
 exports.ChannelAuctioneer = ChannelAuctioneer;

@@ -1,5 +1,5 @@
 import { values } from 'mobx';
-import * as AUCT from 'types/generated/auctioneer_pb';
+import * as AUCT from 'types/generated/auctioneerrpc/auctioneer_pb';
 import * as POOL from 'types/generated/trader_pb';
 import { grpc } from '@improbable-eng/grpc-web';
 import { waitFor } from '@testing-library/react';

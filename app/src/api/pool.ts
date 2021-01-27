@@ -1,4 +1,4 @@
-import * as AUCT from 'types/generated/auctioneer_pb';
+import * as AUCT from 'types/generated/auctioneerrpc/auctioneer_pb';
 import * as POOL from 'types/generated/trader_pb';
 import { Trader } from 'types/generated/trader_pb_service';
 import { b64 } from 'util/strings';

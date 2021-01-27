@@ -1,5 +1,8 @@
 import { entries, makeAutoObservable, runInAction } from 'mobx';
-import { DurationBucketState, NodeTier } from 'types/generated/auctioneer_pb';
+import {
+  DurationBucketState,
+  NodeTier,
+} from 'types/generated/auctioneerrpc/auctioneer_pb';
 import { LeaseDuration } from 'types/state';
 import { annualPercentRate, toBasisPoints, toPercent } from 'util/bigmath';
 import { BLOCKS_PER_DAY } from 'util/constants';

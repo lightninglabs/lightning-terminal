@@ -1,5 +1,5 @@
 import { makeAutoObservable, observable } from 'mobx';
-import * as AUCT from 'types/generated/auctioneer_pb';
+import * as AUCT from 'types/generated/auctioneerrpc/auctioneer_pb';
 import { LeaseDuration } from 'types/state';
 import Big from 'big.js';
 import { toPercent } from 'util/bigmath';

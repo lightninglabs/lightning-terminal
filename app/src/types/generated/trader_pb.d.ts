@@ -2,8 +2,7 @@
 // file: trader.proto
 
 import * as jspb from "google-protobuf";
-import * as google_api_annotations_pb from "./google/api/annotations_pb";
-import * as auctioneer_pb from "./auctioneer_pb";
+import * as auctioneerrpc_auctioneer_pb from "./auctioneerrpc/auctioneer_pb";
 
 export class InitAccountRequest extends jspb.Message {
   getAccountValue(): number;
@@ -24,6 +23,9 @@ export class InitAccountRequest extends jspb.Message {
   getConfTarget(): number;
   setConfTarget(value: number): void;
 
+  getInitiator(): string;
+  setInitiator(value: string): void;
+
   getAccountExpiryCase(): InitAccountRequest.AccountExpiryCase;
   getFeesCase(): InitAccountRequest.FeesCase;
   serializeBinary(): Uint8Array;
@@ -42,6 +44,7 @@ export namespace InitAccountRequest {
     absoluteHeight: number,
     relativeHeight: number,
     confTarget: number,
+    initiator: string,
   }
 
   export enum AccountExpiryCase {
@@ -543,8 +546,8 @@ export class Account extends jspb.Message {
 
   hasOutpoint(): boolean;
   clearOutpoint(): void;
-  getOutpoint(): auctioneer_pb.OutPoint | undefined;
-  setOutpoint(value?: auctioneer_pb.OutPoint): void;
+  getOutpoint(): auctioneerrpc_auctioneer_pb.OutPoint | undefined;
+  setOutpoint(value?: auctioneerrpc_auctioneer_pb.OutPoint): void;
 
   getValue(): number;
   setValue(value: number): void;
@@ -576,7 +579,7 @@ export class Account extends jspb.Message {
 export namespace Account {
   export type AsObject = {
     traderKey: Uint8Array | string,
-    outpoint?: auctioneer_pb.OutPoint.AsObject,
+    outpoint?: auctioneerrpc_auctioneer_pb.OutPoint.AsObject,
     value: number,
     availableBalance: number,
     expirationHeight: number,
@@ -596,6 +599,9 @@ export class SubmitOrderRequest extends jspb.Message {
   getBid(): Bid | undefined;
   setBid(value?: Bid): void;
 
+  getInitiator(): string;
+  setInitiator(value: string): void;
+
   getDetailsCase(): SubmitOrderRequest.DetailsCase;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): SubmitOrderRequest.AsObject;
@@ -611,6 +617,7 @@ export namespace SubmitOrderRequest {
   export type AsObject = {
     ask?: Ask.AsObject,
     bid?: Bid.AsObject,
+    initiator: string,
   }
 
   export enum DetailsCase {
@@ -623,8 +630,8 @@ export namespace SubmitOrderRequest {
 export class SubmitOrderResponse extends jspb.Message {
   hasInvalidOrder(): boolean;
   clearInvalidOrder(): void;
-  getInvalidOrder(): auctioneer_pb.InvalidOrder | undefined;
-  setInvalidOrder(value?: auctioneer_pb.InvalidOrder): void;
+  getInvalidOrder(): auctioneerrpc_auctioneer_pb.InvalidOrder | undefined;
+  setInvalidOrder(value?: auctioneerrpc_auctioneer_pb.InvalidOrder): void;
 
   hasAcceptedOrderNonce(): boolean;
   clearAcceptedOrderNonce(): void;
@@ -646,7 +653,7 @@ export class SubmitOrderResponse extends jspb.Message {
 
 export namespace SubmitOrderResponse {
   export type AsObject = {
-    invalidOrder?: auctioneer_pb.InvalidOrder.AsObject,
+    invalidOrder?: auctioneerrpc_auctioneer_pb.InvalidOrder.AsObject,
     acceptedOrderNonce: Uint8Array | string,
   }
 
@@ -767,8 +774,8 @@ export class Order extends jspb.Message {
   getOrderNonce_asB64(): string;
   setOrderNonce(value: Uint8Array | string): void;
 
-  getState(): auctioneer_pb.OrderStateMap[keyof auctioneer_pb.OrderStateMap];
-  setState(value: auctioneer_pb.OrderStateMap[keyof auctioneer_pb.OrderStateMap]): void;
+  getState(): auctioneerrpc_auctioneer_pb.OrderStateMap[keyof auctioneerrpc_auctioneer_pb.OrderStateMap];
+  setState(value: auctioneerrpc_auctioneer_pb.OrderStateMap[keyof auctioneerrpc_auctioneer_pb.OrderStateMap]): void;
 
   getUnits(): number;
   setUnits(value: number): void;
@@ -807,7 +814,7 @@ export namespace Order {
     amt: number,
     maxBatchFeeRateSatPerKw: number,
     orderNonce: Uint8Array | string,
-    state: auctioneer_pb.OrderStateMap[keyof auctioneer_pb.OrderStateMap],
+    state: auctioneerrpc_auctioneer_pb.OrderStateMap[keyof auctioneerrpc_auctioneer_pb.OrderStateMap],
     units: number,
     unitsUnfulfilled: number,
     reservedValueSat: number,
@@ -829,8 +836,8 @@ export class Bid extends jspb.Message {
   getVersion(): number;
   setVersion(value: number): void;
 
-  getMinNodeTier(): auctioneer_pb.NodeTierMap[keyof auctioneer_pb.NodeTierMap];
-  setMinNodeTier(value: auctioneer_pb.NodeTierMap[keyof auctioneer_pb.NodeTierMap]): void;
+  getMinNodeTier(): auctioneerrpc_auctioneer_pb.NodeTierMap[keyof auctioneerrpc_auctioneer_pb.NodeTierMap];
+  setMinNodeTier(value: auctioneerrpc_auctioneer_pb.NodeTierMap[keyof auctioneerrpc_auctioneer_pb.NodeTierMap]): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Bid.AsObject;
@@ -847,7 +854,7 @@ export namespace Bid {
     details?: Order.AsObject,
     leaseDurationBlocks: number,
     version: number,
-    minNodeTier: auctioneer_pb.NodeTierMap[keyof auctioneer_pb.NodeTierMap],
+    minNodeTier: auctioneerrpc_auctioneer_pb.NodeTierMap[keyof auctioneerrpc_auctioneer_pb.NodeTierMap],
   }
 }
 
@@ -925,11 +932,11 @@ export namespace OrderEvent {
 }
 
 export class UpdatedEvent extends jspb.Message {
-  getPreviousState(): auctioneer_pb.OrderStateMap[keyof auctioneer_pb.OrderStateMap];
-  setPreviousState(value: auctioneer_pb.OrderStateMap[keyof auctioneer_pb.OrderStateMap]): void;
+  getPreviousState(): auctioneerrpc_auctioneer_pb.OrderStateMap[keyof auctioneerrpc_auctioneer_pb.OrderStateMap];
+  setPreviousState(value: auctioneerrpc_auctioneer_pb.OrderStateMap[keyof auctioneerrpc_auctioneer_pb.OrderStateMap]): void;
 
-  getNewState(): auctioneer_pb.OrderStateMap[keyof auctioneer_pb.OrderStateMap];
-  setNewState(value: auctioneer_pb.OrderStateMap[keyof auctioneer_pb.OrderStateMap]): void;
+  getNewState(): auctioneerrpc_auctioneer_pb.OrderStateMap[keyof auctioneerrpc_auctioneer_pb.OrderStateMap];
+  setNewState(value: auctioneerrpc_auctioneer_pb.OrderStateMap[keyof auctioneerrpc_auctioneer_pb.OrderStateMap]): void;
 
   getUnitsFilled(): number;
   setUnitsFilled(value: number): void;
@@ -946,8 +953,8 @@ export class UpdatedEvent extends jspb.Message {
 
 export namespace UpdatedEvent {
   export type AsObject = {
-    previousState: auctioneer_pb.OrderStateMap[keyof auctioneer_pb.OrderStateMap],
-    newState: auctioneer_pb.OrderStateMap[keyof auctioneer_pb.OrderStateMap],
+    previousState: auctioneerrpc_auctioneer_pb.OrderStateMap[keyof auctioneerrpc_auctioneer_pb.OrderStateMap],
+    newState: auctioneerrpc_auctioneer_pb.OrderStateMap[keyof auctioneerrpc_auctioneer_pb.OrderStateMap],
     unitsFilled: number,
   }
 }
@@ -1041,8 +1048,8 @@ export namespace AuctionFeeRequest {
 export class AuctionFeeResponse extends jspb.Message {
   hasExecutionFee(): boolean;
   clearExecutionFee(): void;
-  getExecutionFee(): auctioneer_pb.ExecutionFee | undefined;
-  setExecutionFee(value?: auctioneer_pb.ExecutionFee): void;
+  getExecutionFee(): auctioneerrpc_auctioneer_pb.ExecutionFee | undefined;
+  setExecutionFee(value?: auctioneerrpc_auctioneer_pb.ExecutionFee): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): AuctionFeeResponse.AsObject;
@@ -1056,15 +1063,15 @@ export class AuctionFeeResponse extends jspb.Message {
 
 export namespace AuctionFeeResponse {
   export type AsObject = {
-    executionFee?: auctioneer_pb.ExecutionFee.AsObject,
+    executionFee?: auctioneerrpc_auctioneer_pb.ExecutionFee.AsObject,
   }
 }
 
 export class Lease extends jspb.Message {
   hasChannelPoint(): boolean;
   clearChannelPoint(): void;
-  getChannelPoint(): auctioneer_pb.OutPoint | undefined;
-  setChannelPoint(value?: auctioneer_pb.OutPoint): void;
+  getChannelPoint(): auctioneerrpc_auctioneer_pb.OutPoint | undefined;
+  setChannelPoint(value?: auctioneerrpc_auctioneer_pb.OutPoint): void;
 
   getChannelAmtSat(): number;
   setChannelAmtSat(value: number): void;
@@ -1103,8 +1110,8 @@ export class Lease extends jspb.Message {
   getChannelRemoteNodeKey_asB64(): string;
   setChannelRemoteNodeKey(value: Uint8Array | string): void;
 
-  getChannelNodeTier(): auctioneer_pb.NodeTierMap[keyof auctioneer_pb.NodeTierMap];
-  setChannelNodeTier(value: auctioneer_pb.NodeTierMap[keyof auctioneer_pb.NodeTierMap]): void;
+  getChannelNodeTier(): auctioneerrpc_auctioneer_pb.NodeTierMap[keyof auctioneerrpc_auctioneer_pb.NodeTierMap];
+  setChannelNodeTier(value: auctioneerrpc_auctioneer_pb.NodeTierMap[keyof auctioneerrpc_auctioneer_pb.NodeTierMap]): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Lease.AsObject;
@@ -1118,7 +1125,7 @@ export class Lease extends jspb.Message {
 
 export namespace Lease {
   export type AsObject = {
-    channelPoint?: auctioneer_pb.OutPoint.AsObject,
+    channelPoint?: auctioneerrpc_auctioneer_pb.OutPoint.AsObject,
     channelAmtSat: number,
     channelDurationBlocks: number,
     channelLeaseExpiry: number,
@@ -1130,7 +1137,7 @@ export namespace Lease {
     orderNonce: Uint8Array | string,
     purchased: boolean,
     channelRemoteNodeKey: Uint8Array | string,
-    channelNodeTier: auctioneer_pb.NodeTierMap[keyof auctioneer_pb.NodeTierMap],
+    channelNodeTier: auctioneerrpc_auctioneer_pb.NodeTierMap[keyof auctioneerrpc_auctioneer_pb.NodeTierMap],
   }
 }
 
@@ -1307,7 +1314,7 @@ export namespace LeaseDurationRequest {
 export class LeaseDurationResponse extends jspb.Message {
   getLeaseDurationsMap(): jspb.Map<number, boolean>;
   clearLeaseDurationsMap(): void;
-  getLeaseDurationBucketsMap(): jspb.Map<number, auctioneer_pb.DurationBucketState[keyof auctioneer_pb.DurationBucketState]>;
+  getLeaseDurationBucketsMap(): jspb.Map<number, auctioneerrpc_auctioneer_pb.DurationBucketState[keyof auctioneerrpc_auctioneer_pb.DurationBucketState]>;
   clearLeaseDurationBucketsMap(): void;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LeaseDurationResponse.AsObject;
@@ -1322,7 +1329,7 @@ export class LeaseDurationResponse extends jspb.Message {
 export namespace LeaseDurationResponse {
   export type AsObject = {
     leaseDurationsMap: Array<[number, boolean]>,
-    leaseDurationBucketsMap: Array<[number, auctioneer_pb.DurationBucketState[keyof auctioneer_pb.DurationBucketState]]>,
+    leaseDurationBucketsMap: Array<[number, auctioneerrpc_auctioneer_pb.DurationBucketState[keyof auctioneerrpc_auctioneer_pb.DurationBucketState]]>,
   }
 }
 
@@ -1396,9 +1403,9 @@ export namespace NodeRatingRequest {
 
 export class NodeRatingResponse extends jspb.Message {
   clearNodeRatingsList(): void;
-  getNodeRatingsList(): Array<auctioneer_pb.NodeRating>;
-  setNodeRatingsList(value: Array<auctioneer_pb.NodeRating>): void;
-  addNodeRatings(value?: auctioneer_pb.NodeRating, index?: number): auctioneer_pb.NodeRating;
+  getNodeRatingsList(): Array<auctioneerrpc_auctioneer_pb.NodeRating>;
+  setNodeRatingsList(value: Array<auctioneerrpc_auctioneer_pb.NodeRating>): void;
+  addNodeRatings(value?: auctioneerrpc_auctioneer_pb.NodeRating, index?: number): auctioneerrpc_auctioneer_pb.NodeRating;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): NodeRatingResponse.AsObject;
@@ -1412,7 +1419,7 @@ export class NodeRatingResponse extends jspb.Message {
 
 export namespace NodeRatingResponse {
   export type AsObject = {
-    nodeRatingsList: Array<auctioneer_pb.NodeRating.AsObject>,
+    nodeRatingsList: Array<auctioneerrpc_auctioneer_pb.NodeRating.AsObject>,
   }
 }
 

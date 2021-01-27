@@ -7,7 +7,7 @@ import {
   values,
   when,
 } from 'mobx';
-import { NodeTier } from 'types/generated/auctioneer_pb';
+import { NodeTier } from 'types/generated/auctioneerrpc/auctioneer_pb';
 import { LeaseDuration } from 'types/state';
 import { IS_DEV, IS_TEST } from 'config';
 import debounce from 'lodash/debounce';

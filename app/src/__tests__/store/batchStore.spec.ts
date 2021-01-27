@@ -1,5 +1,5 @@
 import { keys, runInAction, values } from 'mobx';
-import * as AUCT from 'types/generated/auctioneer_pb';
+import * as AUCT from 'types/generated/auctioneerrpc/auctioneer_pb';
 import { grpc } from '@improbable-eng/grpc-web';
 import { waitFor } from '@testing-library/react';
 import * as config from 'config';

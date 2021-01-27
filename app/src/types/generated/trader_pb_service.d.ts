@@ -2,7 +2,7 @@
 // file: trader.proto
 
 import * as trader_pb from "./trader_pb";
-import * as auctioneer_pb from "./auctioneer_pb";
+import * as auctioneerrpc_auctioneer_pb from "./auctioneerrpc/auctioneer_pb";
 import {grpc} from "@improbable-eng/grpc-web";
 
 type TraderQuoteAccount = {
@@ -145,8 +145,8 @@ type TraderBatchSnapshot = {
   readonly service: typeof Trader;
   readonly requestStream: false;
   readonly responseStream: false;
-  readonly requestType: typeof auctioneer_pb.BatchSnapshotRequest;
-  readonly responseType: typeof auctioneer_pb.BatchSnapshotResponse;
+  readonly requestType: typeof auctioneerrpc_auctioneer_pb.BatchSnapshotRequest;
+  readonly responseType: typeof auctioneerrpc_auctioneer_pb.BatchSnapshotResponse;
 };
 
 type TraderGetLsatTokens = {
@@ -181,8 +181,8 @@ type TraderBatchSnapshots = {
   readonly service: typeof Trader;
   readonly requestStream: false;
   readonly responseStream: false;
-  readonly requestType: typeof auctioneer_pb.BatchSnapshotsRequest;
-  readonly responseType: typeof auctioneer_pb.BatchSnapshotsResponse;
+  readonly requestType: typeof auctioneerrpc_auctioneer_pb.BatchSnapshotsRequest;
+  readonly responseType: typeof auctioneerrpc_auctioneer_pb.BatchSnapshotsResponse;
 };
 
 export class Trader {
@@ -377,13 +377,13 @@ export class TraderClient {
     callback: (error: ServiceError|null, responseMessage: trader_pb.NextBatchInfoResponse|null) => void
   ): UnaryResponse;
   batchSnapshot(
-    requestMessage: auctioneer_pb.BatchSnapshotRequest,
+    requestMessage: auctioneerrpc_auctioneer_pb.BatchSnapshotRequest,
     metadata: grpc.Metadata,
-    callback: (error: ServiceError|null, responseMessage: auctioneer_pb.BatchSnapshotResponse|null) => void
+    callback: (error: ServiceError|null, responseMessage: auctioneerrpc_auctioneer_pb.BatchSnapshotResponse|null) => void
   ): UnaryResponse;
   batchSnapshot(
-    requestMessage: auctioneer_pb.BatchSnapshotRequest,
-    callback: (error: ServiceError|null, responseMessage: auctioneer_pb.BatchSnapshotResponse|null) => void
+    requestMessage: auctioneerrpc_auctioneer_pb.BatchSnapshotRequest,
+    callback: (error: ServiceError|null, responseMessage: auctioneerrpc_auctioneer_pb.BatchSnapshotResponse|null) => void
   ): UnaryResponse;
   getLsatTokens(
     requestMessage: trader_pb.TokensRequest,
@@ -413,13 +413,13 @@ export class TraderClient {
     callback: (error: ServiceError|null, responseMessage: trader_pb.NodeRatingResponse|null) => void
   ): UnaryResponse;
   batchSnapshots(
-    requestMessage: auctioneer_pb.BatchSnapshotsRequest,
+    requestMessage: auctioneerrpc_auctioneer_pb.BatchSnapshotsRequest,
     metadata: grpc.Metadata,
-    callback: (error: ServiceError|null, responseMessage: auctioneer_pb.BatchSnapshotsResponse|null) => void
+    callback: (error: ServiceError|null, responseMessage: auctioneerrpc_auctioneer_pb.BatchSnapshotsResponse|null) => void
   ): UnaryResponse;
   batchSnapshots(
-    requestMessage: auctioneer_pb.BatchSnapshotsRequest,
-    callback: (error: ServiceError|null, responseMessage: auctioneer_pb.BatchSnapshotsResponse|null) => void
+    requestMessage: auctioneerrpc_auctioneer_pb.BatchSnapshotsRequest,
+    callback: (error: ServiceError|null, responseMessage: auctioneerrpc_auctioneer_pb.BatchSnapshotsResponse|null) => void
   ): UnaryResponse;
 }
 
