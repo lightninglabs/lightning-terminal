@@ -2,8 +2,8 @@
 const util = require('util');
 const https = require('https');
 const exec = util.promisify(require('child_process').exec);
-const { promises: fs } = require('fs');
-const { join, sep } = require('path');
+const { promises: fs, mkdirSync } = require('fs');
+const { join, sep, dirname } = require('path');
 const { platform } = require('os');
 const appPath = join(__dirname, '..');
 
@@ -41,7 +41,7 @@ const protoSources = async () => {
     lnd: `lightningnetwork/lnd/${lndVersion[1]}/lnrpc/rpc.proto`,
     loop: `lightninglabs/loop/${loopVersion[1]}/looprpc/client.proto`,
     trader: `lightninglabs/pool/${poolVersion[1]}/poolrpc/trader.proto`,
-    auctioneer: `lightninglabs/pool/${poolVersion[1]}/poolrpc/auctioneer.proto`,
+    'auctioneerrpc/auctioneer': `lightninglabs/pool/${poolVersion[1]}/auctioneerrpc/auctioneer.proto`,
   };
 };
 
@@ -50,7 +50,7 @@ const filePatches = {
   lnd: 'lnrpc: {}',
   loop: 'looprpc: {}',
   trader: 'poolrpc: {}',
-  auctioneer: 'poolrpc: {}',
+  'auctioneerrpc/auctioneer': 'poolrpc: {}',
   'google/api/annotations': 'google: { api: {} }',
   'google/api/http': 'google: { api: {} }',
 };
@@ -63,6 +63,7 @@ const download = async () => {
   for ([name, urlPath] of Object.entries(await protoSources())) {
     const url = `https://raw.githubusercontent.com/${urlPath}`;
     const filePath = join(appPath, '..', 'proto', `${name}.proto`);
+    mkdirSync(dirname(filePath), {recursive: true});
     console.log(`${url}`);
     console.log(` -> ${filePath}`);
     const content = await new Promise((resolve, reject) => {
@@ -92,6 +93,7 @@ const generate = async () => {
   );
   const protocCmd = [
     'protoc',
+    `-I../proto`,
     `--plugin=protoc-gen-ts=${protocGen}`,
     '--proto_path=../proto',
     '--js_out=import_style=commonjs,binary:./src/types/generated',
