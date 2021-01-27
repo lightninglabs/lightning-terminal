@@ -659,6 +659,29 @@ export namespace SubscribeSuccess {
   }
 }
 
+export class MatchedMarket extends jspb.Message {
+  getMatchedOrdersMap(): jspb.Map<string, MatchedOrder>;
+  clearMatchedOrdersMap(): void;
+  getClearingPriceRate(): number;
+  setClearingPriceRate(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): MatchedMarket.AsObject;
+  static toObject(includeInstance: boolean, msg: MatchedMarket): MatchedMarket.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: MatchedMarket, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): MatchedMarket;
+  static deserializeBinaryFromReader(message: MatchedMarket, reader: jspb.BinaryReader): MatchedMarket;
+}
+
+export namespace MatchedMarket {
+  export type AsObject = {
+    matchedOrdersMap: Array<[string, MatchedOrder.AsObject]>,
+    clearingPriceRate: number,
+  }
+}
+
 export class OrderMatchPrepare extends jspb.Message {
   getMatchedOrdersMap(): jspb.Map<string, MatchedOrder>;
   clearMatchedOrdersMap(): void;
@@ -694,6 +717,8 @@ export class OrderMatchPrepare extends jspb.Message {
   getBatchVersion(): number;
   setBatchVersion(value: number): void;
 
+  getMatchedMarketsMap(): jspb.Map<number, MatchedMarket>;
+  clearMatchedMarketsMap(): void;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): OrderMatchPrepare.AsObject;
   static toObject(includeInstance: boolean, msg: OrderMatchPrepare): OrderMatchPrepare.AsObject;
@@ -715,6 +740,7 @@ export namespace OrderMatchPrepare {
     feeRebateSat: number,
     batchId: Uint8Array | string,
     batchVersion: number,
+    matchedMarketsMap: Array<[number, MatchedMarket.AsObject]>,
   }
 }
 
@@ -1293,6 +1319,9 @@ export namespace ServerModifyAccountRequest {
     getValue(): number;
     setValue(value: number): void;
 
+    getExpiry(): number;
+    setExpiry(value: number): void;
+
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): NewAccountParameters.AsObject;
     static toObject(includeInstance: boolean, msg: NewAccountParameters): NewAccountParameters.AsObject;
@@ -1306,6 +1335,7 @@ export namespace ServerModifyAccountRequest {
   export namespace NewAccountParameters {
     export type AsObject = {
       value: number,
+      expiry: number,
     }
   }
 }
@@ -1417,6 +1447,8 @@ export class TermsResponse extends jspb.Message {
   getNextBatchClearTimestamp(): number;
   setNextBatchClearTimestamp(value: number): void;
 
+  getLeaseDurationBucketsMap(): jspb.Map<number, DurationBucketStateMap[keyof DurationBucketStateMap]>;
+  clearLeaseDurationBucketsMap(): void;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): TermsResponse.AsObject;
   static toObject(includeInstance: boolean, msg: TermsResponse): TermsResponse.AsObject;
@@ -1436,6 +1468,7 @@ export namespace TermsResponse {
     nextBatchConfTarget: number,
     nextBatchFeeRateSatPerKw: number,
     nextBatchClearTimestamp: number,
+    leaseDurationBucketsMap: Array<[number, DurationBucketStateMap[keyof DurationBucketStateMap]]>,
   }
 }
 
@@ -1501,6 +1534,11 @@ export class RelevantBatch extends jspb.Message {
   getFeeRateSatPerKw(): number;
   setFeeRateSatPerKw(value: number): void;
 
+  getCreationTimestampNs(): number;
+  setCreationTimestampNs(value: number): void;
+
+  getMatchedMarketsMap(): jspb.Map<number, MatchedMarket>;
+  clearMatchedMarketsMap(): void;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RelevantBatch.AsObject;
   static toObject(includeInstance: boolean, msg: RelevantBatch): RelevantBatch.AsObject;
@@ -1521,6 +1559,8 @@ export namespace RelevantBatch {
     executionFee?: ExecutionFee.AsObject,
     transaction: Uint8Array | string,
     feeRateSatPerKw: number,
+    creationTimestampNs: number,
+    matchedMarketsMap: Array<[number, MatchedMarket.AsObject]>,
   }
 }
 
@@ -1724,6 +1764,32 @@ export namespace BatchSnapshotRequest {
   }
 }
 
+export class MatchedMarketSnapshot extends jspb.Message {
+  clearMatchedOrdersList(): void;
+  getMatchedOrdersList(): Array<MatchedOrderSnapshot>;
+  setMatchedOrdersList(value: Array<MatchedOrderSnapshot>): void;
+  addMatchedOrders(value?: MatchedOrderSnapshot, index?: number): MatchedOrderSnapshot;
+
+  getClearingPriceRate(): number;
+  setClearingPriceRate(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): MatchedMarketSnapshot.AsObject;
+  static toObject(includeInstance: boolean, msg: MatchedMarketSnapshot): MatchedMarketSnapshot.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: MatchedMarketSnapshot, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): MatchedMarketSnapshot;
+  static deserializeBinaryFromReader(message: MatchedMarketSnapshot, reader: jspb.BinaryReader): MatchedMarketSnapshot;
+}
+
+export namespace MatchedMarketSnapshot {
+  export type AsObject = {
+    matchedOrdersList: Array<MatchedOrderSnapshot.AsObject>,
+    clearingPriceRate: number,
+  }
+}
+
 export class BatchSnapshotResponse extends jspb.Message {
   getVersion(): number;
   setVersion(value: number): void;
@@ -1757,6 +1823,11 @@ export class BatchSnapshotResponse extends jspb.Message {
   getBatchTxFeeRateSatPerKw(): number;
   setBatchTxFeeRateSatPerKw(value: number): void;
 
+  getCreationTimestampNs(): number;
+  setCreationTimestampNs(value: number): void;
+
+  getMatchedMarketsMap(): jspb.Map<number, MatchedMarketSnapshot>;
+  clearMatchedMarketsMap(): void;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): BatchSnapshotResponse.AsObject;
   static toObject(includeInstance: boolean, msg: BatchSnapshotResponse): BatchSnapshotResponse.AsObject;
@@ -1777,6 +1848,8 @@ export namespace BatchSnapshotResponse {
     batchTxId: string,
     batchTx: Uint8Array | string,
     batchTxFeeRateSatPerKw: number,
+    creationTimestampNs: number,
+    matchedMarketsMap: Array<[number, MatchedMarketSnapshot.AsObject]>,
   }
 }
 
@@ -1852,6 +1925,54 @@ export namespace ServerNodeRatingResponse {
   }
 }
 
+export class BatchSnapshotsRequest extends jspb.Message {
+  getStartBatchId(): Uint8Array | string;
+  getStartBatchId_asU8(): Uint8Array;
+  getStartBatchId_asB64(): string;
+  setStartBatchId(value: Uint8Array | string): void;
+
+  getNumBatchesBack(): number;
+  setNumBatchesBack(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): BatchSnapshotsRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: BatchSnapshotsRequest): BatchSnapshotsRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: BatchSnapshotsRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): BatchSnapshotsRequest;
+  static deserializeBinaryFromReader(message: BatchSnapshotsRequest, reader: jspb.BinaryReader): BatchSnapshotsRequest;
+}
+
+export namespace BatchSnapshotsRequest {
+  export type AsObject = {
+    startBatchId: Uint8Array | string,
+    numBatchesBack: number,
+  }
+}
+
+export class BatchSnapshotsResponse extends jspb.Message {
+  clearBatchesList(): void;
+  getBatchesList(): Array<BatchSnapshotResponse>;
+  setBatchesList(value: Array<BatchSnapshotResponse>): void;
+  addBatches(value?: BatchSnapshotResponse, index?: number): BatchSnapshotResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): BatchSnapshotsResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: BatchSnapshotsResponse): BatchSnapshotsResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: BatchSnapshotsResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): BatchSnapshotsResponse;
+  static deserializeBinaryFromReader(message: BatchSnapshotsResponse, reader: jspb.BinaryReader): BatchSnapshotsResponse;
+}
+
+export namespace BatchSnapshotsResponse {
+  export type AsObject = {
+    batchesList: Array<BatchSnapshotResponse.AsObject>,
+  }
+}
+
 export interface ChannelTypeMap {
   TWEAKLESS: 0;
   ANCHORS: 1;
@@ -1889,4 +2010,13 @@ export interface OrderStateMap {
 }
 
 export const OrderState: OrderStateMap;
+
+export interface DurationBucketStateMap {
+  NO_MARKET: 0;
+  MARKET_CLOSED: 1;
+  ACCEPTING_ORDERS: 2;
+  MARKET_OPEN: 3;
+}
+
+export const DurationBucketState: DurationBucketStateMap;
 

@@ -1,3 +1,6 @@
+/** estimated number of blocks mined per day */
+export const BLOCKS_PER_DAY = 144;
+
 /** the enumeration of unit supported in the app */
 export enum Unit {
   sats = 'sats',
@@ -65,4 +68,15 @@ export const BalanceModes: { [key in BalanceMode]: BalanceConfig } = {
     warn: { min: 70, max: 85, bidirectional: true },
     danger: { min: 85, max: 100, bidirectional: true },
   },
+};
+
+/** the list of supported Bitcoin block explorers for transactions */
+export const BitcoinExplorerPresets: Record<string, string> = {
+  'mempool.space': 'https://mempool.space/tx/{txid}',
+  'blockstream.info': 'https://blockstream.info/tx/{txid}',
+};
+
+/** the list of supported Lightning graph explorers for nodes*/
+export const LightningExplorerPresets: Record<string, string> = {
+  '1ml.com': 'https://1ml.com/node/{pubkey}',
 };

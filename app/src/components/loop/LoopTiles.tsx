@@ -16,7 +16,7 @@ const Styled = {
 
 const LoopTiles: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.LoopTiles');
-  const { channelStore, uiStore } = useStore();
+  const { channelStore, appView } = useStore();
 
   const { TileSection } = Styled;
   return (
@@ -26,7 +26,7 @@ const LoopTiles: React.FC = () => {
           <Tile
             tour="history"
             title={l('history')}
-            onMaximizeClick={uiStore.toggleProcessingSwaps}
+            onMaximizeClick={appView.toggleProcessingSwaps}
           >
             <LoopHistory />
           </Tile>

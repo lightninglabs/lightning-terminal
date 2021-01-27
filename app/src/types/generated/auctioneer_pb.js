@@ -24,16 +24,21 @@ goog.exportSymbol('proto.poolrpc.AuctionAccount', null, global);
 goog.exportSymbol('proto.poolrpc.AuctionAccountState', null, global);
 goog.exportSymbol('proto.poolrpc.BatchSnapshotRequest', null, global);
 goog.exportSymbol('proto.poolrpc.BatchSnapshotResponse', null, global);
+goog.exportSymbol('proto.poolrpc.BatchSnapshotsRequest', null, global);
+goog.exportSymbol('proto.poolrpc.BatchSnapshotsResponse', null, global);
 goog.exportSymbol('proto.poolrpc.BidSnapshot', null, global);
 goog.exportSymbol('proto.poolrpc.CancelOrder', null, global);
 goog.exportSymbol('proto.poolrpc.ChannelInfo', null, global);
 goog.exportSymbol('proto.poolrpc.ChannelType', null, global);
 goog.exportSymbol('proto.poolrpc.ClientAuctionMessage', null, global);
+goog.exportSymbol('proto.poolrpc.DurationBucketState', null, global);
 goog.exportSymbol('proto.poolrpc.ExecutionFee', null, global);
 goog.exportSymbol('proto.poolrpc.InvalidOrder', null, global);
 goog.exportSymbol('proto.poolrpc.InvalidOrder.FailReason', null, global);
 goog.exportSymbol('proto.poolrpc.MatchedAsk', null, global);
 goog.exportSymbol('proto.poolrpc.MatchedBid', null, global);
+goog.exportSymbol('proto.poolrpc.MatchedMarket', null, global);
+goog.exportSymbol('proto.poolrpc.MatchedMarketSnapshot', null, global);
 goog.exportSymbol('proto.poolrpc.MatchedOrder', null, global);
 goog.exportSymbol('proto.poolrpc.MatchedOrderSnapshot', null, global);
 goog.exportSymbol('proto.poolrpc.NodeAddress', null, global);
@@ -4742,6 +4747,177 @@ proto.poolrpc.SubscribeSuccess.prototype.setTraderKey = function(value) {
  * @extends {jspb.Message}
  * @constructor
  */
+proto.poolrpc.MatchedMarket = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.MatchedMarket, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.poolrpc.MatchedMarket.displayName = 'proto.poolrpc.MatchedMarket';
+}
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.poolrpc.MatchedMarket.prototype.toObject = function(opt_includeInstance) {
+  return proto.poolrpc.MatchedMarket.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.poolrpc.MatchedMarket} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.poolrpc.MatchedMarket.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    matchedOrdersMap: (f = msg.getMatchedOrdersMap()) ? f.toObject(includeInstance, proto.poolrpc.MatchedOrder.toObject) : [],
+    clearingPriceRate: jspb.Message.getFieldWithDefault(msg, 2, 0)
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.poolrpc.MatchedMarket}
+ */
+proto.poolrpc.MatchedMarket.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.poolrpc.MatchedMarket;
+  return proto.poolrpc.MatchedMarket.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.poolrpc.MatchedMarket} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.poolrpc.MatchedMarket}
+ */
+proto.poolrpc.MatchedMarket.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = msg.getMatchedOrdersMap();
+      reader.readMessage(value, function(message, reader) {
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.poolrpc.MatchedOrder.deserializeBinaryFromReader);
+         });
+      break;
+    case 2:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setClearingPriceRate(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.poolrpc.MatchedMarket.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.poolrpc.MatchedMarket.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.poolrpc.MatchedMarket} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.poolrpc.MatchedMarket.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getMatchedOrdersMap(true);
+  if (f && f.getLength() > 0) {
+    f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.poolrpc.MatchedOrder.serializeBinaryToWriter);
+  }
+  f = message.getClearingPriceRate();
+  if (f !== 0) {
+    writer.writeUint32(
+      2,
+      f
+    );
+  }
+};
+
+
+/**
+ * map<string, MatchedOrder> matched_orders = 1;
+ * @param {boolean=} opt_noLazyCreate Do not create the map if
+ * empty, instead returning `undefined`
+ * @return {!jspb.Map<string,!proto.poolrpc.MatchedOrder>}
+ */
+proto.poolrpc.MatchedMarket.prototype.getMatchedOrdersMap = function(opt_noLazyCreate) {
+  return /** @type {!jspb.Map<string,!proto.poolrpc.MatchedOrder>} */ (
+      jspb.Message.getMapField(this, 1, opt_noLazyCreate,
+      proto.poolrpc.MatchedOrder));
+};
+
+
+proto.poolrpc.MatchedMarket.prototype.clearMatchedOrdersMap = function() {
+  this.getMatchedOrdersMap().clear();
+};
+
+
+/**
+ * optional uint32 clearing_price_rate = 2;
+ * @return {number}
+ */
+proto.poolrpc.MatchedMarket.prototype.getClearingPriceRate = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
+};
+
+
+/** @param {number} value */
+proto.poolrpc.MatchedMarket.prototype.setClearingPriceRate = function(value) {
+  jspb.Message.setField(this, 2, value);
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
 proto.poolrpc.OrderMatchPrepare = function(opt_data) {
   jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.OrderMatchPrepare.repeatedFields_, null);
 };
@@ -4794,7 +4970,8 @@ proto.poolrpc.OrderMatchPrepare.toObject = function(includeInstance, msg) {
     feeRateSatPerKw: jspb.Message.getFieldWithDefault(msg, 6, 0),
     feeRebateSat: jspb.Message.getFieldWithDefault(msg, 7, 0),
     batchId: msg.getBatchId_asB64(),
-    batchVersion: jspb.Message.getFieldWithDefault(msg, 9, 0)
+    batchVersion: jspb.Message.getFieldWithDefault(msg, 9, 0),
+    matchedMarketsMap: (f = msg.getMatchedMarketsMap()) ? f.toObject(includeInstance, proto.poolrpc.MatchedMarket.toObject) : []
   };
 
   if (includeInstance) {
@@ -4870,6 +5047,12 @@ proto.poolrpc.OrderMatchPrepare.deserializeBinaryFromReader = function(msg, read
     case 9:
       var value = /** @type {number} */ (reader.readUint32());
       msg.setBatchVersion(value);
+      break;
+    case 10:
+      var value = msg.getMatchedMarketsMap();
+      reader.readMessage(value, function(message, reader) {
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readUint32, jspb.BinaryReader.prototype.readMessage, proto.poolrpc.MatchedMarket.deserializeBinaryFromReader);
+         });
       break;
     default:
       reader.skipField();
@@ -4961,6 +5144,10 @@ proto.poolrpc.OrderMatchPrepare.serializeBinaryToWriter = function(message, writ
       9,
       f
     );
+  }
+  f = message.getMatchedMarketsMap(true);
+  if (f && f.getLength() > 0) {
+    f.serializeBinary(10, writer, jspb.BinaryWriter.prototype.writeUint32, jspb.BinaryWriter.prototype.writeMessage, proto.poolrpc.MatchedMarket.serializeBinaryToWriter);
   }
 };
 
@@ -5179,6 +5366,24 @@ proto.poolrpc.OrderMatchPrepare.prototype.getBatchVersion = function() {
 /** @param {number} value */
 proto.poolrpc.OrderMatchPrepare.prototype.setBatchVersion = function(value) {
   jspb.Message.setField(this, 9, value);
+};
+
+
+/**
+ * map<uint32, MatchedMarket> matched_markets = 10;
+ * @param {boolean=} opt_noLazyCreate Do not create the map if
+ * empty, instead returning `undefined`
+ * @return {!jspb.Map<number,!proto.poolrpc.MatchedMarket>}
+ */
+proto.poolrpc.OrderMatchPrepare.prototype.getMatchedMarketsMap = function(opt_noLazyCreate) {
+  return /** @type {!jspb.Map<number,!proto.poolrpc.MatchedMarket>} */ (
+      jspb.Message.getMapField(this, 10, opt_noLazyCreate,
+      proto.poolrpc.MatchedMarket));
+};
+
+
+proto.poolrpc.OrderMatchPrepare.prototype.clearMatchedMarketsMap = function() {
+  this.getMatchedMarketsMap().clear();
 };
 
 
@@ -9212,7 +9417,8 @@ proto.poolrpc.ServerModifyAccountRequest.NewAccountParameters.prototype.toObject
  */
 proto.poolrpc.ServerModifyAccountRequest.NewAccountParameters.toObject = function(includeInstance, msg) {
   var f, obj = {
-    value: jspb.Message.getFieldWithDefault(msg, 1, 0)
+    value: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    expiry: jspb.Message.getFieldWithDefault(msg, 2, 0)
   };
 
   if (includeInstance) {
@@ -9253,6 +9459,10 @@ proto.poolrpc.ServerModifyAccountRequest.NewAccountParameters.deserializeBinaryF
       var value = /** @type {number} */ (reader.readUint64());
       msg.setValue(value);
       break;
+    case 2:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setExpiry(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -9289,6 +9499,13 @@ proto.poolrpc.ServerModifyAccountRequest.NewAccountParameters.serializeBinaryToW
       f
     );
   }
+  f = message.getExpiry();
+  if (f !== 0) {
+    writer.writeUint32(
+      2,
+      f
+    );
+  }
 };
 
 
@@ -9304,6 +9521,21 @@ proto.poolrpc.ServerModifyAccountRequest.NewAccountParameters.prototype.getValue
 /** @param {number} value */
 proto.poolrpc.ServerModifyAccountRequest.NewAccountParameters.prototype.setValue = function(value) {
   jspb.Message.setField(this, 1, value);
+};
+
+
+/**
+ * optional uint32 expiry = 2;
+ * @return {number}
+ */
+proto.poolrpc.ServerModifyAccountRequest.NewAccountParameters.prototype.getExpiry = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
+};
+
+
+/** @param {number} value */
+proto.poolrpc.ServerModifyAccountRequest.NewAccountParameters.prototype.setExpiry = function(value) {
+  jspb.Message.setField(this, 2, value);
 };
 
 
@@ -10108,7 +10340,8 @@ proto.poolrpc.TermsResponse.toObject = function(includeInstance, msg) {
     leaseDurationsMap: (f = msg.getLeaseDurationsMap()) ? f.toObject(includeInstance, undefined) : [],
     nextBatchConfTarget: jspb.Message.getFieldWithDefault(msg, 5, 0),
     nextBatchFeeRateSatPerKw: jspb.Message.getFieldWithDefault(msg, 6, 0),
-    nextBatchClearTimestamp: jspb.Message.getFieldWithDefault(msg, 7, 0)
+    nextBatchClearTimestamp: jspb.Message.getFieldWithDefault(msg, 7, 0),
+    leaseDurationBucketsMap: (f = msg.getLeaseDurationBucketsMap()) ? f.toObject(includeInstance, undefined) : []
   };
 
   if (includeInstance) {
@@ -10175,6 +10408,12 @@ proto.poolrpc.TermsResponse.deserializeBinaryFromReader = function(msg, reader) 
     case 7:
       var value = /** @type {number} */ (reader.readUint64());
       msg.setNextBatchClearTimestamp(value);
+      break;
+    case 8:
+      var value = msg.getLeaseDurationBucketsMap();
+      reader.readMessage(value, function(message, reader) {
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readUint32, jspb.BinaryReader.prototype.readEnum);
+         });
       break;
     default:
       reader.skipField();
@@ -10251,6 +10490,10 @@ proto.poolrpc.TermsResponse.serializeBinaryToWriter = function(message, writer) 
       7,
       f
     );
+  }
+  f = message.getLeaseDurationBucketsMap(true);
+  if (f && f.getLength() > 0) {
+    f.serializeBinary(8, writer, jspb.BinaryWriter.prototype.writeUint32, jspb.BinaryWriter.prototype.writeEnum);
   }
 };
 
@@ -10375,6 +10618,24 @@ proto.poolrpc.TermsResponse.prototype.getNextBatchClearTimestamp = function() {
 /** @param {number} value */
 proto.poolrpc.TermsResponse.prototype.setNextBatchClearTimestamp = function(value) {
   jspb.Message.setField(this, 7, value);
+};
+
+
+/**
+ * map<uint32, DurationBucketState> lease_duration_buckets = 8;
+ * @param {boolean=} opt_noLazyCreate Do not create the map if
+ * empty, instead returning `undefined`
+ * @return {!jspb.Map<number,!proto.poolrpc.DurationBucketState>}
+ */
+proto.poolrpc.TermsResponse.prototype.getLeaseDurationBucketsMap = function(opt_noLazyCreate) {
+  return /** @type {!jspb.Map<number,!proto.poolrpc.DurationBucketState>} */ (
+      jspb.Message.getMapField(this, 8, opt_noLazyCreate,
+      null));
+};
+
+
+proto.poolrpc.TermsResponse.prototype.clearLeaseDurationBucketsMap = function() {
+  this.getLeaseDurationBucketsMap().clear();
 };
 
 
@@ -10678,7 +10939,9 @@ proto.poolrpc.RelevantBatch.toObject = function(includeInstance, msg) {
     clearingPriceRate: jspb.Message.getFieldWithDefault(msg, 5, 0),
     executionFee: (f = msg.getExecutionFee()) && proto.poolrpc.ExecutionFee.toObject(includeInstance, f),
     transaction: msg.getTransaction_asB64(),
-    feeRateSatPerKw: jspb.Message.getFieldWithDefault(msg, 8, 0)
+    feeRateSatPerKw: jspb.Message.getFieldWithDefault(msg, 8, 0),
+    creationTimestampNs: jspb.Message.getFieldWithDefault(msg, 9, 0),
+    matchedMarketsMap: (f = msg.getMatchedMarketsMap()) ? f.toObject(includeInstance, proto.poolrpc.MatchedMarket.toObject) : []
   };
 
   if (includeInstance) {
@@ -10750,6 +11013,16 @@ proto.poolrpc.RelevantBatch.deserializeBinaryFromReader = function(msg, reader) 
     case 8:
       var value = /** @type {number} */ (reader.readUint64());
       msg.setFeeRateSatPerKw(value);
+      break;
+    case 9:
+      var value = /** @type {number} */ (reader.readUint64());
+      msg.setCreationTimestampNs(value);
+      break;
+    case 10:
+      var value = msg.getMatchedMarketsMap();
+      reader.readMessage(value, function(message, reader) {
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readUint32, jspb.BinaryReader.prototype.readMessage, proto.poolrpc.MatchedMarket.deserializeBinaryFromReader);
+         });
       break;
     default:
       reader.skipField();
@@ -10834,6 +11107,17 @@ proto.poolrpc.RelevantBatch.serializeBinaryToWriter = function(message, writer) 
       8,
       f
     );
+  }
+  f = message.getCreationTimestampNs();
+  if (f !== 0) {
+    writer.writeUint64(
+      9,
+      f
+    );
+  }
+  f = message.getMatchedMarketsMap(true);
+  if (f && f.getLength() > 0) {
+    f.serializeBinary(10, writer, jspb.BinaryWriter.prototype.writeUint32, jspb.BinaryWriter.prototype.writeMessage, proto.poolrpc.MatchedMarket.serializeBinaryToWriter);
   }
 };
 
@@ -11037,6 +11321,39 @@ proto.poolrpc.RelevantBatch.prototype.getFeeRateSatPerKw = function() {
 /** @param {number} value */
 proto.poolrpc.RelevantBatch.prototype.setFeeRateSatPerKw = function(value) {
   jspb.Message.setField(this, 8, value);
+};
+
+
+/**
+ * optional uint64 creation_timestamp_ns = 9;
+ * @return {number}
+ */
+proto.poolrpc.RelevantBatch.prototype.getCreationTimestampNs = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 9, 0));
+};
+
+
+/** @param {number} value */
+proto.poolrpc.RelevantBatch.prototype.setCreationTimestampNs = function(value) {
+  jspb.Message.setField(this, 9, value);
+};
+
+
+/**
+ * map<uint32, MatchedMarket> matched_markets = 10;
+ * @param {boolean=} opt_noLazyCreate Do not create the map if
+ * empty, instead returning `undefined`
+ * @return {!jspb.Map<number,!proto.poolrpc.MatchedMarket>}
+ */
+proto.poolrpc.RelevantBatch.prototype.getMatchedMarketsMap = function(opt_noLazyCreate) {
+  return /** @type {!jspb.Map<number,!proto.poolrpc.MatchedMarket>} */ (
+      jspb.Message.getMapField(this, 10, opt_noLazyCreate,
+      proto.poolrpc.MatchedMarket));
+};
+
+
+proto.poolrpc.RelevantBatch.prototype.clearMatchedMarketsMap = function() {
+  this.getMatchedMarketsMap().clear();
 };
 
 
@@ -12478,6 +12795,201 @@ proto.poolrpc.BatchSnapshotRequest.prototype.setBatchId = function(value) {
  * @extends {jspb.Message}
  * @constructor
  */
+proto.poolrpc.MatchedMarketSnapshot = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.MatchedMarketSnapshot.repeatedFields_, null);
+};
+goog.inherits(proto.poolrpc.MatchedMarketSnapshot, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.poolrpc.MatchedMarketSnapshot.displayName = 'proto.poolrpc.MatchedMarketSnapshot';
+}
+/**
+ * List of repeated fields within this message type.
+ * @private {!Array<number>}
+ * @const
+ */
+proto.poolrpc.MatchedMarketSnapshot.repeatedFields_ = [1];
+
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.poolrpc.MatchedMarketSnapshot.prototype.toObject = function(opt_includeInstance) {
+  return proto.poolrpc.MatchedMarketSnapshot.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.poolrpc.MatchedMarketSnapshot} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.poolrpc.MatchedMarketSnapshot.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    matchedOrdersList: jspb.Message.toObjectList(msg.getMatchedOrdersList(),
+    proto.poolrpc.MatchedOrderSnapshot.toObject, includeInstance),
+    clearingPriceRate: jspb.Message.getFieldWithDefault(msg, 2, 0)
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.poolrpc.MatchedMarketSnapshot}
+ */
+proto.poolrpc.MatchedMarketSnapshot.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.poolrpc.MatchedMarketSnapshot;
+  return proto.poolrpc.MatchedMarketSnapshot.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.poolrpc.MatchedMarketSnapshot} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.poolrpc.MatchedMarketSnapshot}
+ */
+proto.poolrpc.MatchedMarketSnapshot.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = new proto.poolrpc.MatchedOrderSnapshot;
+      reader.readMessage(value,proto.poolrpc.MatchedOrderSnapshot.deserializeBinaryFromReader);
+      msg.addMatchedOrders(value);
+      break;
+    case 2:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setClearingPriceRate(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.poolrpc.MatchedMarketSnapshot.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.poolrpc.MatchedMarketSnapshot.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.poolrpc.MatchedMarketSnapshot} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.poolrpc.MatchedMarketSnapshot.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getMatchedOrdersList();
+  if (f.length > 0) {
+    writer.writeRepeatedMessage(
+      1,
+      f,
+      proto.poolrpc.MatchedOrderSnapshot.serializeBinaryToWriter
+    );
+  }
+  f = message.getClearingPriceRate();
+  if (f !== 0) {
+    writer.writeUint32(
+      2,
+      f
+    );
+  }
+};
+
+
+/**
+ * repeated MatchedOrderSnapshot matched_orders = 1;
+ * @return {!Array.<!proto.poolrpc.MatchedOrderSnapshot>}
+ */
+proto.poolrpc.MatchedMarketSnapshot.prototype.getMatchedOrdersList = function() {
+  return /** @type{!Array.<!proto.poolrpc.MatchedOrderSnapshot>} */ (
+    jspb.Message.getRepeatedWrapperField(this, proto.poolrpc.MatchedOrderSnapshot, 1));
+};
+
+
+/** @param {!Array.<!proto.poolrpc.MatchedOrderSnapshot>} value */
+proto.poolrpc.MatchedMarketSnapshot.prototype.setMatchedOrdersList = function(value) {
+  jspb.Message.setRepeatedWrapperField(this, 1, value);
+};
+
+
+/**
+ * @param {!proto.poolrpc.MatchedOrderSnapshot=} opt_value
+ * @param {number=} opt_index
+ * @return {!proto.poolrpc.MatchedOrderSnapshot}
+ */
+proto.poolrpc.MatchedMarketSnapshot.prototype.addMatchedOrders = function(opt_value, opt_index) {
+  return jspb.Message.addToRepeatedWrapperField(this, 1, opt_value, proto.poolrpc.MatchedOrderSnapshot, opt_index);
+};
+
+
+proto.poolrpc.MatchedMarketSnapshot.prototype.clearMatchedOrdersList = function() {
+  this.setMatchedOrdersList([]);
+};
+
+
+/**
+ * optional uint32 clearing_price_rate = 2;
+ * @return {number}
+ */
+proto.poolrpc.MatchedMarketSnapshot.prototype.getClearingPriceRate = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
+};
+
+
+/** @param {number} value */
+proto.poolrpc.MatchedMarketSnapshot.prototype.setClearingPriceRate = function(value) {
+  jspb.Message.setField(this, 2, value);
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
 proto.poolrpc.BatchSnapshotResponse = function(opt_data) {
   jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.BatchSnapshotResponse.repeatedFields_, null);
 };
@@ -12529,7 +13041,9 @@ proto.poolrpc.BatchSnapshotResponse.toObject = function(includeInstance, msg) {
     proto.poolrpc.MatchedOrderSnapshot.toObject, includeInstance),
     batchTxId: jspb.Message.getFieldWithDefault(msg, 7, ""),
     batchTx: msg.getBatchTx_asB64(),
-    batchTxFeeRateSatPerKw: jspb.Message.getFieldWithDefault(msg, 8, 0)
+    batchTxFeeRateSatPerKw: jspb.Message.getFieldWithDefault(msg, 8, 0),
+    creationTimestampNs: jspb.Message.getFieldWithDefault(msg, 9, 0),
+    matchedMarketsMap: (f = msg.getMatchedMarketsMap()) ? f.toObject(includeInstance, proto.poolrpc.MatchedMarketSnapshot.toObject) : []
   };
 
   if (includeInstance) {
@@ -12598,6 +13112,16 @@ proto.poolrpc.BatchSnapshotResponse.deserializeBinaryFromReader = function(msg, 
     case 8:
       var value = /** @type {number} */ (reader.readUint64());
       msg.setBatchTxFeeRateSatPerKw(value);
+      break;
+    case 9:
+      var value = /** @type {number} */ (reader.readUint64());
+      msg.setCreationTimestampNs(value);
+      break;
+    case 10:
+      var value = msg.getMatchedMarketsMap();
+      reader.readMessage(value, function(message, reader) {
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readUint32, jspb.BinaryReader.prototype.readMessage, proto.poolrpc.MatchedMarketSnapshot.deserializeBinaryFromReader);
+         });
       break;
     default:
       reader.skipField();
@@ -12684,6 +13208,17 @@ proto.poolrpc.BatchSnapshotResponse.serializeBinaryToWriter = function(message, 
       8,
       f
     );
+  }
+  f = message.getCreationTimestampNs();
+  if (f !== 0) {
+    writer.writeUint64(
+      9,
+      f
+    );
+  }
+  f = message.getMatchedMarketsMap(true);
+  if (f && f.getLength() > 0) {
+    f.serializeBinary(10, writer, jspb.BinaryWriter.prototype.writeUint32, jspb.BinaryWriter.prototype.writeMessage, proto.poolrpc.MatchedMarketSnapshot.serializeBinaryToWriter);
   }
 };
 
@@ -12893,6 +13428,39 @@ proto.poolrpc.BatchSnapshotResponse.prototype.getBatchTxFeeRateSatPerKw = functi
 /** @param {number} value */
 proto.poolrpc.BatchSnapshotResponse.prototype.setBatchTxFeeRateSatPerKw = function(value) {
   jspb.Message.setField(this, 8, value);
+};
+
+
+/**
+ * optional uint64 creation_timestamp_ns = 9;
+ * @return {number}
+ */
+proto.poolrpc.BatchSnapshotResponse.prototype.getCreationTimestampNs = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 9, 0));
+};
+
+
+/** @param {number} value */
+proto.poolrpc.BatchSnapshotResponse.prototype.setCreationTimestampNs = function(value) {
+  jspb.Message.setField(this, 9, value);
+};
+
+
+/**
+ * map<uint32, MatchedMarketSnapshot> matched_markets = 10;
+ * @param {boolean=} opt_noLazyCreate Do not create the map if
+ * empty, instead returning `undefined`
+ * @return {!jspb.Map<number,!proto.poolrpc.MatchedMarketSnapshot>}
+ */
+proto.poolrpc.BatchSnapshotResponse.prototype.getMatchedMarketsMap = function(opt_noLazyCreate) {
+  return /** @type {!jspb.Map<number,!proto.poolrpc.MatchedMarketSnapshot>} */ (
+      jspb.Message.getMapField(this, 10, opt_noLazyCreate,
+      proto.poolrpc.MatchedMarketSnapshot));
+};
+
+
+proto.poolrpc.BatchSnapshotResponse.prototype.clearMatchedMarketsMap = function() {
+  this.getMatchedMarketsMap().clear();
 };
 
 
@@ -13444,6 +14012,367 @@ proto.poolrpc.ServerNodeRatingResponse.prototype.clearNodeRatingsList = function
 };
 
 
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.BatchSnapshotsRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.BatchSnapshotsRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.poolrpc.BatchSnapshotsRequest.displayName = 'proto.poolrpc.BatchSnapshotsRequest';
+}
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.poolrpc.BatchSnapshotsRequest.prototype.toObject = function(opt_includeInstance) {
+  return proto.poolrpc.BatchSnapshotsRequest.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.poolrpc.BatchSnapshotsRequest} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.poolrpc.BatchSnapshotsRequest.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    startBatchId: msg.getStartBatchId_asB64(),
+    numBatchesBack: jspb.Message.getFieldWithDefault(msg, 2, 0)
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.poolrpc.BatchSnapshotsRequest}
+ */
+proto.poolrpc.BatchSnapshotsRequest.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.poolrpc.BatchSnapshotsRequest;
+  return proto.poolrpc.BatchSnapshotsRequest.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.poolrpc.BatchSnapshotsRequest} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.poolrpc.BatchSnapshotsRequest}
+ */
+proto.poolrpc.BatchSnapshotsRequest.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setStartBatchId(value);
+      break;
+    case 2:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setNumBatchesBack(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.poolrpc.BatchSnapshotsRequest.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.poolrpc.BatchSnapshotsRequest.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.poolrpc.BatchSnapshotsRequest} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.poolrpc.BatchSnapshotsRequest.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getStartBatchId_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      1,
+      f
+    );
+  }
+  f = message.getNumBatchesBack();
+  if (f !== 0) {
+    writer.writeUint32(
+      2,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional bytes start_batch_id = 1;
+ * @return {!(string|Uint8Array)}
+ */
+proto.poolrpc.BatchSnapshotsRequest.prototype.getStartBatchId = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+};
+
+
+/**
+ * optional bytes start_batch_id = 1;
+ * This is a type-conversion wrapper around `getStartBatchId()`
+ * @return {string}
+ */
+proto.poolrpc.BatchSnapshotsRequest.prototype.getStartBatchId_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getStartBatchId()));
+};
+
+
+/**
+ * optional bytes start_batch_id = 1;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getStartBatchId()`
+ * @return {!Uint8Array}
+ */
+proto.poolrpc.BatchSnapshotsRequest.prototype.getStartBatchId_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getStartBatchId()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.poolrpc.BatchSnapshotsRequest.prototype.setStartBatchId = function(value) {
+  jspb.Message.setField(this, 1, value);
+};
+
+
+/**
+ * optional uint32 num_batches_back = 2;
+ * @return {number}
+ */
+proto.poolrpc.BatchSnapshotsRequest.prototype.getNumBatchesBack = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
+};
+
+
+/** @param {number} value */
+proto.poolrpc.BatchSnapshotsRequest.prototype.setNumBatchesBack = function(value) {
+  jspb.Message.setField(this, 2, value);
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.BatchSnapshotsResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.BatchSnapshotsResponse.repeatedFields_, null);
+};
+goog.inherits(proto.poolrpc.BatchSnapshotsResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.poolrpc.BatchSnapshotsResponse.displayName = 'proto.poolrpc.BatchSnapshotsResponse';
+}
+/**
+ * List of repeated fields within this message type.
+ * @private {!Array<number>}
+ * @const
+ */
+proto.poolrpc.BatchSnapshotsResponse.repeatedFields_ = [1];
+
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.poolrpc.BatchSnapshotsResponse.prototype.toObject = function(opt_includeInstance) {
+  return proto.poolrpc.BatchSnapshotsResponse.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.poolrpc.BatchSnapshotsResponse} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.poolrpc.BatchSnapshotsResponse.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    batchesList: jspb.Message.toObjectList(msg.getBatchesList(),
+    proto.poolrpc.BatchSnapshotResponse.toObject, includeInstance)
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.poolrpc.BatchSnapshotsResponse}
+ */
+proto.poolrpc.BatchSnapshotsResponse.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.poolrpc.BatchSnapshotsResponse;
+  return proto.poolrpc.BatchSnapshotsResponse.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.poolrpc.BatchSnapshotsResponse} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.poolrpc.BatchSnapshotsResponse}
+ */
+proto.poolrpc.BatchSnapshotsResponse.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = new proto.poolrpc.BatchSnapshotResponse;
+      reader.readMessage(value,proto.poolrpc.BatchSnapshotResponse.deserializeBinaryFromReader);
+      msg.addBatches(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.poolrpc.BatchSnapshotsResponse.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.poolrpc.BatchSnapshotsResponse.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.poolrpc.BatchSnapshotsResponse} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.poolrpc.BatchSnapshotsResponse.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getBatchesList();
+  if (f.length > 0) {
+    writer.writeRepeatedMessage(
+      1,
+      f,
+      proto.poolrpc.BatchSnapshotResponse.serializeBinaryToWriter
+    );
+  }
+};
+
+
+/**
+ * repeated BatchSnapshotResponse batches = 1;
+ * @return {!Array.<!proto.poolrpc.BatchSnapshotResponse>}
+ */
+proto.poolrpc.BatchSnapshotsResponse.prototype.getBatchesList = function() {
+  return /** @type{!Array.<!proto.poolrpc.BatchSnapshotResponse>} */ (
+    jspb.Message.getRepeatedWrapperField(this, proto.poolrpc.BatchSnapshotResponse, 1));
+};
+
+
+/** @param {!Array.<!proto.poolrpc.BatchSnapshotResponse>} value */
+proto.poolrpc.BatchSnapshotsResponse.prototype.setBatchesList = function(value) {
+  jspb.Message.setRepeatedWrapperField(this, 1, value);
+};
+
+
+/**
+ * @param {!proto.poolrpc.BatchSnapshotResponse=} opt_value
+ * @param {number=} opt_index
+ * @return {!proto.poolrpc.BatchSnapshotResponse}
+ */
+proto.poolrpc.BatchSnapshotsResponse.prototype.addBatches = function(opt_value, opt_index) {
+  return jspb.Message.addToRepeatedWrapperField(this, 1, opt_value, proto.poolrpc.BatchSnapshotResponse, opt_index);
+};
+
+
+proto.poolrpc.BatchSnapshotsResponse.prototype.clearBatchesList = function() {
+  this.setBatchesList([]);
+};
+
+
 /**
  * @enum {number}
  */
@@ -13484,6 +14413,16 @@ proto.poolrpc.OrderState = {
   ORDER_CANCELED: 4,
   ORDER_EXPIRED: 5,
   ORDER_FAILED: 6
+};
+
+/**
+ * @enum {number}
+ */
+proto.poolrpc.DurationBucketState = {
+  NO_MARKET: 0,
+  MARKET_CLOSED: 1,
+  ACCEPTING_ORDERS: 2,
+  MARKET_OPEN: 3
 };
 
 goog.object.extend(exports, proto.poolrpc);

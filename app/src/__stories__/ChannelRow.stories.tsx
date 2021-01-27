@@ -34,64 +34,64 @@ const renderStory = (
 
 export const Good = () => {
   const store = useStore();
-  const channel = new Channel(store, lndListChannels.channelsList[0]);
+  const channel = Channel.create(store, lndListChannels.channelsList[0]);
   return renderStory(channel, { ratio: 0.3 });
 };
 
 export const Warn = () => {
   const store = useStore();
-  const channel = new Channel(store, lndListChannels.channelsList[1]);
+  const channel = Channel.create(store, lndListChannels.channelsList[1]);
   return renderStory(channel, { ratio: 0.5 });
 };
 
 export const Bad = () => {
   const store = useStore();
-  const channel = new Channel(store, lndListChannels.channelsList[2]);
+  const channel = Channel.create(store, lndListChannels.channelsList[2]);
   return renderStory(channel, { ratio: 0.91 });
 };
 
 export const Inactive = () => {
   const store = useStore();
-  const channel = new Channel(store, lndListChannels.channelsList[3]);
+  const channel = Channel.create(store, lndListChannels.channelsList[3]);
   channel.active = false;
   return renderStory(channel);
 };
 
 export const Editable = () => {
   const store = useStore();
-  const channel = new Channel(store, lndListChannels.channelsList[4]);
-  store.buildSwapStore.startSwap();
+  const channel = Channel.create(store, lndListChannels.channelsList[4]);
+  store.buildSwapView.startSwap();
   return renderStory(channel);
 };
 
 export const Selected = () => {
   const store = useStore();
-  const channel = new Channel(store, lndListChannels.channelsList[5]);
-  store.buildSwapStore.startSwap();
-  store.buildSwapStore.toggleSelectedChannel(channel.chanId);
+  const channel = Channel.create(store, lndListChannels.channelsList[5]);
+  store.buildSwapView.startSwap();
+  store.buildSwapView.toggleSelectedChannel(channel.chanId);
   return renderStory(channel);
 };
 
 export const Disabled = () => {
   const store = useStore();
-  const channel = new Channel(store, lndListChannels.channelsList[6]);
-  store.buildSwapStore.startSwap();
-  store.buildSwapStore.toggleSelectedChannel(channel.chanId);
-  store.buildSwapStore.setDirection(SwapDirection.OUT);
+  const channel = Channel.create(store, lndListChannels.channelsList[6]);
+  store.buildSwapView.startSwap();
+  store.buildSwapView.toggleSelectedChannel(channel.chanId);
+  store.buildSwapView.setDirection(SwapDirection.OUT);
   return renderStory(channel);
 };
 
 export const Dimmed = () => {
   const store = useStore();
-  const channel = new Channel(store, lndListChannels.channelsList[6]);
-  store.buildSwapStore.startSwap();
-  store.buildSwapStore.setDirection(SwapDirection.OUT);
+  const channel = Channel.create(store, lndListChannels.channelsList[6]);
+  store.buildSwapView.startSwap();
+  store.buildSwapView.setDirection(SwapDirection.OUT);
   return renderStory(channel);
 };
 
 export const LoopingIn = () => {
   const store = useStore();
-  const channel = new Channel(store, lndListChannels.channelsList[0]);
+  const channel = Channel.create(store, lndListChannels.channelsList[0]);
   const swap = store.swapStore.sortedSwaps[0];
   swap.type = SwapType.LOOP_IN;
   swap.state = SwapState.INITIATED;
@@ -101,7 +101,7 @@ export const LoopingIn = () => {
 
 export const LoopingOut = () => {
   const store = useStore();
-  const channel = new Channel(store, lndListChannels.channelsList[0]);
+  const channel = Channel.create(store, lndListChannels.channelsList[0]);
   const swap = store.swapStore.sortedSwaps[0];
   swap.type = SwapType.LOOP_OUT;
   swap.state = SwapState.INITIATED;
@@ -111,7 +111,7 @@ export const LoopingOut = () => {
 
 export const LoopingInAndOut = () => {
   const store = useStore();
-  const channel = new Channel(store, lndListChannels.channelsList[0]);
+  const channel = Channel.create(store, lndListChannels.channelsList[0]);
   const swap1 = store.swapStore.sortedSwaps[0];
   swap1.type = SwapType.LOOP_IN;
   swap1.state = SwapState.INITIATED;

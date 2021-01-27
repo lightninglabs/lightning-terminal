@@ -1,4 +1,4 @@
-import { ellipseInside } from 'util/strings';
+import { ellipseInside, extractDomain } from 'util/strings';
 
 describe('strings util', () => {
   describe('ellipseInside', () => {
@@ -27,6 +27,22 @@ describe('strings util', () => {
       expect(ellipseInside((undefined as unknown) as string)).toBeUndefined();
       expect(ellipseInside((null as unknown) as string)).toBeNull();
       expect(ellipseInside('')).toEqual('');
+    });
+  });
+
+  describe('extractDomain', () => {
+    it.each<[string, string]>([
+      ['test1.com', 'http://test1.com/blah/{txid}'],
+      ['test2.com', 'https://test2.com/blah/{txid}'],
+      ['test3.com', 'test3.com/{txid}'],
+    ])('should extract %s from %s', (domain, url) => {
+      expect(extractDomain(url)).toEqual(domain);
+    });
+
+    it('should handle invalid urls', () => {
+      expect(extractDomain('')).toEqual('');
+      expect(extractDomain(1 as any)).toEqual('1');
+      expect(extractDomain(undefined as any)).toEqual('undefined');
     });
   });
 });

@@ -59,6 +59,15 @@ type TraderDepositAccount = {
   readonly responseType: typeof trader_pb.DepositAccountResponse;
 };
 
+type TraderRenewAccount = {
+  readonly methodName: string;
+  readonly service: typeof Trader;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof trader_pb.RenewAccountRequest;
+  readonly responseType: typeof trader_pb.RenewAccountResponse;
+};
+
 type TraderBumpAccountFee = {
   readonly methodName: string;
   readonly service: typeof Trader;
@@ -167,6 +176,15 @@ type TraderNodeRatings = {
   readonly responseType: typeof trader_pb.NodeRatingResponse;
 };
 
+type TraderBatchSnapshots = {
+  readonly methodName: string;
+  readonly service: typeof Trader;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof auctioneer_pb.BatchSnapshotsRequest;
+  readonly responseType: typeof auctioneer_pb.BatchSnapshotsResponse;
+};
+
 export class Trader {
   static readonly serviceName: string;
   static readonly QuoteAccount: TraderQuoteAccount;
@@ -175,6 +193,7 @@ export class Trader {
   static readonly CloseAccount: TraderCloseAccount;
   static readonly WithdrawAccount: TraderWithdrawAccount;
   static readonly DepositAccount: TraderDepositAccount;
+  static readonly RenewAccount: TraderRenewAccount;
   static readonly BumpAccountFee: TraderBumpAccountFee;
   static readonly RecoverAccounts: TraderRecoverAccounts;
   static readonly SubmitOrder: TraderSubmitOrder;
@@ -187,6 +206,7 @@ export class Trader {
   static readonly GetLsatTokens: TraderGetLsatTokens;
   static readonly Leases: TraderLeases;
   static readonly NodeRatings: TraderNodeRatings;
+  static readonly BatchSnapshots: TraderBatchSnapshots;
 }
 
 export type ServiceError = { message: string, code: number; metadata: grpc.Metadata }
@@ -275,6 +295,15 @@ export class TraderClient {
     requestMessage: trader_pb.DepositAccountRequest,
     callback: (error: ServiceError|null, responseMessage: trader_pb.DepositAccountResponse|null) => void
   ): UnaryResponse;
+  renewAccount(
+    requestMessage: trader_pb.RenewAccountRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: trader_pb.RenewAccountResponse|null) => void
+  ): UnaryResponse;
+  renewAccount(
+    requestMessage: trader_pb.RenewAccountRequest,
+    callback: (error: ServiceError|null, responseMessage: trader_pb.RenewAccountResponse|null) => void
+  ): UnaryResponse;
   bumpAccountFee(
     requestMessage: trader_pb.BumpAccountFeeRequest,
     metadata: grpc.Metadata,
@@ -382,6 +411,15 @@ export class TraderClient {
   nodeRatings(
     requestMessage: trader_pb.NodeRatingRequest,
     callback: (error: ServiceError|null, responseMessage: trader_pb.NodeRatingResponse|null) => void
+  ): UnaryResponse;
+  batchSnapshots(
+    requestMessage: auctioneer_pb.BatchSnapshotsRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: auctioneer_pb.BatchSnapshotsResponse|null) => void
+  ): UnaryResponse;
+  batchSnapshots(
+    requestMessage: auctioneer_pb.BatchSnapshotsRequest,
+    callback: (error: ServiceError|null, responseMessage: auctioneer_pb.BatchSnapshotsResponse|null) => void
   ): UnaryResponse;
 }
 

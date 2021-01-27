@@ -1,27 +1,33 @@
-import { action, observable, toJS } from 'mobx';
+import { makeAutoObservable, observable, toJS } from 'mobx';
 import { SwapState } from 'types/generated/loop_pb';
 import { Alert } from 'types/state';
 import { AuthenticationError } from 'util/errors';
 import { prefixTranslation } from 'util/translate';
 import { Store } from 'store';
 
-const { l } = prefixTranslation('stores.uiStore');
+const { l } = prefixTranslation('stores.appView');
 
-type SettingName = '' | 'unit' | 'balance';
+type SettingName = '' | 'unit' | 'balance' | 'explorers';
 
-export default class UiStore {
+export default class AppView {
   private _store: Store;
 
   /** indicates if the Processing Loops section is displayed on the Loop page */
-  @observable processingSwapsVisible = false;
+  processingSwapsVisible = false;
   /** indicates if the tour is visible */
-  @observable tourVisible = false;
-  @observable tourActiveStep = 0;
+  tourVisible = false;
+  tourActiveStep = 0;
   /** a collection of alerts to display as toasts */
-  @observable alerts = observable.map<number, Alert>();
+  alerts = observable.map<number, Alert>();
 
   constructor(store: Store) {
+    makeAutoObservable(this, {}, { deep: false, autoBind: true });
+
     this._store = store;
+  }
+
+  get fullWidth() {
+    return this._store.router.location.pathname === '/pool';
   }
 
   /** navigate to the specified route */
@@ -32,14 +38,12 @@ export default class UiStore {
   }
 
   /** Change to the Auth page */
-  @action.bound
   gotoAuth() {
     this.goTo('/');
     this._store.log.info('Go to the Auth page');
   }
 
   /** Change to the Loop page */
-  @action.bound
   goToLoop() {
     this.goTo('/loop');
     this._store.settingsStore.autoCollapseSidebar();
@@ -51,15 +55,21 @@ export default class UiStore {
   }
 
   /** Change to the History page */
-  @action.bound
   goToHistory() {
     this.goTo('/history');
     this._store.settingsStore.autoCollapseSidebar();
     this._store.log.info('Go to the History page');
   }
 
-  /** Change to the History page */
-  @action.bound
+  /** Change to the Pool page */
+  goToPool() {
+    this.goTo('/pool');
+    // always collapse the sidebar to make room for the Pool sidebar
+    this._store.settingsStore.sidebarVisible = false;
+    this._store.log.info('Go to the Pool page');
+  }
+
+  /** Change to the Settings page */
   goToSettings() {
     this.goTo('/settings');
     this._store.settingsStore.autoCollapseSidebar();
@@ -67,7 +77,6 @@ export default class UiStore {
   }
 
   /** Toggle displaying of the Processing Loops section */
-  @action.bound
   toggleProcessingSwaps() {
     this.processingSwapsVisible = !this.processingSwapsVisible;
     if (!this.processingSwapsVisible) {
@@ -76,15 +85,13 @@ export default class UiStore {
   }
 
   /** Display the tour */
-  @action.bound
   showTour() {
     this.tourVisible = true;
     this.tourActiveStep = 0;
-    this._store.buildSwapStore.cancel();
+    this._store.buildSwapView.cancel();
   }
 
   /** Close the tour and switch back to using real data */
-  @action.bound
   closeTour() {
     this.tourVisible = false;
     if (this._store.api.lnd._grpc.useSampleData) {
@@ -102,7 +109,6 @@ export default class UiStore {
   }
 
   /** set the current step in the tour */
-  @action.bound
   setTourActiveStep(step: number) {
     this.tourActiveStep = step;
 
@@ -147,7 +153,6 @@ export default class UiStore {
   }
 
   /** Go to the next step in the tour */
-  @action.bound
   tourGoToNext() {
     if (this.tourVisible) {
       this.tourActiveStep = this.tourActiveStep + 1;
@@ -155,7 +160,6 @@ export default class UiStore {
   }
 
   /** sets the selected setting to display */
-  @action.bound
   showSettings(name: SettingName) {
     const path = name === '' ? '' : `/${name}`;
     this.goTo(`/settings${path}`);
@@ -163,7 +167,6 @@ export default class UiStore {
   }
 
   /** adds a alert to the store */
-  @action.bound
   notify(message: string, title?: string, type: Alert['type'] = 'error') {
     const alert: Alert = { id: Date.now(), type, message, title };
     if (type === 'success') alert.ms = 3000;
@@ -177,14 +180,12 @@ export default class UiStore {
   }
 
   /** removes an existing alert */
-  @action.bound
   clearAlert(id: number) {
     this.alerts.delete(id);
     this._store.log.info('Cleared alert', id, toJS(this.alerts));
   }
 
   /** handle errors by showing a notification and/or the auth screen */
-  @action.bound
   handleError(error: Error, title?: string) {
     if (error instanceof AuthenticationError) {
       // this will automatically redirect to the auth page

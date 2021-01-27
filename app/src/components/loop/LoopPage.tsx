@@ -19,7 +19,7 @@ const Styled = {
 
 const LoopPage: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.LoopPage');
-  const { uiStore, buildSwapStore, channelStore, nodeStore } = useStore();
+  const { appView, buildSwapView, channelStore, nodeStore } = useStore();
 
   const title = (
     <>
@@ -35,15 +35,15 @@ const LoopPage: React.FC = () => {
   const { PageWrap } = Styled;
   return (
     <PageWrap>
-      {uiStore.processingSwapsVisible ? (
+      {appView.processingSwapsVisible ? (
         <ProcessingSwaps />
-      ) : buildSwapStore.showWizard ? (
+      ) : buildSwapView.showWizard ? (
         <SwapWizard />
       ) : (
         <>
           <PageHeader
             title={title}
-            onHelpClick={uiStore.showTour}
+            onHelpClick={appView.showTour}
             onExportClick={channelStore.exportChannels}
           />
           <LoopTiles />

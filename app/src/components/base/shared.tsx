@@ -6,7 +6,7 @@ import { styled } from 'components/theme';
 //
 
 export const Background = styled.div<{ gradient?: boolean }>`
-  min-height: 100vh;
+  height: 100%;
   color: ${props => props.theme.colors.white};
   background: ${props =>
     props.gradient ? props.theme.colors.gradient : props.theme.colors.blue};
@@ -25,11 +25,12 @@ export const Pill = styled.span`
   border-radius: 40px;
 `;
 
-export const Badge = styled.span`
+export const Badge = styled.span<{ muted?: boolean }>`
   display: inline-block;
   margin-left: 10px;
   font-family: ${props => props.theme.fonts.open.light};
   font-size: ${props => props.theme.sizes.xxs};
+  font-weight: 700;
   color: ${props => props.theme.colors.pink};
   border: 1px solid ${props => props.theme.colors.pink};
   border-radius: 4px;
@@ -37,6 +38,41 @@ export const Badge = styled.span`
   text-transform: lowercase;
   line-height: 1;
   letter-spacing: 1.8px;
+
+  ${props =>
+    props.muted &&
+    `
+    color: ${props.theme.colors.gray};
+    border: 1px solid ${props.theme.colors.gray};
+
+  `}
+`;
+
+export const Section = styled.section`
+  padding: 15px;
+  background-color: ${props => props.theme.colors.overlay};
+  border: 1px solid ${props => props.theme.colors.blue};
+  border-radius: 5px;
+`;
+
+export const SummaryItem = styled.div<{ strong?: boolean }>`
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  line-height: 1.2;
+  font-size: ${props => props.theme.sizes.xs};
+  font-weight: ${props => (props.strong ? 'bold' : 'normal')};
+`;
+
+export const Empty = styled.div`
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: ${props => props.theme.sizes.xs};
+  color: ${props => props.theme.colors.gray};
 `;
 
 //
@@ -45,16 +81,18 @@ export const Badge = styled.span`
 
 interface ButtonProps {
   primary?: boolean;
+  danger?: boolean;
   ghost?: boolean;
   borderless?: boolean;
   disabled?: boolean;
+  compact?: boolean;
 }
 
 export const Button = styled.button<ButtonProps>`
   font-family: ${props => props.theme.fonts.work.medium};
   font-size: ${props => props.theme.sizes.s};
-  min-width: 120px;
-  height: 44px;
+  min-width: ${props => (props.compact ? '0' : '120px')};
+  height: ${props => (props.compact ? 'auto' : '44px')};
   padding-left: 15px;
   padding-right: 15px;
   text-align: center;
@@ -98,6 +136,17 @@ export const Button = styled.button<ButtonProps>`
     props.borderless &&
     `
     border-width: 0;
+  `}
+
+  ${props =>
+    props.danger &&
+    `
+    border: 1px solid ${props.theme.colors.pink};
+    &:hover {
+      color: ${props.theme.colors.blue};
+      text-decoration: none;
+      background-color: ${props.theme.colors.pink};
+    }
   `}
 
   ${props =>
@@ -286,5 +335,29 @@ export const RangeInput = styled.input`
   &::-ms-fill-upper {
     background-color: ${props => props.theme.colors.pink};
     border-radius: 2px;
+  }
+`;
+
+export const Scrollable = styled.div`
+  flex: 1 1 auto;
+  height: 0px;
+  overflow: auto;
+
+  // use consistent scrollbars across different platforms
+  &::-webkit-scrollbar {
+    width: 8px;
+    background-color: rgba(0, 0, 0, 0);
+    border-radius: 10px;
+  }
+  &::-webkit-scrollbar:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  &::-webkit-scrollbar-thumb:vertical {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+  }
+  &::-webkit-scrollbar-thumb:vertical:active {
+    background-color: rgba(255, 255, 255, 0.6);
+    border-radius: 10px;
   }
 `;

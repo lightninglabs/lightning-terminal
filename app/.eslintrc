@@ -24,6 +24,7 @@
     "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/explicit-member-accessibility": "off",
     "@typescript-eslint/no-explicit-any": 0,
-    "@typescript-eslint/explicit-module-boundary-types": "off"
+    "@typescript-eslint/explicit-module-boundary-types": "off",
+    "prettier/prettier": ["error", { "endOfLine": "auto" }]
   }
 }

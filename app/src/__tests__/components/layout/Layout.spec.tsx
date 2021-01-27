@@ -7,7 +7,7 @@ import Layout from 'components/layout/Layout';
 describe('Layout component', () => {
   const render = () => {
     const store = createStore();
-    store.uiStore.goToLoop();
+    store.appView.goToLoop();
     return renderWithProviders(<Layout />, store);
   };
 
@@ -39,6 +39,17 @@ describe('Layout component', () => {
     fireEvent.click(getByText('History'));
     expect(store.router.location.pathname).toBe('/history');
     expect(getByText('History').parentElement).toHaveClass('active');
+    fireEvent.click(getByText('Lightning Terminal'));
+    expect(store.router.location.pathname).toBe('/loop');
+    expect(getByText('Lightning Terminal').parentElement).toHaveClass('active');
+  });
+
+  it('should navigate to the Pool page', () => {
+    const { getByText, store } = render();
+    expect(store.router.location.pathname).toBe('/loop');
+    fireEvent.click(getByText('Lightning Pool'));
+    expect(store.router.location.pathname).toBe('/pool');
+    expect(getByText('Lightning Pool').parentElement).toHaveClass('active');
     fireEvent.click(getByText('Lightning Terminal'));
     expect(store.router.location.pathname).toBe('/loop');
     expect(getByText('Lightning Terminal').parentElement).toHaveClass('active');

@@ -1,14 +1,15 @@
 import { values } from 'mobx';
 import { AuthenticationError } from 'util/errors';
-import { createStore, Store, UiStore } from 'store';
+import { createStore, Store } from 'store';
+import { AppView } from 'store/views';
 
-describe('UiStore', () => {
+describe('AppView', () => {
   let rootStore: Store;
-  let store: UiStore;
+  let store: AppView;
 
   beforeEach(() => {
     rootStore = createStore();
-    store = rootStore.uiStore;
+    store = rootStore.appView;
   });
 
   it('should add an alert', async () => {

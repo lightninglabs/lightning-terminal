@@ -1,10 +1,15 @@
+import { ReactComponent as AlertTriangleIcon } from 'assets/icons/alert-triangle.svg';
+import { ReactComponent as ArrowDownCircleIcon } from 'assets/icons/arrow-down-circle.svg';
 import { ReactComponent as ArrowDownIcon } from 'assets/icons/arrow-down.svg';
 import { ReactComponent as ArrowLeftIcon } from 'assets/icons/arrow-left.svg';
 import { ReactComponent as ArrowRightIcon } from 'assets/icons/arrow-right.svg';
+import { ReactComponent as ArrowUpCircleIcon } from 'assets/icons/arrow-up-circle.svg';
 import { ReactComponent as ArrowUpIcon } from 'assets/icons/arrow-up.svg';
 import { ReactComponent as BitcoinIcon } from 'assets/icons/bitcoin.svg';
 import { ReactComponent as BoltIcon } from 'assets/icons/bolt.svg';
 import { ReactComponent as CheckIcon } from 'assets/icons/check.svg';
+import { ReactComponent as ChevronDownIcon } from 'assets/icons/chevron-down.svg';
+import { ReactComponent as ChevronUpIcon } from 'assets/icons/chevron-up.svg';
 import { ReactComponent as ChevronsLeftIcon } from 'assets/icons/chevrons-left.svg';
 import { ReactComponent as ChevronsRightIcon } from 'assets/icons/chevrons-right.svg';
 import { ReactComponent as ChevronsIcon } from 'assets/icons/chevrons.svg';
@@ -20,6 +25,9 @@ import { ReactComponent as MinimizeIcon } from 'assets/icons/minimize.svg';
 import { ReactComponent as RefreshIcon } from 'assets/icons/refresh-cw.svg';
 import { ReactComponent as SettingsIcon } from 'assets/icons/settings.svg';
 import { ReactComponent as CancelIcon } from 'assets/icons/slash.svg';
+import { ReactComponent as UserPlusIcon } from 'assets/icons/user-plus.svg';
+import { ReactComponent as BarChartIcon } from 'assets/icons/bar-chart.svg';
+import { ReactComponent as ListIcon } from 'assets/icons/list.svg';
 import { styled } from 'components/theme';
 
 interface IconProps {
@@ -72,16 +80,21 @@ const Icon = styled.span<IconProps>`
     `}
 `;
 
+export const AlertTriangle = Icon.withComponent(AlertTriangleIcon);
 export const ArrowLeft = Icon.withComponent(ArrowLeftIcon);
 export const ArrowRight = Icon.withComponent(ArrowRightIcon);
 export const ArrowUp = Icon.withComponent(ArrowUpIcon);
 export const ArrowDown = Icon.withComponent(ArrowDownIcon);
+export const ArrowUpCircle = Icon.withComponent(ArrowUpCircleIcon);
+export const ArrowDownCircle = Icon.withComponent(ArrowDownCircleIcon);
 export const Cancel = Icon.withComponent(CancelIcon);
 export const Clock = Icon.withComponent(ClockIcon);
 export const Download = Icon.withComponent(DownloadIcon);
 export const Bolt = Icon.withComponent(BoltIcon);
 export const Bitcoin = Icon.withComponent(BitcoinIcon);
 export const Check = Icon.withComponent(CheckIcon);
+export const ChevronDown = Icon.withComponent(ChevronDownIcon);
+export const ChevronUp = Icon.withComponent(ChevronUpIcon);
 export const Chevrons = Icon.withComponent(ChevronsIcon);
 export const ChevronsLeft = Icon.withComponent(ChevronsLeftIcon);
 export const ChevronsRight = Icon.withComponent(ChevronsRightIcon);
@@ -94,3 +107,6 @@ export const Minimize = Icon.withComponent(MinimizeIcon);
 export const Maximize = Icon.withComponent(MaximizeIcon);
 export const Refresh = Icon.withComponent(RefreshIcon);
 export const Settings = Icon.withComponent(SettingsIcon);
+export const UserPlus = Icon.withComponent(UserPlusIcon);
+export const BarChart = Icon.withComponent(BarChartIcon);
+export const List = Icon.withComponent(ListIcon);

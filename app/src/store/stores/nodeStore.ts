@@ -1,4 +1,4 @@
-import { action, computed, observable, runInAction, toJS } from 'mobx';
+import { makeAutoObservable, runInAction, toJS } from 'mobx';
 import { Transaction } from 'types/generated/lnd_pb';
 import Big from 'big.js';
 import copyToClipboard from 'copy-to-clipboard';
@@ -19,29 +19,33 @@ export default class NodeStore {
   private _knownTxns: string[] = [];
 
   /** the pubkey of the LND node */
-  @observable pubkey = '';
+  pubkey = '';
   /** the alias of the LND node */
-  @observable alias = '';
+  alias = '';
   /** the url of the LND node */
-  @observable url = '';
+  url = '';
   /** the chain that the LND node is connected to */
-  @observable chain: NodeChain = 'bitcoin';
+  chain: NodeChain = 'bitcoin';
   /** the network that the LND node is connected to */
-  @observable network: NodeNetwork = 'mainnet';
+  network: NodeNetwork = 'mainnet';
   /** the channel and wallet balances */
-  @observable wallet: Wallet = new Wallet();
+  wallet: Wallet = new Wallet();
+  /** the current block height */
+  blockHeight = 0;
 
   constructor(store: Store) {
+    makeAutoObservable(this, {}, { deep: false, autoBind: true });
+
     this._store = store;
   }
 
   /** the pubkey shortened to 12 chars with ellipses inside */
-  @computed get pubkeyLabel() {
+  get pubkeyLabel() {
     return ellipseInside(this.pubkey);
   }
 
   /** the url with the pubkey shortened to 12 chars with ellipses inside */
-  @computed get urlLabel() {
+  get urlLabel() {
     if (!this.url) return '';
 
     const [pubkey, host] = this.url.split('@');
@@ -53,24 +57,23 @@ export default class NodeStore {
   /**
    * Copies the value specified by the key to the user's clipboard
    */
-  @action.bound
   copy(key: 'pubkey' | 'alias' | 'url') {
     copyToClipboard(this[key]);
     const msg = `Copied ${key} to clipboard`;
-    this._store.uiStore.notify(msg, '', 'success');
+    this._store.appView.notify(msg, '', 'success');
   }
 
   /**
    * fetch wallet balances from the LND RPC
    */
-  @action.bound
   async fetchInfo() {
     this._store.log.info('fetching node info');
     try {
       const info = await this._store.api.lnd.getInfo();
-      runInAction('getInfoContinuation', () => {
+      runInAction(() => {
         this.pubkey = info.identityPubkey;
         this.alias = info.alias;
+        this.blockHeight = info.blockHeight;
         if (info.chainsList && info.chainsList[0]) {
           this.chain = info.chainsList[0].chain as NodeChain;
           this.network = info.chainsList[0].network as NodeNetwork;
@@ -81,26 +84,26 @@ export default class NodeStore {
         this._store.log.info('updated nodeStore info', toJS(this));
       });
     } catch (error) {
-      this._store.uiStore.handleError(error, 'Unable to fetch node info');
+      this._store.appView.handleError(error, 'Unable to fetch node info');
     }
   }
 
   /**
    * fetch wallet balances from the LND RPC
    */
-  @action.bound
   async fetchBalances() {
     this._store.log.info('fetching node balances');
     try {
       const offChain = await this._store.api.lnd.channelBalance();
       const onChain = await this._store.api.lnd.walletBalance();
-      runInAction('fetchBalancesContinuation', () => {
+      runInAction(() => {
         this.wallet.channelBalance = Big(offChain.balance);
         this.wallet.walletBalance = Big(onChain.totalBalance);
+        this.wallet.confirmedBalance = Big(onChain.confirmedBalance);
         this._store.log.info('updated nodeStore.wallet', toJS(this.wallet));
       });
     } catch (error) {
-      this._store.uiStore.handleError(error, 'Unable to fetch balances');
+      this._store.appView.handleError(error, 'Unable to fetch balances');
     }
   }
 
@@ -110,12 +113,15 @@ export default class NodeStore {
   /**
    * updates the wallet balance from the transaction provided
    */
-  @action.bound
   onTransaction(transaction: Transaction.AsObject) {
     this._store.log.info('handle incoming transaction', transaction);
-    if (this._knownTxns.includes(transaction.txHash)) return;
-    this._knownTxns.push(transaction.txHash);
-    this.wallet.walletBalance = this.wallet.walletBalance.plus(transaction.amount);
-    this._store.log.info('updated nodeStore.wallet', toJS(this.wallet));
+    if (!this._knownTxns.includes(transaction.txHash)) {
+      this._knownTxns.push(transaction.txHash);
+      this.wallet.walletBalance = this.wallet.walletBalance.plus(transaction.amount);
+      this._store.log.info('updated nodeStore.wallet', toJS(this.wallet));
+    }
+
+    // fetch Pool accounts whenever there is an onchain txn
+    this._store.accountStore.fetchAccountsThrottled();
   }
 }

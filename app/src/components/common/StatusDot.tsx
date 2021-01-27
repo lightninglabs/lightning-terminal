@@ -21,11 +21,13 @@ const Styled = {
 
 interface Props {
   status: 'success' | 'warn' | 'error' | 'idle';
+  className?: string;
 }
 
-const StatusDot: React.FC<Props> = ({ status }) => {
+const StatusDot: React.FC<Props> = ({ status, className }) => {
   const { DotIcon } = Styled;
-  return <DotIcon size="small" className={status} aria-label={status} />;
+  const cn = `${status} ${className || ''}`;
+  return <DotIcon size="small" className={cn} aria-label={status} />;
 };
 
 export default StatusDot;

@@ -1,4 +1,4 @@
-import { observable, ObservableMap, values } from 'mobx';
+import { observable, ObservableMap, runInAction, values } from 'mobx';
 import * as LND from 'types/generated/lnd_pb';
 import { grpc } from '@improbable-eng/grpc-web';
 import { waitFor } from '@testing-library/react';
@@ -47,11 +47,36 @@ describe('ChannelStore', () => {
       if (desc.methodName === 'ListChannels') throw new Error('test-err');
       return undefined as any;
     });
-    expect(rootStore.uiStore.alerts.size).toBe(0);
+    expect(rootStore.appView.alerts.size).toBe(0);
     await store.fetchChannels();
     await waitFor(() => {
-      expect(rootStore.uiStore.alerts.size).toBe(1);
-      expect(values(rootStore.uiStore.alerts)[0].message).toBe('test-err');
+      expect(rootStore.appView.alerts.size).toBe(1);
+      expect(values(rootStore.appView.alerts)[0].message).toBe('test-err');
+    });
+  });
+
+  it('should fetch list of pending channels', async () => {
+    expect(store.pendingChannels.size).toEqual(0);
+    await store.fetchPendingChannels();
+    expect(store.pendingChannels.size).toEqual(4);
+    runInAction(() => {
+      store.sortedPendingChannels[0].channelPoint = 'asdf';
+    });
+    await store.fetchPendingChannels();
+    expect(store.sortedPendingChannels[0].channelPoint).not.toBe('asdf');
+    expect(store.pendingChannels.size).toEqual(4);
+  });
+
+  it('should handle errors fetching channels', async () => {
+    grpcMock.unary.mockImplementationOnce(desc => {
+      if (desc.methodName === 'PendingChannels') throw new Error('test-err');
+      return undefined as any;
+    });
+    expect(rootStore.appView.alerts.size).toBe(0);
+    await store.fetchPendingChannels();
+    await waitFor(() => {
+      expect(rootStore.appView.alerts.size).toBe(1);
+      expect(values(rootStore.appView.alerts)[0].message).toBe('test-err');
     });
   });
 
@@ -148,7 +173,7 @@ describe('ChannelStore', () => {
       .spyOn(window.sessionStorage.__proto__, 'getItem')
       .mockReturnValue(JSON.stringify(cache));
 
-    const channel = new Channel(rootStore, lndChannel);
+    const channel = Channel.create(rootStore, lndChannel);
     store.channels = observable.map({
       [channel.chanId]: channel,
     });
@@ -180,7 +205,7 @@ describe('ChannelStore', () => {
       .spyOn(window.sessionStorage.__proto__, 'getItem')
       .mockReturnValue(JSON.stringify(cache));
 
-    const channel = new Channel(rootStore, lndChannel);
+    const channel = Channel.create(rootStore, lndChannel);
     store.channels = observable.map({
       [channel.chanId]: channel,
     });
@@ -196,6 +221,7 @@ describe('ChannelStore', () => {
       CLOSED_CHANNEL,
       ACTIVE_CHANNEL,
       INACTIVE_CHANNEL,
+      PENDING_OPEN_CHANNEL,
     } = LND.ChannelEventUpdate.UpdateType;
 
     beforeEach(async () => {
@@ -235,6 +261,13 @@ describe('ChannelStore', () => {
       expect(store.channels.get(chanId)).toBeDefined();
       store.onChannelEvent(event);
       expect(store.channels.get(chanId)).toBeUndefined();
+    });
+
+    it('should handle pending open channel event', async () => {
+      const event = { ...lndChannelEvent, type: PENDING_OPEN_CHANNEL };
+      store.pendingChannels.clear();
+      expect(store.pendingChannels.size).toBe(0);
+      expect(() => store.onChannelEvent(event)).not.toThrow();
     });
 
     it('should do nothing for unknown channel event type', async () => {

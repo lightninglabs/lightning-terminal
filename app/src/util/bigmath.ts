@@ -16,3 +16,30 @@ export const percentage = (portion: Big, whole: Big, decimals = 0): number => {
   const roundDown = 0;
   return +portion.mul(100).div(whole).round(decimals, roundDown);
 };
+
+/**
+ * Converts a number to a percentage with two decimal places
+ * @param value the decimal value to convert
+ */
+export const toPercent = (value: number) => Math.round(value * 100 * 100) / 100;
+
+/**
+ * Converts a number to basis points, excluding the decimal places
+ * @param value the decimal value to convert
+ */
+export const toBasisPoints = (value: number) => Math.round(toPercent(value) * 100);
+
+/**
+ * Calculates the annual percentage rate. Returned as a decimal, not a percentage
+ * @param principal the total principal amount being loaned
+ * @param premium the premium being paid for the loan
+ * @param termInDays the term of the loan in days
+ */
+export const annualPercentRate = (
+  principal: number,
+  premium: number,
+  termInDays: number,
+) => {
+  const apr = (premium / principal / termInDays) * 365;
+  return apr;
+};

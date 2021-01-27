@@ -11,7 +11,7 @@ export default {
 };
 
 const getChannel = (store: Store, ratio: number) => {
-  const channel = new Channel(store, lndChannel);
+  const channel = Channel.create(store, lndChannel);
   channel.localBalance = channel.capacity.mul(ratio);
   channel.remoteBalance = channel.capacity.mul(1 - ratio);
   return channel;

@@ -20,30 +20,32 @@ describe('Tip component', () => {
   it('should display a tooltip on hover', async () => {
     const { getByText } = render();
     fireEvent.mouseEnter(getByText('test content'));
-    expect(getByText('test tip')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(getByText('test tip')).toBeInTheDocument();
+    });
   });
 
   it('should display a tooltip on bottom', async () => {
-    const { getByText, container } = render('bottom');
+    const { getByText } = render('bottom');
     fireEvent.mouseEnter(getByText('test content'));
-    waitFor(() => {
-      expect(container.querySelector('.rc-tooltip-placement-bottom')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(getByText('test tip')).toBeInTheDocument();
     });
   });
 
   it('should display a tooltip on left', async () => {
-    const { getByText, container } = render('left');
+    const { getByText } = render('left');
     fireEvent.mouseEnter(getByText('test content'));
-    waitFor(() => {
-      expect(container.querySelector('.rc-tooltip-placement-left')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(getByText('test tip')).toBeInTheDocument();
     });
   });
 
   it('should display a tooltip on right', async () => {
-    const { getByText, container } = render('right');
+    const { getByText } = render('right');
     fireEvent.mouseEnter(getByText('test content'));
-    waitFor(() => {
-      expect(container.querySelector('.rc-tooltip-placement-right')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(getByText('test tip')).toBeInTheDocument();
     });
   });
 });

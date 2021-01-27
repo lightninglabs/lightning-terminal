@@ -7,6 +7,7 @@ import { Layout } from 'components/layout';
 const LazyAuthPage = React.lazy(() => import('components/auth/AuthPage'));
 const LazyLoopPage = React.lazy(() => import('components/loop/LoopPage'));
 const LazyHistoryPage = React.lazy(() => import('components/history/HistoryPage'));
+const LazyPoolPage = React.lazy(() => import('components/pool/PoolPage'));
 const LazySettingsPage = React.lazy(() => import('components/settings/SettingsPage'));
 
 const Routes: React.FC = () => {
@@ -23,6 +24,7 @@ const Routes: React.FC = () => {
                 <Suspense fallback={<Loading delay={500} />}>
                   <Route path="/loop" component={LazyLoopPage} />
                   <Route path="/history" component={LazyHistoryPage} />
+                  <Route path="/pool" component={LazyPoolPage} />
                   <Route path="/settings" component={LazySettingsPage} />
                 </Suspense>
               </Switch>

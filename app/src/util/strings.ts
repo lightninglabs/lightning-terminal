@@ -24,3 +24,32 @@ export const ellipseInside = (
   const lastChars = text.substring(text.length - rightCharsToKeep);
   return `${firstChars}...${lastChars}`;
 };
+
+/**
+ * Extracts the domain name from a full url
+ */
+export const extractDomain = (url: string): string => {
+  const domainRegex = /^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n\?\=]+)/im;
+  const match = `${url}`.match(domainRegex);
+  if (match) return match[1];
+  return '';
+};
+
+/**
+ * converts a base64 string into hex format
+ */
+export const hex = (value: string | Uint8Array, reverse = false): string => {
+  if (!value) return value;
+  let converted = Buffer.from(value.toString(), 'base64');
+  if (reverse) converted = converted.reverse();
+  return converted.toString('hex');
+};
+
+/**
+ * converts a hex string into base64 format
+ */
+export const b64 = (value: string, reverse = false): string => {
+  let converted = Buffer.from(value, 'hex');
+  if (reverse) converted = converted.reverse();
+  return converted.toString('base64');
+};

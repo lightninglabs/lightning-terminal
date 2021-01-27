@@ -4,7 +4,12 @@ module.exports = function (app) {
   app.use(
     '/',
     createProxyMiddleware(
-      ['/lnrpc.Lightning', '/looprpc.SwapClient', '/frdrpc.FaradayServer'],
+      [
+        '/lnrpc.Lightning',
+        '/looprpc.SwapClient',
+        '/poolrpc.Trader',
+        '/frdrpc.FaradayServer',
+      ],
       {
         target: 'https://localhost:8443',
         ws: true,

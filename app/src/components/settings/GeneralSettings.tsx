@@ -2,6 +2,7 @@ import React, { useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { formatUnit } from 'util/formatters';
+import { extractDomain } from 'util/strings';
 import { useStore } from 'store';
 import { HeaderFour } from 'components/base';
 import PageHeader from 'components/common/PageHeader';
@@ -17,10 +18,11 @@ const Styled = {
 
 const GeneralSettings: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.settings.GeneralSettings');
-  const { uiStore, settingsStore, nodeStore } = useStore();
+  const { appView, settingsStore, nodeStore } = useStore();
 
-  const handleUnit = useCallback(() => uiStore.showSettings('unit'), [uiStore]);
-  const handleBalance = useCallback(() => uiStore.showSettings('balance'), [uiStore]);
+  const handleUnit = useCallback(() => appView.showSettings('unit'), [appView]);
+  const handleBalance = useCallback(() => appView.showSettings('balance'), [appView]);
+  const handleExplorers = useCallback(() => appView.showSettings('explorers'), [appView]);
   const handleCopyPubkey = useCallback(() => nodeStore.copy('pubkey'), [nodeStore]);
   const handleCopyAlias = useCallback(() => nodeStore.copy('alias'), [nodeStore]);
   const handleCopyUrl = useCallback(() => nodeStore.copy('url'), [nodeStore]);
@@ -43,6 +45,21 @@ const GeneralSettings: React.FC = () => {
             mode: l(`enums.BalanceMode.${settingsStore.balanceMode}`),
           })}
           onClick={handleBalance}
+          icon="arrow"
+        />
+      </Content>
+      <Content>
+        <HeaderFour>{l('explorers')}</HeaderFour>
+        <SettingItem
+          name={l('bitcoinTx')}
+          value={extractDomain(settingsStore.bitcoinTxUrl)}
+          onClick={handleExplorers}
+          icon="arrow"
+        />
+        <SettingItem
+          name={l('lightningNode')}
+          value={extractDomain(settingsStore.lnNodeUrl)}
+          onClick={handleExplorers}
           icon="arrow"
         />
       </Content>

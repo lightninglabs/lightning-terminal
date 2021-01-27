@@ -1,7 +1,8 @@
 import React from 'react';
 import { Router } from 'react-router';
-import { render } from '@testing-library/react';
+import { fireEvent, render } from '@testing-library/react';
 import { createStore, Store, StoreProvider } from 'store';
+import AlertContainer from 'components/common/AlertContainer';
 import { ThemeProvider } from 'components/theme';
 
 /**
@@ -16,10 +17,22 @@ const renderWithProviders = (component: React.ReactElement, withStore?: Store) =
     <StoreProvider store={store}>
       <ThemeProvider>
         <Router history={store.router.history}>{component}</Router>
+        <AlertContainer />
       </ThemeProvider>
     </StoreProvider>,
   );
-  return { ...result, store };
+
+  const changeInput = (label: string, value: string) => {
+    fireEvent.change(result.getByLabelText(label), { target: { value } });
+  };
+
+  const changeSelect = async (label: string, value: string) => {
+    // rc-select adds labels to multiple dom elements. we want the second one
+    fireEvent.mouseDown(result.getAllByLabelText(label)[1]);
+    fireEvent.click(await result.findByText(value));
+  };
+
+  return { ...result, store, changeInput, changeSelect };
 };
 
 export default renderWithProviders;

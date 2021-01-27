@@ -6,29 +6,30 @@ import Big from 'big.js';
 import { BalanceMode } from 'util/constants';
 import { injectIntoGrpcUnary } from 'util/tests';
 import { lndChannel, loopInTerms, loopOutTerms } from 'util/tests/sampleData';
-import { BuildSwapStore, createStore, Store } from 'store';
+import { createStore, Store } from 'store';
 import { Channel } from 'store/models';
-import { SWAP_ABORT_DELAY } from 'store/stores/buildSwapStore';
+import { BuildSwapView } from 'store/views';
+import { SWAP_ABORT_DELAY } from 'store/views/buildSwapView';
 
 const grpcMock = grpc as jest.Mocked<typeof grpc>;
 
-describe('BuildSwapStore', () => {
+describe('BuildSwapView', () => {
   let rootStore: Store;
-  let store: BuildSwapStore;
+  let store: BuildSwapView;
 
   beforeEach(async () => {
     rootStore = createStore();
     await rootStore.fetchAllData();
-    store = rootStore.buildSwapStore;
+    store = rootStore.buildSwapView;
   });
 
   it('should not start a swap if there are no channels', async () => {
     rootStore.channelStore.channels.clear();
     expect(store.currentStep).toBe(BuildSwapSteps.Closed);
-    expect(rootStore.uiStore.alerts.size).toBe(0);
+    expect(rootStore.appView.alerts.size).toBe(0);
     await store.startSwap();
     expect(store.currentStep).toBe(BuildSwapSteps.Closed);
-    expect(rootStore.uiStore.alerts.size).toBe(1);
+    expect(rootStore.appView.alerts.size).toBe(1);
   });
 
   it('should toggle the selected channels', () => {
@@ -96,11 +97,11 @@ describe('BuildSwapStore', () => {
       if (desc.methodName === 'GetLoopInTerms') throw new Error('test-err');
       return undefined as any;
     });
-    expect(rootStore.uiStore.alerts.size).toBe(0);
+    expect(rootStore.appView.alerts.size).toBe(0);
     await store.getTerms();
     await waitFor(() => {
-      expect(rootStore.uiStore.alerts.size).toBe(1);
-      expect(values(rootStore.uiStore.alerts)[0].message).toBe('test-err');
+      expect(rootStore.appView.alerts.size).toBe(1);
+      expect(values(rootStore.appView.alerts)[0].message).toBe('test-err');
     });
   });
 
@@ -224,11 +225,11 @@ describe('BuildSwapStore', () => {
     });
     store.setDirection(SwapDirection.OUT);
     store.setAmount(Big(600));
-    expect(rootStore.uiStore.alerts.size).toBe(0);
+    expect(rootStore.appView.alerts.size).toBe(0);
     await store.getQuote();
     await waitFor(() => {
-      expect(rootStore.uiStore.alerts.size).toBe(1);
-      expect(values(rootStore.uiStore.alerts)[0].message).toBe('test-err');
+      expect(rootStore.appView.alerts.size).toBe(1);
+      expect(values(rootStore.appView.alerts)[0].message).toBe('test-err');
     });
   });
 
@@ -322,11 +323,11 @@ describe('BuildSwapStore', () => {
     });
     store.setDirection(SwapDirection.IN);
     store.setAmount(Big(600));
-    expect(rootStore.uiStore.alerts.size).toBe(0);
+    expect(rootStore.appView.alerts.size).toBe(0);
     store.requestSwap();
     await waitFor(() => {
-      expect(rootStore.uiStore.alerts.size).toBe(1);
-      expect(values(rootStore.uiStore.alerts)[0].message).toBe('test-err');
+      expect(rootStore.appView.alerts.size).toBe(1);
+      expect(values(rootStore.appView.alerts)[0].message).toBe('test-err');
     });
   });
 
@@ -370,7 +371,7 @@ describe('BuildSwapStore', () => {
     const addChannel = (capacity: number, localBalance: number) => {
       const remoteBalance = capacity - localBalance;
       const lndChan = { ...lndChannel, capacity, localBalance, remoteBalance };
-      const channel = new Channel(rootStore, lndChan);
+      const channel = Channel.create(rootStore, lndChan);
       channel.chanId = `${channel.chanId}${rootStore.channelStore.channels.size}`;
       channel.remotePubkey = `${channel.remotePubkey}${rootStore.channelStore.channels.size}`;
       rootStore.channelStore.channels.set(channel.chanId, channel);

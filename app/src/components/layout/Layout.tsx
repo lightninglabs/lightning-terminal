@@ -7,14 +7,15 @@ import Sidebar from './Sidebar';
 
 interface CollapsedProps {
   collapsed: boolean;
+  fullWidth?: boolean;
 }
 
 const Styled = {
-  Container: styled.div`
+  Container: styled.div<{ fullWidth: boolean }>`
     position: relative;
-    min-height: 100vh;
-    max-width: 1440px;
-    width: 100%;
+    height: 100%;
+    max-width: ${props => (props.fullWidth ? '100%' : '1440px')};
+    width: ${props => (props.fullWidth ? '100%' : '100%')};
     margin: 0 auto;
   `,
   Hamburger: styled.span<CollapsedProps>`
@@ -35,7 +36,7 @@ const Styled = {
   Aside: styled.aside<CollapsedProps>`
     position: fixed;
     top: 0;
-    height: 100vh;
+    height: 100%;
     z-index: 1;
     background-color: ${props => props.theme.colors.darkBlue};
     overflow: hidden;
@@ -51,23 +52,27 @@ const Styled = {
     }
   `,
   Content: styled.div<CollapsedProps>`
-    margin-left: ${props => (props.collapsed ? '0' : '285px')};
-    padding: 0 15px;
-    transition: all 0.2s;
+    height: 100%;
+    margin-left: ${props => (props.collapsed || props.fullWidth ? '0' : '285px')};
+    padding: ${props => (props.fullWidth ? '0' : '0 15px')};
+    transition: ${props => (props.fullWidth ? '0' : 'all 0.2s')};
 
     @media (max-width: 1200px) {
       margin-left: 0;
     }
   `,
+  Fluid: styled.div`
+    height: 100%;
+  `,
 };
 
 export const Layout: React.FC = ({ children }) => {
-  const { settingsStore } = useStore();
+  const { settingsStore, appView } = useStore();
 
-  const { Container, Hamburger, Aside, Content } = Styled;
+  const { Container, Hamburger, Aside, Content, Fluid } = Styled;
   return (
     <Background>
-      <Container>
+      <Container fullWidth={appView.fullWidth}>
         <Hamburger
           collapsed={!settingsStore.sidebarVisible}
           onClick={settingsStore.toggleSidebar}
@@ -77,8 +82,8 @@ export const Layout: React.FC = ({ children }) => {
         <Aside collapsed={!settingsStore.sidebarVisible}>
           <Sidebar />
         </Aside>
-        <Content collapsed={!settingsStore.sidebarVisible}>
-          <div className="container-fluid">{children}</div>
+        <Content collapsed={!settingsStore.sidebarVisible} fullWidth={appView.fullWidth}>
+          <Fluid className="container-fluid">{children}</Fluid>
         </Content>
       </Container>
     </Background>

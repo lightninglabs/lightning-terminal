@@ -2,6 +2,7 @@ import * as LOOP from 'types/generated/loop_pb';
 import { SwapClient } from 'types/generated/loop_pb_service';
 import { Quote } from 'types/state';
 import Big from 'big.js';
+import { b64 } from 'util/strings';
 import BaseApi from './base';
 import GrpcClient from './grpc';
 
@@ -92,7 +93,7 @@ class LoopApi extends BaseApi<LoopEvents> {
     req.setMaxSwapFee(+quote.swapFee);
     req.setMaxMinerFee(+quote.minerFee);
     req.setInitiator(LOOP_INITIATOR);
-    if (lastHop) req.setLastHop(Buffer.from(lastHop, 'hex').toString('base64'));
+    if (lastHop) req.setLastHop(b64(lastHop));
     if (confTarget) req.setHtlcConfTarget(confTarget);
     const res = await this._grpc.request(SwapClient.LoopIn, req, this._meta);
     return res.toObject();

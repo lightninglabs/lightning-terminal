@@ -5,6 +5,7 @@ import { useStore } from 'store';
 import { Channel } from 'store/models';
 import { Cancel, Column, HeaderFour, Row } from 'components/base';
 import Checkbox from 'components/common/Checkbox';
+import ExternalLink from 'components/common/ExternalLink';
 import SortableHeader from 'components/common/SortableHeader';
 import Tip from 'components/common/Tip';
 import Unit from 'components/common/Unit';
@@ -171,15 +172,15 @@ interface Props {
 }
 
 const ChannelRow: React.FC<Props> = ({ channel, style }) => {
-  const { buildSwapStore } = useStore();
+  const { buildSwapView } = useStore();
 
-  const editable = buildSwapStore.listEditable;
-  const disabled = buildSwapStore.showWizard;
-  const checked = buildSwapStore.selectedChanIds.includes(channel.chanId);
+  const editable = buildSwapView.listEditable;
+  const disabled = buildSwapView.showWizard;
+  const checked = buildSwapView.selectedChanIds.includes(channel.chanId);
   const dimmed = editable && disabled && !checked;
 
   const handleRowChecked = () => {
-    buildSwapStore.toggleSelectedChannel(channel.chanId);
+    buildSwapView.toggleSelectedChannel(channel.chanId);
   };
 
   const { Row, Column, ActionColumn, WideColumn, StatusIcon, Check, Balance } = Styled;
@@ -220,7 +221,9 @@ const ChannelRow: React.FC<Props> = ({ channel, style }) => {
           placement="left"
           capitalize={false}
         >
-          <span>{channel.aliasLabel}</span>
+          <span>
+            <ExternalLink href={channel.remoteNodeUrl}>{channel.aliasLabel}</ExternalLink>
+          </span>
         </Tip>
       </WideColumn>
       <Column right>

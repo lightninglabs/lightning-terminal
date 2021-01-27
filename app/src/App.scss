@@ -14,43 +14,44 @@
 @import '../node_modules/bootstrap/scss/grid';
 @import '../node_modules/bootstrap/scss/custom-forms';
 
-// rc-tooltip component styles
+// react-component component styles
 @import '../node_modules/rc-tooltip/assets/bootstrap_white.css';
+@import './assets/styles/rc-select.scss';
 
 // react-toastify styles
 @import '../node_modules/react-toastify/dist/ReactToastify.css';
 
 @font-face {
   font-family: 'OpenSans Light';
-  src: url('/fonts/OpenSans-Light.ttf') format('truetype');
+  src: url('./assets/fonts/OpenSans-Light.ttf') format('truetype');
   font-style: normal;
   font-weight: 300;
   font-display: swap;
 }
 @font-face {
   font-family: 'OpenSans Regular';
-  src: url('/fonts/OpenSans-Regular.ttf') format('truetype');
+  src: url('./assets/fonts/OpenSans-Regular.ttf') format('truetype');
   font-style: normal;
   font-weight: 400;
   font-display: swap;
 }
 @font-face {
   font-family: 'OpenSans SemiBold';
-  src: url('/fonts/OpenSans-SemiBold.ttf') format('truetype');
+  src: url('./assets/fonts/OpenSans-SemiBold.ttf') format('truetype');
   font-style: normal;
   font-weight: 600;
   font-display: swap;
 }
 @font-face {
   font-family: 'OpenSans Bold';
-  src: url('/fonts/OpenSans-Bold.ttf') format('truetype');
+  src: url('./assets/fonts/OpenSans-Bold.ttf') format('truetype');
   font-style: normal;
   font-weight: 700;
   font-display: swap;
 }
 @font-face {
   font-family: 'OpenSans ExtraBold';
-  src: url('/fonts/OpenSans-ExtraBold.ttf') format('truetype');
+  src: url('./assets/fonts/OpenSans-ExtraBold.ttf') format('truetype');
   font-style: normal;
   font-weight: 800;
   font-display: swap;
@@ -58,21 +59,21 @@
 
 @font-face {
   font-family: 'WorkSans Light';
-  src: url('/fonts/WorkSans-Light.ttf') format('truetype');
+  src: url('./assets/fonts/WorkSans-Light.ttf') format('truetype');
   font-style: normal;
   font-weight: 300;
   font-display: swap;
 }
 @font-face {
   font-family: 'WorkSans Medium';
-  src: url('/fonts/WorkSans-Medium.ttf') format('truetype');
+  src: url('./assets/fonts/WorkSans-Medium.ttf') format('truetype');
   font-style: normal;
   font-weight: 500;
   font-display: swap;
 }
 @font-face {
   font-family: 'WorkSans SemiBold';
-  src: url('/fonts/WorkSans-SemiBold.ttf') format('truetype');
+  src: url('./assets/fonts/WorkSans-SemiBold.ttf') format('truetype');
   font-style: normal;
   font-weight: 600;
   font-display: swap;
@@ -81,7 +82,7 @@
 html,
 body,
 #root {
-  min-height: 100vh;
+  background-color: #252f4a;
   width: 100%;
   min-width: 1024px;
 }

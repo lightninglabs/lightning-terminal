@@ -1,15 +1,20 @@
 import {
-  action,
-  computed,
+  makeAutoObservable,
   observable,
   ObservableMap,
   runInAction,
   toJS,
   values,
 } from 'mobx';
-import { ChannelEventUpdate, ChannelPoint } from 'types/generated/lnd_pb';
+import {
+  ChannelEventUpdate,
+  ChannelPoint,
+  PendingChannelsResponse,
+} from 'types/generated/lnd_pb';
+import { ChannelStatus } from 'types/state';
 import Big from 'big.js';
 import debounce from 'lodash/debounce';
+import { hex } from 'util/strings';
 import { Store } from 'store';
 import { Channel } from '../models';
 
@@ -18,22 +23,28 @@ const {
   CLOSED_CHANNEL,
   ACTIVE_CHANNEL,
   INACTIVE_CHANNEL,
+  PENDING_OPEN_CHANNEL,
 } = ChannelEventUpdate.UpdateType;
 
 export default class ChannelStore {
   private _store: Store;
 
-  /** the collection of channels */
-  @observable channels: ObservableMap<string, Channel> = observable.map();
+  /** the collection of open channels mapped by chanId */
+  channels: ObservableMap<string, Channel> = observable.map();
+
+  /** the collection of pending channels mapped by channelPoint */
+  pendingChannels: ObservableMap<string, Channel> = observable.map();
 
   constructor(store: Store) {
+    makeAutoObservable(this, {}, { deep: false, autoBind: true });
+
     this._store = store;
   }
 
   /**
-   * an array of channels sorted by balance percent descending
+   * an array of channels sorted
    */
-  @computed get sortedChannels() {
+  get sortedChannels() {
     const { field, descending } = this._store.settingsStore.channelSort;
     const channels = values(this.channels)
       .slice()
@@ -42,16 +53,27 @@ export default class ChannelStore {
   }
 
   /**
+   * an array of pending channels sorted
+   */
+  get sortedPendingChannels() {
+    const { field, descending } = this._store.settingsStore.channelSort;
+    const channels = values(this.pendingChannels)
+      .slice()
+      .sort((a, b) => Channel.compare(a, b, field));
+    return descending ? channels.reverse() : channels;
+  }
+
+  /**
    * an array of channels that are currently active
    */
-  @computed get activeChannels() {
+  get activeChannels() {
     return this.sortedChannels.filter(c => c.active);
   }
 
   /**
    * the sum of remote balance for all channels
    */
-  @computed get totalInbound() {
+  get totalInbound() {
     return this.sortedChannels.reduce(
       (sum, chan) => sum.plus(chan.remoteBalance),
       Big(0),
@@ -61,7 +83,7 @@ export default class ChannelStore {
   /**
    * the sum of local balance for all channels
    */
-  @computed get totalOutbound() {
+  get totalOutbound() {
     return this.sortedChannels.reduce((sum, chan) => sum.plus(chan.localBalance), Big(0));
   }
 
@@ -69,13 +91,12 @@ export default class ChannelStore {
    * queries the LND api to fetch the list of channels and stores them
    * in the state
    */
-  @action.bound
   async fetchChannels() {
     this._store.log.info('fetching channels');
 
     try {
       const { channelsList } = await this._store.api.lnd.listChannels();
-      runInAction('fetchChannelsContinuation', () => {
+      runInAction(() => {
         channelsList.forEach(lndChan => {
           // update existing channels or create new ones in state. using this
           // approach instead of overwriting the array will cause fewer state
@@ -84,24 +105,26 @@ export default class ChannelStore {
           if (existing) {
             existing.update(lndChan);
           } else {
-            this.channels.set(lndChan.chanId, new Channel(this._store, lndChan));
+            this.channels.set(lndChan.chanId, Channel.create(this._store, lndChan));
           }
         });
         // remove any channels in state that are not in the API response
         const serverIds = channelsList.map(c => c.chanId);
-        const localIds = Object.keys(this.channels);
+        const localIds = this.sortedChannels.map(c => c.chanId);
         localIds
           .filter(id => !serverIds.includes(id))
           .forEach(id => this.channels.delete(id));
 
         this._store.log.info('updated channelStore.channels', toJS(this.channels));
+        // fetch the pending channels
+        this.fetchPendingChannels();
         // fetch the aliases for each of the channels
         this.fetchAliases();
         // fetch the remote fee rates for each of the channels
         this.fetchFeeRates();
       });
     } catch (error) {
-      this._store.uiStore.handleError(error, 'Unable to fetch Channels');
+      this._store.appView.handleError(error, 'Unable to fetch Channels');
     }
   }
 
@@ -109,10 +132,64 @@ export default class ChannelStore {
   fetchChannelsThrottled = debounce(this.fetchChannels, 2000);
 
   /**
+   * queries the LND api to fetch the list of pending channels and stores
+   * them in the state
+   */
+  async fetchPendingChannels() {
+    this._store.log.info('fetching pending channels');
+
+    try {
+      const {
+        pendingOpenChannelsList: opening,
+        pendingClosingChannelsList: closing,
+        waitingCloseChannelsList: waitingClose,
+        pendingForceClosingChannelsList: forceClosing,
+      } = await this._store.api.lnd.pendingChannels();
+      runInAction(() => {
+        const mapPending = (status: ChannelStatus) => (c: any) => ({
+          pendingChannel: c.channel as PendingChannelsResponse.PendingChannel.AsObject,
+          status,
+        });
+        // convert all of the pending channels into mobx Channel objects
+        const pending = [
+          ...opening.map(mapPending(ChannelStatus.OPENING)),
+          ...closing.map(mapPending(ChannelStatus.CLOSING)),
+          ...waitingClose.map(mapPending(ChannelStatus.WAITING_TO_CLOSE)),
+          ...forceClosing.map(mapPending(ChannelStatus.FORCE_CLOSING)),
+        ];
+        pending.forEach(({ status, pendingChannel }) => {
+          // update existing channels or create new ones in state. using this
+          // approach instead of overwriting the array will cause fewer state
+          // mutations, resulting in better react rendering performance
+          const existing = this.pendingChannels.get(pendingChannel.channelPoint);
+          if (existing) {
+            existing.updatePending(status, pendingChannel);
+          } else {
+            const channel = Channel.createPending(this._store, status, pendingChannel);
+            this.pendingChannels.set(channel.chanId, channel);
+          }
+        });
+        // remove any pending channels in state that are not in the API response
+        const serverIds = pending.map(c => c.pendingChannel.channelPoint);
+        const localIds = this.sortedPendingChannels.map(c => c.channelPoint);
+        localIds
+          .filter(id => !serverIds.includes(id))
+          .forEach(id => this.pendingChannels.delete(id));
+
+        this._store.log.info('updated channelStore.channels', toJS(this.pendingChannels));
+      });
+    } catch (error) {
+      this._store.appView.handleError(error, 'Unable to fetch Pending Channels');
+    }
+  }
+
+  /** fetch channels at most once every 2 seconds when using this func  */
+  fetchPendingChannelsThrottled = debounce(this.fetchPendingChannels, 2000);
+
+  /**
    * queries the LND api to fetch the aliases for all of the peers we have
    * channels opened with
    */
-  @action.bound
   async fetchAliases() {
     const aliases = await this._store.storage.getCached<string>({
       cacheKey: 'aliases',
@@ -131,7 +208,7 @@ export default class ChannelStore {
       },
     });
 
-    runInAction('fetchAliasesContinuation', () => {
+    runInAction(() => {
       // set the alias on each channel in the store
       values(this.channels).forEach(c => {
         const alias = aliases[c.remotePubkey];
@@ -147,7 +224,6 @@ export default class ChannelStore {
    * queries the LND api to fetch the fees for all of the peers we have
    * channels opened with
    */
-  @action.bound
   async fetchFeeRates() {
     const feeRates = await this._store.storage.getCached<number>({
       cacheKey: 'feeRates',
@@ -171,7 +247,7 @@ export default class ChannelStore {
       },
     });
 
-    runInAction('fetchFeesContinuation', () => {
+    runInAction(() => {
       // set the fee on each channel in the store
       values(this.channels).forEach(c => {
         const rate = feeRates[c.chanId];
@@ -184,7 +260,6 @@ export default class ChannelStore {
   }
 
   /** update the channel list based on events from the API */
-  @action.bound
   onChannelEvent(event: ChannelEventUpdate.AsObject) {
     this._store.log.info('handle incoming channel event', event);
     if (event.type === INACTIVE_CHANNEL && event.inactiveChannel) {
@@ -213,19 +288,28 @@ export default class ChannelStore {
       this._store.nodeStore.fetchBalancesThrottled();
     } else if (event.type === OPEN_CHANNEL && event.openChannel) {
       // add the new opened channel
-      const channel = new Channel(this._store, event.openChannel);
+      const channel = Channel.create(this._store, event.openChannel);
       this.channels.set(channel.chanId, channel);
       this._store.log.info('added new open channel', toJS(channel));
       this._store.nodeStore.fetchBalancesThrottled();
+      // update the pending channels list to remove any pending
+      this.fetchPendingChannelsThrottled();
       // fetch the alias for the added channel
       this.fetchAliases();
       // fetch the remote fee rates for the added channel
       this.fetchFeeRates();
+    } else if (event.type === PENDING_OPEN_CHANNEL && event.pendingOpenChannel) {
+      // add or update the pending channels by fetching the full list from the
+      // API, since the event doesn't contain the channel data
+      this.fetchPendingChannelsThrottled();
+      // fetch orders, leases, & latest batch whenever a channel is opened
+      this._store.orderStore.fetchOrdersThrottled();
+      this._store.orderStore.fetchLeasesThrottled();
+      this._store.batchStore.fetchLatestBatchThrottled();
     }
   }
 
   /** exports the sorted list of channels to CSV file */
-  @action.bound
   exportChannels() {
     this._store.log.info('exporting Channels to a CSV file');
     this._store.csv.export('channels', Channel.csvColumns, toJS(this.sortedChannels));
@@ -234,7 +318,7 @@ export default class ChannelStore {
   /** converts a base64 encoded channel point to a hex encoded channel point */
   private _channelPointToString(channelPoint: ChannelPoint.AsObject) {
     const txidBytes = channelPoint.fundingTxidBytes as string;
-    const txid = Buffer.from(txidBytes, 'base64').reverse().toString('hex');
+    const txid = hex(txidBytes, true);
     return `${txid}:${channelPoint.outputIndex}`;
   }
 }

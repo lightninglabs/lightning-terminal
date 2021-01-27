@@ -1,7 +1,8 @@
 import React from 'react';
+import { runInAction } from 'mobx';
 import { SwapState, SwapType } from 'types/generated/loop_pb';
 import { SwapDirection } from 'types/state';
-import { fireEvent } from '@testing-library/react';
+import { fireEvent, waitFor } from '@testing-library/react';
 import { formatSats } from 'util/formatters';
 import { renderWithProviders } from 'util/tests';
 import { createStore, Store } from 'store';
@@ -15,7 +16,7 @@ describe('ChannelRow component', () => {
   beforeEach(async () => {
     store = createStore();
     await store.fetchAllData();
-    channel = new Channel(store, {
+    channel = Channel.create(store, {
       chanId: '150633093070848',
       remotePubkey: '02ac59099da6d4bd818e6a81098f5d54580b7c3aa8255c707fa0f95ca89b02cb8c',
       capacity: 15000000,
@@ -50,12 +51,16 @@ describe('ChannelRow component', () => {
     expect(getByText(channel.uptime.toString())).toBeInTheDocument();
   });
 
-  it('should display the fee rate', () => {
+  it('should display the fee rate', async () => {
     const { getByText } = render();
-    channel.remoteFeeRate = 500;
+    runInAction(() => {
+      channel.remoteFeeRate = 500;
+    });
     expect(getByText(channel.remoteFeePct)).toBeInTheDocument();
     fireEvent.mouseEnter(getByText(channel.remoteFeePct));
-    expect(getByText(`${channel.remoteFeeRate} ppm`)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(getByText(`${channel.remoteFeeRate} ppm`)).toBeInTheDocument();
+    });
   });
 
   it('should display the peer pubkey or alias', () => {
@@ -63,13 +68,19 @@ describe('ChannelRow component', () => {
     expect(getByText(channel.aliasLabel)).toBeInTheDocument();
   });
 
-  it('should display the peer pubkey & alias tooltip', () => {
+  it('should display the peer pubkey & alias tooltip', async () => {
     const { getByText, getAllByText } = render();
-    channel.alias = 'test-alias';
+    runInAction(() => {
+      channel.alias = 'test-alias';
+    });
     fireEvent.mouseEnter(getByText(channel.aliasLabel));
-    expect(getByText(channel.remotePubkey)).toBeInTheDocument();
-    expect(getAllByText(channel.alias)).toHaveLength(2);
-    channel.alias = channel.remotePubkey.substring(12);
+    await waitFor(() => {
+      expect(getByText(channel.remotePubkey)).toBeInTheDocument();
+    });
+    expect(getAllByText(channel.alias as string)).toHaveLength(2);
+    runInAction(() => {
+      channel.alias = channel.remotePubkey.substring(12);
+    });
     expect(getByText(channel.remotePubkey)).toBeInTheDocument();
   });
 
@@ -101,44 +112,44 @@ describe('ChannelRow component', () => {
   });
 
   it('should display a checkbox when it is editable', () => {
-    store.buildSwapStore.startSwap();
+    store.buildSwapView.startSwap();
     const { getByRole } = render();
     expect(getByRole('checkbox')).toBeInTheDocument();
     expect(getByRole('checkbox')).toHaveAttribute('aria-checked', 'false');
   });
 
   it('should display a checked checkbox when it is checked', () => {
-    store.buildSwapStore.startSwap();
-    store.buildSwapStore.toggleSelectedChannel(channel.chanId);
+    store.buildSwapView.startSwap();
+    store.buildSwapView.toggleSelectedChannel(channel.chanId);
     const { getByRole } = render();
     expect(getByRole('checkbox')).toBeInTheDocument();
     expect(getByRole('checkbox')).toHaveAttribute('aria-checked', 'true');
   });
 
   it('should display a disabled checkbox', () => {
-    store.buildSwapStore.startSwap();
-    store.buildSwapStore.toggleSelectedChannel(channel.chanId);
-    store.buildSwapStore.setDirection(SwapDirection.OUT);
+    store.buildSwapView.startSwap();
+    store.buildSwapView.toggleSelectedChannel(channel.chanId);
+    store.buildSwapView.setDirection(SwapDirection.OUT);
     const { getByRole } = render();
     expect(getByRole('checkbox')).toBeInTheDocument();
     expect(getByRole('checkbox')).toHaveAttribute('aria-disabled', 'true');
   });
 
   it('should trigger onChange when it is clicked', () => {
-    store.buildSwapStore.startSwap();
+    store.buildSwapView.startSwap();
     const { getByRole } = render();
     expect(getByRole('checkbox')).toBeInTheDocument();
     fireEvent.click(getByRole('checkbox'));
-    expect(store.buildSwapStore.selectedChanIds).toEqual([channel.chanId]);
+    expect(store.buildSwapView.selectedChanIds).toEqual([channel.chanId]);
   });
 
   it('should not trigger onChange when it is disabled and clicked', () => {
-    store.buildSwapStore.startSwap();
-    store.buildSwapStore.setDirection(SwapDirection.OUT);
+    store.buildSwapView.startSwap();
+    store.buildSwapView.setDirection(SwapDirection.OUT);
     const { getByRole } = render();
     expect(getByRole('checkbox')).toBeInTheDocument();
     fireEvent.click(getByRole('checkbox'));
-    expect(store.buildSwapStore.selectedChanIds).toEqual([]);
+    expect(store.buildSwapView.selectedChanIds).toEqual([]);
   });
 
   describe('pending swaps', () => {
@@ -151,25 +162,29 @@ describe('ChannelRow component', () => {
       swap1.state = swap2.state = SwapState.INITIATED;
     });
 
-    it('should display the pending Loop In icon', () => {
+    it('should display the pending Loop In icon', async () => {
       swap1.type = SwapType.LOOP_IN;
       store.swapStore.addSwappedChannels(swap1.id, [channel.chanId]);
       const { getByText } = render();
       expect(getByText('chevrons-right.svg')).toBeInTheDocument();
       fireEvent.mouseEnter(getByText('chevrons-right.svg'));
-      expect(getByText('Loop In currently in progress')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(getByText('Loop In currently in progress')).toBeInTheDocument();
+      });
     });
 
-    it('should display the pending Loop Out icon', () => {
+    it('should display the pending Loop Out icon', async () => {
       swap1.type = SwapType.LOOP_OUT;
       store.swapStore.addSwappedChannels(swap1.id, [channel.chanId]);
       const { getByText } = render();
       expect(getByText('chevrons-left.svg')).toBeInTheDocument();
       fireEvent.mouseEnter(getByText('chevrons-left.svg'));
-      expect(getByText('Loop Out currently in progress')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(getByText('Loop Out currently in progress')).toBeInTheDocument();
+      });
     });
 
-    it('should display the pending Loop In and Loop Out icon', () => {
+    it('should display the pending Loop In and Loop Out icon', async () => {
       swap1.type = SwapType.LOOP_IN;
       swap2.type = SwapType.LOOP_OUT;
       store.swapStore.addSwappedChannels(swap1.id, [channel.chanId]);
@@ -177,7 +192,11 @@ describe('ChannelRow component', () => {
       const { getByText } = render();
       expect(getByText('chevrons.svg')).toBeInTheDocument();
       fireEvent.mouseEnter(getByText('chevrons.svg'));
-      expect(getByText('Loop In and Loop Out currently in progress')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(
+          getByText('Loop In and Loop Out currently in progress'),
+        ).toBeInTheDocument();
+      });
     });
   });
 });

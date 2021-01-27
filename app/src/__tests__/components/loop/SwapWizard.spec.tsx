@@ -15,11 +15,11 @@ describe('SwapWizard component', () => {
     store = createStore();
     await store.fetchAllData();
 
-    await store.buildSwapStore.startSwap();
+    await store.buildSwapView.startSwap();
     store.channelStore.sortedChannels.slice(0, 3).forEach(c => {
-      store.buildSwapStore.toggleSelectedChannel(c.chanId);
+      store.buildSwapView.toggleSelectedChannel(c.chanId);
     });
-    await store.buildSwapStore.setDirection(SwapDirection.OUT);
+    await store.buildSwapView.setDirection(SwapDirection.OUT);
   });
 
   const render = () => {
@@ -50,20 +50,20 @@ describe('SwapWizard component', () => {
   describe('Config Step', () => {
     it('should display the correct min an max values', () => {
       const { getByText } = render();
-      const { min, max } = store.buildSwapStore.termsForDirection;
+      const { min, max } = store.buildSwapView.termsForDirection;
       expect(getByText(formatSats(min))).toBeInTheDocument();
       expect(getByText(formatSats(max))).toBeInTheDocument();
     });
 
     it('should display the correct number of channels', () => {
       const { getByText } = render();
-      const { selectedChanIds } = store.buildSwapStore;
+      const { selectedChanIds } = store.buildSwapView;
       expect(getByText(`${selectedChanIds.length}`)).toBeInTheDocument();
     });
 
     it('should update the amount when the slider changes', () => {
       const { getByText, getByLabelText } = render();
-      const build = store.buildSwapStore;
+      const build = store.buildSwapView;
       expect(+build.amountForSelected).toEqual(625000);
       expect(getByText(`625,000 sats`)).toBeInTheDocument();
       fireEvent.change(getByLabelText('range-slider'), { target: { value: '575000' } });
@@ -83,9 +83,9 @@ describe('SwapWizard component', () => {
       fireEvent.change(getByPlaceholderText('number of blocks (ex: 6)'), {
         target: { value: 20 },
       });
-      expect(store.buildSwapStore.confTarget).toBeUndefined();
+      expect(store.buildSwapView.confTarget).toBeUndefined();
       fireEvent.click(getByText('Next'));
-      expect(store.buildSwapStore.confTarget).toBe(20);
+      expect(store.buildSwapView.confTarget).toBe(20);
     });
 
     it('should store the specified destination address', () => {
@@ -94,9 +94,9 @@ describe('SwapWizard component', () => {
       fireEvent.change(getByPlaceholderText('segwit address'), {
         target: { value: 'abcdef' },
       });
-      expect(store.buildSwapStore.loopOutAddress).toBeUndefined();
+      expect(store.buildSwapView.loopOutAddress).toBeUndefined();
       fireEvent.click(getByText('Next'));
-      expect(store.buildSwapStore.loopOutAddress).toBe('abcdef');
+      expect(store.buildSwapView.loopOutAddress).toBe('abcdef');
     });
 
     it('should handle invalid conf target', () => {
@@ -106,7 +106,7 @@ describe('SwapWizard component', () => {
         target: { value: 'asdf' },
       });
       fireEvent.click(getByText('Next'));
-      expect(values(store.uiStore.alerts)[0].message).toBe(
+      expect(values(store.appView.alerts)[0].message).toBe(
         'Confirmation target must be between 20 and 60.',
       );
     });
@@ -114,9 +114,9 @@ describe('SwapWizard component', () => {
 
   describe('Review Step', () => {
     beforeEach(async () => {
-      store.buildSwapStore.setAmount(Big(500000));
-      store.buildSwapStore.goToNextStep();
-      await store.buildSwapStore.getQuote();
+      store.buildSwapView.setAmount(Big(500000));
+      store.buildSwapView.goToNextStep();
+      await store.buildSwapView.getQuote();
     });
 
     it('should display the description labels', () => {
@@ -130,7 +130,7 @@ describe('SwapWizard component', () => {
 
     it('should display the correct values', () => {
       const { getByText } = render();
-      const build = store.buildSwapStore;
+      const build = store.buildSwapView;
       expect(getByText(formatSats(build.amount))).toBeInTheDocument();
       expect(getByText(build.feesLabel)).toBeInTheDocument();
       expect(getByText(formatSats(build.invoiceTotal))).toBeInTheDocument();
@@ -139,10 +139,10 @@ describe('SwapWizard component', () => {
 
   describe('Processing Step', () => {
     beforeEach(async () => {
-      store.buildSwapStore.setAmount(Big(500000));
-      store.buildSwapStore.goToNextStep();
-      await store.buildSwapStore.getQuote();
-      store.buildSwapStore.goToNextStep();
+      store.buildSwapView.setAmount(Big(500000));
+      store.buildSwapView.goToNextStep();
+      await store.buildSwapView.getQuote();
+      store.buildSwapView.goToNextStep();
     });
 
     it('should display the description label', () => {
