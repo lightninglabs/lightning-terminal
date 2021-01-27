@@ -2,6 +2,7 @@ PKG := github.com/lightninglabs/lightning-terminal
 ESCPKG := github.com\/lightninglabs\/lightning-terminal
 LND_PKG := github.com/lightningnetwork/lnd
 LOOP_PKG := github.com/lightninglabs/loop
+POOL_PKG := github.com/lightninglabs/pool
 
 LINT_PKG := github.com/golangci/golangci-lint/cmd/golangci-lint
 GOVERALLS_PKG := github.com/mattn/goveralls
@@ -19,6 +20,12 @@ COMMIT_HASH := $(shell git rev-parse HEAD)
 
 LOOP_COMMIT := $(shell cat go.mod | \
 		grep $(LOOP_PKG) | \
+		head -n1 | \
+		awk -F " " '{ print $$2 }' | \
+		awk -F "/" '{ print $$1 }')
+
+POOL_COMMIT := $(shell cat go.mod | \
+		grep $(POOL_PKG) | \
 		head -n1 | \
 		awk -F " " '{ print $$2 }' | \
 		awk -F "/" '{ print $$1 }')
@@ -52,7 +59,8 @@ make_ldflags = $(2) -X $(LND_PKG)/build.Commit=lightning-terminal-$(COMMIT) \
 	-X $(LND_PKG)/build.CommitHash=$(COMMIT_HASH) \
 	-X $(LND_PKG)/build.GoVersion=$(GOVERSION) \
 	-X $(LND_PKG)/build.RawTags=$(shell echo $(1) | sed -e 's/ /,/g') \
-	-X $(LOOP_PKG).Commit=$(LOOP_COMMIT)
+	-X $(LOOP_PKG).Commit=$(LOOP_COMMIT) \
+	-X $(POOL_PKG).Commit=$(POOL_COMMIT)
 
 LDFLAGS := $(call make_ldflags, $(LND_RELEASE_TAGS))
 
@@ -119,7 +127,7 @@ go-install-cli:
 	$(GOINSTALL) -trimpath -tags="$(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" github.com/lightningnetwork/lnd/cmd/lncli
 	$(GOINSTALL) -trimpath -ldflags "$(LDFLAGS)" github.com/lightninglabs/loop/cmd/loop
 	$(GOINSTALL) -trimpath github.com/lightninglabs/faraday/cmd/frcli
-	$(GOINSTALL) -trimpath github.com/lightninglabs/pool/cmd/pool
+	$(GOINSTALL) -trimpath -ldflags "$(LDFLAGS)" github.com/lightninglabs/pool/cmd/pool
 
 app-build: yarn-install
 	@$(call print, "Building production app.")
