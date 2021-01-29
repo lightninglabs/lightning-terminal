@@ -1,5 +1,5 @@
 import { makeAutoObservable, observable } from 'mobx';
-import { OrderState } from 'types/generated/auctioneer_pb';
+import { OrderState } from 'types/generated/auctioneerrpc/auctioneer_pb';
 import { Store } from 'store';
 import { Channel } from 'store/models';
 import { LeaseView } from './';

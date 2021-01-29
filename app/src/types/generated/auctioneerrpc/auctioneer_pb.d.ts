@@ -1,5 +1,5 @@
 // package: poolrpc
-// file: auctioneer.proto
+// file: auctioneerrpc/auctioneer.proto
 
 import * as jspb from "google-protobuf";
 
@@ -83,6 +83,9 @@ export class ServerInitAccountRequest extends jspb.Message {
   getTraderKey_asB64(): string;
   setTraderKey(value: Uint8Array | string): void;
 
+  getUserAgent(): string;
+  setUserAgent(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServerInitAccountRequest.AsObject;
   static toObject(includeInstance: boolean, msg: ServerInitAccountRequest): ServerInitAccountRequest.AsObject;
@@ -100,6 +103,7 @@ export namespace ServerInitAccountRequest {
     accountValue: number,
     accountExpiry: number,
     traderKey: Uint8Array | string,
+    userAgent: string,
   }
 }
 
@@ -130,6 +134,9 @@ export class ServerSubmitOrderRequest extends jspb.Message {
   getBid(): ServerBid | undefined;
   setBid(value?: ServerBid): void;
 
+  getUserAgent(): string;
+  setUserAgent(value: string): void;
+
   getDetailsCase(): ServerSubmitOrderRequest.DetailsCase;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServerSubmitOrderRequest.AsObject;
@@ -145,6 +152,7 @@ export namespace ServerSubmitOrderRequest {
   export type AsObject = {
     ask?: ServerAsk.AsObject,
     bid?: ServerBid.AsObject,
+    userAgent: string,
   }
 
   export enum DetailsCase {

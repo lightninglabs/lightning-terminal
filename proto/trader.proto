@@ -1,7 +1,6 @@
 syntax = "proto3";
 
-import "google/api/annotations.proto";
-import "auctioneer.proto";
+import "auctioneerrpc/auctioneer.proto";
 
 package poolrpc;
 
@@ -13,77 +12,43 @@ service Trader {
     given confirmation target. If the connected lnd wallet doesn't have enough
     balance to fund an account of the requested size, an error is returned.
     */
-    rpc QuoteAccount (QuoteAccountRequest) returns (QuoteAccountResponse) {
-        option (google.api.http) = {
-            post: "/v1/pool/accounts/quote"
-            body: "*"
-        };
-    };
+    rpc QuoteAccount (QuoteAccountRequest) returns (QuoteAccountResponse);
 
     /* pool: `accounts new`
     InitAccount creates a new account with the requested size and expiration,
     funding it from the wallet of the connected lnd node.
     */
-    rpc InitAccount (InitAccountRequest) returns (Account) {
-        option (google.api.http) = {
-            post: "/v1/pool/accounts"
-            body: "*"
-        };
-    };
+    rpc InitAccount (InitAccountRequest) returns (Account);
 
     /* pool: `accounts list`
     ListAccounts returns a list of all accounts known to the trader daemon and
     their current state.
     */
-    rpc ListAccounts (ListAccountsRequest) returns (ListAccountsResponse) {
-        option (google.api.http) = {
-            get: "/v1/pool/accounts"
-        };
-    };
+    rpc ListAccounts (ListAccountsRequest) returns (ListAccountsResponse);
 
     /* pool: `accounts close`
     CloseAccount closes an account and returns the funds locked in that account
     to the connected lnd node's wallet.
     */
-    rpc CloseAccount (CloseAccountRequest) returns (CloseAccountResponse) {
-        option (google.api.http) = {
-            delete: "/v1/pool/accounts"
-        };
-    };
+    rpc CloseAccount (CloseAccountRequest) returns (CloseAccountResponse);
 
     /* pool: `accounts withdraw`
     WithdrawAccount splits off parts of the account balance into the specified
     outputs while recreating the account with a reduced balance.
     */
     rpc WithdrawAccount (WithdrawAccountRequest)
-        returns (WithdrawAccountResponse) {
-        option (google.api.http) = {
-            post: "/v1/pool/accounts/withdraw"
-            body: "*"
-        };
-    };
+        returns (WithdrawAccountResponse);
 
     /* pool: `accounts deposit`
     DepositAccount adds more funds from the connected lnd node's wallet to an
     account.
     */
-    rpc DepositAccount (DepositAccountRequest)
-        returns (DepositAccountResponse) {
-        option (google.api.http) = {
-            post: "/v1/pool/accounts/deposit"
-            body: "*"
-        };
-    };
+    rpc DepositAccount (DepositAccountRequest) returns (DepositAccountResponse);
 
     /* pool: `accounts renew`
     RenewAccount renews the expiration of an account.
     */
-    rpc RenewAccount (RenewAccountRequest) returns (RenewAccountResponse) {
-        option (google.api.http) = {
-            post: "/v1/pool/accounts/renew"
-            body: "*"
-        };
-    }
+    rpc RenewAccount (RenewAccountRequest) returns (RenewAccountResponse);
 
     /* pool: `accounts bumpfee`
     BumpAccountFee attempts to bump the fee of an account's transaction through
@@ -93,126 +58,74 @@ service Trader {
     account, and this RPC is invoked again, then a replacing transaction (RBF)
     of the child will be broadcast.
     */
-    rpc BumpAccountFee (BumpAccountFeeRequest)
-        returns (BumpAccountFeeResponse) {
-        option (google.api.http) = {
-            post: "/v1/pool/accounts/bump"
-            body: "*"
-        };
-    };
+    rpc BumpAccountFee (BumpAccountFeeRequest) returns (BumpAccountFeeResponse);
 
     /* pool: `accounts recover`
     RecoverAccounts queries the auction server for this trader daemon's accounts
     in case we lost our local account database.
     */
     rpc RecoverAccounts (RecoverAccountsRequest)
-        returns (RecoverAccountsResponse) {
-        option (google.api.http) = {
-            post: "/v1/pool/accounts/recover"
-            body: "*"
-        };
-    };
+        returns (RecoverAccountsResponse);
 
     /* pool: `orders submit`
     SubmitOrder creates a new ask or bid order and submits for the given account
     and submits it to the auction server for matching.
     */
-    rpc SubmitOrder (SubmitOrderRequest) returns (SubmitOrderResponse) {
-        option (google.api.http) = {
-            post: "/v1/pool/orders"
-            body: "*"
-        };
-    };
+    rpc SubmitOrder (SubmitOrderRequest) returns (SubmitOrderResponse);
 
     /* pool: `orders list`
     ListOrders returns a list of all active and archived orders that are
     currently known to the trader daemon.
     */
-    rpc ListOrders (ListOrdersRequest) returns (ListOrdersResponse) {
-        option (google.api.http) = {
-            get: "/v1/pool/orders"
-        };
-    }
+    rpc ListOrders (ListOrdersRequest) returns (ListOrdersResponse);
 
     /* pool: `orders cancel`
     CancelOrder cancels an active order with the auction server to remove it
     from future matching.
     */
-    rpc CancelOrder (CancelOrderRequest) returns (CancelOrderResponse) {
-        option (google.api.http) = {
-            delete: "/v1/pool/orders/{order_nonce}"
-        };
-    };
+    rpc CancelOrder (CancelOrderRequest) returns (CancelOrderResponse);
 
     /* pool: `auction fee`
     AuctionFee returns the current auction order execution fee specified by the
     auction server.
     */
-    rpc AuctionFee (AuctionFeeRequest) returns (AuctionFeeResponse) {
-        option (google.api.http) = {
-            get: "/v1/pool/fee"
-        };
-    };
+    rpc AuctionFee (AuctionFeeRequest) returns (AuctionFeeResponse);
 
     /* pool: `auction leasedurations`
     LeaseDurations returns the current set of valid lease duration in the
     market as is, and also information w.r.t if the market is currently active.
     */
-    rpc LeaseDurations (LeaseDurationRequest) returns (LeaseDurationResponse) {
-        option (google.api.http) = {
-            get: "/v1/pool/lease_durations"
-        };
-    }
+    rpc LeaseDurations (LeaseDurationRequest) returns (LeaseDurationResponse);
 
     /* pool: `auction nextbatchinfo`
     NextBatchInfo returns information about the next batch the auctioneer will
     perform.
     */
-    rpc NextBatchInfo (NextBatchInfoRequest) returns (NextBatchInfoResponse) {
-        option (google.api.http) = {
-            get: "/v1/pool/batch/next"
-        };
-    }
+    rpc NextBatchInfo (NextBatchInfoRequest) returns (NextBatchInfoResponse);
 
     /* pool: `auction snapshot`
     BatchSnapshot returns the snapshot of a past batch identified by its ID.
     If no ID is provided, the snapshot of the last finalized batch is returned.
     Deprecated, use BatchSnapshots instead.
     */
-    rpc BatchSnapshot (BatchSnapshotRequest) returns (BatchSnapshotResponse) {
-        option (google.api.http) = {
-            get: "/v1/pool/batch/snapshot"
-        };
-    };
+    rpc BatchSnapshot (BatchSnapshotRequest) returns (BatchSnapshotResponse);
 
     /* pool: `listauth`
     GetLsatTokens returns all LSAT tokens the daemon ever paid for.
     */
-    rpc GetLsatTokens (TokensRequest) returns (TokensResponse) {
-        option (google.api.http) = {
-            get: "/v1/lsat/tokens"
-        };
-    }
+    rpc GetLsatTokens (TokensRequest) returns (TokensResponse);
 
     /* pool: `auction leases`
     Leases returns the list of channels that were either purchased or sold by
     the trader within the auction.
     */
-    rpc Leases (LeasesRequest) returns (LeasesResponse) {
-        option (google.api.http) = {
-            get: "/v1/pool/leases"
-        };
-    };
+    rpc Leases (LeasesRequest) returns (LeasesResponse);
 
     /* pool: `auction ratings`
     Returns the Node Tier information for this target Lightning node, and other
     related ranking information.
     */
-    rpc NodeRatings (NodeRatingRequest) returns (NodeRatingResponse) {
-        option (google.api.http) = {
-            get: "/v1/pool/node_ratings"
-        };
-    };
+    rpc NodeRatings (NodeRatingRequest) returns (NodeRatingResponse);
 
     /* pool: `auction snapshot`
     BatchSnapshots returns a list of batch snapshots starting at the start batch
@@ -221,12 +134,7 @@ service Trader {
     one call. If no start batch ID is provided, the most recent finalized batch
     is used as the starting point to go back from.
     */
-    rpc BatchSnapshots (BatchSnapshotsRequest)
-        returns (BatchSnapshotsResponse) {
-        option (google.api.http) = {
-            get: "/v1/pool/batch/snapshots/{start_batch_id}/{num_batches_back}"
-        };
-    };
+    rpc BatchSnapshots (BatchSnapshotsRequest) returns (BatchSnapshotsResponse);
 }
 
 message InitAccountRequest {
@@ -246,6 +154,15 @@ message InitAccountRequest {
         // TODO(guggero): Add sat_per_vbyte as soon as lnd has a parameter for
         // that in rpcServer.EstimateFee.
     }
+
+    /*
+    An optional identification string that will be appended to the user agent
+    string sent to the server to give information about the usage of pool. This
+    initiator part is meant for user interfaces to add their name to give the
+    full picture of the binary used (poold, LiT) and the method used for opening
+    the account (pool CLI, LiT UI, other 3rd party UI).
+    */
+    string initiator = 5;
 }
 
 message QuoteAccountRequest {
@@ -499,6 +416,15 @@ message SubmitOrderRequest {
         Ask ask = 1;
         Bid bid = 2;
     }
+
+    /*
+    An optional identification string that will be appended to the user agent
+    string sent to the server to give information about the usage of pool. This
+    initiator part is meant for user interfaces to add their name to give the
+    full picture of the binary used (poold, LiT) and the method used for
+    submitting the order (pool CLI, LiT UI, other 3rd party UI).
+    */
+    string initiator = 3;
 }
 message SubmitOrderResponse {
     oneof details {

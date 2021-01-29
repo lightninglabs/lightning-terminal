@@ -1,4 +1,4 @@
-import * as AUCT from 'types/generated/auctioneer_pb';
+import * as AUCT from 'types/generated/auctioneerrpc/auctioneer_pb';
 import * as POOL from 'types/generated/trader_pb';
 import { Trader } from 'types/generated/trader_pb_service';
 import { b64 } from 'util/strings';
@@ -21,6 +21,8 @@ export const MIN_FEE_RATE_KW = 253;
 // The latest order version. This should be updated along with pool CLI
 // see: https://github.com/lightninglabs/pool/blob/master/order/interface.go#L35
 export const ORDER_VERSION = 2;
+
+const POOL_INITIATOR = 'lit-ui';
 
 /** the names and argument types for the subscription events */
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -63,6 +65,7 @@ class PoolApi extends BaseApi<PoolEvents> {
     req.setAccountValue(amount);
     req.setRelativeHeight(expiryBlocks);
     req.setConfTarget(confTarget);
+    req.setInitiator(POOL_INITIATOR);
     const res = await this._grpc.request(Trader.InitAccount, req, this._meta);
     return res.toObject();
   }
@@ -176,6 +179,7 @@ class PoolApi extends BaseApi<PoolEvents> {
     }
 
     const req = new POOL.SubmitOrderRequest();
+    req.setInitiator(POOL_INITIATOR);
 
     const order = new POOL.Order();
     order.setTraderKey(b64(traderKey));

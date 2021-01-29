@@ -99,9 +99,10 @@ func (g *LightningTerminal) Run() error {
 	g.poolServer = pool.NewServer(g.cfg.Pool)
 	g.rpcProxy = newRpcProxy(g.cfg, g, getAllPermissions())
 
-	// Overwrite the loop daemon's user agent name so it sends "litd"
-	// instead of "loopd".
+	// Overwrite the loop and pool daemon's user agent name so it sends
+	// "litd" instead of "loopd" and "poold" respectively.
 	loop.AgentName = "litd"
+	pool.SetAgentName("litd")
 
 	// Hook interceptor for os signals.
 	err = signal.Intercept()

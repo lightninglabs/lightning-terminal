@@ -1,5 +1,8 @@
 import { entries, makeAutoObservable } from 'mobx';
-import { DurationBucketState, NodeTier } from 'types/generated/auctioneer_pb';
+import {
+  DurationBucketState,
+  NodeTier,
+} from 'types/generated/auctioneerrpc/auctioneer_pb';
 import { toPercent } from 'util/bigmath';
 import { Store } from 'store';
 

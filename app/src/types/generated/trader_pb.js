@@ -14,8 +14,7 @@ var jspb = require('google-protobuf');
 var goog = jspb;
 var global = Function('return this')();
 
-var google_api_annotations_pb = require('./google/api/annotations_pb.js');
-var auctioneer_pb = require('./auctioneer_pb.js');
+var auctioneerrpc_auctioneer_pb = require('./auctioneerrpc/auctioneer_pb.js');
 goog.exportSymbol('proto.poolrpc.Account', null, global);
 goog.exportSymbol('proto.poolrpc.AccountState', null, global);
 goog.exportSymbol('proto.poolrpc.Ask', null, global);
@@ -157,7 +156,8 @@ proto.poolrpc.InitAccountRequest.toObject = function(includeInstance, msg) {
     accountValue: jspb.Message.getFieldWithDefault(msg, 1, 0),
     absoluteHeight: jspb.Message.getFieldWithDefault(msg, 2, 0),
     relativeHeight: jspb.Message.getFieldWithDefault(msg, 3, 0),
-    confTarget: jspb.Message.getFieldWithDefault(msg, 4, 0)
+    confTarget: jspb.Message.getFieldWithDefault(msg, 4, 0),
+    initiator: jspb.Message.getFieldWithDefault(msg, 5, "")
   };
 
   if (includeInstance) {
@@ -209,6 +209,10 @@ proto.poolrpc.InitAccountRequest.deserializeBinaryFromReader = function(msg, rea
     case 4:
       var value = /** @type {number} */ (reader.readUint32());
       msg.setConfTarget(value);
+      break;
+    case 5:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setInitiator(value);
       break;
     default:
       reader.skipField();
@@ -264,6 +268,13 @@ proto.poolrpc.InitAccountRequest.serializeBinaryToWriter = function(message, wri
   if (f != null) {
     writer.writeUint32(
       4,
+      f
+    );
+  }
+  f = message.getInitiator();
+  if (f.length > 0) {
+    writer.writeString(
+      5,
       f
     );
   }
@@ -369,6 +380,21 @@ proto.poolrpc.InitAccountRequest.prototype.clearConfTarget = function() {
  */
 proto.poolrpc.InitAccountRequest.prototype.hasConfTarget = function() {
   return jspb.Message.getField(this, 4) != null;
+};
+
+
+/**
+ * optional string initiator = 5;
+ * @return {string}
+ */
+proto.poolrpc.InitAccountRequest.prototype.getInitiator = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, ""));
+};
+
+
+/** @param {string} value */
+proto.poolrpc.InitAccountRequest.prototype.setInitiator = function(value) {
+  jspb.Message.setField(this, 5, value);
 };
 
 
@@ -3848,7 +3874,7 @@ proto.poolrpc.Account.prototype.toObject = function(opt_includeInstance) {
 proto.poolrpc.Account.toObject = function(includeInstance, msg) {
   var f, obj = {
     traderKey: msg.getTraderKey_asB64(),
-    outpoint: (f = msg.getOutpoint()) && auctioneer_pb.OutPoint.toObject(includeInstance, f),
+    outpoint: (f = msg.getOutpoint()) && auctioneerrpc_auctioneer_pb.OutPoint.toObject(includeInstance, f),
     value: jspb.Message.getFieldWithDefault(msg, 3, 0),
     availableBalance: jspb.Message.getFieldWithDefault(msg, 4, 0),
     expirationHeight: jspb.Message.getFieldWithDefault(msg, 5, 0),
@@ -3895,8 +3921,8 @@ proto.poolrpc.Account.deserializeBinaryFromReader = function(msg, reader) {
       msg.setTraderKey(value);
       break;
     case 2:
-      var value = new auctioneer_pb.OutPoint;
-      reader.readMessage(value,auctioneer_pb.OutPoint.deserializeBinaryFromReader);
+      var value = new auctioneerrpc_auctioneer_pb.OutPoint;
+      reader.readMessage(value,auctioneerrpc_auctioneer_pb.OutPoint.deserializeBinaryFromReader);
       msg.setOutpoint(value);
       break;
     case 3:
@@ -3960,7 +3986,7 @@ proto.poolrpc.Account.serializeBinaryToWriter = function(message, writer) {
     writer.writeMessage(
       2,
       f,
-      auctioneer_pb.OutPoint.serializeBinaryToWriter
+      auctioneerrpc_auctioneer_pb.OutPoint.serializeBinaryToWriter
     );
   }
   f = message.getValue();
@@ -4046,7 +4072,7 @@ proto.poolrpc.Account.prototype.setTraderKey = function(value) {
  */
 proto.poolrpc.Account.prototype.getOutpoint = function() {
   return /** @type{?proto.poolrpc.OutPoint} */ (
-    jspb.Message.getWrapperField(this, auctioneer_pb.OutPoint, 2));
+    jspb.Message.getWrapperField(this, auctioneerrpc_auctioneer_pb.OutPoint, 2));
 };
 
 
@@ -4243,7 +4269,8 @@ proto.poolrpc.SubmitOrderRequest.prototype.toObject = function(opt_includeInstan
 proto.poolrpc.SubmitOrderRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
     ask: (f = msg.getAsk()) && proto.poolrpc.Ask.toObject(includeInstance, f),
-    bid: (f = msg.getBid()) && proto.poolrpc.Bid.toObject(includeInstance, f)
+    bid: (f = msg.getBid()) && proto.poolrpc.Bid.toObject(includeInstance, f),
+    initiator: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -4290,6 +4317,10 @@ proto.poolrpc.SubmitOrderRequest.deserializeBinaryFromReader = function(msg, rea
       reader.readMessage(value,proto.poolrpc.Bid.deserializeBinaryFromReader);
       msg.setBid(value);
       break;
+    case 3:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setInitiator(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -4333,6 +4364,13 @@ proto.poolrpc.SubmitOrderRequest.serializeBinaryToWriter = function(message, wri
       2,
       f,
       proto.poolrpc.Bid.serializeBinaryToWriter
+    );
+  }
+  f = message.getInitiator();
+  if (f.length > 0) {
+    writer.writeString(
+      3,
+      f
     );
   }
 };
@@ -4395,6 +4433,21 @@ proto.poolrpc.SubmitOrderRequest.prototype.clearBid = function() {
  */
 proto.poolrpc.SubmitOrderRequest.prototype.hasBid = function() {
   return jspb.Message.getField(this, 2) != null;
+};
+
+
+/**
+ * optional string initiator = 3;
+ * @return {string}
+ */
+proto.poolrpc.SubmitOrderRequest.prototype.getInitiator = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
+};
+
+
+/** @param {string} value */
+proto.poolrpc.SubmitOrderRequest.prototype.setInitiator = function(value) {
+  jspb.Message.setField(this, 3, value);
 };
 
 
@@ -4471,7 +4524,7 @@ proto.poolrpc.SubmitOrderResponse.prototype.toObject = function(opt_includeInsta
  */
 proto.poolrpc.SubmitOrderResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    invalidOrder: (f = msg.getInvalidOrder()) && auctioneer_pb.InvalidOrder.toObject(includeInstance, f),
+    invalidOrder: (f = msg.getInvalidOrder()) && auctioneerrpc_auctioneer_pb.InvalidOrder.toObject(includeInstance, f),
     acceptedOrderNonce: msg.getAcceptedOrderNonce_asB64()
   };
 
@@ -4510,8 +4563,8 @@ proto.poolrpc.SubmitOrderResponse.deserializeBinaryFromReader = function(msg, re
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = new auctioneer_pb.InvalidOrder;
-      reader.readMessage(value,auctioneer_pb.InvalidOrder.deserializeBinaryFromReader);
+      var value = new auctioneerrpc_auctioneer_pb.InvalidOrder;
+      reader.readMessage(value,auctioneerrpc_auctioneer_pb.InvalidOrder.deserializeBinaryFromReader);
       msg.setInvalidOrder(value);
       break;
     case 2:
@@ -4552,7 +4605,7 @@ proto.poolrpc.SubmitOrderResponse.serializeBinaryToWriter = function(message, wr
     writer.writeMessage(
       1,
       f,
-      auctioneer_pb.InvalidOrder.serializeBinaryToWriter
+      auctioneerrpc_auctioneer_pb.InvalidOrder.serializeBinaryToWriter
     );
   }
   f = /** @type {!(string|Uint8Array)} */ (jspb.Message.getField(message, 2));
@@ -4571,7 +4624,7 @@ proto.poolrpc.SubmitOrderResponse.serializeBinaryToWriter = function(message, wr
  */
 proto.poolrpc.SubmitOrderResponse.prototype.getInvalidOrder = function() {
   return /** @type{?proto.poolrpc.InvalidOrder} */ (
-    jspb.Message.getWrapperField(this, auctioneer_pb.InvalidOrder, 1));
+    jspb.Message.getWrapperField(this, auctioneerrpc_auctioneer_pb.InvalidOrder, 1));
 };
 
 
@@ -7430,7 +7483,7 @@ proto.poolrpc.AuctionFeeResponse.prototype.toObject = function(opt_includeInstan
  */
 proto.poolrpc.AuctionFeeResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    executionFee: (f = msg.getExecutionFee()) && auctioneer_pb.ExecutionFee.toObject(includeInstance, f)
+    executionFee: (f = msg.getExecutionFee()) && auctioneerrpc_auctioneer_pb.ExecutionFee.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -7468,8 +7521,8 @@ proto.poolrpc.AuctionFeeResponse.deserializeBinaryFromReader = function(msg, rea
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = new auctioneer_pb.ExecutionFee;
-      reader.readMessage(value,auctioneer_pb.ExecutionFee.deserializeBinaryFromReader);
+      var value = new auctioneerrpc_auctioneer_pb.ExecutionFee;
+      reader.readMessage(value,auctioneerrpc_auctioneer_pb.ExecutionFee.deserializeBinaryFromReader);
       msg.setExecutionFee(value);
       break;
     default:
@@ -7506,7 +7559,7 @@ proto.poolrpc.AuctionFeeResponse.serializeBinaryToWriter = function(message, wri
     writer.writeMessage(
       1,
       f,
-      auctioneer_pb.ExecutionFee.serializeBinaryToWriter
+      auctioneerrpc_auctioneer_pb.ExecutionFee.serializeBinaryToWriter
     );
   }
 };
@@ -7518,7 +7571,7 @@ proto.poolrpc.AuctionFeeResponse.serializeBinaryToWriter = function(message, wri
  */
 proto.poolrpc.AuctionFeeResponse.prototype.getExecutionFee = function() {
   return /** @type{?proto.poolrpc.ExecutionFee} */ (
-    jspb.Message.getWrapperField(this, auctioneer_pb.ExecutionFee, 1));
+    jspb.Message.getWrapperField(this, auctioneerrpc_auctioneer_pb.ExecutionFee, 1));
 };
 
 
@@ -7589,7 +7642,7 @@ proto.poolrpc.Lease.prototype.toObject = function(opt_includeInstance) {
  */
 proto.poolrpc.Lease.toObject = function(includeInstance, msg) {
   var f, obj = {
-    channelPoint: (f = msg.getChannelPoint()) && auctioneer_pb.OutPoint.toObject(includeInstance, f),
+    channelPoint: (f = msg.getChannelPoint()) && auctioneerrpc_auctioneer_pb.OutPoint.toObject(includeInstance, f),
     channelAmtSat: jspb.Message.getFieldWithDefault(msg, 2, 0),
     channelDurationBlocks: jspb.Message.getFieldWithDefault(msg, 3, 0),
     channelLeaseExpiry: jspb.Message.getFieldWithDefault(msg, 4, 0),
@@ -7639,8 +7692,8 @@ proto.poolrpc.Lease.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = new auctioneer_pb.OutPoint;
-      reader.readMessage(value,auctioneer_pb.OutPoint.deserializeBinaryFromReader);
+      var value = new auctioneerrpc_auctioneer_pb.OutPoint;
+      reader.readMessage(value,auctioneerrpc_auctioneer_pb.OutPoint.deserializeBinaryFromReader);
       msg.setChannelPoint(value);
       break;
     case 2:
@@ -7725,7 +7778,7 @@ proto.poolrpc.Lease.serializeBinaryToWriter = function(message, writer) {
     writer.writeMessage(
       1,
       f,
-      auctioneer_pb.OutPoint.serializeBinaryToWriter
+      auctioneerrpc_auctioneer_pb.OutPoint.serializeBinaryToWriter
     );
   }
   f = message.getChannelAmtSat();
@@ -7821,7 +7874,7 @@ proto.poolrpc.Lease.serializeBinaryToWriter = function(message, writer) {
  */
 proto.poolrpc.Lease.prototype.getChannelPoint = function() {
   return /** @type{?proto.poolrpc.OutPoint} */ (
-    jspb.Message.getWrapperField(this, auctioneer_pb.OutPoint, 1));
+    jspb.Message.getWrapperField(this, auctioneerrpc_auctioneer_pb.OutPoint, 1));
 };
 
 
@@ -10081,7 +10134,7 @@ proto.poolrpc.NodeRatingResponse.prototype.toObject = function(opt_includeInstan
 proto.poolrpc.NodeRatingResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
     nodeRatingsList: jspb.Message.toObjectList(msg.getNodeRatingsList(),
-    auctioneer_pb.NodeRating.toObject, includeInstance)
+    auctioneerrpc_auctioneer_pb.NodeRating.toObject, includeInstance)
   };
 
   if (includeInstance) {
@@ -10119,8 +10172,8 @@ proto.poolrpc.NodeRatingResponse.deserializeBinaryFromReader = function(msg, rea
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = new auctioneer_pb.NodeRating;
-      reader.readMessage(value,auctioneer_pb.NodeRating.deserializeBinaryFromReader);
+      var value = new auctioneerrpc_auctioneer_pb.NodeRating;
+      reader.readMessage(value,auctioneerrpc_auctioneer_pb.NodeRating.deserializeBinaryFromReader);
       msg.addNodeRatings(value);
       break;
     default:
@@ -10157,7 +10210,7 @@ proto.poolrpc.NodeRatingResponse.serializeBinaryToWriter = function(message, wri
     writer.writeRepeatedMessage(
       1,
       f,
-      auctioneer_pb.NodeRating.serializeBinaryToWriter
+      auctioneerrpc_auctioneer_pb.NodeRating.serializeBinaryToWriter
     );
   }
 };
@@ -10169,7 +10222,7 @@ proto.poolrpc.NodeRatingResponse.serializeBinaryToWriter = function(message, wri
  */
 proto.poolrpc.NodeRatingResponse.prototype.getNodeRatingsList = function() {
   return /** @type{!Array.<!proto.poolrpc.NodeRating>} */ (
-    jspb.Message.getRepeatedWrapperField(this, auctioneer_pb.NodeRating, 1));
+    jspb.Message.getRepeatedWrapperField(this, auctioneerrpc_auctioneer_pb.NodeRating, 1));
 };
 
 

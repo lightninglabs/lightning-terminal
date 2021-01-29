@@ -2,7 +2,7 @@
 // file: trader.proto
 
 var trader_pb = require("./trader_pb");
-var auctioneer_pb = require("./auctioneer_pb");
+var auctioneerrpc_auctioneer_pb = require("./auctioneerrpc/auctioneer_pb");
 var grpc = require("@improbable-eng/grpc-web").grpc;
 
 var Trader = (function () {
@@ -151,8 +151,8 @@ Trader.BatchSnapshot = {
   service: Trader,
   requestStream: false,
   responseStream: false,
-  requestType: auctioneer_pb.BatchSnapshotRequest,
-  responseType: auctioneer_pb.BatchSnapshotResponse
+  requestType: auctioneerrpc_auctioneer_pb.BatchSnapshotRequest,
+  responseType: auctioneerrpc_auctioneer_pb.BatchSnapshotResponse
 };
 
 Trader.GetLsatTokens = {
@@ -187,8 +187,8 @@ Trader.BatchSnapshots = {
   service: Trader,
   requestStream: false,
   responseStream: false,
-  requestType: auctioneer_pb.BatchSnapshotsRequest,
-  responseType: auctioneer_pb.BatchSnapshotsResponse
+  requestType: auctioneerrpc_auctioneer_pb.BatchSnapshotsRequest,
+  responseType: auctioneerrpc_auctioneer_pb.BatchSnapshotsResponse
 };
 
 exports.Trader = Trader;

@@ -1,5 +1,5 @@
 import { makeAutoObservable, observable, ObservableMap } from 'mobx';
-import * as AUCT from 'types/generated/auctioneer_pb';
+import * as AUCT from 'types/generated/auctioneerrpc/auctioneer_pb';
 import { hex } from 'util/strings';
 import { Store } from 'store';
 import { Batch } from './';
