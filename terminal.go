@@ -423,8 +423,7 @@ func (g *LightningTerminal) shutdown() error {
 	var returnErr error
 
 	if g.faradayStarted {
-		err := g.faradayServer.Stop()
-		if err != nil {
+		if err := g.faradayServer.Stop(); err != nil {
 			log.Errorf("Error stopping faraday: %v", err)
 			returnErr = err
 		}
@@ -432,9 +431,15 @@ func (g *LightningTerminal) shutdown() error {
 
 	if g.loopStarted {
 		g.loopServer.Stop()
-		err := <-g.loopServer.ErrChan
-		if err != nil {
+		if err := <-g.loopServer.ErrChan; err != nil {
 			log.Errorf("Error stopping loop: %v", err)
+			returnErr = err
+		}
+	}
+
+	if g.poolStarted {
+		if err := g.poolServer.Stop(); err != nil {
+			log.Errorf("Error stopping pool: %v", err)
 			returnErr = err
 		}
 	}
