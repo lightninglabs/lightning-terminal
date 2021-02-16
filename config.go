@@ -59,7 +59,6 @@ const (
 	defaultRemoteLndRpcServer = "localhost:10009"
 	defaultLndChainSubDir     = "chain"
 	defaultLndChain           = "bitcoin"
-	defaultLndMacaroon        = "admin.macaroon"
 )
 
 var (
@@ -98,13 +97,6 @@ var (
 	// its Let's Encrypt files.
 	defaultLetsEncryptDir = filepath.Join(
 		defaultLitDir, defaultLetsEncryptSubDir,
-	)
-
-	// defaultRemoteLndMacDir is the default directory we assume for a local
-	// lnd node to store all its macaroon files.
-	defaultRemoteLndMacDir = filepath.Join(
-		lndDefaultConfig.DataDir, defaultLndChainSubDir,
-		defaultLndChain, defaultNetwork,
 	)
 )
 
@@ -170,16 +162,12 @@ type RemoteDaemonConfig struct {
 	// listening on.
 	RPCServer string `long:"rpcserver" description:"The host:port that the remote daemon is listening for RPC connections on."`
 
-	// MacaroonDir is the directory that contains all the macaroon files
-	// required for the remote connection.
-	MacaroonDir string `long:"macaroondir" description:"DEPRECATED: Use macaroonpath. The directory containing all lnd macaroons to use for the remote connection."`
-
 	// MacaroonPath is the path to the single macaroon that should be used
 	// instead of needing to specify the macaroon directory that contains
-	// all of lnd's macaroons. The specified macaroon MUST have all
+	// all of the daemon's macaroons. The specified macaroon MUST have all
 	// permissions that all the subservers use, otherwise permission errors
 	// will occur.
-	MacaroonPath string `long:"macaroonpath" description:"The full path to the single macaroon to use, either the admin.macaroon or a custom baked one. Cannot be specified at the same time as macaroondir. A custom macaroon must contain ALL permissions required for all subservers to work, otherwise permission errors will occur."`
+	MacaroonPath string `long:"macaroonpath" description:"The full path to the single macaroon to use, either the main (admin.macaroon in lnd's case) or a custom baked one. A custom macaroon must contain ALL permissions required for all subservers to work, otherwise permission errors will occur."`
 
 	// TLSCertPath is the path to the tls cert of the remote daemon that
 	// should be used to verify the TLS identity of the remote RPC server.
@@ -194,24 +182,10 @@ func (c *Config) lndConnectParams() (string, lndclient.Network, string,
 	// In remote lnd mode, we just pass along what was configured in the
 	// remote section of the lnd config.
 	if c.LndMode == ModeRemote {
-		// Because we now have the option to specify a single, custom
-		// macaroon to the lndclient, we either use the single macaroon
-		// indicated by the user or the admin macaroon from the mac dir
-		// that was specified.
-		macPath := path.Join(
-			lncfg.CleanAndExpandPath(c.Remote.Lnd.MacaroonDir),
-			defaultLndMacaroon,
-		)
-		if c.Remote.Lnd.MacaroonPath != "" {
-			macPath = lncfg.CleanAndExpandPath(
-				c.Remote.Lnd.MacaroonPath,
-			)
-		}
-
 		return c.Remote.Lnd.RPCServer,
 			lndclient.Network(c.network),
 			lncfg.CleanAndExpandPath(c.Remote.Lnd.TLSCertPath),
-			macPath
+			lncfg.CleanAndExpandPath(c.Remote.Lnd.MacaroonPath)
 	}
 
 	// When we start lnd internally, we take the listen address as
@@ -248,10 +222,10 @@ func defaultConfig() *Config {
 			LitMaxLogFiles:    defaultMaxLogFiles,
 			LitMaxLogFileSize: defaultMaxLogFileSize,
 			Lnd: &RemoteDaemonConfig{
-				Network:     defaultNetwork,
-				RPCServer:   defaultRemoteLndRpcServer,
-				MacaroonDir: defaultRemoteLndMacDir,
-				TLSCertPath: lndDefaultConfig.TLSCertPath,
+				Network:      defaultNetwork,
+				RPCServer:    defaultRemoteLndRpcServer,
+				MacaroonPath: lndDefaultConfig.AdminMacPath,
+				TLSCertPath:  lndDefaultConfig.TLSCertPath,
 			},
 		},
 		LndMode:           defaultLndMode,
@@ -464,25 +438,23 @@ func validateRemoteModeConfig(cfg *Config) error {
 	}
 	cfg.network = r.Lnd.Network
 
-	// Users can either specify the macaroon directory or the custom
-	// macaroon to use, but not both.
-	if r.Lnd.MacaroonDir != defaultRemoteLndMacDir &&
-		r.Lnd.MacaroonPath != "" {
-
-		return fmt.Errorf("cannot set both macaroon dir and macaroon " +
-			"path")
-	}
+	// When referring to the default lnd configuration later on, let's make
+	// sure we use the actual default values and not the lndDefaultConfig
+	// variable which could've been overwritten by the user. Otherwise this
+	// could lead to weird behavior and hard to catch bugs.
+	defaultLndCfg := lnd.DefaultConfig()
 
 	// If the remote lnd's network isn't the default, we also check if we
 	// need to adjust the default macaroon directory so the user can only
 	// specify --network=testnet for example if everything else is using
 	// the defaults.
 	if r.Lnd.Network != defaultNetwork &&
-		r.Lnd.MacaroonDir == defaultRemoteLndMacDir {
+		r.Lnd.MacaroonPath == defaultLndCfg.AdminMacPath {
 
-		r.Lnd.MacaroonDir = filepath.Join(
-			lndDefaultConfig.DataDir, defaultLndChainSubDir,
+		r.Lnd.MacaroonPath = filepath.Join(
+			defaultLndCfg.DataDir, defaultLndChainSubDir,
 			defaultLndChain, r.Lnd.Network,
+			path.Base(defaultLndCfg.AdminMacPath),
 		)
 	}
 
