@@ -8,12 +8,6 @@ rpclisten=0.0.0.0:10009
 Copy the following files that are located in your `~/.lnd/data/chain/bitcoin/mainnet` directory on your remote machine to `/some/folder/with/lnd/data/` on your local machine (where you’ll be running LiT):
 - tls.cert
 - admin.macaroon
-- chainnotifier.macaroon
-- invoices.macaroon
-- readonly.macaroon
-- router.macaroon
-- signer.macaroon
-- walletkit.macaroon
 
 Create a `lit.conf` file. The default location LiT will look for the configuration file depends on your operating system:
 - MacOS: `~/Library/Application Support/Lit/lit.conf`
