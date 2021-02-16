@@ -367,13 +367,13 @@ func loadAndValidateConfig() (*Config, error) {
 	// (like the log or lnd options) as they will be taken from lnd's config
 	// struct. Others we want to force to be the same as lnd so the user
 	// doesn't have to set them manually, like the network for example.
+	if err := faraday.ValidateConfig(cfg.Faraday); err != nil {
+		return nil, err
+	}
 	if err := loopd.Validate(cfg.Loop); err != nil {
 		return nil, err
 	}
 	if err := pool.Validate(cfg.Pool); err != nil {
-		return nil, err
-	}
-	if err := faraday.ValidateConfig(cfg.Faraday); err != nil {
 		return nil, err
 	}
 

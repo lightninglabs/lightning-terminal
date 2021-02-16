@@ -107,8 +107,8 @@ func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 //        v non-registered call                 |
 //    +---+----------------------+    +---------v----------+
 //    | director                 |    | local subserver    |
-//    +---+----------------------+    |  - loop            |
-//        |                           |  - faraday         |
+//    +---+----------------------+    |  - faraday         |
+//        |                           |  - loop            |
 //        v authenticated call        |  - pool            |
 //    +---+----------------------+    +--------------------+
 //    | lnd (remote or local)    |
@@ -398,18 +398,18 @@ func (p *rpcProxy) basicAuthToMacaroon(ctx context.Context,
 	case isLndURI(requestURI):
 		_, _, _, macPath = p.cfg.lndConnectParams()
 
-	case isLoopURI(requestURI):
-		if p.cfg.loopRemote {
-			macPath = p.cfg.Remote.Loop.MacaroonPath
-		} else {
-			macPath = p.cfg.Loop.MacaroonPath
-		}
-
 	case isFaradayURI(requestURI):
 		if p.cfg.faradayRemote {
 			macPath = p.cfg.Remote.Faraday.MacaroonPath
 		} else {
 			macPath = p.cfg.Faraday.MacaroonPath
+		}
+
+	case isLoopURI(requestURI):
+		if p.cfg.loopRemote {
+			macPath = p.cfg.Remote.Loop.MacaroonPath
+		} else {
+			macPath = p.cfg.Loop.MacaroonPath
 		}
 
 	case isPoolURI(requestURI):

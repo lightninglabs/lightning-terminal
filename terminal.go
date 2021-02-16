@@ -403,23 +403,6 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 	// process. Calls that we proxy to a remote host don't need to be
 	// checked as they'll have their own interceptor.
 	switch {
-	case isLoopURI(fullMethod):
-		// In remote mode we just pass through the request, the remote
-		// daemon will check the macaroon.
-		if g.cfg.loopRemote {
-			return nil
-		}
-
-		if !g.loopStarted {
-			return fmt.Errorf("loop is not yet ready for " +
-				"requests, lnd possibly still starting or " +
-				"syncing")
-		}
-
-		return g.loopServer.ValidateMacaroon(
-			ctx, requiredPermissions, fullMethod,
-		)
-
 	case isFaradayURI(fullMethod):
 		// In remote mode we just pass through the request, the remote
 		// daemon will check the macaroon.
@@ -434,6 +417,23 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 		}
 
 		return g.faradayServer.ValidateMacaroon(
+			ctx, requiredPermissions, fullMethod,
+		)
+
+	case isLoopURI(fullMethod):
+		// In remote mode we just pass through the request, the remote
+		// daemon will check the macaroon.
+		if g.cfg.loopRemote {
+			return nil
+		}
+
+		if !g.loopStarted {
+			return fmt.Errorf("loop is not yet ready for " +
+				"requests, lnd possibly still starting or " +
+				"syncing")
+		}
+
+		return g.loopServer.ValidateMacaroon(
 			ctx, requiredPermissions, fullMethod,
 		)
 
@@ -554,8 +554,8 @@ func (g *LightningTerminal) shutdown() error {
 //        v non-registered call                 |
 //    +---+----------------------+    +---------v----------+
 //    | director                 |    | local subserver    |
-//    +---+----------------------+    |  - loop            |
-//        |                           |  - faraday         |
+//    +---+----------------------+    |  - faraday         |
+//        |                           |  - loop            |
 //        v authenticated call        |  - pool            |
 //    +---+----------------------+    +--------------------+
 //    | lnd (remote or local)    |
