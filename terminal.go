@@ -250,18 +250,14 @@ func (g *LightningTerminal) Run() error {
 // servers that lnd started.
 func (g *LightningTerminal) startSubservers() error {
 	var basicClient lnrpc.LightningClient
-
-	host, network, tlsPath, macPath, err := g.cfg.lndConnectParams()
-	if err != nil {
-		return err
-	}
+	host, network, tlsPath, macPath := g.cfg.lndConnectParams()
 
 	// The main RPC listener of lnd might need some time to start, it could
 	// be that we run into a connection refused a few times. We use the
 	// basic client connection to find out if the RPC server is started yet
 	// because that doesn't do anything else than just connect. We'll check
 	// if lnd is also ready to be used in the next step.
-	err = wait.NoError(func() error {
+	err := wait.NoError(func() error {
 		// Create an lnd client now that we have the full configuration.
 		// We'll need a basic client and a full client because not all
 		// subservers have the same requirements.
@@ -645,7 +641,7 @@ func (g *LightningTerminal) showStartupInfo() error {
 	if g.cfg.LndMode == ModeRemote {
 		// We try to query GetInfo on the remote node to find out the
 		// alias. But the wallet might be locked.
-		host, network, tlsPath, macPath, _ := g.cfg.lndConnectParams()
+		host, network, tlsPath, macPath := g.cfg.lndConnectParams()
 		basicClient, err := lndclient.NewBasicClient(
 			host, tlsPath, path.Dir(macPath), string(network),
 			lndclient.MacFilename(path.Base(macPath)),

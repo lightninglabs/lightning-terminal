@@ -188,8 +188,8 @@ type RemoteDaemonConfig struct {
 
 // lndConnectParams returns the connection parameters to connect to the local
 // lnd instance.
-func (c *Config) lndConnectParams() (string, lndclient.Network, string, string,
-	error) {
+func (c *Config) lndConnectParams() (string, lndclient.Network, string,
+	string) {
 
 	// In remote lnd mode, we just pass along what was configured in the
 	// remote section of the lnd config.
@@ -211,7 +211,7 @@ func (c *Config) lndConnectParams() (string, lndclient.Network, string, string,
 		return c.Remote.Lnd.RPCServer,
 			lndclient.Network(c.network),
 			lncfg.CleanAndExpandPath(c.Remote.Lnd.TLSCertPath),
-			macPath, nil
+			macPath
 	}
 
 	// When we start lnd internally, we take the listen address as
@@ -233,7 +233,7 @@ func (c *Config) lndConnectParams() (string, lndclient.Network, string, string,
 	}
 
 	return lndDialAddr, lndclient.Network(c.network),
-		c.Lnd.TLSCertPath, c.Lnd.AdminMacPath, nil
+		c.Lnd.TLSCertPath, c.Lnd.AdminMacPath
 }
 
 // defaultConfig returns a configuration struct with all default values set.

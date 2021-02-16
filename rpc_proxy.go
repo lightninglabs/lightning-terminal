@@ -126,11 +126,10 @@ type rpcProxy struct {
 
 // Start creates initial connection to lnd.
 func (p *rpcProxy) Start() error {
+	var err error
+
 	// Setup the connection to lnd.
-	host, _, tlsPath, _, err := p.cfg.lndConnectParams()
-	if err != nil {
-		return err
-	}
+	host, _, tlsPath, _ := p.cfg.lndConnectParams()
 	p.lndConn, err = dialLnd(host, tlsPath)
 	if err != nil {
 		return fmt.Errorf("could not dial lnd: %v", err)
@@ -308,13 +307,10 @@ func (p *rpcProxy) basicAuthToMacaroon(ctx context.Context,
 		return ctx, nil
 	}
 
-	var (
-		macPath string
-		err     error
-	)
+	var macPath string
 	switch {
 	case isLndURI(requestURI):
-		_, _, _, macPath, err = p.cfg.lndConnectParams()
+		_, _, _, macPath = p.cfg.lndConnectParams()
 
 	case isLoopURI(requestURI):
 		macPath = p.cfg.Loop.MacaroonPath
@@ -328,9 +324,6 @@ func (p *rpcProxy) basicAuthToMacaroon(ctx context.Context,
 	default:
 		return ctx, fmt.Errorf("unknown gRPC web request: %v",
 			requestURI)
-	}
-	if err != nil {
-		return ctx, fmt.Errorf("error getting macaroon path: %v", err)
 	}
 
 	// Now that we know which macaroon to load, do it and attach it to the
