@@ -191,7 +191,7 @@ func (g *LightningTerminal) Run() error {
 	// Now start the RPC proxy that will handle all incoming gRPC, grpc-web
 	// and REST requests. We also start the main web server that dispatches
 	// requests either to the static UI file server or the RPC proxy. This
-	// makes it possible to unlock lnd through the UI. 
+	// makes it possible to unlock lnd through the UI.
 	if err := g.rpcProxy.Start(); err != nil {
 		return fmt.Errorf("error starting lnd gRPC proxy server: %v",
 			err)
