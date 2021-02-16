@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
+	"github.com/lightningnetwork/lnd/lncfg"
 	"github.com/lightningnetwork/lnd/macaroons"
 	grpcProxy "github.com/mwitkow/grpc-proxy/proxy"
 	"google.golang.org/grpc"
@@ -111,6 +112,9 @@ func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 //        v authenticated call        |  - pool            |
 //    +---+----------------------+    +--------------------+
 //    | lnd (remote or local)    |
+//    | faraday remote           |
+//    | loop remote              |
+//    | pool remote              |
 //    +--------------------------+
 //
 type rpcProxy struct {
@@ -119,7 +123,11 @@ type rpcProxy struct {
 
 	macValidator macaroons.MacaroonValidator
 
-	lndConn      *grpc.ClientConn
+	lndConn     *grpc.ClientConn
+	faradayConn *grpc.ClientConn
+	loopConn    *grpc.ClientConn
+	poolConn    *grpc.ClientConn
+
 	grpcServer   *grpc.Server
 	grpcWebProxy *grpcweb.WrappedGrpcServer
 }
@@ -135,6 +143,41 @@ func (p *rpcProxy) Start() error {
 		return fmt.Errorf("could not dial lnd: %v", err)
 	}
 
+	// Make sure we can connect to all the daemons that are configured to be
+	// running in remote mode.
+	if p.cfg.faradayRemote {
+		p.faradayConn, err = dialBackend(
+			"faraday", p.cfg.Remote.Faraday.RPCServer,
+			lncfg.CleanAndExpandPath(
+				p.cfg.Remote.Faraday.TLSCertPath,
+			),
+		)
+		if err != nil {
+			return fmt.Errorf("could not dial remote faraday: %v",
+				err)
+		}
+	}
+
+	if p.cfg.loopRemote {
+		p.loopConn, err = dialBackend(
+			"loop", p.cfg.Remote.Loop.RPCServer,
+			lncfg.CleanAndExpandPath(p.cfg.Remote.Loop.TLSCertPath),
+		)
+		if err != nil {
+			return fmt.Errorf("could not dial remote loop: %v", err)
+		}
+	}
+
+	if p.cfg.poolRemote {
+		p.poolConn, err = dialBackend(
+			"pool", p.cfg.Remote.Pool.RPCServer,
+			lncfg.CleanAndExpandPath(p.cfg.Remote.Pool.TLSCertPath),
+		)
+		if err != nil {
+			return fmt.Errorf("could not dial remote pool: %v", err)
+		}
+	}
+
 	return nil
 }
 
@@ -145,6 +188,27 @@ func (p *rpcProxy) Stop() error {
 	if p.lndConn != nil {
 		if err := p.lndConn.Close(); err != nil {
 			log.Errorf("Error closing lnd connection: %v", err)
+			return err
+		}
+	}
+
+	if p.faradayConn != nil {
+		if err := p.faradayConn.Close(); err != nil {
+			log.Errorf("Error closing faraday connection: %v", err)
+			return err
+		}
+	}
+
+	if p.loopConn != nil {
+		if err := p.loopConn.Close(); err != nil {
+			log.Errorf("Error closing loop connection: %v", err)
+			return err
+		}
+	}
+
+	if p.poolConn != nil {
+		if err := p.poolConn.Close(); err != nil {
+			log.Errorf("Error closing pool connection: %v", err)
 			return err
 		}
 	}
@@ -188,7 +252,7 @@ func (p *rpcProxy) isHandling(resp http.ResponseWriter,
 // backend, depending on what kind of authentication information is attached to
 // the request.
 func (p *rpcProxy) director(ctx context.Context,
-	_ string) (context.Context, *grpc.ClientConn, error) {
+	requestURI string) (context.Context, *grpc.ClientConn, error) {
 
 	// If this header is present in the request from the web client,
 	// the actual connection to the backend will not be established.
@@ -199,7 +263,29 @@ func (p *rpcProxy) director(ctx context.Context,
 
 	outCtx := metadata.NewOutgoingContext(ctx, mdCopy)
 
-	return outCtx, p.lndConn, nil
+	// Direct the call to the correct backend. For lnd we _always_ have a
+	// client connection, no matter if it's running in integrated or remote
+	// mode. For all other daemons the request shouldn't get here in
+	// integrated mode (after all, the director only picks up calls that the
+	// gRPC server itself would throw a 404 for) so we throw an error
+	// message for them if they're not in remote mode.
+	switch {
+	case isLndURI(requestURI):
+		return outCtx, p.lndConn, nil
+
+	case isFaradayURI(requestURI) && p.cfg.faradayRemote:
+		return outCtx, p.faradayConn, nil
+
+	case isLoopURI(requestURI) && p.cfg.loopRemote:
+		return outCtx, p.loopConn, nil
+
+	case isPoolURI(requestURI) && p.cfg.poolRemote:
+		return outCtx, p.poolConn, nil
+
+	default:
+		return ctx, nil, fmt.Errorf("unknown gRPC web request: %v",
+			requestURI)
+	}
 }
 
 // UnaryServerInterceptor is a gRPC interceptor that checks whether the
@@ -313,13 +399,25 @@ func (p *rpcProxy) basicAuthToMacaroon(ctx context.Context,
 		_, _, _, macPath = p.cfg.lndConnectParams()
 
 	case isLoopURI(requestURI):
-		macPath = p.cfg.Loop.MacaroonPath
+		if p.cfg.loopRemote {
+			macPath = p.cfg.Remote.Loop.MacaroonPath
+		} else {
+			macPath = p.cfg.Loop.MacaroonPath
+		}
 
 	case isFaradayURI(requestURI):
-		macPath = p.cfg.Faraday.MacaroonPath
+		if p.cfg.faradayRemote {
+			macPath = p.cfg.Remote.Faraday.MacaroonPath
+		} else {
+			macPath = p.cfg.Faraday.MacaroonPath
+		}
 
 	case isPoolURI(requestURI):
-		macPath = p.cfg.Pool.MacaroonPath
+		if p.cfg.poolRemote {
+			macPath = p.cfg.Remote.Pool.MacaroonPath
+		} else {
+			macPath = p.cfg.Pool.MacaroonPath
+		}
 
 	default:
 		return ctx, fmt.Errorf("unknown gRPC web request: %v",
@@ -328,7 +426,7 @@ func (p *rpcProxy) basicAuthToMacaroon(ctx context.Context,
 
 	// Now that we know which macaroon to load, do it and attach it to the
 	// request context.
-	macBytes, err := readMacaroon(macPath)
+	macBytes, err := readMacaroon(lncfg.CleanAndExpandPath(macPath))
 	if err != nil {
 		return ctx, fmt.Errorf("error reading macaroon: %v", err)
 	}

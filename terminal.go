@@ -310,24 +310,31 @@ func (g *LightningTerminal) startSubservers() error {
 		return err
 	}
 
-	// Both connection types are ready now, let's start our subservers.
-	err = g.faradayServer.StartAsSubserver(g.lndClient.LndServices)
-	if err != nil {
-		return err
+	// Both connection types are ready now, let's start our subservers if
+	// they should be started locally as an integrated service.
+	if !g.cfg.faradayRemote {
+		err = g.faradayServer.StartAsSubserver(g.lndClient.LndServices)
+		if err != nil {
+			return err
+		}
+		g.faradayStarted = true
 	}
-	g.faradayStarted = true
 
-	err = g.loopServer.StartAsSubserver(g.lndClient)
-	if err != nil {
-		return err
+	if !g.cfg.loopRemote {
+		err = g.loopServer.StartAsSubserver(g.lndClient)
+		if err != nil {
+			return err
+		}
+		g.loopStarted = true
 	}
-	g.loopStarted = true
 
-	err = g.poolServer.StartAsSubserver(basicClient, g.lndClient)
-	if err != nil {
-		return err
+	if !g.cfg.poolRemote {
+		err = g.poolServer.StartAsSubserver(basicClient, g.lndClient)
+		if err != nil {
+			return err
+		}
+		g.poolStarted = true
 	}
-	g.poolStarted = true
 
 	return nil
 }
@@ -338,9 +345,23 @@ func (g *LightningTerminal) startSubservers() error {
 // the same server instance.
 func (g *LightningTerminal) RegisterGrpcSubserver(grpcServer *grpc.Server) error {
 	g.lndGrpcServer = grpcServer
-	frdrpc.RegisterFaradayServerServer(grpcServer, g.faradayServer)
-	looprpc.RegisterSwapClientServer(grpcServer, g.loopServer)
-	poolrpc.RegisterTraderServer(grpcServer, g.poolServer)
+
+	// In remote mode the "director" of the RPC proxy will act as a catch-
+	// all for any gRPC request that isn't known because we didn't register
+	// any server for it. The director will then forward the request to the
+	// remote service.
+	if !g.cfg.faradayRemote {
+		frdrpc.RegisterFaradayServerServer(grpcServer, g.faradayServer)
+	}
+
+	if !g.cfg.loopRemote {
+		looprpc.RegisterSwapClientServer(grpcServer, g.loopServer)
+	}
+
+	if !g.cfg.poolRemote {
+		poolrpc.RegisterTraderServer(grpcServer, g.poolServer)
+	}
+
 	return nil
 }
 
@@ -383,6 +404,12 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 	// checked as they'll have their own interceptor.
 	switch {
 	case isLoopURI(fullMethod):
+		// In remote mode we just pass through the request, the remote
+		// daemon will check the macaroon.
+		if g.cfg.loopRemote {
+			return nil
+		}
+
 		if !g.loopStarted {
 			return fmt.Errorf("loop is not yet ready for " +
 				"requests, lnd possibly still starting or " +
@@ -394,6 +421,12 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 		)
 
 	case isFaradayURI(fullMethod):
+		// In remote mode we just pass through the request, the remote
+		// daemon will check the macaroon.
+		if g.cfg.faradayRemote {
+			return nil
+		}
+
 		if !g.faradayStarted {
 			return fmt.Errorf("faraday is not yet ready for " +
 				"requests, lnd possibly still starting or " +
@@ -405,6 +438,18 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 		)
 
 	case isPoolURI(fullMethod):
+		// In remote mode we just pass through the request, the remote
+		// daemon will check the macaroon.
+		if g.cfg.poolRemote {
+			return nil
+		}
+
+		if !g.poolStarted {
+			return fmt.Errorf("pool is not yet ready for " +
+				"requests, lnd possibly still starting or " +
+				"syncing")
+		}
+
 		return g.poolServer.ValidateMacaroon(
 			ctx, requiredPermissions, fullMethod,
 		)
@@ -514,6 +559,9 @@ func (g *LightningTerminal) shutdown() error {
 //        v authenticated call        |  - pool            |
 //    +---+----------------------+    +--------------------+
 //    | lnd (remote or local)    |
+//    | faraday remote           |
+//    | loop remote              |
+//    | pool remote              |
 //    +--------------------------+
 //
 func (g *LightningTerminal) startMainWebServer() error {
