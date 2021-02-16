@@ -130,7 +130,7 @@ func (p *rpcProxy) Start() error {
 
 	// Setup the connection to lnd.
 	host, _, tlsPath, _ := p.cfg.lndConnectParams()
-	p.lndConn, err = dialLnd(host, tlsPath)
+	p.lndConn, err = dialBackend("lnd", host, tlsPath)
 	if err != nil {
 		return fmt.Errorf("could not dial lnd: %v", err)
 	}
@@ -336,21 +336,20 @@ func (p *rpcProxy) basicAuthToMacaroon(ctx context.Context,
 	return metadata.NewIncomingContext(ctx, md), nil
 }
 
-// dialLnd connects to lnd through the given address and uses the given TLS
-// certificate to authenticate the connection.
-func dialLnd(dialAddr, tlsCertPath string) (*grpc.ClientConn, error) {
-
+// dialBackend connects to a gRPC backend through the given address and uses the
+// given TLS certificate to authenticate the connection.
+func dialBackend(name, dialAddr, tlsCertPath string) (*grpc.ClientConn, error) {
 	var opts []grpc.DialOption
 	tlsConfig, err := credentials.NewClientTLSFromFile(tlsCertPath, "")
 	if err != nil {
-		return nil, fmt.Errorf("could not read lnd TLS cert %s: %v",
-			tlsCertPath, err)
+		return nil, fmt.Errorf("could not read %s TLS cert %s: %v",
+			name, tlsCertPath, err)
 	}
 
 	opts = append(
 		opts,
 
-		// From the grpxProxy doc: This codec is *crucial* to the
+		// From the grpcProxy doc: This codec is *crucial* to the
 		// functioning of the proxy.
 		grpc.WithCodec(grpcProxy.Codec()), // nolint
 		grpc.WithTransportCredentials(tlsConfig),
@@ -361,10 +360,11 @@ func dialLnd(dialAddr, tlsCertPath string) (*grpc.ClientConn, error) {
 		}),
 	)
 
-	log.Infof("Dialing lnd gRPC server at %s", dialAddr)
+	log.Infof("Dialing %s gRPC server at %s", name, dialAddr)
 	cc, err := grpc.Dial(dialAddr, opts...)
 	if err != nil {
-		return nil, fmt.Errorf("failed dialing backend: %v", err)
+		return nil, fmt.Errorf("failed dialing %s backend: %v", name,
+			err)
 	}
 	return cc, nil
 }
