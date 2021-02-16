@@ -120,6 +120,12 @@ type Config struct {
 	LitDir     string `long:"lit-dir" description:"The main directory where LiT looks for its configuration file. If LiT is running in 'remote' lnd mode, this is also the directory where the TLS certificates and log files are stored by default."`
 	ConfigFile string `long:"configfile" description:"Path to LiT's configuration file."`
 
+	// Network is the Bitcoin network we're running on. This will be parsed
+	// before the configuration is loaded and will set the correct flag on
+	// `lnd.bitcoin.mainnet|testnet|regtest` and also for the other daemons.
+	// That way only one global network flag is needed.
+	Network string `long:"network" description:"The network the UI and all its components run on" choice:"regtest" choice:"testnet" choice:"mainnet" choice:"simnet"`
+
 	Remote *RemoteConfig `group:"Remote mode options (use when lnd-mode=remote)" namespace:"remote"`
 
 	Faraday *faraday.Config `group:"Faraday options" namespace:"faraday"`
@@ -131,11 +137,6 @@ type Config struct {
 	// faradayRpcConfig is a subset of faraday's full configuration that is
 	// passed into faraday's RPC server.
 	faradayRpcConfig *frdrpc.Config
-
-	// network is the Bitcoin network we're running on. This will be parsed
-	// and set when the configuration is loaded, either from
-	// `lnd.bitcoin.mainnet|testnet|regtest` or from `remote.lnd.network`.
-	network string
 }
 
 // RemoteConfig holds the configuration parameters that are needed when running
@@ -156,8 +157,6 @@ type RemoteConfig struct {
 // RemoteDaemonConfig holds the configuration parameters that are needed to
 // connect to a remote daemon like lnd for example.
 type RemoteDaemonConfig struct {
-	Network string `long:"network" description:"The network the remote daemon runs on" choice:"regtest" choice:"testnet" choice:"mainnet" choice:"simnet"`
-
 	// RPCServer is host:port that the remote daemon's RPC server is
 	// listening on.
 	RPCServer string `long:"rpcserver" description:"The host:port that the remote daemon is listening for RPC connections on."`
@@ -183,7 +182,7 @@ func (c *Config) lndConnectParams() (string, lndclient.Network, string,
 	// remote section of the lnd config.
 	if c.LndMode == ModeRemote {
 		return c.Remote.Lnd.RPCServer,
-			lndclient.Network(c.network),
+			lndclient.Network(c.Network),
 			lncfg.CleanAndExpandPath(c.Remote.Lnd.TLSCertPath),
 			lncfg.CleanAndExpandPath(c.Remote.Lnd.MacaroonPath)
 	}
@@ -206,7 +205,7 @@ func (c *Config) lndConnectParams() (string, lndclient.Network, string,
 		)
 	}
 
-	return lndDialAddr, lndclient.Network(c.network),
+	return lndDialAddr, lndclient.Network(c.Network),
 		c.Lnd.TLSCertPath, c.Lnd.AdminMacPath
 }
 
@@ -222,12 +221,12 @@ func defaultConfig() *Config {
 			LitMaxLogFiles:    defaultMaxLogFiles,
 			LitMaxLogFileSize: defaultMaxLogFileSize,
 			Lnd: &RemoteDaemonConfig{
-				Network:      defaultNetwork,
 				RPCServer:    defaultRemoteLndRpcServer,
 				MacaroonPath: lndDefaultConfig.AdminMacPath,
 				TLSCertPath:  lndDefaultConfig.TLSCertPath,
 			},
 		},
+		Network:           defaultNetwork,
 		LndMode:           defaultLndMode,
 		Lnd:               &lndDefaultConfig,
 		LitDir:            defaultLitDir,
@@ -317,17 +316,14 @@ func loadAndValidateConfig() (*Config, error) {
 	// (like the log or lnd options) as they will be taken from lnd's config
 	// struct. Others we want to force to be the same as lnd so the user
 	// doesn't have to set them manually, like the network for example.
-	cfg.Loop.Network = cfg.network
 	if err := loopd.Validate(cfg.Loop); err != nil {
 		return nil, err
 	}
 
-	cfg.Pool.Network = cfg.network
 	if err := pool.Validate(cfg.Pool); err != nil {
 		return nil, err
 	}
 
-	cfg.Faraday.Network = cfg.network
 	if err := faraday.ValidateConfig(cfg.Faraday); err != nil {
 		return nil, err
 	}
@@ -389,6 +385,12 @@ func loadConfigFile(preCfg *Config, usageMessage string) (*Config, error) {
 		return nil, err
 	}
 
+	// Parse the global/top-level network and propagate it to all sub config
+	// structs.
+	if err := setNetwork(cfg); err != nil {
+		return nil, err
+	}
+
 	switch cfg.LndMode {
 	// In case we are running lnd in-process, let's make sure its
 	// configuration is fully valid. This also sets up the main logger that
@@ -396,10 +398,6 @@ func loadConfigFile(preCfg *Config, usageMessage string) (*Config, error) {
 	case ModeIntegrated:
 		var err error
 		cfg.Lnd, err = lnd.ValidateConfig(*cfg.Lnd, usageMessage)
-		if err != nil {
-			return nil, err
-		}
-		cfg.network, err = getNetwork(cfg.Lnd.Bitcoin)
 		if err != nil {
 			return nil, err
 		}
@@ -431,13 +429,6 @@ func loadConfigFile(preCfg *Config, usageMessage string) (*Config, error) {
 func validateRemoteModeConfig(cfg *Config) error {
 	r := cfg.Remote
 
-	// Validate the network as in the remote node it's provided as a string
-	// instead of a series of boolean flags.
-	if _, err := lndclient.Network(r.Lnd.Network).ChainParams(); err != nil {
-		return fmt.Errorf("error validating lnd remote network: %v", err)
-	}
-	cfg.network = r.Lnd.Network
-
 	// When referring to the default lnd configuration later on, let's make
 	// sure we use the actual default values and not the lndDefaultConfig
 	// variable which could've been overwritten by the user. Otherwise this
@@ -448,12 +439,12 @@ func validateRemoteModeConfig(cfg *Config) error {
 	// need to adjust the default macaroon directory so the user can only
 	// specify --network=testnet for example if everything else is using
 	// the defaults.
-	if r.Lnd.Network != defaultNetwork &&
+	if cfg.Network != defaultNetwork &&
 		r.Lnd.MacaroonPath == defaultLndCfg.AdminMacPath {
 
 		r.Lnd.MacaroonPath = filepath.Join(
 			defaultLndCfg.DataDir, defaultLndChainSubDir,
-			defaultLndChain, r.Lnd.Network,
+			defaultLndChain, cfg.Network,
 			path.Base(defaultLndCfg.AdminMacPath),
 		)
 	}
@@ -486,7 +477,7 @@ func validateRemoteModeConfig(cfg *Config) error {
 	logWriter := build.NewRotatingLogWriter()
 	cfg.Lnd.LogWriter = logWriter
 	err := logWriter.InitLogRotator(
-		filepath.Join(r.LitLogDir, cfg.network, defaultLogFilename),
+		filepath.Join(r.LitLogDir, cfg.Network, defaultLogFilename),
 		r.LitMaxLogFileSize, r.LitMaxLogFiles,
 	)
 	if err != nil {
@@ -499,23 +490,33 @@ func validateRemoteModeConfig(cfg *Config) error {
 	)
 }
 
-func getNetwork(cfg *lncfg.Chain) (string, error) {
-	switch {
-	case cfg.MainNet:
-		return "mainnet", nil
+// setNetwork parses the top-level network config options and, if valid, sets it
+// in all sub configuration structs. We also set the Bitcoin chain to active by
+// default as LiT won't support Litecoin in the foreseeable future.
+func setNetwork(cfg *Config) error {
+	switch cfg.Network {
+	case "mainnet":
+		cfg.Lnd.Bitcoin.MainNet = true
 
-	case cfg.TestNet3:
-		return "testnet", nil
+	case "testnet", "testnet3":
+		cfg.Lnd.Bitcoin.TestNet3 = true
 
-	case cfg.RegTest:
-		return "regtest", nil
+	case "regtest":
+		cfg.Lnd.Bitcoin.RegTest = true
 
-	case cfg.SimNet:
-		return "simnet", nil
+	case "simnet":
+		cfg.Lnd.Bitcoin.SimNet = true
 
 	default:
-		return "", fmt.Errorf("no network selected")
+		return fmt.Errorf("unknown network: %v", cfg.Network)
 	}
+
+	cfg.Lnd.Bitcoin.Active = true
+	cfg.Faraday.Network = cfg.Network
+	cfg.Loop.Network = cfg.Network
+	cfg.Pool.Network = cfg.Network
+
+	return nil
 }
 
 // readUIPassword reads the password for the UI either from the command line

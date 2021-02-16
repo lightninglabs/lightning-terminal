@@ -89,8 +89,8 @@ and `faraday` (optional):
   --letsencrypt \
   --letsencrypthost=loop.merchant.com \
   --lit-dir=~/.lit \
+  --network=testnet \
   --remote.lit-debuglevel=debug \
-  --remote.lnd.network=testnet \
   --remote.lnd.rpcserver=some-other-host:10009 \
   --remote.lnd.macaroonpath=/some/folder/with/lnd/data/admin.macaroon \
   --remote.lnd.tlscertpath=/some/folder/with/lnd/data/tls.cert \
@@ -135,12 +135,12 @@ uipassword=My$trongP@ssword
 letsencrypt=true
 letsencrypthost=loop.merchant.com
 lit-dir=~/.lit
+network=testnet
 
 # Remote options
 remote.lit-debuglevel=debug
 
 # Remote lnd options
-remote.lnd.network=testnet
 remote.lnd.rpcserver=some-other-host:10009
 remote.lnd.macaroonpath=/some/folder/with/lnd/data/admin.macaroon
 remote.lnd.tlscertpath=/some/folder/with/lnd/data/tls.cert
@@ -180,8 +180,8 @@ configuration (only relevant parts shown here):
 ```text
 httpslisten=0.0.0.0:8443
 lit-dir=~/.lit
+network=testnet
 
-remote.lnd.network=testnet
 remote.lnd.rpcserver=some-other-host:10009
 remote.lnd.macaroonpath=/some/folder/with/lnd/data/admin.macaroon
 remote.lnd.tlscertpath=/some/folder/with/lnd/data/tls.cert

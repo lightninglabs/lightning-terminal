@@ -79,8 +79,7 @@ httpslisten=0.0.0.0:8443
 letsencrypt=1
 letsencrypthost=terminal.mydomain.com
 lnd-mode=integrated
-
-lnd.bitcoin.testnet=true
+network=testnet
 ```
 
 ### Example `lncli` command
