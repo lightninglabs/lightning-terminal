@@ -5,7 +5,7 @@ installed on your machine.
 
 | Dependency                                          | Description                                                                                                                                                                          |
 | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [golang](https://golang.org/doc/install)            | LiT's backend web server is written in Go. The minimum version supported is Go v1.13.                                                                                                |
+| [golang](https://golang.org/doc/install)            | LiT's backend web server is written in Go. The minimum version supported is Go v1.16.                                                                                                |
 | [nodejs](https://nodejs.org/en/download/)           | LiT's frontend is written in TypeScript and built on top of the React JS web framework. To bundle the assets into Javascript & CSS compatible with web browsers, NodeJS is required. |
 | [yarn](https://classic.yarnpkg.com/en/docs/install) | A popular package manager for NodeJS application dependencies.                                                                                                                        |
 
