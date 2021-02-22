@@ -259,7 +259,7 @@
   "cmps.tour.TextStep.swapProgress": "Once the progress bar turns green, your swap has been completed successfully.",
   "cmps.tour.TextStep.congrats": "Congratulations!\n You have completed the tour.\n Happy Looping!",
   "cmps.tour.WelcomeStep.header": "Welcome to Lightning Terminal!",
-  "cmps.tour.WelcomeStep.desc": "A browser-based interface for Loop, presenting a visual representation of your of your channels and balances. Easily identify inefficient channels, perform loops with just a few clicks, and monitor the progress of your ongoing Loops.",
+  "cmps.tour.WelcomeStep.desc": "A browser-based interface for Loop, presenting a visual representation of your channels and balances. Easily identify inefficient channels, perform loops with just a few clicks, and monitor the progress of your ongoing Loops.",
   "cmps.tour.WelcomeStep.tour": "This tour will walk you through the different sections of the dashboard and show you how to perform a Loop.",
   "cmps.tour.WelcomeStep.walkthrough1": "You may also reference the ",
   "cmps.tour.WelcomeStep.walkthrough2": "Walkthrough",
