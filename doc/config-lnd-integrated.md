@@ -32,14 +32,13 @@ node:
   --uipassword=My$trongP@ssword \
   --letsencrypt \
   --letsencrypthost=loop.merchant.com \
+  --network=testnet \
   --lnd-mode=integrated \
   --lnd.lnddir=/root/.lnd \
   --lnd.alias=merchant \
   --lnd.externalip=loop.merchant.com \
   --lnd.rpclisten=0.0.0.0:10009 \
   --lnd.listen=0.0.0.0:9735 \
-  --lnd.bitcoin.active \
-  --lnd.bitcoin.testnet \
   --lnd.bitcoin.node=bitcoind \
   --lnd.bitcoind.rpchost=localhost \
   --lnd.bitcoind.rpcuser=testnetuser \
@@ -75,6 +74,7 @@ httpslisten=0.0.0.0:8443
 letsencrypt=true
 letsencrypthost=loop.merchant.com
 lnd-mode=integrated
+network=testnet
 
 # Lnd
 lnd.lnddir=~/.lnd
@@ -85,8 +85,6 @@ lnd.listen=0.0.0.0:9735
 lnd.debuglevel=debug
 
 # Lnd - bitcoin
-lnd.bitcoin.active=true
-lnd.bitcoin.testnet=true
 lnd.bitcoin.node=bitcoind
 
 # Lnd - bitcoind
@@ -151,13 +149,12 @@ For `lnd`:
   ```text
   # New flag to tell LiT to run its own lnd in integrated mode. We need to set
   # this because "remote" is the new default value if we don't specify anything.
+  # We also don't need to explicitly activate the Bitcoin network anymore as
+  # that is the default for LiT.
   lnd-mode=integrated
 
   # Application Options
   lnd.alias=merchant
-  
-  # bitcoin
-  lnd.bitcoin.active=true
   ```
 
 - if you use command line arguments for configuration, add the `lnd.` prefix to
@@ -271,11 +268,10 @@ relevant parts shown here):
 
 ```text
 lnd-mode=integrated
+network=testnet
 
 lnd.lnddir=~/.lnd
 lnd.rpclisten=0.0.0.0:10009
-
-lnd.bitcoin.testnet=true
 ```
 
 Because all components listen on the same gRPC port and use the same TLS

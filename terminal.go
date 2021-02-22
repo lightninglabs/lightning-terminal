@@ -191,7 +191,7 @@ func (g *LightningTerminal) Run() error {
 	// Now start the RPC proxy that will handle all incoming gRPC, grpc-web
 	// and REST requests. We also start the main web server that dispatches
 	// requests either to the static UI file server or the RPC proxy. This
-	// makes it possible to unlock lnd through the UI. 
+	// makes it possible to unlock lnd through the UI.
 	if err := g.rpcProxy.Start(); err != nil {
 		return fmt.Errorf("error starting lnd gRPC proxy server: %v",
 			err)
@@ -250,18 +250,14 @@ func (g *LightningTerminal) Run() error {
 // servers that lnd started.
 func (g *LightningTerminal) startSubservers() error {
 	var basicClient lnrpc.LightningClient
-
-	host, network, tlsPath, macPath, err := g.cfg.lndConnectParams()
-	if err != nil {
-		return err
-	}
+	host, network, tlsPath, macPath := g.cfg.lndConnectParams()
 
 	// The main RPC listener of lnd might need some time to start, it could
 	// be that we run into a connection refused a few times. We use the
 	// basic client connection to find out if the RPC server is started yet
 	// because that doesn't do anything else than just connect. We'll check
 	// if lnd is also ready to be used in the next step.
-	err = wait.NoError(func() error {
+	err := wait.NoError(func() error {
 		// Create an lnd client now that we have the full configuration.
 		// We'll need a basic client and a full client because not all
 		// subservers have the same requirements.
@@ -314,24 +310,31 @@ func (g *LightningTerminal) startSubservers() error {
 		return err
 	}
 
-	// Both connection types are ready now, let's start our subservers.
-	err = g.faradayServer.StartAsSubserver(g.lndClient.LndServices)
-	if err != nil {
-		return err
+	// Both connection types are ready now, let's start our subservers if
+	// they should be started locally as an integrated service.
+	if !g.cfg.faradayRemote {
+		err = g.faradayServer.StartAsSubserver(g.lndClient.LndServices)
+		if err != nil {
+			return err
+		}
+		g.faradayStarted = true
 	}
-	g.faradayStarted = true
 
-	err = g.loopServer.StartAsSubserver(g.lndClient)
-	if err != nil {
-		return err
+	if !g.cfg.loopRemote {
+		err = g.loopServer.StartAsSubserver(g.lndClient)
+		if err != nil {
+			return err
+		}
+		g.loopStarted = true
 	}
-	g.loopStarted = true
 
-	err = g.poolServer.StartAsSubserver(basicClient, g.lndClient)
-	if err != nil {
-		return err
+	if !g.cfg.poolRemote {
+		err = g.poolServer.StartAsSubserver(basicClient, g.lndClient)
+		if err != nil {
+			return err
+		}
+		g.poolStarted = true
 	}
-	g.poolStarted = true
 
 	return nil
 }
@@ -342,9 +345,23 @@ func (g *LightningTerminal) startSubservers() error {
 // the same server instance.
 func (g *LightningTerminal) RegisterGrpcSubserver(grpcServer *grpc.Server) error {
 	g.lndGrpcServer = grpcServer
-	frdrpc.RegisterFaradayServerServer(grpcServer, g.faradayServer)
-	looprpc.RegisterSwapClientServer(grpcServer, g.loopServer)
-	poolrpc.RegisterTraderServer(grpcServer, g.poolServer)
+
+	// In remote mode the "director" of the RPC proxy will act as a catch-
+	// all for any gRPC request that isn't known because we didn't register
+	// any server for it. The director will then forward the request to the
+	// remote service.
+	if !g.cfg.faradayRemote {
+		frdrpc.RegisterFaradayServerServer(grpcServer, g.faradayServer)
+	}
+
+	if !g.cfg.loopRemote {
+		looprpc.RegisterSwapClientServer(grpcServer, g.loopServer)
+	}
+
+	if !g.cfg.poolRemote {
+		poolrpc.RegisterTraderServer(grpcServer, g.poolServer)
+	}
+
 	return nil
 }
 
@@ -386,18 +403,13 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 	// process. Calls that we proxy to a remote host don't need to be
 	// checked as they'll have their own interceptor.
 	switch {
-	case isLoopURI(fullMethod):
-		if !g.loopStarted {
-			return fmt.Errorf("loop is not yet ready for " +
-				"requests, lnd possibly still starting or " +
-				"syncing")
+	case isFaradayURI(fullMethod):
+		// In remote mode we just pass through the request, the remote
+		// daemon will check the macaroon.
+		if g.cfg.faradayRemote {
+			return nil
 		}
 
-		return g.loopServer.ValidateMacaroon(
-			ctx, requiredPermissions, fullMethod,
-		)
-
-	case isFaradayURI(fullMethod):
 		if !g.faradayStarted {
 			return fmt.Errorf("faraday is not yet ready for " +
 				"requests, lnd possibly still starting or " +
@@ -408,7 +420,36 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 			ctx, requiredPermissions, fullMethod,
 		)
 
+	case isLoopURI(fullMethod):
+		// In remote mode we just pass through the request, the remote
+		// daemon will check the macaroon.
+		if g.cfg.loopRemote {
+			return nil
+		}
+
+		if !g.loopStarted {
+			return fmt.Errorf("loop is not yet ready for " +
+				"requests, lnd possibly still starting or " +
+				"syncing")
+		}
+
+		return g.loopServer.ValidateMacaroon(
+			ctx, requiredPermissions, fullMethod,
+		)
+
 	case isPoolURI(fullMethod):
+		// In remote mode we just pass through the request, the remote
+		// daemon will check the macaroon.
+		if g.cfg.poolRemote {
+			return nil
+		}
+
+		if !g.poolStarted {
+			return fmt.Errorf("pool is not yet ready for " +
+				"requests, lnd possibly still starting or " +
+				"syncing")
+		}
+
 		return g.poolServer.ValidateMacaroon(
 			ctx, requiredPermissions, fullMethod,
 		)
@@ -427,8 +468,7 @@ func (g *LightningTerminal) shutdown() error {
 	var returnErr error
 
 	if g.faradayStarted {
-		err := g.faradayServer.Stop()
-		if err != nil {
+		if err := g.faradayServer.Stop(); err != nil {
 			log.Errorf("Error stopping faraday: %v", err)
 			returnErr = err
 		}
@@ -436,9 +476,15 @@ func (g *LightningTerminal) shutdown() error {
 
 	if g.loopStarted {
 		g.loopServer.Stop()
-		err := <-g.loopServer.ErrChan
-		if err != nil {
+		if err := <-g.loopServer.ErrChan; err != nil {
 			log.Errorf("Error stopping loop: %v", err)
+			returnErr = err
+		}
+	}
+
+	if g.poolStarted {
+		if err := g.poolServer.Stop(); err != nil {
+			log.Errorf("Error stopping pool: %v", err)
 			returnErr = err
 		}
 	}
@@ -508,11 +554,14 @@ func (g *LightningTerminal) shutdown() error {
 //        v non-registered call                 |
 //    +---+----------------------+    +---------v----------+
 //    | director                 |    | local subserver    |
-//    +---+----------------------+    |  - loop            |
-//        |                           |  - faraday         |
+//    +---+----------------------+    |  - faraday         |
+//        |                           |  - loop            |
 //        v authenticated call        |  - pool            |
 //    +---+----------------------+    +--------------------+
 //    | lnd (remote or local)    |
+//    | faraday remote           |
+//    | loop remote              |
+//    | pool remote              |
 //    +--------------------------+
 //
 func (g *LightningTerminal) startMainWebServer() error {
@@ -645,7 +694,7 @@ func (g *LightningTerminal) showStartupInfo() error {
 	if g.cfg.LndMode == ModeRemote {
 		// We try to query GetInfo on the remote node to find out the
 		// alias. But the wallet might be locked.
-		host, network, tlsPath, macPath, _ := g.cfg.lndConnectParams()
+		host, network, tlsPath, macPath := g.cfg.lndConnectParams()
 		basicClient, err := lndclient.NewBasicClient(
 			host, tlsPath, path.Dir(macPath), string(network),
 			lndclient.MacFilename(path.Base(macPath)),

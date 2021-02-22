@@ -49,14 +49,46 @@ Visit https://localhost:8443 to access LiT.
 
 ## Additional Configuration
 
-The "remote" mode means that `lnd` is started as a standalone process, possibly on another
+The default "remote" mode means that `lnd` is started as a standalone process, possibly on another
 host, and `litd` connects to it, right after starting its UI server. Once the connection
 to the remote `lnd` node has been established, `litd` then goes ahead and starts
 `faraday`, `pool` and `loop` and connects them to that `lnd` node as well.
 
-Currently the UI server cannot connect to `loop`, `pool` or `faraday` daemons
-that aren't running in the same process. But that feature will also be available
-in future versions.
+### Connecting LiT to a remote faraday node
+
+To instruct LiT to not start its own integrated `faraday` daemon but instead
+connect to an existing node, use the following configuration options:
+
+```text
+faraday-mode=remote
+remote.faraday.rpcserver=<externally-reachable-ip-address>:8465
+remote.faraday.macaroonpath=/some/folder/with/faraday/data/faraday.macaroon
+remote.faraday.tlscertpath=/some/folder/with/faraday/data/tls.cert
+```
+
+### Connecting LiT to a remote loopd node
+
+To instruct LiT to not start its own integrated `loopd` daemon but instead
+connect to an existing node, use the following configuration options:
+
+```text
+loop-mode=remote
+remote.loop.rpcserver=<externally-reachable-ip-address>:11010
+remote.loop.macaroonpath=/some/folder/with/loop/data/loop.macaroon
+remote.loop.tlscertpath=/some/folder/with/loop/data/tls.cert
+```
+
+### Connecting LiT to a remote poold node
+
+To instruct LiT to not start its own integrated `poold` daemon but instead
+connect to an existing node, use the following configuration options:
+
+```text
+pool-mode=remote
+remote.pool.rpcserver=<externally-reachable-ip-address>:12010
+remote.pool.macaroonpath=/some/folder/with/pool/data/pool.macaroon
+remote.pool.tlscertpath=/some/folder/with/pool/data/tls.cert
+```
 
 ## Use command line parameters only
 
@@ -89,8 +121,8 @@ and `faraday` (optional):
   --letsencrypt \
   --letsencrypthost=loop.merchant.com \
   --lit-dir=~/.lit \
+  --network=testnet \
   --remote.lit-debuglevel=debug \
-  --remote.lnd.network=testnet \
   --remote.lnd.rpcserver=some-other-host:10009 \
   --remote.lnd.macaroonpath=/some/folder/with/lnd/data/admin.macaroon \
   --remote.lnd.tlscertpath=/some/folder/with/lnd/data/tls.cert \
@@ -135,12 +167,12 @@ uipassword=My$trongP@ssword
 letsencrypt=true
 letsencrypthost=loop.merchant.com
 lit-dir=~/.lit
+network=testnet
 
 # Remote options
 remote.lit-debuglevel=debug
 
 # Remote lnd options
-remote.lnd.network=testnet
 remote.lnd.rpcserver=some-other-host:10009
 remote.lnd.macaroonpath=/some/folder/with/lnd/data/admin.macaroon
 remote.lnd.tlscertpath=/some/folder/with/lnd/data/tls.cert
@@ -180,8 +212,8 @@ configuration (only relevant parts shown here):
 ```text
 httpslisten=0.0.0.0:8443
 lit-dir=~/.lit
+network=testnet
 
-remote.lnd.network=testnet
 remote.lnd.rpcserver=some-other-host:10009
 remote.lnd.macaroonpath=/some/folder/with/lnd/data/admin.macaroon
 remote.lnd.tlscertpath=/some/folder/with/lnd/data/tls.cert
