@@ -66,6 +66,7 @@ Lightning Terminal is backwards compatible with `lnd` back to version v0.11.1-be
 
 | LiT              | LND          |
 | ---------------- | ------------ |
+| **v0.4.1-alpha** | v0.11.1-beta |
 | **v0.4.0-alpha** | v0.11.1-beta |
 | **v0.3.4-alpha** | v0.11.1-beta | 
 | **v0.3.3-alpha** | v0.11.1-beta | 
@@ -78,6 +79,7 @@ Lightning Terminal is backwards compatible with `lnd` back to version v0.11.1-be
 
 | LiT              | LND          | Loop        | Faraday      | Pool          |
 | ---------------- | ------------ | ----------- | ------------ |---------------|
+| **v0.4.1-alpha** | v0.12.1-beta | v0.11.4-beta | v0.2.3-alpha | v0.4.3-alpha |
 | **v0.4.0-alpha** | v0.12.0-beta | v0.11.2-beta | v0.2.3-alpha | v0.4.3-alpha |
 | **v0.3.4-alpha** | v0.11.1-beta | v0.11.2-beta | v0.2.2-alpha | v0.3.4-alpha |
 | **v0.3.3-alpha** | v0.11.1-beta | v0.11.2-beta | v0.2.2-alpha | v0.3.4-alpha |
