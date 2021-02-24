@@ -13,7 +13,7 @@ require (
 	github.com/lightninglabs/loop v0.11.2-beta.0.20210114072419-d85cc010b0d4
 	github.com/lightninglabs/pool v0.4.3-alpha
 	github.com/lightninglabs/pool/auctioneerrpc v1.0.1 // indirect
-	github.com/lightningnetwork/lnd v0.12.0-beta.rc5
+	github.com/lightningnetwork/lnd v0.12.1-beta
 	github.com/lightningnetwork/lnd/cert v1.0.3
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
 	github.com/mwitkow/grpc-proxy v0.0.0-20181017164139-0f1106ef9c76
@@ -30,4 +30,4 @@ require (
 
 go 1.13
 
-replace github.com/lightningnetwork/lnd => github.com/lightningnetwork/lnd v0.12.0-beta
+replace github.com/lightningnetwork/lnd => github.com/lightningnetwork/lnd v0.12.1-beta
