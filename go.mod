@@ -11,7 +11,7 @@ require (
 	github.com/lightninglabs/faraday v0.2.3-alpha
 	github.com/lightninglabs/lndclient v0.11.0-5
 	github.com/lightninglabs/loop v0.11.4-beta
-	github.com/lightninglabs/pool v0.4.3-alpha
+	github.com/lightninglabs/pool v0.4.4-alpha
 	github.com/lightninglabs/pool/auctioneerrpc v1.0.1 // indirect
 	github.com/lightningnetwork/lnd v0.12.1-beta
 	github.com/lightningnetwork/lnd/cert v1.0.3
