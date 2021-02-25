@@ -61,7 +61,6 @@ type LightningTerminal struct {
 	lndErrChan chan error
 
 	lndClient     *lndclient.GrpcLndServices
-	lndGrpcServer *grpc.Server
 
 	faradayServer  *frdrpc.RPCServer
 	faradayStarted bool
@@ -343,23 +342,27 @@ func (g *LightningTerminal) startSubservers() error {
 // called once lnd has initialized its main gRPC server instance. It gives the
 // daemons (or external subservers) the possibility to register themselves to
 // the same server instance.
-func (g *LightningTerminal) RegisterGrpcSubserver(grpcServer *grpc.Server) error {
-	g.lndGrpcServer = grpcServer
-
+func (g *LightningTerminal) RegisterGrpcSubserver(_ *grpc.Server) error {
 	// In remote mode the "director" of the RPC proxy will act as a catch-
 	// all for any gRPC request that isn't known because we didn't register
 	// any server for it. The director will then forward the request to the
 	// remote service.
 	if !g.cfg.faradayRemote {
-		frdrpc.RegisterFaradayServerServer(grpcServer, g.faradayServer)
+		frdrpc.RegisterFaradayServerServer(
+			g.rpcProxy.grpcServer, g.faradayServer,
+		)
 	}
 
 	if !g.cfg.loopRemote {
-		looprpc.RegisterSwapClientServer(grpcServer, g.loopServer)
+		looprpc.RegisterSwapClientServer(
+			g.rpcProxy.grpcServer, g.loopServer,
+		)
 	}
 
 	if !g.cfg.poolRemote {
-		poolrpc.RegisterTraderServer(grpcServer, g.poolServer)
+		poolrpc.RegisterTraderServer(
+			g.rpcProxy.grpcServer, g.poolServer,
+		)
 	}
 
 	return nil
