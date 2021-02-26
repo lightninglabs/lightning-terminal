@@ -60,7 +60,7 @@ type LightningTerminal struct {
 	wg         sync.WaitGroup
 	lndErrChan chan error
 
-	lndClient     *lndclient.GrpcLndServices
+	lndClient *lndclient.GrpcLndServices
 
 	faradayServer  *frdrpc.RPCServer
 	faradayStarted bool
@@ -342,27 +342,21 @@ func (g *LightningTerminal) startSubservers() error {
 // called once lnd has initialized its main gRPC server instance. It gives the
 // daemons (or external subservers) the possibility to register themselves to
 // the same server instance.
-func (g *LightningTerminal) RegisterGrpcSubserver(_ *grpc.Server) error {
+func (g *LightningTerminal) RegisterGrpcSubserver(server *grpc.Server) error {
 	// In remote mode the "director" of the RPC proxy will act as a catch-
 	// all for any gRPC request that isn't known because we didn't register
 	// any server for it. The director will then forward the request to the
 	// remote service.
 	if !g.cfg.faradayRemote {
-		frdrpc.RegisterFaradayServerServer(
-			g.rpcProxy.grpcServer, g.faradayServer,
-		)
+		frdrpc.RegisterFaradayServerServer(server, g.faradayServer)
 	}
 
 	if !g.cfg.loopRemote {
-		looprpc.RegisterSwapClientServer(
-			g.rpcProxy.grpcServer, g.loopServer,
-		)
+		looprpc.RegisterSwapClientServer(server, g.loopServer)
 	}
 
 	if !g.cfg.poolRemote {
-		poolrpc.RegisterTraderServer(
-			g.rpcProxy.grpcServer, g.poolServer,
-		)
+		poolrpc.RegisterTraderServer(server, g.poolServer)
 	}
 
 	return nil
@@ -550,22 +544,25 @@ func (g *LightningTerminal) shutdown() error {
 //    +---+----------------------+
 //        |
 //        v native gRPC call with macaroon
-//    +---+----------------------+ registered call
-//    | gRPC server              +--------------+
-//    +---+----------------------+              |
-//        |                                     |
-//        v non-registered call                 |
-//    +---+----------------------+    +---------v----------+
-//    | director                 |    | local subserver    |
-//    +---+----------------------+    |  - faraday         |
-//        |                           |  - loop            |
-//        v authenticated call        |  - pool            |
-//    +---+----------------------+    +--------------------+
-//    | lnd (remote or local)    |
-//    | faraday remote           |
-//    | loop remote              |
-//    | pool remote              |
-//    +--------------------------+
+//    +---+----------------------+
+//    | gRPC server              |
+//    +---+----------------------+
+//        |
+//        v unknown authenticated call, gRPC server is just a wrapper
+//    +---+----------------------+
+//    | director                 |
+//    +---+----------------------+
+//        |
+//        v authenticated call
+//    +---+----------------------+ call to lnd or integrated daemon
+//    | lnd (remote or local)    +---------------+
+//    | faraday remote           |               |
+//    | loop remote              |    +----------v----------+
+//    | pool remote              |    | lnd local subserver |
+//    +--------------------------+    |  - faraday          |
+//                                    |  - loop             |
+//                                    |  - pool             |
+//                                    +---------------------+
 //
 func (g *LightningTerminal) startMainWebServer() error {
 	// Initialize the in-memory file server from the content compiled by

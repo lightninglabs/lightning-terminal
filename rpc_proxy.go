@@ -100,22 +100,25 @@ func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 //    +---+----------------------+
 //        |
 //        v native gRPC call with macaroon
-//    +---+----------------------+ registered call
-//    | gRPC server              +--------------+
-//    +---+----------------------+              |
-//        |                                     |
-//        v non-registered call                 |
-//    +---+----------------------+    +---------v----------+
-//    | director                 |    | local subserver    |
-//    +---+----------------------+    |  - faraday         |
-//        |                           |  - loop            |
-//        v authenticated call        |  - pool            |
-//    +---+----------------------+    +--------------------+
-//    | lnd (remote or local)    |
-//    | faraday remote           |
-//    | loop remote              |
-//    | pool remote              |
-//    +--------------------------+
+//    +---+----------------------+
+//    | gRPC server              |
+//    +---+----------------------+
+//        |
+//        v unknown authenticated call, gRPC server is just a wrapper
+//    +---+----------------------+
+//    | director                 |
+//    +---+----------------------+
+//        |
+//        v authenticated call
+//    +---+----------------------+ call to lnd or integrated daemon
+//    | lnd (remote or local)    +---------------+
+//    | faraday remote           |               |
+//    | loop remote              |    +----------v----------+
+//    | pool remote              |    | lnd local subserver |
+//    +--------------------------+    |  - faraday          |
+//                                    |  - loop             |
+//                                    |  - pool             |
+//                                    +---------------------+
 //
 type rpcProxy struct {
 	cfg       *Config
@@ -263,16 +266,13 @@ func (p *rpcProxy) director(ctx context.Context,
 
 	outCtx := metadata.NewOutgoingContext(ctx, mdCopy)
 
-	// Direct the call to the correct backend. For lnd we _always_ have a
-	// client connection, no matter if it's running in integrated or remote
-	// mode. For all other daemons the request shouldn't get here in
-	// integrated mode (after all, the director only picks up calls that the
-	// gRPC server itself would throw a 404 for) so we throw an error
-	// message for them if they're not in remote mode.
+	// Direct the call to the correct backend. All gRPC calls end up here
+	// since our gRPC server instance doesn't have any handlers registered
+	// itself. So all daemon calls that are remote are forwarded to them
+	// directly. Everything else will go to lnd since it must either be an
+	// lnd call or something that'll be handled by the integrated daemons
+	// that are hooking into lnd's gRPC server.
 	switch {
-	case isLndURI(requestURI):
-		return outCtx, p.lndConn, nil
-
 	case isFaradayURI(requestURI) && p.cfg.faradayRemote:
 		return outCtx, p.faradayConn, nil
 
@@ -283,8 +283,7 @@ func (p *rpcProxy) director(ctx context.Context,
 		return outCtx, p.poolConn, nil
 
 	default:
-		return ctx, nil, fmt.Errorf("unknown gRPC web request: %v",
-			requestURI)
+		return outCtx, p.lndConn, nil
 	}
 }
 
