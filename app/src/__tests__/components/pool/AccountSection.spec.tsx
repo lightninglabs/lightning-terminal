@@ -28,6 +28,7 @@ describe('AccountSection', () => {
 
   beforeEach(async () => {
     store = createStore();
+    await store.channelStore.fetchChannels();
     await store.nodeStore.fetchBalances();
     await store.accountStore.fetchAccounts();
     await store.orderStore.fetchOrders();
@@ -36,6 +37,19 @@ describe('AccountSection', () => {
   const render = () => {
     return renderWithProviders(<AccountSection />, store);
   };
+
+  it('should display channel notice', () => {
+    // remove all accounts to display the FundNewAccountForm
+    runInAction(() => {
+      store.accountStore.accounts.clear();
+      store.accountStore.activeTraderKey = '';
+      store.channelStore.channels.clear();
+    });
+    const { getByText } = render();
+
+    expect(getByText('Welcome to Pool')).toBeInTheDocument();
+    expect(getByText(/Your node must already have open channels/)).toBeInTheDocument();
+  });
 
   it('should validate fund new account form', () => {
     // remove all accounts to display the FundNewAccountForm

@@ -49,6 +49,11 @@ export default class AccountSectionView {
     return this.section;
   }
 
+  /** indicates if the LND node has any open channels */
+  get hasChannels() {
+    return this._store.channelStore.channels.size > 0;
+  }
+
   //
   // Actions
   //
