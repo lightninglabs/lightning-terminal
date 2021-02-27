@@ -122,14 +122,25 @@ const AccountSummary: React.FC = () => {
             </SummaryItem>
           </>
         ) : (
-          <Button
-            primary
-            ghost
-            disabled={account.stateLabel !== 'Open'}
-            onClick={accountSectionView.showFundAccount}
-          >
-            {l('fundAccount')}
-          </Button>
+          <SummaryItem>
+            <Button
+              danger
+              ghost
+              compact
+              disabled={account.stateLabel !== 'Open'}
+              onClick={accountSectionView.showCloseAccount}
+            >
+              {l('close')}
+            </Button>
+            <Button
+              primary
+              ghost
+              disabled={account.stateLabel !== 'Open'}
+              onClick={accountSectionView.showFundAccount}
+            >
+              {l('fundAccount')}
+            </Button>
+          </SummaryItem>
         )}
       </Actions>
     </>
