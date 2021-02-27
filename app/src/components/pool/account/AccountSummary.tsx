@@ -70,6 +70,12 @@ const AccountSummary: React.FC = () => {
           <StatusBadge pending={account.isPending}>{account.stateLabel}</StatusBadge>
         </SummaryItem>
         <SummaryItem>
+          <span>{l('traderKey')}</span>
+          <Tip overlay={account.traderKey} capitalize={false}>
+            <span>{account.traderKeyEllipsed}</span>
+          </Tip>
+        </SummaryItem>
+        <SummaryItem>
           <span>{l('fundingTxn')}</span>
           <Tip overlay={account.fundingTxnId} capitalize={false}>
             <span>
