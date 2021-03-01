@@ -3,8 +3,9 @@ import { observer } from 'mobx-react-lite';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Swap } from 'store/models';
-import { Column, Row } from 'components/base';
+import { Column, HelpCircle, Row } from 'components/base';
 import SortableHeader from 'components/common/SortableHeader';
+import Tip from 'components/common/Tip';
 import Unit from 'components/common/Unit';
 import SwapDot from 'components/loop/SwapDot';
 import { styled } from 'components/theme';
@@ -110,13 +111,31 @@ interface Props {
 }
 
 const HistoryRow: React.FC<Props> = ({ swap, style }) => {
+  const { l } = usePrefixedTranslation('cmps.history.HistoryRow');
   const { Row, Column, ActionColumn } = Styled;
   return (
     <Row style={style}>
       <ActionColumn>
         <SwapDot swap={swap} />
       </ActionColumn>
-      <Column cols={3}>{swap.stateLabel}</Column>
+      <Column cols={3}>
+        {swap.stateLabel !== 'Failed' ? (
+          swap.stateLabel
+        ) : (
+          <>
+            {swap.failureLabel}
+            <Tip
+              overlay={l(`failure-${swap.failureReason}`)}
+              capitalize={false}
+              maxWidth={300}
+            >
+              <span>
+                <HelpCircle />
+              </span>
+            </Tip>
+          </>
+        )}
+      </Column>
       <Column>{swap.typeName}</Column>
       <Column right>
         <Unit sats={swap.amount} suffix={false} />
