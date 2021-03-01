@@ -70,6 +70,12 @@ const AccountSummary: React.FC = () => {
           <StatusBadge pending={account.isPending}>{account.stateLabel}</StatusBadge>
         </SummaryItem>
         <SummaryItem>
+          <span>{l('traderKey')}</span>
+          <Tip overlay={account.traderKey} capitalize={false}>
+            <span>{account.traderKeyEllipsed}</span>
+          </Tip>
+        </SummaryItem>
+        <SummaryItem>
           <span>{l('fundingTxn')}</span>
           <Tip overlay={account.fundingTxnId} capitalize={false}>
             <span>
@@ -122,14 +128,25 @@ const AccountSummary: React.FC = () => {
             </SummaryItem>
           </>
         ) : (
-          <Button
-            primary
-            ghost
-            disabled={account.stateLabel !== 'Open'}
-            onClick={accountSectionView.showFundAccount}
-          >
-            {l('fundAccount')}
-          </Button>
+          <SummaryItem>
+            <Button
+              danger
+              ghost
+              compact
+              disabled={account.stateLabel !== 'Open'}
+              onClick={accountSectionView.showCloseAccount}
+            >
+              {l('close')}
+            </Button>
+            <Button
+              primary
+              ghost
+              disabled={account.stateLabel !== 'Open'}
+              onClick={accountSectionView.showFundAccount}
+            >
+              {l('fundAccount')}
+            </Button>
+          </SummaryItem>
         )}
       </Actions>
     </>

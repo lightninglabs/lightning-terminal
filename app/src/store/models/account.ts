@@ -22,6 +22,11 @@ export default class Account {
     this.update(poolAccount);
   }
 
+  /** the first and last 6 chars of the trader key */
+  get traderKeyEllipsed() {
+    return ellipseInside(this.traderKey, 4);
+  }
+
   /** the first and last 6 chars of the funding txn id */
   get fundingTxnIdEllipsed() {
     return ellipseInside(this.fundingTxnId, 4);

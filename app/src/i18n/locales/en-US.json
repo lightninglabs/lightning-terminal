@@ -95,6 +95,7 @@
   "cmps.pool.account.AccountSummary.expiresIn": "Expires in",
   "cmps.pool.account.AccountSummary.expiresHeight": "{{remaining}} blocks (Height #{{height}})",
   "cmps.pool.account.AccountSummary.accountStatus": "Account Status",
+  "cmps.pool.account.AccountSummary.traderKey": "Trader Key",
   "cmps.pool.account.AccountSummary.fundingTxn": "Funding Transaction",
   "cmps.pool.account.AccountSummary.currentBalance": "Current Balance",
   "cmps.pool.account.AccountSummary.openOrdersCount": "Open Orders",
