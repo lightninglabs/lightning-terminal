@@ -1,6 +1,7 @@
 import {
   autorun,
   entries,
+  IObservableArray,
   makeAutoObservable,
   observable,
   ObservableMap,
@@ -28,7 +29,7 @@ export default class SwapStore {
   swappedChannels: ObservableMap<string, string[]> = observable.map();
 
   /** the ids of failed swaps that have been dismissed */
-  dismissedSwapIds: string[] = [];
+  dismissedSwapIds: IObservableArray<string> = observable.array([]);
 
   constructor(store: Store) {
     makeAutoObservable(this, {}, { deep: false, autoBind: true });
@@ -192,7 +193,7 @@ export default class SwapStore {
     const swapState = this._store.storage.get<PersistentSwapState>('swapState');
     if (swapState) {
       this.swappedChannels = observable.map<string, string[]>(swapState.swappedChannels);
-      this.dismissedSwapIds = swapState.dismissedSwapIds;
+      this.dismissedSwapIds = observable.array(swapState.dismissedSwapIds);
       this._store.log.info('loaded swapState', swapState);
     }
   }
