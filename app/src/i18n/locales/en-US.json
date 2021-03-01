@@ -151,6 +151,7 @@
   "cmps.pool.account.FundAccountForm.newBalance": "New Account Balance",
   "cmps.pool.account.NoAccount.welcome": "Welcome to Pool",
   "cmps.pool.account.NoAccount.message": "To begin buying and selling channels, you will need to deposit funds into a non-custodial account. You will be able to withdraw at any time.",
+  "cmps.pool.account.NoAccount.channelNotice": "Your node must already have open channels before you can fund your Pool account.",
   "cmps.pool.account.NoAccount.createAccount": "Open an Account",
   "cmps.pool.batches.BatchRowHeader.batchId": "Batch ID",
   "cmps.pool.batches.BatchRowHeader.txId": "Tx ID",
