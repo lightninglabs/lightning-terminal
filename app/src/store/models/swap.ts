@@ -15,6 +15,7 @@ export default class Swap {
   initiationTime = 0;
   lastUpdateTime = 0;
   state = 0;
+  failureReason = 0;
 
   constructor(loopSwap: LOOP.SwapStatus.AsObject) {
     makeAutoObservable(this, {}, { deep: false, autoBind: true });
@@ -81,6 +82,29 @@ export default class Swap {
     return 'Unknown';
   }
 
+  /**
+   * The numeric swap `failureReason` as a user friendly string
+   */
+  get failureLabel() {
+    switch (this.failureReason) {
+      case LOOP.FailureReason.FAILURE_REASON_OFFCHAIN:
+        return 'Off-chain Failure';
+      case LOOP.FailureReason.FAILURE_REASON_TIMEOUT:
+        return 'On-chain Timeout';
+      case LOOP.FailureReason.FAILURE_REASON_SWEEP_TIMEOUT:
+        return 'Sweep Timeout';
+      case LOOP.FailureReason.FAILURE_REASON_INSUFFICIENT_VALUE:
+        return 'Insufficient Value';
+      case LOOP.FailureReason.FAILURE_REASON_TEMPORARY:
+        return 'Temporary Failure';
+      case LOOP.FailureReason.FAILURE_REASON_INCORRECT_AMOUNT:
+        return 'Incorrect Amount';
+      case LOOP.FailureReason.FAILURE_REASON_NONE:
+      default:
+        return 'Failed';
+    }
+  }
+
   /** The date this swap was created as a JS Date object */
   get createdOn() {
     return new Date(this.initiationTime / 1000 / 1000);
@@ -112,6 +136,7 @@ export default class Swap {
     this.initiationTime = loopSwap.initiationTime;
     this.lastUpdateTime = loopSwap.lastUpdateTime;
     this.state = loopSwap.state;
+    this.failureReason = loopSwap.failureReason;
   }
 
   /**
