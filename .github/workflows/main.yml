@@ -117,6 +117,9 @@ jobs:
 
       - name: build backend binary
         run: make build
+        
+      - name: build CLI binaries
+        run: make go-install-cli
 
   proto-compile-check:
     name: RPC proto compilation check
