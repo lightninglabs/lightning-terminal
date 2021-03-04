@@ -65,6 +65,7 @@ const (
 	defaultRemotePoolRpcServer    = "localhost:12010"
 	defaultLndChainSubDir         = "chain"
 	defaultLndChain               = "bitcoin"
+	defaultLndMacaroon            = "admin.macaroon"
 )
 
 var (
@@ -103,6 +104,13 @@ var (
 	// its Let's Encrypt files.
 	defaultLetsEncryptDir = filepath.Join(
 		defaultLitDir, defaultLetsEncryptSubDir,
+	)
+
+	// defaultRemoteLndMacaroonPath is the default path we assume for a
+	// local lnd node to store its admin.macaroon file at.
+	defaultRemoteLndMacaroonPath = filepath.Join(
+		lndDefaultConfig.DataDir, defaultLndChainSubDir,
+		defaultLndChain, defaultNetwork, defaultLndMacaroon,
 	)
 )
 
@@ -248,7 +256,7 @@ func defaultConfig() *Config {
 			LitMaxLogFileSize: defaultMaxLogFileSize,
 			Lnd: &RemoteDaemonConfig{
 				RPCServer:    defaultRemoteLndRpcServer,
-				MacaroonPath: lndDefaultConfig.AdminMacPath,
+				MacaroonPath: defaultRemoteLndMacaroonPath,
 				TLSCertPath:  lndDefaultConfig.TLSCertPath,
 			},
 			Faraday: &RemoteDaemonConfig{
@@ -526,7 +534,7 @@ func validateRemoteModeConfig(cfg *Config) error {
 	// specify --network=testnet for example if everything else is using
 	// the defaults.
 	if cfg.Network != defaultNetwork &&
-		r.Lnd.MacaroonPath == defaultLndCfg.AdminMacPath {
+		r.Lnd.MacaroonPath == defaultRemoteLndMacaroonPath {
 
 		r.Lnd.MacaroonPath = filepath.Join(
 			defaultLndCfg.DataDir, defaultLndChainSubDir,
