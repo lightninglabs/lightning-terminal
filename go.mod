@@ -18,7 +18,6 @@ require (
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
 	github.com/mwitkow/grpc-proxy v0.0.0-20181017164139-0f1106ef9c76
 	github.com/prometheus/client_golang v1.5.1 // indirect
-	github.com/rakyll/statik v0.1.7
 	github.com/rs/cors v1.7.0 // indirect
 	golang.org/x/crypto v0.0.0-20200709230013-948cd5f35899
 	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e // indirect
@@ -28,4 +27,4 @@ require (
 	gopkg.in/macaroon.v2 v2.1.0
 )
 
-go 1.13
+go 1.16

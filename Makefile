@@ -7,13 +7,11 @@ POOL_PKG := github.com/lightninglabs/pool
 LINT_PKG := github.com/golangci/golangci-lint/cmd/golangci-lint
 GOVERALLS_PKG := github.com/mattn/goveralls
 GOACC_PKG := github.com/ory/go-acc
-STATIK_PKG := github.com/rakyll/statik
 
 GO_BIN := ${GOPATH}/bin
 GOVERALLS_BIN := $(GO_BIN)/goveralls
 LINT_BIN := $(GO_BIN)/golangci-lint
 GOACC_BIN := $(GO_BIN)/go-acc
-STATIK_BIN := $(GO_BIN)/statik
 
 COMMIT := $(shell git describe --abbrev=40 --dirty --tags)
 COMMIT_HASH := $(shell git rev-parse HEAD)
@@ -94,10 +92,6 @@ $(GOACC_BIN):
 	@$(call print, "Fetching go-acc")
 	$(DEPGET) $(GOACC_PKG)@$(GOACC_COMMIT)
 
-$(STATIK_BIN):
-	@$(call print, "Fetching statik")
-	$(DEPGET) $(STATIK_PKG)
-
 yarn-install:
 	@$(call print, "Installing app dependencies with yarn")
 	cd app; yarn
@@ -105,14 +99,9 @@ yarn-install:
 # ============
 # INSTALLATION
 # ============
-statik-only: $(STATIK_BIN)
-	@$(call print, "Building statik package.")
-	statik -src=app/build
 
-statik-build: app-build statik-only
-
-build: statik-build go-build
-install: statik-build go-install
+build: app-build go-build
+install: app-build go-install
 
 go-build:
 	@$(call print, "Building lightning-terminal.")
@@ -133,7 +122,7 @@ app-build: yarn-install
 	@$(call print, "Building production app.")
 	cd app; yarn build
 
-release: statik-build
+release: app-build
 	@$(call print, "Creating release of lightning-terminal.")
 	./release.sh build-release "$(VERSION_TAG)" "$(BUILD_SYSTEM)" "$(LND_RELEASE_TAGS)" "$(RELEASE_LDFLAGS)"
 
@@ -214,4 +203,3 @@ clean:
 	@$(call print, "Cleaning source.$(NC)")
 	$(RM) ./lightning-terminal-debug
 	$(RM) coverage.txt
-	$(RM) -r statik

@@ -3,8 +3,10 @@ package terminal
 import (
 	"context"
 	"crypto/tls"
+	"embed"
 	"errors"
 	"fmt"
+	"io/fs"
 	"net"
 	"net/http"
 	"os"
@@ -29,15 +31,10 @@ import (
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntest/wait"
 	"github.com/lightningnetwork/lnd/signal"
-	"github.com/rakyll/statik/fs"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"gopkg.in/macaroon-bakery.v2/bakery"
-
-	// Import generated go package that contains all static files for the
-	// UI in a compressed format.
-	_ "github.com/lightninglabs/lightning-terminal/statik"
 )
 
 const (
@@ -50,6 +47,19 @@ var (
 	// maxMsgRecvSize is the largest message our REST proxy will receive. We
 	// set this to 200MiB atm.
 	maxMsgRecvSize = grpc.MaxCallRecvMsgSize(1 * 1024 * 1024 * 200)
+
+	// appBuildFS is an in-memory file system that contains all the static
+	// HTML/CSS/JS files of the UI. It is compiled into the binary with the
+	// go 1.16 embed directive below. Because the path is relative to the
+	// root package, all assets will have a path prefix of /app/build/ which
+	// we'll strip by giving a sub directory to the HTTP server.
+	//
+	//go:embed app/build/*
+	appBuildFS embed.FS
+
+	// appFilesDir is the sub directory of the above build directory which
+	// we pass to the HTTP server.
+	appFilesDir = "app/build"
 )
 
 // LightningTerminal is the main grand unified binary instance. Its task is to
@@ -523,14 +533,14 @@ func (g *LightningTerminal) shutdown() error {
 }
 
 // startMainWebServer creates the main web HTTP server that delegates requests
-// between the Statik HTTP server and the RPC proxy. An incoming request will
+// between the embedded HTTP server and the RPC proxy. An incoming request will
 // go through the following chain of components:
 //
 //    Request on port 8443
 //        |
 //        v
 //    +---+----------------------+ other  +----------------+
-//    | Main web HTTP server     +------->+ Statik HTTP    |
+//    | Main web HTTP server     +------->+ Embedded HTTP  |
 //    +---+----------------------+        +----------------+
 //        |
 //        v any RPC or REST call
@@ -566,12 +576,15 @@ func (g *LightningTerminal) shutdown() error {
 //
 func (g *LightningTerminal) startMainWebServer() error {
 	// Initialize the in-memory file server from the content compiled by
-	// the statik library.
-	statikFS, err := fs.New()
+	// the go:embed directive. Since everything's relative to the root dir,
+	// we need to create an FS of the sub directory app/build.
+	buildDir, err := fs.Sub(appBuildFS, appFilesDir)
 	if err != nil {
-		return fmt.Errorf("could not load statik file system: %v", err)
+		return err
 	}
-	staticFileServer := http.FileServer(&ClientRouteWrapper{statikFS})
+	staticFileServer := http.FileServer(&ClientRouteWrapper{
+		assets: http.FS(buildDir),
+	})
 
 	// Both gRPC (web) and static file requests will come into through the
 	// main UI HTTP server. We use this simple switching handler to send the

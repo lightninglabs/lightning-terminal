@@ -27,7 +27,6 @@ ENV GO111MODULE on
 RUN apk add --no-cache --update alpine-sdk \
     make \
   && cd /go/src/github.com/lightninglabs/lightning-terminal \
-  && make statik-only \
   && make go-install \
   && make go-install-cli
 
