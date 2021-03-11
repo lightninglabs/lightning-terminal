@@ -13,7 +13,8 @@ Lightning Terminal (LiT) is a browser-based interface for managing channel liqui
 - Run a single binary that integrates [`loopd`](https://github.com/lightninglabs/loop),
   [`poold`](https://github.com/lightninglabs/pool) and
   [`faraday`](https://github.com/lightninglabs/faraday) daemons all in one
-- Access a preview release of the Pool UI; earn sats by opening channels to those needing inbound liquidity
+- Access a preview release of the Pool UI
+- Use Pool to earn sats by opening channels to those needing inbound liquidity
 
 ## Installation
 Download the latest binaries from the [releases](https://github.com/lightninglabs/lightning-terminal/releases) page.
