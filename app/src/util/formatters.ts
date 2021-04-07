@@ -22,14 +22,14 @@ const defaultFormatSatsOptions = {
  * @param sats the numeric value in satoshis
  * @param options the format options
  */
-export const formatSats = (sats: Big, options?: FormatSatsOptions) => {
+export const formatSats = (sats: Big | number, options?: FormatSatsOptions) => {
   const { unit, withSuffix, lang } = Object.assign({}, defaultFormatSatsOptions, options);
   const { suffix, denominator, decimals } = Units[unit];
   const formatter = Intl.NumberFormat(lang, {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });
-  let text = formatter.format(+sats.div(denominator));
+  let text = formatter.format(+Big(sats).div(denominator));
   if (withSuffix) text = `${text} ${suffix}`;
   return text;
 };
