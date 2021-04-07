@@ -1,4 +1,5 @@
 import React, { ReactNode, useCallback, useMemo } from 'react';
+import { formatSats } from 'util/formatters';
 import FormInput from './FormInput';
 
 interface Props {
@@ -27,7 +28,10 @@ const FormInputNumber: React.FC<Props> = ({
     [onChange],
   );
 
-  const valueText = useMemo(() => (!value ? '' : value.toLocaleString()), [value]);
+  const valueText = useMemo(
+    () => (!value ? '' : formatSats(value, { withSuffix: false })),
+    [value],
+  );
 
   return (
     <FormInput
