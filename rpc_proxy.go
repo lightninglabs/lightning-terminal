@@ -1,22 +1,24 @@
 package terminal
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
+	"github.com/lightninglabs/lndclient"
 	"github.com/lightningnetwork/lnd/lncfg"
 	"github.com/lightningnetwork/lnd/macaroons"
 	grpcProxy "github.com/mwitkow/grpc-proxy/proxy"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 	"gopkg.in/macaroon.v2"
@@ -49,9 +51,10 @@ func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 	// need to be addressed with a custom director that just takes care of a
 	// few HTTP header fields.
 	p := &rpcProxy{
-		cfg:          cfg,
-		basicAuth:    basicAuth,
-		macValidator: validator,
+		cfg:            cfg,
+		basicAuth:      basicAuth,
+		macValidator:   validator,
+		lndConnectChan: make(chan struct{}),
 	}
 	p.grpcServer = grpc.NewServer(
 		// From the grpxProxy doc: This codec is *crucial* to the
@@ -131,19 +134,26 @@ type rpcProxy struct {
 	loopConn    *grpc.ClientConn
 	poolConn    *grpc.ClientConn
 
-	grpcServer   *grpc.Server
-	grpcWebProxy *grpcweb.WrappedGrpcServer
+	grpcServer     *grpc.Server
+	grpcWebProxy   *grpcweb.WrappedGrpcServer
+	lndConnectChan chan struct{}
+	lndConnectSent bool
 }
 
 // Start creates initial connection to lnd.
 func (p *rpcProxy) Start() error {
 	var err error
 
-	// Setup the connection to lnd.
-	host, _, tlsPath, _ := p.cfg.lndConnectParams()
-	p.lndConn, err = dialBackend("lnd", host, tlsPath)
-	if err != nil {
-		return fmt.Errorf("could not dial lnd: %v", err)
+	// If we're in stateless remote mode, we need to wait until the user
+	// passes in the LND connection info into the UI before connecting to
+	// LND.
+	if p.cfg.LndMode != ModeStatelessRemote {
+		// Setup the connection to lnd.
+		host, _, tlsPath, _ := p.cfg.lndConnectParams()
+		p.lndConn, err = dialBackend("lnd", host, tlsPath, "")
+		if err != nil {
+			return fmt.Errorf("could not dial lnd: %v", err)
+		}
 	}
 
 	// Make sure we can connect to all the daemons that are configured to be
@@ -153,7 +163,7 @@ func (p *rpcProxy) Start() error {
 			"faraday", p.cfg.Remote.Faraday.RPCServer,
 			lncfg.CleanAndExpandPath(
 				p.cfg.Remote.Faraday.TLSCertPath,
-			),
+			), "",
 		)
 		if err != nil {
 			return fmt.Errorf("could not dial remote faraday: %v",
@@ -165,6 +175,7 @@ func (p *rpcProxy) Start() error {
 		p.loopConn, err = dialBackend(
 			"loop", p.cfg.Remote.Loop.RPCServer,
 			lncfg.CleanAndExpandPath(p.cfg.Remote.Loop.TLSCertPath),
+			"",
 		)
 		if err != nil {
 			return fmt.Errorf("could not dial remote loop: %v", err)
@@ -175,6 +186,7 @@ func (p *rpcProxy) Start() error {
 		p.poolConn, err = dialBackend(
 			"pool", p.cfg.Remote.Pool.RPCServer,
 			lncfg.CleanAndExpandPath(p.cfg.Remote.Pool.TLSCertPath),
+			"",
 		)
 		if err != nil {
 			return fmt.Errorf("could not dial remote pool: %v", err)
@@ -300,14 +312,32 @@ func (p *rpcProxy) UnaryServerInterceptor(
 				"required for method", info.FullMethod)
 		}
 
-		// For now, basic authentication is just a quick fix until we
-		// have proper macaroon support implemented in the UI. We allow
-		// gRPC web requests to have it and "convert" the auth into a
-		// proper macaroon now.
-		newCtx, err := p.basicAuthToMacaroon(ctx, info.FullMethod)
-		if err != nil {
-			return nil, fmt.Errorf("error upgrading basic auth: %v",
-				err)
+		var (
+			err    error
+			newCtx context.Context
+		)
+		// If we're in stateless remote mode, we already have the
+		// macaroon to parse.
+		if p.cfg.LndMode == ModeStatelessRemote {
+			newCtx, err = p.getLndConnectStr(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("error retrieving "+
+					"macaroon from lndconnect string: %v",
+					err)
+			}
+		} else {
+			// For now, basic authentication is just a quick fix
+			// until we have proper macaroon support implemented in
+			// the UI. We allow gRPC web requests to have it and
+			// "convert" the auth into a proper macaroon now.
+			newCtx, err = p.basicAuthToMacaroon(
+				ctx,
+				info.FullMethod,
+			)
+			if err != nil {
+				return nil, fmt.Errorf("error upgrading "+
+					"basic auth: %v", err)
+			}
 		}
 
 		// With the basic auth converted to a macaroon if necessary,
@@ -337,19 +367,38 @@ func (p *rpcProxy) StreamServerInterceptor(
 				"for method", info.FullMethod)
 		}
 
-		// For now, basic authentication is just a quick fix until we
-		// have proper macaroon support implemented in the UI. We allow
-		// gRPC web requests to have it and "convert" the auth into a
-		// proper macaroon now.
-		ctx, err := p.basicAuthToMacaroon(ss.Context(), info.FullMethod)
-		if err != nil {
-			return fmt.Errorf("error upgrading basic auth: %v", err)
+		var (
+			err    error
+			newCtx context.Context
+		)
+		// If we're in stateless remote mode, we already have the
+		// macaroon to parse.
+		if p.cfg.LndMode == ModeStatelessRemote {
+			newCtx, err = p.getLndConnectStr(ss.Context())
+			if err != nil {
+				return fmt.Errorf("error retrieving "+
+					"data from lndconnect string: %v",
+					err)
+			}
+		} else {
+			// For now, basic authentication is just a quick fix
+			// until we have proper macaroon support implemented in
+			// the UI. We allow gRPC web requests to have it and
+			// "convert" the auth into a proper macaroon now.
+			newCtx, err = p.basicAuthToMacaroon(
+				ss.Context(),
+				info.FullMethod,
+			)
+			if err != nil {
+				return fmt.Errorf("error upgrading "+
+					"basic auth: %v", err)
+			}
 		}
 
 		// With the basic auth converted to a macaroon if necessary,
 		// let's now validate the macaroon.
 		err = p.macValidator.ValidateMacaroon(
-			ctx, uriPermissions, info.FullMethod,
+			newCtx, uriPermissions, info.FullMethod,
 		)
 		if err != nil {
 			return err
@@ -431,15 +480,102 @@ func (p *rpcProxy) basicAuthToMacaroon(ctx context.Context,
 	return metadata.NewIncomingContext(ctx, md), nil
 }
 
+// getLndConnectStr is used in stateless remote mode to extract the data from
+// the lndconnect string the user should have passed in.
+func (p *rpcProxy) getLndConnectStr(ctx context.Context) (context.Context, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return ctx, nil
+	}
+
+	authHeaders := md.Get("authorization")
+	if len(authHeaders) == 0 {
+		// No lndconnect string provided, we let the gRPC security
+		// interceptor reject the request.
+		return ctx, nil
+	}
+
+	lndConnectParts := strings.Split(authHeaders[0], " ")
+	lndConnectStr := lndConnectParts[1]
+
+	// Since we're in stateless remote mode, we need to extract the
+	// macaroon parameter from the lndconnect url that was passed in,
+	// then attatch it to the request context.
+	u, err := url.Parse(lndConnectStr)
+	if err != nil {
+		return ctx, nil
+	}
+
+	queryMap, _ := url.ParseQuery(u.RawQuery)
+	macaroon := queryMap["macaroon"][0]
+
+	// If channel isn't closed, it means we haven't sent the info from the
+	// lndconnect string, and need to do so, so we can connect to
+	// LND.
+	if !p.lndConnectSent {
+		tlsCert := queryMap["cert"][0]
+
+		tlsCert = strings.Replace(tlsCert, " ", "+", 1)
+
+		// Since the cert was passed in the lndConnect string without
+		// linebreaks or a prefix/suffix, we need to turn the
+		// certificate back into something the PEM library can parse.
+		tlsCert = insertNth(tlsCert, 64, '\n')
+		certPrefix := "-----BEGIN CERTIFICATE-----\n"
+		certSuffix := "\n-----END CERTIFICATE-----"
+
+		fullCert := certPrefix + tlsCert + certSuffix
+
+		p.cfg.Remote.Lnd = &RemoteDaemonConfig{
+			RPCServer: u.Host,
+			Macaroon:  macaroon,
+			TLSCert:   fullCert,
+		}
+
+		// We also need to establish an LND connection for the proxy.
+		p.lndConn, err = dialBackend("lnd", u.Host, "", fullCert)
+		if err != nil {
+			log.Errorf("could not dial lnd: %v", err)
+
+		}
+
+		// Close the channel when we're done to signal to
+		// startSubserver that we're ready to connect to LND.
+		close(p.lndConnectChan)
+		p.lndConnectSent = true
+	}
+
+	md.Set(HeaderMacaroon, macaroon)
+	return metadata.NewIncomingContext(ctx, md), nil
+}
+
+// Add a rune every "n" characters to a string.
+func insertNth(s string, n int, insert rune) string {
+	var buffer bytes.Buffer
+	var n_1 = n - 1
+	var l_1 = len(s) - 1
+
+	for i, char := range s {
+		buffer.WriteRune(char)
+		if i%n == n_1 && i != l_1 {
+			buffer.WriteRune(insert)
+		}
+	}
+
+	return buffer.String()
+}
+
 // dialBackend connects to a gRPC backend through the given address and uses the
 // given TLS certificate to authenticate the connection.
-func dialBackend(name, dialAddr, tlsCertPath string) (*grpc.ClientConn, error) {
-	var opts []grpc.DialOption
-	tlsConfig, err := credentials.NewClientTLSFromFile(tlsCertPath, "")
+func dialBackend(name, dialAddr, tlsCertPath, tlsCertData string) (
+	*grpc.ClientConn, error) {
+
+	tlsConfig, err := lndclient.GetTLSCredentials(tlsCertData, tlsCertPath)
 	if err != nil {
-		return nil, fmt.Errorf("could not read %s TLS cert %s: %v",
-			name, tlsCertPath, err)
+		return nil, fmt.Errorf("unable to get tls creds: %v", err)
 	}
+
+	var opts []grpc.DialOption
 
 	opts = append(
 		opts,
