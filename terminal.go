@@ -300,8 +300,26 @@ func (g *LightningTerminal) Run() error {
 // embedded daemons as external subservers that hook into the same gRPC and REST
 // servers that lnd started.
 func (g *LightningTerminal) startSubservers() error {
-	var basicClient lnrpc.LightningClient
-	host, network, tlsPath, macPath := g.cfg.lndConnectParams()
+	var (
+		basicClient lnrpc.LightningClient
+		host        string
+		network     lndclient.Network
+		tlsPath     string
+		macPath     string
+		tlsData     string
+		macData     string
+	)
+
+	// If we're in stateless-remote mode, we need to wait until the
+	// lnd connect string is provided by the user from the UI.
+	if g.cfg.LndMode == ModeStatelessRemote {
+		<-g.rpcProxy.lndConnectChan
+
+		host, network, tlsData, macData = g.cfg.lndConnectParams()
+		// TODO: LET'S ALSO SET P.LNDCONN HERE?
+	} else {
+		host, network, tlsPath, macPath = g.cfg.lndConnectParams()
+	}
 
 	// The main RPC listener of lnd might need some time to start, it could
 	// be that we run into a connection refused a few times. We use the
@@ -314,7 +332,7 @@ func (g *LightningTerminal) startSubservers() error {
 		// subservers have the same requirements.
 		var err error
 		basicClient, err = lndclient.NewBasicClient(
-			host, tlsPath, path.Dir(macPath), string(network),
+			host, tlsPath, path.Dir(macPath), tlsData, macData, string(network),
 			lndclient.MacFilename(path.Base(macPath)),
 		)
 		return err
@@ -353,6 +371,8 @@ func (g *LightningTerminal) startSubservers() error {
 			Network:               network,
 			TLSPath:               tlsPath,
 			CustomMacaroonPath:    macPath,
+			TLSData:               tlsData,
+			CustomMacaroonHex:     macData,
 			BlockUntilChainSynced: true,
 			BlockUntilUnlocked:    true,
 			CallerCtx:             ctxc,
@@ -365,7 +385,9 @@ func (g *LightningTerminal) startSubservers() error {
 	// Both connection types are ready now, let's start our subservers if
 	// they should be started locally as an integrated service.
 	if !g.cfg.faradayRemote {
-		err = g.faradayServer.StartAsSubserver(g.lndClient.LndServices)
+		err = g.faradayServer.StartAsSubserver(
+			g.lndClient.LndServices, macData,
+		)
 		if err != nil {
 			return err
 		}
@@ -373,7 +395,7 @@ func (g *LightningTerminal) startSubservers() error {
 	}
 
 	if !g.cfg.loopRemote {
-		err = g.loopServer.StartAsSubserver(g.lndClient)
+		err = g.loopServer.StartAsSubserver(g.lndClient, macData)
 		if err != nil {
 			return err
 		}
@@ -381,7 +403,7 @@ func (g *LightningTerminal) startSubservers() error {
 	}
 
 	if !g.cfg.poolRemote {
-		err = g.poolServer.StartAsSubserver(basicClient, g.lndClient)
+		err = g.poolServer.StartAsSubserver(basicClient, g.lndClient, macData)
 		if err != nil {
 			return err
 		}
@@ -902,7 +924,7 @@ func (g *LightningTerminal) showStartupInfo() error {
 		host, network, tlsPath, macPath := g.cfg.lndConnectParams()
 		basicClient, err := lndclient.NewBasicClient(
 			host, tlsPath, path.Dir(macPath), string(network),
-			lndclient.MacFilename(path.Base(macPath)),
+			"", "", lndclient.MacFilename(path.Base(macPath)),
 		)
 		if err != nil {
 			return fmt.Errorf("error querying remote node: %v", err)

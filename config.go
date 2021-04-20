@@ -35,8 +35,9 @@ const (
 
 	uiPasswordMinLength = 8
 
-	ModeIntegrated = "integrated"
-	ModeRemote     = "remote"
+	ModeIntegrated      = "integrated"
+	ModeRemote          = "remote"
+	ModeStatelessRemote = "stateless-remote"
 
 	defaultLndMode     = ModeRemote
 	defaultFaradayMode = ModeIntegrated
@@ -149,7 +150,7 @@ type Config struct {
 	// friendly. Because then we can reference the explicit modes in the
 	// help descriptions of the section headers. We'll parse the mode into
 	// a bool for internal use for better code readability.
-	LndMode string      `long:"lnd-mode" description:"The mode to run lnd in, either 'remote' (default) or 'integrated'. 'integrated' means lnd is started alongside the UI and everything is stored in lnd's main data directory, configure everything by using the --lnd.* flags. 'remote' means the UI connects to an existing lnd node and acts as a proxy for gRPC calls to it. In the remote node LiT creates its own directory for log and configuration files, configure everything using the --remote.* flags." choice:"integrated" choice:"remote"`
+	LndMode string      `long:"lnd-mode" description:"The mode to run lnd in, either 'remote' (default) or 'integrated'. 'integrated' means lnd is started alongside the UI and everything is stored in lnd's main data directory, configure everything by using the --lnd.* flags. 'remote' means the UI connects to an existing lnd node and acts as a proxy for gRPC calls to it. In the remote node LiT creates its own directory for log and configuration files, configure everything using the --remote.* flags. 'stateless-remote' means that sensitive information related to LND and the lightning daemons is passed by the user via the UI before connecting to them." choice:"integrated" choice:"remote" choice:"stateless-remote"`
 	Lnd     *lnd.Config `group:"Integrated lnd (use when lnd-mode=integrated)" namespace:"lnd"`
 
 	FaradayMode string          `long:"faraday-mode" description:"The mode to run faraday in, either 'integrated' (default) or 'remote'. 'integrated' means faraday is started alongside the UI and everything is stored in faraday's main data directory, configure everything by using the --faraday.* flags. 'remote' means the UI connects to an existing faraday node and acts as a proxy for gRPC calls to it." choice:"integrated" choice:"remote"`
@@ -208,6 +209,12 @@ type RemoteDaemonConfig struct {
 	// TLSCertPath is the path to the tls cert of the remote daemon that
 	// should be used to verify the TLS identity of the remote RPC server.
 	TLSCertPath string `long:"tlscertpath" description:"The full path to the remote daemon's TLS cert to use for RPC connection verification."`
+
+	// In stateless-remote mode, we grab the macaroon directly instead of getting it from a path.
+	Macaroon string `long:"macaroon" description:"In stateless-remote mode, we grab the macaroon directly instead of getting it from a path."`
+
+	// In stateless-remote mode, we grab the tls certificate directly instead of getting it from a path.
+	TLSCert string `long:"tlscert" description:"In stateless-remote mode, we grab the tls certificate directly instead of getting it from a path."`
 }
 
 // lndConnectParams returns the connection parameters to connect to the local
@@ -215,8 +222,15 @@ type RemoteDaemonConfig struct {
 func (c *Config) lndConnectParams() (string, lndclient.Network, string,
 	string) {
 
-	// In remote lnd mode, we just pass along what was configured in the
+	// In either remote mode, we just pass along what was configured in the
 	// remote section of the lnd config.
+	if c.LndMode == ModeStatelessRemote {
+		return c.Remote.Lnd.RPCServer,
+			lndclient.Network(c.Network),
+			c.Remote.Lnd.TLSCert,
+			c.Remote.Lnd.Macaroon
+	}
+
 	if c.LndMode == ModeRemote {
 		return c.Remote.Lnd.RPCServer,
 			lndclient.Network(c.Network),
@@ -533,6 +547,11 @@ func loadConfigFile(preCfg *Config, usageMessage string,
 			return nil, err
 		}
 
+	case ModeStatelessRemote:
+		if err := validateRemoteModeConfig(cfg); err != nil {
+			return nil, err
+		}
+
 	default:
 		return nil, fmt.Errorf("invalid lnd mode %v", cfg.LndMode)
 	}
@@ -720,7 +739,7 @@ func buildTLSConfigForHttp2(config *Config) (*tls.Config, error) {
 			GetCertificate: manager.GetCertificate,
 		}
 
-	case config.LndMode == ModeRemote:
+	case config.LndMode == ModeRemote || config.LndMode == ModeStatelessRemote:
 		tlsCertPath := config.Remote.LitTLSCertPath
 		tlsKeyPath := config.Remote.LitTLSKeyPath
 
