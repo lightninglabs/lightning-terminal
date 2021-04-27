@@ -120,6 +120,7 @@ var (
 type Config struct {
 	HTTPSListen    string `long:"httpslisten" description:"The host:port to listen for incoming HTTP/2 connections on for the web UI only."`
 	HTTPListen     string `long:"insecure-httplisten" description:"The host:port to listen on with TLS disabled. This is dangerous to enable as credentials will be submitted without encryption. Should only be used in combination with Tor hidden services or other external encryption."`
+	EnableREST     bool   `long:"enablerest" description:"Also allow REST requests to be made to the main HTTP(s) port(s) configured above."`
 	UIPassword     string `long:"uipassword" description:"The password that must be entered when using the loop UI. use a strong password to protect your node from unauthorized access through the web UI."`
 	UIPasswordFile string `long:"uipassword_file" description:"Same as uipassword but instead of passing in the value directly, read the password from the specified file."`
 	UIPasswordEnv  string `long:"uipassword_env" description:"Same as uipassword but instead of passing in the value directly, read the password from the specified environment variable."`

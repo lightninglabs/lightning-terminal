@@ -29,10 +29,20 @@ import (
 	"github.com/lightningnetwork/lnd"
 	"github.com/lightningnetwork/lnd/build"
 	"github.com/lightningnetwork/lnd/lnrpc"
+	"github.com/lightningnetwork/lnd/lnrpc/autopilotrpc"
+	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
+	"github.com/lightningnetwork/lnd/lnrpc/invoicesrpc"
+	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
+	"github.com/lightningnetwork/lnd/lnrpc/signrpc"
+	"github.com/lightningnetwork/lnd/lnrpc/verrpc"
+	"github.com/lightningnetwork/lnd/lnrpc/walletrpc"
+	"github.com/lightningnetwork/lnd/lnrpc/watchtowerrpc"
+	"github.com/lightningnetwork/lnd/lnrpc/wtclientrpc"
 	"github.com/lightningnetwork/lnd/lntest/wait"
 	"github.com/lightningnetwork/lnd/signal"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 )
@@ -42,6 +52,11 @@ const (
 	defaultConnectTimeout = 5 * time.Second
 	defaultStartupTimeout = 5 * time.Second
 )
+
+// restRegistration is a function type that represents a REST proxy
+// registration.
+type restRegistration func(context.Context, *restProxy.ServeMux, string,
+	[]grpc.DialOption) error
 
 var (
 	// maxMsgRecvSize is the largest message our REST proxy will receive. We
@@ -60,6 +75,31 @@ var (
 	// appFilesDir is the sub directory of the above build directory which
 	// we pass to the HTTP server.
 	appFilesDir = "app/build"
+
+	// patternRESTRequest is the regular expression that matches all REST
+	// URIs that are currently used by lnd, faraday, loop and pool.
+	patternRESTRequest = regexp.MustCompile(`^/v\d/.*`)
+
+	// lndRESTRegistrations is the list of all lnd REST handler registration
+	// functions we want to call when creating our REST proxy. We include
+	// all lnd subserver packages here, even though some might not be active
+	// in a remote lnd node. That will result in an "UNIMPLEMENTED" error
+	// instead of a 404 which should be an okay tradeoff vs. connecting
+	// first and querying all enabled subservers to dynamically populate
+	// this list.
+	lndRESTRegistrations = []restRegistration{
+		lnrpc.RegisterLightningHandlerFromEndpoint,
+		lnrpc.RegisterWalletUnlockerHandlerFromEndpoint,
+		autopilotrpc.RegisterAutopilotHandlerFromEndpoint,
+		chainrpc.RegisterChainNotifierHandlerFromEndpoint,
+		invoicesrpc.RegisterInvoicesHandlerFromEndpoint,
+		routerrpc.RegisterRouterHandlerFromEndpoint,
+		signrpc.RegisterSignerHandlerFromEndpoint,
+		verrpc.RegisterVersionerHandlerFromEndpoint,
+		walletrpc.RegisterWalletKitHandlerFromEndpoint,
+		watchtowerrpc.RegisterWatchtowerHandlerFromEndpoint,
+		wtclientrpc.RegisterWatchtowerClientHandlerFromEndpoint,
+	}
 )
 
 // LightningTerminal is the main grand unified binary instance. Its task is to
@@ -83,6 +123,9 @@ type LightningTerminal struct {
 
 	rpcProxy   *rpcProxy
 	httpServer *http.Server
+
+	restHandler http.Handler
+	restCancel  func()
 }
 
 // New creates a new instance of the lightning-terminal daemon.
@@ -168,6 +211,14 @@ func (g *LightningTerminal) Run() error {
 		close(readyChan)
 
 		_ = g.RegisterGrpcSubserver(g.rpcProxy.grpcServer)
+	}
+
+	// We'll also create a REST proxy that'll convert any REST calls to gRPC
+	// calls and forward them to the internal listener.
+	if g.cfg.EnableREST {
+		if err := g.createRESTProxy(); err != nil {
+			return fmt.Errorf("error creating REST proxy: %v", err)
+		}
 	}
 
 	// Wait for lnd to be started up so we know we have a TLS cert.
@@ -500,6 +551,10 @@ func (g *LightningTerminal) shutdown() error {
 		g.lndClient.Close()
 	}
 
+	if g.restCancel != nil {
+		g.restCancel()
+	}
+
 	if g.rpcProxy != nil {
 		if err := g.rpcProxy.Stop(); err != nil {
 			log.Errorf("Error stopping lnd proxy: %v", err)
@@ -536,17 +591,17 @@ func (g *LightningTerminal) shutdown() error {
 // between the embedded HTTP server and the RPC proxy. An incoming request will
 // go through the following chain of components:
 //
-//    Request on port 8443
-//        |
-//        v
-//    +---+----------------------+ other  +----------------+
-//    | Main web HTTP server     +------->+ Embedded HTTP  |
-//    +---+----------------------+        +----------------+
-//        |
-//        v any RPC or REST call
-//    +---+----------------------+
-//    | grpc-web proxy           |
-//    +---+----------------------+
+//    Request on port 8443       <------------------------------------+
+//        |                                 converted gRPC request    |
+//        v                                                           |
+//    +---+----------------------+ other  +----------------+          |
+//    | Main web HTTP server     +------->+ Embedded HTTP  |          |
+//    +---+----------------------+____+   +----------------+          |
+//        |                           |                               |
+//        v any RPC or grpc-web call  |  any REST call                |
+//    +---+----------------------+    |->+----------------+           |
+//    | grpc-web proxy           |       + grpc-gateway   +-----------+
+//    +---+----------------------+       +----------------+
 //        |
 //        v native gRPC call with basic auth
 //    +---+----------------------+
@@ -594,6 +649,17 @@ func (g *LightningTerminal) startMainWebServer() error {
 		// should go to lnd or one of the daemons, pass it to the proxy
 		// that handles all those calls.
 		if g.rpcProxy.isHandling(resp, req) {
+			return
+		}
+
+		// REST requests aren't that easy to identify, we have to look
+		// at the URL itself. If this is a REST request, we give it
+		// directly to our REST handler which will then forward it to
+		// us again but converted to a gRPC request.
+		if g.cfg.EnableREST && isRESTRequest(req) {
+			log.Infof("Handling REST request: %s", req.URL.Path)
+			g.restHandler.ServeHTTP(resp, req)
+
 			return
 		}
 
@@ -677,6 +743,79 @@ func (g *LightningTerminal) startMainWebServer() error {
 				log.Errorf("http server error: %v", err)
 			}
 		}()
+	}
+
+	return nil
+}
+
+// createRESTProxy creates a grpc-gateway based REST proxy that takes any call
+// identified as a REST call, converts it to a gRPC request and forwards it to
+// our local main server for further triage/forwarding.
+func (g *LightningTerminal) createRESTProxy() error {
+	// The default JSON marshaler of the REST proxy only sets OrigName to
+	// true, which instructs it to use the same field names as specified in
+	// the proto file and not switch to camel case. What we also want is
+	// that the marshaler prints all values, even if they are falsey.
+	customMarshalerOption := restProxy.WithMarshalerOption(
+		restProxy.MIMEWildcard, &restProxy.JSONPb{
+			OrigName:     true,
+			EmitDefaults: true,
+		},
+	)
+
+	// For our REST dial options, we increase the max message size that
+	// we'll decode to allow clients to hit endpoints which return more data
+	// such as the DescribeGraph call. We set this to 200MiB atm. Should be
+	// the same value as maxMsgRecvSize in lnd/cmd/lncli/main.go.
+	restDialOpts := []grpc.DialOption{
+		// We are forwarding the requests directly to the address of our
+		// own local listener. To not need to mess with the TLS
+		// certificate (which might be tricky if we're using Let's
+		// Encrypt), we just skip the certificate verification.
+		// Injecting a malicious hostname into the listener address will
+		// result in an error on startup so this should be quite safe.
+		grpc.WithTransportCredentials(credentials.NewTLS(
+			&tls.Config{InsecureSkipVerify: true},
+		)),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(1 * 1024 * 1024 * 200),
+		),
+	}
+
+	// We use our own RPC listener as the destination for our REST proxy.
+	// If the listener is set to listen on all interfaces, we replace it
+	// with localhost, as we cannot dial it directly.
+	restProxyDest := toLocalAddress(g.cfg.HTTPSListen)
+
+	// Now start the REST proxy for our gRPC server above. We'll ensure
+	// we direct LND to connect to its loopback address rather than a
+	// wildcard to prevent certificate issues when accessing the proxy
+	// externally.
+	restMux := restProxy.NewServeMux(customMarshalerOption)
+	ctx, cancel := context.WithCancel(context.Background())
+	g.restCancel = cancel
+	g.restHandler = restMux
+
+	// First register all lnd handlers. This will make it possible to speak
+	// REST over the main RPC listener port in both remote and integrated
+	// mode. In integrated mode the user can still use the --lnd.restlisten
+	// to spin up an extra REST listener that also offers the same
+	// functionality, but is no longer required. In remote mode REST will
+	// only be enabled on the main HTTP(S) listener.
+	for _, registrationFn := range lndRESTRegistrations {
+		err := registrationFn(ctx, restMux, restProxyDest, restDialOpts)
+		if err != nil {
+			return fmt.Errorf("error registering REST handler: %v",
+				err)
+		}
+	}
+
+	// Now register all handlers for faraday, loop and pool.
+	err := g.RegisterRestSubserver(
+		ctx, restMux, restProxyDest, restDialOpts,
+	)
+	if err != nil {
+		return fmt.Errorf("error registering REST handler: %v", err)
 	}
 
 	return nil
@@ -794,4 +933,12 @@ func (i *ClientRouteWrapper) Open(name string) (http.File, error) {
 func toLocalAddress(listenerAddress string) string {
 	addr := strings.ReplaceAll(listenerAddress, "0.0.0.0", "localhost")
 	return strings.ReplaceAll(addr, "[::]", "localhost")
+}
+
+// isRESTRequest determines if a request is a REST request by checking that the
+// URI starts with /vX/ where X is a single digit number. This is currently true
+// for all REST URIs of lnd, faraday, loop and pool as they all either start
+// with /v1/ or /v2/.
+func isRESTRequest(req *http.Request) bool {
+	return patternRESTRequest.MatchString(req.URL.Path)
 }

@@ -87,7 +87,7 @@ func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 // it is handled there. If not, the director will forward the call to either a
 // local or remote lnd instance.
 //
-//    any RPC or REST call
+//    any RPC or grpc-web call
 //        |
 //        V
 //    +---+----------------------+
@@ -245,8 +245,6 @@ func (p *rpcProxy) isHandling(resp http.ResponseWriter,
 
 		return true
 	}
-
-	// TODO(guggero): Handle REST calls as well.
 
 	return false
 }
