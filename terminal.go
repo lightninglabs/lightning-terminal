@@ -747,13 +747,11 @@ func (g *LightningTerminal) showStartupInfo() error {
 	}
 
 	// If there's an additional HTTP listener, list it as well.
+	listenAddr := g.cfg.HTTPSListen
 	if g.cfg.HTTPListen != "" {
-		host := strings.ReplaceAll(
-			strings.ReplaceAll(
-				g.cfg.HTTPListen, "0.0.0.0", "localhost",
-			), "[::]", "localhost",
-		)
-		info.webURI = fmt.Sprintf("%s, http://%s", info.webURI, host)
+		host := toLocalAddress(listenAddr)
+		info.webURI = fmt.Sprintf("%s or http://%s", info.webURI, host)
+		listenAddr = fmt.Sprintf("%s, %s", listenAddr, g.cfg.HTTPListen)
 	}
 
 	str := "" +
@@ -764,10 +762,10 @@ func (g *LightningTerminal) showStartupInfo() error {
 		" Node status         %s                                   \n" +
 		" Alias               %s                                   \n" +
 		" Version             %s                                   \n" +
-		" Web interface       %s                                   \n" +
+		" Web interface       %s (open %s in your browser)         \n" +
 		"----------------------------------------------------------\n"
 	fmt.Printf(str, info.mode, info.status, info.alias, info.version,
-		info.webURI)
+		listenAddr, info.webURI)
 
 	return nil
 }
@@ -789,4 +787,11 @@ func (i *ClientRouteWrapper) Open(name string) (http.File, error) {
 	}
 
 	return i.assets.Open("/index.html")
+}
+
+// toLocalAddress converts an address that is meant as a wildcard listening
+// address ("0.0.0.0" or "[::]") into an address that can be dialed (localhost).
+func toLocalAddress(listenerAddress string) string {
+	addr := strings.ReplaceAll(listenerAddress, "0.0.0.0", "localhost")
+	return strings.ReplaceAll(addr, "[::]", "localhost")
 }
