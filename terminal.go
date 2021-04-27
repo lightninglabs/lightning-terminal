@@ -794,7 +794,13 @@ func (g *LightningTerminal) createRESTProxy() error {
 	restMux := restProxy.NewServeMux(customMarshalerOption)
 	ctx, cancel := context.WithCancel(context.Background())
 	g.restCancel = cancel
-	g.restHandler = restMux
+
+	// Enable WebSocket and CORS support as well. A request will pass
+	// through the following chain:
+	// req ---> CORS handler --> WS proxy ---> REST proxy --> gRPC endpoint
+	// where gRPC endpoint is our main HTTP(S) listener again.
+	restHandler := lnrpc.NewWebSocketProxy(restMux, log)
+	g.restHandler = allowCORS(restHandler, g.cfg.RestCORS)
 
 	// First register all lnd handlers. This will make it possible to speak
 	// REST over the main RPC listener port in both remote and integrated
@@ -819,6 +825,58 @@ func (g *LightningTerminal) createRESTProxy() error {
 	}
 
 	return nil
+}
+
+// allowCORS wraps the given http.Handler with a function that adds the
+// Access-Control-Allow-Origin header to the response.
+func allowCORS(handler http.Handler, origins []string) http.Handler {
+	allowHeaders := "Access-Control-Allow-Headers"
+	allowMethods := "Access-Control-Allow-Methods"
+	allowOrigin := "Access-Control-Allow-Origin"
+
+	// If the user didn't supply any origins that means CORS is disabled
+	// and we should return the original handler.
+	if len(origins) == 0 {
+		return handler
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
+
+		// Skip everything if the browser doesn't send the Origin field.
+		if origin == "" {
+			handler.ServeHTTP(w, r)
+			return
+		}
+
+		// Set the static header fields first.
+		w.Header().Set(
+			allowHeaders,
+			"Content-Type, Accept, Grpc-Metadata-Macaroon",
+		)
+		w.Header().Set(allowMethods, "GET, POST, DELETE")
+
+		// Either we allow all origins or the incoming request matches
+		// a specific origin in our list of allowed origins.
+		for _, allowedOrigin := range origins {
+			if allowedOrigin == "*" || origin == allowedOrigin {
+				// Only set allowed origin to requested origin.
+				w.Header().Set(allowOrigin, origin)
+
+				break
+			}
+		}
+
+		// For a pre-flight request we only need to send the headers
+		// back. No need to call the rest of the chain.
+		if r.Method == "OPTIONS" {
+			return
+		}
+
+		// Everything's prepared now, we can pass the request along the
+		// chain of handlers.
+		handler.ServeHTTP(w, r)
+	})
 }
 
 // showStartupInfo shows useful information to the user to easily access the
