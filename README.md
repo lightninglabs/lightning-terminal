@@ -19,7 +19,7 @@ Lightning Terminal (LiT) is a browser-based interface for managing channel liqui
 ## Installation
 Download the latest binaries from the [releases](https://github.com/lightninglabs/lightning-terminal/releases) page. 
 
-Additionally you find detailed instructions in the [lightning engineering docs](https://docs.lightning.engineering/lightning-network-tools/lightning-terminal/get-lit).
+Additionally you find detailed instructions on the [docs.lightning.engineering](https://docs.lightning.engineering/lightning-network-tools/lightning-terminal/get-lit) page.
 
 ## Execution
 Run Lightning Terminal with a local `lnd` instance:
