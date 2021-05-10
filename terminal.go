@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"embed"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -316,7 +317,6 @@ func (g *LightningTerminal) startSubservers() error {
 		<-g.rpcProxy.lndConnectChan
 
 		host, network, tlsData, macData = g.cfg.lndConnectParams()
-		// TODO: LET'S ALSO SET P.LNDCONN HERE?
 	} else {
 		host, network, tlsPath, macPath = g.cfg.lndConnectParams()
 	}
@@ -470,6 +470,37 @@ func (g *LightningTerminal) RegisterRestSubserver(ctx context.Context,
 // met. A non-nil error is returned if any of the checks fail.
 func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 	requiredPermissions []bakery.Op, fullMethod string) error {
+
+	if g.cfg.LndMode == ModeStatelessRemote && g.lndClient != nil {
+		// Check with LND that the request follows all caveats built
+		// into the macaroon.
+		ctx := context.Background()
+
+		macBytes, err := hex.DecodeString(g.cfg.Remote.Lnd.Macaroon)
+		if err != nil {
+			return err
+		}
+
+		// Convert permissions to the form that lndClient will accept.
+		permissions := make([]lndclient.MacaroonPermission, 0)
+		for _, perm := range requiredPermissions {
+			newPerm := lndclient.MacaroonPermission{
+				Entity: perm.Entity,
+				Action: perm.Action,
+			}
+			permissions = append(permissions, newPerm)
+		}
+
+		res, err := g.lndClient.Client.CheckMacaroonPermissions(
+			ctx, macBytes, permissions, fullMethod,
+		)
+		if !res {
+			return fmt.Errorf("macaroon is not valid, returned %v",
+				res)
+		}
+
+		return err
+	}
 
 	// Validate all macaroons for services that are running in the local
 	// process. Calls that we proxy to a remote host don't need to be
