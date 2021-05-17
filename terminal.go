@@ -138,7 +138,13 @@ func New() *LightningTerminal {
 // Run starts everything and then blocks until either the application is shut
 // down or a critical error happens.
 func (g *LightningTerminal) Run() error {
-	cfg, err := loadAndValidateConfig()
+	// Hook interceptor for os signals.
+	shutdownInterceptor, err := signal.Intercept()
+	if err != nil {
+		return fmt.Errorf("could not intercept signals: %v", err)
+	}
+
+	cfg, err := loadAndValidateConfig(shutdownInterceptor)
 	if err != nil {
 		return fmt.Errorf("could not load config: %w", err)
 	}
@@ -156,12 +162,6 @@ func (g *LightningTerminal) Run() error {
 	loop.AgentName = "litd"
 	pool.SetAgentName("litd")
 
-	// Hook interceptor for os signals.
-	err = signal.Intercept()
-	if err != nil {
-		return fmt.Errorf("could not intercept signals: %v", err)
-	}
-
 	// Call the "real" main in a nested manner so the defers will properly
 	// be executed in the case of a graceful shutdown.
 	readyChan := make(chan struct{})
@@ -171,30 +171,23 @@ func (g *LightningTerminal) Run() error {
 		go func() {
 			defer g.wg.Done()
 
-			extSubCfg := &lnd.RPCSubserverConfig{
-				Permissions:       getSubserverPermissions(),
-				Registrar:         g,
-				MacaroonValidator: g,
-			}
 			lisCfg := lnd.ListenerCfg{
 				RPCListener: &lnd.ListenerWithSignal{
 					Listener: &onDemandListener{
 						addr: g.cfg.Lnd.RPCListeners[0],
 					},
-					Ready:                   readyChan,
-					ExternalRPCSubserverCfg: extSubCfg,
-					ExternalRestRegistrar:   g,
+					Ready: readyChan,
 				},
-				WalletUnlocker: &lnd.ListenerWithSignal{
-					Listener: &onDemandListener{
-						addr: g.cfg.Lnd.RPCListeners[0],
-					},
-					Ready: unlockChan,
+				ExternalRPCSubserverCfg: &lnd.RPCSubserverConfig{
+					Permissions:       getSubserverPermissions(),
+					Registrar:         g,
+					MacaroonValidator: g,
 				},
+				ExternalRestRegistrar: g,
 			}
 
 			err := lnd.Main(
-				g.cfg.Lnd, lisCfg, signal.ShutdownChannel(),
+				g.cfg.Lnd, lisCfg, shutdownInterceptor,
 			)
 			if e, ok := err.(*flags.Error); err != nil &&
 				(!ok || e.Type != flags.ErrHelp) {
@@ -235,7 +228,7 @@ func (g *LightningTerminal) Run() error {
 	case err := <-g.lndErrChan:
 		return err
 
-	case <-signal.ShutdownChannel():
+	case <-shutdownInterceptor.ShutdownChannel():
 		return errors.New("shutting down")
 	}
 
@@ -273,7 +266,7 @@ func (g *LightningTerminal) Run() error {
 	case err := <-g.lndErrChan:
 		return err
 
-	case <-signal.ShutdownChannel():
+	case <-shutdownInterceptor.ShutdownChannel():
 		return errors.New("shutting down")
 	}
 
@@ -298,7 +291,7 @@ func (g *LightningTerminal) Run() error {
 				"shutting down: %v", err)
 		}
 
-	case <-signal.ShutdownChannel():
+	case <-shutdownInterceptor.ShutdownChannel():
 		log.Infof("Shutdown signal received")
 	}
 
@@ -347,7 +340,7 @@ func (g *LightningTerminal) startSubservers() error {
 	go func() {
 		select {
 		// Client requests shutdown, cancel the wait.
-		case <-signal.ShutdownChannel():
+		case <-interceptor.ShutdownChannel():
 			cancel()
 
 		// The check was completed and the above defer canceled the
@@ -570,7 +563,7 @@ func (g *LightningTerminal) shutdown() error {
 	}
 
 	// In case the error wasn't thrown by lnd, make sure we stop it too.
-	signal.RequestShutdown()
+	interceptor.RequestShutdown()
 
 	g.wg.Wait()
 
@@ -799,7 +792,10 @@ func (g *LightningTerminal) createRESTProxy() error {
 	// through the following chain:
 	// req ---> CORS handler --> WS proxy ---> REST proxy --> gRPC endpoint
 	// where gRPC endpoint is our main HTTP(S) listener again.
-	restHandler := lnrpc.NewWebSocketProxy(restMux, log)
+	restHandler := lnrpc.NewWebSocketProxy(
+		restMux, log, g.cfg.Lnd.WSPingInterval, g.cfg.Lnd.WSPongWait,
+		lnrpc.LndClientStreamingURIs,
+	)
 	g.restHandler = allowCORS(restHandler, g.cfg.RestCORS)
 
 	// First register all lnd handlers. This will make it possible to speak

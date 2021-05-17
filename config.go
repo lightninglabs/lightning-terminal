@@ -25,6 +25,7 @@ import (
 	"github.com/lightningnetwork/lnd/cert"
 	"github.com/lightningnetwork/lnd/lncfg"
 	"github.com/lightningnetwork/lnd/lnrpc"
+	"github.com/lightningnetwork/lnd/signal"
 	"github.com/mwitkow/go-conntrack/connhelpers"
 	"golang.org/x/crypto/acme/autocert"
 )
@@ -296,7 +297,7 @@ func defaultConfig() *Config {
 
 // loadAndValidateConfig loads the terminal's main configuration and validates
 // its content.
-func loadAndValidateConfig() (*Config, error) {
+func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 	// Start with the default configuration.
 	preCfg := defaultConfig()
 
@@ -319,14 +320,14 @@ func loadAndValidateConfig() (*Config, error) {
 
 	// Load the main configuration file and parse any command line options.
 	// This function will also set up logging properly.
-	cfg, err := loadConfigFile(preCfg, usageMessage)
+	cfg, err := loadConfigFile(preCfg, usageMessage, interceptor)
 	if err != nil {
 		return nil, err
 	}
 
 	// With the validated config obtained, we now know that the root logging
 	// system of lnd is initialized and we can hook up our own loggers now.
-	SetupLoggers(cfg.Lnd.LogWriter)
+	SetupLoggers(cfg.Lnd.LogWriter, interceptor)
 
 	// Translate the more user friendly string modes into the more developer
 	// friendly internal bool variables now.
@@ -380,9 +381,11 @@ func loadAndValidateConfig() (*Config, error) {
 	if err := faraday.ValidateConfig(cfg.Faraday); err != nil {
 		return nil, err
 	}
+	cfg.Loop.Lnd.MacaroonPath = loopd.DefaultMacaroonPath
 	if err := loopd.Validate(cfg.Loop); err != nil {
 		return nil, err
 	}
+	cfg.Pool.Lnd.MacaroonPath = pool.DefaultMacaroonPath
 	if err := pool.Validate(cfg.Pool); err != nil {
 		return nil, err
 	}
@@ -441,7 +444,9 @@ func loadAndValidateConfig() (*Config, error) {
 
 // loadConfigFile loads and sanitizes the lit main configuration from the config
 // file or command line arguments (or both).
-func loadConfigFile(preCfg *Config, usageMessage string) (*Config, error) {
+func loadConfigFile(preCfg *Config, usageMessage string,
+	interceptor signal.Interceptor) (*Config, error) {
+
 	// If the config file path has not been modified by the user, then we'll
 	// use the default config file path. However, if the user has modified
 	// their litdir, then we should assume they intend to use the config
@@ -493,7 +498,9 @@ func loadConfigFile(preCfg *Config, usageMessage string) (*Config, error) {
 	// logs to a sub-directory in the .lnd folder.
 	case ModeIntegrated:
 		var err error
-		cfg.Lnd, err = lnd.ValidateConfig(*cfg.Lnd, usageMessage)
+		cfg.Lnd, err = lnd.ValidateConfig(
+			*cfg.Lnd, usageMessage, interceptor,
+		)
 		if err != nil {
 			return nil, err
 		}

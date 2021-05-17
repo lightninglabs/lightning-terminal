@@ -2,21 +2,9 @@ package terminal
 
 import (
 	"github.com/btcsuite/btclog"
-	apertureLsat "github.com/lightninglabs/aperture/lsat"
 	"github.com/lightninglabs/faraday"
-	"github.com/lightninglabs/faraday/dataset"
-	"github.com/lightninglabs/faraday/fiat"
-	"github.com/lightninglabs/faraday/frdrpc"
-	"github.com/lightninglabs/faraday/recommend"
-	"github.com/lightninglabs/faraday/revenue"
-	"github.com/lightninglabs/lndclient"
-	"github.com/lightninglabs/loop"
-	"github.com/lightninglabs/loop/loopdb"
-	"github.com/lightninglabs/loop/lsat"
-	"github.com/lightninglabs/pool/account"
-	"github.com/lightninglabs/pool/auctioneer"
-	"github.com/lightninglabs/pool/clientdb"
-	"github.com/lightninglabs/pool/order"
+	"github.com/lightninglabs/loop/loopd"
+	"github.com/lightninglabs/pool"
 	"github.com/lightningnetwork/lnd"
 	"github.com/lightningnetwork/lnd/build"
 	"github.com/lightningnetwork/lnd/signal"
@@ -28,6 +16,10 @@ var (
 	// means the package will not perform any logging by default until the
 	// caller requests it.
 	log btclog.Logger
+
+	// interceptor is the OS signal interceptor that we need to keep a
+	// reference to for listening for shutdown signals.
+	interceptor signal.Interceptor
 )
 
 const (
@@ -55,43 +47,52 @@ func UseLogger(logger btclog.Logger) {
 }
 
 // SetupLoggers initializes all package-global logger variables.
-func SetupLoggers(root *build.RotatingLogWriter) {
+func SetupLoggers(root *build.RotatingLogWriter, intercept signal.Interceptor) {
+	genLogger := genSubLogger(root, intercept)
+
+	log = build.NewSubLogger(Subsystem, genLogger)
+	interceptor = intercept
+
 	// Add the lightning-terminal root logger.
-	lnd.AddSubLogger(root, Subsystem, UseLogger)
+	lnd.AddSubLogger(root, Subsystem, intercept, UseLogger)
 
-	// Add faraday loggers to lnd's root logger.
-	lnd.AddSubLogger(root, faraday.Subsystem, faraday.UseLogger)
-	lnd.AddSubLogger(root, recommend.Subsystem, recommend.UseLogger)
-	lnd.AddSubLogger(root, dataset.Subsystem, dataset.UseLogger)
-	lnd.AddSubLogger(root, frdrpc.Subsystem, frdrpc.UseLogger)
-	lnd.AddSubLogger(root, revenue.Subsystem, revenue.UseLogger)
-	lnd.AddSubLogger(root, fiat.Subsystem, fiat.UseLogger)
-
-	// Add loop loggers to lnd's root logger.
-	lnd.AddSubLogger(root, "LOOPD", loopdb.UseLogger)
-	lnd.AddSubLogger(root, "LOOP", loop.UseLogger)
-	lnd.AddSubLogger(root, "LNDC", lndclient.UseLogger)
-	lnd.AddSubLogger(root, "STORE", loopdb.UseLogger)
-	lnd.AddSubLogger(root, lsat.Subsystem, lsat.UseLogger)
+	// Add daemon loggers to lnd's root logger.
+	faraday.SetupLoggers(root, intercept)
+	loopd.SetupLoggers(root, intercept)
+	pool.SetupLoggers(root, intercept)
 
 	// Setup the gRPC loggers too.
-	grpclog.SetLoggerV2(NewGrpcLogLogger(root, GrpcLogSubsystem))
+	grpclog.SetLoggerV2(NewGrpcLogLogger(root, intercept, GrpcLogSubsystem))
+}
 
-	// Add llm loggers to lnd's root logger.
-	lnd.AddSubLogger(root, auctioneer.Subsystem, auctioneer.UseLogger)
-	lnd.AddSubLogger(root, order.Subsystem, order.UseLogger)
-	lnd.AddSubLogger(root, "SGNL", signal.UseLogger)
-	lnd.AddSubLogger(root, account.Subsystem, account.UseLogger)
-	lnd.AddSubLogger(root, apertureLsat.Subsystem, apertureLsat.UseLogger)
-	lnd.AddSubLogger(root, clientdb.Subsystem, clientdb.UseLogger)
+// genSubLogger creates a logger for a subsystem. We provide an instance of
+// a signal.Interceptor to be able to shutdown in the case of a critical error.
+func genSubLogger(root *build.RotatingLogWriter,
+	interceptor signal.Interceptor) func(string) btclog.Logger {
+
+	// Create a shutdown function which will request shutdown from our
+	// interceptor if it is listening.
+	shutdown := func() {
+		if !interceptor.Listening() {
+			return
+		}
+
+		interceptor.RequestShutdown()
+	}
+
+	// Return a function which will create a sublogger from our root
+	// logger without shutdown fn.
+	return func(tag string) btclog.Logger {
+		return root.GenSubLogger(tag, shutdown)
+	}
 }
 
 // NewGrpcLogLogger creates a new grpclog compatible logger and attaches it as
 // a sub logger to the passed root logger.
 func NewGrpcLogLogger(root *build.RotatingLogWriter,
-	subsystem string) *GrpcLogLogger {
+	intercept signal.Interceptor, subsystem string) *GrpcLogLogger {
 
-	logger := build.NewSubLogger(subsystem, root.GenSubLogger)
+	logger := build.NewSubLogger(subsystem, genSubLogger(root, intercept))
 	lnd.SetSubLogger(root, subsystem, logger)
 	return &GrpcLogLogger{
 		Logger: logger,
