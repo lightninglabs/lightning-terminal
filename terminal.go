@@ -918,6 +918,7 @@ func (g *LightningTerminal) showStartupInfo() error {
 			// Node is locked.
 			info.status = "locked"
 			info.alias = "???? (node is locked)"
+			info.version = "???? (node is locked)"
 		} else {
 			info.status = "online"
 			info.alias = res.Alias
@@ -937,7 +938,7 @@ func (g *LightningTerminal) showStartupInfo() error {
 	// If there's an additional HTTP listener, list it as well.
 	listenAddr := g.cfg.HTTPSListen
 	if g.cfg.HTTPListen != "" {
-		host := toLocalAddress(listenAddr)
+		host := toLocalAddress(g.cfg.HTTPListen)
 		info.webURI = fmt.Sprintf("%s or http://%s", info.webURI, host)
 		listenAddr = fmt.Sprintf("%s, %s", listenAddr, g.cfg.HTTPListen)
 	}
