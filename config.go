@@ -796,7 +796,11 @@ func (l *onDemandListener) Accept() (net.Conn, error) {
 // Close closes the listener.
 // Any blocked Accept operations will be unblocked and return errors.
 func (l *onDemandListener) Close() error {
-	return l.lis.Close()
+	if l.lis != nil {
+		return l.lis.Close()
+	}
+
+	return nil
 }
 
 // Addr returns the listener's network address.
