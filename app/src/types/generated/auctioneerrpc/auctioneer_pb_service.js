@@ -73,6 +73,15 @@ ChannelAuctioneer.SubscribeBatchAuction = {
   responseType: auctioneerrpc_auctioneer_pb.ServerAuctionMessage
 };
 
+ChannelAuctioneer.SubscribeSidecar = {
+  methodName: "SubscribeSidecar",
+  service: ChannelAuctioneer,
+  requestStream: true,
+  responseStream: true,
+  requestType: auctioneerrpc_auctioneer_pb.ClientAuctionMessage,
+  responseType: auctioneerrpc_auctioneer_pb.ServerAuctionMessage
+};
+
 ChannelAuctioneer.Terms = {
   methodName: "Terms",
   service: ChannelAuctioneer,
@@ -116,6 +125,15 @@ ChannelAuctioneer.BatchSnapshots = {
   responseStream: false,
   requestType: auctioneerrpc_auctioneer_pb.BatchSnapshotsRequest,
   responseType: auctioneerrpc_auctioneer_pb.BatchSnapshotsResponse
+};
+
+ChannelAuctioneer.MarketInfo = {
+  methodName: "MarketInfo",
+  service: ChannelAuctioneer,
+  requestStream: false,
+  responseStream: false,
+  requestType: auctioneerrpc_auctioneer_pb.MarketInfoRequest,
+  responseType: auctioneerrpc_auctioneer_pb.MarketInfoResponse
 };
 
 exports.ChannelAuctioneer = ChannelAuctioneer;
@@ -356,6 +374,51 @@ ChannelAuctioneerClient.prototype.subscribeBatchAuction = function subscribeBatc
   };
 };
 
+ChannelAuctioneerClient.prototype.subscribeSidecar = function subscribeSidecar(metadata) {
+  var listeners = {
+    data: [],
+    end: [],
+    status: []
+  };
+  var client = grpc.client(ChannelAuctioneer.SubscribeSidecar, {
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport
+  });
+  client.onEnd(function (status, statusMessage, trailers) {
+    listeners.status.forEach(function (handler) {
+      handler({ code: status, details: statusMessage, metadata: trailers });
+    });
+    listeners.end.forEach(function (handler) {
+      handler({ code: status, details: statusMessage, metadata: trailers });
+    });
+    listeners = null;
+  });
+  client.onMessage(function (message) {
+    listeners.data.forEach(function (handler) {
+      handler(message);
+    })
+  });
+  client.start(metadata);
+  return {
+    on: function (type, handler) {
+      listeners[type].push(handler);
+      return this;
+    },
+    write: function (requestMessage) {
+      client.send(requestMessage);
+      return this;
+    },
+    end: function () {
+      client.finishSend();
+    },
+    cancel: function () {
+      listeners = null;
+      client.close();
+    }
+  };
+};
+
 ChannelAuctioneerClient.prototype.terms = function terms(requestMessage, metadata, callback) {
   if (arguments.length === 2) {
     callback = arguments[1];
@@ -485,6 +548,37 @@ ChannelAuctioneerClient.prototype.batchSnapshots = function batchSnapshots(reque
     callback = arguments[1];
   }
   var client = grpc.unary(ChannelAuctioneer.BatchSnapshots, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+ChannelAuctioneerClient.prototype.marketInfo = function marketInfo(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(ChannelAuctioneer.MarketInfo, {
     request: requestMessage,
     host: this.serviceHost,
     metadata: metadata,

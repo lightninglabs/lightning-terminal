@@ -438,6 +438,9 @@ export class InQuoteResponse extends jspb.Message {
   getCltvDelta(): number;
   setCltvDelta(value: number): void;
 
+  getConfTarget(): number;
+  setConfTarget(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): InQuoteResponse.AsObject;
   static toObject(includeInstance: boolean, msg: InQuoteResponse): InQuoteResponse.AsObject;
@@ -453,6 +456,7 @@ export namespace InQuoteResponse {
     swapFeeSat: number,
     htlcPublishFeeSat: number,
     cltvDelta: number,
+    confTarget: number,
   }
 }
 
@@ -474,6 +478,9 @@ export class OutQuoteResponse extends jspb.Message {
   getCltvDelta(): number;
   setCltvDelta(value: number): void;
 
+  getConfTarget(): number;
+  setConfTarget(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): OutQuoteResponse.AsObject;
   static toObject(includeInstance: boolean, msg: OutQuoteResponse): OutQuoteResponse.AsObject;
@@ -491,6 +498,7 @@ export namespace OutQuoteResponse {
     htlcSweepFeeSat: number,
     swapPaymentDest: Uint8Array | string,
     cltvDelta: number,
+    confTarget: number,
   }
 }
 
@@ -608,6 +616,9 @@ export class LiquidityParameters extends jspb.Message {
   setRulesList(value: Array<LiquidityRule>): void;
   addRules(value?: LiquidityRule, index?: number): LiquidityRule;
 
+  getFeePpm(): number;
+  setFeePpm(value: number): void;
+
   getSweepFeeRateSatPerVbyte(): number;
   setSweepFeeRateSatPerVbyte(value: number): void;
 
@@ -632,14 +643,14 @@ export class LiquidityParameters extends jspb.Message {
   getFailureBackoffSec(): number;
   setFailureBackoffSec(value: number): void;
 
-  getAutoLoopOut(): boolean;
-  setAutoLoopOut(value: boolean): void;
+  getAutoloop(): boolean;
+  setAutoloop(value: boolean): void;
 
-  getAutoOutBudgetSat(): number;
-  setAutoOutBudgetSat(value: number): void;
+  getAutoloopBudgetSat(): number;
+  setAutoloopBudgetSat(value: number): void;
 
-  getAutoOutBudgetStartSec(): number;
-  setAutoOutBudgetStartSec(value: number): void;
+  getAutoloopBudgetStartSec(): number;
+  setAutoloopBudgetStartSec(value: number): void;
 
   getAutoMaxInFlight(): number;
   setAutoMaxInFlight(value: number): void;
@@ -663,6 +674,7 @@ export class LiquidityParameters extends jspb.Message {
 export namespace LiquidityParameters {
   export type AsObject = {
     rulesList: Array<LiquidityRule.AsObject>,
+    feePpm: number,
     sweepFeeRateSatPerVbyte: number,
     maxSwapFeePpm: number,
     maxRoutingFeePpm: number,
@@ -671,9 +683,9 @@ export namespace LiquidityParameters {
     maxMinerFeeSat: number,
     sweepConfTarget: number,
     failureBackoffSec: number,
-    autoLoopOut: boolean,
-    autoOutBudgetSat: number,
-    autoOutBudgetStartSec: number,
+    autoloop: boolean,
+    autoloopBudgetSat: number,
+    autoloopBudgetStartSec: number,
     autoMaxInFlight: number,
     minSwapAmount: number,
     maxSwapAmount: number,
@@ -683,6 +695,11 @@ export namespace LiquidityParameters {
 export class LiquidityRule extends jspb.Message {
   getChannelId(): number;
   setChannelId(value: number): void;
+
+  getPubkey(): Uint8Array | string;
+  getPubkey_asU8(): Uint8Array;
+  getPubkey_asB64(): string;
+  setPubkey(value: Uint8Array | string): void;
 
   getType(): LiquidityRuleTypeMap[keyof LiquidityRuleTypeMap];
   setType(value: LiquidityRuleTypeMap[keyof LiquidityRuleTypeMap]): void;
@@ -706,6 +723,7 @@ export class LiquidityRule extends jspb.Message {
 export namespace LiquidityRule {
   export type AsObject = {
     channelId: number,
+    pubkey: Uint8Array | string,
     type: LiquidityRuleTypeMap[keyof LiquidityRuleTypeMap],
     incomingThreshold: number,
     outgoingThreshold: number,
@@ -766,11 +784,46 @@ export namespace SuggestSwapsRequest {
   }
 }
 
+export class Disqualified extends jspb.Message {
+  getChannelId(): number;
+  setChannelId(value: number): void;
+
+  getPubkey(): Uint8Array | string;
+  getPubkey_asU8(): Uint8Array;
+  getPubkey_asB64(): string;
+  setPubkey(value: Uint8Array | string): void;
+
+  getReason(): AutoReasonMap[keyof AutoReasonMap];
+  setReason(value: AutoReasonMap[keyof AutoReasonMap]): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): Disqualified.AsObject;
+  static toObject(includeInstance: boolean, msg: Disqualified): Disqualified.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: Disqualified, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): Disqualified;
+  static deserializeBinaryFromReader(message: Disqualified, reader: jspb.BinaryReader): Disqualified;
+}
+
+export namespace Disqualified {
+  export type AsObject = {
+    channelId: number,
+    pubkey: Uint8Array | string,
+    reason: AutoReasonMap[keyof AutoReasonMap],
+  }
+}
+
 export class SuggestSwapsResponse extends jspb.Message {
   clearLoopOutList(): void;
   getLoopOutList(): Array<LoopOutRequest>;
   setLoopOutList(value: Array<LoopOutRequest>): void;
   addLoopOut(value?: LoopOutRequest, index?: number): LoopOutRequest;
+
+  clearDisqualifiedList(): void;
+  getDisqualifiedList(): Array<Disqualified>;
+  setDisqualifiedList(value: Array<Disqualified>): void;
+  addDisqualified(value?: Disqualified, index?: number): Disqualified;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): SuggestSwapsResponse.AsObject;
@@ -785,6 +838,7 @@ export class SuggestSwapsResponse extends jspb.Message {
 export namespace SuggestSwapsResponse {
   export type AsObject = {
     loopOutList: Array<LoopOutRequest.AsObject>,
+    disqualifiedList: Array<Disqualified.AsObject>,
   }
 }
 
@@ -824,4 +878,23 @@ export interface LiquidityRuleTypeMap {
 }
 
 export const LiquidityRuleType: LiquidityRuleTypeMap;
+
+export interface AutoReasonMap {
+  AUTO_REASON_UNKNOWN: 0;
+  AUTO_REASON_BUDGET_NOT_STARTED: 1;
+  AUTO_REASON_SWEEP_FEES: 2;
+  AUTO_REASON_BUDGET_ELAPSED: 3;
+  AUTO_REASON_IN_FLIGHT: 4;
+  AUTO_REASON_SWAP_FEE: 5;
+  AUTO_REASON_MINER_FEE: 6;
+  AUTO_REASON_PREPAY: 7;
+  AUTO_REASON_FAILURE_BACKOFF: 8;
+  AUTO_REASON_LOOP_OUT: 9;
+  AUTO_REASON_LOOP_IN: 10;
+  AUTO_REASON_LIQUIDITY_OK: 11;
+  AUTO_REASON_BUDGET_INSUFFICIENT: 12;
+  AUTO_REASON_FEE_INSUFFICIENT: 13;
+}
+
+export const AutoReason: AutoReasonMap;
 

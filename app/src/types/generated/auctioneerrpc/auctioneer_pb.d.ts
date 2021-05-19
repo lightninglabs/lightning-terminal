@@ -1123,6 +1123,12 @@ export class ServerBid extends jspb.Message {
   getMinNodeTier(): NodeTierMap[keyof NodeTierMap];
   setMinNodeTier(value: NodeTierMap[keyof NodeTierMap]): void;
 
+  getSelfChanBalance(): number;
+  setSelfChanBalance(value: number): void;
+
+  getIsSidecarChannel(): boolean;
+  setIsSidecarChannel(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServerBid.AsObject;
   static toObject(includeInstance: boolean, msg: ServerBid): ServerBid.AsObject;
@@ -1139,6 +1145,8 @@ export namespace ServerBid {
     leaseDurationBlocks: number,
     version: number,
     minNodeTier: NodeTierMap[keyof NodeTierMap],
+    selfChanBalance: number,
+    isSidecarChannel: boolean,
   }
 }
 
@@ -1978,6 +1986,105 @@ export class BatchSnapshotsResponse extends jspb.Message {
 export namespace BatchSnapshotsResponse {
   export type AsObject = {
     batchesList: Array<BatchSnapshotResponse.AsObject>,
+  }
+}
+
+export class MarketInfoRequest extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): MarketInfoRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: MarketInfoRequest): MarketInfoRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: MarketInfoRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): MarketInfoRequest;
+  static deserializeBinaryFromReader(message: MarketInfoRequest, reader: jspb.BinaryReader): MarketInfoRequest;
+}
+
+export namespace MarketInfoRequest {
+  export type AsObject = {
+  }
+}
+
+export class MarketInfo extends jspb.Message {
+  clearNumAsksList(): void;
+  getNumAsksList(): Array<MarketInfo.TierValue>;
+  setNumAsksList(value: Array<MarketInfo.TierValue>): void;
+  addNumAsks(value?: MarketInfo.TierValue, index?: number): MarketInfo.TierValue;
+
+  clearNumBidsList(): void;
+  getNumBidsList(): Array<MarketInfo.TierValue>;
+  setNumBidsList(value: Array<MarketInfo.TierValue>): void;
+  addNumBids(value?: MarketInfo.TierValue, index?: number): MarketInfo.TierValue;
+
+  clearAskOpenInterestUnitsList(): void;
+  getAskOpenInterestUnitsList(): Array<MarketInfo.TierValue>;
+  setAskOpenInterestUnitsList(value: Array<MarketInfo.TierValue>): void;
+  addAskOpenInterestUnits(value?: MarketInfo.TierValue, index?: number): MarketInfo.TierValue;
+
+  clearBidOpenInterestUnitsList(): void;
+  getBidOpenInterestUnitsList(): Array<MarketInfo.TierValue>;
+  setBidOpenInterestUnitsList(value: Array<MarketInfo.TierValue>): void;
+  addBidOpenInterestUnits(value?: MarketInfo.TierValue, index?: number): MarketInfo.TierValue;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): MarketInfo.AsObject;
+  static toObject(includeInstance: boolean, msg: MarketInfo): MarketInfo.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: MarketInfo, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): MarketInfo;
+  static deserializeBinaryFromReader(message: MarketInfo, reader: jspb.BinaryReader): MarketInfo;
+}
+
+export namespace MarketInfo {
+  export type AsObject = {
+    numAsksList: Array<MarketInfo.TierValue.AsObject>,
+    numBidsList: Array<MarketInfo.TierValue.AsObject>,
+    askOpenInterestUnitsList: Array<MarketInfo.TierValue.AsObject>,
+    bidOpenInterestUnitsList: Array<MarketInfo.TierValue.AsObject>,
+  }
+
+  export class TierValue extends jspb.Message {
+    getTier(): NodeTierMap[keyof NodeTierMap];
+    setTier(value: NodeTierMap[keyof NodeTierMap]): void;
+
+    getValue(): number;
+    setValue(value: number): void;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): TierValue.AsObject;
+    static toObject(includeInstance: boolean, msg: TierValue): TierValue.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: TierValue, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): TierValue;
+    static deserializeBinaryFromReader(message: TierValue, reader: jspb.BinaryReader): TierValue;
+  }
+
+  export namespace TierValue {
+    export type AsObject = {
+      tier: NodeTierMap[keyof NodeTierMap],
+      value: number,
+    }
+  }
+}
+
+export class MarketInfoResponse extends jspb.Message {
+  getMarketsMap(): jspb.Map<number, MarketInfo>;
+  clearMarketsMap(): void;
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): MarketInfoResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: MarketInfoResponse): MarketInfoResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: MarketInfoResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): MarketInfoResponse;
+  static deserializeBinaryFromReader(message: MarketInfoResponse, reader: jspb.BinaryReader): MarketInfoResponse;
+}
+
+export namespace MarketInfoResponse {
+  export type AsObject = {
+    marketsMap: Array<[number, MarketInfo.AsObject]>,
   }
 }
 

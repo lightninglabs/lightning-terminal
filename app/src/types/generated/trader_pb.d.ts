@@ -839,6 +839,12 @@ export class Bid extends jspb.Message {
   getMinNodeTier(): auctioneerrpc_auctioneer_pb.NodeTierMap[keyof auctioneerrpc_auctioneer_pb.NodeTierMap];
   setMinNodeTier(value: auctioneerrpc_auctioneer_pb.NodeTierMap[keyof auctioneerrpc_auctioneer_pb.NodeTierMap]): void;
 
+  getSelfChanBalance(): number;
+  setSelfChanBalance(value: number): void;
+
+  getSidecarTicket(): string;
+  setSidecarTicket(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Bid.AsObject;
   static toObject(includeInstance: boolean, msg: Bid): Bid.AsObject;
@@ -855,6 +861,8 @@ export namespace Bid {
     leaseDurationBlocks: number,
     version: number,
     minNodeTier: auctioneerrpc_auctioneer_pb.NodeTierMap[keyof auctioneerrpc_auctioneer_pb.NodeTierMap],
+    selfChanBalance: number,
+    sidecarTicket: string,
   }
 }
 
@@ -885,6 +893,78 @@ export namespace Ask {
     details?: Order.AsObject,
     leaseDurationBlocks: number,
     version: number,
+  }
+}
+
+export class QuoteOrderRequest extends jspb.Message {
+  getAmt(): number;
+  setAmt(value: number): void;
+
+  getRateFixed(): number;
+  setRateFixed(value: number): void;
+
+  getLeaseDurationBlocks(): number;
+  setLeaseDurationBlocks(value: number): void;
+
+  getMaxBatchFeeRateSatPerKw(): number;
+  setMaxBatchFeeRateSatPerKw(value: number): void;
+
+  getMinUnitsMatch(): number;
+  setMinUnitsMatch(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): QuoteOrderRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: QuoteOrderRequest): QuoteOrderRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: QuoteOrderRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): QuoteOrderRequest;
+  static deserializeBinaryFromReader(message: QuoteOrderRequest, reader: jspb.BinaryReader): QuoteOrderRequest;
+}
+
+export namespace QuoteOrderRequest {
+  export type AsObject = {
+    amt: number,
+    rateFixed: number,
+    leaseDurationBlocks: number,
+    maxBatchFeeRateSatPerKw: number,
+    minUnitsMatch: number,
+  }
+}
+
+export class QuoteOrderResponse extends jspb.Message {
+  getTotalPremiumSat(): number;
+  setTotalPremiumSat(value: number): void;
+
+  getRatePerBlock(): number;
+  setRatePerBlock(value: number): void;
+
+  getRatePercent(): number;
+  setRatePercent(value: number): void;
+
+  getTotalExecutionFeeSat(): number;
+  setTotalExecutionFeeSat(value: number): void;
+
+  getWorstCaseChainFeeSat(): number;
+  setWorstCaseChainFeeSat(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): QuoteOrderResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: QuoteOrderResponse): QuoteOrderResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: QuoteOrderResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): QuoteOrderResponse;
+  static deserializeBinaryFromReader(message: QuoteOrderResponse, reader: jspb.BinaryReader): QuoteOrderResponse;
+}
+
+export namespace QuoteOrderResponse {
+  export type AsObject = {
+    totalPremiumSat: number,
+    ratePerBlock: number,
+    ratePercent: number,
+    totalExecutionFeeSat: number,
+    worstCaseChainFeeSat: number,
   }
 }
 
@@ -1113,6 +1193,12 @@ export class Lease extends jspb.Message {
   getChannelNodeTier(): auctioneerrpc_auctioneer_pb.NodeTierMap[keyof auctioneerrpc_auctioneer_pb.NodeTierMap];
   setChannelNodeTier(value: auctioneerrpc_auctioneer_pb.NodeTierMap[keyof auctioneerrpc_auctioneer_pb.NodeTierMap]): void;
 
+  getSelfChanBalance(): number;
+  setSelfChanBalance(value: number): void;
+
+  getSidecarChannel(): boolean;
+  setSidecarChannel(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Lease.AsObject;
   static toObject(includeInstance: boolean, msg: Lease): Lease.AsObject;
@@ -1138,6 +1224,8 @@ export namespace Lease {
     purchased: boolean,
     channelRemoteNodeKey: Uint8Array | string,
     channelNodeTier: auctioneerrpc_auctioneer_pb.NodeTierMap[keyof auctioneerrpc_auctioneer_pb.NodeTierMap],
+    selfChanBalance: number,
+    sidecarChannel: boolean,
   }
 }
 
@@ -1420,6 +1508,237 @@ export class NodeRatingResponse extends jspb.Message {
 export namespace NodeRatingResponse {
   export type AsObject = {
     nodeRatingsList: Array<auctioneerrpc_auctioneer_pb.NodeRating.AsObject>,
+  }
+}
+
+export class GetInfoRequest extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GetInfoRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: GetInfoRequest): GetInfoRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: GetInfoRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetInfoRequest;
+  static deserializeBinaryFromReader(message: GetInfoRequest, reader: jspb.BinaryReader): GetInfoRequest;
+}
+
+export namespace GetInfoRequest {
+  export type AsObject = {
+  }
+}
+
+export class GetInfoResponse extends jspb.Message {
+  getVersion(): string;
+  setVersion(value: string): void;
+
+  getAccountsTotal(): number;
+  setAccountsTotal(value: number): void;
+
+  getAccountsActive(): number;
+  setAccountsActive(value: number): void;
+
+  getAccountsActiveExpired(): number;
+  setAccountsActiveExpired(value: number): void;
+
+  getAccountsArchived(): number;
+  setAccountsArchived(value: number): void;
+
+  getOrdersTotal(): number;
+  setOrdersTotal(value: number): void;
+
+  getOrdersActive(): number;
+  setOrdersActive(value: number): void;
+
+  getOrdersArchived(): number;
+  setOrdersArchived(value: number): void;
+
+  getCurrentBlockHeight(): number;
+  setCurrentBlockHeight(value: number): void;
+
+  getBatchesInvolved(): number;
+  setBatchesInvolved(value: number): void;
+
+  hasNodeRating(): boolean;
+  clearNodeRating(): void;
+  getNodeRating(): auctioneerrpc_auctioneer_pb.NodeRating | undefined;
+  setNodeRating(value?: auctioneerrpc_auctioneer_pb.NodeRating): void;
+
+  getLsatTokens(): number;
+  setLsatTokens(value: number): void;
+
+  getSubscribedToAuctioneer(): boolean;
+  setSubscribedToAuctioneer(value: boolean): void;
+
+  getNewNodesOnly(): boolean;
+  setNewNodesOnly(value: boolean): void;
+
+  getMarketInfoMap(): jspb.Map<number, auctioneerrpc_auctioneer_pb.MarketInfo>;
+  clearMarketInfoMap(): void;
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GetInfoResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: GetInfoResponse): GetInfoResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: GetInfoResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetInfoResponse;
+  static deserializeBinaryFromReader(message: GetInfoResponse, reader: jspb.BinaryReader): GetInfoResponse;
+}
+
+export namespace GetInfoResponse {
+  export type AsObject = {
+    version: string,
+    accountsTotal: number,
+    accountsActive: number,
+    accountsActiveExpired: number,
+    accountsArchived: number,
+    ordersTotal: number,
+    ordersActive: number,
+    ordersArchived: number,
+    currentBlockHeight: number,
+    batchesInvolved: number,
+    nodeRating?: auctioneerrpc_auctioneer_pb.NodeRating.AsObject,
+    lsatTokens: number,
+    subscribedToAuctioneer: boolean,
+    newNodesOnly: boolean,
+    marketInfoMap: Array<[number, auctioneerrpc_auctioneer_pb.MarketInfo.AsObject]>,
+  }
+}
+
+export class StopDaemonRequest extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): StopDaemonRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: StopDaemonRequest): StopDaemonRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: StopDaemonRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StopDaemonRequest;
+  static deserializeBinaryFromReader(message: StopDaemonRequest, reader: jspb.BinaryReader): StopDaemonRequest;
+}
+
+export namespace StopDaemonRequest {
+  export type AsObject = {
+  }
+}
+
+export class StopDaemonResponse extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): StopDaemonResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: StopDaemonResponse): StopDaemonResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: StopDaemonResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StopDaemonResponse;
+  static deserializeBinaryFromReader(message: StopDaemonResponse, reader: jspb.BinaryReader): StopDaemonResponse;
+}
+
+export namespace StopDaemonResponse {
+  export type AsObject = {
+  }
+}
+
+export class OfferSidecarRequest extends jspb.Message {
+  getAutoNegotiate(): boolean;
+  setAutoNegotiate(value: boolean): void;
+
+  hasBid(): boolean;
+  clearBid(): void;
+  getBid(): Bid | undefined;
+  setBid(value?: Bid): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): OfferSidecarRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: OfferSidecarRequest): OfferSidecarRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: OfferSidecarRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): OfferSidecarRequest;
+  static deserializeBinaryFromReader(message: OfferSidecarRequest, reader: jspb.BinaryReader): OfferSidecarRequest;
+}
+
+export namespace OfferSidecarRequest {
+  export type AsObject = {
+    autoNegotiate: boolean,
+    bid?: Bid.AsObject,
+  }
+}
+
+export class SidecarTicket extends jspb.Message {
+  getTicket(): string;
+  setTicket(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): SidecarTicket.AsObject;
+  static toObject(includeInstance: boolean, msg: SidecarTicket): SidecarTicket.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: SidecarTicket, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): SidecarTicket;
+  static deserializeBinaryFromReader(message: SidecarTicket, reader: jspb.BinaryReader): SidecarTicket;
+}
+
+export namespace SidecarTicket {
+  export type AsObject = {
+    ticket: string,
+  }
+}
+
+export class RegisterSidecarRequest extends jspb.Message {
+  getTicket(): string;
+  setTicket(value: string): void;
+
+  getAutoNegotiate(): boolean;
+  setAutoNegotiate(value: boolean): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): RegisterSidecarRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: RegisterSidecarRequest): RegisterSidecarRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: RegisterSidecarRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): RegisterSidecarRequest;
+  static deserializeBinaryFromReader(message: RegisterSidecarRequest, reader: jspb.BinaryReader): RegisterSidecarRequest;
+}
+
+export namespace RegisterSidecarRequest {
+  export type AsObject = {
+    ticket: string,
+    autoNegotiate: boolean,
+  }
+}
+
+export class ExpectSidecarChannelRequest extends jspb.Message {
+  getTicket(): string;
+  setTicket(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ExpectSidecarChannelRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: ExpectSidecarChannelRequest): ExpectSidecarChannelRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ExpectSidecarChannelRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ExpectSidecarChannelRequest;
+  static deserializeBinaryFromReader(message: ExpectSidecarChannelRequest, reader: jspb.BinaryReader): ExpectSidecarChannelRequest;
+}
+
+export namespace ExpectSidecarChannelRequest {
+  export type AsObject = {
+    ticket: string,
+  }
+}
+
+export class ExpectSidecarChannelResponse extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ExpectSidecarChannelResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: ExpectSidecarChannelResponse): ExpectSidecarChannelResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ExpectSidecarChannelResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ExpectSidecarChannelResponse;
+  static deserializeBinaryFromReader(message: ExpectSidecarChannelResponse, reader: jspb.BinaryReader): ExpectSidecarChannelResponse;
+}
+
+export namespace ExpectSidecarChannelResponse {
+  export type AsObject = {
   }
 }
 

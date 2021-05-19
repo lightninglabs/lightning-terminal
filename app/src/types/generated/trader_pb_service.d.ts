@@ -5,6 +5,24 @@ import * as trader_pb from "./trader_pb";
 import * as auctioneerrpc_auctioneer_pb from "./auctioneerrpc/auctioneer_pb";
 import {grpc} from "@improbable-eng/grpc-web";
 
+type TraderGetInfo = {
+  readonly methodName: string;
+  readonly service: typeof Trader;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof trader_pb.GetInfoRequest;
+  readonly responseType: typeof trader_pb.GetInfoResponse;
+};
+
+type TraderStopDaemon = {
+  readonly methodName: string;
+  readonly service: typeof Trader;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof trader_pb.StopDaemonRequest;
+  readonly responseType: typeof trader_pb.StopDaemonResponse;
+};
+
 type TraderQuoteAccount = {
   readonly methodName: string;
   readonly service: typeof Trader;
@@ -113,6 +131,15 @@ type TraderCancelOrder = {
   readonly responseType: typeof trader_pb.CancelOrderResponse;
 };
 
+type TraderQuoteOrder = {
+  readonly methodName: string;
+  readonly service: typeof Trader;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof trader_pb.QuoteOrderRequest;
+  readonly responseType: typeof trader_pb.QuoteOrderResponse;
+};
+
 type TraderAuctionFee = {
   readonly methodName: string;
   readonly service: typeof Trader;
@@ -185,8 +212,37 @@ type TraderBatchSnapshots = {
   readonly responseType: typeof auctioneerrpc_auctioneer_pb.BatchSnapshotsResponse;
 };
 
+type TraderOfferSidecar = {
+  readonly methodName: string;
+  readonly service: typeof Trader;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof trader_pb.OfferSidecarRequest;
+  readonly responseType: typeof trader_pb.SidecarTicket;
+};
+
+type TraderRegisterSidecar = {
+  readonly methodName: string;
+  readonly service: typeof Trader;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof trader_pb.RegisterSidecarRequest;
+  readonly responseType: typeof trader_pb.SidecarTicket;
+};
+
+type TraderExpectSidecarChannel = {
+  readonly methodName: string;
+  readonly service: typeof Trader;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof trader_pb.ExpectSidecarChannelRequest;
+  readonly responseType: typeof trader_pb.ExpectSidecarChannelResponse;
+};
+
 export class Trader {
   static readonly serviceName: string;
+  static readonly GetInfo: TraderGetInfo;
+  static readonly StopDaemon: TraderStopDaemon;
   static readonly QuoteAccount: TraderQuoteAccount;
   static readonly InitAccount: TraderInitAccount;
   static readonly ListAccounts: TraderListAccounts;
@@ -199,6 +255,7 @@ export class Trader {
   static readonly SubmitOrder: TraderSubmitOrder;
   static readonly ListOrders: TraderListOrders;
   static readonly CancelOrder: TraderCancelOrder;
+  static readonly QuoteOrder: TraderQuoteOrder;
   static readonly AuctionFee: TraderAuctionFee;
   static readonly LeaseDurations: TraderLeaseDurations;
   static readonly NextBatchInfo: TraderNextBatchInfo;
@@ -207,6 +264,9 @@ export class Trader {
   static readonly Leases: TraderLeases;
   static readonly NodeRatings: TraderNodeRatings;
   static readonly BatchSnapshots: TraderBatchSnapshots;
+  static readonly OfferSidecar: TraderOfferSidecar;
+  static readonly RegisterSidecar: TraderRegisterSidecar;
+  static readonly ExpectSidecarChannel: TraderExpectSidecarChannel;
 }
 
 export type ServiceError = { message: string, code: number; metadata: grpc.Metadata }
@@ -241,6 +301,24 @@ export class TraderClient {
   readonly serviceHost: string;
 
   constructor(serviceHost: string, options?: grpc.RpcOptions);
+  getInfo(
+    requestMessage: trader_pb.GetInfoRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: trader_pb.GetInfoResponse|null) => void
+  ): UnaryResponse;
+  getInfo(
+    requestMessage: trader_pb.GetInfoRequest,
+    callback: (error: ServiceError|null, responseMessage: trader_pb.GetInfoResponse|null) => void
+  ): UnaryResponse;
+  stopDaemon(
+    requestMessage: trader_pb.StopDaemonRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: trader_pb.StopDaemonResponse|null) => void
+  ): UnaryResponse;
+  stopDaemon(
+    requestMessage: trader_pb.StopDaemonRequest,
+    callback: (error: ServiceError|null, responseMessage: trader_pb.StopDaemonResponse|null) => void
+  ): UnaryResponse;
   quoteAccount(
     requestMessage: trader_pb.QuoteAccountRequest,
     metadata: grpc.Metadata,
@@ -349,6 +427,15 @@ export class TraderClient {
     requestMessage: trader_pb.CancelOrderRequest,
     callback: (error: ServiceError|null, responseMessage: trader_pb.CancelOrderResponse|null) => void
   ): UnaryResponse;
+  quoteOrder(
+    requestMessage: trader_pb.QuoteOrderRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: trader_pb.QuoteOrderResponse|null) => void
+  ): UnaryResponse;
+  quoteOrder(
+    requestMessage: trader_pb.QuoteOrderRequest,
+    callback: (error: ServiceError|null, responseMessage: trader_pb.QuoteOrderResponse|null) => void
+  ): UnaryResponse;
   auctionFee(
     requestMessage: trader_pb.AuctionFeeRequest,
     metadata: grpc.Metadata,
@@ -420,6 +507,33 @@ export class TraderClient {
   batchSnapshots(
     requestMessage: auctioneerrpc_auctioneer_pb.BatchSnapshotsRequest,
     callback: (error: ServiceError|null, responseMessage: auctioneerrpc_auctioneer_pb.BatchSnapshotsResponse|null) => void
+  ): UnaryResponse;
+  offerSidecar(
+    requestMessage: trader_pb.OfferSidecarRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: trader_pb.SidecarTicket|null) => void
+  ): UnaryResponse;
+  offerSidecar(
+    requestMessage: trader_pb.OfferSidecarRequest,
+    callback: (error: ServiceError|null, responseMessage: trader_pb.SidecarTicket|null) => void
+  ): UnaryResponse;
+  registerSidecar(
+    requestMessage: trader_pb.RegisterSidecarRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: trader_pb.SidecarTicket|null) => void
+  ): UnaryResponse;
+  registerSidecar(
+    requestMessage: trader_pb.RegisterSidecarRequest,
+    callback: (error: ServiceError|null, responseMessage: trader_pb.SidecarTicket|null) => void
+  ): UnaryResponse;
+  expectSidecarChannel(
+    requestMessage: trader_pb.ExpectSidecarChannelRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: trader_pb.ExpectSidecarChannelResponse|null) => void
+  ): UnaryResponse;
+  expectSidecarChannel(
+    requestMessage: trader_pb.ExpectSidecarChannelRequest,
+    callback: (error: ServiceError|null, responseMessage: trader_pb.ExpectSidecarChannelResponse|null) => void
   ): UnaryResponse;
 }
 

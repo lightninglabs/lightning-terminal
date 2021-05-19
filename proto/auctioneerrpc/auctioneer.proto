@@ -28,6 +28,9 @@ service ChannelAuctioneer {
     rpc SubscribeBatchAuction (stream ClientAuctionMessage)
         returns (stream ServerAuctionMessage);
 
+    rpc SubscribeSidecar (stream ClientAuctionMessage)
+        returns (stream ServerAuctionMessage);
+
     rpc Terms (TermsRequest) returns (TermsResponse);
 
     rpc RelevantBatchSnapshot (RelevantBatchRequest) returns (RelevantBatch);
@@ -37,6 +40,8 @@ service ChannelAuctioneer {
     rpc NodeRating (ServerNodeRatingRequest) returns (ServerNodeRatingResponse);
 
     rpc BatchSnapshots (BatchSnapshotsRequest) returns (BatchSnapshotsResponse);
+
+    rpc MarketInfo (MarketInfoRequest) returns (MarketInfoResponse);
 }
 
 message ReserveAccountRequest {
@@ -887,10 +892,28 @@ message ServerBid {
     uint32 version = 4;
 
     /*
-    The minium node tier this order should be matched with. Only asks backed by
+    The minimum node tier this order should be matched with. Only asks backed by
     a node this tier or higher will be eligible for matching with this bid.
     */
     NodeTier min_node_tier = 5;
+
+    /*
+    Give the incoming channel that results from this bid being matched an
+    initial outbound balance by adding additional funds from the taker's account
+    into the channel. As a simplification for the execution protocol and the
+    channel reserve calculations, the self_chan_balance can be at most the same
+    as the order amount and the min_chan_amt must be set to the full order
+    amount.
+    */
+    uint64 self_chan_balance = 6;
+
+    /*
+    If this bid order is meant to lease a channel for another node (which is
+    dubbed a "sidecar channel") then this boolean needs to be set to true. The
+    multi_sig_key, node_pub and node_addr fields of the order details must then
+    correspond to the recipient node's details.
+    */
+    bool is_sidecar_channel = 7;
 }
 
 message ServerAsk {
@@ -1304,4 +1327,38 @@ message BatchSnapshotsRequest {
 message BatchSnapshotsResponse {
     // The list of batches requested.
     repeated BatchSnapshotResponse batches = 1;
+}
+
+message MarketInfoRequest {
+}
+
+message MarketInfo {
+    message TierValue {
+        NodeTier tier = 1;
+        uint32 value = 2;
+    }
+
+    // The number of open/pending ask orders per node tier.
+    repeated TierValue num_asks = 1;
+
+    // The number of open/pending bid orders per node tier.
+    repeated TierValue num_bids = 2;
+
+    /*
+    The total number of open/unmatched units in open/pending ask orders per node
+    tier.
+    */
+    repeated TierValue ask_open_interest_units = 3;
+
+    /*
+    The total number of open/unmatched units in open/pending bid orders per node
+    tier.
+    */
+    repeated TierValue bid_open_interest_units = 4;
+}
+
+message MarketInfoResponse {
+    // A map of all markets identified by their lease duration and the current
+    // set of statistics.
+    map<uint32, MarketInfo> markets = 1;
 }
