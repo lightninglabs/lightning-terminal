@@ -41,9 +41,7 @@ import (
 	"github.com/lightningnetwork/lnd/lntest/wait"
 	"github.com/lightningnetwork/lnd/signal"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/status"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 )
 
@@ -912,10 +910,7 @@ func (g *LightningTerminal) showStartupInfo() error {
 		ctx := context.Background()
 		res, err := basicClient.GetInfo(ctx, &lnrpc.GetInfoRequest{})
 		if err != nil {
-			s, ok := status.FromError(err)
-			if !ok || s.Code() != codes.Unimplemented {
-				// Some other error that we didn't expect at
-				// this moment.
+			if !lndclient.IsUnlockError(err) {
 				return fmt.Errorf("error querying remote "+
 					"node : %v", err)
 			}
