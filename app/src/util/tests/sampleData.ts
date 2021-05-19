@@ -75,6 +75,7 @@ export const lndWalletBalance: LND.WalletBalanceResponse.AsObject = {
   totalBalance: 84992363,
   confirmedBalance: 84992363,
   unconfirmedBalance: 0,
+  accountBalanceMap: [],
 };
 
 const txId = '6ee4e45870ac6191e25173f29804851e9f4bcf10f65f8b63100f488989e1e7a8';
@@ -334,12 +335,14 @@ export const loopOutQuote: LOOP.OutQuoteResponse.AsObject = {
   prepayAmtSat: 1337,
   swapFeeSat: 83,
   swapPaymentDest: 'Au1a9/hEsbxHUOwFC1QwxZq6EnnKYtpAdc74OZK8/syU',
+  confTarget: 6,
 };
 
 export const loopInQuote: LOOP.InQuoteResponse.AsObject = {
   cltvDelta: 50,
   htlcPublishFeeSat: 7387,
   swapFeeSat: 83,
+  confTarget: 6,
 };
 
 export const loopSwapResponse: LOOP.SwapResponse.AsObject = {
@@ -470,6 +473,8 @@ export const poolListOrders: POOL.ListOrdersResponse.AsObject = {
       leaseDurationBlocks: 2016,
       version: 1,
       minNodeTier: 1,
+      selfChanBalance: 0,
+      sidecarTicket: '',
     },
     {
       details: {
@@ -489,6 +494,8 @@ export const poolListOrders: POOL.ListOrdersResponse.AsObject = {
       leaseDurationBlocks: 2016,
       version: 1,
       minNodeTier: 1,
+      selfChanBalance: 0,
+      sidecarTicket: '',
     },
     {
       details: {
@@ -508,6 +515,8 @@ export const poolListOrders: POOL.ListOrdersResponse.AsObject = {
       leaseDurationBlocks: 2016,
       version: 1,
       minNodeTier: 1,
+      selfChanBalance: 0,
+      sidecarTicket: '',
     },
     {
       details: {
@@ -527,6 +536,8 @@ export const poolListOrders: POOL.ListOrdersResponse.AsObject = {
       leaseDurationBlocks: 2016,
       version: 1,
       minNodeTier: 1,
+      selfChanBalance: 0,
+      sidecarTicket: '',
     },
   ],
 };
@@ -695,6 +706,8 @@ export const poolLeases: POOL.LeasesResponse.AsObject = {
       purchased: false,
       channelRemoteNodeKey: 'ArW+q/+aS+teUy/E6TgVgVZ2sQ9wX/YJBbwH6if4SuLA',
       channelNodeTier: 1,
+      selfChanBalance: 0,
+      sidecarChannel: false,
     },
     {
       channelPoint: stringToChannelPoint(lndListChannels.channelsList[6].channelPoint),
@@ -710,6 +723,8 @@ export const poolLeases: POOL.LeasesResponse.AsObject = {
       purchased: false,
       channelRemoteNodeKey: 'A9L6+xEwFa2vULND3YYfdoCQwHqlzE5UyLvvQ+gfapg+',
       channelNodeTier: 1,
+      selfChanBalance: 0,
+      sidecarChannel: false,
     },
     {
       channelPoint: stringToChannelPoint(lndListChannels.channelsList[7].channelPoint),
@@ -725,6 +740,8 @@ export const poolLeases: POOL.LeasesResponse.AsObject = {
       purchased: true,
       channelRemoteNodeKey: 'A9L6+xEwFa2vULND3YYfdoCQwHqlzE5UyLvvQ+gfapg+',
       channelNodeTier: 1,
+      selfChanBalance: 0,
+      sidecarChannel: false,
     },
     {
       channelPoint: stringToChannelPoint(lndListChannels.channelsList[8].channelPoint),
@@ -740,6 +757,8 @@ export const poolLeases: POOL.LeasesResponse.AsObject = {
       purchased: true,
       channelRemoteNodeKey: 'ArW+q/+aS+teUy/E6TgVgVZ2sQ9wX/YJBbwH6if4SuLA',
       channelNodeTier: 1,
+      selfChanBalance: 0,
+      sidecarChannel: false,
     },
     {
       channelPoint: stringToChannelPoint(lndListChannels.channelsList[9].channelPoint),
@@ -755,6 +774,8 @@ export const poolLeases: POOL.LeasesResponse.AsObject = {
       purchased: true,
       channelRemoteNodeKey: 'A9L6+xEwFa2vULND3YYfdoCQwHqlzE5UyLvvQ+gfapg+',
       channelNodeTier: 1,
+      selfChanBalance: 0,
+      sidecarChannel: false,
     },
   ],
   totalAmtEarnedSat: 29997,
