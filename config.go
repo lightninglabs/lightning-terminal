@@ -336,6 +336,23 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 	cfg.loopRemote = cfg.LoopMode == ModeRemote
 	cfg.poolRemote = cfg.PoolMode == ModeRemote
 
+	// Now that we've registered all loggers, let's parse, validate, and set
+	// the debug log level(s). In remote lnd mode we have a global log level
+	// that overwrites all others. In integrated mode we use the lnd log
+	// level as the master level.
+	if cfg.lndRemote {
+		err = build.ParseAndSetDebugLevels(
+			cfg.Remote.LitDebugLevel, cfg.Lnd.LogWriter,
+		)
+	} else {
+		err = build.ParseAndSetDebugLevels(
+			cfg.Lnd.DebugLevel, cfg.Lnd.LogWriter,
+		)
+	}
+	if err != nil {
+		return nil, err
+	}
+
 	// Validate the lightning-terminal config options.
 	litDir := lnd.CleanAndExpandPath(preCfg.LitDir)
 	cfg.LetsEncryptDir = lncfg.CleanAndExpandPath(cfg.LetsEncryptDir)
@@ -576,10 +593,13 @@ func validateRemoteModeConfig(cfg *Config) error {
 	}
 
 	// In remote mode, we don't call lnd's ValidateConfig that sets up a
-	// logging backend for us. We need to manually create and start one.
-	logWriter := build.NewRotatingLogWriter()
-	cfg.Lnd.LogWriter = logWriter
-	err := logWriter.InitLogRotator(
+	// logging backend for us. We need to manually create and start one. The
+	// root logger should've already been created as part of the default
+	// config though.
+	if cfg.Lnd.LogWriter == nil {
+		cfg.Lnd.LogWriter = build.NewRotatingLogWriter()
+	}
+	err := cfg.Lnd.LogWriter.InitLogRotator(
 		filepath.Join(r.LitLogDir, cfg.Network, defaultLogFilename),
 		r.LitMaxLogFileSize, r.LitMaxLogFiles,
 	)
@@ -587,10 +607,7 @@ func validateRemoteModeConfig(cfg *Config) error {
 		return fmt.Errorf("log rotation setup failed: %v", err.Error())
 	}
 
-	// Parse, validate, and set debug log level(s).
-	return build.ParseAndSetDebugLevels(
-		cfg.Remote.LitDebugLevel, logWriter,
-	)
+	return nil
 }
 
 // setNetwork parses the top-level network config options and, if valid, sets it
