@@ -7,6 +7,17 @@ package poolrpc;
 option go_package = "github.com/lightninglabs/pool/poolrpc";
 
 service Trader {
+    /* pool: `getinfo`
+    GetInfo returns general information about the state of the Pool trader
+    daemon.
+    */
+    rpc GetInfo (GetInfoRequest) returns (GetInfoResponse);
+
+    /* pool: `stop`
+    Stop gracefully shuts down the Pool trader daemon.
+    */
+    rpc StopDaemon (StopDaemonRequest) returns (StopDaemonResponse);
+
     /*
     QuoteAccount gets a fee quote to fund an account of the given size with the
     given confirmation target. If the connected lnd wallet doesn't have enough
@@ -85,6 +96,12 @@ service Trader {
     */
     rpc CancelOrder (CancelOrderRequest) returns (CancelOrderResponse);
 
+    /*
+    QuoteOrder calculates the premium, execution fees and max batch fee rate for
+    an order based on the given order parameters.
+    */
+    rpc QuoteOrder (QuoteOrderRequest) returns (QuoteOrderResponse);
+
     /* pool: `auction fee`
     AuctionFee returns the current auction order execution fee specified by the
     auction server.
@@ -135,6 +152,39 @@ service Trader {
     is used as the starting point to go back from.
     */
     rpc BatchSnapshots (BatchSnapshotsRequest) returns (BatchSnapshotsResponse);
+
+    /* pool: `sidecar offer`
+    OfferSidecar is step 1/4 of the sidecar negotiation between the provider
+    (the trader submitting the bid order) and the recipient (the trader
+    receiving the sidecar channel).
+    This step must be run by the provider. The result is a sidecar ticket with
+    an offer to lease a sidecar channel for the recipient. The offer will be
+    signed with the provider's lnd node public key. The ticket returned by this
+    call will have the state "offered".
+    */
+    rpc OfferSidecar (OfferSidecarRequest) returns (SidecarTicket);
+
+    /* pool: `sidecar register`
+    RegisterSidecarRequest is step 2/4 of the sidecar negotiation between the
+    provider (the trader submitting the bid order) and the recipient (the trader
+    receiving the sidecar channel).
+    This step must be run by the recipient. The result is a sidecar ticket with
+    the recipient's node information and channel funding multisig pubkey filled
+    in. The ticket returned by this call will have the state "registered".
+    */
+    rpc RegisterSidecar (RegisterSidecarRequest) returns (SidecarTicket);
+
+    /* pool: `sidecar expectchannel`
+    ExpectSidecarChannel is step 4/4 of the sidecar negotiation between the
+    provider (the trader submitting the bid order) and the recipient (the trader
+    receiving the sidecar channel).
+    This step must be run by the recipient once the provider has submitted the
+    bid order for the sidecar channel. From this point onwards the Pool trader
+    daemon of both the provider as well as the recipient need to be online to
+    receive and react to match making events from the server.
+    */
+    rpc ExpectSidecarChannel (ExpectSidecarChannelRequest)
+        returns (ExpectSidecarChannelResponse);
 }
 
 message InitAccountRequest {
@@ -543,10 +593,28 @@ message Bid {
     uint32 version = 3;
 
     /*
-    The minium node tier this order should be matched with. Only asks backed by
+    The minimum node tier this order should be matched with. Only asks backed by
     a node this tier or higher will be eligible for matching with this bid.
     */
     NodeTier min_node_tier = 4;
+
+    /*
+    Give the incoming channel that results from this bid being matched an
+    initial outbound balance by adding additional funds from the taker's account
+    into the channel. As a simplification for the execution protocol and the
+    channel reserve calculations, the self_chan_balance can be at most the same
+    as the order amount and the min_chan_amt must be set to the full order
+    amount.
+    */
+    uint64 self_chan_balance = 5;
+
+    /*
+    If this bid order is meant to lease a channel for another node (which is
+    dubbed a "sidecar channel") then this ticket contains all information
+    required for setting up that sidecar channel. The ticket is expected to be
+    the base64 encoded ticket, including the prefix and the checksum.
+    */
+    string sidecar_ticket = 6;
 }
 
 message Ask {
@@ -566,6 +634,66 @@ message Ask {
     features are added.
     */
     uint32 version = 3;
+}
+
+message QuoteOrderRequest {
+    /*
+    Order amount in satoshis.
+    */
+    uint64 amt = 1;
+
+    /*
+    Fixed order rate in parts per billion.
+    */
+    uint32 rate_fixed = 2;
+
+    /*
+    Required number of blocks that a channel opened as a result of this bid
+    should be kept open.
+    */
+    uint32 lease_duration_blocks = 3;
+
+    /*
+    Maximum fee rate the trader is willing to pay for the batch transaction,
+    expressed in satoshis per 1000 weight units (sat/KW).
+    */
+    uint64 max_batch_fee_rate_sat_per_kw = 4;
+
+    // The minimum number of order units that must be matched per order pair.
+    uint32 min_units_match = 5;
+}
+message QuoteOrderResponse {
+    /*
+    The total order premium in satoshis for filling the entire order. This
+    represents the interest amount paid to the maker by the taker excluding any
+    execution or chain fees.
+    */
+    uint64 total_premium_sat = 1;
+
+    /*
+    The fixed order rate expressed as a fraction instead of parts per billion.
+    */
+    double rate_per_block = 2;
+
+    /*
+    The fixed order rate expressed as a percentage instead of parts per billion.
+    */
+    double rate_percent = 3;
+
+    /*
+    The total execution fee in satoshis that needs to be paid to the auctioneer
+    for executing the entire order.
+    */
+    uint64 total_execution_fee_sat = 4;
+
+    /*
+    The worst case chain fees that need to be paid if fee rates spike up to the
+    max_batch_fee_rate_sat_per_kw value specified in the request. This value is
+    highly dependent on the min_units_match parameter as well since the
+    calculation assumes chain fees for the chain footprint of opening
+    amt/min_units_match channels (hence worst case calculation).
+    */
+    uint64 worst_case_chain_fee_sat = 5;
 }
 
 message OrderEvent {
@@ -764,6 +892,12 @@ message Lease {
 
     // The tier of the node that this channel was bought/sold from.
     NodeTier channel_node_tier = 13;
+
+    // The self channel balance that was pushed to the recipient.
+    uint64 self_chan_balance = 14;
+
+    // Whether the channel was leased as a sidecar channel (bid orders only).
+    bool sidecar_channel = 15;
 }
 
 message LeasesRequest {
@@ -893,4 +1027,134 @@ message NodeRatingRequest {
 message NodeRatingResponse {
     // A series of node ratings for each of the queried nodes.
     repeated NodeRating node_ratings = 1;
+}
+
+message GetInfoRequest {
+}
+
+message GetInfoResponse {
+    // The version of the Pool daemon that is running.
+    string version = 1;
+
+    // The total number of accounts in the local database.
+    uint32 accounts_total = 2;
+
+    /*
+    The total number of accounts that are in an active, non-archived state,
+    including expired accounts.
+    */
+    uint32 accounts_active = 3;
+
+    // The total number of accounts that are active but have expired.
+    uint32 accounts_active_expired = 4;
+
+    // The total number of accounts that are in an archived/closed state.
+    uint32 accounts_archived = 5;
+
+    // The total number of orders in the local database.
+    uint32 orders_total = 6;
+
+    /*
+    The total number of active/pending orders that are still waiting for
+    execution.
+    */
+    uint32 orders_active = 7;
+
+    // The total number of orders that have been archived.
+    uint32 orders_archived = 8;
+
+    // The current block height as seen by the connected lnd node.
+    uint32 current_block_height = 9;
+
+    // The number of batches an account of this node was ever involved in.
+    uint32 batches_involved = 10;
+
+    // Our lnd node's rating as judged by the auctioneer server.
+    NodeRating node_rating = 11;
+
+    // The number of available LSAT tokens.
+    uint32 lsat_tokens = 12;
+
+    /*
+    Indicates whether there is an active subscription connection to the
+    auctioneer. This will never be true if there is no active account. If there
+    are active accounts, this value represents the network connection status to
+    the auctioneer server.
+    */
+    bool subscribed_to_auctioneer = 13;
+
+    /*
+    Indicates whether the global `--newnodesonly` command line flag or
+    `newnodesonly=true` configuration parameter was set on the Pool trader
+    daemon.
+    */
+    bool new_nodes_only = 14;
+
+    /*
+    A map of all markets identified by their lease duration and the current
+    set of statistics such as number of open orders and total units of open
+    interest.
+    */
+    map<uint32, MarketInfo> market_info = 15;
+}
+
+message StopDaemonRequest {
+}
+
+message StopDaemonResponse {
+}
+
+message OfferSidecarRequest {
+    /* 
+    If false, then only the trader_key, unit, self_chan_balance, and
+    lease_duration_blocks need to be set in the bid below. Otherwise, the
+    fields as they're set when submitting a bid need to be filled in.
+    */
+    bool auto_negotiate = 1;
+
+    /*
+    The bid template that will be used to populate the initial sidecar ticket
+    as well as auto negotiate the remainig steps of the sidecar channel if
+    needed.
+    */
+    Bid bid = 2;
+}
+
+message SidecarTicket {
+    /*
+    The complete sidecar ticket in its string encoded form which is base64 URL
+    encoded, has a human readable prefix ('sidecar...') and a checksum built in.
+    The string encoded version will only be used on the trader side of the API.
+    All requests to the auctioneer expect the ticket to be in its raw, tlv
+    encoded byte form.
+    */
+    string ticket = 1;
+}
+
+message RegisterSidecarRequest {
+    /*
+    The sidecar ticket to register and add the node and channel funding
+    information to. The ticket must be in the state "offered".
+    */
+    string ticket = 1;
+
+    /*
+    If this value is True, then the daemon will attempt to finish negotiating
+    the details of the sidecar channel automatically in the background. The
+    progress of the ticket can be monitored using the SidecarState RPC. In
+    addition, if this flag is set, then this method will _block_ until the
+    sidecar negotiation either finishes or breaks down.
+    */
+    bool auto_negotiate = 2;
+}
+
+message ExpectSidecarChannelRequest {
+    /*
+    The sidecar ticket to expect an incoming channel for. The ticket must be in
+    the state "ordered".
+    */
+    string ticket = 1;
+}
+
+message ExpectSidecarChannelResponse {
 }

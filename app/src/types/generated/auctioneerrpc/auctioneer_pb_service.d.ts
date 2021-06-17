@@ -67,6 +67,15 @@ type ChannelAuctioneerSubscribeBatchAuction = {
   readonly responseType: typeof auctioneerrpc_auctioneer_pb.ServerAuctionMessage;
 };
 
+type ChannelAuctioneerSubscribeSidecar = {
+  readonly methodName: string;
+  readonly service: typeof ChannelAuctioneer;
+  readonly requestStream: true;
+  readonly responseStream: true;
+  readonly requestType: typeof auctioneerrpc_auctioneer_pb.ClientAuctionMessage;
+  readonly responseType: typeof auctioneerrpc_auctioneer_pb.ServerAuctionMessage;
+};
+
 type ChannelAuctioneerTerms = {
   readonly methodName: string;
   readonly service: typeof ChannelAuctioneer;
@@ -112,6 +121,15 @@ type ChannelAuctioneerBatchSnapshots = {
   readonly responseType: typeof auctioneerrpc_auctioneer_pb.BatchSnapshotsResponse;
 };
 
+type ChannelAuctioneerMarketInfo = {
+  readonly methodName: string;
+  readonly service: typeof ChannelAuctioneer;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof auctioneerrpc_auctioneer_pb.MarketInfoRequest;
+  readonly responseType: typeof auctioneerrpc_auctioneer_pb.MarketInfoResponse;
+};
+
 export class ChannelAuctioneer {
   static readonly serviceName: string;
   static readonly ReserveAccount: ChannelAuctioneerReserveAccount;
@@ -121,11 +139,13 @@ export class ChannelAuctioneer {
   static readonly CancelOrder: ChannelAuctioneerCancelOrder;
   static readonly OrderState: ChannelAuctioneerOrderState;
   static readonly SubscribeBatchAuction: ChannelAuctioneerSubscribeBatchAuction;
+  static readonly SubscribeSidecar: ChannelAuctioneerSubscribeSidecar;
   static readonly Terms: ChannelAuctioneerTerms;
   static readonly RelevantBatchSnapshot: ChannelAuctioneerRelevantBatchSnapshot;
   static readonly BatchSnapshot: ChannelAuctioneerBatchSnapshot;
   static readonly NodeRating: ChannelAuctioneerNodeRating;
   static readonly BatchSnapshots: ChannelAuctioneerBatchSnapshots;
+  static readonly MarketInfo: ChannelAuctioneerMarketInfo;
 }
 
 export type ServiceError = { message: string, code: number; metadata: grpc.Metadata }
@@ -215,6 +235,7 @@ export class ChannelAuctioneerClient {
     callback: (error: ServiceError|null, responseMessage: auctioneerrpc_auctioneer_pb.ServerOrderStateResponse|null) => void
   ): UnaryResponse;
   subscribeBatchAuction(metadata?: grpc.Metadata): BidirectionalStream<auctioneerrpc_auctioneer_pb.ClientAuctionMessage, auctioneerrpc_auctioneer_pb.ServerAuctionMessage>;
+  subscribeSidecar(metadata?: grpc.Metadata): BidirectionalStream<auctioneerrpc_auctioneer_pb.ClientAuctionMessage, auctioneerrpc_auctioneer_pb.ServerAuctionMessage>;
   terms(
     requestMessage: auctioneerrpc_auctioneer_pb.TermsRequest,
     metadata: grpc.Metadata,
@@ -259,6 +280,15 @@ export class ChannelAuctioneerClient {
   batchSnapshots(
     requestMessage: auctioneerrpc_auctioneer_pb.BatchSnapshotsRequest,
     callback: (error: ServiceError|null, responseMessage: auctioneerrpc_auctioneer_pb.BatchSnapshotsResponse|null) => void
+  ): UnaryResponse;
+  marketInfo(
+    requestMessage: auctioneerrpc_auctioneer_pb.MarketInfoRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: auctioneerrpc_auctioneer_pb.MarketInfoResponse|null) => void
+  ): UnaryResponse;
+  marketInfo(
+    requestMessage: auctioneerrpc_auctioneer_pb.MarketInfoRequest,
+    callback: (error: ServiceError|null, responseMessage: auctioneerrpc_auctioneer_pb.MarketInfoResponse|null) => void
   ): UnaryResponse;
 }
 

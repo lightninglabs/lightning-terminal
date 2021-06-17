@@ -21,7 +21,7 @@ const protoSources = async () => {
   const goModPath = join(appPath, '..', 'go.mod');
   const goModSource = (await fs.readFile(goModPath)).toString();
 
-  const lndVersion = goModSource.match(LND_VERSION_PATTERN);
+  const lndVersion = ['', 'v0.13.0-beta.rc3']; // TODO revert: goModSource.match(LND_VERSION_PATTERN);
   if (!lndVersion || lndVersion.length !== 2) {
     throw new Error(`go.mod did not match pattern ${LND_VERSION_PATTERN}`);
   }
