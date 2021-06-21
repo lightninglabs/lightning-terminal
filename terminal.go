@@ -346,6 +346,7 @@ func (g *LightningTerminal) startSubservers() error {
 		case <-ctxc.Done():
 		}
 	}()
+
 	g.lndClient, err = lndclient.NewLndServices(
 		&lndclient.LndServicesConfig{
 			LndAddress:            host,
