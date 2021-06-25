@@ -16,7 +16,6 @@ require (
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
 	github.com/mwitkow/grpc-proxy v0.0.0-20181017164139-0f1106ef9c76
 	github.com/prometheus/client_golang v1.5.1 // indirect
-	github.com/rakyll/statik v0.1.7
 	github.com/rs/cors v1.7.0 // indirect
 	golang.org/x/crypto v0.0.0-20200709230013-948cd5f35899
 	google.golang.org/grpc v1.29.1
