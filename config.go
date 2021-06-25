@@ -336,6 +336,23 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 	cfg.loopRemote = cfg.LoopMode == ModeRemote
 	cfg.poolRemote = cfg.PoolMode == ModeRemote
 
+	// Now that we've registered all loggers, let's parse, validate, and set
+	// the debug log level(s). In remote lnd mode we have a global log level
+	// that overwrites all others. In integrated mode we use the lnd log
+	// level as the master level.
+	if cfg.lndRemote {
+		err = build.ParseAndSetDebugLevels(
+			cfg.Remote.LitDebugLevel, cfg.Lnd.LogWriter,
+		)
+	} else {
+		err = build.ParseAndSetDebugLevels(
+			cfg.Lnd.DebugLevel, cfg.Lnd.LogWriter,
+		)
+	}
+	if err != nil {
+		return nil, err
+	}
+
 	// Validate the lightning-terminal config options.
 	litDir := lnd.CleanAndExpandPath(preCfg.LitDir)
 	cfg.LetsEncryptDir = lncfg.CleanAndExpandPath(cfg.LetsEncryptDir)
@@ -378,14 +395,18 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 	// (like the log or lnd options) as they will be taken from lnd's config
 	// struct. Others we want to force to be the same as lnd so the user
 	// doesn't have to set them manually, like the network for example.
+	cfg.Faraday.Lnd.MacaroonPath = faraday.DefaultLndMacaroonPath
 	if err := faraday.ValidateConfig(cfg.Faraday); err != nil {
 		return nil, err
 	}
-	cfg.Loop.Lnd.MacaroonPath = loopd.DefaultMacaroonPath
+
+	defaultLoopCfg := loopd.DefaultConfig()
+	cfg.Loop.Lnd.MacaroonPath = defaultLoopCfg.Lnd.MacaroonPath
 	if err := loopd.Validate(cfg.Loop); err != nil {
 		return nil, err
 	}
-	cfg.Pool.Lnd.MacaroonPath = pool.DefaultMacaroonPath
+
+	cfg.Pool.Lnd.MacaroonPath = pool.DefaultLndMacaroonPath
 	if err := pool.Validate(cfg.Pool); err != nil {
 		return nil, err
 	}
@@ -419,7 +440,6 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 		}
 	}
 
-	defaultLoopCfg := loopd.DefaultConfig()
 	if cfg.loopRemote && cfg.Network != defaultNetwork {
 		if cfg.Remote.Loop.MacaroonPath == defaultLoopCfg.MacaroonPath {
 			cfg.Remote.Loop.MacaroonPath = cfg.Loop.MacaroonPath
@@ -576,10 +596,13 @@ func validateRemoteModeConfig(cfg *Config) error {
 	}
 
 	// In remote mode, we don't call lnd's ValidateConfig that sets up a
-	// logging backend for us. We need to manually create and start one.
-	logWriter := build.NewRotatingLogWriter()
-	cfg.Lnd.LogWriter = logWriter
-	err := logWriter.InitLogRotator(
+	// logging backend for us. We need to manually create and start one. The
+	// root logger should've already been created as part of the default
+	// config though.
+	if cfg.Lnd.LogWriter == nil {
+		cfg.Lnd.LogWriter = build.NewRotatingLogWriter()
+	}
+	err := cfg.Lnd.LogWriter.InitLogRotator(
 		filepath.Join(r.LitLogDir, cfg.Network, defaultLogFilename),
 		r.LitMaxLogFileSize, r.LitMaxLogFiles,
 	)
@@ -587,10 +610,7 @@ func validateRemoteModeConfig(cfg *Config) error {
 		return fmt.Errorf("log rotation setup failed: %v", err.Error())
 	}
 
-	// Parse, validate, and set debug log level(s).
-	return build.ParseAndSetDebugLevels(
-		cfg.Remote.LitDebugLevel, logWriter,
-	)
+	return nil
 }
 
 // setNetwork parses the top-level network config options and, if valid, sets it
