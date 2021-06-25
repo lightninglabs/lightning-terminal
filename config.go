@@ -395,14 +395,18 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 	// (like the log or lnd options) as they will be taken from lnd's config
 	// struct. Others we want to force to be the same as lnd so the user
 	// doesn't have to set them manually, like the network for example.
+	cfg.Faraday.Lnd.MacaroonPath = faraday.DefaultLndMacaroonPath
 	if err := faraday.ValidateConfig(cfg.Faraday); err != nil {
 		return nil, err
 	}
-	cfg.Loop.Lnd.MacaroonPath = loopd.DefaultMacaroonPath
+
+	defaultLoopCfg := loopd.DefaultConfig()
+	cfg.Loop.Lnd.MacaroonPath = defaultLoopCfg.Lnd.MacaroonPath
 	if err := loopd.Validate(cfg.Loop); err != nil {
 		return nil, err
 	}
-	cfg.Pool.Lnd.MacaroonPath = pool.DefaultMacaroonPath
+
+	cfg.Pool.Lnd.MacaroonPath = pool.DefaultLndMacaroonPath
 	if err := pool.Validate(cfg.Pool); err != nil {
 		return nil, err
 	}
@@ -436,7 +440,6 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 		}
 	}
 
-	defaultLoopCfg := loopd.DefaultConfig()
 	if cfg.loopRemote && cfg.Network != defaultNetwork {
 		if cfg.Remote.Loop.MacaroonPath == defaultLoopCfg.MacaroonPath {
 			cfg.Remote.Loop.MacaroonPath = cfg.Loop.MacaroonPath
