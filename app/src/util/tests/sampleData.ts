@@ -782,6 +782,11 @@ export const poolLeases: POOL.LeasesResponse.AsObject = {
   totalAmtPaidSat: 57588,
 };
 
+export const poolRegisterSidecar: POOL.SidecarTicket.AsObject = {
+  ticket:
+    'sidecar15o9CCm2VAFa14vyskEhpqxmDjiknDgJaKHL6nZdMHv5f9jSpnTM9jSZecJjDzvqgqbeBRLBupcvtL9cPefg3q2iUfcFYMgFCgfxuicf4ZSpZ9ndwYXJ8F7yrw55TSuxMyZMEFyoMh4rWJX95m5iBWeezDXHSXqFzSVmuFCTtp5KXombXZr64waygqNweCUBnvjTDqsz12EnxE1tsmSoHiFYc1t15J8rHNYAucb9yQWRQTRu146QuBbbLtMEPL62Y',
+};
+
 // collection of sample API responses
 export const sampleApiResponses: Record<string, any> = {
   'lnrpc.Lightning.GetInfo': lndGetInfo,
@@ -814,4 +819,5 @@ export const sampleApiResponses: Record<string, any> = {
   'poolrpc.Trader.NextBatchInfo': poolNextBatchInfo,
   'poolrpc.Trader.NodeRatings': poolNodeRatings,
   'poolrpc.Trader.Leases': poolLeases,
+  'poolrpc.Trader.RegisterSidecar': poolRegisterSidecar,
 };
