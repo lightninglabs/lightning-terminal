@@ -4,6 +4,7 @@ import {
   NodeTier,
 } from 'types/generated/auctioneerrpc/auctioneer_pb';
 import { LeaseDuration } from 'types/state';
+import debounce from 'lodash/debounce';
 import { annualPercentRate, toBasisPoints, toPercent } from 'util/bigmath';
 import { BLOCKS_PER_DAY } from 'util/constants';
 import { prefixTranslation } from 'util/translate';
@@ -30,6 +31,11 @@ export default class OrderFormView {
 
   /** toggle to show or hide the additional options */
   addlOptionsVisible = false;
+
+  /** quoted fees */
+  executionFee = 0;
+  worstChainFee = 0;
+  quoteLoading = false;
 
   constructor(store: Store) {
     makeAutoObservable(this, {}, { deep: false, autoBind: true });
@@ -184,22 +190,27 @@ export default class OrderFormView {
 
   setAmount(amount: number) {
     this.amount = amount;
+    this.fetchQuote();
   }
 
   setPremium(premium: number) {
     this.premium = premium;
+    this.fetchQuote();
   }
 
   setDuration(duration: LeaseDuration) {
     this.duration = duration;
+    this.fetchQuote();
   }
 
   setMinChanSize(minChanSize: number) {
     this.minChanSize = minChanSize;
+    this.fetchQuote();
   }
 
   setMaxBatchFeeRate(feeRate: number) {
     this.maxBatchFeeRate = feeRate;
+    this.fetchQuote();
   }
 
   setMinNodeTier(minNodeTier: Tier) {
@@ -220,6 +231,7 @@ export default class OrderFormView {
       const suggested = this.amount * prevPctRate;
       // round to the nearest 10 to offset lose of precision in calculating percentages
       this.premium = Math.round(suggested / 10) * 10;
+      this.fetchQuote();
     } catch (error) {
       this._store.appView.handleError(error, 'Unable to suggest premium');
     }
@@ -227,6 +239,51 @@ export default class OrderFormView {
 
   toggleAddlOptions() {
     this.addlOptionsVisible = !this.addlOptionsVisible;
+  }
+
+  /** requests a quote for an order to obtain accurate fees */
+  async quoteOrder() {
+    const minUnitsMatch = Math.floor(this.minChanSize / ONE_UNIT);
+    const satsPerKWeight = this._store.api.pool.satsPerVByteToKWeight(
+      this.maxBatchFeeRate,
+    );
+
+    const {
+      totalExecutionFeeSat,
+      worstCaseChainFeeSat,
+    } = await this._store.orderStore.quoteOrder(
+      this.amount,
+      this.perBlockFixedRate,
+      this.derivedDuration,
+      minUnitsMatch,
+      satsPerKWeight,
+    );
+
+    runInAction(() => {
+      this.executionFee = totalExecutionFeeSat;
+      this.worstChainFee = worstCaseChainFeeSat;
+      this.quoteLoading = false;
+    });
+  }
+
+  /** quote order at most once every second when using this func  */
+  quoteOrderThrottled = debounce(this.quoteOrder, 1000);
+
+  /**
+   * sets the quoteLoading flag before while waiting for the throttled quote
+   * request to complete
+   */
+  fetchQuote() {
+    if (!this.isValid) {
+      runInAction(() => {
+        this.executionFee = 0;
+        this.worstChainFee = 0;
+        this.quoteLoading = false;
+      });
+      return;
+    }
+    this.quoteLoading = true;
+    this.quoteOrderThrottled();
   }
 
   /** submits the order to the API and resets the form values if successful */
@@ -249,6 +306,8 @@ export default class OrderFormView {
         this.amount = 0;
         this.premium = 0;
         this.duration = 0;
+        this.executionFee = 0;
+        this.worstChainFee = 0;
         // persist the additional options so they can be used for future orders
         this._store.settingsStore.setOrderSettings(
           this.minChanSize,

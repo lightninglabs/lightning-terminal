@@ -1,6 +1,7 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { LeaseDuration } from 'types/state';
+import Big from 'big.js';
 import { usePrefixedTranslation } from 'hooks';
 import { Unit, Units } from 'util/constants';
 import { useStore } from 'store';
@@ -18,8 +19,11 @@ import BlockTime from 'components/common/BlockTime';
 import FormField from 'components/common/FormField';
 import FormInputNumber from 'components/common/FormInputNumber';
 import FormSelect from 'components/common/FormSelect';
+import LoaderLines from 'components/common/LoaderLines';
 import StatusDot from 'components/common/StatusDot';
+import Tip from 'components/common/Tip';
 import Toggle from 'components/common/Toggle';
+import UnitCmp from 'components/common/Unit';
 import { styled } from 'components/theme';
 
 const Styled = {
@@ -62,6 +66,11 @@ const Styled = {
     margin: 30px auto;
     text-align: center;
   `,
+  LoaderLines: styled(LoaderLines)`
+    .line {
+      margin: 0 1px;
+    }
+  `,
 };
 
 const OrderFormSection: React.FC = () => {
@@ -80,6 +89,7 @@ const OrderFormSection: React.FC = () => {
     OptionsStatus,
     Divider,
     Actions,
+    LoaderLines,
   } = Styled;
   return (
     <Section>
@@ -177,6 +187,30 @@ const OrderFormSection: React.FC = () => {
           />
         </OptionsButton>
         <Divider />
+        <Tip overlay={l('executionFeeTip')} capitalize={false} placement="topRight">
+          <SummaryItem>
+            <span>{l('executionFeeLabel')}</span>
+            <span>
+              {orderFormView.quoteLoading ? (
+                <LoaderLines />
+              ) : (
+                <UnitCmp sats={Big(orderFormView.executionFee)} />
+              )}
+            </span>
+          </SummaryItem>
+        </Tip>
+        <SummaryItem>
+          <Tip overlay={l('chainFeeTip')} capitalize={false} placement="topRight">
+            <span>{l('chainFeeLabel')}</span>
+          </Tip>
+          <span>
+            {orderFormView.quoteLoading ? (
+              <LoaderLines />
+            ) : (
+              <UnitCmp sats={Big(orderFormView.worstChainFee)} />
+            )}
+          </span>
+        </SummaryItem>
         <SummaryItem>
           <span>{l('durationLabel')}</span>
           <span className="text-right">

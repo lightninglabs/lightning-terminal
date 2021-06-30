@@ -162,6 +162,27 @@ class PoolApi extends BaseApi<PoolEvents> {
   }
 
   /**
+   * call the pool `QuoteOrder` RPC and return the response
+   */
+  async quoteOrder(
+    amount: number,
+    rateFixed: number,
+    duration: number,
+    minUnitsMatch: number,
+    feeRateSatPerKw: number,
+  ): Promise<POOL.QuoteOrderResponse.AsObject> {
+    const req = new POOL.QuoteOrderRequest();
+    req.setAmt(amount);
+    req.setRateFixed(rateFixed);
+    req.setLeaseDurationBlocks(duration);
+    req.setMinUnitsMatch(minUnitsMatch);
+    req.setMaxBatchFeeRateSatPerKw(feeRateSatPerKw);
+
+    const res = await this._grpc.request(Trader.QuoteOrder, req, this._meta);
+    return res.toObject();
+  }
+
+  /**
    * call the pool `SubmitOrder` RPC and return the response
    */
   async submitOrder(

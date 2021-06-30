@@ -542,6 +542,14 @@ export const poolListOrders: POOL.ListOrdersResponse.AsObject = {
   ],
 };
 
+export const poolQuoteOrder: POOL.QuoteOrderResponse.AsObject = {
+  ratePerBlock: 0.00000248,
+  ratePercent: 0.000248,
+  totalExecutionFeeSat: 5001,
+  totalPremiumSat: 24998,
+  worstCaseChainFeeSat: 40810,
+};
+
 export const poolSubmitOrder: POOL.SubmitOrderResponse.AsObject = {
   acceptedOrderNonce: 'W4XLkXhEKMcKfzV+Ex+jXQJeaVXoCoKQzptMRi6g+ZA=',
 };
@@ -811,6 +819,7 @@ export const sampleApiResponses: Record<string, any> = {
   'poolrpc.Trader.DepositAccount': poolDepositAccount,
   'poolrpc.Trader.WithdrawAccount': poolWithdrawAccount,
   'poolrpc.Trader.ListOrders': poolListOrders,
+  'poolrpc.Trader.QuoteOrder': poolQuoteOrder,
   'poolrpc.Trader.SubmitOrder': poolSubmitOrder,
   'poolrpc.Trader.CancelOrder': poolCancelOrder,
   'poolrpc.Trader.BatchSnapshot': poolBatchSnapshot,
