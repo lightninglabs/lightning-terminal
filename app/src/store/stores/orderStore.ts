@@ -166,6 +166,50 @@ export default class OrderStore {
   fetchLeasesThrottled = debounce(this.fetchLeases, 2000);
 
   /**
+   * Requests a fee quote for an order
+   * @param amount the amount of the order
+   * @param rateFixed the per block fixed rate
+   * @param duration the number of blocks to keep the channel open for
+   * @param minUnitsMatch the minimum number of units required to match this order
+   * @param maxBatchFeeRate the maximum batch fee rate to allowed as sats per vByte
+   */
+  async quoteOrder(
+    amount: number,
+    rateFixed: number,
+    duration: number,
+    minUnitsMatch: number,
+    maxBatchFeeRate: number,
+  ): Promise<POOL.QuoteOrderResponse.AsObject> {
+    try {
+      this._store.log.info(`quoting an order for ${amount}sats`, {
+        rateFixed,
+        duration,
+        minUnitsMatch,
+        maxBatchFeeRate,
+      });
+
+      const res = await this._store.api.pool.quoteOrder(
+        amount,
+        rateFixed,
+        duration,
+        minUnitsMatch,
+        maxBatchFeeRate,
+      );
+
+      return res;
+    } catch (error) {
+      this._store.appView.handleError(error, 'Unable to estimate order fees');
+      return {
+        ratePerBlock: rateFixed,
+        ratePercent: 0,
+        totalExecutionFeeSat: 0,
+        totalPremiumSat: 0,
+        worstCaseChainFeeSat: 0,
+      };
+    }
+  }
+
+  /**
    * Submits an order to the market
    * @param type the type of order (bid or ask)
    * @param amount the amount of the order
