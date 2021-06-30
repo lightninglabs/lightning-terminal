@@ -32,6 +32,14 @@ export enum BuildSwapSteps {
   Processing = 4,
 }
 
+export enum SidecarRegisterSteps {
+  Closed = 0,
+  EnterTicket = 1,
+  ConfirmTicket = 2,
+  Processing = 3,
+  Complete = 4,
+}
+
 export interface Alert {
   id: number;
   type: 'info' | 'success' | 'warning' | 'error' | 'default';

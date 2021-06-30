@@ -252,4 +252,17 @@ export default class AccountStore {
       this._store.appView.handleError(error, 'Unable to withdraw funds');
     }
   }
+
+  /**
+   * submits a sidecar ticket registration to the pool api
+   */
+  async registerSidecar(ticket: string) {
+    try {
+      this._store.log.info('registering sidecar ticket');
+
+      await this._store.api.pool.registerSidecar(ticket);
+    } catch (error) {
+      this._store.appView.handleError(error, 'Unable to register sidecar ticket');
+    }
+  }
 }
