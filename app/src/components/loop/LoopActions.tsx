@@ -4,7 +4,7 @@ import { SwapDirection } from 'types/state';
 import { usePrefixedTranslation } from 'hooks';
 import { formatSats } from 'util/formatters';
 import { useStore } from 'store';
-import { Button, Close, Refresh } from 'components/base';
+import { Button, Close, CloudLightning, Refresh } from 'components/base';
 import { styled } from 'components/theme';
 import SelectedChannels from './SelectedChannels';
 
@@ -43,11 +43,16 @@ const Styled = {
     font-size: ${props => props.theme.sizes.s};
     color: ${props => props.theme.colors.gray};
   `,
+  Buttons: styled.span`
+    button:last-of-type {
+      margin-left: 10px;
+    }
+  `,
 };
 
 const LoopActions: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.LoopActions');
-  const { buildSwapView } = useStore();
+  const { buildSwapView, registerSidecarView } = useStore();
   const {
     setDirection,
     inferredDirection,
@@ -69,7 +74,7 @@ const LoopActions: React.FC = () => {
     note = l('loopInNote');
   }
 
-  const { Wrapper, Actions, ActionBar, CloseIcon, Selected, Note } = Styled;
+  const { Wrapper, Actions, ActionBar, CloseIcon, Selected, Note, Buttons } = Styled;
   return (
     <Wrapper data-tour="loop-actions">
       {buildSwapView.showActions ? (
@@ -102,10 +107,16 @@ const LoopActions: React.FC = () => {
           {note && <Note>{note}</Note>}
         </Actions>
       ) : (
-        <Button data-tour="loop" onClick={buildSwapView.startSwap}>
-          <Refresh />
-          {l('common.loop')}
-        </Button>
+        <Buttons>
+          <Button data-tour="loop" onClick={buildSwapView.startSwap}>
+            <Refresh />
+            {l('common.loop')}
+          </Button>
+          <Button borderless onClick={registerSidecarView.startRegister}>
+            <CloudLightning />
+            {l('registerSidecar')}
+          </Button>
+        </Buttons>
       )}
     </Wrapper>
   );

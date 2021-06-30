@@ -9,6 +9,7 @@ import ChannelList from './ChannelList';
 import LoopActions from './LoopActions';
 import LoopTiles from './LoopTiles';
 import ProcessingSwaps from './processing/ProcessingSwaps';
+import SidecarWizard from './sidecar/SidecarWizard';
 import SwapWizard from './swap/SwapWizard';
 
 const Styled = {
@@ -19,7 +20,13 @@ const Styled = {
 
 const LoopPage: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.loop.LoopPage');
-  const { appView, buildSwapView, channelStore, nodeStore } = useStore();
+  const {
+    appView,
+    buildSwapView,
+    registerSidecarView,
+    channelStore,
+    nodeStore,
+  } = useStore();
 
   const title = (
     <>
@@ -39,6 +46,8 @@ const LoopPage: React.FC = () => {
         <ProcessingSwaps />
       ) : buildSwapView.showWizard ? (
         <SwapWizard />
+      ) : registerSidecarView.showWizard ? (
+        <SidecarWizard />
       ) : (
         <>
           <PageHeader

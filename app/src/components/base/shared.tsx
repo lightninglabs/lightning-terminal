@@ -192,6 +192,28 @@ export const Input = styled.input`
   }
 `;
 
+export const TextArea = styled.textarea`
+  font-family: ${props => props.theme.fonts.work.light};
+  font-weight: 300;
+  font-size: ${props => props.theme.sizes.m};
+  color: ${props => props.theme.colors.offWhite};
+  background-color: ${props => props.theme.colors.overlay};
+  border-width: 0;
+  border-bottom: 3px solid ${props => props.theme.colors.offWhite};
+  padding: 5px;
+
+  &:active,
+  &:focus {
+    outline: none;
+    background-color: ${props => props.theme.colors.overlay};
+    border-bottom-color: ${props => props.theme.colors.white};
+  }
+
+  &::placeholder {
+    color: ${props => props.theme.colors.gray};
+  }
+`;
+
 //
 // Radio Button
 //
