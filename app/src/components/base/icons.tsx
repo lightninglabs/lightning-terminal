@@ -15,6 +15,7 @@ import { ReactComponent as ChevronsRightIcon } from 'assets/icons/chevrons-right
 import { ReactComponent as ChevronsIcon } from 'assets/icons/chevrons.svg';
 import { ReactComponent as ClockIcon } from 'assets/icons/clock.svg';
 import { ReactComponent as CloseIcon } from 'assets/icons/close.svg';
+import { ReactComponent as CloudLightningIcon } from 'assets/icons/cloud-lightning.svg';
 import { ReactComponent as CopyIcon } from 'assets/icons/copy.svg';
 import { ReactComponent as DotIcon } from 'assets/icons/dot.svg';
 import { ReactComponent as DownloadIcon } from 'assets/icons/download.svg';
@@ -99,6 +100,7 @@ export const Chevrons = Icon.withComponent(ChevronsIcon);
 export const ChevronsLeft = Icon.withComponent(ChevronsLeftIcon);
 export const ChevronsRight = Icon.withComponent(ChevronsRightIcon);
 export const Close = Icon.withComponent(CloseIcon);
+export const CloudLightning = Icon.withComponent(CloudLightningIcon);
 export const Copy = Icon.withComponent(CopyIcon);
 export const Dot = Icon.withComponent(DotIcon);
 export const HelpCircle = Icon.withComponent(HelpCircleIcon);

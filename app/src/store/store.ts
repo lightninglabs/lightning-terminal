@@ -26,6 +26,7 @@ import {
   FundNewAccountView,
   OrderFormView,
   OrderListView,
+  RegisterSidecarView,
   RenewAccountView,
 } from './views';
 
@@ -61,6 +62,7 @@ export class Store {
   orderFormView = new OrderFormView(this);
   orderListView = new OrderListView(this);
   batchesView = new BatchesView(this);
+  registerSidecarView = new RegisterSidecarView(this);
 
   /** the backend api services to be used by child stores */
   api: {

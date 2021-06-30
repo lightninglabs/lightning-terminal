@@ -271,6 +271,17 @@ class PoolApi extends BaseApi<PoolEvents> {
     return res.toObject();
   }
 
+  /**
+   * call the pool `RegisterSidecar` RPC and return the response
+   */
+  async registerSidecar(ticket: string): Promise<POOL.SidecarTicket.AsObject> {
+    const req = new POOL.RegisterSidecarRequest();
+    req.setTicket(ticket);
+    req.setAutoNegotiate(true);
+    const res = await this._grpc.request(Trader.RegisterSidecar, req, this._meta);
+    return res.toObject();
+  }
+
   //
   // Utility functions to convert user-facing units to API units
   //
