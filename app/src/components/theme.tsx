@@ -1,46 +1,6 @@
 import React from 'react';
-import emotionStyled, { CreateStyled } from '@emotion/styled/macro';
-import { ThemeProvider as EmotionThemeProvider } from 'emotion-theming';
-
-export interface Theme {
-  fonts: {
-    open: {
-      light: string;
-      regular: string;
-      semiBold: string;
-      bold: string;
-      extraBold: string;
-    };
-    work: {
-      light: string;
-      medium: string;
-      semiBold: string;
-    };
-  };
-  sizes: {
-    xxs: string;
-    xs: string;
-    s: string;
-    m: string;
-    l: string;
-    xl: string;
-    xxl: string;
-  };
-  colors: {
-    blue: string;
-    darkBlue: string;
-    gray: string;
-    darkGray: string;
-    white: string;
-    offWhite: string;
-    pink: string;
-    green: string;
-    gold: string;
-    purple: string;
-    overlay: string;
-    gradient: string;
-  };
-}
+import { Theme, ThemeProvider as EmotionThemeProvider } from '@emotion/react';
+import emotionStyled from '@emotion/styled';
 
 // use the bootstrap font-families as a fallback while custom fonts are being downloaded
 const fallbackFont =
@@ -86,7 +46,7 @@ const theme: Theme = {
   },
 };
 
-export const styled = emotionStyled as CreateStyled<Theme>;
+export const styled = emotionStyled;
 
 export const ThemeProvider: React.FC = ({ children }) => {
   return <EmotionThemeProvider theme={theme}>{children}</EmotionThemeProvider>;

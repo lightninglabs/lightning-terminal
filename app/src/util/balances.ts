@@ -1,5 +1,5 @@
+import { Theme } from '@emotion/react';
 import Big from 'big.js';
-import { Theme } from 'components/theme';
 import { percentage } from './bigmath';
 import { BalanceConfig, BalanceConstraint, BalanceStatus } from './constants';
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
-import { keyframes } from '@emotion/core';
+import { keyframes } from '@emotion/react';
 import { styled } from 'components/theme';
 
 const pulsing1 = keyframes`
