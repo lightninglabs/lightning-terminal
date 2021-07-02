@@ -19,7 +19,7 @@
   "dependencies": {
     "@emotion/core": "10.0.28",
     "@emotion/styled": "10.0.27",
-    "@improbable-eng/grpc-web": "0.12.0",
+    "@improbable-eng/grpc-web": "0.14.0",
     "big.js": "5.2.2",
     "bootstrap": "4.5.0",
     "copy-to-clipboard": "3.3.1",
