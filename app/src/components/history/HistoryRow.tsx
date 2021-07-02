@@ -1,5 +1,6 @@
 import React, { CSSProperties } from 'react';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Swap } from 'store/models';
@@ -8,7 +9,6 @@ import SortableHeader from 'components/common/SortableHeader';
 import Tip from 'components/common/Tip';
 import Unit from 'components/common/Unit';
 import SwapDot from 'components/loop/SwapDot';
-import { styled } from 'components/theme';
 
 /**
  * the virtualized list requires each row to have a specified

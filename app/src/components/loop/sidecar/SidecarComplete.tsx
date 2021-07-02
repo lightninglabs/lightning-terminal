@@ -1,10 +1,10 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import confirmJson from 'assets/animations/confirm.json';
 import { usePrefixedTranslation } from 'hooks';
 import { HeaderFour } from 'components/base';
 import Animation from 'components/common/Animation';
-import { styled } from 'components/theme';
 
 const Styled = {
   Wrapper: styled.section`

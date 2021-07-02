@@ -1,12 +1,12 @@
 import React from 'react';
 import { ReactourStepContentArgs } from 'reactour';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import confirmJson from 'assets/animations/confirm.json';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Button, HeaderThree } from 'components/base';
 import Animation from 'components/common/Animation';
-import { styled } from 'components/theme';
 import TextStep from './TextStep';
 
 const Styled = {

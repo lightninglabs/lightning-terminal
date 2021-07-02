@@ -1,6 +1,6 @@
 import React from 'react';
+import styled from '@emotion/styled';
 import { ArrowRight, Copy, RadioButton } from 'components/base';
-import { styled } from 'components/theme';
 
 const Styled = {
   Wrapper: styled.div`

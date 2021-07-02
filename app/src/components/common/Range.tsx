@@ -1,6 +1,6 @@
 import React, { ChangeEvent, useCallback } from 'react';
+import styled from '@emotion/styled';
 import Big from 'big.js';
-import { styled } from 'components/theme';
 import { RangeInput } from '../base';
 import Radio from './Radio';
 import Unit from './Unit';

@@ -1,5 +1,5 @@
 import React from 'react';
-import { styled } from 'components/theme';
+import styled from '@emotion/styled';
 import { Chevrons, ChevronsLeft, ChevronsRight } from '../base';
 
 const BaseIcon = styled.span`

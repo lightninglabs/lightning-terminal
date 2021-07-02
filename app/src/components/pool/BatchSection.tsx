@@ -1,9 +1,9 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Section } from 'components/base';
-import { styled } from 'components/theme';
 import BatchChart from './batches/BatchChart';
 import BatchControls from './batches/BatchControls';
 import BatchList from './batches/BatchList';

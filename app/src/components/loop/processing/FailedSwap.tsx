@@ -1,11 +1,11 @@
 import React, { useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Swap } from 'store/models';
 import { Close } from 'components/base';
 import Tip from 'components/common/Tip';
-import { styled } from 'components/theme';
 
 const Styled = {
   Wrapper: styled.div`

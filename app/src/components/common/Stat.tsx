@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
-import { useTheme } from 'emotion-theming';
+import { useTheme } from '@emotion/react';
+import styled from '@emotion/styled';
 import { HeaderFour } from 'components/base';
-import { styled, Theme } from 'components/theme';
 import Tip from './Tip';
 
 const Styled = {
@@ -39,7 +39,7 @@ const Stat: React.FC<Props> = ({
   tipPlacement,
   tipCapitalize,
 }) => {
-  const theme = useTheme<Theme>();
+  const theme = useTheme();
 
   let color = '';
   if (negative) color = theme.colors.pink;

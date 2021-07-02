@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { BitcoinExplorerPresets, LightningExplorerPresets } from 'util/constants';
 import { useStore } from 'store';
@@ -7,7 +8,6 @@ import { Button } from 'components/base';
 import FormField from 'components/common/FormField';
 import FormInput from 'components/common/FormInput';
 import PageHeader from 'components/common/PageHeader';
-import { styled } from 'components/theme';
 
 const Styled = {
   Wrapper: styled.section``,

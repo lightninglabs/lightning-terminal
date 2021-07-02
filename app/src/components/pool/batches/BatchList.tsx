@@ -1,10 +1,10 @@
 import React from 'react';
 import { AutoSizer, List } from 'react-virtualized';
 import { Observer, observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import { useStore } from 'store';
 import { Button } from 'components/base';
 import LoaderLines from 'components/common/LoaderLines';
-import { styled } from 'components/theme';
 import BatchRow, { BatchRowHeader, ROW_HEIGHT } from './BatchRow';
 
 const Styled = {

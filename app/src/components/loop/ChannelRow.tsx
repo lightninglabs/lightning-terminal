@@ -1,5 +1,6 @@
 import React, { CSSProperties } from 'react';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Channel } from 'store/models';
@@ -9,7 +10,6 @@ import ExternalLink from 'components/common/ExternalLink';
 import SortableHeader from 'components/common/SortableHeader';
 import Tip from 'components/common/Tip';
 import Unit from 'components/common/Unit';
-import { styled } from 'components/theme';
 import ChannelBalance from './ChannelBalance';
 import ChannelIcon from './ChannelIcon';
 

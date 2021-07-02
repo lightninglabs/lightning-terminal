@@ -1,12 +1,12 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { HeaderFour, Jumbo, Small } from 'components/base';
 import { Bitcoin, Bolt } from './base';
 import Tip from './common/Tip';
 import Unit from './common/Unit';
-import { styled } from './theme';
 
 const Styled = {
   Wrapper: styled.div`

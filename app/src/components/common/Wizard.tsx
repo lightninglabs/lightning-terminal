@@ -1,9 +1,9 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { ArrowLeft } from 'components/base';
 import Tip from 'components/common/Tip';
-import { styled } from 'components/theme';
 
 const Styled = {
   Wrapper: styled.section<{ sidebar?: boolean }>`

@@ -1,10 +1,10 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import WizardButtons from 'components/common/WizardButtons';
 import WizardSummary from 'components/common/WizardSummary';
-import { styled } from 'components/theme';
 
 const Styled = {
   Wrapper: styled.div`

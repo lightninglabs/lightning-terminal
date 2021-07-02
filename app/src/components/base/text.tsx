@@ -1,4 +1,4 @@
-import { styled } from 'components/theme';
+import styled from '@emotion/styled';
 
 interface HeaderProps {
   marginless?: boolean;

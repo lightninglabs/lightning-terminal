@@ -1,9 +1,9 @@
 import React from 'react';
 import { ReactourStepContentArgs } from 'reactour';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { Bitcoin, Bolt } from 'components/base';
-import { styled } from 'components/theme';
 import TextStep from './TextStep';
 
 const Styled = {

@@ -1,8 +1,8 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import { useStore } from 'store';
 import { Background, Menu } from 'components/base';
-import { styled } from 'components/theme';
 import Sidebar from './Sidebar';
 
 interface CollapsedProps {

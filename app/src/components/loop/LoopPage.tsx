@@ -1,10 +1,10 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Badge } from 'components/base';
 import PageHeader from 'components/common/PageHeader';
-import { styled } from 'components/theme';
 import ChannelList from './ChannelList';
 import LoopActions from './LoopActions';
 import LoopTiles from './LoopTiles';

@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
+import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
-import { styled } from 'components/theme';
 import { HeaderFour, Maximize } from '../base';
 import Tip from './Tip';
 

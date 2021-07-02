@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import useSize from 'hooks/useSize';
 import { useStore } from 'store';
 import LoaderLines from 'components/common/LoaderLines';
-import { styled } from 'components/theme';
 import { ChartConfig, D3Chart } from './chart';
 
 const Styled = {

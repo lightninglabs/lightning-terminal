@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import loadingJson from 'assets/animations/loading.json';
 import { HeaderFour } from 'components/base';
 import Animation from 'components/common/Animation';
-import { styled } from 'components/theme';
 
 const Styled = {
   Wrapper: styled.div`

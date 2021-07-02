@@ -1,8 +1,8 @@
 import React, { ReactNode } from 'react';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import { BatchDelta } from 'store/models/batch';
 import { ArrowDownCircle, ArrowUpCircle, Dot } from 'components/base';
-import { styled } from 'components/theme';
 
 const Styled = {
   Wrapper: styled.span``,

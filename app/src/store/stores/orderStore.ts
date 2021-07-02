@@ -151,7 +151,7 @@ export default class OrderStore {
         });
         // remove any leases in state that are not in the API response
         const serverIds = leasesList.map(a => Lease.channelPointToString(a.channelPoint));
-        const localIds = keys(this.leases);
+        const localIds = keys(this.leases).map(key => String(key));
         localIds
           .filter(id => !serverIds.includes(id))
           .forEach(id => this.leases.delete(id));

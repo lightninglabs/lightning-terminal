@@ -1,7 +1,7 @@
 import React from 'react';
+import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { Pill } from 'components/base';
-import { styled } from 'components/theme';
 
 const Styled = {
   Wrapper: styled.span`

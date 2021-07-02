@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
-import { styled } from 'components/theme';
 import { ArrowLeft, Download, HeaderThree, HelpCircle } from '../base';
 import Tip from './Tip';
 

@@ -1,11 +1,11 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import Big from 'big.js';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Button, HeaderFour, SummaryItem } from 'components/base';
 import Unit from 'components/common/Unit';
-import { styled } from 'components/theme';
 
 const Styled = {
   Summary: styled.div`

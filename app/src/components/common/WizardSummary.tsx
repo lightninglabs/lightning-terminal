@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
+import styled from '@emotion/styled';
 import { HeaderFive, HeaderFour, Small } from 'components/base';
-import { styled } from 'components/theme';
 
 const Styled = {
   Wrapper: styled.div`

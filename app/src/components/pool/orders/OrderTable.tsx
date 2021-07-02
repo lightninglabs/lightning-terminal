@@ -1,4 +1,4 @@
-import { styled } from 'components/theme';
+import styled from '@emotion/styled';
 
 export const Table = styled.table`
   width: 100%;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Route, Switch } from 'react-router';
 import { observer } from 'mobx-react-lite';
-import { styled } from 'components/theme';
+import styled from '@emotion/styled';
 import BalanceSettings from './BalanceSettings';
 import ExplorerSettings from './ExplorerSettings';
 import GeneralSettings from './GeneralSettings';

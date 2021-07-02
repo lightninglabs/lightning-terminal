@@ -1,11 +1,11 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Button, HeaderFour, Small, SummaryItem } from 'components/base';
 import BlockTime from 'components/common/BlockTime';
 import Unit from 'components/common/Unit';
-import { styled } from 'components/theme';
 
 const Styled = {
   Summary: styled.div`
