@@ -1,10 +1,10 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import { Swap } from 'store/models';
 import { HeaderFour } from 'components/base';
 import Tip from 'components/common/Tip';
 import Unit from 'components/common/Unit';
-import { styled } from 'components/theme';
 import SwapDot from '../SwapDot';
 
 const Styled = {

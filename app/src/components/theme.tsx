@@ -1,6 +1,5 @@
 import React from 'react';
 import { Theme, ThemeProvider as EmotionThemeProvider } from '@emotion/react';
-import emotionStyled from '@emotion/styled';
 
 // use the bootstrap font-families as a fallback while custom fonts are being downloaded
 const fallbackFont =
@@ -45,8 +44,6 @@ const theme: Theme = {
     gradient: 'linear-gradient(325.53deg, #252F4A 0%, #46547B 100%);',
   },
 };
-
-export const styled = emotionStyled;
 
 export const ThemeProvider: React.FC = ({ children }) => {
   return <EmotionThemeProvider theme={theme}>{children}</EmotionThemeProvider>;

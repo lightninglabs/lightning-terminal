@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import Select from 'rc-select';
-import { styled } from 'components/theme';
 
 export interface SelectOption {
   label: string;

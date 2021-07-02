@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import { ReactComponent as LogoImage } from 'assets/images/logo.svg';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Background, Button, HeaderOne, Input } from 'components/base';
-import { styled } from 'components/theme';
 
 const Styled = {
   Wrapper: styled.div`

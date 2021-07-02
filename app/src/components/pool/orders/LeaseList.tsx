@@ -2,6 +2,7 @@ import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { ChannelStatus } from 'types/state';
 import { Theme } from '@emotion/react';
+import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { LeaseView } from 'store/views';
@@ -9,7 +10,6 @@ import { Empty, Scrollable } from 'components/base';
 import ExternalLink from 'components/common/ExternalLink';
 import SortableHeader from 'components/common/SortableHeader';
 import Tip from 'components/common/Tip';
-import { styled } from 'components/theme';
 import { Table, TableCell, TableHeader, TableRow } from './OrderTable';
 
 /** maps a lease status to the theme color */

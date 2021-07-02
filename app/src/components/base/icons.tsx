@@ -1,3 +1,4 @@
+import styled from '@emotion/styled';
 import { ReactComponent as AlertTriangleIcon } from 'assets/icons/alert-triangle.svg';
 import { ReactComponent as ArrowDownCircleIcon } from 'assets/icons/arrow-down-circle.svg';
 import { ReactComponent as ArrowDownIcon } from 'assets/icons/arrow-down.svg';
@@ -5,6 +6,7 @@ import { ReactComponent as ArrowLeftIcon } from 'assets/icons/arrow-left.svg';
 import { ReactComponent as ArrowRightIcon } from 'assets/icons/arrow-right.svg';
 import { ReactComponent as ArrowUpCircleIcon } from 'assets/icons/arrow-up-circle.svg';
 import { ReactComponent as ArrowUpIcon } from 'assets/icons/arrow-up.svg';
+import { ReactComponent as BarChartIcon } from 'assets/icons/bar-chart.svg';
 import { ReactComponent as BitcoinIcon } from 'assets/icons/bitcoin.svg';
 import { ReactComponent as BoltIcon } from 'assets/icons/bolt.svg';
 import { ReactComponent as CheckIcon } from 'assets/icons/check.svg';
@@ -20,6 +22,7 @@ import { ReactComponent as CopyIcon } from 'assets/icons/copy.svg';
 import { ReactComponent as DotIcon } from 'assets/icons/dot.svg';
 import { ReactComponent as DownloadIcon } from 'assets/icons/download.svg';
 import { ReactComponent as HelpCircleIcon } from 'assets/icons/help-circle.svg';
+import { ReactComponent as ListIcon } from 'assets/icons/list.svg';
 import { ReactComponent as MaximizeIcon } from 'assets/icons/maximize.svg';
 import { ReactComponent as MenuIcon } from 'assets/icons/menu.svg';
 import { ReactComponent as MinimizeIcon } from 'assets/icons/minimize.svg';
@@ -27,9 +30,6 @@ import { ReactComponent as RefreshIcon } from 'assets/icons/refresh-cw.svg';
 import { ReactComponent as SettingsIcon } from 'assets/icons/settings.svg';
 import { ReactComponent as CancelIcon } from 'assets/icons/slash.svg';
 import { ReactComponent as UserPlusIcon } from 'assets/icons/user-plus.svg';
-import { ReactComponent as BarChartIcon } from 'assets/icons/bar-chart.svg';
-import { ReactComponent as ListIcon } from 'assets/icons/list.svg';
-import { styled } from 'components/theme';
 
 interface IconProps {
   size?: 'x-small' | 'small' | 'medium' | 'large';

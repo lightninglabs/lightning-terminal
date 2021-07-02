@@ -1,5 +1,5 @@
+import styled from '@emotion/styled';
 import Chevrons from 'assets/icons/chevrons.svg';
-import { styled } from 'components/theme';
 
 //
 // Misc

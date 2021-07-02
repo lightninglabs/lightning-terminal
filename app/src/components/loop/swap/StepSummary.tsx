@@ -1,7 +1,7 @@
 import React from 'react';
+import styled from '@emotion/styled';
 import { useStore } from 'store';
 import { HeaderFive, HeaderFour, Small } from 'components/base';
-import { styled } from 'components/theme';
 import SelectedChannels from '../SelectedChannels';
 
 const Styled = {

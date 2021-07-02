@@ -1,5 +1,6 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Button, HeaderFour, SummaryItem } from 'components/base';
@@ -7,7 +8,6 @@ import FormField from 'components/common/FormField';
 import FormInput from 'components/common/FormInput';
 import FormInputNumber from 'components/common/FormInputNumber';
 import UnitCmp from 'components/common/Unit';
-import { styled } from 'components/theme';
 
 const Styled = {
   Balances: styled.div`

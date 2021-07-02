@@ -1,9 +1,9 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import { statusToColor } from 'util/balances';
 import { BalanceStatus } from 'util/constants';
 import { Channel } from 'store/models';
-import { styled } from 'components/theme';
 
 const Styled = {
   Wrapper: styled.div<{ pct: number; status: BalanceStatus; active: boolean }>`

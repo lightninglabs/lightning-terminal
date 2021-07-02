@@ -1,8 +1,8 @@
 import React from 'react';
 import { ReactourStepContentArgs } from 'reactour';
+import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { Button, HeaderThree } from 'components/base';
-import { styled } from 'components/theme';
 
 const Styled = {
   Wrapper: styled.div`

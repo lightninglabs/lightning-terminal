@@ -1,10 +1,10 @@
 import React, { useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { BarChart, HeaderFour, List } from 'components/base';
 import BadgeList from 'components/common/BadgeList';
-import { styled } from 'components/theme';
 
 const Styled = {
   Wrapper: styled.div`

@@ -1,11 +1,11 @@
 import React, { useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { BalanceMode } from 'util/constants';
 import { useStore } from 'store';
 import { HeaderFour } from 'components/base';
 import PageHeader from 'components/common/PageHeader';
-import { styled } from 'components/theme';
 import SettingItem from './SettingItem';
 
 const Styled = {

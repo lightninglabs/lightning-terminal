@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
+import styled from '@emotion/styled';
 import { HeaderFour, HelpCircle } from 'components/base';
-import { styled } from 'components/theme';
 import Tip from './Tip';
 
 const Styled = {

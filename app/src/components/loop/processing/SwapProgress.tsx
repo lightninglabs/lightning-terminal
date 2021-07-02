@@ -1,8 +1,8 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { SwapState, SwapType } from 'types/generated/loop_pb';
+import styled from '@emotion/styled';
 import { Swap } from 'store/models';
-import { styled } from 'components/theme';
 
 const { LOOP_IN, LOOP_OUT } = SwapType;
 const {

@@ -1,5 +1,6 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { Unit, Units } from 'util/constants';
 import { useStore } from 'store';
@@ -8,7 +9,6 @@ import BlockTime from 'components/common/BlockTime';
 import FormField from 'components/common/FormField';
 import FormInputNumber from 'components/common/FormInputNumber';
 import UnitCmp from 'components/common/Unit';
-import { styled } from 'components/theme';
 
 const Styled = {
   Balances: styled.div`

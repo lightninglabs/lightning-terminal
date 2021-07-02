@@ -1,9 +1,9 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Badge, HeaderFour } from 'components/base';
-import { styled } from 'components/theme';
 
 const Styled = {
   NavHeader: styled(HeaderFour)`

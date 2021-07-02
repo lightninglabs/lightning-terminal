@@ -3,8 +3,8 @@ import { toast, ToastContainer } from 'react-toastify';
 import { values } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { Alert } from 'types/state';
+import styled from '@emotion/styled';
 import { useStore } from 'store';
-import { styled } from 'components/theme';
 import { Close } from '../base';
 
 const Styled = {

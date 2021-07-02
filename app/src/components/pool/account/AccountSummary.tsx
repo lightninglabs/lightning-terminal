@@ -1,5 +1,6 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Badge, Button, HeaderFour, SummaryItem } from 'components/base';
@@ -7,7 +8,6 @@ import BlockTime from 'components/common/BlockTime';
 import ExternalLink from 'components/common/ExternalLink';
 import Tip from 'components/common/Tip';
 import Unit from 'components/common/Unit';
-import { styled } from 'components/theme';
 
 const Styled = {
   Expires: styled.span<{ warn: boolean }>`

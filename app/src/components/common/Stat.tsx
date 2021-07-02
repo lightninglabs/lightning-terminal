@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 import { useTheme } from '@emotion/react';
+import styled from '@emotion/styled';
 import { HeaderFour } from 'components/base';
-import { styled } from 'components/theme';
 import Tip from './Tip';
 
 const Styled = {

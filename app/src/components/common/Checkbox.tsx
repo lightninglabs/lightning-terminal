@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { styled } from 'components/theme';
+import styled from '@emotion/styled';
 import { Check } from '../base';
 
 const Styled = {

@@ -1,12 +1,12 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import confirmJson from 'assets/animations/confirm.json';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Close, HeaderFour } from 'components/base';
 import Animation from 'components/common/Animation';
 import Tip from 'components/common/Tip';
-import { styled } from 'components/theme';
 import ProcessingSwapRow from './ProcessingSwapRow';
 
 const Styled = {

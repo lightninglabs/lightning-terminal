@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Theme } from '@emotion/react';
+import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Order } from 'store/models';
@@ -8,7 +9,6 @@ import { Close, Empty, Scrollable } from 'components/base';
 import SortableHeader from 'components/common/SortableHeader';
 import Tip from 'components/common/Tip';
 import Unit from 'components/common/Unit';
-import { styled } from 'components/theme';
 import { Table, TableCell, TableHeader, TableRow } from './OrderTable';
 
 /** maps a order status to a theme color */

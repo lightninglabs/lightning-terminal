@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { styled } from 'components/theme';
+import styled from '@emotion/styled';
 
 const Styled = {
   Wrapper: styled.div`

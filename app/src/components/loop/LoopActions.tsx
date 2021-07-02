@@ -1,11 +1,11 @@
 import React, { useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import { SwapDirection } from 'types/state';
+import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { formatSats } from 'util/formatters';
 import { useStore } from 'store';
 import { Button, Close, CloudLightning, Refresh } from 'components/base';
-import { styled } from 'components/theme';
 import SelectedChannels from './SelectedChannels';
 
 const Styled = {

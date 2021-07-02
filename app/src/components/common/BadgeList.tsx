@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
+import styled from '@emotion/styled';
 import { Badge } from 'components/base';
-import { styled } from 'components/theme';
 
 const Styled = {
   Wrapper: styled.div<{ flex?: boolean }>`

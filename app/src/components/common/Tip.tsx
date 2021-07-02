@@ -1,7 +1,7 @@
 import React from 'react';
+import styled from '@emotion/styled';
 import Tooltip from 'rc-tooltip';
 import { TooltipProps } from 'rc-tooltip/lib/Tooltip';
-import { styled } from 'components/theme';
 
 /**
  * Returns an offset array to create a 10px gap between the

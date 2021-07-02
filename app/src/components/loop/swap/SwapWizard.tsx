@@ -1,11 +1,11 @@
 import React, { ReactNode } from 'react';
 import { observer } from 'mobx-react-lite';
 import { BuildSwapSteps } from 'types/state';
+import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { ArrowLeft } from 'components/base';
 import Tip from 'components/common/Tip';
-import { styled } from 'components/theme';
 import SwapConfigStep from './SwapConfigStep';
 import SwapProcessingStep from './SwapProcessing';
 import SwapReviewStep from './SwapReviewStep';

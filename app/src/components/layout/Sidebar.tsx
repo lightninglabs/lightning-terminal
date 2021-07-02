@@ -1,6 +1,6 @@
 import React from 'react';
+import styled from '@emotion/styled';
 import NodeStatus from 'components/NodeStatus';
-import { styled } from 'components/theme';
 import NavMenu from './NavMenu';
 
 const Styled = {

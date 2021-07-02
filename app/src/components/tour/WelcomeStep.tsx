@@ -1,9 +1,9 @@
 import React from 'react';
 import { ReactourStepContentArgs } from 'reactour';
+import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Button } from 'components/base';
-import { styled } from 'components/theme';
 import TextStep from './TextStep';
 
 const Styled = {

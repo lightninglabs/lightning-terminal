@@ -1,9 +1,9 @@
 import React, { ReactNode, useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
+import styled from '@emotion/styled';
 import { formatTime } from 'util/formatters';
 import LoaderLines from 'components/common/LoaderLines';
 import Stat from 'components/common/Stat';
-import { styled } from 'components/theme';
 
 const getSecsUntil = (timeSecs: number) => {
   // get the current time in seconds

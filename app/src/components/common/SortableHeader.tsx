@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { SortParams } from 'types/state';
+import styled from '@emotion/styled';
 import { ArrowDown, ArrowUp, HeaderFour } from 'components/base';
-import { styled } from 'components/theme';
 
 const Styled = {
   HeaderFour: styled(HeaderFour)<{ selected: boolean }>`

@@ -1,6 +1,7 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { LeaseDuration } from 'types/state';
+import styled from '@emotion/styled';
 import Big from 'big.js';
 import { usePrefixedTranslation } from 'hooks';
 import { Unit, Units } from 'util/constants';
@@ -24,7 +25,6 @@ import StatusDot from 'components/common/StatusDot';
 import Tip from 'components/common/Tip';
 import Toggle from 'components/common/Toggle';
 import UnitCmp from 'components/common/Unit';
-import { styled } from 'components/theme';
 
 const Styled = {
   Section: styled(Section)`
