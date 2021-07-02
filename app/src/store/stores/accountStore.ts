@@ -185,7 +185,7 @@ export default class AccountStore {
         });
         // remove any accounts in state that are not in the API response
         const serverIds = accountsList.map(a => hex(a.traderKey));
-        const localIds = keys(this.accounts);
+        const localIds = keys(this.accounts).map(key => String(key));
         localIds
           .filter(id => !serverIds.includes(id))
           .forEach(id => this.accounts.delete(id));
