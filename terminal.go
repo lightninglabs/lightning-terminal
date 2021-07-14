@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"embed"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -300,8 +301,25 @@ func (g *LightningTerminal) Run() error {
 // embedded daemons as external subservers that hook into the same gRPC and REST
 // servers that lnd started.
 func (g *LightningTerminal) startSubservers() error {
-	var basicClient lnrpc.LightningClient
-	host, network, tlsPath, macPath := g.cfg.lndConnectParams()
+	var (
+		basicClient lnrpc.LightningClient
+		host        string
+		network     lndclient.Network
+		tlsPath     string
+		macPath     string
+		tlsData     string
+		macData     string
+	)
+
+	// If we're in stateless-remote mode, we need to wait until the
+	// lnd connect string is provided by the user from the UI.
+	if g.cfg.LndMode == ModeStatelessRemote {
+		<-g.rpcProxy.lndConnectChan
+
+		host, network, tlsData, macData = g.cfg.lndConnectParams()
+	} else {
+		host, network, tlsPath, macPath = g.cfg.lndConnectParams()
+	}
 
 	// The main RPC listener of lnd might need some time to start, it could
 	// be that we run into a connection refused a few times. We use the
@@ -314,7 +332,7 @@ func (g *LightningTerminal) startSubservers() error {
 		// subservers have the same requirements.
 		var err error
 		basicClient, err = lndclient.NewBasicClient(
-			host, tlsPath, path.Dir(macPath), string(network),
+			host, tlsPath, path.Dir(macPath), tlsData, macData, string(network),
 			lndclient.MacFilename(path.Base(macPath)),
 		)
 		return err
@@ -353,6 +371,8 @@ func (g *LightningTerminal) startSubservers() error {
 			Network:               network,
 			TLSPath:               tlsPath,
 			CustomMacaroonPath:    macPath,
+			TLSData:               tlsData,
+			CustomMacaroonHex:     macData,
 			BlockUntilChainSynced: true,
 			BlockUntilUnlocked:    true,
 			CallerCtx:             ctxc,
@@ -381,7 +401,7 @@ func (g *LightningTerminal) startSubservers() error {
 	}
 
 	if !g.cfg.poolRemote {
-		err = g.poolServer.StartAsSubserver(basicClient, g.lndClient)
+		err = g.poolServer.StartAsSubserver(basicClient, g.lndClient, macData)
 		if err != nil {
 			return err
 		}
@@ -448,6 +468,38 @@ func (g *LightningTerminal) RegisterRestSubserver(ctx context.Context,
 // met. A non-nil error is returned if any of the checks fail.
 func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 	requiredPermissions []bakery.Op, fullMethod string) error {
+
+	if g.cfg.LndMode == ModeStatelessRemote && g.lndClient != nil {
+		// Check with LND that the request follows all caveats built
+		// into the macaroon.
+		ctx := context.Background()
+
+		macBytes, err := hex.DecodeString(g.cfg.Remote.Lnd.Macaroon)
+		if err != nil {
+			return err
+		}
+
+		// Convert permissions to the form that lndClient will accept.
+		permissions := make([]lndclient.MacaroonPermission, 0)
+		for _, perm := range requiredPermissions {
+			newPerm := lndclient.MacaroonPermission{
+				Entity: perm.Entity,
+				Action: perm.Action,
+			}
+			permissions = append(permissions, newPerm)
+		}
+
+		res, err := g.lndClient.Client.CheckMacaroonPermissions(
+			ctx, macBytes, permissions,
+		)
+		if err != nil {
+			return err
+		}
+		if !res {
+			return fmt.Errorf("macaroon is not valid, returned %v",
+				res)
+		}
+	}
 
 	// Validate all macaroons for services that are running in the local
 	// process. Calls that we proxy to a remote host don't need to be
@@ -902,7 +954,7 @@ func (g *LightningTerminal) showStartupInfo() error {
 		host, network, tlsPath, macPath := g.cfg.lndConnectParams()
 		basicClient, err := lndclient.NewBasicClient(
 			host, tlsPath, path.Dir(macPath), string(network),
-			lndclient.MacFilename(path.Base(macPath)),
+			"", "", lndclient.MacFilename(path.Base(macPath)),
 		)
 		if err != nil {
 			return fmt.Errorf("error querying remote node: %v", err)
