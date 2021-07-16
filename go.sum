@@ -265,8 +265,9 @@ github.com/lightninglabs/gozmq v0.0.0-20191113021534-d20a764486bf/go.mod h1:vxmQ
 github.com/lightninglabs/lndclient v0.11.0-4/go.mod h1:8/cTKNwgL87NX123gmlv3Xh6p1a7pvzu+40Un3PhHiI=
 github.com/lightninglabs/lndclient v0.11.1-7/go.mod h1:qVFcrIXxsagpu3RC0SSSdVEs3QVxuv5YiHUYwDauUnc=
 github.com/lightninglabs/lndclient v0.11.1-9/go.mod h1:qVFcrIXxsagpu3RC0SSSdVEs3QVxuv5YiHUYwDauUnc=
-github.com/lightninglabs/lndclient v0.12.0-8 h1:ZnX8wp0atNsBNGNIs+MYvLDRRnoia63RPflD9OfeonQ=
 github.com/lightninglabs/lndclient v0.12.0-8/go.mod h1:L0R2VOaLxMylGbxgnfiZGc0hMDIIgj91cfgwGuFz9kU=
+github.com/lightninglabs/lndclient v0.12.0-11 h1:gkwFlDei2p8ShLBgj1FGK3m13GrCxM+jk7q0Tklx8AE=
+github.com/lightninglabs/lndclient v0.12.0-11/go.mod h1:L0R2VOaLxMylGbxgnfiZGc0hMDIIgj91cfgwGuFz9kU=
 github.com/lightninglabs/loop v0.14.1-beta.0.20210618002526-df5924f25a33 h1:J1Blu43veo1ux9mQFTDR7UP/JeNvMKUDfilb/oFSCWk=
 github.com/lightninglabs/loop v0.14.1-beta.0.20210618002526-df5924f25a33/go.mod h1:fpOgE3A/3Tu3/6Q96WAGe+apv7n/AsykvX0VgOLSclE=
 github.com/lightninglabs/neutrino v0.11.0/go.mod h1:CuhF0iuzg9Sp2HO6ZgXgayviFTn1QHdSTJlMncK80wg=
