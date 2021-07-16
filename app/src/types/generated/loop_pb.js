@@ -99,18 +99,18 @@ proto.looprpc.LoopOutRequest.prototype.toObject = function(opt_includeInstance) 
  */
 proto.looprpc.LoopOutRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-    amt: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    amt: jspb.Message.getFieldWithDefault(msg, 1, "0"),
     dest: jspb.Message.getFieldWithDefault(msg, 2, ""),
-    maxSwapRoutingFee: jspb.Message.getFieldWithDefault(msg, 3, 0),
-    maxPrepayRoutingFee: jspb.Message.getFieldWithDefault(msg, 4, 0),
-    maxSwapFee: jspb.Message.getFieldWithDefault(msg, 5, 0),
-    maxPrepayAmt: jspb.Message.getFieldWithDefault(msg, 6, 0),
-    maxMinerFee: jspb.Message.getFieldWithDefault(msg, 7, 0),
-    loopOutChannel: jspb.Message.getFieldWithDefault(msg, 8, 0),
+    maxSwapRoutingFee: jspb.Message.getFieldWithDefault(msg, 3, "0"),
+    maxPrepayRoutingFee: jspb.Message.getFieldWithDefault(msg, 4, "0"),
+    maxSwapFee: jspb.Message.getFieldWithDefault(msg, 5, "0"),
+    maxPrepayAmt: jspb.Message.getFieldWithDefault(msg, 6, "0"),
+    maxMinerFee: jspb.Message.getFieldWithDefault(msg, 7, "0"),
+    loopOutChannel: jspb.Message.getFieldWithDefault(msg, 8, "0"),
     outgoingChanSetList: jspb.Message.getRepeatedField(msg, 11),
     sweepConfTarget: jspb.Message.getFieldWithDefault(msg, 9, 0),
     htlcConfirmations: jspb.Message.getFieldWithDefault(msg, 13, 0),
-    swapPublicationDeadline: jspb.Message.getFieldWithDefault(msg, 10, 0),
+    swapPublicationDeadline: jspb.Message.getFieldWithDefault(msg, 10, "0"),
     label: jspb.Message.getFieldWithDefault(msg, 12, ""),
     initiator: jspb.Message.getFieldWithDefault(msg, 14, "")
   };
@@ -150,7 +150,7 @@ proto.looprpc.LoopOutRequest.deserializeBinaryFromReader = function(msg, reader)
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {number} */ (reader.readInt64());
+      var value = /** @type {string} */ (reader.readInt64String());
       msg.setAmt(value);
       break;
     case 2:
@@ -158,31 +158,31 @@ proto.looprpc.LoopOutRequest.deserializeBinaryFromReader = function(msg, reader)
       msg.setDest(value);
       break;
     case 3:
-      var value = /** @type {number} */ (reader.readInt64());
+      var value = /** @type {string} */ (reader.readInt64String());
       msg.setMaxSwapRoutingFee(value);
       break;
     case 4:
-      var value = /** @type {number} */ (reader.readInt64());
+      var value = /** @type {string} */ (reader.readInt64String());
       msg.setMaxPrepayRoutingFee(value);
       break;
     case 5:
-      var value = /** @type {number} */ (reader.readInt64());
+      var value = /** @type {string} */ (reader.readInt64String());
       msg.setMaxSwapFee(value);
       break;
     case 6:
-      var value = /** @type {number} */ (reader.readInt64());
+      var value = /** @type {string} */ (reader.readInt64String());
       msg.setMaxPrepayAmt(value);
       break;
     case 7:
-      var value = /** @type {number} */ (reader.readInt64());
+      var value = /** @type {string} */ (reader.readInt64String());
       msg.setMaxMinerFee(value);
       break;
     case 8:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setLoopOutChannel(value);
       break;
     case 11:
-      var value = /** @type {!Array<number>} */ (reader.readPackedUint64());
+      var value = /** @type {!Array<string>} */ (reader.readPackedUint64String());
       msg.setOutgoingChanSetList(value);
       break;
     case 9:
@@ -194,7 +194,7 @@ proto.looprpc.LoopOutRequest.deserializeBinaryFromReader = function(msg, reader)
       msg.setHtlcConfirmations(value);
       break;
     case 10:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setSwapPublicationDeadline(value);
       break;
     case 12:
@@ -235,8 +235,8 @@ proto.looprpc.LoopOutRequest.prototype.serializeBinary = function() {
 proto.looprpc.LoopOutRequest.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getAmt();
-  if (f !== 0) {
-    writer.writeInt64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
       1,
       f
     );
@@ -249,50 +249,50 @@ proto.looprpc.LoopOutRequest.serializeBinaryToWriter = function(message, writer)
     );
   }
   f = message.getMaxSwapRoutingFee();
-  if (f !== 0) {
-    writer.writeInt64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
       3,
       f
     );
   }
   f = message.getMaxPrepayRoutingFee();
-  if (f !== 0) {
-    writer.writeInt64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
       4,
       f
     );
   }
   f = message.getMaxSwapFee();
-  if (f !== 0) {
-    writer.writeInt64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
       5,
       f
     );
   }
   f = message.getMaxPrepayAmt();
-  if (f !== 0) {
-    writer.writeInt64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
       6,
       f
     );
   }
   f = message.getMaxMinerFee();
-  if (f !== 0) {
-    writer.writeInt64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
       7,
       f
     );
   }
   f = message.getLoopOutChannel();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       8,
       f
     );
   }
   f = message.getOutgoingChanSetList();
   if (f.length > 0) {
-    writer.writePackedUint64(
+    writer.writePackedUint64String(
       11,
       f
     );
@@ -312,8 +312,8 @@ proto.looprpc.LoopOutRequest.serializeBinaryToWriter = function(message, writer)
     );
   }
   f = message.getSwapPublicationDeadline();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       10,
       f
     );
@@ -337,16 +337,16 @@ proto.looprpc.LoopOutRequest.serializeBinaryToWriter = function(message, writer)
 
 /**
  * optional int64 amt = 1;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.LoopOutRequest.prototype.getAmt = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.LoopOutRequest.prototype.setAmt = function(value) {
-  jspb.Message.setProto3IntField(this, 1, value);
+  jspb.Message.setProto3StringIntField(this, 1, value);
 };
 
 
@@ -367,111 +367,111 @@ proto.looprpc.LoopOutRequest.prototype.setDest = function(value) {
 
 /**
  * optional int64 max_swap_routing_fee = 3;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.LoopOutRequest.prototype.getMaxSwapRoutingFee = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 3, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.LoopOutRequest.prototype.setMaxSwapRoutingFee = function(value) {
-  jspb.Message.setProto3IntField(this, 3, value);
+  jspb.Message.setProto3StringIntField(this, 3, value);
 };
 
 
 /**
  * optional int64 max_prepay_routing_fee = 4;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.LoopOutRequest.prototype.getMaxPrepayRoutingFee = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 4, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 4, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.LoopOutRequest.prototype.setMaxPrepayRoutingFee = function(value) {
-  jspb.Message.setProto3IntField(this, 4, value);
+  jspb.Message.setProto3StringIntField(this, 4, value);
 };
 
 
 /**
  * optional int64 max_swap_fee = 5;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.LoopOutRequest.prototype.getMaxSwapFee = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 5, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.LoopOutRequest.prototype.setMaxSwapFee = function(value) {
-  jspb.Message.setProto3IntField(this, 5, value);
+  jspb.Message.setProto3StringIntField(this, 5, value);
 };
 
 
 /**
  * optional int64 max_prepay_amt = 6;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.LoopOutRequest.prototype.getMaxPrepayAmt = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 6, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 6, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.LoopOutRequest.prototype.setMaxPrepayAmt = function(value) {
-  jspb.Message.setProto3IntField(this, 6, value);
+  jspb.Message.setProto3StringIntField(this, 6, value);
 };
 
 
 /**
  * optional int64 max_miner_fee = 7;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.LoopOutRequest.prototype.getMaxMinerFee = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 7, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 7, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.LoopOutRequest.prototype.setMaxMinerFee = function(value) {
-  jspb.Message.setProto3IntField(this, 7, value);
+  jspb.Message.setProto3StringIntField(this, 7, value);
 };
 
 
 /**
  * optional uint64 loop_out_channel = 8;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.LoopOutRequest.prototype.getLoopOutChannel = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 8, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 8, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.LoopOutRequest.prototype.setLoopOutChannel = function(value) {
-  jspb.Message.setProto3IntField(this, 8, value);
+  jspb.Message.setProto3StringIntField(this, 8, value);
 };
 
 
 /**
  * repeated uint64 outgoing_chan_set = 11;
- * @return {!Array<number>}
+ * @return {!Array<string>}
  */
 proto.looprpc.LoopOutRequest.prototype.getOutgoingChanSetList = function() {
-  return /** @type {!Array<number>} */ (jspb.Message.getRepeatedField(this, 11));
+  return /** @type {!Array<string>} */ (jspb.Message.getRepeatedField(this, 11));
 };
 
 
-/** @param {!Array<number>} value */
+/** @param {!Array<string>} value */
 proto.looprpc.LoopOutRequest.prototype.setOutgoingChanSetList = function(value) {
   jspb.Message.setField(this, 11, value || []);
 };
 
 
 /**
- * @param {!number} value
+ * @param {!string} value
  * @param {number=} opt_index
  */
 proto.looprpc.LoopOutRequest.prototype.addOutgoingChanSet = function(value, opt_index) {
@@ -516,16 +516,16 @@ proto.looprpc.LoopOutRequest.prototype.setHtlcConfirmations = function(value) {
 
 /**
  * optional uint64 swap_publication_deadline = 10;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.LoopOutRequest.prototype.getSwapPublicationDeadline = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 10, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 10, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.LoopOutRequest.prototype.setSwapPublicationDeadline = function(value) {
-  jspb.Message.setProto3IntField(this, 10, value);
+  jspb.Message.setProto3StringIntField(this, 10, value);
 };
 
 
@@ -606,9 +606,9 @@ proto.looprpc.LoopInRequest.prototype.toObject = function(opt_includeInstance) {
  */
 proto.looprpc.LoopInRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-    amt: jspb.Message.getFieldWithDefault(msg, 1, 0),
-    maxSwapFee: jspb.Message.getFieldWithDefault(msg, 2, 0),
-    maxMinerFee: jspb.Message.getFieldWithDefault(msg, 3, 0),
+    amt: jspb.Message.getFieldWithDefault(msg, 1, "0"),
+    maxSwapFee: jspb.Message.getFieldWithDefault(msg, 2, "0"),
+    maxMinerFee: jspb.Message.getFieldWithDefault(msg, 3, "0"),
     lastHop: msg.getLastHop_asB64(),
     externalHtlc: jspb.Message.getFieldWithDefault(msg, 5, false),
     htlcConfTarget: jspb.Message.getFieldWithDefault(msg, 6, 0),
@@ -651,15 +651,15 @@ proto.looprpc.LoopInRequest.deserializeBinaryFromReader = function(msg, reader) 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {number} */ (reader.readInt64());
+      var value = /** @type {string} */ (reader.readInt64String());
       msg.setAmt(value);
       break;
     case 2:
-      var value = /** @type {number} */ (reader.readInt64());
+      var value = /** @type {string} */ (reader.readInt64String());
       msg.setMaxSwapFee(value);
       break;
     case 3:
-      var value = /** @type {number} */ (reader.readInt64());
+      var value = /** @type {string} */ (reader.readInt64String());
       msg.setMaxMinerFee(value);
       break;
     case 4:
@@ -712,22 +712,22 @@ proto.looprpc.LoopInRequest.prototype.serializeBinary = function() {
 proto.looprpc.LoopInRequest.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getAmt();
-  if (f !== 0) {
-    writer.writeInt64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
       1,
       f
     );
   }
   f = message.getMaxSwapFee();
-  if (f !== 0) {
-    writer.writeInt64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
       2,
       f
     );
   }
   f = message.getMaxMinerFee();
-  if (f !== 0) {
-    writer.writeInt64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
       3,
       f
     );
@@ -772,46 +772,46 @@ proto.looprpc.LoopInRequest.serializeBinaryToWriter = function(message, writer) 
 
 /**
  * optional int64 amt = 1;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.LoopInRequest.prototype.getAmt = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.LoopInRequest.prototype.setAmt = function(value) {
-  jspb.Message.setProto3IntField(this, 1, value);
+  jspb.Message.setProto3StringIntField(this, 1, value);
 };
 
 
 /**
  * optional int64 max_swap_fee = 2;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.LoopInRequest.prototype.getMaxSwapFee = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.LoopInRequest.prototype.setMaxSwapFee = function(value) {
-  jspb.Message.setProto3IntField(this, 2, value);
+  jspb.Message.setProto3StringIntField(this, 2, value);
 };
 
 
 /**
  * optional int64 max_miner_fee = 3;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.LoopInRequest.prototype.getMaxMinerFee = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 3, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.LoopInRequest.prototype.setMaxMinerFee = function(value) {
-  jspb.Message.setProto3IntField(this, 3, value);
+  jspb.Message.setProto3StringIntField(this, 3, value);
 };
 
 
@@ -1380,20 +1380,20 @@ proto.looprpc.SwapStatus.prototype.toObject = function(opt_includeInstance) {
  */
 proto.looprpc.SwapStatus.toObject = function(includeInstance, msg) {
   var f, obj = {
-    amt: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    amt: jspb.Message.getFieldWithDefault(msg, 1, "0"),
     id: jspb.Message.getFieldWithDefault(msg, 2, ""),
     idBytes: msg.getIdBytes_asB64(),
     type: jspb.Message.getFieldWithDefault(msg, 3, 0),
     state: jspb.Message.getFieldWithDefault(msg, 4, 0),
     failureReason: jspb.Message.getFieldWithDefault(msg, 14, 0),
-    initiationTime: jspb.Message.getFieldWithDefault(msg, 5, 0),
-    lastUpdateTime: jspb.Message.getFieldWithDefault(msg, 6, 0),
+    initiationTime: jspb.Message.getFieldWithDefault(msg, 5, "0"),
+    lastUpdateTime: jspb.Message.getFieldWithDefault(msg, 6, "0"),
     htlcAddress: jspb.Message.getFieldWithDefault(msg, 7, ""),
     htlcAddressP2wsh: jspb.Message.getFieldWithDefault(msg, 12, ""),
     htlcAddressNp2wsh: jspb.Message.getFieldWithDefault(msg, 13, ""),
-    costServer: jspb.Message.getFieldWithDefault(msg, 8, 0),
-    costOnchain: jspb.Message.getFieldWithDefault(msg, 9, 0),
-    costOffchain: jspb.Message.getFieldWithDefault(msg, 10, 0),
+    costServer: jspb.Message.getFieldWithDefault(msg, 8, "0"),
+    costOnchain: jspb.Message.getFieldWithDefault(msg, 9, "0"),
+    costOffchain: jspb.Message.getFieldWithDefault(msg, 10, "0"),
     label: jspb.Message.getFieldWithDefault(msg, 15, "")
   };
 
@@ -1432,7 +1432,7 @@ proto.looprpc.SwapStatus.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {number} */ (reader.readInt64());
+      var value = /** @type {string} */ (reader.readInt64String());
       msg.setAmt(value);
       break;
     case 2:
@@ -1456,11 +1456,11 @@ proto.looprpc.SwapStatus.deserializeBinaryFromReader = function(msg, reader) {
       msg.setFailureReason(value);
       break;
     case 5:
-      var value = /** @type {number} */ (reader.readInt64());
+      var value = /** @type {string} */ (reader.readInt64String());
       msg.setInitiationTime(value);
       break;
     case 6:
-      var value = /** @type {number} */ (reader.readInt64());
+      var value = /** @type {string} */ (reader.readInt64String());
       msg.setLastUpdateTime(value);
       break;
     case 7:
@@ -1476,15 +1476,15 @@ proto.looprpc.SwapStatus.deserializeBinaryFromReader = function(msg, reader) {
       msg.setHtlcAddressNp2wsh(value);
       break;
     case 8:
-      var value = /** @type {number} */ (reader.readInt64());
+      var value = /** @type {string} */ (reader.readInt64String());
       msg.setCostServer(value);
       break;
     case 9:
-      var value = /** @type {number} */ (reader.readInt64());
+      var value = /** @type {string} */ (reader.readInt64String());
       msg.setCostOnchain(value);
       break;
     case 10:
-      var value = /** @type {number} */ (reader.readInt64());
+      var value = /** @type {string} */ (reader.readInt64String());
       msg.setCostOffchain(value);
       break;
     case 15:
@@ -1521,8 +1521,8 @@ proto.looprpc.SwapStatus.prototype.serializeBinary = function() {
 proto.looprpc.SwapStatus.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getAmt();
-  if (f !== 0) {
-    writer.writeInt64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
       1,
       f
     );
@@ -1563,15 +1563,15 @@ proto.looprpc.SwapStatus.serializeBinaryToWriter = function(message, writer) {
     );
   }
   f = message.getInitiationTime();
-  if (f !== 0) {
-    writer.writeInt64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
       5,
       f
     );
   }
   f = message.getLastUpdateTime();
-  if (f !== 0) {
-    writer.writeInt64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
       6,
       f
     );
@@ -1598,22 +1598,22 @@ proto.looprpc.SwapStatus.serializeBinaryToWriter = function(message, writer) {
     );
   }
   f = message.getCostServer();
-  if (f !== 0) {
-    writer.writeInt64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
       8,
       f
     );
   }
   f = message.getCostOnchain();
-  if (f !== 0) {
-    writer.writeInt64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
       9,
       f
     );
   }
   f = message.getCostOffchain();
-  if (f !== 0) {
-    writer.writeInt64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
       10,
       f
     );
@@ -1630,16 +1630,16 @@ proto.looprpc.SwapStatus.serializeBinaryToWriter = function(message, writer) {
 
 /**
  * optional int64 amt = 1;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.SwapStatus.prototype.getAmt = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.SwapStatus.prototype.setAmt = function(value) {
-  jspb.Message.setProto3IntField(this, 1, value);
+  jspb.Message.setProto3StringIntField(this, 1, value);
 };
 
 
@@ -1744,31 +1744,31 @@ proto.looprpc.SwapStatus.prototype.setFailureReason = function(value) {
 
 /**
  * optional int64 initiation_time = 5;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.SwapStatus.prototype.getInitiationTime = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 5, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.SwapStatus.prototype.setInitiationTime = function(value) {
-  jspb.Message.setProto3IntField(this, 5, value);
+  jspb.Message.setProto3StringIntField(this, 5, value);
 };
 
 
 /**
  * optional int64 last_update_time = 6;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.SwapStatus.prototype.getLastUpdateTime = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 6, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 6, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.SwapStatus.prototype.setLastUpdateTime = function(value) {
-  jspb.Message.setProto3IntField(this, 6, value);
+  jspb.Message.setProto3StringIntField(this, 6, value);
 };
 
 
@@ -1819,46 +1819,46 @@ proto.looprpc.SwapStatus.prototype.setHtlcAddressNp2wsh = function(value) {
 
 /**
  * optional int64 cost_server = 8;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.SwapStatus.prototype.getCostServer = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 8, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 8, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.SwapStatus.prototype.setCostServer = function(value) {
-  jspb.Message.setProto3IntField(this, 8, value);
+  jspb.Message.setProto3StringIntField(this, 8, value);
 };
 
 
 /**
  * optional int64 cost_onchain = 9;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.SwapStatus.prototype.getCostOnchain = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 9, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 9, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.SwapStatus.prototype.setCostOnchain = function(value) {
-  jspb.Message.setProto3IntField(this, 9, value);
+  jspb.Message.setProto3StringIntField(this, 9, value);
 };
 
 
 /**
  * optional int64 cost_offchain = 10;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.SwapStatus.prototype.getCostOffchain = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 10, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 10, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.SwapStatus.prototype.setCostOffchain = function(value) {
-  jspb.Message.setProto3IntField(this, 10, value);
+  jspb.Message.setProto3StringIntField(this, 10, value);
 };
 
 
@@ -2490,8 +2490,8 @@ proto.looprpc.InTermsResponse.prototype.toObject = function(opt_includeInstance)
  */
 proto.looprpc.InTermsResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    minSwapAmount: jspb.Message.getFieldWithDefault(msg, 5, 0),
-    maxSwapAmount: jspb.Message.getFieldWithDefault(msg, 6, 0)
+    minSwapAmount: jspb.Message.getFieldWithDefault(msg, 5, "0"),
+    maxSwapAmount: jspb.Message.getFieldWithDefault(msg, 6, "0")
   };
 
   if (includeInstance) {
@@ -2529,11 +2529,11 @@ proto.looprpc.InTermsResponse.deserializeBinaryFromReader = function(msg, reader
     var field = reader.getFieldNumber();
     switch (field) {
     case 5:
-      var value = /** @type {number} */ (reader.readInt64());
+      var value = /** @type {string} */ (reader.readInt64String());
       msg.setMinSwapAmount(value);
       break;
     case 6:
-      var value = /** @type {number} */ (reader.readInt64());
+      var value = /** @type {string} */ (reader.readInt64String());
       msg.setMaxSwapAmount(value);
       break;
     default:
@@ -2566,15 +2566,15 @@ proto.looprpc.InTermsResponse.prototype.serializeBinary = function() {
 proto.looprpc.InTermsResponse.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getMinSwapAmount();
-  if (f !== 0) {
-    writer.writeInt64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
       5,
       f
     );
   }
   f = message.getMaxSwapAmount();
-  if (f !== 0) {
-    writer.writeInt64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
       6,
       f
     );
@@ -2584,31 +2584,31 @@ proto.looprpc.InTermsResponse.serializeBinaryToWriter = function(message, writer
 
 /**
  * optional int64 min_swap_amount = 5;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.InTermsResponse.prototype.getMinSwapAmount = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 5, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.InTermsResponse.prototype.setMinSwapAmount = function(value) {
-  jspb.Message.setProto3IntField(this, 5, value);
+  jspb.Message.setProto3StringIntField(this, 5, value);
 };
 
 
 /**
  * optional int64 max_swap_amount = 6;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.InTermsResponse.prototype.getMaxSwapAmount = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 6, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 6, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.InTermsResponse.prototype.setMaxSwapAmount = function(value) {
-  jspb.Message.setProto3IntField(this, 6, value);
+  jspb.Message.setProto3StringIntField(this, 6, value);
 };
 
 
@@ -2659,8 +2659,8 @@ proto.looprpc.OutTermsResponse.prototype.toObject = function(opt_includeInstance
  */
 proto.looprpc.OutTermsResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    minSwapAmount: jspb.Message.getFieldWithDefault(msg, 5, 0),
-    maxSwapAmount: jspb.Message.getFieldWithDefault(msg, 6, 0),
+    minSwapAmount: jspb.Message.getFieldWithDefault(msg, 5, "0"),
+    maxSwapAmount: jspb.Message.getFieldWithDefault(msg, 6, "0"),
     minCltvDelta: jspb.Message.getFieldWithDefault(msg, 8, 0),
     maxCltvDelta: jspb.Message.getFieldWithDefault(msg, 9, 0)
   };
@@ -2700,11 +2700,11 @@ proto.looprpc.OutTermsResponse.deserializeBinaryFromReader = function(msg, reade
     var field = reader.getFieldNumber();
     switch (field) {
     case 5:
-      var value = /** @type {number} */ (reader.readInt64());
+      var value = /** @type {string} */ (reader.readInt64String());
       msg.setMinSwapAmount(value);
       break;
     case 6:
-      var value = /** @type {number} */ (reader.readInt64());
+      var value = /** @type {string} */ (reader.readInt64String());
       msg.setMaxSwapAmount(value);
       break;
     case 8:
@@ -2745,15 +2745,15 @@ proto.looprpc.OutTermsResponse.prototype.serializeBinary = function() {
 proto.looprpc.OutTermsResponse.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getMinSwapAmount();
-  if (f !== 0) {
-    writer.writeInt64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
       5,
       f
     );
   }
   f = message.getMaxSwapAmount();
-  if (f !== 0) {
-    writer.writeInt64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
       6,
       f
     );
@@ -2777,31 +2777,31 @@ proto.looprpc.OutTermsResponse.serializeBinaryToWriter = function(message, write
 
 /**
  * optional int64 min_swap_amount = 5;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.OutTermsResponse.prototype.getMinSwapAmount = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 5, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.OutTermsResponse.prototype.setMinSwapAmount = function(value) {
-  jspb.Message.setProto3IntField(this, 5, value);
+  jspb.Message.setProto3StringIntField(this, 5, value);
 };
 
 
 /**
  * optional int64 max_swap_amount = 6;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.OutTermsResponse.prototype.getMaxSwapAmount = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 6, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 6, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.OutTermsResponse.prototype.setMaxSwapAmount = function(value) {
-  jspb.Message.setProto3IntField(this, 6, value);
+  jspb.Message.setProto3StringIntField(this, 6, value);
 };
 
 
@@ -2882,10 +2882,10 @@ proto.looprpc.QuoteRequest.prototype.toObject = function(opt_includeInstance) {
  */
 proto.looprpc.QuoteRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-    amt: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    amt: jspb.Message.getFieldWithDefault(msg, 1, "0"),
     confTarget: jspb.Message.getFieldWithDefault(msg, 2, 0),
     externalHtlc: jspb.Message.getFieldWithDefault(msg, 3, false),
-    swapPublicationDeadline: jspb.Message.getFieldWithDefault(msg, 4, 0)
+    swapPublicationDeadline: jspb.Message.getFieldWithDefault(msg, 4, "0")
   };
 
   if (includeInstance) {
@@ -2923,7 +2923,7 @@ proto.looprpc.QuoteRequest.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {number} */ (reader.readInt64());
+      var value = /** @type {string} */ (reader.readInt64String());
       msg.setAmt(value);
       break;
     case 2:
@@ -2935,7 +2935,7 @@ proto.looprpc.QuoteRequest.deserializeBinaryFromReader = function(msg, reader) {
       msg.setExternalHtlc(value);
       break;
     case 4:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setSwapPublicationDeadline(value);
       break;
     default:
@@ -2968,8 +2968,8 @@ proto.looprpc.QuoteRequest.prototype.serializeBinary = function() {
 proto.looprpc.QuoteRequest.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getAmt();
-  if (f !== 0) {
-    writer.writeInt64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
       1,
       f
     );
@@ -2989,8 +2989,8 @@ proto.looprpc.QuoteRequest.serializeBinaryToWriter = function(message, writer) {
     );
   }
   f = message.getSwapPublicationDeadline();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       4,
       f
     );
@@ -3000,16 +3000,16 @@ proto.looprpc.QuoteRequest.serializeBinaryToWriter = function(message, writer) {
 
 /**
  * optional int64 amt = 1;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.QuoteRequest.prototype.getAmt = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.QuoteRequest.prototype.setAmt = function(value) {
-  jspb.Message.setProto3IntField(this, 1, value);
+  jspb.Message.setProto3StringIntField(this, 1, value);
 };
 
 
@@ -3047,16 +3047,16 @@ proto.looprpc.QuoteRequest.prototype.setExternalHtlc = function(value) {
 
 /**
  * optional uint64 swap_publication_deadline = 4;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.QuoteRequest.prototype.getSwapPublicationDeadline = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 4, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 4, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.QuoteRequest.prototype.setSwapPublicationDeadline = function(value) {
-  jspb.Message.setProto3IntField(this, 4, value);
+  jspb.Message.setProto3StringIntField(this, 4, value);
 };
 
 
@@ -3107,8 +3107,8 @@ proto.looprpc.InQuoteResponse.prototype.toObject = function(opt_includeInstance)
  */
 proto.looprpc.InQuoteResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    swapFeeSat: jspb.Message.getFieldWithDefault(msg, 1, 0),
-    htlcPublishFeeSat: jspb.Message.getFieldWithDefault(msg, 3, 0),
+    swapFeeSat: jspb.Message.getFieldWithDefault(msg, 1, "0"),
+    htlcPublishFeeSat: jspb.Message.getFieldWithDefault(msg, 3, "0"),
     cltvDelta: jspb.Message.getFieldWithDefault(msg, 5, 0),
     confTarget: jspb.Message.getFieldWithDefault(msg, 6, 0)
   };
@@ -3148,11 +3148,11 @@ proto.looprpc.InQuoteResponse.deserializeBinaryFromReader = function(msg, reader
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {number} */ (reader.readInt64());
+      var value = /** @type {string} */ (reader.readInt64String());
       msg.setSwapFeeSat(value);
       break;
     case 3:
-      var value = /** @type {number} */ (reader.readInt64());
+      var value = /** @type {string} */ (reader.readInt64String());
       msg.setHtlcPublishFeeSat(value);
       break;
     case 5:
@@ -3193,15 +3193,15 @@ proto.looprpc.InQuoteResponse.prototype.serializeBinary = function() {
 proto.looprpc.InQuoteResponse.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getSwapFeeSat();
-  if (f !== 0) {
-    writer.writeInt64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
       1,
       f
     );
   }
   f = message.getHtlcPublishFeeSat();
-  if (f !== 0) {
-    writer.writeInt64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
       3,
       f
     );
@@ -3225,31 +3225,31 @@ proto.looprpc.InQuoteResponse.serializeBinaryToWriter = function(message, writer
 
 /**
  * optional int64 swap_fee_sat = 1;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.InQuoteResponse.prototype.getSwapFeeSat = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.InQuoteResponse.prototype.setSwapFeeSat = function(value) {
-  jspb.Message.setProto3IntField(this, 1, value);
+  jspb.Message.setProto3StringIntField(this, 1, value);
 };
 
 
 /**
  * optional int64 htlc_publish_fee_sat = 3;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.InQuoteResponse.prototype.getHtlcPublishFeeSat = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 3, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.InQuoteResponse.prototype.setHtlcPublishFeeSat = function(value) {
-  jspb.Message.setProto3IntField(this, 3, value);
+  jspb.Message.setProto3StringIntField(this, 3, value);
 };
 
 
@@ -3330,9 +3330,9 @@ proto.looprpc.OutQuoteResponse.prototype.toObject = function(opt_includeInstance
  */
 proto.looprpc.OutQuoteResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    swapFeeSat: jspb.Message.getFieldWithDefault(msg, 1, 0),
-    prepayAmtSat: jspb.Message.getFieldWithDefault(msg, 2, 0),
-    htlcSweepFeeSat: jspb.Message.getFieldWithDefault(msg, 3, 0),
+    swapFeeSat: jspb.Message.getFieldWithDefault(msg, 1, "0"),
+    prepayAmtSat: jspb.Message.getFieldWithDefault(msg, 2, "0"),
+    htlcSweepFeeSat: jspb.Message.getFieldWithDefault(msg, 3, "0"),
     swapPaymentDest: msg.getSwapPaymentDest_asB64(),
     cltvDelta: jspb.Message.getFieldWithDefault(msg, 5, 0),
     confTarget: jspb.Message.getFieldWithDefault(msg, 6, 0)
@@ -3373,15 +3373,15 @@ proto.looprpc.OutQuoteResponse.deserializeBinaryFromReader = function(msg, reade
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {number} */ (reader.readInt64());
+      var value = /** @type {string} */ (reader.readInt64String());
       msg.setSwapFeeSat(value);
       break;
     case 2:
-      var value = /** @type {number} */ (reader.readInt64());
+      var value = /** @type {string} */ (reader.readInt64String());
       msg.setPrepayAmtSat(value);
       break;
     case 3:
-      var value = /** @type {number} */ (reader.readInt64());
+      var value = /** @type {string} */ (reader.readInt64String());
       msg.setHtlcSweepFeeSat(value);
       break;
     case 4:
@@ -3426,22 +3426,22 @@ proto.looprpc.OutQuoteResponse.prototype.serializeBinary = function() {
 proto.looprpc.OutQuoteResponse.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getSwapFeeSat();
-  if (f !== 0) {
-    writer.writeInt64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
       1,
       f
     );
   }
   f = message.getPrepayAmtSat();
-  if (f !== 0) {
-    writer.writeInt64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
       2,
       f
     );
   }
   f = message.getHtlcSweepFeeSat();
-  if (f !== 0) {
-    writer.writeInt64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
       3,
       f
     );
@@ -3472,46 +3472,46 @@ proto.looprpc.OutQuoteResponse.serializeBinaryToWriter = function(message, write
 
 /**
  * optional int64 swap_fee_sat = 1;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.OutQuoteResponse.prototype.getSwapFeeSat = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.OutQuoteResponse.prototype.setSwapFeeSat = function(value) {
-  jspb.Message.setProto3IntField(this, 1, value);
+  jspb.Message.setProto3StringIntField(this, 1, value);
 };
 
 
 /**
  * optional int64 prepay_amt_sat = 2;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.OutQuoteResponse.prototype.getPrepayAmtSat = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.OutQuoteResponse.prototype.setPrepayAmtSat = function(value) {
-  jspb.Message.setProto3IntField(this, 2, value);
+  jspb.Message.setProto3StringIntField(this, 2, value);
 };
 
 
 /**
  * optional int64 htlc_sweep_fee_sat = 3;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.OutQuoteResponse.prototype.getHtlcSweepFeeSat = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 3, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.OutQuoteResponse.prototype.setHtlcSweepFeeSat = function(value) {
-  jspb.Message.setProto3IntField(this, 3, value);
+  jspb.Message.setProto3StringIntField(this, 3, value);
 };
 
 
@@ -3918,9 +3918,9 @@ proto.looprpc.LsatToken.toObject = function(includeInstance, msg) {
     baseMacaroon: msg.getBaseMacaroon_asB64(),
     paymentHash: msg.getPaymentHash_asB64(),
     paymentPreimage: msg.getPaymentPreimage_asB64(),
-    amountPaidMsat: jspb.Message.getFieldWithDefault(msg, 4, 0),
-    routingFeePaidMsat: jspb.Message.getFieldWithDefault(msg, 5, 0),
-    timeCreated: jspb.Message.getFieldWithDefault(msg, 6, 0),
+    amountPaidMsat: jspb.Message.getFieldWithDefault(msg, 4, "0"),
+    routingFeePaidMsat: jspb.Message.getFieldWithDefault(msg, 5, "0"),
+    timeCreated: jspb.Message.getFieldWithDefault(msg, 6, "0"),
     expired: jspb.Message.getFieldWithDefault(msg, 7, false),
     storageName: jspb.Message.getFieldWithDefault(msg, 8, "")
   };
@@ -3972,15 +3972,15 @@ proto.looprpc.LsatToken.deserializeBinaryFromReader = function(msg, reader) {
       msg.setPaymentPreimage(value);
       break;
     case 4:
-      var value = /** @type {number} */ (reader.readInt64());
+      var value = /** @type {string} */ (reader.readInt64String());
       msg.setAmountPaidMsat(value);
       break;
     case 5:
-      var value = /** @type {number} */ (reader.readInt64());
+      var value = /** @type {string} */ (reader.readInt64String());
       msg.setRoutingFeePaidMsat(value);
       break;
     case 6:
-      var value = /** @type {number} */ (reader.readInt64());
+      var value = /** @type {string} */ (reader.readInt64String());
       msg.setTimeCreated(value);
       break;
     case 7:
@@ -4042,22 +4042,22 @@ proto.looprpc.LsatToken.serializeBinaryToWriter = function(message, writer) {
     );
   }
   f = message.getAmountPaidMsat();
-  if (f !== 0) {
-    writer.writeInt64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
       4,
       f
     );
   }
   f = message.getRoutingFeePaidMsat();
-  if (f !== 0) {
-    writer.writeInt64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
       5,
       f
     );
   }
   f = message.getTimeCreated();
-  if (f !== 0) {
-    writer.writeInt64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
       6,
       f
     );
@@ -4198,46 +4198,46 @@ proto.looprpc.LsatToken.prototype.setPaymentPreimage = function(value) {
 
 /**
  * optional int64 amount_paid_msat = 4;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.LsatToken.prototype.getAmountPaidMsat = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 4, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 4, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.LsatToken.prototype.setAmountPaidMsat = function(value) {
-  jspb.Message.setProto3IntField(this, 4, value);
+  jspb.Message.setProto3StringIntField(this, 4, value);
 };
 
 
 /**
  * optional int64 routing_fee_paid_msat = 5;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.LsatToken.prototype.getRoutingFeePaidMsat = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 5, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.LsatToken.prototype.setRoutingFeePaidMsat = function(value) {
-  jspb.Message.setProto3IntField(this, 5, value);
+  jspb.Message.setProto3StringIntField(this, 5, value);
 };
 
 
 /**
  * optional int64 time_created = 6;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.LsatToken.prototype.getTimeCreated = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 6, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 6, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.LsatToken.prototype.setTimeCreated = function(value) {
-  jspb.Message.setProto3IntField(this, 6, value);
+  jspb.Message.setProto3StringIntField(this, 6, value);
 };
 
 
@@ -4445,21 +4445,21 @@ proto.looprpc.LiquidityParameters.toObject = function(includeInstance, msg) {
   var f, obj = {
     rulesList: jspb.Message.toObjectList(msg.getRulesList(),
     proto.looprpc.LiquidityRule.toObject, includeInstance),
-    feePpm: jspb.Message.getFieldWithDefault(msg, 16, 0),
-    sweepFeeRateSatPerVbyte: jspb.Message.getFieldWithDefault(msg, 2, 0),
-    maxSwapFeePpm: jspb.Message.getFieldWithDefault(msg, 3, 0),
-    maxRoutingFeePpm: jspb.Message.getFieldWithDefault(msg, 4, 0),
-    maxPrepayRoutingFeePpm: jspb.Message.getFieldWithDefault(msg, 5, 0),
-    maxPrepaySat: jspb.Message.getFieldWithDefault(msg, 6, 0),
-    maxMinerFeeSat: jspb.Message.getFieldWithDefault(msg, 7, 0),
+    feePpm: jspb.Message.getFieldWithDefault(msg, 16, "0"),
+    sweepFeeRateSatPerVbyte: jspb.Message.getFieldWithDefault(msg, 2, "0"),
+    maxSwapFeePpm: jspb.Message.getFieldWithDefault(msg, 3, "0"),
+    maxRoutingFeePpm: jspb.Message.getFieldWithDefault(msg, 4, "0"),
+    maxPrepayRoutingFeePpm: jspb.Message.getFieldWithDefault(msg, 5, "0"),
+    maxPrepaySat: jspb.Message.getFieldWithDefault(msg, 6, "0"),
+    maxMinerFeeSat: jspb.Message.getFieldWithDefault(msg, 7, "0"),
     sweepConfTarget: jspb.Message.getFieldWithDefault(msg, 8, 0),
-    failureBackoffSec: jspb.Message.getFieldWithDefault(msg, 9, 0),
+    failureBackoffSec: jspb.Message.getFieldWithDefault(msg, 9, "0"),
     autoloop: jspb.Message.getFieldWithDefault(msg, 10, false),
-    autoloopBudgetSat: jspb.Message.getFieldWithDefault(msg, 11, 0),
-    autoloopBudgetStartSec: jspb.Message.getFieldWithDefault(msg, 12, 0),
-    autoMaxInFlight: jspb.Message.getFieldWithDefault(msg, 13, 0),
-    minSwapAmount: jspb.Message.getFieldWithDefault(msg, 14, 0),
-    maxSwapAmount: jspb.Message.getFieldWithDefault(msg, 15, 0)
+    autoloopBudgetSat: jspb.Message.getFieldWithDefault(msg, 11, "0"),
+    autoloopBudgetStartSec: jspb.Message.getFieldWithDefault(msg, 12, "0"),
+    autoMaxInFlight: jspb.Message.getFieldWithDefault(msg, 13, "0"),
+    minSwapAmount: jspb.Message.getFieldWithDefault(msg, 14, "0"),
+    maxSwapAmount: jspb.Message.getFieldWithDefault(msg, 15, "0")
   };
 
   if (includeInstance) {
@@ -4502,31 +4502,31 @@ proto.looprpc.LiquidityParameters.deserializeBinaryFromReader = function(msg, re
       msg.addRules(value);
       break;
     case 16:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setFeePpm(value);
       break;
     case 2:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setSweepFeeRateSatPerVbyte(value);
       break;
     case 3:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setMaxSwapFeePpm(value);
       break;
     case 4:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setMaxRoutingFeePpm(value);
       break;
     case 5:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setMaxPrepayRoutingFeePpm(value);
       break;
     case 6:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setMaxPrepaySat(value);
       break;
     case 7:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setMaxMinerFeeSat(value);
       break;
     case 8:
@@ -4534,7 +4534,7 @@ proto.looprpc.LiquidityParameters.deserializeBinaryFromReader = function(msg, re
       msg.setSweepConfTarget(value);
       break;
     case 9:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setFailureBackoffSec(value);
       break;
     case 10:
@@ -4542,23 +4542,23 @@ proto.looprpc.LiquidityParameters.deserializeBinaryFromReader = function(msg, re
       msg.setAutoloop(value);
       break;
     case 11:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setAutoloopBudgetSat(value);
       break;
     case 12:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setAutoloopBudgetStartSec(value);
       break;
     case 13:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setAutoMaxInFlight(value);
       break;
     case 14:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setMinSwapAmount(value);
       break;
     case 15:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setMaxSwapAmount(value);
       break;
     default:
@@ -4599,50 +4599,50 @@ proto.looprpc.LiquidityParameters.serializeBinaryToWriter = function(message, wr
     );
   }
   f = message.getFeePpm();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       16,
       f
     );
   }
   f = message.getSweepFeeRateSatPerVbyte();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       2,
       f
     );
   }
   f = message.getMaxSwapFeePpm();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       3,
       f
     );
   }
   f = message.getMaxRoutingFeePpm();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       4,
       f
     );
   }
   f = message.getMaxPrepayRoutingFeePpm();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       5,
       f
     );
   }
   f = message.getMaxPrepaySat();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       6,
       f
     );
   }
   f = message.getMaxMinerFeeSat();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       7,
       f
     );
@@ -4655,8 +4655,8 @@ proto.looprpc.LiquidityParameters.serializeBinaryToWriter = function(message, wr
     );
   }
   f = message.getFailureBackoffSec();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       9,
       f
     );
@@ -4669,36 +4669,36 @@ proto.looprpc.LiquidityParameters.serializeBinaryToWriter = function(message, wr
     );
   }
   f = message.getAutoloopBudgetSat();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       11,
       f
     );
   }
   f = message.getAutoloopBudgetStartSec();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       12,
       f
     );
   }
   f = message.getAutoMaxInFlight();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       13,
       f
     );
   }
   f = message.getMinSwapAmount();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       14,
       f
     );
   }
   f = message.getMaxSwapAmount();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       15,
       f
     );
@@ -4739,106 +4739,106 @@ proto.looprpc.LiquidityParameters.prototype.clearRulesList = function() {
 
 /**
  * optional uint64 fee_ppm = 16;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.LiquidityParameters.prototype.getFeePpm = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 16, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 16, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.LiquidityParameters.prototype.setFeePpm = function(value) {
-  jspb.Message.setProto3IntField(this, 16, value);
+  jspb.Message.setProto3StringIntField(this, 16, value);
 };
 
 
 /**
  * optional uint64 sweep_fee_rate_sat_per_vbyte = 2;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.LiquidityParameters.prototype.getSweepFeeRateSatPerVbyte = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.LiquidityParameters.prototype.setSweepFeeRateSatPerVbyte = function(value) {
-  jspb.Message.setProto3IntField(this, 2, value);
+  jspb.Message.setProto3StringIntField(this, 2, value);
 };
 
 
 /**
  * optional uint64 max_swap_fee_ppm = 3;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.LiquidityParameters.prototype.getMaxSwapFeePpm = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 3, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.LiquidityParameters.prototype.setMaxSwapFeePpm = function(value) {
-  jspb.Message.setProto3IntField(this, 3, value);
+  jspb.Message.setProto3StringIntField(this, 3, value);
 };
 
 
 /**
  * optional uint64 max_routing_fee_ppm = 4;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.LiquidityParameters.prototype.getMaxRoutingFeePpm = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 4, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 4, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.LiquidityParameters.prototype.setMaxRoutingFeePpm = function(value) {
-  jspb.Message.setProto3IntField(this, 4, value);
+  jspb.Message.setProto3StringIntField(this, 4, value);
 };
 
 
 /**
  * optional uint64 max_prepay_routing_fee_ppm = 5;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.LiquidityParameters.prototype.getMaxPrepayRoutingFeePpm = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 5, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.LiquidityParameters.prototype.setMaxPrepayRoutingFeePpm = function(value) {
-  jspb.Message.setProto3IntField(this, 5, value);
+  jspb.Message.setProto3StringIntField(this, 5, value);
 };
 
 
 /**
  * optional uint64 max_prepay_sat = 6;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.LiquidityParameters.prototype.getMaxPrepaySat = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 6, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 6, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.LiquidityParameters.prototype.setMaxPrepaySat = function(value) {
-  jspb.Message.setProto3IntField(this, 6, value);
+  jspb.Message.setProto3StringIntField(this, 6, value);
 };
 
 
 /**
  * optional uint64 max_miner_fee_sat = 7;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.LiquidityParameters.prototype.getMaxMinerFeeSat = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 7, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 7, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.LiquidityParameters.prototype.setMaxMinerFeeSat = function(value) {
-  jspb.Message.setProto3IntField(this, 7, value);
+  jspb.Message.setProto3StringIntField(this, 7, value);
 };
 
 
@@ -4859,16 +4859,16 @@ proto.looprpc.LiquidityParameters.prototype.setSweepConfTarget = function(value)
 
 /**
  * optional uint64 failure_backoff_sec = 9;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.LiquidityParameters.prototype.getFailureBackoffSec = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 9, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 9, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.LiquidityParameters.prototype.setFailureBackoffSec = function(value) {
-  jspb.Message.setProto3IntField(this, 9, value);
+  jspb.Message.setProto3StringIntField(this, 9, value);
 };
 
 
@@ -4891,76 +4891,76 @@ proto.looprpc.LiquidityParameters.prototype.setAutoloop = function(value) {
 
 /**
  * optional uint64 autoloop_budget_sat = 11;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.LiquidityParameters.prototype.getAutoloopBudgetSat = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 11, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 11, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.LiquidityParameters.prototype.setAutoloopBudgetSat = function(value) {
-  jspb.Message.setProto3IntField(this, 11, value);
+  jspb.Message.setProto3StringIntField(this, 11, value);
 };
 
 
 /**
  * optional uint64 autoloop_budget_start_sec = 12;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.LiquidityParameters.prototype.getAutoloopBudgetStartSec = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 12, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 12, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.LiquidityParameters.prototype.setAutoloopBudgetStartSec = function(value) {
-  jspb.Message.setProto3IntField(this, 12, value);
+  jspb.Message.setProto3StringIntField(this, 12, value);
 };
 
 
 /**
  * optional uint64 auto_max_in_flight = 13;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.LiquidityParameters.prototype.getAutoMaxInFlight = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 13, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 13, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.LiquidityParameters.prototype.setAutoMaxInFlight = function(value) {
-  jspb.Message.setProto3IntField(this, 13, value);
+  jspb.Message.setProto3StringIntField(this, 13, value);
 };
 
 
 /**
  * optional uint64 min_swap_amount = 14;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.LiquidityParameters.prototype.getMinSwapAmount = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 14, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 14, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.LiquidityParameters.prototype.setMinSwapAmount = function(value) {
-  jspb.Message.setProto3IntField(this, 14, value);
+  jspb.Message.setProto3StringIntField(this, 14, value);
 };
 
 
 /**
  * optional uint64 max_swap_amount = 15;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.LiquidityParameters.prototype.getMaxSwapAmount = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 15, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 15, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.LiquidityParameters.prototype.setMaxSwapAmount = function(value) {
-  jspb.Message.setProto3IntField(this, 15, value);
+  jspb.Message.setProto3StringIntField(this, 15, value);
 };
 
 
@@ -5011,7 +5011,7 @@ proto.looprpc.LiquidityRule.prototype.toObject = function(opt_includeInstance) {
  */
 proto.looprpc.LiquidityRule.toObject = function(includeInstance, msg) {
   var f, obj = {
-    channelId: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    channelId: jspb.Message.getFieldWithDefault(msg, 1, "0"),
     pubkey: msg.getPubkey_asB64(),
     type: jspb.Message.getFieldWithDefault(msg, 2, 0),
     incomingThreshold: jspb.Message.getFieldWithDefault(msg, 3, 0),
@@ -5053,7 +5053,7 @@ proto.looprpc.LiquidityRule.deserializeBinaryFromReader = function(msg, reader) 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setChannelId(value);
       break;
     case 5:
@@ -5102,8 +5102,8 @@ proto.looprpc.LiquidityRule.prototype.serializeBinary = function() {
 proto.looprpc.LiquidityRule.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getChannelId();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       1,
       f
     );
@@ -5141,16 +5141,16 @@ proto.looprpc.LiquidityRule.serializeBinaryToWriter = function(message, writer) 
 
 /**
  * optional uint64 channel_id = 1;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.LiquidityRule.prototype.getChannelId = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.LiquidityRule.prototype.setChannelId = function(value) {
-  jspb.Message.setProto3IntField(this, 1, value);
+  jspb.Message.setProto3StringIntField(this, 1, value);
 };
 
 

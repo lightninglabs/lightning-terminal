@@ -48,7 +48,7 @@ message ReserveAccountRequest {
     /*
     The desired value of the account in satoshis.
     */
-    uint64 account_value = 1;
+    uint64 account_value = 1 [jstype = JS_STRING];
 
     /*
     The block height at which the account should expire.
@@ -94,7 +94,7 @@ message ServerInitAccountRequest {
     The value of the account in satoshis. Must match the amount of the
     account_point output.
     */
-    uint64 account_value = 3;
+    uint64 account_value = 3 [jstype = JS_STRING];
 
     /*
     The block height at which the account should expire.
@@ -519,13 +519,13 @@ message OrderMatchPrepare {
     Fee rate of the batch transaction, expressed in satoshis per 1000 weight
     units (sat/kW).
     */
-    uint64 fee_rate_sat_per_kw = 6;
+    uint64 fee_rate_sat_per_kw = 6 [jstype = JS_STRING];
 
     /*
     Fee rebate in satoshis, offered if another batch participant wants to pay
     more fees for a faster confirmation.
     */
-    uint64 fee_rebate_sat = 7;
+    uint64 fee_rebate_sat = 7 [jstype = JS_STRING];
 
     /*
     The 32 byte unique identifier of this batch.
@@ -666,7 +666,7 @@ message AuctionAccount {
     The value of the account in satoshis. Must match the amount of the
     account_point output.
     */
-    uint64 value = 1;
+    uint64 value = 1 [jstype = JS_STRING];
 
     /*
     The block height at which the account should expire.
@@ -760,7 +760,7 @@ message AccountDiff {
     /*
     The final balance of the account after the executed batch.
     */
-    uint64 ending_balance = 1;
+    uint64 ending_balance = 1 [jstype = JS_STRING];
 
     /*
     Depending on the amount of the final balance of the account, the remainder
@@ -797,9 +797,9 @@ message ServerOrder {
     /*
     Order amount in satoshis.
     */
-    uint64 amt = 3;
+    uint64 amt = 3 [jstype = JS_STRING];
 
-    uint64 min_chan_amt = 4;
+    uint64 min_chan_amt = 4 [jstype = JS_STRING];
 
     // TODO(guggero): implement
     // repeated bytes must_fill_pub = 5;
@@ -836,7 +836,7 @@ message ServerOrder {
 
     /*
     // TODO(guggero): implement
-    int64 min_node_score = 11;
+    int64 min_node_score = 11 [jstype = JS_STRING];
     */
     reserved 11;
 
@@ -849,7 +849,7 @@ message ServerOrder {
     Maximum fee rate the trader is willing to pay for the batch transaction,
     expressed in satoshis per 1000 weight units (sat/kW).
     */
-    uint64 max_batch_fee_rate_sat_per_kw = 13;
+    uint64 max_batch_fee_rate_sat_per_kw = 13 [jstype = JS_STRING];
 }
 
 enum NodeTier {
@@ -905,7 +905,7 @@ message ServerBid {
     as the order amount and the min_chan_amt must be set to the full order
     amount.
     */
-    uint64 self_chan_balance = 6;
+    uint64 self_chan_balance = 6 [jstype = JS_STRING];
 
     /*
     If this bid order is meant to lease a channel for another node (which is
@@ -960,7 +960,7 @@ message ServerInput {
 
 message ServerOutput {
     // The value, in satoshis, of the output.
-    uint64 value = 1;
+    uint64 value = 1 [jstype = JS_STRING];
 
     // The script of the output to send the value to.
     bytes script = 2;
@@ -988,7 +988,7 @@ message ServerModifyAccountRequest {
 
     message NewAccountParameters {
         // The new value of the account.
-        uint64 value = 1;
+        uint64 value = 1 [jstype = JS_STRING];
 
         // The new expiry of the account as an absolute height.
         uint32 expiry = 2;
@@ -1067,7 +1067,7 @@ message TermsResponse {
     /*
     The maximum account size in satoshis currently allowed by the auctioneer.
     */
-    uint64 max_account_value = 1;
+    uint64 max_account_value = 1 [jstype = JS_STRING];
 
     /*
     Deprecated, use explicit order duration from lease_duration_buckets.
@@ -1091,13 +1091,13 @@ message TermsResponse {
     The fee rate, in satoshis per kiloweight, estimated to use for the next
     batch.
     */
-    uint64 next_batch_fee_rate_sat_per_kw = 6;
+    uint64 next_batch_fee_rate_sat_per_kw = 6 [jstype = JS_STRING];
 
     /*
     The absolute unix timestamp at which the auctioneer will attempt to clear
     the next batch.
     */
-    uint64 next_batch_clear_timestamp = 7;
+    uint64 next_batch_clear_timestamp = 7 [jstype = JS_STRING];
 
     /*
     The set of lease durations the market is currently accepting and the state
@@ -1150,10 +1150,10 @@ message RelevantBatch {
     Fee rate of the batch transaction, expressed in satoshis per 1000 weight
     units (sat/kW).
     */
-    uint64 fee_rate_sat_per_kw = 8;
+    uint64 fee_rate_sat_per_kw = 8 [jstype = JS_STRING];
 
     // The unix timestamp in nanoseconds the batch was made.
-    uint64 creation_timestamp_ns = 9;
+    uint64 creation_timestamp_ns = 9 [jstype = JS_STRING];
 
     /*
     Maps the distinct lease duration markets to the orders that were matched
@@ -1166,12 +1166,12 @@ message ExecutionFee {
     /*
     The base fee in satoshis charged per order, regardless of the matched size.
     */
-    uint64 base_fee = 1;
+    uint64 base_fee = 1 [jstype = JS_STRING];
 
     /*
     The fee rate in parts per million.
     */
-    uint64 fee_rate = 2;
+    uint64 fee_rate = 2 [jstype = JS_STRING];
 }
 
 message NodeAddress {
@@ -1228,7 +1228,7 @@ message MatchedOrderSnapshot {
     uint32 matching_rate = 3;
 
     // The total number of satoshis that were bought.
-    uint64 total_sats_cleared = 4;
+    uint64 total_sats_cleared = 4 [jstype = JS_STRING];
 
     // The total number of units that were matched.
     uint32 units_matched = 5;
@@ -1279,10 +1279,10 @@ message BatchSnapshotResponse {
     bytes batch_tx = 6;
 
     // The fee rate, in satoshis per kiloweight, of the batch transaction.
-    uint64 batch_tx_fee_rate_sat_per_kw = 8;
+    uint64 batch_tx_fee_rate_sat_per_kw = 8 [jstype = JS_STRING];
 
     // The unix timestamp in nanoseconds the batch was made.
-    uint64 creation_timestamp_ns = 9;
+    uint64 creation_timestamp_ns = 9 [jstype = JS_STRING];
 
     /*
     Maps the distinct lease duration markets to the orders that were matched

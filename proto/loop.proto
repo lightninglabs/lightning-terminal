@@ -146,7 +146,7 @@ message LoopOutRequest {
     /*
     Requested swap amount in sat. This does not include the swap and miner fee.
     */
-    int64 amt = 1;
+    int64 amt = 1 [jstype = JS_STRING];
 
     /*
     Base58 encoded destination address for the swap.
@@ -158,14 +158,14 @@ message LoopOutRequest {
     This limit is applied during path finding. Typically this value is taken
     from the response of the GetQuote call.
     */
-    int64 max_swap_routing_fee = 3;
+    int64 max_swap_routing_fee = 3 [jstype = JS_STRING];
 
     /*
     Maximum off-chain fee in sat that may be paid for the prepay to the server.
     This limit is applied during path finding. Typically this value is taken
     from the response of the GetQuote call.
     */
-    int64 max_prepay_routing_fee = 4;
+    int64 max_prepay_routing_fee = 4 [jstype = JS_STRING];
 
     /*
     Maximum we are willing to pay the server for the swap. This value is not
@@ -173,12 +173,12 @@ message LoopOutRequest {
     higher fee, we abort the swap. Typically this value is taken from the
     response of the GetQuote call. It includes the prepay amount.
     */
-    int64 max_swap_fee = 5;
+    int64 max_swap_fee = 5 [jstype = JS_STRING];
 
     /*
     Maximum amount of the swap fee that may be charged as a prepayment.
     */
-    int64 max_prepay_amt = 6;
+    int64 max_prepay_amt = 6 [jstype = JS_STRING];
 
     /*
     Maximum in on-chain fees that we are willing to spend. If we want to
@@ -196,21 +196,21 @@ message LoopOutRequest {
 
     max_miner_fee is typically taken from the response of the GetQuote call.
     */
-    int64 max_miner_fee = 7;
+    int64 max_miner_fee = 7 [jstype = JS_STRING];
 
     /*
     Deprecated, use outgoing_chan_set. The channel to loop out, the channel
     to loop out is selected based on the lowest routing fee for the swap
     payment to the server.
     */
-    uint64 loop_out_channel = 8 [deprecated = true];
+    uint64 loop_out_channel = 8 [deprecated = true, jstype = JS_STRING];
 
     /*
     A restriction on the channel set that may be used to loop out. The actual
     channel(s) that will be used are selected based on the lowest routing fee
     for the swap payment to the server.
     */
-    repeated uint64 outgoing_chan_set = 11;
+    repeated uint64 outgoing_chan_set = 11 [jstype = JS_STRING];
 
     /*
     The number of blocks from the on-chain HTLC's confirmation height that it
@@ -231,7 +231,7 @@ message LoopOutRequest {
     low-fee periods before publishing the HTLC, potentially resulting in a
     lower total swap fee.
     */
-    uint64 swap_publication_deadline = 10;
+    uint64 swap_publication_deadline = 10 [jstype = JS_STRING];
 
     /*
     An optional label for this swap. This field is limited to 500 characters
@@ -255,7 +255,7 @@ message LoopInRequest {
     Requested swap amount in sat. This does not include the swap and miner 
     fee.
     */
-    int64 amt = 1;
+    int64 amt = 1 [jstype = JS_STRING];
 
     /*
     Maximum we are willing to pay the server for the swap. This value is not
@@ -263,7 +263,7 @@ message LoopInRequest {
     higher fee, we abort the swap. Typically this value is taken from the
     response of the GetQuote call.
     */
-    int64 max_swap_fee = 2;
+    int64 max_swap_fee = 2 [jstype = JS_STRING];
 
     /*
     Maximum in on-chain fees that we are willing to spend. If we want to
@@ -272,7 +272,7 @@ message LoopInRequest {
 
     max_miner_fee is typically taken from the response of the GetQuote call.
     */
-    int64 max_miner_fee = 3;
+    int64 max_miner_fee = 3 [jstype = JS_STRING];
 
     /*
     The last hop to use for the loop in swap. If empty, the last hop is selected
@@ -358,7 +358,7 @@ message SwapStatus {
     Requested swap amount in sat. This does not include the swap and miner
     fee.
     */
-    int64 amt = 1;
+    int64 amt = 1 [jstype = JS_STRING];
 
     /*
     Swap identifier to track status in the update stream that is returned from
@@ -392,12 +392,12 @@ message SwapStatus {
     /*
     Initiation time of the swap.
     */
-    int64 initiation_time = 5;
+    int64 initiation_time = 5 [jstype = JS_STRING];
 
     /*
     Initiation time of the swap.
     */
-    int64 last_update_time = 6;
+    int64 last_update_time = 6 [jstype = JS_STRING];
 
     /*
     DEPRECATED:  This field stores the address of the onchain htlc.
@@ -417,13 +417,13 @@ message SwapStatus {
     string htlc_address_np2wsh = 13;
 
     // Swap server cost
-    int64 cost_server = 8;
+    int64 cost_server = 8 [jstype = JS_STRING];
 
     // On-chain transaction cost
-    int64 cost_onchain = 9;
+    int64 cost_onchain = 9 [jstype = JS_STRING];
 
     // Off-chain routing fees
-    int64 cost_offchain = 10;
+    int64 cost_offchain = 10 [jstype = JS_STRING];
 
     // An optional label given to the swap on creation.
     string label = 15;
@@ -554,12 +554,12 @@ message InTermsResponse {
     /*
     Minimum swap amount (sat)
     */
-    int64 min_swap_amount = 5;
+    int64 min_swap_amount = 5 [jstype = JS_STRING];
 
     /*
     Maximum swap amount (sat)
     */
-    int64 max_swap_amount = 6;
+    int64 max_swap_amount = 6 [jstype = JS_STRING];
 }
 
 message OutTermsResponse {
@@ -569,12 +569,12 @@ message OutTermsResponse {
     /*
     Minimum swap amount (sat)
     */
-    int64 min_swap_amount = 5;
+    int64 min_swap_amount = 5 [jstype = JS_STRING];
 
     /*
     Maximum swap amount (sat)
     */
-    int64 max_swap_amount = 6;
+    int64 max_swap_amount = 6 [jstype = JS_STRING];
 
     // The minimally accepted cltv delta of the on-chain htlc.
     int32 min_cltv_delta = 8;
@@ -587,7 +587,7 @@ message QuoteRequest {
     /*
     The amount to swap in satoshis.
     */
-    int64 amt = 1;
+    int64 amt = 1 [jstype = JS_STRING];
 
     /*
     The confirmation target that should be used either for the sweep of the
@@ -610,7 +610,7 @@ message QuoteRequest {
     low-fee periods before publishing the HTLC, potentially resulting in a
     lower total swap fee. This only has an effect on loop out quotes.
     */
-    uint64 swap_publication_deadline = 4;
+    uint64 swap_publication_deadline = 4 [jstype = JS_STRING];
 }
 
 message InQuoteResponse {
@@ -619,7 +619,7 @@ message InQuoteResponse {
     /*
     The fee that the swap server is charging for the swap.
     */
-    int64 swap_fee_sat = 1;
+    int64 swap_fee_sat = 1 [jstype = JS_STRING];
 
     /*
     An estimate of the on-chain fee that needs to be paid to publish the HTLC
@@ -629,7 +629,7 @@ message InQuoteResponse {
     create a sample estimation transaction because not enough funds are
     available. An information message should be shown to the user in this case.
     */
-    int64 htlc_publish_fee_sat = 3;
+    int64 htlc_publish_fee_sat = 3 [jstype = JS_STRING];
 
     /*
     On-chain cltv expiry delta
@@ -646,18 +646,18 @@ message OutQuoteResponse {
     /*
     The fee that the swap server is charging for the swap.
     */
-    int64 swap_fee_sat = 1;
+    int64 swap_fee_sat = 1 [jstype = JS_STRING];
 
     /*
     The part of the swap fee that is requested as a prepayment.
     */
-    int64 prepay_amt_sat = 2;
+    int64 prepay_amt_sat = 2 [jstype = JS_STRING];
 
     /*
     An estimate of the on-chain fee that needs to be paid to sweep the HTLC for
     a loop out.
     */
-    int64 htlc_sweep_fee_sat = 3;
+    int64 htlc_sweep_fee_sat = 3 [jstype = JS_STRING];
 
     /*
     The node pubkey where the swap payment needs to be paid
@@ -707,17 +707,17 @@ message LsatToken {
     /*
     The amount of millisatoshis that was paid to get the token.
     */
-    int64 amount_paid_msat = 4;
+    int64 amount_paid_msat = 4 [jstype = JS_STRING];
 
     /*
     The amount of millisatoshis paid in routing fee to pay for the token.
     */
-    int64 routing_fee_paid_msat = 5;
+    int64 routing_fee_paid_msat = 5 [jstype = JS_STRING];
 
     /*
     The creation time of the token as UNIX timestamp in seconds.
     */
-    int64 time_created = 6;
+    int64 time_created = 6 [jstype = JS_STRING];
 
     /*
     Indicates whether the token is expired or still valid.
@@ -746,37 +746,37 @@ message LiquidityParameters {
     conjunction with sweep fee rate, swap fee ppm, routing fee ppm, prepay
     routing, max prepay and max miner fee.
     */
-    uint64 fee_ppm = 16;
+    uint64 fee_ppm = 16 [jstype = JS_STRING];
 
     /*
     The limit we place on our estimated sweep cost for a swap in sat/vByte. If
     the estimated fee for our sweep transaction within the specified
     confirmation target is above this value, we will not suggest any swaps.
     */
-    uint64 sweep_fee_rate_sat_per_vbyte = 2;
+    uint64 sweep_fee_rate_sat_per_vbyte = 2 [jstype = JS_STRING];
 
     /*
     The maximum fee paid to the server for facilitating the swap, expressed
     as parts per million of the swap volume.
     */
-    uint64 max_swap_fee_ppm = 3;
+    uint64 max_swap_fee_ppm = 3 [jstype = JS_STRING];
 
     /*
     The maximum fee paid to route the swap invoice off chain, expressed as
     parts per million of the volume being routed.
     */
-    uint64 max_routing_fee_ppm = 4;
+    uint64 max_routing_fee_ppm = 4 [jstype = JS_STRING];
 
     /*
     The maximum fee paid to route the prepay invoice off chain, expressed as
     parts per million of the volume being routed.
     */
-    uint64 max_prepay_routing_fee_ppm = 5;
+    uint64 max_prepay_routing_fee_ppm = 5 [jstype = JS_STRING];
 
     /*
     The maximum no-show penalty in satoshis paid for a swap.
     */
-    uint64 max_prepay_sat = 6;
+    uint64 max_prepay_sat = 6 [jstype = JS_STRING];
 
     /*
     The maximum miner fee we will pay to sweep the swap on chain. Note that we
@@ -785,7 +785,7 @@ message LiquidityParameters {
     this value is only a cap placed on the amount we spend on fees in the case
     where the swap needs to be claimed on chain, but fees have suddenly spiked.
     */
-    uint64 max_miner_fee_sat = 7;
+    uint64 max_miner_fee_sat = 7 [jstype = JS_STRING];
 
     /*
     The number of blocks from the on-chain HTLC's confirmation height that it
@@ -798,7 +798,7 @@ message LiquidityParameters {
     swap due to off chain payment failure until it will be considered for swap
     suggestions again, expressed in seconds.
     */
-    uint64 failure_backoff_sec = 9;
+    uint64 failure_backoff_sec = 9 [jstype = JS_STRING];
 
     /*
     Set to true to enable automatic dispatch of swaps. All swaps will be limited 
@@ -811,7 +811,7 @@ message LiquidityParameters {
     The total budget for automatically dispatched swaps since the budget start
     time, expressed in satoshis.
     */
-    uint64 autoloop_budget_sat = 11;
+    uint64 autoloop_budget_sat = 11 [jstype = JS_STRING];
 
     /*
     The start time for autoloop budget, expressed as a unix timestamp in
@@ -819,27 +819,27 @@ message LiquidityParameters {
     automatically dispatched swaps. Swaps that were completed before this date
     will not be included in budget calculations.
     */
-    uint64 autoloop_budget_start_sec = 12;
+    uint64 autoloop_budget_start_sec = 12 [jstype = JS_STRING];
 
     /*
     The maximum number of automatically dispatched swaps that we allow to be in
     flight at any point in time.
     */
-    uint64 auto_max_in_flight = 13;
+    uint64 auto_max_in_flight = 13 [jstype = JS_STRING];
 
     /*
     The minimum amount, expressed in satoshis, that the autoloop client will
     dispatch a swap for. This value is subject to the server-side limits
     specified by the LoopOutTerms endpoint.
     */
-    uint64 min_swap_amount = 14;
+    uint64 min_swap_amount = 14 [jstype = JS_STRING];
 
     /*
     The maximum amount, expressed in satoshis, that the autoloop client will
     dispatch a swap for. This value is subject to the server-side limits
     specified by the LoopOutTerms endpoint.
     */
-    uint64 max_swap_amount = 15;
+    uint64 max_swap_amount = 15 [jstype = JS_STRING];
 }
 
 enum LiquidityRuleType {
@@ -852,7 +852,7 @@ message LiquidityRule {
     The short channel ID of the channel that this rule should be applied to.
     This field may not be set when the pubkey field is set.
     */
-    uint64 channel_id = 1;
+    uint64 channel_id = 1 [jstype = JS_STRING];
 
     /* 
     The public key of the peer that this rule should be applied to. This field
