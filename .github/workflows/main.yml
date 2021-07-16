@@ -147,9 +147,6 @@ jobs:
             lnd-${{ runner.os }}-download-${{ hashFiles('**/install_protoc.sh') }}
             lnd-${{ runner.os }}-download-
 
-      - name: install protoc and protobuf libraries
-        run: ./scripts/install_protoc.sh
-
       - name: get yarn cache dir
         id: yarn-cache-dir
         run: echo "::set-output name=dir::$(yarn cache dir)"

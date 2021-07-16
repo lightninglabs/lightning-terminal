@@ -76,18 +76,13 @@ Terminal are updated.
 
 To compile the proto files into JS/TS code, follow the following steps:
 
-1. Install `protoc` **v3.4.0** if you do not already have it installed. Follow the
-   instructions in
-   [this guide](https://github.com/lightningnetwork/lnd/tree/master/lnrpc#generate-protobuf-definitions).
-   Be sure to install the specific **v3.4.0** version of `protoc`. Newer versions will not
-   work properly.
-   
-   > Note: if you are running on a Mac, you only need to perform step 1
-1. Run the following command to download the proto files from each repo and compile the
-   JS/TS code using the updated protos.
-   ```shell script
-   $ cd app
-   $ yarn protos
+1. Install `docker` if you do not already have it installed. Follow the
+   instructions in [this guide](https://docs.docker.com/get-docker/).
+
+1. Run the following command to download the proto files from each repo and
+   compile the JS/TS code using the updated protos.
+   ```shell
+   $ make protos
    ```
 1. Fix any typing, linting, or unit test failures introduced by the update. Run the
    commands below to find and fix these errors in the app code.

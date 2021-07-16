@@ -193,7 +193,7 @@ list:
 
 protos:
 	@$(call print, "Compiling protos.")
-	cd ./app; yarn protos
+	cd proto; ./gen_protos_docker.sh
 
 protos-check: protos
 	@$(call print, "Verifying compiled protos.")
