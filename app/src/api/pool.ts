@@ -1,6 +1,7 @@
 import * as AUCT from 'types/generated/auctioneerrpc/auctioneer_pb';
 import * as POOL from 'types/generated/trader_pb';
 import { Trader } from 'types/generated/trader_pb_service';
+import Big from 'big.js';
 import { b64 } from 'util/strings';
 import { OrderType, Tier } from 'store/models/order';
 import BaseApi from './base';
@@ -43,11 +44,11 @@ class PoolApi extends BaseApi<PoolEvents> {
    * call the pool `QuoteAccount` RPC and return the response
    */
   async quoteAccount(
-    amount: number,
+    amount: Big,
     confTarget: number,
   ): Promise<POOL.QuoteAccountResponse.AsObject> {
     const req = new POOL.QuoteAccountRequest();
-    req.setAccountValue(amount);
+    req.setAccountValue(amount.toString());
     req.setConfTarget(confTarget);
     const res = await this._grpc.request(Trader.QuoteAccount, req, this._meta);
     return res.toObject();
@@ -57,12 +58,12 @@ class PoolApi extends BaseApi<PoolEvents> {
    * call the pool `InitAccount` RPC and return the response
    */
   async initAccount(
-    amount: number,
+    amount: Big,
     expiryBlocks: number,
     confTarget = 6,
   ): Promise<POOL.Account.AsObject> {
     const req = new POOL.InitAccountRequest();
-    req.setAccountValue(amount);
+    req.setAccountValue(amount.toString());
     req.setRelativeHeight(expiryBlocks);
     req.setConfTarget(confTarget);
     req.setInitiator(POOL_INITIATOR);
@@ -76,12 +77,12 @@ class PoolApi extends BaseApi<PoolEvents> {
   async renewAccount(
     traderKey: string,
     expiryBlocks: number,
-    feeRateSatPerKw: number,
+    feeRateSatPerKw: Big,
   ): Promise<POOL.RenewAccountResponse.AsObject> {
     const req = new POOL.RenewAccountRequest();
     req.setAccountKey(b64(traderKey));
     req.setRelativeExpiry(expiryBlocks);
-    req.setFeeRateSatPerKw(feeRateSatPerKw);
+    req.setFeeRateSatPerKw(feeRateSatPerKw.toString());
 
     const res = await this._grpc.request(Trader.RenewAccount, req, this._meta);
     return res.toObject();
@@ -99,7 +100,7 @@ class PoolApi extends BaseApi<PoolEvents> {
     req.setTraderKey(b64(traderKey));
 
     const output = new POOL.OutputWithFee();
-    output.setFeeRateSatPerKw(feeRateSatPerKw);
+    output.setFeeRateSatPerKw(feeRateSatPerKw.toString());
     if (destinationAddr) {
       output.setAddress(destinationAddr);
     }
@@ -123,13 +124,13 @@ class PoolApi extends BaseApi<PoolEvents> {
    */
   async deposit(
     traderKey: string,
-    amount: number,
+    amount: Big,
     feeRateSatPerKw = 253,
   ): Promise<POOL.DepositAccountResponse.AsObject> {
     const req = new POOL.DepositAccountRequest();
     req.setTraderKey(Buffer.from(traderKey, 'hex').toString('base64'));
-    req.setAmountSat(amount);
-    req.setFeeRateSatPerKw(feeRateSatPerKw);
+    req.setAmountSat(amount.toString());
+    req.setFeeRateSatPerKw(feeRateSatPerKw.toString());
     const res = await this._grpc.request(Trader.DepositAccount, req, this._meta);
     return res.toObject();
   }
@@ -139,14 +140,14 @@ class PoolApi extends BaseApi<PoolEvents> {
    */
   async withdraw(
     traderKey: string,
-    amount: number,
+    amount: Big,
     feeRateSatPerKw = 253,
   ): Promise<POOL.WithdrawAccountResponse.AsObject> {
     const req = new POOL.WithdrawAccountRequest();
     req.setTraderKey(Buffer.from(traderKey, 'hex').toString('base64'));
-    req.setFeeRateSatPerKw(feeRateSatPerKw);
+    req.setFeeRateSatPerKw(feeRateSatPerKw.toString());
     const output = new POOL.Output();
-    output.setValueSat(amount);
+    output.setValueSat(amount.toString());
     req.setOutputsList([output]);
     const res = await this._grpc.request(Trader.WithdrawAccount, req, this._meta);
     return res.toObject();
@@ -165,18 +166,18 @@ class PoolApi extends BaseApi<PoolEvents> {
    * call the pool `QuoteOrder` RPC and return the response
    */
   async quoteOrder(
-    amount: number,
+    amount: Big,
     rateFixed: number,
     duration: number,
     minUnitsMatch: number,
-    feeRateSatPerKw: number,
+    feeRateSatPerKw = 253,
   ): Promise<POOL.QuoteOrderResponse.AsObject> {
     const req = new POOL.QuoteOrderRequest();
-    req.setAmt(amount);
+    req.setAmt(amount.toString());
     req.setRateFixed(rateFixed);
     req.setLeaseDurationBlocks(duration);
     req.setMinUnitsMatch(minUnitsMatch);
-    req.setMaxBatchFeeRateSatPerKw(feeRateSatPerKw);
+    req.setMaxBatchFeeRateSatPerKw(feeRateSatPerKw.toString());
 
     const res = await this._grpc.request(Trader.QuoteOrder, req, this._meta);
     return res.toObject();
@@ -188,11 +189,11 @@ class PoolApi extends BaseApi<PoolEvents> {
   async submitOrder(
     traderKey: string,
     type: OrderType,
-    amount: number,
+    amount: Big,
     rateFixed: number,
     duration: number,
     minUnitsMatch: number,
-    feeRateSatPerKw: number,
+    feeRateSatPerKw = 253,
     minNodeTier?: Tier,
   ): Promise<POOL.SubmitOrderResponse.AsObject> {
     if (rateFixed < 1) {
@@ -204,10 +205,10 @@ class PoolApi extends BaseApi<PoolEvents> {
 
     const order = new POOL.Order();
     order.setTraderKey(b64(traderKey));
-    order.setAmt(amount);
+    order.setAmt(amount.toString());
     order.setRateFixed(rateFixed);
     order.setMinUnitsMatch(minUnitsMatch);
-    order.setMaxBatchFeeRateSatPerKw(feeRateSatPerKw);
+    order.setMaxBatchFeeRateSatPerKw(feeRateSatPerKw.toString());
 
     switch (type) {
       case OrderType.Bid:
@@ -324,36 +325,37 @@ class PoolApi extends BaseApi<PoolEvents> {
    * Converts from sats per kilo-weight to sats per vByte
    * @param satsPerVByte the number of sats per kilo-weight
    */
-  satsPerKWeightToVByte(satsPerKWeight: number) {
+  satsPerKWeightToVByte(satsPerKWeight: Big) {
     // convert to kilo-vbyte
-    const satsPerKVByte = satsPerKWeight * 4;
+    const satsPerKVByte = satsPerKWeight.mul(4);
     // convert to vbyte
-    return satsPerKVByte / 1000;
+    return satsPerKVByte.div(1000);
   }
 
   /**
    * Calculates the per block fixed rate given an amount and premium
    * @param amount the amount of the order
    * @param premium the premium being paid
+   * @param duration the lease duration in blocks
    */
-  calcFixedRate(amount: number, premium: number, duration: number) {
-    const ratePct = (premium * 100) / amount;
+  calcFixedRate(amount: Big, premium: Big, duration: number) {
+    const ratePct = premium.mul(100).div(amount);
     // rate = % / 100
     // rate = rateFixed / totalParts
     // rateFixed = rate * totalParts
-    const interestRate = ratePct / 100;
-    const rateFixedFloat = interestRate * FEE_RATE_TOTAL_PARTS;
+    const interestRate = ratePct.div(100);
+    const rateFixedFloat = interestRate.mul(FEE_RATE_TOTAL_PARTS);
     // We then take this rate fixed, and divide it by the number of blocks
     // as the user wants this rate to be the final lump sum they pay.
-    return Math.floor(rateFixedFloat / duration);
+    return +rateFixedFloat.div(duration).round(0, Big.roundDown);
   }
 
   /**
    * Calculates the percentage interest rate for a given fixed rate
    * @param fixedRate the per block fixed rate
    */
-  calcPctRate(fixedRate: number, duration: number) {
-    return (fixedRate * duration) / FEE_RATE_TOTAL_PARTS;
+  calcPctRate(fixedRate: Big, duration: Big) {
+    return +fixedRate.mul(duration).div(FEE_RATE_TOTAL_PARTS);
   }
 }
 

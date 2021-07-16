@@ -59,7 +59,7 @@ class LoopApi extends BaseApi<LoopEvents> {
     confTarget?: number,
   ): Promise<LOOP.InQuoteResponse.AsObject> {
     const req = new LOOP.QuoteRequest();
-    req.setAmt(+amount);
+    req.setAmt(amount.toString());
     if (confTarget) req.setConfTarget(confTarget);
     const res = await this._grpc.request(SwapClient.GetLoopInQuote, req, this._meta);
     return res.toObject();
@@ -73,7 +73,7 @@ class LoopApi extends BaseApi<LoopEvents> {
     confTarget?: number,
   ): Promise<LOOP.OutQuoteResponse.AsObject> {
     const req = new LOOP.QuoteRequest();
-    req.setAmt(+amount);
+    req.setAmt(amount.toString());
     if (confTarget) req.setConfTarget(confTarget);
     const res = await this._grpc.request(SwapClient.LoopOutQuote, req, this._meta);
     return res.toObject();
@@ -89,9 +89,9 @@ class LoopApi extends BaseApi<LoopEvents> {
     confTarget?: number,
   ): Promise<LOOP.SwapResponse.AsObject> {
     const req = new LOOP.LoopInRequest();
-    req.setAmt(+amount);
-    req.setMaxSwapFee(+quote.swapFee);
-    req.setMaxMinerFee(+quote.minerFee);
+    req.setAmt(amount.toString());
+    req.setMaxSwapFee(quote.swapFee.toString());
+    req.setMaxMinerFee(quote.minerFee.toString());
     req.setInitiator(LOOP_INITIATOR);
     if (lastHop) req.setLastHop(b64(lastHop));
     if (confTarget) req.setHtlcConfTarget(confTarget);
@@ -105,20 +105,20 @@ class LoopApi extends BaseApi<LoopEvents> {
   async loopOut(
     amount: Big,
     quote: Quote,
-    chanIds: number[],
+    chanIds: string[],
     deadline: number,
     confTarget?: number,
     destAddress?: string,
   ): Promise<LOOP.SwapResponse.AsObject> {
     const req = new LOOP.LoopOutRequest();
-    req.setAmt(+amount);
-    req.setMaxSwapFee(+quote.swapFee);
-    req.setMaxMinerFee(+quote.minerFee);
-    req.setMaxPrepayAmt(+quote.prepayAmount);
-    req.setMaxSwapRoutingFee(this._calcRoutingFee(+amount));
-    req.setMaxPrepayRoutingFee(this._calcRoutingFee(+quote.prepayAmount));
-    req.setOutgoingChanSetList(chanIds);
-    req.setSwapPublicationDeadline(deadline);
+    req.setAmt(amount.toString());
+    req.setMaxSwapFee(quote.swapFee.toString());
+    req.setMaxMinerFee(quote.minerFee.toString());
+    req.setMaxPrepayAmt(quote.prepayAmount.toString());
+    req.setMaxSwapRoutingFee(this._calcRoutingFee(amount).toString());
+    req.setMaxPrepayRoutingFee(this._calcRoutingFee(quote.prepayAmount).toString());
+    req.setOutgoingChanSetList(chanIds.map(id => id.toString()));
+    req.setSwapPublicationDeadline(deadline.toString());
     req.setInitiator(LOOP_INITIATOR);
     if (confTarget) req.setSweepConfTarget(confTarget);
     if (destAddress) req.setDest(destAddress);
@@ -138,15 +138,16 @@ class LoopApi extends BaseApi<LoopEvents> {
       this._meta,
     );
   }
+
   /**
    * Calculates the max routing fee params for loop out. this mimics the loop cli
    * behavior of using 2% of the amount
    * @param amount the amount of the payment
    */
-  private _calcRoutingFee(amount: number) {
-    const routingFeePct = 2;
+  private _calcRoutingFee(amount: Big): Big {
+    const routingFeeFactor = 0.02;
     // round up to avoid decimals
-    return Math.ceil(amount * (routingFeePct / 100));
+    return amount.mul(routingFeeFactor).round(0, Big.roundUp);
   }
 }
 
