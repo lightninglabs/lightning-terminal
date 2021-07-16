@@ -12,8 +12,8 @@ export default class Swap {
   id = '';
   type = 0;
   amount = Big(0);
-  initiationTime = 0;
-  lastUpdateTime = 0;
+  initiationTime = Big(0);
+  lastUpdateTime = Big(0);
   state = 0;
   failureReason = 0;
 
@@ -107,7 +107,7 @@ export default class Swap {
 
   /** The date this swap was created as a JS Date object */
   get createdOn() {
-    return new Date(this.initiationTime / 1000 / 1000);
+    return new Date(this.initiationTime.div(1000).div(1000).toNumber());
   }
 
   /** The date this swap was created as formatted string */
@@ -117,7 +117,7 @@ export default class Swap {
 
   /** The date this swap was last updated as a JS Date object */
   get updatedOn() {
-    return new Date(this.lastUpdateTime / 1000 / 1000);
+    return new Date(this.lastUpdateTime.div(1000).div(1000).toNumber());
   }
 
   /** The date this swap was last updated as formatted string */
@@ -133,8 +133,8 @@ export default class Swap {
     this.id = loopSwap.id;
     this.type = loopSwap.type;
     this.amount = Big(loopSwap.amt);
-    this.initiationTime = loopSwap.initiationTime;
-    this.lastUpdateTime = loopSwap.lastUpdateTime;
+    this.initiationTime = Big(loopSwap.initiationTime);
+    this.lastUpdateTime = Big(loopSwap.lastUpdateTime);
     this.state = loopSwap.state;
     this.failureReason = loopSwap.failureReason;
   }
@@ -154,12 +154,12 @@ export default class Swap {
       case 'typeName':
         return a.typeName.toLowerCase() > b.typeName.toLowerCase() ? 1 : -1;
       case 'amount':
-        return +a.amount.sub(b.amount);
+        return a.amount.sub(b.amount).toNumber();
       case 'initiationTime':
-        return a.initiationTime - b.initiationTime;
+        return a.initiationTime.sub(b.initiationTime).toNumber();
       case 'lastUpdateTime':
       default:
-        return a.lastUpdateTime - b.lastUpdateTime;
+        return a.lastUpdateTime.sub(b.lastUpdateTime).toNumber();
     }
   }
 

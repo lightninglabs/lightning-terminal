@@ -15,8 +15,8 @@ export default class Lease {
   premiumSat = Big(0);
   executionFeeSat = Big(0);
   chainFeeSat = Big(0);
-  clearingRatePrice = 0;
-  orderFixedRate = 0;
+  clearingRatePrice = Big(0);
+  orderFixedRate = Big(0);
   orderNonce = '';
   purchased = false;
   channelRemoteNodeKey = '';
@@ -45,8 +45,8 @@ export default class Lease {
     this.premiumSat = Big(poolLease.premiumSat);
     this.executionFeeSat = Big(poolLease.executionFeeSat);
     this.chainFeeSat = Big(poolLease.chainFeeSat);
-    this.clearingRatePrice = poolLease.clearingRatePrice;
-    this.orderFixedRate = poolLease.orderFixedRate;
+    this.clearingRatePrice = Big(poolLease.clearingRatePrice);
+    this.orderFixedRate = Big(poolLease.orderFixedRate);
     this.orderNonce = hex(poolLease.orderNonce);
     this.purchased = poolLease.purchased;
     this.channelRemoteNodeKey = hex(poolLease.channelRemoteNodeKey);
