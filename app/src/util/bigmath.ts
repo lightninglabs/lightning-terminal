@@ -11,10 +11,7 @@ import Big from 'big.js';
 export const percentage = (portion: Big, whole: Big, decimals = 0): number => {
   if (whole.eq(0)) return 0;
 
-  // needed because RoundingMode.RoundDown is a `const enum` which we cannot use
-  // with '--isolatedModules'
-  const roundDown = 0;
-  return +portion.mul(100).div(whole).round(decimals, roundDown);
+  return +portion.mul(100).div(whole).round(decimals, Big.roundDown);
 };
 
 /**
@@ -35,11 +32,6 @@ export const toBasisPoints = (value: number) => Math.round(toPercent(value) * 10
  * @param premium the premium being paid for the loan
  * @param termInDays the term of the loan in days
  */
-export const annualPercentRate = (
-  principal: number,
-  premium: number,
-  termInDays: number,
-) => {
-  const apr = (premium / principal / termInDays) * 365;
-  return apr;
+export const annualPercentRate = (principal: Big, premium: Big, termInDays: number) => {
+  return +premium.div(principal).div(termInDays).mul(365);
 };
