@@ -1,6 +1,7 @@
 import { makeAutoObservable, observable, toJS } from 'mobx';
 import { SwapState } from 'types/generated/loop_pb';
 import { Alert } from 'types/state';
+import Big from 'big.js';
 import { AuthenticationError } from 'util/errors';
 import { prefixTranslation } from 'util/translate';
 import { Store } from 'store';
@@ -140,7 +141,7 @@ export default class AppView {
       // set the timestamp far in the future so it doesn't automatically disappear
       // from the Processing Loops list after 5 mins
       const tomorrow = Date.now() + 24 * 60 * 60 * 1000;
-      this._store.swapStore.sortedSwaps[0].lastUpdateTime = tomorrow * 1000 * 1000;
+      this._store.swapStore.sortedSwaps[0].lastUpdateTime = Big(tomorrow * 1000 * 1000);
     } else if (step === 22 /* swap-progress */) {
       // #22 is the swap-progress step
       // force the swap to be 100% complete

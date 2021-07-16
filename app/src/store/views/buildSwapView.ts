@@ -489,11 +489,10 @@ class BuildSwapView {
           const deadline =
             this._store.nodeStore.network === 'regtest' ? 0 : Date.now() + thirtyMins;
           // convert the selected channel ids to numbers
-          const chanIds = this.selectedChanIds.map(v => parseInt(v));
           res = await this._store.api.loop.loopOut(
             amount,
             quote,
-            chanIds,
+            this.selectedChanIds,
             deadline,
             this.confTarget,
             this.loopOutAddress,

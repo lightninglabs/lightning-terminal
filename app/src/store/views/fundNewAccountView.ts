@@ -13,11 +13,11 @@ export default class FundNewAccountView {
   private _store: Store;
 
   // editable form fields
-  amount = 0;
+  amount = Big(0);
   confTarget = DEFAULT_CONF_TARGET;
   expireBlocks = DEFAULT_EXPIRE_BLOCKS;
   // response from quote
-  minerFee = 0;
+  minerFee = Big(0);
 
   constructor(store: Store) {
     makeAutoObservable(this, {}, { deep: false, autoBind: true });
@@ -49,9 +49,9 @@ export default class FundNewAccountView {
 
   /** the error message if the amount is invalid */
   get amountError() {
-    if (!this.amount) return '';
+    if (this.amount.eq(0)) return '';
     const accountMinimum = 100000;
-    if (this.amount < accountMinimum) {
+    if (this.amount.lt(accountMinimum)) {
       return l('amountTooLow', { accountMinimum });
     }
     if (this.walletBalance.lt(this.amount)) {
@@ -93,7 +93,7 @@ export default class FundNewAccountView {
   //
 
   setAmount(amount: number) {
-    this.amount = amount;
+    this.amount = Big(amount);
   }
 
   setConfTarget(confTarget: number) {
@@ -110,7 +110,7 @@ export default class FundNewAccountView {
 
   /** shows the summary view */
   cancel() {
-    this.amount = 0;
+    this.amount = Big(0);
     this.confTarget = DEFAULT_CONF_TARGET;
     this.expireBlocks = DEFAULT_EXPIRE_BLOCKS;
     this._store.accountSectionView.showSummary();
@@ -126,7 +126,7 @@ export default class FundNewAccountView {
       );
 
       runInAction(() => {
-        this.minerFee = minerFeeTotal;
+        this.minerFee = Big(minerFeeTotal);
       });
 
       this._store.accountSectionView.showFundNewConfirm();
