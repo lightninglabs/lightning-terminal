@@ -68,7 +68,7 @@ const OrderRow: React.FC<{
       <TableCell right>
         <Unit sats={order.amount} suffix={false} />
       </TableCell>
-      <TableCell className="text-center">{order.duration}</TableCell>
+      <TableCell className="text-center">{order.duration.toNumber()}</TableCell>
       <TableCell right>{order.basisPoints}</TableCell>
       <TableCell>
         <OrderStatus status={order.stateLabel}>{order.stateWithCount}</OrderStatus>
