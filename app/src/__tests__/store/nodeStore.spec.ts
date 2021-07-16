@@ -49,8 +49,8 @@ describe('NodeStore', () => {
     expect(+store.wallet.channelBalance).toBe(0);
     expect(+store.wallet.walletBalance).toBe(0);
     await store.fetchBalances();
-    expect(+store.wallet.channelBalance).toEqual(lndChannelBalance.balance);
-    expect(+store.wallet.walletBalance).toEqual(lndWalletBalance.totalBalance);
+    expect(store.wallet.channelBalance.toString()).toEqual(lndChannelBalance.balance);
+    expect(store.wallet.walletBalance.toString()).toEqual(lndWalletBalance.totalBalance);
   });
 
   it('should handle errors fetching balances', async () => {
@@ -69,14 +69,14 @@ describe('NodeStore', () => {
   it('should handle a transaction event', () => {
     expect(+store.wallet.walletBalance).toBe(0);
     store.onTransaction(lndTransaction);
-    expect(+store.wallet.walletBalance).toBe(lndTransaction.amount);
+    expect(store.wallet.walletBalance.toString()).toBe(lndTransaction.amount);
   });
 
   it('should handle duplicate transaction events', () => {
     expect(+store.wallet.walletBalance).toBe(0);
     store.onTransaction(lndTransaction);
-    expect(+store.wallet.walletBalance).toBe(lndTransaction.amount);
+    expect(store.wallet.walletBalance.toString()).toBe(lndTransaction.amount);
     store.onTransaction(lndTransaction);
-    expect(+store.wallet.walletBalance).toBe(lndTransaction.amount);
+    expect(store.wallet.walletBalance.toString()).toBe(lndTransaction.amount);
   });
 });

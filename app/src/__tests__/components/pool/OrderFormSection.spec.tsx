@@ -71,12 +71,12 @@ describe('OrderFormSection', () => {
     });
 
     fireEvent.click(getByText('Place Bid Order'));
-    expect(bid!.details.amt).toBe(1000000);
+    expect(bid!.details.amt).toBe('1000000');
     expect(bid!.details.rateFixed).toBe(4960);
     expect(bid!.details.minUnitsMatch).toBe(1);
     expect(bid!.leaseDurationBlocks).toBe(2016);
     expect(bid!.minNodeTier).toBe(1);
-    expect(bid!.details.maxBatchFeeRateSatPerKw).toBe(253);
+    expect(bid!.details.maxBatchFeeRateSatPerKw).toBe('253');
   });
 
   it('should submit an ask order', async () => {
@@ -95,11 +95,11 @@ describe('OrderFormSection', () => {
     });
 
     fireEvent.click(getByText('Place Ask Order'));
-    expect(ask!.details.amt).toBe(1000000);
+    expect(ask!.details.amt).toBe('1000000');
     expect(ask!.details.rateFixed).toBe(4960);
     expect(ask!.details.minUnitsMatch).toBe(1);
     expect(ask!.leaseDurationBlocks).toBe(2016);
-    expect(ask!.details.maxBatchFeeRateSatPerKw).toBe(253);
+    expect(ask!.details.maxBatchFeeRateSatPerKw).toBe('253');
   });
 
   it('should submit an order with a different lease duration', async () => {
@@ -119,12 +119,12 @@ describe('OrderFormSection', () => {
     });
 
     fireEvent.click(getByText('Place Bid Order'));
-    expect(bid!.details.amt).toBe(1000000);
+    expect(bid!.details.amt).toBe('1000000');
     expect(bid!.details.rateFixed).toBe(2480);
     expect(bid!.details.minUnitsMatch).toBe(1);
     expect(bid!.leaseDurationBlocks).toBe(4032);
     expect(bid!.minNodeTier).toBe(1);
-    expect(bid!.details.maxBatchFeeRateSatPerKw).toBe(253);
+    expect(bid!.details.maxBatchFeeRateSatPerKw).toBe('253');
   });
 
   it('should reset the form after placing an order', async () => {

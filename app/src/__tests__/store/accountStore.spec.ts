@@ -46,8 +46,8 @@ describe('AccountStore', () => {
   });
 
   it('should return sorted accounts', async () => {
-    const a = new Account(rootStore, { ...poolInitAccount, value: 300 });
-    const b = new Account(rootStore, { ...poolInitAccount, value: 100 });
+    const a = new Account(rootStore, { ...poolInitAccount, value: '300' });
+    const b = new Account(rootStore, { ...poolInitAccount, value: '100' });
     const c = new Account(rootStore, {
       ...poolInitAccount,
       expirationHeight: 5000,
@@ -76,8 +76,8 @@ describe('AccountStore', () => {
   });
 
   it('should excluded closed accounts in sorted accounts', async () => {
-    const a = new Account(rootStore, { ...poolInitAccount, value: 300 });
-    const b = new Account(rootStore, { ...poolInitAccount, value: 100 });
+    const a = new Account(rootStore, { ...poolInitAccount, value: '300' });
+    const b = new Account(rootStore, { ...poolInitAccount, value: '100' });
     const c = new Account(rootStore, {
       ...poolInitAccount,
       expirationHeight: 5000,
@@ -158,7 +158,7 @@ describe('AccountStore', () => {
 
   it('should create a new Account', async () => {
     expect(store.accounts.size).toEqual(0);
-    await store.createAccount(3000000, 4032);
+    await store.createAccount(Big(3000000), 4032);
     expect(store.accounts.size).toEqual(1);
     expect(store.activeAccount).toBeDefined();
   });
@@ -168,7 +168,7 @@ describe('AccountStore', () => {
       throw new Error('test-err');
     });
     expect(rootStore.appView.alerts.size).toBe(0);
-    await store.createAccount(3000000, 4032);
+    await store.createAccount(Big(3000000), 4032);
     await waitFor(() => {
       expect(rootStore.appView.alerts.size).toBe(1);
       expect(values(rootStore.appView.alerts)[0].message).toBe('test-err');
@@ -216,7 +216,9 @@ describe('AccountStore', () => {
   it('should deposit funds into an account', async () => {
     await store.fetchAccounts();
     const txid = await store.deposit(1);
-    expect(+store.activeAccount.totalBalance).toBe(poolDepositAccount.account?.value);
+    expect(store.activeAccount.totalBalance.toString()).toBe(
+      poolDepositAccount.account?.value,
+    );
     expect(txid).toEqual(poolDepositAccount.depositTxid);
   });
 
@@ -236,7 +238,9 @@ describe('AccountStore', () => {
   it('should withdraw funds from an account', async () => {
     await store.fetchAccounts();
     const txid = await store.withdraw(1);
-    expect(+store.activeAccount.totalBalance).toBe(poolWithdrawAccount.account?.value);
+    expect(store.activeAccount.totalBalance.toString()).toBe(
+      poolWithdrawAccount.account?.value,
+    );
     expect(txid).toEqual(poolWithdrawAccount.withdrawTxid);
   });
 

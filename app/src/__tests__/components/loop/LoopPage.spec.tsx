@@ -3,6 +3,7 @@ import { runInAction } from 'mobx';
 import { SwapStatus } from 'types/generated/loop_pb';
 import { grpc } from '@improbable-eng/grpc-web';
 import { fireEvent, waitFor } from '@testing-library/react';
+import Big from 'big.js';
 import { saveAs } from 'file-saver';
 import { formatSats } from 'util/formatters';
 import { renderWithProviders } from 'util/tests';
@@ -70,9 +71,9 @@ describe('LoopPage component', () => {
     const { findByText } = render();
     // convert from numeric timestamp to string (1586390353623905000 -> '4/15/2020')
     const formatDate = (s: SwapStatus.AsObject) =>
-      new Date(s.initiationTime / 1000 / 1000).toLocaleDateString();
+      new Date(+Big(s.initiationTime).div(1000).div(1000)).toLocaleDateString();
     const [swap1, swap2] = loopListSwaps.swapsList.sort(
-      (a, b) => b.initiationTime - a.initiationTime,
+      (a, b) => +Big(b.initiationTime).sub(a.initiationTime),
     );
 
     expect(await findByText(formatDate(swap1))).toBeInTheDocument();

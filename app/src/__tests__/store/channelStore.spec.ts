@@ -134,21 +134,21 @@ describe('ChannelStore', () => {
   it('should compute inbound liquidity', async () => {
     await store.fetchChannels();
     const inbound = lndListChannels.channelsList.reduce(
-      (sum, chan) => sum + chan.remoteBalance,
-      0,
+      (sum, chan) => sum.plus(chan.remoteBalance),
+      Big(0),
     );
 
-    expect(+store.totalInbound).toBe(inbound);
+    expect(+store.totalInbound).toBe(+inbound);
   });
 
   it('should compute outbound liquidity', async () => {
     await store.fetchChannels();
     const outbound = lndListChannels.channelsList.reduce(
-      (sum, chan) => sum + chan.localBalance,
-      0,
+      (sum, chan) => sum.plus(chan.localBalance),
+      Big(0),
     );
 
-    expect(+store.totalOutbound).toBe(outbound);
+    expect(+store.totalOutbound).toBe(+outbound);
   });
 
   it('should fetch aliases for channels', async () => {
@@ -189,7 +189,9 @@ describe('ChannelStore', () => {
     expect(channel.remoteFeeRate).toBe(0);
     // the alias is fetched from the API and should be updated after a few ticks
     await waitFor(() => {
-      expect(channel.remoteFeeRate).toBe(lndGetChanInfo.node1Policy.feeRateMilliMsat);
+      expect(channel.remoteFeeRate.toString()).toBe(
+        lndGetChanInfo.node1Policy.feeRateMilliMsat,
+      );
     });
   });
 
