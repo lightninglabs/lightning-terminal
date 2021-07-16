@@ -117,7 +117,7 @@ describe('AccountSection', () => {
     });
 
     expect(store.accountStore.activeTraderKey).toBe(hex(poolInitAccount.traderKey));
-    expect(store.fundNewAccountView.amount).toBe(0);
+    expect(+store.fundNewAccountView.amount).toBe(0);
     expect(store.fundNewAccountView.confTarget).toBe(DEFAULT_CONF_TARGET);
     expect(store.fundNewAccountView.expireBlocks).toBe(DEFAULT_EXPIRE_BLOCKS);
   });
@@ -206,7 +206,7 @@ describe('AccountSection', () => {
       expect(getByText('Account')).toBeInTheDocument();
     });
 
-    expect(+store.accountStore.activeAccount.totalBalance).toBe(
+    expect(store.accountStore.activeAccount.totalBalance.toString()).toBe(
       poolDepositAccount.account.value,
     );
     expect(store.fundAccountView.amount).toBe(0);
@@ -322,7 +322,7 @@ describe('AccountSection', () => {
     });
 
     expect(req!.traderKey).toBe(b64(store.accountStore.activeAccount.traderKey));
-    expect(req!.outputWithFee?.feeRateSatPerKw).toBe(2500);
+    expect(req!.outputWithFee?.feeRateSatPerKw).toBe('2500');
     expect(req!.outputWithFee?.address).toBe('abc123');
   });
 
@@ -375,7 +375,7 @@ describe('AccountSection', () => {
     });
 
     expect(req!.accountKey).toBe(b64(store.accountStore.activeAccount.traderKey));
-    expect(req!.feeRateSatPerKw).toBe(31250);
+    expect(req!.feeRateSatPerKw).toBe('31250');
     expect(req!.relativeExpiry).toBe(2016);
   });
 });

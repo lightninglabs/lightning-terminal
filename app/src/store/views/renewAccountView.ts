@@ -1,4 +1,5 @@
 import { makeAutoObservable } from 'mobx';
+import Big from 'big.js';
 import { Store } from 'store';
 
 // default expiration to ~90 days

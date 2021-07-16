@@ -2,6 +2,7 @@ import React from 'react';
 import { runInAction } from 'mobx';
 import * as LOOP from 'types/generated/loop_pb';
 import { fireEvent } from '@testing-library/react';
+import Big from 'big.js';
 import { renderWithProviders } from 'util/tests';
 import { loopListSwaps } from 'util/tests/sampleData';
 import { createStore, Store } from 'store';
@@ -27,7 +28,7 @@ describe('ProcessingSwaps component', () => {
     swap.id = `${id || ''}${swap.id}`;
     swap.type = type;
     swap.state = state;
-    swap.lastUpdateTime = Date.now() * 1000 * 1000;
+    swap.lastUpdateTime = Big(Date.now() * 1000 * 1000);
     runInAction(() => {
       store.swapStore.swaps.set(swap.id, swap);
     });

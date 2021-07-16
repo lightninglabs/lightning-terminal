@@ -10,8 +10,8 @@ export class Utxo extends jspb.Message {
   getAddress(): string;
   setAddress(value: string): void;
 
-  getAmountSat(): number;
-  setAmountSat(value: number): void;
+  getAmountSat(): string;
+  setAmountSat(value: string): void;
 
   getPkScript(): string;
   setPkScript(value: string): void;
@@ -21,8 +21,8 @@ export class Utxo extends jspb.Message {
   getOutpoint(): OutPoint | undefined;
   setOutpoint(value?: OutPoint): void;
 
-  getConfirmations(): number;
-  setConfirmations(value: number): void;
+  getConfirmations(): string;
+  setConfirmations(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Utxo.AsObject;
@@ -38,10 +38,10 @@ export namespace Utxo {
   export type AsObject = {
     addressType: AddressTypeMap[keyof AddressTypeMap],
     address: string,
-    amountSat: number,
+    amountSat: string,
     pkScript: string,
     outpoint?: OutPoint.AsObject,
-    confirmations: number,
+    confirmations: string,
   }
 }
 
@@ -49,8 +49,8 @@ export class Transaction extends jspb.Message {
   getTxHash(): string;
   setTxHash(value: string): void;
 
-  getAmount(): number;
-  setAmount(value: number): void;
+  getAmount(): string;
+  setAmount(value: string): void;
 
   getNumConfirmations(): number;
   setNumConfirmations(value: number): void;
@@ -61,11 +61,11 @@ export class Transaction extends jspb.Message {
   getBlockHeight(): number;
   setBlockHeight(value: number): void;
 
-  getTimeStamp(): number;
-  setTimeStamp(value: number): void;
+  getTimeStamp(): string;
+  setTimeStamp(value: string): void;
 
-  getTotalFees(): number;
-  setTotalFees(value: number): void;
+  getTotalFees(): string;
+  setTotalFees(value: string): void;
 
   clearDestAddressesList(): void;
   getDestAddressesList(): Array<string>;
@@ -91,12 +91,12 @@ export class Transaction extends jspb.Message {
 export namespace Transaction {
   export type AsObject = {
     txHash: string,
-    amount: number,
+    amount: string,
     numConfirmations: number,
     blockHash: string,
     blockHeight: number,
-    timeStamp: number,
-    totalFees: number,
+    timeStamp: string,
+    totalFees: string,
     destAddressesList: Array<string>,
     rawTxHex: string,
     label: string,
@@ -156,18 +156,18 @@ export namespace TransactionDetails {
 export class FeeLimit extends jspb.Message {
   hasFixed(): boolean;
   clearFixed(): void;
-  getFixed(): number;
-  setFixed(value: number): void;
+  getFixed(): string;
+  setFixed(value: string): void;
 
   hasFixedMsat(): boolean;
   clearFixedMsat(): void;
-  getFixedMsat(): number;
-  setFixedMsat(value: number): void;
+  getFixedMsat(): string;
+  setFixedMsat(value: string): void;
 
   hasPercent(): boolean;
   clearPercent(): void;
-  getPercent(): number;
-  setPercent(value: number): void;
+  getPercent(): string;
+  setPercent(value: string): void;
 
   getLimitCase(): FeeLimit.LimitCase;
   serializeBinary(): Uint8Array;
@@ -182,9 +182,9 @@ export class FeeLimit extends jspb.Message {
 
 export namespace FeeLimit {
   export type AsObject = {
-    fixed: number,
-    fixedMsat: number,
-    percent: number,
+    fixed: string,
+    fixedMsat: string,
+    percent: string,
   }
 
   export enum LimitCase {
@@ -204,11 +204,11 @@ export class SendRequest extends jspb.Message {
   getDestString(): string;
   setDestString(value: string): void;
 
-  getAmt(): number;
-  setAmt(value: number): void;
+  getAmt(): string;
+  setAmt(value: string): void;
 
-  getAmtMsat(): number;
-  setAmtMsat(value: number): void;
+  getAmtMsat(): string;
+  setAmtMsat(value: string): void;
 
   getPaymentHash(): Uint8Array | string;
   getPaymentHash_asU8(): Uint8Array;
@@ -269,8 +269,8 @@ export namespace SendRequest {
   export type AsObject = {
     dest: Uint8Array | string,
     destString: string,
-    amt: number,
-    amtMsat: number,
+    amt: string,
+    amtMsat: string,
     paymentHash: Uint8Array | string,
     paymentHashString: string,
     paymentRequest: string,
@@ -372,26 +372,26 @@ export class ChannelAcceptRequest extends jspb.Message {
   getPendingChanId_asB64(): string;
   setPendingChanId(value: Uint8Array | string): void;
 
-  getFundingAmt(): number;
-  setFundingAmt(value: number): void;
+  getFundingAmt(): string;
+  setFundingAmt(value: string): void;
 
-  getPushAmt(): number;
-  setPushAmt(value: number): void;
+  getPushAmt(): string;
+  setPushAmt(value: string): void;
 
-  getDustLimit(): number;
-  setDustLimit(value: number): void;
+  getDustLimit(): string;
+  setDustLimit(value: string): void;
 
-  getMaxValueInFlight(): number;
-  setMaxValueInFlight(value: number): void;
+  getMaxValueInFlight(): string;
+  setMaxValueInFlight(value: string): void;
 
-  getChannelReserve(): number;
-  setChannelReserve(value: number): void;
+  getChannelReserve(): string;
+  setChannelReserve(value: string): void;
 
-  getMinHtlc(): number;
-  setMinHtlc(value: number): void;
+  getMinHtlc(): string;
+  setMinHtlc(value: string): void;
 
-  getFeePerKw(): number;
-  setFeePerKw(value: number): void;
+  getFeePerKw(): string;
+  setFeePerKw(value: string): void;
 
   getCsvDelay(): number;
   setCsvDelay(value: number): void;
@@ -417,13 +417,13 @@ export namespace ChannelAcceptRequest {
     nodePubkey: Uint8Array | string,
     chainHash: Uint8Array | string,
     pendingChanId: Uint8Array | string,
-    fundingAmt: number,
-    pushAmt: number,
-    dustLimit: number,
-    maxValueInFlight: number,
-    channelReserve: number,
-    minHtlc: number,
-    feePerKw: number,
+    fundingAmt: string,
+    pushAmt: string,
+    dustLimit: string,
+    maxValueInFlight: string,
+    channelReserve: string,
+    minHtlc: string,
+    feePerKw: string,
     csvDelay: number,
     maxAcceptedHtlcs: number,
     channelFlags: number,
@@ -448,17 +448,17 @@ export class ChannelAcceptResponse extends jspb.Message {
   getCsvDelay(): number;
   setCsvDelay(value: number): void;
 
-  getReserveSat(): number;
-  setReserveSat(value: number): void;
+  getReserveSat(): string;
+  setReserveSat(value: string): void;
 
-  getInFlightMaxMsat(): number;
-  setInFlightMaxMsat(value: number): void;
+  getInFlightMaxMsat(): string;
+  setInFlightMaxMsat(value: string): void;
 
   getMaxHtlcCount(): number;
   setMaxHtlcCount(value: number): void;
 
-  getMinHtlcIn(): number;
-  setMinHtlcIn(value: number): void;
+  getMinHtlcIn(): string;
+  setMinHtlcIn(value: string): void;
 
   getMinAcceptDepth(): number;
   setMinAcceptDepth(value: number): void;
@@ -480,10 +480,10 @@ export namespace ChannelAcceptResponse {
     error: string,
     upfrontShutdown: string,
     csvDelay: number,
-    reserveSat: number,
-    inFlightMaxMsat: number,
+    reserveSat: string,
+    inFlightMaxMsat: string,
     maxHtlcCount: number,
-    minHtlcIn: number,
+    minHtlcIn: string,
     minAcceptDepth: number,
   }
 }
@@ -615,14 +615,14 @@ export namespace EstimateFeeRequest {
 }
 
 export class EstimateFeeResponse extends jspb.Message {
-  getFeeSat(): number;
-  setFeeSat(value: number): void;
+  getFeeSat(): string;
+  setFeeSat(value: string): void;
 
-  getFeerateSatPerByte(): number;
-  setFeerateSatPerByte(value: number): void;
+  getFeerateSatPerByte(): string;
+  setFeerateSatPerByte(value: string): void;
 
-  getSatPerVbyte(): number;
-  setSatPerVbyte(value: number): void;
+  getSatPerVbyte(): string;
+  setSatPerVbyte(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): EstimateFeeResponse.AsObject;
@@ -636,9 +636,9 @@ export class EstimateFeeResponse extends jspb.Message {
 
 export namespace EstimateFeeResponse {
   export type AsObject = {
-    feeSat: number,
-    feerateSatPerByte: number,
-    satPerVbyte: number,
+    feeSat: string,
+    feerateSatPerByte: string,
+    satPerVbyte: string,
   }
 }
 
@@ -648,11 +648,11 @@ export class SendManyRequest extends jspb.Message {
   getTargetConf(): number;
   setTargetConf(value: number): void;
 
-  getSatPerVbyte(): number;
-  setSatPerVbyte(value: number): void;
+  getSatPerVbyte(): string;
+  setSatPerVbyte(value: string): void;
 
-  getSatPerByte(): number;
-  setSatPerByte(value: number): void;
+  getSatPerByte(): string;
+  setSatPerByte(value: string): void;
 
   getLabel(): string;
   setLabel(value: string): void;
@@ -677,8 +677,8 @@ export namespace SendManyRequest {
   export type AsObject = {
     addrtoamountMap: Array<[string, number]>,
     targetConf: number,
-    satPerVbyte: number,
-    satPerByte: number,
+    satPerVbyte: string,
+    satPerByte: string,
     label: string,
     minConfs: number,
     spendUnconfirmed: boolean,
@@ -709,17 +709,17 @@ export class SendCoinsRequest extends jspb.Message {
   getAddr(): string;
   setAddr(value: string): void;
 
-  getAmount(): number;
-  setAmount(value: number): void;
+  getAmount(): string;
+  setAmount(value: string): void;
 
   getTargetConf(): number;
   setTargetConf(value: number): void;
 
-  getSatPerVbyte(): number;
-  setSatPerVbyte(value: number): void;
+  getSatPerVbyte(): string;
+  setSatPerVbyte(value: string): void;
 
-  getSatPerByte(): number;
-  setSatPerByte(value: number): void;
+  getSatPerByte(): string;
+  setSatPerByte(value: string): void;
 
   getSendAll(): boolean;
   setSendAll(value: boolean): void;
@@ -746,10 +746,10 @@ export class SendCoinsRequest extends jspb.Message {
 export namespace SendCoinsRequest {
   export type AsObject = {
     addr: string,
-    amount: number,
+    amount: string,
     targetConf: number,
-    satPerVbyte: number,
-    satPerByte: number,
+    satPerVbyte: string,
+    satPerByte: string,
     sendAll: boolean,
     label: string,
     minConfs: number,
@@ -972,8 +972,8 @@ export class ConnectPeerRequest extends jspb.Message {
   getPerm(): boolean;
   setPerm(value: boolean): void;
 
-  getTimeout(): number;
-  setTimeout(value: number): void;
+  getTimeout(): string;
+  setTimeout(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ConnectPeerRequest.AsObject;
@@ -989,7 +989,7 @@ export namespace ConnectPeerRequest {
   export type AsObject = {
     addr?: LightningAddress.AsObject,
     perm: boolean,
-    timeout: number,
+    timeout: string,
   }
 }
 
@@ -1049,8 +1049,8 @@ export class HTLC extends jspb.Message {
   getIncoming(): boolean;
   setIncoming(value: boolean): void;
 
-  getAmount(): number;
-  setAmount(value: number): void;
+  getAmount(): string;
+  setAmount(value: string): void;
 
   getHashLock(): Uint8Array | string;
   getHashLock_asU8(): Uint8Array;
@@ -1060,14 +1060,14 @@ export class HTLC extends jspb.Message {
   getExpirationHeight(): number;
   setExpirationHeight(value: number): void;
 
-  getHtlcIndex(): number;
-  setHtlcIndex(value: number): void;
+  getHtlcIndex(): string;
+  setHtlcIndex(value: string): void;
 
-  getForwardingChannel(): number;
-  setForwardingChannel(value: number): void;
+  getForwardingChannel(): string;
+  setForwardingChannel(value: string): void;
 
-  getForwardingHtlcIndex(): number;
-  setForwardingHtlcIndex(value: number): void;
+  getForwardingHtlcIndex(): string;
+  setForwardingHtlcIndex(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): HTLC.AsObject;
@@ -1082,12 +1082,12 @@ export class HTLC extends jspb.Message {
 export namespace HTLC {
   export type AsObject = {
     incoming: boolean,
-    amount: number,
+    amount: string,
     hashLock: Uint8Array | string,
     expirationHeight: number,
-    htlcIndex: number,
-    forwardingChannel: number,
-    forwardingHtlcIndex: number,
+    htlcIndex: string,
+    forwardingChannel: string,
+    forwardingHtlcIndex: string,
   }
 }
 
@@ -1095,17 +1095,17 @@ export class ChannelConstraints extends jspb.Message {
   getCsvDelay(): number;
   setCsvDelay(value: number): void;
 
-  getChanReserveSat(): number;
-  setChanReserveSat(value: number): void;
+  getChanReserveSat(): string;
+  setChanReserveSat(value: string): void;
 
-  getDustLimitSat(): number;
-  setDustLimitSat(value: number): void;
+  getDustLimitSat(): string;
+  setDustLimitSat(value: string): void;
 
-  getMaxPendingAmtMsat(): number;
-  setMaxPendingAmtMsat(value: number): void;
+  getMaxPendingAmtMsat(): string;
+  setMaxPendingAmtMsat(value: string): void;
 
-  getMinHtlcMsat(): number;
-  setMinHtlcMsat(value: number): void;
+  getMinHtlcMsat(): string;
+  setMinHtlcMsat(value: string): void;
 
   getMaxAcceptedHtlcs(): number;
   setMaxAcceptedHtlcs(value: number): void;
@@ -1123,10 +1123,10 @@ export class ChannelConstraints extends jspb.Message {
 export namespace ChannelConstraints {
   export type AsObject = {
     csvDelay: number,
-    chanReserveSat: number,
-    dustLimitSat: number,
-    maxPendingAmtMsat: number,
-    minHtlcMsat: number,
+    chanReserveSat: string,
+    dustLimitSat: string,
+    maxPendingAmtMsat: string,
+    minHtlcMsat: string,
     maxAcceptedHtlcs: number,
   }
 }
@@ -1144,35 +1144,35 @@ export class Channel extends jspb.Message {
   getChanId(): string;
   setChanId(value: string): void;
 
-  getCapacity(): number;
-  setCapacity(value: number): void;
+  getCapacity(): string;
+  setCapacity(value: string): void;
 
-  getLocalBalance(): number;
-  setLocalBalance(value: number): void;
+  getLocalBalance(): string;
+  setLocalBalance(value: string): void;
 
-  getRemoteBalance(): number;
-  setRemoteBalance(value: number): void;
+  getRemoteBalance(): string;
+  setRemoteBalance(value: string): void;
 
-  getCommitFee(): number;
-  setCommitFee(value: number): void;
+  getCommitFee(): string;
+  setCommitFee(value: string): void;
 
-  getCommitWeight(): number;
-  setCommitWeight(value: number): void;
+  getCommitWeight(): string;
+  setCommitWeight(value: string): void;
 
-  getFeePerKw(): number;
-  setFeePerKw(value: number): void;
+  getFeePerKw(): string;
+  setFeePerKw(value: string): void;
 
-  getUnsettledBalance(): number;
-  setUnsettledBalance(value: number): void;
+  getUnsettledBalance(): string;
+  setUnsettledBalance(value: string): void;
 
-  getTotalSatoshisSent(): number;
-  setTotalSatoshisSent(value: number): void;
+  getTotalSatoshisSent(): string;
+  setTotalSatoshisSent(value: string): void;
 
-  getTotalSatoshisReceived(): number;
-  setTotalSatoshisReceived(value: number): void;
+  getTotalSatoshisReceived(): string;
+  setTotalSatoshisReceived(value: string): void;
 
-  getNumUpdates(): number;
-  setNumUpdates(value: number): void;
+  getNumUpdates(): string;
+  setNumUpdates(value: string): void;
 
   clearPendingHtlcsList(): void;
   getPendingHtlcsList(): Array<HTLC>;
@@ -1191,11 +1191,11 @@ export class Channel extends jspb.Message {
   getChanStatusFlags(): string;
   setChanStatusFlags(value: string): void;
 
-  getLocalChanReserveSat(): number;
-  setLocalChanReserveSat(value: number): void;
+  getLocalChanReserveSat(): string;
+  setLocalChanReserveSat(value: string): void;
 
-  getRemoteChanReserveSat(): number;
-  setRemoteChanReserveSat(value: number): void;
+  getRemoteChanReserveSat(): string;
+  setRemoteChanReserveSat(value: string): void;
 
   getStaticRemoteKey(): boolean;
   setStaticRemoteKey(value: boolean): void;
@@ -1203,17 +1203,17 @@ export class Channel extends jspb.Message {
   getCommitmentType(): CommitmentTypeMap[keyof CommitmentTypeMap];
   setCommitmentType(value: CommitmentTypeMap[keyof CommitmentTypeMap]): void;
 
-  getLifetime(): number;
-  setLifetime(value: number): void;
+  getLifetime(): string;
+  setLifetime(value: string): void;
 
-  getUptime(): number;
-  setUptime(value: number): void;
+  getUptime(): string;
+  setUptime(value: string): void;
 
   getCloseAddress(): string;
   setCloseAddress(value: string): void;
 
-  getPushAmountSat(): number;
-  setPushAmountSat(value: number): void;
+  getPushAmountSat(): string;
+  setPushAmountSat(value: string): void;
 
   getThawHeight(): number;
   setThawHeight(value: number): void;
@@ -1244,29 +1244,29 @@ export namespace Channel {
     remotePubkey: string,
     channelPoint: string,
     chanId: string,
-    capacity: number,
-    localBalance: number,
-    remoteBalance: number,
-    commitFee: number,
-    commitWeight: number,
-    feePerKw: number,
-    unsettledBalance: number,
-    totalSatoshisSent: number,
-    totalSatoshisReceived: number,
-    numUpdates: number,
+    capacity: string,
+    localBalance: string,
+    remoteBalance: string,
+    commitFee: string,
+    commitWeight: string,
+    feePerKw: string,
+    unsettledBalance: string,
+    totalSatoshisSent: string,
+    totalSatoshisReceived: string,
+    numUpdates: string,
     pendingHtlcsList: Array<HTLC.AsObject>,
     csvDelay: number,
     pb_private: boolean,
     initiator: boolean,
     chanStatusFlags: string,
-    localChanReserveSat: number,
-    remoteChanReserveSat: number,
+    localChanReserveSat: string,
+    remoteChanReserveSat: string,
     staticRemoteKey: boolean,
     commitmentType: CommitmentTypeMap[keyof CommitmentTypeMap],
-    lifetime: number,
-    uptime: number,
+    lifetime: string,
+    uptime: string,
     closeAddress: string,
-    pushAmountSat: number,
+    pushAmountSat: string,
     thawHeight: number,
     localConstraints?: ChannelConstraints.AsObject,
     remoteConstraints?: ChannelConstraints.AsObject,
@@ -1349,17 +1349,17 @@ export class ChannelCloseSummary extends jspb.Message {
   getRemotePubkey(): string;
   setRemotePubkey(value: string): void;
 
-  getCapacity(): number;
-  setCapacity(value: number): void;
+  getCapacity(): string;
+  setCapacity(value: string): void;
 
   getCloseHeight(): number;
   setCloseHeight(value: number): void;
 
-  getSettledBalance(): number;
-  setSettledBalance(value: number): void;
+  getSettledBalance(): string;
+  setSettledBalance(value: string): void;
 
-  getTimeLockedBalance(): number;
-  setTimeLockedBalance(value: number): void;
+  getTimeLockedBalance(): string;
+  setTimeLockedBalance(value: string): void;
 
   getCloseType(): ChannelCloseSummary.ClosureTypeMap[keyof ChannelCloseSummary.ClosureTypeMap];
   setCloseType(value: ChannelCloseSummary.ClosureTypeMap[keyof ChannelCloseSummary.ClosureTypeMap]): void;
@@ -1392,10 +1392,10 @@ export namespace ChannelCloseSummary {
     chainHash: string,
     closingTxHash: string,
     remotePubkey: string,
-    capacity: number,
+    capacity: string,
     closeHeight: number,
-    settledBalance: number,
-    timeLockedBalance: number,
+    settledBalance: string,
+    timeLockedBalance: string,
     closeType: ChannelCloseSummary.ClosureTypeMap[keyof ChannelCloseSummary.ClosureTypeMap],
     openInitiator: InitiatorMap[keyof InitiatorMap],
     closeInitiator: InitiatorMap[keyof InitiatorMap],
@@ -1426,8 +1426,8 @@ export class Resolution extends jspb.Message {
   getOutpoint(): OutPoint | undefined;
   setOutpoint(value?: OutPoint): void;
 
-  getAmountSat(): number;
-  setAmountSat(value: number): void;
+  getAmountSat(): string;
+  setAmountSat(value: string): void;
 
   getSweepTxid(): string;
   setSweepTxid(value: string): void;
@@ -1447,7 +1447,7 @@ export namespace Resolution {
     resolutionType: ResolutionTypeMap[keyof ResolutionTypeMap],
     outcome: ResolutionOutcomeMap[keyof ResolutionOutcomeMap],
     outpoint?: OutPoint.AsObject,
-    amountSat: number,
+    amountSat: string,
     sweepTxid: string,
   }
 }
@@ -1521,23 +1521,23 @@ export class Peer extends jspb.Message {
   getAddress(): string;
   setAddress(value: string): void;
 
-  getBytesSent(): number;
-  setBytesSent(value: number): void;
+  getBytesSent(): string;
+  setBytesSent(value: string): void;
 
-  getBytesRecv(): number;
-  setBytesRecv(value: number): void;
+  getBytesRecv(): string;
+  setBytesRecv(value: string): void;
 
-  getSatSent(): number;
-  setSatSent(value: number): void;
+  getSatSent(): string;
+  setSatSent(value: string): void;
 
-  getSatRecv(): number;
-  setSatRecv(value: number): void;
+  getSatRecv(): string;
+  setSatRecv(value: string): void;
 
   getInbound(): boolean;
   setInbound(value: boolean): void;
 
-  getPingTime(): number;
-  setPingTime(value: number): void;
+  getPingTime(): string;
+  setPingTime(value: string): void;
 
   getSyncType(): Peer.SyncTypeMap[keyof Peer.SyncTypeMap];
   setSyncType(value: Peer.SyncTypeMap[keyof Peer.SyncTypeMap]): void;
@@ -1552,8 +1552,8 @@ export class Peer extends jspb.Message {
   getFlapCount(): number;
   setFlapCount(value: number): void;
 
-  getLastFlapNs(): number;
-  setLastFlapNs(value: number): void;
+  getLastFlapNs(): string;
+  setLastFlapNs(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Peer.AsObject;
@@ -1569,17 +1569,17 @@ export namespace Peer {
   export type AsObject = {
     pubKey: string,
     address: string,
-    bytesSent: number,
-    bytesRecv: number,
-    satSent: number,
-    satRecv: number,
+    bytesSent: string,
+    bytesRecv: string,
+    satSent: string,
+    satRecv: string,
     inbound: boolean,
-    pingTime: number,
+    pingTime: string,
     syncType: Peer.SyncTypeMap[keyof Peer.SyncTypeMap],
     featuresMap: Array<[number, Feature.AsObject]>,
     errorsList: Array<TimestampedError.AsObject>,
     flapCount: number,
-    lastFlapNs: number,
+    lastFlapNs: string,
   }
 
   export interface SyncTypeMap {
@@ -1593,8 +1593,8 @@ export namespace Peer {
 }
 
 export class TimestampedError extends jspb.Message {
-  getTimestamp(): number;
-  setTimestamp(value: number): void;
+  getTimestamp(): string;
+  setTimestamp(value: string): void;
 
   getError(): string;
   setError(value: string): void;
@@ -1611,7 +1611,7 @@ export class TimestampedError extends jspb.Message {
 
 export namespace TimestampedError {
   export type AsObject = {
-    timestamp: number,
+    timestamp: string,
     error: string,
   }
 }
@@ -1755,8 +1755,8 @@ export class GetInfoResponse extends jspb.Message {
   getBlockHash(): string;
   setBlockHash(value: string): void;
 
-  getBestHeaderTimestamp(): number;
-  setBestHeaderTimestamp(value: number): void;
+  getBestHeaderTimestamp(): string;
+  setBestHeaderTimestamp(value: string): void;
 
   getSyncedToChain(): boolean;
   setSyncedToChain(value: boolean): void;
@@ -1802,7 +1802,7 @@ export namespace GetInfoResponse {
     numPeers: number,
     blockHeight: number,
     blockHash: string,
-    bestHeaderTimestamp: number,
+    bestHeaderTimestamp: string,
     syncedToChain: boolean,
     syncedToGraph: boolean,
     testnet: boolean,
@@ -1970,14 +1970,14 @@ export class CloseChannelRequest extends jspb.Message {
   getTargetConf(): number;
   setTargetConf(value: number): void;
 
-  getSatPerByte(): number;
-  setSatPerByte(value: number): void;
+  getSatPerByte(): string;
+  setSatPerByte(value: string): void;
 
   getDeliveryAddress(): string;
   setDeliveryAddress(value: string): void;
 
-  getSatPerVbyte(): number;
-  setSatPerVbyte(value: number): void;
+  getSatPerVbyte(): string;
+  setSatPerVbyte(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): CloseChannelRequest.AsObject;
@@ -1994,9 +1994,9 @@ export namespace CloseChannelRequest {
     channelPoint?: ChannelPoint.AsObject,
     force: boolean,
     targetConf: number,
-    satPerByte: number,
+    satPerByte: string,
     deliveryAddress: string,
-    satPerVbyte: number,
+    satPerVbyte: string,
   }
 }
 
@@ -2065,8 +2065,8 @@ export class ReadyForPsbtFunding extends jspb.Message {
   getFundingAddress(): string;
   setFundingAddress(value: string): void;
 
-  getFundingAmount(): number;
-  setFundingAmount(value: number): void;
+  getFundingAmount(): string;
+  setFundingAmount(value: string): void;
 
   getPsbt(): Uint8Array | string;
   getPsbt_asU8(): Uint8Array;
@@ -2086,14 +2086,14 @@ export class ReadyForPsbtFunding extends jspb.Message {
 export namespace ReadyForPsbtFunding {
   export type AsObject = {
     fundingAddress: string,
-    fundingAmount: number,
+    fundingAmount: string,
     psbt: Uint8Array | string,
   }
 }
 
 export class OpenChannelRequest extends jspb.Message {
-  getSatPerVbyte(): number;
-  setSatPerVbyte(value: number): void;
+  getSatPerVbyte(): string;
+  setSatPerVbyte(value: string): void;
 
   getNodePubkey(): Uint8Array | string;
   getNodePubkey_asU8(): Uint8Array;
@@ -2103,23 +2103,23 @@ export class OpenChannelRequest extends jspb.Message {
   getNodePubkeyString(): string;
   setNodePubkeyString(value: string): void;
 
-  getLocalFundingAmount(): number;
-  setLocalFundingAmount(value: number): void;
+  getLocalFundingAmount(): string;
+  setLocalFundingAmount(value: string): void;
 
-  getPushSat(): number;
-  setPushSat(value: number): void;
+  getPushSat(): string;
+  setPushSat(value: string): void;
 
   getTargetConf(): number;
   setTargetConf(value: number): void;
 
-  getSatPerByte(): number;
-  setSatPerByte(value: number): void;
+  getSatPerByte(): string;
+  setSatPerByte(value: string): void;
 
   getPrivate(): boolean;
   setPrivate(value: boolean): void;
 
-  getMinHtlcMsat(): number;
-  setMinHtlcMsat(value: number): void;
+  getMinHtlcMsat(): string;
+  setMinHtlcMsat(value: string): void;
 
   getRemoteCsvDelay(): number;
   setRemoteCsvDelay(value: number): void;
@@ -2138,8 +2138,8 @@ export class OpenChannelRequest extends jspb.Message {
   getFundingShim(): FundingShim | undefined;
   setFundingShim(value?: FundingShim): void;
 
-  getRemoteMaxValueInFlightMsat(): number;
-  setRemoteMaxValueInFlightMsat(value: number): void;
+  getRemoteMaxValueInFlightMsat(): string;
+  setRemoteMaxValueInFlightMsat(value: string): void;
 
   getRemoteMaxHtlcs(): number;
   setRemoteMaxHtlcs(value: number): void;
@@ -2159,21 +2159,21 @@ export class OpenChannelRequest extends jspb.Message {
 
 export namespace OpenChannelRequest {
   export type AsObject = {
-    satPerVbyte: number,
+    satPerVbyte: string,
     nodePubkey: Uint8Array | string,
     nodePubkeyString: string,
-    localFundingAmount: number,
-    pushSat: number,
+    localFundingAmount: string,
+    pushSat: string,
     targetConf: number,
-    satPerByte: number,
+    satPerByte: string,
     pb_private: boolean,
-    minHtlcMsat: number,
+    minHtlcMsat: string,
     remoteCsvDelay: number,
     minConfs: number,
     spendUnconfirmed: boolean,
     closeAddress: string,
     fundingShim?: FundingShim.AsObject,
-    remoteMaxValueInFlightMsat: number,
+    remoteMaxValueInFlightMsat: string,
     remoteMaxHtlcs: number,
     maxLocalCsv: number,
   }
@@ -2280,8 +2280,8 @@ export namespace KeyDescriptor {
 }
 
 export class ChanPointShim extends jspb.Message {
-  getAmt(): number;
-  setAmt(value: number): void;
+  getAmt(): string;
+  setAmt(value: string): void;
 
   hasChanPoint(): boolean;
   clearChanPoint(): void;
@@ -2318,7 +2318,7 @@ export class ChanPointShim extends jspb.Message {
 
 export namespace ChanPointShim {
   export type AsObject = {
-    amt: number,
+    amt: string,
     chanPoint?: ChannelPoint.AsObject,
     localKey?: KeyDescriptor.AsObject,
     remoteKey: Uint8Array | string,
@@ -2547,8 +2547,8 @@ export class PendingHTLC extends jspb.Message {
   getIncoming(): boolean;
   setIncoming(value: boolean): void;
 
-  getAmount(): number;
-  setAmount(value: number): void;
+  getAmount(): string;
+  setAmount(value: string): void;
 
   getOutpoint(): string;
   setOutpoint(value: string): void;
@@ -2575,7 +2575,7 @@ export class PendingHTLC extends jspb.Message {
 export namespace PendingHTLC {
   export type AsObject = {
     incoming: boolean,
-    amount: number,
+    amount: string,
     outpoint: string,
     maturityHeight: number,
     blocksTilMaturity: number,
@@ -2600,8 +2600,8 @@ export namespace PendingChannelsRequest {
 }
 
 export class PendingChannelsResponse extends jspb.Message {
-  getTotalLimboBalance(): number;
-  setTotalLimboBalance(value: number): void;
+  getTotalLimboBalance(): string;
+  setTotalLimboBalance(value: string): void;
 
   clearPendingOpenChannelsList(): void;
   getPendingOpenChannelsList(): Array<PendingChannelsResponse.PendingOpenChannel>;
@@ -2635,7 +2635,7 @@ export class PendingChannelsResponse extends jspb.Message {
 
 export namespace PendingChannelsResponse {
   export type AsObject = {
-    totalLimboBalance: number,
+    totalLimboBalance: string,
     pendingOpenChannelsList: Array<PendingChannelsResponse.PendingOpenChannel.AsObject>,
     pendingClosingChannelsList: Array<PendingChannelsResponse.ClosedChannel.AsObject>,
     pendingForceClosingChannelsList: Array<PendingChannelsResponse.ForceClosedChannel.AsObject>,
@@ -2649,20 +2649,20 @@ export namespace PendingChannelsResponse {
     getChannelPoint(): string;
     setChannelPoint(value: string): void;
 
-    getCapacity(): number;
-    setCapacity(value: number): void;
+    getCapacity(): string;
+    setCapacity(value: string): void;
 
-    getLocalBalance(): number;
-    setLocalBalance(value: number): void;
+    getLocalBalance(): string;
+    setLocalBalance(value: string): void;
 
-    getRemoteBalance(): number;
-    setRemoteBalance(value: number): void;
+    getRemoteBalance(): string;
+    setRemoteBalance(value: string): void;
 
-    getLocalChanReserveSat(): number;
-    setLocalChanReserveSat(value: number): void;
+    getLocalChanReserveSat(): string;
+    setLocalChanReserveSat(value: string): void;
 
-    getRemoteChanReserveSat(): number;
-    setRemoteChanReserveSat(value: number): void;
+    getRemoteChanReserveSat(): string;
+    setRemoteChanReserveSat(value: string): void;
 
     getInitiator(): InitiatorMap[keyof InitiatorMap];
     setInitiator(value: InitiatorMap[keyof InitiatorMap]): void;
@@ -2684,11 +2684,11 @@ export namespace PendingChannelsResponse {
     export type AsObject = {
       remoteNodePub: string,
       channelPoint: string,
-      capacity: number,
-      localBalance: number,
-      remoteBalance: number,
-      localChanReserveSat: number,
-      remoteChanReserveSat: number,
+      capacity: string,
+      localBalance: string,
+      remoteBalance: string,
+      localChanReserveSat: string,
+      remoteChanReserveSat: string,
       initiator: InitiatorMap[keyof InitiatorMap],
       commitmentType: CommitmentTypeMap[keyof CommitmentTypeMap],
     }
@@ -2703,14 +2703,14 @@ export namespace PendingChannelsResponse {
     getConfirmationHeight(): number;
     setConfirmationHeight(value: number): void;
 
-    getCommitFee(): number;
-    setCommitFee(value: number): void;
+    getCommitFee(): string;
+    setCommitFee(value: string): void;
 
-    getCommitWeight(): number;
-    setCommitWeight(value: number): void;
+    getCommitWeight(): string;
+    setCommitWeight(value: string): void;
 
-    getFeePerKw(): number;
-    setFeePerKw(value: number): void;
+    getFeePerKw(): string;
+    setFeePerKw(value: string): void;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): PendingOpenChannel.AsObject;
@@ -2726,9 +2726,9 @@ export namespace PendingChannelsResponse {
     export type AsObject = {
       channel?: PendingChannelsResponse.PendingChannel.AsObject,
       confirmationHeight: number,
-      commitFee: number,
-      commitWeight: number,
-      feePerKw: number,
+      commitFee: string,
+      commitWeight: string,
+      feePerKw: string,
     }
   }
 
@@ -2738,8 +2738,8 @@ export namespace PendingChannelsResponse {
     getChannel(): PendingChannelsResponse.PendingChannel | undefined;
     setChannel(value?: PendingChannelsResponse.PendingChannel): void;
 
-    getLimboBalance(): number;
-    setLimboBalance(value: number): void;
+    getLimboBalance(): string;
+    setLimboBalance(value: string): void;
 
     hasCommitments(): boolean;
     clearCommitments(): void;
@@ -2759,7 +2759,7 @@ export namespace PendingChannelsResponse {
   export namespace WaitingCloseChannel {
     export type AsObject = {
       channel?: PendingChannelsResponse.PendingChannel.AsObject,
-      limboBalance: number,
+      limboBalance: string,
       commitments?: PendingChannelsResponse.Commitments.AsObject,
     }
   }
@@ -2774,14 +2774,14 @@ export namespace PendingChannelsResponse {
     getRemotePendingTxid(): string;
     setRemotePendingTxid(value: string): void;
 
-    getLocalCommitFeeSat(): number;
-    setLocalCommitFeeSat(value: number): void;
+    getLocalCommitFeeSat(): string;
+    setLocalCommitFeeSat(value: string): void;
 
-    getRemoteCommitFeeSat(): number;
-    setRemoteCommitFeeSat(value: number): void;
+    getRemoteCommitFeeSat(): string;
+    setRemoteCommitFeeSat(value: string): void;
 
-    getRemotePendingCommitFeeSat(): number;
-    setRemotePendingCommitFeeSat(value: number): void;
+    getRemotePendingCommitFeeSat(): string;
+    setRemotePendingCommitFeeSat(value: string): void;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): Commitments.AsObject;
@@ -2798,9 +2798,9 @@ export namespace PendingChannelsResponse {
       localTxid: string,
       remoteTxid: string,
       remotePendingTxid: string,
-      localCommitFeeSat: number,
-      remoteCommitFeeSat: number,
-      remotePendingCommitFeeSat: number,
+      localCommitFeeSat: string,
+      remoteCommitFeeSat: string,
+      remotePendingCommitFeeSat: string,
     }
   }
 
@@ -2839,8 +2839,8 @@ export namespace PendingChannelsResponse {
     getClosingTxid(): string;
     setClosingTxid(value: string): void;
 
-    getLimboBalance(): number;
-    setLimboBalance(value: number): void;
+    getLimboBalance(): string;
+    setLimboBalance(value: string): void;
 
     getMaturityHeight(): number;
     setMaturityHeight(value: number): void;
@@ -2848,8 +2848,8 @@ export namespace PendingChannelsResponse {
     getBlocksTilMaturity(): number;
     setBlocksTilMaturity(value: number): void;
 
-    getRecoveredBalance(): number;
-    setRecoveredBalance(value: number): void;
+    getRecoveredBalance(): string;
+    setRecoveredBalance(value: string): void;
 
     clearPendingHtlcsList(): void;
     getPendingHtlcsList(): Array<PendingHTLC>;
@@ -2873,10 +2873,10 @@ export namespace PendingChannelsResponse {
     export type AsObject = {
       channel?: PendingChannelsResponse.PendingChannel.AsObject,
       closingTxid: string,
-      limboBalance: number,
+      limboBalance: string,
       maturityHeight: number,
       blocksTilMaturity: number,
-      recoveredBalance: number,
+      recoveredBalance: string,
       pendingHtlcsList: Array<PendingHTLC.AsObject>,
       anchor: PendingChannelsResponse.ForceClosedChannel.AnchorStateMap[keyof PendingChannelsResponse.ForceClosedChannel.AnchorStateMap],
     }
@@ -2978,11 +2978,11 @@ export namespace ChannelEventUpdate {
 }
 
 export class WalletAccountBalance extends jspb.Message {
-  getConfirmedBalance(): number;
-  setConfirmedBalance(value: number): void;
+  getConfirmedBalance(): string;
+  setConfirmedBalance(value: string): void;
 
-  getUnconfirmedBalance(): number;
-  setUnconfirmedBalance(value: number): void;
+  getUnconfirmedBalance(): string;
+  setUnconfirmedBalance(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): WalletAccountBalance.AsObject;
@@ -2996,8 +2996,8 @@ export class WalletAccountBalance extends jspb.Message {
 
 export namespace WalletAccountBalance {
   export type AsObject = {
-    confirmedBalance: number,
-    unconfirmedBalance: number,
+    confirmedBalance: string,
+    unconfirmedBalance: string,
   }
 }
 
@@ -3018,14 +3018,14 @@ export namespace WalletBalanceRequest {
 }
 
 export class WalletBalanceResponse extends jspb.Message {
-  getTotalBalance(): number;
-  setTotalBalance(value: number): void;
+  getTotalBalance(): string;
+  setTotalBalance(value: string): void;
 
-  getConfirmedBalance(): number;
-  setConfirmedBalance(value: number): void;
+  getConfirmedBalance(): string;
+  setConfirmedBalance(value: string): void;
 
-  getUnconfirmedBalance(): number;
-  setUnconfirmedBalance(value: number): void;
+  getUnconfirmedBalance(): string;
+  setUnconfirmedBalance(value: string): void;
 
   getAccountBalanceMap(): jspb.Map<string, WalletAccountBalance>;
   clearAccountBalanceMap(): void;
@@ -3041,19 +3041,19 @@ export class WalletBalanceResponse extends jspb.Message {
 
 export namespace WalletBalanceResponse {
   export type AsObject = {
-    totalBalance: number,
-    confirmedBalance: number,
-    unconfirmedBalance: number,
+    totalBalance: string,
+    confirmedBalance: string,
+    unconfirmedBalance: string,
     accountBalanceMap: Array<[string, WalletAccountBalance.AsObject]>,
   }
 }
 
 export class Amount extends jspb.Message {
-  getSat(): number;
-  setSat(value: number): void;
+  getSat(): string;
+  setSat(value: string): void;
 
-  getMsat(): number;
-  setMsat(value: number): void;
+  getMsat(): string;
+  setMsat(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Amount.AsObject;
@@ -3067,8 +3067,8 @@ export class Amount extends jspb.Message {
 
 export namespace Amount {
   export type AsObject = {
-    sat: number,
-    msat: number,
+    sat: string,
+    msat: string,
   }
 }
 
@@ -3089,11 +3089,11 @@ export namespace ChannelBalanceRequest {
 }
 
 export class ChannelBalanceResponse extends jspb.Message {
-  getBalance(): number;
-  setBalance(value: number): void;
+  getBalance(): string;
+  setBalance(value: string): void;
 
-  getPendingOpenBalance(): number;
-  setPendingOpenBalance(value: number): void;
+  getPendingOpenBalance(): string;
+  setPendingOpenBalance(value: string): void;
 
   hasLocalBalance(): boolean;
   clearLocalBalance(): void;
@@ -3137,8 +3137,8 @@ export class ChannelBalanceResponse extends jspb.Message {
 
 export namespace ChannelBalanceResponse {
   export type AsObject = {
-    balance: number,
-    pendingOpenBalance: number,
+    balance: string,
+    pendingOpenBalance: string,
     localBalance?: Amount.AsObject,
     remoteBalance?: Amount.AsObject,
     unsettledLocalBalance?: Amount.AsObject,
@@ -3152,11 +3152,11 @@ export class QueryRoutesRequest extends jspb.Message {
   getPubKey(): string;
   setPubKey(value: string): void;
 
-  getAmt(): number;
-  setAmt(value: number): void;
+  getAmt(): string;
+  setAmt(value: string): void;
 
-  getAmtMsat(): number;
-  setAmtMsat(value: number): void;
+  getAmtMsat(): string;
+  setAmtMsat(value: string): void;
 
   getFinalCltvDelta(): number;
   setFinalCltvDelta(value: number): void;
@@ -3225,8 +3225,8 @@ export class QueryRoutesRequest extends jspb.Message {
 export namespace QueryRoutesRequest {
   export type AsObject = {
     pubKey: string,
-    amt: number,
-    amtMsat: number,
+    amt: string,
+    amtMsat: string,
     finalCltvDelta: number,
     feeLimit?: FeeLimit.AsObject,
     ignoredNodesList: Array<Uint8Array | string>,
@@ -3325,23 +3325,23 @@ export class Hop extends jspb.Message {
   getChanId(): string;
   setChanId(value: string): void;
 
-  getChanCapacity(): number;
-  setChanCapacity(value: number): void;
+  getChanCapacity(): string;
+  setChanCapacity(value: string): void;
 
-  getAmtToForward(): number;
-  setAmtToForward(value: number): void;
+  getAmtToForward(): string;
+  setAmtToForward(value: string): void;
 
-  getFee(): number;
-  setFee(value: number): void;
+  getFee(): string;
+  setFee(value: string): void;
 
   getExpiry(): number;
   setExpiry(value: number): void;
 
-  getAmtToForwardMsat(): number;
-  setAmtToForwardMsat(value: number): void;
+  getAmtToForwardMsat(): string;
+  setAmtToForwardMsat(value: string): void;
 
-  getFeeMsat(): number;
-  setFeeMsat(value: number): void;
+  getFeeMsat(): string;
+  setFeeMsat(value: string): void;
 
   getPubKey(): string;
   setPubKey(value: string): void;
@@ -3374,12 +3374,12 @@ export class Hop extends jspb.Message {
 export namespace Hop {
   export type AsObject = {
     chanId: string,
-    chanCapacity: number,
-    amtToForward: number,
-    fee: number,
+    chanCapacity: string,
+    amtToForward: string,
+    fee: string,
     expiry: number,
-    amtToForwardMsat: number,
-    feeMsat: number,
+    amtToForwardMsat: string,
+    feeMsat: string,
     pubKey: string,
     tlvPayload: boolean,
     mppRecord?: MPPRecord.AsObject,
@@ -3394,8 +3394,8 @@ export class MPPRecord extends jspb.Message {
   getPaymentAddr_asB64(): string;
   setPaymentAddr(value: Uint8Array | string): void;
 
-  getTotalAmtMsat(): number;
-  setTotalAmtMsat(value: number): void;
+  getTotalAmtMsat(): string;
+  setTotalAmtMsat(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): MPPRecord.AsObject;
@@ -3410,7 +3410,7 @@ export class MPPRecord extends jspb.Message {
 export namespace MPPRecord {
   export type AsObject = {
     paymentAddr: Uint8Array | string,
-    totalAmtMsat: number,
+    totalAmtMsat: string,
   }
 }
 
@@ -3450,22 +3450,22 @@ export class Route extends jspb.Message {
   getTotalTimeLock(): number;
   setTotalTimeLock(value: number): void;
 
-  getTotalFees(): number;
-  setTotalFees(value: number): void;
+  getTotalFees(): string;
+  setTotalFees(value: string): void;
 
-  getTotalAmt(): number;
-  setTotalAmt(value: number): void;
+  getTotalAmt(): string;
+  setTotalAmt(value: string): void;
 
   clearHopsList(): void;
   getHopsList(): Array<Hop>;
   setHopsList(value: Array<Hop>): void;
   addHops(value?: Hop, index?: number): Hop;
 
-  getTotalFeesMsat(): number;
-  setTotalFeesMsat(value: number): void;
+  getTotalFeesMsat(): string;
+  setTotalFeesMsat(value: string): void;
 
-  getTotalAmtMsat(): number;
-  setTotalAmtMsat(value: number): void;
+  getTotalAmtMsat(): string;
+  setTotalAmtMsat(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Route.AsObject;
@@ -3480,11 +3480,11 @@ export class Route extends jspb.Message {
 export namespace Route {
   export type AsObject = {
     totalTimeLock: number,
-    totalFees: number,
-    totalAmt: number,
+    totalFees: string,
+    totalAmt: string,
     hopsList: Array<Hop.AsObject>,
-    totalFeesMsat: number,
-    totalAmtMsat: number,
+    totalFeesMsat: string,
+    totalAmtMsat: string,
   }
 }
 
@@ -3521,8 +3521,8 @@ export class NodeInfo extends jspb.Message {
   getNumChannels(): number;
   setNumChannels(value: number): void;
 
-  getTotalCapacity(): number;
-  setTotalCapacity(value: number): void;
+  getTotalCapacity(): string;
+  setTotalCapacity(value: string): void;
 
   clearChannelsList(): void;
   getChannelsList(): Array<ChannelEdge>;
@@ -3543,7 +3543,7 @@ export namespace NodeInfo {
   export type AsObject = {
     node?: LightningNode.AsObject,
     numChannels: number,
-    totalCapacity: number,
+    totalCapacity: string,
     channelsList: Array<ChannelEdge.AsObject>,
   }
 }
@@ -3617,20 +3617,20 @@ export class RoutingPolicy extends jspb.Message {
   getTimeLockDelta(): number;
   setTimeLockDelta(value: number): void;
 
-  getMinHtlc(): number;
-  setMinHtlc(value: number): void;
+  getMinHtlc(): string;
+  setMinHtlc(value: string): void;
 
-  getFeeBaseMsat(): number;
-  setFeeBaseMsat(value: number): void;
+  getFeeBaseMsat(): string;
+  setFeeBaseMsat(value: string): void;
 
-  getFeeRateMilliMsat(): number;
-  setFeeRateMilliMsat(value: number): void;
+  getFeeRateMilliMsat(): string;
+  setFeeRateMilliMsat(value: string): void;
 
   getDisabled(): boolean;
   setDisabled(value: boolean): void;
 
-  getMaxHtlcMsat(): number;
-  setMaxHtlcMsat(value: number): void;
+  getMaxHtlcMsat(): string;
+  setMaxHtlcMsat(value: string): void;
 
   getLastUpdate(): number;
   setLastUpdate(value: number): void;
@@ -3648,11 +3648,11 @@ export class RoutingPolicy extends jspb.Message {
 export namespace RoutingPolicy {
   export type AsObject = {
     timeLockDelta: number,
-    minHtlc: number,
-    feeBaseMsat: number,
-    feeRateMilliMsat: number,
+    minHtlc: string,
+    feeBaseMsat: string,
+    feeRateMilliMsat: string,
     disabled: boolean,
-    maxHtlcMsat: number,
+    maxHtlcMsat: string,
     lastUpdate: number,
   }
 }
@@ -3673,8 +3673,8 @@ export class ChannelEdge extends jspb.Message {
   getNode2Pub(): string;
   setNode2Pub(value: string): void;
 
-  getCapacity(): number;
-  setCapacity(value: number): void;
+  getCapacity(): string;
+  setCapacity(value: string): void;
 
   hasNode1Policy(): boolean;
   clearNode1Policy(): void;
@@ -3703,7 +3703,7 @@ export namespace ChannelEdge {
     lastUpdate: number,
     node1Pub: string,
     node2Pub: string,
-    capacity: number,
+    capacity: string,
     node1Policy?: RoutingPolicy.AsObject,
     node2Policy?: RoutingPolicy.AsObject,
   }
@@ -3874,23 +3874,23 @@ export class NetworkInfo extends jspb.Message {
   getNumChannels(): number;
   setNumChannels(value: number): void;
 
-  getTotalNetworkCapacity(): number;
-  setTotalNetworkCapacity(value: number): void;
+  getTotalNetworkCapacity(): string;
+  setTotalNetworkCapacity(value: string): void;
 
   getAvgChannelSize(): number;
   setAvgChannelSize(value: number): void;
 
-  getMinChannelSize(): number;
-  setMinChannelSize(value: number): void;
+  getMinChannelSize(): string;
+  setMinChannelSize(value: string): void;
 
-  getMaxChannelSize(): number;
-  setMaxChannelSize(value: number): void;
+  getMaxChannelSize(): string;
+  setMaxChannelSize(value: string): void;
 
-  getMedianChannelSizeSat(): number;
-  setMedianChannelSizeSat(value: number): void;
+  getMedianChannelSizeSat(): string;
+  setMedianChannelSizeSat(value: string): void;
 
-  getNumZombieChans(): number;
-  setNumZombieChans(value: number): void;
+  getNumZombieChans(): string;
+  setNumZombieChans(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): NetworkInfo.AsObject;
@@ -3909,12 +3909,12 @@ export namespace NetworkInfo {
     maxOutDegree: number,
     numNodes: number,
     numChannels: number,
-    totalNetworkCapacity: number,
+    totalNetworkCapacity: string,
     avgChannelSize: number,
-    minChannelSize: number,
-    maxChannelSize: number,
-    medianChannelSizeSat: number,
-    numZombieChans: number,
+    minChannelSize: string,
+    maxChannelSize: string,
+    medianChannelSizeSat: string,
+    numZombieChans: string,
   }
 }
 
@@ -4058,8 +4058,8 @@ export class ChannelEdgeUpdate extends jspb.Message {
   getChanPoint(): ChannelPoint | undefined;
   setChanPoint(value?: ChannelPoint): void;
 
-  getCapacity(): number;
-  setCapacity(value: number): void;
+  getCapacity(): string;
+  setCapacity(value: string): void;
 
   hasRoutingPolicy(): boolean;
   clearRoutingPolicy(): void;
@@ -4086,7 +4086,7 @@ export namespace ChannelEdgeUpdate {
   export type AsObject = {
     chanId: string,
     chanPoint?: ChannelPoint.AsObject,
-    capacity: number,
+    capacity: string,
     routingPolicy?: RoutingPolicy.AsObject,
     advertisingNode: string,
     connectingNode: string,
@@ -4097,8 +4097,8 @@ export class ClosedChannelUpdate extends jspb.Message {
   getChanId(): string;
   setChanId(value: string): void;
 
-  getCapacity(): number;
-  setCapacity(value: number): void;
+  getCapacity(): string;
+  setCapacity(value: string): void;
 
   getClosedHeight(): number;
   setClosedHeight(value: number): void;
@@ -4121,7 +4121,7 @@ export class ClosedChannelUpdate extends jspb.Message {
 export namespace ClosedChannelUpdate {
   export type AsObject = {
     chanId: string,
-    capacity: number,
+    capacity: string,
     closedHeight: number,
     chanPoint?: ChannelPoint.AsObject,
   }
@@ -4199,20 +4199,20 @@ export class Invoice extends jspb.Message {
   getRHash_asB64(): string;
   setRHash(value: Uint8Array | string): void;
 
-  getValue(): number;
-  setValue(value: number): void;
+  getValue(): string;
+  setValue(value: string): void;
 
-  getValueMsat(): number;
-  setValueMsat(value: number): void;
+  getValueMsat(): string;
+  setValueMsat(value: string): void;
 
   getSettled(): boolean;
   setSettled(value: boolean): void;
 
-  getCreationDate(): number;
-  setCreationDate(value: number): void;
+  getCreationDate(): string;
+  setCreationDate(value: string): void;
 
-  getSettleDate(): number;
-  setSettleDate(value: number): void;
+  getSettleDate(): string;
+  setSettleDate(value: string): void;
 
   getPaymentRequest(): string;
   setPaymentRequest(value: string): void;
@@ -4222,14 +4222,14 @@ export class Invoice extends jspb.Message {
   getDescriptionHash_asB64(): string;
   setDescriptionHash(value: Uint8Array | string): void;
 
-  getExpiry(): number;
-  setExpiry(value: number): void;
+  getExpiry(): string;
+  setExpiry(value: string): void;
 
   getFallbackAddr(): string;
   setFallbackAddr(value: string): void;
 
-  getCltvExpiry(): number;
-  setCltvExpiry(value: number): void;
+  getCltvExpiry(): string;
+  setCltvExpiry(value: string): void;
 
   clearRouteHintsList(): void;
   getRouteHintsList(): Array<RouteHint>;
@@ -4239,20 +4239,20 @@ export class Invoice extends jspb.Message {
   getPrivate(): boolean;
   setPrivate(value: boolean): void;
 
-  getAddIndex(): number;
-  setAddIndex(value: number): void;
+  getAddIndex(): string;
+  setAddIndex(value: string): void;
 
-  getSettleIndex(): number;
-  setSettleIndex(value: number): void;
+  getSettleIndex(): string;
+  setSettleIndex(value: string): void;
 
-  getAmtPaid(): number;
-  setAmtPaid(value: number): void;
+  getAmtPaid(): string;
+  setAmtPaid(value: string): void;
 
-  getAmtPaidSat(): number;
-  setAmtPaidSat(value: number): void;
+  getAmtPaidSat(): string;
+  setAmtPaidSat(value: string): void;
 
-  getAmtPaidMsat(): number;
-  setAmtPaidMsat(value: number): void;
+  getAmtPaidMsat(): string;
+  setAmtPaidMsat(value: string): void;
 
   getState(): Invoice.InvoiceStateMap[keyof Invoice.InvoiceStateMap];
   setState(value: Invoice.InvoiceStateMap[keyof Invoice.InvoiceStateMap]): void;
@@ -4290,23 +4290,23 @@ export namespace Invoice {
     memo: string,
     rPreimage: Uint8Array | string,
     rHash: Uint8Array | string,
-    value: number,
-    valueMsat: number,
+    value: string,
+    valueMsat: string,
     settled: boolean,
-    creationDate: number,
-    settleDate: number,
+    creationDate: string,
+    settleDate: string,
     paymentRequest: string,
     descriptionHash: Uint8Array | string,
-    expiry: number,
+    expiry: string,
     fallbackAddr: string,
-    cltvExpiry: number,
+    cltvExpiry: string,
     routeHintsList: Array<RouteHint.AsObject>,
     pb_private: boolean,
-    addIndex: number,
-    settleIndex: number,
-    amtPaid: number,
-    amtPaidSat: number,
-    amtPaidMsat: number,
+    addIndex: string,
+    settleIndex: string,
+    amtPaid: string,
+    amtPaidSat: string,
+    amtPaidMsat: string,
     state: Invoice.InvoiceStateMap[keyof Invoice.InvoiceStateMap],
     htlcsList: Array<InvoiceHTLC.AsObject>,
     featuresMap: Array<[number, Feature.AsObject]>,
@@ -4329,20 +4329,20 @@ export class InvoiceHTLC extends jspb.Message {
   getChanId(): string;
   setChanId(value: string): void;
 
-  getHtlcIndex(): number;
-  setHtlcIndex(value: number): void;
+  getHtlcIndex(): string;
+  setHtlcIndex(value: string): void;
 
-  getAmtMsat(): number;
-  setAmtMsat(value: number): void;
+  getAmtMsat(): string;
+  setAmtMsat(value: string): void;
 
   getAcceptHeight(): number;
   setAcceptHeight(value: number): void;
 
-  getAcceptTime(): number;
-  setAcceptTime(value: number): void;
+  getAcceptTime(): string;
+  setAcceptTime(value: string): void;
 
-  getResolveTime(): number;
-  setResolveTime(value: number): void;
+  getResolveTime(): string;
+  setResolveTime(value: string): void;
 
   getExpiryHeight(): number;
   setExpiryHeight(value: number): void;
@@ -4352,8 +4352,8 @@ export class InvoiceHTLC extends jspb.Message {
 
   getCustomRecordsMap(): jspb.Map<number, Uint8Array | string>;
   clearCustomRecordsMap(): void;
-  getMppTotalAmtMsat(): number;
-  setMppTotalAmtMsat(value: number): void;
+  getMppTotalAmtMsat(): string;
+  setMppTotalAmtMsat(value: string): void;
 
   hasAmp(): boolean;
   clearAmp(): void;
@@ -4373,15 +4373,15 @@ export class InvoiceHTLC extends jspb.Message {
 export namespace InvoiceHTLC {
   export type AsObject = {
     chanId: string,
-    htlcIndex: number,
-    amtMsat: number,
+    htlcIndex: string,
+    amtMsat: string,
     acceptHeight: number,
-    acceptTime: number,
-    resolveTime: number,
+    acceptTime: string,
+    resolveTime: string,
     expiryHeight: number,
     state: InvoiceHTLCStateMap[keyof InvoiceHTLCStateMap],
     customRecordsMap: Array<[number, Uint8Array | string]>,
-    mppTotalAmtMsat: number,
+    mppTotalAmtMsat: string,
     amp?: AMP.AsObject,
   }
 }
@@ -4439,8 +4439,8 @@ export class AddInvoiceResponse extends jspb.Message {
   getPaymentRequest(): string;
   setPaymentRequest(value: string): void;
 
-  getAddIndex(): number;
-  setAddIndex(value: number): void;
+  getAddIndex(): string;
+  setAddIndex(value: string): void;
 
   getPaymentAddr(): Uint8Array | string;
   getPaymentAddr_asU8(): Uint8Array;
@@ -4461,7 +4461,7 @@ export namespace AddInvoiceResponse {
   export type AsObject = {
     rHash: Uint8Array | string,
     paymentRequest: string,
-    addIndex: number,
+    addIndex: string,
     paymentAddr: Uint8Array | string,
   }
 }
@@ -4496,11 +4496,11 @@ export class ListInvoiceRequest extends jspb.Message {
   getPendingOnly(): boolean;
   setPendingOnly(value: boolean): void;
 
-  getIndexOffset(): number;
-  setIndexOffset(value: number): void;
+  getIndexOffset(): string;
+  setIndexOffset(value: string): void;
 
-  getNumMaxInvoices(): number;
-  setNumMaxInvoices(value: number): void;
+  getNumMaxInvoices(): string;
+  setNumMaxInvoices(value: string): void;
 
   getReversed(): boolean;
   setReversed(value: boolean): void;
@@ -4518,8 +4518,8 @@ export class ListInvoiceRequest extends jspb.Message {
 export namespace ListInvoiceRequest {
   export type AsObject = {
     pendingOnly: boolean,
-    indexOffset: number,
-    numMaxInvoices: number,
+    indexOffset: string,
+    numMaxInvoices: string,
     reversed: boolean,
   }
 }
@@ -4530,11 +4530,11 @@ export class ListInvoiceResponse extends jspb.Message {
   setInvoicesList(value: Array<Invoice>): void;
   addInvoices(value?: Invoice, index?: number): Invoice;
 
-  getLastIndexOffset(): number;
-  setLastIndexOffset(value: number): void;
+  getLastIndexOffset(): string;
+  setLastIndexOffset(value: string): void;
 
-  getFirstIndexOffset(): number;
-  setFirstIndexOffset(value: number): void;
+  getFirstIndexOffset(): string;
+  setFirstIndexOffset(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ListInvoiceResponse.AsObject;
@@ -4549,17 +4549,17 @@ export class ListInvoiceResponse extends jspb.Message {
 export namespace ListInvoiceResponse {
   export type AsObject = {
     invoicesList: Array<Invoice.AsObject>,
-    lastIndexOffset: number,
-    firstIndexOffset: number,
+    lastIndexOffset: string,
+    firstIndexOffset: string,
   }
 }
 
 export class InvoiceSubscription extends jspb.Message {
-  getAddIndex(): number;
-  setAddIndex(value: number): void;
+  getAddIndex(): string;
+  setAddIndex(value: string): void;
 
-  getSettleIndex(): number;
-  setSettleIndex(value: number): void;
+  getSettleIndex(): string;
+  setSettleIndex(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): InvoiceSubscription.AsObject;
@@ -4573,8 +4573,8 @@ export class InvoiceSubscription extends jspb.Message {
 
 export namespace InvoiceSubscription {
   export type AsObject = {
-    addIndex: number,
-    settleIndex: number,
+    addIndex: string,
+    settleIndex: string,
   }
 }
 
@@ -4582,23 +4582,23 @@ export class Payment extends jspb.Message {
   getPaymentHash(): string;
   setPaymentHash(value: string): void;
 
-  getValue(): number;
-  setValue(value: number): void;
+  getValue(): string;
+  setValue(value: string): void;
 
-  getCreationDate(): number;
-  setCreationDate(value: number): void;
+  getCreationDate(): string;
+  setCreationDate(value: string): void;
 
-  getFee(): number;
-  setFee(value: number): void;
+  getFee(): string;
+  setFee(value: string): void;
 
   getPaymentPreimage(): string;
   setPaymentPreimage(value: string): void;
 
-  getValueSat(): number;
-  setValueSat(value: number): void;
+  getValueSat(): string;
+  setValueSat(value: string): void;
 
-  getValueMsat(): number;
-  setValueMsat(value: number): void;
+  getValueMsat(): string;
+  setValueMsat(value: string): void;
 
   getPaymentRequest(): string;
   setPaymentRequest(value: string): void;
@@ -4606,22 +4606,22 @@ export class Payment extends jspb.Message {
   getStatus(): Payment.PaymentStatusMap[keyof Payment.PaymentStatusMap];
   setStatus(value: Payment.PaymentStatusMap[keyof Payment.PaymentStatusMap]): void;
 
-  getFeeSat(): number;
-  setFeeSat(value: number): void;
+  getFeeSat(): string;
+  setFeeSat(value: string): void;
 
-  getFeeMsat(): number;
-  setFeeMsat(value: number): void;
+  getFeeMsat(): string;
+  setFeeMsat(value: string): void;
 
-  getCreationTimeNs(): number;
-  setCreationTimeNs(value: number): void;
+  getCreationTimeNs(): string;
+  setCreationTimeNs(value: string): void;
 
   clearHtlcsList(): void;
   getHtlcsList(): Array<HTLCAttempt>;
   setHtlcsList(value: Array<HTLCAttempt>): void;
   addHtlcs(value?: HTLCAttempt, index?: number): HTLCAttempt;
 
-  getPaymentIndex(): number;
-  setPaymentIndex(value: number): void;
+  getPaymentIndex(): string;
+  setPaymentIndex(value: string): void;
 
   getFailureReason(): PaymentFailureReasonMap[keyof PaymentFailureReasonMap];
   setFailureReason(value: PaymentFailureReasonMap[keyof PaymentFailureReasonMap]): void;
@@ -4639,19 +4639,19 @@ export class Payment extends jspb.Message {
 export namespace Payment {
   export type AsObject = {
     paymentHash: string,
-    value: number,
-    creationDate: number,
-    fee: number,
+    value: string,
+    creationDate: string,
+    fee: string,
     paymentPreimage: string,
-    valueSat: number,
-    valueMsat: number,
+    valueSat: string,
+    valueMsat: string,
     paymentRequest: string,
     status: Payment.PaymentStatusMap[keyof Payment.PaymentStatusMap],
-    feeSat: number,
-    feeMsat: number,
-    creationTimeNs: number,
+    feeSat: string,
+    feeMsat: string,
+    creationTimeNs: string,
     htlcsList: Array<HTLCAttempt.AsObject>,
-    paymentIndex: number,
+    paymentIndex: string,
     failureReason: PaymentFailureReasonMap[keyof PaymentFailureReasonMap],
   }
 
@@ -4666,8 +4666,8 @@ export namespace Payment {
 }
 
 export class HTLCAttempt extends jspb.Message {
-  getAttemptId(): number;
-  setAttemptId(value: number): void;
+  getAttemptId(): string;
+  setAttemptId(value: string): void;
 
   getStatus(): HTLCAttempt.HTLCStatusMap[keyof HTLCAttempt.HTLCStatusMap];
   setStatus(value: HTLCAttempt.HTLCStatusMap[keyof HTLCAttempt.HTLCStatusMap]): void;
@@ -4677,11 +4677,11 @@ export class HTLCAttempt extends jspb.Message {
   getRoute(): Route | undefined;
   setRoute(value?: Route): void;
 
-  getAttemptTimeNs(): number;
-  setAttemptTimeNs(value: number): void;
+  getAttemptTimeNs(): string;
+  setAttemptTimeNs(value: string): void;
 
-  getResolveTimeNs(): number;
-  setResolveTimeNs(value: number): void;
+  getResolveTimeNs(): string;
+  setResolveTimeNs(value: string): void;
 
   hasFailure(): boolean;
   clearFailure(): void;
@@ -4705,11 +4705,11 @@ export class HTLCAttempt extends jspb.Message {
 
 export namespace HTLCAttempt {
   export type AsObject = {
-    attemptId: number,
+    attemptId: string,
     status: HTLCAttempt.HTLCStatusMap[keyof HTLCAttempt.HTLCStatusMap],
     route?: Route.AsObject,
-    attemptTimeNs: number,
-    resolveTimeNs: number,
+    attemptTimeNs: string,
+    resolveTimeNs: string,
     failure?: Failure.AsObject,
     preimage: Uint8Array | string,
   }
@@ -4727,11 +4727,11 @@ export class ListPaymentsRequest extends jspb.Message {
   getIncludeIncomplete(): boolean;
   setIncludeIncomplete(value: boolean): void;
 
-  getIndexOffset(): number;
-  setIndexOffset(value: number): void;
+  getIndexOffset(): string;
+  setIndexOffset(value: string): void;
 
-  getMaxPayments(): number;
-  setMaxPayments(value: number): void;
+  getMaxPayments(): string;
+  setMaxPayments(value: string): void;
 
   getReversed(): boolean;
   setReversed(value: boolean): void;
@@ -4749,8 +4749,8 @@ export class ListPaymentsRequest extends jspb.Message {
 export namespace ListPaymentsRequest {
   export type AsObject = {
     includeIncomplete: boolean,
-    indexOffset: number,
-    maxPayments: number,
+    indexOffset: string,
+    maxPayments: string,
     reversed: boolean,
   }
 }
@@ -4761,11 +4761,11 @@ export class ListPaymentsResponse extends jspb.Message {
   setPaymentsList(value: Array<Payment>): void;
   addPayments(value?: Payment, index?: number): Payment;
 
-  getFirstIndexOffset(): number;
-  setFirstIndexOffset(value: number): void;
+  getFirstIndexOffset(): string;
+  setFirstIndexOffset(value: string): void;
 
-  getLastIndexOffset(): number;
-  setLastIndexOffset(value: number): void;
+  getLastIndexOffset(): string;
+  setLastIndexOffset(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ListPaymentsResponse.AsObject;
@@ -4780,8 +4780,8 @@ export class ListPaymentsResponse extends jspb.Message {
 export namespace ListPaymentsResponse {
   export type AsObject = {
     paymentsList: Array<Payment.AsObject>,
-    firstIndexOffset: number,
-    lastIndexOffset: number,
+    firstIndexOffset: string,
+    lastIndexOffset: string,
   }
 }
 
@@ -4938,14 +4938,14 @@ export class PayReq extends jspb.Message {
   getPaymentHash(): string;
   setPaymentHash(value: string): void;
 
-  getNumSatoshis(): number;
-  setNumSatoshis(value: number): void;
+  getNumSatoshis(): string;
+  setNumSatoshis(value: string): void;
 
-  getTimestamp(): number;
-  setTimestamp(value: number): void;
+  getTimestamp(): string;
+  setTimestamp(value: string): void;
 
-  getExpiry(): number;
-  setExpiry(value: number): void;
+  getExpiry(): string;
+  setExpiry(value: string): void;
 
   getDescription(): string;
   setDescription(value: string): void;
@@ -4956,8 +4956,8 @@ export class PayReq extends jspb.Message {
   getFallbackAddr(): string;
   setFallbackAddr(value: string): void;
 
-  getCltvExpiry(): number;
-  setCltvExpiry(value: number): void;
+  getCltvExpiry(): string;
+  setCltvExpiry(value: string): void;
 
   clearRouteHintsList(): void;
   getRouteHintsList(): Array<RouteHint>;
@@ -4969,8 +4969,8 @@ export class PayReq extends jspb.Message {
   getPaymentAddr_asB64(): string;
   setPaymentAddr(value: Uint8Array | string): void;
 
-  getNumMsat(): number;
-  setNumMsat(value: number): void;
+  getNumMsat(): string;
+  setNumMsat(value: string): void;
 
   getFeaturesMap(): jspb.Map<number, Feature>;
   clearFeaturesMap(): void;
@@ -4988,16 +4988,16 @@ export namespace PayReq {
   export type AsObject = {
     destination: string,
     paymentHash: string,
-    numSatoshis: number,
-    timestamp: number,
-    expiry: number,
+    numSatoshis: string,
+    timestamp: string,
+    expiry: string,
     description: string,
     descriptionHash: string,
     fallbackAddr: string,
-    cltvExpiry: number,
+    cltvExpiry: string,
     routeHintsList: Array<RouteHint.AsObject>,
     paymentAddr: Uint8Array | string,
-    numMsat: number,
+    numMsat: string,
     featuresMap: Array<[number, Feature.AsObject]>,
   }
 }
@@ -5053,11 +5053,11 @@ export class ChannelFeeReport extends jspb.Message {
   getChannelPoint(): string;
   setChannelPoint(value: string): void;
 
-  getBaseFeeMsat(): number;
-  setBaseFeeMsat(value: number): void;
+  getBaseFeeMsat(): string;
+  setBaseFeeMsat(value: string): void;
 
-  getFeePerMil(): number;
-  setFeePerMil(value: number): void;
+  getFeePerMil(): string;
+  setFeePerMil(value: string): void;
 
   getFeeRate(): number;
   setFeeRate(value: number): void;
@@ -5076,8 +5076,8 @@ export namespace ChannelFeeReport {
   export type AsObject = {
     chanId: string,
     channelPoint: string,
-    baseFeeMsat: number,
-    feePerMil: number,
+    baseFeeMsat: string,
+    feePerMil: string,
     feeRate: number,
   }
 }
@@ -5088,14 +5088,14 @@ export class FeeReportResponse extends jspb.Message {
   setChannelFeesList(value: Array<ChannelFeeReport>): void;
   addChannelFees(value?: ChannelFeeReport, index?: number): ChannelFeeReport;
 
-  getDayFeeSum(): number;
-  setDayFeeSum(value: number): void;
+  getDayFeeSum(): string;
+  setDayFeeSum(value: string): void;
 
-  getWeekFeeSum(): number;
-  setWeekFeeSum(value: number): void;
+  getWeekFeeSum(): string;
+  setWeekFeeSum(value: string): void;
 
-  getMonthFeeSum(): number;
-  setMonthFeeSum(value: number): void;
+  getMonthFeeSum(): string;
+  setMonthFeeSum(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): FeeReportResponse.AsObject;
@@ -5110,9 +5110,9 @@ export class FeeReportResponse extends jspb.Message {
 export namespace FeeReportResponse {
   export type AsObject = {
     channelFeesList: Array<ChannelFeeReport.AsObject>,
-    dayFeeSum: number,
-    weekFeeSum: number,
-    monthFeeSum: number,
+    dayFeeSum: string,
+    weekFeeSum: string,
+    monthFeeSum: string,
   }
 }
 
@@ -5127,8 +5127,8 @@ export class PolicyUpdateRequest extends jspb.Message {
   getChanPoint(): ChannelPoint | undefined;
   setChanPoint(value?: ChannelPoint): void;
 
-  getBaseFeeMsat(): number;
-  setBaseFeeMsat(value: number): void;
+  getBaseFeeMsat(): string;
+  setBaseFeeMsat(value: string): void;
 
   getFeeRate(): number;
   setFeeRate(value: number): void;
@@ -5136,11 +5136,11 @@ export class PolicyUpdateRequest extends jspb.Message {
   getTimeLockDelta(): number;
   setTimeLockDelta(value: number): void;
 
-  getMaxHtlcMsat(): number;
-  setMaxHtlcMsat(value: number): void;
+  getMaxHtlcMsat(): string;
+  setMaxHtlcMsat(value: string): void;
 
-  getMinHtlcMsat(): number;
-  setMinHtlcMsat(value: number): void;
+  getMinHtlcMsat(): string;
+  setMinHtlcMsat(value: string): void;
 
   getMinHtlcMsatSpecified(): boolean;
   setMinHtlcMsatSpecified(value: boolean): void;
@@ -5160,11 +5160,11 @@ export namespace PolicyUpdateRequest {
   export type AsObject = {
     global: boolean,
     chanPoint?: ChannelPoint.AsObject,
-    baseFeeMsat: number,
+    baseFeeMsat: string,
     feeRate: number,
     timeLockDelta: number,
-    maxHtlcMsat: number,
-    minHtlcMsat: number,
+    maxHtlcMsat: string,
+    minHtlcMsat: string,
     minHtlcMsatSpecified: boolean,
   }
 
@@ -5192,11 +5192,11 @@ export namespace PolicyUpdateResponse {
 }
 
 export class ForwardingHistoryRequest extends jspb.Message {
-  getStartTime(): number;
-  setStartTime(value: number): void;
+  getStartTime(): string;
+  setStartTime(value: string): void;
 
-  getEndTime(): number;
-  setEndTime(value: number): void;
+  getEndTime(): string;
+  setEndTime(value: string): void;
 
   getIndexOffset(): number;
   setIndexOffset(value: number): void;
@@ -5216,16 +5216,16 @@ export class ForwardingHistoryRequest extends jspb.Message {
 
 export namespace ForwardingHistoryRequest {
   export type AsObject = {
-    startTime: number,
-    endTime: number,
+    startTime: string,
+    endTime: string,
     indexOffset: number,
     numMaxEvents: number,
   }
 }
 
 export class ForwardingEvent extends jspb.Message {
-  getTimestamp(): number;
-  setTimestamp(value: number): void;
+  getTimestamp(): string;
+  setTimestamp(value: string): void;
 
   getChanIdIn(): string;
   setChanIdIn(value: string): void;
@@ -5233,26 +5233,26 @@ export class ForwardingEvent extends jspb.Message {
   getChanIdOut(): string;
   setChanIdOut(value: string): void;
 
-  getAmtIn(): number;
-  setAmtIn(value: number): void;
+  getAmtIn(): string;
+  setAmtIn(value: string): void;
 
-  getAmtOut(): number;
-  setAmtOut(value: number): void;
+  getAmtOut(): string;
+  setAmtOut(value: string): void;
 
-  getFee(): number;
-  setFee(value: number): void;
+  getFee(): string;
+  setFee(value: string): void;
 
-  getFeeMsat(): number;
-  setFeeMsat(value: number): void;
+  getFeeMsat(): string;
+  setFeeMsat(value: string): void;
 
-  getAmtInMsat(): number;
-  setAmtInMsat(value: number): void;
+  getAmtInMsat(): string;
+  setAmtInMsat(value: string): void;
 
-  getAmtOutMsat(): number;
-  setAmtOutMsat(value: number): void;
+  getAmtOutMsat(): string;
+  setAmtOutMsat(value: string): void;
 
-  getTimestampNs(): number;
-  setTimestampNs(value: number): void;
+  getTimestampNs(): string;
+  setTimestampNs(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ForwardingEvent.AsObject;
@@ -5266,16 +5266,16 @@ export class ForwardingEvent extends jspb.Message {
 
 export namespace ForwardingEvent {
   export type AsObject = {
-    timestamp: number,
+    timestamp: string,
     chanIdIn: string,
     chanIdOut: string,
-    amtIn: number,
-    amtOut: number,
-    fee: number,
-    feeMsat: number,
-    amtInMsat: number,
-    amtOutMsat: number,
-    timestampNs: number,
+    amtIn: string,
+    amtOut: string,
+    fee: string,
+    feeMsat: string,
+    amtInMsat: string,
+    amtOutMsat: string,
+    timestampNs: string,
   }
 }
 
@@ -5564,8 +5564,8 @@ export class BakeMacaroonRequest extends jspb.Message {
   setPermissionsList(value: Array<MacaroonPermission>): void;
   addPermissions(value?: MacaroonPermission, index?: number): MacaroonPermission;
 
-  getRootKeyId(): number;
-  setRootKeyId(value: number): void;
+  getRootKeyId(): string;
+  setRootKeyId(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): BakeMacaroonRequest.AsObject;
@@ -5580,7 +5580,7 @@ export class BakeMacaroonRequest extends jspb.Message {
 export namespace BakeMacaroonRequest {
   export type AsObject = {
     permissionsList: Array<MacaroonPermission.AsObject>,
-    rootKeyId: number,
+    rootKeyId: string,
   }
 }
 
@@ -5622,9 +5622,9 @@ export namespace ListMacaroonIDsRequest {
 
 export class ListMacaroonIDsResponse extends jspb.Message {
   clearRootKeyIdsList(): void;
-  getRootKeyIdsList(): Array<number>;
-  setRootKeyIdsList(value: Array<number>): void;
-  addRootKeyIds(value: number, index?: number): number;
+  getRootKeyIdsList(): Array<string>;
+  setRootKeyIdsList(value: Array<string>): void;
+  addRootKeyIds(value: string, index?: number): string;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ListMacaroonIDsResponse.AsObject;
@@ -5638,13 +5638,13 @@ export class ListMacaroonIDsResponse extends jspb.Message {
 
 export namespace ListMacaroonIDsResponse {
   export type AsObject = {
-    rootKeyIdsList: Array<number>,
+    rootKeyIdsList: Array<string>,
   }
 }
 
 export class DeleteMacaroonIDRequest extends jspb.Message {
-  getRootKeyId(): number;
-  setRootKeyId(value: number): void;
+  getRootKeyId(): string;
+  setRootKeyId(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): DeleteMacaroonIDRequest.AsObject;
@@ -5658,7 +5658,7 @@ export class DeleteMacaroonIDRequest extends jspb.Message {
 
 export namespace DeleteMacaroonIDRequest {
   export type AsObject = {
-    rootKeyId: number,
+    rootKeyId: string,
   }
 }
 
@@ -5748,8 +5748,8 @@ export class Failure extends jspb.Message {
   getChannelUpdate(): ChannelUpdate | undefined;
   setChannelUpdate(value?: ChannelUpdate): void;
 
-  getHtlcMsat(): number;
-  setHtlcMsat(value: number): void;
+  getHtlcMsat(): string;
+  setHtlcMsat(value: string): void;
 
   getOnionSha256(): Uint8Array | string;
   getOnionSha256_asU8(): Uint8Array;
@@ -5782,7 +5782,7 @@ export namespace Failure {
   export type AsObject = {
     code: Failure.FailureCodeMap[keyof Failure.FailureCodeMap],
     channelUpdate?: ChannelUpdate.AsObject,
-    htlcMsat: number,
+    htlcMsat: string,
     onionSha256: Uint8Array | string,
     cltvExpiry: number,
     flags: number,
@@ -5850,8 +5850,8 @@ export class ChannelUpdate extends jspb.Message {
   getTimeLockDelta(): number;
   setTimeLockDelta(value: number): void;
 
-  getHtlcMinimumMsat(): number;
-  setHtlcMinimumMsat(value: number): void;
+  getHtlcMinimumMsat(): string;
+  setHtlcMinimumMsat(value: string): void;
 
   getBaseFee(): number;
   setBaseFee(value: number): void;
@@ -5859,8 +5859,8 @@ export class ChannelUpdate extends jspb.Message {
   getFeeRate(): number;
   setFeeRate(value: number): void;
 
-  getHtlcMaximumMsat(): number;
-  setHtlcMaximumMsat(value: number): void;
+  getHtlcMaximumMsat(): string;
+  setHtlcMaximumMsat(value: string): void;
 
   getExtraOpaqueData(): Uint8Array | string;
   getExtraOpaqueData_asU8(): Uint8Array;
@@ -5886,10 +5886,10 @@ export namespace ChannelUpdate {
     messageFlags: number,
     channelFlags: number,
     timeLockDelta: number,
-    htlcMinimumMsat: number,
+    htlcMinimumMsat: string,
     baseFee: number,
     feeRate: number,
-    htlcMaximumMsat: number,
+    htlcMaximumMsat: string,
     extraOpaqueData: Uint8Array | string,
   }
 }

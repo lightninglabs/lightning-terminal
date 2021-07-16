@@ -135,7 +135,7 @@ proto.poolrpc.ReserveAccountRequest.prototype.toObject = function(opt_includeIns
  */
 proto.poolrpc.ReserveAccountRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-    accountValue: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    accountValue: jspb.Message.getFieldWithDefault(msg, 1, "0"),
     accountExpiry: jspb.Message.getFieldWithDefault(msg, 2, 0),
     traderKey: msg.getTraderKey_asB64()
   };
@@ -175,7 +175,7 @@ proto.poolrpc.ReserveAccountRequest.deserializeBinaryFromReader = function(msg, 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setAccountValue(value);
       break;
     case 2:
@@ -216,8 +216,8 @@ proto.poolrpc.ReserveAccountRequest.prototype.serializeBinary = function() {
 proto.poolrpc.ReserveAccountRequest.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getAccountValue();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       1,
       f
     );
@@ -241,16 +241,16 @@ proto.poolrpc.ReserveAccountRequest.serializeBinaryToWriter = function(message, 
 
 /**
  * optional uint64 account_value = 1;
- * @return {number}
+ * @return {string}
  */
 proto.poolrpc.ReserveAccountRequest.prototype.getAccountValue = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.poolrpc.ReserveAccountRequest.prototype.setAccountValue = function(value) {
-  jspb.Message.setProto3IntField(this, 1, value);
+  jspb.Message.setProto3StringIntField(this, 1, value);
 };
 
 
@@ -574,7 +574,7 @@ proto.poolrpc.ServerInitAccountRequest.toObject = function(includeInstance, msg)
   var f, obj = {
     accountPoint: (f = msg.getAccountPoint()) && proto.poolrpc.OutPoint.toObject(includeInstance, f),
     accountScript: msg.getAccountScript_asB64(),
-    accountValue: jspb.Message.getFieldWithDefault(msg, 3, 0),
+    accountValue: jspb.Message.getFieldWithDefault(msg, 3, "0"),
     accountExpiry: jspb.Message.getFieldWithDefault(msg, 4, 0),
     traderKey: msg.getTraderKey_asB64(),
     userAgent: jspb.Message.getFieldWithDefault(msg, 6, "")
@@ -624,7 +624,7 @@ proto.poolrpc.ServerInitAccountRequest.deserializeBinaryFromReader = function(ms
       msg.setAccountScript(value);
       break;
     case 3:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setAccountValue(value);
       break;
     case 4:
@@ -684,8 +684,8 @@ proto.poolrpc.ServerInitAccountRequest.serializeBinaryToWriter = function(messag
     );
   }
   f = message.getAccountValue();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       3,
       f
     );
@@ -785,16 +785,16 @@ proto.poolrpc.ServerInitAccountRequest.prototype.setAccountScript = function(val
 
 /**
  * optional uint64 account_value = 3;
- * @return {number}
+ * @return {string}
  */
 proto.poolrpc.ServerInitAccountRequest.prototype.getAccountValue = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 3, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.poolrpc.ServerInitAccountRequest.prototype.setAccountValue = function(value) {
-  jspb.Message.setProto3IntField(this, 3, value);
+  jspb.Message.setProto3StringIntField(this, 3, value);
 };
 
 
@@ -5025,8 +5025,8 @@ proto.poolrpc.OrderMatchPrepare.toObject = function(includeInstance, msg) {
     proto.poolrpc.AccountDiff.toObject, includeInstance),
     executionFee: (f = msg.getExecutionFee()) && proto.poolrpc.ExecutionFee.toObject(includeInstance, f),
     batchTransaction: msg.getBatchTransaction_asB64(),
-    feeRateSatPerKw: jspb.Message.getFieldWithDefault(msg, 6, 0),
-    feeRebateSat: jspb.Message.getFieldWithDefault(msg, 7, 0),
+    feeRateSatPerKw: jspb.Message.getFieldWithDefault(msg, 6, "0"),
+    feeRebateSat: jspb.Message.getFieldWithDefault(msg, 7, "0"),
     batchId: msg.getBatchId_asB64(),
     batchVersion: jspb.Message.getFieldWithDefault(msg, 9, 0),
     matchedMarketsMap: (f = msg.getMatchedMarketsMap()) ? f.toObject(includeInstance, proto.poolrpc.MatchedMarket.toObject) : []
@@ -5091,11 +5091,11 @@ proto.poolrpc.OrderMatchPrepare.deserializeBinaryFromReader = function(msg, read
       msg.setBatchTransaction(value);
       break;
     case 6:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setFeeRateSatPerKw(value);
       break;
     case 7:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setFeeRebateSat(value);
       break;
     case 8:
@@ -5176,15 +5176,15 @@ proto.poolrpc.OrderMatchPrepare.serializeBinaryToWriter = function(message, writ
     );
   }
   f = message.getFeeRateSatPerKw();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       6,
       f
     );
   }
   f = message.getFeeRebateSat();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       7,
       f
     );
@@ -5345,31 +5345,31 @@ proto.poolrpc.OrderMatchPrepare.prototype.setBatchTransaction = function(value) 
 
 /**
  * optional uint64 fee_rate_sat_per_kw = 6;
- * @return {number}
+ * @return {string}
  */
 proto.poolrpc.OrderMatchPrepare.prototype.getFeeRateSatPerKw = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 6, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 6, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.poolrpc.OrderMatchPrepare.prototype.setFeeRateSatPerKw = function(value) {
-  jspb.Message.setProto3IntField(this, 6, value);
+  jspb.Message.setProto3StringIntField(this, 6, value);
 };
 
 
 /**
  * optional uint64 fee_rebate_sat = 7;
- * @return {number}
+ * @return {string}
  */
 proto.poolrpc.OrderMatchPrepare.prototype.getFeeRebateSat = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 7, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 7, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.poolrpc.OrderMatchPrepare.prototype.setFeeRebateSat = function(value) {
-  jspb.Message.setProto3IntField(this, 7, value);
+  jspb.Message.setProto3StringIntField(this, 7, value);
 };
 
 
@@ -6176,7 +6176,7 @@ proto.poolrpc.AuctionAccount.prototype.toObject = function(opt_includeInstance) 
  */
 proto.poolrpc.AuctionAccount.toObject = function(includeInstance, msg) {
   var f, obj = {
-    value: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    value: jspb.Message.getFieldWithDefault(msg, 1, "0"),
     expiry: jspb.Message.getFieldWithDefault(msg, 2, 0),
     traderKey: msg.getTraderKey_asB64(),
     auctioneerKey: msg.getAuctioneerKey_asB64(),
@@ -6222,7 +6222,7 @@ proto.poolrpc.AuctionAccount.deserializeBinaryFromReader = function(msg, reader)
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setValue(value);
       break;
     case 2:
@@ -6288,8 +6288,8 @@ proto.poolrpc.AuctionAccount.prototype.serializeBinary = function() {
 proto.poolrpc.AuctionAccount.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getValue();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       1,
       f
     );
@@ -6356,16 +6356,16 @@ proto.poolrpc.AuctionAccount.serializeBinaryToWriter = function(message, writer)
 
 /**
  * optional uint64 value = 1;
- * @return {number}
+ * @return {string}
  */
 proto.poolrpc.AuctionAccount.prototype.getValue = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.poolrpc.AuctionAccount.prototype.setValue = function(value) {
-  jspb.Message.setProto3IntField(this, 1, value);
+  jspb.Message.setProto3StringIntField(this, 1, value);
 };
 
 
@@ -7233,7 +7233,7 @@ proto.poolrpc.AccountDiff.prototype.toObject = function(opt_includeInstance) {
  */
 proto.poolrpc.AccountDiff.toObject = function(includeInstance, msg) {
   var f, obj = {
-    endingBalance: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    endingBalance: jspb.Message.getFieldWithDefault(msg, 1, "0"),
     endingState: jspb.Message.getFieldWithDefault(msg, 2, 0),
     outpointIndex: jspb.Message.getFieldWithDefault(msg, 3, 0),
     traderKey: msg.getTraderKey_asB64()
@@ -7274,7 +7274,7 @@ proto.poolrpc.AccountDiff.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setEndingBalance(value);
       break;
     case 2:
@@ -7319,8 +7319,8 @@ proto.poolrpc.AccountDiff.prototype.serializeBinary = function() {
 proto.poolrpc.AccountDiff.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getEndingBalance();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       1,
       f
     );
@@ -7361,16 +7361,16 @@ proto.poolrpc.AccountDiff.AccountState = {
 
 /**
  * optional uint64 ending_balance = 1;
- * @return {number}
+ * @return {string}
  */
 proto.poolrpc.AccountDiff.prototype.getEndingBalance = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.poolrpc.AccountDiff.prototype.setEndingBalance = function(value) {
-  jspb.Message.setProto3IntField(this, 1, value);
+  jspb.Message.setProto3StringIntField(this, 1, value);
 };
 
 
@@ -7499,8 +7499,8 @@ proto.poolrpc.ServerOrder.toObject = function(includeInstance, msg) {
   var f, obj = {
     traderKey: msg.getTraderKey_asB64(),
     rateFixed: jspb.Message.getFieldWithDefault(msg, 2, 0),
-    amt: jspb.Message.getFieldWithDefault(msg, 3, 0),
-    minChanAmt: jspb.Message.getFieldWithDefault(msg, 4, 0),
+    amt: jspb.Message.getFieldWithDefault(msg, 3, "0"),
+    minChanAmt: jspb.Message.getFieldWithDefault(msg, 4, "0"),
     orderNonce: msg.getOrderNonce_asB64(),
     orderSig: msg.getOrderSig_asB64(),
     multiSigKey: msg.getMultiSigKey_asB64(),
@@ -7508,7 +7508,7 @@ proto.poolrpc.ServerOrder.toObject = function(includeInstance, msg) {
     nodeAddrList: jspb.Message.toObjectList(msg.getNodeAddrList(),
     proto.poolrpc.NodeAddress.toObject, includeInstance),
     chanType: jspb.Message.getFieldWithDefault(msg, 12, 0),
-    maxBatchFeeRateSatPerKw: jspb.Message.getFieldWithDefault(msg, 13, 0)
+    maxBatchFeeRateSatPerKw: jspb.Message.getFieldWithDefault(msg, 13, "0")
   };
 
   if (includeInstance) {
@@ -7554,11 +7554,11 @@ proto.poolrpc.ServerOrder.deserializeBinaryFromReader = function(msg, reader) {
       msg.setRateFixed(value);
       break;
     case 3:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setAmt(value);
       break;
     case 4:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setMinChanAmt(value);
       break;
     case 6:
@@ -7587,7 +7587,7 @@ proto.poolrpc.ServerOrder.deserializeBinaryFromReader = function(msg, reader) {
       msg.setChanType(value);
       break;
     case 13:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setMaxBatchFeeRateSatPerKw(value);
       break;
     default:
@@ -7634,15 +7634,15 @@ proto.poolrpc.ServerOrder.serializeBinaryToWriter = function(message, writer) {
     );
   }
   f = message.getAmt();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       3,
       f
     );
   }
   f = message.getMinChanAmt();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       4,
       f
     );
@@ -7691,8 +7691,8 @@ proto.poolrpc.ServerOrder.serializeBinaryToWriter = function(message, writer) {
     );
   }
   f = message.getMaxBatchFeeRateSatPerKw();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       13,
       f
     );
@@ -7756,31 +7756,31 @@ proto.poolrpc.ServerOrder.prototype.setRateFixed = function(value) {
 
 /**
  * optional uint64 amt = 3;
- * @return {number}
+ * @return {string}
  */
 proto.poolrpc.ServerOrder.prototype.getAmt = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 3, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.poolrpc.ServerOrder.prototype.setAmt = function(value) {
-  jspb.Message.setProto3IntField(this, 3, value);
+  jspb.Message.setProto3StringIntField(this, 3, value);
 };
 
 
 /**
  * optional uint64 min_chan_amt = 4;
- * @return {number}
+ * @return {string}
  */
 proto.poolrpc.ServerOrder.prototype.getMinChanAmt = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 4, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 4, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.poolrpc.ServerOrder.prototype.setMinChanAmt = function(value) {
-  jspb.Message.setProto3IntField(this, 4, value);
+  jspb.Message.setProto3StringIntField(this, 4, value);
 };
 
 
@@ -7988,16 +7988,16 @@ proto.poolrpc.ServerOrder.prototype.setChanType = function(value) {
 
 /**
  * optional uint64 max_batch_fee_rate_sat_per_kw = 13;
- * @return {number}
+ * @return {string}
  */
 proto.poolrpc.ServerOrder.prototype.getMaxBatchFeeRateSatPerKw = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 13, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 13, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.poolrpc.ServerOrder.prototype.setMaxBatchFeeRateSatPerKw = function(value) {
-  jspb.Message.setProto3IntField(this, 13, value);
+  jspb.Message.setProto3StringIntField(this, 13, value);
 };
 
 
@@ -8052,7 +8052,7 @@ proto.poolrpc.ServerBid.toObject = function(includeInstance, msg) {
     leaseDurationBlocks: jspb.Message.getFieldWithDefault(msg, 2, 0),
     version: jspb.Message.getFieldWithDefault(msg, 4, 0),
     minNodeTier: jspb.Message.getFieldWithDefault(msg, 5, 0),
-    selfChanBalance: jspb.Message.getFieldWithDefault(msg, 6, 0),
+    selfChanBalance: jspb.Message.getFieldWithDefault(msg, 6, "0"),
     isSidecarChannel: jspb.Message.getFieldWithDefault(msg, 7, false)
   };
 
@@ -8108,7 +8108,7 @@ proto.poolrpc.ServerBid.deserializeBinaryFromReader = function(msg, reader) {
       msg.setMinNodeTier(value);
       break;
     case 6:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setSelfChanBalance(value);
       break;
     case 7:
@@ -8174,8 +8174,8 @@ proto.poolrpc.ServerBid.serializeBinaryToWriter = function(message, writer) {
     );
   }
   f = message.getSelfChanBalance();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       6,
       f
     );
@@ -8267,16 +8267,16 @@ proto.poolrpc.ServerBid.prototype.setMinNodeTier = function(value) {
 
 /**
  * optional uint64 self_chan_balance = 6;
- * @return {number}
+ * @return {string}
  */
 proto.poolrpc.ServerBid.prototype.getSelfChanBalance = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 6, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 6, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.poolrpc.ServerBid.prototype.setSelfChanBalance = function(value) {
-  jspb.Message.setProto3IntField(this, 6, value);
+  jspb.Message.setProto3StringIntField(this, 6, value);
 };
 
 
@@ -9160,7 +9160,7 @@ proto.poolrpc.ServerOutput.prototype.toObject = function(opt_includeInstance) {
  */
 proto.poolrpc.ServerOutput.toObject = function(includeInstance, msg) {
   var f, obj = {
-    value: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    value: jspb.Message.getFieldWithDefault(msg, 1, "0"),
     script: msg.getScript_asB64()
   };
 
@@ -9199,7 +9199,7 @@ proto.poolrpc.ServerOutput.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setValue(value);
       break;
     case 2:
@@ -9236,8 +9236,8 @@ proto.poolrpc.ServerOutput.prototype.serializeBinary = function() {
 proto.poolrpc.ServerOutput.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getValue();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       1,
       f
     );
@@ -9254,16 +9254,16 @@ proto.poolrpc.ServerOutput.serializeBinaryToWriter = function(message, writer) {
 
 /**
  * optional uint64 value = 1;
- * @return {number}
+ * @return {string}
  */
 proto.poolrpc.ServerOutput.prototype.getValue = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.poolrpc.ServerOutput.prototype.setValue = function(value) {
-  jspb.Message.setProto3IntField(this, 1, value);
+  jspb.Message.setProto3StringIntField(this, 1, value);
 };
 
 
@@ -9531,7 +9531,7 @@ proto.poolrpc.ServerModifyAccountRequest.NewAccountParameters.prototype.toObject
  */
 proto.poolrpc.ServerModifyAccountRequest.NewAccountParameters.toObject = function(includeInstance, msg) {
   var f, obj = {
-    value: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    value: jspb.Message.getFieldWithDefault(msg, 1, "0"),
     expiry: jspb.Message.getFieldWithDefault(msg, 2, 0)
   };
 
@@ -9570,7 +9570,7 @@ proto.poolrpc.ServerModifyAccountRequest.NewAccountParameters.deserializeBinaryF
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setValue(value);
       break;
     case 2:
@@ -9607,8 +9607,8 @@ proto.poolrpc.ServerModifyAccountRequest.NewAccountParameters.prototype.serializ
 proto.poolrpc.ServerModifyAccountRequest.NewAccountParameters.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getValue();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       1,
       f
     );
@@ -9625,16 +9625,16 @@ proto.poolrpc.ServerModifyAccountRequest.NewAccountParameters.serializeBinaryToW
 
 /**
  * optional uint64 value = 1;
- * @return {number}
+ * @return {string}
  */
 proto.poolrpc.ServerModifyAccountRequest.NewAccountParameters.prototype.getValue = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.poolrpc.ServerModifyAccountRequest.NewAccountParameters.prototype.setValue = function(value) {
-  jspb.Message.setProto3IntField(this, 1, value);
+  jspb.Message.setProto3StringIntField(this, 1, value);
 };
 
 
@@ -10448,13 +10448,13 @@ proto.poolrpc.TermsResponse.prototype.toObject = function(opt_includeInstance) {
  */
 proto.poolrpc.TermsResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    maxAccountValue: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    maxAccountValue: jspb.Message.getFieldWithDefault(msg, 1, "0"),
     maxOrderDurationBlocks: jspb.Message.getFieldWithDefault(msg, 2, 0),
     executionFee: (f = msg.getExecutionFee()) && proto.poolrpc.ExecutionFee.toObject(includeInstance, f),
     leaseDurationsMap: (f = msg.getLeaseDurationsMap()) ? f.toObject(includeInstance, undefined) : [],
     nextBatchConfTarget: jspb.Message.getFieldWithDefault(msg, 5, 0),
-    nextBatchFeeRateSatPerKw: jspb.Message.getFieldWithDefault(msg, 6, 0),
-    nextBatchClearTimestamp: jspb.Message.getFieldWithDefault(msg, 7, 0),
+    nextBatchFeeRateSatPerKw: jspb.Message.getFieldWithDefault(msg, 6, "0"),
+    nextBatchClearTimestamp: jspb.Message.getFieldWithDefault(msg, 7, "0"),
     leaseDurationBucketsMap: (f = msg.getLeaseDurationBucketsMap()) ? f.toObject(includeInstance, undefined) : []
   };
 
@@ -10493,7 +10493,7 @@ proto.poolrpc.TermsResponse.deserializeBinaryFromReader = function(msg, reader) 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setMaxAccountValue(value);
       break;
     case 2:
@@ -10516,11 +10516,11 @@ proto.poolrpc.TermsResponse.deserializeBinaryFromReader = function(msg, reader) 
       msg.setNextBatchConfTarget(value);
       break;
     case 6:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setNextBatchFeeRateSatPerKw(value);
       break;
     case 7:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setNextBatchClearTimestamp(value);
       break;
     case 8:
@@ -10559,8 +10559,8 @@ proto.poolrpc.TermsResponse.prototype.serializeBinary = function() {
 proto.poolrpc.TermsResponse.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getMaxAccountValue();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       1,
       f
     );
@@ -10592,15 +10592,15 @@ proto.poolrpc.TermsResponse.serializeBinaryToWriter = function(message, writer) 
     );
   }
   f = message.getNextBatchFeeRateSatPerKw();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       6,
       f
     );
   }
   f = message.getNextBatchClearTimestamp();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       7,
       f
     );
@@ -10614,16 +10614,16 @@ proto.poolrpc.TermsResponse.serializeBinaryToWriter = function(message, writer) 
 
 /**
  * optional uint64 max_account_value = 1;
- * @return {number}
+ * @return {string}
  */
 proto.poolrpc.TermsResponse.prototype.getMaxAccountValue = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.poolrpc.TermsResponse.prototype.setMaxAccountValue = function(value) {
-  jspb.Message.setProto3IntField(this, 1, value);
+  jspb.Message.setProto3StringIntField(this, 1, value);
 };
 
 
@@ -10707,31 +10707,31 @@ proto.poolrpc.TermsResponse.prototype.setNextBatchConfTarget = function(value) {
 
 /**
  * optional uint64 next_batch_fee_rate_sat_per_kw = 6;
- * @return {number}
+ * @return {string}
  */
 proto.poolrpc.TermsResponse.prototype.getNextBatchFeeRateSatPerKw = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 6, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 6, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.poolrpc.TermsResponse.prototype.setNextBatchFeeRateSatPerKw = function(value) {
-  jspb.Message.setProto3IntField(this, 6, value);
+  jspb.Message.setProto3StringIntField(this, 6, value);
 };
 
 
 /**
  * optional uint64 next_batch_clear_timestamp = 7;
- * @return {number}
+ * @return {string}
  */
 proto.poolrpc.TermsResponse.prototype.getNextBatchClearTimestamp = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 7, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 7, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.poolrpc.TermsResponse.prototype.setNextBatchClearTimestamp = function(value) {
-  jspb.Message.setProto3IntField(this, 7, value);
+  jspb.Message.setProto3StringIntField(this, 7, value);
 };
 
 
@@ -11053,8 +11053,8 @@ proto.poolrpc.RelevantBatch.toObject = function(includeInstance, msg) {
     clearingPriceRate: jspb.Message.getFieldWithDefault(msg, 5, 0),
     executionFee: (f = msg.getExecutionFee()) && proto.poolrpc.ExecutionFee.toObject(includeInstance, f),
     transaction: msg.getTransaction_asB64(),
-    feeRateSatPerKw: jspb.Message.getFieldWithDefault(msg, 8, 0),
-    creationTimestampNs: jspb.Message.getFieldWithDefault(msg, 9, 0),
+    feeRateSatPerKw: jspb.Message.getFieldWithDefault(msg, 8, "0"),
+    creationTimestampNs: jspb.Message.getFieldWithDefault(msg, 9, "0"),
     matchedMarketsMap: (f = msg.getMatchedMarketsMap()) ? f.toObject(includeInstance, proto.poolrpc.MatchedMarket.toObject) : []
   };
 
@@ -11125,11 +11125,11 @@ proto.poolrpc.RelevantBatch.deserializeBinaryFromReader = function(msg, reader) 
       msg.setTransaction(value);
       break;
     case 8:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setFeeRateSatPerKw(value);
       break;
     case 9:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setCreationTimestampNs(value);
       break;
     case 10:
@@ -11216,15 +11216,15 @@ proto.poolrpc.RelevantBatch.serializeBinaryToWriter = function(message, writer) 
     );
   }
   f = message.getFeeRateSatPerKw();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       8,
       f
     );
   }
   f = message.getCreationTimestampNs();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       9,
       f
     );
@@ -11425,31 +11425,31 @@ proto.poolrpc.RelevantBatch.prototype.setTransaction = function(value) {
 
 /**
  * optional uint64 fee_rate_sat_per_kw = 8;
- * @return {number}
+ * @return {string}
  */
 proto.poolrpc.RelevantBatch.prototype.getFeeRateSatPerKw = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 8, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 8, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.poolrpc.RelevantBatch.prototype.setFeeRateSatPerKw = function(value) {
-  jspb.Message.setProto3IntField(this, 8, value);
+  jspb.Message.setProto3StringIntField(this, 8, value);
 };
 
 
 /**
  * optional uint64 creation_timestamp_ns = 9;
- * @return {number}
+ * @return {string}
  */
 proto.poolrpc.RelevantBatch.prototype.getCreationTimestampNs = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 9, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 9, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.poolrpc.RelevantBatch.prototype.setCreationTimestampNs = function(value) {
-  jspb.Message.setProto3IntField(this, 9, value);
+  jspb.Message.setProto3StringIntField(this, 9, value);
 };
 
 
@@ -11518,8 +11518,8 @@ proto.poolrpc.ExecutionFee.prototype.toObject = function(opt_includeInstance) {
  */
 proto.poolrpc.ExecutionFee.toObject = function(includeInstance, msg) {
   var f, obj = {
-    baseFee: jspb.Message.getFieldWithDefault(msg, 1, 0),
-    feeRate: jspb.Message.getFieldWithDefault(msg, 2, 0)
+    baseFee: jspb.Message.getFieldWithDefault(msg, 1, "0"),
+    feeRate: jspb.Message.getFieldWithDefault(msg, 2, "0")
   };
 
   if (includeInstance) {
@@ -11557,11 +11557,11 @@ proto.poolrpc.ExecutionFee.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setBaseFee(value);
       break;
     case 2:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setFeeRate(value);
       break;
     default:
@@ -11594,15 +11594,15 @@ proto.poolrpc.ExecutionFee.prototype.serializeBinary = function() {
 proto.poolrpc.ExecutionFee.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getBaseFee();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       1,
       f
     );
   }
   f = message.getFeeRate();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       2,
       f
     );
@@ -11612,31 +11612,31 @@ proto.poolrpc.ExecutionFee.serializeBinaryToWriter = function(message, writer) {
 
 /**
  * optional uint64 base_fee = 1;
- * @return {number}
+ * @return {string}
  */
 proto.poolrpc.ExecutionFee.prototype.getBaseFee = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.poolrpc.ExecutionFee.prototype.setBaseFee = function(value) {
-  jspb.Message.setProto3IntField(this, 1, value);
+  jspb.Message.setProto3StringIntField(this, 1, value);
 };
 
 
 /**
  * optional uint64 fee_rate = 2;
- * @return {number}
+ * @return {string}
  */
 proto.poolrpc.ExecutionFee.prototype.getFeeRate = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.poolrpc.ExecutionFee.prototype.setFeeRate = function(value) {
-  jspb.Message.setProto3IntField(this, 2, value);
+  jspb.Message.setProto3StringIntField(this, 2, value);
 };
 
 
@@ -12498,7 +12498,7 @@ proto.poolrpc.MatchedOrderSnapshot.toObject = function(includeInstance, msg) {
     ask: (f = msg.getAsk()) && proto.poolrpc.AskSnapshot.toObject(includeInstance, f),
     bid: (f = msg.getBid()) && proto.poolrpc.BidSnapshot.toObject(includeInstance, f),
     matchingRate: jspb.Message.getFieldWithDefault(msg, 3, 0),
-    totalSatsCleared: jspb.Message.getFieldWithDefault(msg, 4, 0),
+    totalSatsCleared: jspb.Message.getFieldWithDefault(msg, 4, "0"),
     unitsMatched: jspb.Message.getFieldWithDefault(msg, 5, 0)
   };
 
@@ -12551,7 +12551,7 @@ proto.poolrpc.MatchedOrderSnapshot.deserializeBinaryFromReader = function(msg, r
       msg.setMatchingRate(value);
       break;
     case 4:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setTotalSatsCleared(value);
       break;
     case 5:
@@ -12611,8 +12611,8 @@ proto.poolrpc.MatchedOrderSnapshot.serializeBinaryToWriter = function(message, w
     );
   }
   f = message.getTotalSatsCleared();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       4,
       f
     );
@@ -12704,16 +12704,16 @@ proto.poolrpc.MatchedOrderSnapshot.prototype.setMatchingRate = function(value) {
 
 /**
  * optional uint64 total_sats_cleared = 4;
- * @return {number}
+ * @return {string}
  */
 proto.poolrpc.MatchedOrderSnapshot.prototype.getTotalSatsCleared = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 4, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 4, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.poolrpc.MatchedOrderSnapshot.prototype.setTotalSatsCleared = function(value) {
-  jspb.Message.setProto3IntField(this, 4, value);
+  jspb.Message.setProto3StringIntField(this, 4, value);
 };
 
 
@@ -13155,8 +13155,8 @@ proto.poolrpc.BatchSnapshotResponse.toObject = function(includeInstance, msg) {
     proto.poolrpc.MatchedOrderSnapshot.toObject, includeInstance),
     batchTxId: jspb.Message.getFieldWithDefault(msg, 7, ""),
     batchTx: msg.getBatchTx_asB64(),
-    batchTxFeeRateSatPerKw: jspb.Message.getFieldWithDefault(msg, 8, 0),
-    creationTimestampNs: jspb.Message.getFieldWithDefault(msg, 9, 0),
+    batchTxFeeRateSatPerKw: jspb.Message.getFieldWithDefault(msg, 8, "0"),
+    creationTimestampNs: jspb.Message.getFieldWithDefault(msg, 9, "0"),
     matchedMarketsMap: (f = msg.getMatchedMarketsMap()) ? f.toObject(includeInstance, proto.poolrpc.MatchedMarketSnapshot.toObject) : []
   };
 
@@ -13224,11 +13224,11 @@ proto.poolrpc.BatchSnapshotResponse.deserializeBinaryFromReader = function(msg, 
       msg.setBatchTx(value);
       break;
     case 8:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setBatchTxFeeRateSatPerKw(value);
       break;
     case 9:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setCreationTimestampNs(value);
       break;
     case 10:
@@ -13317,15 +13317,15 @@ proto.poolrpc.BatchSnapshotResponse.serializeBinaryToWriter = function(message, 
     );
   }
   f = message.getBatchTxFeeRateSatPerKw();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       8,
       f
     );
   }
   f = message.getCreationTimestampNs();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       9,
       f
     );
@@ -13532,31 +13532,31 @@ proto.poolrpc.BatchSnapshotResponse.prototype.setBatchTx = function(value) {
 
 /**
  * optional uint64 batch_tx_fee_rate_sat_per_kw = 8;
- * @return {number}
+ * @return {string}
  */
 proto.poolrpc.BatchSnapshotResponse.prototype.getBatchTxFeeRateSatPerKw = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 8, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 8, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.poolrpc.BatchSnapshotResponse.prototype.setBatchTxFeeRateSatPerKw = function(value) {
-  jspb.Message.setProto3IntField(this, 8, value);
+  jspb.Message.setProto3StringIntField(this, 8, value);
 };
 
 
 /**
  * optional uint64 creation_timestamp_ns = 9;
- * @return {number}
+ * @return {string}
  */
 proto.poolrpc.BatchSnapshotResponse.prototype.getCreationTimestampNs = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 9, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 9, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.poolrpc.BatchSnapshotResponse.prototype.setCreationTimestampNs = function(value) {
-  jspb.Message.setProto3IntField(this, 9, value);
+  jspb.Message.setProto3StringIntField(this, 9, value);
 };
 
 

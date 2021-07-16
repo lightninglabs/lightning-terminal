@@ -8,6 +8,7 @@ import {
   values,
 } from 'mobx';
 import { AccountState } from 'types/generated/trader_pb';
+import Big from 'big.js';
 import copyToClipboard from 'copy-to-clipboard';
 import debounce from 'lodash/debounce';
 import { hex } from 'util/strings';
@@ -86,7 +87,7 @@ export default class AccountStore {
    * @param amount the amount (sats) to fund the account with
    * @param expiryBlocks the number of blocks from now to expire the account
    */
-  async createAccount(amount: number, expiryBlocks: number, confTarget?: number) {
+  async createAccount(amount: Big, expiryBlocks: number, confTarget?: number) {
     this._store.log.info(`creating new account with ${amount}sats`);
     try {
       const acct = await this._store.api.pool.initAccount(
@@ -142,7 +143,7 @@ export default class AccountStore {
       const res = await this._store.api.pool.renewAccount(
         acct.traderKey,
         expiryBlocks,
-        feeRate,
+        Big(feeRate),
       );
       runInAction(() => {
         // the account should always be defined but if not, fetch all accounts as a fallback
@@ -214,7 +215,11 @@ export default class AccountStore {
       const acct = this.activeAccount;
       this._store.log.info(`depositing ${amount}sats into account ${acct.traderKey}`);
 
-      const res = await this._store.api.pool.deposit(acct.traderKey, amount, feeRate);
+      const res = await this._store.api.pool.deposit(
+        acct.traderKey,
+        Big(amount),
+        feeRate,
+      );
       runInAction(() => {
         // the account should always be defined but if not, fetch all accounts as a fallback
         if (res.account) {
@@ -238,7 +243,11 @@ export default class AccountStore {
       const acct = this.activeAccount;
       this._store.log.info(`withdrawing ${amount}sats into account ${acct.traderKey}`);
 
-      const res = await this._store.api.pool.withdraw(acct.traderKey, amount, feeRate);
+      const res = await this._store.api.pool.withdraw(
+        acct.traderKey,
+        Big(amount),
+        feeRate,
+      );
       runInAction(() => {
         if (res.account) {
           acct.update(res.account);

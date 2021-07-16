@@ -524,7 +524,7 @@ message Utxo {
     string address = 2;
 
     // The value of the unspent coin in satoshis
-    int64 amount_sat = 3;
+    int64 amount_sat = 3 [jstype = JS_STRING];
 
     // The pkscript in hex
     string pk_script = 4;
@@ -533,7 +533,7 @@ message Utxo {
     OutPoint outpoint = 5;
 
     // The number of confirmations for the Utxo
-    int64 confirmations = 6;
+    int64 confirmations = 6 [jstype = JS_STRING];
 }
 
 message Transaction {
@@ -541,7 +541,7 @@ message Transaction {
     string tx_hash = 1;
 
     // The transaction amount, denominated in satoshis
-    int64 amount = 2;
+    int64 amount = 2 [jstype = JS_STRING];
 
     // The number of confirmations
     int32 num_confirmations = 3;
@@ -553,10 +553,10 @@ message Transaction {
     int32 block_height = 5;
 
     // Timestamp of this transaction
-    int64 time_stamp = 6;
+    int64 time_stamp = 6 [jstype = JS_STRING];
 
     // Fees paid for this transaction
-    int64 total_fees = 7;
+    int64 total_fees = 7 [jstype = JS_STRING];
 
     // Addresses that received funds for this transaction
     repeated string dest_addresses = 8;
@@ -599,17 +599,17 @@ message FeeLimit {
 
         The fields fixed and fixed_msat are mutually exclusive.
         */
-        int64 fixed = 1;
+        int64 fixed = 1 [jstype = JS_STRING];
 
         /*
         The fee limit expressed as a fixed amount of millisatoshis.
 
         The fields fixed and fixed_msat are mutually exclusive.
         */
-        int64 fixed_msat = 3;
+        int64 fixed_msat = 3 [jstype = JS_STRING];
 
         // The fee limit expressed as a percentage of the payment amount.
-        int64 percent = 2;
+        int64 percent = 2 [jstype = JS_STRING];
     }
 }
 
@@ -631,14 +631,14 @@ message SendRequest {
 
     The fields amt and amt_msat are mutually exclusive.
     */
-    int64 amt = 3;
+    int64 amt = 3 [jstype = JS_STRING];
 
     /*
     The amount to send expressed in millisatoshis.
 
     The fields amt and amt_msat are mutually exclusive.
     */
-    int64 amt_msat = 12;
+    int64 amt_msat = 12 [jstype = JS_STRING];
 
     /*
     The hash to use within the payment's HTLC. When using REST, this field
@@ -756,28 +756,28 @@ message ChannelAcceptRequest {
 
     // The funding amount in satoshis that initiator wishes to use in the
     // channel.
-    uint64 funding_amt = 4;
+    uint64 funding_amt = 4 [jstype = JS_STRING];
 
     // The push amount of the proposed channel in millisatoshis.
-    uint64 push_amt = 5;
+    uint64 push_amt = 5 [jstype = JS_STRING];
 
     // The dust limit of the initiator's commitment tx.
-    uint64 dust_limit = 6;
+    uint64 dust_limit = 6 [jstype = JS_STRING];
 
     // The maximum amount of coins in millisatoshis that can be pending in this
     // channel.
-    uint64 max_value_in_flight = 7;
+    uint64 max_value_in_flight = 7 [jstype = JS_STRING];
 
     // The minimum amount of satoshis the initiator requires us to have at all
     // times.
-    uint64 channel_reserve = 8;
+    uint64 channel_reserve = 8 [jstype = JS_STRING];
 
     // The smallest HTLC in millisatoshis that the initiator will accept.
-    uint64 min_htlc = 9;
+    uint64 min_htlc = 9 [jstype = JS_STRING];
 
     // The initial fee rate that the initiator suggests for both commitment
     // transactions.
-    uint64 fee_per_kw = 10;
+    uint64 fee_per_kw = 10 [jstype = JS_STRING];
 
     /*
     The number of blocks to use for the relative time lock in the pay-to-self
@@ -829,13 +829,13 @@ message ChannelAcceptResponse {
     them so that there is always a disincentive to broadcast old state (if they
     hold 0 sats on their side of the channel, there is nothing to lose).
     */
-    uint64 reserve_sat = 6;
+    uint64 reserve_sat = 6 [jstype = JS_STRING];
 
     /*
     The maximum amount of funds in millisatoshis that we allow the remote peer
     to have in outstanding htlcs.
     */
-    uint64 in_flight_max_msat = 7;
+    uint64 in_flight_max_msat = 7 [jstype = JS_STRING];
 
     /*
     The maximum number of htlcs that the remote peer can offer us.
@@ -845,7 +845,7 @@ message ChannelAcceptResponse {
     /*
     The minimum value in millisatoshis for incoming htlcs on the channel.
     */
-    uint64 min_htlc_in = 9;
+    uint64 min_htlc_in = 9 [jstype = JS_STRING];
 
     /*
     The number of confirmations we require before we consider the channel open.
@@ -910,14 +910,14 @@ message EstimateFeeRequest {
 
 message EstimateFeeResponse {
     // The total fee in satoshis.
-    int64 fee_sat = 1;
+    int64 fee_sat = 1 [jstype = JS_STRING];
 
     // Deprecated, use sat_per_vbyte.
     // The fee rate in satoshi/vbyte.
-    int64 feerate_sat_per_byte = 2 [deprecated = true];
+    int64 feerate_sat_per_byte = 2 [deprecated = true, jstype = JS_STRING];
 
     // The fee rate in satoshi/vbyte.
-    uint64 sat_per_vbyte = 3;
+    uint64 sat_per_vbyte = 3 [jstype = JS_STRING];
 }
 
 message SendManyRequest {
@@ -930,12 +930,12 @@ message SendManyRequest {
 
     // A manual fee rate set in sat/vbyte that should be used when crafting the
     // transaction.
-    uint64 sat_per_vbyte = 4;
+    uint64 sat_per_vbyte = 4 [jstype = JS_STRING];
 
     // Deprecated, use sat_per_vbyte.
     // A manual fee rate set in sat/vbyte that should be used when crafting the
     // transaction.
-    int64 sat_per_byte = 5 [deprecated = true];
+    int64 sat_per_byte = 5 [deprecated = true, jstype = JS_STRING];
 
     // An optional label for the transaction, limited to 500 characters.
     string label = 6;
@@ -957,7 +957,7 @@ message SendCoinsRequest {
     string addr = 1;
 
     // The amount in satoshis to send
-    int64 amount = 2;
+    int64 amount = 2 [jstype = JS_STRING];
 
     // The target number of blocks that this transaction should be confirmed
     // by.
@@ -965,12 +965,12 @@ message SendCoinsRequest {
 
     // A manual fee rate set in sat/vbyte that should be used when crafting the
     // transaction.
-    uint64 sat_per_vbyte = 4;
+    uint64 sat_per_vbyte = 4 [jstype = JS_STRING];
 
     // Deprecated, use sat_per_vbyte.
     // A manual fee rate set in sat/vbyte that should be used when crafting the
     // transaction.
-    int64 sat_per_byte = 5 [deprecated = true];
+    int64 sat_per_byte = 5 [deprecated = true, jstype = JS_STRING];
 
     /*
     If set, then the amount field will be ignored, and lnd will attempt to
@@ -1079,7 +1079,7 @@ message ConnectPeerRequest {
     The connection timeout value (in seconds) for this request. It won't affect
     other requests.
     */
-    uint64 timeout = 3;
+    uint64 timeout = 3 [jstype = JS_STRING];
 }
 message ConnectPeerResponse {
 }
@@ -1093,12 +1093,12 @@ message DisconnectPeerResponse {
 
 message HTLC {
     bool incoming = 1;
-    int64 amount = 2;
+    int64 amount = 2 [jstype = JS_STRING];
     bytes hash_lock = 3;
     uint32 expiration_height = 4;
 
     // Index identifying the htlc on the channel.
-    uint64 htlc_index = 5;
+    uint64 htlc_index = 5 [jstype = JS_STRING];
 
     // If this HTLC is involved in a forwarding operation, this field indicates
     // the forwarding channel. For an outgoing htlc, it is the incoming channel.
@@ -1107,10 +1107,10 @@ message HTLC {
     // forwarding_channel will be zero. The forwarding channel will also be zero
     // for htlcs that need to be forwarded but don't have a forwarding decision
     // persisted yet.
-    uint64 forwarding_channel = 6;
+    uint64 forwarding_channel = 6 [jstype = JS_STRING];
 
     // Index identifying the htlc on the forwarding channel.
-    uint64 forwarding_htlc_index = 7;
+    uint64 forwarding_htlc_index = 7 [jstype = JS_STRING];
 }
 
 enum CommitmentType {
@@ -1149,17 +1149,17 @@ message ChannelConstraints {
     uint32 csv_delay = 1;
 
     // The minimum satoshis this node is required to reserve in its balance.
-    uint64 chan_reserve_sat = 2;
+    uint64 chan_reserve_sat = 2 [jstype = JS_STRING];
 
     // The dust limit (in satoshis) of the initiator's commitment tx.
-    uint64 dust_limit_sat = 3;
+    uint64 dust_limit_sat = 3 [jstype = JS_STRING];
 
     // The maximum amount of coins in millisatoshis that can be pending in this
     // channel.
-    uint64 max_pending_amt_msat = 4;
+    uint64 max_pending_amt_msat = 4 [jstype = JS_STRING];
 
     // The smallest HTLC in millisatoshis that the initiator will accept.
-    uint64 min_htlc_msat = 5;
+    uint64 min_htlc_msat = 5 [jstype = JS_STRING];
 
     // The total number of incoming HTLC's that the initiator will accept.
     uint32 max_accepted_htlcs = 6;
@@ -1187,13 +1187,13 @@ message Channel {
     uint64 chan_id = 4 [jstype = JS_STRING];
 
     // The total amount of funds held in this channel
-    int64 capacity = 5;
+    int64 capacity = 5 [jstype = JS_STRING];
 
     // This node's current balance in this channel
-    int64 local_balance = 6;
+    int64 local_balance = 6 [jstype = JS_STRING];
 
     // The counterparty's current balance in this channel
-    int64 remote_balance = 7;
+    int64 remote_balance = 7 [jstype = JS_STRING];
 
     /*
     The amount calculated to be paid in fees for the current set of commitment
@@ -1201,35 +1201,35 @@ message Channel {
     allow the fee amount to be removed and recalculated with each channel state
     update, including updates that happen after a system restart.
     */
-    int64 commit_fee = 8;
+    int64 commit_fee = 8 [jstype = JS_STRING];
 
     // The weight of the commitment transaction
-    int64 commit_weight = 9;
+    int64 commit_weight = 9 [jstype = JS_STRING];
 
     /*
     The required number of satoshis per kilo-weight that the requester will pay
     at all times, for both the funding transaction and commitment transaction.
     This value can later be updated once the channel is open.
     */
-    int64 fee_per_kw = 10;
+    int64 fee_per_kw = 10 [jstype = JS_STRING];
 
     // The unsettled balance in this channel
-    int64 unsettled_balance = 11;
+    int64 unsettled_balance = 11 [jstype = JS_STRING];
 
     /*
     The total number of satoshis we've sent within this channel.
     */
-    int64 total_satoshis_sent = 12;
+    int64 total_satoshis_sent = 12 [jstype = JS_STRING];
 
     /*
     The total number of satoshis we've received within this channel.
     */
-    int64 total_satoshis_received = 13;
+    int64 total_satoshis_received = 13 [jstype = JS_STRING];
 
     /*
     The total number of updates conducted within this channel.
     */
-    uint64 num_updates = 14;
+    uint64 num_updates = 14 [jstype = JS_STRING];
 
     /*
     The list of active, uncleared HTLCs currently pending within the channel.
@@ -1254,13 +1254,13 @@ message Channel {
 
     // Deprecated. The minimum satoshis this node is required to reserve in its
     // balance.
-    int64 local_chan_reserve_sat = 20 [deprecated = true];
+    int64 local_chan_reserve_sat = 20 [deprecated = true, jstype = JS_STRING];
 
     /*
     Deprecated. The minimum satoshis the other node is required to reserve in
     its balance.
     */
-    int64 remote_chan_reserve_sat = 21 [deprecated = true];
+    int64 remote_chan_reserve_sat = 21 [deprecated = true, jstype = JS_STRING];
 
     // Deprecated. Use commitment_type.
     bool static_remote_key = 22 [deprecated = true];
@@ -1273,14 +1273,14 @@ message Channel {
     scoring system. Scores are currently not persisted, so this value may be
     less than the lifetime of the channel [EXPERIMENTAL].
     */
-    int64 lifetime = 23;
+    int64 lifetime = 23 [jstype = JS_STRING];
 
     /*
     The number of seconds that the remote peer has been observed as being online
     by the channel scoring system over the lifetime of the channel
     [EXPERIMENTAL].
     */
-    int64 uptime = 24;
+    int64 uptime = 24 [jstype = JS_STRING];
 
     /*
     Close address is the address that we will enforce payout to on cooperative
@@ -1298,7 +1298,7 @@ message Channel {
     pushed this amount to our peer, if it is false, the remote peer pushed this
     amount to us.
     */
-    uint64 push_amount_sat = 27;
+    uint64 push_amount_sat = 27 [jstype = JS_STRING];
 
     /*
     This uint32 indicates if this channel is to be considered 'frozen'. A
@@ -1359,16 +1359,16 @@ message ChannelCloseSummary {
     string remote_pubkey = 5;
 
     // Total capacity of the channel.
-    int64 capacity = 6;
+    int64 capacity = 6 [jstype = JS_STRING];
 
     // Height at which the funding transaction was spent.
     uint32 close_height = 7;
 
     // Settled balance at the time of channel closure
-    int64 settled_balance = 8;
+    int64 settled_balance = 8 [jstype = JS_STRING];
 
     // The sum of all the time-locked outputs at the time of channel closure
-    int64 time_locked_balance = 9;
+    int64 time_locked_balance = 9 [jstype = JS_STRING];
 
     enum ClosureType {
         COOPERATIVE_CLOSE = 0;
@@ -1465,7 +1465,7 @@ message Resolution {
     OutPoint outpoint = 3;
 
     // The amount that was claimed by the resolution.
-    uint64 amount_sat = 4;
+    uint64 amount_sat = 4 [jstype = JS_STRING];
 
     // The hex-encoded transaction ID of the sweep transaction that spent the
     // output.
@@ -1493,22 +1493,22 @@ message Peer {
     string address = 3;
 
     // Bytes of data transmitted to this peer
-    uint64 bytes_sent = 4;
+    uint64 bytes_sent = 4 [jstype = JS_STRING];
 
     // Bytes of data transmitted from this peer
-    uint64 bytes_recv = 5;
+    uint64 bytes_recv = 5 [jstype = JS_STRING];
 
     // Satoshis sent to this peer
-    int64 sat_sent = 6;
+    int64 sat_sent = 6 [jstype = JS_STRING];
 
     // Satoshis received from this peer
-    int64 sat_recv = 7;
+    int64 sat_recv = 7 [jstype = JS_STRING];
 
     // A channel is inbound if the counterparty initiated the channel
     bool inbound = 8;
 
     // Ping time to this peer
-    int64 ping_time = 9;
+    int64 ping_time = 9 [jstype = JS_STRING];
 
     enum SyncType {
         /*
@@ -1559,12 +1559,12 @@ message Peer {
     The timestamp of the last flap we observed for this peer. If this value is
     zero, we have not observed any flaps for this peer.
     */
-    int64 last_flap_ns = 14;
+    int64 last_flap_ns = 14 [jstype = JS_STRING];
 }
 
 message TimestampedError {
     // The unix timestamp in seconds when the error occurred.
-    uint64 timestamp = 1;
+    uint64 timestamp = 1 [jstype = JS_STRING];
 
     // The string representation of the error sent by our peer.
     string error = 2;
@@ -1635,7 +1635,7 @@ message GetInfoResponse {
     string block_hash = 8;
 
     // Timestamp of the block best known to the wallet
-    int64 best_header_timestamp = 13;
+    int64 best_header_timestamp = 13 [jstype = JS_STRING];
 
     // Whether the wallet's view is synced to the main chain
     bool synced_to_chain = 9;
@@ -1721,7 +1721,7 @@ message CloseChannelRequest {
     // Deprecated, use sat_per_vbyte.
     // A manual fee rate set in sat/vbyte that should be used when crafting the
     // closure transaction.
-    int64 sat_per_byte = 4 [deprecated = true];
+    int64 sat_per_byte = 4 [deprecated = true, jstype = JS_STRING];
 
     /*
     An optional address to send funds to in the case of a cooperative close.
@@ -1733,7 +1733,7 @@ message CloseChannelRequest {
 
     // A manual fee rate set in sat/vbyte that should be used when crafting the
     // closure transaction.
-    uint64 sat_per_vbyte = 6;
+    uint64 sat_per_vbyte = 6 [jstype = JS_STRING];
 }
 
 message CloseStatusUpdate {
@@ -1759,7 +1759,7 @@ message ReadyForPsbtFunding {
     The exact amount in satoshis that needs to be sent to the above address to
     fund the pending channel.
     */
-    int64 funding_amount = 2;
+    int64 funding_amount = 2 [jstype = JS_STRING];
 
     /*
     A raw PSBT that contains the pending channel output. If a base PSBT was
@@ -1773,7 +1773,7 @@ message ReadyForPsbtFunding {
 message OpenChannelRequest {
     // A manual fee rate set in sat/vbyte that should be used when crafting the
     // funding transaction.
-    uint64 sat_per_vbyte = 1;
+    uint64 sat_per_vbyte = 1 [jstype = JS_STRING];
 
     /*
     The pubkey of the node to open a channel with. When using REST, this field
@@ -1788,11 +1788,11 @@ message OpenChannelRequest {
     string node_pubkey_string = 3 [deprecated = true];
 
     // The number of satoshis the wallet should commit to the channel
-    int64 local_funding_amount = 4;
+    int64 local_funding_amount = 4 [jstype = JS_STRING];
 
     // The number of satoshis to push to the remote side as part of the initial
     // commitment state
-    int64 push_sat = 5;
+    int64 push_sat = 5 [jstype = JS_STRING];
 
     // The target number of blocks that the funding transaction should be
     // confirmed by.
@@ -1801,7 +1801,7 @@ message OpenChannelRequest {
     // Deprecated, use sat_per_vbyte.
     // A manual fee rate set in sat/vbyte that should be used when crafting the
     // funding transaction.
-    int64 sat_per_byte = 7 [deprecated = true];
+    int64 sat_per_byte = 7 [deprecated = true, jstype = JS_STRING];
 
     // Whether this channel should be private, not announced to the greater
     // network.
@@ -1809,7 +1809,7 @@ message OpenChannelRequest {
 
     // The minimum value in millisatoshi we will require for incoming HTLCs on
     // the channel.
-    int64 min_htlc_msat = 9;
+    int64 min_htlc_msat = 9 [jstype = JS_STRING];
 
     // The delay we require on the remote's commitment transaction. If this is
     // not set, it will be scaled automatically with the channel size.
@@ -1848,7 +1848,7 @@ message OpenChannelRequest {
     The maximum amount of coins in millisatoshi that can be pending within
     the channel. It only applies to the remote party.
     */
-    uint64 remote_max_value_in_flight_msat = 15;
+    uint64 remote_max_value_in_flight_msat = 15 [jstype = JS_STRING];
 
     /*
     The maximum number of concurrent HTLCs we will allow the remote party to add
@@ -1915,7 +1915,7 @@ message ChanPointShim {
     The size of the pre-crafted output to be used as the channel point for this
     channel funding.
     */
-    int64 amt = 1;
+    int64 amt = 1 [jstype = JS_STRING];
 
     // The target channel point to refrence in created commitment transactions.
     ChannelPoint chan_point = 2;
@@ -2058,7 +2058,7 @@ message PendingHTLC {
     bool incoming = 1;
 
     // The total value of the htlc
-    int64 amount = 2;
+    int64 amount = 2 [jstype = JS_STRING];
 
     // The final output to be swept back to the user's wallet
     string outpoint = 3;
@@ -2084,20 +2084,20 @@ message PendingChannelsResponse {
         string remote_node_pub = 1;
         string channel_point = 2;
 
-        int64 capacity = 3;
+        int64 capacity = 3 [jstype = JS_STRING];
 
-        int64 local_balance = 4;
-        int64 remote_balance = 5;
+        int64 local_balance = 4 [jstype = JS_STRING];
+        int64 remote_balance = 5 [jstype = JS_STRING];
 
         // The minimum satoshis this node is required to reserve in its
         // balance.
-        int64 local_chan_reserve_sat = 6;
+        int64 local_chan_reserve_sat = 6 [jstype = JS_STRING];
 
         /*
         The minimum satoshis the other node is required to reserve in its
         balance.
         */
-        int64 remote_chan_reserve_sat = 7;
+        int64 remote_chan_reserve_sat = 7 [jstype = JS_STRING];
 
         // The party that initiated opening the channel.
         Initiator initiator = 8;
@@ -2120,17 +2120,17 @@ message PendingChannelsResponse {
         each channel state update, including updates that happen after a system
         restart.
         */
-        int64 commit_fee = 4;
+        int64 commit_fee = 4 [jstype = JS_STRING];
 
         // The weight of the commitment transaction
-        int64 commit_weight = 5;
+        int64 commit_weight = 5 [jstype = JS_STRING];
 
         /*
         The required number of satoshis per kilo-weight that the requester will
         pay at all times, for both the funding transaction and commitment
         transaction. This value can later be updated once the channel is open.
         */
-        int64 fee_per_kw = 6;
+        int64 fee_per_kw = 6 [jstype = JS_STRING];
     }
 
     message WaitingCloseChannel {
@@ -2138,7 +2138,7 @@ message PendingChannelsResponse {
         PendingChannel channel = 1;
 
         // The balance in satoshis encumbered in this channel
-        int64 limbo_balance = 2;
+        int64 limbo_balance = 2 [jstype = JS_STRING];
 
         /*
         A list of valid commitment transactions. Any of these can confirm at
@@ -2161,19 +2161,19 @@ message PendingChannelsResponse {
         The amount in satoshis calculated to be paid in fees for the local
         commitment.
         */
-        uint64 local_commit_fee_sat = 4;
+        uint64 local_commit_fee_sat = 4 [jstype = JS_STRING];
 
         /*
         The amount in satoshis calculated to be paid in fees for the remote
         commitment.
         */
-        uint64 remote_commit_fee_sat = 5;
+        uint64 remote_commit_fee_sat = 5 [jstype = JS_STRING];
 
         /*
         The amount in satoshis calculated to be paid in fees for the remote
         pending commitment.
         */
-        uint64 remote_pending_commit_fee_sat = 6;
+        uint64 remote_pending_commit_fee_sat = 6 [jstype = JS_STRING];
     }
 
     message ClosedChannel {
@@ -2192,7 +2192,7 @@ message PendingChannelsResponse {
         string closing_txid = 2;
 
         // The balance in satoshis encumbered in this pending channel
-        int64 limbo_balance = 3;
+        int64 limbo_balance = 3 [jstype = JS_STRING];
 
         // The height at which funds can be swept into the wallet
         uint32 maturity_height = 4;
@@ -2205,7 +2205,7 @@ message PendingChannelsResponse {
         int32 blocks_til_maturity = 5;
 
         // The total value of funds successfully recovered from this channel
-        int64 recovered_balance = 6;
+        int64 recovered_balance = 6 [jstype = JS_STRING];
 
         repeated PendingHTLC pending_htlcs = 8;
 
@@ -2219,7 +2219,7 @@ message PendingChannelsResponse {
     }
 
     // The balance in satoshis encumbered in pending channels
-    int64 total_limbo_balance = 1;
+    int64 total_limbo_balance = 1 [jstype = JS_STRING];
 
     // Channels pending opening
     repeated PendingOpenChannel pending_open_channels = 2;
@@ -2263,10 +2263,10 @@ message ChannelEventUpdate {
 
 message WalletAccountBalance {
     // The confirmed balance of the account (with >= 1 confirmations).
-    int64 confirmed_balance = 1;
+    int64 confirmed_balance = 1 [jstype = JS_STRING];
 
     // The unconfirmed balance of the account (with 0 confirmations).
-    int64 unconfirmed_balance = 2;
+    int64 unconfirmed_balance = 2 [jstype = JS_STRING];
 }
 
 message WalletBalanceRequest {
@@ -2274,13 +2274,13 @@ message WalletBalanceRequest {
 
 message WalletBalanceResponse {
     // The balance of the wallet
-    int64 total_balance = 1;
+    int64 total_balance = 1 [jstype = JS_STRING];
 
     // The confirmed balance of a wallet(with >= 1 confirmations)
-    int64 confirmed_balance = 2;
+    int64 confirmed_balance = 2 [jstype = JS_STRING];
 
     // The unconfirmed balance of a wallet(with 0 confirmations)
-    int64 unconfirmed_balance = 3;
+    int64 unconfirmed_balance = 3 [jstype = JS_STRING];
 
     // A mapping of each wallet account's name to its balance.
     map<string, WalletAccountBalance> account_balance = 4;
@@ -2288,20 +2288,20 @@ message WalletBalanceResponse {
 
 message Amount {
     // Value denominated in satoshis.
-    uint64 sat = 1;
+    uint64 sat = 1 [jstype = JS_STRING];
 
     // Value denominated in milli-satoshis.
-    uint64 msat = 2;
+    uint64 msat = 2 [jstype = JS_STRING];
 }
 
 message ChannelBalanceRequest {
 }
 message ChannelBalanceResponse {
     // Deprecated. Sum of channels balances denominated in satoshis
-    int64 balance = 1 [deprecated = true];
+    int64 balance = 1 [deprecated = true, jstype = JS_STRING];
 
     // Deprecated. Sum of channels pending balances denominated in satoshis
-    int64 pending_open_balance = 2 [deprecated = true];
+    int64 pending_open_balance = 2 [deprecated = true, jstype = JS_STRING];
 
     // Sum of channels local balances.
     Amount local_balance = 3;
@@ -2331,14 +2331,14 @@ message QueryRoutesRequest {
 
     The fields amt and amt_msat are mutually exclusive.
     */
-    int64 amt = 2;
+    int64 amt = 2 [jstype = JS_STRING];
 
     /*
     The amount to send expressed in millisatoshis.
 
     The fields amt and amt_msat are mutually exclusive.
     */
-    int64 amt_msat = 12;
+    int64 amt_msat = 12 [jstype = JS_STRING];
 
     reserved 3;
 
@@ -2478,12 +2478,12 @@ message Hop {
     output index for the channel.
     */
     uint64 chan_id = 1 [jstype = JS_STRING];
-    int64 chan_capacity = 2 [deprecated = true];
-    int64 amt_to_forward = 3 [deprecated = true];
-    int64 fee = 4 [deprecated = true];
+    int64 chan_capacity = 2 [deprecated = true, jstype = JS_STRING];
+    int64 amt_to_forward = 3 [deprecated = true, jstype = JS_STRING];
+    int64 fee = 4 [deprecated = true, jstype = JS_STRING];
     uint32 expiry = 5;
-    int64 amt_to_forward_msat = 6;
-    int64 fee_msat = 7;
+    int64 amt_to_forward_msat = 6 [jstype = JS_STRING];
+    int64 fee_msat = 7 [jstype = JS_STRING];
 
     /*
     An optional public key of the hop. If the public key is given, the payment
@@ -2539,7 +2539,7 @@ message MPPRecord {
     and payment_hash sum exactly to total_amt_msat. The same
     total_amt_msat must be used on all subpayments.
     */
-    int64 total_amt_msat = 10;
+    int64 total_amt_msat = 10 [jstype = JS_STRING];
 }
 
 message AMPRecord {
@@ -2571,7 +2571,7 @@ message Route {
     of a one-hop payment, this value will be zero as we don't need to pay a fee
     to ourselves.
     */
-    int64 total_fees = 2 [deprecated = true];
+    int64 total_fees = 2 [deprecated = true, jstype = JS_STRING];
 
     /*
     The total amount of funds required to complete a payment over this route.
@@ -2580,7 +2580,7 @@ message Route {
     satoshis, otherwise the route will fail at an intermediate node due to an
     insufficient amount of fees.
     */
-    int64 total_amt = 3 [deprecated = true];
+    int64 total_amt = 3 [deprecated = true, jstype = JS_STRING];
 
     /*
     Contains details concerning the specific forwarding details at each hop.
@@ -2590,12 +2590,12 @@ message Route {
     /*
     The total fees in millisatoshis.
     */
-    int64 total_fees_msat = 5;
+    int64 total_fees_msat = 5 [jstype = JS_STRING];
 
     /*
     The total amount in millisatoshis.
     */
-    int64 total_amt_msat = 6;
+    int64 total_amt_msat = 6 [jstype = JS_STRING];
 }
 
 message NodeInfoRequest {
@@ -2619,7 +2619,7 @@ message NodeInfo {
     uint32 num_channels = 2;
 
     // The sum of all channels capacity for the node, denominated in satoshis.
-    int64 total_capacity = 3;
+    int64 total_capacity = 3 [jstype = JS_STRING];
 
     // A list of all public channels for the node.
     repeated ChannelEdge channels = 4;
@@ -2647,11 +2647,11 @@ message NodeAddress {
 
 message RoutingPolicy {
     uint32 time_lock_delta = 1;
-    int64 min_htlc = 2;
-    int64 fee_base_msat = 3;
-    int64 fee_rate_milli_msat = 4;
+    int64 min_htlc = 2 [jstype = JS_STRING];
+    int64 fee_base_msat = 3 [jstype = JS_STRING];
+    int64 fee_rate_milli_msat = 4 [jstype = JS_STRING];
     bool disabled = 5;
-    uint64 max_htlc_msat = 6;
+    uint64 max_htlc_msat = 6 [jstype = JS_STRING];
     uint32 last_update = 7;
 }
 
@@ -2676,7 +2676,7 @@ message ChannelEdge {
     string node1_pub = 4;
     string node2_pub = 5;
 
-    int64 capacity = 6;
+    int64 capacity = 6 [jstype = JS_STRING];
 
     RoutingPolicy node1_policy = 7;
     RoutingPolicy node2_policy = 8;
@@ -2748,15 +2748,15 @@ message NetworkInfo {
     uint32 num_nodes = 4;
     uint32 num_channels = 5;
 
-    int64 total_network_capacity = 6;
+    int64 total_network_capacity = 6 [jstype = JS_STRING];
 
     double avg_channel_size = 7;
-    int64 min_channel_size = 8;
-    int64 max_channel_size = 9;
-    int64 median_channel_size_sat = 10;
+    int64 min_channel_size = 8 [jstype = JS_STRING];
+    int64 max_channel_size = 9 [jstype = JS_STRING];
+    int64 median_channel_size_sat = 10 [jstype = JS_STRING];
 
     // The number of edges marked as zombies.
-    uint64 num_zombie_chans = 11;
+    uint64 num_zombie_chans = 11 [jstype = JS_STRING];
 
     // TODO(roasbeef): fee rate info, expiry
     //  * also additional RPC for tracking fee info once in
@@ -2807,7 +2807,7 @@ message ChannelEdgeUpdate {
 
     ChannelPoint chan_point = 2;
 
-    int64 capacity = 3;
+    int64 capacity = 3 [jstype = JS_STRING];
 
     RoutingPolicy routing_policy = 4;
 
@@ -2821,7 +2821,7 @@ message ClosedChannelUpdate {
     output index for the channel.
     */
     uint64 chan_id = 1 [jstype = JS_STRING];
-    int64 capacity = 2;
+    int64 capacity = 2 [jstype = JS_STRING];
     uint32 closed_height = 3;
     ChannelPoint chan_point = 4;
 }
@@ -2883,23 +2883,23 @@ message Invoice {
 
     The fields value and value_msat are mutually exclusive.
     */
-    int64 value = 5;
+    int64 value = 5 [jstype = JS_STRING];
 
     /*
     The value of this invoice in millisatoshis
 
     The fields value and value_msat are mutually exclusive.
     */
-    int64 value_msat = 23;
+    int64 value_msat = 23 [jstype = JS_STRING];
 
     // Whether this invoice has been fulfilled
     bool settled = 6 [deprecated = true];
 
     // When this invoice was created
-    int64 creation_date = 7;
+    int64 creation_date = 7 [jstype = JS_STRING];
 
     // When this invoice was settled
-    int64 settle_date = 8;
+    int64 settle_date = 8 [jstype = JS_STRING];
 
     /*
     A bare-bones invoice for a payment within the Lightning Network. With the
@@ -2917,13 +2917,13 @@ message Invoice {
     bytes description_hash = 10;
 
     // Payment request expiry time in seconds. Default is 3600 (1 hour).
-    int64 expiry = 11;
+    int64 expiry = 11 [jstype = JS_STRING];
 
     // Fallback on-chain address.
     string fallback_addr = 12;
 
     // Delta to use for the time-lock of the CLTV extended to the final hop.
-    uint64 cltv_expiry = 13;
+    uint64 cltv_expiry = 13 [jstype = JS_STRING];
 
     /*
     Route hints that can each be individually used to assist in reaching the
@@ -2940,7 +2940,7 @@ message Invoice {
     SubscribeInvoices call can use this to instantly get notified of all added
     invoices with an add_index greater than this one.
     */
-    uint64 add_index = 16;
+    uint64 add_index = 16 [jstype = JS_STRING];
 
     /*
     The "settle" index of this invoice. Each newly settled invoice will
@@ -2948,10 +2948,10 @@ message Invoice {
     SubscribeInvoices call can use this to instantly get notified of all
     settled invoices with an settle_index greater than this one.
     */
-    uint64 settle_index = 17;
+    uint64 settle_index = 17 [jstype = JS_STRING];
 
     // Deprecated, use amt_paid_sat or amt_paid_msat.
-    int64 amt_paid = 18 [deprecated = true];
+    int64 amt_paid = 18 [deprecated = true, jstype = JS_STRING];
 
     /*
     The amount that was accepted for this invoice, in satoshis. This will ONLY
@@ -2961,7 +2961,7 @@ message Invoice {
     MORE that was specified in the original invoice. So we'll record that here
     as well.
     */
-    int64 amt_paid_sat = 19;
+    int64 amt_paid_sat = 19 [jstype = JS_STRING];
 
     /*
     The amount that was accepted for this invoice, in millisatoshis. This will
@@ -2971,7 +2971,7 @@ message Invoice {
     paid MORE that was specified in the original invoice. So we'll record that
     here as well.
     */
-    int64 amt_paid_msat = 20;
+    int64 amt_paid_msat = 20 [jstype = JS_STRING];
 
     enum InvoiceState {
         OPEN = 0;
@@ -3022,19 +3022,19 @@ message InvoiceHTLC {
     uint64 chan_id = 1 [jstype = JS_STRING];
 
     // Index identifying the htlc on the channel.
-    uint64 htlc_index = 2;
+    uint64 htlc_index = 2 [jstype = JS_STRING];
 
     // The amount of the htlc in msat.
-    uint64 amt_msat = 3;
+    uint64 amt_msat = 3 [jstype = JS_STRING];
 
     // Block height at which this htlc was accepted.
     int32 accept_height = 4;
 
     // Time at which this htlc was accepted.
-    int64 accept_time = 5;
+    int64 accept_time = 5 [jstype = JS_STRING];
 
     // Time at which this htlc was settled or canceled.
-    int64 resolve_time = 6;
+    int64 resolve_time = 6 [jstype = JS_STRING];
 
     // Block height at which this htlc expires.
     int32 expiry_height = 7;
@@ -3046,7 +3046,7 @@ message InvoiceHTLC {
     map<uint64, bytes> custom_records = 9;
 
     // The total amount of the mpp payment in msat.
-    uint64 mpp_total_amt_msat = 10;
+    uint64 mpp_total_amt_msat = 10 [jstype = JS_STRING];
 
     // Details relevant to AMP HTLCs, only populated if this is an AMP HTLC.
     AMP amp = 11;
@@ -3090,7 +3090,7 @@ message AddInvoiceResponse {
     SubscribeInvoices call can use this to instantly get notified of all added
     invoices with an add_index greater than this one.
     */
-    uint64 add_index = 16;
+    uint64 add_index = 16 [jstype = JS_STRING];
 
     /*
     The payment address of the generated invoice. This value should be used
@@ -3126,10 +3126,10 @@ message ListInvoiceRequest {
     The index of an invoice that will be used as either the start or end of a
     query to determine which invoices should be returned in the response.
     */
-    uint64 index_offset = 4;
+    uint64 index_offset = 4 [jstype = JS_STRING];
 
     // The max number of invoices to return in the response to this query.
-    uint64 num_max_invoices = 5;
+    uint64 num_max_invoices = 5 [jstype = JS_STRING];
 
     /*
     If set, the invoices returned will result from seeking backwards from the
@@ -3148,13 +3148,13 @@ message ListInvoiceResponse {
     The index of the last item in the set of returned invoices. This can be used
     to seek further, pagination style.
     */
-    uint64 last_index_offset = 2;
+    uint64 last_index_offset = 2 [jstype = JS_STRING];
 
     /*
     The index of the last item in the set of returned invoices. This can be used
     to seek backwards, pagination style.
     */
-    uint64 first_index_offset = 3;
+    uint64 first_index_offset = 3 [jstype = JS_STRING];
 }
 
 message InvoiceSubscription {
@@ -3164,7 +3164,7 @@ message InvoiceSubscription {
     value. This allows callers to catch up on any events they missed while they
     weren't connected to the streaming RPC.
     */
-    uint64 add_index = 1;
+    uint64 add_index = 1 [jstype = JS_STRING];
 
     /*
     If specified (non-zero), then we'll first start by sending out
@@ -3172,7 +3172,7 @@ message InvoiceSubscription {
     this value. This allows callers to catch up on any events they missed while
     they weren't connected to the streaming RPC.
     */
-    uint64 settle_index = 2;
+    uint64 settle_index = 2 [jstype = JS_STRING];
 }
 
 enum PaymentFailureReason {
@@ -3214,24 +3214,24 @@ message Payment {
     string payment_hash = 1;
 
     // Deprecated, use value_sat or value_msat.
-    int64 value = 2 [deprecated = true];
+    int64 value = 2 [deprecated = true, jstype = JS_STRING];
 
     // Deprecated, use creation_time_ns
-    int64 creation_date = 3 [deprecated = true];
+    int64 creation_date = 3 [deprecated = true, jstype = JS_STRING];
 
     reserved 4;
 
     // Deprecated, use fee_sat or fee_msat.
-    int64 fee = 5 [deprecated = true];
+    int64 fee = 5 [deprecated = true, jstype = JS_STRING];
 
     // The payment preimage
     string payment_preimage = 6;
 
     // The value of the payment in satoshis
-    int64 value_sat = 7;
+    int64 value_sat = 7 [jstype = JS_STRING];
 
     // The value of the payment in milli-satoshis
-    int64 value_msat = 8;
+    int64 value_msat = 8 [jstype = JS_STRING];
 
     // The optional payment request being fulfilled.
     string payment_request = 9;
@@ -3247,13 +3247,13 @@ message Payment {
     PaymentStatus status = 10;
 
     //  The fee paid for this payment in satoshis
-    int64 fee_sat = 11;
+    int64 fee_sat = 11 [jstype = JS_STRING];
 
     //  The fee paid for this payment in milli-satoshis
-    int64 fee_msat = 12;
+    int64 fee_msat = 12 [jstype = JS_STRING];
 
     // The time in UNIX nanoseconds at which the payment was created.
-    int64 creation_time_ns = 13;
+    int64 creation_time_ns = 13 [jstype = JS_STRING];
 
     // The HTLCs made in attempt to settle the payment.
     repeated HTLCAttempt htlcs = 14;
@@ -3263,14 +3263,14 @@ message Payment {
     by this index, which may not strictly increment by 1 for payments made in
     older versions of lnd.
     */
-    uint64 payment_index = 15;
+    uint64 payment_index = 15 [jstype = JS_STRING];
 
     PaymentFailureReason failure_reason = 16;
 }
 
 message HTLCAttempt {
     // The unique ID that is used for this attempt.
-    uint64 attempt_id = 7;
+    uint64 attempt_id = 7 [jstype = JS_STRING];
 
     enum HTLCStatus {
         IN_FLIGHT = 0;
@@ -3285,13 +3285,13 @@ message HTLCAttempt {
     Route route = 2;
 
     // The time in UNIX nanoseconds at which this HTLC was sent.
-    int64 attempt_time_ns = 3;
+    int64 attempt_time_ns = 3 [jstype = JS_STRING];
 
     /*
     The time in UNIX nanoseconds at which this HTLC was settled or failed.
     This value will not be set if the HTLC is still IN_FLIGHT.
     */
-    int64 resolve_time_ns = 4;
+    int64 resolve_time_ns = 4 [jstype = JS_STRING];
 
     // Detailed htlc failure info.
     Failure failure = 5;
@@ -3316,10 +3316,10 @@ message ListPaymentsRequest {
     will start with the oldest payment when paginating forwards, or will end
     with the most recent payment when paginating backwards.
     */
-    uint64 index_offset = 2;
+    uint64 index_offset = 2 [jstype = JS_STRING];
 
     // The maximal number of payments returned in the response to this query.
-    uint64 max_payments = 3;
+    uint64 max_payments = 3 [jstype = JS_STRING];
 
     /*
     If set, the payments returned will result from seeking backwards from the
@@ -3337,13 +3337,13 @@ message ListPaymentsResponse {
     The index of the first item in the set of returned payments. This can be
     used as the index_offset to continue seeking backwards in the next request.
     */
-    uint64 first_index_offset = 2;
+    uint64 first_index_offset = 2 [jstype = JS_STRING];
 
     /*
     The index of the last item in the set of returned payments. This can be used
     as the index_offset to continue seeking forwards in the next request.
     */
-    uint64 last_index_offset = 3;
+    uint64 last_index_offset = 3 [jstype = JS_STRING];
 }
 
 message DeleteAllPaymentsRequest {
@@ -3383,16 +3383,16 @@ message PayReqString {
 message PayReq {
     string destination = 1;
     string payment_hash = 2;
-    int64 num_satoshis = 3;
-    int64 timestamp = 4;
-    int64 expiry = 5;
+    int64 num_satoshis = 3 [jstype = JS_STRING];
+    int64 timestamp = 4 [jstype = JS_STRING];
+    int64 expiry = 5 [jstype = JS_STRING];
     string description = 6;
     string description_hash = 7;
     string fallback_addr = 8;
-    int64 cltv_expiry = 9;
+    int64 cltv_expiry = 9 [jstype = JS_STRING];
     repeated RouteHint route_hints = 10;
     bytes payment_addr = 11;
-    int64 num_msat = 12;
+    int64 num_msat = 12 [jstype = JS_STRING];
     map<uint32, Feature> features = 13;
 }
 
@@ -3440,11 +3440,11 @@ message ChannelFeeReport {
     string channel_point = 1;
 
     // The base fee charged regardless of the number of milli-satoshis sent.
-    int64 base_fee_msat = 2;
+    int64 base_fee_msat = 2 [jstype = JS_STRING];
 
     // The amount charged per milli-satoshis transferred expressed in
     // millionths of a satoshi.
-    int64 fee_per_mil = 3;
+    int64 fee_per_mil = 3 [jstype = JS_STRING];
 
     // The effective fee rate in milli-satoshis. Computed by dividing the
     // fee_per_mil value by 1 million.
@@ -3457,15 +3457,15 @@ message FeeReportResponse {
 
     // The total amount of fee revenue (in satoshis) the switch has collected
     // over the past 24 hrs.
-    uint64 day_fee_sum = 2;
+    uint64 day_fee_sum = 2 [jstype = JS_STRING];
 
     // The total amount of fee revenue (in satoshis) the switch has collected
     // over the past 1 week.
-    uint64 week_fee_sum = 3;
+    uint64 week_fee_sum = 3 [jstype = JS_STRING];
 
     // The total amount of fee revenue (in satoshis) the switch has collected
     // over the past 1 month.
-    uint64 month_fee_sum = 4;
+    uint64 month_fee_sum = 4 [jstype = JS_STRING];
 }
 
 message PolicyUpdateRequest {
@@ -3478,7 +3478,7 @@ message PolicyUpdateRequest {
     }
 
     // The base fee charged regardless of the number of milli-satoshis sent.
-    int64 base_fee_msat = 3;
+    int64 base_fee_msat = 3 [jstype = JS_STRING];
 
     // The effective fee rate in milli-satoshis. The precision of this value
     // goes up to 6 decimal places, so 1e-6.
@@ -3489,11 +3489,11 @@ message PolicyUpdateRequest {
 
     // If set, the maximum HTLC size in milli-satoshis. If unset, the maximum
     // HTLC will be unchanged.
-    uint64 max_htlc_msat = 6;
+    uint64 max_htlc_msat = 6 [jstype = JS_STRING];
 
     // The minimum HTLC size in milli-satoshis. Only applied if
     // min_htlc_msat_specified is true.
-    uint64 min_htlc_msat = 7;
+    uint64 min_htlc_msat = 7 [jstype = JS_STRING];
 
     // If true, min_htlc_msat is applied.
     bool min_htlc_msat_specified = 8;
@@ -3505,12 +3505,12 @@ message ForwardingHistoryRequest {
     // Start time is the starting point of the forwarding history request. All
     // records beyond this point will be included, respecting the end time, and
     // the index offset.
-    uint64 start_time = 1;
+    uint64 start_time = 1 [jstype = JS_STRING];
 
     // End time is the end point of the forwarding history request. The
     // response will carry at most 50k records between the start time and the
     // end time. The index offset can be used to implement pagination.
-    uint64 end_time = 2;
+    uint64 end_time = 2 [jstype = JS_STRING];
 
     // Index offset is the offset in the time series to start at. As each
     // response can only contain 50k records, callers can use this to skip
@@ -3523,7 +3523,7 @@ message ForwardingHistoryRequest {
 message ForwardingEvent {
     // Timestamp is the time (unix epoch offset) that this circuit was
     // completed. Deprecated by timestamp_ns.
-    uint64 timestamp = 1 [deprecated = true];
+    uint64 timestamp = 1 [deprecated = true, jstype = JS_STRING];
 
     // The incoming channel ID that carried the HTLC that created the circuit.
     uint64 chan_id_in = 2 [jstype = JS_STRING];
@@ -3534,29 +3534,29 @@ message ForwardingEvent {
 
     // The total amount (in satoshis) of the incoming HTLC that created half
     // the circuit.
-    uint64 amt_in = 5;
+    uint64 amt_in = 5 [jstype = JS_STRING];
 
     // The total amount (in satoshis) of the outgoing HTLC that created the
     // second half of the circuit.
-    uint64 amt_out = 6;
+    uint64 amt_out = 6 [jstype = JS_STRING];
 
     // The total fee (in satoshis) that this payment circuit carried.
-    uint64 fee = 7;
+    uint64 fee = 7 [jstype = JS_STRING];
 
     // The total fee (in milli-satoshis) that this payment circuit carried.
-    uint64 fee_msat = 8;
+    uint64 fee_msat = 8 [jstype = JS_STRING];
 
     // The total amount (in milli-satoshis) of the incoming HTLC that created
     // half the circuit.
-    uint64 amt_in_msat = 9;
+    uint64 amt_in_msat = 9 [jstype = JS_STRING];
 
     // The total amount (in milli-satoshis) of the outgoing HTLC that created
     // the second half of the circuit.
-    uint64 amt_out_msat = 10;
+    uint64 amt_out_msat = 10 [jstype = JS_STRING];
 
     // The number of nanoseconds elapsed since January 1, 1970 UTC when this
     // circuit was completed.
-    uint64 timestamp_ns = 11;
+    uint64 timestamp_ns = 11 [jstype = JS_STRING];
 
     // TODO(roasbeef): add settlement latency?
     //  * use FPE on the chan id?
@@ -3665,7 +3665,7 @@ message BakeMacaroonRequest {
     repeated MacaroonPermission permissions = 1;
 
     // The root key ID used to create the macaroon, must be a positive integer.
-    uint64 root_key_id = 2;
+    uint64 root_key_id = 2 [jstype = JS_STRING];
 }
 message BakeMacaroonResponse {
     // The hex encoded macaroon, serialized in binary format.
@@ -3676,12 +3676,12 @@ message ListMacaroonIDsRequest {
 }
 message ListMacaroonIDsResponse {
     // The list of root key IDs that are in use.
-    repeated uint64 root_key_ids = 1;
+    repeated uint64 root_key_ids = 1 [jstype = JS_STRING];
 }
 
 message DeleteMacaroonIDRequest {
     // The root key ID to be removed.
-    uint64 root_key_id = 1;
+    uint64 root_key_id = 1 [jstype = JS_STRING];
 }
 message DeleteMacaroonIDResponse {
     // A boolean indicates that the deletion is successful.
@@ -3763,7 +3763,7 @@ message Failure {
     ChannelUpdate channel_update = 3;
 
     // A failure type-dependent htlc value.
-    uint64 htlc_msat = 4;
+    uint64 htlc_msat = 4 [jstype = JS_STRING];
 
     // The sha256 sum of the onion payload.
     bytes onion_sha_256 = 5;
@@ -3838,7 +3838,7 @@ message ChannelUpdate {
     /*
     The minimum HTLC value which will be accepted.
     */
-    uint64 htlc_minimum_msat = 7;
+    uint64 htlc_minimum_msat = 7 [jstype = JS_STRING];
 
     /*
     The base fee that must be used for incoming HTLC's to this particular
@@ -3855,7 +3855,7 @@ message ChannelUpdate {
     /*
     The maximum HTLC value which will be accepted.
     */
-    uint64 htlc_maximum_msat = 11;
+    uint64 htlc_maximum_msat = 11 [jstype = JS_STRING];
 
     /*
     The set of data that was appended to this message, some of which we may

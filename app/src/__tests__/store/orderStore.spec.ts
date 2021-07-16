@@ -75,13 +75,27 @@ describe('OrderStore', () => {
 
   it('should submit an ask order', async () => {
     await rootStore.accountStore.fetchAccounts();
-    const nonce = await store.submitOrder(OrderType.Ask, 100000, 2000, 2016, 100000, 253);
+    const nonce = await store.submitOrder(
+      OrderType.Ask,
+      Big(100000),
+      2000,
+      2016,
+      100000,
+      253,
+    );
     expect(nonce).toBe(hex(poolSubmitOrder.acceptedOrderNonce));
   });
 
   it('should submit a bid order', async () => {
     await rootStore.accountStore.fetchAccounts();
-    const nonce = await store.submitOrder(OrderType.Bid, 100000, 2000, 2016, 100000, 253);
+    const nonce = await store.submitOrder(
+      OrderType.Bid,
+      Big(100000),
+      2000,
+      2016,
+      100000,
+      253,
+    );
     expect(nonce).toBe(hex(poolSubmitOrder.acceptedOrderNonce));
   });
 
@@ -100,14 +114,14 @@ describe('OrderStore', () => {
       }
       return undefined as any;
     });
-    await store.submitOrder(OrderType.Bid, 100000, 2000, 2016, 100000, 253);
+    await store.submitOrder(OrderType.Bid, Big(100000), 2000, 2016, 100000, 253);
     expect(rootStore.appView.alerts.size).toBe(1);
     expect(values(rootStore.appView.alerts)[0].message).toBe(poolInvalidOrder.failString);
   });
 
   it('should throw if the fixed rate rate is too low', async () => {
     await rootStore.accountStore.fetchAccounts();
-    await store.submitOrder(OrderType.Bid, 100000, 0.9, 20000, 100000, 253);
+    await store.submitOrder(OrderType.Bid, Big(100000), 0.9, 20000, 100000, 253);
     expect(rootStore.appView.alerts.size).toBe(1);
     expect(values(rootStore.appView.alerts)[0].message).toMatch(/The rate is too low.*/);
   });

@@ -4,6 +4,7 @@ import {
   NodeTier,
 } from 'types/generated/auctioneerrpc/auctioneer_pb';
 import { LeaseDuration } from 'types/state';
+import Big from 'big.js';
 import debounce from 'lodash/debounce';
 import { annualPercentRate, toBasisPoints, toPercent } from 'util/bigmath';
 import { BLOCKS_PER_DAY } from 'util/constants';
@@ -22,8 +23,8 @@ export default class OrderFormView {
 
   /** the currently selected type of the order */
   orderType: OrderType = OrderType.Bid;
-  amount = 0;
-  premium = 0;
+  amount = Big(0);
+  premium = Big(0);
   duration = 0;
   minChanSize = DEFAULT_MIN_CHAN_SIZE;
   maxBatchFeeRate = DEFAULT_MAX_BATCH_FEE;
@@ -33,8 +34,8 @@ export default class OrderFormView {
   addlOptionsVisible = false;
 
   /** quoted fees */
-  executionFee = 0;
-  worstChainFee = 0;
+  executionFee = Big(0);
+  worstChainFee = Big(0);
   quoteLoading = false;
 
   constructor(store: Store) {
@@ -52,8 +53,8 @@ export default class OrderFormView {
 
   /** the error message if the amount is invalid */
   get amountError() {
-    if (!this.amount) return '';
-    if (this.amount % ONE_UNIT !== 0) {
+    if (this.amount.eq(0)) return '';
+    if (!this.amount.mod(ONE_UNIT).eq(0)) {
       return l('errorMultiple');
     }
     return '';
@@ -61,7 +62,7 @@ export default class OrderFormView {
 
   /** the error message if the premium is invalid */
   get premiumError() {
-    if (!this.premium || !this.amount) return '';
+    if (this.premium.eq(0) || this.amount.eq(0)) return '';
     if (this.perBlockFixedRate < 1) {
       return l('premiumLowError');
     }
@@ -74,7 +75,7 @@ export default class OrderFormView {
     if (this.minChanSize % ONE_UNIT !== 0) {
       return l('errorMultiple');
     }
-    if (this.amount && this.minChanSize > this.amount) {
+    if (!this.amount.eq(0) && this.amount.lt(this.minChanSize)) {
       return l('errorLiquidity');
     }
     return '';
@@ -145,7 +146,7 @@ export default class OrderFormView {
 
   /** the per block fixed rate */
   get perBlockFixedRate() {
-    if ([this.amount, this.premium].includes(0)) return 0;
+    if (this.amount.eq(0) || this.premium.eq(0)) return 0;
 
     return this._store.api.pool.calcFixedRate(
       this.amount,
@@ -156,13 +157,13 @@ export default class OrderFormView {
 
   /** the premium interest of the amount in basis points */
   get interestBps() {
-    if ([this.amount, this.premium].includes(0)) return 0;
-    return toBasisPoints(this.premium / this.amount);
+    if (this.amount.eq(0) || this.premium.eq(0)) return 0;
+    return toBasisPoints(this.premium.div(this.amount).toNumber());
   }
 
   /** the APR given the amount and premium */
   get apr() {
-    if ([this.amount, this.premium].includes(0)) return 0;
+    if (this.amount.eq(0) || this.premium.eq(0)) return 0;
     const termInDays = this.derivedDuration / BLOCKS_PER_DAY;
     const apr = annualPercentRate(this.amount, this.premium, termInDays);
     return toPercent(apr);
@@ -177,7 +178,9 @@ export default class OrderFormView {
   /** determines if the current values are all valid */
   get isValid() {
     return (
-      ![this.amount, this.premium, this.minChanSize, this.maxBatchFeeRate].includes(0) &&
+      !this.amount.eq(0) &&
+      !this.premium.eq(0) &&
+      ![this.minChanSize, this.maxBatchFeeRate].includes(0) &&
       !this.amountError &&
       !this.minChanSizeError &&
       !this.feeRateError
@@ -189,12 +192,12 @@ export default class OrderFormView {
   }
 
   setAmount(amount: number) {
-    this.amount = amount;
+    this.amount = Big(amount);
     this.fetchQuote();
   }
 
   setPremium(premium: number) {
-    this.premium = premium;
+    this.premium = Big(premium);
     this.fetchQuote();
   }
 
@@ -219,18 +222,18 @@ export default class OrderFormView {
 
   setSuggestedPremium() {
     try {
-      if (!this.amount) throw new Error('Must specify amount first');
+      if (this.amount.eq(0)) throw new Error('Must specify amount first');
       const prevBatch = this._store.batchStore.sortedBatches[0];
       if (!prevBatch) throw new Error('Previous batch not found');
       const prevFixedRate = prevBatch.clearingPriceRate;
       // get the percentage rate of the previous batch and apply to the current amount
       const prevPctRate = this._store.api.pool.calcPctRate(
-        prevFixedRate,
-        this.derivedDuration,
+        Big(prevFixedRate),
+        Big(this.derivedDuration),
       );
-      const suggested = this.amount * prevPctRate;
+      const suggested = this.amount.mul(prevPctRate);
       // round to the nearest 10 to offset lose of precision in calculating percentages
-      this.premium = Math.round(suggested / 10) * 10;
+      this.premium = suggested.div(10).round().mul(10);
       this.fetchQuote();
     } catch (error) {
       this._store.appView.handleError(error, 'Unable to suggest premium');
@@ -243,7 +246,7 @@ export default class OrderFormView {
 
   /** requests a quote for an order to obtain accurate fees */
   async quoteOrder() {
-    const minUnitsMatch = Math.floor(this.minChanSize / ONE_UNIT);
+    const minUnitsMatch = +Big(this.minChanSize).div(ONE_UNIT).round(0, Big.roundDown);
     const satsPerKWeight = this._store.api.pool.satsPerVByteToKWeight(
       this.maxBatchFeeRate,
     );
@@ -260,8 +263,8 @@ export default class OrderFormView {
     );
 
     runInAction(() => {
-      this.executionFee = totalExecutionFeeSat;
-      this.worstChainFee = worstCaseChainFeeSat;
+      this.executionFee = Big(totalExecutionFeeSat);
+      this.worstChainFee = Big(worstCaseChainFeeSat);
       this.quoteLoading = false;
     });
   }
@@ -276,8 +279,8 @@ export default class OrderFormView {
   fetchQuote() {
     if (!this.isValid) {
       runInAction(() => {
-        this.executionFee = 0;
-        this.worstChainFee = 0;
+        this.executionFee = Big(0);
+        this.worstChainFee = Big(0);
         this.quoteLoading = false;
       });
       return;
@@ -303,11 +306,11 @@ export default class OrderFormView {
     );
     runInAction(() => {
       if (nonce) {
-        this.amount = 0;
-        this.premium = 0;
+        this.amount = Big(0);
+        this.premium = Big(0);
         this.duration = 0;
-        this.executionFee = 0;
-        this.worstChainFee = 0;
+        this.executionFee = Big(0);
+        this.worstChainFee = Big(0);
         // persist the additional options so they can be used for future orders
         this._store.settingsStore.setOrderSettings(
           this.minChanSize,

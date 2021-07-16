@@ -36,7 +36,9 @@ const protoSources = async () => {
     throw new Error(`go.mod did not match pattern ${POOL_VERSION_PATTERN}`);
   }
 
-  console.log(`Found lnd version ${lndVersion[1]} and loop version ${loopVersion[1]}.`);
+  console.log(
+    `Found:\n LND ${lndVersion[1]}\n Loop ${loopVersion[1]}\n Pool ${poolVersion[1]}`,
+  );
   return {
     lnd: `lightningnetwork/lnd/${lndVersion[1]}/lnrpc/rpc.proto`,
     loop: `lightninglabs/loop/${loopVersion[1]}/looprpc/client.proto`,
@@ -63,7 +65,7 @@ const download = async () => {
   for ([name, urlPath] of Object.entries(await protoSources())) {
     const url = `https://raw.githubusercontent.com/${urlPath}`;
     const filePath = join(appPath, '..', 'proto', `${name}.proto`);
-    mkdirSync(dirname(filePath), {recursive: true});
+    mkdirSync(dirname(filePath), { recursive: true });
     console.log(`${url}`);
     console.log(` -> ${filePath}`);
     const content = await new Promise((resolve, reject) => {
@@ -75,6 +77,26 @@ const download = async () => {
       });
     });
     await fs.writeFile(filePath, content);
+  }
+};
+
+/**
+ * Adds "[jstype = JS_STRING]" to uint64 fields to indicate that they should be
+ * represented as strings to avoid Number overflow issues
+ */
+const sanitize = async () => {
+  const filePaths = Object.keys(filePatches).map(name =>
+    join(appPath, '..', 'proto', `${name}.proto`),
+  );
+  for (path of filePaths) {
+    let content = (await fs.readFile(path)).toString();
+    content = content.replace(/^\s*(repeated)? u?int64 ((?!jstype).)*$/gm, match => {
+      // add the jstype descriptor
+      return /^.*];$/.test(match)
+        ? match.replace(/\s*];$/, `, jstype = JS_STRING];`)
+        : match.replace(/;$/, ` [jstype = JS_STRING];`);
+    });
+    await fs.writeFile(path, content);
   }
 };
 
@@ -117,11 +139,6 @@ const patch = async () => {
   console.log('\nPatching generated JS files');
 
   for (const filename of Object.keys(filePatches)) {
-    const patch = [
-      '/* eslint-disable */',
-      `var proto = { ${filePatches[filename]} };`,
-      '',
-    ].join('\n');
     const path = join(
       appPath,
       'src',
@@ -132,7 +149,15 @@ const patch = async () => {
 
     console.log(` - ${path}`);
     let content = await fs.readFile(path);
+
+    // apply the webpack patch
+    const patch = [
+      '/* eslint-disable */',
+      `var proto = { ${filePatches[filename]} };`,
+      '',
+    ].join('\n');
     content = `${patch}\n${content}`;
+
     await fs.writeFile(path, content);
   }
 };
@@ -143,6 +168,7 @@ const patch = async () => {
 const main = async () => {
   try {
     await download();
+    await sanitize();
     await generate();
     await patch();
   } catch (error) {

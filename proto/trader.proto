@@ -188,7 +188,7 @@ service Trader {
 }
 
 message InitAccountRequest {
-    uint64 account_value = 1;
+    uint64 account_value = 1 [jstype = JS_STRING];
 
     oneof account_expiry {
         uint32 absolute_height = 2;
@@ -216,7 +216,7 @@ message InitAccountRequest {
 }
 
 message QuoteAccountRequest {
-    uint64 account_value = 1;
+    uint64 account_value = 1 [jstype = JS_STRING];
 
     oneof fees {
         /*
@@ -230,9 +230,9 @@ message QuoteAccountRequest {
 }
 
 message QuoteAccountResponse {
-    uint64 miner_fee_rate_sat_per_kw = 1;
+    uint64 miner_fee_rate_sat_per_kw = 1 [jstype = JS_STRING];
 
-    uint64 miner_fee_total = 2;
+    uint64 miner_fee_total = 2 [jstype = JS_STRING];
 }
 
 message ListAccountsRequest {
@@ -247,7 +247,7 @@ message ListAccountsResponse {
 
 message Output {
     // The value, in satoshis, of the output.
-    uint64 value_sat = 1;
+    uint64 value_sat = 1 [jstype = JS_STRING];
 
     // The address corresponding to the output.
     string address = 2;
@@ -266,7 +266,7 @@ message OutputWithFee {
         /*
         The fee rate, in satoshis per kw, to use for the withdrawal transaction.
         */
-        uint64 fee_rate_sat_per_kw = 3;
+        uint64 fee_rate_sat_per_kw = 3 [jstype = JS_STRING];
     }
 }
 
@@ -314,7 +314,7 @@ message WithdrawAccountRequest {
     /*
     The fee rate, in satoshis per kw, to use for the withdrawal transaction.
     */
-    uint64 fee_rate_sat_per_kw = 3;
+    uint64 fee_rate_sat_per_kw = 3 [jstype = JS_STRING];
 }
 message WithdrawAccountResponse {
     // The state of the account after processing the withdrawal.
@@ -332,12 +332,12 @@ message DepositAccountRequest {
     bytes trader_key = 1;
 
     // The amount in satoshis to deposit into the account.
-    uint64 amount_sat = 2;
+    uint64 amount_sat = 2 [jstype = JS_STRING];
 
     /*
     The fee rate, in satoshis per kw, to use for the deposit transaction.
     */
-    uint64 fee_rate_sat_per_kw = 3;
+    uint64 fee_rate_sat_per_kw = 3 [jstype = JS_STRING];
 }
 message DepositAccountResponse {
     // The state of the account after processing the deposit.
@@ -360,7 +360,7 @@ message RenewAccountRequest {
     }
 
     // The fee rate, in satoshis per kw, to use for the renewal transaction.
-    uint64 fee_rate_sat_per_kw = 4;
+    uint64 fee_rate_sat_per_kw = 4 [jstype = JS_STRING];
 }
 message RenewAccountResponse {
     // The state of the account after processing the renewal.
@@ -380,7 +380,7 @@ message BumpAccountFeeRequest {
     The new fee rate, in satoshis per kw, to use for the child of the account
     transaction.
     */
-    uint64 fee_rate_sat_per_kw = 2;
+    uint64 fee_rate_sat_per_kw = 2 [jstype = JS_STRING];
 }
 message BumpAccountFeeResponse {
 }
@@ -443,13 +443,13 @@ message Account {
     OutPoint outpoint = 2;
 
     // The current total amount of satoshis in the account.
-    uint64 value = 3;
+    uint64 value = 3 [jstype = JS_STRING];
 
     /*
     The amount of satoshis in the account that is available, meaning not
     allocated to any oustanding orders.
     */
-    uint64 available_balance = 4;
+    uint64 available_balance = 4 [jstype = JS_STRING];
 
     // The height at which the account will expire.
     uint32 expiration_height = 5;
@@ -527,13 +527,13 @@ message Order {
     /*
     Order amount in satoshis.
     */
-    uint64 amt = 3;
+    uint64 amt = 3 [jstype = JS_STRING];
 
     /*
     Maximum fee rate the trader is willing to pay for the batch transaction,
     expressed in satoshis per 1000 weight units (sat/KW).
     */
-    uint64 max_batch_fee_rate_sat_per_kw = 4;
+    uint64 max_batch_fee_rate_sat_per_kw = 4 [jstype = JS_STRING];
 
     /*
     Order nonce, acts as unique order identifier.
@@ -559,10 +559,10 @@ message Order {
 
     // The value reserved from the account by this order to ensure the account
     // can pay execution and chain fees in case it gets matched.
-    uint64 reserved_value_sat = 9;
+    uint64 reserved_value_sat = 9 [jstype = JS_STRING];
 
     // The unix timestamp in nanoseconds the order was first created/submitted.
-    uint64 creation_timestamp_ns = 10;
+    uint64 creation_timestamp_ns = 10 [jstype = JS_STRING];
 
     /*
     A list of events that were emitted for this order. This field is only set
@@ -606,7 +606,7 @@ message Bid {
     as the order amount and the min_chan_amt must be set to the full order
     amount.
     */
-    uint64 self_chan_balance = 5;
+    uint64 self_chan_balance = 5 [jstype = JS_STRING];
 
     /*
     If this bid order is meant to lease a channel for another node (which is
@@ -640,7 +640,7 @@ message QuoteOrderRequest {
     /*
     Order amount in satoshis.
     */
-    uint64 amt = 1;
+    uint64 amt = 1 [jstype = JS_STRING];
 
     /*
     Fixed order rate in parts per billion.
@@ -657,7 +657,7 @@ message QuoteOrderRequest {
     Maximum fee rate the trader is willing to pay for the batch transaction,
     expressed in satoshis per 1000 weight units (sat/KW).
     */
-    uint64 max_batch_fee_rate_sat_per_kw = 4;
+    uint64 max_batch_fee_rate_sat_per_kw = 4 [jstype = JS_STRING];
 
     // The minimum number of order units that must be matched per order pair.
     uint32 min_units_match = 5;
@@ -668,7 +668,7 @@ message QuoteOrderResponse {
     represents the interest amount paid to the maker by the taker excluding any
     execution or chain fees.
     */
-    uint64 total_premium_sat = 1;
+    uint64 total_premium_sat = 1 [jstype = JS_STRING];
 
     /*
     The fixed order rate expressed as a fraction instead of parts per billion.
@@ -684,7 +684,7 @@ message QuoteOrderResponse {
     The total execution fee in satoshis that needs to be paid to the auctioneer
     for executing the entire order.
     */
-    uint64 total_execution_fee_sat = 4;
+    uint64 total_execution_fee_sat = 4 [jstype = JS_STRING];
 
     /*
     The worst case chain fees that need to be paid if fee rates spike up to the
@@ -693,7 +693,7 @@ message QuoteOrderResponse {
     calculation assumes chain fees for the chain footprint of opening
     amt/min_units_match channels (hence worst case calculation).
     */
-    uint64 worst_case_chain_fee_sat = 5;
+    uint64 worst_case_chain_fee_sat = 5 [jstype = JS_STRING];
 }
 
 message OrderEvent {
@@ -701,7 +701,7 @@ message OrderEvent {
     The unix timestamp in nanoseconds the event was emitted at. This is the
     primary key of the event and is unique across the database.
     */
-    int64 timestamp_ns = 1;
+    int64 timestamp_ns = 1 [jstype = JS_STRING];
 
     // The human readable representation of the event.
     string event_str = 2;
@@ -844,7 +844,7 @@ message Lease {
     OutPoint channel_point = 1;
 
     // The amount, in satoshis, of the channel created.
-    uint64 channel_amt_sat = 2;
+    uint64 channel_amt_sat = 2 [jstype = JS_STRING];
 
     // The intended duration, in blocks, of the channel created.
     uint32 channel_duration_blocks = 3;
@@ -855,31 +855,31 @@ message Lease {
     /*
     The premium, in satoshis, either paid or received for the offered liquidity.
     */
-    uint64 premium_sat = 5;
+    uint64 premium_sat = 5 [jstype = JS_STRING];
 
     /*
     The execution fee, in satoshis, charged by the auctioneer for the channel
     created.
     */
-    uint64 execution_fee_sat = 6;
+    uint64 execution_fee_sat = 6 [jstype = JS_STRING];
 
     /*
     The fee, in satoshis, charged by the auctioneer for the batch execution
     transaction that created this lease.
     */
-    uint64 chain_fee_sat = 7;
+    uint64 chain_fee_sat = 7 [jstype = JS_STRING];
 
     /*
     The actual fixed rate expressed in parts per billionth this lease was
     bought/sold at.
     */
-    uint64 clearing_rate_price = 8;
+    uint64 clearing_rate_price = 8 [jstype = JS_STRING];
 
     /*
     The actual fixed rate of the bid/ask, this should always be 'better' than
     the clearing_rate_price.
     */
-    uint64 order_fixed_rate = 9;
+    uint64 order_fixed_rate = 9 [jstype = JS_STRING];
 
     // The order executed that resulted in the channel created.
     bytes order_nonce = 10;
@@ -894,7 +894,7 @@ message Lease {
     NodeTier channel_node_tier = 13;
 
     // The self channel balance that was pushed to the recipient.
-    uint64 self_chan_balance = 14;
+    uint64 self_chan_balance = 14 [jstype = JS_STRING];
 
     // Whether the channel was leased as a sidecar channel (bid orders only).
     bool sidecar_channel = 15;
@@ -919,10 +919,10 @@ message LeasesResponse {
     repeated Lease leases = 1;
 
     // The total amount of satoshis earned from the leases returned.
-    uint64 total_amt_earned_sat = 2;
+    uint64 total_amt_earned_sat = 2 [jstype = JS_STRING];
 
     // The total amount of satoshis paid for the leases returned.
-    uint64 total_amt_paid_sat = 3;
+    uint64 total_amt_paid_sat = 3 [jstype = JS_STRING];
 }
 
 message TokensRequest {
@@ -956,17 +956,17 @@ message LsatToken {
     /**
     The amount of millisatoshis that was paid to get the token.
     */
-    int64 amount_paid_msat = 4;
+    int64 amount_paid_msat = 4 [jstype = JS_STRING];
 
     /**
     The amount of millisatoshis paid in routing fee to pay for the token.
     */
-    int64 routing_fee_paid_msat = 5;
+    int64 routing_fee_paid_msat = 5 [jstype = JS_STRING];
 
     /**
     The creation time of the token as UNIX timestamp in seconds.
     */
-    int64 time_created = 6;
+    int64 time_created = 6 [jstype = JS_STRING];
 
     /**
     Indicates whether the token is expired or still valid.
@@ -1010,13 +1010,13 @@ message NextBatchInfoResponse {
     The fee rate, in satoshis per kiloweight, estimated by the auctioneer to use
     for the next batch.
     */
-    uint64 fee_rate_sat_per_kw = 6;
+    uint64 fee_rate_sat_per_kw = 6 [jstype = JS_STRING];
 
     /*
     The absolute unix timestamp in seconds at which the auctioneer will attempt
     to clear the next batch.
     */
-    uint64 clear_timestamp = 7;
+    uint64 clear_timestamp = 7 [jstype = JS_STRING];
 }
 
 message NodeRatingRequest {

@@ -174,7 +174,7 @@ export default class OrderStore {
    * @param maxBatchFeeRate the maximum batch fee rate to allowed as sats per vByte
    */
   async quoteOrder(
-    amount: number,
+    amount: Big,
     rateFixed: number,
     duration: number,
     minUnitsMatch: number,
@@ -202,9 +202,9 @@ export default class OrderStore {
       return {
         ratePerBlock: rateFixed,
         ratePercent: 0,
-        totalExecutionFeeSat: 0,
-        totalPremiumSat: 0,
-        worstCaseChainFeeSat: 0,
+        totalExecutionFeeSat: '0',
+        totalPremiumSat: '0',
+        worstCaseChainFeeSat: '0',
       };
     }
   }
@@ -221,7 +221,7 @@ export default class OrderStore {
    */
   async submitOrder(
     type: OrderType,
-    amount: number,
+    amount: Big,
     rateFixed: number,
     duration: number,
     minUnitsMatch: number,

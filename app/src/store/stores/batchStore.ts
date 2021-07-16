@@ -9,6 +9,7 @@ import {
 } from 'mobx';
 import { NodeTier } from 'types/generated/auctioneerrpc/auctioneer_pb';
 import { LeaseDuration } from 'types/state';
+import Big from 'big.js';
 import { IS_DEV, IS_TEST } from 'config';
 import debounce from 'lodash/debounce';
 import { hex } from 'util/strings';
@@ -35,7 +36,7 @@ export default class BatchStore {
   markets: ObservableMap<LeaseDuration, Market> = observable.map();
 
   /** the timestamp of the next batch in seconds */
-  nextBatchTimestamp = 0;
+  nextBatchTimestamp = Big(0);
 
   /** the fee rate (sats/vbyte) estimated by the auctioneer to use for the next batch */
   nextFeeRate = 0;
@@ -166,12 +167,12 @@ export default class BatchStore {
     try {
       const res = await this._store.api.pool.nextBatchInfo();
       runInAction(() => {
-        this.setNextBatchTimestamp(res.clearTimestamp);
+        this.setNextBatchTimestamp(Big(res.clearTimestamp));
         this._store.log.info(
           'updated batchStore.nextBatchTimestamp',
           this.nextBatchTimestamp,
         );
-        this.setNextFeeRate(res.feeRateSatPerKw);
+        this.setNextFeeRate(Big(res.feeRateSatPerKw));
         this._store.log.info('updated batchStore.nextFeeRate', this.nextFeeRate);
       });
     } catch (error) {
@@ -254,15 +255,15 @@ export default class BatchStore {
    * batched to be processed
    * @param timestamp the next batch timestamp in seconds since epoch
    */
-  setNextBatchTimestamp(timestamp: number) {
+  setNextBatchTimestamp(timestamp: Big) {
     // if the value is the same, then just return immediately
-    if (this.nextBatchTimestamp === timestamp) return;
+    if (this.nextBatchTimestamp.eq(timestamp)) return;
 
     this.nextBatchTimestamp = timestamp;
 
     if (this._nextBatchTimer) clearTimeout(this._nextBatchTimer);
     // calc the number of ms between now and the next batch timestamp
-    let ms = timestamp * 1000 - Date.now();
+    let ms = timestamp.mul(1000).sub(Date.now()).toNumber();
     // if the timestamp is somehow in the past, use 10 mins as a default
     if (ms < 0) ms = 10 * 60 * 1000;
     this._nextBatchTimer = setTimeout(this.fetchLatestBatch, ms + 3000);
@@ -271,9 +272,9 @@ export default class BatchStore {
   /**
    * sets the nextFeeRate by converting the provided sats/kw to sats/vbyte
    */
-  setNextFeeRate(satsPerKWeight: number) {
+  setNextFeeRate(satsPerKWeight: Big) {
     const satsPerVbyte = this._store.api.pool.satsPerKWeightToVByte(satsPerKWeight);
-    this.nextFeeRate = Math.ceil(satsPerVbyte);
+    this.nextFeeRate = satsPerVbyte.round(0, Big.roundUp).toNumber();
   }
 
   startPolling() {

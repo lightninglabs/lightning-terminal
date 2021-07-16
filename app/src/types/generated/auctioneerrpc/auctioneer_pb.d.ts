@@ -4,8 +4,8 @@
 import * as jspb from "google-protobuf";
 
 export class ReserveAccountRequest extends jspb.Message {
-  getAccountValue(): number;
-  setAccountValue(value: number): void;
+  getAccountValue(): string;
+  setAccountValue(value: string): void;
 
   getAccountExpiry(): number;
   setAccountExpiry(value: number): void;
@@ -27,7 +27,7 @@ export class ReserveAccountRequest extends jspb.Message {
 
 export namespace ReserveAccountRequest {
   export type AsObject = {
-    accountValue: number,
+    accountValue: string,
     accountExpiry: number,
     traderKey: Uint8Array | string,
   }
@@ -72,8 +72,8 @@ export class ServerInitAccountRequest extends jspb.Message {
   getAccountScript_asB64(): string;
   setAccountScript(value: Uint8Array | string): void;
 
-  getAccountValue(): number;
-  setAccountValue(value: number): void;
+  getAccountValue(): string;
+  setAccountValue(value: string): void;
 
   getAccountExpiry(): number;
   setAccountExpiry(value: number): void;
@@ -100,7 +100,7 @@ export namespace ServerInitAccountRequest {
   export type AsObject = {
     accountPoint?: OutPoint.AsObject,
     accountScript: Uint8Array | string,
-    accountValue: number,
+    accountValue: string,
     accountExpiry: number,
     traderKey: Uint8Array | string,
     userAgent: string,
@@ -711,11 +711,11 @@ export class OrderMatchPrepare extends jspb.Message {
   getBatchTransaction_asB64(): string;
   setBatchTransaction(value: Uint8Array | string): void;
 
-  getFeeRateSatPerKw(): number;
-  setFeeRateSatPerKw(value: number): void;
+  getFeeRateSatPerKw(): string;
+  setFeeRateSatPerKw(value: string): void;
 
-  getFeeRebateSat(): number;
-  setFeeRebateSat(value: number): void;
+  getFeeRebateSat(): string;
+  setFeeRebateSat(value: string): void;
 
   getBatchId(): Uint8Array | string;
   getBatchId_asU8(): Uint8Array;
@@ -744,8 +744,8 @@ export namespace OrderMatchPrepare {
     chargedAccountsList: Array<AccountDiff.AsObject>,
     executionFee?: ExecutionFee.AsObject,
     batchTransaction: Uint8Array | string,
-    feeRateSatPerKw: number,
-    feeRebateSat: number,
+    feeRateSatPerKw: string,
+    feeRebateSat: string,
     batchId: Uint8Array | string,
     batchVersion: number,
     matchedMarketsMap: Array<[number, MatchedMarket.AsObject]>,
@@ -852,8 +852,8 @@ export namespace SubscribeError {
 }
 
 export class AuctionAccount extends jspb.Message {
-  getValue(): number;
-  setValue(value: number): void;
+  getValue(): string;
+  setValue(value: string): void;
 
   getExpiry(): number;
   setExpiry(value: number): void;
@@ -901,7 +901,7 @@ export class AuctionAccount extends jspb.Message {
 
 export namespace AuctionAccount {
   export type AsObject = {
-    value: number,
+    value: string,
     expiry: number,
     traderKey: Uint8Array | string,
     auctioneerKey: Uint8Array | string,
@@ -994,8 +994,8 @@ export namespace MatchedBid {
 }
 
 export class AccountDiff extends jspb.Message {
-  getEndingBalance(): number;
-  setEndingBalance(value: number): void;
+  getEndingBalance(): string;
+  setEndingBalance(value: string): void;
 
   getEndingState(): AccountDiff.AccountStateMap[keyof AccountDiff.AccountStateMap];
   setEndingState(value: AccountDiff.AccountStateMap[keyof AccountDiff.AccountStateMap]): void;
@@ -1020,7 +1020,7 @@ export class AccountDiff extends jspb.Message {
 
 export namespace AccountDiff {
   export type AsObject = {
-    endingBalance: number,
+    endingBalance: string,
     endingState: AccountDiff.AccountStateMap[keyof AccountDiff.AccountStateMap],
     outpointIndex: number,
     traderKey: Uint8Array | string,
@@ -1045,11 +1045,11 @@ export class ServerOrder extends jspb.Message {
   getRateFixed(): number;
   setRateFixed(value: number): void;
 
-  getAmt(): number;
-  setAmt(value: number): void;
+  getAmt(): string;
+  setAmt(value: string): void;
 
-  getMinChanAmt(): number;
-  setMinChanAmt(value: number): void;
+  getMinChanAmt(): string;
+  setMinChanAmt(value: string): void;
 
   getOrderNonce(): Uint8Array | string;
   getOrderNonce_asU8(): Uint8Array;
@@ -1079,8 +1079,8 @@ export class ServerOrder extends jspb.Message {
   getChanType(): number;
   setChanType(value: number): void;
 
-  getMaxBatchFeeRateSatPerKw(): number;
-  setMaxBatchFeeRateSatPerKw(value: number): void;
+  getMaxBatchFeeRateSatPerKw(): string;
+  setMaxBatchFeeRateSatPerKw(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServerOrder.AsObject;
@@ -1096,15 +1096,15 @@ export namespace ServerOrder {
   export type AsObject = {
     traderKey: Uint8Array | string,
     rateFixed: number,
-    amt: number,
-    minChanAmt: number,
+    amt: string,
+    minChanAmt: string,
     orderNonce: Uint8Array | string,
     orderSig: Uint8Array | string,
     multiSigKey: Uint8Array | string,
     nodePub: Uint8Array | string,
     nodeAddrList: Array<NodeAddress.AsObject>,
     chanType: number,
-    maxBatchFeeRateSatPerKw: number,
+    maxBatchFeeRateSatPerKw: string,
   }
 }
 
@@ -1123,8 +1123,8 @@ export class ServerBid extends jspb.Message {
   getMinNodeTier(): NodeTierMap[keyof NodeTierMap];
   setMinNodeTier(value: NodeTierMap[keyof NodeTierMap]): void;
 
-  getSelfChanBalance(): number;
-  setSelfChanBalance(value: number): void;
+  getSelfChanBalance(): string;
+  setSelfChanBalance(value: string): void;
 
   getIsSidecarChannel(): boolean;
   setIsSidecarChannel(value: boolean): void;
@@ -1145,7 +1145,7 @@ export namespace ServerBid {
     leaseDurationBlocks: number,
     version: number,
     minNodeTier: NodeTierMap[keyof NodeTierMap],
-    selfChanBalance: number,
+    selfChanBalance: string,
     isSidecarChannel: boolean,
   }
 }
@@ -1267,8 +1267,8 @@ export namespace ServerInput {
 }
 
 export class ServerOutput extends jspb.Message {
-  getValue(): number;
-  setValue(value: number): void;
+  getValue(): string;
+  setValue(value: string): void;
 
   getScript(): Uint8Array | string;
   getScript_asU8(): Uint8Array;
@@ -1287,7 +1287,7 @@ export class ServerOutput extends jspb.Message {
 
 export namespace ServerOutput {
   export type AsObject = {
-    value: number,
+    value: string,
     script: Uint8Array | string,
   }
 }
@@ -1332,8 +1332,8 @@ export namespace ServerModifyAccountRequest {
   }
 
   export class NewAccountParameters extends jspb.Message {
-    getValue(): number;
-    setValue(value: number): void;
+    getValue(): string;
+    setValue(value: string): void;
 
     getExpiry(): number;
     setExpiry(value: number): void;
@@ -1350,7 +1350,7 @@ export namespace ServerModifyAccountRequest {
 
   export namespace NewAccountParameters {
     export type AsObject = {
-      value: number,
+      value: string,
       expiry: number,
     }
   }
@@ -1441,8 +1441,8 @@ export namespace TermsRequest {
 }
 
 export class TermsResponse extends jspb.Message {
-  getMaxAccountValue(): number;
-  setMaxAccountValue(value: number): void;
+  getMaxAccountValue(): string;
+  setMaxAccountValue(value: string): void;
 
   getMaxOrderDurationBlocks(): number;
   setMaxOrderDurationBlocks(value: number): void;
@@ -1457,11 +1457,11 @@ export class TermsResponse extends jspb.Message {
   getNextBatchConfTarget(): number;
   setNextBatchConfTarget(value: number): void;
 
-  getNextBatchFeeRateSatPerKw(): number;
-  setNextBatchFeeRateSatPerKw(value: number): void;
+  getNextBatchFeeRateSatPerKw(): string;
+  setNextBatchFeeRateSatPerKw(value: string): void;
 
-  getNextBatchClearTimestamp(): number;
-  setNextBatchClearTimestamp(value: number): void;
+  getNextBatchClearTimestamp(): string;
+  setNextBatchClearTimestamp(value: string): void;
 
   getLeaseDurationBucketsMap(): jspb.Map<number, DurationBucketStateMap[keyof DurationBucketStateMap]>;
   clearLeaseDurationBucketsMap(): void;
@@ -1477,13 +1477,13 @@ export class TermsResponse extends jspb.Message {
 
 export namespace TermsResponse {
   export type AsObject = {
-    maxAccountValue: number,
+    maxAccountValue: string,
     maxOrderDurationBlocks: number,
     executionFee?: ExecutionFee.AsObject,
     leaseDurationsMap: Array<[number, boolean]>,
     nextBatchConfTarget: number,
-    nextBatchFeeRateSatPerKw: number,
-    nextBatchClearTimestamp: number,
+    nextBatchFeeRateSatPerKw: string,
+    nextBatchClearTimestamp: string,
     leaseDurationBucketsMap: Array<[number, DurationBucketStateMap[keyof DurationBucketStateMap]]>,
   }
 }
@@ -1547,11 +1547,11 @@ export class RelevantBatch extends jspb.Message {
   getTransaction_asB64(): string;
   setTransaction(value: Uint8Array | string): void;
 
-  getFeeRateSatPerKw(): number;
-  setFeeRateSatPerKw(value: number): void;
+  getFeeRateSatPerKw(): string;
+  setFeeRateSatPerKw(value: string): void;
 
-  getCreationTimestampNs(): number;
-  setCreationTimestampNs(value: number): void;
+  getCreationTimestampNs(): string;
+  setCreationTimestampNs(value: string): void;
 
   getMatchedMarketsMap(): jspb.Map<number, MatchedMarket>;
   clearMatchedMarketsMap(): void;
@@ -1574,18 +1574,18 @@ export namespace RelevantBatch {
     clearingPriceRate: number,
     executionFee?: ExecutionFee.AsObject,
     transaction: Uint8Array | string,
-    feeRateSatPerKw: number,
-    creationTimestampNs: number,
+    feeRateSatPerKw: string,
+    creationTimestampNs: string,
     matchedMarketsMap: Array<[number, MatchedMarket.AsObject]>,
   }
 }
 
 export class ExecutionFee extends jspb.Message {
-  getBaseFee(): number;
-  setBaseFee(value: number): void;
+  getBaseFee(): string;
+  setBaseFee(value: string): void;
 
-  getFeeRate(): number;
-  setFeeRate(value: number): void;
+  getFeeRate(): string;
+  setFeeRate(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ExecutionFee.AsObject;
@@ -1599,8 +1599,8 @@ export class ExecutionFee extends jspb.Message {
 
 export namespace ExecutionFee {
   export type AsObject = {
-    baseFee: number,
-    feeRate: number,
+    baseFee: string,
+    feeRate: string,
   }
 }
 
@@ -1732,8 +1732,8 @@ export class MatchedOrderSnapshot extends jspb.Message {
   getMatchingRate(): number;
   setMatchingRate(value: number): void;
 
-  getTotalSatsCleared(): number;
-  setTotalSatsCleared(value: number): void;
+  getTotalSatsCleared(): string;
+  setTotalSatsCleared(value: string): void;
 
   getUnitsMatched(): number;
   setUnitsMatched(value: number): void;
@@ -1753,7 +1753,7 @@ export namespace MatchedOrderSnapshot {
     ask?: AskSnapshot.AsObject,
     bid?: BidSnapshot.AsObject,
     matchingRate: number,
-    totalSatsCleared: number,
+    totalSatsCleared: string,
     unitsMatched: number,
   }
 }
@@ -1836,11 +1836,11 @@ export class BatchSnapshotResponse extends jspb.Message {
   getBatchTx_asB64(): string;
   setBatchTx(value: Uint8Array | string): void;
 
-  getBatchTxFeeRateSatPerKw(): number;
-  setBatchTxFeeRateSatPerKw(value: number): void;
+  getBatchTxFeeRateSatPerKw(): string;
+  setBatchTxFeeRateSatPerKw(value: string): void;
 
-  getCreationTimestampNs(): number;
-  setCreationTimestampNs(value: number): void;
+  getCreationTimestampNs(): string;
+  setCreationTimestampNs(value: string): void;
 
   getMatchedMarketsMap(): jspb.Map<number, MatchedMarketSnapshot>;
   clearMatchedMarketsMap(): void;
@@ -1863,8 +1863,8 @@ export namespace BatchSnapshotResponse {
     matchedOrdersList: Array<MatchedOrderSnapshot.AsObject>,
     batchTxId: string,
     batchTx: Uint8Array | string,
-    batchTxFeeRateSatPerKw: number,
-    creationTimestampNs: number,
+    batchTxFeeRateSatPerKw: string,
+    creationTimestampNs: string,
     matchedMarketsMap: Array<[number, MatchedMarketSnapshot.AsObject]>,
   }
 }

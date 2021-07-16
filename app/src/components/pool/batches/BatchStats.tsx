@@ -61,7 +61,7 @@ const BatchStats: React.FC = () => {
       <div>
         <BatchCountdown
           label={l('nextBatch')}
-          timestamp={batchesView.nextBatchTimestamp}
+          timestamp={batchesView.nextBatchTimestamp.toNumber()}
           tip={l('nextBatchTip')}
         />
         <Stat

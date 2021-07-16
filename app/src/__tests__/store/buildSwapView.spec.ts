@@ -111,15 +111,15 @@ describe('BuildSwapView', () => {
   });
 
   it('should ensure amount is greater than the min terms', async () => {
-    store.setAmount(Big(loopInTerms.minSwapAmount - 100));
+    store.setAmount(Big(loopInTerms.minSwapAmount).sub(100));
     await store.getTerms();
-    expect(+store.amountForSelected).toBe(loopInTerms.minSwapAmount);
+    expect(store.amountForSelected.toString()).toBe(loopInTerms.minSwapAmount);
   });
 
   it('should ensure amount is less than the max terms', async () => {
     store.setAmount(Big(loopInTerms.maxSwapAmount + 100));
     await store.getTerms();
-    expect(+store.amountForSelected).toBe(loopInTerms.maxSwapAmount);
+    expect(store.amountForSelected.toString()).toBe(loopInTerms.maxSwapAmount);
   });
 
   it('should validate the conf target', async () => {
@@ -293,7 +293,7 @@ describe('BuildSwapView', () => {
     store.setDirection(SwapDirection.OUT);
     store.setAmount(Big(600));
 
-    let deadline = 0;
+    let deadline = '';
     // mock the grpc unary function in order to capture the supplied deadline
     // passed in with the API request
     injectIntoGrpcUnary((desc, props) => {
@@ -303,7 +303,7 @@ describe('BuildSwapView', () => {
     // run a loop on mainnet and verify the deadline
     rootStore.nodeStore.network = 'mainnet';
     store.requestSwap();
-    await waitFor(() => expect(deadline).toBeGreaterThan(0));
+    await waitFor(() => expect(+deadline).toBeGreaterThan(0));
 
     // inject again for the next swap
     injectIntoGrpcUnary((desc, props) => {
@@ -313,7 +313,7 @@ describe('BuildSwapView', () => {
     // run a loop on regtest and verify the deadline
     rootStore.nodeStore.network = 'regtest';
     store.requestSwap();
-    await waitFor(() => expect(deadline).toEqual(0));
+    await waitFor(() => expect(+deadline).toEqual(0));
   });
 
   it('should handle errors when performing a loop', async () => {
@@ -370,7 +370,12 @@ describe('BuildSwapView', () => {
   describe('min/max swap limits', () => {
     const addChannel = (capacity: number, localBalance: number) => {
       const remoteBalance = capacity - localBalance;
-      const lndChan = { ...lndChannel, capacity, localBalance, remoteBalance };
+      const lndChan = {
+        ...lndChannel,
+        capacity: `${capacity}`,
+        localBalance: `${localBalance}`,
+        remoteBalance: `${remoteBalance}`,
+      };
       const channel = Channel.create(rootStore, lndChan);
       channel.chanId = `${channel.chanId}${rootStore.channelStore.channels.size}`;
       channel.remotePubkey = `${channel.remotePubkey}${rootStore.channelStore.channels.size}`;

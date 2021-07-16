@@ -5,8 +5,8 @@ import * as jspb from "google-protobuf";
 import * as auctioneerrpc_auctioneer_pb from "./auctioneerrpc/auctioneer_pb";
 
 export class InitAccountRequest extends jspb.Message {
-  getAccountValue(): number;
-  setAccountValue(value: number): void;
+  getAccountValue(): string;
+  setAccountValue(value: string): void;
 
   hasAbsoluteHeight(): boolean;
   clearAbsoluteHeight(): void;
@@ -40,7 +40,7 @@ export class InitAccountRequest extends jspb.Message {
 
 export namespace InitAccountRequest {
   export type AsObject = {
-    accountValue: number,
+    accountValue: string,
     absoluteHeight: number,
     relativeHeight: number,
     confTarget: number,
@@ -60,8 +60,8 @@ export namespace InitAccountRequest {
 }
 
 export class QuoteAccountRequest extends jspb.Message {
-  getAccountValue(): number;
-  setAccountValue(value: number): void;
+  getAccountValue(): string;
+  setAccountValue(value: string): void;
 
   hasConfTarget(): boolean;
   clearConfTarget(): void;
@@ -81,7 +81,7 @@ export class QuoteAccountRequest extends jspb.Message {
 
 export namespace QuoteAccountRequest {
   export type AsObject = {
-    accountValue: number,
+    accountValue: string,
     confTarget: number,
   }
 
@@ -92,11 +92,11 @@ export namespace QuoteAccountRequest {
 }
 
 export class QuoteAccountResponse extends jspb.Message {
-  getMinerFeeRateSatPerKw(): number;
-  setMinerFeeRateSatPerKw(value: number): void;
+  getMinerFeeRateSatPerKw(): string;
+  setMinerFeeRateSatPerKw(value: string): void;
 
-  getMinerFeeTotal(): number;
-  setMinerFeeTotal(value: number): void;
+  getMinerFeeTotal(): string;
+  setMinerFeeTotal(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): QuoteAccountResponse.AsObject;
@@ -110,8 +110,8 @@ export class QuoteAccountResponse extends jspb.Message {
 
 export namespace QuoteAccountResponse {
   export type AsObject = {
-    minerFeeRateSatPerKw: number,
-    minerFeeTotal: number,
+    minerFeeRateSatPerKw: string,
+    minerFeeTotal: string,
   }
 }
 
@@ -158,8 +158,8 @@ export namespace ListAccountsResponse {
 }
 
 export class Output extends jspb.Message {
-  getValueSat(): number;
-  setValueSat(value: number): void;
+  getValueSat(): string;
+  setValueSat(value: string): void;
 
   getAddress(): string;
   setAddress(value: string): void;
@@ -176,7 +176,7 @@ export class Output extends jspb.Message {
 
 export namespace Output {
   export type AsObject = {
-    valueSat: number,
+    valueSat: string,
     address: string,
   }
 }
@@ -192,8 +192,8 @@ export class OutputWithFee extends jspb.Message {
 
   hasFeeRateSatPerKw(): boolean;
   clearFeeRateSatPerKw(): void;
-  getFeeRateSatPerKw(): number;
-  setFeeRateSatPerKw(value: number): void;
+  getFeeRateSatPerKw(): string;
+  setFeeRateSatPerKw(value: string): void;
 
   getFeesCase(): OutputWithFee.FeesCase;
   serializeBinary(): Uint8Array;
@@ -210,7 +210,7 @@ export namespace OutputWithFee {
   export type AsObject = {
     address: string,
     confTarget: number,
-    feeRateSatPerKw: number,
+    feeRateSatPerKw: string,
   }
 
   export enum FeesCase {
@@ -316,8 +316,8 @@ export class WithdrawAccountRequest extends jspb.Message {
   setOutputsList(value: Array<Output>): void;
   addOutputs(value?: Output, index?: number): Output;
 
-  getFeeRateSatPerKw(): number;
-  setFeeRateSatPerKw(value: number): void;
+  getFeeRateSatPerKw(): string;
+  setFeeRateSatPerKw(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): WithdrawAccountRequest.AsObject;
@@ -333,7 +333,7 @@ export namespace WithdrawAccountRequest {
   export type AsObject = {
     traderKey: Uint8Array | string,
     outputsList: Array<Output.AsObject>,
-    feeRateSatPerKw: number,
+    feeRateSatPerKw: string,
   }
 }
 
@@ -371,11 +371,11 @@ export class DepositAccountRequest extends jspb.Message {
   getTraderKey_asB64(): string;
   setTraderKey(value: Uint8Array | string): void;
 
-  getAmountSat(): number;
-  setAmountSat(value: number): void;
+  getAmountSat(): string;
+  setAmountSat(value: string): void;
 
-  getFeeRateSatPerKw(): number;
-  setFeeRateSatPerKw(value: number): void;
+  getFeeRateSatPerKw(): string;
+  setFeeRateSatPerKw(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): DepositAccountRequest.AsObject;
@@ -390,8 +390,8 @@ export class DepositAccountRequest extends jspb.Message {
 export namespace DepositAccountRequest {
   export type AsObject = {
     traderKey: Uint8Array | string,
-    amountSat: number,
-    feeRateSatPerKw: number,
+    amountSat: string,
+    feeRateSatPerKw: string,
   }
 }
 
@@ -439,8 +439,8 @@ export class RenewAccountRequest extends jspb.Message {
   getRelativeExpiry(): number;
   setRelativeExpiry(value: number): void;
 
-  getFeeRateSatPerKw(): number;
-  setFeeRateSatPerKw(value: number): void;
+  getFeeRateSatPerKw(): string;
+  setFeeRateSatPerKw(value: string): void;
 
   getAccountExpiryCase(): RenewAccountRequest.AccountExpiryCase;
   serializeBinary(): Uint8Array;
@@ -458,7 +458,7 @@ export namespace RenewAccountRequest {
     accountKey: Uint8Array | string,
     absoluteExpiry: number,
     relativeExpiry: number,
-    feeRateSatPerKw: number,
+    feeRateSatPerKw: string,
   }
 
   export enum AccountExpiryCase {
@@ -502,8 +502,8 @@ export class BumpAccountFeeRequest extends jspb.Message {
   getTraderKey_asB64(): string;
   setTraderKey(value: Uint8Array | string): void;
 
-  getFeeRateSatPerKw(): number;
-  setFeeRateSatPerKw(value: number): void;
+  getFeeRateSatPerKw(): string;
+  setFeeRateSatPerKw(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): BumpAccountFeeRequest.AsObject;
@@ -518,7 +518,7 @@ export class BumpAccountFeeRequest extends jspb.Message {
 export namespace BumpAccountFeeRequest {
   export type AsObject = {
     traderKey: Uint8Array | string,
-    feeRateSatPerKw: number,
+    feeRateSatPerKw: string,
   }
 }
 
@@ -549,11 +549,11 @@ export class Account extends jspb.Message {
   getOutpoint(): auctioneerrpc_auctioneer_pb.OutPoint | undefined;
   setOutpoint(value?: auctioneerrpc_auctioneer_pb.OutPoint): void;
 
-  getValue(): number;
-  setValue(value: number): void;
+  getValue(): string;
+  setValue(value: string): void;
 
-  getAvailableBalance(): number;
-  setAvailableBalance(value: number): void;
+  getAvailableBalance(): string;
+  setAvailableBalance(value: string): void;
 
   getExpirationHeight(): number;
   setExpirationHeight(value: number): void;
@@ -580,8 +580,8 @@ export namespace Account {
   export type AsObject = {
     traderKey: Uint8Array | string,
     outpoint?: auctioneerrpc_auctioneer_pb.OutPoint.AsObject,
-    value: number,
-    availableBalance: number,
+    value: string,
+    availableBalance: string,
     expirationHeight: number,
     state: AccountStateMap[keyof AccountStateMap],
     latestTxid: Uint8Array | string,
@@ -763,11 +763,11 @@ export class Order extends jspb.Message {
   getRateFixed(): number;
   setRateFixed(value: number): void;
 
-  getAmt(): number;
-  setAmt(value: number): void;
+  getAmt(): string;
+  setAmt(value: string): void;
 
-  getMaxBatchFeeRateSatPerKw(): number;
-  setMaxBatchFeeRateSatPerKw(value: number): void;
+  getMaxBatchFeeRateSatPerKw(): string;
+  setMaxBatchFeeRateSatPerKw(value: string): void;
 
   getOrderNonce(): Uint8Array | string;
   getOrderNonce_asU8(): Uint8Array;
@@ -783,11 +783,11 @@ export class Order extends jspb.Message {
   getUnitsUnfulfilled(): number;
   setUnitsUnfulfilled(value: number): void;
 
-  getReservedValueSat(): number;
-  setReservedValueSat(value: number): void;
+  getReservedValueSat(): string;
+  setReservedValueSat(value: string): void;
 
-  getCreationTimestampNs(): number;
-  setCreationTimestampNs(value: number): void;
+  getCreationTimestampNs(): string;
+  setCreationTimestampNs(value: string): void;
 
   clearEventsList(): void;
   getEventsList(): Array<OrderEvent>;
@@ -811,14 +811,14 @@ export namespace Order {
   export type AsObject = {
     traderKey: Uint8Array | string,
     rateFixed: number,
-    amt: number,
-    maxBatchFeeRateSatPerKw: number,
+    amt: string,
+    maxBatchFeeRateSatPerKw: string,
     orderNonce: Uint8Array | string,
     state: auctioneerrpc_auctioneer_pb.OrderStateMap[keyof auctioneerrpc_auctioneer_pb.OrderStateMap],
     units: number,
     unitsUnfulfilled: number,
-    reservedValueSat: number,
-    creationTimestampNs: number,
+    reservedValueSat: string,
+    creationTimestampNs: string,
     eventsList: Array<OrderEvent.AsObject>,
     minUnitsMatch: number,
   }
@@ -839,8 +839,8 @@ export class Bid extends jspb.Message {
   getMinNodeTier(): auctioneerrpc_auctioneer_pb.NodeTierMap[keyof auctioneerrpc_auctioneer_pb.NodeTierMap];
   setMinNodeTier(value: auctioneerrpc_auctioneer_pb.NodeTierMap[keyof auctioneerrpc_auctioneer_pb.NodeTierMap]): void;
 
-  getSelfChanBalance(): number;
-  setSelfChanBalance(value: number): void;
+  getSelfChanBalance(): string;
+  setSelfChanBalance(value: string): void;
 
   getSidecarTicket(): string;
   setSidecarTicket(value: string): void;
@@ -861,7 +861,7 @@ export namespace Bid {
     leaseDurationBlocks: number,
     version: number,
     minNodeTier: auctioneerrpc_auctioneer_pb.NodeTierMap[keyof auctioneerrpc_auctioneer_pb.NodeTierMap],
-    selfChanBalance: number,
+    selfChanBalance: string,
     sidecarTicket: string,
   }
 }
@@ -897,8 +897,8 @@ export namespace Ask {
 }
 
 export class QuoteOrderRequest extends jspb.Message {
-  getAmt(): number;
-  setAmt(value: number): void;
+  getAmt(): string;
+  setAmt(value: string): void;
 
   getRateFixed(): number;
   setRateFixed(value: number): void;
@@ -906,8 +906,8 @@ export class QuoteOrderRequest extends jspb.Message {
   getLeaseDurationBlocks(): number;
   setLeaseDurationBlocks(value: number): void;
 
-  getMaxBatchFeeRateSatPerKw(): number;
-  setMaxBatchFeeRateSatPerKw(value: number): void;
+  getMaxBatchFeeRateSatPerKw(): string;
+  setMaxBatchFeeRateSatPerKw(value: string): void;
 
   getMinUnitsMatch(): number;
   setMinUnitsMatch(value: number): void;
@@ -924,17 +924,17 @@ export class QuoteOrderRequest extends jspb.Message {
 
 export namespace QuoteOrderRequest {
   export type AsObject = {
-    amt: number,
+    amt: string,
     rateFixed: number,
     leaseDurationBlocks: number,
-    maxBatchFeeRateSatPerKw: number,
+    maxBatchFeeRateSatPerKw: string,
     minUnitsMatch: number,
   }
 }
 
 export class QuoteOrderResponse extends jspb.Message {
-  getTotalPremiumSat(): number;
-  setTotalPremiumSat(value: number): void;
+  getTotalPremiumSat(): string;
+  setTotalPremiumSat(value: string): void;
 
   getRatePerBlock(): number;
   setRatePerBlock(value: number): void;
@@ -942,11 +942,11 @@ export class QuoteOrderResponse extends jspb.Message {
   getRatePercent(): number;
   setRatePercent(value: number): void;
 
-  getTotalExecutionFeeSat(): number;
-  setTotalExecutionFeeSat(value: number): void;
+  getTotalExecutionFeeSat(): string;
+  setTotalExecutionFeeSat(value: string): void;
 
-  getWorstCaseChainFeeSat(): number;
-  setWorstCaseChainFeeSat(value: number): void;
+  getWorstCaseChainFeeSat(): string;
+  setWorstCaseChainFeeSat(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): QuoteOrderResponse.AsObject;
@@ -960,17 +960,17 @@ export class QuoteOrderResponse extends jspb.Message {
 
 export namespace QuoteOrderResponse {
   export type AsObject = {
-    totalPremiumSat: number,
+    totalPremiumSat: string,
     ratePerBlock: number,
     ratePercent: number,
-    totalExecutionFeeSat: number,
-    worstCaseChainFeeSat: number,
+    totalExecutionFeeSat: string,
+    worstCaseChainFeeSat: string,
   }
 }
 
 export class OrderEvent extends jspb.Message {
-  getTimestampNs(): number;
-  setTimestampNs(value: number): void;
+  getTimestampNs(): string;
+  setTimestampNs(value: string): void;
 
   getEventStr(): string;
   setEventStr(value: string): void;
@@ -998,7 +998,7 @@ export class OrderEvent extends jspb.Message {
 
 export namespace OrderEvent {
   export type AsObject = {
-    timestampNs: number,
+    timestampNs: string,
     eventStr: string,
     stateChange?: UpdatedEvent.AsObject,
     matched?: MatchEvent.AsObject,
@@ -1153,8 +1153,8 @@ export class Lease extends jspb.Message {
   getChannelPoint(): auctioneerrpc_auctioneer_pb.OutPoint | undefined;
   setChannelPoint(value?: auctioneerrpc_auctioneer_pb.OutPoint): void;
 
-  getChannelAmtSat(): number;
-  setChannelAmtSat(value: number): void;
+  getChannelAmtSat(): string;
+  setChannelAmtSat(value: string): void;
 
   getChannelDurationBlocks(): number;
   setChannelDurationBlocks(value: number): void;
@@ -1162,20 +1162,20 @@ export class Lease extends jspb.Message {
   getChannelLeaseExpiry(): number;
   setChannelLeaseExpiry(value: number): void;
 
-  getPremiumSat(): number;
-  setPremiumSat(value: number): void;
+  getPremiumSat(): string;
+  setPremiumSat(value: string): void;
 
-  getExecutionFeeSat(): number;
-  setExecutionFeeSat(value: number): void;
+  getExecutionFeeSat(): string;
+  setExecutionFeeSat(value: string): void;
 
-  getChainFeeSat(): number;
-  setChainFeeSat(value: number): void;
+  getChainFeeSat(): string;
+  setChainFeeSat(value: string): void;
 
-  getClearingRatePrice(): number;
-  setClearingRatePrice(value: number): void;
+  getClearingRatePrice(): string;
+  setClearingRatePrice(value: string): void;
 
-  getOrderFixedRate(): number;
-  setOrderFixedRate(value: number): void;
+  getOrderFixedRate(): string;
+  setOrderFixedRate(value: string): void;
 
   getOrderNonce(): Uint8Array | string;
   getOrderNonce_asU8(): Uint8Array;
@@ -1193,8 +1193,8 @@ export class Lease extends jspb.Message {
   getChannelNodeTier(): auctioneerrpc_auctioneer_pb.NodeTierMap[keyof auctioneerrpc_auctioneer_pb.NodeTierMap];
   setChannelNodeTier(value: auctioneerrpc_auctioneer_pb.NodeTierMap[keyof auctioneerrpc_auctioneer_pb.NodeTierMap]): void;
 
-  getSelfChanBalance(): number;
-  setSelfChanBalance(value: number): void;
+  getSelfChanBalance(): string;
+  setSelfChanBalance(value: string): void;
 
   getSidecarChannel(): boolean;
   setSidecarChannel(value: boolean): void;
@@ -1212,19 +1212,19 @@ export class Lease extends jspb.Message {
 export namespace Lease {
   export type AsObject = {
     channelPoint?: auctioneerrpc_auctioneer_pb.OutPoint.AsObject,
-    channelAmtSat: number,
+    channelAmtSat: string,
     channelDurationBlocks: number,
     channelLeaseExpiry: number,
-    premiumSat: number,
-    executionFeeSat: number,
-    chainFeeSat: number,
-    clearingRatePrice: number,
-    orderFixedRate: number,
+    premiumSat: string,
+    executionFeeSat: string,
+    chainFeeSat: string,
+    clearingRatePrice: string,
+    orderFixedRate: string,
     orderNonce: Uint8Array | string,
     purchased: boolean,
     channelRemoteNodeKey: Uint8Array | string,
     channelNodeTier: auctioneerrpc_auctioneer_pb.NodeTierMap[keyof auctioneerrpc_auctioneer_pb.NodeTierMap],
-    selfChanBalance: number,
+    selfChanBalance: string,
     sidecarChannel: boolean,
   }
 }
@@ -1267,11 +1267,11 @@ export class LeasesResponse extends jspb.Message {
   setLeasesList(value: Array<Lease>): void;
   addLeases(value?: Lease, index?: number): Lease;
 
-  getTotalAmtEarnedSat(): number;
-  setTotalAmtEarnedSat(value: number): void;
+  getTotalAmtEarnedSat(): string;
+  setTotalAmtEarnedSat(value: string): void;
 
-  getTotalAmtPaidSat(): number;
-  setTotalAmtPaidSat(value: number): void;
+  getTotalAmtPaidSat(): string;
+  setTotalAmtPaidSat(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LeasesResponse.AsObject;
@@ -1286,8 +1286,8 @@ export class LeasesResponse extends jspb.Message {
 export namespace LeasesResponse {
   export type AsObject = {
     leasesList: Array<Lease.AsObject>,
-    totalAmtEarnedSat: number,
-    totalAmtPaidSat: number,
+    totalAmtEarnedSat: string,
+    totalAmtPaidSat: string,
   }
 }
 
@@ -1345,14 +1345,14 @@ export class LsatToken extends jspb.Message {
   getPaymentPreimage_asB64(): string;
   setPaymentPreimage(value: Uint8Array | string): void;
 
-  getAmountPaidMsat(): number;
-  setAmountPaidMsat(value: number): void;
+  getAmountPaidMsat(): string;
+  setAmountPaidMsat(value: string): void;
 
-  getRoutingFeePaidMsat(): number;
-  setRoutingFeePaidMsat(value: number): void;
+  getRoutingFeePaidMsat(): string;
+  setRoutingFeePaidMsat(value: string): void;
 
-  getTimeCreated(): number;
-  setTimeCreated(value: number): void;
+  getTimeCreated(): string;
+  setTimeCreated(value: string): void;
 
   getExpired(): boolean;
   setExpired(value: boolean): void;
@@ -1375,9 +1375,9 @@ export namespace LsatToken {
     baseMacaroon: Uint8Array | string,
     paymentHash: Uint8Array | string,
     paymentPreimage: Uint8Array | string,
-    amountPaidMsat: number,
-    routingFeePaidMsat: number,
-    timeCreated: number,
+    amountPaidMsat: string,
+    routingFeePaidMsat: string,
+    timeCreated: string,
     expired: boolean,
     storageName: string,
   }
@@ -1441,11 +1441,11 @@ export class NextBatchInfoResponse extends jspb.Message {
   getConfTarget(): number;
   setConfTarget(value: number): void;
 
-  getFeeRateSatPerKw(): number;
-  setFeeRateSatPerKw(value: number): void;
+  getFeeRateSatPerKw(): string;
+  setFeeRateSatPerKw(value: string): void;
 
-  getClearTimestamp(): number;
-  setClearTimestamp(value: number): void;
+  getClearTimestamp(): string;
+  setClearTimestamp(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): NextBatchInfoResponse.AsObject;
@@ -1460,8 +1460,8 @@ export class NextBatchInfoResponse extends jspb.Message {
 export namespace NextBatchInfoResponse {
   export type AsObject = {
     confTarget: number,
-    feeRateSatPerKw: number,
-    clearTimestamp: number,
+    feeRateSatPerKw: string,
+    clearTimestamp: string,
   }
 }
 

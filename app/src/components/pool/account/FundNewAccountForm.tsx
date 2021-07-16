@@ -35,7 +35,7 @@ const FundNewAccountForm: React.FC = () => {
           label={l(`amountLabel`)}
           placeholder={l('amountPlaceholder')}
           extra={Units[Unit.sats].suffix}
-          value={fundNewAccountView.amount}
+          value={fundNewAccountView.amount.toNumber()}
           onChange={fundNewAccountView.setAmount}
         />
       </FormField>

@@ -27,17 +27,17 @@ export default class Order {
   traderKey = '';
   amount = Big(0);
   state = 0;
-  rateFixed = 0;
-  maxBatchFeeRateSatPerKw = 0;
+  rateFixed = Big(0);
+  maxBatchFeeRateSatPerKw = Big(0);
   units = 0;
   unitsUnfulfilled = 0;
   reserved = Big(0);
-  creationTimestamp = 0;
+  creationTimestamp = Big(0);
   minNodeTier?: Tier = 0;
   // custom app values
   type: OrderType = OrderType.Bid;
   // for bids, this is the minimum. for asks this is the maximum
-  duration = 0;
+  duration = Big(0);
 
   constructor(store: Store) {
     makeAutoObservable(this, {}, { deep: false, autoBind: true });
@@ -102,7 +102,7 @@ export default class Order {
 
   /** The date this swap was created as a JS Date object */
   get createdOn() {
-    return new Date(this.creationTimestamp / 1000 / 1000);
+    return new Date(this.creationTimestamp.div(1000).div(1000).toNumber());
   }
 
   /** The date this swap was created as formatted string */
@@ -124,15 +124,15 @@ export default class Order {
     this.traderKey = hex(poolOrder.traderKey);
     this.amount = Big(poolOrder.amt);
     this.state = poolOrder.state;
-    this.rateFixed = poolOrder.rateFixed;
-    this.maxBatchFeeRateSatPerKw = poolOrder.maxBatchFeeRateSatPerKw;
+    this.rateFixed = Big(poolOrder.rateFixed);
+    this.maxBatchFeeRateSatPerKw = Big(poolOrder.maxBatchFeeRateSatPerKw);
     this.units = poolOrder.units;
     this.unitsUnfulfilled = poolOrder.unitsUnfulfilled;
     this.reserved = Big(poolOrder.reservedValueSat);
-    this.creationTimestamp = poolOrder.creationTimestampNs;
+    this.creationTimestamp = Big(poolOrder.creationTimestampNs);
 
     this.type = type;
-    this.duration = duration;
+    this.duration = Big(duration);
     this.minNodeTier = minNodeTier;
   }
 
@@ -149,16 +149,16 @@ export default class Order {
       case 'type':
         return a.type.toLowerCase() > b.type.toLowerCase() ? 1 : -1;
       case 'amount':
-        return +a.amount.sub(b.amount);
+        return a.amount.sub(b.amount).toNumber();
       case 'rateFixed':
-        return a.rateFixed - b.rateFixed;
+        return a.rateFixed.sub(b.rateFixed).toNumber();
       case 'duration':
-        return a.duration - b.duration;
+        return a.duration.sub(b.duration).toNumber();
       case 'stateLabel':
         return a.stateLabel.toLowerCase() > b.stateLabel.toLowerCase() ? 1 : -1;
       case 'creationTimestamp':
       default:
-        return a.creationTimestamp - b.creationTimestamp;
+        return a.creationTimestamp.sub(b.creationTimestamp).toNumber();
     }
   }
 }

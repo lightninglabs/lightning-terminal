@@ -240,7 +240,7 @@ export default class ChannelStore {
           const localPubkey = this._store.nodeStore.pubkey;
           const policy = node1Pub === localPubkey ? node2Policy : node1Policy;
           if (policy) {
-            acc[channelId] = policy.feeRateMilliMsat;
+            acc[channelId] = +Big(policy.feeRateMilliMsat);
           }
           return acc;
         }, data);

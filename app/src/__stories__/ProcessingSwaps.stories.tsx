@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { observable } from 'mobx';
 import * as LOOP from 'types/generated/loop_pb';
+import Big from 'big.js';
 import { loopListSwaps } from 'util/tests/sampleData';
 import { useStore } from 'store';
 import { Swap } from 'store/models';
@@ -47,7 +48,7 @@ const mockSwap = (type: number, state: number, id?: string) => {
   swap.id = `${id || ''}${swap.id}`;
   swap.type = type;
   swap.state = state;
-  swap.lastUpdateTime = Date.now() * 1000 * 1000;
+  swap.lastUpdateTime = Big(Date.now() * 1000 * 1000);
   return swap;
 };
 // create a list of swaps to use for stories
@@ -84,7 +85,7 @@ export const LoopInProgress = () => {
       await delay(2000);
       swap.state = SUCCESS;
       await delay(2000);
-      swap.initiationTime = 0;
+      swap.initiationTime = Big(0);
     };
 
     startTransitions();
@@ -106,7 +107,7 @@ export const LoopOutProgress = () => {
       await delay(2000);
       swap.state = SUCCESS;
       await delay(2000);
-      swap.initiationTime = 0;
+      swap.initiationTime = Big(0);
     };
 
     startTransitions();

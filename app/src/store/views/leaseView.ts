@@ -1,5 +1,6 @@
 import { makeAutoObservable } from 'mobx';
 import { SortParams } from 'types/state';
+import Big from 'big.js';
 import { annualPercentRate, toPercent } from 'util/bigmath';
 import { BLOCKS_PER_DAY } from 'util/constants';
 import { formatSats } from 'util/formatters';
@@ -40,7 +41,7 @@ export default class LeaseView {
   get apr() {
     const { channelAmtSat, premiumSat, channelDurationBlocks } = this.lease;
     const termInDays = channelDurationBlocks / BLOCKS_PER_DAY;
-    return annualPercentRate(+channelAmtSat, +premiumSat, termInDays);
+    return annualPercentRate(channelAmtSat, premiumSat, termInDays);
   }
 
   /** the annual percentage rate of this lease as a percentage */

@@ -5,34 +5,34 @@ import * as jspb from "google-protobuf";
 import * as google_api_annotations_pb from "./google/api/annotations_pb";
 
 export class LoopOutRequest extends jspb.Message {
-  getAmt(): number;
-  setAmt(value: number): void;
+  getAmt(): string;
+  setAmt(value: string): void;
 
   getDest(): string;
   setDest(value: string): void;
 
-  getMaxSwapRoutingFee(): number;
-  setMaxSwapRoutingFee(value: number): void;
+  getMaxSwapRoutingFee(): string;
+  setMaxSwapRoutingFee(value: string): void;
 
-  getMaxPrepayRoutingFee(): number;
-  setMaxPrepayRoutingFee(value: number): void;
+  getMaxPrepayRoutingFee(): string;
+  setMaxPrepayRoutingFee(value: string): void;
 
-  getMaxSwapFee(): number;
-  setMaxSwapFee(value: number): void;
+  getMaxSwapFee(): string;
+  setMaxSwapFee(value: string): void;
 
-  getMaxPrepayAmt(): number;
-  setMaxPrepayAmt(value: number): void;
+  getMaxPrepayAmt(): string;
+  setMaxPrepayAmt(value: string): void;
 
-  getMaxMinerFee(): number;
-  setMaxMinerFee(value: number): void;
+  getMaxMinerFee(): string;
+  setMaxMinerFee(value: string): void;
 
-  getLoopOutChannel(): number;
-  setLoopOutChannel(value: number): void;
+  getLoopOutChannel(): string;
+  setLoopOutChannel(value: string): void;
 
   clearOutgoingChanSetList(): void;
-  getOutgoingChanSetList(): Array<number>;
-  setOutgoingChanSetList(value: Array<number>): void;
-  addOutgoingChanSet(value: number, index?: number): number;
+  getOutgoingChanSetList(): Array<string>;
+  setOutgoingChanSetList(value: Array<string>): void;
+  addOutgoingChanSet(value: string, index?: number): string;
 
   getSweepConfTarget(): number;
   setSweepConfTarget(value: number): void;
@@ -40,8 +40,8 @@ export class LoopOutRequest extends jspb.Message {
   getHtlcConfirmations(): number;
   setHtlcConfirmations(value: number): void;
 
-  getSwapPublicationDeadline(): number;
-  setSwapPublicationDeadline(value: number): void;
+  getSwapPublicationDeadline(): string;
+  setSwapPublicationDeadline(value: string): void;
 
   getLabel(): string;
   setLabel(value: string): void;
@@ -61,32 +61,32 @@ export class LoopOutRequest extends jspb.Message {
 
 export namespace LoopOutRequest {
   export type AsObject = {
-    amt: number,
+    amt: string,
     dest: string,
-    maxSwapRoutingFee: number,
-    maxPrepayRoutingFee: number,
-    maxSwapFee: number,
-    maxPrepayAmt: number,
-    maxMinerFee: number,
-    loopOutChannel: number,
-    outgoingChanSetList: Array<number>,
+    maxSwapRoutingFee: string,
+    maxPrepayRoutingFee: string,
+    maxSwapFee: string,
+    maxPrepayAmt: string,
+    maxMinerFee: string,
+    loopOutChannel: string,
+    outgoingChanSetList: Array<string>,
     sweepConfTarget: number,
     htlcConfirmations: number,
-    swapPublicationDeadline: number,
+    swapPublicationDeadline: string,
     label: string,
     initiator: string,
   }
 }
 
 export class LoopInRequest extends jspb.Message {
-  getAmt(): number;
-  setAmt(value: number): void;
+  getAmt(): string;
+  setAmt(value: string): void;
 
-  getMaxSwapFee(): number;
-  setMaxSwapFee(value: number): void;
+  getMaxSwapFee(): string;
+  setMaxSwapFee(value: string): void;
 
-  getMaxMinerFee(): number;
-  setMaxMinerFee(value: number): void;
+  getMaxMinerFee(): string;
+  setMaxMinerFee(value: string): void;
 
   getLastHop(): Uint8Array | string;
   getLastHop_asU8(): Uint8Array;
@@ -117,9 +117,9 @@ export class LoopInRequest extends jspb.Message {
 
 export namespace LoopInRequest {
   export type AsObject = {
-    amt: number,
-    maxSwapFee: number,
-    maxMinerFee: number,
+    amt: string,
+    maxSwapFee: string,
+    maxMinerFee: string,
     lastHop: Uint8Array | string,
     externalHtlc: boolean,
     htlcConfTarget: number,
@@ -187,8 +187,8 @@ export namespace MonitorRequest {
 }
 
 export class SwapStatus extends jspb.Message {
-  getAmt(): number;
-  setAmt(value: number): void;
+  getAmt(): string;
+  setAmt(value: string): void;
 
   getId(): string;
   setId(value: string): void;
@@ -207,11 +207,11 @@ export class SwapStatus extends jspb.Message {
   getFailureReason(): FailureReasonMap[keyof FailureReasonMap];
   setFailureReason(value: FailureReasonMap[keyof FailureReasonMap]): void;
 
-  getInitiationTime(): number;
-  setInitiationTime(value: number): void;
+  getInitiationTime(): string;
+  setInitiationTime(value: string): void;
 
-  getLastUpdateTime(): number;
-  setLastUpdateTime(value: number): void;
+  getLastUpdateTime(): string;
+  setLastUpdateTime(value: string): void;
 
   getHtlcAddress(): string;
   setHtlcAddress(value: string): void;
@@ -222,14 +222,14 @@ export class SwapStatus extends jspb.Message {
   getHtlcAddressNp2wsh(): string;
   setHtlcAddressNp2wsh(value: string): void;
 
-  getCostServer(): number;
-  setCostServer(value: number): void;
+  getCostServer(): string;
+  setCostServer(value: string): void;
 
-  getCostOnchain(): number;
-  setCostOnchain(value: number): void;
+  getCostOnchain(): string;
+  setCostOnchain(value: string): void;
 
-  getCostOffchain(): number;
-  setCostOffchain(value: number): void;
+  getCostOffchain(): string;
+  setCostOffchain(value: string): void;
 
   getLabel(): string;
   setLabel(value: string): void;
@@ -246,20 +246,20 @@ export class SwapStatus extends jspb.Message {
 
 export namespace SwapStatus {
   export type AsObject = {
-    amt: number,
+    amt: string,
     id: string,
     idBytes: Uint8Array | string,
     type: SwapTypeMap[keyof SwapTypeMap],
     state: SwapStateMap[keyof SwapStateMap],
     failureReason: FailureReasonMap[keyof FailureReasonMap],
-    initiationTime: number,
-    lastUpdateTime: number,
+    initiationTime: string,
+    lastUpdateTime: string,
     htlcAddress: string,
     htlcAddressP2wsh: string,
     htlcAddressNp2wsh: string,
-    costServer: number,
-    costOnchain: number,
-    costOffchain: number,
+    costServer: string,
+    costOnchain: string,
+    costOffchain: string,
     label: string,
   }
 }
@@ -341,11 +341,11 @@ export namespace TermsRequest {
 }
 
 export class InTermsResponse extends jspb.Message {
-  getMinSwapAmount(): number;
-  setMinSwapAmount(value: number): void;
+  getMinSwapAmount(): string;
+  setMinSwapAmount(value: string): void;
 
-  getMaxSwapAmount(): number;
-  setMaxSwapAmount(value: number): void;
+  getMaxSwapAmount(): string;
+  setMaxSwapAmount(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): InTermsResponse.AsObject;
@@ -359,17 +359,17 @@ export class InTermsResponse extends jspb.Message {
 
 export namespace InTermsResponse {
   export type AsObject = {
-    minSwapAmount: number,
-    maxSwapAmount: number,
+    minSwapAmount: string,
+    maxSwapAmount: string,
   }
 }
 
 export class OutTermsResponse extends jspb.Message {
-  getMinSwapAmount(): number;
-  setMinSwapAmount(value: number): void;
+  getMinSwapAmount(): string;
+  setMinSwapAmount(value: string): void;
 
-  getMaxSwapAmount(): number;
-  setMaxSwapAmount(value: number): void;
+  getMaxSwapAmount(): string;
+  setMaxSwapAmount(value: string): void;
 
   getMinCltvDelta(): number;
   setMinCltvDelta(value: number): void;
@@ -389,16 +389,16 @@ export class OutTermsResponse extends jspb.Message {
 
 export namespace OutTermsResponse {
   export type AsObject = {
-    minSwapAmount: number,
-    maxSwapAmount: number,
+    minSwapAmount: string,
+    maxSwapAmount: string,
     minCltvDelta: number,
     maxCltvDelta: number,
   }
 }
 
 export class QuoteRequest extends jspb.Message {
-  getAmt(): number;
-  setAmt(value: number): void;
+  getAmt(): string;
+  setAmt(value: string): void;
 
   getConfTarget(): number;
   setConfTarget(value: number): void;
@@ -406,8 +406,8 @@ export class QuoteRequest extends jspb.Message {
   getExternalHtlc(): boolean;
   setExternalHtlc(value: boolean): void;
 
-  getSwapPublicationDeadline(): number;
-  setSwapPublicationDeadline(value: number): void;
+  getSwapPublicationDeadline(): string;
+  setSwapPublicationDeadline(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): QuoteRequest.AsObject;
@@ -421,19 +421,19 @@ export class QuoteRequest extends jspb.Message {
 
 export namespace QuoteRequest {
   export type AsObject = {
-    amt: number,
+    amt: string,
     confTarget: number,
     externalHtlc: boolean,
-    swapPublicationDeadline: number,
+    swapPublicationDeadline: string,
   }
 }
 
 export class InQuoteResponse extends jspb.Message {
-  getSwapFeeSat(): number;
-  setSwapFeeSat(value: number): void;
+  getSwapFeeSat(): string;
+  setSwapFeeSat(value: string): void;
 
-  getHtlcPublishFeeSat(): number;
-  setHtlcPublishFeeSat(value: number): void;
+  getHtlcPublishFeeSat(): string;
+  setHtlcPublishFeeSat(value: string): void;
 
   getCltvDelta(): number;
   setCltvDelta(value: number): void;
@@ -453,22 +453,22 @@ export class InQuoteResponse extends jspb.Message {
 
 export namespace InQuoteResponse {
   export type AsObject = {
-    swapFeeSat: number,
-    htlcPublishFeeSat: number,
+    swapFeeSat: string,
+    htlcPublishFeeSat: string,
     cltvDelta: number,
     confTarget: number,
   }
 }
 
 export class OutQuoteResponse extends jspb.Message {
-  getSwapFeeSat(): number;
-  setSwapFeeSat(value: number): void;
+  getSwapFeeSat(): string;
+  setSwapFeeSat(value: string): void;
 
-  getPrepayAmtSat(): number;
-  setPrepayAmtSat(value: number): void;
+  getPrepayAmtSat(): string;
+  setPrepayAmtSat(value: string): void;
 
-  getHtlcSweepFeeSat(): number;
-  setHtlcSweepFeeSat(value: number): void;
+  getHtlcSweepFeeSat(): string;
+  setHtlcSweepFeeSat(value: string): void;
 
   getSwapPaymentDest(): Uint8Array | string;
   getSwapPaymentDest_asU8(): Uint8Array;
@@ -493,9 +493,9 @@ export class OutQuoteResponse extends jspb.Message {
 
 export namespace OutQuoteResponse {
   export type AsObject = {
-    swapFeeSat: number,
-    prepayAmtSat: number,
-    htlcSweepFeeSat: number,
+    swapFeeSat: string,
+    prepayAmtSat: string,
+    htlcSweepFeeSat: string,
     swapPaymentDest: Uint8Array | string,
     cltvDelta: number,
     confTarget: number,
@@ -556,14 +556,14 @@ export class LsatToken extends jspb.Message {
   getPaymentPreimage_asB64(): string;
   setPaymentPreimage(value: Uint8Array | string): void;
 
-  getAmountPaidMsat(): number;
-  setAmountPaidMsat(value: number): void;
+  getAmountPaidMsat(): string;
+  setAmountPaidMsat(value: string): void;
 
-  getRoutingFeePaidMsat(): number;
-  setRoutingFeePaidMsat(value: number): void;
+  getRoutingFeePaidMsat(): string;
+  setRoutingFeePaidMsat(value: string): void;
 
-  getTimeCreated(): number;
-  setTimeCreated(value: number): void;
+  getTimeCreated(): string;
+  setTimeCreated(value: string): void;
 
   getExpired(): boolean;
   setExpired(value: boolean): void;
@@ -586,9 +586,9 @@ export namespace LsatToken {
     baseMacaroon: Uint8Array | string,
     paymentHash: Uint8Array | string,
     paymentPreimage: Uint8Array | string,
-    amountPaidMsat: number,
-    routingFeePaidMsat: number,
-    timeCreated: number,
+    amountPaidMsat: string,
+    routingFeePaidMsat: string,
+    timeCreated: string,
     expired: boolean,
     storageName: string,
   }
@@ -616,50 +616,50 @@ export class LiquidityParameters extends jspb.Message {
   setRulesList(value: Array<LiquidityRule>): void;
   addRules(value?: LiquidityRule, index?: number): LiquidityRule;
 
-  getFeePpm(): number;
-  setFeePpm(value: number): void;
+  getFeePpm(): string;
+  setFeePpm(value: string): void;
 
-  getSweepFeeRateSatPerVbyte(): number;
-  setSweepFeeRateSatPerVbyte(value: number): void;
+  getSweepFeeRateSatPerVbyte(): string;
+  setSweepFeeRateSatPerVbyte(value: string): void;
 
-  getMaxSwapFeePpm(): number;
-  setMaxSwapFeePpm(value: number): void;
+  getMaxSwapFeePpm(): string;
+  setMaxSwapFeePpm(value: string): void;
 
-  getMaxRoutingFeePpm(): number;
-  setMaxRoutingFeePpm(value: number): void;
+  getMaxRoutingFeePpm(): string;
+  setMaxRoutingFeePpm(value: string): void;
 
-  getMaxPrepayRoutingFeePpm(): number;
-  setMaxPrepayRoutingFeePpm(value: number): void;
+  getMaxPrepayRoutingFeePpm(): string;
+  setMaxPrepayRoutingFeePpm(value: string): void;
 
-  getMaxPrepaySat(): number;
-  setMaxPrepaySat(value: number): void;
+  getMaxPrepaySat(): string;
+  setMaxPrepaySat(value: string): void;
 
-  getMaxMinerFeeSat(): number;
-  setMaxMinerFeeSat(value: number): void;
+  getMaxMinerFeeSat(): string;
+  setMaxMinerFeeSat(value: string): void;
 
   getSweepConfTarget(): number;
   setSweepConfTarget(value: number): void;
 
-  getFailureBackoffSec(): number;
-  setFailureBackoffSec(value: number): void;
+  getFailureBackoffSec(): string;
+  setFailureBackoffSec(value: string): void;
 
   getAutoloop(): boolean;
   setAutoloop(value: boolean): void;
 
-  getAutoloopBudgetSat(): number;
-  setAutoloopBudgetSat(value: number): void;
+  getAutoloopBudgetSat(): string;
+  setAutoloopBudgetSat(value: string): void;
 
-  getAutoloopBudgetStartSec(): number;
-  setAutoloopBudgetStartSec(value: number): void;
+  getAutoloopBudgetStartSec(): string;
+  setAutoloopBudgetStartSec(value: string): void;
 
-  getAutoMaxInFlight(): number;
-  setAutoMaxInFlight(value: number): void;
+  getAutoMaxInFlight(): string;
+  setAutoMaxInFlight(value: string): void;
 
-  getMinSwapAmount(): number;
-  setMinSwapAmount(value: number): void;
+  getMinSwapAmount(): string;
+  setMinSwapAmount(value: string): void;
 
-  getMaxSwapAmount(): number;
-  setMaxSwapAmount(value: number): void;
+  getMaxSwapAmount(): string;
+  setMaxSwapAmount(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LiquidityParameters.AsObject;
@@ -674,27 +674,27 @@ export class LiquidityParameters extends jspb.Message {
 export namespace LiquidityParameters {
   export type AsObject = {
     rulesList: Array<LiquidityRule.AsObject>,
-    feePpm: number,
-    sweepFeeRateSatPerVbyte: number,
-    maxSwapFeePpm: number,
-    maxRoutingFeePpm: number,
-    maxPrepayRoutingFeePpm: number,
-    maxPrepaySat: number,
-    maxMinerFeeSat: number,
+    feePpm: string,
+    sweepFeeRateSatPerVbyte: string,
+    maxSwapFeePpm: string,
+    maxRoutingFeePpm: string,
+    maxPrepayRoutingFeePpm: string,
+    maxPrepaySat: string,
+    maxMinerFeeSat: string,
     sweepConfTarget: number,
-    failureBackoffSec: number,
+    failureBackoffSec: string,
     autoloop: boolean,
-    autoloopBudgetSat: number,
-    autoloopBudgetStartSec: number,
-    autoMaxInFlight: number,
-    minSwapAmount: number,
-    maxSwapAmount: number,
+    autoloopBudgetSat: string,
+    autoloopBudgetStartSec: string,
+    autoMaxInFlight: string,
+    minSwapAmount: string,
+    maxSwapAmount: string,
   }
 }
 
 export class LiquidityRule extends jspb.Message {
-  getChannelId(): number;
-  setChannelId(value: number): void;
+  getChannelId(): string;
+  setChannelId(value: string): void;
 
   getPubkey(): Uint8Array | string;
   getPubkey_asU8(): Uint8Array;
@@ -722,7 +722,7 @@ export class LiquidityRule extends jspb.Message {
 
 export namespace LiquidityRule {
   export type AsObject = {
-    channelId: number,
+    channelId: string,
     pubkey: Uint8Array | string,
     type: LiquidityRuleTypeMap[keyof LiquidityRuleTypeMap],
     incomingThreshold: number,

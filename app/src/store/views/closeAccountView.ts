@@ -1,4 +1,5 @@
 import { makeAutoObservable } from 'mobx';
+import Big from 'big.js';
 import { ellipseInside } from 'util/strings';
 import { Store } from 'store';
 

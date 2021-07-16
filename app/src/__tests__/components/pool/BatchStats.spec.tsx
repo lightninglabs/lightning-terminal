@@ -1,6 +1,7 @@
 import React from 'react';
 import { runInAction } from 'mobx';
 import { act, waitFor } from '@testing-library/react';
+import Big from 'big.js';
 import { formatSats } from 'util/formatters';
 import { renderWithProviders } from 'util/tests';
 import { createStore, Store } from 'store';
@@ -25,7 +26,7 @@ describe('BatchStats', () => {
     jest.useFakeTimers();
     runInAction(() => {
       const nowSecs = Math.ceil(Date.now() / 1000);
-      store.batchStore.nextBatchTimestamp = nowSecs + 90;
+      store.batchStore.nextBatchTimestamp = Big(nowSecs + 90);
     });
     const { getByText } = render();
     expect(getByText('Next Batch')).toBeInTheDocument();

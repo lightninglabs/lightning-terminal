@@ -48,7 +48,7 @@ export default class Batch {
   prevBatchId = '';
   clearingPriceRate = 0;
   batchTxId = '';
-  batchTxFeeRateSatPerKw = 0;
+  batchTxFeeRateSatPerKw = Big(0);
   matchedOrders: MatchedOrder[] = [];
 
   // the provided lease duration to filter orders by
@@ -101,21 +101,21 @@ export default class Batch {
   /** the total amount of sats earned in this batch */
   get earnedSats() {
     const pctRate = this._store.api.pool.calcPctRate(
-      this.clearingPriceRate,
-      this.leaseDuration,
+      Big(this.clearingPriceRate),
+      Big(this.leaseDuration),
     );
     return this.volume.mul(pctRate);
   }
 
   /** the fee in sats/vbyte rounded to the nearest whole number */
   get feeLabel() {
-    return `${Math.round(this.feeInVBytes)}`;
+    return this.feeInVBytes.round().toString();
   }
 
   /** a label containing the batch fee in both sats/kw and sats/vbyte */
   get feeDescription() {
     // round the fee to 2 decimal places
-    const fee = Math.round(this.feeInVBytes * 100) / 100;
+    const fee = this.feeInVBytes.mul(100).round().div(100);
     return `${this.batchTxFeeRateSatPerKw} sats/kw - ${fee} sats/vbyte`;
   }
 
@@ -145,8 +145,8 @@ export default class Batch {
   /** the batch clearing rate expressed as basis points */
   get basisPoints() {
     const pct = this._store.api.pool.calcPctRate(
-      this.clearingPriceRate,
-      this.leaseDuration,
+      Big(this.clearingPriceRate),
+      Big(this.leaseDuration),
     );
     // convert the percentage to basis points. round up to prevent 0 bps
     // which is the case for the first batch on testnet which has a
@@ -173,7 +173,7 @@ export default class Batch {
     this.batchId = hex(llmBatch.batchId);
     this.prevBatchId = hex(llmBatch.prevBatchId);
     this.batchTxId = llmBatch.batchTxId;
-    this.batchTxFeeRateSatPerKw = llmBatch.batchTxFeeRateSatPerKw;
+    this.batchTxFeeRateSatPerKw = Big(llmBatch.batchTxFeeRateSatPerKw);
     // loop over all markets to limit the orders of this batch to a specific lease duration
     llmBatch.matchedMarketsMap.forEach(([duration, market]) => {
       // ignore markets for other lease durations

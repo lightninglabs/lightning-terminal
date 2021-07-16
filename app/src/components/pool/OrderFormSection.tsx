@@ -2,7 +2,6 @@ import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { LeaseDuration } from 'types/state';
 import styled from '@emotion/styled';
-import Big from 'big.js';
 import { usePrefixedTranslation } from 'hooks';
 import { Unit, Units } from 'util/constants';
 import { useStore } from 'store';
@@ -110,7 +109,7 @@ const OrderFormSection: React.FC = () => {
             label={l(`amountLabel${orderFormView.orderType}`)}
             placeholder={l('amountPlaceholder')}
             extra={Units[Unit.sats].suffix}
-            value={orderFormView.amount}
+            value={orderFormView.amount.toNumber()}
             onChange={orderFormView.setAmount}
           />
         </FormField>
@@ -121,7 +120,7 @@ const OrderFormSection: React.FC = () => {
           <FormInputNumber
             label={l(`premiumLabel${orderFormView.orderType}`)}
             placeholder={l('premiumPlaceholder')}
-            value={orderFormView.premium}
+            value={orderFormView.premium.toNumber()}
             onChange={orderFormView.setPremium}
             extra={
               <>
@@ -194,7 +193,7 @@ const OrderFormSection: React.FC = () => {
               {orderFormView.quoteLoading ? (
                 <LoaderLines />
               ) : (
-                <UnitCmp sats={Big(orderFormView.executionFee)} />
+                <UnitCmp sats={orderFormView.executionFee} />
               )}
             </span>
           </SummaryItem>
@@ -207,7 +206,7 @@ const OrderFormSection: React.FC = () => {
             {orderFormView.quoteLoading ? (
               <LoaderLines />
             ) : (
-              <UnitCmp sats={Big(orderFormView.worstChainFee)} />
+              <UnitCmp sats={orderFormView.worstChainFee} />
             )}
           </span>
         </SummaryItem>
