@@ -61,7 +61,7 @@ func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 	p.grpcServer = grpc.NewServer(
 		// From the grpxProxy doc: This codec is *crucial* to the
 		// functioning of the proxy.
-		grpc.CustomCodec(grpcProxy.Codec()),
+		grpc.CustomCodec(grpcProxy.Codec()), // nolint:staticcheck
 		grpc.ChainStreamInterceptor(p.StreamServerInterceptor(
 			permissionMap,
 		)),
@@ -278,6 +278,20 @@ func (p *rpcProxy) director(ctx context.Context,
 
 	outCtx := metadata.NewOutgoingContext(ctx, mdCopy)
 
+	// Is there a basic auth set?
+	authHeaders := md.Get("authorization")
+	if len(authHeaders) == 1 {
+		macBytes, err := p.basicAuthToMacaroon(
+			authHeaders[0], requestURI,
+		)
+		if err != nil {
+			return outCtx, nil, err
+		}
+		if len(macBytes) > 0 {
+			mdCopy.Set(HeaderMacaroon, hex.EncodeToString(macBytes))
+		}
+	}
+
 	// Direct the call to the correct backend. All gRPC calls end up here
 	// since our gRPC server instance doesn't have any handlers registered
 	// itself. So all daemon calls that are remote are forwarded to them
@@ -318,7 +332,7 @@ func (p *rpcProxy) UnaryServerInterceptor(
 		// have proper macaroon support implemented in the UI. We allow
 		// gRPC web requests to have it and "convert" the auth into a
 		// proper macaroon now.
-		newCtx, err := p.basicAuthToMacaroon(ctx, info.FullMethod)
+		newCtx, err := p.convertBasicAuth(ctx, info.FullMethod)
 		if err != nil {
 			return nil, fmt.Errorf("error upgrading basic auth: %v",
 				err)
@@ -355,7 +369,7 @@ func (p *rpcProxy) StreamServerInterceptor(
 		// have proper macaroon support implemented in the UI. We allow
 		// gRPC web requests to have it and "convert" the auth into a
 		// proper macaroon now.
-		ctx, err := p.basicAuthToMacaroon(ss.Context(), info.FullMethod)
+		ctx, err := p.convertBasicAuth(ss.Context(), info.FullMethod)
 		if err != nil {
 			return fmt.Errorf("error upgrading basic auth: %v", err)
 		}
@@ -373,10 +387,9 @@ func (p *rpcProxy) StreamServerInterceptor(
 	}
 }
 
-// basicAuthToMacaroon checks that the incoming request context has the expected
-// and valid basic authentication header then attaches the correct macaroon to
-// the context so it can be forwarded to the actual gRPC server.
-func (p *rpcProxy) basicAuthToMacaroon(ctx context.Context,
+// convertBasicAuth tries to convert the HTTP authorization header into a
+// macaroon based authentication header.
+func (p *rpcProxy) convertBasicAuth(ctx context.Context,
 	requestURI string) (context.Context, error) {
 
 	md, ok := metadata.FromIncomingContext(ctx)
@@ -391,17 +404,32 @@ func (p *rpcProxy) basicAuthToMacaroon(ctx context.Context,
 		return ctx, nil
 	}
 
+	macBytes, err := p.basicAuthToMacaroon(authHeaders[0], requestURI)
+	if err != nil || len(macBytes) == 0 {
+		return ctx, err
+	}
+
+	md.Set(HeaderMacaroon, hex.EncodeToString(macBytes))
+	return metadata.NewIncomingContext(ctx, md), nil
+}
+
+// basicAuthToMacaroon checks that the incoming request context has the expected
+// and valid basic authentication header then attaches the correct macaroon to
+// the context so it can be forwarded to the actual gRPC server.
+func (p *rpcProxy) basicAuthToMacaroon(basicAuth, requestURI string) ([]byte,
+	error) {
+
 	// The user specified an authorization header so this is very likely a
 	// gRPC Web call from the UI. But we only attach the macaroon if the
 	// auth is correct. That way an attacker doesn't know that basic auth
 	// is even allowed as the error message will only be the macaroon error
 	// from the lnd backend.
-	authHeaderParts := strings.Split(authHeaders[0], " ")
+	authHeaderParts := strings.Split(basicAuth, " ")
 	if len(authHeaderParts) != 2 {
-		return ctx, nil
+		return nil, nil
 	}
 	if authHeaderParts[1] != p.basicAuth {
-		return ctx, nil
+		return nil, nil
 	}
 
 	var (
@@ -433,8 +461,11 @@ func (p *rpcProxy) basicAuthToMacaroon(ctx context.Context,
 			macPath = p.cfg.Pool.MacaroonPath
 		}
 
+	case isLitURI(requestURI):
+		return []byte("no-macaroons-for-litcli"), nil
+
 	default:
-		return ctx, fmt.Errorf("unknown gRPC web request: %v",
+		return nil, fmt.Errorf("unknown gRPC web request: %v",
 			requestURI)
 	}
 
@@ -442,29 +473,23 @@ func (p *rpcProxy) basicAuthToMacaroon(ctx context.Context,
 	// If we have a super macaroon, we can use that one directly since it
 	// will contain all permissions we need.
 	case len(p.superMacaroon) > 0:
-		md.Set(HeaderMacaroon, p.superMacaroon)
+		return hex.DecodeString(p.superMacaroon)
 
 	// If we have macaroon data directly, just encode them. This could be
 	// for initial requests to lnd while we don't have the super macaroon
 	// just yet (or are actually calling to bake the super macaroon).
 	case len(macData) > 0:
-		md.Set(HeaderMacaroon, hex.EncodeToString(macData))
+		return macData, nil
 
 	// The fall back is to read the macaroon from a path. This is in remote
 	// mode.
 	case len(macPath) > 0:
 		// Now that we know which macaroon to load, do it and attach it
 		// to the request context.
-		macBytes, err := readMacaroon(lncfg.CleanAndExpandPath(macPath))
-		if err != nil {
-			return ctx, fmt.Errorf("error reading macaroon %s: %v",
-				lncfg.CleanAndExpandPath(macPath), err)
-		}
-
-		md.Set(HeaderMacaroon, hex.EncodeToString(macBytes))
+		return readMacaroon(lncfg.CleanAndExpandPath(macPath))
 	}
 
-	return metadata.NewIncomingContext(ctx, md), nil
+	return nil, fmt.Errorf("unknown macaroon to use")
 }
 
 // dialBufConnBackend dials an in-memory connection to an RPC listener and
