@@ -168,3 +168,6 @@ jobs:
 
       - name: run check
         run: make protos-check
+
+      - name: compile rpc for golang
+        run: make rpc

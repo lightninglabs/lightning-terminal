@@ -193,6 +193,10 @@ list:
 		grep -v Makefile | \
 		sort
 
+rpc:
+	@$(call print, "Compiling protos.")
+	cd ./litrpc; ./gen_protos_docker.sh
+
 protos:
 	@$(call print, "Compiling protos.")
 	cd proto; ./gen_protos_docker.sh
