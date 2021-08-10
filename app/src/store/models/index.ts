@@ -6,3 +6,4 @@ export { default as Order } from './order';
 export { default as Lease } from './lease';
 export { default as Batch } from './batch';
 export { default as Market } from './market';
+export { default as Session } from './session';

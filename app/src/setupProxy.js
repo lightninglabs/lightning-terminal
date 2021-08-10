@@ -9,6 +9,7 @@ module.exports = function (app) {
         '/looprpc.SwapClient',
         '/poolrpc.Trader',
         '/frdrpc.FaradayServer',
+        '/litrpc.Session',
       ],
       {
         target: 'https://localhost:8443',
