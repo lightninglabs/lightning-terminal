@@ -47,7 +47,7 @@ import (
 
 const (
 	defaultServerTimeout  = 10 * time.Second
-	defaultConnectTimeout = 5 * time.Second
+	defaultConnectTimeout = 15 * time.Second
 	defaultStartupTimeout = 5 * time.Second
 )
 
