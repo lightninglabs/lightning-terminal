@@ -342,7 +342,7 @@ Faraday's command line tool follows the same pattern as loop. We also have to
 specify the server and TLS flags for `lnd` but use `faraday`'s macaroon:
 
 ```shell
-⛰  frcli --rpcserver=localhost:10009 --tlscertpath=~/.lnd/tls.cert \
+⛰  frcli --rpcserver=localhost:10009 --tlscertpath=~/.lit/tls.cert \
   --macaroonpath=~/.faraday/testnet/faraday.macaroon \
   audit
 ```
@@ -351,7 +351,7 @@ You can easily create an alias for this by adding the following line to your
 `~/.bashrc` file:
 
 ```shell
-⛰  alias lit-frcli="frcli --rpcserver=localhost:10009 --tlscertpath=~/.lnd/tls.cert --macaroonpath=~/.faraday/testnet/faraday.macaroon"
+⛰  alias lit-frcli="frcli --rpcserver=localhost:10009 --tlscertpath=~/.lit/tls.cert --macaroonpath=~/.faraday/testnet/faraday.macaroon"
 ```
 
 ## Shutting down LiT
