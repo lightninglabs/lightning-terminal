@@ -78,6 +78,13 @@ export default class AppView {
     this._store.log.info('Go to the Settings page');
   }
 
+  /** Change to the Connect page */
+  goToConnect() {
+    this.goTo('/connect');
+    this._store.settingsStore.autoCollapseSidebar();
+    this._store.log.info('Go to the Connect page');
+  }
+
   /** Toggle displaying of the Processing Loops section */
   toggleProcessingSwaps() {
     this.processingSwapsVisible = !this.processingSwapsVisible;

@@ -92,8 +92,8 @@ export default class SettingsStore {
 
   /** specifies the sorting field and direction for the Lit session list */
   sessionSort: SortParams<Session> = {
-    field: 'label',
-    descending: false,
+    field: 'expiry',
+    descending: true,
   };
 
   /** the chosen language */
@@ -231,7 +231,17 @@ export default class SettingsStore {
    */
   setLeaseSort(field: SortParams<LeaseView>['field'], descending: boolean) {
     this.leaseSort = { field, descending };
-    this._store.log.info('updated leases list sort lease', toJS(this.leaseSort));
+    this._store.log.info('updated leases list sort order', toJS(this.leaseSort));
+  }
+
+  /**
+   * Sets the sort field and direction that the sessions list should use
+   * @param field the lease field to sort by
+   * @param descending true of the lease should be descending, otherwise false
+   */
+  setSessionSort(field: SortParams<Session>['field'], descending: boolean) {
+    this.sessionSort = { field, descending };
+    this._store.log.info('updated sessions list sort order', toJS(this.sessionSort));
   }
 
   /**

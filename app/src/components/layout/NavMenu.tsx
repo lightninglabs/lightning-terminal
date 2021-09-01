@@ -84,6 +84,7 @@ const NavMenu: React.FC = () => {
         <NavItem page="history" onClick={appView.goToHistory} />
         <NavItem page="pool" preview onClick={appView.goToPool} />
         <NavItem page="settings" onClick={appView.goToSettings} />
+        <NavItem page="connect" onClick={appView.goToConnect} />
       </Nav>
     </>
   );

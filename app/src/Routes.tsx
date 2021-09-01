@@ -10,6 +10,7 @@ const LazyLoopPage = React.lazy(() => import('components/loop/LoopPage'));
 const LazyHistoryPage = React.lazy(() => import('components/history/HistoryPage'));
 const LazyPoolPage = React.lazy(() => import('components/pool/PoolPage'));
 const LazySettingsPage = React.lazy(() => import('components/settings/SettingsPage'));
+const LazyConnectPage = React.lazy(() => import('components/connect/ConnectPage'));
 
 const Routes: React.FC = () => {
   const { router } = useStore();
@@ -26,6 +27,7 @@ const Routes: React.FC = () => {
                   <Route path={`${PUBLIC_URL}/history`} component={LazyHistoryPage} />
                   <Route path={`${PUBLIC_URL}/pool`} component={LazyPoolPage} />
                   <Route path={`${PUBLIC_URL}/settings`} component={LazySettingsPage} />
+                  <Route path={`${PUBLIC_URL}/connect`} component={LazyConnectPage} />
                 </Suspense>
               </Switch>
             </Layout>

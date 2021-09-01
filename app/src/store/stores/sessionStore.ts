@@ -7,13 +7,15 @@ import {
   values,
 } from 'mobx';
 import * as LIT from 'types/generated/lit-sessions_pb';
-import debounce from 'lodash/debounce';
+import { IS_PROD } from 'config';
 import { hex } from 'util/strings';
 import { Store } from 'store';
 import { Session } from '../models';
 
 export default class SessionStore {
   private _store: Store;
+
+  proxyServer = IS_PROD ? 'mailbox.staging.lightningcluster.com:443' : 'aperture:11110';
 
   /** the collection of sessions */
   sessions: ObservableMap<string, Session> = observable.map();
@@ -71,9 +73,6 @@ export default class SessionStore {
     }
   }
 
-  /** fetch sessions at most once every 2 seconds when using this func  */
-  fetchOrdersThrottled = debounce(this.fetchSessions, 2000);
-
   /**
    * Adds a new session
    * @param label the user defined label for this session
@@ -81,25 +80,20 @@ export default class SessionStore {
    * @param mailboxServerAddr the address where the mailbox server is reachable
    * @param devServer whether the mailbox server is a dev server that has no valid TLS cert
    */
-  async addSession(
-    label: string,
-    expiry: Date,
-    mailboxServerAddr: string,
-    devServer: boolean,
-  ) {
+  async addSession(label: string, expiry: Date) {
     try {
       this._store.log.info(`submitting session with label ${label}`, {
         expiry,
-        mailboxServerAddr,
-        devServer,
+        proxyServer: this.proxyServer,
+        devServer: !IS_PROD,
       });
 
       const { session } = await this._store.api.lit.addSession(
         label,
         LIT.SessionType.TYPE_UI_PASSWORD,
         expiry,
-        mailboxServerAddr,
-        devServer,
+        this.proxyServer,
+        !IS_PROD,
         [],
       );
 
@@ -107,10 +101,8 @@ export default class SessionStore {
       await this.fetchSessions();
 
       if (session) {
-        return hex(session.localPublicKey);
+        return this.sessions.get(hex(session.localPublicKey));
       }
-
-      return null;
     } catch (error) {
       this._store.appView.handleError(error, 'Unable to add session');
     }
