@@ -15,6 +15,8 @@ const Styled = {
 const SessionList: React.FC = () => {
   const { sessionStore } = useStore();
 
+  if (sessionStore.sortedSessions.length === 0) return null;
+
   const { Wrapper } = Styled;
   return (
     <Wrapper>

@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite';
 import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import PageHeader from 'components/common/PageHeader';
+import AddSession from './AddSession';
 import SessionList from './SessionList';
 
 const Styled = {
@@ -22,6 +23,7 @@ const ConnectPage: React.FC = () => {
     <Wrapper>
       <PageHeader title={l('pageTitle')} />
       <Description>{l('description')}</Description>
+      <AddSession />
       <SessionList />
     </Wrapper>
   );
