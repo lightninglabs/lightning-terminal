@@ -1,5 +1,5 @@
-import * as LIT from 'types/generated/lit-sessions_pb';
 import { makeAutoObservable } from 'mobx';
+import * as LIT from 'types/generated/lit-sessions_pb';
 import { SortParams } from 'types/state';
 import formatDate from 'date-fns/format';
 import { hex } from 'util/strings';
@@ -66,6 +66,14 @@ export default class Session {
   /** The date this session will expire as formatted string */
   get expiryLabel() {
     return formatDate(this.expiry, 'MMM d, h:mm a');
+  }
+
+  /** True if the session is not revoked or expired */
+  get isActive() {
+    return (
+      this.state === LIT.SessionState.STATE_CREATED ||
+      this.state === LIT.SessionState.STATE_IN_USE
+    );
   }
 
   /**

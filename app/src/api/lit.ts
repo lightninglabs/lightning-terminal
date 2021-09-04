@@ -1,6 +1,6 @@
 import * as LIT from 'types/generated/lit-sessions_pb';
-import { MacaroonPermission, SessionTypeMap } from 'types/generated/lit-sessions_pb';
 import { Sessions } from 'types/generated/lit-sessions_pb_service';
+import { b64 } from 'util/strings';
 import BaseApi from './base';
 import GrpcClient from './grpc';
 
@@ -21,11 +21,11 @@ class LitApi extends BaseApi<LitEvents> {
    */
   async addSession(
     label: string,
-    sessionType: SessionTypeMap[keyof SessionTypeMap],
+    sessionType: LIT.SessionTypeMap[keyof LIT.SessionTypeMap],
     expiry: Date,
     mailboxServerAddr: string,
     devServer: boolean,
-    macaroonCustomPermissions: Array<MacaroonPermission>,
+    macaroonCustomPermissions: Array<LIT.MacaroonPermission>,
   ): Promise<LIT.AddSessionResponse.AsObject> {
     const req = new LIT.AddSessionRequest();
     req.setLabel(label);
@@ -52,10 +52,10 @@ class LitApi extends BaseApi<LitEvents> {
    * call the Lit `RevokeSession` RPC and return the response
    */
   async revokeSession(
-    localPublicKey: Uint8Array,
+    localPublicKey: string,
   ): Promise<LIT.RevokeSessionResponse.AsObject> {
     const req = new LIT.RevokeSessionRequest();
-    req.setLocalPublicKey(localPublicKey);
+    req.setLocalPublicKey(b64(localPublicKey));
     const res = await this._grpc.request(Sessions.RevokeSession, req, this._meta);
     return res.toObject();
   }

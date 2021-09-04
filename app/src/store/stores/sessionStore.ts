@@ -32,6 +32,7 @@ export default class SessionStore {
     const { field, descending } = this._store.settingsStore.sessionSort;
     const sessions = values(this.sessions)
       .slice()
+      .filter(s => s.isActive)
       .sort((a, b) => Session.compare(a, b, field));
 
     return descending ? sessions.reverse() : sessions;
@@ -109,6 +110,30 @@ export default class SessionStore {
     }
   }
 
+  /**
+   * Revokes a session
+   * @param session the Terminal Connect session object
+   */
+  async revokeSession(session: Session) {
+    const { label, localPublicKey } = session;
+    try {
+      this._store.log.info(`revoking session with label ${label}`, {
+        localPublicKey,
+      });
+
+      await this._store.api.lit.revokeSession(localPublicKey);
+
+      // fetch all sessions to update the store's state
+      await this.fetchSessions();
+    } catch (error) {
+      this._store.appView.handleError(error, 'Unable to revoke the session');
+    }
+  }
+
+  /**
+   * Copies a pairing phrase to the clipboard
+   * @param phrase the pairing phrase
+   */
   copyPhrase(phrase: string) {
     copyToClipboard(phrase);
     const msg = `Copied Pairing Phrase to clipboard`;

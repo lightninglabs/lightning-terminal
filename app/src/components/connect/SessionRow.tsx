@@ -4,7 +4,7 @@ import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Session } from 'store/models';
-import { Column, Copy, Row } from 'components/base';
+import { Close, Column, Copy, Row } from 'components/base';
 import SortableHeader from 'components/common/SortableHeader';
 import Tip from 'components/common/Tip';
 
@@ -45,6 +45,9 @@ const Styled = {
     & > svg {
       border-radius: 10px;
     }
+  `,
+  CloseIcon: styled(Close)`
+    color: ${props => props.theme.colors.pink};
   `,
 };
 
@@ -92,6 +95,7 @@ const RowHeader: React.FC = () => {
           {l('expiry')}
         </SortableHeader>
       </HeaderColumn>
+      <ActionColumn />
     </HeaderRow>
   );
 };
@@ -110,7 +114,11 @@ const SessionRow: React.FC<Props> = ({ session, style }) => {
     sessionStore.copyPhrase(session.pairingSecretMnemonic);
   }, [session.pairingSecretMnemonic]);
 
-  const { Row, Column, ActionColumn } = Styled;
+  const handleRevoke = useCallback(() => {
+    sessionStore.revokeSession(session);
+  }, [session]);
+
+  const { Row, Column, ActionColumn, CloseIcon } = Styled;
   return (
     <Row style={style}>
       <ActionColumn>
@@ -122,6 +130,11 @@ const SessionRow: React.FC<Props> = ({ session, style }) => {
       <Column>{session.typeLabel}</Column>
       <Column right>{session.stateLabel}</Column>
       <Column right>{session.expiryLabel}</Column>
+      <ActionColumn>
+        <Tip overlay="Revoke Session">
+          <CloseIcon onClick={handleRevoke} />
+        </Tip>
+      </ActionColumn>
     </Row>
   );
 };
