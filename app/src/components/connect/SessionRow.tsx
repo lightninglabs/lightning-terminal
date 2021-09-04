@@ -1,11 +1,12 @@
-import React, { CSSProperties } from 'react';
+import React, { CSSProperties, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Session } from 'store/models';
-import { Column, Row } from 'components/base';
+import { Column, Copy, Row } from 'components/base';
 import SortableHeader from 'components/common/SortableHeader';
+import Tip from 'components/common/Tip';
 
 /**
  * the virtualized list requires each row to have a specified
@@ -37,9 +38,13 @@ const Styled = {
     padding: 0 5px;
   `,
   ActionColumn: styled(Column)`
-    max-width: 50px;
+    max-width: 70px;
     padding: 0 20px;
     line-height: ${ROW_HEIGHT}px;
+
+    & > svg {
+      border-radius: 10px;
+    }
   `,
 };
 
@@ -99,10 +104,20 @@ interface Props {
 }
 
 const SessionRow: React.FC<Props> = ({ session, style }) => {
+  const { sessionStore } = useStore();
+
+  const handleCopy = useCallback(() => {
+    sessionStore.copyPhrase(session.pairingSecretMnemonic);
+  }, [session.pairingSecretMnemonic]);
+
   const { Row, Column, ActionColumn } = Styled;
   return (
     <Row style={style}>
-      <ActionColumn></ActionColumn>
+      <ActionColumn>
+        <Tip overlay="Copy Pairing Phrase">
+          <Copy onClick={handleCopy} />
+        </Tip>
+      </ActionColumn>
       <Column cols={3}>{session.label}</Column>
       <Column>{session.typeLabel}</Column>
       <Column right>{session.stateLabel}</Column>

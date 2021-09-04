@@ -19,14 +19,20 @@ const Styled = {
 
 const AddSession: React.FC = () => {
   const { sessionStore } = useStore();
+
   const [label, setLabel] = useState('');
   const [expiry, setExpiry] = useState(30);
   const [editing, setEditing] = useState(false);
+
   const toggleEditing = useCallback(() => setEditing(e => !e), []);
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
     const expDate = new Date(Date.now() + expiry * 24 * 60 * 60 * 1000);
-    sessionStore.addSession(label, expDate);
-    setEditing(false);
+    const session = await sessionStore.addSession(label, expDate);
+    if (session) {
+      setLabel('');
+      setExpiry(30);
+      setEditing(false);
+    }
   }, [label, expiry]);
 
   const { Wrapper, AddSection, ActionColumn } = Styled;
@@ -55,7 +61,7 @@ const AddSession: React.FC = () => {
           <Button primary onClick={handleSubmit}>
             Submit
           </Button>
-          <Button ghost borderless onClick={handleSubmit}>
+          <Button ghost borderless onClick={toggleEditing}>
             Cancel
           </Button>
         </ActionColumn>
