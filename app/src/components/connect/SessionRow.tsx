@@ -108,6 +108,7 @@ interface Props {
 }
 
 const SessionRow: React.FC<Props> = ({ session, style }) => {
+  const { l } = usePrefixedTranslation('cmps.connect.SessionRow');
   const { sessionStore } = useStore();
 
   const handleCopy = useCallback(() => {
@@ -122,7 +123,7 @@ const SessionRow: React.FC<Props> = ({ session, style }) => {
   return (
     <Row style={style}>
       <ActionColumn>
-        <Tip overlay="Copy Pairing Phrase">
+        <Tip overlay={l('copy')}>
           <Copy onClick={handleCopy} />
         </Tip>
       </ActionColumn>
@@ -131,7 +132,7 @@ const SessionRow: React.FC<Props> = ({ session, style }) => {
       <Column right>{session.stateLabel}</Column>
       <Column right>{session.expiryLabel}</Column>
       <ActionColumn>
-        <Tip overlay="Revoke Session">
+        <Tip overlay={l('revoke')}>
           <CloseIcon onClick={handleRevoke} />
         </Tip>
       </ActionColumn>

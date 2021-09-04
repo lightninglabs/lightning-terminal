@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import styled from '@emotion/styled';
+import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Button, Column, Row } from 'components/base';
 import FormField from 'components/common/FormField';
@@ -18,6 +19,7 @@ const Styled = {
 };
 
 const AddSession: React.FC = () => {
+  const { l } = usePrefixedTranslation('cmps.connect.AddSession');
   const { sessionStore } = useStore();
 
   const [label, setLabel] = useState('');
@@ -39,7 +41,7 @@ const AddSession: React.FC = () => {
   if (!editing) {
     return (
       <AddSection>
-        <Button onClick={toggleEditing}>Create a New Session</Button>
+        <Button onClick={toggleEditing}>{l('create')}</Button>
       </AddSection>
     );
   }
@@ -48,21 +50,25 @@ const AddSession: React.FC = () => {
     <Wrapper>
       <Row>
         <Column cols={4} className="offset-1">
-          <FormField label="Label">
-            <FormInput value={label} onChange={setLabel} placeholder="My First Session" />
+          <FormField label={l('label')}>
+            <FormInput value={label} onChange={setLabel} placeholder={l('labelHint')} />
           </FormField>
         </Column>
         <Column cols={2}>
-          <FormField label="Expiration">
-            <FormInputNumber value={expiry} onChange={setExpiry} extra="days" />
+          <FormField label={l('expiration')}>
+            <FormInputNumber
+              value={expiry}
+              onChange={setExpiry}
+              extra={l('common.days_plural')}
+            />
           </FormField>
         </Column>
         <ActionColumn className="">
           <Button primary onClick={handleSubmit}>
-            Submit
+            {l('common.submit')}
           </Button>
           <Button ghost borderless onClick={toggleEditing}>
-            Cancel
+            {l('common.cancel')}
           </Button>
         </ActionColumn>
       </Row>
