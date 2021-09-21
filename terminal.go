@@ -17,7 +17,7 @@ import (
 	"sync"
 	"time"
 
-	restProxy "github.com/grpc-ecosystem/grpc-gateway/runtime"
+	restProxy "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jessevdk/go-flags"
 	"github.com/lightninglabs/faraday/frdrpc"
 	"github.com/lightninglabs/lndclient"
@@ -42,6 +42,7 @@ import (
 	"github.com/lightningnetwork/lnd/signal"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/protobuf/encoding/protojson"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 )
 
@@ -110,6 +111,8 @@ var (
 type LightningTerminal struct {
 	cfg *Config
 
+	defaultImplCfg *lnd.ImplementationCfg
+
 	wg         sync.WaitGroup
 	lndErrChan chan error
 
@@ -152,6 +155,7 @@ func (g *LightningTerminal) Run() error {
 		return fmt.Errorf("could not load config: %w", err)
 	}
 	g.cfg = cfg
+	g.defaultImplCfg = g.cfg.Lnd.ImplementationConfig(shutdownInterceptor)
 
 	// Create the instances of our subservers now so we can hook them up to
 	// lnd once it's fully started.
@@ -170,27 +174,30 @@ func (g *LightningTerminal) Run() error {
 	readyChan := make(chan struct{})
 	unlockChan := make(chan struct{})
 	if g.cfg.LndMode == ModeIntegrated {
+		lisCfg := lnd.ListenerCfg{
+			RPCListeners: []*lnd.ListenerWithSignal{{
+				Listener: &onDemandListener{
+					addr: g.cfg.Lnd.RPCListeners[0],
+				},
+				Ready: readyChan,
+			}},
+		}
+
+		implCfg := &lnd.ImplementationCfg{
+			GrpcRegistrar:       g,
+			RestRegistrar:       g,
+			ExternalValidator:   g,
+			DatabaseBuilder:     g.defaultImplCfg.DatabaseBuilder,
+			WalletConfigBuilder: g.defaultImplCfg.WalletConfigBuilder,
+			ChainControlBuilder: g.defaultImplCfg.ChainControlBuilder,
+		}
+
 		g.wg.Add(1)
 		go func() {
 			defer g.wg.Done()
 
-			lisCfg := lnd.ListenerCfg{
-				RPCListener: &lnd.ListenerWithSignal{
-					Listener: &onDemandListener{
-						addr: g.cfg.Lnd.RPCListeners[0],
-					},
-					Ready: readyChan,
-				},
-				ExternalRPCSubserverCfg: &lnd.RPCSubserverConfig{
-					Permissions:       getSubserverPermissions(),
-					Registrar:         g,
-					MacaroonValidator: g,
-				},
-				ExternalRestRegistrar: g,
-			}
-
 			err := lnd.Main(
-				g.cfg.Lnd, lisCfg, shutdownInterceptor,
+				g.cfg.Lnd, lisCfg, implCfg, shutdownInterceptor,
 			)
 			if e, ok := err.(*flags.Error); err != nil &&
 				(!ok || e.Type != flags.ErrHelp) {
@@ -400,7 +407,13 @@ func (g *LightningTerminal) startSubservers() error {
 // called once lnd has initialized its main gRPC server instance. It gives the
 // daemons (or external subservers) the possibility to register themselves to
 // the same server instance.
+//
+// NOTE: This is part of the lnd.GrpcRegistrar interface.
 func (g *LightningTerminal) RegisterGrpcSubserver(server *grpc.Server) error {
+	if err := g.defaultImplCfg.RegisterGrpcSubserver(server); err != nil {
+		return err
+	}
+
 	// In remote mode the "director" of the RPC proxy will act as a catch-
 	// all for any gRPC request that isn't known because we didn't register
 	// any server for it. The director will then forward the request to the
@@ -424,11 +437,20 @@ func (g *LightningTerminal) RegisterGrpcSubserver(server *grpc.Server) error {
 // called once lnd has initialized its main REST server instance. It gives the
 // daemons (or external subservers) the possibility to register themselves to
 // the same server instance.
+//
+// NOTE: This is part of the lnd.RestRegistrar interface.
 func (g *LightningTerminal) RegisterRestSubserver(ctx context.Context,
 	mux *restProxy.ServeMux, endpoint string,
 	dialOpts []grpc.DialOption) error {
 
-	err := frdrpc.RegisterFaradayServerHandlerFromEndpoint(
+	err := g.defaultImplCfg.RegisterRestSubserver(
+		ctx, mux, endpoint, dialOpts,
+	)
+	if err != nil {
+		return err
+	}
+
+	err = frdrpc.RegisterFaradayServerHandlerFromEndpoint(
 		ctx, mux, endpoint, dialOpts,
 	)
 	if err != nil {
@@ -451,6 +473,8 @@ func (g *LightningTerminal) RegisterRestSubserver(ctx context.Context,
 // checks its signature, makes sure all specified permissions for the called
 // method are contained within and finally ensures all caveat conditions are
 // met. A non-nil error is returned if any of the checks fail.
+//
+// NOTE: This is part of the lnd.ExternalValidator interface.
 func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 	requiredPermissions []bakery.Op, fullMethod string) error {
 
@@ -516,6 +540,14 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 	// the macaroons. So we don't need to worry about anything other than
 	// the subservers that are running in the local process.
 	return nil
+}
+
+// Permissions returns all permissions for which the external validator of the
+// terminal is responsible.
+//
+// NOTE: This is part of the lnd.ExternalValidator interface.
+func (g *LightningTerminal) Permissions() map[string][]bakery.Op {
+	return getSubserverPermissions()
 }
 
 // shutdown stops all subservers that were started and attached to lnd.
@@ -755,8 +787,10 @@ func (g *LightningTerminal) createRESTProxy() error {
 	// that the marshaler prints all values, even if they are falsey.
 	customMarshalerOption := restProxy.WithMarshalerOption(
 		restProxy.MIMEWildcard, &restProxy.JSONPb{
-			OrigName:     true,
-			EmitDefaults: true,
+			MarshalOptions: protojson.MarshalOptions{
+				UseProtoNames:   true,
+				EmitUnpopulated: true,
+			},
 		},
 	)
 

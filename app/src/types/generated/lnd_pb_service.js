@@ -217,6 +217,15 @@ Lightning.OpenChannel = {
   responseType: lnd_pb.OpenStatusUpdate
 };
 
+Lightning.BatchOpenChannel = {
+  methodName: "BatchOpenChannel",
+  service: Lightning,
+  requestStream: false,
+  responseStream: false,
+  requestType: lnd_pb.BatchOpenChannelRequest,
+  responseType: lnd_pb.BatchOpenChannelResponse
+};
+
 Lightning.FundingStateStep = {
   methodName: "FundingStateStep",
   service: Lightning,
@@ -341,6 +350,15 @@ Lightning.ListPayments = {
   responseStream: false,
   requestType: lnd_pb.ListPaymentsRequest,
   responseType: lnd_pb.ListPaymentsResponse
+};
+
+Lightning.DeletePayment = {
+  methodName: "DeletePayment",
+  service: Lightning,
+  requestStream: false,
+  responseStream: false,
+  requestType: lnd_pb.DeletePaymentRequest,
+  responseType: lnd_pb.DeletePaymentResponse
 };
 
 Lightning.DeleteAllPayments = {
@@ -539,6 +557,42 @@ Lightning.ListPermissions = {
   responseStream: false,
   requestType: lnd_pb.ListPermissionsRequest,
   responseType: lnd_pb.ListPermissionsResponse
+};
+
+Lightning.CheckMacaroonPermissions = {
+  methodName: "CheckMacaroonPermissions",
+  service: Lightning,
+  requestStream: false,
+  responseStream: false,
+  requestType: lnd_pb.CheckMacPermRequest,
+  responseType: lnd_pb.CheckMacPermResponse
+};
+
+Lightning.RegisterRPCMiddleware = {
+  methodName: "RegisterRPCMiddleware",
+  service: Lightning,
+  requestStream: true,
+  responseStream: true,
+  requestType: lnd_pb.RPCMiddlewareResponse,
+  responseType: lnd_pb.RPCMiddlewareRequest
+};
+
+Lightning.SendCustomMessage = {
+  methodName: "SendCustomMessage",
+  service: Lightning,
+  requestStream: false,
+  responseStream: false,
+  requestType: lnd_pb.SendCustomMessageRequest,
+  responseType: lnd_pb.SendCustomMessageResponse
+};
+
+Lightning.SubscribeCustomMessages = {
+  methodName: "SubscribeCustomMessages",
+  service: Lightning,
+  requestStream: false,
+  responseStream: true,
+  requestType: lnd_pb.SubscribeCustomMessagesRequest,
+  responseType: lnd_pb.CustomMessage
 };
 
 exports.Lightning = Lightning;
@@ -1293,6 +1347,37 @@ LightningClient.prototype.openChannel = function openChannel(requestMessage, met
   };
 };
 
+LightningClient.prototype.batchOpenChannel = function batchOpenChannel(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(Lightning.BatchOpenChannel, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
 LightningClient.prototype.fundingStateStep = function fundingStateStep(requestMessage, metadata, callback) {
   if (arguments.length === 2) {
     callback = arguments[1];
@@ -1759,6 +1844,37 @@ LightningClient.prototype.listPayments = function listPayments(requestMessage, m
     callback = arguments[1];
   }
   var client = grpc.unary(Lightning.ListPayments, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+LightningClient.prototype.deletePayment = function deletePayment(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(Lightning.DeletePayment, {
     request: requestMessage,
     host: this.serviceHost,
     metadata: metadata,
@@ -2478,6 +2594,152 @@ LightningClient.prototype.listPermissions = function listPermissions(requestMess
   return {
     cancel: function () {
       callback = null;
+      client.close();
+    }
+  };
+};
+
+LightningClient.prototype.checkMacaroonPermissions = function checkMacaroonPermissions(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(Lightning.CheckMacaroonPermissions, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+LightningClient.prototype.registerRPCMiddleware = function registerRPCMiddleware(metadata) {
+  var listeners = {
+    data: [],
+    end: [],
+    status: []
+  };
+  var client = grpc.client(Lightning.RegisterRPCMiddleware, {
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport
+  });
+  client.onEnd(function (status, statusMessage, trailers) {
+    listeners.status.forEach(function (handler) {
+      handler({ code: status, details: statusMessage, metadata: trailers });
+    });
+    listeners.end.forEach(function (handler) {
+      handler({ code: status, details: statusMessage, metadata: trailers });
+    });
+    listeners = null;
+  });
+  client.onMessage(function (message) {
+    listeners.data.forEach(function (handler) {
+      handler(message);
+    })
+  });
+  client.start(metadata);
+  return {
+    on: function (type, handler) {
+      listeners[type].push(handler);
+      return this;
+    },
+    write: function (requestMessage) {
+      client.send(requestMessage);
+      return this;
+    },
+    end: function () {
+      client.finishSend();
+    },
+    cancel: function () {
+      listeners = null;
+      client.close();
+    }
+  };
+};
+
+LightningClient.prototype.sendCustomMessage = function sendCustomMessage(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(Lightning.SendCustomMessage, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+LightningClient.prototype.subscribeCustomMessages = function subscribeCustomMessages(requestMessage, metadata) {
+  var listeners = {
+    data: [],
+    end: [],
+    status: []
+  };
+  var client = grpc.invoke(Lightning.SubscribeCustomMessages, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onMessage: function (responseMessage) {
+      listeners.data.forEach(function (handler) {
+        handler(responseMessage);
+      });
+    },
+    onEnd: function (status, statusMessage, trailers) {
+      listeners.status.forEach(function (handler) {
+        handler({ code: status, details: statusMessage, metadata: trailers });
+      });
+      listeners.end.forEach(function (handler) {
+        handler({ code: status, details: statusMessage, metadata: trailers });
+      });
+      listeners = null;
+    }
+  });
+  return {
+    on: function (type, handler) {
+      listeners[type].push(handler);
+      return this;
+    },
+    cancel: function () {
+      listeners = null;
       client.close();
     }
   };

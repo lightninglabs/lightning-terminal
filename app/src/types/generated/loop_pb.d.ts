@@ -2,7 +2,7 @@
 // file: loop.proto
 
 import * as jspb from "google-protobuf";
-import * as google_api_annotations_pb from "./google/api/annotations_pb";
+import * as common_pb from "./common_pb";
 
 export class LoopOutRequest extends jspb.Message {
   getAmt(): string;
@@ -409,6 +409,16 @@ export class QuoteRequest extends jspb.Message {
   getSwapPublicationDeadline(): string;
   setSwapPublicationDeadline(value: string): void;
 
+  getLoopInLastHop(): Uint8Array | string;
+  getLoopInLastHop_asU8(): Uint8Array;
+  getLoopInLastHop_asB64(): string;
+  setLoopInLastHop(value: Uint8Array | string): void;
+
+  clearLoopInRouteHintsList(): void;
+  getLoopInRouteHintsList(): Array<common_pb.RouteHint>;
+  setLoopInRouteHintsList(value: Array<common_pb.RouteHint>): void;
+  addLoopInRouteHints(value?: common_pb.RouteHint, index?: number): common_pb.RouteHint;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): QuoteRequest.AsObject;
   static toObject(includeInstance: boolean, msg: QuoteRequest): QuoteRequest.AsObject;
@@ -425,6 +435,8 @@ export namespace QuoteRequest {
     confTarget: number,
     externalHtlc: boolean,
     swapPublicationDeadline: string,
+    loopInLastHop: Uint8Array | string,
+    loopInRouteHintsList: Array<common_pb.RouteHint.AsObject>,
   }
 }
 
@@ -499,6 +511,54 @@ export namespace OutQuoteResponse {
     swapPaymentDest: Uint8Array | string,
     cltvDelta: number,
     confTarget: number,
+  }
+}
+
+export class ProbeRequest extends jspb.Message {
+  getAmt(): string;
+  setAmt(value: string): void;
+
+  getLastHop(): Uint8Array | string;
+  getLastHop_asU8(): Uint8Array;
+  getLastHop_asB64(): string;
+  setLastHop(value: Uint8Array | string): void;
+
+  clearRouteHintsList(): void;
+  getRouteHintsList(): Array<common_pb.RouteHint>;
+  setRouteHintsList(value: Array<common_pb.RouteHint>): void;
+  addRouteHints(value?: common_pb.RouteHint, index?: number): common_pb.RouteHint;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ProbeRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: ProbeRequest): ProbeRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ProbeRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ProbeRequest;
+  static deserializeBinaryFromReader(message: ProbeRequest, reader: jspb.BinaryReader): ProbeRequest;
+}
+
+export namespace ProbeRequest {
+  export type AsObject = {
+    amt: string,
+    lastHop: Uint8Array | string,
+    routeHintsList: Array<common_pb.RouteHint.AsObject>,
+  }
+}
+
+export class ProbeResponse extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ProbeResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: ProbeResponse): ProbeResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ProbeResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ProbeResponse;
+  static deserializeBinaryFromReader(message: ProbeResponse, reader: jspb.BinaryReader): ProbeResponse;
+}
+
+export namespace ProbeResponse {
+  export type AsObject = {
   }
 }
 
@@ -785,8 +845,8 @@ export namespace SuggestSwapsRequest {
 }
 
 export class Disqualified extends jspb.Message {
-  getChannelId(): number;
-  setChannelId(value: number): void;
+  getChannelId(): string;
+  setChannelId(value: string): void;
 
   getPubkey(): Uint8Array | string;
   getPubkey_asU8(): Uint8Array;
@@ -808,7 +868,7 @@ export class Disqualified extends jspb.Message {
 
 export namespace Disqualified {
   export type AsObject = {
-    channelId: number,
+    channelId: string,
     pubkey: Uint8Array | string,
     reason: AutoReasonMap[keyof AutoReasonMap],
   }

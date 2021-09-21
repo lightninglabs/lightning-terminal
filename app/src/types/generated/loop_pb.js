@@ -14,7 +14,7 @@ var jspb = require('google-protobuf');
 var goog = jspb;
 var global = Function('return this')();
 
-var google_api_annotations_pb = require('./google/api/annotations_pb.js');
+var common_pb = require('./common_pb.js');
 goog.exportSymbol('proto.looprpc.AutoReason', null, global);
 goog.exportSymbol('proto.looprpc.Disqualified', null, global);
 goog.exportSymbol('proto.looprpc.FailureReason', null, global);
@@ -32,6 +32,8 @@ goog.exportSymbol('proto.looprpc.LsatToken', null, global);
 goog.exportSymbol('proto.looprpc.MonitorRequest', null, global);
 goog.exportSymbol('proto.looprpc.OutQuoteResponse', null, global);
 goog.exportSymbol('proto.looprpc.OutTermsResponse', null, global);
+goog.exportSymbol('proto.looprpc.ProbeRequest', null, global);
+goog.exportSymbol('proto.looprpc.ProbeResponse', null, global);
 goog.exportSymbol('proto.looprpc.QuoteRequest', null, global);
 goog.exportSymbol('proto.looprpc.SetLiquidityParamsRequest', null, global);
 goog.exportSymbol('proto.looprpc.SetLiquidityParamsResponse', null, global);
@@ -2847,12 +2849,19 @@ proto.looprpc.OutTermsResponse.prototype.setMaxCltvDelta = function(value) {
  * @constructor
  */
 proto.looprpc.QuoteRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.looprpc.QuoteRequest.repeatedFields_, null);
 };
 goog.inherits(proto.looprpc.QuoteRequest, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
   proto.looprpc.QuoteRequest.displayName = 'proto.looprpc.QuoteRequest';
 }
+/**
+ * List of repeated fields within this message type.
+ * @private {!Array<number>}
+ * @const
+ */
+proto.looprpc.QuoteRequest.repeatedFields_ = [6];
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
@@ -2885,7 +2894,10 @@ proto.looprpc.QuoteRequest.toObject = function(includeInstance, msg) {
     amt: jspb.Message.getFieldWithDefault(msg, 1, "0"),
     confTarget: jspb.Message.getFieldWithDefault(msg, 2, 0),
     externalHtlc: jspb.Message.getFieldWithDefault(msg, 3, false),
-    swapPublicationDeadline: jspb.Message.getFieldWithDefault(msg, 4, "0")
+    swapPublicationDeadline: jspb.Message.getFieldWithDefault(msg, 4, "0"),
+    loopInLastHop: msg.getLoopInLastHop_asB64(),
+    loopInRouteHintsList: jspb.Message.toObjectList(msg.getLoopInRouteHintsList(),
+    common_pb.RouteHint.toObject, includeInstance)
   };
 
   if (includeInstance) {
@@ -2937,6 +2949,15 @@ proto.looprpc.QuoteRequest.deserializeBinaryFromReader = function(msg, reader) {
     case 4:
       var value = /** @type {string} */ (reader.readUint64String());
       msg.setSwapPublicationDeadline(value);
+      break;
+    case 5:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setLoopInLastHop(value);
+      break;
+    case 6:
+      var value = new common_pb.RouteHint;
+      reader.readMessage(value,common_pb.RouteHint.deserializeBinaryFromReader);
+      msg.addLoopInRouteHints(value);
       break;
     default:
       reader.skipField();
@@ -2993,6 +3014,21 @@ proto.looprpc.QuoteRequest.serializeBinaryToWriter = function(message, writer) {
     writer.writeUint64String(
       4,
       f
+    );
+  }
+  f = message.getLoopInLastHop_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      5,
+      f
+    );
+  }
+  f = message.getLoopInRouteHintsList();
+  if (f.length > 0) {
+    writer.writeRepeatedMessage(
+      6,
+      f,
+      common_pb.RouteHint.serializeBinaryToWriter
     );
   }
 };
@@ -3057,6 +3093,76 @@ proto.looprpc.QuoteRequest.prototype.getSwapPublicationDeadline = function() {
 /** @param {string} value */
 proto.looprpc.QuoteRequest.prototype.setSwapPublicationDeadline = function(value) {
   jspb.Message.setProto3StringIntField(this, 4, value);
+};
+
+
+/**
+ * optional bytes loop_in_last_hop = 5;
+ * @return {!(string|Uint8Array)}
+ */
+proto.looprpc.QuoteRequest.prototype.getLoopInLastHop = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 5, ""));
+};
+
+
+/**
+ * optional bytes loop_in_last_hop = 5;
+ * This is a type-conversion wrapper around `getLoopInLastHop()`
+ * @return {string}
+ */
+proto.looprpc.QuoteRequest.prototype.getLoopInLastHop_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getLoopInLastHop()));
+};
+
+
+/**
+ * optional bytes loop_in_last_hop = 5;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getLoopInLastHop()`
+ * @return {!Uint8Array}
+ */
+proto.looprpc.QuoteRequest.prototype.getLoopInLastHop_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getLoopInLastHop()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.looprpc.QuoteRequest.prototype.setLoopInLastHop = function(value) {
+  jspb.Message.setProto3BytesField(this, 5, value);
+};
+
+
+/**
+ * repeated RouteHint loop_in_route_hints = 6;
+ * @return {!Array<!proto.looprpc.RouteHint>}
+ */
+proto.looprpc.QuoteRequest.prototype.getLoopInRouteHintsList = function() {
+  return /** @type{!Array<!proto.looprpc.RouteHint>} */ (
+    jspb.Message.getRepeatedWrapperField(this, common_pb.RouteHint, 6));
+};
+
+
+/** @param {!Array<!proto.looprpc.RouteHint>} value */
+proto.looprpc.QuoteRequest.prototype.setLoopInRouteHintsList = function(value) {
+  jspb.Message.setRepeatedWrapperField(this, 6, value);
+};
+
+
+/**
+ * @param {!proto.looprpc.RouteHint=} opt_value
+ * @param {number=} opt_index
+ * @return {!proto.looprpc.RouteHint}
+ */
+proto.looprpc.QuoteRequest.prototype.addLoopInRouteHints = function(opt_value, opt_index) {
+  return jspb.Message.addToRepeatedWrapperField(this, 6, opt_value, proto.looprpc.RouteHint, opt_index);
+};
+
+
+proto.looprpc.QuoteRequest.prototype.clearLoopInRouteHintsList = function() {
+  this.setLoopInRouteHintsList([]);
 };
 
 
@@ -3581,6 +3687,368 @@ proto.looprpc.OutQuoteResponse.prototype.getConfTarget = function() {
 /** @param {number} value */
 proto.looprpc.OutQuoteResponse.prototype.setConfTarget = function(value) {
   jspb.Message.setProto3IntField(this, 6, value);
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.looprpc.ProbeRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.looprpc.ProbeRequest.repeatedFields_, null);
+};
+goog.inherits(proto.looprpc.ProbeRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.looprpc.ProbeRequest.displayName = 'proto.looprpc.ProbeRequest';
+}
+/**
+ * List of repeated fields within this message type.
+ * @private {!Array<number>}
+ * @const
+ */
+proto.looprpc.ProbeRequest.repeatedFields_ = [3];
+
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.looprpc.ProbeRequest.prototype.toObject = function(opt_includeInstance) {
+  return proto.looprpc.ProbeRequest.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.looprpc.ProbeRequest} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.looprpc.ProbeRequest.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    amt: jspb.Message.getFieldWithDefault(msg, 1, "0"),
+    lastHop: msg.getLastHop_asB64(),
+    routeHintsList: jspb.Message.toObjectList(msg.getRouteHintsList(),
+    common_pb.RouteHint.toObject, includeInstance)
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.looprpc.ProbeRequest}
+ */
+proto.looprpc.ProbeRequest.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.looprpc.ProbeRequest;
+  return proto.looprpc.ProbeRequest.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.looprpc.ProbeRequest} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.looprpc.ProbeRequest}
+ */
+proto.looprpc.ProbeRequest.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = /** @type {string} */ (reader.readInt64String());
+      msg.setAmt(value);
+      break;
+    case 2:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setLastHop(value);
+      break;
+    case 3:
+      var value = new common_pb.RouteHint;
+      reader.readMessage(value,common_pb.RouteHint.deserializeBinaryFromReader);
+      msg.addRouteHints(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.looprpc.ProbeRequest.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.looprpc.ProbeRequest.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.looprpc.ProbeRequest} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.looprpc.ProbeRequest.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getAmt();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
+      1,
+      f
+    );
+  }
+  f = message.getLastHop_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      2,
+      f
+    );
+  }
+  f = message.getRouteHintsList();
+  if (f.length > 0) {
+    writer.writeRepeatedMessage(
+      3,
+      f,
+      common_pb.RouteHint.serializeBinaryToWriter
+    );
+  }
+};
+
+
+/**
+ * optional int64 amt = 1;
+ * @return {string}
+ */
+proto.looprpc.ProbeRequest.prototype.getAmt = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, "0"));
+};
+
+
+/** @param {string} value */
+proto.looprpc.ProbeRequest.prototype.setAmt = function(value) {
+  jspb.Message.setProto3StringIntField(this, 1, value);
+};
+
+
+/**
+ * optional bytes last_hop = 2;
+ * @return {!(string|Uint8Array)}
+ */
+proto.looprpc.ProbeRequest.prototype.getLastHop = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+};
+
+
+/**
+ * optional bytes last_hop = 2;
+ * This is a type-conversion wrapper around `getLastHop()`
+ * @return {string}
+ */
+proto.looprpc.ProbeRequest.prototype.getLastHop_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getLastHop()));
+};
+
+
+/**
+ * optional bytes last_hop = 2;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getLastHop()`
+ * @return {!Uint8Array}
+ */
+proto.looprpc.ProbeRequest.prototype.getLastHop_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getLastHop()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.looprpc.ProbeRequest.prototype.setLastHop = function(value) {
+  jspb.Message.setProto3BytesField(this, 2, value);
+};
+
+
+/**
+ * repeated RouteHint route_hints = 3;
+ * @return {!Array<!proto.looprpc.RouteHint>}
+ */
+proto.looprpc.ProbeRequest.prototype.getRouteHintsList = function() {
+  return /** @type{!Array<!proto.looprpc.RouteHint>} */ (
+    jspb.Message.getRepeatedWrapperField(this, common_pb.RouteHint, 3));
+};
+
+
+/** @param {!Array<!proto.looprpc.RouteHint>} value */
+proto.looprpc.ProbeRequest.prototype.setRouteHintsList = function(value) {
+  jspb.Message.setRepeatedWrapperField(this, 3, value);
+};
+
+
+/**
+ * @param {!proto.looprpc.RouteHint=} opt_value
+ * @param {number=} opt_index
+ * @return {!proto.looprpc.RouteHint}
+ */
+proto.looprpc.ProbeRequest.prototype.addRouteHints = function(opt_value, opt_index) {
+  return jspb.Message.addToRepeatedWrapperField(this, 3, opt_value, proto.looprpc.RouteHint, opt_index);
+};
+
+
+proto.looprpc.ProbeRequest.prototype.clearRouteHintsList = function() {
+  this.setRouteHintsList([]);
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.looprpc.ProbeResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.looprpc.ProbeResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.looprpc.ProbeResponse.displayName = 'proto.looprpc.ProbeResponse';
+}
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.looprpc.ProbeResponse.prototype.toObject = function(opt_includeInstance) {
+  return proto.looprpc.ProbeResponse.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.looprpc.ProbeResponse} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.looprpc.ProbeResponse.toObject = function(includeInstance, msg) {
+  var f, obj = {
+
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.looprpc.ProbeResponse}
+ */
+proto.looprpc.ProbeResponse.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.looprpc.ProbeResponse;
+  return proto.looprpc.ProbeResponse.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.looprpc.ProbeResponse} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.looprpc.ProbeResponse}
+ */
+proto.looprpc.ProbeResponse.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.looprpc.ProbeResponse.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.looprpc.ProbeResponse.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.looprpc.ProbeResponse} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.looprpc.ProbeResponse.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
 };
 
 
@@ -5676,7 +6144,7 @@ proto.looprpc.Disqualified.prototype.toObject = function(opt_includeInstance) {
  */
 proto.looprpc.Disqualified.toObject = function(includeInstance, msg) {
   var f, obj = {
-    channelId: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    channelId: jspb.Message.getFieldWithDefault(msg, 1, "0"),
     pubkey: msg.getPubkey_asB64(),
     reason: jspb.Message.getFieldWithDefault(msg, 2, 0)
   };
@@ -5716,7 +6184,7 @@ proto.looprpc.Disqualified.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {number} */ (reader.readUint64());
+      var value = /** @type {string} */ (reader.readUint64String());
       msg.setChannelId(value);
       break;
     case 3:
@@ -5757,8 +6225,8 @@ proto.looprpc.Disqualified.prototype.serializeBinary = function() {
 proto.looprpc.Disqualified.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getChannelId();
-  if (f !== 0) {
-    writer.writeUint64(
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
       1,
       f
     );
@@ -5782,16 +6250,16 @@ proto.looprpc.Disqualified.serializeBinaryToWriter = function(message, writer) {
 
 /**
  * optional uint64 channel_id = 1;
- * @return {number}
+ * @return {string}
  */
 proto.looprpc.Disqualified.prototype.getChannelId = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, "0"));
 };
 
 
-/** @param {number} value */
+/** @param {string} value */
 proto.looprpc.Disqualified.prototype.setChannelId = function(value) {
-  jspb.Message.setProto3IntField(this, 1, value);
+  jspb.Message.setProto3StringIntField(this, 1, value);
 };
 
 

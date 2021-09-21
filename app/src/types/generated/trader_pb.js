@@ -8217,6 +8217,7 @@ proto.poolrpc.Lease.toObject = function(includeInstance, msg) {
     clearingRatePrice: jspb.Message.getFieldWithDefault(msg, 8, "0"),
     orderFixedRate: jspb.Message.getFieldWithDefault(msg, 9, "0"),
     orderNonce: msg.getOrderNonce_asB64(),
+    matchedOrderNonce: msg.getMatchedOrderNonce_asB64(),
     purchased: jspb.Message.getFieldWithDefault(msg, 11, false),
     channelRemoteNodeKey: msg.getChannelRemoteNodeKey_asB64(),
     channelNodeTier: jspb.Message.getFieldWithDefault(msg, 13, 0),
@@ -8298,6 +8299,10 @@ proto.poolrpc.Lease.deserializeBinaryFromReader = function(msg, reader) {
     case 10:
       var value = /** @type {!Uint8Array} */ (reader.readBytes());
       msg.setOrderNonce(value);
+      break;
+    case 16:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setMatchedOrderNonce(value);
       break;
     case 11:
       var value = /** @type {boolean} */ (reader.readBool());
@@ -8416,6 +8421,13 @@ proto.poolrpc.Lease.serializeBinaryToWriter = function(message, writer) {
   if (f.length > 0) {
     writer.writeBytes(
       10,
+      f
+    );
+  }
+  f = message.getMatchedOrderNonce_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      16,
       f
     );
   }
@@ -8643,6 +8655,45 @@ proto.poolrpc.Lease.prototype.getOrderNonce_asU8 = function() {
 /** @param {!(string|Uint8Array)} value */
 proto.poolrpc.Lease.prototype.setOrderNonce = function(value) {
   jspb.Message.setProto3BytesField(this, 10, value);
+};
+
+
+/**
+ * optional bytes matched_order_nonce = 16;
+ * @return {!(string|Uint8Array)}
+ */
+proto.poolrpc.Lease.prototype.getMatchedOrderNonce = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 16, ""));
+};
+
+
+/**
+ * optional bytes matched_order_nonce = 16;
+ * This is a type-conversion wrapper around `getMatchedOrderNonce()`
+ * @return {string}
+ */
+proto.poolrpc.Lease.prototype.getMatchedOrderNonce_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getMatchedOrderNonce()));
+};
+
+
+/**
+ * optional bytes matched_order_nonce = 16;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getMatchedOrderNonce()`
+ * @return {!Uint8Array}
+ */
+proto.poolrpc.Lease.prototype.getMatchedOrderNonce_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getMatchedOrderNonce()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.poolrpc.Lease.prototype.setMatchedOrderNonce = function(value) {
+  jspb.Message.setProto3BytesField(this, 16, value);
 };
 
 
