@@ -55,8 +55,6 @@ const filePatches = {
   common: 'looprpc: {}',
   trader: 'poolrpc: {}',
   'auctioneerrpc/auctioneer': 'poolrpc: {}',
-  'google/api/annotations': 'google: { api: {} }',
-  'google/api/http': 'google: { api: {} }',
 };
 
 /**
