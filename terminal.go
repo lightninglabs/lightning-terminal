@@ -17,7 +17,7 @@ import (
 	"sync"
 	"time"
 
-	restProxy "github.com/grpc-ecosystem/grpc-gateway/runtime"
+	restProxy "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jessevdk/go-flags"
 	"github.com/lightninglabs/faraday/frdrpc"
 	"github.com/lightninglabs/lndclient"
@@ -42,6 +42,7 @@ import (
 	"github.com/lightningnetwork/lnd/signal"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/protobuf/encoding/protojson"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 )
 
@@ -314,7 +315,8 @@ func (g *LightningTerminal) startSubservers() error {
 		// subservers have the same requirements.
 		var err error
 		basicClient, err = lndclient.NewBasicClient(
-			host, tlsPath, path.Dir(macPath), string(network),
+			host, tlsPath, path.Dir(macPath), "", "",
+			string(network), false, false,
 			lndclient.MacFilename(path.Base(macPath)),
 		)
 		return err
@@ -750,8 +752,10 @@ func (g *LightningTerminal) createRESTProxy() error {
 	// that the marshaler prints all values, even if they are falsey.
 	customMarshalerOption := restProxy.WithMarshalerOption(
 		restProxy.MIMEWildcard, &restProxy.JSONPb{
-			OrigName:     true,
-			EmitDefaults: true,
+			MarshalOptions: protojson.MarshalOptions{
+				UseProtoNames:   true,
+				EmitUnpopulated: true,
+			},
 		},
 	)
 
@@ -901,7 +905,8 @@ func (g *LightningTerminal) showStartupInfo() error {
 		// alias. But the wallet might be locked.
 		host, network, tlsPath, macPath := g.cfg.lndConnectParams()
 		basicClient, err := lndclient.NewBasicClient(
-			host, tlsPath, path.Dir(macPath), string(network),
+			host, tlsPath, path.Dir(macPath), "", "",
+			string(network), false, false,
 			lndclient.MacFilename(path.Base(macPath)),
 		)
 		if err != nil {

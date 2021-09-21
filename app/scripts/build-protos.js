@@ -21,7 +21,7 @@ const protoSources = async () => {
   const goModPath = join(appPath, '..', 'go.mod');
   const goModSource = (await fs.readFile(goModPath)).toString();
 
-  const lndVersion = goModSource.match(LND_VERSION_PATTERN);
+  const lndVersion = ['', '8d8db527237e0cc897398ebea8b296638c55d946']; // TODO: goModSource.match(LND_VERSION_PATTERN);
   if (!lndVersion || lndVersion.length !== 2) {
     throw new Error(`go.mod did not match pattern ${LND_VERSION_PATTERN}`);
   }
@@ -40,8 +40,9 @@ const protoSources = async () => {
     `Found:\n LND ${lndVersion[1]}\n Loop ${loopVersion[1]}\n Pool ${poolVersion[1]}`,
   );
   return {
-    lnd: `lightningnetwork/lnd/${lndVersion[1]}/lnrpc/rpc.proto`,
+    lnd: `lightningnetwork/lnd/${lndVersion[1]}/lnrpc/lightning.proto`,
     loop: `lightninglabs/loop/${loopVersion[1]}/looprpc/client.proto`,
+    common: `lightninglabs/loop/${loopVersion[1]}/looprpc/common.proto`,
     trader: `lightninglabs/pool/${poolVersion[1]}/poolrpc/trader.proto`,
     'auctioneerrpc/auctioneer': `lightninglabs/pool/${poolVersion[1]}/auctioneerrpc/auctioneer.proto`,
   };
@@ -51,6 +52,7 @@ const protoSources = async () => {
 const filePatches = {
   lnd: 'lnrpc: {}',
   loop: 'looprpc: {}',
+  common: 'looprpc: {}',
   trader: 'poolrpc: {}',
   'auctioneerrpc/auctioneer': 'poolrpc: {}',
   'google/api/annotations': 'google: { api: {} }',

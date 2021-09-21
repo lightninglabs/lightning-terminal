@@ -211,6 +211,15 @@ type LightningOpenChannel = {
   readonly responseType: typeof lnd_pb.OpenStatusUpdate;
 };
 
+type LightningBatchOpenChannel = {
+  readonly methodName: string;
+  readonly service: typeof Lightning;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof lnd_pb.BatchOpenChannelRequest;
+  readonly responseType: typeof lnd_pb.BatchOpenChannelResponse;
+};
+
 type LightningFundingStateStep = {
   readonly methodName: string;
   readonly service: typeof Lightning;
@@ -335,6 +344,15 @@ type LightningListPayments = {
   readonly responseStream: false;
   readonly requestType: typeof lnd_pb.ListPaymentsRequest;
   readonly responseType: typeof lnd_pb.ListPaymentsResponse;
+};
+
+type LightningDeletePayment = {
+  readonly methodName: string;
+  readonly service: typeof Lightning;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof lnd_pb.DeletePaymentRequest;
+  readonly responseType: typeof lnd_pb.DeletePaymentResponse;
 };
 
 type LightningDeleteAllPayments = {
@@ -535,6 +553,24 @@ type LightningListPermissions = {
   readonly responseType: typeof lnd_pb.ListPermissionsResponse;
 };
 
+type LightningCheckMacaroonPermissions = {
+  readonly methodName: string;
+  readonly service: typeof Lightning;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof lnd_pb.CheckMacPermRequest;
+  readonly responseType: typeof lnd_pb.CheckMacPermResponse;
+};
+
+type LightningRegisterRPCMiddleware = {
+  readonly methodName: string;
+  readonly service: typeof Lightning;
+  readonly requestStream: true;
+  readonly responseStream: true;
+  readonly requestType: typeof lnd_pb.RPCMiddlewareResponse;
+  readonly responseType: typeof lnd_pb.RPCMiddlewareRequest;
+};
+
 export class Lightning {
   static readonly serviceName: string;
   static readonly WalletBalance: LightningWalletBalance;
@@ -560,6 +596,7 @@ export class Lightning {
   static readonly ClosedChannels: LightningClosedChannels;
   static readonly OpenChannelSync: LightningOpenChannelSync;
   static readonly OpenChannel: LightningOpenChannel;
+  static readonly BatchOpenChannel: LightningBatchOpenChannel;
   static readonly FundingStateStep: LightningFundingStateStep;
   static readonly ChannelAcceptor: LightningChannelAcceptor;
   static readonly CloseChannel: LightningCloseChannel;
@@ -574,6 +611,7 @@ export class Lightning {
   static readonly SubscribeInvoices: LightningSubscribeInvoices;
   static readonly DecodePayReq: LightningDecodePayReq;
   static readonly ListPayments: LightningListPayments;
+  static readonly DeletePayment: LightningDeletePayment;
   static readonly DeleteAllPayments: LightningDeleteAllPayments;
   static readonly DescribeGraph: LightningDescribeGraph;
   static readonly GetNodeMetrics: LightningGetNodeMetrics;
@@ -596,6 +634,8 @@ export class Lightning {
   static readonly ListMacaroonIDs: LightningListMacaroonIDs;
   static readonly DeleteMacaroonID: LightningDeleteMacaroonID;
   static readonly ListPermissions: LightningListPermissions;
+  static readonly CheckMacaroonPermissions: LightningCheckMacaroonPermissions;
+  static readonly RegisterRPCMiddleware: LightningRegisterRPCMiddleware;
 }
 
 export type ServiceError = { message: string, code: number; metadata: grpc.Metadata }
@@ -805,6 +845,15 @@ export class LightningClient {
     callback: (error: ServiceError|null, responseMessage: lnd_pb.ChannelPoint|null) => void
   ): UnaryResponse;
   openChannel(requestMessage: lnd_pb.OpenChannelRequest, metadata?: grpc.Metadata): ResponseStream<lnd_pb.OpenStatusUpdate>;
+  batchOpenChannel(
+    requestMessage: lnd_pb.BatchOpenChannelRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: lnd_pb.BatchOpenChannelResponse|null) => void
+  ): UnaryResponse;
+  batchOpenChannel(
+    requestMessage: lnd_pb.BatchOpenChannelRequest,
+    callback: (error: ServiceError|null, responseMessage: lnd_pb.BatchOpenChannelResponse|null) => void
+  ): UnaryResponse;
   fundingStateStep(
     requestMessage: lnd_pb.FundingTransitionMsg,
     metadata: grpc.Metadata,
@@ -890,6 +939,15 @@ export class LightningClient {
   listPayments(
     requestMessage: lnd_pb.ListPaymentsRequest,
     callback: (error: ServiceError|null, responseMessage: lnd_pb.ListPaymentsResponse|null) => void
+  ): UnaryResponse;
+  deletePayment(
+    requestMessage: lnd_pb.DeletePaymentRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: lnd_pb.DeletePaymentResponse|null) => void
+  ): UnaryResponse;
+  deletePayment(
+    requestMessage: lnd_pb.DeletePaymentRequest,
+    callback: (error: ServiceError|null, responseMessage: lnd_pb.DeletePaymentResponse|null) => void
   ): UnaryResponse;
   deleteAllPayments(
     requestMessage: lnd_pb.DeleteAllPaymentsRequest,
@@ -1073,5 +1131,15 @@ export class LightningClient {
     requestMessage: lnd_pb.ListPermissionsRequest,
     callback: (error: ServiceError|null, responseMessage: lnd_pb.ListPermissionsResponse|null) => void
   ): UnaryResponse;
+  checkMacaroonPermissions(
+    requestMessage: lnd_pb.CheckMacPermRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: lnd_pb.CheckMacPermResponse|null) => void
+  ): UnaryResponse;
+  checkMacaroonPermissions(
+    requestMessage: lnd_pb.CheckMacPermRequest,
+    callback: (error: ServiceError|null, responseMessage: lnd_pb.CheckMacPermResponse|null) => void
+  ): UnaryResponse;
+  registerRPCMiddleware(metadata?: grpc.Metadata): BidirectionalStream<lnd_pb.RPCMiddlewareResponse, lnd_pb.RPCMiddlewareRequest>;
 }
 

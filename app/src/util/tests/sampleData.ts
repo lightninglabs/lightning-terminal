@@ -247,6 +247,11 @@ export const lndChannelEvent: Required<LND.ChannelEventUpdate.AsObject> = {
     txid: '1f765f45f2a6d33837a203e3fc911915c891e9b86f9c9d91a1931b92efdedf5b',
     outputIndex: 0,
   },
+  fullyResolvedChannel: {
+    fundingTxidBytes: txIdBytes,
+    fundingTxidStr: '',
+    outputIndex: outIndex,
+  },
 };
 
 export const lndTransaction: LND.Transaction.AsObject = {
@@ -711,6 +716,7 @@ export const poolLeases: POOL.LeasesResponse.AsObject = {
       clearingRatePrice: '4960',
       orderFixedRate: '4960',
       orderNonce: 'Iw842N6B77EGuZCy5oiBDRAvJrQoIrlsjPosuKevT9g=',
+      matchedOrderNonce: 'NWKpd8HC5zIWr4f2CRbLEVv+g9s5LeArnK9xREAZ2mY=',
       purchased: false,
       channelRemoteNodeKey: 'ArW+q/+aS+teUy/E6TgVgVZ2sQ9wX/YJBbwH6if4SuLA',
       channelNodeTier: 1,
@@ -728,6 +734,7 @@ export const poolLeases: POOL.LeasesResponse.AsObject = {
       clearingRatePrice: '4960',
       orderFixedRate: '4960',
       orderNonce: 'Iw842N6B77EGuZCy5oiBDRAvJrQoIrlsjPosuKevT9g=',
+      matchedOrderNonce: 'NWKpd8HC5zIWr4f2CRbLEVv+g9s5LeArnK9xREAZ2mY=',
       purchased: false,
       channelRemoteNodeKey: 'A9L6+xEwFa2vULND3YYfdoCQwHqlzE5UyLvvQ+gfapg+',
       channelNodeTier: 1,
@@ -745,6 +752,7 @@ export const poolLeases: POOL.LeasesResponse.AsObject = {
       clearingRatePrice: '4960',
       orderFixedRate: '4960',
       orderNonce: 'NWKpd8HC5zIWr4f2CRbLEVv+g9s5LeArnK9xREAZ2mY=',
+      matchedOrderNonce: 'Iw842N6B77EGuZCy5oiBDRAvJrQoIrlsjPosuKevT9g=',
       purchased: true,
       channelRemoteNodeKey: 'A9L6+xEwFa2vULND3YYfdoCQwHqlzE5UyLvvQ+gfapg+',
       channelNodeTier: 1,
@@ -762,6 +770,7 @@ export const poolLeases: POOL.LeasesResponse.AsObject = {
       clearingRatePrice: '4960',
       orderFixedRate: '4960',
       orderNonce: 'NWKpd8HC5zIWr4f2CRbLEVv+g9s5LeArnK9xREAZ2mY=',
+      matchedOrderNonce: 'Iw842N6B77EGuZCy5oiBDRAvJrQoIrlsjPosuKevT9g=',
       purchased: true,
       channelRemoteNodeKey: 'ArW+q/+aS+teUy/E6TgVgVZ2sQ9wX/YJBbwH6if4SuLA',
       channelNodeTier: 1,
@@ -779,6 +788,7 @@ export const poolLeases: POOL.LeasesResponse.AsObject = {
       clearingRatePrice: '2480',
       orderFixedRate: '2480',
       orderNonce: 'nRXHe7gMTmox7AXMW6yVYg9Lp4ZMNps6KRGQXH4PXu8=',
+      matchedOrderNonce: 'Iw842N6B77EGuZCy5oiBDRAvJrQoIrlsjPosuKevT9g=',
       purchased: true,
       channelRemoteNodeKey: 'A9L6+xEwFa2vULND3YYfdoCQwHqlzE5UyLvvQ+gfapg+',
       channelNodeTier: 1,
