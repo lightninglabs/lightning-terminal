@@ -26,9 +26,9 @@ func getSubserverPermissions() map[string][]bakery.Op {
 	return result
 }
 
-// getAllPermissions returns a merged map of lnd's and all subservers' macaroon
-// permissions.
-func getAllPermissions() map[string][]bakery.Op {
+// getAllMethodPermissions returns a merged map of lnd's and all subservers'
+// method macaroon permissions.
+func getAllMethodPermissions() map[string][]bakery.Op {
 	subserverPermissions := getSubserverPermissions()
 	lndPermissions := lnd.MainRPCServerPermissions()
 	mapSize := len(subserverPermissions) + len(lndPermissions)
@@ -40,6 +40,30 @@ func getAllPermissions() map[string][]bakery.Op {
 		result[key] = value
 	}
 	return result
+}
+
+// getAllPermissions retrieves all the permissions needed to bake a super
+// macaroon.
+func getAllPermissions() []bakery.Op {
+	readPerms, writePerms := lnd.GetAllPermissions()
+
+	permSlices := [][]bakery.Op{
+		readPerms, writePerms, frdrpc.AllPermissions,
+		loopd.AllPermissions, pool.AllPermissions,
+	}
+
+	var totalLen int
+	for _, size := range permSlices {
+		totalLen += len(size)
+	}
+
+	allPerms := make([]bakery.Op, totalLen)
+	var i int
+	for _, s := range permSlices {
+		i += copy(allPerms[i:], s)
+	}
+
+	return allPerms
 }
 
 // isLndURI returns true if the given URI belongs to an RPC of lnd.

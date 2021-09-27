@@ -2,10 +2,12 @@ package terminal
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -18,6 +20,7 @@ import (
 	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/test/bufconn"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 	"gopkg.in/macaroon.v2"
 )
@@ -125,6 +128,9 @@ type rpcProxy struct {
 	basicAuth string
 
 	macValidator macaroons.MacaroonValidator
+	superMac     string
+
+	bufListener *bufconn.Listener
 
 	lndConn     *grpc.ClientConn
 	faradayConn *grpc.ClientConn
@@ -138,10 +144,17 @@ type rpcProxy struct {
 // Start creates initial connection to lnd.
 func (p *rpcProxy) Start() error {
 	var err error
+	var buf bool
 
 	// Setup the connection to lnd.
 	host, _, tlsPath, _ := p.cfg.lndConnectParams()
-	p.lndConn, err = dialBackend("lnd", host, tlsPath)
+
+	if p.cfg.LndMode == ModeIntegrated {
+		// We use a bufconn to connect to lnd in integrated mode.
+		buf = true
+	}
+
+	p.lndConn, err = p.dialBackend("lnd", host, tlsPath, buf)
 	if err != nil {
 		return fmt.Errorf("could not dial lnd: %v", err)
 	}
@@ -149,11 +162,12 @@ func (p *rpcProxy) Start() error {
 	// Make sure we can connect to all the daemons that are configured to be
 	// running in remote mode.
 	if p.cfg.faradayRemote {
-		p.faradayConn, err = dialBackend(
+		p.faradayConn, err = p.dialBackend(
 			"faraday", p.cfg.Remote.Faraday.RPCServer,
 			lncfg.CleanAndExpandPath(
 				p.cfg.Remote.Faraday.TLSCertPath,
 			),
+			false,
 		)
 		if err != nil {
 			return fmt.Errorf("could not dial remote faraday: %v",
@@ -162,9 +176,10 @@ func (p *rpcProxy) Start() error {
 	}
 
 	if p.cfg.loopRemote {
-		p.loopConn, err = dialBackend(
+		p.loopConn, err = p.dialBackend(
 			"loop", p.cfg.Remote.Loop.RPCServer,
 			lncfg.CleanAndExpandPath(p.cfg.Remote.Loop.TLSCertPath),
+			false,
 		)
 		if err != nil {
 			return fmt.Errorf("could not dial remote loop: %v", err)
@@ -172,9 +187,10 @@ func (p *rpcProxy) Start() error {
 	}
 
 	if p.cfg.poolRemote {
-		p.poolConn, err = dialBackend(
+		p.poolConn, err = p.dialBackend(
 			"pool", p.cfg.Remote.Pool.RPCServer,
 			lncfg.CleanAndExpandPath(p.cfg.Remote.Pool.TLSCertPath),
+			false,
 		)
 		if err != nil {
 			return fmt.Errorf("could not dial remote pool: %v", err)
@@ -421,19 +437,46 @@ func (p *rpcProxy) basicAuthToMacaroon(ctx context.Context,
 			requestURI)
 	}
 
-	// Now that we know which macaroon to load, do it and attach it to the
-	// request context.
-	macBytes, err := readMacaroon(lncfg.CleanAndExpandPath(macPath))
-	if err != nil {
-		return ctx, fmt.Errorf("error reading macaroon: %v", err)
+	var macData string
+
+	// If we have the macaroon set already, we don't need to load it from a
+	// file.
+	if p.superMac == "" {
+		// Now that we know which macaroon to load, do it and attach it to the
+		// request context.
+		macBytes, err := p.readMacaroon(lncfg.CleanAndExpandPath(macPath))
+		if err != nil {
+			return ctx, fmt.Errorf("error reading macaroon: %v", err)
+		}
+
+		macData = hex.EncodeToString(macBytes)
+	} else {
+		macData = p.superMac
 	}
-	md.Set(HeaderMacaroon, hex.EncodeToString(macBytes))
+
+	md.Set(HeaderMacaroon, macData)
 	return metadata.NewIncomingContext(ctx, md), nil
 }
 
 // dialBackend connects to a gRPC backend through the given address and uses the
-// given TLS certificate to authenticate the connection.
-func dialBackend(name, dialAddr, tlsCertPath string) (*grpc.ClientConn, error) {
+// given TLS certificate to authenticate the connection, if needed.
+func (p *rpcProxy) dialBackend(name, dialAddr, tlsCertPath string, buf bool) (
+	*grpc.ClientConn, error) {
+	// If we're in integrated mode, we can use a bufconn to connect to lnd
+	// instead.
+	if p.cfg.LndMode == ModeIntegrated && name == "lnd" && buf == true {
+		tlsConfig := credentials.NewTLS(&tls.Config{
+			InsecureSkipVerify: true,
+		})
+		conn, err := grpc.Dial("localhost", grpc.WithContextDialer(
+			func(context.Context, string) (net.Conn, error) {
+				return p.bufListener.Dial()
+			},
+		), grpc.WithTransportCredentials(tlsConfig))
+
+		return conn, err
+	}
+
 	var opts []grpc.DialOption
 	tlsConfig, err := credentials.NewClientTLSFromFile(tlsCertPath, "")
 	if err != nil {
@@ -466,16 +509,17 @@ func dialBackend(name, dialAddr, tlsCertPath string) (*grpc.ClientConn, error) {
 
 // readMacaroon tries to read the macaroon file at the specified path and create
 // gRPC dial options from it.
-func readMacaroon(macPath string) ([]byte, error) {
+func (p *rpcProxy) readMacaroon(macPath string) ([]byte, error) {
 	// Load the specified macaroon file.
 	macBytes, err := ioutil.ReadFile(macPath)
 	if err != nil {
-		return nil, fmt.Errorf("unable to read macaroon path : %v", err)
+		return nil, fmt.Errorf("unable to read macaroon path:"+
+			" %v", err)
 	}
 
 	// Make sure it actually is a macaroon by parsing it.
 	mac := &macaroon.Macaroon{}
-	if err = mac.UnmarshalBinary(macBytes); err != nil {
+	if err := mac.UnmarshalBinary(macBytes); err != nil {
 		return nil, fmt.Errorf("unable to decode macaroon: %v", err)
 	}
 

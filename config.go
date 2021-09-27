@@ -152,6 +152,8 @@ type Config struct {
 	LndMode string      `long:"lnd-mode" description:"The mode to run lnd in, either 'remote' (default) or 'integrated'. 'integrated' means lnd is started alongside the UI and everything is stored in lnd's main data directory, configure everything by using the --lnd.* flags. 'remote' means the UI connects to an existing lnd node and acts as a proxy for gRPC calls to it. In the remote node LiT creates its own directory for log and configuration files, configure everything using the --remote.* flags." choice:"integrated" choice:"remote"`
 	Lnd     *lnd.Config `group:"Integrated lnd (use when lnd-mode=integrated)" namespace:"lnd"`
 
+	Macaroon string `long:"macaroon" description:"The macaroon passed in from lnd in integrated mode."`
+
 	FaradayMode string          `long:"faraday-mode" description:"The mode to run faraday in, either 'integrated' (default) or 'remote'. 'integrated' means faraday is started alongside the UI and everything is stored in faraday's main data directory, configure everything by using the --faraday.* flags. 'remote' means the UI connects to an existing faraday node and acts as a proxy for gRPC calls to it." choice:"integrated" choice:"remote"`
 	Faraday     *faraday.Config `group:"Integrated faraday options (use when faraday-mode=integrated)" namespace:"faraday"`
 
@@ -243,7 +245,7 @@ func (c *Config) lndConnectParams() (string, lndclient.Network, string,
 	}
 
 	return lndDialAddr, lndclient.Network(c.Network),
-		c.Lnd.TLSCertPath, c.Lnd.AdminMacPath
+		"", c.Macaroon
 }
 
 // defaultConfig returns a configuration struct with all default values set.

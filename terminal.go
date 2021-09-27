@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"embed"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -42,6 +43,8 @@ import (
 	"github.com/lightningnetwork/lnd/signal"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/test/bufconn"
 	"google.golang.org/protobuf/encoding/protojson"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 )
@@ -154,7 +157,7 @@ func (g *LightningTerminal) Run() error {
 	g.faradayServer = frdrpc.NewRPCServer(g.cfg.faradayRpcConfig)
 	g.loopServer = loopd.New(g.cfg.Loop, nil)
 	g.poolServer = pool.NewServer(g.cfg.Pool)
-	g.rpcProxy = newRpcProxy(g.cfg, g, getAllPermissions())
+	g.rpcProxy = newRpcProxy(g.cfg, g, getAllMethodPermissions())
 
 	// Overwrite the loop and pool daemon's user agent name so it sends
 	// "litd" instead of "loopd" and "poold" respectively.
@@ -164,18 +167,33 @@ func (g *LightningTerminal) Run() error {
 	// Call the "real" main in a nested manner so the defers will properly
 	// be executed in the case of a graceful shutdown.
 	readyChan := make(chan struct{})
+	bufReadyChan := make(chan struct{})
 	unlockChan := make(chan struct{})
+	macChan := make(chan []byte, 1)
+	bufRpcListener := bufconn.Listen(100)
+	g.rpcProxy.bufListener = bufRpcListener
+
 	if g.cfg.LndMode == ModeIntegrated {
 		g.wg.Add(1)
 		go func() {
 			defer g.wg.Done()
 
+			regListener := &lnd.ListenerWithSignal{
+				Listener: &onDemandListener{
+					addr: g.cfg.Lnd.RPCListeners[0],
+				},
+				Ready: readyChan,
+			}
+
+			bufListener := &lnd.ListenerWithSignal{
+				Listener: bufRpcListener,
+				Ready:    bufReadyChan,
+				MacChan:  macChan,
+			}
+
 			lisCfg := lnd.ListenerCfg{
-				RPCListener: &lnd.ListenerWithSignal{
-					Listener: &onDemandListener{
-						addr: g.cfg.Lnd.RPCListeners[0],
-					},
-					Ready: readyChan,
+				RPCListeners: []*lnd.ListenerWithSignal{
+					regListener, bufListener,
 				},
 				ExternalRPCSubserverCfg: &lnd.RPCSubserverConfig{
 					Permissions:       getSubserverPermissions(),
@@ -201,6 +219,7 @@ func (g *LightningTerminal) Run() error {
 	} else {
 		close(unlockChan)
 		close(readyChan)
+		close(bufReadyChan)
 
 		_ = g.RegisterGrpcSubserver(g.rpcProxy.grpcServer)
 	}
@@ -269,6 +288,13 @@ func (g *LightningTerminal) Run() error {
 		return errors.New("shutting down")
 	}
 
+	// If we're in integrated mode, we'll need to wait for lnd to send the
+	// macaroon after unlock before going any further.
+	if g.cfg.LndMode == ModeIntegrated {
+		macBytes := <-macChan
+		g.cfg.Macaroon = hex.EncodeToString(macBytes)
+	}
+
 	err = g.startSubservers()
 	if err != nil {
 		log.Errorf("Could not start subservers: %v", err)
@@ -301,8 +327,27 @@ func (g *LightningTerminal) Run() error {
 // embedded daemons as external subservers that hook into the same gRPC and REST
 // servers that lnd started.
 func (g *LightningTerminal) startSubservers() error {
-	var basicClient lnrpc.LightningClient
-	host, network, tlsPath, macPath := g.cfg.lndConnectParams()
+	var (
+		basicClient lnrpc.LightningClient
+		host        string
+		network     lndclient.Network
+		tlsPath     string
+		macPath     string
+		macData     string
+		insecure    bool
+	)
+
+	// If we're in integrated mode, we can retrieve the macaroon string
+	// from lnd directly, rather than grabbing it from disk.
+	if g.cfg.LndMode == ModeIntegrated {
+		host, network, tlsPath, macData = g.cfg.lndConnectParams()
+
+		// Set to true in integrated mode, since we will not require tls when
+		// communicating with lnd via a bufconn.
+		insecure = true
+	} else {
+		host, network, tlsPath, macPath = g.cfg.lndConnectParams()
+	}
 
 	// The main RPC listener of lnd might need some time to start, it could
 	// be that we run into a connection refused a few times. We use the
@@ -315,8 +360,8 @@ func (g *LightningTerminal) startSubservers() error {
 		// subservers have the same requirements.
 		var err error
 		basicClient, err = lndclient.NewBasicClient(
-			host, tlsPath, path.Dir(macPath), "", "",
-			string(network), false, false,
+			host, tlsPath, path.Dir(macPath), "", macData,
+			string(network), insecure, false,
 			lndclient.MacFilename(path.Base(macPath)),
 		)
 		return err
@@ -354,7 +399,9 @@ func (g *LightningTerminal) startSubservers() error {
 			LndAddress:            host,
 			Network:               network,
 			TLSPath:               tlsPath,
+			Insecure:              insecure,
 			CustomMacaroonPath:    macPath,
+			CustomMacaroonHex:     macData,
 			BlockUntilChainSynced: true,
 			BlockUntilUnlocked:    true,
 			CallerCtx:             ctxc,
@@ -364,10 +411,43 @@ func (g *LightningTerminal) startSubservers() error {
 		return err
 	}
 
+	// If we're in integrated mode, we won't create macaroon files in any
+	// of the subserver daemons.
+	noMacaroonCreation := g.cfg.LndMode == ModeIntegrated
+
+	if g.cfg.LndMode == ModeIntegrated {
+		// Create a super macaroon that can be used to control lnd,
+		// faraday, loop, and pool, all at the same time.
+		bakePerms := getAllPermissions()
+
+		grpcPerms := make([]*lnrpc.MacaroonPermission, len(bakePerms))
+		for idx, perm := range bakePerms {
+			grpcPerms[idx] = &lnrpc.MacaroonPermission{
+				Entity: perm.Entity,
+				Action: perm.Action,
+			}
+		}
+
+		req := &lnrpc.BakeMacaroonRequest{
+			Permissions:              grpcPerms,
+			AllowExternalPermissions: true,
+		}
+
+		ctx := context.Background()
+		res, err := basicClient.BakeMacaroon(ctx, req)
+		if err != nil {
+			return err
+		}
+
+		g.rpcProxy.superMac = res.Macaroon
+	}
+
 	// Both connection types are ready now, let's start our subservers if
 	// they should be started locally as an integrated service.
 	if !g.cfg.faradayRemote {
-		err = g.faradayServer.StartAsSubserver(g.lndClient.LndServices)
+		err = g.faradayServer.StartAsSubserver(
+			g.lndClient.LndServices, noMacaroonCreation,
+		)
 		if err != nil {
 			return err
 		}
@@ -375,7 +455,9 @@ func (g *LightningTerminal) startSubservers() error {
 	}
 
 	if !g.cfg.loopRemote {
-		err = g.loopServer.StartAsSubserver(g.lndClient)
+		err = g.loopServer.StartAsSubserver(
+			g.lndClient, noMacaroonCreation,
+		)
 		if err != nil {
 			return err
 		}
@@ -383,7 +465,9 @@ func (g *LightningTerminal) startSubservers() error {
 	}
 
 	if !g.cfg.poolRemote {
-		err = g.poolServer.StartAsSubserver(basicClient, g.lndClient)
+		err = g.poolServer.StartAsSubserver(
+			basicClient, g.lndClient, noMacaroonCreation,
+		)
 		if err != nil {
 			return err
 		}
@@ -450,6 +534,44 @@ func (g *LightningTerminal) RegisterRestSubserver(ctx context.Context,
 // met. A non-nil error is returned if any of the checks fail.
 func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 	requiredPermissions []bakery.Op, fullMethod string) error {
+
+	// If we're in integrated mode, we're using a super macaroon, which we
+	// can just pass straight to lnd for validation.
+	if g.cfg.LndMode == ModeIntegrated && g.lndClient != nil {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return fmt.Errorf("unable to get metadata from context")
+		}
+		if len(md["macaroon"]) != 1 {
+			return fmt.Errorf("expected 1 macaroon, got %d",
+				len(md["macaroon"]))
+		}
+
+		macBytes, err := hex.DecodeString(md["macaroon"][0])
+		if err != nil {
+			return err
+		}
+
+		// Convert permissions to the form that lndClient will accept.
+		permissions := make([]lndclient.MacaroonPermission, 0)
+		for _, perm := range requiredPermissions {
+			newPerm := lndclient.MacaroonPermission{
+				Entity: perm.Entity,
+				Action: perm.Action,
+			}
+			permissions = append(permissions, newPerm)
+		}
+
+		res, err := g.lndClient.Client.CheckMacaroonPermissions(
+			ctx, macBytes, permissions, fullMethod,
+		)
+		if !res {
+			return fmt.Errorf("macaroon is not valid, returned %v",
+				res)
+		}
+
+		return err
+	}
 
 	// Validate all macaroons for services that are running in the local
 	// process. Calls that we proxy to a remote host don't need to be
