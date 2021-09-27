@@ -26,9 +26,9 @@ func getSubserverPermissions() map[string][]bakery.Op {
 	return result
 }
 
-// getAllPermissions returns a merged map of lnd's and all subservers' macaroon
-// permissions.
-func getAllPermissions() map[string][]bakery.Op {
+// getAllMethodPermissions returns a merged map of lnd's and all subservers'
+// method macaroon permissions.
+func getAllMethodPermissions() map[string][]bakery.Op {
 	subserverPermissions := getSubserverPermissions()
 	lndPermissions := lnd.MainRPCServerPermissions()
 	mapSize := len(subserverPermissions) + len(lndPermissions)
@@ -39,6 +39,35 @@ func getAllPermissions() map[string][]bakery.Op {
 	for key, value := range subserverPermissions {
 		result[key] = value
 	}
+	return result
+}
+
+// getAllPermissions retrieves all the permissions needed to bake a super
+// macaroon.
+func getAllPermissions() []bakery.Op {
+	dedupMap := make(map[string]map[string]bool)
+
+	for _, methodPerms := range getAllMethodPermissions() {
+		for _, methodPerm := range methodPerms {
+			if dedupMap[methodPerm.Entity] == nil {
+				dedupMap[methodPerm.Entity] = make(
+					map[string]bool,
+				)
+			}
+			dedupMap[methodPerm.Entity][methodPerm.Action] = true
+		}
+	}
+
+	result := make([]bakery.Op, 0, len(dedupMap))
+	for entity, actions := range dedupMap {
+		for action := range actions {
+			result = append(result, bakery.Op{
+				Entity: entity,
+				Action: action,
+			})
+		}
+	}
+
 	return result
 }
 

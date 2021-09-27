@@ -177,6 +177,11 @@ type Config struct {
 	faradayRemote bool
 	loopRemote    bool
 	poolRemote    bool
+
+	// lndAdminMacaroon is the admin macaroon that is given to us by lnd
+	// over an in-memory connection on startup. This is only set in
+	// integrated lnd mode.
+	lndAdminMacaroon []byte
 }
 
 // RemoteConfig holds the configuration parameters that are needed when running
@@ -219,7 +224,7 @@ type RemoteDaemonConfig struct {
 // lndConnectParams returns the connection parameters to connect to the local
 // lnd instance.
 func (c *Config) lndConnectParams() (string, lndclient.Network, string,
-	string) {
+	string, []byte) {
 
 	// In remote lnd mode, we just pass along what was configured in the
 	// remote section of the lnd config.
@@ -227,7 +232,8 @@ func (c *Config) lndConnectParams() (string, lndclient.Network, string,
 		return c.Remote.Lnd.RPCServer,
 			lndclient.Network(c.Network),
 			lncfg.CleanAndExpandPath(c.Remote.Lnd.TLSCertPath),
-			lncfg.CleanAndExpandPath(c.Remote.Lnd.MacaroonPath)
+			lncfg.CleanAndExpandPath(c.Remote.Lnd.MacaroonPath),
+			nil
 	}
 
 	// When we start lnd internally, we take the listen address as
@@ -248,8 +254,8 @@ func (c *Config) lndConnectParams() (string, lndclient.Network, string,
 		)
 	}
 
-	return lndDialAddr, lndclient.Network(c.Network),
-		c.Lnd.TLSCertPath, c.Lnd.AdminMacPath
+	return lndDialAddr, lndclient.Network(c.Network), "", "",
+		c.lndAdminMacaroon
 }
 
 // defaultConfig returns a configuration struct with all default values set.
