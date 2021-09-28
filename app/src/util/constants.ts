@@ -1,6 +1,9 @@
 /** estimated number of blocks mined per day */
 export const BLOCKS_PER_DAY = 144;
 
+/** A Date very far into the future */
+export const MAX_DATE = new Date(9999, 0, 1);
+
 /** the enumeration of unit supported in the app */
 export enum Unit {
   sats = 'sats',

@@ -2,11 +2,11 @@ import React, { useCallback, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
+import { MAX_DATE } from 'util/constants';
 import { useStore } from 'store';
 import { Button, Column, Row } from 'components/base';
 import FormField from 'components/common/FormField';
 import FormInput from 'components/common/FormInput';
-import FormInputNumber from 'components/common/FormInputNumber';
 
 const Styled = {
   Wrapper: styled.div``,
@@ -23,19 +23,16 @@ const AddSession: React.FC = () => {
   const { sessionStore } = useStore();
 
   const [label, setLabel] = useState('');
-  const [expiry, setExpiry] = useState(30);
   const [editing, setEditing] = useState(false);
 
   const toggleEditing = useCallback(() => setEditing(e => !e), []);
   const handleSubmit = useCallback(async () => {
-    const expDate = new Date(Date.now() + expiry * 24 * 60 * 60 * 1000);
-    const session = await sessionStore.addSession(label, expDate);
+    const session = await sessionStore.addSession(label, MAX_DATE);
     if (session) {
       setLabel('');
-      setExpiry(30);
       setEditing(false);
     }
-  }, [label, expiry]);
+  }, [label]);
 
   const { Wrapper, AddSection, ActionColumn } = Styled;
   if (!editing) {
@@ -49,18 +46,9 @@ const AddSession: React.FC = () => {
   return (
     <Wrapper>
       <Row>
-        <Column cols={4} className="offset-1">
+        <Column cols={6} className="offset-1">
           <FormField label={l('label')}>
             <FormInput value={label} onChange={setLabel} placeholder={l('labelHint')} />
-          </FormField>
-        </Column>
-        <Column cols={2}>
-          <FormField label={l('expiration')}>
-            <FormInputNumber
-              value={expiry}
-              onChange={setExpiry}
-              extra={l('common.days_plural')}
-            />
           </FormField>
         </Column>
         <ActionColumn className="">

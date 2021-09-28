@@ -92,8 +92,8 @@ export default class SettingsStore {
 
   /** specifies the sorting field and direction for the Lit session list */
   sessionSort: SortParams<Session> = {
-    field: 'expiry',
-    descending: true,
+    field: 'label',
+    descending: false,
   };
 
   /** the chosen language */

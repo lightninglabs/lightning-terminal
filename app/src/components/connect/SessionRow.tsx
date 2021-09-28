@@ -86,15 +86,6 @@ const RowHeader: React.FC = () => {
           {l('state')}
         </SortableHeader>
       </HeaderColumn>
-      <HeaderColumn right>
-        <SortableHeader<Session>
-          field="expiry"
-          sort={settingsStore.sessionSort}
-          onSort={settingsStore.setSessionSort}
-        >
-          {l('expiry')}
-        </SortableHeader>
-      </HeaderColumn>
       <ActionColumn />
     </HeaderRow>
   );
@@ -130,7 +121,6 @@ const SessionRow: React.FC<Props> = ({ session, style }) => {
       <Column cols={3}>{session.label}</Column>
       <Column>{session.typeLabel}</Column>
       <Column right>{session.stateLabel}</Column>
-      <Column right>{session.expiryLabel}</Column>
       <ActionColumn>
         <Tip overlay={l('revoke')}>
           <CloseIcon onClick={handleRevoke} />

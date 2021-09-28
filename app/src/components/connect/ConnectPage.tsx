@@ -13,18 +13,25 @@ const Styled = {
   Description: styled.div`
     margin: 60px;
   `,
+  Info: styled.div`
+    margin: 100px 60px;
+    color: ${props => props.theme.colors.gray};
+    text-align: center;
+    font-size: ${props => props.theme.sizes.s};
+  `,
 };
 
 const ConnectPage: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.connect.ConnectPage');
 
-  const { Wrapper, Description } = Styled;
+  const { Wrapper, Description, Info } = Styled;
   return (
     <Wrapper>
       <PageHeader title={l('pageTitle')} />
       <Description>{l('description')}</Description>
       <AddSession />
       <SessionList />
+      <Info>{l('info')}</Info>
     </Wrapper>
   );
 };
