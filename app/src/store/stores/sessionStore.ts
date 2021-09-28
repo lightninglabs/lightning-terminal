@@ -9,6 +9,7 @@ import {
 import * as LIT from 'types/generated/lit-sessions_pb';
 import { IS_PROD } from 'config';
 import copyToClipboard from 'copy-to-clipboard';
+import { MAX_DATE } from 'util/constants';
 import { hex } from 'util/strings';
 import { Store } from 'store';
 import { Session } from '../models';
@@ -70,6 +71,15 @@ export default class SessionStore {
 
         this._store.log.info('updated sessionStore.sessions', toJS(this.sessions));
       });
+
+      // Ensures that there is at least one session created
+      if (this.sortedSessions.length === 0) {
+        const count = values(this.sessions).filter(s =>
+          s.label.startsWith('Default Session'),
+        ).length;
+        const countText = count === 0 ? '' : `(${count})`;
+        await this.addSession(`Default Session ${countText}`, MAX_DATE);
+      }
     } catch (error) {
       this._store.appView.handleError(error, 'Unable to fetch sessions');
     }
