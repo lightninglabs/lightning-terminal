@@ -8,7 +8,7 @@ require (
 	github.com/improbable-eng/grpc-web v0.12.0
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/lightninglabs/faraday v0.2.6-alpha.0.20210921141539-6134fcb8f727
-	github.com/lightninglabs/lndclient v0.13.0-9
+	github.com/lightninglabs/lndclient v0.14.0-0
 	github.com/lightninglabs/loop v0.15.0-beta.0.20210921141505-4fb76c79442e
 	github.com/lightninglabs/pool v0.5.1-alpha.0.20210921141413-04d77fd502ec
 	github.com/lightningnetwork/lnd v0.13.0-beta.rc5.0.20210921132504-8d8db527237e
@@ -23,6 +23,14 @@ require (
 	gopkg.in/macaroon.v2 v2.1.0
 )
 
-go 1.16
+replace github.com/lightningnetwork/lnd => github.com/orbitalturtle/lnd v0.12.0-beta.rc6.0.20210925024443-b77f6b9c5429
+
+replace github.com/lightninglabs/pool => github.com/orbitalturtle/pool v0.4.4-alpha.0.20210924221022-7584bd9c4b5d
+
+replace github.com/lightninglabs/faraday => github.com/orbitalturtle/faraday v0.2.3-alpha.0.20210926063130-bb6060dc67fe
+
+replace github.com/lightninglabs/loop => github.com/orbitalturtle/loop v0.12.2-beta.0.20210927211637-7e694f01e26c
 
 replace github.com/lightninglabs/lndclient => github.com/guggero/lndclient v0.11.0-2.0.20210921141129-268bfb6c4797
+
+go 1.16
