@@ -10,12 +10,13 @@ require (
 	github.com/lightninglabs/faraday v0.2.6-alpha.0.20210618001847-0106012e5835
 	github.com/lightninglabs/lndclient v0.12.0-11
 	github.com/lightninglabs/loop v0.14.1-beta.0.20210618002526-df5924f25a33
-	github.com/lightninglabs/pool v0.5.0-alpha.0.20210618001313-dfb86d6568c4
-	github.com/lightningnetwork/lnd v0.13.0-beta
+	github.com/lightninglabs/pool v0.5.0-alpha.0.20211006210249-28626e33e1c3
+	github.com/lightningnetwork/lnd v0.13.3-beta
 	github.com/lightningnetwork/lnd/cert v1.0.3
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
 	github.com/mwitkow/grpc-proxy v0.0.0-20181017164139-0f1106ef9c76
 	github.com/prometheus/client_golang v1.5.1 // indirect
+	github.com/rakyll/statik v0.1.7
 	github.com/rs/cors v1.7.0 // indirect
 	golang.org/x/crypto v0.0.0-20200709230013-948cd5f35899
 	google.golang.org/grpc v1.29.1
