@@ -33,7 +33,7 @@ jobs:
       - name: Set env
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
 
-      - name: Build and push
+      - name: Build and push default image
         id: docker_build
         uses: lightninglabs/gh-actions/build-push-action@2021.01.25.00
         with:
@@ -42,5 +42,14 @@ jobs:
           tags: "${{ env.DOCKER_REPO }}/${{ env.DOCKER_IMAGE }}:${{ env.RELEASE_VERSION }}"
           build-args: checkout=${{ env.RELEASE_VERSION }}
 
+      - name: Build and push image with /lit path
+        id: docker_build2
+        uses: lightninglabs/gh-actions/build-push-action@2021.01.25.00
+        with:
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: "${{ env.DOCKER_REPO }}/${{ env.DOCKER_IMAGE }}:${{ env.RELEASE_VERSION }}-path-prefix"
+          build-args: checkout=${{ env.RELEASE_VERSION }} public_url=/lit
+
       - name: Image digest
-        run: echo ${{ steps.docker_build.outputs.digest }}
+        run: echo ${{ steps.docker_build.outputs.digest }} ${{ steps.docker_build2.outputs.digest }}
