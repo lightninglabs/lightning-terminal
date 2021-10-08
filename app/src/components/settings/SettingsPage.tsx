@@ -6,6 +6,7 @@ import BalanceSettings from './BalanceSettings';
 import ExplorerSettings from './ExplorerSettings';
 import GeneralSettings from './GeneralSettings';
 import UnitSettings from './UnitSettings';
+import { PUBLIC_URL } from '../../config';
 
 const Styled = {
   Wrapper: styled.div`
@@ -19,10 +20,10 @@ const SettingsPage: React.FC = () => {
   return (
     <Wrapper>
       <Switch>
-        <Route path="/settings" exact component={GeneralSettings} />
-        <Route path="/settings/unit" component={UnitSettings} />
-        <Route path="/settings/balance" component={BalanceSettings} />
-        <Route path="/settings/explorers" component={ExplorerSettings} />
+        <Route path={`${PUBLIC_URL}/settings`} exact component={GeneralSettings} />
+        <Route path={`${PUBLIC_URL}/settings/unit"`} component={UnitSettings} />
+        <Route path={`${PUBLIC_URL}/settings/balance`} component={BalanceSettings} />
+        <Route path={`${PUBLIC_URL}/settings/explorers`} component={ExplorerSettings} />
       </Switch>
     </Wrapper>
   );

@@ -5,6 +5,7 @@ import Big from 'big.js';
 import { AuthenticationError } from 'util/errors';
 import { prefixTranslation } from 'util/translate';
 import { Store } from 'store';
+import { PUBLIC_URL } from '../../config';
 
 const { l } = prefixTranslation('stores.appView');
 
@@ -28,7 +29,7 @@ export default class AppView {
   }
 
   get fullWidth() {
-    return this._store.router.location.pathname === '/pool';
+    return this._store.router.location.pathname === `${PUBLIC_URL}/pool`;
   }
 
   /** navigate to the specified route */
@@ -40,13 +41,13 @@ export default class AppView {
 
   /** Change to the Auth page */
   gotoAuth() {
-    this.goTo('/');
+    this.goTo(`${PUBLIC_URL}/`);
     this._store.log.info('Go to the Auth page');
   }
 
   /** Change to the Loop page */
   goToLoop() {
-    this.goTo('/loop');
+    this.goTo(`${PUBLIC_URL}/loop`);
     this._store.settingsStore.autoCollapseSidebar();
     if (!this._store.settingsStore.tourAutoShown) {
       this.showTour();
@@ -57,14 +58,14 @@ export default class AppView {
 
   /** Change to the History page */
   goToHistory() {
-    this.goTo('/history');
+    this.goTo(`${PUBLIC_URL}/history`);
     this._store.settingsStore.autoCollapseSidebar();
     this._store.log.info('Go to the History page');
   }
 
   /** Change to the Pool page */
   goToPool() {
-    this.goTo('/pool');
+    this.goTo(`${PUBLIC_URL}/pool`);
     // always collapse the sidebar to make room for the Pool sidebar
     this._store.settingsStore.sidebarVisible = false;
     this._store.log.info('Go to the Pool page');
@@ -72,7 +73,7 @@ export default class AppView {
 
   /** Change to the Settings page */
   goToSettings() {
-    this.goTo('/settings');
+    this.goTo(`${PUBLIC_URL}/settings`);
     this._store.settingsStore.autoCollapseSidebar();
     this._store.log.info('Go to the Settings page');
   }
@@ -163,7 +164,7 @@ export default class AppView {
   /** sets the selected setting to display */
   showSettings(name: SettingName) {
     const path = name === '' ? '' : `/${name}`;
-    this.goTo(`/settings${path}`);
+    this.goTo(`${PUBLIC_URL}/settings${path}`);
     this._store.log.info('Switch to Setting screen', name);
   }
 
