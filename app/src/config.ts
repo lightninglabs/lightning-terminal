@@ -7,6 +7,8 @@ export const IS_PROD = process.env.NODE_ENV === 'production';
 // flag to check if the app is running in a a test environment
 export const IS_TEST = process.env.NODE_ENV === 'test';
 
+export const PUBLIC_URL = process.env.PUBLIC_URL;
+
 // detect the host currently serving the app files
 const { protocol, hostname, port } = window.location;
 const host = `${protocol}//${hostname}:${port}`;

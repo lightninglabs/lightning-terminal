@@ -3,6 +3,7 @@ import { Route, Router, Switch } from 'react-router';
 import { useStore } from 'store';
 import Loading from 'components/common/Loading';
 import { Layout } from 'components/layout';
+import { PUBLIC_URL } from 'config';
 
 const LazyAuthPage = React.lazy(() => import('components/auth/AuthPage'));
 const LazyLoopPage = React.lazy(() => import('components/loop/LoopPage'));
@@ -12,20 +13,19 @@ const LazySettingsPage = React.lazy(() => import('components/settings/SettingsPa
 
 const Routes: React.FC = () => {
   const { router } = useStore();
-
   return (
     <Suspense fallback={<Loading delay={500} />}>
       <Router history={router.history}>
         <Switch>
-          <Route path="/" exact component={LazyAuthPage} />
+          <Route path={`${PUBLIC_URL}/`} exact component={LazyAuthPage} />
           <Route>
             <Layout>
               <Switch>
                 <Suspense fallback={<Loading delay={500} />}>
-                  <Route path="/loop" component={LazyLoopPage} />
-                  <Route path="/history" component={LazyHistoryPage} />
-                  <Route path="/pool" component={LazyPoolPage} />
-                  <Route path="/settings" component={LazySettingsPage} />
+                  <Route path={`${PUBLIC_URL}/loop`} component={LazyLoopPage} />
+                  <Route path={`${PUBLIC_URL}/history`} component={LazyHistoryPage} />
+                  <Route path={`${PUBLIC_URL}/pool`} component={LazyPoolPage} />
+                  <Route path={`${PUBLIC_URL}/settings`} component={LazySettingsPage} />
                 </Suspense>
               </Switch>
             </Layout>

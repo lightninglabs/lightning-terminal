@@ -4,6 +4,7 @@ import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Badge, HeaderFour } from 'components/base';
+import { PUBLIC_URL } from '../../config';
 
 const Styled = {
   NavHeader: styled(HeaderFour)`
@@ -52,7 +53,9 @@ const NavItem: React.FC<{
 }> = observer(({ page, preview, onClick }) => {
   const { l } = usePrefixedTranslation('cmps.layout.NavMenu');
   const { router } = useStore();
-  const className = router.location.pathname === `/${page}` ? 'active' : '';
+  const className = router.location.pathname.startsWith(`${PUBLIC_URL}/${page}`)
+    ? 'active'
+    : '';
 
   return (
     <Styled.NavItem className={className}>

@@ -29,6 +29,7 @@ import {
   RegisterSidecarView,
   RenewAccountView,
 } from './views';
+import { PUBLIC_URL } from '../config';
 
 /**
  * The store used to manage global app state
@@ -125,7 +126,7 @@ export class Store {
           // entering a password or from loading the credentials from storage.
           // only do this if the auth page is currently being viewed, otherwise
           // stay on the current page (ex: history, settings)
-          if (document.location.pathname === '/') {
+          if (document.location.pathname === `${PUBLIC_URL}/`) {
             runInAction(() => {
               this.appView.goToLoop();
             });
