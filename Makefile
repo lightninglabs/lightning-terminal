@@ -108,10 +108,12 @@ install: app-build go-install
 go-build:
 	@$(call print, "Building lightning-terminal.")
 	$(GOBUILD) -tags="$(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" -o litd-debug $(PKG)/cmd/litd
+	$(GOBUILD) -tags="$(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" -o litcli-debug $(PKG)/cmd/litcli
 
 go-install:
 	@$(call print, "Installing lightning-terminal.")
 	$(GOINSTALL) -tags="$(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" $(PKG)/cmd/litd
+	$(GOINSTALL) -tags="$(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" $(PKG)/cmd/litcli
 
 go-install-cli:
 	@$(call print, "Installing all CLI binaries.")

@@ -41,6 +41,7 @@ EXPOSE 8443 10009 9735
 
 # Copy the binaries and entrypoint from the builder image.
 COPY --from=golangbuilder /go/bin/litd /bin/
+COPY --from=golangbuilder /go/bin/litcli /bin/
 COPY --from=golangbuilder /go/bin/lncli /bin/
 COPY --from=golangbuilder /go/bin/frcli /bin/
 COPY --from=golangbuilder /go/bin/loop /bin/

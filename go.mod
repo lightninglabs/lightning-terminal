@@ -13,14 +13,17 @@ require (
 	github.com/lightninglabs/lndclient v0.14.0-5
 	github.com/lightninglabs/loop v0.15.1-beta
 	github.com/lightninglabs/pool v0.5.2-alpha
+	github.com/lightninglabs/protobuf-hex-display v1.4.3-hex-display
 	github.com/lightningnetwork/lnd v0.14.0-beta
 	github.com/lightningnetwork/lnd/cert v1.1.0
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
 	github.com/mwitkow/grpc-proxy v0.0.0-20181017164139-0f1106ef9c76
 	github.com/rs/cors v1.7.0 // indirect
 	github.com/stretchr/testify v1.7.0
+	github.com/urfave/cli v1.20.0
 	go.etcd.io/bbolt v1.3.6
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
+	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1
 	google.golang.org/grpc v1.39.0
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/macaroon-bakery.v2 v2.1.0
