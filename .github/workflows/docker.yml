@@ -49,7 +49,9 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: "${{ env.DOCKER_REPO }}/${{ env.DOCKER_IMAGE }}:${{ env.RELEASE_VERSION }}-path-prefix"
-          build-args: checkout=${{ env.RELEASE_VERSION }} public_url=/lit
+          build-args: |
+            checkout=${{ env.RELEASE_VERSION }}
+            public_url=/lit
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }} ${{ steps.docker_build2.outputs.digest }}
