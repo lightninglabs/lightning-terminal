@@ -6,6 +6,10 @@ FROM node:12.17.0-alpine as nodejsbuilder
 # master by default.
 ARG checkout="master"
 
+# The public URL the static files should be served under. This must be empty to
+# work for the root path (/).
+ARG public_url=""
+
 # There seem to be multiple problems when using yarn for a build inside of a
 # docker image:
 #   1. For building and installing node-gyp, python is required. This seems to
@@ -25,7 +29,7 @@ RUN apk add --no-cache --update alpine-sdk \
   && npm config set registry "http://registry.npmjs.org" \
   && yarn config set registry "http://registry.npmjs.org" \
   && yarn install --frozen-lockfile --network-timeout 1000000 \
-  && yarn build
+  && PUBLIC_URL=$public_url yarn build
 
 # The first stage is already done and all static assets should now be generated
 # in the app/build sub directory.
@@ -46,7 +50,7 @@ ENV GO111MODULE on
 RUN apk add --no-cache --update alpine-sdk \
     make \
   && cd /go/src/github.com/lightninglabs/lightning-terminal \
-  && make go-install \
+  && make go-install PUBLIC_URL=$public_url \
   && make go-install-cli
 
 # Start a new, final image to reduce size.

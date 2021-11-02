@@ -15,6 +15,7 @@ GOACC_BIN := $(GO_BIN)/go-acc
 
 COMMIT := $(shell git describe --abbrev=40 --dirty --tags)
 COMMIT_HASH := $(shell git rev-parse HEAD)
+PUBLIC_URL := 
 
 LOOP_COMMIT := $(shell cat go.mod | \
 		grep $(LOOP_PKG) | \
@@ -57,6 +58,7 @@ make_ldflags = $(2) -X $(LND_PKG)/build.Commit=lightning-terminal-$(COMMIT) \
 	-X $(LND_PKG)/build.CommitHash=$(COMMIT_HASH) \
 	-X $(LND_PKG)/build.GoVersion=$(GOVERSION) \
 	-X $(LND_PKG)/build.RawTags=$(shell echo $(1) | sed -e 's/ /,/g') \
+	-X $(PKG).appFilesPrefix=$(PUBLIC_URL) \
 	-X $(LOOP_PKG).Commit=$(LOOP_COMMIT) \
 	-X $(POOL_PKG).Commit=$(POOL_COMMIT)
 

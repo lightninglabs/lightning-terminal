@@ -74,6 +74,11 @@ var (
 	// we pass to the HTTP server.
 	appFilesDir = "app/build"
 
+	// appFilesPrefix is the path prefix the static assets of the UI are
+	// exposed under. This variable can be overwritten during build time if
+	// a different deployment path should be used.
+	appFilesPrefix = ""
+
 	// patternRESTRequest is the regular expression that matches all REST
 	// URIs that are currently used by lnd, faraday, loop and pool.
 	patternRESTRequest = regexp.MustCompile(`^/v\d/.*`)
@@ -971,8 +976,15 @@ type ClientRouteWrapper struct {
 // is no file extension, then assume this is a client side route and return the
 // contents of index.html
 func (i *ClientRouteWrapper) Open(name string) (http.File, error) {
-	ret, err := i.assets.Open(name)
-	if !os.IsNotExist(err) || filepath.Ext(name) != "" {
+	localName := name
+
+	// The file prefix can be overwritten during build time.
+	if appFilesPrefix != "" {
+		localName = strings.Replace(name, appFilesPrefix, "/", 1)
+	}
+	localName = strings.ReplaceAll(localName, "//", "/")
+	ret, err := i.assets.Open(localName)
+	if !os.IsNotExist(err) || filepath.Ext(localName) != "" {
 		return ret, err
 	}
 
