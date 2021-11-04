@@ -1182,6 +1182,11 @@ export class Lease extends jspb.Message {
   getOrderNonce_asB64(): string;
   setOrderNonce(value: Uint8Array | string): void;
 
+  getMatchedOrderNonce(): Uint8Array | string;
+  getMatchedOrderNonce_asU8(): Uint8Array;
+  getMatchedOrderNonce_asB64(): string;
+  setMatchedOrderNonce(value: Uint8Array | string): void;
+
   getPurchased(): boolean;
   setPurchased(value: boolean): void;
 
@@ -1221,6 +1226,7 @@ export namespace Lease {
     clearingRatePrice: string,
     orderFixedRate: string,
     orderNonce: Uint8Array | string,
+    matchedOrderNonce: Uint8Array | string,
     purchased: boolean,
     channelRemoteNodeKey: Uint8Array | string,
     channelNodeTier: auctioneerrpc_auctioneer_pb.NodeTierMap[keyof auctioneerrpc_auctioneer_pb.NodeTierMap],

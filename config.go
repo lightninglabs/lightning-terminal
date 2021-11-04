@@ -11,6 +11,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/btcsuite/btcutil"
 	"github.com/jessevdk/go-flags"
@@ -67,6 +68,11 @@ const (
 	defaultLndChainSubDir         = "chain"
 	defaultLndChain               = "bitcoin"
 	defaultLndMacaroon            = "admin.macaroon"
+
+	// DefaultAutogenValidity is the default validity of a self-signed
+	// certificate. The value corresponds to 14 months
+	// (14 months * 30 days * 24 hours).
+	DefaultAutogenValidity = 14 * 30 * 24 * time.Hour
 )
 
 var (
@@ -484,7 +490,9 @@ func loadConfigFile(preCfg *Config, usageMessage string,
 	// Next, load any additional configuration options from the file.
 	var configFileError error
 	cfg := preCfg
-	if err := flags.IniParse(configFilePath, cfg); err != nil {
+	fileParser := flags.NewParser(cfg, flags.Default)
+	err := flags.NewIniParser(fileParser).ParseFile(configFilePath)
+	if err != nil {
 		// If it's a parsing related error, then we'll return
 		// immediately, otherwise we can proceed as possibly the config
 		// file doesn't exist which is OK.
@@ -497,7 +505,8 @@ func loadConfigFile(preCfg *Config, usageMessage string,
 
 	// Finally, parse the remaining command line options again to ensure
 	// they take precedence.
-	if _, err := flags.Parse(cfg); err != nil {
+	flagParser := flags.NewParser(cfg, flags.Default)
+	if _, err := flagParser.Parse(); err != nil {
 		return nil, err
 	}
 
@@ -519,7 +528,8 @@ func loadConfigFile(preCfg *Config, usageMessage string,
 	case ModeIntegrated:
 		var err error
 		cfg.Lnd, err = lnd.ValidateConfig(
-			*cfg.Lnd, usageMessage, interceptor,
+			*cfg.Lnd, usageMessage, interceptor, fileParser,
+			flagParser,
 		)
 		if err != nil {
 			return nil, err
@@ -730,7 +740,7 @@ func buildTLSConfigForHttp2(config *Config) (*tls.Config, error) {
 			err := cert.GenCertPair(
 				defaultSelfSignedCertOrganization, tlsCertPath,
 				tlsKeyPath, nil, nil, false,
-				cert.DefaultAutogenValidity,
+				DefaultAutogenValidity,
 			)
 			if err != nil {
 				return nil, fmt.Errorf("failed creating "+

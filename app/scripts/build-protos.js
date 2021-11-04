@@ -11,7 +11,7 @@ const appPath = join(__dirname, '..');
  * Specify the pattern under which the project's version can be found in the
  * root directory's go.mod file.
  */
-const LND_VERSION_PATTERN = /^\tgithub\.com\/lightningnetwork\/lnd (v[\d.]+-beta)/ms;
+const LND_VERSION_PATTERN = /^\tgithub\.com\/lightningnetwork\/lnd (v[\d.]+-beta(?:\.rc\d)?)/ms;
 const LOOP_VERSION_PATTERN = /^\tgithub\.com\/lightninglabs\/loop (v[\d.]+-beta)/ms;
 const POOL_VERSION_PATTERN = /^\tgithub\.com\/lightninglabs\/pool (v[\d.]+-alpha)/ms;
 
@@ -40,8 +40,9 @@ const protoSources = async () => {
     `Found:\n LND ${lndVersion[1]}\n Loop ${loopVersion[1]}\n Pool ${poolVersion[1]}`,
   );
   return {
-    lnd: `lightningnetwork/lnd/${lndVersion[1]}/lnrpc/rpc.proto`,
+    lnd: `lightningnetwork/lnd/${lndVersion[1]}/lnrpc/lightning.proto`,
     loop: `lightninglabs/loop/${loopVersion[1]}/looprpc/client.proto`,
+    common: `lightninglabs/loop/${loopVersion[1]}/looprpc/common.proto`,
     trader: `lightninglabs/pool/${poolVersion[1]}/poolrpc/trader.proto`,
     'auctioneerrpc/auctioneer': `lightninglabs/pool/${poolVersion[1]}/auctioneerrpc/auctioneer.proto`,
   };
@@ -51,10 +52,9 @@ const protoSources = async () => {
 const filePatches = {
   lnd: 'lnrpc: {}',
   loop: 'looprpc: {}',
+  common: 'looprpc: {}',
   trader: 'poolrpc: {}',
   'auctioneerrpc/auctioneer': 'poolrpc: {}',
-  'google/api/annotations': 'google: { api: {} }',
-  'google/api/http': 'google: { api: {} }',
 };
 
 /**
