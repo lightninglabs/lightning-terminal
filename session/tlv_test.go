@@ -33,7 +33,8 @@ func TestSerializeDeserializeSession(t *testing.T) {
 	mac := createDummyMacaroon(t)
 
 	session, err := NewSession(
-		"this is a session", TypeMacaroonCustom, time.Now(),
+		"this is a session", TypeMacaroonCustom,
+		time.Date(99999, 1, 1, 0, 0, 0, 0, time.UTC),
 		"foo.bar.baz:1234", true,
 	)
 	require.NoError(t, err)
@@ -52,8 +53,7 @@ func TestSerializeDeserializeSession(t *testing.T) {
 	// a struct. So we need to compare the timestamp itself and then make
 	// sure the rest of the session is equal separately.
 	require.Equal(
-		t, session.Expiry.UnixNano(),
-		deserializedSession.Expiry.UnixNano(),
+		t, session.Expiry.Unix(), deserializedSession.Expiry.Unix(),
 	)
 	session.Expiry = time.Time{}
 	deserializedSession.Expiry = time.Time{}

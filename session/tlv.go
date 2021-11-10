@@ -35,7 +35,7 @@ func SerializeSession(w io.Writer, session *Session) error {
 		label         = []byte(session.Label)
 		state         = uint8(session.State)
 		typ           = uint8(session.Type)
-		expiry        = uint64(session.Expiry.UnixNano())
+		expiry        = uint64(session.Expiry.Unix())
 		serverAddr    = []byte(session.ServerAddr)
 		devServer     = uint8(0)
 		pairingSecret = session.PairingSecret[:]
@@ -128,7 +128,7 @@ func DeserializeSession(r io.Reader) (*Session, error) {
 	session.Label = string(label)
 	session.State = State(state)
 	session.Type = Type(typ)
-	session.Expiry = time.Unix(0, int64(expiry))
+	session.Expiry = time.Unix(int64(expiry), 0)
 	session.ServerAddr = string(serverAddr)
 	session.DevServer = devServer == 1
 
