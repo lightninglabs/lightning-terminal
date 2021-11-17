@@ -39,6 +39,11 @@ export default class SessionStore {
     return descending ? sessions.reverse() : sessions;
   }
 
+  /** indicates if there are more than one sessions active */
+  get hasMultiple() {
+    return this.sortedSessions.length > 1;
+  }
+
   /**
    * queries the LIT api to fetch the list of sessions and stores them
    * in the state
@@ -80,7 +85,7 @@ export default class SessionStore {
         const countText = count === 0 ? '' : `(${count})`;
         await this.addSession(`Default Session ${countText}`, MAX_DATE);
       }
-    } catch (error) {
+    } catch (error: any) {
       this._store.appView.handleError(error, 'Unable to fetch sessions');
     }
   }
@@ -113,9 +118,10 @@ export default class SessionStore {
       await this.fetchSessions();
 
       if (session) {
+        this.copyPhrase(session.label, session.pairingSecretMnemonic);
         return this.sessions.get(hex(session.localPublicKey));
       }
-    } catch (error) {
+    } catch (error: any) {
       this._store.appView.handleError(error, 'Unable to add session');
     }
   }
@@ -135,18 +141,30 @@ export default class SessionStore {
 
       // fetch all sessions to update the store's state
       await this.fetchSessions();
-    } catch (error) {
+    } catch (error: any) {
       this._store.appView.handleError(error, 'Unable to revoke the session');
     }
   }
 
   /**
    * Copies a pairing phrase to the clipboard
+   * @param label the session label
    * @param phrase the pairing phrase
    */
-  copyPhrase(phrase: string) {
+  copyPhrase(label: string, phrase: string) {
     copyToClipboard(phrase);
-    const msg = `Copied Pairing Phrase to clipboard`;
+    const msg = `Copied Pairing Phrase for '${label}' to clipboard`;
+    this._store.appView.notify(msg, '', 'success');
+  }
+
+  /**
+   * Copies a pairing phrase of the first session to the clipboard
+   */
+  copyFirstPhrase() {
+    if (this.sortedSessions.length === 0) return;
+    const { pairingSecretMnemonic, label } = this.sortedSessions[0];
+    copyToClipboard(pairingSecretMnemonic);
+    const msg = `Copied Pairing Phrase for '${label}' to clipboard`;
     this._store.appView.notify(msg, '', 'success');
   }
 }

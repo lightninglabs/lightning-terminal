@@ -48,9 +48,9 @@ const Styled = {
 
 const NavItem: React.FC<{
   page: string;
-  preview?: boolean;
+  badge?: string;
   onClick: () => void;
-}> = observer(({ page, preview, onClick }) => {
+}> = observer(({ page, badge, onClick }) => {
   const { l } = usePrefixedTranslation('cmps.layout.NavMenu');
   const { router } = useStore();
   const className = router.location.pathname.startsWith(`${PUBLIC_URL}/${page}`)
@@ -61,9 +61,9 @@ const NavItem: React.FC<{
     <Styled.NavItem className={className}>
       <span onClick={onClick}>
         {l(page)}
-        {preview && (
+        {badge && (
           <sup>
-            <Badge muted>{l('common.preview')}</Badge>
+            <Badge muted>{badge}</Badge>
           </sup>
         )}
       </span>
@@ -82,9 +82,9 @@ const NavMenu: React.FC = () => {
       <Nav>
         <NavItem page="loop" onClick={appView.goToLoop} />
         <NavItem page="history" onClick={appView.goToHistory} />
-        <NavItem page="pool" preview onClick={appView.goToPool} />
+        <NavItem page="pool" badge={l('common.preview')} onClick={appView.goToPool} />
         <NavItem page="settings" onClick={appView.goToSettings} />
-        <NavItem page="connect" onClick={appView.goToConnect} />
+        <NavItem page="connect" badge={l('common.beta')} onClick={appView.goToConnect} />
       </Nav>
     </>
   );

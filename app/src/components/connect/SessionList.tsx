@@ -8,7 +8,7 @@ import SessionRow, { ROW_HEIGHT, SessionRowHeader } from './SessionRow';
 
 const Styled = {
   Wrapper: styled.div`
-    margin: 100px 0;
+    margin: 40px 0;
   `,
 };
 

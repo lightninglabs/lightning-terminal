@@ -103,7 +103,7 @@ const SessionRow: React.FC<Props> = ({ session, style }) => {
   const { sessionStore } = useStore();
 
   const handleCopy = useCallback(() => {
-    sessionStore.copyPhrase(session.pairingSecretMnemonic);
+    sessionStore.copyPhrase(session.label, session.pairingSecretMnemonic);
   }, [session.pairingSecretMnemonic]);
 
   const handleRevoke = useCallback(() => {

@@ -1,37 +1,63 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
 import styled from '@emotion/styled';
+import nodeConnectSvg from 'assets/images/lightning-node-connect.svg';
 import { usePrefixedTranslation } from 'hooks';
-import PageHeader from 'components/common/PageHeader';
+import { useStore } from 'store';
+import { Copy } from 'components/base';
 import AddSession from './AddSession';
+import PurpleButton from './PurpleButton';
 import SessionList from './SessionList';
 
 const Styled = {
   Wrapper: styled.section`
-    padding: 40px 0;
+    padding: 80px 0 0 80px;
+  `,
+  DisplayLarge: styled.div`
+    font-family: ${props => props.theme.fonts.open.semiBold};
+    font-size: 32px;
+    line-height: 40px;
+    margin-top: 32px;
+    margin-bottom: 16px;
   `,
   Description: styled.div`
-    margin: 60px;
+    margin-bottom: 32px;
   `,
-  Info: styled.div`
-    margin: 100px 60px;
-    color: ${props => props.theme.colors.gray};
-    text-align: center;
-    font-size: ${props => props.theme.sizes.s};
+  Divider: styled.div`
+    max-width: 640px;
+    border: 1px solid #384770;
+    margin: 32px 0;
   `,
 };
 
 const ConnectPage: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.connect.ConnectPage');
+  const { sessionStore } = useStore();
 
-  const { Wrapper, Description, Info } = Styled;
-  return (
+  const { Wrapper, DisplayLarge, Description, Divider } = Styled;
+  return !sessionStore.hasMultiple ? (
     <Wrapper>
-      <PageHeader title={l('pageTitle')} />
-      <Description>{l('description')}</Description>
+      <img src={nodeConnectSvg} alt={l('pageTitle')} />
+      <DisplayLarge>{l('pageTitle')}</DisplayLarge>
+      <Description>
+        {l('description1')}
+        <br />
+        {l('description2')}
+      </Description>
+      <PurpleButton onClick={sessionStore.copyFirstPhrase}>
+        <Copy />
+        {l('copyPhraseLabel')}
+      </PurpleButton>
+      <Divider />
+      <Description>{l('addlDesc')}</Description>
       <AddSession />
+    </Wrapper>
+  ) : (
+    <Wrapper>
+      <DisplayLarge>{l('pageTitle')}</DisplayLarge>
+      <Description>{l('description1')}</Description>
+      <AddSession primary />
       <SessionList />
-      <Info>{l('info')}</Info>
     </Wrapper>
   );
 };

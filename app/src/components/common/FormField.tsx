@@ -18,7 +18,7 @@ const Styled = {
 };
 
 interface Props {
-  label: string;
+  label?: string;
   info?: ReactNode;
   error?: ReactNode;
   tip?: string;
@@ -28,14 +28,16 @@ const FormField: React.FC<Props> = ({ label, info, error, tip, children }) => {
   const { Wrapper, Info } = Styled;
   return (
     <Wrapper>
-      <HeaderFour>
-        {label}
-        {tip && (
-          <Tip overlay={tip} placement="right" capitalize={false}>
-            <HelpCircle size="medium" />
-          </Tip>
-        )}
-      </HeaderFour>
+      {label && (
+        <HeaderFour>
+          {label}
+          {tip && (
+            <Tip overlay={tip} placement="right" capitalize={false}>
+              <HelpCircle size="medium" />
+            </Tip>
+          )}
+        </HeaderFour>
+      )}
       {children}
       <Info error={!!error}>{error || info}</Info>
     </Wrapper>
