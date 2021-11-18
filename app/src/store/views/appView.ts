@@ -39,6 +39,13 @@ export default class AppView {
     }
   }
 
+  /** determines if the Lightning Node Connect UI should be visible */
+  get showLightningConnect() {
+    const devOverride = !!localStorage.getItem('i-want-lnc');
+    /** the unix timestamp (ms) when Lightning Node Connect should become visible */
+    return devOverride || Date.now() > 1638288000000; // Nov 30 2021 11:00am EST
+  }
+
   /** Change to the Auth page */
   gotoAuth() {
     this.goTo(`${PUBLIC_URL}/`);
