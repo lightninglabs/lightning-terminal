@@ -104,6 +104,17 @@ var (
 		watchtowerrpc.RegisterWatchtowerHandlerFromEndpoint,
 		wtclientrpc.RegisterWatchtowerClientHandlerFromEndpoint,
 	}
+
+	// minimalCompatibleVersion is the minimal lnd version that is required
+	// to run LiT in remote mode.
+	minimalCompatibleVersion = &verrpc.Version{
+		AppMajor: 0,
+		AppMinor: 13,
+		AppPatch: 3,
+		BuildTags: []string{
+			"signrpc", "walletrpc", "chainrpc", "invoicesrpc",
+		},
+	}
 )
 
 // LightningTerminal is the main grand unified binary instance. Its task is to
@@ -368,6 +379,7 @@ func (g *LightningTerminal) startSubservers() error {
 			BlockUntilChainSynced: true,
 			BlockUntilUnlocked:    true,
 			CallerCtx:             ctxc,
+			CheckVersion:          minimalCompatibleVersion,
 		},
 	)
 	if err != nil {
@@ -377,7 +389,9 @@ func (g *LightningTerminal) startSubservers() error {
 	// Both connection types are ready now, let's start our subservers if
 	// they should be started locally as an integrated service.
 	if !g.cfg.faradayRemote {
-		err = g.faradayServer.StartAsSubserver(g.lndClient.LndServices)
+		err = g.faradayServer.StartAsSubserver(
+			g.lndClient.LndServices, true,
+		)
 		if err != nil {
 			return err
 		}
@@ -385,7 +399,7 @@ func (g *LightningTerminal) startSubservers() error {
 	}
 
 	if !g.cfg.loopRemote {
-		err = g.loopServer.StartAsSubserver(g.lndClient)
+		err = g.loopServer.StartAsSubserver(g.lndClient, true)
 		if err != nil {
 			return err
 		}
@@ -393,7 +407,9 @@ func (g *LightningTerminal) startSubservers() error {
 	}
 
 	if !g.cfg.poolRemote {
-		err = g.poolServer.StartAsSubserver(basicClient, g.lndClient)
+		err = g.poolServer.StartAsSubserver(
+			basicClient, g.lndClient, true,
+		)
 		if err != nil {
 			return err
 		}

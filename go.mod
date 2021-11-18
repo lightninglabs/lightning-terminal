@@ -7,11 +7,11 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.5.0
 	github.com/improbable-eng/grpc-web v0.12.0
 	github.com/jessevdk/go-flags v1.4.0
-	github.com/lightninglabs/faraday v0.2.6-alpha.0.20211104103247-f8a995369c78
-	github.com/lightninglabs/lndclient v0.14.0-3
-	github.com/lightninglabs/loop v0.15.0-beta.0.20211104102229-139eac6febd0
-	github.com/lightninglabs/pool v0.5.1-alpha.0.20211103184317-df007ad9b567
-	github.com/lightningnetwork/lnd v0.14.0-beta.rc1
+	github.com/lightninglabs/faraday v0.2.7-alpha
+	github.com/lightninglabs/lndclient v0.14.0-5
+	github.com/lightninglabs/loop v0.15.1-beta
+	github.com/lightninglabs/pool v0.5.2-alpha
+	github.com/lightningnetwork/lnd v0.14.0-beta
 	github.com/lightningnetwork/lnd/cert v1.1.0
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
 	github.com/mwitkow/grpc-proxy v0.0.0-20181017164139-0f1106ef9c76
@@ -22,5 +22,13 @@ require (
 	gopkg.in/macaroon-bakery.v2 v2.1.0
 	gopkg.in/macaroon.v2 v2.1.0
 )
+
+// A PR was merged without bumping the kvdb module version. We'll be able to
+// remove this once lnd 0.14.1-beta is out.
+replace github.com/lightningnetwork/lnd/kvdb => github.com/lightningnetwork/lnd/kvdb v1.2.1
+
+// A PR was merged without bumping the auctioneerrpc module version. We'll be
+// able to remove this once pool 0.5.3-alpha is out.
+replace github.com/lightninglabs/pool/auctioneerrpc => github.com/lightninglabs/pool/auctioneerrpc v1.0.4
 
 go 1.16
