@@ -7,6 +7,9 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/lightningnetwork/lnd/chainreg"
+	"github.com/lightningnetwork/lnd/lnwallet/btcwallet"
+	"github.com/lightningnetwork/lnd/rpcperms"
 	"io/fs"
 	"net"
 	"net/http"
@@ -127,6 +130,10 @@ type LightningTerminal struct {
 
 	defaultImplCfg *lnd.ImplementationCfg
 
+	// lndInterceptorChain is a reference to lnd's interceptor chain that
+	// guards all incoming calls. This is only set in integrated mode!
+	lndInterceptorChain *rpcperms.InterceptorChain
+
 	wg         sync.WaitGroup
 	lndErrChan chan error
 
@@ -212,7 +219,7 @@ func (g *LightningTerminal) Run() error {
 			RestRegistrar:       g,
 			ExternalValidator:   g,
 			DatabaseBuilder:     g.defaultImplCfg.DatabaseBuilder,
-			WalletConfigBuilder: g.defaultImplCfg.WalletConfigBuilder,
+			WalletConfigBuilder: g,
 			ChainControlBuilder: g.defaultImplCfg.ChainControlBuilder,
 		}
 
@@ -458,9 +465,20 @@ func (g *LightningTerminal) startSubservers() error {
 		g.rpcProxy.superMacaroon = res.Macaroon
 	}
 
-	// If we're in integrated mode, we won't create macaroon files in any
-	// of the subserver daemons.
-	createDefaultMacaroons := g.cfg.LndMode != ModeIntegrated
+	// If we're in integrated and stateless init mode, we won't create
+	// macaroon files in any of the subserver daemons.
+	createDefaultMacaroons := true
+	if g.cfg.LndMode == ModeIntegrated && g.lndInterceptorChain != nil &&
+		g.lndInterceptorChain.MacaroonService() != nil {
+
+		// If the wallet was initialized in stateless mode, we don't
+		// want any macaroons lying around on the filesystem. In that
+		// case only the UI will be able to access any of the integrated
+		// daemons. In all other cases we want default macaroons so we
+		// can use the CLI tools to interact with loop/pool/faraday.
+		macService := g.lndInterceptorChain.MacaroonService()
+		createDefaultMacaroons = !macService.StatelessInit
+	}
 
 	// Both connection types are ready now, let's start our subservers if
 	// they should be started locally as an integrated service.
@@ -687,6 +705,25 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 // NOTE: This is part of the lnd.ExternalValidator interface.
 func (g *LightningTerminal) Permissions() map[string][]bakery.Op {
 	return getSubserverPermissions()
+}
+
+// BuildWalletConfig is responsible for creating or unlocking and then
+// fully initializing a wallet.
+//
+// NOTE: This is only implemented in order for us to intercept the setup call
+// and store a reference to the interceptor chain.
+//
+// NOTE: This is part of the lnd.WalletConfigBuilder interface.
+func (g *LightningTerminal) BuildWalletConfig(ctx context.Context,
+	dbs *lnd.DatabaseInstances, interceptorChain *rpcperms.InterceptorChain,
+	grpcListeners []*lnd.ListenerWithSignal) (*chainreg.PartialChainControl,
+	*btcwallet.Config, func(), error) {
+
+	g.lndInterceptorChain = interceptorChain
+
+	return g.defaultImplCfg.WalletConfigBuilder.BuildWalletConfig(
+		ctx, dbs, interceptorChain, grpcListeners,
+	)
 }
 
 // shutdown stops all subservers that were started and attached to lnd.
