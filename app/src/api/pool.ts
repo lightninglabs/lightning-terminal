@@ -21,7 +21,7 @@ export const MIN_FEE_RATE_KW = 253;
 
 // The latest order version. This should be updated along with pool CLI
 // see: https://github.com/lightninglabs/pool/blob/master/order/interface.go#L35
-export const ORDER_VERSION = 2;
+export const ORDER_VERSION = 4;
 
 const POOL_INITIATOR = 'lit-ui';
 
