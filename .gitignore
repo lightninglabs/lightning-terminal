@@ -7,3 +7,9 @@ litcli-debug
 
 # MacOS junk
 .DS_Store
+
+itest/btcd-itest
+itest/litd-itest
+itest/itest.test
+itest/.logs
+itest/*.log

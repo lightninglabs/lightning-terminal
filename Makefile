@@ -3,6 +3,7 @@ ESCPKG := github.com\/lightninglabs\/lightning-terminal
 LND_PKG := github.com/lightningnetwork/lnd
 LOOP_PKG := github.com/lightninglabs/loop
 POOL_PKG := github.com/lightninglabs/pool
+BTCD_PKG := github.com/btcsuite/btcd
 
 LINT_PKG := github.com/golangci/golangci-lint/cmd/golangci-lint
 GOVERALLS_PKG := github.com/mattn/goveralls
@@ -67,6 +68,9 @@ LDFLAGS := $(call make_ldflags, $(LND_RELEASE_TAGS))
 # For the release, we want to remove the symbol table and debug information (-s)
 # and omit the DWARF symbol table (-w). Also we clear the build ID.
 RELEASE_LDFLAGS := $(call make_ldflags, $(LND_RELEASE_TAGS), -s -w -buildid=)
+
+ITEST_TAGS := rpctest itest $(LND_RELEASE_TAGS)
+ITEST_LDFLAGS := $(call make_ldflags, $(ITEST_TAGS))
 
 GREEN := "\\033[0;32m"
 NC := "\\033[0m"
@@ -160,6 +164,20 @@ travis-cover: lint unit-cover goveralls
 
 travis-itest: lint
 
+build-itest: app-build
+	@$(call print, "Building itest btcd and litd.")
+	CGO_ENABLED=0 $(GOBUILD) -tags="$(ITEST_TAGS)" -o itest/btcd-itest -ldflags "$(ITEST_LDFLAGS)" $(BTCD_PKG)
+
+itest-only:
+	@$(call print, "Building itest binary.")
+	CGO_ENABLED=0 $(GOBUILD) -tags="$(ITEST_TAGS)" -o itest/litd-itest -ldflags "$(ITEST_LDFLAGS)" $(PKG)/cmd/litd
+	CGO_ENABLED=0 $(GOTEST) -v ./itest -tags="$(DEV_TAGS) $(ITEST_TAGS)" -c -o itest/itest.test
+
+	@$(call print, "Running integration tests.")
+	rm -rf itest/*.log itest/.logs*; date
+	scripts/itest_part.sh $(ITEST_FLAGS)
+
+itest: build-itest itest-only
 
 # =============
 # FLAKE HUNTING
