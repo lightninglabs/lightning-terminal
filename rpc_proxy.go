@@ -2,10 +2,12 @@ package terminal
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -18,6 +20,7 @@ import (
 	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/test/bufconn"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 	"gopkg.in/macaroon.v2"
 )
@@ -34,7 +37,8 @@ const (
 // or REST request and delegate (and convert if necessary) it to the correct
 // component.
 func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
-	permissionMap map[string][]bakery.Op) *rpcProxy {
+	permissionMap map[string][]bakery.Op,
+	bufListener *bufconn.Listener) *rpcProxy {
 
 	// The gRPC web calls are protected by HTTP basic auth which is defined
 	// by base64(username:password). Because we only have a password, we
@@ -52,6 +56,7 @@ func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 		cfg:          cfg,
 		basicAuth:    basicAuth,
 		macValidator: validator,
+		bufListener:  bufListener,
 	}
 	p.grpcServer = grpc.NewServer(
 		// From the grpxProxy doc: This codec is *crucial* to the
@@ -125,6 +130,9 @@ type rpcProxy struct {
 	basicAuth string
 
 	macValidator macaroons.MacaroonValidator
+	bufListener  *bufconn.Listener
+
+	superMacaroon string
 
 	lndConn     *grpc.ClientConn
 	faradayConn *grpc.ClientConn
@@ -140,8 +148,14 @@ func (p *rpcProxy) Start() error {
 	var err error
 
 	// Setup the connection to lnd.
-	host, _, tlsPath, _ := p.cfg.lndConnectParams()
-	p.lndConn, err = dialBackend("lnd", host, tlsPath)
+	host, _, tlsPath, _, _ := p.cfg.lndConnectParams()
+
+	// We use a bufconn to connect to lnd in integrated mode.
+	if p.cfg.LndMode == ModeIntegrated {
+		p.lndConn, err = dialBufConnBackend(p.bufListener)
+	} else {
+		p.lndConn, err = dialBackend("lnd", host, tlsPath)
+	}
 	if err != nil {
 		return fmt.Errorf("could not dial lnd: %v", err)
 	}
@@ -390,10 +404,13 @@ func (p *rpcProxy) basicAuthToMacaroon(ctx context.Context,
 		return ctx, nil
 	}
 
-	var macPath string
+	var (
+		macPath string
+		macData []byte
+	)
 	switch {
 	case isLndURI(requestURI):
-		_, _, _, macPath = p.cfg.lndConnectParams()
+		_, _, _, macPath, macData = p.cfg.lndConnectParams()
 
 	case isFaradayURI(requestURI):
 		if p.cfg.faradayRemote {
@@ -421,14 +438,62 @@ func (p *rpcProxy) basicAuthToMacaroon(ctx context.Context,
 			requestURI)
 	}
 
-	// Now that we know which macaroon to load, do it and attach it to the
-	// request context.
-	macBytes, err := readMacaroon(lncfg.CleanAndExpandPath(macPath))
-	if err != nil {
-		return ctx, fmt.Errorf("error reading macaroon: %v", err)
+	switch {
+	// If we have a super macaroon, we can use that one directly since it
+	// will contain all permissions we need.
+	case len(p.superMacaroon) > 0:
+		md.Set(HeaderMacaroon, p.superMacaroon)
+
+	// If we have macaroon data directly, just encode them. This could be
+	// for initial requests to lnd while we don't have the super macaroon
+	// just yet (or are actually calling to bake the super macaroon).
+	case len(macData) > 0:
+		md.Set(HeaderMacaroon, hex.EncodeToString(macData))
+
+	// The fall back is to read the macaroon from a path. This is in remote
+	// mode.
+	case len(macPath) > 0:
+		// Now that we know which macaroon to load, do it and attach it
+		// to the request context.
+		macBytes, err := readMacaroon(lncfg.CleanAndExpandPath(macPath))
+		if err != nil {
+			return ctx, fmt.Errorf("error reading macaroon %s: %v",
+				lncfg.CleanAndExpandPath(macPath), err)
+		}
+
+		md.Set(HeaderMacaroon, hex.EncodeToString(macBytes))
 	}
-	md.Set(HeaderMacaroon, hex.EncodeToString(macBytes))
+
 	return metadata.NewIncomingContext(ctx, md), nil
+}
+
+// dialBufConnBackend dials an in-memory connection to an RPC listener and
+// ignores any TLS certificate mismatches.
+func dialBufConnBackend(listener *bufconn.Listener) (*grpc.ClientConn, error) {
+	tlsConfig := credentials.NewTLS(&tls.Config{
+		InsecureSkipVerify: true,
+	})
+	conn, err := grpc.Dial(
+		"",
+		grpc.WithContextDialer(
+			func(context.Context, string) (net.Conn, error) {
+				return listener.Dial()
+			},
+		),
+		grpc.WithTransportCredentials(tlsConfig),
+
+		// From the grpcProxy doc: This codec is *crucial* to the
+		// functioning of the proxy.
+		grpc.WithCodec(grpcProxy.Codec()), // nolint
+		grpc.WithTransportCredentials(tlsConfig),
+		grpc.WithDefaultCallOptions(maxMsgRecvSize),
+		grpc.WithConnectParams(grpc.ConnectParams{
+			Backoff:           backoff.DefaultConfig,
+			MinConnectTimeout: defaultConnectTimeout,
+		}),
+	)
+
+	return conn, err
 }
 
 // dialBackend connects to a gRPC backend through the given address and uses the
@@ -470,12 +535,12 @@ func readMacaroon(macPath string) ([]byte, error) {
 	// Load the specified macaroon file.
 	macBytes, err := ioutil.ReadFile(macPath)
 	if err != nil {
-		return nil, fmt.Errorf("unable to read macaroon path : %v", err)
+		return nil, fmt.Errorf("unable to read macaroon path: %v", err)
 	}
 
 	// Make sure it actually is a macaroon by parsing it.
 	mac := &macaroon.Macaroon{}
-	if err = mac.UnmarshalBinary(macBytes); err != nil {
+	if err := mac.UnmarshalBinary(macBytes); err != nil {
 		return nil, fmt.Errorf("unable to decode macaroon: %v", err)
 	}
 
