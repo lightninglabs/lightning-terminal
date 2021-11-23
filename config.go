@@ -317,7 +317,6 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 	// Show the version and exit if the version flag was specified.
 	appName := filepath.Base(os.Args[0])
 	appName = strings.TrimSuffix(appName, filepath.Ext(appName))
-	usageMessage := fmt.Sprintf("Use %s -h to show usage", appName)
 	if preCfg.Lnd.ShowVersion {
 		fmt.Println(appName, "version", build.Version(),
 			"commit="+build.Commit)
@@ -326,7 +325,7 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 
 	// Load the main configuration file and parse any command line options.
 	// This function will also set up logging properly.
-	cfg, err := loadConfigFile(preCfg, usageMessage, interceptor)
+	cfg, err := loadConfigFile(preCfg, interceptor)
 	if err != nil {
 		return nil, err
 	}
@@ -470,8 +469,8 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 
 // loadConfigFile loads and sanitizes the lit main configuration from the config
 // file or command line arguments (or both).
-func loadConfigFile(preCfg *Config, usageMessage string,
-	interceptor signal.Interceptor) (*Config, error) {
+func loadConfigFile(preCfg *Config, interceptor signal.Interceptor) (*Config,
+	error) {
 
 	// If the config file path has not been modified by the user, then we'll
 	// use the default config file path. However, if the user has modified
@@ -528,8 +527,7 @@ func loadConfigFile(preCfg *Config, usageMessage string,
 	case ModeIntegrated:
 		var err error
 		cfg.Lnd, err = lnd.ValidateConfig(
-			*cfg.Lnd, usageMessage, interceptor, fileParser,
-			flagParser,
+			*cfg.Lnd, interceptor, fileParser, flagParser,
 		)
 		if err != nil {
 			return nil, err
