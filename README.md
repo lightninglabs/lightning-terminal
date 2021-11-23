@@ -88,7 +88,8 @@ Lightning Terminal is backwards compatible with `lnd` back to version v0.13.3-be
 ## Daemon Versions packaged with LiT
 
 | LiT              | LND          | Loop        | Faraday      | Pool         |
-|------------------| ------------ | ----------- | ------------ |--------------|
+|------------------|--------------| ----------- | ------------ |--------------|
+| **v0.6.3-alpha** | v0.14.2-beta | v0.15.1-beta | v0.2.7-alpha | v0.5.4-alpha |
 | **v0.6.2-alpha** | v0.14.1-beta | v0.15.1-beta | v0.2.7-alpha | v0.5.4-alpha |
 | **v0.6.1-alpha** | v0.14.1-beta | v0.15.1-beta | v0.2.7-alpha | v0.5.2-alpha |
 | **v0.5.3-alpha** | v0.13.3-beta | v0.14.1-beta | v0.2.6-alpha | v0.5.0-alpha |

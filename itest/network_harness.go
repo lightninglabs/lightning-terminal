@@ -8,7 +8,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -29,9 +28,6 @@ import (
 	"google.golang.org/grpc/grpclog"
 )
 
-// NodeOption is a function for updating a node's configuration.
-type NodeOption func(*NodeConfig)
-
 // NetworkHarness is an integration testing harness for the lightning network.
 // The harness by default is created with two active nodes on the network:
 // Alice and Bob.
@@ -48,6 +44,9 @@ type NetworkHarness struct {
 	// Miner is a reference to a running full node that can be used to create
 	// new blocks on the network.
 	Miner *lntest.HarnessMiner
+
+	// server is an instance of the local Loop/Pool mock server.
+	server *serverHarness
 
 	// BackendCfg houses the information necessary to use a node as LND
 	// chain backend, such as rpc configuration, P2P information etc.
@@ -124,20 +123,35 @@ func (n *NetworkHarness) SetUp(t *testing.T,
 	grpclog.SetLoggerV2(fakeLogger)
 	n.currentTestCase = testCase
 
+	// Start our mock Loop/Pool server first.
+	mockServerAddr := fmt.Sprintf(
+		lntest.ListenerFormat, lntest.NextAvailablePort(),
+	)
+	n.server = newServerHarness(mockServerAddr)
+	err := n.server.start()
+	require.NoError(t, err)
+
+	litArgs := []string{
+		fmt.Sprintf("--loop.server.host=%s", mockServerAddr),
+		fmt.Sprintf("--loop.server.tlspath=%s", n.server.certFile),
+		fmt.Sprintf("--pool.auctionserver=%s", mockServerAddr),
+		fmt.Sprintf("--pool.tlspathauctserver=%s", n.server.certFile),
+	}
+
 	// Start the initial seeder nodes within the test network, then connect
 	// their respective RPC clients.
 	eg := errgroup.Group{}
 	eg.Go(func() error {
 		var err error
 		n.Alice, err = n.newNode(
-			"Alice", lndArgs, false, nil, true,
+			"Alice", lndArgs, litArgs, false, nil, true,
 		)
 		return err
 	})
 	eg.Go(func() error {
 		var err error
 		n.Bob, err = n.newNode(
-			"Bob", lndArgs, false, nil, true,
+			"Bob", lndArgs, litArgs, false, nil, true,
 		)
 		return err
 	})
@@ -250,11 +264,11 @@ func (n *NetworkHarness) Stop() {
 // wallet with or without a seed. If hasSeed is false, the returned harness node
 // can be used immediately. Otherwise, the node will require an additional
 // initialization phase where the wallet is either created or restored.
-func (n *NetworkHarness) newNode(name string, extraArgs []string,
-	hasSeed bool, password []byte, wait bool, opts ...NodeOption) (
+func (n *NetworkHarness) newNode(name string, extraArgs, litArgs []string,
+	hasSeed bool, password []byte, wait bool, opts ...lntest.NodeOption) (
 	*HarnessNode, error) {
 
-	cfg := &NodeConfig{
+	baseCfg := &lntest.BaseNodeConfig{
 		Name:              name,
 		LogFilenamePrefix: n.currentTestCase,
 		HasSeed:           hasSeed,
@@ -264,10 +278,14 @@ func (n *NetworkHarness) newNode(name string, extraArgs []string,
 		ExtraArgs:         extraArgs,
 	}
 	for _, opt := range opts {
-		opt(cfg)
+		opt(baseCfg)
+	}
+	cfg := &LitNodeConfig{
+		BaseNodeConfig: baseCfg,
+		LitArgs:        litArgs,
 	}
 
-	node, err := newNode(*cfg)
+	node, err := newNode(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -1311,48 +1329,4 @@ func CopyFile(dest, src string) error {
 	}
 
 	return d.Close()
-}
-
-// FileExists returns true if the file at path exists.
-func FileExists(path string) bool {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return false
-	}
-
-	return true
-}
-
-// copyAll copies all files and directories from srcDir to dstDir recursively.
-// Note that this function does not support links.
-func copyAll(dstDir, srcDir string) error {
-	entries, err := ioutil.ReadDir(srcDir)
-	if err != nil {
-		return err
-	}
-
-	for _, entry := range entries {
-		srcPath := filepath.Join(srcDir, entry.Name())
-		dstPath := filepath.Join(dstDir, entry.Name())
-
-		info, err := os.Stat(srcPath)
-		if err != nil {
-			return err
-		}
-
-		if info.IsDir() {
-			err := os.Mkdir(dstPath, info.Mode())
-			if err != nil && !os.IsExist(err) {
-				return err
-			}
-
-			err = copyAll(dstPath, srcPath)
-			if err != nil {
-				return err
-			}
-		} else if err := CopyFile(dstPath, srcPath); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }

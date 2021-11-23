@@ -4,5 +4,8 @@
 package itest
 
 var allTestCases = []*testCase{
-	// TODO(guggero): Add tests.
+	{
+		name: "test mode integrated",
+		test: testModeIntegrated,
+	},
 }
