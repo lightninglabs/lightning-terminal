@@ -17,7 +17,7 @@ import { Session } from '../models';
 export default class SessionStore {
   private _store: Store;
 
-  proxyServer = IS_PROD ? 'mailbox.staging.lightningcluster.com:443' : 'aperture:11110';
+  proxyServer = IS_PROD ? 'mailbox.terminal.lightning.today:443' : 'aperture:11110';
 
   /** the collection of sessions */
   sessions: ObservableMap<string, Session> = observable.map();

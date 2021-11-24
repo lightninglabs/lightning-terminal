@@ -43,7 +43,7 @@ var addSessionCommand = cli.Command{
 		cli.StringFlag{
 			Name:  "mailboxserveraddr",
 			Usage: "the host:port of the mailbox server to be used",
-			Value: "mailbox.staging.lightningcluster.com:443",
+			Value: "mailbox.terminal.lightning.today:443",
 		},
 		cli.BoolFlag{
 			Name: "devserver",
