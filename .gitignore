@@ -2,6 +2,7 @@
 .env*.local
 
 litd-debug
+litcli-debug
 /lightning-terminal-*
 
 # MacOS junk

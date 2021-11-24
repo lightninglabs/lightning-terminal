@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package litrpc;
+
+option go_package = "github.com/lightninglabs/lightning-terminal/litrpc";
+
+// Sessions is a service that gives access to the core functionalities of the
+// daemon's session system.
+service Sessions {
+    rpc AddSession (AddSessionRequest) returns (AddSessionResponse);
+
+    rpc ListSessions (ListSessionsRequest) returns (ListSessionsResponse);
+
+    rpc RevokeSession (RevokeSessionRequest) returns (RevokeSessionResponse);
+}
+
+enum SessionType {
+    TYPE_MACAROON_READONLY = 0;
+    TYPE_MACAROON_ADMIN = 1;
+    TYPE_MACAROON_CUSTOM = 2;
+    TYPE_UI_PASSWORD = 3;
+}
+
+message AddSessionRequest {
+    string label = 1;
+
+    SessionType session_type = 2;
+
+    uint64 expiry_timestamp_seconds = 3 [jstype = JS_STRING];
+
+    string mailbox_server_addr = 4;
+
+    bool dev_server = 5;
+
+    repeated MacaroonPermission macaroon_custom_permissions = 6;
+}
+
+message MacaroonPermission {
+    // The entity a permission grants access to.
+    string entity = 1;
+
+    // The action that is granted.
+    string action = 2;
+}
+
+enum SessionState {
+    STATE_CREATED = 0;
+    STATE_IN_USE = 1;
+    STATE_REVOKED = 2;
+    STATE_EXPIRED = 3;
+}
+
+message AddSessionResponse {
+    Session session = 1;
+}
+
+message Session {
+    string label = 1;
+
+    SessionState session_state = 2;
+
+    SessionType session_type = 3;
+
+    uint64 expiry_timestamp_seconds = 4 [jstype = JS_STRING];
+
+    string mailbox_server_addr = 5;
+
+    bool dev_server = 6;
+
+    bytes pairing_secret = 7;
+
+    string pairing_secret_mnemonic = 8;
+
+    bytes local_public_key = 9;
+
+    bytes remote_public_key = 10;
+}
+
+message ListSessionsRequest {
+}
+
+message ListSessionsResponse {
+    repeated Session sessions = 1;
+}
+
+message RevokeSessionRequest {
+    bytes local_public_key = 8;
+}
+
+message RevokeSessionResponse {
+}

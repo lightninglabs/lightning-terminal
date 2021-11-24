@@ -4,7 +4,7 @@ import { createBrowserHistory, History } from 'history';
 import AppStorage from 'util/appStorage';
 import CsvExporter from 'util/csv';
 import { actionLog, Logger } from 'util/log';
-import { GrpcClient, LndApi, LoopApi, PoolApi } from 'api';
+import { GrpcClient, LitApi, LndApi, LoopApi, PoolApi } from 'api';
 import {
   AccountStore,
   AuthStore,
@@ -13,6 +13,7 @@ import {
   NodeStore,
   OrderStore,
   RouterStore,
+  SessionStore,
   SettingsStore,
   SwapStore,
 } from './stores';
@@ -46,6 +47,7 @@ export class Store {
   nodeStore = new NodeStore(this);
   orderStore = new OrderStore(this);
   settingsStore = new SettingsStore(this);
+  sessionStore = new SessionStore(this);
 
   /** the store which synchronizes with the browser history */
   router: RouterStore;
@@ -70,6 +72,7 @@ export class Store {
     lnd: LndApi;
     loop: LoopApi;
     pool: PoolApi;
+    lit: LitApi;
   };
 
   /** the logger for actions to use when modifying state */
@@ -91,6 +94,7 @@ export class Store {
     lnd: LndApi,
     loop: LoopApi,
     pool: PoolApi,
+    lit: LitApi,
     storage: AppStorage,
     history: History,
     csv: CsvExporter,
@@ -98,7 +102,7 @@ export class Store {
   ) {
     makeAutoObservable(this, {}, { deep: false, autoBind: true });
 
-    this.api = { lnd, loop, pool };
+    this.api = { lnd, loop, pool, lit };
     this.storage = storage;
     this.router = new RouterStore(history);
     this.csv = csv;
@@ -155,6 +159,7 @@ export class Store {
     await this.channelStore.fetchChannels();
     await this.swapStore.fetchSwaps();
     await this.nodeStore.fetchBalances();
+    await this.sessionStore.fetchSessions();
   }
 
   /** connects to the LND and Loop websocket streams if not already connected */
@@ -199,10 +204,20 @@ export const createStore = (grpcClient?: GrpcClient, appStorage?: AppStorage) =>
   const lndApi = new LndApi(grpc);
   const loopApi = new LoopApi(grpc);
   const poolApi = new PoolApi(grpc);
+  const litApi = new LitApi(grpc);
   const csv = new CsvExporter();
   const history = createBrowserHistory();
 
-  const store = new Store(lndApi, loopApi, poolApi, storage, history, csv, actionLog);
+  const store = new Store(
+    lndApi,
+    loopApi,
+    poolApi,
+    litApi,
+    storage,
+    history,
+    csv,
+    actionLog,
+  );
 
   // initialize the store immediately to fetch API data, except when running unit tests
   if (!IS_TEST) store.init();

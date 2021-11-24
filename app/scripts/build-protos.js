@@ -50,11 +50,30 @@ const protoSources = async () => {
 
 /** list of proto files and patches to apply */
 const filePatches = {
-  lnd: 'lnrpc: {}',
-  loop: 'looprpc: {}',
-  common: 'looprpc: {}',
-  trader: 'poolrpc: {}',
-  'auctioneerrpc/auctioneer': 'poolrpc: {}',
+  lnd: {
+    patch: 'lnrpc: {}',
+    folder: 'proto'
+  },
+  loop: {
+    patch: 'looprpc: {}',
+    folder: 'proto'
+  },
+  common: {
+    patch: 'looprpc: {}',
+    folder: 'proto'
+  },
+  trader: {
+    patch: 'poolrpc: {}',
+    folder: 'proto'
+  },
+  'auctioneerrpc/auctioneer': {
+    patch: 'poolrpc: {}',
+    folder: 'proto'
+  },
+  'lit-sessions': {
+    patch: 'litrpc: {}',
+    folder: 'litrpc'
+  }
 };
 
 /**
@@ -86,7 +105,7 @@ const download = async () => {
  */
 const sanitize = async () => {
   const filePaths = Object.keys(filePatches).map(name =>
-    join(appPath, '..', 'proto', `${name}.proto`),
+    join(appPath, '..', filePatches[name].folder, `${name}.proto`),
   );
   for (path of filePaths) {
     let content = (await fs.readFile(path)).toString();
@@ -113,14 +132,18 @@ const generate = async () => {
     '.bin',
     platform() === 'win32' ? 'protoc-gen-ts.cmd' : 'protoc-gen-ts',
   );
+  const files = Object
+      .keys(filePatches)
+      .map(name => `../${filePatches[name].folder}/${name}.proto`);
   const protocCmd = [
     'protoc',
     `-I../proto`,
+    `-I../litrpc`,
     `--plugin=protoc-gen-ts=${protocGen}`,
     '--proto_path=../proto',
     '--js_out=import_style=commonjs,binary:./src/types/generated',
     '--ts_out=service=grpc-web:./src/types/generated',
-    ...Object.keys(filePatches).map(file => `../proto/${file}.proto`),
+    ...files,
   ].join(' ');
 
   console.log(protocCmd);
@@ -153,7 +176,7 @@ const patch = async () => {
     // apply the webpack patch
     const patch = [
       '/* eslint-disable */',
-      `var proto = { ${filePatches[filename]} };`,
+      `var proto = { ${filePatches[filename].patch} };`,
       '',
     ].join('\n');
     content = `${patch}\n${content}`;

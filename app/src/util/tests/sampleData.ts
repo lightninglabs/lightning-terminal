@@ -1,4 +1,5 @@
 import * as AUCT from 'types/generated/auctioneerrpc/auctioneer_pb';
+import * as LIT from 'types/generated/lit-sessions_pb';
 import * as LND from 'types/generated/lnd_pb';
 import * as LOOP from 'types/generated/loop_pb';
 import * as POOL from 'types/generated/trader_pb';
@@ -806,6 +807,35 @@ export const poolRegisterSidecar: POOL.SidecarTicket.AsObject = {
     'sidecar15o9CCm2VAFa14vyskEhpqxmDjiknDgJaKHL6nZdMHv5f9jSpnTM9jSZecJjDzvqgqbeBRLBupcvtL9cPefg3q2iUfcFYMgFCgfxuicf4ZSpZ9ndwYXJ8F7yrw55TSuxMyZMEFyoMh4rWJX95m5iBWeezDXHSXqFzSVmuFCTtp5KXombXZr64waygqNweCUBnvjTDqsz12EnxE1tsmSoHiFYc1t15J8rHNYAucb9yQWRQTRu146QuBbbLtMEPL62Y',
 };
 
+export const litListSessions: LIT.ListSessionsResponse.AsObject = {
+  sessionsList: [
+    {
+      devServer: true,
+      expiryTimestampSeconds: '253370782800',
+      label: 'Default Session',
+      localPublicKey: 'AkHHPwMqjOyBaBVE5o6ZE4opJHkCN7Ut/Gs1E9FekLjn',
+      mailboxServerAddr: 'aperture:11110',
+      pairingSecret: '9JtMeel8DA9v3Pw=',
+      pairingSecretMnemonic: 'virus surprise bunker spray school amateur satoshi panel',
+      remotePublicKey: '',
+      sessionState: LIT.SessionState.STATE_CREATED,
+      sessionType: LIT.SessionType.TYPE_UI_PASSWORD,
+    },
+    {
+      devServer: true,
+      expiryTimestampSeconds: '253370782800',
+      label: 'Default Session',
+      localPublicKey: 'ArNt9nOsy8c8p8XtNPIBPoSXjzBfsZ87GVnz6ADTdhVw',
+      mailboxServerAddr: 'aperture:11110',
+      pairingSecret: 'a51LAsjfD7AAk9c=',
+      pairingSecretMnemonic: 'high tumble scheme museum valley submit across kit',
+      remotePublicKey: '',
+      sessionState: LIT.SessionState.STATE_EXPIRED,
+      sessionType: LIT.SessionType.TYPE_UI_PASSWORD,
+    },
+  ],
+};
+
 // collection of sample API responses
 export const sampleApiResponses: Record<string, any> = {
   'lnrpc.Lightning.GetInfo': lndGetInfo,
@@ -840,4 +870,5 @@ export const sampleApiResponses: Record<string, any> = {
   'poolrpc.Trader.NodeRatings': poolNodeRatings,
   'poolrpc.Trader.Leases': poolLeases,
   'poolrpc.Trader.RegisterSidecar': poolRegisterSidecar,
+  'litrpc.Sessions.ListSessions': litListSessions,
 };

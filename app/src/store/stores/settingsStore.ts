@@ -9,7 +9,7 @@ import {
 } from 'util/constants';
 import { prefixTranslation } from 'util/translate';
 import { Store } from 'store';
-import { Channel, Order, Swap } from 'store/models';
+import { Channel, Order, Session, Swap } from 'store/models';
 import { Tier } from 'store/models/order';
 import { LeaseView } from 'store/views';
 import { DEFAULT_MAX_BATCH_FEE, DEFAULT_MIN_CHAN_SIZE } from 'store/views/orderFormView';
@@ -30,6 +30,7 @@ export interface PersistentSettings {
   historySort: SortParams<Swap>;
   orderSort: SortParams<Order>;
   leaseSort: SortParams<LeaseView>;
+  sessionSort: SortParams<Session>;
 }
 
 export default class SettingsStore {
@@ -87,6 +88,12 @@ export default class SettingsStore {
   leaseSort: SortParams<LeaseView> = {
     field: 'blocksSoFar',
     descending: true,
+  };
+
+  /** specifies the sorting field and direction for the Lit session list */
+  sessionSort: SortParams<Session> = {
+    field: 'label',
+    descending: false,
   };
 
   /** the chosen language */
@@ -224,7 +231,17 @@ export default class SettingsStore {
    */
   setLeaseSort(field: SortParams<LeaseView>['field'], descending: boolean) {
     this.leaseSort = { field, descending };
-    this._store.log.info('updated leases list sort lease', toJS(this.leaseSort));
+    this._store.log.info('updated leases list sort order', toJS(this.leaseSort));
+  }
+
+  /**
+   * Sets the sort field and direction that the sessions list should use
+   * @param field the lease field to sort by
+   * @param descending true of the lease should be descending, otherwise false
+   */
+  setSessionSort(field: SortParams<Session>['field'], descending: boolean) {
+    this.sessionSort = { field, descending };
+    this._store.log.info('updated sessions list sort order', toJS(this.sessionSort));
   }
 
   /**
@@ -248,6 +265,7 @@ export default class SettingsStore {
           historySort: toJS(this.historySort),
           orderSort: toJS(this.orderSort),
           leaseSort: toJS(this.leaseSort),
+          sessionSort: toJS(this.sessionSort),
         };
         this._store.storage.set('settings', settings);
         this._store.log.info('saved settings to localStorage', settings);
@@ -273,6 +291,7 @@ export default class SettingsStore {
       if (settings.historySort) this.historySort = settings.historySort;
       if (settings.orderSort) this.orderSort = settings.orderSort;
       if (settings.leaseSort) this.leaseSort = settings.leaseSort;
+      if (settings.sessionSort) this.sessionSort = settings.sessionSort;
 
       if (settings.minChanSize) this.minChanSize = settings.minChanSize;
       if (settings.maxBatchFeeRate) this.maxBatchFeeRate = settings.maxBatchFeeRate;

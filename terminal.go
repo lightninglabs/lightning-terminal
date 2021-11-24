@@ -7,9 +7,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/lightningnetwork/lnd/chainreg"
-	"github.com/lightningnetwork/lnd/lnwallet/btcwallet"
-	"github.com/lightningnetwork/lnd/rpcperms"
 	"io/fs"
 	"net"
 	"net/http"
@@ -24,6 +21,8 @@ import (
 	restProxy "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jessevdk/go-flags"
 	"github.com/lightninglabs/faraday/frdrpc"
+	"github.com/lightninglabs/lightning-terminal/litrpc"
+	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightninglabs/loop"
 	"github.com/lightninglabs/loop/loopd"
@@ -32,6 +31,7 @@ import (
 	"github.com/lightninglabs/pool/poolrpc"
 	"github.com/lightningnetwork/lnd"
 	"github.com/lightningnetwork/lnd/build"
+	"github.com/lightningnetwork/lnd/chainreg"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/autopilotrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
@@ -43,8 +43,11 @@ import (
 	"github.com/lightningnetwork/lnd/lnrpc/watchtowerrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/wtclientrpc"
 	"github.com/lightningnetwork/lnd/lntest/wait"
+	"github.com/lightningnetwork/lnd/lnwallet/btcwallet"
 	"github.com/lightningnetwork/lnd/macaroons"
+	"github.com/lightningnetwork/lnd/rpcperms"
 	"github.com/lightningnetwork/lnd/signal"
+	grpcProxy "github.com/mwitkow/grpc-proxy/proxy"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/test/bufconn"
@@ -151,6 +154,10 @@ type LightningTerminal struct {
 	rpcProxy   *rpcProxy
 	httpServer *http.Server
 
+	sessionDB        *session.DB
+	sessionServer    *session.Server
+	sessionRpcServer *sessionRpcServer
+
 	restHandler http.Handler
 	restCancel  func()
 }
@@ -187,6 +194,51 @@ func (g *LightningTerminal) Run() error {
 	g.rpcProxy = newRpcProxy(
 		g.cfg, g, getAllMethodPermissions(), bufRpcListener,
 	)
+
+	// Create an instance of the local Terminal Connect session store DB.
+	networkDir := path.Join(g.cfg.LitDir, g.cfg.Network)
+	g.sessionDB, err = session.NewDB(networkDir, session.DBFilename)
+	if err != nil {
+		return fmt.Errorf("error creating session DB: %v", err)
+	}
+
+	// Create the gRPC server that handles adding/removing sessions and the
+	// actual mailbox server that spins up the Terminal Connect server
+	// interface.
+	g.sessionServer = session.NewServer(
+		func(opts ...grpc.ServerOption) *grpc.Server {
+			allOpts := []grpc.ServerOption{
+				grpc.CustomCodec(grpcProxy.Codec()), // nolint: staticcheck,
+				grpc.UnknownServiceHandler(
+					grpcProxy.TransparentHandler(
+						g.rpcProxy.director,
+					),
+				),
+			}
+			allOpts = append(allOpts, opts...)
+			mailboxGrpcServer := grpc.NewServer(allOpts...)
+
+			_ = g.RegisterGrpcSubserver(mailboxGrpcServer)
+
+			return mailboxGrpcServer
+		},
+	)
+	g.sessionRpcServer = &sessionRpcServer{
+		basicAuth:     g.rpcProxy.basicAuth,
+		db:            g.sessionDB,
+		sessionServer: g.sessionServer,
+	}
+
+	// Now start up all previously created sessions.
+	sessions, err := g.sessionDB.ListSessions()
+	if err != nil {
+		return fmt.Errorf("error listing sessions: %v", err)
+	}
+	for _, sess := range sessions {
+		if err := g.sessionRpcServer.resumeSession(sess); err != nil {
+			return fmt.Errorf("error resuming sesion: %v", err)
+		}
+	}
 
 	// Overwrite the loop and pool daemon's user agent name so it sends
 	// "litd" instead of "loopd" and "poold" respectively.
@@ -542,6 +594,8 @@ func (g *LightningTerminal) RegisterGrpcSubserver(server *grpc.Server) error {
 		poolrpc.RegisterTraderServer(server, g.poolServer)
 	}
 
+	litrpc.RegisterSessionsServer(server, g.sessionRpcServer)
+
 	return nil
 }
 
@@ -689,6 +743,12 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 		return g.poolServer.ValidateMacaroon(
 			ctx, requiredPermissions, fullMethod,
 		)
+
+	case isLitURI(fullMethod):
+		_, err := g.rpcProxy.convertBasicAuth(ctx, fullMethod)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Because lnd will spin up its own gRPC server with macaroon
@@ -751,6 +811,12 @@ func (g *LightningTerminal) shutdown() error {
 			returnErr = err
 		}
 	}
+
+	if err := g.sessionDB.Close(); err != nil {
+		log.Errorf("Error closing session DB: %v", err)
+		returnErr = err
+	}
+	g.sessionServer.Stop()
 
 	if g.lndClient != nil {
 		g.lndClient.Close()

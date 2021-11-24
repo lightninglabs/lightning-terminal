@@ -7,3 +7,4 @@ export { default as NodeStore } from './nodeStore';
 export { default as SettingsStore } from './settingsStore';
 export { default as SwapStore } from './swapStore';
 export { default as RouterStore } from './routerStore';
+export { default as SessionStore } from './sessionStore';

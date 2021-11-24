@@ -8,6 +8,16 @@ import (
 	"gopkg.in/macaroon-bakery.v2/bakery"
 )
 
+var (
+	// litPermissions is a map of all LiT RPC methods and their required
+	// macaroon permissions to access the session service.
+	litPermissions = map[string][]bakery.Op{
+		"/litrpc.Sessions/AddSession":    {{}},
+		"/litrpc.Sessions/ListSessions":  {{}},
+		"/litrpc.Sessions/RevokeSession": {{}},
+	}
+)
+
 // getSubserverPermissions returns a merged map of all subserver macaroon
 // permissions.
 func getSubserverPermissions() map[string][]bakery.Op {
@@ -21,6 +31,9 @@ func getSubserverPermissions() map[string][]bakery.Op {
 		result[key] = value
 	}
 	for key, value := range pool.RequiredPermissions {
+		result[key] = value
+	}
+	for key, value := range litPermissions {
 		result[key] = value
 	}
 	return result
@@ -92,5 +105,11 @@ func isFaradayURI(uri string) bool {
 // isPoolURI returns true if the given URI belongs to an RPC of poold.
 func isPoolURI(uri string) bool {
 	_, ok := pool.RequiredPermissions[uri]
+	return ok
+}
+
+// isLitURI returns true if the given URI belongs to an RPC of LiT.
+func isLitURI(uri string) bool {
+	_, ok := litPermissions[uri]
 	return ok
 }

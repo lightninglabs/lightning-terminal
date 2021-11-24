@@ -39,9 +39,9 @@ describe('Layout component', () => {
     fireEvent.click(getByText('History'));
     expect(store.router.location.pathname).toBe('/history');
     expect(getByText('History').parentElement).toHaveClass('active');
-    fireEvent.click(getByText('Lightning Terminal'));
+    fireEvent.click(getByText('Lightning Loop'));
     expect(store.router.location.pathname).toBe('/loop');
-    expect(getByText('Lightning Terminal').parentElement).toHaveClass('active');
+    expect(getByText('Lightning Loop').parentElement).toHaveClass('active');
   });
 
   it('should navigate to the Pool page', () => {
@@ -50,9 +50,9 @@ describe('Layout component', () => {
     fireEvent.click(getByText('Lightning Pool'));
     expect(store.router.location.pathname).toBe('/pool');
     expect(getByText('Lightning Pool').parentElement).toHaveClass('active');
-    fireEvent.click(getByText('Lightning Terminal'));
+    fireEvent.click(getByText('Lightning Loop'));
     expect(store.router.location.pathname).toBe('/loop');
-    expect(getByText('Lightning Terminal').parentElement).toHaveClass('active');
+    expect(getByText('Lightning Loop').parentElement).toHaveClass('active');
   });
 
   it('should navigate to the Settings page', () => {
@@ -61,8 +61,8 @@ describe('Layout component', () => {
     fireEvent.click(getByText('Settings'));
     expect(store.router.location.pathname).toBe('/settings');
     expect(getByText('Settings').parentElement).toHaveClass('active');
-    fireEvent.click(getByText('Lightning Terminal'));
+    fireEvent.click(getByText('Lightning Loop'));
     expect(store.router.location.pathname).toBe('/loop');
-    expect(getByText('Lightning Terminal').parentElement).toHaveClass('active');
+    expect(getByText('Lightning Loop').parentElement).toHaveClass('active');
   });
 });
