@@ -456,6 +456,7 @@ export const poolListOrders: POOL.ListOrdersResponse.AsObject = {
         creationTimestampNs: '1605370663652010000',
         eventsList: [],
         minUnitsMatch: 1,
+        channelType: 1,
       },
       leaseDurationBlocks: 2016,
       version: 1,
@@ -476,6 +477,7 @@ export const poolListOrders: POOL.ListOrdersResponse.AsObject = {
         creationTimestampNs: '1605371586127059200',
         eventsList: [],
         minUnitsMatch: 1,
+        channelType: 1,
       },
       leaseDurationBlocks: 2016,
       version: 1,
@@ -497,6 +499,7 @@ export const poolListOrders: POOL.ListOrdersResponse.AsObject = {
         creationTimestampNs: '1605372478047663000',
         eventsList: [],
         minUnitsMatch: 1,
+        channelType: 1,
       },
       leaseDurationBlocks: 2016,
       version: 1,
@@ -518,6 +521,7 @@ export const poolListOrders: POOL.ListOrdersResponse.AsObject = {
         creationTimestampNs: '1605372382040897300',
         eventsList: [],
         minUnitsMatch: 1,
+        channelType: 1,
       },
       leaseDurationBlocks: 2016,
       version: 1,
@@ -539,6 +543,7 @@ export const poolListOrders: POOL.ListOrdersResponse.AsObject = {
         creationTimestampNs: '1605372096883950800',
         eventsList: [],
         minUnitsMatch: 1,
+        channelType: 1,
       },
       leaseDurationBlocks: 2016,
       version: 1,
@@ -559,6 +564,7 @@ export const poolQuoteOrder: POOL.QuoteOrderResponse.AsObject = {
 
 export const poolSubmitOrder: POOL.SubmitOrderResponse.AsObject = {
   acceptedOrderNonce: 'W4XLkXhEKMcKfzV+Ex+jXQJeaVXoCoKQzptMRi6g+ZA=',
+  updatedSidecarTicket: '',
 };
 
 export const poolInvalidOrder: AUCT.InvalidOrder.AsObject = {
