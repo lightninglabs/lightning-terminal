@@ -345,6 +345,13 @@ enum ChannelType {
 
     // The channel uses an anchor-based commitment.
     ANCHORS = 1;
+
+    /*
+    The channel build upon the anchor-based commitment and requires an
+    additional CLTV of the channel lease maturity on any commitment and HTLC
+    outputs that pay directly to the channel initiator (the seller).
+    */
+    SCRIPT_ENFORCED_LEASE = 2;
 }
 
 message ChannelInfo {
@@ -545,6 +552,13 @@ message OrderMatchPrepare {
     within and the discovered market clearing price.
     */
     map<uint32, MatchedMarket> matched_markets = 10;
+
+    /*
+    The earliest absolute height in the chain in which the batch transaction can
+    be found within. This will be used by traders to base off their absolute
+    channel lease maturity height.
+    */
+    uint32 batch_height_hint = 11;
 }
 
 message OrderMatchSignBegin {
@@ -565,11 +579,8 @@ message OrderMatchFinalize {
     */
     bytes batch_txid = 2;
 
-    /*
-    The current block height at the time the batch transaction was published to
-    the network.
-    */
-    uint32 height_hint = 3;
+    // Don't re-use, this was a field that was removed.
+    reserved 3;
 }
 
 message SubscribeError {
@@ -783,6 +794,24 @@ message AccountDiff {
     bytes trader_key = 4;
 }
 
+enum OrderChannelType {
+    // Used to set defaults when a trader doesn't specify a channel type.
+    ORDER_CHANNEL_TYPE_UNKNOWN = 0;
+
+    /*
+    The channel type will vary per matched channel based on the features shared
+    between its participants.
+    */
+    ORDER_CHANNEL_TYPE_PEER_DEPENDENT = 1;
+
+    /*
+    A channel type that builds upon the anchors commitment format to enforce
+    channel lease maturities in the commitment and HTLC outputs that pay to the
+    channel initiator/seller.
+    */
+    ORDER_CHANNEL_TYPE_SCRIPT_ENFORCED = 2;
+}
+
 message ServerOrder {
     /*
     The trader's account key of the account to use for the order.
@@ -843,7 +872,7 @@ message ServerOrder {
     /*
     The type of the channel that should be opened.
     */
-    uint32 chan_type = 12;
+    OrderChannelType channel_type = 12;
 
     /*
     Maximum fee rate the trader is willing to pay for the batch transaction,
@@ -1202,7 +1231,7 @@ message AskSnapshot {
     uint32 rate_fixed = 3;
 
     // The channel type to be created.
-    uint32 chan_type = 4;
+    OrderChannelType chan_type = 4;
 }
 message BidSnapshot {
     // The version of the order.
@@ -1215,7 +1244,7 @@ message BidSnapshot {
     uint32 rate_fixed = 3;
 
     // The channel type to be created.
-    uint32 chan_type = 4;
+    OrderChannelType chan_type = 4;
 }
 message MatchedOrderSnapshot {
     // The full ask order that was matched.

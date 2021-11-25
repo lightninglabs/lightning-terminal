@@ -45779,7 +45779,8 @@ proto.lnrpc.RPCMiddlewareRequest.toObject = function(includeInstance, msg) {
     customCaveatCondition: jspb.Message.getFieldWithDefault(msg, 3, ""),
     streamAuth: (f = msg.getStreamAuth()) && proto.lnrpc.StreamAuth.toObject(includeInstance, f),
     request: (f = msg.getRequest()) && proto.lnrpc.RPCMessage.toObject(includeInstance, f),
-    response: (f = msg.getResponse()) && proto.lnrpc.RPCMessage.toObject(includeInstance, f)
+    response: (f = msg.getResponse()) && proto.lnrpc.RPCMessage.toObject(includeInstance, f),
+    msgId: jspb.Message.getFieldWithDefault(msg, 7, "0")
   };
 
   if (includeInstance) {
@@ -45842,6 +45843,10 @@ proto.lnrpc.RPCMiddlewareRequest.deserializeBinaryFromReader = function(msg, rea
       var value = new proto.lnrpc.RPCMessage;
       reader.readMessage(value,proto.lnrpc.RPCMessage.deserializeBinaryFromReader);
       msg.setResponse(value);
+      break;
+    case 7:
+      var value = /** @type {string} */ (reader.readUint64String());
+      msg.setMsgId(value);
       break;
     default:
       reader.skipField();
@@ -45915,6 +45920,13 @@ proto.lnrpc.RPCMiddlewareRequest.serializeBinaryToWriter = function(message, wri
       6,
       f,
       proto.lnrpc.RPCMessage.serializeBinaryToWriter
+    );
+  }
+  f = message.getMsgId();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
+      7,
+      f
     );
   }
 };
@@ -46076,6 +46088,21 @@ proto.lnrpc.RPCMiddlewareRequest.prototype.clearResponse = function() {
  */
 proto.lnrpc.RPCMiddlewareRequest.prototype.hasResponse = function() {
   return jspb.Message.getField(this, 6) != null;
+};
+
+
+/**
+ * optional uint64 msg_id = 7;
+ * @return {string}
+ */
+proto.lnrpc.RPCMiddlewareRequest.prototype.getMsgId = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 7, "0"));
+};
+
+
+/** @param {string} value */
+proto.lnrpc.RPCMiddlewareRequest.prototype.setMsgId = function(value) {
+  jspb.Message.setProto3StringIntField(this, 7, value);
 };
 
 
@@ -46543,7 +46570,7 @@ proto.lnrpc.RPCMiddlewareResponse.prototype.toObject = function(opt_includeInsta
  */
 proto.lnrpc.RPCMiddlewareResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    requestId: jspb.Message.getFieldWithDefault(msg, 1, "0"),
+    refMsgId: jspb.Message.getFieldWithDefault(msg, 1, "0"),
     register: (f = msg.getRegister()) && proto.lnrpc.MiddlewareRegistration.toObject(includeInstance, f),
     feedback: (f = msg.getFeedback()) && proto.lnrpc.InterceptFeedback.toObject(includeInstance, f)
   };
@@ -46584,7 +46611,7 @@ proto.lnrpc.RPCMiddlewareResponse.deserializeBinaryFromReader = function(msg, re
     switch (field) {
     case 1:
       var value = /** @type {string} */ (reader.readUint64String());
-      msg.setRequestId(value);
+      msg.setRefMsgId(value);
       break;
     case 2:
       var value = new proto.lnrpc.MiddlewareRegistration;
@@ -46625,7 +46652,7 @@ proto.lnrpc.RPCMiddlewareResponse.prototype.serializeBinary = function() {
  */
 proto.lnrpc.RPCMiddlewareResponse.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getRequestId();
+  f = message.getRefMsgId();
   if (parseInt(f, 10) !== 0) {
     writer.writeUint64String(
       1,
@@ -46652,16 +46679,16 @@ proto.lnrpc.RPCMiddlewareResponse.serializeBinaryToWriter = function(message, wr
 
 
 /**
- * optional uint64 request_id = 1;
+ * optional uint64 ref_msg_id = 1;
  * @return {string}
  */
-proto.lnrpc.RPCMiddlewareResponse.prototype.getRequestId = function() {
+proto.lnrpc.RPCMiddlewareResponse.prototype.getRefMsgId = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, "0"));
 };
 
 
 /** @param {string} value */
-proto.lnrpc.RPCMiddlewareResponse.prototype.setRequestId = function(value) {
+proto.lnrpc.RPCMiddlewareResponse.prototype.setRefMsgId = function(value) {
   jspb.Message.setProto3StringIntField(this, 1, value);
 };
 

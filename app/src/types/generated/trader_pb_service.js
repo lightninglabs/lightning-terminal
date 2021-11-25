@@ -245,6 +245,33 @@ Trader.ExpectSidecarChannel = {
   responseType: trader_pb.ExpectSidecarChannelResponse
 };
 
+Trader.DecodeSidecarTicket = {
+  methodName: "DecodeSidecarTicket",
+  service: Trader,
+  requestStream: false,
+  responseStream: false,
+  requestType: trader_pb.SidecarTicket,
+  responseType: trader_pb.DecodedSidecarTicket
+};
+
+Trader.ListSidecars = {
+  methodName: "ListSidecars",
+  service: Trader,
+  requestStream: false,
+  responseStream: false,
+  requestType: trader_pb.ListSidecarsRequest,
+  responseType: trader_pb.ListSidecarsResponse
+};
+
+Trader.CancelSidecar = {
+  methodName: "CancelSidecar",
+  service: Trader,
+  requestStream: false,
+  responseStream: false,
+  requestType: trader_pb.CancelSidecarRequest,
+  responseType: trader_pb.CancelSidecarResponse
+};
+
 exports.Trader = Trader;
 
 function TraderClient(serviceHost, options) {
@@ -1032,6 +1059,99 @@ TraderClient.prototype.expectSidecarChannel = function expectSidecarChannel(requ
     callback = arguments[1];
   }
   var client = grpc.unary(Trader.ExpectSidecarChannel, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+TraderClient.prototype.decodeSidecarTicket = function decodeSidecarTicket(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(Trader.DecodeSidecarTicket, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+TraderClient.prototype.listSidecars = function listSidecars(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(Trader.ListSidecars, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+TraderClient.prototype.cancelSidecar = function cancelSidecar(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(Trader.CancelSidecar, {
     request: requestMessage,
     host: this.serviceHost,
     metadata: metadata,

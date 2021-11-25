@@ -727,6 +727,9 @@ export class OrderMatchPrepare extends jspb.Message {
 
   getMatchedMarketsMap(): jspb.Map<number, MatchedMarket>;
   clearMatchedMarketsMap(): void;
+  getBatchHeightHint(): number;
+  setBatchHeightHint(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): OrderMatchPrepare.AsObject;
   static toObject(includeInstance: boolean, msg: OrderMatchPrepare): OrderMatchPrepare.AsObject;
@@ -749,6 +752,7 @@ export namespace OrderMatchPrepare {
     batchId: Uint8Array | string,
     batchVersion: number,
     matchedMarketsMap: Array<[number, MatchedMarket.AsObject]>,
+    batchHeightHint: number,
   }
 }
 
@@ -785,9 +789,6 @@ export class OrderMatchFinalize extends jspb.Message {
   getBatchTxid_asB64(): string;
   setBatchTxid(value: Uint8Array | string): void;
 
-  getHeightHint(): number;
-  setHeightHint(value: number): void;
-
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): OrderMatchFinalize.AsObject;
   static toObject(includeInstance: boolean, msg: OrderMatchFinalize): OrderMatchFinalize.AsObject;
@@ -802,7 +803,6 @@ export namespace OrderMatchFinalize {
   export type AsObject = {
     batchId: Uint8Array | string,
     batchTxid: Uint8Array | string,
-    heightHint: number,
   }
 }
 
@@ -1076,8 +1076,8 @@ export class ServerOrder extends jspb.Message {
   setNodeAddrList(value: Array<NodeAddress>): void;
   addNodeAddr(value?: NodeAddress, index?: number): NodeAddress;
 
-  getChanType(): number;
-  setChanType(value: number): void;
+  getChannelType(): OrderChannelTypeMap[keyof OrderChannelTypeMap];
+  setChannelType(value: OrderChannelTypeMap[keyof OrderChannelTypeMap]): void;
 
   getMaxBatchFeeRateSatPerKw(): string;
   setMaxBatchFeeRateSatPerKw(value: string): void;
@@ -1103,7 +1103,7 @@ export namespace ServerOrder {
     multiSigKey: Uint8Array | string,
     nodePub: Uint8Array | string,
     nodeAddrList: Array<NodeAddress.AsObject>,
-    chanType: number,
+    channelType: OrderChannelTypeMap[keyof OrderChannelTypeMap],
     maxBatchFeeRateSatPerKw: string,
   }
 }
@@ -1664,8 +1664,8 @@ export class AskSnapshot extends jspb.Message {
   getRateFixed(): number;
   setRateFixed(value: number): void;
 
-  getChanType(): number;
-  setChanType(value: number): void;
+  getChanType(): OrderChannelTypeMap[keyof OrderChannelTypeMap];
+  setChanType(value: OrderChannelTypeMap[keyof OrderChannelTypeMap]): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): AskSnapshot.AsObject;
@@ -1682,7 +1682,7 @@ export namespace AskSnapshot {
     version: number,
     leaseDurationBlocks: number,
     rateFixed: number,
-    chanType: number,
+    chanType: OrderChannelTypeMap[keyof OrderChannelTypeMap],
   }
 }
 
@@ -1696,8 +1696,8 @@ export class BidSnapshot extends jspb.Message {
   getRateFixed(): number;
   setRateFixed(value: number): void;
 
-  getChanType(): number;
-  setChanType(value: number): void;
+  getChanType(): OrderChannelTypeMap[keyof OrderChannelTypeMap];
+  setChanType(value: OrderChannelTypeMap[keyof OrderChannelTypeMap]): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): BidSnapshot.AsObject;
@@ -1714,7 +1714,7 @@ export namespace BidSnapshot {
     version: number,
     leaseDurationBlocks: number,
     rateFixed: number,
-    chanType: number,
+    chanType: OrderChannelTypeMap[keyof OrderChannelTypeMap],
   }
 }
 
@@ -2091,6 +2091,7 @@ export namespace MarketInfoResponse {
 export interface ChannelTypeMap {
   TWEAKLESS: 0;
   ANCHORS: 1;
+  SCRIPT_ENFORCED_LEASE: 2;
 }
 
 export const ChannelType: ChannelTypeMap;
@@ -2105,6 +2106,14 @@ export interface AuctionAccountStateMap {
 }
 
 export const AuctionAccountState: AuctionAccountStateMap;
+
+export interface OrderChannelTypeMap {
+  ORDER_CHANNEL_TYPE_UNKNOWN: 0;
+  ORDER_CHANNEL_TYPE_PEER_DEPENDENT: 1;
+  ORDER_CHANNEL_TYPE_SCRIPT_ENFORCED: 2;
+}
+
+export const OrderChannelType: OrderChannelTypeMap;
 
 export interface NodeTierMap {
   TIER_DEFAULT: 0;

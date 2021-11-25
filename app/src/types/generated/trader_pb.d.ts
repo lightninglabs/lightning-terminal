@@ -23,6 +23,11 @@ export class InitAccountRequest extends jspb.Message {
   getConfTarget(): number;
   setConfTarget(value: number): void;
 
+  hasFeeRateSatPerKw(): boolean;
+  clearFeeRateSatPerKw(): void;
+  getFeeRateSatPerKw(): string;
+  setFeeRateSatPerKw(value: string): void;
+
   getInitiator(): string;
   setInitiator(value: string): void;
 
@@ -44,6 +49,7 @@ export namespace InitAccountRequest {
     absoluteHeight: number,
     relativeHeight: number,
     confTarget: number,
+    feeRateSatPerKw: string,
     initiator: string,
   }
 
@@ -56,6 +62,7 @@ export namespace InitAccountRequest {
   export enum FeesCase {
     FEES_NOT_SET = 0,
     CONF_TARGET = 4,
+    FEE_RATE_SAT_PER_KW = 6,
   }
 }
 
@@ -640,6 +647,9 @@ export class SubmitOrderResponse extends jspb.Message {
   getAcceptedOrderNonce_asB64(): string;
   setAcceptedOrderNonce(value: Uint8Array | string): void;
 
+  getUpdatedSidecarTicket(): string;
+  setUpdatedSidecarTicket(value: string): void;
+
   getDetailsCase(): SubmitOrderResponse.DetailsCase;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): SubmitOrderResponse.AsObject;
@@ -655,6 +665,7 @@ export namespace SubmitOrderResponse {
   export type AsObject = {
     invalidOrder?: auctioneerrpc_auctioneer_pb.InvalidOrder.AsObject,
     acceptedOrderNonce: Uint8Array | string,
+    updatedSidecarTicket: string,
   }
 
   export enum DetailsCase {
@@ -797,6 +808,9 @@ export class Order extends jspb.Message {
   getMinUnitsMatch(): number;
   setMinUnitsMatch(value: number): void;
 
+  getChannelType(): auctioneerrpc_auctioneer_pb.OrderChannelTypeMap[keyof auctioneerrpc_auctioneer_pb.OrderChannelTypeMap];
+  setChannelType(value: auctioneerrpc_auctioneer_pb.OrderChannelTypeMap[keyof auctioneerrpc_auctioneer_pb.OrderChannelTypeMap]): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Order.AsObject;
   static toObject(includeInstance: boolean, msg: Order): Order.AsObject;
@@ -821,6 +835,7 @@ export namespace Order {
     creationTimestampNs: string,
     eventsList: Array<OrderEvent.AsObject>,
     minUnitsMatch: number,
+    channelType: auctioneerrpc_auctioneer_pb.OrderChannelTypeMap[keyof auctioneerrpc_auctioneer_pb.OrderChannelTypeMap],
   }
 }
 
@@ -1688,6 +1703,102 @@ export namespace SidecarTicket {
   }
 }
 
+export class DecodedSidecarTicket extends jspb.Message {
+  getId(): Uint8Array | string;
+  getId_asU8(): Uint8Array;
+  getId_asB64(): string;
+  setId(value: Uint8Array | string): void;
+
+  getVersion(): number;
+  setVersion(value: number): void;
+
+  getState(): string;
+  setState(value: string): void;
+
+  getOfferCapacity(): string;
+  setOfferCapacity(value: string): void;
+
+  getOfferPushAmount(): string;
+  setOfferPushAmount(value: string): void;
+
+  getOfferLeaseDurationBlocks(): number;
+  setOfferLeaseDurationBlocks(value: number): void;
+
+  getOfferSignPubkey(): Uint8Array | string;
+  getOfferSignPubkey_asU8(): Uint8Array;
+  getOfferSignPubkey_asB64(): string;
+  setOfferSignPubkey(value: Uint8Array | string): void;
+
+  getOfferSignature(): Uint8Array | string;
+  getOfferSignature_asU8(): Uint8Array;
+  getOfferSignature_asB64(): string;
+  setOfferSignature(value: Uint8Array | string): void;
+
+  getOfferAuto(): boolean;
+  setOfferAuto(value: boolean): void;
+
+  getRecipientNodePubkey(): Uint8Array | string;
+  getRecipientNodePubkey_asU8(): Uint8Array;
+  getRecipientNodePubkey_asB64(): string;
+  setRecipientNodePubkey(value: Uint8Array | string): void;
+
+  getRecipientMultisigPubkey(): Uint8Array | string;
+  getRecipientMultisigPubkey_asU8(): Uint8Array;
+  getRecipientMultisigPubkey_asB64(): string;
+  setRecipientMultisigPubkey(value: Uint8Array | string): void;
+
+  getRecipientMultisigPubkeyIndex(): number;
+  setRecipientMultisigPubkeyIndex(value: number): void;
+
+  getOrderBidNonce(): Uint8Array | string;
+  getOrderBidNonce_asU8(): Uint8Array;
+  getOrderBidNonce_asB64(): string;
+  setOrderBidNonce(value: Uint8Array | string): void;
+
+  getOrderSignature(): Uint8Array | string;
+  getOrderSignature_asU8(): Uint8Array;
+  getOrderSignature_asB64(): string;
+  setOrderSignature(value: Uint8Array | string): void;
+
+  getExecutionPendingChannelId(): Uint8Array | string;
+  getExecutionPendingChannelId_asU8(): Uint8Array;
+  getExecutionPendingChannelId_asB64(): string;
+  setExecutionPendingChannelId(value: Uint8Array | string): void;
+
+  getEncodedTicket(): string;
+  setEncodedTicket(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): DecodedSidecarTicket.AsObject;
+  static toObject(includeInstance: boolean, msg: DecodedSidecarTicket): DecodedSidecarTicket.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: DecodedSidecarTicket, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): DecodedSidecarTicket;
+  static deserializeBinaryFromReader(message: DecodedSidecarTicket, reader: jspb.BinaryReader): DecodedSidecarTicket;
+}
+
+export namespace DecodedSidecarTicket {
+  export type AsObject = {
+    id: Uint8Array | string,
+    version: number,
+    state: string,
+    offerCapacity: string,
+    offerPushAmount: string,
+    offerLeaseDurationBlocks: number,
+    offerSignPubkey: Uint8Array | string,
+    offerSignature: Uint8Array | string,
+    offerAuto: boolean,
+    recipientNodePubkey: Uint8Array | string,
+    recipientMultisigPubkey: Uint8Array | string,
+    recipientMultisigPubkeyIndex: number,
+    orderBidNonce: Uint8Array | string,
+    orderSignature: Uint8Array | string,
+    executionPendingChannelId: Uint8Array | string,
+    encodedTicket: string,
+  }
+}
+
 export class RegisterSidecarRequest extends jspb.Message {
   getTicket(): string;
   setTicket(value: string): void;
@@ -1744,6 +1855,88 @@ export class ExpectSidecarChannelResponse extends jspb.Message {
 }
 
 export namespace ExpectSidecarChannelResponse {
+  export type AsObject = {
+  }
+}
+
+export class ListSidecarsRequest extends jspb.Message {
+  getSidecarId(): Uint8Array | string;
+  getSidecarId_asU8(): Uint8Array;
+  getSidecarId_asB64(): string;
+  setSidecarId(value: Uint8Array | string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListSidecarsRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: ListSidecarsRequest): ListSidecarsRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ListSidecarsRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListSidecarsRequest;
+  static deserializeBinaryFromReader(message: ListSidecarsRequest, reader: jspb.BinaryReader): ListSidecarsRequest;
+}
+
+export namespace ListSidecarsRequest {
+  export type AsObject = {
+    sidecarId: Uint8Array | string,
+  }
+}
+
+export class ListSidecarsResponse extends jspb.Message {
+  clearTicketsList(): void;
+  getTicketsList(): Array<DecodedSidecarTicket>;
+  setTicketsList(value: Array<DecodedSidecarTicket>): void;
+  addTickets(value?: DecodedSidecarTicket, index?: number): DecodedSidecarTicket;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListSidecarsResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: ListSidecarsResponse): ListSidecarsResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ListSidecarsResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListSidecarsResponse;
+  static deserializeBinaryFromReader(message: ListSidecarsResponse, reader: jspb.BinaryReader): ListSidecarsResponse;
+}
+
+export namespace ListSidecarsResponse {
+  export type AsObject = {
+    ticketsList: Array<DecodedSidecarTicket.AsObject>,
+  }
+}
+
+export class CancelSidecarRequest extends jspb.Message {
+  getSidecarId(): Uint8Array | string;
+  getSidecarId_asU8(): Uint8Array;
+  getSidecarId_asB64(): string;
+  setSidecarId(value: Uint8Array | string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): CancelSidecarRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: CancelSidecarRequest): CancelSidecarRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: CancelSidecarRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): CancelSidecarRequest;
+  static deserializeBinaryFromReader(message: CancelSidecarRequest, reader: jspb.BinaryReader): CancelSidecarRequest;
+}
+
+export namespace CancelSidecarRequest {
+  export type AsObject = {
+    sidecarId: Uint8Array | string,
+  }
+}
+
+export class CancelSidecarResponse extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): CancelSidecarResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: CancelSidecarResponse): CancelSidecarResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: CancelSidecarResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): CancelSidecarResponse;
+  static deserializeBinaryFromReader(message: CancelSidecarResponse, reader: jspb.BinaryReader): CancelSidecarResponse;
+}
+
+export namespace CancelSidecarResponse {
   export type AsObject = {
   }
 }

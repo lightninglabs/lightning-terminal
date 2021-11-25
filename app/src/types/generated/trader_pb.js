@@ -25,8 +25,11 @@ goog.exportSymbol('proto.poolrpc.BumpAccountFeeRequest', null, global);
 goog.exportSymbol('proto.poolrpc.BumpAccountFeeResponse', null, global);
 goog.exportSymbol('proto.poolrpc.CancelOrderRequest', null, global);
 goog.exportSymbol('proto.poolrpc.CancelOrderResponse', null, global);
+goog.exportSymbol('proto.poolrpc.CancelSidecarRequest', null, global);
+goog.exportSymbol('proto.poolrpc.CancelSidecarResponse', null, global);
 goog.exportSymbol('proto.poolrpc.CloseAccountRequest', null, global);
 goog.exportSymbol('proto.poolrpc.CloseAccountResponse', null, global);
+goog.exportSymbol('proto.poolrpc.DecodedSidecarTicket', null, global);
 goog.exportSymbol('proto.poolrpc.DepositAccountRequest', null, global);
 goog.exportSymbol('proto.poolrpc.DepositAccountResponse', null, global);
 goog.exportSymbol('proto.poolrpc.ExpectSidecarChannelRequest', null, global);
@@ -43,6 +46,8 @@ goog.exportSymbol('proto.poolrpc.ListAccountsRequest', null, global);
 goog.exportSymbol('proto.poolrpc.ListAccountsResponse', null, global);
 goog.exportSymbol('proto.poolrpc.ListOrdersRequest', null, global);
 goog.exportSymbol('proto.poolrpc.ListOrdersResponse', null, global);
+goog.exportSymbol('proto.poolrpc.ListSidecarsRequest', null, global);
+goog.exportSymbol('proto.poolrpc.ListSidecarsResponse', null, global);
 goog.exportSymbol('proto.poolrpc.LsatToken', null, global);
 goog.exportSymbol('proto.poolrpc.MatchEvent', null, global);
 goog.exportSymbol('proto.poolrpc.MatchRejectReason', null, global);
@@ -102,7 +107,7 @@ if (goog.DEBUG && !COMPILED) {
  * @private {!Array<!Array<number>>}
  * @const
  */
-proto.poolrpc.InitAccountRequest.oneofGroups_ = [[2,3],[4]];
+proto.poolrpc.InitAccountRequest.oneofGroups_ = [[2,3],[4,6]];
 
 /**
  * @enum {number}
@@ -125,7 +130,8 @@ proto.poolrpc.InitAccountRequest.prototype.getAccountExpiryCase = function() {
  */
 proto.poolrpc.InitAccountRequest.FeesCase = {
   FEES_NOT_SET: 0,
-  CONF_TARGET: 4
+  CONF_TARGET: 4,
+  FEE_RATE_SAT_PER_KW: 6
 };
 
 /**
@@ -168,6 +174,7 @@ proto.poolrpc.InitAccountRequest.toObject = function(includeInstance, msg) {
     absoluteHeight: jspb.Message.getFieldWithDefault(msg, 2, 0),
     relativeHeight: jspb.Message.getFieldWithDefault(msg, 3, 0),
     confTarget: jspb.Message.getFieldWithDefault(msg, 4, 0),
+    feeRateSatPerKw: jspb.Message.getFieldWithDefault(msg, 6, "0"),
     initiator: jspb.Message.getFieldWithDefault(msg, 5, "")
   };
 
@@ -220,6 +227,10 @@ proto.poolrpc.InitAccountRequest.deserializeBinaryFromReader = function(msg, rea
     case 4:
       var value = /** @type {number} */ (reader.readUint32());
       msg.setConfTarget(value);
+      break;
+    case 6:
+      var value = /** @type {string} */ (reader.readUint64String());
+      msg.setFeeRateSatPerKw(value);
       break;
     case 5:
       var value = /** @type {string} */ (reader.readString());
@@ -279,6 +290,13 @@ proto.poolrpc.InitAccountRequest.serializeBinaryToWriter = function(message, wri
   if (f != null) {
     writer.writeUint32(
       4,
+      f
+    );
+  }
+  f = /** @type {string} */ (jspb.Message.getField(message, 6));
+  if (f != null) {
+    writer.writeUint64String(
+      6,
       f
     );
   }
@@ -391,6 +409,35 @@ proto.poolrpc.InitAccountRequest.prototype.clearConfTarget = function() {
  */
 proto.poolrpc.InitAccountRequest.prototype.hasConfTarget = function() {
   return jspb.Message.getField(this, 4) != null;
+};
+
+
+/**
+ * optional uint64 fee_rate_sat_per_kw = 6;
+ * @return {string}
+ */
+proto.poolrpc.InitAccountRequest.prototype.getFeeRateSatPerKw = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 6, "0"));
+};
+
+
+/** @param {string} value */
+proto.poolrpc.InitAccountRequest.prototype.setFeeRateSatPerKw = function(value) {
+  jspb.Message.setOneofField(this, 6, proto.poolrpc.InitAccountRequest.oneofGroups_[1], value);
+};
+
+
+proto.poolrpc.InitAccountRequest.prototype.clearFeeRateSatPerKw = function() {
+  jspb.Message.setOneofField(this, 6, proto.poolrpc.InitAccountRequest.oneofGroups_[1], undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {!boolean}
+ */
+proto.poolrpc.InitAccountRequest.prototype.hasFeeRateSatPerKw = function() {
+  return jspb.Message.getField(this, 6) != null;
 };
 
 
@@ -4536,7 +4583,8 @@ proto.poolrpc.SubmitOrderResponse.prototype.toObject = function(opt_includeInsta
 proto.poolrpc.SubmitOrderResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
     invalidOrder: (f = msg.getInvalidOrder()) && auctioneerrpc_auctioneer_pb.InvalidOrder.toObject(includeInstance, f),
-    acceptedOrderNonce: msg.getAcceptedOrderNonce_asB64()
+    acceptedOrderNonce: msg.getAcceptedOrderNonce_asB64(),
+    updatedSidecarTicket: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -4582,6 +4630,10 @@ proto.poolrpc.SubmitOrderResponse.deserializeBinaryFromReader = function(msg, re
       var value = /** @type {!Uint8Array} */ (reader.readBytes());
       msg.setAcceptedOrderNonce(value);
       break;
+    case 3:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setUpdatedSidecarTicket(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -4623,6 +4675,13 @@ proto.poolrpc.SubmitOrderResponse.serializeBinaryToWriter = function(message, wr
   if (f != null) {
     writer.writeBytes(
       2,
+      f
+    );
+  }
+  f = message.getUpdatedSidecarTicket();
+  if (f.length > 0) {
+    writer.writeString(
+      3,
       f
     );
   }
@@ -4709,6 +4768,21 @@ proto.poolrpc.SubmitOrderResponse.prototype.clearAcceptedOrderNonce = function()
  */
 proto.poolrpc.SubmitOrderResponse.prototype.hasAcceptedOrderNonce = function() {
   return jspb.Message.getField(this, 2) != null;
+};
+
+
+/**
+ * optional string updated_sidecar_ticket = 3;
+ * @return {string}
+ */
+proto.poolrpc.SubmitOrderResponse.prototype.getUpdatedSidecarTicket = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
+};
+
+
+/** @param {string} value */
+proto.poolrpc.SubmitOrderResponse.prototype.setUpdatedSidecarTicket = function(value) {
+  jspb.Message.setProto3StringField(this, 3, value);
 };
 
 
@@ -5447,7 +5521,8 @@ proto.poolrpc.Order.toObject = function(includeInstance, msg) {
     creationTimestampNs: jspb.Message.getFieldWithDefault(msg, 10, "0"),
     eventsList: jspb.Message.toObjectList(msg.getEventsList(),
     proto.poolrpc.OrderEvent.toObject, includeInstance),
-    minUnitsMatch: jspb.Message.getFieldWithDefault(msg, 12, 0)
+    minUnitsMatch: jspb.Message.getFieldWithDefault(msg, 12, 0),
+    channelType: jspb.Message.getFieldWithDefault(msg, 13, 0)
   };
 
   if (includeInstance) {
@@ -5532,6 +5607,10 @@ proto.poolrpc.Order.deserializeBinaryFromReader = function(msg, reader) {
     case 12:
       var value = /** @type {number} */ (reader.readUint32());
       msg.setMinUnitsMatch(value);
+      break;
+    case 13:
+      var value = /** @type {!proto.poolrpc.OrderChannelType} */ (reader.readEnum());
+      msg.setChannelType(value);
       break;
     default:
       reader.skipField();
@@ -5644,6 +5723,13 @@ proto.poolrpc.Order.serializeBinaryToWriter = function(message, writer) {
   if (f !== 0) {
     writer.writeUint32(
       12,
+      f
+    );
+  }
+  f = message.getChannelType();
+  if (f !== 0.0) {
+    writer.writeEnum(
+      13,
       f
     );
   }
@@ -5891,6 +5977,21 @@ proto.poolrpc.Order.prototype.getMinUnitsMatch = function() {
 /** @param {number} value */
 proto.poolrpc.Order.prototype.setMinUnitsMatch = function(value) {
   jspb.Message.setProto3IntField(this, 12, value);
+};
+
+
+/**
+ * optional OrderChannelType channel_type = 13;
+ * @return {!proto.poolrpc.OrderChannelType}
+ */
+proto.poolrpc.Order.prototype.getChannelType = function() {
+  return /** @type {!proto.poolrpc.OrderChannelType} */ (jspb.Message.getFieldWithDefault(this, 13, 0));
+};
+
+
+/** @param {!proto.poolrpc.OrderChannelType} value */
+proto.poolrpc.Order.prototype.setChannelType = function(value) {
+  jspb.Message.setProto3EnumField(this, 13, value);
 };
 
 
@@ -12151,6 +12252,747 @@ proto.poolrpc.SidecarTicket.prototype.setTicket = function(value) {
  * @extends {jspb.Message}
  * @constructor
  */
+proto.poolrpc.DecodedSidecarTicket = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.DecodedSidecarTicket, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.poolrpc.DecodedSidecarTicket.displayName = 'proto.poolrpc.DecodedSidecarTicket';
+}
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.toObject = function(opt_includeInstance) {
+  return proto.poolrpc.DecodedSidecarTicket.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.poolrpc.DecodedSidecarTicket} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.poolrpc.DecodedSidecarTicket.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    id: msg.getId_asB64(),
+    version: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    state: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    offerCapacity: jspb.Message.getFieldWithDefault(msg, 4, "0"),
+    offerPushAmount: jspb.Message.getFieldWithDefault(msg, 5, "0"),
+    offerLeaseDurationBlocks: jspb.Message.getFieldWithDefault(msg, 6, 0),
+    offerSignPubkey: msg.getOfferSignPubkey_asB64(),
+    offerSignature: msg.getOfferSignature_asB64(),
+    offerAuto: jspb.Message.getFieldWithDefault(msg, 9, false),
+    recipientNodePubkey: msg.getRecipientNodePubkey_asB64(),
+    recipientMultisigPubkey: msg.getRecipientMultisigPubkey_asB64(),
+    recipientMultisigPubkeyIndex: jspb.Message.getFieldWithDefault(msg, 12, 0),
+    orderBidNonce: msg.getOrderBidNonce_asB64(),
+    orderSignature: msg.getOrderSignature_asB64(),
+    executionPendingChannelId: msg.getExecutionPendingChannelId_asB64(),
+    encodedTicket: jspb.Message.getFieldWithDefault(msg, 16, "")
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.poolrpc.DecodedSidecarTicket}
+ */
+proto.poolrpc.DecodedSidecarTicket.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.poolrpc.DecodedSidecarTicket;
+  return proto.poolrpc.DecodedSidecarTicket.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.poolrpc.DecodedSidecarTicket} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.poolrpc.DecodedSidecarTicket}
+ */
+proto.poolrpc.DecodedSidecarTicket.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setId(value);
+      break;
+    case 2:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setVersion(value);
+      break;
+    case 3:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setState(value);
+      break;
+    case 4:
+      var value = /** @type {string} */ (reader.readUint64String());
+      msg.setOfferCapacity(value);
+      break;
+    case 5:
+      var value = /** @type {string} */ (reader.readUint64String());
+      msg.setOfferPushAmount(value);
+      break;
+    case 6:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setOfferLeaseDurationBlocks(value);
+      break;
+    case 7:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setOfferSignPubkey(value);
+      break;
+    case 8:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setOfferSignature(value);
+      break;
+    case 9:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setOfferAuto(value);
+      break;
+    case 10:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setRecipientNodePubkey(value);
+      break;
+    case 11:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setRecipientMultisigPubkey(value);
+      break;
+    case 12:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setRecipientMultisigPubkeyIndex(value);
+      break;
+    case 13:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setOrderBidNonce(value);
+      break;
+    case 14:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setOrderSignature(value);
+      break;
+    case 15:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setExecutionPendingChannelId(value);
+      break;
+    case 16:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setEncodedTicket(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.poolrpc.DecodedSidecarTicket.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.poolrpc.DecodedSidecarTicket} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.poolrpc.DecodedSidecarTicket.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getId_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      1,
+      f
+    );
+  }
+  f = message.getVersion();
+  if (f !== 0) {
+    writer.writeUint32(
+      2,
+      f
+    );
+  }
+  f = message.getState();
+  if (f.length > 0) {
+    writer.writeString(
+      3,
+      f
+    );
+  }
+  f = message.getOfferCapacity();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
+      4,
+      f
+    );
+  }
+  f = message.getOfferPushAmount();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
+      5,
+      f
+    );
+  }
+  f = message.getOfferLeaseDurationBlocks();
+  if (f !== 0) {
+    writer.writeUint32(
+      6,
+      f
+    );
+  }
+  f = message.getOfferSignPubkey_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      7,
+      f
+    );
+  }
+  f = message.getOfferSignature_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      8,
+      f
+    );
+  }
+  f = message.getOfferAuto();
+  if (f) {
+    writer.writeBool(
+      9,
+      f
+    );
+  }
+  f = message.getRecipientNodePubkey_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      10,
+      f
+    );
+  }
+  f = message.getRecipientMultisigPubkey_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      11,
+      f
+    );
+  }
+  f = message.getRecipientMultisigPubkeyIndex();
+  if (f !== 0) {
+    writer.writeUint32(
+      12,
+      f
+    );
+  }
+  f = message.getOrderBidNonce_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      13,
+      f
+    );
+  }
+  f = message.getOrderSignature_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      14,
+      f
+    );
+  }
+  f = message.getExecutionPendingChannelId_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      15,
+      f
+    );
+  }
+  f = message.getEncodedTicket();
+  if (f.length > 0) {
+    writer.writeString(
+      16,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional bytes id = 1;
+ * @return {!(string|Uint8Array)}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getId = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+};
+
+
+/**
+ * optional bytes id = 1;
+ * This is a type-conversion wrapper around `getId()`
+ * @return {string}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getId_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getId()));
+};
+
+
+/**
+ * optional bytes id = 1;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getId()`
+ * @return {!Uint8Array}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getId_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getId()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.poolrpc.DecodedSidecarTicket.prototype.setId = function(value) {
+  jspb.Message.setProto3BytesField(this, 1, value);
+};
+
+
+/**
+ * optional uint32 version = 2;
+ * @return {number}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getVersion = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
+};
+
+
+/** @param {number} value */
+proto.poolrpc.DecodedSidecarTicket.prototype.setVersion = function(value) {
+  jspb.Message.setProto3IntField(this, 2, value);
+};
+
+
+/**
+ * optional string state = 3;
+ * @return {string}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getState = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
+};
+
+
+/** @param {string} value */
+proto.poolrpc.DecodedSidecarTicket.prototype.setState = function(value) {
+  jspb.Message.setProto3StringField(this, 3, value);
+};
+
+
+/**
+ * optional uint64 offer_capacity = 4;
+ * @return {string}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getOfferCapacity = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 4, "0"));
+};
+
+
+/** @param {string} value */
+proto.poolrpc.DecodedSidecarTicket.prototype.setOfferCapacity = function(value) {
+  jspb.Message.setProto3StringIntField(this, 4, value);
+};
+
+
+/**
+ * optional uint64 offer_push_amount = 5;
+ * @return {string}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getOfferPushAmount = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, "0"));
+};
+
+
+/** @param {string} value */
+proto.poolrpc.DecodedSidecarTicket.prototype.setOfferPushAmount = function(value) {
+  jspb.Message.setProto3StringIntField(this, 5, value);
+};
+
+
+/**
+ * optional uint32 offer_lease_duration_blocks = 6;
+ * @return {number}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getOfferLeaseDurationBlocks = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 6, 0));
+};
+
+
+/** @param {number} value */
+proto.poolrpc.DecodedSidecarTicket.prototype.setOfferLeaseDurationBlocks = function(value) {
+  jspb.Message.setProto3IntField(this, 6, value);
+};
+
+
+/**
+ * optional bytes offer_sign_pubkey = 7;
+ * @return {!(string|Uint8Array)}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getOfferSignPubkey = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 7, ""));
+};
+
+
+/**
+ * optional bytes offer_sign_pubkey = 7;
+ * This is a type-conversion wrapper around `getOfferSignPubkey()`
+ * @return {string}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getOfferSignPubkey_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getOfferSignPubkey()));
+};
+
+
+/**
+ * optional bytes offer_sign_pubkey = 7;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getOfferSignPubkey()`
+ * @return {!Uint8Array}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getOfferSignPubkey_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getOfferSignPubkey()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.poolrpc.DecodedSidecarTicket.prototype.setOfferSignPubkey = function(value) {
+  jspb.Message.setProto3BytesField(this, 7, value);
+};
+
+
+/**
+ * optional bytes offer_signature = 8;
+ * @return {!(string|Uint8Array)}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getOfferSignature = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 8, ""));
+};
+
+
+/**
+ * optional bytes offer_signature = 8;
+ * This is a type-conversion wrapper around `getOfferSignature()`
+ * @return {string}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getOfferSignature_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getOfferSignature()));
+};
+
+
+/**
+ * optional bytes offer_signature = 8;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getOfferSignature()`
+ * @return {!Uint8Array}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getOfferSignature_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getOfferSignature()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.poolrpc.DecodedSidecarTicket.prototype.setOfferSignature = function(value) {
+  jspb.Message.setProto3BytesField(this, 8, value);
+};
+
+
+/**
+ * optional bool offer_auto = 9;
+ * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
+ * You should avoid comparisons like {@code val === true/false} in those cases.
+ * @return {boolean}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getOfferAuto = function() {
+  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 9, false));
+};
+
+
+/** @param {boolean} value */
+proto.poolrpc.DecodedSidecarTicket.prototype.setOfferAuto = function(value) {
+  jspb.Message.setProto3BooleanField(this, 9, value);
+};
+
+
+/**
+ * optional bytes recipient_node_pubkey = 10;
+ * @return {!(string|Uint8Array)}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getRecipientNodePubkey = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 10, ""));
+};
+
+
+/**
+ * optional bytes recipient_node_pubkey = 10;
+ * This is a type-conversion wrapper around `getRecipientNodePubkey()`
+ * @return {string}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getRecipientNodePubkey_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getRecipientNodePubkey()));
+};
+
+
+/**
+ * optional bytes recipient_node_pubkey = 10;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getRecipientNodePubkey()`
+ * @return {!Uint8Array}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getRecipientNodePubkey_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getRecipientNodePubkey()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.poolrpc.DecodedSidecarTicket.prototype.setRecipientNodePubkey = function(value) {
+  jspb.Message.setProto3BytesField(this, 10, value);
+};
+
+
+/**
+ * optional bytes recipient_multisig_pubkey = 11;
+ * @return {!(string|Uint8Array)}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getRecipientMultisigPubkey = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 11, ""));
+};
+
+
+/**
+ * optional bytes recipient_multisig_pubkey = 11;
+ * This is a type-conversion wrapper around `getRecipientMultisigPubkey()`
+ * @return {string}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getRecipientMultisigPubkey_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getRecipientMultisigPubkey()));
+};
+
+
+/**
+ * optional bytes recipient_multisig_pubkey = 11;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getRecipientMultisigPubkey()`
+ * @return {!Uint8Array}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getRecipientMultisigPubkey_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getRecipientMultisigPubkey()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.poolrpc.DecodedSidecarTicket.prototype.setRecipientMultisigPubkey = function(value) {
+  jspb.Message.setProto3BytesField(this, 11, value);
+};
+
+
+/**
+ * optional uint32 recipient_multisig_pubkey_index = 12;
+ * @return {number}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getRecipientMultisigPubkeyIndex = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 12, 0));
+};
+
+
+/** @param {number} value */
+proto.poolrpc.DecodedSidecarTicket.prototype.setRecipientMultisigPubkeyIndex = function(value) {
+  jspb.Message.setProto3IntField(this, 12, value);
+};
+
+
+/**
+ * optional bytes order_bid_nonce = 13;
+ * @return {!(string|Uint8Array)}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getOrderBidNonce = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 13, ""));
+};
+
+
+/**
+ * optional bytes order_bid_nonce = 13;
+ * This is a type-conversion wrapper around `getOrderBidNonce()`
+ * @return {string}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getOrderBidNonce_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getOrderBidNonce()));
+};
+
+
+/**
+ * optional bytes order_bid_nonce = 13;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getOrderBidNonce()`
+ * @return {!Uint8Array}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getOrderBidNonce_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getOrderBidNonce()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.poolrpc.DecodedSidecarTicket.prototype.setOrderBidNonce = function(value) {
+  jspb.Message.setProto3BytesField(this, 13, value);
+};
+
+
+/**
+ * optional bytes order_signature = 14;
+ * @return {!(string|Uint8Array)}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getOrderSignature = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 14, ""));
+};
+
+
+/**
+ * optional bytes order_signature = 14;
+ * This is a type-conversion wrapper around `getOrderSignature()`
+ * @return {string}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getOrderSignature_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getOrderSignature()));
+};
+
+
+/**
+ * optional bytes order_signature = 14;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getOrderSignature()`
+ * @return {!Uint8Array}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getOrderSignature_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getOrderSignature()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.poolrpc.DecodedSidecarTicket.prototype.setOrderSignature = function(value) {
+  jspb.Message.setProto3BytesField(this, 14, value);
+};
+
+
+/**
+ * optional bytes execution_pending_channel_id = 15;
+ * @return {!(string|Uint8Array)}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getExecutionPendingChannelId = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 15, ""));
+};
+
+
+/**
+ * optional bytes execution_pending_channel_id = 15;
+ * This is a type-conversion wrapper around `getExecutionPendingChannelId()`
+ * @return {string}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getExecutionPendingChannelId_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getExecutionPendingChannelId()));
+};
+
+
+/**
+ * optional bytes execution_pending_channel_id = 15;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getExecutionPendingChannelId()`
+ * @return {!Uint8Array}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getExecutionPendingChannelId_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getExecutionPendingChannelId()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.poolrpc.DecodedSidecarTicket.prototype.setExecutionPendingChannelId = function(value) {
+  jspb.Message.setProto3BytesField(this, 15, value);
+};
+
+
+/**
+ * optional string encoded_ticket = 16;
+ * @return {string}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getEncodedTicket = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 16, ""));
+};
+
+
+/** @param {string} value */
+proto.poolrpc.DecodedSidecarTicket.prototype.setEncodedTicket = function(value) {
+  jspb.Message.setProto3StringField(this, 16, value);
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
 proto.poolrpc.RegisterSidecarRequest = function(opt_data) {
   jspb.Message.initialize(this, opt_data, 0, -1, null, null);
 };
@@ -12565,6 +13407,622 @@ proto.poolrpc.ExpectSidecarChannelResponse.prototype.serializeBinary = function(
  * @suppress {unusedLocalVariables} f is only used for nested messages
  */
 proto.poolrpc.ExpectSidecarChannelResponse.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.ListSidecarsRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.ListSidecarsRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.poolrpc.ListSidecarsRequest.displayName = 'proto.poolrpc.ListSidecarsRequest';
+}
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.poolrpc.ListSidecarsRequest.prototype.toObject = function(opt_includeInstance) {
+  return proto.poolrpc.ListSidecarsRequest.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.poolrpc.ListSidecarsRequest} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.poolrpc.ListSidecarsRequest.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    sidecarId: msg.getSidecarId_asB64()
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.poolrpc.ListSidecarsRequest}
+ */
+proto.poolrpc.ListSidecarsRequest.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.poolrpc.ListSidecarsRequest;
+  return proto.poolrpc.ListSidecarsRequest.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.poolrpc.ListSidecarsRequest} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.poolrpc.ListSidecarsRequest}
+ */
+proto.poolrpc.ListSidecarsRequest.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setSidecarId(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.poolrpc.ListSidecarsRequest.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.poolrpc.ListSidecarsRequest.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.poolrpc.ListSidecarsRequest} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.poolrpc.ListSidecarsRequest.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getSidecarId_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      1,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional bytes sidecar_id = 1;
+ * @return {!(string|Uint8Array)}
+ */
+proto.poolrpc.ListSidecarsRequest.prototype.getSidecarId = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+};
+
+
+/**
+ * optional bytes sidecar_id = 1;
+ * This is a type-conversion wrapper around `getSidecarId()`
+ * @return {string}
+ */
+proto.poolrpc.ListSidecarsRequest.prototype.getSidecarId_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getSidecarId()));
+};
+
+
+/**
+ * optional bytes sidecar_id = 1;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getSidecarId()`
+ * @return {!Uint8Array}
+ */
+proto.poolrpc.ListSidecarsRequest.prototype.getSidecarId_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getSidecarId()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.poolrpc.ListSidecarsRequest.prototype.setSidecarId = function(value) {
+  jspb.Message.setProto3BytesField(this, 1, value);
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.ListSidecarsResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.ListSidecarsResponse.repeatedFields_, null);
+};
+goog.inherits(proto.poolrpc.ListSidecarsResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.poolrpc.ListSidecarsResponse.displayName = 'proto.poolrpc.ListSidecarsResponse';
+}
+/**
+ * List of repeated fields within this message type.
+ * @private {!Array<number>}
+ * @const
+ */
+proto.poolrpc.ListSidecarsResponse.repeatedFields_ = [1];
+
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.poolrpc.ListSidecarsResponse.prototype.toObject = function(opt_includeInstance) {
+  return proto.poolrpc.ListSidecarsResponse.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.poolrpc.ListSidecarsResponse} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.poolrpc.ListSidecarsResponse.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    ticketsList: jspb.Message.toObjectList(msg.getTicketsList(),
+    proto.poolrpc.DecodedSidecarTicket.toObject, includeInstance)
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.poolrpc.ListSidecarsResponse}
+ */
+proto.poolrpc.ListSidecarsResponse.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.poolrpc.ListSidecarsResponse;
+  return proto.poolrpc.ListSidecarsResponse.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.poolrpc.ListSidecarsResponse} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.poolrpc.ListSidecarsResponse}
+ */
+proto.poolrpc.ListSidecarsResponse.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = new proto.poolrpc.DecodedSidecarTicket;
+      reader.readMessage(value,proto.poolrpc.DecodedSidecarTicket.deserializeBinaryFromReader);
+      msg.addTickets(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.poolrpc.ListSidecarsResponse.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.poolrpc.ListSidecarsResponse.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.poolrpc.ListSidecarsResponse} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.poolrpc.ListSidecarsResponse.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getTicketsList();
+  if (f.length > 0) {
+    writer.writeRepeatedMessage(
+      1,
+      f,
+      proto.poolrpc.DecodedSidecarTicket.serializeBinaryToWriter
+    );
+  }
+};
+
+
+/**
+ * repeated DecodedSidecarTicket tickets = 1;
+ * @return {!Array<!proto.poolrpc.DecodedSidecarTicket>}
+ */
+proto.poolrpc.ListSidecarsResponse.prototype.getTicketsList = function() {
+  return /** @type{!Array<!proto.poolrpc.DecodedSidecarTicket>} */ (
+    jspb.Message.getRepeatedWrapperField(this, proto.poolrpc.DecodedSidecarTicket, 1));
+};
+
+
+/** @param {!Array<!proto.poolrpc.DecodedSidecarTicket>} value */
+proto.poolrpc.ListSidecarsResponse.prototype.setTicketsList = function(value) {
+  jspb.Message.setRepeatedWrapperField(this, 1, value);
+};
+
+
+/**
+ * @param {!proto.poolrpc.DecodedSidecarTicket=} opt_value
+ * @param {number=} opt_index
+ * @return {!proto.poolrpc.DecodedSidecarTicket}
+ */
+proto.poolrpc.ListSidecarsResponse.prototype.addTickets = function(opt_value, opt_index) {
+  return jspb.Message.addToRepeatedWrapperField(this, 1, opt_value, proto.poolrpc.DecodedSidecarTicket, opt_index);
+};
+
+
+proto.poolrpc.ListSidecarsResponse.prototype.clearTicketsList = function() {
+  this.setTicketsList([]);
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.CancelSidecarRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.CancelSidecarRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.poolrpc.CancelSidecarRequest.displayName = 'proto.poolrpc.CancelSidecarRequest';
+}
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.poolrpc.CancelSidecarRequest.prototype.toObject = function(opt_includeInstance) {
+  return proto.poolrpc.CancelSidecarRequest.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.poolrpc.CancelSidecarRequest} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.poolrpc.CancelSidecarRequest.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    sidecarId: msg.getSidecarId_asB64()
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.poolrpc.CancelSidecarRequest}
+ */
+proto.poolrpc.CancelSidecarRequest.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.poolrpc.CancelSidecarRequest;
+  return proto.poolrpc.CancelSidecarRequest.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.poolrpc.CancelSidecarRequest} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.poolrpc.CancelSidecarRequest}
+ */
+proto.poolrpc.CancelSidecarRequest.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setSidecarId(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.poolrpc.CancelSidecarRequest.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.poolrpc.CancelSidecarRequest.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.poolrpc.CancelSidecarRequest} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.poolrpc.CancelSidecarRequest.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getSidecarId_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      1,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional bytes sidecar_id = 1;
+ * @return {!(string|Uint8Array)}
+ */
+proto.poolrpc.CancelSidecarRequest.prototype.getSidecarId = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+};
+
+
+/**
+ * optional bytes sidecar_id = 1;
+ * This is a type-conversion wrapper around `getSidecarId()`
+ * @return {string}
+ */
+proto.poolrpc.CancelSidecarRequest.prototype.getSidecarId_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getSidecarId()));
+};
+
+
+/**
+ * optional bytes sidecar_id = 1;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getSidecarId()`
+ * @return {!Uint8Array}
+ */
+proto.poolrpc.CancelSidecarRequest.prototype.getSidecarId_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getSidecarId()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.poolrpc.CancelSidecarRequest.prototype.setSidecarId = function(value) {
+  jspb.Message.setProto3BytesField(this, 1, value);
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.CancelSidecarResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.CancelSidecarResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.poolrpc.CancelSidecarResponse.displayName = 'proto.poolrpc.CancelSidecarResponse';
+}
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.poolrpc.CancelSidecarResponse.prototype.toObject = function(opt_includeInstance) {
+  return proto.poolrpc.CancelSidecarResponse.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.poolrpc.CancelSidecarResponse} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.poolrpc.CancelSidecarResponse.toObject = function(includeInstance, msg) {
+  var f, obj = {
+
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.poolrpc.CancelSidecarResponse}
+ */
+proto.poolrpc.CancelSidecarResponse.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.poolrpc.CancelSidecarResponse;
+  return proto.poolrpc.CancelSidecarResponse.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.poolrpc.CancelSidecarResponse} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.poolrpc.CancelSidecarResponse}
+ */
+proto.poolrpc.CancelSidecarResponse.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.poolrpc.CancelSidecarResponse.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.poolrpc.CancelSidecarResponse.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.poolrpc.CancelSidecarResponse} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.poolrpc.CancelSidecarResponse.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
 };
 

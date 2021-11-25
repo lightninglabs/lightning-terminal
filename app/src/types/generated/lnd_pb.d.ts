@@ -6426,6 +6426,9 @@ export class RPCMiddlewareRequest extends jspb.Message {
   getResponse(): RPCMessage | undefined;
   setResponse(value?: RPCMessage): void;
 
+  getMsgId(): string;
+  setMsgId(value: string): void;
+
   getInterceptTypeCase(): RPCMiddlewareRequest.InterceptTypeCase;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RPCMiddlewareRequest.AsObject;
@@ -6445,6 +6448,7 @@ export namespace RPCMiddlewareRequest {
     streamAuth?: StreamAuth.AsObject,
     request?: RPCMessage.AsObject,
     response?: RPCMessage.AsObject,
+    msgId: string,
   }
 
   export enum InterceptTypeCase {
@@ -6510,8 +6514,8 @@ export namespace RPCMessage {
 }
 
 export class RPCMiddlewareResponse extends jspb.Message {
-  getRequestId(): string;
-  setRequestId(value: string): void;
+  getRefMsgId(): string;
+  setRefMsgId(value: string): void;
 
   hasRegister(): boolean;
   clearRegister(): void;
@@ -6536,7 +6540,7 @@ export class RPCMiddlewareResponse extends jspb.Message {
 
 export namespace RPCMiddlewareResponse {
   export type AsObject = {
-    requestId: string,
+    refMsgId: string,
     register?: MiddlewareRegistration.AsObject,
     feedback?: InterceptFeedback.AsObject,
   }

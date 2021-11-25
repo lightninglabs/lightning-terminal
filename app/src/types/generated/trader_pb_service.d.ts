@@ -239,6 +239,33 @@ type TraderExpectSidecarChannel = {
   readonly responseType: typeof trader_pb.ExpectSidecarChannelResponse;
 };
 
+type TraderDecodeSidecarTicket = {
+  readonly methodName: string;
+  readonly service: typeof Trader;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof trader_pb.SidecarTicket;
+  readonly responseType: typeof trader_pb.DecodedSidecarTicket;
+};
+
+type TraderListSidecars = {
+  readonly methodName: string;
+  readonly service: typeof Trader;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof trader_pb.ListSidecarsRequest;
+  readonly responseType: typeof trader_pb.ListSidecarsResponse;
+};
+
+type TraderCancelSidecar = {
+  readonly methodName: string;
+  readonly service: typeof Trader;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof trader_pb.CancelSidecarRequest;
+  readonly responseType: typeof trader_pb.CancelSidecarResponse;
+};
+
 export class Trader {
   static readonly serviceName: string;
   static readonly GetInfo: TraderGetInfo;
@@ -267,6 +294,9 @@ export class Trader {
   static readonly OfferSidecar: TraderOfferSidecar;
   static readonly RegisterSidecar: TraderRegisterSidecar;
   static readonly ExpectSidecarChannel: TraderExpectSidecarChannel;
+  static readonly DecodeSidecarTicket: TraderDecodeSidecarTicket;
+  static readonly ListSidecars: TraderListSidecars;
+  static readonly CancelSidecar: TraderCancelSidecar;
 }
 
 export type ServiceError = { message: string, code: number; metadata: grpc.Metadata }
@@ -534,6 +564,33 @@ export class TraderClient {
   expectSidecarChannel(
     requestMessage: trader_pb.ExpectSidecarChannelRequest,
     callback: (error: ServiceError|null, responseMessage: trader_pb.ExpectSidecarChannelResponse|null) => void
+  ): UnaryResponse;
+  decodeSidecarTicket(
+    requestMessage: trader_pb.SidecarTicket,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: trader_pb.DecodedSidecarTicket|null) => void
+  ): UnaryResponse;
+  decodeSidecarTicket(
+    requestMessage: trader_pb.SidecarTicket,
+    callback: (error: ServiceError|null, responseMessage: trader_pb.DecodedSidecarTicket|null) => void
+  ): UnaryResponse;
+  listSidecars(
+    requestMessage: trader_pb.ListSidecarsRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: trader_pb.ListSidecarsResponse|null) => void
+  ): UnaryResponse;
+  listSidecars(
+    requestMessage: trader_pb.ListSidecarsRequest,
+    callback: (error: ServiceError|null, responseMessage: trader_pb.ListSidecarsResponse|null) => void
+  ): UnaryResponse;
+  cancelSidecar(
+    requestMessage: trader_pb.CancelSidecarRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: trader_pb.CancelSidecarResponse|null) => void
+  ): UnaryResponse;
+  cancelSidecar(
+    requestMessage: trader_pb.CancelSidecarRequest,
+    callback: (error: ServiceError|null, responseMessage: trader_pb.CancelSidecarResponse|null) => void
   ): UnaryResponse;
 }
 
