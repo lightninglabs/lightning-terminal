@@ -118,6 +118,7 @@ github.com/btcsuite/btcwallet/walletdb v1.2.0/go.mod h1:9cwc1Yyg4uvd4ZdfdoMnALji
 github.com/btcsuite/btcwallet/walletdb v1.3.2/go.mod h1:GZCMPNpUu5KE3ASoVd+k06p/1OW8OwNGCCaNWRto2cQ=
 github.com/btcsuite/btcwallet/walletdb v1.3.3/go.mod h1:oJDxAEUHVtnmIIBaa22wSBPTVcs6hUp5NKWmI8xDwwU=
 github.com/btcsuite/btcwallet/walletdb v1.3.4/go.mod h1:oJDxAEUHVtnmIIBaa22wSBPTVcs6hUp5NKWmI8xDwwU=
+github.com/btcsuite/btcwallet/walletdb v1.3.5-0.20210513043850-3a2f12e3a954/go.mod h1:oJDxAEUHVtnmIIBaa22wSBPTVcs6hUp5NKWmI8xDwwU=
 github.com/btcsuite/btcwallet/walletdb v1.3.5/go.mod h1:oJDxAEUHVtnmIIBaa22wSBPTVcs6hUp5NKWmI8xDwwU=
 github.com/btcsuite/btcwallet/walletdb v1.3.6-0.20210803004036-eebed51155ec h1:zcAU3Ij8SmqaE+ITtS76fua2Niq7DRNp46sJRhi8PiI=
 github.com/btcsuite/btcwallet/walletdb v1.3.6-0.20210803004036-eebed51155ec/go.mod h1:oJDxAEUHVtnmIIBaa22wSBPTVcs6hUp5NKWmI8xDwwU=
@@ -537,8 +538,9 @@ github.com/lightningnetwork/lightning-onion v1.0.2-0.20210520211913-522b799e65b1
 github.com/lightningnetwork/lnd v0.11.0-beta/go.mod h1:CzArvT7NFDLhVyW06+NJWSuWFmE6Ea+AjjA3txUBqTM=
 github.com/lightningnetwork/lnd v0.11.1-beta/go.mod h1:PGIgxy8aH70Li33YVYkHSaCM8m8LjEevk5h1Dpldrr4=
 github.com/lightningnetwork/lnd v0.13.0-beta.rc5.0.20210728112744-ebabda671786/go.mod h1:3cmukt9wR4PX1va9Q78gmqSPYd6yhV1wcFemM5F+kT8=
-github.com/lightningnetwork/lnd v0.14.0-beta h1:q9ExaoRD7+Pv5UKbxBaszkAOX9pZrxre1YzEEq3pveY=
 github.com/lightningnetwork/lnd v0.14.0-beta/go.mod h1:qqOImM4QBKeIXsmUUsJznAbAaEF9iAPHAwfBZf9ld4Y=
+github.com/lightningnetwork/lnd v0.14.1-beta h1:v9hOlJ1xYivYQ634Nt71up5QDh8mXVpYh4MXUbbWTRw=
+github.com/lightningnetwork/lnd v0.14.1-beta/go.mod h1:o7zDwjZXm/bPP48qjwsqnZvvITyQl+fUv6UVoV4o+J8=
 github.com/lightningnetwork/lnd/cert v1.0.2/go.mod h1:fmtemlSMf5t4hsQmcprSoOykypAPp+9c+0d0iqTScMo=
 github.com/lightningnetwork/lnd/cert v1.0.2/go.mod h1:fmtemlSMf5t4hsQmcprSoOykypAPp+9c+0d0iqTScMo=
 github.com/lightningnetwork/lnd/cert v1.0.3/go.mod h1:3MWXVLLPI0Mg0XETm9fT4N9Vyy/8qQLmaM5589bEggM=
@@ -551,6 +553,8 @@ github.com/lightningnetwork/lnd/healthcheck v1.0.0/go.mod h1:u92p1JGFJNMSkMvztKE
 github.com/lightningnetwork/lnd/healthcheck v1.0.2/go.mod h1:u92p1JGFJNMSkMvztKEwmt1P3TRnLeJBXZ3M85xkU1E=
 github.com/lightningnetwork/lnd/healthcheck v1.2.0 h1:00bkNn+hGJM9j3Ht+ulf8YNcSx1HEYSDv5pf4HB1/uQ=
 github.com/lightningnetwork/lnd/healthcheck v1.2.0/go.mod h1:WSz3lsUjErJQZ3gb+zW32nM3WIHNiZ3A40GVoaQY5wU=
+github.com/lightningnetwork/lnd/kvdb v1.0.1/go.mod h1:XYnpYUhtYCY+5dxU90VXWn/DxlGAgGejEgfqU+F9h98=
+github.com/lightningnetwork/lnd/kvdb v1.2.0/go.mod h1:4DW7zc9AWqqJBvwhSE251VasYikTELItN70hESIt9RU=
 github.com/lightningnetwork/lnd/kvdb v1.2.1 h1:QevYLPh6bh1SLIvlUaPbrpX/YMKzSPBfmGVvn2i8IlU=
 github.com/lightningnetwork/lnd/kvdb v1.2.1/go.mod h1:x+IpsuDynubjokUofavLXroeGfS/WrqUXXTK6vN/gp4=
 github.com/lightningnetwork/lnd/queue v1.0.1/go.mod h1:vaQwexir73flPW43Mrm7JOgJHmcEFBWWSl9HlyASoms=

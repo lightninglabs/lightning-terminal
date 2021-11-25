@@ -14,7 +14,7 @@ require (
 	github.com/lightninglabs/loop v0.15.1-beta
 	github.com/lightninglabs/pool v0.5.2-alpha
 	github.com/lightninglabs/protobuf-hex-display v1.4.3-hex-display
-	github.com/lightningnetwork/lnd v0.14.0-beta
+	github.com/lightningnetwork/lnd v0.14.1-beta
 	github.com/lightningnetwork/lnd/cert v1.1.0
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
 	github.com/mwitkow/grpc-proxy v0.0.0-20181017164139-0f1106ef9c76
@@ -29,10 +29,6 @@ require (
 	gopkg.in/macaroon-bakery.v2 v2.1.0
 	gopkg.in/macaroon.v2 v2.1.0
 )
-
-// A PR was merged without bumping the kvdb module version. We'll be able to
-// remove this once lnd 0.14.1-beta is out.
-replace github.com/lightningnetwork/lnd/kvdb => github.com/lightningnetwork/lnd/kvdb v1.2.1
 
 // A PR was merged without bumping the auctioneerrpc module version. We'll be
 // able to remove this once pool 0.5.3-alpha is out.
