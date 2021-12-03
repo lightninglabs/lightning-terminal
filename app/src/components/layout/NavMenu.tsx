@@ -84,13 +84,7 @@ const NavMenu: React.FC = () => {
         <NavItem page="history" onClick={appView.goToHistory} />
         <NavItem page="pool" badge={l('common.preview')} onClick={appView.goToPool} />
         <NavItem page="settings" onClick={appView.goToSettings} />
-        {appView.showLightningConnect && (
-          <NavItem
-            page="connect"
-            badge={l('common.beta')}
-            onClick={appView.goToConnect}
-          />
-        )}
+        <NavItem page="connect" badge={l('common.beta')} onClick={appView.goToConnect} />
       </Nav>
     </>
   );
