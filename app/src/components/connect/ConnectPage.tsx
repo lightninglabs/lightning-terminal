@@ -1,5 +1,4 @@
 import React from 'react';
-import { Redirect } from 'react-router';
 import { observer } from 'mobx-react-lite';
 import styled from '@emotion/styled';
 import nodeConnectSvg from 'assets/images/lightning-node-connect.svg';
@@ -12,7 +11,7 @@ import SessionList from './SessionList';
 
 const Styled = {
   Wrapper: styled.section`
-    padding: 80px 0 0 80px;
+    padding-top: 80px;
   `,
   DisplayLarge: styled.div`
     font-family: ${props => props.theme.fonts.open.semiBold};
@@ -33,11 +32,7 @@ const Styled = {
 
 const ConnectPage: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.connect.ConnectPage');
-  const { appView, sessionStore } = useStore();
-
-  if (!appView.showLightningConnect) {
-    return <Redirect to="/loop" />;
-  }
+  const { sessionStore } = useStore();
 
   const { Wrapper, DisplayLarge, Description, Divider } = Styled;
   return !sessionStore.hasMultiple ? (

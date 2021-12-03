@@ -706,9 +706,16 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 				"syncing")
 		}
 
-		return g.faradayServer.ValidateMacaroon(
+		err = g.faradayServer.ValidateMacaroon(
 			ctx, requiredPermissions, fullMethod,
 		)
+		if err != nil {
+			return &proxyErr{
+				proxyContext: "faraday",
+				wrapped: fmt.Errorf("invalid macaroon: %v",
+					err),
+			}
+		}
 
 	case isLoopURI(fullMethod):
 		// In remote mode we just pass through the request, the remote
@@ -723,9 +730,16 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 				"syncing")
 		}
 
-		return g.loopServer.ValidateMacaroon(
+		err = g.loopServer.ValidateMacaroon(
 			ctx, requiredPermissions, fullMethod,
 		)
+		if err != nil {
+			return &proxyErr{
+				proxyContext: "loop",
+				wrapped: fmt.Errorf("invalid macaroon: %v",
+					err),
+			}
+		}
 
 	case isPoolURI(fullMethod):
 		// In remote mode we just pass through the request, the remote
@@ -740,14 +754,26 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 				"syncing")
 		}
 
-		return g.poolServer.ValidateMacaroon(
+		err = g.poolServer.ValidateMacaroon(
 			ctx, requiredPermissions, fullMethod,
 		)
+		if err != nil {
+			return &proxyErr{
+				proxyContext: "pool",
+				wrapped: fmt.Errorf("invalid macaroon: %v",
+					err),
+			}
+		}
 
 	case isLitURI(fullMethod):
-		_, err := g.rpcProxy.convertBasicAuth(ctx, fullMethod)
+		wrap := fmt.Errorf("invalid basic auth")
+		_, err := g.rpcProxy.convertBasicAuth(ctx, fullMethod, wrap)
 		if err != nil {
-			return err
+			return &proxyErr{
+				proxyContext: "lit",
+				wrapped: fmt.Errorf("invalid auth: %v",
+					err),
+			}
 		}
 	}
 
