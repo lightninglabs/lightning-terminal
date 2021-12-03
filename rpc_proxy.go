@@ -33,6 +33,24 @@ const (
 	HeaderMacaroon = "Macaroon"
 )
 
+// proxyErr is an error type that adds more context to an error occurring in the
+// proxy.
+type proxyErr struct {
+	wrapped      error
+	proxyContext string
+}
+
+// Error returns the error message as a string, including the proxy's context.
+func (e *proxyErr) Error() string {
+	return fmt.Sprintf("proxy error with context %s: %v", e.proxyContext,
+		e.wrapped)
+}
+
+// Unwrap returns the wrapped error.
+func (e *proxyErr) Unwrap() error {
+	return e.wrapped
+}
+
 // newRpcProxy creates a new RPC proxy that can take any native gRPC, grpc-web
 // or REST request and delegate (and convert if necessary) it to the correct
 // component.
