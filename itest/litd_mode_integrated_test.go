@@ -4,13 +4,16 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
+	"strings"
 	"testing"
 
 	"github.com/btcsuite/btcutil"
 	"github.com/lightninglabs/faraday/frdrpc"
+	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/lightninglabs/pool/poolrpc"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -94,32 +97,69 @@ var (
 	poolMacaroonFn = func(cfg *LitNodeConfig) string {
 		return cfg.PoolMacPath
 	}
+	litRequestFn = func(ctx context.Context,
+		c grpc.ClientConnInterface) (proto.Message, error) {
+
+		litConn := litrpc.NewSessionsClient(c)
+		return litConn.ListSessions(
+			ctx, &litrpc.ListSessionsRequest{},
+		)
+	}
 
 	endpoints = []struct {
-		name           string
-		macaroonFn     macaroonFn
-		requestFn      requestFn
-		successPattern string
+		name                        string
+		macaroonFn                  macaroonFn
+		requestFn                   requestFn
+		successPattern              string
+		supportsMacAuthOnLndPort    bool
+		supportsMacAuthOnLitPort    bool
+		supportsUIPasswordOnLndPort bool
+		supportsUIPasswordOnLitPort bool
 	}{{
-		name:           "lnrpc",
-		macaroonFn:     lndMacaroonFn,
-		requestFn:      lndRequestFn,
-		successPattern: "\"identity_pubkey\":\"0",
+		name:                        "lnrpc",
+		macaroonFn:                  lndMacaroonFn,
+		requestFn:                   lndRequestFn,
+		successPattern:              "\"identity_pubkey\":\"0",
+		supportsMacAuthOnLndPort:    true,
+		supportsMacAuthOnLitPort:    true,
+		supportsUIPasswordOnLndPort: false,
+		supportsUIPasswordOnLitPort: true,
 	}, {
-		name:           "frdrpc",
-		macaroonFn:     faradayMacaroonFn,
-		requestFn:      faradayRequestFn,
-		successPattern: "\"reports\":[]",
+		name:                        "frdrpc",
+		macaroonFn:                  faradayMacaroonFn,
+		requestFn:                   faradayRequestFn,
+		successPattern:              "\"reports\":[]",
+		supportsMacAuthOnLndPort:    true,
+		supportsMacAuthOnLitPort:    true,
+		supportsUIPasswordOnLndPort: false,
+		supportsUIPasswordOnLitPort: true,
 	}, {
-		name:           "looprpc",
-		macaroonFn:     loopMacaroonFn,
-		requestFn:      loopRequestFn,
-		successPattern: "\"swaps\":[]",
+		name:                        "looprpc",
+		macaroonFn:                  loopMacaroonFn,
+		requestFn:                   loopRequestFn,
+		successPattern:              "\"swaps\":[]",
+		supportsMacAuthOnLndPort:    true,
+		supportsMacAuthOnLitPort:    true,
+		supportsUIPasswordOnLndPort: false,
+		supportsUIPasswordOnLitPort: true,
 	}, {
-		name:           "poolrpc",
-		macaroonFn:     poolMacaroonFn,
-		requestFn:      poolRequestFn,
-		successPattern: "\"accounts_active\":0",
+		name:                        "poolrpc",
+		macaroonFn:                  poolMacaroonFn,
+		requestFn:                   poolRequestFn,
+		successPattern:              "\"accounts_active\":0",
+		supportsMacAuthOnLndPort:    true,
+		supportsMacAuthOnLitPort:    true,
+		supportsUIPasswordOnLndPort: false,
+		supportsUIPasswordOnLitPort: true,
+	}, {
+		name:                        "litrpc",
+		macaroonFn:                  nil,
+		requestFn:                   litRequestFn,
+		successPattern:              "\"sessions\":[]",
+		supportsMacAuthOnLndPort:    false,
+		supportsMacAuthOnLitPort:    false,
+		supportsUIPasswordOnLndPort: true,
+		supportsUIPasswordOnLitPort: true,
 	}}
 )
 
@@ -147,6 +187,10 @@ func testModeIntegrated(net *NetworkHarness, t *harnessTest) {
 		for _, endpoint := range endpoints {
 			endpoint := endpoint
 			tt.Run(endpoint.name+" lnd port", func(ttt *testing.T) {
+				if !endpoint.supportsMacAuthOnLndPort {
+					return
+				}
+
 				runGRPCAuthTest(
 					ttt, cfg.RPCAddr(), cfg.TLSCertPath,
 					endpoint.macaroonFn(cfg),
@@ -156,10 +200,41 @@ func testModeIntegrated(net *NetworkHarness, t *harnessTest) {
 			})
 
 			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
+				if !endpoint.supportsMacAuthOnLitPort {
+					return
+				}
+
 				runGRPCAuthTest(
 					ttt, cfg.LitAddr(), cfg.TLSCertPath,
 					endpoint.macaroonFn(cfg),
 					endpoint.requestFn,
+					endpoint.successPattern,
+				)
+			})
+		}
+	})
+
+	t.t.Run("UI password auth check", func(tt *testing.T) {
+		cfg := net.Alice.Cfg
+
+		for _, endpoint := range endpoints {
+			endpoint := endpoint
+			tt.Run(endpoint.name+" lnd port", func(ttt *testing.T) {
+				runUIPasswordCheck(
+					ttt, cfg.RPCAddr(), cfg.TLSCertPath,
+					cfg.UIPassword,
+					endpoint.requestFn, true,
+					!endpoint.supportsUIPasswordOnLndPort,
+					endpoint.successPattern,
+				)
+			})
+
+			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
+				runUIPasswordCheck(
+					ttt, cfg.LitAddr(), cfg.TLSCertPath,
+					cfg.UIPassword,
+					endpoint.requestFn, false,
+					!endpoint.supportsUIPasswordOnLitPort,
 					endpoint.successPattern,
 				)
 			})
@@ -232,6 +307,74 @@ func runGRPCAuthTest(t *testing.T, hostPort, tlsCertPath, macPath string,
 	require.Contains(t, string(json), successContent)
 }
 
+// runUIPasswordCheck tests UI password authentication.
+func runUIPasswordCheck(t *testing.T, hostPort, tlsCertPath, uiPassword string,
+	makeRequest requestFn, shouldFailWithoutMacaroon,
+	shouldFailWithDummyMacaroon bool, successContent string) {
+
+	ctxb := context.Background()
+	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
+	defer cancel()
+
+	rawConn, err := connectRPC(ctxt, hostPort, tlsCertPath)
+	require.NoError(t, err)
+
+	// Make sure that a call without any metadata results in an error.
+	_, err = makeRequest(ctxt, rawConn)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "expected 1 macaroon, got 0")
+
+	// We can do the same calls by providing a UI password. Make sure that
+	// sending an incorrect one is ignored.
+	ctxm := uiPasswordContext(ctxt, "foobar", false)
+	_, err = makeRequest(ctxm, rawConn)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "expected 1 macaroon, got 0")
+
+	// Sending a dummy macaroon along with the incorrect UI password also
+	// shouldn't be allowed and result in an error.
+	ctxm = uiPasswordContext(ctxt, "foobar", true)
+	_, err = makeRequest(ctxm, rawConn)
+	require.Error(t, err)
+	errStr := err.Error()
+	err1 := strings.Contains(errStr, "invalid auth: invalid basic auth")
+	err2 := strings.Contains(errStr, "cannot get macaroon: root key with")
+	require.True(t, err1 || err2, "wrong UI password and dummy mac")
+
+	// Using the correct UI password should work for all requests.
+	ctxm = uiPasswordContext(ctxt, uiPassword, false)
+	resp, err := makeRequest(ctxm, rawConn)
+
+	// On lnd's gRPC interface we don't support using the UI password.
+	if shouldFailWithoutMacaroon {
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "expected 1 macaroon, got 0")
+
+		// Sending a dummy macaroon will allow us to not get an error in
+		// case of the litrpc calls, where we don't support macaroons
+		// but have the extraction call in the validator anyway. So we
+		// provide a dummy macaroon but still the UI password must be
+		// correct to pass.
+		ctxm = uiPasswordContext(ctxt, uiPassword, true)
+		resp, err = makeRequest(ctxm, rawConn)
+
+		if shouldFailWithDummyMacaroon {
+			require.Error(t, err)
+			require.Contains(
+				t, err.Error(), "cannot get macaroon: root",
+			)
+			return
+		}
+	}
+
+	// We expect the call to succeed.
+	require.NoError(t, err)
+
+	json, err := marshalOptions.Marshal(resp)
+	require.NoError(t, err)
+	require.Contains(t, string(json), successContent)
+}
+
 // getServerCertificates returns the TLS certificates that a server presents to
 // clients.
 func getServerCertificates(hostPort string) ([]*x509.Certificate, error) {
@@ -253,6 +396,23 @@ func macaroonContext(ctx context.Context, macBytes []byte) context.Context {
 	if len(macBytes) > 0 {
 		md["macaroon"] = []string{hex.EncodeToString(macBytes)}
 	}
+	return metadata.NewOutgoingContext(ctx, md)
+}
+
+func uiPasswordContext(ctx context.Context, password string,
+	withDummyMac bool) context.Context {
+
+	basicAuth := base64.StdEncoding.EncodeToString(
+		[]byte(fmt.Sprintf("%s:%s", password, password)),
+	)
+
+	md := metadata.MD{}
+	md["authorization"] = []string{fmt.Sprintf("Basic %s", basicAuth)}
+
+	if withDummyMac {
+		md["macaroon"] = []string{hex.EncodeToString(dummyMacBytes)}
+	}
+
 	return metadata.NewOutgoingContext(ctx, md)
 }
 
