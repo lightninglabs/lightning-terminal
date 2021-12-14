@@ -52,6 +52,8 @@ var (
 	// numActiveNodes is the number of active nodes within the test network.
 	numActiveNodes    = 0
 	numActiveNodesMtx sync.Mutex
+
+	defaultLndPassphrase = []byte("default-wallet-password")
 )
 
 type LitNodeConfig struct {
@@ -59,9 +61,12 @@ type LitNodeConfig struct {
 
 	LitArgs []string
 
+	RemoteMode bool
+
 	FaradayMacPath string
 	LoopMacPath    string
 	PoolMacPath    string
+	LitTLSCertPath string
 
 	UIPassword string
 	LitDir     string
@@ -105,9 +110,9 @@ func (cfg *LitNodeConfig) GenArgs() []string {
 			fmt.Sprintf("--pool.basedir=%s", cfg.PoolDir),
 			fmt.Sprintf("--uipassword=%s", cfg.UIPassword),
 			"--restcors=*",
-			"--lnd-mode=integrated",
 		}
 	)
+	litArgs = append(litArgs, cfg.LitArgs...)
 
 	switch cfg.NetParams {
 	case &chaincfg.TestNet3Params:
@@ -118,9 +123,27 @@ func (cfg *LitNodeConfig) GenArgs() []string {
 		litArgs = append(litArgs, "--network=regtest")
 	}
 
+	// In remote mode, we don't need any lnd specific arguments other than
+	// those we need to connect.
+	if cfg.RemoteMode {
+		litArgs = append(litArgs, "--lnd-mode=remote")
+		litArgs = append(litArgs, fmt.Sprintf(
+			"--remote.lnd.rpcserver=%s", cfg.RPCAddr()),
+		)
+		litArgs = append(litArgs, fmt.Sprintf(
+			"--remote.lnd.tlscertpath=%s", cfg.TLSCertPath),
+		)
+		litArgs = append(litArgs, fmt.Sprintf(
+			"--remote.lnd.macaroonpath=%s", cfg.AdminMacPath),
+		)
+
+		return litArgs
+	}
+	
 	// All arguments so far were for lnd. Let's namespace them now so we can
 	// add args for the other daemons and LiT itself afterwards.
 	litArgs = append(litArgs, cfg.LitArgs...)
+	litArgs = append(litArgs, "--lnd-mode=integrated")
 	lndArgs := cfg.BaseNodeConfig.GenArgs()
 	for idx := range lndArgs {
 		litArgs = append(
@@ -155,6 +178,9 @@ type HarnessNode struct {
 
 	// NodeID is a unique identifier for the node within a NetworkHarness.
 	NodeID int
+
+	RemoteLnd        *lntest.HarnessNode
+	RemoteLndHarness *lntest.NetworkHarness
 
 	// PubKey is the serialized compressed identity public key of the node.
 	// This field will only be populated once the node itself has been
@@ -220,7 +246,7 @@ var _ lnrpc.WalletUnlockerClient = (*HarnessNode)(nil)
 var _ invoicesrpc.InvoicesClient = (*HarnessNode)(nil)
 
 // newNode creates a new test lightning node instance from the passed config.
-func newNode(cfg *LitNodeConfig) (*HarnessNode, error) {
+func newNode(cfg *LitNodeConfig, harness *NetworkHarness) (*HarnessNode, error) {
 	if cfg.BaseDir == "" {
 		var err error
 		cfg.BaseDir, err = ioutil.TempDir("", "litdtest-node")
@@ -252,6 +278,7 @@ func newNode(cfg *LitNodeConfig) (*HarnessNode, error) {
 	cfg.PoolMacPath = filepath.Join(
 		cfg.PoolDir, cfg.NetParams.Name, "pool.macaroon",
 	)
+	cfg.LitTLSCertPath = filepath.Join(cfg.LitDir, "tls.cert")
 	cfg.GenerateListeningPorts()
 
 	// Generate a random UI password by reading 16 random bytes and base64
@@ -270,9 +297,41 @@ func newNode(cfg *LitNodeConfig) (*HarnessNode, error) {
 	numActiveNodes++
 	numActiveNodesMtx.Unlock()
 
+	var (
+		remoteNode        *lntest.HarnessNode
+		remoteNodeHarness *lntest.NetworkHarness
+		err               error
+	)
+	if cfg.RemoteMode {
+		lndBinary := strings.ReplaceAll(
+			getLitdBinary(), itestLitdBinary, itestLndBinary,
+		)
+		remoteNodeHarness, err = lntest.NewNetworkHarness(
+			harness.Miner, harness.BackendCfg, lndBinary,
+			lntest.BackendBbolt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		remoteNode, _, _, err = remoteNodeHarness.NewNodeWithSeed(
+			cfg.Name, cfg.ExtraArgs, defaultLndPassphrase, false,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		cfg.RPCPort = remoteNode.Cfg.RPCPort
+		cfg.P2PPort = remoteNode.Cfg.P2PPort
+		cfg.TLSCertPath = remoteNode.Cfg.TLSCertPath
+		cfg.AdminMacPath = remoteNode.Cfg.AdminMacPath
+	}
+
 	return &HarnessNode{
 		Cfg:               cfg,
 		NodeID:            nodeNum,
+		RemoteLnd:         remoteNode,
+		RemoteLndHarness:  remoteNodeHarness,
 		chanWatchRequests: make(chan *chanWatchRequest),
 		openChans:         make(map[wire.OutPoint]int),
 		openChanWatchers:  make(map[wire.OutPoint][]chan struct{}),
@@ -929,14 +988,21 @@ func (hn *HarnessNode) ReadMacaroon(macPath string, timeout time.Duration) (
 func (hn *HarnessNode) ConnectRPCWithMacaroon(mac *macaroon.Macaroon) (
 	*grpc.ClientConn, error) {
 
+	var (
+		certPath    = hn.Cfg.TLSCertPath
+		connectAddr = hn.Cfg.RPCAddr()
+	)
+	if hn.Cfg.RemoteMode {
+		certPath = hn.Cfg.LitTLSCertPath
+		connectAddr = hn.Cfg.LitAddr()
+	}
+
 	// Wait until TLS certificate is created and has valid content before
 	// using it, up to 30 sec.
 	var tlsCreds credentials.TransportCredentials
 	err := wait.NoError(func() error {
 		var err error
-		tlsCreds, err = credentials.NewClientTLSFromFile(
-			hn.Cfg.TLSCertPath, "",
-		)
+		tlsCreds, err = credentials.NewClientTLSFromFile(certPath, "")
 		return err
 	}, lntest.DefaultTimeout)
 	if err != nil {
@@ -948,11 +1014,13 @@ func (hn *HarnessNode) ConnectRPCWithMacaroon(mac *macaroon.Macaroon) (
 		grpc.WithTransportCredentials(tlsCreds),
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), lntest.DefaultTimeout)
+	ctx, cancel := context.WithTimeout(
+		context.Background(), lntest.DefaultTimeout,
+	)
 	defer cancel()
 
 	if mac == nil {
-		return grpc.DialContext(ctx, hn.Cfg.RPCAddr(), opts...)
+		return grpc.DialContext(ctx, connectAddr, opts...)
 	}
 	macCred, err := macaroons.NewMacaroonCredential(mac)
 	if err != nil {
@@ -960,7 +1028,7 @@ func (hn *HarnessNode) ConnectRPCWithMacaroon(mac *macaroon.Macaroon) (
 	}
 	opts = append(opts, grpc.WithPerRPCCredentials(macCred))
 
-	return grpc.DialContext(ctx, hn.Cfg.RPCAddr(), opts...)
+	return grpc.DialContext(ctx, connectAddr, opts...)
 }
 
 // ConnectRPC uses the TLS certificate and admin macaroon files written by the
@@ -1059,6 +1127,10 @@ func (hn *HarnessNode) stop() error {
 			return fmt.Errorf("error attempting to stop grpc "+
 				"client: %v", err)
 		}
+	}
+
+	if hn.Cfg.RemoteMode {
+		return hn.RemoteLndHarness.ShutdownNode(hn.RemoteLnd)
 	}
 
 	return nil

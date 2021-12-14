@@ -31,6 +31,7 @@ const (
 	defaultTimeout      = lntest.DefaultTimeout
 	minerMempoolTimeout = lntest.MinerMempoolTimeout
 	itestLitdBinary     = "litd-itest"
+	itestLndBinary      = "lnd-itest"
 )
 
 // harnessTest wraps a regular testing.T providing enhanced error detection
@@ -103,7 +104,7 @@ func (h *harnessTest) Log(args ...interface{}) {
 	h.t.Log(args...)
 }
 
-func (h *harnessTest) getLitdBinary() string {
+func getLitdBinary() string {
 	binary := itestLitdBinary
 	litdExec := ""
 	if litdExecutable != nil && *litdExecutable != "" {

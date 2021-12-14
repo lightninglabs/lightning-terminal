@@ -167,6 +167,7 @@ travis-itest: lint
 build-itest: app-build
 	@$(call print, "Building itest btcd and litd.")
 	CGO_ENABLED=0 $(GOBUILD) -tags="$(ITEST_TAGS)" -o itest/btcd-itest -ldflags "$(ITEST_LDFLAGS)" $(BTCD_PKG)
+	CGO_ENABLED=0 $(GOBUILD) -tags="$(ITEST_TAGS)" -o itest/lnd-itest -ldflags "$(ITEST_LDFLAGS)" $(LND_PKG)/cmd/lnd
 
 itest-only:
 	@$(call print, "Building itest binary.")

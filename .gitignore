@@ -10,6 +10,7 @@ litcli-debug
 
 itest/btcd-itest
 itest/litd-itest
+itest/lnd-itest
 itest/itest.test
 itest/.logs
 itest/*.log

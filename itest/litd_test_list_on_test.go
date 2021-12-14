@@ -8,4 +8,8 @@ var allTestCases = []*testCase{
 		name: "test mode integrated",
 		test: testModeIntegrated,
 	},
+	{
+		name: "test mode remote",
+		test: testModeRemote,
+	},
 }

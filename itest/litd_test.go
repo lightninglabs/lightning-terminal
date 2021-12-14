@@ -73,7 +73,7 @@ func TestLightningTerminal(t *testing.T) {
 	// Now we can set up our test harness (LND instance), with the chain
 	// backend we just created.
 	ht := newHarnessTest(t, nil)
-	binary := ht.getLitdBinary()
+	binary := getLitdBinary()
 	litdHarness, err = NewNetworkHarness(miner, chainBackend, binary)
 	if err != nil {
 		ht.Fatalf("unable to create lightning network harness: %v", err)

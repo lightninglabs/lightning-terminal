@@ -144,14 +144,14 @@ func (n *NetworkHarness) SetUp(t *testing.T,
 	eg.Go(func() error {
 		var err error
 		n.Alice, err = n.newNode(
-			"Alice", lndArgs, litArgs, false, nil, true,
+			"Alice", lndArgs, litArgs, false, false, nil, true,
 		)
 		return err
 	})
 	eg.Go(func() error {
 		var err error
 		n.Bob, err = n.newNode(
-			"Bob", lndArgs, litArgs, false, nil, true,
+			"Bob", lndArgs, litArgs, false, true, nil, true,
 		)
 		return err
 	})
@@ -265,8 +265,8 @@ func (n *NetworkHarness) Stop() {
 // can be used immediately. Otherwise, the node will require an additional
 // initialization phase where the wallet is either created or restored.
 func (n *NetworkHarness) newNode(name string, extraArgs, litArgs []string,
-	hasSeed bool, password []byte, wait bool, opts ...lntest.NodeOption) (
-	*HarnessNode, error) {
+	hasSeed, remoteMode bool, password []byte, wait bool,
+	opts ...lntest.NodeOption) (*HarnessNode, error) {
 
 	baseCfg := &lntest.BaseNodeConfig{
 		Name:              name,
@@ -283,9 +283,10 @@ func (n *NetworkHarness) newNode(name string, extraArgs, litArgs []string,
 	cfg := &LitNodeConfig{
 		BaseNodeConfig: baseCfg,
 		LitArgs:        litArgs,
+		RemoteMode:     remoteMode,
 	}
 
-	node, err := newNode(cfg)
+	node, err := newNode(cfg, n)
 	if err != nil {
 		return nil, err
 	}
