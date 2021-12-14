@@ -8,8 +8,10 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/btcsuite/btcutil"
 	"github.com/lightninglabs/faraday/frdrpc"
@@ -25,6 +27,13 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"gopkg.in/macaroon.v2"
+)
+
+const (
+	// indexHtmlMarker is a string that appears in the rendered index.html
+	// file of the main UI. This is created by Webpack and should be fairly
+	// stable.
+	indexHtmlMarker = "webpackJsonplightning-terminal"
 )
 
 // requestFn is a function type for a helper function that makes a daemon
@@ -51,6 +60,10 @@ var (
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
 		},
+	}
+	client = http.Client{
+		Transport: transport,
+		Timeout:   1 * time.Second,
 	}
 
 	lndRequestFn = func(ctx context.Context,
@@ -240,6 +253,10 @@ func testModeIntegrated(net *NetworkHarness, t *harnessTest) {
 			})
 		}
 	})
+
+	t.t.Run("UI index page fallback", func(tt *testing.T) {
+		runIndexPageCheck(tt, net.Alice.Cfg.LitAddr())
+	})
 }
 
 // runCertificateCheck checks that the TLS certificates presented to clients are
@@ -373,6 +390,40 @@ func runUIPasswordCheck(t *testing.T, hostPort, tlsCertPath, uiPassword string,
 	json, err := marshalOptions.Marshal(resp)
 	require.NoError(t, err)
 	require.Contains(t, string(json), successContent)
+}
+
+// runIndexPageCheck makes sure the index page is returned correctly.
+func runIndexPageCheck(t *testing.T, hostPort string) {
+	body, err := getURL(fmt.Sprintf("https://%s/index.html", hostPort))
+	require.NoError(t, err)
+	require.Contains(t, body, indexHtmlMarker)
+
+	// The UI implements "virtual" pages by using the browser history API.
+	// Any URL that looks like a directory should fall back to the main
+	// index.html file as well.
+	body, err = getURL(fmt.Sprintf("https://%s/loop", hostPort))
+	require.NoError(t, err)
+	require.Contains(t, body, indexHtmlMarker)
+}
+
+// getURL retrieves the body of a given URL, ignoring any TLS certificate the
+// server might present.
+func getURL(url string) (string, error) {
+	resp, err := client.Get(url)
+	if err != nil {
+		return "", err
+	}
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(body), nil
 }
 
 // getServerCertificates returns the TLS certificates that a server presents to
