@@ -33,7 +33,10 @@ RUN apk add --no-cache --update alpine-sdk \
 
 # The first stage is already done and all static assets should now be generated
 # in the app/build sub directory.
-FROM golang:1.16.0-alpine as golangbuilder
+# If you change this value, please also update:
+# /dev.Dockerfile
+# /.github/workflows/main.yml
+FROM golang:1.17.6-alpine as golangbuilder
 
 # Instead of checking out from git again, we just copy the whole working
 # directory of the previous stage that includes the generated static assets.
