@@ -1,6 +1,7 @@
 package itest
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
@@ -22,6 +23,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -65,6 +67,10 @@ var (
 		Transport: transport,
 		Timeout:   1 * time.Second,
 	}
+
+	// emptyGrpcWebRequest is the binary serialized POST content of an empty
+	// gRPC request. One byte version and then 4 bytes content length.
+	emptyGrpcWebRequest = []byte{0, 0, 0, 0, 0}
 
 	lndRequestFn = func(ctx context.Context,
 		c grpc.ClientConnInterface) (proto.Message, error) {
@@ -128,6 +134,7 @@ var (
 		supportsMacAuthOnLitPort    bool
 		supportsUIPasswordOnLndPort bool
 		supportsUIPasswordOnLitPort bool
+		grpcWebURI                  string
 	}{{
 		name:                        "lnrpc",
 		macaroonFn:                  lndMacaroonFn,
@@ -137,6 +144,7 @@ var (
 		supportsMacAuthOnLitPort:    true,
 		supportsUIPasswordOnLndPort: false,
 		supportsUIPasswordOnLitPort: true,
+		grpcWebURI:                  "/lnrpc.Lightning/GetInfo",
 	}, {
 		name:                        "frdrpc",
 		macaroonFn:                  faradayMacaroonFn,
@@ -146,6 +154,7 @@ var (
 		supportsMacAuthOnLitPort:    true,
 		supportsUIPasswordOnLndPort: false,
 		supportsUIPasswordOnLitPort: true,
+		grpcWebURI:                  "/frdrpc.FaradayServer/RevenueReport",
 	}, {
 		name:                        "looprpc",
 		macaroonFn:                  loopMacaroonFn,
@@ -155,6 +164,7 @@ var (
 		supportsMacAuthOnLitPort:    true,
 		supportsUIPasswordOnLndPort: false,
 		supportsUIPasswordOnLitPort: true,
+		grpcWebURI:                  "/looprpc.SwapClient/ListSwaps",
 	}, {
 		name:                        "poolrpc",
 		macaroonFn:                  poolMacaroonFn,
@@ -164,6 +174,7 @@ var (
 		supportsMacAuthOnLitPort:    true,
 		supportsUIPasswordOnLndPort: false,
 		supportsUIPasswordOnLitPort: true,
+		grpcWebURI:                  "/poolrpc.Trader/GetInfo",
 	}, {
 		name:                        "litrpc",
 		macaroonFn:                  nil,
@@ -173,6 +184,7 @@ var (
 		supportsMacAuthOnLitPort:    false,
 		supportsUIPasswordOnLndPort: true,
 		supportsUIPasswordOnLitPort: true,
+		grpcWebURI:                  "/litrpc.Sessions/ListSessions",
 	}}
 )
 
@@ -256,6 +268,20 @@ func testModeIntegrated(net *NetworkHarness, t *harnessTest) {
 
 	t.t.Run("UI index page fallback", func(tt *testing.T) {
 		runIndexPageCheck(tt, net.Alice.Cfg.LitAddr())
+	})
+
+	t.t.Run("grpc-web auth", func(tt *testing.T) {
+		cfg := net.Alice.Cfg
+
+		for _, endpoint := range endpoints {
+			endpoint := endpoint
+			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
+				runGRPCWebAuthTest(
+					ttt, cfg.LitAddr(), cfg.UIPassword,
+					endpoint.grpcWebURI,
+				)
+			})
+		}
 	})
 }
 
@@ -406,6 +432,44 @@ func runIndexPageCheck(t *testing.T, hostPort string) {
 	require.Contains(t, body, indexHtmlMarker)
 }
 
+// runGRPCWebAuthTest tests authentication of the given gRPC interface.
+func runGRPCWebAuthTest(t *testing.T, hostPort, uiPassword, grpcWebURI string) {
+	basicAuth := base64.StdEncoding.EncodeToString(
+		[]byte(fmt.Sprintf("%s:%s", uiPassword, uiPassword)),
+	)
+
+	header := http.Header{
+		"content-type": []string{"application/grpc-web+proto"},
+		"x-grpc-web":   []string{"1"},
+	}
+
+	url := fmt.Sprintf("https://%s%s", hostPort, grpcWebURI)
+
+	// First test a grpc-web call without authorization, which should fail.
+	_, responseHeader, err := postURL(url, emptyGrpcWebRequest, header)
+	require.NoError(t, err)
+
+	require.Equal(
+		t, "expected 1 macaroon, got 0",
+		responseHeader.Get("grpc-message"),
+	)
+	require.Equal(
+		t, fmt.Sprintf("%d", codes.Unknown),
+		responseHeader.Get("grpc-status"),
+	)
+
+	// Now add the basic auth and try again.
+	header["authorization"] = []string{fmt.Sprintf("Basic %s", basicAuth)}
+	body, responseHeader, err := postURL(url, emptyGrpcWebRequest, header)
+	require.NoError(t, err)
+
+	require.Empty(t, responseHeader.Get("grpc-message"))
+	require.Empty(t, responseHeader.Get("grpc-status"))
+
+	// We get the status encoded as trailer in the response.
+	require.Contains(t, body, "grpc-status: 0")
+}
+
 // getURL retrieves the body of a given URL, ignoring any TLS certificate the
 // server might present.
 func getURL(url string) (string, error) {
@@ -424,6 +488,42 @@ func getURL(url string) (string, error) {
 	}
 
 	return string(body), nil
+}
+
+// postURL retrieves the body of a given URL, ignoring any TLS certificate the
+// server might present.
+func postURL(url string, postBody []byte, header http.Header) (string,
+	http.Header, error) {
+
+	req, err := http.NewRequest("POST", url, bytes.NewReader(postBody))
+	if err != nil {
+		return "", nil, err
+	}
+	for key, values := range header {
+		for _, value := range values {
+			req.Header.Add(key, value)
+		}
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", nil, err
+	}
+
+	if resp.StatusCode != 200 {
+		return "", nil, fmt.Errorf("request failed, got status code "+
+			"%d (%s)", resp.StatusCode, resp.Status)
+	}
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return string(body), resp.Header, nil
 }
 
 // getServerCertificates returns the TLS certificates that a server presents to
