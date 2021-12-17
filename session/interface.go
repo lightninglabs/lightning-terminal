@@ -1,7 +1,6 @@
 package session
 
 import (
-	"encoding/binary"
 	"fmt"
 	"time"
 
@@ -69,7 +68,10 @@ func NewSession(label string, typ Type, expiry time.Time, serverAddr string,
 		return nil, fmt.Errorf("error deriving private key: %v", err)
 	}
 	pubKey := privateKey.PubKey()
-	macRootKey := binary.BigEndian.Uint64(pubKey.SerializeCompressed()[0:8])
+
+	var macRootKeyBase [4]byte
+	copy(macRootKeyBase[:], pubKey.SerializeCompressed())
+	macRootKey := NewSuperMacaroonRootKeyID(macRootKeyBase)
 
 	sess := &Session{
 		Label:           label,
