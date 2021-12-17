@@ -80,6 +80,10 @@ func getAllPermissions(readOnly bool) []bakery.Op {
 
 	for _, methodPerms := range getAllMethodPermissions() {
 		for _, methodPerm := range methodPerms {
+			if methodPerm.Action == "" || methodPerm.Entity == "" {
+				continue
+			}
+
 			if readOnly && methodPerm.Action != "read" {
 				continue
 			}
