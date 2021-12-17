@@ -218,11 +218,7 @@ func (g *LightningTerminal) Run() error {
 				),
 			}
 			allOpts = append(allOpts, opts...)
-			mailboxGrpcServer := grpc.NewServer(allOpts...)
-
-			_ = g.RegisterGrpcSubserver(mailboxGrpcServer)
-
-			return mailboxGrpcServer
+			return grpc.NewServer(allOpts...)
 		},
 	)
 	g.sessionRpcServer = &sessionRpcServer{
@@ -509,7 +505,10 @@ func (g *LightningTerminal) startSubservers() error {
 		// faraday, loop, and pool, all at the same time.
 		ctx := context.Background()
 		superMacaroon, err := bakeSuperMacaroon(
-			ctx, g.basicClient, 0, getAllPermissions(false), nil,
+			ctx, g.basicClient, session.NewSuperMacaroonRootKeyID(
+				[4]byte{},
+			),
+			getAllPermissions(false), nil,
 		)
 		if err != nil {
 			return err
@@ -654,8 +653,7 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 	// which we can just pass straight to lnd for validation. But the user
 	// might still be using a specific macaroon, which should be handled the
 	// same as before.
-	isSuperMacaroon := macHex == g.rpcProxy.superMacaroon
-	if g.cfg.LndMode == ModeIntegrated && isSuperMacaroon {
+	if g.cfg.LndMode == ModeIntegrated && session.IsSuperMacaroon(macHex) {
 		macBytes, err := hex.DecodeString(macHex)
 		if err != nil {
 			return err
@@ -1160,13 +1158,8 @@ func bakeSuperMacaroon(ctx context.Context, lnd lnrpc.LightningClient,
 		return "", err
 	}
 
-	macBytes, err := hex.DecodeString(res.Macaroon)
+	mac, err := session.ParseMacaroon(res.Macaroon)
 	if err != nil {
-		return "", err
-	}
-
-	var mac macaroon.Macaroon
-	if err := mac.UnmarshalBinary(macBytes); err != nil {
 		return "", err
 	}
 
@@ -1176,7 +1169,7 @@ func bakeSuperMacaroon(ctx context.Context, lnd lnrpc.LightningClient,
 		}
 	}
 
-	macBytes, err = mac.MarshalBinary()
+	macBytes, err := mac.MarshalBinary()
 	if err != nil {
 		return "", err
 	}
