@@ -80,7 +80,7 @@ export default class AppView {
 
   /** Change to the Connect page */
   goToConnect() {
-    this.goTo('/connect');
+    this.goTo(`${PUBLIC_URL}/connect`);
     this._store.settingsStore.autoCollapseSidebar();
     this._store.log.info('Go to the Connect page');
   }
