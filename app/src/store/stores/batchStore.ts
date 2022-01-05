@@ -1,4 +1,5 @@
 import {
+  entries,
   makeAutoObservable,
   observable,
   ObservableMap,
@@ -67,6 +68,13 @@ export default class BatchStore {
       // return an empty market if none have been fetched yet
       new Market(this._store, 0)
     );
+  }
+
+  /** the collection of lease durations sorted by number of blocks */
+  get sortedDurations() {
+    return entries(this.leaseDurations)
+      .map(([duration, state]) => ({ duration, state }))
+      .sort((a, b) => a.duration - b.duration);
   }
 
   /**

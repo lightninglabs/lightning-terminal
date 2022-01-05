@@ -38,8 +38,8 @@ describe('BatchSection', () => {
   it('should toggle between markets', async () => {
     const { getByText, findByText } = render();
     expect(store.batchStore.selectedLeaseDuration).toBe(2016);
-    expect(await findByText('4032')).toBeInTheDocument();
-    fireEvent.click(getByText('4032'));
+    expect(await findByText('1 month')).toBeInTheDocument();
+    fireEvent.click(getByText('1 month'));
     expect(store.batchStore.selectedLeaseDuration).toBe(4032);
   });
 });

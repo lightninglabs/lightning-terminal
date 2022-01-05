@@ -1,5 +1,6 @@
 import Big from 'big.js';
-import { Unit, Units } from './constants';
+import { BLOCKS_PER_DAY, Unit, Units } from './constants';
+import { plural } from './strings';
 
 interface FormatSatsOptions {
   /** the units to convert the sats to (defaults to `sats`) */
@@ -64,4 +65,24 @@ export const formatTime = (totalSeconds: number) => {
   parts.push(`${seconds}s`);
 
   return parts.join(' ');
+};
+
+/**
+ * Converts a number of blocks to a human readable time in weeks, months, or years
+ * @param blocks the number of blocks
+ */
+export const blocksToTime = (blocks: number) => {
+  const days = Math.round(blocks / BLOCKS_PER_DAY);
+  if (days < 7) {
+    return `${days} ${plural(days, 'day')}`;
+  } else if (days < 28) {
+    const weeks = Math.round(days / 7);
+    return `${weeks} ${plural(weeks, 'week')}`;
+  } else if (days < 365 - 30) {
+    const months = Math.round(days / 30);
+    return `${months} ${plural(months, 'month')}`;
+  } else {
+    const years = Math.round(days / 365);
+    return `${years} ${plural(years, 'year')}`;
+  }
 };
