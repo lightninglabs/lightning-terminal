@@ -1,6 +1,6 @@
 import Big from 'big.js';
 import { Unit } from 'util/constants';
-import { formatSats, formatTime, formatUnit } from 'util/formatters';
+import { blocksToTime, formatSats, formatTime, formatUnit } from 'util/formatters';
 
 describe('formatters Util', () => {
   describe('formatSats', () => {
@@ -87,6 +87,20 @@ describe('formatters Util', () => {
       expect(formatTime(60 * 60)).toEqual('1h 0m 0s');
       expect(formatTime(60 * 60 + 1)).toEqual('1h 0m 1s');
       expect(formatTime(60 * 70 + 1)).toEqual('1h 10m 1s');
+    });
+  });
+
+  describe('blocksToTime', () => {
+    it('should convert block to time', () => {
+      expect(blocksToTime(432)).toEqual('3 days');
+      expect(blocksToTime(1008)).toEqual('1 week');
+      expect(blocksToTime(2016)).toEqual('2 weeks');
+      expect(blocksToTime(4032)).toEqual('1 month');
+      expect(blocksToTime(8064)).toEqual('2 months');
+      expect(blocksToTime(12096)).toEqual('3 months');
+      expect(blocksToTime(16128)).toEqual('4 months');
+      expect(blocksToTime(24192)).toEqual('6 months');
+      expect(blocksToTime(52416)).toEqual('1 year');
     });
   });
 });

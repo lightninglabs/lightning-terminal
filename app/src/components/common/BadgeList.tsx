@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import styled from '@emotion/styled';
 import { Badge } from 'components/base';
+import Tip from './Tip';
 
 const Styled = {
   Wrapper: styled.div<{ flex?: boolean }>`
@@ -30,6 +31,7 @@ const Styled = {
 export interface BadgeListOption {
   label: string;
   value: string;
+  tip?: string;
 }
 
 interface Props {
@@ -45,9 +47,11 @@ const BadgeList: React.FC<Props> = ({ options, value, onChange }) => {
   return (
     <Wrapper>
       {options.map(o => (
-        <Badge key={o.value} selected={o.value === value} onClick={handleClick(o.value)}>
-          {o.label}
-        </Badge>
+        <Tip key={o.value} overlay={o.tip}>
+          <Badge selected={o.value === value} onClick={handleClick(o.value)}>
+            {o.label}
+          </Badge>
+        </Tip>
       ))}
     </Wrapper>
   );

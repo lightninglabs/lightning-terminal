@@ -1,4 +1,4 @@
-import { entries, makeAutoObservable, runInAction } from 'mobx';
+import { makeAutoObservable, runInAction } from 'mobx';
 import {
   DurationBucketState,
   NodeTier,
@@ -8,6 +8,7 @@ import Big from 'big.js';
 import debounce from 'lodash/debounce';
 import { annualPercentRate, toBasisPoints, toPercent } from 'util/bigmath';
 import { BLOCKS_PER_DAY } from 'util/constants';
+import { blocksToTime } from 'util/formatters';
 import { prefixTranslation } from 'util/translate';
 import { ONE_UNIT } from 'api/pool';
 import { Store } from 'store';
@@ -93,9 +94,9 @@ export default class OrderFormView {
   /** the markets currently open or accepting orders */
   get marketsAcceptingOrders() {
     const { MARKET_OPEN, ACCEPTING_ORDERS } = DurationBucketState;
-    return entries(this._store.batchStore.leaseDurations)
-      .map(([duration, state]) => ({ duration, state }))
-      .filter(({ state }) => state === MARKET_OPEN || state === ACCEPTING_ORDERS);
+    return this._store.batchStore.sortedDurations.filter(
+      ({ state }) => state === MARKET_OPEN || state === ACCEPTING_ORDERS,
+    );
   }
 
   /** the mapping of market states to user-friendly labels */
@@ -112,7 +113,7 @@ export default class OrderFormView {
   get durationOptions() {
     const labels = this.marketStateLabels;
     const durations = this.marketsAcceptingOrders.map(({ duration, state }) => ({
-      label: `${duration} (${labels[state]})`,
+      label: `${blocksToTime(duration)} (${labels[state]})`,
       value: `${duration}`,
     }));
 
@@ -122,7 +123,9 @@ export default class OrderFormView {
       // add a default option with a value of zero to signify that the duration
       // currently being displayed should be used
       durations.unshift({
-        label: `${l('inView')} (${selectedDuration}, ${labels[selectedState]})`,
+        label: `${l('inView')} (${blocksToTime(selectedDuration)}, ${
+          labels[selectedState]
+        })`,
         value: '0',
       });
     }

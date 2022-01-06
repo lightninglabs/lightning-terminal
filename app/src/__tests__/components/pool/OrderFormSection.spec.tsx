@@ -109,7 +109,7 @@ describe('OrderFormSection', () => {
     changeInput('Bid Premium', '10000');
     changeInput('Minimum Channel Size', '100000');
     changeInput('Max Batch Fee Rate', '1');
-    await changeSelect('Channel Duration', '4032 (open)');
+    await changeSelect('Channel Duration', '1 month (open)');
     await changeSelect('Min Node Tier', 'T0 - All Nodes');
 
     let bid: Required<POOL.Bid.AsObject>;

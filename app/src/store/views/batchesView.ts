@@ -1,9 +1,10 @@
-import { entries, makeAutoObservable } from 'mobx';
+import { makeAutoObservable } from 'mobx';
 import {
   DurationBucketState,
   NodeTier,
 } from 'types/generated/auctioneerrpc/auctioneer_pb';
 import { toPercent } from 'util/bigmath';
+import { blocksToTime } from 'util/formatters';
 import { Store } from 'store';
 
 export default class BatchesView {
@@ -85,16 +86,17 @@ export default class BatchesView {
 
   /** the markets that are currently open (accepting & matching orders) */
   get openMarkets() {
-    return entries(this._store.batchStore.leaseDurations)
-      .map(([duration, state]) => ({ duration, state }))
-      .filter(({ state }) => state === DurationBucketState.MARKET_OPEN);
+    return this._store.batchStore.sortedDurations.filter(
+      ({ state }) => state === DurationBucketState.MARKET_OPEN,
+    );
   }
 
   /** the list of markets to display as badges */
   get marketOptions() {
     return this.openMarkets.map(({ duration }) => ({
-      label: `${duration}`,
+      label: blocksToTime(duration),
       value: `${duration}`,
+      tip: `${duration} blocks`,
     }));
   }
 
