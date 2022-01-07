@@ -151,12 +151,9 @@ func extractPathArgs(ctx *cli.Context) (string, error) {
 		return "", err
 	}
 
-	// We'll now fetch the basedir so we can make a decision on how to
-	// properly read the cert. This will either be the default,
-	// or will have been overwritten by the end user.
-	baseDir := lncfg.CleanAndExpandPath(ctx.GlobalString(baseDirFlag.Name))
+	// Get the LND mode. If Lit is in integrated LND mode, then LND's tls
+	// cert is used directly. Otherwise, Lit's own tls cert is used.
 	lndmode := strings.ToLower(ctx.GlobalString(lndMode.Name))
-
 	if lndmode == terminal.ModeIntegrated {
 		tlsCertPath := lncfg.CleanAndExpandPath(ctx.GlobalString(
 			lndTlsCertFlag.Name,
@@ -165,18 +162,25 @@ func extractPathArgs(ctx *cli.Context) (string, error) {
 		return tlsCertPath, nil
 	}
 
+	// Lit is in remote LND mode. So we need Lit's tls cert.
 	tlsCertPath := lncfg.CleanAndExpandPath(ctx.GlobalString(
 		tlsCertFlag.Name,
 	))
+
+	// If a custom TLS path was set, use it as is.
+	if tlsCertPath != terminal.DefaultTLSCertPath {
+		return tlsCertPath, nil
+	}
 
 	// If a custom base directory was set, we'll also check if custom paths
 	// for the TLS cert file was set as well. If not, we'll override the
 	// paths so they can be found within the custom base directory set.
 	// This allows us to set a custom base directory, along with custom
 	// paths to the TLS cert file.
-	if baseDir != terminal.DefaultLitDir || networkStr != terminal.DefaultNetwork {
+	baseDir := lncfg.CleanAndExpandPath(ctx.GlobalString(baseDirFlag.Name))
+	if baseDir != terminal.DefaultLitDir {
 		tlsCertPath = filepath.Join(
-			baseDir, networkStr, terminal.DefaultTLSCertFilename,
+			baseDir, terminal.DefaultTLSCertFilename,
 		)
 	}
 
