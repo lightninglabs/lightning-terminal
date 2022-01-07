@@ -227,6 +227,7 @@ func (g *LightningTerminal) Run() error {
 		basicAuth:     g.rpcProxy.basicAuth,
 		db:            g.sessionDB,
 		sessionServer: g.sessionServer,
+		quit:          make(chan struct{}),
 	}
 
 	// Now start up all previously created sessions.
@@ -838,6 +839,7 @@ func (g *LightningTerminal) shutdown() error {
 		}
 	}
 
+	g.sessionRpcServer.stop()
 	if err := g.sessionDB.Close(); err != nil {
 		log.Errorf("Error closing session DB: %v", err)
 		returnErr = err

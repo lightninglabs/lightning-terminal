@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/btcsuite/btcd/btcec"
@@ -20,6 +21,17 @@ type sessionRpcServer struct {
 
 	db            *session.DB
 	sessionServer *session.Server
+
+	quit chan struct{}
+
+	stopOnce sync.Once
+}
+
+// stop cleans up any sessionRpcServer resources.
+func (s *sessionRpcServer) stop() {
+	s.stopOnce.Do(func() {
+		close(s.quit)
+	})
 }
 
 // AddSession adds and starts a new Terminal Connect session.
