@@ -91,7 +91,8 @@ class LoopApi extends BaseApi<LoopEvents> {
     const req = new LOOP.LoopInRequest();
     req.setAmt(amount.toString());
     req.setMaxSwapFee(quote.swapFee.toString());
-    req.setMaxMinerFee(quote.minerFee.toString());
+    // mimic the behavior of loop CLI to avoid swap failures due to rising chain fees
+    req.setMaxMinerFee(quote.minerFee.mul(250).toString());
     req.setInitiator(LOOP_INITIATOR);
     if (lastHop) req.setLastHop(b64(lastHop));
     if (confTarget) req.setHtlcConfTarget(confTarget);
@@ -113,7 +114,8 @@ class LoopApi extends BaseApi<LoopEvents> {
     const req = new LOOP.LoopOutRequest();
     req.setAmt(amount.toString());
     req.setMaxSwapFee(quote.swapFee.toString());
-    req.setMaxMinerFee(quote.minerFee.toString());
+    // mimic the behavior of loop CLI to avoid swap failures due to rising chain fees
+    req.setMaxMinerFee(quote.minerFee.mul(250).toString());
     req.setMaxPrepayAmt(quote.prepayAmount.toString());
     req.setMaxSwapRoutingFee(this._calcRoutingFee(amount).toString());
     req.setMaxPrepayRoutingFee(this._calcRoutingFee(quote.prepayAmount).toString());
