@@ -11,10 +11,10 @@ import (
 )
 
 var (
-	testRootKey                = []byte("54321")
-	testID                     = []byte("dummyId")
-	testLocation               = "lnd"
-	testVersion                = macaroon.LatestVersion
+	testRootKey  = []byte("54321")
+	testID       = []byte("dummyId")
+	testLocation = "lnd"
+	testVersion  = macaroon.LatestVersion
 )
 
 func createDummyMacaroon(t *testing.T) *macaroon.Macaroon {
