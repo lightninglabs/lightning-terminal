@@ -792,6 +792,13 @@ message AccountDiff {
     The trader's account key this diff is referring to.
     */
     bytes trader_key = 4;
+
+    /*
+    The new account expiry height used to verify the batch. If the batch is
+    successfully executed the account must update its expiry height to this
+    value.
+    */
+    uint32 new_expiry = 5;
 }
 
 enum OrderChannelType {
@@ -1133,6 +1140,12 @@ message TermsResponse {
     the duration buckets currently are in.
     */
     map<uint32, DurationBucketState> lease_duration_buckets = 8;
+
+    /*
+    The value used by the auctioneer to determine if an account expiry height
+    needs to be extended after participating in a batch and for how long.
+    */
+    uint32 auto_renew_extension_blocks = 9;
 }
 
 message RelevantBatchRequest {

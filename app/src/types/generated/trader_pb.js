@@ -2190,7 +2190,7 @@ proto.poolrpc.CloseAccountResponse.prototype.setCloseTxid = function(value) {
  * @constructor
  */
 proto.poolrpc.WithdrawAccountRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.WithdrawAccountRequest.repeatedFields_, null);
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.WithdrawAccountRequest.repeatedFields_, proto.poolrpc.WithdrawAccountRequest.oneofGroups_);
 };
 goog.inherits(proto.poolrpc.WithdrawAccountRequest, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
@@ -2202,6 +2202,32 @@ if (goog.DEBUG && !COMPILED) {
  * @const
  */
 proto.poolrpc.WithdrawAccountRequest.repeatedFields_ = [2];
+
+/**
+ * Oneof group definitions for this message. Each group defines the field
+ * numbers belonging to that group. When of these fields' value is set, all
+ * other fields in the group are cleared. During deserialization, if multiple
+ * fields are encountered for a group, only the last value seen will be kept.
+ * @private {!Array<!Array<number>>}
+ * @const
+ */
+proto.poolrpc.WithdrawAccountRequest.oneofGroups_ = [[4,5]];
+
+/**
+ * @enum {number}
+ */
+proto.poolrpc.WithdrawAccountRequest.AccountExpiryCase = {
+  ACCOUNT_EXPIRY_NOT_SET: 0,
+  ABSOLUTE_EXPIRY: 4,
+  RELATIVE_EXPIRY: 5
+};
+
+/**
+ * @return {proto.poolrpc.WithdrawAccountRequest.AccountExpiryCase}
+ */
+proto.poolrpc.WithdrawAccountRequest.prototype.getAccountExpiryCase = function() {
+  return /** @type {proto.poolrpc.WithdrawAccountRequest.AccountExpiryCase} */(jspb.Message.computeOneofCase(this, proto.poolrpc.WithdrawAccountRequest.oneofGroups_[0]));
+};
 
 
 
@@ -2235,7 +2261,9 @@ proto.poolrpc.WithdrawAccountRequest.toObject = function(includeInstance, msg) {
     traderKey: msg.getTraderKey_asB64(),
     outputsList: jspb.Message.toObjectList(msg.getOutputsList(),
     proto.poolrpc.Output.toObject, includeInstance),
-    feeRateSatPerKw: jspb.Message.getFieldWithDefault(msg, 3, "0")
+    feeRateSatPerKw: jspb.Message.getFieldWithDefault(msg, 3, "0"),
+    absoluteExpiry: jspb.Message.getFieldWithDefault(msg, 4, 0),
+    relativeExpiry: jspb.Message.getFieldWithDefault(msg, 5, 0)
   };
 
   if (includeInstance) {
@@ -2285,6 +2313,14 @@ proto.poolrpc.WithdrawAccountRequest.deserializeBinaryFromReader = function(msg,
       var value = /** @type {string} */ (reader.readUint64String());
       msg.setFeeRateSatPerKw(value);
       break;
+    case 4:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setAbsoluteExpiry(value);
+      break;
+    case 5:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setRelativeExpiry(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -2333,6 +2369,20 @@ proto.poolrpc.WithdrawAccountRequest.serializeBinaryToWriter = function(message,
   if (parseInt(f, 10) !== 0) {
     writer.writeUint64String(
       3,
+      f
+    );
+  }
+  f = /** @type {number} */ (jspb.Message.getField(message, 4));
+  if (f != null) {
+    writer.writeUint32(
+      4,
+      f
+    );
+  }
+  f = /** @type {number} */ (jspb.Message.getField(message, 5));
+  if (f != null) {
+    writer.writeUint32(
+      5,
       f
     );
   }
@@ -2421,6 +2471,64 @@ proto.poolrpc.WithdrawAccountRequest.prototype.getFeeRateSatPerKw = function() {
 /** @param {string} value */
 proto.poolrpc.WithdrawAccountRequest.prototype.setFeeRateSatPerKw = function(value) {
   jspb.Message.setProto3StringIntField(this, 3, value);
+};
+
+
+/**
+ * optional uint32 absolute_expiry = 4;
+ * @return {number}
+ */
+proto.poolrpc.WithdrawAccountRequest.prototype.getAbsoluteExpiry = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 4, 0));
+};
+
+
+/** @param {number} value */
+proto.poolrpc.WithdrawAccountRequest.prototype.setAbsoluteExpiry = function(value) {
+  jspb.Message.setOneofField(this, 4, proto.poolrpc.WithdrawAccountRequest.oneofGroups_[0], value);
+};
+
+
+proto.poolrpc.WithdrawAccountRequest.prototype.clearAbsoluteExpiry = function() {
+  jspb.Message.setOneofField(this, 4, proto.poolrpc.WithdrawAccountRequest.oneofGroups_[0], undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {!boolean}
+ */
+proto.poolrpc.WithdrawAccountRequest.prototype.hasAbsoluteExpiry = function() {
+  return jspb.Message.getField(this, 4) != null;
+};
+
+
+/**
+ * optional uint32 relative_expiry = 5;
+ * @return {number}
+ */
+proto.poolrpc.WithdrawAccountRequest.prototype.getRelativeExpiry = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 5, 0));
+};
+
+
+/** @param {number} value */
+proto.poolrpc.WithdrawAccountRequest.prototype.setRelativeExpiry = function(value) {
+  jspb.Message.setOneofField(this, 5, proto.poolrpc.WithdrawAccountRequest.oneofGroups_[0], value);
+};
+
+
+proto.poolrpc.WithdrawAccountRequest.prototype.clearRelativeExpiry = function() {
+  jspb.Message.setOneofField(this, 5, proto.poolrpc.WithdrawAccountRequest.oneofGroups_[0], undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {!boolean}
+ */
+proto.poolrpc.WithdrawAccountRequest.prototype.hasRelativeExpiry = function() {
+  return jspb.Message.getField(this, 5) != null;
 };
 
 
@@ -2646,12 +2754,38 @@ proto.poolrpc.WithdrawAccountResponse.prototype.setWithdrawTxid = function(value
  * @constructor
  */
 proto.poolrpc.DepositAccountRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.poolrpc.DepositAccountRequest.oneofGroups_);
 };
 goog.inherits(proto.poolrpc.DepositAccountRequest, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
   proto.poolrpc.DepositAccountRequest.displayName = 'proto.poolrpc.DepositAccountRequest';
 }
+/**
+ * Oneof group definitions for this message. Each group defines the field
+ * numbers belonging to that group. When of these fields' value is set, all
+ * other fields in the group are cleared. During deserialization, if multiple
+ * fields are encountered for a group, only the last value seen will be kept.
+ * @private {!Array<!Array<number>>}
+ * @const
+ */
+proto.poolrpc.DepositAccountRequest.oneofGroups_ = [[4,5]];
+
+/**
+ * @enum {number}
+ */
+proto.poolrpc.DepositAccountRequest.AccountExpiryCase = {
+  ACCOUNT_EXPIRY_NOT_SET: 0,
+  ABSOLUTE_EXPIRY: 4,
+  RELATIVE_EXPIRY: 5
+};
+
+/**
+ * @return {proto.poolrpc.DepositAccountRequest.AccountExpiryCase}
+ */
+proto.poolrpc.DepositAccountRequest.prototype.getAccountExpiryCase = function() {
+  return /** @type {proto.poolrpc.DepositAccountRequest.AccountExpiryCase} */(jspb.Message.computeOneofCase(this, proto.poolrpc.DepositAccountRequest.oneofGroups_[0]));
+};
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
@@ -2683,7 +2817,9 @@ proto.poolrpc.DepositAccountRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
     traderKey: msg.getTraderKey_asB64(),
     amountSat: jspb.Message.getFieldWithDefault(msg, 2, "0"),
-    feeRateSatPerKw: jspb.Message.getFieldWithDefault(msg, 3, "0")
+    feeRateSatPerKw: jspb.Message.getFieldWithDefault(msg, 3, "0"),
+    absoluteExpiry: jspb.Message.getFieldWithDefault(msg, 4, 0),
+    relativeExpiry: jspb.Message.getFieldWithDefault(msg, 5, 0)
   };
 
   if (includeInstance) {
@@ -2732,6 +2868,14 @@ proto.poolrpc.DepositAccountRequest.deserializeBinaryFromReader = function(msg, 
       var value = /** @type {string} */ (reader.readUint64String());
       msg.setFeeRateSatPerKw(value);
       break;
+    case 4:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setAbsoluteExpiry(value);
+      break;
+    case 5:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setRelativeExpiry(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -2779,6 +2923,20 @@ proto.poolrpc.DepositAccountRequest.serializeBinaryToWriter = function(message, 
   if (parseInt(f, 10) !== 0) {
     writer.writeUint64String(
       3,
+      f
+    );
+  }
+  f = /** @type {number} */ (jspb.Message.getField(message, 4));
+  if (f != null) {
+    writer.writeUint32(
+      4,
+      f
+    );
+  }
+  f = /** @type {number} */ (jspb.Message.getField(message, 5));
+  if (f != null) {
+    writer.writeUint32(
+      5,
       f
     );
   }
@@ -2851,6 +3009,64 @@ proto.poolrpc.DepositAccountRequest.prototype.getFeeRateSatPerKw = function() {
 /** @param {string} value */
 proto.poolrpc.DepositAccountRequest.prototype.setFeeRateSatPerKw = function(value) {
   jspb.Message.setProto3StringIntField(this, 3, value);
+};
+
+
+/**
+ * optional uint32 absolute_expiry = 4;
+ * @return {number}
+ */
+proto.poolrpc.DepositAccountRequest.prototype.getAbsoluteExpiry = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 4, 0));
+};
+
+
+/** @param {number} value */
+proto.poolrpc.DepositAccountRequest.prototype.setAbsoluteExpiry = function(value) {
+  jspb.Message.setOneofField(this, 4, proto.poolrpc.DepositAccountRequest.oneofGroups_[0], value);
+};
+
+
+proto.poolrpc.DepositAccountRequest.prototype.clearAbsoluteExpiry = function() {
+  jspb.Message.setOneofField(this, 4, proto.poolrpc.DepositAccountRequest.oneofGroups_[0], undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {!boolean}
+ */
+proto.poolrpc.DepositAccountRequest.prototype.hasAbsoluteExpiry = function() {
+  return jspb.Message.getField(this, 4) != null;
+};
+
+
+/**
+ * optional uint32 relative_expiry = 5;
+ * @return {number}
+ */
+proto.poolrpc.DepositAccountRequest.prototype.getRelativeExpiry = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 5, 0));
+};
+
+
+/** @param {number} value */
+proto.poolrpc.DepositAccountRequest.prototype.setRelativeExpiry = function(value) {
+  jspb.Message.setOneofField(this, 5, proto.poolrpc.DepositAccountRequest.oneofGroups_[0], value);
+};
+
+
+proto.poolrpc.DepositAccountRequest.prototype.clearRelativeExpiry = function() {
+  jspb.Message.setOneofField(this, 5, proto.poolrpc.DepositAccountRequest.oneofGroups_[0], undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {!boolean}
+ */
+proto.poolrpc.DepositAccountRequest.prototype.hasRelativeExpiry = function() {
+  return jspb.Message.getField(this, 5) != null;
 };
 
 
@@ -10518,7 +10734,8 @@ proto.poolrpc.NextBatchInfoResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
     confTarget: jspb.Message.getFieldWithDefault(msg, 5, 0),
     feeRateSatPerKw: jspb.Message.getFieldWithDefault(msg, 6, "0"),
-    clearTimestamp: jspb.Message.getFieldWithDefault(msg, 7, "0")
+    clearTimestamp: jspb.Message.getFieldWithDefault(msg, 7, "0"),
+    autoRenewExtensionBlocks: jspb.Message.getFieldWithDefault(msg, 8, 0)
   };
 
   if (includeInstance) {
@@ -10566,6 +10783,10 @@ proto.poolrpc.NextBatchInfoResponse.deserializeBinaryFromReader = function(msg, 
     case 7:
       var value = /** @type {string} */ (reader.readUint64String());
       msg.setClearTimestamp(value);
+      break;
+    case 8:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setAutoRenewExtensionBlocks(value);
       break;
     default:
       reader.skipField();
@@ -10617,6 +10838,13 @@ proto.poolrpc.NextBatchInfoResponse.serializeBinaryToWriter = function(message, 
       f
     );
   }
+  f = message.getAutoRenewExtensionBlocks();
+  if (f !== 0) {
+    writer.writeUint32(
+      8,
+      f
+    );
+  }
 };
 
 
@@ -10662,6 +10890,21 @@ proto.poolrpc.NextBatchInfoResponse.prototype.getClearTimestamp = function() {
 /** @param {string} value */
 proto.poolrpc.NextBatchInfoResponse.prototype.setClearTimestamp = function(value) {
   jspb.Message.setProto3StringIntField(this, 7, value);
+};
+
+
+/**
+ * optional uint32 auto_renew_extension_blocks = 8;
+ * @return {number}
+ */
+proto.poolrpc.NextBatchInfoResponse.prototype.getAutoRenewExtensionBlocks = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 8, 0));
+};
+
+
+/** @param {number} value */
+proto.poolrpc.NextBatchInfoResponse.prototype.setAutoRenewExtensionBlocks = function(value) {
+  jspb.Message.setProto3IntField(this, 8, value);
 };
 
 

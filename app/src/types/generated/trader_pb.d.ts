@@ -326,6 +326,17 @@ export class WithdrawAccountRequest extends jspb.Message {
   getFeeRateSatPerKw(): string;
   setFeeRateSatPerKw(value: string): void;
 
+  hasAbsoluteExpiry(): boolean;
+  clearAbsoluteExpiry(): void;
+  getAbsoluteExpiry(): number;
+  setAbsoluteExpiry(value: number): void;
+
+  hasRelativeExpiry(): boolean;
+  clearRelativeExpiry(): void;
+  getRelativeExpiry(): number;
+  setRelativeExpiry(value: number): void;
+
+  getAccountExpiryCase(): WithdrawAccountRequest.AccountExpiryCase;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): WithdrawAccountRequest.AsObject;
   static toObject(includeInstance: boolean, msg: WithdrawAccountRequest): WithdrawAccountRequest.AsObject;
@@ -341,6 +352,14 @@ export namespace WithdrawAccountRequest {
     traderKey: Uint8Array | string,
     outputsList: Array<Output.AsObject>,
     feeRateSatPerKw: string,
+    absoluteExpiry: number,
+    relativeExpiry: number,
+  }
+
+  export enum AccountExpiryCase {
+    ACCOUNT_EXPIRY_NOT_SET = 0,
+    ABSOLUTE_EXPIRY = 4,
+    RELATIVE_EXPIRY = 5,
   }
 }
 
@@ -384,6 +403,17 @@ export class DepositAccountRequest extends jspb.Message {
   getFeeRateSatPerKw(): string;
   setFeeRateSatPerKw(value: string): void;
 
+  hasAbsoluteExpiry(): boolean;
+  clearAbsoluteExpiry(): void;
+  getAbsoluteExpiry(): number;
+  setAbsoluteExpiry(value: number): void;
+
+  hasRelativeExpiry(): boolean;
+  clearRelativeExpiry(): void;
+  getRelativeExpiry(): number;
+  setRelativeExpiry(value: number): void;
+
+  getAccountExpiryCase(): DepositAccountRequest.AccountExpiryCase;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): DepositAccountRequest.AsObject;
   static toObject(includeInstance: boolean, msg: DepositAccountRequest): DepositAccountRequest.AsObject;
@@ -399,6 +429,14 @@ export namespace DepositAccountRequest {
     traderKey: Uint8Array | string,
     amountSat: string,
     feeRateSatPerKw: string,
+    absoluteExpiry: number,
+    relativeExpiry: number,
+  }
+
+  export enum AccountExpiryCase {
+    ACCOUNT_EXPIRY_NOT_SET = 0,
+    ABSOLUTE_EXPIRY = 4,
+    RELATIVE_EXPIRY = 5,
   }
 }
 
@@ -1468,6 +1506,9 @@ export class NextBatchInfoResponse extends jspb.Message {
   getClearTimestamp(): string;
   setClearTimestamp(value: string): void;
 
+  getAutoRenewExtensionBlocks(): number;
+  setAutoRenewExtensionBlocks(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): NextBatchInfoResponse.AsObject;
   static toObject(includeInstance: boolean, msg: NextBatchInfoResponse): NextBatchInfoResponse.AsObject;
@@ -1483,6 +1524,7 @@ export namespace NextBatchInfoResponse {
     confTarget: number,
     feeRateSatPerKw: string,
     clearTimestamp: string,
+    autoRenewExtensionBlocks: number,
   }
 }
 

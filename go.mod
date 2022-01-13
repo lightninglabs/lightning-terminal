@@ -10,9 +10,9 @@ require (
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/lightninglabs/faraday v0.2.7-alpha
 	github.com/lightninglabs/lightning-node-connect v0.1.5-alpha
-	github.com/lightninglabs/lndclient v0.14.0-5
+	github.com/lightninglabs/lndclient v0.14.0-7
 	github.com/lightninglabs/loop v0.15.1-beta
-	github.com/lightninglabs/pool v0.5.2-alpha
+	github.com/lightninglabs/pool v0.5.4-alpha.0.20220114202858-525fe156d240
 	github.com/lightninglabs/protobuf-hex-display v1.4.3-hex-display
 	github.com/lightningnetwork/lnd v0.14.1-beta
 	github.com/lightningnetwork/lnd/cert v1.1.0
@@ -29,9 +29,5 @@ require (
 	gopkg.in/macaroon-bakery.v2 v2.1.0
 	gopkg.in/macaroon.v2 v2.1.0
 )
-
-// A PR was merged without bumping the auctioneerrpc module version. We'll be
-// able to remove this once pool 0.5.3-alpha is out.
-replace github.com/lightninglabs/pool/auctioneerrpc => github.com/lightninglabs/pool/auctioneerrpc v1.0.4
 
 go 1.16
