@@ -19,7 +19,14 @@ type GRPCServerCreator func(opts ...grpc.ServerOption) *grpc.Server
 type mailboxSession struct {
 	server *grpc.Server
 
-	wg sync.WaitGroup
+	wg   sync.WaitGroup
+	quit chan struct{}
+}
+
+func newMailboxSession() *mailboxSession {
+	return &mailboxSession{
+		quit: make(chan struct{}),
+	}
 }
 
 func (m *mailboxSession) start(session *Session,
@@ -62,6 +69,7 @@ func (m *mailboxSession) run(mailboxServer *mailbox.Server) {
 
 func (m *mailboxSession) stop() {
 	m.server.Stop()
+	close(m.quit)
 	m.wg.Wait()
 }
 
@@ -82,7 +90,9 @@ func NewServer(serverCreator GRPCServerCreator) *Server {
 	}
 }
 
-func (s *Server) StartSession(session *Session, authData []byte) error {
+func (s *Server) StartSession(session *Session, authData []byte) (chan struct{},
+	error) {
+
 	s.activeSessionsMtx.Lock()
 	defer s.activeSessionsMtx.Unlock()
 
@@ -91,11 +101,13 @@ func (s *Server) StartSession(session *Session, authData []byte) error {
 
 	_, ok := s.activeSessions[id]
 	if ok {
-		return fmt.Errorf("session %x is already active", id[:])
+		return nil, fmt.Errorf("session %x is already active", id[:])
 	}
 
-	s.activeSessions[id] = &mailboxSession{}
-	return s.activeSessions[id].start(session, s.serverCreator, authData)
+	sess := newMailboxSession()
+	s.activeSessions[id] = sess
+
+	return sess.quit, sess.start(session, s.serverCreator, authData)
 }
 
 func (s *Server) StopSession(localPublicKey *btcec.PublicKey) error {

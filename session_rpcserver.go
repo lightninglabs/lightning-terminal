@@ -105,7 +105,8 @@ func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
 	}
 
 	authData := []byte("Authorization: Basic " + s.basicAuth)
-	return s.sessionServer.StartSession(sess, authData)
+	_, err := s.sessionServer.StartSession(sess, authData)
+	return err
 }
 
 // ListSessions returns all sessions known to the session store.
