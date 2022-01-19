@@ -696,6 +696,7 @@ export const poolNextBatchInfo: POOL.NextBatchInfoResponse.AsObject = {
   clearTimestamp: '1605936138',
   confTarget: 6,
   feeRateSatPerKw: '12500',
+  autoRenewExtensionBlocks: 3024,
 };
 
 export const poolNodeRatings: POOL.NodeRatingResponse.AsObject = {

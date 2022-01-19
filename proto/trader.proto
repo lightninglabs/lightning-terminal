@@ -338,6 +338,14 @@ message WithdrawAccountRequest {
     The fee rate, in satoshis per kw, to use for the withdrawal transaction.
     */
     uint64 fee_rate_sat_per_kw = 3 [jstype = JS_STRING];
+
+    oneof account_expiry {
+        // The new absolute expiration height of the account.
+        uint32 absolute_expiry = 4;
+
+        // The new relative expiration height of the account.
+        uint32 relative_expiry = 5;
+    }
 }
 message WithdrawAccountResponse {
     // The state of the account after processing the withdrawal.
@@ -361,6 +369,14 @@ message DepositAccountRequest {
     The fee rate, in satoshis per kw, to use for the deposit transaction.
     */
     uint64 fee_rate_sat_per_kw = 3 [jstype = JS_STRING];
+
+    oneof account_expiry {
+        // The new absolute expiration height of the account.
+        uint32 absolute_expiry = 4;
+
+        // The new relative expiration height of the account.
+        uint32 relative_expiry = 5;
+    }
 }
 message DepositAccountResponse {
     // The state of the account after processing the deposit.
@@ -1055,6 +1071,12 @@ message NextBatchInfoResponse {
     to clear the next batch.
     */
     uint64 clear_timestamp = 7 [jstype = JS_STRING];
+
+    /*
+    The value used by the auctioneer to determine if an account expiry height
+    needs to be extended after participating in a batch and for how long.
+    */
+    uint32 auto_renew_extension_blocks = 8;
 }
 
 message NodeRatingRequest {

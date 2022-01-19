@@ -7237,7 +7237,8 @@ proto.poolrpc.AccountDiff.toObject = function(includeInstance, msg) {
     endingBalance: jspb.Message.getFieldWithDefault(msg, 1, "0"),
     endingState: jspb.Message.getFieldWithDefault(msg, 2, 0),
     outpointIndex: jspb.Message.getFieldWithDefault(msg, 3, 0),
-    traderKey: msg.getTraderKey_asB64()
+    traderKey: msg.getTraderKey_asB64(),
+    newExpiry: jspb.Message.getFieldWithDefault(msg, 5, 0)
   };
 
   if (includeInstance) {
@@ -7289,6 +7290,10 @@ proto.poolrpc.AccountDiff.deserializeBinaryFromReader = function(msg, reader) {
     case 4:
       var value = /** @type {!Uint8Array} */ (reader.readBytes());
       msg.setTraderKey(value);
+      break;
+    case 5:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setNewExpiry(value);
       break;
     default:
       reader.skipField();
@@ -7344,6 +7349,13 @@ proto.poolrpc.AccountDiff.serializeBinaryToWriter = function(message, writer) {
   if (f.length > 0) {
     writer.writeBytes(
       4,
+      f
+    );
+  }
+  f = message.getNewExpiry();
+  if (f !== 0) {
+    writer.writeUint32(
+      5,
       f
     );
   }
@@ -7441,6 +7453,21 @@ proto.poolrpc.AccountDiff.prototype.getTraderKey_asU8 = function() {
 /** @param {!(string|Uint8Array)} value */
 proto.poolrpc.AccountDiff.prototype.setTraderKey = function(value) {
   jspb.Message.setProto3BytesField(this, 4, value);
+};
+
+
+/**
+ * optional uint32 new_expiry = 5;
+ * @return {number}
+ */
+proto.poolrpc.AccountDiff.prototype.getNewExpiry = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 5, 0));
+};
+
+
+/** @param {number} value */
+proto.poolrpc.AccountDiff.prototype.setNewExpiry = function(value) {
+  jspb.Message.setProto3IntField(this, 5, value);
 };
 
 
@@ -10456,7 +10483,8 @@ proto.poolrpc.TermsResponse.toObject = function(includeInstance, msg) {
     nextBatchConfTarget: jspb.Message.getFieldWithDefault(msg, 5, 0),
     nextBatchFeeRateSatPerKw: jspb.Message.getFieldWithDefault(msg, 6, "0"),
     nextBatchClearTimestamp: jspb.Message.getFieldWithDefault(msg, 7, "0"),
-    leaseDurationBucketsMap: (f = msg.getLeaseDurationBucketsMap()) ? f.toObject(includeInstance, undefined) : []
+    leaseDurationBucketsMap: (f = msg.getLeaseDurationBucketsMap()) ? f.toObject(includeInstance, undefined) : [],
+    autoRenewExtensionBlocks: jspb.Message.getFieldWithDefault(msg, 9, 0)
   };
 
   if (includeInstance) {
@@ -10529,6 +10557,10 @@ proto.poolrpc.TermsResponse.deserializeBinaryFromReader = function(msg, reader) 
       reader.readMessage(value, function(message, reader) {
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readUint32, jspb.BinaryReader.prototype.readEnum, null, 0);
          });
+      break;
+    case 9:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setAutoRenewExtensionBlocks(value);
       break;
     default:
       reader.skipField();
@@ -10609,6 +10641,13 @@ proto.poolrpc.TermsResponse.serializeBinaryToWriter = function(message, writer) 
   f = message.getLeaseDurationBucketsMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(8, writer, jspb.BinaryWriter.prototype.writeUint32, jspb.BinaryWriter.prototype.writeEnum);
+  }
+  f = message.getAutoRenewExtensionBlocks();
+  if (f !== 0) {
+    writer.writeUint32(
+      9,
+      f
+    );
   }
 };
 
@@ -10751,6 +10790,21 @@ proto.poolrpc.TermsResponse.prototype.getLeaseDurationBucketsMap = function(opt_
 
 proto.poolrpc.TermsResponse.prototype.clearLeaseDurationBucketsMap = function() {
   this.getLeaseDurationBucketsMap().clear();
+};
+
+
+/**
+ * optional uint32 auto_renew_extension_blocks = 9;
+ * @return {number}
+ */
+proto.poolrpc.TermsResponse.prototype.getAutoRenewExtensionBlocks = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 9, 0));
+};
+
+
+/** @param {number} value */
+proto.poolrpc.TermsResponse.prototype.setAutoRenewExtensionBlocks = function(value) {
+  jspb.Message.setProto3IntField(this, 9, value);
 };
 
 

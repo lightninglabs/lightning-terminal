@@ -1008,6 +1008,9 @@ export class AccountDiff extends jspb.Message {
   getTraderKey_asB64(): string;
   setTraderKey(value: Uint8Array | string): void;
 
+  getNewExpiry(): number;
+  setNewExpiry(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): AccountDiff.AsObject;
   static toObject(includeInstance: boolean, msg: AccountDiff): AccountDiff.AsObject;
@@ -1024,6 +1027,7 @@ export namespace AccountDiff {
     endingState: AccountDiff.AccountStateMap[keyof AccountDiff.AccountStateMap],
     outpointIndex: number,
     traderKey: Uint8Array | string,
+    newExpiry: number,
   }
 
   export interface AccountStateMap {
@@ -1465,6 +1469,9 @@ export class TermsResponse extends jspb.Message {
 
   getLeaseDurationBucketsMap(): jspb.Map<number, DurationBucketStateMap[keyof DurationBucketStateMap]>;
   clearLeaseDurationBucketsMap(): void;
+  getAutoRenewExtensionBlocks(): number;
+  setAutoRenewExtensionBlocks(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): TermsResponse.AsObject;
   static toObject(includeInstance: boolean, msg: TermsResponse): TermsResponse.AsObject;
@@ -1485,6 +1492,7 @@ export namespace TermsResponse {
     nextBatchFeeRateSatPerKw: string,
     nextBatchClearTimestamp: string,
     leaseDurationBucketsMap: Array<[number, DurationBucketStateMap[keyof DurationBucketStateMap]]>,
+    autoRenewExtensionBlocks: number,
   }
 }
 
