@@ -9,7 +9,7 @@ require (
 	github.com/improbable-eng/grpc-web v0.12.0
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/lightninglabs/faraday v0.2.7-alpha
-	github.com/lightninglabs/lightning-node-connect v0.1.5-alpha
+	github.com/lightninglabs/lightning-node-connect v0.1.6-alpha
 	github.com/lightninglabs/lndclient v0.14.0-7
 	github.com/lightninglabs/loop v0.15.1-beta
 	github.com/lightninglabs/pool v0.5.4-alpha.0.20220114202858-525fe156d240
