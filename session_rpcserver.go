@@ -59,6 +59,7 @@ func (s *sessionRpcServer) AddSession(_ context.Context,
 
 	sess, err := session.NewSession(
 		req.Label, typ, expiry, req.MailboxServerAddr, req.DevServer,
+		nil, nil,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating new session: %v", err)
