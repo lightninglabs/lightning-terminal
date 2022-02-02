@@ -22,6 +22,9 @@ type sessionRpcServer struct {
 	db            *session.DB
 	sessionServer *session.Server
 
+	superMacBaker func(ctx context.Context, rootKeyID uint64,
+		recipe *session.MacaroonRecipe) (string, error)
+
 	quit     chan struct{}
 	wg       sync.WaitGroup
 	stopOnce sync.Once
@@ -39,22 +42,19 @@ func (s *sessionRpcServer) stop() {
 func (s *sessionRpcServer) AddSession(_ context.Context,
 	req *litrpc.AddSessionRequest) (*litrpc.AddSessionResponse, error) {
 
-	var (
-		typ    session.Type
-		expiry time.Time
-	)
-	switch req.SessionType {
-	case litrpc.SessionType_TYPE_UI_PASSWORD:
-		typ = session.TypeUIPassword
-
-	default:
-		return nil, fmt.Errorf("invalid session type, only UI " +
-			"password supported in LiT")
-	}
-
-	expiry = time.Unix(int64(req.ExpiryTimestampSeconds), 0)
+	expiry := time.Unix(int64(req.ExpiryTimestampSeconds), 0)
 	if time.Now().After(expiry) {
 		return nil, fmt.Errorf("expiry must be in the future")
+	}
+
+	typ, err := unmarshalRPCType(req.SessionType)
+	if err != nil {
+		return nil, err
+	}
+
+	if typ != session.TypeUIPassword && typ != session.TypeMacaroonAdmin {
+		return nil, fmt.Errorf("invalid session type, only UI " +
+			"password and macaroon admin types supported in LiT")
 	}
 
 	sess, err := session.NewSession(
@@ -94,15 +94,12 @@ func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
 	if sess.State != session.StateInUse &&
 		sess.State != session.StateCreated {
 
-		log.Debugf("Not resuming session %x with state %d",
-			sess.LocalPublicKey.SerializeCompressed(), sess.State)
+		log.Debugf("Not resuming session %x with state %d", pubKeyBytes,
+			sess.State)
 		return nil
 	}
-	if sess.Type != session.TypeUIPassword {
-		log.Debugf("Not resuming session %x with type %d",
-			sess.LocalPublicKey.SerializeCompressed(), sess.Type)
-		return nil
-	}
+
+	// Don't resume an expired session.
 	if sess.Expiry.Before(time.Now()) {
 		log.Debugf("Not resuming session %x with expiry %s",
 			pubKeyBytes, sess.Expiry)
@@ -114,7 +111,32 @@ func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
 		return nil
 	}
 
-	authData := []byte("Authorization: Basic " + s.basicAuth)
+	var authData []byte
+	switch sess.Type {
+	case session.TypeUIPassword:
+		authData = []byte("Authorization: Basic " + s.basicAuth)
+
+	case session.TypeMacaroonAdmin:
+		ctx := context.Background()
+		mac, err := s.superMacBaker(
+			ctx, sess.MacaroonRootKey, &session.MacaroonRecipe{
+				Permissions: getAllPermissions(),
+			},
+		)
+		if err != nil {
+			log.Debugf("Not resuming session %x. Could not bake"+
+				"the necessary macaroon: %w", pubKeyBytes, err)
+			return nil
+		}
+
+		authData = []byte(fmt.Sprintf("%s: %s", HeaderMacaroon, mac))
+
+	default:
+		log.Debugf("Not resuming session %x with type %d", pubKeyBytes,
+			sess.Type)
+		return nil
+	}
+
 	sessionClosedSub, err := s.sessionServer.StartSession(sess, authData)
 	if err != nil {
 		return err
@@ -148,7 +170,7 @@ func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
 		}
 	}()
 
-	return err
+	return nil
 }
 
 // ListSessions returns all sessions known to the session store.
@@ -267,6 +289,26 @@ func marshalRPCType(typ session.Type) (litrpc.SessionType, error) {
 
 	case session.TypeUIPassword:
 		return litrpc.SessionType_TYPE_UI_PASSWORD, nil
+
+	default:
+		return 0, fmt.Errorf("unknown type <%d>", typ)
+	}
+}
+
+// unmarshalRPCType converts an RPC session type to its session counterpart.
+func unmarshalRPCType(typ litrpc.SessionType) (session.Type, error) {
+	switch typ {
+	case litrpc.SessionType_TYPE_MACAROON_READONLY:
+		return session.TypeMacaroonReadonly, nil
+
+	case litrpc.SessionType_TYPE_MACAROON_ADMIN:
+		return session.TypeMacaroonAdmin, nil
+
+	case litrpc.SessionType_TYPE_MACAROON_CUSTOM:
+		return session.TypeMacaroonCustom, nil
+
+	case litrpc.SessionType_TYPE_UI_PASSWORD:
+		return session.TypeUIPassword, nil
 
 	default:
 		return 0, fmt.Errorf("unknown type <%d>", typ)

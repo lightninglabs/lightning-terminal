@@ -10,7 +10,7 @@ require (
 	github.com/improbable-eng/grpc-web v0.12.0
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/lightninglabs/faraday v0.2.7-alpha
-	github.com/lightninglabs/lightning-node-connect v0.1.5-alpha
+	github.com/lightninglabs/lightning-node-connect v0.1.7-alpha
 	github.com/lightninglabs/lndclient v0.14.0-7
 	github.com/lightninglabs/loop v0.15.1-beta
 	github.com/lightninglabs/pool v0.5.4-alpha.0.20220114202858-525fe156d240
@@ -25,6 +25,7 @@ require (
 	github.com/urfave/cli v1.22.4
 	go.etcd.io/bbolt v1.3.6
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
+	golang.org/x/net v0.0.0-20210913180222-943fd674d43e
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1
 	google.golang.org/grpc v1.39.0
