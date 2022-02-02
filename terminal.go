@@ -53,6 +53,7 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 	"google.golang.org/protobuf/encoding/protojson"
 	"gopkg.in/macaroon-bakery.v2/bakery"
+	"gopkg.in/macaroon.v2"
 )
 
 const (
@@ -495,27 +496,15 @@ func (g *LightningTerminal) startSubservers() error {
 	if g.cfg.LndMode == ModeIntegrated {
 		// Create a super macaroon that can be used to control lnd,
 		// faraday, loop, and pool, all at the same time.
-		bakePerms := getAllPermissions()
-		req := &lnrpc.BakeMacaroonRequest{
-			Permissions: make(
-				[]*lnrpc.MacaroonPermission, len(bakePerms),
-			),
-			AllowExternalPermissions: true,
-		}
-		for idx, perm := range bakePerms {
-			req.Permissions[idx] = &lnrpc.MacaroonPermission{
-				Entity: perm.Entity,
-				Action: perm.Action,
-			}
-		}
-
 		ctx := context.Background()
-		res, err := basicClient.BakeMacaroon(ctx, req)
+		superMacaroon, err := bakeSuperMacaroon(
+			ctx, basicClient, 0, getAllPermissions(), nil,
+		)
 		if err != nil {
 			return err
 		}
 
-		g.rpcProxy.superMacaroon = res.Macaroon
+		g.rpcProxy.superMacaroon = superMacaroon
 	}
 
 	// If we're in integrated and stateless init mode, we won't create
@@ -1129,6 +1118,59 @@ func (g *LightningTerminal) createRESTProxy() error {
 	}
 
 	return nil
+}
+
+// bakeSuperMacaroon uses the lnd client to bake a macaroon that can include
+// permissions for multiple daemons.
+func bakeSuperMacaroon(ctx context.Context, lnd lnrpc.LightningClient,
+	rootKeyID uint64, perms []bakery.Op, caveats []macaroon.Caveat) (string,
+	error) {
+
+	if lnd == nil {
+		return "", errors.New("lnd not yet connected")
+	}
+
+	req := &lnrpc.BakeMacaroonRequest{
+		Permissions: make(
+			[]*lnrpc.MacaroonPermission, len(perms),
+		),
+		AllowExternalPermissions: true,
+		RootKeyId:                rootKeyID,
+	}
+	for idx, perm := range perms {
+		req.Permissions[idx] = &lnrpc.MacaroonPermission{
+			Entity: perm.Entity,
+			Action: perm.Action,
+		}
+	}
+
+	res, err := lnd.BakeMacaroon(ctx, req)
+	if err != nil {
+		return "", err
+	}
+
+	macBytes, err := hex.DecodeString(res.Macaroon)
+	if err != nil {
+		return "", err
+	}
+
+	var mac macaroon.Macaroon
+	if err := mac.UnmarshalBinary(macBytes); err != nil {
+		return "", err
+	}
+
+	for _, caveat := range caveats {
+		if err := mac.AddFirstPartyCaveat(caveat.Id); err != nil {
+			return "", err
+		}
+	}
+
+	macBytes, err = mac.MarshalBinary()
+	if err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(macBytes), err
 }
 
 // allowCORS wraps the given http.Handler with a function that adds the
