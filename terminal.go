@@ -509,7 +509,7 @@ func (g *LightningTerminal) startSubservers() error {
 		// faraday, loop, and pool, all at the same time.
 		ctx := context.Background()
 		superMacaroon, err := bakeSuperMacaroon(
-			ctx, g.basicClient, 0, getAllPermissions(), nil,
+			ctx, g.basicClient, 0, getAllPermissions(false), nil,
 		)
 		if err != nil {
 			return err

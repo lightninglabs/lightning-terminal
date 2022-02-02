@@ -120,7 +120,7 @@ func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
 		ctx := context.Background()
 		mac, err := s.superMacBaker(
 			ctx, sess.MacaroonRootKey, &session.MacaroonRecipe{
-				Permissions: getAllPermissions(),
+				Permissions: getAllPermissions(false),
 			},
 		)
 		if err != nil {
