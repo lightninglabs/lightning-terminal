@@ -52,9 +52,12 @@ func (s *sessionRpcServer) AddSession(_ context.Context,
 		return nil, err
 	}
 
-	if typ != session.TypeUIPassword && typ != session.TypeMacaroonAdmin {
+	if typ != session.TypeUIPassword && typ != session.TypeMacaroonAdmin &&
+		typ != session.TypeMacaroonReadonly {
+
 		return nil, fmt.Errorf("invalid session type, only UI " +
-			"password and macaroon admin types supported in LiT")
+			"password, admin and readonly macaroon types " +
+			"supported in LiT")
 	}
 
 	sess, err := session.NewSession(
@@ -116,11 +119,12 @@ func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
 	case session.TypeUIPassword:
 		authData = []byte("Authorization: Basic " + s.basicAuth)
 
-	case session.TypeMacaroonAdmin:
+	case session.TypeMacaroonAdmin, session.TypeMacaroonReadonly:
 		ctx := context.Background()
+		readOnly := sess.Type == session.TypeMacaroonReadonly
 		mac, err := s.superMacBaker(
 			ctx, sess.MacaroonRootKey, &session.MacaroonRecipe{
-				Permissions: getAllPermissions(false),
+				Permissions: getAllPermissions(readOnly),
 			},
 		)
 		if err != nil {
