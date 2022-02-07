@@ -229,7 +229,7 @@ func (g *LightningTerminal) Run() error {
 		superMacBaker: func(ctx context.Context, rootKeyID uint64,
 			recipe *session.MacaroonRecipe) (string, error) {
 
-			return bakeSuperMacaroon(
+			return BakeSuperMacaroon(
 				ctx, g.basicClient, rootKeyID,
 				recipe.Permissions, recipe.Caveats,
 			)
@@ -504,11 +504,11 @@ func (g *LightningTerminal) startSubservers() error {
 		// Create a super macaroon that can be used to control lnd,
 		// faraday, loop, and pool, all at the same time.
 		ctx := context.Background()
-		superMacaroon, err := bakeSuperMacaroon(
+		superMacaroon, err := BakeSuperMacaroon(
 			ctx, g.basicClient, session.NewSuperMacaroonRootKeyID(
 				[4]byte{},
 			),
-			getAllPermissions(false), nil,
+			GetAllPermissions(false), nil,
 		)
 		if err != nil {
 			return err
@@ -1129,9 +1129,9 @@ func (g *LightningTerminal) createRESTProxy() error {
 	return nil
 }
 
-// bakeSuperMacaroon uses the lnd client to bake a macaroon that can include
+// BakeSuperMacaroon uses the lnd client to bake a macaroon that can include
 // permissions for multiple daemons.
-func bakeSuperMacaroon(ctx context.Context, lnd lnrpc.LightningClient,
+func BakeSuperMacaroon(ctx context.Context, lnd lnrpc.LightningClient,
 	rootKeyID uint64, perms []bakery.Op, caveats []macaroon.Caveat) (string,
 	error) {
 

@@ -124,7 +124,7 @@ func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
 		readOnly := sess.Type == session.TypeMacaroonReadonly
 		mac, err := s.superMacBaker(
 			ctx, sess.MacaroonRootKey, &session.MacaroonRecipe{
-				Permissions: getAllPermissions(readOnly),
+				Permissions: GetAllPermissions(readOnly),
 			},
 		)
 		if err != nil {
