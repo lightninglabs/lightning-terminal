@@ -649,11 +649,16 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 		return err
 	}
 
-	// If we're in integrated mode, we're using a super macaroon internally,
-	// which we can just pass straight to lnd for validation. But the user
-	// might still be using a specific macaroon, which should be handled the
-	// same as before.
-	if g.cfg.LndMode == ModeIntegrated && session.IsSuperMacaroon(macHex) {
+	// If we're using a super macaroon, we just make sure it is valid and
+	// contains all the permissions needed. If we get to this point, we're
+	// either in integrated lnd mode where this is the only macaroon
+	// validation function, and we're done after the check. Or we're in
+	// remote lnd mode but the request is for an in-process daemon which we
+	// can validate here. Any request for a remote sub-daemon goes through
+	// the proxy and its director and any super macaroon will be converted
+	// to a daemon specific macaroon before directing the call to the remote
+	// daemon. Those calls don't land here.
+	if session.IsSuperMacaroon(macHex) {
 		macBytes, err := hex.DecodeString(macHex)
 		if err != nil {
 			return err
