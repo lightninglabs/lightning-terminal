@@ -10,13 +10,16 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/btcsuite/btcutil"
 	"github.com/lightninglabs/faraday/frdrpc"
+	terminal "github.com/lightninglabs/lightning-terminal"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
+	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/lightninglabs/pool/poolrpc"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -279,6 +282,46 @@ func testModeIntegrated(net *NetworkHarness, t *harnessTest) {
 				runGRPCWebAuthTest(
 					ttt, cfg.LitAddr(), cfg.UIPassword,
 					endpoint.grpcWebURI,
+				)
+			})
+		}
+	})
+
+	t.t.Run("gRPC super macaroon auth check", func(tt *testing.T) {
+		cfg := net.Alice.Cfg
+
+		superMacFile, err := bakeSuperMacaroon(cfg, true)
+		require.NoError(tt, err)
+
+		defer func() {
+			_ = os.Remove(superMacFile)
+		}()
+
+		for _, endpoint := range endpoints {
+			endpoint := endpoint
+			tt.Run(endpoint.name+" lnd port", func(ttt *testing.T) {
+				if !endpoint.supportsMacAuthOnLndPort {
+					return
+				}
+
+				runGRPCAuthTest(
+					ttt, cfg.RPCAddr(), cfg.TLSCertPath,
+					superMacFile,
+					endpoint.requestFn,
+					endpoint.successPattern,
+				)
+			})
+
+			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
+				if !endpoint.supportsMacAuthOnLitPort {
+					return
+				}
+
+				runGRPCAuthTest(
+					ttt, cfg.LitAddr(), cfg.TLSCertPath,
+					superMacFile,
+					endpoint.requestFn,
+					endpoint.successPattern,
 				)
 			})
 		}
@@ -600,4 +643,52 @@ func connectRPC(ctx context.Context, hostPort,
 	}
 
 	return grpc.DialContext(ctx, hostPort, opts...)
+}
+
+func bakeSuperMacaroon(cfg *LitNodeConfig, readOnly bool) (string, error) {
+	lndAdminMac := lndMacaroonFn(cfg)
+
+	ctxb := context.Background()
+	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
+	defer cancel()
+
+	rawConn, err := connectRPC(ctxt, cfg.RPCAddr(), cfg.TLSCertPath)
+	if err != nil {
+		return "", err
+	}
+
+	lndAdminMacBytes, err := ioutil.ReadFile(lndAdminMac)
+	if err != nil {
+		return "", err
+	}
+	lndAdminCtx := macaroonContext(ctxt, lndAdminMacBytes)
+	lndConn := lnrpc.NewLightningClient(rawConn)
+
+	superMacPermissions := terminal.GetAllPermissions(readOnly)
+	nullID := [4]byte{}
+	superMacHex, err := terminal.BakeSuperMacaroon(
+		lndAdminCtx, lndConn, session.NewSuperMacaroonRootKeyID(nullID),
+		superMacPermissions, nil,
+	)
+	if err != nil {
+		return "", err
+	}
+
+	// The BakeSuperMacaroon function just hex encoded the macaroon, we know
+	// it's valid.
+	superMacBytes, _ := hex.DecodeString(superMacHex)
+
+	tempFile, err := ioutil.TempFile("", "lit-super-macaroon")
+	if err != nil {
+		_ = os.Remove(tempFile.Name())
+		return "", err
+	}
+
+	err = ioutil.WriteFile(tempFile.Name(), superMacBytes, 0644)
+	if err != nil {
+		_ = os.Remove(tempFile.Name())
+		return "", err
+	}
+
+	return tempFile.Name(), nil
 }
