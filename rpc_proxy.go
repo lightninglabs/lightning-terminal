@@ -84,6 +84,7 @@ func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 	p := &rpcProxy{
 		cfg:               cfg,
 		basicAuth:         basicAuth,
+		permissionMap:     permissionMap,
 		macValidator:      validator,
 		superMacValidator: superMacValidator,
 		bufListener:       bufListener,
@@ -92,12 +93,8 @@ func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 		// From the grpxProxy doc: This codec is *crucial* to the
 		// functioning of the proxy.
 		grpc.CustomCodec(grpcProxy.Codec()), // nolint:staticcheck
-		grpc.ChainStreamInterceptor(p.StreamServerInterceptor(
-			permissionMap,
-		)),
-		grpc.ChainUnaryInterceptor(p.UnaryServerInterceptor(
-			permissionMap,
-		)),
+		grpc.ChainStreamInterceptor(p.StreamServerInterceptor),
+		grpc.ChainUnaryInterceptor(p.UnaryServerInterceptor),
 		grpc.UnknownServiceHandler(
 			grpcProxy.TransparentHandler(p.director),
 		),
@@ -156,8 +153,9 @@ func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 //                                    +---------------------+
 //
 type rpcProxy struct {
-	cfg       *Config
-	basicAuth string
+	cfg           *Config
+	basicAuth     string
+	permissionMap map[string][]bakery.Op
 
 	macValidator      macaroons.MacaroonValidator
 	superMacValidator session.SuperMacaroonValidator
@@ -346,93 +344,86 @@ func (p *rpcProxy) director(ctx context.Context,
 
 // UnaryServerInterceptor is a gRPC interceptor that checks whether the
 // request is authorized by the included macaroons.
-func (p *rpcProxy) UnaryServerInterceptor(
-	permissionMap map[string][]bakery.Op) grpc.UnaryServerInterceptor {
+func (p *rpcProxy) UnaryServerInterceptor(ctx context.Context, req interface{},
+	info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{},
+	error) {
 
-	return func(ctx context.Context, req interface{},
-		info *grpc.UnaryServerInfo,
-		handler grpc.UnaryHandler) (interface{}, error) {
-
-		uriPermissions, ok := permissionMap[info.FullMethod]
-		if !ok {
-			return nil, fmt.Errorf("%s: unknown permissions "+
-				"required for method", info.FullMethod)
-		}
-
-		// For now, basic authentication is just a quick fix until we
-		// have proper macaroon support implemented in the UI. We allow
-		// gRPC web requests to have it and "convert" the auth into a
-		// proper macaroon now.
-		newCtx, err := p.convertBasicAuth(ctx, info.FullMethod, nil)
-		if err != nil {
-			// Make sure we handle the case where the super macaroon
-			// is still empty on startup.
-			if pErr, ok := err.(*proxyErr); ok &&
-				pErr.proxyContext == "supermacaroon" {
-
-				return nil, fmt.Errorf("super macaroon error: "+
-					"%v", pErr)
-			}
-			return nil, err
-		}
-
-		// With the basic auth converted to a macaroon if necessary,
-		// let's now validate the macaroon.
-		err = p.macValidator.ValidateMacaroon(
-			newCtx, uriPermissions, info.FullMethod,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		return handler(ctx, req)
+	uriPermissions, ok := p.permissionMap[info.FullMethod]
+	if !ok {
+		return nil, fmt.Errorf("%s: unknown permissions "+
+			"required for method", info.FullMethod)
 	}
+
+	// For now, basic authentication is just a quick fix until we
+	// have proper macaroon support implemented in the UI. We allow
+	// gRPC web requests to have it and "convert" the auth into a
+	// proper macaroon now.
+	newCtx, err := p.convertBasicAuth(ctx, info.FullMethod, nil)
+	if err != nil {
+		// Make sure we handle the case where the super macaroon
+		// is still empty on startup.
+		if pErr, ok := err.(*proxyErr); ok &&
+			pErr.proxyContext == "supermacaroon" {
+
+			return nil, fmt.Errorf("super macaroon error: "+
+				"%v", pErr)
+		}
+		return nil, err
+	}
+
+	// With the basic auth converted to a macaroon if necessary,
+	// let's now validate the macaroon.
+	err = p.macValidator.ValidateMacaroon(
+		newCtx, uriPermissions, info.FullMethod,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return handler(ctx, req)
 }
 
 // StreamServerInterceptor is a GRPC interceptor that checks whether the
 // request is authorized by the included macaroons.
-func (p *rpcProxy) StreamServerInterceptor(
-	permissionMap map[string][]bakery.Op) grpc.StreamServerInterceptor {
+func (p *rpcProxy) StreamServerInterceptor(srv interface{},
+	ss grpc.ServerStream, info *grpc.StreamServerInfo,
+	handler grpc.StreamHandler) error {
 
-	return func(srv interface{}, ss grpc.ServerStream,
-		info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-
-		uriPermissions, ok := permissionMap[info.FullMethod]
-		if !ok {
-			return fmt.Errorf("%s: unknown permissions required "+
-				"for method", info.FullMethod)
-		}
-
-		// For now, basic authentication is just a quick fix until we
-		// have proper macaroon support implemented in the UI. We allow
-		// gRPC web requests to have it and "convert" the auth into a
-		// proper macaroon now.
-		ctx, err := p.convertBasicAuth(
-			ss.Context(), info.FullMethod, nil,
-		)
-		if err != nil {
-			// Make sure we handle the case where the super macaroon
-			// is still empty on startup.
-			if pErr, ok := err.(*proxyErr); ok &&
-				pErr.proxyContext == "supermacaroon" {
-
-				return fmt.Errorf("super macaroon error: "+
-					"%v", pErr)
-			}
-			return err
-		}
-
-		// With the basic auth converted to a macaroon if necessary,
-		// let's now validate the macaroon.
-		err = p.macValidator.ValidateMacaroon(
-			ctx, uriPermissions, info.FullMethod,
-		)
-		if err != nil {
-			return err
-		}
-
-		return handler(srv, ss)
+	uriPermissions, ok := p.permissionMap[info.FullMethod]
+	if !ok {
+		return fmt.Errorf("%s: unknown permissions required "+
+			"for method", info.FullMethod)
 	}
+
+	// For now, basic authentication is just a quick fix until we
+	// have proper macaroon support implemented in the UI. We allow
+	// gRPC web requests to have it and "convert" the auth into a
+	// proper macaroon now.
+	ctx, err := p.convertBasicAuth(
+		ss.Context(), info.FullMethod, nil,
+	)
+	if err != nil {
+		// Make sure we handle the case where the super macaroon
+		// is still empty on startup.
+		if pErr, ok := err.(*proxyErr); ok &&
+			pErr.proxyContext == "supermacaroon" {
+
+			return fmt.Errorf("super macaroon error: "+
+				"%v", pErr)
+		}
+		return err
+	}
+
+	// With the basic auth converted to a macaroon if necessary,
+	// let's now validate the macaroon.
+	err = p.macValidator.ValidateMacaroon(
+		ctx, uriPermissions, info.FullMethod,
+	)
+	if err != nil {
+		return err
+	}
+
+	return handler(srv, ss)
 }
 
 // convertBasicAuth tries to convert the HTTP authorization header into a
