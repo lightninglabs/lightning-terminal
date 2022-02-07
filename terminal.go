@@ -194,7 +194,8 @@ func (g *LightningTerminal) Run() error {
 	g.loopServer = loopd.New(g.cfg.Loop, nil)
 	g.poolServer = pool.NewServer(g.cfg.Pool)
 	g.rpcProxy = newRpcProxy(
-		g.cfg, g, getAllMethodPermissions(), bufRpcListener,
+		g.cfg, g, g.validateSuperMacaroon, getAllMethodPermissions(),
+		bufRpcListener,
 	)
 
 	// Create an instance of the local Terminal Connect session store DB.

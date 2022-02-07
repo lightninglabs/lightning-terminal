@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
+	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/lncfg"
 	"github.com/lightningnetwork/lnd/macaroons"
 	grpcProxy "github.com/mwitkow/grpc-proxy/proxy"
@@ -64,6 +65,7 @@ func (e *proxyErr) Unwrap() error {
 // or REST request and delegate (and convert if necessary) it to the correct
 // component.
 func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
+	superMacValidator session.SuperMacaroonValidator,
 	permissionMap map[string][]bakery.Op,
 	bufListener *bufconn.Listener) *rpcProxy {
 
@@ -80,10 +82,11 @@ func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 	// need to be addressed with a custom director that just takes care of a
 	// few HTTP header fields.
 	p := &rpcProxy{
-		cfg:          cfg,
-		basicAuth:    basicAuth,
-		macValidator: validator,
-		bufListener:  bufListener,
+		cfg:               cfg,
+		basicAuth:         basicAuth,
+		macValidator:      validator,
+		superMacValidator: superMacValidator,
+		bufListener:       bufListener,
 	}
 	p.grpcServer = grpc.NewServer(
 		// From the grpxProxy doc: This codec is *crucial* to the
@@ -156,8 +159,9 @@ type rpcProxy struct {
 	cfg       *Config
 	basicAuth string
 
-	macValidator macaroons.MacaroonValidator
-	bufListener  *bufconn.Listener
+	macValidator      macaroons.MacaroonValidator
+	superMacValidator session.SuperMacaroonValidator
+	bufListener       *bufconn.Listener
 
 	superMacaroon string
 

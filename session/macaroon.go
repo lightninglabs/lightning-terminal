@@ -2,6 +2,7 @@ package session
 
 import (
 	"bytes"
+	"context"
 	"encoding/binary"
 	"encoding/hex"
 	"strconv"
@@ -17,6 +18,11 @@ var (
 	// root key to clearly mark it as such.
 	SuperMacaroonRootKeyPrefix = [4]byte{0xFF, 0xEE, 0xDD, 0xCC}
 )
+
+// SuperMacaroonValidator is a function type for validating a super macaroon.
+type SuperMacaroonValidator func(ctx context.Context,
+	superMacaroon []byte, requiredPermissions []bakery.Op,
+	fullMethod string) error
 
 // NewSuperMacaroonRootKeyID returns a new macaroon root key ID that has the
 // prefix to mark it as a super macaroon root key.
