@@ -307,11 +307,27 @@ func (p *rpcProxy) director(ctx context.Context,
 
 	outCtx := metadata.NewOutgoingContext(ctx, mdCopy)
 
-	// Is there a basic auth set?
+	// Is there a basic auth or super macaroon set?
 	authHeaders := md.Get("authorization")
-	if len(authHeaders) == 1 {
+	macHeader := md.Get(HeaderMacaroon)
+	switch {
+	case len(authHeaders) == 1:
 		macBytes, err := p.basicAuthToMacaroon(
 			authHeaders[0], requestURI, nil,
+		)
+		if err != nil {
+			return outCtx, nil, err
+		}
+		if len(macBytes) > 0 {
+			mdCopy.Set(HeaderMacaroon, hex.EncodeToString(macBytes))
+		}
+
+	case len(macHeader) == 1 && session.IsSuperMacaroon(macHeader[0]):
+		// If we have a macaroon, and it's a super macaroon, then we
+		// need to convert it into the actual daemon macaroon if they're
+		// running in remote mode.
+		macBytes, err := p.convertSuperMacaroon(
+			ctx, macHeader[0], requestURI,
 		)
 		if err != nil {
 			return outCtx, nil, err
@@ -547,6 +563,56 @@ func (p *rpcProxy) basicAuthToMacaroon(basicAuth, requestURI string,
 		proxyContext: "auth",
 		wrapped:      fmt.Errorf("unknown macaroon to use"),
 	}
+}
+
+// convertSuperMacaroon converts a super macaroon into a daemon specific
+// macaroon, but only if the super macaroon contains all required permissions
+// and the target daemon is actually running in remote mode.
+func (p *rpcProxy) convertSuperMacaroon(ctx context.Context, macHex string,
+	fullMethod string) ([]byte, error) {
+
+	requiredPermissions, ok := p.permissionMap[fullMethod]
+	if !ok {
+		return nil, fmt.Errorf("%s: unknown permissions required for "+
+			"method", fullMethod)
+	}
+
+	// We have a super macaroon, from here on out we'll return errors if
+	// something isn't the way we expect it to be.
+	macBytes, err := hex.DecodeString(macHex)
+	if err != nil {
+		return nil, err
+	}
+
+	// Make sure the super macaroon is valid and contains all the required
+	// permissions.
+	err = p.superMacValidator(
+		ctx, macBytes, requiredPermissions, fullMethod,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Is this actually a request that goes to a daemon that is running
+	// remotely?
+	switch {
+	case isFaradayURI(fullMethod) && p.cfg.faradayRemote:
+		return readMacaroon(lncfg.CleanAndExpandPath(
+			p.cfg.Remote.Faraday.MacaroonPath,
+		))
+
+	case isLoopURI(fullMethod) && p.cfg.loopRemote:
+		return readMacaroon(lncfg.CleanAndExpandPath(
+			p.cfg.Remote.Loop.MacaroonPath,
+		))
+
+	case isPoolURI(fullMethod) && p.cfg.poolRemote:
+		return readMacaroon(lncfg.CleanAndExpandPath(
+			p.cfg.Remote.Pool.MacaroonPath,
+		))
+	}
+
+	return nil, nil
 }
 
 // dialBufConnBackend dials an in-memory connection to an RPC listener and
