@@ -118,4 +118,25 @@ func testModeRemote(net *NetworkHarness, t *harnessTest) {
 			})
 		}
 	})
+
+	t.t.Run("REST auth", func(tt *testing.T) {
+		cfg := net.Bob.Cfg
+
+		for _, endpoint := range endpoints {
+			endpoint := endpoint
+
+			if endpoint.restWebURI == "" {
+				continue
+			}
+
+			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
+				runRESTAuthTest(
+					ttt, cfg.LitAddr(), cfg.UIPassword,
+					endpoint.macaroonFn(cfg),
+					endpoint.restWebURI,
+					endpoint.successPattern,
+				)
+			})
+		}
+	})
 }
