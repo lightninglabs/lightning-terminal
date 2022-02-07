@@ -659,33 +659,9 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 			return err
 		}
 
-		// If we haven't connected to lnd yet, we can't check the super
-		// macaroon. The user will need to wait a bit.
-		if g.lndClient == nil {
-			return fmt.Errorf("cannot validate macaroon, not yet " +
-				"connected to lnd, please wait")
-		}
-
-		// Convert permissions to the form that lndClient will accept.
-		permissions := make(
-			[]lndclient.MacaroonPermission, len(requiredPermissions),
+		return g.validateSuperMacaroon(
+			ctx, macBytes, requiredPermissions, fullMethod,
 		)
-		for idx, perm := range requiredPermissions {
-			permissions[idx] = lndclient.MacaroonPermission{
-				Entity: perm.Entity,
-				Action: perm.Action,
-			}
-		}
-
-		res, err := g.lndClient.Client.CheckMacaroonPermissions(
-			ctx, macBytes, permissions, fullMethod,
-		)
-		if !res {
-			return fmt.Errorf("macaroon is not valid, returned %v",
-				res)
-		}
-
-		return err
 	}
 
 	// Validate all macaroons for services that are running in the local
@@ -1124,6 +1100,45 @@ func (g *LightningTerminal) createRESTProxy() error {
 	)
 	if err != nil {
 		return fmt.Errorf("error registering REST handler: %v", err)
+	}
+
+	return nil
+}
+
+// validateSuperMacaroon makes sure the given macaroon is a valid super macaroon
+// that was issued by lnd and contains all the required permissions, even if
+// the actual RPC method isn't a lnd request.
+func (g *LightningTerminal) validateSuperMacaroon(ctx context.Context,
+	superMacaroon []byte, requiredPermissions []bakery.Op,
+	fullMethod string) error {
+
+	// If we haven't connected to lnd yet, we can't check the super
+	// macaroon. The user will need to wait a bit.
+	if g.lndClient == nil {
+		return fmt.Errorf("cannot validate macaroon, not yet " +
+			"connected to lnd, please wait")
+	}
+
+	// Convert permissions to the form that lndClient will accept.
+	permissions := make(
+		[]lndclient.MacaroonPermission, len(requiredPermissions),
+	)
+	for idx, perm := range requiredPermissions {
+		permissions[idx] = lndclient.MacaroonPermission{
+			Entity: perm.Entity,
+			Action: perm.Action,
+		}
+	}
+
+	res, err := g.lndClient.Client.CheckMacaroonPermissions(
+		ctx, superMacaroon, permissions, fullMethod,
+	)
+	if err != nil {
+		return fmt.Errorf("lnd macaroon validation failed: %v",
+			err)
+	}
+	if !res {
+		return fmt.Errorf("macaroon is not valid")
 	}
 
 	return nil
