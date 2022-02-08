@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/btcsuite/btcd/btcec"
@@ -20,6 +21,18 @@ type sessionRpcServer struct {
 
 	db            *session.DB
 	sessionServer *session.Server
+
+	quit     chan struct{}
+	wg       sync.WaitGroup
+	stopOnce sync.Once
+}
+
+// stop cleans up any sessionRpcServer resources.
+func (s *sessionRpcServer) stop() {
+	s.stopOnce.Do(func() {
+		close(s.quit)
+		s.wg.Wait()
+	})
 }
 
 // AddSession adds and starts a new Terminal Connect session.
@@ -72,6 +85,9 @@ func (s *sessionRpcServer) AddSession(_ context.Context,
 // resumeSession tries to start an existing session if it is not expired, not
 // revoked and a LiT session.
 func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
+	pubKey := sess.LocalPublicKey
+	pubKeyBytes := pubKey.SerializeCompressed()
+
 	// We only start non-revoked, non-expired LiT sessions. Everything else
 	// we just skip.
 	if sess.State != session.StateInUse &&
@@ -88,12 +104,50 @@ func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
 	}
 	if sess.Expiry.Before(time.Now()) {
 		log.Debugf("Not resuming session %x with expiry %s",
-			sess.LocalPublicKey.SerializeCompressed(), sess.Expiry)
+			pubKeyBytes, sess.Expiry)
+
+		if err := s.db.RevokeSession(pubKey); err != nil {
+			return fmt.Errorf("error revoking session: %v", err)
+		}
+
 		return nil
 	}
 
 	authData := []byte("Authorization: Basic " + s.basicAuth)
-	return s.sessionServer.StartSession(sess, authData)
+	sessionClosedSub, err := s.sessionServer.StartSession(sess, authData)
+	if err != nil {
+		return err
+	}
+
+	s.wg.Add(1)
+	go func() {
+		defer s.wg.Done()
+
+		ticker := time.NewTimer(time.Until(sess.Expiry))
+		defer ticker.Stop()
+
+		select {
+		case <-s.quit:
+		case <-sessionClosedSub:
+		case <-ticker.C:
+			log.Debugf("Stopping expired session %x with "+
+				"type %d", pubKeyBytes, sess.Type)
+
+			err = s.sessionServer.StopSession(pubKey)
+			if err != nil {
+				log.Debugf("Error stopping session: "+
+					"%v", err)
+			}
+
+			err = s.db.RevokeSession(pubKey)
+			if err != nil {
+				log.Debugf("error revoking session: "+
+					"%v", err)
+			}
+		}
+	}()
+
+	return err
 }
 
 // ListSessions returns all sessions known to the session store.
