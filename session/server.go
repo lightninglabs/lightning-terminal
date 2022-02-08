@@ -4,12 +4,14 @@ import (
 	"crypto/tls"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/lightninglabs/lightning-node-connect/mailbox"
 	"github.com/lightningnetwork/lnd/keychain"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/keepalive"
 )
 
 type sessionID [33]byte
@@ -41,6 +43,9 @@ func (m *mailboxSession) start(session *Session,
 	mailboxServer, err := mailbox.NewServer(
 		session.ServerAddr, session.PairingSecret[:],
 		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
+		grpc.WithKeepaliveParams(keepalive.ClientParameters{
+			Time: 2 * time.Minute,
+		}),
 	)
 	if err != nil {
 		return err
