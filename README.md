@@ -86,6 +86,29 @@ Lightning Terminal is backwards compatible with `lnd` back to version v0.13.3-be
 | **v0.3.0-alpha** | v0.11.1-beta |
 | **v0.2.0-alpha** | v0.11.0-beta |
 
+LiT offers two main operating modes, one in which [`lnd` is running inside the
+LiT process (called "lnd integrated mode", set by `lnd-mode=integrated` config
+option)](doc/config-lnd-integrated.md) and one in which [`lnd` is running in
+a standalone process on the same or remote machine (called "lnd remote mode",
+set by `lnd-mode=remote` config option)](doc/config-lnd-remote.md).
+
+In addition to those main modes, the individual bundled daemons (Faraday, Loop
+and Pool) can be toggled to be integrated or remote as well. This offers a
+large number of possible configuration combinations, of which not all are
+fully supported due to technical reasons.
+
+The following table shows the supported combinations:
+
+|                                        | `lnd-mode=integrated` | `lnd-mode=remote` |
+|----------------------------------------|-----------------------|-------------------|
+| `faraday-mode=integrated`              | X                     | X                 |
+| `loop-mode=integrated`                 | X                     | X                 |
+| `pool-mode=integrated`                 | X                     | X                 |
+| `faraday-mode=remote`                  |                       | X                 |
+| `loop-mode=remote`                     |                       | X                 |
+| `pool-mode=remote`                     |                       | X                 |
+| `lnd` running in "stateless init" mode | X                     |                   |
+
 ## Daemon Versions packaged with LiT
 
 | LiT              | LND          | Loop        | Faraday      | Pool         |
