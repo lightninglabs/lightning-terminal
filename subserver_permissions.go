@@ -16,6 +16,20 @@ var (
 		"/litrpc.Sessions/ListSessions":  {{}},
 		"/litrpc.Sessions/RevokeSession": {{}},
 	}
+
+	// whiteListedMethods is a map of all lnd RPC methods that don't require
+	// any macaroon authentication.
+	whiteListedMethods = map[string][]bakery.Op{
+		"/lnrpc.WalletUnlocker/GenSeed":        {},
+		"/lnrpc.WalletUnlocker/InitWallet":     {},
+		"/lnrpc.WalletUnlocker/UnlockWallet":   {},
+		"/lnrpc.WalletUnlocker/ChangePassword": {},
+
+		// The State service must be available at all times, even
+		// before we can check macaroons, so we whitelist it.
+		"/lnrpc.State/SubscribeState": {},
+		"/lnrpc.State/GetState":       {},
+	}
 )
 
 // getSubserverPermissions returns a merged map of all subserver macaroon
@@ -44,12 +58,16 @@ func getSubserverPermissions() map[string][]bakery.Op {
 func getAllMethodPermissions() map[string][]bakery.Op {
 	subserverPermissions := getSubserverPermissions()
 	lndPermissions := lnd.MainRPCServerPermissions()
-	mapSize := len(subserverPermissions) + len(lndPermissions)
+	mapSize := len(subserverPermissions) + len(lndPermissions) +
+		len(whiteListedMethods)
 	result := make(map[string][]bakery.Op, mapSize)
 	for key, value := range lndPermissions {
 		result[key] = value
 	}
 	for key, value := range subserverPermissions {
+		result[key] = value
+	}
+	for key, value := range whiteListedMethods {
 		result[key] = value
 	}
 	return result
