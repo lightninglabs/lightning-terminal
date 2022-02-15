@@ -53,6 +53,7 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 	"google.golang.org/protobuf/encoding/protojson"
 	"gopkg.in/macaroon-bakery.v2/bakery"
+	"gopkg.in/macaroon.v2"
 )
 
 const (
@@ -140,7 +141,8 @@ type LightningTerminal struct {
 	wg         sync.WaitGroup
 	lndErrChan chan error
 
-	lndClient *lndclient.GrpcLndServices
+	lndClient   *lndclient.GrpcLndServices
+	basicClient lnrpc.LightningClient
 
 	faradayServer  *frdrpc.RPCServer
 	faradayStarted bool
@@ -216,11 +218,7 @@ func (g *LightningTerminal) Run() error {
 				),
 			}
 			allOpts = append(allOpts, opts...)
-			mailboxGrpcServer := grpc.NewServer(allOpts...)
-
-			_ = g.RegisterGrpcSubserver(mailboxGrpcServer)
-
-			return mailboxGrpcServer
+			return grpc.NewServer(allOpts...)
 		},
 	)
 	g.sessionRpcServer = &sessionRpcServer{
@@ -228,17 +226,14 @@ func (g *LightningTerminal) Run() error {
 		db:            g.sessionDB,
 		sessionServer: g.sessionServer,
 		quit:          make(chan struct{}),
-	}
+		superMacBaker: func(ctx context.Context, rootKeyID uint64,
+			recipe *session.MacaroonRecipe) (string, error) {
 
-	// Now start up all previously created sessions.
-	sessions, err := g.sessionDB.ListSessions()
-	if err != nil {
-		return fmt.Errorf("error listing sessions: %v", err)
-	}
-	for _, sess := range sessions {
-		if err := g.sessionRpcServer.resumeSession(sess); err != nil {
-			return fmt.Errorf("error resuming sesion: %v", err)
-		}
+			return bakeSuperMacaroon(
+				ctx, g.basicClient, rootKeyID,
+				recipe.Permissions, recipe.Caveats,
+			)
+		},
 	}
 
 	// Overwrite the loop and pool daemon's user agent name so it sends
@@ -378,6 +373,20 @@ func (g *LightningTerminal) Run() error {
 		return err
 	}
 
+	// Now start up all previously created sessions. Since the sessions
+	// require a lnd connection in order to bake macaroons, we can only
+	// start up the sessions once the connection to lnd has been
+	// established.
+	sessions, err := g.sessionDB.ListSessions()
+	if err != nil {
+		return fmt.Errorf("error listing sessions: %v", err)
+	}
+	for _, sess := range sessions {
+		if err := g.sessionRpcServer.resumeSession(sess); err != nil {
+			return fmt.Errorf("error resuming sesion: %v", err)
+		}
+	}
+
 	// Now block until we receive an error or the main shutdown signal.
 	select {
 	case err := <-g.loopServer.ErrChan:
@@ -405,7 +414,6 @@ func (g *LightningTerminal) Run() error {
 // servers that lnd started.
 func (g *LightningTerminal) startSubservers() error {
 	var (
-		basicClient   lnrpc.LightningClient
 		insecure      bool
 		clientOptions []lndclient.BasicClientOption
 	)
@@ -437,7 +445,7 @@ func (g *LightningTerminal) startSubservers() error {
 		// We'll need a basic client and a full client because not all
 		// subservers have the same requirements.
 		var err error
-		basicClient, err = lndclient.NewBasicClient(
+		g.basicClient, err = lndclient.NewBasicClient(
 			host, tlsPath, path.Dir(macPath), string(network),
 			clientOptions...,
 		)
@@ -495,27 +503,18 @@ func (g *LightningTerminal) startSubservers() error {
 	if g.cfg.LndMode == ModeIntegrated {
 		// Create a super macaroon that can be used to control lnd,
 		// faraday, loop, and pool, all at the same time.
-		bakePerms := getAllPermissions()
-		req := &lnrpc.BakeMacaroonRequest{
-			Permissions: make(
-				[]*lnrpc.MacaroonPermission, len(bakePerms),
-			),
-			AllowExternalPermissions: true,
-		}
-		for idx, perm := range bakePerms {
-			req.Permissions[idx] = &lnrpc.MacaroonPermission{
-				Entity: perm.Entity,
-				Action: perm.Action,
-			}
-		}
-
 		ctx := context.Background()
-		res, err := basicClient.BakeMacaroon(ctx, req)
+		superMacaroon, err := bakeSuperMacaroon(
+			ctx, g.basicClient, session.NewSuperMacaroonRootKeyID(
+				[4]byte{},
+			),
+			getAllPermissions(false), nil,
+		)
 		if err != nil {
 			return err
 		}
 
-		g.rpcProxy.superMacaroon = res.Macaroon
+		g.rpcProxy.superMacaroon = superMacaroon
 	}
 
 	// If we're in integrated and stateless init mode, we won't create
@@ -557,7 +556,7 @@ func (g *LightningTerminal) startSubservers() error {
 
 	if !g.cfg.poolRemote {
 		err = g.poolServer.StartAsSubserver(
-			basicClient, g.lndClient, createDefaultMacaroons,
+			g.basicClient, g.lndClient, createDefaultMacaroons,
 		)
 		if err != nil {
 			return err
@@ -654,8 +653,7 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 	// which we can just pass straight to lnd for validation. But the user
 	// might still be using a specific macaroon, which should be handled the
 	// same as before.
-	isSuperMacaroon := macHex == g.rpcProxy.superMacaroon
-	if g.cfg.LndMode == ModeIntegrated && isSuperMacaroon {
+	if g.cfg.LndMode == ModeIntegrated && session.IsSuperMacaroon(macHex) {
 		macBytes, err := hex.DecodeString(macHex)
 		if err != nil {
 			return err
@@ -1129,6 +1127,54 @@ func (g *LightningTerminal) createRESTProxy() error {
 	}
 
 	return nil
+}
+
+// bakeSuperMacaroon uses the lnd client to bake a macaroon that can include
+// permissions for multiple daemons.
+func bakeSuperMacaroon(ctx context.Context, lnd lnrpc.LightningClient,
+	rootKeyID uint64, perms []bakery.Op, caveats []macaroon.Caveat) (string,
+	error) {
+
+	if lnd == nil {
+		return "", errors.New("lnd not yet connected")
+	}
+
+	req := &lnrpc.BakeMacaroonRequest{
+		Permissions: make(
+			[]*lnrpc.MacaroonPermission, len(perms),
+		),
+		AllowExternalPermissions: true,
+		RootKeyId:                rootKeyID,
+	}
+	for idx, perm := range perms {
+		req.Permissions[idx] = &lnrpc.MacaroonPermission{
+			Entity: perm.Entity,
+			Action: perm.Action,
+		}
+	}
+
+	res, err := lnd.BakeMacaroon(ctx, req)
+	if err != nil {
+		return "", err
+	}
+
+	mac, err := session.ParseMacaroon(res.Macaroon)
+	if err != nil {
+		return "", err
+	}
+
+	for _, caveat := range caveats {
+		if err := mac.AddFirstPartyCaveat(caveat.Id); err != nil {
+			return "", err
+		}
+	}
+
+	macBytes, err := mac.MarshalBinary()
+	if err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(macBytes), err
 }
 
 // allowCORS wraps the given http.Handler with a function that adds the

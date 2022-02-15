@@ -1,12 +1,12 @@
 package session
 
 import (
-	"encoding/binary"
 	"fmt"
 	"time"
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/lightninglabs/lightning-node-connect/mailbox"
+	"gopkg.in/macaroon-bakery.v2/bakery"
 	"gopkg.in/macaroon.v2"
 )
 
@@ -30,6 +30,13 @@ const (
 	StateExpired State = 3
 )
 
+// MacaroonRecipe defines the permissions and caveats that should be used
+// to bake a macaroon.
+type MacaroonRecipe struct {
+	Permissions []bakery.Op
+	Caveats     []macaroon.Caveat
+}
+
 // Session is a struct representing a long-term Terminal Connect session.
 type Session struct {
 	Label           string
@@ -39,7 +46,7 @@ type Session struct {
 	ServerAddr      string
 	DevServer       bool
 	MacaroonRootKey uint64
-	Macaroon        *macaroon.Macaroon
+	MacaroonRecipe  *MacaroonRecipe
 	PairingSecret   [mailbox.NumPasswordBytes]byte
 	LocalPrivateKey *btcec.PrivateKey
 	LocalPublicKey  *btcec.PublicKey
@@ -48,7 +55,8 @@ type Session struct {
 
 // NewSession creates a new session with the given user-defined parameters.
 func NewSession(label string, typ Type, expiry time.Time, serverAddr string,
-	devServer bool) (*Session, error) {
+	devServer bool, perms []bakery.Op, caveats []macaroon.Caveat) (*Session,
+	error) {
 
 	_, pairingSecret, err := mailbox.NewPassword()
 	if err != nil {
@@ -60,9 +68,12 @@ func NewSession(label string, typ Type, expiry time.Time, serverAddr string,
 		return nil, fmt.Errorf("error deriving private key: %v", err)
 	}
 	pubKey := privateKey.PubKey()
-	macRootKey := binary.BigEndian.Uint64(pubKey.SerializeCompressed()[0:8])
 
-	return &Session{
+	var macRootKeyBase [4]byte
+	copy(macRootKeyBase[:], pubKey.SerializeCompressed())
+	macRootKey := NewSuperMacaroonRootKeyID(macRootKeyBase)
+
+	sess := &Session{
 		Label:           label,
 		State:           StateCreated,
 		Type:            typ,
@@ -74,7 +85,16 @@ func NewSession(label string, typ Type, expiry time.Time, serverAddr string,
 		LocalPrivateKey: privateKey,
 		LocalPublicKey:  pubKey,
 		RemotePublicKey: nil,
-	}, nil
+	}
+
+	if perms != nil || caveats != nil {
+		sess.MacaroonRecipe = &MacaroonRecipe{
+			Permissions: perms,
+			Caveats:     caveats,
+		}
+	}
+
+	return sess, nil
 }
 
 // Store is the interface a persistent storage must implement for storing and
