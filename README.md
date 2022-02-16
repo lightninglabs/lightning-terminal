@@ -70,6 +70,7 @@ Lightning Terminal is backwards compatible with `lnd` back to version v0.13.3-be
 
 | LiT              | LND          |
 |------------------| ------------ |
+| **v0.6.3-alpha** | v0.13.3-beta |
 | **v0.6.2-alpha** | v0.13.3-beta |
 | **v0.6.1-alpha** | v0.13.3-beta |
 | **v0.6.0-alpha** | v0.13.3-beta |
