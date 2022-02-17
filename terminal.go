@@ -212,14 +212,24 @@ func (g *LightningTerminal) Run() error {
 		func(opts ...grpc.ServerOption) *grpc.Server {
 			allOpts := []grpc.ServerOption{
 				grpc.CustomCodec(grpcProxy.Codec()), // nolint: staticcheck,
+				grpc.ChainStreamInterceptor(
+					g.rpcProxy.StreamServerInterceptor,
+				),
+				grpc.ChainUnaryInterceptor(
+					g.rpcProxy.UnaryServerInterceptor,
+				),
 				grpc.UnknownServiceHandler(
 					grpcProxy.TransparentHandler(
-						g.rpcProxy.director,
+						// Don't allow calls to litrpc.
+						g.rpcProxy.makeDirector(false),
 					),
 				),
 			}
 			allOpts = append(allOpts, opts...)
-			return grpc.NewServer(allOpts...)
+			grpcServer := grpc.NewServer(allOpts...)
+			g.registerSubDaemonGrpcServers(grpcServer, false)
+
+			return grpcServer
 		},
 	)
 	g.sessionRpcServer = &sessionRpcServer{
@@ -579,6 +589,21 @@ func (g *LightningTerminal) RegisterGrpcSubserver(server *grpc.Server) error {
 		return err
 	}
 
+	// Register all other daemon RPC servers that are running in-process.
+	// The LiT session server should be enabled on the main interface.
+	g.registerSubDaemonGrpcServers(server, true)
+
+	return nil
+}
+
+// registerSubDaemonGrpcServers registers the sub daemon (Faraday, Loop, Pool
+// and LiT session) servers to a given gRPC server, given they are running in
+// the local process. The lit session server is gated by its own boolean because
+// we don't necessarily want to expose it on all listeners, given its security
+// implications.
+func (g *LightningTerminal) registerSubDaemonGrpcServers(server *grpc.Server,
+	withLitRPC bool) {
+
 	// In remote mode the "director" of the RPC proxy will act as a catch-
 	// all for any gRPC request that isn't known because we didn't register
 	// any server for it. The director will then forward the request to the
@@ -595,9 +620,9 @@ func (g *LightningTerminal) RegisterGrpcSubserver(server *grpc.Server) error {
 		poolrpc.RegisterTraderServer(server, g.poolServer)
 	}
 
-	litrpc.RegisterSessionsServer(server, g.sessionRpcServer)
-
-	return nil
+	if withLitRPC {
+		litrpc.RegisterSessionsServer(server, g.sessionRpcServer)
+	}
 }
 
 // RegisterRestSubserver is a callback on the lnd.SubserverConfig struct that is
