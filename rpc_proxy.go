@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
+	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/lncfg"
 	"github.com/lightningnetwork/lnd/macaroons"
 	grpcProxy "github.com/mwitkow/grpc-proxy/proxy"
@@ -31,6 +32,15 @@ const (
 	// HeaderMacaroon is the HTTP header field name that is used to send
 	// the macaroon.
 	HeaderMacaroon = "Macaroon"
+)
+
+var (
+	// EmptyMacaroonBytes is the byte representation of an empty but
+	// formally valid macaroon.
+	EmptyMacaroonBytes, _ = hex.DecodeString(
+		"020205656d7074790000062062083e2ea599285ac29350abb4ea21fd7c5a" +
+			"15aca8b4c0d38e6c058829369e50",
+	)
 )
 
 // proxyErr is an error type that adds more context to an error occurring in the
@@ -55,6 +65,7 @@ func (e *proxyErr) Unwrap() error {
 // or REST request and delegate (and convert if necessary) it to the correct
 // component.
 func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
+	superMacValidator session.SuperMacaroonValidator,
 	permissionMap map[string][]bakery.Op,
 	bufListener *bufconn.Listener) *rpcProxy {
 
@@ -71,21 +82,19 @@ func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 	// need to be addressed with a custom director that just takes care of a
 	// few HTTP header fields.
 	p := &rpcProxy{
-		cfg:          cfg,
-		basicAuth:    basicAuth,
-		macValidator: validator,
-		bufListener:  bufListener,
+		cfg:               cfg,
+		basicAuth:         basicAuth,
+		permissionMap:     permissionMap,
+		macValidator:      validator,
+		superMacValidator: superMacValidator,
+		bufListener:       bufListener,
 	}
 	p.grpcServer = grpc.NewServer(
 		// From the grpxProxy doc: This codec is *crucial* to the
 		// functioning of the proxy.
 		grpc.CustomCodec(grpcProxy.Codec()), // nolint:staticcheck
-		grpc.ChainStreamInterceptor(p.StreamServerInterceptor(
-			permissionMap,
-		)),
-		grpc.ChainUnaryInterceptor(p.UnaryServerInterceptor(
-			permissionMap,
-		)),
+		grpc.ChainStreamInterceptor(p.StreamServerInterceptor),
+		grpc.ChainUnaryInterceptor(p.UnaryServerInterceptor),
 		grpc.UnknownServiceHandler(
 			grpcProxy.TransparentHandler(p.director),
 		),
@@ -144,11 +153,13 @@ func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 //                                    +---------------------+
 //
 type rpcProxy struct {
-	cfg       *Config
-	basicAuth string
+	cfg           *Config
+	basicAuth     string
+	permissionMap map[string][]bakery.Op
 
-	macValidator macaroons.MacaroonValidator
-	bufListener  *bufconn.Listener
+	macValidator      macaroons.MacaroonValidator
+	superMacValidator session.SuperMacaroonValidator
+	bufListener       *bufconn.Listener
 
 	superMacaroon string
 
@@ -296,11 +307,27 @@ func (p *rpcProxy) director(ctx context.Context,
 
 	outCtx := metadata.NewOutgoingContext(ctx, mdCopy)
 
-	// Is there a basic auth set?
+	// Is there a basic auth or super macaroon set?
 	authHeaders := md.Get("authorization")
-	if len(authHeaders) == 1 {
+	macHeader := md.Get(HeaderMacaroon)
+	switch {
+	case len(authHeaders) == 1:
 		macBytes, err := p.basicAuthToMacaroon(
 			authHeaders[0], requestURI, nil,
+		)
+		if err != nil {
+			return outCtx, nil, err
+		}
+		if len(macBytes) > 0 {
+			mdCopy.Set(HeaderMacaroon, hex.EncodeToString(macBytes))
+		}
+
+	case len(macHeader) == 1 && session.IsSuperMacaroon(macHeader[0]):
+		// If we have a macaroon, and it's a super macaroon, then we
+		// need to convert it into the actual daemon macaroon if they're
+		// running in remote mode.
+		macBytes, err := p.convertSuperMacaroon(
+			ctx, macHeader[0], requestURI,
 		)
 		if err != nil {
 			return outCtx, nil, err
@@ -333,93 +360,86 @@ func (p *rpcProxy) director(ctx context.Context,
 
 // UnaryServerInterceptor is a gRPC interceptor that checks whether the
 // request is authorized by the included macaroons.
-func (p *rpcProxy) UnaryServerInterceptor(
-	permissionMap map[string][]bakery.Op) grpc.UnaryServerInterceptor {
+func (p *rpcProxy) UnaryServerInterceptor(ctx context.Context, req interface{},
+	info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{},
+	error) {
 
-	return func(ctx context.Context, req interface{},
-		info *grpc.UnaryServerInfo,
-		handler grpc.UnaryHandler) (interface{}, error) {
-
-		uriPermissions, ok := permissionMap[info.FullMethod]
-		if !ok {
-			return nil, fmt.Errorf("%s: unknown permissions "+
-				"required for method", info.FullMethod)
-		}
-
-		// For now, basic authentication is just a quick fix until we
-		// have proper macaroon support implemented in the UI. We allow
-		// gRPC web requests to have it and "convert" the auth into a
-		// proper macaroon now.
-		newCtx, err := p.convertBasicAuth(ctx, info.FullMethod, nil)
-		if err != nil {
-			// Make sure we handle the case where the super macaroon
-			// is still empty on startup.
-			if pErr, ok := err.(*proxyErr); ok &&
-				pErr.proxyContext == "supermacaroon" {
-
-				return nil, fmt.Errorf("super macaroon error: "+
-					"%v", pErr)
-			}
-			return nil, err
-		}
-
-		// With the basic auth converted to a macaroon if necessary,
-		// let's now validate the macaroon.
-		err = p.macValidator.ValidateMacaroon(
-			newCtx, uriPermissions, info.FullMethod,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		return handler(ctx, req)
+	uriPermissions, ok := p.permissionMap[info.FullMethod]
+	if !ok {
+		return nil, fmt.Errorf("%s: unknown permissions "+
+			"required for method", info.FullMethod)
 	}
+
+	// For now, basic authentication is just a quick fix until we
+	// have proper macaroon support implemented in the UI. We allow
+	// gRPC web requests to have it and "convert" the auth into a
+	// proper macaroon now.
+	newCtx, err := p.convertBasicAuth(ctx, info.FullMethod, nil)
+	if err != nil {
+		// Make sure we handle the case where the super macaroon
+		// is still empty on startup.
+		if pErr, ok := err.(*proxyErr); ok &&
+			pErr.proxyContext == "supermacaroon" {
+
+			return nil, fmt.Errorf("super macaroon error: "+
+				"%v", pErr)
+		}
+		return nil, err
+	}
+
+	// With the basic auth converted to a macaroon if necessary,
+	// let's now validate the macaroon.
+	err = p.macValidator.ValidateMacaroon(
+		newCtx, uriPermissions, info.FullMethod,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return handler(ctx, req)
 }
 
 // StreamServerInterceptor is a GRPC interceptor that checks whether the
 // request is authorized by the included macaroons.
-func (p *rpcProxy) StreamServerInterceptor(
-	permissionMap map[string][]bakery.Op) grpc.StreamServerInterceptor {
+func (p *rpcProxy) StreamServerInterceptor(srv interface{},
+	ss grpc.ServerStream, info *grpc.StreamServerInfo,
+	handler grpc.StreamHandler) error {
 
-	return func(srv interface{}, ss grpc.ServerStream,
-		info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-
-		uriPermissions, ok := permissionMap[info.FullMethod]
-		if !ok {
-			return fmt.Errorf("%s: unknown permissions required "+
-				"for method", info.FullMethod)
-		}
-
-		// For now, basic authentication is just a quick fix until we
-		// have proper macaroon support implemented in the UI. We allow
-		// gRPC web requests to have it and "convert" the auth into a
-		// proper macaroon now.
-		ctx, err := p.convertBasicAuth(
-			ss.Context(), info.FullMethod, nil,
-		)
-		if err != nil {
-			// Make sure we handle the case where the super macaroon
-			// is still empty on startup.
-			if pErr, ok := err.(*proxyErr); ok &&
-				pErr.proxyContext == "supermacaroon" {
-
-				return fmt.Errorf("super macaroon error: "+
-					"%v", pErr)
-			}
-			return err
-		}
-
-		// With the basic auth converted to a macaroon if necessary,
-		// let's now validate the macaroon.
-		err = p.macValidator.ValidateMacaroon(
-			ctx, uriPermissions, info.FullMethod,
-		)
-		if err != nil {
-			return err
-		}
-
-		return handler(srv, ss)
+	uriPermissions, ok := p.permissionMap[info.FullMethod]
+	if !ok {
+		return fmt.Errorf("%s: unknown permissions required "+
+			"for method", info.FullMethod)
 	}
+
+	// For now, basic authentication is just a quick fix until we
+	// have proper macaroon support implemented in the UI. We allow
+	// gRPC web requests to have it and "convert" the auth into a
+	// proper macaroon now.
+	ctx, err := p.convertBasicAuth(
+		ss.Context(), info.FullMethod, nil,
+	)
+	if err != nil {
+		// Make sure we handle the case where the super macaroon
+		// is still empty on startup.
+		if pErr, ok := err.(*proxyErr); ok &&
+			pErr.proxyContext == "supermacaroon" {
+
+			return fmt.Errorf("super macaroon error: "+
+				"%v", pErr)
+		}
+		return err
+	}
+
+	// With the basic auth converted to a macaroon if necessary,
+	// let's now validate the macaroon.
+	err = p.macValidator.ValidateMacaroon(
+		ctx, uriPermissions, info.FullMethod,
+	)
+	if err != nil {
+		return err
+	}
+
+	return handler(srv, ss)
 }
 
 // convertBasicAuth tries to convert the HTTP authorization header into a
@@ -499,7 +519,7 @@ func (p *rpcProxy) basicAuthToMacaroon(basicAuth, requestURI string,
 		}
 
 	case isLitURI(requestURI):
-		return []byte("no-macaroons-for-litcli"), nil
+		return EmptyMacaroonBytes, nil
 
 	default:
 		return nil, fmt.Errorf("unknown gRPC web request: %v",
@@ -543,6 +563,56 @@ func (p *rpcProxy) basicAuthToMacaroon(basicAuth, requestURI string,
 		proxyContext: "auth",
 		wrapped:      fmt.Errorf("unknown macaroon to use"),
 	}
+}
+
+// convertSuperMacaroon converts a super macaroon into a daemon specific
+// macaroon, but only if the super macaroon contains all required permissions
+// and the target daemon is actually running in remote mode.
+func (p *rpcProxy) convertSuperMacaroon(ctx context.Context, macHex string,
+	fullMethod string) ([]byte, error) {
+
+	requiredPermissions, ok := p.permissionMap[fullMethod]
+	if !ok {
+		return nil, fmt.Errorf("%s: unknown permissions required for "+
+			"method", fullMethod)
+	}
+
+	// We have a super macaroon, from here on out we'll return errors if
+	// something isn't the way we expect it to be.
+	macBytes, err := hex.DecodeString(macHex)
+	if err != nil {
+		return nil, err
+	}
+
+	// Make sure the super macaroon is valid and contains all the required
+	// permissions.
+	err = p.superMacValidator(
+		ctx, macBytes, requiredPermissions, fullMethod,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Is this actually a request that goes to a daemon that is running
+	// remotely?
+	switch {
+	case isFaradayURI(fullMethod) && p.cfg.faradayRemote:
+		return readMacaroon(lncfg.CleanAndExpandPath(
+			p.cfg.Remote.Faraday.MacaroonPath,
+		))
+
+	case isLoopURI(fullMethod) && p.cfg.loopRemote:
+		return readMacaroon(lncfg.CleanAndExpandPath(
+			p.cfg.Remote.Loop.MacaroonPath,
+		))
+
+	case isPoolURI(fullMethod) && p.cfg.poolRemote:
+		return readMacaroon(lncfg.CleanAndExpandPath(
+			p.cfg.Remote.Pool.MacaroonPath,
+		))
+	}
+
+	return nil, nil
 }
 
 // dialBufConnBackend dials an in-memory connection to an RPC listener and

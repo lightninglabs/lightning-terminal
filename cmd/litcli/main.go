@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -210,7 +211,7 @@ func getAuthContext(cliCtx *cli.Context) context.Context {
 	ctxb := context.Background()
 	md := metadata.MD{}
 
-	md.Set("macaroon", "no-macaroons-for-litcli")
+	md.Set("macaroon", hex.EncodeToString(terminal.EmptyMacaroonBytes))
 	md.Set("authorization", fmt.Sprintf("Basic %s", basicAuth))
 
 	return metadata.NewOutgoingContext(ctxb, md)

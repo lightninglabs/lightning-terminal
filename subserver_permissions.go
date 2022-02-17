@@ -73,9 +73,9 @@ func getAllMethodPermissions() map[string][]bakery.Op {
 	return result
 }
 
-// getAllPermissions retrieves all the permissions needed to bake a super
+// GetAllPermissions retrieves all the permissions needed to bake a super
 // macaroon.
-func getAllPermissions(readOnly bool) []bakery.Op {
+func GetAllPermissions(readOnly bool) []bakery.Op {
 	dedupMap := make(map[string]map[string]bool)
 
 	for _, methodPerms := range getAllMethodPermissions() {

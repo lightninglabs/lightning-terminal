@@ -2,6 +2,7 @@ package itest
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/btcsuite/btcutil"
@@ -86,6 +87,54 @@ func testModeRemote(net *NetworkHarness, t *harnessTest) {
 				runGRPCWebAuthTest(
 					ttt, cfg.LitAddr(), cfg.UIPassword,
 					endpoint.grpcWebURI,
+				)
+			})
+		}
+	})
+
+	t.t.Run("gRPC super macaroon auth check", func(tt *testing.T) {
+		cfg := net.Bob.Cfg
+
+		superMacFile, err := bakeSuperMacaroon(cfg, true)
+		require.NoError(tt, err)
+
+		defer func() {
+			_ = os.Remove(superMacFile)
+		}()
+
+		for _, endpoint := range endpoints {
+			endpoint := endpoint
+			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
+				if !endpoint.supportsMacAuthOnLitPort {
+					return
+				}
+
+				runGRPCAuthTest(
+					ttt, cfg.LitAddr(), cfg.LitTLSCertPath,
+					superMacFile,
+					endpoint.requestFn,
+					endpoint.successPattern,
+				)
+			})
+		}
+	})
+
+	t.t.Run("REST auth", func(tt *testing.T) {
+		cfg := net.Bob.Cfg
+
+		for _, endpoint := range endpoints {
+			endpoint := endpoint
+
+			if endpoint.restWebURI == "" {
+				continue
+			}
+
+			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
+				runRESTAuthTest(
+					ttt, cfg.LitAddr(), cfg.UIPassword,
+					endpoint.macaroonFn(cfg),
+					endpoint.restWebURI,
+					endpoint.successPattern,
 				)
 			})
 		}

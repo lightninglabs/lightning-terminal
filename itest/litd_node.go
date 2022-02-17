@@ -109,6 +109,7 @@ func (cfg *LitNodeConfig) GenArgs() []string {
 			fmt.Sprintf("--loop.loopdir=%s", cfg.LoopDir),
 			fmt.Sprintf("--pool.basedir=%s", cfg.PoolDir),
 			fmt.Sprintf("--uipassword=%s", cfg.UIPassword),
+			"--enablerest",
 			"--restcors=*",
 		}
 	)
@@ -139,7 +140,7 @@ func (cfg *LitNodeConfig) GenArgs() []string {
 
 		return litArgs
 	}
-	
+
 	// All arguments so far were for lnd. Let's namespace them now so we can
 	// add args for the other daemons and LiT itself afterwards.
 	litArgs = append(litArgs, cfg.LitArgs...)

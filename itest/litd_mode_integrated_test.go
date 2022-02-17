@@ -10,13 +10,16 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/btcsuite/btcutil"
 	"github.com/lightninglabs/faraday/frdrpc"
+	terminal "github.com/lightninglabs/lightning-terminal"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
+	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/lightninglabs/pool/poolrpc"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -135,6 +138,7 @@ var (
 		supportsUIPasswordOnLndPort bool
 		supportsUIPasswordOnLitPort bool
 		grpcWebURI                  string
+		restWebURI                  string
 	}{{
 		name:                        "lnrpc",
 		macaroonFn:                  lndMacaroonFn,
@@ -145,6 +149,7 @@ var (
 		supportsUIPasswordOnLndPort: false,
 		supportsUIPasswordOnLitPort: true,
 		grpcWebURI:                  "/lnrpc.Lightning/GetInfo",
+		restWebURI:                  "/v1/getinfo",
 	}, {
 		name:                        "frdrpc",
 		macaroonFn:                  faradayMacaroonFn,
@@ -155,6 +160,7 @@ var (
 		supportsUIPasswordOnLndPort: false,
 		supportsUIPasswordOnLitPort: true,
 		grpcWebURI:                  "/frdrpc.FaradayServer/RevenueReport",
+		restWebURI:                  "/v1/faraday/revenue",
 	}, {
 		name:                        "looprpc",
 		macaroonFn:                  loopMacaroonFn,
@@ -165,6 +171,7 @@ var (
 		supportsUIPasswordOnLndPort: false,
 		supportsUIPasswordOnLitPort: true,
 		grpcWebURI:                  "/looprpc.SwapClient/ListSwaps",
+		restWebURI:                  "/v1/loop/swaps",
 	}, {
 		name:                        "poolrpc",
 		macaroonFn:                  poolMacaroonFn,
@@ -175,6 +182,7 @@ var (
 		supportsUIPasswordOnLndPort: false,
 		supportsUIPasswordOnLitPort: true,
 		grpcWebURI:                  "/poolrpc.Trader/GetInfo",
+		restWebURI:                  "/v1/pool/info",
 	}, {
 		name:                        "litrpc",
 		macaroonFn:                  nil,
@@ -279,6 +287,67 @@ func testModeIntegrated(net *NetworkHarness, t *harnessTest) {
 				runGRPCWebAuthTest(
 					ttt, cfg.LitAddr(), cfg.UIPassword,
 					endpoint.grpcWebURI,
+				)
+			})
+		}
+	})
+
+	t.t.Run("gRPC super macaroon auth check", func(tt *testing.T) {
+		cfg := net.Alice.Cfg
+
+		superMacFile, err := bakeSuperMacaroon(cfg, true)
+		require.NoError(tt, err)
+
+		defer func() {
+			_ = os.Remove(superMacFile)
+		}()
+
+		for _, endpoint := range endpoints {
+			endpoint := endpoint
+			tt.Run(endpoint.name+" lnd port", func(ttt *testing.T) {
+				if !endpoint.supportsMacAuthOnLndPort {
+					return
+				}
+
+				runGRPCAuthTest(
+					ttt, cfg.RPCAddr(), cfg.TLSCertPath,
+					superMacFile,
+					endpoint.requestFn,
+					endpoint.successPattern,
+				)
+			})
+
+			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
+				if !endpoint.supportsMacAuthOnLitPort {
+					return
+				}
+
+				runGRPCAuthTest(
+					ttt, cfg.LitAddr(), cfg.TLSCertPath,
+					superMacFile,
+					endpoint.requestFn,
+					endpoint.successPattern,
+				)
+			})
+		}
+	})
+
+	t.t.Run("REST auth", func(tt *testing.T) {
+		cfg := net.Alice.Cfg
+
+		for _, endpoint := range endpoints {
+			endpoint := endpoint
+
+			if endpoint.restWebURI == "" {
+				continue
+			}
+
+			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
+				runRESTAuthTest(
+					ttt, cfg.LitAddr(), cfg.UIPassword,
+					endpoint.macaroonFn(cfg),
+					endpoint.restWebURI,
+					endpoint.successPattern,
 				)
 			})
 		}
@@ -470,6 +539,58 @@ func runGRPCWebAuthTest(t *testing.T, hostPort, uiPassword, grpcWebURI string) {
 	require.Contains(t, body, "grpc-status: 0")
 }
 
+// runRESTAuthTest tests authentication of the given REST interface.
+func runRESTAuthTest(t *testing.T, hostPort, uiPassword, macaroonPath, restURI,
+	successPattern string) {
+
+	basicAuth := base64.StdEncoding.EncodeToString(
+		[]byte(fmt.Sprintf("%s:%s", uiPassword, uiPassword)),
+	)
+	basicAuthHeader := http.Header{
+		"authorization": []string{fmt.Sprintf("Basic %s", basicAuth)},
+	}
+	url := fmt.Sprintf("https://%s%s", hostPort, restURI)
+
+	// First test a REST call without authorization, which should fail.
+	body, responseHeader, err := callURL(url, "GET", nil, nil, false)
+	require.NoError(t, err)
+
+	require.Equal(
+		t, "application/grpc",
+		responseHeader.Get("grpc-metadata-content-type"),
+	)
+	require.Equal(
+		t, "application/json",
+		responseHeader.Get("content-type"),
+	)
+	require.Contains(
+		t, body,
+		"expected 1 macaroon, got 0",
+	)
+
+	// Now add the UI password which should make the request succeed.
+	body, responseHeader, err = callURL(
+		url, "GET", nil, basicAuthHeader, false,
+	)
+	require.NoError(t, err)
+	require.Contains(t, body, successPattern)
+
+	// And finally, try with the given macaroon.
+	macBytes, err := ioutil.ReadFile(macaroonPath)
+	require.NoError(t, err)
+
+	macaroonHeader := http.Header{
+		"grpc-metadata-macaroon": []string{
+			hex.EncodeToString(macBytes),
+		},
+	}
+	body, responseHeader, err = callURL(
+		url, "GET", nil, macaroonHeader, false,
+	)
+	require.NoError(t, err)
+	require.Contains(t, body, successPattern)
+}
+
 // getURL retrieves the body of a given URL, ignoring any TLS certificate the
 // server might present.
 func getURL(url string) (string, error) {
@@ -495,7 +616,15 @@ func getURL(url string) (string, error) {
 func postURL(url string, postBody []byte, header http.Header) (string,
 	http.Header, error) {
 
-	req, err := http.NewRequest("POST", url, bytes.NewReader(postBody))
+	return callURL(url, "POST", postBody, header, true)
+}
+
+// callURL does a HTTP call to the given URL, ignoring any TLS certificate the
+// server might present.
+func callURL(url, method string, postBody []byte, header http.Header,
+	expectOk bool) (string, http.Header, error) {
+
+	req, err := http.NewRequest(method, url, bytes.NewReader(postBody))
 	if err != nil {
 		return "", nil, err
 	}
@@ -509,7 +638,7 @@ func postURL(url string, postBody []byte, header http.Header) (string,
 		return "", nil, err
 	}
 
-	if resp.StatusCode != 200 {
+	if expectOk && resp.StatusCode != 200 {
 		return "", nil, fmt.Errorf("request failed, got status code "+
 			"%d (%s)", resp.StatusCode, resp.Status)
 	}
@@ -600,4 +729,52 @@ func connectRPC(ctx context.Context, hostPort,
 	}
 
 	return grpc.DialContext(ctx, hostPort, opts...)
+}
+
+func bakeSuperMacaroon(cfg *LitNodeConfig, readOnly bool) (string, error) {
+	lndAdminMac := lndMacaroonFn(cfg)
+
+	ctxb := context.Background()
+	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
+	defer cancel()
+
+	rawConn, err := connectRPC(ctxt, cfg.RPCAddr(), cfg.TLSCertPath)
+	if err != nil {
+		return "", err
+	}
+
+	lndAdminMacBytes, err := ioutil.ReadFile(lndAdminMac)
+	if err != nil {
+		return "", err
+	}
+	lndAdminCtx := macaroonContext(ctxt, lndAdminMacBytes)
+	lndConn := lnrpc.NewLightningClient(rawConn)
+
+	superMacPermissions := terminal.GetAllPermissions(readOnly)
+	nullID := [4]byte{}
+	superMacHex, err := terminal.BakeSuperMacaroon(
+		lndAdminCtx, lndConn, session.NewSuperMacaroonRootKeyID(nullID),
+		superMacPermissions, nil,
+	)
+	if err != nil {
+		return "", err
+	}
+
+	// The BakeSuperMacaroon function just hex encoded the macaroon, we know
+	// it's valid.
+	superMacBytes, _ := hex.DecodeString(superMacHex)
+
+	tempFile, err := ioutil.TempFile("", "lit-super-macaroon")
+	if err != nil {
+		_ = os.Remove(tempFile.Name())
+		return "", err
+	}
+
+	err = ioutil.WriteFile(tempFile.Name(), superMacBytes, 0644)
+	if err != nil {
+		_ = os.Remove(tempFile.Name())
+		return "", err
+	}
+
+	return tempFile.Name(), nil
 }

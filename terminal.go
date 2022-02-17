@@ -194,7 +194,8 @@ func (g *LightningTerminal) Run() error {
 	g.loopServer = loopd.New(g.cfg.Loop, nil)
 	g.poolServer = pool.NewServer(g.cfg.Pool)
 	g.rpcProxy = newRpcProxy(
-		g.cfg, g, getAllMethodPermissions(), bufRpcListener,
+		g.cfg, g, g.validateSuperMacaroon, getAllMethodPermissions(),
+		bufRpcListener,
 	)
 
 	// Create an instance of the local Terminal Connect session store DB.
@@ -229,7 +230,7 @@ func (g *LightningTerminal) Run() error {
 		superMacBaker: func(ctx context.Context, rootKeyID uint64,
 			recipe *session.MacaroonRecipe) (string, error) {
 
-			return bakeSuperMacaroon(
+			return BakeSuperMacaroon(
 				ctx, g.basicClient, rootKeyID,
 				recipe.Permissions, recipe.Caveats,
 			)
@@ -504,11 +505,11 @@ func (g *LightningTerminal) startSubservers() error {
 		// Create a super macaroon that can be used to control lnd,
 		// faraday, loop, and pool, all at the same time.
 		ctx := context.Background()
-		superMacaroon, err := bakeSuperMacaroon(
+		superMacaroon, err := BakeSuperMacaroon(
 			ctx, g.basicClient, session.NewSuperMacaroonRootKeyID(
 				[4]byte{},
 			),
-			getAllPermissions(false), nil,
+			GetAllPermissions(false), nil,
 		)
 		if err != nil {
 			return err
@@ -649,43 +650,24 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 		return err
 	}
 
-	// If we're in integrated mode, we're using a super macaroon internally,
-	// which we can just pass straight to lnd for validation. But the user
-	// might still be using a specific macaroon, which should be handled the
-	// same as before.
-	if g.cfg.LndMode == ModeIntegrated && session.IsSuperMacaroon(macHex) {
+	// If we're using a super macaroon, we just make sure it is valid and
+	// contains all the permissions needed. If we get to this point, we're
+	// either in integrated lnd mode where this is the only macaroon
+	// validation function, and we're done after the check. Or we're in
+	// remote lnd mode but the request is for an in-process daemon which we
+	// can validate here. Any request for a remote sub-daemon goes through
+	// the proxy and its director and any super macaroon will be converted
+	// to a daemon specific macaroon before directing the call to the remote
+	// daemon. Those calls don't land here.
+	if session.IsSuperMacaroon(macHex) {
 		macBytes, err := hex.DecodeString(macHex)
 		if err != nil {
 			return err
 		}
 
-		// If we haven't connected to lnd yet, we can't check the super
-		// macaroon. The user will need to wait a bit.
-		if g.lndClient == nil {
-			return fmt.Errorf("cannot validate macaroon, not yet " +
-				"connected to lnd, please wait")
-		}
-
-		// Convert permissions to the form that lndClient will accept.
-		permissions := make(
-			[]lndclient.MacaroonPermission, len(requiredPermissions),
+		return g.validateSuperMacaroon(
+			ctx, macBytes, requiredPermissions, fullMethod,
 		)
-		for idx, perm := range requiredPermissions {
-			permissions[idx] = lndclient.MacaroonPermission{
-				Entity: perm.Entity,
-				Action: perm.Action,
-			}
-		}
-
-		res, err := g.lndClient.Client.CheckMacaroonPermissions(
-			ctx, macBytes, permissions, fullMethod,
-		)
-		if !res {
-			return fmt.Errorf("macaroon is not valid, returned %v",
-				res)
-		}
-
-		return err
 	}
 
 	// Validate all macaroons for services that are running in the local
@@ -1129,9 +1111,48 @@ func (g *LightningTerminal) createRESTProxy() error {
 	return nil
 }
 
-// bakeSuperMacaroon uses the lnd client to bake a macaroon that can include
+// validateSuperMacaroon makes sure the given macaroon is a valid super macaroon
+// that was issued by lnd and contains all the required permissions, even if
+// the actual RPC method isn't a lnd request.
+func (g *LightningTerminal) validateSuperMacaroon(ctx context.Context,
+	superMacaroon []byte, requiredPermissions []bakery.Op,
+	fullMethod string) error {
+
+	// If we haven't connected to lnd yet, we can't check the super
+	// macaroon. The user will need to wait a bit.
+	if g.lndClient == nil {
+		return fmt.Errorf("cannot validate macaroon, not yet " +
+			"connected to lnd, please wait")
+	}
+
+	// Convert permissions to the form that lndClient will accept.
+	permissions := make(
+		[]lndclient.MacaroonPermission, len(requiredPermissions),
+	)
+	for idx, perm := range requiredPermissions {
+		permissions[idx] = lndclient.MacaroonPermission{
+			Entity: perm.Entity,
+			Action: perm.Action,
+		}
+	}
+
+	res, err := g.lndClient.Client.CheckMacaroonPermissions(
+		ctx, superMacaroon, permissions, fullMethod,
+	)
+	if err != nil {
+		return fmt.Errorf("lnd macaroon validation failed: %v",
+			err)
+	}
+	if !res {
+		return fmt.Errorf("macaroon is not valid")
+	}
+
+	return nil
+}
+
+// BakeSuperMacaroon uses the lnd client to bake a macaroon that can include
 // permissions for multiple daemons.
-func bakeSuperMacaroon(ctx context.Context, lnd lnrpc.LightningClient,
+func BakeSuperMacaroon(ctx context.Context, lnd lnrpc.LightningClient,
 	rootKeyID uint64, perms []bakery.Op, caveats []macaroon.Caveat) (string,
 	error) {
 
