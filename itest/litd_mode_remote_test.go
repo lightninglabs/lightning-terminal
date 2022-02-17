@@ -139,4 +139,21 @@ func testModeRemote(net *NetworkHarness, t *harnessTest) {
 			})
 		}
 	})
+
+	t.t.Run("lnc auth", func(tt *testing.T) {
+		cfg := net.Bob.Cfg
+
+		for _, endpoint := range endpoints {
+			endpoint := endpoint
+			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
+				runLNCAuthTest(
+					ttt, cfg.LitAddr(), cfg.UIPassword,
+					cfg.LitTLSCertPath,
+					endpoint.requestFn,
+					endpoint.successPattern,
+					endpoint.allowedThroughLNC,
+				)
+			})
+		}
+	})
 }
