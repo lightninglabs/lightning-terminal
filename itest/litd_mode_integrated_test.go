@@ -3,6 +3,7 @@ package itest
 import (
 	"bytes"
 	"context"
+	"crypto/sha512"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
@@ -15,13 +16,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcutil"
 	"github.com/lightninglabs/faraday/frdrpc"
+	"github.com/lightninglabs/lightning-node-connect/mailbox"
 	terminal "github.com/lightninglabs/lightning-terminal"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/lightninglabs/pool/poolrpc"
+	"github.com/lightningnetwork/lnd/keychain"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/http2"
@@ -39,6 +43,10 @@ const (
 	// file of the main UI. This is created by Webpack and should be fairly
 	// stable.
 	indexHtmlMarker = "webpackJsonplightning-terminal"
+
+	// mailboxServerAddr is the address of the mailbox server to use during
+	// integration tests.
+	mailboxServerAddr = "mailbox.testnet.lightningcluster.com:443"
 )
 
 // requestFn is a function type for a helper function that makes a daemon
@@ -137,6 +145,7 @@ var (
 		supportsMacAuthOnLitPort    bool
 		supportsUIPasswordOnLndPort bool
 		supportsUIPasswordOnLitPort bool
+		allowedThroughLNC           bool
 		grpcWebURI                  string
 		restWebURI                  string
 	}{{
@@ -148,6 +157,7 @@ var (
 		supportsMacAuthOnLitPort:    true,
 		supportsUIPasswordOnLndPort: false,
 		supportsUIPasswordOnLitPort: true,
+		allowedThroughLNC:           true,
 		grpcWebURI:                  "/lnrpc.Lightning/GetInfo",
 		restWebURI:                  "/v1/getinfo",
 	}, {
@@ -159,6 +169,7 @@ var (
 		supportsMacAuthOnLitPort:    true,
 		supportsUIPasswordOnLndPort: false,
 		supportsUIPasswordOnLitPort: true,
+		allowedThroughLNC:           true,
 		grpcWebURI:                  "/frdrpc.FaradayServer/RevenueReport",
 		restWebURI:                  "/v1/faraday/revenue",
 	}, {
@@ -170,6 +181,7 @@ var (
 		supportsMacAuthOnLitPort:    true,
 		supportsUIPasswordOnLndPort: false,
 		supportsUIPasswordOnLitPort: true,
+		allowedThroughLNC:           true,
 		grpcWebURI:                  "/looprpc.SwapClient/ListSwaps",
 		restWebURI:                  "/v1/loop/swaps",
 	}, {
@@ -181,17 +193,22 @@ var (
 		supportsMacAuthOnLitPort:    true,
 		supportsUIPasswordOnLndPort: false,
 		supportsUIPasswordOnLitPort: true,
+		allowedThroughLNC:           true,
 		grpcWebURI:                  "/poolrpc.Trader/GetInfo",
 		restWebURI:                  "/v1/pool/info",
 	}, {
-		name:                        "litrpc",
-		macaroonFn:                  nil,
-		requestFn:                   litRequestFn,
-		successPattern:              "\"sessions\":[]",
+		name:       "litrpc",
+		macaroonFn: nil,
+		requestFn:  litRequestFn,
+		// In some test cases we actually expect some sessions, so we
+		// don't explicitly check for an empty array but just the
+		// existence of the array in the response.
+		successPattern:              "\"sessions\":[",
 		supportsMacAuthOnLndPort:    false,
 		supportsMacAuthOnLitPort:    false,
 		supportsUIPasswordOnLndPort: true,
 		supportsUIPasswordOnLitPort: true,
+		allowedThroughLNC:           false,
 		grpcWebURI:                  "/litrpc.Sessions/ListSessions",
 	}}
 )
@@ -348,6 +365,23 @@ func testModeIntegrated(net *NetworkHarness, t *harnessTest) {
 					endpoint.macaroonFn(cfg),
 					endpoint.restWebURI,
 					endpoint.successPattern,
+				)
+			})
+		}
+	})
+
+	t.t.Run("lnc auth", func(tt *testing.T) {
+		cfg := net.Alice.Cfg
+
+		for _, endpoint := range endpoints {
+			endpoint := endpoint
+			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
+				runLNCAuthTest(
+					ttt, cfg.LitAddr(), cfg.UIPassword,
+					cfg.TLSCertPath,
+					endpoint.requestFn,
+					endpoint.successPattern,
+					endpoint.allowedThroughLNC,
 				)
 			})
 		}
@@ -591,6 +625,61 @@ func runRESTAuthTest(t *testing.T, hostPort, uiPassword, macaroonPath, restURI,
 	require.Contains(t, body, successPattern)
 }
 
+// runLNCAuthTest tests authentication of the given interface when connecting
+// through Lightning Node Connect.
+func runLNCAuthTest(t *testing.T, hostPort, uiPassword, tlsCertPath string,
+	makeRequest requestFn, successContent string, callAllowed bool) {
+
+	ctxb := context.Background()
+	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
+	defer cancel()
+
+	rawConn, err := connectRPC(ctxt, hostPort, tlsCertPath)
+	require.NoError(t, err)
+
+	// We first need to create an LNC session that we can use to connect.
+	// We use the UI password to create the session.
+	ctxm := uiPasswordContext(ctxt, uiPassword, true)
+	litClient := litrpc.NewSessionsClient(rawConn)
+	sessResp, err := litClient.AddSession(ctxm, &litrpc.AddSessionRequest{
+		Label:       "integration-test",
+		SessionType: litrpc.SessionType_TYPE_MACAROON_READONLY,
+		ExpiryTimestampSeconds: uint64(
+			time.Now().Add(5 * time.Minute).Unix(),
+		),
+		MailboxServerAddr: mailboxServerAddr,
+	})
+	require.NoError(t, err)
+
+	// Try the LNC connection now.
+	connectPhrase := strings.Split(
+		sessResp.Session.PairingSecretMnemonic, " ",
+	)
+	rawLNCConn, err := connectMailbox(ctxt, connectPhrase)
+	require.NoError(t, err)
+
+	// We should be able to make a request via LNC to the given RPC
+	// endpoint, unless it is explicitly disallowed (we currently don't want
+	// to support creating more sessions through LNC until we have all
+	// macaroon permissions properly set up).
+	resp, err := makeRequest(ctxm, rawLNCConn)
+
+	// Is this a disallowed call?
+	if !callAllowed {
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "unknown service")
+
+		return
+	}
+
+	// The call should be allowed, so we expect no error.
+	require.NoError(t, err)
+
+	json, err := marshalOptions.Marshal(resp)
+	require.NoError(t, err)
+	require.Contains(t, string(json), successContent)
+}
+
 // getURL retrieves the body of a given URL, ignoring any TLS certificate the
 // server might present.
 func getURL(url string) (string, error) {
@@ -669,6 +758,39 @@ func getServerCertificates(hostPort string) ([]*x509.Certificate, error) {
 	}()
 
 	return conn.ConnectionState().PeerCertificates, nil
+}
+
+// connectMailbox tries to establish a connection through LNC using the given
+// connect phrase and the test mailbox server.
+func connectMailbox(ctx context.Context,
+	connectPhrase []string) (grpc.ClientConnInterface, error) {
+
+	var mnemonicWords [mailbox.NumPasswordWords]string
+	copy(mnemonicWords[:], connectPhrase)
+	password := mailbox.PasswordMnemonicToEntropy(mnemonicWords)
+
+	sid := sha512.Sum512(password[:])
+
+	privKey, err := btcec.NewPrivateKey(btcec.S256())
+	if err != nil {
+		return nil, err
+	}
+	ecdh := &keychain.PrivKeyECDH{PrivKey: privKey}
+
+	transportConn, err := mailbox.NewClient(ctx, sid)
+	if err != nil {
+		return nil, err
+	}
+
+	noiseConn := mailbox.NewNoiseGrpcConn(ecdh, nil, password[:])
+
+	dialOpts := []grpc.DialOption{
+		grpc.WithContextDialer(transportConn.Dial),
+		grpc.WithTransportCredentials(noiseConn),
+		grpc.WithPerRPCCredentials(noiseConn),
+	}
+
+	return grpc.DialContext(ctx, mailboxServerAddr, dialOpts...)
 }
 
 func macaroonContext(ctx context.Context, macBytes []byte) context.Context {

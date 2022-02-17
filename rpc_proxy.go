@@ -19,8 +19,10 @@ import (
 	grpcProxy "github.com/mwitkow/grpc-proxy/proxy"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 	"gopkg.in/macaroon.v2"
@@ -96,7 +98,7 @@ func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 		grpc.ChainStreamInterceptor(p.StreamServerInterceptor),
 		grpc.ChainUnaryInterceptor(p.UnaryServerInterceptor),
 		grpc.UnknownServiceHandler(
-			grpcProxy.TransparentHandler(p.director),
+			grpcProxy.TransparentHandler(p.makeDirector(true)),
 		),
 	)
 
@@ -292,69 +294,85 @@ func (p *rpcProxy) isHandling(resp http.ResponseWriter,
 	return false
 }
 
-// director is a function that directs an incoming request to the correct
-// backend, depending on what kind of authentication information is attached to
-// the request.
-func (p *rpcProxy) director(ctx context.Context,
+// makeDirector is a function that returns a director that directs an incoming
+// request to the correct backend, depending on what kind of authentication
+// information is attached to the request.
+func (p *rpcProxy) makeDirector(allowLitRPC bool) func(ctx context.Context,
 	requestURI string) (context.Context, *grpc.ClientConn, error) {
 
-	// If this header is present in the request from the web client,
-	// the actual connection to the backend will not be established.
-	// https://github.com/improbable-eng/grpc-web/issues/568
-	md, _ := metadata.FromIncomingContext(ctx)
-	mdCopy := md.Copy()
-	delete(mdCopy, "connection")
+	return func(ctx context.Context, requestURI string) (context.Context,
+		*grpc.ClientConn, error) {
 
-	outCtx := metadata.NewOutgoingContext(ctx, mdCopy)
+		// If this header is present in the request from the web client,
+		// the actual connection to the backend will not be established.
+		// https://github.com/improbable-eng/grpc-web/issues/568
+		md, _ := metadata.FromIncomingContext(ctx)
+		mdCopy := md.Copy()
+		delete(mdCopy, "connection")
 
-	// Is there a basic auth or super macaroon set?
-	authHeaders := md.Get("authorization")
-	macHeader := md.Get(HeaderMacaroon)
-	switch {
-	case len(authHeaders) == 1:
-		macBytes, err := p.basicAuthToMacaroon(
-			authHeaders[0], requestURI, nil,
-		)
-		if err != nil {
-			return outCtx, nil, err
+		outCtx := metadata.NewOutgoingContext(ctx, mdCopy)
+
+		// Is there a basic auth or super macaroon set?
+		authHeaders := md.Get("authorization")
+		macHeader := md.Get(HeaderMacaroon)
+		switch {
+		case len(authHeaders) == 1:
+			macBytes, err := p.basicAuthToMacaroon(
+				authHeaders[0], requestURI, nil,
+			)
+			if err != nil {
+				return outCtx, nil, err
+			}
+			if len(macBytes) > 0 {
+				mdCopy.Set(HeaderMacaroon, hex.EncodeToString(
+					macBytes,
+				))
+			}
+
+		case len(macHeader) == 1 && session.IsSuperMacaroon(macHeader[0]):
+			// If we have a macaroon, and it's a super macaroon,
+			// then we need to convert it into the actual daemon
+			// macaroon if they're running in remote mode.
+			macBytes, err := p.convertSuperMacaroon(
+				ctx, macHeader[0], requestURI,
+			)
+			if err != nil {
+				return outCtx, nil, err
+			}
+			if len(macBytes) > 0 {
+				mdCopy.Set(HeaderMacaroon, hex.EncodeToString(
+					macBytes,
+				))
+			}
 		}
-		if len(macBytes) > 0 {
-			mdCopy.Set(HeaderMacaroon, hex.EncodeToString(macBytes))
+
+		// Direct the call to the correct backend. All gRPC calls end up
+		// here since our gRPC server instance doesn't have any handlers
+		// registered itself. So all daemon calls that are remote are
+		// forwarded to them directly. Everything else will go to lnd
+		// since it must either be an lnd call or something that'll be
+		// handled by the integrated daemons that are hooking into lnd's
+		// gRPC server.
+		switch {
+		case isFaradayURI(requestURI) && p.cfg.faradayRemote:
+			return outCtx, p.faradayConn, nil
+
+		case isLoopURI(requestURI) && p.cfg.loopRemote:
+			return outCtx, p.loopConn, nil
+
+		case isPoolURI(requestURI) && p.cfg.poolRemote:
+			return outCtx, p.poolConn, nil
+
+		// Calls to LiT session RPC aren't allowed in some cases.
+		case isLitURI(requestURI) && !allowLitRPC:
+			return outCtx, nil, status.Errorf(
+				codes.Unimplemented, "unknown service %s",
+				requestURI,
+			)
+
+		default:
+			return outCtx, p.lndConn, nil
 		}
-
-	case len(macHeader) == 1 && session.IsSuperMacaroon(macHeader[0]):
-		// If we have a macaroon, and it's a super macaroon, then we
-		// need to convert it into the actual daemon macaroon if they're
-		// running in remote mode.
-		macBytes, err := p.convertSuperMacaroon(
-			ctx, macHeader[0], requestURI,
-		)
-		if err != nil {
-			return outCtx, nil, err
-		}
-		if len(macBytes) > 0 {
-			mdCopy.Set(HeaderMacaroon, hex.EncodeToString(macBytes))
-		}
-	}
-
-	// Direct the call to the correct backend. All gRPC calls end up here
-	// since our gRPC server instance doesn't have any handlers registered
-	// itself. So all daemon calls that are remote are forwarded to them
-	// directly. Everything else will go to lnd since it must either be an
-	// lnd call or something that'll be handled by the integrated daemons
-	// that are hooking into lnd's gRPC server.
-	switch {
-	case isFaradayURI(requestURI) && p.cfg.faradayRemote:
-		return outCtx, p.faradayConn, nil
-
-	case isLoopURI(requestURI) && p.cfg.loopRemote:
-		return outCtx, p.loopConn, nil
-
-	case isPoolURI(requestURI) && p.cfg.poolRemote:
-		return outCtx, p.poolConn, nil
-
-	default:
-		return outCtx, p.lndConn, nil
 	}
 }
 
