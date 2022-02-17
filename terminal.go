@@ -187,6 +187,9 @@ func (g *LightningTerminal) Run() error {
 	g.cfg = cfg
 	g.defaultImplCfg = g.cfg.Lnd.ImplementationConfig(shutdownInterceptor)
 
+	// Show version at startup.
+	log.Infof("LiT version: %s", Version())
+
 	// Create the instances of our subservers now so we can hook them up to
 	// lnd once it's fully started.
 	bufRpcListener := bufconn.Listen(100)
@@ -1349,14 +1352,15 @@ func (g *LightningTerminal) showStartupInfo() error {
 		"----------------------------------------------------------\n" +
 		" Lightning Terminal (LiT) by Lightning Labs               \n" +
 		"                                                          \n" +
-		" Operating mode      %s                                   \n" +
-		" Node status         %s                                   \n" +
-		" Alias               %s                                   \n" +
-		" Version             %s                                   \n" +
-		" Web interface       %s (open %s in your browser)         \n" +
+		" LND Operating mode      %s                               \n" +
+		" LND Node status         %s                               \n" +
+		" LND Alias               %s                               \n" +
+		" LND Version             %s                               \n" +
+		" LiT Version             %s                               \n" +
+		" Web interface           %s (open %s in your browser)     \n" +
 		"----------------------------------------------------------\n"
 	fmt.Printf(str, info.mode, info.status, info.alias, info.version,
-		listenAddr, info.webURI)
+		Version(), listenAddr, info.webURI)
 
 	return nil
 }
