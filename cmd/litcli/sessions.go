@@ -9,6 +9,12 @@ import (
 	"github.com/urfave/cli"
 )
 
+var (
+	// defaultSessionExpiry is the default time a session can be used for.
+	// The current value evaluates to 90 days.
+	defaultSessionExpiry = time.Hour * 24 * 90
+)
+
 var sessionCommands = []cli.Command{
 	{
 		Name:      "sessions",
@@ -38,7 +44,7 @@ var addSessionCommand = cli.Command{
 			Name: "expiry",
 			Usage: "number of seconds that the session should " +
 				"remain active",
-			Value: uint64(time.Hour.Seconds()),
+			Value: uint64(defaultSessionExpiry.Seconds()),
 		},
 		cli.StringFlag{
 			Name:  "mailboxserveraddr",
