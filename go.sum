@@ -617,8 +617,8 @@ github.com/lightninglabs/lightning-node-connect/hashmailrpc v1.0.2/go.mod h1:ant
 github.com/lightninglabs/lndclient v0.11.0-4/go.mod h1:8/cTKNwgL87NX123gmlv3Xh6p1a7pvzu+40Un3PhHiI=
 github.com/lightninglabs/lndclient v0.12.0-9/go.mod h1:L0R2VOaLxMylGbxgnfiZGc0hMDIIgj91cfgwGuFz9kU=
 github.com/lightninglabs/lndclient v0.14.0-5/go.mod h1:2kH9vNoc29ghIkfMjxwSeK8yCxsYfR80XAJ9PU/QWWk=
-github.com/lightninglabs/lndclient v0.14.0-7 h1:muqPju9ixBtQNcO0SkvbZ2b2oORUMRqQ4e+aC077Qa8=
-github.com/lightninglabs/lndclient v0.14.0-7/go.mod h1:2kH9vNoc29ghIkfMjxwSeK8yCxsYfR80XAJ9PU/QWWk=
+github.com/lightninglabs/lndclient v0.14.0-8 h1:vdwV6yFU4A7BjG2V8cpI8Kqdl2M0NSfsA+RWR+JGTko=
+github.com/lightninglabs/lndclient v0.14.0-8/go.mod h1:YIE/Yac69hIMiq9cm/ZC2sP4F0Llv3tC4hZGfgOhdeY=
 github.com/lightninglabs/loop v0.15.1-beta h1:X4qth5qAdpgKarmcltO85HxMze3Wrk8FzI46Cwt9H4A=
 github.com/lightninglabs/loop v0.15.1-beta/go.mod h1:9TawqLzvjDP4pswZ8QkvTcBqH+wGKBffP+r6mFGBVi4=
 github.com/lightninglabs/neutrino v0.11.0/go.mod h1:CuhF0iuzg9Sp2HO6ZgXgayviFTn1QHdSTJlMncK80wg=
@@ -627,8 +627,8 @@ github.com/lightninglabs/neutrino v0.11.1-0.20201210023533-e1978372d15e/go.mod h
 github.com/lightninglabs/neutrino v0.12.1/go.mod h1:GlKninWpRBbL7b8G0oQ36/8downfnFwKsr0hbRA6E/E=
 github.com/lightninglabs/neutrino v0.13.0 h1:j3PKWEJCwqwMn/qLASz2j0IuCF6AumS9DaM0i0pM/nY=
 github.com/lightninglabs/neutrino v0.13.0/go.mod h1:GlKninWpRBbL7b8G0oQ36/8downfnFwKsr0hbRA6E/E=
-github.com/lightninglabs/pool v0.5.4-alpha.0.20220114202858-525fe156d240 h1:REFYh3B/Y1wNZNv3KlZunMDDM+/p8+99sK1SEl/vlkw=
-github.com/lightninglabs/pool v0.5.4-alpha.0.20220114202858-525fe156d240/go.mod h1:tr69wanbadPnWQ1LqH8MkAv5bp2BLSVPFOSwar61y/M=
+github.com/lightninglabs/pool v0.5.5-alpha h1:/tte6k6fJeZlb1v0d7OkUo9tKCMarmcs3ZGdJ1nSsp8=
+github.com/lightninglabs/pool v0.5.5-alpha/go.mod h1:asKvGWumYLB4mLXAqHRjfho22/puMoRHs8JWO3C1qR8=
 github.com/lightninglabs/pool/auctioneerrpc v1.0.5 h1:TIPnH3gPQxoN4HQ+3ATO5geTB6kthBtnx3TLROa6QE0=
 github.com/lightninglabs/pool/auctioneerrpc v1.0.5/go.mod h1:F9uND5Kpj2eYeYe0RLi8IWQHsRjQ88FUp8itkYmX1Mo=
 github.com/lightninglabs/protobuf-hex-display v1.3.3-0.20191212020323-b444784ce75d/go.mod h1:KDb67YMzoh4eudnzClmvs2FbiLG9vxISmLApUkCa4uI=
