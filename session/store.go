@@ -3,7 +3,6 @@ package session
 import (
 	"bytes"
 	"errors"
-
 	"github.com/btcsuite/btcd/btcec"
 	"go.etcd.io/bbolt"
 )

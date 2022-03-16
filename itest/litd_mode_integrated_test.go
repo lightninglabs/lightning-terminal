@@ -3,7 +3,6 @@ package itest
 import (
 	"bytes"
 	"context"
-	"crypto/sha512"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
@@ -764,11 +763,9 @@ func getServerCertificates(hostPort string) ([]*x509.Certificate, error) {
 func connectMailbox(ctx context.Context,
 	connectPhrase []string) (grpc.ClientConnInterface, error) {
 
-	var mnemonicWords [mailbox.NumPasswordWords]string
+	var mnemonicWords [mailbox.NumPassphraseWords]string
 	copy(mnemonicWords[:], connectPhrase)
-	password := mailbox.PasswordMnemonicToEntropy(mnemonicWords)
-
-	sid := sha512.Sum512(password[:])
+	passphrase := mailbox.PassphraseMnemonicToEntropy(mnemonicWords)
 
 	privKey, err := btcec.NewPrivateKey(btcec.S256())
 	if err != nil {
@@ -776,12 +773,14 @@ func connectMailbox(ctx context.Context,
 	}
 	ecdh := &keychain.PrivKeyECDH{PrivKey: privKey}
 
-	transportConn, err := mailbox.NewClient(ctx, sid)
+	connData := mailbox.NewConnData(ecdh, nil, passphrase[:], nil, nil, nil)
+
+	transportConn, err := mailbox.NewClient(ctx, connData)
 	if err != nil {
 		return nil, err
 	}
 
-	noiseConn := mailbox.NewNoiseGrpcConn(ecdh, nil, password[:])
+	noiseConn := mailbox.NewNoiseGrpcConn(connData)
 
 	dialOpts := []grpc.DialOption{
 		grpc.WithContextDialer(transportConn.Dial),

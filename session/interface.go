@@ -47,7 +47,7 @@ type Session struct {
 	DevServer       bool
 	MacaroonRootKey uint64
 	MacaroonRecipe  *MacaroonRecipe
-	PairingSecret   [mailbox.NumPasswordBytes]byte
+	PairingSecret   [mailbox.NumPassphraseEntropyBytes]byte
 	LocalPrivateKey *btcec.PrivateKey
 	LocalPublicKey  *btcec.PublicKey
 	RemotePublicKey *btcec.PublicKey
@@ -58,7 +58,7 @@ func NewSession(label string, typ Type, expiry time.Time, serverAddr string,
 	devServer bool, perms []bakery.Op, caveats []macaroon.Caveat) (*Session,
 	error) {
 
-	_, pairingSecret, err := mailbox.NewPassword()
+	_, pairingSecret, err := mailbox.NewPassphraseEntropy()
 	if err != nil {
 		return nil, fmt.Errorf("error deriving pairing secret: %v", err)
 	}
