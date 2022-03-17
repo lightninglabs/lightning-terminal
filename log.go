@@ -3,6 +3,7 @@ package terminal
 import (
 	"github.com/btcsuite/btclog"
 	"github.com/lightninglabs/faraday"
+	"github.com/lightninglabs/lightning-node-connect/mailbox"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightninglabs/loop/loopd"
 	"github.com/lightninglabs/pool"
@@ -57,6 +58,7 @@ func SetupLoggers(root *build.RotatingLogWriter, intercept signal.Interceptor) {
 	// Add the lightning-terminal root logger.
 	lnd.AddSubLogger(root, Subsystem, intercept, UseLogger)
 	lnd.AddSubLogger(root, session.Subsystem, intercept, session.UseLogger)
+	lnd.AddSubLogger(root, mailbox.Subsystem, intercept, mailbox.UseLogger)
 
 	// Add daemon loggers to lnd's root logger.
 	faraday.SetupLoggers(root, intercept)
