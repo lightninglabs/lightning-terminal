@@ -34,6 +34,4 @@ require (
 	gopkg.in/macaroon.v2 v2.1.0
 )
 
-replace github.com/lightninglabs/lightning-node-connect => github.com/ellemouton/lightning-node-connect v0.1.5-alpha.0.20220321121554-214be2e1be66
-
 go 1.16

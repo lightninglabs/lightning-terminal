@@ -3,6 +3,7 @@ package itest
 import (
 	"bytes"
 	"context"
+	"crypto/sha512"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
@@ -768,18 +769,20 @@ func connectMailbox(ctx context.Context,
 	copy(mnemonicWords[:], connectPhrase)
 	password := mailbox.PasswordMnemonicToEntropy(mnemonicWords)
 
+	sid := sha512.Sum512(password[:])
+
 	privKey, err := btcec.NewPrivateKey(btcec.S256())
 	if err != nil {
 		return nil, err
 	}
 	ecdh := &keychain.PrivKeyECDH{PrivKey: privKey}
 
-	transportConn, err := mailbox.NewClient(ctx, ecdh, nil, password[:])
+	transportConn, err := mailbox.NewClient(ctx, sid)
 	if err != nil {
 		return nil, err
 	}
 
-	noiseConn := mailbox.NewNoiseGrpcConn(ecdh, nil, nil, password[:], nil)
+	noiseConn := mailbox.NewNoiseGrpcConn(ecdh, nil, password[:])
 
 	dialOpts := []grpc.DialOption{
 		grpc.WithContextDialer(transportConn.Dial),
