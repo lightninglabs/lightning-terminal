@@ -141,7 +141,9 @@ func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
 		return nil
 	}
 
-	sessionClosedSub, err := s.sessionServer.StartSession(sess, authData)
+	sessionClosedSub, err := s.sessionServer.StartSession(
+		sess, authData, s.db.StoreSession,
+	)
 	if err != nil {
 		return err
 	}
