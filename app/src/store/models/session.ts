@@ -51,11 +51,11 @@ export default class Session {
   get typeLabel() {
     switch (this.type) {
       case LIT.SessionType.TYPE_MACAROON_READONLY:
-        return 'Readonly Macaroon';
+        return 'Read-Only';
       case LIT.SessionType.TYPE_MACAROON_ADMIN:
-        return 'Admin Macaroon';
+        return 'Admin';
       case LIT.SessionType.TYPE_MACAROON_CUSTOM:
-        return 'Custom Macaroon';
+        return 'Custom';
       case LIT.SessionType.TYPE_UI_PASSWORD:
         return 'LiT UI Password';
     }
