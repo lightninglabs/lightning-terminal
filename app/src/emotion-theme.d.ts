@@ -38,6 +38,8 @@ declare module '@emotion/react' {
       purple: string;
       overlay: string;
       gradient: string;
+      lightBlue: string;
+      paleBlue: string;
     };
   }
 }
