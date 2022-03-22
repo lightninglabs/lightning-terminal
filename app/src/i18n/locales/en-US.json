@@ -33,6 +33,7 @@
   "cmps.common.Wizard.backTip": "Back to Previous",
   "cmps.connect.AddSession.create": "Create a new session",
   "cmps.connect.AddSession.label": "Label",
+  "cmps.connect.AddSession.permissions": "Permissions",
   "cmps.connect.AddSession.labelHint": "My First Session",
   "cmps.connect.AddSession.expiration": "Expiration",
   "cmps.connect.AddSession.expirationSuffix": "",

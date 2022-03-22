@@ -58,6 +58,7 @@ interface Props {
   extra?: ReactNode;
   placeholder?: string;
   onChange?: (value: string) => void;
+  className?: string;
 }
 
 const FormSelect: React.FC<Props> = ({
@@ -66,17 +67,17 @@ const FormSelect: React.FC<Props> = ({
   value,
   placeholder,
   onChange,
+  className,
 }) => {
   const { Wrapper, Select } = Styled;
   return (
-    <Wrapper>
+    <Wrapper className={className}>
       <Select
         value={value}
         onChange={v => onChange && onChange(v as string)}
         placeholder={placeholder}
         aria-label={label}
         options={options}
-        dropdownClassName="asdf"
       />
     </Wrapper>
   );
