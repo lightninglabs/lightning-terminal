@@ -1,5 +1,6 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
+import { Global, Theme } from '@emotion/react';
 import styled from '@emotion/styled';
 import { useStore } from 'store';
 import { Background, Menu } from 'components/base';
@@ -9,6 +10,47 @@ interface CollapsedProps {
   collapsed: boolean;
   fullWidth?: boolean;
 }
+
+const GlobalStyles = (theme: Theme) => `
+  .rc-select-dropdown {
+    padding-top: 10px;
+    background-color: transparent;
+
+    & > div {
+      color: ${theme.colors.offWhite};
+      background-color: ${theme.colors.lightBlue};
+      border-width: 0;
+      border-radius: 8px;
+      box-shadow: 0px 16px 16px rgba(0, 0, 0, 0.15);
+      overflow: hidden;
+    }
+  }
+
+  .rc-select-item {
+    color: ${theme.colors.white};
+    font-family: ${theme.fonts.open.regular};
+    font-weight: 600;
+    font-size: ${theme.sizes.s};
+    line-height: 24px;
+    padding: 16px;
+    border-bottom: 1px solid ${theme.colors.paleBlue};
+
+    &:last-of-type {
+      border-bottom: none;
+    }
+
+    &:hover {
+      color: ${theme.colors.white};
+      background-color: ${theme.colors.blue};
+      cursor: pointer;
+    }
+
+    & > .rc-select-item-option-state {
+        top: 16px;
+        right: 12px;
+      }
+  }
+`;
 
 const Styled = {
   Container: styled.div<{ fullWidth: boolean }>`
@@ -86,6 +128,7 @@ export const Layout: React.FC = ({ children }) => {
           <Fluid className="container-fluid">{children}</Fluid>
         </Content>
       </Container>
+      <Global styles={GlobalStyles} />
     </Background>
   );
 };

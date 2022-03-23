@@ -2,11 +2,13 @@ import React, { useCallback, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
+import * as LIT from 'types/generated/lit-sessions_pb';
 import { MAX_DATE } from 'util/constants';
 import { useStore } from 'store';
 import { Button, Column, HeaderFour, Row } from 'components/base';
 import FormField from 'components/common/FormField';
 import FormInput from 'components/common/FormInput';
+import FormSelect from 'components/common/FormSelect';
 import PurpleButton from './PurpleButton';
 
 const Styled = {
@@ -21,6 +23,17 @@ const Styled = {
       padding: 12px 16px;
     }
   `,
+  FormSelect: styled(FormSelect)`
+    .rc-select {
+      font-family: ${props => props.theme.fonts.open.regular};
+      font-size: ${props => props.theme.sizes.m};
+      padding: 12px 40px 8px 0px;
+    }
+
+    .rc-select-selection-item {
+      padding-left: 14px;
+    }
+  `,
 };
 
 interface Props {
@@ -32,18 +45,25 @@ const AddSession: React.FC<Props> = ({ primary }) => {
   const { sessionStore } = useStore();
 
   const [label, setLabel] = useState('');
+  const [permissions, setPermissions] = useState('admin');
   const [editing, setEditing] = useState(false);
 
   const toggleEditing = useCallback(() => setEditing(e => !e), []);
   const handleSubmit = useCallback(async () => {
-    const session = await sessionStore.addSession(label, MAX_DATE);
+    const sessionType =
+      permissions === 'admin'
+        ? LIT.SessionType.TYPE_MACAROON_ADMIN
+        : LIT.SessionType.TYPE_MACAROON_READONLY;
+
+    const session = await sessionStore.addSession(label, sessionType, MAX_DATE);
+
     if (session) {
       setLabel('');
       setEditing(false);
     }
-  }, [label]);
+  }, [label, permissions]);
 
-  const { Wrapper, FormHeader, FormInput } = Styled;
+  const { Wrapper, FormHeader, FormInput, FormSelect } = Styled;
   if (!editing) {
     return (
       <PurpleButton tertiary={!primary} onClick={toggleEditing}>
@@ -54,11 +74,30 @@ const AddSession: React.FC<Props> = ({ primary }) => {
 
   return (
     <Wrapper>
-      <FormHeader>{l('label')}</FormHeader>
+      <Row>
+        <Column>
+          <FormHeader>{l('label')}</FormHeader>
+        </Column>
+        <Column>
+          <FormHeader>{l('permissions')}</FormHeader>
+        </Column>
+      </Row>
       <Row>
         <Column cols={6}>
           <FormField>
             <FormInput value={label} onChange={setLabel} placeholder={l('labelHint')} />
+          </FormField>
+        </Column>
+        <Column>
+          <FormField>
+            <FormSelect
+              value={permissions}
+              onChange={setPermissions}
+              options={[
+                { label: 'Admin', value: 'admin' },
+                { label: 'Read Only', value: 'read-only' },
+              ]}
+            />
           </FormField>
         </Column>
         <Column>

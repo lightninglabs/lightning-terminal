@@ -83,7 +83,11 @@ export default class SessionStore {
           s.label.startsWith('Default Session'),
         ).length;
         const countText = count === 0 ? '' : `(${count})`;
-        await this.addSession(`Default Session ${countText}`, MAX_DATE);
+        await this.addSession(
+          `Default Session ${countText}`,
+          LIT.SessionType.TYPE_MACAROON_ADMIN,
+          MAX_DATE,
+        );
       }
     } catch (error: any) {
       this._store.appView.handleError(error, 'Unable to fetch sessions');
@@ -93,11 +97,16 @@ export default class SessionStore {
   /**
    * Adds a new session
    * @param label the user defined label for this session
+   * @param type the type of session being created (admin, read-only, etc)
    * @param expiry how long the session should be valid for
    * @param mailboxServerAddr the address where the mailbox server is reachable
    * @param devServer whether the mailbox server is a dev server that has no valid TLS cert
    */
-  async addSession(label: string, expiry: Date) {
+  async addSession(
+    label: string,
+    type: LIT.SessionTypeMap[keyof LIT.SessionTypeMap],
+    expiry: Date,
+  ) {
     try {
       this._store.log.info(`submitting session with label ${label}`, {
         expiry,
@@ -107,7 +116,7 @@ export default class SessionStore {
 
       const { session } = await this._store.api.lit.addSession(
         label,
-        LIT.SessionType.TYPE_UI_PASSWORD,
+        type,
         expiry,
         this.proxyServer,
         !IS_PROD,
