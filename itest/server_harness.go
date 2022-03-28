@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lightninglabs/loop/looprpc"
+	"github.com/lightninglabs/loop/swapserverrpc"
 	"github.com/lightninglabs/pool/auctioneerrpc"
 	"github.com/lightningnetwork/lnd/cert"
 	"google.golang.org/grpc"
@@ -24,7 +24,7 @@ const (
 
 type loopPoolServer struct {
 	auctioneerrpc.UnimplementedChannelAuctioneerServer
-	looprpc.UnimplementedSwapServerServer
+	swapserverrpc.UnimplementedSwapServerServer
 }
 
 type serverHarness struct {

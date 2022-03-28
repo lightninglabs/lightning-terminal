@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"go.etcd.io/bbolt"
 )
 

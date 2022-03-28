@@ -6,7 +6,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/lightningnetwork/lnd/tlv"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 	"gopkg.in/macaroon.v2"
@@ -164,7 +164,7 @@ func DeserializeSession(r io.Reader) (*Session, error) {
 
 	if t, ok := parsedTypes[typeLocalPrivateKey]; ok && t == nil {
 		session.LocalPrivateKey, session.LocalPublicKey = btcec.PrivKeyFromBytes(
-			btcec.S256(), privateKey,
+			privateKey,
 		)
 	}
 

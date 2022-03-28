@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/lightninglabs/lightning-node-connect/mailbox"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 	"gopkg.in/macaroon.v2"
@@ -63,7 +63,7 @@ func NewSession(label string, typ Type, expiry time.Time, serverAddr string,
 		return nil, fmt.Errorf("error deriving pairing secret: %v", err)
 	}
 
-	privateKey, err := btcec.NewPrivateKey(btcec.S256())
+	privateKey, err := btcec.NewPrivateKey()
 	if err != nil {
 		return nil, fmt.Errorf("error deriving private key: %v", err)
 	}

@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/jessevdk/go-flags"
 	"github.com/lightninglabs/faraday"
 	"github.com/lightninglabs/faraday/chain"
