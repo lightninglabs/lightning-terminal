@@ -15,8 +15,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
-	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/lightninglabs/faraday/frdrpc"
 	"github.com/lightninglabs/lightning-node-connect/mailbox"
 	terminal "github.com/lightninglabs/lightning-terminal"
@@ -726,7 +726,7 @@ func connectMailbox(ctx context.Context,
 	copy(mnemonicWords[:], connectPhrase)
 	passphrase := mailbox.PassphraseMnemonicToEntropy(mnemonicWords)
 
-	privKey, err := btcec.NewPrivateKey(btcec.S256())
+	privKey, err := btcec.NewPrivateKey()
 	if err != nil {
 		return nil, err
 	}

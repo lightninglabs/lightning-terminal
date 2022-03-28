@@ -141,6 +141,46 @@ export namespace Utxo {
   }
 }
 
+export class OutputDetail extends jspb.Message {
+  getOutputType(): OutputScriptTypeMap[keyof OutputScriptTypeMap];
+  setOutputType(value: OutputScriptTypeMap[keyof OutputScriptTypeMap]): void;
+
+  getAddress(): string;
+  setAddress(value: string): void;
+
+  getPkScript(): string;
+  setPkScript(value: string): void;
+
+  getOutputIndex(): string;
+  setOutputIndex(value: string): void;
+
+  getAmount(): string;
+  setAmount(value: string): void;
+
+  getIsOurAddress(): boolean;
+  setIsOurAddress(value: boolean): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): OutputDetail.AsObject;
+  static toObject(includeInstance: boolean, msg: OutputDetail): OutputDetail.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: OutputDetail, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): OutputDetail;
+  static deserializeBinaryFromReader(message: OutputDetail, reader: jspb.BinaryReader): OutputDetail;
+}
+
+export namespace OutputDetail {
+  export type AsObject = {
+    outputType: OutputScriptTypeMap[keyof OutputScriptTypeMap],
+    address: string,
+    pkScript: string,
+    outputIndex: string,
+    amount: string,
+    isOurAddress: boolean,
+  }
+}
+
 export class Transaction extends jspb.Message {
   getTxHash(): string;
   setTxHash(value: string): void;
@@ -168,6 +208,11 @@ export class Transaction extends jspb.Message {
   setDestAddressesList(value: Array<string>): void;
   addDestAddresses(value: string, index?: number): string;
 
+  clearOutputDetailsList(): void;
+  getOutputDetailsList(): Array<OutputDetail>;
+  setOutputDetailsList(value: Array<OutputDetail>): void;
+  addOutputDetails(value?: OutputDetail, index?: number): OutputDetail;
+
   getRawTxHex(): string;
   setRawTxHex(value: string): void;
 
@@ -194,6 +239,7 @@ export namespace Transaction {
     timeStamp: string,
     totalFees: string,
     destAddressesList: Array<string>,
+    outputDetailsList: Array<OutputDetail.AsObject>,
     rawTxHex: string,
     label: string,
   }
@@ -1889,6 +1935,9 @@ export class GetInfoResponse extends jspb.Message {
 
   getFeaturesMap(): jspb.Map<number, Feature>;
   clearFeaturesMap(): void;
+  getRequireHtlcInterceptor(): boolean;
+  setRequireHtlcInterceptor(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetInfoResponse.AsObject;
   static toObject(includeInstance: boolean, msg: GetInfoResponse): GetInfoResponse.AsObject;
@@ -1919,6 +1968,7 @@ export namespace GetInfoResponse {
     chainsList: Array<Chain.AsObject>,
     urisList: Array<string>,
     featuresMap: Array<[number, Feature.AsObject]>,
+    requireHtlcInterceptor: boolean,
   }
 }
 
@@ -2914,6 +2964,9 @@ export namespace PendingChannelsResponse {
     getChanStatusFlags(): string;
     setChanStatusFlags(value: string): void;
 
+    getPrivate(): boolean;
+    setPrivate(value: boolean): void;
+
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): PendingChannel.AsObject;
     static toObject(includeInstance: boolean, msg: PendingChannel): PendingChannel.AsObject;
@@ -2937,6 +2990,7 @@ export namespace PendingChannelsResponse {
       commitmentType: CommitmentTypeMap[keyof CommitmentTypeMap],
       numForwardingPackages: string,
       chanStatusFlags: string,
+      pb_private: boolean,
     }
   }
 
@@ -2945,9 +2999,6 @@ export namespace PendingChannelsResponse {
     clearChannel(): void;
     getChannel(): PendingChannelsResponse.PendingChannel | undefined;
     setChannel(value?: PendingChannelsResponse.PendingChannel): void;
-
-    getConfirmationHeight(): number;
-    setConfirmationHeight(value: number): void;
 
     getCommitFee(): string;
     setCommitFee(value: string): void;
@@ -2971,7 +3022,6 @@ export namespace PendingChannelsResponse {
   export namespace PendingOpenChannel {
     export type AsObject = {
       channel?: PendingChannelsResponse.PendingChannel.AsObject,
-      confirmationHeight: number,
       commitFee: string,
       commitWeight: string,
       feePerKw: string,
@@ -3474,6 +3524,9 @@ export class QueryRoutesRequest extends jspb.Message {
   setDestFeaturesList(value: Array<FeatureBitMap[keyof FeatureBitMap]>): void;
   addDestFeatures(value: FeatureBitMap[keyof FeatureBitMap], index?: number): FeatureBitMap[keyof FeatureBitMap];
 
+  getTimePref(): number;
+  setTimePref(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): QueryRoutesRequest.AsObject;
   static toObject(includeInstance: boolean, msg: QueryRoutesRequest): QueryRoutesRequest.AsObject;
@@ -3502,6 +3555,7 @@ export namespace QueryRoutesRequest {
     lastHopPubkey: Uint8Array | string,
     routeHintsList: Array<RouteHint.AsObject>,
     destFeaturesList: Array<FeatureBitMap[keyof FeatureBitMap]>,
+    timePref: number,
   }
 }
 
@@ -3623,6 +3677,11 @@ export class Hop extends jspb.Message {
 
   getCustomRecordsMap(): jspb.Map<number, Uint8Array | string>;
   clearCustomRecordsMap(): void;
+  getMetadata(): Uint8Array | string;
+  getMetadata_asU8(): Uint8Array;
+  getMetadata_asB64(): string;
+  setMetadata(value: Uint8Array | string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Hop.AsObject;
   static toObject(includeInstance: boolean, msg: Hop): Hop.AsObject;
@@ -3647,6 +3706,7 @@ export namespace Hop {
     mppRecord?: MPPRecord.AsObject,
     ampRecord?: AMPRecord.AsObject,
     customRecordsMap: Array<[number, Uint8Array | string]>,
+    metadata: Uint8Array | string,
   }
 }
 
@@ -5055,6 +5115,9 @@ export class ListPaymentsRequest extends jspb.Message {
   getReversed(): boolean;
   setReversed(value: boolean): void;
 
+  getCountTotalPayments(): boolean;
+  setCountTotalPayments(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ListPaymentsRequest.AsObject;
   static toObject(includeInstance: boolean, msg: ListPaymentsRequest): ListPaymentsRequest.AsObject;
@@ -5071,6 +5134,7 @@ export namespace ListPaymentsRequest {
     indexOffset: string,
     maxPayments: string,
     reversed: boolean,
+    countTotalPayments: boolean,
   }
 }
 
@@ -5085,6 +5149,9 @@ export class ListPaymentsResponse extends jspb.Message {
 
   getLastIndexOffset(): string;
   setLastIndexOffset(value: string): void;
+
+  getTotalNumPayments(): string;
+  setTotalNumPayments(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ListPaymentsResponse.AsObject;
@@ -5101,6 +5168,7 @@ export namespace ListPaymentsResponse {
     paymentsList: Array<Payment.AsObject>,
     firstIndexOffset: string,
     lastIndexOffset: string,
+    totalNumPayments: string,
   }
 }
 
@@ -6626,11 +6694,27 @@ export namespace InterceptFeedback {
   }
 }
 
+export interface OutputScriptTypeMap {
+  SCRIPT_TYPE_PUBKEY_HASH: 0;
+  SCRIPT_TYPE_SCRIPT_HASH: 1;
+  SCRIPT_TYPE_WITNESS_V0_PUBKEY_HASH: 2;
+  SCRIPT_TYPE_WITNESS_V0_SCRIPT_HASH: 3;
+  SCRIPT_TYPE_PUBKEY: 4;
+  SCRIPT_TYPE_MULTISIG: 5;
+  SCRIPT_TYPE_NULLDATA: 6;
+  SCRIPT_TYPE_NON_STANDARD: 7;
+  SCRIPT_TYPE_WITNESS_UNKNOWN: 8;
+}
+
+export const OutputScriptType: OutputScriptTypeMap;
+
 export interface AddressTypeMap {
   WITNESS_PUBKEY_HASH: 0;
   NESTED_PUBKEY_HASH: 1;
   UNUSED_WITNESS_PUBKEY_HASH: 2;
   UNUSED_NESTED_PUBKEY_HASH: 3;
+  TAPROOT_PUBKEY: 4;
+  UNUSED_TAPROOT_PUBKEY: 5;
 }
 
 export const AddressType: AddressTypeMap;

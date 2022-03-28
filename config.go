@@ -13,11 +13,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/jessevdk/go-flags"
 	"github.com/lightninglabs/faraday"
 	"github.com/lightninglabs/faraday/chain"
-	"github.com/lightninglabs/faraday/frdrpc"
+	"github.com/lightninglabs/faraday/frdrpcserver"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightninglabs/loop/loopd"
 	"github.com/lightninglabs/pool"
@@ -181,7 +181,7 @@ type Config struct {
 
 	// faradayRpcConfig is a subset of faraday's full configuration that is
 	// passed into faraday's RPC server.
-	faradayRpcConfig *frdrpc.Config
+	faradayRpcConfig *frdrpcserver.Config
 
 	// lndRemote is a convenience bool variable that is parsed from the
 	// LndMode string variable on startup.
@@ -312,7 +312,7 @@ func defaultConfig() *Config {
 		ConfigFile:        defaultConfigFile,
 		FaradayMode:       defaultFaradayMode,
 		Faraday:           &faradayDefaultConfig,
-		faradayRpcConfig:  &frdrpc.Config{},
+		faradayRpcConfig:  &frdrpcserver.Config{},
 		LoopMode:          defaultLoopMode,
 		Loop:              &loopDefaultConfig,
 		PoolMode:          defaultPoolMode,

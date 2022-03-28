@@ -21,6 +21,7 @@ import (
 	restProxy "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jessevdk/go-flags"
 	"github.com/lightninglabs/faraday/frdrpc"
+	"github.com/lightninglabs/faraday/frdrpcserver"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightninglabs/lndclient"
@@ -144,7 +145,7 @@ type LightningTerminal struct {
 	lndClient   *lndclient.GrpcLndServices
 	basicClient lnrpc.LightningClient
 
-	faradayServer  *frdrpc.RPCServer
+	faradayServer  *frdrpcserver.RPCServer
 	faradayStarted bool
 
 	loopServer  *loopd.Daemon
@@ -195,7 +196,7 @@ func (g *LightningTerminal) Run() error {
 	// Create the instances of our subservers now so we can hook them up to
 	// lnd once it's fully started.
 	bufRpcListener := bufconn.Listen(100)
-	g.faradayServer = frdrpc.NewRPCServer(g.cfg.faradayRpcConfig)
+	g.faradayServer = frdrpcserver.NewRPCServer(g.cfg.faradayRpcConfig)
 	g.loopServer = loopd.New(g.cfg.Loop, nil)
 	g.poolServer = pool.NewServer(g.cfg.Pool)
 	g.rpcProxy = newRpcProxy(
