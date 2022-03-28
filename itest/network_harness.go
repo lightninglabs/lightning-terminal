@@ -13,11 +13,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
 	"github.com/lightningnetwork/lnd"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntest"
@@ -144,15 +144,21 @@ func (n *NetworkHarness) SetUp(t *testing.T,
 	eg.Go(func() error {
 		var err error
 		n.Alice, err = n.newNode(
-			"Alice", lndArgs, litArgs, false, false, nil, true,
+			t, "Alice", lndArgs, litArgs, false, false, nil, true,
 		)
+		if err != nil {
+			t.Logf("Error starting Alice: %v", err)
+		}
 		return err
 	})
 	eg.Go(func() error {
 		var err error
 		n.Bob, err = n.newNode(
-			"Bob", lndArgs, litArgs, false, true, nil, true,
+			t, "Bob", lndArgs, litArgs, false, true, nil, true,
 		)
+		if err != nil {
+			t.Logf("Error starting Bob: %v", err)
+		}
 		return err
 	})
 	require.NoError(t, eg.Wait())
@@ -168,14 +174,20 @@ func (n *NetworkHarness) SetUp(t *testing.T,
 	addrReq := &lnrpc.NewAddressRequest{
 		Type: lnrpc.AddressType_WITNESS_PUBKEY_HASH,
 	}
-	clients := []lnrpc.LightningClient{n.Alice, n.Bob}
+
+	// Bob is connected to a remote lnd that is also called Bob and already
+	// got the necessary coins when being set up before. So we only need to
+	// send to Alice here which is our integrated LiTd instance.
+	clients := []lnrpc.LightningClient{n.Alice}
 	for _, client := range clients {
 		for i := 0; i < 10; i++ {
 			resp, err := client.NewAddress(ctxb, addrReq)
 			if err != nil {
 				return err
 			}
-			addr, err := btcutil.DecodeAddress(resp.Address, n.netParams)
+			addr, err := btcutil.DecodeAddress(
+				resp.Address, n.netParams,
+			)
 			if err != nil {
 				return err
 			}
@@ -188,7 +200,9 @@ func (n *NetworkHarness) SetUp(t *testing.T,
 				PkScript: addrScript,
 				Value:    btcutil.SatoshiPerBitcoin,
 			}
-			_, err = n.Miner.SendOutputs([]*wire.TxOut{output}, 7500)
+			_, err = n.Miner.SendOutputs(
+				[]*wire.TxOut{output}, 7500,
+			)
 			if err != nil {
 				return err
 			}
@@ -264,8 +278,8 @@ func (n *NetworkHarness) Stop() {
 // wallet with or without a seed. If hasSeed is false, the returned harness node
 // can be used immediately. Otherwise, the node will require an additional
 // initialization phase where the wallet is either created or restored.
-func (n *NetworkHarness) newNode(name string, extraArgs, litArgs []string,
-	hasSeed, remoteMode bool, password []byte, wait bool,
+func (n *NetworkHarness) newNode(t *testing.T, name string, extraArgs,
+	litArgs []string, hasSeed, remoteMode bool, password []byte, wait bool,
 	opts ...lntest.NodeOption) (*HarnessNode, error) {
 
 	baseCfg := &lntest.BaseNodeConfig{
@@ -286,7 +300,7 @@ func (n *NetworkHarness) newNode(name string, extraArgs, litArgs []string,
 		RemoteMode:     remoteMode,
 	}
 
-	node, err := newNode(cfg, n)
+	node, err := newNode(t, cfg, n)
 	if err != nil {
 		return nil, err
 	}

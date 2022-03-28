@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/lightningnetwork/lnd/tlv"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/macaroon-bakery.v2/bakery"
@@ -80,9 +80,7 @@ func TestSerializeDeserializeSession(t *testing.T) {
 			)
 			require.NoError(t, err)
 
-			_, remotePubKey := btcec.PrivKeyFromBytes(
-				btcec.S256(), testRootKey,
-			)
+			_, remotePubKey := btcec.PrivKeyFromBytes(testRootKey)
 			session.RemotePublicKey = remotePubKey
 
 			var buf bytes.Buffer

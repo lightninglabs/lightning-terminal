@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/lightninglabs/lightning-node-connect/mailbox"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/lightning-terminal/session"
@@ -282,7 +282,7 @@ func (s *sessionRpcServer) ListSessions(_ context.Context,
 func (s *sessionRpcServer) RevokeSession(_ context.Context,
 	req *litrpc.RevokeSessionRequest) (*litrpc.RevokeSessionResponse, error) {
 
-	pubKey, err := btcec.ParsePubKey(req.LocalPublicKey, btcec.S256())
+	pubKey, err := btcec.ParsePubKey(req.LocalPublicKey)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing public key: %v", err)
 	}

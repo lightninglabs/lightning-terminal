@@ -620,6 +620,14 @@ message Order {
 
     // The channel type to use for the resulting matched channels.
     OrderChannelType channel_type = 13;
+
+    // List of nodes that will be allowed to match with our order. Incompatible
+    // with the `not_allowed_node_ids` field.
+    repeated bytes allowed_node_ids = 14;
+
+    // List of nodes that won't be allowed to match with our order. Incompatible
+    // with the `allowed_node_ids` field.
+    repeated bytes not_allowed_node_ids = 15;
 }
 
 message Bid {

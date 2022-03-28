@@ -1429,12 +1429,19 @@ proto.looprpc.MonitorRequest.serializeBinaryToWriter = function(message, writer)
  * @constructor
  */
 proto.looprpc.SwapStatus = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.looprpc.SwapStatus.repeatedFields_, null);
 };
 goog.inherits(proto.looprpc.SwapStatus, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
   proto.looprpc.SwapStatus.displayName = 'proto.looprpc.SwapStatus';
 }
+/**
+ * List of repeated fields within this message type.
+ * @private {!Array<number>}
+ * @const
+ */
+proto.looprpc.SwapStatus.repeatedFields_ = [17];
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
@@ -1478,6 +1485,8 @@ proto.looprpc.SwapStatus.toObject = function(includeInstance, msg) {
     costServer: jspb.Message.getFieldWithDefault(msg, 8, "0"),
     costOnchain: jspb.Message.getFieldWithDefault(msg, 9, "0"),
     costOffchain: jspb.Message.getFieldWithDefault(msg, 10, "0"),
+    lastHop: msg.getLastHop_asB64(),
+    outgoingChanSetList: jspb.Message.getRepeatedField(msg, 17),
     label: jspb.Message.getFieldWithDefault(msg, 15, "")
   };
 
@@ -1570,6 +1579,14 @@ proto.looprpc.SwapStatus.deserializeBinaryFromReader = function(msg, reader) {
     case 10:
       var value = /** @type {string} */ (reader.readInt64String());
       msg.setCostOffchain(value);
+      break;
+    case 16:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setLastHop(value);
+      break;
+    case 17:
+      var value = /** @type {!Array<string>} */ (reader.readPackedUint64String());
+      msg.setOutgoingChanSetList(value);
       break;
     case 15:
       var value = /** @type {string} */ (reader.readString());
@@ -1699,6 +1716,20 @@ proto.looprpc.SwapStatus.serializeBinaryToWriter = function(message, writer) {
   if (parseInt(f, 10) !== 0) {
     writer.writeInt64String(
       10,
+      f
+    );
+  }
+  f = message.getLastHop_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      16,
+      f
+    );
+  }
+  f = message.getOutgoingChanSetList();
+  if (f.length > 0) {
+    writer.writePackedUint64String(
+      17,
       f
     );
   }
@@ -1943,6 +1974,74 @@ proto.looprpc.SwapStatus.prototype.getCostOffchain = function() {
 /** @param {string} value */
 proto.looprpc.SwapStatus.prototype.setCostOffchain = function(value) {
   jspb.Message.setProto3StringIntField(this, 10, value);
+};
+
+
+/**
+ * optional bytes last_hop = 16;
+ * @return {!(string|Uint8Array)}
+ */
+proto.looprpc.SwapStatus.prototype.getLastHop = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 16, ""));
+};
+
+
+/**
+ * optional bytes last_hop = 16;
+ * This is a type-conversion wrapper around `getLastHop()`
+ * @return {string}
+ */
+proto.looprpc.SwapStatus.prototype.getLastHop_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getLastHop()));
+};
+
+
+/**
+ * optional bytes last_hop = 16;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getLastHop()`
+ * @return {!Uint8Array}
+ */
+proto.looprpc.SwapStatus.prototype.getLastHop_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getLastHop()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.looprpc.SwapStatus.prototype.setLastHop = function(value) {
+  jspb.Message.setProto3BytesField(this, 16, value);
+};
+
+
+/**
+ * repeated uint64 outgoing_chan_set = 17;
+ * @return {!Array<string>}
+ */
+proto.looprpc.SwapStatus.prototype.getOutgoingChanSetList = function() {
+  return /** @type {!Array<string>} */ (jspb.Message.getRepeatedField(this, 17));
+};
+
+
+/** @param {!Array<string>} value */
+proto.looprpc.SwapStatus.prototype.setOutgoingChanSetList = function(value) {
+  jspb.Message.setField(this, 17, value || []);
+};
+
+
+/**
+ * @param {!string} value
+ * @param {number=} opt_index
+ */
+proto.looprpc.SwapStatus.prototype.addOutgoingChanSet = function(value, opt_index) {
+  jspb.Message.addToRepeatedField(this, 17, value, opt_index);
+};
+
+
+proto.looprpc.SwapStatus.prototype.clearOutgoingChanSetList = function() {
+  this.setOutgoingChanSetList([]);
 };
 
 
