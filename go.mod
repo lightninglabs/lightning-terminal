@@ -11,12 +11,13 @@ require (
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/lightninglabs/faraday v0.2.7-alpha
 	github.com/lightninglabs/lightning-node-connect v0.1.9-alpha
-	github.com/lightninglabs/lndclient v0.14.0-8
-	github.com/lightninglabs/loop v0.15.1-beta
-	github.com/lightninglabs/pool v0.5.5-alpha
+	github.com/lightninglabs/lndclient v0.14.2-3
+	github.com/lightninglabs/loop v0.18.0-beta-lnd-14
+	github.com/lightninglabs/loop/swapserverrpc v1.0.1
+	github.com/lightninglabs/pool v0.5.6-alpha-lnd-14
 	github.com/lightninglabs/pool/auctioneerrpc v1.0.5
 	github.com/lightninglabs/protobuf-hex-display v1.4.3-hex-display
-	github.com/lightningnetwork/lnd v0.14.2-beta
+	github.com/lightningnetwork/lnd v0.14.3-beta
 	github.com/lightningnetwork/lnd/cert v1.1.0
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
 	github.com/mwitkow/grpc-proxy v0.0.0-20181017164139-0f1106ef9c76
