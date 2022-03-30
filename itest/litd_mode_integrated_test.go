@@ -134,81 +134,60 @@ var (
 			ctx, &litrpc.ListSessionsRequest{},
 		)
 	}
+	litMacaroonFn = func(cfg *LitNodeConfig) string {
+		return cfg.LitMacPath
+	}
 
 	endpoints = []struct {
-		name                        string
-		macaroonFn                  macaroonFn
-		requestFn                   requestFn
-		successPattern              string
-		supportsMacAuthOnLndPort    bool
-		supportsMacAuthOnLitPort    bool
-		supportsUIPasswordOnLndPort bool
-		supportsUIPasswordOnLitPort bool
-		allowedThroughLNC           bool
-		grpcWebURI                  string
-		restWebURI                  string
+		name              string
+		macaroonFn        macaroonFn
+		requestFn         requestFn
+		successPattern    string
+		allowedThroughLNC bool
+		grpcWebURI        string
+		restWebURI        string
 	}{{
-		name:                        "lnrpc",
-		macaroonFn:                  lndMacaroonFn,
-		requestFn:                   lndRequestFn,
-		successPattern:              "\"identity_pubkey\":\"0",
-		supportsMacAuthOnLndPort:    true,
-		supportsMacAuthOnLitPort:    true,
-		supportsUIPasswordOnLndPort: false,
-		supportsUIPasswordOnLitPort: true,
-		allowedThroughLNC:           true,
-		grpcWebURI:                  "/lnrpc.Lightning/GetInfo",
-		restWebURI:                  "/v1/getinfo",
+		name:              "lnrpc",
+		macaroonFn:        lndMacaroonFn,
+		requestFn:         lndRequestFn,
+		successPattern:    "\"identity_pubkey\":\"0",
+		allowedThroughLNC: true,
+		grpcWebURI:        "/lnrpc.Lightning/GetInfo",
+		restWebURI:        "/v1/getinfo",
 	}, {
-		name:                        "frdrpc",
-		macaroonFn:                  faradayMacaroonFn,
-		requestFn:                   faradayRequestFn,
-		successPattern:              "\"reports\":[]",
-		supportsMacAuthOnLndPort:    true,
-		supportsMacAuthOnLitPort:    true,
-		supportsUIPasswordOnLndPort: false,
-		supportsUIPasswordOnLitPort: true,
-		allowedThroughLNC:           true,
-		grpcWebURI:                  "/frdrpc.FaradayServer/RevenueReport",
-		restWebURI:                  "/v1/faraday/revenue",
+		name:              "frdrpc",
+		macaroonFn:        faradayMacaroonFn,
+		requestFn:         faradayRequestFn,
+		successPattern:    "\"reports\":[]",
+		allowedThroughLNC: true,
+		grpcWebURI:        "/frdrpc.FaradayServer/RevenueReport",
+		restWebURI:        "/v1/faraday/revenue",
 	}, {
-		name:                        "looprpc",
-		macaroonFn:                  loopMacaroonFn,
-		requestFn:                   loopRequestFn,
-		successPattern:              "\"swaps\":[]",
-		supportsMacAuthOnLndPort:    true,
-		supportsMacAuthOnLitPort:    true,
-		supportsUIPasswordOnLndPort: false,
-		supportsUIPasswordOnLitPort: true,
-		allowedThroughLNC:           true,
-		grpcWebURI:                  "/looprpc.SwapClient/ListSwaps",
-		restWebURI:                  "/v1/loop/swaps",
+		name:              "looprpc",
+		macaroonFn:        loopMacaroonFn,
+		requestFn:         loopRequestFn,
+		successPattern:    "\"swaps\":[]",
+		allowedThroughLNC: true,
+		grpcWebURI:        "/looprpc.SwapClient/ListSwaps",
+		restWebURI:        "/v1/loop/swaps",
 	}, {
-		name:                        "poolrpc",
-		macaroonFn:                  poolMacaroonFn,
-		requestFn:                   poolRequestFn,
-		successPattern:              "\"accounts_active\":0",
-		supportsMacAuthOnLndPort:    true,
-		supportsMacAuthOnLitPort:    true,
-		supportsUIPasswordOnLndPort: false,
-		supportsUIPasswordOnLitPort: true,
-		allowedThroughLNC:           true,
-		grpcWebURI:                  "/poolrpc.Trader/GetInfo",
-		restWebURI:                  "/v1/pool/info",
+		name:              "poolrpc",
+		macaroonFn:        poolMacaroonFn,
+		requestFn:         poolRequestFn,
+		successPattern:    "\"accounts_active\":0",
+		allowedThroughLNC: true,
+		grpcWebURI:        "/poolrpc.Trader/GetInfo",
+		restWebURI:        "/v1/pool/info",
 	}, {
 		name:       "litrpc",
-		macaroonFn: nil,
+		macaroonFn: litMacaroonFn,
 		requestFn:  litRequestFn,
 		// In some test cases we actually expect some sessions, so we
 		// don't explicitly check for an empty array but just the
 		// existence of the array in the response.
-		successPattern:              "\"sessions\":[",
-		supportsMacAuthOnLndPort:    false,
-		supportsMacAuthOnLitPort:    false,
-		supportsUIPasswordOnLndPort: true,
-		supportsUIPasswordOnLitPort: true,
-		allowedThroughLNC:           false,
-		grpcWebURI:                  "/litrpc.Sessions/ListSessions",
+		successPattern:    "\"sessions\":[",
+		allowedThroughLNC: false,
+		grpcWebURI:        "/litrpc.Sessions/ListSessions",
 	}}
 )
 
@@ -236,10 +215,6 @@ func testModeIntegrated(net *NetworkHarness, t *harnessTest) {
 		for _, endpoint := range endpoints {
 			endpoint := endpoint
 			tt.Run(endpoint.name+" lnd port", func(ttt *testing.T) {
-				if !endpoint.supportsMacAuthOnLndPort {
-					return
-				}
-
 				runGRPCAuthTest(
 					ttt, cfg.RPCAddr(), cfg.TLSCertPath,
 					endpoint.macaroonFn(cfg),
@@ -249,10 +224,6 @@ func testModeIntegrated(net *NetworkHarness, t *harnessTest) {
 			})
 
 			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
-				if !endpoint.supportsMacAuthOnLitPort {
-					return
-				}
-
 				runGRPCAuthTest(
 					ttt, cfg.LitAddr(), cfg.TLSCertPath,
 					endpoint.macaroonFn(cfg),
@@ -271,20 +242,16 @@ func testModeIntegrated(net *NetworkHarness, t *harnessTest) {
 			tt.Run(endpoint.name+" lnd port", func(ttt *testing.T) {
 				runUIPasswordCheck(
 					ttt, cfg.RPCAddr(), cfg.TLSCertPath,
-					cfg.UIPassword,
-					endpoint.requestFn, true,
-					!endpoint.supportsUIPasswordOnLndPort,
-					endpoint.successPattern,
+					cfg.UIPassword, endpoint.requestFn,
+					true, endpoint.successPattern,
 				)
 			})
 
 			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
 				runUIPasswordCheck(
 					ttt, cfg.LitAddr(), cfg.TLSCertPath,
-					cfg.UIPassword,
-					endpoint.requestFn, false,
-					!endpoint.supportsUIPasswordOnLitPort,
-					endpoint.successPattern,
+					cfg.UIPassword, endpoint.requestFn,
+					false, endpoint.successPattern,
 				)
 			})
 		}
@@ -321,10 +288,6 @@ func testModeIntegrated(net *NetworkHarness, t *harnessTest) {
 		for _, endpoint := range endpoints {
 			endpoint := endpoint
 			tt.Run(endpoint.name+" lnd port", func(ttt *testing.T) {
-				if !endpoint.supportsMacAuthOnLndPort {
-					return
-				}
-
 				runGRPCAuthTest(
 					ttt, cfg.RPCAddr(), cfg.TLSCertPath,
 					superMacFile,
@@ -334,10 +297,6 @@ func testModeIntegrated(net *NetworkHarness, t *harnessTest) {
 			})
 
 			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
-				if !endpoint.supportsMacAuthOnLitPort {
-					return
-				}
-
 				runGRPCAuthTest(
 					ttt, cfg.LitAddr(), cfg.TLSCertPath,
 					superMacFile,
@@ -454,8 +413,8 @@ func runGRPCAuthTest(t *testing.T, hostPort, tlsCertPath, macPath string,
 
 // runUIPasswordCheck tests UI password authentication.
 func runUIPasswordCheck(t *testing.T, hostPort, tlsCertPath, uiPassword string,
-	makeRequest requestFn, shouldFailWithoutMacaroon,
-	shouldFailWithDummyMacaroon bool, successContent string) {
+	makeRequest requestFn, shouldFailWithoutMacaroon bool,
+	successContent string) {
 
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
@@ -503,13 +462,11 @@ func runUIPasswordCheck(t *testing.T, hostPort, tlsCertPath, uiPassword string,
 		ctxm = uiPasswordContext(ctxt, uiPassword, true)
 		resp, err = makeRequest(ctxm, rawConn)
 
-		if shouldFailWithDummyMacaroon {
-			require.Error(t, err)
-			require.Contains(
-				t, err.Error(), "cannot get macaroon: root",
-			)
-			return
-		}
+		require.Error(t, err)
+		require.Contains(
+			t, err.Error(), "cannot get macaroon: root",
+		)
+		return
 	}
 
 	// We expect the call to succeed.

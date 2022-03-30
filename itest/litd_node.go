@@ -67,6 +67,7 @@ type LitNodeConfig struct {
 	LoopMacPath    string
 	PoolMacPath    string
 	LitTLSCertPath string
+	LitMacPath     string
 
 	UIPassword string
 	LitDir     string
@@ -278,6 +279,9 @@ func newNode(cfg *LitNodeConfig, harness *NetworkHarness) (*HarnessNode, error) 
 	)
 	cfg.PoolMacPath = filepath.Join(
 		cfg.PoolDir, cfg.NetParams.Name, "pool.macaroon",
+	)
+	cfg.LitMacPath = filepath.Join(
+		cfg.LitDir, cfg.NetParams.Name, "lit.macaroon",
 	)
 	cfg.LitTLSCertPath = filepath.Join(cfg.LitDir, "tls.cert")
 	cfg.GenerateListeningPorts()

@@ -775,12 +775,17 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 		}
 
 	case isLitURI(fullMethod):
-		wrap := fmt.Errorf("invalid basic auth")
-		_, err := g.rpcProxy.convertBasicAuth(ctx, fullMethod, wrap)
-		if err != nil {
+		if !g.macaroonServiceStarted {
+			return fmt.Errorf("the macaroon service has not " +
+				"started yet")
+		}
+
+		if err := g.macaroonService.ValidateMacaroon(
+			ctx, requiredPermissions, fullMethod,
+		); err != nil {
 			return &proxyErr{
 				proxyContext: "lit",
-				wrapped: fmt.Errorf("invalid auth: %v",
+				wrapped: fmt.Errorf("invalid macaroon: %w",
 					err),
 			}
 		}
