@@ -159,6 +159,9 @@ type LightningTerminal struct {
 	sessionRpcServer        *sessionRpcServer
 	sessionRpcServerStarted bool
 
+	macaroonService        *lndclient.MacaroonService
+	macaroonServiceStarted bool
+
 	restHandler http.Handler
 	restCancel  func()
 }
@@ -548,6 +551,28 @@ func (g *LightningTerminal) startSubservers() error {
 		g.poolStarted = true
 	}
 
+	g.macaroonService, err = lndclient.NewMacaroonService(
+		&lndclient.MacaroonServiceConfig{
+			DBPath:           path.Join(g.cfg.LitDir, g.cfg.Network),
+			MacaroonLocation: "litd",
+			StatelessInit:    !createDefaultMacaroons,
+			RequiredPerms:    litPermissions,
+			LndClient:        &g.lndClient.LndServices,
+			EphemeralKey:     lndclient.SharedKeyNUMS,
+			KeyLocator:       lndclient.SharedKeyLocator,
+			MacaroonPath:     g.cfg.MacaroonPath,
+		},
+	)
+	if err != nil {
+		log.Errorf("Could not create a new macaroon service: %v", err)
+		return err
+	}
+
+	if err := g.macaroonService.Start(); err != nil {
+		return fmt.Errorf("could not start macaroon service: %v", err)
+	}
+	g.macaroonServiceStarted = true
+
 	if err = g.sessionRpcServer.start(); err != nil {
 		return err
 	}
@@ -825,6 +850,13 @@ func (g *LightningTerminal) shutdown() error {
 	if g.sessionRpcServerStarted {
 		if err := g.sessionRpcServer.stop(); err != nil {
 			log.Errorf("Error closing session DB: %v", err)
+			returnErr = err
+		}
+	}
+
+	if g.macaroonServiceStarted {
+		if err := g.macaroonService.Stop(); err != nil {
+			log.Errorf("Error stopping macaroon service: %v", err)
 			returnErr = err
 		}
 	}
