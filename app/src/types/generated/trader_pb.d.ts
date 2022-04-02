@@ -1127,6 +1127,36 @@ export namespace MatchEvent {
 }
 
 export class RecoverAccountsRequest extends jspb.Message {
+  getFullClient(): boolean;
+  setFullClient(value: boolean): void;
+
+  getAccountTarget(): number;
+  setAccountTarget(value: number): void;
+
+  getAuctioneerKey(): string;
+  setAuctioneerKey(value: string): void;
+
+  getHeightHint(): number;
+  setHeightHint(value: number): void;
+
+  getBitcoinHost(): string;
+  setBitcoinHost(value: string): void;
+
+  getBitcoinUser(): string;
+  setBitcoinUser(value: string): void;
+
+  getBitcoinPassword(): string;
+  setBitcoinPassword(value: string): void;
+
+  getBitcoinHttppostmode(): boolean;
+  setBitcoinHttppostmode(value: boolean): void;
+
+  getBitcoinUsetls(): boolean;
+  setBitcoinUsetls(value: boolean): void;
+
+  getBitcoinTlspath(): string;
+  setBitcoinTlspath(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RecoverAccountsRequest.AsObject;
   static toObject(includeInstance: boolean, msg: RecoverAccountsRequest): RecoverAccountsRequest.AsObject;
@@ -1139,6 +1169,16 @@ export class RecoverAccountsRequest extends jspb.Message {
 
 export namespace RecoverAccountsRequest {
   export type AsObject = {
+    fullClient: boolean,
+    accountTarget: number,
+    auctioneerKey: string,
+    heightHint: number,
+    bitcoinHost: string,
+    bitcoinUser: string,
+    bitcoinPassword: string,
+    bitcoinHttppostmode: boolean,
+    bitcoinUsetls: boolean,
+    bitcoinTlspath: string,
   }
 }
 
@@ -1635,8 +1675,6 @@ export class GetInfoResponse extends jspb.Message {
   getNewNodesOnly(): boolean;
   setNewNodesOnly(value: boolean): void;
 
-  getMarketInfoMap(): jspb.Map<number, auctioneerrpc_auctioneer_pb.MarketInfo>;
-  clearMarketInfoMap(): void;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetInfoResponse.AsObject;
   static toObject(includeInstance: boolean, msg: GetInfoResponse): GetInfoResponse.AsObject;
@@ -1663,7 +1701,6 @@ export namespace GetInfoResponse {
     lsatTokens: number,
     subscribedToAuctioneer: boolean,
     newNodesOnly: boolean,
-    marketInfoMap: Array<[number, auctioneerrpc_auctioneer_pb.MarketInfo.AsObject]>,
   }
 }
 

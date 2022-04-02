@@ -870,6 +870,55 @@ enum MatchRejectReason {
 }
 
 message RecoverAccountsRequest {
+    /*
+    Recover the latest account states without interacting with the
+    Lightning Labs server.
+    */
+    bool full_client = 1;
+
+    /*
+    Number of accounts that we are trying to recover. Used during the
+    full_client recovery process.
+    */
+    uint32 account_target = 2;
+
+    /*
+    Auctioneer's public key. Used during the full_client recovery process.
+    This field should be left empty for testnet/mainnet, its value is already
+    hardcoded in our codebase.
+    */
+    string auctioneer_key = 3;
+
+    /*
+    Initial block height. We won't try to look for any account with an expiry
+    height smaller than this value. Used during the full_client recovery
+    process.
+    */
+    uint32 height_hint = 4;
+
+    // bitcoind/btcd instance address. Used during the full_client recovery
+    // process.
+    string bitcoin_host = 5;
+
+    // bitcoind/btcd user name. Used during the full_client recovery
+    // process.
+    string bitcoin_user = 6;
+
+    // bitcoind/btcd password. Used during the full_client recovery
+    // process.
+    string bitcoin_password = 7;
+
+    // Use HTTP POST mode? bitcoind only supports this mode. Used during the
+    // full_client recovery process.
+    bool bitcoin_httppostmode = 8;
+
+    // Use TLS to connect? bitcoind only supports non-TLS connections. Used
+    // during the full_client recovery process.
+    bool bitcoin_usetls = 9;
+
+    // Path to btcd's TLS certificate, if TLS is enabled. Used  during the
+    // full_client recovery process.
+    string bitcoin_tlspath = 10;
 }
 
 message RecoverAccountsResponse {
@@ -1155,7 +1204,7 @@ message GetInfoResponse {
     set of statistics such as number of open orders and total units of open
     interest.
     */
-    map<uint32, MarketInfo> market_info = 15;
+    // [workaround, see patchPool() in build-protos.js] map<uint32, MarketInfo> market_info = 15;
 }
 
 message StopDaemonRequest {

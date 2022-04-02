@@ -2911,6 +2911,9 @@ export namespace PendingChannelsResponse {
     getNumForwardingPackages(): string;
     setNumForwardingPackages(value: string): void;
 
+    getChanStatusFlags(): string;
+    setChanStatusFlags(value: string): void;
+
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): PendingChannel.AsObject;
     static toObject(includeInstance: boolean, msg: PendingChannel): PendingChannel.AsObject;
@@ -2933,6 +2936,7 @@ export namespace PendingChannelsResponse {
       initiator: InitiatorMap[keyof InitiatorMap],
       commitmentType: CommitmentTypeMap[keyof CommitmentTypeMap],
       numForwardingPackages: string,
+      chanStatusFlags: string,
     }
   }
 
@@ -2988,6 +2992,9 @@ export namespace PendingChannelsResponse {
     getCommitments(): PendingChannelsResponse.Commitments | undefined;
     setCommitments(value?: PendingChannelsResponse.Commitments): void;
 
+    getClosingTxid(): string;
+    setClosingTxid(value: string): void;
+
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): WaitingCloseChannel.AsObject;
     static toObject(includeInstance: boolean, msg: WaitingCloseChannel): WaitingCloseChannel.AsObject;
@@ -3003,6 +3010,7 @@ export namespace PendingChannelsResponse {
       channel?: PendingChannelsResponse.PendingChannel.AsObject,
       limboBalance: string,
       commitments?: PendingChannelsResponse.Commitments.AsObject,
+      closingTxid: string,
     }
   }
 
@@ -5486,6 +5494,9 @@ export class PolicyUpdateRequest extends jspb.Message {
   getFeeRate(): number;
   setFeeRate(value: number): void;
 
+  getFeeRatePpm(): number;
+  setFeeRatePpm(value: number): void;
+
   getTimeLockDelta(): number;
   setTimeLockDelta(value: number): void;
 
@@ -5515,6 +5526,7 @@ export namespace PolicyUpdateRequest {
     chanPoint?: ChannelPoint.AsObject,
     baseFeeMsat: string,
     feeRate: number,
+    feeRatePpm: number,
     timeLockDelta: number,
     maxHtlcMsat: string,
     minHtlcMsat: string,

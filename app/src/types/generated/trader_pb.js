@@ -7991,7 +7991,16 @@ proto.poolrpc.RecoverAccountsRequest.prototype.toObject = function(opt_includeIn
  */
 proto.poolrpc.RecoverAccountsRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-
+    fullClient: jspb.Message.getFieldWithDefault(msg, 1, false),
+    accountTarget: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    auctioneerKey: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    heightHint: jspb.Message.getFieldWithDefault(msg, 4, 0),
+    bitcoinHost: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    bitcoinUser: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    bitcoinPassword: jspb.Message.getFieldWithDefault(msg, 7, ""),
+    bitcoinHttppostmode: jspb.Message.getFieldWithDefault(msg, 8, false),
+    bitcoinUsetls: jspb.Message.getFieldWithDefault(msg, 9, false),
+    bitcoinTlspath: jspb.Message.getFieldWithDefault(msg, 10, "")
   };
 
   if (includeInstance) {
@@ -8028,6 +8037,46 @@ proto.poolrpc.RecoverAccountsRequest.deserializeBinaryFromReader = function(msg,
     }
     var field = reader.getFieldNumber();
     switch (field) {
+    case 1:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setFullClient(value);
+      break;
+    case 2:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setAccountTarget(value);
+      break;
+    case 3:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setAuctioneerKey(value);
+      break;
+    case 4:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setHeightHint(value);
+      break;
+    case 5:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setBitcoinHost(value);
+      break;
+    case 6:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setBitcoinUser(value);
+      break;
+    case 7:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setBitcoinPassword(value);
+      break;
+    case 8:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setBitcoinHttppostmode(value);
+      break;
+    case 9:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setBitcoinUsetls(value);
+      break;
+    case 10:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setBitcoinTlspath(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -8057,6 +8106,232 @@ proto.poolrpc.RecoverAccountsRequest.prototype.serializeBinary = function() {
  */
 proto.poolrpc.RecoverAccountsRequest.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
+  f = message.getFullClient();
+  if (f) {
+    writer.writeBool(
+      1,
+      f
+    );
+  }
+  f = message.getAccountTarget();
+  if (f !== 0) {
+    writer.writeUint32(
+      2,
+      f
+    );
+  }
+  f = message.getAuctioneerKey();
+  if (f.length > 0) {
+    writer.writeString(
+      3,
+      f
+    );
+  }
+  f = message.getHeightHint();
+  if (f !== 0) {
+    writer.writeUint32(
+      4,
+      f
+    );
+  }
+  f = message.getBitcoinHost();
+  if (f.length > 0) {
+    writer.writeString(
+      5,
+      f
+    );
+  }
+  f = message.getBitcoinUser();
+  if (f.length > 0) {
+    writer.writeString(
+      6,
+      f
+    );
+  }
+  f = message.getBitcoinPassword();
+  if (f.length > 0) {
+    writer.writeString(
+      7,
+      f
+    );
+  }
+  f = message.getBitcoinHttppostmode();
+  if (f) {
+    writer.writeBool(
+      8,
+      f
+    );
+  }
+  f = message.getBitcoinUsetls();
+  if (f) {
+    writer.writeBool(
+      9,
+      f
+    );
+  }
+  f = message.getBitcoinTlspath();
+  if (f.length > 0) {
+    writer.writeString(
+      10,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional bool full_client = 1;
+ * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
+ * You should avoid comparisons like {@code val === true/false} in those cases.
+ * @return {boolean}
+ */
+proto.poolrpc.RecoverAccountsRequest.prototype.getFullClient = function() {
+  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 1, false));
+};
+
+
+/** @param {boolean} value */
+proto.poolrpc.RecoverAccountsRequest.prototype.setFullClient = function(value) {
+  jspb.Message.setProto3BooleanField(this, 1, value);
+};
+
+
+/**
+ * optional uint32 account_target = 2;
+ * @return {number}
+ */
+proto.poolrpc.RecoverAccountsRequest.prototype.getAccountTarget = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
+};
+
+
+/** @param {number} value */
+proto.poolrpc.RecoverAccountsRequest.prototype.setAccountTarget = function(value) {
+  jspb.Message.setProto3IntField(this, 2, value);
+};
+
+
+/**
+ * optional string auctioneer_key = 3;
+ * @return {string}
+ */
+proto.poolrpc.RecoverAccountsRequest.prototype.getAuctioneerKey = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
+};
+
+
+/** @param {string} value */
+proto.poolrpc.RecoverAccountsRequest.prototype.setAuctioneerKey = function(value) {
+  jspb.Message.setProto3StringField(this, 3, value);
+};
+
+
+/**
+ * optional uint32 height_hint = 4;
+ * @return {number}
+ */
+proto.poolrpc.RecoverAccountsRequest.prototype.getHeightHint = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 4, 0));
+};
+
+
+/** @param {number} value */
+proto.poolrpc.RecoverAccountsRequest.prototype.setHeightHint = function(value) {
+  jspb.Message.setProto3IntField(this, 4, value);
+};
+
+
+/**
+ * optional string bitcoin_host = 5;
+ * @return {string}
+ */
+proto.poolrpc.RecoverAccountsRequest.prototype.getBitcoinHost = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, ""));
+};
+
+
+/** @param {string} value */
+proto.poolrpc.RecoverAccountsRequest.prototype.setBitcoinHost = function(value) {
+  jspb.Message.setProto3StringField(this, 5, value);
+};
+
+
+/**
+ * optional string bitcoin_user = 6;
+ * @return {string}
+ */
+proto.poolrpc.RecoverAccountsRequest.prototype.getBitcoinUser = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 6, ""));
+};
+
+
+/** @param {string} value */
+proto.poolrpc.RecoverAccountsRequest.prototype.setBitcoinUser = function(value) {
+  jspb.Message.setProto3StringField(this, 6, value);
+};
+
+
+/**
+ * optional string bitcoin_password = 7;
+ * @return {string}
+ */
+proto.poolrpc.RecoverAccountsRequest.prototype.getBitcoinPassword = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 7, ""));
+};
+
+
+/** @param {string} value */
+proto.poolrpc.RecoverAccountsRequest.prototype.setBitcoinPassword = function(value) {
+  jspb.Message.setProto3StringField(this, 7, value);
+};
+
+
+/**
+ * optional bool bitcoin_httppostmode = 8;
+ * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
+ * You should avoid comparisons like {@code val === true/false} in those cases.
+ * @return {boolean}
+ */
+proto.poolrpc.RecoverAccountsRequest.prototype.getBitcoinHttppostmode = function() {
+  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 8, false));
+};
+
+
+/** @param {boolean} value */
+proto.poolrpc.RecoverAccountsRequest.prototype.setBitcoinHttppostmode = function(value) {
+  jspb.Message.setProto3BooleanField(this, 8, value);
+};
+
+
+/**
+ * optional bool bitcoin_usetls = 9;
+ * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
+ * You should avoid comparisons like {@code val === true/false} in those cases.
+ * @return {boolean}
+ */
+proto.poolrpc.RecoverAccountsRequest.prototype.getBitcoinUsetls = function() {
+  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 9, false));
+};
+
+
+/** @param {boolean} value */
+proto.poolrpc.RecoverAccountsRequest.prototype.setBitcoinUsetls = function(value) {
+  jspb.Message.setProto3BooleanField(this, 9, value);
+};
+
+
+/**
+ * optional string bitcoin_tlspath = 10;
+ * @return {string}
+ */
+proto.poolrpc.RecoverAccountsRequest.prototype.getBitcoinTlspath = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 10, ""));
+};
+
+
+/** @param {string} value */
+proto.poolrpc.RecoverAccountsRequest.prototype.setBitcoinTlspath = function(value) {
+  jspb.Message.setProto3StringField(this, 10, value);
 };
 
 
@@ -11439,8 +11714,7 @@ proto.poolrpc.GetInfoResponse.toObject = function(includeInstance, msg) {
     nodeRating: (f = msg.getNodeRating()) && auctioneerrpc_auctioneer_pb.NodeRating.toObject(includeInstance, f),
     lsatTokens: jspb.Message.getFieldWithDefault(msg, 12, 0),
     subscribedToAuctioneer: jspb.Message.getFieldWithDefault(msg, 13, false),
-    newNodesOnly: jspb.Message.getFieldWithDefault(msg, 14, false),
-    marketInfoMap: (f = msg.getMarketInfoMap()) ? f.toObject(includeInstance, proto.poolrpc.MarketInfo.toObject) : []
+    newNodesOnly: jspb.Message.getFieldWithDefault(msg, 14, false)
   };
 
   if (includeInstance) {
@@ -11533,12 +11807,6 @@ proto.poolrpc.GetInfoResponse.deserializeBinaryFromReader = function(msg, reader
     case 14:
       var value = /** @type {boolean} */ (reader.readBool());
       msg.setNewNodesOnly(value);
-      break;
-    case 15:
-      var value = msg.getMarketInfoMap();
-      reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readUint32, jspb.BinaryReader.prototype.readMessage, proto.poolrpc.MarketInfo.deserializeBinaryFromReader, 0);
-         });
       break;
     default:
       reader.skipField();
@@ -11667,10 +11935,6 @@ proto.poolrpc.GetInfoResponse.serializeBinaryToWriter = function(message, writer
       14,
       f
     );
-  }
-  f = message.getMarketInfoMap(true);
-  if (f && f.getLength() > 0) {
-    f.serializeBinary(15, writer, jspb.BinaryWriter.prototype.writeUint32, jspb.BinaryWriter.prototype.writeMessage, proto.poolrpc.MarketInfo.serializeBinaryToWriter);
   }
 };
 
@@ -11901,24 +12165,6 @@ proto.poolrpc.GetInfoResponse.prototype.getNewNodesOnly = function() {
 /** @param {boolean} value */
 proto.poolrpc.GetInfoResponse.prototype.setNewNodesOnly = function(value) {
   jspb.Message.setProto3BooleanField(this, 14, value);
-};
-
-
-/**
- * map<uint32, MarketInfo> market_info = 15;
- * @param {boolean=} opt_noLazyCreate Do not create the map if
- * empty, instead returning `undefined`
- * @return {!jspb.Map<number,!proto.poolrpc.MarketInfo>}
- */
-proto.poolrpc.GetInfoResponse.prototype.getMarketInfoMap = function(opt_noLazyCreate) {
-  return /** @type {!jspb.Map<number,!proto.poolrpc.MarketInfo>} */ (
-      jspb.Message.getMapField(this, 15, opt_noLazyCreate,
-      proto.poolrpc.MarketInfo));
-};
-
-
-proto.poolrpc.GetInfoResponse.prototype.clearMarketInfoMap = function() {
-  this.getMarketInfoMap().clear();
 };
 
 
