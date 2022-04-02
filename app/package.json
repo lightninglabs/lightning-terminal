@@ -47,6 +47,7 @@
     "react-toastify": "6.0.6",
     "react-virtualized": "9.21.2",
     "reactour": "1.18.0",
+    "semver": "^7.3.5",
     "styled-components": "5.1.1"
   },
   "devDependencies": {
@@ -73,6 +74,7 @@
     "@types/react-router": "5.1.8",
     "@types/react-virtualized": "9.21.10",
     "@types/reactour": "1.17.1",
+    "@types/semver": "^7.3.9",
     "@typescript-eslint/eslint-plugin": "5.17.0",
     "@typescript-eslint/parser": "5.17.0",
     "cross-env": "7.0.2",
