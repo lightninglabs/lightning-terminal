@@ -5,6 +5,7 @@ import { grpc } from '@improbable-eng/grpc-web';
 import { waitFor } from '@testing-library/react';
 import Big from 'big.js';
 import { hex } from 'util/strings';
+import { sampleGrpcResponse } from 'util/tests';
 import { poolInvalidOrder, poolListOrders, poolSubmitOrder } from 'util/tests/sampleData';
 import { createStore, OrderStore, Store } from 'store';
 import { Order } from 'store/models';
@@ -101,6 +102,12 @@ describe('OrderStore', () => {
 
   it('should handle invalid orders', async () => {
     await rootStore.accountStore.fetchAccounts();
+    // handle the GetInfo call
+    grpcMock.unary.mockImplementationOnce((desc, opts) => {
+      opts.onEnd(sampleGrpcResponse(desc));
+      return undefined as any;
+    });
+    // mock the SubmitOrder response
     grpcMock.unary.mockImplementationOnce((desc, opts) => {
       if (desc.methodName === 'SubmitOrder') {
         const res = {
