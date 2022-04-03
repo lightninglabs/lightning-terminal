@@ -1,5 +1,5 @@
 # Start with a NodeJS base image that also contains yarn.
-FROM node:12.17.0-alpine as nodejsbuilder
+FROM node:16.14.2-alpine as nodejsbuilder
 
 # Copy in the local repository to build from.
 COPY . /go/src/github.com/lightninglabs/lightning-terminal
@@ -28,7 +28,7 @@ ENV GO111MODULE on
 
 # Install dependencies and install/build lightning-terminal.
 RUN apk add --no-cache --update alpine-sdk \
-    make \
+  make \
   && cd /go/src/github.com/lightninglabs/lightning-terminal \
   && make go-install \
   && make go-install-cli
@@ -52,9 +52,9 @@ COPY --from=golangbuilder /go/bin/pool /bin/
 
 # Add bash.
 RUN apk add --no-cache \
-    bash \
-    jq \
-    ca-certificates
+  bash \
+  jq \
+  ca-certificates
 
 # Specify the start command and entrypoint as the lightning-terminal daemon.
 ENTRYPOINT ["litd"]
