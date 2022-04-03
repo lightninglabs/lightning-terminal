@@ -2,6 +2,7 @@ import * as AUCT from 'types/generated/auctioneerrpc/auctioneer_pb';
 import * as POOL from 'types/generated/trader_pb';
 import { Trader } from 'types/generated/trader_pb_service';
 import Big from 'big.js';
+import { Buffer } from 'buffer';
 import { b64 } from 'util/strings';
 import { OrderType, Tier } from 'store/models/order';
 import BaseApi from './base';
