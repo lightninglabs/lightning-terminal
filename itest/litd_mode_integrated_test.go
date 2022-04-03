@@ -40,9 +40,8 @@ import (
 
 const (
 	// indexHtmlMarker is a string that appears in the rendered index.html
-	// file of the main UI. This is created by Webpack and should be fairly
-	// stable.
-	indexHtmlMarker = "webpackJsonplightning-terminal"
+	// file of the main UI.
+	indexHtmlMarker = "<title>Lightning Terminal</title>"
 
 	// mailboxServerAddr is the address of the mailbox server to use during
 	// integration tests.
