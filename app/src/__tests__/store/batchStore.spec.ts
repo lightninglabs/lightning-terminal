@@ -254,20 +254,22 @@ describe('BatchStore', () => {
     // allow polling in this test
     Object.defineProperty(config, 'IS_TEST', { get: () => false });
     jest.useFakeTimers();
+    jest.spyOn(global, 'setInterval');
 
     store.startPolling();
-    expect(window.setInterval).toBeCalled();
+    expect(setInterval).toBeCalled();
     expect(callCount).toBe(0);
     // fast forward 1 minute
-    jest.runTimersToTime(60 * 1000);
+    jest.advanceTimersByTime(60 * 1000);
     await waitFor(() => {
       expect(callCount).toBe(1);
     });
 
+    jest.spyOn(global, 'clearInterval');
     store.stopPolling();
-    expect(window.clearInterval).toBeCalled();
+    expect(clearInterval).toBeCalled();
     // fast forward 1 more minute
-    jest.runTimersToTime(120 * 1000);
+    jest.advanceTimersByTime(120 * 1000);
     expect(callCount).toBe(1);
 
     // revert IS_TEST

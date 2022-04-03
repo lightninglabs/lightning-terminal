@@ -33,7 +33,7 @@ describe('BatchStats', () => {
     expect(getByText('1m 30s')).toBeInTheDocument();
 
     act(() => {
-      jest.runTimersToTime(1000);
+      jest.advanceTimersByTime(1000);
     });
     await waitFor(() => {
       expect(getByText('1m 29s')).toBeInTheDocument();
