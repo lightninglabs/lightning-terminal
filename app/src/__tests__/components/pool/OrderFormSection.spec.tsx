@@ -1,10 +1,13 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import React from 'react';
 import * as POOL from 'types/generated/trader_pb';
+import { grpc } from '@improbable-eng/grpc-web';
 import { fireEvent, waitFor } from '@testing-library/react';
-import { injectIntoGrpcUnary, renderWithProviders } from 'util/tests';
+import { injectIntoGrpcUnary, renderWithProviders, sampleGrpcResponse } from 'util/tests';
 import { createStore, Store } from 'store';
 import OrderFormSection from 'components/pool/OrderFormSection';
+
+const grpcMock = grpc as jest.Mocked<typeof grpc>;
 
 describe('OrderFormSection', () => {
   let store: Store;
@@ -64,14 +67,21 @@ describe('OrderFormSection', () => {
     changeInput('Max Batch Fee Rate', '1');
     await changeSelect('Min Node Tier', 'T0 - All Nodes');
 
-    let bid: Required<POOL.Bid.AsObject>;
+    // handle the GetInfo call
+    grpcMock.unary.mockImplementationOnce((desc, opts) => {
+      opts.onEnd(sampleGrpcResponse(desc));
+      return undefined as any;
+    });
+    let bid: Required<POOL.Bid.AsObject> = {} as any;
     // capture the rate that is sent to the API
     injectIntoGrpcUnary((_, props) => {
       bid = (props.request.toObject() as any).bid;
     });
 
     fireEvent.click(getByText('Place Bid Order'));
-    expect(bid!.details.amt).toBe('1000000');
+    await waitFor(() => {
+      expect(bid!.details.amt).toBe('1000000');
+    });
     expect(bid!.details.rateFixed).toBe(4960);
     expect(bid!.details.minUnitsMatch).toBe(1);
     expect(bid!.leaseDurationBlocks).toBe(2016);
@@ -88,6 +98,11 @@ describe('OrderFormSection', () => {
     changeInput('Minimum Channel Size', '100000');
     changeInput('Max Batch Fee Rate', '1');
 
+    // handle the GetInfo call
+    grpcMock.unary.mockImplementationOnce((desc, opts) => {
+      opts.onEnd(sampleGrpcResponse(desc));
+      return undefined as any;
+    });
     let ask: Required<POOL.Ask.AsObject>;
     // capture the rate that is sent to the API
     injectIntoGrpcUnary((_, props) => {
@@ -95,7 +110,9 @@ describe('OrderFormSection', () => {
     });
 
     fireEvent.click(getByText('Place Ask Order'));
-    expect(ask!.details.amt).toBe('1000000');
+    await waitFor(() => {
+      expect(ask!.details.amt).toBe('1000000');
+    });
     expect(ask!.details.rateFixed).toBe(4960);
     expect(ask!.details.minUnitsMatch).toBe(1);
     expect(ask!.leaseDurationBlocks).toBe(2016);
@@ -112,6 +129,11 @@ describe('OrderFormSection', () => {
     await changeSelect('Channel Duration', '1 month (open)');
     await changeSelect('Min Node Tier', 'T0 - All Nodes');
 
+    // handle the GetInfo call
+    grpcMock.unary.mockImplementationOnce((desc, opts) => {
+      opts.onEnd(sampleGrpcResponse(desc));
+      return undefined as any;
+    });
     let bid: Required<POOL.Bid.AsObject>;
     // capture the rate that is sent to the API
     injectIntoGrpcUnary((_, props) => {
@@ -119,7 +141,9 @@ describe('OrderFormSection', () => {
     });
 
     fireEvent.click(getByText('Place Bid Order'));
-    expect(bid!.details.amt).toBe('1000000');
+    await waitFor(() => {
+      expect(bid!.details.amt).toBe('1000000');
+    });
     expect(bid!.details.rateFixed).toBe(2480);
     expect(bid!.details.minUnitsMatch).toBe(1);
     expect(bid!.leaseDurationBlocks).toBe(4032);

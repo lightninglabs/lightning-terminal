@@ -3,6 +3,7 @@ import * as POOL from 'types/generated/trader_pb';
 import { Trader } from 'types/generated/trader_pb_service';
 import Big from 'big.js';
 import { Buffer } from 'buffer';
+import { coerce, satisfies } from 'semver';
 import { b64 } from 'util/strings';
 import { OrderType, Tier } from 'store/models/order';
 import BaseApi from './base';
@@ -20,9 +21,17 @@ export const ONE_UNIT = 100000;
 // The minimum batch fee rate in sats/kw
 export const MIN_FEE_RATE_KW = 253;
 
-// The latest order version. This should be updated along with pool CLI
-// see: https://github.com/lightninglabs/pool/blob/master/order/interface.go#L35
-export const ORDER_VERSION = 4;
+// The default order version to use if the Pool version cannot be detected
+export const DEFAULT_ORDER_VERSION = 2;
+
+// maps from the Pool version semver condition to a compatible order version
+// see: https://github.com/lightninglabs/pool/blob/master/order/interfaces.go#L42
+export const ORDER_VERSION_COMPAT: Record<string, number> = {
+  '>=0.5.2-alpha': 5,
+  '>=0.5.0-alpha': 4,
+  '>=0.4.0-alpha': 2,
+  '>=0.2.7-alpha': 1,
+};
 
 const POOL_INITIATOR = 'lit-ui';
 
@@ -39,6 +48,15 @@ class PoolApi extends BaseApi<PoolEvents> {
   constructor(grpc: GrpcClient) {
     super();
     this._grpc = grpc;
+  }
+
+  /**
+   * call the pool `GetInfo` RPC and return the response
+   */
+  async getInfo(): Promise<POOL.GetInfoResponse.AsObject> {
+    const req = new POOL.GetInfoRequest();
+    const res = await this._grpc.request(Trader.GetInfo, req, this._meta);
+    return res.toObject();
   }
 
   /**
@@ -201,6 +219,9 @@ class PoolApi extends BaseApi<PoolEvents> {
       throw new Error(`The rate is too low. it must equate to at least 1 sat per block`);
     }
 
+    const info = await this.getInfo();
+    const orderVersion = this.getOrderVersion(info.version);
+
     const req = new POOL.SubmitOrderRequest();
     req.setInitiator(POOL_INITIATOR);
 
@@ -215,7 +236,7 @@ class PoolApi extends BaseApi<PoolEvents> {
       case OrderType.Bid:
         const bid = new POOL.Bid();
         bid.setLeaseDurationBlocks(duration);
-        bid.setVersion(ORDER_VERSION);
+        bid.setVersion(orderVersion);
         if (minNodeTier !== undefined) bid.setMinNodeTier(minNodeTier);
         bid.setDetails(order);
         req.setBid(bid);
@@ -223,7 +244,7 @@ class PoolApi extends BaseApi<PoolEvents> {
       case OrderType.Ask:
         const ask = new POOL.Ask();
         ask.setLeaseDurationBlocks(duration);
-        ask.setVersion(ORDER_VERSION);
+        ask.setVersion(orderVersion);
         ask.setDetails(order);
         req.setAsk(ask);
         break;
@@ -357,6 +378,26 @@ class PoolApi extends BaseApi<PoolEvents> {
    */
   calcPctRate(fixedRate: Big, duration: Big) {
     return +fixedRate.mul(duration).div(FEE_RATE_TOTAL_PARTS);
+  }
+
+  /**
+   * Determines which order version to use based on the provided version string
+   * @param version the version of pool
+   *    (ex: 0.5.4-alpha commit=v0.5.4-alpha.0.20220114202858-525fe156d240)
+   */
+  getOrderVersion(version: string): number {
+    // try to convert the pool version string to a SemVer object (ex: 0.5.4)
+    const verNum = coerce(version);
+    if (!verNum) return DEFAULT_ORDER_VERSION;
+
+    // find the first key which the pool version satisfies
+    const matchedKey = Object.keys(ORDER_VERSION_COMPAT).find(condition =>
+      satisfies(verNum, condition),
+    );
+    if (!matchedKey) return DEFAULT_ORDER_VERSION;
+
+    // return the order version that was matched
+    return ORDER_VERSION_COMPAT[matchedKey];
   }
 }
 

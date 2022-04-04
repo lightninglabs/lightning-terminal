@@ -157,6 +157,7 @@ export const lndPendingChannel: LND.PendingChannelsResponse.PendingChannel.AsObj
   remoteChanReserveSat: '5000',
   remoteNodePub: '03bb934930cdcd25576aa61d08cc95214e0036f1219c435c06976e561558703290',
   numForwardingPackages: '7',
+  chanStatusFlags: '',
 };
 
 export const lndPendingChannels: LND.PendingChannelsResponse.AsObject = {
@@ -197,6 +198,7 @@ export const lndPendingChannels: LND.PendingChannelsResponse.AsObject = {
         remoteTxid: '9850a4b1cfcfbf972f8541b26b8061ed3091ee8cbed5875167080be4be9524e7',
       },
       limboBalance: '0',
+      closingTxid: '6c151252215b73547a5415051c82dd25c725c4309b93fed4f38c4c5b610c3fb0',
     },
   ],
   pendingForceClosingChannelsList: [
@@ -390,6 +392,26 @@ export const poolCloseAccount: POOL.CloseAccountResponse.AsObject = {
 export const poolRenewAccount: POOL.RenewAccountResponse.AsObject = {
   renewalTxid: '+BQm/hnM0SleT2NxS7bdw0JNDuvIMhL4qxLUkdbCJdo=',
   account: poolInitAccount,
+};
+
+export const poolGetInfo: POOL.GetInfoResponse.AsObject = {
+  version: '0.5.4-alpha commit=v0.5.4-alpha.0.20220114202858-525fe156d240',
+  accountsTotal: 5,
+  accountsActive: 1,
+  accountsActiveExpired: 0,
+  accountsArchived: 4,
+  ordersTotal: 16,
+  ordersActive: 0,
+  ordersArchived: 16,
+  currentBlockHeight: 2164104,
+  batchesInvolved: 8,
+  nodeRating: {
+    nodePubkey: '027433f335bbea5f5631bda2bcf45f57d069a084c800aa80148909bc392b99103c',
+    nodeTier: AUCT.NodeTier.TIER_1,
+  },
+  lsatTokens: 1,
+  subscribedToAuctioneer: true,
+  newNodesOnly: false,
 };
 
 export const poolListAccounts: POOL.ListAccountsResponse.AsObject = {
@@ -859,6 +881,7 @@ export const sampleApiResponses: Record<string, any> = {
   'looprpc.SwapClient.GetLoopInQuote': loopInQuote,
   'looprpc.SwapClient.LoopIn': loopSwapResponse,
   'looprpc.SwapClient.LoopOut': loopSwapResponse,
+  'poolrpc.Trader.GetInfo': poolGetInfo,
   'poolrpc.Trader.ListAccounts': poolListAccounts,
   'poolrpc.Trader.QuoteAccount': poolQuoteAccount,
   'poolrpc.Trader.InitAccount': poolInitAccount,

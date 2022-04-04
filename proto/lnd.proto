@@ -753,7 +753,8 @@ message SendRequest {
     The maximum number of satoshis that will be paid as a fee of the payment.
     This value can be represented either as a percentage of the amount being
     sent, or as a fixed amount of the maximum fee the user is willing the pay to
-    send the payment.
+    send the payment. If not specified, lnd will use a default value of 100%
+    fees for small amounts (<=1k sat) or 5% fees for larger amounts.
     */
     FeeLimit fee_limit = 8;
 
@@ -2312,6 +2313,9 @@ message PendingChannelsResponse {
 
         // Total number of forwarding packages created in this channel.
         int64 num_forwarding_packages = 10 [jstype = JS_STRING];
+
+        // A set of flags showing the current state of the channel.
+        string chan_status_flags = 11;
     }
 
     message PendingOpenChannel {
@@ -2353,6 +2357,9 @@ message PendingChannelsResponse {
         this point.
         */
         Commitments commitments = 3;
+
+        // The transaction id of the closing transaction
+        string closing_txid = 4;
     }
 
     message Commitments {
@@ -2565,7 +2572,8 @@ message QueryRoutesRequest {
     The maximum number of satoshis that will be paid as a fee of the payment.
     This value can be represented either as a percentage of the amount being
     sent, or as a fixed amount of the maximum fee the user is willing the pay to
-    send the payment.
+    send the payment. If not specified, lnd will use a default value of 100%
+    fees for small amounts (<=1k sat) or 5% fees for larger amounts.
     */
     FeeLimit fee_limit = 5;
 
@@ -3741,6 +3749,9 @@ message PolicyUpdateRequest {
     // The effective fee rate in milli-satoshis. The precision of this value
     // goes up to 6 decimal places, so 1e-6.
     double fee_rate = 4;
+
+    // The effective fee rate in micro-satoshis (parts per million).
+    uint32 fee_rate_ppm = 9;
 
     // The required timelock delta for HTLCs forwarded over the channel.
     uint32 time_lock_delta = 5;

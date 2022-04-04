@@ -20660,7 +20660,8 @@ proto.lnrpc.PendingChannelsResponse.PendingChannel.toObject = function(includeIn
     remoteChanReserveSat: jspb.Message.getFieldWithDefault(msg, 7, "0"),
     initiator: jspb.Message.getFieldWithDefault(msg, 8, 0),
     commitmentType: jspb.Message.getFieldWithDefault(msg, 9, 0),
-    numForwardingPackages: jspb.Message.getFieldWithDefault(msg, 10, "0")
+    numForwardingPackages: jspb.Message.getFieldWithDefault(msg, 10, "0"),
+    chanStatusFlags: jspb.Message.getFieldWithDefault(msg, 11, "")
   };
 
   if (includeInstance) {
@@ -20736,6 +20737,10 @@ proto.lnrpc.PendingChannelsResponse.PendingChannel.deserializeBinaryFromReader =
     case 10:
       var value = /** @type {string} */ (reader.readInt64String());
       msg.setNumForwardingPackages(value);
+      break;
+    case 11:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setChanStatusFlags(value);
       break;
     default:
       reader.skipField();
@@ -20833,6 +20838,13 @@ proto.lnrpc.PendingChannelsResponse.PendingChannel.serializeBinaryToWriter = fun
   if (parseInt(f, 10) !== 0) {
     writer.writeInt64String(
       10,
+      f
+    );
+  }
+  f = message.getChanStatusFlags();
+  if (f.length > 0) {
+    writer.writeString(
+      11,
       f
     );
   }
@@ -20986,6 +20998,21 @@ proto.lnrpc.PendingChannelsResponse.PendingChannel.prototype.getNumForwardingPac
 /** @param {string} value */
 proto.lnrpc.PendingChannelsResponse.PendingChannel.prototype.setNumForwardingPackages = function(value) {
   jspb.Message.setProto3StringIntField(this, 10, value);
+};
+
+
+/**
+ * optional string chan_status_flags = 11;
+ * @return {string}
+ */
+proto.lnrpc.PendingChannelsResponse.PendingChannel.prototype.getChanStatusFlags = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 11, ""));
+};
+
+
+/** @param {string} value */
+proto.lnrpc.PendingChannelsResponse.PendingChannel.prototype.setChanStatusFlags = function(value) {
+  jspb.Message.setProto3StringField(this, 11, value);
 };
 
 
@@ -21305,7 +21332,8 @@ proto.lnrpc.PendingChannelsResponse.WaitingCloseChannel.toObject = function(incl
   var f, obj = {
     channel: (f = msg.getChannel()) && proto.lnrpc.PendingChannelsResponse.PendingChannel.toObject(includeInstance, f),
     limboBalance: jspb.Message.getFieldWithDefault(msg, 2, "0"),
-    commitments: (f = msg.getCommitments()) && proto.lnrpc.PendingChannelsResponse.Commitments.toObject(includeInstance, f)
+    commitments: (f = msg.getCommitments()) && proto.lnrpc.PendingChannelsResponse.Commitments.toObject(includeInstance, f),
+    closingTxid: jspb.Message.getFieldWithDefault(msg, 4, "")
   };
 
   if (includeInstance) {
@@ -21355,6 +21383,10 @@ proto.lnrpc.PendingChannelsResponse.WaitingCloseChannel.deserializeBinaryFromRea
       var value = new proto.lnrpc.PendingChannelsResponse.Commitments;
       reader.readMessage(value,proto.lnrpc.PendingChannelsResponse.Commitments.deserializeBinaryFromReader);
       msg.setCommitments(value);
+      break;
+    case 4:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setClosingTxid(value);
       break;
     default:
       reader.skipField();
@@ -21406,6 +21438,13 @@ proto.lnrpc.PendingChannelsResponse.WaitingCloseChannel.serializeBinaryToWriter 
       3,
       f,
       proto.lnrpc.PendingChannelsResponse.Commitments.serializeBinaryToWriter
+    );
+  }
+  f = message.getClosingTxid();
+  if (f.length > 0) {
+    writer.writeString(
+      4,
+      f
     );
   }
 };
@@ -21483,6 +21522,21 @@ proto.lnrpc.PendingChannelsResponse.WaitingCloseChannel.prototype.clearCommitmen
  */
 proto.lnrpc.PendingChannelsResponse.WaitingCloseChannel.prototype.hasCommitments = function() {
   return jspb.Message.getField(this, 3) != null;
+};
+
+
+/**
+ * optional string closing_txid = 4;
+ * @return {string}
+ */
+proto.lnrpc.PendingChannelsResponse.WaitingCloseChannel.prototype.getClosingTxid = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 4, ""));
+};
+
+
+/** @param {string} value */
+proto.lnrpc.PendingChannelsResponse.WaitingCloseChannel.prototype.setClosingTxid = function(value) {
+  jspb.Message.setProto3StringField(this, 4, value);
 };
 
 
@@ -39233,6 +39287,7 @@ proto.lnrpc.PolicyUpdateRequest.toObject = function(includeInstance, msg) {
     chanPoint: (f = msg.getChanPoint()) && proto.lnrpc.ChannelPoint.toObject(includeInstance, f),
     baseFeeMsat: jspb.Message.getFieldWithDefault(msg, 3, "0"),
     feeRate: +jspb.Message.getFieldWithDefault(msg, 4, 0.0),
+    feeRatePpm: jspb.Message.getFieldWithDefault(msg, 9, 0),
     timeLockDelta: jspb.Message.getFieldWithDefault(msg, 5, 0),
     maxHtlcMsat: jspb.Message.getFieldWithDefault(msg, 6, "0"),
     minHtlcMsat: jspb.Message.getFieldWithDefault(msg, 7, "0"),
@@ -39289,6 +39344,10 @@ proto.lnrpc.PolicyUpdateRequest.deserializeBinaryFromReader = function(msg, read
     case 4:
       var value = /** @type {number} */ (reader.readDouble());
       msg.setFeeRate(value);
+      break;
+    case 9:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setFeeRatePpm(value);
       break;
     case 5:
       var value = /** @type {number} */ (reader.readUint32());
@@ -39361,6 +39420,13 @@ proto.lnrpc.PolicyUpdateRequest.serializeBinaryToWriter = function(message, writ
   if (f !== 0.0) {
     writer.writeDouble(
       4,
+      f
+    );
+  }
+  f = message.getFeeRatePpm();
+  if (f !== 0) {
+    writer.writeUint32(
+      9,
       f
     );
   }
@@ -39483,6 +39549,21 @@ proto.lnrpc.PolicyUpdateRequest.prototype.getFeeRate = function() {
 /** @param {number} value */
 proto.lnrpc.PolicyUpdateRequest.prototype.setFeeRate = function(value) {
   jspb.Message.setProto3FloatField(this, 4, value);
+};
+
+
+/**
+ * optional uint32 fee_rate_ppm = 9;
+ * @return {number}
+ */
+proto.lnrpc.PolicyUpdateRequest.prototype.getFeeRatePpm = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 9, 0));
+};
+
+
+/** @param {number} value */
+proto.lnrpc.PolicyUpdateRequest.prototype.setFeeRatePpm = function(value) {
+  jspb.Message.setProto3IntField(this, 9, value);
 };
 
 
