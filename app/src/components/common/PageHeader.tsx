@@ -28,12 +28,15 @@ const Styled = {
   `,
   BackLink: styled.a`
     text-transform: uppercase;
+    color: ${props => props.theme.colors.offWhite};
     font-size: ${props => props.theme.sizes.xs};
     cursor: pointer;
     line-height: 36px;
 
     &:hover {
+      color: ${props => props.theme.colors.offWhite};
       opacity: 80%;
+      text-decoration: none;
     }
   `,
 };
