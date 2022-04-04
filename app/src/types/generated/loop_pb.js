@@ -14,7 +14,7 @@ var jspb = require('google-protobuf');
 var goog = jspb;
 var global = Function('return this')();
 
-var common_pb = require('./common_pb.js');
+var swapserverrpc_common_pb = require('./swapserverrpc/common_pb.js');
 goog.exportSymbol('proto.looprpc.AutoReason', null, global);
 goog.exportSymbol('proto.looprpc.Disqualified', null, global);
 goog.exportSymbol('proto.looprpc.FailureReason', null, global);
@@ -573,12 +573,19 @@ proto.looprpc.LoopOutRequest.prototype.setInitiator = function(value) {
  * @constructor
  */
 proto.looprpc.LoopInRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.looprpc.LoopInRequest.repeatedFields_, null);
 };
 goog.inherits(proto.looprpc.LoopInRequest, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
   proto.looprpc.LoopInRequest.displayName = 'proto.looprpc.LoopInRequest';
 }
+/**
+ * List of repeated fields within this message type.
+ * @private {!Array<number>}
+ * @const
+ */
+proto.looprpc.LoopInRequest.repeatedFields_ = [9];
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
@@ -615,7 +622,10 @@ proto.looprpc.LoopInRequest.toObject = function(includeInstance, msg) {
     externalHtlc: jspb.Message.getFieldWithDefault(msg, 5, false),
     htlcConfTarget: jspb.Message.getFieldWithDefault(msg, 6, 0),
     label: jspb.Message.getFieldWithDefault(msg, 7, ""),
-    initiator: jspb.Message.getFieldWithDefault(msg, 8, "")
+    initiator: jspb.Message.getFieldWithDefault(msg, 8, ""),
+    routeHintsList: jspb.Message.toObjectList(msg.getRouteHintsList(),
+    swapserverrpc_common_pb.RouteHint.toObject, includeInstance),
+    pb_private: jspb.Message.getFieldWithDefault(msg, 10, false)
   };
 
   if (includeInstance) {
@@ -683,6 +693,15 @@ proto.looprpc.LoopInRequest.deserializeBinaryFromReader = function(msg, reader) 
     case 8:
       var value = /** @type {string} */ (reader.readString());
       msg.setInitiator(value);
+      break;
+    case 9:
+      var value = new swapserverrpc_common_pb.RouteHint;
+      reader.readMessage(value,swapserverrpc_common_pb.RouteHint.deserializeBinaryFromReader);
+      msg.addRouteHints(value);
+      break;
+    case 10:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setPrivate(value);
       break;
     default:
       reader.skipField();
@@ -766,6 +785,21 @@ proto.looprpc.LoopInRequest.serializeBinaryToWriter = function(message, writer) 
   if (f.length > 0) {
     writer.writeString(
       8,
+      f
+    );
+  }
+  f = message.getRouteHintsList();
+  if (f.length > 0) {
+    writer.writeRepeatedMessage(
+      9,
+      f,
+      swapserverrpc_common_pb.RouteHint.serializeBinaryToWriter
+    );
+  }
+  f = message.getPrivate();
+  if (f) {
+    writer.writeBool(
+      10,
       f
     );
   }
@@ -915,6 +949,54 @@ proto.looprpc.LoopInRequest.prototype.getInitiator = function() {
 /** @param {string} value */
 proto.looprpc.LoopInRequest.prototype.setInitiator = function(value) {
   jspb.Message.setProto3StringField(this, 8, value);
+};
+
+
+/**
+ * repeated RouteHint route_hints = 9;
+ * @return {!Array<!proto.looprpc.RouteHint>}
+ */
+proto.looprpc.LoopInRequest.prototype.getRouteHintsList = function() {
+  return /** @type{!Array<!proto.looprpc.RouteHint>} */ (
+    jspb.Message.getRepeatedWrapperField(this, swapserverrpc_common_pb.RouteHint, 9));
+};
+
+
+/** @param {!Array<!proto.looprpc.RouteHint>} value */
+proto.looprpc.LoopInRequest.prototype.setRouteHintsList = function(value) {
+  jspb.Message.setRepeatedWrapperField(this, 9, value);
+};
+
+
+/**
+ * @param {!proto.looprpc.RouteHint=} opt_value
+ * @param {number=} opt_index
+ * @return {!proto.looprpc.RouteHint}
+ */
+proto.looprpc.LoopInRequest.prototype.addRouteHints = function(opt_value, opt_index) {
+  return jspb.Message.addToRepeatedWrapperField(this, 9, opt_value, proto.looprpc.RouteHint, opt_index);
+};
+
+
+proto.looprpc.LoopInRequest.prototype.clearRouteHintsList = function() {
+  this.setRouteHintsList([]);
+};
+
+
+/**
+ * optional bool private = 10;
+ * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
+ * You should avoid comparisons like {@code val === true/false} in those cases.
+ * @return {boolean}
+ */
+proto.looprpc.LoopInRequest.prototype.getPrivate = function() {
+  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 10, false));
+};
+
+
+/** @param {boolean} value */
+proto.looprpc.LoopInRequest.prototype.setPrivate = function(value) {
+  jspb.Message.setProto3BooleanField(this, 10, value);
 };
 
 
@@ -2897,7 +2979,8 @@ proto.looprpc.QuoteRequest.toObject = function(includeInstance, msg) {
     swapPublicationDeadline: jspb.Message.getFieldWithDefault(msg, 4, "0"),
     loopInLastHop: msg.getLoopInLastHop_asB64(),
     loopInRouteHintsList: jspb.Message.toObjectList(msg.getLoopInRouteHintsList(),
-    common_pb.RouteHint.toObject, includeInstance)
+    swapserverrpc_common_pb.RouteHint.toObject, includeInstance),
+    pb_private: jspb.Message.getFieldWithDefault(msg, 7, false)
   };
 
   if (includeInstance) {
@@ -2955,9 +3038,13 @@ proto.looprpc.QuoteRequest.deserializeBinaryFromReader = function(msg, reader) {
       msg.setLoopInLastHop(value);
       break;
     case 6:
-      var value = new common_pb.RouteHint;
-      reader.readMessage(value,common_pb.RouteHint.deserializeBinaryFromReader);
+      var value = new swapserverrpc_common_pb.RouteHint;
+      reader.readMessage(value,swapserverrpc_common_pb.RouteHint.deserializeBinaryFromReader);
       msg.addLoopInRouteHints(value);
+      break;
+    case 7:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setPrivate(value);
       break;
     default:
       reader.skipField();
@@ -3028,7 +3115,14 @@ proto.looprpc.QuoteRequest.serializeBinaryToWriter = function(message, writer) {
     writer.writeRepeatedMessage(
       6,
       f,
-      common_pb.RouteHint.serializeBinaryToWriter
+      swapserverrpc_common_pb.RouteHint.serializeBinaryToWriter
+    );
+  }
+  f = message.getPrivate();
+  if (f) {
+    writer.writeBool(
+      7,
+      f
     );
   }
 };
@@ -3141,7 +3235,7 @@ proto.looprpc.QuoteRequest.prototype.setLoopInLastHop = function(value) {
  */
 proto.looprpc.QuoteRequest.prototype.getLoopInRouteHintsList = function() {
   return /** @type{!Array<!proto.looprpc.RouteHint>} */ (
-    jspb.Message.getRepeatedWrapperField(this, common_pb.RouteHint, 6));
+    jspb.Message.getRepeatedWrapperField(this, swapserverrpc_common_pb.RouteHint, 6));
 };
 
 
@@ -3163,6 +3257,23 @@ proto.looprpc.QuoteRequest.prototype.addLoopInRouteHints = function(opt_value, o
 
 proto.looprpc.QuoteRequest.prototype.clearLoopInRouteHintsList = function() {
   this.setLoopInRouteHintsList([]);
+};
+
+
+/**
+ * optional bool private = 7;
+ * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
+ * You should avoid comparisons like {@code val === true/false} in those cases.
+ * @return {boolean}
+ */
+proto.looprpc.QuoteRequest.prototype.getPrivate = function() {
+  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 7, false));
+};
+
+
+/** @param {boolean} value */
+proto.looprpc.QuoteRequest.prototype.setPrivate = function(value) {
+  jspb.Message.setProto3BooleanField(this, 7, value);
 };
 
 
@@ -3747,7 +3858,7 @@ proto.looprpc.ProbeRequest.toObject = function(includeInstance, msg) {
     amt: jspb.Message.getFieldWithDefault(msg, 1, "0"),
     lastHop: msg.getLastHop_asB64(),
     routeHintsList: jspb.Message.toObjectList(msg.getRouteHintsList(),
-    common_pb.RouteHint.toObject, includeInstance)
+    swapserverrpc_common_pb.RouteHint.toObject, includeInstance)
   };
 
   if (includeInstance) {
@@ -3793,8 +3904,8 @@ proto.looprpc.ProbeRequest.deserializeBinaryFromReader = function(msg, reader) {
       msg.setLastHop(value);
       break;
     case 3:
-      var value = new common_pb.RouteHint;
-      reader.readMessage(value,common_pb.RouteHint.deserializeBinaryFromReader);
+      var value = new swapserverrpc_common_pb.RouteHint;
+      reader.readMessage(value,swapserverrpc_common_pb.RouteHint.deserializeBinaryFromReader);
       msg.addRouteHints(value);
       break;
     default:
@@ -3845,7 +3956,7 @@ proto.looprpc.ProbeRequest.serializeBinaryToWriter = function(message, writer) {
     writer.writeRepeatedMessage(
       3,
       f,
-      common_pb.RouteHint.serializeBinaryToWriter
+      swapserverrpc_common_pb.RouteHint.serializeBinaryToWriter
     );
   }
 };
@@ -3911,7 +4022,7 @@ proto.looprpc.ProbeRequest.prototype.setLastHop = function(value) {
  */
 proto.looprpc.ProbeRequest.prototype.getRouteHintsList = function() {
   return /** @type{!Array<!proto.looprpc.RouteHint>} */ (
-    jspb.Message.getRepeatedWrapperField(this, common_pb.RouteHint, 3));
+    jspb.Message.getRepeatedWrapperField(this, swapserverrpc_common_pb.RouteHint, 3));
 };
 
 
@@ -4927,7 +5038,8 @@ proto.looprpc.LiquidityParameters.toObject = function(includeInstance, msg) {
     autoloopBudgetStartSec: jspb.Message.getFieldWithDefault(msg, 12, "0"),
     autoMaxInFlight: jspb.Message.getFieldWithDefault(msg, 13, "0"),
     minSwapAmount: jspb.Message.getFieldWithDefault(msg, 14, "0"),
-    maxSwapAmount: jspb.Message.getFieldWithDefault(msg, 15, "0")
+    maxSwapAmount: jspb.Message.getFieldWithDefault(msg, 15, "0"),
+    htlcConfTarget: jspb.Message.getFieldWithDefault(msg, 17, 0)
   };
 
   if (includeInstance) {
@@ -5028,6 +5140,10 @@ proto.looprpc.LiquidityParameters.deserializeBinaryFromReader = function(msg, re
     case 15:
       var value = /** @type {string} */ (reader.readUint64String());
       msg.setMaxSwapAmount(value);
+      break;
+    case 17:
+      var value = /** @type {number} */ (reader.readInt32());
+      msg.setHtlcConfTarget(value);
       break;
     default:
       reader.skipField();
@@ -5168,6 +5284,13 @@ proto.looprpc.LiquidityParameters.serializeBinaryToWriter = function(message, wr
   if (parseInt(f, 10) !== 0) {
     writer.writeUint64String(
       15,
+      f
+    );
+  }
+  f = message.getHtlcConfTarget();
+  if (f !== 0) {
+    writer.writeInt32(
+      17,
       f
     );
   }
@@ -5432,6 +5555,21 @@ proto.looprpc.LiquidityParameters.prototype.setMaxSwapAmount = function(value) {
 };
 
 
+/**
+ * optional int32 htlc_conf_target = 17;
+ * @return {number}
+ */
+proto.looprpc.LiquidityParameters.prototype.getHtlcConfTarget = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 17, 0));
+};
+
+
+/** @param {number} value */
+proto.looprpc.LiquidityParameters.prototype.setHtlcConfTarget = function(value) {
+  jspb.Message.setProto3IntField(this, 17, value);
+};
+
+
 
 /**
  * Generated by JsPbCodeGenerator.
@@ -5480,6 +5618,7 @@ proto.looprpc.LiquidityRule.prototype.toObject = function(opt_includeInstance) {
 proto.looprpc.LiquidityRule.toObject = function(includeInstance, msg) {
   var f, obj = {
     channelId: jspb.Message.getFieldWithDefault(msg, 1, "0"),
+    swapType: jspb.Message.getFieldWithDefault(msg, 6, 0),
     pubkey: msg.getPubkey_asB64(),
     type: jspb.Message.getFieldWithDefault(msg, 2, 0),
     incomingThreshold: jspb.Message.getFieldWithDefault(msg, 3, 0),
@@ -5523,6 +5662,10 @@ proto.looprpc.LiquidityRule.deserializeBinaryFromReader = function(msg, reader) 
     case 1:
       var value = /** @type {string} */ (reader.readUint64String());
       msg.setChannelId(value);
+      break;
+    case 6:
+      var value = /** @type {!proto.looprpc.SwapType} */ (reader.readEnum());
+      msg.setSwapType(value);
       break;
     case 5:
       var value = /** @type {!Uint8Array} */ (reader.readBytes());
@@ -5576,6 +5719,13 @@ proto.looprpc.LiquidityRule.serializeBinaryToWriter = function(message, writer) 
       f
     );
   }
+  f = message.getSwapType();
+  if (f !== 0.0) {
+    writer.writeEnum(
+      6,
+      f
+    );
+  }
   f = message.getPubkey_asU8();
   if (f.length > 0) {
     writer.writeBytes(
@@ -5619,6 +5769,21 @@ proto.looprpc.LiquidityRule.prototype.getChannelId = function() {
 /** @param {string} value */
 proto.looprpc.LiquidityRule.prototype.setChannelId = function(value) {
   jspb.Message.setProto3StringIntField(this, 1, value);
+};
+
+
+/**
+ * optional SwapType swap_type = 6;
+ * @return {!proto.looprpc.SwapType}
+ */
+proto.looprpc.LiquidityRule.prototype.getSwapType = function() {
+  return /** @type {!proto.looprpc.SwapType} */ (jspb.Message.getFieldWithDefault(this, 6, 0));
+};
+
+
+/** @param {!proto.looprpc.SwapType} value */
+proto.looprpc.LiquidityRule.prototype.setSwapType = function(value) {
+  jspb.Message.setProto3EnumField(this, 6, value);
 };
 
 
@@ -6340,7 +6505,7 @@ if (goog.DEBUG && !COMPILED) {
  * @private {!Array<number>}
  * @const
  */
-proto.looprpc.SuggestSwapsResponse.repeatedFields_ = [1,2];
+proto.looprpc.SuggestSwapsResponse.repeatedFields_ = [1,3,2];
 
 
 
@@ -6373,6 +6538,8 @@ proto.looprpc.SuggestSwapsResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
     loopOutList: jspb.Message.toObjectList(msg.getLoopOutList(),
     proto.looprpc.LoopOutRequest.toObject, includeInstance),
+    loopInList: jspb.Message.toObjectList(msg.getLoopInList(),
+    proto.looprpc.LoopInRequest.toObject, includeInstance),
     disqualifiedList: jspb.Message.toObjectList(msg.getDisqualifiedList(),
     proto.looprpc.Disqualified.toObject, includeInstance)
   };
@@ -6416,6 +6583,11 @@ proto.looprpc.SuggestSwapsResponse.deserializeBinaryFromReader = function(msg, r
       reader.readMessage(value,proto.looprpc.LoopOutRequest.deserializeBinaryFromReader);
       msg.addLoopOut(value);
       break;
+    case 3:
+      var value = new proto.looprpc.LoopInRequest;
+      reader.readMessage(value,proto.looprpc.LoopInRequest.deserializeBinaryFromReader);
+      msg.addLoopIn(value);
+      break;
     case 2:
       var value = new proto.looprpc.Disqualified;
       reader.readMessage(value,proto.looprpc.Disqualified.deserializeBinaryFromReader);
@@ -6458,6 +6630,14 @@ proto.looprpc.SuggestSwapsResponse.serializeBinaryToWriter = function(message, w
       proto.looprpc.LoopOutRequest.serializeBinaryToWriter
     );
   }
+  f = message.getLoopInList();
+  if (f.length > 0) {
+    writer.writeRepeatedMessage(
+      3,
+      f,
+      proto.looprpc.LoopInRequest.serializeBinaryToWriter
+    );
+  }
   f = message.getDisqualifiedList();
   if (f.length > 0) {
     writer.writeRepeatedMessage(
@@ -6497,6 +6677,37 @@ proto.looprpc.SuggestSwapsResponse.prototype.addLoopOut = function(opt_value, op
 
 proto.looprpc.SuggestSwapsResponse.prototype.clearLoopOutList = function() {
   this.setLoopOutList([]);
+};
+
+
+/**
+ * repeated LoopInRequest loop_in = 3;
+ * @return {!Array<!proto.looprpc.LoopInRequest>}
+ */
+proto.looprpc.SuggestSwapsResponse.prototype.getLoopInList = function() {
+  return /** @type{!Array<!proto.looprpc.LoopInRequest>} */ (
+    jspb.Message.getRepeatedWrapperField(this, proto.looprpc.LoopInRequest, 3));
+};
+
+
+/** @param {!Array<!proto.looprpc.LoopInRequest>} value */
+proto.looprpc.SuggestSwapsResponse.prototype.setLoopInList = function(value) {
+  jspb.Message.setRepeatedWrapperField(this, 3, value);
+};
+
+
+/**
+ * @param {!proto.looprpc.LoopInRequest=} opt_value
+ * @param {number=} opt_index
+ * @return {!proto.looprpc.LoopInRequest}
+ */
+proto.looprpc.SuggestSwapsResponse.prototype.addLoopIn = function(opt_value, opt_index) {
+  return jspb.Message.addToRepeatedWrapperField(this, 3, opt_value, proto.looprpc.LoopInRequest, opt_index);
+};
+
+
+proto.looprpc.SuggestSwapsResponse.prototype.clearLoopInList = function() {
+  this.setLoopInList([]);
 };
 
 

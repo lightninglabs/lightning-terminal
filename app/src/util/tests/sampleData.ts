@@ -77,6 +77,7 @@ export const lndWalletBalance: LND.WalletBalanceResponse.AsObject = {
   confirmedBalance: '84992363',
   unconfirmedBalance: '0',
   accountBalanceMap: [],
+  lockedBalance: '84992363',
 };
 
 const txId = '6ee4e45870ac6191e25173f29804851e9f4bcf10f65f8b63100f488989e1e7a8';
@@ -157,7 +158,7 @@ export const lndPendingChannel: LND.PendingChannelsResponse.PendingChannel.AsObj
   remoteChanReserveSat: '5000',
   remoteNodePub: '03bb934930cdcd25576aa61d08cc95214e0036f1219c435c06976e561558703290',
   numForwardingPackages: '7',
-  chanStatusFlags: '',
+  chanStatusFlags: 'ChanStatusDefault',
 };
 
 export const lndPendingChannels: LND.PendingChannelsResponse.AsObject = {

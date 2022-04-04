@@ -2,7 +2,7 @@
 // file: loop.proto
 
 import * as jspb from "google-protobuf";
-import * as common_pb from "./common_pb";
+import * as swapserverrpc_common_pb from "./swapserverrpc/common_pb";
 
 export class LoopOutRequest extends jspb.Message {
   getAmt(): string;
@@ -105,6 +105,14 @@ export class LoopInRequest extends jspb.Message {
   getInitiator(): string;
   setInitiator(value: string): void;
 
+  clearRouteHintsList(): void;
+  getRouteHintsList(): Array<swapserverrpc_common_pb.RouteHint>;
+  setRouteHintsList(value: Array<swapserverrpc_common_pb.RouteHint>): void;
+  addRouteHints(value?: swapserverrpc_common_pb.RouteHint, index?: number): swapserverrpc_common_pb.RouteHint;
+
+  getPrivate(): boolean;
+  setPrivate(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LoopInRequest.AsObject;
   static toObject(includeInstance: boolean, msg: LoopInRequest): LoopInRequest.AsObject;
@@ -125,6 +133,8 @@ export namespace LoopInRequest {
     htlcConfTarget: number,
     label: string,
     initiator: string,
+    routeHintsList: Array<swapserverrpc_common_pb.RouteHint.AsObject>,
+    pb_private: boolean,
   }
 }
 
@@ -415,9 +425,12 @@ export class QuoteRequest extends jspb.Message {
   setLoopInLastHop(value: Uint8Array | string): void;
 
   clearLoopInRouteHintsList(): void;
-  getLoopInRouteHintsList(): Array<common_pb.RouteHint>;
-  setLoopInRouteHintsList(value: Array<common_pb.RouteHint>): void;
-  addLoopInRouteHints(value?: common_pb.RouteHint, index?: number): common_pb.RouteHint;
+  getLoopInRouteHintsList(): Array<swapserverrpc_common_pb.RouteHint>;
+  setLoopInRouteHintsList(value: Array<swapserverrpc_common_pb.RouteHint>): void;
+  addLoopInRouteHints(value?: swapserverrpc_common_pb.RouteHint, index?: number): swapserverrpc_common_pb.RouteHint;
+
+  getPrivate(): boolean;
+  setPrivate(value: boolean): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): QuoteRequest.AsObject;
@@ -436,7 +449,8 @@ export namespace QuoteRequest {
     externalHtlc: boolean,
     swapPublicationDeadline: string,
     loopInLastHop: Uint8Array | string,
-    loopInRouteHintsList: Array<common_pb.RouteHint.AsObject>,
+    loopInRouteHintsList: Array<swapserverrpc_common_pb.RouteHint.AsObject>,
+    pb_private: boolean,
   }
 }
 
@@ -524,9 +538,9 @@ export class ProbeRequest extends jspb.Message {
   setLastHop(value: Uint8Array | string): void;
 
   clearRouteHintsList(): void;
-  getRouteHintsList(): Array<common_pb.RouteHint>;
-  setRouteHintsList(value: Array<common_pb.RouteHint>): void;
-  addRouteHints(value?: common_pb.RouteHint, index?: number): common_pb.RouteHint;
+  getRouteHintsList(): Array<swapserverrpc_common_pb.RouteHint>;
+  setRouteHintsList(value: Array<swapserverrpc_common_pb.RouteHint>): void;
+  addRouteHints(value?: swapserverrpc_common_pb.RouteHint, index?: number): swapserverrpc_common_pb.RouteHint;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ProbeRequest.AsObject;
@@ -542,7 +556,7 @@ export namespace ProbeRequest {
   export type AsObject = {
     amt: string,
     lastHop: Uint8Array | string,
-    routeHintsList: Array<common_pb.RouteHint.AsObject>,
+    routeHintsList: Array<swapserverrpc_common_pb.RouteHint.AsObject>,
   }
 }
 
@@ -721,6 +735,9 @@ export class LiquidityParameters extends jspb.Message {
   getMaxSwapAmount(): string;
   setMaxSwapAmount(value: string): void;
 
+  getHtlcConfTarget(): number;
+  setHtlcConfTarget(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LiquidityParameters.AsObject;
   static toObject(includeInstance: boolean, msg: LiquidityParameters): LiquidityParameters.AsObject;
@@ -749,12 +766,16 @@ export namespace LiquidityParameters {
     autoMaxInFlight: string,
     minSwapAmount: string,
     maxSwapAmount: string,
+    htlcConfTarget: number,
   }
 }
 
 export class LiquidityRule extends jspb.Message {
   getChannelId(): string;
   setChannelId(value: string): void;
+
+  getSwapType(): SwapTypeMap[keyof SwapTypeMap];
+  setSwapType(value: SwapTypeMap[keyof SwapTypeMap]): void;
 
   getPubkey(): Uint8Array | string;
   getPubkey_asU8(): Uint8Array;
@@ -783,6 +804,7 @@ export class LiquidityRule extends jspb.Message {
 export namespace LiquidityRule {
   export type AsObject = {
     channelId: string,
+    swapType: SwapTypeMap[keyof SwapTypeMap],
     pubkey: Uint8Array | string,
     type: LiquidityRuleTypeMap[keyof LiquidityRuleTypeMap],
     incomingThreshold: number,
@@ -880,6 +902,11 @@ export class SuggestSwapsResponse extends jspb.Message {
   setLoopOutList(value: Array<LoopOutRequest>): void;
   addLoopOut(value?: LoopOutRequest, index?: number): LoopOutRequest;
 
+  clearLoopInList(): void;
+  getLoopInList(): Array<LoopInRequest>;
+  setLoopInList(value: Array<LoopInRequest>): void;
+  addLoopIn(value?: LoopInRequest, index?: number): LoopInRequest;
+
   clearDisqualifiedList(): void;
   getDisqualifiedList(): Array<Disqualified>;
   setDisqualifiedList(value: Array<Disqualified>): void;
@@ -898,6 +925,7 @@ export class SuggestSwapsResponse extends jspb.Message {
 export namespace SuggestSwapsResponse {
   export type AsObject = {
     loopOutList: Array<LoopOutRequest.AsObject>,
+    loopInList: Array<LoopInRequest.AsObject>,
     disqualifiedList: Array<Disqualified.AsObject>,
   }
 }
