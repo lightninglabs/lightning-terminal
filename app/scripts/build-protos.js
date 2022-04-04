@@ -42,7 +42,8 @@ const protoSources = async () => {
   return {
     lnd: `lightningnetwork/lnd/${lndVersion[1]}/lnrpc/lightning.proto`,
     loop: `lightninglabs/loop/${loopVersion[1]}/looprpc/client.proto`,
-    common: `lightninglabs/loop/${loopVersion[1]}/looprpc/common.proto`,
+    'swapserverrpc/server': `lightninglabs/loop/${loopVersion[1]}/swapserverrpc/server.proto`,
+    'swapserverrpc/common': `lightninglabs/loop/${loopVersion[1]}/swapserverrpc/common.proto`,
     trader: `lightninglabs/pool/${poolVersion[1]}/poolrpc/trader.proto`,
     'auctioneerrpc/auctioneer': `lightninglabs/pool/${poolVersion[1]}/auctioneerrpc/auctioneer.proto`,
   };
@@ -58,7 +59,11 @@ const filePatches = {
     patch: 'looprpc: {}',
     folder: 'proto',
   },
-  common: {
+  'swapserverrpc/common': {
+    patch: 'looprpc: {}',
+    folder: 'proto'
+  },
+  'swapserverrpc/server': {
     patch: 'looprpc: {}',
     folder: 'proto',
   },
@@ -109,12 +114,15 @@ const sanitize = async () => {
   );
   for (path of filePaths) {
     let content = (await fs.readFile(path)).toString();
-    content = content.replace(/^\s*(repeated)? u?int64 ((?!jstype).)*$/gm, match => {
-      // add the jstype descriptor
-      return /^.*];$/.test(match)
-        ? match.replace(/\s*];$/, `, jstype = JS_STRING];`)
-        : match.replace(/;$/, ` [jstype = JS_STRING];`);
-    });
+    content = content.replace(
+        /^(\s*)(repeated )?(u?int64) (\S+) = (\d+);$/gm, 
+        '$1$2$3 $4 = $5 [jstype = JS_STRING];'
+    );
+    content = content.replace(
+        /^(\s*)(repeated )?(u?int64) (\S+) = (\d+) \[((?!jstype).*)];$/gm, 
+        '$1$2$3 $4 = $5 [$6, jstype = JS_STRING];'
+    );
+    content = content.replace("import \"common.proto\"", "import \"swapserverrpc/common.proto\"")
     await fs.writeFile(path, content);
   }
 };
