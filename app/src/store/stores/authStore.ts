@@ -1,4 +1,5 @@
 import { makeAutoObservable, runInAction } from 'mobx';
+import { Buffer } from 'buffer';
 import { prefixTranslation } from 'util/translate';
 import { Store } from 'store';
 

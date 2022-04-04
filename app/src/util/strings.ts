@@ -1,3 +1,5 @@
+import { Buffer } from 'buffer';
+
 /**
  * Shortens text by removing a portion of characters from the middle and only
  * keeping a small subset of the outer left and right sides

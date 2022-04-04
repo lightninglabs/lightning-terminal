@@ -1,5 +1,5 @@
 # Start with a NodeJS base image that also contains yarn.
-FROM node:12.17.0-alpine as nodejsbuilder
+FROM node:16.14.2-alpine as nodejsbuilder
 
 # Pass a tag, branch or a commit using build-arg. This allows a docker image to
 # be built from a specified Git state. The default image will use the Git tip of
@@ -20,8 +20,8 @@ ARG public_url=""
 #      be mitigated by switching to HTTP and increasing the network timeout.
 #      See https://github.com/yarnpkg/yarn/issues/5259 for more info.
 RUN apk add --no-cache --update alpine-sdk \
-    python \
-    git \
+  python \
+  git \
   && git clone https://github.com/lightninglabs/lightning-terminal /go/src/github.com/lightninglabs/lightning-terminal \
   && cd /go/src/github.com/lightninglabs/lightning-terminal \
   && git checkout $checkout \
@@ -51,7 +51,7 @@ ENV GO111MODULE on
 
 # Install dependencies and install/build lightning-terminal.
 RUN apk add --no-cache --update alpine-sdk \
-    make \
+  make \
   && cd /go/src/github.com/lightninglabs/lightning-terminal \
   && make go-install PUBLIC_URL=$public_url \
   && make go-install-cli
@@ -75,9 +75,9 @@ COPY --from=golangbuilder /go/bin/pool /bin/
 
 # Add bash.
 RUN apk add --no-cache \
-    bash \
-    jq \
-    ca-certificates
+  bash \
+  jq \
+  ca-certificates
 
 # Specify the start command and entrypoint as the lightning-terminal daemon.
 ENTRYPOINT ["litd"]

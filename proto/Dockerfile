@@ -1,5 +1,5 @@
 # Start with a NodeJS base image that also contains yarn.
-FROM node:12.17.0-buster as nodejsbuilder
+FROM node:16.14.2-buster as nodejsbuilder
 
 RUN apt-get update && apt-get install -y \
   git \
