@@ -32,27 +32,16 @@ func newMailboxSession() *mailboxSession {
 }
 
 func (m *mailboxSession) start(session *Session,
-	serverCreator GRPCServerCreator, authData []byte,
-	onUpdate func(sess *Session) error) error {
+	serverCreator GRPCServerCreator, authData []byte) error {
 
 	tlsConfig := &tls.Config{}
 	if session.DevServer {
 		tlsConfig = &tls.Config{InsecureSkipVerify: true}
 	}
 
-	ecdh := &keychain.PrivKeyECDH{PrivKey: session.LocalPrivateKey}
-
-	keys := mailbox.NewConnData(
-		ecdh, session.RemotePublicKey, session.PairingSecret[:],
-		authData, func(key *btcec.PublicKey) error {
-			session.RemotePublicKey = key
-			return onUpdate(session)
-		}, nil,
-	)
-
 	// Start the mailbox gRPC server.
 	mailboxServer, err := mailbox.NewServer(
-		session.ServerAddr, keys,
+		session.ServerAddr, session.PairingSecret[:],
 		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
 			Time: 2 * time.Minute,
@@ -62,7 +51,10 @@ func (m *mailboxSession) start(session *Session,
 		return err
 	}
 
-	noiseConn := mailbox.NewNoiseGrpcConn(keys)
+	ecdh := &keychain.PrivKeyECDH{PrivKey: session.LocalPrivateKey}
+	noiseConn := mailbox.NewNoiseGrpcConn(
+		ecdh, authData, session.PairingSecret[:],
+	)
 	m.server = serverCreator(grpc.Creds(noiseConn))
 
 	m.wg.Add(1)
@@ -103,8 +95,8 @@ func NewServer(serverCreator GRPCServerCreator) *Server {
 	}
 }
 
-func (s *Server) StartSession(session *Session, authData []byte,
-	onUpdate func(sess *Session) error) (chan struct{}, error) {
+func (s *Server) StartSession(session *Session, authData []byte) (chan struct{},
+	error) {
 
 	s.activeSessionsMtx.Lock()
 	defer s.activeSessionsMtx.Unlock()
@@ -120,9 +112,7 @@ func (s *Server) StartSession(session *Session, authData []byte,
 	sess := newMailboxSession()
 	s.activeSessions[id] = sess
 
-	return sess.quit, sess.start(
-		session, s.serverCreator, authData, onUpdate,
-	)
+	return sess.quit, sess.start(session, s.serverCreator, authData)
 }
 
 func (s *Server) StopSession(localPublicKey *btcec.PublicKey) error {
