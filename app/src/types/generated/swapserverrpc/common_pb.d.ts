@@ -1,5 +1,5 @@
 // package: looprpc
-// file: common.proto
+// file: swapserverrpc/common.proto
 
 import * as jspb from "google-protobuf";
 

@@ -23424,6 +23424,7 @@ proto.lnrpc.WalletBalanceResponse.toObject = function(includeInstance, msg) {
     totalBalance: jspb.Message.getFieldWithDefault(msg, 1, "0"),
     confirmedBalance: jspb.Message.getFieldWithDefault(msg, 2, "0"),
     unconfirmedBalance: jspb.Message.getFieldWithDefault(msg, 3, "0"),
+    lockedBalance: jspb.Message.getFieldWithDefault(msg, 5, "0"),
     accountBalanceMap: (f = msg.getAccountBalanceMap()) ? f.toObject(includeInstance, proto.lnrpc.WalletAccountBalance.toObject) : []
   };
 
@@ -23472,6 +23473,10 @@ proto.lnrpc.WalletBalanceResponse.deserializeBinaryFromReader = function(msg, re
     case 3:
       var value = /** @type {string} */ (reader.readInt64String());
       msg.setUnconfirmedBalance(value);
+      break;
+    case 5:
+      var value = /** @type {string} */ (reader.readInt64String());
+      msg.setLockedBalance(value);
       break;
     case 4:
       var value = msg.getAccountBalanceMap();
@@ -23529,6 +23534,13 @@ proto.lnrpc.WalletBalanceResponse.serializeBinaryToWriter = function(message, wr
       f
     );
   }
+  f = message.getLockedBalance();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
+      5,
+      f
+    );
+  }
   f = message.getAccountBalanceMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(4, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.lnrpc.WalletAccountBalance.serializeBinaryToWriter);
@@ -23578,6 +23590,21 @@ proto.lnrpc.WalletBalanceResponse.prototype.getUnconfirmedBalance = function() {
 /** @param {string} value */
 proto.lnrpc.WalletBalanceResponse.prototype.setUnconfirmedBalance = function(value) {
   jspb.Message.setProto3StringIntField(this, 3, value);
+};
+
+
+/**
+ * optional int64 locked_balance = 5;
+ * @return {string}
+ */
+proto.lnrpc.WalletBalanceResponse.prototype.getLockedBalance = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, "0"));
+};
+
+
+/** @param {string} value */
+proto.lnrpc.WalletBalanceResponse.prototype.setLockedBalance = function(value) {
+  jspb.Message.setProto3StringIntField(this, 5, value);
 };
 
 

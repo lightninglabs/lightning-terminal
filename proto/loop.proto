@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-import "common.proto";
+import "swapserverrpc/common.proto";
 
 package looprpc;
 
@@ -264,6 +264,18 @@ message LoopInRequest {
     triggering the swap (loop CLI, autolooper, LiT UI, other 3rd party UI).
     */
     string initiator = 8;
+
+    /*
+    Optional route hints to reach the destination through private channels.
+    */
+    repeated looprpc.RouteHint route_hints = 9;
+
+    /*
+    Private indicates whether the destination node should be considered
+    private. In which case, loop will generate hophints to assist with
+    probing and payment.
+    */
+    bool private = 10;
 }
 
 message SwapResponse {
@@ -579,7 +591,14 @@ message QuoteRequest {
     /*
     Optional route hints to reach the destination through private channels.
     */
-    repeated RouteHint loop_in_route_hints = 6;
+    repeated looprpc.RouteHint loop_in_route_hints = 6;
+
+    /*
+    Private indicates whether the destination node should be considered
+    private. In which case, loop will generate hophints to assist with
+    probing and payment.
+    */
+    bool private = 7;
 }
 
 message InQuoteResponse {
@@ -659,7 +678,7 @@ message ProbeRequest {
     /*
     Optional route hints to reach the destination through private channels.
     */
-    repeated RouteHint route_hints = 3;
+    repeated looprpc.RouteHint route_hints = 3;
 }
 
 message ProbeResponse {
@@ -829,6 +848,11 @@ message LiquidityParameters {
     specified by the LoopOutTerms endpoint.
     */
     uint64 max_swap_amount = 15 [jstype = JS_STRING];
+
+    /*
+    The confirmation target for loop in on-chain htlcs.
+    */
+    int32 htlc_conf_target = 17;
 }
 
 enum LiquidityRuleType {
@@ -842,6 +866,9 @@ message LiquidityRule {
     This field may not be set when the pubkey field is set.
     */
     uint64 channel_id = 1 [jstype = JS_STRING];
+
+    // The type of swap that will be dispatched for this rule.
+    SwapType swap_type = 6;
 
     /*
     The public key of the peer that this rule should be applied to. This field
@@ -989,6 +1016,11 @@ message SuggestSwapsResponse {
     The set of recommended loop outs.
     */
     repeated LoopOutRequest loop_out = 1;
+
+    /*
+    The set of recommended loop in swaps
+    */
+    repeated LoopInRequest loop_in = 3;
 
     /*
     Disqualified contains the set of channels that swaps are not recommended

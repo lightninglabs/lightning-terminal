@@ -70,6 +70,7 @@ Lightning Terminal is backwards compatible with `lnd` back to version v0.13.3-be
 
 | LiT              | LND          |
 |------------------| ------------ |
+| **v0.6.6-alpha** | v0.13.3-beta |
 | **v0.6.5-alpha** | v0.13.3-beta |
 | **v0.6.4-alpha** | v0.13.3-beta |
 | **v0.6.3-alpha** | v0.13.3-beta |
@@ -113,8 +114,9 @@ The following table shows the supported combinations:
 
 ## Daemon Versions packaged with LiT
 
-| LiT              | LND          | Loop        | Faraday      | Pool         |
-|------------------|--------------| ----------- | ------------ |--------------|
+| LiT              | LND          | Loop         | Faraday      | Pool         |
+|------------------|--------------|--------------| ------------ |--------------|
+| **v0.6.6-alpha** | v0.14.3-beta | v0.18.0-beta | v0.2.7-alpha | v0.5.6-alpha |
 | **v0.6.5-alpha** | v0.14.2-beta | v0.15.1-beta | v0.2.7-alpha | v0.5.5-alpha |
 | **v0.6.4-alpha** | v0.14.2-beta | v0.15.1-beta | v0.2.7-alpha | v0.5.4-alpha |
 | **v0.6.3-alpha** | v0.14.2-beta | v0.15.1-beta | v0.2.7-alpha | v0.5.4-alpha |
@@ -132,5 +134,5 @@ The following table shows the supported combinations:
 | **v0.3.1-alpha** | v0.11.1-beta | v0.11.1-beta | v0.2.2-alpha | v0.3.3-alpha |
 | **v0.3.0-alpha** | v0.11.1-beta | v0.11.0-beta | v0.2.2-alpha | v0.3.2-alpha |
 | **v0.2.0-alpha** | v0.11.1-beta | v0.10.0-beta | v0.2.1-alpha | n/a          |
-| **v0.1.1-alpha** | v0.11.0-beta | v0.8.1-beta | v0.2.0-alpha | n/a          |
-| **v0.1.0-alpha** | v0.10.3-beta | v0.6.5-beta | v0.2.0-alpha | n/a          |
+| **v0.1.1-alpha** | v0.11.0-beta | v0.8.1-beta  | v0.2.0-alpha | n/a          |
+| **v0.1.0-alpha** | v0.10.3-beta | v0.6.5-beta  | v0.2.0-alpha | n/a          |
