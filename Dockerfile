@@ -20,7 +20,6 @@ ARG public_url=""
 #      be mitigated by switching to HTTP and increasing the network timeout.
 #      See https://github.com/yarnpkg/yarn/issues/5259 for more info.
 RUN apk add --no-cache --update alpine-sdk \
-  python \
   git \
   && git clone https://github.com/lightninglabs/lightning-terminal /go/src/github.com/lightninglabs/lightning-terminal \
   && cd /go/src/github.com/lightninglabs/lightning-terminal \
