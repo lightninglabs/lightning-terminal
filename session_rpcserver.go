@@ -216,7 +216,9 @@ func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
 
 	authData := []byte(fmt.Sprintf("%s: %s", HeaderMacaroon, mac))
 
-	sessionClosedSub, err := s.sessionServer.StartSession(sess, authData)
+	sessionClosedSub, err := s.sessionServer.StartSession(
+		sess, authData, s.db.StoreSession,
+	)
 	if err != nil {
 		return err
 	}
@@ -315,7 +317,7 @@ func marshalRPCSession(sess *session.Session) (*litrpc.Session, error) {
 		remotePubKey = sess.RemotePublicKey.SerializeCompressed()
 	}
 
-	mnemonic, err := mailbox.PasswordEntropyToMnemonic(sess.PairingSecret)
+	mnemonic, err := mailbox.PassphraseEntropyToMnemonic(sess.PairingSecret)
 	if err != nil {
 		return nil, err
 	}
