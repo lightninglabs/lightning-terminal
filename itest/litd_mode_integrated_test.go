@@ -335,9 +335,8 @@ func testModeIntegrated(net *NetworkHarness, t *harnessTest) {
 			endpoint := endpoint
 			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
 				runLNCAuthTest(
-					ttt, cfg.LitAddr(), cfg.UIPassword,
-					cfg.TLSCertPath,
-					endpoint.requestFn,
+					ttt, cfg.LitAddr(), cfg.TLSCertPath,
+					cfg.LitMacPath, endpoint.requestFn,
 					endpoint.successPattern,
 					endpoint.allowedThroughLNC,
 				)
@@ -583,7 +582,7 @@ func runRESTAuthTest(t *testing.T, hostPort, uiPassword, macaroonPath, restURI,
 
 // runLNCAuthTest tests authentication of the given interface when connecting
 // through Lightning Node Connect.
-func runLNCAuthTest(t *testing.T, hostPort, uiPassword, tlsCertPath string,
+func runLNCAuthTest(t *testing.T, hostPort, tlsCertPath, macPath string,
 	makeRequest requestFn, successContent string, callAllowed bool) {
 
 	ctxb := context.Background()
@@ -593,9 +592,12 @@ func runLNCAuthTest(t *testing.T, hostPort, uiPassword, tlsCertPath string,
 	rawConn, err := connectRPC(ctxt, hostPort, tlsCertPath)
 	require.NoError(t, err)
 
+	macBytes, err := ioutil.ReadFile(macPath)
+	require.NoError(t, err)
+	ctxm := macaroonContext(ctxt, macBytes)
+
 	// We first need to create an LNC session that we can use to connect.
 	// We use the UI password to create the session.
-	ctxm := uiPasswordContext(ctxt, uiPassword, true)
 	litClient := litrpc.NewSessionsClient(rawConn)
 	sessResp, err := litClient.AddSession(ctxm, &litrpc.AddSessionRequest{
 		Label:       "integration-test",
@@ -618,7 +620,7 @@ func runLNCAuthTest(t *testing.T, hostPort, uiPassword, tlsCertPath string,
 	// endpoint, unless it is explicitly disallowed (we currently don't want
 	// to support creating more sessions through LNC until we have all
 	// macaroon permissions properly set up).
-	resp, err := makeRequest(ctxm, rawLNCConn)
+	resp, err := makeRequest(ctxt, rawLNCConn)
 
 	// Is this a disallowed call?
 	if !callAllowed {
@@ -744,6 +746,7 @@ func connectMailbox(ctx context.Context,
 		grpc.WithContextDialer(transportConn.Dial),
 		grpc.WithTransportCredentials(noiseConn),
 		grpc.WithPerRPCCredentials(noiseConn),
+		grpc.WithBlock(),
 	}
 
 	return grpc.DialContext(ctx, mailboxServerAddr, dialOpts...)

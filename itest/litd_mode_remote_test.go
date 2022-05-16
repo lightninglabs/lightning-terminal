@@ -137,9 +137,8 @@ func testModeRemote(net *NetworkHarness, t *harnessTest) {
 			endpoint := endpoint
 			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
 				runLNCAuthTest(
-					ttt, cfg.LitAddr(), cfg.UIPassword,
-					cfg.LitTLSCertPath,
-					endpoint.requestFn,
+					ttt, cfg.LitAddr(), cfg.LitTLSCertPath,
+					cfg.LitMacPath, endpoint.requestFn,
 					endpoint.successPattern,
 					endpoint.allowedThroughLNC,
 				)

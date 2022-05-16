@@ -119,12 +119,11 @@ func (s *sessionRpcServer) AddSession(_ context.Context,
 		return nil, err
 	}
 
-	if typ != session.TypeUIPassword && typ != session.TypeMacaroonAdmin &&
+	if typ != session.TypeMacaroonAdmin &&
 		typ != session.TypeMacaroonReadonly {
 
-		return nil, fmt.Errorf("invalid session type, only UI " +
-			"password, admin and readonly macaroon types " +
-			"supported in LiT")
+		return nil, fmt.Errorf("invalid session type, only admin " +
+			"and readonly macaroon types supported in LiT")
 	}
 
 	sess, err := session.NewSession(
@@ -181,32 +180,28 @@ func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
 		return nil
 	}
 
-	var authData []byte
-	switch sess.Type {
-	case session.TypeUIPassword:
-		authData = []byte("Authorization: Basic " + s.cfg.basicAuth)
+	if sess.Type != session.TypeMacaroonAdmin &&
+		sess.Type != session.TypeMacaroonReadonly {
 
-	case session.TypeMacaroonAdmin, session.TypeMacaroonReadonly:
-		ctx := context.Background()
-		readOnly := sess.Type == session.TypeMacaroonReadonly
-		mac, err := s.cfg.superMacBaker(
-			ctx, sess.MacaroonRootKey, &session.MacaroonRecipe{
-				Permissions: GetAllPermissions(readOnly),
-			},
-		)
-		if err != nil {
-			log.Debugf("Not resuming session %x. Could not bake"+
-				"the necessary macaroon: %w", pubKeyBytes, err)
-			return nil
-		}
-
-		authData = []byte(fmt.Sprintf("%s: %s", HeaderMacaroon, mac))
-
-	default:
 		log.Debugf("Not resuming session %x with type %d", pubKeyBytes,
 			sess.Type)
 		return nil
 	}
+
+	readOnly := sess.Type == session.TypeMacaroonReadonly
+	mac, err := s.cfg.superMacBaker(
+		context.Background(), sess.MacaroonRootKey,
+		&session.MacaroonRecipe{
+			Permissions: GetAllPermissions(readOnly),
+		},
+	)
+	if err != nil {
+		log.Debugf("Not resuming session %x. Could not bake "+
+			"the necessary macaroon: %w", pubKeyBytes, err)
+		return nil
+	}
+
+	authData := []byte(fmt.Sprintf("%s: %s", HeaderMacaroon, mac))
 
 	sessionClosedSub, err := s.sessionServer.StartSession(sess, authData)
 	if err != nil {
