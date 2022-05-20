@@ -22,6 +22,7 @@ import (
 	"github.com/lightninglabs/faraday/frdrpc"
 	"github.com/lightninglabs/faraday/frdrpcserver"
 	"github.com/lightninglabs/lightning-terminal/accounts"
+	"github.com/lightninglabs/lightning-terminal/firewall"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/lightning-terminal/perms"
 	"github.com/lightninglabs/lightning-terminal/queue"
@@ -638,31 +639,39 @@ func (g *LightningTerminal) startSubservers() error {
 	}
 	g.sessionRpcServerStarted = true
 
-	if !g.cfg.RPCMiddleware.Disabled {
-		log.Infof("Starting LiT account service")
-		err := g.accountService.Start(
-			g.lndClient.Client, g.lndClient.Router,
-			g.lndClient.ChainParams,
-		)
-		if err != nil {
-			return fmt.Errorf("error starting account service: %v",
-				err)
-		}
-		g.accountServiceStarted = true
+	// The rest of the function only applies if the rpc middleware
+	// interceptor has been enabled.
+	if g.cfg.RPCMiddleware.Disabled {
+		log.Infof("Internal sub server startup complete")
 
-		// Start the middleware manager.
-		log.Infof("Starting LiT middleware manager")
-		g.middleware = mid.NewManager(
-			g.cfg.RPCMiddleware.InterceptTimeout,
-			g.lndClient.Client, g.errQueue.ChanIn(),
-			g.accountService,
-		)
-
-		if err = g.middleware.Start(); err != nil {
-			return err
-		}
-		g.middlewareStarted = true
+		return nil
 	}
+
+	log.Infof("Starting LiT account service")
+	err = g.accountService.Start(
+		g.lndClient.Client, g.lndClient.Router,
+		g.lndClient.ChainParams,
+	)
+	if err != nil {
+		return fmt.Errorf("error starting account service: %v",
+			err)
+	}
+	g.accountServiceStarted = true
+
+	// Start the middleware manager.
+	log.Infof("Starting LiT middleware manager")
+	g.middleware = mid.NewManager(
+		g.cfg.RPCMiddleware.InterceptTimeout,
+		g.lndClient.Client, g.errQueue.ChanIn(),
+		g.accountService,
+		&firewall.RequestLogger{},
+		&firewall.RuleEnforcer{},
+	)
+
+	if err = g.middleware.Start(); err != nil {
+		return err
+	}
+	g.middlewareStarted = true
 
 	log.Infof("Internal sub server startup complete")
 
