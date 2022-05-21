@@ -14,3 +14,5 @@ const { protocol, hostname, port } = window.location;
 const host = `${protocol}//${hostname}:${port}`;
 // the GRPC server to make requests to
 export const DEV_HOST = process.env.REACT_APP_DEV_HOST || host;
+
+export const USE_SAMPLE_DATA = process.env.REACT_APP_USE_SAMPLE_DATA === 'true';

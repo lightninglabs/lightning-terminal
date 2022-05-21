@@ -1,5 +1,5 @@
 import { autorun, makeAutoObservable, runInAction } from 'mobx';
-import { IS_DEV, IS_TEST } from 'config';
+import { IS_DEV, IS_TEST, USE_SAMPLE_DATA } from 'config';
 import { createBrowserHistory, History } from 'history';
 import AppStorage from 'util/appStorage';
 import CsvExporter from 'util/csv';
@@ -200,6 +200,9 @@ export class Store {
  */
 export const createStore = (grpcClient?: GrpcClient, appStorage?: AppStorage) => {
   const grpc = grpcClient || new GrpcClient();
+  // Resolve api requests with sample data when running client in develop mode.
+  grpc.useSampleData = USE_SAMPLE_DATA;
+
   const storage = appStorage || new AppStorage();
   const lndApi = new LndApi(grpc);
   const loopApi = new LoopApi(grpc);
