@@ -98,11 +98,7 @@ const ExplorerSettings: React.FC = () => {
   const { Wrapper, Content, Actions } = Styled;
   return (
     <Wrapper>
-      <PageHeader
-        title={l('pageTitle')}
-        backText={l('backText')}
-        onBackClick={handleBack}
-      />
+      <PageHeader title={l('pageTitle')} backText={l('backText')} showBackButton />
       <Content>
         <ExplorerField
           label={l('bitcoinTxUrl')}

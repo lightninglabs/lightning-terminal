@@ -5,7 +5,7 @@ import AlertContainer from 'components/common/AlertContainer';
 import FullHeight from 'components/common/FullHeight';
 import { ThemeProvider } from 'components/theme';
 import TourHost from 'components/tour/TourHost';
-import Routes from './Routes';
+import AppRoutes from './AppRoutes';
 
 const App = () => {
   const store = createStore();
@@ -14,7 +14,7 @@ const App = () => {
     <FullHeight>
       <StoreProvider store={store}>
         <ThemeProvider>
-          <Routes />
+          <AppRoutes />
           <AlertContainer />
           <TourHost />
         </ThemeProvider>

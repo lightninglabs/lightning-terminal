@@ -5,6 +5,7 @@ import styled from '@emotion/styled';
 import { useStore } from 'store';
 import { Background, Menu } from 'components/base';
 import Sidebar from './Sidebar';
+import { useLocation } from 'react-router-dom';
 
 interface CollapsedProps {
   collapsed: boolean;
@@ -110,11 +111,13 @@ const Styled = {
 
 export const Layout: React.FC = ({ children }) => {
   const { settingsStore, appView } = useStore();
+  const location = useLocation();
+  const fullWidth = location.pathname === `/pool`;
 
   const { Container, Hamburger, Aside, Content, Fluid } = Styled;
   return (
     <Background>
-      <Container fullWidth={appView.fullWidth}>
+      <Container fullWidth={fullWidth}>
         <Hamburger
           collapsed={!settingsStore.sidebarVisible}
           onClick={settingsStore.toggleSidebar}
@@ -124,7 +127,7 @@ export const Layout: React.FC = ({ children }) => {
         <Aside collapsed={!settingsStore.sidebarVisible}>
           <Sidebar />
         </Aside>
-        <Content collapsed={!settingsStore.sidebarVisible} fullWidth={appView.fullWidth}>
+        <Content collapsed={!settingsStore.sidebarVisible} fullWidth={fullWidth}>
           <Fluid className="container-fluid">{children}</Fluid>
         </Content>
       </Container>

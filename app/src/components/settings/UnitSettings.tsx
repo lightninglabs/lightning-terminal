@@ -37,16 +37,10 @@ const UnitSettings: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.settings.UnitSettings');
   const { appView } = useStore();
 
-  const handleBack = useCallback(() => appView.showSettings(''), [appView]);
-
   const { Wrapper, Content } = Styled;
   return (
     <Wrapper>
-      <PageHeader
-        title={l('pageTitle')}
-        backText={l('backText')}
-        onBackClick={handleBack}
-      />
+      <PageHeader title={l('pageTitle')} backText={l('backText')} showBackButton />
       <Content>
         <UnitItem unit={Unit.sats} />
         <UnitItem unit={Unit.bits} />

@@ -6,6 +6,7 @@ import { AuthenticationError } from 'util/errors';
 import { prefixTranslation } from 'util/translate';
 import { Store } from 'store';
 import { PUBLIC_URL } from '../../config';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const { l } = prefixTranslation('stores.appView');
 
@@ -28,15 +29,12 @@ export default class AppView {
     this._store = store;
   }
 
-  get fullWidth() {
-    return this._store.router.location.pathname === `${PUBLIC_URL}/pool`;
-  }
-
   /** navigate to the specified route */
   goTo(route: string) {
-    if (this._store.router.location.pathname !== route) {
-      this._store.router.push(route);
-    }
+    // if (this._store.router.location.pathname !== route) {
+    // this._store.router.push(route);
+    // this.navigate(route);
+    // }
   }
 
   /** Change to the Auth page */

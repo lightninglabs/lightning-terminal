@@ -49,8 +49,8 @@ export class Store {
   settingsStore = new SettingsStore(this);
   sessionStore = new SessionStore(this);
 
-  /** the store which synchronizes with the browser history */
-  router: RouterStore;
+  // /** the store which synchronizes with the browser history */
+  // router: RouterStore;
 
   //
   // UI Views state
@@ -96,7 +96,7 @@ export class Store {
     pool: PoolApi,
     lit: LitApi,
     storage: AppStorage,
-    history: History,
+    // history: History,
     csv: CsvExporter,
     log: Logger,
   ) {
@@ -104,7 +104,7 @@ export class Store {
 
     this.api = { lnd, loop, pool, lit };
     this.storage = storage;
-    this.router = new RouterStore(history);
+    // this.router = new RouterStore(history);
     this.csv = csv;
     this.log = log;
   }
@@ -209,7 +209,7 @@ export const createStore = (grpcClient?: GrpcClient, appStorage?: AppStorage) =>
   const poolApi = new PoolApi(grpc);
   const litApi = new LitApi(grpc);
   const csv = new CsvExporter();
-  const history = createBrowserHistory();
+  // const history = createBrowserHistory();
 
   const store = new Store(
     lndApi,
@@ -217,7 +217,7 @@ export const createStore = (grpcClient?: GrpcClient, appStorage?: AppStorage) =>
     poolApi,
     litApi,
     storage,
-    history,
+    // history,
     csv,
     actionLog,
   );

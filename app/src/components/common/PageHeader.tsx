@@ -4,6 +4,7 @@ import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { ArrowLeft, Download, HeaderThree, HelpCircle } from '../base';
 import Tip from './Tip';
+import { useNavigate } from 'react-router-dom';
 
 const Styled = {
   Wrapper: styled.div`
@@ -43,7 +44,7 @@ const Styled = {
 
 interface Props {
   title: ReactNode;
-  onBackClick?: () => void;
+  showBackButton?: boolean;
   backText?: string;
   onHelpClick?: () => void;
   exportTip?: string;
@@ -52,19 +53,23 @@ interface Props {
 
 const PageHeader: React.FC<Props> = ({
   title,
-  onBackClick,
+  showBackButton,
   backText,
   onHelpClick,
   exportTip,
   onExportClick,
 }) => {
   const { l } = usePrefixedTranslation('cmps.common.PageHeader');
+  const navigate = useNavigate();
+  const onBackClick = () => {
+    navigate(-1);
+  };
 
   const { Wrapper, Left, Center, Right, BackLink } = Styled;
   return (
     <Wrapper>
       <Left>
-        {onBackClick && (
+        {showBackButton && (
           <BackLink onClick={onBackClick}>
             <ArrowLeft />
             {backText}

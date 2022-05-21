@@ -5,6 +5,8 @@ import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Badge, HeaderFour } from 'components/base';
 import { PUBLIC_URL } from '../../config';
+import { Link } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
 const Styled = {
   NavHeader: styled(HeaderFour)`
@@ -19,7 +21,7 @@ const Styled = {
     font-size: ${props => props.theme.sizes.xs};
     margin-right: -17px;
 
-    > span {
+    > a > span {
       display: block;
       height: 50px;
       line-height: 50px;
@@ -35,7 +37,7 @@ const Styled = {
       }
     }
 
-    &.active > span {
+    &.active > a > span {
       border-left: 3px solid ${props => props.theme.colors.offWhite};
       background-color: ${props => props.theme.colors.blue};
 
@@ -49,42 +51,44 @@ const Styled = {
 const NavItem: React.FC<{
   page: string;
   badge?: string;
-  onClick: () => void;
-}> = observer(({ page, badge, onClick }) => {
+}> = observer(({ page, badge }) => {
   const { l } = usePrefixedTranslation('cmps.layout.NavMenu');
-  const { router } = useStore();
-  const className = router.location.pathname.startsWith(`${PUBLIC_URL}/${page}`)
-    ? 'active'
-    : '';
+  const { settingsStore, log } = useStore();
+  const location = useLocation();
+  const className = location.pathname.startsWith(`/${page}`) ? 'active' : '';
 
+  const onClick = () => {
+    settingsStore.autoCollapseSidebar();
+    log.info(`Go to the ${page} page`);
+  };
   return (
     <Styled.NavItem className={className}>
-      <span onClick={onClick}>
-        {l(page)}
-        {badge && (
-          <sup>
-            <Badge muted>{badge}</Badge>
-          </sup>
-        )}
-      </span>
+      <Link to={`/${page}`} onClick={onClick}>
+        <span>
+          {l(page)}
+          {badge && (
+            <sup>
+              <Badge muted>{badge}</Badge>
+            </sup>
+          )}
+        </span>
+      </Link>
     </Styled.NavItem>
   );
 });
 
 const NavMenu: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.layout.NavMenu');
-  const { appView } = useStore();
-
   const { NavHeader, Nav } = Styled;
   return (
     <>
       <NavHeader>{l('menu')}</NavHeader>
       <Nav>
-        <NavItem page="loop" onClick={appView.goToLoop} />
-        <NavItem page="history" onClick={appView.goToHistory} />
-        <NavItem page="pool" badge={l('common.preview')} onClick={appView.goToPool} />
-        <NavItem page="settings" onClick={appView.goToSettings} />
-        <NavItem page="connect" badge={l('common.beta')} onClick={appView.goToConnect} />
+        <NavItem page="loop" />
+        <NavItem page="history" />
+        <NavItem page="pool" badge={l('common.preview')} />
+        <NavItem page="settings" />
+        <NavItem page="connect" badge={l('common.beta')} />
       </Nav>
     </>
   );

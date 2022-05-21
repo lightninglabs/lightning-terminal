@@ -43,11 +43,7 @@ const BalanceSettings: React.FC = () => {
   const { Wrapper, Content } = Styled;
   return (
     <Wrapper>
-      <PageHeader
-        title={l('pageTitle')}
-        backText={l('backText')}
-        onBackClick={handleBack}
-      />
+      <PageHeader title={l('pageTitle')} backText={l('backText')} showBackButton />
       <Content>
         <HeaderFour>{l('title')}</HeaderFour>
         <BalanceModeItem mode={BalanceMode.receive} />

@@ -1,8 +1,7 @@
 import React from 'react';
-import { Route, Switch } from 'react-router';
+import { Route, Routes } from 'react-router';
 import { observer } from 'mobx-react-lite';
 import styled from '@emotion/styled';
-import { PUBLIC_URL } from '../../config';
 import BalanceSettings from './BalanceSettings';
 import ExplorerSettings from './ExplorerSettings';
 import GeneralSettings from './GeneralSettings';
@@ -19,12 +18,12 @@ const SettingsPage: React.FC = () => {
 
   return (
     <Wrapper>
-      <Switch>
-        <Route path={`${PUBLIC_URL}/settings`} exact component={GeneralSettings} />
-        <Route path={`${PUBLIC_URL}/settings/unit`} component={UnitSettings} />
-        <Route path={`${PUBLIC_URL}/settings/balance`} component={BalanceSettings} />
-        <Route path={`${PUBLIC_URL}/settings/explorers`} component={ExplorerSettings} />
-      </Switch>
+      <Routes>
+        <Route path="/" element={<GeneralSettings />} />
+        <Route path="unit" element={<UnitSettings />} />
+        <Route path="balance" element={<BalanceSettings />} />
+        <Route path="explorers" element={<ExplorerSettings />} />
+      </Routes>
     </Wrapper>
   );
 };

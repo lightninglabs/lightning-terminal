@@ -1,5 +1,5 @@
 import React from 'react';
-import Routes from 'Routes';
+import AppRoutes from 'AppRoutes';
 import { renderWithProviders } from 'util/tests';
 import { createStore, Store } from 'store';
 
@@ -12,7 +12,7 @@ describe('Routes Component', () => {
   });
 
   const render = () => {
-    return renderWithProviders(<Routes />, store);
+    return renderWithProviders(<AppRoutes />, store);
   };
 
   it('should display the Auth page by default', async () => {

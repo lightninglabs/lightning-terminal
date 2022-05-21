@@ -8,6 +8,8 @@ import { useStore } from 'store';
 import { HeaderFour } from 'components/base';
 import PageHeader from 'components/common/PageHeader';
 import SettingItem from './SettingItem';
+import { Layout } from 'components/layout';
+import { useNavigate } from 'react-router-dom';
 
 const Styled = {
   Wrapper: styled.section``,
@@ -18,75 +20,82 @@ const Styled = {
 
 const GeneralSettings: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.settings.GeneralSettings');
-  const { appView, settingsStore, nodeStore } = useStore();
+  const { appView, log, nodeStore, settingsStore } = useStore();
+  const navigate = useNavigate();
+  const navigateTo = (path: string) => {
+    log.info('Switch to Setting screen', path);
+    navigate(`/settings/${path}`);
+  };
 
-  const handleUnit = useCallback(() => appView.showSettings('unit'), [appView]);
-  const handleBalance = useCallback(() => appView.showSettings('balance'), [appView]);
-  const handleExplorers = useCallback(() => appView.showSettings('explorers'), [appView]);
+  const handleUnit = useCallback(() => navigateTo('unit'), [appView]);
+  const handleBalance = useCallback(() => navigateTo('balance'), [appView]);
+  const handleExplorers = useCallback(() => navigateTo('explorers'), [appView]);
   const handleCopyPubkey = useCallback(() => nodeStore.copy('pubkey'), [nodeStore]);
   const handleCopyAlias = useCallback(() => nodeStore.copy('alias'), [nodeStore]);
   const handleCopyUrl = useCallback(() => nodeStore.copy('url'), [nodeStore]);
 
   const { Wrapper, Content } = Styled;
   return (
-    <Wrapper>
-      <PageHeader title={l('pageTitle')} />
-      <Content>
-        <HeaderFour>{l('general')}</HeaderFour>
-        <SettingItem
-          name={l('bitcoinUnit')}
-          value={formatUnit(settingsStore.unit)}
-          onClick={handleUnit}
-          icon="arrow"
-        />
-        <SettingItem
-          name={l('balances')}
-          value={l('balancesValue', {
-            mode: l(`enums.BalanceMode.${settingsStore.balanceMode}`),
-          })}
-          onClick={handleBalance}
-          icon="arrow"
-        />
-      </Content>
-      <Content>
-        <HeaderFour>{l('explorers')}</HeaderFour>
-        <SettingItem
-          name={l('bitcoinTx')}
-          value={extractDomain(settingsStore.bitcoinTxUrl)}
-          onClick={handleExplorers}
-          icon="arrow"
-        />
-        <SettingItem
-          name={l('lightningNode')}
-          value={extractDomain(settingsStore.lnNodeUrl)}
-          onClick={handleExplorers}
-          icon="arrow"
-        />
-      </Content>
-      <Content>
-        <HeaderFour>{l('myNode')}</HeaderFour>
-        <SettingItem
-          name={l('pubkey')}
-          value={nodeStore.pubkeyLabel}
-          onClick={handleCopyPubkey}
-          icon="copy"
-        />
-        <SettingItem
-          name={l('alias')}
-          value={nodeStore.alias}
-          onClick={handleCopyAlias}
-          icon="copy"
-        />
-        {nodeStore.urlLabel && (
+    <Layout>
+      <Wrapper>
+        <PageHeader title={l('pageTitle')} />
+        <Content>
+          <HeaderFour>{l('general')}</HeaderFour>
           <SettingItem
-            name={l('url')}
-            value={nodeStore.urlLabel}
-            onClick={handleCopyUrl}
+            name={l('bitcoinUnit')}
+            value={formatUnit(settingsStore.unit)}
+            onClick={handleUnit}
+            icon="arrow"
+          />
+          <SettingItem
+            name={l('balances')}
+            value={l('balancesValue', {
+              mode: l(`enums.BalanceMode.${settingsStore.balanceMode}`),
+            })}
+            onClick={handleBalance}
+            icon="arrow"
+          />
+        </Content>
+        <Content>
+          <HeaderFour>{l('explorers')}</HeaderFour>
+          <SettingItem
+            name={l('bitcoinTx')}
+            value={extractDomain(settingsStore.bitcoinTxUrl)}
+            onClick={handleExplorers}
+            icon="arrow"
+          />
+          <SettingItem
+            name={l('lightningNode')}
+            value={extractDomain(settingsStore.lnNodeUrl)}
+            onClick={handleExplorers}
+            icon="arrow"
+          />
+        </Content>
+        <Content>
+          <HeaderFour>{l('myNode')}</HeaderFour>
+          <SettingItem
+            name={l('pubkey')}
+            value={nodeStore.pubkeyLabel}
+            onClick={handleCopyPubkey}
             icon="copy"
           />
-        )}
-      </Content>
-    </Wrapper>
+          <SettingItem
+            name={l('alias')}
+            value={nodeStore.alias}
+            onClick={handleCopyAlias}
+            icon="copy"
+          />
+          {nodeStore.urlLabel && (
+            <SettingItem
+              name={l('url')}
+              value={nodeStore.urlLabel}
+              onClick={handleCopyUrl}
+              icon="copy"
+            />
+          )}
+        </Content>
+      </Wrapper>
+    </Layout>
   );
 };
 

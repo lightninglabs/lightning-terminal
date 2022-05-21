@@ -1,5 +1,5 @@
 import React from 'react';
-import { Router } from 'react-router';
+import { BrowserRouter } from 'react-router-dom';
 import { fireEvent, render } from '@testing-library/react';
 import { createStore, Store, StoreProvider } from 'store';
 import AlertContainer from 'components/common/AlertContainer';
@@ -16,7 +16,7 @@ const renderWithProviders = (component: React.ReactElement, withStore?: Store) =
   const result = render(
     <StoreProvider store={store}>
       <ThemeProvider>
-        <Router history={store.router.history}>{component}</Router>
+        <BrowserRouter>{component}</BrowserRouter>
         <AlertContainer />
       </ThemeProvider>
     </StoreProvider>,
