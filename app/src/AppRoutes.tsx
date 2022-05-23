@@ -2,6 +2,7 @@ import React, { Suspense } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import Loading from 'components/common/Loading';
 import { Layout } from 'components/layout';
+import { PUBLIC_URL } from 'config';
 
 const LazyAuthPage = React.lazy(() => import('components/auth/AuthPage'));
 const LazyLoopPage = React.lazy(() => import('components/loop/LoopPage'));
@@ -13,7 +14,7 @@ const LazyConnectPage = React.lazy(() => import('components/connect/ConnectPage'
 const AppRoutes: React.FC = () => {
   return (
     <Suspense fallback={<Loading delay={500} />}>
-      <BrowserRouter>
+      <BrowserRouter basename={PUBLIC_URL}>
         <Routes>
           <Route path="/" element={<LazyAuthPage />} />
           <Route>
