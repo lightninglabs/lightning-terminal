@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { MemoryRouter, unstable_HistoryRouter as HistoryRouter } from 'react-router-dom';
+import { unstable_HistoryRouter as HistoryRouter } from 'react-router-dom';
 import { fireEvent, render } from '@testing-library/react';
 import { createStore, Store, StoreProvider } from 'store';
 import AlertContainer from 'components/common/AlertContainer';

@@ -111,13 +111,11 @@ const Styled = {
 
 export const Layout: React.FC = ({ children }) => {
   const { settingsStore, appView } = useStore();
-  const location = useLocation();
-  const fullWidth = location.pathname === `/pool`;
 
   const { Container, Hamburger, Aside, Content, Fluid } = Styled;
   return (
     <Background>
-      <Container fullWidth={fullWidth}>
+      <Container fullWidth={appView.fullWidth}>
         <Hamburger
           collapsed={!settingsStore.sidebarVisible}
           onClick={settingsStore.toggleSidebar}
@@ -127,7 +125,7 @@ export const Layout: React.FC = ({ children }) => {
         <Aside collapsed={!settingsStore.sidebarVisible}>
           <Sidebar />
         </Aside>
-        <Content collapsed={!settingsStore.sidebarVisible} fullWidth={fullWidth}>
+        <Content collapsed={!settingsStore.sidebarVisible} fullWidth={appView.fullWidth}>
           <Fluid className="container-fluid">{children}</Fluid>
         </Content>
       </Container>

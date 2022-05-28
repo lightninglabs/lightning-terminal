@@ -8,7 +8,6 @@ import { useStore } from 'store';
 import { HeaderFour } from 'components/base';
 import PageHeader from 'components/common/PageHeader';
 import SettingItem from './SettingItem';
-import { useNavigate } from 'react-router-dom';
 
 const Styled = {
   Wrapper: styled.section``,
@@ -19,16 +18,11 @@ const Styled = {
 
 const GeneralSettings: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.settings.GeneralSettings');
-  const { appView, log, nodeStore, settingsStore } = useStore();
-  const navigate = useNavigate();
-  const navigateTo = (path: string) => {
-    log.info('Switch to Setting screen', path);
-    navigate(`/settings/${path}`);
-  };
+  const { appView, nodeStore, settingsStore } = useStore();
 
-  const handleUnit = useCallback(() => navigateTo('unit'), [appView]);
-  const handleBalance = useCallback(() => navigateTo('balance'), [appView]);
-  const handleExplorers = useCallback(() => navigateTo('explorers'), [appView]);
+  const handleUnit = useCallback(() => appView.showSettings('unit'), [appView]);
+  const handleBalance = useCallback(() => appView.showSettings('balance'), [appView]);
+  const handleExplorers = useCallback(() => appView.showSettings('explorers'), [appView]);
   const handleCopyPubkey = useCallback(() => nodeStore.copy('pubkey'), [nodeStore]);
   const handleCopyAlias = useCallback(() => nodeStore.copy('alias'), [nodeStore]);
   const handleCopyUrl = useCallback(() => nodeStore.copy('url'), [nodeStore]);
