@@ -31,10 +31,9 @@ export default class AppView {
 
   /** navigate to the specified route */
   goTo(route: string) {
-    // if (this._store.router.location.pathname !== route) {
-    // this._store.router.push(route);
-    // this.navigate(route);
-    // }
+    if (this._store.router.location.pathname !== route) {
+      this._store.router.push(route);
+    }
   }
 
   /** Change to the Auth page */

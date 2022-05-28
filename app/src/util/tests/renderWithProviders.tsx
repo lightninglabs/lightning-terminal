@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter } from 'react-router-dom';
+import React, { Suspense } from 'react';
+import { MemoryRouter, unstable_HistoryRouter as HistoryRouter } from 'react-router-dom';
 import { fireEvent, render } from '@testing-library/react';
 import { createStore, Store, StoreProvider } from 'store';
 import AlertContainer from 'components/common/AlertContainer';
@@ -16,7 +16,9 @@ const renderWithProviders = (component: React.ReactElement, withStore?: Store) =
   const result = render(
     <StoreProvider store={store}>
       <ThemeProvider>
-        <BrowserRouter>{component}</BrowserRouter>
+        <Suspense fallback={<></>}>
+          <HistoryRouter history={store.router.history}>{component}</HistoryRouter>
+        </Suspense>
         <AlertContainer />
       </ThemeProvider>
     </StoreProvider>,

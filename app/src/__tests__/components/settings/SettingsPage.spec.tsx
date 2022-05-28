@@ -1,4 +1,5 @@
 import React from 'react';
+import { Route, Routes } from 'react-router-dom';
 import { runInAction } from 'mobx';
 import { fireEvent } from '@testing-library/react';
 import copyToClipboard from 'copy-to-clipboard';
@@ -20,7 +21,13 @@ describe('SettingsPage', () => {
   });
 
   const render = () => {
-    return renderWithProviders(<SettingsPage />, store);
+    return renderWithProviders(
+      <Routes>
+        <Route
+          path="settings/*"
+          element={<SettingsPage />}
+        />
+      </Routes>, store);
   };
 
   it('should display the title', () => {

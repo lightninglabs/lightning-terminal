@@ -8,7 +8,6 @@ import { useStore } from 'store';
 import { HeaderFour } from 'components/base';
 import PageHeader from 'components/common/PageHeader';
 import SettingItem from './SettingItem';
-import { Layout } from 'components/layout';
 import { useNavigate } from 'react-router-dom';
 
 const Styled = {
@@ -36,66 +35,64 @@ const GeneralSettings: React.FC = () => {
 
   const { Wrapper, Content } = Styled;
   return (
-    <Layout>
-      <Wrapper>
-        <PageHeader title={l('pageTitle')} />
-        <Content>
-          <HeaderFour>{l('general')}</HeaderFour>
+    <Wrapper>
+      <PageHeader title={l('pageTitle')} />
+      <Content>
+        <HeaderFour>{l('general')}</HeaderFour>
+        <SettingItem
+          name={l('bitcoinUnit')}
+          value={formatUnit(settingsStore.unit)}
+          onClick={handleUnit}
+          icon="arrow"
+        />
+        <SettingItem
+          name={l('balances')}
+          value={l('balancesValue', {
+            mode: l(`enums.BalanceMode.${settingsStore.balanceMode}`),
+          })}
+          onClick={handleBalance}
+          icon="arrow"
+        />
+      </Content>
+      <Content>
+        <HeaderFour>{l('explorers')}</HeaderFour>
+        <SettingItem
+          name={l('bitcoinTx')}
+          value={extractDomain(settingsStore.bitcoinTxUrl)}
+          onClick={handleExplorers}
+          icon="arrow"
+        />
+        <SettingItem
+          name={l('lightningNode')}
+          value={extractDomain(settingsStore.lnNodeUrl)}
+          onClick={handleExplorers}
+          icon="arrow"
+        />
+      </Content>
+      <Content>
+        <HeaderFour>{l('myNode')}</HeaderFour>
+        <SettingItem
+          name={l('pubkey')}
+          value={nodeStore.pubkeyLabel}
+          onClick={handleCopyPubkey}
+          icon="copy"
+        />
+        <SettingItem
+          name={l('alias')}
+          value={nodeStore.alias}
+          onClick={handleCopyAlias}
+          icon="copy"
+        />
+        {nodeStore.urlLabel && (
           <SettingItem
-            name={l('bitcoinUnit')}
-            value={formatUnit(settingsStore.unit)}
-            onClick={handleUnit}
-            icon="arrow"
-          />
-          <SettingItem
-            name={l('balances')}
-            value={l('balancesValue', {
-              mode: l(`enums.BalanceMode.${settingsStore.balanceMode}`),
-            })}
-            onClick={handleBalance}
-            icon="arrow"
-          />
-        </Content>
-        <Content>
-          <HeaderFour>{l('explorers')}</HeaderFour>
-          <SettingItem
-            name={l('bitcoinTx')}
-            value={extractDomain(settingsStore.bitcoinTxUrl)}
-            onClick={handleExplorers}
-            icon="arrow"
-          />
-          <SettingItem
-            name={l('lightningNode')}
-            value={extractDomain(settingsStore.lnNodeUrl)}
-            onClick={handleExplorers}
-            icon="arrow"
-          />
-        </Content>
-        <Content>
-          <HeaderFour>{l('myNode')}</HeaderFour>
-          <SettingItem
-            name={l('pubkey')}
-            value={nodeStore.pubkeyLabel}
-            onClick={handleCopyPubkey}
+            name={l('url')}
+            value={nodeStore.urlLabel}
+            onClick={handleCopyUrl}
             icon="copy"
           />
-          <SettingItem
-            name={l('alias')}
-            value={nodeStore.alias}
-            onClick={handleCopyAlias}
-            icon="copy"
-          />
-          {nodeStore.urlLabel && (
-            <SettingItem
-              name={l('url')}
-              value={nodeStore.urlLabel}
-              onClick={handleCopyUrl}
-              icon="copy"
-            />
-          )}
-        </Content>
-      </Wrapper>
-    </Layout>
+        )}
+      </Content>
+    </Wrapper>
   );
 };
 

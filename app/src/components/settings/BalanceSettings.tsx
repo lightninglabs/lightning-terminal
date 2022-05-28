@@ -36,9 +36,6 @@ const BalanceModeItem: React.FC<{ mode: BalanceMode }> = observer(({ mode }) => 
 
 const BalanceSettings: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.settings.BalanceSettings');
-  const { appView } = useStore();
-
-  const handleBack = useCallback(() => appView.showSettings(''), [appView]);
 
   const { Wrapper, Content } = Styled;
   return (

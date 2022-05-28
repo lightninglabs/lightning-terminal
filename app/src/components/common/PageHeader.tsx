@@ -1,10 +1,10 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { ArrowLeft, Download, HeaderThree, HelpCircle } from '../base';
 import Tip from './Tip';
-import { useNavigate } from 'react-router-dom';
+import { useStore } from 'store';
 
 const Styled = {
   Wrapper: styled.div`
@@ -13,6 +13,7 @@ const Styled = {
   `,
   Left: styled.span`
     flex: 1;
+    padding-left: 16px;
     text-align: left;
   `,
   Center: styled.span`
@@ -60,17 +61,15 @@ const PageHeader: React.FC<Props> = ({
   onExportClick,
 }) => {
   const { l } = usePrefixedTranslation('cmps.common.PageHeader');
-  const navigate = useNavigate();
-  const onBackClick = () => {
-    navigate(-1);
-  };
+  const { appView } = useStore();
+  const handleBack = useCallback(() => appView.showSettings(''), [appView]);
 
   const { Wrapper, Left, Center, Right, BackLink } = Styled;
   return (
     <Wrapper>
       <Left>
         {showBackButton && (
-          <BackLink onClick={onBackClick}>
+          <BackLink onClick={handleBack}>
             <ArrowLeft />
             {backText}
           </BackLink>

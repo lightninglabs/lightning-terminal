@@ -1,4 +1,5 @@
 import React from 'react';
+import { act } from '@testing-library/react';
 import AppRoutes from 'AppRoutes';
 import { renderWithProviders } from 'util/tests';
 import { createStore, Store } from 'store';
@@ -29,21 +30,27 @@ describe('Routes Component', () => {
 
     it('should display the Loop page', async () => {
       const { findByText, store } = render();
-      store.appView.goToLoop();
+      act(() => {
+        store.appView.goToLoop();
+      });
       expect(await findByText('Total Outbound Liquidity')).toBeInTheDocument();
       expect(store.router.location.pathname).toBe('/loop');
     });
 
     it('should display the History page', async () => {
       const { findByText, store } = render();
-      store.appView.goToHistory();
+      act(() => {
+        store.appView.goToHistory();
+      });
       expect(await findByText('History')).toBeInTheDocument();
       expect(store.router.location.pathname).toBe('/history');
     });
 
     it('should display the Settings page', async () => {
       const { findByText, store } = render();
-      store.appView.goToSettings();
+      act(() => {
+        store.appView.goToSettings();
+      });
       expect(await findByText('My Node')).toBeInTheDocument();
       expect(store.router.location.pathname).toBe('/settings');
     });
