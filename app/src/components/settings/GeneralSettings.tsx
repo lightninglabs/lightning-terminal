@@ -18,7 +18,7 @@ const Styled = {
 
 const GeneralSettings: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.settings.GeneralSettings');
-  const { appView, nodeStore, settingsStore } = useStore();
+  const { appView, settingsStore, nodeStore } = useStore();
 
   const handleUnit = useCallback(() => appView.showSettings('unit'), [appView]);
   const handleBalance = useCallback(() => appView.showSettings('balance'), [appView]);

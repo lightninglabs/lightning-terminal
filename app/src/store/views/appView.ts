@@ -31,7 +31,7 @@ export default class AppView {
   get fullWidth() {
     return this._store.router.location.pathname === `${PUBLIC_URL}/pool`;
   }
-  
+
   /** navigate to the specified route */
   goTo(route: string) {
     if (this._store.router.location.pathname !== route) {

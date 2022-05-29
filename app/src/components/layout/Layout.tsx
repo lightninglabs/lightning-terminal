@@ -5,7 +5,6 @@ import styled from '@emotion/styled';
 import { useStore } from 'store';
 import { Background, Menu } from 'components/base';
 import Sidebar from './Sidebar';
-import { useLocation } from 'react-router-dom';
 
 interface CollapsedProps {
   collapsed: boolean;

@@ -1,10 +1,9 @@
-import React, { ReactNode, useCallback } from 'react';
+import React, { ReactNode } from 'react';
 import { observer } from 'mobx-react-lite';
 import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { ArrowLeft, Download, HeaderThree, HelpCircle } from '../base';
 import Tip from './Tip';
-import { useStore } from 'store';
 
 const Styled = {
   Wrapper: styled.div`
@@ -45,7 +44,7 @@ const Styled = {
 
 interface Props {
   title: ReactNode;
-  showBackButton?: boolean;
+  onBackClick?: () => void;
   backText?: string;
   onHelpClick?: () => void;
   exportTip?: string;
@@ -54,22 +53,20 @@ interface Props {
 
 const PageHeader: React.FC<Props> = ({
   title,
-  showBackButton,
+  onBackClick,
   backText,
   onHelpClick,
   exportTip,
   onExportClick,
 }) => {
   const { l } = usePrefixedTranslation('cmps.common.PageHeader');
-  const { appView } = useStore();
-  const handleBack = useCallback(() => appView.showSettings(''), [appView]);
 
   const { Wrapper, Left, Center, Right, BackLink } = Styled;
   return (
     <Wrapper>
       <Left>
-        {showBackButton && (
-          <BackLink onClick={handleBack}>
+        {onBackClick && (
+          <BackLink onClick={onBackClick}>
             <ArrowLeft />
             {backText}
           </BackLink>

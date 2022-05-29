@@ -36,11 +36,18 @@ const BalanceModeItem: React.FC<{ mode: BalanceMode }> = observer(({ mode }) => 
 
 const BalanceSettings: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.settings.BalanceSettings');
+  const { appView } = useStore();
+
+  const handleBack = useCallback(() => appView.showSettings(''), [appView]);
 
   const { Wrapper, Content } = Styled;
   return (
     <Wrapper>
-      <PageHeader title={l('pageTitle')} backText={l('backText')} showBackButton />
+      <PageHeader
+        title={l('pageTitle')}
+        backText={l('backText')}
+        onBackClick={handleBack}
+      />
       <Content>
         <HeaderFour>{l('title')}</HeaderFour>
         <BalanceModeItem mode={BalanceMode.receive} />
