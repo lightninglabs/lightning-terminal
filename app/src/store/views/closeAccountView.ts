@@ -10,6 +10,8 @@ export default class CloseAccountView {
   destination = '';
   satsPerVbyte = 0;
 
+  loading = false;
+
   constructor(store: Store) {
     makeAutoObservable(this, {}, { deep: false, autoBind: true });
 
@@ -55,6 +57,10 @@ export default class CloseAccountView {
     this.satsPerVbyte = satPerVbyte;
   }
 
+  setLoading(loading: boolean) {
+    this.loading = loading;
+  }
+
   //
   // Actions
   //
@@ -75,10 +81,12 @@ export default class CloseAccountView {
   async closeAccount() {
     if (!this.isValid) return;
 
+    this.setLoading(true);
     try {
       await this._store.orderStore.cancelAllOrders();
     } catch (error) {
-      this._store.appView.handleError(error, 'Unable to cancel all open orders');
+      this._store.appView.handleError(error as Error, 'Unable to cancel all open orders');
+      this.setLoading(false);
       return;
     }
 
@@ -92,5 +100,6 @@ export default class CloseAccountView {
     if (txid) {
       this.cancel();
     }
+    this.setLoading(false);
   }
 }

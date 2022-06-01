@@ -12,6 +12,8 @@ export default class FundAccountView {
   amount = 0;
   satsPerVbyte = 0;
 
+  loading = false;
+
   constructor(store: Store) {
     makeAutoObservable(this, {}, { deep: false, autoBind: true });
 
@@ -66,6 +68,10 @@ export default class FundAccountView {
     this.satsPerVbyte = satPerVbyte;
   }
 
+  setLoading(loading: boolean) {
+    this.loading = loading;
+  }
+
   //
   // Actions
   //
@@ -84,6 +90,7 @@ export default class FundAccountView {
 
   /** submits the deposit to the API and resets the form values if successful */
   async fundAccount() {
+    this.setLoading(true);
     const satsPerKWeight = this._store.api.pool.satsPerVByteToKWeight(this.satsPerVbyte);
 
     // if there is an error, it will be displayed by deposit
@@ -92,5 +99,6 @@ export default class FundAccountView {
     if (txid) {
       this.cancel();
     }
+    this.setLoading(false);
   }
 }

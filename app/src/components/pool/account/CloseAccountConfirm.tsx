@@ -57,7 +57,7 @@ const CloseAccountConfirm: React.FC = () => {
           <Button
             danger
             ghost
-            disabled={!closeAccountView.isValid}
+            disabled={!closeAccountView.isValid || closeAccountView.loading}
             onClick={closeAccountView.closeAccount}
           >
             {l('common.confirm')}
