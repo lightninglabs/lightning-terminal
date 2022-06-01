@@ -23,11 +23,10 @@ describe('SettingsPage', () => {
   const render = () => {
     return renderWithProviders(
       <Routes>
-        <Route
-          path="settings/*"
-          element={<SettingsPage />}
-        />
-      </Routes>, store);
+        <Route path="settings/*" element={<SettingsPage />} />
+      </Routes>,
+      store,
+    );
   };
 
   it('should display the title', () => {

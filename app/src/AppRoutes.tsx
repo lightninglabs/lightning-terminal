@@ -1,9 +1,6 @@
-import React, { Suspense } from 'react';
-import { unstable_HistoryRouter as HistoryRouter, Route, Routes } from 'react-router-dom';
-import Loading from 'components/common/Loading';
+import React from 'react';
+import { Route, Routes } from 'react-router-dom';
 import { Layout } from 'components/layout';
-import { PUBLIC_URL } from 'config';
-import { useStore } from 'store';
 
 const LazyAuthPage = React.lazy(() => import('components/auth/AuthPage'));
 const LazyLoopPage = React.lazy(() => import('components/loop/LoopPage'));
@@ -13,7 +10,6 @@ const LazySettingsPage = React.lazy(() => import('components/settings/SettingsPa
 const LazyConnectPage = React.lazy(() => import('components/connect/ConnectPage'));
 
 const AppRoutes: React.FC = () => {
-  const { router } = useStore();
   return (
     <Routes>
       <Route path="/" element={<LazyAuthPage />} />
