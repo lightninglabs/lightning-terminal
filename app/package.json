@@ -29,7 +29,6 @@
     "date-fns": "2.14.0",
     "debug": "4.1.1",
     "file-saver": "2.0.2",
-    "history": "4.10.1",
     "http-proxy-middleware": "1.0.4",
     "i18next": "19.5.1",
     "i18next-browser-languagedetector": "5.0.0",
@@ -43,7 +42,7 @@
     "react": "17.0.2",
     "react-dom": "17.0.2",
     "react-i18next": "11.7.0",
-    "react-router": "5.2.0",
+    "react-router-dom": "^6.3.0",
     "react-scripts": "5.0.0",
     "react-toastify": "6.0.6",
     "react-virtualized": "9.21.2",
@@ -72,7 +71,7 @@
     "@types/node": "14.0.14",
     "@types/react": "17.0.13",
     "@types/react-dom": "17.0.8",
-    "@types/react-router": "5.1.8",
+    "@types/react-router-dom": "^5.3.3",
     "@types/react-virtualized": "9.21.10",
     "@types/reactour": "1.17.1",
     "@types/semver": "^7.3.9",
@@ -89,9 +88,6 @@
     "sass": "1.43.4",
     "ts-protoc-gen": "0.12.0",
     "typescript": "4.1.6"
-  },
-  "resolutions": {
-    "history": "4.10.1"
   },
   "eslintConfig": {
     "extends": "react-app",

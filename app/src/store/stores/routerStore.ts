@@ -14,7 +14,7 @@ export default class RouterStore {
     this.history = history;
     this.location = history.location;
 
-    history.listen(location => {
+    history.listen(({ location }) => {
       runInAction(() => {
         this.location = location;
       });

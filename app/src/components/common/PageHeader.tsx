@@ -12,6 +12,7 @@ const Styled = {
   `,
   Left: styled.span`
     flex: 1;
+    padding-left: 16px;
     text-align: left;
   `,
   Center: styled.span`
