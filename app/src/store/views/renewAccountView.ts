@@ -12,6 +12,8 @@ export default class RenewAccountView {
   expiryBlocks = DEFAULT_EXPIRE_BLOCKS;
   satsPerVbyte = 0;
 
+  loading = false;
+
   constructor(store: Store) {
     makeAutoObservable(this, {}, { deep: false, autoBind: true });
 
@@ -55,6 +57,10 @@ export default class RenewAccountView {
     this.satsPerVbyte = satsPerVbyte;
   }
 
+  setLoading(loading: boolean) {
+    this.loading = loading;
+  }
+
   //
   // Actions
   //
@@ -75,6 +81,7 @@ export default class RenewAccountView {
   async renewAccount() {
     if (!this.isValid) return;
 
+    this.setLoading(true);
     const satsPerKWeight = this._store.api.pool.satsPerVByteToKWeight(this.satsPerVbyte);
     // if there is an error, it will be displayed by renewAccount
     const txid = await this._store.accountStore.renewAccount(
@@ -85,5 +92,6 @@ export default class RenewAccountView {
     if (txid) {
       this.cancel();
     }
+    this.setLoading(false);
   }
 }

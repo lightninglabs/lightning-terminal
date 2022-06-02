@@ -64,7 +64,7 @@ const RenewAccountConfirm: React.FC = () => {
           <Button
             primary
             ghost
-            disabled={!renewAccountView.isValid}
+            disabled={!renewAccountView.isValid || renewAccountView.loading}
             onClick={renewAccountView.renewAccount}
           >
             {l('common.confirm')}

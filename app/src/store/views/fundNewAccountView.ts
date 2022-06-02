@@ -19,6 +19,8 @@ export default class FundNewAccountView {
   // response from quote
   minerFee = Big(0);
 
+  loading = false;
+
   constructor(store: Store) {
     makeAutoObservable(this, {}, { deep: false, autoBind: true });
 
@@ -104,6 +106,10 @@ export default class FundNewAccountView {
     this.expireBlocks = expireBlocks;
   }
 
+  setLoading(loading: boolean) {
+    this.loading = loading;
+  }
+
   //
   // Actions
   //
@@ -131,12 +137,13 @@ export default class FundNewAccountView {
 
       this._store.accountSectionView.showFundNewConfirm();
     } catch (error) {
-      this._store.appView.handleError(error, 'Unable to estimate miner fee');
+      this._store.appView.handleError(error as Error, 'Unable to estimate miner fee');
     }
   }
 
   /** submits the order to the API and resets the form values if successful */
   async fundAccount() {
+    this.setLoading(true);
     // if there is an error, it will be displayed by createAccount
     const traderKey = await this._store.accountStore.createAccount(
       this.amount,
@@ -147,5 +154,6 @@ export default class FundNewAccountView {
     if (traderKey) {
       this.cancel();
     }
+    this.setLoading(false);
   }
 }

@@ -49,7 +49,7 @@ const FundAccountConfirm: React.FC = () => {
           <Button
             primary
             ghost
-            disabled={!fundAccountView.isValid}
+            disabled={!fundAccountView.isValid || fundAccountView.loading}
             onClick={fundAccountView.fundAccount}
           >
             {l('common.confirm')}
