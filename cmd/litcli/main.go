@@ -1,14 +1,11 @@
 package main
 
 import (
-	"context"
-	"encoding/base64"
-	"encoding/hex"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
 
 	terminal "github.com/lightninglabs/lightning-terminal"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
@@ -17,17 +14,17 @@ import (
 	"github.com/lightninglabs/protobuf-hex-display/proto"
 	"github.com/lightningnetwork/lnd"
 	"github.com/lightningnetwork/lnd/lncfg"
+	"github.com/lightningnetwork/lnd/macaroons"
 	"github.com/urfave/cli"
-	"golang.org/x/term"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/metadata"
+	"gopkg.in/macaroon.v2"
 )
 
 const (
-	// uiPasswordEnvName is the name of the environment variable under which
-	// we look for the UI password for litcli.
-	uiPasswordEnvName = "UI_PASSWORD"
+	// defaultMacaroonTimeout is the default macaroon timeout in seconds
+	// that we set when sending it over the line.
+	defaultMacaroonTimeout int64 = 60
 )
 
 var (
@@ -61,12 +58,10 @@ var (
 		Usage: "path to lnd's TLS certificate",
 		Value: lnd.DefaultConfig().TLSCertPath,
 	}
-	uiPasswordFlag = cli.StringFlag{
-		Name: "uipassword",
-		Usage: "the UI password for authenticating against LiT; if " +
-			"not specified will read from environment variable " +
-			uiPasswordEnvName + " or prompt on terminal if both " +
-			"values are empty",
+	macaroonPathFlag = cli.StringFlag{
+		Name:  "macaroonpath",
+		Usage: "path to lit's macaroon file",
+		Value: terminal.DefaultMacaroonPath,
 	}
 )
 
@@ -87,7 +82,7 @@ func main() {
 		lndMode,
 		tlsCertFlag,
 		lndTlsCertFlag,
-		uiPasswordFlag,
+		macaroonPathFlag,
 	}
 	app.Commands = append(app.Commands, sessionCommands...)
 
@@ -104,11 +99,11 @@ func fatal(err error) {
 
 func getClient(ctx *cli.Context) (litrpc.SessionsClient, func(), error) {
 	rpcServer := ctx.GlobalString("rpcserver")
-	tlsCertPath, err := extractPathArgs(ctx)
+	tlsCertPath, macPath, err := extractPathArgs(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
-	conn, err := getClientConn(rpcServer, tlsCertPath)
+	conn, err := getClientConn(rpcServer, tlsCertPath, macPath)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -118,9 +113,18 @@ func getClient(ctx *cli.Context) (litrpc.SessionsClient, func(), error) {
 	return sessionsClient, cleanup, nil
 }
 
-func getClientConn(address, tlsCertPath string) (*grpc.ClientConn, error) {
+func getClientConn(address, tlsCertPath, macaroonPath string) (*grpc.ClientConn,
+	error) {
+
+	// We always need to send a macaroon.
+	macOption, err := readMacaroon(macaroonPath)
+	if err != nil {
+		return nil, err
+	}
+
 	opts := []grpc.DialOption{
 		grpc.WithDefaultCallOptions(maxMsgRecvSize),
+		macOption,
 	}
 
 	// TLS cannot be disabled, we'll always have a cert file to read.
@@ -140,47 +144,111 @@ func getClientConn(address, tlsCertPath string) (*grpc.ClientConn, error) {
 	return conn, nil
 }
 
-// extractPathArgs parses the TLS certificate from the command.
-func extractPathArgs(ctx *cli.Context) (string, error) {
+// extractPathArgs parses the TLS certificate and macaroon paths from the
+// command.
+func extractPathArgs(ctx *cli.Context) (string, string, error) {
 	// We'll start off by parsing the network. This is needed to determine
 	// the correct path to the TLS certificate and macaroon when not
 	// specified.
 	networkStr := strings.ToLower(ctx.GlobalString("network"))
 	_, err := lndclient.Network(networkStr).ChainParams()
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	// We'll now fetch the basedir so we can make a decision on how to
-	// properly read the cert. This will either be the default,
-	// or will have been overwritten by the end user.
+	// Get the base dir so that we can reconstruct the default tls and
+	// macaroon paths if needed.
 	baseDir := lncfg.CleanAndExpandPath(ctx.GlobalString(baseDirFlag.Name))
-	lndmode := strings.ToLower(ctx.GlobalString(lndMode.Name))
 
+	macaroonPath := lncfg.CleanAndExpandPath(ctx.GlobalString(
+		macaroonPathFlag.Name,
+	))
+
+	// If the macaroon path flag has not been set to a custom value,
+	// then reconstruct it with the possibly new base dir and network
+	// values.
+	if macaroonPath == terminal.DefaultMacaroonPath {
+		macaroonPath = filepath.Join(
+			baseDir, networkStr, terminal.DefaultMacaroonFilename,
+		)
+	}
+
+	// Get the LND mode. If Lit is in integrated LND mode, then LND's tls
+	// cert is used directly. Otherwise, Lit's own tls cert is used.
+	lndmode := strings.ToLower(ctx.GlobalString(lndMode.Name))
 	if lndmode == terminal.ModeIntegrated {
 		tlsCertPath := lncfg.CleanAndExpandPath(ctx.GlobalString(
 			lndTlsCertFlag.Name,
 		))
 
-		return tlsCertPath, nil
+		return tlsCertPath, macaroonPath, nil
 	}
 
+	// Lit is in remote LND mode. So we need Lit's tls cert.
 	tlsCertPath := lncfg.CleanAndExpandPath(ctx.GlobalString(
 		tlsCertFlag.Name,
 	))
+
+	// If a custom TLS path was set, use it as is.
+	if tlsCertPath != terminal.DefaultTLSCertPath {
+		return tlsCertPath, macaroonPath, nil
+	}
 
 	// If a custom base directory was set, we'll also check if custom paths
 	// for the TLS cert file was set as well. If not, we'll override the
 	// paths so they can be found within the custom base directory set.
 	// This allows us to set a custom base directory, along with custom
 	// paths to the TLS cert file.
-	if baseDir != terminal.DefaultLitDir || networkStr != terminal.DefaultNetwork {
+	if baseDir != terminal.DefaultLitDir {
 		tlsCertPath = filepath.Join(
-			baseDir, networkStr, terminal.DefaultTLSCertFilename,
+			baseDir, terminal.DefaultTLSCertFilename,
 		)
 	}
 
-	return tlsCertPath, nil
+	return tlsCertPath, macaroonPath, nil
+}
+
+// readMacaroon tries to read the macaroon file at the specified path and create
+// gRPC dial options from it.
+func readMacaroon(macPath string) (grpc.DialOption, error) {
+	// Load the specified macaroon file.
+	macBytes, err := ioutil.ReadFile(macPath)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read macaroon path : %v", err)
+	}
+
+	mac := &macaroon.Macaroon{}
+	if err = mac.UnmarshalBinary(macBytes); err != nil {
+		return nil, fmt.Errorf("unable to decode macaroon: %v", err)
+	}
+
+	macConstraints := []macaroons.Constraint{
+		// We add a time-based constraint to prevent replay of the
+		// macaroon. It's good for 60 seconds by default to make up for
+		// any discrepancy between client and server clocks, but leaking
+		// the macaroon before it becomes invalid makes it possible for
+		// an attacker to reuse the macaroon. In addition, the validity
+		// time of the macaroon is extended by the time the server clock
+		// is behind the client clock, or shortened by the time the
+		// server clock is ahead of the client clock (or invalid
+		// altogether if, in the latter case, this time is more than 60
+		// seconds).
+		macaroons.TimeoutConstraint(defaultMacaroonTimeout),
+	}
+
+	// Apply constraints to the macaroon.
+	constrainedMac, err := macaroons.AddConstraints(mac, macConstraints...)
+	if err != nil {
+		return nil, err
+	}
+
+	// Now we append the macaroon credentials to the dial options.
+	cred, err := macaroons.NewMacaroonCredential(constrainedMac)
+	if err != nil {
+		return nil, fmt.Errorf("error creating macaroon credential: %v",
+			err)
+	}
+	return grpc.WithPerRPCCredentials(cred), nil
 }
 
 func printRespJSON(resp proto.Message) { // nolint
@@ -197,57 +265,4 @@ func printRespJSON(resp proto.Message) { // nolint
 	}
 
 	fmt.Println(jsonStr)
-}
-
-func getAuthContext(cliCtx *cli.Context) context.Context {
-	uiPassword, err := getUIPassword(cliCtx)
-	if err != nil {
-		fatal(err)
-	}
-
-	basicAuth := base64.StdEncoding.EncodeToString(
-		[]byte(fmt.Sprintf("%s:%s", uiPassword, uiPassword)),
-	)
-
-	ctxb := context.Background()
-	md := metadata.MD{}
-
-	md.Set("macaroon", hex.EncodeToString(terminal.EmptyMacaroonBytes))
-	md.Set("authorization", fmt.Sprintf("Basic %s", basicAuth))
-
-	return metadata.NewOutgoingContext(ctxb, md)
-}
-
-func getUIPassword(ctx *cli.Context) (string, error) {
-	// The command line flag has precedence.
-	uiPassword := strings.TrimSpace(ctx.GlobalString(uiPasswordFlag.Name))
-
-	// To automate things with litcli, we also offer reading the password
-	// from environment variables if the flag wasn't specified.
-	if uiPassword == "" {
-		uiPassword = strings.TrimSpace(os.Getenv(uiPasswordEnvName))
-	}
-
-	if uiPassword == "" {
-		// If there's no value in the environment, we'll now prompt the
-		// user to enter their password on the terminal.
-		fmt.Printf("Input your LiT UI password: ")
-
-		// The variable syscall.Stdin is of a different type in the
-		// Windows API that's why we need the explicit cast. And of
-		// course the linter doesn't like it either.
-		pw, err := term.ReadPassword(int(syscall.Stdin)) // nolint:unconvert
-		fmt.Println()
-
-		if err != nil {
-			return "", err
-		}
-		uiPassword = strings.TrimSpace(string(pw))
-	}
-
-	if uiPassword == "" {
-		return "", fmt.Errorf("no UI password provided")
-	}
-
-	return uiPassword, nil
 }

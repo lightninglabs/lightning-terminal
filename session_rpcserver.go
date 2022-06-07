@@ -11,31 +11,98 @@ import (
 	"github.com/lightninglabs/lightning-node-connect/mailbox"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/lightning-terminal/session"
+	"google.golang.org/grpc"
 )
 
 // sessionRpcServer is the gRPC server for the Session RPC interface.
 type sessionRpcServer struct {
 	litrpc.UnimplementedSessionsServer
 
-	basicAuth string
-
+	cfg           *sessionRpcServerConfig
 	db            *session.DB
 	sessionServer *session.Server
-
-	superMacBaker func(ctx context.Context, rootKeyID uint64,
-		recipe *session.MacaroonRecipe) (string, error)
 
 	quit     chan struct{}
 	wg       sync.WaitGroup
 	stopOnce sync.Once
 }
 
+// sessionRpcServerConfig holds the values used to configure the
+// sessionRpcServer.
+type sessionRpcServerConfig struct {
+	basicAuth           string
+	dbDir               string
+	grpcOptions         []grpc.ServerOption
+	registerGrpcServers func(server *grpc.Server)
+	superMacBaker       func(ctx context.Context, rootKeyID uint64,
+		recipe *session.MacaroonRecipe) (string, error)
+}
+
+// newSessionRPCServer creates a new sessionRpcServer using the passed config.
+func newSessionRPCServer(cfg *sessionRpcServerConfig) (*sessionRpcServer,
+	error) {
+
+	// Create an instance of the local Terminal Connect session store DB.
+	db, err := session.NewDB(cfg.dbDir, session.DBFilename)
+	if err != nil {
+		return nil, fmt.Errorf("error creating session DB: %v", err)
+	}
+
+	// Create the gRPC server that handles adding/removing sessions and the
+	// actual mailbox server that spins up the Terminal Connect server
+	// interface.
+	server := session.NewServer(
+		func(opts ...grpc.ServerOption) *grpc.Server {
+			allOpts := append(cfg.grpcOptions, opts...)
+			grpcServer := grpc.NewServer(allOpts...)
+
+			cfg.registerGrpcServers(grpcServer)
+
+			return grpcServer
+		},
+	)
+
+	return &sessionRpcServer{
+		cfg:           cfg,
+		db:            db,
+		sessionServer: server,
+		quit:          make(chan struct{}),
+	}, nil
+}
+
+// start all the components necessary for the sessionRpcServer to start serving
+// requests. This includes starting the macaroon service and resuming all
+// non-revoked sessions.
+func (s *sessionRpcServer) start() error {
+	// Start up all previously created sessions.
+	sessions, err := s.db.ListSessions()
+	if err != nil {
+		return fmt.Errorf("error listing sessions: %v", err)
+	}
+	for _, sess := range sessions {
+		if err := s.resumeSession(sess); err != nil {
+			return fmt.Errorf("error resuming sesion: %v", err)
+		}
+	}
+
+	return nil
+}
+
 // stop cleans up any sessionRpcServer resources.
-func (s *sessionRpcServer) stop() {
+func (s *sessionRpcServer) stop() error {
+	var returnErr error
 	s.stopOnce.Do(func() {
+		if err := s.db.Close(); err != nil {
+			log.Errorf("Error closing session DB: %v", err)
+			returnErr = err
+		}
+		s.sessionServer.Stop()
+
 		close(s.quit)
 		s.wg.Wait()
 	})
+
+	return returnErr
 }
 
 // AddSession adds and starts a new Terminal Connect session.
@@ -52,12 +119,11 @@ func (s *sessionRpcServer) AddSession(_ context.Context,
 		return nil, err
 	}
 
-	if typ != session.TypeUIPassword && typ != session.TypeMacaroonAdmin &&
+	if typ != session.TypeMacaroonAdmin &&
 		typ != session.TypeMacaroonReadonly {
 
-		return nil, fmt.Errorf("invalid session type, only UI " +
-			"password, admin and readonly macaroon types " +
-			"supported in LiT")
+		return nil, fmt.Errorf("invalid session type, only admin " +
+			"and readonly macaroon types supported in LiT")
 	}
 
 	sess, err := session.NewSession(
@@ -114,32 +180,28 @@ func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
 		return nil
 	}
 
-	var authData []byte
-	switch sess.Type {
-	case session.TypeUIPassword:
-		authData = []byte("Authorization: Basic " + s.basicAuth)
+	if sess.Type != session.TypeMacaroonAdmin &&
+		sess.Type != session.TypeMacaroonReadonly {
 
-	case session.TypeMacaroonAdmin, session.TypeMacaroonReadonly:
-		ctx := context.Background()
-		readOnly := sess.Type == session.TypeMacaroonReadonly
-		mac, err := s.superMacBaker(
-			ctx, sess.MacaroonRootKey, &session.MacaroonRecipe{
-				Permissions: GetAllPermissions(readOnly),
-			},
-		)
-		if err != nil {
-			log.Debugf("Not resuming session %x. Could not bake"+
-				"the necessary macaroon: %w", pubKeyBytes, err)
-			return nil
-		}
-
-		authData = []byte(fmt.Sprintf("%s: %s", HeaderMacaroon, mac))
-
-	default:
 		log.Debugf("Not resuming session %x with type %d", pubKeyBytes,
 			sess.Type)
 		return nil
 	}
+
+	readOnly := sess.Type == session.TypeMacaroonReadonly
+	mac, err := s.cfg.superMacBaker(
+		context.Background(), sess.MacaroonRootKey,
+		&session.MacaroonRecipe{
+			Permissions: GetAllPermissions(readOnly),
+		},
+	)
+	if err != nil {
+		log.Debugf("Not resuming session %x. Could not bake "+
+			"the necessary macaroon: %w", pubKeyBytes, err)
+		return nil
+	}
+
+	authData := []byte(fmt.Sprintf("%s: %s", HeaderMacaroon, mac))
 
 	sessionClosedSub, err := s.sessionServer.StartSession(sess, authData)
 	if err != nil {

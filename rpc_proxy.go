@@ -36,15 +36,6 @@ const (
 	HeaderMacaroon = "Macaroon"
 )
 
-var (
-	// EmptyMacaroonBytes is the byte representation of an empty but
-	// formally valid macaroon.
-	EmptyMacaroonBytes, _ = hex.DecodeString(
-		"020205656d7074790000062062083e2ea599285ac29350abb4ea21fd7c5a" +
-			"15aca8b4c0d38e6c058829369e50",
-	)
-)
-
 // proxyErr is an error type that adds more context to an error occurring in the
 // proxy.
 type proxyErr struct {
@@ -537,7 +528,7 @@ func (p *rpcProxy) basicAuthToMacaroon(basicAuth, requestURI string,
 		}
 
 	case isLitURI(requestURI):
-		return EmptyMacaroonBytes, nil
+		macPath = p.cfg.MacaroonPath
 
 	default:
 		return nil, fmt.Errorf("unknown gRPC web request: %v",

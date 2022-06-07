@@ -156,9 +156,11 @@ type LightningTerminal struct {
 	rpcProxy   *rpcProxy
 	httpServer *http.Server
 
-	sessionDB        *session.DB
-	sessionServer    *session.Server
-	sessionRpcServer *sessionRpcServer
+	sessionRpcServer        *sessionRpcServer
+	sessionRpcServerStarted bool
+
+	macaroonService        *lndclient.MacaroonService
+	macaroonServiceStarted bool
 
 	restHandler http.Handler
 	restCancel  func()
@@ -200,46 +202,27 @@ func (g *LightningTerminal) Run() error {
 		g.cfg, g, g.validateSuperMacaroon, getAllMethodPermissions(),
 		bufRpcListener,
 	)
-
-	// Create an instance of the local Terminal Connect session store DB.
-	networkDir := path.Join(g.cfg.LitDir, g.cfg.Network)
-	g.sessionDB, err = session.NewDB(networkDir, session.DBFilename)
-	if err != nil {
-		return fmt.Errorf("error creating session DB: %v", err)
-	}
-
-	// Create the gRPC server that handles adding/removing sessions and the
-	// actual mailbox server that spins up the Terminal Connect server
-	// interface.
-	g.sessionServer = session.NewServer(
-		func(opts ...grpc.ServerOption) *grpc.Server {
-			allOpts := []grpc.ServerOption{
-				grpc.CustomCodec(grpcProxy.Codec()), // nolint: staticcheck,
-				grpc.ChainStreamInterceptor(
-					g.rpcProxy.StreamServerInterceptor,
+	g.sessionRpcServer, err = newSessionRPCServer(&sessionRpcServerConfig{
+		basicAuth: g.rpcProxy.basicAuth,
+		dbDir:     path.Join(g.cfg.LitDir, g.cfg.Network),
+		grpcOptions: []grpc.ServerOption{
+			grpc.CustomCodec(grpcProxy.Codec()), // nolint: staticcheck,
+			grpc.ChainStreamInterceptor(
+				g.rpcProxy.StreamServerInterceptor,
+			),
+			grpc.ChainUnaryInterceptor(
+				g.rpcProxy.UnaryServerInterceptor,
+			),
+			grpc.UnknownServiceHandler(
+				grpcProxy.TransparentHandler(
+					// Don't allow calls to litrpc.
+					g.rpcProxy.makeDirector(false),
 				),
-				grpc.ChainUnaryInterceptor(
-					g.rpcProxy.UnaryServerInterceptor,
-				),
-				grpc.UnknownServiceHandler(
-					grpcProxy.TransparentHandler(
-						// Don't allow calls to litrpc.
-						g.rpcProxy.makeDirector(false),
-					),
-				),
-			}
-			allOpts = append(allOpts, opts...)
-			grpcServer := grpc.NewServer(allOpts...)
-			g.registerSubDaemonGrpcServers(grpcServer, false)
-
-			return grpcServer
+			),
 		},
-	)
-	g.sessionRpcServer = &sessionRpcServer{
-		basicAuth:     g.rpcProxy.basicAuth,
-		db:            g.sessionDB,
-		sessionServer: g.sessionServer,
-		quit:          make(chan struct{}),
+		registerGrpcServers: func(server *grpc.Server) {
+			g.registerSubDaemonGrpcServers(server, false)
+		},
 		superMacBaker: func(ctx context.Context, rootKeyID uint64,
 			recipe *session.MacaroonRecipe) (string, error) {
 
@@ -248,6 +231,10 @@ func (g *LightningTerminal) Run() error {
 				recipe.Permissions, recipe.Caveats,
 			)
 		},
+	})
+	if err != nil {
+		return fmt.Errorf("could not create new session rpc "+
+			"server: %v", err)
 	}
 
 	// Overwrite the loop and pool daemon's user agent name so it sends
@@ -385,20 +372,6 @@ func (g *LightningTerminal) Run() error {
 	if err != nil {
 		log.Errorf("Could not start subservers: %v", err)
 		return err
-	}
-
-	// Now start up all previously created sessions. Since the sessions
-	// require a lnd connection in order to bake macaroons, we can only
-	// start up the sessions once the connection to lnd has been
-	// established.
-	sessions, err := g.sessionDB.ListSessions()
-	if err != nil {
-		return fmt.Errorf("error listing sessions: %v", err)
-	}
-	for _, sess := range sessions {
-		if err := g.sessionRpcServer.resumeSession(sess); err != nil {
-			return fmt.Errorf("error resuming sesion: %v", err)
-		}
 	}
 
 	// Now block until we receive an error or the main shutdown signal.
@@ -577,6 +550,33 @@ func (g *LightningTerminal) startSubservers() error {
 		}
 		g.poolStarted = true
 	}
+
+	g.macaroonService, err = lndclient.NewMacaroonService(
+		&lndclient.MacaroonServiceConfig{
+			DBPath:           path.Join(g.cfg.LitDir, g.cfg.Network),
+			MacaroonLocation: "litd",
+			StatelessInit:    !createDefaultMacaroons,
+			RequiredPerms:    litPermissions,
+			LndClient:        &g.lndClient.LndServices,
+			EphemeralKey:     lndclient.SharedKeyNUMS,
+			KeyLocator:       lndclient.SharedKeyLocator,
+			MacaroonPath:     g.cfg.MacaroonPath,
+		},
+	)
+	if err != nil {
+		log.Errorf("Could not create a new macaroon service: %v", err)
+		return err
+	}
+
+	if err := g.macaroonService.Start(); err != nil {
+		return fmt.Errorf("could not start macaroon service: %v", err)
+	}
+	g.macaroonServiceStarted = true
+
+	if err = g.sessionRpcServer.start(); err != nil {
+		return err
+	}
+	g.sessionRpcServerStarted = true
 
 	return nil
 }
@@ -775,12 +775,17 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 		}
 
 	case isLitURI(fullMethod):
-		wrap := fmt.Errorf("invalid basic auth")
-		_, err := g.rpcProxy.convertBasicAuth(ctx, fullMethod, wrap)
-		if err != nil {
+		if !g.macaroonServiceStarted {
+			return fmt.Errorf("the macaroon service has not " +
+				"started yet")
+		}
+
+		if err := g.macaroonService.ValidateMacaroon(
+			ctx, requiredPermissions, fullMethod,
+		); err != nil {
 			return &proxyErr{
 				proxyContext: "lit",
-				wrapped: fmt.Errorf("invalid auth: %v",
+				wrapped: fmt.Errorf("invalid macaroon: %w",
 					err),
 			}
 		}
@@ -847,12 +852,19 @@ func (g *LightningTerminal) shutdown() error {
 		}
 	}
 
-	g.sessionRpcServer.stop()
-	if err := g.sessionDB.Close(); err != nil {
-		log.Errorf("Error closing session DB: %v", err)
-		returnErr = err
+	if g.sessionRpcServerStarted {
+		if err := g.sessionRpcServer.stop(); err != nil {
+			log.Errorf("Error closing session DB: %v", err)
+			returnErr = err
+		}
 	}
-	g.sessionServer.Stop()
+
+	if g.macaroonServiceStarted {
+		if err := g.macaroonService.Stop(); err != nil {
+			log.Errorf("Error stopping macaroon service: %v", err)
+			returnErr = err
+		}
+	}
 
 	if g.lndClient != nil {
 		g.lndClient.Close()

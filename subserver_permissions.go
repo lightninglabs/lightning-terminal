@@ -12,9 +12,18 @@ var (
 	// litPermissions is a map of all LiT RPC methods and their required
 	// macaroon permissions to access the session service.
 	litPermissions = map[string][]bakery.Op{
-		"/litrpc.Sessions/AddSession":    {{}},
-		"/litrpc.Sessions/ListSessions":  {{}},
-		"/litrpc.Sessions/RevokeSession": {{}},
+		"/litrpc.Sessions/AddSession": {{
+			Entity: "sessions",
+			Action: "write",
+		}},
+		"/litrpc.Sessions/ListSessions": {{
+			Entity: "sessions",
+			Action: "read",
+		}},
+		"/litrpc.Sessions/RevokeSession": {{
+			Entity: "sessions",
+			Action: "write",
+		}},
 	}
 
 	// whiteListedMethods is a map of all lnd RPC methods that don't require

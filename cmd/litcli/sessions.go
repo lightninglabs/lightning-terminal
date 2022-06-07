@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/hex"
 	"fmt"
 	"time"
@@ -88,8 +89,9 @@ func addSession(ctx *cli.Context) error {
 	sessionLength := time.Second * time.Duration(ctx.Uint64("expiry"))
 	sessionExpiry := time.Now().Add(sessionLength).Unix()
 
+	ctxb := context.Background()
 	resp, err := client.AddSession(
-		getAuthContext(ctx), &litrpc.AddSessionRequest{
+		ctxb, &litrpc.AddSessionRequest{
 			Label:                  label,
 			SessionType:            sessType,
 			ExpiryTimestampSeconds: uint64(sessionExpiry),
@@ -196,8 +198,9 @@ func listSessions(filter sessionFilter) func(ctx *cli.Context) error {
 		}
 		defer cleanup()
 
+		ctxb := context.Background()
 		resp, err := client.ListSessions(
-			getAuthContext(ctx), &litrpc.ListSessionsRequest{},
+			ctxb, &litrpc.ListSessionsRequest{},
 		)
 		if err != nil {
 			return err
@@ -248,8 +251,9 @@ func revokeSession(ctx *cli.Context) error {
 		return err
 	}
 
+	ctxb := context.Background()
 	resp, err := client.RevokeSession(
-		getAuthContext(ctx), &litrpc.RevokeSessionRequest{
+		ctxb, &litrpc.RevokeSessionRequest{
 			LocalPublicKey: pubkey,
 		},
 	)

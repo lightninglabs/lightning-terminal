@@ -43,10 +43,6 @@ func testModeRemote(net *NetworkHarness, t *harnessTest) {
 		for _, endpoint := range endpoints {
 			endpoint := endpoint
 			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
-				if !endpoint.supportsMacAuthOnLitPort {
-					return
-				}
-
 				runGRPCAuthTest(
 					ttt, cfg.LitAddr(), cfg.LitTLSCertPath,
 					endpoint.macaroonFn(cfg),
@@ -65,10 +61,8 @@ func testModeRemote(net *NetworkHarness, t *harnessTest) {
 			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
 				runUIPasswordCheck(
 					ttt, cfg.LitAddr(), cfg.LitTLSCertPath,
-					cfg.UIPassword,
-					endpoint.requestFn, false,
-					!endpoint.supportsUIPasswordOnLitPort,
-					endpoint.successPattern,
+					cfg.UIPassword, endpoint.requestFn,
+					false, endpoint.successPattern,
 				)
 			})
 		}
@@ -105,10 +99,6 @@ func testModeRemote(net *NetworkHarness, t *harnessTest) {
 		for _, endpoint := range endpoints {
 			endpoint := endpoint
 			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
-				if !endpoint.supportsMacAuthOnLitPort {
-					return
-				}
-
 				runGRPCAuthTest(
 					ttt, cfg.LitAddr(), cfg.LitTLSCertPath,
 					superMacFile,
@@ -147,9 +137,8 @@ func testModeRemote(net *NetworkHarness, t *harnessTest) {
 			endpoint := endpoint
 			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
 				runLNCAuthTest(
-					ttt, cfg.LitAddr(), cfg.UIPassword,
-					cfg.LitTLSCertPath,
-					endpoint.requestFn,
+					ttt, cfg.LitAddr(), cfg.LitTLSCertPath,
+					cfg.LitMacPath, endpoint.requestFn,
 					endpoint.successPattern,
 					endpoint.allowedThroughLNC,
 				)
