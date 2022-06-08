@@ -53,9 +53,10 @@ func (r *RuleEnforcer) Intercept(_ context.Context,
 	log.Infof("Enforcing rule %v", ri)
 
 	// Enforce actual rules.
-	if len(ri.Rules) > 0 {
+	numRules := len(ri.Rules.SessionRules) + len(ri.Rules.FeatureRules)
+	if numRules > 0 {
 		// TODO(guggero): Implement rules and their enforcement.
-		log.Debugf("There are %d rules to enforce", len(ri.Rules))
+		log.Debugf("There are %d rules to enforce", numRules)
 	}
 
 	// Send empty response, accepting the request.

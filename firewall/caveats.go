@@ -52,6 +52,9 @@ type InterceptMetaInfo struct {
 	// that is issuing this request.
 	ActorName string `json:"actor_name"`
 
+	// Feature is the feature that caused the actor to execute this action.
+	Feature string `json:"feature"`
+
 	// Trigger is the action or condition that triggered this intercepted
 	// request to be made.
 	Trigger string `json:"trigger"`
@@ -59,6 +62,10 @@ type InterceptMetaInfo struct {
 	// Intent is the desired outcome or end condition this request aims to
 	// arrive at.
 	Intent string `json:"intent"`
+
+	// StructuredJsonData is extra, structured, info that the Autopilot can
+	// send to Lit. It is a json serialised string.
+	StructuredJsonData string `json:"structured_json_data"`
 }
 
 // ToCaveat returns the full custom caveat string representation of the
@@ -96,23 +103,24 @@ func ParseMetaInfoCaveat(caveat string) (*InterceptMetaInfo, error) {
 	return i, nil
 }
 
-// InterceptRule is the JSON serializable struct containing all the rules and
+// InterceptRules is the JSON serializable struct containing all the rules and
 // their limits/settings that need to be enforced on a request made by an
 // automated node management software against LiT. The rule information is added
 // as a custom macaroon caveat.
-type InterceptRule struct {
-	// Name is the name of the rule. It must correspond to a
-	Name string `json:"name"`
+type InterceptRules struct {
+	// SessionRules are rules that apply session wide. The map is rule
+	// name to rule value.
+	SessionRules map[string]string `json:"session_rules"`
 
-	// Restrictions is a key/value map of all the parameters that apply to
-	// this rule.
-	Restrictions map[string]string `json:"restrictions"`
+	// Feature rules are rules that apply to a specific feature. The map is
+	// feature name to a map of rule name to rule value.
+	FeatureRules map[string]map[string]string `json:"feature_rules"`
 }
 
 // RulesToCaveat encodes a list of rules as a full custom caveat string
 // representation in this format:
 //     lnd-custom lit-mac-fw rules:[<array_of_JSON_encoded_rules>]
-func RulesToCaveat(rules []*InterceptRule) (string, error) {
+func RulesToCaveat(rules *InterceptRules) (string, error) {
 	jsonBytes, err := json.Marshal(rules)
 	if err != nil {
 		return "", fmt.Errorf("error JSON marshaling: %v", err)
@@ -122,7 +130,7 @@ func RulesToCaveat(rules []*InterceptRule) (string, error) {
 }
 
 // ParseRuleCaveat tries to parse the given caveat string as a rule struct.
-func ParseRuleCaveat(caveat string) ([]*InterceptRule, error) {
+func ParseRuleCaveat(caveat string) (*InterceptRules, error) {
 	if !strings.HasPrefix(caveat, MetaRulesFullCaveatPrefix) {
 		return nil, ErrNoRulesCaveat
 	}
@@ -134,11 +142,11 @@ func ParseRuleCaveat(caveat string) ([]*InterceptRule, error) {
 
 	// There's a colon after the prefix that we need to skip as well.
 	jsonData := caveat[len(MetaRulesFullCaveatPrefix)+1:]
-	var rules []*InterceptRule
+	var rules InterceptRules
 
 	if err := json.Unmarshal([]byte(jsonData), &rules); err != nil {
 		return nil, fmt.Errorf("error unmarshaling JSON: %v", err)
 	}
 
-	return rules, nil
+	return &rules, nil
 }

@@ -9,25 +9,27 @@ import (
 
 const (
 	testMetaCaveat = "lnd-custom lit-mac-fw meta:{\"actor_name\":" +
-		"\"re-balancer\",\"trigger\":\"channel 7413345453234435345 " +
-		"depleted\",\"intent\":\"increase outbound liquidity by " +
-		"2000000 sats\"}"
+		"\"autopilot\",\"feature\":\"re-balance\",\"trigger\":" +
+		"\"channel 7413345453234435345 depleted\",\"intent\":" +
+		"\"increase outbound liquidity by 2000000 sats\"," +
+		"\"structured_json_data\":\"{}\"}"
 
-	testRulesCaveat = "lnd-custom lit-mac-fw rules:[{\"name\":" +
-		"\"re-balance-limits\",\"restrictions\":" +
-		"{\"first-hop-ignore-list\":\"03abcd...,02badb01...\"," +
-		"\"max-hops\":\"4\",\"off-chain-fees-sats\":\"10\"}}," +
-		"{\"name\":\"time-limits\",\"restrictions\":" +
-		"{\"re-balance-min-interval-seconds\":\"3600\"}}]"
+	testRulesCaveat = "lnd-custom lit-mac-fw rules:{\"session_rules\":{" +
+		"\"rate-limit\":\"1/10\"},\"feature_rules\":{\"AutoFees\":{" +
+		"\"first-hop-ignore-list\":\"03abcd...,02badb01...\"," +
+		"\"max-hops\":\"4\"},\"Rebalance\":{\"off-chain-fees-sats\":" +
+		"\"10\",\"re-balance-min-interval-seconds\":\"3600\"}}}"
 )
 
 // TestInterceptMetaInfo makes sure that a meta information struct can be
 // formatted as a caveat and then parsed again successfully.
 func TestInterceptMetaInfo(t *testing.T) {
 	info := &InterceptMetaInfo{
-		ActorName: "re-balancer",
-		Trigger:   "channel 7413345453234435345 depleted",
-		Intent:    "increase outbound liquidity by 2000000 sats",
+		ActorName:          "autopilot",
+		Feature:            "re-balance",
+		Trigger:            "channel 7413345453234435345 depleted",
+		Intent:             "increase outbound liquidity by 2000000 sats",
+		StructuredJsonData: "{}",
 	}
 
 	caveat, err := info.ToCaveat()
@@ -90,19 +92,21 @@ func TestParseMetaInfoCaveat(t *testing.T) {
 // TestInterceptRule makes sure that a rules list struct can be formatted as a
 // caveat and then parsed again successfully.
 func TestInterceptRule(t *testing.T) {
-	rules := []*InterceptRule{{
-		Name: "re-balance-limits",
-		Restrictions: map[string]string{
-			"off-chain-fees-sats":   "10",
-			"max-hops":              "4",
-			"first-hop-ignore-list": "03abcd...,02badb01...",
+	rules := &InterceptRules{
+		FeatureRules: map[string]map[string]string{
+			"AutoFees": {
+				"first-hop-ignore-list": "03abcd...,02badb01...",
+				"max-hops":              "4",
+			},
+			"Rebalance": {
+				"off-chain-fees-sats":             "10",
+				"re-balance-min-interval-seconds": "3600",
+			},
 		},
-	}, {
-		Name: "time-limits",
-		Restrictions: map[string]string{
-			"re-balance-min-interval-seconds": "3600",
+		SessionRules: map[string]string{
+			"rate-limit": "1/10",
 		},
-	}}
+	}
 
 	caveat, err := RulesToCaveat(rules)
 	require.NoError(t, err)
@@ -122,7 +126,7 @@ func TestParseRulesCaveat(t *testing.T) {
 		name   string
 		input  string
 		err    error
-		result []*InterceptRule
+		result *InterceptRules
 	}{{
 		name:  "empty string",
 		input: "",
@@ -138,23 +142,25 @@ func TestParseRulesCaveat(t *testing.T) {
 			"'b' looking for beginning of value"),
 	}, {
 		name:   "empty JSON",
-		input:  "lnd-custom lit-mac-fw rules:[]",
-		result: []*InterceptRule{},
-	}, {
-		name:   "empty rules",
-		input:  "lnd-custom lit-mac-fw rules:[{}, {}]",
-		result: []*InterceptRule{{}, {}},
+		input:  "lnd-custom lit-mac-fw rules:{}",
+		result: &InterceptRules{},
 	}, {
 		name: "valid rules",
-		input: "lnd-custom lit-mac-fw rules:[{\"name\":\"foo\"}, " +
-			"{\"restrictions\":{\"foo\":\"bar\"}}]",
-		result: []*InterceptRule{{
-			Name: "foo",
-		}, {
-			Restrictions: map[string]string{
-				"foo": "bar",
+		input: "lnd-custom lit-mac-fw rules:{\"session_rules\":" +
+			"{\"rate-limit\":\"2000\"}, \"feature_rules\":" +
+			"{\"Autofees\":{\"foo\":\"bar\", \"rate-limit\":" +
+			"\"1000\"}}}",
+		result: &InterceptRules{
+			FeatureRules: map[string]map[string]string{
+				"Autofees": {
+					"foo":        "bar",
+					"rate-limit": "1000",
+				},
 			},
-		}},
+			SessionRules: map[string]string{
+				"rate-limit": "2000",
+			},
+		},
 	}}
 
 	for _, tc := range testCases {
