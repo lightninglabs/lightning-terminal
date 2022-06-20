@@ -12,6 +12,8 @@ import (
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"google.golang.org/grpc"
+	"gopkg.in/macaroon-bakery.v2/bakery/checkers"
+	"gopkg.in/macaroon.v2"
 )
 
 // sessionRpcServer is the gRPC server for the Session RPC interface.
@@ -188,11 +190,22 @@ func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
 		return nil
 	}
 
-	readOnly := sess.Type == session.TypeMacaroonReadonly
+	var (
+		caveats  []macaroon.Caveat
+		readOnly = sess.Type == session.TypeMacaroonReadonly
+	)
+
+	// Add the session expiry as a macaroon caveat.
+	macExpiry := checkers.TimeBeforeCaveat(sess.Expiry)
+	caveats = append(caveats, macaroon.Caveat{
+		Id: []byte(macExpiry.Condition),
+	})
+
 	mac, err := s.cfg.superMacBaker(
 		context.Background(), sess.MacaroonRootKey,
 		&session.MacaroonRecipe{
 			Permissions: GetAllPermissions(readOnly),
+			Caveats:     caveats,
 		},
 	)
 	if err != nil {
