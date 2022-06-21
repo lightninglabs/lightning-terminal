@@ -18,6 +18,7 @@ import (
 	"github.com/lightninglabs/faraday"
 	"github.com/lightninglabs/faraday/chain"
 	"github.com/lightninglabs/faraday/frdrpcserver"
+	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightninglabs/loop/loopd"
 	"github.com/lightninglabs/pool"
@@ -183,6 +184,8 @@ type Config struct {
 	PoolMode string       `long:"pool-mode" description:"The mode to run pool in, either 'integrated' (default) or 'remote'. 'integrated' means poold is started alongside the UI and everything is stored in pool's main data directory, configure everything by using the --pool.* flags. 'remote' means the UI connects to an existing poold node and acts as a proxy for gRPC calls to it." choice:"integrated" choice:"remote"`
 	Pool     *pool.Config `group:"Integrated pool options (use when pool-mode=integrated)" namespace:"pool"`
 
+	RPCMiddleware *mid.Config `group:"RPC middleware options" namespace:"rpcmiddleware"`
+
 	// faradayRpcConfig is a subset of faraday's full configuration that is
 	// passed into faraday's RPC server.
 	faradayRpcConfig *frdrpcserver.Config
@@ -321,6 +324,7 @@ func defaultConfig() *Config {
 		Loop:                 &loopDefaultConfig,
 		PoolMode:             defaultPoolMode,
 		Pool:                 &poolDefaultConfig,
+		RPCMiddleware:        mid.DefaultConfig(),
 		FirstLNCConnDeadline: defaultFirstLNCConnTimeout,
 	}
 }
@@ -380,6 +384,14 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 	}
 	if err != nil {
 		return nil, err
+	}
+
+	// To enable the rpc middleware interceptor, we need LND's RPC
+	// middleware interceptor to be enabled. In remote mode we can't
+	// influence whether that's enabled on lnd. But in integrated mode we
+	// can overwrite the flag here.
+	if !cfg.lndRemote {
+		cfg.Lnd.RPCMiddleware.Enable = !cfg.RPCMiddleware.Disabled
 	}
 
 	// Validate the lightning-terminal config options.
