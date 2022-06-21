@@ -86,9 +86,7 @@ var (
 		c grpc.ClientConnInterface) (proto.Message, error) {
 
 		lndConn := lnrpc.NewLightningClient(c)
-		return lndConn.GetInfo(
-			ctx, &lnrpc.GetInfoRequest{},
-		)
+		return lndConn.GetInfo(ctx, &lnrpc.GetInfoRequest{})
 	}
 	lndMacaroonFn = func(cfg *LitNodeConfig) string {
 		return cfg.AdminMacPath
@@ -108,9 +106,7 @@ var (
 		c grpc.ClientConnInterface) (proto.Message, error) {
 
 		loopConn := looprpc.NewSwapClientClient(c)
-		return loopConn.ListSwaps(
-			ctx, &looprpc.ListSwapsRequest{},
-		)
+		return loopConn.ListSwaps(ctx, &looprpc.ListSwapsRequest{})
 	}
 	loopMacaroonFn = func(cfg *LitNodeConfig) string {
 		return cfg.LoopMacPath
@@ -119,20 +115,22 @@ var (
 		c grpc.ClientConnInterface) (proto.Message, error) {
 
 		poolConn := poolrpc.NewTraderClient(c)
-		return poolConn.GetInfo(
-			ctx, &poolrpc.GetInfoRequest{},
-		)
+		return poolConn.GetInfo(ctx, &poolrpc.GetInfoRequest{})
 	}
 	poolMacaroonFn = func(cfg *LitNodeConfig) string {
 		return cfg.PoolMacPath
 	}
-	litRequestFn = func(ctx context.Context,
+	litSessionRequestFn = func(ctx context.Context,
 		c grpc.ClientConnInterface) (proto.Message, error) {
 
 		litConn := litrpc.NewSessionsClient(c)
-		return litConn.ListSessions(
-			ctx, &litrpc.ListSessionsRequest{},
-		)
+		return litConn.ListSessions(ctx, &litrpc.ListSessionsRequest{})
+	}
+	litAccountRequestFn = func(ctx context.Context,
+		c grpc.ClientConnInterface) (proto.Message, error) {
+
+		litConn := litrpc.NewAccountsClient(c)
+		return litConn.ListAccounts(ctx, &litrpc.ListAccountsRequest{})
 	}
 	litMacaroonFn = func(cfg *LitNodeConfig) string {
 		return cfg.LitMacPath
@@ -179,15 +177,22 @@ var (
 		grpcWebURI:        "/poolrpc.Trader/GetInfo",
 		restWebURI:        "/v1/pool/info",
 	}, {
-		name:       "litrpc",
+		name:       "litrpc-sessions",
 		macaroonFn: litMacaroonFn,
-		requestFn:  litRequestFn,
+		requestFn:  litSessionRequestFn,
 		// In some test cases we actually expect some sessions, so we
 		// don't explicitly check for an empty array but just the
 		// existence of the array in the response.
 		successPattern:    "\"sessions\":[",
 		allowedThroughLNC: false,
 		grpcWebURI:        "/litrpc.Sessions/ListSessions",
+	}, {
+		name:              "litrpc-accounts",
+		macaroonFn:        litMacaroonFn,
+		requestFn:         litAccountRequestFn,
+		successPattern:    "\"accounts\":[]",
+		allowedThroughLNC: false,
+		grpcWebURI:        "/litrpc.Accounts/ListAccounts",
 	}}
 )
 
@@ -342,6 +347,27 @@ func testModeIntegrated(net *NetworkHarness, t *harnessTest) {
 				)
 			})
 		}
+	})
+
+	t.t.Run("gRPC super macaroon account system test", func(tt *testing.T) {
+		cfg := net.Alice.Cfg
+
+		superMacFile, err := bakeSuperMacaroon(cfg, false)
+		require.NoError(tt, err)
+
+		defer func() {
+			_ = os.Remove(superMacFile)
+		}()
+
+		ht := newHarnessTest(tt, net)
+		runAccountSystemTest(
+			ht, net.Alice, cfg.RPCAddr(), cfg.TLSCertPath,
+			superMacFile, 1,
+		)
+		runAccountSystemTest(
+			ht, net.Alice, cfg.LitAddr(), cfg.TLSCertPath,
+			superMacFile, 2,
+		)
 	})
 }
 

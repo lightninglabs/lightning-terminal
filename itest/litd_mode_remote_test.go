@@ -145,4 +145,21 @@ func testModeRemote(net *NetworkHarness, t *harnessTest) {
 			})
 		}
 	})
+
+	t.t.Run("gRPC super macaroon account system test", func(tt *testing.T) {
+		cfg := net.Bob.Cfg
+
+		superMacFile, err := bakeSuperMacaroon(cfg, false)
+		require.NoError(tt, err)
+
+		defer func() {
+			_ = os.Remove(superMacFile)
+		}()
+
+		ht := newHarnessTest(tt, net)
+		runAccountSystemTest(
+			ht, net.Bob, cfg.LitAddr(), cfg.LitTLSCertPath,
+			superMacFile, 1,
+		)
+	})
 }
