@@ -50,6 +50,9 @@ XARGS := xargs -L 1
 
 LINT = $(LINT_BIN) run -v
 
+UNIT := $(GOLIST) | $(XARGS) env $(GOTEST)
+UNIT_RACE := $(UNIT) -race
+
 include make/release_flags.mk
 
 # We only return the part inside the double quote here to avoid escape issues
