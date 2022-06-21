@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	terminal "github.com/lightninglabs/lightning-terminal"
-	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightninglabs/protobuf-hex-display/jsonpb"
 	"github.com/lightninglabs/protobuf-hex-display/proto"
@@ -97,7 +96,7 @@ func fatal(err error) {
 	os.Exit(1)
 }
 
-func getClient(ctx *cli.Context) (litrpc.SessionsClient, func(), error) {
+func connectClient(ctx *cli.Context) (grpc.ClientConnInterface, func(), error) {
 	rpcServer := ctx.GlobalString("rpcserver")
 	tlsCertPath, macPath, err := extractPathArgs(ctx)
 	if err != nil {
@@ -109,8 +108,7 @@ func getClient(ctx *cli.Context) (litrpc.SessionsClient, func(), error) {
 	}
 	cleanup := func() { _ = conn.Close() }
 
-	sessionsClient := litrpc.NewSessionsClient(conn)
-	return sessionsClient, cleanup, nil
+	return conn, cleanup, nil
 }
 
 func getClientConn(address, tlsCertPath, macaroonPath string) (*grpc.ClientConn,
