@@ -24,6 +24,18 @@ var (
 			Entity: "sessions",
 			Action: "write",
 		}},
+		"/litrpc.Accounts/CreateAccount": {{
+			Entity: "account",
+			Action: "write",
+		}},
+		"/litrpc.Accounts/ListAccounts": {{
+			Entity: "account",
+			Action: "read",
+		}},
+		"/litrpc.Accounts/RemoveAccount": {{
+			Entity: "account",
+			Action: "write",
+		}},
 	}
 
 	// whiteListedMethods is a map of all lnd RPC methods that don't require

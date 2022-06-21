@@ -377,6 +377,13 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 		return nil, err
 	}
 
+	// To enable the accounts feature, we need the RPC middleware
+	// interceptor. In remote mode we can't influence whether that's enabled
+	// on lnd. But in integrated mode we can overwrite the flag here.
+	if !cfg.lndRemote {
+		cfg.Lnd.RPCMiddleware.Enable = true
+	}
+
 	// Validate the lightning-terminal config options.
 	litDir := lnd.CleanAndExpandPath(preCfg.LitDir)
 	cfg.LetsEncryptDir = lncfg.CleanAndExpandPath(cfg.LetsEncryptDir)

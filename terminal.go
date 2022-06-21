@@ -21,6 +21,7 @@ import (
 	restProxy "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jessevdk/go-flags"
 	"github.com/lightninglabs/faraday/frdrpc"
+	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/lightning-terminal/rpcmiddleware"
 	"github.com/lightninglabs/lightning-terminal/session"
@@ -166,6 +167,11 @@ type LightningTerminal struct {
 	middleware        *rpcmiddleware.Manager
 	middlewareStarted bool
 
+	accountService        *accounts.Service
+	accountServiceStarted bool
+
+	accountRpcServer *accounts.RPCServer
+
 	restHandler http.Handler
 	restCancel  func()
 }
@@ -206,6 +212,13 @@ func (g *LightningTerminal) Run() error {
 		g.cfg, g, g.validateSuperMacaroon, getAllMethodPermissions(),
 		bufRpcListener,
 	)
+	g.accountService, err = accounts.NewService(
+		path.Dir(g.cfg.MacaroonPath),
+	)
+	if err != nil {
+		return fmt.Errorf("error creating account service: %v", err)
+	}
+	g.accountRpcServer = accounts.NewRPCServer(g.accountService)
 	g.sessionRpcServer, err = newSessionRPCServer(&sessionRpcServerConfig{
 		basicAuth: g.rpcProxy.basicAuth,
 		dbDir:     path.Join(g.cfg.LitDir, g.cfg.Network),
@@ -393,6 +406,12 @@ func (g *LightningTerminal) Run() error {
 				"shutting down: %v", err)
 		}
 
+	case err := <-g.middleware.Errors():
+		if err != nil {
+			log.Errorf("Received critical error from RPC "+
+				"middleware, shutting down: %v", err)
+		}
+
 	case <-shutdownInterceptor.ShutdownChannel():
 		log.Infof("Shutdown signal received")
 	}
@@ -431,6 +450,7 @@ func (g *LightningTerminal) startSubservers() error {
 	// basic client connection to find out if the RPC server is started yet
 	// because that doesn't do anything else than just connect. We'll check
 	// if lnd is also ready to be used in the next step.
+	log.Infof("Connecting basic lnd client")
 	err := wait.NoError(func() error {
 		// Create an lnd client now that we have the full configuration.
 		// We'll need a basic client and a full client because not all
@@ -470,6 +490,7 @@ func (g *LightningTerminal) startSubservers() error {
 		}
 	}()
 
+	log.Infof("Connecting full lnd client")
 	g.lndClient, err = lndclient.NewLndServices(
 		&lndclient.LndServicesConfig{
 			LndAddress:            host,
@@ -494,6 +515,7 @@ func (g *LightningTerminal) startSubservers() error {
 	if g.cfg.LndMode == ModeIntegrated {
 		// Create a super macaroon that can be used to control lnd,
 		// faraday, loop, and pool, all at the same time.
+		log.Infof("Baking internal super macaroon")
 		ctx := context.Background()
 		superMacaroon, err := BakeSuperMacaroon(
 			ctx, g.basicClient, session.NewSuperMacaroonRootKeyID(
@@ -526,6 +548,7 @@ func (g *LightningTerminal) startSubservers() error {
 	// Both connection types are ready now, let's start our subservers if
 	// they should be started locally as an integrated service.
 	if !g.cfg.faradayRemote {
+		log.Infof("Starting integrated faraday daemon")
 		err = g.faradayServer.StartAsSubserver(
 			g.lndClient.LndServices, createDefaultMacaroons,
 		)
@@ -536,6 +559,7 @@ func (g *LightningTerminal) startSubservers() error {
 	}
 
 	if !g.cfg.loopRemote {
+		log.Infof("Starting integrated loop daemon")
 		err = g.loopServer.StartAsSubserver(
 			g.lndClient, createDefaultMacaroons,
 		)
@@ -546,6 +570,7 @@ func (g *LightningTerminal) startSubservers() error {
 	}
 
 	if !g.cfg.poolRemote {
+		log.Infof("Starting integrated pool daemon")
 		err = g.poolServer.StartAsSubserver(
 			g.basicClient, g.lndClient, createDefaultMacaroons,
 		)
@@ -555,6 +580,7 @@ func (g *LightningTerminal) startSubservers() error {
 		g.poolStarted = true
 	}
 
+	log.Infof("Starting LiT macaroon service")
 	g.macaroonService, err = lndclient.NewMacaroonService(
 		&lndclient.MacaroonServiceConfig{
 			DBPath:           path.Join(g.cfg.LitDir, g.cfg.Network),
@@ -577,20 +603,31 @@ func (g *LightningTerminal) startSubservers() error {
 	}
 	g.macaroonServiceStarted = true
 
+	log.Infof("Starting LiT session server")
 	if err = g.sessionRpcServer.start(); err != nil {
 		return err
 	}
 	g.sessionRpcServerStarted = true
 
+	log.Infof("Starting LiT account service")
+	if err := g.accountService.Start(g.lndClient.LndServices); err != nil {
+		return fmt.Errorf("error starting account service: %v", err)
+	}
+	g.accountServiceStarted = true
+
 	// Start the middleware manager.
+	log.Infof("Starting LiT middleware manager")
 	g.middleware = rpcmiddleware.NewManager(
 		rpcmiddleware.DefaultInterceptTimeout, g.lndClient.Client,
+		g.accountService,
 	)
 
 	if err = g.middleware.Start(); err != nil {
 		return err
 	}
 	g.middlewareStarted = true
+
+	log.Infof("Internal sub server startup complete")
 
 	return nil
 }
@@ -639,6 +676,7 @@ func (g *LightningTerminal) registerSubDaemonGrpcServers(server *grpc.Server,
 
 	if withLitRPC {
 		litrpc.RegisterSessionsServer(server, g.sessionRpcServer)
+		litrpc.RegisterAccountsServer(server, g.accountRpcServer)
 	}
 }
 
@@ -876,6 +914,13 @@ func (g *LightningTerminal) shutdown() error {
 	if g.macaroonServiceStarted {
 		if err := g.macaroonService.Stop(); err != nil {
 			log.Errorf("Error stopping macaroon service: %v", err)
+			returnErr = err
+		}
+	}
+
+	if g.accountServiceStarted {
+		if err := g.accountService.Stop(); err != nil {
+			log.Errorf("Error stopping account service: %v", err)
 			returnErr = err
 		}
 	}
