@@ -1,0 +1,101 @@
+syntax = "proto3";
+
+package litrpc;
+
+option go_package = "github.com/lightninglabs/lightning-terminal/litrpc";
+
+service Accounts {
+    /*
+    CreateAccount adds an entry to the account database. This entry represents
+    an amount of satoshis (account balance) that can be spent using off-chain
+    transactions (e.g. paying invoices).
+
+    Macaroons can be created to be locked to an account. This makes sure that
+    the bearer of the macaroon can only spend at most that amount of satoshis
+    through the daemon that has issued the macaroon.
+
+    Accounts only assert a maximum amount spendable. Having a certain account
+    balance does not guarantee that the node has the channel liquidity to
+    actually spend that amount.
+    */
+    rpc CreateAccount (CreateAccountRequest) returns (CreateAccountResponse);
+
+    /*
+    ListAccounts returns all accounts that are currently stored in the account
+    database.
+    */
+    rpc ListAccounts (ListAccountsRequest) returns (ListAccountsResponse);
+
+    /*
+    RemoveAccount removes the given account from the account database.
+    */
+    rpc RemoveAccount (RemoveAccountRequest) returns (RemoveAccountResponse);
+}
+
+message CreateAccountRequest {
+    /*
+    The initial account balance in satoshis representing the maximum amount that
+    can be spent.
+    */
+    uint64 account_balance = 1;
+
+    /*
+    The expiration date of the account as a timestamp. Set to zero to never
+    expire.
+    */
+    int64 expiration_date = 2;
+}
+
+message Account {
+    /*
+    The ID of the account.
+    */
+    string id = 1;
+
+    /*
+    The initial balance in satoshis that was set when the account was created.
+    */
+    uint64 initial_balance = 2;
+
+    /*
+    The current balance in satoshis.
+    */
+    uint64 current_balance = 3;
+
+    /*
+    Timestamp of the last time the account was updated.
+    */
+    int64 last_update = 4;
+
+    /*
+    Timestamp of the account's expiration date. Zero means it does not expire.
+    */
+    int64 expiration_date = 5;
+}
+
+message CreateAccountResponse {
+    /*
+    The created account.
+    */
+    Account account = 1;
+}
+
+message ListAccountsRequest {
+}
+
+message ListAccountsResponse {
+    /*
+    All accounts in the account database.
+    */
+    repeated Account accounts = 1;
+}
+
+message RemoveAccountRequest {
+    /*
+    The hexadecimal ID of the account to remove.
+    */
+    string id = 1;
+}
+
+message RemoveAccountResponse {
+}
