@@ -5,6 +5,7 @@ import (
 	"github.com/lightninglabs/loop/loopd"
 	"github.com/lightninglabs/pool"
 	"github.com/lightningnetwork/lnd"
+	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 )
 
@@ -53,6 +54,18 @@ var (
 	}
 )
 
+// getLndPermissions returns all lnd permissions for the proxy.
+func getLndPermissions() map[string][]bakery.Op {
+	lndPerms := lnd.MainRPCServerPermissions()
+
+	_, routerrpcPermissions, _ := routerrpc.New(&routerrpc.Config{})
+	for key, value := range routerrpcPermissions {
+		lndPerms[key] = value
+	}
+
+	return lndPerms
+}
+
 // getSubserverPermissions returns a merged map of all subserver macaroon
 // permissions.
 func getSubserverPermissions() map[string][]bakery.Op {
@@ -78,7 +91,7 @@ func getSubserverPermissions() map[string][]bakery.Op {
 // method macaroon permissions.
 func getAllMethodPermissions() map[string][]bakery.Op {
 	subserverPermissions := getSubserverPermissions()
-	lndPermissions := lnd.MainRPCServerPermissions()
+	lndPermissions := getLndPermissions()
 	mapSize := len(subserverPermissions) + len(lndPermissions) +
 		len(whiteListedMethods)
 	result := make(map[string][]bakery.Op, mapSize)
