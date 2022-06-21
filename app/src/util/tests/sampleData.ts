@@ -26,6 +26,7 @@ export const lndGetInfo: LND.GetInfoResponse.AsObject = {
   syncedToGraph: true,
   testnet: false,
   chainsList: [{ chain: 'bitcoin', network: 'regtest' }],
+  requireHtlcInterceptor: false,
   urisList: [
     '038b3fc29cfc195c9b190d86ad2d40ce7550a5c6f13941f53c7d7ac5b25c912a6c@172.18.0.7:9735',
   ],
@@ -159,6 +160,7 @@ export const lndPendingChannel: LND.PendingChannelsResponse.PendingChannel.AsObj
   remoteNodePub: '03bb934930cdcd25576aa61d08cc95214e0036f1219c435c06976e561558703290',
   numForwardingPackages: '7',
   chanStatusFlags: 'ChanStatusDefault',
+  pb_private: false,
 };
 
 export const lndPendingChannels: LND.PendingChannelsResponse.AsObject = {
@@ -171,7 +173,6 @@ export const lndPendingChannels: LND.PendingChannelsResponse.AsObject = {
       },
       commitFee: '9050',
       commitWeight: '552',
-      confirmationHeight: 0,
       feePerKw: '12500',
     },
   ],
@@ -274,6 +275,7 @@ export const lndTransaction: LND.Transaction.AsObject = {
   totalFees: '0',
   txHash: '1f765f45f2a6d33837a203e3fc911915c891e9b86f9c9d91a1931b92efdedf5b',
   label: '',
+  outputDetailsList: [],
 };
 
 export const lndGetChanInfo: Required<LND.ChannelEdge.AsObject> = {
