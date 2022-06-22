@@ -34,6 +34,7 @@ import { ReactComponent as UserPlusIcon } from 'assets/icons/user-plus.svg';
 interface IconProps {
   size?: 'x-small' | 'small' | 'medium' | 'large';
   onClick?: () => void;
+  disabled?: boolean;
 }
 
 const Icon = styled.span<IconProps>`
@@ -50,6 +51,12 @@ const Icon = styled.span<IconProps>`
       color: ${props.theme.colors.blue};
       background-color: ${props.theme.colors.offWhite}; 
     }
+  `}
+
+  ${props =>
+    props.disabled &&
+    `
+    color: ${props.theme.colors.lightBlue};
   `}
 
   ${props =>
