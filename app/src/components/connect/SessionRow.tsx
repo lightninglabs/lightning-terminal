@@ -77,13 +77,22 @@ const RowHeader: React.FC = () => {
           {l('type')}
         </SortableHeader>
       </HeaderColumn>
-      <HeaderColumn right>
+      <HeaderColumn>
         <SortableHeader<Session>
           field="state"
           sort={settingsStore.sessionSort}
           onSort={settingsStore.setSessionSort}
         >
           {l('state')}
+        </SortableHeader>
+      </HeaderColumn>
+      <HeaderColumn>
+        <SortableHeader<Session>
+          field="expiry"
+          sort={settingsStore.sessionSort}
+          onSort={settingsStore.setSessionSort}
+        >
+          {l('expiry')}
         </SortableHeader>
       </HeaderColumn>
       <ActionColumn />
@@ -114,16 +123,23 @@ const SessionRow: React.FC<Props> = ({ session, style }) => {
   return (
     <Row style={style}>
       <ActionColumn>
-        <Tip overlay={l('copy')}>
-          <Copy onClick={handleCopy} />
-        </Tip>
+        {session.isPaired ? (
+          <Tip overlay={l('paired')}>
+            <Copy disabled />
+          </Tip>
+        ) : (
+          <Tip overlay={l('copy')}>
+            <Copy onClick={handleCopy} />
+          </Tip>
+        )}
       </ActionColumn>
       <Column cols={3}>{session.label}</Column>
       <Column>{session.typeLabel}</Column>
-      <Column right>{session.stateLabel}</Column>
+      <Column>{session.pairedLabel}</Column>
+      <Column>{session.expiryLabel}</Column>
       <ActionColumn>
         <Tip overlay={l('revoke')}>
-          <CloseIcon onClick={handleRevoke} />
+          <CloseIcon size="large" onClick={handleRevoke} />
         </Tip>
       </ActionColumn>
     </Row>

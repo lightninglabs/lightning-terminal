@@ -2,6 +2,7 @@ import { makeAutoObservable } from 'mobx';
 import * as LIT from 'types/generated/lit-sessions_pb';
 import { SortParams } from 'types/state';
 import formatDate from 'date-fns/format';
+import { MAX_DATE } from 'util/constants';
 import { hex } from 'util/strings';
 import { Store } from 'store/store';
 
@@ -65,7 +66,9 @@ export default class Session {
 
   /** The date this session will expire as formatted string */
   get expiryLabel() {
-    return formatDate(this.expiry, 'MMM d, h:mm a');
+    return this.expiry.getTime() === MAX_DATE.getTime()
+      ? 'Never'
+      : formatDate(this.expiry, 'MMM d, yyyy h:mm a');
   }
 
   /** True if the session is not revoked or expired */
@@ -74,6 +77,16 @@ export default class Session {
       this.state === LIT.SessionState.STATE_CREATED ||
       this.state === LIT.SessionState.STATE_IN_USE
     );
+  }
+
+  /** True if the session has had a client connect to it */
+  get isPaired() {
+    return this.remotePublicKey !== '';
+  }
+
+  /** The paired status as a string */
+  get pairedLabel() {
+    return this.isPaired ? 'In Use' : 'Created';
   }
 
   /**
