@@ -66,7 +66,10 @@ export default class Session {
 
   /** The date this session will expire as formatted string */
   get expiryLabel() {
-    return this.expiry.getTime() === MAX_DATE.getTime()
+    // consider any expiry past the year 9000 to be never. This
+    // factors in expiry values set in different time zones
+    const minDate = new Date(MAX_DATE.getFullYear() - 999, 0, 1);
+    return this.expiry.getTime() > minDate.getTime()
       ? 'Never'
       : formatDate(this.expiry, 'MMM d, yyyy h:mm a');
   }
