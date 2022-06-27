@@ -120,7 +120,7 @@ var (
 	// to run LiT in remote mode.
 	minimalCompatibleVersion = &verrpc.Version{
 		AppMajor: 0,
-		AppMinor: 13,
+		AppMinor: 14,
 		AppPatch: 3,
 		BuildTags: []string{
 			"signrpc", "walletrpc", "chainrpc", "invoicesrpc",
