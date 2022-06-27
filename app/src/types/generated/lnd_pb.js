@@ -158,6 +158,8 @@ goog.exportSymbol('proto.lnrpc.Op', null, global);
 goog.exportSymbol('proto.lnrpc.OpenChannelRequest', null, global);
 goog.exportSymbol('proto.lnrpc.OpenStatusUpdate', null, global);
 goog.exportSymbol('proto.lnrpc.OutPoint', null, global);
+goog.exportSymbol('proto.lnrpc.OutputDetail', null, global);
+goog.exportSymbol('proto.lnrpc.OutputScriptType', null, global);
 goog.exportSymbol('proto.lnrpc.PayReq', null, global);
 goog.exportSymbol('proto.lnrpc.PayReqString', null, global);
 goog.exportSymbol('proto.lnrpc.Payment', null, global);
@@ -1249,6 +1251,285 @@ proto.lnrpc.Utxo.prototype.setConfirmations = function(value) {
  * @extends {jspb.Message}
  * @constructor
  */
+proto.lnrpc.OutputDetail = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.lnrpc.OutputDetail, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.lnrpc.OutputDetail.displayName = 'proto.lnrpc.OutputDetail';
+}
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.lnrpc.OutputDetail.prototype.toObject = function(opt_includeInstance) {
+  return proto.lnrpc.OutputDetail.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.lnrpc.OutputDetail} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.lnrpc.OutputDetail.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    outputType: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    address: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    pkScript: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    outputIndex: jspb.Message.getFieldWithDefault(msg, 4, "0"),
+    amount: jspb.Message.getFieldWithDefault(msg, 5, "0"),
+    isOurAddress: jspb.Message.getFieldWithDefault(msg, 6, false)
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.lnrpc.OutputDetail}
+ */
+proto.lnrpc.OutputDetail.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.lnrpc.OutputDetail;
+  return proto.lnrpc.OutputDetail.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.lnrpc.OutputDetail} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.lnrpc.OutputDetail}
+ */
+proto.lnrpc.OutputDetail.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = /** @type {!proto.lnrpc.OutputScriptType} */ (reader.readEnum());
+      msg.setOutputType(value);
+      break;
+    case 2:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setAddress(value);
+      break;
+    case 3:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setPkScript(value);
+      break;
+    case 4:
+      var value = /** @type {string} */ (reader.readInt64String());
+      msg.setOutputIndex(value);
+      break;
+    case 5:
+      var value = /** @type {string} */ (reader.readInt64String());
+      msg.setAmount(value);
+      break;
+    case 6:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setIsOurAddress(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.lnrpc.OutputDetail.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.lnrpc.OutputDetail.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.lnrpc.OutputDetail} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.lnrpc.OutputDetail.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getOutputType();
+  if (f !== 0.0) {
+    writer.writeEnum(
+      1,
+      f
+    );
+  }
+  f = message.getAddress();
+  if (f.length > 0) {
+    writer.writeString(
+      2,
+      f
+    );
+  }
+  f = message.getPkScript();
+  if (f.length > 0) {
+    writer.writeString(
+      3,
+      f
+    );
+  }
+  f = message.getOutputIndex();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
+      4,
+      f
+    );
+  }
+  f = message.getAmount();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
+      5,
+      f
+    );
+  }
+  f = message.getIsOurAddress();
+  if (f) {
+    writer.writeBool(
+      6,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional OutputScriptType output_type = 1;
+ * @return {!proto.lnrpc.OutputScriptType}
+ */
+proto.lnrpc.OutputDetail.prototype.getOutputType = function() {
+  return /** @type {!proto.lnrpc.OutputScriptType} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
+};
+
+
+/** @param {!proto.lnrpc.OutputScriptType} value */
+proto.lnrpc.OutputDetail.prototype.setOutputType = function(value) {
+  jspb.Message.setProto3EnumField(this, 1, value);
+};
+
+
+/**
+ * optional string address = 2;
+ * @return {string}
+ */
+proto.lnrpc.OutputDetail.prototype.getAddress = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+};
+
+
+/** @param {string} value */
+proto.lnrpc.OutputDetail.prototype.setAddress = function(value) {
+  jspb.Message.setProto3StringField(this, 2, value);
+};
+
+
+/**
+ * optional string pk_script = 3;
+ * @return {string}
+ */
+proto.lnrpc.OutputDetail.prototype.getPkScript = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
+};
+
+
+/** @param {string} value */
+proto.lnrpc.OutputDetail.prototype.setPkScript = function(value) {
+  jspb.Message.setProto3StringField(this, 3, value);
+};
+
+
+/**
+ * optional int64 output_index = 4;
+ * @return {string}
+ */
+proto.lnrpc.OutputDetail.prototype.getOutputIndex = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 4, "0"));
+};
+
+
+/** @param {string} value */
+proto.lnrpc.OutputDetail.prototype.setOutputIndex = function(value) {
+  jspb.Message.setProto3StringIntField(this, 4, value);
+};
+
+
+/**
+ * optional int64 amount = 5;
+ * @return {string}
+ */
+proto.lnrpc.OutputDetail.prototype.getAmount = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, "0"));
+};
+
+
+/** @param {string} value */
+proto.lnrpc.OutputDetail.prototype.setAmount = function(value) {
+  jspb.Message.setProto3StringIntField(this, 5, value);
+};
+
+
+/**
+ * optional bool is_our_address = 6;
+ * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
+ * You should avoid comparisons like {@code val === true/false} in those cases.
+ * @return {boolean}
+ */
+proto.lnrpc.OutputDetail.prototype.getIsOurAddress = function() {
+  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 6, false));
+};
+
+
+/** @param {boolean} value */
+proto.lnrpc.OutputDetail.prototype.setIsOurAddress = function(value) {
+  jspb.Message.setProto3BooleanField(this, 6, value);
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
 proto.lnrpc.Transaction = function(opt_data) {
   jspb.Message.initialize(this, opt_data, 0, -1, proto.lnrpc.Transaction.repeatedFields_, null);
 };
@@ -1261,7 +1542,7 @@ if (goog.DEBUG && !COMPILED) {
  * @private {!Array<number>}
  * @const
  */
-proto.lnrpc.Transaction.repeatedFields_ = [8];
+proto.lnrpc.Transaction.repeatedFields_ = [8,11];
 
 
 
@@ -1300,6 +1581,8 @@ proto.lnrpc.Transaction.toObject = function(includeInstance, msg) {
     timeStamp: jspb.Message.getFieldWithDefault(msg, 6, "0"),
     totalFees: jspb.Message.getFieldWithDefault(msg, 7, "0"),
     destAddressesList: jspb.Message.getRepeatedField(msg, 8),
+    outputDetailsList: jspb.Message.toObjectList(msg.getOutputDetailsList(),
+    proto.lnrpc.OutputDetail.toObject, includeInstance),
     rawTxHex: jspb.Message.getFieldWithDefault(msg, 9, ""),
     label: jspb.Message.getFieldWithDefault(msg, 10, "")
   };
@@ -1369,6 +1652,11 @@ proto.lnrpc.Transaction.deserializeBinaryFromReader = function(msg, reader) {
     case 8:
       var value = /** @type {string} */ (reader.readString());
       msg.addDestAddresses(value);
+      break;
+    case 11:
+      var value = new proto.lnrpc.OutputDetail;
+      reader.readMessage(value,proto.lnrpc.OutputDetail.deserializeBinaryFromReader);
+      msg.addOutputDetails(value);
       break;
     case 9:
       var value = /** @type {string} */ (reader.readString());
@@ -1461,6 +1749,14 @@ proto.lnrpc.Transaction.serializeBinaryToWriter = function(message, writer) {
     writer.writeRepeatedString(
       8,
       f
+    );
+  }
+  f = message.getOutputDetailsList();
+  if (f.length > 0) {
+    writer.writeRepeatedMessage(
+      11,
+      f,
+      proto.lnrpc.OutputDetail.serializeBinaryToWriter
     );
   }
   f = message.getRawTxHex();
@@ -1611,6 +1907,37 @@ proto.lnrpc.Transaction.prototype.addDestAddresses = function(value, opt_index) 
 
 proto.lnrpc.Transaction.prototype.clearDestAddressesList = function() {
   this.setDestAddressesList([]);
+};
+
+
+/**
+ * repeated OutputDetail output_details = 11;
+ * @return {!Array<!proto.lnrpc.OutputDetail>}
+ */
+proto.lnrpc.Transaction.prototype.getOutputDetailsList = function() {
+  return /** @type{!Array<!proto.lnrpc.OutputDetail>} */ (
+    jspb.Message.getRepeatedWrapperField(this, proto.lnrpc.OutputDetail, 11));
+};
+
+
+/** @param {!Array<!proto.lnrpc.OutputDetail>} value */
+proto.lnrpc.Transaction.prototype.setOutputDetailsList = function(value) {
+  jspb.Message.setRepeatedWrapperField(this, 11, value);
+};
+
+
+/**
+ * @param {!proto.lnrpc.OutputDetail=} opt_value
+ * @param {number=} opt_index
+ * @return {!proto.lnrpc.OutputDetail}
+ */
+proto.lnrpc.Transaction.prototype.addOutputDetails = function(opt_value, opt_index) {
+  return jspb.Message.addToRepeatedWrapperField(this, 11, opt_value, proto.lnrpc.OutputDetail, opt_index);
+};
+
+
+proto.lnrpc.Transaction.prototype.clearOutputDetailsList = function() {
+  this.setOutputDetailsList([]);
 };
 
 
@@ -13261,7 +13588,8 @@ proto.lnrpc.GetInfoResponse.toObject = function(includeInstance, msg) {
     chainsList: jspb.Message.toObjectList(msg.getChainsList(),
     proto.lnrpc.Chain.toObject, includeInstance),
     urisList: jspb.Message.getRepeatedField(msg, 12),
-    featuresMap: (f = msg.getFeaturesMap()) ? f.toObject(includeInstance, proto.lnrpc.Feature.toObject) : []
+    featuresMap: (f = msg.getFeaturesMap()) ? f.toObject(includeInstance, proto.lnrpc.Feature.toObject) : [],
+    requireHtlcInterceptor: jspb.Message.getFieldWithDefault(msg, 21, false)
   };
 
   if (includeInstance) {
@@ -13372,6 +13700,10 @@ proto.lnrpc.GetInfoResponse.deserializeBinaryFromReader = function(msg, reader) 
       reader.readMessage(value, function(message, reader) {
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readUint32, jspb.BinaryReader.prototype.readMessage, proto.lnrpc.Feature.deserializeBinaryFromReader, 0);
          });
+      break;
+    case 21:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setRequireHtlcInterceptor(value);
       break;
     default:
       reader.skipField();
@@ -13525,6 +13857,13 @@ proto.lnrpc.GetInfoResponse.serializeBinaryToWriter = function(message, writer) 
   f = message.getFeaturesMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(19, writer, jspb.BinaryWriter.prototype.writeUint32, jspb.BinaryWriter.prototype.writeMessage, proto.lnrpc.Feature.serializeBinaryToWriter);
+  }
+  f = message.getRequireHtlcInterceptor();
+  if (f) {
+    writer.writeBool(
+      21,
+      f
+    );
   }
 };
 
@@ -13835,6 +14174,23 @@ proto.lnrpc.GetInfoResponse.prototype.getFeaturesMap = function(opt_noLazyCreate
 
 proto.lnrpc.GetInfoResponse.prototype.clearFeaturesMap = function() {
   this.getFeaturesMap().clear();
+};
+
+
+/**
+ * optional bool require_htlc_interceptor = 21;
+ * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
+ * You should avoid comparisons like {@code val === true/false} in those cases.
+ * @return {boolean}
+ */
+proto.lnrpc.GetInfoResponse.prototype.getRequireHtlcInterceptor = function() {
+  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 21, false));
+};
+
+
+/** @param {boolean} value */
+proto.lnrpc.GetInfoResponse.prototype.setRequireHtlcInterceptor = function(value) {
+  jspb.Message.setProto3BooleanField(this, 21, value);
 };
 
 
@@ -20661,7 +21017,8 @@ proto.lnrpc.PendingChannelsResponse.PendingChannel.toObject = function(includeIn
     initiator: jspb.Message.getFieldWithDefault(msg, 8, 0),
     commitmentType: jspb.Message.getFieldWithDefault(msg, 9, 0),
     numForwardingPackages: jspb.Message.getFieldWithDefault(msg, 10, "0"),
-    chanStatusFlags: jspb.Message.getFieldWithDefault(msg, 11, "")
+    chanStatusFlags: jspb.Message.getFieldWithDefault(msg, 11, ""),
+    pb_private: jspb.Message.getFieldWithDefault(msg, 12, false)
   };
 
   if (includeInstance) {
@@ -20741,6 +21098,10 @@ proto.lnrpc.PendingChannelsResponse.PendingChannel.deserializeBinaryFromReader =
     case 11:
       var value = /** @type {string} */ (reader.readString());
       msg.setChanStatusFlags(value);
+      break;
+    case 12:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setPrivate(value);
       break;
     default:
       reader.skipField();
@@ -20845,6 +21206,13 @@ proto.lnrpc.PendingChannelsResponse.PendingChannel.serializeBinaryToWriter = fun
   if (f.length > 0) {
     writer.writeString(
       11,
+      f
+    );
+  }
+  f = message.getPrivate();
+  if (f) {
+    writer.writeBool(
+      12,
       f
     );
   }
@@ -21016,6 +21384,23 @@ proto.lnrpc.PendingChannelsResponse.PendingChannel.prototype.setChanStatusFlags 
 };
 
 
+/**
+ * optional bool private = 12;
+ * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
+ * You should avoid comparisons like {@code val === true/false} in those cases.
+ * @return {boolean}
+ */
+proto.lnrpc.PendingChannelsResponse.PendingChannel.prototype.getPrivate = function() {
+  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 12, false));
+};
+
+
+/** @param {boolean} value */
+proto.lnrpc.PendingChannelsResponse.PendingChannel.prototype.setPrivate = function(value) {
+  jspb.Message.setProto3BooleanField(this, 12, value);
+};
+
+
 
 /**
  * Generated by JsPbCodeGenerator.
@@ -21064,7 +21449,6 @@ proto.lnrpc.PendingChannelsResponse.PendingOpenChannel.prototype.toObject = func
 proto.lnrpc.PendingChannelsResponse.PendingOpenChannel.toObject = function(includeInstance, msg) {
   var f, obj = {
     channel: (f = msg.getChannel()) && proto.lnrpc.PendingChannelsResponse.PendingChannel.toObject(includeInstance, f),
-    confirmationHeight: jspb.Message.getFieldWithDefault(msg, 2, 0),
     commitFee: jspb.Message.getFieldWithDefault(msg, 4, "0"),
     commitWeight: jspb.Message.getFieldWithDefault(msg, 5, "0"),
     feePerKw: jspb.Message.getFieldWithDefault(msg, 6, "0")
@@ -21108,10 +21492,6 @@ proto.lnrpc.PendingChannelsResponse.PendingOpenChannel.deserializeBinaryFromRead
       var value = new proto.lnrpc.PendingChannelsResponse.PendingChannel;
       reader.readMessage(value,proto.lnrpc.PendingChannelsResponse.PendingChannel.deserializeBinaryFromReader);
       msg.setChannel(value);
-      break;
-    case 2:
-      var value = /** @type {number} */ (reader.readUint32());
-      msg.setConfirmationHeight(value);
       break;
     case 4:
       var value = /** @type {string} */ (reader.readInt64String());
@@ -21160,13 +21540,6 @@ proto.lnrpc.PendingChannelsResponse.PendingOpenChannel.serializeBinaryToWriter =
       1,
       f,
       proto.lnrpc.PendingChannelsResponse.PendingChannel.serializeBinaryToWriter
-    );
-  }
-  f = message.getConfirmationHeight();
-  if (f !== 0) {
-    writer.writeUint32(
-      2,
-      f
     );
   }
   f = message.getCommitFee();
@@ -21220,21 +21593,6 @@ proto.lnrpc.PendingChannelsResponse.PendingOpenChannel.prototype.clearChannel = 
  */
 proto.lnrpc.PendingChannelsResponse.PendingOpenChannel.prototype.hasChannel = function() {
   return jspb.Message.getField(this, 1) != null;
-};
-
-
-/**
- * optional uint32 confirmation_height = 2;
- * @return {number}
- */
-proto.lnrpc.PendingChannelsResponse.PendingOpenChannel.prototype.getConfirmationHeight = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
-};
-
-
-/** @param {number} value */
-proto.lnrpc.PendingChannelsResponse.PendingOpenChannel.prototype.setConfirmationHeight = function(value) {
-  jspb.Message.setProto3IntField(this, 2, value);
 };
 
 
@@ -24416,7 +24774,8 @@ proto.lnrpc.QueryRoutesRequest.toObject = function(includeInstance, msg) {
     lastHopPubkey: msg.getLastHopPubkey_asB64(),
     routeHintsList: jspb.Message.toObjectList(msg.getRouteHintsList(),
     proto.lnrpc.RouteHint.toObject, includeInstance),
-    destFeaturesList: jspb.Message.getRepeatedField(msg, 17)
+    destFeaturesList: jspb.Message.getRepeatedField(msg, 17),
+    timePref: +jspb.Message.getFieldWithDefault(msg, 18, 0.0)
   };
 
   if (includeInstance) {
@@ -24522,6 +24881,10 @@ proto.lnrpc.QueryRoutesRequest.deserializeBinaryFromReader = function(msg, reade
     case 17:
       var value = /** @type {!Array<!proto.lnrpc.FeatureBit>} */ (reader.readPackedEnum());
       msg.setDestFeaturesList(value);
+      break;
+    case 18:
+      var value = /** @type {number} */ (reader.readDouble());
+      msg.setTimePref(value);
       break;
     default:
       reader.skipField();
@@ -24662,6 +25025,13 @@ proto.lnrpc.QueryRoutesRequest.serializeBinaryToWriter = function(message, write
   if (f.length > 0) {
     writer.writePackedEnum(
       17,
+      f
+    );
+  }
+  f = message.getTimePref();
+  if (f !== 0.0) {
+    writer.writeDouble(
+      18,
       f
     );
   }
@@ -25049,6 +25419,21 @@ proto.lnrpc.QueryRoutesRequest.prototype.addDestFeatures = function(value, opt_i
 
 proto.lnrpc.QueryRoutesRequest.prototype.clearDestFeaturesList = function() {
   this.setDestFeaturesList([]);
+};
+
+
+/**
+ * optional double time_pref = 18;
+ * @return {number}
+ */
+proto.lnrpc.QueryRoutesRequest.prototype.getTimePref = function() {
+  return /** @type {number} */ (+jspb.Message.getFieldWithDefault(this, 18, 0.0));
+};
+
+
+/** @param {number} value */
+proto.lnrpc.QueryRoutesRequest.prototype.setTimePref = function(value) {
+  jspb.Message.setProto3FloatField(this, 18, value);
 };
 
 
@@ -25693,7 +26078,8 @@ proto.lnrpc.Hop.toObject = function(includeInstance, msg) {
     tlvPayload: jspb.Message.getFieldWithDefault(msg, 9, false),
     mppRecord: (f = msg.getMppRecord()) && proto.lnrpc.MPPRecord.toObject(includeInstance, f),
     ampRecord: (f = msg.getAmpRecord()) && proto.lnrpc.AMPRecord.toObject(includeInstance, f),
-    customRecordsMap: (f = msg.getCustomRecordsMap()) ? f.toObject(includeInstance, undefined) : []
+    customRecordsMap: (f = msg.getCustomRecordsMap()) ? f.toObject(includeInstance, undefined) : [],
+    metadata: msg.getMetadata_asB64()
   };
 
   if (includeInstance) {
@@ -25781,6 +26167,10 @@ proto.lnrpc.Hop.deserializeBinaryFromReader = function(msg, reader) {
       reader.readMessage(value, function(message, reader) {
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readUint64, jspb.BinaryReader.prototype.readBytes, null, 0);
          });
+      break;
+    case 13:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setMetadata(value);
       break;
     default:
       reader.skipField();
@@ -25893,6 +26283,13 @@ proto.lnrpc.Hop.serializeBinaryToWriter = function(message, writer) {
   f = message.getCustomRecordsMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(11, writer, jspb.BinaryWriter.prototype.writeUint64, jspb.BinaryWriter.prototype.writeBytes);
+  }
+  f = message.getMetadata_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      13,
+      f
+    );
   }
 };
 
@@ -26109,6 +26506,45 @@ proto.lnrpc.Hop.prototype.getCustomRecordsMap = function(opt_noLazyCreate) {
 
 proto.lnrpc.Hop.prototype.clearCustomRecordsMap = function() {
   this.getCustomRecordsMap().clear();
+};
+
+
+/**
+ * optional bytes metadata = 13;
+ * @return {!(string|Uint8Array)}
+ */
+proto.lnrpc.Hop.prototype.getMetadata = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 13, ""));
+};
+
+
+/**
+ * optional bytes metadata = 13;
+ * This is a type-conversion wrapper around `getMetadata()`
+ * @return {string}
+ */
+proto.lnrpc.Hop.prototype.getMetadata_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getMetadata()));
+};
+
+
+/**
+ * optional bytes metadata = 13;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getMetadata()`
+ * @return {!Uint8Array}
+ */
+proto.lnrpc.Hop.prototype.getMetadata_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getMetadata()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.lnrpc.Hop.prototype.setMetadata = function(value) {
+  jspb.Message.setProto3BytesField(this, 13, value);
 };
 
 
@@ -36117,7 +36553,8 @@ proto.lnrpc.ListPaymentsRequest.toObject = function(includeInstance, msg) {
     includeIncomplete: jspb.Message.getFieldWithDefault(msg, 1, false),
     indexOffset: jspb.Message.getFieldWithDefault(msg, 2, "0"),
     maxPayments: jspb.Message.getFieldWithDefault(msg, 3, "0"),
-    reversed: jspb.Message.getFieldWithDefault(msg, 4, false)
+    reversed: jspb.Message.getFieldWithDefault(msg, 4, false),
+    countTotalPayments: jspb.Message.getFieldWithDefault(msg, 5, false)
   };
 
   if (includeInstance) {
@@ -36169,6 +36606,10 @@ proto.lnrpc.ListPaymentsRequest.deserializeBinaryFromReader = function(msg, read
     case 4:
       var value = /** @type {boolean} */ (reader.readBool());
       msg.setReversed(value);
+      break;
+    case 5:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setCountTotalPayments(value);
       break;
     default:
       reader.skipField();
@@ -36224,6 +36665,13 @@ proto.lnrpc.ListPaymentsRequest.serializeBinaryToWriter = function(message, writ
   if (f) {
     writer.writeBool(
       4,
+      f
+    );
+  }
+  f = message.getCountTotalPayments();
+  if (f) {
+    writer.writeBool(
+      5,
       f
     );
   }
@@ -36294,6 +36742,23 @@ proto.lnrpc.ListPaymentsRequest.prototype.setReversed = function(value) {
 };
 
 
+/**
+ * optional bool count_total_payments = 5;
+ * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
+ * You should avoid comparisons like {@code val === true/false} in those cases.
+ * @return {boolean}
+ */
+proto.lnrpc.ListPaymentsRequest.prototype.getCountTotalPayments = function() {
+  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 5, false));
+};
+
+
+/** @param {boolean} value */
+proto.lnrpc.ListPaymentsRequest.prototype.setCountTotalPayments = function(value) {
+  jspb.Message.setProto3BooleanField(this, 5, value);
+};
+
+
 
 /**
  * Generated by JsPbCodeGenerator.
@@ -36351,7 +36816,8 @@ proto.lnrpc.ListPaymentsResponse.toObject = function(includeInstance, msg) {
     paymentsList: jspb.Message.toObjectList(msg.getPaymentsList(),
     proto.lnrpc.Payment.toObject, includeInstance),
     firstIndexOffset: jspb.Message.getFieldWithDefault(msg, 2, "0"),
-    lastIndexOffset: jspb.Message.getFieldWithDefault(msg, 3, "0")
+    lastIndexOffset: jspb.Message.getFieldWithDefault(msg, 3, "0"),
+    totalNumPayments: jspb.Message.getFieldWithDefault(msg, 4, "0")
   };
 
   if (includeInstance) {
@@ -36401,6 +36867,10 @@ proto.lnrpc.ListPaymentsResponse.deserializeBinaryFromReader = function(msg, rea
       var value = /** @type {string} */ (reader.readUint64String());
       msg.setLastIndexOffset(value);
       break;
+    case 4:
+      var value = /** @type {string} */ (reader.readUint64String());
+      msg.setTotalNumPayments(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -36449,6 +36919,13 @@ proto.lnrpc.ListPaymentsResponse.serializeBinaryToWriter = function(message, wri
   if (parseInt(f, 10) !== 0) {
     writer.writeUint64String(
       3,
+      f
+    );
+  }
+  f = message.getTotalNumPayments();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
+      4,
       f
     );
   }
@@ -36513,6 +36990,21 @@ proto.lnrpc.ListPaymentsResponse.prototype.getLastIndexOffset = function() {
 /** @param {string} value */
 proto.lnrpc.ListPaymentsResponse.prototype.setLastIndexOffset = function(value) {
   jspb.Message.setProto3StringIntField(this, 3, value);
+};
+
+
+/**
+ * optional uint64 total_num_payments = 4;
+ * @return {string}
+ */
+proto.lnrpc.ListPaymentsResponse.prototype.getTotalNumPayments = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 4, "0"));
+};
+
+
+/** @param {string} value */
+proto.lnrpc.ListPaymentsResponse.prototype.setTotalNumPayments = function(value) {
+  jspb.Message.setProto3StringIntField(this, 4, value);
 };
 
 
@@ -47284,11 +47776,28 @@ proto.lnrpc.InterceptFeedback.prototype.setReplacementSerialized = function(valu
 /**
  * @enum {number}
  */
+proto.lnrpc.OutputScriptType = {
+  SCRIPT_TYPE_PUBKEY_HASH: 0,
+  SCRIPT_TYPE_SCRIPT_HASH: 1,
+  SCRIPT_TYPE_WITNESS_V0_PUBKEY_HASH: 2,
+  SCRIPT_TYPE_WITNESS_V0_SCRIPT_HASH: 3,
+  SCRIPT_TYPE_PUBKEY: 4,
+  SCRIPT_TYPE_MULTISIG: 5,
+  SCRIPT_TYPE_NULLDATA: 6,
+  SCRIPT_TYPE_NON_STANDARD: 7,
+  SCRIPT_TYPE_WITNESS_UNKNOWN: 8
+};
+
+/**
+ * @enum {number}
+ */
 proto.lnrpc.AddressType = {
   WITNESS_PUBKEY_HASH: 0,
   NESTED_PUBKEY_HASH: 1,
   UNUSED_WITNESS_PUBKEY_HASH: 2,
-  UNUSED_NESTED_PUBKEY_HASH: 3
+  UNUSED_NESTED_PUBKEY_HASH: 3,
+  TAPROOT_PUBKEY: 4,
+  UNUSED_TAPROOT_PUBKEY: 5
 };
 
 /**

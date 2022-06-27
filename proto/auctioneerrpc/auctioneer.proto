@@ -670,6 +670,13 @@ enum AuctionAccountState {
     The account has recently participated in a batch and is not yet confirmed.
     */
     STATE_PENDING_BATCH = 5;
+
+    /*
+    The account has reached the expiration height while it had a pending update
+    that hasn't yet confirmed. This allows accounts to be renewed once
+    confirmed and expired.
+    */
+    STATE_EXPIRED_PENDING_UPDATE = 6;
 }
 
 message AuctionAccount {
@@ -886,6 +893,14 @@ message ServerOrder {
     expressed in satoshis per 1000 weight units (sat/kW).
     */
     uint64 max_batch_fee_rate_sat_per_kw = 13 [jstype = JS_STRING];
+
+    // List of nodes that will be allowed to match with our order. Incompatible
+    // with the `not_allowed_node_ids` field.
+    repeated bytes allowed_node_ids = 14;
+
+    // List of nodes that won't be allowed to match with our order. Incompatible
+    // with the `allowed_node_ids` field.
+    repeated bytes not_allowed_node_ids = 15;
 }
 
 enum NodeTier {

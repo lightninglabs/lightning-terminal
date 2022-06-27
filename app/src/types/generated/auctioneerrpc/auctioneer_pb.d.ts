@@ -1086,6 +1086,20 @@ export class ServerOrder extends jspb.Message {
   getMaxBatchFeeRateSatPerKw(): string;
   setMaxBatchFeeRateSatPerKw(value: string): void;
 
+  clearAllowedNodeIdsList(): void;
+  getAllowedNodeIdsList(): Array<Uint8Array | string>;
+  getAllowedNodeIdsList_asU8(): Array<Uint8Array>;
+  getAllowedNodeIdsList_asB64(): Array<string>;
+  setAllowedNodeIdsList(value: Array<Uint8Array | string>): void;
+  addAllowedNodeIds(value: Uint8Array | string, index?: number): Uint8Array | string;
+
+  clearNotAllowedNodeIdsList(): void;
+  getNotAllowedNodeIdsList(): Array<Uint8Array | string>;
+  getNotAllowedNodeIdsList_asU8(): Array<Uint8Array>;
+  getNotAllowedNodeIdsList_asB64(): Array<string>;
+  setNotAllowedNodeIdsList(value: Array<Uint8Array | string>): void;
+  addNotAllowedNodeIds(value: Uint8Array | string, index?: number): Uint8Array | string;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServerOrder.AsObject;
   static toObject(includeInstance: boolean, msg: ServerOrder): ServerOrder.AsObject;
@@ -1109,6 +1123,8 @@ export namespace ServerOrder {
     nodeAddrList: Array<NodeAddress.AsObject>,
     channelType: OrderChannelTypeMap[keyof OrderChannelTypeMap],
     maxBatchFeeRateSatPerKw: string,
+    allowedNodeIdsList: Array<Uint8Array | string>,
+    notAllowedNodeIdsList: Array<Uint8Array | string>,
   }
 }
 
@@ -2111,6 +2127,7 @@ export interface AuctionAccountStateMap {
   STATE_PENDING_UPDATE: 3;
   STATE_CLOSED: 4;
   STATE_PENDING_BATCH: 5;
+  STATE_EXPIRED_PENDING_UPDATE: 6;
 }
 
 export const AuctionAccountState: AuctionAccountStateMap;

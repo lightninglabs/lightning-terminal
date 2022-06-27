@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/lightninglabs/lightning-node-connect/mailbox"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 	"gopkg.in/macaroon.v2"
@@ -47,7 +47,7 @@ type Session struct {
 	DevServer       bool
 	MacaroonRootKey uint64
 	MacaroonRecipe  *MacaroonRecipe
-	PairingSecret   [mailbox.NumPasswordBytes]byte
+	PairingSecret   [mailbox.NumPassphraseEntropyBytes]byte
 	LocalPrivateKey *btcec.PrivateKey
 	LocalPublicKey  *btcec.PublicKey
 	RemotePublicKey *btcec.PublicKey
@@ -58,12 +58,12 @@ func NewSession(label string, typ Type, expiry time.Time, serverAddr string,
 	devServer bool, perms []bakery.Op, caveats []macaroon.Caveat) (*Session,
 	error) {
 
-	_, pairingSecret, err := mailbox.NewPassword()
+	_, pairingSecret, err := mailbox.NewPassphraseEntropy()
 	if err != nil {
 		return nil, fmt.Errorf("error deriving pairing secret: %v", err)
 	}
 
-	privateKey, err := btcec.NewPrivateKey(btcec.S256())
+	privateKey, err := btcec.NewPrivateKey()
 	if err != nil {
 		return nil, fmt.Errorf("error deriving private key: %v", err)
 	}

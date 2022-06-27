@@ -5694,7 +5694,7 @@ if (goog.DEBUG && !COMPILED) {
  * @private {!Array<number>}
  * @const
  */
-proto.poolrpc.Order.repeatedFields_ = [11];
+proto.poolrpc.Order.repeatedFields_ = [11,14,15];
 
 
 
@@ -5738,7 +5738,9 @@ proto.poolrpc.Order.toObject = function(includeInstance, msg) {
     eventsList: jspb.Message.toObjectList(msg.getEventsList(),
     proto.poolrpc.OrderEvent.toObject, includeInstance),
     minUnitsMatch: jspb.Message.getFieldWithDefault(msg, 12, 0),
-    channelType: jspb.Message.getFieldWithDefault(msg, 13, 0)
+    channelType: jspb.Message.getFieldWithDefault(msg, 13, 0),
+    allowedNodeIdsList: msg.getAllowedNodeIdsList_asB64(),
+    notAllowedNodeIdsList: msg.getNotAllowedNodeIdsList_asB64()
   };
 
   if (includeInstance) {
@@ -5827,6 +5829,14 @@ proto.poolrpc.Order.deserializeBinaryFromReader = function(msg, reader) {
     case 13:
       var value = /** @type {!proto.poolrpc.OrderChannelType} */ (reader.readEnum());
       msg.setChannelType(value);
+      break;
+    case 14:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.addAllowedNodeIds(value);
+      break;
+    case 15:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.addNotAllowedNodeIds(value);
       break;
     default:
       reader.skipField();
@@ -5946,6 +5956,20 @@ proto.poolrpc.Order.serializeBinaryToWriter = function(message, writer) {
   if (f !== 0.0) {
     writer.writeEnum(
       13,
+      f
+    );
+  }
+  f = message.getAllowedNodeIdsList_asU8();
+  if (f.length > 0) {
+    writer.writeRepeatedBytes(
+      14,
+      f
+    );
+  }
+  f = message.getNotAllowedNodeIdsList_asU8();
+  if (f.length > 0) {
+    writer.writeRepeatedBytes(
+      15,
       f
     );
   }
@@ -6208,6 +6232,112 @@ proto.poolrpc.Order.prototype.getChannelType = function() {
 /** @param {!proto.poolrpc.OrderChannelType} value */
 proto.poolrpc.Order.prototype.setChannelType = function(value) {
   jspb.Message.setProto3EnumField(this, 13, value);
+};
+
+
+/**
+ * repeated bytes allowed_node_ids = 14;
+ * @return {!(Array<!Uint8Array>|Array<string>)}
+ */
+proto.poolrpc.Order.prototype.getAllowedNodeIdsList = function() {
+  return /** @type {!(Array<!Uint8Array>|Array<string>)} */ (jspb.Message.getRepeatedField(this, 14));
+};
+
+
+/**
+ * repeated bytes allowed_node_ids = 14;
+ * This is a type-conversion wrapper around `getAllowedNodeIdsList()`
+ * @return {!Array<string>}
+ */
+proto.poolrpc.Order.prototype.getAllowedNodeIdsList_asB64 = function() {
+  return /** @type {!Array<string>} */ (jspb.Message.bytesListAsB64(
+      this.getAllowedNodeIdsList()));
+};
+
+
+/**
+ * repeated bytes allowed_node_ids = 14;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getAllowedNodeIdsList()`
+ * @return {!Array<!Uint8Array>}
+ */
+proto.poolrpc.Order.prototype.getAllowedNodeIdsList_asU8 = function() {
+  return /** @type {!Array<!Uint8Array>} */ (jspb.Message.bytesListAsU8(
+      this.getAllowedNodeIdsList()));
+};
+
+
+/** @param {!(Array<!Uint8Array>|Array<string>)} value */
+proto.poolrpc.Order.prototype.setAllowedNodeIdsList = function(value) {
+  jspb.Message.setField(this, 14, value || []);
+};
+
+
+/**
+ * @param {!(string|Uint8Array)} value
+ * @param {number=} opt_index
+ */
+proto.poolrpc.Order.prototype.addAllowedNodeIds = function(value, opt_index) {
+  jspb.Message.addToRepeatedField(this, 14, value, opt_index);
+};
+
+
+proto.poolrpc.Order.prototype.clearAllowedNodeIdsList = function() {
+  this.setAllowedNodeIdsList([]);
+};
+
+
+/**
+ * repeated bytes not_allowed_node_ids = 15;
+ * @return {!(Array<!Uint8Array>|Array<string>)}
+ */
+proto.poolrpc.Order.prototype.getNotAllowedNodeIdsList = function() {
+  return /** @type {!(Array<!Uint8Array>|Array<string>)} */ (jspb.Message.getRepeatedField(this, 15));
+};
+
+
+/**
+ * repeated bytes not_allowed_node_ids = 15;
+ * This is a type-conversion wrapper around `getNotAllowedNodeIdsList()`
+ * @return {!Array<string>}
+ */
+proto.poolrpc.Order.prototype.getNotAllowedNodeIdsList_asB64 = function() {
+  return /** @type {!Array<string>} */ (jspb.Message.bytesListAsB64(
+      this.getNotAllowedNodeIdsList()));
+};
+
+
+/**
+ * repeated bytes not_allowed_node_ids = 15;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getNotAllowedNodeIdsList()`
+ * @return {!Array<!Uint8Array>}
+ */
+proto.poolrpc.Order.prototype.getNotAllowedNodeIdsList_asU8 = function() {
+  return /** @type {!Array<!Uint8Array>} */ (jspb.Message.bytesListAsU8(
+      this.getNotAllowedNodeIdsList()));
+};
+
+
+/** @param {!(Array<!Uint8Array>|Array<string>)} value */
+proto.poolrpc.Order.prototype.setNotAllowedNodeIdsList = function(value) {
+  jspb.Message.setField(this, 15, value || []);
+};
+
+
+/**
+ * @param {!(string|Uint8Array)} value
+ * @param {number=} opt_index
+ */
+proto.poolrpc.Order.prototype.addNotAllowedNodeIds = function(value, opt_index) {
+  jspb.Message.addToRepeatedField(this, 15, value, opt_index);
+};
+
+
+proto.poolrpc.Order.prototype.clearNotAllowedNodeIdsList = function() {
+  this.setNotAllowedNodeIdsList([]);
 };
 
 

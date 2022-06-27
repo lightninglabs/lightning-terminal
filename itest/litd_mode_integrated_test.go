@@ -3,7 +3,6 @@ package itest
 import (
 	"bytes"
 	"context"
-	"crypto/sha512"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
@@ -16,8 +15,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
-	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/lightninglabs/faraday/frdrpc"
 	"github.com/lightninglabs/lightning-node-connect/mailbox"
 	terminal "github.com/lightninglabs/lightning-terminal"
@@ -723,24 +722,24 @@ func getServerCertificates(hostPort string) ([]*x509.Certificate, error) {
 func connectMailbox(ctx context.Context,
 	connectPhrase []string) (grpc.ClientConnInterface, error) {
 
-	var mnemonicWords [mailbox.NumPasswordWords]string
+	var mnemonicWords [mailbox.NumPassphraseWords]string
 	copy(mnemonicWords[:], connectPhrase)
-	password := mailbox.PasswordMnemonicToEntropy(mnemonicWords)
+	passphrase := mailbox.PassphraseMnemonicToEntropy(mnemonicWords)
 
-	sid := sha512.Sum512(password[:])
-
-	privKey, err := btcec.NewPrivateKey(btcec.S256())
+	privKey, err := btcec.NewPrivateKey()
 	if err != nil {
 		return nil, err
 	}
 	ecdh := &keychain.PrivKeyECDH{PrivKey: privKey}
 
-	transportConn, err := mailbox.NewClient(ctx, sid)
+	connData := mailbox.NewConnData(ecdh, nil, passphrase[:], nil, nil, nil)
+
+	transportConn, err := mailbox.NewClient(ctx, connData)
 	if err != nil {
 		return nil, err
 	}
 
-	noiseConn := mailbox.NewNoiseGrpcConn(ecdh, nil, password[:])
+	noiseConn := mailbox.NewNoiseGrpcConn(connData)
 
 	dialOpts := []grpc.DialOption{
 		grpc.WithContextDialer(transportConn.Dial),

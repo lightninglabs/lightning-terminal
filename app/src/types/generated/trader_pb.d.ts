@@ -849,6 +849,20 @@ export class Order extends jspb.Message {
   getChannelType(): auctioneerrpc_auctioneer_pb.OrderChannelTypeMap[keyof auctioneerrpc_auctioneer_pb.OrderChannelTypeMap];
   setChannelType(value: auctioneerrpc_auctioneer_pb.OrderChannelTypeMap[keyof auctioneerrpc_auctioneer_pb.OrderChannelTypeMap]): void;
 
+  clearAllowedNodeIdsList(): void;
+  getAllowedNodeIdsList(): Array<Uint8Array | string>;
+  getAllowedNodeIdsList_asU8(): Array<Uint8Array>;
+  getAllowedNodeIdsList_asB64(): Array<string>;
+  setAllowedNodeIdsList(value: Array<Uint8Array | string>): void;
+  addAllowedNodeIds(value: Uint8Array | string, index?: number): Uint8Array | string;
+
+  clearNotAllowedNodeIdsList(): void;
+  getNotAllowedNodeIdsList(): Array<Uint8Array | string>;
+  getNotAllowedNodeIdsList_asU8(): Array<Uint8Array>;
+  getNotAllowedNodeIdsList_asB64(): Array<string>;
+  setNotAllowedNodeIdsList(value: Array<Uint8Array | string>): void;
+  addNotAllowedNodeIds(value: Uint8Array | string, index?: number): Uint8Array | string;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Order.AsObject;
   static toObject(includeInstance: boolean, msg: Order): Order.AsObject;
@@ -874,6 +888,8 @@ export namespace Order {
     eventsList: Array<OrderEvent.AsObject>,
     minUnitsMatch: number,
     channelType: auctioneerrpc_auctioneer_pb.OrderChannelTypeMap[keyof auctioneerrpc_auctioneer_pb.OrderChannelTypeMap],
+    allowedNodeIdsList: Array<Uint8Array | string>,
+    notAllowedNodeIdsList: Array<Uint8Array | string>,
   }
 }
 

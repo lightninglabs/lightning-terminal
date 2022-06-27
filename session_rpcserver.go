@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/lightninglabs/lightning-node-connect/mailbox"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/lightning-terminal/session"
@@ -216,7 +216,9 @@ func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
 
 	authData := []byte(fmt.Sprintf("%s: %s", HeaderMacaroon, mac))
 
-	sessionClosedSub, err := s.sessionServer.StartSession(sess, authData)
+	sessionClosedSub, err := s.sessionServer.StartSession(
+		sess, authData, s.db.StoreSession,
+	)
 	if err != nil {
 		return err
 	}
@@ -280,7 +282,7 @@ func (s *sessionRpcServer) ListSessions(_ context.Context,
 func (s *sessionRpcServer) RevokeSession(_ context.Context,
 	req *litrpc.RevokeSessionRequest) (*litrpc.RevokeSessionResponse, error) {
 
-	pubKey, err := btcec.ParsePubKey(req.LocalPublicKey, btcec.S256())
+	pubKey, err := btcec.ParsePubKey(req.LocalPublicKey)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing public key: %v", err)
 	}
@@ -315,7 +317,7 @@ func marshalRPCSession(sess *session.Session) (*litrpc.Session, error) {
 		remotePubKey = sess.RemotePublicKey.SerializeCompressed()
 	}
 
-	mnemonic, err := mailbox.PasswordEntropyToMnemonic(sess.PairingSecret)
+	mnemonic, err := mailbox.PassphraseEntropyToMnemonic(sess.PairingSecret)
 	if err != nil {
 		return nil, err
 	}

@@ -16,12 +16,13 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"testing"
 	"time"
 
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
 	"github.com/lightninglabs/faraday/frdrpc"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/lightninglabs/pool/poolrpc"
@@ -248,7 +249,9 @@ var _ lnrpc.WalletUnlockerClient = (*HarnessNode)(nil)
 var _ invoicesrpc.InvoicesClient = (*HarnessNode)(nil)
 
 // newNode creates a new test lightning node instance from the passed config.
-func newNode(cfg *LitNodeConfig, harness *NetworkHarness) (*HarnessNode, error) {
+func newNode(t *testing.T, cfg *LitNodeConfig,
+	harness *NetworkHarness) (*HarnessNode, error) {
+
 	if cfg.BaseDir == "" {
 		var err error
 		cfg.BaseDir, err = ioutil.TempDir("", "litdtest-node")
@@ -262,8 +265,8 @@ func newNode(cfg *LitNodeConfig, harness *NetworkHarness) (*HarnessNode, error) 
 	cfg.FaradayDir = filepath.Join(cfg.LitDir, "faraday")
 	cfg.LoopDir = filepath.Join(cfg.LitDir, "loop")
 	cfg.PoolDir = filepath.Join(cfg.LitDir, "pool")
-	cfg.TLSCertPath = filepath.Join(cfg.DataDir, "tls.cert")
-	cfg.TLSKeyPath = filepath.Join(cfg.DataDir, "tls.key")
+	cfg.TLSCertPath = filepath.Join(cfg.BaseDir, "tls.cert")
+	cfg.TLSKeyPath = filepath.Join(cfg.BaseDir, "tls.key")
 
 	networkDir := filepath.Join(
 		cfg.DataDir, "chain", "bitcoin", cfg.NetParams.Name,
@@ -318,13 +321,12 @@ func newNode(cfg *LitNodeConfig, harness *NetworkHarness) (*HarnessNode, error) 
 		if err != nil {
 			return nil, err
 		}
-
-		remoteNode, _, _, err = remoteNodeHarness.NewNodeWithSeed(
-			cfg.Name, cfg.ExtraArgs, defaultLndPassphrase, false,
-		)
+		err = remoteNodeHarness.SetUp(t, "remote-lnd", cfg.ExtraArgs)
 		if err != nil {
 			return nil, err
 		}
+
+		remoteNode = remoteNodeHarness.Bob
 
 		cfg.RPCPort = remoteNode.Cfg.RPCPort
 		cfg.P2PPort = remoteNode.Cfg.P2PPort

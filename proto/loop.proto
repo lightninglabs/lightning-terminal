@@ -396,6 +396,12 @@ message SwapStatus {
     // Off-chain routing fees
     int64 cost_offchain = 10 [jstype = JS_STRING];
 
+    // Optional last hop if provided in the loop in request.
+    bytes last_hop = 16;
+
+    // Optional outgoing channel set if provided in the loop out request.
+    repeated uint64 outgoing_chan_set = 17 [jstype = JS_STRING];
+
     // An optional label given to the swap on creation.
     string label = 15;
 }

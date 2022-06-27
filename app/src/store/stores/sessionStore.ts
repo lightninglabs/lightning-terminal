@@ -99,8 +99,6 @@ export default class SessionStore {
    * @param label the user defined label for this session
    * @param type the type of session being created (admin, read-only, etc)
    * @param expiry how long the session should be valid for
-   * @param mailboxServerAddr the address where the mailbox server is reachable
-   * @param devServer whether the mailbox server is a dev server that has no valid TLS cert
    */
   async addSession(
     label: string,

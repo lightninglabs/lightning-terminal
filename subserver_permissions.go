@@ -1,9 +1,9 @@
 package terminal
 
 import (
-	"github.com/lightninglabs/faraday/frdrpc"
-	"github.com/lightninglabs/loop/loopd"
-	"github.com/lightninglabs/pool"
+	faraday "github.com/lightninglabs/faraday/frdrpcserver/perms"
+	loop "github.com/lightninglabs/loop/loopd/perms"
+	pool "github.com/lightninglabs/pool/perms"
 	"github.com/lightningnetwork/lnd"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 )
@@ -44,13 +44,13 @@ var (
 // getSubserverPermissions returns a merged map of all subserver macaroon
 // permissions.
 func getSubserverPermissions() map[string][]bakery.Op {
-	mapSize := len(frdrpc.RequiredPermissions) +
-		len(loopd.RequiredPermissions) + len(pool.RequiredPermissions)
+	mapSize := len(faraday.RequiredPermissions) +
+		len(loop.RequiredPermissions) + len(pool.RequiredPermissions)
 	result := make(map[string][]bakery.Op, mapSize)
-	for key, value := range frdrpc.RequiredPermissions {
+	for key, value := range faraday.RequiredPermissions {
 		result[key] = value
 	}
-	for key, value := range loopd.RequiredPermissions {
+	for key, value := range loop.RequiredPermissions {
 		result[key] = value
 	}
 	for key, value := range pool.RequiredPermissions {
@@ -127,13 +127,13 @@ func isLndURI(uri string) bool {
 
 // isLoopURI returns true if the given URI belongs to an RPC of loopd.
 func isLoopURI(uri string) bool {
-	_, ok := loopd.RequiredPermissions[uri]
+	_, ok := loop.RequiredPermissions[uri]
 	return ok
 }
 
 // isFaradayURI returns true if the given URI belongs to an RPC of faraday.
 func isFaradayURI(uri string) bool {
-	_, ok := frdrpc.RequiredPermissions[uri]
+	_, ok := faraday.RequiredPermissions[uri]
 	return ok
 }
 
