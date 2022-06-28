@@ -1,6 +1,7 @@
 package rpcmiddleware
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -33,12 +34,22 @@ func ParseProtobuf(typeName string, serialized []byte) (proto.Message, error) {
 	return msg.Interface(), nil
 }
 
+// ParseResponseErr converts a serialized error into an error type.
+func ParseResponseErr(serialized []byte) error {
+	return errors.New(string(serialized))
+}
+
+// RPCOk constructs a middleware response with no error. This results in the
+// original rpc message passing through as is.
 func RPCOk(req *lnrpc.RPCMiddlewareRequest) (*lnrpc.RPCMiddlewareResponse,
 	error) {
 
 	return RPCErrString(req, "")
 }
 
+// RPCErr constructs an rpc middleware response from the given error. The
+// response will result in the message being rejected and the error being given
+// as the reason for rejection.
 func RPCErr(req *lnrpc.RPCMiddlewareRequest,
 	err error) (*lnrpc.RPCMiddlewareResponse, error) {
 
@@ -49,6 +60,11 @@ func RPCErr(req *lnrpc.RPCMiddlewareRequest,
 	return RPCErrString(req, "")
 }
 
+// RPCErrString constructs a middleware response. If an empty format param is
+// given then the feedback will be empty meaning that the message can pass
+// through without modification. If the format param is empty, then this is
+// used as the feedback error indicating the reason that the message can not go
+// through.
 func RPCErrString(req *lnrpc.RPCMiddlewareRequest, format string,
 	args ...interface{}) (*lnrpc.RPCMiddlewareResponse, error) {
 
@@ -67,6 +83,8 @@ func RPCErrString(req *lnrpc.RPCMiddlewareRequest, format string,
 	return resp, nil
 }
 
+// RPCReplacement constructs a new middleware response that will indicate that
+// the message should be replaced with the given replacement message.
 func RPCReplacement(req *lnrpc.RPCMiddlewareRequest,
 	replacementResponse proto.Message) (*lnrpc.RPCMiddlewareResponse,
 	error) {
@@ -81,6 +99,24 @@ func RPCReplacement(req *lnrpc.RPCMiddlewareRequest,
 	feedback := &lnrpc.InterceptFeedback{
 		ReplaceResponse:       true,
 		ReplacementSerialized: rawResponse,
+	}
+
+	return &lnrpc.RPCMiddlewareResponse{
+		RefMsgId: req.MsgId,
+		MiddlewareMessage: &lnrpc.RPCMiddlewareResponse_Feedback{
+			Feedback: feedback,
+		},
+	}, nil
+}
+
+// RPCErrReplacement constructs a new rpc middleware response that will indicate
+// that an error should be replaced by a different one
+func RPCErrReplacement(req *lnrpc.RPCMiddlewareRequest,
+	replacementError error) (*lnrpc.RPCMiddlewareResponse, error) {
+
+	feedback := &lnrpc.InterceptFeedback{
+		ReplaceResponse:       true,
+		ReplacementSerialized: []byte(replacementError.Error()),
 	}
 
 	return &lnrpc.RPCMiddlewareResponse{
