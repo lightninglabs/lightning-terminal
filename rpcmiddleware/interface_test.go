@@ -34,15 +34,88 @@ func TestMessageTypeOf(t *testing.T) {
 func TestPassThrough(t *testing.T) {
 	peersChecker := NewPassThrough(listPeersReq, listPeersResp)
 
-	require.True(t, peersChecker.AcceptsRequest(listPeersReqType))
+	require.True(t, peersChecker.HandlesRequest(listPeersReqType))
 	require.True(t, peersChecker.HandlesResponse(listPeersRespType))
-	require.Nil(t, peersChecker.HandleRequest(listPeersReq))
+
+	req, err := peersChecker.HandleRequest(listPeersReq)
+	require.NoError(t, err)
+	require.Nil(t, req)
 
 	resp, err := peersChecker.HandleResponse(listPeersResp)
 	require.NoError(t, err)
 	require.Nil(t, resp)
 
-	require.False(t, peersChecker.AcceptsRequest(listPeersRespType))
+	require.False(t, peersChecker.HandlesRequest(listPeersRespType))
+	require.False(t, peersChecker.HandlesResponse(listPeersReqType))
+}
+
+// TestRequestDenier tests that the request denier round trip checker behaves as
+// expected.
+func TestRequestDenier(t *testing.T) {
+	peersChecker := NewRequestDenier(listPeersReq, listPeersResp)
+
+	require.True(t, peersChecker.HandlesRequest(listPeersReqType))
+	require.True(t, peersChecker.HandlesResponse(listPeersRespType))
+
+	req, err := peersChecker.HandleRequest(listPeersReq)
+	require.ErrorIs(t, err, ErrNotSupported)
+	require.Nil(t, req)
+
+	resp, err := peersChecker.HandleResponse(listPeersResp)
+	require.ErrorIs(t, err, ErrNotSupported)
+	require.Nil(t, resp)
+
+	require.False(t, peersChecker.HandlesRequest(listPeersRespType))
+	require.False(t, peersChecker.HandlesResponse(listPeersReqType))
+}
+
+// TestRequestChecker tests that the request checker round trip checker
+// behaves as expected.
+func TestRequestChecker(t *testing.T) {
+	peersChecker := NewRequestChecker(
+		listPeersReq, listPeersResp,
+		func(peer *lnrpc.ListPeersRequest) error {
+			return nil
+		},
+	)
+
+	require.True(t, peersChecker.HandlesRequest(listPeersReqType))
+	require.True(t, peersChecker.HandlesResponse(listPeersRespType))
+
+	req, err := peersChecker.HandleRequest(listPeersReq)
+	require.NoError(t, err)
+	require.Nil(t, req)
+
+	resp, err := peersChecker.HandleResponse(listPeersResp)
+	require.NoError(t, err)
+	require.Nil(t, resp)
+
+	require.False(t, peersChecker.HandlesRequest(listPeersRespType))
+	require.False(t, peersChecker.HandlesResponse(listPeersReqType))
+}
+
+// TestRequestRewriter tests that the request rewriter round trip checker
+// behaves as expected.
+func TestRequestRewriter(t *testing.T) {
+	peersChecker := NewRequestRewriter(
+		listPeersReq, listPeersResp,
+		func(peer *lnrpc.ListPeersRequest) (proto.Message, error) {
+			return peer, nil
+		},
+	)
+
+	require.True(t, peersChecker.HandlesRequest(listPeersReqType))
+	require.True(t, peersChecker.HandlesResponse(listPeersRespType))
+
+	req, err := peersChecker.HandleRequest(listPeersReq)
+	require.NoError(t, err)
+	require.Equal(t, listPeersReq, req)
+
+	resp, err := peersChecker.HandleResponse(listPeersResp)
+	require.NoError(t, err)
+	require.Nil(t, resp)
+
+	require.False(t, peersChecker.HandlesRequest(listPeersRespType))
 	require.False(t, peersChecker.HandlesResponse(listPeersReqType))
 }
 
@@ -53,18 +126,21 @@ func TestResponseRewriter(t *testing.T) {
 		listPeersReq, listPeersResp,
 		func(peer *lnrpc.ListPeersResponse) (proto.Message, error) {
 			return peer, nil
-		},
+		}, PassThroughErrorHandler,
 	)
 
-	require.True(t, peersChecker.AcceptsRequest(listPeersReqType))
+	require.True(t, peersChecker.HandlesRequest(listPeersReqType))
 	require.True(t, peersChecker.HandlesResponse(listPeersRespType))
-	require.Nil(t, peersChecker.HandleRequest(listPeersReq))
+
+	req, err := peersChecker.HandleRequest(listPeersReq)
+	require.NoError(t, err)
+	require.Nil(t, req)
 
 	resp, err := peersChecker.HandleResponse(listPeersResp)
 	require.NoError(t, err)
 	require.Equal(t, listPeersResp, resp)
 
-	require.False(t, peersChecker.AcceptsRequest(listPeersRespType))
+	require.False(t, peersChecker.HandlesRequest(listPeersRespType))
 	require.False(t, peersChecker.HandlesResponse(listPeersReqType))
 }
 
@@ -79,19 +155,50 @@ func TestFullChecker(t *testing.T) {
 		},
 		func(*lnrpc.ListPeersResponse) (proto.Message, error) {
 			return nil, myErr
-		},
+		}, PassThroughErrorHandler,
 	)
 
-	require.True(t, peersChecker.AcceptsRequest(listPeersReqType))
+	require.True(t, peersChecker.HandlesRequest(listPeersReqType))
 	require.True(t, peersChecker.HandlesResponse(listPeersRespType))
-	require.Equal(t, myErr, peersChecker.HandleRequest(listPeersReq))
+
+	_, err := peersChecker.HandleRequest(listPeersReq)
+	require.Equal(t, myErr, err)
 
 	resp, err := peersChecker.HandleResponse(listPeersResp)
 	require.Error(t, err)
 	require.Equal(t, myErr, err)
 	require.Nil(t, resp)
 
-	require.False(t, peersChecker.AcceptsRequest(listPeersRespType))
+	require.False(t, peersChecker.HandlesRequest(listPeersRespType))
+	require.False(t, peersChecker.HandlesResponse(listPeersReqType))
+}
+
+// TestFullRewriter tests that the full re-writer round trip checker behaves as
+// expected.
+func TestFullRewriter(t *testing.T) {
+	myErr := fmt.Errorf("some error happened")
+	peersChecker := NewFullRewriter(
+		listPeersReq, listPeersResp,
+		func(peer *lnrpc.ListPeersRequest) (proto.Message, error) {
+			return nil, myErr
+		},
+		func(*lnrpc.ListPeersResponse) (proto.Message, error) {
+			return nil, myErr
+		}, PassThroughErrorHandler,
+	)
+
+	require.True(t, peersChecker.HandlesRequest(listPeersReqType))
+	require.True(t, peersChecker.HandlesResponse(listPeersRespType))
+
+	_, err := peersChecker.HandleRequest(listPeersReq)
+	require.Equal(t, myErr, err)
+
+	resp, err := peersChecker.HandleResponse(listPeersResp)
+	require.Error(t, err)
+	require.Equal(t, myErr, err)
+	require.Nil(t, resp)
+
+	require.False(t, peersChecker.HandlesRequest(listPeersRespType))
 	require.False(t, peersChecker.HandlesResponse(listPeersReqType))
 }
 
@@ -118,21 +225,41 @@ func TestImplementationPanics(t *testing.T) {
 		},
 	)
 	require.PanicsWithError(
-		t, "response handler must be a function", func() {
-			_ = NewResponseRewriter(
+		t, "message handler must be a function", func() {
+			_ = NewRequestRewriter(
 				listPeersReq, listPeersResp, "wrong",
 			)
 		},
 	)
 	require.PanicsWithError(
-		t, "response handler must have exactly one parameter and two "+
+		t, "message handler must have exactly one parameter and two "+
+			"return values",
+		func() {
+			_ = NewRequestRewriter(
+				listPeersReq, listPeersResp,
+				func() error {
+					return nil
+				},
+			)
+		},
+	)
+	require.PanicsWithError(
+		t, "message handler must be a function", func() {
+			_ = NewResponseRewriter(
+				listPeersReq, listPeersResp, "wrong",
+				PassThroughErrorHandler,
+			)
+		},
+	)
+	require.PanicsWithError(
+		t, "message handler must have exactly one parameter and two "+
 			"return values",
 		func() {
 			_ = NewResponseRewriter(
 				listPeersReq, listPeersResp,
 				func() error {
 					return nil
-				},
+				}, PassThroughErrorHandler,
 			)
 		},
 	)
