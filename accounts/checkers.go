@@ -34,7 +34,7 @@ var (
 			r.TotalLimboBalance = 0
 
 			return r, nil
-		},
+		}, rpcmiddleware.PassThroughErrorHandler,
 	)
 
 	ListChannelsEmptyRewriter = rpcmiddleware.NewResponseRewriter(
@@ -43,7 +43,7 @@ var (
 			r.Channels = []*lnrpc.Channel{}
 
 			return r, nil
-		},
+		}, rpcmiddleware.PassThroughErrorHandler,
 	)
 
 	ClosedChannelsEmptyRewriter = rpcmiddleware.NewResponseRewriter(
@@ -52,7 +52,7 @@ var (
 			r.Channels = []*lnrpc.ChannelCloseSummary{}
 
 			return r, nil
-		},
+		}, rpcmiddleware.PassThroughErrorHandler,
 	)
 
 	WalletBalanceEmptyRewriter = rpcmiddleware.NewResponseRewriter(
@@ -68,7 +68,7 @@ var (
 			}
 
 			return t, nil
-		},
+		}, rpcmiddleware.PassThroughErrorHandler,
 	)
 
 	GetTransactionsEmptyRewriter = rpcmiddleware.NewResponseRewriter(
@@ -78,7 +78,7 @@ var (
 			r.Transactions = make([]*lnrpc.Transaction, 0)
 
 			return r, nil
-		},
+		}, rpcmiddleware.PassThroughErrorHandler,
 	)
 
 	ListPeersEmptyRewriter = rpcmiddleware.NewResponseRewriter(
@@ -87,7 +87,7 @@ var (
 			r.Peers = []*lnrpc.Peer{}
 
 			return r, nil
-		},
+		}, rpcmiddleware.PassThroughErrorHandler,
 	)
 )
 
@@ -111,7 +111,7 @@ func (s *Service) generateCheckers(
 				return nil, s.Store.associateInvoice(
 					acct.ID, hash,
 				)
-			},
+			}, rpcmiddleware.PassThroughErrorHandler,
 		),
 		"/lnrpc.Lightning/ListInvoices": rpcmiddleware.NewResponseRewriter(
 			&lnrpc.ListInvoiceRequest{},
@@ -140,7 +140,7 @@ func (s *Service) generateCheckers(
 
 				t.Invoices = filteredInvoices
 				return t, nil
-			},
+			}, rpcmiddleware.PassThroughErrorHandler,
 		),
 		"/lnrpc.Lightning/LookupInvoice": rpcmiddleware.NewRequestChecker(
 			&lnrpc.PaymentHash{},
@@ -208,7 +208,7 @@ func (s *Service) generateCheckers(
 					acct.ID, hash,
 					lnwire.MilliSatoshi(r.ValueMsat),
 				)
-			},
+			}, rpcmiddleware.PassThroughErrorHandler,
 		),
 		"/lnrpc.Lightning/SendToRoute": rpcmiddleware.NewRequestChecker(
 			&lnrpc.SendToRouteRequest{},
@@ -241,7 +241,7 @@ func (s *Service) generateCheckers(
 				return nil, s.chargeHTLC(
 					acct, r.Route, r.Preimage,
 				)
-			},
+			}, rpcmiddleware.PassThroughErrorHandler,
 		),
 		"/lnrpc.Lightning/DecodePayReq": DecodePayReqPassThrough,
 		"/lnrpc.Lightning/ListPayments": rpcmiddleware.NewResponseRewriter(
@@ -271,7 +271,7 @@ func (s *Service) generateCheckers(
 
 				t.Payments = filteredPayments
 				return t, nil
-			},
+			}, rpcmiddleware.PassThroughErrorHandler,
 		),
 
 		// Channels:
@@ -302,7 +302,7 @@ func (s *Service) generateCheckers(
 				t.UnsettledRemoteBalance.Msat = 0
 
 				return t, nil
-			},
+			}, rpcmiddleware.PassThroughErrorHandler,
 		),
 		"/lnrpc.Lightning/WalletBalance": WalletBalanceEmptyRewriter,
 
@@ -325,7 +325,7 @@ func (s *Service) generateCheckers(
 				t.NumPeers = 0
 
 				return t, nil
-			},
+			}, rpcmiddleware.PassThroughErrorHandler,
 		),
 		"/lnrpc.Lightning/GetNodeInfo": GetNodeInfoPassThrough,
 	}

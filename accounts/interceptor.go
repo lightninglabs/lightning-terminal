@@ -152,13 +152,23 @@ func (s *Service) checkIncomingRequest(fullUri string, req proto.Message,
 
 	// This is just a sanity check to make sure the implementation for the
 	// checker actually matches the correct request type.
-	if !checker.AcceptsRequest(req.ProtoReflect().Type()) {
+	if !checker.HandlesRequest(req.ProtoReflect().Type()) {
 		return fmt.Errorf("invalid implementation, checker for URI "+
 			"%s does not accept request of type %v", fullUri,
 			req.ProtoReflect().Type())
 	}
 
-	return checker.HandleRequest(req)
+	req, err := checker.HandleRequest(req)
+	if err != nil {
+		return err
+	}
+
+	if req != nil {
+		return fmt.Errorf("request editing checkers not supported " +
+			"for accounts")
+	}
+
+	return nil
 }
 
 // replaceOutgoingResponse inspects the responses before sending them out to the

@@ -1,6 +1,7 @@
 package rpcmiddleware
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -31,6 +32,10 @@ func ParseProtobuf(typeName string, serialized []byte) (proto.Message, error) {
 	}
 
 	return msg.Interface(), nil
+}
+
+func ParseResponseErr(serialized []byte) error {
+	return errors.New(string(serialized))
 }
 
 func RPCOk(req *lnrpc.RPCMiddlewareRequest) (*lnrpc.RPCMiddlewareResponse,
@@ -81,6 +86,22 @@ func RPCReplacement(req *lnrpc.RPCMiddlewareRequest,
 	feedback := &lnrpc.InterceptFeedback{
 		ReplaceResponse:       true,
 		ReplacementSerialized: rawResponse,
+	}
+
+	return &lnrpc.RPCMiddlewareResponse{
+		RefMsgId: req.MsgId,
+		MiddlewareMessage: &lnrpc.RPCMiddlewareResponse_Feedback{
+			Feedback: feedback,
+		},
+	}, nil
+}
+
+func RPCErrReplacement(req *lnrpc.RPCMiddlewareRequest,
+	replacementError error) (*lnrpc.RPCMiddlewareResponse, error) {
+
+	feedback := &lnrpc.InterceptFeedback{
+		ReplaceResponse:       true,
+		ReplacementSerialized: []byte(replacementError.Error()),
 	}
 
 	return &lnrpc.RPCMiddlewareResponse{
