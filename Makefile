@@ -156,6 +156,7 @@ unit-cover: $(GOACC_BIN)
 
 unit-race:
 	@$(call print, "Running unit race tests.")
+	mkdir -p app/build && touch app/build/index.html
 	env CGO_ENABLED=1 GORACE="history_size=7 halt_on_errors=1" $(UNIT_RACE)
 
 goveralls: $(GOVERALLS_BIN)
