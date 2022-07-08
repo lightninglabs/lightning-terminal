@@ -15,7 +15,9 @@ type ManagerSet map[string]Manager
 
 // NewRuleManagerSet creates a new map of the supported rule ManagerSet.
 func NewRuleManagerSet() ManagerSet {
-	return map[string]Manager{}
+	return map[string]Manager{
+		RateLimitName: &RateLimitMgr{},
+	}
 }
 
 // InitEnforcer gets the appropriate rule Manager for the given name and uses it
