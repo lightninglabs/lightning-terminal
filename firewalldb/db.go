@@ -2,6 +2,7 @@ package firewalldb
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -104,6 +105,18 @@ func initDB(filepath string, firstInit bool) (*bbolt.DB, error) {
 			if err != nil {
 				return err
 			}
+		}
+
+		rulesBucket, err := tx.CreateBucketIfNotExists(rulesBucketKey)
+		if err != nil {
+			return err
+		}
+
+		// Delete everything under the "temp" key if such a bucket
+		// exists.
+		err = rulesBucket.DeleteBucket(tempBucketKey)
+		if err != nil && !errors.Is(err, bbolt.ErrBucketNotFound) {
+			return err
 		}
 
 		actionsBucket, err := tx.CreateBucketIfNotExists(
