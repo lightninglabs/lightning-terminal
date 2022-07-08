@@ -1,0 +1,191 @@
+syntax = "proto3";
+
+package autopilotserverrpc;
+
+option go_package = "github.com/lightninglabs/lightning-terminal/autopilotserverrpc";
+
+service Autopilot {
+    rpc Terms (TermsRequest) returns (TermsResponse);
+    rpc ListFeatures (ListFeaturesRequest) returns (ListFeaturesResponse);
+    rpc RegisterSession (RegisterSessionRequest)
+        returns (RegisterSessionResponse);
+    rpc ActivateSession (ActivateSessionRequest)
+        returns (ActivateSessionResponse);
+    rpc RevokeSession (RevokeSessionRequest) returns (RevokeSessionResponse);
+}
+
+message TermsRequest {
+}
+
+message TermsResponse {
+    Version min_required_version = 1;
+}
+
+message Version {
+    /*
+    The major application version.
+    */
+    uint32 major = 1;
+
+    /*
+    The minor application version.
+    */
+    uint32 minor = 2;
+
+    /*
+    The application patch number.
+    */
+    uint32 patch = 3;
+}
+
+message ListFeaturesRequest {
+}
+
+message ActivateSessionRequest {
+    /*
+    The static public key of the client that is to be used for future noise
+    handshakes. Since the autopilot is the initiator of a connection, the
+    client's key is called the "responder" key.
+    */
+    bytes responder_pub_key = 1;
+}
+
+message ActivateSessionResponse {
+    /*
+   The autopilot's static pub key to be used for the noise connection with the
+   client.
+   */
+    bytes initiator_pub_key = 1;
+}
+
+message ListFeaturesResponse {
+    /*
+    A map of feature name to Feature object. This map represents each of the
+    features supported by the autopilot server along with the details of
+    each feature.
+    */
+    map<string, Feature> features = 1;
+}
+
+message Feature {
+    /*
+    The string identifier of the feature.
+    */
+    string name = 1;
+
+    /*
+    A human-readable description of what the feature offers.
+    */
+    string description = 2;
+
+    /*
+    A map of the rule names to rule values that make sense for this feature.
+    */
+    map<string, Rule> rules = 3;
+
+    /*
+    A list of the permissions that the feature will require to operate.
+    */
+    repeated Permissions permissions_list = 4;
+}
+
+message Rule {
+    /*
+    The name of the rule.
+    */
+    string name = 1;
+
+    /*
+    The recommended default values for the rule. These may vary from feature
+    to feature.
+    */
+    bytes default = 2;
+
+    /*
+    The minimum sane value of the rule that is allowed for the associated
+    feature.
+    */
+    bytes min_value = 3;
+
+    /*
+    The maximum sane value of the rule that is allowed for the associated
+    feature.
+    */
+    bytes max_value = 4;
+}
+
+message Permissions {
+    /*
+    The URI of the method that the operation set is referring to.
+    */
+    string method = 1;
+
+    /*
+    A list of operations that the method can perform
+    */
+    repeated Operation operations = 2;
+}
+
+message Operation {
+    /*
+    The entity to which the action applies.
+    */
+    string entity = 1;
+
+    /*
+    The action that can be performed on the above specified entity.
+    */
+    string action = 2;
+}
+
+message RegisterSessionRequest {
+    /*
+    The static public key of the client that is to be used for future noise
+    handshakes. Since the autopilot is the initiator of a connection, the
+    client's key is called the "responder" key.
+    */
+    bytes responder_pub_key = 1;
+
+    /*
+    The address of the mailbox that the client will use for the LNC connection.
+    */
+    string mailbox_addr = 2;
+
+    /*
+    Set to true if tls should be skipped for when connecting to the mailbox.
+    */
+    bool dev_server = 3;
+
+    /*
+    A map from feature name to configuration bytes for that feature.
+    */
+    map<string, bytes> feature_configs = 4;
+
+    /*
+    The version of the Lit client.
+    */
+    Version lit_version = 5;
+
+    /*
+    The version of the LND that the Lit client is using.
+    */
+    Version lnd_version = 6;
+}
+
+message RegisterSessionResponse {
+    /*
+    The autopilot's static pub key to be used for the noise connection with the
+    client.
+    */
+    bytes initiator_pub_key = 1;
+}
+
+message RevokeSessionRequest {
+    /*
+    The client's key for the session that the client is revoking.
+    */
+    bytes responder_pub_key = 1;
+}
+
+message RevokeSessionResponse {
+}

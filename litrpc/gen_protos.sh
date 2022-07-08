@@ -38,3 +38,8 @@ pushd litrpc
 format
 generate
 popd
+
+pushd autopilotserverrpc
+format
+generate no-wasm
+popd
