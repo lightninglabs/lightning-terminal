@@ -321,6 +321,8 @@ func (g *LightningTerminal) Run() error {
 		firstConnectionDeadline: g.cfg.FirstLNCConnDeadline,
 		permMgr:                 g.permsMgr,
 		actionsDB:               g.firewallDB,
+		autopilot:               g.autopilotClient,
+		ruleMgrs:                g.ruleMgrs,
 	})
 	if err != nil {
 		return fmt.Errorf("could not create new session rpc "+
@@ -818,6 +820,10 @@ func (g *LightningTerminal) registerSubDaemonGrpcServers(server *grpc.Server,
 	}
 
 	litrpc.RegisterFirewallServer(server, g.sessionRpcServer)
+
+	if !g.cfg.Autopilot.Disable {
+		litrpc.RegisterAutopilotServer(server, g.sessionRpcServer)
+	}
 }
 
 // RegisterRestSubserver is a callback on the lnd.SubserverConfig struct that is

@@ -62,9 +62,25 @@ var (
 			Entity: "account",
 			Action: "write",
 		}},
-		"/litrpc.Lit/ListActions": {{
+		"/litrpc.Firewall/ListActions": {{
 			Entity: "actions",
 			Action: "read",
+		}},
+		"/litrpc.Autopilot/ListAutopilotFeatures": {{
+			Entity: "autopilot",
+			Action: "read",
+		}},
+		"/litrpc.Autopilot/AddAutopilotSession": {{
+			Entity: "autopilot",
+			Action: "write",
+		}},
+		"/litrpc.Autopilot/ListAutopilotSessions": {{
+			Entity: "autopilot",
+			Action: "read",
+		}},
+		"/litrpc.Autopilot/RevokeAutopilotSession": {{
+			Entity: "autopilot",
+			Action: "write",
 		}},
 	}
 
