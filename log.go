@@ -6,6 +6,7 @@ import (
 	"github.com/lightninglabs/lightning-node-connect/mailbox"
 	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/firewall"
+	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightninglabs/loop/loopd"
@@ -68,6 +69,9 @@ func SetupLoggers(root *build.RotatingLogWriter, intercept signal.Interceptor) {
 	)
 	lnd.AddSubLogger(
 		root, firewall.Subsystem, intercept, firewall.UseLogger,
+	)
+	lnd.AddSubLogger(
+		root, firewalldb.Subsystem, intercept, firewalldb.UseLogger,
 	)
 
 	// Add daemon loggers to lnd's root logger.
