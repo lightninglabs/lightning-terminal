@@ -16,7 +16,8 @@ type ManagerSet map[string]Manager
 // NewRuleManagerSet creates a new map of the supported rule ManagerSet.
 func NewRuleManagerSet() ManagerSet {
 	return map[string]Manager{
-		RateLimitName: &RateLimitMgr{},
+		RateLimitName:        &RateLimitMgr{},
+		ChanPolicyBoundsName: &ChanPolicyBoundsMgr{},
 	}
 }
 
