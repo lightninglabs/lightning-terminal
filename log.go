@@ -5,6 +5,7 @@ import (
 	"github.com/lightninglabs/faraday"
 	"github.com/lightninglabs/lightning-node-connect/mailbox"
 	"github.com/lightninglabs/lightning-terminal/accounts"
+	"github.com/lightninglabs/lightning-terminal/autopilotserver"
 	"github.com/lightninglabs/lightning-terminal/firewall"
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
 	"github.com/lightninglabs/lightning-terminal/rules"
@@ -71,6 +72,10 @@ func SetupLoggers(root *build.RotatingLogWriter, intercept signal.Interceptor) {
 		root, firewall.Subsystem, intercept, firewall.UseLogger,
 	)
 	lnd.AddSubLogger(root, rules.Subsystem, intercept, rules.UseLogger)
+	lnd.AddSubLogger(
+		root, autopilotserver.Subsystem, intercept,
+		autopilotserver.UseLogger,
+	)
 
 	// Add daemon loggers to lnd's root logger.
 	faraday.SetupLoggers(root, intercept)
