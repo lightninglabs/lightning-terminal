@@ -27,6 +27,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/perms"
 	"github.com/lightninglabs/lightning-terminal/queue"
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
+	"github.com/lightninglabs/lightning-terminal/rules"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightninglabs/loop"
@@ -154,6 +155,8 @@ type LightningTerminal struct {
 	faradayServer  *frdrpcserver.RPCServer
 	faradayStarted bool
 
+	ruleMgrs rules.ManagerSet
+
 	loopServer  *loopd.Daemon
 	loopStarted bool
 
@@ -246,6 +249,9 @@ func (g *LightningTerminal) Run() error {
 	g.accountRpcServer = accounts.NewRPCServer(
 		g.accountService, superMacBaker,
 	)
+
+	g.ruleMgrs = rules.NewRuleManagerSet()
+
 	g.sessionRpcServer, err = newSessionRPCServer(&sessionRpcServerConfig{
 		basicAuth: g.rpcProxy.basicAuth,
 		dbDir:     filepath.Join(g.cfg.LitDir, g.cfg.Network),
@@ -973,6 +979,13 @@ func (g *LightningTerminal) shutdown() error {
 
 	if g.middlewareStarted {
 		g.middleware.Stop()
+	}
+
+	if g.ruleMgrs != nil {
+		if err := g.ruleMgrs.Stop(); err != nil {
+			log.Errorf("Error stopping rule manager set: %v", err)
+			returnErr = err
+		}
 	}
 
 	if g.lndClient != nil {
