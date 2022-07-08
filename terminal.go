@@ -23,6 +23,7 @@ import (
 	"github.com/lightninglabs/faraday/frdrpcserver"
 	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/firewall"
+	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/lightning-terminal/perms"
 	"github.com/lightninglabs/lightning-terminal/queue"
@@ -180,6 +181,8 @@ type LightningTerminal struct {
 
 	accountRpcServer *accounts.RPCServer
 
+	firewallDB *firewalldb.DB
+
 	restHandler http.Handler
 	restCancel  func()
 }
@@ -251,6 +254,12 @@ func (g *LightningTerminal) Run() error {
 	)
 
 	g.ruleMgrs = rules.NewRuleManagerSet()
+
+	networkDir := filepath.Join(g.cfg.LitDir, g.cfg.Network)
+	g.firewallDB, err = firewalldb.NewDB(networkDir, firewalldb.DBFilename)
+	if err != nil {
+		return fmt.Errorf("error creating session DB: %v", err)
+	}
 
 	g.sessionRpcServer, err = newSessionRPCServer(&sessionRpcServerConfig{
 		basicAuth: g.rpcProxy.basicAuth,
@@ -979,6 +988,13 @@ func (g *LightningTerminal) shutdown() error {
 
 	if g.middlewareStarted {
 		g.middleware.Stop()
+	}
+
+	if g.firewallDB != nil {
+		if err := g.firewallDB.Close(); err != nil {
+			log.Errorf("Error closing rules DB: %v", err)
+			returnErr = err
+		}
 	}
 
 	if g.ruleMgrs != nil {
