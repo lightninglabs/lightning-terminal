@@ -60,19 +60,7 @@ func IsSuperMacaroon(macHex string) bool {
 		return false
 	}
 
-	rawID := mac.Id()
-	if rawID[0] != byte(bakery.LatestVersion) {
-		return false
-	}
-	decodedID := &lnrpc.MacaroonId{}
-	idProto := rawID[1:]
-	err = proto.Unmarshal(idProto, decodedID)
-	if err != nil {
-		return false
-	}
-
-	// The storage ID is a string representation of a 64bit unsigned number.
-	rootKeyID, err := strconv.ParseUint(string(decodedID.StorageId), 10, 64)
+	rootKeyID, err := RootKeyIDFromMacaroon(mac)
 	if err != nil {
 		return false
 	}

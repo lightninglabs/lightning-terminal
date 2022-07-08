@@ -8,6 +8,7 @@ require (
 	github.com/btcsuite/btclog v0.0.0-20170628155309-84c8d2346e9f
 	github.com/btcsuite/btcwallet/walletdb v1.4.0
 	github.com/go-errors/errors v1.0.1
+	github.com/golang/protobuf v1.5.2
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.5.0
 	github.com/improbable-eng/grpc-web v0.12.0
 	github.com/jessevdk/go-flags v1.4.0
@@ -73,7 +74,6 @@ require (
 	github.com/form3tech-oss/jwt-go v3.2.3+incompatible // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/mock v1.6.0 // indirect
-	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/btree v1.0.1 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect

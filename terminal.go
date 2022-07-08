@@ -673,13 +673,15 @@ func (g *LightningTerminal) startSubservers() error {
 	}
 	g.accountServiceStarted = true
 
+	requestLogger := firewall.NewRequestLogger(g.firewallDB)
+
 	// Start the middleware manager.
 	log.Infof("Starting LiT middleware manager")
 	g.middleware = mid.NewManager(
 		g.cfg.RPCMiddleware.InterceptTimeout,
 		g.lndClient.Client, g.errQueue.ChanIn(),
 		g.accountService,
-		&firewall.RequestLogger{},
+		requestLogger,
 		&firewall.RuleEnforcer{},
 	)
 
