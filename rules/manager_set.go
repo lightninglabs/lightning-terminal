@@ -18,6 +18,7 @@ func NewRuleManagerSet() ManagerSet {
 	return map[string]Manager{
 		RateLimitName:        &RateLimitMgr{},
 		ChanPolicyBoundsName: &ChanPolicyBoundsMgr{},
+		HistoryLimitName:     &HistoryLimitMgr{},
 	}
 }
 
