@@ -30,6 +30,10 @@ var (
 	// byteOrder is the default byte order we'll use for serialization
 	// within the database.
 	byteOrder = binary.BigEndian
+
+	// ErrNoSuchKeyFound is returned when there is no key-value pair found
+	// for the given key.
+	ErrNoSuchKeyFound = fmt.Errorf("no such key found")
 )
 
 // DB is a bolt-backed persistent store.
@@ -102,7 +106,20 @@ func initDB(filepath string, firstInit bool) (*bbolt.DB, error) {
 			}
 		}
 
-		return nil
+		actionsBucket, err := tx.CreateBucketIfNotExists(
+			actionsBucketKey,
+		)
+		if err != nil {
+			return err
+		}
+
+		_, err = actionsBucket.CreateBucketIfNotExists(actionsKey)
+		if err != nil {
+			return err
+		}
+
+		_, err = actionsBucket.CreateBucketIfNotExists(actionsIndex)
+		return err
 	})
 	if err != nil {
 		return nil, err
