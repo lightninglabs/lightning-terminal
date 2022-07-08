@@ -132,6 +132,11 @@ func initDB(filepath string, firstInit bool) (*bbolt.DB, error) {
 		}
 
 		_, err = actionsBucket.CreateBucketIfNotExists(actionsIndex)
+		if err != nil {
+			return err
+		}
+
+		_, err = tx.CreateBucketIfNotExists(privacyBucketKey)
 		return err
 	})
 	if err != nil {
