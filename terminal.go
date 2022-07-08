@@ -22,6 +22,7 @@ import (
 	"github.com/lightninglabs/faraday/frdrpc"
 	"github.com/lightninglabs/faraday/frdrpcserver"
 	"github.com/lightninglabs/lightning-terminal/accounts"
+	"github.com/lightninglabs/lightning-terminal/autopilotserver"
 	"github.com/lightninglabs/lightning-terminal/firewall"
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
@@ -64,6 +65,9 @@ import (
 )
 
 const (
+	MainnetServer = "autopilot.lightning.finance:12010"
+	TestnetServer = "test.autopilot.lightning.finance:12010"
+
 	defaultServerTimeout  = 10 * time.Second
 	defaultConnectTimeout = 15 * time.Second
 	defaultStartupTimeout = 5 * time.Second
@@ -155,6 +159,8 @@ type LightningTerminal struct {
 
 	faradayServer  *frdrpcserver.RPCServer
 	faradayStarted bool
+
+	autopilotClient autopilotserver.Autopilot
 
 	ruleMgrs rules.ManagerSet
 
@@ -259,6 +265,35 @@ func (g *LightningTerminal) Run() error {
 	g.firewallDB, err = firewalldb.NewDB(networkDir, firewalldb.DBFilename)
 	if err != nil {
 		return fmt.Errorf("error creating session DB: %v", err)
+	}
+
+	if !g.cfg.Autopilot.Disable {
+		if g.cfg.Autopilot.Address == "" &&
+			len(g.cfg.Autopilot.DialOpts) == 0 {
+
+			switch g.cfg.Network {
+			case "mainnet":
+				g.cfg.Autopilot.Address = MainnetServer
+			case "testnet":
+				g.cfg.Autopilot.Address = TestnetServer
+			default:
+				return errors.New("no autopilot server " +
+					"address specified")
+			}
+		}
+
+		g.cfg.Autopilot.LitVersion = autopilotserver.Version{
+			Major: uint32(appMajor),
+			Minor: uint32(appMinor),
+			Patch: uint32(appPatch),
+		}
+
+		g.autopilotClient, err = autopilotserver.NewClient(
+			g.cfg.Autopilot,
+		)
+		if err != nil {
+			return err
+		}
 	}
 
 	g.sessionRpcServer, err = newSessionRPCServer(&sessionRpcServerConfig{
@@ -649,6 +684,21 @@ func (g *LightningTerminal) startSubservers() error {
 	}
 	g.macaroonServiceStarted = true
 
+	if !g.cfg.Autopilot.Disable {
+		withLndVersion := func(cfg *autopilotserver.Config) {
+			cfg.LndVersion = autopilotserver.Version{
+				Major: g.lndClient.Version.AppMajor,
+				Minor: g.lndClient.Version.AppMinor,
+				Patch: g.lndClient.Version.AppPatch,
+			}
+		}
+
+		if err = g.autopilotClient.Start(withLndVersion); err != nil {
+			return fmt.Errorf("could not start the autopilot "+
+				"client: %v", err)
+		}
+	}
+
 	log.Infof("Starting LiT session server")
 	if err = g.sessionRpcServer.start(); err != nil {
 		return err
@@ -968,6 +1018,10 @@ func (g *LightningTerminal) shutdown() error {
 			log.Errorf("Error stopping pool: %v", err)
 			returnErr = err
 		}
+	}
+
+	if g.autopilotClient != nil {
+		g.autopilotClient.Stop()
 	}
 
 	if g.sessionRpcServerStarted {
