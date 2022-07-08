@@ -725,15 +725,39 @@ func (g *LightningTerminal) startSubservers() error {
 	g.accountServiceStarted = true
 
 	requestLogger := firewall.NewRequestLogger(g.firewallDB)
+	mw := []mid.RequestInterceptor{
+		g.accountService,
+		requestLogger,
+	}
+
+	if !g.cfg.Autopilot.Disable {
+		info, err := g.lndClient.Client.GetInfo(ctxc)
+		if err != nil {
+			return fmt.Errorf("GetInfo call failed: %v", err)
+		}
+
+		ruleEnforcer := firewall.NewRuleEnforcer(
+			g.firewallDB, g.firewallDB,
+			g.autopilotClient.ListFeaturePerms,
+			g.permsMgr, info.IdentityPubkey,
+			g.lndClient.Router,
+			g.lndClient.Client, g.ruleMgrs,
+			func(reqID uint64, reason string) error {
+				return requestLogger.MarkAction(
+					reqID, firewalldb.ActionStateError,
+					reason,
+				)
+			}, g.firewallDB.PrivacyDB,
+		)
+
+		mw = append(mw, ruleEnforcer)
+	}
 
 	// Start the middleware manager.
 	log.Infof("Starting LiT middleware manager")
 	g.middleware = mid.NewManager(
 		g.cfg.RPCMiddleware.InterceptTimeout,
-		g.lndClient.Client, g.errQueue.ChanIn(),
-		g.accountService,
-		requestLogger,
-		&firewall.RuleEnforcer{},
+		g.lndClient.Client, g.errQueue.ChanIn(), mw...,
 	)
 
 	if err = g.middleware.Start(); err != nil {
