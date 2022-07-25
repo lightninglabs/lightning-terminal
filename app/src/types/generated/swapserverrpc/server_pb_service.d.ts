@@ -121,6 +121,15 @@ type SwapServerReportRoutingResult = {
   readonly responseType: typeof swapserverrpc_server_pb.ReportRoutingResultRes;
 };
 
+type SwapServerMuSig2SignSweep = {
+  readonly methodName: string;
+  readonly service: typeof SwapServer;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof swapserverrpc_server_pb.MuSig2SignSweepReq;
+  readonly responseType: typeof swapserverrpc_server_pb.MuSig2SignSweepRes;
+};
+
 export class SwapServer {
   static readonly serviceName: string;
   static readonly LoopOutTerms: SwapServerLoopOutTerms;
@@ -136,6 +145,7 @@ export class SwapServer {
   static readonly Probe: SwapServerProbe;
   static readonly RecommendRoutingPlugin: SwapServerRecommendRoutingPlugin;
   static readonly ReportRoutingResult: SwapServerReportRoutingResult;
+  static readonly MuSig2SignSweep: SwapServerMuSig2SignSweep;
 }
 
 export type ServiceError = { message: string, code: number; metadata: grpc.Metadata }
@@ -270,6 +280,15 @@ export class SwapServerClient {
   reportRoutingResult(
     requestMessage: swapserverrpc_server_pb.ReportRoutingResultReq,
     callback: (error: ServiceError|null, responseMessage: swapserverrpc_server_pb.ReportRoutingResultRes|null) => void
+  ): UnaryResponse;
+  muSig2SignSweep(
+    requestMessage: swapserverrpc_server_pb.MuSig2SignSweepReq,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: swapserverrpc_server_pb.MuSig2SignSweepRes|null) => void
+  ): UnaryResponse;
+  muSig2SignSweep(
+    requestMessage: swapserverrpc_server_pb.MuSig2SignSweepReq,
+    callback: (error: ServiceError|null, responseMessage: swapserverrpc_server_pb.MuSig2SignSweepRes|null) => void
   ): UnaryResponse;
 }
 
