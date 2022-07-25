@@ -270,6 +270,15 @@ func (c *Config) lndConnectParams() (string, lndclient.Network, string,
 		c.lndAdminMacaroon
 }
 
+// applyLitSpecificOverwrites applies any lightning-terminal specific overwrites
+// to the config that the user cannot revert.
+func (c *Config) applyLitSpecificOverwrites() {
+	if !c.loopRemote {
+		// Enable Taproot swaps.
+		c.Loop.EnableExperimental = true
+	}
+}
+
 // defaultConfig returns a configuration struct with all default values set.
 func defaultConfig() *Config {
 	return &Config{
@@ -376,6 +385,10 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// For LiT we might want to overwrite certain boolean values to always
+	// be on.
+	cfg.applyLitSpecificOverwrites()
 
 	// Validate the lightning-terminal config options.
 	litDir := lnd.CleanAndExpandPath(preCfg.LitDir)
