@@ -1,12 +1,13 @@
-import React, { CSSProperties, useCallback } from 'react';
+import React, { CSSProperties, useCallback, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Session } from 'store/models';
-import { Close, Column, Copy, Row } from 'components/base';
+import { BoltOutlined, Close, Column, Copy, QRCode, Row } from 'components/base';
 import SortableHeader from 'components/common/SortableHeader';
 import Tip from 'components/common/Tip';
+import QRCodeModal from './QRCodeModal';
 
 /**
  * the virtualized list requires each row to have a specified
@@ -38,12 +39,24 @@ const Styled = {
     padding: 0 5px;
   `,
   ActionColumn: styled(Column)`
-    max-width: 70px;
-    padding: 0 20px;
     line-height: ${ROW_HEIGHT}px;
 
-    & > svg {
-      border-radius: 10px;
+    svg {
+      border-radius: 0;
+      margin-left: 10%;
+
+      &:hover {
+        border-radius: 10px;
+      }
+    }
+
+    > a {
+      color: ${props => props.theme.colors.offWhite};
+
+      &:hover svg {
+        color: ${props => props.theme.colors.blue};
+        background-color: ${props => props.theme.colors.offWhite};
+      }
     }
   `,
   CloseIcon: styled(Close)`
@@ -95,7 +108,7 @@ const RowHeader: React.FC = () => {
           {l('expiry')}
         </SortableHeader>
       </HeaderColumn>
-      <ActionColumn />
+      <Column className="col-1" />
     </HeaderRow>
   );
 };
@@ -109,6 +122,7 @@ interface Props {
 
 const SessionRow: React.FC<Props> = ({ session, style }) => {
   const { l } = usePrefixedTranslation('cmps.connect.SessionRow');
+  const [showQR, setShowQR] = useState(false);
   const { sessionStore } = useStore();
 
   const handleCopy = useCallback(() => {
@@ -119,29 +133,54 @@ const SessionRow: React.FC<Props> = ({ session, style }) => {
     sessionStore.revokeSession(session);
   }, [session]);
 
+  const toggleQRModal = useCallback(() => setShowQR(v => !v), []);
+
   const { Row, Column, ActionColumn, CloseIcon } = Styled;
   return (
     <Row style={style}>
       <ActionColumn>
         {session.isPaired ? (
-          <Tip overlay={l('paired')}>
-            <Copy disabled />
-          </Tip>
+          <>
+            <Tip overlay={l('paired')}>
+              <BoltOutlined disabled />
+            </Tip>
+            <Tip overlay={l('paired')}>
+              <Copy disabled />
+            </Tip>
+            <Tip overlay={l('paired')}>
+              <QRCode disabled />
+            </Tip>
+          </>
         ) : (
-          <Tip overlay={l('copy')}>
-            <Copy onClick={handleCopy} />
-          </Tip>
+          <>
+            <Tip overlay={l('pairTerminal')}>
+              <a href={session.terminalConnectUrl} target="_blank" rel="noreferrer">
+                <BoltOutlined />
+              </a>
+            </Tip>
+            <Tip overlay={l('copy')}>
+              <Copy onClick={handleCopy} />
+            </Tip>
+            <Tip overlay={l('generateQR')}>
+              <QRCode onClick={toggleQRModal} />
+            </Tip>
+          </>
         )}
+        <QRCodeModal
+          url={session.terminalConnectUrl}
+          visible={showQR}
+          onClose={toggleQRModal}
+        />
       </ActionColumn>
       <Column cols={3}>{session.label}</Column>
       <Column>{session.typeLabel}</Column>
       <Column>{session.pairedLabel}</Column>
       <Column>{session.expiryLabel}</Column>
-      <ActionColumn>
+      <Column className="col-1" right>
         <Tip overlay={l('revoke')}>
           <CloseIcon size="large" onClick={handleRevoke} />
         </Tip>
-      </ActionColumn>
+      </Column>
     </Row>
   );
 };

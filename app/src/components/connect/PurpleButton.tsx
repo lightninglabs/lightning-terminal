@@ -1,6 +1,7 @@
 import styled from '@emotion/styled';
 
 interface Props {
+  secondary?: boolean;
   tertiary?: boolean;
 }
 
@@ -22,6 +23,18 @@ const PurpleButton = styled.button<Props>`
   &:focus {
     outline: none;
   }
+
+  ${props =>
+    props.secondary &&
+    `
+    color: #252F4A;
+    background-color: ${props.theme.colors.white};
+
+    &:hover {
+      opacity: 0.8;
+      background-color: ${props.theme.colors.white};
+    }
+  `}
 
   ${props =>
     props.tertiary &&

@@ -1,8 +1,8 @@
 import React, { useCallback, useState } from 'react';
 import { observer } from 'mobx-react-lite';
+import * as LIT from 'types/generated/lit-sessions_pb';
 import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
-import * as LIT from 'types/generated/lit-sessions_pb';
 import { MAX_DATE } from 'util/constants';
 import { useStore } from 'store';
 import { Button, Column, HeaderFour, Row } from 'components/base';
@@ -55,7 +55,7 @@ const AddSession: React.FC<Props> = ({ primary }) => {
         ? LIT.SessionType.TYPE_MACAROON_ADMIN
         : LIT.SessionType.TYPE_MACAROON_READONLY;
 
-    const session = await sessionStore.addSession(label, sessionType, MAX_DATE);
+    const session = await sessionStore.addSession(label, sessionType, MAX_DATE, true);
 
     if (session) {
       setLabel('');
