@@ -4,6 +4,7 @@ import { Layout } from 'components/layout';
 
 const LazyAuthPage = React.lazy(() => import('components/auth/AuthPage'));
 const LazyLoopPage = React.lazy(() => import('components/loop/LoopPage'));
+const LazyHomePage = React.lazy(() => import('components/home/HomePage'));
 const LazyHistoryPage = React.lazy(() => import('components/history/HistoryPage'));
 const LazyPoolPage = React.lazy(() => import('components/pool/PoolPage'));
 const LazySettingsPage = React.lazy(() => import('components/settings/SettingsPage'));
@@ -14,6 +15,14 @@ const AppRoutes: React.FC = () => {
     <Routes>
       <Route path="/" element={<LazyAuthPage />} />
       <Route>
+        <Route
+          path="home"
+          element={
+            <Layout>
+              <LazyHomePage />
+            </Layout>
+          }
+        />
         <Route
           path="loop"
           element={

@@ -28,31 +28,31 @@ describe('Layout component', () => {
   it('should navigate to the History page', () => {
     const { getByText, store } = render();
     expect(store.router.location.pathname).toBe('/loop');
-    fireEvent.click(getByText('History'));
+    fireEvent.click(getByText('Loop History'));
     expect(store.router.location.pathname).toBe('/history');
-    expect(getByText('History').parentElement).toHaveClass('active');
+    expect(getByText('Loop History').parentElement).toHaveClass('active');
   });
 
   it('should navigate back to the Loop page', () => {
     const { getByText, store } = render();
     expect(store.router.location.pathname).toBe('/loop');
-    fireEvent.click(getByText('History'));
+    fireEvent.click(getByText('Loop History'));
     expect(store.router.location.pathname).toBe('/history');
-    expect(getByText('History').parentElement).toHaveClass('active');
-    fireEvent.click(getByText('Lightning Loop'));
+    expect(getByText('Loop History').parentElement).toHaveClass('active');
+    fireEvent.click(getByText('Loop'));
     expect(store.router.location.pathname).toBe('/loop');
-    expect(getByText('Lightning Loop').parentElement).toHaveClass('active');
+    expect(getByText('Loop').parentElement).toHaveClass('active');
   });
 
   it('should navigate to the Pool page', () => {
     const { getByText, store } = render();
     expect(store.router.location.pathname).toBe('/loop');
-    fireEvent.click(getByText('Lightning Pool'));
+    fireEvent.click(getByText('Pool'));
     expect(store.router.location.pathname).toBe('/pool');
-    expect(getByText('Lightning Pool').parentElement).toHaveClass('active');
-    fireEvent.click(getByText('Lightning Loop'));
+    expect(getByText('Pool').parentElement).toHaveClass('active');
+    fireEvent.click(getByText('Loop'));
     expect(store.router.location.pathname).toBe('/loop');
-    expect(getByText('Lightning Loop').parentElement).toHaveClass('active');
+    expect(getByText('Loop').parentElement).toHaveClass('active');
   });
 
   it('should navigate to the Settings page', () => {
@@ -61,8 +61,8 @@ describe('Layout component', () => {
     fireEvent.click(getByText('Settings'));
     expect(store.router.location.pathname).toBe('/settings');
     expect(getByText('Settings').parentElement).toHaveClass('active');
-    fireEvent.click(getByText('Lightning Loop'));
+    fireEvent.click(getByText('Loop'));
     expect(store.router.location.pathname).toBe('/loop');
-    expect(getByText('Lightning Loop').parentElement).toHaveClass('active');
+    expect(getByText('Loop').parentElement).toHaveClass('active');
   });
 });
