@@ -39,9 +39,21 @@ export default class SessionStore {
     return descending ? sessions.reverse() : sessions;
   }
 
+  /** The list of sessions that have not been paired */
+  get unpairedSessions() {
+    return this.sortedSessions.filter(s => !s.isPaired);
+  }
+
   /** indicates if there are more than one sessions active */
   get hasMultiple() {
     return this.sortedSessions.length > 1;
+  }
+
+  /** The URl to pair with Terminal Web for the first session */
+  get firstSessionTerminalUrl() {
+    return this.unpairedSessions.length > 0
+      ? this.unpairedSessions[0].terminalConnectUrl
+      : '';
   }
 
   /**
@@ -78,7 +90,7 @@ export default class SessionStore {
       });
 
       // Ensures that there is at least one session created
-      if (this.sortedSessions.length === 0) {
+      if (this.unpairedSessions.length === 0) {
         const count = values(this.sessions).filter(s =>
           s.label.startsWith('Default Session'),
         ).length;
@@ -99,11 +111,13 @@ export default class SessionStore {
    * @param label the user defined label for this session
    * @param type the type of session being created (admin, read-only, etc)
    * @param expiry how long the session should be valid for
+   * @param copy copy the session's phrase to the clipboard
    */
   async addSession(
     label: string,
     type: LIT.SessionTypeMap[keyof LIT.SessionTypeMap],
     expiry: Date,
+    copy = false,
   ) {
     try {
       this._store.log.info(`submitting session with label ${label}`, {
@@ -124,7 +138,7 @@ export default class SessionStore {
       // fetch all sessions to update the store's state
       await this.fetchSessions();
 
-      if (session) {
+      if (session && copy) {
         this.copyPhrase(session.label, session.pairingSecretMnemonic);
         return this.sessions.get(hex(session.localPublicKey));
       }

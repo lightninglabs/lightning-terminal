@@ -45,6 +45,13 @@ export default class AppView {
     this._store.log.info('Go to the Auth page');
   }
 
+  /** Change to the Home page */
+  goToHome() {
+    this.goTo(`${PUBLIC_URL}/home`);
+    this._store.settingsStore.autoCollapseSidebar();
+    this._store.log.info('Go to the Home page');
+  }
+
   /** Change to the Loop page */
   goToLoop() {
     this.goTo(`${PUBLIC_URL}/loop`);
