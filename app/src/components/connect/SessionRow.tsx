@@ -16,7 +16,7 @@ export const ROW_HEIGHT = 60;
 
 const Styled = {
   Row: styled(Row)`
-    border-bottom: 0.5px solid ${props => props.theme.colors.darkGray};
+    border-bottom: 0.5px solid ${props => props.theme.colors.lightBlue};
 
     &:last-child {
       border-bottom-width: 0;
@@ -47,7 +47,7 @@ const Styled = {
     }
   `,
   CloseIcon: styled(Close)`
-    color: ${props => props.theme.colors.pink};
+    color: ${props => props.theme.colors.lightningRed};
   `,
 };
 

@@ -40,6 +40,7 @@ declare module '@emotion/react' {
       gradient: string;
       lightBlue: string;
       paleBlue: string;
+      lightningRed: string;
     };
   }
 }
