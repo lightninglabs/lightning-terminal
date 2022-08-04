@@ -44,6 +44,7 @@ const theme: Theme = {
     gradient: 'linear-gradient(325.53deg, #252F4A 0%, #46547B 100%);',
     lightBlue: '#384770',
     paleBlue: '#2E3A5C',
+    lightningRed: '#EF4444',
   },
 };
 
