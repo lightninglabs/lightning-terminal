@@ -8,3 +8,5 @@ updates:
       # Allow both direct and indirect updates for production packages.
       # Ignores packages listed in devDependencies
       - dependency-type: 'production'
+    # exclude dependabot version updates
+    open-pull-requests-limit: 0
