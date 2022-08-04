@@ -92,7 +92,7 @@ func newSessionRPCServer(cfg *sessionRpcServerConfig) (*sessionRpcServer,
 // requests. This includes resuming all non-revoked sessions.
 func (s *sessionRpcServer) start() error {
 	// Start up all previously created sessions.
-	sessions, err := s.db.ListSessions()
+	sessions, err := s.db.ListSessions(nil)
 	if err != nil {
 		return fmt.Errorf("error listing sessions: %v", err)
 	}
@@ -456,7 +456,7 @@ func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
 func (s *sessionRpcServer) ListSessions(_ context.Context,
 	_ *litrpc.ListSessionsRequest) (*litrpc.ListSessionsResponse, error) {
 
-	sessions, err := s.db.ListSessions()
+	sessions, err := s.db.ListSessions(nil)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching sessions: %v", err)
 	}

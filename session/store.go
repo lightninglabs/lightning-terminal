@@ -45,8 +45,36 @@ func (db *DB) StoreSession(session *Session) error {
 	})
 }
 
+// GetSession fetches the session with the given key.
+func (db *DB) GetSession(key *btcec.PublicKey) (*Session, error) {
+	var session *Session
+	err := db.View(func(tx *bbolt.Tx) error {
+		sessionBucket, err := getBucket(tx, sessionBucketKey)
+		if err != nil {
+			return err
+		}
+
+		v := sessionBucket.Get(key.SerializeCompressed())
+		if len(v) == 0 {
+			return ErrSessionNotFound
+		}
+
+		session, err = DeserializeSession(bytes.NewReader(v))
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return session, nil
+}
+
 // ListSessions returns all sessions currently known to the store.
-func (db *DB) ListSessions() ([]*Session, error) {
+func (db *DB) ListSessions(filterFn func(s *Session) bool) ([]*Session, error) {
 	var sessions []*Session
 	err := db.View(func(tx *bbolt.Tx) error {
 		sessionBucket, err := getBucket(tx, sessionBucketKey)
@@ -65,12 +93,16 @@ func (db *DB) ListSessions() ([]*Session, error) {
 			if err != nil {
 				return err
 			}
+
+			if filterFn != nil && !filterFn(session) {
+				return nil
+			}
+
 			sessions = append(sessions, session)
 
 			return nil
 		})
 	})
-
 	if err != nil {
 		return nil, err
 	}
