@@ -8,7 +8,7 @@ const Styled = {
     align-items: center;
     height: 80px;
     cursor: pointer;
-    border-bottom: 0.5px solid ${props => props.theme.colors.darkGray};
+    border-bottom: 0.5px solid ${props => props.theme.colors.lightBlue};
 
     &:last-child {
       border-bottom-width: 0;
