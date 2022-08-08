@@ -32,16 +32,16 @@ describe('ChannelBalance component', () => {
     const { el, remote, local } = render(0.25);
     expect(el.children.length).toBe(3);
     expect(width(local)).toBe('25%');
-    expect(bgColor(local)).toBe('rgb(70, 232, 14)');
-    expect(bgColor(remote)).toBe('rgb(70, 232, 14)');
+    expect(bgColor(local)).toBe('rgb(16, 185, 129)');
+    expect(bgColor(remote)).toBe('rgb(16, 185, 129)');
   });
 
   it('should display a warning balance', () => {
     const { el, remote, local } = render(0.52);
     expect(el.children.length).toBe(3);
     expect(width(local)).toBe('52%');
-    expect(bgColor(local)).toBe('rgb(239, 160, 11)');
-    expect(bgColor(remote)).toBe('rgb(239, 160, 11)');
+    expect(bgColor(local)).toBe('rgb(245, 158, 11)');
+    expect(bgColor(remote)).toBe('rgb(245, 158, 11)');
   });
 
   it('should display a bad balance', () => {
