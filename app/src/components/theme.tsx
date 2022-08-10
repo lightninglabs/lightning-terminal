@@ -30,7 +30,7 @@ const theme: Theme = {
     xxl: '45px',
   },
   colors: {
-    blue: '#3B82F6',
+    blue: '#252f4a',
     darkBlue: '#212133',
     gray: '#848a99',
     darkGray: '#6b6969ef',
