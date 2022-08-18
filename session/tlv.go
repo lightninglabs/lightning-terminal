@@ -24,6 +24,7 @@ const (
 	typeLocalPrivateKey tlv.Type = 10
 	typeRemotePublicKey tlv.Type = 11
 	typeMacaroonRecipe  tlv.Type = 12
+	typeCreatedAt       tlv.Type = 13
 
 	// typeMacaroon is no longer used, but we leave it defined for backwards
 	// compatibility.
@@ -56,6 +57,7 @@ func SerializeSession(w io.Writer, session *Session) error {
 		devServer     = uint8(0)
 		pairingSecret = session.PairingSecret[:]
 		privateKey    = session.LocalPrivateKey.Serialize()
+		createdAt     = uint64(session.CreatedAt.Unix())
 	)
 
 	if session.DevServer {
@@ -99,6 +101,10 @@ func SerializeSession(w io.Writer, session *Session) error {
 		))
 	}
 
+	tlvRecords = append(
+		tlvRecords, tlv.MakePrimitiveRecord(typeCreatedAt, &createdAt),
+	)
+
 	tlvStream, err := tlv.NewStream(tlvRecords...)
 	if err != nil {
 		return err
@@ -115,7 +121,7 @@ func DeserializeSession(r io.Reader) (*Session, error) {
 		label, serverAddr         []byte
 		pairingSecret, privateKey []byte
 		state, typ, devServer     uint8
-		expiry                    uint64
+		expiry, createdAt         uint64
 		macRecipe                 MacaroonRecipe
 	)
 	tlvStream, err := tlv.NewStream(
@@ -137,6 +143,7 @@ func DeserializeSession(r io.Reader) (*Session, error) {
 			typeMacaroonRecipe, &macRecipe, nil,
 			macaroonRecipeEncoder, macaroonRecipeDecoder,
 		),
+		tlv.MakePrimitiveRecord(typeCreatedAt, &createdAt),
 	)
 	if err != nil {
 		return nil, err
@@ -151,6 +158,7 @@ func DeserializeSession(r io.Reader) (*Session, error) {
 	session.State = State(state)
 	session.Type = Type(typ)
 	session.Expiry = time.Unix(int64(expiry), 0)
+	session.CreatedAt = time.Unix(int64(createdAt), 0)
 	session.ServerAddr = string(serverAddr)
 	session.DevServer = devServer == 1
 

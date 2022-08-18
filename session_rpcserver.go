@@ -333,6 +333,7 @@ func marshalRPCSession(sess *session.Session) (*litrpc.Session, error) {
 		PairingSecretMnemonic:  strings.Join(mnemonic[:], " "),
 		LocalPublicKey:         sess.LocalPublicKey.SerializeCompressed(),
 		RemotePublicKey:        remotePubKey,
+		CreatedAt:              uint64(sess.CreatedAt.Unix()),
 	}, nil
 }
 

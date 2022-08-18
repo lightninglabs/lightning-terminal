@@ -74,6 +74,8 @@ message Session {
     bytes local_public_key = 9;
 
     bytes remote_public_key = 10;
+
+    uint64 created_at = 11 [jstype = JS_STRING];
 }
 
 message ListSessionsRequest {
