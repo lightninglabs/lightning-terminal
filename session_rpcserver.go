@@ -38,6 +38,7 @@ type sessionRpcServerConfig struct {
 	registerGrpcServers func(server *grpc.Server)
 	superMacBaker       func(ctx context.Context, rootKeyID uint64,
 		recipe *session.MacaroonRecipe) (string, error)
+	firstConnectionDeadline time.Duration
 }
 
 // newSessionRPCServer creates a new sessionRpcServer using the passed config.
@@ -214,10 +215,57 @@ func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
 		return nil
 	}
 
-	authData := []byte(fmt.Sprintf("%s: %s", HeaderMacaroon, mac))
+	var (
+		onNewStatus     func(s mailbox.ServerStatus)
+		firstConnTimout = make(chan struct{})
+	)
 
+	// If this is the first time the session is being spun up then we will
+	// kick off a timer to revoke the session after a timeout unless an
+	// initial connection is made. We identify such a session as one that
+	// we do not yet have a static remote pub key for.
+	if sess.RemotePublicKey == nil {
+		deadline := sess.CreatedAt.Add(s.cfg.firstConnectionDeadline)
+		if deadline.Before(time.Now()) {
+			log.Debugf("Deadline for session %x has already "+
+				"passed. Revoking session", pubKeyBytes)
+
+			return s.db.RevokeSession(pubKey)
+		}
+
+		// Start the deadline timer.
+		deadlineDuration := time.Until(deadline)
+		deadlineTimer := time.AfterFunc(deadlineDuration, func() {
+			close(firstConnTimout)
+		})
+
+		log.Warnf("Kicking off deadline timer for first connection "+
+			"for session %x. A successful connection must be "+
+			"made in the next %s", pubKeyBytes, deadlineDuration)
+
+		var stopTimerOnce sync.Once
+		onNewStatus = func(s mailbox.ServerStatus) {
+			// We will only stop the timer if the server status
+			// indicates that the client has successfully connected.
+			if s != mailbox.ServerStatusInUse {
+				return
+			}
+
+			// Stop the deadline timer.
+			stopTimerOnce.Do(func() {
+				log.Debugf("First connection for session %x "+
+					"made in a timely manner",
+					sess.LocalPublicKey.
+						SerializeCompressed())
+
+				deadlineTimer.Stop()
+			})
+		}
+	}
+
+	authData := []byte(fmt.Sprintf("%s: %s", HeaderMacaroon, mac))
 	sessionClosedSub, err := s.sessionServer.StartSession(
-		sess, authData, s.db.StoreSession,
+		sess, authData, s.db.StoreSession, onNewStatus,
 	)
 	if err != nil {
 		return err
@@ -232,22 +280,31 @@ func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
 
 		select {
 		case <-s.quit:
+			return
+
 		case <-sessionClosedSub:
+			return
+
 		case <-ticker.C:
 			log.Debugf("Stopping expired session %x with "+
 				"type %d", pubKeyBytes, sess.Type)
 
-			err = s.sessionServer.StopSession(pubKey)
-			if err != nil {
-				log.Debugf("Error stopping session: "+
-					"%v", err)
-			}
+		case <-firstConnTimout:
+			log.Debugf("Deadline exceeded for first connection "+
+				"for session %x. Stopping and revoking.",
+				pubKeyBytes)
+		}
 
-			err = s.db.RevokeSession(pubKey)
-			if err != nil {
-				log.Debugf("error revoking session: "+
-					"%v", err)
-			}
+		err = s.sessionServer.StopSession(pubKey)
+		if err != nil {
+			log.Debugf("Error stopping session: "+
+				"%v", err)
+		}
+
+		err = s.db.RevokeSession(pubKey)
+		if err != nil {
+			log.Debugf("error revoking session: "+
+				"%v", err)
 		}
 	}()
 
