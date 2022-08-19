@@ -16,11 +16,11 @@ const GlobalStyles = (theme: Theme) => `
     color: ${theme.colors.offWhite};
     background-color: ${theme.colors.blue};
     border-width: 0px;
-    padding: 40px;
+    padding: 32px 40px;
   }
   div.rc-dialog-title {
-    font-size: ${theme.sizes.xxl};
-    line-height: 42px;
+    font-size: 32px;
+    line-height: 40px;
     overflow: hidden;
     text-overflow: ellipsis;
   }

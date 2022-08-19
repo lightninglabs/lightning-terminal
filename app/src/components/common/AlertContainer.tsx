@@ -48,6 +48,10 @@ const Styled = {
       color: ${props => props.theme.colors.offWhite};
       background-color: ${props => props.theme.colors.pink};
     }
+    .Toastify__toast--warning {
+      color: ${props => props.theme.colors.offWhite};
+      background-color: ${props => props.theme.colors.gold};
+    }
   `,
 };
 

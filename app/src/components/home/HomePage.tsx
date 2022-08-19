@@ -37,6 +37,9 @@ const Styled = {
       margin-right: 16px;
     }
   `,
+  Column: styled(Column)`
+    max-width: 480px;
+  `,
   Image: styled.img`
     width: 100%;
     margin-bottom: 24px;
@@ -45,14 +48,18 @@ const Styled = {
 
 const HomePage: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.home.HomePage');
-  const [showQR, setShowQR] = useState(false);
+  const [qrUrl, setQrUrl] = useState('');
   const [showVideo, setShowVideo] = useState(false);
   const { sessionStore } = useStore();
 
-  const toggleQRModal = useCallback(() => setShowQR(v => !v), []);
+  const openQRModal = useCallback(
+    async () => setQrUrl(await sessionStore.getNewSessionUrl()),
+    [],
+  );
+  const closeQRModal = useCallback(() => setQrUrl(''), []);
   const toggleVideoModal = useCallback(() => setShowVideo(v => !v), []);
 
-  const { Wrapper, PurpleButton, YoutubeButton, Image } = Styled;
+  const { Wrapper, PurpleButton, YoutubeButton, Column, Image } = Styled;
   return (
     <Wrapper>
       <Display semiBold space={16}>
@@ -60,13 +67,11 @@ const HomePage: React.FC = () => {
       </Display>
       <Paragraph space={32}>{l('connectDesc')}</Paragraph>
       <Paragraph space={40}>
-        <a href={sessionStore.firstSessionTerminalUrl} target="_blank" rel="noreferrer">
-          <PurpleButton>
-            <BoltOutlined />
-            {l('connectTerminalBtn')}
-          </PurpleButton>
-        </a>
-        <PurpleButton secondary onClick={toggleQRModal}>
+        <PurpleButton onClick={sessionStore.connectToTerminalWeb}>
+          <BoltOutlined />
+          {l('connectTerminalBtn')}
+        </PurpleButton>
+        <PurpleButton secondary onClick={openQRModal}>
           <QRCode />
           {l('connectQrBtn')}
         </PurpleButton>
@@ -98,11 +103,7 @@ const HomePage: React.FC = () => {
           <Paragraph muted>{l('dashDesc')}</Paragraph>
         </Column>
       </Row>
-      <QRCodeModal
-        url={sessionStore.firstSessionTerminalUrl}
-        visible={showQR}
-        onClose={toggleQRModal}
-      />
+      <QRCodeModal url={qrUrl} visible={!!qrUrl} onClose={closeQRModal} />
       <YoutubeModal
         videoId="5kH1ByxjkTM"
         visible={showVideo}
