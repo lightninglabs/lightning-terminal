@@ -33,7 +33,8 @@ func newMailboxSession() *mailboxSession {
 
 func (m *mailboxSession) start(session *Session,
 	serverCreator GRPCServerCreator, authData []byte,
-	onUpdate func(sess *Session) error) error {
+	onUpdate func(sess *Session) error,
+	onNewStatus func(s mailbox.ServerStatus)) error {
 
 	tlsConfig := &tls.Config{}
 	if session.DevServer {
@@ -52,7 +53,7 @@ func (m *mailboxSession) start(session *Session,
 
 	// Start the mailbox gRPC server.
 	mailboxServer, err := mailbox.NewServer(
-		session.ServerAddr, keys,
+		session.ServerAddr, keys, onNewStatus,
 		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
 			Time: 2 * time.Minute,
@@ -104,7 +105,8 @@ func NewServer(serverCreator GRPCServerCreator) *Server {
 }
 
 func (s *Server) StartSession(session *Session, authData []byte,
-	onUpdate func(sess *Session) error) (chan struct{}, error) {
+	onUpdate func(sess *Session) error,
+	onNewStatus func(s mailbox.ServerStatus)) (chan struct{}, error) {
 
 	s.activeSessionsMtx.Lock()
 	defer s.activeSessionsMtx.Unlock()
@@ -121,7 +123,7 @@ func (s *Server) StartSession(session *Session, authData []byte,
 	s.activeSessions[id] = sess
 
 	return sess.quit, sess.start(
-		session, s.serverCreator, authData, onUpdate,
+		session, s.serverCreator, authData, onUpdate, onNewStatus,
 	)
 }
 

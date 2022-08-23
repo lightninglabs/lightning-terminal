@@ -11,7 +11,7 @@ require (
 	github.com/improbable-eng/grpc-web v0.12.0
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/lightninglabs/faraday v0.2.8-alpha.0.20220624141723-ddd3cd123e62
-	github.com/lightninglabs/lightning-node-connect v0.1.11-alpha
+	github.com/lightninglabs/lightning-node-connect v0.1.11-alpha.0.20220822151854-c072f70315d8
 	github.com/lightninglabs/lndclient v0.15.0-10
 	github.com/lightninglabs/loop v0.19.1-beta.0.20220623090540-08209f61e304
 	github.com/lightninglabs/loop/swapserverrpc v1.0.1

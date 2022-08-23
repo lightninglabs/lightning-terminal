@@ -43,6 +43,7 @@ type Session struct {
 	State           State
 	Type            Type
 	Expiry          time.Time
+	CreatedAt       time.Time
 	ServerAddr      string
 	DevServer       bool
 	MacaroonRootKey uint64
@@ -78,6 +79,7 @@ func NewSession(label string, typ Type, expiry time.Time, serverAddr string,
 		State:           StateCreated,
 		Type:            typ,
 		Expiry:          expiry,
+		CreatedAt:       time.Now(),
 		ServerAddr:      serverAddr,
 		DevServer:       devServer,
 		MacaroonRootKey: macRootKey,

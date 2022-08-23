@@ -8,9 +8,17 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/integration/rpctest"
+	"github.com/lightninglabs/aperture"
+	"github.com/lightninglabs/lightning-node-connect/gbn"
+	"github.com/lightninglabs/lightning-node-connect/mailbox"
+	"github.com/lightningnetwork/lnd"
+	"github.com/lightningnetwork/lnd/build"
 	"github.com/lightningnetwork/lnd/lntest"
+	"github.com/lightningnetwork/lnd/signal"
 	"github.com/stretchr/testify/require"
 )
+
+var interceptor *signal.Interceptor
 
 // TestLightningTerminal performs a series of integration tests amongst a
 // programmatically driven network of lnd nodes.
@@ -73,6 +81,7 @@ func TestLightningTerminal(t *testing.T) {
 	// Now we can set up our test harness (LND instance), with the chain
 	// backend we just created.
 	ht := newHarnessTest(t, nil)
+	ht.setupLogging()
 	binary := getLitdBinary()
 	litdHarness, err = NewNetworkHarness(miner, chainBackend, binary)
 	if err != nil {
@@ -163,4 +172,25 @@ func TestLightningTerminal(t *testing.T) {
 			break
 		}
 	}
+}
+
+func (h *harnessTest) setupLogging() {
+	logWriter := build.NewRotatingLogWriter()
+
+	if interceptor != nil {
+		return
+	}
+
+	ic, err := signal.Intercept()
+	require.NoError(h.t, err)
+	interceptor = &ic
+
+	aperture.SetupLoggers(logWriter, *interceptor)
+	lnd.AddSubLogger(
+		logWriter, mailbox.Subsystem, *interceptor, mailbox.UseLogger,
+	)
+	lnd.AddSubLogger(logWriter, gbn.Subsystem, *interceptor, gbn.UseLogger)
+
+	err = build.ParseAndSetDebugLevels("debug", logWriter)
+	require.NoError(h.t, err)
 }

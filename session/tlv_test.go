@@ -99,6 +99,9 @@ func TestSerializeDeserializeSession(t *testing.T) {
 			)
 			session.Expiry = time.Time{}
 			deserializedSession.Expiry = time.Time{}
+			session.CreatedAt = time.Time{}
+			deserializedSession.CreatedAt = time.Time{}
+
 			require.Equal(t, session, deserializedSession)
 		})
 	}

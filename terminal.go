@@ -232,6 +232,7 @@ func (g *LightningTerminal) Run() error {
 				recipe.Permissions, recipe.Caveats,
 			)
 		},
+		firstConnectionDeadline: g.cfg.FirstLNCConnDeadline,
 	})
 	if err != nil {
 		return fmt.Errorf("could not create new session rpc "+

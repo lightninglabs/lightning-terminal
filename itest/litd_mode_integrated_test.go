@@ -612,6 +612,10 @@ func runLNCAuthTest(t *testing.T, hostPort, tlsCertPath, macPath string,
 	connectPhrase := strings.Split(
 		sessResp.Session.PairingSecretMnemonic, " ",
 	)
+
+	ctxt, cancel = context.WithTimeout(ctxb, defaultTimeout)
+	defer cancel()
+
 	rawLNCConn, err := connectMailbox(ctxt, connectPhrase)
 	require.NoError(t, err)
 
