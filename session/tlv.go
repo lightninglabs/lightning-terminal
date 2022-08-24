@@ -25,7 +25,7 @@ const (
 	typeRemotePublicKey tlv.Type = 11
 	typeMacaroonRecipe  tlv.Type = 12
 	typeCreatedAt       tlv.Type = 13
-	typeReservedNum1    tlv.Type = 14
+	typeFeaturesConfig  tlv.Type = 14
 	typeReservedNum2    tlv.Type = 15
 	typeRevokedAt       tlv.Type = 16
 
@@ -42,6 +42,9 @@ const (
 
 	typePermEntity tlv.Type = 1
 	typePermAction tlv.Type = 2
+
+	typeFeatureName   tlv.Type = 1
+	typeFeatureConfig tlv.Type = 2
 )
 
 // SerializeSession binary serializes the given session to the writer using the
@@ -111,7 +114,23 @@ func SerializeSession(w io.Writer, session *Session) error {
 
 	tlvRecords = append(
 		tlvRecords, tlv.MakePrimitiveRecord(typeCreatedAt, &createdAt),
-		tlv.MakePrimitiveRecord(typeRevokedAt, &revokedAt),
+	)
+
+	if session.FeatureConfig != nil && len(*session.FeatureConfig) != 0 {
+		tlvRecords = append(tlvRecords, tlv.MakeDynamicRecord(
+			typeFeaturesConfig, session.FeatureConfig,
+			func() uint64 {
+				return recordSize(
+					featureConfigEncoder,
+					session.FeatureConfig,
+				)
+			},
+			featureConfigEncoder, featureConfigDecoder,
+		))
+	}
+
+	tlvRecords = append(
+		tlvRecords, tlv.MakePrimitiveRecord(typeRevokedAt, &revokedAt),
 	)
 
 	tlvStream, err := tlv.NewStream(tlvRecords...)
@@ -132,6 +151,7 @@ func DeserializeSession(r io.Reader) (*Session, error) {
 		state, typ, devServer        uint8
 		expiry, createdAt, revokedAt uint64
 		macRecipe                    MacaroonRecipe
+		featureConfig                FeaturesConfig
 	)
 	tlvStream, err := tlv.NewStream(
 		tlv.MakePrimitiveRecord(typeLabel, &label),
@@ -153,6 +173,10 @@ func DeserializeSession(r io.Reader) (*Session, error) {
 			macaroonRecipeEncoder, macaroonRecipeDecoder,
 		),
 		tlv.MakePrimitiveRecord(typeCreatedAt, &createdAt),
+		tlv.MakeDynamicRecord(
+			typeFeaturesConfig, &featureConfig, nil,
+			featureConfigEncoder, featureConfigDecoder,
+		),
 		tlv.MakePrimitiveRecord(typeRevokedAt, &revokedAt),
 	)
 	if err != nil {
@@ -191,7 +215,113 @@ func DeserializeSession(r io.Reader) (*Session, error) {
 		)
 	}
 
+	if t, ok := parsedTypes[typeFeaturesConfig]; ok && t == nil {
+		session.FeatureConfig = &featureConfig
+	}
+
 	return session, nil
+}
+
+func featureConfigEncoder(w io.Writer, val interface{}, buf *[8]byte) error {
+	if v, ok := val.(*FeaturesConfig); ok {
+		for n, config := range *v {
+			name := []byte(n)
+			config := config
+
+			var permsTLVBytes bytes.Buffer
+			tlvStream, err := tlv.NewStream(
+				tlv.MakePrimitiveRecord(typeFeatureName, &name),
+				tlv.MakePrimitiveRecord(
+					typeFeatureConfig, &config,
+				),
+			)
+			if err != nil {
+				return err
+			}
+
+			err = tlvStream.Encode(&permsTLVBytes)
+			if err != nil {
+				return err
+			}
+
+			// We encode the record with a varint length followed by
+			// the _raw_ TLV bytes.
+			tlvLen := uint64(len(permsTLVBytes.Bytes()))
+			if err := tlv.WriteVarInt(w, tlvLen, buf); err != nil {
+				return err
+			}
+
+			_, err = w.Write(permsTLVBytes.Bytes())
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+
+	return tlv.NewTypeForEncodingErr(val, "FeaturesConfig")
+}
+
+func featureConfigDecoder(r io.Reader, val interface{}, buf *[8]byte,
+	l uint64) error {
+
+	if v, ok := val.(*FeaturesConfig); ok {
+		featureConfig := make(map[string][]byte)
+
+		// Using this information, we'll create a new limited
+		// reader that'll return an EOF once the end has been
+		// reached so the stream stops consuming bytes.
+		innerTlvReader := io.LimitedReader{
+			R: r,
+			N: int64(l),
+		}
+
+		for {
+			// Read out the varint that encodes the size of this
+			// inner TLV record.
+			blobSize, err := tlv.ReadVarInt(&innerTlvReader, buf)
+			if err == io.EOF {
+				break
+			} else if err != nil {
+				return err
+			}
+
+			innerInnerTlvReader := io.LimitedReader{
+				R: &innerTlvReader,
+				N: int64(blobSize),
+			}
+
+			var (
+				name   []byte
+				config []byte
+			)
+			tlvStream, err := tlv.NewStream(
+				tlv.MakePrimitiveRecord(
+					typeFeatureName, &name,
+				),
+				tlv.MakePrimitiveRecord(
+					typeFeatureConfig, &config,
+				),
+			)
+			if err != nil {
+				return err
+			}
+
+			err = tlvStream.Decode(&innerInnerTlvReader)
+			if err != nil {
+				return err
+			}
+
+			featureConfig[string(name)] = config
+		}
+
+		*v = featureConfig
+
+		return nil
+	}
+
+	return tlv.NewTypeForEncodingErr(val, "FeaturesConfig")
 }
 
 // macaroonRecipeEncoder is a custom TLV encoder for a MacaroonRecipe record.

@@ -51,11 +51,12 @@ var (
 // and deserialized from and to the tlv binary format successfully.
 func TestSerializeDeserializeSession(t *testing.T) {
 	tests := []struct {
-		name      string
-		sessType  Type
-		revokedAt time.Time
-		perms     []bakery.Op
-		caveats   []macaroon.Caveat
+		name          string
+		sessType      Type
+		revokedAt     time.Time
+		perms         []bakery.Op
+		caveats       []macaroon.Caveat
+		featureConfig map[string][]byte
 	}{
 		{
 			name:     "session 1",
@@ -70,6 +71,14 @@ func TestSerializeDeserializeSession(t *testing.T) {
 			perms:    perms,
 			caveats:  caveats,
 		},
+		{
+			name:     "session 3",
+			sessType: TypeMacaroonCustom,
+			featureConfig: map[string][]byte{
+				"AutoFees":      {1, 2, 3, 4},
+				"AutoSomething": {4, 3, 4, 5, 6, 6},
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -78,7 +87,7 @@ func TestSerializeDeserializeSession(t *testing.T) {
 				test.name, test.sessType,
 				time.Date(99999, 1, 1, 0, 0, 0, 0, time.UTC),
 				"foo.bar.baz:1234", true, test.perms,
-				test.caveats,
+				test.caveats, test.featureConfig,
 			)
 			require.NoError(t, err)
 

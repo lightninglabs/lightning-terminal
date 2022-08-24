@@ -40,6 +40,10 @@ type MacaroonRecipe struct {
 	Caveats     []macaroon.Caveat
 }
 
+// FeaturesConfig is a map from feature name to a raw byte array which stores
+// any config feature config options.
+type FeaturesConfig map[string][]byte
+
 // Session is a struct representing a long-term Terminal Connect session.
 type Session struct {
 	ID              ID
@@ -57,6 +61,7 @@ type Session struct {
 	LocalPrivateKey *btcec.PrivateKey
 	LocalPublicKey  *btcec.PublicKey
 	RemotePublicKey *btcec.PublicKey
+	FeatureConfig   *FeaturesConfig
 }
 
 // MacaroonBaker is a function type for baking a super macaroon.
@@ -65,8 +70,8 @@ type MacaroonBaker func(ctx context.Context, rootKeyID uint64,
 
 // NewSession creates a new session with the given user-defined parameters.
 func NewSession(label string, typ Type, expiry time.Time, serverAddr string,
-	devServer bool, perms []bakery.Op, caveats []macaroon.Caveat) (*Session,
-	error) {
+	devServer bool, perms []bakery.Op, caveats []macaroon.Caveat,
+	featureConfig FeaturesConfig) (*Session, error) {
 
 	_, pairingSecret, err := mailbox.NewPassphraseEntropy()
 	if err != nil {
@@ -104,6 +109,10 @@ func NewSession(label string, typ Type, expiry time.Time, serverAddr string,
 			Permissions: perms,
 			Caveats:     caveats,
 		}
+	}
+
+	if len(featureConfig) != 0 {
+		sess.FeatureConfig = &featureConfig
 	}
 
 	return sess, nil
