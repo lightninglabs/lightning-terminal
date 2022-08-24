@@ -45,4 +45,5 @@ var Registrations = []StubPackageRegistration{
 	litrpc.RegisterSessionsJSONCallbacks,
 	litrpc.RegisterAccountsJSONCallbacks,
 	litrpc.RegisterAutopilotJSONCallbacks,
+	litrpc.RegisterFirewallJSONCallbacks,
 }

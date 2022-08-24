@@ -10,6 +10,7 @@ import (
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/lightninglabs/lightning-node-connect/mailbox"
 	"github.com/lightninglabs/lightning-terminal/accounts"
+	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/lightning-terminal/perms"
 	"github.com/lightninglabs/lightning-terminal/session"
@@ -31,6 +32,7 @@ const readOnlyAction = "***readonly***"
 // sessionRpcServer is the gRPC server for the Session RPC interface.
 type sessionRpcServer struct {
 	litrpc.UnimplementedSessionsServer
+	litrpc.UnimplementedFirewallServer
 
 	cfg           *sessionRpcServerConfig
 	db            *session.DB
@@ -51,6 +53,7 @@ type sessionRpcServerConfig struct {
 	superMacBaker           session.MacaroonBaker
 	firstConnectionDeadline time.Duration
 	permMgr                 *perms.Manager
+	actionsDB               *firewalldb.DB
 }
 
 // newSessionRPCServer creates a new sessionRpcServer using the passed config.
@@ -86,8 +89,7 @@ func newSessionRPCServer(cfg *sessionRpcServerConfig) (*sessionRpcServer,
 }
 
 // start all the components necessary for the sessionRpcServer to start serving
-// requests. This includes starting the macaroon service and resuming all
-// non-revoked sessions.
+// requests. This includes resuming all non-revoked sessions.
 func (s *sessionRpcServer) start() error {
 	// Start up all previously created sessions.
 	sessions, err := s.db.ListSessions()
@@ -96,7 +98,8 @@ func (s *sessionRpcServer) start() error {
 	}
 	for _, sess := range sessions {
 		if err := s.resumeSession(sess); err != nil {
-			return fmt.Errorf("error resuming sesion: %v", err)
+			log.Errorf("error resuming session (%x): %v",
+				sess.LocalPublicKey.SerializeCompressed(), err)
 		}
 	}
 
@@ -495,6 +498,142 @@ func (s *sessionRpcServer) RevokeSession(_ context.Context,
 	return &litrpc.RevokeSessionResponse{}, nil
 }
 
+// ListActions lists all actions attempted on the Litd server.
+func (s *sessionRpcServer) ListActions(_ context.Context,
+	req *litrpc.ListActionsRequest) (*litrpc.ListActionsResponse, error) {
+
+	// If no maximum number of actions is given, use a default of 100.
+	if req.MaxNumActions == 0 {
+		req.MaxNumActions = 100
+	}
+
+	// Build a filter function based on the request values.
+	filterFn := func(a *firewalldb.Action, reversed bool) (bool, bool) {
+		timeStamp := uint64(a.AttemptedAt.Unix())
+		if req.EndTimestamp != 0 {
+			// If actions are being considered in order and the
+			// timestamp of this action exceeds the given end
+			// timestamp, then there is no need to continue
+			// traversing.
+			if !reversed && timeStamp > req.EndTimestamp {
+				return false, false
+			}
+
+			// If the actions are in reverse order and the timestamp
+			// comes after the end timestamp, then the actions is
+			// not included but the search can continue.
+			if reversed && timeStamp > req.EndTimestamp {
+				return false, true
+			}
+		}
+
+		if req.StartTimestamp != 0 {
+			// If actions are being considered in order and the
+			// timestamp of this action comes before the given start
+			// timestamp, then the action is not included but the
+			// search can continue.
+			if !reversed && timeStamp < req.StartTimestamp {
+				return false, true
+			}
+
+			// If the actions are in reverse order and the timestamp
+			// comes before the start timestamp, then there is no
+			// need to continue traversing.
+			if reversed && timeStamp < req.StartTimestamp {
+				return false, false
+			}
+		}
+
+		if req.FeatureName != "" && a.FeatureName != req.FeatureName {
+			return false, true
+		}
+
+		if req.ActorName != "" && a.ActorName != req.ActorName {
+			return false, true
+		}
+
+		if req.MethodName != "" && a.RPCMethod != req.MethodName {
+			return false, true
+		}
+
+		if req.State != 0 {
+			s, err := marshalActionState(a.State)
+			if err != nil {
+				return false, true
+			}
+
+			if s != req.State {
+				return false, true
+			}
+		}
+
+		return true, true
+	}
+
+	query := &firewalldb.ListActionsQuery{
+		IndexOffset: req.IndexOffset,
+		MaxNum:      req.MaxNumActions,
+		Reversed:    req.Reversed,
+		CountAll:    req.CountTotal,
+	}
+
+	var (
+		db         = s.cfg.actionsDB
+		actions    []*firewalldb.Action
+		lastIndex  uint64
+		totalCount uint64
+		err        error
+	)
+	if req.SessionId != nil {
+		sessionID, err := session.IDFromBytes(req.SessionId)
+		if err != nil {
+			return nil, err
+		}
+
+		actions, lastIndex, totalCount, err = db.ListSessionActions(
+			sessionID, filterFn, query,
+		)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		actions, lastIndex, totalCount, err = db.ListActions(
+			filterFn, query,
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	resp := make([]*litrpc.Action, len(actions))
+	for i, a := range actions {
+		state, err := marshalActionState(a.State)
+		if err != nil {
+			return nil, err
+		}
+
+		resp[i] = &litrpc.Action{
+			SessionId:          a.SessionID[:],
+			ActorName:          a.ActorName,
+			FeatureName:        a.FeatureName,
+			Trigger:            a.Trigger,
+			Intent:             a.Intent,
+			StructuredJsonData: a.StructuredJsonData,
+			RpcMethod:          a.RPCMethod,
+			RpcParamsJson:      string(a.RPCParamsJson),
+			Timestamp:          uint64(a.AttemptedAt.Unix()),
+			State:              state,
+			ErrorReason:        a.ErrorReason,
+		}
+	}
+
+	return &litrpc.ListActionsResponse{
+		Actions:         resp,
+		LastIndexOffset: lastIndex,
+		TotalCount:      totalCount,
+	}, nil
+}
+
 // marshalRPCSession converts a session into its RPC counterpart.
 func marshalRPCSession(sess *session.Session) (*litrpc.Session, error) {
 	rpcState, err := marshalRPCState(sess.State)
@@ -633,5 +772,23 @@ func unmarshalRPCType(typ litrpc.SessionType) (session.Type, error) {
 
 	default:
 		return 0, fmt.Errorf("unknown type <%d>", typ)
+	}
+}
+
+// marshalActionState converts an Action state into its RPC counterpart.
+func marshalActionState(state firewalldb.ActionState) (litrpc.ActionState,
+	error) {
+
+	switch state {
+	case firewalldb.ActionStateUnknown:
+		return litrpc.ActionState_STATE_UNKNOWN, nil
+	case firewalldb.ActionStateInit:
+		return litrpc.ActionState_STATE_PENDING, nil
+	case firewalldb.ActionStateDone:
+		return litrpc.ActionState_STATE_DONE, nil
+	case firewalldb.ActionStateError:
+		return litrpc.ActionState_STATE_ERROR, nil
+	default:
+		return 0, fmt.Errorf("unknown state <%d>", state)
 	}
 }

@@ -62,6 +62,10 @@ var (
 			Entity: "account",
 			Action: "write",
 		}},
+		"/litrpc.Lit/ListActions": {{
+			Entity: "actions",
+			Action: "read",
+		}},
 	}
 
 	// whiteListedLNDMethods is a map of all lnd RPC methods that don't
