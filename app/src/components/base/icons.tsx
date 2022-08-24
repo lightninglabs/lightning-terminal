@@ -30,6 +30,8 @@ import { ReactComponent as RefreshIcon } from 'assets/icons/refresh-cw.svg';
 import { ReactComponent as SettingsIcon } from 'assets/icons/settings.svg';
 import { ReactComponent as CancelIcon } from 'assets/icons/slash.svg';
 import { ReactComponent as UserPlusIcon } from 'assets/icons/user-plus.svg';
+import { ReactComponent as QRCodeIcon } from 'assets/icons/qr.svg';
+import { ReactComponent as BoltOutlinedIcon } from 'assets/icons/bolt-outlined.svg';
 
 interface IconProps {
   size?: 'x-small' | 'small' | 'medium' | 'large';
@@ -119,3 +121,5 @@ export const Settings = Icon.withComponent(SettingsIcon);
 export const UserPlus = Icon.withComponent(UserPlusIcon);
 export const BarChart = Icon.withComponent(BarChartIcon);
 export const List = Icon.withComponent(ListIcon);
+export const QRCode = Icon.withComponent(QRCodeIcon);
+export const BoltOutlined = Icon.withComponent(BoltOutlinedIcon);

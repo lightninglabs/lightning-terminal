@@ -9,6 +9,11 @@ export const IS_TEST = process.env.NODE_ENV === 'test';
 
 export const PUBLIC_URL = process.env.PUBLIC_URL;
 
+// the Terminal on the web url to link to with the session pairing phrase
+export const LNC_APP_BASE_URL = IS_DEV
+  ? 'http://localhost:4000'
+  : 'https://terminal.lightning.engineering';
+
 // detect the host currently serving the app files
 const { protocol, hostname, port } = window.location;
 const host = `${protocol}//${hostname}:${port}`;

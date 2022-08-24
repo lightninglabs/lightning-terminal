@@ -39,9 +39,18 @@ export default class SessionStore {
     return descending ? sessions.reverse() : sessions;
   }
 
-  /** indicates if there are more than one sessions active */
-  get hasMultiple() {
-    return this.sortedSessions.length > 1;
+  /** The list of sessions that have not been paired */
+  get unpairedSessions() {
+    return this.sortedSessions.filter(s => !s.isPaired);
+  }
+
+  /** The label to use for a new generated session */
+  get nextSessionLabel() {
+    const count = values(this.sessions).filter(s =>
+      s.label.startsWith('Generated Session'),
+    ).length;
+    const countText = count === 0 ? '' : ` (${count})`;
+    return `Generated Session${countText}`;
   }
 
   /**
@@ -76,19 +85,6 @@ export default class SessionStore {
 
         this._store.log.info('updated sessionStore.sessions', toJS(this.sessions));
       });
-
-      // Ensures that there is at least one session created
-      if (this.sortedSessions.length === 0) {
-        const count = values(this.sessions).filter(s =>
-          s.label.startsWith('Default Session'),
-        ).length;
-        const countText = count === 0 ? '' : `(${count})`;
-        await this.addSession(
-          `Default Session ${countText}`,
-          LIT.SessionType.TYPE_MACAROON_ADMIN,
-          MAX_DATE,
-        );
-      }
     } catch (error: any) {
       this._store.appView.handleError(error, 'Unable to fetch sessions');
     }
@@ -99,11 +95,13 @@ export default class SessionStore {
    * @param label the user defined label for this session
    * @param type the type of session being created (admin, read-only, etc)
    * @param expiry how long the session should be valid for
+   * @param copy copy the session's phrase to the clipboard
    */
   async addSession(
     label: string,
     type: LIT.SessionTypeMap[keyof LIT.SessionTypeMap],
     expiry: Date,
+    copy = false,
   ) {
     try {
       this._store.log.info(`submitting session with label ${label}`, {
@@ -125,12 +123,43 @@ export default class SessionStore {
       await this.fetchSessions();
 
       if (session) {
-        this.copyPhrase(session.label, session.pairingSecretMnemonic);
+        if (copy) this.copyPhrase(session.label, session.pairingSecretMnemonic);
+        const msg =
+          'Please connect immediately. The pairing phrase will expire in 10 minutes.';
+        this._store.appView.notify(msg, 'Session Created', 'warning');
         return this.sessions.get(hex(session.localPublicKey));
       }
     } catch (error: any) {
       this._store.appView.handleError(error, 'Unable to add session');
     }
+  }
+
+  /**
+   * Creates a new session if necessary and returns the Terminal Web url
+   */
+  async getNewSessionUrl() {
+    let session = this.unpairedSessions.length > 0 ? this.unpairedSessions[0] : undefined;
+    if (!session) {
+      session = await this.addSession(
+        this.nextSessionLabel,
+        LIT.SessionType.TYPE_MACAROON_ADMIN,
+        MAX_DATE,
+      );
+    }
+    return session ? session.terminalConnectUrl : '';
+  }
+
+  /**
+   * Opens the Terminal Web connect page in a new tab
+   */
+  async connectToTerminalWeb() {
+    // open the window first, then set the url when the async function returns. This is done
+    // in this order because popup blockers will prevent the page from opening if the open()
+    // function is not in the immediate callstack of a user initiated action, such as a
+    // button click. If open() was called after the `await`, it would be blocked
+    const tab = window.open();
+    const url = await this.getNewSessionUrl();
+    if (tab) tab.location.replace(url);
   }
 
   /**

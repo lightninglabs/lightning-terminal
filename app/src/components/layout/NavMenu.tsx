@@ -8,7 +8,9 @@ import { PUBLIC_URL } from '../../config';
 
 const Styled = {
   NavHeader: styled(HeaderFour)`
-    padding: 8px 14px;
+    padding: 44px 14px 8px;
+    font-size: 10px;
+    line-height: 16px;
   `,
   Nav: styled.ul`
     padding-left: 0;
@@ -78,12 +80,18 @@ const NavMenu: React.FC = () => {
   const { NavHeader, Nav } = Styled;
   return (
     <>
-      <NavHeader>{l('menu')}</NavHeader>
+      <Nav>
+        <NavItem page="home" onClick={appView.goToHome} />
+        <NavItem page="settings" onClick={appView.goToSettings} />
+      </Nav>
+      <NavHeader>{l('liquidityHeader')}</NavHeader>
       <Nav>
         <NavItem page="loop" onClick={appView.goToLoop} />
         <NavItem page="history" onClick={appView.goToHistory} />
         <NavItem page="pool" badge={l('common.preview')} onClick={appView.goToPool} />
-        <NavItem page="settings" onClick={appView.goToSettings} />
+      </Nav>
+      <NavHeader>{l('connectHeader')}</NavHeader>
+      <Nav>
         <NavItem page="connect" badge={l('common.beta')} onClick={appView.goToConnect} />
       </Nav>
     </>

@@ -5,6 +5,7 @@ import AppStorage from 'util/appStorage';
 import CsvExporter from 'util/csv';
 import { actionLog, Logger } from 'util/log';
 import { GrpcClient, LitApi, LndApi, LoopApi, PoolApi } from 'api';
+import { PUBLIC_URL } from '../config';
 import {
   AccountStore,
   AuthStore,
@@ -30,7 +31,6 @@ import {
   RegisterSidecarView,
   RenewAccountView,
 } from './views';
-import { PUBLIC_URL } from '../config';
 
 /**
  * The store used to manage global app state
@@ -132,7 +132,7 @@ export class Store {
           // stay on the current page (ex: history, settings)
           if (document.location.pathname === `${PUBLIC_URL}/`) {
             runInAction(() => {
-              this.appView.goToLoop();
+              this.appView.goToHome();
             });
           }
           // also fetch all the data we need

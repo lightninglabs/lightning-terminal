@@ -1,6 +1,8 @@
 import { makeAutoObservable } from 'mobx';
 import * as LIT from 'types/generated/lit-sessions_pb';
 import { SortParams } from 'types/state';
+import { Buffer } from 'buffer';
+import { LNC_APP_BASE_URL } from 'config';
 import formatDate from 'date-fns/format';
 import { MAX_DATE } from 'util/constants';
 import { hex } from 'util/strings';
@@ -90,6 +92,17 @@ export default class Session {
   /** The paired status as a string */
   get pairedLabel() {
     return this.isPaired ? 'In Use' : 'Created';
+  }
+
+  /** The HEX encoded pairing secret mnemonic and mailbox server address */
+  get encodedPairingData() {
+    const data = `${this.pairingSecretMnemonic}||${this.mailboxServerAddr}`;
+    return Buffer.from(data, 'ascii').toString('base64');
+  }
+
+  /** The URL to use to pre-fill the pairing phrase in Terminal on the web */
+  get terminalConnectUrl() {
+    return `${LNC_APP_BASE_URL}#/connect/pair/${this.encodedPairingData}`;
   }
 
   /**

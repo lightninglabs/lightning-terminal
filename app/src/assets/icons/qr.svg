@@ -1,0 +1,13 @@
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M0 7.11111H7.11111V0H0V7.11111ZM1.77778 1.77778H5.33333V5.33333H1.77778V1.77778Z" fill="currentColor" />
+  <path d="M0 15.9998H7.11111V8.88867H0V15.9998ZM1.77778 10.6665H5.33333V14.222H1.77778V10.6665Z" fill="currentColor" />
+  <path d="M8.88867 0V7.11111H15.9998V0H8.88867ZM14.222 5.33333H10.6664V1.77778H14.222V5.33333Z" fill="currentColor" />
+  <path d="M15.9999 14.2227H14.2222V16.0004H15.9999V14.2227Z" fill="currentColor" />
+  <path d="M10.6665 8.88867H8.88867V10.6664H10.6665V8.88867Z" fill="currentColor" />
+  <path d="M12.4448 10.667H10.667V12.4448H12.4448V10.667Z" fill="currentColor" />
+  <path d="M10.6665 12.4443H8.88867V14.2221H10.6665V12.4443Z" fill="currentColor" />
+  <path d="M12.4448 14.2227H10.667V16.0004H12.4448V14.2227Z" fill="currentColor" />
+  <path d="M14.2224 12.4443H12.4446V14.2221H14.2224V12.4443Z" fill="currentColor" />
+  <path d="M14.2224 8.88867H12.4446V10.6664H14.2224V8.88867Z" fill="currentColor" />
+  <path d="M15.9999 10.667H14.2222V12.4448H15.9999V10.667Z" fill="currentColor" />
+</svg>
