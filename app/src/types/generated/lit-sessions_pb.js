@@ -713,7 +713,8 @@ proto.litrpc.Session.toObject = function(includeInstance, msg) {
     pairingSecret: msg.getPairingSecret_asB64(),
     pairingSecretMnemonic: jspb.Message.getFieldWithDefault(msg, 8, ""),
     localPublicKey: msg.getLocalPublicKey_asB64(),
-    remotePublicKey: msg.getRemotePublicKey_asB64()
+    remotePublicKey: msg.getRemotePublicKey_asB64(),
+    createdAt: jspb.Message.getFieldWithDefault(msg, 11, "0")
   };
 
   if (includeInstance) {
@@ -789,6 +790,10 @@ proto.litrpc.Session.deserializeBinaryFromReader = function(msg, reader) {
     case 10:
       var value = /** @type {!Uint8Array} */ (reader.readBytes());
       msg.setRemotePublicKey(value);
+      break;
+    case 11:
+      var value = /** @type {string} */ (reader.readUint64String());
+      msg.setCreatedAt(value);
       break;
     default:
       reader.skipField();
@@ -886,6 +891,13 @@ proto.litrpc.Session.serializeBinaryToWriter = function(message, writer) {
   if (f.length > 0) {
     writer.writeBytes(
       10,
+      f
+    );
+  }
+  f = message.getCreatedAt();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
+      11,
       f
     );
   }
@@ -1113,6 +1125,21 @@ proto.litrpc.Session.prototype.getRemotePublicKey_asU8 = function() {
 /** @param {!(string|Uint8Array)} value */
 proto.litrpc.Session.prototype.setRemotePublicKey = function(value) {
   jspb.Message.setProto3BytesField(this, 10, value);
+};
+
+
+/**
+ * optional uint64 created_at = 11;
+ * @return {string}
+ */
+proto.litrpc.Session.prototype.getCreatedAt = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 11, "0"));
+};
+
+
+/** @param {string} value */
+proto.litrpc.Session.prototype.setCreatedAt = function(value) {
+  jspb.Message.setProto3StringIntField(this, 11, value);
 };
 
 

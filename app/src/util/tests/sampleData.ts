@@ -864,6 +864,7 @@ export const litListSessions: LIT.ListSessionsResponse.AsObject = {
       remotePublicKey: '',
       sessionState: LIT.SessionState.STATE_CREATED,
       sessionType: LIT.SessionType.TYPE_UI_PASSWORD,
+      createdAt: '253300000000',
     },
     {
       devServer: true,
@@ -876,6 +877,7 @@ export const litListSessions: LIT.ListSessionsResponse.AsObject = {
       remotePublicKey: '',
       sessionState: LIT.SessionState.STATE_EXPIRED,
       sessionType: LIT.SessionType.TYPE_UI_PASSWORD,
+      createdAt: '253300000000',
     },
   ],
 };
