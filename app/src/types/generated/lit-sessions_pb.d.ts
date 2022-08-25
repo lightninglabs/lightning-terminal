@@ -128,6 +128,9 @@ export class Session extends jspb.Message {
   getRemotePublicKey_asB64(): string;
   setRemotePublicKey(value: Uint8Array | string): void;
 
+  getCreatedAt(): string;
+  setCreatedAt(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Session.AsObject;
   static toObject(includeInstance: boolean, msg: Session): Session.AsObject;
@@ -150,6 +153,7 @@ export namespace Session {
     pairingSecretMnemonic: string,
     localPublicKey: Uint8Array | string,
     remotePublicKey: Uint8Array | string,
+    createdAt: string,
   }
 }
 

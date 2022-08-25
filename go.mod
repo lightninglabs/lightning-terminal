@@ -10,8 +10,9 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.5.0
 	github.com/improbable-eng/grpc-web v0.12.0
 	github.com/jessevdk/go-flags v1.4.0
+	github.com/lightninglabs/aperture v0.1.18-beta
 	github.com/lightninglabs/faraday v0.2.8-alpha.0.20220624141723-ddd3cd123e62
-	github.com/lightninglabs/lightning-node-connect v0.1.11-alpha.0.20220822151854-c072f70315d8
+	github.com/lightninglabs/lightning-node-connect v0.1.12-alpha
 	github.com/lightninglabs/lndclient v0.15.0-10
 	github.com/lightninglabs/loop v0.19.1-beta.0.20220623090540-08209f61e304
 	github.com/lightninglabs/loop/swapserverrpc v1.0.1
@@ -98,7 +99,6 @@ require (
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/lib/pq v1.10.3 // indirect
-	github.com/lightninglabs/aperture v0.1.18-beta // indirect
 	github.com/lightninglabs/gozmq v0.0.0-20191113021534-d20a764486bf // indirect
 	github.com/lightninglabs/lightning-node-connect/hashmailrpc v1.0.2 // indirect
 	github.com/lightninglabs/neutrino v0.14.2 // indirect
