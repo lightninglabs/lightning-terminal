@@ -135,6 +135,8 @@ type LightningTerminal struct {
 
 	defaultImplCfg *lnd.ImplementationCfg
 
+	permsMgr *PermissionsManager
+
 	// lndInterceptorChain is a reference to lnd's interceptor chain that
 	// guards all incoming calls. This is only set in integrated mode!
 	lndInterceptorChain *rpcperms.InterceptorChain
@@ -193,6 +195,12 @@ func (g *LightningTerminal) Run() error {
 	// Show version at startup.
 	log.Infof("LiT version: %s", Version())
 
+	// Construct a new PermissionsManager.
+	g.permsMgr, err = NewPermissionsManager()
+	if err != nil {
+		return fmt.Errorf("could not create permissions manager")
+	}
+
 	// Create the instances of our subservers now so we can hook them up to
 	// lnd once it's fully started.
 	bufRpcListener := bufconn.Listen(100)
@@ -200,8 +208,7 @@ func (g *LightningTerminal) Run() error {
 	g.loopServer = loopd.New(g.cfg.Loop, nil)
 	g.poolServer = pool.NewServer(g.cfg.Pool)
 	g.rpcProxy = newRpcProxy(
-		g.cfg, g, g.validateSuperMacaroon, getAllMethodPermissions(),
-		bufRpcListener,
+		g.cfg, g, g.validateSuperMacaroon, g.permsMgr, bufRpcListener,
 	)
 	g.sessionRpcServer, err = newSessionRPCServer(&sessionRpcServerConfig{
 		basicAuth: g.rpcProxy.basicAuth,
@@ -233,6 +240,7 @@ func (g *LightningTerminal) Run() error {
 			)
 		},
 		firstConnectionDeadline: g.cfg.FirstLNCConnDeadline,
+		permMgr:                 g.permsMgr,
 	})
 	if err != nil {
 		return fmt.Errorf("could not create new session rpc "+
@@ -497,7 +505,7 @@ func (g *LightningTerminal) startSubservers() error {
 			ctx, g.basicClient, session.NewSuperMacaroonRootKeyID(
 				[4]byte{},
 			),
-			GetAllPermissions(false), nil,
+			g.permsMgr.ActivePermissions(false), nil,
 		)
 		if err != nil {
 			return err
@@ -704,7 +712,7 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 	// process. Calls that we proxy to a remote host don't need to be
 	// checked as they'll have their own interceptor.
 	switch {
-	case isFaradayURI(fullMethod):
+	case g.permsMgr.IsFaradayURI(fullMethod):
 		// In remote mode we just pass through the request, the remote
 		// daemon will check the macaroon.
 		if g.cfg.faradayRemote {
@@ -728,7 +736,7 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 			}
 		}
 
-	case isLoopURI(fullMethod):
+	case g.permsMgr.IsLoopURI(fullMethod):
 		// In remote mode we just pass through the request, the remote
 		// daemon will check the macaroon.
 		if g.cfg.loopRemote {
@@ -752,7 +760,7 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 			}
 		}
 
-	case isPoolURI(fullMethod):
+	case g.permsMgr.IsPoolURI(fullMethod):
 		// In remote mode we just pass through the request, the remote
 		// daemon will check the macaroon.
 		if g.cfg.poolRemote {
@@ -776,7 +784,7 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 			}
 		}
 
-	case isLitURI(fullMethod):
+	case g.permsMgr.IsLitURI(fullMethod):
 		if !g.macaroonServiceStarted {
 			return fmt.Errorf("the macaroon service has not " +
 				"started yet")
@@ -806,7 +814,7 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 //
 // NOTE: This is part of the lnd.ExternalValidator interface.
 func (g *LightningTerminal) Permissions() map[string][]bakery.Op {
-	return getSubserverPermissions()
+	return g.permsMgr.GetLitPerms()
 }
 
 // BuildWalletConfig is responsible for creating or unlocking and then

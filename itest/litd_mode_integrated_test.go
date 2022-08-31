@@ -834,7 +834,12 @@ func bakeSuperMacaroon(cfg *LitNodeConfig, readOnly bool) (string, error) {
 	lndAdminCtx := macaroonContext(ctxt, lndAdminMacBytes)
 	lndConn := lnrpc.NewLightningClient(rawConn)
 
-	superMacPermissions := terminal.GetAllPermissions(readOnly)
+	permsMgr, err := terminal.NewPermissionsManager()
+	if err != nil {
+		return "", err
+	}
+
+	superMacPermissions := permsMgr.ActivePermissions(readOnly)
 	nullID := [4]byte{}
 	superMacHex, err := terminal.BakeSuperMacaroon(
 		lndAdminCtx, lndConn, session.NewSuperMacaroonRootKeyID(nullID),
