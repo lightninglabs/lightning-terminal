@@ -494,6 +494,10 @@ func (g *LightningTerminal) startSubservers() error {
 		return err
 	}
 
+	// Pass LND's build tags to the permission manager so that it can
+	// filter the available permissions accordingly.
+	g.permsMgr.OnLNDBuildTags(g.lndClient.Version.BuildTags)
+
 	// In the integrated mode, we received an admin macaroon once lnd was
 	// ready. We can now bake a "super macaroon" that contains all
 	// permissions of all daemons that we can use for any internal calls.

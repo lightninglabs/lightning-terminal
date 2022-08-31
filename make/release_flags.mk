@@ -11,7 +11,7 @@ windows-386 \
 windows-amd64 \
 windows-arm
 
-LND_RELEASE_TAGS = litd autopilotrpc signrpc walletrpc chainrpc invoicesrpc watchtowerrpc
+LND_RELEASE_TAGS = litd autopilotrpc signrpc walletrpc chainrpc invoicesrpc watchtowerrpc neutrinorpc peersrpc
 
 # By default we will build all systems. But with the 'sys' tag, a specific
 # system can be specified. This is useful to release for a subset of
