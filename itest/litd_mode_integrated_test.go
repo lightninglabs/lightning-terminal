@@ -26,6 +26,8 @@ import (
 	"github.com/lightninglabs/pool/poolrpc"
 	"github.com/lightningnetwork/lnd/keychain"
 	"github.com/lightningnetwork/lnd/lnrpc"
+	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
+	"github.com/lightningnetwork/lnd/lnrpc/walletrpc"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
@@ -81,16 +83,32 @@ var (
 	// gRPC request. One byte version and then 4 bytes content length.
 	emptyGrpcWebRequest = []byte{0, 0, 0, 0, 0}
 
-	lndRequestFn = func(ctx context.Context,
+	lnrpcRequestFn = func(ctx context.Context,
 		c grpc.ClientConnInterface) (proto.Message, error) {
 
-		lndConn := lnrpc.NewLightningClient(c)
-		return lndConn.GetInfo(
+		lnrpcConn := lnrpc.NewLightningClient(c)
+		return lnrpcConn.GetInfo(
 			ctx, &lnrpc.GetInfoRequest{},
 		)
 	}
 	lndMacaroonFn = func(cfg *LitNodeConfig) string {
 		return cfg.AdminMacPath
+	}
+	routerrpcRequestFn = func(ctx context.Context,
+		c grpc.ClientConnInterface) (proto.Message, error) {
+
+		routerrpcConn := routerrpc.NewRouterClient(c)
+		return routerrpcConn.GetMissionControlConfig(
+			ctx, &routerrpc.GetMissionControlConfigRequest{},
+		)
+	}
+	walletrpcRequestFn = func(ctx context.Context,
+		c grpc.ClientConnInterface) (proto.Message, error) {
+
+		walletrpcConn := walletrpc.NewWalletKitClient(c)
+		return walletrpcConn.ListUnspent(
+			ctx, &walletrpc.ListUnspentRequest{},
+		)
 	}
 	faradayRequestFn = func(ctx context.Context,
 		c grpc.ClientConnInterface) (proto.Message, error) {
@@ -145,14 +163,32 @@ var (
 		allowedThroughLNC bool
 		grpcWebURI        string
 		restWebURI        string
+		restPOST          bool
 	}{{
 		name:              "lnrpc",
 		macaroonFn:        lndMacaroonFn,
-		requestFn:         lndRequestFn,
+		requestFn:         lnrpcRequestFn,
 		successPattern:    "\"identity_pubkey\":\"0",
 		allowedThroughLNC: true,
 		grpcWebURI:        "/lnrpc.Lightning/GetInfo",
 		restWebURI:        "/v1/getinfo",
+	}, {
+		name:              "routerrpc",
+		macaroonFn:        lndMacaroonFn,
+		requestFn:         routerrpcRequestFn,
+		successPattern:    "\"config\":{",
+		allowedThroughLNC: true,
+		grpcWebURI:        "/routerrpc.Router/GetMissionControlConfig",
+		restWebURI:        "/v2/router/mccfg",
+	}, {
+		name:              "walletrpc",
+		macaroonFn:        lndMacaroonFn,
+		requestFn:         walletrpcRequestFn,
+		successPattern:    "\"utxos\":[",
+		allowedThroughLNC: true,
+		grpcWebURI:        "/walletrpc.WalletKit/ListUnspent",
+		restWebURI:        "/v2/wallet/utxos",
+		restPOST:          true,
 	}, {
 		name:              "frdrpc",
 		macaroonFn:        faradayMacaroonFn,
@@ -322,6 +358,7 @@ func testModeIntegrated(net *NetworkHarness, t *harnessTest) {
 					endpoint.macaroonFn(cfg),
 					endpoint.restWebURI,
 					endpoint.successPattern,
+					endpoint.restPOST,
 				)
 			})
 		}
@@ -529,7 +566,7 @@ func runGRPCWebAuthTest(t *testing.T, hostPort, uiPassword, grpcWebURI string) {
 
 // runRESTAuthTest tests authentication of the given REST interface.
 func runRESTAuthTest(t *testing.T, hostPort, uiPassword, macaroonPath, restURI,
-	successPattern string) {
+	successPattern string, usePOST bool) {
 
 	basicAuth := base64.StdEncoding.EncodeToString(
 		[]byte(fmt.Sprintf("%s:%s", uiPassword, uiPassword)),
@@ -539,13 +576,19 @@ func runRESTAuthTest(t *testing.T, hostPort, uiPassword, macaroonPath, restURI,
 	}
 	url := fmt.Sprintf("https://%s%s", hostPort, restURI)
 
+	method := "GET"
+	if usePOST {
+		method = "POST"
+	}
+
 	// First test a REST call without authorization, which should fail.
-	body, responseHeader, err := callURL(url, "GET", nil, nil, false)
+	body, responseHeader, err := callURL(url, method, nil, nil, false)
 	require.NoError(t, err)
 
-	require.Equal(
+	require.Equalf(
 		t, "application/grpc",
 		responseHeader.Get("grpc-metadata-content-type"),
+		"response headers: %v, body: %v", responseHeader, body,
 	)
 	require.Equal(
 		t, "application/json",
@@ -558,7 +601,7 @@ func runRESTAuthTest(t *testing.T, hostPort, uiPassword, macaroonPath, restURI,
 
 	// Now add the UI password which should make the request succeed.
 	body, responseHeader, err = callURL(
-		url, "GET", nil, basicAuthHeader, false,
+		url, method, nil, basicAuthHeader, false,
 	)
 	require.NoError(t, err)
 	require.Contains(t, body, successPattern)
@@ -573,7 +616,7 @@ func runRESTAuthTest(t *testing.T, hostPort, uiPassword, macaroonPath, restURI,
 		},
 	}
 	body, responseHeader, err = callURL(
-		url, "GET", nil, macaroonHeader, false,
+		url, method, nil, macaroonHeader, false,
 	)
 	require.NoError(t, err)
 	require.Contains(t, body, successPattern)
@@ -834,7 +877,12 @@ func bakeSuperMacaroon(cfg *LitNodeConfig, readOnly bool) (string, error) {
 	lndAdminCtx := macaroonContext(ctxt, lndAdminMacBytes)
 	lndConn := lnrpc.NewLightningClient(rawConn)
 
-	superMacPermissions := terminal.GetAllPermissions(readOnly)
+	permsMgr, err := terminal.NewPermissionsManager()
+	if err != nil {
+		return "", err
+	}
+
+	superMacPermissions := permsMgr.ActivePermissions(readOnly)
 	nullID := [4]byte{}
 	superMacHex, err := terminal.BakeSuperMacaroon(
 		lndAdminCtx, lndConn, session.NewSuperMacaroonRootKeyID(nullID),

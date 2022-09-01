@@ -125,6 +125,7 @@ func testModeRemote(net *NetworkHarness, t *harnessTest) {
 					endpoint.macaroonFn(cfg),
 					endpoint.restWebURI,
 					endpoint.successPattern,
+					endpoint.restPOST,
 				)
 			})
 		}

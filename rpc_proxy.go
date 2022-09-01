@@ -24,7 +24,6 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
-	"gopkg.in/macaroon-bakery.v2/bakery"
 	"gopkg.in/macaroon.v2"
 )
 
@@ -59,8 +58,7 @@ func (e *proxyErr) Unwrap() error {
 // component.
 func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 	superMacValidator session.SuperMacaroonValidator,
-	permissionMap map[string][]bakery.Op,
-	bufListener *bufconn.Listener) *rpcProxy {
+	permsMgr *PermissionsManager, bufListener *bufconn.Listener) *rpcProxy {
 
 	// The gRPC web calls are protected by HTTP basic auth which is defined
 	// by base64(username:password). Because we only have a password, we
@@ -77,7 +75,7 @@ func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 	p := &rpcProxy{
 		cfg:               cfg,
 		basicAuth:         basicAuth,
-		permissionMap:     permissionMap,
+		permsMgr:          permsMgr,
 		macValidator:      validator,
 		superMacValidator: superMacValidator,
 		bufListener:       bufListener,
@@ -146,9 +144,9 @@ func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 //                                    +---------------------+
 //
 type rpcProxy struct {
-	cfg           *Config
-	basicAuth     string
-	permissionMap map[string][]bakery.Op
+	cfg       *Config
+	basicAuth string
+	permsMgr  *PermissionsManager
 
 	macValidator      macaroons.MacaroonValidator
 	superMacValidator session.SuperMacaroonValidator
@@ -345,17 +343,17 @@ func (p *rpcProxy) makeDirector(allowLitRPC bool) func(ctx context.Context,
 		// handled by the integrated daemons that are hooking into lnd's
 		// gRPC server.
 		switch {
-		case isFaradayURI(requestURI) && p.cfg.faradayRemote:
+		case p.permsMgr.IsFaradayURI(requestURI) && p.cfg.faradayRemote:
 			return outCtx, p.faradayConn, nil
 
-		case isLoopURI(requestURI) && p.cfg.loopRemote:
+		case p.permsMgr.IsLoopURI(requestURI) && p.cfg.loopRemote:
 			return outCtx, p.loopConn, nil
 
-		case isPoolURI(requestURI) && p.cfg.poolRemote:
+		case p.permsMgr.IsPoolURI(requestURI) && p.cfg.poolRemote:
 			return outCtx, p.poolConn, nil
 
 		// Calls to LiT session RPC aren't allowed in some cases.
-		case isLitURI(requestURI) && !allowLitRPC:
+		case p.permsMgr.IsLitURI(requestURI) && !allowLitRPC:
 			return outCtx, nil, status.Errorf(
 				codes.Unimplemented, "unknown service %s",
 				requestURI,
@@ -373,7 +371,7 @@ func (p *rpcProxy) UnaryServerInterceptor(ctx context.Context, req interface{},
 	info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{},
 	error) {
 
-	uriPermissions, ok := p.permissionMap[info.FullMethod]
+	uriPermissions, ok := p.permsMgr.URIPermissions(info.FullMethod)
 	if !ok {
 		return nil, fmt.Errorf("%s: unknown permissions "+
 			"required for method", info.FullMethod)
@@ -414,7 +412,7 @@ func (p *rpcProxy) StreamServerInterceptor(srv interface{},
 	ss grpc.ServerStream, info *grpc.StreamServerInfo,
 	handler grpc.StreamHandler) error {
 
-	uriPermissions, ok := p.permissionMap[info.FullMethod]
+	uriPermissions, ok := p.permsMgr.URIPermissions(info.FullMethod)
 	if !ok {
 		return fmt.Errorf("%s: unknown permissions required "+
 			"for method", info.FullMethod)
@@ -503,31 +501,31 @@ func (p *rpcProxy) basicAuthToMacaroon(basicAuth, requestURI string,
 		macData []byte
 	)
 	switch {
-	case isLndURI(requestURI):
+	case p.permsMgr.IsLndURI(requestURI):
 		_, _, _, macPath, macData = p.cfg.lndConnectParams()
 
-	case isFaradayURI(requestURI):
+	case p.permsMgr.IsFaradayURI(requestURI):
 		if p.cfg.faradayRemote {
 			macPath = p.cfg.Remote.Faraday.MacaroonPath
 		} else {
 			macPath = p.cfg.Faraday.MacaroonPath
 		}
 
-	case isLoopURI(requestURI):
+	case p.permsMgr.IsLoopURI(requestURI):
 		if p.cfg.loopRemote {
 			macPath = p.cfg.Remote.Loop.MacaroonPath
 		} else {
 			macPath = p.cfg.Loop.MacaroonPath
 		}
 
-	case isPoolURI(requestURI):
+	case p.permsMgr.IsPoolURI(requestURI):
 		if p.cfg.poolRemote {
 			macPath = p.cfg.Remote.Pool.MacaroonPath
 		} else {
 			macPath = p.cfg.Pool.MacaroonPath
 		}
 
-	case isLitURI(requestURI):
+	case p.permsMgr.IsLitURI(requestURI):
 		macPath = p.cfg.MacaroonPath
 
 	default:
@@ -580,7 +578,7 @@ func (p *rpcProxy) basicAuthToMacaroon(basicAuth, requestURI string,
 func (p *rpcProxy) convertSuperMacaroon(ctx context.Context, macHex string,
 	fullMethod string) ([]byte, error) {
 
-	requiredPermissions, ok := p.permissionMap[fullMethod]
+	requiredPermissions, ok := p.permsMgr.URIPermissions(fullMethod)
 	if !ok {
 		return nil, fmt.Errorf("%s: unknown permissions required for "+
 			"method", fullMethod)
@@ -605,17 +603,17 @@ func (p *rpcProxy) convertSuperMacaroon(ctx context.Context, macHex string,
 	// Is this actually a request that goes to a daemon that is running
 	// remotely?
 	switch {
-	case isFaradayURI(fullMethod) && p.cfg.faradayRemote:
+	case p.permsMgr.IsFaradayURI(fullMethod) && p.cfg.faradayRemote:
 		return readMacaroon(lncfg.CleanAndExpandPath(
 			p.cfg.Remote.Faraday.MacaroonPath,
 		))
 
-	case isLoopURI(fullMethod) && p.cfg.loopRemote:
+	case p.permsMgr.IsLoopURI(fullMethod) && p.cfg.loopRemote:
 		return readMacaroon(lncfg.CleanAndExpandPath(
 			p.cfg.Remote.Loop.MacaroonPath,
 		))
 
-	case isPoolURI(fullMethod) && p.cfg.poolRemote:
+	case p.permsMgr.IsPoolURI(fullMethod) && p.cfg.poolRemote:
 		return readMacaroon(lncfg.CleanAndExpandPath(
 			p.cfg.Remote.Pool.MacaroonPath,
 		))

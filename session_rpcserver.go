@@ -39,6 +39,7 @@ type sessionRpcServerConfig struct {
 	superMacBaker       func(ctx context.Context, rootKeyID uint64,
 		recipe *session.MacaroonRecipe) (string, error)
 	firstConnectionDeadline time.Duration
+	permMgr                 *PermissionsManager
 }
 
 // newSessionRPCServer creates a new sessionRpcServer using the passed config.
@@ -205,7 +206,7 @@ func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
 	mac, err := s.cfg.superMacBaker(
 		context.Background(), sess.MacaroonRootKey,
 		&session.MacaroonRecipe{
-			Permissions: GetAllPermissions(readOnly),
+			Permissions: s.cfg.permMgr.ActivePermissions(readOnly),
 			Caveats:     caveats,
 		},
 	)
