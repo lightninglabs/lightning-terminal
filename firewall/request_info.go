@@ -37,6 +37,7 @@ type RequestInfo struct {
 	Caveats         []string
 	MetaInfo        *InterceptMetaInfo
 	Rules           *InterceptRules
+	WithPrivacy     bool
 }
 
 // NewInfoFromRequest parses the given RPC middleware interception request and
@@ -99,7 +100,8 @@ func NewInfoFromRequest(req *lnrpc.RPCMiddlewareRequest) (*RequestInfo, error) {
 		if err == nil {
 			ri.MetaInfo = metaInfo
 
-			// The same caveat can't be a meta info and rule list.
+			// The same caveat can't be a meta info and a rule list
+			// or a privacy caveat.
 			continue
 		}
 
@@ -109,6 +111,14 @@ func NewInfoFromRequest(req *lnrpc.RPCMiddlewareRequest) (*RequestInfo, error) {
 		rules, err := ParseRuleCaveat(ri.Caveats[idx])
 		if err == nil {
 			ri.Rules = rules
+
+			// The same caveat can't be a rule list and a privacy
+			// caveat.
+			continue
+		}
+
+		if IsPrivacyCaveat(ri.Caveats[idx]) {
+			ri.WithPrivacy = true
 		}
 	}
 

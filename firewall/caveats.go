@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/lightningnetwork/lnd/macaroons"
+	"gopkg.in/macaroon.v2"
 )
 
 const (
@@ -20,6 +21,11 @@ const (
 	// MetaRulesValuePrefix is the static prefix a macaroon caveat value has
 	// to mark the beginning of the rules list JSON data.
 	MetaRulesValuePrefix = "rules"
+
+	// CondPrivacy is the name of the custom caveat that will
+	// instruct lnd to send all requests with this caveat to this
+	// interceptor.
+	CondPrivacy = "privacy"
 )
 
 var (
@@ -34,6 +40,15 @@ var (
 	MetaRulesFullCaveatPrefix = fmt.Sprintf("%s %s %s",
 		macaroons.CondLndCustom, RuleEnforcerCaveat,
 		MetaRulesValuePrefix)
+
+	// MetaPrivacyCaveatPrefix is the caveat prefix that will be used to
+	// identify the privacy mapper caveat.
+	MetaPrivacyCaveatPrefix = fmt.Sprintf("%s %s", macaroons.CondLndCustom,
+		CondPrivacy)
+
+	// MetaPrivacyCaveat is the caveat required to ensure that the
+	// privacy mapper is activated as an interceptor for a request.
+	MetaPrivacyCaveat = macaroon.Caveat{Id: []byte(MetaPrivacyCaveatPrefix)}
 
 	// ErrNoMetaInfoCaveat is the error that is returned if a caveat doesn't
 	// have the prefix to be recognized as a meta information caveat.
@@ -149,4 +164,10 @@ func ParseRuleCaveat(caveat string) (*InterceptRules, error) {
 	}
 
 	return &rules, nil
+}
+
+// IsPrivacyCaveat returns true if the given caveat string is a privacy mapper
+// caveat.
+func IsPrivacyCaveat(caveat string) bool {
+	return strings.Contains(caveat, MetaPrivacyCaveatPrefix)
 }
