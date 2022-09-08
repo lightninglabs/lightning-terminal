@@ -26,7 +26,7 @@ const (
 	typeMacaroonRecipe  tlv.Type = 12
 	typeCreatedAt       tlv.Type = 13
 	typeFeaturesConfig  tlv.Type = 14
-	typeReservedNum2    tlv.Type = 15
+	typeWithPrivacy     tlv.Type = 15
 	typeRevokedAt       tlv.Type = 16
 
 	// typeMacaroon is no longer used, but we leave it defined for backwards
@@ -65,10 +65,15 @@ func SerializeSession(w io.Writer, session *Session) error {
 		privateKey    = session.LocalPrivateKey.Serialize()
 		createdAt     = uint64(session.CreatedAt.Unix())
 		revokedAt     uint64
+		withPrivacy   = uint8(0)
 	)
 
 	if !session.RevokedAt.IsZero() {
 		revokedAt = uint64(session.RevokedAt.Unix())
+	}
+
+	if session.WithPrivacyMapper {
+		withPrivacy = 1
 	}
 
 	if session.DevServer {
@@ -130,7 +135,9 @@ func SerializeSession(w io.Writer, session *Session) error {
 	}
 
 	tlvRecords = append(
-		tlvRecords, tlv.MakePrimitiveRecord(typeRevokedAt, &revokedAt),
+		tlvRecords,
+		tlv.MakePrimitiveRecord(typeWithPrivacy, &withPrivacy),
+		tlv.MakePrimitiveRecord(typeRevokedAt, &revokedAt),
 	)
 
 	tlvStream, err := tlv.NewStream(tlvRecords...)
@@ -145,13 +152,13 @@ func SerializeSession(w io.Writer, session *Session) error {
 // the data to be encoded in the tlv format.
 func DeserializeSession(r io.Reader) (*Session, error) {
 	var (
-		session                      = &Session{}
-		label, serverAddr            []byte
-		pairingSecret, privateKey    []byte
-		state, typ, devServer        uint8
-		expiry, createdAt, revokedAt uint64
-		macRecipe                    MacaroonRecipe
-		featureConfig                FeaturesConfig
+		session                        = &Session{}
+		label, serverAddr              []byte
+		pairingSecret, privateKey      []byte
+		state, typ, devServer, privacy uint8
+		expiry, createdAt, revokedAt   uint64
+		macRecipe                      MacaroonRecipe
+		featureConfig                  FeaturesConfig
 	)
 	tlvStream, err := tlv.NewStream(
 		tlv.MakePrimitiveRecord(typeLabel, &label),
@@ -177,6 +184,7 @@ func DeserializeSession(r io.Reader) (*Session, error) {
 			typeFeaturesConfig, &featureConfig, nil,
 			featureConfigEncoder, featureConfigDecoder,
 		),
+		tlv.MakePrimitiveRecord(typeWithPrivacy, &privacy),
 		tlv.MakePrimitiveRecord(typeRevokedAt, &revokedAt),
 	)
 	if err != nil {
@@ -196,6 +204,7 @@ func DeserializeSession(r io.Reader) (*Session, error) {
 	session.CreatedAt = time.Unix(int64(createdAt), 0)
 	session.ServerAddr = string(serverAddr)
 	session.DevServer = devServer == 1
+	session.WithPrivacyMapper = privacy == 1
 
 	if revokedAt != 0 {
 		session.RevokedAt = time.Unix(int64(revokedAt), 0)

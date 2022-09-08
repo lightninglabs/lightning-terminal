@@ -87,7 +87,7 @@ func TestSerializeDeserializeSession(t *testing.T) {
 				test.name, test.sessType,
 				time.Date(99999, 1, 1, 0, 0, 0, 0, time.UTC),
 				"foo.bar.baz:1234", true, test.perms,
-				test.caveats, test.featureConfig,
+				test.caveats, test.featureConfig, true,
 			)
 			require.NoError(t, err)
 

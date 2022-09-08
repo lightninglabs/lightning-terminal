@@ -46,22 +46,23 @@ type FeaturesConfig map[string][]byte
 
 // Session is a struct representing a long-term Terminal Connect session.
 type Session struct {
-	ID              ID
-	Label           string
-	State           State
-	Type            Type
-	Expiry          time.Time
-	CreatedAt       time.Time
-	RevokedAt       time.Time
-	ServerAddr      string
-	DevServer       bool
-	MacaroonRootKey uint64
-	MacaroonRecipe  *MacaroonRecipe
-	PairingSecret   [mailbox.NumPassphraseEntropyBytes]byte
-	LocalPrivateKey *btcec.PrivateKey
-	LocalPublicKey  *btcec.PublicKey
-	RemotePublicKey *btcec.PublicKey
-	FeatureConfig   *FeaturesConfig
+	ID                ID
+	Label             string
+	State             State
+	Type              Type
+	Expiry            time.Time
+	CreatedAt         time.Time
+	RevokedAt         time.Time
+	ServerAddr        string
+	DevServer         bool
+	MacaroonRootKey   uint64
+	MacaroonRecipe    *MacaroonRecipe
+	PairingSecret     [mailbox.NumPassphraseEntropyBytes]byte
+	LocalPrivateKey   *btcec.PrivateKey
+	LocalPublicKey    *btcec.PublicKey
+	RemotePublicKey   *btcec.PublicKey
+	FeatureConfig     *FeaturesConfig
+	WithPrivacyMapper bool
 }
 
 // MacaroonBaker is a function type for baking a super macaroon.
@@ -71,7 +72,7 @@ type MacaroonBaker func(ctx context.Context, rootKeyID uint64,
 // NewSession creates a new session with the given user-defined parameters.
 func NewSession(label string, typ Type, expiry time.Time, serverAddr string,
 	devServer bool, perms []bakery.Op, caveats []macaroon.Caveat,
-	featureConfig FeaturesConfig) (*Session, error) {
+	featureConfig FeaturesConfig, privacy bool) (*Session, error) {
 
 	_, pairingSecret, err := mailbox.NewPassphraseEntropy()
 	if err != nil {
@@ -89,19 +90,20 @@ func NewSession(label string, typ Type, expiry time.Time, serverAddr string,
 	macRootKey := NewSuperMacaroonRootKeyID(macRootKeyBase)
 
 	sess := &Session{
-		ID:              macRootKeyBase,
-		Label:           label,
-		State:           StateCreated,
-		Type:            typ,
-		Expiry:          expiry,
-		CreatedAt:       time.Now(),
-		ServerAddr:      serverAddr,
-		DevServer:       devServer,
-		MacaroonRootKey: macRootKey,
-		PairingSecret:   pairingSecret,
-		LocalPrivateKey: privateKey,
-		LocalPublicKey:  pubKey,
-		RemotePublicKey: nil,
+		ID:                macRootKeyBase,
+		Label:             label,
+		State:             StateCreated,
+		Type:              typ,
+		Expiry:            expiry,
+		CreatedAt:         time.Now(),
+		ServerAddr:        serverAddr,
+		DevServer:         devServer,
+		MacaroonRootKey:   macRootKey,
+		PairingSecret:     pairingSecret,
+		LocalPrivateKey:   privateKey,
+		LocalPublicKey:    pubKey,
+		RemotePublicKey:   nil,
+		WithPrivacyMapper: privacy,
 	}
 
 	if perms != nil || caveats != nil {
