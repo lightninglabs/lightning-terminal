@@ -6,6 +6,34 @@ option go_package = "github.com/lightninglabs/lightning-terminal/litrpc";
 
 service Firewall {
     rpc ListActions (ListActionsRequest) returns (ListActionsResponse);
+    rpc PrivacyMapConversion (PrivacyMapConversionRequest)
+        returns (PrivacyMapConversionResponse);
+}
+
+message PrivacyMapConversionRequest {
+    /*
+    If set to true, then the input string will be taken as the real value and
+    the response will the the pseudo value it if exists. Otherwise, the input
+    string will be assumed to be the pseudo value.
+    */
+    bool real_to_pseudo = 1;
+
+    /*
+    The session ID under which to search for the real-pseudo pair.
+    */
+    bytes session_id = 2;
+
+    /*
+    The input to be converted into the real or pseudo value.
+    */
+    string input = 3;
+}
+
+message PrivacyMapConversionResponse {
+    /*
+    The resulting real or pseudo output.
+    */
+    string output = 1;
 }
 
 message ListActionsRequest {

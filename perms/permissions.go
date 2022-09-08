@@ -82,6 +82,10 @@ var (
 			Entity: "autopilot",
 			Action: "write",
 		}},
+		"/litrpc.Firewall/PrivacyMapConversion": {{
+			Entity: "privacymap",
+			Action: "read",
+		}},
 	}
 
 	// whiteListedLNDMethods is a map of all lnd RPC methods that don't

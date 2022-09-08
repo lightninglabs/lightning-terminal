@@ -323,6 +323,7 @@ func (g *LightningTerminal) Run() error {
 		actionsDB:               g.firewallDB,
 		autopilot:               g.autopilotClient,
 		ruleMgrs:                g.ruleMgrs,
+		privMap:                 g.firewallDB.PrivacyDB,
 	})
 	if err != nil {
 		return fmt.Errorf("could not create new session rpc "+

@@ -581,6 +581,36 @@ func (s *sessionRpcServer) RevokeSession(ctx context.Context,
 	return &litrpc.RevokeSessionResponse{}, nil
 }
 
+func (s *sessionRpcServer) PrivacyMapConversion(_ context.Context,
+	req *litrpc.PrivacyMapConversionRequest) (
+	*litrpc.PrivacyMapConversionResponse, error) {
+
+	sessionID, err := session.IDFromBytes(req.SessionId)
+	if err != nil {
+		return nil, err
+	}
+
+	var res string
+	privMap := s.cfg.privMap(sessionID)
+	err = privMap.View(func(tx firewalldb.PrivacyMapTx) error {
+		var err error
+		if req.RealToPseudo {
+			res, err = tx.RealToPseudo(req.Input)
+			return err
+		}
+
+		res, err = tx.PseudoToReal(req.Input)
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &litrpc.PrivacyMapConversionResponse{
+		Output: res,
+	}, nil
+}
+
 // ListActions lists all actions attempted on the Litd server.
 func (s *sessionRpcServer) ListActions(_ context.Context,
 	req *litrpc.ListActionsRequest) (*litrpc.ListActionsResponse, error) {
