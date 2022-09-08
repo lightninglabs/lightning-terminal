@@ -19,6 +19,7 @@ func NewRuleManagerSet() ManagerSet {
 		RateLimitName:        &RateLimitMgr{},
 		ChanPolicyBoundsName: &ChanPolicyBoundsMgr{},
 		HistoryLimitName:     &HistoryLimitMgr{},
+		ChannelRestrictName:  NewChannelRestrictMgr(),
 	}
 }
 
