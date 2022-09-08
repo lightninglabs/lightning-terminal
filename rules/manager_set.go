@@ -20,6 +20,7 @@ func NewRuleManagerSet() ManagerSet {
 		ChanPolicyBoundsName: &ChanPolicyBoundsMgr{},
 		HistoryLimitName:     &HistoryLimitMgr{},
 		ChannelRestrictName:  NewChannelRestrictMgr(),
+		PeersRestrictName:    NewPeerRestrictMgr(),
 	}
 }
 
