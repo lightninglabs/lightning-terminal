@@ -178,4 +178,4 @@ require (
 // decision with a replace.
 replace github.com/lightningnetwork/lnd => github.com/lightningnetwork/lnd v0.15.0-beta
 
-go 1.17
+go 1.18
