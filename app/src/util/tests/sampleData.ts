@@ -79,6 +79,7 @@ export const lndWalletBalance: LND.WalletBalanceResponse.AsObject = {
   unconfirmedBalance: '0',
   accountBalanceMap: [],
   lockedBalance: '84992363',
+  reservedBalanceAnchorChan: '',
 };
 
 const txId = '6ee4e45870ac6191e25173f29804851e9f4bcf10f65f8b63100f488989e1e7a8';
@@ -122,6 +123,9 @@ export const lndChannel: LND.Channel.AsObject = {
   closeAddress: '',
   pushAmountSat: '5000000',
   thawHeight: 0,
+  aliasScidsList: [],
+  zeroConf: false,
+  zeroConfConfirmedScid: '',
 };
 
 export const lndListChannelsMany: LND.ListChannelsResponse.AsObject = {
@@ -238,6 +242,8 @@ export const lndChannelEvent: Required<LND.ChannelEventUpdate.AsObject> = {
     openInitiator: 1,
     closeInitiator: 1,
     resolutionsList: [],
+    aliasScidsList: [],
+    zeroConfConfirmedScid: '',
   },
   activeChannel: {
     fundingTxidBytes: txIdBytes,
@@ -276,6 +282,7 @@ export const lndTransaction: LND.Transaction.AsObject = {
   txHash: '1f765f45f2a6d33837a203e3fc911915c891e9b86f9c9d91a1931b92efdedf5b',
   label: '',
   outputDetailsList: [],
+  previousOutpointsList: [],
 };
 
 export const lndGetChanInfo: Required<LND.ChannelEdge.AsObject> = {
@@ -328,6 +335,7 @@ export const loopListSwaps: LOOP.ListSwapsResponse.AsObject = {
     label: `Sample Swap #${i + 1}`,
     lastHop: '021626ad63f6876f2baa6000739312690b027ec289b9d1bf9184f3194e8c923dad',
     outgoingChanSetList: ['123456789'],
+    htlcAddressP2tr: '',
   })),
 };
 
@@ -366,6 +374,7 @@ export const loopSwapResponse: LOOP.SwapResponse.AsObject = {
   id: '18e17a2f44efc7f344ef6330281765e569315f93d3eaf9b0f959b404836e3480',
   idBytes: 'GOF6L0Tvx/NE72MwKBdl5WkxX5PT6vmw+Vm0BINuNIA=',
   serverMessage: 'Loop, there it is!',
+  htlcAddressP2tr: '',
 };
 
 //

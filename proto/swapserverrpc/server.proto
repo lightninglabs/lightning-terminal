@@ -43,6 +43,8 @@ service SwapServer {
 
     rpc ReportRoutingResult (ReportRoutingResultReq)
         returns (ReportRoutingResultRes);
+
+    rpc MuSig2SignSweep (MuSig2SignSweepReq) returns (MuSig2SignSweepRes);
 }
 
 /**
@@ -92,6 +94,9 @@ enum ProtocolVersion {
     // The client may ask the server to use a custom routing helper plugin in
     // order to enhance off-chain payments corresponding to a swap.
     ROUTING_PLUGIN = 9;
+
+    // The client will use the new v3 (taproot) HTLC scripts.
+    HTLC_V3 = 10;
 }
 
 message ServerLoopOutRequest {
@@ -522,4 +527,31 @@ message ReportRoutingResultReq {
 }
 
 message ReportRoutingResultRes {
+}
+
+message MuSig2SignSweepReq {
+    reserved 5;
+
+    ProtocolVersion protocol_version = 1;
+
+    // The swap hash.
+    bytes swap_hash = 2;
+
+    // The payment address for the swap invoice, used to ensure that only the
+    // swap owner can obtain the partial signature.
+    bytes payment_address = 3;
+
+    // The local public nonce.
+    bytes nonce = 4;
+
+    // The psbt of the sweep txn.
+    bytes sweep_tx_psbt = 6;
+}
+
+message MuSig2SignSweepRes {
+    // The server side public nonce.
+    bytes nonce = 1;
+
+    // The partial signature of the server for the requested sighash.
+    bytes partial_signature = 2;
 }

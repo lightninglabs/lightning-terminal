@@ -824,6 +824,78 @@ export namespace ReportRoutingResultRes {
   }
 }
 
+export class MuSig2SignSweepReq extends jspb.Message {
+  getProtocolVersion(): ProtocolVersionMap[keyof ProtocolVersionMap];
+  setProtocolVersion(value: ProtocolVersionMap[keyof ProtocolVersionMap]): void;
+
+  getSwapHash(): Uint8Array | string;
+  getSwapHash_asU8(): Uint8Array;
+  getSwapHash_asB64(): string;
+  setSwapHash(value: Uint8Array | string): void;
+
+  getPaymentAddress(): Uint8Array | string;
+  getPaymentAddress_asU8(): Uint8Array;
+  getPaymentAddress_asB64(): string;
+  setPaymentAddress(value: Uint8Array | string): void;
+
+  getNonce(): Uint8Array | string;
+  getNonce_asU8(): Uint8Array;
+  getNonce_asB64(): string;
+  setNonce(value: Uint8Array | string): void;
+
+  getSweepTxPsbt(): Uint8Array | string;
+  getSweepTxPsbt_asU8(): Uint8Array;
+  getSweepTxPsbt_asB64(): string;
+  setSweepTxPsbt(value: Uint8Array | string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): MuSig2SignSweepReq.AsObject;
+  static toObject(includeInstance: boolean, msg: MuSig2SignSweepReq): MuSig2SignSweepReq.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: MuSig2SignSweepReq, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): MuSig2SignSweepReq;
+  static deserializeBinaryFromReader(message: MuSig2SignSweepReq, reader: jspb.BinaryReader): MuSig2SignSweepReq;
+}
+
+export namespace MuSig2SignSweepReq {
+  export type AsObject = {
+    protocolVersion: ProtocolVersionMap[keyof ProtocolVersionMap],
+    swapHash: Uint8Array | string,
+    paymentAddress: Uint8Array | string,
+    nonce: Uint8Array | string,
+    sweepTxPsbt: Uint8Array | string,
+  }
+}
+
+export class MuSig2SignSweepRes extends jspb.Message {
+  getNonce(): Uint8Array | string;
+  getNonce_asU8(): Uint8Array;
+  getNonce_asB64(): string;
+  setNonce(value: Uint8Array | string): void;
+
+  getPartialSignature(): Uint8Array | string;
+  getPartialSignature_asU8(): Uint8Array;
+  getPartialSignature_asB64(): string;
+  setPartialSignature(value: Uint8Array | string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): MuSig2SignSweepRes.AsObject;
+  static toObject(includeInstance: boolean, msg: MuSig2SignSweepRes): MuSig2SignSweepRes.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: MuSig2SignSweepRes, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): MuSig2SignSweepRes;
+  static deserializeBinaryFromReader(message: MuSig2SignSweepRes, reader: jspb.BinaryReader): MuSig2SignSweepRes;
+}
+
+export namespace MuSig2SignSweepRes {
+  export type AsObject = {
+    nonce: Uint8Array | string,
+    partialSignature: Uint8Array | string,
+  }
+}
+
 export interface ProtocolVersionMap {
   LEGACY: 0;
   MULTI_LOOP_OUT: 1;
@@ -835,6 +907,7 @@ export interface ProtocolVersionMap {
   LOOP_OUT_CANCEL: 7;
   PROBE: 8;
   ROUTING_PLUGIN: 9;
+  HTLC_V3: 10;
 }
 
 export const ProtocolVersion: ProtocolVersionMap;

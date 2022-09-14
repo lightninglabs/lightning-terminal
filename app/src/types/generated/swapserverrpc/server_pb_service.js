@@ -127,6 +127,15 @@ SwapServer.ReportRoutingResult = {
   responseType: swapserverrpc_server_pb.ReportRoutingResultRes
 };
 
+SwapServer.MuSig2SignSweep = {
+  methodName: "MuSig2SignSweep",
+  service: SwapServer,
+  requestStream: false,
+  responseStream: false,
+  requestType: swapserverrpc_server_pb.MuSig2SignSweepReq,
+  responseType: swapserverrpc_server_pb.MuSig2SignSweepRes
+};
+
 exports.SwapServer = SwapServer;
 
 function SwapServerClient(serviceHost, options) {
@@ -527,6 +536,37 @@ SwapServerClient.prototype.reportRoutingResult = function reportRoutingResult(re
     callback = arguments[1];
   }
   var client = grpc.unary(SwapServer.ReportRoutingResult, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+SwapServerClient.prototype.muSig2SignSweep = function muSig2SignSweep(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(SwapServer.MuSig2SignSweep, {
     request: requestMessage,
     host: this.serviceHost,
     metadata: metadata,

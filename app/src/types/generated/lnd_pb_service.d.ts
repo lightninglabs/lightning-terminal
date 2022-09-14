@@ -589,6 +589,15 @@ type LightningSubscribeCustomMessages = {
   readonly responseType: typeof lnd_pb.CustomMessage;
 };
 
+type LightningListAliases = {
+  readonly methodName: string;
+  readonly service: typeof Lightning;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof lnd_pb.ListAliasesRequest;
+  readonly responseType: typeof lnd_pb.ListAliasesResponse;
+};
+
 export class Lightning {
   static readonly serviceName: string;
   static readonly WalletBalance: LightningWalletBalance;
@@ -656,6 +665,7 @@ export class Lightning {
   static readonly RegisterRPCMiddleware: LightningRegisterRPCMiddleware;
   static readonly SendCustomMessage: LightningSendCustomMessage;
   static readonly SubscribeCustomMessages: LightningSubscribeCustomMessages;
+  static readonly ListAliases: LightningListAliases;
 }
 
 export type ServiceError = { message: string, code: number; metadata: grpc.Metadata }
@@ -1171,5 +1181,14 @@ export class LightningClient {
     callback: (error: ServiceError|null, responseMessage: lnd_pb.SendCustomMessageResponse|null) => void
   ): UnaryResponse;
   subscribeCustomMessages(requestMessage: lnd_pb.SubscribeCustomMessagesRequest, metadata?: grpc.Metadata): ResponseStream<lnd_pb.CustomMessage>;
+  listAliases(
+    requestMessage: lnd_pb.ListAliasesRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: lnd_pb.ListAliasesResponse|null) => void
+  ): UnaryResponse;
+  listAliases(
+    requestMessage: lnd_pb.ListAliasesRequest,
+    callback: (error: ServiceError|null, responseMessage: lnd_pb.ListAliasesResponse|null) => void
+  ): UnaryResponse;
 }
 
