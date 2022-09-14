@@ -156,6 +156,9 @@ export class SwapResponse extends jspb.Message {
   getHtlcAddressP2wsh(): string;
   setHtlcAddressP2wsh(value: string): void;
 
+  getHtlcAddressP2tr(): string;
+  setHtlcAddressP2tr(value: string): void;
+
   getServerMessage(): string;
   setServerMessage(value: string): void;
 
@@ -176,6 +179,7 @@ export namespace SwapResponse {
     htlcAddress: string,
     htlcAddressNp2wsh: string,
     htlcAddressP2wsh: string,
+    htlcAddressP2tr: string,
     serverMessage: string,
   }
 }
@@ -232,6 +236,9 @@ export class SwapStatus extends jspb.Message {
   getHtlcAddressNp2wsh(): string;
   setHtlcAddressNp2wsh(value: string): void;
 
+  getHtlcAddressP2tr(): string;
+  setHtlcAddressP2tr(value: string): void;
+
   getCostServer(): string;
   setCostServer(value: string): void;
 
@@ -277,6 +284,7 @@ export namespace SwapStatus {
     htlcAddress: string,
     htlcAddressP2wsh: string,
     htlcAddressNp2wsh: string,
+    htlcAddressP2tr: string,
     costServer: string,
     costOnchain: string,
     costOffchain: string,

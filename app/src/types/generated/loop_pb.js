@@ -1052,6 +1052,7 @@ proto.looprpc.SwapResponse.toObject = function(includeInstance, msg) {
     htlcAddress: jspb.Message.getFieldWithDefault(msg, 2, ""),
     htlcAddressNp2wsh: jspb.Message.getFieldWithDefault(msg, 4, ""),
     htlcAddressP2wsh: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    htlcAddressP2tr: jspb.Message.getFieldWithDefault(msg, 7, ""),
     serverMessage: jspb.Message.getFieldWithDefault(msg, 6, "")
   };
 
@@ -1108,6 +1109,10 @@ proto.looprpc.SwapResponse.deserializeBinaryFromReader = function(msg, reader) {
     case 5:
       var value = /** @type {string} */ (reader.readString());
       msg.setHtlcAddressP2wsh(value);
+      break;
+    case 7:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setHtlcAddressP2tr(value);
       break;
     case 6:
       var value = /** @type {string} */ (reader.readString());
@@ -1174,6 +1179,13 @@ proto.looprpc.SwapResponse.serializeBinaryToWriter = function(message, writer) {
   if (f.length > 0) {
     writer.writeString(
       5,
+      f
+    );
+  }
+  f = message.getHtlcAddressP2tr();
+  if (f.length > 0) {
+    writer.writeString(
+      7,
       f
     );
   }
@@ -1283,6 +1295,21 @@ proto.looprpc.SwapResponse.prototype.getHtlcAddressP2wsh = function() {
 /** @param {string} value */
 proto.looprpc.SwapResponse.prototype.setHtlcAddressP2wsh = function(value) {
   jspb.Message.setProto3StringField(this, 5, value);
+};
+
+
+/**
+ * optional string htlc_address_p2tr = 7;
+ * @return {string}
+ */
+proto.looprpc.SwapResponse.prototype.getHtlcAddressP2tr = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 7, ""));
+};
+
+
+/** @param {string} value */
+proto.looprpc.SwapResponse.prototype.setHtlcAddressP2tr = function(value) {
+  jspb.Message.setProto3StringField(this, 7, value);
 };
 
 
@@ -1482,6 +1509,7 @@ proto.looprpc.SwapStatus.toObject = function(includeInstance, msg) {
     htlcAddress: jspb.Message.getFieldWithDefault(msg, 7, ""),
     htlcAddressP2wsh: jspb.Message.getFieldWithDefault(msg, 12, ""),
     htlcAddressNp2wsh: jspb.Message.getFieldWithDefault(msg, 13, ""),
+    htlcAddressP2tr: jspb.Message.getFieldWithDefault(msg, 18, ""),
     costServer: jspb.Message.getFieldWithDefault(msg, 8, "0"),
     costOnchain: jspb.Message.getFieldWithDefault(msg, 9, "0"),
     costOffchain: jspb.Message.getFieldWithDefault(msg, 10, "0"),
@@ -1567,6 +1595,10 @@ proto.looprpc.SwapStatus.deserializeBinaryFromReader = function(msg, reader) {
     case 13:
       var value = /** @type {string} */ (reader.readString());
       msg.setHtlcAddressNp2wsh(value);
+      break;
+    case 18:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setHtlcAddressP2tr(value);
       break;
     case 8:
       var value = /** @type {string} */ (reader.readInt64String());
@@ -1695,6 +1727,13 @@ proto.looprpc.SwapStatus.serializeBinaryToWriter = function(message, writer) {
   if (f.length > 0) {
     writer.writeString(
       13,
+      f
+    );
+  }
+  f = message.getHtlcAddressP2tr();
+  if (f.length > 0) {
+    writer.writeString(
+      18,
       f
     );
   }
@@ -1929,6 +1968,21 @@ proto.looprpc.SwapStatus.prototype.getHtlcAddressNp2wsh = function() {
 /** @param {string} value */
 proto.looprpc.SwapStatus.prototype.setHtlcAddressNp2wsh = function(value) {
   jspb.Message.setProto3StringField(this, 13, value);
+};
+
+
+/**
+ * optional string htlc_address_p2tr = 18;
+ * @return {string}
+ */
+proto.looprpc.SwapStatus.prototype.getHtlcAddressP2tr = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 18, ""));
+};
+
+
+/** @param {string} value */
+proto.looprpc.SwapStatus.prototype.setHtlcAddressP2tr = function(value) {
+  jspb.Message.setProto3StringField(this, 18, value);
 };
 
 
