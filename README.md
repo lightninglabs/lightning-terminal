@@ -66,10 +66,17 @@ If you’d prefer to compile from source code please follow [these instructions]
 
 ## Compatibility
 
-Lightning Terminal is backwards compatible with `lnd` back to version v0.14.3-beta.
+Full Lightning Terminal functionality can be dependent on running a certain
+version of `lnd`. View the table below to ensure that you run the correct
+version of `lnd` with the relevant `litd` release.
+
+This version compatibility dependency is only relevant for running remote mode
+`litd`. The bundled version will always come with the correct, [compatible
+versioning](#daemon-versions-packaged-with-lit).
 
 | LiT              | LND          |
 |------------------|--------------|
+| **v0.8.0-alpha** | v0.15.1-beta |
 | **v0.7.1-alpha** | v0.14.3-beta |
 | **v0.7.0-alpha** | v0.14.3-beta |
 | **v0.6.7-alpha** | v0.13.3-beta |
@@ -119,6 +126,7 @@ The following table shows the supported combinations:
 
 | LiT              | LND          | Loop         | Faraday      | Pool         |
 |------------------|--------------|--------------|--------------|--------------|
+| **v0.8.0-alpha** | v0.15.1-beta | v0.20.1-beta | v0.2.8-alpha | v0.5.8-alpha |
 | **v0.7.1-alpha** | v0.15.0-beta | v0.19.1-beta | v0.2.8-alpha | v0.5.7-alpha |
 | **v0.7.0-alpha** | v0.15.0-beta | v0.19.1-beta | v0.2.8-alpha | v0.5.7-alpha |
 | **v0.6.7-alpha** | v0.14.3-beta | v0.18.0-beta | v0.2.7-alpha | v0.5.6-alpha |
