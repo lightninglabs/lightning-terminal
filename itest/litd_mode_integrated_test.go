@@ -516,7 +516,7 @@ func setUpLNCConn(ctx context.Context, t *testing.T, hostPort, tlsCertPath,
 		sessResp.Session.PairingSecretMnemonic, " ",
 	)
 
-	rawLNCConn, err := connectMailbox(ctx, connectPhrase)
+	rawLNCConn, err := connectMailboxWithPairingPhrase(ctx, connectPhrase)
 	require.NoError(t, err)
 
 	return rawLNCConn
@@ -876,9 +876,9 @@ func getServerCertificates(hostPort string) ([]*x509.Certificate, error) {
 	return conn.ConnectionState().PeerCertificates, nil
 }
 
-// connectMailbox tries to establish a connection through LNC using the given
-// connect phrase and the test mailbox server.
-func connectMailbox(ctx context.Context,
+// connectMailboxWithPairingPhrase tries to establish a connection through LNC
+// using the given connect phrase and the test mailbox server.
+func connectMailboxWithPairingPhrase(ctx context.Context,
 	connectPhrase []string) (*grpc.ClientConn, error) {
 
 	var mnemonicWords [mailbox.NumPassphraseWords]string
