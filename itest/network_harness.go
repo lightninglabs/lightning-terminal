@@ -18,6 +18,7 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
+	"github.com/lightninglabs/lightning-terminal/autopilotserver/mock"
 	"github.com/lightningnetwork/lnd"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntest"
@@ -54,6 +55,8 @@ type NetworkHarness struct {
 	activeNodes map[int]*HarnessNode
 
 	nodesByPub map[string]*HarnessNode
+
+	autopilotServer *mock.Server
 
 	// Alice and Bob are the initial seeder nodes that are automatically
 	// created to be the initial participants of the test network.
@@ -129,6 +132,10 @@ func (n *NetworkHarness) SetUp(t *testing.T,
 	n.server = newServerHarness(mockServerAddr)
 	err := n.server.start()
 	require.NoError(t, err)
+
+	// Start a mock autopilot server.
+	n.autopilotServer = mock.NewServer()
+	require.NoError(t, n.autopilotServer.Start())
 
 	// Start the initial seeder nodes within the test network, then connect
 	// their respective RPC clients.
@@ -260,6 +267,8 @@ func (n *NetworkHarness) TearDown() error {
 func (n *NetworkHarness) Stop() {
 	close(n.lndErrorChan)
 	close(n.quit)
+
+	n.autopilotServer.Stop()
 }
 
 // NewNode initializes a new HarnessNode.
@@ -271,6 +280,11 @@ func (n *NetworkHarness) NewNode(t *testing.T, name string, extraArgs []string,
 		fmt.Sprintf("--loop.server.tlspath=%s", n.server.certFile),
 		fmt.Sprintf("--pool.auctionserver=%s", n.server.serverHost),
 		fmt.Sprintf("--pool.tlspathauctserver=%s", n.server.certFile),
+		"--autopilot.insecure",
+		fmt.Sprintf(
+			"--autopilot.address=localhost:%d",
+			n.autopilotServer.GetPort(),
+		),
 	}
 
 	return n.newNode(
