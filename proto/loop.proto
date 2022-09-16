@@ -317,6 +317,9 @@ message SwapResponse {
     */
     string htlc_address_p2wsh = 5;
 
+    // The address of the v3 (taproot) htlc. Used for both loop-in and loop-out.
+    string htlc_address_p2tr = 7;
+
     // A human-readable message received from the loop server.
     string server_message = 6;
 }
@@ -386,6 +389,9 @@ message SwapStatus {
 
     // HTLC address (nested segwit), used in loop-in swaps only.
     string htlc_address_np2wsh = 13;
+
+    // The address of the v3 (taproot) htlc. Used for both loop-in and loop-out.
+    string htlc_address_p2tr = 18;
 
     // Swap server cost
     int64 cost_server = 8 [jstype = JS_STRING];

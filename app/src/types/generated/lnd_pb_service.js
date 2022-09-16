@@ -595,6 +595,15 @@ Lightning.SubscribeCustomMessages = {
   responseType: lnd_pb.CustomMessage
 };
 
+Lightning.ListAliases = {
+  methodName: "ListAliases",
+  service: Lightning,
+  requestStream: false,
+  responseStream: false,
+  requestType: lnd_pb.ListAliasesRequest,
+  responseType: lnd_pb.ListAliasesResponse
+};
+
 exports.Lightning = Lightning;
 
 function LightningClient(serviceHost, options) {
@@ -2740,6 +2749,37 @@ LightningClient.prototype.subscribeCustomMessages = function subscribeCustomMess
     },
     cancel: function () {
       listeners = null;
+      client.close();
+    }
+  };
+};
+
+LightningClient.prototype.listAliases = function listAliases(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(Lightning.ListAliases, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
       client.close();
     }
   };
