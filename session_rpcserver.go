@@ -525,6 +525,7 @@ func marshalRPCSession(sess *session.Session) (*litrpc.Session, error) {
 	}
 
 	return &litrpc.Session{
+		Id:                     sess.ID[:],
 		Label:                  sess.Label,
 		SessionState:           rpcState,
 		SessionType:            rpcType,

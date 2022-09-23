@@ -164,6 +164,7 @@ func DeserializeSession(r io.Reader) (*Session, error) {
 		return nil, err
 	}
 
+	session.ID = IDFromMacRootKeyID(session.MacaroonRootKey)
 	session.Label = string(label)
 	session.State = State(state)
 	session.Type = Type(typ)

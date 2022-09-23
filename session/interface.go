@@ -42,6 +42,7 @@ type MacaroonRecipe struct {
 
 // Session is a struct representing a long-term Terminal Connect session.
 type Session struct {
+	ID              ID
 	Label           string
 	State           State
 	Type            Type
@@ -83,6 +84,7 @@ func NewSession(label string, typ Type, expiry time.Time, serverAddr string,
 	macRootKey := NewSuperMacaroonRootKeyID(macRootKeyBase)
 
 	sess := &Session{
+		ID:              macRootKeyBase,
 		Label:           label,
 		State:           StateCreated,
 		Type:            typ,

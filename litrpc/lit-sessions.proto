@@ -67,6 +67,8 @@ message AddSessionResponse {
 }
 
 message Session {
+    bytes id = 14;
+
     string label = 1;
 
     SessionState session_state = 2;
@@ -92,11 +94,6 @@ message Session {
     MacaroonRecipe macaroon_recipe = 12;
 
     string account_id = 13;
-
-    /*
-    Field number 14 is reserved for future use.
-    */
-    reserved 14;
 
     /*
     Field number 15 is reserved for future use.
