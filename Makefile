@@ -148,7 +148,8 @@ check: unit
 
 unit:
 	@$(call print, "Running unit tests.")
-	$(UNIT)
+	mkdir -p app/build && touch app/build/index.html
+	$(UNIT) -tags="$(LND_RELEASE_TAGS)"
 
 unit-cover: $(GOACC_BIN)
 	@$(call print, "Running unit coverage tests.")
@@ -156,7 +157,7 @@ unit-cover: $(GOACC_BIN)
 
 unit-race:
 	@$(call print, "Running unit race tests.")
-	mkdir app/build && touch app/build/index.html
+	mkdir -p app/build && touch app/build/index.html
 	env CGO_ENABLED=1 GORACE="history_size=7 halt_on_errors=1" $(UNIT_RACE) -tags="$(LND_RELEASE_TAGS)"
 
 goveralls: $(GOVERALLS_BIN)
