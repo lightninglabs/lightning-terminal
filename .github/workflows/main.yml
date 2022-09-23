@@ -194,6 +194,23 @@ jobs:
       - name: run check
         run: make unit-race
 
+  unit:
+    name: unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: git checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: setup go ${{ env.GO_VERSION }}
+        uses: actions/setup-go@v2
+        with:
+          go-version: '${{ env.GO_VERSION }}'
+
+      - name: run check
+        run: make unit
+
   itest:
     name: integration test
     runs-on: ubuntu-latest
