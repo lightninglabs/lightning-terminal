@@ -16,12 +16,23 @@ var global = Function('return this')();
 
 goog.exportSymbol('proto.litrpc.AddSessionRequest', null, global);
 goog.exportSymbol('proto.litrpc.AddSessionResponse', null, global);
+goog.exportSymbol('proto.litrpc.ChannelPolicyBounds', null, global);
+goog.exportSymbol('proto.litrpc.ChannelRestrict', null, global);
+goog.exportSymbol('proto.litrpc.HistoryLimit', null, global);
 goog.exportSymbol('proto.litrpc.ListSessionsRequest', null, global);
 goog.exportSymbol('proto.litrpc.ListSessionsResponse', null, global);
 goog.exportSymbol('proto.litrpc.MacaroonPermission', null, global);
 goog.exportSymbol('proto.litrpc.MacaroonRecipe', null, global);
+goog.exportSymbol('proto.litrpc.OffChainBudget', null, global);
+goog.exportSymbol('proto.litrpc.OnChainBudget', null, global);
+goog.exportSymbol('proto.litrpc.PeerRestrict', null, global);
+goog.exportSymbol('proto.litrpc.Rate', null, global);
+goog.exportSymbol('proto.litrpc.RateLimit', null, global);
 goog.exportSymbol('proto.litrpc.RevokeSessionRequest', null, global);
 goog.exportSymbol('proto.litrpc.RevokeSessionResponse', null, global);
+goog.exportSymbol('proto.litrpc.RuleValue', null, global);
+goog.exportSymbol('proto.litrpc.RulesMap', null, global);
+goog.exportSymbol('proto.litrpc.SendToSelf', null, global);
 goog.exportSymbol('proto.litrpc.Session', null, global);
 goog.exportSymbol('proto.litrpc.SessionState', null, global);
 goog.exportSymbol('proto.litrpc.SessionType', null, global);
@@ -732,6 +743,7 @@ proto.litrpc.Session.prototype.toObject = function(opt_includeInstance) {
  */
 proto.litrpc.Session.toObject = function(includeInstance, msg) {
   var f, obj = {
+    id: msg.getId_asB64(),
     label: jspb.Message.getFieldWithDefault(msg, 1, ""),
     sessionState: jspb.Message.getFieldWithDefault(msg, 2, 0),
     sessionType: jspb.Message.getFieldWithDefault(msg, 3, 0),
@@ -744,7 +756,8 @@ proto.litrpc.Session.toObject = function(includeInstance, msg) {
     remotePublicKey: msg.getRemotePublicKey_asB64(),
     createdAt: jspb.Message.getFieldWithDefault(msg, 11, "0"),
     macaroonRecipe: (f = msg.getMacaroonRecipe()) && proto.litrpc.MacaroonRecipe.toObject(includeInstance, f),
-    accountId: jspb.Message.getFieldWithDefault(msg, 13, "")
+    accountId: jspb.Message.getFieldWithDefault(msg, 13, ""),
+    autopilotFeatureInfoMap: (f = msg.getAutopilotFeatureInfoMap()) ? f.toObject(includeInstance, proto.litrpc.RulesMap.toObject) : []
   };
 
   if (includeInstance) {
@@ -781,6 +794,10 @@ proto.litrpc.Session.deserializeBinaryFromReader = function(msg, reader) {
     }
     var field = reader.getFieldNumber();
     switch (field) {
+    case 14:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setId(value);
+      break;
     case 1:
       var value = /** @type {string} */ (reader.readString());
       msg.setLabel(value);
@@ -834,6 +851,12 @@ proto.litrpc.Session.deserializeBinaryFromReader = function(msg, reader) {
       var value = /** @type {string} */ (reader.readString());
       msg.setAccountId(value);
       break;
+    case 15:
+      var value = msg.getAutopilotFeatureInfoMap();
+      reader.readMessage(value, function(message, reader) {
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.litrpc.RulesMap.deserializeBinaryFromReader, "");
+         });
+      break;
     default:
       reader.skipField();
       break;
@@ -863,6 +886,13 @@ proto.litrpc.Session.prototype.serializeBinary = function() {
  */
 proto.litrpc.Session.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
+  f = message.getId_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      14,
+      f
+    );
+  }
   f = message.getLabel();
   if (f.length > 0) {
     writer.writeString(
@@ -955,6 +985,49 @@ proto.litrpc.Session.serializeBinaryToWriter = function(message, writer) {
       f
     );
   }
+  f = message.getAutopilotFeatureInfoMap(true);
+  if (f && f.getLength() > 0) {
+    f.serializeBinary(15, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.litrpc.RulesMap.serializeBinaryToWriter);
+  }
+};
+
+
+/**
+ * optional bytes id = 14;
+ * @return {!(string|Uint8Array)}
+ */
+proto.litrpc.Session.prototype.getId = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 14, ""));
+};
+
+
+/**
+ * optional bytes id = 14;
+ * This is a type-conversion wrapper around `getId()`
+ * @return {string}
+ */
+proto.litrpc.Session.prototype.getId_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getId()));
+};
+
+
+/**
+ * optional bytes id = 14;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getId()`
+ * @return {!Uint8Array}
+ */
+proto.litrpc.Session.prototype.getId_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getId()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.litrpc.Session.prototype.setId = function(value) {
+  jspb.Message.setProto3BytesField(this, 14, value);
 };
 
 
@@ -1239,6 +1312,24 @@ proto.litrpc.Session.prototype.getAccountId = function() {
 /** @param {string} value */
 proto.litrpc.Session.prototype.setAccountId = function(value) {
   jspb.Message.setProto3StringField(this, 13, value);
+};
+
+
+/**
+ * map<string, RulesMap> autopilot_feature_info = 15;
+ * @param {boolean=} opt_noLazyCreate Do not create the map if
+ * empty, instead returning `undefined`
+ * @return {!jspb.Map<string,!proto.litrpc.RulesMap>}
+ */
+proto.litrpc.Session.prototype.getAutopilotFeatureInfoMap = function(opt_noLazyCreate) {
+  return /** @type {!jspb.Map<string,!proto.litrpc.RulesMap>} */ (
+      jspb.Message.getMapField(this, 15, opt_noLazyCreate,
+      proto.litrpc.RulesMap));
+};
+
+
+proto.litrpc.Session.prototype.clearAutopilotFeatureInfoMap = function() {
+  this.getAutopilotFeatureInfoMap().clear();
 };
 
 
@@ -2017,6 +2108,2301 @@ proto.litrpc.RevokeSessionResponse.serializeBinaryToWriter = function(message, w
 };
 
 
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.litrpc.RulesMap = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.litrpc.RulesMap, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.litrpc.RulesMap.displayName = 'proto.litrpc.RulesMap';
+}
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.litrpc.RulesMap.prototype.toObject = function(opt_includeInstance) {
+  return proto.litrpc.RulesMap.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.litrpc.RulesMap} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.litrpc.RulesMap.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    rulesMap: (f = msg.getRulesMap()) ? f.toObject(includeInstance, proto.litrpc.RuleValue.toObject) : []
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.litrpc.RulesMap}
+ */
+proto.litrpc.RulesMap.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.litrpc.RulesMap;
+  return proto.litrpc.RulesMap.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.litrpc.RulesMap} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.litrpc.RulesMap}
+ */
+proto.litrpc.RulesMap.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = msg.getRulesMap();
+      reader.readMessage(value, function(message, reader) {
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.litrpc.RuleValue.deserializeBinaryFromReader, "");
+         });
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.litrpc.RulesMap.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.litrpc.RulesMap.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.litrpc.RulesMap} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.litrpc.RulesMap.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getRulesMap(true);
+  if (f && f.getLength() > 0) {
+    f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.litrpc.RuleValue.serializeBinaryToWriter);
+  }
+};
+
+
+/**
+ * map<string, RuleValue> rules = 1;
+ * @param {boolean=} opt_noLazyCreate Do not create the map if
+ * empty, instead returning `undefined`
+ * @return {!jspb.Map<string,!proto.litrpc.RuleValue>}
+ */
+proto.litrpc.RulesMap.prototype.getRulesMap = function(opt_noLazyCreate) {
+  return /** @type {!jspb.Map<string,!proto.litrpc.RuleValue>} */ (
+      jspb.Message.getMapField(this, 1, opt_noLazyCreate,
+      proto.litrpc.RuleValue));
+};
+
+
+proto.litrpc.RulesMap.prototype.clearRulesMap = function() {
+  this.getRulesMap().clear();
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.litrpc.RuleValue = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.litrpc.RuleValue.oneofGroups_);
+};
+goog.inherits(proto.litrpc.RuleValue, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.litrpc.RuleValue.displayName = 'proto.litrpc.RuleValue';
+}
+/**
+ * Oneof group definitions for this message. Each group defines the field
+ * numbers belonging to that group. When of these fields' value is set, all
+ * other fields in the group are cleared. During deserialization, if multiple
+ * fields are encountered for a group, only the last value seen will be kept.
+ * @private {!Array<!Array<number>>}
+ * @const
+ */
+proto.litrpc.RuleValue.oneofGroups_ = [[1,2,3,4,5,6,7,8]];
+
+/**
+ * @enum {number}
+ */
+proto.litrpc.RuleValue.ValueCase = {
+  VALUE_NOT_SET: 0,
+  RATE_LIMIT: 1,
+  CHAN_POLICY_BOUNDS: 2,
+  HISTORY_LIMIT: 3,
+  OFF_CHAIN_BUDGET: 4,
+  ON_CHAIN_BUDGET: 5,
+  SEND_TO_SELF: 6,
+  CHANNEL_RESTRICT: 7,
+  PEER_RESTRICT: 8
+};
+
+/**
+ * @return {proto.litrpc.RuleValue.ValueCase}
+ */
+proto.litrpc.RuleValue.prototype.getValueCase = function() {
+  return /** @type {proto.litrpc.RuleValue.ValueCase} */(jspb.Message.computeOneofCase(this, proto.litrpc.RuleValue.oneofGroups_[0]));
+};
+
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.litrpc.RuleValue.prototype.toObject = function(opt_includeInstance) {
+  return proto.litrpc.RuleValue.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.litrpc.RuleValue} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.litrpc.RuleValue.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    rateLimit: (f = msg.getRateLimit()) && proto.litrpc.RateLimit.toObject(includeInstance, f),
+    chanPolicyBounds: (f = msg.getChanPolicyBounds()) && proto.litrpc.ChannelPolicyBounds.toObject(includeInstance, f),
+    historyLimit: (f = msg.getHistoryLimit()) && proto.litrpc.HistoryLimit.toObject(includeInstance, f),
+    offChainBudget: (f = msg.getOffChainBudget()) && proto.litrpc.OffChainBudget.toObject(includeInstance, f),
+    onChainBudget: (f = msg.getOnChainBudget()) && proto.litrpc.OnChainBudget.toObject(includeInstance, f),
+    sendToSelf: (f = msg.getSendToSelf()) && proto.litrpc.SendToSelf.toObject(includeInstance, f),
+    channelRestrict: (f = msg.getChannelRestrict()) && proto.litrpc.ChannelRestrict.toObject(includeInstance, f),
+    peerRestrict: (f = msg.getPeerRestrict()) && proto.litrpc.PeerRestrict.toObject(includeInstance, f)
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.litrpc.RuleValue}
+ */
+proto.litrpc.RuleValue.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.litrpc.RuleValue;
+  return proto.litrpc.RuleValue.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.litrpc.RuleValue} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.litrpc.RuleValue}
+ */
+proto.litrpc.RuleValue.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = new proto.litrpc.RateLimit;
+      reader.readMessage(value,proto.litrpc.RateLimit.deserializeBinaryFromReader);
+      msg.setRateLimit(value);
+      break;
+    case 2:
+      var value = new proto.litrpc.ChannelPolicyBounds;
+      reader.readMessage(value,proto.litrpc.ChannelPolicyBounds.deserializeBinaryFromReader);
+      msg.setChanPolicyBounds(value);
+      break;
+    case 3:
+      var value = new proto.litrpc.HistoryLimit;
+      reader.readMessage(value,proto.litrpc.HistoryLimit.deserializeBinaryFromReader);
+      msg.setHistoryLimit(value);
+      break;
+    case 4:
+      var value = new proto.litrpc.OffChainBudget;
+      reader.readMessage(value,proto.litrpc.OffChainBudget.deserializeBinaryFromReader);
+      msg.setOffChainBudget(value);
+      break;
+    case 5:
+      var value = new proto.litrpc.OnChainBudget;
+      reader.readMessage(value,proto.litrpc.OnChainBudget.deserializeBinaryFromReader);
+      msg.setOnChainBudget(value);
+      break;
+    case 6:
+      var value = new proto.litrpc.SendToSelf;
+      reader.readMessage(value,proto.litrpc.SendToSelf.deserializeBinaryFromReader);
+      msg.setSendToSelf(value);
+      break;
+    case 7:
+      var value = new proto.litrpc.ChannelRestrict;
+      reader.readMessage(value,proto.litrpc.ChannelRestrict.deserializeBinaryFromReader);
+      msg.setChannelRestrict(value);
+      break;
+    case 8:
+      var value = new proto.litrpc.PeerRestrict;
+      reader.readMessage(value,proto.litrpc.PeerRestrict.deserializeBinaryFromReader);
+      msg.setPeerRestrict(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.litrpc.RuleValue.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.litrpc.RuleValue.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.litrpc.RuleValue} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.litrpc.RuleValue.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getRateLimit();
+  if (f != null) {
+    writer.writeMessage(
+      1,
+      f,
+      proto.litrpc.RateLimit.serializeBinaryToWriter
+    );
+  }
+  f = message.getChanPolicyBounds();
+  if (f != null) {
+    writer.writeMessage(
+      2,
+      f,
+      proto.litrpc.ChannelPolicyBounds.serializeBinaryToWriter
+    );
+  }
+  f = message.getHistoryLimit();
+  if (f != null) {
+    writer.writeMessage(
+      3,
+      f,
+      proto.litrpc.HistoryLimit.serializeBinaryToWriter
+    );
+  }
+  f = message.getOffChainBudget();
+  if (f != null) {
+    writer.writeMessage(
+      4,
+      f,
+      proto.litrpc.OffChainBudget.serializeBinaryToWriter
+    );
+  }
+  f = message.getOnChainBudget();
+  if (f != null) {
+    writer.writeMessage(
+      5,
+      f,
+      proto.litrpc.OnChainBudget.serializeBinaryToWriter
+    );
+  }
+  f = message.getSendToSelf();
+  if (f != null) {
+    writer.writeMessage(
+      6,
+      f,
+      proto.litrpc.SendToSelf.serializeBinaryToWriter
+    );
+  }
+  f = message.getChannelRestrict();
+  if (f != null) {
+    writer.writeMessage(
+      7,
+      f,
+      proto.litrpc.ChannelRestrict.serializeBinaryToWriter
+    );
+  }
+  f = message.getPeerRestrict();
+  if (f != null) {
+    writer.writeMessage(
+      8,
+      f,
+      proto.litrpc.PeerRestrict.serializeBinaryToWriter
+    );
+  }
+};
+
+
+/**
+ * optional RateLimit rate_limit = 1;
+ * @return {?proto.litrpc.RateLimit}
+ */
+proto.litrpc.RuleValue.prototype.getRateLimit = function() {
+  return /** @type{?proto.litrpc.RateLimit} */ (
+    jspb.Message.getWrapperField(this, proto.litrpc.RateLimit, 1));
+};
+
+
+/** @param {?proto.litrpc.RateLimit|undefined} value */
+proto.litrpc.RuleValue.prototype.setRateLimit = function(value) {
+  jspb.Message.setOneofWrapperField(this, 1, proto.litrpc.RuleValue.oneofGroups_[0], value);
+};
+
+
+proto.litrpc.RuleValue.prototype.clearRateLimit = function() {
+  this.setRateLimit(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {!boolean}
+ */
+proto.litrpc.RuleValue.prototype.hasRateLimit = function() {
+  return jspb.Message.getField(this, 1) != null;
+};
+
+
+/**
+ * optional ChannelPolicyBounds chan_policy_bounds = 2;
+ * @return {?proto.litrpc.ChannelPolicyBounds}
+ */
+proto.litrpc.RuleValue.prototype.getChanPolicyBounds = function() {
+  return /** @type{?proto.litrpc.ChannelPolicyBounds} */ (
+    jspb.Message.getWrapperField(this, proto.litrpc.ChannelPolicyBounds, 2));
+};
+
+
+/** @param {?proto.litrpc.ChannelPolicyBounds|undefined} value */
+proto.litrpc.RuleValue.prototype.setChanPolicyBounds = function(value) {
+  jspb.Message.setOneofWrapperField(this, 2, proto.litrpc.RuleValue.oneofGroups_[0], value);
+};
+
+
+proto.litrpc.RuleValue.prototype.clearChanPolicyBounds = function() {
+  this.setChanPolicyBounds(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {!boolean}
+ */
+proto.litrpc.RuleValue.prototype.hasChanPolicyBounds = function() {
+  return jspb.Message.getField(this, 2) != null;
+};
+
+
+/**
+ * optional HistoryLimit history_limit = 3;
+ * @return {?proto.litrpc.HistoryLimit}
+ */
+proto.litrpc.RuleValue.prototype.getHistoryLimit = function() {
+  return /** @type{?proto.litrpc.HistoryLimit} */ (
+    jspb.Message.getWrapperField(this, proto.litrpc.HistoryLimit, 3));
+};
+
+
+/** @param {?proto.litrpc.HistoryLimit|undefined} value */
+proto.litrpc.RuleValue.prototype.setHistoryLimit = function(value) {
+  jspb.Message.setOneofWrapperField(this, 3, proto.litrpc.RuleValue.oneofGroups_[0], value);
+};
+
+
+proto.litrpc.RuleValue.prototype.clearHistoryLimit = function() {
+  this.setHistoryLimit(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {!boolean}
+ */
+proto.litrpc.RuleValue.prototype.hasHistoryLimit = function() {
+  return jspb.Message.getField(this, 3) != null;
+};
+
+
+/**
+ * optional OffChainBudget off_chain_budget = 4;
+ * @return {?proto.litrpc.OffChainBudget}
+ */
+proto.litrpc.RuleValue.prototype.getOffChainBudget = function() {
+  return /** @type{?proto.litrpc.OffChainBudget} */ (
+    jspb.Message.getWrapperField(this, proto.litrpc.OffChainBudget, 4));
+};
+
+
+/** @param {?proto.litrpc.OffChainBudget|undefined} value */
+proto.litrpc.RuleValue.prototype.setOffChainBudget = function(value) {
+  jspb.Message.setOneofWrapperField(this, 4, proto.litrpc.RuleValue.oneofGroups_[0], value);
+};
+
+
+proto.litrpc.RuleValue.prototype.clearOffChainBudget = function() {
+  this.setOffChainBudget(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {!boolean}
+ */
+proto.litrpc.RuleValue.prototype.hasOffChainBudget = function() {
+  return jspb.Message.getField(this, 4) != null;
+};
+
+
+/**
+ * optional OnChainBudget on_chain_budget = 5;
+ * @return {?proto.litrpc.OnChainBudget}
+ */
+proto.litrpc.RuleValue.prototype.getOnChainBudget = function() {
+  return /** @type{?proto.litrpc.OnChainBudget} */ (
+    jspb.Message.getWrapperField(this, proto.litrpc.OnChainBudget, 5));
+};
+
+
+/** @param {?proto.litrpc.OnChainBudget|undefined} value */
+proto.litrpc.RuleValue.prototype.setOnChainBudget = function(value) {
+  jspb.Message.setOneofWrapperField(this, 5, proto.litrpc.RuleValue.oneofGroups_[0], value);
+};
+
+
+proto.litrpc.RuleValue.prototype.clearOnChainBudget = function() {
+  this.setOnChainBudget(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {!boolean}
+ */
+proto.litrpc.RuleValue.prototype.hasOnChainBudget = function() {
+  return jspb.Message.getField(this, 5) != null;
+};
+
+
+/**
+ * optional SendToSelf send_to_self = 6;
+ * @return {?proto.litrpc.SendToSelf}
+ */
+proto.litrpc.RuleValue.prototype.getSendToSelf = function() {
+  return /** @type{?proto.litrpc.SendToSelf} */ (
+    jspb.Message.getWrapperField(this, proto.litrpc.SendToSelf, 6));
+};
+
+
+/** @param {?proto.litrpc.SendToSelf|undefined} value */
+proto.litrpc.RuleValue.prototype.setSendToSelf = function(value) {
+  jspb.Message.setOneofWrapperField(this, 6, proto.litrpc.RuleValue.oneofGroups_[0], value);
+};
+
+
+proto.litrpc.RuleValue.prototype.clearSendToSelf = function() {
+  this.setSendToSelf(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {!boolean}
+ */
+proto.litrpc.RuleValue.prototype.hasSendToSelf = function() {
+  return jspb.Message.getField(this, 6) != null;
+};
+
+
+/**
+ * optional ChannelRestrict channel_restrict = 7;
+ * @return {?proto.litrpc.ChannelRestrict}
+ */
+proto.litrpc.RuleValue.prototype.getChannelRestrict = function() {
+  return /** @type{?proto.litrpc.ChannelRestrict} */ (
+    jspb.Message.getWrapperField(this, proto.litrpc.ChannelRestrict, 7));
+};
+
+
+/** @param {?proto.litrpc.ChannelRestrict|undefined} value */
+proto.litrpc.RuleValue.prototype.setChannelRestrict = function(value) {
+  jspb.Message.setOneofWrapperField(this, 7, proto.litrpc.RuleValue.oneofGroups_[0], value);
+};
+
+
+proto.litrpc.RuleValue.prototype.clearChannelRestrict = function() {
+  this.setChannelRestrict(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {!boolean}
+ */
+proto.litrpc.RuleValue.prototype.hasChannelRestrict = function() {
+  return jspb.Message.getField(this, 7) != null;
+};
+
+
+/**
+ * optional PeerRestrict peer_restrict = 8;
+ * @return {?proto.litrpc.PeerRestrict}
+ */
+proto.litrpc.RuleValue.prototype.getPeerRestrict = function() {
+  return /** @type{?proto.litrpc.PeerRestrict} */ (
+    jspb.Message.getWrapperField(this, proto.litrpc.PeerRestrict, 8));
+};
+
+
+/** @param {?proto.litrpc.PeerRestrict|undefined} value */
+proto.litrpc.RuleValue.prototype.setPeerRestrict = function(value) {
+  jspb.Message.setOneofWrapperField(this, 8, proto.litrpc.RuleValue.oneofGroups_[0], value);
+};
+
+
+proto.litrpc.RuleValue.prototype.clearPeerRestrict = function() {
+  this.setPeerRestrict(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {!boolean}
+ */
+proto.litrpc.RuleValue.prototype.hasPeerRestrict = function() {
+  return jspb.Message.getField(this, 8) != null;
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.litrpc.RateLimit = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.litrpc.RateLimit, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.litrpc.RateLimit.displayName = 'proto.litrpc.RateLimit';
+}
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.litrpc.RateLimit.prototype.toObject = function(opt_includeInstance) {
+  return proto.litrpc.RateLimit.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.litrpc.RateLimit} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.litrpc.RateLimit.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    readLimit: (f = msg.getReadLimit()) && proto.litrpc.Rate.toObject(includeInstance, f),
+    writeLimit: (f = msg.getWriteLimit()) && proto.litrpc.Rate.toObject(includeInstance, f)
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.litrpc.RateLimit}
+ */
+proto.litrpc.RateLimit.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.litrpc.RateLimit;
+  return proto.litrpc.RateLimit.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.litrpc.RateLimit} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.litrpc.RateLimit}
+ */
+proto.litrpc.RateLimit.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = new proto.litrpc.Rate;
+      reader.readMessage(value,proto.litrpc.Rate.deserializeBinaryFromReader);
+      msg.setReadLimit(value);
+      break;
+    case 2:
+      var value = new proto.litrpc.Rate;
+      reader.readMessage(value,proto.litrpc.Rate.deserializeBinaryFromReader);
+      msg.setWriteLimit(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.litrpc.RateLimit.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.litrpc.RateLimit.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.litrpc.RateLimit} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.litrpc.RateLimit.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getReadLimit();
+  if (f != null) {
+    writer.writeMessage(
+      1,
+      f,
+      proto.litrpc.Rate.serializeBinaryToWriter
+    );
+  }
+  f = message.getWriteLimit();
+  if (f != null) {
+    writer.writeMessage(
+      2,
+      f,
+      proto.litrpc.Rate.serializeBinaryToWriter
+    );
+  }
+};
+
+
+/**
+ * optional Rate read_limit = 1;
+ * @return {?proto.litrpc.Rate}
+ */
+proto.litrpc.RateLimit.prototype.getReadLimit = function() {
+  return /** @type{?proto.litrpc.Rate} */ (
+    jspb.Message.getWrapperField(this, proto.litrpc.Rate, 1));
+};
+
+
+/** @param {?proto.litrpc.Rate|undefined} value */
+proto.litrpc.RateLimit.prototype.setReadLimit = function(value) {
+  jspb.Message.setWrapperField(this, 1, value);
+};
+
+
+proto.litrpc.RateLimit.prototype.clearReadLimit = function() {
+  this.setReadLimit(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {!boolean}
+ */
+proto.litrpc.RateLimit.prototype.hasReadLimit = function() {
+  return jspb.Message.getField(this, 1) != null;
+};
+
+
+/**
+ * optional Rate write_limit = 2;
+ * @return {?proto.litrpc.Rate}
+ */
+proto.litrpc.RateLimit.prototype.getWriteLimit = function() {
+  return /** @type{?proto.litrpc.Rate} */ (
+    jspb.Message.getWrapperField(this, proto.litrpc.Rate, 2));
+};
+
+
+/** @param {?proto.litrpc.Rate|undefined} value */
+proto.litrpc.RateLimit.prototype.setWriteLimit = function(value) {
+  jspb.Message.setWrapperField(this, 2, value);
+};
+
+
+proto.litrpc.RateLimit.prototype.clearWriteLimit = function() {
+  this.setWriteLimit(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {!boolean}
+ */
+proto.litrpc.RateLimit.prototype.hasWriteLimit = function() {
+  return jspb.Message.getField(this, 2) != null;
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.litrpc.Rate = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.litrpc.Rate, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.litrpc.Rate.displayName = 'proto.litrpc.Rate';
+}
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.litrpc.Rate.prototype.toObject = function(opt_includeInstance) {
+  return proto.litrpc.Rate.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.litrpc.Rate} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.litrpc.Rate.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    iterations: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    numHours: jspb.Message.getFieldWithDefault(msg, 2, 0)
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.litrpc.Rate}
+ */
+proto.litrpc.Rate.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.litrpc.Rate;
+  return proto.litrpc.Rate.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.litrpc.Rate} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.litrpc.Rate}
+ */
+proto.litrpc.Rate.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setIterations(value);
+      break;
+    case 2:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setNumHours(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.litrpc.Rate.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.litrpc.Rate.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.litrpc.Rate} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.litrpc.Rate.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getIterations();
+  if (f !== 0) {
+    writer.writeUint32(
+      1,
+      f
+    );
+  }
+  f = message.getNumHours();
+  if (f !== 0) {
+    writer.writeUint32(
+      2,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional uint32 iterations = 1;
+ * @return {number}
+ */
+proto.litrpc.Rate.prototype.getIterations = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
+};
+
+
+/** @param {number} value */
+proto.litrpc.Rate.prototype.setIterations = function(value) {
+  jspb.Message.setProto3IntField(this, 1, value);
+};
+
+
+/**
+ * optional uint32 num_hours = 2;
+ * @return {number}
+ */
+proto.litrpc.Rate.prototype.getNumHours = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
+};
+
+
+/** @param {number} value */
+proto.litrpc.Rate.prototype.setNumHours = function(value) {
+  jspb.Message.setProto3IntField(this, 2, value);
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.litrpc.HistoryLimit = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.litrpc.HistoryLimit, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.litrpc.HistoryLimit.displayName = 'proto.litrpc.HistoryLimit';
+}
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.litrpc.HistoryLimit.prototype.toObject = function(opt_includeInstance) {
+  return proto.litrpc.HistoryLimit.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.litrpc.HistoryLimit} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.litrpc.HistoryLimit.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    startTime: jspb.Message.getFieldWithDefault(msg, 1, "0"),
+    duration: jspb.Message.getFieldWithDefault(msg, 2, "0")
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.litrpc.HistoryLimit}
+ */
+proto.litrpc.HistoryLimit.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.litrpc.HistoryLimit;
+  return proto.litrpc.HistoryLimit.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.litrpc.HistoryLimit} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.litrpc.HistoryLimit}
+ */
+proto.litrpc.HistoryLimit.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = /** @type {string} */ (reader.readUint64String());
+      msg.setStartTime(value);
+      break;
+    case 2:
+      var value = /** @type {string} */ (reader.readUint64String());
+      msg.setDuration(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.litrpc.HistoryLimit.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.litrpc.HistoryLimit.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.litrpc.HistoryLimit} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.litrpc.HistoryLimit.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getStartTime();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
+      1,
+      f
+    );
+  }
+  f = message.getDuration();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
+      2,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional uint64 start_time = 1;
+ * @return {string}
+ */
+proto.litrpc.HistoryLimit.prototype.getStartTime = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, "0"));
+};
+
+
+/** @param {string} value */
+proto.litrpc.HistoryLimit.prototype.setStartTime = function(value) {
+  jspb.Message.setProto3StringIntField(this, 1, value);
+};
+
+
+/**
+ * optional uint64 duration = 2;
+ * @return {string}
+ */
+proto.litrpc.HistoryLimit.prototype.getDuration = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, "0"));
+};
+
+
+/** @param {string} value */
+proto.litrpc.HistoryLimit.prototype.setDuration = function(value) {
+  jspb.Message.setProto3StringIntField(this, 2, value);
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.litrpc.ChannelPolicyBounds = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.litrpc.ChannelPolicyBounds, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.litrpc.ChannelPolicyBounds.displayName = 'proto.litrpc.ChannelPolicyBounds';
+}
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.litrpc.ChannelPolicyBounds.prototype.toObject = function(opt_includeInstance) {
+  return proto.litrpc.ChannelPolicyBounds.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.litrpc.ChannelPolicyBounds} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.litrpc.ChannelPolicyBounds.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    minBaseMsat: jspb.Message.getFieldWithDefault(msg, 1, "0"),
+    maxBaseMsat: jspb.Message.getFieldWithDefault(msg, 2, "0"),
+    minRatePpm: jspb.Message.getFieldWithDefault(msg, 3, 0),
+    maxRatePpm: jspb.Message.getFieldWithDefault(msg, 4, 0),
+    minCltvDelta: jspb.Message.getFieldWithDefault(msg, 5, 0),
+    maxCltvDelta: jspb.Message.getFieldWithDefault(msg, 6, 0),
+    minHtlcMsat: jspb.Message.getFieldWithDefault(msg, 7, "0"),
+    maxHtlcMsat: jspb.Message.getFieldWithDefault(msg, 8, "0")
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.litrpc.ChannelPolicyBounds}
+ */
+proto.litrpc.ChannelPolicyBounds.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.litrpc.ChannelPolicyBounds;
+  return proto.litrpc.ChannelPolicyBounds.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.litrpc.ChannelPolicyBounds} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.litrpc.ChannelPolicyBounds}
+ */
+proto.litrpc.ChannelPolicyBounds.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = /** @type {string} */ (reader.readUint64String());
+      msg.setMinBaseMsat(value);
+      break;
+    case 2:
+      var value = /** @type {string} */ (reader.readUint64String());
+      msg.setMaxBaseMsat(value);
+      break;
+    case 3:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setMinRatePpm(value);
+      break;
+    case 4:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setMaxRatePpm(value);
+      break;
+    case 5:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setMinCltvDelta(value);
+      break;
+    case 6:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setMaxCltvDelta(value);
+      break;
+    case 7:
+      var value = /** @type {string} */ (reader.readUint64String());
+      msg.setMinHtlcMsat(value);
+      break;
+    case 8:
+      var value = /** @type {string} */ (reader.readUint64String());
+      msg.setMaxHtlcMsat(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.litrpc.ChannelPolicyBounds.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.litrpc.ChannelPolicyBounds.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.litrpc.ChannelPolicyBounds} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.litrpc.ChannelPolicyBounds.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getMinBaseMsat();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
+      1,
+      f
+    );
+  }
+  f = message.getMaxBaseMsat();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
+      2,
+      f
+    );
+  }
+  f = message.getMinRatePpm();
+  if (f !== 0) {
+    writer.writeUint32(
+      3,
+      f
+    );
+  }
+  f = message.getMaxRatePpm();
+  if (f !== 0) {
+    writer.writeUint32(
+      4,
+      f
+    );
+  }
+  f = message.getMinCltvDelta();
+  if (f !== 0) {
+    writer.writeUint32(
+      5,
+      f
+    );
+  }
+  f = message.getMaxCltvDelta();
+  if (f !== 0) {
+    writer.writeUint32(
+      6,
+      f
+    );
+  }
+  f = message.getMinHtlcMsat();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
+      7,
+      f
+    );
+  }
+  f = message.getMaxHtlcMsat();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
+      8,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional uint64 min_base_msat = 1;
+ * @return {string}
+ */
+proto.litrpc.ChannelPolicyBounds.prototype.getMinBaseMsat = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, "0"));
+};
+
+
+/** @param {string} value */
+proto.litrpc.ChannelPolicyBounds.prototype.setMinBaseMsat = function(value) {
+  jspb.Message.setProto3StringIntField(this, 1, value);
+};
+
+
+/**
+ * optional uint64 max_base_msat = 2;
+ * @return {string}
+ */
+proto.litrpc.ChannelPolicyBounds.prototype.getMaxBaseMsat = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, "0"));
+};
+
+
+/** @param {string} value */
+proto.litrpc.ChannelPolicyBounds.prototype.setMaxBaseMsat = function(value) {
+  jspb.Message.setProto3StringIntField(this, 2, value);
+};
+
+
+/**
+ * optional uint32 min_rate_ppm = 3;
+ * @return {number}
+ */
+proto.litrpc.ChannelPolicyBounds.prototype.getMinRatePpm = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 3, 0));
+};
+
+
+/** @param {number} value */
+proto.litrpc.ChannelPolicyBounds.prototype.setMinRatePpm = function(value) {
+  jspb.Message.setProto3IntField(this, 3, value);
+};
+
+
+/**
+ * optional uint32 max_rate_ppm = 4;
+ * @return {number}
+ */
+proto.litrpc.ChannelPolicyBounds.prototype.getMaxRatePpm = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 4, 0));
+};
+
+
+/** @param {number} value */
+proto.litrpc.ChannelPolicyBounds.prototype.setMaxRatePpm = function(value) {
+  jspb.Message.setProto3IntField(this, 4, value);
+};
+
+
+/**
+ * optional uint32 min_cltv_delta = 5;
+ * @return {number}
+ */
+proto.litrpc.ChannelPolicyBounds.prototype.getMinCltvDelta = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 5, 0));
+};
+
+
+/** @param {number} value */
+proto.litrpc.ChannelPolicyBounds.prototype.setMinCltvDelta = function(value) {
+  jspb.Message.setProto3IntField(this, 5, value);
+};
+
+
+/**
+ * optional uint32 max_cltv_delta = 6;
+ * @return {number}
+ */
+proto.litrpc.ChannelPolicyBounds.prototype.getMaxCltvDelta = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 6, 0));
+};
+
+
+/** @param {number} value */
+proto.litrpc.ChannelPolicyBounds.prototype.setMaxCltvDelta = function(value) {
+  jspb.Message.setProto3IntField(this, 6, value);
+};
+
+
+/**
+ * optional uint64 min_htlc_msat = 7;
+ * @return {string}
+ */
+proto.litrpc.ChannelPolicyBounds.prototype.getMinHtlcMsat = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 7, "0"));
+};
+
+
+/** @param {string} value */
+proto.litrpc.ChannelPolicyBounds.prototype.setMinHtlcMsat = function(value) {
+  jspb.Message.setProto3StringIntField(this, 7, value);
+};
+
+
+/**
+ * optional uint64 max_htlc_msat = 8;
+ * @return {string}
+ */
+proto.litrpc.ChannelPolicyBounds.prototype.getMaxHtlcMsat = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 8, "0"));
+};
+
+
+/** @param {string} value */
+proto.litrpc.ChannelPolicyBounds.prototype.setMaxHtlcMsat = function(value) {
+  jspb.Message.setProto3StringIntField(this, 8, value);
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.litrpc.OffChainBudget = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.litrpc.OffChainBudget, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.litrpc.OffChainBudget.displayName = 'proto.litrpc.OffChainBudget';
+}
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.litrpc.OffChainBudget.prototype.toObject = function(opt_includeInstance) {
+  return proto.litrpc.OffChainBudget.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.litrpc.OffChainBudget} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.litrpc.OffChainBudget.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    maxAmtMsat: jspb.Message.getFieldWithDefault(msg, 1, "0"),
+    maxFeesMsat: jspb.Message.getFieldWithDefault(msg, 2, "0")
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.litrpc.OffChainBudget}
+ */
+proto.litrpc.OffChainBudget.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.litrpc.OffChainBudget;
+  return proto.litrpc.OffChainBudget.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.litrpc.OffChainBudget} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.litrpc.OffChainBudget}
+ */
+proto.litrpc.OffChainBudget.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = /** @type {string} */ (reader.readUint64String());
+      msg.setMaxAmtMsat(value);
+      break;
+    case 2:
+      var value = /** @type {string} */ (reader.readUint64String());
+      msg.setMaxFeesMsat(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.litrpc.OffChainBudget.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.litrpc.OffChainBudget.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.litrpc.OffChainBudget} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.litrpc.OffChainBudget.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getMaxAmtMsat();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
+      1,
+      f
+    );
+  }
+  f = message.getMaxFeesMsat();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
+      2,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional uint64 max_amt_msat = 1;
+ * @return {string}
+ */
+proto.litrpc.OffChainBudget.prototype.getMaxAmtMsat = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, "0"));
+};
+
+
+/** @param {string} value */
+proto.litrpc.OffChainBudget.prototype.setMaxAmtMsat = function(value) {
+  jspb.Message.setProto3StringIntField(this, 1, value);
+};
+
+
+/**
+ * optional uint64 max_fees_msat = 2;
+ * @return {string}
+ */
+proto.litrpc.OffChainBudget.prototype.getMaxFeesMsat = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, "0"));
+};
+
+
+/** @param {string} value */
+proto.litrpc.OffChainBudget.prototype.setMaxFeesMsat = function(value) {
+  jspb.Message.setProto3StringIntField(this, 2, value);
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.litrpc.OnChainBudget = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.litrpc.OnChainBudget, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.litrpc.OnChainBudget.displayName = 'proto.litrpc.OnChainBudget';
+}
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.litrpc.OnChainBudget.prototype.toObject = function(opt_includeInstance) {
+  return proto.litrpc.OnChainBudget.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.litrpc.OnChainBudget} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.litrpc.OnChainBudget.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    absoluteAmtSats: jspb.Message.getFieldWithDefault(msg, 1, "0"),
+    maxSatPerVByte: jspb.Message.getFieldWithDefault(msg, 2, "0")
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.litrpc.OnChainBudget}
+ */
+proto.litrpc.OnChainBudget.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.litrpc.OnChainBudget;
+  return proto.litrpc.OnChainBudget.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.litrpc.OnChainBudget} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.litrpc.OnChainBudget}
+ */
+proto.litrpc.OnChainBudget.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = /** @type {string} */ (reader.readUint64String());
+      msg.setAbsoluteAmtSats(value);
+      break;
+    case 2:
+      var value = /** @type {string} */ (reader.readUint64String());
+      msg.setMaxSatPerVByte(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.litrpc.OnChainBudget.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.litrpc.OnChainBudget.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.litrpc.OnChainBudget} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.litrpc.OnChainBudget.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getAbsoluteAmtSats();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
+      1,
+      f
+    );
+  }
+  f = message.getMaxSatPerVByte();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
+      2,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional uint64 absolute_amt_sats = 1;
+ * @return {string}
+ */
+proto.litrpc.OnChainBudget.prototype.getAbsoluteAmtSats = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, "0"));
+};
+
+
+/** @param {string} value */
+proto.litrpc.OnChainBudget.prototype.setAbsoluteAmtSats = function(value) {
+  jspb.Message.setProto3StringIntField(this, 1, value);
+};
+
+
+/**
+ * optional uint64 max_sat_per_v_byte = 2;
+ * @return {string}
+ */
+proto.litrpc.OnChainBudget.prototype.getMaxSatPerVByte = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, "0"));
+};
+
+
+/** @param {string} value */
+proto.litrpc.OnChainBudget.prototype.setMaxSatPerVByte = function(value) {
+  jspb.Message.setProto3StringIntField(this, 2, value);
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.litrpc.SendToSelf = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.litrpc.SendToSelf, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.litrpc.SendToSelf.displayName = 'proto.litrpc.SendToSelf';
+}
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.litrpc.SendToSelf.prototype.toObject = function(opt_includeInstance) {
+  return proto.litrpc.SendToSelf.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.litrpc.SendToSelf} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.litrpc.SendToSelf.toObject = function(includeInstance, msg) {
+  var f, obj = {
+
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.litrpc.SendToSelf}
+ */
+proto.litrpc.SendToSelf.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.litrpc.SendToSelf;
+  return proto.litrpc.SendToSelf.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.litrpc.SendToSelf} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.litrpc.SendToSelf}
+ */
+proto.litrpc.SendToSelf.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.litrpc.SendToSelf.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.litrpc.SendToSelf.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.litrpc.SendToSelf} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.litrpc.SendToSelf.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.litrpc.ChannelRestrict = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.litrpc.ChannelRestrict.repeatedFields_, null);
+};
+goog.inherits(proto.litrpc.ChannelRestrict, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.litrpc.ChannelRestrict.displayName = 'proto.litrpc.ChannelRestrict';
+}
+/**
+ * List of repeated fields within this message type.
+ * @private {!Array<number>}
+ * @const
+ */
+proto.litrpc.ChannelRestrict.repeatedFields_ = [1];
+
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.litrpc.ChannelRestrict.prototype.toObject = function(opt_includeInstance) {
+  return proto.litrpc.ChannelRestrict.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.litrpc.ChannelRestrict} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.litrpc.ChannelRestrict.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    channelIdsList: jspb.Message.getRepeatedField(msg, 1)
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.litrpc.ChannelRestrict}
+ */
+proto.litrpc.ChannelRestrict.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.litrpc.ChannelRestrict;
+  return proto.litrpc.ChannelRestrict.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.litrpc.ChannelRestrict} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.litrpc.ChannelRestrict}
+ */
+proto.litrpc.ChannelRestrict.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = /** @type {!Array<string>} */ (reader.readPackedUint64String());
+      msg.setChannelIdsList(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.litrpc.ChannelRestrict.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.litrpc.ChannelRestrict.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.litrpc.ChannelRestrict} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.litrpc.ChannelRestrict.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getChannelIdsList();
+  if (f.length > 0) {
+    writer.writePackedUint64String(
+      1,
+      f
+    );
+  }
+};
+
+
+/**
+ * repeated uint64 channel_ids = 1;
+ * @return {!Array<string>}
+ */
+proto.litrpc.ChannelRestrict.prototype.getChannelIdsList = function() {
+  return /** @type {!Array<string>} */ (jspb.Message.getRepeatedField(this, 1));
+};
+
+
+/** @param {!Array<string>} value */
+proto.litrpc.ChannelRestrict.prototype.setChannelIdsList = function(value) {
+  jspb.Message.setField(this, 1, value || []);
+};
+
+
+/**
+ * @param {!string} value
+ * @param {number=} opt_index
+ */
+proto.litrpc.ChannelRestrict.prototype.addChannelIds = function(value, opt_index) {
+  jspb.Message.addToRepeatedField(this, 1, value, opt_index);
+};
+
+
+proto.litrpc.ChannelRestrict.prototype.clearChannelIdsList = function() {
+  this.setChannelIdsList([]);
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.litrpc.PeerRestrict = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.litrpc.PeerRestrict.repeatedFields_, null);
+};
+goog.inherits(proto.litrpc.PeerRestrict, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.litrpc.PeerRestrict.displayName = 'proto.litrpc.PeerRestrict';
+}
+/**
+ * List of repeated fields within this message type.
+ * @private {!Array<number>}
+ * @const
+ */
+proto.litrpc.PeerRestrict.repeatedFields_ = [1];
+
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.litrpc.PeerRestrict.prototype.toObject = function(opt_includeInstance) {
+  return proto.litrpc.PeerRestrict.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.litrpc.PeerRestrict} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.litrpc.PeerRestrict.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    peerIdsList: jspb.Message.getRepeatedField(msg, 1)
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.litrpc.PeerRestrict}
+ */
+proto.litrpc.PeerRestrict.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.litrpc.PeerRestrict;
+  return proto.litrpc.PeerRestrict.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.litrpc.PeerRestrict} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.litrpc.PeerRestrict}
+ */
+proto.litrpc.PeerRestrict.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = /** @type {string} */ (reader.readString());
+      msg.addPeerIds(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.litrpc.PeerRestrict.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.litrpc.PeerRestrict.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.litrpc.PeerRestrict} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.litrpc.PeerRestrict.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getPeerIdsList();
+  if (f.length > 0) {
+    writer.writeRepeatedString(
+      1,
+      f
+    );
+  }
+};
+
+
+/**
+ * repeated string peer_ids = 1;
+ * @return {!Array<string>}
+ */
+proto.litrpc.PeerRestrict.prototype.getPeerIdsList = function() {
+  return /** @type {!Array<string>} */ (jspb.Message.getRepeatedField(this, 1));
+};
+
+
+/** @param {!Array<string>} value */
+proto.litrpc.PeerRestrict.prototype.setPeerIdsList = function(value) {
+  jspb.Message.setField(this, 1, value || []);
+};
+
+
+/**
+ * @param {!string} value
+ * @param {number=} opt_index
+ */
+proto.litrpc.PeerRestrict.prototype.addPeerIds = function(value, opt_index) {
+  jspb.Message.addToRepeatedField(this, 1, value, opt_index);
+};
+
+
+proto.litrpc.PeerRestrict.prototype.clearPeerIdsList = function() {
+  this.setPeerIdsList([]);
+};
+
+
 /**
  * @enum {number}
  */
@@ -2025,6 +4411,7 @@ proto.litrpc.SessionType = {
   TYPE_MACAROON_ADMIN: 1,
   TYPE_MACAROON_CUSTOM: 2,
   TYPE_UI_PASSWORD: 3,
+  TYPE_AUTOPILOT: 4,
   TYPE_MACAROON_ACCOUNT: 5
 };
 

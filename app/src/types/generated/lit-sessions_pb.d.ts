@@ -96,6 +96,11 @@ export namespace AddSessionResponse {
 }
 
 export class Session extends jspb.Message {
+  getId(): Uint8Array | string;
+  getId_asU8(): Uint8Array;
+  getId_asB64(): string;
+  setId(value: Uint8Array | string): void;
+
   getLabel(): string;
   setLabel(value: string): void;
 
@@ -143,6 +148,8 @@ export class Session extends jspb.Message {
   getAccountId(): string;
   setAccountId(value: string): void;
 
+  getAutopilotFeatureInfoMap(): jspb.Map<string, RulesMap>;
+  clearAutopilotFeatureInfoMap(): void;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Session.AsObject;
   static toObject(includeInstance: boolean, msg: Session): Session.AsObject;
@@ -155,6 +162,7 @@ export class Session extends jspb.Message {
 
 export namespace Session {
   export type AsObject = {
+    id: Uint8Array | string,
     label: string,
     sessionState: SessionStateMap[keyof SessionStateMap],
     sessionType: SessionTypeMap[keyof SessionTypeMap],
@@ -168,6 +176,7 @@ export namespace Session {
     createdAt: string,
     macaroonRecipe?: MacaroonRecipe.AsObject,
     accountId: string,
+    autopilotFeatureInfoMap: Array<[string, RulesMap.AsObject]>,
   }
 }
 
@@ -275,11 +284,340 @@ export namespace RevokeSessionResponse {
   }
 }
 
+export class RulesMap extends jspb.Message {
+  getRulesMap(): jspb.Map<string, RuleValue>;
+  clearRulesMap(): void;
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): RulesMap.AsObject;
+  static toObject(includeInstance: boolean, msg: RulesMap): RulesMap.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: RulesMap, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): RulesMap;
+  static deserializeBinaryFromReader(message: RulesMap, reader: jspb.BinaryReader): RulesMap;
+}
+
+export namespace RulesMap {
+  export type AsObject = {
+    rulesMap: Array<[string, RuleValue.AsObject]>,
+  }
+}
+
+export class RuleValue extends jspb.Message {
+  hasRateLimit(): boolean;
+  clearRateLimit(): void;
+  getRateLimit(): RateLimit | undefined;
+  setRateLimit(value?: RateLimit): void;
+
+  hasChanPolicyBounds(): boolean;
+  clearChanPolicyBounds(): void;
+  getChanPolicyBounds(): ChannelPolicyBounds | undefined;
+  setChanPolicyBounds(value?: ChannelPolicyBounds): void;
+
+  hasHistoryLimit(): boolean;
+  clearHistoryLimit(): void;
+  getHistoryLimit(): HistoryLimit | undefined;
+  setHistoryLimit(value?: HistoryLimit): void;
+
+  hasOffChainBudget(): boolean;
+  clearOffChainBudget(): void;
+  getOffChainBudget(): OffChainBudget | undefined;
+  setOffChainBudget(value?: OffChainBudget): void;
+
+  hasOnChainBudget(): boolean;
+  clearOnChainBudget(): void;
+  getOnChainBudget(): OnChainBudget | undefined;
+  setOnChainBudget(value?: OnChainBudget): void;
+
+  hasSendToSelf(): boolean;
+  clearSendToSelf(): void;
+  getSendToSelf(): SendToSelf | undefined;
+  setSendToSelf(value?: SendToSelf): void;
+
+  hasChannelRestrict(): boolean;
+  clearChannelRestrict(): void;
+  getChannelRestrict(): ChannelRestrict | undefined;
+  setChannelRestrict(value?: ChannelRestrict): void;
+
+  hasPeerRestrict(): boolean;
+  clearPeerRestrict(): void;
+  getPeerRestrict(): PeerRestrict | undefined;
+  setPeerRestrict(value?: PeerRestrict): void;
+
+  getValueCase(): RuleValue.ValueCase;
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): RuleValue.AsObject;
+  static toObject(includeInstance: boolean, msg: RuleValue): RuleValue.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: RuleValue, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): RuleValue;
+  static deserializeBinaryFromReader(message: RuleValue, reader: jspb.BinaryReader): RuleValue;
+}
+
+export namespace RuleValue {
+  export type AsObject = {
+    rateLimit?: RateLimit.AsObject,
+    chanPolicyBounds?: ChannelPolicyBounds.AsObject,
+    historyLimit?: HistoryLimit.AsObject,
+    offChainBudget?: OffChainBudget.AsObject,
+    onChainBudget?: OnChainBudget.AsObject,
+    sendToSelf?: SendToSelf.AsObject,
+    channelRestrict?: ChannelRestrict.AsObject,
+    peerRestrict?: PeerRestrict.AsObject,
+  }
+
+  export enum ValueCase {
+    VALUE_NOT_SET = 0,
+    RATE_LIMIT = 1,
+    CHAN_POLICY_BOUNDS = 2,
+    HISTORY_LIMIT = 3,
+    OFF_CHAIN_BUDGET = 4,
+    ON_CHAIN_BUDGET = 5,
+    SEND_TO_SELF = 6,
+    CHANNEL_RESTRICT = 7,
+    PEER_RESTRICT = 8,
+  }
+}
+
+export class RateLimit extends jspb.Message {
+  hasReadLimit(): boolean;
+  clearReadLimit(): void;
+  getReadLimit(): Rate | undefined;
+  setReadLimit(value?: Rate): void;
+
+  hasWriteLimit(): boolean;
+  clearWriteLimit(): void;
+  getWriteLimit(): Rate | undefined;
+  setWriteLimit(value?: Rate): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): RateLimit.AsObject;
+  static toObject(includeInstance: boolean, msg: RateLimit): RateLimit.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: RateLimit, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): RateLimit;
+  static deserializeBinaryFromReader(message: RateLimit, reader: jspb.BinaryReader): RateLimit;
+}
+
+export namespace RateLimit {
+  export type AsObject = {
+    readLimit?: Rate.AsObject,
+    writeLimit?: Rate.AsObject,
+  }
+}
+
+export class Rate extends jspb.Message {
+  getIterations(): number;
+  setIterations(value: number): void;
+
+  getNumHours(): number;
+  setNumHours(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): Rate.AsObject;
+  static toObject(includeInstance: boolean, msg: Rate): Rate.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: Rate, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): Rate;
+  static deserializeBinaryFromReader(message: Rate, reader: jspb.BinaryReader): Rate;
+}
+
+export namespace Rate {
+  export type AsObject = {
+    iterations: number,
+    numHours: number,
+  }
+}
+
+export class HistoryLimit extends jspb.Message {
+  getStartTime(): string;
+  setStartTime(value: string): void;
+
+  getDuration(): string;
+  setDuration(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): HistoryLimit.AsObject;
+  static toObject(includeInstance: boolean, msg: HistoryLimit): HistoryLimit.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: HistoryLimit, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): HistoryLimit;
+  static deserializeBinaryFromReader(message: HistoryLimit, reader: jspb.BinaryReader): HistoryLimit;
+}
+
+export namespace HistoryLimit {
+  export type AsObject = {
+    startTime: string,
+    duration: string,
+  }
+}
+
+export class ChannelPolicyBounds extends jspb.Message {
+  getMinBaseMsat(): string;
+  setMinBaseMsat(value: string): void;
+
+  getMaxBaseMsat(): string;
+  setMaxBaseMsat(value: string): void;
+
+  getMinRatePpm(): number;
+  setMinRatePpm(value: number): void;
+
+  getMaxRatePpm(): number;
+  setMaxRatePpm(value: number): void;
+
+  getMinCltvDelta(): number;
+  setMinCltvDelta(value: number): void;
+
+  getMaxCltvDelta(): number;
+  setMaxCltvDelta(value: number): void;
+
+  getMinHtlcMsat(): string;
+  setMinHtlcMsat(value: string): void;
+
+  getMaxHtlcMsat(): string;
+  setMaxHtlcMsat(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ChannelPolicyBounds.AsObject;
+  static toObject(includeInstance: boolean, msg: ChannelPolicyBounds): ChannelPolicyBounds.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ChannelPolicyBounds, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ChannelPolicyBounds;
+  static deserializeBinaryFromReader(message: ChannelPolicyBounds, reader: jspb.BinaryReader): ChannelPolicyBounds;
+}
+
+export namespace ChannelPolicyBounds {
+  export type AsObject = {
+    minBaseMsat: string,
+    maxBaseMsat: string,
+    minRatePpm: number,
+    maxRatePpm: number,
+    minCltvDelta: number,
+    maxCltvDelta: number,
+    minHtlcMsat: string,
+    maxHtlcMsat: string,
+  }
+}
+
+export class OffChainBudget extends jspb.Message {
+  getMaxAmtMsat(): string;
+  setMaxAmtMsat(value: string): void;
+
+  getMaxFeesMsat(): string;
+  setMaxFeesMsat(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): OffChainBudget.AsObject;
+  static toObject(includeInstance: boolean, msg: OffChainBudget): OffChainBudget.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: OffChainBudget, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): OffChainBudget;
+  static deserializeBinaryFromReader(message: OffChainBudget, reader: jspb.BinaryReader): OffChainBudget;
+}
+
+export namespace OffChainBudget {
+  export type AsObject = {
+    maxAmtMsat: string,
+    maxFeesMsat: string,
+  }
+}
+
+export class OnChainBudget extends jspb.Message {
+  getAbsoluteAmtSats(): string;
+  setAbsoluteAmtSats(value: string): void;
+
+  getMaxSatPerVByte(): string;
+  setMaxSatPerVByte(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): OnChainBudget.AsObject;
+  static toObject(includeInstance: boolean, msg: OnChainBudget): OnChainBudget.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: OnChainBudget, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): OnChainBudget;
+  static deserializeBinaryFromReader(message: OnChainBudget, reader: jspb.BinaryReader): OnChainBudget;
+}
+
+export namespace OnChainBudget {
+  export type AsObject = {
+    absoluteAmtSats: string,
+    maxSatPerVByte: string,
+  }
+}
+
+export class SendToSelf extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): SendToSelf.AsObject;
+  static toObject(includeInstance: boolean, msg: SendToSelf): SendToSelf.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: SendToSelf, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): SendToSelf;
+  static deserializeBinaryFromReader(message: SendToSelf, reader: jspb.BinaryReader): SendToSelf;
+}
+
+export namespace SendToSelf {
+  export type AsObject = {
+  }
+}
+
+export class ChannelRestrict extends jspb.Message {
+  clearChannelIdsList(): void;
+  getChannelIdsList(): Array<string>;
+  setChannelIdsList(value: Array<string>): void;
+  addChannelIds(value: string, index?: number): string;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ChannelRestrict.AsObject;
+  static toObject(includeInstance: boolean, msg: ChannelRestrict): ChannelRestrict.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ChannelRestrict, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ChannelRestrict;
+  static deserializeBinaryFromReader(message: ChannelRestrict, reader: jspb.BinaryReader): ChannelRestrict;
+}
+
+export namespace ChannelRestrict {
+  export type AsObject = {
+    channelIdsList: Array<string>,
+  }
+}
+
+export class PeerRestrict extends jspb.Message {
+  clearPeerIdsList(): void;
+  getPeerIdsList(): Array<string>;
+  setPeerIdsList(value: Array<string>): void;
+  addPeerIds(value: string, index?: number): string;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): PeerRestrict.AsObject;
+  static toObject(includeInstance: boolean, msg: PeerRestrict): PeerRestrict.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: PeerRestrict, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): PeerRestrict;
+  static deserializeBinaryFromReader(message: PeerRestrict, reader: jspb.BinaryReader): PeerRestrict;
+}
+
+export namespace PeerRestrict {
+  export type AsObject = {
+    peerIdsList: Array<string>,
+  }
+}
+
 export interface SessionTypeMap {
   TYPE_MACAROON_READONLY: 0;
   TYPE_MACAROON_ADMIN: 1;
   TYPE_MACAROON_CUSTOM: 2;
   TYPE_UI_PASSWORD: 3;
+  TYPE_AUTOPILOT: 4;
   TYPE_MACAROON_ACCOUNT: 5;
 }
 

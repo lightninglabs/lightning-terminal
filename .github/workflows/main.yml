@@ -114,6 +114,9 @@ jobs:
         working-directory: ./app
         run: yarn
 
+      - name: run check
+        run: make rpc-js-compile && make protos-check
+
       - name: compile rpc for golang
         run: make rpc
 
