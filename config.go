@@ -8,7 +8,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -620,7 +619,7 @@ func validateRemoteModeConfig(cfg *Config) error {
 		r.Lnd.MacaroonPath = filepath.Join(
 			defaultLndCfg.DataDir, defaultLndChainSubDir,
 			defaultLndChain, cfg.Network,
-			path.Base(defaultLndCfg.AdminMacPath),
+			filepath.Base(defaultLndCfg.AdminMacPath),
 		)
 	}
 

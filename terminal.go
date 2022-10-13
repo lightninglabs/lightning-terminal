@@ -11,7 +11,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -216,7 +215,7 @@ func (g *LightningTerminal) Run() error {
 	)
 	g.sessionRpcServer, err = newSessionRPCServer(&sessionRpcServerConfig{
 		basicAuth: g.rpcProxy.basicAuth,
-		dbDir:     path.Join(g.cfg.LitDir, g.cfg.Network),
+		dbDir:     filepath.Join(g.cfg.LitDir, g.cfg.Network),
 		grpcOptions: []grpc.ServerOption{
 			grpc.CustomCodec(grpcProxy.Codec()), // nolint: staticcheck,
 			grpc.ChainStreamInterceptor(
@@ -424,7 +423,7 @@ func (g *LightningTerminal) startSubservers() error {
 		hex.EncodeToString(macData),
 	))
 	clientOptions = append(
-		clientOptions, lndclient.MacFilename(path.Base(macPath)),
+		clientOptions, lndclient.MacFilename(filepath.Base(macPath)),
 	)
 
 	// If we're in integrated mode, we can retrieve the macaroon string
@@ -447,7 +446,7 @@ func (g *LightningTerminal) startSubservers() error {
 		// subservers have the same requirements.
 		var err error
 		g.basicClient, err = lndclient.NewBasicClient(
-			host, tlsPath, path.Dir(macPath), string(network),
+			host, tlsPath, filepath.Dir(macPath), string(network),
 			clientOptions...,
 		)
 		return err
@@ -571,7 +570,7 @@ func (g *LightningTerminal) startSubservers() error {
 
 	g.macaroonService, err = lndclient.NewMacaroonService(
 		&lndclient.MacaroonServiceConfig{
-			DBPath:           path.Join(g.cfg.LitDir, g.cfg.Network),
+			DBPath:           filepath.Join(g.cfg.LitDir, g.cfg.Network),
 			MacaroonLocation: "litd",
 			StatelessInit:    !createDefaultMacaroons,
 			RequiredPerms:    litPermissions,
@@ -1352,8 +1351,8 @@ func (g *LightningTerminal) showStartupInfo() error {
 		// alias. But the wallet might be locked.
 		host, network, tlsPath, macPath, _ := g.cfg.lndConnectParams()
 		basicClient, err := lndclient.NewBasicClient(
-			host, tlsPath, path.Dir(macPath), string(network),
-			lndclient.MacFilename(path.Base(macPath)),
+			host, tlsPath, filepath.Dir(macPath), string(network),
+			lndclient.MacFilename(filepath.Base(macPath)),
 		)
 		if err != nil {
 			return fmt.Errorf("error querying remote node: %v", err)
