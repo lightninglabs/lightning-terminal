@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
-	"path"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -57,8 +57,8 @@ func (s *serverHarness) start() error {
 		return err
 	}
 
-	s.certFile = path.Join(tempDirName, "proxy.cert")
-	keyFile := path.Join(tempDirName, "proxy.key")
+	s.certFile = filepath.Join(tempDirName, "proxy.cert")
+	keyFile := filepath.Join(tempDirName, "proxy.key")
 	creds, err := genCertPair(s.certFile, keyFile)
 	if err != nil {
 		return err
