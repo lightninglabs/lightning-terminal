@@ -78,6 +78,8 @@ func (f *Manager) Start() error {
 					case <-f.quit:
 					case <-ctxc.Done():
 					}
+
+					return
 				}
 			}
 		}(i, errChan)
