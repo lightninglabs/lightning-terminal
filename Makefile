@@ -33,11 +33,11 @@ POOL_COMMIT := $(shell cat go.mod | \
 LINT_COMMIT := v1.18.0
 GOACC_COMMIT := ddc355013f90fea78d83d3a6c71f1d37ac07ecd5
 
-DEPGET := cd /tmp && GO111MODULE=on go get -v
-GOBUILD := GO111MODULE=on go build -v
-GOINSTALL := GO111MODULE=on go install -v
-GOTEST := GO111MODULE=on go test -v
-GOMOD := GO111MODULE=on go mod
+DEPGET := cd /tmp && go get -v
+GOBUILD := go build -v
+GOINSTALL := go install -v
+GOTEST := go test -v
+GOMOD := go mod
 
 GOFILES_NOVENDOR = $(shell find . -type f -name '*.go' -not -path "./vendor/*")
 GOLIST := go list -deps $(PKG)/... | grep '$(PKG)'| grep -v '/vendor/'
@@ -54,6 +54,7 @@ UNIT := $(GOLIST) | $(XARGS) env $(GOTEST)
 UNIT_RACE := $(UNIT) -race
 
 include make/release_flags.mk
+include make/testing_flags.mk
 
 # We only return the part inside the double quote here to avoid escape issues
 # when calling the external release script. The second parameter can be used to
