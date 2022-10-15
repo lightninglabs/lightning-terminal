@@ -22,6 +22,7 @@ import (
 	"github.com/lightninglabs/faraday/frdrpc"
 	"github.com/lightninglabs/faraday/frdrpcserver"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
+	"github.com/lightninglabs/lightning-terminal/queue"
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightninglabs/lndclient"
@@ -197,6 +198,13 @@ func (g *LightningTerminal) Run() error {
 
 	// Show version at startup.
 	log.Infof("LiT version: %s", Version())
+
+	// This concurrent error queue can be used by every component that can
+	// raise runtime errors. Using a queue will prevent us from blocking on
+	// sending errors to it, as long as the queue is running.
+	errQueue := queue.NewConcurrentQueue[error](queue.DefaultQueueSize)
+	errQueue.Start()
+	defer errQueue.Stop()
 
 	// Construct a new PermissionsManager.
 	g.permsMgr, err = NewPermissionsManager()
