@@ -495,7 +495,7 @@ func runUIPasswordCheck(t *testing.T, hostPort, tlsCertPath, uiPassword string,
 		// provide a dummy macaroon but still the UI password must be
 		// correct to pass.
 		ctxm = uiPasswordContext(ctxt, uiPassword, true)
-		resp, err = makeRequest(ctxm, rawConn)
+		_, err = makeRequest(ctxm, rawConn)
 
 		require.Error(t, err)
 		require.Contains(

@@ -13,9 +13,7 @@ import (
 )
 
 var (
-	testRootKey  = []byte("54321")
-	testID       = []byte("dummyId")
-	testLocation = "lnd"
+	testRootKey = []byte("54321")
 
 	perms = []bakery.Op{
 		{

@@ -758,10 +758,12 @@ func buildTLSConfigForHttp2(config *Config) (*tls.Config, error) {
 			log.Infof("Listening for Let's Encrypt challenges on "+
 				"%v", config.LetsEncryptListen)
 
-			err := http.ListenAndServe(
-				config.LetsEncryptListen,
-				manager.HTTPHandler(nil),
-			)
+			srv := &http.Server{
+				Addr:              config.LetsEncryptListen,
+				ReadHeaderTimeout: 3 * time.Second,
+				Handler:           manager.HTTPHandler(nil),
+			}
+			err := srv.ListenAndServe()
 			if err != nil {
 				log.Errorf("Error starting Let's Encrypt "+
 					"HTTP listener on port 80: %v", err)

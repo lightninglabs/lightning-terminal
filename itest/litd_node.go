@@ -728,7 +728,6 @@ func (hn *HarnessNode) waitForState(conn grpc.ClientConnInterface,
 	}()
 
 	select {
-
 	case <-started:
 	case err = <-errChan:
 
@@ -888,7 +887,6 @@ func (hn *HarnessNode) waitTillServerStarted() error {
 			return nil
 		}
 	}
-
 }
 
 // initLightningClient constructs the grpc LightningClient from the given client
@@ -1258,7 +1256,6 @@ func (hn *HarnessNode) lightningNetworkWatcher() {
 
 	for {
 		select {
-
 		// A new graph update has just been received, so we'll examine
 		// the current set of registered clients to see if we can
 		// dispatch any requests.
@@ -1779,7 +1776,6 @@ func (hn *HarnessNode) getChannelPolicies(include bool) policyUpdateMap {
 	policyUpdates := policyUpdateMap{}
 
 	for _, e := range graph.Edges {
-
 		policies := policyUpdates[e.ChanPoint]
 
 		// If the map[op] is nil, we need to initialize the map first.

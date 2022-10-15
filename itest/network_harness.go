@@ -234,6 +234,7 @@ out:
 
 			if aliceResp.ConfirmedBalance == expectedBalance &&
 				bobResp.ConfirmedBalance == expectedBalance {
+
 				break out
 			}
 		case <-balanceTimeout:
@@ -259,7 +260,6 @@ func (n *NetworkHarness) TearDown() error {
 func (n *NetworkHarness) Stop() {
 	close(n.lndErrorChan)
 	close(n.quit)
-
 }
 
 // NewNode initializes a new HarnessNode.
@@ -420,7 +420,6 @@ func (n *NetworkHarness) EnsureConnected(t *testing.T, a, b *HarnessNode) {
 				predErr = err
 				return false
 			}
-
 		}, lntest.DefaultTimeout)
 		if err != nil {
 			return fmt.Errorf("connection not succeeded within 15 "+
@@ -959,6 +958,7 @@ func (n *NetworkHarness) CloseChannel(lnNode *HarnessNode,
 		// not.
 		filterChannel := func(node *HarnessNode,
 			op wire.OutPoint) (*lnrpc.Channel, error) {
+
 			listResp, err := node.ListChannels(ctx, listReq)
 			if err != nil {
 				return nil, err

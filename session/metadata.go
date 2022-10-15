@@ -81,7 +81,6 @@ func syncVersions(db *bbolt.DB) error {
 		"db_version=%v", latestDBVersion, currentVersion)
 
 	switch {
-
 	// If the database reports a higher version that we are aware of, the
 	// user is probably trying to revert to a prior version of lnd. We fail
 	// here to prevent reversions and unintended corruption.
