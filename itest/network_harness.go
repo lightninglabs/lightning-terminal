@@ -22,7 +22,6 @@ import (
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntest"
 	"github.com/lightningnetwork/lnd/lntest/wait"
-	"github.com/lightningnetwork/lnd/lnwire"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/grpclog"
@@ -131,21 +130,12 @@ func (n *NetworkHarness) SetUp(t *testing.T,
 	err := n.server.start()
 	require.NoError(t, err)
 
-	litArgs := []string{
-		fmt.Sprintf("--loop.server.host=%s", mockServerAddr),
-		fmt.Sprintf("--loop.server.tlspath=%s", n.server.certFile),
-		fmt.Sprintf("--pool.auctionserver=%s", mockServerAddr),
-		fmt.Sprintf("--pool.tlspathauctserver=%s", n.server.certFile),
-	}
-
 	// Start the initial seeder nodes within the test network, then connect
 	// their respective RPC clients.
 	eg := errgroup.Group{}
 	eg.Go(func() error {
 		var err error
-		n.Alice, err = n.newNode(
-			t, "Alice", lndArgs, litArgs, false, false, nil, true,
-		)
+		n.Alice, err = n.NewNode(t, "Alice", lndArgs, false, true)
 		if err != nil {
 			t.Logf("Error starting Alice: %v", err)
 		}
@@ -153,9 +143,7 @@ func (n *NetworkHarness) SetUp(t *testing.T,
 	})
 	eg.Go(func() error {
 		var err error
-		n.Bob, err = n.newNode(
-			t, "Bob", lndArgs, litArgs, false, true, nil, true,
-		)
+		n.Bob, err = n.NewNode(t, "Bob", lndArgs, true, true)
 		if err != nil {
 			t.Logf("Error starting Bob: %v", err)
 		}
@@ -272,6 +260,22 @@ func (n *NetworkHarness) Stop() {
 	close(n.lndErrorChan)
 	close(n.quit)
 
+}
+
+// NewNode initializes a new HarnessNode.
+func (n *NetworkHarness) NewNode(t *testing.T, name string, extraArgs []string,
+	remoteMode bool, wait bool) (*HarnessNode, error) {
+
+	litArgs := []string{
+		fmt.Sprintf("--loop.server.host=%s", n.server.serverHost),
+		fmt.Sprintf("--loop.server.tlspath=%s", n.server.certFile),
+		fmt.Sprintf("--pool.auctionserver=%s", n.server.serverHost),
+		fmt.Sprintf("--pool.tlspathauctserver=%s", n.server.certFile),
+	}
+
+	return n.newNode(
+		t, name, extraArgs, litArgs, false, remoteMode, nil, wait,
+	)
 }
 
 // newNode initializes a new HarnessNode, supporting the ability to initialize a
@@ -728,53 +732,16 @@ func (n *NetworkHarness) waitForTxInMempool(ctx context.Context,
 	}
 }
 
-// OpenChannelParams houses the params to specify when opening a new channel.
-type OpenChannelParams struct {
-	// Amt is the local amount being put into the channel.
-	Amt btcutil.Amount
-
-	// PushAmt is the amount that should be pushed to the remote when the
-	// channel is opened.
-	PushAmt btcutil.Amount
-
-	// Private is a boolan indicating whether the opened channel should be
-	// private.
-	Private bool
-
-	// SpendUnconfirmed is a boolean indicating whether we can utilize
-	// unconfirmed outputs to fund the channel.
-	SpendUnconfirmed bool
-
-	// MinHtlc is the htlc_minimum_msat value set when opening the channel.
-	MinHtlc lnwire.MilliSatoshi
-
-	// RemoteMaxHtlcs is the remote_max_htlcs value set when opening the
-	// channel, restricting the number of concurrent HTLCs the remote party
-	// can add to a commitment.
-	RemoteMaxHtlcs uint16
-
-	// FundingShim is an optional funding shim that the caller can specify
-	// in order to modify the channel funding workflow.
-	FundingShim *lnrpc.FundingShim
-
-	// SatPerVByte is the amount of satoshis to spend in chain fees per virtual
-	// byte of the transaction.
-	SatPerVByte btcutil.Amount
-
-	// CommitmentType is the commitment type that should be used for the
-	// channel to be opened.
-	CommitmentType lnrpc.CommitmentType
-}
-
 // OpenChannel attempts to open a channel between srcNode and destNode with the
 // passed channel funding parameters. If the passed context has a timeout, then
 // if the timeout is reached before the channel pending notification is
 // received, an error is returned. The confirmed boolean determines whether we
 // should fund the channel with confirmed outputs or not.
 func (n *NetworkHarness) OpenChannel(srcNode, destNode *HarnessNode,
-	p OpenChannelParams) (lnrpc.Lightning_OpenChannelClient, error) {
+	p lntest.OpenChannelParams) (lnrpc.Lightning_OpenChannelClient, error) {
 
 	ctxb := context.Background()
+
 	// The cancel is intentionally left out here because the returned
 	// item(open channel client) relies on the context being active. This
 	// will be fixed once we finish refactoring the NetworkHarness.
