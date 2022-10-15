@@ -14,23 +14,23 @@ type Manager struct {
 	lndClient        lndclient.LightningClient
 	interceptors     []RequestInterceptor
 
-	errChan  chan error
-	wg       sync.WaitGroup
-	cancel   context.CancelFunc
-	quit     chan struct{}
-	stopOnce sync.Once
+	mainErrChan chan<- error
+	wg          sync.WaitGroup
+	cancel      context.CancelFunc
+	quit        chan struct{}
+	stopOnce    sync.Once
 }
 
 // NewManager returns a new middleware manager.
 func NewManager(interceptTimeout time.Duration,
-	lndClient lndclient.LightningClient,
+	lndClient lndclient.LightningClient, errChan chan<- error,
 	interceptors ...RequestInterceptor) *Manager {
 
 	return &Manager{
 		interceptTimeout: interceptTimeout,
 		lndClient:        lndClient,
 		interceptors:     interceptors,
-		errChan:          make(chan error),
+		mainErrChan:      errChan,
 		quit:             make(chan struct{}),
 	}
 }
@@ -74,7 +74,7 @@ func (f *Manager) Start() error {
 						err)
 
 					select {
-					case f.errChan <- err:
+					case f.mainErrChan <- err:
 					case <-f.quit:
 					case <-ctxc.Done():
 					}
@@ -86,12 +86,6 @@ func (f *Manager) Start() error {
 	}
 
 	return nil
-}
-
-// Errors returns a channel on which any errors the manager encounters will be
-// delivered.
-func (f *Manager) Errors() chan error {
-	return f.errChan
 }
 
 // Stop shuts down the middleware manager.
