@@ -76,6 +76,7 @@ versioning](#daemon-versions-packaged-with-lit).
 
 | LiT              | LND          |
 |------------------|--------------|
+| **v0.8.2-alpha** | v0.15.1-beta |
 | **v0.8.1-alpha** | v0.15.1-beta |
 | **v0.8.0-alpha** | v0.15.1-beta |
 | **v0.7.1-alpha** | v0.14.3-beta |
@@ -127,6 +128,7 @@ The following table shows the supported combinations:
 
 | LiT              | LND          | Loop         | Faraday      | Pool         |
 |------------------|--------------|--------------|--------------|--------------|
+| **v0.8.2-alpha** | v0.15.3-beta | v0.20.1-beta | v0.2.8-alpha | v0.5.8-alpha |
 | **v0.8.1-alpha** | v0.15.2-beta | v0.20.1-beta | v0.2.8-alpha | v0.5.8-alpha |
 | **v0.8.0-alpha** | v0.15.1-beta | v0.20.1-beta | v0.2.8-alpha | v0.5.8-alpha |
 | **v0.7.1-alpha** | v0.15.0-beta | v0.19.1-beta | v0.2.8-alpha | v0.5.7-alpha |
