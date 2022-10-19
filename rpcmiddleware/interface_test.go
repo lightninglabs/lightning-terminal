@@ -1,6 +1,7 @@
 package rpcmiddleware
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -10,6 +11,8 @@ import (
 )
 
 var (
+	ctxb = context.Background()
+
 	listPeersReq     = &lnrpc.ListPeersRequest{}
 	listPeersReqType = listPeersReq.ProtoReflect().Type()
 
@@ -37,11 +40,11 @@ func TestPassThrough(t *testing.T) {
 	require.True(t, peersChecker.HandlesRequest(listPeersReqType))
 	require.True(t, peersChecker.HandlesResponse(listPeersRespType))
 
-	req, err := peersChecker.HandleRequest(listPeersReq)
+	req, err := peersChecker.HandleRequest(ctxb, listPeersReq)
 	require.NoError(t, err)
 	require.Nil(t, req)
 
-	resp, err := peersChecker.HandleResponse(listPeersResp)
+	resp, err := peersChecker.HandleResponse(ctxb, listPeersResp)
 	require.NoError(t, err)
 	require.Nil(t, resp)
 
@@ -57,11 +60,11 @@ func TestRequestDenier(t *testing.T) {
 	require.True(t, peersChecker.HandlesRequest(listPeersReqType))
 	require.True(t, peersChecker.HandlesResponse(listPeersRespType))
 
-	req, err := peersChecker.HandleRequest(listPeersReq)
+	req, err := peersChecker.HandleRequest(ctxb, listPeersReq)
 	require.ErrorIs(t, err, ErrNotSupported)
 	require.Nil(t, req)
 
-	resp, err := peersChecker.HandleResponse(listPeersResp)
+	resp, err := peersChecker.HandleResponse(ctxb, listPeersResp)
 	require.ErrorIs(t, err, ErrNotSupported)
 	require.Nil(t, resp)
 
@@ -74,7 +77,7 @@ func TestRequestDenier(t *testing.T) {
 func TestRequestChecker(t *testing.T) {
 	peersChecker := NewRequestChecker(
 		listPeersReq, listPeersResp,
-		func(peer *lnrpc.ListPeersRequest) error {
+		func(context.Context, *lnrpc.ListPeersRequest) error {
 			return nil
 		},
 	)
@@ -82,11 +85,11 @@ func TestRequestChecker(t *testing.T) {
 	require.True(t, peersChecker.HandlesRequest(listPeersReqType))
 	require.True(t, peersChecker.HandlesResponse(listPeersRespType))
 
-	req, err := peersChecker.HandleRequest(listPeersReq)
+	req, err := peersChecker.HandleRequest(ctxb, listPeersReq)
 	require.NoError(t, err)
 	require.Nil(t, req)
 
-	resp, err := peersChecker.HandleResponse(listPeersResp)
+	resp, err := peersChecker.HandleResponse(ctxb, listPeersResp)
 	require.NoError(t, err)
 	require.Nil(t, resp)
 
@@ -99,7 +102,9 @@ func TestRequestChecker(t *testing.T) {
 func TestRequestRewriter(t *testing.T) {
 	peersChecker := NewRequestRewriter(
 		listPeersReq, listPeersResp,
-		func(peer *lnrpc.ListPeersRequest) (proto.Message, error) {
+		func(ctx context.Context,
+			peer *lnrpc.ListPeersRequest) (proto.Message, error) {
+
 			return peer, nil
 		},
 	)
@@ -107,11 +112,11 @@ func TestRequestRewriter(t *testing.T) {
 	require.True(t, peersChecker.HandlesRequest(listPeersReqType))
 	require.True(t, peersChecker.HandlesResponse(listPeersRespType))
 
-	req, err := peersChecker.HandleRequest(listPeersReq)
+	req, err := peersChecker.HandleRequest(ctxb, listPeersReq)
 	require.NoError(t, err)
 	require.Equal(t, listPeersReq, req)
 
-	resp, err := peersChecker.HandleResponse(listPeersResp)
+	resp, err := peersChecker.HandleResponse(ctxb, listPeersResp)
 	require.NoError(t, err)
 	require.Nil(t, resp)
 
@@ -124,7 +129,9 @@ func TestRequestRewriter(t *testing.T) {
 func TestResponseRewriter(t *testing.T) {
 	peersChecker := NewResponseRewriter(
 		listPeersReq, listPeersResp,
-		func(peer *lnrpc.ListPeersResponse) (proto.Message, error) {
+		func(ctx context.Context,
+			peer *lnrpc.ListPeersResponse) (proto.Message, error) {
+
 			return peer, nil
 		}, PassThroughErrorHandler,
 	)
@@ -132,11 +139,11 @@ func TestResponseRewriter(t *testing.T) {
 	require.True(t, peersChecker.HandlesRequest(listPeersReqType))
 	require.True(t, peersChecker.HandlesResponse(listPeersRespType))
 
-	req, err := peersChecker.HandleRequest(listPeersReq)
+	req, err := peersChecker.HandleRequest(ctxb, listPeersReq)
 	require.NoError(t, err)
 	require.Nil(t, req)
 
-	resp, err := peersChecker.HandleResponse(listPeersResp)
+	resp, err := peersChecker.HandleResponse(ctxb, listPeersResp)
 	require.NoError(t, err)
 	require.Equal(t, listPeersResp, resp)
 
@@ -150,10 +157,12 @@ func TestFullChecker(t *testing.T) {
 	myErr := fmt.Errorf("some error happened")
 	peersChecker := NewFullChecker(
 		listPeersReq, listPeersResp,
-		func(peer *lnrpc.ListPeersRequest) error {
+		func(ctx context.Context, peer *lnrpc.ListPeersRequest) error {
 			return myErr
 		},
-		func(*lnrpc.ListPeersResponse) (proto.Message, error) {
+		func(context.Context, *lnrpc.ListPeersResponse) (proto.Message,
+			error) {
+
 			return nil, myErr
 		}, PassThroughErrorHandler,
 	)
@@ -161,10 +170,10 @@ func TestFullChecker(t *testing.T) {
 	require.True(t, peersChecker.HandlesRequest(listPeersReqType))
 	require.True(t, peersChecker.HandlesResponse(listPeersRespType))
 
-	_, err := peersChecker.HandleRequest(listPeersReq)
+	_, err := peersChecker.HandleRequest(ctxb, listPeersReq)
 	require.Equal(t, myErr, err)
 
-	resp, err := peersChecker.HandleResponse(listPeersResp)
+	resp, err := peersChecker.HandleResponse(ctxb, listPeersResp)
 	require.Error(t, err)
 	require.Equal(t, myErr, err)
 	require.Nil(t, resp)
@@ -179,10 +188,14 @@ func TestFullRewriter(t *testing.T) {
 	myErr := fmt.Errorf("some error happened")
 	peersChecker := NewFullRewriter(
 		listPeersReq, listPeersResp,
-		func(peer *lnrpc.ListPeersRequest) (proto.Message, error) {
+		func(ctx context.Context,
+			peer *lnrpc.ListPeersRequest) (proto.Message, error) {
+
 			return nil, myErr
 		},
-		func(*lnrpc.ListPeersResponse) (proto.Message, error) {
+		func(context.Context, *lnrpc.ListPeersResponse) (proto.Message,
+			error) {
+
 			return nil, myErr
 		}, PassThroughErrorHandler,
 	)
@@ -190,10 +203,10 @@ func TestFullRewriter(t *testing.T) {
 	require.True(t, peersChecker.HandlesRequest(listPeersReqType))
 	require.True(t, peersChecker.HandlesResponse(listPeersRespType))
 
-	_, err := peersChecker.HandleRequest(listPeersReq)
+	_, err := peersChecker.HandleRequest(ctxb, listPeersReq)
 	require.Equal(t, myErr, err)
 
-	resp, err := peersChecker.HandleResponse(listPeersResp)
+	resp, err := peersChecker.HandleResponse(ctxb, listPeersResp)
 	require.Error(t, err)
 	require.Equal(t, myErr, err)
 	require.Nil(t, resp)
@@ -213,7 +226,7 @@ func TestImplementationPanics(t *testing.T) {
 		},
 	)
 	require.PanicsWithError(
-		t, "request handler must have exactly one parameter and one "+
+		t, "request handler must have exactly two parameter and one "+
 			"return value",
 		func() {
 			_ = NewRequestChecker(
@@ -232,7 +245,7 @@ func TestImplementationPanics(t *testing.T) {
 		},
 	)
 	require.PanicsWithError(
-		t, "message handler must have exactly one parameter and two "+
+		t, "message handler must have exactly two parameter and two "+
 			"return values",
 		func() {
 			_ = NewRequestRewriter(
@@ -252,7 +265,7 @@ func TestImplementationPanics(t *testing.T) {
 		},
 	)
 	require.PanicsWithError(
-		t, "message handler must have exactly one parameter and two "+
+		t, "message handler must have exactly two parameter and two "+
 			"return values",
 		func() {
 			_ = NewResponseRewriter(

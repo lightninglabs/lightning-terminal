@@ -5,14 +5,13 @@ LOOP_PKG := github.com/lightninglabs/loop
 POOL_PKG := github.com/lightninglabs/pool
 BTCD_PKG := github.com/btcsuite/btcd
 
-LINT_PKG := github.com/golangci/golangci-lint/cmd/golangci-lint
-GOVERALLS_PKG := github.com/mattn/goveralls
 GOACC_PKG := github.com/ory/go-acc
+GOIMPORTS_PKG := github.com/rinchsan/gosimports/cmd/gosimports
+TOOLS_DIR := tools
 
 GO_BIN := ${GOPATH}/bin
-GOVERALLS_BIN := $(GO_BIN)/goveralls
-LINT_BIN := $(GO_BIN)/golangci-lint
 GOACC_BIN := $(GO_BIN)/go-acc
+GOIMPORTS_BIN := $(GO_BIN)/gosimports
 
 COMMIT := $(shell git describe --abbrev=40 --dirty --tags)
 COMMIT_HASH := $(shell git rev-parse HEAD)
@@ -30,16 +29,12 @@ POOL_COMMIT := $(shell cat go.mod | \
 		awk -F " " '{ print $$2 }' | \
 		awk -F "/" '{ print $$1 }')
 
-LINT_COMMIT := v1.18.0
-GOACC_COMMIT := ddc355013f90fea78d83d3a6c71f1d37ac07ecd5
+GOBUILD := go build -v
+GOINSTALL := go install -v
+GOTEST := go test -v
+GOMOD := go mod
 
-DEPGET := cd /tmp && GO111MODULE=on go get -v
-GOBUILD := GO111MODULE=on go build -v
-GOINSTALL := GO111MODULE=on go install -v
-GOTEST := GO111MODULE=on go test -v
-GOMOD := GO111MODULE=on go mod
-
-GOFILES_NOVENDOR = $(shell find . -type f -name '*.go' -not -path "./vendor/*")
+GOFILES_NOVENDOR = $(shell find . -type f -name '*.go' -not -path "./vendor/*" -not -name "*pb.go" -not -name "*pb.gw.go" -not -name "*.pb.json.go")
 GOLIST := go list -deps $(PKG)/... | grep '$(PKG)'| grep -v '/vendor/'
 GOLISTCOVER := $(shell go list -deps -f '{{.ImportPath}}' ./... | grep '$(PKG)' | sed -e 's/^$(ESCPKG)/./')
 
@@ -54,6 +49,7 @@ UNIT := $(GOLIST) | $(XARGS) env $(GOTEST)
 UNIT_RACE := $(UNIT) -race
 
 include make/release_flags.mk
+include make/testing_flags.mk
 
 # We only return the part inside the double quote here to avoid escape issues
 # when calling the external release script. The second parameter can be used to
@@ -73,6 +69,14 @@ LDFLAGS := $(call make_ldflags, $(LND_RELEASE_TAGS))
 # and omit the DWARF symbol table (-w). Also we clear the build ID.
 RELEASE_LDFLAGS := $(call make_ldflags, $(LND_RELEASE_TAGS), -s -w -buildid=)
 
+# Linting uses a lot of memory, so keep it under control by limiting the number
+# of workers if requested.
+ifneq ($(workers),)
+LINT_WORKERS = --concurrency=$(workers)
+endif
+
+DOCKER_TOOLS = docker run -v $$(pwd):/build litd-tools
+
 ITEST_TAGS := rpctest itest $(LND_RELEASE_TAGS)
 ITEST_LDFLAGS := $(call make_ldflags, $(ITEST_TAGS))
 
@@ -90,17 +94,13 @@ all: scratch check install
 # DEPENDENCIES
 # ============
 
-$(GOVERALLS_BIN):
-	@$(call print, "Fetching goveralls.")
-	go get -u $(GOVERALLS_PKG)
-
-$(LINT_BIN):
-	@$(call print, "Fetching linter")
-	$(DEPGET) $(LINT_PKG)@$(LINT_COMMIT)
-
 $(GOACC_BIN):
-	@$(call print, "Fetching go-acc")
-	$(DEPGET) $(GOACC_PKG)@$(GOACC_COMMIT)
+	@$(call print, "Installing go-acc.")
+	cd $(TOOLS_DIR); go install -trimpath -tags=tools $(GOACC_PKG)
+
+$(GOIMPORTS_BIN):
+	@$(call print, "Installing goimports.")
+	cd $(TOOLS_DIR); go install -trimpath $(GOIMPORTS_PKG)
 
 yarn-install:
 	@$(call print, "Installing app dependencies with yarn")
@@ -138,6 +138,10 @@ release: app-build
 	@$(call print, "Creating release of lightning-terminal.")
 	./release.sh build-release "$(VERSION_TAG)" "$(BUILD_SYSTEM)" "$(LND_RELEASE_TAGS)" "$(RELEASE_LDFLAGS)"
 
+docker-tools:
+	@$(call print, "Building tools docker image.")
+	docker build -q -t litd-tools $(TOOLS_DIR)
+
 scratch: build
 
 # =======
@@ -159,16 +163,6 @@ unit-race:
 	@$(call print, "Running unit race tests.")
 	mkdir -p app/build && touch app/build/index.html
 	env CGO_ENABLED=1 GORACE="history_size=7 halt_on_errors=1" $(UNIT_RACE) -tags="$(LND_RELEASE_TAGS)"
-
-goveralls: $(GOVERALLS_BIN)
-	@$(call print, "Sending coverage report.")
-	$(GOVERALLS_BIN) -coverprofile=coverage.txt -service=travis-ci
-
-travis-race: lint unit-race
-
-travis-cover: lint unit-cover goveralls
-
-travis-itest: lint
 
 build-itest: app-build
 	@$(call print, "Building itest btcd and litd.")
@@ -196,13 +190,15 @@ flake-unit:
 # =========
 # UTILITIES
 # =========
-fmt:
+fmt: $(GOIMPORTS_BIN)
+	@$(call print, "Fixing imports.")
+	gosimports -w $(GOFILES_NOVENDOR)
 	@$(call print, "Formatting source.")
 	gofmt -l -w -s $(GOFILES_NOVENDOR)
 
-lint: $(LINT_BIN)
+lint: docker-tools
 	@$(call print, "Linting source.")
-	$(LINT)
+	$(DOCKER_TOOLS) golangci-lint run -v $(LINT_WORKERS)
 
 mod:
 	@$(call print, "Tidying modules.")
@@ -230,9 +226,10 @@ protos:
 
 protos-check: protos
 	@$(call print, "Verifying compiled protos.")
-	if test -n "$$(git describe --dirty | grep dirty)"; then echo "Protos not properly formatted or not compiled with v3.4.0"; git status; git diff; exit 1; fi
+	if test -n "$$(git describe --dirty | grep dirty)"; then echo "Protos not properly formatted or not compiled with correct version"; git status; git diff; exit 1; fi
 
 clean:
 	@$(call print, "Cleaning source.$(NC)")
-	$(RM) ./lightning-terminal-debug
+	$(RM) ./litcli-debug
+	$(RM) ./litd-debug
 	$(RM) coverage.txt

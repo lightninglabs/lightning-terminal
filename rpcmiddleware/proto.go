@@ -57,7 +57,7 @@ func RPCErr(req *lnrpc.RPCMiddlewareRequest,
 		return RPCErrString(req, err.Error())
 	}
 
-	return RPCErrString(req, "")
+	return RPCOk(req)
 }
 
 // RPCErrString constructs a middleware response. If an empty format param is

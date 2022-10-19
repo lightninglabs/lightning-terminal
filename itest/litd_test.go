@@ -94,15 +94,8 @@ func TestLightningTerminal(t *testing.T) {
 	// case should naturally as a result and we log the server error here to
 	// help debug.
 	go func() {
-		for {
-			select {
-			case err, more := <-litdHarness.ProcessErrors():
-				if !more {
-					return
-				}
-				ht.Logf("litd finished with error (stderr):\n%v",
-					err)
-			}
+		for err := range litdHarness.ProcessErrors() {
+			ht.Logf("litd finished with error (stderr):\n%v", err)
 		}
 	}()
 

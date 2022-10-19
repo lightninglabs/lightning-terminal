@@ -28,7 +28,7 @@ const (
 
 	// typeMacaroon is no longer used, but we leave it defined for backwards
 	// compatibility.
-	typeMacaroon tlv.Type = 8
+	typeMacaroon tlv.Type = 8 // nolint
 
 	typeMacPerms   tlv.Type = 1
 	typeMacCaveats tlv.Type = 2
@@ -182,7 +182,6 @@ func DeserializeSession(r io.Reader) (*Session, error) {
 // macaroonRecipeEncoder is a custom TLV encoder for a MacaroonRecipe record.
 func macaroonRecipeEncoder(w io.Writer, val interface{}, buf *[8]byte) error {
 	if v, ok := val.(*MacaroonRecipe); ok {
-
 		var recipeTLVBytes bytes.Buffer
 		tlvStream, err := tlv.NewStream(
 			tlv.MakeDynamicRecord(
@@ -225,7 +224,6 @@ func macaroonRecipeDecoder(r io.Reader, val interface{}, buf *[8]byte,
 	l uint64) error {
 
 	if v, ok := val.(*MacaroonRecipe); ok {
-
 		// Using this information, we'll create a new limited
 		// reader that'll return an EOF once the end has been
 		// reached so the stream stops consuming bytes.

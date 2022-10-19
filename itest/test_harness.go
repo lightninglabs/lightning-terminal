@@ -79,7 +79,6 @@ func (h *harnessTest) Fatalf(format string, a ...interface{}) {
 // RunTestCase executes a harness test case. Any errors or panics will be
 // represented as fatal.
 func (h *harnessTest) RunTestCase(testCase *testCase) {
-
 	h.testCase = testCase
 	defer func() {
 		h.testCase = nil
@@ -159,7 +158,7 @@ func waitForNTxsInMempool(miner *rpcclient.Client, n int,
 // give all network participants time to catch up.
 //
 // NOTE: This function currently is just an alias for mineBlocksSlow.
-func mineBlocks(t *harnessTest, net *lntest.NetworkHarness,
+func mineBlocks(t *harnessTest, net *NetworkHarness,
 	num uint32, numTxs int) []*wire.MsgBlock {
 
 	return mineBlocksSlow(t, net, num, numTxs)
@@ -170,7 +169,7 @@ func mineBlocks(t *harnessTest, net *lntest.NetworkHarness,
 // transactions (excluding the coinbase) we expect to be included in the first
 // mined block. Between each mined block an artificial delay is introduced to
 // give all network participants time to catch up.
-func mineBlocksSlow(t *harnessTest, net *lntest.NetworkHarness,
+func mineBlocksSlow(t *harnessTest, net *NetworkHarness,
 	num uint32, numTxs int) []*wire.MsgBlock {
 
 	t.t.Helper()

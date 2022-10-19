@@ -69,11 +69,12 @@ var addSessionCommand = cli.Command{
 }
 
 func addSession(ctx *cli.Context) error {
-	client, cleanup, err := getClient(ctx)
+	clientConn, cleanup, err := connectClient(ctx)
 	if err != nil {
 		return err
 	}
 	defer cleanup()
+	client := litrpc.NewSessionsClient(clientConn)
 
 	label := ctx.String("label")
 	if label == "" {
@@ -192,11 +193,12 @@ var sessionStateMap = map[litrpc.SessionState]sessionFilter{
 
 func listSessions(filter sessionFilter) func(ctx *cli.Context) error {
 	return func(ctx *cli.Context) error {
-		client, cleanup, err := getClient(ctx)
+		clientConn, cleanup, err := connectClient(ctx)
 		if err != nil {
 			return err
 		}
 		defer cleanup()
+		client := litrpc.NewSessionsClient(clientConn)
 
 		ctxb := context.Background()
 		resp, err := client.ListSessions(
@@ -240,11 +242,12 @@ var revokeSessionCommand = cli.Command{
 }
 
 func revokeSession(ctx *cli.Context) error {
-	client, cleanup, err := getClient(ctx)
+	clientConn, cleanup, err := connectClient(ctx)
 	if err != nil {
 		return err
 	}
 	defer cleanup()
+	client := litrpc.NewSessionsClient(clientConn)
 
 	pubkey, err := hex.DecodeString(ctx.String("localpubkey"))
 	if err != nil {

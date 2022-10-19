@@ -18,13 +18,16 @@ var (
 	// errorType is the reflection type of the error interface.
 	errorType = reflect.TypeOf((*error)(nil)).Elem()
 
+	// ctxType is the reflection type of the context.Context interface.
+	ctxType = reflect.TypeOf((*context.Context)(nil)).Elem()
+
 	// protoMessageType is the reflection type of the proto.Message
 	// interface.
 	protoMessageType = reflect.TypeOf((*proto.Message)(nil)).Elem()
 
 	// passThroughMessageHandler is a messageHandler that does not modify
 	// the message and just passes it through.
-	passThroughMessageHandler messageHandler = func(
+	passThroughMessageHandler messageHandler = func(context.Context,
 		proto.Message) (proto.Message, error) {
 
 		return nil, nil
@@ -37,8 +40,8 @@ var (
 	}
 
 	// messageDenyHandler disallows the given message.
-	messageDenyHandler messageHandler = func(req proto.Message) (
-		proto.Message, error) {
+	messageDenyHandler messageHandler = func(context.Context,
+		proto.Message) (proto.Message, error) {
 
 		return nil, ErrNotSupported
 	}
@@ -72,7 +75,7 @@ type RequestInterceptor interface {
 // new message of the same type (=return non-nil message, nil error) or abort
 // the call by returning a non-nil error. If the message is a request, then
 // returning a non-nil error will reject the request.
-type messageHandler func(req proto.Message) (proto.Message, error)
+type messageHandler func(context.Context, proto.Message) (proto.Message, error)
 
 // ErrorHandler is a function type for a generic gRPC error handler. It can
 // pass through the error unchanged (=return nil, nil), replace the error with
@@ -99,14 +102,14 @@ type RoundTripChecker interface {
 	// a new message of the same type (=return non-nil message, nil) or
 	// refuse (=return non-nil error with rejection reason) an incoming
 	// request.
-	HandleRequest(proto.Message) (proto.Message, error)
+	HandleRequest(context.Context, proto.Message) (proto.Message, error)
 
 	// HandleResponse is called for each outgoing gRPC response message of
 	// the type declared to be handled by HandlesResponse. The handler can
 	// pass through the response (=return nil, nil), replace the response
 	// with a new message of the same type (=return non-nil message, nil
 	// error) or abort the call by returning a non-nil error.
-	HandleResponse(proto.Message) (proto.Message, error)
+	HandleResponse(context.Context, proto.Message) (proto.Message, error)
 
 	// HandleErrorResponse is called for any error response.
 	// The handler can pass through the error (=return nil, nil), replace
@@ -142,27 +145,26 @@ func (r *DefaultChecker) HandlesResponse(t protoreflect.MessageType) bool {
 	return t == r.responseType
 }
 
-// HandleRequest is called for each incoming gRPC request message of the
-// type declared to be accepted by HandlesRequest. The handler can
-// accept the request as is (=return nil, nil), replace the request with
-// a new message of the same type (=return non-nil message, nil) or
-// refuse (=return non-nil error with rejection reason) an incoming
-// request.
-func (r *DefaultChecker) HandleRequest(req proto.Message) (proto.Message,
-	error) {
+// HandleRequest is called for each incoming gRPC request message of the type
+// declared to be accepted by HandlesRequest. The handler can accept the request
+// as is (=return nil, nil), replace the request with a new message of the same
+// type (=return non-nil message, nil) or refuse (=return non-nil error with
+// rejection reason) an incoming request.
+func (r *DefaultChecker) HandleRequest(ctx context.Context,
+	req proto.Message) (proto.Message, error) {
 
-	return r.requestHandler(req)
+	return r.requestHandler(ctx, req)
 }
 
-// HandleResponse is called for each outgoing gRPC response message of
-// the type declared to be handled by HandlesResponse. The handler can
-// pass through the response (=return nil, nil), replace the response
-// with a new message of the same type (=return non-nil message, nil
-// error) or abort the call by returning a non-nil error.
-func (r *DefaultChecker) HandleResponse(resp proto.Message) (proto.Message,
-	error) {
+// HandleResponse is called for each outgoing gRPC response message of the type
+// declared to be handled by HandlesResponse. The handler can pass through the
+// response (=return nil, nil), replace the response with a new message of the
+// same type (=return non-nil message, nil error) or abort the call by returning
+// a non-nil error.
+func (r *DefaultChecker) HandleResponse(ctx context.Context,
+	resp proto.Message) (proto.Message, error) {
 
-	return r.responseHandler(resp)
+	return r.responseHandler(ctx, resp)
 }
 
 // HandleErrorResponse is called for any error response.
@@ -310,7 +312,9 @@ func newReflectionRequestCheckHandler(requestSample proto.Message,
 		panic(err)
 	}
 
-	return func(req proto.Message) (proto.Message, error) {
+	return func(ctx context.Context, req proto.Message) (proto.Message,
+		error) {
+
 		if req.ProtoReflect().Type() != requestProtoType {
 			return nil, fmt.Errorf("request handler called for "+
 				"unsupported type %v (expected %v)",
@@ -320,6 +324,7 @@ func newReflectionRequestCheckHandler(requestSample proto.Message,
 		// We made sure this call would succeed when creating the
 		// handler.
 		resp := handlerValue.Call([]reflect.Value{
+			reflect.ValueOf(ctx),
 			reflect.ValueOf(req),
 		})
 
@@ -352,7 +357,9 @@ func newReflectionMessageHandler(messageSample proto.Message,
 		panic(err)
 	}
 
-	return func(req proto.Message) (proto.Message, error) {
+	return func(ctx context.Context, req proto.Message) (proto.Message,
+		error) {
+
 		if req.ProtoReflect().Type() != messageProtoType {
 			return nil, fmt.Errorf("message handler called for "+
 				"unsupported type %v (expected %v)",
@@ -362,6 +369,7 @@ func newReflectionMessageHandler(messageSample proto.Message,
 		// We made sure this call would succeed when creating the
 		// handler.
 		resp := handlerValue.Call([]reflect.Value{
+			reflect.ValueOf(ctx),
 			reflect.ValueOf(req),
 		})
 
@@ -390,12 +398,16 @@ func validateRequestCheckHandler(typedHandlerType reflect.Type,
 	if typedHandlerType.Kind() != reflect.Func {
 		return fmt.Errorf("request handler must be a function")
 	}
-	if typedHandlerType.NumIn() != 1 || typedHandlerType.NumOut() != 1 {
-		return fmt.Errorf("request handler must have exactly one " +
+	if typedHandlerType.NumIn() != 2 || typedHandlerType.NumOut() != 1 {
+		return fmt.Errorf("request handler must have exactly two " +
 			"parameter and one return value")
 	}
-	if !typedHandlerType.In(0).ConvertibleTo(requestType) {
-		return fmt.Errorf("request handler must have one parameter " +
+	if !typedHandlerType.In(0).ConvertibleTo(ctxType) {
+		return fmt.Errorf("request handler must have first parameter " +
+			"with a sub type of context.Context")
+	}
+	if !typedHandlerType.In(1).ConvertibleTo(requestType) {
+		return fmt.Errorf("request handler must have second parameter " +
 			"with a sub type of proto.Message")
 	}
 	if typedHandlerType.Out(0) != errorType {
@@ -414,12 +426,16 @@ func validateMessageHandler(typedHandlerType reflect.Type,
 	if typedHandlerType.Kind() != reflect.Func {
 		return fmt.Errorf("message handler must be a function")
 	}
-	if typedHandlerType.NumIn() != 1 || typedHandlerType.NumOut() != 2 {
-		return fmt.Errorf("message handler must have exactly one " +
+	if typedHandlerType.NumIn() != 2 || typedHandlerType.NumOut() != 2 {
+		return fmt.Errorf("message handler must have exactly two " +
 			"parameter and two return values")
 	}
-	if !typedHandlerType.In(0).ConvertibleTo(messageType) {
-		return fmt.Errorf("message handler must have one parameter " +
+	if !typedHandlerType.In(0).ConvertibleTo(ctxType) {
+		return fmt.Errorf("request handler must have first parameter " +
+			"with a sub type of context.Context")
+	}
+	if !typedHandlerType.In(1).ConvertibleTo(messageType) {
+		return fmt.Errorf("message handler must have second parameter " +
 			"with a sub type of proto.Message")
 	}
 	outType0 := typedHandlerType.Out(0)

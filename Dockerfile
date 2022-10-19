@@ -45,9 +45,6 @@ COPY --from=nodejsbuilder /go/src/github.com/lightninglabs/lightning-terminal /g
 # queries required to connect to linked containers succeed.
 ENV GODEBUG netdns=cgo
 
-# Explicitly turn on the use of modules (until this becomes the default).
-ENV GO111MODULE on
-
 # Install dependencies and install/build lightning-terminal.
 RUN apk add --no-cache --update alpine-sdk \
   make \

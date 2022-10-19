@@ -1,0 +1,59 @@
+run:
+  # timeout for analysis
+  deadline: 4m
+  
+  build-tags:
+    - autopilotrpc
+    - signrpc
+    - walletrpc
+    - chainrpc
+    - invoicesrpc
+    - watchtowerrpc
+    - neutrinorpc
+    - peersrpc
+
+linters-settings:
+  govet:
+    # Don't report about shadowed variables
+    check-shadowing: false
+  gofmt:
+    # simplify code: gofmt with `-s` option, true by default
+    simplify: true
+  tagliatelle:
+    case:
+      rules:
+        json: snake
+  whitespace:
+    multi-func: true
+    multi-if: true
+  gosec:
+    excludes:
+      - G402 # Look for bad TLS connection settings.
+      - G306 # Poor file permissions used when writing to a new file.
+  staticcheck:
+    go: "1.18"
+    checks: ["-SA1019"]
+
+linters:
+  enable:
+    - gofmt
+    - tagliatelle
+    - whitespace
+    - gosec
+
+issues:
+  exclude-rules:
+    # Exclude gosec from running for tests so that tests with weak randomness
+    # (math/rand) will pass the linter.
+    - path: _test\.go
+      linters:
+        - gosec
+    - path: internal/test/.*
+      linters:
+        - gosec
+    # Fix false positives because of build flags in itest directory.
+    - path: itest/.*
+      linters:
+        - unused
+        - deadcode
+        - varcheck

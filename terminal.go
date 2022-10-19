@@ -22,6 +22,7 @@ import (
 	"github.com/lightninglabs/faraday/frdrpc"
 	"github.com/lightninglabs/faraday/frdrpcserver"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
+	"github.com/lightninglabs/lightning-terminal/queue"
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightninglabs/lndclient"
@@ -141,8 +142,8 @@ type LightningTerminal struct {
 	// guards all incoming calls. This is only set in integrated mode!
 	lndInterceptorChain *rpcperms.InterceptorChain
 
-	wg         sync.WaitGroup
-	lndErrChan chan error
+	wg       sync.WaitGroup
+	errQueue *queue.ConcurrentQueue[error]
 
 	lndClient   *lndclient.GrpcLndServices
 	basicClient lnrpc.LightningClient
@@ -174,9 +175,7 @@ type LightningTerminal struct {
 
 // New creates a new instance of the lightning-terminal daemon.
 func New() *LightningTerminal {
-	return &LightningTerminal{
-		lndErrChan: make(chan error, 1),
-	}
+	return &LightningTerminal{}
 }
 
 // Run starts everything and then blocks until either the application is shut
@@ -197,6 +196,13 @@ func (g *LightningTerminal) Run() error {
 
 	// Show version at startup.
 	log.Infof("LiT version: %s", Version())
+
+	// This concurrent error queue can be used by every component that can
+	// raise runtime errors. Using a queue will prevent us from blocking on
+	// sending errors to it, as long as the queue is running.
+	g.errQueue = queue.NewConcurrentQueue[error](queue.DefaultQueueSize)
+	g.errQueue.Start()
+	defer g.errQueue.Stop()
 
 	// Construct a new PermissionsManager.
 	g.permsMgr, err = NewPermissionsManager()
@@ -260,6 +266,7 @@ func (g *LightningTerminal) Run() error {
 	readyChan := make(chan struct{})
 	bufReadyChan := make(chan struct{})
 	unlockChan := make(chan struct{})
+	lndQuit := make(chan struct{})
 	macChan := make(chan []byte, 1)
 
 	if g.cfg.LndMode == ModeIntegrated {
@@ -296,11 +303,11 @@ func (g *LightningTerminal) Run() error {
 				(!ok || e.Type != flags.ErrHelp) {
 
 				log.Errorf("Error running main lnd: %v", err)
-				g.lndErrChan <- err
+				g.errQueue.ChanIn() <- err
 				return
 			}
 
-			close(g.lndErrChan)
+			close(lndQuit)
 		}()
 	} else {
 		close(unlockChan)
@@ -329,8 +336,11 @@ func (g *LightningTerminal) Run() error {
 	// get the ready signal immediately.
 	case <-readyChan:
 
-	case err := <-g.lndErrChan:
+	case err := <-g.errQueue.ChanOut():
 		return err
+
+	case <-lndQuit:
+		return nil
 
 	case <-shutdownInterceptor.ShutdownChannel():
 		return errors.New("shutting down")
@@ -367,8 +377,11 @@ func (g *LightningTerminal) Run() error {
 	select {
 	case <-readyChan:
 
-	case err := <-g.lndErrChan:
+	case err := <-g.errQueue.ChanOut():
 		return err
+
+	case <-lndQuit:
+		return nil
 
 	case <-shutdownInterceptor.ShutdownChannel():
 		return errors.New("shutting down")
@@ -396,11 +409,14 @@ func (g *LightningTerminal) Run() error {
 		log.Errorf("Received critical error from loop, shutting down: "+
 			"%v", err)
 
-	case err := <-g.lndErrChan:
+	case err := <-g.errQueue.ChanOut():
 		if err != nil {
-			log.Errorf("Received critical error from lnd, "+
+			log.Errorf("Received critical error from subsystem, "+
 				"shutting down: %v", err)
 		}
+
+	case <-lndQuit:
+		return nil
 
 	case <-shutdownInterceptor.ShutdownChannel():
 		log.Infof("Shutdown signal received")
@@ -599,7 +615,7 @@ func (g *LightningTerminal) startSubservers() error {
 		// Start the middleware manager.
 		g.middleware = mid.NewManager(
 			g.cfg.RPCMiddleware.InterceptTimeout,
-			g.lndClient.Client,
+			g.lndClient.Client, g.errQueue.ChanIn(),
 		)
 
 		if err = g.middleware.Start(); err != nil {
@@ -927,15 +943,25 @@ func (g *LightningTerminal) shutdown() error {
 
 	g.wg.Wait()
 
-	// The lnd error channel is only used if we are actually running lnd in
-	// the same process.
-	if g.cfg.LndMode == ModeIntegrated {
-		err := <-g.lndErrChan
-		if err != nil {
-			log.Errorf("Error stopping lnd: %v", err)
-			returnErr = err
+	// Do we have any last errors to display? We use an anonymous function,
+	// so we can use return instead of breaking to a label in the default
+	// case.
+	func() {
+		for {
+			select {
+			case err := <-g.errQueue.ChanOut():
+				if err != nil {
+					log.Errorf("Error while stopping "+
+						"litd: %v", err)
+
+					returnErr = err
+				}
+
+			default:
+				return
+			}
 		}
-	}
+	}()
 
 	return returnErr
 }
