@@ -14,12 +14,12 @@ require (
 	github.com/lightninglabs/faraday v0.2.8-alpha.0.20220624141723-ddd3cd123e62
 	github.com/lightninglabs/lightning-node-connect v0.1.12-alpha
 	github.com/lightninglabs/lndclient v0.15.1-5
-	github.com/lightninglabs/loop v0.20.1-beta
+	github.com/lightninglabs/loop v0.20.1-beta.0.20221020162445-0d887ac17390
 	github.com/lightninglabs/loop/swapserverrpc v1.0.3
 	github.com/lightninglabs/pool v0.5.8-alpha
 	github.com/lightninglabs/pool/auctioneerrpc v1.0.7
 	github.com/lightninglabs/protobuf-hex-display v1.4.3-hex-display
-	github.com/lightningnetwork/lnd v0.15.2-beta
+	github.com/lightningnetwork/lnd v0.15.3-beta
 	github.com/lightningnetwork/lnd/cert v1.1.1
 	github.com/lightningnetwork/lnd/tlv v1.0.3
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
@@ -45,10 +45,10 @@ require (
 	github.com/andybalholm/brotli v1.0.3 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/btcsuite/btcd/btcutil/psbt v1.1.5 // indirect
-	github.com/btcsuite/btcwallet v0.15.1 // indirect
-	github.com/btcsuite/btcwallet/wallet/txauthor v1.2.3 // indirect
+	github.com/btcsuite/btcwallet v0.16.1 // indirect
+	github.com/btcsuite/btcwallet/wallet/txauthor v1.3.2 // indirect
 	github.com/btcsuite/btcwallet/wallet/txrules v1.2.0 // indirect
-	github.com/btcsuite/btcwallet/wallet/txsizes v1.1.0 // indirect
+	github.com/btcsuite/btcwallet/wallet/txsizes v1.2.3 // indirect
 	github.com/btcsuite/btcwallet/walletdb v1.4.0 // indirect
 	github.com/btcsuite/btcwallet/wtxmgr v1.5.0 // indirect
 	github.com/btcsuite/go-socks v0.0.0-20170105172521-4720035b7bfd // indirect
