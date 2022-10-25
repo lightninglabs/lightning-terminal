@@ -76,6 +76,14 @@ message Session {
     bytes remote_public_key = 10;
 
     uint64 created_at = 11 [jstype = JS_STRING];
+
+    MacaroonRecipe macaroon_recipe = 12;
+}
+
+message MacaroonRecipe {
+    repeated MacaroonPermission permissions = 1;
+
+    repeated string caveats = 2;
 }
 
 message ListSessionsRequest {
