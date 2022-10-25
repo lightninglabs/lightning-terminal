@@ -11,7 +11,9 @@ import (
 	"github.com/lightninglabs/lightning-node-connect/mailbox"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/lightning-terminal/session"
+	"github.com/lightningnetwork/lnd/macaroons"
 	"google.golang.org/grpc"
+	"gopkg.in/macaroon-bakery.v2/bakery"
 	"gopkg.in/macaroon-bakery.v2/bakery/checkers"
 	"gopkg.in/macaroon.v2"
 )
@@ -123,16 +125,46 @@ func (s *sessionRpcServer) AddSession(_ context.Context,
 		return nil, err
 	}
 
-	if typ != session.TypeMacaroonAdmin &&
-		typ != session.TypeMacaroonReadonly {
+	var permissions []bakery.Op
+	switch typ {
+	// For the default session types we use empty caveats and permissions,
+	// the macaroons are baked correctly when creating the session.
+	case session.TypeMacaroonAdmin, session.TypeMacaroonReadonly:
 
-		return nil, fmt.Errorf("invalid session type, only admin " +
-			"and readonly macaroon types supported in LiT")
+	// For the custom macaroon type, we use the custom permissions specified
+	// in the request. For the time being, the caveats list will be empty
+	// for this type.
+	case session.TypeMacaroonCustom:
+		if len(req.MacaroonCustomPermissions) == 0 {
+			return nil, fmt.Errorf("custom macaroon " +
+				"permissions must be specified for the " +
+				"custom macaroon session type")
+		}
+
+		for _, op := range req.MacaroonCustomPermissions {
+			if op.Entity == macaroons.PermissionEntityCustomURI {
+				_, ok := s.cfg.permMgr.URIPermissions(op.Action)
+				if !ok {
+					return nil, fmt.Errorf("URI %s is "+
+						"unknown to LiT", op.Action)
+				}
+			}
+
+			permissions = append(permissions, bakery.Op{
+				Entity: op.Entity,
+				Action: op.Action,
+			})
+		}
+
+	// No other types are currently supported.
+	default:
+		return nil, fmt.Errorf("invalid session type, only admin, " +
+			"readonly and custom macaroon types supported in LiT")
 	}
 
 	sess, err := session.NewSession(
 		req.Label, typ, expiry, req.MailboxServerAddr, req.DevServer,
-		nil, nil,
+		permissions, nil,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating new session: %v", err)
@@ -184,18 +216,28 @@ func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
 		return nil
 	}
 
-	if sess.Type != session.TypeMacaroonAdmin &&
-		sess.Type != session.TypeMacaroonReadonly {
+	var (
+		caveats     []macaroon.Caveat
+		permissions []bakery.Op
+		readOnly    = sess.Type == session.TypeMacaroonReadonly
+	)
+	switch sess.Type {
+	// For the default session types we use empty caveats and permissions,
+	// the macaroons are baked correctly when creating the session.
+	case session.TypeMacaroonAdmin, session.TypeMacaroonReadonly:
+		permissions = s.cfg.permMgr.ActivePermissions(readOnly)
 
+	// For custom session types, we use the caveats and permissions that
+	// were persisted on session creation.
+	case session.TypeMacaroonCustom:
+		permissions = sess.MacaroonRecipe.Permissions
+
+	// No other types are currently supported.
+	default:
 		log.Debugf("Not resuming session %x with type %d", pubKeyBytes,
 			sess.Type)
 		return nil
 	}
-
-	var (
-		caveats  []macaroon.Caveat
-		readOnly = sess.Type == session.TypeMacaroonReadonly
-	)
 
 	// Add the session expiry as a macaroon caveat.
 	macExpiry := checkers.TimeBeforeCaveat(sess.Expiry)
@@ -206,7 +248,7 @@ func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
 	mac, err := s.cfg.superMacBaker(
 		context.Background(), sess.MacaroonRootKey,
 		&session.MacaroonRecipe{
-			Permissions: s.cfg.permMgr.ActivePermissions(readOnly),
+			Permissions: permissions,
 			Caveats:     caveats,
 		},
 	)
@@ -380,6 +422,8 @@ func marshalRPCSession(sess *session.Session) (*litrpc.Session, error) {
 		return nil, err
 	}
 
+	macRecipe := marshalRPCMacaroonRecipe(sess.MacaroonRecipe)
+
 	return &litrpc.Session{
 		Label:                  sess.Label,
 		SessionState:           rpcState,
@@ -392,7 +436,36 @@ func marshalRPCSession(sess *session.Session) (*litrpc.Session, error) {
 		LocalPublicKey:         sess.LocalPublicKey.SerializeCompressed(),
 		RemotePublicKey:        remotePubKey,
 		CreatedAt:              uint64(sess.CreatedAt.Unix()),
+		MacaroonRecipe:         macRecipe,
 	}, nil
+}
+
+// marshalRPCMacaroonRecipe converts a macaroon recipe (permissions and caveats)
+// into its RPC counterpart.
+func marshalRPCMacaroonRecipe(
+	recipe *session.MacaroonRecipe) *litrpc.MacaroonRecipe {
+
+	if recipe == nil {
+		return nil
+	}
+
+	perms := make([]*litrpc.MacaroonPermission, len(recipe.Permissions))
+	for i, op := range recipe.Permissions {
+		perms[i] = &litrpc.MacaroonPermission{
+			Entity: op.Entity,
+			Action: op.Action,
+		}
+	}
+
+	caveats := make([]string, len(recipe.Caveats))
+	for i, cav := range recipe.Caveats {
+		caveats[i] = string(cav.Id)
+	}
+
+	return &litrpc.MacaroonRecipe{
+		Permissions: perms,
+		Caveats:     caveats,
+	}
 }
 
 // marshalRPCState converts a session state to its RPC counterpart.
