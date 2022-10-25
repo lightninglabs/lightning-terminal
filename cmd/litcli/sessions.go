@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/lightninglabs/lightning-terminal/litrpc"
+	"github.com/lightningnetwork/lnd/macaroons"
 	"github.com/urfave/cli"
 )
 
@@ -62,8 +63,17 @@ var addSessionCommand = cli.Command{
 			Usage: "session type to be created which will " +
 				"determine the permissions a user has when " +
 				"connecting with the session. Options " +
-				"include readonly|admin",
+				"include readonly|admin|custom",
 			Value: "readonly",
+		},
+		cli.StringSliceFlag{
+			Name: "uri",
+			Usage: "A URI that should be included in the " +
+				"macaroon of a custom session. Note that " +
+				"this flag will only be used if the 'type' " +
+				"flag is set to 'custom'. This flag can be " +
+				"specified multiple times if multiple URIs " +
+				"should be included",
 		},
 	},
 }
@@ -87,17 +97,26 @@ func addSession(ctx *cli.Context) error {
 		return err
 	}
 
+	var macPerms []*litrpc.MacaroonPermission
+	for _, uri := range ctx.StringSlice("uri") {
+		macPerms = append(macPerms, &litrpc.MacaroonPermission{
+			Entity: macaroons.PermissionEntityCustomURI,
+			Action: uri,
+		})
+	}
+
 	sessionLength := time.Second * time.Duration(ctx.Uint64("expiry"))
 	sessionExpiry := time.Now().Add(sessionLength).Unix()
 
 	ctxb := context.Background()
 	resp, err := client.AddSession(
 		ctxb, &litrpc.AddSessionRequest{
-			Label:                  label,
-			SessionType:            sessType,
-			ExpiryTimestampSeconds: uint64(sessionExpiry),
-			MailboxServerAddr:      ctx.String("mailboxserveraddr"),
-			DevServer:              ctx.Bool("devserver"),
+			Label:                     label,
+			SessionType:               sessType,
+			ExpiryTimestampSeconds:    uint64(sessionExpiry),
+			MailboxServerAddr:         ctx.String("mailboxserveraddr"),
+			DevServer:                 ctx.Bool("devserver"),
+			MacaroonCustomPermissions: macPerms,
 		},
 	)
 	if err != nil {
@@ -115,6 +134,8 @@ func parseSessionType(sessionType string) (litrpc.SessionType, error) {
 		return litrpc.SessionType_TYPE_MACAROON_ADMIN, nil
 	case "readonly":
 		return litrpc.SessionType_TYPE_MACAROON_READONLY, nil
+	case "custom":
+		return litrpc.SessionType_TYPE_MACAROON_CUSTOM, nil
 	default:
 		return 0, fmt.Errorf("unsupported session type %s", sessionType)
 	}
