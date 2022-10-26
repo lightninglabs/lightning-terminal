@@ -134,12 +134,21 @@ func testModeRemote(net *NetworkHarness, t *harnessTest) {
 	t.t.Run("lnc auth", func(tt *testing.T) {
 		cfg := net.Bob.Cfg
 
+		ctx := context.Background()
+		ctxt, cancel := context.WithTimeout(ctx, defaultTimeout)
+		defer cancel()
+
+		rawLNCConn := setUpLNCConn(
+			ctxt, tt, cfg.LitAddr(), cfg.LitTLSCertPath,
+			cfg.LitMacPath,
+		)
+		defer rawLNCConn.Close()
+
 		for _, endpoint := range endpoints {
 			endpoint := endpoint
 			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
 				runLNCAuthTest(
-					ttt, cfg.LitAddr(), cfg.LitTLSCertPath,
-					cfg.LitMacPath, endpoint.requestFn,
+					ttt, rawLNCConn, endpoint.requestFn,
 					endpoint.successPattern,
 					endpoint.allowedThroughLNC,
 				)

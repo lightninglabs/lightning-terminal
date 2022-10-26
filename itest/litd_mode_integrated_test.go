@@ -367,18 +367,62 @@ func testModeIntegrated(net *NetworkHarness, t *harnessTest) {
 	t.t.Run("lnc auth", func(tt *testing.T) {
 		cfg := net.Alice.Cfg
 
+		ctx := context.Background()
+		ctxt, cancel := context.WithTimeout(ctx, defaultTimeout)
+		defer cancel()
+
+		rawLNCConn := setUpLNCConn(
+			ctxt, t.t, cfg.LitAddr(), cfg.TLSCertPath,
+			cfg.LitMacPath,
+		)
+		defer rawLNCConn.Close()
+
 		for _, endpoint := range endpoints {
 			endpoint := endpoint
 			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
 				runLNCAuthTest(
-					ttt, cfg.LitAddr(), cfg.TLSCertPath,
-					cfg.LitMacPath, endpoint.requestFn,
+					ttt, rawLNCConn, endpoint.requestFn,
 					endpoint.successPattern,
 					endpoint.allowedThroughLNC,
 				)
 			})
 		}
 	})
+}
+
+// setUpLNCConn creates a new LNC session and then creates a connection to that
+// session via the mailbox that the session was created with.
+func setUpLNCConn(ctx context.Context, t *testing.T, hostPort, tlsCertPath,
+	macPath string) *grpc.ClientConn {
+
+	rawConn, err := connectRPC(ctx, hostPort, tlsCertPath)
+	require.NoError(t, err)
+
+	macBytes, err := ioutil.ReadFile(macPath)
+	require.NoError(t, err)
+	ctxm := macaroonContext(ctx, macBytes)
+
+	// We first need to create an LNC session that we can use to connect.
+	litClient := litrpc.NewSessionsClient(rawConn)
+	sessResp, err := litClient.AddSession(ctxm, &litrpc.AddSessionRequest{
+		Label:       "integration-test",
+		SessionType: litrpc.SessionType_TYPE_MACAROON_READONLY,
+		ExpiryTimestampSeconds: uint64(
+			time.Now().Add(5 * time.Minute).Unix(),
+		),
+		MailboxServerAddr: mailboxServerAddr,
+	})
+	require.NoError(t, err)
+
+	// Try the LNC connection now.
+	connectPhrase := strings.Split(
+		sessResp.Session.PairingSecretMnemonic, " ",
+	)
+
+	rawLNCConn, err := connectMailbox(ctx, connectPhrase)
+	require.NoError(t, err)
+
+	return rawLNCConn
 }
 
 // runCertificateCheck checks that the TLS certificates presented to clients are
@@ -624,43 +668,13 @@ func runRESTAuthTest(t *testing.T, hostPort, uiPassword, macaroonPath, restURI,
 
 // runLNCAuthTest tests authentication of the given interface when connecting
 // through Lightning Node Connect.
-func runLNCAuthTest(t *testing.T, hostPort, tlsCertPath, macPath string,
+func runLNCAuthTest(t *testing.T, rawLNCConn grpc.ClientConnInterface,
 	makeRequest requestFn, successContent string, callAllowed bool) {
 
-	ctxb := context.Background()
-	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
-	defer cancel()
-
-	rawConn, err := connectRPC(ctxt, hostPort, tlsCertPath)
-	require.NoError(t, err)
-
-	macBytes, err := ioutil.ReadFile(macPath)
-	require.NoError(t, err)
-	ctxm := macaroonContext(ctxt, macBytes)
-
-	// We first need to create an LNC session that we can use to connect.
-	// We use the UI password to create the session.
-	litClient := litrpc.NewSessionsClient(rawConn)
-	sessResp, err := litClient.AddSession(ctxm, &litrpc.AddSessionRequest{
-		Label:       "integration-test",
-		SessionType: litrpc.SessionType_TYPE_MACAROON_READONLY,
-		ExpiryTimestampSeconds: uint64(
-			time.Now().Add(5 * time.Minute).Unix(),
-		),
-		MailboxServerAddr: mailboxServerAddr,
-	})
-	require.NoError(t, err)
-
-	// Try the LNC connection now.
-	connectPhrase := strings.Split(
-		sessResp.Session.PairingSecretMnemonic, " ",
+	ctxt, cancel := context.WithTimeout(
+		context.Background(), defaultTimeout,
 	)
-
-	ctxt, cancel = context.WithTimeout(ctxb, defaultTimeout)
 	defer cancel()
-
-	rawLNCConn, err := connectMailbox(ctxt, connectPhrase)
-	require.NoError(t, err)
 
 	// We should be able to make a request via LNC to the given RPC
 	// endpoint, unless it is explicitly disallowed (we currently don't want
@@ -767,7 +781,7 @@ func getServerCertificates(hostPort string) ([]*x509.Certificate, error) {
 // connectMailbox tries to establish a connection through LNC using the given
 // connect phrase and the test mailbox server.
 func connectMailbox(ctx context.Context,
-	connectPhrase []string) (grpc.ClientConnInterface, error) {
+	connectPhrase []string) (*grpc.ClientConn, error) {
 
 	var mnemonicWords [mailbox.NumPassphraseWords]string
 	copy(mnemonicWords[:], connectPhrase)
