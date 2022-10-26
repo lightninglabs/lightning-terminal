@@ -28,6 +28,7 @@ import (
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/walletrpc"
+	"github.com/lightningnetwork/lnd/macaroons"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
@@ -224,6 +225,13 @@ var (
 		allowedThroughLNC: false,
 		grpcWebURI:        "/litrpc.Sessions/ListSessions",
 	}}
+
+	// customURIs is a map of endpoint URIs that we want to allow via a
+	// custom-macaroon session type.
+	customURIs = map[string]bool{
+		"/lnrpc.Lightning/GetInfo":            true,
+		"/frdrpc.FaradayServer/RevenueReport": true,
+	}
 )
 
 // testModeIntegrated makes sure that in integrated mode all daemons work
@@ -374,6 +382,7 @@ func testModeIntegrated(net *NetworkHarness, t *harnessTest) {
 		rawLNCConn := setUpLNCConn(
 			ctxt, t.t, cfg.LitAddr(), cfg.TLSCertPath,
 			cfg.LitMacPath,
+			litrpc.SessionType_TYPE_MACAROON_READONLY, nil,
 		)
 		defer rawLNCConn.Close()
 
@@ -384,6 +393,48 @@ func testModeIntegrated(net *NetworkHarness, t *harnessTest) {
 					ttt, rawLNCConn, endpoint.requestFn,
 					endpoint.successPattern,
 					endpoint.allowedThroughLNC,
+					"unknown service",
+				)
+			})
+		}
+	})
+
+	t.t.Run("lnc auth custom mac perms", func(tt *testing.T) {
+		cfg := net.Alice.Cfg
+
+		ctx := context.Background()
+		ctxt, cancel := context.WithTimeout(ctx, defaultTimeout)
+		defer cancel()
+
+		customPerms := make(
+			[]*litrpc.MacaroonPermission, 0, len(customURIs),
+		)
+
+		customURIKeyword := macaroons.PermissionEntityCustomURI
+		for uri := range customURIs {
+			customPerms = append(
+				customPerms, &litrpc.MacaroonPermission{
+					Entity: customURIKeyword,
+					Action: uri,
+				},
+			)
+		}
+
+		rawLNCConn := setUpLNCConn(
+			ctxt, t.t, cfg.LitAddr(), cfg.TLSCertPath,
+			cfg.LitMacPath,
+			litrpc.SessionType_TYPE_MACAROON_CUSTOM, customPerms,
+		)
+		defer rawLNCConn.Close()
+
+		for _, endpoint := range endpoints {
+			endpoint := endpoint
+			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
+				allowed := customURIs[endpoint.grpcWebURI]
+				runLNCAuthTest(
+					ttt, rawLNCConn, endpoint.requestFn,
+					endpoint.successPattern,
+					allowed, "permission denied",
 				)
 			})
 		}
@@ -393,7 +444,8 @@ func testModeIntegrated(net *NetworkHarness, t *harnessTest) {
 // setUpLNCConn creates a new LNC session and then creates a connection to that
 // session via the mailbox that the session was created with.
 func setUpLNCConn(ctx context.Context, t *testing.T, hostPort, tlsCertPath,
-	macPath string) *grpc.ClientConn {
+	macPath string, sessType litrpc.SessionType,
+	customMacPerms []*litrpc.MacaroonPermission) *grpc.ClientConn {
 
 	rawConn, err := connectRPC(ctx, hostPort, tlsCertPath)
 	require.NoError(t, err)
@@ -406,11 +458,12 @@ func setUpLNCConn(ctx context.Context, t *testing.T, hostPort, tlsCertPath,
 	litClient := litrpc.NewSessionsClient(rawConn)
 	sessResp, err := litClient.AddSession(ctxm, &litrpc.AddSessionRequest{
 		Label:       "integration-test",
-		SessionType: litrpc.SessionType_TYPE_MACAROON_READONLY,
+		SessionType: sessType,
 		ExpiryTimestampSeconds: uint64(
 			time.Now().Add(5 * time.Minute).Unix(),
 		),
-		MailboxServerAddr: mailboxServerAddr,
+		MailboxServerAddr:         mailboxServerAddr,
+		MacaroonCustomPermissions: customMacPerms,
 	})
 	require.NoError(t, err)
 
@@ -669,7 +722,8 @@ func runRESTAuthTest(t *testing.T, hostPort, uiPassword, macaroonPath, restURI,
 // runLNCAuthTest tests authentication of the given interface when connecting
 // through Lightning Node Connect.
 func runLNCAuthTest(t *testing.T, rawLNCConn grpc.ClientConnInterface,
-	makeRequest requestFn, successContent string, callAllowed bool) {
+	makeRequest requestFn, successContent string, callAllowed bool,
+	expectErrContains string) {
 
 	ctxt, cancel := context.WithTimeout(
 		context.Background(), defaultTimeout,
@@ -685,7 +739,7 @@ func runLNCAuthTest(t *testing.T, rawLNCConn grpc.ClientConnInterface,
 	// Is this a disallowed call?
 	if !callAllowed {
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "unknown service")
+		require.Contains(t, err.Error(), expectErrContains)
 
 		return
 	}
