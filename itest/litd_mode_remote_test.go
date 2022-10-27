@@ -6,7 +6,9 @@ import (
 	"testing"
 
 	"github.com/btcsuite/btcd/btcutil"
+	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightningnetwork/lnd/lnrpc"
+	"github.com/lightningnetwork/lnd/macaroons"
 	"github.com/stretchr/testify/require"
 )
 
@@ -134,14 +136,66 @@ func testModeRemote(net *NetworkHarness, t *harnessTest) {
 	t.t.Run("lnc auth", func(tt *testing.T) {
 		cfg := net.Bob.Cfg
 
+		ctx := context.Background()
+		ctxt, cancel := context.WithTimeout(ctx, defaultTimeout)
+		defer cancel()
+
+		rawLNCConn := setUpLNCConn(
+			ctxt, tt, cfg.LitAddr(), cfg.LitTLSCertPath,
+			cfg.LitMacPath,
+			litrpc.SessionType_TYPE_MACAROON_READONLY, nil,
+		)
+		defer rawLNCConn.Close()
+
 		for _, endpoint := range endpoints {
 			endpoint := endpoint
 			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
 				runLNCAuthTest(
-					ttt, cfg.LitAddr(), cfg.LitTLSCertPath,
-					cfg.LitMacPath, endpoint.requestFn,
+					ttt, rawLNCConn, endpoint.requestFn,
 					endpoint.successPattern,
 					endpoint.allowedThroughLNC,
+					"unknown service",
+				)
+			})
+		}
+	})
+
+	t.t.Run("lnc auth custom mac perms", func(tt *testing.T) {
+		cfg := net.Bob.Cfg
+
+		ctx := context.Background()
+		ctxt, cancel := context.WithTimeout(ctx, defaultTimeout)
+		defer cancel()
+
+		customPerms := make(
+			[]*litrpc.MacaroonPermission, 0, len(customURIs),
+		)
+
+		customURIKeyword := macaroons.PermissionEntityCustomURI
+		for uri := range customURIs {
+			customPerms = append(
+				customPerms, &litrpc.MacaroonPermission{
+					Entity: customURIKeyword,
+					Action: uri,
+				},
+			)
+		}
+
+		rawLNCConn := setUpLNCConn(
+			ctxt, tt, cfg.LitAddr(), cfg.LitTLSCertPath,
+			cfg.LitMacPath,
+			litrpc.SessionType_TYPE_MACAROON_CUSTOM, customPerms,
+		)
+		defer rawLNCConn.Close()
+
+		for _, endpoint := range endpoints {
+			endpoint := endpoint
+			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
+				allowed := customURIs[endpoint.grpcWebURI]
+				runLNCAuthTest(
+					ttt, rawLNCConn, endpoint.requestFn,
+					endpoint.successPattern,
+					allowed, "permission denied",
 				)
 			})
 		}
