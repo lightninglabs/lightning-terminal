@@ -71,6 +71,8 @@ Example `~/.lit/lit.conf`:
 ```text
 # Application Options
 httpslisten=0.0.0.0:8443
+tlscertpath=~/.lit/tls.cert
+tlskeypath=~/.lit/tls.key
 letsencrypt=true
 letsencrypthost=loop.merchant.com
 lnd-mode=integrated
@@ -116,6 +118,15 @@ system:
 - **On MacOS**: `~/Library/Application Support/Lit/lit.conf`
 - **On Linux**: `~/.lit/lit.conf`
 - **On Windows**: `~/AppData/Roaming/Lit/lit.conf`
+
+## LiT and LND interfaces
+
+Port 10009 is the port that LND uses to expose its gRPC interface. LND's tls 
+cert and macaroons will be required when making requests to this interface.
+
+Port 8443 is a port that LiT uses to expose a variety of interfaces: gRPC, 
+REST, grpc-web. When making requests using this interface, LiT's tls cert and 
+macaroons should be used. 
 
 ## Upgrade Existing Nodes
 
@@ -294,7 +305,7 @@ running standalone. The `--lnddir` flag does not need to be specified as long
 as it is the default directory (`~/.lnd` on Linux).
 
 ```shell
-⛰  lncli --network=testnet getinfo
+⛰  lncli --rpcserver=localhost:10009 --tlscertpath=~/.lnd/tls.cert getinfo
 ```
 
 ### Example `loop` command
@@ -305,7 +316,7 @@ runs on the same gRPC server as `lnd`. That's why we have to both specify the
 own macaroon, so we have to specify that one from the `.loop` directory.
 
 ```shell
-⛰  loop --rpcserver=localhost:10009 --tlscertpath=~/.lnd/tls.cert \
+⛰  loop --rpcserver=localhost:8443 --tlscertpath=~/.lit/tls.cert \
   --macaroonpath=~/.loop/testnet/loop.macaroon \
   quote out 500000
 ```
@@ -314,7 +325,7 @@ You can easily create an alias for this by adding the following line to your
 `~/.bashrc` file:
 
 ```shell
-⛰  alias lit-loop="loop --rpcserver=localhost:10009 --tlscertpath=~/.lnd/tls.cert --macaroonpath=~/.loop/testnet/loop.macaroon"
+⛰  alias lit-loop="loop --rpcserver=localhost:8443 --tlscertpath=~/.lit/tls.cert --macaroonpath=~/.loop/testnet/loop.macaroon"
 ```
 
 ### Example `pool` command
@@ -324,7 +335,7 @@ the `host:port` and the TLS certificate of `lnd` but use the macaroon from the
 `.pool` directory.
 
 ```shell
-⛰  pool --rpcserver=localhost:10009 --tlscertpath=~/.lnd/tls.cert \
+⛰  pool --rpcserver=localhost:8443 --tlscertpath=~/.lit/tls.cert \
   --macaroonpath=~/.pool/testnet/pool.macaroon \
   accounts list
 ```
@@ -333,7 +344,7 @@ You can easily create an alias for this by adding the following line to your
 `~/.bashrc` file:
 
 ```shell
-⛰  alias lit-pool="pool --rpcserver=localhost:10009 --tlscertpath=~/.lnd/tls.cert --macaroonpath=~/.pool/testnet/pool.macaroon"
+⛰  alias lit-pool="pool --rpcserver=localhost:8443 --tlscertpath=~/.lit/tls.cert --macaroonpath=~/.pool/testnet/pool.macaroon"
 ```
 
 ### Example `frcli` command
@@ -342,7 +353,7 @@ Faraday's command line tool follows the same pattern as loop. We also have to
 specify the server and TLS flags for `lnd` but use `faraday`'s macaroon:
 
 ```shell
-⛰  frcli --rpcserver=localhost:10009 --tlscertpath=~/.lnd/tls.cert \
+⛰  frcli --rpcserver=localhost:8443 --tlscertpath=~/.lit/tls.cert \
   --macaroonpath=~/.faraday/testnet/faraday.macaroon \
   audit
 ```
@@ -351,7 +362,7 @@ You can easily create an alias for this by adding the following line to your
 `~/.bashrc` file:
 
 ```shell
-⛰  alias lit-frcli="frcli --rpcserver=localhost:10009 --tlscertpath=~/.lnd/tls.cert --macaroonpath=~/.faraday/testnet/faraday.macaroon"
+⛰  alias lit-frcli="frcli --rpcserver=localhost:8443 --tlscertpath=~/.lit/tls.cert --macaroonpath=~/.faraday/testnet/faraday.macaroon"
 ```
 
 ## Shutting down LiT
