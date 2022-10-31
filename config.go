@@ -144,6 +144,7 @@ type Config struct {
 	UIPassword     string   `long:"uipassword" description:"The password that must be entered when using the loop UI. use a strong password to protect your node from unauthorized access through the web UI."`
 	UIPasswordFile string   `long:"uipassword_file" description:"Same as uipassword but instead of passing in the value directly, read the password from the specified file."`
 	UIPasswordEnv  string   `long:"uipassword_env" description:"Same as uipassword but instead of passing in the value directly, read the password from the specified environment variable."`
+	DisableUI      bool     `long:"disableui" description:"Disable the local Terminal UI so only gRPC and/or REST API access is allowed."`
 
 	LetsEncrypt       bool   `long:"letsencrypt" description:"Use Let's Encrypt to create a TLS certificate for the UI instead of using lnd's TLS certificate. Port 80 must be free to listen on and must be reachable from the internet for this to work."`
 	LetsEncryptHost   string `long:"letsencrypthost" description:"The host name to create a Let's Encrypt certificate for."`
@@ -696,6 +697,14 @@ func setNetwork(cfg *Config) error {
 // readUIPassword reads the password for the UI either from the command line
 // flag, a file specified or an environment variable.
 func readUIPassword(config *Config) error {
+
+	// If the configuration has the UI disabled,
+	// we don't need the password at all.
+	if config.DisableUI {
+		config.UIPassword = "placeholder"
+		return nil
+	}
+
 	// A password is passed in as a command line flag (or config file
 	// variable) directly.
 	if len(strings.TrimSpace(config.UIPassword)) > 0 {

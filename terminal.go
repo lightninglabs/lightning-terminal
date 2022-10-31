@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"net"
 	"net/http"
@@ -1039,6 +1040,14 @@ func (g *LightningTerminal) startMainWebServer() error {
 			log.Infof("Handling REST request: %s", req.URL.Path)
 			g.restHandler.ServeHTTP(resp, req)
 
+			return
+		}
+
+		// If the configuration has the UI disabled, return a
+		// 401 Unauthorized message on all static files.
+		if g.cfg.DisableUI {
+			resp.WriteHeader(http.StatusUnauthorized)
+			io.WriteString(resp, "unauthorized")
 			return
 		}
 
