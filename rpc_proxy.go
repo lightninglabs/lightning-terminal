@@ -2,12 +2,10 @@ package terminal
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"strings"
 	"sync/atomic"
@@ -21,12 +19,9 @@ import (
 	"github.com/lightningnetwork/lnd/macaroons"
 	grpcProxy "github.com/mwitkow/grpc-proxy/proxy"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
-	"google.golang.org/grpc/test/bufconn"
 	"gopkg.in/macaroon.v2"
 )
 
@@ -65,7 +60,7 @@ func (e *proxyErr) Unwrap() error {
 // component.
 func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 	superMacValidator session.SuperMacaroonValidator,
-	permsMgr *perms.Manager, bufListener *bufconn.Listener) *rpcProxy {
+	permsMgr *perms.Manager) *rpcProxy {
 
 	// The gRPC web calls are protected by HTTP basic auth which is defined
 	// by base64(username:password). Because we only have a password, we
@@ -85,7 +80,6 @@ func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 		permsMgr:          permsMgr,
 		macValidator:      validator,
 		superMacValidator: superMacValidator,
-		bufListener:       bufListener,
 	}
 	p.grpcServer = grpc.NewServer(
 		// From the grpxProxy doc: This codec is *crucial* to the
@@ -162,7 +156,6 @@ type rpcProxy struct {
 
 	macValidator      macaroons.MacaroonValidator
 	superMacValidator session.SuperMacaroonValidator
-	bufListener       *bufconn.Listener
 
 	superMacaroon string
 
@@ -176,21 +169,9 @@ type rpcProxy struct {
 }
 
 // Start creates initial connection to lnd.
-func (p *rpcProxy) Start() error {
+func (p *rpcProxy) Start(lndConn *grpc.ClientConn) error {
 	var err error
-
-	// Setup the connection to lnd.
-	host, _, tlsPath, _, _ := p.cfg.lndConnectParams()
-
-	// We use a bufconn to connect to lnd in integrated mode.
-	if p.cfg.LndMode == ModeIntegrated {
-		p.lndConn, err = dialBufConnBackend(p.bufListener)
-	} else {
-		p.lndConn, err = dialBackend("lnd", host, tlsPath)
-	}
-	if err != nil {
-		return fmt.Errorf("could not dial lnd: %v", err)
-	}
+	p.lndConn = lndConn
 
 	// Make sure we can connect to all the daemons that are configured to be
 	// running in remote mode.
@@ -241,13 +222,6 @@ func (p *rpcProxy) hasStarted() bool {
 // Stop shuts down the lnd connection.
 func (p *rpcProxy) Stop() error {
 	p.grpcServer.Stop()
-
-	if p.lndConn != nil {
-		if err := p.lndConn.Close(); err != nil {
-			log.Errorf("Error closing lnd connection: %v", err)
-			return err
-		}
-	}
 
 	if p.faradayConn != nil {
 		if err := p.faradayConn.Close(); err != nil {
@@ -660,68 +634,6 @@ func (p *rpcProxy) convertSuperMacaroon(ctx context.Context, macHex string,
 	}
 
 	return nil, nil
-}
-
-// dialBufConnBackend dials an in-memory connection to an RPC listener and
-// ignores any TLS certificate mismatches.
-func dialBufConnBackend(listener *bufconn.Listener) (*grpc.ClientConn, error) {
-	tlsConfig := credentials.NewTLS(&tls.Config{
-		InsecureSkipVerify: true,
-	})
-	conn, err := grpc.Dial(
-		"",
-		grpc.WithContextDialer(
-			func(context.Context, string) (net.Conn, error) {
-				return listener.Dial()
-			},
-		),
-		grpc.WithTransportCredentials(tlsConfig),
-
-		// From the grpcProxy doc: This codec is *crucial* to the
-		// functioning of the proxy.
-		grpc.WithCodec(grpcProxy.Codec()), // nolint
-		grpc.WithTransportCredentials(tlsConfig),
-		grpc.WithDefaultCallOptions(maxMsgRecvSize),
-		grpc.WithConnectParams(grpc.ConnectParams{
-			Backoff:           backoff.DefaultConfig,
-			MinConnectTimeout: defaultConnectTimeout,
-		}),
-	)
-
-	return conn, err
-}
-
-// dialBackend connects to a gRPC backend through the given address and uses the
-// given TLS certificate to authenticate the connection.
-func dialBackend(name, dialAddr, tlsCertPath string) (*grpc.ClientConn, error) {
-	var opts []grpc.DialOption
-	tlsConfig, err := credentials.NewClientTLSFromFile(tlsCertPath, "")
-	if err != nil {
-		return nil, fmt.Errorf("could not read %s TLS cert %s: %v",
-			name, tlsCertPath, err)
-	}
-
-	opts = append(
-		opts,
-
-		// From the grpcProxy doc: This codec is *crucial* to the
-		// functioning of the proxy.
-		grpc.WithCodec(grpcProxy.Codec()), // nolint
-		grpc.WithTransportCredentials(tlsConfig),
-		grpc.WithDefaultCallOptions(maxMsgRecvSize),
-		grpc.WithConnectParams(grpc.ConnectParams{
-			Backoff:           backoff.DefaultConfig,
-			MinConnectTimeout: defaultConnectTimeout,
-		}),
-	)
-
-	log.Infof("Dialing %s gRPC server at %s", name, dialAddr)
-	cc, err := grpc.Dial(dialAddr, opts...)
-	if err != nil {
-		return nil, fmt.Errorf("failed dialing %s backend: %v", name,
-			err)
-	}
-	return cc, nil
 }
 
 // readMacaroon tries to read the macaroon file at the specified path and create

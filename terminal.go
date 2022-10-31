@@ -154,6 +154,7 @@ type LightningTerminal struct {
 	wg       sync.WaitGroup
 	errQueue *queue.ConcurrentQueue[error]
 
+	lndConn     *grpc.ClientConn
 	lndClient   *lndclient.GrpcLndServices
 	basicClient lnrpc.LightningClient
 
@@ -237,7 +238,7 @@ func (g *LightningTerminal) Run() error {
 	g.loopServer = loopd.New(g.cfg.Loop, nil)
 	g.poolServer = pool.NewServer(g.cfg.Pool)
 	g.rpcProxy = newRpcProxy(
-		g.cfg, g, g.validateSuperMacaroon, g.permsMgr, bufRpcListener,
+		g.cfg, g, g.validateSuperMacaroon, g.permsMgr,
 	)
 	g.accountService, err = accounts.NewService(
 		filepath.Dir(g.cfg.MacaroonPath), g.errQueue.ChanIn(),
@@ -429,11 +430,17 @@ func (g *LightningTerminal) Run() error {
 		}
 	}()
 
+	// Connect to LND.
+	g.lndConn, err = connectLND(g.cfg, bufRpcListener)
+	if err != nil {
+		return fmt.Errorf("could not connect to LND: %v", err)
+	}
+
 	// Now start the RPC proxy that will handle all incoming gRPC, grpc-web
 	// and REST requests. We also start the main web server that dispatches
 	// requests either to the static UI file server or the RPC proxy. This
 	// makes it possible to unlock lnd through the UI.
-	if err := g.rpcProxy.Start(); err != nil {
+	if err := g.rpcProxy.Start(g.lndConn); err != nil {
 		return fmt.Errorf("error starting lnd gRPC proxy server: %v",
 			err)
 	}
@@ -1117,6 +1124,13 @@ func (g *LightningTerminal) shutdown() error {
 	if g.rpcProxy != nil {
 		if err := g.rpcProxy.Stop(); err != nil {
 			log.Errorf("Error stopping lnd proxy: %v", err)
+			returnErr = err
+		}
+	}
+
+	if g.lndConn != nil {
+		if err := g.lndConn.Close(); err != nil {
+			log.Errorf("Error closing lnd connection: %v", err)
 			returnErr = err
 		}
 	}
