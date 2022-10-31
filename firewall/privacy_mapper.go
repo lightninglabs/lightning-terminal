@@ -2,8 +2,11 @@ package firewall
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
+	"math/big"
+	"time"
 
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
@@ -12,8 +15,22 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// privacyMapperName is the name of the RequestLogger interceptor.
-const privacyMapperName = "lit-privacy-mapper"
+const (
+	// privacyMapperName is the name of the RequestLogger interceptor.
+	privacyMapperName = "lit-privacy-mapper"
+
+	// amountVariation and timeVariation are used to set the randomization
+	// of amounts and timestamps that are sent to the autopilot. Changing
+	// these values may lead to unintended consequences in the behavior of
+	// the autpilot.
+	amountVariation = 0.05
+	timeVariation   = time.Duration(10) * time.Minute
+
+	// minTimeVariation and maxTimeVariation are the acceptable bounds
+	// between which timeVariation can be set.
+	minTimeVariation = time.Minute
+	maxTimeVariation = time.Duration(24) * time.Hour
+)
 
 var (
 	// ErrNotSupportedByPrivacyMapper indicates that the invoked RPC method
@@ -491,4 +508,116 @@ func handleUpdatePolicyResponse(db firewalldb.PrivacyMapDB) func(
 
 		return r, nil
 	}
+}
+
+// hideAmount symmetrically randomizes an amount around a given relative
+// variation interval. relativeVariation should be between 0 and 1.
+func hideAmount(randIntn func(n int) (int, error), relativeVariation float64,
+	amount uint64) (uint64, error) {
+
+	if relativeVariation < 0 || relativeVariation > 1 {
+		return 0, fmt.Errorf("hide amount: relative variation is not "+
+			"between allowed bounds of [0, 1], is %v",
+			relativeVariation)
+	}
+
+	if amount == 0 {
+		return 0, nil
+	}
+
+	// fuzzInterval is smaller than the amount provided fuzzVariation is
+	// between 0 and 1.
+	fuzzInterval := uint64(float64(amount) * relativeVariation)
+
+	amountMin := int(amount - fuzzInterval/2)
+	amountMax := int(amount + fuzzInterval/2)
+
+	randAmount, err := randBetween(randIntn, amountMin, amountMax)
+	if err != nil {
+		return 0, err
+	}
+
+	return uint64(randAmount), nil
+}
+
+// hideTimestamp symmetrically randomizes a unix timestamp given an absolute
+// variation interval. The random input is expected to be rand.Intn.
+func hideTimestamp(randIntn func(n int) (int, error),
+	absoluteVariation time.Duration,
+	timestamp time.Time) (time.Time, error) {
+
+	if absoluteVariation < minTimeVariation ||
+		absoluteVariation > maxTimeVariation {
+
+		return time.Time{}, fmt.Errorf("hide timestamp: absolute time "+
+			"variation is out of bounds, have %v",
+			absoluteVariation)
+	}
+
+	// Don't fuzz meaningless timestamps.
+	if timestamp.Add(-absoluteVariation).Unix() < 0 ||
+		timestamp.IsZero() {
+
+		return timestamp, nil
+	}
+
+	// We vary symmetrically around the provided timestamp.
+	timeMin := timestamp.Add(-absoluteVariation / 2)
+	timeMax := timestamp.Add(absoluteVariation / 2)
+
+	timeNs, err := randBetween(
+		randIntn, int(timeMin.UnixNano()), int(timeMax.UnixNano()),
+	)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return time.Unix(0, int64(timeNs)), nil
+}
+
+// randBetween generates a random number between [min, max) given a source of
+// randomness.
+func randBetween(randIntn func(int) (int, error), min, max int) (int, error) {
+	if max < min {
+		return 0, fmt.Errorf("min is not allowed to be greater than "+
+			"max, (min: %v, max: %v)", min, max)
+	}
+
+	// We don't want to pass zero to randIntn to avoid panics.
+	if max == min {
+		return min, nil
+	}
+
+	add, err := randIntn(max - min)
+	if err != nil {
+		return 0, err
+	}
+
+	return min + add, nil
+}
+
+// hideBool generates a random bool given a random input.
+func hideBool(randIntn func(n int) (int, error)) (bool, error) {
+	random, err := randIntn(2)
+	if err != nil {
+		return false, err
+	}
+
+	// For testing we may expect larger random numbers, which we map to
+	// true.
+	return random >= 1, nil
+}
+
+// CryptoRandIntn generates a random number between [0, n).
+func CryptoRandIntn(n int) (int, error) {
+	if n == 0 {
+		return 0, nil
+	}
+
+	nBig, err := rand.Int(rand.Reader, big.NewInt(int64(n)))
+	if err != nil {
+		return 0, err
+	}
+
+	return int(nBig.Int64()), nil
 }

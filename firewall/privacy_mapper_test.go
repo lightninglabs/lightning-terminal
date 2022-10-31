@@ -3,6 +3,7 @@ package firewall
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	"github.com/lightninglabs/lightning-terminal/session"
@@ -366,3 +367,154 @@ func (m *mockPrivacyMapDB) RealToPseudo(real string) (string, error) {
 }
 
 var _ firewalldb.PrivacyMapDB = (*mockPrivacyMapDB)(nil)
+
+// TestRandBetween tests random number generation for numbers in an interval.
+func TestRandBetween(t *testing.T) {
+	min := 0
+	max := 10
+
+	for i := 0; i < 100; i++ {
+		val, err := randBetween(CryptoRandIntn, min, max)
+		require.NoError(t, err)
+		require.Less(t, val, max)
+		require.GreaterOrEqual(t, val, min)
+	}
+}
+
+// TestHideAmount tests that we hide amounts correctly.
+func TestHideAmount(t *testing.T) {
+	testAmount := uint64(10_000)
+	relativeVariation := 0.05
+	fuzzInterval := int(float64(testAmount) * relativeVariation)
+
+	tests := []struct {
+		name      string
+		amount    uint64
+		randIntFn func(int) (int, error)
+		expected  uint64
+	}{
+		{
+			name:      "zero test amount",
+			randIntFn: func(int) (int, error) { return 0, nil },
+		},
+		{
+			name:      "test small amount",
+			randIntFn: func(int) (int, error) { return 0, nil },
+			amount:    1,
+			expected:  1,
+		},
+		{
+			name:      "min value",
+			randIntFn: func(int) (int, error) { return 0, nil },
+			amount:    testAmount,
+			expected:  9750,
+		},
+		{
+			name: "max value",
+			randIntFn: func(int) (int, error) {
+				return fuzzInterval, nil
+			},
+			amount:   testAmount,
+			expected: 10250,
+		},
+		{
+			name:      "some fuzz",
+			randIntFn: func(int) (int, error) { return 123, nil },
+			amount:    testAmount,
+			expected:  9750 + 123,
+		},
+	}
+
+	for _, test := range tests {
+		test := test
+
+		t.Run(test.name, func(t *testing.T) {
+			val, err := hideAmount(
+				test.randIntFn,
+				relativeVariation,
+				test.amount,
+			)
+			require.NoError(t, err)
+			require.Equal(t, test.expected, val)
+		})
+	}
+
+	// Subtest with real randomness.
+	t.Run("real randomness for small numbers", func(t *testing.T) {
+		for i := 0; i < 1000; i++ {
+			_, err := hideAmount(
+				CryptoRandIntn,
+				relativeVariation,
+				uint64(i),
+			)
+			require.NoError(t, err)
+		}
+	})
+}
+
+// TestHideTimestamp test correct timestamp hiding.
+func TestHideTimestamp(t *testing.T) {
+	timestamp := time.Unix(1_000_000, 0)
+	absoluteVariation := time.Duration(10) * time.Minute
+
+	tests := []struct {
+		name      string
+		randIntFn func(int) (int, error)
+		timestamp time.Time
+		expected  time.Time
+	}{
+		{
+			name:      "zero timestamp",
+			randIntFn: func(int) (int, error) { return 0, nil },
+		},
+		{
+			name:      "min value",
+			randIntFn: func(int) (int, error) { return 0, nil },
+			timestamp: timestamp,
+			expected:  time.Unix(999_700, 0),
+		},
+		{
+			name: "max value",
+			randIntFn: func(int) (int, error) {
+				return int(absoluteVariation), nil
+			},
+			timestamp: timestamp,
+			expected:  time.Unix(1_000_300, 0),
+		},
+		{
+			name:      "some fuzz",
+			randIntFn: func(int) (int, error) { return 123, nil },
+			timestamp: timestamp,
+			expected:  time.Unix(999_700, 123),
+		},
+	}
+
+	for _, test := range tests {
+		test := test
+
+		t.Run(test.name, func(t *testing.T) {
+			val, err := hideTimestamp(
+				test.randIntFn,
+				absoluteVariation,
+				test.timestamp,
+			)
+			require.NoError(t, err)
+			require.Equal(t, test.expected, val)
+		})
+	}
+}
+
+// TestHideBool test correct boolean hiding.
+func TestHideBool(t *testing.T) {
+	val, err := hideBool(func(int) (int, error) { return 100, nil })
+	require.NoError(t, err)
+	require.True(t, val)
+
+	val, err = hideBool(func(int) (int, error) { return 1, nil })
+	require.NoError(t, err)
+	require.True(t, val)
+
+	val, err = hideBool(func(int) (int, error) { return 0, nil })
+	require.NoError(t, err)
+	require.False(t, val)
+}
