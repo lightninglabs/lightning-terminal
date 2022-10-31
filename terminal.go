@@ -475,10 +475,37 @@ func (g *LightningTerminal) Run() error {
 		g.cfg.lndAdminMacaroon = <-macChan
 	}
 
-	err = g.startSubservers()
+	// Set up all the LND clients required by LiT.
+	err = g.setUpLNDClients()
 	if err != nil {
-		log.Errorf("Could not start subservers: %v", err)
+		log.Errorf("Could not set up LND clients: %w", err)
 		return err
+	}
+
+	// If we're in integrated and stateless init mode, we won't create
+	// macaroon files in any of the subserver daemons.
+	createDefaultMacaroons := true
+	if g.cfg.LndMode == ModeIntegrated && g.lndInterceptorChain != nil &&
+		g.lndInterceptorChain.MacaroonService() != nil {
+
+		// If the wallet was initialized in stateless mode, we don't
+		// want any macaroons lying around on the filesystem. In that
+		// case only the UI will be able to access any of the integrated
+		// daemons. In all other cases we want default macaroons so we
+		// can use the CLI tools to interact with loop/pool/faraday.
+		macService := g.lndInterceptorChain.MacaroonService()
+		createDefaultMacaroons = !macService.StatelessInit
+	}
+
+	err = g.startIntegratedDaemons(createDefaultMacaroons)
+	if err != nil {
+		log.Errorf("Could not start integrated daemons: %v", err)
+		return err
+	}
+
+	err = g.startInternalSubServers(createDefaultMacaroons)
+	if err != nil {
+		return fmt.Errorf("could not start litd sub-servers: %v", err)
 	}
 
 	// Now block until we receive an error or the main shutdown signal.
@@ -506,10 +533,8 @@ func (g *LightningTerminal) Run() error {
 	return nil
 }
 
-// startSubservers creates an internal connection to lnd and then starts all
-// embedded daemons as external subservers that hook into the same gRPC and REST
-// servers that lnd started.
-func (g *LightningTerminal) startSubservers() error {
+// setUpLNDClients sets up the various LND clients required by LiT.
+func (g *LightningTerminal) setUpLNDClients() error {
 	var (
 		insecure      bool
 		clientOptions []lndclient.BasicClientOption
@@ -550,7 +575,7 @@ func (g *LightningTerminal) startSubservers() error {
 		return err
 	}, defaultStartupTimeout)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not create basic LND Client: %v", err)
 	}
 
 	// Now we know that the connection itself is ready. But we also need to
@@ -593,7 +618,8 @@ func (g *LightningTerminal) startSubservers() error {
 		},
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not create LND Services client: %v",
+			err)
 	}
 
 	// Pass LND's build tags to the permission manager so that it can
@@ -621,26 +647,19 @@ func (g *LightningTerminal) startSubservers() error {
 		g.rpcProxy.superMacaroon = superMacaroon
 	}
 
-	// If we're in integrated and stateless init mode, we won't create
-	// macaroon files in any of the subserver daemons.
-	createDefaultMacaroons := true
-	if g.cfg.LndMode == ModeIntegrated && g.lndInterceptorChain != nil &&
-		g.lndInterceptorChain.MacaroonService() != nil {
+	return nil
+}
 
-		// If the wallet was initialized in stateless mode, we don't
-		// want any macaroons lying around on the filesystem. In that
-		// case only the UI will be able to access any of the integrated
-		// daemons. In all other cases we want default macaroons so we
-		// can use the CLI tools to interact with loop/pool/faraday.
-		macService := g.lndInterceptorChain.MacaroonService()
-		createDefaultMacaroons = !macService.StatelessInit
-	}
+// startIntegratedDaemons starts all embedded daemons as external sub-servers
+// that hook into the same gRPC and REST servers that lnd started.
+func (g *LightningTerminal) startIntegratedDaemons(
+	createDefaultMacaroons bool) error {
 
-	// Both connection types are ready now, let's start our subservers if
+	// Both connection types are ready now, let's start our sub-servers if
 	// they should be started locally as an integrated service.
 	if !g.cfg.faradayRemote {
 		log.Infof("Starting integrated faraday daemon")
-		err = g.faradayServer.StartAsSubserver(
+		err := g.faradayServer.StartAsSubserver(
 			g.lndClient.LndServices, createDefaultMacaroons,
 		)
 		if err != nil {
@@ -651,7 +670,7 @@ func (g *LightningTerminal) startSubservers() error {
 
 	if !g.cfg.loopRemote {
 		log.Infof("Starting integrated loop daemon")
-		err = g.loopServer.StartAsSubserver(
+		err := g.loopServer.StartAsSubserver(
 			g.lndClient, createDefaultMacaroons,
 		)
 		if err != nil {
@@ -662,7 +681,7 @@ func (g *LightningTerminal) startSubservers() error {
 
 	if !g.cfg.poolRemote {
 		log.Infof("Starting integrated pool daemon")
-		err = g.poolServer.StartAsSubserver(
+		err := g.poolServer.StartAsSubserver(
 			g.basicClient, g.lndClient, createDefaultMacaroons,
 		)
 		if err != nil {
@@ -671,10 +690,21 @@ func (g *LightningTerminal) startSubservers() error {
 		g.poolStarted = true
 	}
 
+	return nil
+}
+
+// startInternalSubServers starts all Litd specific sub-servers.
+func (g *LightningTerminal) startInternalSubServers(
+	createDefaultMacaroons bool) error {
+
 	log.Infof("Starting LiT macaroon service")
+
+	var err error
 	g.macaroonService, err = lndclient.NewMacaroonService(
 		&lndclient.MacaroonServiceConfig{
-			DBPath:           filepath.Join(g.cfg.LitDir, g.cfg.Network),
+			DBPath: filepath.Join(
+				g.cfg.LitDir, g.cfg.Network,
+			),
 			MacaroonLocation: "litd",
 			StatelessInit:    !createDefaultMacaroons,
 			RequiredPerms:    perms.LitPermissions,
@@ -752,7 +782,8 @@ func (g *LightningTerminal) startSubservers() error {
 	}
 
 	if !g.cfg.Autopilot.Disable {
-		info, err := g.lndClient.Client.GetInfo(ctxc)
+		ctx := context.Background()
+		info, err := g.lndClient.Client.GetInfo(ctx)
 		if err != nil {
 			return fmt.Errorf("GetInfo call failed: %v", err)
 		}
