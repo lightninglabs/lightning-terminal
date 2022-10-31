@@ -152,6 +152,9 @@ type Config struct {
 	LetsEncryptDir    string `long:"letsencryptdir" description:"The directory where the Let's Encrypt library will store its key and certificate."`
 	LetsEncryptListen string `long:"letsencryptlisten" description:"The IP:port on which LiT will listen for Let's Encrypt challenges. Let's Encrypt will always try to contact on port 80. Often non-root processes are not allowed to bind to ports lower than 1024. This configuration option allows a different port to be used, but must be used in combination with port forwarding from port 80. This configuration can also be used to specify another IP address to listen on, for example an IPv6 address."`
 
+	TLSCertPath string `long:"tlscertpath" description:"Path to write the self signed TLS certificate for LiT's RPC and REST proxy service (if Let's Encrypt is not used). This only applies to the HTTP(S)Listen port."`
+	TLSKeyPath  string `long:"tlskeypath" description:"Path to write the self signed TLS private key for LiT's RPC and REST proxy service (if Let's Encrypt is not used). This only applies to the HTTP(S)Listen port."`
+
 	LitDir     string `long:"lit-dir" description:"The main directory where LiT looks for its configuration file. If LiT is running in 'remote' lnd mode, this is also the directory where the TLS certificates and log files are stored by default."`
 	ConfigFile string `long:"configfile" description:"Path to LiT's configuration file."`
 
@@ -211,9 +214,6 @@ type Config struct {
 // RemoteConfig holds the configuration parameters that are needed when running
 // LiT in the "remote" lnd mode.
 type RemoteConfig struct {
-	LitTLSCertPath string `long:"lit-tlscertpath" description:"For lnd remote mode only: Path to write the self signed TLS certificate for LiT's RPC and REST proxy service (if Let's Encrypt is not used)."`
-	LitTLSKeyPath  string `long:"lit-tlskeypath" description:"For lnd remote mode only: Path to write the self signed TLS private key for LiT's RPC and REST proxy service (if Let's Encrypt is not used)."`
-
 	LitLogDir         string `long:"lit-logdir" description:"For lnd remote mode only: Directory to log output."`
 	LitMaxLogFiles    int    `long:"lit-maxlogfiles" description:"For lnd remote mode only: Maximum logfiles to keep (0 for no rotation)"`
 	LitMaxLogFileSize int    `long:"lit-maxlogfilesize" description:"For lnd remote mode only: Maximum logfile size in MB"`
@@ -286,9 +286,9 @@ func (c *Config) lndConnectParams() (string, lndclient.Network, string,
 func defaultConfig() *Config {
 	return &Config{
 		HTTPSListen: defaultHTTPSListen,
+		TLSCertPath: DefaultTLSCertPath,
+		TLSKeyPath:  defaultTLSKeyPath,
 		Remote: &RemoteConfig{
-			LitTLSCertPath:    DefaultTLSCertPath,
-			LitTLSKeyPath:     defaultTLSKeyPath,
 			LitDebugLevel:     defaultLogLevel,
 			LitLogDir:         defaultLogDir,
 			LitMaxLogFiles:    defaultMaxLogFiles,
@@ -598,6 +598,33 @@ func loadConfigFile(preCfg *Config, interceptor signal.Interceptor) (*Config,
 		return nil, fmt.Errorf("invalid lnd mode %v", cfg.LndMode)
 	}
 
+	// If the provided lit directory is not the default, we'll modify the
+	// path to all of the files and directories that will live within it.
+	if litDir != DefaultLitDir {
+		if cfg.TLSKeyPath == defaultTLSKeyPath {
+			cfg.TLSKeyPath = filepath.Join(
+				litDir, DefaultTLSKeyFilename,
+			)
+		}
+
+		if cfg.TLSCertPath == DefaultTLSCertPath {
+			cfg.TLSCertPath = filepath.Join(
+				litDir, DefaultTLSCertFilename,
+			)
+		}
+	}
+
+	cfg.TLSCertPath = lncfg.CleanAndExpandPath(cfg.TLSCertPath)
+	cfg.TLSKeyPath = lncfg.CleanAndExpandPath(cfg.TLSKeyPath)
+
+	// Make sure the parent directories of our certificate files exist.
+	if err := makeDirectories(filepath.Dir(cfg.TLSCertPath)); err != nil {
+		return nil, err
+	}
+	if err := makeDirectories(filepath.Dir(cfg.TLSKeyPath)); err != nil {
+		return nil, err
+	}
+
 	// Warn about missing config file only after all other configuration is
 	// done. This prevents the warning on help messages and invalid options.
 	// Note this should go directly before the return.
@@ -637,24 +664,14 @@ func validateRemoteModeConfig(cfg *Config) error {
 	// path to all of the files and directories that will live within it.
 	litDir := lnd.CleanAndExpandPath(cfg.LitDir)
 	if litDir != DefaultLitDir {
-		r.LitTLSCertPath = filepath.Join(litDir, DefaultTLSCertFilename)
-		r.LitTLSKeyPath = filepath.Join(litDir, DefaultTLSKeyFilename)
-		r.LitLogDir = filepath.Join(litDir, defaultLogDirname)
+		if r.LitLogDir == defaultLogDir {
+			r.LitLogDir = filepath.Join(
+				litDir, defaultLogDirname,
+			)
+		}
 	}
 
-	r.LitTLSCertPath = lncfg.CleanAndExpandPath(r.LitTLSCertPath)
-	r.LitTLSKeyPath = lncfg.CleanAndExpandPath(r.LitTLSKeyPath)
 	r.LitLogDir = lncfg.CleanAndExpandPath(r.LitLogDir)
-
-	// Make sure the parent directories of our certificate files exist. We
-	// don't need to do the same for the log dir as the log rotator will do
-	// just that.
-	if err := makeDirectories(filepath.Dir(r.LitTLSCertPath)); err != nil {
-		return err
-	}
-	if err := makeDirectories(filepath.Dir(r.LitTLSKeyPath)); err != nil {
-		return err
-	}
 
 	// In remote mode, we don't call lnd's ValidateConfig that sets up a
 	// logging backend for us. We need to manually create and start one. The
@@ -745,8 +762,7 @@ func readUIPassword(config *Config) error {
 func buildTLSConfigForHttp2(config *Config) (*tls.Config, error) {
 	var tlsConfig *tls.Config
 
-	switch {
-	case config.LetsEncrypt:
+	if config.LetsEncrypt {
 		serverName := config.LetsEncryptHost
 		if serverName == "" {
 			return nil, errors.New("let's encrypt host name " +
@@ -782,10 +798,9 @@ func buildTLSConfigForHttp2(config *Config) (*tls.Config, error) {
 		tlsConfig = &tls.Config{
 			GetCertificate: manager.GetCertificate,
 		}
-
-	case config.LndMode == ModeRemote:
-		tlsCertPath := config.Remote.LitTLSCertPath
-		tlsKeyPath := config.Remote.LitTLSKeyPath
+	} else {
+		tlsCertPath := config.TLSCertPath
+		tlsKeyPath := config.TLSKeyPath
 
 		if !lnrpc.FileExists(tlsCertPath) &&
 			!lnrpc.FileExists(tlsKeyPath) {
@@ -802,16 +817,6 @@ func buildTLSConfigForHttp2(config *Config) (*tls.Config, error) {
 		}
 
 		tlsCert, _, err := cert.LoadCert(tlsCertPath, tlsKeyPath)
-		if err != nil {
-			return nil, fmt.Errorf("failed reading TLS server "+
-				"keys: %v", err)
-		}
-		tlsConfig = cert.TLSConfFromCert(tlsCert)
-
-	default:
-		tlsCert, _, err := cert.LoadCert(
-			config.Lnd.TLSCertPath, config.Lnd.TLSKeyPath,
-		)
 		if err != nil {
 			return nil, fmt.Errorf("failed reading TLS server "+
 				"keys: %v", err)

@@ -71,6 +71,8 @@ Example `~/.lit/lit.conf`:
 ```text
 # Application Options
 httpslisten=0.0.0.0:8443
+tlscertpath=~/.lit/tls.cert
+tlskeypath=~/.lit/tls.key
 letsencrypt=true
 letsencrypthost=loop.merchant.com
 lnd-mode=integrated
@@ -116,6 +118,15 @@ system:
 - **On MacOS**: `~/Library/Application Support/Lit/lit.conf`
 - **On Linux**: `~/.lit/lit.conf`
 - **On Windows**: `~/AppData/Roaming/Lit/lit.conf`
+
+## LiT and LND interfaces
+
+Port 10009 is the port that LND uses to expose its gRPC interface. LND's tls 
+cert and macaroons will be required when making requests to this interface.
+
+Port 8443 is a port that LiT uses to expose a variety of interfaces: gRPC, 
+REST, grpc-web. When making requests using this interface, LiT's tls cert and 
+macaroons should be used. 
 
 ## Upgrade Existing Nodes
 

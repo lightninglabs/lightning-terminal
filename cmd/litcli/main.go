@@ -11,7 +11,6 @@ import (
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightninglabs/protobuf-hex-display/jsonpb"
 	"github.com/lightninglabs/protobuf-hex-display/proto"
-	"github.com/lightningnetwork/lnd"
 	"github.com/lightningnetwork/lnd/lncfg"
 	"github.com/lightningnetwork/lnd/macaroons"
 	"github.com/urfave/cli"
@@ -47,16 +46,6 @@ var (
 		Usage: "path to lit's TLS certificate",
 		Value: terminal.DefaultTLSCertPath,
 	}
-	lndMode = cli.StringFlag{
-		Name:  "lndmode",
-		Usage: "the mode that lnd is running in: remote or integrated",
-		Value: terminal.ModeIntegrated,
-	}
-	lndTlsCertFlag = cli.StringFlag{
-		Name:  "lndtlscertpath",
-		Usage: "path to lnd's TLS certificate",
-		Value: lnd.DefaultConfig().TLSCertPath,
-	}
 	macaroonPathFlag = cli.StringFlag{
 		Name:  "macaroonpath",
 		Usage: "path to lit's macaroon file",
@@ -78,9 +67,7 @@ func main() {
 		},
 		networkFlag,
 		baseDirFlag,
-		lndMode,
 		tlsCertFlag,
-		lndTlsCertFlag,
 		macaroonPathFlag,
 	}
 	app.Commands = append(app.Commands, sessionCommands...)
@@ -175,18 +162,6 @@ func extractPathArgs(ctx *cli.Context) (string, string, error) {
 		)
 	}
 
-	// Get the LND mode. If Lit is in integrated LND mode, then LND's tls
-	// cert is used directly. Otherwise, Lit's own tls cert is used.
-	lndmode := strings.ToLower(ctx.GlobalString(lndMode.Name))
-	if lndmode == terminal.ModeIntegrated {
-		tlsCertPath := lncfg.CleanAndExpandPath(ctx.GlobalString(
-			lndTlsCertFlag.Name,
-		))
-
-		return tlsCertPath, macaroonPath, nil
-	}
-
-	// Lit is in remote LND mode. So we need Lit's tls cert.
 	tlsCertPath := lncfg.CleanAndExpandPath(ctx.GlobalString(
 		tlsCertFlag.Name,
 	))
