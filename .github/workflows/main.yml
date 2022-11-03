@@ -18,6 +18,9 @@ env:
   GO_VERSION: 1.18
 
 jobs:
+  ########################
+  # frontend build checks
+  ########################
   frontend:
     name: frontend tests on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -72,6 +75,9 @@ jobs:
         working-directory: ./app
         run: yarn test:ci
 
+  ########################
+  # backend build checks
+  ########################
   backend:
     name: backend build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -126,6 +132,9 @@ jobs:
       - name: build CLI binaries
         run: make go-install-cli
 
+  ########################
+  # proto compile check
+  ########################
   proto-compile-check:
     name: RPC proto compilation check
     runs-on: ubuntu-latest
@@ -147,10 +156,10 @@ jobs:
         uses: actions/cache@v1
         with:
           path: /home/runner/work/download_cache
-          key: lnd-${{ runner.os }}-download-${{ hashFiles('**/install_protoc.sh') }}
+          key: litd-${{ runner.os }}-download-${{ hashFiles('**/install_protoc.sh') }}
           restore-keys: |
-            lnd-${{ runner.os }}-download-${{ hashFiles('**/install_protoc.sh') }}
-            lnd-${{ runner.os }}-download-
+            litd-${{ runner.os }}-download-${{ hashFiles('**/install_protoc.sh') }}
+            litd-${{ runner.os }}-download-
 
       - name: get yarn cache dir
         id: yarn-cache-dir
@@ -182,6 +191,48 @@ jobs:
       - name: run check
         run: make mod-check
 
+  ########################
+  # check commits
+  ########################
+  check-commits:
+    name: check commits
+    runs-on: ubuntu-latest
+    steps:
+      - name: git checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: go cache
+        uses: actions/cache@v1
+        with:
+          path: /home/runner/work/go
+          key: litd-${{ runner.os }}-go-${{ env.GO_VERSION }}-${{ github.job }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            litd-${{ runner.os }}-go-${{ env.GO_VERSION }}-${{ github.job }}-${{ hashFiles('**/go.sum') }}
+            litd-${{ runner.os }}-go-${{ env.GO_VERSION }}-${{ github.job }}-
+            litd-${{ runner.os }}-go-${{ env.GO_VERSION }}-
+            litd-${{ runner.os }}-go-
+
+      - name: setup go ${{ env.GO_VERSION }}
+        uses: actions/setup-go@v2
+        with:
+          go-version: '${{ env.GO_VERSION }}'
+
+      - name: fetch and rebase on ${{ github.base_ref }}
+        run: |
+          git remote add upstream https://github.com/${{ github.repository }}
+          git fetch upstream
+          export GIT_COMMITTER_EMAIL="litd-ci@example.com"
+          export GIT_COMMITTER_NAME="LiT CI"
+          git rebase upstream/${{ github.base_ref }}
+
+      - name: check commits
+        run: scripts/check-each-commit.sh upstream/${{ github.base_ref }}
+
+  ########################
+  # lint code
+  ########################
   lint:
     name: lint
     runs-on: ubuntu-latest
@@ -202,6 +253,9 @@ jobs:
       - name: run check
         run: make lint mod-check
 
+  ########################
+  # unit race tests
+  ########################
   unit-race:
     name: unit-race
     runs-on: ubuntu-latest
@@ -219,6 +273,9 @@ jobs:
       - name: run check
         run: make unit-race
 
+  ########################
+  # unit tests
+  ########################
   unit:
     name: unit tests
     runs-on: ubuntu-latest
@@ -236,6 +293,9 @@ jobs:
       - name: run check
         run: make unit
 
+  ########################
+  # integration tests
+  ########################
   itest:
     name: integration test
     runs-on: ubuntu-latest
@@ -257,10 +317,10 @@ jobs:
         uses: actions/cache@v1
         with:
           path: /home/runner/work/download_cache
-          key: lnd-${{ runner.os }}-download-${{ hashFiles('**/install_protoc.sh') }}
+          key: litd-${{ runner.os }}-download-${{ hashFiles('**/install_protoc.sh') }}
           restore-keys: |
-            lnd-${{ runner.os }}-download-${{ hashFiles('**/install_protoc.sh') }}
-            lnd-${{ runner.os }}-download-
+            litd-${{ runner.os }}-download-${{ hashFiles('**/install_protoc.sh') }}
+            litd-${{ runner.os }}-download-
 
       - name: get yarn cache dir
         id: yarn-cache-dir
