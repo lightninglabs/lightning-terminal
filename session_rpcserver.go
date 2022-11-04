@@ -143,12 +143,38 @@ func (s *sessionRpcServer) AddSession(_ context.Context,
 		}
 
 		for _, op := range req.MacaroonCustomPermissions {
-			if op.Entity == macaroons.PermissionEntityCustomURI {
-				_, ok := s.cfg.permMgr.URIPermissions(op.Action)
-				if !ok {
-					return nil, fmt.Errorf("URI %s is "+
-						"unknown to LiT", op.Action)
+			if op.Entity != macaroons.PermissionEntityCustomURI {
+				permissions = append(permissions, bakery.Op{
+					Entity: op.Entity,
+					Action: op.Action,
+				})
+
+				continue
+			}
+
+			// First check if this is a regex URI.
+			uris, isRegex := s.cfg.permMgr.MatchRegexURI(op.Action)
+			if isRegex {
+				// This is a regex URI, and so we add each of
+				// the matching URIs returned from the
+				// permissions' manager.
+				for _, uri := range uris {
+					permissions = append(
+						permissions, bakery.Op{
+							Entity: op.Entity,
+							Action: uri,
+						},
+					)
 				}
+				continue
+			}
+
+			// This is not a wild card URI, so just check that the
+			// permissions' manager is aware of this URI.
+			_, ok := s.cfg.permMgr.URIPermissions(op.Action)
+			if !ok {
+				return nil, fmt.Errorf("URI %s is unknown to "+
+					"LiT", op.Action)
 			}
 
 			permissions = append(permissions, bakery.Op{

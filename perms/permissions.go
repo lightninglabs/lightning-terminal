@@ -2,6 +2,7 @@ package perms
 
 import (
 	"net"
+	"regexp"
 	"strings"
 	"sync"
 
@@ -208,6 +209,40 @@ func (pm *Manager) URIPermissions(uri string) ([]bakery.Op, bool) {
 
 	ops, ok := pm.perms[uri]
 	return ops, ok
+}
+
+// MatchRegexURI first checks that the given URI is in fact a regex. If it is,
+// then it is used to match on the perms that the manager has. The return values
+// are a list of URIs that match the regex and the boolean represents whether
+// the given uri is in fact a regex.
+func (pm *Manager) MatchRegexURI(uriRegex string) ([]string, bool) {
+	pm.permsMu.RLock()
+	defer pm.permsMu.RUnlock()
+
+	// If the given uri string is one of our permissions, then it is not
+	// a regex.
+	if _, ok := pm.perms[uriRegex]; ok {
+		return nil, false
+	}
+
+	// Construct the regex type from the given string.
+	r, err := regexp.Compile(uriRegex)
+	if err != nil {
+		return nil, false
+	}
+
+	// Iterate over the list of permissions and collect all permissions that
+	// match the given regex.
+	var matches []string
+	for uri := range pm.perms {
+		if !r.MatchString(uri) {
+			continue
+		}
+
+		matches = append(matches, uri)
+	}
+
+	return matches, true
 }
 
 // ActivePermissions returns all the available active permissions that the
