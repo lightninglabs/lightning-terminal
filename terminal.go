@@ -22,6 +22,7 @@ import (
 	"github.com/lightninglabs/faraday/frdrpc"
 	"github.com/lightninglabs/faraday/frdrpcserver"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
+	"github.com/lightninglabs/lightning-terminal/perms"
 	"github.com/lightninglabs/lightning-terminal/queue"
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
 	"github.com/lightninglabs/lightning-terminal/session"
@@ -136,7 +137,7 @@ type LightningTerminal struct {
 
 	defaultImplCfg *lnd.ImplementationCfg
 
-	permsMgr *PermissionsManager
+	permsMgr *perms.Manager
 
 	// lndInterceptorChain is a reference to lnd's interceptor chain that
 	// guards all incoming calls. This is only set in integrated mode!
@@ -204,8 +205,8 @@ func (g *LightningTerminal) Run() error {
 	g.errQueue.Start()
 	defer g.errQueue.Stop()
 
-	// Construct a new PermissionsManager.
-	g.permsMgr, err = NewPermissionsManager()
+	// Construct a new Manager.
+	g.permsMgr, err = perms.NewManager()
 	if err != nil {
 		return fmt.Errorf("could not create permissions manager")
 	}
@@ -589,7 +590,7 @@ func (g *LightningTerminal) startSubservers() error {
 			DBPath:           filepath.Join(g.cfg.LitDir, g.cfg.Network),
 			MacaroonLocation: "litd",
 			StatelessInit:    !createDefaultMacaroons,
-			RequiredPerms:    litPermissions,
+			RequiredPerms:    perms.LitPermissions,
 			LndClient:        &g.lndClient.LndServices,
 			EphemeralKey:     lndclient.SharedKeyNUMS,
 			KeyLocator:       lndclient.SharedKeyLocator,

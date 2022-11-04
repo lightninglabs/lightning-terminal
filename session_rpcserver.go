@@ -10,6 +10,7 @@ import (
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/lightninglabs/lightning-node-connect/mailbox"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
+	"github.com/lightninglabs/lightning-terminal/perms"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/macaroons"
 	"google.golang.org/grpc"
@@ -41,7 +42,7 @@ type sessionRpcServerConfig struct {
 	superMacBaker       func(ctx context.Context, rootKeyID uint64,
 		recipe *session.MacaroonRecipe) (string, error)
 	firstConnectionDeadline time.Duration
-	permMgr                 *PermissionsManager
+	permMgr                 *perms.Manager
 }
 
 // newSessionRPCServer creates a new sessionRpcServer using the passed config.

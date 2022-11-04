@@ -21,6 +21,7 @@ import (
 	"github.com/lightninglabs/lightning-node-connect/mailbox"
 	terminal "github.com/lightninglabs/lightning-terminal"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
+	"github.com/lightninglabs/lightning-terminal/perms"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/lightninglabs/pool/poolrpc"
@@ -945,7 +946,7 @@ func bakeSuperMacaroon(cfg *LitNodeConfig, readOnly bool) (string, error) {
 	lndAdminCtx := macaroonContext(ctxt, lndAdminMacBytes)
 	lndConn := lnrpc.NewLightningClient(rawConn)
 
-	permsMgr, err := terminal.NewPermissionsManager()
+	permsMgr, err := perms.NewManager()
 	if err != nil {
 		return "", err
 	}

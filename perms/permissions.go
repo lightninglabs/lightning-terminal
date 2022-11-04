@@ -1,4 +1,4 @@
-package terminal
+package perms
 
 import (
 	"net"
@@ -30,9 +30,9 @@ import (
 )
 
 var (
-	// litPermissions is a map of all LiT RPC methods and their required
+	// LitPermissions is a map of all LiT RPC methods and their required
 	// macaroon permissions to access the session service.
-	litPermissions = map[string][]bakery.Op{
+	LitPermissions = map[string][]bakery.Op{
 		"/litrpc.Sessions/AddSession": {{
 			Entity: "sessions",
 			Action: "write",
@@ -93,15 +93,15 @@ const (
 	lndPerms     subServerName = "lnd"
 )
 
-// PermissionsManager manages the permission lists that Lit requires.
-type PermissionsManager struct {
+// Manager manages the permission lists that Lit requires.
+type Manager struct {
 	// lndSubServerPerms is a map from LND subserver name to permissions
 	// map. This is used once the manager receives a list of build tags
 	// that LND has been compiled with so that the correct permissions can
 	// be extracted based on subservers that LND has been compiled with.
 	lndSubServerPerms map[string]map[string][]bakery.Op
 
-	// fixedPerms is constructed once on creation of the PermissionsManager.
+	// fixedPerms is constructed once on creation of the Manager.
 	// It contains all the permissions that will not change throughout the
 	// lifetime of the manager. It maps sub-server name to uri to permission
 	// operations.
@@ -117,14 +117,14 @@ type PermissionsManager struct {
 	permsMu sync.RWMutex
 }
 
-// NewPermissionsManager constructs a new PermissionsManager instance and
-// collects any of the fixed permissions.
-func NewPermissionsManager() (*PermissionsManager, error) {
+// NewManager constructs a new Manager instance and collects any of the fixed
+// permissions.
+func NewManager() (*Manager, error) {
 	permissions := make(map[subServerName]map[string][]bakery.Op)
 	permissions[faradayPerms] = faraday.RequiredPermissions
 	permissions[loopPerms] = loop.RequiredPermissions
 	permissions[poolPerms] = pool.RequiredPermissions
-	permissions[litPerms] = litPermissions
+	permissions[litPerms] = LitPermissions
 	permissions[lndPerms] = lnd.MainRPCServerPermissions()
 	for k, v := range whiteListedLNDMethods {
 		permissions[lndPerms][k] = v
@@ -163,7 +163,7 @@ func NewPermissionsManager() (*PermissionsManager, error) {
 		}
 	}
 
-	return &PermissionsManager{
+	return &Manager{
 		lndSubServerPerms: lndSubServerPerms,
 		fixedPerms:        permissions,
 		perms:             allPerms,
@@ -174,7 +174,7 @@ func NewPermissionsManager() (*PermissionsManager, error) {
 // obtained. It then uses those build tags to decide which of the LND sub-server
 // permissions to add to the main permissions list. This method should only
 // be called once.
-func (pm *PermissionsManager) OnLNDBuildTags(lndBuildTags []string) {
+func (pm *Manager) OnLNDBuildTags(lndBuildTags []string) {
 	pm.permsMu.Lock()
 	defer pm.permsMu.Unlock()
 
@@ -202,7 +202,7 @@ func (pm *PermissionsManager) OnLNDBuildTags(lndBuildTags []string) {
 // URIPermissions returns a list of permission operations for the given URI if
 // the uri is known to the manager. The second return parameter will be false
 // if the URI is unknown to the manager.
-func (pm *PermissionsManager) URIPermissions(uri string) ([]bakery.Op, bool) {
+func (pm *Manager) URIPermissions(uri string) ([]bakery.Op, bool) {
 	pm.permsMu.RLock()
 	defer pm.permsMu.RUnlock()
 
@@ -213,7 +213,7 @@ func (pm *PermissionsManager) URIPermissions(uri string) ([]bakery.Op, bool) {
 // ActivePermissions returns all the available active permissions that the
 // manager is aware of. Optionally, readOnly can be set to true if only the
 // read-only permissions should be returned.
-func (pm *PermissionsManager) ActivePermissions(readOnly bool) []bakery.Op {
+func (pm *Manager) ActivePermissions(readOnly bool) []bakery.Op {
 	pm.permsMu.RLock()
 	defer pm.permsMu.RUnlock()
 
@@ -254,7 +254,7 @@ func (pm *PermissionsManager) ActivePermissions(readOnly bool) []bakery.Op {
 // GetLitPerms returns a map of all permissions that the manager is aware of
 // _except_ for any LND permissions. In other words, this returns permissions
 // for which the external validator of Lit is responsible.
-func (pm *PermissionsManager) GetLitPerms() map[string][]bakery.Op {
+func (pm *Manager) GetLitPerms() map[string][]bakery.Op {
 	mapSize := len(pm.fixedPerms[litPerms]) +
 		len(pm.fixedPerms[faradayPerms]) +
 		len(pm.fixedPerms[loopPerms]) + len(pm.fixedPerms[poolPerms])
@@ -276,7 +276,7 @@ func (pm *PermissionsManager) GetLitPerms() map[string][]bakery.Op {
 }
 
 // IsLndURI returns true if the given URI belongs to an RPC of lnd.
-func (pm *PermissionsManager) IsLndURI(uri string) bool {
+func (pm *Manager) IsLndURI(uri string) bool {
 	var lndSubServerCall bool
 	for _, subserverPermissions := range pm.lndSubServerPerms {
 		_, found := subserverPermissions[uri]
@@ -290,25 +290,25 @@ func (pm *PermissionsManager) IsLndURI(uri string) bool {
 }
 
 // IsLoopURI returns true if the given URI belongs to an RPC of loopd.
-func (pm *PermissionsManager) IsLoopURI(uri string) bool {
+func (pm *Manager) IsLoopURI(uri string) bool {
 	_, ok := pm.fixedPerms[loopPerms][uri]
 	return ok
 }
 
 // IsFaradayURI returns true if the given URI belongs to an RPC of faraday.
-func (pm *PermissionsManager) IsFaradayURI(uri string) bool {
+func (pm *Manager) IsFaradayURI(uri string) bool {
 	_, ok := pm.fixedPerms[faradayPerms][uri]
 	return ok
 }
 
 // IsPoolURI returns true if the given URI belongs to an RPC of poold.
-func (pm *PermissionsManager) IsPoolURI(uri string) bool {
+func (pm *Manager) IsPoolURI(uri string) bool {
 	_, ok := pm.fixedPerms[poolPerms][uri]
 	return ok
 }
 
 // IsLitURI returns true if the given URI belongs to an RPC of LiT.
-func (pm *PermissionsManager) IsLitURI(uri string) bool {
+func (pm *Manager) IsLitURI(uri string) bool {
 	_, ok := pm.fixedPerms[litPerms][uri]
 	return ok
 }
