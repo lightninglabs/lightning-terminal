@@ -131,6 +131,11 @@ export class Session extends jspb.Message {
   getCreatedAt(): string;
   setCreatedAt(value: string): void;
 
+  hasMacaroonRecipe(): boolean;
+  clearMacaroonRecipe(): void;
+  getMacaroonRecipe(): MacaroonRecipe | undefined;
+  setMacaroonRecipe(value?: MacaroonRecipe): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Session.AsObject;
   static toObject(includeInstance: boolean, msg: Session): Session.AsObject;
@@ -154,6 +159,35 @@ export namespace Session {
     localPublicKey: Uint8Array | string,
     remotePublicKey: Uint8Array | string,
     createdAt: string,
+    macaroonRecipe?: MacaroonRecipe.AsObject,
+  }
+}
+
+export class MacaroonRecipe extends jspb.Message {
+  clearPermissionsList(): void;
+  getPermissionsList(): Array<MacaroonPermission>;
+  setPermissionsList(value: Array<MacaroonPermission>): void;
+  addPermissions(value?: MacaroonPermission, index?: number): MacaroonPermission;
+
+  clearCaveatsList(): void;
+  getCaveatsList(): Array<string>;
+  setCaveatsList(value: Array<string>): void;
+  addCaveats(value: string, index?: number): string;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): MacaroonRecipe.AsObject;
+  static toObject(includeInstance: boolean, msg: MacaroonRecipe): MacaroonRecipe.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: MacaroonRecipe, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): MacaroonRecipe;
+  static deserializeBinaryFromReader(message: MacaroonRecipe, reader: jspb.BinaryReader): MacaroonRecipe;
+}
+
+export namespace MacaroonRecipe {
+  export type AsObject = {
+    permissionsList: Array<MacaroonPermission.AsObject>,
+    caveatsList: Array<string>,
   }
 }
 
