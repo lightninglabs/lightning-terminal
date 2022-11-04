@@ -48,28 +48,56 @@ func TestPrivacyMapper(t *testing.T) {
 			msg: &lnrpc.ForwardingHistoryResponse{
 				ForwardingEvents: []*lnrpc.ForwardingEvent{
 					{
-						AmtIn:     100,
-						ChanIdIn:  123,
-						ChanIdOut: 321,
+						AmtIn:       2_000,
+						AmtInMsat:   2_000_000,
+						AmtOut:      1_000,
+						AmtOutMsat:  1_000_000,
+						Fee:         1_000,
+						FeeMsat:     1_000_000,
+						Timestamp:   1_000,
+						TimestampNs: 1_000_000_000_000,
+						ChanIdIn:    123,
+						ChanIdOut:   321,
 					},
 					{
-						Fee:       200,
-						ChanIdIn:  678,
-						ChanIdOut: 876,
+						AmtIn:       3_000,
+						AmtInMsat:   3_000_000,
+						AmtOut:      2_000,
+						AmtOutMsat:  2_000_000,
+						Fee:         1_000,
+						FeeMsat:     1_000_000,
+						Timestamp:   1_000,
+						TimestampNs: 1_000_000_000_000,
+						ChanIdIn:    678,
+						ChanIdOut:   876,
 					},
 				},
 			},
 			expectedReplacement: &lnrpc.ForwardingHistoryResponse{
 				ForwardingEvents: []*lnrpc.ForwardingEvent{
 					{
-						AmtIn:     100,
-						ChanIdIn:  5178778334600911958,
-						ChanIdOut: 3446430762436373227,
+						AmtIn:       1_950,
+						AmtInMsat:   1_950_200,
+						AmtOut:      975,
+						AmtOutMsat:  975_100,
+						Fee:         975,
+						FeeMsat:     975_100,
+						Timestamp:   700,
+						TimestampNs: 700_000_000_100,
+						ChanIdIn:    5178778334600911958,
+						ChanIdOut:   3446430762436373227,
 					},
 					{
-						Fee:       200,
-						ChanIdIn:  8672172843977902018,
-						ChanIdOut: 1378354177616075123,
+						AmtIn:       2_925,
+						AmtInMsat:   2_925_200,
+						AmtOut:      1_950,
+						AmtOutMsat:  1_950_100,
+						Fee:         975,
+						FeeMsat:     975_100,
+						Timestamp:   700,
+						TimestampNs: 700_000_000_100,
+						ChanIdIn:    8672172843977902018,
+						ChanIdOut:   1378354177616075123,
 					},
 				},
 			},
@@ -121,18 +149,34 @@ func TestPrivacyMapper(t *testing.T) {
 			msg: &lnrpc.ListChannelsResponse{
 				Channels: []*lnrpc.Channel{
 					{
-						RemotePubkey: "01020304",
-						ChanId:       123,
-						ChannelPoint: "abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd:0",
+						Capacity:              1_000_000,
+						RemoteBalance:         600_000,
+						LocalBalance:          499_000,
+						CommitFee:             1_000,
+						TotalSatoshisSent:     500_000,
+						TotalSatoshisReceived: 450_000,
+						RemotePubkey:          "01020304",
+						Initiator:             false,
+						ChanId:                123,
+						ChannelPoint:          "abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd:0",
+						PendingHtlcs:          []*lnrpc.HTLC{{HashLock: []byte("aaaa")}, {HashLock: []byte("bbbb")}},
 					},
 				},
 			},
 			expectedReplacement: &lnrpc.ListChannelsResponse{
 				Channels: []*lnrpc.Channel{
 					{
-						RemotePubkey: "c8134495",
-						ChanId:       5178778334600911958,
-						ChannelPoint: "097ef666a61919ff3413b3b701eae3a5cbac08f70c0ca567806e1fa6acbfe384:2161781494",
+						Capacity:              1_000_000,
+						RemoteBalance:         513_375,
+						LocalBalance:          485_625,
+						CommitFee:             1_000,
+						TotalSatoshisSent:     487_600,
+						TotalSatoshisReceived: 438_850,
+						RemotePubkey:          "c8134495",
+						Initiator:             true,
+						ChanId:                5178778334600911958,
+						ChannelPoint:          "097ef666a61919ff3413b3b701eae3a5cbac08f70c0ca567806e1fa6acbfe384:2161781494",
+						PendingHtlcs:          []*lnrpc.HTLC{{}, {}},
 					},
 				},
 			},
@@ -247,7 +291,10 @@ func TestPrivacyMapper(t *testing.T) {
 	}
 
 	db := newMockDB(t, mapPreloadRealToPseudo, sessionID)
-	p := NewPrivacyMapper(db.NewSessionDB)
+
+	// randIntn is used for deterministic testing.
+	randIntn := func(n int) (int, error) { return 100, nil }
+	p := NewPrivacyMapper(db.NewSessionDB, randIntn)
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -286,6 +333,111 @@ func TestPrivacyMapper(t *testing.T) {
 			)
 		})
 	}
+
+	// Subtest to test behavior with real randomness.
+	t.Run("Response with randomness", func(t *testing.T) {
+		msg := &lnrpc.ForwardingHistoryResponse{
+			ForwardingEvents: []*lnrpc.ForwardingEvent{
+				{
+					AmtIn:       2_000,
+					AmtInMsat:   2_000_000,
+					AmtOut:      1_000,
+					AmtOutMsat:  1_000_000,
+					Fee:         0,
+					FeeMsat:     1,
+					Timestamp:   1_000_000,
+					TimestampNs: 1_000_000 * 1e9,
+					ChanIdIn:    123,
+					ChanIdOut:   321,
+				},
+			},
+		}
+		rawMsg, err := proto.Marshal(msg)
+		require.NoError(t, err)
+
+		p = NewPrivacyMapper(db.NewSessionDB, CryptoRandIntn)
+		require.NoError(t, err)
+
+		// We test the independent outgoing amount (incoming amount
+		// would also be dependend on the fee variation).
+		amtOutMsat := msg.ForwardingEvents[0].AmtOutMsat
+		amtInterval := uint64(amountVariation * float64(amtOutMsat))
+		minAmt := amtOutMsat - amtInterval/2
+		maxAmt := amtOutMsat + amtInterval/2
+
+		// We keep track of the timestamp. We test only the timestamp in
+		// seconds as there can be numerical inaccuracies with the
+		// nanosecond one.
+		timestamp := msg.ForwardingEvents[0].Timestamp
+		timestampInterval := uint64(timeVariation) / 1e9
+		minTime := timestamp - timestampInterval/2
+		maxTime := timestamp + timestampInterval/2
+
+		// We need a certain number of samples to have statistical
+		// accuracy.
+		numSamples := 10_000
+
+		// We require a five percent accuracy for 10_000 samples.
+		relativeTestAccuracy := 0.05
+
+		amounts := make([]uint64, numSamples)
+		timestamps := make([]uint64, numSamples)
+
+		for i := 0; i < numSamples; i++ {
+			interceptReq := &rpcperms.InterceptionRequest{
+				Type:            rpcperms.TypeResponse,
+				Macaroon:        mac,
+				RawMacaroon:     macBytes,
+				FullURI:         "/lnrpc.Lightning/ForwardingHistory",
+				ProtoSerialized: rawMsg,
+				ProtoTypeName: string(
+					proto.MessageName(msg),
+				),
+			}
+
+			mwReq, err := interceptReq.ToRPC(1, 2)
+			require.NoError(t, err)
+
+			resp, err := p.Intercept(context.Background(), mwReq)
+			require.NoError(t, err)
+
+			feedback := resp.GetFeedback()
+
+			fw := &lnrpc.ForwardingHistoryResponse{}
+			err = proto.Unmarshal(
+				feedback.ReplacementSerialized, fw,
+			)
+			require.NoError(t, err)
+
+			amounts[i] = fw.ForwardingEvents[0].AmtOutMsat
+			require.LessOrEqual(t, amounts[i], maxAmt)
+			require.GreaterOrEqual(t, amounts[i], minAmt)
+
+			timestamps[i] = fw.ForwardingEvents[0].Timestamp
+			require.LessOrEqual(t, timestamps[i], maxTime)
+			require.GreaterOrEqual(t, timestamps[i], minTime)
+		}
+
+		// The formula for the expected variance is taken from
+		// https://en.wikipedia.org/wiki/Continuous_uniform_distribution
+		expectedVar := func(min, max uint64) uint64 {
+			return (max - min) * (max - min) / 12
+		}
+
+		// Test amounts for mean and variance.
+		expectedAmtVariance := expectedVar(minAmt, maxAmt)
+		require.InEpsilon(t, expectedAmtVariance, variance(amounts),
+			relativeTestAccuracy)
+		require.InEpsilon(t, amtOutMsat, mean(amounts),
+			relativeTestAccuracy)
+
+		// Test timestamps for mean and variance.
+		expectedTimeVariance := expectedVar(minTime, maxTime)
+		require.InEpsilon(t, expectedTimeVariance, variance(timestamps),
+			relativeTestAccuracy)
+		require.InEpsilon(t, timestamp, mean(timestamps),
+			relativeTestAccuracy)
+	})
 }
 
 type mockDB map[string]*mockPrivacyMapDB
@@ -517,4 +669,30 @@ func TestHideBool(t *testing.T) {
 	val, err = hideBool(func(int) (int, error) { return 0, nil })
 	require.NoError(t, err)
 	require.False(t, val)
+}
+
+// mean computes the mean of the given slice of numbers.
+func mean(numbers []uint64) uint64 {
+	sum := uint64(0)
+
+	for _, n := range numbers {
+		sum += n
+	}
+
+	return sum / uint64(len(numbers))
+}
+
+// variance computes the variance of the given slice of numbers.
+func variance(numbers []uint64) uint64 {
+	mean := mean(numbers)
+	sum := 0.0
+
+	// We divide in each step to have smaller numbers.
+	norm := float64(len(numbers) - 1)
+
+	for _, n := range numbers {
+		sum += float64((n-mean)*(n-mean)) / norm
+	}
+
+	return uint64(sum)
 }

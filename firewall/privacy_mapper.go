@@ -46,14 +46,16 @@ var _ mid.RequestInterceptor = (*PrivacyMapper)(nil)
 // PrivacyMapper is a RequestInterceptor that maps any pseudo names in certain
 // requests to their real values and vice versa for responses.
 type PrivacyMapper struct {
-	newDB firewalldb.NewPrivacyMapDB
+	newDB    firewalldb.NewPrivacyMapDB
+	randIntn func(int) (int, error)
 }
 
-// NewPrivacyMapper returns a new instance of PrivacyMapper.
-func NewPrivacyMapper(newDB firewalldb.NewPrivacyMapDB) *PrivacyMapper {
-	return &PrivacyMapper{
-		newDB: newDB,
-	}
+// NewPrivacyMapper returns a new instance of PrivacyMapper. The randIntn
+// function is used to draw randomness for request field obfuscation.
+func NewPrivacyMapper(newDB firewalldb.NewPrivacyMapDB,
+	randIntn func(int) (int, error)) *PrivacyMapper {
+
+	return &PrivacyMapper{newDB: newDB, randIntn: randIntn}
 }
 
 // Name returns the name of the interceptor.
@@ -224,7 +226,7 @@ func (p *PrivacyMapper) checkers(
 		"/lnrpc.Lightning/ForwardingHistory": mid.NewResponseRewriter(
 			&lnrpc.ForwardingHistoryRequest{},
 			&lnrpc.ForwardingHistoryResponse{},
-			handleFwdHistoryResponse(db),
+			handleFwdHistoryResponse(db, p.randIntn),
 			mid.PassThroughErrorHandler,
 		),
 		"/lnrpc.Lightning/FeeReport": mid.NewResponseRewriter(
@@ -236,7 +238,8 @@ func (p *PrivacyMapper) checkers(
 			&lnrpc.ListChannelsRequest{},
 			&lnrpc.ListChannelsResponse{},
 			handleListChannelsRequest(db),
-			handleListChannelsResponse(db),
+			handleListChannelsResponse(db, p.randIntn),
+
 			mid.PassThroughErrorHandler,
 		),
 		"/lnrpc.Lightning/UpdateChannelPolicy": mid.NewFullRewriter(
@@ -282,15 +285,16 @@ func handleGetInfoRequest(db firewalldb.PrivacyMapDB) func(ctx context.Context,
 	}
 }
 
-func handleFwdHistoryResponse(db firewalldb.PrivacyMapDB) func(
-	ctx context.Context, r *lnrpc.ForwardingHistoryResponse) (proto.Message,
-	error) {
+func handleFwdHistoryResponse(db firewalldb.PrivacyMapDB,
+	randIntn func(int) (int, error)) func(ctx context.Context,
+	r *lnrpc.ForwardingHistoryResponse) (proto.Message, error) {
 
-	return func(ctx context.Context, r *lnrpc.ForwardingHistoryResponse) (
+	return func(_ context.Context, r *lnrpc.ForwardingHistoryResponse) (
 		proto.Message, error) {
 
 		err := db.Update(func(tx firewalldb.PrivacyMapTx) error {
 			for _, fe := range r.ForwardingEvents {
+				// Deterministically hide channel ids.
 				chanIn, err := firewalldb.HideUint64(
 					tx, fe.ChanIdIn,
 				)
@@ -306,6 +310,44 @@ func handleFwdHistoryResponse(db firewalldb.PrivacyMapDB) func(
 					return err
 				}
 				fe.ChanIdOut = chanOut
+
+				// We randomize the outgoing amount for privacy.
+				hiddenAmtOutMsat, err := hideAmount(
+					randIntn, amountVariation,
+					fe.AmtOutMsat,
+				)
+				if err != nil {
+					return err
+				}
+				fe.AmtOutMsat = hiddenAmtOutMsat
+
+				// We randomize fees for privacy.
+				hiddenFeeMsat, err := hideAmount(
+					randIntn, amountVariation, fe.FeeMsat,
+				)
+				if err != nil {
+					return err
+				}
+				fe.FeeMsat = hiddenFeeMsat
+
+				// Populate other fields in a consistent manner.
+				fe.AmtInMsat = fe.AmtOutMsat + fe.FeeMsat
+				fe.AmtOut = fe.AmtOutMsat / 1000
+				fe.AmtIn = fe.AmtInMsat / 1000
+				fe.Fee = fe.FeeMsat / 1000
+
+				// We randomize the forwarding timestamp.
+				timestamp := time.Unix(0, int64(fe.TimestampNs))
+				hiddenTimestamp, err := hideTimestamp(
+					randIntn, timeVariation, timestamp,
+				)
+				if err != nil {
+					return err
+				}
+				fe.TimestampNs = uint64(
+					hiddenTimestamp.UnixNano(),
+				)
+				fe.Timestamp = uint64(hiddenTimestamp.Unix())
 			}
 			return nil
 		})
@@ -382,22 +424,37 @@ func handleListChannelsRequest(db firewalldb.PrivacyMapDB) func(
 	}
 }
 
-func handleListChannelsResponse(db firewalldb.PrivacyMapDB) func(
-	ctx context.Context, r *lnrpc.ListChannelsResponse) (proto.Message,
-	error) {
+func handleListChannelsResponse(db firewalldb.PrivacyMapDB,
+	randIntn func(int) (int, error)) func(ctx context.Context,
+	r *lnrpc.ListChannelsResponse) (proto.Message, error) {
 
-	return func(ctx context.Context, r *lnrpc.ListChannelsResponse) (
+	return func(_ context.Context, r *lnrpc.ListChannelsResponse) (
 		proto.Message, error) {
+
+		hideAmount := func(a int64) (int64, error) {
+			hiddenAmount, err := hideAmount(
+				randIntn, amountVariation, uint64(a),
+			)
+			if err != nil {
+				return 0, err
+			}
+
+			return int64(hiddenAmount), nil
+		}
 
 		err := db.Update(func(tx firewalldb.PrivacyMapTx) error {
 			for i, c := range r.Channels {
+				ch := r.Channels[i]
+
+				// Deterministically hide the peer pubkey,
+				// the channel point, and the channel id.
 				pk, err := firewalldb.HideString(
 					tx, c.RemotePubkey,
 				)
 				if err != nil {
 					return err
 				}
-				r.Channels[i].RemotePubkey = pk
+				ch.RemotePubkey = pk
 
 				cp, err := firewalldb.HideChanPointStr(
 					tx, c.ChannelPoint,
@@ -405,13 +462,83 @@ func handleListChannelsResponse(db firewalldb.PrivacyMapDB) func(
 				if err != nil {
 					return err
 				}
-				r.Channels[i].ChannelPoint = cp
+				ch.ChannelPoint = cp
 
 				cid, err := firewalldb.HideUint64(tx, c.ChanId)
 				if err != nil {
 					return err
 				}
-				r.Channels[i].ChanId = cid
+				ch.ChanId = cid
+
+				// We hide the initiator.
+				initiator, err := hideBool(randIntn)
+				if err != nil {
+					return err
+				}
+				ch.Initiator = initiator
+
+				// Consider the capacity to be public
+				// information. We don't care about reserves, as
+				// having some funds as a balance is the normal
+				// state over the lifetime of a channel. The
+				// balance would be zero only for the initial
+				// state as a non-funder.
+
+				// We randomize local/remote balances.
+				localBalance, err := hideAmount(c.LocalBalance)
+				if err != nil {
+					return err
+				}
+
+				// We may have a too large value for the local
+				// balance, restrict it to the capacity.
+				if localBalance > c.Capacity {
+					localBalance = c.Capacity
+				}
+				if ch.Initiator {
+					localBalance -= ch.CommitFee
+				}
+				ch.LocalBalance = localBalance
+
+				// We adapt the remote balance accordingly.
+				remoteBalance := c.Capacity - localBalance -
+					c.CommitFee
+				if !ch.Initiator {
+					remoteBalance -= ch.CommitFee
+				}
+				ch.RemoteBalance = remoteBalance
+
+				// We hide the total sats sent and received.
+				hiddenSatsReceived, err := hideAmount(
+					c.TotalSatoshisReceived,
+				)
+				if err != nil {
+					return err
+				}
+				ch.TotalSatoshisReceived = hiddenSatsReceived
+
+				hiddenSatsSent, err := hideAmount(
+					c.TotalSatoshisSent,
+				)
+				if err != nil {
+					return err
+				}
+				ch.TotalSatoshisSent = hiddenSatsSent
+
+				// We only keep track of the number of unsettled
+				// HTLCs.
+				ch.PendingHtlcs = make(
+					[]*lnrpc.HTLC, len(ch.PendingHtlcs),
+				)
+
+				// We hide the unsettled balance.
+				unsettled, err := hideAmount(
+					c.UnsettledBalance,
+				)
+				if err != nil {
+					return err
+				}
+				ch.UnsettledBalance = unsettled
 			}
 
 			return nil
