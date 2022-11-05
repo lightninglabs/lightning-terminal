@@ -50,6 +50,10 @@ const GlobalStyles = (theme: Theme) => `
         right: 12px;
       }
   }
+
+  .ReactCollapse--collapse {
+    transition: height 500ms;
+  }
 `;
 
 const Styled = {
