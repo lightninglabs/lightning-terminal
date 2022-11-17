@@ -43,12 +43,11 @@ type sessionRpcServer struct {
 // sessionRpcServerConfig holds the values used to configure the
 // sessionRpcServer.
 type sessionRpcServerConfig struct {
-	basicAuth           string
-	dbDir               string
-	grpcOptions         []grpc.ServerOption
-	registerGrpcServers func(server *grpc.Server)
-	superMacBaker       func(ctx context.Context, rootKeyID uint64,
-		recipe *session.MacaroonRecipe) (string, error)
+	basicAuth               string
+	dbDir                   string
+	grpcOptions             []grpc.ServerOption
+	registerGrpcServers     func(server *grpc.Server)
+	superMacBaker           session.MacaroonBaker
 	firstConnectionDeadline time.Duration
 	permMgr                 *perms.Manager
 }

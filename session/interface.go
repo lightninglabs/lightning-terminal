@@ -1,6 +1,7 @@
 package session
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -53,6 +54,10 @@ type Session struct {
 	LocalPublicKey  *btcec.PublicKey
 	RemotePublicKey *btcec.PublicKey
 }
+
+// MacaroonBaker is a function type for baking a super macaroon.
+type MacaroonBaker func(ctx context.Context, rootKeyID uint64,
+	recipe *MacaroonRecipe) (string, error)
 
 // NewSession creates a new session with the given user-defined parameters.
 func NewSession(label string, typ Type, expiry time.Time, serverAddr string,

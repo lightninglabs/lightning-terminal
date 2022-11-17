@@ -9,6 +9,7 @@ import (
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
 	"github.com/lightningnetwork/lnd/lnwire"
+	"gopkg.in/macaroon-bakery.v2/bakery"
 )
 
 const (
@@ -148,6 +149,31 @@ var (
 	// interceptor.
 	ErrNotSupportedWithAccounts = errors.New("this RPC call is not " +
 		"supported with restricted account macaroons")
+
+	// MacaroonPermissions are the permissions required for an account
+	// macaroon.
+	MacaroonPermissions = []bakery.Op{{
+		Entity: "info",
+		Action: "read",
+	}, {
+		Entity: "offchain",
+		Action: "read",
+	}, {
+		Entity: "offchain",
+		Action: "write",
+	}, {
+		Entity: "onchain",
+		Action: "read",
+	}, {
+		Entity: "invoices",
+		Action: "read",
+	}, {
+		Entity: "invoices",
+		Action: "write",
+	}, {
+		Entity: "peers",
+		Action: "read",
+	}}
 )
 
 // Store is the main account store interface.
