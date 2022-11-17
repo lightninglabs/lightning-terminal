@@ -84,6 +84,7 @@ func main() {
 		macaroonPathFlag,
 	}
 	app.Commands = append(app.Commands, sessionCommands...)
+	app.Commands = append(app.Commands, accountsCommands...)
 
 	err := app.Run(os.Args)
 	if err != nil {
