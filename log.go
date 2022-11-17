@@ -4,6 +4,7 @@ import (
 	"github.com/btcsuite/btclog"
 	"github.com/lightninglabs/faraday"
 	"github.com/lightninglabs/lightning-node-connect/mailbox"
+	"github.com/lightninglabs/lightning-terminal/accounts"
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightninglabs/loop/loopd"
@@ -61,6 +62,9 @@ func SetupLoggers(root *build.RotatingLogWriter, intercept signal.Interceptor) {
 	lnd.AddSubLogger(root, session.Subsystem, intercept, session.UseLogger)
 	lnd.AddSubLogger(root, mailbox.Subsystem, intercept, mailbox.UseLogger)
 	lnd.AddSubLogger(root, mid.Subsystem, intercept, mid.UseLogger)
+	lnd.AddSubLogger(
+		root, accounts.Subsystem, intercept, accounts.UseLogger,
+	)
 
 	// Add daemon loggers to lnd's root logger.
 	faraday.SetupLoggers(root, intercept)
