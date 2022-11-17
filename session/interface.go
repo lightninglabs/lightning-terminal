@@ -19,6 +19,7 @@ const (
 	TypeMacaroonAdmin    Type = 1
 	TypeMacaroonCustom   Type = 2
 	TypeUIPassword       Type = 3
+	TypeMacaroonAccount  Type = 4
 )
 
 // State represents the state of a session.

@@ -3,7 +3,9 @@ package itest
 import (
 	"context"
 	"io/ioutil"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
@@ -138,7 +140,15 @@ func runAccountSystemTest(t *harnessTest, node *HarnessNode, hostPort,
 
 	// Run the actual account restriction tests against the connection with
 	// the account macaroon.
-	testAccountRestrictions(ctxa, t, net, rawConn, charlie, acctBalance)
+	newAcctBalance := testAccountRestrictions(
+		ctxa, t, rawConn, charlie, acctBalance,
+	)
+
+	// Test the same account restrictions with an LNC session that is bound
+	// to the account.
+	testAccountRestrictionsLNC(
+		ctxm, t, rawConn, newAcctBalance, acctResp.Account.Id,
+	)
 
 	// Clean up our channel and payments, so we can start the next test
 	// iteration with a clean slate.
@@ -151,11 +161,68 @@ func runAccountSystemTest(t *harnessTest, node *HarnessNode, hostPort,
 	require.NoError(t.t, err)
 }
 
+// testAccountRestrictionsLNC tests that an account restricted session can also
+// be created through LNC.
+func testAccountRestrictionsLNC(ctxm context.Context, t *harnessTest,
+	rawConn grpc.ClientConnInterface, currentAccountBalance uint64,
+	accountID string) {
+
+	// We first need to create an LNC session that we can use to connect.
+	// We use the UI password to create the session.
+	litClient := litrpc.NewSessionsClient(rawConn)
+	sessResp, err := litClient.AddSession(ctxm, &litrpc.AddSessionRequest{
+		Label:       "integration-test",
+		SessionType: litrpc.SessionType_TYPE_MACAROON_ACCOUNT,
+		ExpiryTimestampSeconds: uint64(
+			time.Now().Add(5 * time.Minute).Unix(),
+		),
+		MailboxServerAddr: mailboxServerAddr,
+		AccountId:         accountID,
+	})
+	require.NoError(t.t, err)
+
+	// Try the LNC connection now.
+	connectPhrase := strings.Split(
+		sessResp.Session.PairingSecretMnemonic, " ",
+	)
+
+	ctxb := context.Background()
+	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
+	defer cancel()
+
+	rawLNCConn, err := connectMailbox(ctxt, connectPhrase)
+	require.NoError(t.t, err)
+
+	lightningClient := lnrpc.NewLightningClient(rawLNCConn)
+
+	// The channel balance should always reflect our account balance.
+	assertChannelBalance(
+		ctxt, t.t, lightningClient, currentAccountBalance, 0,
+	)
+
+	// The on-chain balance should always be zero, no on-chain transactions
+	// should show up and nothing channel or peer related should be shown.
+	assertWalletBalance(ctxt, t.t, lightningClient, 0, 0, 0, 0)
+	assertNumChannels(ctxt, t.t, lightningClient, 0, 0, 0, 0)
+	assertNumPeers(ctxt, t.t, lightningClient, 0)
+
+	txnsResp, err := lightningClient.GetTransactions(
+		ctxt, &lnrpc.GetTransactionsRequest{},
+	)
+	require.NoError(t.t, err)
+	require.Len(t.t, txnsResp.Transactions, 0)
+
+	// There should be invoices and payments from the previous test over RPC
+	// directly.
+	assertNumInvoices(ctxt, t.t, lightningClient, 1)
+	assertNumPayments(ctxt, t.t, lightningClient, 1)
+}
+
 // testAccountRestrictions tests the different scenarios in which the account
 // restricted RPC responses differ from the normal responses.
 func testAccountRestrictions(ctxa context.Context, t *harnessTest,
-	net *NetworkHarness, rawConn *grpc.ClientConn, charlie *HarnessNode,
-	initialAccountBalance uint64) {
+	rawConn grpc.ClientConnInterface, charlie *HarnessNode,
+	initialAccountBalance uint64) uint64 {
 
 	// The ctxa variable is the context with the restricted account macaroon
 	// applied to it. But we also need a timeout context for things we do
@@ -217,6 +284,8 @@ func testAccountRestrictions(ctxa context.Context, t *harnessTest,
 		ctxa, t.t, lightningClient,
 		initialAccountBalance+inboundPaymentAmt-outboundPaymentAmt, 0,
 	)
+
+	return initialAccountBalance + inboundPaymentAmt - outboundPaymentAmt
 }
 
 func assertChannelBalance(ctx context.Context, t *testing.T,

@@ -85,7 +85,8 @@ proto.litrpc.AddSessionRequest.toObject = function(includeInstance, msg) {
     mailboxServerAddr: jspb.Message.getFieldWithDefault(msg, 4, ""),
     devServer: jspb.Message.getFieldWithDefault(msg, 5, false),
     macaroonCustomPermissionsList: jspb.Message.toObjectList(msg.getMacaroonCustomPermissionsList(),
-    proto.litrpc.MacaroonPermission.toObject, includeInstance)
+    proto.litrpc.MacaroonPermission.toObject, includeInstance),
+    accountId: jspb.Message.getFieldWithDefault(msg, 7, "")
   };
 
   if (includeInstance) {
@@ -146,6 +147,10 @@ proto.litrpc.AddSessionRequest.deserializeBinaryFromReader = function(msg, reade
       var value = new proto.litrpc.MacaroonPermission;
       reader.readMessage(value,proto.litrpc.MacaroonPermission.deserializeBinaryFromReader);
       msg.addMacaroonCustomPermissions(value);
+      break;
+    case 7:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setAccountId(value);
       break;
     default:
       reader.skipField();
@@ -217,6 +222,13 @@ proto.litrpc.AddSessionRequest.serializeBinaryToWriter = function(message, write
       6,
       f,
       proto.litrpc.MacaroonPermission.serializeBinaryToWriter
+    );
+  }
+  f = message.getAccountId();
+  if (f.length > 0) {
+    writer.writeString(
+      7,
+      f
     );
   }
 };
@@ -327,6 +339,21 @@ proto.litrpc.AddSessionRequest.prototype.addMacaroonCustomPermissions = function
 
 proto.litrpc.AddSessionRequest.prototype.clearMacaroonCustomPermissionsList = function() {
   this.setMacaroonCustomPermissionsList([]);
+};
+
+
+/**
+ * optional string account_id = 7;
+ * @return {string}
+ */
+proto.litrpc.AddSessionRequest.prototype.getAccountId = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 7, ""));
+};
+
+
+/** @param {string} value */
+proto.litrpc.AddSessionRequest.prototype.setAccountId = function(value) {
+  jspb.Message.setProto3StringField(this, 7, value);
 };
 
 
@@ -716,7 +743,8 @@ proto.litrpc.Session.toObject = function(includeInstance, msg) {
     localPublicKey: msg.getLocalPublicKey_asB64(),
     remotePublicKey: msg.getRemotePublicKey_asB64(),
     createdAt: jspb.Message.getFieldWithDefault(msg, 11, "0"),
-    macaroonRecipe: (f = msg.getMacaroonRecipe()) && proto.litrpc.MacaroonRecipe.toObject(includeInstance, f)
+    macaroonRecipe: (f = msg.getMacaroonRecipe()) && proto.litrpc.MacaroonRecipe.toObject(includeInstance, f),
+    accountId: jspb.Message.getFieldWithDefault(msg, 13, "")
   };
 
   if (includeInstance) {
@@ -801,6 +829,10 @@ proto.litrpc.Session.deserializeBinaryFromReader = function(msg, reader) {
       var value = new proto.litrpc.MacaroonRecipe;
       reader.readMessage(value,proto.litrpc.MacaroonRecipe.deserializeBinaryFromReader);
       msg.setMacaroonRecipe(value);
+      break;
+    case 13:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setAccountId(value);
       break;
     default:
       reader.skipField();
@@ -914,6 +946,13 @@ proto.litrpc.Session.serializeBinaryToWriter = function(message, writer) {
       12,
       f,
       proto.litrpc.MacaroonRecipe.serializeBinaryToWriter
+    );
+  }
+  f = message.getAccountId();
+  if (f.length > 0) {
+    writer.writeString(
+      13,
+      f
     );
   }
 };
@@ -1185,6 +1224,21 @@ proto.litrpc.Session.prototype.clearMacaroonRecipe = function() {
  */
 proto.litrpc.Session.prototype.hasMacaroonRecipe = function() {
   return jspb.Message.getField(this, 12) != null;
+};
+
+
+/**
+ * optional string account_id = 13;
+ * @return {string}
+ */
+proto.litrpc.Session.prototype.getAccountId = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 13, ""));
+};
+
+
+/** @param {string} value */
+proto.litrpc.Session.prototype.setAccountId = function(value) {
+  jspb.Message.setProto3StringField(this, 13, value);
 };
 
 
@@ -1970,7 +2024,8 @@ proto.litrpc.SessionType = {
   TYPE_MACAROON_READONLY: 0,
   TYPE_MACAROON_ADMIN: 1,
   TYPE_MACAROON_CUSTOM: 2,
-  TYPE_UI_PASSWORD: 3
+  TYPE_UI_PASSWORD: 3,
+  TYPE_MACAROON_ACCOUNT: 4
 };
 
 /**

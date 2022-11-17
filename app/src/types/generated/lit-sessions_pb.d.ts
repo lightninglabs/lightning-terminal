@@ -24,6 +24,9 @@ export class AddSessionRequest extends jspb.Message {
   setMacaroonCustomPermissionsList(value: Array<MacaroonPermission>): void;
   addMacaroonCustomPermissions(value?: MacaroonPermission, index?: number): MacaroonPermission;
 
+  getAccountId(): string;
+  setAccountId(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): AddSessionRequest.AsObject;
   static toObject(includeInstance: boolean, msg: AddSessionRequest): AddSessionRequest.AsObject;
@@ -42,6 +45,7 @@ export namespace AddSessionRequest {
     mailboxServerAddr: string,
     devServer: boolean,
     macaroonCustomPermissionsList: Array<MacaroonPermission.AsObject>,
+    accountId: string,
   }
 }
 
@@ -136,6 +140,9 @@ export class Session extends jspb.Message {
   getMacaroonRecipe(): MacaroonRecipe | undefined;
   setMacaroonRecipe(value?: MacaroonRecipe): void;
 
+  getAccountId(): string;
+  setAccountId(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Session.AsObject;
   static toObject(includeInstance: boolean, msg: Session): Session.AsObject;
@@ -160,6 +167,7 @@ export namespace Session {
     remotePublicKey: Uint8Array | string,
     createdAt: string,
     macaroonRecipe?: MacaroonRecipe.AsObject,
+    accountId: string,
   }
 }
 
@@ -272,6 +280,7 @@ export interface SessionTypeMap {
   TYPE_MACAROON_ADMIN: 1;
   TYPE_MACAROON_CUSTOM: 2;
   TYPE_UI_PASSWORD: 3;
+  TYPE_MACAROON_ACCOUNT: 4;
 }
 
 export const SessionType: SessionTypeMap;

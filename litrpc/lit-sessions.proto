@@ -19,6 +19,7 @@ enum SessionType {
     TYPE_MACAROON_ADMIN = 1;
     TYPE_MACAROON_CUSTOM = 2;
     TYPE_UI_PASSWORD = 3;
+    TYPE_MACAROON_ACCOUNT = 4;
 }
 
 message AddSessionRequest {
@@ -33,6 +34,8 @@ message AddSessionRequest {
     bool dev_server = 5;
 
     repeated MacaroonPermission macaroon_custom_permissions = 6;
+
+    string account_id = 7;
 }
 
 message MacaroonPermission {
@@ -86,6 +89,8 @@ message Session {
     uint64 created_at = 11 [jstype = JS_STRING];
 
     MacaroonRecipe macaroon_recipe = 12;
+
+    string account_id = 13;
 }
 
 message MacaroonRecipe {
