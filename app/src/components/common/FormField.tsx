@@ -22,12 +22,13 @@ interface Props {
   info?: ReactNode;
   error?: ReactNode;
   tip?: string;
+  className?: string;
 }
 
-const FormField: React.FC<Props> = ({ label, info, error, tip, children }) => {
+const FormField: React.FC<Props> = ({ label, info, error, tip, children, className }) => {
   const { Wrapper, Info } = Styled;
   return (
-    <Wrapper>
+    <Wrapper className={className}>
       {label && (
         <HeaderFour>
           {label}

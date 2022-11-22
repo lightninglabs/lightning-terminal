@@ -26,6 +26,11 @@ const Styled = {
     &::placeholder {
       color: ${props => props.theme.colors.gray};
     }
+
+    // Fix color of the date picker icon in chrome
+    ::-webkit-calendar-picker-indicator {
+      filter: invert(1);
+    }
   `,
   Extra: styled.div`
     position: absolute;
