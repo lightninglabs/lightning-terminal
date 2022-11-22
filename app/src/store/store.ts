@@ -20,6 +20,7 @@ import {
 } from './stores';
 import {
   AccountSectionView,
+  AddSessionView,
   AppView,
   BatchesView,
   BuildSwapView,
@@ -66,6 +67,7 @@ export class Store {
   orderListView = new OrderListView(this);
   batchesView = new BatchesView(this);
   registerSidecarView = new RegisterSidecarView(this);
+  addSessionView = new AddSessionView(this);
 
   /** the backend api services to be used by child stores */
   api: {
