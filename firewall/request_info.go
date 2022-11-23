@@ -72,6 +72,12 @@ func NewInfoFromRequest(req *lnrpc.RPCMiddlewareRequest) (*RequestInfo, error) {
 	ri.MsgID = req.MsgId
 	ri.RequestID = req.RequestId
 
+	// If there is no macaroon in the request, then there is nothing left
+	// to parse.
+	if len(req.RawMacaroon) == 0 {
+		return ri, nil
+	}
+
 	ri.Macaroon = &macaroon.Macaroon{}
 	if err := ri.Macaroon.UnmarshalBinary(req.RawMacaroon); err != nil {
 		return nil, fmt.Errorf("error parsing macaroon: %v", err)
