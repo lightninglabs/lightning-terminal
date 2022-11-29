@@ -216,9 +216,17 @@ type MacaroonPermission struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The entity a permission grants access to.
+	// The entity a permission grants access to. If a entity is set to the
+	// "uri" keyword then the action entry should be one of the special cases
+	// described in the comment for action.
 	Entity string `protobuf:"bytes,1,opt,name=entity,proto3" json:"entity,omitempty"`
-	// The action that is granted.
+	// The action that is granted. If entity is set to "uri", then action must
+	// be set to either:
+	//  - a particular URI to which access should be granted.
+	//  - a URI regex, in which case access will be granted to each URI that
+	//    matches the regex.
+	//  - the "***readonly***" keyword. This will result in the access being
+	//    granted to all read-only endpoints.
 	Action string `protobuf:"bytes,2,opt,name=action,proto3" json:"action,omitempty"`
 }
 
