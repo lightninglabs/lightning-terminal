@@ -84,7 +84,7 @@ const Styled = {
     overflow: hidden;
 
     /* change sidebar dimensions based on collapsed toggle */
-    width: ${props => (props.collapsed ? '0' : '285px')};
+    width: ${props => (props.collapsed ? '0' : '280px')};
     padding: ${props => (props.collapsed ? '0' : '0 15px')};
     transition: all 0.2s;
 
@@ -95,8 +95,8 @@ const Styled = {
   `,
   Content: styled.div<CollapsedProps>`
     height: 100%;
-    margin-left: ${props => (props.collapsed || props.fullWidth ? '0' : '285px')};
-    padding: ${props => (props.fullWidth ? '0' : '0 15px')};
+    margin-left: ${props => (props.collapsed || props.fullWidth ? '0' : '320px')};
+    padding: 0px;
     transition: ${props => (props.fullWidth ? '0' : 'all 0.2s')};
 
     @media (max-width: 1200px) {

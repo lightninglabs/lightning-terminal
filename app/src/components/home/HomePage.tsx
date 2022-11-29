@@ -21,7 +21,7 @@ import YoutubeModal from './YoutubeModal';
 
 const Styled = {
   Wrapper: styled.div`
-    padding: 72px 0;
+    padding: 120px 0;
   `,
   PurpleButton: styled(PurpleButton)`
     font-size: ${props => props.theme.sizes.s};

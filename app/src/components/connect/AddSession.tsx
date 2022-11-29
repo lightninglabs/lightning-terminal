@@ -19,14 +19,14 @@ const Styled = {
   FormInput: styled(FormInput)`
     > input {
       font-family: ${props => props.theme.fonts.open.regular};
-      font-size: ${props => props.theme.sizes.m};
+      font-size: ${props => props.theme.sizes.s};
       padding: 12px 16px;
     }
   `,
   FormSelect: styled(FormSelect)`
     .rc-select {
       font-family: ${props => props.theme.fonts.open.regular};
-      font-size: ${props => props.theme.sizes.m};
+      font-size: ${props => props.theme.sizes.s};
       padding: 12px 40px 8px 0px;
     }
 
