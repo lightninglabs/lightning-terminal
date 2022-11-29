@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
+	"github.com/lightninglabs/lightning-terminal/perms"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/lncfg"
 	"github.com/lightningnetwork/lnd/macaroons"
@@ -58,7 +59,7 @@ func (e *proxyErr) Unwrap() error {
 // component.
 func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 	superMacValidator session.SuperMacaroonValidator,
-	permsMgr *PermissionsManager, bufListener *bufconn.Listener) *rpcProxy {
+	permsMgr *perms.Manager, bufListener *bufconn.Listener) *rpcProxy {
 
 	// The gRPC web calls are protected by HTTP basic auth which is defined
 	// by base64(username:password). Because we only have a password, we
@@ -146,7 +147,7 @@ func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 type rpcProxy struct {
 	cfg       *Config
 	basicAuth string
-	permsMgr  *PermissionsManager
+	permsMgr  *perms.Manager
 
 	macValidator      macaroons.MacaroonValidator
 	superMacValidator session.SuperMacaroonValidator

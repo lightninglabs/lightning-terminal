@@ -73,7 +73,11 @@ var addSessionCommand = cli.Command{
 				"this flag will only be used if the 'type' " +
 				"flag is set to 'custom'. This flag can be " +
 				"specified multiple times if multiple URIs " +
-				"should be included",
+				"should be included. Note that a regex can " +
+				"also be specified which will then result in " +
+				"all URIs matching the regex to be included. " +
+				"For example, '/lnrpc\\..*' will result in " +
+				"all `lnrpc` permissions being included.",
 		},
 	},
 }
