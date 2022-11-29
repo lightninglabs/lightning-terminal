@@ -19,6 +19,14 @@ import (
 	"gopkg.in/macaroon.v2"
 )
 
+// readOnlyAction defines the keyword that a permission action should be set to
+// when the entity is set to "uri" in order to activate the special case that
+// will result in all read-only permissions known to lit to be added to a
+// session's macaroon. The purpose of the three '*'s is to make this keyword
+// an invalid URI and an invalid regex so that it does not ever clash with the
+// other special cases.
+const readOnlyAction = "***readonly***"
+
 // sessionRpcServer is the gRPC server for the Session RPC interface.
 type sessionRpcServer struct {
 	litrpc.UnimplementedSessionsServer
@@ -148,6 +156,20 @@ func (s *sessionRpcServer) AddSession(_ context.Context,
 					Entity: op.Entity,
 					Action: op.Action,
 				})
+
+				continue
+			}
+
+			// If the action specified was equal to the
+			// readOnlyAction keyword, then this is taken to mean
+			// that the permissions for all read-only URIs should be
+			// granted.
+			if op.Action == readOnlyAction {
+				readPerms := s.cfg.permMgr.ActivePermissions(
+					true,
+				)
+
+				permissions = append(permissions, readPerms...)
 
 				continue
 			}
