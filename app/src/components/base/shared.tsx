@@ -89,7 +89,7 @@ interface ButtonProps {
 }
 
 export const Button = styled.button<ButtonProps>`
-  font-family: ${props => props.theme.fonts.work.medium};
+  font-family: ${props => props.theme.fonts.open.regular};
   font-size: ${props => props.theme.sizes.s};
   min-width: ${props => (props.compact ? '0' : '120px')};
   height: ${props => (props.compact ? 'auto' : '44px')};
@@ -118,7 +118,7 @@ export const Button = styled.button<ButtonProps>`
     background-color: transparent;
     &:hover {
       color: ${props.theme.colors.offWhite};
-      text-decoration: underline;
+      text-decoration: none;
       background-color: transparent;
     }
   `}

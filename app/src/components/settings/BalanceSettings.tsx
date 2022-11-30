@@ -11,8 +11,7 @@ import SettingItem from './SettingItem';
 const Styled = {
   Wrapper: styled.section``,
   Content: styled.div`
-    margin: 100px auto;
-    max-width: 500px;
+    margin: 40px auto;
   `,
 };
 

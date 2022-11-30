@@ -9,7 +9,7 @@ import { PUBLIC_URL } from '../../config';
 const Styled = {
   NavHeader: styled(HeaderFour)`
     padding: 44px 14px 8px;
-    font-size: 10px;
+    font-size: 12px;
     line-height: 16px;
   `,
   Nav: styled.ul`

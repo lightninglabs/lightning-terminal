@@ -9,7 +9,7 @@ import UnitSettings from './UnitSettings';
 
 const Styled = {
   Wrapper: styled.div`
-    padding: 40px 0;
+    padding: 120px 0;
   `,
 };
 

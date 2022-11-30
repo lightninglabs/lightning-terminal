@@ -6,13 +6,13 @@ import { formatUnit } from 'util/formatters';
 import { extractDomain } from 'util/strings';
 import { useStore } from 'store';
 import { HeaderFour } from 'components/base';
-import PageHeader from 'components/common/PageHeader';
 import SettingItem from './SettingItem';
+import { Display } from 'components/base';
 
 const Styled = {
-  Wrapper: styled.section``,
+  Wrapper: styled.div``,
   Content: styled.div`
-    margin: 100px 50px;
+    margin: 80px 0px;
   `,
 };
 
@@ -30,9 +30,10 @@ const GeneralSettings: React.FC = () => {
   const { Wrapper, Content } = Styled;
   return (
     <Wrapper>
-      <PageHeader title={l('pageTitle')} />
+      <Display semiBold space={16}>
+        {l('pageTitle')}
+      </Display>
       <Content>
-        <HeaderFour>{l('general')}</HeaderFour>
         <SettingItem
           name={l('bitcoinUnit')}
           value={formatUnit(settingsStore.unit)}

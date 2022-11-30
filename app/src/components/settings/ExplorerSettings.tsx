@@ -12,8 +12,7 @@ import PageHeader from 'components/common/PageHeader';
 const Styled = {
   Wrapper: styled.section``,
   Content: styled.div`
-    margin: 100px auto;
-    max-width: 800px;
+    margin: 40px auto;
   `,
   Actions: styled.div`
     text-align: center;
