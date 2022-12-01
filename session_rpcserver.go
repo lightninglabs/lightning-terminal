@@ -134,7 +134,21 @@ func (s *sessionRpcServer) AddSession(_ context.Context,
 		return nil, err
 	}
 
-	var permissions []bakery.Op
+	// Store the entity-action permission pairs in a map in order to
+	// de-dup any repeat perms.
+	permissions := make(map[string]map[string]struct{})
+
+	// addPerm is a closure that can be used to add entity-action pairs to
+	// the permissions map.
+	addPerm := func(entity, action string) {
+		_, ok := permissions[entity]
+		if !ok {
+			permissions[entity] = make(map[string]struct{})
+		}
+
+		permissions[entity][action] = struct{}{}
+	}
+
 	switch typ {
 	// For the default session types we use empty caveats and permissions,
 	// the macaroons are baked correctly when creating the session.
@@ -152,10 +166,7 @@ func (s *sessionRpcServer) AddSession(_ context.Context,
 
 		for _, op := range req.MacaroonCustomPermissions {
 			if op.Entity != macaroons.PermissionEntityCustomURI {
-				permissions = append(permissions, bakery.Op{
-					Entity: op.Entity,
-					Action: op.Action,
-				})
+				addPerm(op.Entity, op.Action)
 
 				continue
 			}
@@ -169,7 +180,9 @@ func (s *sessionRpcServer) AddSession(_ context.Context,
 					true,
 				)
 
-				permissions = append(permissions, readPerms...)
+				for _, p := range readPerms {
+					addPerm(p.Entity, p.Action)
+				}
 
 				continue
 			}
@@ -181,12 +194,7 @@ func (s *sessionRpcServer) AddSession(_ context.Context,
 				// the matching URIs returned from the
 				// permissions' manager.
 				for _, uri := range uris {
-					permissions = append(
-						permissions, bakery.Op{
-							Entity: op.Entity,
-							Action: uri,
-						},
-					)
+					addPerm(op.Entity, uri)
 				}
 				continue
 			}
@@ -199,10 +207,7 @@ func (s *sessionRpcServer) AddSession(_ context.Context,
 					"LiT", op.Action)
 			}
 
-			permissions = append(permissions, bakery.Op{
-				Entity: op.Entity,
-				Action: op.Action,
-			})
+			addPerm(op.Entity, op.Action)
 		}
 
 	// No other types are currently supported.
@@ -211,9 +216,20 @@ func (s *sessionRpcServer) AddSession(_ context.Context,
 			"readonly and custom macaroon types supported in LiT")
 	}
 
+	// Collect the de-duped permissions.
+	var perms []bakery.Op
+	for entity, actions := range permissions {
+		for action := range actions {
+			perms = append(perms, bakery.Op{
+				Entity: entity,
+				Action: action,
+			})
+		}
+	}
+
 	sess, err := session.NewSession(
 		req.Label, typ, expiry, req.MailboxServerAddr, req.DevServer,
-		permissions, nil,
+		perms, nil,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating new session: %v", err)
