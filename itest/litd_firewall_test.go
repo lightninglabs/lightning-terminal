@@ -19,6 +19,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/lightning-terminal/rules"
 	"github.com/lightninglabs/lightning-terminal/session"
+	"github.com/lightningnetwork/lnd"
 	"github.com/lightningnetwork/lnd/keychain"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntest"
@@ -1135,6 +1136,125 @@ func testPeerAndChannelRestrictRules(net *NetworkHarness, t *harnessTest) {
 		}, caveatCreds,
 	)
 	require.NoError(t.t, err)
+}
+
+func testLargeHttpHeader(net *NetworkHarness, t *harnessTest) {
+	ctx := context.Background()
+
+	// First we add all LND's permissions so that any call we make to LND to
+	// test that the connection is working will succeed.
+	perms := lnd.MainRPCServerPermissions()
+
+	// Now we pad the above valid perms with a bunch of junk perms. This is
+	// done in order to make the macaroon that will be sent in the header
+	// very big.
+	for i := 0; i < 800; i++ {
+		uniqueString := fmt.Sprintf("unique long string %d", i)
+		perms[uniqueString] = []bakery.Op{
+			{
+				Entity: uniqueString,
+				Action: "fake-action",
+			},
+		}
+	}
+
+	// We first override the autopilots features set. We create a feature
+	// with a very large permissions set. This is done so that we can test
+	// that a grpc/http header of a certain size does not break things.
+	net.autopilotServer.SetFeatures(map[string]*mock.Feature{
+		"TestFeature": {
+			Rules:       map[string]*mock.RuleRanges{},
+			Permissions: perms,
+		},
+	})
+
+	// We expect a non-empty alias to be returned.
+	aliceInfo, err := net.Alice.GetInfo(ctx, &lnrpc.GetInfoRequest{})
+	require.NoError(t.t, err)
+	require.NotEmpty(t.t, aliceInfo.Alias)
+
+	// We create a connection to the Alice node's RPC server.
+	cfg := net.Alice.Cfg
+	rawConn, err := connectRPC(ctx, cfg.LitAddr(), cfg.TLSCertPath)
+	require.NoError(t.t, err)
+
+	macBytes, err := ioutil.ReadFile(cfg.LitMacPath)
+	require.NoError(t.t, err)
+	ctxm := macaroonContext(ctx, macBytes)
+
+	// Test that the connection to Alice's rpc server is working and that
+	// the autopilot server is returning a non-empty feature list.
+	litClient := litrpc.NewAutopilotClient(rawConn)
+	featResp, err := litClient.ListAutopilotFeatures(
+		ctxm, &litrpc.ListAutopilotFeaturesRequest{},
+	)
+	require.NoError(t.t, err)
+	require.NotEmpty(t.t, featResp)
+
+	// Add a new Autopilot session that subscribes to a "Test", feature.
+	// This call is expected to also result in Litd registering this session
+	// with the mock autopilot server.
+	sessResp, err := litClient.AddAutopilotSession(
+		ctxm, &litrpc.AddAutopilotSessionRequest{
+			Label: "integration-test",
+			ExpiryTimestampSeconds: uint64(
+				time.Now().Add(5 * time.Minute).Unix(),
+			),
+			MailboxServerAddr: mailboxServerAddr,
+			Features: map[string]*litrpc.FeatureConfig{
+				"TestFeature": {
+					Rules: &litrpc.RulesMap{
+						Rules: map[string]*litrpc.RuleValue{},
+					},
+				},
+			},
+			// Switch the privacy mapper off for simplicity’s sake.
+			NoPrivacyMapper: true,
+		},
+	)
+	require.NoError(t.t, err)
+
+	// From the response, we can extract Lit's local public key.
+	litdPub, err := btcec.ParsePubKey(sessResp.Session.LocalPublicKey)
+	require.NoError(t.t, err)
+
+	// We then query the autopilot server to extract the private key that
+	// it will be using for this session.
+	pilotPriv, err := net.autopilotServer.GetPrivKey(litdPub)
+	require.NoError(t.t, err)
+
+	// Now we can connect to the mailbox from the PoV of the autopilot
+	// server.
+	pilotConn, metaDataInjector, err := connectMailboxWithRemoteKey(
+		ctx, pilotPriv, litdPub,
+	)
+	require.NoError(t.t, err)
+	defer pilotConn.Close()
+	lndConn := lnrpc.NewLightningClient(pilotConn)
+
+	// The autopilot server is expected to add a MetaInfo caveat to any
+	// request that it makes. So we add that now and specify that it is
+	// initially making requests on behalf of the HealthCheck feature.
+	metaInfo := &firewall.InterceptMetaInfo{
+		ActorName: "Autopilot Server",
+		Feature:   "TestFeature",
+	}
+	caveat, err := metaInfo.ToCaveat()
+	require.NoError(t.t, err)
+	caveatCreds := metaDataInjector.addCaveat(caveat)
+
+	// Now we assert that the size of the macaroon that will go in the
+	// request header is larger than a certain threshold.
+	meta, err := caveatCreds.Creds.GetRequestMetadata(ctx, "")
+	require.NoError(t.t, err)
+	require.Greater(t.t, len([]byte(meta[HeaderMacaroon])), 40000)
+
+	// Assert that requests from the autopilot work with this large header.
+	getInfoReq, err := lndConn.GetInfo(
+		ctx, &lnrpc.GetInfoRequest{}, caveatCreds,
+	)
+	require.NoError(t.t, err)
+	require.Equal(t.t, aliceInfo.Alias, getInfoReq.Alias)
 }
 
 // connectMailboxWithRemoteKey tries to establish a connection through LNC using

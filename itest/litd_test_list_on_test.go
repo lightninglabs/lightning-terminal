@@ -16,4 +16,8 @@ var allTestCases = []*testCase{
 		name: "test firewall rules",
 		test: testFirewallRules,
 	},
+	{
+		name: "test large http header",
+		test: testLargeHttpHeader,
+	},
 }

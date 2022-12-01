@@ -934,33 +934,23 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 
 	// Gather all the permissions we need to add to the macaroon given the
 	// feature list.
-	var dedupedPerms = make(map[string]map[string]bool)
+	var dedupedPerms = make(map[string]bool)
 	for name, feature := range autopilotFeatureMap {
 		if _, ok := req.Features[name]; !ok {
 			continue
 		}
 
-		for _, ops := range feature.Permissions {
-			for _, op := range ops {
-				if dedupedPerms[op.Entity] == nil {
-					dedupedPerms[op.Entity] = make(
-						map[string]bool,
-					)
-				}
-
-				dedupedPerms[op.Entity][op.Action] = true
-			}
+		for uri := range feature.Permissions {
+			dedupedPerms[uri] = true
 		}
 	}
 
 	var perms []bakery.Op
-	for entity, actions := range dedupedPerms {
-		for action := range actions {
-			perms = append(perms, bakery.Op{
-				Entity: entity,
-				Action: action,
-			})
-		}
+	for uri := range dedupedPerms {
+		perms = append(perms, bakery.Op{
+			Entity: macaroons.PermissionEntityCustomURI,
+			Action: uri,
+		})
 	}
 
 	rulesCaveatStr, err := firewall.RulesToCaveat(interceptRules)
