@@ -78,4 +78,10 @@ func TestMatchRegexURI(t *testing.T) {
 	uris, isRegex = m.MatchRegexURI("/poolrpc.Trader/.*")
 	require.True(t, isRegex)
 	require.Empty(t, uris)
+
+	// Assert that the read-only permission's keyword is not seen as a valid
+	// regex.
+	uris, isRegex = m.MatchRegexURI("***readonly***")
+	require.False(t, isRegex)
+	require.Empty(t, uris)
 }
