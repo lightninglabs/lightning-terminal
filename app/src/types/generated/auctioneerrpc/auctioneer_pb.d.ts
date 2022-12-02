@@ -15,6 +15,9 @@ export class ReserveAccountRequest extends jspb.Message {
   getTraderKey_asB64(): string;
   setTraderKey(value: Uint8Array | string): void;
 
+  getVersion(): number;
+  setVersion(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ReserveAccountRequest.AsObject;
   static toObject(includeInstance: boolean, msg: ReserveAccountRequest): ReserveAccountRequest.AsObject;
@@ -30,6 +33,7 @@ export namespace ReserveAccountRequest {
     accountValue: string,
     accountExpiry: number,
     traderKey: Uint8Array | string,
+    version: number,
   }
 }
 
@@ -86,6 +90,9 @@ export class ServerInitAccountRequest extends jspb.Message {
   getUserAgent(): string;
   setUserAgent(value: string): void;
 
+  getVersion(): number;
+  setVersion(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServerInitAccountRequest.AsObject;
   static toObject(includeInstance: boolean, msg: ServerInitAccountRequest): ServerInitAccountRequest.AsObject;
@@ -104,6 +111,7 @@ export namespace ServerInitAccountRequest {
     accountExpiry: number,
     traderKey: Uint8Array | string,
     userAgent: string,
+    version: number,
   }
 }
 
@@ -507,6 +515,8 @@ export class OrderMatchSign extends jspb.Message {
   clearAccountSigsMap(): void;
   getChannelInfosMap(): jspb.Map<string, ChannelInfo>;
   clearChannelInfosMap(): void;
+  getTraderNoncesMap(): jspb.Map<string, Uint8Array | string>;
+  clearTraderNoncesMap(): void;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): OrderMatchSign.AsObject;
   static toObject(includeInstance: boolean, msg: OrderMatchSign): OrderMatchSign.AsObject;
@@ -522,6 +532,7 @@ export namespace OrderMatchSign {
     batchId: Uint8Array | string,
     accountSigsMap: Array<[string, Uint8Array | string]>,
     channelInfosMap: Array<[string, ChannelInfo.AsObject]>,
+    traderNoncesMap: Array<[string, Uint8Array | string]>,
   }
 }
 
@@ -756,11 +767,44 @@ export namespace OrderMatchPrepare {
   }
 }
 
+export class TxOut extends jspb.Message {
+  getValue(): string;
+  setValue(value: string): void;
+
+  getPkScript(): Uint8Array | string;
+  getPkScript_asU8(): Uint8Array;
+  getPkScript_asB64(): string;
+  setPkScript(value: Uint8Array | string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): TxOut.AsObject;
+  static toObject(includeInstance: boolean, msg: TxOut): TxOut.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: TxOut, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): TxOut;
+  static deserializeBinaryFromReader(message: TxOut, reader: jspb.BinaryReader): TxOut;
+}
+
+export namespace TxOut {
+  export type AsObject = {
+    value: string,
+    pkScript: Uint8Array | string,
+  }
+}
+
 export class OrderMatchSignBegin extends jspb.Message {
   getBatchId(): Uint8Array | string;
   getBatchId_asU8(): Uint8Array;
   getBatchId_asB64(): string;
   setBatchId(value: Uint8Array | string): void;
+
+  getServerNoncesMap(): jspb.Map<string, Uint8Array | string>;
+  clearServerNoncesMap(): void;
+  clearPrevOutputsList(): void;
+  getPrevOutputsList(): Array<TxOut>;
+  setPrevOutputsList(value: Array<TxOut>): void;
+  addPrevOutputs(value?: TxOut, index?: number): TxOut;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): OrderMatchSignBegin.AsObject;
@@ -775,6 +819,8 @@ export class OrderMatchSignBegin extends jspb.Message {
 export namespace OrderMatchSignBegin {
   export type AsObject = {
     batchId: Uint8Array | string,
+    serverNoncesMap: Array<[string, Uint8Array | string]>,
+    prevOutputsList: Array<TxOut.AsObject>,
   }
 }
 
@@ -889,6 +935,9 @@ export class AuctionAccount extends jspb.Message {
   getLatestTx_asB64(): string;
   setLatestTx(value: Uint8Array | string): void;
 
+  getVersion(): number;
+  setVersion(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): AuctionAccount.AsObject;
   static toObject(includeInstance: boolean, msg: AuctionAccount): AuctionAccount.AsObject;
@@ -910,6 +959,7 @@ export namespace AuctionAccount {
     heightHint: number,
     outpoint?: OutPoint.AsObject,
     latestTx: Uint8Array | string,
+    version: number,
   }
 }
 
@@ -1011,6 +1061,9 @@ export class AccountDiff extends jspb.Message {
   getNewExpiry(): number;
   setNewExpiry(value: number): void;
 
+  getNewVersion(): number;
+  setNewVersion(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): AccountDiff.AsObject;
   static toObject(includeInstance: boolean, msg: AccountDiff): AccountDiff.AsObject;
@@ -1028,6 +1081,7 @@ export namespace AccountDiff {
     outpointIndex: number,
     traderKey: Uint8Array | string,
     newExpiry: number,
+    newVersion: number,
   }
 
   export interface AccountStateMap {
@@ -1100,6 +1154,12 @@ export class ServerOrder extends jspb.Message {
   setNotAllowedNodeIdsList(value: Array<Uint8Array | string>): void;
   addNotAllowedNodeIds(value: Uint8Array | string, index?: number): Uint8Array | string;
 
+  getAuctionType(): AuctionTypeMap[keyof AuctionTypeMap];
+  setAuctionType(value: AuctionTypeMap[keyof AuctionTypeMap]): void;
+
+  getIsPublic(): boolean;
+  setIsPublic(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServerOrder.AsObject;
   static toObject(includeInstance: boolean, msg: ServerOrder): ServerOrder.AsObject;
@@ -1125,6 +1185,8 @@ export namespace ServerOrder {
     maxBatchFeeRateSatPerKw: string,
     allowedNodeIdsList: Array<Uint8Array | string>,
     notAllowedNodeIdsList: Array<Uint8Array | string>,
+    auctionType: AuctionTypeMap[keyof AuctionTypeMap],
+    isPublic: boolean,
   }
 }
 
@@ -1149,6 +1211,12 @@ export class ServerBid extends jspb.Message {
   getIsSidecarChannel(): boolean;
   setIsSidecarChannel(value: boolean): void;
 
+  getUnannouncedChannel(): boolean;
+  setUnannouncedChannel(value: boolean): void;
+
+  getZeroConfChannel(): boolean;
+  setZeroConfChannel(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServerBid.AsObject;
   static toObject(includeInstance: boolean, msg: ServerBid): ServerBid.AsObject;
@@ -1167,6 +1235,8 @@ export namespace ServerBid {
     minNodeTier: NodeTierMap[keyof NodeTierMap],
     selfChanBalance: string,
     isSidecarChannel: boolean,
+    unannouncedChannel: boolean,
+    zeroConfChannel: boolean,
   }
 }
 
@@ -1181,6 +1251,12 @@ export class ServerAsk extends jspb.Message {
 
   getVersion(): number;
   setVersion(value: number): void;
+
+  getAnnouncementConstraints(): ChannelAnnouncementConstraintsMap[keyof ChannelAnnouncementConstraintsMap];
+  setAnnouncementConstraints(value: ChannelAnnouncementConstraintsMap[keyof ChannelAnnouncementConstraintsMap]): void;
+
+  getConfirmationConstraints(): ChannelConfirmationConstraintsMap[keyof ChannelConfirmationConstraintsMap];
+  setConfirmationConstraints(value: ChannelConfirmationConstraintsMap[keyof ChannelConfirmationConstraintsMap]): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServerAsk.AsObject;
@@ -1197,6 +1273,8 @@ export namespace ServerAsk {
     details?: ServerOrder.AsObject,
     leaseDurationBlocks: number,
     version: number,
+    announcementConstraints: ChannelAnnouncementConstraintsMap[keyof ChannelAnnouncementConstraintsMap],
+    confirmationConstraints: ChannelConfirmationConstraintsMap[keyof ChannelConfirmationConstraintsMap],
   }
 }
 
@@ -1333,6 +1411,16 @@ export class ServerModifyAccountRequest extends jspb.Message {
   getNewParams(): ServerModifyAccountRequest.NewAccountParameters | undefined;
   setNewParams(value?: ServerModifyAccountRequest.NewAccountParameters): void;
 
+  getTraderNonces(): Uint8Array | string;
+  getTraderNonces_asU8(): Uint8Array;
+  getTraderNonces_asB64(): string;
+  setTraderNonces(value: Uint8Array | string): void;
+
+  clearPrevOutputsList(): void;
+  getPrevOutputsList(): Array<TxOut>;
+  setPrevOutputsList(value: Array<TxOut>): void;
+  addPrevOutputs(value?: TxOut, index?: number): TxOut;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServerModifyAccountRequest.AsObject;
   static toObject(includeInstance: boolean, msg: ServerModifyAccountRequest): ServerModifyAccountRequest.AsObject;
@@ -1349,6 +1437,8 @@ export namespace ServerModifyAccountRequest {
     newInputsList: Array<ServerInput.AsObject>,
     newOutputsList: Array<ServerOutput.AsObject>,
     newParams?: ServerModifyAccountRequest.NewAccountParameters.AsObject,
+    traderNonces: Uint8Array | string,
+    prevOutputsList: Array<TxOut.AsObject>,
   }
 
   export class NewAccountParameters extends jspb.Message {
@@ -1357,6 +1447,9 @@ export namespace ServerModifyAccountRequest {
 
     getExpiry(): number;
     setExpiry(value: number): void;
+
+    getVersion(): number;
+    setVersion(value: number): void;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): NewAccountParameters.AsObject;
@@ -1372,6 +1465,7 @@ export namespace ServerModifyAccountRequest {
     export type AsObject = {
       value: string,
       expiry: number,
+      version: number,
     }
   }
 }
@@ -1381,6 +1475,11 @@ export class ServerModifyAccountResponse extends jspb.Message {
   getAccountSig_asU8(): Uint8Array;
   getAccountSig_asB64(): string;
   setAccountSig(value: Uint8Array | string): void;
+
+  getServerNonces(): Uint8Array | string;
+  getServerNonces_asU8(): Uint8Array;
+  getServerNonces_asB64(): string;
+  setServerNonces(value: Uint8Array | string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServerModifyAccountResponse.AsObject;
@@ -1395,6 +1494,7 @@ export class ServerModifyAccountResponse extends jspb.Message {
 export namespace ServerModifyAccountResponse {
   export type AsObject = {
     accountSig: Uint8Array | string,
+    serverNonces: Uint8Array | string,
   }
 }
 
@@ -2140,6 +2240,13 @@ export interface OrderChannelTypeMap {
 
 export const OrderChannelType: OrderChannelTypeMap;
 
+export interface AuctionTypeMap {
+  AUCTION_TYPE_BTC_INBOUND_LIQUIDITY: 0;
+  AUCTION_TYPE_BTC_OUTBOUND_LIQUIDITY: 1;
+}
+
+export const AuctionType: AuctionTypeMap;
+
 export interface NodeTierMap {
   TIER_DEFAULT: 0;
   TIER_0: 1;
@@ -2147,6 +2254,22 @@ export interface NodeTierMap {
 }
 
 export const NodeTier: NodeTierMap;
+
+export interface ChannelAnnouncementConstraintsMap {
+  ANNOUNCEMENT_NO_PREFERENCE: 0;
+  ONLY_ANNOUNCED: 1;
+  ONLY_UNANNOUNCED: 2;
+}
+
+export const ChannelAnnouncementConstraints: ChannelAnnouncementConstraintsMap;
+
+export interface ChannelConfirmationConstraintsMap {
+  CONFIRMATION_NO_PREFERENCE: 0;
+  ONLY_CONFIRMED: 1;
+  ONLY_ZEROCONF: 2;
+}
+
+export const ChannelConfirmationConstraints: ChannelConfirmationConstraintsMap;
 
 export interface OrderStateMap {
   ORDER_SUBMITTED: 0;

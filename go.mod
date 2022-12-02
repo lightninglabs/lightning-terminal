@@ -15,10 +15,10 @@ require (
 	github.com/lightninglabs/faraday v0.2.9-alpha
 	github.com/lightninglabs/lightning-node-connect v0.1.12-alpha
 	github.com/lightninglabs/lndclient v0.15.4-0
-	github.com/lightninglabs/loop v0.20.1-beta.0.20221020162445-0d887ac17390
+	github.com/lightninglabs/loop v0.20.2-beta
 	github.com/lightninglabs/loop/swapserverrpc v1.0.3
-	github.com/lightninglabs/pool v0.5.8-alpha
-	github.com/lightninglabs/pool/auctioneerrpc v1.0.7
+	github.com/lightninglabs/pool v0.6.1-beta.0.20221202155747-aec0aee8d9a1
+	github.com/lightninglabs/pool/auctioneerrpc v1.1.0
 	github.com/lightninglabs/protobuf-hex-display v1.4.3-hex-display
 	github.com/lightningnetwork/lnd v0.15.5-beta
 	github.com/lightningnetwork/lnd/cert v1.1.1

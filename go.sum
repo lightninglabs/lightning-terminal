@@ -560,8 +560,8 @@ github.com/lightninglabs/lndclient v0.15.0-0/go.mod h1:ORS/YFe9hAXlzN/Uj+gvTmrnX
 github.com/lightninglabs/lndclient v0.15.1-5/go.mod h1:6pymu+B4mYQDWQH1Beu51Pnrj556xNlqOe5j1ITsADE=
 github.com/lightninglabs/lndclient v0.15.4-0 h1:K+Biu0V94VRLBmc+DQJcU0KrRQI7wOndIAFpV7qIGiQ=
 github.com/lightninglabs/lndclient v0.15.4-0/go.mod h1:bCUgwozVk/5O99DajpJxUfaCbjSXgHuis5WT2iC7B5c=
-github.com/lightninglabs/loop v0.20.1-beta.0.20221020162445-0d887ac17390 h1:vXJvZJ2rSTryUmh64n3mx/Yi6TDHS+UwKBpBo33y1f8=
-github.com/lightninglabs/loop v0.20.1-beta.0.20221020162445-0d887ac17390/go.mod h1:2ZC0KRnPSp4QhQh5hMn63l50l9n3PxPh5TonYJX0wNo=
+github.com/lightninglabs/loop v0.20.2-beta h1:cqWUL0MvWqwF8o8Ba/Ya7KAGhRwKgcE1svG0WireASU=
+github.com/lightninglabs/loop v0.20.2-beta/go.mod h1:2ZC0KRnPSp4QhQh5hMn63l50l9n3PxPh5TonYJX0wNo=
 github.com/lightninglabs/loop/swapserverrpc v1.0.1/go.mod h1:imy1/sqnb70EEyBKMo4pHwwLBPW8uYahWZ8s+1Xcq1o=
 github.com/lightninglabs/loop/swapserverrpc v1.0.3 h1:Uslz7QZ2MWKo00JrEumCqDs9S4hR6Is4cA2GsoTbLd8=
 github.com/lightninglabs/loop/swapserverrpc v1.0.3/go.mod h1:imy1/sqnb70EEyBKMo4pHwwLBPW8uYahWZ8s+1Xcq1o=
@@ -569,10 +569,10 @@ github.com/lightninglabs/neutrino v0.13.2/go.mod h1:Cv/v8oHiPhuGiGvGgO+rIMhwCwEd
 github.com/lightninglabs/neutrino v0.14.1/go.mod h1:SV9ccrw2m6t6UvJX8xB//W0Dv+LEwMTbjg4V/Fb5KwU=
 github.com/lightninglabs/neutrino v0.14.2 h1:yrnZUCYMZ5ECtXhgDrzqPq2oX8awoAN2D/cgCewJcCo=
 github.com/lightninglabs/neutrino v0.14.2/go.mod h1:OICUeTCn+4Tu27YRJIpWvvqySxx4oH4vgdP33Sw9RDc=
-github.com/lightninglabs/pool v0.5.8-alpha h1:+sCYlzBpXe07ALsp1b6IavaMKnHbHsNZuB7/T15PFfI=
-github.com/lightninglabs/pool v0.5.8-alpha/go.mod h1:0DMGQcDuAPheqzWZEv8ZE0Qptdpl1KPwM4ERGjybIX8=
-github.com/lightninglabs/pool/auctioneerrpc v1.0.7 h1:+a1ynzXAHDlFT4pOeKeAfV38rlwRX3wVdKnGxggtDEQ=
-github.com/lightninglabs/pool/auctioneerrpc v1.0.7/go.mod h1:F9uND5Kpj2eYeYe0RLi8IWQHsRjQ88FUp8itkYmX1Mo=
+github.com/lightninglabs/pool v0.6.1-beta.0.20221202155747-aec0aee8d9a1 h1:MuvbpEhS+jV6NMB2jKjKagq3lUh2w5qZiOGxNuciK30=
+github.com/lightninglabs/pool v0.6.1-beta.0.20221202155747-aec0aee8d9a1/go.mod h1:x7jWw8GelJKxLf0sAwArUPxbp4FzTalK3+eWjGY/b0g=
+github.com/lightninglabs/pool/auctioneerrpc v1.1.0 h1:XOhmaFKRvQ1smwkY9SRTA0+FCloTExuhaQX4jgtrBB0=
+github.com/lightninglabs/pool/auctioneerrpc v1.1.0/go.mod h1:F9uND5Kpj2eYeYe0RLi8IWQHsRjQ88FUp8itkYmX1Mo=
 github.com/lightninglabs/protobuf-hex-display v1.4.3-hex-display h1:RZJ8H4ueU/aQ9pFtx5wqsuD3B/DezrewJeVwDKKYY8E=
 github.com/lightninglabs/protobuf-hex-display v1.4.3-hex-display/go.mod h1:2oKOBU042GKFHrdbgGiKax4xVrFiZu51lhacUZQ9MnE=
 github.com/lightningnetwork/lightning-onion v1.0.2-0.20220211021909-bb84a1ccb0c5 h1:TkKwqFcQTGYoI+VEqyxA8rxpCin8qDaYX0AfVRinT3k=

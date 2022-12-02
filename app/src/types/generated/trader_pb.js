@@ -17,6 +17,7 @@ var global = Function('return this')();
 var auctioneerrpc_auctioneer_pb = require('./auctioneerrpc/auctioneer_pb.js');
 goog.exportSymbol('proto.poolrpc.Account', null, global);
 goog.exportSymbol('proto.poolrpc.AccountState', null, global);
+goog.exportSymbol('proto.poolrpc.AccountVersion', null, global);
 goog.exportSymbol('proto.poolrpc.Ask', null, global);
 goog.exportSymbol('proto.poolrpc.AuctionFeeRequest', null, global);
 goog.exportSymbol('proto.poolrpc.AuctionFeeResponse', null, global);
@@ -175,7 +176,8 @@ proto.poolrpc.InitAccountRequest.toObject = function(includeInstance, msg) {
     relativeHeight: jspb.Message.getFieldWithDefault(msg, 3, 0),
     confTarget: jspb.Message.getFieldWithDefault(msg, 4, 0),
     feeRateSatPerKw: jspb.Message.getFieldWithDefault(msg, 6, "0"),
-    initiator: jspb.Message.getFieldWithDefault(msg, 5, "")
+    initiator: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    version: jspb.Message.getFieldWithDefault(msg, 7, 0)
   };
 
   if (includeInstance) {
@@ -235,6 +237,10 @@ proto.poolrpc.InitAccountRequest.deserializeBinaryFromReader = function(msg, rea
     case 5:
       var value = /** @type {string} */ (reader.readString());
       msg.setInitiator(value);
+      break;
+    case 7:
+      var value = /** @type {!proto.poolrpc.AccountVersion} */ (reader.readEnum());
+      msg.setVersion(value);
       break;
     default:
       reader.skipField();
@@ -304,6 +310,13 @@ proto.poolrpc.InitAccountRequest.serializeBinaryToWriter = function(message, wri
   if (f.length > 0) {
     writer.writeString(
       5,
+      f
+    );
+  }
+  f = message.getVersion();
+  if (f !== 0.0) {
+    writer.writeEnum(
+      7,
       f
     );
   }
@@ -453,6 +466,21 @@ proto.poolrpc.InitAccountRequest.prototype.getInitiator = function() {
 /** @param {string} value */
 proto.poolrpc.InitAccountRequest.prototype.setInitiator = function(value) {
   jspb.Message.setProto3StringField(this, 5, value);
+};
+
+
+/**
+ * optional AccountVersion version = 7;
+ * @return {!proto.poolrpc.AccountVersion}
+ */
+proto.poolrpc.InitAccountRequest.prototype.getVersion = function() {
+  return /** @type {!proto.poolrpc.AccountVersion} */ (jspb.Message.getFieldWithDefault(this, 7, 0));
+};
+
+
+/** @param {!proto.poolrpc.AccountVersion} value */
+proto.poolrpc.InitAccountRequest.prototype.setVersion = function(value) {
+  jspb.Message.setProto3EnumField(this, 7, value);
 };
 
 
@@ -2263,7 +2291,8 @@ proto.poolrpc.WithdrawAccountRequest.toObject = function(includeInstance, msg) {
     proto.poolrpc.Output.toObject, includeInstance),
     feeRateSatPerKw: jspb.Message.getFieldWithDefault(msg, 3, "0"),
     absoluteExpiry: jspb.Message.getFieldWithDefault(msg, 4, 0),
-    relativeExpiry: jspb.Message.getFieldWithDefault(msg, 5, 0)
+    relativeExpiry: jspb.Message.getFieldWithDefault(msg, 5, 0),
+    newVersion: jspb.Message.getFieldWithDefault(msg, 6, 0)
   };
 
   if (includeInstance) {
@@ -2320,6 +2349,10 @@ proto.poolrpc.WithdrawAccountRequest.deserializeBinaryFromReader = function(msg,
     case 5:
       var value = /** @type {number} */ (reader.readUint32());
       msg.setRelativeExpiry(value);
+      break;
+    case 6:
+      var value = /** @type {!proto.poolrpc.AccountVersion} */ (reader.readEnum());
+      msg.setNewVersion(value);
       break;
     default:
       reader.skipField();
@@ -2383,6 +2416,13 @@ proto.poolrpc.WithdrawAccountRequest.serializeBinaryToWriter = function(message,
   if (f != null) {
     writer.writeUint32(
       5,
+      f
+    );
+  }
+  f = message.getNewVersion();
+  if (f !== 0.0) {
+    writer.writeEnum(
+      6,
       f
     );
   }
@@ -2529,6 +2569,21 @@ proto.poolrpc.WithdrawAccountRequest.prototype.clearRelativeExpiry = function() 
  */
 proto.poolrpc.WithdrawAccountRequest.prototype.hasRelativeExpiry = function() {
   return jspb.Message.getField(this, 5) != null;
+};
+
+
+/**
+ * optional AccountVersion new_version = 6;
+ * @return {!proto.poolrpc.AccountVersion}
+ */
+proto.poolrpc.WithdrawAccountRequest.prototype.getNewVersion = function() {
+  return /** @type {!proto.poolrpc.AccountVersion} */ (jspb.Message.getFieldWithDefault(this, 6, 0));
+};
+
+
+/** @param {!proto.poolrpc.AccountVersion} value */
+proto.poolrpc.WithdrawAccountRequest.prototype.setNewVersion = function(value) {
+  jspb.Message.setProto3EnumField(this, 6, value);
 };
 
 
@@ -2819,7 +2874,8 @@ proto.poolrpc.DepositAccountRequest.toObject = function(includeInstance, msg) {
     amountSat: jspb.Message.getFieldWithDefault(msg, 2, "0"),
     feeRateSatPerKw: jspb.Message.getFieldWithDefault(msg, 3, "0"),
     absoluteExpiry: jspb.Message.getFieldWithDefault(msg, 4, 0),
-    relativeExpiry: jspb.Message.getFieldWithDefault(msg, 5, 0)
+    relativeExpiry: jspb.Message.getFieldWithDefault(msg, 5, 0),
+    newVersion: jspb.Message.getFieldWithDefault(msg, 6, 0)
   };
 
   if (includeInstance) {
@@ -2875,6 +2931,10 @@ proto.poolrpc.DepositAccountRequest.deserializeBinaryFromReader = function(msg, 
     case 5:
       var value = /** @type {number} */ (reader.readUint32());
       msg.setRelativeExpiry(value);
+      break;
+    case 6:
+      var value = /** @type {!proto.poolrpc.AccountVersion} */ (reader.readEnum());
+      msg.setNewVersion(value);
       break;
     default:
       reader.skipField();
@@ -2937,6 +2997,13 @@ proto.poolrpc.DepositAccountRequest.serializeBinaryToWriter = function(message, 
   if (f != null) {
     writer.writeUint32(
       5,
+      f
+    );
+  }
+  f = message.getNewVersion();
+  if (f !== 0.0) {
+    writer.writeEnum(
+      6,
       f
     );
   }
@@ -3067,6 +3134,21 @@ proto.poolrpc.DepositAccountRequest.prototype.clearRelativeExpiry = function() {
  */
 proto.poolrpc.DepositAccountRequest.prototype.hasRelativeExpiry = function() {
   return jspb.Message.getField(this, 5) != null;
+};
+
+
+/**
+ * optional AccountVersion new_version = 6;
+ * @return {!proto.poolrpc.AccountVersion}
+ */
+proto.poolrpc.DepositAccountRequest.prototype.getNewVersion = function() {
+  return /** @type {!proto.poolrpc.AccountVersion} */ (jspb.Message.getFieldWithDefault(this, 6, 0));
+};
+
+
+/** @param {!proto.poolrpc.AccountVersion} value */
+proto.poolrpc.DepositAccountRequest.prototype.setNewVersion = function(value) {
+  jspb.Message.setProto3EnumField(this, 6, value);
 };
 
 
@@ -3356,7 +3438,8 @@ proto.poolrpc.RenewAccountRequest.toObject = function(includeInstance, msg) {
     accountKey: msg.getAccountKey_asB64(),
     absoluteExpiry: jspb.Message.getFieldWithDefault(msg, 2, 0),
     relativeExpiry: jspb.Message.getFieldWithDefault(msg, 3, 0),
-    feeRateSatPerKw: jspb.Message.getFieldWithDefault(msg, 4, "0")
+    feeRateSatPerKw: jspb.Message.getFieldWithDefault(msg, 4, "0"),
+    newVersion: jspb.Message.getFieldWithDefault(msg, 5, 0)
   };
 
   if (includeInstance) {
@@ -3408,6 +3491,10 @@ proto.poolrpc.RenewAccountRequest.deserializeBinaryFromReader = function(msg, re
     case 4:
       var value = /** @type {string} */ (reader.readUint64String());
       msg.setFeeRateSatPerKw(value);
+      break;
+    case 5:
+      var value = /** @type {!proto.poolrpc.AccountVersion} */ (reader.readEnum());
+      msg.setNewVersion(value);
       break;
     default:
       reader.skipField();
@@ -3463,6 +3550,13 @@ proto.poolrpc.RenewAccountRequest.serializeBinaryToWriter = function(message, wr
   if (parseInt(f, 10) !== 0) {
     writer.writeUint64String(
       4,
+      f
+    );
+  }
+  f = message.getNewVersion();
+  if (f !== 0.0) {
+    writer.writeEnum(
+      5,
       f
     );
   }
@@ -3578,6 +3672,21 @@ proto.poolrpc.RenewAccountRequest.prototype.getFeeRateSatPerKw = function() {
 /** @param {string} value */
 proto.poolrpc.RenewAccountRequest.prototype.setFeeRateSatPerKw = function(value) {
   jspb.Message.setProto3StringIntField(this, 4, value);
+};
+
+
+/**
+ * optional AccountVersion new_version = 5;
+ * @return {!proto.poolrpc.AccountVersion}
+ */
+proto.poolrpc.RenewAccountRequest.prototype.getNewVersion = function() {
+  return /** @type {!proto.poolrpc.AccountVersion} */ (jspb.Message.getFieldWithDefault(this, 5, 0));
+};
+
+
+/** @param {!proto.poolrpc.AccountVersion} value */
+proto.poolrpc.RenewAccountRequest.prototype.setNewVersion = function(value) {
+  jspb.Message.setProto3EnumField(this, 5, value);
 };
 
 
@@ -4153,7 +4262,8 @@ proto.poolrpc.Account.toObject = function(includeInstance, msg) {
     availableBalance: jspb.Message.getFieldWithDefault(msg, 4, "0"),
     expirationHeight: jspb.Message.getFieldWithDefault(msg, 5, 0),
     state: jspb.Message.getFieldWithDefault(msg, 6, 0),
-    latestTxid: msg.getLatestTxid_asB64()
+    latestTxid: msg.getLatestTxid_asB64(),
+    version: jspb.Message.getFieldWithDefault(msg, 8, 0)
   };
 
   if (includeInstance) {
@@ -4218,6 +4328,10 @@ proto.poolrpc.Account.deserializeBinaryFromReader = function(msg, reader) {
     case 7:
       var value = /** @type {!Uint8Array} */ (reader.readBytes());
       msg.setLatestTxid(value);
+      break;
+    case 8:
+      var value = /** @type {!proto.poolrpc.AccountVersion} */ (reader.readEnum());
+      msg.setVersion(value);
       break;
     default:
       reader.skipField();
@@ -4295,6 +4409,13 @@ proto.poolrpc.Account.serializeBinaryToWriter = function(message, writer) {
   if (f.length > 0) {
     writer.writeBytes(
       7,
+      f
+    );
+  }
+  f = message.getVersion();
+  if (f !== 0.0) {
+    writer.writeEnum(
+      8,
       f
     );
   }
@@ -4466,6 +4587,21 @@ proto.poolrpc.Account.prototype.getLatestTxid_asU8 = function() {
 /** @param {!(string|Uint8Array)} value */
 proto.poolrpc.Account.prototype.setLatestTxid = function(value) {
   jspb.Message.setProto3BytesField(this, 7, value);
+};
+
+
+/**
+ * optional AccountVersion version = 8;
+ * @return {!proto.poolrpc.AccountVersion}
+ */
+proto.poolrpc.Account.prototype.getVersion = function() {
+  return /** @type {!proto.poolrpc.AccountVersion} */ (jspb.Message.getFieldWithDefault(this, 8, 0));
+};
+
+
+/** @param {!proto.poolrpc.AccountVersion} value */
+proto.poolrpc.Account.prototype.setVersion = function(value) {
+  jspb.Message.setProto3EnumField(this, 8, value);
 };
 
 
@@ -5740,7 +5876,9 @@ proto.poolrpc.Order.toObject = function(includeInstance, msg) {
     minUnitsMatch: jspb.Message.getFieldWithDefault(msg, 12, 0),
     channelType: jspb.Message.getFieldWithDefault(msg, 13, 0),
     allowedNodeIdsList: msg.getAllowedNodeIdsList_asB64(),
-    notAllowedNodeIdsList: msg.getNotAllowedNodeIdsList_asB64()
+    notAllowedNodeIdsList: msg.getNotAllowedNodeIdsList_asB64(),
+    auctionType: jspb.Message.getFieldWithDefault(msg, 16, 0),
+    isPublic: jspb.Message.getFieldWithDefault(msg, 17, false)
   };
 
   if (includeInstance) {
@@ -5837,6 +5975,14 @@ proto.poolrpc.Order.deserializeBinaryFromReader = function(msg, reader) {
     case 15:
       var value = /** @type {!Uint8Array} */ (reader.readBytes());
       msg.addNotAllowedNodeIds(value);
+      break;
+    case 16:
+      var value = /** @type {!proto.poolrpc.AuctionType} */ (reader.readEnum());
+      msg.setAuctionType(value);
+      break;
+    case 17:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setIsPublic(value);
       break;
     default:
       reader.skipField();
@@ -5970,6 +6116,20 @@ proto.poolrpc.Order.serializeBinaryToWriter = function(message, writer) {
   if (f.length > 0) {
     writer.writeRepeatedBytes(
       15,
+      f
+    );
+  }
+  f = message.getAuctionType();
+  if (f !== 0.0) {
+    writer.writeEnum(
+      16,
+      f
+    );
+  }
+  f = message.getIsPublic();
+  if (f) {
+    writer.writeBool(
+      17,
       f
     );
   }
@@ -6341,6 +6501,38 @@ proto.poolrpc.Order.prototype.clearNotAllowedNodeIdsList = function() {
 };
 
 
+/**
+ * optional AuctionType auction_type = 16;
+ * @return {!proto.poolrpc.AuctionType}
+ */
+proto.poolrpc.Order.prototype.getAuctionType = function() {
+  return /** @type {!proto.poolrpc.AuctionType} */ (jspb.Message.getFieldWithDefault(this, 16, 0));
+};
+
+
+/** @param {!proto.poolrpc.AuctionType} value */
+proto.poolrpc.Order.prototype.setAuctionType = function(value) {
+  jspb.Message.setProto3EnumField(this, 16, value);
+};
+
+
+/**
+ * optional bool is_public = 17;
+ * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
+ * You should avoid comparisons like {@code val === true/false} in those cases.
+ * @return {boolean}
+ */
+proto.poolrpc.Order.prototype.getIsPublic = function() {
+  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 17, false));
+};
+
+
+/** @param {boolean} value */
+proto.poolrpc.Order.prototype.setIsPublic = function(value) {
+  jspb.Message.setProto3BooleanField(this, 17, value);
+};
+
+
 
 /**
  * Generated by JsPbCodeGenerator.
@@ -6393,7 +6585,9 @@ proto.poolrpc.Bid.toObject = function(includeInstance, msg) {
     version: jspb.Message.getFieldWithDefault(msg, 3, 0),
     minNodeTier: jspb.Message.getFieldWithDefault(msg, 4, 0),
     selfChanBalance: jspb.Message.getFieldWithDefault(msg, 5, "0"),
-    sidecarTicket: jspb.Message.getFieldWithDefault(msg, 6, "")
+    sidecarTicket: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    unannouncedChannel: jspb.Message.getFieldWithDefault(msg, 7, false),
+    zeroConfChannel: jspb.Message.getFieldWithDefault(msg, 8, false)
   };
 
   if (includeInstance) {
@@ -6454,6 +6648,14 @@ proto.poolrpc.Bid.deserializeBinaryFromReader = function(msg, reader) {
     case 6:
       var value = /** @type {string} */ (reader.readString());
       msg.setSidecarTicket(value);
+      break;
+    case 7:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setUnannouncedChannel(value);
+      break;
+    case 8:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setZeroConfChannel(value);
       break;
     default:
       reader.skipField();
@@ -6524,6 +6726,20 @@ proto.poolrpc.Bid.serializeBinaryToWriter = function(message, writer) {
   if (f.length > 0) {
     writer.writeString(
       6,
+      f
+    );
+  }
+  f = message.getUnannouncedChannel();
+  if (f) {
+    writer.writeBool(
+      7,
+      f
+    );
+  }
+  f = message.getZeroConfChannel();
+  if (f) {
+    writer.writeBool(
+      8,
       f
     );
   }
@@ -6635,6 +6851,40 @@ proto.poolrpc.Bid.prototype.setSidecarTicket = function(value) {
 };
 
 
+/**
+ * optional bool unannounced_channel = 7;
+ * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
+ * You should avoid comparisons like {@code val === true/false} in those cases.
+ * @return {boolean}
+ */
+proto.poolrpc.Bid.prototype.getUnannouncedChannel = function() {
+  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 7, false));
+};
+
+
+/** @param {boolean} value */
+proto.poolrpc.Bid.prototype.setUnannouncedChannel = function(value) {
+  jspb.Message.setProto3BooleanField(this, 7, value);
+};
+
+
+/**
+ * optional bool zero_conf_channel = 8;
+ * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
+ * You should avoid comparisons like {@code val === true/false} in those cases.
+ * @return {boolean}
+ */
+proto.poolrpc.Bid.prototype.getZeroConfChannel = function() {
+  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 8, false));
+};
+
+
+/** @param {boolean} value */
+proto.poolrpc.Bid.prototype.setZeroConfChannel = function(value) {
+  jspb.Message.setProto3BooleanField(this, 8, value);
+};
+
+
 
 /**
  * Generated by JsPbCodeGenerator.
@@ -6684,7 +6934,9 @@ proto.poolrpc.Ask.toObject = function(includeInstance, msg) {
   var f, obj = {
     details: (f = msg.getDetails()) && proto.poolrpc.Order.toObject(includeInstance, f),
     leaseDurationBlocks: jspb.Message.getFieldWithDefault(msg, 2, 0),
-    version: jspb.Message.getFieldWithDefault(msg, 3, 0)
+    version: jspb.Message.getFieldWithDefault(msg, 3, 0),
+    announcementConstraints: jspb.Message.getFieldWithDefault(msg, 4, 0),
+    confirmationConstraints: jspb.Message.getFieldWithDefault(msg, 5, 0)
   };
 
   if (includeInstance) {
@@ -6734,6 +6986,14 @@ proto.poolrpc.Ask.deserializeBinaryFromReader = function(msg, reader) {
       var value = /** @type {number} */ (reader.readUint32());
       msg.setVersion(value);
       break;
+    case 4:
+      var value = /** @type {!proto.poolrpc.ChannelAnnouncementConstraints} */ (reader.readEnum());
+      msg.setAnnouncementConstraints(value);
+      break;
+    case 5:
+      var value = /** @type {!proto.poolrpc.ChannelConfirmationConstraints} */ (reader.readEnum());
+      msg.setConfirmationConstraints(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -6782,6 +7042,20 @@ proto.poolrpc.Ask.serializeBinaryToWriter = function(message, writer) {
   if (f !== 0) {
     writer.writeUint32(
       3,
+      f
+    );
+  }
+  f = message.getAnnouncementConstraints();
+  if (f !== 0.0) {
+    writer.writeEnum(
+      4,
+      f
+    );
+  }
+  f = message.getConfirmationConstraints();
+  if (f !== 0.0) {
+    writer.writeEnum(
+      5,
       f
     );
   }
@@ -6845,6 +7119,36 @@ proto.poolrpc.Ask.prototype.getVersion = function() {
 /** @param {number} value */
 proto.poolrpc.Ask.prototype.setVersion = function(value) {
   jspb.Message.setProto3IntField(this, 3, value);
+};
+
+
+/**
+ * optional ChannelAnnouncementConstraints announcement_constraints = 4;
+ * @return {!proto.poolrpc.ChannelAnnouncementConstraints}
+ */
+proto.poolrpc.Ask.prototype.getAnnouncementConstraints = function() {
+  return /** @type {!proto.poolrpc.ChannelAnnouncementConstraints} */ (jspb.Message.getFieldWithDefault(this, 4, 0));
+};
+
+
+/** @param {!proto.poolrpc.ChannelAnnouncementConstraints} value */
+proto.poolrpc.Ask.prototype.setAnnouncementConstraints = function(value) {
+  jspb.Message.setProto3EnumField(this, 4, value);
+};
+
+
+/**
+ * optional ChannelConfirmationConstraints confirmation_constraints = 5;
+ * @return {!proto.poolrpc.ChannelConfirmationConstraints}
+ */
+proto.poolrpc.Ask.prototype.getConfirmationConstraints = function() {
+  return /** @type {!proto.poolrpc.ChannelConfirmationConstraints} */ (jspb.Message.getFieldWithDefault(this, 5, 0));
+};
+
+
+/** @param {!proto.poolrpc.ChannelConfirmationConstraints} value */
+proto.poolrpc.Ask.prototype.setConfirmationConstraints = function(value) {
+  jspb.Message.setProto3EnumField(this, 5, value);
 };
 
 
@@ -12922,7 +13226,9 @@ proto.poolrpc.DecodedSidecarTicket.toObject = function(includeInstance, msg) {
     orderBidNonce: msg.getOrderBidNonce_asB64(),
     orderSignature: msg.getOrderSignature_asB64(),
     executionPendingChannelId: msg.getExecutionPendingChannelId_asB64(),
-    encodedTicket: jspb.Message.getFieldWithDefault(msg, 16, "")
+    encodedTicket: jspb.Message.getFieldWithDefault(msg, 16, ""),
+    offerUnannouncedChannel: jspb.Message.getFieldWithDefault(msg, 17, false),
+    offerZeroConfChannel: jspb.Message.getFieldWithDefault(msg, 18, false)
   };
 
   if (includeInstance) {
@@ -13022,6 +13328,14 @@ proto.poolrpc.DecodedSidecarTicket.deserializeBinaryFromReader = function(msg, r
     case 16:
       var value = /** @type {string} */ (reader.readString());
       msg.setEncodedTicket(value);
+      break;
+    case 17:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setOfferUnannouncedChannel(value);
+      break;
+    case 18:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setOfferZeroConfChannel(value);
       break;
     default:
       reader.skipField();
@@ -13161,6 +13475,20 @@ proto.poolrpc.DecodedSidecarTicket.serializeBinaryToWriter = function(message, w
   if (f.length > 0) {
     writer.writeString(
       16,
+      f
+    );
+  }
+  f = message.getOfferUnannouncedChannel();
+  if (f) {
+    writer.writeBool(
+      17,
+      f
+    );
+  }
+  f = message.getOfferZeroConfChannel();
+  if (f) {
+    writer.writeBool(
+      18,
       f
     );
   }
@@ -13598,6 +13926,40 @@ proto.poolrpc.DecodedSidecarTicket.prototype.getEncodedTicket = function() {
 /** @param {string} value */
 proto.poolrpc.DecodedSidecarTicket.prototype.setEncodedTicket = function(value) {
   jspb.Message.setProto3StringField(this, 16, value);
+};
+
+
+/**
+ * optional bool offer_unannounced_channel = 17;
+ * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
+ * You should avoid comparisons like {@code val === true/false} in those cases.
+ * @return {boolean}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getOfferUnannouncedChannel = function() {
+  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 17, false));
+};
+
+
+/** @param {boolean} value */
+proto.poolrpc.DecodedSidecarTicket.prototype.setOfferUnannouncedChannel = function(value) {
+  jspb.Message.setProto3BooleanField(this, 17, value);
+};
+
+
+/**
+ * optional bool offer_zero_conf_channel = 18;
+ * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
+ * You should avoid comparisons like {@code val === true/false} in those cases.
+ * @return {boolean}
+ */
+proto.poolrpc.DecodedSidecarTicket.prototype.getOfferZeroConfChannel = function() {
+  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 18, false));
+};
+
+
+/** @param {boolean} value */
+proto.poolrpc.DecodedSidecarTicket.prototype.setOfferZeroConfChannel = function(value) {
+  jspb.Message.setProto3BooleanField(this, 18, value);
 };
 
 
@@ -14645,6 +15007,15 @@ proto.poolrpc.CancelSidecarResponse.serializeBinaryToWriter = function(message, 
   var f = undefined;
 };
 
+
+/**
+ * @enum {number}
+ */
+proto.poolrpc.AccountVersion = {
+  ACCOUNT_VERSION_LND_DEPENDENT: 0,
+  ACCOUNT_VERSION_LEGACY: 1,
+  ACCOUNT_VERSION_TAPROOT: 2
+};
 
 /**
  * @enum {number}

@@ -392,6 +392,7 @@ export const poolInitAccount: POOL.Account.AsObject = {
   state: POOL.AccountState.OPEN,
   traderKey: 'Ap+9XjK2X8EOrmAJvcvWS1B9jt3xLYka0S7aMru0Bude',
   value: '30000000',
+  version: POOL.AccountVersion.ACCOUNT_VERSION_LEGACY,
 };
 
 export const poolQuoteAccount: POOL.QuoteAccountResponse.AsObject = {
@@ -442,6 +443,7 @@ export const poolListAccounts: POOL.ListAccountsResponse.AsObject = {
       state: POOL.AccountState.OPEN,
       traderKey: 'A1XCKczWrUUjZg4rmtYoQnji2mGEyLxM8FvIPZ9ZnRCk',
       value: '15000000',
+      version: POOL.AccountVersion.ACCOUNT_VERSION_LEGACY,
     },
     {
       availableBalance: '7773185',
@@ -454,6 +456,7 @@ export const poolListAccounts: POOL.ListAccountsResponse.AsObject = {
       state: POOL.AccountState.OPEN,
       traderKey: 'A9Mua6d2a+1NZZ8knxJ/XtE3VENxQO4erD9Y3igCmH9q',
       value: '10000000',
+      version: POOL.AccountVersion.ACCOUNT_VERSION_LEGACY,
     },
   ],
 };
@@ -495,9 +498,14 @@ export const poolListOrders: POOL.ListOrdersResponse.AsObject = {
         channelType: 1,
         allowedNodeIdsList: [],
         notAllowedNodeIdsList: [],
+        auctionType: AUCT.AuctionType.AUCTION_TYPE_BTC_INBOUND_LIQUIDITY,
+        isPublic: true,
       },
       leaseDurationBlocks: 2016,
       version: 1,
+      announcementConstraints: AUCT.ChannelAnnouncementConstraints.ONLY_ANNOUNCED,
+      confirmationConstraints:
+        AUCT.ChannelConfirmationConstraints.CONFIRMATION_NO_PREFERENCE,
     },
   ],
   bidsList: [
@@ -518,12 +526,16 @@ export const poolListOrders: POOL.ListOrdersResponse.AsObject = {
         channelType: 1,
         allowedNodeIdsList: [],
         notAllowedNodeIdsList: [],
+        auctionType: AUCT.AuctionType.AUCTION_TYPE_BTC_INBOUND_LIQUIDITY,
+        isPublic: false,
       },
       leaseDurationBlocks: 2016,
       version: 1,
       minNodeTier: 1,
       selfChanBalance: '0',
       sidecarTicket: '',
+      unannouncedChannel: true,
+      zeroConfChannel: true,
     },
     {
       details: {
@@ -542,12 +554,16 @@ export const poolListOrders: POOL.ListOrdersResponse.AsObject = {
         channelType: 1,
         allowedNodeIdsList: [],
         notAllowedNodeIdsList: [],
+        auctionType: AUCT.AuctionType.AUCTION_TYPE_BTC_INBOUND_LIQUIDITY,
+        isPublic: true,
       },
       leaseDurationBlocks: 2016,
       version: 1,
       minNodeTier: 1,
       selfChanBalance: '0',
       sidecarTicket: '',
+      unannouncedChannel: false,
+      zeroConfChannel: false,
     },
     {
       details: {
@@ -566,12 +582,16 @@ export const poolListOrders: POOL.ListOrdersResponse.AsObject = {
         channelType: 1,
         allowedNodeIdsList: [],
         notAllowedNodeIdsList: [],
+        auctionType: AUCT.AuctionType.AUCTION_TYPE_BTC_INBOUND_LIQUIDITY,
+        isPublic: true,
       },
       leaseDurationBlocks: 2016,
       version: 1,
       minNodeTier: 1,
       selfChanBalance: '0',
       sidecarTicket: '',
+      unannouncedChannel: false,
+      zeroConfChannel: false,
     },
     {
       details: {
@@ -590,12 +610,16 @@ export const poolListOrders: POOL.ListOrdersResponse.AsObject = {
         channelType: 1,
         allowedNodeIdsList: [],
         notAllowedNodeIdsList: [],
+        auctionType: AUCT.AuctionType.AUCTION_TYPE_BTC_INBOUND_LIQUIDITY,
+        isPublic: true,
       },
       leaseDurationBlocks: 2016,
       version: 1,
       minNodeTier: 1,
       selfChanBalance: '0',
       sidecarTicket: '',
+      unannouncedChannel: false,
+      zeroConfChannel: false,
     },
   ],
 };

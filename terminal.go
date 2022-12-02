@@ -124,7 +124,7 @@ var (
 	minimalCompatibleVersion = &verrpc.Version{
 		AppMajor: 0,
 		AppMinor: 15,
-		AppPatch: 1,
+		AppPatch: 4,
 		BuildTags: []string{
 			"signrpc", "walletrpc", "chainrpc", "invoicesrpc",
 		},
