@@ -9,6 +9,7 @@ import (
 
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/lightninglabs/lightning-node-connect/mailbox"
+	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/lightning-terminal/perms"
 	"github.com/lightninglabs/lightning-terminal/session"
@@ -43,12 +44,11 @@ type sessionRpcServer struct {
 // sessionRpcServerConfig holds the values used to configure the
 // sessionRpcServer.
 type sessionRpcServerConfig struct {
-	basicAuth           string
-	dbDir               string
-	grpcOptions         []grpc.ServerOption
-	registerGrpcServers func(server *grpc.Server)
-	superMacBaker       func(ctx context.Context, rootKeyID uint64,
-		recipe *session.MacaroonRecipe) (string, error)
+	basicAuth               string
+	dbDir                   string
+	grpcOptions             []grpc.ServerOption
+	registerGrpcServers     func(server *grpc.Server)
+	superMacBaker           session.MacaroonBaker
 	firstConnectionDeadline time.Duration
 	permMgr                 *perms.Manager
 }
@@ -149,10 +149,26 @@ func (s *sessionRpcServer) AddSession(_ context.Context,
 		permissions[entity][action] = struct{}{}
 	}
 
+	var caveats []macaroon.Caveat
 	switch typ {
 	// For the default session types we use empty caveats and permissions,
 	// the macaroons are baked correctly when creating the session.
 	case session.TypeMacaroonAdmin, session.TypeMacaroonReadonly:
+
+	// For account based sessions we just add the account ID caveat, the
+	// permissions are added dynamically when creating the session.
+	case session.TypeMacaroonAccount:
+		id, err := accounts.ParseAccountID(req.AccountId)
+		if err != nil {
+			return nil, fmt.Errorf("invalid account ID: %v", err)
+		}
+
+		cav := checkers.Condition(macaroons.CondLndCustom, fmt.Sprintf(
+			"%s %x", accounts.CondAccount, id[:],
+		))
+		caveats = append(caveats, macaroon.Caveat{
+			Id: []byte(cav),
+		})
 
 	// For the custom macaroon type, we use the custom permissions specified
 	// in the request. For the time being, the caveats list will be empty
@@ -213,14 +229,15 @@ func (s *sessionRpcServer) AddSession(_ context.Context,
 	// No other types are currently supported.
 	default:
 		return nil, fmt.Errorf("invalid session type, only admin, " +
-			"readonly and custom macaroon types supported in LiT")
+			"readonly, account and custom macaroon types " +
+			"supported in LiT")
 	}
 
 	// Collect the de-duped permissions.
-	var perms []bakery.Op
+	var uniquePermissions []bakery.Op
 	for entity, actions := range permissions {
 		for action := range actions {
-			perms = append(perms, bakery.Op{
+			uniquePermissions = append(uniquePermissions, bakery.Op{
 				Entity: entity,
 				Action: action,
 			})
@@ -229,7 +246,7 @@ func (s *sessionRpcServer) AddSession(_ context.Context,
 
 	sess, err := session.NewSession(
 		req.Label, typ, expiry, req.MailboxServerAddr, req.DevServer,
-		perms, nil,
+		uniquePermissions, caveats,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating new session: %v", err)
@@ -291,6 +308,17 @@ func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
 	// the macaroons are baked correctly when creating the session.
 	case session.TypeMacaroonAdmin, session.TypeMacaroonReadonly:
 		permissions = s.cfg.permMgr.ActivePermissions(readOnly)
+
+	// For account based sessions we just add the account ID caveat, the
+	// permissions are added dynamically when creating the session.
+	case session.TypeMacaroonAccount:
+		if sess.MacaroonRecipe == nil {
+			return fmt.Errorf("invalid account session, expected " +
+				"recipe to be set")
+		}
+
+		caveats = sess.MacaroonRecipe.Caveats
+		permissions = accounts.MacaroonPermissions
 
 	// For custom session types, we use the caveats and permissions that
 	// were persisted on session creation.
@@ -568,6 +596,9 @@ func marshalRPCType(typ session.Type) (litrpc.SessionType, error) {
 	case session.TypeUIPassword:
 		return litrpc.SessionType_TYPE_UI_PASSWORD, nil
 
+	case session.TypeMacaroonAccount:
+		return litrpc.SessionType_TYPE_MACAROON_ACCOUNT, nil
+
 	default:
 		return 0, fmt.Errorf("unknown type <%d>", typ)
 	}
@@ -587,6 +618,9 @@ func unmarshalRPCType(typ litrpc.SessionType) (session.Type, error) {
 
 	case litrpc.SessionType_TYPE_UI_PASSWORD:
 		return session.TypeUIPassword, nil
+
+	case litrpc.SessionType_TYPE_MACAROON_ACCOUNT:
+		return session.TypeMacaroonAccount, nil
 
 	default:
 		return 0, fmt.Errorf("unknown type <%d>", typ)

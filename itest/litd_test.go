@@ -113,6 +113,7 @@ func TestLightningTerminal(t *testing.T) {
 	aliceBobArgs := []string{
 		"--default-remote-max-htlcs=483",
 		"--dust-threshold=5000000",
+		"--rpcmiddleware.enable",
 	}
 
 	// Run the subset of the test cases selected in this tranche.

@@ -253,6 +253,26 @@ func NewResponseRewriter(requestSample proto.Message,
 	}
 }
 
+// NewResponseEmptier returns a round trip checker that allows the incoming
+// request and replaces the response with an empty one.
+func NewResponseEmptier[reqT, respT proto.Message]() *DefaultChecker {
+	req := *new(reqT)
+	resp := *new(respT)
+	return &DefaultChecker{
+		requestType:    req.ProtoReflect().Type(),
+		responseType:   resp.ProtoReflect().Type(),
+		requestHandler: passThroughMessageHandler,
+		responseHandler: newReflectionMessageHandler(
+			resp, func(context.Context, respT) (proto.Message,
+				error) {
+
+				return *new(respT), nil
+			},
+		),
+		errorHandler: PassThroughErrorHandler,
+	}
+}
+
 // NewFullChecker returns a round trip checker that both inspects the incoming
 // request and response and potentially modifies the response.
 func NewFullChecker(requestSample proto.Message,
