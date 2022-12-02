@@ -323,7 +323,9 @@ func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
 	// For custom session types, we use the caveats and permissions that
 	// were persisted on session creation.
 	case session.TypeMacaroonCustom:
-		permissions = sess.MacaroonRecipe.Permissions
+		if sess.MacaroonRecipe != nil {
+			permissions = sess.MacaroonRecipe.Permissions
+		}
 
 	// No other types are currently supported.
 	default:
