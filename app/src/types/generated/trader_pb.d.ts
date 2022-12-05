@@ -31,6 +31,9 @@ export class InitAccountRequest extends jspb.Message {
   getInitiator(): string;
   setInitiator(value: string): void;
 
+  getVersion(): AccountVersionMap[keyof AccountVersionMap];
+  setVersion(value: AccountVersionMap[keyof AccountVersionMap]): void;
+
   getAccountExpiryCase(): InitAccountRequest.AccountExpiryCase;
   getFeesCase(): InitAccountRequest.FeesCase;
   serializeBinary(): Uint8Array;
@@ -51,6 +54,7 @@ export namespace InitAccountRequest {
     confTarget: number,
     feeRateSatPerKw: string,
     initiator: string,
+    version: AccountVersionMap[keyof AccountVersionMap],
   }
 
   export enum AccountExpiryCase {
@@ -336,6 +340,9 @@ export class WithdrawAccountRequest extends jspb.Message {
   getRelativeExpiry(): number;
   setRelativeExpiry(value: number): void;
 
+  getNewVersion(): AccountVersionMap[keyof AccountVersionMap];
+  setNewVersion(value: AccountVersionMap[keyof AccountVersionMap]): void;
+
   getAccountExpiryCase(): WithdrawAccountRequest.AccountExpiryCase;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): WithdrawAccountRequest.AsObject;
@@ -354,6 +361,7 @@ export namespace WithdrawAccountRequest {
     feeRateSatPerKw: string,
     absoluteExpiry: number,
     relativeExpiry: number,
+    newVersion: AccountVersionMap[keyof AccountVersionMap],
   }
 
   export enum AccountExpiryCase {
@@ -413,6 +421,9 @@ export class DepositAccountRequest extends jspb.Message {
   getRelativeExpiry(): number;
   setRelativeExpiry(value: number): void;
 
+  getNewVersion(): AccountVersionMap[keyof AccountVersionMap];
+  setNewVersion(value: AccountVersionMap[keyof AccountVersionMap]): void;
+
   getAccountExpiryCase(): DepositAccountRequest.AccountExpiryCase;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): DepositAccountRequest.AsObject;
@@ -431,6 +442,7 @@ export namespace DepositAccountRequest {
     feeRateSatPerKw: string,
     absoluteExpiry: number,
     relativeExpiry: number,
+    newVersion: AccountVersionMap[keyof AccountVersionMap],
   }
 
   export enum AccountExpiryCase {
@@ -487,6 +499,9 @@ export class RenewAccountRequest extends jspb.Message {
   getFeeRateSatPerKw(): string;
   setFeeRateSatPerKw(value: string): void;
 
+  getNewVersion(): AccountVersionMap[keyof AccountVersionMap];
+  setNewVersion(value: AccountVersionMap[keyof AccountVersionMap]): void;
+
   getAccountExpiryCase(): RenewAccountRequest.AccountExpiryCase;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RenewAccountRequest.AsObject;
@@ -504,6 +519,7 @@ export namespace RenewAccountRequest {
     absoluteExpiry: number,
     relativeExpiry: number,
     feeRateSatPerKw: string,
+    newVersion: AccountVersionMap[keyof AccountVersionMap],
   }
 
   export enum AccountExpiryCase {
@@ -611,6 +627,9 @@ export class Account extends jspb.Message {
   getLatestTxid_asB64(): string;
   setLatestTxid(value: Uint8Array | string): void;
 
+  getVersion(): AccountVersionMap[keyof AccountVersionMap];
+  setVersion(value: AccountVersionMap[keyof AccountVersionMap]): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Account.AsObject;
   static toObject(includeInstance: boolean, msg: Account): Account.AsObject;
@@ -630,6 +649,7 @@ export namespace Account {
     expirationHeight: number,
     state: AccountStateMap[keyof AccountStateMap],
     latestTxid: Uint8Array | string,
+    version: AccountVersionMap[keyof AccountVersionMap],
   }
 }
 
@@ -863,6 +883,12 @@ export class Order extends jspb.Message {
   setNotAllowedNodeIdsList(value: Array<Uint8Array | string>): void;
   addNotAllowedNodeIds(value: Uint8Array | string, index?: number): Uint8Array | string;
 
+  getAuctionType(): auctioneerrpc_auctioneer_pb.AuctionTypeMap[keyof auctioneerrpc_auctioneer_pb.AuctionTypeMap];
+  setAuctionType(value: auctioneerrpc_auctioneer_pb.AuctionTypeMap[keyof auctioneerrpc_auctioneer_pb.AuctionTypeMap]): void;
+
+  getIsPublic(): boolean;
+  setIsPublic(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Order.AsObject;
   static toObject(includeInstance: boolean, msg: Order): Order.AsObject;
@@ -890,6 +916,8 @@ export namespace Order {
     channelType: auctioneerrpc_auctioneer_pb.OrderChannelTypeMap[keyof auctioneerrpc_auctioneer_pb.OrderChannelTypeMap],
     allowedNodeIdsList: Array<Uint8Array | string>,
     notAllowedNodeIdsList: Array<Uint8Array | string>,
+    auctionType: auctioneerrpc_auctioneer_pb.AuctionTypeMap[keyof auctioneerrpc_auctioneer_pb.AuctionTypeMap],
+    isPublic: boolean,
   }
 }
 
@@ -914,6 +942,12 @@ export class Bid extends jspb.Message {
   getSidecarTicket(): string;
   setSidecarTicket(value: string): void;
 
+  getUnannouncedChannel(): boolean;
+  setUnannouncedChannel(value: boolean): void;
+
+  getZeroConfChannel(): boolean;
+  setZeroConfChannel(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Bid.AsObject;
   static toObject(includeInstance: boolean, msg: Bid): Bid.AsObject;
@@ -932,6 +966,8 @@ export namespace Bid {
     minNodeTier: auctioneerrpc_auctioneer_pb.NodeTierMap[keyof auctioneerrpc_auctioneer_pb.NodeTierMap],
     selfChanBalance: string,
     sidecarTicket: string,
+    unannouncedChannel: boolean,
+    zeroConfChannel: boolean,
   }
 }
 
@@ -946,6 +982,12 @@ export class Ask extends jspb.Message {
 
   getVersion(): number;
   setVersion(value: number): void;
+
+  getAnnouncementConstraints(): auctioneerrpc_auctioneer_pb.ChannelAnnouncementConstraintsMap[keyof auctioneerrpc_auctioneer_pb.ChannelAnnouncementConstraintsMap];
+  setAnnouncementConstraints(value: auctioneerrpc_auctioneer_pb.ChannelAnnouncementConstraintsMap[keyof auctioneerrpc_auctioneer_pb.ChannelAnnouncementConstraintsMap]): void;
+
+  getConfirmationConstraints(): auctioneerrpc_auctioneer_pb.ChannelConfirmationConstraintsMap[keyof auctioneerrpc_auctioneer_pb.ChannelConfirmationConstraintsMap];
+  setConfirmationConstraints(value: auctioneerrpc_auctioneer_pb.ChannelConfirmationConstraintsMap[keyof auctioneerrpc_auctioneer_pb.ChannelConfirmationConstraintsMap]): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Ask.AsObject;
@@ -962,6 +1004,8 @@ export namespace Ask {
     details?: Order.AsObject,
     leaseDurationBlocks: number,
     version: number,
+    announcementConstraints: auctioneerrpc_auctioneer_pb.ChannelAnnouncementConstraintsMap[keyof auctioneerrpc_auctioneer_pb.ChannelAnnouncementConstraintsMap],
+    confirmationConstraints: auctioneerrpc_auctioneer_pb.ChannelConfirmationConstraintsMap[keyof auctioneerrpc_auctioneer_pb.ChannelConfirmationConstraintsMap],
   }
 }
 
@@ -1863,6 +1907,12 @@ export class DecodedSidecarTicket extends jspb.Message {
   getEncodedTicket(): string;
   setEncodedTicket(value: string): void;
 
+  getOfferUnannouncedChannel(): boolean;
+  setOfferUnannouncedChannel(value: boolean): void;
+
+  getOfferZeroConfChannel(): boolean;
+  setOfferZeroConfChannel(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): DecodedSidecarTicket.AsObject;
   static toObject(includeInstance: boolean, msg: DecodedSidecarTicket): DecodedSidecarTicket.AsObject;
@@ -1891,6 +1941,8 @@ export namespace DecodedSidecarTicket {
     orderSignature: Uint8Array | string,
     executionPendingChannelId: Uint8Array | string,
     encodedTicket: string,
+    offerUnannouncedChannel: boolean,
+    offerZeroConfChannel: boolean,
   }
 }
 
@@ -2035,6 +2087,14 @@ export namespace CancelSidecarResponse {
   export type AsObject = {
   }
 }
+
+export interface AccountVersionMap {
+  ACCOUNT_VERSION_LND_DEPENDENT: 0;
+  ACCOUNT_VERSION_LEGACY: 1;
+  ACCOUNT_VERSION_TAPROOT: 2;
+}
+
+export const AccountVersion: AccountVersionMap;
 
 export interface AccountStateMap {
   PENDING_OPEN: 0;

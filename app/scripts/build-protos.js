@@ -13,7 +13,7 @@ const appPath = join(__dirname, '..');
  */
 const LND_VERSION_PATTERN = /^\tgithub\.com\/lightningnetwork\/lnd (v[\d.]+-beta(?:\.rc\d)?)/ms;
 const LOOP_VERSION_PATTERN = /^\tgithub\.com\/lightninglabs\/loop (v[\d.]+-beta)/ms;
-const POOL_VERSION_PATTERN = /^\tgithub\.com\/lightninglabs\/pool (v[\d.]+-alpha)/ms;
+const POOL_VERSION_PATTERN = /^\tgithub\.com\/lightninglabs\/pool (v[\d.]+-beta)/ms;
 
 /** mapping of proto files to the github url to download each from */
 const protoSources = async () => {

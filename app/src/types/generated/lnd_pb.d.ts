@@ -6861,6 +6861,7 @@ export interface OutputScriptTypeMap {
   SCRIPT_TYPE_NULLDATA: 6;
   SCRIPT_TYPE_NON_STANDARD: 7;
   SCRIPT_TYPE_WITNESS_UNKNOWN: 8;
+  SCRIPT_TYPE_WITNESS_V1_TAPROOT: 9;
 }
 
 export const OutputScriptType: OutputScriptTypeMap;
