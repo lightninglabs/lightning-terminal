@@ -207,6 +207,26 @@ service Trader {
     rpc CancelSidecar (CancelSidecarRequest) returns (CancelSidecarResponse);
 }
 
+enum AccountVersion {
+    /*
+    Let the version of lnd decide. If a version of lnd >= 0.15.0-beta is
+    detected then a Taproot account is created. For earlier versions a legacy
+    account is created.
+    */
+    ACCOUNT_VERSION_LND_DEPENDENT = 0;
+
+    /*
+    A legacy SegWit v0 p2wsh account with a single script.
+    */
+    ACCOUNT_VERSION_LEGACY = 1;
+
+    /*
+    A Taproot enabled account with MuSig2 combined internal key and the expiry
+    script as a single tap script leaf.
+    */
+    ACCOUNT_VERSION_TAPROOT = 2;
+}
+
 message InitAccountRequest {
     uint64 account_value = 1 [jstype = JS_STRING];
 
@@ -236,6 +256,11 @@ message InitAccountRequest {
     the account (pool CLI, LiT UI, other 3rd party UI).
     */
     string initiator = 5;
+
+    /*
+    The version of account to create.
+    */
+    AccountVersion version = 7;
 }
 
 message QuoteAccountRequest {
@@ -346,6 +371,13 @@ message WithdrawAccountRequest {
         // The new relative expiration height of the account.
         uint32 relative_expiry = 5;
     }
+
+    /*
+    The new version of the account. If this is set and is a valid version
+    greater than the account's current version, then the account is upgraded to
+    that version during the withdrawal.
+    */
+    AccountVersion new_version = 6;
 }
 message WithdrawAccountResponse {
     // The state of the account after processing the withdrawal.
@@ -377,6 +409,13 @@ message DepositAccountRequest {
         // The new relative expiration height of the account.
         uint32 relative_expiry = 5;
     }
+
+    /*
+    The new version of the account. If this is set and is a valid version
+    greater than the account's current version, then the account is upgraded to
+    that version during the deposit.
+    */
+    AccountVersion new_version = 6;
 }
 message DepositAccountResponse {
     // The state of the account after processing the deposit.
@@ -400,6 +439,13 @@ message RenewAccountRequest {
 
     // The fee rate, in satoshis per kw, to use for the renewal transaction.
     uint64 fee_rate_sat_per_kw = 4 [jstype = JS_STRING];
+
+    /*
+    The new version of the account. If this is set and is a valid version
+    greater than the account's current version, then the account is upgraded to
+    that version during the renewal.
+    */
+    AccountVersion new_version = 5;
 }
 message RenewAccountResponse {
     // The state of the account after processing the renewal.
@@ -498,6 +544,9 @@ message Account {
 
     // The hash of the account's latest transaction.
     bytes latest_txid = 7;
+
+    // The current version of the account.
+    AccountVersion version = 8;
 }
 
 message SubmitOrderRequest {
@@ -628,6 +677,13 @@ message Order {
     // List of nodes that won't be allowed to match with our order. Incompatible
     // with the `allowed_node_ids` field.
     repeated bytes not_allowed_node_ids = 15;
+
+    // Auction type where this order must be considered during the matching.
+    AuctionType auction_type = 16;
+
+    // Flag used to signal that this order can be shared in public market
+    // places.
+    bool is_public = 17;
 }
 
 message Bid {
@@ -658,9 +714,9 @@ message Bid {
     Give the incoming channel that results from this bid being matched an
     initial outbound balance by adding additional funds from the taker's account
     into the channel. As a simplification for the execution protocol and the
-    channel reserve calculations, the self_chan_balance can be at most the same
-    as the order amount and the min_chan_amt must be set to the full order
-    amount.
+    channel reserve calculations the min_chan_amt must be set to the full order
+    amount. For the inbound liquidity market the self_chan_balance can be at
+    most the same as the order amount.
     */
     uint64 self_chan_balance = 5 [jstype = JS_STRING];
 
@@ -671,6 +727,16 @@ message Bid {
     the base58 encoded ticket, including the prefix and the checksum.
     */
     string sidecar_ticket = 6;
+
+    /*
+    Signals if this bid is interested in an announced or unannounced channel.
+    */
+    bool unannounced_channel = 7;
+
+    /*
+    Signals if this bid is interested in a zero conf channel or not.
+    */
+    bool zero_conf_channel = 8;
 }
 
 message Ask {
@@ -690,6 +756,17 @@ message Ask {
     features are added.
     */
     uint32 version = 3;
+
+    /*
+    The constraints for selling the liquidity based on channel discoverability.
+    */
+    ChannelAnnouncementConstraints announcement_constraints = 4;
+
+    /*
+    The constraints for selling the liquidity based on the number of
+    blocks before considering the channel confirmed.
+    */
+    ChannelConfirmationConstraints confirmation_constraints = 5;
 }
 
 message QuoteOrderRequest {
@@ -1302,6 +1379,14 @@ message DecodedSidecarTicket {
 
     // The original, base58 encoded ticket.
     string encoded_ticket = 16;
+
+    // If true, the channel acceptor for this ticket will expect an unannounced
+    // channel.
+    bool offer_unannounced_channel = 17;
+
+    // If true, the channel acceptor for this ticket will expect a zero conf
+    // channel.
+    bool offer_zero_conf_channel = 18;
 }
 
 message RegisterSidecarRequest {
