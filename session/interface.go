@@ -15,11 +15,12 @@ import (
 type Type uint8
 
 const (
-	TypeMacaroonReadonly Type = 0
-	TypeMacaroonAdmin    Type = 1
-	TypeMacaroonCustom   Type = 2
-	TypeUIPassword       Type = 3
-	TypeMacaroonAccount  Type = 4
+	TypeMacaroonReadonly     Type = 0
+	TypeMacaroonAdmin        Type = 1
+	TypeMacaroonCustom       Type = 2
+	TypeUIPassword           Type = 3
+	typeReservedForFutureUse Type = 4
+	TypeMacaroonAccount      Type = 5
 )
 
 // State represents the state of a session.

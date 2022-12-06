@@ -280,7 +280,7 @@ export interface SessionTypeMap {
   TYPE_MACAROON_ADMIN: 1;
   TYPE_MACAROON_CUSTOM: 2;
   TYPE_UI_PASSWORD: 3;
-  TYPE_MACAROON_ACCOUNT: 4;
+  TYPE_MACAROON_ACCOUNT: 5;
 }
 
 export const SessionType: SessionTypeMap;
