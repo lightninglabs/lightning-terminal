@@ -55,7 +55,7 @@ export default class SettingsStore {
   bitcoinTxUrl = BitcoinExplorerPresets['mempool.space'];
 
   /** url to a graph explorer for Lightning nodes */
-  lnNodeUrl = LightningExplorerPresets['1ml.com'];
+  lnNodeUrl = LightningExplorerPresets['terminal'];
 
   /** the order minimum channel size chosen by the user */
   minChanSize = DEFAULT_MIN_CHAN_SIZE;
