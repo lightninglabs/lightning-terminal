@@ -83,3 +83,35 @@ export const BitcoinExplorerPresets: Record<string, string> = {
 export const LightningExplorerPresets: Record<string, string> = {
   '1ml.com': 'https://1ml.com/node/{pubkey}',
 };
+
+/** A map of all the necessary URIs for each set of features */
+export const PermissionUriMap: { [key: string]: string[] } = {
+  openChannel: [
+    '/lnrpc.Lightning/OpenChannel',
+    '/lnrpc.Lightning/BatchOpenChannel',
+    '/lnrpc.Lightning/OpenChannelSync',
+  ],
+  closeChannel: ['/lnrpc.Lightning/CloseChannel'],
+  setFees: [
+    '/lnrpc.Lightning/EstimateFee',
+    '/lnrpc.Lightning/FeeReport',
+    '/lnrpc.Lightning/UpdateChannelPolicy',
+  ],
+  loop: ['^/looprpc\\.SwapClient/.*$'],
+  pool: ['^/poolrpc\\.Trader/.*$'],
+  send: [
+    '/lnrpc.Lightning/SendCoins',
+    '/lnrpc.Lightning/SendMany',
+    '/lnrpc.Lightning/SendPayment',
+    '/lnrpc.Lightning/SendPaymentSync',
+    '/lnrpc.Lightning/SendToRoute',
+    '/lnrpc.Lightning/SendToRouteSync',
+  ],
+  receive: [
+    '/lnrpc.Lightning/NewAddress',
+    '/lnrpc.Lightning/AddInvoice',
+    '/lnrpc.Lightning/LookupInvoice',
+    '/lnrpc.Lightning/ListInvoices',
+    '/lnrpc.Lightning/SubscribeInvoices',
+  ],
+};
