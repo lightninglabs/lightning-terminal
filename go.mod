@@ -25,7 +25,7 @@ require (
 	github.com/lightningnetwork/lnd v0.15.5-beta
 	github.com/lightningnetwork/lnd/cert v1.1.1
 	github.com/lightningnetwork/lnd/kvdb v1.3.1
-	github.com/lightningnetwork/lnd/tlv v1.0.3
+	github.com/lightningnetwork/lnd/tlv v1.1.0
 	github.com/lightningnetwork/lnd/tor v1.0.1
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
 	github.com/mwitkow/grpc-proxy v0.0.0-20181017164139-0f1106ef9c76
