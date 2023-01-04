@@ -9,6 +9,7 @@ import { Paragraph, Small, Label } from 'components/common/v2/Text';
 import OverlayFormWrap from 'components/common/OverlayFormWrap';
 import FormField from 'components/common/FormField';
 import FormInput from 'components/common/FormInput';
+import FormInputNumber from 'components/common/FormInputNumber';
 import FormSelect from 'components/common/FormSelect';
 import FormDate from 'components/common/FormDate';
 import FormSwitch from 'components/common/v2/FormSwitch';
@@ -63,6 +64,11 @@ const Styled = {
       font-size: ${props => props.theme.sizes.m};
       background-color: ${props => props.theme.colors.blue};
       padding: 12px 40px 12px 0px;
+    }
+  `,
+  FormInputNumber: styled(FormInputNumber)`
+    input {
+      background-color: ${props => props.theme.colors.lightningNavy};
     }
   `,
   FormDate: styled(FormDate)`
@@ -122,6 +128,7 @@ const CustomSessionPage: React.FC = () => {
     Permission,
     FormSelect,
     FormInput,
+    FormInputNumber,
     FormDate,
     Small,
     Button,
@@ -200,6 +207,14 @@ const CustomSessionPage: React.FC = () => {
                 </PermissionType>
 
                 <PermissionType
+                  active={addSessionView.permissionType === 'custodial'}
+                  onClick={setPermissionType('custodial')}
+                >
+                  <Paragraph bold>{l('custodial')}</Paragraph>
+                  <Small>{l('custodialDesc')}</Small>
+                </PermissionType>
+
+                <PermissionType
                   active={addSessionView.permissionType === 'custom'}
                   onClick={setPermissionType('custom')}
                 >
@@ -213,6 +228,21 @@ const CustomSessionPage: React.FC = () => {
               <Label semiBold>Permissions</Label>
 
               <Permissions>
+                {addSessionView.permissionType === 'custodial' && (
+                  <FormField>
+                    <Label semiBold space={8}>
+                      {l('addBalance')}
+                    </Label>
+
+                    <FormInputNumber
+                      value={addSessionView.custodialBalance}
+                      onChange={addSessionView.setCustodialBalance}
+                      placeholder="1,000,000"
+                      extra={<b>sats</b>}
+                    />
+                  </FormField>
+                )}
+
                 <Permission>
                   <div>
                     <Paragraph bold>{l('permView')}</Paragraph>
