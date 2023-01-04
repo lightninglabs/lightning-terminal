@@ -59,6 +59,8 @@ export default class Session {
         return 'Admin';
       case LIT.SessionType.TYPE_MACAROON_CUSTOM:
         return 'Custom';
+      case LIT.SessionType.TYPE_MACAROON_ACCOUNT:
+        return 'Custodial';
       case LIT.SessionType.TYPE_UI_PASSWORD:
         return 'LiT UI Password';
     }
@@ -96,7 +98,7 @@ export default class Session {
 
   /** The HEX encoded pairing secret mnemonic and mailbox server address */
   get encodedPairingData() {
-    const data = `${this.pairingSecretMnemonic}||${this.mailboxServerAddr}`;
+    const data = `${this.pairingSecretMnemonic}||${this.mailboxServerAddr}||${this.typeLabel}`;
     return Buffer.from(data, 'ascii').toString('base64');
   }
 

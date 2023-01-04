@@ -7,7 +7,7 @@ export default class AddSessionView {
   private _store: Store;
 
   label = '';
-  permissionType = 'admin'; // Expected values: admin | read-only | custom | liquidity | payments
+  permissionType = 'admin'; // Expected values: admin | read-only | custodial | custom | liquidity | payments
   editing = false;
   permissions: { [key: string]: boolean } = {
     openChannel: false,
@@ -30,6 +30,7 @@ export default class AddSessionView {
   expirationDate = '';
   showAdvanced = false;
   proxy = '';
+  custodialBalance = 0;
 
   constructor(store: Store) {
     makeAutoObservable(
@@ -52,6 +53,8 @@ export default class AddSessionView {
       return LIT.SessionType.TYPE_MACAROON_ADMIN;
     } else if (this.permissionType === 'read-only') {
       return LIT.SessionType.TYPE_MACAROON_READONLY;
+    } else if (this.permissionType === 'custodial') {
+      return LIT.SessionType.TYPE_MACAROON_ACCOUNT;
     }
 
     return LIT.SessionType.TYPE_MACAROON_CUSTOM;
@@ -125,6 +128,10 @@ export default class AddSessionView {
     this.proxy = proxy;
   }
 
+  setCustodialBalance(balance: number) {
+    this.custodialBalance = balance;
+  }
+
   setPermissionType(permissionType: string) {
     this.permissionType = permissionType;
 
@@ -145,6 +152,12 @@ export default class AddSessionView {
         break;
 
       case 'payments':
+        this.setAllPermissions(false);
+        this.permissions.send = true;
+        this.permissions.receive = true;
+        break;
+
+      case 'custodial':
         this.setAllPermissions(false);
         this.permissions.send = true;
         this.permissions.receive = true;
@@ -203,10 +216,22 @@ export default class AddSessionView {
 
   async handleCustomSubmit() {
     let label = this.label;
+    let accountId = '';
 
     // Automatically generate human friendly labels for custom sessions
     if (label === '') {
       label = `My ${this.permissionType} session`;
+    }
+
+    if (this.permissionType === 'custodial') {
+      const custodialAccountId = await this.registerCustodialAccount();
+
+      // Return immediately to prevent a session being created when there is an error creating the custodial account
+      if (!custodialAccountId) {
+        return;
+      }
+
+      accountId = custodialAccountId;
     }
 
     const session = await this._store.sessionStore.addSession(
@@ -216,11 +241,27 @@ export default class AddSessionView {
       true,
       this.sessionProxy,
       this.getMacaroonPermissions,
+      accountId,
     );
 
     if (session) {
       this.cancel();
       this._store.router.push('/connect');
+    }
+  }
+
+  async registerCustodialAccount(): Promise<string | undefined> {
+    try {
+      const response = await this._store.api.lit.createAccount(
+        this.custodialBalance,
+        this.sessionDate,
+      );
+
+      if (response.account) {
+        return response.account.id;
+      }
+    } catch (error) {
+      this._store.appView.handleError(error, 'Unable to register custodial account');
     }
   }
 

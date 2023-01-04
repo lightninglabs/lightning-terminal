@@ -104,6 +104,7 @@ export default class SessionStore {
     copy = false,
     proxy?: string,
     customPermissions?: LIT.MacaroonPermission[],
+    accountId?: string,
   ) {
     try {
       this._store.log.info(`submitting session with label ${label}`, {
@@ -119,6 +120,7 @@ export default class SessionStore {
         proxy || this.proxyServer,
         !IS_PROD,
         customPermissions || [],
+        accountId || '',
       );
 
       // fetch all sessions to update the store's state
