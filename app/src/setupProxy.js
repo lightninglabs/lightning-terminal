@@ -10,6 +10,7 @@ module.exports = function (app) {
         '/poolrpc.Trader',
         '/frdrpc.FaradayServer',
         '/litrpc.Session',
+        '/litrpc.Accounts',
       ],
       {
         target: 'https://localhost:8443',

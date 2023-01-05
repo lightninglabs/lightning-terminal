@@ -1,0 +1,115 @@
+syntax = "proto3";
+
+package litrpc;
+
+option go_package = "github.com/lightninglabs/lightning-terminal/litrpc";
+
+// Sessions is a service that gives access to the core functionalities of the
+// daemon's session system.
+service Sessions {
+    rpc AddSession (AddSessionRequest) returns (AddSessionResponse);
+
+    rpc ListSessions (ListSessionsRequest) returns (ListSessionsResponse);
+
+    rpc RevokeSession (RevokeSessionRequest) returns (RevokeSessionResponse);
+}
+
+enum SessionType {
+    TYPE_MACAROON_READONLY = 0;
+    TYPE_MACAROON_ADMIN = 1;
+    TYPE_MACAROON_CUSTOM = 2;
+    TYPE_UI_PASSWORD = 3;
+    reserved 4;
+    TYPE_MACAROON_ACCOUNT = 5;
+}
+
+message AddSessionRequest {
+    string label = 1;
+
+    SessionType session_type = 2;
+
+    uint64 expiry_timestamp_seconds = 3 [jstype = JS_STRING];
+
+    string mailbox_server_addr = 4;
+
+    bool dev_server = 5;
+
+    repeated MacaroonPermission macaroon_custom_permissions = 6;
+
+    string account_id = 7;
+}
+
+message MacaroonPermission {
+    // The entity a permission grants access to. If a entity is set to the
+    // "uri" keyword then the action entry should be one of the special cases
+    // described in the comment for action.
+    string entity = 1;
+
+    // The action that is granted. If entity is set to "uri", then action must
+    // be set to either:
+    //  - a particular URI to which access should be granted.
+    //  - a URI regex, in which case access will be granted to each URI that
+    //    matches the regex.
+    //  - the "***readonly***" keyword. This will result in the access being
+    //    granted to all read-only endpoints.
+    string action = 2;
+}
+
+enum SessionState {
+    STATE_CREATED = 0;
+    STATE_IN_USE = 1;
+    STATE_REVOKED = 2;
+    STATE_EXPIRED = 3;
+}
+
+message AddSessionResponse {
+    Session session = 1;
+}
+
+message Session {
+    string label = 1;
+
+    SessionState session_state = 2;
+
+    SessionType session_type = 3;
+
+    uint64 expiry_timestamp_seconds = 4 [jstype = JS_STRING];
+
+    string mailbox_server_addr = 5;
+
+    bool dev_server = 6;
+
+    bytes pairing_secret = 7;
+
+    string pairing_secret_mnemonic = 8;
+
+    bytes local_public_key = 9;
+
+    bytes remote_public_key = 10;
+
+    uint64 created_at = 11 [jstype = JS_STRING];
+
+    MacaroonRecipe macaroon_recipe = 12;
+
+    string account_id = 13;
+}
+
+message MacaroonRecipe {
+    repeated MacaroonPermission permissions = 1;
+
+    repeated string caveats = 2;
+}
+
+message ListSessionsRequest {
+}
+
+message ListSessionsResponse {
+    repeated Session sessions = 1;
+}
+
+message RevokeSessionRequest {
+    bytes local_public_key = 8;
+}
+
+message RevokeSessionResponse {
+}
