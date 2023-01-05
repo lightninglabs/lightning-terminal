@@ -1,0 +1,34 @@
+name: "Setup Golang environment"
+description: "A reusable workflow that's used to set up the Go environment and cache."
+inputs:
+  go-version:
+    description: "The version of Golang to set up"
+    required: true
+
+runs:
+  using: "composite"
+
+  steps:
+    - name: set git config
+      shell: bash
+      run: |
+        git config --global core.eol lf
+        git config --global core.autocrlf false
+
+    - name: setup go ${{ inputs.go-version }}
+      uses: actions/setup-go@v3
+      with:
+        go-version: '${{ inputs.go-version }}'
+
+    - name: go cache
+      uses: actions/cache@v3
+      with:
+        path: |
+          /home/runner/go/pkg/mod
+          /home/runner/.cache/go-build
+        key: litd-${{ runner.os }}-go-${{ inputs.go-version }}-${{ github.job }}-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          litd-${{ runner.os }}-go-${{ inputs.go-version }}-${{ github.job }}-${{ hashFiles('**/go.sum') }}
+          litd-${{ runner.os }}-go-${{ inputs.go-version }}-${{ github.job }}-
+          litd-${{ runner.os }}-go-${{ inputs.go-version }}-
+          litd-${{ runner.os }}-go-

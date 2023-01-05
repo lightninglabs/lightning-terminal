@@ -1,0 +1,37 @@
+name: "Setup Node environment"
+description: "A reusable workflow that's used to set up the Node environment and cache."
+inputs:
+  node-version:
+    description: "The version of Node to set up"
+    required: true
+
+runs:
+  using: "composite"
+
+  steps:
+    - name: set git config
+      shell: bash
+      run: |
+        git config --global core.eol lf
+        git config --global core.autocrlf false
+
+    - name: setup nodejs v${{ inputs.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: '${{ inputs.node-version }}'
+
+    - name: get yarn cache dir
+      id: yarn-cache-dir
+      shell: bash
+      run: echo "YARN_CACHE_DIR=$(yarn cache dir)" >> $GITHUB_ENV
+
+    - name: yarn cache
+      uses: actions/cache@v3
+      id: yarn-cache
+      with:
+        path: ${{ env.YARN_CACHE_DIR }}
+        key: litd-${{ runner.os }}-yarn-${{ inputs.node-version }}-${{ hashFiles('**/yarn.lock') }}
+        restore-keys: |
+          litd-${{ runner.os }}-yarn-${{ inputs.node-version }}-${{ hashFiles('**/yarn.lock') }}
+          litd-${{ runner.os }}-yarn-${{ inputs.node-version }}-
+          litd-${{ runner.os }}-yarn-

@@ -9,9 +9,6 @@ on:
       - "*"
 
 env:
-  # go needs absolute directories, using the $HOME variable doesn't work here.
-  DOWNLOAD_CACHE: /home/runner/work/download_cache
-
   # If you change this value, please change it in the following files as well:
   # /Dockerfile
   # /dev.Dockerfile
@@ -31,33 +28,15 @@ jobs:
         os: [ubuntu-latest, windows-latest, macOS-latest]
 
     steps:
-      - name: set git config
-        run: |
-          git config --global core.eol lf
-          git config --global core.autocrlf false
-
       - name: git checkout
-        uses: actions/checkout@v2
-
-      - name: setup nodejs v${{ matrix.node_version }}
-        uses: actions/setup-node@v1
+        uses: actions/checkout@v3
         with:
-          node-version: ${{ matrix.node_version }}
+          fetch-depth: 0
 
-      - name: get yarn cache dir
-        id: yarn-cache-dir
-        run: echo "::set-output name=dir::$(yarn cache dir)"
-
-      - name: yarn cache
-        uses: actions/cache@v2
-        id: yarn-cache
+      - name: setup nodejs ${{ matrix.node_version }}
+        uses: ./.github/actions/setup-node
         with:
-          path: ${{ steps.yarn-cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ matrix.node_version }}-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-${{ matrix.node_version }}-${{ hashFiles('**/yarn.lock') }}
-            ${{ runner.os }}-yarn-${{ matrix.node_version }}-
-            ${{ runner.os }}-yarn-
+          node-version: '${{ matrix.node_version }}'
 
       - name: install dependencies
         working-directory: ./app
@@ -88,43 +67,20 @@ jobs:
         os: [ubuntu-latest, windows-latest, macOS-latest]
 
     steps:
-      - name: Set git to use LF
-        run: |
-          git config --global core.eol lf
-          git config --global core.autocrlf false
-
       - name: git checkout
-        uses: actions/checkout@v2
-
-      - name: go cache
-        uses: actions/cache@v2
+        uses: actions/checkout@v3
         with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ matrix.go_version }}-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-${{ matrix.go_version }}-${{ hashFiles('**/go.sum') }}
-            ${{ runner.os }}-go-${{ matrix.go_version }}-
-            ${{ runner.os }}-go-
+          fetch-depth: 0
 
-      - name: get yarn cache dir
-        id: yarn-cache-dir
-        run: echo "::set-output name=dir::$(yarn cache dir)"
-
-      - name: yarn cache
-        uses: actions/cache@v2
-        id: yarn-cache
+      - name: setup nodejs ${{ matrix.node_version }}
+        uses: ./.github/actions/setup-node
         with:
-          path: ${{ steps.yarn-cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-yarn-16.x-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-16.x-${{ hashFiles('**/yarn.lock') }}
-            ${{ runner.os }}-yarn-16.x-
-            ${{ runner.os }}-yarn-
+          node-version: '${{ matrix.node_version }}'
 
-      - name: setup go v${{ matrix.go_version }}
-        uses: actions/setup-go@v2
+      - name: setup go ${{ env.GO_VERSION }}
+        uses: ./.github/actions/setup-go
         with:
-          go-version: '~${{ matrix.go_version }}'
+          go-version: '${{ env.GO_VERSION }}'
 
       - name: build backend binary
         run: make build
@@ -139,51 +95,24 @@ jobs:
     name: RPC proto compilation check
     runs-on: ubuntu-latest
     steps:
-      - name: set git config
-        run: |
-          git config --global core.eol lf
-          git config --global core.autocrlf false
-
       - name: git checkout
-        uses: actions/checkout@v2
-
-      - name: setup nodejs v16.x
-        uses: actions/setup-node@v1
+        uses: actions/checkout@v3
         with:
-          node-version: 16.x
+          fetch-depth: 0
 
-      - name: download cache
-        uses: actions/cache@v1
+      - name: setup nodejs ${{ matrix.node_version }}
+        uses: ./.github/actions/setup-node
         with:
-          path: /home/runner/work/download_cache
-          key: litd-${{ runner.os }}-download-${{ hashFiles('**/install_protoc.sh') }}
-          restore-keys: |
-            litd-${{ runner.os }}-download-${{ hashFiles('**/install_protoc.sh') }}
-            litd-${{ runner.os }}-download-
+          node-version: '${{ matrix.node_version }}'
 
-      - name: get yarn cache dir
-        id: yarn-cache-dir
-        run: echo "::set-output name=dir::$(yarn cache dir)"
-
-      - name: yarn cache
-        uses: actions/cache@v2
-        id: yarn-cache
+      - name: setup go ${{ env.GO_VERSION }}
+        uses: ./.github/actions/setup-go
         with:
-          path: ${{ steps.yarn-cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ matrix.node_version }}-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-${{ matrix.node_version }}-${{ hashFiles('**/yarn.lock') }}
-            ${{ runner.os }}-yarn-${{ matrix.node_version }}-
-            ${{ runner.os }}-yarn-
+          go-version: '${{ env.GO_VERSION }}'
 
       - name: install dependencies
         working-directory: ./app
         run: yarn
-
-      - name: setup go ${{ env.GO_VERSION }}
-        uses: actions/setup-go@v2
-        with:
-          go-version: '${{ env.GO_VERSION }}'
 
       - name: compile rpc for golang
         run: make rpc
@@ -200,23 +129,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: git checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - name: go cache
-        uses: actions/cache@v1
-        with:
-          path: /home/runner/work/go
-          key: litd-${{ runner.os }}-go-${{ env.GO_VERSION }}-${{ github.job }}-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            litd-${{ runner.os }}-go-${{ env.GO_VERSION }}-${{ github.job }}-${{ hashFiles('**/go.sum') }}
-            litd-${{ runner.os }}-go-${{ env.GO_VERSION }}-${{ github.job }}-
-            litd-${{ runner.os }}-go-${{ env.GO_VERSION }}-
-            litd-${{ runner.os }}-go-
-
       - name: setup go ${{ env.GO_VERSION }}
-        uses: actions/setup-go@v2
+        uses: ./.github/actions/setup-go
         with:
           go-version: '${{ env.GO_VERSION }}'
 
@@ -239,12 +157,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: git checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
       - name: setup go ${{ env.GO_VERSION }}
-        uses: actions/setup-go@v2
+        uses: ./.github/actions/setup-go
         with:
           go-version: '${{ env.GO_VERSION }}'
 
@@ -262,12 +180,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: git checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
       - name: setup go ${{ env.GO_VERSION }}
-        uses: actions/setup-go@v2
+        uses: ./.github/actions/setup-go
         with:
           go-version: '${{ env.GO_VERSION }}'
 
@@ -282,12 +200,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: git checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
       - name: setup go ${{ env.GO_VERSION }}
-        uses: actions/setup-go@v2
+        uses: ./.github/actions/setup-go
         with:
           go-version: '${{ env.GO_VERSION }}'
 
@@ -301,51 +219,24 @@ jobs:
     name: integration test
     runs-on: ubuntu-latest
     steps:
-      - name: set git config
-        run: |
-          git config --global core.eol lf
-          git config --global core.autocrlf false
-
       - name: git checkout
-        uses: actions/checkout@v2
-
-      - name: setup nodejs v${{ matrix.node_version }}
-        uses: actions/setup-node@v1
+        uses: actions/checkout@v3
         with:
-          node-version: 16.x
+          fetch-depth: 0
 
-      - name: download cache
-        uses: actions/cache@v1
+      - name: setup nodejs ${{ matrix.node_version }}
+        uses: ./.github/actions/setup-node
         with:
-          path: /home/runner/work/download_cache
-          key: litd-${{ runner.os }}-download-${{ hashFiles('**/install_protoc.sh') }}
-          restore-keys: |
-            litd-${{ runner.os }}-download-${{ hashFiles('**/install_protoc.sh') }}
-            litd-${{ runner.os }}-download-
+          node-version: '${{ matrix.node_version }}'
 
-      - name: get yarn cache dir
-        id: yarn-cache-dir
-        run: echo "::set-output name=dir::$(yarn cache dir)"
-
-      - name: yarn cache
-        uses: actions/cache@v2
-        id: yarn-cache
+      - name: setup go ${{ env.GO_VERSION }}
+        uses: ./.github/actions/setup-go
         with:
-          path: ${{ steps.yarn-cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ matrix.node_version }}-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-${{ matrix.node_version }}-${{ hashFiles('**/yarn.lock') }}
-            ${{ runner.os }}-yarn-${{ matrix.node_version }}-
-            ${{ runner.os }}-yarn-
+          go-version: '${{ env.GO_VERSION }}'
 
       - name: install dependencies
         working-directory: ./app
         run: yarn
-
-      - name: setup go ${{ env.GO_VERSION }}
-        uses: actions/setup-go@v2
-        with:
-          go-version: '${{ env.GO_VERSION }}'
 
       - name: run check
         run: make itest
