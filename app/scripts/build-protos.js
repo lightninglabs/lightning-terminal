@@ -51,34 +51,14 @@ const protoSources = async () => {
 
 /** list of proto files and patches to apply */
 const filePatches = {
-  lnd: {
-    patch: 'lnrpc: {}',
-    folder: 'proto',
-  },
-  loop: {
-    patch: 'looprpc: {}',
-    folder: 'proto',
-  },
-  'swapserverrpc/common': {
-    patch: 'looprpc: {}',
-    folder: 'proto'
-  },
-  'swapserverrpc/server': {
-    patch: 'looprpc: {}',
-    folder: 'proto',
-  },
-  trader: {
-    patch: 'poolrpc: {}',
-    folder: 'proto',
-  },
-  'auctioneerrpc/auctioneer': {
-    patch: 'poolrpc: {}',
-    folder: 'proto',
-  },
-  'lit-sessions': {
-    patch: 'litrpc: {}',
-    folder: 'litrpc',
-  },
+  lnd: 'lnrpc: {}',
+  loop: 'looprpc: {}',
+  'swapserverrpc/common': 'looprpc: {}',
+  'swapserverrpc/server': 'looprpc: {}',
+  trader: 'poolrpc: {}',
+  'auctioneerrpc/auctioneer': 'poolrpc: {}',
+  'lit-sessions': 'litrpc: {}',
+  'lit-accounts': 'litrpc: {}',
 };
 
 /**
@@ -102,6 +82,14 @@ const download = async () => {
     });
     await fs.writeFile(filePath, content);
   }
+  // copy the lit proto files from litrpc to the proto dir so that the original
+  // files are not modified by `sanitize`
+  const litProtoFiles = ['lit-sessions', 'lit-accounts'];
+  for (name of litProtoFiles) {
+    const src = join(appPath, '..', 'litrpc', `${name}.proto`);
+    const dest = join(appPath, '..', 'proto', `${name}.proto`);
+    await fs.copyFile(src, dest);
+  }
 };
 
 /**
@@ -110,19 +98,22 @@ const download = async () => {
  */
 const sanitize = async () => {
   const filePaths = Object.keys(filePatches).map(name =>
-    join(appPath, '..', filePatches[name].folder, `${name}.proto`),
+    join(appPath, '..', 'proto', `${name}.proto`),
   );
   for (path of filePaths) {
     let content = (await fs.readFile(path)).toString();
     content = content.replace(
-        /^(\s*)(repeated )?(u?int64) (\S+) = (\d+);$/gm, 
-        '$1$2$3 $4 = $5 [jstype = JS_STRING];'
+      /^(\s*)(repeated )?(u?int64) (\S+) = (\d+);$/gm,
+      '$1$2$3 $4 = $5 [jstype = JS_STRING];',
     );
     content = content.replace(
-        /^(\s*)(repeated )?(u?int64) (\S+) = (\d+) \[((?!jstype).*)];$/gm, 
-        '$1$2$3 $4 = $5 [$6, jstype = JS_STRING];'
+      /^(\s*)(repeated )?(u?int64) (\S+) = (\d+) \[((?!jstype).*)];$/gm,
+      '$1$2$3 $4 = $5 [$6, jstype = JS_STRING];',
     );
-    content = content.replace("import \"common.proto\"", "import \"swapserverrpc/common.proto\"")
+    content = content.replace(
+      'import "common.proto"',
+      'import "swapserverrpc/common.proto"',
+    );
     await fs.writeFile(path, content);
   }
 };
@@ -140,9 +131,7 @@ const generate = async () => {
     '.bin',
     platform() === 'win32' ? 'protoc-gen-ts.cmd' : 'protoc-gen-ts',
   );
-  const files = Object.keys(filePatches).map(
-    name => `../${filePatches[name].folder}/${name}.proto`,
-  );
+  const files = Object.keys(filePatches).map(name => `../proto/${name}.proto`);
   const protocCmd = [
     'protoc',
     `-I../proto`,
@@ -184,7 +173,7 @@ const patch = async () => {
     // apply the webpack patch
     const patch = [
       '/* eslint-disable */',
-      `var proto = { ${filePatches[filename].patch} };`,
+      `var proto = { ${filePatches[filename]} };`,
       '',
     ].join('\n');
     content = `${patch}\n${content}`;
