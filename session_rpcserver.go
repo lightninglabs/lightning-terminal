@@ -519,6 +519,11 @@ func marshalRPCSession(sess *session.Session) (*litrpc.Session, error) {
 
 	macRecipe := marshalRPCMacaroonRecipe(sess.MacaroonRecipe)
 
+	var revokedAt uint64
+	if !sess.RevokedAt.IsZero() {
+		revokedAt = uint64(sess.RevokedAt.Unix())
+	}
+
 	return &litrpc.Session{
 		Label:                  sess.Label,
 		SessionState:           rpcState,
@@ -531,6 +536,7 @@ func marshalRPCSession(sess *session.Session) (*litrpc.Session, error) {
 		LocalPublicKey:         sess.LocalPublicKey.SerializeCompressed(),
 		RemotePublicKey:        remotePubKey,
 		CreatedAt:              uint64(sess.CreatedAt.Unix()),
+		RevokedAt:              revokedAt,
 		MacaroonRecipe:         macRecipe,
 	}, nil
 }
