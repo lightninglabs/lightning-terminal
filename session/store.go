@@ -3,6 +3,7 @@ package session
 import (
 	"bytes"
 	"errors"
+	"time"
 
 	"github.com/btcsuite/btcd/btcec/v2"
 	"go.etcd.io/bbolt"
@@ -100,5 +101,7 @@ func (db *DB) RevokeSession(key *btcec.PublicKey) error {
 	}
 
 	session.State = StateRevoked
+	session.RevokedAt = time.Now()
+
 	return db.StoreSession(session)
 }
