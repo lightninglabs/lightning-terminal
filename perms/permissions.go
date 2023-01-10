@@ -135,8 +135,12 @@ type Manager struct {
 }
 
 // NewManager constructs a new Manager instance and collects any of the fixed
-// permissions.
-func NewManager() (*Manager, error) {
+// permissions. If withAllSubServers is true, then all the LND sub-server
+// permissions will be added to the available permissions set regardless of
+// whether LND was compiled with those sub-servers. If it is not set, however,
+// then OnLNDBuildTags can be used to specify the exact sub-servers that LND
+// was compiled with and then only the corresponding permissions will be added.
+func NewManager(withAllSubServers bool) (*Manager, error) {
 	permissions := make(map[subServerName]map[string][]bakery.Op)
 	permissions[faradayPerms] = faraday.RequiredPermissions
 	permissions[loopPerms] = loop.RequiredPermissions
@@ -166,8 +170,11 @@ func NewManager() (*Manager, error) {
 
 			// If this sub-server is one that we know is
 			// automatically compiled in LND then we add it to our
-			// map of active permissions.
-			if lndAutoCompiledSubServers[name] {
+			// map of active permissions. We also add the permission
+			// if withAllSubServers is true.
+			if withAllSubServers ||
+				lndAutoCompiledSubServers[name] {
+
 				permissions[lndPerms][key] = value
 			}
 		}
