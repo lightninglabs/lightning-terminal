@@ -47,6 +47,7 @@ type Session struct {
 	Type            Type
 	Expiry          time.Time
 	CreatedAt       time.Time
+	RevokedAt       time.Time
 	ServerAddr      string
 	DevServer       bool
 	MacaroonRootKey uint64

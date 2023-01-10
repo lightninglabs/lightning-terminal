@@ -25,6 +25,7 @@ const (
 	typeRemotePublicKey tlv.Type = 11
 	typeMacaroonRecipe  tlv.Type = 12
 	typeCreatedAt       tlv.Type = 13
+	typeRevokedAt       tlv.Type = 14
 
 	// typeMacaroon is no longer used, but we leave it defined for backwards
 	// compatibility.
@@ -58,7 +59,12 @@ func SerializeSession(w io.Writer, session *Session) error {
 		pairingSecret = session.PairingSecret[:]
 		privateKey    = session.LocalPrivateKey.Serialize()
 		createdAt     = uint64(session.CreatedAt.Unix())
+		revokedAt     uint64
 	)
+
+	if !session.RevokedAt.IsZero() {
+		revokedAt = uint64(session.RevokedAt.Unix())
+	}
 
 	if session.DevServer {
 		devServer = 1
@@ -103,6 +109,7 @@ func SerializeSession(w io.Writer, session *Session) error {
 
 	tlvRecords = append(
 		tlvRecords, tlv.MakePrimitiveRecord(typeCreatedAt, &createdAt),
+		tlv.MakePrimitiveRecord(typeRevokedAt, &revokedAt),
 	)
 
 	tlvStream, err := tlv.NewStream(tlvRecords...)
@@ -117,12 +124,12 @@ func SerializeSession(w io.Writer, session *Session) error {
 // the data to be encoded in the tlv format.
 func DeserializeSession(r io.Reader) (*Session, error) {
 	var (
-		session                   = &Session{}
-		label, serverAddr         []byte
-		pairingSecret, privateKey []byte
-		state, typ, devServer     uint8
-		expiry, createdAt         uint64
-		macRecipe                 MacaroonRecipe
+		session                      = &Session{}
+		label, serverAddr            []byte
+		pairingSecret, privateKey    []byte
+		state, typ, devServer        uint8
+		expiry, createdAt, revokedAt uint64
+		macRecipe                    MacaroonRecipe
 	)
 	tlvStream, err := tlv.NewStream(
 		tlv.MakePrimitiveRecord(typeLabel, &label),
@@ -144,6 +151,7 @@ func DeserializeSession(r io.Reader) (*Session, error) {
 			macaroonRecipeEncoder, macaroonRecipeDecoder,
 		),
 		tlv.MakePrimitiveRecord(typeCreatedAt, &createdAt),
+		tlv.MakePrimitiveRecord(typeRevokedAt, &revokedAt),
 	)
 	if err != nil {
 		return nil, err
@@ -161,6 +169,10 @@ func DeserializeSession(r io.Reader) (*Session, error) {
 	session.CreatedAt = time.Unix(int64(createdAt), 0)
 	session.ServerAddr = string(serverAddr)
 	session.DevServer = devServer == 1
+
+	if revokedAt != 0 {
+		session.RevokedAt = time.Unix(int64(revokedAt), 0)
+	}
 
 	if t, ok := parsedTypes[typeMacaroonRecipe]; ok && t == nil {
 		session.MacaroonRecipe = &macRecipe

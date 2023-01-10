@@ -51,14 +51,18 @@ var (
 // and deserialized from and to the tlv binary format successfully.
 func TestSerializeDeserializeSession(t *testing.T) {
 	tests := []struct {
-		name     string
-		sessType Type
-		perms    []bakery.Op
-		caveats  []macaroon.Caveat
+		name      string
+		sessType  Type
+		revokedAt time.Time
+		perms     []bakery.Op
+		caveats   []macaroon.Caveat
 	}{
 		{
 			name:     "session 1",
 			sessType: TypeMacaroonCustom,
+			revokedAt: time.Date(
+				2023, 1, 10, 10, 10, 0, 0, time.UTC,
+			),
 		},
 		{
 			name:     "session 2",
@@ -78,6 +82,8 @@ func TestSerializeDeserializeSession(t *testing.T) {
 			)
 			require.NoError(t, err)
 
+			session.RevokedAt = test.revokedAt
+
 			_, remotePubKey := btcec.PrivKeyFromBytes(testRootKey)
 			session.RemotePublicKey = remotePubKey
 
@@ -95,10 +101,16 @@ func TestSerializeDeserializeSession(t *testing.T) {
 				t, session.Expiry.Unix(),
 				deserializedSession.Expiry.Unix(),
 			)
+			require.Equal(
+				t, session.RevokedAt.Unix(),
+				deserializedSession.RevokedAt.Unix(),
+			)
 			session.Expiry = time.Time{}
 			deserializedSession.Expiry = time.Time{}
 			session.CreatedAt = time.Time{}
 			deserializedSession.CreatedAt = time.Time{}
+			session.RevokedAt = time.Time{}
+			deserializedSession.RevokedAt = time.Time{}
 
 			require.Equal(t, session, deserializedSession)
 		})
