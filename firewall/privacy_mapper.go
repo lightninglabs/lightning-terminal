@@ -221,7 +221,7 @@ func (p *PrivacyMapper) checkers(
 	return map[string]mid.RoundTripChecker{
 		"/lnrpc.Lightning/GetInfo": mid.NewResponseRewriter(
 			&lnrpc.GetInfoRequest{}, &lnrpc.GetInfoResponse{},
-			handleGetInfoRequest(db), mid.PassThroughErrorHandler,
+			handleGetInfoResponse(db), mid.PassThroughErrorHandler,
 		),
 		"/lnrpc.Lightning/ForwardingHistory": mid.NewResponseRewriter(
 			&lnrpc.ForwardingHistoryRequest{},
@@ -239,7 +239,6 @@ func (p *PrivacyMapper) checkers(
 			&lnrpc.ListChannelsResponse{},
 			handleListChannelsRequest(db),
 			handleListChannelsResponse(db, p.randIntn),
-
 			mid.PassThroughErrorHandler,
 		),
 		"/lnrpc.Lightning/UpdateChannelPolicy": mid.NewFullRewriter(
@@ -252,23 +251,23 @@ func (p *PrivacyMapper) checkers(
 	}
 }
 
-func handleGetInfoRequest(db firewalldb.PrivacyMapDB) func(ctx context.Context,
+func handleGetInfoResponse(db firewalldb.PrivacyMapDB) func(ctx context.Context,
 	r *lnrpc.GetInfoResponse) (proto.Message, error) {
 
 	return func(ctx context.Context, r *lnrpc.GetInfoResponse) (
 		proto.Message, error) {
 
+		var pseudoPubKey string
 		err := db.Update(
 			func(tx firewalldb.PrivacyMapTx) error {
 				var err error
-				pk, err := firewalldb.HideString(
+				pseudoPubKey, err = firewalldb.HideString(
 					tx, r.IdentityPubkey,
 				)
 				if err != nil {
 					return err
 				}
 
-				r.IdentityPubkey = pk
 				return nil
 			},
 		)
@@ -276,12 +275,29 @@ func handleGetInfoRequest(db firewalldb.PrivacyMapDB) func(ctx context.Context,
 			return nil, err
 		}
 
-		// Hide our Alias and URI from the autopilot
-		// server.
-		r.Alias = ""
-		r.Uris = nil
-
-		return r, nil
+		return &lnrpc.GetInfoResponse{
+			// We purposefully hide our alias and URIs from the
+			// autopilot server.
+			Alias:                  "",
+			Color:                  "",
+			Uris:                   nil,
+			Version:                r.Version,
+			CommitHash:             r.CommitHash,
+			IdentityPubkey:         pseudoPubKey,
+			NumPendingChannels:     r.NumPendingChannels,
+			NumActiveChannels:      r.NumActiveChannels,
+			NumInactiveChannels:    r.NumInactiveChannels,
+			NumPeers:               r.NumPeers,
+			BlockHeight:            r.BlockHeight,
+			BlockHash:              r.BlockHash,
+			BestHeaderTimestamp:    r.BestHeaderTimestamp,
+			SyncedToChain:          r.SyncedToChain,
+			SyncedToGraph:          r.SyncedToGraph,
+			Testnet:                r.Testnet,
+			Chains:                 r.Chains,
+			Features:               r.Features,
+			RequireHtlcInterceptor: r.RequireHtlcInterceptor,
+		}, nil
 	}
 }
 
@@ -292,8 +308,12 @@ func handleFwdHistoryResponse(db firewalldb.PrivacyMapDB,
 	return func(_ context.Context, r *lnrpc.ForwardingHistoryResponse) (
 		proto.Message, error) {
 
+		fwdEvents := make(
+			[]*lnrpc.ForwardingEvent, len(r.ForwardingEvents),
+		)
+
 		err := db.Update(func(tx firewalldb.PrivacyMapTx) error {
-			for _, fe := range r.ForwardingEvents {
+			for i, fe := range r.ForwardingEvents {
 				// Deterministically hide channel ids.
 				chanIn, err := firewalldb.HideUint64(
 					tx, fe.ChanIdIn,
@@ -301,7 +321,6 @@ func handleFwdHistoryResponse(db firewalldb.PrivacyMapDB,
 				if err != nil {
 					return err
 				}
-				fe.ChanIdIn = chanIn
 
 				chanOut, err := firewalldb.HideUint64(
 					tx, fe.ChanIdOut,
@@ -309,45 +328,55 @@ func handleFwdHistoryResponse(db firewalldb.PrivacyMapDB,
 				if err != nil {
 					return err
 				}
-				fe.ChanIdOut = chanOut
 
 				// We randomize the outgoing amount for privacy.
-				hiddenAmtOutMsat, err := hideAmount(
+				amtOutMsat, err := hideAmount(
 					randIntn, amountVariation,
 					fe.AmtOutMsat,
 				)
 				if err != nil {
 					return err
 				}
-				fe.AmtOutMsat = hiddenAmtOutMsat
 
 				// We randomize fees for privacy.
-				hiddenFeeMsat, err := hideAmount(
+				feeMsat, err := hideAmount(
 					randIntn, amountVariation, fe.FeeMsat,
 				)
 				if err != nil {
 					return err
 				}
-				fe.FeeMsat = hiddenFeeMsat
 
 				// Populate other fields in a consistent manner.
-				fe.AmtInMsat = fe.AmtOutMsat + fe.FeeMsat
-				fe.AmtOut = fe.AmtOutMsat / 1000
-				fe.AmtIn = fe.AmtInMsat / 1000
-				fe.Fee = fe.FeeMsat / 1000
+				amtInMsat := amtOutMsat + feeMsat
+				amtOut := amtOutMsat / 1000
+				amtIn := amtInMsat / 1000
+				fee := feeMsat / 1000
 
 				// We randomize the forwarding timestamp.
-				timestamp := time.Unix(0, int64(fe.TimestampNs))
-				hiddenTimestamp, err := hideTimestamp(
-					randIntn, timeVariation, timestamp,
+				timestamp, err := hideTimestamp(
+					randIntn, timeVariation,
+					time.Unix(0, int64(fe.TimestampNs)),
 				)
 				if err != nil {
 					return err
 				}
-				fe.TimestampNs = uint64(
-					hiddenTimestamp.UnixNano(),
-				)
-				fe.Timestamp = uint64(hiddenTimestamp.Unix())
+
+				fwdEvents[i] = &lnrpc.ForwardingEvent{
+					ChanIdIn:   chanIn,
+					ChanIdOut:  chanOut,
+					AmtIn:      amtIn,
+					AmtOut:     amtOut,
+					Fee:        fee,
+					FeeMsat:    feeMsat,
+					AmtInMsat:  amtInMsat,
+					AmtOutMsat: amtOutMsat,
+					TimestampNs: uint64(
+						timestamp.UnixNano(),
+					),
+					Timestamp: uint64(
+						timestamp.Unix(),
+					),
+				}
 			}
 			return nil
 		})
@@ -355,7 +384,10 @@ func handleFwdHistoryResponse(db firewalldb.PrivacyMapDB,
 			return nil, err
 		}
 
-		return r, nil
+		return &lnrpc.ForwardingHistoryResponse{
+			ForwardingEvents: fwdEvents,
+			LastOffsetIndex:  r.LastOffsetIndex,
+		}, nil
 	}
 }
 
@@ -366,8 +398,10 @@ func handleFeeReportResponse(db firewalldb.PrivacyMapDB) func(
 	return func(ctx context.Context, r *lnrpc.FeeReportResponse) (
 		proto.Message, error) {
 
+		chanFees := make([]*lnrpc.ChannelFeeReport, len(r.ChannelFees))
+
 		err := db.Update(func(tx firewalldb.PrivacyMapTx) error {
-			for _, c := range r.ChannelFees {
+			for i, c := range r.ChannelFees {
 				chanID, err := firewalldb.HideUint64(
 					tx, c.ChanId,
 				)
@@ -382,8 +416,13 @@ func handleFeeReportResponse(db firewalldb.PrivacyMapDB) func(
 					return err
 				}
 
-				c.ChannelPoint = chanPoint
-				c.ChanId = chanID
+				chanFees[i] = &lnrpc.ChannelFeeReport{
+					ChanId:       chanID,
+					ChannelPoint: chanPoint,
+					BaseFeeMsat:  c.BaseFeeMsat,
+					FeePerMil:    c.FeePerMil,
+					FeeRate:      c.FeeRate,
+				}
 			}
 
 			return nil
@@ -392,7 +431,12 @@ func handleFeeReportResponse(db firewalldb.PrivacyMapDB) func(
 			return nil, err
 		}
 
-		return r, nil
+		return &lnrpc.FeeReportResponse{
+			ChannelFees: chanFees,
+			DayFeeSum:   r.DayFeeSum,
+			WeekFeeSum:  r.WeekFeeSum,
+			MonthFeeSum: r.MonthFeeSum,
+		}, nil
 	}
 }
 
@@ -442,40 +486,38 @@ func handleListChannelsResponse(db firewalldb.PrivacyMapDB,
 			return int64(hiddenAmount), nil
 		}
 
+		channels := make([]*lnrpc.Channel, len(r.Channels))
+
 		err := db.Update(func(tx firewalldb.PrivacyMapTx) error {
 			for i, c := range r.Channels {
-				ch := r.Channels[i]
-
 				// Deterministically hide the peer pubkey,
 				// the channel point, and the channel id.
-				pk, err := firewalldb.HideString(
+				remotePub, err := firewalldb.HideString(
 					tx, c.RemotePubkey,
 				)
 				if err != nil {
 					return err
 				}
-				ch.RemotePubkey = pk
 
-				cp, err := firewalldb.HideChanPointStr(
+				chanPoint, err := firewalldb.HideChanPointStr(
 					tx, c.ChannelPoint,
 				)
 				if err != nil {
 					return err
 				}
-				ch.ChannelPoint = cp
 
-				cid, err := firewalldb.HideUint64(tx, c.ChanId)
+				chanID, err := firewalldb.HideUint64(
+					tx, c.ChanId,
+				)
 				if err != nil {
 					return err
 				}
-				ch.ChanId = cid
 
 				// We hide the initiator.
 				initiator, err := hideBool(randIntn)
 				if err != nil {
 					return err
 				}
-				ch.Initiator = initiator
 
 				// Consider the capacity to be public
 				// information. We don't care about reserves, as
@@ -495,50 +537,85 @@ func handleListChannelsResponse(db firewalldb.PrivacyMapDB,
 				if localBalance > c.Capacity {
 					localBalance = c.Capacity
 				}
-				if ch.Initiator {
-					localBalance -= ch.CommitFee
+				if initiator {
+					localBalance -= c.CommitFee
 				}
-				ch.LocalBalance = localBalance
 
 				// We adapt the remote balance accordingly.
 				remoteBalance := c.Capacity - localBalance -
 					c.CommitFee
-				if !ch.Initiator {
-					remoteBalance -= ch.CommitFee
+				if !initiator {
+					remoteBalance -= c.CommitFee
 				}
-				ch.RemoteBalance = remoteBalance
 
 				// We hide the total sats sent and received.
-				hiddenSatsReceived, err := hideAmount(
+				satsReceived, err := hideAmount(
 					c.TotalSatoshisReceived,
 				)
 				if err != nil {
 					return err
 				}
-				ch.TotalSatoshisReceived = hiddenSatsReceived
 
-				hiddenSatsSent, err := hideAmount(
+				satsSent, err := hideAmount(
 					c.TotalSatoshisSent,
 				)
 				if err != nil {
 					return err
 				}
-				ch.TotalSatoshisSent = hiddenSatsSent
 
-				// We only keep track of the number of unsettled
-				// HTLCs.
-				ch.PendingHtlcs = make(
-					[]*lnrpc.HTLC, len(ch.PendingHtlcs),
+				// We only keep track of the _number_ of
+				// unsettled HTLCs.
+				pendingHtlcs := make(
+					[]*lnrpc.HTLC, len(c.PendingHtlcs),
 				)
 
 				// We hide the unsettled balance.
-				unsettled, err := hideAmount(
-					c.UnsettledBalance,
-				)
+				unsettled, err := hideAmount(c.UnsettledBalance)
 				if err != nil {
 					return err
 				}
-				ch.UnsettledBalance = unsettled
+
+				//nolint:lll
+				channels[i] = &lnrpc.Channel{
+					// Items we adjust.
+					RemotePubkey:          remotePub,
+					ChannelPoint:          chanPoint,
+					ChanId:                chanID,
+					Initiator:             initiator,
+					LocalBalance:          localBalance,
+					RemoteBalance:         remoteBalance,
+					TotalSatoshisReceived: satsReceived,
+					TotalSatoshisSent:     satsSent,
+					UnsettledBalance:      unsettled,
+					PendingHtlcs:          pendingHtlcs,
+
+					// Items that we zero out.
+					CloseAddress:          "",
+					PushAmountSat:         0,
+					AliasScids:            nil,
+					ZeroConfConfirmedScid: 0,
+
+					// Items we keep as is.
+					Active:               c.Active,
+					Capacity:             c.Capacity,
+					CommitFee:            c.CommitFee,
+					CommitWeight:         c.CommitWeight,
+					FeePerKw:             c.FeePerKw,
+					NumUpdates:           c.NumUpdates,
+					CsvDelay:             c.CsvDelay,
+					Private:              c.Private,
+					ChanStatusFlags:      c.ChanStatusFlags,
+					LocalChanReserveSat:  c.LocalChanReserveSat,
+					RemoteChanReserveSat: c.RemoteChanReserveSat,
+					StaticRemoteKey:      c.StaticRemoteKey,
+					CommitmentType:       c.CommitmentType,
+					Lifetime:             c.Lifetime,
+					Uptime:               c.Uptime,
+					ThawHeight:           c.ThawHeight,
+					LocalConstraints:     c.LocalConstraints,
+					RemoteConstraints:    c.RemoteConstraints,
+					ZeroConf:             c.ZeroConf,
+				}
 			}
 
 			return nil
@@ -547,7 +624,9 @@ func handleListChannelsResponse(db firewalldb.PrivacyMapDB,
 			return nil, err
 		}
 
-		return r, nil
+		return &lnrpc.ListChannelsResponse{
+			Channels: channels,
+		}, nil
 	}
 }
 
@@ -608,12 +687,21 @@ func handleUpdatePolicyResponse(db firewalldb.PrivacyMapDB) func(
 	return func(ctx context.Context, r *lnrpc.PolicyUpdateResponse) (
 		proto.Message, error) {
 
-		if len(r.FailedUpdates) == 0 {
-			return nil, nil
-		}
+		failedUpdates := make(
+			[]*lnrpc.FailedUpdate, len(r.FailedUpdates),
+		)
 
 		err := db.Update(func(tx firewalldb.PrivacyMapTx) error {
-			for _, u := range r.FailedUpdates {
+			for i, u := range r.FailedUpdates {
+				failedUpdates[i] = &lnrpc.FailedUpdate{
+					Reason:      u.Reason,
+					UpdateError: u.UpdateError,
+				}
+
+				if u.Outpoint == nil {
+					continue
+				}
+
 				txid, index, err := firewalldb.HideChanPoint(
 					tx, u.Outpoint.TxidStr,
 					u.Outpoint.OutputIndex,
@@ -622,9 +710,11 @@ func handleUpdatePolicyResponse(db firewalldb.PrivacyMapDB) func(
 					return err
 				}
 
-				u.Outpoint.TxidBytes = nil
-				u.Outpoint.TxidStr = txid
-				u.Outpoint.OutputIndex = index
+				failedUpdates[i].Outpoint = &lnrpc.OutPoint{
+					TxidBytes:   nil,
+					TxidStr:     txid,
+					OutputIndex: index,
+				}
 			}
 
 			return nil
@@ -633,7 +723,9 @@ func handleUpdatePolicyResponse(db firewalldb.PrivacyMapDB) func(
 			return nil, err
 		}
 
-		return r, nil
+		return &lnrpc.PolicyUpdateResponse{
+			FailedUpdates: failedUpdates,
+		}, nil
 	}
 }
 
