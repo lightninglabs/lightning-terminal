@@ -94,6 +94,16 @@ message Session {
     string account_id = 13;
 
     /*
+    Field number 14 is reserved for future use.
+    */
+    reserved 14;
+
+    /*
+    Field number 15 is reserved for future use.
+    */
+    reserved 15;
+
+    /*
     The unix timestamp indicating the time at which the session was revoked.
     Note that this field has not been around since the beginning and so it
     could be the case that a session has been revoked but that this field
@@ -101,7 +111,7 @@ message Session {
     readers should not assume that if this field is zero that the session is
     not revoked. Readers should instead first check the session_state field.
     */
-    uint64 revoked_at = 14 [jstype = JS_STRING];
+    uint64 revoked_at = 16 [jstype = JS_STRING];
 }
 
 message MacaroonRecipe {

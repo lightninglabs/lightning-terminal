@@ -25,7 +25,9 @@ const (
 	typeRemotePublicKey tlv.Type = 11
 	typeMacaroonRecipe  tlv.Type = 12
 	typeCreatedAt       tlv.Type = 13
-	typeRevokedAt       tlv.Type = 14
+	typeReservedNum1    tlv.Type = 14
+	typeReservedNum2    tlv.Type = 15
+	typeRevokedAt       tlv.Type = 16
 
 	// typeMacaroon is no longer used, but we leave it defined for backwards
 	// compatibility.
