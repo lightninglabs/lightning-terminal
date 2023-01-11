@@ -974,7 +974,7 @@ func bakeSuperMacaroon(cfg *LitNodeConfig, readOnly bool) (string, error) {
 	lndAdminCtx := macaroonContext(ctxt, lndAdminMacBytes)
 	lndConn := lnrpc.NewLightningClient(rawConn)
 
-	permsMgr, err := perms.NewManager()
+	permsMgr, err := perms.NewManager(false)
 	if err != nil {
 		return "", err
 	}

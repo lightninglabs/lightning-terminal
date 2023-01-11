@@ -212,7 +212,7 @@ func (g *LightningTerminal) Run() error {
 	defer g.errQueue.Stop()
 
 	// Construct a new Manager.
-	g.permsMgr, err = perms.NewManager()
+	g.permsMgr, err = perms.NewManager(false)
 	if err != nil {
 		return fmt.Errorf("could not create permissions manager")
 	}
