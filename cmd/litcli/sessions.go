@@ -69,7 +69,7 @@ var addSessionCommand = cli.Command{
 			Usage: "session type to be created which will " +
 				"determine the permissions a user has when " +
 				"connecting with the session. Options " +
-				"include readonly|admin|custom",
+				"include readonly|admin|account|custom",
 			Value: "readonly",
 		},
 		cli.StringSliceFlag{
@@ -84,6 +84,13 @@ var addSessionCommand = cli.Command{
 				"all URIs matching the regex to be included. " +
 				"For example, '/lnrpc\\..*' will result in " +
 				"all `lnrpc` permissions being included.",
+		},
+		cli.StringFlag{
+			Name: "account_id",
+			Usage: "The account id that should be used for " +
+				"the account session. Note that this flag " +
+				"will only be used if the 'type' flag is " +
+				"set to 'account'.",
 		},
 	},
 }
@@ -122,6 +129,7 @@ func addSession(ctx *cli.Context) error {
 			MailboxServerAddr:         ctx.String("mailboxserveraddr"),
 			DevServer:                 ctx.Bool("devserver"),
 			MacaroonCustomPermissions: macPerms,
+			AccountId:                 ctx.String("account_id"),
 		},
 	)
 	if err != nil {
@@ -139,6 +147,8 @@ func parseSessionType(sessionType string) (litrpc.SessionType, error) {
 		return litrpc.SessionType_TYPE_MACAROON_ADMIN, nil
 	case "readonly":
 		return litrpc.SessionType_TYPE_MACAROON_READONLY, nil
+	case "account":
+		return litrpc.SessionType_TYPE_MACAROON_ACCOUNT, nil
 	case "custom":
 		return litrpc.SessionType_TYPE_MACAROON_CUSTOM, nil
 	default:
