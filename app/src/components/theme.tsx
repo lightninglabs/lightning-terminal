@@ -45,6 +45,15 @@ const theme: Theme = {
     lightBlue: '#384770',
     paleBlue: '#2E3A5C',
     lightningRed: '#EF4444',
+    lightningGray: '#B9BDC5',
+    lightningNavy: '#1D253A',
+    iris: '#5D5FEF',
+  },
+  breakpoints: {
+    s: 'min-width: 576px',
+    m: 'min-width: 768px',
+    l: 'min-width: 992px',
+    xl: 'min-width: 1200px',
   },
 };
 

@@ -10,3 +10,4 @@ export { default as OrderListView } from './orderListView';
 export { default as LeaseView } from './leaseView';
 export { default as BatchesView } from './batchesView';
 export { default as RegisterSidecarView } from './registerSidecarView';
+export { default as AddSessionView } from './addSessionView';

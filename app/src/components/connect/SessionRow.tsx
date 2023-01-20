@@ -7,6 +7,7 @@ import { Session } from 'store/models';
 import { BoltOutlined, Close, Column, Copy, QRCode, Row } from 'components/base';
 import SortableHeader from 'components/common/SortableHeader';
 import Tip from 'components/common/Tip';
+import * as LIT from 'types/generated/lit-sessions_pb';
 import QRCodeModal from './QRCodeModal';
 
 /**
@@ -149,6 +150,18 @@ const SessionRow: React.FC<Props> = ({ session, style }) => {
             </Tip>
             <Tip overlay={l('paired')}>
               <QRCode disabled />
+            </Tip>
+          </>
+        ) : session.type === LIT.SessionType.TYPE_MACAROON_ACCOUNT ? (
+          <>
+            <Tip overlay={l('pairCustodial')}>
+              <BoltOutlined disabled />
+            </Tip>
+            <Tip overlay={l('copy')}>
+              <Copy onClick={handleCopy} />
+            </Tip>
+            <Tip overlay={l('generateQR')}>
+              <QRCode onClick={toggleQRModal} />
             </Tip>
           </>
         ) : (

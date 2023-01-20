@@ -1,6 +1,9 @@
-import * as LIT from 'types/generated/lit-sessions_pb';
+import * as ACCOUNT from 'types/generated/lit-accounts_pb';
+import * as SESSION from 'types/generated/lit-sessions_pb';
+import { Accounts } from 'types/generated/lit-accounts_pb_service';
 import { Sessions } from 'types/generated/lit-sessions_pb_service';
 import { b64 } from 'util/strings';
+import { MAX_DATE } from 'util/constants';
 import BaseApi from './base';
 import GrpcClient from './grpc';
 
@@ -17,23 +20,45 @@ class LitApi extends BaseApi<LitEvents> {
   }
 
   /**
+   * call the Lit `CreateAccount` RPC and return the response
+   */
+  async createAccount(
+    accountBalance: number,
+    expirationDate: Date,
+  ): Promise<ACCOUNT.CreateAccountResponse.AsObject> {
+    const req = new ACCOUNT.CreateAccountRequest();
+    req.setAccountBalance(accountBalance.toString());
+
+    if (expirationDate === MAX_DATE) {
+      req.setExpirationDate('0');
+    } else {
+      req.setExpirationDate(Math.floor(expirationDate.getTime() / 1000).toString());
+    }
+
+    const res = await this._grpc.request(Accounts.CreateAccount, req, this._meta);
+    return res.toObject();
+  }
+
+  /**
    * call the Lit `AddSession` RPC and return the response
    */
   async addSession(
     label: string,
-    sessionType: LIT.SessionTypeMap[keyof LIT.SessionTypeMap],
+    sessionType: SESSION.SessionTypeMap[keyof SESSION.SessionTypeMap],
     expiry: Date,
     mailboxServerAddr: string,
     devServer: boolean,
-    macaroonCustomPermissions: Array<LIT.MacaroonPermission>,
-  ): Promise<LIT.AddSessionResponse.AsObject> {
-    const req = new LIT.AddSessionRequest();
+    macaroonCustomPermissions: Array<SESSION.MacaroonPermission>,
+    accountId: string,
+  ): Promise<SESSION.AddSessionResponse.AsObject> {
+    const req = new SESSION.AddSessionRequest();
     req.setLabel(label);
     req.setSessionType(sessionType);
     req.setExpiryTimestampSeconds(Math.floor(expiry.getTime() / 1000).toString());
     req.setMailboxServerAddr(mailboxServerAddr);
     req.setDevServer(devServer);
     req.setMacaroonCustomPermissionsList(macaroonCustomPermissions);
+    req.setAccountId(accountId);
 
     const res = await this._grpc.request(Sessions.AddSession, req, this._meta);
     return res.toObject();
@@ -42,8 +67,8 @@ class LitApi extends BaseApi<LitEvents> {
   /**
    * call the Lit `ListSessions` RPC and return the response
    */
-  async listSessions(): Promise<LIT.ListSessionsResponse.AsObject> {
-    const req = new LIT.ListSessionsRequest();
+  async listSessions(): Promise<SESSION.ListSessionsResponse.AsObject> {
+    const req = new SESSION.ListSessionsRequest();
     const res = await this._grpc.request(Sessions.ListSessions, req, this._meta);
     return res.toObject();
   }
@@ -53,8 +78,8 @@ class LitApi extends BaseApi<LitEvents> {
    */
   async revokeSession(
     localPublicKey: string,
-  ): Promise<LIT.RevokeSessionResponse.AsObject> {
-    const req = new LIT.RevokeSessionRequest();
+  ): Promise<SESSION.RevokeSessionResponse.AsObject> {
+    const req = new SESSION.RevokeSessionRequest();
     req.setLocalPublicKey(b64(localPublicKey));
     const res = await this._grpc.request(Sessions.RevokeSession, req, this._meta);
     return res.toObject();

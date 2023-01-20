@@ -102,6 +102,9 @@ export default class SessionStore {
     type: LIT.SessionTypeMap[keyof LIT.SessionTypeMap],
     expiry: Date,
     copy = false,
+    proxy?: string,
+    customPermissions?: LIT.MacaroonPermission[],
+    accountId?: string,
   ) {
     try {
       this._store.log.info(`submitting session with label ${label}`, {
@@ -114,9 +117,10 @@ export default class SessionStore {
         label,
         type,
         expiry,
-        this.proxyServer,
+        proxy || this.proxyServer,
         !IS_PROD,
-        [],
+        customPermissions || [],
+        accountId || '',
       );
 
       // fetch all sessions to update the store's state

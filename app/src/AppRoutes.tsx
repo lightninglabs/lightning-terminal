@@ -9,6 +9,9 @@ const LazyHistoryPage = React.lazy(() => import('components/history/HistoryPage'
 const LazyPoolPage = React.lazy(() => import('components/pool/PoolPage'));
 const LazySettingsPage = React.lazy(() => import('components/settings/SettingsPage'));
 const LazyConnectPage = React.lazy(() => import('components/connect/ConnectPage'));
+const LazyCustomSessionPage = React.lazy(
+  () => import('components/connect/CustomSessionPage'),
+);
 
 const AppRoutes: React.FC = () => {
   return (
@@ -60,6 +63,14 @@ const AppRoutes: React.FC = () => {
           element={
             <Layout>
               <LazyConnectPage />
+            </Layout>
+          }
+        />
+        <Route
+          path="connect/custom"
+          element={
+            <Layout>
+              <LazyCustomSessionPage />
             </Layout>
           }
         />

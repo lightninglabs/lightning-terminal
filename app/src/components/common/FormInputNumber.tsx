@@ -7,6 +7,7 @@ interface Props {
   value?: number;
   extra?: ReactNode;
   placeholder?: string;
+  className?: string;
   onChange: (value: number) => void;
 }
 
@@ -15,6 +16,7 @@ const FormInputNumber: React.FC<Props> = ({
   value,
   extra,
   placeholder,
+  className,
   onChange,
 }) => {
   const handleChange = useCallback(
@@ -35,6 +37,7 @@ const FormInputNumber: React.FC<Props> = ({
 
   return (
     <FormInput
+      className={className}
       label={label}
       value={valueText}
       extra={extra}

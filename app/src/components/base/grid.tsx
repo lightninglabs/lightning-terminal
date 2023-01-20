@@ -1,6 +1,22 @@
 import React, { CSSProperties } from 'react';
 
 /**
+ * This component represents a container in the bootstrap Grid layout
+ */
+export const Container: React.FC<{
+  className?: string;
+  style?: CSSProperties;
+}> = ({ children, className, style }) => {
+  const cn: string[] = ['container'];
+  className && cn.push(className);
+  return (
+    <div className={cn.join(' ')} style={style}>
+      {children}
+    </div>
+  );
+};
+
+/**
  * This component represents a Row in the bootstrap Grid layout
  */
 export const Row: React.FC<{
