@@ -537,16 +537,9 @@ func handleListChannelsResponse(db firewalldb.PrivacyMapDB,
 				if localBalance > c.Capacity {
 					localBalance = c.Capacity
 				}
-				if initiator {
-					localBalance -= c.CommitFee
-				}
 
 				// We adapt the remote balance accordingly.
-				remoteBalance := c.Capacity - localBalance -
-					c.CommitFee
-				if !initiator {
-					remoteBalance -= c.CommitFee
-				}
+				remoteBalance := c.Capacity - localBalance
 
 				// We hide the total sats sent and received.
 				satsReceived, err := hideAmount(
@@ -748,8 +741,8 @@ func hideAmount(randIntn func(n int) (int, error), relativeVariation float64,
 	// between 0 and 1.
 	fuzzInterval := uint64(float64(amount) * relativeVariation)
 
-	amountMin := int(amount - fuzzInterval/2)
-	amountMax := int(amount + fuzzInterval/2)
+	amountMin := int(amount - fuzzInterval)
+	amountMax := int(amount + fuzzInterval)
 
 	randAmount, err := randBetween(randIntn, amountMin, amountMax)
 	if err != nil {
@@ -781,8 +774,8 @@ func hideTimestamp(randIntn func(n int) (int, error),
 	}
 
 	// We vary symmetrically around the provided timestamp.
-	timeMin := timestamp.Add(-absoluteVariation / 2)
-	timeMax := timestamp.Add(absoluteVariation / 2)
+	timeMin := timestamp.Add(-absoluteVariation)
+	timeMax := timestamp.Add(absoluteVariation)
 
 	timeNs, err := randBetween(
 		randIntn, int(timeMin.UnixNano()), int(timeMax.UnixNano()),

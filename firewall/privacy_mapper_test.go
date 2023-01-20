@@ -76,26 +76,26 @@ func TestPrivacyMapper(t *testing.T) {
 			expectedReplacement: &lnrpc.ForwardingHistoryResponse{
 				ForwardingEvents: []*lnrpc.ForwardingEvent{
 					{
-						AmtIn:       1_950,
-						AmtInMsat:   1_950_200,
-						AmtOut:      975,
-						AmtOutMsat:  975_100,
-						Fee:         975,
-						FeeMsat:     975_100,
-						Timestamp:   700,
-						TimestampNs: 700_000_000_100,
+						AmtIn:       1_900,
+						AmtInMsat:   1_900_200,
+						AmtOut:      950,
+						AmtOutMsat:  950_100,
+						Fee:         950,
+						FeeMsat:     950_100,
+						Timestamp:   400,
+						TimestampNs: 400_000_000_100,
 						ChanIdIn:    5178778334600911958,
 						ChanIdOut:   3446430762436373227,
 					},
 					{
-						AmtIn:       2_925,
-						AmtInMsat:   2_925_200,
-						AmtOut:      1_950,
-						AmtOutMsat:  1_950_100,
-						Fee:         975,
-						FeeMsat:     975_100,
-						Timestamp:   700,
-						TimestampNs: 700_000_000_100,
+						AmtIn:       2_850,
+						AmtInMsat:   2_850_200,
+						AmtOut:      1_900,
+						AmtOutMsat:  1_900_100,
+						Fee:         950,
+						FeeMsat:     950_100,
+						Timestamp:   400,
+						TimestampNs: 400_000_000_100,
 						ChanIdIn:    8672172843977902018,
 						ChanIdOut:   1378354177616075123,
 					},
@@ -167,11 +167,11 @@ func TestPrivacyMapper(t *testing.T) {
 				Channels: []*lnrpc.Channel{
 					{
 						Capacity:              1_000_000,
-						RemoteBalance:         513_375,
-						LocalBalance:          485_625,
+						RemoteBalance:         525_850,
+						LocalBalance:          474_150,
 						CommitFee:             1_000,
-						TotalSatoshisSent:     487_600,
-						TotalSatoshisReceived: 438_850,
+						TotalSatoshisSent:     475_100,
+						TotalSatoshisReceived: 427_600,
 						RemotePubkey:          "c8134495",
 						Initiator:             true,
 						ChanId:                5178778334600911958,
@@ -362,16 +362,16 @@ func TestPrivacyMapper(t *testing.T) {
 		// would also be dependend on the fee variation).
 		amtOutMsat := msg.ForwardingEvents[0].AmtOutMsat
 		amtInterval := uint64(amountVariation * float64(amtOutMsat))
-		minAmt := amtOutMsat - amtInterval/2
-		maxAmt := amtOutMsat + amtInterval/2
+		minAmt := amtOutMsat - amtInterval
+		maxAmt := amtOutMsat + amtInterval
 
 		// We keep track of the timestamp. We test only the timestamp in
 		// seconds as there can be numerical inaccuracies with the
 		// nanosecond one.
 		timestamp := msg.ForwardingEvents[0].Timestamp
 		timestampInterval := uint64(timeVariation) / 1e9
-		minTime := timestamp - timestampInterval/2
-		maxTime := timestamp + timestampInterval/2
+		minTime := timestamp - timestampInterval
+		maxTime := timestamp + timestampInterval
 
 		// We need a certain number of samples to have statistical
 		// accuracy.
@@ -537,7 +537,9 @@ func TestRandBetween(t *testing.T) {
 func TestHideAmount(t *testing.T) {
 	testAmount := uint64(10_000)
 	relativeVariation := 0.05
-	fuzzInterval := int(float64(testAmount) * relativeVariation)
+	absoluteVariation := int(float64(testAmount) * relativeVariation)
+	lowerBound := testAmount - uint64(absoluteVariation)
+	upperBound := testAmount + uint64(absoluteVariation)
 
 	tests := []struct {
 		name      string
@@ -559,21 +561,21 @@ func TestHideAmount(t *testing.T) {
 			name:      "min value",
 			randIntFn: func(int) (int, error) { return 0, nil },
 			amount:    testAmount,
-			expected:  9750,
+			expected:  lowerBound,
 		},
 		{
 			name: "max value",
 			randIntFn: func(int) (int, error) {
-				return fuzzInterval, nil
+				return int(upperBound - lowerBound), nil
 			},
 			amount:   testAmount,
-			expected: 10250,
+			expected: upperBound,
 		},
 		{
 			name:      "some fuzz",
 			randIntFn: func(int) (int, error) { return 123, nil },
 			amount:    testAmount,
-			expected:  9750 + 123,
+			expected:  lowerBound + 123,
 		},
 	}
 
@@ -608,6 +610,8 @@ func TestHideAmount(t *testing.T) {
 func TestHideTimestamp(t *testing.T) {
 	timestamp := time.Unix(1_000_000, 0)
 	absoluteVariation := time.Duration(10) * time.Minute
+	lowerBound := timestamp.Add(-absoluteVariation)
+	upperBound := timestamp.Add(absoluteVariation)
 
 	tests := []struct {
 		name      string
@@ -623,21 +627,21 @@ func TestHideTimestamp(t *testing.T) {
 			name:      "min value",
 			randIntFn: func(int) (int, error) { return 0, nil },
 			timestamp: timestamp,
-			expected:  time.Unix(999_700, 0),
+			expected:  lowerBound,
 		},
 		{
 			name: "max value",
 			randIntFn: func(int) (int, error) {
-				return int(absoluteVariation), nil
+				return int(upperBound.Sub(lowerBound)), nil
 			},
 			timestamp: timestamp,
-			expected:  time.Unix(1_000_300, 0),
+			expected:  upperBound,
 		},
 		{
 			name:      "some fuzz",
 			randIntFn: func(int) (int, error) { return 123, nil },
 			timestamp: timestamp,
-			expected:  time.Unix(999_700, 123),
+			expected:  lowerBound.Add(time.Duration(123)),
 		},
 	}
 
