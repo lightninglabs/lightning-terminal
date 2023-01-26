@@ -727,7 +727,13 @@ func (g *LightningTerminal) startSubservers() error {
 	}
 	g.accountServiceStarted = true
 
-	requestLogger := firewall.NewRequestLogger(g.firewallDB)
+	requestLogger, err := firewall.NewRequestLogger(
+		g.cfg.Firewall.RequestLogger, g.firewallDB,
+	)
+	if err != nil {
+		return fmt.Errorf("error creating new request logger")
+	}
+
 	privacyMapper := firewall.NewPrivacyMapper(
 		g.firewallDB.PrivacyDB, firewall.CryptoRandIntn,
 	)

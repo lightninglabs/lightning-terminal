@@ -3,6 +3,7 @@ package firewall
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightninglabs/protobuf-hex-display/jsonpb"
 	"github.com/lightningnetwork/lnd/lnrpc"
+	"github.com/lightningnetwork/lnd/macaroons"
 )
 
 const (
@@ -35,9 +37,19 @@ var (
 	_ mid.RequestInterceptor = (*RequestLogger)(nil)
 )
 
+type RequestLoggerLevel string
+
+const (
+	RequestLoggerLevelInterceptor = "interceptor"
+	RequestLoggerLevelAll         = "all"
+	RequestLoggerLevelFull        = "full"
+)
+
 // RequestLogger is a RequestInterceptor that just logs incoming RPC requests.
 type RequestLogger struct {
 	actionsDB firewalldb.ActionsWriteDB
+
+	shouldLogAction func(ri *RequestInfo) (bool, bool)
 
 	// reqIDToAction is a map from request ID to an ActionLocator that can
 	// be used to find the corresponding action. This is used so that
@@ -48,11 +60,55 @@ type RequestLogger struct {
 }
 
 // NewRequestLogger creates a new RequestLogger.
-func NewRequestLogger(actionsDB firewalldb.ActionsWriteDB) *RequestLogger {
-	return &RequestLogger{
-		actionsDB:     actionsDB,
-		reqIDToAction: make(map[uint64]*firewalldb.ActionLocator),
+func NewRequestLogger(cfg *RequestLoggerConfig,
+	actionsDB firewalldb.ActionsWriteDB) (*RequestLogger, error) {
+
+	hasInterceptorCaveat := func(caveats []string) bool {
+		for _, c := range caveats {
+			if strings.HasPrefix(c, macaroons.CondLndCustom) {
+				return true
+			}
+		}
+
+		return false
 	}
+
+	var shouldLogAction func(ri *RequestInfo) (bool, bool)
+	switch cfg.RequestLoggerLevel {
+	// Only log requests that have an interceptor caveat attached.
+	case RequestLoggerLevelInterceptor:
+		shouldLogAction = func(ri *RequestInfo) (bool, bool) {
+			if hasInterceptorCaveat(ri.Caveats) {
+				return true, true
+			}
+
+			return false, false
+		}
+
+	// Log all requests but only log request params if the request
+	// has an interceptor caveat.
+	case RequestLoggerLevelAll:
+		shouldLogAction = func(ri *RequestInfo) (bool, bool) {
+			return true, hasInterceptorCaveat(ri.Caveats)
+		}
+
+	// Log all requests will all request parameters.
+	case RequestLoggerLevelFull:
+		shouldLogAction = func(ri *RequestInfo) (bool, bool) {
+			return true, true
+		}
+
+	default:
+		return nil, fmt.Errorf("unknown request logger level: %s. "+
+			"Expected either 'interceptor', 'all' or 'full'",
+			cfg.RequestLoggerLevel)
+	}
+
+	return &RequestLogger{
+		shouldLogAction: shouldLogAction,
+		actionsDB:       actionsDB,
+		reqIDToAction:   make(map[uint64]*firewalldb.ActionLocator),
+	}, nil
 }
 
 // Name returns the name of the interceptor.
@@ -89,6 +145,11 @@ func (r *RequestLogger) Intercept(_ context.Context,
 		return mid.RPCOk(req)
 	}
 
+	shouldLogAction, withPayloadData := r.shouldLogAction(ri)
+	if !shouldLogAction {
+		return mid.RPCOk(req)
+	}
+
 	log.Tracef("RequestLogger: Intercepting %v", ri)
 
 	switch ri.MWRequestType {
@@ -97,7 +158,7 @@ func (r *RequestLogger) Intercept(_ context.Context,
 
 	// Parse incoming requests and act on them.
 	case MWRequestTypeRequest:
-		return mid.RPCErr(req, r.addNewAction(ri))
+		return mid.RPCErr(req, r.addNewAction(ri, withPayloadData))
 
 	// Parse and possibly manipulate outgoing responses.
 	case MWRequestTypeResponse:
@@ -120,7 +181,9 @@ func (r *RequestLogger) Intercept(_ context.Context,
 }
 
 // addNewAction persists the new action to the db.
-func (r *RequestLogger) addNewAction(ri *RequestInfo) error {
+func (r *RequestLogger) addNewAction(ri *RequestInfo,
+	withPayloadData bool) error {
+
 	// If no macaroon is provided, then an empty 4-byte array is used as the
 	// session ID. Otherwise, the macaroon is used to derive a session ID.
 	var sessionID [4]byte
@@ -132,34 +195,40 @@ func (r *RequestLogger) addNewAction(ri *RequestInfo) error {
 		}
 	}
 
-	msg, err := mid.ParseProtobuf(ri.GRPCMessageType, ri.Serialized)
-	if err != nil {
-		return err
-	}
-
-	jsonMarshaler := &jsonpb.Marshaler{
-		EmitDefaults: true,
-		OrigName:     true,
-	}
-
-	jsonStr, err := jsonMarshaler.MarshalToString(proto.MessageV1(msg))
-	if err != nil {
-		return fmt.Errorf("unable to decode response: %v", err)
-	}
-
 	action := &firewalldb.Action{
-		RPCMethod:     ri.URI,
-		RPCParamsJson: []byte(jsonStr),
-		AttemptedAt:   time.Now(),
-		State:         firewalldb.ActionStateInit,
+		RPCMethod:   ri.URI,
+		AttemptedAt: time.Now(),
+		State:       firewalldb.ActionStateInit,
 	}
 
-	if ri.MetaInfo != nil {
-		action.ActorName = ri.MetaInfo.ActorName
-		action.FeatureName = ri.MetaInfo.Feature
-		action.Trigger = ri.MetaInfo.Trigger
-		action.Intent = ri.MetaInfo.Intent
-		action.StructuredJsonData = ri.MetaInfo.StructuredJsonData
+	if withPayloadData {
+		msg, err := mid.ParseProtobuf(ri.GRPCMessageType, ri.Serialized)
+		if err != nil {
+			return err
+		}
+
+		jsonMarshaler := &jsonpb.Marshaler{
+			EmitDefaults: true,
+			OrigName:     true,
+		}
+
+		jsonStr, err := jsonMarshaler.MarshalToString(
+			proto.MessageV1(msg),
+		)
+		if err != nil {
+			return fmt.Errorf("unable to decode response: %v", err)
+		}
+
+		action.RPCParamsJson = []byte(jsonStr)
+
+		meta := ri.MetaInfo
+		if meta != nil {
+			action.ActorName = meta.ActorName
+			action.FeatureName = meta.Feature
+			action.Trigger = meta.Trigger
+			action.Intent = meta.Intent
+			action.StructuredJsonData = meta.StructuredJsonData
+		}
 	}
 
 	id, err := r.actionsDB.AddAction(sessionID, action)
