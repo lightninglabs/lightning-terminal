@@ -2,6 +2,7 @@ package rules
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"sync"
 
@@ -252,6 +253,18 @@ func (c *PeerRestrictEnforcer) HandleErrorResponse(_ context.Context,
 // checkers returns a map of URI to rpcmiddleware.RoundTripChecker which define
 // how the URI should be handled.
 func (c *PeerRestrictEnforcer) checkers() map[string]mid.RoundTripChecker {
+	// checkPeer is a helper function which checks if the given request
+	// is allowed to be executed on the peer.
+	checkPeer := func(req ChanOpenReq) error {
+		pubkey := hex.EncodeToString(req.GetNodePubkey())
+		if c.peerMap[pubkey] {
+			return fmt.Errorf("illegal action on peer in peer " +
+				"restriction list")
+		}
+
+		return nil
+	}
+
 	return map[string]mid.RoundTripChecker{
 		"/lnrpc.Lightning/UpdateChannelPolicy": mid.NewRequestChecker(
 			&lnrpc.PolicyUpdateRequest{},
@@ -294,6 +307,30 @@ func (c *PeerRestrictEnforcer) checkers() map[string]mid.RoundTripChecker {
 					return fmt.Errorf("illegal action on " +
 						"peer in peer restriction " +
 						"list")
+				}
+
+				return nil
+			},
+		),
+		"/lnrpc.Lightning/OpenChannelSync": mid.NewRequestChecker(
+			&lnrpc.OpenChannelRequest{},
+			&lnrpc.ChannelPoint{},
+			func(_ context.Context,
+				r *lnrpc.OpenChannelRequest) error {
+
+				return checkPeer(r)
+			},
+		),
+		"/lnrpc.Lightning/BatchOpenChannel": mid.NewRequestChecker(
+			&lnrpc.BatchOpenChannelRequest{},
+			&lnrpc.BatchOpenChannelResponse{},
+			func(_ context.Context,
+				r *lnrpc.BatchOpenChannelRequest) error {
+
+				for _, r := range r.Channels {
+					if err := checkPeer(r); err != nil {
+						return err
+					}
 				}
 
 				return nil

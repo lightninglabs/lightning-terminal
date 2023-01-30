@@ -206,6 +206,7 @@ type ChanOpenReq interface {
 	GetPushSat() int64
 	GetCloseAddress() string
 	GetPrivate() bool
+	GetNodePubkey() []byte
 }
 
 // checkOpenRequest verifies that the given request is valid given the
