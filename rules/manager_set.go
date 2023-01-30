@@ -26,6 +26,7 @@ func NewRuleManagerSet() ManagerSet {
 		OnChainBudgetName:    &OnChainBudgetMgr{},
 		ChannelRestrictName:  NewChannelRestrictMgr(),
 		PeersRestrictName:    NewPeerRestrictMgr(),
+		ChanConstraintName:   &ChanConstraintMgr{},
 	}
 }
 
