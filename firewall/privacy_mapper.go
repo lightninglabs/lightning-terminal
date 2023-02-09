@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
 	"github.com/lightninglabs/lightning-terminal/session"
@@ -294,6 +295,14 @@ func (p *PrivacyMapper) checkers(db firewalldb.PrivacyMapDB,
 			&lnrpc.PendingChannelsRequest{},
 			&lnrpc.PendingChannelsResponse{},
 			handlePendingChannelsResponse(db, flags, p.randIntn),
+			mid.PassThroughErrorHandler,
+		),
+
+		"/lnrpc.Lightning/BatchOpenChannel": mid.NewFullRewriter(
+			&lnrpc.BatchOpenChannelRequest{},
+			&lnrpc.BatchOpenChannelResponse{},
+			handleBatchOpenChannelRequest(db, flags),
+			handleBatchOpenChannelResponse(db, flags),
 			mid.PassThroughErrorHandler,
 		),
 	}
@@ -1313,6 +1322,134 @@ func handlePendingChannelsResponse(db firewalldb.PrivacyMapDB,
 			PendingClosingChannels:      pendingCloses,
 			PendingForceClosingChannels: pendingForceCloses,
 			WaitingCloseChannels:        waitingCloses,
+		}, nil
+	}
+}
+
+func handleBatchOpenChannelRequest(db firewalldb.PrivacyMapDB,
+	flags session.PrivacyFlags) func(ctx context.Context,
+	r *lnrpc.BatchOpenChannelRequest) (proto.Message, error) {
+
+	return func(_ context.Context, r *lnrpc.BatchOpenChannelRequest) (
+		proto.Message, error) {
+
+		var reqs = make([]*lnrpc.BatchOpenChannel, len(r.Channels))
+
+		err := db.View(func(tx firewalldb.PrivacyMapTx) error {
+			for i, c := range r.Channels {
+				var err error
+
+				// Note, this only works if the obfuscated
+				// pubkey was already created via other
+				// calls, e.g. via ListChannels or
+				// GetInfo or the like.
+				nodePubkey := c.NodePubkey
+				if !flags.Contains(session.ClearPubkeys) {
+					nodePubkey, err = firewalldb.RevealBytes(
+						tx, c.NodePubkey,
+					)
+					if err != nil {
+						return err
+					}
+				}
+
+				reqs[i] = &lnrpc.BatchOpenChannel{
+					// Obfuscated fields.
+					NodePubkey: nodePubkey,
+
+					// Non-obfuscated fields.
+					LocalFundingAmount:         c.LocalFundingAmount,
+					PushSat:                    c.PushSat,
+					Private:                    c.Private,
+					MinHtlcMsat:                c.MinHtlcMsat,
+					RemoteCsvDelay:             c.RemoteCsvDelay,
+					CloseAddress:               c.CloseAddress,
+					PendingChanId:              c.PendingChanId,
+					CommitmentType:             c.CommitmentType,
+					RemoteMaxValueInFlightMsat: c.RemoteMaxValueInFlightMsat,
+					RemoteMaxHtlcs:             c.RemoteMaxHtlcs,
+					MaxLocalCsv:                c.MaxLocalCsv,
+					ZeroConf:                   c.ZeroConf,
+					ScidAlias:                  c.ScidAlias,
+					BaseFee:                    c.BaseFee,
+					FeeRate:                    c.FeeRate,
+					UseBaseFee:                 c.UseBaseFee,
+					UseFeeRate:                 c.UseFeeRate,
+					RemoteChanReserveSat:       c.RemoteChanReserveSat,
+					Memo:                       c.Memo,
+				}
+			}
+
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		return &lnrpc.BatchOpenChannelRequest{
+			Channels:         reqs,
+			TargetConf:       r.TargetConf,
+			SatPerVbyte:      r.SatPerVbyte,
+			MinConfs:         r.MinConfs,
+			SpendUnconfirmed: r.SpendUnconfirmed,
+			Label:            r.Label,
+		}, nil
+	}
+}
+
+func handleBatchOpenChannelResponse(db firewalldb.PrivacyMapDB,
+	flags session.PrivacyFlags) func(ctx context.Context,
+	r *lnrpc.BatchOpenChannelResponse) (proto.Message, error) {
+
+	return func(_ context.Context, r *lnrpc.BatchOpenChannelResponse) (
+		proto.Message, error) {
+
+		resps := make([]*lnrpc.PendingUpdate, len(r.PendingChannels))
+
+		err := db.Update(func(tx firewalldb.PrivacyMapTx) error {
+			for i, p := range r.PendingChannels {
+				var (
+					txIdBytes   = p.Txid
+					outputIndex = p.OutputIndex
+				)
+
+				if !flags.Contains(session.ClearChanIDs) {
+					txId, err := chainhash.NewHash(p.Txid)
+					if err != nil {
+						return err
+					}
+
+					txID, outIdx, err := firewalldb.HideChanPoint(
+						tx, txId.String(), p.OutputIndex,
+					)
+					if err != nil {
+						return err
+					}
+					outputIndex = outIdx
+
+					txHash, err := chainhash.NewHashFromStr(
+						txID,
+					)
+					if err != nil {
+						return err
+					}
+					txIdBytes = txHash[:]
+				}
+
+				resps[i] = &lnrpc.PendingUpdate{
+					Txid:        txIdBytes,
+					OutputIndex: outputIndex,
+				}
+			}
+
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		return &lnrpc.BatchOpenChannelResponse{
+			PendingChannels: resps,
 		}, nil
 	}
 }

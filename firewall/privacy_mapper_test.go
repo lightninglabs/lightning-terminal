@@ -27,8 +27,11 @@ func TestPrivacyMapper(t *testing.T) {
 
 	// Define some transaction outpoints used for mapping.
 	clearTxID := "abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd"
+	clearTxIDReveresed, err := chainhash.NewHashFromStr(clearTxID)
+	require.NoError(t, err)
 
 	obfusTxID0 := "097ef666a61919ff3413b3b701eae3a5cbac08f70c0ca567806e1fa6acbfe384"
+	require.NoError(t, err)
 	obfusOut0 := uint32(2161781494)
 	obfusTxID0Reversed, err := chainhash.NewHashFromStr(obfusTxID0)
 	require.NoError(t, err)
@@ -668,6 +671,59 @@ func TestPrivacyMapper(t *testing.T) {
 							Initiator: lnrpc.Initiator_INITIATOR_LOCAL,
 							Memo:      "something",
 						},
+					},
+				},
+			},
+		},
+		{
+			name:    "BatchOpenChannel Request",
+			uri:     "/lnrpc.Lightning/BatchOpenChannel",
+			msgType: rpcperms.TypeRequest,
+			msg: &lnrpc.BatchOpenChannelRequest{
+				TargetConf: 6,
+				Channels: []*lnrpc.BatchOpenChannel{
+					{
+						NodePubkey: []byte{
+							200, 19, 68, 149,
+						},
+						LocalFundingAmount: 1_000_000,
+						PushSat:            1_000_000,
+						MinHtlcMsat:        100,
+					},
+				},
+			},
+			expectedReplacement: &lnrpc.BatchOpenChannelRequest{
+				TargetConf: 6,
+				Channels: []*lnrpc.BatchOpenChannel{
+					{
+						NodePubkey: []byte{
+							1, 2, 3, 4,
+						},
+						LocalFundingAmount: 1_000_000,
+						PushSat:            1_000_000,
+						MinHtlcMsat:        100,
+					},
+				},
+			},
+		},
+		{
+			name:    "BatchOpenChannel Response",
+			uri:     "/lnrpc.Lightning/BatchOpenChannel",
+			msgType: rpcperms.TypeResponse,
+			msg: &lnrpc.BatchOpenChannelResponse{
+				PendingChannels: []*lnrpc.PendingUpdate{
+					{
+
+						Txid:        clearTxIDReveresed[:],
+						OutputIndex: 0,
+					},
+				},
+			},
+			expectedReplacement: &lnrpc.BatchOpenChannelResponse{
+				PendingChannels: []*lnrpc.PendingUpdate{
+					{
+						Txid:        obfusTxID0Reversed[:],
+						OutputIndex: obfusOut0,
 					},
 				},
 			},
