@@ -150,6 +150,9 @@ export class Session extends jspb.Message {
 
   getAutopilotFeatureInfoMap(): jspb.Map<string, RulesMap>;
   clearAutopilotFeatureInfoMap(): void;
+  getRevokedAt(): string;
+  setRevokedAt(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Session.AsObject;
   static toObject(includeInstance: boolean, msg: Session): Session.AsObject;
@@ -177,6 +180,7 @@ export namespace Session {
     macaroonRecipe?: MacaroonRecipe.AsObject,
     accountId: string,
     autopilotFeatureInfoMap: Array<[string, RulesMap.AsObject]>,
+    revokedAt: string,
   }
 }
 

@@ -757,7 +757,8 @@ proto.litrpc.Session.toObject = function(includeInstance, msg) {
     createdAt: jspb.Message.getFieldWithDefault(msg, 11, "0"),
     macaroonRecipe: (f = msg.getMacaroonRecipe()) && proto.litrpc.MacaroonRecipe.toObject(includeInstance, f),
     accountId: jspb.Message.getFieldWithDefault(msg, 13, ""),
-    autopilotFeatureInfoMap: (f = msg.getAutopilotFeatureInfoMap()) ? f.toObject(includeInstance, proto.litrpc.RulesMap.toObject) : []
+    autopilotFeatureInfoMap: (f = msg.getAutopilotFeatureInfoMap()) ? f.toObject(includeInstance, proto.litrpc.RulesMap.toObject) : [],
+    revokedAt: jspb.Message.getFieldWithDefault(msg, 16, "0")
   };
 
   if (includeInstance) {
@@ -856,6 +857,10 @@ proto.litrpc.Session.deserializeBinaryFromReader = function(msg, reader) {
       reader.readMessage(value, function(message, reader) {
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.litrpc.RulesMap.deserializeBinaryFromReader, "");
          });
+      break;
+    case 16:
+      var value = /** @type {string} */ (reader.readUint64String());
+      msg.setRevokedAt(value);
       break;
     default:
       reader.skipField();
@@ -988,6 +993,13 @@ proto.litrpc.Session.serializeBinaryToWriter = function(message, writer) {
   f = message.getAutopilotFeatureInfoMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(15, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.litrpc.RulesMap.serializeBinaryToWriter);
+  }
+  f = message.getRevokedAt();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
+      16,
+      f
+    );
   }
 };
 
@@ -1330,6 +1342,21 @@ proto.litrpc.Session.prototype.getAutopilotFeatureInfoMap = function(opt_noLazyC
 
 proto.litrpc.Session.prototype.clearAutopilotFeatureInfoMap = function() {
   this.getAutopilotFeatureInfoMap().clear();
+};
+
+
+/**
+ * optional uint64 revoked_at = 16;
+ * @return {string}
+ */
+proto.litrpc.Session.prototype.getRevokedAt = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 16, "0"));
+};
+
+
+/** @param {string} value */
+proto.litrpc.Session.prototype.setRevokedAt = function(value) {
+  jspb.Message.setProto3StringIntField(this, 16, value);
 };
 
 
