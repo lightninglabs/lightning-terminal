@@ -75,6 +75,7 @@ func main() {
 	app.Commands = append(app.Commands, listActionsCommand)
 	app.Commands = append(app.Commands, privacyMapCommands)
 	app.Commands = append(app.Commands, autopilotCommands)
+	app.Commands = append(app.Commands, litCommands...)
 
 	err := app.Run(os.Args)
 	if err != nil {

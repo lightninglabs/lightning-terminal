@@ -829,6 +829,7 @@ func (g *LightningTerminal) registerSubDaemonGrpcServers(server *grpc.Server,
 	if withLitRPC {
 		litrpc.RegisterSessionsServer(server, g.sessionRpcServer)
 		litrpc.RegisterAccountsServer(server, g.accountRpcServer)
+		litrpc.RegisterLitServiceServer(server, g.rpcProxy)
 	}
 
 	litrpc.RegisterFirewallServer(server, g.sessionRpcServer)
@@ -1159,44 +1160,43 @@ func (g *LightningTerminal) shutdown() error {
 // between the embedded HTTP server and the RPC proxy. An incoming request will
 // go through the following chain of components:
 //
-//    Request on port 8443       <------------------------------------+
-//        |                                 converted gRPC request    |
-//        v                                                           |
-//    +---+----------------------+ other  +----------------+          |
-//    | Main web HTTP server     +------->+ Embedded HTTP  |          |
-//    +---+----------------------+____+   +----------------+          |
-//        |                           |                               |
-//        v any RPC or grpc-web call  |  any REST call                |
-//    +---+----------------------+    |->+----------------+           |
-//    | grpc-web proxy           |       + grpc-gateway   +-----------+
-//    +---+----------------------+       +----------------+
-//        |
-//        v native gRPC call with basic auth
-//    +---+----------------------+
-//    | interceptors             |
-//    +---+----------------------+
-//        |
-//        v native gRPC call with macaroon
-//    +---+----------------------+
-//    | gRPC server              |
-//    +---+----------------------+
-//        |
-//        v unknown authenticated call, gRPC server is just a wrapper
-//    +---+----------------------+
-//    | director                 |
-//    +---+----------------------+
-//        |
-//        v authenticated call
-//    +---+----------------------+ call to lnd or integrated daemon
-//    | lnd (remote or local)    +---------------+
-//    | faraday remote           |               |
-//    | loop remote              |    +----------v----------+
-//    | pool remote              |    | lnd local subserver |
-//    +--------------------------+    |  - faraday          |
-//                                    |  - loop             |
-//                                    |  - pool             |
-//                                    +---------------------+
-//
+//	Request on port 8443       <------------------------------------+
+//	    |                                 converted gRPC request    |
+//	    v                                                           |
+//	+---+----------------------+ other  +----------------+          |
+//	| Main web HTTP server     +------->+ Embedded HTTP  |          |
+//	+---+----------------------+____+   +----------------+          |
+//	    |                           |                               |
+//	    v any RPC or grpc-web call  |  any REST call                |
+//	+---+----------------------+    |->+----------------+           |
+//	| grpc-web proxy           |       + grpc-gateway   +-----------+
+//	+---+----------------------+       +----------------+
+//	    |
+//	    v native gRPC call with basic auth
+//	+---+----------------------+
+//	| interceptors             |
+//	+---+----------------------+
+//	    |
+//	    v native gRPC call with macaroon
+//	+---+----------------------+
+//	| gRPC server              |
+//	+---+----------------------+
+//	    |
+//	    v unknown authenticated call, gRPC server is just a wrapper
+//	+---+----------------------+
+//	| director                 |
+//	+---+----------------------+
+//	    |
+//	    v authenticated call
+//	+---+----------------------+ call to lnd or integrated daemon
+//	| lnd (remote or local)    +---------------+
+//	| faraday remote           |               |
+//	| loop remote              |    +----------v----------+
+//	| pool remote              |    | lnd local subserver |
+//	+--------------------------+    |  - faraday          |
+//	                                |  - loop             |
+//	                                |  - pool             |
+//	                                +---------------------+
 func (g *LightningTerminal) startMainWebServer() error {
 	// Initialize the in-memory file server from the content compiled by
 	// the go:embed directive. Since everything's relative to the root dir,

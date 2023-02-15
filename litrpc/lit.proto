@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package litrpc;
+
+option go_package = "github.com/lightninglabs/lightning-terminal/litrpc";
+
+service LitService {
+    rpc StopDaemon (StopDaemonRequest) returns (StopDaemonResponse);
+}
+
+message StopDaemonRequest {
+}
+
+message StopDaemonResponse {
+}

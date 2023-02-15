@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
+	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/lightning-terminal/perms"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/lncfg"
@@ -111,40 +112,41 @@ func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 // it is handled there. If not, the director will forward the call to either a
 // local or remote lnd instance.
 //
-//    any RPC or grpc-web call
-//        |
-//        V
-//    +---+----------------------+
-//    | grpc-web proxy           |
-//    +---+----------------------+
-//        |
-//        v native gRPC call with basic auth
-//    +---+----------------------+
-//    | interceptors             |
-//    +---+----------------------+
-//        |
-//        v native gRPC call with macaroon
-//    +---+----------------------+
-//    | gRPC server              |
-//    +---+----------------------+
-//        |
-//        v unknown authenticated call, gRPC server is just a wrapper
-//    +---+----------------------+
-//    | director                 |
-//    +---+----------------------+
-//        |
-//        v authenticated call
-//    +---+----------------------+ call to lnd or integrated daemon
-//    | lnd (remote or local)    +---------------+
-//    | faraday remote           |               |
-//    | loop remote              |    +----------v----------+
-//    | pool remote              |    | lnd local subserver |
-//    +--------------------------+    |  - faraday          |
-//                                    |  - loop             |
-//                                    |  - pool             |
-//                                    +---------------------+
-//
+//	any RPC or grpc-web call
+//	    |
+//	    V
+//	+---+----------------------+
+//	| grpc-web proxy           |
+//	+---+----------------------+
+//	    |
+//	    v native gRPC call with basic auth
+//	+---+----------------------+
+//	| interceptors             |
+//	+---+----------------------+
+//	    |
+//	    v native gRPC call with macaroon
+//	+---+----------------------+
+//	| gRPC server              |
+//	+---+----------------------+
+//	    |
+//	    v unknown authenticated call, gRPC server is just a wrapper
+//	+---+----------------------+
+//	| director                 |
+//	+---+----------------------+
+//	    |
+//	    v authenticated call
+//	+---+----------------------+ call to lnd or integrated daemon
+//	| lnd (remote or local)    +---------------+
+//	| faraday remote           |               |
+//	| loop remote              |    +----------v----------+
+//	| pool remote              |    | lnd local subserver |
+//	+--------------------------+    |  - faraday          |
+//	                                |  - loop             |
+//	                                |  - pool             |
+//	                                +---------------------+
 type rpcProxy struct {
+	litrpc.UnimplementedLitServiceServer
+
 	cfg       *Config
 	basicAuth string
 	permsMgr  *perms.Manager
@@ -252,6 +254,18 @@ func (p *rpcProxy) Stop() error {
 	}
 
 	return nil
+}
+
+// StopDaemon will send a shutdown request to the interrupt handler, triggering
+// a graceful shutdown of the daemon.
+//
+// NOTE: this is part of the litrpc.LitServiceServer interface.
+func (p *rpcProxy) StopDaemon(_ context.Context,
+	_ *litrpc.StopDaemonRequest) (*litrpc.StopDaemonResponse, error) {
+
+	interceptor.RequestShutdown()
+
+	return &litrpc.StopDaemonResponse{}, nil
 }
 
 // isHandling checks if the specified request is something to be handled by lnd

@@ -86,6 +86,10 @@ var (
 			Entity: "privacymap",
 			Action: "read",
 		}},
+		"/litrpc.LitService/StopDaemon": {{
+			Entity: "litd",
+			Action: "write",
+		}},
 	}
 
 	// whiteListedLNDMethods is a map of all lnd RPC methods that don't
