@@ -369,7 +369,6 @@ export const loopInQuote: LOOP.InQuoteResponse.AsObject = {
 
 export const loopSwapResponse: LOOP.SwapResponse.AsObject = {
   htlcAddress: 'bcrt1qkjct8aqxfwyla50mfxdnzlmuphg3zwuz2zmuy99c9sw67xj7tn2sfkflhw',
-  htlcAddressNp2wsh: '',
   htlcAddressP2wsh: 'bcrt1qkjct8aqxfwyla50mfxdnzlmuphg3zwuz2zmuy99c9sw67xj7tn2sfkflhw',
   id: '18e17a2f44efc7f344ef6330281765e569315f93d3eaf9b0f959b404836e3480',
   idBytes: 'GOF6L0Tvx/NE72MwKBdl5WkxX5PT6vmw+Vm0BINuNIA=',

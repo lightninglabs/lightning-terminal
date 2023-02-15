@@ -1050,7 +1050,6 @@ proto.looprpc.SwapResponse.toObject = function(includeInstance, msg) {
     id: jspb.Message.getFieldWithDefault(msg, 1, ""),
     idBytes: msg.getIdBytes_asB64(),
     htlcAddress: jspb.Message.getFieldWithDefault(msg, 2, ""),
-    htlcAddressNp2wsh: jspb.Message.getFieldWithDefault(msg, 4, ""),
     htlcAddressP2wsh: jspb.Message.getFieldWithDefault(msg, 5, ""),
     htlcAddressP2tr: jspb.Message.getFieldWithDefault(msg, 7, ""),
     serverMessage: jspb.Message.getFieldWithDefault(msg, 6, "")
@@ -1101,10 +1100,6 @@ proto.looprpc.SwapResponse.deserializeBinaryFromReader = function(msg, reader) {
     case 2:
       var value = /** @type {string} */ (reader.readString());
       msg.setHtlcAddress(value);
-      break;
-    case 4:
-      var value = /** @type {string} */ (reader.readString());
-      msg.setHtlcAddressNp2wsh(value);
       break;
     case 5:
       var value = /** @type {string} */ (reader.readString());
@@ -1165,13 +1160,6 @@ proto.looprpc.SwapResponse.serializeBinaryToWriter = function(message, writer) {
   if (f.length > 0) {
     writer.writeString(
       2,
-      f
-    );
-  }
-  f = message.getHtlcAddressNp2wsh();
-  if (f.length > 0) {
-    writer.writeString(
-      4,
       f
     );
   }
@@ -1265,21 +1253,6 @@ proto.looprpc.SwapResponse.prototype.getHtlcAddress = function() {
 /** @param {string} value */
 proto.looprpc.SwapResponse.prototype.setHtlcAddress = function(value) {
   jspb.Message.setProto3StringField(this, 2, value);
-};
-
-
-/**
- * optional string htlc_address_np2wsh = 4;
- * @return {string}
- */
-proto.looprpc.SwapResponse.prototype.getHtlcAddressNp2wsh = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 4, ""));
-};
-
-
-/** @param {string} value */
-proto.looprpc.SwapResponse.prototype.setHtlcAddressNp2wsh = function(value) {
-  jspb.Message.setProto3StringField(this, 4, value);
 };
 
 
@@ -1508,7 +1481,6 @@ proto.looprpc.SwapStatus.toObject = function(includeInstance, msg) {
     lastUpdateTime: jspb.Message.getFieldWithDefault(msg, 6, "0"),
     htlcAddress: jspb.Message.getFieldWithDefault(msg, 7, ""),
     htlcAddressP2wsh: jspb.Message.getFieldWithDefault(msg, 12, ""),
-    htlcAddressNp2wsh: jspb.Message.getFieldWithDefault(msg, 13, ""),
     htlcAddressP2tr: jspb.Message.getFieldWithDefault(msg, 18, ""),
     costServer: jspb.Message.getFieldWithDefault(msg, 8, "0"),
     costOnchain: jspb.Message.getFieldWithDefault(msg, 9, "0"),
@@ -1591,10 +1563,6 @@ proto.looprpc.SwapStatus.deserializeBinaryFromReader = function(msg, reader) {
     case 12:
       var value = /** @type {string} */ (reader.readString());
       msg.setHtlcAddressP2wsh(value);
-      break;
-    case 13:
-      var value = /** @type {string} */ (reader.readString());
-      msg.setHtlcAddressNp2wsh(value);
       break;
     case 18:
       var value = /** @type {string} */ (reader.readString());
@@ -1720,13 +1688,6 @@ proto.looprpc.SwapStatus.serializeBinaryToWriter = function(message, writer) {
   if (f.length > 0) {
     writer.writeString(
       12,
-      f
-    );
-  }
-  f = message.getHtlcAddressNp2wsh();
-  if (f.length > 0) {
-    writer.writeString(
-      13,
       f
     );
   }
@@ -1953,21 +1914,6 @@ proto.looprpc.SwapStatus.prototype.getHtlcAddressP2wsh = function() {
 /** @param {string} value */
 proto.looprpc.SwapStatus.prototype.setHtlcAddressP2wsh = function(value) {
   jspb.Message.setProto3StringField(this, 12, value);
-};
-
-
-/**
- * optional string htlc_address_np2wsh = 13;
- * @return {string}
- */
-proto.looprpc.SwapStatus.prototype.getHtlcAddressNp2wsh = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 13, ""));
-};
-
-
-/** @param {string} value */
-proto.looprpc.SwapStatus.prototype.setHtlcAddressNp2wsh = function(value) {
-  jspb.Message.setProto3StringField(this, 13, value);
 };
 
 
@@ -5192,7 +5138,8 @@ proto.looprpc.LiquidityParameters.toObject = function(includeInstance, msg) {
     autoMaxInFlight: jspb.Message.getFieldWithDefault(msg, 13, "0"),
     minSwapAmount: jspb.Message.getFieldWithDefault(msg, 14, "0"),
     maxSwapAmount: jspb.Message.getFieldWithDefault(msg, 15, "0"),
-    htlcConfTarget: jspb.Message.getFieldWithDefault(msg, 17, 0)
+    htlcConfTarget: jspb.Message.getFieldWithDefault(msg, 17, 0),
+    autoloopDestAddress: jspb.Message.getFieldWithDefault(msg, 18, "")
   };
 
   if (includeInstance) {
@@ -5297,6 +5244,10 @@ proto.looprpc.LiquidityParameters.deserializeBinaryFromReader = function(msg, re
     case 17:
       var value = /** @type {number} */ (reader.readInt32());
       msg.setHtlcConfTarget(value);
+      break;
+    case 18:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setAutoloopDestAddress(value);
       break;
     default:
       reader.skipField();
@@ -5444,6 +5395,13 @@ proto.looprpc.LiquidityParameters.serializeBinaryToWriter = function(message, wr
   if (f !== 0) {
     writer.writeInt32(
       17,
+      f
+    );
+  }
+  f = message.getAutoloopDestAddress();
+  if (f.length > 0) {
+    writer.writeString(
+      18,
       f
     );
   }
@@ -5720,6 +5678,21 @@ proto.looprpc.LiquidityParameters.prototype.getHtlcConfTarget = function() {
 /** @param {number} value */
 proto.looprpc.LiquidityParameters.prototype.setHtlcConfTarget = function(value) {
   jspb.Message.setProto3IntField(this, 17, value);
+};
+
+
+/**
+ * optional string autoloop_dest_address = 18;
+ * @return {string}
+ */
+proto.looprpc.LiquidityParameters.prototype.getAutoloopDestAddress = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 18, ""));
+};
+
+
+/** @param {string} value */
+proto.looprpc.LiquidityParameters.prototype.setAutoloopDestAddress = function(value) {
+  jspb.Message.setProto3StringField(this, 18, value);
 };
 
 
