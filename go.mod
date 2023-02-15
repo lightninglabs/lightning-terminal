@@ -13,11 +13,11 @@ require (
 	github.com/improbable-eng/grpc-web v0.12.0
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/lightninglabs/aperture v0.1.18-beta
-	github.com/lightninglabs/faraday v0.2.9-alpha
+	github.com/lightninglabs/faraday v0.2.9-alpha.0.20230215114316-475a2fe8b5e1
 	github.com/lightninglabs/lightning-node-connect v0.1.12-alpha
 	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.1
 	github.com/lightninglabs/lndclient v0.15.4-0
-	github.com/lightninglabs/loop v0.20.2-beta
+	github.com/lightninglabs/loop v0.21.0-beta
 	github.com/lightninglabs/loop/swapserverrpc v1.0.3
 	github.com/lightninglabs/pool v0.6.1-beta.0.20221202155747-aec0aee8d9a1
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.0

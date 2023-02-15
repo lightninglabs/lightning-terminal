@@ -150,9 +150,6 @@ export class SwapResponse extends jspb.Message {
   getHtlcAddress(): string;
   setHtlcAddress(value: string): void;
 
-  getHtlcAddressNp2wsh(): string;
-  setHtlcAddressNp2wsh(value: string): void;
-
   getHtlcAddressP2wsh(): string;
   setHtlcAddressP2wsh(value: string): void;
 
@@ -177,7 +174,6 @@ export namespace SwapResponse {
     id: string,
     idBytes: Uint8Array | string,
     htlcAddress: string,
-    htlcAddressNp2wsh: string,
     htlcAddressP2wsh: string,
     htlcAddressP2tr: string,
     serverMessage: string,
@@ -233,9 +229,6 @@ export class SwapStatus extends jspb.Message {
   getHtlcAddressP2wsh(): string;
   setHtlcAddressP2wsh(value: string): void;
 
-  getHtlcAddressNp2wsh(): string;
-  setHtlcAddressNp2wsh(value: string): void;
-
   getHtlcAddressP2tr(): string;
   setHtlcAddressP2tr(value: string): void;
 
@@ -283,7 +276,6 @@ export namespace SwapStatus {
     lastUpdateTime: string,
     htlcAddress: string,
     htlcAddressP2wsh: string,
-    htlcAddressNp2wsh: string,
     htlcAddressP2tr: string,
     costServer: string,
     costOnchain: string,
@@ -758,6 +750,9 @@ export class LiquidityParameters extends jspb.Message {
   getHtlcConfTarget(): number;
   setHtlcConfTarget(value: number): void;
 
+  getAutoloopDestAddress(): string;
+  setAutoloopDestAddress(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LiquidityParameters.AsObject;
   static toObject(includeInstance: boolean, msg: LiquidityParameters): LiquidityParameters.AsObject;
@@ -787,6 +782,7 @@ export namespace LiquidityParameters {
     minSwapAmount: string,
     maxSwapAmount: string,
     htlcConfTarget: number,
+    autoloopDestAddress: string,
   }
 }
 
