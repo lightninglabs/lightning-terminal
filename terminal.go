@@ -231,15 +231,30 @@ func (g *LightningTerminal) Run() error {
 		return fmt.Errorf("could not create permissions manager")
 	}
 
+	// Construct the rpcProxy. It must be initialised before the main web
+	// server is started.
+	g.rpcProxy = newRpcProxy(g.cfg, g, g.validateSuperMacaroon, g.permsMgr)
+
+	// We'll also create a REST proxy that'll convert any REST calls to gRPC
+	// calls and forward them to the internal listener.
+	if g.cfg.EnableREST {
+		if err := g.createRESTProxy(); err != nil {
+			return fmt.Errorf("error creating REST proxy: %v", err)
+		}
+	}
+
+	// Start the main web server that dispatches requests either to the
+	// static UI file server or the RPC proxy. This makes it possible to
+	// unlock lnd through the UI.
+	if err := g.startMainWebServer(); err != nil {
+		return fmt.Errorf("error starting UI HTTP server: %v", err)
+	}
+
 	// Create the instances of our subservers now so we can hook them up to
 	// lnd once it's fully started.
-	bufRpcListener := bufconn.Listen(100)
 	g.faradayServer = frdrpcserver.NewRPCServer(g.cfg.faradayRpcConfig)
 	g.loopServer = loopd.New(g.cfg.Loop, nil)
 	g.poolServer = pool.NewServer(g.cfg.Pool)
-	g.rpcProxy = newRpcProxy(
-		g.cfg, g, g.validateSuperMacaroon, g.permsMgr,
-	)
 	g.accountService, err = accounts.NewService(
 		filepath.Dir(g.cfg.MacaroonPath), g.errQueue.ChanIn(),
 	)
@@ -338,12 +353,14 @@ func (g *LightningTerminal) Run() error {
 
 	// Call the "real" main in a nested manner so the defers will properly
 	// be executed in the case of a graceful shutdown.
-	readyChan := make(chan struct{})
-	bufReadyChan := make(chan struct{})
-	unlockChan := make(chan struct{})
-	lndQuit := make(chan struct{})
-	macChan := make(chan []byte, 1)
-
+	var (
+		bufRpcListener = bufconn.Listen(100)
+		readyChan      = make(chan struct{})
+		bufReadyChan   = make(chan struct{})
+		unlockChan     = make(chan struct{})
+		lndQuit        = make(chan struct{})
+		macChan        = make(chan []byte, 1)
+	)
 	if g.cfg.LndMode == ModeIntegrated {
 		lisCfg := lnd.ListenerCfg{
 			RPCListeners: []*lnd.ListenerWithSignal{{
@@ -392,14 +409,6 @@ func (g *LightningTerminal) Run() error {
 		_ = g.RegisterGrpcSubserver(g.rpcProxy.grpcServer)
 	}
 
-	// We'll also create a REST proxy that'll convert any REST calls to gRPC
-	// calls and forward them to the internal listener.
-	if g.cfg.EnableREST {
-		if err := g.createRESTProxy(); err != nil {
-			return fmt.Errorf("error creating REST proxy: %v", err)
-		}
-	}
-
 	// Wait for lnd to be started up so we know we have a TLS cert.
 	select {
 	// If lnd needs to be unlocked we get the signal that it's ready to do
@@ -437,15 +446,10 @@ func (g *LightningTerminal) Run() error {
 	}
 
 	// Now start the RPC proxy that will handle all incoming gRPC, grpc-web
-	// and REST requests. We also start the main web server that dispatches
-	// requests either to the static UI file server or the RPC proxy. This
-	// makes it possible to unlock lnd through the UI.
+	// and REST requests.
 	if err := g.rpcProxy.Start(g.lndConn); err != nil {
 		return fmt.Errorf("error starting lnd gRPC proxy server: %v",
 			err)
-	}
-	if err := g.startMainWebServer(); err != nil {
-		return fmt.Errorf("error starting UI HTTP server: %v", err)
 	}
 
 	// Now that we have started the main UI web server, show some useful
