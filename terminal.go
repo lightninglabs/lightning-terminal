@@ -158,6 +158,8 @@ type LightningTerminal struct {
 	lndClient   *lndclient.GrpcLndServices
 	basicClient lnrpc.LightningClient
 
+	statusServer *statusServer
+
 	faradayServer  *frdrpcserver.RPCServer
 	faradayStarted bool
 
@@ -196,7 +198,9 @@ type LightningTerminal struct {
 
 // New creates a new instance of the lightning-terminal daemon.
 func New() *LightningTerminal {
-	return &LightningTerminal{}
+	return &LightningTerminal{
+		statusServer: newStatusServer(),
+	}
 }
 
 // Run starts everything and then blocks until either the application is shut
@@ -872,6 +876,7 @@ func (g *LightningTerminal) registerSubDaemonGrpcServers(server *grpc.Server,
 		litrpc.RegisterSessionsServer(server, g.sessionRpcServer)
 		litrpc.RegisterAccountsServer(server, g.accountRpcServer)
 		litrpc.RegisterLitServiceServer(server, g.rpcProxy)
+		litrpc.RegisterStatusServer(server, g.statusServer)
 	}
 
 	litrpc.RegisterFirewallServer(server, g.sessionRpcServer)
@@ -925,6 +930,10 @@ func (g *LightningTerminal) RegisterRestSubserver(ctx context.Context,
 // NOTE: This is part of the lnd.ExternalValidator interface.
 func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 	requiredPermissions []bakery.Op, fullMethod string) error {
+
+	if _, ok := perms.MacaroonWhitelist[fullMethod]; ok {
+		return nil
+	}
 
 	macHex, err := macaroons.RawMacaroonFromContext(ctx)
 	if err != nil {
