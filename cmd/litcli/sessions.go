@@ -15,6 +15,28 @@ var (
 	// defaultSessionExpiry is the default time a session can be used for.
 	// The current value evaluates to 90 days.
 	defaultSessionExpiry = time.Hour * 24 * 90
+
+	labelFlag = cli.StringFlag{
+		Name:     "label",
+		Usage:    "session label",
+		Required: true,
+	}
+	expiryFlag = cli.Uint64Flag{
+		Name: "expiry",
+		Usage: "number of seconds that the session should " +
+			"remain active",
+		Value: uint64(defaultSessionExpiry.Seconds()),
+	}
+	mailboxServerAddrFlag = cli.StringFlag{
+		Name:  "mailboxserveraddr",
+		Usage: "the host:port of the mailbox server to be used",
+		Value: "mailbox.terminal.lightning.today:443",
+	}
+	devserver = cli.BoolFlag{
+		Name: "devserver",
+		Usage: "set to true to skip verification of the " +
+			"server's tls cert.",
+	}
 )
 
 var sessionCommands = []cli.Command{
@@ -38,32 +60,16 @@ var addSessionCommand = cli.Command{
 	Description: "Add a new active session.",
 	Action:      addSession,
 	Flags: []cli.Flag{
-		cli.StringFlag{
-			Name:  "label",
-			Usage: "session label",
-		},
-		cli.Uint64Flag{
-			Name: "expiry",
-			Usage: "number of seconds that the session should " +
-				"remain active",
-			Value: uint64(defaultSessionExpiry.Seconds()),
-		},
-		cli.StringFlag{
-			Name:  "mailboxserveraddr",
-			Usage: "the host:port of the mailbox server to be used",
-			Value: "mailbox.terminal.lightning.today:443",
-		},
-		cli.BoolFlag{
-			Name: "devserver",
-			Usage: "set to true to skip verification of the " +
-				"server's tls cert.",
-		},
+		labelFlag,
+		expiryFlag,
+		mailboxServerAddrFlag,
+		devserver,
 		cli.StringFlag{
 			Name: "type",
 			Usage: "session type to be created which will " +
 				"determine the permissions a user has when " +
 				"connecting with the session. Options " +
-				"include readonly|admin|custom",
+				"include readonly|admin|account|custom",
 			Value: "readonly",
 		},
 		cli.StringSliceFlag{
@@ -79,6 +85,13 @@ var addSessionCommand = cli.Command{
 				"For example, '/lnrpc\\..*' will result in " +
 				"all `lnrpc` permissions being included.",
 		},
+		cli.StringFlag{
+			Name: "account_id",
+			Usage: "The account id that should be used for " +
+				"the account session. Note that this flag " +
+				"will only be used if the 'type' flag is " +
+				"set to 'account'.",
+		},
 	},
 }
 
@@ -89,11 +102,6 @@ func addSession(ctx *cli.Context) error {
 	}
 	defer cleanup()
 	client := litrpc.NewSessionsClient(clientConn)
-
-	label := ctx.String("label")
-	if label == "" {
-		return fmt.Errorf("must set a label for the session")
-	}
 
 	sessTypeStr := ctx.String("type")
 	sessType, err := parseSessionType(sessTypeStr)
@@ -115,12 +123,13 @@ func addSession(ctx *cli.Context) error {
 	ctxb := context.Background()
 	resp, err := client.AddSession(
 		ctxb, &litrpc.AddSessionRequest{
-			Label:                     label,
+			Label:                     ctx.String("label"),
 			SessionType:               sessType,
 			ExpiryTimestampSeconds:    uint64(sessionExpiry),
 			MailboxServerAddr:         ctx.String("mailboxserveraddr"),
 			DevServer:                 ctx.Bool("devserver"),
 			MacaroonCustomPermissions: macPerms,
+			AccountId:                 ctx.String("account_id"),
 		},
 	)
 	if err != nil {
@@ -138,6 +147,8 @@ func parseSessionType(sessionType string) (litrpc.SessionType, error) {
 		return litrpc.SessionType_TYPE_MACAROON_ADMIN, nil
 	case "readonly":
 		return litrpc.SessionType_TYPE_MACAROON_READONLY, nil
+	case "account":
+		return litrpc.SessionType_TYPE_MACAROON_ACCOUNT, nil
 	case "custom":
 		return litrpc.SessionType_TYPE_MACAROON_CUSTOM, nil
 	default:
@@ -260,8 +271,9 @@ var revokeSessionCommand = cli.Command{
 	Action:      revokeSession,
 	Flags: []cli.Flag{
 		cli.StringFlag{
-			Name:  "localpubkey",
-			Usage: "local pubkey of the session to revoke",
+			Name:     "localpubkey",
+			Usage:    "local pubkey of the session to revoke",
+			Required: true,
 		},
 	},
 }

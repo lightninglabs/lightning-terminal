@@ -22,10 +22,14 @@ import (
 	"github.com/lightninglabs/faraday/frdrpc"
 	"github.com/lightninglabs/faraday/frdrpcserver"
 	"github.com/lightninglabs/lightning-terminal/accounts"
+	"github.com/lightninglabs/lightning-terminal/autopilotserver"
+	"github.com/lightninglabs/lightning-terminal/firewall"
+	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/lightning-terminal/perms"
 	"github.com/lightninglabs/lightning-terminal/queue"
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
+	"github.com/lightninglabs/lightning-terminal/rules"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightninglabs/loop"
@@ -61,6 +65,9 @@ import (
 )
 
 const (
+	MainnetServer = "autopilot.lightning.finance:12010"
+	TestnetServer = "test.autopilot.lightning.finance:12010"
+
 	defaultServerTimeout  = 10 * time.Second
 	defaultConnectTimeout = 15 * time.Second
 	defaultStartupTimeout = 5 * time.Second
@@ -153,6 +160,10 @@ type LightningTerminal struct {
 	faradayServer  *frdrpcserver.RPCServer
 	faradayStarted bool
 
+	autopilotClient autopilotserver.Autopilot
+
+	ruleMgrs rules.ManagerSet
+
 	loopServer  *loopd.Daemon
 	loopStarted bool
 
@@ -175,6 +186,8 @@ type LightningTerminal struct {
 	accountServiceStarted bool
 
 	accountRpcServer *accounts.RPCServer
+
+	firewallDB *firewalldb.DB
 
 	restHandler http.Handler
 	restCancel  func()
@@ -245,6 +258,44 @@ func (g *LightningTerminal) Run() error {
 	g.accountRpcServer = accounts.NewRPCServer(
 		g.accountService, superMacBaker,
 	)
+
+	g.ruleMgrs = rules.NewRuleManagerSet()
+
+	networkDir := filepath.Join(g.cfg.LitDir, g.cfg.Network)
+	g.firewallDB, err = firewalldb.NewDB(networkDir, firewalldb.DBFilename)
+	if err != nil {
+		return fmt.Errorf("error creating session DB: %v", err)
+	}
+
+	if !g.cfg.Autopilot.Disable {
+		if g.cfg.Autopilot.Address == "" &&
+			len(g.cfg.Autopilot.DialOpts) == 0 {
+
+			switch g.cfg.Network {
+			case "mainnet":
+				g.cfg.Autopilot.Address = MainnetServer
+			case "testnet":
+				g.cfg.Autopilot.Address = TestnetServer
+			default:
+				return errors.New("no autopilot server " +
+					"address specified")
+			}
+		}
+
+		g.cfg.Autopilot.LitVersion = autopilotserver.Version{
+			Major: uint32(appMajor),
+			Minor: uint32(appMinor),
+			Patch: uint32(appPatch),
+		}
+
+		g.autopilotClient, err = autopilotserver.NewClient(
+			g.cfg.Autopilot,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
 	g.sessionRpcServer, err = newSessionRPCServer(&sessionRpcServerConfig{
 		basicAuth: g.rpcProxy.basicAuth,
 		dbDir:     filepath.Join(g.cfg.LitDir, g.cfg.Network),
@@ -269,6 +320,10 @@ func (g *LightningTerminal) Run() error {
 		superMacBaker:           superMacBaker,
 		firstConnectionDeadline: g.cfg.FirstLNCConnDeadline,
 		permMgr:                 g.permsMgr,
+		actionsDB:               g.firewallDB,
+		autopilot:               g.autopilotClient,
+		ruleMgrs:                g.ruleMgrs,
+		privMap:                 g.firewallDB.PrivacyDB,
 	})
 	if err != nil {
 		return fmt.Errorf("could not create new session rpc "+
@@ -632,37 +687,97 @@ func (g *LightningTerminal) startSubservers() error {
 	}
 	g.macaroonServiceStarted = true
 
+	if !g.cfg.Autopilot.Disable {
+		withLndVersion := func(cfg *autopilotserver.Config) {
+			cfg.LndVersion = autopilotserver.Version{
+				Major: g.lndClient.Version.AppMajor,
+				Minor: g.lndClient.Version.AppMinor,
+				Patch: g.lndClient.Version.AppPatch,
+			}
+		}
+
+		if err = g.autopilotClient.Start(withLndVersion); err != nil {
+			return fmt.Errorf("could not start the autopilot "+
+				"client: %v", err)
+		}
+	}
+
 	log.Infof("Starting LiT session server")
 	if err = g.sessionRpcServer.start(); err != nil {
 		return err
 	}
 	g.sessionRpcServerStarted = true
 
-	if !g.cfg.RPCMiddleware.Disabled {
-		log.Infof("Starting LiT account service")
-		err := g.accountService.Start(
-			g.lndClient.Client, g.lndClient.Router,
-			g.lndClient.ChainParams,
-		)
-		if err != nil {
-			return fmt.Errorf("error starting account service: %v",
-				err)
-		}
-		g.accountServiceStarted = true
+	// The rest of the function only applies if the rpc middleware
+	// interceptor has been enabled.
+	if g.cfg.RPCMiddleware.Disabled {
+		log.Infof("Internal sub server startup complete")
 
-		// Start the middleware manager.
-		log.Infof("Starting LiT middleware manager")
-		g.middleware = mid.NewManager(
-			g.cfg.RPCMiddleware.InterceptTimeout,
-			g.lndClient.Client, g.errQueue.ChanIn(),
-			g.accountService,
-		)
-
-		if err = g.middleware.Start(); err != nil {
-			return err
-		}
-		g.middlewareStarted = true
+		return nil
 	}
+
+	log.Infof("Starting LiT account service")
+	err = g.accountService.Start(
+		g.lndClient.Client, g.lndClient.Router,
+		g.lndClient.ChainParams,
+	)
+	if err != nil {
+		return fmt.Errorf("error starting account service: %v",
+			err)
+	}
+	g.accountServiceStarted = true
+
+	requestLogger, err := firewall.NewRequestLogger(
+		g.cfg.Firewall.RequestLogger, g.firewallDB,
+	)
+	if err != nil {
+		return fmt.Errorf("error creating new request logger")
+	}
+
+	privacyMapper := firewall.NewPrivacyMapper(
+		g.firewallDB.PrivacyDB, firewall.CryptoRandIntn,
+	)
+
+	mw := []mid.RequestInterceptor{
+		privacyMapper,
+		g.accountService,
+		requestLogger,
+	}
+
+	if !g.cfg.Autopilot.Disable {
+		info, err := g.lndClient.Client.GetInfo(ctxc)
+		if err != nil {
+			return fmt.Errorf("GetInfo call failed: %v", err)
+		}
+
+		ruleEnforcer := firewall.NewRuleEnforcer(
+			g.firewallDB, g.firewallDB,
+			g.autopilotClient.ListFeaturePerms,
+			g.permsMgr, info.IdentityPubkey,
+			g.lndClient.Router,
+			g.lndClient.Client, g.ruleMgrs,
+			func(reqID uint64, reason string) error {
+				return requestLogger.MarkAction(
+					reqID, firewalldb.ActionStateError,
+					reason,
+				)
+			}, g.firewallDB.PrivacyDB,
+		)
+
+		mw = append(mw, ruleEnforcer)
+	}
+
+	// Start the middleware manager.
+	log.Infof("Starting LiT middleware manager")
+	g.middleware = mid.NewManager(
+		g.cfg.RPCMiddleware.InterceptTimeout,
+		g.lndClient.Client, g.errQueue.ChanIn(), mw...,
+	)
+
+	if err = g.middleware.Start(); err != nil {
+		return err
+	}
+	g.middlewareStarted = true
 
 	log.Infof("Internal sub server startup complete")
 
@@ -714,6 +829,12 @@ func (g *LightningTerminal) registerSubDaemonGrpcServers(server *grpc.Server,
 	if withLitRPC {
 		litrpc.RegisterSessionsServer(server, g.sessionRpcServer)
 		litrpc.RegisterAccountsServer(server, g.accountRpcServer)
+	}
+
+	litrpc.RegisterFirewallServer(server, g.sessionRpcServer)
+
+	if !g.cfg.Autopilot.Disable {
+		litrpc.RegisterAutopilotServer(server, g.sessionRpcServer)
 	}
 }
 
@@ -941,6 +1062,10 @@ func (g *LightningTerminal) shutdown() error {
 		}
 	}
 
+	if g.autopilotClient != nil {
+		g.autopilotClient.Stop()
+	}
+
 	if g.sessionRpcServerStarted {
 		if err := g.sessionRpcServer.stop(); err != nil {
 			log.Errorf("Error closing session DB: %v", err)
@@ -964,6 +1089,20 @@ func (g *LightningTerminal) shutdown() error {
 
 	if g.middlewareStarted {
 		g.middleware.Stop()
+	}
+
+	if g.firewallDB != nil {
+		if err := g.firewallDB.Close(); err != nil {
+			log.Errorf("Error closing rules DB: %v", err)
+			returnErr = err
+		}
+	}
+
+	if g.ruleMgrs != nil {
+		if err := g.ruleMgrs.Stop(); err != nil {
+			log.Errorf("Error stopping rule manager set: %v", err)
+			returnErr = err
+		}
 	}
 
 	if g.lndClient != nil {

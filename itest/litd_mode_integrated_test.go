@@ -153,6 +153,14 @@ var (
 		litConn := litrpc.NewAccountsClient(c)
 		return litConn.ListAccounts(ctx, &litrpc.ListAccountsRequest{})
 	}
+	litAutopilotRequestFn = func(ctx context.Context,
+		c grpc.ClientConnInterface) (proto.Message, error) {
+
+		litConn := litrpc.NewAutopilotClient(c)
+		return litConn.ListAutopilotFeatures(
+			ctx, &litrpc.ListAutopilotFeaturesRequest{},
+		)
+	}
 	litMacaroonFn = func(cfg *LitNodeConfig) string {
 		return cfg.LitMacPath
 	}
@@ -232,6 +240,13 @@ var (
 		successPattern:    "\"accounts\":[]",
 		allowedThroughLNC: false,
 		grpcWebURI:        "/litrpc.Accounts/ListAccounts",
+	}, {
+		name:              "litrpc-autopilot",
+		macaroonFn:        litMacaroonFn,
+		requestFn:         litAutopilotRequestFn,
+		successPattern:    "\"features\":{",
+		allowedThroughLNC: true,
+		grpcWebURI:        "/litrpc.Autopilot/ListAutopilotFeatures",
 	}}
 
 	// customURIs is a map of endpoint URIs that we want to allow via a
@@ -501,7 +516,7 @@ func setUpLNCConn(ctx context.Context, t *testing.T, hostPort, tlsCertPath,
 		sessResp.Session.PairingSecretMnemonic, " ",
 	)
 
-	rawLNCConn, err := connectMailbox(ctx, connectPhrase)
+	rawLNCConn, err := connectMailboxWithPairingPhrase(ctx, connectPhrase)
 	require.NoError(t, err)
 
 	return rawLNCConn
@@ -861,9 +876,9 @@ func getServerCertificates(hostPort string) ([]*x509.Certificate, error) {
 	return conn.ConnectionState().PeerCertificates, nil
 }
 
-// connectMailbox tries to establish a connection through LNC using the given
-// connect phrase and the test mailbox server.
-func connectMailbox(ctx context.Context,
+// connectMailboxWithPairingPhrase tries to establish a connection through LNC
+// using the given connect phrase and the test mailbox server.
+func connectMailboxWithPairingPhrase(ctx context.Context,
 	connectPhrase []string) (*grpc.ClientConn, error) {
 
 	var mnemonicWords [mailbox.NumPassphraseWords]string

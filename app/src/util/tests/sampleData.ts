@@ -887,6 +887,7 @@ export const poolRegisterSidecar: POOL.SidecarTicket.AsObject = {
 export const litListSessions: LIT.ListSessionsResponse.AsObject = {
   sessionsList: [
     {
+      id: '',
       devServer: true,
       expiryTimestampSeconds: '253370782800',
       label: 'Default Session',
@@ -899,8 +900,74 @@ export const litListSessions: LIT.ListSessionsResponse.AsObject = {
       sessionType: LIT.SessionType.TYPE_UI_PASSWORD,
       createdAt: '253300000000',
       accountId: '',
+      revokedAt: '453300000000',
+      autopilotFeatureInfoMap: [
+        [
+          'SampleFeature',
+          {
+            rulesMap: [
+              [
+                'channel-policy-bounds',
+                {
+                  chanPolicyBounds: {
+                    minBaseMsat: '0',
+                    maxBaseMsat: '10',
+                    minRatePpm: 1,
+                    maxRatePpm: 10,
+                    minCltvDelta: 18,
+                    maxCltvDelta: 18,
+                    minHtlcMsat: '0',
+                    maxHtlcMsat: '0',
+                  },
+                },
+              ],
+              [
+                'channel-restriction',
+                {
+                  channelRestrict: {
+                    channelIdsList: [],
+                  },
+                },
+              ],
+              [
+                'history-limit',
+                {
+                  historyLimit: {
+                    startTime: '0',
+                    duration: '0',
+                  },
+                },
+              ],
+              [
+                'peer-restriction',
+                {
+                  peerRestrict: {
+                    peerIdsList: [],
+                  },
+                },
+              ],
+              [
+                'rate-limit',
+                {
+                  rateLimit: {
+                    readLimit: {
+                      iterations: 50,
+                      numHours: 1,
+                    },
+                    writeLimit: {
+                      iterations: 50,
+                      numHours: 50,
+                    },
+                  },
+                },
+              ],
+            ],
+          },
+        ],
+      ],
     },
     {
+      id: '',
       devServer: true,
       expiryTimestampSeconds: '253370782800',
       label: 'Default Session',
@@ -912,7 +979,72 @@ export const litListSessions: LIT.ListSessionsResponse.AsObject = {
       sessionState: LIT.SessionState.STATE_EXPIRED,
       sessionType: LIT.SessionType.TYPE_UI_PASSWORD,
       createdAt: '253300000000',
+      revokedAt: '453300000000',
       accountId: '',
+      autopilotFeatureInfoMap: [
+        [
+          'SampleFeature',
+          {
+            rulesMap: [
+              [
+                'channel-policy-bounds',
+                {
+                  chanPolicyBounds: {
+                    minBaseMsat: '0',
+                    maxBaseMsat: '10',
+                    minRatePpm: 1,
+                    maxRatePpm: 10,
+                    minCltvDelta: 18,
+                    maxCltvDelta: 18,
+                    minHtlcMsat: '0',
+                    maxHtlcMsat: '0',
+                  },
+                },
+              ],
+              [
+                'channel-restriction',
+                {
+                  channelRestrict: {
+                    channelIdsList: [],
+                  },
+                },
+              ],
+              [
+                'history-limit',
+                {
+                  historyLimit: {
+                    startTime: '0',
+                    duration: '0',
+                  },
+                },
+              ],
+              [
+                'peer-restriction',
+                {
+                  peerRestrict: {
+                    peerIdsList: [],
+                  },
+                },
+              ],
+              [
+                'rate-limit',
+                {
+                  rateLimit: {
+                    readLimit: {
+                      iterations: 50,
+                      numHours: 1,
+                    },
+                    writeLimit: {
+                      iterations: 50,
+                      numHours: 50,
+                    },
+                  },
+                },
+              ],
+            ],
+          },
+        ],
+      ],
     },
   ],
 };

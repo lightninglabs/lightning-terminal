@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/lightninglabs/faraday/frdrpc"
+	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/lightninglabs/pool/poolrpc"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -41,4 +42,8 @@ var Registrations = []StubPackageRegistration{
 	looprpc.RegisterSwapClientJSONCallbacks,
 	poolrpc.RegisterTraderJSONCallbacks,
 	frdrpc.RegisterFaradayServerJSONCallbacks,
+	litrpc.RegisterSessionsJSONCallbacks,
+	litrpc.RegisterAccountsJSONCallbacks,
+	litrpc.RegisterAutopilotJSONCallbacks,
+	litrpc.RegisterFirewallJSONCallbacks,
 }

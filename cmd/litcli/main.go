@@ -85,6 +85,9 @@ func main() {
 	}
 	app.Commands = append(app.Commands, sessionCommands...)
 	app.Commands = append(app.Commands, accountsCommands...)
+	app.Commands = append(app.Commands, listActionsCommand)
+	app.Commands = append(app.Commands, privacyMapCommands)
+	app.Commands = append(app.Commands, autopilotCommands)
 
 	err := app.Run(os.Args)
 	if err != nil {

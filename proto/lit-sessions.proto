@@ -19,7 +19,7 @@ enum SessionType {
     TYPE_MACAROON_ADMIN = 1;
     TYPE_MACAROON_CUSTOM = 2;
     TYPE_UI_PASSWORD = 3;
-    reserved 4;
+    TYPE_AUTOPILOT = 4;
     TYPE_MACAROON_ACCOUNT = 5;
 }
 
@@ -67,6 +67,8 @@ message AddSessionResponse {
 }
 
 message Session {
+    bytes id = 14;
+
     string label = 1;
 
     SessionState session_state = 2;
@@ -92,6 +94,18 @@ message Session {
     MacaroonRecipe macaroon_recipe = 12;
 
     string account_id = 13;
+
+    map<string, RulesMap> autopilot_feature_info = 15;
+
+    /*
+    The unix timestamp indicating the time at which the session was revoked.
+    Note that this field has not been around since the beginning and so it
+    could be the case that a session has been revoked but that this field
+    will not have been set for that session. Therefore, it is suggested that
+    readers should not assume that if this field is zero that the session is
+    not revoked. Readers should instead first check the session_state field.
+    */
+    uint64 revoked_at = 16 [jstype = JS_STRING];
 }
 
 message MacaroonRecipe {
@@ -112,4 +126,126 @@ message RevokeSessionRequest {
 }
 
 message RevokeSessionResponse {
+}
+
+message RulesMap {
+    /*
+    A map of rule name to RuleValue. The RuleValue should be parsed based on
+    the name of the rule.
+    */
+    map<string, RuleValue> rules = 1;
+}
+
+message RuleValue {
+    oneof value {
+        RateLimit rate_limit = 1;
+        ChannelPolicyBounds chan_policy_bounds = 2;
+        HistoryLimit history_limit = 3;
+        OffChainBudget off_chain_budget = 4;
+        OnChainBudget on_chain_budget = 5;
+        SendToSelf send_to_self = 6;
+        ChannelRestrict channel_restrict = 7;
+        PeerRestrict peer_restrict = 8;
+    }
+}
+
+message RateLimit {
+    /*
+    The rate limit for read-only calls.
+    */
+    Rate read_limit = 1;
+
+    /*
+    The rate limit for write/execution calls.
+    */
+    Rate write_limit = 2;
+}
+
+message Rate {
+    /*
+    The number of times a call is allowed in num_hours number of hours.
+    */
+    uint32 iterations = 1;
+
+    /*
+    The number of hours in which the iterations count takes place over.
+    */
+    uint32 num_hours = 2;
+}
+
+message HistoryLimit {
+    /*
+    The absolute unix timestamp in seconds before which no information should
+    be shared. This should only be set if duration is not set.
+    */
+    uint64 start_time = 1 [jstype = JS_STRING];
+
+    /*
+    The maximum relative duration in seconds that a request is allowed to query
+    for. This should only be set if start_time is not set.
+    */
+    uint64 duration = 2 [jstype = JS_STRING];
+}
+
+message ChannelPolicyBounds {
+    /*
+    The minimum base fee in msat that the autopilot can set for a channel.
+    */
+    uint64 min_base_msat = 1 [jstype = JS_STRING];
+
+    /*
+    The maximum base fee in msat that the autopilot can set for a channel.
+    */
+    uint64 max_base_msat = 2 [jstype = JS_STRING];
+
+    /*
+    The minimum ppm fee in msat that the autopilot can set for a channel.
+    */
+    uint32 min_rate_ppm = 3;
+
+    /*
+    The maximum ppm fee in msat that the autopilot can set for a channel.
+    */
+    uint32 max_rate_ppm = 4;
+
+    /*
+    The minimum cltv delta that the autopilot may set for a channel.
+    */
+    uint32 min_cltv_delta = 5;
+
+    /*
+    The maximum cltv delta that the autopilot may set for a channel.
+    */
+    uint32 max_cltv_delta = 6;
+
+    /*
+    The minimum htlc msat that the autopilot may set for a channel.
+    */
+    uint64 min_htlc_msat = 7 [jstype = JS_STRING];
+
+    /*
+    The maximum htlc msat that the autopilot may set for a channel.
+    */
+    uint64 max_htlc_msat = 8 [jstype = JS_STRING];
+}
+
+message OffChainBudget {
+    uint64 max_amt_msat = 1 [jstype = JS_STRING];
+    uint64 max_fees_msat = 2 [jstype = JS_STRING];
+}
+
+message OnChainBudget {
+    uint64 absolute_amt_sats = 1 [jstype = JS_STRING];
+    uint64 max_sat_per_v_byte = 2 [jstype = JS_STRING];
+}
+
+message SendToSelf {
+}
+
+message ChannelRestrict {
+    repeated uint64 channel_ids = 1 [jstype = JS_STRING];
+}
+
+message PeerRestrict {
+    repeated string peer_ids = 1;
 }

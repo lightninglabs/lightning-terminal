@@ -62,6 +62,30 @@ var (
 			Entity: "account",
 			Action: "write",
 		}},
+		"/litrpc.Firewall/ListActions": {{
+			Entity: "actions",
+			Action: "read",
+		}},
+		"/litrpc.Autopilot/ListAutopilotFeatures": {{
+			Entity: "autopilot",
+			Action: "read",
+		}},
+		"/litrpc.Autopilot/AddAutopilotSession": {{
+			Entity: "autopilot",
+			Action: "write",
+		}},
+		"/litrpc.Autopilot/ListAutopilotSessions": {{
+			Entity: "autopilot",
+			Action: "read",
+		}},
+		"/litrpc.Autopilot/RevokeAutopilotSession": {{
+			Entity: "autopilot",
+			Action: "write",
+		}},
+		"/litrpc.Firewall/PrivacyMapConversion": {{
+			Entity: "privacymap",
+			Action: "read",
+		}},
 	}
 
 	// whiteListedLNDMethods is a map of all lnd RPC methods that don't

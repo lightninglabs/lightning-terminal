@@ -190,7 +190,7 @@ func testAccountRestrictionsLNC(ctxm context.Context, t *harnessTest,
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
 	defer cancel()
 
-	rawLNCConn, err := connectMailbox(ctxt, connectPhrase)
+	rawLNCConn, err := connectMailboxWithPairingPhrase(ctxt, connectPhrase)
 	require.NoError(t.t, err)
 
 	lightningClient := lnrpc.NewLightningClient(rawLNCConn)

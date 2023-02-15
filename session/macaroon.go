@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/binary"
 	"encoding/hex"
+	"fmt"
 	"strconv"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -18,6 +19,9 @@ var (
 	// root key to clearly mark it as such.
 	SuperMacaroonRootKeyPrefix = [4]byte{0xFF, 0xEE, 0xDD, 0xCC}
 )
+
+// ID represents the id of a session.
+type ID [4]byte
 
 // SuperMacaroonValidator is a function type for validating a super macaroon.
 type SuperMacaroonValidator func(ctx context.Context,
@@ -56,19 +60,7 @@ func IsSuperMacaroon(macHex string) bool {
 		return false
 	}
 
-	rawID := mac.Id()
-	if rawID[0] != byte(bakery.LatestVersion) {
-		return false
-	}
-	decodedID := &lnrpc.MacaroonId{}
-	idProto := rawID[1:]
-	err = proto.Unmarshal(idProto, decodedID)
-	if err != nil {
-		return false
-	}
-
-	// The storage ID is a string representation of a 64bit unsigned number.
-	rootKeyID, err := strconv.ParseUint(string(decodedID.StorageId), 10, 64)
+	rootKeyID, err := RootKeyIDFromMacaroon(mac)
 	if err != nil {
 		return false
 	}
@@ -83,4 +75,55 @@ func isSuperMacaroonRootKeyID(rootKeyID uint64) bool {
 	rootKeyBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(rootKeyBytes, rootKeyID)
 	return bytes.HasPrefix(rootKeyBytes, SuperMacaroonRootKeyPrefix[:])
+}
+
+// IDFromMacaroon is a helper function that creates a session ID from
+// a macaroon ID.
+func IDFromMacaroon(mac *macaroon.Macaroon) (ID, error) {
+	rootKeyID, err := RootKeyIDFromMacaroon(mac)
+	if err != nil {
+		return ID{}, err
+	}
+
+	return IDFromMacRootKeyID(rootKeyID), nil
+}
+
+// IDFromMacRootKeyID converts a macaroon root key ID to a session ID.
+func IDFromMacRootKeyID(rootKeyID uint64) ID {
+	rootKeyBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(rootKeyBytes[:], rootKeyID)
+
+	var id ID
+	copy(id[:], rootKeyBytes[4:])
+
+	return id
+}
+
+// IDFromBytes is a helper function that creates a session ID from a byte slice.
+func IDFromBytes(b []byte) (ID, error) {
+	var id ID
+	if len(b) != 4 {
+		return id, fmt.Errorf("session ID must be 4 bytes long")
+	}
+	copy(id[:], b)
+	return id, nil
+}
+
+// RootKeyIDFromMacaroon extracts the root key ID of the passed macaroon.
+func RootKeyIDFromMacaroon(mac *macaroon.Macaroon) (uint64, error) {
+	rawID := mac.Id()
+	if rawID[0] != byte(bakery.LatestVersion) {
+		return 0, fmt.Errorf("mac id is not on the latest version")
+	}
+
+	decodedID := &lnrpc.MacaroonId{}
+	idProto := rawID[1:]
+	err := proto.Unmarshal(idProto, decodedID)
+	if err != nil {
+		return 0, err
+	}
+
+	// The storage ID is a string representation of a 64-bit unsigned
+	// number.
+	return strconv.ParseUint(string(decodedID.StorageId), 10, 64)
 }

@@ -17,6 +17,8 @@ import (
 	"github.com/lightninglabs/faraday"
 	"github.com/lightninglabs/faraday/chain"
 	"github.com/lightninglabs/faraday/frdrpcserver"
+	"github.com/lightninglabs/lightning-terminal/autopilotserver"
+	"github.com/lightninglabs/lightning-terminal/firewall"
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightninglabs/loop/loopd"
@@ -185,6 +187,10 @@ type Config struct {
 
 	RPCMiddleware *mid.Config `group:"RPC middleware options" namespace:"rpcmiddleware"`
 
+	Autopilot *autopilotserver.Config `group:"Autopilot server options" namespace:"autopilot"`
+
+	Firewall *firewall.Config `group:"Firewall options" namespace:"firewall"`
+
 	// faradayRpcConfig is a subset of faraday's full configuration that is
 	// passed into faraday's RPC server.
 	faradayRpcConfig *frdrpcserver.Config
@@ -325,6 +331,10 @@ func defaultConfig() *Config {
 		Pool:                 &poolDefaultConfig,
 		RPCMiddleware:        mid.DefaultConfig(),
 		FirstLNCConnDeadline: defaultFirstLNCConnTimeout,
+		Autopilot: &autopilotserver.Config{
+			PingCadence: time.Hour,
+		},
+		Firewall: firewall.DefaultConfig(),
 	}
 }
 
