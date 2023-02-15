@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
@@ -36,6 +37,10 @@ const (
 	// the macaroon.
 	HeaderMacaroon = "Macaroon"
 )
+
+// ErrWaitingToStart is returned if Lit's rpcProxy is not yet ready to handle
+// calls.
+var ErrWaitingToStart = fmt.Errorf("waiting for the RPC server to start")
 
 // proxyErr is an error type that adds more context to an error occurring in the
 // proxy.
@@ -147,6 +152,10 @@ func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 type rpcProxy struct {
 	litrpc.UnimplementedProxyServer
 
+	// started is set to 1 once the rpcProxy has successfully started. It
+	// must only ever be used atomically.
+	started int32
+
 	cfg       *Config
 	basicAuth string
 	permsMgr  *perms.Manager
@@ -218,7 +227,15 @@ func (p *rpcProxy) Start() error {
 		}
 	}
 
+	atomic.CompareAndSwapInt32(&p.started, 0, 1)
+
 	return nil
+}
+
+// hasStarted returns true if the rpcProxy has started and is ready to handle
+// requests.
+func (p *rpcProxy) hasStarted() bool {
+	return atomic.LoadInt32(&p.started) == 1
 }
 
 // Stop shuts down the lnd connection.
@@ -399,6 +416,10 @@ func (p *rpcProxy) UnaryServerInterceptor(ctx context.Context, req interface{},
 	info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{},
 	error) {
 
+	if !p.hasStarted() {
+		return nil, ErrWaitingToStart
+	}
+
 	uriPermissions, ok := p.permsMgr.URIPermissions(info.FullMethod)
 	if !ok {
 		return nil, fmt.Errorf("%s: unknown permissions "+
@@ -439,6 +460,10 @@ func (p *rpcProxy) UnaryServerInterceptor(ctx context.Context, req interface{},
 func (p *rpcProxy) StreamServerInterceptor(srv interface{},
 	ss grpc.ServerStream, info *grpc.StreamServerInfo,
 	handler grpc.StreamHandler) error {
+
+	if !p.hasStarted() {
+		return ErrWaitingToStart
+	}
 
 	uriPermissions, ok := p.permsMgr.URIPermissions(info.FullMethod)
 	if !ok {
