@@ -163,7 +163,6 @@ type rpcProxy struct {
 	superMacaroon string
 
 	lndConn  *grpc.ClientConn
-	loopConn *grpc.ClientConn
 	poolConn *grpc.ClientConn
 
 	statusServer *statusServer
@@ -180,16 +179,6 @@ func (p *rpcProxy) Start(lndConn *grpc.ClientConn) error {
 
 	// Make sure we can connect to all the daemons that are configured to be
 	// running in remote mode.
-	if p.cfg.loopRemote {
-		p.loopConn, err = dialBackend(
-			"loop", p.cfg.Remote.Loop.RPCServer,
-			lncfg.CleanAndExpandPath(p.cfg.Remote.Loop.TLSCertPath),
-		)
-		if err != nil {
-			return fmt.Errorf("could not dial remote loop: %v", err)
-		}
-	}
-
 	if p.cfg.poolRemote {
 		p.poolConn, err = dialBackend(
 			"pool", p.cfg.Remote.Pool.RPCServer,
@@ -222,13 +211,6 @@ func isStatusReq(uri string) bool {
 // Stop shuts down the lnd connection.
 func (p *rpcProxy) Stop() error {
 	p.grpcServer.Stop()
-
-	if p.loopConn != nil {
-		if err := p.loopConn.Close(); err != nil {
-			log.Errorf("Error closing loop connection: %v", err)
-			return err
-		}
-	}
 
 	if p.poolConn != nil {
 		if err := p.poolConn.Close(); err != nil {
@@ -355,10 +337,6 @@ func (p *rpcProxy) makeDirector(allowLitRPC bool) func(ctx context.Context,
 		}
 
 		switch {
-		case isSubServerURI(perms.SubServerLoop, requestURI) &&
-			p.cfg.loopRemote:
-
-			return outCtx, p.loopConn, nil
 
 		case isSubServerURI(perms.SubServerPool, requestURI) &&
 			p.cfg.poolRemote:
@@ -440,8 +418,7 @@ func (p *rpcProxy) checkSubSystemStarted(requestURI string) error {
 
 	if isSubServerURI(perms.SubServerLit, requestURI) ||
 		isSubServerURI(perms.SubServerLnd, requestURI) ||
-		isSubServerURI(perms.SubServerPool, requestURI) ||
-		isSubServerURI(perms.SubServerLoop, requestURI) {
+		isSubServerURI(perms.SubServerPool, requestURI) {
 
 		return nil
 	}
@@ -571,13 +548,6 @@ func (p *rpcProxy) basicAuthToMacaroon(basicAuth, requestURI string,
 	case p.permsMgr.IsSubServerURI(perms.SubServerLnd, requestURI):
 		_, _, _, macPath, macData = p.cfg.lndConnectParams()
 
-	case p.permsMgr.IsSubServerURI(perms.SubServerLoop, requestURI):
-		if p.cfg.loopRemote {
-			macPath = p.cfg.Remote.Loop.MacaroonPath
-		} else {
-			macPath = p.cfg.Loop.MacaroonPath
-		}
-
 	case p.permsMgr.IsSubServerURI(perms.SubServerPool, requestURI):
 		if p.cfg.poolRemote {
 			macPath = p.cfg.Remote.Pool.MacaroonPath
@@ -669,17 +639,8 @@ func (p *rpcProxy) convertSuperMacaroon(ctx context.Context, macHex string,
 		return macBytes, err
 	}
 
-	switch {
-
-	case isSubServerURI(perms.SubServerLoop, fullMethod) &&
-		p.cfg.loopRemote:
-
-		return readMacaroon(lncfg.CleanAndExpandPath(
-			p.cfg.Remote.Loop.MacaroonPath,
-		))
-
-	case isSubServerURI(perms.SubServerPool, fullMethod) &&
-		p.cfg.poolRemote:
+	if isSubServerURI(perms.SubServerPool, fullMethod) &&
+		p.cfg.poolRemote {
 
 		return readMacaroon(lncfg.CleanAndExpandPath(
 			p.cfg.Remote.Pool.MacaroonPath,

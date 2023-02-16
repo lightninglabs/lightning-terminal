@@ -32,7 +32,6 @@ import (
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightninglabs/loop"
-	"github.com/lightninglabs/loop/loopd"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/lightninglabs/pool"
 	"github.com/lightninglabs/pool/poolrpc"
@@ -164,9 +163,6 @@ type LightningTerminal struct {
 
 	ruleMgrs rules.ManagerSet
 
-	loopServer  *loopd.Daemon
-	loopStarted bool
-
 	poolServer  *pool.Server
 	poolStarted bool
 
@@ -259,7 +255,6 @@ func (g *LightningTerminal) Run() error {
 	// Create the instances of our subservers now so we can hook them up to
 	// lnd once it's fully started.
 	g.initSubServers()
-	g.loopServer = loopd.New(g.cfg.Loop, nil)
 	g.poolServer = pool.NewServer(g.cfg.Pool)
 	g.accountService, err = accounts.NewService(
 		filepath.Dir(g.cfg.MacaroonPath), g.errQueue.ChanIn(),
@@ -352,9 +347,8 @@ func (g *LightningTerminal) Run() error {
 			"server: %v", err)
 	}
 
-	// Overwrite the loop and pool daemon's user agent name so it sends
-	// "litd" instead of "loopd" and "poold" respectively.
-	loop.AgentName = "litd"
+	// Overwrite the pool daemon's user agent name so it sends "litd"
+	// instead of and "poold".
 	pool.SetAgentName("litd")
 
 	// Call the "real" main in a nested manner so the defers will properly
@@ -524,12 +518,6 @@ func (g *LightningTerminal) Run() error {
 
 	// Now block until we receive an error or the main shutdown signal.
 	select {
-	case err := <-g.loopServer.ErrChan:
-		// Loop will shut itself down if an error happens. We don't need
-		// to try to stop it again.
-		g.loopStarted = false
-		log.Errorf("Received critical error from loop, shutting down: "+
-			"%v", err)
 
 	case err := <-g.errQueue.ChanOut():
 		if err != nil {
@@ -675,17 +663,6 @@ func (g *LightningTerminal) startIntegratedDaemons(
 
 	// Both connection types are ready now, let's start our sub-servers if
 	// they should be started locally as an integrated service.
-	if !g.cfg.loopRemote {
-		log.Infof("Starting integrated loop daemon")
-		err := g.loopServer.StartAsSubserver(
-			g.lndClient, createDefaultMacaroons,
-		)
-		if err != nil {
-			return err
-		}
-		g.loopStarted = true
-	}
-
 	if !g.cfg.poolRemote {
 		log.Infof("Starting integrated pool daemon")
 		err := g.poolServer.StartAsSubserver(
@@ -861,10 +838,6 @@ func (g *LightningTerminal) registerSubDaemonGrpcServers(server *grpc.Server,
 	// all for any gRPC request that isn't known because we didn't register
 	// any server for it. The director will then forward the request to the
 	// remote service.
-	if !g.cfg.loopRemote {
-		looprpc.RegisterSwapClientServer(server, g.loopServer)
-	}
-
 	if !g.cfg.poolRemote {
 		poolrpc.RegisterTraderServer(server, g.poolServer)
 	}
@@ -970,30 +943,6 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 			return err
 		}
 
-	case g.permsMgr.IsSubServerURI(perms.SubServerLoop, fullMethod):
-		// In remote mode we just pass through the request, the remote
-		// daemon will check the macaroon.
-		if g.cfg.loopRemote {
-			return nil
-		}
-
-		if !g.loopStarted {
-			return fmt.Errorf("loop is not yet ready for " +
-				"requests, lnd possibly still starting or " +
-				"syncing")
-		}
-
-		err = g.loopServer.ValidateMacaroon(
-			ctx, requiredPermissions, fullMethod,
-		)
-		if err != nil {
-			return &proxyErr{
-				proxyContext: "loop",
-				wrapped: fmt.Errorf("invalid macaroon: %v",
-					err),
-			}
-		}
-
 	case g.permsMgr.IsSubServerURI(perms.SubServerPool, fullMethod):
 		// In remote mode we just pass through the request, the remote
 		// daemon will check the macaroon.
@@ -1073,14 +1022,6 @@ func (g *LightningTerminal) BuildWalletConfig(ctx context.Context,
 // shutdown stops all subservers that were started and attached to lnd.
 func (g *LightningTerminal) shutdown() error {
 	var returnErr error
-
-	if g.loopStarted {
-		g.loopServer.Stop()
-		if err := <-g.loopServer.ErrChan; err != nil {
-			log.Errorf("Error stopping loop: %v", err)
-			returnErr = err
-		}
-	}
 
 	if g.poolStarted {
 		if err := g.poolServer.Stop(); err != nil {
@@ -1483,6 +1424,13 @@ func (g *LightningTerminal) initSubServers() {
 	g.subServerMgr.AddServer(NewFaradaySubServer(
 		g.cfg.Faraday, g.cfg.faradayRpcConfig, g.cfg.Remote.Faraday,
 		g.cfg.faradayRemote,
+	))
+
+	// Overwrite the loop daemon's user agent name so it sends "litd"
+	// instead of "loopd".
+	loop.AgentName = "litd"
+	g.subServerMgr.AddServer(NewLoopSubServer(
+		g.cfg.Loop, g.cfg.Remote.Loop, g.cfg.loopRemote,
 	))
 }
 
