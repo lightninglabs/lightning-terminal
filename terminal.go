@@ -225,6 +225,9 @@ func (g *LightningTerminal) Run() error {
 		return fmt.Errorf("could not create permissions manager")
 	}
 
+	g.statusServer.RegisterSubServer(LNDSubServer)
+	g.statusServer.RegisterSubServer(LitdSubServer)
+
 	g.subServerMgr = newSubServerMgr(g.permsMgr, g.statusServer)
 
 	// Construct the rpcProxy. It must be initialised before the main web
@@ -249,9 +252,49 @@ func (g *LightningTerminal) Run() error {
 		return fmt.Errorf("error starting UI HTTP server: %v", err)
 	}
 
+	// Attempt to start Lit and all of its sub-servers. If an error is
+	// returned, it means that either one of Lit's internal sub-servers
+	// could not start or LND could not start or be connected to.
+	startErr := g.start()
+	if startErr != nil {
+		g.statusServer.setServerErrored(
+			LitdSubServer, "could not start Lit: %v", startErr,
+		)
+	}
+
+	// Now block until we receive an error or the main shutdown
+	// signal.
+	<-shutdownInterceptor.ShutdownChannel()
+	log.Infof("Shutdown signal received")
+
+	if g.rpcProxy != nil {
+		if err := g.rpcProxy.Stop(); err != nil {
+			log.Errorf("Error stopping rpc proxy: %v", err)
+		}
+	}
+
+	if g.httpServer != nil {
+		if err := g.httpServer.Close(); err != nil {
+			log.Errorf("Error stopping UI server: %v", err)
+		}
+	}
+
+	g.wg.Wait()
+
+	return startErr
+}
+
+// start attempts to start all the various components of Litd. Only Litd and
+// LND errors are considered fatal and will result in an error being returned.
+// If any of the sub-servers managed by the subServerMgr error while starting
+// up, these are considered non-fatal and will not result in an error being
+// returned.
+func (g *LightningTerminal) start() error {
 	// Create the instances of our subservers now so we can hook them up to
 	// lnd once it's fully started.
 	g.initSubServers()
+
+	var err error
 	g.accountService, err = accounts.NewService(
 		filepath.Dir(g.cfg.MacaroonPath), g.errQueue.ChanIn(),
 	)
@@ -380,9 +423,7 @@ func (g *LightningTerminal) Run() error {
 		go func() {
 			defer g.wg.Done()
 
-			err := lnd.Main(
-				g.cfg.Lnd, lisCfg, implCfg, shutdownInterceptor,
-			)
+			err := lnd.Main(g.cfg.Lnd, lisCfg, implCfg, interceptor)
 			if e, ok := err.(*flags.Error); err != nil &&
 				(!ok || e.Type != flags.ErrHelp) {
 
@@ -413,19 +454,25 @@ func (g *LightningTerminal) Run() error {
 	case <-readyChan:
 
 	case err := <-g.errQueue.ChanOut():
-		return err
+		g.statusServer.setServerErrored(
+			LNDSubServer, "error from errQueue channel",
+		)
+		return fmt.Errorf("could not start LND: %v", err)
 
 	case <-lndQuit:
-		return nil
+		g.statusServer.setServerErrored(
+			LNDSubServer, "lndQuit channel closed",
+		)
+		return fmt.Errorf("LND has stopped")
 
-	case <-shutdownInterceptor.ShutdownChannel():
-		return errors.New("shutting down")
+	case <-interceptor.ShutdownChannel():
+		return fmt.Errorf("received the shutdown signal")
 	}
 
 	// We now know that starting lnd was successful. If we now run into an
 	// error, we must shut down lnd correctly.
 	defer func() {
-		err := g.shutdown()
+		err := g.shutdownSubServers()
 		if err != nil {
 			log.Errorf("Error shutting down: %v", err)
 		}
@@ -434,7 +481,11 @@ func (g *LightningTerminal) Run() error {
 	// Connect to LND.
 	g.lndConn, err = connectLND(g.cfg, bufRpcListener)
 	if err != nil {
-		return fmt.Errorf("could not connect to LND: %v", err)
+		g.statusServer.setServerErrored(
+			LNDSubServer, "could not connect to LND: %v", err,
+		)
+
+		return fmt.Errorf("could not connect to LND")
 	}
 
 	// Initialise any connections to sub-servers that we are running in
@@ -462,11 +513,17 @@ func (g *LightningTerminal) Run() error {
 		return err
 
 	case <-lndQuit:
-		return nil
+		g.statusServer.setServerErrored(
+			LNDSubServer, "lndQuit channel closed",
+		)
+		return fmt.Errorf("LND is not running")
 
-	case <-shutdownInterceptor.ShutdownChannel():
+	case <-interceptor.ShutdownChannel():
 		return errors.New("shutting down")
 	}
+
+	// We can now set the status of LND as running.
+	g.statusServer.setServerRunning(LNDSubServer)
 
 	// If we're in integrated mode, we'll need to wait for lnd to send the
 	// macaroon after unlock before going any further.
@@ -478,8 +535,11 @@ func (g *LightningTerminal) Run() error {
 	// Set up all the LND clients required by LiT.
 	err = g.setUpLNDClients()
 	if err != nil {
-		log.Errorf("Could not set up LND clients: %w", err)
-		return err
+		g.statusServer.setServerErrored(
+			LNDSubServer, "could not set up LND clients: %v", err,
+		)
+
+		return fmt.Errorf("could not start LND")
 	}
 
 	// If we're in integrated and stateless init mode, we won't create
@@ -508,6 +568,9 @@ func (g *LightningTerminal) Run() error {
 		return fmt.Errorf("could not start litd sub-servers: %v", err)
 	}
 
+	// We can now set the status of LiT as running.
+	g.statusServer.setServerRunning(LitdSubServer)
+
 	// Now block until we receive an error or the main shutdown signal.
 	select {
 
@@ -518,10 +581,14 @@ func (g *LightningTerminal) Run() error {
 		}
 
 	case <-lndQuit:
-		return nil
+		g.statusServer.setServerErrored(
+			LNDSubServer, "lndQuit channel closed",
+		)
 
-	case <-shutdownInterceptor.ShutdownChannel():
-		log.Infof("Shutdown signal received")
+		return fmt.Errorf("LND is not running")
+
+	case <-interceptor.ShutdownChannel():
+		log.Infof("received the shutdown signal")
 	}
 
 	return nil
@@ -951,8 +1018,9 @@ func (g *LightningTerminal) BuildWalletConfig(ctx context.Context,
 	)
 }
 
-// shutdown stops all subservers that were started and attached to lnd.
-func (g *LightningTerminal) shutdown() error {
+// shutdownSubServers stops all subservers that were started and attached to
+// lnd.
+func (g *LightningTerminal) shutdownSubServers() error {
 	var returnErr error
 
 	err := g.subServerMgr.Stop()
@@ -1011,31 +1079,12 @@ func (g *LightningTerminal) shutdown() error {
 		g.restCancel()
 	}
 
-	if g.rpcProxy != nil {
-		if err := g.rpcProxy.Stop(); err != nil {
-			log.Errorf("Error stopping lnd proxy: %v", err)
-			returnErr = err
-		}
-	}
-
 	if g.lndConn != nil {
 		if err := g.lndConn.Close(); err != nil {
 			log.Errorf("Error closing lnd connection: %v", err)
 			returnErr = err
 		}
 	}
-
-	if g.httpServer != nil {
-		if err := g.httpServer.Close(); err != nil {
-			log.Errorf("Error stopping UI server: %v", err)
-			returnErr = err
-		}
-	}
-
-	// In case the error wasn't thrown by lnd, make sure we stop it too.
-	interceptor.RequestShutdown()
-
-	g.wg.Wait()
 
 	// Do we have any last errors to display? We use an anonymous function,
 	// so we can use return instead of breaking to a label in the default

@@ -24,6 +24,8 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/lightninglabs/faraday/frdrpc"
+	terminal "github.com/lightninglabs/lightning-terminal"
+	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/lightninglabs/pool/poolrpc"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -160,17 +162,18 @@ func (cfg *LitNodeConfig) GenArgs() []string {
 
 // policyUpdateMap defines a type to store channel policy updates. It has the
 // format,
-// {
-//  "chanPoint1": {
-//       "advertisingNode1": [
-//              policy1, policy2, ...
-//       ],
-//       "advertisingNode2": [
-//              policy1, policy2, ...
-//       ]
-//  },
-//  "chanPoint2": ...
-// }
+//
+//	{
+//	 "chanPoint1": {
+//	      "advertisingNode1": [
+//	             policy1, policy2, ...
+//	      ],
+//	      "advertisingNode2": [
+//	             policy1, policy2, ...
+//	      ]
+//	 },
+//	 "chanPoint2": ...
+//	}
 type policyUpdateMap map[string]map[string][]*lnrpc.RoutingPolicy
 
 // HarnessNode represents an instance of lnd running within our test network
@@ -228,8 +231,12 @@ type HarnessNode struct {
 	// methods SignMessage and VerifyMessage.
 	SignerClient signrpc.SignerClient
 
-	// conn is the underlying connection to the grpc endpoint of the node.
+	// conn is the underlying connection to the lnd grpc endpoint of the
+	// node.
 	conn *grpc.ClientConn
+
+	// litConn is the underlying connection to Lit's grpc endpoint.
+	litConn *grpc.ClientConn
 
 	// RouterClient, WalletKitClient, WatchtowerClient cannot be embedded,
 	// because a name collision would occur with LightningClient.
@@ -596,6 +603,16 @@ func (hn *HarnessNode) start(litdBinary string, litdError chan<- error,
 		return nil
 	}
 
+	// Also connect to Lit's RPC port for any Litd specific calls.
+	litConn, err := connectLitRPC(
+		context.Background(), hn.Cfg.LitAddr(), hn.Cfg.LitTLSCertPath,
+		hn.Cfg.LitMacPath,
+	)
+	if err != nil {
+		return err
+	}
+	hn.litConn = litConn
+
 	return hn.initLightningClient(conn)
 }
 
@@ -603,7 +620,37 @@ func (hn *HarnessNode) start(litdBinary string, litdError chan<- error,
 func (hn *HarnessNode) WaitUntilStarted(conn grpc.ClientConnInterface,
 	timeout time.Duration) error {
 
-	err := hn.waitForState(conn, timeout, func(s lnrpc.WalletState) bool {
+	// First wait for Litd state server to show that LND has started.
+	ctx := context.Background()
+	rawConn, err := connectLitRPC(
+		ctx, hn.Cfg.LitAddr(), hn.Cfg.LitTLSCertPath, "",
+	)
+	if err != nil {
+		return err
+	}
+
+	litConn := litrpc.NewStatusClient(rawConn)
+
+	err = wait.NoError(func() error {
+		states, err := litConn.SubServerState(
+			ctx, &litrpc.SubServerStatusReq{},
+		)
+		if err != nil {
+			return err
+		}
+
+		lndStatus, ok := states.SubServers[terminal.LNDSubServer]
+		if !ok || !lndStatus.Running {
+			return fmt.Errorf("LND has not yet started")
+		}
+
+		return nil
+	}, lntest.DefaultTimeout)
+	if err != nil {
+		return err
+	}
+
+	err = hn.waitForState(conn, timeout, func(s lnrpc.WalletState) bool {
 		return s >= lnrpc.WalletState_SERVER_ACTIVE
 	})
 	if err != nil {
@@ -1101,6 +1148,21 @@ func (hn *HarnessNode) stop() error {
 				return nil
 			}
 		}, lntest.DefaultTimeout)
+		if err != nil {
+			return err
+		}
+	}
+
+	// If lit is running in remote mode, then calling LNDs StopDaemon
+	// method will not shut down Lit, and so we need to explicitly request
+	// lit to shut down.
+	if hn.Cfg.RemoteMode {
+		ctx, cancel := context.WithTimeout(
+			context.Background(), lntest.DefaultTimeout,
+		)
+		litConn := litrpc.NewLitServiceClient(hn.litConn)
+		_, err := litConn.StopDaemon(ctx, &litrpc.StopDaemonRequest{})
+		cancel()
 		if err != nil {
 			return err
 		}
@@ -1799,4 +1861,41 @@ func (hn *HarnessNode) getChannelPolicies(include bool) policyUpdateMap {
 	}
 
 	return policyUpdates
+}
+
+// connectLigRPC can be used to connect to the lit rpc server.
+func connectLitRPC(ctx context.Context, hostPort, tlsCertPath,
+	macPath string) (*grpc.ClientConn, error) {
+
+	tlsCreds, err := credentials.NewClientTLSFromFile(tlsCertPath, "")
+	if err != nil {
+		return nil, err
+	}
+
+	opts := []grpc.DialOption{
+		grpc.WithBlock(),
+		grpc.WithTransportCredentials(tlsCreds),
+	}
+
+	if macPath != "" {
+		macBytes, err := ioutil.ReadFile(macPath)
+		if err != nil {
+			return nil, err
+		}
+
+		mac := &macaroon.Macaroon{}
+		if err = mac.UnmarshalBinary(macBytes); err != nil {
+			return nil, fmt.Errorf("error unmarshalling macaroon "+
+				"file: %v", err)
+		}
+
+		macCred, err := macaroons.NewMacaroonCredential(mac)
+		if err != nil {
+			return nil, fmt.Errorf("error cloning mac: %v", err)
+		}
+
+		opts = append(opts, grpc.WithPerRPCCredentials(macCred))
+	}
+
+	return grpc.DialContext(ctx, hostPort, opts...)
 }

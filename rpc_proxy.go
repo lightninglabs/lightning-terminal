@@ -385,16 +385,24 @@ func (p *rpcProxy) UnaryServerInterceptor(ctx context.Context, req interface{},
 func (p *rpcProxy) checkSubSystemStarted(requestURI string) error {
 	var system string
 
-	isSubServerURI := p.permsMgr.IsSubServerURI
+	handled, subServerName := p.subServerMgr.HandledBy(requestURI)
+	switch {
+	case handled:
+		system = subServerName
 
-	if isSubServerURI(perms.SubServerLit, requestURI) ||
-		isSubServerURI(perms.SubServerLnd, requestURI) {
+	case p.permsMgr.IsSubServerURI(perms.SubServerLnd, requestURI):
+		system = LNDSubServer
 
-		return nil
-	}
+	case p.permsMgr.IsSubServerURI(perms.SubServerLit, requestURI):
+		system = LitdSubServer
 
-	handled, system := p.subServerMgr.HandledBy(requestURI)
-	if !handled {
+		// If the request is for the status server, then we allow the
+		// request even if Lit has not properly started.
+		if isStatusReq(requestURI) {
+			return nil
+		}
+
+	default:
 		return fmt.Errorf("unknown gRPC web request: %v", requestURI)
 	}
 

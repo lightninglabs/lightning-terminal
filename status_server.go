@@ -8,6 +8,11 @@ import (
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 )
 
+const (
+	LNDSubServer  = "lnd"
+	LitdSubServer = "litd"
+)
+
 // statusServer is an implementation of the litrpc.StatusServer which can be
 // queried for the status of various LiT sub-servers.
 type statusServer struct {
