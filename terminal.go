@@ -20,7 +20,6 @@ import (
 	restProxy "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jessevdk/go-flags"
 	"github.com/lightninglabs/faraday/frdrpc"
-	"github.com/lightninglabs/faraday/frdrpcserver"
 	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/autopilotserver"
 	"github.com/lightninglabs/lightning-terminal/firewall"
@@ -161,9 +160,6 @@ type LightningTerminal struct {
 	statusServer *statusServer
 	subServerMgr *subServerMgr
 
-	faradayServer  *frdrpcserver.RPCServer
-	faradayStarted bool
-
 	autopilotClient autopilotserver.Autopilot
 
 	ruleMgrs rules.ManagerSet
@@ -262,7 +258,7 @@ func (g *LightningTerminal) Run() error {
 
 	// Create the instances of our subservers now so we can hook them up to
 	// lnd once it's fully started.
-	g.faradayServer = frdrpcserver.NewRPCServer(g.cfg.faradayRpcConfig)
+	g.initSubServers()
 	g.loopServer = loopd.New(g.cfg.Loop, nil)
 	g.poolServer = pool.NewServer(g.cfg.Pool)
 	g.accountService, err = accounts.NewService(
@@ -679,17 +675,6 @@ func (g *LightningTerminal) startIntegratedDaemons(
 
 	// Both connection types are ready now, let's start our sub-servers if
 	// they should be started locally as an integrated service.
-	if !g.cfg.faradayRemote {
-		log.Infof("Starting integrated faraday daemon")
-		err := g.faradayServer.StartAsSubserver(
-			g.lndClient.LndServices, createDefaultMacaroons,
-		)
-		if err != nil {
-			return err
-		}
-		g.faradayStarted = true
-	}
-
 	if !g.cfg.loopRemote {
 		log.Infof("Starting integrated loop daemon")
 		err := g.loopServer.StartAsSubserver(
@@ -876,10 +861,6 @@ func (g *LightningTerminal) registerSubDaemonGrpcServers(server *grpc.Server,
 	// all for any gRPC request that isn't known because we didn't register
 	// any server for it. The director will then forward the request to the
 	// remote service.
-	if !g.cfg.faradayRemote {
-		frdrpc.RegisterFaradayServerServer(server, g.faradayServer)
-	}
-
 	if !g.cfg.loopRemote {
 		looprpc.RegisterSwapClientServer(server, g.loopServer)
 	}
@@ -989,30 +970,6 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 			return err
 		}
 
-	case g.permsMgr.IsSubServerURI(perms.SubServerFaraday, fullMethod):
-		// In remote mode we just pass through the request, the remote
-		// daemon will check the macaroon.
-		if g.cfg.faradayRemote {
-			return nil
-		}
-
-		if !g.faradayStarted {
-			return fmt.Errorf("faraday is not yet ready for " +
-				"requests, lnd possibly still starting or " +
-				"syncing")
-		}
-
-		err = g.faradayServer.ValidateMacaroon(
-			ctx, requiredPermissions, fullMethod,
-		)
-		if err != nil {
-			return &proxyErr{
-				proxyContext: "faraday",
-				wrapped: fmt.Errorf("invalid macaroon: %v",
-					err),
-			}
-		}
-
 	case g.permsMgr.IsSubServerURI(perms.SubServerLoop, fullMethod):
 		// In remote mode we just pass through the request, the remote
 		// daemon will check the macaroon.
@@ -1116,13 +1073,6 @@ func (g *LightningTerminal) BuildWalletConfig(ctx context.Context,
 // shutdown stops all subservers that were started and attached to lnd.
 func (g *LightningTerminal) shutdown() error {
 	var returnErr error
-
-	if g.faradayStarted {
-		if err := g.faradayServer.Stop(); err != nil {
-			log.Errorf("Error stopping faraday: %v", err)
-			returnErr = err
-		}
-	}
 
 	if g.loopStarted {
 		g.loopServer.Stop()
@@ -1525,6 +1475,15 @@ func (g *LightningTerminal) validateSuperMacaroon(ctx context.Context,
 	}
 
 	return nil
+}
+
+// initSubServers registers the faraday and loop sub-servers with the
+// subServerMgr.
+func (g *LightningTerminal) initSubServers() {
+	g.subServerMgr.AddServer(NewFaradaySubServer(
+		g.cfg.Faraday, g.cfg.faradayRpcConfig, g.cfg.Remote.Faraday,
+		g.cfg.faradayRemote,
+	))
 }
 
 // BakeSuperMacaroon uses the lnd client to bake a macaroon that can include
