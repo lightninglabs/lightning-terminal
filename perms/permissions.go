@@ -135,15 +135,15 @@ var (
 	}
 )
 
-// subServerName is a name used to identify a particular Lit sub-server.
-type subServerName string
+// SubServerName is a name used to identify a particular Lit sub-server.
+type SubServerName string
 
 const (
-	poolPerms    subServerName = "pool"
-	loopPerms    subServerName = "loop"
-	faradayPerms subServerName = "faraday"
-	litPerms     subServerName = "lit"
-	lndPerms     subServerName = "lnd"
+	SubServerPool    SubServerName = "pool"
+	SubServerLoop    SubServerName = "loop"
+	SubServerFaraday SubServerName = "faraday"
+	SubServerLit     SubServerName = "lit"
+	SubServerLnd     SubServerName = "lnd"
 )
 
 // Manager manages the permission lists that Lit requires.
@@ -158,7 +158,7 @@ type Manager struct {
 	// It contains all the permissions that will not change throughout the
 	// lifetime of the manager. It maps sub-server name to uri to permission
 	// operations.
-	fixedPerms map[subServerName]map[string][]bakery.Op
+	fixedPerms map[SubServerName]map[string][]bakery.Op
 
 	// perms is a map containing all permissions that the manager knows
 	// are available for use. This map will start out not including any of
@@ -177,17 +177,17 @@ type Manager struct {
 // then OnLNDBuildTags can be used to specify the exact sub-servers that LND
 // was compiled with and then only the corresponding permissions will be added.
 func NewManager(withAllSubServers bool) (*Manager, error) {
-	permissions := make(map[subServerName]map[string][]bakery.Op)
-	permissions[faradayPerms] = faraday.RequiredPermissions
-	permissions[loopPerms] = loop.RequiredPermissions
-	permissions[poolPerms] = pool.RequiredPermissions
-	permissions[litPerms] = LitPermissions
+	permissions := make(map[SubServerName]map[string][]bakery.Op)
+	permissions[SubServerFaraday] = faraday.RequiredPermissions
+	permissions[SubServerLoop] = loop.RequiredPermissions
+	permissions[SubServerPool] = pool.RequiredPermissions
+	permissions[SubServerLit] = LitPermissions
 	for k, v := range MacaroonWhitelist {
-		permissions[litPerms][k] = v
+		permissions[SubServerLit][k] = v
 	}
-	permissions[lndPerms] = lnd.MainRPCServerPermissions()
+	permissions[SubServerLnd] = lnd.MainRPCServerPermissions()
 	for k, v := range whiteListedLNDMethods {
-		permissions[lndPerms][k] = v
+		permissions[SubServerLnd][k] = v
 	}
 
 	// Collect all LND sub-server permissions along with the name of the
@@ -214,7 +214,7 @@ func NewManager(withAllSubServers bool) (*Manager, error) {
 			if withAllSubServers ||
 				lndAutoCompiledSubServers[name] {
 
-				permissions[lndPerms][key] = value
+				permissions[SubServerLnd][key] = value
 			}
 		}
 	}
@@ -352,28 +352,39 @@ func (pm *Manager) ActivePermissions(readOnly bool) []bakery.Op {
 // _except_ for any LND permissions. In other words, this returns permissions
 // for which the external validator of Lit is responsible.
 func (pm *Manager) GetLitPerms() map[string][]bakery.Op {
-	mapSize := len(pm.fixedPerms[litPerms]) +
-		len(pm.fixedPerms[faradayPerms]) +
-		len(pm.fixedPerms[loopPerms]) + len(pm.fixedPerms[poolPerms])
+	mapSize := len(pm.fixedPerms[SubServerLit]) +
+		len(pm.fixedPerms[SubServerFaraday]) +
+		len(pm.fixedPerms[SubServerPool]) +
+		len(pm.fixedPerms[SubServerLoop])
 
 	result := make(map[string][]bakery.Op, mapSize)
-	for key, value := range pm.fixedPerms[faradayPerms] {
+	for key, value := range pm.fixedPerms[SubServerFaraday] {
 		result[key] = value
 	}
-	for key, value := range pm.fixedPerms[loopPerms] {
+	for key, value := range pm.fixedPerms[SubServerLoop] {
 		result[key] = value
 	}
-	for key, value := range pm.fixedPerms[poolPerms] {
+	for key, value := range pm.fixedPerms[SubServerPool] {
 		result[key] = value
 	}
-	for key, value := range pm.fixedPerms[litPerms] {
+	for key, value := range pm.fixedPerms[SubServerLit] {
 		result[key] = value
 	}
 	return result
 }
 
-// IsLndURI returns true if the given URI belongs to an RPC of lnd.
-func (pm *Manager) IsLndURI(uri string) bool {
+// IsSubServerURI if the given URI belongs to the RPC of the given server.
+func (pm *Manager) IsSubServerURI(name SubServerName, uri string) bool {
+	if name == SubServerLnd {
+		return pm.isLndURI(uri)
+	}
+
+	_, ok := pm.fixedPerms[name][uri]
+	return ok
+}
+
+// isLndURI returns true if the given URI belongs to an RPC of lnd.
+func (pm *Manager) isLndURI(uri string) bool {
 	var lndSubServerCall bool
 	for _, subserverPermissions := range pm.lndSubServerPerms {
 		_, found := subserverPermissions[uri]
@@ -382,32 +393,8 @@ func (pm *Manager) IsLndURI(uri string) bool {
 			break
 		}
 	}
-	_, lndCall := pm.fixedPerms[lndPerms][uri]
+	_, lndCall := pm.fixedPerms[SubServerLnd][uri]
 	return lndCall || lndSubServerCall
-}
-
-// IsLoopURI returns true if the given URI belongs to an RPC of loopd.
-func (pm *Manager) IsLoopURI(uri string) bool {
-	_, ok := pm.fixedPerms[loopPerms][uri]
-	return ok
-}
-
-// IsFaradayURI returns true if the given URI belongs to an RPC of faraday.
-func (pm *Manager) IsFaradayURI(uri string) bool {
-	_, ok := pm.fixedPerms[faradayPerms][uri]
-	return ok
-}
-
-// IsPoolURI returns true if the given URI belongs to an RPC of poold.
-func (pm *Manager) IsPoolURI(uri string) bool {
-	_, ok := pm.fixedPerms[poolPerms][uri]
-	return ok
-}
-
-// IsLitURI returns true if the given URI belongs to an RPC of LiT.
-func (pm *Manager) IsLitURI(uri string) bool {
-	_, ok := pm.fixedPerms[litPerms][uri]
-	return ok
 }
 
 // mockConfig implements lnrpc.SubServerConfigDispatcher. It provides the

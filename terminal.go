@@ -964,7 +964,7 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 	// process. Calls that we proxy to a remote host don't need to be
 	// checked as they'll have their own interceptor.
 	switch {
-	case g.permsMgr.IsFaradayURI(fullMethod):
+	case g.permsMgr.IsSubServerURI(perms.SubServerFaraday, fullMethod):
 		// In remote mode we just pass through the request, the remote
 		// daemon will check the macaroon.
 		if g.cfg.faradayRemote {
@@ -988,7 +988,7 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 			}
 		}
 
-	case g.permsMgr.IsLoopURI(fullMethod):
+	case g.permsMgr.IsSubServerURI(perms.SubServerLoop, fullMethod):
 		// In remote mode we just pass through the request, the remote
 		// daemon will check the macaroon.
 		if g.cfg.loopRemote {
@@ -1012,7 +1012,7 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 			}
 		}
 
-	case g.permsMgr.IsPoolURI(fullMethod):
+	case g.permsMgr.IsSubServerURI(perms.SubServerPool, fullMethod):
 		// In remote mode we just pass through the request, the remote
 		// daemon will check the macaroon.
 		if g.cfg.poolRemote {
@@ -1036,7 +1036,7 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 			}
 		}
 
-	case g.permsMgr.IsLitURI(fullMethod):
+	case g.permsMgr.IsSubServerURI(perms.SubServerLit, fullMethod):
 		if !g.macaroonServiceStarted {
 			return fmt.Errorf("the macaroon service has not " +
 				"started yet")

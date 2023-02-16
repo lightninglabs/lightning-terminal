@@ -349,6 +349,8 @@ func (p *rpcProxy) makeDirector(allowLitRPC bool) func(ctx context.Context,
 			}
 		}
 
+		isSubServerURI := p.permsMgr.IsSubServerURI
+
 		// Direct the call to the correct backend. All gRPC calls end up
 		// here since our gRPC server instance doesn't have any handlers
 		// registered itself. So all daemon calls that are remote are
@@ -357,17 +359,25 @@ func (p *rpcProxy) makeDirector(allowLitRPC bool) func(ctx context.Context,
 		// handled by the integrated daemons that are hooking into lnd's
 		// gRPC server.
 		switch {
-		case p.permsMgr.IsFaradayURI(requestURI) && p.cfg.faradayRemote:
+		case isSubServerURI(perms.SubServerFaraday, requestURI) &&
+			p.cfg.faradayRemote:
+
 			return outCtx, p.faradayConn, nil
 
-		case p.permsMgr.IsLoopURI(requestURI) && p.cfg.loopRemote:
+		case isSubServerURI(perms.SubServerLoop, requestURI) &&
+			p.cfg.loopRemote:
+
 			return outCtx, p.loopConn, nil
 
-		case p.permsMgr.IsPoolURI(requestURI) && p.cfg.poolRemote:
+		case isSubServerURI(perms.SubServerPool, requestURI) &&
+			p.cfg.poolRemote:
+
 			return outCtx, p.poolConn, nil
 
 		// Calls to LiT session RPC aren't allowed in some cases.
-		case p.permsMgr.IsLitURI(requestURI) && !allowLitRPC:
+		case isSubServerURI(perms.SubServerLit, requestURI) &&
+			!allowLitRPC:
+
 			return outCtx, nil, status.Errorf(
 				codes.Unimplemented, "unknown service %s",
 				requestURI,
@@ -523,31 +533,31 @@ func (p *rpcProxy) basicAuthToMacaroon(basicAuth, requestURI string,
 		macData []byte
 	)
 	switch {
-	case p.permsMgr.IsLndURI(requestURI):
+	case p.permsMgr.IsSubServerURI(perms.SubServerLnd, requestURI):
 		_, _, _, macPath, macData = p.cfg.lndConnectParams()
 
-	case p.permsMgr.IsFaradayURI(requestURI):
+	case p.permsMgr.IsSubServerURI(perms.SubServerFaraday, requestURI):
 		if p.cfg.faradayRemote {
 			macPath = p.cfg.Remote.Faraday.MacaroonPath
 		} else {
 			macPath = p.cfg.Faraday.MacaroonPath
 		}
 
-	case p.permsMgr.IsLoopURI(requestURI):
+	case p.permsMgr.IsSubServerURI(perms.SubServerLoop, requestURI):
 		if p.cfg.loopRemote {
 			macPath = p.cfg.Remote.Loop.MacaroonPath
 		} else {
 			macPath = p.cfg.Loop.MacaroonPath
 		}
 
-	case p.permsMgr.IsPoolURI(requestURI):
+	case p.permsMgr.IsSubServerURI(perms.SubServerPool, requestURI):
 		if p.cfg.poolRemote {
 			macPath = p.cfg.Remote.Pool.MacaroonPath
 		} else {
 			macPath = p.cfg.Pool.MacaroonPath
 		}
 
-	case p.permsMgr.IsLitURI(requestURI):
+	case p.permsMgr.IsSubServerURI(perms.SubServerLit, requestURI):
 		macPath = p.cfg.MacaroonPath
 
 	default:
@@ -624,18 +634,25 @@ func (p *rpcProxy) convertSuperMacaroon(ctx context.Context, macHex string,
 
 	// Is this actually a request that goes to a daemon that is running
 	// remotely?
+	isSubServerURI := p.permsMgr.IsSubServerURI
 	switch {
-	case p.permsMgr.IsFaradayURI(fullMethod) && p.cfg.faradayRemote:
+	case isSubServerURI(perms.SubServerFaraday, fullMethod) &&
+		p.cfg.faradayRemote:
+
 		return readMacaroon(lncfg.CleanAndExpandPath(
 			p.cfg.Remote.Faraday.MacaroonPath,
 		))
 
-	case p.permsMgr.IsLoopURI(fullMethod) && p.cfg.loopRemote:
+	case isSubServerURI(perms.SubServerLoop, fullMethod) &&
+		p.cfg.loopRemote:
+
 		return readMacaroon(lncfg.CleanAndExpandPath(
 			p.cfg.Remote.Loop.MacaroonPath,
 		))
 
-	case p.permsMgr.IsPoolURI(fullMethod) && p.cfg.poolRemote:
+	case isSubServerURI(perms.SubServerPool, fullMethod) &&
+		p.cfg.poolRemote:
+
 		return readMacaroon(lncfg.CleanAndExpandPath(
 			p.cfg.Remote.Pool.MacaroonPath,
 		))
