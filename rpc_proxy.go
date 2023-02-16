@@ -60,7 +60,8 @@ func (e *proxyErr) Unwrap() error {
 // component.
 func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 	superMacValidator session.SuperMacaroonValidator,
-	permsMgr *perms.Manager) *rpcProxy {
+	permsMgr *perms.Manager, statusServer *statusServer,
+	subServerMgr *subServerMgr) *rpcProxy {
 
 	// The gRPC web calls are protected by HTTP basic auth which is defined
 	// by base64(username:password). Because we only have a password, we
@@ -80,6 +81,8 @@ func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 		permsMgr:          permsMgr,
 		macValidator:      validator,
 		superMacValidator: superMacValidator,
+		statusServer:      statusServer,
+		subServerMgr:      subServerMgr,
 	}
 	p.grpcServer = grpc.NewServer(
 		// From the grpxProxy doc: This codec is *crucial* to the
@@ -163,6 +166,9 @@ type rpcProxy struct {
 	faradayConn *grpc.ClientConn
 	loopConn    *grpc.ClientConn
 	poolConn    *grpc.ClientConn
+
+	statusServer *statusServer
+	subServerMgr *subServerMgr
 
 	grpcServer   *grpc.Server
 	grpcWebProxy *grpcweb.WrappedGrpcServer
@@ -315,6 +321,12 @@ func (p *rpcProxy) makeDirector(allowLitRPC bool) func(ctx context.Context,
 
 		outCtx := metadata.NewOutgoingContext(ctx, mdCopy)
 
+		// Check that the target subsystem is running.
+		err := p.checkSubSystemStarted(requestURI)
+		if err != nil {
+			return nil, nil, err
+		}
+
 		// Is there a basic auth or super macaroon set?
 		authHeaders := md.Get("authorization")
 		macHeader := md.Get(HeaderMacaroon)
@@ -358,6 +370,11 @@ func (p *rpcProxy) makeDirector(allowLitRPC bool) func(ctx context.Context,
 		// since it must either be an lnd call or something that'll be
 		// handled by the integrated daemons that are hooking into lnd's
 		// gRPC server.
+		handled, conn := p.subServerMgr.GetRemoteConn(requestURI)
+		if handled {
+			return outCtx, conn, nil
+		}
+
 		switch {
 		case isSubServerURI(perms.SubServerFaraday, requestURI) &&
 			p.cfg.faradayRemote:
@@ -405,6 +422,12 @@ func (p *rpcProxy) UnaryServerInterceptor(ctx context.Context, req interface{},
 			"required for method", info.FullMethod)
 	}
 
+	// Check that the target subsystem is running.
+	err := p.checkSubSystemStarted(info.FullMethod)
+	if err != nil {
+		return nil, err
+	}
+
 	// For now, basic authentication is just a quick fix until we
 	// have proper macaroon support implemented in the UI. We allow
 	// gRPC web requests to have it and "convert" the auth into a
@@ -434,6 +457,35 @@ func (p *rpcProxy) UnaryServerInterceptor(ctx context.Context, req interface{},
 	return handler(ctx, req)
 }
 
+// checkSubSystemStarted checks if the subsystem responsible for handling the
+// given URI has started.
+func (p *rpcProxy) checkSubSystemStarted(requestURI string) error {
+	var system string
+
+	isSubServerURI := p.permsMgr.IsSubServerURI
+
+	if isSubServerURI(perms.SubServerLit, requestURI) ||
+		isSubServerURI(perms.SubServerLnd, requestURI) ||
+		isSubServerURI(perms.SubServerPool, requestURI) ||
+		isSubServerURI(perms.SubServerLoop, requestURI) ||
+		isSubServerURI(perms.SubServerFaraday, requestURI) {
+
+		return nil
+	}
+
+	handled, system := p.subServerMgr.HandledBy(requestURI)
+	if !handled {
+		return fmt.Errorf("unknown gRPC web request: %v", requestURI)
+	}
+
+	started, startErr := p.statusServer.getSubServerState(system)
+	if !started {
+		return fmt.Errorf("%s is not running: %s", system, startErr)
+	}
+
+	return nil
+}
+
 // StreamServerInterceptor is a GRPC interceptor that checks whether the
 // request is authorized by the included macaroons.
 func (p *rpcProxy) StreamServerInterceptor(srv interface{},
@@ -448,6 +500,12 @@ func (p *rpcProxy) StreamServerInterceptor(srv interface{},
 	if !ok {
 		return fmt.Errorf("%s: unknown permissions required "+
 			"for method", info.FullMethod)
+	}
+
+	// Check that the target subsystem is running.
+	err := p.checkSubSystemStarted(info.FullMethod)
+	if err != nil {
+		return err
 	}
 
 	// For now, basic authentication is just a quick fix until we
@@ -529,10 +587,14 @@ func (p *rpcProxy) basicAuthToMacaroon(basicAuth, requestURI string,
 	}
 
 	var (
-		macPath string
-		macData []byte
+		handled, path = p.subServerMgr.MacaroonPath(requestURI)
+		macPath       string
+		macData       []byte
 	)
 	switch {
+	case handled:
+		macPath = path
+
 	case p.permsMgr.IsSubServerURI(perms.SubServerLnd, requestURI):
 		_, _, _, macPath, macData = p.cfg.lndConnectParams()
 
@@ -632,10 +694,17 @@ func (p *rpcProxy) convertSuperMacaroon(ctx context.Context, macHex string,
 		return nil, err
 	}
 
+	isSubServerURI := p.permsMgr.IsSubServerURI
+
 	// Is this actually a request that goes to a daemon that is running
 	// remotely?
-	isSubServerURI := p.permsMgr.IsSubServerURI
+	handled, macBytes, err := p.subServerMgr.ReadRemoteMacaroon(fullMethod)
+	if handled {
+		return macBytes, err
+	}
+
 	switch {
+
 	case isSubServerURI(perms.SubServerFaraday, fullMethod) &&
 		p.cfg.faradayRemote:
 

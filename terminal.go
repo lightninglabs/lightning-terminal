@@ -159,6 +159,7 @@ type LightningTerminal struct {
 	basicClient lnrpc.LightningClient
 
 	statusServer *statusServer
+	subServerMgr *subServerMgr
 
 	faradayServer  *frdrpcserver.RPCServer
 	faradayStarted bool
@@ -235,9 +236,14 @@ func (g *LightningTerminal) Run() error {
 		return fmt.Errorf("could not create permissions manager")
 	}
 
+	g.subServerMgr = newSubServerMgr(g.permsMgr, g.statusServer)
+
 	// Construct the rpcProxy. It must be initialised before the main web
 	// server is started.
-	g.rpcProxy = newRpcProxy(g.cfg, g, g.validateSuperMacaroon, g.permsMgr)
+	g.rpcProxy = newRpcProxy(
+		g.cfg, g, g.validateSuperMacaroon, g.permsMgr, g.statusServer,
+		g.subServerMgr,
+	)
 
 	// We'll also create a REST proxy that'll convert any REST calls to gRPC
 	// calls and forward them to the internal listener.
@@ -448,6 +454,10 @@ func (g *LightningTerminal) Run() error {
 	if err != nil {
 		return fmt.Errorf("could not connect to LND: %v", err)
 	}
+
+	// Initialise any connections to sub-servers that we are running in
+	// remote mode.
+	g.subServerMgr.ConnectRemoteSubServers()
 
 	// Now start the RPC proxy that will handle all incoming gRPC, grpc-web
 	// and REST requests.
@@ -663,6 +673,10 @@ func (g *LightningTerminal) setUpLNDClients() error {
 func (g *LightningTerminal) startIntegratedDaemons(
 	createDefaultMacaroons bool) error {
 
+	g.subServerMgr.StartIntegratedServers(
+		g.basicClient, g.lndClient, createDefaultMacaroons,
+	)
+
 	// Both connection types are ready now, let's start our sub-servers if
 	// they should be started locally as an integrated service.
 	if !g.cfg.faradayRemote {
@@ -856,6 +870,8 @@ func (g *LightningTerminal) RegisterGrpcSubserver(server *grpc.Server) error {
 func (g *LightningTerminal) registerSubDaemonGrpcServers(server *grpc.Server,
 	withLitRPC bool) {
 
+	g.subServerMgr.RegisterRPCServices(server)
+
 	// In remote mode the "director" of the RPC proxy will act as a catch-
 	// all for any gRPC request that isn't known because we didn't register
 	// any server for it. The director will then forward the request to the
@@ -960,10 +976,19 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 		)
 	}
 
+	handled, err := g.subServerMgr.ValidateMacaroon(
+		ctx, requiredPermissions, fullMethod,
+	)
+
 	// Validate all macaroons for services that are running in the local
 	// process. Calls that we proxy to a remote host don't need to be
 	// checked as they'll have their own interceptor.
 	switch {
+	case handled:
+		if err != nil {
+			return err
+		}
+
 	case g.permsMgr.IsSubServerURI(perms.SubServerFaraday, fullMethod):
 		// In remote mode we just pass through the request, the remote
 		// daemon will check the macaroon.
@@ -1112,6 +1137,11 @@ func (g *LightningTerminal) shutdown() error {
 			log.Errorf("Error stopping pool: %v", err)
 			returnErr = err
 		}
+	}
+
+	err := g.subServerMgr.Stop()
+	if err != nil {
+		returnErr = err
 	}
 
 	if g.autopilotClient != nil {
