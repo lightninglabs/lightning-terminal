@@ -162,8 +162,7 @@ type rpcProxy struct {
 
 	superMacaroon string
 
-	lndConn  *grpc.ClientConn
-	poolConn *grpc.ClientConn
+	lndConn *grpc.ClientConn
 
 	statusServer *statusServer
 	subServerMgr *subServerMgr
@@ -174,20 +173,7 @@ type rpcProxy struct {
 
 // Start creates initial connection to lnd.
 func (p *rpcProxy) Start(lndConn *grpc.ClientConn) error {
-	var err error
 	p.lndConn = lndConn
-
-	// Make sure we can connect to all the daemons that are configured to be
-	// running in remote mode.
-	if p.cfg.poolRemote {
-		p.poolConn, err = dialBackend(
-			"pool", p.cfg.Remote.Pool.RPCServer,
-			lncfg.CleanAndExpandPath(p.cfg.Remote.Pool.TLSCertPath),
-		)
-		if err != nil {
-			return fmt.Errorf("could not dial remote pool: %v", err)
-		}
-	}
 
 	atomic.CompareAndSwapInt32(&p.started, 0, 1)
 
@@ -211,13 +197,6 @@ func isStatusReq(uri string) bool {
 // Stop shuts down the lnd connection.
 func (p *rpcProxy) Stop() error {
 	p.grpcServer.Stop()
-
-	if p.poolConn != nil {
-		if err := p.poolConn.Close(); err != nil {
-			log.Errorf("Error closing pool connection: %v", err)
-			return err
-		}
-	}
 
 	return nil
 }
@@ -336,25 +315,17 @@ func (p *rpcProxy) makeDirector(allowLitRPC bool) func(ctx context.Context,
 			return outCtx, conn, nil
 		}
 
-		switch {
-
-		case isSubServerURI(perms.SubServerPool, requestURI) &&
-			p.cfg.poolRemote:
-
-			return outCtx, p.poolConn, nil
-
 		// Calls to LiT session RPC aren't allowed in some cases.
-		case isSubServerURI(perms.SubServerLit, requestURI) &&
-			!allowLitRPC:
+		if isSubServerURI(perms.SubServerLit, requestURI) &&
+			!allowLitRPC {
 
 			return outCtx, nil, status.Errorf(
 				codes.Unimplemented, "unknown service %s",
 				requestURI,
 			)
-
-		default:
-			return outCtx, p.lndConn, nil
 		}
+
+		return outCtx, p.lndConn, nil
 	}
 }
 
@@ -417,8 +388,7 @@ func (p *rpcProxy) checkSubSystemStarted(requestURI string) error {
 	isSubServerURI := p.permsMgr.IsSubServerURI
 
 	if isSubServerURI(perms.SubServerLit, requestURI) ||
-		isSubServerURI(perms.SubServerLnd, requestURI) ||
-		isSubServerURI(perms.SubServerPool, requestURI) {
+		isSubServerURI(perms.SubServerLnd, requestURI) {
 
 		return nil
 	}
@@ -548,13 +518,6 @@ func (p *rpcProxy) basicAuthToMacaroon(basicAuth, requestURI string,
 	case p.permsMgr.IsSubServerURI(perms.SubServerLnd, requestURI):
 		_, _, _, macPath, macData = p.cfg.lndConnectParams()
 
-	case p.permsMgr.IsSubServerURI(perms.SubServerPool, requestURI):
-		if p.cfg.poolRemote {
-			macPath = p.cfg.Remote.Pool.MacaroonPath
-		} else {
-			macPath = p.cfg.Pool.MacaroonPath
-		}
-
 	case p.permsMgr.IsSubServerURI(perms.SubServerLit, requestURI):
 		macPath = p.cfg.MacaroonPath
 
@@ -630,21 +593,11 @@ func (p *rpcProxy) convertSuperMacaroon(ctx context.Context, macHex string,
 		return nil, err
 	}
 
-	isSubServerURI := p.permsMgr.IsSubServerURI
-
 	// Is this actually a request that goes to a daemon that is running
 	// remotely?
 	handled, macBytes, err := p.subServerMgr.ReadRemoteMacaroon(fullMethod)
 	if handled {
 		return macBytes, err
-	}
-
-	if isSubServerURI(perms.SubServerPool, fullMethod) &&
-		p.cfg.poolRemote {
-
-		return readMacaroon(lncfg.CleanAndExpandPath(
-			p.cfg.Remote.Pool.MacaroonPath,
-		))
 	}
 
 	return nil, nil

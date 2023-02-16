@@ -163,9 +163,6 @@ type LightningTerminal struct {
 
 	ruleMgrs rules.ManagerSet
 
-	poolServer  *pool.Server
-	poolStarted bool
-
 	rpcProxy   *rpcProxy
 	httpServer *http.Server
 
@@ -255,7 +252,6 @@ func (g *LightningTerminal) Run() error {
 	// Create the instances of our subservers now so we can hook them up to
 	// lnd once it's fully started.
 	g.initSubServers()
-	g.poolServer = pool.NewServer(g.cfg.Pool)
 	g.accountService, err = accounts.NewService(
 		filepath.Dir(g.cfg.MacaroonPath), g.errQueue.ChanIn(),
 	)
@@ -346,10 +342,6 @@ func (g *LightningTerminal) Run() error {
 		return fmt.Errorf("could not create new session rpc "+
 			"server: %v", err)
 	}
-
-	// Overwrite the pool daemon's user agent name so it sends "litd"
-	// instead of and "poold".
-	pool.SetAgentName("litd")
 
 	// Call the "real" main in a nested manner so the defers will properly
 	// be executed in the case of a graceful shutdown.
@@ -505,11 +497,11 @@ func (g *LightningTerminal) Run() error {
 		createDefaultMacaroons = !macService.StatelessInit
 	}
 
-	err = g.startIntegratedDaemons(createDefaultMacaroons)
-	if err != nil {
-		log.Errorf("Could not start integrated daemons: %v", err)
-		return err
-	}
+	// Both connection types are ready now, let's start our sub-servers if
+	// they should be started locally as an integrated service.
+	g.subServerMgr.StartIntegratedServers(
+		g.basicClient, g.lndClient, createDefaultMacaroons,
+	)
 
 	err = g.startInternalSubServers(createDefaultMacaroons)
 	if err != nil {
@@ -647,31 +639,6 @@ func (g *LightningTerminal) setUpLNDClients() error {
 		}
 
 		g.rpcProxy.superMacaroon = superMacaroon
-	}
-
-	return nil
-}
-
-// startIntegratedDaemons starts all embedded daemons as external sub-servers
-// that hook into the same gRPC and REST servers that lnd started.
-func (g *LightningTerminal) startIntegratedDaemons(
-	createDefaultMacaroons bool) error {
-
-	g.subServerMgr.StartIntegratedServers(
-		g.basicClient, g.lndClient, createDefaultMacaroons,
-	)
-
-	// Both connection types are ready now, let's start our sub-servers if
-	// they should be started locally as an integrated service.
-	if !g.cfg.poolRemote {
-		log.Infof("Starting integrated pool daemon")
-		err := g.poolServer.StartAsSubserver(
-			g.basicClient, g.lndClient, createDefaultMacaroons,
-		)
-		if err != nil {
-			return err
-		}
-		g.poolStarted = true
 	}
 
 	return nil
@@ -834,14 +801,6 @@ func (g *LightningTerminal) registerSubDaemonGrpcServers(server *grpc.Server,
 
 	g.subServerMgr.RegisterRPCServices(server)
 
-	// In remote mode the "director" of the RPC proxy will act as a catch-
-	// all for any gRPC request that isn't known because we didn't register
-	// any server for it. The director will then forward the request to the
-	// remote service.
-	if !g.cfg.poolRemote {
-		poolrpc.RegisterTraderServer(server, g.poolServer)
-	}
-
 	if withLitRPC {
 		litrpc.RegisterSessionsServer(server, g.sessionRpcServer)
 		litrpc.RegisterAccountsServer(server, g.accountRpcServer)
@@ -930,44 +889,17 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 		)
 	}
 
-	handled, err := g.subServerMgr.ValidateMacaroon(
-		ctx, requiredPermissions, fullMethod,
-	)
-
 	// Validate all macaroons for services that are running in the local
 	// process. Calls that we proxy to a remote host don't need to be
 	// checked as they'll have their own interceptor.
-	switch {
-	case handled:
-		if err != nil {
-			return err
-		}
+	handled, err := g.subServerMgr.ValidateMacaroon(
+		ctx, requiredPermissions, fullMethod,
+	)
+	if handled {
+		return err
+	}
 
-	case g.permsMgr.IsSubServerURI(perms.SubServerPool, fullMethod):
-		// In remote mode we just pass through the request, the remote
-		// daemon will check the macaroon.
-		if g.cfg.poolRemote {
-			return nil
-		}
-
-		if !g.poolStarted {
-			return fmt.Errorf("pool is not yet ready for " +
-				"requests, lnd possibly still starting or " +
-				"syncing")
-		}
-
-		err = g.poolServer.ValidateMacaroon(
-			ctx, requiredPermissions, fullMethod,
-		)
-		if err != nil {
-			return &proxyErr{
-				proxyContext: "pool",
-				wrapped: fmt.Errorf("invalid macaroon: %v",
-					err),
-			}
-		}
-
-	case g.permsMgr.IsSubServerURI(perms.SubServerLit, fullMethod):
+	if g.permsMgr.IsSubServerURI(perms.SubServerLit, fullMethod) {
 		if !g.macaroonServiceStarted {
 			return fmt.Errorf("the macaroon service has not " +
 				"started yet")
@@ -1022,13 +954,6 @@ func (g *LightningTerminal) BuildWalletConfig(ctx context.Context,
 // shutdown stops all subservers that were started and attached to lnd.
 func (g *LightningTerminal) shutdown() error {
 	var returnErr error
-
-	if g.poolStarted {
-		if err := g.poolServer.Stop(); err != nil {
-			log.Errorf("Error stopping pool: %v", err)
-			returnErr = err
-		}
-	}
 
 	err := g.subServerMgr.Stop()
 	if err != nil {
@@ -1431,6 +1356,13 @@ func (g *LightningTerminal) initSubServers() {
 	loop.AgentName = "litd"
 	g.subServerMgr.AddServer(NewLoopSubServer(
 		g.cfg.Loop, g.cfg.Remote.Loop, g.cfg.loopRemote,
+	))
+
+	// Overwrite the pool daemon's user agent name so it sends "litd"
+	// instead of and "poold".
+	pool.SetAgentName("litd")
+	g.subServerMgr.AddServer(NewPoolSubServer(
+		g.cfg.Pool, g.cfg.Remote.Pool, g.cfg.poolRemote,
 	))
 }
 
