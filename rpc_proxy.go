@@ -194,6 +194,16 @@ func isStatusReq(uri string) bool {
 	)
 }
 
+// isShutdownReq returns true if the given request is a Litd shutdown request.
+func isShutdownReq(uri string) bool {
+	return strings.HasPrefix(
+		uri, fmt.Sprintf(
+			"/%s/%s", litrpc.LitService_ServiceDesc.ServiceName,
+			"StopDaemon",
+		),
+	)
+}
+
 // Stop shuts down the lnd connection.
 func (p *rpcProxy) Stop() error {
 	p.grpcServer.Stop()
@@ -397,8 +407,9 @@ func (p *rpcProxy) checkSubSystemStarted(requestURI string) error {
 		system = LitdSubServer
 
 		// If the request is for the status server, then we allow the
-		// request even if Lit has not properly started.
-		if isStatusReq(requestURI) {
+		// request even if Lit has not properly started. We also allow
+		// the request through if it is a Litd shutdown.
+		if isStatusReq(requestURI) || isShutdownReq(requestURI) {
 			return nil
 		}
 
