@@ -3,6 +3,7 @@ To connect Lightning Terminal to a remote LND instance first make sure your `lnd
 ```text
 tlsextraip=<externally-reachable-ip-address>
 rpclisten=0.0.0.0:10009
+rpcmiddleware.enable=true
 ```
 
 Copy the following files that are located in your `~/.lnd/data/chain/bitcoin/mainnet` directory on your remote machine to `/some/folder/with/lnd/data/` on your local machine (where you’ll be running LiT):
