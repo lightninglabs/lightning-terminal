@@ -11,6 +11,7 @@ file contains the following additional configuration settings:
 ```text
 tlsextraip=<externally-reachable-ip-address>
 rpclisten=0.0.0.0:10009
+rpcmiddleware.enable=true
 ```
 
 Copy the following files that are located in your `~/.lnd/data/chain/bitcoin/mainnet`
