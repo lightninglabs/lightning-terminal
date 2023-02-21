@@ -67,6 +67,9 @@ type Feature struct {
 	// Rules is a list of all the firewall that must be specified for this
 	// feature.
 	Rules map[string]*RuleValues
+
+	// Configuration is a JSON-serialized configuration of the feature.
+	Configuration []byte
 }
 
 // RuleValues holds the default value along with the sane max and min values

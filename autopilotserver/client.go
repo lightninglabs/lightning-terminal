@@ -357,10 +357,11 @@ func (c *Client) ListFeatures(ctx context.Context) (map[string]*Feature,
 		perms := unmarshalPermissions(feature.PermissionsList)
 		rules := unmarshalRules(feature.Rules)
 		features[i] = &Feature{
-			Name:        feature.Name,
-			Description: feature.Description,
-			Permissions: perms,
-			Rules:       rules,
+			Name:          feature.Name,
+			Description:   feature.Description,
+			Permissions:   perms,
+			Rules:         rules,
+			Configuration: feature.Configuration,
 		}
 	}
 
