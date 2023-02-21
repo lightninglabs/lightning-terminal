@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/hex"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -64,6 +65,12 @@ var addAutopilotSessionCmd = cli.Command{
 				"Autopilot server should not " +
 				"perform actions on. In the " +
 				"form of: peerID1,peerID2,...",
+		},
+		cli.StringSliceFlag{
+			Name: "configuration",
+			Usage: `per feature JSON-serialized configuration, ` +
+				`expected format: {"version":0,"option1":` +
+				`"parameter1","option2":"parameter2",...}`,
 		},
 	},
 }
@@ -216,11 +223,27 @@ func initAutopilotSession(ctx *cli.Context) error {
 		}
 	}
 
+	configs := ctx.StringSlice("configuration")
+	features := ctx.StringSlice("feature")
+
+	if len(configs) > 0 && len(features) != len(configs) {
+		return fmt.Errorf("number of features and configurations " +
+			"must match")
+	}
+
 	featureMap := make(map[string]*litrpc.FeatureConfig)
-	for _, feature := range ctx.StringSlice("feature") {
+	for i, feature := range ctx.StringSlice("feature") {
+		var config []byte
+
+		// We allow empty configs, to signal the usage of the default
+		// configuration when the session is registered.
+		if len(configs) > 0 && configs[i] != "{}" {
+			config = []byte(configs[i])
+		}
+
 		featureMap[feature] = &litrpc.FeatureConfig{
 			Rules:  ruleMap,
-			Config: nil,
+			Config: config,
 		}
 	}
 

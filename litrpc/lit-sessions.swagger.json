@@ -461,6 +461,13 @@
           "type": "string",
           "format": "uint64",
           "description": "The unix timestamp indicating the time at which the session was revoked.\nNote that this field has not been around since the beginning and so it\ncould be the case that a session has been revoked but that this field\nwill not have been set for that session. Therefore, it is suggested that\nreaders should not assume that if this field is zero that the session is\nnot revoked. Readers should instead first check the session_state field."
+        },
+        "feature_configs": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Configurations for each individual feature mapping from the feature name to\na JSON-serialized configuration."
         }
       }
     },

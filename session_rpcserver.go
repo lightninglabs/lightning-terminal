@@ -972,7 +972,21 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 
 	featureConfig := make(map[string][]byte, len(req.Features))
 	for name, f := range req.Features {
-		featureConfig[name] = f.Config
+		var configB []byte
+
+		// We explicitly take the configuration provided from autopilot
+		// if the user did not specify any.
+		if len(f.Config) == 0 {
+			af, ok := allFeatures[name]
+			if !ok {
+				return nil, fmt.Errorf("cannot determine "+
+					"default configuration for feature %s",
+					name)
+			}
+			configB = af.Configuration
+		}
+
+		featureConfig[name] = configB
 	}
 
 	caveats := []macaroon.Caveat{{Id: []byte(rulesCaveatStr)}}
@@ -1241,6 +1255,13 @@ func (s *sessionRpcServer) marshalRPCSession(sess *session.Session) (
 		}
 	}
 
+	featureConfigs := make(map[string]string)
+	if sess.FeatureConfig != nil {
+		for k, v := range *sess.FeatureConfig {
+			featureConfigs[k] = string(v)
+		}
+	}
+
 	return &litrpc.Session{
 		Id:                     sess.ID[:],
 		Label:                  sess.Label,
@@ -1257,6 +1278,7 @@ func (s *sessionRpcServer) marshalRPCSession(sess *session.Session) (
 		RevokedAt:              revokedAt,
 		MacaroonRecipe:         macRecipe,
 		AutopilotFeatureInfo:   featureInfo,
+		FeatureConfigs:         featureConfigs,
 	}, nil
 }
 
