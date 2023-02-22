@@ -130,10 +130,21 @@ go-build:
 	$(GOBUILD) -tags="$(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" -o litd-debug $(PKG)/cmd/litd
 	$(GOBUILD) -tags="$(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" -o litcli-debug $(PKG)/cmd/litcli
 
+
+go-build-noui:
+	@$(call print, "Building lightning-terminal without UI.")
+	$(GOBUILD) -tags="litd_no_ui $(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" -o litd-debug $(PKG)/cmd/litd
+	$(GOBUILD) -tags="litd_no_ui $(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" -o litcli-debug $(PKG)/cmd/litcli
+
 go-install:
 	@$(call print, "Installing lightning-terminal.")
 	$(GOINSTALL) -trimpath -tags="$(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" $(PKG)/cmd/litd
 	$(GOINSTALL) -trimpath -tags="$(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" $(PKG)/cmd/litcli
+
+go-install-noui:
+	@$(call print, "Installing lightning-terminal without UI.")
+	$(GOINSTALL) -tags="litd_no_ui $(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" $(PKG)/cmd/litd
+	$(GOINSTALL) -tags="litd_no_ui $(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" $(PKG)/cmd/litcli
 
 go-install-cli:
 	@$(call print, "Installing all CLI binaries.")
