@@ -3,7 +3,6 @@ package terminal
 import (
 	"context"
 	"crypto/tls"
-	"embed"
 	"encoding/binary"
 	"encoding/hex"
 	"errors"
@@ -98,15 +97,6 @@ var (
 	// macDatabaseOpenTimeout is how long we wait for acquiring the lock on
 	// the macaroon database before we give up with an error.
 	macDatabaseOpenTimeout = time.Second * 5
-
-	// appBuildFS is an in-memory file system that contains all the static
-	// HTML/CSS/JS files of the UI. It is compiled into the binary with the
-	// go 1.16 embed directive below. Because the path is relative to the
-	// root package, all assets will have a path prefix of /app/build/ which
-	// we'll strip by giving a sub directory to the HTTP server.
-	//
-	//go:embed app/build/*
-	appBuildFS embed.FS
 
 	// appFilesDir is the sub directory of the above build directory which
 	// we pass to the HTTP server.
