@@ -259,8 +259,8 @@ var (
 
 // testModeIntegrated makes sure that in integrated mode all daemons work
 // correctly.
-func testModeIntegrated(net *NetworkHarness, t *harnessTest) {
-	ctx := context.Background()
+func testModeIntegrated(ctx context.Context, net *NetworkHarness,
+	t *harnessTest) {
 
 	// Some very basic functionality tests to make sure lnd is working fine
 	// in integrated mode.

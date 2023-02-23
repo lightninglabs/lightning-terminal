@@ -2,6 +2,7 @@ package itest
 
 import (
 	"bytes"
+	"context"
 	"flag"
 	"fmt"
 	"testing"
@@ -25,6 +26,8 @@ var (
 	)
 
 	slowMineDelay = 20 * time.Millisecond
+
+	defaultITestTimeout = 10 * time.Minute
 )
 
 const (
@@ -92,7 +95,12 @@ func (h *harnessTest) RunTestCase(testCase *testCase) {
 		}
 	}()
 
-	testCase.test(h.lndHarness, h)
+	ctxt, cancel := context.WithTimeout(
+		context.Background(), defaultITestTimeout,
+	)
+	defer cancel()
+
+	testCase.test(ctxt, h.lndHarness, h)
 }
 
 func (h *harnessTest) Logf(format string, args ...interface{}) {
@@ -118,7 +126,7 @@ func getLitdBinary() string {
 
 type testCase struct {
 	name string
-	test func(net *NetworkHarness, t *harnessTest)
+	test func(ctx context.Context, net *NetworkHarness, t *harnessTest)
 }
 
 // waitForNTxsInMempool polls until finding the desired number of transactions

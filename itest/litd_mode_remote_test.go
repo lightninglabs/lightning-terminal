@@ -13,9 +13,7 @@ import (
 )
 
 // testModeRemote makes sure that in remote mode all daemons work correctly.
-func testModeRemote(net *NetworkHarness, t *harnessTest) {
-	ctx := context.Background()
-
+func testModeRemote(ctx context.Context, net *NetworkHarness, t *harnessTest) {
 	// Some very basic functionality tests to make sure lnd is working fine
 	// in remote mode.
 	net.SendCoins(t.t, btcutil.SatoshiPerBitcoin, net.Bob)
