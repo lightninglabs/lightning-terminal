@@ -91,6 +91,7 @@ func runAccountSystemTest(t *harnessTest, node *HarnessNode, hostPort,
 	// authentication mechanism.
 	rawConn, err := connectRPC(ctxt, hostPort, tlsCertPath)
 	require.NoError(t.t, err)
+	defer rawConn.Close()
 
 	macBytes, err := ioutil.ReadFile(macPath)
 	require.NoError(t.t, err)
@@ -192,6 +193,7 @@ func testAccountRestrictionsLNC(ctxm context.Context, t *harnessTest,
 
 	rawLNCConn, err := connectMailboxWithPairingPhrase(ctxt, connectPhrase)
 	require.NoError(t.t, err)
+	defer rawLNCConn.Close()
 
 	lightningClient := lnrpc.NewLightningClient(rawLNCConn)
 

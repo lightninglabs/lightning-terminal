@@ -493,6 +493,7 @@ func setUpLNCConn(ctx context.Context, t *testing.T, hostPort, tlsCertPath,
 
 	rawConn, err := connectRPC(ctx, hostPort, tlsCertPath)
 	require.NoError(t, err)
+	defer rawConn.Close()
 
 	macBytes, err := ioutil.ReadFile(macPath)
 	require.NoError(t, err)
@@ -550,6 +551,7 @@ func runGRPCAuthTest(t *testing.T, hostPort, tlsCertPath, macPath string,
 
 	rawConn, err := connectRPC(ctxt, hostPort, tlsCertPath)
 	require.NoError(t, err)
+	defer rawConn.Close()
 
 	// We have a connection without any macaroon. A call should fail.
 	_, err = makeRequest(ctxt, rawConn)
@@ -593,6 +595,7 @@ func runUIPasswordCheck(t *testing.T, hostPort, tlsCertPath, uiPassword string,
 
 	rawConn, err := connectRPC(ctxt, hostPort, tlsCertPath)
 	require.NoError(t, err)
+	defer rawConn.Close()
 
 	// Make sure that a call without any metadata results in an error.
 	_, err = makeRequest(ctxt, rawConn)
@@ -976,6 +979,7 @@ func bakeSuperMacaroon(cfg *LitNodeConfig, readOnly bool) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer rawConn.Close()
 
 	lndAdminMacBytes, err := ioutil.ReadFile(lndAdminMac)
 	if err != nil {

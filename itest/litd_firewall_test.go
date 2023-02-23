@@ -170,6 +170,7 @@ func testFWRateLimitAndPrivacyMapper(net *NetworkHarness, t *harnessTest) {
 	cfg := net.Alice.Cfg
 	rawConn, err := connectRPC(ctx, cfg.LitAddr(), cfg.LitTLSCertPath)
 	require.NoError(t.t, err)
+	defer rawConn.Close()
 
 	macBytes, err := ioutil.ReadFile(cfg.LitMacPath)
 	require.NoError(t.t, err)
@@ -421,6 +422,7 @@ func testHistoryLimitRule(net *NetworkHarness, t *harnessTest) {
 	cfg := net.Alice.Cfg
 	rawConn, err := connectRPC(ctx, cfg.LitAddr(), cfg.LitTLSCertPath)
 	require.NoError(t.t, err)
+	defer rawConn.Close()
 
 	macBytes, err := ioutil.ReadFile(cfg.LitMacPath)
 	require.NoError(t.t, err)
@@ -597,6 +599,7 @@ func testChanPolicyBoundsRule(net *NetworkHarness, t *harnessTest) {
 	cfg := net.Alice.Cfg
 	rawConn, err := connectRPC(ctx, cfg.LitAddr(), cfg.LitTLSCertPath)
 	require.NoError(t.t, err)
+	defer rawConn.Close()
 
 	macBytes, err := ioutil.ReadFile(cfg.LitMacPath)
 	require.NoError(t.t, err)
@@ -845,6 +848,7 @@ func testPeerAndChannelRestrictRules(net *NetworkHarness, t *harnessTest) {
 	cfg := net.Alice.Cfg
 	rawConn, err := connectRPC(ctx, cfg.LitAddr(), cfg.LitTLSCertPath)
 	require.NoError(t.t, err)
+	defer rawConn.Close()
 
 	macBytes, err := ioutil.ReadFile(cfg.LitMacPath)
 	require.NoError(t.t, err)
@@ -1177,6 +1181,7 @@ func testLargeHttpHeader(net *NetworkHarness, t *harnessTest) {
 	cfg := net.Alice.Cfg
 	rawConn, err := connectRPC(ctx, cfg.LitAddr(), cfg.LitTLSCertPath)
 	require.NoError(t.t, err)
+	defer rawConn.Close()
 
 	macBytes, err := ioutil.ReadFile(cfg.LitMacPath)
 	require.NoError(t.t, err)
