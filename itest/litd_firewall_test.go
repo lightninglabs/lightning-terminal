@@ -168,8 +168,9 @@ func testFWRateLimitAndPrivacyMapper(net *NetworkHarness, t *harnessTest) {
 
 	// We create a connection to the Alice node's RPC server.
 	cfg := net.Alice.Cfg
-	rawConn, err := connectRPC(ctx, cfg.LitAddr(), cfg.TLSCertPath)
+	rawConn, err := connectRPC(ctx, cfg.LitAddr(), cfg.LitTLSCertPath)
 	require.NoError(t.t, err)
+	defer rawConn.Close()
 
 	macBytes, err := ioutil.ReadFile(cfg.LitMacPath)
 	require.NoError(t.t, err)
@@ -377,8 +378,8 @@ func assertStatusErr(t *testing.T, err error, code codes.Code) {
 
 // testFirewallRules tests that the various firewall rules are enforced
 // correctly.
-func testFirewallRules(net *NetworkHarness, t *harnessTest) {
-	ctx := context.Background()
+func testFirewallRules(ctx context.Context, net *NetworkHarness,
+	t *harnessTest) {
 
 	// Some very basic functionality tests to make sure lnd is working fine
 	// in integrated mode.
@@ -419,8 +420,9 @@ func testHistoryLimitRule(net *NetworkHarness, t *harnessTest) {
 
 	// We create a connection to the Alice node's RPC server.
 	cfg := net.Alice.Cfg
-	rawConn, err := connectRPC(ctx, cfg.LitAddr(), cfg.TLSCertPath)
+	rawConn, err := connectRPC(ctx, cfg.LitAddr(), cfg.LitTLSCertPath)
 	require.NoError(t.t, err)
+	defer rawConn.Close()
 
 	macBytes, err := ioutil.ReadFile(cfg.LitMacPath)
 	require.NoError(t.t, err)
@@ -595,8 +597,9 @@ func testChanPolicyBoundsRule(net *NetworkHarness, t *harnessTest) {
 
 	// We create a connection to the Alice node's RPC server.
 	cfg := net.Alice.Cfg
-	rawConn, err := connectRPC(ctx, cfg.LitAddr(), cfg.TLSCertPath)
+	rawConn, err := connectRPC(ctx, cfg.LitAddr(), cfg.LitTLSCertPath)
 	require.NoError(t.t, err)
+	defer rawConn.Close()
 
 	macBytes, err := ioutil.ReadFile(cfg.LitMacPath)
 	require.NoError(t.t, err)
@@ -843,8 +846,9 @@ func testPeerAndChannelRestrictRules(net *NetworkHarness, t *harnessTest) {
 
 	// We create a connection to the Alice node's RPC server.
 	cfg := net.Alice.Cfg
-	rawConn, err := connectRPC(ctx, cfg.LitAddr(), cfg.TLSCertPath)
+	rawConn, err := connectRPC(ctx, cfg.LitAddr(), cfg.LitTLSCertPath)
 	require.NoError(t.t, err)
+	defer rawConn.Close()
 
 	macBytes, err := ioutil.ReadFile(cfg.LitMacPath)
 	require.NoError(t.t, err)
@@ -1138,8 +1142,8 @@ func testPeerAndChannelRestrictRules(net *NetworkHarness, t *harnessTest) {
 	require.NoError(t.t, err)
 }
 
-func testLargeHttpHeader(net *NetworkHarness, t *harnessTest) {
-	ctx := context.Background()
+func testLargeHttpHeader(ctx context.Context, net *NetworkHarness,
+	t *harnessTest) {
 
 	// First we add all LND's permissions so that any call we make to LND to
 	// test that the connection is working will succeed.
@@ -1175,8 +1179,9 @@ func testLargeHttpHeader(net *NetworkHarness, t *harnessTest) {
 
 	// We create a connection to the Alice node's RPC server.
 	cfg := net.Alice.Cfg
-	rawConn, err := connectRPC(ctx, cfg.LitAddr(), cfg.TLSCertPath)
+	rawConn, err := connectRPC(ctx, cfg.LitAddr(), cfg.LitTLSCertPath)
 	require.NoError(t.t, err)
+	defer rawConn.Close()
 
 	macBytes, err := ioutil.ReadFile(cfg.LitMacPath)
 	require.NoError(t.t, err)
