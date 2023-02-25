@@ -113,6 +113,7 @@ func (cfg *LitNodeConfig) GenArgs() []string {
 			fmt.Sprintf("--uipassword=%s", cfg.UIPassword),
 			"--enablerest",
 			"--restcors=*",
+			"--disable-web-server",
 		}
 	)
 	litArgs = append(litArgs, cfg.LitArgs...)

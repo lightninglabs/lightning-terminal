@@ -437,8 +437,10 @@ func (g *LightningTerminal) Run() error {
 		return fmt.Errorf("error starting lnd gRPC proxy server: %v",
 			err)
 	}
-	if err := g.startMainWebServer(); err != nil {
-		return fmt.Errorf("error starting UI HTTP server: %v", err)
+	if !g.cfg.DisableWebServer {
+		if err := g.startMainWebServer(); err != nil {
+			return fmt.Errorf("error starting UI HTTP server: %v", err)
+		}
 	}
 
 	// Now that we have started the main UI web server, show some useful

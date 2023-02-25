@@ -147,6 +147,8 @@ type Config struct {
 	UIPasswordFile string   `long:"uipassword_file" description:"Same as uipassword but instead of passing in the value directly, read the password from the specified file."`
 	UIPasswordEnv  string   `long:"uipassword_env" description:"Same as uipassword but instead of passing in the value directly, read the password from the specified environment variable."`
 
+	DisableWebServer bool `long:"disable-web-server" description:"Disables the main UI http web server."`
+
 	LetsEncrypt       bool   `long:"letsencrypt" description:"Use Let's Encrypt to create a TLS certificate for the UI instead of using lnd's TLS certificate. Port 80 must be free to listen on and must be reachable from the internet for this to work."`
 	LetsEncryptHost   string `long:"letsencrypthost" description:"The host name to create a Let's Encrypt certificate for."`
 	LetsEncryptDir    string `long:"letsencryptdir" description:"The directory where the Let's Encrypt library will store its key and certificate."`
