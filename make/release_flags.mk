@@ -2,6 +2,7 @@ VERSION_TAG = $(shell git describe --tags)
 VERSION_CHECK = @$(call print, "Building master with date version tag")
 
 BUILD_SYSTEM = darwin-amd64 \
+darwin-arm64 \
 linux-386 \
 linux-amd64 \
 linux-armv6 \
