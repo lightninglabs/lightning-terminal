@@ -20,6 +20,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/autopilotserver"
 	"github.com/lightninglabs/lightning-terminal/firewall"
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
+	"github.com/lightninglabs/lightning-terminal/subservers"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightninglabs/loop/loopd"
 	"github.com/lightninglabs/pool"
@@ -169,7 +170,7 @@ type Config struct {
 	// That way only one global network flag is needed.
 	Network string `long:"network" description:"The network the UI and all its components run on" choice:"regtest" choice:"testnet" choice:"mainnet" choice:"simnet"`
 
-	Remote *RemoteConfig `group:"Remote mode options (use when lnd-mode=remote)" namespace:"remote"`
+	Remote *subservers.RemoteConfig `group:"Remote mode options (use when lnd-mode=remote)" namespace:"remote"`
 
 	// LndMode is the selected mode to run lnd in. The supported modes are
 	// 'integrated' and 'remote'. We only use a string instead of a bool
@@ -210,40 +211,6 @@ type Config struct {
 	// over an in-memory connection on startup. This is only set in
 	// integrated lnd mode.
 	lndAdminMacaroon []byte
-}
-
-// RemoteConfig holds the configuration parameters that are needed when running
-// LiT in the "remote" lnd mode.
-type RemoteConfig struct {
-	LitLogDir         string `long:"lit-logdir" description:"For lnd remote mode only: Directory to log output."`
-	LitMaxLogFiles    int    `long:"lit-maxlogfiles" description:"For lnd remote mode only: Maximum logfiles to keep (0 for no rotation)"`
-	LitMaxLogFileSize int    `long:"lit-maxlogfilesize" description:"For lnd remote mode only: Maximum logfile size in MB"`
-
-	LitDebugLevel string `long:"lit-debuglevel" description:"For lnd remote mode only: Logging level for all subsystems {trace, debug, info, warn, error, critical} -- You may also specify <subsystem>=<level>,<subsystem2>=<level>,... to set the log level for individual subsystems."`
-
-	Lnd     *RemoteDaemonConfig `group:"Remote lnd (use when lnd-mode=remote)" namespace:"lnd"`
-	Faraday *RemoteDaemonConfig `group:"Remote faraday (use when faraday-mode=remote)" namespace:"faraday"`
-	Loop    *RemoteDaemonConfig `group:"Remote loop (use when loop-mode=remote)" namespace:"loop"`
-	Pool    *RemoteDaemonConfig `group:"Remote pool (use when pool-mode=remote)" namespace:"pool"`
-}
-
-// RemoteDaemonConfig holds the configuration parameters that are needed to
-// connect to a remote daemon like lnd for example.
-type RemoteDaemonConfig struct {
-	// RPCServer is host:port that the remote daemon's RPC server is
-	// listening on.
-	RPCServer string `long:"rpcserver" description:"The host:port that the remote daemon is listening for RPC connections on."`
-
-	// MacaroonPath is the path to the single macaroon that should be used
-	// instead of needing to specify the macaroon directory that contains
-	// all of the daemon's macaroons. The specified macaroon MUST have all
-	// permissions that all the subservers use, otherwise permission errors
-	// will occur.
-	MacaroonPath string `long:"macaroonpath" description:"The full path to the single macaroon to use, either the main (admin.macaroon in lnd's case) or a custom baked one. A custom macaroon must contain ALL permissions required for all subservers to work, otherwise permission errors will occur."`
-
-	// TLSCertPath is the path to the tls cert of the remote daemon that
-	// should be used to verify the TLS identity of the remote RPC server.
-	TLSCertPath string `long:"tlscertpath" description:"The full path to the remote daemon's TLS cert to use for RPC connection verification."`
 }
 
 // lndConnectParams returns the connection parameters to connect to the local
@@ -289,27 +256,27 @@ func defaultConfig() *Config {
 		HTTPSListen: defaultHTTPSListen,
 		TLSCertPath: DefaultTLSCertPath,
 		TLSKeyPath:  defaultTLSKeyPath,
-		Remote: &RemoteConfig{
+		Remote: &subservers.RemoteConfig{
 			LitDebugLevel:     defaultLogLevel,
 			LitLogDir:         defaultLogDir,
 			LitMaxLogFiles:    defaultMaxLogFiles,
 			LitMaxLogFileSize: defaultMaxLogFileSize,
-			Lnd: &RemoteDaemonConfig{
+			Lnd: &subservers.RemoteDaemonConfig{
 				RPCServer:    defaultRemoteLndRpcServer,
 				MacaroonPath: DefaultRemoteLndMacaroonPath,
 				TLSCertPath:  lndDefaultConfig.TLSCertPath,
 			},
-			Faraday: &RemoteDaemonConfig{
+			Faraday: &subservers.RemoteDaemonConfig{
 				RPCServer:    defaultRemoteFaradayRpcServer,
 				MacaroonPath: faradayDefaultConfig.MacaroonPath,
 				TLSCertPath:  faradayDefaultConfig.TLSCertPath,
 			},
-			Loop: &RemoteDaemonConfig{
+			Loop: &subservers.RemoteDaemonConfig{
 				RPCServer:    defaultRemoteLoopRpcServer,
 				MacaroonPath: loopDefaultConfig.MacaroonPath,
 				TLSCertPath:  loopDefaultConfig.TLSCertPath,
 			},
-			Pool: &RemoteDaemonConfig{
+			Pool: &subservers.RemoteDaemonConfig{
 				RPCServer:    defaultRemotePoolRpcServer,
 				MacaroonPath: poolDefaultConfig.MacaroonPath,
 				TLSCertPath:  poolDefaultConfig.TLSCertPath,
