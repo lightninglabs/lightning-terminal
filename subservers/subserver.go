@@ -11,8 +11,9 @@ import (
 )
 
 const (
-	LND string = "lnd"
-	LIT string = "lit"
+	LND     string = "lnd"
+	LIT     string = "lit"
+	FARADAY string = "faraday"
 )
 
 // subServerWrapper is a wrapper around the SubServer interface and is used by
