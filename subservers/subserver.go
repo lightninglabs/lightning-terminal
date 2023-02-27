@@ -13,6 +13,7 @@ import (
 const (
 	LND     string = "lnd"
 	LIT     string = "lit"
+	LOOP    string = "loop"
 	POOL    string = "pool"
 	FARADAY string = "faraday"
 )
