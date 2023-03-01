@@ -984,6 +984,19 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 					name)
 			}
 			configB = af.Configuration
+		} else {
+			configB = f.Config
+		}
+
+		// The configuration may contain sensitive data like pubkeys,
+		// which we replace here and add to to the privacy map.
+		if privacy {
+			configB, err = firewall.ObfuscateConfig(
+				privacyMapPairs, configB,
+			)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		featureConfig[name] = configB

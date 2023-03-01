@@ -675,6 +675,68 @@ func TestHideBool(t *testing.T) {
 	require.False(t, val)
 }
 
+// TestObfuscateConfig tests that we substitute substrings in the config
+// correctly.
+func TestObfuscateConfig(t *testing.T) {
+	tests := []struct {
+		name            string
+		config          []byte
+		expectedPubKeys int
+	}{
+		{
+			name: "empty",
+		},
+		{
+			name: "pubkeys",
+			config: []byte(`{"version":1,"pubkeys":` +
+				`"d23da57575cdcb878ac191e1e0c8a5c4f061b11cfdc7a8ec5c9d495270de66fdbf,` +
+				`0e092708c9e737115ff14a85b65466561280d77c1b8cd666bc655536ad81ccca85,` +
+				`DEAD2708c9e737115ff14a85b65466561280d77c1b8cd666bc655536ad81ccca85,` +
+				`586b59212da4623c40dcc68c4573da1719e5893630790c9f2db8940fff3efd8cd4"}`),
+			expectedPubKeys: 4,
+		},
+		{
+			name: "too short pubkey",
+			config: []byte(`{"version":1,"pubkeys":` +
+				`"d23da57575cdcb878ac191e1e0c8a5c4f061b11"}`),
+			expectedPubKeys: 0,
+		},
+		{
+			name: "too long pubkey",
+			config: []byte(`{"version":1,"pubkeys":` +
+				`"586b59212da4623c40dcc68c4573da1719e5893630790c9f2db8940fff3efd8cd4dead"}`),
+			expectedPubKeys: 0,
+		},
+		{
+			name: "nonhex",
+			config: []byte(`{"version":1,"pubkeys":` +
+				`"x86b59212da4623c40dcc68c4573da1719e5893630790c9f2db8940fff3efd8cd4"}`),
+			expectedPubKeys: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+
+		t.Run(tt.name, func(t *testing.T) {
+			privacyPairMap := make(map[string]string)
+			config, err := ObfuscateConfig(
+				privacyPairMap, tt.config,
+			)
+			require.NoError(t, err)
+
+			// We expect the config to be obfuscated only if there
+			// are pubkeys.
+			if tt.expectedPubKeys > 0 {
+				require.NotEqual(t, config, tt.config)
+			}
+			require.Equal(t, len(tt.config), len(config))
+			require.Equal(t, tt.expectedPubKeys,
+				len(privacyPairMap))
+		})
+	}
+}
+
 // mean computes the mean of the given slice of numbers.
 func mean(numbers []uint64) uint64 {
 	sum := uint64(0)

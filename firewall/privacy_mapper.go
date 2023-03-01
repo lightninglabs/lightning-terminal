@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
@@ -832,4 +834,42 @@ func CryptoRandIntn(n int) (int, error) {
 	}
 
 	return int(nBig.Int64()), nil
+}
+
+// ObfuscateConfig alters the config string by replacing pubkeys with random
+// values and updates the privacy pair map.
+func ObfuscateConfig(privacyPairs map[string]string, configB []byte) ([]byte,
+	error) {
+
+	// The config is a JSON blob, so we interpret it as a string to detect
+	// any patterns we want to replace.
+	config := string(configB)
+
+	// Replace all pubkeys with a pseudo-random string.
+	pubKeyRegex := regexp.MustCompile(`[a-fA-F0-9]+`)
+	matches := pubKeyRegex.FindAllString(config, -1)
+
+	for _, match := range matches {
+		// A pubkey is 66 characters long.
+		if len(match) != 66 {
+			continue
+		}
+
+		if _, ok := privacyPairs[match]; ok {
+			continue
+		}
+
+		replacement, err := firewalldb.NewPseudoStr(len(match))
+		if err != nil {
+			return nil, err
+		}
+		privacyPairs[match] = replacement
+	}
+
+	// Replace all occurances.
+	for k, v := range privacyPairs {
+		config = strings.ReplaceAll(config, k, v)
+	}
+
+	return []byte(config), nil
 }
