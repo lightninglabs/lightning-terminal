@@ -1125,6 +1125,37 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 		prevSessionPub = linkedGroupSession.LocalPublicKey
 	}
 
+	// The feature configurations may contain sensitive data like pubkeys,
+	// which we replace here and add to the privacy map.
+	obfuscatedConfig := make(session.FeaturesConfig, len(clientConfig))
+	if privacy {
+		for name, configB := range clientConfig {
+			configB, privMapPairs, err := firewall.ObfuscateConfig(
+				knownPrivMapPairs, configB,
+			)
+			if err != nil {
+				return nil, err
+			}
+
+			// Store the new privacy map pairs in the newPrivMap
+			// pairs map so that they are later persisted to the
+			// real priv map db.
+			for k, v := range privMapPairs {
+				newPrivMapPairs[k] = v
+			}
+
+			// Also add the new pairs to the known set of pairs.
+			err = knownPrivMapPairs.Add(privMapPairs)
+			if err != nil {
+				return nil, err
+			}
+
+			obfuscatedConfig[name] = configB
+		}
+	} else {
+		obfuscatedConfig = clientConfig
+	}
+
 	// Register all the privacy map pairs for this session ID.
 	privDB := s.cfg.privMap(sess.GroupID)
 	err = privDB.Update(func(tx firewalldb.PrivacyMapTx) error {
@@ -1143,7 +1174,7 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 	// Attempt to register the session with the Autopilot server.
 	remoteKey, err := s.cfg.autopilot.RegisterSession(
 		ctx, sess.LocalPublicKey, sess.ServerAddr, sess.DevServer,
-		clientConfig, prevSessionPub, linkSig,
+		obfuscatedConfig, prevSessionPub, linkSig,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error registering session with "+

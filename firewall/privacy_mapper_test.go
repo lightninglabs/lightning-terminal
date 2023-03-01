@@ -2,6 +2,7 @@ package firewall
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -716,6 +717,196 @@ func TestHideBool(t *testing.T) {
 	val, err = hideBool(func(int) (int, error) { return 0, nil })
 	require.NoError(t, err)
 	require.False(t, val)
+}
+
+// TestObfuscateConfig tests that we substitute substrings in the config
+// correctly.
+func TestObfuscateConfig(t *testing.T) {
+	tests := []struct {
+		name             string
+		config           []byte
+		knownMap         map[string]string
+		expectedNewPairs int
+		expectErr        bool
+		notExpectSameLen bool
+	}{
+		{
+			name: "empty",
+		},
+		{
+			// We substitue pubkeys of different forms.
+			name: "several pubkeys",
+			config: []byte(`{"version":1,"list":` +
+				`["d23da57575cdcb878ac191e1e0c8a5c4f061b11cfdc7a8ec5c9d495270de66fdbf",` +
+				`"0e092708c9e737115ff14a85b65466561280d77c1b8cd666bc655536ad81ccca85",` +
+				`"DEAD2708c9e737115ff14a85b65466561280d77c1b8cd666bc655536ad81ccca85",` +
+				`"586b59212da4623c40dcc68c4573da1719e5893630790c9f2db8940fff3efd8cd4"]}`),
+			expectedNewPairs: 4,
+		},
+		{
+			// We don't generate new pairs for pubkeys that we
+			// already have a mapping.
+			name: "several pubkeys with known replacement or duplicates",
+			config: []byte(`{"version":1,"list":` +
+				`["d23da57575cdcb878ac191e1e0c8a5c4f061b11cfdc7a8ec5c9d495270de66fdbf",` +
+				`"0e092708c9e737115ff14a85b65466561280d77c1b8cd666bc655536ad81ccca85",` +
+				`"DEAD2708c9e737115ff14a85b65466561280d77c1b8cd666bc655536ad81ccca85",` +
+				`"0e092708c9e737115ff14a85b65466561280d77c1b8cd666bc655536ad81ccca85",` +
+				`"586b59212da4623c40dcc68c4573da1719e5893630790c9f2db8940fff3efd8cd4"]}`),
+			knownMap: map[string]string{
+				"586b59212da4623c40dcc68c4573da1719e5893630790c9f2db8940fff3efd8cd4": "123456789012345678901234567890123456789012345678901234567890123456",
+			},
+			expectedNewPairs: 3,
+		},
+		{
+			// We don't substitute unknown items.
+			name: "all invalid pubkeys",
+			config: []byte(`{"version":1,"list":` +
+				`["d23da57575cdcb878ac191e1e0c8a5c4f061b11",` +
+				`"586b59212da4623c40dcc68c4573da1719e5893630790c9f2db8940fff3efd8cd4dead",` +
+				`"x86b59212da4623c40dcc68c4573da1719e5893630790c9f2db8940fff3efd8cd4"]}`),
+			expectedNewPairs: 0,
+		},
+		{
+			// We only substitute channel ids that have a sane
+			// format.
+			name: "channel ids",
+			config: []byte(`{"version":1,"list":` +
+				`["1",` +
+				`"12345",` +
+				`"1234567890123",` +
+				`"1234567890123456789",` +
+				`"123456789012345678901"]}`),
+			expectedNewPairs: 2,
+		},
+		{
+			// We obfuscate channel points, the character length may
+			// vary due to the output index.
+			name: "channel points",
+			config: []byte(`{"version":1,"list":` +
+				`["0e092708c9e737115ff14a85b65466561280d77c1b8cd666bc655536ad81ccca:1",` +
+				`"e092708c9e737115ff14a85b65466561280d77c1b8cd666bc655536ad81ccca:1",` +
+				`"0e092708c9e737115ff14a85b65466561280d77c1b8cd666bc655536ad81ccca3:1",` +
+				`"0e092708c9e737115ff14a85b65466561280d77c1b8cd666bc655536ad81ccca:3000"]}`),
+			expectedNewPairs: 2,
+			notExpectSameLen: true,
+		},
+		{
+			// We only act on items that are in lists of strings.
+			name: "single pubkey with another field",
+			config: []byte(`{"version":1,"list":` +
+				`["586b59212da4623c40dcc68c4573da1719e5893630790c9f2db8940fff3efd8cd4"],` +
+				`"another":"0e092708c9e737115ff14a85b65466561280d77c1b8cd666bc655536ad81ccca85"}`),
+			expectedNewPairs: 1,
+		},
+		{
+			// We don't obfuscate any numbers even though they may
+			// be channel ids. This is to be able to set numerical
+			// values in the range of channel ids.
+			name:             "number",
+			config:           []byte(`{"version":1,"number":12345678901234567890}`),
+			expectedNewPairs: 0,
+		},
+		{
+			// We don't allow to mix strings with other types, which
+			// may be a configuration mistake.
+			name: "list of invalid types",
+			config: []byte(`{"version":1,"channels":` +
+				`[12345,` +
+				`"e092708c9e737115ff14a85ab65466561280d77c1b8cd666bc655536ad81ccca:1"]}`),
+			expectErr:        true,
+			expectedNewPairs: 0,
+		},
+		{
+			// A list of numbers is not obfuscated. Those can be
+			// useful to submit histograms for example.
+			name: "channel ids",
+			config: []byte(`{"version":1,"list":` +
+				`[1,` +
+				`12345,` +
+				`1234567890123,` +
+				`1234567890123456789,` +
+				`123456789012345678901]}`),
+			expectedNewPairs: 0,
+		},
+	}
+
+	// assertConfigStructure checks that the structure of the config is
+	// preserved.
+	assertConfigStructure := func(wantConfig, gotConfig []byte) {
+		t.Helper()
+
+		if len(wantConfig) == 0 {
+			require.Equal(t, wantConfig, gotConfig)
+
+			return
+		}
+
+		var wantConfigMap map[string]any
+		err := json.Unmarshal(wantConfig, &wantConfigMap)
+		require.NoError(t, err)
+
+		var gotConfigMap map[string]any
+		err = json.Unmarshal(gotConfig, &gotConfigMap)
+		require.NoError(t, err)
+
+		// We test that the number of top level items is the same.
+		require.Equal(t, len(wantConfigMap), len(gotConfigMap))
+
+		listLen := func(config map[string]any) int {
+			for k, v := range config {
+				if k == "list" {
+					list, ok := v.([]interface{})
+					require.True(t, ok)
+					return len(list)
+				}
+			}
+			return 0
+		}
+
+		// We test that we have the same number of items in the list.
+		require.Equal(t, listLen(wantConfigMap), listLen(gotConfigMap))
+	}
+
+	for _, tt := range tests {
+		tt := tt
+
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			db := firewalldb.NewPrivacyMapPairs(tt.knownMap)
+
+			config, privMapPairs, err := ObfuscateConfig(
+				db, tt.config,
+			)
+			if tt.expectErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+
+			// We expect the config to be obfuscated in any parts
+			// only if there is sensitive data.
+			if tt.expectedNewPairs > 0 {
+				require.NotEqual(t, config, tt.config)
+			}
+
+			// We check that we recognized the correct number of new
+			// substitutions.
+			require.Equal(t, tt.expectedNewPairs,
+				len(privMapPairs))
+
+			// We expect the same number of items in the config
+			// after obfuscation.
+			assertConfigStructure(tt.config, config)
+
+			// We don't perform exact length checks for cases where
+			// we know the length can change.
+			if !tt.notExpectSameLen {
+				require.Equal(t, len(tt.config), len(config))
+			}
+		})
+	}
 }
 
 // mean computes the mean of the given slice of numbers.
