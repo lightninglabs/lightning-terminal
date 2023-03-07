@@ -726,7 +726,7 @@ func (g *LightningTerminal) startInternalSubServers(
 			RootKeyStore:     rks,
 			MacaroonLocation: "litd",
 			StatelessInit:    !createDefaultMacaroons,
-			RequiredPerms:    perms.LitPermissions,
+			RequiredPerms:    perms.RequiredPermissions,
 			LndClient:        &g.lndClient.LndServices,
 			EphemeralKey:     lndclient.SharedKeyNUMS,
 			KeyLocator:       lndclient.SharedKeyLocator,
