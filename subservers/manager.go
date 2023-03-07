@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/lightninglabs/lightning-terminal/perms"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	grpcProxy "github.com/mwitkow/grpc-proxy/proxy"
@@ -27,13 +28,16 @@ var (
 
 // Manager manages a set of subServer objects.
 type Manager struct {
-	servers []*subServerWrapper
-	mu      sync.RWMutex
+	servers  []*subServerWrapper
+	permsMgr *perms.Manager
+	mu       sync.RWMutex
 }
 
 // NewManager constructs a new subServerMgr.
-func NewManager() *Manager {
-	return &Manager{}
+func NewManager(permsMgr *perms.Manager) *Manager {
+	return &Manager{
+		permsMgr: permsMgr,
+	}
 }
 
 // AddServer adds a new subServer to the manager's set.
@@ -112,6 +116,29 @@ func (s *Manager) RegisterRPCServices(server grpc.ServiceRegistrar) {
 	}
 }
 
+// GetRemoteConn checks if any of the manager's sub-servers owns the given uri
+// and if so, the remote connection to that sub-server is returned. The bool
+// return value indicates if the uri is managed by one of the sub-servers
+// running in remote mode.
+func (s *Manager) GetRemoteConn(uri string) (bool, *grpc.ClientConn) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	for _, ss := range s.servers {
+		if !s.permsMgr.IsSubServerURI(ss.subServer.Name(), uri) {
+			continue
+		}
+
+		if !ss.subServer.Remote() {
+			return false, nil
+		}
+
+		return true, ss.remoteConn
+	}
+
+	return false, nil
+}
+
 // ValidateMacaroon checks if any of the manager's sub-servers owns the given
 // uri and if so, if it is running in remote mode, then true is returned since
 // the macaroon will be validated by the remote subserver itself when the
@@ -124,7 +151,9 @@ func (s *Manager) ValidateMacaroon(ctx context.Context,
 	defer s.mu.RUnlock()
 
 	for _, ss := range s.servers {
-		// TODO(positiveblue): check subserver permissions.
+		if !s.permsMgr.IsSubServerURI(ss.subServer.Name(), uri) {
+			continue
+		}
 
 		// If the sub-server is running in remote mode, then we don't
 		// need to validate the macaroon here since the remote server
