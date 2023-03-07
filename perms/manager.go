@@ -1,6 +1,7 @@
 package perms
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 	"sync"
@@ -244,8 +245,42 @@ func (pm *Manager) GetLitPerms() map[string][]bakery.Op {
 	return result
 }
 
-// IsLndURI returns true if the given URI belongs to an RPC of lnd.
-func (pm *Manager) IsLndURI(uri string) bool {
+// SubServerHandler returns the name of the subserver that should handle the
+// given URI.
+func (pm *Manager) SubServerHandler(uri string) (string, error) {
+	switch {
+	case pm.IsSubServerURI(lndPerms, uri):
+		return lndPerms, nil
+
+	case pm.IsSubServerURI(faradayPerms, uri):
+		return faradayPerms, nil
+
+	case pm.IsSubServerURI(loopPerms, uri):
+		return loopPerms, nil
+
+	case pm.IsSubServerURI(poolPerms, uri):
+		return poolPerms, nil
+
+	case pm.IsSubServerURI(litPerms, uri):
+		return litPerms, nil
+
+	default:
+		return "", fmt.Errorf("unknown gRPC web request: %v", uri)
+	}
+}
+
+// IsSubServerURI if the given URI belongs to the RPC of the given server.
+func (pm *Manager) IsSubServerURI(name string, uri string) bool {
+	if name == lndPerms {
+		return pm.isLndURI(uri)
+	}
+
+	_, ok := pm.fixedPerms[name][uri]
+	return ok
+}
+
+// isLndURI returns true if the given URI belongs to an RPC of lnd.
+func (pm *Manager) isLndURI(uri string) bool {
 	var lndSubServerCall bool
 	for _, subserverPermissions := range pm.lndSubServerPerms {
 		_, found := subserverPermissions[uri]

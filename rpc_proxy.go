@@ -15,6 +15,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/lightning-terminal/perms"
 	"github.com/lightninglabs/lightning-terminal/session"
+	"github.com/lightninglabs/lightning-terminal/subservers"
 	"github.com/lightningnetwork/lnd/lncfg"
 	"github.com/lightningnetwork/lnd/macaroons"
 	grpcProxy "github.com/mwitkow/grpc-proxy/proxy"
@@ -361,18 +362,30 @@ func (p *rpcProxy) makeDirector(allowLitRPC bool) func(ctx context.Context,
 		// since it must either be an lnd call or something that'll be
 		// handled by the integrated daemons that are hooking into lnd's
 		// gRPC server.
+		isFaraday := p.permsMgr.IsSubServerURI(
+			subservers.FARADAY, requestURI,
+		)
+		isLoop := p.permsMgr.IsSubServerURI(
+			subservers.LOOP, requestURI,
+		)
+		isPool := p.permsMgr.IsSubServerURI(
+			subservers.POOL, requestURI,
+		)
+		isLit := p.permsMgr.IsSubServerURI(
+			subservers.LIT, requestURI,
+		)
 		switch {
-		case p.permsMgr.IsFaradayURI(requestURI) && p.cfg.faradayRemote:
+		case isFaraday && p.cfg.faradayRemote:
 			return outCtx, p.faradayConn, nil
 
-		case p.permsMgr.IsLoopURI(requestURI) && p.cfg.loopRemote:
+		case isLoop && p.cfg.loopRemote:
 			return outCtx, p.loopConn, nil
 
-		case p.permsMgr.IsPoolURI(requestURI) && p.cfg.poolRemote:
+		case isPool && p.cfg.poolRemote:
 			return outCtx, p.poolConn, nil
 
 		// Calls to LiT session RPC aren't allowed in some cases.
-		case p.permsMgr.IsLitURI(requestURI) && !allowLitRPC:
+		case isLit && !allowLitRPC:
 			return outCtx, nil, status.Errorf(
 				codes.Unimplemented, "unknown service %s",
 				requestURI,
@@ -533,37 +546,42 @@ func (p *rpcProxy) basicAuthToMacaroon(basicAuth, requestURI string,
 		macPath string
 		macData []byte
 	)
-	switch {
-	case p.permsMgr.IsLndURI(requestURI):
+	subserver, err := p.permsMgr.SubServerHandler(requestURI)
+	if err != nil {
+		return nil, err
+	}
+
+	switch subserver {
+	case subservers.LND:
 		_, _, _, macPath, macData = p.cfg.lndConnectParams()
 
-	case p.permsMgr.IsFaradayURI(requestURI):
+	case subservers.FARADAY:
 		if p.cfg.faradayRemote {
 			macPath = p.cfg.Remote.Faraday.MacaroonPath
 		} else {
 			macPath = p.cfg.Faraday.MacaroonPath
 		}
 
-	case p.permsMgr.IsLoopURI(requestURI):
+	case subservers.LOOP:
 		if p.cfg.loopRemote {
 			macPath = p.cfg.Remote.Loop.MacaroonPath
 		} else {
 			macPath = p.cfg.Loop.MacaroonPath
 		}
 
-	case p.permsMgr.IsPoolURI(requestURI):
+	case subservers.POOL:
 		if p.cfg.poolRemote {
 			macPath = p.cfg.Remote.Pool.MacaroonPath
 		} else {
 			macPath = p.cfg.Pool.MacaroonPath
 		}
 
-	case p.permsMgr.IsLitURI(requestURI):
+	case subservers.LIT:
 		macPath = p.cfg.MacaroonPath
 
 	default:
-		return nil, fmt.Errorf("unknown gRPC web request: %v",
-			requestURI)
+		return nil, fmt.Errorf("unknown subserver handler: %v",
+			subserver)
 	}
 
 	switch {
@@ -635,21 +653,22 @@ func (p *rpcProxy) convertSuperMacaroon(ctx context.Context, macHex string,
 
 	// Is this actually a request that goes to a daemon that is running
 	// remotely?
-	switch {
-	case p.permsMgr.IsFaradayURI(fullMethod) && p.cfg.faradayRemote:
-		return readMacaroon(lncfg.CleanAndExpandPath(
-			p.cfg.Remote.Faraday.MacaroonPath,
-		))
-
-	case p.permsMgr.IsLoopURI(fullMethod) && p.cfg.loopRemote:
-		return readMacaroon(lncfg.CleanAndExpandPath(
-			p.cfg.Remote.Loop.MacaroonPath,
-		))
-
-	case p.permsMgr.IsPoolURI(fullMethod) && p.cfg.poolRemote:
-		return readMacaroon(lncfg.CleanAndExpandPath(
-			p.cfg.Remote.Pool.MacaroonPath,
-		))
+	subserver, err := p.permsMgr.SubServerHandler(fullMethod)
+	if err == nil {
+		switch {
+		case subserver == subservers.FARADAY && p.cfg.faradayRemote:
+			return readMacaroon(lncfg.CleanAndExpandPath(
+				p.cfg.Remote.Faraday.MacaroonPath,
+			))
+		case subserver == subservers.LOOP && p.cfg.loopRemote:
+			return readMacaroon(lncfg.CleanAndExpandPath(
+				p.cfg.Remote.Loop.MacaroonPath,
+			))
+		case subserver == subservers.POOL && p.cfg.poolRemote:
+			return readMacaroon(lncfg.CleanAndExpandPath(
+				p.cfg.Remote.Pool.MacaroonPath,
+			))
+		}
 	}
 
 	return nil, nil
