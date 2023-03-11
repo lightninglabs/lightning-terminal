@@ -3,6 +3,54 @@
 
 import * as jspb from "google-protobuf";
 
+export class LookupHtlcResolutionRequest extends jspb.Message {
+  getChanId(): string;
+  setChanId(value: string): void;
+
+  getHtlcIndex(): string;
+  setHtlcIndex(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): LookupHtlcResolutionRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: LookupHtlcResolutionRequest): LookupHtlcResolutionRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: LookupHtlcResolutionRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): LookupHtlcResolutionRequest;
+  static deserializeBinaryFromReader(message: LookupHtlcResolutionRequest, reader: jspb.BinaryReader): LookupHtlcResolutionRequest;
+}
+
+export namespace LookupHtlcResolutionRequest {
+  export type AsObject = {
+    chanId: string,
+    htlcIndex: string,
+  }
+}
+
+export class LookupHtlcResolutionResponse extends jspb.Message {
+  getSettled(): boolean;
+  setSettled(value: boolean): void;
+
+  getOffchain(): boolean;
+  setOffchain(value: boolean): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): LookupHtlcResolutionResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: LookupHtlcResolutionResponse): LookupHtlcResolutionResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: LookupHtlcResolutionResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): LookupHtlcResolutionResponse;
+  static deserializeBinaryFromReader(message: LookupHtlcResolutionResponse, reader: jspb.BinaryReader): LookupHtlcResolutionResponse;
+}
+
+export namespace LookupHtlcResolutionResponse {
+  export type AsObject = {
+    settled: boolean,
+    offchain: boolean,
+  }
+}
+
 export class SubscribeCustomMessagesRequest extends jspb.Message {
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): SubscribeCustomMessagesRequest.AsObject;
@@ -1431,6 +1479,9 @@ export class Channel extends jspb.Message {
   getZeroConfConfirmedScid(): string;
   setZeroConfConfirmedScid(value: string): void;
 
+  getPeerAlias(): string;
+  setPeerAlias(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Channel.AsObject;
   static toObject(includeInstance: boolean, msg: Channel): Channel.AsObject;
@@ -1476,6 +1527,7 @@ export namespace Channel {
     aliasScidsList: Array<string>,
     zeroConf: boolean,
     zeroConfConfirmedScid: string,
+    peerAlias: string,
   }
 }
 
@@ -1497,6 +1549,9 @@ export class ListChannelsRequest extends jspb.Message {
   getPeer_asB64(): string;
   setPeer(value: Uint8Array | string): void;
 
+  getPeerAliasLookup(): boolean;
+  setPeerAliasLookup(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ListChannelsRequest.AsObject;
   static toObject(includeInstance: boolean, msg: ListChannelsRequest): ListChannelsRequest.AsObject;
@@ -1514,6 +1569,7 @@ export namespace ListChannelsRequest {
     publicOnly: boolean,
     privateOnly: boolean,
     peer: Uint8Array | string,
+    peerAliasLookup: boolean,
   }
 }
 
@@ -2068,6 +2124,9 @@ export class GetInfoResponse extends jspb.Message {
   getRequireHtlcInterceptor(): boolean;
   setRequireHtlcInterceptor(value: boolean): void;
 
+  getStoreFinalHtlcResolutions(): boolean;
+  setStoreFinalHtlcResolutions(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetInfoResponse.AsObject;
   static toObject(includeInstance: boolean, msg: GetInfoResponse): GetInfoResponse.AsObject;
@@ -2099,6 +2158,7 @@ export namespace GetInfoResponse {
     urisList: Array<string>,
     featuresMap: Array<[number, Feature.AsObject]>,
     requireHtlcInterceptor: boolean,
+    storeFinalHtlcResolutions: boolean,
   }
 }
 
@@ -2570,6 +2630,21 @@ export class OpenChannelRequest extends jspb.Message {
   getScidAlias(): boolean;
   setScidAlias(value: boolean): void;
 
+  getBaseFee(): string;
+  setBaseFee(value: string): void;
+
+  getFeeRate(): string;
+  setFeeRate(value: string): void;
+
+  getUseBaseFee(): boolean;
+  setUseBaseFee(value: boolean): void;
+
+  getUseFeeRate(): boolean;
+  setUseFeeRate(value: boolean): void;
+
+  getRemoteChanReserveSat(): string;
+  setRemoteChanReserveSat(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): OpenChannelRequest.AsObject;
   static toObject(includeInstance: boolean, msg: OpenChannelRequest): OpenChannelRequest.AsObject;
@@ -2602,6 +2677,11 @@ export namespace OpenChannelRequest {
     commitmentType: CommitmentTypeMap[keyof CommitmentTypeMap],
     zeroConf: boolean,
     scidAlias: boolean,
+    baseFee: string,
+    feeRate: string,
+    useBaseFee: boolean,
+    useFeeRate: boolean,
+    remoteChanReserveSat: string,
   }
 }
 
@@ -4036,6 +4116,8 @@ export class LightningNode extends jspb.Message {
 
   getFeaturesMap(): jspb.Map<number, Feature>;
   clearFeaturesMap(): void;
+  getCustomRecordsMap(): jspb.Map<number, Uint8Array | string>;
+  clearCustomRecordsMap(): void;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LightningNode.AsObject;
   static toObject(includeInstance: boolean, msg: LightningNode): LightningNode.AsObject;
@@ -4054,6 +4136,7 @@ export namespace LightningNode {
     addressesList: Array<NodeAddress.AsObject>,
     color: string,
     featuresMap: Array<[number, Feature.AsObject]>,
+    customRecordsMap: Array<[number, Uint8Array | string]>,
   }
 }
 
@@ -4103,6 +4186,8 @@ export class RoutingPolicy extends jspb.Message {
   getLastUpdate(): number;
   setLastUpdate(value: number): void;
 
+  getCustomRecordsMap(): jspb.Map<number, Uint8Array | string>;
+  clearCustomRecordsMap(): void;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RoutingPolicy.AsObject;
   static toObject(includeInstance: boolean, msg: RoutingPolicy): RoutingPolicy.AsObject;
@@ -4122,6 +4207,7 @@ export namespace RoutingPolicy {
     disabled: boolean,
     maxHtlcMsat: string,
     lastUpdate: number,
+    customRecordsMap: Array<[number, Uint8Array | string]>,
   }
 }
 
@@ -4154,6 +4240,8 @@ export class ChannelEdge extends jspb.Message {
   getNode2Policy(): RoutingPolicy | undefined;
   setNode2Policy(value?: RoutingPolicy): void;
 
+  getCustomRecordsMap(): jspb.Map<number, Uint8Array | string>;
+  clearCustomRecordsMap(): void;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ChannelEdge.AsObject;
   static toObject(includeInstance: boolean, msg: ChannelEdge): ChannelEdge.AsObject;
@@ -4174,6 +4262,7 @@ export namespace ChannelEdge {
     capacity: string,
     node1Policy?: RoutingPolicy.AsObject,
     node2Policy?: RoutingPolicy.AsObject,
+    customRecordsMap: Array<[number, Uint8Array | string]>,
   }
 }
 
@@ -5030,6 +5119,12 @@ export class ListInvoiceRequest extends jspb.Message {
   getReversed(): boolean;
   setReversed(value: boolean): void;
 
+  getCreationDateStart(): string;
+  setCreationDateStart(value: string): void;
+
+  getCreationDateEnd(): string;
+  setCreationDateEnd(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ListInvoiceRequest.AsObject;
   static toObject(includeInstance: boolean, msg: ListInvoiceRequest): ListInvoiceRequest.AsObject;
@@ -5046,6 +5141,8 @@ export namespace ListInvoiceRequest {
     indexOffset: string,
     numMaxInvoices: string,
     reversed: boolean,
+    creationDateStart: string,
+    creationDateEnd: string,
   }
 }
 
@@ -5264,6 +5361,12 @@ export class ListPaymentsRequest extends jspb.Message {
   getCountTotalPayments(): boolean;
   setCountTotalPayments(value: boolean): void;
 
+  getCreationDateStart(): string;
+  setCreationDateStart(value: string): void;
+
+  getCreationDateEnd(): string;
+  setCreationDateEnd(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ListPaymentsRequest.AsObject;
   static toObject(includeInstance: boolean, msg: ListPaymentsRequest): ListPaymentsRequest.AsObject;
@@ -5281,6 +5384,8 @@ export namespace ListPaymentsRequest {
     maxPayments: string,
     reversed: boolean,
     countTotalPayments: boolean,
+    creationDateStart: string,
+    creationDateEnd: string,
   }
 }
 
@@ -5823,6 +5928,9 @@ export class ForwardingHistoryRequest extends jspb.Message {
   getNumMaxEvents(): number;
   setNumMaxEvents(value: number): void;
 
+  getPeerAliasLookup(): boolean;
+  setPeerAliasLookup(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ForwardingHistoryRequest.AsObject;
   static toObject(includeInstance: boolean, msg: ForwardingHistoryRequest): ForwardingHistoryRequest.AsObject;
@@ -5839,6 +5947,7 @@ export namespace ForwardingHistoryRequest {
     endTime: string,
     indexOffset: number,
     numMaxEvents: number,
+    peerAliasLookup: boolean,
   }
 }
 
@@ -5873,6 +5982,12 @@ export class ForwardingEvent extends jspb.Message {
   getTimestampNs(): string;
   setTimestampNs(value: string): void;
 
+  getPeerAliasIn(): string;
+  setPeerAliasIn(value: string): void;
+
+  getPeerAliasOut(): string;
+  setPeerAliasOut(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ForwardingEvent.AsObject;
   static toObject(includeInstance: boolean, msg: ForwardingEvent): ForwardingEvent.AsObject;
@@ -5895,6 +6010,8 @@ export namespace ForwardingEvent {
     amtInMsat: string,
     amtOutMsat: string,
     timestampNs: string,
+    peerAliasIn: string,
+    peerAliasOut: string,
   }
 }
 

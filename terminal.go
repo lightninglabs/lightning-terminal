@@ -40,6 +40,8 @@ import (
 	"github.com/lightningnetwork/lnd"
 	"github.com/lightningnetwork/lnd/build"
 	"github.com/lightningnetwork/lnd/chainreg"
+	"github.com/lightningnetwork/lnd/kvdb"
+	"github.com/lightningnetwork/lnd/lncfg"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/autopilotrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
@@ -82,6 +84,10 @@ var (
 	// maxMsgRecvSize is the largest message our REST proxy will receive. We
 	// set this to 200MiB atm.
 	maxMsgRecvSize = grpc.MaxCallRecvMsgSize(1 * 1024 * 1024 * 200)
+
+	// macDatabaseOpenTimeout is how long we wait for acquiring the lock on
+	// the macaroon database before we give up with an error.
+	macDatabaseOpenTimeout = time.Second * 5
 
 	// appBuildFS is an in-memory file system that contains all the static
 	// HTML/CSS/JS files of the UI. It is compiled into the binary with the
@@ -178,6 +184,7 @@ type LightningTerminal struct {
 
 	macaroonService        *lndclient.MacaroonService
 	macaroonServiceStarted bool
+	macaroonDB             kvdb.Backend
 
 	middleware        *mid.Manager
 	middlewareStarted bool
@@ -665,9 +672,19 @@ func (g *LightningTerminal) startSubservers() error {
 	}
 
 	log.Infof("Starting LiT macaroon service")
+
+	// Set up the macaroon service.
+	rks, db, err := lndclient.NewBoltMacaroonStore(
+		g.cfg.LitDir, lncfg.MacaroonDBName, macDatabaseOpenTimeout,
+	)
+	if err != nil {
+		return err
+	}
+
+	g.macaroonDB = db
 	g.macaroonService, err = lndclient.NewMacaroonService(
 		&lndclient.MacaroonServiceConfig{
-			DBPath:           filepath.Join(g.cfg.LitDir, g.cfg.Network),
+			RootKeyStore:     rks,
 			MacaroonLocation: "litd",
 			StatelessInit:    !createDefaultMacaroons,
 			RequiredPerms:    perms.LitPermissions,
@@ -1080,6 +1097,10 @@ func (g *LightningTerminal) shutdown() error {
 		}
 	}
 
+	if g.macaroonDB != nil {
+		g.macaroonDB.Close()
+	}
+
 	if g.accountServiceStarted {
 		if err := g.accountService.Stop(); err != nil {
 			log.Errorf("Error stopping account service: %v", err)
@@ -1159,44 +1180,43 @@ func (g *LightningTerminal) shutdown() error {
 // between the embedded HTTP server and the RPC proxy. An incoming request will
 // go through the following chain of components:
 //
-//    Request on port 8443       <------------------------------------+
-//        |                                 converted gRPC request    |
-//        v                                                           |
-//    +---+----------------------+ other  +----------------+          |
-//    | Main web HTTP server     +------->+ Embedded HTTP  |          |
-//    +---+----------------------+____+   +----------------+          |
-//        |                           |                               |
-//        v any RPC or grpc-web call  |  any REST call                |
-//    +---+----------------------+    |->+----------------+           |
-//    | grpc-web proxy           |       + grpc-gateway   +-----------+
-//    +---+----------------------+       +----------------+
-//        |
-//        v native gRPC call with basic auth
-//    +---+----------------------+
-//    | interceptors             |
-//    +---+----------------------+
-//        |
-//        v native gRPC call with macaroon
-//    +---+----------------------+
-//    | gRPC server              |
-//    +---+----------------------+
-//        |
-//        v unknown authenticated call, gRPC server is just a wrapper
-//    +---+----------------------+
-//    | director                 |
-//    +---+----------------------+
-//        |
-//        v authenticated call
-//    +---+----------------------+ call to lnd or integrated daemon
-//    | lnd (remote or local)    +---------------+
-//    | faraday remote           |               |
-//    | loop remote              |    +----------v----------+
-//    | pool remote              |    | lnd local subserver |
-//    +--------------------------+    |  - faraday          |
-//                                    |  - loop             |
-//                                    |  - pool             |
-//                                    +---------------------+
-//
+//	Request on port 8443       <------------------------------------+
+//	    |                                 converted gRPC request    |
+//	    v                                                           |
+//	+---+----------------------+ other  +----------------+          |
+//	| Main web HTTP server     +------->+ Embedded HTTP  |          |
+//	+---+----------------------+____+   +----------------+          |
+//	    |                           |                               |
+//	    v any RPC or grpc-web call  |  any REST call                |
+//	+---+----------------------+    |->+----------------+           |
+//	| grpc-web proxy           |       + grpc-gateway   +-----------+
+//	+---+----------------------+       +----------------+
+//	    |
+//	    v native gRPC call with basic auth
+//	+---+----------------------+
+//	| interceptors             |
+//	+---+----------------------+
+//	    |
+//	    v native gRPC call with macaroon
+//	+---+----------------------+
+//	| gRPC server              |
+//	+---+----------------------+
+//	    |
+//	    v unknown authenticated call, gRPC server is just a wrapper
+//	+---+----------------------+
+//	| director                 |
+//	+---+----------------------+
+//	    |
+//	    v authenticated call
+//	+---+----------------------+ call to lnd or integrated daemon
+//	| lnd (remote or local)    +---------------+
+//	| faraday remote           |               |
+//	| loop remote              |    +----------v----------+
+//	| pool remote              |    | lnd local subserver |
+//	+--------------------------+    |  - faraday          |
+//	                                |  - loop             |
+//	                                |  - pool             |
+//	                                +---------------------+
 func (g *LightningTerminal) startMainWebServer() error {
 	// Initialize the in-memory file server from the content compiled by
 	// the go:embed directive. Since everything's relative to the root dir,

@@ -8,7 +8,7 @@ import (
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/lightninglabs/lndclient"
-	"github.com/lightningnetwork/lnd/channeldb"
+	invpkg "github.com/lightningnetwork/lnd/invoices"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
 	"github.com/lightningnetwork/lnd/lnwire"
@@ -381,7 +381,7 @@ func (s *InterceptorService) invoiceUpdate(invoice *lndclient.Invoice) error {
 
 	// The invoice hasn't been settled yet, there is nothing for us to do.
 	// If it eventually settles, we'll be called again.
-	if invoice.State != channeldb.ContractSettled {
+	if invoice.State != invpkg.ContractSettled {
 		return nil
 	}
 

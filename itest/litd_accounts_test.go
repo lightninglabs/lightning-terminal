@@ -79,13 +79,11 @@ func runAccountSystemTest(t *harnessTest, node *HarnessNode, hostPort,
 	)
 	assertNumChannels(ctxt, t.t, node.LightningClient, 1, 0, 0, 0)
 
-	// In remote mode there's another node out there that we are connected
-	// to.
-	numPeers := 2
-	if node.Cfg.RemoteMode {
-		numPeers = 3
-	}
-	assertNumPeers(ctxt, t.t, node.LightningClient, numPeers)
+	// Before the big lnd itest framework refactor the passive nodes Alice
+	// and Bob were always started. Now they are optional, and we don't
+	// start them, so we just have either Alice or Bob and the additional
+	// node Charlie as peers.
+	assertNumPeers(ctxt, t.t, node.LightningClient, 2)
 
 	// Prepare our gRPC connection with the super macaroon as the
 	// authentication mechanism.

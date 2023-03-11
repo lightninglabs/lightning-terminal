@@ -22,6 +22,7 @@ import (
 	"github.com/lightningnetwork/lnd"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntest"
+	"github.com/lightningnetwork/lnd/lntest/node"
 	"github.com/lightningnetwork/lnd/lntest/wait"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
@@ -45,12 +46,14 @@ type NetworkHarness struct {
 	// new blocks on the network.
 	Miner *lntest.HarnessMiner
 
+	LNDHarness *lntest.HarnessTest
+
 	// server is an instance of the local Loop/Pool mock server.
 	server *serverHarness
 
 	// BackendCfg houses the information necessary to use a node as LND
 	// chain backend, such as rpc configuration, P2P information etc.
-	BackendCfg lntest.BackendConfig
+	BackendCfg node.BackendConfig
 
 	activeNodes map[int]*HarnessNode
 
@@ -67,23 +70,21 @@ type NetworkHarness struct {
 	// to main process.
 	lndErrorChan chan error
 
-	quit chan struct{}
-
 	mtx sync.Mutex
 }
 
 // NewNetworkHarness creates a new network test harness.
-func NewNetworkHarness(m *lntest.HarnessMiner, b lntest.BackendConfig,
+func NewNetworkHarness(lndHarness *lntest.HarnessTest, b node.BackendConfig,
 	litdBinary string) (*NetworkHarness, error) {
 
 	n := NetworkHarness{
 		activeNodes:  make(map[int]*HarnessNode),
 		nodesByPub:   make(map[string]*HarnessNode),
 		lndErrorChan: make(chan error),
-		netParams:    m.ActiveNet,
-		Miner:        m,
+		netParams:    lndHarness.Miner.ActiveNet,
+		Miner:        lndHarness.Miner,
+		LNDHarness:   lndHarness,
 		BackendCfg:   b,
-		quit:         make(chan struct{}),
 		litdBinary:   litdBinary,
 	}
 	return &n, nil
@@ -127,7 +128,7 @@ func (n *NetworkHarness) SetUp(t *testing.T,
 
 	// Start our mock Loop/Pool server first.
 	mockServerAddr := fmt.Sprintf(
-		lntest.ListenerFormat, lntest.NextAvailablePort(),
+		node.ListenerFormat, node.NextAvailablePort(),
 	)
 	n.server = newServerHarness(mockServerAddr)
 	err := n.server.start()
@@ -173,34 +174,31 @@ func (n *NetworkHarness) SetUp(t *testing.T,
 	// Bob is connected to a remote lnd that is also called Bob and already
 	// got the necessary coins when being set up before. So we only need to
 	// send to Alice here which is our integrated LiTd instance.
-	clients := []lnrpc.LightningClient{n.Alice}
-	for _, client := range clients {
-		for i := 0; i < 10; i++ {
-			resp, err := client.NewAddress(ctxb, addrReq)
-			if err != nil {
-				return err
-			}
-			addr, err := btcutil.DecodeAddress(
-				resp.Address, n.netParams,
-			)
-			if err != nil {
-				return err
-			}
-			addrScript, err := txscript.PayToAddrScript(addr)
-			if err != nil {
-				return err
-			}
+	for i := 0; i < 10; i++ {
+		resp, err := n.Alice.NewAddress(ctxb, addrReq)
+		if err != nil {
+			return err
+		}
+		addr, err := btcutil.DecodeAddress(
+			resp.Address, n.netParams,
+		)
+		if err != nil {
+			return err
+		}
+		addrScript, err := txscript.PayToAddrScript(addr)
+		if err != nil {
+			return err
+		}
 
-			output := &wire.TxOut{
-				PkScript: addrScript,
-				Value:    btcutil.SatoshiPerBitcoin,
-			}
-			_, err = n.Miner.SendOutputs(
-				[]*wire.TxOut{output}, 7500,
-			)
-			if err != nil {
-				return err
-			}
+		output := &wire.TxOut{
+			PkScript: addrScript,
+			Value:    btcutil.SatoshiPerBitcoin,
+		}
+		_, err = n.Miner.SendOutputs(
+			[]*wire.TxOut{output}, 7500,
+		)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -266,7 +264,6 @@ func (n *NetworkHarness) TearDown() error {
 // Stop stops the test harness.
 func (n *NetworkHarness) Stop() {
 	close(n.lndErrorChan)
-	close(n.quit)
 
 	n.autopilotServer.Stop()
 }
@@ -298,12 +295,11 @@ func (n *NetworkHarness) NewNode(t *testing.T, name string, extraArgs []string,
 // initialization phase where the wallet is either created or restored.
 func (n *NetworkHarness) newNode(t *testing.T, name string, extraArgs,
 	litArgs []string, hasSeed, remoteMode bool, password []byte, wait bool,
-	opts ...lntest.NodeOption) (*HarnessNode, error) {
+	opts ...node.Option) (*HarnessNode, error) {
 
-	baseCfg := &lntest.BaseNodeConfig{
+	baseCfg := &node.BaseNodeConfig{
 		Name:              name,
 		LogFilenamePrefix: n.currentTestCase,
-		HasSeed:           hasSeed,
 		Password:          password,
 		BackendCfg:        n.BackendCfg,
 		NetParams:         n.netParams,
@@ -314,6 +310,7 @@ func (n *NetworkHarness) newNode(t *testing.T, name string, extraArgs,
 	}
 	cfg := &LitNodeConfig{
 		BaseNodeConfig: baseCfg,
+		HasSeed:        hasSeed,
 		LitArgs:        litArgs,
 		RemoteMode:     remoteMode,
 	}
@@ -706,45 +703,6 @@ func (n *NetworkHarness) StopNode(node *HarnessNode) error {
 	return node.stop()
 }
 
-// waitForTxInMempool blocks until the target txid is seen in the mempool. If
-// the transaction isn't seen within the network before the passed timeout,
-// then an error is returned.
-func (n *NetworkHarness) waitForTxInMempool(ctx context.Context,
-	txid chainhash.Hash) error {
-
-	// Return immediately if harness has been torn down.
-	select {
-	case <-n.quit:
-		return fmt.Errorf("NetworkHarness has been torn down")
-	default:
-	}
-
-	ticker := time.NewTicker(50 * time.Millisecond)
-	defer ticker.Stop()
-
-	var mempool []*chainhash.Hash
-	for {
-		select {
-		case <-ctx.Done():
-			return fmt.Errorf("wanted %v, found %v txs "+
-				"in mempool: %v", txid, len(mempool), mempool)
-
-		case <-ticker.C:
-			var err error
-			mempool, err = n.Miner.Client.GetRawMempool()
-			if err != nil {
-				return err
-			}
-
-			for _, mempoolTx := range mempool {
-				if *mempoolTx == txid {
-					return nil
-				}
-			}
-		}
-	}
-}
-
 // OpenChannel attempts to open a channel between srcNode and destNode with the
 // passed channel funding parameters. If the passed context has a timeout, then
 // if the timeout is reached before the channel pending notification is
@@ -758,7 +716,7 @@ func (n *NetworkHarness) OpenChannel(srcNode, destNode *HarnessNode,
 	// The cancel is intentionally left out here because the returned
 	// item(open channel client) relies on the context being active. This
 	// will be fixed once we finish refactoring the NetworkHarness.
-	ctx, _ := context.WithTimeout(ctxb, lntest.ChannelOpenTimeout) // nolint: govet
+	ctx, _ := context.WithTimeout(ctxb, wait.ChannelOpenTimeout) // nolint: govet
 
 	// Wait until srcNode and destNode have the latest chain synced.
 	// Otherwise, we may run into a check within the funding manager that
@@ -836,7 +794,7 @@ func (n *NetworkHarness) OpenPendingChannel(srcNode, destNode *HarnessNode,
 	pushAmt btcutil.Amount) (*lnrpc.PendingUpdate, error) {
 
 	ctxb := context.Background()
-	ctx, cancel := context.WithTimeout(ctxb, lntest.ChannelOpenTimeout)
+	ctx, cancel := context.WithTimeout(ctxb, wait.ChannelOpenTimeout)
 	defer cancel()
 
 	// Wait until srcNode and destNode have blockchain synced
@@ -900,7 +858,7 @@ func (n *NetworkHarness) WaitForChannelOpen(
 	openChanStream lnrpc.Lightning_OpenChannelClient) (*lnrpc.ChannelPoint, error) {
 
 	ctxb := context.Background()
-	ctx, cancel := context.WithTimeout(ctxb, lntest.ChannelOpenTimeout)
+	ctx, cancel := context.WithTimeout(ctxb, wait.ChannelOpenTimeout)
 	defer cancel()
 
 	errChan := make(chan error)
@@ -944,7 +902,7 @@ func (n *NetworkHarness) CloseChannel(lnNode *HarnessNode,
 	// The cancel is intentionally left out here because the returned
 	// item(close channel client) relies on the context being active. This
 	// will be fixed once we finish refactoring the NetworkHarness.
-	ctx, _ := context.WithTimeout(ctxb, lntest.ChannelCloseTimeout) // nolint: govet
+	ctx, _ := context.WithTimeout(ctxb, wait.ChannelCloseTimeout) // nolint: govet
 
 	// Create a channel outpoint that we can use to compare to channels
 	// from the ListChannelsResponse.
@@ -1057,12 +1015,10 @@ func (n *NetworkHarness) CloseChannel(lnNode *HarnessNode,
 			return fmt.Errorf("unable to decode closeTxid: "+
 				"%v", err)
 		}
-		if err := n.waitForTxInMempool(ctx, *closeTxid); err != nil {
-			return fmt.Errorf("error while waiting for "+
-				"broadcast tx: %v", err)
-		}
+		n.LNDHarness.Miner.AssertTxInMempool(closeTxid)
+
 		return nil
-	}, lntest.ChannelCloseTimeout)
+	}, wait.ChannelCloseTimeout)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1078,7 +1034,7 @@ func (n *NetworkHarness) WaitForChannelClose(
 	closeChanStream lnrpc.Lightning_CloseChannelClient) (*chainhash.Hash, error) {
 
 	ctxb := context.Background()
-	ctx, cancel := context.WithTimeout(ctxb, lntest.ChannelCloseTimeout)
+	ctx, cancel := context.WithTimeout(ctxb, wait.ChannelCloseTimeout)
 	defer cancel()
 
 	errChan := make(chan error)
@@ -1121,7 +1077,7 @@ func (n *NetworkHarness) AssertChannelExists(node *HarnessNode,
 	chanPoint *wire.OutPoint, checks ...func(*lnrpc.Channel)) error {
 
 	ctxb := context.Background()
-	ctx, cancel := context.WithTimeout(ctxb, lntest.ChannelCloseTimeout)
+	ctx, cancel := context.WithTimeout(ctxb, wait.ChannelCloseTimeout)
 	defer cancel()
 
 	req := &lnrpc.ListChannelsRequest{}
@@ -1251,12 +1207,6 @@ func (n *NetworkHarness) sendCoins(amt btcutil.Amount, target *HarnessNode,
 	// Now, wait for ListUnspent to show the unconfirmed transaction
 	// containing the correct pkscript.
 	err = wait.NoError(func() error {
-		// Since neutrino doesn't support unconfirmed outputs, skip
-		// this check.
-		if target.Cfg.BackendCfg.Name() == "neutrino" {
-			return nil
-		}
-
 		req := &lnrpc.ListUnspentRequest{}
 		resp, err := target.ListUnspent(ctx, req)
 		if err != nil {

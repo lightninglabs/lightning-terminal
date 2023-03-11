@@ -16,7 +16,7 @@ import (
 func testModeRemote(ctx context.Context, net *NetworkHarness, t *harnessTest) {
 	// Some very basic functionality tests to make sure lnd is working fine
 	// in remote mode.
-	net.SendCoins(t.t, btcutil.SatoshiPerBitcoin, net.Bob)
+	net.LNDHarness.FundCoins(btcutil.SatoshiPerBitcoin, net.Bob.RemoteLnd)
 
 	// We expect a non-empty alias (truncated node ID) to be returned.
 	resp, err := net.Bob.GetInfo(ctx, &lnrpc.GetInfoRequest{})

@@ -805,13 +805,22 @@ func buildTLSConfigForHttp2(config *Config) (*tls.Config, error) {
 		if !lnrpc.FileExists(tlsCertPath) &&
 			!lnrpc.FileExists(tlsKeyPath) {
 
-			err := cert.GenCertPair(
-				defaultSelfSignedCertOrganization, tlsCertPath,
-				tlsKeyPath, nil, nil, false,
-				DefaultAutogenValidity,
+			certBytes, keyBytes, err := cert.GenCertPair(
+				defaultSelfSignedCertOrganization, nil, nil,
+				false, DefaultAutogenValidity,
 			)
 			if err != nil {
 				return nil, fmt.Errorf("failed creating "+
+					"self-signed cert: %v", err)
+			}
+
+			// Now that we have the certificate and key, we'll store
+			// them to the file system.
+			err = cert.WriteCertPair(
+				tlsCertPath, tlsKeyPath, certBytes, keyBytes,
+			)
+			if err != nil {
+				return nil, fmt.Errorf("failed storing "+
 					"self-signed cert: %v", err)
 			}
 		}

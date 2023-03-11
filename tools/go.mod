@@ -1,6 +1,6 @@
 module github.com/lightninglabs/lightning-terminal/tools
 
-go 1.18
+go 1.19
 
 require (
 	github.com/btcsuite/btcd v0.23.2
