@@ -85,7 +85,8 @@ type InterceptMetaInfo struct {
 
 // ToCaveat returns the full custom caveat string representation of the
 // interception meta information in this format:
-//     lnd-custom lit-mac-fw meta:<JSON_encoded_meta_information>
+//
+//	lnd-custom lit-mac-fw meta:<JSON_encoded_meta_information>
 func (i *InterceptMetaInfo) ToCaveat() (string, error) {
 	jsonBytes, err := json.Marshal(i)
 	if err != nil {
@@ -134,7 +135,8 @@ type InterceptRules struct {
 
 // RulesToCaveat encodes a list of rules as a full custom caveat string
 // representation in this format:
-//     lnd-custom lit-mac-fw rules:[<array_of_JSON_encoded_rules>]
+//
+//	lnd-custom lit-mac-fw rules:[<array_of_JSON_encoded_rules>]
 func RulesToCaveat(rules *InterceptRules) (string, error) {
 	jsonBytes, err := json.Marshal(rules)
 	if err != nil {

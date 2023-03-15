@@ -604,6 +604,15 @@ Lightning.ListAliases = {
   responseType: lnd_pb.ListAliasesResponse
 };
 
+Lightning.LookupHtlcResolution = {
+  methodName: "LookupHtlcResolution",
+  service: Lightning,
+  requestStream: false,
+  responseStream: false,
+  requestType: lnd_pb.LookupHtlcResolutionRequest,
+  responseType: lnd_pb.LookupHtlcResolutionResponse
+};
+
 exports.Lightning = Lightning;
 
 function LightningClient(serviceHost, options) {
@@ -2759,6 +2768,37 @@ LightningClient.prototype.listAliases = function listAliases(requestMessage, met
     callback = arguments[1];
   }
   var client = grpc.unary(Lightning.ListAliases, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+LightningClient.prototype.lookupHtlcResolution = function lookupHtlcResolution(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(Lightning.LookupHtlcResolution, {
     request: requestMessage,
     host: this.serviceHost,
     metadata: metadata,

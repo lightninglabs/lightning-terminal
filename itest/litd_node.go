@@ -34,6 +34,7 @@ import (
 	"github.com/lightningnetwork/lnd/lnrpc/watchtowerrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/wtclientrpc"
 	"github.com/lightningnetwork/lnd/lntest"
+	"github.com/lightningnetwork/lnd/lntest/node"
 	"github.com/lightningnetwork/lnd/lntest/wait"
 	"github.com/lightningnetwork/lnd/macaroons"
 	"google.golang.org/grpc"
@@ -58,11 +59,13 @@ var (
 )
 
 type LitNodeConfig struct {
-	*lntest.BaseNodeConfig
+	*node.BaseNodeConfig
 
 	LitArgs []string
 
 	RemoteMode bool
+
+	HasSeed bool
 
 	FaradayMacPath string
 	LoopMacPath    string
@@ -81,21 +84,21 @@ type LitNodeConfig struct {
 }
 
 func (cfg *LitNodeConfig) LitAddr() string {
-	return fmt.Sprintf(lntest.ListenerFormat, cfg.LitPort)
+	return fmt.Sprintf(node.ListenerFormat, cfg.LitPort)
 }
 
 func (cfg *LitNodeConfig) LitRESTAddr() string {
-	return fmt.Sprintf(lntest.ListenerFormat, cfg.LitRESTPort)
+	return fmt.Sprintf(node.ListenerFormat, cfg.LitRESTPort)
 }
 
 func (cfg *LitNodeConfig) GenerateListeningPorts() {
 	cfg.BaseNodeConfig.GenerateListeningPorts()
 
 	if cfg.LitPort == 0 {
-		cfg.LitPort = lntest.NextAvailablePort()
+		cfg.LitPort = node.NextAvailablePort()
 	}
 	if cfg.LitRESTPort == 0 {
-		cfg.LitRESTPort = lntest.NextAvailablePort()
+		cfg.LitRESTPort = node.NextAvailablePort()
 	}
 }
 
@@ -160,17 +163,18 @@ func (cfg *LitNodeConfig) GenArgs() []string {
 
 // policyUpdateMap defines a type to store channel policy updates. It has the
 // format,
-// {
-//  "chanPoint1": {
-//       "advertisingNode1": [
-//              policy1, policy2, ...
-//       ],
-//       "advertisingNode2": [
-//              policy1, policy2, ...
-//       ]
-//  },
-//  "chanPoint2": ...
-// }
+//
+//	{
+//	 "chanPoint1": {
+//	      "advertisingNode1": [
+//	             policy1, policy2, ...
+//	      ],
+//	      "advertisingNode2": [
+//	             policy1, policy2, ...
+//	      ]
+//	 },
+//	 "chanPoint2": ...
+//	}
 type policyUpdateMap map[string]map[string][]*lnrpc.RoutingPolicy
 
 // HarnessNode represents an instance of lnd running within our test network
@@ -182,8 +186,7 @@ type HarnessNode struct {
 	// NodeID is a unique identifier for the node within a NetworkHarness.
 	NodeID int
 
-	RemoteLnd        *lntest.HarnessNode
-	RemoteLndHarness *lntest.NetworkHarness
+	RemoteLnd *node.HarnessNode
 
 	// PubKey is the serialized compressed identity public key of the node.
 	// This field will only be populated once the node itself has been
@@ -254,7 +257,7 @@ func newNode(t *testing.T, cfg *LitNodeConfig,
 
 	if cfg.BaseDir == "" {
 		var err error
-		cfg.BaseDir, err = ioutil.TempDir("", "litdtest-node")
+		cfg.BaseDir, err = os.MkdirTemp("", "litdtest-node")
 		if err != nil {
 			return nil, err
 		}
@@ -295,38 +298,18 @@ func newNode(t *testing.T, cfg *LitNodeConfig,
 	_, _ = rand.Read(randomBytes[:])
 	cfg.UIPassword = base64.URLEncoding.EncodeToString(randomBytes[:])
 
-	// Run all tests with accept keysend. The keysend code is very isolated
-	// and it is highly unlikely that it would affect regular itests when
-	// enabled.
-	cfg.AcceptKeySend = true
-
 	numActiveNodesMtx.Lock()
 	nodeNum := numActiveNodes
 	numActiveNodes++
 	numActiveNodesMtx.Unlock()
 
-	var (
-		remoteNode        *lntest.HarnessNode
-		remoteNodeHarness *lntest.NetworkHarness
-		err               error
-	)
+	var remoteNode *node.HarnessNode
 	if cfg.RemoteMode {
-		lndBinary := strings.ReplaceAll(
-			getLitdBinary(), itestLitdBinary, itestLndBinary,
-		)
-		remoteNodeHarness, err = lntest.NewNetworkHarness(
-			harness.Miner, harness.BackendCfg, lndBinary,
-			lntest.BackendBbolt,
-		)
-		if err != nil {
-			return nil, err
-		}
-		err = remoteNodeHarness.SetUp(t, "remote-lnd", cfg.ExtraArgs)
-		if err != nil {
-			return nil, err
-		}
+		lndHarness := harness.LNDHarness
 
-		remoteNode = remoteNodeHarness.Bob
+		remoteNode = lndHarness.NewNode("bob-custom", cfg.ExtraArgs)
+		tenBTC := btcutil.Amount(10 * btcutil.SatoshiPerBitcoin)
+		lndHarness.FundCoins(tenBTC, remoteNode)
 
 		cfg.RPCPort = remoteNode.Cfg.RPCPort
 		cfg.P2PPort = remoteNode.Cfg.P2PPort
@@ -334,11 +317,12 @@ func newNode(t *testing.T, cfg *LitNodeConfig,
 		cfg.AdminMacPath = remoteNode.Cfg.AdminMacPath
 	}
 
+	t.Logf("Created new node %s with p2p port %d", cfg.Name, cfg.P2PPort)
+
 	return &HarnessNode{
 		Cfg:               cfg,
 		NodeID:            nodeNum,
 		RemoteLnd:         remoteNode,
-		RemoteLndHarness:  remoteNodeHarness,
 		chanWatchRequests: make(chan *chanWatchRequest),
 		openChans:         make(map[wire.OutPoint]int),
 		openChanWatchers:  make(map[wire.OutPoint][]chan struct{}),
@@ -385,8 +369,6 @@ func (hn *HarnessNode) String() string {
 			P2PPort:           hn.Cfg.P2PPort,
 			RPCPort:           hn.Cfg.RPCPort,
 			RESTPort:          hn.Cfg.RESTPort,
-			AcceptKeySend:     hn.Cfg.AcceptKeySend,
-			AcceptAMP:         hn.Cfg.AcceptAMP,
 			FeeURL:            hn.Cfg.FeeURL,
 		},
 	}
@@ -491,14 +473,14 @@ func (hn *HarnessNode) start(litdBinary string, litdError chan<- error,
 	getFinalizedLogFilePrefix := func() string {
 		pubKeyHex := hex.EncodeToString(hn.PubKey[:logPubKeyBytes])
 
-		return fmt.Sprintf("%s/%d-%s-%s-%s", lntest.GetLogDir(),
+		return fmt.Sprintf("%s/%d-%s-%s-%s", node.GetLogDir(),
 			hn.NodeID, hn.Cfg.LogFilenamePrefix, hn.Cfg.Name,
 			pubKeyHex)
 	}
 
 	// If the logoutput flag is passed, redirect output from the nodes to
 	// log files.
-	dir := lntest.GetLogDir()
+	dir := node.GetLogDir()
 	fileName := fmt.Sprintf("%s/%d-%s-%s-%s.log", dir, hn.NodeID,
 		hn.Cfg.LogFilenamePrefix, hn.Cfg.Name,
 		hex.EncodeToString(hn.PubKey[:logPubKeyBytes]))
@@ -866,7 +848,7 @@ func (hn *HarnessNode) Unlock(ctx context.Context,
 // blocks until the server is in state ServerActive.
 func (hn *HarnessNode) waitTillServerStarted() error {
 	ctxb := context.Background()
-	ctxt, cancel := context.WithTimeout(ctxb, lntest.NodeStartTimeout)
+	ctxt, cancel := context.WithTimeout(ctxb, wait.NodeStartTimeout)
 	defer cancel()
 
 	client, err := hn.StateClient.SubscribeState(
@@ -1135,7 +1117,7 @@ func (hn *HarnessNode) stop() error {
 	}
 
 	if hn.Cfg.RemoteMode {
-		return hn.RemoteLndHarness.ShutdownNode(hn.RemoteLnd)
+		return hn.RemoteLnd.Shutdown()
 	}
 
 	return nil

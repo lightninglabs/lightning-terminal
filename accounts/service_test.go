@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/lightninglabs/lndclient"
-	"github.com/lightningnetwork/lnd/channeldb"
+	invpkg "github.com/lightningnetwork/lnd/invoices"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
 	"github.com/stretchr/testify/require"
@@ -378,7 +378,7 @@ func TestAccountService(t *testing.T) {
 				SettleIndex: 12,
 				Hash:        testHash,
 				AmountPaid:  777,
-				State:       channeldb.ContractSettled,
+				State:       invpkg.ContractSettled,
 			}
 
 			// Make sure the amount paid is eventually credited.

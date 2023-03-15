@@ -77,7 +77,7 @@ endif
 
 DOCKER_TOOLS = docker run -v $$(pwd):/build litd-tools
 
-ITEST_TAGS := rpctest itest $(LND_RELEASE_TAGS)
+ITEST_TAGS := integration itest $(LND_RELEASE_TAGS)
 ITEST_LDFLAGS := $(call make_ldflags, $(ITEST_TAGS))
 
 GREEN := "\\033[0;32m"

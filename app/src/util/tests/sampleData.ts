@@ -27,6 +27,7 @@ export const lndGetInfo: LND.GetInfoResponse.AsObject = {
   testnet: false,
   chainsList: [{ chain: 'bitcoin', network: 'regtest' }],
   requireHtlcInterceptor: false,
+  storeFinalHtlcResolutions: false,
   urisList: [
     '038b3fc29cfc195c9b190d86ad2d40ce7550a5c6f13941f53c7d7ac5b25c912a6c@172.18.0.7:9735',
   ],
@@ -63,6 +64,7 @@ export const lndGetNodeInfo: Required<LND.NodeInfo.AsObject> = {
     ],
     lastUpdate: 1591393224,
     pubKey: '037136742c67e24681f36542f7c8916aa6f6fdf665c1dca2a107425503cff94501',
+    customRecordsMap: [],
   },
   numChannels: 3,
   totalCapacity: '47000000',
@@ -126,6 +128,7 @@ export const lndChannel: LND.Channel.AsObject = {
   aliasScidsList: [],
   zeroConf: false,
   zeroConfConfirmedScid: '',
+  peerAlias: '',
 };
 
 export const lndListChannelsMany: LND.ListChannelsResponse.AsObject = {
@@ -300,6 +303,7 @@ export const lndGetChanInfo: Required<LND.ChannelEdge.AsObject> = {
     disabled: false,
     maxHtlcMsat: '1782000000',
     lastUpdate: 1591622793,
+    customRecordsMap: [],
   },
   node2Policy: {
     timeLockDelta: 40,
@@ -309,7 +313,9 @@ export const lndGetChanInfo: Required<LND.ChannelEdge.AsObject> = {
     disabled: false,
     maxHtlcMsat: '1782000000',
     lastUpdate: 1591622772,
+    customRecordsMap: [],
   },
+  customRecordsMap: [],
 };
 
 //

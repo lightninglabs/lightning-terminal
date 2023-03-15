@@ -427,6 +427,7 @@ func (t *mockConfig) FetchConfig(subServerName string) (interface{}, bool) {
 	case "ChainRPC":
 		return &chainrpc.Config{
 			ChainNotifier: &chainreg.NoChainBackend{},
+			Chain:         &mock.ChainIO{},
 		}, true
 	case "DevRPC":
 		return &devrpc.Config{}, true

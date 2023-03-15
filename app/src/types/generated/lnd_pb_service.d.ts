@@ -598,6 +598,15 @@ type LightningListAliases = {
   readonly responseType: typeof lnd_pb.ListAliasesResponse;
 };
 
+type LightningLookupHtlcResolution = {
+  readonly methodName: string;
+  readonly service: typeof Lightning;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof lnd_pb.LookupHtlcResolutionRequest;
+  readonly responseType: typeof lnd_pb.LookupHtlcResolutionResponse;
+};
+
 export class Lightning {
   static readonly serviceName: string;
   static readonly WalletBalance: LightningWalletBalance;
@@ -666,6 +675,7 @@ export class Lightning {
   static readonly SendCustomMessage: LightningSendCustomMessage;
   static readonly SubscribeCustomMessages: LightningSubscribeCustomMessages;
   static readonly ListAliases: LightningListAliases;
+  static readonly LookupHtlcResolution: LightningLookupHtlcResolution;
 }
 
 export type ServiceError = { message: string, code: number; metadata: grpc.Metadata }
@@ -1189,6 +1199,15 @@ export class LightningClient {
   listAliases(
     requestMessage: lnd_pb.ListAliasesRequest,
     callback: (error: ServiceError|null, responseMessage: lnd_pb.ListAliasesResponse|null) => void
+  ): UnaryResponse;
+  lookupHtlcResolution(
+    requestMessage: lnd_pb.LookupHtlcResolutionRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: lnd_pb.LookupHtlcResolutionResponse|null) => void
+  ): UnaryResponse;
+  lookupHtlcResolution(
+    requestMessage: lnd_pb.LookupHtlcResolutionRequest,
+    callback: (error: ServiceError|null, responseMessage: lnd_pb.LookupHtlcResolutionResponse|null) => void
   ): UnaryResponse;
 }
 
