@@ -333,7 +333,7 @@ func (p *rpcProxy) makeDirector(allowLitRPC bool) func(ctx context.Context,
 		authHeaders := md.Get("authorization")
 		macHeader := md.Get(HeaderMacaroon)
 		switch {
-		case len(authHeaders) == 1:
+		case len(authHeaders) == 1 && !p.cfg.DisableUI:
 			macBytes, err := p.basicAuthToMacaroon(
 				authHeaders[0], requestURI, nil,
 			)
@@ -481,6 +481,12 @@ func (p *rpcProxy) StreamServerInterceptor(srv interface{},
 // macaroon based authentication header.
 func (p *rpcProxy) convertBasicAuth(ctx context.Context,
 	requestURI string, ctxErr error) (context.Context, error) {
+
+	// If the UI is disabled, then there is no UI password and so the
+	// request is required to have a macaroon in it.
+	if p.cfg.DisableUI {
+		return ctx, ctxErr
+	}
 
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {

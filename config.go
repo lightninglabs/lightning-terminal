@@ -143,9 +143,10 @@ type Config struct {
 	HTTPListen     string   `long:"insecure-httplisten" description:"The host:port to listen on with TLS disabled. This is dangerous to enable as credentials will be submitted without encryption. Should only be used in combination with Tor hidden services or other external encryption."`
 	EnableREST     bool     `long:"enablerest" description:"Also allow REST requests to be made to the main HTTP(s) port(s) configured above."`
 	RestCORS       []string `long:"restcors" description:"Add an ip:port/hostname to allow cross origin access from. To allow all origins, set as \"*\"."`
-	UIPassword     string   `long:"uipassword" description:"The password that must be entered when using the loop UI. use a strong password to protect your node from unauthorized access through the web UI."`
+	UIPassword     string   `long:"uipassword" description:"The password that must be entered when using the UI. Use a strong password to protect your node from unauthorized access through the web UI."`
 	UIPasswordFile string   `long:"uipassword_file" description:"Same as uipassword but instead of passing in the value directly, read the password from the specified file."`
 	UIPasswordEnv  string   `long:"uipassword_env" description:"Same as uipassword but instead of passing in the value directly, read the password from the specified environment variable."`
+	DisableUI      bool     `long:"disableui" description:"If set to true, no web UI will be served and so the uipassword will also not need to be set."`
 
 	LetsEncrypt       bool   `long:"letsencrypt" description:"Use Let's Encrypt to create a TLS certificate for the UI instead of using lnd's TLS certificate. Port 80 must be free to listen on and must be reachable from the internet for this to work."`
 	LetsEncryptHost   string `long:"letsencrypthost" description:"The host name to create a Let's Encrypt certificate for."`
@@ -424,13 +425,19 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 			return nil, err
 		}
 	}
-	err = readUIPassword(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("could not read UI password: %v", err)
-	}
-	if len(cfg.UIPassword) < uiPasswordMinLength {
-		return nil, fmt.Errorf("please set a strong password for the "+
-			"UI, at least %d characters long", uiPasswordMinLength)
+
+	// If the web UI is enabled, a UI password must be provided.
+	if !cfg.DisableUI {
+		err = readUIPassword(cfg)
+		if err != nil {
+			return nil, fmt.Errorf("could not read UI password: %v",
+				err)
+		}
+		if len(cfg.UIPassword) < uiPasswordMinLength {
+			return nil, fmt.Errorf("please set a strong "+
+				"password for the UI, at least %d characters "+
+				"long", uiPasswordMinLength)
+		}
 	}
 
 	if cfg.Network != DefaultNetwork {
