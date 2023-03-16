@@ -606,9 +606,10 @@ func (n *NetworkHarness) DisconnectNodes(a, b *HarnessNode) error {
 // pass a set of SCBs to pass in via the Unlock method allowing them to restore
 // channels during restart.
 func (n *NetworkHarness) RestartNode(node *HarnessNode, callback func() error,
+	litArgOpts []LitArgOption,
 	chanBackups ...*lnrpc.ChanBackupSnapshot) error {
 
-	err := n.RestartNodeNoUnlock(node, callback, true)
+	err := n.RestartNodeNoUnlock(node, callback, true, litArgOpts...)
 	if err != nil {
 		return err
 	}
@@ -646,7 +647,7 @@ func (n *NetworkHarness) RestartNode(node *HarnessNode, callback func() error,
 // the callback parameter is non-nil, then the function will be executed after
 // the node shuts down, but *before* the process has been started up again.
 func (n *NetworkHarness) RestartNodeNoUnlock(node *HarnessNode,
-	callback func() error, wait bool) error {
+	callback func() error, wait bool, litArgOpts ...LitArgOption) error {
 
 	if err := node.stop(); err != nil {
 		return err
@@ -658,7 +659,7 @@ func (n *NetworkHarness) RestartNodeNoUnlock(node *HarnessNode,
 		}
 	}
 
-	return node.start(n.litdBinary, n.lndErrorChan, wait)
+	return node.start(n.litdBinary, n.lndErrorChan, wait, litArgOpts...)
 }
 
 // SuspendNode stops the given node and returns a callback that can be used to

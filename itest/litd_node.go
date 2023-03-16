@@ -103,63 +103,146 @@ func (cfg *LitNodeConfig) GenerateListeningPorts() {
 	}
 }
 
+// litArgs holds a key-value map of config option to config value. An empty
+// string value means that the config option is a boolean.
+type litArgs struct {
+	args map[string]string
+
+	mu sync.Mutex
+}
+
+// deleteArg deletes the argument with the given name from the set if it is
+// present.
+func (l *litArgs) deleteArg(argName string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	delete(l.args, argName)
+}
+
+// addArg adds a new argument to the set. An empty value string will mean that
+// the key will be added as a boolean flag.
+func (l *litArgs) addArg(name, value string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	l.args[name] = value
+}
+
+// toArgList converts the litArgs map to an arguments string slice.
+func (l *litArgs) toArgList() []string {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	args := make([]string, 0, len(l.args))
+	for arg, setting := range l.args {
+		if setting == "" {
+			args = append(args, fmt.Sprintf("--%s", arg))
+			continue
+		}
+
+		args = append(args, fmt.Sprintf("--%s=%s", arg, setting))
+	}
+
+	return args
+}
+
+// LitArgOption defines the signature of a functional option that can be used
+// to tweak the default arguments of a Litd node.
+type LitArgOption func(args *litArgs)
+
+// WithoutLitArg can be used to delete a litd config option.
+func WithoutLitArg(arg string) LitArgOption {
+	return func(args *litArgs) {
+		args.deleteArg(arg)
+	}
+}
+
+// WithLitArg can be used to set a Litd config option. An empty value string
+// will mean that the key will be added as a boolean flag.
+func WithLitArg(key, value string) LitArgOption {
+	return func(args *litArgs) {
+		args.addArg(key, value)
+	}
+}
+
 // GenArgs generates a slice of command line arguments from the lightning node
 // config struct.
-func (cfg *LitNodeConfig) GenArgs() []string {
+func (cfg *LitNodeConfig) GenArgs(opts ...LitArgOption) []string {
+	args := cfg.defaultLitdArgs()
+
+	for _, opt := range opts {
+		opt(args)
+	}
+
+	return args.toArgList()
+}
+
+// defaultLitArgs generates the default arguments to be used with a Litd node.
+func (cfg *LitNodeConfig) defaultLitdArgs() *litArgs {
 	var (
-		litArgs = []string{
-			fmt.Sprintf("--httpslisten=%s", cfg.LitAddr()),
-			fmt.Sprintf("--insecure-httplisten=%s", cfg.LitRESTAddr()),
-			fmt.Sprintf("--lit-dir=%s", cfg.LitDir),
-			fmt.Sprintf("--faraday.faradaydir=%s", cfg.FaradayDir),
-			fmt.Sprintf("--loop.loopdir=%s", cfg.LoopDir),
-			fmt.Sprintf("--pool.basedir=%s", cfg.PoolDir),
-			fmt.Sprintf("--uipassword=%s", cfg.UIPassword),
-			"--enablerest",
-			"--restcors=*",
+		args = map[string]string{
+			"httpslisten":         cfg.LitAddr(),
+			"insecure-httplisten": cfg.LitRESTAddr(),
+			"lit-dir":             cfg.LitDir,
+			"faraday.faradaydir":  cfg.FaradayDir,
+			"loop.loopdir":        cfg.LoopDir,
+			"pool.basedir":        cfg.PoolDir,
+			"uipassword":          cfg.UIPassword,
+			"enablerest":          "",
+			"restcors":            "*",
 		}
 	)
-	litArgs = append(litArgs, cfg.LitArgs...)
+	for _, arg := range cfg.LitArgs {
+		parts := strings.Split(arg, "=")
+		option := strings.TrimLeft(parts[0], "--")
+		switch len(parts) {
+		case 1:
+			args[option] = ""
+		case 2:
+			args[option] = parts[1]
+		}
+	}
 
 	switch cfg.NetParams {
 	case &chaincfg.TestNet3Params:
-		litArgs = append(litArgs, "--network=testnet")
+		args["network"] = "testnet"
 	case &chaincfg.SimNetParams:
-		litArgs = append(litArgs, "--network=simnet")
+		args["network"] = "simnet"
 	case &chaincfg.RegressionNetParams:
-		litArgs = append(litArgs, "--network=regtest")
+		args["network"] = "regtest"
 	}
 
 	// In remote mode, we don't need any lnd specific arguments other than
 	// those we need to connect.
 	if cfg.RemoteMode {
-		litArgs = append(litArgs, "--lnd-mode=remote")
-		litArgs = append(litArgs, fmt.Sprintf(
-			"--remote.lnd.rpcserver=%s", cfg.RPCAddr()),
-		)
-		litArgs = append(litArgs, fmt.Sprintf(
-			"--remote.lnd.tlscertpath=%s", cfg.TLSCertPath),
-		)
-		litArgs = append(litArgs, fmt.Sprintf(
-			"--remote.lnd.macaroonpath=%s", cfg.AdminMacPath),
-		)
+		args["lnd-mode"] = "remote"
+		args["remote.lnd.rpcserver"] = cfg.RPCAddr()
+		args["remote.lnd.tlscertpath"] = cfg.TLSCertPath
+		args["remote.lnd.macaroonpath"] = cfg.AdminMacPath
 
-		return litArgs
+		return &litArgs{args: args}
 	}
 
 	// All arguments so far were for lnd. Let's namespace them now so we can
 	// add args for the other daemons and LiT itself afterwards.
-	litArgs = append(litArgs, cfg.LitArgs...)
-	litArgs = append(litArgs, "--lnd-mode=integrated")
+	args["lnd-mode"] = "integrated"
+
 	lndArgs := cfg.BaseNodeConfig.GenArgs()
 	for idx := range lndArgs {
-		litArgs = append(
-			litArgs,
-			strings.ReplaceAll(lndArgs[idx], "--", "--lnd."),
-		)
+		arg := strings.ReplaceAll(lndArgs[idx], "--", "--lnd.")
+
+		parts := strings.Split(arg, "=")
+		option := strings.TrimLeft(parts[0], "--")
+		switch len(parts) {
+		case 1:
+			args[option] = ""
+		case 2:
+			args[option] = parts[1]
+		}
 	}
 
-	return litArgs
+	return &litArgs{args: args}
 }
 
 // policyUpdateMap defines a type to store channel policy updates. It has the
@@ -456,11 +539,11 @@ func renameFile(fromFileName, toFileName string) {
 // This may not clean up properly if an error is returned, so the caller should
 // call shutdown() regardless of the return value.
 func (hn *HarnessNode) start(litdBinary string, litdError chan<- error,
-	wait bool) error {
+	wait bool, litArgOpts ...LitArgOption) error {
 
 	hn.quit = make(chan struct{})
 
-	args := hn.Cfg.GenArgs()
+	args := hn.Cfg.GenArgs(litArgOpts...)
 	hn.cmd = exec.Command(litdBinary, args...)
 
 	// Redirect stderr output to buffer
