@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
+	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/lightning-terminal/perms"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/lncfg"
@@ -144,6 +145,8 @@ func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 //	                                |  - pool             |
 //	                                +---------------------+
 type rpcProxy struct {
+	litrpc.UnimplementedProxyServer
+
 	cfg       *Config
 	basicAuth string
 	permsMgr  *perms.Manager
@@ -251,6 +254,31 @@ func (p *rpcProxy) Stop() error {
 	}
 
 	return nil
+}
+
+// StopDaemon will send a shutdown request to the interrupt handler, triggering
+// a graceful shutdown of the daemon.
+//
+// NOTE: this is part of the litrpc.ProxyServiceServer interface.
+func (p *rpcProxy) StopDaemon(_ context.Context,
+	_ *litrpc.StopDaemonRequest) (*litrpc.StopDaemonResponse, error) {
+
+	log.Infof("StopDaemon rpc request received")
+
+	interceptor.RequestShutdown()
+
+	return &litrpc.StopDaemonResponse{}, nil
+}
+
+// GetInfo returns general information concerning the LiTd node.
+//
+// NOTE: this is part of the litrpc.ProxyServiceServer interface.
+func (p *rpcProxy) GetInfo(_ context.Context, _ *litrpc.GetInfoRequest) (
+	*litrpc.GetInfoResponse, error) {
+
+	return &litrpc.GetInfoResponse{
+		Version: Version(),
+	}, nil
 }
 
 // isHandling checks if the specified request is something to be handled by lnd

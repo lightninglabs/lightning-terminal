@@ -846,6 +846,7 @@ func (g *LightningTerminal) registerSubDaemonGrpcServers(server *grpc.Server,
 	if withLitRPC {
 		litrpc.RegisterSessionsServer(server, g.sessionRpcServer)
 		litrpc.RegisterAccountsServer(server, g.accountRpcServer)
+		litrpc.RegisterProxyServer(server, g.rpcProxy)
 	}
 
 	litrpc.RegisterFirewallServer(server, g.sessionRpcServer)

@@ -86,6 +86,14 @@ var (
 			Entity: "privacymap",
 			Action: "read",
 		}},
+		"/litrpc.Proxy/StopDaemon": {{
+			Entity: "proxy",
+			Action: "write",
+		}},
+		"/litrpc.Proxy/GetInfo": {{
+			Entity: "proxy",
+			Action: "read",
+		}},
 	}
 
 	// whiteListedLNDMethods is a map of all lnd RPC methods that don't

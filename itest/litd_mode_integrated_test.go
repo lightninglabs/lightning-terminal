@@ -161,6 +161,12 @@ var (
 			ctx, &litrpc.ListAutopilotFeaturesRequest{},
 		)
 	}
+	proxyRequestFn = func(ctx context.Context,
+		c grpc.ClientConnInterface) (proto.Message, error) {
+
+		litConn := litrpc.NewProxyClient(c)
+		return litConn.GetInfo(ctx, &litrpc.GetInfoRequest{})
+	}
 	litMacaroonFn = func(cfg *LitNodeConfig) string {
 		return cfg.LitMacPath
 	}
@@ -247,6 +253,13 @@ var (
 		successPattern:    "\"features\":{",
 		allowedThroughLNC: true,
 		grpcWebURI:        "/litrpc.Autopilot/ListAutopilotFeatures",
+	}, {
+		name:              "litrpc-proxy",
+		macaroonFn:        litMacaroonFn,
+		requestFn:         proxyRequestFn,
+		successPattern:    "\"version\":",
+		allowedThroughLNC: false,
+		grpcWebURI:        "/litrpc.Proxy/GetInfo",
 	}}
 
 	// customURIs is a map of endpoint URIs that we want to allow via a
