@@ -846,6 +846,7 @@ func (g *LightningTerminal) registerSubDaemonGrpcServers(server *grpc.Server,
 	if withLitRPC {
 		litrpc.RegisterSessionsServer(server, g.sessionRpcServer)
 		litrpc.RegisterAccountsServer(server, g.accountRpcServer)
+		litrpc.RegisterProxyServer(server, g.rpcProxy)
 	}
 
 	litrpc.RegisterFirewallServer(server, g.sessionRpcServer)
@@ -1251,6 +1252,14 @@ func (g *LightningTerminal) startMainWebServer() error {
 			return
 		}
 
+		// If the UI is disabled, then we return a 401 here to prevent
+		// serving any of the static files.
+		if g.cfg.DisableUI {
+			resp.WriteHeader(http.StatusUnauthorized)
+
+			return
+		}
+
 		// If we got here, it's a static file the browser wants, or
 		// something we don't know in which case the static file server
 		// will answer with a 404.
@@ -1629,6 +1638,13 @@ func (g *LightningTerminal) showStartupInfo() error {
 		listenAddr = fmt.Sprintf("%s, %s", listenAddr, g.cfg.HTTPListen)
 	}
 
+	webInterfaceString := fmt.Sprintf(
+		"%s (open %s in your browser)", listenAddr, info.webURI,
+	)
+	if g.cfg.DisableUI {
+		webInterfaceString = "disabled"
+	}
+
 	str := "" +
 		"----------------------------------------------------------\n" +
 		" Lightning Terminal (LiT) by Lightning Labs               \n" +
@@ -1638,10 +1654,10 @@ func (g *LightningTerminal) showStartupInfo() error {
 		" LND Alias               %s                               \n" +
 		" LND Version             %s                               \n" +
 		" LiT Version             %s                               \n" +
-		" Web interface           %s (open %s in your browser)     \n" +
+		" Web interface           %s  			           \n" +
 		"----------------------------------------------------------\n"
 	fmt.Printf(str, info.mode, info.status, info.alias, info.version,
-		Version(), listenAddr, info.webURI)
+		Version(), webInterfaceString)
 
 	return nil
 }

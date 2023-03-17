@@ -24,6 +24,7 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/lightninglabs/faraday/frdrpc"
+	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/lightninglabs/pool/poolrpc"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -102,63 +103,146 @@ func (cfg *LitNodeConfig) GenerateListeningPorts() {
 	}
 }
 
+// litArgs holds a key-value map of config option to config value. An empty
+// string value means that the config option is a boolean.
+type litArgs struct {
+	args map[string]string
+
+	mu sync.Mutex
+}
+
+// deleteArg deletes the argument with the given name from the set if it is
+// present.
+func (l *litArgs) deleteArg(argName string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	delete(l.args, argName)
+}
+
+// addArg adds a new argument to the set. An empty value string will mean that
+// the key will be added as a boolean flag.
+func (l *litArgs) addArg(name, value string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	l.args[name] = value
+}
+
+// toArgList converts the litArgs map to an arguments string slice.
+func (l *litArgs) toArgList() []string {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	args := make([]string, 0, len(l.args))
+	for arg, setting := range l.args {
+		if setting == "" {
+			args = append(args, fmt.Sprintf("--%s", arg))
+			continue
+		}
+
+		args = append(args, fmt.Sprintf("--%s=%s", arg, setting))
+	}
+
+	return args
+}
+
+// LitArgOption defines the signature of a functional option that can be used
+// to tweak the default arguments of a Litd node.
+type LitArgOption func(args *litArgs)
+
+// WithoutLitArg can be used to delete a litd config option.
+func WithoutLitArg(arg string) LitArgOption {
+	return func(args *litArgs) {
+		args.deleteArg(arg)
+	}
+}
+
+// WithLitArg can be used to set a Litd config option. An empty value string
+// will mean that the key will be added as a boolean flag.
+func WithLitArg(key, value string) LitArgOption {
+	return func(args *litArgs) {
+		args.addArg(key, value)
+	}
+}
+
 // GenArgs generates a slice of command line arguments from the lightning node
 // config struct.
-func (cfg *LitNodeConfig) GenArgs() []string {
+func (cfg *LitNodeConfig) GenArgs(opts ...LitArgOption) []string {
+	args := cfg.defaultLitdArgs()
+
+	for _, opt := range opts {
+		opt(args)
+	}
+
+	return args.toArgList()
+}
+
+// defaultLitArgs generates the default arguments to be used with a Litd node.
+func (cfg *LitNodeConfig) defaultLitdArgs() *litArgs {
 	var (
-		litArgs = []string{
-			fmt.Sprintf("--httpslisten=%s", cfg.LitAddr()),
-			fmt.Sprintf("--insecure-httplisten=%s", cfg.LitRESTAddr()),
-			fmt.Sprintf("--lit-dir=%s", cfg.LitDir),
-			fmt.Sprintf("--faraday.faradaydir=%s", cfg.FaradayDir),
-			fmt.Sprintf("--loop.loopdir=%s", cfg.LoopDir),
-			fmt.Sprintf("--pool.basedir=%s", cfg.PoolDir),
-			fmt.Sprintf("--uipassword=%s", cfg.UIPassword),
-			"--enablerest",
-			"--restcors=*",
+		args = map[string]string{
+			"httpslisten":         cfg.LitAddr(),
+			"insecure-httplisten": cfg.LitRESTAddr(),
+			"lit-dir":             cfg.LitDir,
+			"faraday.faradaydir":  cfg.FaradayDir,
+			"loop.loopdir":        cfg.LoopDir,
+			"pool.basedir":        cfg.PoolDir,
+			"uipassword":          cfg.UIPassword,
+			"enablerest":          "",
+			"restcors":            "*",
 		}
 	)
-	litArgs = append(litArgs, cfg.LitArgs...)
+	for _, arg := range cfg.LitArgs {
+		parts := strings.Split(arg, "=")
+		option := strings.TrimLeft(parts[0], "--")
+		switch len(parts) {
+		case 1:
+			args[option] = ""
+		case 2:
+			args[option] = parts[1]
+		}
+	}
 
 	switch cfg.NetParams {
 	case &chaincfg.TestNet3Params:
-		litArgs = append(litArgs, "--network=testnet")
+		args["network"] = "testnet"
 	case &chaincfg.SimNetParams:
-		litArgs = append(litArgs, "--network=simnet")
+		args["network"] = "simnet"
 	case &chaincfg.RegressionNetParams:
-		litArgs = append(litArgs, "--network=regtest")
+		args["network"] = "regtest"
 	}
 
 	// In remote mode, we don't need any lnd specific arguments other than
 	// those we need to connect.
 	if cfg.RemoteMode {
-		litArgs = append(litArgs, "--lnd-mode=remote")
-		litArgs = append(litArgs, fmt.Sprintf(
-			"--remote.lnd.rpcserver=%s", cfg.RPCAddr()),
-		)
-		litArgs = append(litArgs, fmt.Sprintf(
-			"--remote.lnd.tlscertpath=%s", cfg.TLSCertPath),
-		)
-		litArgs = append(litArgs, fmt.Sprintf(
-			"--remote.lnd.macaroonpath=%s", cfg.AdminMacPath),
-		)
+		args["lnd-mode"] = "remote"
+		args["remote.lnd.rpcserver"] = cfg.RPCAddr()
+		args["remote.lnd.tlscertpath"] = cfg.TLSCertPath
+		args["remote.lnd.macaroonpath"] = cfg.AdminMacPath
 
-		return litArgs
+		return &litArgs{args: args}
 	}
 
 	// All arguments so far were for lnd. Let's namespace them now so we can
 	// add args for the other daemons and LiT itself afterwards.
-	litArgs = append(litArgs, cfg.LitArgs...)
-	litArgs = append(litArgs, "--lnd-mode=integrated")
+	args["lnd-mode"] = "integrated"
+
 	lndArgs := cfg.BaseNodeConfig.GenArgs()
 	for idx := range lndArgs {
-		litArgs = append(
-			litArgs,
-			strings.ReplaceAll(lndArgs[idx], "--", "--lnd."),
-		)
+		arg := strings.ReplaceAll(lndArgs[idx], "--", "--lnd.")
+
+		parts := strings.Split(arg, "=")
+		option := strings.TrimLeft(parts[0], "--")
+		switch len(parts) {
+		case 1:
+			args[option] = ""
+		case 2:
+			args[option] = parts[1]
+		}
 	}
 
-	return litArgs
+	return &litArgs{args: args}
 }
 
 // policyUpdateMap defines a type to store channel policy updates. It has the
@@ -231,8 +315,12 @@ type HarnessNode struct {
 	// methods SignMessage and VerifyMessage.
 	SignerClient signrpc.SignerClient
 
-	// conn is the underlying connection to the grpc endpoint of the node.
+	// conn is the underlying connection to the lnd grpc endpoint of the
+	// node.
 	conn *grpc.ClientConn
+
+	// litConn is the underlying connection to Lit's grpc endpoint.
+	litConn *grpc.ClientConn
 
 	// RouterClient, WalletKitClient, WatchtowerClient cannot be embedded,
 	// because a name collision would occur with LightningClient.
@@ -451,11 +539,11 @@ func renameFile(fromFileName, toFileName string) {
 // This may not clean up properly if an error is returned, so the caller should
 // call shutdown() regardless of the return value.
 func (hn *HarnessNode) start(litdBinary string, litdError chan<- error,
-	wait bool) error {
+	wait bool, litArgOpts ...LitArgOption) error {
 
 	hn.quit = make(chan struct{})
 
-	args := hn.Cfg.GenArgs()
+	args := hn.Cfg.GenArgs(litArgOpts...)
 	hn.cmd = exec.Command(litdBinary, args...)
 
 	// Redirect stderr output to buffer
@@ -578,7 +666,22 @@ func (hn *HarnessNode) start(litdBinary string, litdError chan<- error,
 		return nil
 	}
 
-	return hn.initLightningClient(conn)
+	err = hn.initLightningClient(conn)
+	if err != nil {
+		return fmt.Errorf("could not init Lightning Client: %w", err)
+	}
+
+	// Also connect to Lit's RPC port for any Litd specific calls.
+	litConn, err := connectLitRPC(
+		context.Background(), hn.Cfg.LitAddr(), hn.Cfg.LitTLSCertPath,
+		hn.Cfg.LitMacPath,
+	)
+	if err != nil {
+		return fmt.Errorf("could not connect to Lit RPC: %w", err)
+	}
+	hn.litConn = litConn
+
+	return nil
 }
 
 // WaitUntilStarted waits until the wallet state flips from "WAITING_TO_START".
@@ -1044,6 +1147,14 @@ func (hn *HarnessNode) SetExtraArgs(extraArgs []string) {
 
 // cleanup cleans up all the temporary files created by the node's process.
 func (hn *HarnessNode) cleanup() error {
+	if hn.Cfg.RemoteMode {
+		err := hn.RemoteLnd.Shutdown()
+		if err != nil {
+			return fmt.Errorf("unable to shutdown remote lnd "+
+				"dir: %v", err)
+		}
+	}
+
 	if hn.backupDbDir != "" {
 		err := os.RemoveAll(hn.backupDbDir)
 		if err != nil {
@@ -1054,7 +1165,7 @@ func (hn *HarnessNode) cleanup() error {
 	return os.RemoveAll(hn.Cfg.BaseDir)
 }
 
-// Stop attempts to stop the active lnd process.
+// Stop attempts to stop the active litd process.
 func (hn *HarnessNode) stop() error {
 	// Do nothing if the process is not running.
 	if hn.processExit == nil {
@@ -1063,9 +1174,9 @@ func (hn *HarnessNode) stop() error {
 
 	// If start() failed before creating a client, we will just wait for the
 	// child process to die.
-	if hn.LightningClient != nil {
-		// Don't watch for error because sometimes the RPC connection gets
-		// closed before a response is returned.
+	if !hn.Cfg.RemoteMode && hn.LightningClient != nil {
+		// Don't watch for error because sometimes the RPC connection
+		// gets closed before a response is returned.
 		req := lnrpc.StopRequest{}
 		ctx := context.Background()
 
@@ -1086,9 +1197,22 @@ func (hn *HarnessNode) stop() error {
 		if err != nil {
 			return err
 		}
+	} else if hn.Cfg.RemoteMode {
+		// If lit is running in remote mode, then calling LNDs
+		// StopDaemon method will not shut down Lit, and so we need to
+		// explicitly request lit to shut down.
+		ctx, cancel := context.WithTimeout(
+			context.Background(), lntest.DefaultTimeout,
+		)
+		litConn := litrpc.NewProxyClient(hn.litConn)
+		_, err := litConn.StopDaemon(ctx, &litrpc.StopDaemonRequest{})
+		cancel()
+		if err != nil {
+			return err
+		}
 	}
 
-	// Wait for lnd process and other goroutines to exit.
+	// Wait for litd process and other goroutines to exit.
 	select {
 	case <-hn.processExit:
 	case <-time.After(lntest.DefaultTimeout * 2):
@@ -1114,10 +1238,6 @@ func (hn *HarnessNode) stop() error {
 			return fmt.Errorf("error attempting to stop grpc "+
 				"client: %v", err)
 		}
-	}
-
-	if hn.Cfg.RemoteMode {
-		return hn.RemoteLnd.Shutdown()
 	}
 
 	return nil
@@ -1781,4 +1901,41 @@ func (hn *HarnessNode) getChannelPolicies(include bool) policyUpdateMap {
 	}
 
 	return policyUpdates
+}
+
+// connectLitRPC can be used to connect to the lit rpc server.
+func connectLitRPC(ctx context.Context, hostPort, tlsCertPath,
+	macPath string) (*grpc.ClientConn, error) {
+
+	tlsCreds, err := credentials.NewClientTLSFromFile(tlsCertPath, "")
+	if err != nil {
+		return nil, err
+	}
+
+	opts := []grpc.DialOption{
+		grpc.WithBlock(),
+		grpc.WithTransportCredentials(tlsCreds),
+	}
+
+	if macPath != "" {
+		macBytes, err := ioutil.ReadFile(macPath)
+		if err != nil {
+			return nil, err
+		}
+
+		mac := &macaroon.Macaroon{}
+		if err = mac.UnmarshalBinary(macBytes); err != nil {
+			return nil, fmt.Errorf("error unmarshalling macaroon "+
+				"file: %v", err)
+		}
+
+		macCred, err := macaroons.NewMacaroonCredential(mac)
+		if err != nil {
+			return nil, fmt.Errorf("error cloning mac: %v", err)
+		}
+
+		opts = append(opts, grpc.WithPerRPCCredentials(macCred))
+	}
+
+	return grpc.DialContext(ctx, hostPort, opts...)
 }

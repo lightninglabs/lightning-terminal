@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package litrpc;
+
+option go_package = "github.com/lightninglabs/lightning-terminal/litrpc";
+
+service Proxy {
+    rpc GetInfo (GetInfoRequest) returns (GetInfoResponse);
+    rpc StopDaemon (StopDaemonRequest) returns (StopDaemonResponse);
+}
+
+message StopDaemonRequest {
+}
+
+message StopDaemonResponse {
+}
+
+message GetInfoRequest {
+}
+
+message GetInfoResponse {
+    // The version of the LiTd software that the node is running.
+    string version = 1;
+}
