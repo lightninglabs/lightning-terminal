@@ -675,7 +675,8 @@ func (g *LightningTerminal) startSubservers() error {
 
 	// Set up the macaroon service.
 	rks, db, err := lndclient.NewBoltMacaroonStore(
-		g.cfg.LitDir, lncfg.MacaroonDBName, macDatabaseOpenTimeout,
+		filepath.Join(g.cfg.LitDir, g.cfg.Network),
+		lncfg.MacaroonDBName, macDatabaseOpenTimeout,
 	)
 	if err != nil {
 		return err
