@@ -114,7 +114,7 @@
         "parameters": [
           {
             "name": "local_public_key",
-            "description": "The local static public key of the Autopilot session to be revoked.\nWhen using REST, this field must be encoded as base64.",
+            "description": "The local static public key of the Autopilot session to be revoked.\nWhen using REST, this field must be encoded as base64url.",
             "in": "path",
             "required": true,
             "type": "string",

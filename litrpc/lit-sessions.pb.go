@@ -692,7 +692,7 @@ type RevokeSessionRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The local static key of the session to be revoked.
-	// When using REST, this field must be encoded as base64.
+	// When using REST, this field must be encoded as base64url.
 	LocalPublicKey []byte `protobuf:"bytes,8,opt,name=local_public_key,json=localPublicKey,proto3" json:"local_public_key,omitempty"`
 }
 

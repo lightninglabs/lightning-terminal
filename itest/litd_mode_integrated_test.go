@@ -239,6 +239,7 @@ var (
 		successPattern:    "\"sessions\":[",
 		allowedThroughLNC: false,
 		grpcWebURI:        "/litrpc.Sessions/ListSessions",
+		restWebURI:        "/v1/sessions",
 	}, {
 		name:              "litrpc-accounts",
 		macaroonFn:        litMacaroonFn,
@@ -246,6 +247,7 @@ var (
 		successPattern:    "\"accounts\":[",
 		allowedThroughLNC: false,
 		grpcWebURI:        "/litrpc.Accounts/ListAccounts",
+		restWebURI:        "/v1/accounts",
 	}, {
 		name:              "litrpc-autopilot",
 		macaroonFn:        litMacaroonFn,
@@ -253,6 +255,7 @@ var (
 		successPattern:    "\"features\":{",
 		allowedThroughLNC: true,
 		grpcWebURI:        "/litrpc.Autopilot/ListAutopilotFeatures",
+		restWebURI:        "/v1/autopilot/features",
 	}, {
 		name:              "litrpc-proxy",
 		macaroonFn:        litMacaroonFn,
@@ -260,6 +263,7 @@ var (
 		successPattern:    "\"version\":",
 		allowedThroughLNC: false,
 		grpcWebURI:        "/litrpc.Proxy/GetInfo",
+		restWebURI:        "/v1/proxy/info",
 	}}
 
 	// customURIs is a map of endpoint URIs that we want to allow via a
@@ -447,10 +451,6 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 
 		for _, endpoint := range endpoints {
 			endpoint := endpoint
-
-			if endpoint.restWebURI == "" {
-				continue
-			}
 
 			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
 				runRESTAuthTest(

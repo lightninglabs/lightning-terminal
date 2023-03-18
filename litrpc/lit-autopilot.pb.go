@@ -409,7 +409,7 @@ type RevokeAutopilotSessionRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The local static public key of the Autopilot session to be revoked.
-	// When using REST, this field must be encoded as base64.
+	// When using REST, this field must be encoded as base64url.
 	LocalPublicKey []byte `protobuf:"bytes,1,opt,name=local_public_key,json=localPublicKey,proto3" json:"local_public_key,omitempty"`
 }
 

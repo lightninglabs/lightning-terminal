@@ -226,7 +226,7 @@ message ListSessionsResponse {
 message RevokeSessionRequest {
     /*
     The local static key of the session to be revoked.
-    When using REST, this field must be encoded as base64.
+    When using REST, this field must be encoded as base64url.
     */
     bytes local_public_key = 8;
 }

@@ -134,10 +134,6 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 		for _, endpoint := range endpoints {
 			endpoint := endpoint
 
-			if endpoint.restWebURI == "" {
-				continue
-			}
-
 			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
 				runRESTAuthTest(
 					ttt, cfg.LitAddr(), cfg.UIPassword,
