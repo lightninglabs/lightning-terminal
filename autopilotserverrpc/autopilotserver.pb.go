@@ -110,14 +110,11 @@ type Version struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
-	//The major application version.
+	// The major application version.
 	Major uint32 `protobuf:"varint,1,opt,name=major,proto3" json:"major,omitempty"`
-	//
-	//The minor application version.
+	// The minor application version.
 	Minor uint32 `protobuf:"varint,2,opt,name=minor,proto3" json:"minor,omitempty"`
-	//
-	//The application patch number.
+	// The application patch number.
 	Patch uint32 `protobuf:"varint,3,opt,name=patch,proto3" json:"patch,omitempty"`
 }
 
@@ -217,10 +214,9 @@ type ActivateSessionRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
-	//The static public key of the client that is to be used for future noise
-	//handshakes. Since the autopilot is the initiator of a connection, the
-	//client's key is called the "responder" key.
+	// The static public key of the client that is to be used for future noise
+	// handshakes. Since the autopilot is the initiator of a connection, the
+	// client's key is called the "responder" key.
 	ResponderPubKey []byte `protobuf:"bytes,1,opt,name=responder_pub_key,json=responderPubKey,proto3" json:"responder_pub_key,omitempty"`
 }
 
@@ -268,9 +264,8 @@ type ActivateSessionResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
-	//The autopilot's static pub key to be used for the noise connection with the
-	//client.
+	// The autopilot's static pub key to be used for the noise connection with the
+	// client.
 	InitiatorPubKey []byte `protobuf:"bytes,1,opt,name=initiator_pub_key,json=initiatorPubKey,proto3" json:"initiator_pub_key,omitempty"`
 }
 
@@ -318,10 +313,9 @@ type ListFeaturesResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
-	//A map of feature name to Feature object. This map represents each of the
-	//features supported by the autopilot server along with the details of
-	//each feature.
+	// A map of feature name to Feature object. This map represents each of the
+	// features supported by the autopilot server along with the details of
+	// each feature.
 	Features map[string]*Feature `protobuf:"bytes,1,rep,name=features,proto3" json:"features,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -369,17 +363,13 @@ type Feature struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
-	//The string identifier of the feature.
+	// The string identifier of the feature.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	//
-	//A human-readable description of what the feature offers.
+	// A human-readable description of what the feature offers.
 	Description string `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
-	//
-	//A map of the rule names to rule values that make sense for this feature.
+	// A map of the rule names to rule values that make sense for this feature.
 	Rules map[string]*Rule `protobuf:"bytes,3,rep,name=rules,proto3" json:"rules,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	//
-	//A list of the permissions that the feature will require to operate.
+	// A list of the permissions that the feature will require to operate.
 	PermissionsList []*Permissions `protobuf:"bytes,4,rep,name=permissions_list,json=permissionsList,proto3" json:"permissions_list,omitempty"`
 }
 
@@ -448,20 +438,16 @@ type Rule struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
-	//The name of the rule.
+	// The name of the rule.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	//
-	//The recommended default values for the rule. These may vary from feature
-	//to feature.
+	// The recommended default values for the rule. These may vary from feature
+	// to feature.
 	Default []byte `protobuf:"bytes,2,opt,name=default,proto3" json:"default,omitempty"`
-	//
-	//The minimum sane value of the rule that is allowed for the associated
-	//feature.
+	// The minimum sane value of the rule that is allowed for the associated
+	// feature.
 	MinValue []byte `protobuf:"bytes,3,opt,name=min_value,json=minValue,proto3" json:"min_value,omitempty"`
-	//
-	//The maximum sane value of the rule that is allowed for the associated
-	//feature.
+	// The maximum sane value of the rule that is allowed for the associated
+	// feature.
 	MaxValue []byte `protobuf:"bytes,4,opt,name=max_value,json=maxValue,proto3" json:"max_value,omitempty"`
 }
 
@@ -530,11 +516,9 @@ type Permissions struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
-	//The URI of the method that the operation set is referring to.
+	// The URI of the method that the operation set is referring to.
 	Method string `protobuf:"bytes,1,opt,name=method,proto3" json:"method,omitempty"`
-	//
-	//A list of operations that the method can perform
+	// A list of operations that the method can perform
 	Operations []*Operation `protobuf:"bytes,2,rep,name=operations,proto3" json:"operations,omitempty"`
 }
 
@@ -589,11 +573,9 @@ type Operation struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
-	//The entity to which the action applies.
+	// The entity to which the action applies.
 	Entity string `protobuf:"bytes,1,opt,name=entity,proto3" json:"entity,omitempty"`
-	//
-	//The action that can be performed on the above specified entity.
+	// The action that can be performed on the above specified entity.
 	Action string `protobuf:"bytes,2,opt,name=action,proto3" json:"action,omitempty"`
 }
 
@@ -648,25 +630,19 @@ type RegisterSessionRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
-	//The static public key of the client that is to be used for future noise
-	//handshakes. Since the autopilot is the initiator of a connection, the
-	//client's key is called the "responder" key.
+	// The static public key of the client that is to be used for future noise
+	// handshakes. Since the autopilot is the initiator of a connection, the
+	// client's key is called the "responder" key.
 	ResponderPubKey []byte `protobuf:"bytes,1,opt,name=responder_pub_key,json=responderPubKey,proto3" json:"responder_pub_key,omitempty"`
-	//
-	//The address of the mailbox that the client will use for the LNC connection.
+	// The address of the mailbox that the client will use for the LNC connection.
 	MailboxAddr string `protobuf:"bytes,2,opt,name=mailbox_addr,json=mailboxAddr,proto3" json:"mailbox_addr,omitempty"`
-	//
-	//Set to true if tls should be skipped for when connecting to the mailbox.
+	// Set to true if tls should be skipped for when connecting to the mailbox.
 	DevServer bool `protobuf:"varint,3,opt,name=dev_server,json=devServer,proto3" json:"dev_server,omitempty"`
-	//
-	//A map from feature name to configuration bytes for that feature.
+	// A map from feature name to configuration bytes for that feature.
 	FeatureConfigs map[string][]byte `protobuf:"bytes,4,rep,name=feature_configs,json=featureConfigs,proto3" json:"feature_configs,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	//
-	//The version of the Lit client.
+	// The version of the Lit client.
 	LitVersion *Version `protobuf:"bytes,5,opt,name=lit_version,json=litVersion,proto3" json:"lit_version,omitempty"`
-	//
-	//The version of the LND that the Lit client is using.
+	// The version of the LND that the Lit client is using.
 	LndVersion *Version `protobuf:"bytes,6,opt,name=lnd_version,json=lndVersion,proto3" json:"lnd_version,omitempty"`
 }
 
@@ -749,9 +725,8 @@ type RegisterSessionResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
-	//The autopilot's static pub key to be used for the noise connection with the
-	//client.
+	// The autopilot's static pub key to be used for the noise connection with the
+	// client.
 	InitiatorPubKey []byte `protobuf:"bytes,1,opt,name=initiator_pub_key,json=initiatorPubKey,proto3" json:"initiator_pub_key,omitempty"`
 }
 
@@ -799,8 +774,7 @@ type RevokeSessionRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
-	//The client's key for the session that the client is revoking.
+	// The client's key for the session that the client is revoking.
 	ResponderPubKey []byte `protobuf:"bytes,1,opt,name=responder_pub_key,json=responderPubKey,proto3" json:"responder_pub_key,omitempty"`
 }
 

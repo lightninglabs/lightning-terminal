@@ -25,12 +25,10 @@ type CreateAccountRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
-	//The initial account balance in satoshis representing the maximum amount that
-	//can be spent.
+	// The initial account balance in satoshis representing the maximum amount that
+	// can be spent.
 	AccountBalance uint64 `protobuf:"varint,1,opt,name=account_balance,json=accountBalance,proto3" json:"account_balance,omitempty"`
-	//
-	//The expiration date of the account as a timestamp. Set to 0 to never expire.
+	// The expiration date of the account as a timestamp. Set to 0 to never expire.
 	ExpirationDate int64 `protobuf:"varint,2,opt,name=expiration_date,json=expirationDate,proto3" json:"expiration_date,omitempty"`
 }
 
@@ -144,23 +142,19 @@ type Account struct {
 
 	// The ID of the account.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	//
-	//The initial balance in satoshis that was set when the account was created.
+	// The initial balance in satoshis that was set when the account was created.
 	InitialBalance uint64 `protobuf:"varint,2,opt,name=initial_balance,json=initialBalance,proto3" json:"initial_balance,omitempty"`
 	// The current balance in satoshis.
 	CurrentBalance int64 `protobuf:"varint,3,opt,name=current_balance,json=currentBalance,proto3" json:"current_balance,omitempty"`
 	// Timestamp of the last time the account was updated.
 	LastUpdate int64 `protobuf:"varint,4,opt,name=last_update,json=lastUpdate,proto3" json:"last_update,omitempty"`
-	//
-	//Timestamp of the account's expiration date. Zero means it does not expire.
+	// Timestamp of the account's expiration date. Zero means it does not expire.
 	ExpirationDate int64 `protobuf:"varint,5,opt,name=expiration_date,json=expirationDate,proto3" json:"expiration_date,omitempty"`
-	//
-	//The list of invoices created by the account. An invoice created by an
-	//account will credit the account balance if it is settled.
+	// The list of invoices created by the account. An invoice created by an
+	// account will credit the account balance if it is settled.
 	Invoices []*AccountInvoice `protobuf:"bytes,6,rep,name=invoices,proto3" json:"invoices,omitempty"`
-	//
-	//The list of payments made by the account. A payment made by an account will
-	//debit the account balance if it is settled.
+	// The list of payments made by the account. A payment made by an account will
+	// debit the account balance if it is settled.
 	Payments []*AccountPayment `protobuf:"bytes,7,rep,name=payments,proto3" json:"payments,omitempty"`
 }
 
@@ -302,10 +296,9 @@ type AccountPayment struct {
 	Hash []byte `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
 	// The state of the payment as reported by lnd.
 	State string `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`
-	//
-	//The full amount in satoshis reserved for this payment. This includes the
-	//routing fee estimated by the fee limit of the payment request. The actual
-	//debited amount will likely be lower if the fee is below the limit.
+	// The full amount in satoshis reserved for this payment. This includes the
+	// routing fee estimated by the fee limit of the payment request. The actual
+	// debited amount will likely be lower if the fee is below the limit.
 	FullAmount int64 `protobuf:"varint,3,opt,name=full_amount,json=fullAmount,proto3" json:"full_amount,omitempty"`
 }
 
@@ -371,9 +364,8 @@ type UpdateAccountRequest struct {
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// The new account balance to set. Set to -1 to not update the balance.
 	AccountBalance int64 `protobuf:"varint,2,opt,name=account_balance,json=accountBalance,proto3" json:"account_balance,omitempty"`
-	//
-	//The new account expiry to set. Set to -1 to not update the expiry. Set to 0
-	//to never expire.
+	// The new account expiry to set. Set to -1 to not update the expiry. Set to 0
+	// to never expire.
 	ExpirationDate int64 `protobuf:"varint,3,opt,name=expiration_date,json=expirationDate,proto3" json:"expiration_date,omitempty"`
 }
 

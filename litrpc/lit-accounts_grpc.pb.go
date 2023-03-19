@@ -18,28 +18,24 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AccountsClient interface {
+	// CreateAccount adds an entry to the account database. This entry represents
+	// an amount of satoshis (account balance) that can be spent using off-chain
+	// transactions (e.g. paying invoices).
 	//
-	//CreateAccount adds an entry to the account database. This entry represents
-	//an amount of satoshis (account balance) that can be spent using off-chain
-	//transactions (e.g. paying invoices).
+	// Macaroons can be created to be locked to an account. This makes sure that
+	// the bearer of the macaroon can only spend at most that amount of satoshis
+	// through the daemon that has issued the macaroon.
 	//
-	//Macaroons can be created to be locked to an account. This makes sure that
-	//the bearer of the macaroon can only spend at most that amount of satoshis
-	//through the daemon that has issued the macaroon.
-	//
-	//Accounts only assert a maximum amount spendable. Having a certain account
-	//balance does not guarantee that the node has the channel liquidity to
-	//actually spend that amount.
+	// Accounts only assert a maximum amount spendable. Having a certain account
+	// balance does not guarantee that the node has the channel liquidity to
+	// actually spend that amount.
 	CreateAccount(ctx context.Context, in *CreateAccountRequest, opts ...grpc.CallOption) (*CreateAccountResponse, error)
-	//
-	//UpdateAccount updates an existing account in the account database.
+	// UpdateAccount updates an existing account in the account database.
 	UpdateAccount(ctx context.Context, in *UpdateAccountRequest, opts ...grpc.CallOption) (*Account, error)
-	//
-	//ListAccounts returns all accounts that are currently stored in the account
-	//database.
+	// ListAccounts returns all accounts that are currently stored in the account
+	// database.
 	ListAccounts(ctx context.Context, in *ListAccountsRequest, opts ...grpc.CallOption) (*ListAccountsResponse, error)
-	//
-	//RemoveAccount removes the given account from the account database.
+	// RemoveAccount removes the given account from the account database.
 	RemoveAccount(ctx context.Context, in *RemoveAccountRequest, opts ...grpc.CallOption) (*RemoveAccountResponse, error)
 }
 
@@ -91,28 +87,24 @@ func (c *accountsClient) RemoveAccount(ctx context.Context, in *RemoveAccountReq
 // All implementations must embed UnimplementedAccountsServer
 // for forward compatibility
 type AccountsServer interface {
+	// CreateAccount adds an entry to the account database. This entry represents
+	// an amount of satoshis (account balance) that can be spent using off-chain
+	// transactions (e.g. paying invoices).
 	//
-	//CreateAccount adds an entry to the account database. This entry represents
-	//an amount of satoshis (account balance) that can be spent using off-chain
-	//transactions (e.g. paying invoices).
+	// Macaroons can be created to be locked to an account. This makes sure that
+	// the bearer of the macaroon can only spend at most that amount of satoshis
+	// through the daemon that has issued the macaroon.
 	//
-	//Macaroons can be created to be locked to an account. This makes sure that
-	//the bearer of the macaroon can only spend at most that amount of satoshis
-	//through the daemon that has issued the macaroon.
-	//
-	//Accounts only assert a maximum amount spendable. Having a certain account
-	//balance does not guarantee that the node has the channel liquidity to
-	//actually spend that amount.
+	// Accounts only assert a maximum amount spendable. Having a certain account
+	// balance does not guarantee that the node has the channel liquidity to
+	// actually spend that amount.
 	CreateAccount(context.Context, *CreateAccountRequest) (*CreateAccountResponse, error)
-	//
-	//UpdateAccount updates an existing account in the account database.
+	// UpdateAccount updates an existing account in the account database.
 	UpdateAccount(context.Context, *UpdateAccountRequest) (*Account, error)
-	//
-	//ListAccounts returns all accounts that are currently stored in the account
-	//database.
+	// ListAccounts returns all accounts that are currently stored in the account
+	// database.
 	ListAccounts(context.Context, *ListAccountsRequest) (*ListAccountsResponse, error)
-	//
-	//RemoveAccount removes the given account from the account database.
+	// RemoveAccount removes the given account from the account database.
 	RemoveAccount(context.Context, *RemoveAccountRequest) (*RemoveAccountResponse, error)
 	mustEmbedUnimplementedAccountsServer()
 }

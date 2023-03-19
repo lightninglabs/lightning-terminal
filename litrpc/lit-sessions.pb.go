@@ -236,11 +236,11 @@ type MacaroonPermission struct {
 	Entity string `protobuf:"bytes,1,opt,name=entity,proto3" json:"entity,omitempty"`
 	// The action that is granted. If entity is set to "uri", then action must
 	// be set to either:
-	//  - a particular URI to which access should be granted.
-	//  - a URI regex, in which case access will be granted to each URI that
-	//    matches the regex.
-	//  - the "***readonly***" keyword. This will result in the access being
-	//    granted to all read-only endpoints.
+	//   - a particular URI to which access should be granted.
+	//   - a URI regex, in which case access will be granted to each URI that
+	//     matches the regex.
+	//   - the "***readonly***" keyword. This will result in the access being
+	//     granted to all read-only endpoints.
 	Action string `protobuf:"bytes,2,opt,name=action,proto3" json:"action,omitempty"`
 }
 
@@ -357,13 +357,12 @@ type Session struct {
 	MacaroonRecipe         *MacaroonRecipe      `protobuf:"bytes,12,opt,name=macaroon_recipe,json=macaroonRecipe,proto3" json:"macaroon_recipe,omitempty"`
 	AccountId              string               `protobuf:"bytes,13,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
 	AutopilotFeatureInfo   map[string]*RulesMap `protobuf:"bytes,15,rep,name=autopilot_feature_info,json=autopilotFeatureInfo,proto3" json:"autopilot_feature_info,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	//
-	//The unix timestamp indicating the time at which the session was revoked.
-	//Note that this field has not been around since the beginning and so it
-	//could be the case that a session has been revoked but that this field
-	//will not have been set for that session. Therefore, it is suggested that
-	//readers should not assume that if this field is zero that the session is
-	//not revoked. Readers should instead first check the session_state field.
+	// The unix timestamp indicating the time at which the session was revoked.
+	// Note that this field has not been around since the beginning and so it
+	// could be the case that a session has been revoked but that this field
+	// will not have been set for that session. Therefore, it is suggested that
+	// readers should not assume that if this field is zero that the session is
+	// not revoked. Readers should instead first check the session_state field.
 	RevokedAt uint64 `protobuf:"varint,16,opt,name=revoked_at,json=revokedAt,proto3" json:"revoked_at,omitempty"`
 }
 
@@ -741,9 +740,8 @@ type RulesMap struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
-	//A map of rule name to RuleValue. The RuleValue should be parsed based on
-	//the name of the rule.
+	// A map of rule name to RuleValue. The RuleValue should be parsed based on
+	// the name of the rule.
 	Rules map[string]*RuleValue `protobuf:"bytes,1,rep,name=rules,proto3" json:"rules,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -792,6 +790,7 @@ type RuleValue struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Value:
+	//
 	//	*RuleValue_RateLimit
 	//	*RuleValue_ChanPolicyBounds
 	//	*RuleValue_HistoryLimit
@@ -955,11 +954,9 @@ type RateLimit struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
-	//The rate limit for read-only calls.
+	// The rate limit for read-only calls.
 	ReadLimit *Rate `protobuf:"bytes,1,opt,name=read_limit,json=readLimit,proto3" json:"read_limit,omitempty"`
-	//
-	//The rate limit for write/execution calls.
+	// The rate limit for write/execution calls.
 	WriteLimit *Rate `protobuf:"bytes,2,opt,name=write_limit,json=writeLimit,proto3" json:"write_limit,omitempty"`
 }
 
@@ -1014,11 +1011,9 @@ type Rate struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
-	//The number of times a call is allowed in num_hours number of hours.
+	// The number of times a call is allowed in num_hours number of hours.
 	Iterations uint32 `protobuf:"varint,1,opt,name=iterations,proto3" json:"iterations,omitempty"`
-	//
-	//The number of hours in which the iterations count takes place over.
+	// The number of hours in which the iterations count takes place over.
 	NumHours uint32 `protobuf:"varint,2,opt,name=num_hours,json=numHours,proto3" json:"num_hours,omitempty"`
 }
 
@@ -1073,13 +1068,11 @@ type HistoryLimit struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
-	//The absolute unix timestamp in seconds before which no information should
-	//be shared. This should only be set if duration is not set.
+	// The absolute unix timestamp in seconds before which no information should
+	// be shared. This should only be set if duration is not set.
 	StartTime uint64 `protobuf:"varint,1,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
-	//
-	//The maximum relative duration in seconds that a request is allowed to query
-	//for. This should only be set if start_time is not set.
+	// The maximum relative duration in seconds that a request is allowed to query
+	// for. This should only be set if start_time is not set.
 	Duration uint64 `protobuf:"varint,2,opt,name=duration,proto3" json:"duration,omitempty"`
 }
 
@@ -1134,29 +1127,21 @@ type ChannelPolicyBounds struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
-	//The minimum base fee in msat that the autopilot can set for a channel.
+	// The minimum base fee in msat that the autopilot can set for a channel.
 	MinBaseMsat uint64 `protobuf:"varint,1,opt,name=min_base_msat,json=minBaseMsat,proto3" json:"min_base_msat,omitempty"`
-	//
-	//The maximum base fee in msat that the autopilot can set for a channel.
+	// The maximum base fee in msat that the autopilot can set for a channel.
 	MaxBaseMsat uint64 `protobuf:"varint,2,opt,name=max_base_msat,json=maxBaseMsat,proto3" json:"max_base_msat,omitempty"`
-	//
-	//The minimum ppm fee in msat that the autopilot can set for a channel.
+	// The minimum ppm fee in msat that the autopilot can set for a channel.
 	MinRatePpm uint32 `protobuf:"varint,3,opt,name=min_rate_ppm,json=minRatePpm,proto3" json:"min_rate_ppm,omitempty"`
-	//
-	//The maximum ppm fee in msat that the autopilot can set for a channel.
+	// The maximum ppm fee in msat that the autopilot can set for a channel.
 	MaxRatePpm uint32 `protobuf:"varint,4,opt,name=max_rate_ppm,json=maxRatePpm,proto3" json:"max_rate_ppm,omitempty"`
-	//
-	//The minimum cltv delta that the autopilot may set for a channel.
+	// The minimum cltv delta that the autopilot may set for a channel.
 	MinCltvDelta uint32 `protobuf:"varint,5,opt,name=min_cltv_delta,json=minCltvDelta,proto3" json:"min_cltv_delta,omitempty"`
-	//
-	//The maximum cltv delta that the autopilot may set for a channel.
+	// The maximum cltv delta that the autopilot may set for a channel.
 	MaxCltvDelta uint32 `protobuf:"varint,6,opt,name=max_cltv_delta,json=maxCltvDelta,proto3" json:"max_cltv_delta,omitempty"`
-	//
-	//The minimum htlc msat that the autopilot may set for a channel.
+	// The minimum htlc msat that the autopilot may set for a channel.
 	MinHtlcMsat uint64 `protobuf:"varint,7,opt,name=min_htlc_msat,json=minHtlcMsat,proto3" json:"min_htlc_msat,omitempty"`
-	//
-	//The maximum htlc msat that the autopilot may set for a channel.
+	// The maximum htlc msat that the autopilot may set for a channel.
 	MaxHtlcMsat uint64 `protobuf:"varint,8,opt,name=max_htlc_msat,json=maxHtlcMsat,proto3" json:"max_htlc_msat,omitempty"`
 }
 

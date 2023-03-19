@@ -25,28 +25,21 @@ type AddAutopilotSessionRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
-	//A human readable label to assign to the session.
+	// A human readable label to assign to the session.
 	Label string `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
-	//
-	//The unix timestamp at which this session should be revoked.
+	// The unix timestamp at which this session should be revoked.
 	ExpiryTimestampSeconds uint64 `protobuf:"varint,2,opt,name=expiry_timestamp_seconds,json=expiryTimestampSeconds,proto3" json:"expiry_timestamp_seconds,omitempty"`
-	//
-	//The address of the mailbox server to connect to for this session.
+	// The address of the mailbox server to connect to for this session.
 	MailboxServerAddr string `protobuf:"bytes,3,opt,name=mailbox_server_addr,json=mailboxServerAddr,proto3" json:"mailbox_server_addr,omitempty"`
-	//
-	//Set to true if tls should be skipped for when connecting to the mailbox.
+	// Set to true if tls should be skipped for when connecting to the mailbox.
 	DevServer bool `protobuf:"varint,4,opt,name=dev_server,json=devServer,proto3" json:"dev_server,omitempty"`
-	//
-	//The features that the session should subscribe to. Each feature maps to
-	//a FeatureConfig that should be applied to that feature.
+	// The features that the session should subscribe to. Each feature maps to
+	// a FeatureConfig that should be applied to that feature.
 	Features map[string]*FeatureConfig `protobuf:"bytes,5,rep,name=features,proto3" json:"features,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	//
-	//Rules that apply to the entire session. By default, no rules will apply
-	//to the entire session.
+	// Rules that apply to the entire session. By default, no rules will apply
+	// to the entire session.
 	SessionRules *RulesMap `protobuf:"bytes,6,opt,name=session_rules,json=sessionRules,proto3" json:"session_rules,omitempty"`
-	//
-	//Set to true of the session should not make use of the privacy mapper.
+	// Set to true of the session should not make use of the privacy mapper.
 	NoPrivacyMapper bool `protobuf:"varint,7,opt,name=no_privacy_mapper,json=noPrivacyMapper,proto3" json:"no_privacy_mapper,omitempty"`
 }
 
@@ -136,13 +129,11 @@ type FeatureConfig struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
-	//The RulesMap acts as an override map. In other words, by default the rules
-	//values recommended by the Auto Pilot server will be used but the RulesMap
-	//can be used to override the defaults.
+	// The RulesMap acts as an override map. In other words, by default the rules
+	// values recommended by the Auto Pilot server will be used but the RulesMap
+	// can be used to override the defaults.
 	Rules *RulesMap `protobuf:"bytes,1,opt,name=rules,proto3" json:"rules,omitempty"`
-	//
-	//Serialised configuration for the feature.
+	// Serialised configuration for the feature.
 	Config []byte `protobuf:"bytes,2,opt,name=config,proto3" json:"config,omitempty"`
 }
 
@@ -235,8 +226,7 @@ type ListAutopilotSessionsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
-	//A list of the Autopilot sessions.
+	// A list of the Autopilot sessions.
 	Sessions []*Session `protobuf:"bytes,1,rep,name=sessions,proto3" json:"sessions,omitempty"`
 }
 
@@ -284,8 +274,7 @@ type AddAutopilotSessionResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
-	//Details of the session that was just created.
+	// Details of the session that was just created.
 	Session *Session `protobuf:"bytes,1,opt,name=session,proto3" json:"session,omitempty"`
 }
 
@@ -371,8 +360,7 @@ type ListAutopilotFeaturesResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
-	//A map of feature names to Feature objects describing the feature.
+	// A map of feature names to Feature objects describing the feature.
 	Features map[string]*Feature `protobuf:"bytes,1,rep,name=features,proto3" json:"features,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -505,24 +493,19 @@ type Feature struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
-	//Name is the name of the Autopilot feature.
+	// Name is the name of the Autopilot feature.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	//
-	//A human readable description of what the feature offers.
+	// A human readable description of what the feature offers.
 	Description string `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
-	//
-	//A map of rules that make sense for this feature. Each rule is accompanied
-	//with appropriate default values for the feature along with minimum and
-	//maximum values for the rules.
+	// A map of rules that make sense for this feature. Each rule is accompanied
+	// with appropriate default values for the feature along with minimum and
+	// maximum values for the rules.
 	Rules map[string]*RuleValues `protobuf:"bytes,3,rep,name=rules,proto3" json:"rules,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	//
-	//A list of URI permissions required by the feature.
+	// A list of URI permissions required by the feature.
 	PermissionsList []*Permissions `protobuf:"bytes,4,rep,name=permissions_list,json=permissionsList,proto3" json:"permissions_list,omitempty"`
-	//
-	//A boolean indicating if the user would need to upgrade their Litd version in
-	//order to subscribe to the Autopilot feature. This will be true if the
-	//feature rules set contains a rule that Litd is unaware of.
+	// A boolean indicating if the user would need to upgrade their Litd version in
+	// order to subscribe to the Autopilot feature. This will be true if the
+	// feature rules set contains a rule that Litd is unaware of.
 	RequiresUpgrade bool `protobuf:"varint,5,opt,name=requires_upgrade,json=requiresUpgrade,proto3" json:"requires_upgrade,omitempty"`
 }
 
@@ -598,18 +581,14 @@ type RuleValues struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
-	//Whether or not the users version of Litd is aware of this rule.
+	// Whether or not the users version of Litd is aware of this rule.
 	Known bool `protobuf:"varint,1,opt,name=known,proto3" json:"known,omitempty"`
-	//
-	//The default values for the rule that the Autopilot server recommends for
-	//the associated feature.
+	// The default values for the rule that the Autopilot server recommends for
+	// the associated feature.
 	Defaults *RuleValue `protobuf:"bytes,2,opt,name=defaults,proto3" json:"defaults,omitempty"`
-	//
-	//The minimum sane value for this rule for the associated feature.
+	// The minimum sane value for this rule for the associated feature.
 	MinValue *RuleValue `protobuf:"bytes,3,opt,name=min_value,json=minValue,proto3" json:"min_value,omitempty"`
-	//
-	//The maximum sane value for this rule for the associated feature.
+	// The maximum sane value for this rule for the associated feature.
 	MaxValue *RuleValue `protobuf:"bytes,4,opt,name=max_value,json=maxValue,proto3" json:"max_value,omitempty"`
 }
 
@@ -678,11 +657,9 @@ type Permissions struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
-	//The URI in question.
+	// The URI in question.
 	Method string `protobuf:"bytes,1,opt,name=method,proto3" json:"method,omitempty"`
-	//
-	//A list of the permissions required for this method.
+	// A list of the permissions required for this method.
 	Operations []*MacaroonPermission `protobuf:"bytes,2,rep,name=operations,proto3" json:"operations,omitempty"`
 }
 
