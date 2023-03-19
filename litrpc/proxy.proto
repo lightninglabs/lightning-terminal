@@ -5,7 +5,15 @@ package litrpc;
 option go_package = "github.com/lightninglabs/lightning-terminal/litrpc";
 
 service Proxy {
+    /* litcli: `getinfo`
+    GetInfo returns general information concerning the LiTd node.
+    */
     rpc GetInfo (GetInfoRequest) returns (GetInfoResponse);
+
+    /* litcli: `stop`
+    StopDaemon will send a shutdown request to the interrupt handler,
+    triggering a graceful shutdown of the daemon.
+    */
     rpc StopDaemon (StopDaemonRequest) returns (StopDaemonResponse);
 }
 

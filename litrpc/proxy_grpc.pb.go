@@ -18,7 +18,12 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ProxyClient interface {
+	// litcli: `getinfo`
+	// GetInfo returns general information concerning the LiTd node.
 	GetInfo(ctx context.Context, in *GetInfoRequest, opts ...grpc.CallOption) (*GetInfoResponse, error)
+	// litcli: `stop`
+	// StopDaemon will send a shutdown request to the interrupt handler,
+	// triggering a graceful shutdown of the daemon.
 	StopDaemon(ctx context.Context, in *StopDaemonRequest, opts ...grpc.CallOption) (*StopDaemonResponse, error)
 }
 
@@ -52,7 +57,12 @@ func (c *proxyClient) StopDaemon(ctx context.Context, in *StopDaemonRequest, opt
 // All implementations must embed UnimplementedProxyServer
 // for forward compatibility
 type ProxyServer interface {
+	// litcli: `getinfo`
+	// GetInfo returns general information concerning the LiTd node.
 	GetInfo(context.Context, *GetInfoRequest) (*GetInfoResponse, error)
+	// litcli: `stop`
+	// StopDaemon will send a shutdown request to the interrupt handler,
+	// triggering a graceful shutdown of the daemon.
 	StopDaemon(context.Context, *StopDaemonRequest) (*StopDaemonResponse, error)
 	mustEmbedUnimplementedProxyServer()
 }
