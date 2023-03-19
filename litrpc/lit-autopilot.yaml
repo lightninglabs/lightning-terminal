@@ -1,0 +1,16 @@
+type: google.api.Service
+config_version: 3
+
+http:
+  rules:
+
+    # lit-autopilot.proto
+    - selector: litrpc.Autopilot.AddAutopilotSession
+      post: "/v1/autopilot/sessions"
+      body: "*"
+    - selector: litrpc.Autopilot.ListAutopilotFeatures
+      get: "/v1/autopilot/features"
+    - selector: litrpc.Autopilot.ListAutopilotSessions
+      get: "/v1/autopilot/sessions"
+    - selector: litrpc.Autopilot.RevokeAutopilotSession
+      delete: "/v1/autopilot/sessions/{local_public_key}"

@@ -1,0 +1,123 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "proxy.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "Proxy"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/proxy/info": {
+      "get": {
+        "summary": "litcli: `proxy getinfo`\nGetInfo returns general information concerning the LiTd node.",
+        "operationId": "Proxy_GetInfo",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/litrpcGetInfoResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Proxy"
+        ]
+      }
+    },
+    "/v1/proxy/stop": {
+      "post": {
+        "summary": "litcli: `proxy stop`\nStopDaemon will send a shutdown request to the interrupt handler,\ntriggering a graceful shutdown of the daemon.",
+        "operationId": "Proxy_StopDaemon",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/litrpcStopDaemonResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/litrpcStopDaemonRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Proxy"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "litrpcGetInfoResponse": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "description": "The version of the LiTd software that the node is running."
+        }
+      }
+    },
+    "litrpcStopDaemonRequest": {
+      "type": "object"
+    },
+    "litrpcStopDaemonResponse": {
+      "type": "object"
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "type_url": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}

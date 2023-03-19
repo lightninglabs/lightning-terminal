@@ -1,0 +1,12 @@
+type: google.api.Service
+config_version: 3
+
+http:
+  rules:
+
+    # proxy.proto
+    - selector: litrpc.Proxy.StopDaemon
+      post: "/v1/proxy/stop"
+      body: "*"
+    - selector: litrpc.Proxy.GetInfo
+      get: "/v1/proxy/info"

@@ -1,0 +1,17 @@
+type: google.api.Service
+config_version: 3
+
+http:
+  rules:
+
+    # lit-accounts.proto
+    - selector: litrpc.Accounts.CreateAccount
+      post: "/v1/accounts"
+      body: "*"
+    - selector: litrpc.Accounts.UpdateAccount
+      post: "/v1/accounts/{id}"
+      body: "*"
+    - selector: litrpc.Accounts.ListAccounts
+      get: "/v1/accounts"
+    - selector: litrpc.Accounts.RemoveAccount
+      delete: "/v1/accounts/{id}"
