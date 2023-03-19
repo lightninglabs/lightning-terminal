@@ -135,13 +135,22 @@ type AddSessionRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Label                     string                `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
-	SessionType               SessionType           `protobuf:"varint,2,opt,name=session_type,json=sessionType,proto3,enum=litrpc.SessionType" json:"session_type,omitempty"`
-	ExpiryTimestampSeconds    uint64                `protobuf:"varint,3,opt,name=expiry_timestamp_seconds,json=expiryTimestampSeconds,proto3" json:"expiry_timestamp_seconds,omitempty"`
-	MailboxServerAddr         string                `protobuf:"bytes,4,opt,name=mailbox_server_addr,json=mailboxServerAddr,proto3" json:"mailbox_server_addr,omitempty"`
-	DevServer                 bool                  `protobuf:"varint,5,opt,name=dev_server,json=devServer,proto3" json:"dev_server,omitempty"`
+	// A user assigned label for the session.
+	Label string `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
+	// The session type. This will be used during macaroon construction to
+	// determine how restrictive to make the macaroon and thus the session access.
+	SessionType SessionType `protobuf:"varint,2,opt,name=session_type,json=sessionType,proto3,enum=litrpc.SessionType" json:"session_type,omitempty"`
+	// The time at which the session should automatically be revoked.
+	ExpiryTimestampSeconds uint64 `protobuf:"varint,3,opt,name=expiry_timestamp_seconds,json=expiryTimestampSeconds,proto3" json:"expiry_timestamp_seconds,omitempty"`
+	// The address of the mailbox server that the LNC connection should use.
+	MailboxServerAddr string `protobuf:"bytes,4,opt,name=mailbox_server_addr,json=mailboxServerAddr,proto3" json:"mailbox_server_addr,omitempty"`
+	// If set to true, tls will be skipped  when connecting to the mailbox.
+	DevServer bool `protobuf:"varint,5,opt,name=dev_server,json=devServer,proto3" json:"dev_server,omitempty"`
+	// Any custom permissions to add the session's macaroon.
 	MacaroonCustomPermissions []*MacaroonPermission `protobuf:"bytes,6,rep,name=macaroon_custom_permissions,json=macaroonCustomPermissions,proto3" json:"macaroon_custom_permissions,omitempty"`
-	AccountId                 string                `protobuf:"bytes,7,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
+	// The ID of the account to associate this session with. This should only be
+	// set if the session_type is TYPE_MACAROON_ACCOUNT.
+	AccountId string `protobuf:"bytes,7,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
 }
 
 func (x *AddSessionRequest) Reset() {
@@ -236,11 +245,11 @@ type MacaroonPermission struct {
 	Entity string `protobuf:"bytes,1,opt,name=entity,proto3" json:"entity,omitempty"`
 	// The action that is granted. If entity is set to "uri", then action must
 	// be set to either:
-	//   - a particular URI to which access should be granted.
-	//   - a URI regex, in which case access will be granted to each URI that
-	//     matches the regex.
-	//   - the "***readonly***" keyword. This will result in the access being
-	//     granted to all read-only endpoints.
+	// - a particular URI to which access should be granted.
+	// - a URI regex, in which case access will be granted to each URI that
+	// matches the regex.
+	// - the "***readonly***" keyword. This will result in the access being
+	// granted to all read-only endpoints.
 	Action string `protobuf:"bytes,2,opt,name=action,proto3" json:"action,omitempty"`
 }
 
@@ -295,6 +304,7 @@ type AddSessionResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// The session of the newly created session.
 	Session *Session `protobuf:"bytes,1,opt,name=session,proto3" json:"session,omitempty"`
 }
 
@@ -342,21 +352,44 @@ type Session struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id                     []byte               `protobuf:"bytes,14,opt,name=id,proto3" json:"id,omitempty"`
-	Label                  string               `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
-	SessionState           SessionState         `protobuf:"varint,2,opt,name=session_state,json=sessionState,proto3,enum=litrpc.SessionState" json:"session_state,omitempty"`
-	SessionType            SessionType          `protobuf:"varint,3,opt,name=session_type,json=sessionType,proto3,enum=litrpc.SessionType" json:"session_type,omitempty"`
-	ExpiryTimestampSeconds uint64               `protobuf:"varint,4,opt,name=expiry_timestamp_seconds,json=expiryTimestampSeconds,proto3" json:"expiry_timestamp_seconds,omitempty"`
-	MailboxServerAddr      string               `protobuf:"bytes,5,opt,name=mailbox_server_addr,json=mailboxServerAddr,proto3" json:"mailbox_server_addr,omitempty"`
-	DevServer              bool                 `protobuf:"varint,6,opt,name=dev_server,json=devServer,proto3" json:"dev_server,omitempty"`
-	PairingSecret          []byte               `protobuf:"bytes,7,opt,name=pairing_secret,json=pairingSecret,proto3" json:"pairing_secret,omitempty"`
-	PairingSecretMnemonic  string               `protobuf:"bytes,8,opt,name=pairing_secret_mnemonic,json=pairingSecretMnemonic,proto3" json:"pairing_secret_mnemonic,omitempty"`
-	LocalPublicKey         []byte               `protobuf:"bytes,9,opt,name=local_public_key,json=localPublicKey,proto3" json:"local_public_key,omitempty"`
-	RemotePublicKey        []byte               `protobuf:"bytes,10,opt,name=remote_public_key,json=remotePublicKey,proto3" json:"remote_public_key,omitempty"`
-	CreatedAt              uint64               `protobuf:"varint,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	MacaroonRecipe         *MacaroonRecipe      `protobuf:"bytes,12,opt,name=macaroon_recipe,json=macaroonRecipe,proto3" json:"macaroon_recipe,omitempty"`
-	AccountId              string               `protobuf:"bytes,13,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
-	AutopilotFeatureInfo   map[string]*RulesMap `protobuf:"bytes,15,rep,name=autopilot_feature_info,json=autopilotFeatureInfo,proto3" json:"autopilot_feature_info,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	// A unique ID assigned to the session. It is derived from the session
+	// macaroon.
+	Id []byte `protobuf:"bytes,14,opt,name=id,proto3" json:"id,omitempty"`
+	// A user assigned label for the session.
+	Label string `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
+	// The current state that the session is in. This will give an indication of
+	// if the session is currently usable or not.
+	SessionState SessionState `protobuf:"varint,2,opt,name=session_state,json=sessionState,proto3,enum=litrpc.SessionState" json:"session_state,omitempty"`
+	// The session type. The will given an indication of the restrictions applied
+	// to the macaroon assigned to the session.
+	SessionType SessionType `protobuf:"varint,3,opt,name=session_type,json=sessionType,proto3,enum=litrpc.SessionType" json:"session_type,omitempty"`
+	// The time at which the session will automatically be revoked.
+	ExpiryTimestampSeconds uint64 `protobuf:"varint,4,opt,name=expiry_timestamp_seconds,json=expiryTimestampSeconds,proto3" json:"expiry_timestamp_seconds,omitempty"`
+	// The address of the mailbox server that the LNC connection should use.
+	MailboxServerAddr string `protobuf:"bytes,5,opt,name=mailbox_server_addr,json=mailboxServerAddr,proto3" json:"mailbox_server_addr,omitempty"`
+	// If set to true, tls will be skipped  when connecting to the mailbox.
+	DevServer bool `protobuf:"varint,6,opt,name=dev_server,json=devServer,proto3" json:"dev_server,omitempty"`
+	// The LNC pairing phrase in byte form.
+	PairingSecret []byte `protobuf:"bytes,7,opt,name=pairing_secret,json=pairingSecret,proto3" json:"pairing_secret,omitempty"`
+	// The LNC pairing phrase in mnemonic form.
+	PairingSecretMnemonic string `protobuf:"bytes,8,opt,name=pairing_secret_mnemonic,json=pairingSecretMnemonic,proto3" json:"pairing_secret_mnemonic,omitempty"`
+	// The long term, local static public key used by this node for the LNC
+	// connection.
+	LocalPublicKey []byte `protobuf:"bytes,9,opt,name=local_public_key,json=localPublicKey,proto3" json:"local_public_key,omitempty"`
+	// The long term, remote static public key used by the remote party for the
+	// LNC connection.
+	RemotePublicKey []byte `protobuf:"bytes,10,opt,name=remote_public_key,json=remotePublicKey,proto3" json:"remote_public_key,omitempty"`
+	// The time at which the session was created.
+	CreatedAt uint64 `protobuf:"varint,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	// The recipe used for creating a macaroon to use with this session. This will
+	// be closely linked to the session type.
+	MacaroonRecipe *MacaroonRecipe `protobuf:"bytes,12,opt,name=macaroon_recipe,json=macaroonRecipe,proto3" json:"macaroon_recipe,omitempty"`
+	// If the session is for a specific account, then this will be the account ID
+	// it is associated with.
+	AccountId string `protobuf:"bytes,13,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
+	// If this session is for Autopilot use, then this will be the set of features
+	// that the session can be used for along with the rules for each feature.
+	AutopilotFeatureInfo map[string]*RulesMap `protobuf:"bytes,15,rep,name=autopilot_feature_info,json=autopilotFeatureInfo,proto3" json:"autopilot_feature_info,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// The unix timestamp indicating the time at which the session was revoked.
 	// Note that this field has not been around since the beginning and so it
 	// could be the case that a session has been revoked but that this field
@@ -515,8 +548,10 @@ type MacaroonRecipe struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// A list of permissions that should be included in the macaroon.
 	Permissions []*MacaroonPermission `protobuf:"bytes,1,rep,name=permissions,proto3" json:"permissions,omitempty"`
-	Caveats     []string              `protobuf:"bytes,2,rep,name=caveats,proto3" json:"caveats,omitempty"`
+	// A list of caveats to add to the macaroon.
+	Caveats []string `protobuf:"bytes,2,rep,name=caveats,proto3" json:"caveats,omitempty"`
 }
 
 func (x *MacaroonRecipe) Reset() {
@@ -608,6 +643,7 @@ type ListSessionsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// A list of sessions.
 	Sessions []*Session `protobuf:"bytes,1,rep,name=sessions,proto3" json:"sessions,omitempty"`
 }
 
@@ -655,6 +691,7 @@ type RevokeSessionRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// The local static key of the session to be revoked.
 	LocalPublicKey []byte `protobuf:"bytes,8,opt,name=local_public_key,json=localPublicKey,proto3" json:"local_public_key,omitempty"`
 }
 
@@ -1238,7 +1275,9 @@ type OffChainBudget struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	MaxAmtMsat  uint64 `protobuf:"varint,1,opt,name=max_amt_msat,json=maxAmtMsat,proto3" json:"max_amt_msat,omitempty"`
+	// The maximum amount that can be spent off-chain excluding fees.
+	MaxAmtMsat uint64 `protobuf:"varint,1,opt,name=max_amt_msat,json=maxAmtMsat,proto3" json:"max_amt_msat,omitempty"`
+	// The maximum amount that can be spent off-chain on fees.
 	MaxFeesMsat uint64 `protobuf:"varint,2,opt,name=max_fees_msat,json=maxFeesMsat,proto3" json:"max_fees_msat,omitempty"`
 }
 
@@ -1293,8 +1332,10 @@ type OnChainBudget struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// The maximum amount that can be spent on-chain including fees.
 	AbsoluteAmtSats uint64 `protobuf:"varint,1,opt,name=absolute_amt_sats,json=absoluteAmtSats,proto3" json:"absolute_amt_sats,omitempty"`
-	MaxSatPerVByte  uint64 `protobuf:"varint,2,opt,name=max_sat_per_v_byte,json=maxSatPerVByte,proto3" json:"max_sat_per_v_byte,omitempty"`
+	// The maximum amount that can be spent on-chain in fees.
+	MaxSatPerVByte uint64 `protobuf:"varint,2,opt,name=max_sat_per_v_byte,json=maxSatPerVByte,proto3" json:"max_sat_per_v_byte,omitempty"`
 }
 
 func (x *OnChainBudget) Reset() {
@@ -1386,6 +1427,8 @@ type ChannelRestrict struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// A list of channel IDs that the Autopilot should _not_ perform any actions
+	// on.
 	ChannelIds []uint64 `protobuf:"varint,1,rep,packed,name=channel_ids,json=channelIds,proto3" json:"channel_ids,omitempty"`
 }
 
@@ -1433,6 +1476,7 @@ type PeerRestrict struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// A list of peer IDs that the Autopilot should _not_ perform any actions on.
 	PeerIds []string `protobuf:"bytes,1,rep,name=peer_ids,json=peerIds,proto3" json:"peer_ids,omitempty"`
 }
 
