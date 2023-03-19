@@ -7,15 +7,31 @@ package litrpc;
 option go_package = "github.com/lightninglabs/lightning-terminal/litrpc";
 
 service Autopilot {
+    /* litcli: `autopilot features`
+    ListAutopilotFeatures fetches all the features supported by the Autopilot
+    server along with the rules that we need to support in order to subscribe
+    to those features.
+    */
     rpc ListAutopilotFeatures (ListAutopilotFeaturesRequest)
         returns (ListAutopilotFeaturesResponse);
 
+    /* litcli: `autopilot add`
+    AddAutopilotSession creates a new LNC session and attempts to register it
+    with the Autopilot server.
+    */
     rpc AddAutopilotSession (AddAutopilotSessionRequest)
         returns (AddAutopilotSessionResponse);
 
+    /* litcli: `autopilot list`
+    ListAutopilotSessions lists all the sessions that are of type
+    TypeAutopilot.
+    */
     rpc ListAutopilotSessions (ListAutopilotSessionsRequest)
         returns (ListAutopilotSessionsResponse);
 
+    /* litcli: `autopilot revoke`
+    RevokeAutopilotSession revokes an Autopilot session.
+    */
     rpc RevokeAutopilotSession (RevokeAutopilotSessionRequest)
         returns (RevokeAutopilotSessionResponse);
 }
@@ -101,6 +117,9 @@ message ListAutopilotFeaturesResponse {
 }
 
 message RevokeAutopilotSessionRequest {
+    /*
+    The local static public key of the Autopilot session to be revoked.
+    */
     bytes local_public_key = 1;
 }
 

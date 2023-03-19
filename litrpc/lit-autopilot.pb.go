@@ -408,6 +408,7 @@ type RevokeAutopilotSessionRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// The local static public key of the Autopilot session to be revoked.
 	LocalPublicKey []byte `protobuf:"bytes,1,opt,name=local_public_key,json=localPublicKey,proto3" json:"local_public_key,omitempty"`
 }
 
