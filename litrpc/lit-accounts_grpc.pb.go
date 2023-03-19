@@ -18,6 +18,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AccountsClient interface {
+	// litcli: `accounts create`
 	// CreateAccount adds an entry to the account database. This entry represents
 	// an amount of satoshis (account balance) that can be spent using off-chain
 	// transactions (e.g. paying invoices).
@@ -30,11 +31,14 @@ type AccountsClient interface {
 	// balance does not guarantee that the node has the channel liquidity to
 	// actually spend that amount.
 	CreateAccount(ctx context.Context, in *CreateAccountRequest, opts ...grpc.CallOption) (*CreateAccountResponse, error)
+	// litcli: `accounts update`
 	// UpdateAccount updates an existing account in the account database.
 	UpdateAccount(ctx context.Context, in *UpdateAccountRequest, opts ...grpc.CallOption) (*Account, error)
+	// litcli: `accounts list`
 	// ListAccounts returns all accounts that are currently stored in the account
 	// database.
 	ListAccounts(ctx context.Context, in *ListAccountsRequest, opts ...grpc.CallOption) (*ListAccountsResponse, error)
+	// litcli: `accounts remove`
 	// RemoveAccount removes the given account from the account database.
 	RemoveAccount(ctx context.Context, in *RemoveAccountRequest, opts ...grpc.CallOption) (*RemoveAccountResponse, error)
 }
@@ -87,6 +91,7 @@ func (c *accountsClient) RemoveAccount(ctx context.Context, in *RemoveAccountReq
 // All implementations must embed UnimplementedAccountsServer
 // for forward compatibility
 type AccountsServer interface {
+	// litcli: `accounts create`
 	// CreateAccount adds an entry to the account database. This entry represents
 	// an amount of satoshis (account balance) that can be spent using off-chain
 	// transactions (e.g. paying invoices).
@@ -99,11 +104,14 @@ type AccountsServer interface {
 	// balance does not guarantee that the node has the channel liquidity to
 	// actually spend that amount.
 	CreateAccount(context.Context, *CreateAccountRequest) (*CreateAccountResponse, error)
+	// litcli: `accounts update`
 	// UpdateAccount updates an existing account in the account database.
 	UpdateAccount(context.Context, *UpdateAccountRequest) (*Account, error)
+	// litcli: `accounts list`
 	// ListAccounts returns all accounts that are currently stored in the account
 	// database.
 	ListAccounts(context.Context, *ListAccountsRequest) (*ListAccountsResponse, error)
+	// litcli: `accounts remove`
 	// RemoveAccount removes the given account from the account database.
 	RemoveAccount(context.Context, *RemoveAccountRequest) (*RemoveAccountResponse, error)
 	mustEmbedUnimplementedAccountsServer()
