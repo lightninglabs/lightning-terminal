@@ -23,20 +23,16 @@ const (
 type ActionState int32
 
 const (
-	//
-	//No state was assigned to the action. This should never be the case.
+	// No state was assigned to the action. This should never be the case.
 	ActionState_STATE_UNKNOWN ActionState = 0
-	//
-	//Pending means that the request resulting in the action being created
-	//came through but that no response came back from the appropriate backend.
-	//This means that the Action is either still being processed or that it
-	//did not successfully complete.
+	// Pending means that the request resulting in the action being created
+	// came through but that no response came back from the appropriate backend.
+	// This means that the Action is either still being processed or that it
+	// did not successfully complete.
 	ActionState_STATE_PENDING ActionState = 1
-	//
-	//Done means that the action successfully completed.
+	// Done means that the action successfully completed.
 	ActionState_STATE_DONE ActionState = 2
-	//
-	//Error means that the Action did not successfully complete.
+	// Error means that the Action did not successfully complete.
 	ActionState_STATE_ERROR ActionState = 3
 )
 
@@ -88,16 +84,13 @@ type PrivacyMapConversionRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
-	//If set to true, then the input string will be taken as the real value and
-	//the response will the the pseudo value it if exists. Otherwise, the input
-	//string will be assumed to be the pseudo value.
+	// If set to true, then the input string will be taken as the real value and
+	// the response will the the pseudo value it if exists. Otherwise, the input
+	// string will be assumed to be the pseudo value.
 	RealToPseudo bool `protobuf:"varint,1,opt,name=real_to_pseudo,json=realToPseudo,proto3" json:"real_to_pseudo,omitempty"`
-	//
-	//The session ID under which to search for the real-pseudo pair.
+	// The session ID under which to search for the real-pseudo pair.
 	SessionId []byte `protobuf:"bytes,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
-	//
-	//The input to be converted into the real or pseudo value.
+	// The input to be converted into the real or pseudo value.
 	Input string `protobuf:"bytes,3,opt,name=input,proto3" json:"input,omitempty"`
 }
 
@@ -159,8 +152,7 @@ type PrivacyMapConversionResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
-	//The resulting real or pseudo output.
+	// The resulting real or pseudo output.
 	Output string `protobuf:"bytes,1,opt,name=output,proto3" json:"output,omitempty"`
 }
 
@@ -208,50 +200,39 @@ type ListActionsRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
-	//The feature name which the filter the actions by. If left empty, all feature
-	//actions will be returned.
+	// The feature name which the filter the actions by. If left empty, all feature
+	// actions will be returned.
 	FeatureName string `protobuf:"bytes,1,opt,name=feature_name,json=featureName,proto3" json:"feature_name,omitempty"`
-	//
-	//The actor name to filter on. If left empty, all actor actions will be
-	//returned.
+	// The actor name to filter on. If left empty, all actor actions will be
+	// returned.
 	ActorName string `protobuf:"bytes,2,opt,name=actor_name,json=actorName,proto3" json:"actor_name,omitempty"`
-	//
-	//The method name to filter on. If left empty, actions for any method will be
-	//returned.
+	// The method name to filter on. If left empty, actions for any method will be
+	// returned.
 	MethodName string `protobuf:"bytes,3,opt,name=method_name,json=methodName,proto3" json:"method_name,omitempty"`
-	//
-	//The action state to filter on. If set to zero, actions for any state will
-	//be returned.
+	// The action state to filter on. If set to zero, actions for any state will
+	// be returned.
 	State ActionState `protobuf:"varint,4,opt,name=state,proto3,enum=litrpc.ActionState" json:"state,omitempty"`
-	//
-	//The index of an action that will be used as the start of a query to
-	//determine which actions should be returned in the response.
+	// The index of an action that will be used as the start of a query to
+	// determine which actions should be returned in the response.
 	IndexOffset uint64 `protobuf:"varint,5,opt,name=index_offset,json=indexOffset,proto3" json:"index_offset,omitempty"`
-	//
-	//The max number of actions to return in the response to this query.
+	// The max number of actions to return in the response to this query.
 	MaxNumActions uint64 `protobuf:"varint,6,opt,name=max_num_actions,json=maxNumActions,proto3" json:"max_num_actions,omitempty"`
-	//
-	//If set, the actions returned will result from seeking backwards from the
-	//specified index offset. This can be used to paginate backwards.
+	// If set, the actions returned will result from seeking backwards from the
+	// specified index offset. This can be used to paginate backwards.
 	Reversed bool `protobuf:"varint,7,opt,name=reversed,proto3" json:"reversed,omitempty"`
-	//
-	//Set to true if the total number of all actions that match the given filters
-	//should be counted and returned in the request. Note that setting this will
-	//significantly decrease the performance of the query if there are many
-	//actions in the db.
+	// Set to true if the total number of all actions that match the given filters
+	// should be counted and returned in the request. Note that setting this will
+	// significantly decrease the performance of the query if there are many
+	// actions in the db.
 	CountTotal bool `protobuf:"varint,8,opt,name=count_total,json=countTotal,proto3" json:"count_total,omitempty"`
-	//
-	//The session ID to filter on. If left empty, actions for any session will
-	//be returned.
+	// The session ID to filter on. If left empty, actions for any session will
+	// be returned.
 	SessionId []byte `protobuf:"bytes,9,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
-	//
-	//If specified, then only actions created after the given timestamp will be
-	//considered.
+	// If specified, then only actions created after the given timestamp will be
+	// considered.
 	StartTimestamp uint64 `protobuf:"varint,10,opt,name=start_timestamp,json=startTimestamp,proto3" json:"start_timestamp,omitempty"`
-	//
-	//If specified, then only actions created before the given timestamp will be
-	//considered.
+	// If specified, then only actions created before the given timestamp will be
+	// considered.
 	EndTimestamp uint64 `protobuf:"varint,11,opt,name=end_timestamp,json=endTimestamp,proto3" json:"end_timestamp,omitempty"`
 }
 
@@ -369,16 +350,13 @@ type ListActionsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
-	//A list of actions performed by the autopilot server.
+	// A list of actions performed by the autopilot server.
 	Actions []*Action `protobuf:"bytes,1,rep,name=actions,proto3" json:"actions,omitempty"`
-	//
-	//The index of the last item in the set of returned actions. This can be used
-	//to seek further, pagination style.
+	// The index of the last item in the set of returned actions. This can be used
+	// to seek further, pagination style.
 	LastIndexOffset uint64 `protobuf:"varint,2,opt,name=last_index_offset,json=lastIndexOffset,proto3" json:"last_index_offset,omitempty"`
-	//
-	//The total number of actions that matched the filter in the request. It is
-	//only set if count_total was set in the request.
+	// The total number of actions that matched the filter in the request. It is
+	// only set if count_total was set in the request.
 	TotalCount uint64 `protobuf:"varint,3,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
 }
 
@@ -440,40 +418,29 @@ type Action struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
-	//The name of the actor that initiated the action.
+	// The name of the actor that initiated the action.
 	ActorName string `protobuf:"bytes,1,opt,name=actor_name,json=actorName,proto3" json:"actor_name,omitempty"`
-	//
-	//The name of the feature that triggered the action.
+	// The name of the feature that triggered the action.
 	FeatureName string `protobuf:"bytes,2,opt,name=feature_name,json=featureName,proto3" json:"feature_name,omitempty"`
-	//
-	//A human readable reason that the action was performed.
+	// A human readable reason that the action was performed.
 	Trigger string `protobuf:"bytes,3,opt,name=trigger,proto3" json:"trigger,omitempty"`
-	//
-	//A human readable string describing the intended outcome successfully
-	//performing the action.
+	// A human readable string describing the intended outcome successfully
+	// performing the action.
 	Intent string `protobuf:"bytes,4,opt,name=intent,proto3" json:"intent,omitempty"`
-	//
-	//Structured info added by the action performer.
+	// Structured info added by the action performer.
 	StructuredJsonData string `protobuf:"bytes,5,opt,name=structured_json_data,json=structuredJsonData,proto3" json:"structured_json_data,omitempty"`
-	//
-	//The URI of the method called.
+	// The URI of the method called.
 	RpcMethod string `protobuf:"bytes,6,opt,name=rpc_method,json=rpcMethod,proto3" json:"rpc_method,omitempty"`
-	//
-	//The parameters of the method call in compact json form.
+	// The parameters of the method call in compact json form.
 	RpcParamsJson string `protobuf:"bytes,7,opt,name=rpc_params_json,json=rpcParamsJson,proto3" json:"rpc_params_json,omitempty"`
-	//
-	//The unix timestamp in seconds at which the action was attempted.
+	// The unix timestamp in seconds at which the action was attempted.
 	Timestamp uint64 `protobuf:"varint,8,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	//
-	//The action state. See ActionState for the meaning of each state.
+	// The action state. See ActionState for the meaning of each state.
 	State ActionState `protobuf:"varint,9,opt,name=state,proto3,enum=litrpc.ActionState" json:"state,omitempty"`
-	//
-	//If the state is Error, then this string will show the human readable reason
-	//for why the action errored out.
+	// If the state is Error, then this string will show the human readable reason
+	// for why the action errored out.
 	ErrorReason string `protobuf:"bytes,10,opt,name=error_reason,json=errorReason,proto3" json:"error_reason,omitempty"`
-	//
-	//The ID of the session under which the action was performed.
+	// The ID of the session under which the action was performed.
 	SessionId []byte `protobuf:"bytes,11,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 }
 

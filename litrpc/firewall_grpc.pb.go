@@ -18,7 +18,21 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type FirewallClient interface {
+	// litcli: `actions`
+	// ListActions will return a list of actions that have been performed on the
+	// node. The actions that will be persisted depends on the value of the
+	// `--firewall.request-logger.level` config option. The default value of the
+	// option is the "interceptor" mode which will persist only the actions (with
+	// all request parameters) made with macaroons with caveats that force them
+	// to be checked by an rpc middleware interceptor. If the "all" mode is used
+	// then all actions will be persisted but only full request parameters will
+	// only be stored if the actions are interceptor actions, otherwise only the
+	// URI and timestamp of the actions will be stored. The "full" mode will
+	// persist all request data for all actions.
 	ListActions(ctx context.Context, in *ListActionsRequest, opts ...grpc.CallOption) (*ListActionsResponse, error)
+	// litcli: `privacy`
+	// PrivacyMapConversion can be used map real values to their pseudo
+	// counterpart and vice versa.
 	PrivacyMapConversion(ctx context.Context, in *PrivacyMapConversionRequest, opts ...grpc.CallOption) (*PrivacyMapConversionResponse, error)
 }
 
@@ -52,7 +66,21 @@ func (c *firewallClient) PrivacyMapConversion(ctx context.Context, in *PrivacyMa
 // All implementations must embed UnimplementedFirewallServer
 // for forward compatibility
 type FirewallServer interface {
+	// litcli: `actions`
+	// ListActions will return a list of actions that have been performed on the
+	// node. The actions that will be persisted depends on the value of the
+	// `--firewall.request-logger.level` config option. The default value of the
+	// option is the "interceptor" mode which will persist only the actions (with
+	// all request parameters) made with macaroons with caveats that force them
+	// to be checked by an rpc middleware interceptor. If the "all" mode is used
+	// then all actions will be persisted but only full request parameters will
+	// only be stored if the actions are interceptor actions, otherwise only the
+	// URI and timestamp of the actions will be stored. The "full" mode will
+	// persist all request data for all actions.
 	ListActions(context.Context, *ListActionsRequest) (*ListActionsResponse, error)
+	// litcli: `privacy`
+	// PrivacyMapConversion can be used map real values to their pseudo
+	// counterpart and vice versa.
 	PrivacyMapConversion(context.Context, *PrivacyMapConversionRequest) (*PrivacyMapConversionResponse, error)
 	mustEmbedUnimplementedFirewallServer()
 }

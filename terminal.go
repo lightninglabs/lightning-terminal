@@ -874,6 +874,41 @@ func (g *LightningTerminal) RegisterRestSubserver(ctx context.Context,
 		return err
 	}
 
+	err = litrpc.RegisterAccountsHandlerFromEndpoint(
+		ctx, mux, endpoint, dialOpts,
+	)
+	if err != nil {
+		return err
+	}
+
+	err = litrpc.RegisterFirewallHandlerFromEndpoint(
+		ctx, mux, endpoint, dialOpts,
+	)
+	if err != nil {
+		return err
+	}
+
+	err = litrpc.RegisterAutopilotHandlerFromEndpoint(
+		ctx, mux, endpoint, dialOpts,
+	)
+	if err != nil {
+		return err
+	}
+
+	err = litrpc.RegisterSessionsHandlerFromEndpoint(
+		ctx, mux, endpoint, dialOpts,
+	)
+	if err != nil {
+		return err
+	}
+
+	err = litrpc.RegisterProxyHandlerFromEndpoint(
+		ctx, mux, endpoint, dialOpts,
+	)
+	if err != nil {
+		return err
+	}
+
 	err = frdrpc.RegisterFaradayServerHandlerFromEndpoint(
 		ctx, mux, endpoint, dialOpts,
 	)

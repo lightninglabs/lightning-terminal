@@ -18,8 +18,15 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SessionsClient interface {
+	// litcli: `sessions add`
+	// AddSession adds and starts a new LNC session.
 	AddSession(ctx context.Context, in *AddSessionRequest, opts ...grpc.CallOption) (*AddSessionResponse, error)
+	// litcli: `sessions list`
+	// ListSessions returns all sessions known to the session store.
 	ListSessions(ctx context.Context, in *ListSessionsRequest, opts ...grpc.CallOption) (*ListSessionsResponse, error)
+	// litcli: `sessions revoke`
+	// RevokeSession revokes a single session and also stops it if it is currently
+	// active.
 	RevokeSession(ctx context.Context, in *RevokeSessionRequest, opts ...grpc.CallOption) (*RevokeSessionResponse, error)
 }
 
@@ -62,8 +69,15 @@ func (c *sessionsClient) RevokeSession(ctx context.Context, in *RevokeSessionReq
 // All implementations must embed UnimplementedSessionsServer
 // for forward compatibility
 type SessionsServer interface {
+	// litcli: `sessions add`
+	// AddSession adds and starts a new LNC session.
 	AddSession(context.Context, *AddSessionRequest) (*AddSessionResponse, error)
+	// litcli: `sessions list`
+	// ListSessions returns all sessions known to the session store.
 	ListSessions(context.Context, *ListSessionsRequest) (*ListSessionsResponse, error)
+	// litcli: `sessions revoke`
+	// RevokeSession revokes a single session and also stops it if it is currently
+	// active.
 	RevokeSession(context.Context, *RevokeSessionRequest) (*RevokeSessionResponse, error)
 	mustEmbedUnimplementedSessionsServer()
 }

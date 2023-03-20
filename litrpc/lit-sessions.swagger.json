@@ -1,0 +1,520 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "lit-sessions.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "Sessions"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/sessions": {
+      "get": {
+        "summary": "litcli: `sessions list`\nListSessions returns all sessions known to the session store.",
+        "operationId": "Sessions_ListSessions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/litrpcListSessionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Sessions"
+        ]
+      },
+      "post": {
+        "summary": "litcli: `sessions add`\nAddSession adds and starts a new LNC session.",
+        "operationId": "Sessions_AddSession",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/litrpcAddSessionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/litrpcAddSessionRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
+    "/v1/sessions/{local_public_key}": {
+      "delete": {
+        "summary": "litcli: `sessions revoke`\nRevokeSession revokes a single session and also stops it if it is currently\nactive.",
+        "operationId": "Sessions_RevokeSession",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/litrpcRevokeSessionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "local_public_key",
+            "description": "The local static key of the session to be revoked.\nWhen using REST, this field must be encoded as base64url.",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "byte"
+          }
+        ],
+        "tags": [
+          "Sessions"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "litrpcAddSessionRequest": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "A user assigned label for the session."
+        },
+        "session_type": {
+          "$ref": "#/definitions/litrpcSessionType",
+          "description": "The session type. This will be used during macaroon construction to\ndetermine how restrictive to make the macaroon and thus the session access."
+        },
+        "expiry_timestamp_seconds": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The time at which the session should automatically be revoked."
+        },
+        "mailbox_server_addr": {
+          "type": "string",
+          "description": "The address of the mailbox server that the LNC connection should use."
+        },
+        "dev_server": {
+          "type": "boolean",
+          "description": "If set to true, tls will be skipped  when connecting to the mailbox."
+        },
+        "macaroon_custom_permissions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/litrpcMacaroonPermission"
+          },
+          "description": "Any custom permissions to add the session's macaroon."
+        },
+        "account_id": {
+          "type": "string",
+          "description": "The ID of the account to associate this session with. This should only be\nset if the session_type is TYPE_MACAROON_ACCOUNT."
+        }
+      }
+    },
+    "litrpcAddSessionResponse": {
+      "type": "object",
+      "properties": {
+        "session": {
+          "$ref": "#/definitions/litrpcSession",
+          "description": "The session of the newly created session."
+        }
+      }
+    },
+    "litrpcChannelPolicyBounds": {
+      "type": "object",
+      "properties": {
+        "min_base_msat": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The minimum base fee in msat that the autopilot can set for a channel."
+        },
+        "max_base_msat": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The maximum base fee in msat that the autopilot can set for a channel."
+        },
+        "min_rate_ppm": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The minimum ppm fee in msat that the autopilot can set for a channel."
+        },
+        "max_rate_ppm": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The maximum ppm fee in msat that the autopilot can set for a channel."
+        },
+        "min_cltv_delta": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The minimum cltv delta that the autopilot may set for a channel."
+        },
+        "max_cltv_delta": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The maximum cltv delta that the autopilot may set for a channel."
+        },
+        "min_htlc_msat": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The minimum htlc msat that the autopilot may set for a channel."
+        },
+        "max_htlc_msat": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The maximum htlc msat that the autopilot may set for a channel."
+        }
+      }
+    },
+    "litrpcChannelRestrict": {
+      "type": "object",
+      "properties": {
+        "channel_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uint64"
+          },
+          "description": "A list of channel IDs that the Autopilot should _not_ perform any actions\non."
+        }
+      }
+    },
+    "litrpcHistoryLimit": {
+      "type": "object",
+      "properties": {
+        "start_time": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The absolute unix timestamp in seconds before which no information should\nbe shared. This should only be set if duration is not set."
+        },
+        "duration": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The maximum relative duration in seconds that a request is allowed to query\nfor. This should only be set if start_time is not set."
+        }
+      }
+    },
+    "litrpcListSessionsResponse": {
+      "type": "object",
+      "properties": {
+        "sessions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/litrpcSession"
+          },
+          "description": "A list of sessions."
+        }
+      }
+    },
+    "litrpcMacaroonPermission": {
+      "type": "object",
+      "properties": {
+        "entity": {
+          "type": "string",
+          "description": "The entity a permission grants access to. If a entity is set to the\n\"uri\" keyword then the action entry should be one of the special cases\ndescribed in the comment for action."
+        },
+        "action": {
+          "type": "string",
+          "description": "The action that is granted. If entity is set to \"uri\", then action must\nbe set to either:\n- a particular URI to which access should be granted.\n- a URI regex, in which case access will be granted to each URI that\nmatches the regex.\n- the \"***readonly***\" keyword. This will result in the access being\ngranted to all read-only endpoints."
+        }
+      }
+    },
+    "litrpcMacaroonRecipe": {
+      "type": "object",
+      "properties": {
+        "permissions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/litrpcMacaroonPermission"
+          },
+          "description": "A list of permissions that should be included in the macaroon."
+        },
+        "caveats": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "A list of caveats to add to the macaroon."
+        }
+      }
+    },
+    "litrpcOffChainBudget": {
+      "type": "object",
+      "properties": {
+        "max_amt_msat": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The maximum amount that can be spent off-chain excluding fees."
+        },
+        "max_fees_msat": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The maximum amount that can be spent off-chain on fees."
+        }
+      }
+    },
+    "litrpcOnChainBudget": {
+      "type": "object",
+      "properties": {
+        "absolute_amt_sats": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The maximum amount that can be spent on-chain including fees."
+        },
+        "max_sat_per_v_byte": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The maximum amount that can be spent on-chain in fees."
+        }
+      }
+    },
+    "litrpcPeerRestrict": {
+      "type": "object",
+      "properties": {
+        "peer_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "A list of peer IDs that the Autopilot should _not_ perform any actions on."
+        }
+      }
+    },
+    "litrpcRate": {
+      "type": "object",
+      "properties": {
+        "iterations": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The number of times a call is allowed in num_hours number of hours."
+        },
+        "num_hours": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The number of hours in which the iterations count takes place over."
+        }
+      }
+    },
+    "litrpcRateLimit": {
+      "type": "object",
+      "properties": {
+        "read_limit": {
+          "$ref": "#/definitions/litrpcRate",
+          "description": "The rate limit for read-only calls."
+        },
+        "write_limit": {
+          "$ref": "#/definitions/litrpcRate",
+          "description": "The rate limit for write/execution calls."
+        }
+      }
+    },
+    "litrpcRevokeSessionResponse": {
+      "type": "object"
+    },
+    "litrpcRuleValue": {
+      "type": "object",
+      "properties": {
+        "rate_limit": {
+          "$ref": "#/definitions/litrpcRateLimit"
+        },
+        "chan_policy_bounds": {
+          "$ref": "#/definitions/litrpcChannelPolicyBounds"
+        },
+        "history_limit": {
+          "$ref": "#/definitions/litrpcHistoryLimit"
+        },
+        "off_chain_budget": {
+          "$ref": "#/definitions/litrpcOffChainBudget"
+        },
+        "on_chain_budget": {
+          "$ref": "#/definitions/litrpcOnChainBudget"
+        },
+        "send_to_self": {
+          "$ref": "#/definitions/litrpcSendToSelf"
+        },
+        "channel_restrict": {
+          "$ref": "#/definitions/litrpcChannelRestrict"
+        },
+        "peer_restrict": {
+          "$ref": "#/definitions/litrpcPeerRestrict"
+        }
+      }
+    },
+    "litrpcRulesMap": {
+      "type": "object",
+      "properties": {
+        "rules": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/litrpcRuleValue"
+          },
+          "description": "A map of rule name to RuleValue. The RuleValue should be parsed based on\nthe name of the rule."
+        }
+      }
+    },
+    "litrpcSendToSelf": {
+      "type": "object"
+    },
+    "litrpcSession": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "byte",
+          "description": "A unique ID assigned to the session. It is derived from the session\nmacaroon."
+        },
+        "label": {
+          "type": "string",
+          "description": "A user assigned label for the session."
+        },
+        "session_state": {
+          "$ref": "#/definitions/litrpcSessionState",
+          "description": "The current state that the session is in. This will give an indication of\nif the session is currently usable or not."
+        },
+        "session_type": {
+          "$ref": "#/definitions/litrpcSessionType",
+          "description": "The session type. The will given an indication of the restrictions applied\nto the macaroon assigned to the session."
+        },
+        "expiry_timestamp_seconds": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The time at which the session will automatically be revoked."
+        },
+        "mailbox_server_addr": {
+          "type": "string",
+          "description": "The address of the mailbox server that the LNC connection should use."
+        },
+        "dev_server": {
+          "type": "boolean",
+          "description": "If set to true, tls will be skipped  when connecting to the mailbox."
+        },
+        "pairing_secret": {
+          "type": "string",
+          "format": "byte",
+          "description": "The LNC pairing phrase in byte form."
+        },
+        "pairing_secret_mnemonic": {
+          "type": "string",
+          "description": "The LNC pairing phrase in mnemonic form."
+        },
+        "local_public_key": {
+          "type": "string",
+          "format": "byte",
+          "description": "The long term, local static public key used by this node for the LNC\nconnection."
+        },
+        "remote_public_key": {
+          "type": "string",
+          "format": "byte",
+          "description": "The long term, remote static public key used by the remote party for the\nLNC connection."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The time at which the session was created."
+        },
+        "macaroon_recipe": {
+          "$ref": "#/definitions/litrpcMacaroonRecipe",
+          "description": "The recipe used for creating a macaroon to use with this session. This will\nbe closely linked to the session type."
+        },
+        "account_id": {
+          "type": "string",
+          "description": "If the session is for a specific account, then this will be the account ID\nit is associated with."
+        },
+        "autopilot_feature_info": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/litrpcRulesMap"
+          },
+          "description": "If this session is for Autopilot use, then this will be the set of features\nthat the session can be used for along with the rules for each feature."
+        },
+        "revoked_at": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The unix timestamp indicating the time at which the session was revoked.\nNote that this field has not been around since the beginning and so it\ncould be the case that a session has been revoked but that this field\nwill not have been set for that session. Therefore, it is suggested that\nreaders should not assume that if this field is zero that the session is\nnot revoked. Readers should instead first check the session_state field."
+        }
+      }
+    },
+    "litrpcSessionState": {
+      "type": "string",
+      "enum": [
+        "STATE_CREATED",
+        "STATE_IN_USE",
+        "STATE_REVOKED",
+        "STATE_EXPIRED"
+      ],
+      "default": "STATE_CREATED"
+    },
+    "litrpcSessionType": {
+      "type": "string",
+      "enum": [
+        "TYPE_MACAROON_READONLY",
+        "TYPE_MACAROON_ADMIN",
+        "TYPE_MACAROON_CUSTOM",
+        "TYPE_UI_PASSWORD",
+        "TYPE_AUTOPILOT",
+        "TYPE_MACAROON_ACCOUNT"
+      ],
+      "default": "TYPE_MACAROON_READONLY"
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "type_url": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}

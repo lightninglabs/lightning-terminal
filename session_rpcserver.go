@@ -581,6 +581,8 @@ func (s *sessionRpcServer) RevokeSession(ctx context.Context,
 	return &litrpc.RevokeSessionResponse{}, nil
 }
 
+// PrivacyMapConversion can be used map real values to their pseudo counterpart
+// and vice versa.
 func (s *sessionRpcServer) PrivacyMapConversion(_ context.Context,
 	req *litrpc.PrivacyMapConversionRequest) (
 	*litrpc.PrivacyMapConversionResponse, error) {
@@ -611,7 +613,16 @@ func (s *sessionRpcServer) PrivacyMapConversion(_ context.Context,
 	}, nil
 }
 
-// ListActions lists all actions attempted on the Litd server.
+// ListActions will return a list of actions that have been performed on the
+// node. The actions that will be persisted depends on the value of the
+// `--firewall.request-logger.level` config option. The default value of the
+// option is the "interceptor" mode which will persist only the actions (with
+// all request parameters) made with macaroons with caveats that force them to
+// be checked by an rpc middleware interceptor. If the "all" mode is used then
+// all actions will be persisted but only full request parameters will only be
+// stored if the actions are interceptor actions, otherwise only the URI and
+// timestamp of the actions will be stored. The "full" mode will persist all
+// request data for all actions.
 func (s *sessionRpcServer) ListActions(_ context.Context,
 	req *litrpc.ListActionsRequest) (*litrpc.ListActionsResponse, error) {
 

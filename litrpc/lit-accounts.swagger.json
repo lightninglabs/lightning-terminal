@@ -1,0 +1,305 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "lit-accounts.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "Accounts"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/accounts": {
+      "get": {
+        "summary": "litcli: `accounts list`\nListAccounts returns all accounts that are currently stored in the account\ndatabase.",
+        "operationId": "Accounts_ListAccounts",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/litrpcListAccountsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Accounts"
+        ]
+      },
+      "post": {
+        "summary": "litcli: `accounts create`\nCreateAccount adds an entry to the account database. This entry represents\nan amount of satoshis (account balance) that can be spent using off-chain\ntransactions (e.g. paying invoices).",
+        "description": "Macaroons can be created to be locked to an account. This makes sure that\nthe bearer of the macaroon can only spend at most that amount of satoshis\nthrough the daemon that has issued the macaroon.\n\nAccounts only assert a maximum amount spendable. Having a certain account\nbalance does not guarantee that the node has the channel liquidity to\nactually spend that amount.",
+        "operationId": "Accounts_CreateAccount",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/litrpcCreateAccountResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/litrpcCreateAccountRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Accounts"
+        ]
+      }
+    },
+    "/v1/accounts/{id}": {
+      "delete": {
+        "summary": "litcli: `accounts remove`\nRemoveAccount removes the given account from the account database.",
+        "operationId": "Accounts_RemoveAccount",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/litrpcRemoveAccountResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "The hexadecimal ID of the account to remove.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Accounts"
+        ]
+      },
+      "post": {
+        "summary": "litcli: `accounts update`\nUpdateAccount updates an existing account in the account database.",
+        "operationId": "Accounts_UpdateAccount",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/litrpcAccount"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "The ID of the account to update.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "account_balance": {
+                  "type": "string",
+                  "format": "int64",
+                  "description": "The new account balance to set. Set to -1 to not update the balance."
+                },
+                "expiration_date": {
+                  "type": "string",
+                  "format": "int64",
+                  "description": "The new account expiry to set. Set to -1 to not update the expiry. Set to 0\nto never expire."
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "Accounts"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "litrpcAccount": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The ID of the account."
+        },
+        "initial_balance": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The initial balance in satoshis that was set when the account was created."
+        },
+        "current_balance": {
+          "type": "string",
+          "format": "int64",
+          "description": "The current balance in satoshis."
+        },
+        "last_update": {
+          "type": "string",
+          "format": "int64",
+          "description": "Timestamp of the last time the account was updated."
+        },
+        "expiration_date": {
+          "type": "string",
+          "format": "int64",
+          "description": "Timestamp of the account's expiration date. Zero means it does not expire."
+        },
+        "invoices": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/litrpcAccountInvoice"
+          },
+          "description": "The list of invoices created by the account. An invoice created by an\naccount will credit the account balance if it is settled."
+        },
+        "payments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/litrpcAccountPayment"
+          },
+          "description": "The list of payments made by the account. A payment made by an account will\ndebit the account balance if it is settled."
+        }
+      }
+    },
+    "litrpcAccountInvoice": {
+      "type": "object",
+      "properties": {
+        "hash": {
+          "type": "string",
+          "format": "byte",
+          "description": "The payment hash of the invoice."
+        }
+      }
+    },
+    "litrpcAccountPayment": {
+      "type": "object",
+      "properties": {
+        "hash": {
+          "type": "string",
+          "format": "byte",
+          "description": "The payment hash."
+        },
+        "state": {
+          "type": "string",
+          "description": "The state of the payment as reported by lnd."
+        },
+        "full_amount": {
+          "type": "string",
+          "format": "int64",
+          "description": "The full amount in satoshis reserved for this payment. This includes the\nrouting fee estimated by the fee limit of the payment request. The actual\ndebited amount will likely be lower if the fee is below the limit."
+        }
+      }
+    },
+    "litrpcCreateAccountRequest": {
+      "type": "object",
+      "properties": {
+        "account_balance": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The initial account balance in satoshis representing the maximum amount that\ncan be spent."
+        },
+        "expiration_date": {
+          "type": "string",
+          "format": "int64",
+          "description": "The expiration date of the account as a timestamp. Set to 0 to never expire."
+        }
+      }
+    },
+    "litrpcCreateAccountResponse": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "#/definitions/litrpcAccount",
+          "description": "The new account that was created."
+        },
+        "macaroon": {
+          "type": "string",
+          "format": "byte",
+          "description": "The macaroon with all permissions required to access the account."
+        }
+      }
+    },
+    "litrpcListAccountsResponse": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/litrpcAccount"
+          },
+          "description": "All accounts in the account database."
+        }
+      }
+    },
+    "litrpcRemoveAccountResponse": {
+      "type": "object"
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "type_url": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}

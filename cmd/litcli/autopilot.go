@@ -17,58 +17,83 @@ var autopilotCommands = cli.Command{
 	Usage:    "manage autopilot sessions",
 	Category: "Autopilot",
 	Subcommands: []cli.Command{
-		{
-			Name:      "features",
-			ShortName: "f",
-			Usage:     "List available features",
-			Action:    listFeatures,
+		listAutopilotFeaturesCmd,
+		addAutopilotSessionCmd,
+		revokeAutopilotSessionCmd,
+		listAutopilotSessionsCmd,
+	},
+}
+
+var listAutopilotFeaturesCmd = cli.Command{
+	Name:      "features",
+	ShortName: "f",
+	Usage:     "List available Autopilot features.",
+	Description: `
+	List available Autopilot features.	
+	`,
+	Action: listFeatures,
+}
+
+var addAutopilotSessionCmd = cli.Command{
+	Name:      "add",
+	ShortName: "a",
+	Usage:     "Initialize an Autopilot session.",
+	Description: `
+	Initialize an Autopilot session.	
+	`,
+	Action: initAutopilotSession,
+	Flags: []cli.Flag{
+		labelFlag,
+		expiryFlag,
+		mailboxServerAddrFlag,
+		devserver,
+		cli.StringSliceFlag{
+			Name:     "feature",
+			Required: true,
 		},
-		{
-			Name:      "add",
-			ShortName: "a",
-			Usage:     "Initialize an autopilot session",
-			Action:    initAutopilotSession,
-			Flags: []cli.Flag{
-				labelFlag,
-				expiryFlag,
-				mailboxServerAddrFlag,
-				devserver,
-				cli.StringSliceFlag{
-					Name:     "feature",
-					Required: true,
-				},
-				cli.StringFlag{
-					Name: "channel-restrict-list",
-					Usage: "list of channel IDs that the " +
-						"autopilot server should not " +
-						"perform actions on. In the " +
-						"form of: chanID1,chanID2,...",
-				},
-				cli.StringFlag{
-					Name: "peer-restrict-list",
-					Usage: "list of peer IDs that the " +
-						"autopilot server should not " +
-						"perform actions on. In the " +
-						"form of: peerID1,peerID2,...",
-				},
-			},
+		cli.StringFlag{
+			Name: "channel-restrict-list",
+			Usage: "list of channel IDs that the " +
+				"Autopilot server should not " +
+				"perform actions on. In the " +
+				"form of: chanID1,chanID2,...",
 		},
-		{
-			Name:        "revoke",
-			ShortName:   "r",
-			Usage:       "revoke an autopilot session",
-			Description: "Revoke an active autopilot session",
-			Action:      revokeAutopilotSession,
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name: "localpubkey",
-					Usage: "local pubkey of the " +
-						"session to revoke",
-					Required: true,
-				},
-			},
+		cli.StringFlag{
+			Name: "peer-restrict-list",
+			Usage: "list of peer IDs that the " +
+				"Autopilot server should not " +
+				"perform actions on. In the " +
+				"form of: peerID1,peerID2,...",
 		},
 	},
+}
+
+var revokeAutopilotSessionCmd = cli.Command{
+	Name:      "revoke",
+	ShortName: "r",
+	Usage:     "Revoke an Autopilot session.",
+	Description: `
+	Revoke an active Autopilot session.
+	`,
+	Action: revokeAutopilotSession,
+	Flags: []cli.Flag{
+		cli.StringFlag{
+			Name: "localpubkey",
+			Usage: "local pubkey of the " +
+				"session to revoke",
+			Required: true,
+		},
+	},
+}
+
+var listAutopilotSessionsCmd = cli.Command{
+	Name:      "list",
+	ShortName: "l",
+	Usage:     "List all Autopilot sessions.",
+	Description: `
+	List all Autopilot sessions.
+	`,
+	Action: listAutopilotSessions,
 }
 
 func revokeAutopilotSession(ctx *cli.Context) error {
@@ -89,6 +114,27 @@ func revokeAutopilotSession(ctx *cli.Context) error {
 		ctxb, &litrpc.RevokeAutopilotSessionRequest{
 			LocalPublicKey: pubkey,
 		},
+	)
+	if err != nil {
+		return err
+	}
+
+	printRespJSON(resp)
+
+	return nil
+}
+
+func listAutopilotSessions(ctx *cli.Context) error {
+	ctxb := context.Background()
+	clientConn, cleanup, err := connectClient(ctx)
+	if err != nil {
+		return err
+	}
+	defer cleanup()
+	client := litrpc.NewAutopilotClient(clientConn)
+
+	resp, err := client.ListAutopilotSessions(
+		ctxb, &litrpc.ListAutopilotSessionsRequest{},
 	)
 	if err != nil {
 		return err

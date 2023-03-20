@@ -1,0 +1,14 @@
+type: google.api.Service
+config_version: 3
+
+http:
+  rules:
+
+    # lit-sessions.proto
+    - selector: litrpc.Sessions.AddSession
+      post: "/v1/sessions"
+      body: "*"
+    - selector: litrpc.Sessions.ListSessions
+      get: "/v1/sessions"
+    - selector: litrpc.Sessions.RevokeSession
+      delete: "/v1/sessions/{local_public_key}"

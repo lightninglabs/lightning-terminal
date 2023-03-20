@@ -1,0 +1,283 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "firewall.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "Firewall"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/firewall/actions": {
+      "post": {
+        "summary": "litcli: `actions`\nListActions will return a list of actions that have been performed on the\nnode. The actions that will be persisted depends on the value of the\n`--firewall.request-logger.level` config option. The default value of the\noption is the \"interceptor\" mode which will persist only the actions (with\nall request parameters) made with macaroons with caveats that force them\nto be checked by an rpc middleware interceptor. If the \"all\" mode is used\nthen all actions will be persisted but only full request parameters will\nonly be stored if the actions are interceptor actions, otherwise only the\nURI and timestamp of the actions will be stored. The \"full\" mode will\npersist all request data for all actions.",
+        "operationId": "Firewall_ListActions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/litrpcListActionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/litrpcListActionsRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Firewall"
+        ]
+      }
+    },
+    "/v1/firewall/privacy_map/convert": {
+      "post": {
+        "summary": "litcli: `privacy`\nPrivacyMapConversion can be used map real values to their pseudo\ncounterpart and vice versa.",
+        "operationId": "Firewall_PrivacyMapConversion",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/litrpcPrivacyMapConversionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/litrpcPrivacyMapConversionRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Firewall"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "litrpcAction": {
+      "type": "object",
+      "properties": {
+        "actor_name": {
+          "type": "string",
+          "description": "The name of the actor that initiated the action."
+        },
+        "feature_name": {
+          "type": "string",
+          "description": "The name of the feature that triggered the action."
+        },
+        "trigger": {
+          "type": "string",
+          "description": "A human readable reason that the action was performed."
+        },
+        "intent": {
+          "type": "string",
+          "description": "A human readable string describing the intended outcome successfully\nperforming the action."
+        },
+        "structured_json_data": {
+          "type": "string",
+          "description": "Structured info added by the action performer."
+        },
+        "rpc_method": {
+          "type": "string",
+          "description": "The URI of the method called."
+        },
+        "rpc_params_json": {
+          "type": "string",
+          "description": "The parameters of the method call in compact json form."
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The unix timestamp in seconds at which the action was attempted."
+        },
+        "state": {
+          "$ref": "#/definitions/litrpcActionState",
+          "description": "The action state. See ActionState for the meaning of each state."
+        },
+        "error_reason": {
+          "type": "string",
+          "description": "If the state is Error, then this string will show the human readable reason\nfor why the action errored out."
+        },
+        "session_id": {
+          "type": "string",
+          "format": "byte",
+          "description": "The ID of the session under which the action was performed."
+        }
+      }
+    },
+    "litrpcActionState": {
+      "type": "string",
+      "enum": [
+        "STATE_UNKNOWN",
+        "STATE_PENDING",
+        "STATE_DONE",
+        "STATE_ERROR"
+      ],
+      "default": "STATE_UNKNOWN",
+      "description": " - STATE_UNKNOWN: No state was assigned to the action. This should never be the case.\n - STATE_PENDING: Pending means that the request resulting in the action being created\ncame through but that no response came back from the appropriate backend.\nThis means that the Action is either still being processed or that it\ndid not successfully complete.\n - STATE_DONE: Done means that the action successfully completed.\n - STATE_ERROR: Error means that the Action did not successfully complete."
+    },
+    "litrpcListActionsRequest": {
+      "type": "object",
+      "properties": {
+        "feature_name": {
+          "type": "string",
+          "description": "The feature name which the filter the actions by. If left empty, all feature\nactions will be returned."
+        },
+        "actor_name": {
+          "type": "string",
+          "description": "The actor name to filter on. If left empty, all actor actions will be\nreturned."
+        },
+        "method_name": {
+          "type": "string",
+          "description": "The method name to filter on. If left empty, actions for any method will be\nreturned."
+        },
+        "state": {
+          "$ref": "#/definitions/litrpcActionState",
+          "description": "The action state to filter on. If set to zero, actions for any state will\nbe returned."
+        },
+        "index_offset": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The index of an action that will be used as the start of a query to\ndetermine which actions should be returned in the response."
+        },
+        "max_num_actions": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The max number of actions to return in the response to this query."
+        },
+        "reversed": {
+          "type": "boolean",
+          "description": "If set, the actions returned will result from seeking backwards from the\nspecified index offset. This can be used to paginate backwards."
+        },
+        "count_total": {
+          "type": "boolean",
+          "description": "Set to true if the total number of all actions that match the given filters\nshould be counted and returned in the request. Note that setting this will\nsignificantly decrease the performance of the query if there are many\nactions in the db."
+        },
+        "session_id": {
+          "type": "string",
+          "format": "byte",
+          "description": "The session ID to filter on. If left empty, actions for any session will\nbe returned."
+        },
+        "start_timestamp": {
+          "type": "string",
+          "format": "uint64",
+          "description": "If specified, then only actions created after the given timestamp will be\nconsidered."
+        },
+        "end_timestamp": {
+          "type": "string",
+          "format": "uint64",
+          "description": "If specified, then only actions created before the given timestamp will be\nconsidered."
+        }
+      }
+    },
+    "litrpcListActionsResponse": {
+      "type": "object",
+      "properties": {
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/litrpcAction"
+          },
+          "description": "A list of actions performed by the autopilot server."
+        },
+        "last_index_offset": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The index of the last item in the set of returned actions. This can be used\nto seek further, pagination style."
+        },
+        "total_count": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The total number of actions that matched the filter in the request. It is\nonly set if count_total was set in the request."
+        }
+      }
+    },
+    "litrpcPrivacyMapConversionRequest": {
+      "type": "object",
+      "properties": {
+        "real_to_pseudo": {
+          "type": "boolean",
+          "description": "If set to true, then the input string will be taken as the real value and\nthe response will the the pseudo value it if exists. Otherwise, the input\nstring will be assumed to be the pseudo value."
+        },
+        "session_id": {
+          "type": "string",
+          "format": "byte",
+          "description": "The session ID under which to search for the real-pseudo pair."
+        },
+        "input": {
+          "type": "string",
+          "description": "The input to be converted into the real or pseudo value."
+        }
+      }
+    },
+    "litrpcPrivacyMapConversionResponse": {
+      "type": "object",
+      "properties": {
+        "output": {
+          "type": "string",
+          "description": "The resulting real or pseudo output."
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "type_url": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}

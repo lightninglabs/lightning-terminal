@@ -11,10 +11,27 @@ function generate() {
       --go-grpc_out . --go-grpc_opt paths=source_relative \
       "${file}"
 
-    # Only generate JSON/WASM stubs if requested.
-    if [[ "$1" == "no-wasm" ]]; then
-      return
+    # Only generate REST stubs if requested.
+    if [[ "$1" == "no-rest" ]]; then
+      continue
     fi
+
+    # Generate the REST reverse proxy.
+    annotationsFile=${file//proto/yaml}
+    protoc -I/usr/local/include -I. -I.. \
+      --grpc-gateway_out . \
+      --grpc-gateway_opt logtostderr=true \
+      --grpc-gateway_opt paths=source_relative \
+      --grpc-gateway_opt grpc_api_configuration=${annotationsFile} \
+      "${file}"
+
+    # Finally, generate the swagger file which describes the REST API in detail.
+    protoc -I/usr/local/include -I. -I.. \
+      --openapiv2_out . \
+      --openapiv2_opt logtostderr=true \
+      --openapiv2_opt grpc_api_configuration=${annotationsFile} \
+      --openapiv2_opt json_names_for_fields=false \
+      "${file}"
 
     # Generate the JSON/WASM autopilot stubs.
     falafel=$(which falafel)
@@ -41,5 +58,5 @@ popd
 
 pushd autopilotserverrpc
 format
-generate no-wasm
+generate no-rest
 popd

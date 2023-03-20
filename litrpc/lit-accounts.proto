@@ -5,7 +5,7 @@ package litrpc;
 option go_package = "github.com/lightninglabs/lightning-terminal/litrpc";
 
 service Accounts {
-    /*
+    /* litcli: `accounts create`
     CreateAccount adds an entry to the account database. This entry represents
     an amount of satoshis (account balance) that can be spent using off-chain
     transactions (e.g. paying invoices).
@@ -20,18 +20,18 @@ service Accounts {
     */
     rpc CreateAccount (CreateAccountRequest) returns (CreateAccountResponse);
 
-    /*
+    /* litcli: `accounts update`
     UpdateAccount updates an existing account in the account database.
     */
     rpc UpdateAccount (UpdateAccountRequest) returns (Account);
 
-    /*
+    /* litcli: `accounts list`
     ListAccounts returns all accounts that are currently stored in the account
     database.
     */
     rpc ListAccounts (ListAccountsRequest) returns (ListAccountsResponse);
 
-    /*
+    /* litcli: `accounts remove`
     RemoveAccount removes the given account from the account database.
     */
     rpc RemoveAccount (RemoveAccountRequest) returns (RemoveAccountResponse);

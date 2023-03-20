@@ -18,9 +18,21 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AutopilotClient interface {
+	// litcli: `autopilot features`
+	// ListAutopilotFeatures fetches all the features supported by the Autopilot
+	// server along with the rules that we need to support in order to subscribe
+	// to those features.
 	ListAutopilotFeatures(ctx context.Context, in *ListAutopilotFeaturesRequest, opts ...grpc.CallOption) (*ListAutopilotFeaturesResponse, error)
+	// litcli: `autopilot add`
+	// AddAutopilotSession creates a new LNC session and attempts to register it
+	// with the Autopilot server.
 	AddAutopilotSession(ctx context.Context, in *AddAutopilotSessionRequest, opts ...grpc.CallOption) (*AddAutopilotSessionResponse, error)
+	// litcli: `autopilot list`
+	// ListAutopilotSessions lists all the sessions that are of type
+	// TypeAutopilot.
 	ListAutopilotSessions(ctx context.Context, in *ListAutopilotSessionsRequest, opts ...grpc.CallOption) (*ListAutopilotSessionsResponse, error)
+	// litcli: `autopilot revoke`
+	// RevokeAutopilotSession revokes an Autopilot session.
 	RevokeAutopilotSession(ctx context.Context, in *RevokeAutopilotSessionRequest, opts ...grpc.CallOption) (*RevokeAutopilotSessionResponse, error)
 }
 
@@ -72,9 +84,21 @@ func (c *autopilotClient) RevokeAutopilotSession(ctx context.Context, in *Revoke
 // All implementations must embed UnimplementedAutopilotServer
 // for forward compatibility
 type AutopilotServer interface {
+	// litcli: `autopilot features`
+	// ListAutopilotFeatures fetches all the features supported by the Autopilot
+	// server along with the rules that we need to support in order to subscribe
+	// to those features.
 	ListAutopilotFeatures(context.Context, *ListAutopilotFeaturesRequest) (*ListAutopilotFeaturesResponse, error)
+	// litcli: `autopilot add`
+	// AddAutopilotSession creates a new LNC session and attempts to register it
+	// with the Autopilot server.
 	AddAutopilotSession(context.Context, *AddAutopilotSessionRequest) (*AddAutopilotSessionResponse, error)
+	// litcli: `autopilot list`
+	// ListAutopilotSessions lists all the sessions that are of type
+	// TypeAutopilot.
 	ListAutopilotSessions(context.Context, *ListAutopilotSessionsRequest) (*ListAutopilotSessionsResponse, error)
+	// litcli: `autopilot revoke`
+	// RevokeAutopilotSession revokes an Autopilot session.
 	RevokeAutopilotSession(context.Context, *RevokeAutopilotSessionRequest) (*RevokeAutopilotSessionResponse, error)
 	mustEmbedUnimplementedAutopilotServer()
 }

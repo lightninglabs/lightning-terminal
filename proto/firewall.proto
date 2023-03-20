@@ -82,12 +82,12 @@ message ListActionsRequest {
     The index of an action that will be used as the start of a query to
     determine which actions should be returned in the response.
     */
-    uint64 index_offset = 5;
+    uint64 index_offset = 5 [jstype = JS_STRING];
 
     /*
     The max number of actions to return in the response to this query.
     */
-    uint64 max_num_actions = 6;
+    uint64 max_num_actions = 6 [jstype = JS_STRING];
 
     /*
     If set, the actions returned will result from seeking backwards from the
@@ -132,13 +132,13 @@ message ListActionsResponse {
     The index of the last item in the set of returned actions. This can be used
     to seek further, pagination style.
     */
-    uint64 last_index_offset = 2;
+    uint64 last_index_offset = 2 [jstype = JS_STRING];
 
     /*
     The total number of actions that matched the filter in the request. It is
     only set if count_total was set in the request.
     */
-    uint64 total_count = 3;
+    uint64 total_count = 3 [jstype = JS_STRING];
 }
 
 message Action {
