@@ -96,7 +96,7 @@ all: scratch check install
 
 $(GOACC_BIN):
 	@$(call print, "Installing go-acc.")
-	cd $(TOOLS_DIR); go install -trimpath -tags=tools $(GOACC_PKG)
+	cd $(TOOLS_DIR); go install -trimpath $(GOACC_PKG)
 
 $(GOIMPORTS_BIN):
 	@$(call print, "Installing goimports.")
