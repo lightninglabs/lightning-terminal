@@ -156,6 +156,9 @@ jobs:
   # lint code
   ########################
   lint:
+    # Temporarily disabling the linter while this issue persists:
+    #       https://github.com/golangci/golangci-lint/discussions/1920
+    if: false
     name: lint
     runs-on: ubuntu-latest
     steps:
