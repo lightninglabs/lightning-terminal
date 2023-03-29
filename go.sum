@@ -547,8 +547,8 @@ github.com/lightninglabs/neutrino v0.15.0 h1:yr3uz36fLAq8hyM0TRUVlef1TRNoWAqpmmN
 github.com/lightninglabs/neutrino v0.15.0/go.mod h1:pmjwElN/091TErtSE9Vd5W4hpxoG2/+xlb+HoPm9Gug=
 github.com/lightninglabs/neutrino/cache v1.1.1 h1:TllWOSlkABhpgbWJfzsrdUaDH2fBy/54VSIB4vVqV8M=
 github.com/lightninglabs/neutrino/cache v1.1.1/go.mod h1:XJNcgdOw1LQnanGjw8Vj44CvguYA25IMKjWFZczwZuo=
-github.com/lightninglabs/pool v0.6.1-beta.0.20230227204507-0db3a9fdc6fd h1:pbNKLVdWnLXy12Jyf79DUbkA1k/gbG4Qqq4YZyPkc/M=
-github.com/lightninglabs/pool v0.6.1-beta.0.20230227204507-0db3a9fdc6fd/go.mod h1:v5VyYxU+mLsBgDoniJv9ylOsIY2E+xaOR/iSNHfTIiM=
+github.com/lightninglabs/pool v0.6.2-beta h1:TGO9BB5M829l9HA8b9wny47527IyKuWt2assANI8G78=
+github.com/lightninglabs/pool v0.6.2-beta/go.mod h1:3lfQEiEueD8j1SzBv1+zN+0d8Auf1s31raNyXA6asV0=
 github.com/lightninglabs/pool/auctioneerrpc v1.1.0 h1:XOhmaFKRvQ1smwkY9SRTA0+FCloTExuhaQX4jgtrBB0=
 github.com/lightninglabs/pool/auctioneerrpc v1.1.0/go.mod h1:F9uND5Kpj2eYeYe0RLi8IWQHsRjQ88FUp8itkYmX1Mo=
 github.com/lightninglabs/protobuf-hex-display v1.4.3-hex-display h1:RZJ8H4ueU/aQ9pFtx5wqsuD3B/DezrewJeVwDKKYY8E=

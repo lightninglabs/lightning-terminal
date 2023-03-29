@@ -1262,6 +1262,118 @@ export namespace RecoverAccountsResponse {
   }
 }
 
+export class AccountModificationFeesRequest extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AccountModificationFeesRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: AccountModificationFeesRequest): AccountModificationFeesRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: AccountModificationFeesRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AccountModificationFeesRequest;
+  static deserializeBinaryFromReader(message: AccountModificationFeesRequest, reader: jspb.BinaryReader): AccountModificationFeesRequest;
+}
+
+export namespace AccountModificationFeesRequest {
+  export type AsObject = {
+  }
+}
+
+export class AccountModificationFee extends jspb.Message {
+  getAction(): string;
+  setAction(value: string): void;
+
+  getTxid(): string;
+  setTxid(value: string): void;
+
+  getBlockHeight(): number;
+  setBlockHeight(value: number): void;
+
+  getTimestamp(): string;
+  setTimestamp(value: string): void;
+
+  getOutputAmount(): string;
+  setOutputAmount(value: string): void;
+
+  hasFeeNull(): boolean;
+  clearFeeNull(): void;
+  getFeeNull(): boolean;
+  setFeeNull(value: boolean): void;
+
+  hasFeeValue(): boolean;
+  clearFeeValue(): void;
+  getFeeValue(): string;
+  setFeeValue(value: string): void;
+
+  getFeeCase(): AccountModificationFee.FeeCase;
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AccountModificationFee.AsObject;
+  static toObject(includeInstance: boolean, msg: AccountModificationFee): AccountModificationFee.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: AccountModificationFee, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AccountModificationFee;
+  static deserializeBinaryFromReader(message: AccountModificationFee, reader: jspb.BinaryReader): AccountModificationFee;
+}
+
+export namespace AccountModificationFee {
+  export type AsObject = {
+    action: string,
+    txid: string,
+    blockHeight: number,
+    timestamp: string,
+    outputAmount: string,
+    feeNull: boolean,
+    feeValue: string,
+  }
+
+  export enum FeeCase {
+    FEE_NOT_SET = 0,
+    FEE_NULL = 6,
+    FEE_VALUE = 7,
+  }
+}
+
+export class ListOfAccountModificationFees extends jspb.Message {
+  clearModificationFeesList(): void;
+  getModificationFeesList(): Array<AccountModificationFee>;
+  setModificationFeesList(value: Array<AccountModificationFee>): void;
+  addModificationFees(value?: AccountModificationFee, index?: number): AccountModificationFee;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListOfAccountModificationFees.AsObject;
+  static toObject(includeInstance: boolean, msg: ListOfAccountModificationFees): ListOfAccountModificationFees.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ListOfAccountModificationFees, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListOfAccountModificationFees;
+  static deserializeBinaryFromReader(message: ListOfAccountModificationFees, reader: jspb.BinaryReader): ListOfAccountModificationFees;
+}
+
+export namespace ListOfAccountModificationFees {
+  export type AsObject = {
+    modificationFeesList: Array<AccountModificationFee.AsObject>,
+  }
+}
+
+export class AccountModificationFeesResponse extends jspb.Message {
+  getAccountsMap(): jspb.Map<string, ListOfAccountModificationFees>;
+  clearAccountsMap(): void;
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AccountModificationFeesResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: AccountModificationFeesResponse): AccountModificationFeesResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: AccountModificationFeesResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AccountModificationFeesResponse;
+  static deserializeBinaryFromReader(message: AccountModificationFeesResponse, reader: jspb.BinaryReader): AccountModificationFeesResponse;
+}
+
+export namespace AccountModificationFeesResponse {
+  export type AsObject = {
+    accountsMap: Array<[string, ListOfAccountModificationFees.AsObject]>,
+  }
+}
+
 export class AuctionFeeRequest extends jspb.Message {
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): AuctionFeeRequest.AsObject;
@@ -2092,6 +2204,7 @@ export interface AccountVersionMap {
   ACCOUNT_VERSION_LND_DEPENDENT: 0;
   ACCOUNT_VERSION_LEGACY: 1;
   ACCOUNT_VERSION_TAPROOT: 2;
+  ACCOUNT_VERSION_TAPROOT_V2: 3;
 }
 
 export const AccountVersion: AccountVersionMap;

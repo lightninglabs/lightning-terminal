@@ -19,7 +19,7 @@ require (
 	github.com/lightninglabs/lndclient v0.16.0-9
 	github.com/lightninglabs/loop v0.21.0-beta.0.20230307115451-ec4f2507535c
 	github.com/lightninglabs/loop/swapserverrpc v1.0.3
-	github.com/lightninglabs/pool v0.6.1-beta.0.20230227204507-0db3a9fdc6fd
+	github.com/lightninglabs/pool v0.6.2-beta
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.0
 	github.com/lightninglabs/protobuf-hex-display v1.4.3-hex-display
 	github.com/lightningnetwork/lnd v0.16.0-beta.rc2

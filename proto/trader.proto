@@ -78,6 +78,13 @@ service Trader {
     rpc RecoverAccounts (RecoverAccountsRequest)
         returns (RecoverAccountsResponse);
 
+    /* pool: `accounts listfees`
+    AccountModificationFees returns a map from account key to an ordered list of
+    account action modification fees.
+    */
+    rpc AccountModificationFees (AccountModificationFeesRequest)
+        returns (AccountModificationFeesResponse);
+
     /* pool: `orders submit`
     SubmitOrder creates a new ask or bid order and submits for the given account
     and submits it to the auction server for matching.
@@ -211,7 +218,8 @@ enum AccountVersion {
     /*
     Let the version of lnd decide. If a version of lnd >= 0.15.0-beta is
     detected then a Taproot account is created. For earlier versions a legacy
-    account is created.
+    account is created. If a version of lnd >= 0.16.0-beta is detected, then a
+    Taproot v2 account is created.
     */
     ACCOUNT_VERSION_LND_DEPENDENT = 0;
 
@@ -225,6 +233,14 @@ enum AccountVersion {
     script as a single tap script leaf.
     */
     ACCOUNT_VERSION_TAPROOT = 2;
+
+    /*
+    A Taproot enabled account with MuSig2 combined internal key and the expiry
+    script as a single tap script leaf. This version uses the MuSig2 v1.0.0-rc2
+    protocol for creating the combined internal key. This can only be selected
+    when the connected lnd version is >= 0.16.0-beta.
+    */
+    ACCOUNT_VERSION_TAPROOT_V2 = 3;
 }
 
 message InitAccountRequest {
@@ -1009,6 +1025,45 @@ message RecoverAccountsRequest {
 message RecoverAccountsResponse {
     // The number of accounts that were recovered.
     uint32 num_recovered_accounts = 1;
+}
+
+message AccountModificationFeesRequest {
+}
+
+message AccountModificationFee {
+    // Modification action type.
+    string action = 1;
+
+    // Transaction ID.
+    string txid = 2;
+
+    // Action transaction block height.
+    int32 block_height = 3;
+
+    // Action transaction timestamp.
+    int64 timestamp = 4 [jstype = JS_STRING];
+
+    // Action transaction output amount.
+    int64 output_amount = 5 [jstype = JS_STRING];
+
+    // Action transaction fee.
+    oneof fee {
+        // A flag which is true if fee value has not been set, and is otherwise
+        // false.
+        bool fee_null = 6;
+
+        // Action transaction fee value.
+        int64 fee_value = 7 [jstype = JS_STRING];
+    }
+}
+
+message ListOfAccountModificationFees {
+    repeated AccountModificationFee modification_fees = 1;
+}
+
+message AccountModificationFeesResponse {
+    // A map from account key to an ordered list of account modification fees.
+    map<string, ListOfAccountModificationFees> accounts = 1;
 }
 
 message AuctionFeeRequest {
