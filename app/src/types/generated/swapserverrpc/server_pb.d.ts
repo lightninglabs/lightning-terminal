@@ -224,6 +224,11 @@ export class ServerLoopInRequest extends jspb.Message {
   getSenderKey_asB64(): string;
   setSenderKey(value: Uint8Array | string): void;
 
+  getSenderInternalPubkey(): Uint8Array | string;
+  getSenderInternalPubkey_asU8(): Uint8Array;
+  getSenderInternalPubkey_asB64(): string;
+  setSenderInternalPubkey(value: Uint8Array | string): void;
+
   getSwapHash(): Uint8Array | string;
   getSwapHash_asU8(): Uint8Array;
   getSwapHash_asB64(): string;
@@ -262,6 +267,7 @@ export class ServerLoopInRequest extends jspb.Message {
 export namespace ServerLoopInRequest {
   export type AsObject = {
     senderKey: Uint8Array | string,
+    senderInternalPubkey: Uint8Array | string,
     swapHash: Uint8Array | string,
     amt: string,
     swapInvoice: string,
@@ -277,6 +283,11 @@ export class ServerLoopInResponse extends jspb.Message {
   getReceiverKey_asU8(): Uint8Array;
   getReceiverKey_asB64(): string;
   setReceiverKey(value: Uint8Array | string): void;
+
+  getReceiverInternalPubkey(): Uint8Array | string;
+  getReceiverInternalPubkey_asU8(): Uint8Array;
+  getReceiverInternalPubkey_asB64(): string;
+  setReceiverInternalPubkey(value: Uint8Array | string): void;
 
   getExpiry(): number;
   setExpiry(value: number): void;
@@ -297,6 +308,7 @@ export class ServerLoopInResponse extends jspb.Message {
 export namespace ServerLoopInResponse {
   export type AsObject = {
     receiverKey: Uint8Array | string,
+    receiverInternalPubkey: Uint8Array | string,
     expiry: number,
     serverMessage: string,
   }
@@ -896,6 +908,54 @@ export namespace MuSig2SignSweepRes {
   }
 }
 
+export class ServerPushKeyReq extends jspb.Message {
+  getProtocolVersion(): ProtocolVersionMap[keyof ProtocolVersionMap];
+  setProtocolVersion(value: ProtocolVersionMap[keyof ProtocolVersionMap]): void;
+
+  getSwapHash(): Uint8Array | string;
+  getSwapHash_asU8(): Uint8Array;
+  getSwapHash_asB64(): string;
+  setSwapHash(value: Uint8Array | string): void;
+
+  getInternalPrivkey(): Uint8Array | string;
+  getInternalPrivkey_asU8(): Uint8Array;
+  getInternalPrivkey_asB64(): string;
+  setInternalPrivkey(value: Uint8Array | string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ServerPushKeyReq.AsObject;
+  static toObject(includeInstance: boolean, msg: ServerPushKeyReq): ServerPushKeyReq.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ServerPushKeyReq, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ServerPushKeyReq;
+  static deserializeBinaryFromReader(message: ServerPushKeyReq, reader: jspb.BinaryReader): ServerPushKeyReq;
+}
+
+export namespace ServerPushKeyReq {
+  export type AsObject = {
+    protocolVersion: ProtocolVersionMap[keyof ProtocolVersionMap],
+    swapHash: Uint8Array | string,
+    internalPrivkey: Uint8Array | string,
+  }
+}
+
+export class ServerPushKeyRes extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ServerPushKeyRes.AsObject;
+  static toObject(includeInstance: boolean, msg: ServerPushKeyRes): ServerPushKeyRes.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ServerPushKeyRes, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ServerPushKeyRes;
+  static deserializeBinaryFromReader(message: ServerPushKeyRes, reader: jspb.BinaryReader): ServerPushKeyRes;
+}
+
+export namespace ServerPushKeyRes {
+  export type AsObject = {
+  }
+}
+
 export interface ProtocolVersionMap {
   LEGACY: 0;
   MULTI_LOOP_OUT: 1;
@@ -908,6 +968,7 @@ export interface ProtocolVersionMap {
   PROBE: 8;
   ROUTING_PLUGIN: 9;
   HTLC_V3: 10;
+  MUSIG2: 11;
 }
 
 export const ProtocolVersion: ProtocolVersionMap;

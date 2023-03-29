@@ -5139,7 +5139,9 @@ proto.looprpc.LiquidityParameters.toObject = function(includeInstance, msg) {
     minSwapAmount: jspb.Message.getFieldWithDefault(msg, 14, "0"),
     maxSwapAmount: jspb.Message.getFieldWithDefault(msg, 15, "0"),
     htlcConfTarget: jspb.Message.getFieldWithDefault(msg, 17, 0),
-    autoloopDestAddress: jspb.Message.getFieldWithDefault(msg, 18, "")
+    autoloopDestAddress: jspb.Message.getFieldWithDefault(msg, 18, ""),
+    autoloopBudgetRefreshPeriodSec: jspb.Message.getFieldWithDefault(msg, 19, "0"),
+    autoloopBudgetLastRefresh: jspb.Message.getFieldWithDefault(msg, 20, "0")
   };
 
   if (includeInstance) {
@@ -5248,6 +5250,14 @@ proto.looprpc.LiquidityParameters.deserializeBinaryFromReader = function(msg, re
     case 18:
       var value = /** @type {string} */ (reader.readString());
       msg.setAutoloopDestAddress(value);
+      break;
+    case 19:
+      var value = /** @type {string} */ (reader.readUint64String());
+      msg.setAutoloopBudgetRefreshPeriodSec(value);
+      break;
+    case 20:
+      var value = /** @type {string} */ (reader.readUint64String());
+      msg.setAutoloopBudgetLastRefresh(value);
       break;
     default:
       reader.skipField();
@@ -5402,6 +5412,20 @@ proto.looprpc.LiquidityParameters.serializeBinaryToWriter = function(message, wr
   if (f.length > 0) {
     writer.writeString(
       18,
+      f
+    );
+  }
+  f = message.getAutoloopBudgetRefreshPeriodSec();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
+      19,
+      f
+    );
+  }
+  f = message.getAutoloopBudgetLastRefresh();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
+      20,
       f
     );
   }
@@ -5693,6 +5717,36 @@ proto.looprpc.LiquidityParameters.prototype.getAutoloopDestAddress = function() 
 /** @param {string} value */
 proto.looprpc.LiquidityParameters.prototype.setAutoloopDestAddress = function(value) {
   jspb.Message.setProto3StringField(this, 18, value);
+};
+
+
+/**
+ * optional uint64 autoloop_budget_refresh_period_sec = 19;
+ * @return {string}
+ */
+proto.looprpc.LiquidityParameters.prototype.getAutoloopBudgetRefreshPeriodSec = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 19, "0"));
+};
+
+
+/** @param {string} value */
+proto.looprpc.LiquidityParameters.prototype.setAutoloopBudgetRefreshPeriodSec = function(value) {
+  jspb.Message.setProto3StringIntField(this, 19, value);
+};
+
+
+/**
+ * optional uint64 autoloop_budget_last_refresh = 20;
+ * @return {string}
+ */
+proto.looprpc.LiquidityParameters.prototype.getAutoloopBudgetLastRefresh = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 20, "0"));
+};
+
+
+/** @param {string} value */
+proto.looprpc.LiquidityParameters.prototype.setAutoloopBudgetLastRefresh = function(value) {
+  jspb.Message.setProto3StringIntField(this, 20, value);
 };
 
 

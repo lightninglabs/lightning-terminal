@@ -753,6 +753,12 @@ export class LiquidityParameters extends jspb.Message {
   getAutoloopDestAddress(): string;
   setAutoloopDestAddress(value: string): void;
 
+  getAutoloopBudgetRefreshPeriodSec(): string;
+  setAutoloopBudgetRefreshPeriodSec(value: string): void;
+
+  getAutoloopBudgetLastRefresh(): string;
+  setAutoloopBudgetLastRefresh(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LiquidityParameters.AsObject;
   static toObject(includeInstance: boolean, msg: LiquidityParameters): LiquidityParameters.AsObject;
@@ -783,6 +789,8 @@ export namespace LiquidityParameters {
     maxSwapAmount: string,
     htlcConfTarget: number,
     autoloopDestAddress: string,
+    autoloopBudgetRefreshPeriodSec: string,
+    autoloopBudgetLastRefresh: string,
   }
 }
 

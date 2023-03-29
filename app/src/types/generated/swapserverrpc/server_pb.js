@@ -45,6 +45,8 @@ goog.exportSymbol('proto.looprpc.ServerLoopOutTerms', null, global);
 goog.exportSymbol('proto.looprpc.ServerLoopOutTermsRequest', null, global);
 goog.exportSymbol('proto.looprpc.ServerProbeRequest', null, global);
 goog.exportSymbol('proto.looprpc.ServerProbeResponse', null, global);
+goog.exportSymbol('proto.looprpc.ServerPushKeyReq', null, global);
+goog.exportSymbol('proto.looprpc.ServerPushKeyRes', null, global);
 goog.exportSymbol('proto.looprpc.ServerSwapState', null, global);
 goog.exportSymbol('proto.looprpc.SubscribeLoopInUpdatesResponse', null, global);
 goog.exportSymbol('proto.looprpc.SubscribeLoopOutUpdatesResponse', null, global);
@@ -1615,6 +1617,7 @@ proto.looprpc.ServerLoopInRequest.prototype.toObject = function(opt_includeInsta
 proto.looprpc.ServerLoopInRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
     senderKey: msg.getSenderKey_asB64(),
+    senderInternalPubkey: msg.getSenderInternalPubkey_asB64(),
     swapHash: msg.getSwapHash_asB64(),
     amt: jspb.Message.getFieldWithDefault(msg, 3, "0"),
     swapInvoice: jspb.Message.getFieldWithDefault(msg, 4, ""),
@@ -1661,6 +1664,10 @@ proto.looprpc.ServerLoopInRequest.deserializeBinaryFromReader = function(msg, re
     case 1:
       var value = /** @type {!Uint8Array} */ (reader.readBytes());
       msg.setSenderKey(value);
+      break;
+    case 9:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setSenderInternalPubkey(value);
       break;
     case 2:
       var value = /** @type {!Uint8Array} */ (reader.readBytes());
@@ -1723,6 +1730,13 @@ proto.looprpc.ServerLoopInRequest.serializeBinaryToWriter = function(message, wr
   if (f.length > 0) {
     writer.writeBytes(
       1,
+      f
+    );
+  }
+  f = message.getSenderInternalPubkey_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      9,
       f
     );
   }
@@ -1814,6 +1828,45 @@ proto.looprpc.ServerLoopInRequest.prototype.getSenderKey_asU8 = function() {
 /** @param {!(string|Uint8Array)} value */
 proto.looprpc.ServerLoopInRequest.prototype.setSenderKey = function(value) {
   jspb.Message.setProto3BytesField(this, 1, value);
+};
+
+
+/**
+ * optional bytes sender_internal_pubkey = 9;
+ * @return {!(string|Uint8Array)}
+ */
+proto.looprpc.ServerLoopInRequest.prototype.getSenderInternalPubkey = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 9, ""));
+};
+
+
+/**
+ * optional bytes sender_internal_pubkey = 9;
+ * This is a type-conversion wrapper around `getSenderInternalPubkey()`
+ * @return {string}
+ */
+proto.looprpc.ServerLoopInRequest.prototype.getSenderInternalPubkey_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getSenderInternalPubkey()));
+};
+
+
+/**
+ * optional bytes sender_internal_pubkey = 9;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getSenderInternalPubkey()`
+ * @return {!Uint8Array}
+ */
+proto.looprpc.ServerLoopInRequest.prototype.getSenderInternalPubkey_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getSenderInternalPubkey()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.looprpc.ServerLoopInRequest.prototype.setSenderInternalPubkey = function(value) {
+  jspb.Message.setProto3BytesField(this, 9, value);
 };
 
 
@@ -2018,6 +2071,7 @@ proto.looprpc.ServerLoopInResponse.prototype.toObject = function(opt_includeInst
 proto.looprpc.ServerLoopInResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
     receiverKey: msg.getReceiverKey_asB64(),
+    receiverInternalPubkey: msg.getReceiverInternalPubkey_asB64(),
     expiry: jspb.Message.getFieldWithDefault(msg, 2, 0),
     serverMessage: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
@@ -2060,6 +2114,10 @@ proto.looprpc.ServerLoopInResponse.deserializeBinaryFromReader = function(msg, r
       var value = /** @type {!Uint8Array} */ (reader.readBytes());
       msg.setReceiverKey(value);
       break;
+    case 9:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setReceiverInternalPubkey(value);
+      break;
     case 2:
       var value = /** @type {number} */ (reader.readInt32());
       msg.setExpiry(value);
@@ -2101,6 +2159,13 @@ proto.looprpc.ServerLoopInResponse.serializeBinaryToWriter = function(message, w
   if (f.length > 0) {
     writer.writeBytes(
       1,
+      f
+    );
+  }
+  f = message.getReceiverInternalPubkey_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      9,
       f
     );
   }
@@ -2157,6 +2222,45 @@ proto.looprpc.ServerLoopInResponse.prototype.getReceiverKey_asU8 = function() {
 /** @param {!(string|Uint8Array)} value */
 proto.looprpc.ServerLoopInResponse.prototype.setReceiverKey = function(value) {
   jspb.Message.setProto3BytesField(this, 1, value);
+};
+
+
+/**
+ * optional bytes receiver_internal_pubkey = 9;
+ * @return {!(string|Uint8Array)}
+ */
+proto.looprpc.ServerLoopInResponse.prototype.getReceiverInternalPubkey = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 9, ""));
+};
+
+
+/**
+ * optional bytes receiver_internal_pubkey = 9;
+ * This is a type-conversion wrapper around `getReceiverInternalPubkey()`
+ * @return {string}
+ */
+proto.looprpc.ServerLoopInResponse.prototype.getReceiverInternalPubkey_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getReceiverInternalPubkey()));
+};
+
+
+/**
+ * optional bytes receiver_internal_pubkey = 9;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getReceiverInternalPubkey()`
+ * @return {!Uint8Array}
+ */
+proto.looprpc.ServerLoopInResponse.prototype.getReceiverInternalPubkey_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getReceiverInternalPubkey()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.looprpc.ServerLoopInResponse.prototype.setReceiverInternalPubkey = function(value) {
+  jspb.Message.setProto3BytesField(this, 9, value);
 };
 
 
@@ -6567,6 +6671,366 @@ proto.looprpc.MuSig2SignSweepRes.prototype.setPartialSignature = function(value)
 };
 
 
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.looprpc.ServerPushKeyReq = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.looprpc.ServerPushKeyReq, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.looprpc.ServerPushKeyReq.displayName = 'proto.looprpc.ServerPushKeyReq';
+}
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.looprpc.ServerPushKeyReq.prototype.toObject = function(opt_includeInstance) {
+  return proto.looprpc.ServerPushKeyReq.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.looprpc.ServerPushKeyReq} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.looprpc.ServerPushKeyReq.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    protocolVersion: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    swapHash: msg.getSwapHash_asB64(),
+    internalPrivkey: msg.getInternalPrivkey_asB64()
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.looprpc.ServerPushKeyReq}
+ */
+proto.looprpc.ServerPushKeyReq.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.looprpc.ServerPushKeyReq;
+  return proto.looprpc.ServerPushKeyReq.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.looprpc.ServerPushKeyReq} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.looprpc.ServerPushKeyReq}
+ */
+proto.looprpc.ServerPushKeyReq.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = /** @type {!proto.looprpc.ProtocolVersion} */ (reader.readEnum());
+      msg.setProtocolVersion(value);
+      break;
+    case 2:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setSwapHash(value);
+      break;
+    case 3:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setInternalPrivkey(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.looprpc.ServerPushKeyReq.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.looprpc.ServerPushKeyReq.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.looprpc.ServerPushKeyReq} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.looprpc.ServerPushKeyReq.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getProtocolVersion();
+  if (f !== 0.0) {
+    writer.writeEnum(
+      1,
+      f
+    );
+  }
+  f = message.getSwapHash_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      2,
+      f
+    );
+  }
+  f = message.getInternalPrivkey_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      3,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional ProtocolVersion protocol_version = 1;
+ * @return {!proto.looprpc.ProtocolVersion}
+ */
+proto.looprpc.ServerPushKeyReq.prototype.getProtocolVersion = function() {
+  return /** @type {!proto.looprpc.ProtocolVersion} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
+};
+
+
+/** @param {!proto.looprpc.ProtocolVersion} value */
+proto.looprpc.ServerPushKeyReq.prototype.setProtocolVersion = function(value) {
+  jspb.Message.setProto3EnumField(this, 1, value);
+};
+
+
+/**
+ * optional bytes swap_hash = 2;
+ * @return {!(string|Uint8Array)}
+ */
+proto.looprpc.ServerPushKeyReq.prototype.getSwapHash = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+};
+
+
+/**
+ * optional bytes swap_hash = 2;
+ * This is a type-conversion wrapper around `getSwapHash()`
+ * @return {string}
+ */
+proto.looprpc.ServerPushKeyReq.prototype.getSwapHash_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getSwapHash()));
+};
+
+
+/**
+ * optional bytes swap_hash = 2;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getSwapHash()`
+ * @return {!Uint8Array}
+ */
+proto.looprpc.ServerPushKeyReq.prototype.getSwapHash_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getSwapHash()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.looprpc.ServerPushKeyReq.prototype.setSwapHash = function(value) {
+  jspb.Message.setProto3BytesField(this, 2, value);
+};
+
+
+/**
+ * optional bytes internal_privkey = 3;
+ * @return {!(string|Uint8Array)}
+ */
+proto.looprpc.ServerPushKeyReq.prototype.getInternalPrivkey = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
+};
+
+
+/**
+ * optional bytes internal_privkey = 3;
+ * This is a type-conversion wrapper around `getInternalPrivkey()`
+ * @return {string}
+ */
+proto.looprpc.ServerPushKeyReq.prototype.getInternalPrivkey_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getInternalPrivkey()));
+};
+
+
+/**
+ * optional bytes internal_privkey = 3;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getInternalPrivkey()`
+ * @return {!Uint8Array}
+ */
+proto.looprpc.ServerPushKeyReq.prototype.getInternalPrivkey_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getInternalPrivkey()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.looprpc.ServerPushKeyReq.prototype.setInternalPrivkey = function(value) {
+  jspb.Message.setProto3BytesField(this, 3, value);
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.looprpc.ServerPushKeyRes = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.looprpc.ServerPushKeyRes, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.looprpc.ServerPushKeyRes.displayName = 'proto.looprpc.ServerPushKeyRes';
+}
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.looprpc.ServerPushKeyRes.prototype.toObject = function(opt_includeInstance) {
+  return proto.looprpc.ServerPushKeyRes.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.looprpc.ServerPushKeyRes} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.looprpc.ServerPushKeyRes.toObject = function(includeInstance, msg) {
+  var f, obj = {
+
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.looprpc.ServerPushKeyRes}
+ */
+proto.looprpc.ServerPushKeyRes.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.looprpc.ServerPushKeyRes;
+  return proto.looprpc.ServerPushKeyRes.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.looprpc.ServerPushKeyRes} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.looprpc.ServerPushKeyRes}
+ */
+proto.looprpc.ServerPushKeyRes.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.looprpc.ServerPushKeyRes.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.looprpc.ServerPushKeyRes.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.looprpc.ServerPushKeyRes} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.looprpc.ServerPushKeyRes.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+};
+
+
 /**
  * @enum {number}
  */
@@ -6581,7 +7045,8 @@ proto.looprpc.ProtocolVersion = {
   LOOP_OUT_CANCEL: 7,
   PROBE: 8,
   ROUTING_PLUGIN: 9,
-  HTLC_V3: 10
+  HTLC_V3: 10,
+  MUSIG2: 11
 };
 
 /**

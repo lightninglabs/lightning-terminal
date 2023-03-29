@@ -12,13 +12,13 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.5.0
 	github.com/improbable-eng/grpc-web v0.12.0
 	github.com/jessevdk/go-flags v1.4.0
-	github.com/lightninglabs/aperture v0.1.19-beta.0.20230227124349-b952e4ee6ff4
+	github.com/lightninglabs/aperture v0.1.20-beta
 	github.com/lightninglabs/faraday v0.2.9-alpha.0.20230307084535-e9359999b5da
 	github.com/lightninglabs/lightning-node-connect v0.1.12-alpha
 	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.1
-	github.com/lightninglabs/lndclient v0.16.0-9
-	github.com/lightninglabs/loop v0.21.0-beta.0.20230307115451-ec4f2507535c
-	github.com/lightninglabs/loop/swapserverrpc v1.0.3
+	github.com/lightninglabs/lndclient v0.16.0-10
+	github.com/lightninglabs/loop v0.22.0-beta
+	github.com/lightninglabs/loop/swapserverrpc v1.0.4
 	github.com/lightninglabs/pool v0.6.2-beta
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.0
 	github.com/lightninglabs/protobuf-hex-display v1.4.3-hex-display

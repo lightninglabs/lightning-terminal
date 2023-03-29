@@ -45,6 +45,8 @@ service SwapServer {
         returns (ReportRoutingResultRes);
 
     rpc MuSig2SignSweep (MuSig2SignSweepReq) returns (MuSig2SignSweepRes);
+
+    rpc PushKey (ServerPushKeyReq) returns (ServerPushKeyRes);
 }
 
 /**
@@ -97,6 +99,9 @@ enum ProtocolVersion {
 
     // The client will use the new v3 (taproot) HTLC scripts.
     HTLC_V3 = 10;
+
+    // Enables MuSig2 signature scheme for swaps.
+    MUSIG2 = 11;
 }
 
 message ServerLoopOutRequest {
@@ -196,14 +201,21 @@ message ServerLoopOutTerms {
 
 message ServerLoopInRequest {
     bytes sender_key = 1;
+
+    bytes sender_internal_pubkey = 9;
+
     bytes swap_hash = 2;
+
     uint64 amt = 3 [jstype = JS_STRING];
+
     string swap_invoice = 4;
+
     bytes last_hop = 5;
 
     /// The protocol version that the client adheres to.
     ProtocolVersion protocol_version = 6;
 
+    // An invoice that can be used for the purpose of probing.
     string probe_invoice = 7;
 
     // The user agent string that identifies the software running on the user's
@@ -218,6 +230,9 @@ message ServerLoopInRequest {
 
 message ServerLoopInResponse {
     bytes receiver_key = 1;
+
+    bytes receiver_internal_pubkey = 9;
+
     int32 expiry = 2;
 
     // A human-readable message from the loop server.
@@ -458,7 +473,7 @@ message CancelLoopOutSwapResponse {
 }
 
 message ServerProbeRequest {
-    /// The protocol version that the client adheres to.
+    // The protocol version that the client adheres to.
     ProtocolVersion protocol_version = 1;
 
     // The probe amount.
@@ -470,9 +485,7 @@ message ServerProbeRequest {
     // Optional last hop to use when probing the client.
     bytes last_hop = 4;
 
-    /*
-    Optional route hints to reach the destination through private channels.
-    */
+    // Optional route hints to reach the destination through private channels.
     repeated RouteHint route_hints = 5;
 }
 
@@ -554,4 +567,18 @@ message MuSig2SignSweepRes {
 
     // The partial signature of the server for the requested sighash.
     bytes partial_signature = 2;
+}
+
+message ServerPushKeyReq {
+    // The protocol version that the client adheres to.
+    ProtocolVersion protocol_version = 1;
+
+    // The swap hash.
+    bytes swap_hash = 2;
+
+    // The client’s private key used in the HTLC’s aggregated internal key.
+    bytes internal_privkey = 3;
+}
+
+message ServerPushKeyRes {
 }
