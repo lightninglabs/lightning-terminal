@@ -18,7 +18,7 @@
   "paths": {
     "/v1/proxy/info": {
       "get": {
-        "summary": "litcli: `proxy getinfo`\nGetInfo returns general information concerning the LiTd node.",
+        "summary": "litcli: `getinfo`\nGetInfo returns general information concerning the LiTd node.",
         "operationId": "Proxy_GetInfo",
         "responses": {
           "200": {
@@ -41,7 +41,7 @@
     },
     "/v1/proxy/stop": {
       "post": {
-        "summary": "litcli: `proxy stop`\nStopDaemon will send a shutdown request to the interrupt handler,\ntriggering a graceful shutdown of the daemon.",
+        "summary": "litcli: `stop`\nStopDaemon will send a shutdown request to the interrupt handler,\ntriggering a graceful shutdown of the daemon.",
         "operationId": "Proxy_StopDaemon",
         "responses": {
           "200": {
