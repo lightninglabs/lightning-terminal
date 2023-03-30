@@ -130,6 +130,15 @@ type SwapServerMuSig2SignSweep = {
   readonly responseType: typeof swapserverrpc_server_pb.MuSig2SignSweepRes;
 };
 
+type SwapServerPushKey = {
+  readonly methodName: string;
+  readonly service: typeof SwapServer;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof swapserverrpc_server_pb.ServerPushKeyReq;
+  readonly responseType: typeof swapserverrpc_server_pb.ServerPushKeyRes;
+};
+
 export class SwapServer {
   static readonly serviceName: string;
   static readonly LoopOutTerms: SwapServerLoopOutTerms;
@@ -146,6 +155,7 @@ export class SwapServer {
   static readonly RecommendRoutingPlugin: SwapServerRecommendRoutingPlugin;
   static readonly ReportRoutingResult: SwapServerReportRoutingResult;
   static readonly MuSig2SignSweep: SwapServerMuSig2SignSweep;
+  static readonly PushKey: SwapServerPushKey;
 }
 
 export type ServiceError = { message: string, code: number; metadata: grpc.Metadata }
@@ -289,6 +299,15 @@ export class SwapServerClient {
   muSig2SignSweep(
     requestMessage: swapserverrpc_server_pb.MuSig2SignSweepReq,
     callback: (error: ServiceError|null, responseMessage: swapserverrpc_server_pb.MuSig2SignSweepRes|null) => void
+  ): UnaryResponse;
+  pushKey(
+    requestMessage: swapserverrpc_server_pb.ServerPushKeyReq,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: swapserverrpc_server_pb.ServerPushKeyRes|null) => void
+  ): UnaryResponse;
+  pushKey(
+    requestMessage: swapserverrpc_server_pb.ServerPushKeyReq,
+    callback: (error: ServiceError|null, responseMessage: swapserverrpc_server_pb.ServerPushKeyRes|null) => void
   ): UnaryResponse;
 }
 

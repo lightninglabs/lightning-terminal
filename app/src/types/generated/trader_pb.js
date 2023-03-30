@@ -16,6 +16,9 @@ var global = Function('return this')();
 
 var auctioneerrpc_auctioneer_pb = require('./auctioneerrpc/auctioneer_pb.js');
 goog.exportSymbol('proto.poolrpc.Account', null, global);
+goog.exportSymbol('proto.poolrpc.AccountModificationFee', null, global);
+goog.exportSymbol('proto.poolrpc.AccountModificationFeesRequest', null, global);
+goog.exportSymbol('proto.poolrpc.AccountModificationFeesResponse', null, global);
 goog.exportSymbol('proto.poolrpc.AccountState', null, global);
 goog.exportSymbol('proto.poolrpc.AccountVersion', null, global);
 goog.exportSymbol('proto.poolrpc.Ask', null, global);
@@ -45,6 +48,7 @@ goog.exportSymbol('proto.poolrpc.LeasesRequest', null, global);
 goog.exportSymbol('proto.poolrpc.LeasesResponse', null, global);
 goog.exportSymbol('proto.poolrpc.ListAccountsRequest', null, global);
 goog.exportSymbol('proto.poolrpc.ListAccountsResponse', null, global);
+goog.exportSymbol('proto.poolrpc.ListOfAccountModificationFees', null, global);
 goog.exportSymbol('proto.poolrpc.ListOrdersRequest', null, global);
 goog.exportSymbol('proto.poolrpc.ListOrdersResponse', null, global);
 goog.exportSymbol('proto.poolrpc.ListSidecarsRequest', null, global);
@@ -8922,6 +8926,794 @@ proto.poolrpc.RecoverAccountsResponse.prototype.setNumRecoveredAccounts = functi
  * @extends {jspb.Message}
  * @constructor
  */
+proto.poolrpc.AccountModificationFeesRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.AccountModificationFeesRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.poolrpc.AccountModificationFeesRequest.displayName = 'proto.poolrpc.AccountModificationFeesRequest';
+}
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.poolrpc.AccountModificationFeesRequest.prototype.toObject = function(opt_includeInstance) {
+  return proto.poolrpc.AccountModificationFeesRequest.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.poolrpc.AccountModificationFeesRequest} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.poolrpc.AccountModificationFeesRequest.toObject = function(includeInstance, msg) {
+  var f, obj = {
+
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.poolrpc.AccountModificationFeesRequest}
+ */
+proto.poolrpc.AccountModificationFeesRequest.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.poolrpc.AccountModificationFeesRequest;
+  return proto.poolrpc.AccountModificationFeesRequest.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.poolrpc.AccountModificationFeesRequest} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.poolrpc.AccountModificationFeesRequest}
+ */
+proto.poolrpc.AccountModificationFeesRequest.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.poolrpc.AccountModificationFeesRequest.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.poolrpc.AccountModificationFeesRequest.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.poolrpc.AccountModificationFeesRequest} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.poolrpc.AccountModificationFeesRequest.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.AccountModificationFee = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.poolrpc.AccountModificationFee.oneofGroups_);
+};
+goog.inherits(proto.poolrpc.AccountModificationFee, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.poolrpc.AccountModificationFee.displayName = 'proto.poolrpc.AccountModificationFee';
+}
+/**
+ * Oneof group definitions for this message. Each group defines the field
+ * numbers belonging to that group. When of these fields' value is set, all
+ * other fields in the group are cleared. During deserialization, if multiple
+ * fields are encountered for a group, only the last value seen will be kept.
+ * @private {!Array<!Array<number>>}
+ * @const
+ */
+proto.poolrpc.AccountModificationFee.oneofGroups_ = [[6,7]];
+
+/**
+ * @enum {number}
+ */
+proto.poolrpc.AccountModificationFee.FeeCase = {
+  FEE_NOT_SET: 0,
+  FEE_NULL: 6,
+  FEE_VALUE: 7
+};
+
+/**
+ * @return {proto.poolrpc.AccountModificationFee.FeeCase}
+ */
+proto.poolrpc.AccountModificationFee.prototype.getFeeCase = function() {
+  return /** @type {proto.poolrpc.AccountModificationFee.FeeCase} */(jspb.Message.computeOneofCase(this, proto.poolrpc.AccountModificationFee.oneofGroups_[0]));
+};
+
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.poolrpc.AccountModificationFee.prototype.toObject = function(opt_includeInstance) {
+  return proto.poolrpc.AccountModificationFee.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.poolrpc.AccountModificationFee} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.poolrpc.AccountModificationFee.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    action: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    txid: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    blockHeight: jspb.Message.getFieldWithDefault(msg, 3, 0),
+    timestamp: jspb.Message.getFieldWithDefault(msg, 4, "0"),
+    outputAmount: jspb.Message.getFieldWithDefault(msg, 5, "0"),
+    feeNull: jspb.Message.getFieldWithDefault(msg, 6, false),
+    feeValue: jspb.Message.getFieldWithDefault(msg, 7, "0")
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.poolrpc.AccountModificationFee}
+ */
+proto.poolrpc.AccountModificationFee.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.poolrpc.AccountModificationFee;
+  return proto.poolrpc.AccountModificationFee.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.poolrpc.AccountModificationFee} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.poolrpc.AccountModificationFee}
+ */
+proto.poolrpc.AccountModificationFee.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setAction(value);
+      break;
+    case 2:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setTxid(value);
+      break;
+    case 3:
+      var value = /** @type {number} */ (reader.readInt32());
+      msg.setBlockHeight(value);
+      break;
+    case 4:
+      var value = /** @type {string} */ (reader.readInt64String());
+      msg.setTimestamp(value);
+      break;
+    case 5:
+      var value = /** @type {string} */ (reader.readInt64String());
+      msg.setOutputAmount(value);
+      break;
+    case 6:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setFeeNull(value);
+      break;
+    case 7:
+      var value = /** @type {string} */ (reader.readInt64String());
+      msg.setFeeValue(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.poolrpc.AccountModificationFee.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.poolrpc.AccountModificationFee.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.poolrpc.AccountModificationFee} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.poolrpc.AccountModificationFee.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getAction();
+  if (f.length > 0) {
+    writer.writeString(
+      1,
+      f
+    );
+  }
+  f = message.getTxid();
+  if (f.length > 0) {
+    writer.writeString(
+      2,
+      f
+    );
+  }
+  f = message.getBlockHeight();
+  if (f !== 0) {
+    writer.writeInt32(
+      3,
+      f
+    );
+  }
+  f = message.getTimestamp();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
+      4,
+      f
+    );
+  }
+  f = message.getOutputAmount();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
+      5,
+      f
+    );
+  }
+  f = /** @type {boolean} */ (jspb.Message.getField(message, 6));
+  if (f != null) {
+    writer.writeBool(
+      6,
+      f
+    );
+  }
+  f = /** @type {string} */ (jspb.Message.getField(message, 7));
+  if (f != null) {
+    writer.writeInt64String(
+      7,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional string action = 1;
+ * @return {string}
+ */
+proto.poolrpc.AccountModificationFee.prototype.getAction = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+};
+
+
+/** @param {string} value */
+proto.poolrpc.AccountModificationFee.prototype.setAction = function(value) {
+  jspb.Message.setProto3StringField(this, 1, value);
+};
+
+
+/**
+ * optional string txid = 2;
+ * @return {string}
+ */
+proto.poolrpc.AccountModificationFee.prototype.getTxid = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+};
+
+
+/** @param {string} value */
+proto.poolrpc.AccountModificationFee.prototype.setTxid = function(value) {
+  jspb.Message.setProto3StringField(this, 2, value);
+};
+
+
+/**
+ * optional int32 block_height = 3;
+ * @return {number}
+ */
+proto.poolrpc.AccountModificationFee.prototype.getBlockHeight = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 3, 0));
+};
+
+
+/** @param {number} value */
+proto.poolrpc.AccountModificationFee.prototype.setBlockHeight = function(value) {
+  jspb.Message.setProto3IntField(this, 3, value);
+};
+
+
+/**
+ * optional int64 timestamp = 4;
+ * @return {string}
+ */
+proto.poolrpc.AccountModificationFee.prototype.getTimestamp = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 4, "0"));
+};
+
+
+/** @param {string} value */
+proto.poolrpc.AccountModificationFee.prototype.setTimestamp = function(value) {
+  jspb.Message.setProto3StringIntField(this, 4, value);
+};
+
+
+/**
+ * optional int64 output_amount = 5;
+ * @return {string}
+ */
+proto.poolrpc.AccountModificationFee.prototype.getOutputAmount = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, "0"));
+};
+
+
+/** @param {string} value */
+proto.poolrpc.AccountModificationFee.prototype.setOutputAmount = function(value) {
+  jspb.Message.setProto3StringIntField(this, 5, value);
+};
+
+
+/**
+ * optional bool fee_null = 6;
+ * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
+ * You should avoid comparisons like {@code val === true/false} in those cases.
+ * @return {boolean}
+ */
+proto.poolrpc.AccountModificationFee.prototype.getFeeNull = function() {
+  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 6, false));
+};
+
+
+/** @param {boolean} value */
+proto.poolrpc.AccountModificationFee.prototype.setFeeNull = function(value) {
+  jspb.Message.setOneofField(this, 6, proto.poolrpc.AccountModificationFee.oneofGroups_[0], value);
+};
+
+
+proto.poolrpc.AccountModificationFee.prototype.clearFeeNull = function() {
+  jspb.Message.setOneofField(this, 6, proto.poolrpc.AccountModificationFee.oneofGroups_[0], undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {!boolean}
+ */
+proto.poolrpc.AccountModificationFee.prototype.hasFeeNull = function() {
+  return jspb.Message.getField(this, 6) != null;
+};
+
+
+/**
+ * optional int64 fee_value = 7;
+ * @return {string}
+ */
+proto.poolrpc.AccountModificationFee.prototype.getFeeValue = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 7, "0"));
+};
+
+
+/** @param {string} value */
+proto.poolrpc.AccountModificationFee.prototype.setFeeValue = function(value) {
+  jspb.Message.setOneofField(this, 7, proto.poolrpc.AccountModificationFee.oneofGroups_[0], value);
+};
+
+
+proto.poolrpc.AccountModificationFee.prototype.clearFeeValue = function() {
+  jspb.Message.setOneofField(this, 7, proto.poolrpc.AccountModificationFee.oneofGroups_[0], undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {!boolean}
+ */
+proto.poolrpc.AccountModificationFee.prototype.hasFeeValue = function() {
+  return jspb.Message.getField(this, 7) != null;
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.ListOfAccountModificationFees = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.ListOfAccountModificationFees.repeatedFields_, null);
+};
+goog.inherits(proto.poolrpc.ListOfAccountModificationFees, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.poolrpc.ListOfAccountModificationFees.displayName = 'proto.poolrpc.ListOfAccountModificationFees';
+}
+/**
+ * List of repeated fields within this message type.
+ * @private {!Array<number>}
+ * @const
+ */
+proto.poolrpc.ListOfAccountModificationFees.repeatedFields_ = [1];
+
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.poolrpc.ListOfAccountModificationFees.prototype.toObject = function(opt_includeInstance) {
+  return proto.poolrpc.ListOfAccountModificationFees.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.poolrpc.ListOfAccountModificationFees} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.poolrpc.ListOfAccountModificationFees.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    modificationFeesList: jspb.Message.toObjectList(msg.getModificationFeesList(),
+    proto.poolrpc.AccountModificationFee.toObject, includeInstance)
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.poolrpc.ListOfAccountModificationFees}
+ */
+proto.poolrpc.ListOfAccountModificationFees.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.poolrpc.ListOfAccountModificationFees;
+  return proto.poolrpc.ListOfAccountModificationFees.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.poolrpc.ListOfAccountModificationFees} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.poolrpc.ListOfAccountModificationFees}
+ */
+proto.poolrpc.ListOfAccountModificationFees.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = new proto.poolrpc.AccountModificationFee;
+      reader.readMessage(value,proto.poolrpc.AccountModificationFee.deserializeBinaryFromReader);
+      msg.addModificationFees(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.poolrpc.ListOfAccountModificationFees.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.poolrpc.ListOfAccountModificationFees.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.poolrpc.ListOfAccountModificationFees} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.poolrpc.ListOfAccountModificationFees.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getModificationFeesList();
+  if (f.length > 0) {
+    writer.writeRepeatedMessage(
+      1,
+      f,
+      proto.poolrpc.AccountModificationFee.serializeBinaryToWriter
+    );
+  }
+};
+
+
+/**
+ * repeated AccountModificationFee modification_fees = 1;
+ * @return {!Array<!proto.poolrpc.AccountModificationFee>}
+ */
+proto.poolrpc.ListOfAccountModificationFees.prototype.getModificationFeesList = function() {
+  return /** @type{!Array<!proto.poolrpc.AccountModificationFee>} */ (
+    jspb.Message.getRepeatedWrapperField(this, proto.poolrpc.AccountModificationFee, 1));
+};
+
+
+/** @param {!Array<!proto.poolrpc.AccountModificationFee>} value */
+proto.poolrpc.ListOfAccountModificationFees.prototype.setModificationFeesList = function(value) {
+  jspb.Message.setRepeatedWrapperField(this, 1, value);
+};
+
+
+/**
+ * @param {!proto.poolrpc.AccountModificationFee=} opt_value
+ * @param {number=} opt_index
+ * @return {!proto.poolrpc.AccountModificationFee}
+ */
+proto.poolrpc.ListOfAccountModificationFees.prototype.addModificationFees = function(opt_value, opt_index) {
+  return jspb.Message.addToRepeatedWrapperField(this, 1, opt_value, proto.poolrpc.AccountModificationFee, opt_index);
+};
+
+
+proto.poolrpc.ListOfAccountModificationFees.prototype.clearModificationFeesList = function() {
+  this.setModificationFeesList([]);
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.AccountModificationFeesResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.AccountModificationFeesResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.poolrpc.AccountModificationFeesResponse.displayName = 'proto.poolrpc.AccountModificationFeesResponse';
+}
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.poolrpc.AccountModificationFeesResponse.prototype.toObject = function(opt_includeInstance) {
+  return proto.poolrpc.AccountModificationFeesResponse.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.poolrpc.AccountModificationFeesResponse} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.poolrpc.AccountModificationFeesResponse.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    accountsMap: (f = msg.getAccountsMap()) ? f.toObject(includeInstance, proto.poolrpc.ListOfAccountModificationFees.toObject) : []
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.poolrpc.AccountModificationFeesResponse}
+ */
+proto.poolrpc.AccountModificationFeesResponse.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.poolrpc.AccountModificationFeesResponse;
+  return proto.poolrpc.AccountModificationFeesResponse.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.poolrpc.AccountModificationFeesResponse} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.poolrpc.AccountModificationFeesResponse}
+ */
+proto.poolrpc.AccountModificationFeesResponse.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = msg.getAccountsMap();
+      reader.readMessage(value, function(message, reader) {
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.poolrpc.ListOfAccountModificationFees.deserializeBinaryFromReader, "");
+         });
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.poolrpc.AccountModificationFeesResponse.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.poolrpc.AccountModificationFeesResponse.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.poolrpc.AccountModificationFeesResponse} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.poolrpc.AccountModificationFeesResponse.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getAccountsMap(true);
+  if (f && f.getLength() > 0) {
+    f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.poolrpc.ListOfAccountModificationFees.serializeBinaryToWriter);
+  }
+};
+
+
+/**
+ * map<string, ListOfAccountModificationFees> accounts = 1;
+ * @param {boolean=} opt_noLazyCreate Do not create the map if
+ * empty, instead returning `undefined`
+ * @return {!jspb.Map<string,!proto.poolrpc.ListOfAccountModificationFees>}
+ */
+proto.poolrpc.AccountModificationFeesResponse.prototype.getAccountsMap = function(opt_noLazyCreate) {
+  return /** @type {!jspb.Map<string,!proto.poolrpc.ListOfAccountModificationFees>} */ (
+      jspb.Message.getMapField(this, 1, opt_noLazyCreate,
+      proto.poolrpc.ListOfAccountModificationFees));
+};
+
+
+proto.poolrpc.AccountModificationFeesResponse.prototype.clearAccountsMap = function() {
+  this.getAccountsMap().clear();
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
 proto.poolrpc.AuctionFeeRequest = function(opt_data) {
   jspb.Message.initialize(this, opt_data, 0, -1, null, null);
 };
@@ -15014,7 +15806,8 @@ proto.poolrpc.CancelSidecarResponse.serializeBinaryToWriter = function(message, 
 proto.poolrpc.AccountVersion = {
   ACCOUNT_VERSION_LND_DEPENDENT: 0,
   ACCOUNT_VERSION_LEGACY: 1,
-  ACCOUNT_VERSION_TAPROOT: 2
+  ACCOUNT_VERSION_TAPROOT: 2,
+  ACCOUNT_VERSION_TAPROOT_V2: 3
 };
 
 /**

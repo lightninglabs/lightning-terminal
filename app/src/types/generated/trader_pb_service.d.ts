@@ -104,6 +104,15 @@ type TraderRecoverAccounts = {
   readonly responseType: typeof trader_pb.RecoverAccountsResponse;
 };
 
+type TraderAccountModificationFees = {
+  readonly methodName: string;
+  readonly service: typeof Trader;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof trader_pb.AccountModificationFeesRequest;
+  readonly responseType: typeof trader_pb.AccountModificationFeesResponse;
+};
+
 type TraderSubmitOrder = {
   readonly methodName: string;
   readonly service: typeof Trader;
@@ -279,6 +288,7 @@ export class Trader {
   static readonly RenewAccount: TraderRenewAccount;
   static readonly BumpAccountFee: TraderBumpAccountFee;
   static readonly RecoverAccounts: TraderRecoverAccounts;
+  static readonly AccountModificationFees: TraderAccountModificationFees;
   static readonly SubmitOrder: TraderSubmitOrder;
   static readonly ListOrders: TraderListOrders;
   static readonly CancelOrder: TraderCancelOrder;
@@ -429,6 +439,15 @@ export class TraderClient {
   recoverAccounts(
     requestMessage: trader_pb.RecoverAccountsRequest,
     callback: (error: ServiceError|null, responseMessage: trader_pb.RecoverAccountsResponse|null) => void
+  ): UnaryResponse;
+  accountModificationFees(
+    requestMessage: trader_pb.AccountModificationFeesRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: trader_pb.AccountModificationFeesResponse|null) => void
+  ): UnaryResponse;
+  accountModificationFees(
+    requestMessage: trader_pb.AccountModificationFeesRequest,
+    callback: (error: ServiceError|null, responseMessage: trader_pb.AccountModificationFeesResponse|null) => void
   ): UnaryResponse;
   submitOrder(
     requestMessage: trader_pb.SubmitOrderRequest,

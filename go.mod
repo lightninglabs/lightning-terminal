@@ -12,17 +12,17 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.5.0
 	github.com/improbable-eng/grpc-web v0.12.0
 	github.com/jessevdk/go-flags v1.4.0
-	github.com/lightninglabs/aperture v0.1.19-beta.0.20230227124349-b952e4ee6ff4
-	github.com/lightninglabs/faraday v0.2.9-alpha.0.20230307084535-e9359999b5da
+	github.com/lightninglabs/aperture v0.1.20-beta
+	github.com/lightninglabs/faraday v0.2.10-alpha
 	github.com/lightninglabs/lightning-node-connect v0.1.12-alpha
 	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.1
-	github.com/lightninglabs/lndclient v0.16.0-9
-	github.com/lightninglabs/loop v0.21.0-beta.0.20230307115451-ec4f2507535c
-	github.com/lightninglabs/loop/swapserverrpc v1.0.3
-	github.com/lightninglabs/pool v0.6.1-beta.0.20230227204507-0db3a9fdc6fd
+	github.com/lightninglabs/lndclient v0.16.0-10
+	github.com/lightninglabs/loop v0.22.0-beta
+	github.com/lightninglabs/loop/swapserverrpc v1.0.4
+	github.com/lightninglabs/pool v0.6.2-beta.0.20230329135228-c3bffb52df3a
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.0
 	github.com/lightninglabs/protobuf-hex-display v1.4.3-hex-display
-	github.com/lightningnetwork/lnd v0.16.0-beta.rc2
+	github.com/lightningnetwork/lnd v0.16.0-beta
 	github.com/lightningnetwork/lnd/cert v1.2.1
 	github.com/lightningnetwork/lnd/kvdb v1.4.1
 	github.com/lightningnetwork/lnd/tlv v1.1.0
@@ -190,5 +190,10 @@ require (
 )
 
 replace github.com/lightninglabs/lightning-terminal/autopilotserverrpc => ./autopilotserverrpc
+
+// We need to use grpc v1.39.0 because of a change in how HTTP errors are
+// formatted and sent to the client. This change was introduced in grpc v1.40.0
+// with https://github.com/grpc/grpc-go/pull/4474.
+replace google.golang.org/grpc => google.golang.org/grpc v1.39.0
 
 go 1.19

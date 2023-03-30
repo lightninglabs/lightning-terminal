@@ -110,6 +110,15 @@ Trader.RecoverAccounts = {
   responseType: trader_pb.RecoverAccountsResponse
 };
 
+Trader.AccountModificationFees = {
+  methodName: "AccountModificationFees",
+  service: Trader,
+  requestStream: false,
+  responseStream: false,
+  requestType: trader_pb.AccountModificationFeesRequest,
+  responseType: trader_pb.AccountModificationFeesResponse
+};
+
 Trader.SubmitOrder = {
   methodName: "SubmitOrder",
   service: Trader,
@@ -594,6 +603,37 @@ TraderClient.prototype.recoverAccounts = function recoverAccounts(requestMessage
     callback = arguments[1];
   }
   var client = grpc.unary(Trader.RecoverAccounts, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+TraderClient.prototype.accountModificationFees = function accountModificationFees(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(Trader.AccountModificationFees, {
     request: requestMessage,
     host: this.serviceHost,
     metadata: metadata,

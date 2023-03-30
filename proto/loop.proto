@@ -823,12 +823,13 @@ message LiquidityParameters {
     uint64 autoloop_budget_sat = 11 [jstype = JS_STRING];
 
     /*
-    The start time for autoloop budget, expressed as a unix timestamp in
-    seconds. If this value is 0, the budget will be applied for all
-    automatically dispatched swaps. Swaps that were completed before this date
-    will not be included in budget calculations.
+    Deprecated, use autoloop_budget_refresh_period_sec. The start time for
+    autoloop budget, expressed as a unix timestamp in seconds. If this value is
+    0, the budget will be applied for all automatically dispatched swaps. Swaps
+    that were completed before this date will not be included in budget
+    calculations.
     */
-    uint64 autoloop_budget_start_sec = 12 [jstype = JS_STRING];
+    uint64 autoloop_budget_start_sec = 12 [deprecated = true, jstype = JS_STRING];
 
     /*
     The maximum number of automatically dispatched swaps that we allow to be in
@@ -860,6 +861,18 @@ message LiquidityParameters {
     order to revert to default behavior.
     */
     string autoloop_dest_address = 18;
+
+    /*
+    The period over which the autoloop budget is refreshed, expressed in
+    seconds.
+    */
+    uint64 autoloop_budget_refresh_period_sec = 19 [jstype = JS_STRING];
+
+    /*
+    The time at which the autoloop budget was last refreshed, expressed as a
+    UNIX timestamp in seconds.
+    */
+    uint64 autoloop_budget_last_refresh = 20 [jstype = JS_STRING];
 }
 
 enum LiquidityRuleType {
