@@ -4,16 +4,24 @@
 package litdmobile
 
 import (
+	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync/atomic"
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/lightningnetwork/lnd"
+	"github.com/lightningnetwork/lnd/lnrpc/verrpc"
 	"github.com/lightningnetwork/lnd/signal"
 	"google.golang.org/grpc"
+
+	"github.com/lightninglabs/lndclient"
+	"github.com/lightninglabs/loop/loopd"
+	"github.com/lightninglabs/pool"
 )
 
 // litdStarted will be used atomically to ensure only a single lnd instance is
@@ -94,7 +102,7 @@ func Start(extraArgs string, rpcReady Callback) {
 
 	// We call the main method with the custom in-memory listener called by
 	// the mobile APIs, such that the grpc server will use it.
-	cfg := lnd.ListenerCfg{
+	lisCfg := lnd.ListenerCfg{
 		RPCListeners: []*lnd.ListenerWithSignal{{
 			Listener: lightningLis,
 			Ready:    rpcListening,
@@ -108,9 +116,90 @@ func Start(extraArgs string, rpcReady Callback) {
 		defer atomic.StoreInt32(&litdStarted, 0)
 		defer close(quit)
 
-		if err := lnd.Main(
-			loadedConfig, cfg, implCfg, shutdownInterceptor,
-		); err != nil {
+		loadedConfig, err := lnd.LoadConfig(shutdownInterceptor)
+		if err != nil {
+			fmt.Errorf("could not load lnd config: %w", err)
+			return
+		}
+
+		loopConf := loopd.DefaultConfig()
+		poolConf := pool.DefaultConfig()
+
+		loopServer := loopd.New(&loopConf, nil)
+		poolServer := pool.NewServer(&poolConf)
+
+		err = lnd.Main(
+			loadedConfig, lisCfg, implCfg, shutdownInterceptor,
+		)
+		if err != nil {
+			fmt.Errorf("error starting lnd: %w", err)
+			return
+		}
+
+		macChan := make(chan []byte, 1)
+
+		// We'll need to wait for lnd to send the acaroon after unlock before
+		// going any further.
+		<-rpcListening
+		macData := <-macChan
+
+		ctxc, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		// lndClient + basicClient conf
+		host := "localhost"
+		network := lndclient.Network("mainnet")
+		tlsPath := ""
+		macPath := ""
+		insecure := false
+
+		lndClient, err := lndclient.NewLndServices(
+			&lndclient.LndServicesConfig{
+				LndAddress:            host,
+				Network:               network,
+				TLSPath:               tlsPath,
+				Insecure:              insecure,
+				CustomMacaroonPath:    macPath,
+				CustomMacaroonHex:     hex.EncodeToString(macData),
+				BlockUntilChainSynced: true,
+				BlockUntilUnlocked:    true,
+				CallerCtx:             ctxc,
+				CheckVersion: &verrpc.Version{
+					AppMajor: 0,
+					AppMinor: 15,
+					AppPatch: 4,
+					BuildTags: []string{
+						"signrpc", "walletrpc", "chainrpc", "invoicesrpc",
+					},
+				},
+			},
+		)
+		if err != nil {
+			fmt.Errorf("could not set up lnd client: %w", err)
+			return
+		}
+
+		basicClient, err := lndclient.NewBasicClient(
+			host, tlsPath, filepath.Dir(macPath), string(network),
+			nil,
+		)
+		if err != nil {
+			fmt.Errorf("could not set up lnd basic client: %w", err)
+			return
+		}
+
+		// loop + pool server conf
+		createDefaultMacaroons := true
+
+		err = loopServer.StartAsSubserver(
+			lndClient, createDefaultMacaroons,
+		)
+
+		err = poolServer.StartAsSubserver(
+			basicClient, lndClient, createDefaultMacaroons,
+		)
+
+		if err != nil {
 			if e, ok := err.(*flags.Error); ok &&
 				e.Type == flags.ErrHelp {
 			} else {
