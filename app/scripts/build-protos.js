@@ -41,6 +41,18 @@ const protoSources = async () => {
   );
   return {
     lnd: `lightningnetwork/lnd/${lndVersion[1]}/lnrpc/lightning.proto`,
+    lightning: `lightningnetwork/lnd/${lndVersion[1]}/lnrpc/lightning.proto`,
+    'autopilotrpc/autopilot': `lightningnetwork/lnd/${lndVersion[1]}/lnrpc/autopilotrpc/autopilot.proto`,
+    'chainrpc/chainnotifier': `lightningnetwork/lnd/${lndVersion[1]}/lnrpc/chainrpc/chainnotifier.proto`,
+    'invoicesrpc/invoices': `lightningnetwork/lnd/${lndVersion[1]}/lnrpc/invoicesrpc/invoices.proto`,
+    'neutrinorpc/neutrino': `lightningnetwork/lnd/${lndVersion[1]}/lnrpc/neutrinorpc/neutrino.proto`,
+    'routerrpc/router': `lightningnetwork/lnd/${lndVersion[1]}/lnrpc/routerrpc/router.proto`,
+    'signrpc/signer': `lightningnetwork/lnd/${lndVersion[1]}/lnrpc/signrpc/signer.proto`,
+    'state': `lightningnetwork/lnd/${lndVersion[1]}/lnrpc/stateservice.proto`,
+    'walletrpc/walletkit': `lightningnetwork/lnd/${lndVersion[1]}/lnrpc/walletrpc/walletkit.proto`,
+    'walletunlocker': `lightningnetwork/lnd/${lndVersion[1]}/lnrpc/walletunlocker.proto`,
+    'watchtowerrpc/watchtower': `lightningnetwork/lnd/${lndVersion[1]}/lnrpc/watchtowerrpc/watchtower.proto`,
+    'wtclientrpc/wtclient': `lightningnetwork/lnd/${lndVersion[1]}/lnrpc/wtclientrpc/wtclient.proto`,
     loop: `lightninglabs/loop/${loopVersion[1]}/looprpc/client.proto`,
     'swapserverrpc/server': `lightninglabs/loop/${loopVersion[1]}/swapserverrpc/server.proto`,
     'swapserverrpc/common': `lightninglabs/loop/${loopVersion[1]}/swapserverrpc/common.proto`,

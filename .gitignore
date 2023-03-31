@@ -14,3 +14,9 @@ itest/lnd-itest
 itest/itest.test
 itest/.logs
 itest/*.log
+
+# Files from mobile build.
+mobile/build
+mobile/*_generated.go
+
+vendor
