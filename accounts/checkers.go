@@ -173,6 +173,40 @@ func NewAccountChecker(service Service,
 				return nil
 			},
 		),
+		"/lnrpc.Lightning/SubscribeInvoices": mid.NewResponseRewriter(
+			&lnrpc.InvoiceSubscription{},
+			&lnrpc.Invoice{},
+			func(ctx context.Context,
+				t *lnrpc.Invoice) (proto.Message, error) {
+
+				acct, err := AccountFromContext(ctx)
+				if err != nil {
+					return nil, err
+				}
+
+				hash, err := lntypes.MakeHash(t.RHash)
+				if err != nil {
+					return nil, err
+				}
+
+				// If the invoice does not belong to this
+				// account, we need to skip it. There is no
+				// mechanism for actually skipping (not
+				// forwarding) a stream message yet, so we just
+				// send an empty invoice instead.
+				if _, ok := acct.Invoices[hash]; !ok {
+					return &lnrpc.Invoice{}, nil
+				}
+
+				// If the invoice does belong to the account,
+				// we can just forward it. Returning nil as the
+				// replacement message will cause the original
+				// message to be forwarded, which saves us an
+				// encoding/decoding roundtrip.
+				return nil, nil
+
+			}, mid.PassThroughErrorHandler,
+		),
 
 		// Payments:
 		"/lnrpc.Lightning/SendPayment": mid.NewFullChecker(
