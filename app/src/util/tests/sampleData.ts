@@ -129,6 +129,7 @@ export const lndChannel: LND.Channel.AsObject = {
   zeroConf: false,
   zeroConfConfirmedScid: '',
   peerAlias: '',
+  peerScidAlias: '',
 };
 
 export const lndListChannelsMany: LND.ListChannelsResponse.AsObject = {

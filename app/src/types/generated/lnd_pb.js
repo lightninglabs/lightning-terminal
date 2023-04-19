@@ -10138,7 +10138,8 @@ proto.lnrpc.Channel.toObject = function(includeInstance, msg) {
     aliasScidsList: jspb.Message.getRepeatedField(msg, 31),
     zeroConf: jspb.Message.getFieldWithDefault(msg, 32, false),
     zeroConfConfirmedScid: jspb.Message.getFieldWithDefault(msg, 33, "0"),
-    peerAlias: jspb.Message.getFieldWithDefault(msg, 34, "")
+    peerAlias: jspb.Message.getFieldWithDefault(msg, 34, ""),
+    peerScidAlias: jspb.Message.getFieldWithDefault(msg, 35, "0")
   };
 
   if (includeInstance) {
@@ -10313,6 +10314,10 @@ proto.lnrpc.Channel.deserializeBinaryFromReader = function(msg, reader) {
     case 34:
       var value = /** @type {string} */ (reader.readString());
       msg.setPeerAlias(value);
+      break;
+    case 35:
+      var value = /** @type {string} */ (reader.readUint64String());
+      msg.setPeerScidAlias(value);
       break;
     default:
       reader.skipField();
@@ -10581,6 +10586,13 @@ proto.lnrpc.Channel.serializeBinaryToWriter = function(message, writer) {
   if (f.length > 0) {
     writer.writeString(
       34,
+      f
+    );
+  }
+  f = message.getPeerScidAlias();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
+      35,
       f
     );
   }
@@ -11164,6 +11176,21 @@ proto.lnrpc.Channel.prototype.getPeerAlias = function() {
 /** @param {string} value */
 proto.lnrpc.Channel.prototype.setPeerAlias = function(value) {
   jspb.Message.setProto3StringField(this, 34, value);
+};
+
+
+/**
+ * optional uint64 peer_scid_alias = 35;
+ * @return {string}
+ */
+proto.lnrpc.Channel.prototype.getPeerScidAlias = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 35, "0"));
+};
+
+
+/** @param {string} value */
+proto.lnrpc.Channel.prototype.setPeerScidAlias = function(value) {
+  jspb.Message.setProto3StringIntField(this, 35, value);
 };
 
 
@@ -18546,7 +18573,8 @@ proto.lnrpc.OpenChannelRequest.toObject = function(includeInstance, msg) {
     feeRate: jspb.Message.getFieldWithDefault(msg, 22, "0"),
     useBaseFee: jspb.Message.getFieldWithDefault(msg, 23, false),
     useFeeRate: jspb.Message.getFieldWithDefault(msg, 24, false),
-    remoteChanReserveSat: jspb.Message.getFieldWithDefault(msg, 25, "0")
+    remoteChanReserveSat: jspb.Message.getFieldWithDefault(msg, 25, "0"),
+    fundMax: jspb.Message.getFieldWithDefault(msg, 26, false)
   };
 
   if (includeInstance) {
@@ -18683,6 +18711,10 @@ proto.lnrpc.OpenChannelRequest.deserializeBinaryFromReader = function(msg, reade
     case 25:
       var value = /** @type {string} */ (reader.readUint64String());
       msg.setRemoteChanReserveSat(value);
+      break;
+    case 26:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setFundMax(value);
       break;
     default:
       reader.skipField();
@@ -18886,6 +18918,13 @@ proto.lnrpc.OpenChannelRequest.serializeBinaryToWriter = function(message, write
   if (parseInt(f, 10) !== 0) {
     writer.writeUint64String(
       25,
+      f
+    );
+  }
+  f = message.getFundMax();
+  if (f) {
+    writer.writeBool(
+      26,
       f
     );
   }
@@ -19315,6 +19354,23 @@ proto.lnrpc.OpenChannelRequest.prototype.getRemoteChanReserveSat = function() {
 /** @param {string} value */
 proto.lnrpc.OpenChannelRequest.prototype.setRemoteChanReserveSat = function(value) {
   jspb.Message.setProto3StringIntField(this, 25, value);
+};
+
+
+/**
+ * optional bool fund_max = 26;
+ * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
+ * You should avoid comparisons like {@code val === true/false} in those cases.
+ * @return {boolean}
+ */
+proto.lnrpc.OpenChannelRequest.prototype.getFundMax = function() {
+  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 26, false));
+};
+
+
+/** @param {boolean} value */
+proto.lnrpc.OpenChannelRequest.prototype.setFundMax = function(value) {
+  jspb.Message.setProto3BooleanField(this, 26, value);
 };
 
 
