@@ -8,7 +8,7 @@
     "start": "BROWSER=none react-scripts start",
     "develop": "REACT_APP_USE_SAMPLE_DATA=true yarn start",
     "build": "react-scripts build",
-    "postbuild": "echo -n '# Keep directory in git.' > build/.gitkeep",
+    "postbuild": "echo '# Keep directory in git.' > build/.gitkeep",
     "test": "react-scripts test --env=jest-environment-jsdom",
     "test:ci": "cross-env CI=true yarn test --coverage",
     "eject": "react-scripts eject",

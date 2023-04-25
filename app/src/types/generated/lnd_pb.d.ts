@@ -1482,6 +1482,9 @@ export class Channel extends jspb.Message {
   getPeerAlias(): string;
   setPeerAlias(value: string): void;
 
+  getPeerScidAlias(): string;
+  setPeerScidAlias(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Channel.AsObject;
   static toObject(includeInstance: boolean, msg: Channel): Channel.AsObject;
@@ -1528,6 +1531,7 @@ export namespace Channel {
     zeroConf: boolean,
     zeroConfConfirmedScid: string,
     peerAlias: string,
+    peerScidAlias: string,
   }
 }
 
@@ -2645,6 +2649,9 @@ export class OpenChannelRequest extends jspb.Message {
   getRemoteChanReserveSat(): string;
   setRemoteChanReserveSat(value: string): void;
 
+  getFundMax(): boolean;
+  setFundMax(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): OpenChannelRequest.AsObject;
   static toObject(includeInstance: boolean, msg: OpenChannelRequest): OpenChannelRequest.AsObject;
@@ -2682,6 +2689,7 @@ export namespace OpenChannelRequest {
     useBaseFee: boolean,
     useFeeRate: boolean,
     remoteChanReserveSat: string,
+    fundMax: boolean,
   }
 }
 
