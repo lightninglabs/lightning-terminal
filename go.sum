@@ -103,8 +103,8 @@ github.com/btcsuite/btclog v0.0.0-20170628155309-84c8d2346e9f/go.mod h1:TdznJufo
 github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d/go.mod h1:+5NJ2+qvTyV9exUAL/rxXi3DcLg2Ts+ymUAY5y4NvMg=
 github.com/btcsuite/btcwallet v0.14.0/go.mod h1:KFR1x3ZH7c31i4qA34XIvcsnhrEBLK1SHli52lN8E54=
 github.com/btcsuite/btcwallet v0.15.1-0.20220512002839-af5562928b70/go.mod h1:OQ+KZYSjNxxSIya6uWKquZBJgb8sV86njOj1tzsf0WE=
-github.com/btcsuite/btcwallet v0.16.8 h1:ADMormFSOBMANB/ZWvU00VDnFelZXY9Uyc9wW0dNFzM=
-github.com/btcsuite/btcwallet v0.16.8/go.mod h1:ynC16HgMU03dYyUit6b0+IZjDg9KVnr2VNLie9ZXG1I=
+github.com/btcsuite/btcwallet v0.16.9 h1:hLAzEJvsiSn+r6j374G7ThnrYD/toa+Lv7l1Rm6+0oM=
+github.com/btcsuite/btcwallet v0.16.9/go.mod h1:T3DjEAMZYIqQ28l+ixlB6DX4mFJXCX8Pzz+yACQcLsc=
 github.com/btcsuite/btcwallet/wallet/txauthor v1.2.1/go.mod h1:/74bubxX5Js48d76nf/TsNabpYp/gndUuJw4chzCmhU=
 github.com/btcsuite/btcwallet/wallet/txauthor v1.2.3/go.mod h1:T2xSiKGpUkSLCh68aF+FMXmKK9mFqNdHl9VaqOr+JjU=
 github.com/btcsuite/btcwallet/wallet/txauthor v1.3.2 h1:etuLgGEojecsDOYTII8rYiGHjGyV5xTqsXi+ZQ715UU=
@@ -546,8 +546,8 @@ github.com/lightningnetwork/lightning-onion v1.2.1-0.20221202012345-ca23184850a1
 github.com/lightningnetwork/lightning-onion v1.2.1-0.20221202012345-ca23184850a1/go.mod h1:7dDx73ApjEZA0kcknI799m2O5kkpfg4/gr7N092ojNo=
 github.com/lightningnetwork/lnd v0.14.1-beta.0.20220324135938-0dcaa511a249/go.mod h1:Tp3ZxsfioUl6kQ30RrbMqWoZyZ4K+fv/o1lMEU8U7rA=
 github.com/lightningnetwork/lnd v0.15.0-beta.rc3/go.mod h1:NzCE1ZGct0YEW9u74TXUpXp5AoUXzpkI5lgrO7x0ugM=
-github.com/lightningnetwork/lnd v0.16.1-beta h1:583f8rFf+O0liOYRR8BXsNKFIOVTKIH4/8mvksFuby4=
-github.com/lightningnetwork/lnd v0.16.1-beta/go.mod h1:9IuPuc4P32kKvD+NTQBattJ1VqsICSDPuHVGpuUyBeo=
+github.com/lightningnetwork/lnd v0.16.2-beta h1:JHVPT7L/Zi1M5bCPT8zsQ007M9fM4gFvBkf2ZOhfwfM=
+github.com/lightningnetwork/lnd v0.16.2-beta/go.mod h1:2RJBY41KHCzh/PphINjuKgnlg9lS5tTTRAla7AYbUiI=
 github.com/lightningnetwork/lnd/cert v1.1.1/go.mod h1:1P46svkkd73oSoeI4zjkVKgZNwGq8bkGuPR8z+5vQUs=
 github.com/lightningnetwork/lnd/cert v1.2.1 h1:CTrTcU0L66J73oqdRLVfNylZyp1Fh97ZezX6IuzkrqE=
 github.com/lightningnetwork/lnd/cert v1.2.1/go.mod h1:04JhIEodoR6usBN5+XBRtLEEmEHsclLi0tEyxZQNP+w=
