@@ -20,7 +20,6 @@ import (
 	restProxy "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jessevdk/go-flags"
 	"github.com/lightninglabs/faraday/frdrpc"
-	"github.com/lightninglabs/faraday/frdrpcserver"
 	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/autopilotserver"
 	"github.com/lightninglabs/lightning-terminal/firewall"
@@ -31,9 +30,9 @@ import (
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
 	"github.com/lightninglabs/lightning-terminal/rules"
 	"github.com/lightninglabs/lightning-terminal/session"
+	"github.com/lightninglabs/lightning-terminal/subservers"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightninglabs/loop"
-	"github.com/lightninglabs/loop/loopd"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/lightninglabs/pool"
 	"github.com/lightninglabs/pool/poolrpc"
@@ -160,21 +159,15 @@ type LightningTerminal struct {
 	wg       sync.WaitGroup
 	errQueue *queue.ConcurrentQueue[error]
 
+	lndConn     *grpc.ClientConn
 	lndClient   *lndclient.GrpcLndServices
 	basicClient lnrpc.LightningClient
 
-	faradayServer  *frdrpcserver.RPCServer
-	faradayStarted bool
+	subServerMgr *subservers.Manager
 
 	autopilotClient autopilotserver.Autopilot
 
 	ruleMgrs rules.ManagerSet
-
-	loopServer  *loopd.Daemon
-	loopStarted bool
-
-	poolServer  *pool.Server
-	poolStarted bool
 
 	rpcProxy   *rpcProxy
 	httpServer *http.Server
@@ -239,13 +232,71 @@ func (g *LightningTerminal) Run() error {
 
 	// Create the instances of our subservers now so we can hook them up to
 	// lnd once it's fully started.
-	bufRpcListener := bufconn.Listen(100)
-	g.faradayServer = frdrpcserver.NewRPCServer(g.cfg.faradayRpcConfig)
-	g.loopServer = loopd.New(g.cfg.Loop, nil)
-	g.poolServer = pool.NewServer(g.cfg.Pool)
-	g.rpcProxy = newRpcProxy(
-		g.cfg, g, g.validateSuperMacaroon, g.permsMgr, bufRpcListener,
-	)
+	g.subServerMgr = subservers.NewManager(g.permsMgr)
+
+	// Construct the rpcProxy. It must be initialised before the main web
+	// server is started.
+	g.rpcProxy = newRpcProxy(g.cfg, g, g.validateSuperMacaroon, g.permsMgr)
+
+	// Start the main web server that dispatches requests either to the
+	// static UI file server or the RPC proxy. This makes it possible to
+	// unlock lnd through the UI.
+	if err := g.startMainWebServer(); err != nil {
+		return fmt.Errorf("error starting main proxy HTTP server: %v",
+			err)
+	}
+
+	// We'll also create a REST proxy that'll convert any REST calls to gRPC
+	// calls and forward them to the internal listener.
+	if g.cfg.EnableREST {
+		if err := g.createRESTProxy(); err != nil {
+			return fmt.Errorf("error creating REST proxy: %v", err)
+		}
+	}
+
+	// Attempt to start Lit and all of its sub-servers. If an error is
+	// returned, it means that either one of Lit's internal sub-servers
+	// could not start or LND could not start or be connected to.
+	startErr := g.start()
+	if startErr != nil {
+		log.Errorf("Error starting Lightning Terminal: %v", startErr)
+		return startErr
+	}
+
+	// Now block until we receive an error or the main shutdown
+	// signal.
+	<-shutdownInterceptor.ShutdownChannel()
+	log.Infof("Shutdown signal received")
+
+	if g.rpcProxy != nil {
+		if err := g.rpcProxy.Stop(); err != nil {
+			log.Errorf("Error stopping rpc proxy: %v", err)
+		}
+	}
+
+	if g.httpServer != nil {
+		if err := g.httpServer.Close(); err != nil {
+			log.Errorf("Error stopping UI server: %v", err)
+		}
+	}
+
+	g.wg.Wait()
+
+	return startErr
+}
+
+// start attempts to start all the various components of Litd. Only Litd and
+// LND errors are considered fatal and will result in an error being returned.
+// If any of the sub-servers managed by the subServerMgr error while starting
+// up, these are considered non-fatal and will not result in an error being
+// returned.
+func (g *LightningTerminal) start() error {
+	// Create the instances of our subservers now so we can hook them up to
+	// lnd once it's fully started.
+	g.initSubServers()
+
+	var err error
+
 	g.accountService, err = accounts.NewService(
 		filepath.Dir(g.cfg.MacaroonPath), g.errQueue.ChanIn(),
 	)
@@ -337,19 +388,16 @@ func (g *LightningTerminal) Run() error {
 			"server: %v", err)
 	}
 
-	// Overwrite the loop and pool daemon's user agent name so it sends
-	// "litd" instead of "loopd" and "poold" respectively.
-	loop.AgentName = "litd"
-	pool.SetAgentName("litd")
-
 	// Call the "real" main in a nested manner so the defers will properly
 	// be executed in the case of a graceful shutdown.
-	readyChan := make(chan struct{})
-	bufReadyChan := make(chan struct{})
-	unlockChan := make(chan struct{})
-	lndQuit := make(chan struct{})
-	macChan := make(chan []byte, 1)
-
+	var (
+		bufRpcListener = bufconn.Listen(100)
+		readyChan      = make(chan struct{})
+		bufReadyChan   = make(chan struct{})
+		unlockChan     = make(chan struct{})
+		lndQuit        = make(chan struct{})
+		macChan        = make(chan []byte, 1)
+	)
 	if g.cfg.LndMode == ModeIntegrated {
 		lisCfg := lnd.ListenerCfg{
 			RPCListeners: []*lnd.ListenerWithSignal{{
@@ -377,9 +425,7 @@ func (g *LightningTerminal) Run() error {
 		go func() {
 			defer g.wg.Done()
 
-			err := lnd.Main(
-				g.cfg.Lnd, lisCfg, implCfg, shutdownInterceptor,
-			)
+			err := lnd.Main(g.cfg.Lnd, lisCfg, implCfg, interceptor)
 			if e, ok := err.(*flags.Error); err != nil &&
 				(!ok || e.Type != flags.ErrHelp) {
 
@@ -396,14 +442,6 @@ func (g *LightningTerminal) Run() error {
 		close(bufReadyChan)
 
 		_ = g.RegisterGrpcSubserver(g.rpcProxy.grpcServer)
-	}
-
-	// We'll also create a REST proxy that'll convert any REST calls to gRPC
-	// calls and forward them to the internal listener.
-	if g.cfg.EnableREST {
-		if err := g.createRESTProxy(); err != nil {
-			return fmt.Errorf("error creating REST proxy: %v", err)
-		}
 	}
 
 	// Wait for lnd to be started up so we know we have a TLS cert.
@@ -423,29 +461,46 @@ func (g *LightningTerminal) Run() error {
 	case <-lndQuit:
 		return nil
 
-	case <-shutdownInterceptor.ShutdownChannel():
-		return errors.New("shutting down")
+	case <-interceptor.ShutdownChannel():
+		return fmt.Errorf("received the shutdown signal")
 	}
 
 	// We now know that starting lnd was successful. If we now run into an
 	// error, we must shut down lnd correctly.
 	defer func() {
-		err := g.shutdown()
+		err := g.shutdownSubServers()
 		if err != nil {
 			log.Errorf("Error shutting down: %v", err)
 		}
+
+		if g.rpcProxy != nil {
+			if err := g.rpcProxy.Stop(); err != nil {
+				log.Errorf("Error stopping rpc proxy: %v", err)
+			}
+		}
+
+		if g.httpServer != nil {
+			if err := g.httpServer.Close(); err != nil {
+				log.Errorf("Error stopping UI server: %v", err)
+			}
+		}
 	}()
 
+	// Connect to LND.
+	g.lndConn, err = connectLND(g.cfg, bufRpcListener)
+	if err != nil {
+		return fmt.Errorf("could not connect to LND")
+	}
+
+	// Initialise any connections to sub-servers that we are running in
+	// remote mode.
+	g.subServerMgr.ConnectRemoteSubServers()
+
 	// Now start the RPC proxy that will handle all incoming gRPC, grpc-web
-	// and REST requests. We also start the main web server that dispatches
-	// requests either to the static UI file server or the RPC proxy. This
-	// makes it possible to unlock lnd through the UI.
-	if err := g.rpcProxy.Start(); err != nil {
+	// and REST requests.
+	if err := g.rpcProxy.Start(g.lndConn); err != nil {
 		return fmt.Errorf("error starting lnd gRPC proxy server: %v",
 			err)
-	}
-	if err := g.startMainWebServer(); err != nil {
-		return fmt.Errorf("error starting UI HTTP server: %v", err)
 	}
 
 	// Now that we have started the main UI web server, show some useful
@@ -464,8 +519,8 @@ func (g *LightningTerminal) Run() error {
 	case <-lndQuit:
 		return nil
 
-	case <-shutdownInterceptor.ShutdownChannel():
-		return errors.New("shutting down")
+	case <-interceptor.ShutdownChannel():
+		return fmt.Errorf("received the shutdown signal")
 	}
 
 	// If we're in integrated mode, we'll need to wait for lnd to send the
@@ -475,21 +530,44 @@ func (g *LightningTerminal) Run() error {
 		g.cfg.lndAdminMacaroon = <-macChan
 	}
 
-	err = g.startSubservers()
+	// Set up all the LND clients required by LiT.
+	err = g.setUpLNDClients()
 	if err != nil {
-		log.Errorf("Could not start subservers: %v", err)
+		log.Errorf("Could not set up LND clients: %w", err)
 		return err
+	}
+
+	// If we're in integrated and stateless init mode, we won't create
+	// macaroon files in any of the subserver daemons.
+	createDefaultMacaroons := true
+	if g.cfg.LndMode == ModeIntegrated && g.lndInterceptorChain != nil &&
+		g.lndInterceptorChain.MacaroonService() != nil {
+
+		// If the wallet was initialized in stateless mode, we don't
+		// want any macaroons lying around on the filesystem. In that
+		// case only the UI will be able to access any of the integrated
+		// daemons. In all other cases we want default macaroons so we
+		// can use the CLI tools to interact with loop/pool/faraday.
+		macService := g.lndInterceptorChain.MacaroonService()
+		createDefaultMacaroons = !macService.StatelessInit
+	}
+
+	// Both connection types are ready now, let's start our sub-servers if
+	// they should be started locally as an integrated service.
+	err = g.subServerMgr.StartIntegratedServers(
+		g.basicClient, g.lndClient, createDefaultMacaroons,
+	)
+	if err != nil {
+		return fmt.Errorf("could not start subservers: %v", err)
+	}
+
+	err = g.startInternalSubServers(createDefaultMacaroons)
+	if err != nil {
+		return fmt.Errorf("could not start litd sub-servers: %v", err)
 	}
 
 	// Now block until we receive an error or the main shutdown signal.
 	select {
-	case err := <-g.loopServer.ErrChan:
-		// Loop will shut itself down if an error happens. We don't need
-		// to try to stop it again.
-		g.loopStarted = false
-		log.Errorf("Received critical error from loop, shutting down: "+
-			"%v", err)
-
 	case err := <-g.errQueue.ChanOut():
 		if err != nil {
 			log.Errorf("Received critical error from subsystem, "+
@@ -499,17 +577,15 @@ func (g *LightningTerminal) Run() error {
 	case <-lndQuit:
 		return nil
 
-	case <-shutdownInterceptor.ShutdownChannel():
+	case <-interceptor.ShutdownChannel():
 		log.Infof("Shutdown signal received")
 	}
 
 	return nil
 }
 
-// startSubservers creates an internal connection to lnd and then starts all
-// embedded daemons as external subservers that hook into the same gRPC and REST
-// servers that lnd started.
-func (g *LightningTerminal) startSubservers() error {
+// setUpLNDClients sets up the various LND clients required by LiT.
+func (g *LightningTerminal) setUpLNDClients() error {
 	var (
 		insecure      bool
 		clientOptions []lndclient.BasicClientOption
@@ -550,7 +626,7 @@ func (g *LightningTerminal) startSubservers() error {
 		return err
 	}, defaultStartupTimeout)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not create basic LND Client: %v", err)
 	}
 
 	// Now we know that the connection itself is ready. But we also need to
@@ -593,7 +669,8 @@ func (g *LightningTerminal) startSubservers() error {
 		},
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not create LND Services client: %v",
+			err)
 	}
 
 	// Pass LND's build tags to the permission manager so that it can
@@ -621,55 +698,12 @@ func (g *LightningTerminal) startSubservers() error {
 		g.rpcProxy.superMacaroon = superMacaroon
 	}
 
-	// If we're in integrated and stateless init mode, we won't create
-	// macaroon files in any of the subserver daemons.
-	createDefaultMacaroons := true
-	if g.cfg.LndMode == ModeIntegrated && g.lndInterceptorChain != nil &&
-		g.lndInterceptorChain.MacaroonService() != nil {
+	return nil
+}
 
-		// If the wallet was initialized in stateless mode, we don't
-		// want any macaroons lying around on the filesystem. In that
-		// case only the UI will be able to access any of the integrated
-		// daemons. In all other cases we want default macaroons so we
-		// can use the CLI tools to interact with loop/pool/faraday.
-		macService := g.lndInterceptorChain.MacaroonService()
-		createDefaultMacaroons = !macService.StatelessInit
-	}
-
-	// Both connection types are ready now, let's start our subservers if
-	// they should be started locally as an integrated service.
-	if !g.cfg.faradayRemote {
-		log.Infof("Starting integrated faraday daemon")
-		err = g.faradayServer.StartAsSubserver(
-			g.lndClient.LndServices, createDefaultMacaroons,
-		)
-		if err != nil {
-			return err
-		}
-		g.faradayStarted = true
-	}
-
-	if !g.cfg.loopRemote {
-		log.Infof("Starting integrated loop daemon")
-		err = g.loopServer.StartAsSubserver(
-			g.lndClient, createDefaultMacaroons,
-		)
-		if err != nil {
-			return err
-		}
-		g.loopStarted = true
-	}
-
-	if !g.cfg.poolRemote {
-		log.Infof("Starting integrated pool daemon")
-		err = g.poolServer.StartAsSubserver(
-			g.basicClient, g.lndClient, createDefaultMacaroons,
-		)
-		if err != nil {
-			return err
-		}
-		g.poolStarted = true
-	}
+// startInternalSubServers starts all Litd specific sub-servers.
+func (g *LightningTerminal) startInternalSubServers(
+	createDefaultMacaroons bool) error {
 
 	log.Infof("Starting LiT macaroon service")
 
@@ -688,7 +722,7 @@ func (g *LightningTerminal) startSubservers() error {
 			RootKeyStore:     rks,
 			MacaroonLocation: "litd",
 			StatelessInit:    !createDefaultMacaroons,
-			RequiredPerms:    perms.LitPermissions,
+			RequiredPerms:    perms.RequiredPermissions,
 			LndClient:        &g.lndClient.LndServices,
 			EphemeralKey:     lndclient.SharedKeyNUMS,
 			KeyLocator:       lndclient.SharedKeyLocator,
@@ -763,15 +797,10 @@ func (g *LightningTerminal) startSubservers() error {
 	}
 
 	if !g.cfg.Autopilot.Disable {
-		info, err := g.lndClient.Client.GetInfo(ctxc)
-		if err != nil {
-			return fmt.Errorf("GetInfo call failed: %v", err)
-		}
-
 		ruleEnforcer := firewall.NewRuleEnforcer(
 			g.firewallDB, g.firewallDB,
 			g.autopilotClient.ListFeaturePerms,
-			g.permsMgr, info.IdentityPubkey,
+			g.permsMgr, g.lndClient.NodePubkey,
 			g.lndClient.Router,
 			g.lndClient.Client, g.ruleMgrs,
 			func(reqID uint64, reason string) error {
@@ -828,21 +857,7 @@ func (g *LightningTerminal) RegisterGrpcSubserver(server *grpc.Server) error {
 func (g *LightningTerminal) registerSubDaemonGrpcServers(server *grpc.Server,
 	withLitRPC bool) {
 
-	// In remote mode the "director" of the RPC proxy will act as a catch-
-	// all for any gRPC request that isn't known because we didn't register
-	// any server for it. The director will then forward the request to the
-	// remote service.
-	if !g.cfg.faradayRemote {
-		frdrpc.RegisterFaradayServerServer(server, g.faradayServer)
-	}
-
-	if !g.cfg.loopRemote {
-		looprpc.RegisterSwapClientServer(server, g.loopServer)
-	}
-
-	if !g.cfg.poolRemote {
-		poolrpc.RegisterTraderServer(server, g.poolServer)
-	}
+	g.subServerMgr.RegisterRPCServices(server)
 
 	if withLitRPC {
 		litrpc.RegisterSessionsServer(server, g.sessionRpcServer)
@@ -965,80 +980,14 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 	// Validate all macaroons for services that are running in the local
 	// process. Calls that we proxy to a remote host don't need to be
 	// checked as they'll have their own interceptor.
-	switch {
-	case g.permsMgr.IsFaradayURI(fullMethod):
-		// In remote mode we just pass through the request, the remote
-		// daemon will check the macaroon.
-		if g.cfg.faradayRemote {
-			return nil
-		}
+	handledBySubserver, err := g.subServerMgr.ValidateMacaroon(
+		ctx, requiredPermissions, fullMethod,
+	)
+	if handledBySubserver {
+		return err
+	}
 
-		if !g.faradayStarted {
-			return fmt.Errorf("faraday is not yet ready for " +
-				"requests, lnd possibly still starting or " +
-				"syncing")
-		}
-
-		err = g.faradayServer.ValidateMacaroon(
-			ctx, requiredPermissions, fullMethod,
-		)
-		if err != nil {
-			return &proxyErr{
-				proxyContext: "faraday",
-				wrapped: fmt.Errorf("invalid macaroon: %v",
-					err),
-			}
-		}
-
-	case g.permsMgr.IsLoopURI(fullMethod):
-		// In remote mode we just pass through the request, the remote
-		// daemon will check the macaroon.
-		if g.cfg.loopRemote {
-			return nil
-		}
-
-		if !g.loopStarted {
-			return fmt.Errorf("loop is not yet ready for " +
-				"requests, lnd possibly still starting or " +
-				"syncing")
-		}
-
-		err = g.loopServer.ValidateMacaroon(
-			ctx, requiredPermissions, fullMethod,
-		)
-		if err != nil {
-			return &proxyErr{
-				proxyContext: "loop",
-				wrapped: fmt.Errorf("invalid macaroon: %v",
-					err),
-			}
-		}
-
-	case g.permsMgr.IsPoolURI(fullMethod):
-		// In remote mode we just pass through the request, the remote
-		// daemon will check the macaroon.
-		if g.cfg.poolRemote {
-			return nil
-		}
-
-		if !g.poolStarted {
-			return fmt.Errorf("pool is not yet ready for " +
-				"requests, lnd possibly still starting or " +
-				"syncing")
-		}
-
-		err = g.poolServer.ValidateMacaroon(
-			ctx, requiredPermissions, fullMethod,
-		)
-		if err != nil {
-			return &proxyErr{
-				proxyContext: "pool",
-				wrapped: fmt.Errorf("invalid macaroon: %v",
-					err),
-			}
-		}
-
-	case g.permsMgr.IsLitURI(fullMethod):
+	if g.permsMgr.IsSubServerURI(subservers.LIT, fullMethod) {
 		if !g.macaroonServiceStarted {
 			return fmt.Errorf("the macaroon service has not " +
 				"started yet")
@@ -1090,30 +1039,14 @@ func (g *LightningTerminal) BuildWalletConfig(ctx context.Context,
 	)
 }
 
-// shutdown stops all subservers that were started and attached to lnd.
-func (g *LightningTerminal) shutdown() error {
+// shutdownSubServers stops all subservers that were started and attached to
+// lnd.
+func (g *LightningTerminal) shutdownSubServers() error {
 	var returnErr error
 
-	if g.faradayStarted {
-		if err := g.faradayServer.Stop(); err != nil {
-			log.Errorf("Error stopping faraday: %v", err)
-			returnErr = err
-		}
-	}
-
-	if g.loopStarted {
-		g.loopServer.Stop()
-		if err := <-g.loopServer.ErrChan; err != nil {
-			log.Errorf("Error stopping loop: %v", err)
-			returnErr = err
-		}
-	}
-
-	if g.poolStarted {
-		if err := g.poolServer.Stop(); err != nil {
-			log.Errorf("Error stopping pool: %v", err)
-			returnErr = err
-		}
+	err := g.subServerMgr.Stop()
+	if err != nil {
+		returnErr = err
 	}
 
 	if g.autopilotClient != nil {
@@ -1171,24 +1104,12 @@ func (g *LightningTerminal) shutdown() error {
 		g.restCancel()
 	}
 
-	if g.rpcProxy != nil {
-		if err := g.rpcProxy.Stop(); err != nil {
-			log.Errorf("Error stopping lnd proxy: %v", err)
+	if g.lndConn != nil {
+		if err := g.lndConn.Close(); err != nil {
+			log.Errorf("Error closing lnd connection: %v", err)
 			returnErr = err
 		}
 	}
-
-	if g.httpServer != nil {
-		if err := g.httpServer.Close(); err != nil {
-			log.Errorf("Error stopping UI server: %v", err)
-			returnErr = err
-		}
-	}
-
-	// In case the error wasn't thrown by lnd, make sure we stop it too.
-	interceptor.RequestShutdown()
-
-	g.wg.Wait()
 
 	// Do we have any last errors to display? We use an anonymous function,
 	// so we can use return instead of breaking to a label in the default
@@ -1200,16 +1121,13 @@ func (g *LightningTerminal) shutdown() error {
 				if err != nil {
 					log.Errorf("Error while stopping "+
 						"litd: %v", err)
-
 					returnErr = err
 				}
-
 			default:
 				return
 			}
 		}
 	}()
-
 	return returnErr
 }
 
@@ -1502,6 +1420,29 @@ func (g *LightningTerminal) validateSuperMacaroon(ctx context.Context,
 	}
 
 	return nil
+}
+
+// initSubServers registers the faraday and loop sub-servers with the
+// subServerMgr.
+func (g *LightningTerminal) initSubServers() {
+	g.subServerMgr.AddServer(subservers.NewFaradaySubServer(
+		g.cfg.Faraday, g.cfg.faradayRpcConfig, g.cfg.Remote.Faraday,
+		g.cfg.faradayRemote,
+	))
+
+	// Overwrite the loop daemon's user agent name so it sends "litd"
+	// instead of "loopd".
+	loop.AgentName = "litd"
+	g.subServerMgr.AddServer(subservers.NewLoopSubServer(
+		g.cfg.Loop, g.cfg.Remote.Loop, g.cfg.loopRemote,
+	))
+
+	// Overwrite the pool daemon's user agent name so it sends "litd"
+	// instead of and "poold".
+	pool.SetAgentName("litd")
+	g.subServerMgr.AddServer(subservers.NewPoolSubServer(
+		g.cfg.Pool, g.cfg.Remote.Pool, g.cfg.poolRemote,
+	))
 }
 
 // BakeSuperMacaroon uses the lnd client to bake a macaroon that can include

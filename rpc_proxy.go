@@ -2,30 +2,27 @@ package terminal
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/lightning-terminal/perms"
 	"github.com/lightninglabs/lightning-terminal/session"
+	"github.com/lightninglabs/lightning-terminal/subservers"
 	"github.com/lightningnetwork/lnd/lncfg"
 	"github.com/lightningnetwork/lnd/macaroons"
 	grpcProxy "github.com/mwitkow/grpc-proxy/proxy"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
-	"google.golang.org/grpc/test/bufconn"
 	"gopkg.in/macaroon.v2"
 )
 
@@ -36,6 +33,10 @@ const (
 	// the macaroon.
 	HeaderMacaroon = "Macaroon"
 )
+
+// ErrWaitingToStart is returned if Lit's rpcProxy is not yet ready to handle
+// calls.
+var ErrWaitingToStart = fmt.Errorf("waiting for the RPC server to start")
 
 // proxyErr is an error type that adds more context to an error occurring in the
 // proxy.
@@ -60,7 +61,7 @@ func (e *proxyErr) Unwrap() error {
 // component.
 func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 	superMacValidator session.SuperMacaroonValidator,
-	permsMgr *perms.Manager, bufListener *bufconn.Listener) *rpcProxy {
+	permsMgr *perms.Manager) *rpcProxy {
 
 	// The gRPC web calls are protected by HTTP basic auth which is defined
 	// by base64(username:password). Because we only have a password, we
@@ -80,7 +81,6 @@ func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 		permsMgr:          permsMgr,
 		macValidator:      validator,
 		superMacValidator: superMacValidator,
-		bufListener:       bufListener,
 	}
 	p.grpcServer = grpc.NewServer(
 		// From the grpxProxy doc: This codec is *crucial* to the
@@ -147,13 +147,16 @@ func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 type rpcProxy struct {
 	litrpc.UnimplementedProxyServer
 
+	// started is set to 1 once the rpcProxy has successfully started. It
+	// must only ever be used atomically.
+	started int32
+
 	cfg       *Config
 	basicAuth string
 	permsMgr  *perms.Manager
 
 	macValidator      macaroons.MacaroonValidator
 	superMacValidator session.SuperMacaroonValidator
-	bufListener       *bufconn.Listener
 
 	superMacaroon string
 
@@ -167,21 +170,9 @@ type rpcProxy struct {
 }
 
 // Start creates initial connection to lnd.
-func (p *rpcProxy) Start() error {
+func (p *rpcProxy) Start(lndConn *grpc.ClientConn) error {
 	var err error
-
-	// Setup the connection to lnd.
-	host, _, tlsPath, _, _ := p.cfg.lndConnectParams()
-
-	// We use a bufconn to connect to lnd in integrated mode.
-	if p.cfg.LndMode == ModeIntegrated {
-		p.lndConn, err = dialBufConnBackend(p.bufListener)
-	} else {
-		p.lndConn, err = dialBackend("lnd", host, tlsPath)
-	}
-	if err != nil {
-		return fmt.Errorf("could not dial lnd: %v", err)
-	}
+	p.lndConn = lndConn
 
 	// Make sure we can connect to all the daemons that are configured to be
 	// running in remote mode.
@@ -218,19 +209,20 @@ func (p *rpcProxy) Start() error {
 		}
 	}
 
+	atomic.CompareAndSwapInt32(&p.started, 0, 1)
+
 	return nil
+}
+
+// hasStarted returns true if the rpcProxy has started and is ready to handle
+// requests.
+func (p *rpcProxy) hasStarted() bool {
+	return atomic.LoadInt32(&p.started) == 1
 }
 
 // Stop shuts down the lnd connection.
 func (p *rpcProxy) Stop() error {
 	p.grpcServer.Stop()
-
-	if p.lndConn != nil {
-		if err := p.lndConn.Close(); err != nil {
-			log.Errorf("Error closing lnd connection: %v", err)
-			return err
-		}
-	}
 
 	if p.faradayConn != nil {
 		if err := p.faradayConn.Close(); err != nil {
@@ -370,18 +362,30 @@ func (p *rpcProxy) makeDirector(allowLitRPC bool) func(ctx context.Context,
 		// since it must either be an lnd call or something that'll be
 		// handled by the integrated daemons that are hooking into lnd's
 		// gRPC server.
+		isFaraday := p.permsMgr.IsSubServerURI(
+			subservers.FARADAY, requestURI,
+		)
+		isLoop := p.permsMgr.IsSubServerURI(
+			subservers.LOOP, requestURI,
+		)
+		isPool := p.permsMgr.IsSubServerURI(
+			subservers.POOL, requestURI,
+		)
+		isLit := p.permsMgr.IsSubServerURI(
+			subservers.LIT, requestURI,
+		)
 		switch {
-		case p.permsMgr.IsFaradayURI(requestURI) && p.cfg.faradayRemote:
+		case isFaraday && p.cfg.faradayRemote:
 			return outCtx, p.faradayConn, nil
 
-		case p.permsMgr.IsLoopURI(requestURI) && p.cfg.loopRemote:
+		case isLoop && p.cfg.loopRemote:
 			return outCtx, p.loopConn, nil
 
-		case p.permsMgr.IsPoolURI(requestURI) && p.cfg.poolRemote:
+		case isPool && p.cfg.poolRemote:
 			return outCtx, p.poolConn, nil
 
 		// Calls to LiT session RPC aren't allowed in some cases.
-		case p.permsMgr.IsLitURI(requestURI) && !allowLitRPC:
+		case isLit && !allowLitRPC:
 			return outCtx, nil, status.Errorf(
 				codes.Unimplemented, "unknown service %s",
 				requestURI,
@@ -398,6 +402,10 @@ func (p *rpcProxy) makeDirector(allowLitRPC bool) func(ctx context.Context,
 func (p *rpcProxy) UnaryServerInterceptor(ctx context.Context, req interface{},
 	info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{},
 	error) {
+
+	if !p.hasStarted() {
+		return nil, ErrWaitingToStart
+	}
 
 	uriPermissions, ok := p.permsMgr.URIPermissions(info.FullMethod)
 	if !ok {
@@ -439,6 +447,10 @@ func (p *rpcProxy) UnaryServerInterceptor(ctx context.Context, req interface{},
 func (p *rpcProxy) StreamServerInterceptor(srv interface{},
 	ss grpc.ServerStream, info *grpc.StreamServerInfo,
 	handler grpc.StreamHandler) error {
+
+	if !p.hasStarted() {
+		return ErrWaitingToStart
+	}
 
 	uriPermissions, ok := p.permsMgr.URIPermissions(info.FullMethod)
 	if !ok {
@@ -534,37 +546,42 @@ func (p *rpcProxy) basicAuthToMacaroon(basicAuth, requestURI string,
 		macPath string
 		macData []byte
 	)
-	switch {
-	case p.permsMgr.IsLndURI(requestURI):
+	subserver, err := p.permsMgr.SubServerHandler(requestURI)
+	if err != nil {
+		return nil, err
+	}
+
+	switch subserver {
+	case subservers.LND:
 		_, _, _, macPath, macData = p.cfg.lndConnectParams()
 
-	case p.permsMgr.IsFaradayURI(requestURI):
+	case subservers.FARADAY:
 		if p.cfg.faradayRemote {
 			macPath = p.cfg.Remote.Faraday.MacaroonPath
 		} else {
 			macPath = p.cfg.Faraday.MacaroonPath
 		}
 
-	case p.permsMgr.IsLoopURI(requestURI):
+	case subservers.LOOP:
 		if p.cfg.loopRemote {
 			macPath = p.cfg.Remote.Loop.MacaroonPath
 		} else {
 			macPath = p.cfg.Loop.MacaroonPath
 		}
 
-	case p.permsMgr.IsPoolURI(requestURI):
+	case subservers.POOL:
 		if p.cfg.poolRemote {
 			macPath = p.cfg.Remote.Pool.MacaroonPath
 		} else {
 			macPath = p.cfg.Pool.MacaroonPath
 		}
 
-	case p.permsMgr.IsLitURI(requestURI):
+	case subservers.LIT:
 		macPath = p.cfg.MacaroonPath
 
 	default:
-		return nil, fmt.Errorf("unknown gRPC web request: %v",
-			requestURI)
+		return nil, fmt.Errorf("unknown subserver handler: %v",
+			subserver)
 	}
 
 	switch {
@@ -636,86 +653,25 @@ func (p *rpcProxy) convertSuperMacaroon(ctx context.Context, macHex string,
 
 	// Is this actually a request that goes to a daemon that is running
 	// remotely?
-	switch {
-	case p.permsMgr.IsFaradayURI(fullMethod) && p.cfg.faradayRemote:
-		return readMacaroon(lncfg.CleanAndExpandPath(
-			p.cfg.Remote.Faraday.MacaroonPath,
-		))
-
-	case p.permsMgr.IsLoopURI(fullMethod) && p.cfg.loopRemote:
-		return readMacaroon(lncfg.CleanAndExpandPath(
-			p.cfg.Remote.Loop.MacaroonPath,
-		))
-
-	case p.permsMgr.IsPoolURI(fullMethod) && p.cfg.poolRemote:
-		return readMacaroon(lncfg.CleanAndExpandPath(
-			p.cfg.Remote.Pool.MacaroonPath,
-		))
+	subserver, err := p.permsMgr.SubServerHandler(fullMethod)
+	if err == nil {
+		switch {
+		case subserver == subservers.FARADAY && p.cfg.faradayRemote:
+			return readMacaroon(lncfg.CleanAndExpandPath(
+				p.cfg.Remote.Faraday.MacaroonPath,
+			))
+		case subserver == subservers.LOOP && p.cfg.loopRemote:
+			return readMacaroon(lncfg.CleanAndExpandPath(
+				p.cfg.Remote.Loop.MacaroonPath,
+			))
+		case subserver == subservers.POOL && p.cfg.poolRemote:
+			return readMacaroon(lncfg.CleanAndExpandPath(
+				p.cfg.Remote.Pool.MacaroonPath,
+			))
+		}
 	}
 
 	return nil, nil
-}
-
-// dialBufConnBackend dials an in-memory connection to an RPC listener and
-// ignores any TLS certificate mismatches.
-func dialBufConnBackend(listener *bufconn.Listener) (*grpc.ClientConn, error) {
-	tlsConfig := credentials.NewTLS(&tls.Config{
-		InsecureSkipVerify: true,
-	})
-	conn, err := grpc.Dial(
-		"",
-		grpc.WithContextDialer(
-			func(context.Context, string) (net.Conn, error) {
-				return listener.Dial()
-			},
-		),
-		grpc.WithTransportCredentials(tlsConfig),
-
-		// From the grpcProxy doc: This codec is *crucial* to the
-		// functioning of the proxy.
-		grpc.WithCodec(grpcProxy.Codec()), // nolint
-		grpc.WithTransportCredentials(tlsConfig),
-		grpc.WithDefaultCallOptions(maxMsgRecvSize),
-		grpc.WithConnectParams(grpc.ConnectParams{
-			Backoff:           backoff.DefaultConfig,
-			MinConnectTimeout: defaultConnectTimeout,
-		}),
-	)
-
-	return conn, err
-}
-
-// dialBackend connects to a gRPC backend through the given address and uses the
-// given TLS certificate to authenticate the connection.
-func dialBackend(name, dialAddr, tlsCertPath string) (*grpc.ClientConn, error) {
-	var opts []grpc.DialOption
-	tlsConfig, err := credentials.NewClientTLSFromFile(tlsCertPath, "")
-	if err != nil {
-		return nil, fmt.Errorf("could not read %s TLS cert %s: %v",
-			name, tlsCertPath, err)
-	}
-
-	opts = append(
-		opts,
-
-		// From the grpcProxy doc: This codec is *crucial* to the
-		// functioning of the proxy.
-		grpc.WithCodec(grpcProxy.Codec()), // nolint
-		grpc.WithTransportCredentials(tlsConfig),
-		grpc.WithDefaultCallOptions(maxMsgRecvSize),
-		grpc.WithConnectParams(grpc.ConnectParams{
-			Backoff:           backoff.DefaultConfig,
-			MinConnectTimeout: defaultConnectTimeout,
-		}),
-	)
-
-	log.Infof("Dialing %s gRPC server at %s", name, dialAddr)
-	cc, err := grpc.Dial(dialAddr, opts...)
-	if err != nil {
-		return nil, fmt.Errorf("failed dialing %s backend: %v", name,
-			err)
-	}
-	return cc, nil
 }
 
 // readMacaroon tries to read the macaroon file at the specified path and create
