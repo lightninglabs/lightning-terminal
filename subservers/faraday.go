@@ -7,9 +7,11 @@ import (
 	"github.com/lightninglabs/faraday"
 	"github.com/lightninglabs/faraday/frdrpc"
 	"github.com/lightninglabs/faraday/frdrpcserver"
+	"github.com/lightninglabs/faraday/frdrpcserver/perms"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"google.golang.org/grpc"
+	"gopkg.in/macaroon-bakery.v2/bakery"
 )
 
 // faradaySubServer implements the SubServer interface.
@@ -107,4 +109,12 @@ func (f *faradaySubServer) ServerErrChan() chan error {
 // NOTE: this is part of the SubServer interface.
 func (f *faradaySubServer) MacPath() string {
 	return f.cfg.MacaroonPath
+}
+
+// Permissions returns a map of all RPC methods and their required macaroon
+// permissions to access the sub-server.
+//
+// NOTE: this is part of the SubServer interface.
+func (f *faradaySubServer) Permissions() map[string][]bakery.Op {
+	return perms.RequiredPermissions
 }

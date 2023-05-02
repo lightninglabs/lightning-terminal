@@ -8,6 +8,7 @@ import (
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/macaroons"
 	"google.golang.org/grpc"
+	"gopkg.in/macaroon-bakery.v2/bakery"
 )
 
 // SubServer defines an interface that should be implemented by any sub-server
@@ -53,4 +54,8 @@ type SubServer interface {
 	// MacPath returns the path to the sub-server's macaroon if it is not
 	// running in remote mode.
 	MacPath() string
+
+	// Permissions returns a map of all RPC methods and their required
+	// macaroon permissions to access the sub-server.
+	Permissions() map[string][]bakery.Op
 }

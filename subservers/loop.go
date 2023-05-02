@@ -7,9 +7,11 @@ import (
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightninglabs/loop"
 	"github.com/lightninglabs/loop/loopd"
+	"github.com/lightninglabs/loop/loopd/perms"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"google.golang.org/grpc"
+	"gopkg.in/macaroon-bakery.v2/bakery"
 )
 
 // loopSubServer implements the SubServer interface.
@@ -117,4 +119,12 @@ func (l *loopSubServer) ServerErrChan() chan error {
 // NOTE: this is part of the SubServer interface.
 func (l *loopSubServer) MacPath() string {
 	return l.cfg.MacaroonPath
+}
+
+// Permissions returns a map of all RPC methods and their required macaroon
+// permissions to access the sub-server.
+//
+// NOTE: this is part of the SubServer interface.
+func (l *loopSubServer) Permissions() map[string][]bakery.Op {
+	return perms.RequiredPermissions
 }

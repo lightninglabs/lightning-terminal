@@ -6,9 +6,11 @@ import (
 	restProxy "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightninglabs/pool"
+	"github.com/lightninglabs/pool/perms"
 	"github.com/lightninglabs/pool/poolrpc"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"google.golang.org/grpc"
+	"gopkg.in/macaroon-bakery.v2/bakery"
 )
 
 // poolSubServer implements the SubServer interface.
@@ -107,4 +109,12 @@ func (p *poolSubServer) ServerErrChan() chan error {
 // NOTE: this is part of the SubServer interface.
 func (p *poolSubServer) MacPath() string {
 	return p.cfg.MacaroonPath
+}
+
+// Permissions returns a map of all RPC methods and their required macaroon
+// permissions to access the sub-server.
+//
+// NOTE: this is part of the SubServer interface.
+func (p *poolSubServer) Permissions() map[string][]bakery.Op {
+	return perms.RequiredPermissions
 }
