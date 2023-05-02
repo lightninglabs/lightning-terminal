@@ -236,7 +236,9 @@ func (g *LightningTerminal) Run() error {
 
 	// Construct the rpcProxy. It must be initialised before the main web
 	// server is started.
-	g.rpcProxy = newRpcProxy(g.cfg, g, g.validateSuperMacaroon, g.permsMgr)
+	g.rpcProxy = newRpcProxy(
+		g.cfg, g, g.validateSuperMacaroon, g.permsMgr, g.subServerMgr,
+	)
 
 	// Start the main web server that dispatches requests either to the
 	// static UI file server or the RPC proxy. This makes it possible to
