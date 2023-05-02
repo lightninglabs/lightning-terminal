@@ -3,17 +3,20 @@ package subservers
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"sync"
 	"time"
 
 	"github.com/lightninglabs/lightning-terminal/perms"
 	"github.com/lightninglabs/lndclient"
+	"github.com/lightningnetwork/lnd/lncfg"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	grpcProxy "github.com/mwitkow/grpc-proxy/proxy"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/credentials"
 	"gopkg.in/macaroon-bakery.v2/bakery"
+	"gopkg.in/macaroon.v2"
 )
 
 var (
@@ -210,6 +213,32 @@ func (s *Manager) MacaroonPath(uri string) (bool, string) {
 	return false, ""
 }
 
+// ReadRemoteMacaroon checks if any of the manager's sub-servers running in
+// remote mode owns the given uri and if so, the appropriate macaroon path is
+// returned for that sub-server.
+func (s *Manager) ReadRemoteMacaroon(uri string) (bool, []byte, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	for _, ss := range s.servers {
+		if !s.permsMgr.IsSubServerURI(ss.Name(), uri) {
+			continue
+		}
+
+		if !ss.Remote() {
+			return false, nil, nil
+		}
+
+		macBytes, err := readMacaroon(lncfg.CleanAndExpandPath(
+			ss.RemoteConfig().MacaroonPath,
+		))
+
+		return true, macBytes, err
+	}
+
+	return false, nil, nil
+}
+
 // Stop stops all the manager's sub-servers
 func (s *Manager) Stop() error {
 	var returnErr error
@@ -258,4 +287,22 @@ func dialBackend(name, dialAddr, tlsCertPath string) (*grpc.ClientConn, error) {
 			err)
 	}
 	return cc, nil
+}
+
+// readMacaroon tries to read the macaroon file at the specified path.
+func readMacaroon(macPath string) ([]byte, error) {
+	// Load the specified macaroon file.
+	macBytes, err := ioutil.ReadFile(macPath)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read macaroon path: %v", err)
+	}
+
+	// Make sure it actually is a macaroon by parsing it.
+	mac := &macaroon.Macaroon{}
+	if err := mac.UnmarshalBinary(macBytes); err != nil {
+		return nil, fmt.Errorf("unable to decode macaroon: %v", err)
+	}
+
+	// It's a macaroon alright, let's return the binary data now.
+	return macBytes, nil
 }

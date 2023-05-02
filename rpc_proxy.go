@@ -553,22 +553,9 @@ func (p *rpcProxy) convertSuperMacaroon(ctx context.Context, macHex string,
 
 	// Is this actually a request that goes to a daemon that is running
 	// remotely?
-	subserver, err := p.permsMgr.SubServerHandler(fullMethod)
-	if err == nil {
-		switch {
-		case subserver == subservers.FARADAY && p.cfg.faradayRemote:
-			return readMacaroon(lncfg.CleanAndExpandPath(
-				p.cfg.Remote.Faraday.MacaroonPath,
-			))
-		case subserver == subservers.LOOP && p.cfg.loopRemote:
-			return readMacaroon(lncfg.CleanAndExpandPath(
-				p.cfg.Remote.Loop.MacaroonPath,
-			))
-		case subserver == subservers.POOL && p.cfg.poolRemote:
-			return readMacaroon(lncfg.CleanAndExpandPath(
-				p.cfg.Remote.Pool.MacaroonPath,
-			))
-		}
+	handled, macBytes, err := p.subServerMgr.ReadRemoteMacaroon(fullMethod)
+	if handled {
+		return macBytes, err
 	}
 
 	return nil, nil
