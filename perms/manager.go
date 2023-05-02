@@ -292,27 +292,3 @@ func (pm *Manager) isLndURI(uri string) bool {
 	_, lndCall := pm.fixedPerms[lndPerms][uri]
 	return lndCall || lndSubServerCall
 }
-
-// IsLoopURI returns true if the given URI belongs to an RPC of loopd.
-func (pm *Manager) IsLoopURI(uri string) bool {
-	_, ok := pm.fixedPerms[loopPerms][uri]
-	return ok
-}
-
-// IsFaradayURI returns true if the given URI belongs to an RPC of faraday.
-func (pm *Manager) IsFaradayURI(uri string) bool {
-	_, ok := pm.fixedPerms[faradayPerms][uri]
-	return ok
-}
-
-// IsPoolURI returns true if the given URI belongs to an RPC of poold.
-func (pm *Manager) IsPoolURI(uri string) bool {
-	_, ok := pm.fixedPerms[poolPerms][uri]
-	return ok
-}
-
-// IsLitURI returns true if the given URI belongs to an RPC of LiT.
-func (pm *Manager) IsLitURI(uri string) bool {
-	_, ok := pm.fixedPerms[litPerms][uri]
-	return ok
-}
