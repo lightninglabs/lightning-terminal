@@ -5,6 +5,7 @@ import (
 
 	restProxy "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lightninglabs/lndclient"
+	"github.com/lightninglabs/loop"
 	"github.com/lightninglabs/loop/loopd"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -26,6 +27,10 @@ var _ SubServer = (*loopSubServer)(nil)
 // interface.
 func NewLoopSubServer(cfg *loopd.Config, remoteCfg *RemoteDaemonConfig,
 	remote bool) SubServer {
+
+	// Overwrite the loop daemon's user agent name, so it sends "litd"
+	// instead of "loopd".
+	loop.AgentName = "litd"
 
 	return &loopSubServer{
 		Daemon:    loopd.New(cfg, nil),

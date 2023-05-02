@@ -27,6 +27,10 @@ var _ SubServer = (*poolSubServer)(nil)
 func NewPoolSubServer(cfg *pool.Config, remoteCfg *RemoteDaemonConfig,
 	remote bool) SubServer {
 
+	// Overwrite the pool daemon's user agent name, so it sends "litd"
+	// instead of and "poold".
+	pool.SetAgentName("litd")
+
 	return &poolSubServer{
 		Server:    pool.NewServer(cfg),
 		cfg:       cfg,

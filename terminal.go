@@ -31,8 +31,6 @@ import (
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightninglabs/lightning-terminal/subservers"
 	"github.com/lightninglabs/lndclient"
-	"github.com/lightninglabs/loop"
-	"github.com/lightninglabs/pool"
 	"github.com/lightningnetwork/lnd"
 	"github.com/lightningnetwork/lnd/build"
 	"github.com/lightningnetwork/lnd/chainreg"
@@ -1413,16 +1411,10 @@ func (g *LightningTerminal) initSubServers() {
 		g.cfg.faradayRemote,
 	))
 
-	// Overwrite the loop daemon's user agent name so it sends "litd"
-	// instead of "loopd".
-	loop.AgentName = "litd"
 	g.subServerMgr.AddServer(subservers.NewLoopSubServer(
 		g.cfg.Loop, g.cfg.Remote.Loop, g.cfg.loopRemote,
 	))
 
-	// Overwrite the pool daemon's user agent name so it sends "litd"
-	// instead of and "poold".
-	pool.SetAgentName("litd")
 	g.subServerMgr.AddServer(subservers.NewPoolSubServer(
 		g.cfg.Pool, g.cfg.Remote.Pool, g.cfg.poolRemote,
 	))
