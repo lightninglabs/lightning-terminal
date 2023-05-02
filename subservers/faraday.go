@@ -1,6 +1,9 @@
 package subservers
 
 import (
+	"context"
+
+	restProxy "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lightninglabs/faraday"
 	"github.com/lightninglabs/faraday/frdrpc"
 	"github.com/lightninglabs/faraday/frdrpcserver"
@@ -74,6 +77,19 @@ func (f *faradaySubServer) Start(_ lnrpc.LightningClient,
 // NOTE: this is part of the SubServer interface.
 func (f *faradaySubServer) RegisterGrpcService(service grpc.ServiceRegistrar) {
 	frdrpc.RegisterFaradayServerServer(service, f)
+}
+
+// RegisterRestService registers the sub-server's REST handlers with the given
+// endpoint.
+//
+// NOTE: this is part of the SubServer interface.
+func (f *faradaySubServer) RegisterRestService(ctx context.Context,
+	mux *restProxy.ServeMux, endpoint string,
+	dialOpts []grpc.DialOption) error {
+
+	return frdrpc.RegisterFaradayServerHandlerFromEndpoint(
+		ctx, mux, endpoint, dialOpts,
+	)
 }
 
 // ServerErrChan returns an error channel that should be listened on after

@@ -1,6 +1,9 @@
 package subservers
 
 import (
+	"context"
+
+	restProxy "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightninglabs/loop/loopd"
 	"github.com/lightninglabs/loop/looprpc"
@@ -79,6 +82,19 @@ func (l *loopSubServer) Stop() error {
 // NOTE: this is part of the SubServer interface.
 func (l *loopSubServer) RegisterGrpcService(registrar grpc.ServiceRegistrar) {
 	looprpc.RegisterSwapClientServer(registrar, l)
+}
+
+// RegisterRestService registers the sub-server's REST handlers with the given
+// endpoint.
+//
+// NOTE: this is part of the SubServer interface.
+func (l *loopSubServer) RegisterRestService(ctx context.Context,
+	mux *restProxy.ServeMux, endpoint string,
+	dialOpts []grpc.DialOption) error {
+
+	return looprpc.RegisterSwapClientHandlerFromEndpoint(
+		ctx, mux, endpoint, dialOpts,
+	)
 }
 
 // ServerErrChan returns an error channel that should be listened on after

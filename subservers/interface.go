@@ -1,6 +1,9 @@
 package subservers
 
 import (
+	"context"
+
+	restProxy "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/macaroons"
@@ -35,6 +38,11 @@ type SubServer interface {
 	// RegisterGrpcService must register the sub-server's GRPC server with
 	// the given registrar.
 	RegisterGrpcService(grpc.ServiceRegistrar)
+
+	// RegisterRestService registers the sub-server's REST handlers with the
+	// given endpoint.
+	RegisterRestService(context.Context, *restProxy.ServeMux, string,
+		[]grpc.DialOption) error
 
 	// ServerErrChan returns an error channel that should be listened on
 	// after starting the sub-server to listen for any runtime errors. It

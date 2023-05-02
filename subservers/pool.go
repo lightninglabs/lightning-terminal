@@ -1,6 +1,9 @@
 package subservers
 
 import (
+	"context"
+
+	restProxy "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightninglabs/pool"
 	"github.com/lightninglabs/pool/poolrpc"
@@ -70,6 +73,19 @@ func (p *poolSubServer) Start(lnClient lnrpc.LightningClient,
 // NOTE: this is part of the SubServer interface.
 func (p *poolSubServer) RegisterGrpcService(registrar grpc.ServiceRegistrar) {
 	poolrpc.RegisterTraderServer(registrar, p)
+}
+
+// RegisterRestService registers the sub-server's REST handlers with the given
+// endpoint.
+//
+// NOTE: this is part of the SubServer interface.
+func (p *poolSubServer) RegisterRestService(ctx context.Context,
+	mux *restProxy.ServeMux, endpoint string,
+	dialOpts []grpc.DialOption) error {
+
+	return poolrpc.RegisterTraderHandlerFromEndpoint(
+		ctx, mux, endpoint, dialOpts,
+	)
 }
 
 // ServerErrChan returns an error channel that should be listened on after

@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	restProxy "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lightninglabs/lightning-terminal/perms"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightningnetwork/lnd/lncfg"
@@ -117,6 +118,33 @@ func (s *Manager) RegisterRPCServices(server grpc.ServiceRegistrar) {
 
 		ss.RegisterGrpcService(server)
 	}
+}
+
+// RegisterRestServices registers all the manager's sub-servers REST handlers
+// with the given endpoint.
+func (s *Manager) RegisterRestServices(ctx context.Context,
+	mux *restProxy.ServeMux, endpoint string,
+	dialOpts []grpc.DialOption) error {
+
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	for _, ss := range s.servers {
+		// In remote mode the "director" of the RPC proxy will act as
+		// a catch-all for any gRPC request that isn't known because we
+		// didn't register any server for it. The director will then
+		// forward the request to the remote service.
+		if ss.Remote() {
+			continue
+		}
+
+		err := ss.RegisterRestService(ctx, mux, endpoint, dialOpts)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // GetRemoteConn checks if any of the manager's sub-servers owns the given uri
