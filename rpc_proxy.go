@@ -467,46 +467,21 @@ func (p *rpcProxy) basicAuthToMacaroon(basicAuth, requestURI string,
 		return nil, ctxErr
 	}
 
-	var (
-		macPath string
-		macData []byte
-	)
-	subserver, err := p.permsMgr.SubServerHandler(requestURI)
-	if err != nil {
-		return nil, err
-	}
+	var macData []byte
+	handled, macPath := p.subServerMgr.MacaroonPath(requestURI)
 
-	switch subserver {
-	case subservers.LND:
+	switch {
+	case handled:
+
+	case p.permsMgr.IsSubServerURI(subservers.LND, requestURI):
 		_, _, _, macPath, macData = p.cfg.lndConnectParams()
 
-	case subservers.FARADAY:
-		if p.cfg.faradayRemote {
-			macPath = p.cfg.Remote.Faraday.MacaroonPath
-		} else {
-			macPath = p.cfg.Faraday.MacaroonPath
-		}
-
-	case subservers.LOOP:
-		if p.cfg.loopRemote {
-			macPath = p.cfg.Remote.Loop.MacaroonPath
-		} else {
-			macPath = p.cfg.Loop.MacaroonPath
-		}
-
-	case subservers.POOL:
-		if p.cfg.poolRemote {
-			macPath = p.cfg.Remote.Pool.MacaroonPath
-		} else {
-			macPath = p.cfg.Pool.MacaroonPath
-		}
-
-	case subservers.LIT:
+	case p.permsMgr.IsSubServerURI(subservers.LIT, requestURI):
 		macPath = p.cfg.MacaroonPath
 
 	default:
-		return nil, fmt.Errorf("unknown subserver handler: %v",
-			subserver)
+		return nil, fmt.Errorf("unknown gRPC web request: %v",
+			requestURI)
 	}
 
 	switch {

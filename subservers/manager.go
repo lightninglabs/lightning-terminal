@@ -189,6 +189,27 @@ func (s *Manager) ValidateMacaroon(ctx context.Context,
 	return false, nil
 }
 
+// MacaroonPath checks if any of the manager's sub-servers owns the given uri
+// and if so, the appropriate macaroon path is returned for that sub-server.
+func (s *Manager) MacaroonPath(uri string) (bool, string) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	for _, ss := range s.servers {
+		if !s.permsMgr.IsSubServerURI(ss.Name(), uri) {
+			continue
+		}
+
+		if ss.Remote() {
+			return true, ss.RemoteConfig().MacaroonPath
+		}
+
+		return true, ss.MacPath()
+	}
+
+	return false, ""
+}
+
 // Stop stops all the manager's sub-servers
 func (s *Manager) Stop() error {
 	var returnErr error
