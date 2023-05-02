@@ -46,7 +46,7 @@ func (s *Manager) AddServer(ss SubServer) {
 	defer s.mu.Unlock()
 
 	s.servers = append(s.servers, &subServerWrapper{
-		subServer: ss,
+		SubServer: ss,
 		quit:      make(chan struct{}),
 	})
 }
@@ -60,7 +60,7 @@ func (s *Manager) StartIntegratedServers(lndClient lnrpc.LightningClient,
 	defer s.mu.Unlock()
 
 	for _, ss := range s.servers {
-		if ss.subServer.Remote() {
+		if ss.Remote() {
 			continue
 		}
 
@@ -68,8 +68,8 @@ func (s *Manager) StartIntegratedServers(lndClient lnrpc.LightningClient,
 			lndClient, lndGrpc, withMacaroonService,
 		)
 		if err != nil {
-			return fmt.Errorf("Unable to start %v in integrated "+
-				"mode: %v", ss.subServer.Name(), err)
+			return fmt.Errorf("unable to start %v in integrated "+
+				"mode: %v", ss.Name(), err)
 		}
 	}
 
@@ -83,14 +83,14 @@ func (s *Manager) ConnectRemoteSubServers() {
 	defer s.mu.Unlock()
 
 	for _, ss := range s.servers {
-		if !ss.subServer.Remote() {
+		if !ss.Remote() {
 			continue
 		}
 
 		err := ss.connectRemote()
 		if err != nil {
 			log.Errorf("Failed to connect to remote %s: %v",
-				ss.subServer.Name(), err)
+				ss.Name(), err)
 
 			continue
 		}
@@ -108,11 +108,11 @@ func (s *Manager) RegisterRPCServices(server grpc.ServiceRegistrar) {
 		// a catch-all for any gRPC request that isn't known because we
 		// didn't register any server for it. The director will then
 		// forward the request to the remote service.
-		if ss.subServer.Remote() {
+		if ss.Remote() {
 			continue
 		}
 
-		ss.subServer.RegisterGrpcService(server)
+		ss.RegisterGrpcService(server)
 	}
 }
 
@@ -125,11 +125,11 @@ func (s *Manager) GetRemoteConn(uri string) (bool, *grpc.ClientConn) {
 	defer s.mu.RUnlock()
 
 	for _, ss := range s.servers {
-		if !s.permsMgr.IsSubServerURI(ss.subServer.Name(), uri) {
+		if !s.permsMgr.IsSubServerURI(ss.Name(), uri) {
 			continue
 		}
 
-		if !ss.subServer.Remote() {
+		if !ss.Remote() {
 			return false, nil
 		}
 
@@ -151,7 +151,7 @@ func (s *Manager) ValidateMacaroon(ctx context.Context,
 	defer s.mu.RUnlock()
 
 	for _, ss := range s.servers {
-		if !s.permsMgr.IsSubServerURI(ss.subServer.Name(), uri) {
+		if !s.permsMgr.IsSubServerURI(ss.Name(), uri) {
 			continue
 		}
 
@@ -159,7 +159,7 @@ func (s *Manager) ValidateMacaroon(ctx context.Context,
 		// need to validate the macaroon here since the remote server
 		// will do it when the request arrives. But we have handled the
 		// request, as we were able to identify it.
-		if ss.subServer.Remote() {
+		if ss.Remote() {
 			return true, nil
 		}
 
@@ -170,14 +170,12 @@ func (s *Manager) ValidateMacaroon(ctx context.Context,
 			return true, fmt.Errorf("%s is not yet ready for "+
 				"requests, the subserver has not started or "+
 				"lnd still starting/syncing",
-				ss.subServer.Name())
+				ss.Name())
 		}
 
 		// Validate the macaroon with the integrated sub-server's own
 		// validator.
-		err := ss.subServer.ValidateMacaroon(
-			ctx, requiredPermissions, uri,
-		)
+		err := ss.ValidateMacaroon(ctx, requiredPermissions, uri)
 		if err != nil {
 			return true, fmt.Errorf("invalid macaroon: %v", err)
 		}
@@ -199,14 +197,13 @@ func (s *Manager) Stop() error {
 	defer s.mu.RUnlock()
 
 	for _, ss := range s.servers {
-		if ss.subServer.Remote() {
+		if ss.Remote() {
 			continue
 		}
 
 		err := ss.stop()
 		if err != nil {
-			log.Errorf("Error stopping %s: %v", ss.subServer.Name(),
-				err)
+			log.Errorf("Error stopping %s: %v", ss.Name(), err)
 			returnErr = err
 		}
 	}

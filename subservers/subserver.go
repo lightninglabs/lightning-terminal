@@ -21,12 +21,12 @@ const (
 // subServerWrapper is a wrapper around the SubServer interface and is used by
 // the subServerMgr to manage a SubServer.
 type subServerWrapper struct {
+	SubServer
+
 	integratedStarted bool
 	startedMu         sync.RWMutex
 
 	stopped sync.Once
-
-	subServer SubServer
 
 	remoteConn *grpc.ClientConn
 
@@ -66,7 +66,7 @@ func (s *subServerWrapper) stop() error {
 		s.wg.Wait()
 
 		// If running in remote mode, close the connection.
-		if s.subServer.Remote() && s.remoteConn != nil {
+		if s.Remote() && s.remoteConn != nil {
 			err := s.remoteConn.Close()
 			if err != nil {
 				returnErr = fmt.Errorf("could not close "+
@@ -76,19 +76,19 @@ func (s *subServerWrapper) stop() error {
 		}
 
 		// Else, stop the integrated sub-server process.
-		err := s.subServer.Stop()
+		err := s.Stop()
 		if err != nil {
 			returnErr = fmt.Errorf("could not close "+
 				"integrated connection: %v", err)
 			return
 		}
 
-		if s.subServer.ServerErrChan() == nil {
+		if s.ServerErrChan() == nil {
 			return
 		}
 
 		select {
-		case returnErr = <-s.subServer.ServerErrChan():
+		case returnErr = <-s.ServerErrChan():
 		default:
 		}
 	})
@@ -100,13 +100,13 @@ func (s *subServerWrapper) stop() error {
 func (s *subServerWrapper) startIntegrated(lndClient lnrpc.LightningClient,
 	lndGrpc *lndclient.GrpcLndServices, withMacaroonService bool) error {
 
-	err := s.subServer.Start(lndClient, lndGrpc, withMacaroonService)
+	err := s.Start(lndClient, lndGrpc, withMacaroonService)
 	if err != nil {
 		return err
 	}
 	s.setStarted(true)
 
-	if s.subServer.ServerErrChan() == nil {
+	if s.ServerErrChan() == nil {
 		return nil
 	}
 
@@ -115,14 +115,14 @@ func (s *subServerWrapper) startIntegrated(lndClient lnrpc.LightningClient,
 		defer s.wg.Done()
 
 		select {
-		case err := <-s.subServer.ServerErrChan():
+		case err := <-s.ServerErrChan():
 			// The sub server should shut itself down if an error
 			// happens. We don't need to try to stop it again.
 			s.setStarted(false)
 
 			err = fmt.Errorf("received critical error from "+
 				"sub-server (%s), shutting down: %v",
-				s.subServer.Name(), err)
+				s.Name(), err)
 
 			log.Error(err)
 
@@ -135,9 +135,9 @@ func (s *subServerWrapper) startIntegrated(lndClient lnrpc.LightningClient,
 
 // connectRemote attempts to make a connection to the remote sub-server.
 func (s *subServerWrapper) connectRemote() error {
-	cfg := s.subServer.RemoteConfig()
+	cfg := s.RemoteConfig()
 	certPath := lncfg.CleanAndExpandPath(cfg.TLSCertPath)
-	name := s.subServer.Name()
+	name := s.Name()
 	conn, err := dialBackend(name, cfg.RPCServer, certPath)
 	if err != nil {
 		return fmt.Errorf("remote dial error: %v", err)
