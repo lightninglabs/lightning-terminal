@@ -328,16 +328,18 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 		os.Exit(0)
 	}
 
+	// Before we validate the config, we first hook up our own loggers.
+	// This must be done before the config is validated if LND is running
+	// in integrated mode so that the log levels for various non-LND related
+	// subsystems can be set via the `lnd.debuglevel` flag.
+	SetupLoggers(preCfg.Lnd.LogWriter, interceptor)
+
 	// Load the main configuration file and parse any command line options.
 	// This function will also set up logging properly.
 	cfg, err := loadConfigFile(preCfg, interceptor)
 	if err != nil {
 		return nil, err
 	}
-
-	// With the validated config obtained, we now know that the root logging
-	// system of lnd is initialized and we can hook up our own loggers now.
-	SetupLoggers(cfg.Lnd.LogWriter, interceptor)
 
 	// Translate the more user friendly string modes into the more developer
 	// friendly internal bool variables now.
