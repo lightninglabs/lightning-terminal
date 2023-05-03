@@ -230,6 +230,10 @@ func (g *LightningTerminal) Run() error {
 		return fmt.Errorf("could not create permissions manager")
 	}
 
+	// Register LND and LiT with the status manager.
+	g.statusMgr.RegisterAndEnableSubServer(subservers.LND)
+	g.statusMgr.RegisterAndEnableSubServer(subservers.LIT)
+
 	// Create the instances of our subservers now so we can hook them up to
 	// lnd once it's fully started.
 	g.subServerMgr = subservers.NewManager(g.permsMgr, g.statusMgr)
@@ -269,8 +273,9 @@ func (g *LightningTerminal) Run() error {
 	// could not start or LND could not start or be connected to.
 	startErr := g.start()
 	if startErr != nil {
-		log.Errorf("Error starting Lightning Terminal: %v", startErr)
-		return startErr
+		g.statusMgr.SetErrored(
+			subservers.LIT, "could not start Lit: %v", startErr,
+		)
 	}
 
 	// Now block until we receive an error or the main shutdown
@@ -302,7 +307,6 @@ func (g *LightningTerminal) Run() error {
 // returned.
 func (g *LightningTerminal) start() error {
 	var err error
-
 	g.accountService, err = accounts.NewService(
 		filepath.Dir(g.cfg.MacaroonPath), g.errQueue.ChanIn(),
 	)
@@ -462,10 +466,18 @@ func (g *LightningTerminal) start() error {
 	case <-readyChan:
 
 	case err := <-g.errQueue.ChanOut():
-		return err
+		g.statusMgr.SetErrored(
+			subservers.LND, "error from errQueue channel",
+		)
+
+		return fmt.Errorf("could not start LND: %v", err)
 
 	case <-lndQuit:
-		return nil
+		g.statusMgr.SetErrored(
+			subservers.LND, "lndQuit channel closed",
+		)
+
+		return fmt.Errorf("LND has stopped")
 
 	case <-interceptor.ShutdownChannel():
 		return fmt.Errorf("received the shutdown signal")
@@ -495,6 +507,10 @@ func (g *LightningTerminal) start() error {
 	// Connect to LND.
 	g.lndConn, err = connectLND(g.cfg, bufRpcListener)
 	if err != nil {
+		g.statusMgr.SetErrored(
+			subservers.LND, "could not connect to LND: %v", err,
+		)
+
 		return fmt.Errorf("could not connect to LND")
 	}
 
@@ -539,7 +555,11 @@ func (g *LightningTerminal) start() error {
 		return err
 
 	case <-lndQuit:
-		return nil
+		g.statusMgr.SetErrored(
+			subservers.LND, "lndQuit channel closed",
+		)
+
+		return fmt.Errorf("LND has stopped")
 
 	case <-interceptor.ShutdownChannel():
 		return fmt.Errorf("received the shutdown signal")
@@ -555,9 +575,15 @@ func (g *LightningTerminal) start() error {
 	// Set up all the LND clients required by LiT.
 	err = g.setUpLNDClients()
 	if err != nil {
-		log.Errorf("Could not set up LND clients: %w", err)
-		return err
+		g.statusMgr.SetErrored(
+			subservers.LND, "could not set up LND clients: %v", err,
+		)
+
+		return fmt.Errorf("could not start LND")
 	}
+
+	// We can now set the status of LND as running.
+	g.statusMgr.SetRunning(subservers.LND)
 
 	// If we're in integrated and stateless init mode, we won't create
 	// macaroon files in any of the subserver daemons.
@@ -585,6 +611,9 @@ func (g *LightningTerminal) start() error {
 		return fmt.Errorf("could not start litd sub-servers: %v", err)
 	}
 
+	// We can now set the status of LiT as running.
+	g.statusMgr.SetRunning(subservers.LIT)
+
 	// Now block until we receive an error or the main shutdown signal.
 	select {
 	case err := <-g.errQueue.ChanOut():
@@ -592,7 +621,11 @@ func (g *LightningTerminal) start() error {
 			"shutting down: %v", err)
 
 	case <-lndQuit:
-		return nil
+		g.statusMgr.SetErrored(
+			subservers.LND, "lndQuit channel closed",
+		)
+
+		return fmt.Errorf("LND is not running")
 
 	case <-interceptor.ShutdownChannel():
 		log.Infof("Shutdown signal received")

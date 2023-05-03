@@ -617,18 +617,17 @@ func (p *rpcProxy) checkSubSystemStarted(requestURI string) error {
 		return ErrWaitingToStart
 	}
 
-	// Currently, Lit and LND are not registered with the sub-server
-	// manager, so we let any request for them through.
-	if p.permsMgr.IsSubServerURI(subservers.LIT, requestURI) ||
-		p.permsMgr.IsSubServerURI(subservers.LND, requestURI) {
-
-		return nil
-	}
-
-	// Check that the sub-server manager does have a sub-server registered
-	// that can handle the given URI.
 	handled, system := p.subServerMgr.Handles(requestURI)
-	if !handled {
+	switch {
+	case handled:
+
+	case p.permsMgr.IsSubServerURI(subservers.LIT, requestURI):
+		system = subservers.LIT
+
+	case p.permsMgr.IsSubServerURI(subservers.LND, requestURI):
+		system = subservers.LND
+
+	default:
 		return fmt.Errorf("unknown gRPC web request: %v", requestURI)
 	}
 
