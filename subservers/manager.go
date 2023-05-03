@@ -298,6 +298,23 @@ func (s *Manager) ReadRemoteMacaroon(uri string) (bool, []byte, error) {
 	return false, nil, nil
 }
 
+// Handles returns true if one of its sub-servers owns the given URI along with
+// the name of the service.
+func (s *Manager) Handles(uri string) (bool, string) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	for _, ss := range s.servers {
+		if !s.permsMgr.IsSubServerURI(ss.Name(), uri) {
+			continue
+		}
+
+		return true, ss.Name()
+	}
+
+	return false, ""
+}
+
 // Stop stops all the manager's sub-servers
 func (s *Manager) Stop() error {
 	var returnErr error
