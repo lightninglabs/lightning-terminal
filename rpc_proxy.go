@@ -15,6 +15,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/lightning-terminal/perms"
 	"github.com/lightninglabs/lightning-terminal/session"
+	litstatus "github.com/lightninglabs/lightning-terminal/status"
 	"github.com/lightninglabs/lightning-terminal/subservers"
 	"github.com/lightningnetwork/lnd/lncfg"
 	"github.com/lightningnetwork/lnd/macaroons"
@@ -61,7 +62,8 @@ func (e *proxyErr) Unwrap() error {
 // component.
 func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 	superMacValidator session.SuperMacaroonValidator,
-	permsMgr *perms.Manager, subServerMgr *subservers.Manager) *rpcProxy {
+	permsMgr *perms.Manager, subServerMgr *subservers.Manager,
+	statusMgr *litstatus.Manager) *rpcProxy {
 
 	// The gRPC web calls are protected by HTTP basic auth which is defined
 	// by base64(username:password). Because we only have a password, we
@@ -82,6 +84,7 @@ func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 		macValidator:      validator,
 		superMacValidator: superMacValidator,
 		subServerMgr:      subServerMgr,
+		statusMgr:         statusMgr,
 	}
 	p.grpcServer = grpc.NewServer(
 		// From the grpxProxy doc: This codec is *crucial* to the
@@ -156,6 +159,7 @@ type rpcProxy struct {
 	basicAuth    string
 	permsMgr     *perms.Manager
 	subServerMgr *subservers.Manager
+	statusMgr    *litstatus.Manager
 
 	bakeSuperMac bakeSuperMac
 
@@ -327,6 +331,10 @@ func (p *rpcProxy) makeDirector(allowLitRPC bool) func(ctx context.Context,
 			}
 		}
 
+		if err := p.checkSubSystemStarted(requestURI); err != nil {
+			return outCtx, nil, err
+		}
+
 		// Direct the call to the correct backend. All gRPC calls end up
 		// here since our gRPC server instance doesn't have any handlers
 		// registered itself. So all daemon calls that are remote are
@@ -353,12 +361,6 @@ func (p *rpcProxy) makeDirector(allowLitRPC bool) func(ctx context.Context,
 			)
 		}
 
-		// If the rpcProxy has not started yet, then the lnd connection
-		// will not be initialised yet.
-		if !p.hasStarted() {
-			return outCtx, nil, ErrWaitingToStart
-		}
-
 		return outCtx, p.lndConn, nil
 	}
 }
@@ -369,8 +371,8 @@ func (p *rpcProxy) UnaryServerInterceptor(ctx context.Context, req interface{},
 	info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{},
 	error) {
 
-	if !p.hasStarted() && !isStatusReq(info.FullMethod) {
-		return nil, ErrWaitingToStart
+	if err := p.checkSubSystemStarted(info.FullMethod); err != nil {
+		return nil, err
 	}
 
 	uriPermissions, ok := p.permsMgr.URIPermissions(info.FullMethod)
@@ -414,8 +416,8 @@ func (p *rpcProxy) StreamServerInterceptor(srv interface{},
 	ss grpc.ServerStream, info *grpc.StreamServerInfo,
 	handler grpc.StreamHandler) error {
 
-	if !p.hasStarted() && !isStatusReq(info.FullMethod) {
-		return ErrWaitingToStart
+	if err := p.checkSubSystemStarted(info.FullMethod); err != nil {
+		return err
 	}
 
 	uriPermissions, ok := p.permsMgr.URIPermissions(info.FullMethod)
@@ -600,6 +602,53 @@ func (p *rpcProxy) convertSuperMacaroon(ctx context.Context, macHex string,
 	}
 
 	return nil, nil
+}
+
+// checkSubSystemStarted checks if the subsystem responsible for handling the
+// given URI has started.
+func (p *rpcProxy) checkSubSystemStarted(requestURI string) error {
+	// A request to Lit's status server is always allowed.
+	if isStatusReq(requestURI) {
+		return nil
+	}
+
+	// Check if the rpcProxy has started yet.
+	if !p.hasStarted() {
+		return ErrWaitingToStart
+	}
+
+	// Currently, Lit and LND are not registered with the sub-server
+	// manager, so we let any request for them through.
+	if p.permsMgr.IsSubServerURI(subservers.LIT, requestURI) ||
+		p.permsMgr.IsSubServerURI(subservers.LND, requestURI) {
+
+		return nil
+	}
+
+	// Check that the sub-server manager does have a sub-server registered
+	// that can handle the given URI.
+	handled, system := p.subServerMgr.Handles(requestURI)
+	if !handled {
+		return fmt.Errorf("unknown gRPC web request: %v", requestURI)
+	}
+
+	// Check with the status manger to see if the sub-server is ready to
+	// handle the request.
+	serverStatus, err := p.statusMgr.GetStatus(system)
+	if err != nil {
+		return err
+	}
+
+	if serverStatus.Disabled {
+		return fmt.Errorf("%s has been disabled", system)
+	}
+
+	if !serverStatus.Running {
+		return fmt.Errorf("%s is not running: %s", system,
+			serverStatus.Err)
+	}
+
+	return nil
 }
 
 // readMacaroon tries to read the macaroon file at the specified path and create

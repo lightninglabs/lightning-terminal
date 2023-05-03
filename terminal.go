@@ -242,6 +242,7 @@ func (g *LightningTerminal) Run() error {
 	// server is started.
 	g.rpcProxy = newRpcProxy(
 		g.cfg, g, g.validateSuperMacaroon, g.permsMgr, g.subServerMgr,
+		g.statusMgr,
 	)
 
 	litrpc.RegisterProxyServer(g.rpcProxy.grpcServer, g.rpcProxy)
