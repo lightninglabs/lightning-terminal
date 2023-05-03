@@ -323,6 +323,12 @@ func (p *rpcProxy) makeDirector(allowLitRPC bool) func(ctx context.Context,
 			)
 		}
 
+		// If the rpcProxy has not started yet, then the lnd connection
+		// will not be initialised yet.
+		if !p.hasStarted() {
+			return outCtx, nil, ErrWaitingToStart
+		}
+
 		return outCtx, p.lndConn, nil
 	}
 }
