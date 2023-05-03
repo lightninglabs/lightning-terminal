@@ -29,6 +29,7 @@ import (
 	"github.com/lightninglabs/loop/looprpc"
 	pool "github.com/lightninglabs/pool/perms"
 	"github.com/lightninglabs/pool/poolrpc"
+	tap "github.com/lightninglabs/taproot-assets/perms"
 	"github.com/lightningnetwork/lnd/keychain"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
@@ -647,7 +648,7 @@ func runGRPCAuthTest(t *testing.T, hostPort, tlsCertPath, macPath string,
 
 	// Then finally we try with the correct macaroon which should now
 	// succeed.
-	macBytes, err := ioutil.ReadFile(macPath)
+	macBytes, err := os.ReadFile(macPath)
 	require.NoError(t, err)
 	ctxm = macaroonContext(ctxt, macBytes)
 	resp, err := makeRequest(ctxm, rawConn)
@@ -1099,6 +1100,7 @@ func bakeSuperMacaroon(cfg *LitNodeConfig, readOnly bool) (string, error) {
 	permsMgr.RegisterSubServer(
 		subservers.FARADAY, faraday.RequiredPermissions,
 	)
+	permsMgr.RegisterSubServer(subservers.TAP, tap.RequiredPermissions)
 
 	superMacPermissions := permsMgr.ActivePermissions(readOnly)
 	nullID := [4]byte{}

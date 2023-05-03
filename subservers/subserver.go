@@ -15,6 +15,7 @@ const (
 	LIT     string = "lit"
 	LOOP    string = "loop"
 	POOL    string = "pool"
+	TAP     string = "taproot-assets"
 	FARADAY string = "faraday"
 )
 

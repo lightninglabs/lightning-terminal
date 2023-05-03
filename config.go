@@ -24,6 +24,7 @@ import (
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightninglabs/loop/loopd"
 	"github.com/lightninglabs/pool"
+	"github.com/lightninglabs/taproot-assets/tapcfg"
 	"github.com/lightningnetwork/lnd"
 	"github.com/lightningnetwork/lnd/build"
 	"github.com/lightningnetwork/lnd/cert"
@@ -46,6 +47,7 @@ const (
 	defaultFaradayMode = ModeIntegrated
 	defaultLoopMode    = ModeIntegrated
 	defaultPoolMode    = ModeIntegrated
+	defaultTapMode     = ModeIntegrated
 
 	defaultConfigFilename = "lit.conf"
 
@@ -68,9 +70,11 @@ const (
 	defaultRemoteFaradayRpcServer = "localhost:8465"
 	defaultRemoteLoopRpcServer    = "localhost:11010"
 	defaultRemotePoolRpcServer    = "localhost:12010"
-	defaultLndChainSubDir         = "chain"
-	defaultLndChain               = "bitcoin"
-	defaultLndMacaroon            = "admin.macaroon"
+	defaultRemoteTapRpcServer     = "localhost:10029"
+
+	defaultLndChainSubDir = "chain"
+	defaultLndChain       = "bitcoin"
+	defaultLndMacaroon    = "admin.macaroon"
 
 	// DefaultAutogenValidity is the default validity of a self-signed
 	// certificate. The value corresponds to 14 months
@@ -89,6 +93,7 @@ var (
 	faradayDefaultConfig = faraday.DefaultConfig()
 	loopDefaultConfig    = loopd.DefaultConfig()
 	poolDefaultConfig    = pool.DefaultConfig()
+	tapDefaultConfig     = tapcfg.DefaultConfig()
 
 	// DefaultLitDir is the default directory where LiT tries to find its
 	// configuration file and store its data (in remote lnd node). This is a
@@ -190,6 +195,9 @@ type Config struct {
 	PoolMode string       `long:"pool-mode" description:"The mode to run pool in, either 'integrated' (default) or 'remote'. 'integrated' means poold is started alongside the UI and everything is stored in pool's main data directory, configure everything by using the --pool.* flags. 'remote' means the UI connects to an existing poold node and acts as a proxy for gRPC calls to it." choice:"integrated" choice:"remote"`
 	Pool     *pool.Config `group:"Integrated pool options (use when pool-mode=integrated)" namespace:"pool"`
 
+	TaprootAssetsMode string         `long:"taproot-assets-mode" description:"The mode to run taproot assets in, either 'integrated' (default) or 'remote'. 'integrated' means tapd is started alongside the UI and everything is stored in tap's main data directory, configure everything by using the --taproot-assets.* flags. 'remote' means the UI connects to an existing tapd node and acts as a proxy for gRPC calls to it." choice:"integrated" choice:"remote"`
+	TaprootAssets     *tapcfg.Config `group:"Integrated taproot assets options (use when taproot-assets=integrated)" namespace:"taproot-assets"`
+
 	RPCMiddleware *mid.Config `group:"RPC middleware options" namespace:"rpcmiddleware"`
 
 	Autopilot *autopilotserver.Config `group:"Autopilot server options" namespace:"autopilot"`
@@ -206,6 +214,7 @@ type Config struct {
 	faradayRemote bool
 	loopRemote    bool
 	poolRemote    bool
+	tapRemote     bool
 
 	// lndAdminMacaroon is the admin macaroon that is given to us by lnd
 	// over an in-memory connection on startup. This is only set in
@@ -281,6 +290,11 @@ func defaultConfig() *Config {
 				MacaroonPath: poolDefaultConfig.MacaroonPath,
 				TLSCertPath:  poolDefaultConfig.TLSCertPath,
 			},
+			TaprootAssets: &subservers.RemoteDaemonConfig{
+				RPCServer:    defaultRemoteTapRpcServer,
+				MacaroonPath: tapDefaultConfig.RpcConf.MacaroonPath,
+				TLSCertPath:  tapDefaultConfig.RpcConf.TLSCertPath,
+			},
 		},
 		Network:              DefaultNetwork,
 		LndMode:              DefaultLndMode,
@@ -297,6 +311,8 @@ func defaultConfig() *Config {
 		Loop:                 &loopDefaultConfig,
 		PoolMode:             defaultPoolMode,
 		Pool:                 &poolDefaultConfig,
+		TaprootAssetsMode:    defaultTapMode,
+		TaprootAssets:        &tapDefaultConfig,
 		RPCMiddleware:        mid.DefaultConfig(),
 		FirstLNCConnDeadline: defaultFirstLNCConnTimeout,
 		Autopilot: &autopilotserver.Config{
@@ -347,6 +363,7 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 	cfg.faradayRemote = cfg.FaradayMode == ModeRemote
 	cfg.loopRemote = cfg.LoopMode == ModeRemote
 	cfg.poolRemote = cfg.PoolMode == ModeRemote
+	cfg.tapRemote = cfg.TaprootAssetsMode == ModeRemote
 
 	// Now that we've registered all loggers, let's parse, validate, and set
 	// the debug log level(s). In remote lnd mode we have a global log level
@@ -445,6 +462,11 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 		return nil, err
 	}
 
+	cfg.TaprootAssets, err = tapcfg.ValidateConfig(*cfg.TaprootAssets, log)
+	if err != nil {
+		return nil, err
+	}
+
 	// We've set the network before and have now validated the loop config
 	// which updated its default paths for that network. So if we're in
 	// remote mode and not mainnet, we want to update our default paths for
@@ -490,6 +512,19 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 		}
 		if cfg.Remote.Pool.TLSCertPath == defaultPoolCfg.TLSCertPath {
 			cfg.Remote.Pool.TLSCertPath = cfg.Pool.TLSCertPath
+		}
+	}
+
+	defaultTapCfg := tapcfg.DefaultConfig()
+	if cfg.tapRemote && cfg.Network != DefaultNetwork {
+		if cfg.Remote.TaprootAssets.MacaroonPath == defaultTapCfg.RpcConf.MacaroonPath {
+			macaroonPath := cfg.TaprootAssets.RpcConf.MacaroonPath
+			cfg.Remote.TaprootAssets.MacaroonPath = macaroonPath
+		}
+		if cfg.Remote.TaprootAssets.TLSCertPath == defaultTapCfg.RpcConf.TLSCertPath {
+			tlsCertPath := cfg.TaprootAssets.RpcConf.TLSCertPath
+
+			cfg.Remote.TaprootAssets.TLSCertPath = tlsCertPath
 		}
 	}
 
@@ -692,6 +727,7 @@ func setNetwork(cfg *Config) error {
 	cfg.Faraday.Network = cfg.Network
 	cfg.Loop.Network = cfg.Network
 	cfg.Pool.Network = cfg.Network
+	cfg.TaprootAssets.ChainConf.Network = cfg.Network
 
 	return nil
 }
