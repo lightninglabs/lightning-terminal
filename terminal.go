@@ -234,7 +234,7 @@ func (g *LightningTerminal) Run() error {
 
 	// Create the instances of our subservers now so we can hook them up to
 	// lnd once it's fully started.
-	g.subServerMgr = subservers.NewManager(g.permsMgr)
+	g.subServerMgr = subservers.NewManager(g.permsMgr, g.statusMgr)
 
 	// Register our sub-servers. This must be done before the REST proxy is
 	// set up so that the correct REST handlers are registered.
@@ -511,10 +511,7 @@ func (g *LightningTerminal) start() error {
 
 	// Initialise any connections to sub-servers that we are running in
 	// remote mode.
-	if err := g.subServerMgr.ConnectRemoteSubServers(); err != nil {
-		return fmt.Errorf("error connecting to remote sub-servers: %v",
-			err)
-	}
+	g.subServerMgr.ConnectRemoteSubServers()
 
 	// bakeSuperMac is a closure that can be used to bake a new super
 	// macaroon that contains all active permissions.
@@ -615,12 +612,9 @@ func (g *LightningTerminal) start() error {
 
 	// Both connection types are ready now, let's start our sub-servers if
 	// they should be started locally as an integrated service.
-	err = g.subServerMgr.StartIntegratedServers(
+	g.subServerMgr.StartIntegratedServers(
 		g.basicClient, g.lndClient, createDefaultMacaroons,
 	)
-	if err != nil {
-		return fmt.Errorf("could not start subservers: %v", err)
-	}
 
 	err = g.startInternalSubServers(createDefaultMacaroons)
 	if err != nil {
