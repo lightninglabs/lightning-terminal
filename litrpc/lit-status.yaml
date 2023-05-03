@@ -1,0 +1,9 @@
+type: google.api.Service
+config_version: 3
+
+http:
+  rules:
+
+    # lit-status.proto
+    - selector: litrpc.Status.SubServerStatus
+      get: "/v1/status"
