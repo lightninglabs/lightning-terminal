@@ -18,12 +18,16 @@ import (
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/lightninglabs/faraday/frdrpc"
+	faraday "github.com/lightninglabs/faraday/frdrpcserver/perms"
 	"github.com/lightninglabs/lightning-node-connect/mailbox"
 	terminal "github.com/lightninglabs/lightning-terminal"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/lightning-terminal/perms"
 	"github.com/lightninglabs/lightning-terminal/session"
+	"github.com/lightninglabs/lightning-terminal/subservers"
+	loop "github.com/lightninglabs/loop/loopd/perms"
 	"github.com/lightninglabs/loop/looprpc"
+	pool "github.com/lightninglabs/pool/perms"
 	"github.com/lightninglabs/pool/poolrpc"
 	"github.com/lightningnetwork/lnd/keychain"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -1089,6 +1093,12 @@ func bakeSuperMacaroon(cfg *LitNodeConfig, readOnly bool) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	permsMgr.RegisterSubServer(subservers.LOOP, loop.RequiredPermissions)
+	permsMgr.RegisterSubServer(subservers.POOL, pool.RequiredPermissions)
+	permsMgr.RegisterSubServer(
+		subservers.FARADAY, faraday.RequiredPermissions,
+	)
 
 	superMacPermissions := permsMgr.ActivePermissions(readOnly)
 	nullID := [4]byte{}

@@ -1,11 +1,17 @@
 package subservers
 
 import (
+	"context"
+
+	restProxy "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lightninglabs/lndclient"
+	"github.com/lightninglabs/loop"
 	"github.com/lightninglabs/loop/loopd"
+	"github.com/lightninglabs/loop/loopd/perms"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"google.golang.org/grpc"
+	"gopkg.in/macaroon-bakery.v2/bakery"
 )
 
 // loopSubServer implements the SubServer interface.
@@ -23,6 +29,10 @@ var _ SubServer = (*loopSubServer)(nil)
 // interface.
 func NewLoopSubServer(cfg *loopd.Config, remoteCfg *RemoteDaemonConfig,
 	remote bool) SubServer {
+
+	// Overwrite the loop daemon's user agent name, so it sends "litd"
+	// instead of "loopd".
+	loop.AgentName = "litd"
 
 	return &loopSubServer{
 		Daemon:    loopd.New(cfg, nil),
@@ -81,6 +91,19 @@ func (l *loopSubServer) RegisterGrpcService(registrar grpc.ServiceRegistrar) {
 	looprpc.RegisterSwapClientServer(registrar, l)
 }
 
+// RegisterRestService registers the sub-server's REST handlers with the given
+// endpoint.
+//
+// NOTE: this is part of the SubServer interface.
+func (l *loopSubServer) RegisterRestService(ctx context.Context,
+	mux *restProxy.ServeMux, endpoint string,
+	dialOpts []grpc.DialOption) error {
+
+	return looprpc.RegisterSwapClientHandlerFromEndpoint(
+		ctx, mux, endpoint, dialOpts,
+	)
+}
+
 // ServerErrChan returns an error channel that should be listened on after
 // starting the sub-server to listen for any runtime errors. It is optional and
 // may be set to nil. This only applies in integrated mode.
@@ -96,4 +119,12 @@ func (l *loopSubServer) ServerErrChan() chan error {
 // NOTE: this is part of the SubServer interface.
 func (l *loopSubServer) MacPath() string {
 	return l.cfg.MacaroonPath
+}
+
+// Permissions returns a map of all RPC methods and their required macaroon
+// permissions to access the sub-server.
+//
+// NOTE: this is part of the SubServer interface.
+func (l *loopSubServer) Permissions() map[string][]bakery.Op {
+	return perms.RequiredPermissions
 }

@@ -61,7 +61,7 @@ func (e *proxyErr) Unwrap() error {
 // component.
 func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 	superMacValidator session.SuperMacaroonValidator,
-	permsMgr *perms.Manager) *rpcProxy {
+	permsMgr *perms.Manager, subServerMgr *subservers.Manager) *rpcProxy {
 
 	// The gRPC web calls are protected by HTTP basic auth which is defined
 	// by base64(username:password). Because we only have a password, we
@@ -81,6 +81,7 @@ func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 		permsMgr:          permsMgr,
 		macValidator:      validator,
 		superMacValidator: superMacValidator,
+		subServerMgr:      subServerMgr,
 	}
 	p.grpcServer = grpc.NewServer(
 		// From the grpxProxy doc: This codec is *crucial* to the
@@ -151,19 +152,17 @@ type rpcProxy struct {
 	// must only ever be used atomically.
 	started int32
 
-	cfg       *Config
-	basicAuth string
-	permsMgr  *perms.Manager
+	cfg          *Config
+	basicAuth    string
+	permsMgr     *perms.Manager
+	subServerMgr *subservers.Manager
 
 	macValidator      macaroons.MacaroonValidator
 	superMacValidator session.SuperMacaroonValidator
 
 	superMacaroon string
 
-	lndConn     *grpc.ClientConn
-	faradayConn *grpc.ClientConn
-	loopConn    *grpc.ClientConn
-	poolConn    *grpc.ClientConn
+	lndConn *grpc.ClientConn
 
 	grpcServer   *grpc.Server
 	grpcWebProxy *grpcweb.WrappedGrpcServer
@@ -171,43 +170,7 @@ type rpcProxy struct {
 
 // Start creates initial connection to lnd.
 func (p *rpcProxy) Start(lndConn *grpc.ClientConn) error {
-	var err error
 	p.lndConn = lndConn
-
-	// Make sure we can connect to all the daemons that are configured to be
-	// running in remote mode.
-	if p.cfg.faradayRemote {
-		p.faradayConn, err = dialBackend(
-			"faraday", p.cfg.Remote.Faraday.RPCServer,
-			lncfg.CleanAndExpandPath(
-				p.cfg.Remote.Faraday.TLSCertPath,
-			),
-		)
-		if err != nil {
-			return fmt.Errorf("could not dial remote faraday: %v",
-				err)
-		}
-	}
-
-	if p.cfg.loopRemote {
-		p.loopConn, err = dialBackend(
-			"loop", p.cfg.Remote.Loop.RPCServer,
-			lncfg.CleanAndExpandPath(p.cfg.Remote.Loop.TLSCertPath),
-		)
-		if err != nil {
-			return fmt.Errorf("could not dial remote loop: %v", err)
-		}
-	}
-
-	if p.cfg.poolRemote {
-		p.poolConn, err = dialBackend(
-			"pool", p.cfg.Remote.Pool.RPCServer,
-			lncfg.CleanAndExpandPath(p.cfg.Remote.Pool.TLSCertPath),
-		)
-		if err != nil {
-			return fmt.Errorf("could not dial remote pool: %v", err)
-		}
-	}
 
 	atomic.CompareAndSwapInt32(&p.started, 0, 1)
 
@@ -223,27 +186,6 @@ func (p *rpcProxy) hasStarted() bool {
 // Stop shuts down the lnd connection.
 func (p *rpcProxy) Stop() error {
 	p.grpcServer.Stop()
-
-	if p.faradayConn != nil {
-		if err := p.faradayConn.Close(); err != nil {
-			log.Errorf("Error closing faraday connection: %v", err)
-			return err
-		}
-	}
-
-	if p.loopConn != nil {
-		if err := p.loopConn.Close(); err != nil {
-			log.Errorf("Error closing loop connection: %v", err)
-			return err
-		}
-	}
-
-	if p.poolConn != nil {
-		if err := p.poolConn.Close(); err != nil {
-			log.Errorf("Error closing pool connection: %v", err)
-			return err
-		}
-	}
 
 	return nil
 }
@@ -362,38 +304,32 @@ func (p *rpcProxy) makeDirector(allowLitRPC bool) func(ctx context.Context,
 		// since it must either be an lnd call or something that'll be
 		// handled by the integrated daemons that are hooking into lnd's
 		// gRPC server.
-		isFaraday := p.permsMgr.IsSubServerURI(
-			subservers.FARADAY, requestURI,
-		)
-		isLoop := p.permsMgr.IsSubServerURI(
-			subservers.LOOP, requestURI,
-		)
-		isPool := p.permsMgr.IsSubServerURI(
-			subservers.POOL, requestURI,
-		)
-		isLit := p.permsMgr.IsSubServerURI(
-			subservers.LIT, requestURI,
-		)
-		switch {
-		case isFaraday && p.cfg.faradayRemote:
-			return outCtx, p.faradayConn, nil
-
-		case isLoop && p.cfg.loopRemote:
-			return outCtx, p.loopConn, nil
-
-		case isPool && p.cfg.poolRemote:
-			return outCtx, p.poolConn, nil
+		handled, conn, err := p.subServerMgr.GetRemoteConn(requestURI)
+		if err != nil {
+			return outCtx, nil, status.Errorf(
+				codes.Unavailable, err.Error(),
+			)
+		}
+		if handled {
+			return outCtx, conn, nil
+		}
 
 		// Calls to LiT session RPC aren't allowed in some cases.
-		case isLit && !allowLitRPC:
+		isLit := p.permsMgr.IsSubServerURI(subservers.LIT, requestURI)
+		if isLit && !allowLitRPC {
 			return outCtx, nil, status.Errorf(
 				codes.Unimplemented, "unknown service %s",
 				requestURI,
 			)
-
-		default:
-			return outCtx, p.lndConn, nil
 		}
+
+		// If the rpcProxy has not started yet, then the lnd connection
+		// will not be initialised yet.
+		if !p.hasStarted() {
+			return outCtx, nil, ErrWaitingToStart
+		}
+
+		return outCtx, p.lndConn, nil
 	}
 }
 
@@ -542,46 +478,21 @@ func (p *rpcProxy) basicAuthToMacaroon(basicAuth, requestURI string,
 		return nil, ctxErr
 	}
 
-	var (
-		macPath string
-		macData []byte
-	)
-	subserver, err := p.permsMgr.SubServerHandler(requestURI)
-	if err != nil {
-		return nil, err
-	}
+	var macData []byte
+	handled, macPath := p.subServerMgr.MacaroonPath(requestURI)
 
-	switch subserver {
-	case subservers.LND:
+	switch {
+	case handled:
+
+	case p.permsMgr.IsSubServerURI(subservers.LND, requestURI):
 		_, _, _, macPath, macData = p.cfg.lndConnectParams()
 
-	case subservers.FARADAY:
-		if p.cfg.faradayRemote {
-			macPath = p.cfg.Remote.Faraday.MacaroonPath
-		} else {
-			macPath = p.cfg.Faraday.MacaroonPath
-		}
-
-	case subservers.LOOP:
-		if p.cfg.loopRemote {
-			macPath = p.cfg.Remote.Loop.MacaroonPath
-		} else {
-			macPath = p.cfg.Loop.MacaroonPath
-		}
-
-	case subservers.POOL:
-		if p.cfg.poolRemote {
-			macPath = p.cfg.Remote.Pool.MacaroonPath
-		} else {
-			macPath = p.cfg.Pool.MacaroonPath
-		}
-
-	case subservers.LIT:
+	case p.permsMgr.IsSubServerURI(subservers.LIT, requestURI):
 		macPath = p.cfg.MacaroonPath
 
 	default:
-		return nil, fmt.Errorf("unknown subserver handler: %v",
-			subserver)
+		return nil, fmt.Errorf("unknown gRPC web request: %v",
+			requestURI)
 	}
 
 	switch {
@@ -653,22 +564,9 @@ func (p *rpcProxy) convertSuperMacaroon(ctx context.Context, macHex string,
 
 	// Is this actually a request that goes to a daemon that is running
 	// remotely?
-	subserver, err := p.permsMgr.SubServerHandler(fullMethod)
-	if err == nil {
-		switch {
-		case subserver == subservers.FARADAY && p.cfg.faradayRemote:
-			return readMacaroon(lncfg.CleanAndExpandPath(
-				p.cfg.Remote.Faraday.MacaroonPath,
-			))
-		case subserver == subservers.LOOP && p.cfg.loopRemote:
-			return readMacaroon(lncfg.CleanAndExpandPath(
-				p.cfg.Remote.Loop.MacaroonPath,
-			))
-		case subserver == subservers.POOL && p.cfg.poolRemote:
-			return readMacaroon(lncfg.CleanAndExpandPath(
-				p.cfg.Remote.Pool.MacaroonPath,
-			))
-		}
+	handled, macBytes, err := p.subServerMgr.ReadRemoteMacaroon(fullMethod)
+	if handled {
+		return macBytes, err
 	}
 
 	return nil, nil

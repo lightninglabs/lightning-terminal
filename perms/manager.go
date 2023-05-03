@@ -1,25 +1,18 @@
 package perms
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 	"sync"
 
-	faraday "github.com/lightninglabs/faraday/frdrpcserver/perms"
-	loop "github.com/lightninglabs/loop/loopd/perms"
-	pool "github.com/lightninglabs/pool/perms"
 	"github.com/lightningnetwork/lnd"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 )
 
 const (
-	poolPerms    string = "pool"
-	loopPerms    string = "loop"
-	faradayPerms string = "faraday"
-	litPerms     string = "lit"
-	lndPerms     string = "lnd"
+	litPerms string = "lit"
+	lndPerms string = "lnd"
 )
 
 // Manager manages the permission lists that Lit requires.
@@ -54,9 +47,6 @@ type Manager struct {
 // was compiled with and then only the corresponding permissions will be added.
 func NewManager(withAllSubServers bool) (*Manager, error) {
 	permissions := make(map[string]map[string][]bakery.Op)
-	permissions[faradayPerms] = faraday.RequiredPermissions
-	permissions[loopPerms] = loop.RequiredPermissions
-	permissions[poolPerms] = pool.RequiredPermissions
 	permissions[litPerms] = RequiredPermissions
 	permissions[lndPerms] = lnd.MainRPCServerPermissions()
 	for k, v := range whiteListedLNDMethods {
@@ -104,6 +94,21 @@ func NewManager(withAllSubServers bool) (*Manager, error) {
 		fixedPerms:        permissions,
 		perms:             allPerms,
 	}, nil
+}
+
+// RegisterSubServer adds the permissions of a given sub-server to the set
+// managed by the Manager.
+func (pm *Manager) RegisterSubServer(name string,
+	permissions map[string][]bakery.Op) {
+
+	pm.permsMu.Lock()
+	defer pm.permsMu.Unlock()
+
+	pm.fixedPerms[name] = permissions
+
+	for uri, ops := range permissions {
+		pm.perms[uri] = ops
+	}
 }
 
 // OnLNDBuildTags should be called once a list of LND build tags has been
@@ -225,48 +230,17 @@ func (pm *Manager) ActivePermissions(readOnly bool) []bakery.Op {
 // _except_ for any LND permissions. In other words, this returns permissions
 // for which the external validator of Lit is responsible.
 func (pm *Manager) GetLitPerms() map[string][]bakery.Op {
-	mapSize := len(pm.fixedPerms[litPerms]) +
-		len(pm.fixedPerms[faradayPerms]) +
-		len(pm.fixedPerms[loopPerms]) + len(pm.fixedPerms[poolPerms])
+	result := make(map[string][]bakery.Op)
+	for subserver, ops := range pm.fixedPerms {
+		if subserver == lndPerms {
+			continue
+		}
 
-	result := make(map[string][]bakery.Op, mapSize)
-	for key, value := range pm.fixedPerms[faradayPerms] {
-		result[key] = value
-	}
-	for key, value := range pm.fixedPerms[loopPerms] {
-		result[key] = value
-	}
-	for key, value := range pm.fixedPerms[poolPerms] {
-		result[key] = value
-	}
-	for key, value := range pm.fixedPerms[litPerms] {
-		result[key] = value
+		for key, value := range ops {
+			result[key] = value
+		}
 	}
 	return result
-}
-
-// SubServerHandler returns the name of the subserver that should handle the
-// given URI.
-func (pm *Manager) SubServerHandler(uri string) (string, error) {
-	switch {
-	case pm.IsSubServerURI(lndPerms, uri):
-		return lndPerms, nil
-
-	case pm.IsSubServerURI(faradayPerms, uri):
-		return faradayPerms, nil
-
-	case pm.IsSubServerURI(loopPerms, uri):
-		return loopPerms, nil
-
-	case pm.IsSubServerURI(poolPerms, uri):
-		return poolPerms, nil
-
-	case pm.IsSubServerURI(litPerms, uri):
-		return litPerms, nil
-
-	default:
-		return "", fmt.Errorf("unknown gRPC web request: %v", uri)
-	}
 }
 
 // IsSubServerURI if the given URI belongs to the RPC of the given server.
@@ -291,28 +265,4 @@ func (pm *Manager) isLndURI(uri string) bool {
 	}
 	_, lndCall := pm.fixedPerms[lndPerms][uri]
 	return lndCall || lndSubServerCall
-}
-
-// IsLoopURI returns true if the given URI belongs to an RPC of loopd.
-func (pm *Manager) IsLoopURI(uri string) bool {
-	_, ok := pm.fixedPerms[loopPerms][uri]
-	return ok
-}
-
-// IsFaradayURI returns true if the given URI belongs to an RPC of faraday.
-func (pm *Manager) IsFaradayURI(uri string) bool {
-	_, ok := pm.fixedPerms[faradayPerms][uri]
-	return ok
-}
-
-// IsPoolURI returns true if the given URI belongs to an RPC of poold.
-func (pm *Manager) IsPoolURI(uri string) bool {
-	_, ok := pm.fixedPerms[poolPerms][uri]
-	return ok
-}
-
-// IsLitURI returns true if the given URI belongs to an RPC of LiT.
-func (pm *Manager) IsLitURI(uri string) bool {
-	_, ok := pm.fixedPerms[litPerms][uri]
-	return ok
 }

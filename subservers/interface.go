@@ -1,10 +1,14 @@
 package subservers
 
 import (
+	"context"
+
+	restProxy "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/macaroons"
 	"google.golang.org/grpc"
+	"gopkg.in/macaroon-bakery.v2/bakery"
 )
 
 // SubServer defines an interface that should be implemented by any sub-server
@@ -36,6 +40,11 @@ type SubServer interface {
 	// the given registrar.
 	RegisterGrpcService(grpc.ServiceRegistrar)
 
+	// RegisterRestService registers the sub-server's REST handlers with the
+	// given endpoint.
+	RegisterRestService(context.Context, *restProxy.ServeMux, string,
+		[]grpc.DialOption) error
+
 	// ServerErrChan returns an error channel that should be listened on
 	// after starting the sub-server to listen for any runtime errors. It
 	// is optional and may be set to nil. This only applies in integrated
@@ -45,4 +54,8 @@ type SubServer interface {
 	// MacPath returns the path to the sub-server's macaroon if it is not
 	// running in remote mode.
 	MacPath() string
+
+	// Permissions returns a map of all RPC methods and their required
+	// macaroon permissions to access the sub-server.
+	Permissions() map[string][]bakery.Op
 }
