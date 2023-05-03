@@ -304,7 +304,12 @@ func (p *rpcProxy) makeDirector(allowLitRPC bool) func(ctx context.Context,
 		// since it must either be an lnd call or something that'll be
 		// handled by the integrated daemons that are hooking into lnd's
 		// gRPC server.
-		handled, conn := p.subServerMgr.GetRemoteConn(requestURI)
+		handled, conn, err := p.subServerMgr.GetRemoteConn(requestURI)
+		if err != nil {
+			return outCtx, nil, status.Errorf(
+				codes.Unavailable, err.Error(),
+			)
+		}
 		if handled {
 			return outCtx, conn, nil
 		}

@@ -153,7 +153,7 @@ func (s *Manager) RegisterRestServices(ctx context.Context,
 // and if so, the remote connection to that sub-server is returned. The bool
 // return value indicates if the uri is managed by one of the sub-servers
 // running in remote mode.
-func (s *Manager) GetRemoteConn(uri string) (bool, *grpc.ClientConn) {
+func (s *Manager) GetRemoteConn(uri string) (bool, *grpc.ClientConn, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -163,13 +163,18 @@ func (s *Manager) GetRemoteConn(uri string) (bool, *grpc.ClientConn) {
 		}
 
 		if !ss.Remote() {
-			return false, nil
+			return false, nil, nil
 		}
 
-		return true, ss.remoteConn
+		if ss.remoteConn == nil {
+			return true, nil, fmt.Errorf("not yet connected to "+
+				"remote sub-server(%s)", ss.Name())
+		}
+
+		return true, ss.remoteConn, nil
 	}
 
-	return false, nil
+	return false, nil, nil
 }
 
 // ValidateMacaroon checks if any of the manager's sub-servers owns the given
