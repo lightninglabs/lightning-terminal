@@ -9,6 +9,7 @@ import (
 
 	restProxy "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lightninglabs/lightning-terminal/perms"
+	"github.com/lightninglabs/lightning-terminal/status"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightningnetwork/lnd/lncfg"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -32,15 +33,19 @@ var (
 
 // Manager manages a set of subServer objects.
 type Manager struct {
-	servers  []*subServerWrapper
-	permsMgr *perms.Manager
-	mu       sync.RWMutex
+	servers      []*subServerWrapper
+	permsMgr     *perms.Manager
+	statusServer *status.Manager
+	mu           sync.RWMutex
 }
 
-// NewManager constructs a new subServerMgr.
-func NewManager(permsMgr *perms.Manager) *Manager {
+// NewManager constructs a new Manager.
+func NewManager(permsMgr *perms.Manager,
+	statusServer *status.Manager) *Manager {
+
 	return &Manager{
-		permsMgr: permsMgr,
+		permsMgr:     permsMgr,
+		statusServer: statusServer,
 	}
 }
 
@@ -48,6 +53,9 @@ func NewManager(permsMgr *perms.Manager) *Manager {
 func (s *Manager) AddServer(ss SubServer, enable bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	// Register all sub-servers with the status server.
+	s.statusServer.RegisterSubServer(ss.Name())
 
 	// If the sub-server has explicitly been disabled, then we don't add it
 	// to the set of servers tracked by the Manager.
@@ -63,12 +71,15 @@ func (s *Manager) AddServer(ss SubServer, enable bool) {
 
 	// Register the sub-server's permissions with the permission manager.
 	s.permsMgr.RegisterSubServer(ss.Name(), ss.Permissions())
+
+	// Mark the sub-server as enabled with the status manager.
+	s.statusServer.SetEnabled(ss.Name())
 }
 
 // StartIntegratedServers starts all the manager's sub-servers that should be
 // started in integrated mode.
 func (s *Manager) StartIntegratedServers(lndClient lnrpc.LightningClient,
-	lndGrpc *lndclient.GrpcLndServices, withMacaroonService bool) error {
+	lndGrpc *lndclient.GrpcLndServices, withMacaroonService bool) {
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -80,19 +91,24 @@ func (s *Manager) StartIntegratedServers(lndClient lnrpc.LightningClient,
 
 		err := ss.startIntegrated(
 			lndClient, lndGrpc, withMacaroonService,
+			func(err error) {
+				s.statusServer.SetErrored(
+					ss.Name(), err.Error(),
+				)
+			},
 		)
 		if err != nil {
-			return fmt.Errorf("unable to start %v in integrated "+
-				"mode: %v", ss.Name(), err)
+			s.statusServer.SetErrored(ss.Name(), err.Error())
+			continue
 		}
-	}
 
-	return nil
+		s.statusServer.SetRunning(ss.Name())
+	}
 }
 
 // ConnectRemoteSubServers creates connections to all the manager's sub-servers
 // that are running remotely.
-func (s *Manager) ConnectRemoteSubServers() error {
+func (s *Manager) ConnectRemoteSubServers() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -103,12 +119,12 @@ func (s *Manager) ConnectRemoteSubServers() error {
 
 		err := ss.connectRemote()
 		if err != nil {
-			return fmt.Errorf("failed to connect to remote %s: %v",
-				ss.Name(), err)
+			s.statusServer.SetErrored(ss.Name(), err.Error())
+			continue
 		}
-	}
 
-	return nil
+		s.statusServer.SetRunning(ss.Name())
+	}
 }
 
 // RegisterRPCServices registers all the manager's sub-servers with the given
@@ -299,6 +315,8 @@ func (s *Manager) Stop() error {
 			log.Errorf("Error stopping %s: %v", ss.Name(), err)
 			returnErr = err
 		}
+
+		s.statusServer.SetStopped(ss.Name())
 	}
 
 	return returnErr
