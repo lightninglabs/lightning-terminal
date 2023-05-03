@@ -491,7 +491,10 @@ func (g *LightningTerminal) start() error {
 
 	// Initialise any connections to sub-servers that we are running in
 	// remote mode.
-	g.subServerMgr.ConnectRemoteSubServers()
+	if err := g.subServerMgr.ConnectRemoteSubServers(); err != nil {
+		return fmt.Errorf("error connecting to remote sub-servers: %v",
+			err)
+	}
 
 	// Now start the RPC proxy that will handle all incoming gRPC, grpc-web
 	// and REST requests.

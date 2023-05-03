@@ -84,7 +84,7 @@ func (s *Manager) StartIntegratedServers(lndClient lnrpc.LightningClient,
 
 // ConnectRemoteSubServers creates connections to all the manager's sub-servers
 // that are running remotely.
-func (s *Manager) ConnectRemoteSubServers() {
+func (s *Manager) ConnectRemoteSubServers() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -95,12 +95,12 @@ func (s *Manager) ConnectRemoteSubServers() {
 
 		err := ss.connectRemote()
 		if err != nil {
-			log.Errorf("Failed to connect to remote %s: %v",
+			return fmt.Errorf("failed to connect to remote %s: %v",
 				ss.Name(), err)
-
-			continue
 		}
 	}
+
+	return nil
 }
 
 // RegisterRPCServices registers all the manager's sub-servers with the given
