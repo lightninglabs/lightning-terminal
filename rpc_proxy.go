@@ -369,7 +369,7 @@ func (p *rpcProxy) UnaryServerInterceptor(ctx context.Context, req interface{},
 	info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{},
 	error) {
 
-	if !p.hasStarted() {
+	if !p.hasStarted() && !isStatusReq(info.FullMethod) {
 		return nil, ErrWaitingToStart
 	}
 
@@ -414,7 +414,7 @@ func (p *rpcProxy) StreamServerInterceptor(srv interface{},
 	ss grpc.ServerStream, info *grpc.StreamServerInfo,
 	handler grpc.StreamHandler) error {
 
-	if !p.hasStarted() {
+	if !p.hasStarted() && !isStatusReq(info.FullMethod) {
 		return ErrWaitingToStart
 	}
 
@@ -627,4 +627,12 @@ func isGrpcRequest(req *http.Request) bool {
 	contentType := req.Header.Get("content-type")
 	return req.ProtoMajor == 2 &&
 		strings.HasPrefix(contentType, contentTypeGrpc)
+}
+
+// isStatusReq returns true if the given request is intended for the
+// litrpc.Status service.
+func isStatusReq(uri string) bool {
+	return strings.HasPrefix(
+		uri, fmt.Sprintf("/%s", litrpc.Status_ServiceDesc.ServiceName),
+	)
 }

@@ -30,6 +30,7 @@ import (
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
 	"github.com/lightninglabs/lightning-terminal/rules"
 	"github.com/lightninglabs/lightning-terminal/session"
+	"github.com/lightninglabs/lightning-terminal/status"
 	"github.com/lightninglabs/lightning-terminal/subservers"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightningnetwork/lnd"
@@ -160,6 +161,7 @@ type LightningTerminal struct {
 	basicClient lnrpc.LightningClient
 
 	subServerMgr *subservers.Manager
+	statusMgr    *status.Manager
 
 	autopilotClient autopilotserver.Autopilot
 
@@ -191,7 +193,9 @@ type LightningTerminal struct {
 
 // New creates a new instance of the lightning-terminal daemon.
 func New() *LightningTerminal {
-	return &LightningTerminal{}
+	return &LightningTerminal{
+		statusMgr: status.NewStatusManager(),
+	}
 }
 
 // Run starts everything and then blocks until either the application is shut
@@ -241,6 +245,7 @@ func (g *LightningTerminal) Run() error {
 	)
 
 	litrpc.RegisterProxyServer(g.rpcProxy.grpcServer, g.rpcProxy)
+	litrpc.RegisterStatusServer(g.rpcProxy.grpcServer, g.statusMgr)
 
 	// Start the main web server that dispatches requests either to the
 	// static UI file server or the RPC proxy. This makes it possible to
@@ -373,7 +378,7 @@ func (g *LightningTerminal) start() error {
 			),
 		},
 		registerGrpcServers: func(server *grpc.Server) {
-			g.registerSubDaemonGrpcServers(server, false)
+			g.registerSubDaemonGrpcServers(server, true)
 		},
 		superMacBaker:           superMacBaker,
 		firstConnectionDeadline: g.cfg.FirstLNCConnDeadline,
@@ -861,22 +866,24 @@ func (g *LightningTerminal) RegisterGrpcSubserver(server *grpc.Server) error {
 
 	// Register all other daemon RPC servers that are running in-process.
 	// The LiT session server should be enabled on the main interface.
-	g.registerSubDaemonGrpcServers(server, true)
+	g.registerSubDaemonGrpcServers(server, false)
 
 	return nil
 }
 
 // registerSubDaemonGrpcServers registers the sub daemon (Faraday, Loop, Pool
 // and LiT session) servers to a given gRPC server, given they are running in
-// the local process. The lit session server is gated by its own boolean because
-// we don't necessarily want to expose it on all listeners, given its security
-// implications.
+// the local process. Some of LiT's own sub-servers should be registered with
+// LNC sessions and some should not - the forLNCSession boolean can be used to
+// control this.
 func (g *LightningTerminal) registerSubDaemonGrpcServers(server *grpc.Server,
-	withLitRPC bool) {
+	forLNCSession bool) {
 
 	g.subServerMgr.RegisterRPCServices(server)
 
-	if withLitRPC {
+	if forLNCSession {
+		litrpc.RegisterStatusServer(server, g.statusMgr)
+	} else {
 		litrpc.RegisterSessionsServer(server, g.sessionRpcServer)
 		litrpc.RegisterAccountsServer(server, g.accountRpcServer)
 	}
@@ -940,6 +947,13 @@ func (g *LightningTerminal) RegisterRestSubserver(ctx context.Context,
 		return err
 	}
 
+	err = litrpc.RegisterStatusHandlerFromEndpoint(
+		ctx, mux, endpoint, dialOpts,
+	)
+	if err != nil {
+		return err
+	}
+
 	return g.subServerMgr.RegisterRestServices(ctx, mux, endpoint, dialOpts)
 }
 
@@ -951,6 +965,10 @@ func (g *LightningTerminal) RegisterRestSubserver(ctx context.Context,
 // NOTE: This is part of the lnd.ExternalValidator interface.
 func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 	requiredPermissions []bakery.Op, fullMethod string) error {
+
+	if _, ok := perms.MacaroonWhitelist[fullMethod]; ok {
+		return nil
+	}
 
 	macHex, err := macaroons.RawMacaroonFromContext(ctx)
 	if err != nil {

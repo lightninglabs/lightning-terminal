@@ -48,6 +48,10 @@ type Manager struct {
 func NewManager(withAllSubServers bool) (*Manager, error) {
 	permissions := make(map[string]map[string][]bakery.Op)
 	permissions[litPerms] = RequiredPermissions
+	for k, v := range MacaroonWhitelist {
+		permissions[litPerms][k] = v
+	}
+
 	permissions[lndPerms] = lnd.MainRPCServerPermissions()
 	for k, v := range whiteListedLNDMethods {
 		permissions[lndPerms][k] = v

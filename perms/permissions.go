@@ -107,4 +107,12 @@ var (
 		"RouterRPC":           true,
 		"WatchtowerClientRPC": true,
 	}
+
+	// MacaroonWhitelist defines methods that we don't require macaroons to
+	// access.
+	MacaroonWhitelist = map[string][]bakery.Op{
+		// The Status service must be available at all times, even
+		// before we can check macaroons, so we whitelist it.
+		"/litrpc.Status/SubServerStatus": {},
+	}
 )
