@@ -26,6 +26,7 @@ import (
 	"github.com/lightninglabs/faraday/frdrpc"
 	terminal "github.com/lightninglabs/lightning-terminal"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
+	"github.com/lightninglabs/lightning-terminal/subservers"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/lightninglabs/pool/poolrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc"
@@ -723,7 +724,37 @@ func (hn *HarnessNode) Start(litdBinary string, litdError chan<- error,
 func (hn *HarnessNode) WaitUntilStarted(conn grpc.ClientConnInterface,
 	timeout time.Duration) error {
 
-	err := hn.waitForState(conn, timeout, func(s lnrpc.WalletState) bool {
+	// First wait for Litd status server to show that LND has started.
+	ctx := context.Background()
+	rawConn, err := connectLitRPC(
+		ctx, hn.Cfg.LitAddr(), hn.Cfg.LitTLSCertPath, "",
+	)
+	if err != nil {
+		return err
+	}
+
+	litConn := litrpc.NewStatusClient(rawConn)
+
+	err = wait.NoError(func() error {
+		states, err := litConn.SubServerStatus(
+			ctx, &litrpc.SubServerStatusReq{},
+		)
+		if err != nil {
+			return err
+		}
+
+		lndStatus, ok := states.SubServers[subservers.LND]
+		if !ok || !lndStatus.Running {
+			return fmt.Errorf("LND has not yet started")
+		}
+
+		return nil
+	}, lntest.DefaultTimeout)
+	if err != nil {
+		return err
+	}
+
+	err = hn.waitForState(conn, timeout, func(s lnrpc.WalletState) bool {
 		return s >= lnrpc.WalletState_SERVER_ACTIVE
 	})
 	if err != nil {
