@@ -609,8 +609,8 @@ func (p *rpcProxy) convertSuperMacaroon(ctx context.Context, macHex string,
 // checkSubSystemStarted checks if the subsystem responsible for handling the
 // given URI has started.
 func (p *rpcProxy) checkSubSystemStarted(requestURI string) error {
-	// A request to Lit's status server is always allowed.
-	if isStatusReq(requestURI) {
+	// A request to Lit's status and proxy services is always allowed.
+	if isStatusReq(requestURI) || isProxyReq(requestURI) {
 		return nil
 	}
 
@@ -630,7 +630,7 @@ func (p *rpcProxy) checkSubSystemStarted(requestURI string) error {
 		system = subservers.LND
 
 	default:
-		return fmt.Errorf("unknown gRPC web request: %v", requestURI)
+		return ErrUnknownRequest
 	}
 
 	// Check with the status manger to see if the sub-server is ready to
@@ -684,5 +684,13 @@ func isGrpcRequest(req *http.Request) bool {
 func isStatusReq(uri string) bool {
 	return strings.HasPrefix(
 		uri, fmt.Sprintf("/%s", litrpc.Status_ServiceDesc.ServiceName),
+	)
+}
+
+// isProxyReq returns true if the given request is intended for the litrpc.Proxy
+// service.
+func isProxyReq(uri string) bool {
+	return strings.HasPrefix(
+		uri, fmt.Sprintf("/%s", litrpc.Proxy_ServiceDesc.ServiceName),
 	)
 }
