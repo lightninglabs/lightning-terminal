@@ -115,9 +115,9 @@ a standalone process on the same or remote machine (called "lnd remote mode",
 set by `lnd-mode=remote` config option)](doc/config-lnd-remote.md).
 
 In addition to those main modes, the individual bundled daemons (Faraday, Loop
-and Pool) can be toggled to be integrated or remote as well. This offers a
-large number of possible configuration combinations, of which not all are
-fully supported due to technical reasons.
+and Pool) can be toggled to be integrated or remote as well, or as disabled.
+This offers a large number of possible configuration combinations, of which not
+all are fully supported due to technical reasons.
 
 The following table shows the supported combinations:
 
@@ -129,6 +129,9 @@ The following table shows the supported combinations:
 | `faraday-mode=remote`                  |                       | X                 |
 | `loop-mode=remote`                     |                       | X                 |
 | `pool-mode=remote`                     |                       | X                 |
+| `faraday-mode=disable`                 | X                     | X                 |
+| `loop-mode=disable`                    | X                     | X                 |
+| `pool-mode=disable`                    | X                     | X                 |
 | `lnd` running in "stateless init" mode | X                     |                   |
 
 ## Daemon Versions packaged with LiT
