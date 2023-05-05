@@ -30,6 +30,7 @@ import (
 	pool "github.com/lightninglabs/pool/perms"
 	"github.com/lightninglabs/pool/poolrpc"
 	tap "github.com/lightninglabs/taproot-assets/perms"
+	"github.com/lightninglabs/taproot-assets/taprpc"
 	"github.com/lightningnetwork/lnd/keychain"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
@@ -146,6 +147,15 @@ var (
 	poolMacaroonFn = func(cfg *LitNodeConfig) string {
 		return cfg.PoolMacPath
 	}
+	tapRequestFn = func(ctx context.Context,
+		c grpc.ClientConnInterface) (proto.Message, error) {
+
+		tapConn := taprpc.NewTaprootAssetsClient(c)
+		return tapConn.ListAssets(ctx, &taprpc.ListAssetRequest{})
+	}
+	tapMacaroonFn = func(cfg *LitNodeConfig) string {
+		return cfg.TapMacPath
+	}
 	litSessionRequestFn = func(ctx context.Context,
 		c grpc.ClientConnInterface) (proto.Message, error) {
 
@@ -234,6 +244,14 @@ var (
 		allowedThroughLNC: true,
 		grpcWebURI:        "/poolrpc.Trader/GetInfo",
 		restWebURI:        "/v1/pool/info",
+	}, {
+		name:              "taprpc",
+		macaroonFn:        tapMacaroonFn,
+		requestFn:         tapRequestFn,
+		successPattern:    "\"assets\":[]",
+		allowedThroughLNC: true,
+		grpcWebURI:        "/taprpc.TaprootAssets/ListAssets",
+		restWebURI:        "/v1/taproot-assets/assets",
 	}, {
 		name:       "litrpc-sessions",
 		macaroonFn: litMacaroonFn,
@@ -644,7 +662,13 @@ func runGRPCAuthTest(t *testing.T, hostPort, tlsCertPath, macPath string,
 	ctxm = macaroonContext(ctxt, dummyMacBytes)
 	_, err = makeRequest(ctxm, rawConn)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "cannot get macaroon: root key with")
+
+	errStr := err.Error()
+	err1 := strings.Contains(errStr, "cannot get macaroon: root")
+	err2 := strings.Contains(errStr, "cannot get macaroon: sql: no")
+	require.Truef(
+		t, err1 || err2, "no macaroon, got unexpected error: %v", err,
+	)
 
 	// Then finally we try with the correct macaroon which should now
 	// succeed.
@@ -692,7 +716,9 @@ func runUIPasswordCheck(t *testing.T, hostPort, tlsCertPath, uiPassword string,
 	errStr := err.Error()
 	err1 := strings.Contains(errStr, "invalid auth: invalid basic auth")
 	err2 := strings.Contains(errStr, "cannot get macaroon: root key with")
-	require.True(t, err1 || err2, "wrong UI password and dummy mac")
+	err3 := strings.Contains(errStr, "cannot get macaroon: sql: no rows")
+	require.Truef(t, err1 || err2 || err3, "wrong UI password and dummy "+
+		"mac, got unexpected error: %v", err)
 
 	// Using the correct UI password should work for all requests.
 	ctxm = uiPasswordContext(ctxt, uiPassword, false)
@@ -712,9 +738,11 @@ func runUIPasswordCheck(t *testing.T, hostPort, tlsCertPath, uiPassword string,
 		_, err = makeRequest(ctxm, rawConn)
 
 		require.Error(t, err)
-		require.Contains(
-			t, err.Error(), "cannot get macaroon: root",
-		)
+		errStr := err.Error()
+		err1 := strings.Contains(errStr, "cannot get macaroon: root")
+		err2 := strings.Contains(errStr, "cannot get macaroon: sql: no")
+		require.Truef(t, err1 || err2, "no macaroon, got unexpected "+
+			"error: %v", err)
 		return
 	}
 
@@ -1097,6 +1125,7 @@ func bakeSuperMacaroon(cfg *LitNodeConfig, readOnly bool) (string, error) {
 
 	permsMgr.RegisterSubServer(subservers.LOOP, loop.RequiredPermissions)
 	permsMgr.RegisterSubServer(subservers.POOL, pool.RequiredPermissions)
+	permsMgr.RegisterSubServer(subservers.TAP, tap.RequiredPermissions)
 	permsMgr.RegisterSubServer(
 		subservers.FARADAY, faraday.RequiredPermissions,
 	)

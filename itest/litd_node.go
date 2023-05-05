@@ -27,6 +27,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/lightninglabs/pool/poolrpc"
+	"github.com/lightninglabs/taproot-assets/taprpc"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/invoicesrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
@@ -71,6 +72,7 @@ type LitNodeConfig struct {
 	FaradayMacPath string
 	LoopMacPath    string
 	PoolMacPath    string
+	TapMacPath     string
 	LitTLSCertPath string
 	LitMacPath     string
 
@@ -79,6 +81,7 @@ type LitNodeConfig struct {
 	FaradayDir string
 	LoopDir    string
 	PoolDir    string
+	TapdDir    string
 
 	LitPort     int
 	LitRESTPort int
@@ -182,15 +185,16 @@ func (cfg *LitNodeConfig) GenArgs(opts ...LitArgOption) []string {
 func (cfg *LitNodeConfig) defaultLitdArgs() *litArgs {
 	var (
 		args = map[string]string{
-			"httpslisten":         cfg.LitAddr(),
-			"insecure-httplisten": cfg.LitRESTAddr(),
-			"lit-dir":             cfg.LitDir,
-			"faraday.faradaydir":  cfg.FaradayDir,
-			"loop.loopdir":        cfg.LoopDir,
-			"pool.basedir":        cfg.PoolDir,
-			"uipassword":          cfg.UIPassword,
-			"enablerest":          "",
-			"restcors":            "*",
+			"httpslisten":            cfg.LitAddr(),
+			"insecure-httplisten":    cfg.LitRESTAddr(),
+			"lit-dir":                cfg.LitDir,
+			"faraday.faradaydir":     cfg.FaradayDir,
+			"loop.loopdir":           cfg.LoopDir,
+			"pool.basedir":           cfg.PoolDir,
+			"taproot-assets.tapddir": cfg.TapdDir,
+			"uipassword":             cfg.UIPassword,
+			"enablerest":             "",
+			"restcors":               "*",
 		}
 	)
 	for _, arg := range cfg.LitArgs {
@@ -356,6 +360,7 @@ func NewNode(t *testing.T, cfg *LitNodeConfig,
 	cfg.FaradayDir = filepath.Join(cfg.LitDir, "faraday")
 	cfg.LoopDir = filepath.Join(cfg.LitDir, "loop")
 	cfg.PoolDir = filepath.Join(cfg.LitDir, "pool")
+	cfg.TapdDir = filepath.Join(cfg.LitDir, "tapd")
 	cfg.TLSCertPath = filepath.Join(cfg.BaseDir, "tls.cert")
 	cfg.TLSKeyPath = filepath.Join(cfg.BaseDir, "tls.key")
 
@@ -373,6 +378,9 @@ func NewNode(t *testing.T, cfg *LitNodeConfig,
 	)
 	cfg.PoolMacPath = filepath.Join(
 		cfg.PoolDir, cfg.NetParams.Name, "pool.macaroon",
+	)
+	cfg.TapMacPath = filepath.Join(
+		cfg.TapdDir, "data", cfg.NetParams.Name, "admin.macaroon",
 	)
 	cfg.LitMacPath = filepath.Join(
 		cfg.LitDir, cfg.NetParams.Name, "lit.macaroon",
@@ -730,6 +738,18 @@ func (hn *HarnessNode) WaitUntilStarted(conn grpc.ClientConnInterface,
 			return err
 		}
 
+		tapClient, err := hn.tapClient()
+		if err != nil {
+			return err
+		}
+
+		_, err = tapClient.ListAssets(
+			ctxt, &taprpc.ListAssetRequest{},
+		)
+		if err != nil {
+			return err
+		}
+
 		return nil
 	}, timeout)
 }
@@ -776,6 +796,20 @@ func (hn *HarnessNode) poolClient() (poolrpc.TraderClient, error) {
 	}
 
 	return poolrpc.NewTraderClient(conn), nil
+}
+
+func (hn *HarnessNode) tapClient() (taprpc.TaprootAssetsClient, error) {
+	mac, err := hn.ReadMacaroon(hn.Cfg.TapMacPath, lntest.DefaultTimeout)
+	if err != nil {
+		return nil, err
+	}
+
+	conn, err := hn.ConnectRPCWithMacaroon(mac)
+	if err != nil {
+		return nil, err
+	}
+
+	return taprpc.NewTaprootAssetsClient(conn), nil
 }
 
 // waitForState waits until the current node state fulfills the given
