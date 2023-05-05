@@ -1422,10 +1422,12 @@ func (g *LightningTerminal) initSubServers() {
 		g.cfg.Pool, g.cfg.Remote.Pool, g.cfg.poolRemote,
 	))
 
-	g.subServerMgr.AddServer(subservers.NewTaprootAssetsSubServer(
-		g.cfg.TaprootAssets, g.cfg.Remote.TaprootAssets,
-		g.cfg.tapRemote,
-	))
+	if g.cfg.TaprootAssetsMode != ModeDisable {
+		g.subServerMgr.AddServer(subservers.NewTaprootAssetsSubServer(
+			g.cfg.TaprootAssets, g.cfg.Remote.TaprootAssets,
+			g.cfg.tapRemote,
+		))
+	}
 }
 
 // BakeSuperMacaroon uses the lnd client to bake a macaroon that can include

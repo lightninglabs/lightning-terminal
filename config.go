@@ -42,12 +42,13 @@ const (
 
 	ModeIntegrated = "integrated"
 	ModeRemote     = "remote"
+	ModeDisable    = "disable"
 
 	DefaultLndMode     = ModeRemote
 	defaultFaradayMode = ModeIntegrated
 	defaultLoopMode    = ModeIntegrated
 	defaultPoolMode    = ModeIntegrated
-	defaultTapMode     = ModeIntegrated
+	defaultTapMode     = ModeDisable
 
 	defaultConfigFilename = "lit.conf"
 
@@ -195,7 +196,7 @@ type Config struct {
 	PoolMode string       `long:"pool-mode" description:"The mode to run pool in, either 'integrated' (default) or 'remote'. 'integrated' means poold is started alongside the UI and everything is stored in pool's main data directory, configure everything by using the --pool.* flags. 'remote' means the UI connects to an existing poold node and acts as a proxy for gRPC calls to it." choice:"integrated" choice:"remote"`
 	Pool     *pool.Config `group:"Integrated pool options (use when pool-mode=integrated)" namespace:"pool"`
 
-	TaprootAssetsMode string         `long:"taproot-assets-mode" description:"The mode to run taproot assets in, either 'integrated' (default) or 'remote'. 'integrated' means tapd is started alongside the UI and everything is stored in tap's main data directory, configure everything by using the --taproot-assets.* flags. 'remote' means the UI connects to an existing tapd node and acts as a proxy for gRPC calls to it." choice:"integrated" choice:"remote"`
+	TaprootAssetsMode string         `long:"taproot-assets-mode" description:"The mode to run taproot assets in, either 'integrated' (default), 'remote' or 'disable'. 'integrated' means tapd is started alongside the UI and everything is stored in tap's main data directory, configure everything by using the --taproot-assets.* flags. 'remote' means the UI connects to an existing tapd node and acts as a proxy for gRPC calls to it. 'disable' means that LiT is started without a connection to tapd" choice:"integrated" choice:"disable"`
 	TaprootAssets     *tapcfg.Config `group:"Integrated taproot assets options (use when taproot-assets=integrated)" namespace:"taproot-assets"`
 
 	RPCMiddleware *mid.Config `group:"RPC middleware options" namespace:"rpcmiddleware"`
@@ -462,9 +463,13 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 		return nil, err
 	}
 
-	cfg.TaprootAssets, err = tapcfg.ValidateConfig(*cfg.TaprootAssets, log)
-	if err != nil {
-		return nil, err
+	if cfg.TaprootAssetsMode != ModeDisable {
+		cfg.TaprootAssets, err = tapcfg.ValidateConfig(
+			*cfg.TaprootAssets, log,
+		)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// We've set the network before and have now validated the loop config

@@ -19,11 +19,13 @@ func testModeRemote(ctx context.Context, net *NetworkHarness,
 	t *harnessTest) {
 
 	testWithAndWithoutUIPassword(ctx, net, t.t, remoteTestSuite, net.Bob)
+
+	testDisablingSubServers(ctx, net, t.t, remoteTestSuite, net.Bob)
 }
 
 // remoteTestSuite makes sure that in remote mode all daemons work correctly.
 func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
-	withoutUIPassword bool, runNum int) {
+	withoutUIPassword, subServersDisabled bool, runNum int) {
 
 	// Some very basic functionality tests to make sure lnd is working fine
 	// in remote mode.
@@ -54,12 +56,18 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 
 		for _, endpoint := range endpoints {
 			endpoint := endpoint
+			endpointEnabled := subServersDisabled &&
+				endpoint.canDisable
+
 			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
 				runGRPCAuthTest(
 					ttt, cfg.LitAddr(), cfg.LitTLSCertPath,
 					endpoint.macaroonFn(cfg),
 					endpoint.requestFn,
 					endpoint.successPattern,
+					endpointEnabled,
+					"unknown permissions required for "+
+						"method",
 				)
 			})
 		}
@@ -70,6 +78,8 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 
 		for _, endpoint := range endpoints {
 			endpoint := endpoint
+			endpointEnabled := subServersDisabled &&
+				endpoint.canDisable
 
 			shouldFailWithoutMacaroon := false
 			if withoutUIPassword {
@@ -82,6 +92,9 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					cfg.UIPassword, endpoint.requestFn,
 					shouldFailWithoutMacaroon,
 					endpoint.successPattern,
+					endpointEnabled,
+					"unknown permissions required for "+
+						"method",
 				)
 			})
 		}
@@ -96,10 +109,16 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 
 		for _, endpoint := range endpoints {
 			endpoint := endpoint
+			endpointEnabled := subServersDisabled &&
+				endpoint.canDisable
+
 			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
 				runGRPCWebAuthTest(
 					ttt, cfg.LitAddr(), cfg.UIPassword,
 					endpoint.grpcWebURI, withoutUIPassword,
+					endpointEnabled,
+					"unknown permissions required for "+
+						"method",
 				)
 			})
 		}
@@ -117,12 +136,18 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 
 		for _, endpoint := range endpoints {
 			endpoint := endpoint
+			endpointEnabled := subServersDisabled &&
+				endpoint.canDisable
+
 			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
 				runGRPCAuthTest(
 					ttt, cfg.LitAddr(), cfg.LitTLSCertPath,
 					superMacFile,
 					endpoint.requestFn,
 					endpoint.successPattern,
+					endpointEnabled,
+					"unknown permissions required for "+
+						"method",
 				)
 			})
 		}
@@ -133,6 +158,8 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 
 		for _, endpoint := range endpoints {
 			endpoint := endpoint
+			endpointDisabled := subServersDisabled &&
+				endpoint.canDisable
 
 			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
 				runRESTAuthTest(
@@ -141,6 +168,7 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					endpoint.restWebURI,
 					endpoint.successPattern,
 					endpoint.restPOST, withoutUIPassword,
+					endpointDisabled,
 				)
 			})
 		}
@@ -162,12 +190,16 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 
 		for _, endpoint := range endpoints {
 			endpoint := endpoint
+			endpointDisabled := subServersDisabled &&
+				endpoint.canDisable
+
 			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
 				runLNCAuthTest(
 					ttt, rawLNCConn, endpoint.requestFn,
 					endpoint.successPattern,
 					endpoint.allowedThroughLNC,
 					"unknown service",
+					endpointDisabled,
 				)
 			})
 		}
@@ -203,12 +235,16 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 
 		for _, endpoint := range endpoints {
 			endpoint := endpoint
+			endpointDisabled := subServersDisabled &&
+				endpoint.canDisable
+
 			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
 				allowed := customURIs[endpoint.grpcWebURI]
 				runLNCAuthTest(
 					ttt, rawLNCConn, endpoint.requestFn,
 					endpoint.successPattern,
 					allowed, "permission denied",
+					endpointDisabled,
 				)
 			})
 		}

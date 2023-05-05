@@ -24,6 +24,7 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/lightninglabs/faraday/frdrpc"
+	terminal "github.com/lightninglabs/lightning-terminal"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/lightninglabs/pool/poolrpc"
@@ -63,7 +64,8 @@ var (
 type LitNodeConfig struct {
 	*node.BaseNodeConfig
 
-	LitArgs []string
+	LitArgs    []string
+	ActiveArgs *litArgs
 
 	RemoteMode bool
 
@@ -132,6 +134,19 @@ func (l *litArgs) addArg(name, value string) {
 	l.args[name] = value
 }
 
+// getArg gets the arg with the given name from the set and returns the value.
+// The boolean returned will be true if the argument is in the set. If the
+// boolean is true but the string is empty, it means it is a boolean config
+// flag.
+func (l *litArgs) getArg(name string) (string, bool) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	value, ok := l.args[name]
+
+	return value, ok
+}
+
 // toArgList converts the litArgs map to an arguments string slice.
 func (l *litArgs) toArgList() []string {
 	l.mu.Lock()
@@ -178,6 +193,8 @@ func (cfg *LitNodeConfig) GenArgs(opts ...LitArgOption) []string {
 		opt(args)
 	}
 
+	cfg.ActiveArgs = args
+
 	return args.toArgList()
 }
 
@@ -192,6 +209,7 @@ func (cfg *LitNodeConfig) defaultLitdArgs() *litArgs {
 			"loop.loopdir":           cfg.LoopDir,
 			"pool.basedir":           cfg.PoolDir,
 			"taproot-assets.tapddir": cfg.TapdDir,
+			"taproot-assets-mode":    "integrated",
 			"uipassword":             cfg.UIPassword,
 			"enablerest":             "",
 			"restcors":               "*",
@@ -547,7 +565,7 @@ func renameFile(fromFileName, toFileName string) {
 // This may not clean up properly if an error is returned, so the caller should
 // call shutdown() regardless of the return value.
 func (hn *HarnessNode) Start(litdBinary string, litdError chan<- error,
-	wait bool, litArgOpts ...LitArgOption) error {
+	waitForStart bool, litArgOpts ...LitArgOption) error {
 
 	hn.quit = make(chan struct{})
 
@@ -648,7 +666,7 @@ func (hn *HarnessNode) Start(litdBinary string, litdError chan<- error,
 
 	// We may want to skip waiting for the node to come up (eg. the node
 	// is waiting to become the leader).
-	if !wait {
+	if !waitForStart {
 		return nil
 	}
 
@@ -689,7 +707,16 @@ func (hn *HarnessNode) Start(litdBinary string, litdError chan<- error,
 	}
 	hn.litConn = litConn
 
-	return nil
+	ctxt, cancel := context.WithTimeout(
+		context.Background(), lntest.DefaultTimeout,
+	)
+	defer cancel()
+	return wait.NoError(func() error {
+		litConn := litrpc.NewProxyClient(hn.litConn)
+
+		_, err = litConn.GetInfo(ctxt, &litrpc.GetInfoRequest{})
+		return err
+	}, lntest.DefaultTimeout)
 }
 
 // WaitUntilStarted waits until the wallet state flips from "WAITING_TO_START".
@@ -738,16 +765,19 @@ func (hn *HarnessNode) WaitUntilStarted(conn grpc.ClientConnInterface,
 			return err
 		}
 
-		tapClient, err := hn.tapClient()
-		if err != nil {
-			return err
-		}
+		tapMode, _ := hn.Cfg.ActiveArgs.getArg("taproot-assets-mode")
+		if tapMode != terminal.ModeDisable {
+			tapClient, err := hn.tapClient()
+			if err != nil {
+				return err
+			}
 
-		_, err = tapClient.ListAssets(
-			ctxt, &taprpc.ListAssetRequest{},
-		)
-		if err != nil {
-			return err
+			_, err = tapClient.ListAssets(
+				ctxt, &taprpc.ListAssetRequest{},
+			)
+			if err != nil {
+				return err
+			}
 		}
 
 		return nil
@@ -822,9 +852,19 @@ func (hn *HarnessNode) waitForState(conn grpc.ClientConnInterface,
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	stateStream, err := stateClient.SubscribeState(
-		ctx, &lnrpc.SubscribeStateRequest{},
+	var (
+		stateStream lnrpc.State_SubscribeStateClient
+		err         error
 	)
+
+	subscribeFunc := func() error {
+		stateStream, err = stateClient.SubscribeState(
+			ctx, &lnrpc.SubscribeStateRequest{},
+		)
+
+		return err
+	}
+	err = wait.NoError(subscribeFunc, lntest.DefaultTimeout)
 	if err != nil {
 		return err
 	}
