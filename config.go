@@ -48,7 +48,7 @@ const (
 	defaultFaradayMode = ModeIntegrated
 	defaultLoopMode    = ModeIntegrated
 	defaultPoolMode    = ModeIntegrated
-	defaultTapMode     = ModeDisable
+	defaultTapMode     = ModeIntegrated
 
 	defaultConfigFilename = "lit.conf"
 
@@ -356,6 +356,19 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 	cfg, err := loadConfigFile(preCfg, interceptor)
 	if err != nil {
 		return nil, err
+	}
+
+	// TODO(positiveblue): Taproot Assets do not support mainnet yet so we
+	// want the subserver disabled for that specific net.
+	// We cannot distinguish if the user manually set the flag
+	// `taproot-assets-mode` or we are using the default value (integrated)
+	// so we will disable the server in both cases.
+	if cfg.Network == "mainnet" {
+		log.Infof("LiT is running in mainnet, the taproot assets " +
+			"subserver do not support the `mainnet` network yet, " +
+			"disabling taproot assets subserver")
+
+		cfg.TaprootAssetsMode = ModeDisable
 	}
 
 	// Translate the more user friendly string modes into the more developer
