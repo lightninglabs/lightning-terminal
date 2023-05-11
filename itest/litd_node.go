@@ -339,9 +339,9 @@ var _ lnrpc.LightningClient = (*HarnessNode)(nil)
 var _ lnrpc.WalletUnlockerClient = (*HarnessNode)(nil)
 var _ invoicesrpc.InvoicesClient = (*HarnessNode)(nil)
 
-// newNode creates a new test lightning node instance from the passed config.
-func newNode(t *testing.T, cfg *LitNodeConfig,
-	harness *NetworkHarness) (*HarnessNode, error) {
+// NewNode creates a new test lightning node instance from the passed config.
+func NewNode(t *testing.T, cfg *LitNodeConfig,
+	harness *lntest.HarnessTest) (*HarnessNode, error) {
 
 	if cfg.BaseDir == "" {
 		var err error
@@ -393,7 +393,7 @@ func newNode(t *testing.T, cfg *LitNodeConfig,
 
 	var remoteNode *node.HarnessNode
 	if cfg.RemoteMode {
-		lndHarness := harness.LNDHarness
+		lndHarness := harness
 
 		remoteNode = lndHarness.NewNode("bob-custom", cfg.ExtraArgs)
 		tenBTC := btcutil.Amount(10 * btcutil.SatoshiPerBitcoin)
@@ -538,7 +538,7 @@ func renameFile(fromFileName, toFileName string) {
 //
 // This may not clean up properly if an error is returned, so the caller should
 // call shutdown() regardless of the return value.
-func (hn *HarnessNode) start(litdBinary string, litdError chan<- error,
+func (hn *HarnessNode) Start(litdBinary string, litdError chan<- error,
 	wait bool, litArgOpts ...LitArgOption) error {
 
 	hn.quit = make(chan struct{})
@@ -1165,8 +1165,8 @@ func (hn *HarnessNode) cleanup() error {
 	return os.RemoveAll(hn.Cfg.BaseDir)
 }
 
-// Stop attempts to stop the active litd process.
-func (hn *HarnessNode) stop() error {
+// Stop attempts to Stop the active litd process.
+func (hn *HarnessNode) Stop() error {
 	// Do nothing if the process is not running.
 	if hn.processExit == nil {
 		return nil
@@ -1246,7 +1246,7 @@ func (hn *HarnessNode) stop() error {
 // shutdown stops the active lnd process and cleans up any temporary directories
 // created along the way.
 func (hn *HarnessNode) shutdown() error {
-	if err := hn.stop(); err != nil {
+	if err := hn.Stop(); err != nil {
 		return err
 	}
 	if err := hn.cleanup(); err != nil {

@@ -27,11 +27,11 @@ type loopPoolServer struct {
 	swapserverrpc.UnimplementedSwapServerServer
 }
 
-type serverHarness struct {
-	serverHost string
+type ServerHarness struct {
+	ServerHost string
 	mockServer *grpc.Server
 
-	certFile string
+	CertFile string
 	server   *loopPoolServer
 
 	errChan chan error
@@ -39,32 +39,35 @@ type serverHarness struct {
 	wg sync.WaitGroup
 }
 
-func newServerHarness(serverHost string) *serverHarness {
-	return &serverHarness{
-		serverHost: serverHost,
+// NewServerHarness creates a new ServerHarness instance.
+func NewServerHarness(serverHost string) *ServerHarness {
+	return &ServerHarness{
+		ServerHost: serverHost,
 		errChan:    make(chan error, 1),
 	}
 }
 
-func (s *serverHarness) stop() {
+// Stop stops the mock Loop/Pool server.
+func (s *ServerHarness) Stop() {
 	s.mockServer.Stop()
 	s.wg.Wait()
 }
 
-func (s *serverHarness) start() error {
+// Start starts the mock Loop/Pool server.
+func (s *ServerHarness) Start() error {
 	tempDirName, err := ioutil.TempDir("", "litditest")
 	if err != nil {
 		return err
 	}
 
-	s.certFile = filepath.Join(tempDirName, "proxy.cert")
+	s.CertFile = filepath.Join(tempDirName, "proxy.cert")
 	keyFile := filepath.Join(tempDirName, "proxy.key")
-	creds, err := genCertPair(s.certFile, keyFile)
+	creds, err := genCertPair(s.CertFile, keyFile)
 	if err != nil {
 		return err
 	}
 
-	httpListener, err := net.Listen("tcp", s.serverHost)
+	httpListener, err := net.Listen("tcp", s.ServerHost)
 	if err != nil {
 		return err
 	}

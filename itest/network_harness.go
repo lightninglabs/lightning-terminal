@@ -49,7 +49,7 @@ type NetworkHarness struct {
 	LNDHarness *lntest.HarnessTest
 
 	// server is an instance of the local Loop/Pool mock server.
-	server *serverHarness
+	server *ServerHarness
 
 	// BackendCfg houses the information necessary to use a node as LND
 	// chain backend, such as rpc configuration, P2P information etc.
@@ -130,8 +130,8 @@ func (n *NetworkHarness) SetUp(t *testing.T,
 	mockServerAddr := fmt.Sprintf(
 		node.ListenerFormat, node.NextAvailablePort(),
 	)
-	n.server = newServerHarness(mockServerAddr)
-	err := n.server.start()
+	n.server = NewServerHarness(mockServerAddr)
+	err := n.server.Start()
 	require.NoError(t, err)
 
 	// Start a mock autopilot server.
@@ -273,10 +273,10 @@ func (n *NetworkHarness) NewNode(t *testing.T, name string, extraArgs []string,
 	remoteMode bool, wait bool) (*HarnessNode, error) {
 
 	litArgs := []string{
-		fmt.Sprintf("--loop.server.host=%s", n.server.serverHost),
-		fmt.Sprintf("--loop.server.tlspath=%s", n.server.certFile),
-		fmt.Sprintf("--pool.auctionserver=%s", n.server.serverHost),
-		fmt.Sprintf("--pool.tlspathauctserver=%s", n.server.certFile),
+		fmt.Sprintf("--loop.server.host=%s", n.server.ServerHost),
+		fmt.Sprintf("--loop.server.tlspath=%s", n.server.CertFile),
+		fmt.Sprintf("--pool.auctionserver=%s", n.server.ServerHost),
+		fmt.Sprintf("--pool.tlspathauctserver=%s", n.server.CertFile),
 		"--autopilot.insecure",
 		fmt.Sprintf(
 			"--autopilot.address=localhost:%d",
@@ -315,7 +315,7 @@ func (n *NetworkHarness) newNode(t *testing.T, name string, extraArgs,
 		RemoteMode:     remoteMode,
 	}
 
-	node, err := newNode(t, cfg, n)
+	node, err := NewNode(t, cfg, n.LNDHarness)
 	if err != nil {
 		return nil, err
 	}
@@ -326,7 +326,7 @@ func (n *NetworkHarness) newNode(t *testing.T, name string, extraArgs,
 	n.activeNodes[node.NodeID] = node
 	n.mtx.Unlock()
 
-	err = node.start(n.litdBinary, n.lndErrorChan, wait)
+	err = node.Start(n.litdBinary, n.lndErrorChan, wait)
 	if err != nil {
 		return nil, err
 	}
@@ -649,7 +649,7 @@ func (n *NetworkHarness) RestartNode(node *HarnessNode, callback func() error,
 func (n *NetworkHarness) RestartNodeNoUnlock(node *HarnessNode,
 	callback func() error, wait bool, litArgOpts ...LitArgOption) error {
 
-	if err := node.stop(); err != nil {
+	if err := node.Stop(); err != nil {
 		return err
 	}
 
@@ -659,18 +659,18 @@ func (n *NetworkHarness) RestartNodeNoUnlock(node *HarnessNode,
 		}
 	}
 
-	return node.start(n.litdBinary, n.lndErrorChan, wait, litArgOpts...)
+	return node.Start(n.litdBinary, n.lndErrorChan, wait, litArgOpts...)
 }
 
 // SuspendNode stops the given node and returns a callback that can be used to
 // start it again.
 func (n *NetworkHarness) SuspendNode(node *HarnessNode) (func() error, error) {
-	if err := node.stop(); err != nil {
+	if err := node.Stop(); err != nil {
 		return nil, err
 	}
 
 	restart := func() error {
-		return node.start(n.litdBinary, n.lndErrorChan, true)
+		return node.Start(n.litdBinary, n.lndErrorChan, true)
 	}
 
 	return restart, nil
@@ -701,7 +701,7 @@ func (n *NetworkHarness) KillNode(node *HarnessNode) error {
 // This can be used to temporarily bring a node down during a test, to be later
 // started up again.
 func (n *NetworkHarness) StopNode(node *HarnessNode) error {
-	return node.stop()
+	return node.Stop()
 }
 
 // OpenChannel attempts to open a channel between srcNode and destNode with the
