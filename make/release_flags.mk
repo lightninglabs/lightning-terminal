@@ -8,9 +8,7 @@ linux-amd64 \
 linux-armv6 \
 linux-armv7 \
 linux-arm64 \
-windows-386 \
-windows-amd64 \
-windows-arm
+windows-amd64
 
 LND_RELEASE_TAGS = litd autopilotrpc signrpc walletrpc chainrpc invoicesrpc watchtowerrpc neutrinorpc peersrpc
 
