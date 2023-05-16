@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
-import { HeaderFour, Jumbo, Small } from 'components/base';
+import { HeaderFour, Jumbo, Paragraph } from 'components/base';
 import { Bitcoin, Bolt } from './base';
 import Tip from './common/Tip';
 import Unit from './common/Unit';
@@ -41,12 +41,12 @@ const NodeStatus: React.FC = () => {
         </Jumbo>
       </Tip>
       <Tip overlay={l('onchainTip')}>
-        <Small>
+        <Paragraph>
           <Balance>
             <Bitcoin title="bitcoin" size="small" />
             <Unit sats={nodeStore.wallet.walletBalance} suffix={false} />
           </Balance>
-        </Small>
+        </Paragraph>
       </Tip>
       <Divider />
     </Wrapper>

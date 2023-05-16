@@ -30,9 +30,6 @@ const GeneralSettings: React.FC = () => {
   const { Wrapper, Content } = Styled;
   return (
     <Wrapper>
-      <Display semiBold space={16}>
-        {l('pageTitle')}
-      </Display>
       <Content>
         <SettingItem
           name={l('bitcoinUnit')}
