@@ -13,6 +13,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/subservers"
 	"github.com/lightninglabs/loop/loopd"
 	"github.com/lightninglabs/pool"
+	tap "github.com/lightninglabs/taproot-assets"
 	"github.com/lightningnetwork/lnd"
 	"github.com/lightningnetwork/lnd/build"
 	"github.com/lightningnetwork/lnd/signal"
@@ -86,6 +87,7 @@ func SetupLoggers(root *build.RotatingLogWriter, intercept signal.Interceptor) {
 	faraday.SetupLoggers(root, intercept)
 	loopd.SetupLoggers(root, intercept)
 	pool.SetupLoggers(root, intercept)
+	tap.SetupLoggers(root, intercept)
 
 	// Setup the gRPC loggers too.
 	grpclog.SetLoggerV2(NewGrpcLogLogger(root, intercept, GrpcLogSubsystem))

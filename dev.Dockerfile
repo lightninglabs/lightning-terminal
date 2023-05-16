@@ -46,6 +46,7 @@ COPY --from=golangbuilder /go/bin/lncli /bin/
 COPY --from=golangbuilder /go/bin/frcli /bin/
 COPY --from=golangbuilder /go/bin/loop /bin/
 COPY --from=golangbuilder /go/bin/pool /bin/
+COPY --from=golangbuilder /go/bin/tapcli /bin/
 
 # Add bash.
 RUN apk add --no-cache \

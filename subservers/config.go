@@ -9,10 +9,11 @@ type RemoteConfig struct {
 
 	LitDebugLevel string `long:"lit-debuglevel" description:"For lnd remote mode only: Logging level for all subsystems {trace, debug, info, warn, error, critical} -- You may also specify <subsystem>=<level>,<subsystem2>=<level>,... to set the log level for individual subsystems."`
 
-	Lnd     *RemoteDaemonConfig `group:"Remote lnd (use when lnd-mode=remote)" namespace:"lnd"`
-	Faraday *RemoteDaemonConfig `group:"Remote faraday (use when faraday-mode=remote)" namespace:"faraday"`
-	Loop    *RemoteDaemonConfig `group:"Remote loop (use when loop-mode=remote)" namespace:"loop"`
-	Pool    *RemoteDaemonConfig `group:"Remote pool (use when pool-mode=remote)" namespace:"pool"`
+	Lnd           *RemoteDaemonConfig `group:"Remote lnd (use when lnd-mode=remote)" namespace:"lnd"`
+	Faraday       *RemoteDaemonConfig `group:"Remote faraday (use when faraday-mode=remote)" namespace:"faraday"`
+	Loop          *RemoteDaemonConfig `group:"Remote loop (use when loop-mode=remote)" namespace:"loop"`
+	Pool          *RemoteDaemonConfig `group:"Remote pool (use when pool-mode=remote)" namespace:"pool"`
+	TaprootAssets *RemoteDaemonConfig `group:"Remote taproot-assets (use when taproot-assets-mode=remote)" namespace:"taproot-assets"`
 }
 
 // RemoteDaemonConfig holds the configuration parameters that are needed to

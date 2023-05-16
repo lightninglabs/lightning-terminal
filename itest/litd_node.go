@@ -24,9 +24,11 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/lightninglabs/faraday/frdrpc"
+	terminal "github.com/lightninglabs/lightning-terminal"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/lightninglabs/pool/poolrpc"
+	"github.com/lightninglabs/taproot-assets/taprpc"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/invoicesrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
@@ -62,7 +64,8 @@ var (
 type LitNodeConfig struct {
 	*node.BaseNodeConfig
 
-	LitArgs []string
+	LitArgs    []string
+	ActiveArgs *litArgs
 
 	RemoteMode bool
 
@@ -71,6 +74,7 @@ type LitNodeConfig struct {
 	FaradayMacPath string
 	LoopMacPath    string
 	PoolMacPath    string
+	TapMacPath     string
 	LitTLSCertPath string
 	LitMacPath     string
 
@@ -79,6 +83,7 @@ type LitNodeConfig struct {
 	FaradayDir string
 	LoopDir    string
 	PoolDir    string
+	TapdDir    string
 
 	LitPort     int
 	LitRESTPort int
@@ -129,6 +134,19 @@ func (l *litArgs) addArg(name, value string) {
 	l.args[name] = value
 }
 
+// getArg gets the arg with the given name from the set and returns the value.
+// The boolean returned will be true if the argument is in the set. If the
+// boolean is true but the string is empty, it means it is a boolean config
+// flag.
+func (l *litArgs) getArg(name string) (string, bool) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	value, ok := l.args[name]
+
+	return value, ok
+}
+
 // toArgList converts the litArgs map to an arguments string slice.
 func (l *litArgs) toArgList() []string {
 	l.mu.Lock()
@@ -175,6 +193,8 @@ func (cfg *LitNodeConfig) GenArgs(opts ...LitArgOption) []string {
 		opt(args)
 	}
 
+	cfg.ActiveArgs = args
+
 	return args.toArgList()
 }
 
@@ -182,15 +202,17 @@ func (cfg *LitNodeConfig) GenArgs(opts ...LitArgOption) []string {
 func (cfg *LitNodeConfig) defaultLitdArgs() *litArgs {
 	var (
 		args = map[string]string{
-			"httpslisten":         cfg.LitAddr(),
-			"insecure-httplisten": cfg.LitRESTAddr(),
-			"lit-dir":             cfg.LitDir,
-			"faraday.faradaydir":  cfg.FaradayDir,
-			"loop.loopdir":        cfg.LoopDir,
-			"pool.basedir":        cfg.PoolDir,
-			"uipassword":          cfg.UIPassword,
-			"enablerest":          "",
-			"restcors":            "*",
+			"httpslisten":            cfg.LitAddr(),
+			"insecure-httplisten":    cfg.LitRESTAddr(),
+			"lit-dir":                cfg.LitDir,
+			"faraday.faradaydir":     cfg.FaradayDir,
+			"loop.loopdir":           cfg.LoopDir,
+			"pool.basedir":           cfg.PoolDir,
+			"taproot-assets.tapddir": cfg.TapdDir,
+			"taproot-assets-mode":    "integrated",
+			"uipassword":             cfg.UIPassword,
+			"enablerest":             "",
+			"restcors":               "*",
 		}
 	)
 	for _, arg := range cfg.LitArgs {
@@ -356,6 +378,7 @@ func NewNode(t *testing.T, cfg *LitNodeConfig,
 	cfg.FaradayDir = filepath.Join(cfg.LitDir, "faraday")
 	cfg.LoopDir = filepath.Join(cfg.LitDir, "loop")
 	cfg.PoolDir = filepath.Join(cfg.LitDir, "pool")
+	cfg.TapdDir = filepath.Join(cfg.LitDir, "tapd")
 	cfg.TLSCertPath = filepath.Join(cfg.BaseDir, "tls.cert")
 	cfg.TLSKeyPath = filepath.Join(cfg.BaseDir, "tls.key")
 
@@ -373,6 +396,9 @@ func NewNode(t *testing.T, cfg *LitNodeConfig,
 	)
 	cfg.PoolMacPath = filepath.Join(
 		cfg.PoolDir, cfg.NetParams.Name, "pool.macaroon",
+	)
+	cfg.TapMacPath = filepath.Join(
+		cfg.TapdDir, "data", cfg.NetParams.Name, "admin.macaroon",
 	)
 	cfg.LitMacPath = filepath.Join(
 		cfg.LitDir, cfg.NetParams.Name, "lit.macaroon",
@@ -539,7 +565,7 @@ func renameFile(fromFileName, toFileName string) {
 // This may not clean up properly if an error is returned, so the caller should
 // call shutdown() regardless of the return value.
 func (hn *HarnessNode) Start(litdBinary string, litdError chan<- error,
-	wait bool, litArgOpts ...LitArgOption) error {
+	waitForStart bool, litArgOpts ...LitArgOption) error {
 
 	hn.quit = make(chan struct{})
 
@@ -640,7 +666,7 @@ func (hn *HarnessNode) Start(litdBinary string, litdError chan<- error,
 
 	// We may want to skip waiting for the node to come up (eg. the node
 	// is waiting to become the leader).
-	if !wait {
+	if !waitForStart {
 		return nil
 	}
 
@@ -681,7 +707,16 @@ func (hn *HarnessNode) Start(litdBinary string, litdError chan<- error,
 	}
 	hn.litConn = litConn
 
-	return nil
+	ctxt, cancel := context.WithTimeout(
+		context.Background(), lntest.DefaultTimeout,
+	)
+	defer cancel()
+	return wait.NoError(func() error {
+		litConn := litrpc.NewProxyClient(hn.litConn)
+
+		_, err = litConn.GetInfo(ctxt, &litrpc.GetInfoRequest{})
+		return err
+	}, lntest.DefaultTimeout)
 }
 
 // WaitUntilStarted waits until the wallet state flips from "WAITING_TO_START".
@@ -728,6 +763,21 @@ func (hn *HarnessNode) WaitUntilStarted(conn grpc.ClientConnInterface,
 		_, err = poolClient.GetInfo(ctxt, &poolrpc.GetInfoRequest{})
 		if err != nil {
 			return err
+		}
+
+		tapMode, _ := hn.Cfg.ActiveArgs.getArg("taproot-assets-mode")
+		if tapMode != terminal.ModeDisable {
+			tapClient, err := hn.tapClient()
+			if err != nil {
+				return err
+			}
+
+			_, err = tapClient.ListAssets(
+				ctxt, &taprpc.ListAssetRequest{},
+			)
+			if err != nil {
+				return err
+			}
 		}
 
 		return nil
@@ -778,6 +828,20 @@ func (hn *HarnessNode) poolClient() (poolrpc.TraderClient, error) {
 	return poolrpc.NewTraderClient(conn), nil
 }
 
+func (hn *HarnessNode) tapClient() (taprpc.TaprootAssetsClient, error) {
+	mac, err := hn.ReadMacaroon(hn.Cfg.TapMacPath, lntest.DefaultTimeout)
+	if err != nil {
+		return nil, err
+	}
+
+	conn, err := hn.ConnectRPCWithMacaroon(mac)
+	if err != nil {
+		return nil, err
+	}
+
+	return taprpc.NewTaprootAssetsClient(conn), nil
+}
+
 // waitForState waits until the current node state fulfills the given
 // predicate.
 func (hn *HarnessNode) waitForState(conn grpc.ClientConnInterface,
@@ -788,9 +852,19 @@ func (hn *HarnessNode) waitForState(conn grpc.ClientConnInterface,
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	stateStream, err := stateClient.SubscribeState(
-		ctx, &lnrpc.SubscribeStateRequest{},
+	var (
+		stateStream lnrpc.State_SubscribeStateClient
+		err         error
 	)
+
+	subscribeFunc := func() error {
+		stateStream, err = stateClient.SubscribeState(
+			ctx, &lnrpc.SubscribeStateRequest{},
+		)
+
+		return err
+	}
+	err = wait.NoError(subscribeFunc, lntest.DefaultTimeout)
 	if err != nil {
 		return err
 	}

@@ -29,6 +29,8 @@ import (
 	"github.com/lightninglabs/loop/looprpc"
 	pool "github.com/lightninglabs/pool/perms"
 	"github.com/lightninglabs/pool/poolrpc"
+	tap "github.com/lightninglabs/taproot-assets/perms"
+	"github.com/lightninglabs/taproot-assets/taprpc"
 	"github.com/lightningnetwork/lnd/keychain"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
@@ -145,6 +147,15 @@ var (
 	poolMacaroonFn = func(cfg *LitNodeConfig) string {
 		return cfg.PoolMacPath
 	}
+	tapRequestFn = func(ctx context.Context,
+		c grpc.ClientConnInterface) (proto.Message, error) {
+
+		tapConn := taprpc.NewTaprootAssetsClient(c)
+		return tapConn.ListAssets(ctx, &taprpc.ListAssetRequest{})
+	}
+	tapMacaroonFn = func(cfg *LitNodeConfig) string {
+		return cfg.TapMacPath
+	}
 	litSessionRequestFn = func(ctx context.Context,
 		c grpc.ClientConnInterface) (proto.Message, error) {
 
@@ -184,6 +195,7 @@ var (
 		grpcWebURI        string
 		restWebURI        string
 		restPOST          bool
+		canDisable        bool
 	}{{
 		name:              "lnrpc",
 		macaroonFn:        lndMacaroonFn,
@@ -234,6 +246,15 @@ var (
 		grpcWebURI:        "/poolrpc.Trader/GetInfo",
 		restWebURI:        "/v1/pool/info",
 	}, {
+		name:              "taprpc",
+		macaroonFn:        tapMacaroonFn,
+		requestFn:         tapRequestFn,
+		successPattern:    "\"assets\":[]",
+		allowedThroughLNC: true,
+		grpcWebURI:        "/taprpc.TaprootAssets/ListAssets",
+		restWebURI:        "/v1/taproot-assets/assets",
+		canDisable:        true,
+	}, {
 		name:       "litrpc-sessions",
 		macaroonFn: litMacaroonFn,
 		requestFn:  litSessionRequestFn,
@@ -278,9 +299,37 @@ var (
 	}
 )
 
-// testSuite defines the signature of a test suite. The boolean parameter
-// indicates if the UI password is set or disabled.
-type testSuite func(context.Context, *NetworkHarness, *testing.T, bool, int)
+// testSuite defines the signature of a test suite. The first boolean parameter
+// indicates if the UI password is set or disabled and the second one indicates
+// if the LiT sub-servers are disabled.
+type testSuite func(context.Context, *NetworkHarness, *testing.T, bool, bool,
+	int)
+
+// testDisablingSubServers will restart LiT with some sub-servers disabled and
+// will then run the test suite against it.
+func testDisablingSubServers(ctx context.Context, net *NetworkHarness,
+	t *testing.T, test testSuite, node *HarnessNode) {
+
+	// Restart the Lit node with some the sub-servers disabled.
+	err := net.RestartNode(
+		node, nil, []LitArgOption{
+			WithLitArg("taproot-assets-mode", "disable"),
+		},
+	)
+	require.NoError(t, err)
+
+	if !node.Cfg.RemoteMode {
+		// Reconnect Alice and Bob so that tests can continue to assert
+		// that the nodes each have one peer at start up. This is only
+		// required if the node is running in integrated mode since in
+		// remote mode, the peers would never have disconnected.
+		net.ConnectNodes(t, net.Alice, net.Bob)
+	}
+
+	t.Run("disable sub-servers", func(t *testing.T) {
+		test(ctx, net, t, false, true, 3)
+	})
+}
 
 // testWithAndWithoutUIPassword runs the given test suite against the given node
 // both with the UI password set and without the UI password with the UI
@@ -289,7 +338,7 @@ func testWithAndWithoutUIPassword(ctx context.Context, net *NetworkHarness,
 	t *testing.T, test testSuite, node *HarnessNode) {
 
 	t.Run("with UI password", func(t *testing.T) {
-		test(ctx, net, t, false, 1)
+		test(ctx, net, t, false, false, 1)
 	})
 
 	// Restart the node without the ui password and disable the UI.
@@ -310,7 +359,7 @@ func testWithAndWithoutUIPassword(ctx context.Context, net *NetworkHarness,
 	}
 
 	t.Run("without UI password", func(t *testing.T) {
-		test(ctx, net, t, true, 2)
+		test(ctx, net, t, true, false, 2)
 	})
 }
 
@@ -323,12 +372,16 @@ func testModeIntegrated(ctx context.Context, net *NetworkHarness,
 	testWithAndWithoutUIPassword(
 		ctx, net, t.t, integratedTestSuite, net.Alice,
 	)
+
+	testDisablingSubServers(
+		ctx, net, t.t, integratedTestSuite, net.Alice,
+	)
 }
 
 // integratedTestSuite makes sure that in integrated mode all daemons work
 // correctly.
 func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
-	withoutUIPassword bool, runNum int) {
+	withoutUIPassword, subServersDisabled bool, runNum int) {
 
 	// Some very basic functionality tests to make sure lnd is working fine
 	// in integrated mode.
@@ -348,12 +401,17 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 
 		for _, endpoint := range endpoints {
 			endpoint := endpoint
+			endpointDisabled := subServersDisabled &&
+				endpoint.canDisable
+
 			tt.Run(endpoint.name+" lnd port", func(ttt *testing.T) {
 				runGRPCAuthTest(
 					ttt, cfg.RPCAddr(), cfg.TLSCertPath,
 					endpoint.macaroonFn(cfg),
 					endpoint.requestFn,
 					endpoint.successPattern,
+					endpointDisabled,
+					"Unimplemented desc = unknown service",
 				)
 			})
 
@@ -363,6 +421,9 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					endpoint.macaroonFn(cfg),
 					endpoint.requestFn,
 					endpoint.successPattern,
+					endpointDisabled,
+					"unknown permissions required for "+
+						"method",
 				)
 			})
 		}
@@ -373,11 +434,16 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 
 		for _, endpoint := range endpoints {
 			endpoint := endpoint
+			endpointDisabled := subServersDisabled &&
+				endpoint.canDisable
+
 			tt.Run(endpoint.name+" lnd port", func(ttt *testing.T) {
 				runUIPasswordCheck(
 					ttt, cfg.RPCAddr(), cfg.TLSCertPath,
 					cfg.UIPassword, endpoint.requestFn,
 					true, endpoint.successPattern,
+					endpointDisabled,
+					"Unimplemented desc = unknown service",
 				)
 			})
 
@@ -392,6 +458,9 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					cfg.UIPassword, endpoint.requestFn,
 					shouldFailWithoutMacaroon,
 					endpoint.successPattern,
+					endpointDisabled,
+					"unknown permissions required for "+
+						"method",
 				)
 			})
 		}
@@ -408,11 +477,16 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 
 		for _, endpoint := range endpoints {
 			endpoint := endpoint
+			endpointDisabled := subServersDisabled &&
+				endpoint.canDisable
+
 			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
 				runGRPCWebAuthTest(
 					ttt, cfg.LitAddr(), cfg.UIPassword,
 					endpoint.grpcWebURI,
-					withoutUIPassword,
+					withoutUIPassword, endpointDisabled,
+					"unknown permissions required for "+
+						"method",
 				)
 			})
 		}
@@ -430,12 +504,17 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 
 		for _, endpoint := range endpoints {
 			endpoint := endpoint
+			endpointDisabled := subServersDisabled &&
+				endpoint.canDisable
+
 			tt.Run(endpoint.name+" lnd port", func(ttt *testing.T) {
 				runGRPCAuthTest(
 					ttt, cfg.RPCAddr(), cfg.TLSCertPath,
 					superMacFile,
 					endpoint.requestFn,
 					endpoint.successPattern,
+					endpointDisabled,
+					"Unimplemented desc = unknown service",
 				)
 			})
 
@@ -445,6 +524,9 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					superMacFile,
 					endpoint.requestFn,
 					endpoint.successPattern,
+					endpointDisabled,
+					"unknown permissions required for "+
+						"method",
 				)
 			})
 		}
@@ -455,6 +537,8 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 
 		for _, endpoint := range endpoints {
 			endpoint := endpoint
+			endpointDisabled := subServersDisabled &&
+				endpoint.canDisable
 
 			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
 				runRESTAuthTest(
@@ -463,7 +547,7 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					endpoint.restWebURI,
 					endpoint.successPattern,
 					endpoint.restPOST,
-					withoutUIPassword,
+					withoutUIPassword, endpointDisabled,
 				)
 			})
 		}
@@ -485,12 +569,16 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 
 		for _, endpoint := range endpoints {
 			endpoint := endpoint
+			endpointDisabled := subServersDisabled &&
+				endpoint.canDisable
+
 			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
 				runLNCAuthTest(
 					ttt, rawLNCConn, endpoint.requestFn,
 					endpoint.successPattern,
 					endpoint.allowedThroughLNC,
 					"unknown service",
+					endpointDisabled,
 				)
 			})
 		}
@@ -547,12 +635,16 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 
 		for _, endpoint := range endpoints {
 			endpoint := endpoint
+			endpointDisabled := subServersDisabled &&
+				endpoint.canDisable
+
 			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
 				allowed := customURIs[endpoint.grpcWebURI]
 				runLNCAuthTest(
 					ttt, rawLNCConn, endpoint.requestFn,
 					endpoint.successPattern,
 					allowed, "permission denied",
+					endpointDisabled,
 				)
 			})
 		}
@@ -617,7 +709,8 @@ func runCertificateCheck(t *testing.T, node *HarnessNode) {
 
 // runGRPCAuthTest tests authentication of the given gRPC interface.
 func runGRPCAuthTest(t *testing.T, hostPort, tlsCertPath, macPath string,
-	makeRequest requestFn, successContent string) {
+	makeRequest requestFn, successContent string, disabled bool,
+	disabledErr string) {
 
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
@@ -629,29 +722,48 @@ func runGRPCAuthTest(t *testing.T, hostPort, tlsCertPath, macPath string,
 
 	// We have a connection without any macaroon. A call should fail.
 	_, err = makeRequest(ctxt, rawConn)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "expected 1 macaroon, got 0")
+	if disabled {
+		require.ErrorContains(t, err, disabledErr)
+	} else {
+		require.ErrorContains(t, err, "expected 1 macaroon, got 0")
+	}
 
 	// Add dummy data as the macaroon, that should fail as well.
 	ctxm := macaroonContext(ctxt, []byte("dummy"))
 	_, err = makeRequest(ctxm, rawConn)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "packet too short")
+	if disabled {
+		require.ErrorContains(t, err, disabledErr)
+	} else {
+		require.ErrorContains(t, err, "packet too short")
+	}
 
 	// Add a macaroon that can be parsed but that's not issued by lnd, which
 	// should also fail.
 	ctxm = macaroonContext(ctxt, dummyMacBytes)
 	_, err = makeRequest(ctxm, rawConn)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "cannot get macaroon: root key with")
+	if disabled {
+		require.ErrorContains(t, err, disabledErr)
+	} else {
+		errStr := err.Error()
+		err1 := strings.Contains(errStr, "cannot get macaroon: root")
+		err2 := strings.Contains(errStr, "cannot get macaroon: sql: no")
+		require.Truef(
+			t, err1 || err2, "no macaroon, got unexpected error: "+
+				"%v", err,
+		)
+	}
 
 	// Then finally we try with the correct macaroon which should now
-	// succeed.
-	macBytes, err := ioutil.ReadFile(macPath)
+	// succeed, as long as it is not for a disabled sub-server.
+	macBytes, err := os.ReadFile(macPath)
 	require.NoError(t, err)
 	ctxm = macaroonContext(ctxt, macBytes)
 	resp, err := makeRequest(ctxm, rawConn)
-	require.NoError(t, err)
+	if disabled {
+		require.ErrorContains(t, err, disabledErr)
+	} else {
+		require.NoError(t, err)
+	}
 
 	json, err := marshalOptions.Marshal(resp)
 	require.NoError(t, err)
@@ -661,7 +773,7 @@ func runGRPCAuthTest(t *testing.T, hostPort, tlsCertPath, macPath string,
 // runUIPasswordCheck tests UI password authentication.
 func runUIPasswordCheck(t *testing.T, hostPort, tlsCertPath, uiPassword string,
 	makeRequest requestFn, shouldFailWithoutMacaroon bool,
-	successContent string) {
+	successContent string, disabled bool, disabledErr string) {
 
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
@@ -673,34 +785,57 @@ func runUIPasswordCheck(t *testing.T, hostPort, tlsCertPath, uiPassword string,
 
 	// Make sure that a call without any metadata results in an error.
 	_, err = makeRequest(ctxt, rawConn)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "expected 1 macaroon, got 0")
+	if disabled {
+		require.ErrorContains(t, err, disabledErr)
+	} else {
+		require.ErrorContains(t, err, "expected 1 macaroon, got 0")
+	}
 
 	// We can do the same calls by providing a UI password. Make sure that
 	// sending an incorrect one is ignored.
 	ctxm := uiPasswordContext(ctxt, "foobar", false)
 	_, err = makeRequest(ctxm, rawConn)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "expected 1 macaroon, got 0")
+	if disabled {
+		require.ErrorContains(t, err, disabledErr)
+	} else {
+		require.ErrorContains(t, err, "expected 1 macaroon, got 0")
+	}
 
 	// Sending a dummy macaroon along with the incorrect UI password also
 	// shouldn't be allowed and result in an error.
 	ctxm = uiPasswordContext(ctxt, "foobar", true)
 	_, err = makeRequest(ctxm, rawConn)
-	require.Error(t, err)
-	errStr := err.Error()
-	err1 := strings.Contains(errStr, "invalid auth: invalid basic auth")
-	err2 := strings.Contains(errStr, "cannot get macaroon: root key with")
-	require.True(t, err1 || err2, "wrong UI password and dummy mac")
+	if disabled {
+		require.ErrorContains(t, err, disabledErr)
+	} else {
+		errStr := err.Error()
+		err1 := strings.Contains(
+			errStr, "invalid auth: invalid basic auth",
+		)
+		err2 := strings.Contains(
+			errStr, "cannot get macaroon: root key with",
+		)
+		err3 := strings.Contains(
+			errStr, "cannot get macaroon: sql: no rows",
+		)
 
-	// Using the correct UI password should work for all requests.
+		require.Truef(t, err1 || err2 || err3, "wrong UI password and "+
+			"dummy mac, got unexpected error: %v", err)
+	}
+
+	// Using the correct UI password should work for all requests unless the
+	// request is for a disabled sub-server.
 	ctxm = uiPasswordContext(ctxt, uiPassword, false)
 	resp, err := makeRequest(ctxm, rawConn)
 
 	// On lnd's gRPC interface we don't support using the UI password.
 	if shouldFailWithoutMacaroon {
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "expected 1 macaroon, got 0")
+		if disabled {
+			require.ErrorContains(t, err, disabledErr)
+		} else {
+			require.ErrorContains(t, err, "expected 1 macaroon, "+
+				"got 0")
+		}
 
 		// Sending a dummy macaroon will allow us to not get an error in
 		// case of the litrpc calls, where we don't support macaroons
@@ -710,14 +845,31 @@ func runUIPasswordCheck(t *testing.T, hostPort, tlsCertPath, uiPassword string,
 		ctxm = uiPasswordContext(ctxt, uiPassword, true)
 		_, err = makeRequest(ctxm, rawConn)
 
-		require.Error(t, err)
-		require.Contains(
-			t, err.Error(), "cannot get macaroon: root",
-		)
+		if disabled {
+			require.ErrorContains(t, err, disabledErr)
+		} else {
+			require.Error(t, err)
+			errStr := err.Error()
+			err1 := strings.Contains(
+				errStr, "cannot get macaroon: root",
+			)
+			err2 := strings.Contains(
+				errStr, "cannot get macaroon: sql: no",
+			)
+
+			require.Truef(t, err1 || err2, "no macaroon, got "+
+				"unexpected error: %v", err)
+		}
+
 		return
 	}
 
-	// We expect the call to succeed.
+	if disabled {
+		require.ErrorContains(t, err, disabledErr)
+		return
+	}
+
+	// We expect the call to succeed unless it is for a disabled sub-server.
 	require.NoError(t, err)
 
 	json, err := marshalOptions.Marshal(resp)
@@ -746,7 +898,7 @@ func runIndexPageCheck(t *testing.T, hostPort string, uiDisabled bool) {
 
 // runGRPCWebAuthTest tests authentication of the given gRPC interface.
 func runGRPCWebAuthTest(t *testing.T, hostPort, uiPassword, grpcWebURI string,
-	shouldFailWithUIPassword bool) {
+	shouldFailWithUIPassword, disabled bool, disableErr string) {
 
 	basicAuth := base64.StdEncoding.EncodeToString(
 		[]byte(fmt.Sprintf("%s:%s", uiPassword, uiPassword)),
@@ -763,10 +915,17 @@ func runGRPCWebAuthTest(t *testing.T, hostPort, uiPassword, grpcWebURI string,
 	_, responseHeader, err := postURL(url, emptyGrpcWebRequest, header)
 	require.NoError(t, err)
 
-	require.Equal(
-		t, "expected 1 macaroon, got 0",
-		responseHeader.Get("grpc-message"),
-	)
+	if disabled {
+		require.Contains(
+			t, responseHeader.Get("grpc-message"), disableErr,
+		)
+	} else {
+		require.Equal(
+			t, "expected 1 macaroon, got 0",
+			responseHeader.Get("grpc-message"),
+		)
+	}
+
 	require.Equal(
 		t, fmt.Sprintf("%d", codes.Unknown),
 		responseHeader.Get("grpc-status"),
@@ -789,16 +948,27 @@ func runGRPCWebAuthTest(t *testing.T, hostPort, uiPassword, grpcWebURI string,
 		return
 	}
 
-	require.Empty(t, responseHeader.Get("grpc-message"))
-	require.Empty(t, responseHeader.Get("grpc-status"))
+	if disabled {
+		require.Contains(
+			t, responseHeader.Get("grpc-message"), disableErr,
+		)
+		require.Equal(
+			t, fmt.Sprintf("%d", codes.Unknown),
+			responseHeader.Get("grpc-status"),
+		)
+	} else {
+		require.Empty(t, responseHeader.Get("grpc-message"))
+		require.Empty(t, responseHeader.Get("grpc-status"))
 
-	// We get the status encoded as trailer in the response.
-	require.Contains(t, body, "grpc-status: 0")
+		// We get the status encoded as trailer in the response.
+		require.Contains(t, body, "grpc-status: 0")
+	}
 }
 
 // runRESTAuthTest tests authentication of the given REST interface.
 func runRESTAuthTest(t *testing.T, hostPort, uiPassword, macaroonPath, restURI,
-	successPattern string, usePOST, shouldFailWithUIPassword bool) {
+	successPattern string, usePOST, shouldFailWithUIPassword,
+	disabled bool) {
 
 	basicAuth := base64.StdEncoding.EncodeToString(
 		[]byte(fmt.Sprintf("%s:%s", uiPassword, uiPassword)),
@@ -817,19 +987,24 @@ func runRESTAuthTest(t *testing.T, hostPort, uiPassword, macaroonPath, restURI,
 	body, responseHeader, err := callURL(url, method, nil, nil, false)
 	require.NoError(t, err)
 
-	require.Equalf(
-		t, "application/grpc",
-		responseHeader.Get("grpc-metadata-content-type"),
-		"response headers: %v, body: %v", responseHeader, body,
-	)
 	require.Equal(
 		t, "application/json",
 		responseHeader.Get("content-type"),
 	)
-	require.Contains(
-		t, body,
-		"expected 1 macaroon, got 0",
-	)
+
+	if disabled {
+		require.Empty(
+			t, responseHeader.Get("grpc-metadata-content-type"),
+		)
+		require.Contains(t, body, "Not Found")
+	} else {
+		require.Equalf(
+			t, "application/grpc",
+			responseHeader.Get("grpc-metadata-content-type"),
+			"response headers: %v, body: %v", responseHeader, body,
+		)
+		require.Contains(t, body, "expected 1 macaroon, got 0")
+	}
 
 	// Now add the UI password which should make the request succeed.
 	body, responseHeader, err = callURL(
@@ -837,13 +1012,16 @@ func runRESTAuthTest(t *testing.T, hostPort, uiPassword, macaroonPath, restURI,
 	)
 	require.NoError(t, err)
 
-	if shouldFailWithUIPassword {
-		require.Contains(
-			t, body,
-			"expected 1 macaroon, got 0",
-		)
-	} else {
+	switch {
+	case shouldFailWithUIPassword:
+		require.Contains(t, body, "expected 1 macaroon, got 0")
+
+	case disabled:
+		require.Contains(t, body, "Not Found")
+
+	default:
 		require.Contains(t, body, successPattern)
+
 	}
 
 	// And finally, try with the given macaroon.
@@ -859,14 +1037,19 @@ func runRESTAuthTest(t *testing.T, hostPort, uiPassword, macaroonPath, restURI,
 		url, method, nil, macaroonHeader, false,
 	)
 	require.NoError(t, err)
-	require.Contains(t, body, successPattern)
+
+	if disabled {
+		require.Contains(t, body, "Not Found")
+	} else {
+		require.Contains(t, body, successPattern)
+	}
 }
 
 // runLNCAuthTest tests authentication of the given interface when connecting
 // through Lightning Node Connect.
 func runLNCAuthTest(t *testing.T, rawLNCConn grpc.ClientConnInterface,
 	makeRequest requestFn, successContent string, callAllowed bool,
-	expectErrContains string) {
+	expectErrContains string, disabled bool) {
 
 	ctxt, cancel := context.WithTimeout(
 		context.Background(), defaultTimeout,
@@ -881,14 +1064,26 @@ func runLNCAuthTest(t *testing.T, rawLNCConn grpc.ClientConnInterface,
 
 	// Is this a disallowed call?
 	if !callAllowed {
-		require.Error(t, err)
-		require.Contains(t, err.Error(), expectErrContains)
+		if disabled {
+			require.ErrorContains(t, err, "unknown permissions "+
+				"required for method")
+		} else {
+			require.ErrorContains(t, err, expectErrContains)
+		}
 
 		return
 	}
 
-	// The call should be allowed, so we expect no error.
-	require.NoError(t, err)
+	// The call should be allowed, so we expect no error unless this is
+	// for a disabled sub-server.
+	if disabled {
+		require.ErrorContains(t, err, "unknown permissions "+
+			"required for method")
+
+		return
+	} else {
+		require.NoError(t, err)
+	}
 
 	json, err := marshalOptions.Marshal(resp)
 	require.NoError(t, err)
@@ -1096,9 +1291,11 @@ func bakeSuperMacaroon(cfg *LitNodeConfig, readOnly bool) (string, error) {
 
 	permsMgr.RegisterSubServer(subservers.LOOP, loop.RequiredPermissions)
 	permsMgr.RegisterSubServer(subservers.POOL, pool.RequiredPermissions)
+	permsMgr.RegisterSubServer(subservers.TAP, tap.RequiredPermissions)
 	permsMgr.RegisterSubServer(
 		subservers.FARADAY, faraday.RequiredPermissions,
 	)
+	permsMgr.RegisterSubServer(subservers.TAP, tap.RequiredPermissions)
 
 	superMacPermissions := permsMgr.ActivePermissions(readOnly)
 	nullID := [4]byte{}
