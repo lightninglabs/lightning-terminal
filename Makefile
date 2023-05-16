@@ -3,6 +3,7 @@ ESCPKG := github.com\/lightninglabs\/lightning-terminal
 LND_PKG := github.com/lightningnetwork/lnd
 LOOP_PKG := github.com/lightninglabs/loop
 POOL_PKG := github.com/lightninglabs/pool
+TAP_PKG := github.com/lightninglabs/taproot-assets
 BTCD_PKG := github.com/btcsuite/btcd
 
 GOACC_PKG := github.com/ory/go-acc
@@ -25,6 +26,12 @@ LOOP_COMMIT := $(shell cat go.mod | \
 
 POOL_COMMIT := $(shell cat go.mod | \
 		grep $(POOL_PKG) | \
+		head -n1 | \
+		awk -F " " '{ print $$2 }' | \
+		awk -F "/" '{ print $$1 }')
+
+TAP_COMMIT := $(shell cat go.mod | \
+		grep $(TAP_PKG) | \
 		head -n1 | \
 		awk -F " " '{ print $$2 }' | \
 		awk -F "/" '{ print $$1 }')
@@ -61,7 +68,8 @@ make_ldflags = $(2) -X $(LND_PKG)/build.Commit=lightning-terminal-$(COMMIT) \
 	-X $(PKG).appFilesPrefix=$(PUBLIC_URL) \
 	-X $(PKG).Commit=$(COMMIT) \
 	-X $(LOOP_PKG).Commit=$(LOOP_COMMIT) \
-	-X $(POOL_PKG).Commit=$(POOL_COMMIT)
+	-X $(POOL_PKG).Commit=$(POOL_COMMIT) \
+	-X $(TAP_PKG).Commit=$(TAP_COMMIT)
 
 LDFLAGS := $(call make_ldflags, $(LND_RELEASE_TAGS))
 
@@ -129,6 +137,7 @@ go-install-cli:
 	$(GOINSTALL) -trimpath -ldflags "$(LDFLAGS)" github.com/lightninglabs/loop/cmd/loop
 	$(GOINSTALL) -trimpath github.com/lightninglabs/faraday/cmd/frcli
 	$(GOINSTALL) -trimpath -ldflags "$(LDFLAGS)" github.com/lightninglabs/pool/cmd/pool
+	$(GOINSTALL) -trimpath -ldflags "$(LDFLAGS)" github.com/lightninglabs/taproot-assets/cmd/tapcli
 
 app-build: yarn-install
 	@$(call print, "Building production app.")
