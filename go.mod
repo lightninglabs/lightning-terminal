@@ -23,7 +23,7 @@ require (
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.0
 	github.com/lightninglabs/protobuf-hex-display v1.4.3-hex-display
 	github.com/lightninglabs/taproot-assets v0.2.0
-	github.com/lightningnetwork/lnd v0.16.2-beta
+	github.com/lightningnetwork/lnd v0.16.0-beta.rc5.0.20230517143048-2fd40d16f1ec
 	github.com/lightningnetwork/lnd/cert v1.2.1
 	github.com/lightningnetwork/lnd/kvdb v1.4.1
 	github.com/lightningnetwork/lnd/tlv v1.1.0
@@ -37,7 +37,7 @@ require (
 	golang.org/x/net v0.8.0
 	golang.org/x/sync v0.1.0
 	google.golang.org/grpc v1.45.0
-	google.golang.org/protobuf v1.28.1
+	google.golang.org/protobuf v1.30.0
 	gopkg.in/macaroon-bakery.v2 v2.1.0
 	gopkg.in/macaroon.v2 v2.1.0
 )
@@ -54,7 +54,7 @@ require (
 	github.com/andybalholm/brotli v1.0.3 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/btcsuite/btcd/btcutil/psbt v1.1.8 // indirect
-	github.com/btcsuite/btcwallet v0.16.9 // indirect
+	github.com/btcsuite/btcwallet v0.16.10-0.20230510075312-4383930e9c4c // indirect
 	github.com/btcsuite/btcwallet/wallet/txauthor v1.3.2 // indirect
 	github.com/btcsuite/btcwallet/wallet/txrules v1.2.0 // indirect
 	github.com/btcsuite/btcwallet/wallet/txsizes v1.2.3 // indirect
@@ -171,7 +171,7 @@ require (
 	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7 // indirect
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20201229170055-e5319fda7802 // indirect
 	github.com/tv42/zbase32 v0.0.0-20160707012821-501572607d02 // indirect
-	github.com/ulikunitz/xz v0.5.10 // indirect
+	github.com/ulikunitz/xz v0.5.11 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
@@ -228,5 +228,9 @@ replace github.com/lightninglabs/lightning-terminal/autopilotserverrpc => ./auto
 // formatted and sent to the client. This change was introduced in grpc v1.40.0
 // with https://github.com/grpc/grpc-go/pull/4474.
 replace google.golang.org/grpc => google.golang.org/grpc v1.39.0
+
+// We want to format raw bytes as hex instead of base64. The forked version
+// allows us to specify that as an option.
+replace google.golang.org/protobuf => github.com/lightninglabs/protobuf-go-hex-display v1.30.0-hex-display
 
 go 1.19

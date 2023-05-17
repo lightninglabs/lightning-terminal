@@ -533,7 +533,7 @@ func (g *LightningTerminal) start() error {
 	// Set up all the LND clients required by LiT.
 	err = g.setUpLNDClients()
 	if err != nil {
-		log.Errorf("Could not set up LND clients: %w", err)
+		log.Errorf("Could not set up LND clients: %v", err)
 		return err
 	}
 
@@ -1456,7 +1456,7 @@ func BakeSuperMacaroon(ctx context.Context, lnd lnrpc.LightningClient,
 
 	res, err := lnd.BakeMacaroon(ctx, req)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("could not bake super macaroon: %v", err)
 	}
 
 	mac, err := session.ParseMacaroon(res.Macaroon)
