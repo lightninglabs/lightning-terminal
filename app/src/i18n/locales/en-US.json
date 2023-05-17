@@ -26,7 +26,7 @@
   "cmps.auth.AuthPage.terminal": "Terminal",
   "cmps.auth.AuthPage.subtitle": "Efficiently manage Lightning node liquidity",
   "cmps.auth.AuthPage.passLabel": "Enter your password in the field above",
-  "cmps.auth.AuthPage.submitBtn": "Submit",
+  "cmps.auth.AuthPage.loginBtn": "Login",
   "cmps.common.Tile.maximizeTip": "Maximize",
   "cmps.common.PageHeader.exportTip": "Download CSV",
   "cmps.common.PageHeader.helpTip": "Take a Tour",

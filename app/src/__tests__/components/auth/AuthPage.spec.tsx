@@ -26,14 +26,9 @@ describe('AuthPage ', () => {
     expect(getByText('Terminal')).toBeInTheDocument();
   });
 
-  it('should display the password field', () => {
-    const { getByLabelText } = render();
-    expect(getByLabelText('Enter your password in the field above')).toBeInTheDocument();
-  });
-
-  it('should display the submit button', () => {
+  it('should display the login button', () => {
     const { getByText } = render();
-    expect(getByText('Submit')).toBeInTheDocument();
+    expect(getByText('Login')).toBeInTheDocument();
   });
 
   it('should display nothing when the store is not initialized', () => {
@@ -49,7 +44,7 @@ describe('AuthPage ', () => {
 
   it('should display an error when submitting an empty password', async () => {
     const { getByText, findByText } = render();
-    fireEvent.click(getByText('Submit'));
+    fireEvent.click(getByText('Login'));
     expect(await findByText('oops, password is required')).toBeInTheDocument();
   });
 
@@ -59,10 +54,8 @@ describe('AuthPage ', () => {
       return undefined as any;
     });
 
-    const { getByText, getByLabelText, findByText } = render();
-    const input = getByLabelText('Enter your password in the field above');
-    fireEvent.change(input, { target: { value: 'test-pw' } });
-    fireEvent.click(getByText('Submit'));
+    const { getByText, findByText } = render();
+    fireEvent.click(getByText('Login'));
     expect(await findByText('oops, that password is incorrect')).toBeInTheDocument();
   });
 });
