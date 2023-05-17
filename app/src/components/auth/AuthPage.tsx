@@ -4,7 +4,8 @@ import styled from '@emotion/styled';
 import { ReactComponent as LogoImage } from 'assets/images/logo.svg';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
-import { Background, Button, HeaderOne, Input } from 'components/base';
+import { Background, HeaderOne, Input } from 'components/base';
+import PurpleButton from 'components/connect/PurpleButton';
 
 const Styled = {
   Wrapper: styled.div`
@@ -16,20 +17,24 @@ const Styled = {
     height: 100%;
   `,
   Logo: styled(LogoImage)`
-    color: ${props => props.theme.colors.offWhite};
-    width: 80px;
-    height: 156px;
-    margin-bottom: 30px;
+    color: ${props => props.theme.colors.white};
+    width: 60px;
+    height: 80px;
+    margin-bottom: 32px;
   `,
   Title: styled(HeaderOne)`
-    font-size: 75px;
-    margin-bottom: 30px;
+    color: ${props => props.theme.colors.white};
+    font-size: 48px;
+    line-height: 48px;
+    margin-bottom: 0px;
     text-transform: uppercase;
   `,
   Subtitle: styled.div`
+    color: ${props => props.theme.colors.gray};
     width: 100%;
-    max-width: 500px;
-    margin-bottom: 80px;
+    max-width: 400px;
+    margin-top: 24px;
+    margin-bottom: 24px;
     text-align: center;
   `,
   Form: styled.form`
@@ -37,19 +42,31 @@ const Styled = {
     flex-direction: column;
     align-items: center;
   `,
+  Input: styled(Input)`
+    font-size: ${props => props.theme.sizes.l};
+    width: 100%;
+    color: ${props => props.theme.colors.white};
+    padding: 8px 0px;
+    border-width: 0;
+    border-bottom: 2px solid ${props => props.theme.colors.gray};
+    min-width: 360px;
+    outline: none;
+  `,
   Label: styled.label`
     margin: 10px 0 80px;
   `,
   ErrMessage: styled.div`
     width: 100%;
-    margin: 0 0 80px;
-    padding: 5px 0;
-    background-color: ${props => props.theme.colors.pink};
-    color: ${props => props.theme.colors.offWhite};
-    text-align: center;
+    padding: 8px 0;
+    color: ${props => props.theme.colors.lightningRed};
+    text-align: left;
   `,
-  Submit: styled(Button)`
-    background-color: transparent;
+  PurpleButton: styled(PurpleButton)`
+    font-size: ${props => props.theme.sizes.s};
+    margin-top: 32px;
+    line-height: 24px;
+    padding: 12px 24px;
+    width: 100%;
   `,
 };
 
@@ -77,7 +94,16 @@ const AuthPage: React.FC = () => {
   // a UI flicker while validating credentials stored in session storage
   if (!store.initialized) return null;
 
-  const { Wrapper, Logo, Title, Subtitle, Form, Label, ErrMessage, Submit } = Styled;
+  const {
+    Wrapper,
+    Logo,
+    Title,
+    Subtitle,
+    Form,
+    Input,
+    ErrMessage,
+    PurpleButton,
+  } = Styled;
   return (
     <Background gradient>
       <Wrapper>
@@ -92,13 +118,10 @@ const AuthPage: React.FC = () => {
             autoFocus
             value={pass}
             onChange={handleChange}
+            placeholder="Password"
           />
-          {error ? (
-            <ErrMessage>{error}</ErrMessage>
-          ) : (
-            <Label htmlFor="auth">{l('passLabel')}</Label>
-          )}
-          <Submit>{l('submitBtn')}</Submit>
+          {error && <ErrMessage>{error}</ErrMessage>}
+          <PurpleButton>{l('loginBtn')}</PurpleButton>
         </Form>
       </Wrapper>
     </Background>

@@ -8,8 +8,7 @@ import Chevrons from 'assets/icons/chevrons.svg';
 export const Background = styled.div<{ gradient?: boolean }>`
   height: 100%;
   color: ${props => props.theme.colors.white};
-  background: ${props =>
-    props.gradient ? props.theme.colors.gradient : props.theme.colors.blue};
+  background: radial-gradient(#1d273f, #101727);
   font-family: ${props => props.theme.fonts.open.regular};
   font-size: ${props => props.theme.sizes.m};
 `;
@@ -170,15 +169,20 @@ export const Button = styled.button<ButtonProps>`
 `;
 
 export const Input = styled.input`
-  font-family: ${props => props.theme.fonts.work.light};
-  font-weight: 300;
+  font-family: ${props => props.theme.fonts.open.regular};
+  font-weight: 500;
   font-size: ${props => props.theme.sizes.xxl};
   color: ${props => props.theme.colors.offWhite};
   background-color: transparent;
   border-width: 0;
-  border-bottom: 3px solid ${props => props.theme.colors.offWhite};
-  padding: 5px;
-  text-align: center;
+  border-bottom: 2px solid ${props => props.theme.colors.offWhite};
+  padding: 8px;
+  text-align: left;
+  transition: all 200ms;
+
+  &:hover {
+    border-bottom-color: ${props => props.theme.colors.white};
+  }
 
   &:active,
   &:focus {
@@ -193,13 +197,13 @@ export const Input = styled.input`
 `;
 
 export const TextArea = styled.textarea`
-  font-family: ${props => props.theme.fonts.work.light};
+  font-family: ${props => props.theme.fonts.open.regular};
   font-weight: 300;
   font-size: ${props => props.theme.sizes.m};
   color: ${props => props.theme.colors.offWhite};
   background-color: ${props => props.theme.colors.overlay};
   border-width: 0;
-  border-bottom: 3px solid ${props => props.theme.colors.offWhite};
+  border-bottom: 3px solid ${props => props.theme.colors.gray};
   padding: 5px;
 
   &:active,
