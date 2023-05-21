@@ -217,6 +217,11 @@ var (
 
 		// noAuth is true if the call does not require a macaroon.
 		noAuth bool
+
+		// litOnly is true if the endpoint is only being served on
+		// Lit's grpc server and so will never be accessible via the
+		// LND port.
+		litOnly bool
 	}{{
 		name:              "lnrpc",
 		macaroonFn:        lndMacaroonFn,
@@ -332,6 +337,7 @@ var (
 		allowedThroughLNC: false,
 		grpcWebURI:        "/litrpc.Proxy/GetInfo",
 		restWebURI:        "/v1/proxy/info",
+		litOnly:           true,
 	}}
 
 	// customURIs is a map of endpoint URIs that we want to allow via a
@@ -457,7 +463,7 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					endpoint.noAuth,
 					endpoint.requestFn,
 					endpoint.successPattern,
-					endpointDisabled,
+					endpointDisabled || endpoint.litOnly,
 					"Unimplemented desc = unknown service",
 				)
 			})
@@ -490,7 +496,7 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					cfg.UIPassword, endpoint.requestFn,
 					endpoint.noAuth,
 					true, endpoint.successPattern,
-					endpointDisabled,
+					endpointDisabled || endpoint.litOnly,
 					"Unimplemented desc = unknown service",
 				)
 			})
@@ -560,7 +566,7 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					superMacFile, endpoint.noAuth,
 					endpoint.requestFn,
 					endpoint.successPattern,
-					endpointDisabled,
+					endpointDisabled || endpoint.litOnly,
 					"Unimplemented desc = unknown service",
 				)
 			})
