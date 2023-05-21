@@ -187,13 +187,13 @@ type Config struct {
 	LndMode string      `long:"lnd-mode" description:"The mode to run lnd in, either 'remote' (default) or 'integrated'. 'integrated' means lnd is started alongside the UI and everything is stored in lnd's main data directory, configure everything by using the --lnd.* flags. 'remote' means the UI connects to an existing lnd node and acts as a proxy for gRPC calls to it. In the remote node LiT creates its own directory for log and configuration files, configure everything using the --remote.* flags." choice:"integrated" choice:"remote"`
 	Lnd     *lnd.Config `group:"Integrated lnd (use when lnd-mode=integrated)" namespace:"lnd"`
 
-	FaradayMode string          `long:"faraday-mode" description:"The mode to run faraday in, either 'integrated' (default) or 'remote'. 'integrated' means faraday is started alongside the UI and everything is stored in faraday's main data directory, configure everything by using the --faraday.* flags. 'remote' means the UI connects to an existing faraday node and acts as a proxy for gRPC calls to it." choice:"integrated" choice:"remote"`
+	FaradayMode string          `long:"faraday-mode" description:"The mode to run faraday in, either 'integrated' (default), 'remote' or 'disable'. 'integrated' means faraday is started alongside the UI and everything is stored in faraday's main data directory, configure everything by using the --faraday.* flags. 'remote' means the UI connects to an existing faraday node and acts as a proxy for gRPC calls to it. 'disable' means that LiT is started without a connection to faraday." choice:"integrated" choice:"remote" choice:"disable"`
 	Faraday     *faraday.Config `group:"Integrated faraday options (use when faraday-mode=integrated)" namespace:"faraday"`
 
-	LoopMode string        `long:"loop-mode" description:"The mode to run loop in, either 'integrated' (default) or 'remote'. 'integrated' means loopd is started alongside the UI and everything is stored in loop's main data directory, configure everything by using the --loop.* flags. 'remote' means the UI connects to an existing loopd node and acts as a proxy for gRPC calls to it." choice:"integrated" choice:"remote"`
+	LoopMode string        `long:"loop-mode" description:"The mode to run loop in, either 'integrated' (default), 'remote' or 'disable'. 'integrated' means loopd is started alongside the UI and everything is stored in loop's main data directory, configure everything by using the --loop.* flags. 'remote' means the UI connects to an existing loopd node and acts as a proxy for gRPC calls to it. 'disable' means that LiT is started without a connection to loop." choice:"integrated" choice:"remote" choice:"disable"`
 	Loop     *loopd.Config `group:"Integrated loop options (use when loop-mode=integrated)" namespace:"loop"`
 
-	PoolMode string       `long:"pool-mode" description:"The mode to run pool in, either 'integrated' (default) or 'remote'. 'integrated' means poold is started alongside the UI and everything is stored in pool's main data directory, configure everything by using the --pool.* flags. 'remote' means the UI connects to an existing poold node and acts as a proxy for gRPC calls to it." choice:"integrated" choice:"remote"`
+	PoolMode string       `long:"pool-mode" description:"The mode to run pool in, either 'integrated' (default) or 'remote'. 'integrated' means poold is started alongside the UI and everything is stored in pool's main data directory, configure everything by using the --pool.* flags. 'remote' means the UI connects to an existing poold node and acts as a proxy for gRPC calls to it. 'disable' means that LiT is started without a connection to pool." choice:"integrated" choice:"remote" choice:"disable"`
 	Pool     *pool.Config `group:"Integrated pool options (use when pool-mode=integrated)" namespace:"pool"`
 
 	TaprootAssetsMode string         `long:"taproot-assets-mode" description:"The mode to run taproot assets in, either 'integrated' (default), 'remote' or 'disable'. 'integrated' means tapd is started alongside the UI and everything is stored in tap's main data directory, configure everything by using the --taproot-assets.* flags. 'remote' means the UI connects to an existing tapd node and acts as a proxy for gRPC calls to it. 'disable' means that LiT is started without a connection to tapd" choice:"integrated" choice:"disable"`
@@ -458,20 +458,26 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 	// (like the log or lnd options) as they will be taken from lnd's config
 	// struct. Others we want to force to be the same as lnd so the user
 	// doesn't have to set them manually, like the network for example.
-	cfg.Faraday.Lnd.MacaroonPath = faraday.DefaultLndMacaroonPath
-	if err := faraday.ValidateConfig(cfg.Faraday); err != nil {
-		return nil, err
+	if cfg.FaradayMode != ModeDisable {
+		cfg.Faraday.Lnd.MacaroonPath = faraday.DefaultLndMacaroonPath
+		if err := faraday.ValidateConfig(cfg.Faraday); err != nil {
+			return nil, err
+		}
 	}
 
 	defaultLoopCfg := loopd.DefaultConfig()
-	cfg.Loop.Lnd.MacaroonPath = defaultLoopCfg.Lnd.MacaroonPath
-	if err := loopd.Validate(cfg.Loop); err != nil {
-		return nil, err
+	if cfg.LoopMode != ModeDisable {
+		cfg.Loop.Lnd.MacaroonPath = defaultLoopCfg.Lnd.MacaroonPath
+		if err := loopd.Validate(cfg.Loop); err != nil {
+			return nil, err
+		}
 	}
 
-	cfg.Pool.Lnd.MacaroonPath = pool.DefaultLndMacaroonPath
-	if err := pool.Validate(cfg.Pool); err != nil {
-		return nil, err
+	if cfg.PoolMode != ModeDisable {
+		cfg.Pool.Lnd.MacaroonPath = pool.DefaultLndMacaroonPath
+		if err := pool.Validate(cfg.Pool); err != nil {
+			return nil, err
+		}
 	}
 
 	if cfg.TaprootAssetsMode != ModeDisable {
