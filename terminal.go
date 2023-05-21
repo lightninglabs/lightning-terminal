@@ -283,16 +283,9 @@ func (g *LightningTerminal) Run() error {
 	<-shutdownInterceptor.ShutdownChannel()
 	log.Infof("Shutdown signal received")
 
-	if g.rpcProxy != nil {
-		if err := g.rpcProxy.Stop(); err != nil {
-			log.Errorf("Error stopping rpc proxy: %v", err)
-		}
-	}
-
-	if g.httpServer != nil {
-		if err := g.httpServer.Close(); err != nil {
-			log.Errorf("Error stopping UI server: %v", err)
-		}
+	err = g.shutdownSubServers()
+	if err != nil {
+		log.Errorf("Error shutting down: %v", err)
 	}
 
 	g.wg.Wait()
@@ -482,27 +475,6 @@ func (g *LightningTerminal) start() error {
 	case <-interceptor.ShutdownChannel():
 		return fmt.Errorf("received the shutdown signal")
 	}
-
-	// We now know that starting lnd was successful. If we now run into an
-	// error, we must shut down lnd correctly.
-	defer func() {
-		err := g.shutdownSubServers()
-		if err != nil {
-			log.Errorf("Error shutting down: %v", err)
-		}
-
-		if g.rpcProxy != nil {
-			if err := g.rpcProxy.Stop(); err != nil {
-				log.Errorf("Error stopping rpc proxy: %v", err)
-			}
-		}
-
-		if g.httpServer != nil {
-			if err := g.httpServer.Close(); err != nil {
-				log.Errorf("Error stopping UI server: %v", err)
-			}
-		}
-	}()
 
 	// Connect to LND.
 	g.lndConn, err = connectLND(g.cfg, bufRpcListener)
@@ -1154,6 +1126,18 @@ func (g *LightningTerminal) shutdownSubServers() error {
 		if err := g.lndConn.Close(); err != nil {
 			log.Errorf("Error closing lnd connection: %v", err)
 			returnErr = err
+		}
+	}
+
+	if g.rpcProxy != nil {
+		if err := g.rpcProxy.Stop(); err != nil {
+			log.Errorf("Error stopping rpc proxy: %v", err)
+		}
+	}
+
+	if g.httpServer != nil {
+		if err := g.httpServer.Close(); err != nil {
+			log.Errorf("Error stopping UI server: %v", err)
 		}
 	}
 
