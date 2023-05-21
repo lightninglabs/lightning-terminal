@@ -730,42 +730,56 @@ func (hn *HarnessNode) WaitUntilStarted(conn grpc.ClientConnInterface,
 		return err
 	}
 
+	faradayMode, _ := hn.Cfg.ActiveArgs.getArg("faraday-mode")
+	loopMode, _ := hn.Cfg.ActiveArgs.getArg("loop-mode")
+	poolMode, _ := hn.Cfg.ActiveArgs.getArg("pool-mode")
+	tapMode, _ := hn.Cfg.ActiveArgs.getArg("taproot-assets-mode")
+
 	ctxt, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	return wait.NoError(func() error {
-		faradayClient, err := hn.faradayClient()
-		if err != nil {
-			return err
+		if faradayMode != terminal.ModeDisable {
+			faradayClient, err := hn.faradayClient()
+			if err != nil {
+				return err
+			}
+
+			_, err = faradayClient.RevenueReport(
+				ctxt, &frdrpc.RevenueReportRequest{},
+			)
+			if err != nil {
+				return err
+			}
 		}
 
-		_, err = faradayClient.RevenueReport(
-			ctxt, &frdrpc.RevenueReportRequest{},
-		)
-		if err != nil {
-			return err
+		if loopMode != terminal.ModeDisable {
+			loopClient, err := hn.loopClient()
+			if err != nil {
+				return err
+			}
+
+			_, err = loopClient.ListSwaps(
+				ctxt, &looprpc.ListSwapsRequest{},
+			)
+			if err != nil {
+				return err
+			}
 		}
 
-		loopClient, err := hn.loopClient()
-		if err != nil {
-			return err
+		if poolMode != terminal.ModeDisable {
+			poolClient, err := hn.poolClient()
+			if err != nil {
+				return err
+			}
+
+			_, err = poolClient.GetInfo(
+				ctxt, &poolrpc.GetInfoRequest{},
+			)
+			if err != nil {
+				return err
+			}
 		}
 
-		_, err = loopClient.ListSwaps(ctxt, &looprpc.ListSwapsRequest{})
-		if err != nil {
-			return err
-		}
-
-		poolClient, err := hn.poolClient()
-		if err != nil {
-			return err
-		}
-
-		_, err = poolClient.GetInfo(ctxt, &poolrpc.GetInfoRequest{})
-		if err != nil {
-			return err
-		}
-
-		tapMode, _ := hn.Cfg.ActiveArgs.getArg("taproot-assets-mode")
 		if tapMode != terminal.ModeDisable {
 			tapClient, err := hn.tapClient()
 			if err != nil {

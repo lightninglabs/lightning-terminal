@@ -259,6 +259,7 @@ var (
 		allowedThroughLNC: true,
 		grpcWebURI:        "/frdrpc.FaradayServer/RevenueReport",
 		restWebURI:        "/v1/faraday/revenue",
+		canDisable:        true,
 	}, {
 		name:              "looprpc",
 		macaroonFn:        loopMacaroonFn,
@@ -267,6 +268,7 @@ var (
 		allowedThroughLNC: true,
 		grpcWebURI:        "/looprpc.SwapClient/ListSwaps",
 		restWebURI:        "/v1/loop/swaps",
+		canDisable:        true,
 	}, {
 		name:              "poolrpc",
 		macaroonFn:        poolMacaroonFn,
@@ -275,6 +277,7 @@ var (
 		allowedThroughLNC: true,
 		grpcWebURI:        "/poolrpc.Trader/GetInfo",
 		restWebURI:        "/v1/pool/info",
+		canDisable:        true,
 	}, {
 		name:              "taprpc",
 		macaroonFn:        tapMacaroonFn,
@@ -354,6 +357,9 @@ func testDisablingSubServers(ctx context.Context, net *NetworkHarness,
 	err := net.RestartNode(
 		node, nil, []LitArgOption{
 			WithLitArg("taproot-assets-mode", "disable"),
+			WithLitArg("loop-mode", "disable"),
+			WithLitArg("pool-mode", "disable"),
+			WithLitArg("faraday-mode", "disable"),
 		},
 	)
 	require.NoError(t, err)
