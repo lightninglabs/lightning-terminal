@@ -67,7 +67,7 @@ var createAccountCommand = cli.Command{
 
 func createAccount(ctx *cli.Context) error {
 	ctxb := context.Background()
-	clientConn, cleanup, err := connectClient(ctx)
+	clientConn, cleanup, err := connectClient(ctx, false)
 	if err != nil {
 		return err
 	}
@@ -169,7 +169,7 @@ var updateAccountCommand = cli.Command{
 
 func updateAccount(ctx *cli.Context) error {
 	ctxb := context.Background()
-	clientConn, cleanup, err := connectClient(ctx)
+	clientConn, cleanup, err := connectClient(ctx, false)
 	if err != nil {
 		return err
 	}
@@ -250,7 +250,7 @@ var listAccountsCommand = cli.Command{
 
 func listAccounts(ctx *cli.Context) error {
 	ctxb := context.Background()
-	clientConn, cleanup, err := connectClient(ctx)
+	clientConn, cleanup, err := connectClient(ctx, false)
 	if err != nil {
 		return err
 	}
@@ -286,7 +286,7 @@ var removeAccountCommand = cli.Command{
 
 func removeAccount(ctx *cli.Context) error {
 	ctxb := context.Background()
-	clientConn, cleanup, err := connectClient(ctx)
+	clientConn, cleanup, err := connectClient(ctx, false)
 	if err != nil {
 		return err
 	}

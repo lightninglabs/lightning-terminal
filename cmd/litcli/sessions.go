@@ -96,7 +96,7 @@ var addSessionCommand = cli.Command{
 }
 
 func addSession(ctx *cli.Context) error {
-	clientConn, cleanup, err := connectClient(ctx)
+	clientConn, cleanup, err := connectClient(ctx, false)
 	if err != nil {
 		return err
 	}
@@ -229,7 +229,7 @@ var sessionStateMap = map[litrpc.SessionState]sessionFilter{
 
 func listSessions(filter sessionFilter) func(ctx *cli.Context) error {
 	return func(ctx *cli.Context) error {
-		clientConn, cleanup, err := connectClient(ctx)
+		clientConn, cleanup, err := connectClient(ctx, false)
 		if err != nil {
 			return err
 		}
@@ -279,7 +279,7 @@ var revokeSessionCommand = cli.Command{
 }
 
 func revokeSession(ctx *cli.Context) error {
-	clientConn, cleanup, err := connectClient(ctx)
+	clientConn, cleanup, err := connectClient(ctx, false)
 	if err != nil {
 		return err
 	}

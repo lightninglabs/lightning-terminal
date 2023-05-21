@@ -89,7 +89,7 @@ var listActionsCommand = cli.Command{
 
 func listActions(ctx *cli.Context) error {
 	ctxb := context.Background()
-	clientConn, cleanup, err := connectClient(ctx)
+	clientConn, cleanup, err := connectClient(ctx, false)
 	if err != nil {
 		return err
 	}
