@@ -240,6 +240,8 @@ func (g *LightningTerminal) Run() error {
 		g.cfg, g, g.validateSuperMacaroon, g.permsMgr, g.subServerMgr,
 	)
 
+	litrpc.RegisterProxyServer(g.rpcProxy.grpcServer, g.rpcProxy)
+
 	// Start the main web server that dispatches requests either to the
 	// static UI file server or the RPC proxy. This makes it possible to
 	// unlock lnd through the UI.
@@ -877,7 +879,6 @@ func (g *LightningTerminal) registerSubDaemonGrpcServers(server *grpc.Server,
 	if withLitRPC {
 		litrpc.RegisterSessionsServer(server, g.sessionRpcServer)
 		litrpc.RegisterAccountsServer(server, g.accountRpcServer)
-		litrpc.RegisterProxyServer(server, g.rpcProxy)
 	}
 
 	litrpc.RegisterFirewallServer(server, g.sessionRpcServer)
