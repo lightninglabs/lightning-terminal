@@ -1468,18 +1468,24 @@ func (g *LightningTerminal) validateSuperMacaroon(ctx context.Context,
 // initSubServers registers the faraday and loop sub-servers with the
 // subServerMgr.
 func (g *LightningTerminal) initSubServers() {
-	g.subServerMgr.AddServer(subservers.NewFaradaySubServer(
-		g.cfg.Faraday, g.cfg.faradayRpcConfig, g.cfg.Remote.Faraday,
-		g.cfg.faradayRemote,
-	), true)
+	g.subServerMgr.AddServer(
+		subservers.NewFaradaySubServer(
+			g.cfg.Faraday, g.cfg.faradayRpcConfig,
+			g.cfg.Remote.Faraday, g.cfg.faradayRemote,
+		), g.cfg.FaradayMode != ModeDisable,
+	)
 
-	g.subServerMgr.AddServer(subservers.NewLoopSubServer(
-		g.cfg.Loop, g.cfg.Remote.Loop, g.cfg.loopRemote,
-	), true)
+	g.subServerMgr.AddServer(
+		subservers.NewLoopSubServer(
+			g.cfg.Loop, g.cfg.Remote.Loop, g.cfg.loopRemote,
+		), g.cfg.LoopMode != ModeDisable,
+	)
 
-	g.subServerMgr.AddServer(subservers.NewPoolSubServer(
-		g.cfg.Pool, g.cfg.Remote.Pool, g.cfg.poolRemote,
-	), true)
+	g.subServerMgr.AddServer(
+		subservers.NewPoolSubServer(
+			g.cfg.Pool, g.cfg.Remote.Pool, g.cfg.poolRemote,
+		), g.cfg.PoolMode != ModeDisable,
+	)
 
 	g.subServerMgr.AddServer(
 		subservers.NewTaprootAssetsSubServer(
