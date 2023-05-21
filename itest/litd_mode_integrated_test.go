@@ -200,6 +200,14 @@ var (
 		litConn := litrpc.NewProxyClient(c)
 		return litConn.GetInfo(ctx, &litrpc.GetInfoRequest{})
 	}
+	statusRequestFn = func(ctx context.Context,
+		c grpc.ClientConnInterface) (proto.Message, error) {
+
+		litConn := litrpc.NewStatusClient(c)
+		return litConn.SubServerStatus(
+			ctx, &litrpc.SubServerStatusReq{},
+		)
+	}
 	litMacaroonFn = func(cfg *LitNodeConfig) string {
 		return cfg.LitMacPath
 	}
@@ -337,6 +345,16 @@ var (
 		allowedThroughLNC: false,
 		grpcWebURI:        "/litrpc.Proxy/GetInfo",
 		restWebURI:        "/v1/proxy/info",
+		litOnly:           true,
+	}, {
+		name:              "litrpc-status",
+		macaroonFn:        emptyMacaroonFn,
+		requestFn:         statusRequestFn,
+		successPattern:    "\"sub_servers\":",
+		allowedThroughLNC: true,
+		grpcWebURI:        "/litrpc.Status/SubServerStatus",
+		restWebURI:        "/v1/status",
+		noAuth:            true,
 		litOnly:           true,
 	}}
 
@@ -691,13 +709,20 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 			endpointDisabled := subServersDisabled &&
 				endpoint.canDisable
 
+			expectedErr := "permission denied"
+			if endpoint.noAuth {
+				expectedErr = "unknown service"
+			}
+
 			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
 				allowed := customURIs[endpoint.grpcWebURI]
+
 				runLNCAuthTest(
 					ttt, rawLNCConn, endpoint.requestFn,
 					endpoint.successPattern,
-					allowed, "permission denied",
-					endpointDisabled, endpoint.noAuth,
+					allowed, expectedErr,
+					endpointDisabled,
+					endpoint.noAuth,
 				)
 			})
 		}
@@ -817,6 +842,10 @@ func runGRPCAuthTest(t *testing.T, hostPort, tlsCertPath, macPath string,
 	require.NoError(t, err)
 	ctxm = macaroonContext(ctxt, macBytes)
 	resp, err = makeRequest(ctxm, rawConn)
+	if disabled {
+		require.ErrorContains(t, err, disabledErr)
+		return
+	}
 	require.NoError(t, err)
 
 	json, err := marshalOptions.Marshal(resp)
