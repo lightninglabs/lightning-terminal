@@ -428,8 +428,7 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					endpoint.requestFn,
 					endpoint.successPattern,
 					endpointDisabled,
-					"unknown permissions required for "+
-						"method",
+					"unknown gRPC web request",
 				)
 			})
 		}
@@ -465,8 +464,7 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					shouldFailWithoutMacaroon,
 					endpoint.successPattern,
 					endpointDisabled,
-					"unknown permissions required for "+
-						"method",
+					"unknown gRPC web request",
 				)
 			})
 		}
@@ -491,8 +489,7 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					ttt, cfg.LitAddr(), cfg.UIPassword,
 					endpoint.grpcWebURI,
 					withoutUIPassword, endpointDisabled,
-					"unknown permissions required for "+
-						"method",
+					"unknown gRPC web request",
 				)
 			})
 		}
@@ -531,8 +528,7 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					endpoint.requestFn,
 					endpoint.successPattern,
 					endpointDisabled,
-					"unknown permissions required for "+
-						"method",
+					"unknown gRPC web request",
 				)
 			})
 		}
@@ -1071,8 +1067,8 @@ func runLNCAuthTest(t *testing.T, rawLNCConn grpc.ClientConnInterface,
 	// Is this a disallowed call?
 	if !callAllowed {
 		if disabled {
-			require.ErrorContains(t, err, "unknown permissions "+
-				"required for method")
+			require.ErrorContains(t, err, "unknown gRPC web "+
+				"request")
 		} else {
 			require.ErrorContains(t, err, expectErrContains)
 		}
@@ -1083,8 +1079,7 @@ func runLNCAuthTest(t *testing.T, rawLNCConn grpc.ClientConnInterface,
 	// The call should be allowed, so we expect no error unless this is
 	// for a disabled sub-server.
 	if disabled {
-		require.ErrorContains(t, err, "unknown permissions "+
-			"required for method")
+		require.ErrorContains(t, err, "unknown gRPC web request")
 
 		return
 	} else {
