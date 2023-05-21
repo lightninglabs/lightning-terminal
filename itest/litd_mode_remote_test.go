@@ -63,6 +63,7 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 				runGRPCAuthTest(
 					ttt, cfg.LitAddr(), cfg.LitTLSCertPath,
 					endpoint.macaroonFn(cfg),
+					endpoint.noAuth,
 					endpoint.requestFn,
 					endpoint.successPattern,
 					endpointEnabled,
@@ -89,6 +90,7 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 				runUIPasswordCheck(
 					ttt, cfg.LitAddr(), cfg.LitTLSCertPath,
 					cfg.UIPassword, endpoint.requestFn,
+					endpoint.noAuth,
 					shouldFailWithoutMacaroon,
 					endpoint.successPattern,
 					endpointEnabled,
@@ -116,6 +118,7 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					endpoint.grpcWebURI, withoutUIPassword,
 					endpointEnabled,
 					"unknown gRPC web request",
+					endpoint.noAuth,
 				)
 			})
 		}
@@ -140,6 +143,7 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 				runGRPCAuthTest(
 					ttt, cfg.LitAddr(), cfg.LitTLSCertPath,
 					superMacFile,
+					endpoint.noAuth,
 					endpoint.requestFn,
 					endpoint.successPattern,
 					endpointEnabled,
@@ -165,6 +169,7 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					endpoint.successPattern,
 					endpoint.restPOST, withoutUIPassword,
 					endpointDisabled,
+					endpoint.noAuth,
 				)
 			})
 		}
@@ -196,6 +201,7 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					endpoint.allowedThroughLNC,
 					"unknown service",
 					endpointDisabled,
+					endpoint.noAuth,
 				)
 			})
 		}
@@ -234,13 +240,19 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 			endpointDisabled := subServersDisabled &&
 				endpoint.canDisable
 
+			expectedErr := "permission denied"
+			if endpoint.noAuth {
+				expectedErr = "unknown service"
+			}
+
 			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
 				allowed := customURIs[endpoint.grpcWebURI]
 				runLNCAuthTest(
 					ttt, rawLNCConn, endpoint.requestFn,
 					endpoint.successPattern,
-					allowed, "permission denied",
+					allowed, expectedErr,
 					endpointDisabled,
+					endpoint.noAuth,
 				)
 			})
 		}
