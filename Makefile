@@ -138,6 +138,7 @@ go-install-cli:
 	$(GOINSTALL) -trimpath github.com/lightninglabs/faraday/cmd/frcli
 	$(GOINSTALL) -trimpath -ldflags "$(LDFLAGS)" github.com/lightninglabs/pool/cmd/pool
 	$(GOINSTALL) -trimpath -ldflags "$(LDFLAGS)" github.com/lightninglabs/taproot-assets/cmd/tapcli
+	$(GOINSTALL) -trimpath -tags="$(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" $(PKG)/cmd/litcli
 
 app-build: yarn-install
 	@$(call print, "Building production app.")
