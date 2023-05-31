@@ -109,6 +109,15 @@ SwapClient.GetLsatTokens = {
   responseType: loop_pb.TokensResponse
 };
 
+SwapClient.GetInfo = {
+  methodName: "GetInfo",
+  service: SwapClient,
+  requestStream: false,
+  responseStream: false,
+  requestType: loop_pb.GetInfoRequest,
+  responseType: loop_pb.GetInfoResponse
+};
+
 SwapClient.GetLiquidityParams = {
   methodName: "GetLiquidityParams",
   service: SwapClient,
@@ -466,6 +475,37 @@ SwapClientClient.prototype.getLsatTokens = function getLsatTokens(requestMessage
     callback = arguments[1];
   }
   var client = grpc.unary(SwapClient.GetLsatTokens, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+SwapClientClient.prototype.getInfo = function getInfo(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(SwapClient.GetInfo, {
     request: requestMessage,
     host: this.serviceHost,
     metadata: metadata,

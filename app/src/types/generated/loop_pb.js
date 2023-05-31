@@ -18,6 +18,8 @@ var swapserverrpc_common_pb = require('./swapserverrpc/common_pb.js');
 goog.exportSymbol('proto.looprpc.AutoReason', null, global);
 goog.exportSymbol('proto.looprpc.Disqualified', null, global);
 goog.exportSymbol('proto.looprpc.FailureReason', null, global);
+goog.exportSymbol('proto.looprpc.GetInfoRequest', null, global);
+goog.exportSymbol('proto.looprpc.GetInfoResponse', null, global);
 goog.exportSymbol('proto.looprpc.GetLiquidityParamsRequest', null, global);
 goog.exportSymbol('proto.looprpc.InQuoteResponse', null, global);
 goog.exportSymbol('proto.looprpc.InTermsResponse', null, global);
@@ -28,6 +30,7 @@ goog.exportSymbol('proto.looprpc.ListSwapsRequest', null, global);
 goog.exportSymbol('proto.looprpc.ListSwapsResponse', null, global);
 goog.exportSymbol('proto.looprpc.LoopInRequest', null, global);
 goog.exportSymbol('proto.looprpc.LoopOutRequest', null, global);
+goog.exportSymbol('proto.looprpc.LoopStats', null, global);
 goog.exportSymbol('proto.looprpc.LsatToken', null, global);
 goog.exportSymbol('proto.looprpc.MonitorRequest', null, global);
 goog.exportSymbol('proto.looprpc.OutQuoteResponse', null, global);
@@ -4962,6 +4965,737 @@ proto.looprpc.LsatToken.prototype.setStorageName = function(value) {
  * @extends {jspb.Message}
  * @constructor
  */
+proto.looprpc.LoopStats = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.looprpc.LoopStats, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.looprpc.LoopStats.displayName = 'proto.looprpc.LoopStats';
+}
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.looprpc.LoopStats.prototype.toObject = function(opt_includeInstance) {
+  return proto.looprpc.LoopStats.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.looprpc.LoopStats} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.looprpc.LoopStats.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    pendingCount: jspb.Message.getFieldWithDefault(msg, 1, "0"),
+    successCount: jspb.Message.getFieldWithDefault(msg, 2, "0"),
+    failCount: jspb.Message.getFieldWithDefault(msg, 3, "0"),
+    sumPendingAmt: jspb.Message.getFieldWithDefault(msg, 4, "0"),
+    sumSucceededAmt: jspb.Message.getFieldWithDefault(msg, 5, "0")
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.looprpc.LoopStats}
+ */
+proto.looprpc.LoopStats.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.looprpc.LoopStats;
+  return proto.looprpc.LoopStats.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.looprpc.LoopStats} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.looprpc.LoopStats}
+ */
+proto.looprpc.LoopStats.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = /** @type {string} */ (reader.readUint64String());
+      msg.setPendingCount(value);
+      break;
+    case 2:
+      var value = /** @type {string} */ (reader.readUint64String());
+      msg.setSuccessCount(value);
+      break;
+    case 3:
+      var value = /** @type {string} */ (reader.readUint64String());
+      msg.setFailCount(value);
+      break;
+    case 4:
+      var value = /** @type {string} */ (reader.readInt64String());
+      msg.setSumPendingAmt(value);
+      break;
+    case 5:
+      var value = /** @type {string} */ (reader.readInt64String());
+      msg.setSumSucceededAmt(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.looprpc.LoopStats.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.looprpc.LoopStats.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.looprpc.LoopStats} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.looprpc.LoopStats.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getPendingCount();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
+      1,
+      f
+    );
+  }
+  f = message.getSuccessCount();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
+      2,
+      f
+    );
+  }
+  f = message.getFailCount();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
+      3,
+      f
+    );
+  }
+  f = message.getSumPendingAmt();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
+      4,
+      f
+    );
+  }
+  f = message.getSumSucceededAmt();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
+      5,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional uint64 pending_count = 1;
+ * @return {string}
+ */
+proto.looprpc.LoopStats.prototype.getPendingCount = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, "0"));
+};
+
+
+/** @param {string} value */
+proto.looprpc.LoopStats.prototype.setPendingCount = function(value) {
+  jspb.Message.setProto3StringIntField(this, 1, value);
+};
+
+
+/**
+ * optional uint64 success_count = 2;
+ * @return {string}
+ */
+proto.looprpc.LoopStats.prototype.getSuccessCount = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, "0"));
+};
+
+
+/** @param {string} value */
+proto.looprpc.LoopStats.prototype.setSuccessCount = function(value) {
+  jspb.Message.setProto3StringIntField(this, 2, value);
+};
+
+
+/**
+ * optional uint64 fail_count = 3;
+ * @return {string}
+ */
+proto.looprpc.LoopStats.prototype.getFailCount = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, "0"));
+};
+
+
+/** @param {string} value */
+proto.looprpc.LoopStats.prototype.setFailCount = function(value) {
+  jspb.Message.setProto3StringIntField(this, 3, value);
+};
+
+
+/**
+ * optional int64 sum_pending_amt = 4;
+ * @return {string}
+ */
+proto.looprpc.LoopStats.prototype.getSumPendingAmt = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 4, "0"));
+};
+
+
+/** @param {string} value */
+proto.looprpc.LoopStats.prototype.setSumPendingAmt = function(value) {
+  jspb.Message.setProto3StringIntField(this, 4, value);
+};
+
+
+/**
+ * optional int64 sum_succeeded_amt = 5;
+ * @return {string}
+ */
+proto.looprpc.LoopStats.prototype.getSumSucceededAmt = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, "0"));
+};
+
+
+/** @param {string} value */
+proto.looprpc.LoopStats.prototype.setSumSucceededAmt = function(value) {
+  jspb.Message.setProto3StringIntField(this, 5, value);
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.looprpc.GetInfoRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.looprpc.GetInfoRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.looprpc.GetInfoRequest.displayName = 'proto.looprpc.GetInfoRequest';
+}
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.looprpc.GetInfoRequest.prototype.toObject = function(opt_includeInstance) {
+  return proto.looprpc.GetInfoRequest.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.looprpc.GetInfoRequest} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.looprpc.GetInfoRequest.toObject = function(includeInstance, msg) {
+  var f, obj = {
+
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.looprpc.GetInfoRequest}
+ */
+proto.looprpc.GetInfoRequest.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.looprpc.GetInfoRequest;
+  return proto.looprpc.GetInfoRequest.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.looprpc.GetInfoRequest} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.looprpc.GetInfoRequest}
+ */
+proto.looprpc.GetInfoRequest.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.looprpc.GetInfoRequest.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.looprpc.GetInfoRequest.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.looprpc.GetInfoRequest} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.looprpc.GetInfoRequest.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.looprpc.GetInfoResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.looprpc.GetInfoResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.looprpc.GetInfoResponse.displayName = 'proto.looprpc.GetInfoResponse';
+}
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.looprpc.GetInfoResponse.prototype.toObject = function(opt_includeInstance) {
+  return proto.looprpc.GetInfoResponse.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.looprpc.GetInfoResponse} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.looprpc.GetInfoResponse.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    version: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    network: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    rpcListen: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    restListen: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    macaroonPath: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    tlsCertPath: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    loopOutStats: (f = msg.getLoopOutStats()) && proto.looprpc.LoopStats.toObject(includeInstance, f),
+    loopInStats: (f = msg.getLoopInStats()) && proto.looprpc.LoopStats.toObject(includeInstance, f)
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.looprpc.GetInfoResponse}
+ */
+proto.looprpc.GetInfoResponse.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.looprpc.GetInfoResponse;
+  return proto.looprpc.GetInfoResponse.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.looprpc.GetInfoResponse} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.looprpc.GetInfoResponse}
+ */
+proto.looprpc.GetInfoResponse.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setVersion(value);
+      break;
+    case 2:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setNetwork(value);
+      break;
+    case 3:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setRpcListen(value);
+      break;
+    case 4:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setRestListen(value);
+      break;
+    case 5:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setMacaroonPath(value);
+      break;
+    case 6:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setTlsCertPath(value);
+      break;
+    case 7:
+      var value = new proto.looprpc.LoopStats;
+      reader.readMessage(value,proto.looprpc.LoopStats.deserializeBinaryFromReader);
+      msg.setLoopOutStats(value);
+      break;
+    case 8:
+      var value = new proto.looprpc.LoopStats;
+      reader.readMessage(value,proto.looprpc.LoopStats.deserializeBinaryFromReader);
+      msg.setLoopInStats(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.looprpc.GetInfoResponse.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.looprpc.GetInfoResponse.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.looprpc.GetInfoResponse} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.looprpc.GetInfoResponse.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getVersion();
+  if (f.length > 0) {
+    writer.writeString(
+      1,
+      f
+    );
+  }
+  f = message.getNetwork();
+  if (f.length > 0) {
+    writer.writeString(
+      2,
+      f
+    );
+  }
+  f = message.getRpcListen();
+  if (f.length > 0) {
+    writer.writeString(
+      3,
+      f
+    );
+  }
+  f = message.getRestListen();
+  if (f.length > 0) {
+    writer.writeString(
+      4,
+      f
+    );
+  }
+  f = message.getMacaroonPath();
+  if (f.length > 0) {
+    writer.writeString(
+      5,
+      f
+    );
+  }
+  f = message.getTlsCertPath();
+  if (f.length > 0) {
+    writer.writeString(
+      6,
+      f
+    );
+  }
+  f = message.getLoopOutStats();
+  if (f != null) {
+    writer.writeMessage(
+      7,
+      f,
+      proto.looprpc.LoopStats.serializeBinaryToWriter
+    );
+  }
+  f = message.getLoopInStats();
+  if (f != null) {
+    writer.writeMessage(
+      8,
+      f,
+      proto.looprpc.LoopStats.serializeBinaryToWriter
+    );
+  }
+};
+
+
+/**
+ * optional string version = 1;
+ * @return {string}
+ */
+proto.looprpc.GetInfoResponse.prototype.getVersion = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+};
+
+
+/** @param {string} value */
+proto.looprpc.GetInfoResponse.prototype.setVersion = function(value) {
+  jspb.Message.setProto3StringField(this, 1, value);
+};
+
+
+/**
+ * optional string network = 2;
+ * @return {string}
+ */
+proto.looprpc.GetInfoResponse.prototype.getNetwork = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+};
+
+
+/** @param {string} value */
+proto.looprpc.GetInfoResponse.prototype.setNetwork = function(value) {
+  jspb.Message.setProto3StringField(this, 2, value);
+};
+
+
+/**
+ * optional string rpc_listen = 3;
+ * @return {string}
+ */
+proto.looprpc.GetInfoResponse.prototype.getRpcListen = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
+};
+
+
+/** @param {string} value */
+proto.looprpc.GetInfoResponse.prototype.setRpcListen = function(value) {
+  jspb.Message.setProto3StringField(this, 3, value);
+};
+
+
+/**
+ * optional string rest_listen = 4;
+ * @return {string}
+ */
+proto.looprpc.GetInfoResponse.prototype.getRestListen = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 4, ""));
+};
+
+
+/** @param {string} value */
+proto.looprpc.GetInfoResponse.prototype.setRestListen = function(value) {
+  jspb.Message.setProto3StringField(this, 4, value);
+};
+
+
+/**
+ * optional string macaroon_path = 5;
+ * @return {string}
+ */
+proto.looprpc.GetInfoResponse.prototype.getMacaroonPath = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, ""));
+};
+
+
+/** @param {string} value */
+proto.looprpc.GetInfoResponse.prototype.setMacaroonPath = function(value) {
+  jspb.Message.setProto3StringField(this, 5, value);
+};
+
+
+/**
+ * optional string tls_cert_path = 6;
+ * @return {string}
+ */
+proto.looprpc.GetInfoResponse.prototype.getTlsCertPath = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 6, ""));
+};
+
+
+/** @param {string} value */
+proto.looprpc.GetInfoResponse.prototype.setTlsCertPath = function(value) {
+  jspb.Message.setProto3StringField(this, 6, value);
+};
+
+
+/**
+ * optional LoopStats loop_out_stats = 7;
+ * @return {?proto.looprpc.LoopStats}
+ */
+proto.looprpc.GetInfoResponse.prototype.getLoopOutStats = function() {
+  return /** @type{?proto.looprpc.LoopStats} */ (
+    jspb.Message.getWrapperField(this, proto.looprpc.LoopStats, 7));
+};
+
+
+/** @param {?proto.looprpc.LoopStats|undefined} value */
+proto.looprpc.GetInfoResponse.prototype.setLoopOutStats = function(value) {
+  jspb.Message.setWrapperField(this, 7, value);
+};
+
+
+proto.looprpc.GetInfoResponse.prototype.clearLoopOutStats = function() {
+  this.setLoopOutStats(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {!boolean}
+ */
+proto.looprpc.GetInfoResponse.prototype.hasLoopOutStats = function() {
+  return jspb.Message.getField(this, 7) != null;
+};
+
+
+/**
+ * optional LoopStats loop_in_stats = 8;
+ * @return {?proto.looprpc.LoopStats}
+ */
+proto.looprpc.GetInfoResponse.prototype.getLoopInStats = function() {
+  return /** @type{?proto.looprpc.LoopStats} */ (
+    jspb.Message.getWrapperField(this, proto.looprpc.LoopStats, 8));
+};
+
+
+/** @param {?proto.looprpc.LoopStats|undefined} value */
+proto.looprpc.GetInfoResponse.prototype.setLoopInStats = function(value) {
+  jspb.Message.setWrapperField(this, 8, value);
+};
+
+
+proto.looprpc.GetInfoResponse.prototype.clearLoopInStats = function() {
+  this.setLoopInStats(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {!boolean}
+ */
+proto.looprpc.GetInfoResponse.prototype.hasLoopInStats = function() {
+  return jspb.Message.getField(this, 8) != null;
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
 proto.looprpc.GetLiquidityParamsRequest = function(opt_data) {
   jspb.Message.initialize(this, opt_data, 0, -1, null, null);
 };
@@ -5141,7 +5875,9 @@ proto.looprpc.LiquidityParameters.toObject = function(includeInstance, msg) {
     htlcConfTarget: jspb.Message.getFieldWithDefault(msg, 17, 0),
     autoloopDestAddress: jspb.Message.getFieldWithDefault(msg, 18, ""),
     autoloopBudgetRefreshPeriodSec: jspb.Message.getFieldWithDefault(msg, 19, "0"),
-    autoloopBudgetLastRefresh: jspb.Message.getFieldWithDefault(msg, 20, "0")
+    autoloopBudgetLastRefresh: jspb.Message.getFieldWithDefault(msg, 20, "0"),
+    easyAutoloop: jspb.Message.getFieldWithDefault(msg, 21, false),
+    easyAutoloopLocalTargetSat: jspb.Message.getFieldWithDefault(msg, 22, "0")
   };
 
   if (includeInstance) {
@@ -5258,6 +5994,14 @@ proto.looprpc.LiquidityParameters.deserializeBinaryFromReader = function(msg, re
     case 20:
       var value = /** @type {string} */ (reader.readUint64String());
       msg.setAutoloopBudgetLastRefresh(value);
+      break;
+    case 21:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setEasyAutoloop(value);
+      break;
+    case 22:
+      var value = /** @type {string} */ (reader.readUint64String());
+      msg.setEasyAutoloopLocalTargetSat(value);
       break;
     default:
       reader.skipField();
@@ -5426,6 +6170,20 @@ proto.looprpc.LiquidityParameters.serializeBinaryToWriter = function(message, wr
   if (parseInt(f, 10) !== 0) {
     writer.writeUint64String(
       20,
+      f
+    );
+  }
+  f = message.getEasyAutoloop();
+  if (f) {
+    writer.writeBool(
+      21,
+      f
+    );
+  }
+  f = message.getEasyAutoloopLocalTargetSat();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
+      22,
       f
     );
   }
@@ -5747,6 +6505,38 @@ proto.looprpc.LiquidityParameters.prototype.getAutoloopBudgetLastRefresh = funct
 /** @param {string} value */
 proto.looprpc.LiquidityParameters.prototype.setAutoloopBudgetLastRefresh = function(value) {
   jspb.Message.setProto3StringIntField(this, 20, value);
+};
+
+
+/**
+ * optional bool easy_autoloop = 21;
+ * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
+ * You should avoid comparisons like {@code val === true/false} in those cases.
+ * @return {boolean}
+ */
+proto.looprpc.LiquidityParameters.prototype.getEasyAutoloop = function() {
+  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 21, false));
+};
+
+
+/** @param {boolean} value */
+proto.looprpc.LiquidityParameters.prototype.setEasyAutoloop = function(value) {
+  jspb.Message.setProto3BooleanField(this, 21, value);
+};
+
+
+/**
+ * optional uint64 easy_autoloop_local_target_sat = 22;
+ * @return {string}
+ */
+proto.looprpc.LiquidityParameters.prototype.getEasyAutoloopLocalTargetSat = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 22, "0"));
+};
+
+
+/** @param {string} value */
+proto.looprpc.LiquidityParameters.prototype.setEasyAutoloopLocalTargetSat = function(value) {
+  jspb.Message.setProto3StringIntField(this, 22, value);
 };
 
 

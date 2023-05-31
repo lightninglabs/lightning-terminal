@@ -75,6 +75,11 @@ service SwapClient {
     */
     rpc GetLsatTokens (TokensRequest) returns (TokensResponse);
 
+    /* loop: `getinfo`
+    GetInfo gets basic information about the loop daemon.
+    */
+    rpc GetInfo (GetInfoRequest) returns (GetInfoResponse);
+
     /* loop: `getparams`
     GetLiquidityParams gets the parameters that the daemon's liquidity manager
     is currently configured with. This may be nil if nothing is configured.
@@ -740,6 +745,78 @@ message LsatToken {
     string storage_name = 8;
 }
 
+message LoopStats {
+    /*
+    Number of currently pending swaps.
+     */
+    uint64 pending_count = 1 [jstype = JS_STRING];
+
+    /*
+    Number of succeeded swaps.
+     */
+    uint64 success_count = 2 [jstype = JS_STRING];
+
+    /*
+    Number failed swaps.
+     */
+    uint64 fail_count = 3 [jstype = JS_STRING];
+
+    /*
+    The sum of all pending swap amounts.
+     */
+    int64 sum_pending_amt = 4 [jstype = JS_STRING];
+
+    /*
+    The sum of all succeeded swap amounts.
+     */
+    int64 sum_succeeded_amt = 5 [jstype = JS_STRING];
+}
+
+message GetInfoRequest {
+}
+
+message GetInfoResponse {
+    /*
+    The current daemon version.
+     */
+    string version = 1;
+
+    /*
+    The network the daemon is running on.
+     */
+    string network = 2;
+
+    /*
+    Host and port of the loopd grpc server.
+     */
+    string rpc_listen = 3;
+
+    /*
+    Host and port of the loopd rest server.
+     */
+    string rest_listen = 4;
+
+    /*
+    Loop's macaroon path that clients use to talk to the daemon.
+     */
+    string macaroon_path = 5;
+
+    /*
+    Loop's tls cert path
+     */
+    string tls_cert_path = 6;
+
+    /*
+    Statistics about loop outs.
+     */
+    LoopStats loop_out_stats = 7;
+
+    /*
+    Statistics about loop ins.
+     */
+    LoopStats loop_in_stats = 8;
+}
+
 message GetLiquidityParamsRequest {
 }
 
@@ -873,6 +950,21 @@ message LiquidityParameters {
     UNIX timestamp in seconds.
     */
     uint64 autoloop_budget_last_refresh = 20 [jstype = JS_STRING];
+
+    /*
+    Set to true to enable easy autoloop. If set, all channel/peer rules will be
+    overridden and the client will automatically dispatch swaps in order to meet
+    the configured local balance target size. Currently only loop out is
+    supported, meaning that easy autoloop can only reduce the funds that are
+    held as balance in channels.
+    */
+    bool easy_autoloop = 21;
+
+    /*
+    The local balance target size, expressed in satoshis. This is used by easy
+    autoloop to determine how much liquidity should be maintained in channels.
+    */
+    uint64 easy_autoloop_local_target_sat = 22 [jstype = JS_STRING];
 }
 
 enum LiquidityRuleType {

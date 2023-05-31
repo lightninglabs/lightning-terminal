@@ -103,6 +103,15 @@ type SwapClientGetLsatTokens = {
   readonly responseType: typeof loop_pb.TokensResponse;
 };
 
+type SwapClientGetInfo = {
+  readonly methodName: string;
+  readonly service: typeof SwapClient;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof loop_pb.GetInfoRequest;
+  readonly responseType: typeof loop_pb.GetInfoResponse;
+};
+
 type SwapClientGetLiquidityParams = {
   readonly methodName: string;
   readonly service: typeof SwapClient;
@@ -143,6 +152,7 @@ export class SwapClient {
   static readonly GetLoopInQuote: SwapClientGetLoopInQuote;
   static readonly Probe: SwapClientProbe;
   static readonly GetLsatTokens: SwapClientGetLsatTokens;
+  static readonly GetInfo: SwapClientGetInfo;
   static readonly GetLiquidityParams: SwapClientGetLiquidityParams;
   static readonly SetLiquidityParams: SwapClientSetLiquidityParams;
   static readonly SuggestSwaps: SwapClientSuggestSwaps;
@@ -270,6 +280,15 @@ export class SwapClientClient {
   getLsatTokens(
     requestMessage: loop_pb.TokensRequest,
     callback: (error: ServiceError|null, responseMessage: loop_pb.TokensResponse|null) => void
+  ): UnaryResponse;
+  getInfo(
+    requestMessage: loop_pb.GetInfoRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.GetInfoResponse|null) => void
+  ): UnaryResponse;
+  getInfo(
+    requestMessage: loop_pb.GetInfoRequest,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.GetInfoResponse|null) => void
   ): UnaryResponse;
   getLiquidityParams(
     requestMessage: loop_pb.GetLiquidityParamsRequest,
