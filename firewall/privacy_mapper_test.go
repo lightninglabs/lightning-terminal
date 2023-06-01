@@ -36,6 +36,33 @@ func TestPrivacyMapper(t *testing.T) {
 	obfusTxID1 := "45ec471bfccb0b7b9a8bc4008248931c59ad994903e07b54f54821ea3ef5cc5c"
 	obfusOut1 := uint32(1642614131)
 
+	clearPending := &lnrpc.PendingChannelsResponse_PendingChannel{
+		RemoteNodePub:        "01020304",
+		LocalBalance:         100_000,
+		RemoteBalance:        20_000,
+		LocalChanReserveSat:  1_000,
+		RemoteChanReserveSat: 1_000,
+		Capacity:             120_000,
+		ChannelPoint: outPoint(
+			clearTxID, 0,
+		),
+		Initiator: lnrpc.Initiator_INITIATOR_LOCAL,
+		Memo:      "something",
+	}
+
+	obfuscatedPending := &lnrpc.PendingChannelsResponse_PendingChannel{
+		RemoteNodePub: "c8134495",
+		LocalBalance:  95_100,
+		RemoteBalance: 19_000,
+		Capacity:      114_100,
+		ChannelPoint: outPoint(
+			obfusTxID0,
+			obfusOut0,
+		),
+		Initiator: lnrpc.Initiator_INITIATOR_LOCAL,
+		Memo:      "something",
+	}
+
 	// Define some preexisting mappings for the privacy mapper.
 	mapPreloadRealToPseudo := map[string]string{
 		"Tinker Bell's pub key": "a44ef01c3bff970ef495c",
@@ -514,6 +541,133 @@ func TestPrivacyMapper(t *testing.T) {
 						CloseType:      lnrpc.ChannelCloseSummary_LOCAL_FORCE_CLOSE,
 						CloseInitiator: lnrpc.Initiator_INITIATOR_LOCAL,
 						OpenInitiator:  lnrpc.Initiator_INITIATOR_LOCAL,
+					},
+				},
+			},
+		},
+		{
+			name:    "PendingChannels Response",
+			uri:     "/lnrpc.Lightning/PendingChannels",
+			msgType: rpcperms.TypeResponse,
+			msg: &lnrpc.PendingChannelsResponse{
+				PendingOpenChannels: []*lnrpc.PendingChannelsResponse_PendingOpenChannel{
+					{
+						CommitFee: 123,
+						Channel:   clearPending,
+					},
+				},
+				PendingClosingChannels: []*lnrpc.PendingChannelsResponse_ClosedChannel{
+					{
+						Channel:     clearPending,
+						ClosingTxid: clearTxID,
+					},
+				},
+				PendingForceClosingChannels: []*lnrpc.PendingChannelsResponse_ForceClosedChannel{
+					{
+						Channel:           clearPending,
+						ClosingTxid:       clearTxID,
+						LimboBalance:      100_000,
+						MaturityHeight:    123,
+						BlocksTilMaturity: 123,
+						RecoveredBalance:  100_000,
+						PendingHtlcs: []*lnrpc.PendingHTLC{
+							{
+								Incoming: true,
+							},
+						},
+						Anchor: 1,
+					},
+				},
+				WaitingCloseChannels: []*lnrpc.PendingChannelsResponse_WaitingCloseChannel{
+					{
+						Channel:      clearPending,
+						LimboBalance: 100_000,
+						Commitments: &lnrpc.PendingChannelsResponse_Commitments{
+							LocalTxid: clearTxID,
+						},
+						ClosingTxid:  clearTxID,
+						ClosingTxHex: clearTxID,
+					},
+				},
+			},
+			expectedReplacement: &lnrpc.PendingChannelsResponse{
+				PendingOpenChannels: []*lnrpc.PendingChannelsResponse_PendingOpenChannel{
+					{
+						CommitFee: 123,
+						Channel:   obfuscatedPending,
+					},
+				},
+				PendingClosingChannels: []*lnrpc.PendingChannelsResponse_ClosedChannel{
+					{
+						Channel:     obfuscatedPending,
+						ClosingTxid: obfusTxID0,
+					},
+				},
+				PendingForceClosingChannels: []*lnrpc.PendingChannelsResponse_ForceClosedChannel{
+					{
+						Channel:           obfuscatedPending,
+						ClosingTxid:       obfusTxID0,
+						LimboBalance:      95_100,
+						MaturityHeight:    123,
+						BlocksTilMaturity: 123,
+						RecoveredBalance:  95_100,
+						PendingHtlcs:      []*lnrpc.PendingHTLC{},
+						Anchor:            1,
+					},
+				},
+				WaitingCloseChannels: []*lnrpc.PendingChannelsResponse_WaitingCloseChannel{
+					{
+						Channel:      obfuscatedPending,
+						LimboBalance: 95_100,
+						Commitments:  &lnrpc.PendingChannelsResponse_Commitments{},
+						ClosingTxid:  obfusTxID0,
+						ClosingTxHex: obfusTxID0,
+					},
+				},
+			},
+		},
+		{
+			name:    "PendingChannels Response clear",
+			uri:     "/lnrpc.Lightning/PendingChannels",
+			msgType: rpcperms.TypeResponse,
+			msg: &lnrpc.PendingChannelsResponse{
+				PendingOpenChannels: []*lnrpc.PendingChannelsResponse_PendingOpenChannel{
+					{
+						CommitFee: 123,
+						Channel: &lnrpc.PendingChannelsResponse_PendingChannel{
+							RemoteNodePub: "01020304",
+							LocalBalance:  100_000,
+							RemoteBalance: 100_000,
+							Capacity:      120_000,
+							ChannelPoint: outPoint(
+								clearTxID, 0,
+							),
+							Initiator: lnrpc.Initiator_INITIATOR_LOCAL,
+							Memo:      "something",
+						},
+					},
+				},
+			},
+			privacyFlags: []session.PrivacyFlag{
+				session.ClearPubkeys,
+				session.ClearAmounts,
+				session.ClearChanIDs,
+			},
+			expectedReplacement: &lnrpc.PendingChannelsResponse{
+				PendingOpenChannels: []*lnrpc.PendingChannelsResponse_PendingOpenChannel{
+					{
+						CommitFee: 123,
+						Channel: &lnrpc.PendingChannelsResponse_PendingChannel{
+							RemoteNodePub: "01020304",
+							LocalBalance:  100_000,
+							RemoteBalance: 100_000,
+							Capacity:      120_000,
+							ChannelPoint: outPoint(
+								clearTxID, 0,
+							),
+							Initiator: lnrpc.Initiator_INITIATOR_LOCAL,
+							Memo:      "something",
+						},
 					},
 				},
 			},
