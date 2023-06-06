@@ -25,6 +25,10 @@ type ProxyClient interface {
 	// StopDaemon will send a shutdown request to the interrupt handler,
 	// triggering a graceful shutdown of the daemon.
 	StopDaemon(ctx context.Context, in *StopDaemonRequest, opts ...grpc.CallOption) (*StopDaemonResponse, error)
+	// litcli: `bakesupermacaroon`
+	// BakeSuperMacaroon bakes a new macaroon that includes permissions for
+	// all the active daemons that LiT is connected to.
+	BakeSuperMacaroon(ctx context.Context, in *BakeSuperMacaroonRequest, opts ...grpc.CallOption) (*BakeSuperMacaroonResponse, error)
 }
 
 type proxyClient struct {
@@ -53,6 +57,15 @@ func (c *proxyClient) StopDaemon(ctx context.Context, in *StopDaemonRequest, opt
 	return out, nil
 }
 
+func (c *proxyClient) BakeSuperMacaroon(ctx context.Context, in *BakeSuperMacaroonRequest, opts ...grpc.CallOption) (*BakeSuperMacaroonResponse, error) {
+	out := new(BakeSuperMacaroonResponse)
+	err := c.cc.Invoke(ctx, "/litrpc.Proxy/BakeSuperMacaroon", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ProxyServer is the server API for Proxy service.
 // All implementations must embed UnimplementedProxyServer
 // for forward compatibility
@@ -64,6 +77,10 @@ type ProxyServer interface {
 	// StopDaemon will send a shutdown request to the interrupt handler,
 	// triggering a graceful shutdown of the daemon.
 	StopDaemon(context.Context, *StopDaemonRequest) (*StopDaemonResponse, error)
+	// litcli: `bakesupermacaroon`
+	// BakeSuperMacaroon bakes a new macaroon that includes permissions for
+	// all the active daemons that LiT is connected to.
+	BakeSuperMacaroon(context.Context, *BakeSuperMacaroonRequest) (*BakeSuperMacaroonResponse, error)
 	mustEmbedUnimplementedProxyServer()
 }
 
@@ -76,6 +93,9 @@ func (UnimplementedProxyServer) GetInfo(context.Context, *GetInfoRequest) (*GetI
 }
 func (UnimplementedProxyServer) StopDaemon(context.Context, *StopDaemonRequest) (*StopDaemonResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StopDaemon not implemented")
+}
+func (UnimplementedProxyServer) BakeSuperMacaroon(context.Context, *BakeSuperMacaroonRequest) (*BakeSuperMacaroonResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BakeSuperMacaroon not implemented")
 }
 func (UnimplementedProxyServer) mustEmbedUnimplementedProxyServer() {}
 
@@ -126,6 +146,24 @@ func _Proxy_StopDaemon_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Proxy_BakeSuperMacaroon_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BakeSuperMacaroonRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProxyServer).BakeSuperMacaroon(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/litrpc.Proxy/BakeSuperMacaroon",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProxyServer).BakeSuperMacaroon(ctx, req.(*BakeSuperMacaroonRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Proxy_ServiceDesc is the grpc.ServiceDesc for Proxy service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -140,6 +178,10 @@ var Proxy_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "StopDaemon",
 			Handler:    _Proxy_StopDaemon_Handler,
+		},
+		{
+			MethodName: "BakeSuperMacaroon",
+			Handler:    _Proxy_BakeSuperMacaroon_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
