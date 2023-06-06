@@ -680,6 +680,110 @@ export namespace LsatToken {
   }
 }
 
+export class LoopStats extends jspb.Message {
+  getPendingCount(): string;
+  setPendingCount(value: string): void;
+
+  getSuccessCount(): string;
+  setSuccessCount(value: string): void;
+
+  getFailCount(): string;
+  setFailCount(value: string): void;
+
+  getSumPendingAmt(): string;
+  setSumPendingAmt(value: string): void;
+
+  getSumSucceededAmt(): string;
+  setSumSucceededAmt(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): LoopStats.AsObject;
+  static toObject(includeInstance: boolean, msg: LoopStats): LoopStats.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: LoopStats, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): LoopStats;
+  static deserializeBinaryFromReader(message: LoopStats, reader: jspb.BinaryReader): LoopStats;
+}
+
+export namespace LoopStats {
+  export type AsObject = {
+    pendingCount: string,
+    successCount: string,
+    failCount: string,
+    sumPendingAmt: string,
+    sumSucceededAmt: string,
+  }
+}
+
+export class GetInfoRequest extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GetInfoRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: GetInfoRequest): GetInfoRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: GetInfoRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetInfoRequest;
+  static deserializeBinaryFromReader(message: GetInfoRequest, reader: jspb.BinaryReader): GetInfoRequest;
+}
+
+export namespace GetInfoRequest {
+  export type AsObject = {
+  }
+}
+
+export class GetInfoResponse extends jspb.Message {
+  getVersion(): string;
+  setVersion(value: string): void;
+
+  getNetwork(): string;
+  setNetwork(value: string): void;
+
+  getRpcListen(): string;
+  setRpcListen(value: string): void;
+
+  getRestListen(): string;
+  setRestListen(value: string): void;
+
+  getMacaroonPath(): string;
+  setMacaroonPath(value: string): void;
+
+  getTlsCertPath(): string;
+  setTlsCertPath(value: string): void;
+
+  hasLoopOutStats(): boolean;
+  clearLoopOutStats(): void;
+  getLoopOutStats(): LoopStats | undefined;
+  setLoopOutStats(value?: LoopStats): void;
+
+  hasLoopInStats(): boolean;
+  clearLoopInStats(): void;
+  getLoopInStats(): LoopStats | undefined;
+  setLoopInStats(value?: LoopStats): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GetInfoResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: GetInfoResponse): GetInfoResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: GetInfoResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetInfoResponse;
+  static deserializeBinaryFromReader(message: GetInfoResponse, reader: jspb.BinaryReader): GetInfoResponse;
+}
+
+export namespace GetInfoResponse {
+  export type AsObject = {
+    version: string,
+    network: string,
+    rpcListen: string,
+    restListen: string,
+    macaroonPath: string,
+    tlsCertPath: string,
+    loopOutStats?: LoopStats.AsObject,
+    loopInStats?: LoopStats.AsObject,
+  }
+}
+
 export class GetLiquidityParamsRequest extends jspb.Message {
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetLiquidityParamsRequest.AsObject;
@@ -759,6 +863,12 @@ export class LiquidityParameters extends jspb.Message {
   getAutoloopBudgetLastRefresh(): string;
   setAutoloopBudgetLastRefresh(value: string): void;
 
+  getEasyAutoloop(): boolean;
+  setEasyAutoloop(value: boolean): void;
+
+  getEasyAutoloopLocalTargetSat(): string;
+  setEasyAutoloopLocalTargetSat(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LiquidityParameters.AsObject;
   static toObject(includeInstance: boolean, msg: LiquidityParameters): LiquidityParameters.AsObject;
@@ -791,6 +901,8 @@ export namespace LiquidityParameters {
     autoloopDestAddress: string,
     autoloopBudgetRefreshPeriodSec: string,
     autoloopBudgetLastRefresh: string,
+    easyAutoloop: boolean,
+    easyAutoloopLocalTargetSat: string,
   }
 }
 
