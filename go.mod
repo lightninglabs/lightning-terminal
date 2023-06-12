@@ -22,7 +22,7 @@ require (
 	github.com/lightninglabs/pool v0.6.4-beta
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.0
 	github.com/lightninglabs/protobuf-hex-display v1.4.3-hex-display
-	github.com/lightninglabs/taproot-assets v0.2.0
+	github.com/lightninglabs/taproot-assets v0.2.0-lit-0
 	github.com/lightningnetwork/lnd v0.16.3-beta
 	github.com/lightningnetwork/lnd/cert v1.2.1
 	github.com/lightningnetwork/lnd/kvdb v1.4.1
@@ -37,7 +37,7 @@ require (
 	golang.org/x/net v0.8.0
 	golang.org/x/sync v0.1.0
 	google.golang.org/grpc v1.45.0
-	google.golang.org/protobuf v1.28.1
+	google.golang.org/protobuf v1.30.0
 	gopkg.in/macaroon-bakery.v2 v2.1.0
 	gopkg.in/macaroon.v2 v2.1.0
 )
@@ -223,6 +223,11 @@ require (
 )
 
 replace github.com/lightninglabs/lightning-terminal/autopilotserverrpc => ./autopilotserverrpc
+
+// We want to format raw bytes as hex instead of base64. The forked version
+// allows us to specify that as an option. This is required for the
+// taproot-assets dependency to function properly.
+replace google.golang.org/protobuf => github.com/lightninglabs/protobuf-go-hex-display v1.30.0-hex-display
 
 // We need to use grpc v1.39.0 because of a change in how HTTP errors are
 // formatted and sent to the client. This change was introduced in grpc v1.40.0
