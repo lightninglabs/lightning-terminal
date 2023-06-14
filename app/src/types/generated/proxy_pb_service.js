@@ -28,6 +28,15 @@ Proxy.StopDaemon = {
   responseType: proxy_pb.StopDaemonResponse
 };
 
+Proxy.BakeSuperMacaroon = {
+  methodName: "BakeSuperMacaroon",
+  service: Proxy,
+  requestStream: false,
+  responseStream: false,
+  requestType: proxy_pb.BakeSuperMacaroonRequest,
+  responseType: proxy_pb.BakeSuperMacaroonResponse
+};
+
 exports.Proxy = Proxy;
 
 function ProxyClient(serviceHost, options) {
@@ -71,6 +80,37 @@ ProxyClient.prototype.stopDaemon = function stopDaemon(requestMessage, metadata,
     callback = arguments[1];
   }
   var client = grpc.unary(Proxy.StopDaemon, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+ProxyClient.prototype.bakeSuperMacaroon = function bakeSuperMacaroon(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(Proxy.BakeSuperMacaroon, {
     request: requestMessage,
     host: this.serviceHost,
     metadata: metadata,
