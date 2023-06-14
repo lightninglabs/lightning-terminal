@@ -11,6 +11,7 @@ import (
 	"github.com/lightninglabs/taproot-assets/taprpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/assetwalletrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/mintrpc"
+	"github.com/lightninglabs/taproot-assets/taprpc/universerpc"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"google.golang.org/grpc"
 	"gopkg.in/macaroon-bakery.v2/bakery"
@@ -107,6 +108,7 @@ func (t *taprootAssetsSubServer) RegisterGrpcService(
 	taprpc.RegisterTaprootAssetsServer(registrar, t)
 	mintrpc.RegisterMintServer(registrar, t)
 	assetwalletrpc.RegisterAssetWalletServer(registrar, t)
+	universerpc.RegisterUniverseServer(registrar, t)
 }
 
 // RegisterRestService registers the sub-server's REST handlers with the given
@@ -132,6 +134,13 @@ func (t *taprootAssetsSubServer) RegisterRestService(ctx context.Context,
 	}
 
 	err = assetwalletrpc.RegisterAssetWalletHandlerFromEndpoint(
+		ctx, mux, endpoint, dialOpts,
+	)
+	if err != nil {
+		return err
+	}
+
+	err = universerpc.RegisterUniverseHandlerFromEndpoint(
 		ctx, mux, endpoint, dialOpts,
 	)
 	if err != nil {
