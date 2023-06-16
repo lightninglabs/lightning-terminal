@@ -81,6 +81,8 @@ export const BitcoinExplorerPresets: Record<string, string> = {
 
 /** the list of supported Lightning graph explorers for nodes*/
 export const LightningExplorerPresets: Record<string, string> = {
+  terminal: 'https://terminal.lightning.engineering/{pubkey}',
+  'amboss.space': 'https://amboss.space/node/{pubkey}',
   '1ml.com': 'https://1ml.com/node/{pubkey}',
 };
 
