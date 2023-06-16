@@ -62,6 +62,7 @@ const filePatches = {
   'lit-autopilot': 'litrpc: {}',
   'firewall': 'litrpc: {}',
   'proxy': 'litrpc: {}',
+  'lit-status': 'litrpc: {}',
 };
 
 /**
@@ -87,7 +88,7 @@ const download = async () => {
   }
   // copy the lit proto files from litrpc to the proto dir so that the original
   // files are not modified by `sanitize`
-  const litProtoFiles = ['lit-sessions', 'lit-accounts', 'lit-autopilot', 'proxy', 'firewall'];
+  const litProtoFiles = ['lit-sessions', 'lit-accounts', 'lit-autopilot', 'proxy', 'firewall', 'lit-status'];
   for (name of litProtoFiles) {
     const src = join(appPath, '..', 'litrpc', `${name}.proto`);
     const dest = join(appPath, '..', 'proto', `${name}.proto`);
