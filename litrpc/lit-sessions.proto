@@ -199,6 +199,21 @@ message Session {
     not revoked. Readers should instead first check the session_state field.
     */
     uint64 revoked_at = 16 [jstype = JS_STRING];
+
+    /*
+    If set, this is the local_pub_key of a Session that this Session is linked
+    to. The session's will share the same privacy mapper and, if this is an
+    Autopilot session, then the Autopilot server will be informed that the
+    sessions are linked on session creation.
+    */
+    bytes prev_session_local_pub = 17;
+
+    /*
+    The ID of the group of Session's that this Session is linked to. If this
+    session is not linked to any older Session, then this value will be the
+    same as the ID.
+    */
+    bytes group_id = 18;
 }
 
 message MacaroonRecipe {

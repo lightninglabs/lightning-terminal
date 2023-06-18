@@ -162,6 +162,11 @@
         "no_privacy_mapper": {
           "type": "boolean",
           "description": "Set to true of the session should not make use of the privacy mapper."
+        },
+        "prev_local_pub": {
+          "type": "string",
+          "format": "byte",
+          "description": "Set to a previous, revoked session's local pub key in order to link the\nnew session to the previous one."
         }
       }
     },
@@ -578,6 +583,16 @@
           "type": "string",
           "format": "uint64",
           "description": "The unix timestamp indicating the time at which the session was revoked.\nNote that this field has not been around since the beginning and so it\ncould be the case that a session has been revoked but that this field\nwill not have been set for that session. Therefore, it is suggested that\nreaders should not assume that if this field is zero that the session is\nnot revoked. Readers should instead first check the session_state field."
+        },
+        "prev_session_local_pub": {
+          "type": "string",
+          "format": "byte",
+          "description": "If set, this is the local_pub_key of a Session that this Session is linked\nto. The session's will share the same privacy mapper and, if this is an\nAutopilot session, then the Autopilot server will be informed that the\nsessions are linked on session creation."
+        },
+        "group_id": {
+          "type": "string",
+          "format": "byte",
+          "description": "The ID of the group of Session's that this Session is linked to. If this\nsession is not linked to any older Session, then this value will be the\nsame as the ID."
         }
       }
     },
