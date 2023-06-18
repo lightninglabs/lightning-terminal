@@ -50,6 +50,11 @@ var (
 // TestSerializeDeserializeSession makes sure that a session can be serialized
 // and deserialized from and to the tlv binary format successfully.
 func TestSerializeDeserializeSession(t *testing.T) {
+	t.Parallel()
+
+	priv, err := btcec.NewPrivateKey()
+	require.NoError(t, err)
+
 	tests := []struct {
 		name          string
 		sessType      Type
@@ -57,23 +62,64 @@ func TestSerializeDeserializeSession(t *testing.T) {
 		perms         []bakery.Op
 		caveats       []macaroon.Caveat
 		featureConfig map[string][]byte
+		prevSess      *Session
 	}{
 		{
-			name:     "session 1",
+			name:     "revoked-at field",
 			sessType: TypeMacaroonCustom,
 			revokedAt: time.Date(
 				2023, 1, 10, 10, 10, 0, 0, time.UTC,
 			),
 		},
 		{
-			name:     "session 2",
+			name:     "permissions and caveats",
 			sessType: TypeMacaroonCustom,
 			perms:    perms,
 			caveats:  caveats,
 		},
 		{
-			name:     "session 3",
+			name:     "feature configuration bytes",
 			sessType: TypeMacaroonCustom,
+			featureConfig: map[string][]byte{
+				"AutoFees":      {1, 2, 3, 4},
+				"AutoSomething": {4, 3, 4, 5, 6, 6},
+			},
+		},
+		{
+			name:     "linked session with no group ID",
+			sessType: TypeMacaroonCustom,
+			featureConfig: map[string][]byte{
+				"AutoFees":      {1, 2, 3, 4},
+				"AutoSomething": {4, 3, 4, 5, 6, 6},
+			},
+			prevSess: &Session{
+				LocalPublicKey: priv.PubKey(),
+			},
+		},
+		{
+			name:     "linked session with group ID",
+			sessType: TypeMacaroonCustom,
+			featureConfig: map[string][]byte{
+				"AutoFees":      {1, 2, 3, 4},
+				"AutoSomething": {4, 3, 4, 5, 6, 6},
+			},
+			prevSess: &Session{
+				LocalPublicKey: priv.PubKey(),
+				GroupID:        ID{1, 2, 3, 4},
+			},
+		},
+		{
+			name:     "session with no optional fields",
+			sessType: TypeMacaroonCustom,
+		},
+		{
+			name:     "session with all optional fields",
+			sessType: TypeMacaroonCustom,
+			revokedAt: time.Date(
+				2023, 1, 10, 10, 10, 0, 0, time.UTC,
+			),
+			perms:   perms,
+			caveats: caveats,
 			featureConfig: map[string][]byte{
 				"AutoFees":      {1, 2, 3, 4},
 				"AutoSomething": {4, 3, 4, 5, 6, 6},
@@ -83,11 +129,14 @@ func TestSerializeDeserializeSession(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			session, err := NewSession(
 				test.name, test.sessType,
 				time.Date(99999, 1, 1, 0, 0, 0, 0, time.UTC),
 				"foo.bar.baz:1234", true, test.perms,
 				test.caveats, test.featureConfig, true,
+				test.prevSess,
 			)
 			require.NoError(t, err)
 
@@ -126,9 +175,43 @@ func TestSerializeDeserializeSession(t *testing.T) {
 	}
 }
 
+// TestGroupID tests that a Session's GroupID member gets correctly set
+// depending on if the Session is linked to a previous one.
+func TestGroupID(t *testing.T) {
+	t.Parallel()
+
+	// Create session 1 which is not linked to any previous session.
+	session1, err := NewSession(
+		"test-session", TypeMacaroonAdmin,
+		time.Date(99999, 1, 1, 0, 0, 0, 0, time.UTC),
+		"foo.bar.baz:1234", true, nil, nil, nil, false, nil,
+	)
+	require.NoError(t, err)
+
+	// The group ID of this session should be the same as the session ID.
+	require.Equal(t, session1.ID, session1.GroupID)
+
+	// Create session 2 and link it to session 1.
+	session2, err := NewSession(
+		"test-session", TypeMacaroonAdmin,
+		time.Date(99999, 1, 1, 0, 0, 0, 0, time.UTC),
+		"foo.bar.baz:1234", true, nil, nil, nil, false, session1,
+	)
+	require.NoError(t, err)
+
+	// The group ID of this session should _not_ the same as its session ID.
+	require.NotEqual(t, session2.ID, session2.GroupID)
+
+	// Instead, the group ID should match the session ID of session 1.
+	require.Equal(t, session1.ID, session2.GroupID)
+
+}
+
 // TestSerializeDeserializeCaveats makes sure that a list of caveats can be
 // serialized and deserialized from and to the tlv binary format successfully.
 func TestSerializeDeserializeCaveats(t *testing.T) {
+	t.Parallel()
+
 	// We'll now make a sample invoice stream, and use that to encode the
 	// amp state we created above.
 	tlvStream, err := tlv.NewStream(
@@ -170,6 +253,8 @@ func TestSerializeDeserializeCaveats(t *testing.T) {
 // TestSerializeDeserializePerms makes sure that a list of perms can be
 // serialized and deserialized from and to the tlv binary format successfully.
 func TestSerializeDeserializePerms(t *testing.T) {
+	t.Parallel()
+
 	// We'll now make a sample invoice stream, and use that to encode the
 	// amp state we created above.
 	tlvStream, err := tlv.NewStream(
@@ -209,6 +294,8 @@ func TestSerializeDeserializePerms(t *testing.T) {
 // recipes can be serialized and deserialized from and to the tlv binary format
 // successfully.
 func TestSerializeDeserializeMacaroonRecipe(t *testing.T) {
+	t.Parallel()
+
 	recipe := MacaroonRecipe{
 		Permissions: perms,
 		Caveats:     caveats,

@@ -317,7 +317,7 @@ func (s *sessionRpcServer) AddSession(_ context.Context,
 
 	sess, err := session.NewSession(
 		req.Label, typ, expiry, req.MailboxServerAddr, req.DevServer,
-		uniquePermissions, caveats, nil, false,
+		uniquePermissions, caveats, nil, false, nil,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating new session: %v", err)
@@ -981,7 +981,7 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 
 	sess, err := session.NewSession(
 		req.Label, session.TypeAutopilot, expiry, req.MailboxServerAddr,
-		req.DevServer, perms, caveats, featureConfig, privacy,
+		req.DevServer, perms, caveats, featureConfig, privacy, nil,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating new session: %v", err)
