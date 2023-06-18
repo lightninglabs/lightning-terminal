@@ -67,6 +67,19 @@ func (db *DB) CreateSession(session *Session) error {
 				session.LocalPublicKey.SerializeCompressed())
 		}
 
+		// If this is a linked session (meaning the group ID is
+		// different from the ID) the make sure that the Group ID of
+		// this session is an ID known by the store. We can do this by
+		// checking that an entry for this ID exists in the id-to-key
+		// index.
+		if session.ID != session.GroupID {
+			_, err = getKeyForID(sessionBucket, session.GroupID)
+			if err != nil {
+				return fmt.Errorf("unknown linked session "+
+					"%x: %w", session.GroupID, err)
+			}
+		}
+
 		// Add the mapping from session ID to session key to the ID
 		// index.
 		err = addIDToKeyPair(sessionBucket, session.ID, sessionKey)

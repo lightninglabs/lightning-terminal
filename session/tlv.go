@@ -28,6 +28,7 @@ const (
 	typeFeaturesConfig  tlv.Type = 14
 	typeWithPrivacy     tlv.Type = 15
 	typeRevokedAt       tlv.Type = 16
+	typeGroupID         tlv.Type = 17
 
 	// typeMacaroon is no longer used, but we leave it defined for backwards
 	// compatibility.
@@ -53,6 +54,28 @@ func SerializeSession(w io.Writer, session *Session) error {
 	if session == nil {
 		return fmt.Errorf("session cannot be nil")
 	}
+
+	tlvRecords, err := constructSessionTLVRecords(session, true)
+	if err != nil {
+		return err
+	}
+
+	tlvStream, err := tlv.NewStream(tlvRecords...)
+	if err != nil {
+		return err
+	}
+
+	return tlvStream.Encode(w)
+}
+
+// constructSessionTlvRecords takes a Session and gathers all the TLV records
+// that need to be serialised for the session. The withGroupID boolean can be
+// used to exclude the tlv record for the GroupID of the session. This should
+// only ever be set to true for testing purposes to ensure that older sessions
+// which did do not have the GroupID serialised still correctly deserialize and
+// set the correct GroupID in the Session struct.
+func constructSessionTLVRecords(session *Session, withGroupID bool) (
+	[]tlv.Record, error) {
 
 	var (
 		label         = []byte(session.Label)
@@ -140,12 +163,14 @@ func SerializeSession(w io.Writer, session *Session) error {
 		tlv.MakePrimitiveRecord(typeRevokedAt, &revokedAt),
 	)
 
-	tlvStream, err := tlv.NewStream(tlvRecords...)
-	if err != nil {
-		return err
+	if withGroupID {
+		groupID := session.GroupID[:]
+		tlvRecords = append(tlvRecords, tlv.MakePrimitiveRecord(
+			typeGroupID, &groupID,
+		))
 	}
 
-	return tlvStream.Encode(w)
+	return tlvRecords, nil
 }
 
 // DeserializeSession deserializes a session from the given reader, expecting
@@ -159,6 +184,7 @@ func DeserializeSession(r io.Reader) (*Session, error) {
 		expiry, createdAt, revokedAt   uint64
 		macRecipe                      MacaroonRecipe
 		featureConfig                  FeaturesConfig
+		groupID                        []byte
 	)
 	tlvStream, err := tlv.NewStream(
 		tlv.MakePrimitiveRecord(typeLabel, &label),
@@ -186,6 +212,7 @@ func DeserializeSession(r io.Reader) (*Session, error) {
 		),
 		tlv.MakePrimitiveRecord(typeWithPrivacy, &privacy),
 		tlv.MakePrimitiveRecord(typeRevokedAt, &revokedAt),
+		tlv.MakePrimitiveRecord(typeGroupID, &groupID),
 	)
 	if err != nil {
 		return nil, err
@@ -226,6 +253,15 @@ func DeserializeSession(r io.Reader) (*Session, error) {
 
 	if t, ok := parsedTypes[typeFeaturesConfig]; ok && t == nil {
 		session.FeatureConfig = &featureConfig
+	}
+
+	// The GroupID field might not be set for older sessions. So we attempt
+	// to read it from the DB, otherwise we set the group ID to the session
+	// ID.
+	if t, ok := parsedTypes[typeGroupID]; ok && t == nil {
+		copy(session.GroupID[:], groupID)
+	} else {
+		session.GroupID = session.ID
 	}
 
 	return session, nil
