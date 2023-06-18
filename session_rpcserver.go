@@ -1228,7 +1228,10 @@ func (s *sessionRpcServer) marshalRPCSession(sess *session.Session) (
 		revokedAt = uint64(sess.RevokedAt.Unix())
 	}
 
-	featureInfo := make(map[string]*litrpc.RulesMap)
+	var (
+		featureInfo    = make(map[string]*litrpc.RulesMap)
+		initRuleValues = s.cfg.ruleMgrs.InitRuleValues
+	)
 	if sess.MacaroonRecipe != nil {
 		for _, cav := range sess.MacaroonRecipe.Caveats {
 			info, err := firewall.ParseRuleCaveat(string(cav.Id))
@@ -1241,13 +1244,17 @@ func (s *sessionRpcServer) marshalRPCSession(sess *session.Session) (
 			for feature, rules := range info.FeatureRules {
 				ruleMap := make(map[string]*litrpc.RuleValue)
 				for name, rule := range rules {
-					val, err := s.cfg.ruleMgrs.InitRuleValues(name, []byte(rule))
+					val, err := initRuleValues(
+						name, []byte(rule),
+					)
 					if err != nil {
 						return nil, err
 					}
 
 					if sess.WithPrivacyMapper {
-						db := s.cfg.privMap(sess.ID)
+						db := s.cfg.privMap(
+							sess.GroupID,
+						)
 						val, err = val.PseudoToReal(db)
 						if err != nil {
 							return nil, err
@@ -1257,7 +1264,9 @@ func (s *sessionRpcServer) marshalRPCSession(sess *session.Session) (
 					ruleMap[name] = val.ToProto()
 				}
 
-				featureInfo[feature] = &litrpc.RulesMap{Rules: ruleMap}
+				featureInfo[feature] = &litrpc.RulesMap{
+					Rules: ruleMap,
+				}
 			}
 		}
 	}
@@ -1278,6 +1287,7 @@ func (s *sessionRpcServer) marshalRPCSession(sess *session.Session) (
 		RevokedAt:              revokedAt,
 		MacaroonRecipe:         macRecipe,
 		AutopilotFeatureInfo:   featureInfo,
+		GroupId:                sess.GroupID[:],
 	}, nil
 }
 
