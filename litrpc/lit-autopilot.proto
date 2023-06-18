@@ -73,6 +73,11 @@ message AddAutopilotSessionRequest {
     Set to true of the session should not make use of the privacy mapper.
     */
     bool no_privacy_mapper = 7;
+
+    /*
+    Set to the ID of the group to link this session to, if any.
+    */
+    bytes linked_group_id = 8;
 }
 
 message FeatureConfig {
