@@ -376,11 +376,12 @@ func (c *Client) ListFeatures(ctx context.Context) (map[string]*Feature,
 //
 // Note: this is part of the Autopilot interface.
 func (c *Client) RegisterSession(ctx context.Context, pubKey *btcec.PublicKey,
-	mailboxAddr string, devServer bool, featureConf map[string][]byte) (
-	*btcec.PublicKey, error) {
+	mailboxAddr string, devServer bool, featureConf map[string][]byte,
+	groupKey *btcec.PublicKey, linkSig []byte) (*btcec.PublicKey, error) {
 
 	remotePub, err := c.registerSession(
 		ctx, pubKey, mailboxAddr, devServer, featureConf,
+		groupKey, linkSig,
 	)
 	if err != nil {
 		log.Errorf("unsuccessful registration of session %x",
@@ -425,8 +426,9 @@ func (c *Client) trackClient(pubKey *btcec.PublicKey) {
 // registerSession attempts to register a session with the given local static
 // public key with the autopilot server.
 func (c *Client) registerSession(ctx context.Context, pubKey *btcec.PublicKey,
-	mailboxAddr string, devServer bool,
-	featureConfig map[string][]byte) (*btcec.PublicKey, error) {
+	mailboxAddr string, devServer bool, featureConfig map[string][]byte,
+	groupLocalPub *btcec.PublicKey, linkSig []byte) (*btcec.PublicKey,
+	error) {
 
 	client, cleanup, err := c.getClientConn()
 	if err != nil {
@@ -434,14 +436,21 @@ func (c *Client) registerSession(ctx context.Context, pubKey *btcec.PublicKey,
 	}
 	defer cleanup()
 
+	var groupKey []byte
+	if groupLocalPub != nil {
+		groupKey = groupLocalPub.SerializeCompressed()
+	}
+
 	resp, err := client.RegisterSession(
 		ctx, &autopilotserverrpc.RegisterSessionRequest{
-			ResponderPubKey: pubKey.SerializeCompressed(),
-			MailboxAddr:     mailboxAddr,
-			DevServer:       devServer,
-			FeatureConfigs:  featureConfig,
-			LitVersion:      marshalVersion(c.cfg.LitVersion),
-			LndVersion:      marshalVersion(c.cfg.LndVersion),
+			ResponderPubKey:   pubKey.SerializeCompressed(),
+			MailboxAddr:       mailboxAddr,
+			DevServer:         devServer,
+			FeatureConfigs:    featureConfig,
+			LitVersion:        marshalVersion(c.cfg.LitVersion),
+			LndVersion:        marshalVersion(c.cfg.LndVersion),
+			GroupResponderKey: groupKey,
+			GroupResponderSig: linkSig,
 		},
 	)
 	if err != nil {
