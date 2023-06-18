@@ -1005,7 +1005,7 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 	// Attempt to register the session with the Autopilot server.
 	remoteKey, err := s.cfg.autopilot.RegisterSession(
 		ctx, sess.LocalPublicKey, sess.ServerAddr, sess.DevServer,
-		featureConfig,
+		featureConfig, nil, nil,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error registering session with "+
