@@ -814,6 +814,7 @@ func (g *LightningTerminal) startInternalSubServers(
 
 	privacyMapper := firewall.NewPrivacyMapper(
 		g.firewallDB.PrivacyDB, firewall.CryptoRandIntn,
+		g.sessionDB,
 	)
 
 	mw := []mid.RequestInterceptor{
