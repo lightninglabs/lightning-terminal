@@ -13,11 +13,11 @@ the `perm` and `temp` buckets are identical in structure. The only difference is
 that the `temp` bucket is cleared on restart of the db.
 
 rules -> perm -> rule-name -> global   -> {k:v}
-              -> sessions -> sessionID -> session-kv-store  -> {k:v}
+              -> sessions -> group ID  -> session-kv-store  -> {k:v}
 			               -> feature-kv-stores -> feature-name -> {k:v}
 
       -> temp -> rule-name -> global   -> {k:v}
-	      -> sessions -> sessionID -> session-kv-store  -> {k:v}
+	      -> sessions -> group ID  -> session-kv-store  -> {k:v}
 				       -> feature-kv-stores -> feature-name -> {k:v}
 */
 
@@ -44,7 +44,7 @@ var (
 	sessKVStoreBucketKey = []byte("session-kv-store")
 
 	// featureKVStoreBucketKey is the kye under which a kv store specific
-	// the session id and feature name is stored.
+	// the group id and feature name is stored.
 	featureKVStoreBucketKey = []byte("feature-kv-store")
 )
 
@@ -72,12 +72,12 @@ type KVStores interface {
 type KVStoreTx interface {
 	// Global returns a persisted global, rule-name indexed, kv store. A
 	// rule with a given name will have access to this store independent of
-	// session ID or feature.
+	// group ID or feature.
 	Global() KVStore
 
 	// Local returns a persisted local kv store for the rule. Depending on
 	// how the implementation is initialised, this will either be under the
-	// session ID namespace or the session ID _and_ feature name namespace.
+	// group ID namespace or the group ID _and_ feature name namespace.
 	Local() KVStore
 
 	// GlobalTemp is similar to the Global store except that its contents
@@ -105,17 +105,17 @@ type KVStore interface {
 
 // RulesDB can be used to initialise a new rules.KVStores.
 type RulesDB interface {
-	GetKVStores(rule string, sessionID session.ID, feature string) KVStores
+	GetKVStores(rule string, groupID session.ID, feature string) KVStores
 }
 
 // GetKVStores constructs a new rules.KVStores backed by a bbolt db.
-func (db *DB) GetKVStores(rule string, sessionID session.ID,
+func (db *DB) GetKVStores(rule string, groupID session.ID,
 	feature string) KVStores {
 
 	return &kvStores{
 		DB:          db,
 		ruleName:    rule,
-		sessionID:   sessionID,
+		groupID:     groupID,
 		featureName: feature,
 	}
 }
@@ -124,7 +124,7 @@ func (db *DB) GetKVStores(rule string, sessionID session.ID,
 type kvStores struct {
 	*DB
 	ruleName    string
-	sessionID   session.ID
+	groupID     session.ID
 	featureName string
 }
 
@@ -237,10 +237,10 @@ func (tx *kvStoreTx) Global() KVStore {
 //
 // NOTE: this is part of the KVStoreTx interface.
 func (tx *kvStoreTx) Local() KVStore {
-	fn := getSessionRuleBucket(true, tx.ruleName, tx.sessionID)
+	fn := getSessionRuleBucket(true, tx.ruleName, tx.groupID)
 	if tx.featureName != "" {
 		fn = getSessionFeatureRuleBucket(
-			true, tx.ruleName, tx.sessionID, tx.featureName,
+			true, tx.ruleName, tx.groupID, tx.featureName,
 		)
 	}
 
@@ -268,10 +268,10 @@ func (tx *kvStoreTx) GlobalTemp() KVStore {
 //
 // NOTE: this is part of the KVStoreTx interface.
 func (tx *kvStoreTx) LocalTemp() KVStore {
-	fn := getSessionRuleBucket(true, tx.ruleName, tx.sessionID)
+	fn := getSessionRuleBucket(true, tx.ruleName, tx.groupID)
 	if tx.featureName != "" {
 		fn = getSessionFeatureRuleBucket(
-			false, tx.ruleName, tx.sessionID, tx.featureName,
+			false, tx.ruleName, tx.groupID, tx.featureName,
 		)
 	}
 
@@ -390,11 +390,11 @@ func getGlobalRuleBucket(perm bool, ruleName string) getBucketFunc {
 }
 
 // getSessionRuleBucket returns a function that can be used to fetch the
-// bucket under which a kv store for a specific rule-name and session ID is
+// bucket under which a kv store for a specific rule-name and group ID is
 // stored. The `perm` param determines if the temporary or permanent store is
 // used.
 func getSessionRuleBucket(perm bool, ruleName string,
-	sessionID session.ID) getBucketFunc {
+	groupID session.ID) getBucketFunc {
 
 	return func(tx *bbolt.Tx, create bool) (*bbolt.Bucket, error) {
 		ruleBucket, err := getRuleBucket(perm, ruleName)(tx, create)
@@ -414,27 +414,28 @@ func getSessionRuleBucket(perm bool, ruleName string,
 				return nil, err
 			}
 
-			return sessBucket.CreateBucketIfNotExists(sessionID[:])
+			return sessBucket.CreateBucketIfNotExists(groupID[:])
 		}
 
 		sessBucket := ruleBucket.Bucket(sessKVStoreBucketKey)
 		if sessBucket == nil {
 			return nil, nil
 		}
-		return sessBucket.Bucket(sessionID[:]), nil
+		return sessBucket.Bucket(groupID[:]), nil
 	}
 }
 
 // getSessionFeatureRuleBucket returns a function that can be used to fetch the
-// bucket under which a kv store for a specific rule-name, session ID and
+// bucket under which a kv store for a specific rule-name, group ID and
 // feature name is stored. The `perm` param determines if the temporary or
 // permanent store is used.
 func getSessionFeatureRuleBucket(perm bool, ruleName string,
-	sessionID session.ID, featureName string) getBucketFunc {
+	groupID session.ID, featureName string) getBucketFunc {
 
 	return func(tx *bbolt.Tx, create bool) (*bbolt.Bucket, error) {
 		sessBucket, err := getSessionRuleBucket(
-			perm, ruleName, sessionID)(tx, create)
+			perm, ruleName, groupID,
+		)(tx, create)
 		if err != nil {
 			return nil, err
 		}
