@@ -128,8 +128,8 @@ go-build:
 
 go-install:
 	@$(call print, "Installing lightning-terminal.")
-	$(GOINSTALL) -tags="$(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" $(PKG)/cmd/litd
-	$(GOINSTALL) -tags="$(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" $(PKG)/cmd/litcli
+	$(GOINSTALL) -trimpath -tags="$(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" $(PKG)/cmd/litd
+	$(GOINSTALL) -trimpath -tags="$(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" $(PKG)/cmd/litcli
 
 go-install-cli:
 	@$(call print, "Installing all CLI binaries.")
@@ -138,6 +138,7 @@ go-install-cli:
 	$(GOINSTALL) -trimpath github.com/lightninglabs/faraday/cmd/frcli
 	$(GOINSTALL) -trimpath -ldflags "$(LDFLAGS)" github.com/lightninglabs/pool/cmd/pool
 	$(GOINSTALL) -trimpath -ldflags "$(LDFLAGS)" github.com/lightninglabs/taproot-assets/cmd/tapcli
+	$(GOINSTALL) -trimpath -tags="$(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" $(PKG)/cmd/litcli
 
 app-build: yarn-install
 	@$(call print, "Building production app.")
