@@ -69,7 +69,8 @@ proto.litrpc.PrivacyMapConversionRequest.toObject = function(includeInstance, ms
   var f, obj = {
     realToPseudo: jspb.Message.getFieldWithDefault(msg, 1, false),
     sessionId: msg.getSessionId_asB64(),
-    input: jspb.Message.getFieldWithDefault(msg, 3, "")
+    input: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    groupId: msg.getGroupId_asB64()
   };
 
   if (includeInstance) {
@@ -118,6 +119,10 @@ proto.litrpc.PrivacyMapConversionRequest.deserializeBinaryFromReader = function(
       var value = /** @type {string} */ (reader.readString());
       msg.setInput(value);
       break;
+    case 4:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setGroupId(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -165,6 +170,13 @@ proto.litrpc.PrivacyMapConversionRequest.serializeBinaryToWriter = function(mess
   if (f.length > 0) {
     writer.writeString(
       3,
+      f
+    );
+  }
+  f = message.getGroupId_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      4,
       f
     );
   }
@@ -239,6 +251,45 @@ proto.litrpc.PrivacyMapConversionRequest.prototype.getInput = function() {
 /** @param {string} value */
 proto.litrpc.PrivacyMapConversionRequest.prototype.setInput = function(value) {
   jspb.Message.setProto3StringField(this, 3, value);
+};
+
+
+/**
+ * optional bytes group_id = 4;
+ * @return {!(string|Uint8Array)}
+ */
+proto.litrpc.PrivacyMapConversionRequest.prototype.getGroupId = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 4, ""));
+};
+
+
+/**
+ * optional bytes group_id = 4;
+ * This is a type-conversion wrapper around `getGroupId()`
+ * @return {string}
+ */
+proto.litrpc.PrivacyMapConversionRequest.prototype.getGroupId_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getGroupId()));
+};
+
+
+/**
+ * optional bytes group_id = 4;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getGroupId()`
+ * @return {!Uint8Array}
+ */
+proto.litrpc.PrivacyMapConversionRequest.prototype.getGroupId_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getGroupId()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.litrpc.PrivacyMapConversionRequest.prototype.setGroupId = function(value) {
+  jspb.Message.setProto3BytesField(this, 4, value);
 };
 
 
@@ -441,7 +492,8 @@ proto.litrpc.ListActionsRequest.toObject = function(includeInstance, msg) {
     countTotal: jspb.Message.getFieldWithDefault(msg, 8, false),
     sessionId: msg.getSessionId_asB64(),
     startTimestamp: jspb.Message.getFieldWithDefault(msg, 10, "0"),
-    endTimestamp: jspb.Message.getFieldWithDefault(msg, 11, "0")
+    endTimestamp: jspb.Message.getFieldWithDefault(msg, 11, "0"),
+    groupId: msg.getGroupId_asB64()
   };
 
   if (includeInstance) {
@@ -521,6 +573,10 @@ proto.litrpc.ListActionsRequest.deserializeBinaryFromReader = function(msg, read
     case 11:
       var value = /** @type {string} */ (reader.readUint64String());
       msg.setEndTimestamp(value);
+      break;
+    case 12:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setGroupId(value);
       break;
     default:
       reader.skipField();
@@ -625,6 +681,13 @@ proto.litrpc.ListActionsRequest.serializeBinaryToWriter = function(message, writ
   if (parseInt(f, 10) !== 0) {
     writer.writeUint64String(
       11,
+      f
+    );
+  }
+  f = message.getGroupId_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      12,
       f
     );
   }
@@ -821,6 +884,45 @@ proto.litrpc.ListActionsRequest.prototype.getEndTimestamp = function() {
 /** @param {string} value */
 proto.litrpc.ListActionsRequest.prototype.setEndTimestamp = function(value) {
   jspb.Message.setProto3StringIntField(this, 11, value);
+};
+
+
+/**
+ * optional bytes group_id = 12;
+ * @return {!(string|Uint8Array)}
+ */
+proto.litrpc.ListActionsRequest.prototype.getGroupId = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 12, ""));
+};
+
+
+/**
+ * optional bytes group_id = 12;
+ * This is a type-conversion wrapper around `getGroupId()`
+ * @return {string}
+ */
+proto.litrpc.ListActionsRequest.prototype.getGroupId_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getGroupId()));
+};
+
+
+/**
+ * optional bytes group_id = 12;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getGroupId()`
+ * @return {!Uint8Array}
+ */
+proto.litrpc.ListActionsRequest.prototype.getGroupId_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getGroupId()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.litrpc.ListActionsRequest.prototype.setGroupId = function(value) {
+  jspb.Message.setProto3BytesField(this, 12, value);
 };
 
 

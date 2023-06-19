@@ -758,7 +758,9 @@ proto.litrpc.Session.toObject = function(includeInstance, msg) {
     macaroonRecipe: (f = msg.getMacaroonRecipe()) && proto.litrpc.MacaroonRecipe.toObject(includeInstance, f),
     accountId: jspb.Message.getFieldWithDefault(msg, 13, ""),
     autopilotFeatureInfoMap: (f = msg.getAutopilotFeatureInfoMap()) ? f.toObject(includeInstance, proto.litrpc.RulesMap.toObject) : [],
-    revokedAt: jspb.Message.getFieldWithDefault(msg, 16, "0")
+    revokedAt: jspb.Message.getFieldWithDefault(msg, 16, "0"),
+    prevSessionLocalPub: msg.getPrevSessionLocalPub_asB64(),
+    groupId: msg.getGroupId_asB64()
   };
 
   if (includeInstance) {
@@ -861,6 +863,14 @@ proto.litrpc.Session.deserializeBinaryFromReader = function(msg, reader) {
     case 16:
       var value = /** @type {string} */ (reader.readUint64String());
       msg.setRevokedAt(value);
+      break;
+    case 17:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setPrevSessionLocalPub(value);
+      break;
+    case 18:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setGroupId(value);
       break;
     default:
       reader.skipField();
@@ -998,6 +1008,20 @@ proto.litrpc.Session.serializeBinaryToWriter = function(message, writer) {
   if (parseInt(f, 10) !== 0) {
     writer.writeUint64String(
       16,
+      f
+    );
+  }
+  f = message.getPrevSessionLocalPub_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      17,
+      f
+    );
+  }
+  f = message.getGroupId_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      18,
       f
     );
   }
@@ -1357,6 +1381,84 @@ proto.litrpc.Session.prototype.getRevokedAt = function() {
 /** @param {string} value */
 proto.litrpc.Session.prototype.setRevokedAt = function(value) {
   jspb.Message.setProto3StringIntField(this, 16, value);
+};
+
+
+/**
+ * optional bytes prev_session_local_pub = 17;
+ * @return {!(string|Uint8Array)}
+ */
+proto.litrpc.Session.prototype.getPrevSessionLocalPub = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 17, ""));
+};
+
+
+/**
+ * optional bytes prev_session_local_pub = 17;
+ * This is a type-conversion wrapper around `getPrevSessionLocalPub()`
+ * @return {string}
+ */
+proto.litrpc.Session.prototype.getPrevSessionLocalPub_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getPrevSessionLocalPub()));
+};
+
+
+/**
+ * optional bytes prev_session_local_pub = 17;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getPrevSessionLocalPub()`
+ * @return {!Uint8Array}
+ */
+proto.litrpc.Session.prototype.getPrevSessionLocalPub_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getPrevSessionLocalPub()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.litrpc.Session.prototype.setPrevSessionLocalPub = function(value) {
+  jspb.Message.setProto3BytesField(this, 17, value);
+};
+
+
+/**
+ * optional bytes group_id = 18;
+ * @return {!(string|Uint8Array)}
+ */
+proto.litrpc.Session.prototype.getGroupId = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 18, ""));
+};
+
+
+/**
+ * optional bytes group_id = 18;
+ * This is a type-conversion wrapper around `getGroupId()`
+ * @return {string}
+ */
+proto.litrpc.Session.prototype.getGroupId_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getGroupId()));
+};
+
+
+/**
+ * optional bytes group_id = 18;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getGroupId()`
+ * @return {!Uint8Array}
+ */
+proto.litrpc.Session.prototype.getGroupId_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getGroupId()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.litrpc.Session.prototype.setGroupId = function(value) {
+  jspb.Message.setProto3BytesField(this, 18, value);
 };
 
 

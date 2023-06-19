@@ -73,6 +73,12 @@ message AddAutopilotSessionRequest {
     Set to true of the session should not make use of the privacy mapper.
     */
     bool no_privacy_mapper = 7;
+
+    /*
+    Set to a previous, revoked session's local pub key in order to link the
+    new session to the previous one.
+    */
+    bytes prev_local_pub = 14;
 }
 
 message FeatureConfig {

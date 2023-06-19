@@ -907,6 +907,8 @@ export const litListSessions: LIT.ListSessionsResponse.AsObject = {
       createdAt: '253300000000',
       accountId: '',
       revokedAt: '453300000000',
+      prevSessionLocalPub: 'AkHHPwMqjOyBaBVE5o6ZE4opJHkCN7Ut/Gs1E9FekLjn',
+      groupId: '',
       autopilotFeatureInfoMap: [
         [
           'SampleFeature',
@@ -987,6 +989,8 @@ export const litListSessions: LIT.ListSessionsResponse.AsObject = {
       createdAt: '253300000000',
       revokedAt: '453300000000',
       accountId: '',
+      prevSessionLocalPub: 'ArNt9nOsy8c8p8XtNPIBPoSXjzBfsZ87GVnz6ADTdhVw',
+      groupId: '',
       autopilotFeatureInfoMap: [
         [
           'SampleFeature',

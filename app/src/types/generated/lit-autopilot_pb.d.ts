@@ -27,6 +27,11 @@ export class AddAutopilotSessionRequest extends jspb.Message {
   getNoPrivacyMapper(): boolean;
   setNoPrivacyMapper(value: boolean): void;
 
+  getPrevLocalPub(): Uint8Array | string;
+  getPrevLocalPub_asU8(): Uint8Array;
+  getPrevLocalPub_asB64(): string;
+  setPrevLocalPub(value: Uint8Array | string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): AddAutopilotSessionRequest.AsObject;
   static toObject(includeInstance: boolean, msg: AddAutopilotSessionRequest): AddAutopilotSessionRequest.AsObject;
@@ -46,6 +51,7 @@ export namespace AddAutopilotSessionRequest {
     featuresMap: Array<[string, FeatureConfig.AsObject]>,
     sessionRules?: lit_sessions_pb.RulesMap.AsObject,
     noPrivacyMapper: boolean,
+    prevLocalPub: Uint8Array | string,
   }
 }
 

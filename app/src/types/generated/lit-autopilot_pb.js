@@ -80,7 +80,8 @@ proto.litrpc.AddAutopilotSessionRequest.toObject = function(includeInstance, msg
     devServer: jspb.Message.getFieldWithDefault(msg, 4, false),
     featuresMap: (f = msg.getFeaturesMap()) ? f.toObject(includeInstance, proto.litrpc.FeatureConfig.toObject) : [],
     sessionRules: (f = msg.getSessionRules()) && lit$sessions_pb.RulesMap.toObject(includeInstance, f),
-    noPrivacyMapper: jspb.Message.getFieldWithDefault(msg, 7, false)
+    noPrivacyMapper: jspb.Message.getFieldWithDefault(msg, 7, false),
+    prevLocalPub: msg.getPrevLocalPub_asB64()
   };
 
   if (includeInstance) {
@@ -147,6 +148,10 @@ proto.litrpc.AddAutopilotSessionRequest.deserializeBinaryFromReader = function(m
     case 7:
       var value = /** @type {boolean} */ (reader.readBool());
       msg.setNoPrivacyMapper(value);
+      break;
+    case 14:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setPrevLocalPub(value);
       break;
     default:
       reader.skipField();
@@ -221,6 +226,13 @@ proto.litrpc.AddAutopilotSessionRequest.serializeBinaryToWriter = function(messa
   if (f) {
     writer.writeBool(
       7,
+      f
+    );
+  }
+  f = message.getPrevLocalPub_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      14,
       f
     );
   }
@@ -351,6 +363,45 @@ proto.litrpc.AddAutopilotSessionRequest.prototype.getNoPrivacyMapper = function(
 /** @param {boolean} value */
 proto.litrpc.AddAutopilotSessionRequest.prototype.setNoPrivacyMapper = function(value) {
   jspb.Message.setProto3BooleanField(this, 7, value);
+};
+
+
+/**
+ * optional bytes prev_local_pub = 14;
+ * @return {!(string|Uint8Array)}
+ */
+proto.litrpc.AddAutopilotSessionRequest.prototype.getPrevLocalPub = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 14, ""));
+};
+
+
+/**
+ * optional bytes prev_local_pub = 14;
+ * This is a type-conversion wrapper around `getPrevLocalPub()`
+ * @return {string}
+ */
+proto.litrpc.AddAutopilotSessionRequest.prototype.getPrevLocalPub_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getPrevLocalPub()));
+};
+
+
+/**
+ * optional bytes prev_local_pub = 14;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getPrevLocalPub()`
+ * @return {!Uint8Array}
+ */
+proto.litrpc.AddAutopilotSessionRequest.prototype.getPrevLocalPub_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getPrevLocalPub()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.litrpc.AddAutopilotSessionRequest.prototype.setPrevLocalPub = function(value) {
+  jspb.Message.setProto3BytesField(this, 14, value);
 };
 
 
