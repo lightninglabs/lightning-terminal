@@ -363,11 +363,11 @@ func (r *RuleEnforcer) initRule(reqID uint64, name string, value []byte,
 	}
 
 	allActionsDB := r.actionsDB.GetActionsReadDB(sessionID, featureName)
-	actionsDB := allActionsDB.FeatureActionsDB()
+	actionsDB := allActionsDB.GroupFeatureActionsDB()
 	rulesDB := r.ruleDB.GetKVStores(name, sessionID, featureName)
 
 	if sessionRule {
-		actionsDB = allActionsDB.SessionActionsDB()
+		actionsDB = allActionsDB.GroupActionsDB()
 		rulesDB = r.ruleDB.GetKVStores(name, sessionID, "")
 	}
 
