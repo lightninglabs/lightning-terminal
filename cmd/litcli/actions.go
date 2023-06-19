@@ -35,9 +35,9 @@ var listActionsCommand = cli.Command{
 		},
 		cli.StringFlag{
 			Name: "session_id",
-			Usage: "The session ID to filter the actions by. If " +
-				"left empty, then all actions will be " +
-				"returned.",
+			Usage: "The hex encoded session ID to filter the " +
+				"actions by. If left empty, then all actions " +
+				"will be returned.",
 		},
 		cli.Uint64Flag{
 			Name: "start_timestamp",
@@ -84,6 +84,11 @@ var listActionsCommand = cli.Command{
 				"index_offset is the index of the action in " +
 				"the db regardless of filter.",
 		},
+		cli.StringFlag{
+			Name: "group_id",
+			Usage: "The hex encoded group ID to filter the " +
+				"actions by.",
+		},
 	},
 }
 
@@ -109,6 +114,14 @@ func listActions(ctx *cli.Context) error {
 		}
 	}
 
+	var groupID []byte
+	if ctx.String("group_id") != "" {
+		groupID, err = hex.DecodeString(ctx.String("group_id"))
+		if err != nil {
+			return err
+		}
+	}
+
 	resp, err := client.ListActions(
 		ctxb, &litrpc.ListActionsRequest{
 			SessionId:      sessionID,
@@ -122,6 +135,7 @@ func listActions(ctx *cli.Context) error {
 			CountTotal:     ctx.Bool("count_total"),
 			StartTimestamp: ctx.Uint64("start_timestamp"),
 			EndTimestamp:   ctx.Uint64("end_timestamp"),
+			GroupId:        groupID,
 		},
 	)
 	if err != nil {
