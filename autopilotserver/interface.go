@@ -29,7 +29,7 @@ type Autopilot interface {
 	// remains active.
 	RegisterSession(ctx context.Context, pubKey *btcec.PublicKey,
 		mailboxAddr string, devServer bool,
-		featureConf map[string][]byte, prevLocal *btcec.PublicKey,
+		featureConf map[string][]byte, linkedGroupKey *btcec.PublicKey,
 		linkSig []byte) (*btcec.PublicKey, error)
 
 	// ActivateSession attempts to inform the autopilot server that the
