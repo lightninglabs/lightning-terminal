@@ -592,13 +592,29 @@ func (s *sessionRpcServer) PrivacyMapConversion(_ context.Context,
 	req *litrpc.PrivacyMapConversionRequest) (
 	*litrpc.PrivacyMapConversionResponse, error) {
 
-	sessionID, err := session.IDFromBytes(req.SessionId)
-	if err != nil {
-		return nil, err
+	var (
+		groupID session.ID
+		err     error
+	)
+	if len(req.GroupId) != 0 {
+		groupID, err = session.IDFromBytes(req.GroupId)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		sessionID, err := session.IDFromBytes(req.SessionId)
+		if err != nil {
+			return nil, err
+		}
+
+		groupID, err = s.cfg.db.GetGroupID(sessionID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var res string
-	privMap := s.cfg.privMap(sessionID)
+	privMap := s.cfg.privMap(groupID)
 	err = privMap.View(func(tx firewalldb.PrivacyMapTx) error {
 		var err error
 		if req.RealToPseudo {
