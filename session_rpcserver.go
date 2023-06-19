@@ -63,6 +63,7 @@ type sessionRpcServerConfig struct {
 	autopilot               autopilotserver.Autopilot
 	ruleMgrs                rules.ManagerSet
 	privMap                 firewalldb.NewPrivacyMapDB
+	sessionIDIndex          firewalldb.SessionIDIndex
 }
 
 // newSessionRPCServer creates a new sessionRpcServer using the passed config.
@@ -321,6 +322,13 @@ func (s *sessionRpcServer) AddSession(_ context.Context,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating new session: %v", err)
+	}
+
+	// Ensure that the session ID to group ID index is updated with the
+	// new pair before storing the session.
+	err = s.cfg.sessionIDIndex.AddGroupID(sess.ID, sess.GroupID)
+	if err != nil {
+		return nil, err
 	}
 
 	if err := s.db.StoreSession(sess); err != nil {
@@ -985,6 +993,14 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating new session: %v", err)
+	}
+
+	// Ensure that the session ID to group ID index is updated with the
+	// new pair before storing the session or writing any values to the
+	// privacy mapper.
+	err = s.cfg.sessionIDIndex.AddGroupID(sess.ID, sess.GroupID)
+	if err != nil {
+		return nil, err
 	}
 
 	// Register all the privacy map pairs for this session ID.
