@@ -36,14 +36,20 @@ message PrivacyMapConversionRequest {
     bool real_to_pseudo = 1;
 
     /*
+    Deprecated, use group_id.
     The session ID under which to search for the real-pseudo pair.
     */
-    bytes session_id = 2;
+    bytes session_id = 2 [deprecated = true];
 
     /*
     The input to be converted into the real or pseudo value.
     */
     string input = 3;
+
+    /*
+    The group ID under which to search for the real-pseudo pair.
+    */
+    bytes group_id = 4;
 }
 
 message PrivacyMapConversionResponse {

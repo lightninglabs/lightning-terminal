@@ -18,9 +18,9 @@ var privacyMapCommands = cli.Command{
 	Category: "Privacy",
 	Flags: []cli.Flag{
 		cli.StringFlag{
-			Name:     "session_id",
-			Usage:    "The id of the session in question",
-			Required: true,
+			Name:   "session_id",
+			Usage:  "Deprecated, use group_id instead.",
+			Hidden: true,
 		},
 		cli.BoolFlag{
 			Name: "realtopseudo",
@@ -29,6 +29,11 @@ var privacyMapCommands = cli.Command{
 				"Otherwise the input will be taken " +
 				"as the pseudo value that should be " +
 				"mapped to its real counterpart.",
+		},
+		cli.StringFlag{
+			Name: "group_id",
+			Usage: "The ID of the session group who's privacy " +
+				"map DB should be queried.",
 		},
 	},
 	Subcommands: []cli.Command{
@@ -60,16 +65,26 @@ func privacyMapConvertStr(ctx *cli.Context) error {
 	defer cleanup()
 	client := litrpc.NewFirewallClient(clientConn)
 
-	id, err := hex.DecodeString(ctx.GlobalString("session_id"))
-	if err != nil {
-		return err
+	var groupID []byte
+	if ctx.GlobalIsSet("group_id") {
+		groupID, err = hex.DecodeString(ctx.GlobalString("group_id"))
+		if err != nil {
+			return err
+		}
+	} else if ctx.GlobalIsSet("session_id") {
+		groupID, err = hex.DecodeString(ctx.GlobalString("session_id"))
+		if err != nil {
+			return err
+		}
+	} else {
+		return fmt.Errorf("must set group_id")
 	}
 
 	resp, err := client.PrivacyMapConversion(
 		ctxb, &litrpc.PrivacyMapConversionRequest{
-			SessionId:    id,
 			RealToPseudo: ctx.GlobalBool("realtopseudo"),
 			Input:        ctx.String("input"),
+			GroupId:      groupID,
 		},
 	)
 	if err != nil {
@@ -104,18 +119,28 @@ func privacyMapConvertUint64(ctx *cli.Context) error {
 	defer cleanup()
 	client := litrpc.NewFirewallClient(clientConn)
 
-	id, err := hex.DecodeString(ctx.GlobalString("session_id"))
-	if err != nil {
-		return err
+	var groupID []byte
+	if ctx.GlobalIsSet("group_id") {
+		groupID, err = hex.DecodeString(ctx.GlobalString("group_id"))
+		if err != nil {
+			return err
+		}
+	} else if ctx.GlobalIsSet("session_id") {
+		groupID, err = hex.DecodeString(ctx.GlobalString("session_id"))
+		if err != nil {
+			return err
+		}
+	} else {
+		return fmt.Errorf("must set group_id")
 	}
 
 	input := firewalldb.Uint64ToStr(ctx.Uint64("input"))
 
 	resp, err := client.PrivacyMapConversion(
 		ctxb, &litrpc.PrivacyMapConversionRequest{
-			SessionId:    id,
 			RealToPseudo: ctx.GlobalBool("realtopseudo"),
 			Input:        input,
+			GroupId:      groupID,
 		},
 	)
 	if err != nil {
