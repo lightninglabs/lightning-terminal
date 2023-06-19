@@ -8,18 +8,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestActionStorage tests that the ActionsDB CRUD logic.
-func TestActionStorage(t *testing.T) {
-	tmpDir := t.TempDir()
+var (
+	sessionID1 = intToSessionID(1)
+	sessionID2 = intToSessionID(2)
 
-	db, err := NewDB(tmpDir, "test.db")
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		_ = db.Close()
-	})
-
-	sessionID1 := [4]byte{1, 1, 1, 1}
-	action1 := &Action{
+	action1 = &Action{
 		SessionID:          sessionID1,
 		ActorName:          "Autopilot",
 		FeatureName:        "auto-fees",
@@ -32,8 +25,7 @@ func TestActionStorage(t *testing.T) {
 		State:              ActionStateDone,
 	}
 
-	sessionID2 := [4]byte{2, 2, 2, 2}
-	action2 := &Action{
+	action2 = &Action{
 		SessionID:     sessionID2,
 		ActorName:     "Autopilot",
 		FeatureName:   "rebalancer",
@@ -44,6 +36,17 @@ func TestActionStorage(t *testing.T) {
 		AttemptedAt:   time.Unix(12300, 0),
 		State:         ActionStateInit,
 	}
+)
+
+// TestActionStorage tests that the ActionsDB CRUD logic.
+func TestActionStorage(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	db, err := NewDB(tmpDir, "test.db")
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_ = db.Close()
+	})
 
 	actionsStateFilterFn := func(state ActionState) ListActionsFilterFn {
 		return func(a *Action, _ bool) (bool, bool) {
@@ -334,4 +337,50 @@ func TestListActions(t *testing.T) {
 		{sessionID2, "5"},
 		{sessionID2, "6"},
 	})
+}
+
+// TestListGroupActions tests that the ListGroupActions correctly returns all
+// actions in a particular session group.
+func TestListGroupActions(t *testing.T) {
+	db, err := NewDB(t.TempDir(), "test.db")
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_ = db.Close()
+	})
+
+	group1 := intToSessionID(0)
+
+	// Link group1 and session1.
+	err = db.AddGroupID(sessionID1, group1)
+	require.NoError(t, err)
+
+	// There should not be any actions in group 1 yet.
+	al, err := db.ListGroupActions(group1, nil)
+	require.NoError(t, err)
+	require.Empty(t, al)
+
+	// Add an action under session 1.
+	_, err = db.AddAction(sessionID1, action1)
+	require.NoError(t, err)
+
+	// There should now be one action in the group.
+	al, err = db.ListGroupActions(group1, nil)
+	require.NoError(t, err)
+	require.Len(t, al, 1)
+	require.Equal(t, sessionID1, al[0].SessionID)
+
+	// Also link session 2 to group 1.
+	err = db.AddGroupID(sessionID2, group1)
+	require.NoError(t, err)
+
+	// Add an action under session 2.
+	_, err = db.AddAction(sessionID2, action2)
+	require.NoError(t, err)
+
+	// There should now be actions in the group.
+	al, err = db.ListGroupActions(group1, nil)
+	require.NoError(t, err)
+	require.Len(t, al, 2)
+	require.Equal(t, sessionID1, al[0].SessionID)
+	require.Equal(t, sessionID2, al[1].SessionID)
 }
