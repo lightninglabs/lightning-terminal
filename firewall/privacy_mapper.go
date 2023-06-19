@@ -46,16 +46,22 @@ var _ mid.RequestInterceptor = (*PrivacyMapper)(nil)
 // PrivacyMapper is a RequestInterceptor that maps any pseudo names in certain
 // requests to their real values and vice versa for responses.
 type PrivacyMapper struct {
-	newDB    firewalldb.NewPrivacyMapDB
-	randIntn func(int) (int, error)
+	newDB            firewalldb.NewPrivacyMapDB
+	randIntn         func(int) (int, error)
+	sessionIDIndexDB firewalldb.SessionIDIndex
 }
 
 // NewPrivacyMapper returns a new instance of PrivacyMapper. The randIntn
 // function is used to draw randomness for request field obfuscation.
 func NewPrivacyMapper(newDB firewalldb.NewPrivacyMapDB,
-	randIntn func(int) (int, error)) *PrivacyMapper {
+	randIntn func(int) (int, error),
+	sessionIDIndexDB firewalldb.SessionIDIndex) *PrivacyMapper {
 
-	return &PrivacyMapper{newDB: newDB, randIntn: randIntn}
+	return &PrivacyMapper{
+		newDB:            newDB,
+		randIntn:         randIntn,
+		sessionIDIndexDB: sessionIDIndexDB,
+	}
 }
 
 // Name returns the name of the interceptor.
@@ -91,6 +97,12 @@ func (p *PrivacyMapper) Intercept(ctx context.Context,
 		return nil, fmt.Errorf("could not extract ID from macaroon")
 	}
 
+	// Get group ID for session ID.
+	groupID, err := p.sessionIDIndexDB.GetGroupID(sessionID)
+	if err != nil {
+		return nil, err
+	}
+
 	log.Tracef("PrivacyMapper: Intercepting %v", ri)
 
 	switch r := req.InterceptType.(type) {
@@ -108,7 +120,7 @@ func (p *PrivacyMapper) Intercept(ctx context.Context,
 		}
 
 		replacement, err := p.checkAndReplaceIncomingRequest(
-			ctx, r.Request.MethodFullUri, msg, sessionID,
+			ctx, r.Request.MethodFullUri, msg, groupID,
 		)
 		if err != nil {
 			return mid.RPCErr(req, err)
@@ -142,7 +154,7 @@ func (p *PrivacyMapper) Intercept(ctx context.Context,
 		}
 
 		replacement, err := p.replaceOutgoingResponse(
-			ctx, r.Response.MethodFullUri, msg, sessionID,
+			ctx, r.Response.MethodFullUri, msg, groupID,
 		)
 		if err != nil {
 			return mid.RPCErr(req, err)
@@ -167,10 +179,10 @@ func (p *PrivacyMapper) Intercept(ctx context.Context,
 // checkAndReplaceIncomingRequest inspects an incoming request and optionally
 // modifies some of the request parameters.
 func (p *PrivacyMapper) checkAndReplaceIncomingRequest(ctx context.Context,
-	uri string, req proto.Message, sessionID session.ID) (proto.Message,
+	uri string, req proto.Message, groupID session.ID) (proto.Message,
 	error) {
 
-	db := p.newDB(sessionID)
+	db := p.newDB(groupID)
 
 	// If we don't have a handler for the URI, we don't allow the request
 	// to go through.
@@ -193,9 +205,9 @@ func (p *PrivacyMapper) checkAndReplaceIncomingRequest(ctx context.Context,
 // replaceOutgoingResponse inspects the responses before sending them out to the
 // client and replaces them if needed.
 func (p *PrivacyMapper) replaceOutgoingResponse(ctx context.Context, uri string,
-	resp proto.Message, sessionID session.ID) (proto.Message, error) {
+	resp proto.Message, groupID session.ID) (proto.Message, error) {
 
-	db := p.newDB(sessionID)
+	db := p.newDB(groupID)
 
 	// If we don't have a handler for the URI, we don't allow the response
 	// to go to avoid accidental leaks.
