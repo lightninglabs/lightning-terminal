@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/lightninglabs/lightning-terminal/firewalldb/migration1"
 	"go.etcd.io/bbolt"
 )
 
@@ -29,7 +30,9 @@ var (
 	// version of the database doesn't match the latest version this list
 	// will be used for retrieving all migration function that are need to
 	// apply to the current db.
-	dbVersions []migration
+	dbVersions = []migration{
+		migration1.MigrateSessionIDIndex,
+	}
 
 	latestDBVersion = uint32(len(dbVersions))
 )
