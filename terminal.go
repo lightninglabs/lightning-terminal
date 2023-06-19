@@ -824,7 +824,7 @@ func (g *LightningTerminal) startInternalSubServers(
 
 	if !g.cfg.Autopilot.Disable {
 		ruleEnforcer := firewall.NewRuleEnforcer(
-			g.firewallDB, g.firewallDB,
+			g.firewallDB, g.firewallDB, g.sessionDB,
 			g.autopilotClient.ListFeaturePerms,
 			g.permsMgr, g.lndClient.NodePubkey,
 			g.lndClient.Router,
