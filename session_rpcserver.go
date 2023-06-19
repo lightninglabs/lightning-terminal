@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	"github.com/lightninglabs/lightning-node-connect/mailbox"
 	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/autopilotserver"
@@ -1008,12 +1009,48 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 		caveats = append(caveats, firewall.MetaPrivacyCaveat)
 	}
 
+	// If a previous session ID has been set to link this new one to, we
+	// first check if we have the referenced session, and we make sure it
+	// has been revoked.
+	var prevSess *session.Session
+	if len(req.PrevLocalPub) != 0 {
+		prevPub, err := btcec.ParsePubKey(req.PrevLocalPub)
+		if err != nil {
+			return nil, err
+		}
+
+		prevSess, err = s.db.GetSession(prevPub)
+		if errors.Is(err, session.ErrSessionNotFound) {
+			return nil, fmt.Errorf("linked session(%x) not found",
+				req.PrevLocalPub)
+		} else if err != nil {
+			return nil, err
+		}
+
+		if prevSess.State != session.StateRevoked &&
+			prevSess.State != session.StateExpired {
+
+			return nil, fmt.Errorf("linked session(%x) still "+
+				"active", req.PrevLocalPub)
+		}
+	}
+
 	sess, err := session.NewSession(
 		req.Label, session.TypeAutopilot, expiry, req.MailboxServerAddr,
-		req.DevServer, perms, caveats, featureConfig, privacy, nil,
+		req.DevServer, perms, caveats, featureConfig, privacy, prevSess,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating new session: %v", err)
+	}
+
+	// If this session is being linked to a previous one, then we need to
+	// use the previous session's local private key to sign the new
+	// session's public key in order to prove to the Autopilot server that
+	// the two session's belong to the same owner.
+	var linkSig []byte
+	if prevSess != nil {
+		msg := sess.LocalPublicKey.SerializeCompressed()
+		linkSig = ecdsa.Sign(prevSess.LocalPrivateKey, msg).Serialize()
 	}
 
 	// Ensure that the session ID to group ID index is updated with the
@@ -1025,7 +1062,7 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 	}
 
 	// Register all the privacy map pairs for this session ID.
-	privDB := s.cfg.privMap(sess.ID)
+	privDB := s.cfg.privMap(sess.GroupID)
 	err = privDB.Update(func(tx firewalldb.PrivacyMapTx) error {
 		for r, p := range privacyMapPairs {
 			err := tx.NewPair(r, p)
@@ -1042,7 +1079,7 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 	// Attempt to register the session with the Autopilot server.
 	remoteKey, err := s.cfg.autopilot.RegisterSession(
 		ctx, sess.LocalPublicKey, sess.ServerAddr, sess.DevServer,
-		featureConfig, nil, nil,
+		featureConfig, sess.PrevLocalPub, linkSig,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error registering session with "+

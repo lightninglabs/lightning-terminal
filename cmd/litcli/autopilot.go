@@ -65,6 +65,11 @@ var addAutopilotSessionCmd = cli.Command{
 				"perform actions on. In the " +
 				"form of: peerID1,peerID2,...",
 		},
+		cli.StringFlag{
+			Name: "prev-local-pub",
+			Usage: "The local pubkey of a previous session to " +
+				"link this one to",
+		},
 	},
 }
 
@@ -224,6 +229,16 @@ func initAutopilotSession(ctx *cli.Context) error {
 		}
 	}
 
+	var prevLocalPub []byte
+	if ctx.IsSet("prev-local-pub") {
+		prevLocalPub, err = hex.DecodeString(
+			ctx.String("prev-local-pub"),
+		)
+		if err != nil {
+			return err
+		}
+	}
+
 	resp, err := client.AddAutopilotSession(
 		ctxb, &litrpc.AddAutopilotSessionRequest{
 			Label:                  ctx.String("label"),
@@ -231,6 +246,7 @@ func initAutopilotSession(ctx *cli.Context) error {
 			MailboxServerAddr:      ctx.String("mailboxserveraddr"),
 			DevServer:              ctx.Bool("devserver"),
 			Features:               featureMap,
+			PrevLocalPub:           prevLocalPub,
 		},
 	)
 	if err != nil {
