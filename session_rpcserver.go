@@ -725,6 +725,16 @@ func (s *sessionRpcServer) ListActions(_ context.Context,
 		if err != nil {
 			return nil, err
 		}
+	} else if req.GroupId != nil {
+		groupID, err := session.IDFromBytes(req.GroupId)
+		if err != nil {
+			return nil, err
+		}
+
+		actions, err = db.ListGroupActions(groupID, filterFn)
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		actions, lastIndex, totalCount, err = db.ListActions(
 			filterFn, query,

@@ -120,6 +120,11 @@ message ListActionsRequest {
     considered.
     */
     uint64 end_timestamp = 11 [jstype = JS_STRING];
+
+    /*
+    If specified, then only actions under the given group will be queried.
+    */
+    bytes group_id = 12;
 }
 
 message ListActionsResponse {
