@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -384,6 +385,79 @@ func (db *DB) ListSessionActions(sessionID session.ID,
 	}
 
 	return actions, lastIndex, totalCount, nil
+}
+
+// ListGroupActions returns a list of the given session group's Actions that
+// pass the filterFn requirements.
+//
+// TODO: update to allow for pagination.
+func (db *DB) ListGroupActions(groupID session.ID,
+	filterFn ListActionsFilterFn) ([]*Action, error) {
+
+	if filterFn == nil {
+		filterFn = func(a *Action, reversed bool) (bool, bool) {
+			return true, true
+		}
+	}
+
+	sessionIDs, err := db.sessionIDIndex.GetSessionIDs(groupID)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		actions []*Action
+		errDone = errors.New("done iterating")
+	)
+	err = db.View(func(tx *bbolt.Tx) error {
+		mainActionsBucket, err := getBucket(tx, actionsBucketKey)
+		if err != nil {
+			return err
+		}
+
+		actionsBucket := mainActionsBucket.Bucket(actionsKey)
+		if actionsBucket == nil {
+			return ErrNoSuchKeyFound
+		}
+
+		// Iterate over each session ID in this group.
+		for _, sessionID := range sessionIDs {
+			sessionsBucket := actionsBucket.Bucket(sessionID[:])
+			if sessionsBucket == nil {
+				return nil
+			}
+
+			err = sessionsBucket.ForEach(func(_, v []byte) error {
+				action, err := DeserializeAction(
+					bytes.NewReader(v), sessionID,
+				)
+				if err != nil {
+					return err
+				}
+
+				include, cont := filterFn(action, false)
+				if include {
+					actions = append(actions, action)
+				}
+
+				if !cont {
+					return errDone
+				}
+
+				return nil
+			})
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+	if err != nil && !errors.Is(err, errDone) {
+		return nil, err
+	}
+
+	return actions, nil
 }
 
 // SerializeAction binary serializes the given action to the writer using the
