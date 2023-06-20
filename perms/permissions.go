@@ -68,6 +68,10 @@ var (
 			Entity: "proxy",
 			Action: "read",
 		}},
+		"/litrpc.Proxy/BakeSuperMacaroon": {{
+			Entity: "supermacaroon",
+			Action: "write",
+		}},
 	}
 
 	// whiteListedLNDMethods is a map of all lnd RPC methods that don't

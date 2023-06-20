@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"embed"
+	"encoding/binary"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -496,9 +497,25 @@ func (g *LightningTerminal) start() error {
 			err)
 	}
 
+	// bakeSuperMac is a closure that can be used to bake a new super
+	// macaroon that contains all active permissions.
+	bakeSuperMac := func(ctx context.Context, rootKeyIDSuffix uint32) (
+		string, error) {
+
+		var suffixBytes [4]byte
+		binary.BigEndian.PutUint32(suffixBytes[:], rootKeyIDSuffix)
+
+		rootKeyID := session.NewSuperMacaroonRootKeyID(suffixBytes)
+
+		return BakeSuperMacaroon(
+			ctx, g.basicClient, rootKeyID,
+			g.permsMgr.ActivePermissions(false), nil,
+		)
+	}
+
 	// Now start the RPC proxy that will handle all incoming gRPC, grpc-web
 	// and REST requests.
-	if err := g.rpcProxy.Start(g.lndConn); err != nil {
+	if err := g.rpcProxy.Start(g.lndConn, bakeSuperMac); err != nil {
 		return fmt.Errorf("error starting lnd gRPC proxy server: %v",
 			err)
 	}

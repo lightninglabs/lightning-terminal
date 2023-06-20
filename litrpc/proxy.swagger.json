@@ -71,9 +71,61 @@
           "Proxy"
         ]
       }
+    },
+    "/v1/proxy/supermacaroon": {
+      "post": {
+        "summary": "litcli: `bakesupermacaroon`\nBakeSuperMacaroon bakes a new macaroon that includes permissions for\nall the active daemons that LiT is connected to.",
+        "operationId": "Proxy_BakeSuperMacaroon",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/litrpcBakeSuperMacaroonResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/litrpcBakeSuperMacaroonRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Proxy"
+        ]
+      }
     }
   },
   "definitions": {
+    "litrpcBakeSuperMacaroonRequest": {
+      "type": "object",
+      "properties": {
+        "root_key_id_suffix": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The root key ID suffix is the 4-byte suffix of the root key ID that will\nbe used to create the macaroon."
+        }
+      }
+    },
+    "litrpcBakeSuperMacaroonResponse": {
+      "type": "object",
+      "properties": {
+        "macaroon": {
+          "type": "string",
+          "description": "The hex encoded macaroon."
+        }
+      }
+    },
     "litrpcGetInfoResponse": {
       "type": "object",
       "properties": {

@@ -15,6 +15,26 @@ service Proxy {
     triggering a graceful shutdown of the daemon.
     */
     rpc StopDaemon (StopDaemonRequest) returns (StopDaemonResponse);
+
+    /* litcli: `bakesupermacaroon`
+    BakeSuperMacaroon bakes a new macaroon that includes permissions for
+    all the active daemons that LiT is connected to.
+    */
+    rpc BakeSuperMacaroon (BakeSuperMacaroonRequest)
+        returns (BakeSuperMacaroonResponse);
+}
+
+message BakeSuperMacaroonRequest {
+    /*
+    The root key ID suffix is the 4-byte suffix of the root key ID that will
+    be used to create the macaroon.
+    */
+    uint32 root_key_id_suffix = 1;
+}
+
+message BakeSuperMacaroonResponse {
+    // The hex encoded macaroon.
+    string macaroon = 1;
 }
 
 message StopDaemonRequest {

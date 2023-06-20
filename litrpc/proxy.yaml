@@ -10,3 +10,6 @@ http:
       body: "*"
     - selector: litrpc.Proxy.GetInfo
       get: "/v1/proxy/info"
+    - selector: litrpc.Proxy.BakeSuperMacaroon
+      post: "/v1/proxy/supermacaroon"
+      body: "*"

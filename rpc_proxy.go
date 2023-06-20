@@ -157,6 +157,8 @@ type rpcProxy struct {
 	permsMgr     *perms.Manager
 	subServerMgr *subservers.Manager
 
+	bakeSuperMac bakeSuperMac
+
 	macValidator      macaroons.MacaroonValidator
 	superMacValidator session.SuperMacaroonValidator
 
@@ -168,9 +170,15 @@ type rpcProxy struct {
 	grpcWebProxy *grpcweb.WrappedGrpcServer
 }
 
+// bakeSuperMac can be used to bake a new super macaroon.
+type bakeSuperMac func(ctx context.Context, rootKeyID uint32) (string, error)
+
 // Start creates initial connection to lnd.
-func (p *rpcProxy) Start(lndConn *grpc.ClientConn) error {
+func (p *rpcProxy) Start(lndConn *grpc.ClientConn,
+	bakeSuperMac bakeSuperMac) error {
+
 	p.lndConn = lndConn
+	p.bakeSuperMac = bakeSuperMac
 
 	atomic.CompareAndSwapInt32(&p.started, 0, 1)
 
@@ -212,6 +220,28 @@ func (p *rpcProxy) GetInfo(_ context.Context, _ *litrpc.GetInfoRequest) (
 
 	return &litrpc.GetInfoResponse{
 		Version: Version(),
+	}, nil
+}
+
+// BakeSuperMacaroon bakes a new macaroon that includes permissions for
+// all the active daemons that LiT is connected to.
+//
+// NOTE: this is part of the litrpc.ProxyServiceServer interface.
+func (p *rpcProxy) BakeSuperMacaroon(ctx context.Context,
+	req *litrpc.BakeSuperMacaroonRequest) (
+	*litrpc.BakeSuperMacaroonResponse, error) {
+
+	if !p.hasStarted() {
+		return nil, ErrWaitingToStart
+	}
+
+	superMac, err := p.bakeSuperMac(ctx, req.RootKeyIdSuffix)
+	if err != nil {
+		return nil, err
+	}
+
+	return &litrpc.BakeSuperMacaroonResponse{
+		Macaroon: superMac,
 	}, nil
 }
 

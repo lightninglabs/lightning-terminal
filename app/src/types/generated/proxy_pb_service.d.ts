@@ -22,10 +22,20 @@ type ProxyStopDaemon = {
   readonly responseType: typeof proxy_pb.StopDaemonResponse;
 };
 
+type ProxyBakeSuperMacaroon = {
+  readonly methodName: string;
+  readonly service: typeof Proxy;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof proxy_pb.BakeSuperMacaroonRequest;
+  readonly responseType: typeof proxy_pb.BakeSuperMacaroonResponse;
+};
+
 export class Proxy {
   static readonly serviceName: string;
   static readonly GetInfo: ProxyGetInfo;
   static readonly StopDaemon: ProxyStopDaemon;
+  static readonly BakeSuperMacaroon: ProxyBakeSuperMacaroon;
 }
 
 export type ServiceError = { message: string, code: number; metadata: grpc.Metadata }
@@ -77,6 +87,15 @@ export class ProxyClient {
   stopDaemon(
     requestMessage: proxy_pb.StopDaemonRequest,
     callback: (error: ServiceError|null, responseMessage: proxy_pb.StopDaemonResponse|null) => void
+  ): UnaryResponse;
+  bakeSuperMacaroon(
+    requestMessage: proxy_pb.BakeSuperMacaroonRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: proxy_pb.BakeSuperMacaroonResponse|null) => void
+  ): UnaryResponse;
+  bakeSuperMacaroon(
+    requestMessage: proxy_pb.BakeSuperMacaroonRequest,
+    callback: (error: ServiceError|null, responseMessage: proxy_pb.BakeSuperMacaroonResponse|null) => void
   ): UnaryResponse;
 }
 
