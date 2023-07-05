@@ -76,6 +76,7 @@ versioning](#daemon-versions-packaged-with-lit).
 
 | LiT               | LND          |
 |-------------------|--------------|
+| **v0.10.2-alpha** | v0.16.0-beta |
 | **v0.10.1-alpha** | v0.16.0-beta |
 | **v0.10.0-alpha** | v0.16.0-beta |
 | **v0.9.2-alpha**  | v0.16.0-beta |
@@ -139,6 +140,7 @@ The following table shows the supported combinations:
 
 | LiT               | LND          | Loop         | Faraday       | Pool         | Taproot Assets |
 |-------------------|--------------|--------------|---------------|--------------|----------------|
+| **v0.10.2-alpha** | v0.16.4-beta | v0.25.2-beta | v0.2.11-alpha | v0.6.4-beta  | v0.2.2-alpha   |
 | **v0.10.1-alpha** | v0.16.3-beta | v0.24.1-beta | v0.2.11-alpha | v0.6.4-beta  | v0.2.0-alpha   |
 | **v0.10.0-alpha** | v0.16.2-beta | v0.23.0-beta | v0.2.11-alpha | v0.6.2-beta  | v0.2.0-alpha   |
 | **v0.9.2-alpha**  | v0.16.2-beta | v0.23.0-beta | v0.2.11-alpha | v0.6.2-beta  | n/a            |
