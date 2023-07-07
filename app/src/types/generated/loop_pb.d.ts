@@ -657,6 +657,9 @@ export class LsatToken extends jspb.Message {
   getStorageName(): string;
   setStorageName(value: string): void;
 
+  getId(): string;
+  setId(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LsatToken.AsObject;
   static toObject(includeInstance: boolean, msg: LsatToken): LsatToken.AsObject;
@@ -677,6 +680,7 @@ export namespace LsatToken {
     timeCreated: string,
     expired: boolean,
     storageName: string,
+    id: string,
   }
 }
 
