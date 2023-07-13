@@ -4603,7 +4603,8 @@ proto.looprpc.LsatToken.toObject = function(includeInstance, msg) {
     routingFeePaidMsat: jspb.Message.getFieldWithDefault(msg, 5, "0"),
     timeCreated: jspb.Message.getFieldWithDefault(msg, 6, "0"),
     expired: jspb.Message.getFieldWithDefault(msg, 7, false),
-    storageName: jspb.Message.getFieldWithDefault(msg, 8, "")
+    storageName: jspb.Message.getFieldWithDefault(msg, 8, ""),
+    id: jspb.Message.getFieldWithDefault(msg, 9, "")
   };
 
   if (includeInstance) {
@@ -4671,6 +4672,10 @@ proto.looprpc.LsatToken.deserializeBinaryFromReader = function(msg, reader) {
     case 8:
       var value = /** @type {string} */ (reader.readString());
       msg.setStorageName(value);
+      break;
+    case 9:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setId(value);
       break;
     default:
       reader.skipField();
@@ -4754,6 +4759,13 @@ proto.looprpc.LsatToken.serializeBinaryToWriter = function(message, writer) {
   if (f.length > 0) {
     writer.writeString(
       8,
+      f
+    );
+  }
+  f = message.getId();
+  if (f.length > 0) {
+    writer.writeString(
+      9,
       f
     );
   }
@@ -4951,6 +4963,21 @@ proto.looprpc.LsatToken.prototype.getStorageName = function() {
 /** @param {string} value */
 proto.looprpc.LsatToken.prototype.setStorageName = function(value) {
   jspb.Message.setProto3StringField(this, 8, value);
+};
+
+
+/**
+ * optional string id = 9;
+ * @return {string}
+ */
+proto.looprpc.LsatToken.prototype.getId = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 9, ""));
+};
+
+
+/** @param {string} value */
+proto.looprpc.LsatToken.prototype.setId = function(value) {
+  jspb.Message.setProto3StringField(this, 9, value);
 };
 
 

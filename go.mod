@@ -17,13 +17,13 @@ require (
 	github.com/lightninglabs/lightning-node-connect v0.1.12-alpha
 	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.1
 	github.com/lightninglabs/lndclient v0.16.0-14
-	github.com/lightninglabs/loop v0.24.1-beta
+	github.com/lightninglabs/loop v0.25.2-beta
 	github.com/lightninglabs/loop/swapserverrpc v1.0.4
 	github.com/lightninglabs/pool v0.6.4-beta
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.0
 	github.com/lightninglabs/protobuf-hex-display v1.4.3-hex-display
-	github.com/lightninglabs/taproot-assets v0.2.0-lit-0
-	github.com/lightningnetwork/lnd v0.16.3-beta
+	github.com/lightninglabs/taproot-assets v0.2.2
+	github.com/lightningnetwork/lnd v0.16.4-beta
 	github.com/lightningnetwork/lnd/cert v1.2.1
 	github.com/lightningnetwork/lnd/kvdb v1.4.1
 	github.com/lightningnetwork/lnd/tlv v1.1.0
@@ -44,7 +44,7 @@ require (
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
-	github.com/Microsoft/go-winio v0.5.2 // indirect
+	github.com/Microsoft/go-winio v0.6.0 // indirect
 	github.com/NebulousLabs/fastrand v0.0.0-20181203155948-6fb6489aac4e // indirect
 	github.com/NebulousLabs/go-upnp v0.0.0-20180202185039-29b680b06c82 // indirect
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
@@ -54,7 +54,7 @@ require (
 	github.com/andybalholm/brotli v1.0.3 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/btcsuite/btcd/btcutil/psbt v1.1.8 // indirect
-	github.com/btcsuite/btcwallet v0.16.10-0.20230517173256-aa62c04afcdf // indirect
+	github.com/btcsuite/btcwallet v0.16.10-0.20230621165747-9c21f464ce13 // indirect
 	github.com/btcsuite/btcwallet/wallet/txauthor v1.3.2 // indirect
 	github.com/btcsuite/btcwallet/wallet/txrules v1.2.0 // indirect
 	github.com/btcsuite/btcwallet/wallet/txsizes v1.2.3 // indirect
@@ -76,7 +76,7 @@ require (
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
 	github.com/decred/dcrd/lru v1.0.0 // indirect
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
-	github.com/docker/cli v20.10.14+incompatible // indirect
+	github.com/docker/cli v20.10.17+incompatible // indirect
 	github.com/docker/docker v20.10.24+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
@@ -102,7 +102,7 @@ require (
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.12.0 // indirect
-	github.com/jackc/pgerrcode v0.0.0-20201024163028-a0d42d470451 // indirect
+	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgproto3/v2 v2.3.0 // indirect
@@ -148,7 +148,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/opencontainers/runc v1.1.5 // indirect
-	github.com/ory/dockertest/v3 v3.9.1 // indirect
+	github.com/ory/dockertest/v3 v3.10.0 // indirect
 	github.com/pierrec/lz4/v4 v4.1.8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
@@ -197,12 +197,12 @@ require (
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.23.0 // indirect
 	golang.org/x/exp v0.0.0-20221111094246-ab4555d3164f // indirect
-	golang.org/x/mod v0.8.0 // indirect
-	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/mod v0.9.0 // indirect
+	golang.org/x/sys v0.7.0 // indirect
 	golang.org/x/term v0.6.0 // indirect
 	golang.org/x/text v0.8.0 // indirect
 	golang.org/x/time v0.0.0-20220224211638-0e9765cccd65 // indirect
-	golang.org/x/tools v0.6.0 // indirect
+	golang.org/x/tools v0.7.0 // indirect
 	google.golang.org/genproto v0.0.0-20220314164441-57ef72a4c106 // indirect
 	gopkg.in/errgo.v1 v1.0.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect

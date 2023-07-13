@@ -743,6 +743,11 @@ message LsatToken {
     file name of the token where it's stored on the file system.
     */
     string storage_name = 8;
+
+    /*
+    The l402 ID of the token.
+    */
+    string id = 9;
 }
 
 message LoopStats {
