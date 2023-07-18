@@ -440,12 +440,10 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 		}
 	}
 
-	if cfg.Network != DefaultNetwork {
-		if cfg.MacaroonPath == DefaultMacaroonPath {
-			cfg.MacaroonPath = filepath.Join(
-				litDir, cfg.Network, DefaultMacaroonFilename,
-			)
-		}
+	if cfg.MacaroonPath == DefaultMacaroonPath {
+		cfg.MacaroonPath = filepath.Join(
+			litDir, cfg.Network, DefaultMacaroonFilename,
+		)
 	}
 
 	// Initiate our listeners. For now, we only support listening on one
