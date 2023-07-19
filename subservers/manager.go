@@ -45,15 +45,23 @@ func NewManager(permsMgr *perms.Manager) *Manager {
 }
 
 // AddServer adds a new subServer to the manager's set.
-func (s *Manager) AddServer(ss SubServer) {
+func (s *Manager) AddServer(ss SubServer, enable bool) {
+	// If the sub-server has explicitly been disabled, then we don't add it
+	// to the set of servers tracked by the Manager.
+	if !enable {
+		return
+	}
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	// Add the enabled server to the set of servers tracked by the Manager.
 	s.servers = append(s.servers, &subServerWrapper{
 		SubServer: ss,
 		quit:      make(chan struct{}),
 	})
 
+	// Register the sub-server's permissions with the permission manager.
 	s.permsMgr.RegisterSubServer(
 		ss.Name(), ss.Permissions(), ss.WhiteListedURLs(),
 	)
