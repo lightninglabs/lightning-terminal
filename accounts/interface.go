@@ -104,6 +104,10 @@ type OffChainBalanceAccount struct {
 	// Payments is a list of all payments that are associated with the
 	// account and the last status we were aware of.
 	Payments map[lntypes.Hash]*PaymentEntry
+
+	// Label is an optional label that can be set for the account. If it is
+	// not empty then it must be unique.
+	Label string
 }
 
 // HasExpired returns true if the account has an expiration date set and that
@@ -180,8 +184,8 @@ var (
 type Store interface {
 	// NewAccount creates a new OffChainBalanceAccount with the given
 	// balance and a randomly chosen ID.
-	NewAccount(balance lnwire.MilliSatoshi,
-		expirationDate time.Time) (*OffChainBalanceAccount, error)
+	NewAccount(balance lnwire.MilliSatoshi, expirationDate time.Time,
+		label string) (*OffChainBalanceAccount, error)
 
 	// UpdateAccount writes an account to the database, overwriting the
 	// existing one if it exists.

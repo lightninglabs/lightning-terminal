@@ -70,7 +70,7 @@ func (s *RPCServer) CreateAccount(ctx context.Context,
 	balanceMsat = lnwire.NewMSatFromSatoshis(balance)
 
 	// Create the actual account in the macaroon account store.
-	account, err := s.service.NewAccount(balanceMsat, expirationDate)
+	account, err := s.service.NewAccount(balanceMsat, expirationDate, "")
 	if err != nil {
 		return nil, fmt.Errorf("unable to create account: %v", err)
 	}

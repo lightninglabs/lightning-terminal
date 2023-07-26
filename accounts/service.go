@@ -212,12 +212,13 @@ func (s *InterceptorService) Start(lightningClient lndclient.LightningClient,
 // NewAccount creates a new OffChainBalanceAccount with the given balance and a
 // randomly chosen ID.
 func (s *InterceptorService) NewAccount(balance lnwire.MilliSatoshi,
-	expirationDate time.Time) (*OffChainBalanceAccount, error) {
+	expirationDate time.Time, label string) (*OffChainBalanceAccount,
+	error) {
 
 	s.Lock()
 	defer s.Unlock()
 
-	return s.store.NewAccount(balance, expirationDate)
+	return s.store.NewAccount(balance, expirationDate, label)
 }
 
 // UpdateAccount writes an account to the database, overwriting the existing one

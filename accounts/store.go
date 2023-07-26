@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"time"
@@ -104,10 +105,37 @@ func (s *BoltStore) Close() error {
 // NewAccount creates a new OffChainBalanceAccount with the given balance and a
 // randomly chosen ID.
 func (s *BoltStore) NewAccount(balance lnwire.MilliSatoshi,
-	expirationDate time.Time) (*OffChainBalanceAccount, error) {
+	expirationDate time.Time, label string) (*OffChainBalanceAccount,
+	error) {
 
 	if balance == 0 {
 		return nil, fmt.Errorf("a new account cannot have balance of 0")
+	}
+
+	// If a label is set, it must be unique, as we use it to identify the
+	// account in some of the RPCs. It also can't be mistaken for a hex
+	// encoded account ID to avoid confusion and make it easier for the CLI
+	// to distinguish between the two.
+	if len(label) > 0 {
+		if _, err := hex.DecodeString(label); err == nil &&
+			len(label) == hex.EncodedLen(AccountIDLen) {
+
+			return nil, fmt.Errorf("the label '%s' is not allowed "+
+				"as it can be mistaken for an account ID",
+				label)
+		}
+
+		accounts, err := s.Accounts()
+		if err != nil {
+			return nil, fmt.Errorf("error checking label "+
+				"uniqueness: %w", err)
+		}
+		for _, account := range accounts {
+			if account.Label == label {
+				return nil, fmt.Errorf("an account with the "+
+					"label '%s' already exists", label)
+			}
+		}
 	}
 
 	// First, create a new instance of an account. Currently, only the type
@@ -120,6 +148,7 @@ func (s *BoltStore) NewAccount(balance lnwire.MilliSatoshi,
 		LastUpdate:     time.Now(),
 		Invoices:       make(map[lntypes.Hash]struct{}),
 		Payments:       make(map[lntypes.Hash]*PaymentEntry),
+		Label:          label,
 	}
 
 	// Try storing the account in the account database, so we can keep track

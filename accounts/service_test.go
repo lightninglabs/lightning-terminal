@@ -206,7 +206,9 @@ func TestAccountService(t *testing.T) {
 	}, {
 		name: "startup do not track completed payments",
 		setup: func(t *testing.T, lnd *mockLnd, s *InterceptorService) {
-			acct, err := s.store.NewAccount(1234, testExpiration)
+			acct, err := s.store.NewAccount(
+				1234, testExpiration, "",
+			)
 			require.NoError(t, err)
 
 			acct.Invoices[testHash] = struct{}{}

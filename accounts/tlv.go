@@ -21,6 +21,7 @@ const (
 	typeExpirationDate tlv.Type = 6
 	typeInvoices       tlv.Type = 7
 	typePayments       tlv.Type = 8
+	typeLabel          tlv.Type = 9
 )
 
 func serializeAccount(account *OffChainBalanceAccount) ([]byte, error) {
@@ -34,6 +35,7 @@ func serializeAccount(account *OffChainBalanceAccount) ([]byte, error) {
 		initialBalance = uint64(account.InitialBalance)
 		currentBalance = uint64(account.CurrentBalance)
 		lastUpdate     = uint64(account.LastUpdate.UnixNano())
+		label          = []byte(account.Label)
 	)
 
 	tlvRecords := []tlv.Record{
@@ -55,6 +57,7 @@ func serializeAccount(account *OffChainBalanceAccount) ([]byte, error) {
 		tlvRecords,
 		newHashMapRecord(typeInvoices, &account.Invoices),
 		newPaymentEntryMapRecord(typePayments, &account.Payments),
+		tlv.MakePrimitiveRecord(typeLabel, &label),
 	)
 
 	tlvStream, err := tlv.NewStream(tlvRecords...)
@@ -80,6 +83,7 @@ func deserializeAccount(content []byte) (*OffChainBalanceAccount, error) {
 		expirationDate uint64
 		invoices       map[lntypes.Hash]struct{}
 		payments       map[lntypes.Hash]*PaymentEntry
+		label          []byte
 	)
 
 	tlvStream, err := tlv.NewStream(
@@ -91,6 +95,7 @@ func deserializeAccount(content []byte) (*OffChainBalanceAccount, error) {
 		tlv.MakePrimitiveRecord(typeExpirationDate, &expirationDate),
 		newHashMapRecord(typeInvoices, &invoices),
 		newPaymentEntryMapRecord(typePayments, &payments),
+		tlv.MakePrimitiveRecord(typeLabel, &label),
 	)
 	if err != nil {
 		return nil, err
@@ -108,6 +113,7 @@ func deserializeAccount(content []byte) (*OffChainBalanceAccount, error) {
 		LastUpdate:     time.Unix(0, int64(lastUpdate)),
 		Invoices:       invoices,
 		Payments:       payments,
+		Label:          string(label),
 	}
 	copy(account.ID[:], id)
 
