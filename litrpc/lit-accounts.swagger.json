@@ -195,6 +195,10 @@
             "$ref": "#/definitions/litrpcAccountPayment"
           },
           "description": "The list of payments made by the account. A payment made by an account will\ndebit the account balance if it is settled."
+        },
+        "label": {
+          "type": "string",
+          "description": "An optional label to identify the account. If this is not empty, then it is\nguaranteed to be unique."
         }
       }
     },
@@ -239,6 +243,10 @@
           "type": "string",
           "format": "int64",
           "description": "The expiration date of the account as a timestamp. Set to 0 to never expire."
+        },
+        "label": {
+          "type": "string",
+          "description": "An optional label to identify the account. If the label is not empty, then\nit must be unique, otherwise it couldn't be used to query a single account."
         }
       }
     },

@@ -50,8 +50,8 @@ func (s *RPCServer) CreateAccount(ctx context.Context,
 	req *litrpc.CreateAccountRequest) (*litrpc.CreateAccountResponse,
 	error) {
 
-	log.Infof("[createaccount] balance=%d, expiration=%d",
-		req.AccountBalance, req.ExpirationDate)
+	log.Infof("[createaccount] label=%v, balance=%d, expiration=%d",
+		req.Label, req.AccountBalance, req.ExpirationDate)
 
 	var (
 		balanceMsat    lnwire.MilliSatoshi
@@ -70,7 +70,9 @@ func (s *RPCServer) CreateAccount(ctx context.Context,
 	balanceMsat = lnwire.NewMSatFromSatoshis(balance)
 
 	// Create the actual account in the macaroon account store.
-	account, err := s.service.NewAccount(balanceMsat, expirationDate, "")
+	account, err := s.service.NewAccount(
+		balanceMsat, expirationDate, req.Label,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create account: %v", err)
 	}
@@ -196,6 +198,7 @@ func marshalAccount(acct *OffChainBalanceAccount) *litrpc.Account {
 		Payments: make(
 			[]*litrpc.AccountPayment, 0, len(acct.Payments),
 		),
+		Label: acct.Label,
 	}
 
 	for hash := range acct.Invoices {

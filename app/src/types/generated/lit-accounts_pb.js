@@ -72,7 +72,8 @@ proto.litrpc.CreateAccountRequest.prototype.toObject = function(opt_includeInsta
 proto.litrpc.CreateAccountRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
     accountBalance: jspb.Message.getFieldWithDefault(msg, 1, "0"),
-    expirationDate: jspb.Message.getFieldWithDefault(msg, 2, "0")
+    expirationDate: jspb.Message.getFieldWithDefault(msg, 2, "0"),
+    label: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -117,6 +118,10 @@ proto.litrpc.CreateAccountRequest.deserializeBinaryFromReader = function(msg, re
       var value = /** @type {string} */ (reader.readInt64String());
       msg.setExpirationDate(value);
       break;
+    case 3:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setLabel(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -160,6 +165,13 @@ proto.litrpc.CreateAccountRequest.serializeBinaryToWriter = function(message, wr
       f
     );
   }
+  f = message.getLabel();
+  if (f.length > 0) {
+    writer.writeString(
+      3,
+      f
+    );
+  }
 };
 
 
@@ -190,6 +202,21 @@ proto.litrpc.CreateAccountRequest.prototype.getExpirationDate = function() {
 /** @param {string} value */
 proto.litrpc.CreateAccountRequest.prototype.setExpirationDate = function(value) {
   jspb.Message.setProto3StringIntField(this, 2, value);
+};
+
+
+/**
+ * optional string label = 3;
+ * @return {string}
+ */
+proto.litrpc.CreateAccountRequest.prototype.getLabel = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
+};
+
+
+/** @param {string} value */
+proto.litrpc.CreateAccountRequest.prototype.setLabel = function(value) {
+  jspb.Message.setProto3StringField(this, 3, value);
 };
 
 
@@ -465,7 +492,8 @@ proto.litrpc.Account.toObject = function(includeInstance, msg) {
     invoicesList: jspb.Message.toObjectList(msg.getInvoicesList(),
     proto.litrpc.AccountInvoice.toObject, includeInstance),
     paymentsList: jspb.Message.toObjectList(msg.getPaymentsList(),
-    proto.litrpc.AccountPayment.toObject, includeInstance)
+    proto.litrpc.AccountPayment.toObject, includeInstance),
+    label: jspb.Message.getFieldWithDefault(msg, 8, "")
   };
 
   if (includeInstance) {
@@ -531,6 +559,10 @@ proto.litrpc.Account.deserializeBinaryFromReader = function(msg, reader) {
       var value = new proto.litrpc.AccountPayment;
       reader.readMessage(value,proto.litrpc.AccountPayment.deserializeBinaryFromReader);
       msg.addPayments(value);
+      break;
+    case 8:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setLabel(value);
       break;
     default:
       reader.skipField();
@@ -610,6 +642,13 @@ proto.litrpc.Account.serializeBinaryToWriter = function(message, writer) {
       7,
       f,
       proto.litrpc.AccountPayment.serializeBinaryToWriter
+    );
+  }
+  f = message.getLabel();
+  if (f.length > 0) {
+    writer.writeString(
+      8,
+      f
     );
   }
 };
@@ -749,6 +788,21 @@ proto.litrpc.Account.prototype.addPayments = function(opt_value, opt_index) {
 
 proto.litrpc.Account.prototype.clearPaymentsList = function() {
   this.setPaymentsList([]);
+};
+
+
+/**
+ * optional string label = 8;
+ * @return {string}
+ */
+proto.litrpc.Account.prototype.getLabel = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 8, ""));
+};
+
+
+/** @param {string} value */
+proto.litrpc.Account.prototype.setLabel = function(value) {
+  jspb.Message.setProto3StringField(this, 8, value);
 };
 
 

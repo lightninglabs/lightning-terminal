@@ -48,6 +48,12 @@ message CreateAccountRequest {
     The expiration date of the account as a timestamp. Set to 0 to never expire.
     */
     int64 expiration_date = 2 [jstype = JS_STRING];
+
+    /*
+    An optional label to identify the account. If the label is not empty, then
+    it must be unique, otherwise it couldn't be used to query a single account.
+    */
+    string label = 3;
 }
 
 message CreateAccountResponse {
@@ -89,6 +95,12 @@ message Account {
     debit the account balance if it is settled.
     */
     repeated AccountPayment payments = 7;
+
+    /*
+    An optional label to identify the account. If this is not empty, then it is
+    guaranteed to be unique.
+    */
+    string label = 8;
 }
 
 message AccountInvoice {

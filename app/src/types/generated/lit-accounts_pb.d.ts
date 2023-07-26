@@ -10,6 +10,9 @@ export class CreateAccountRequest extends jspb.Message {
   getExpirationDate(): string;
   setExpirationDate(value: string): void;
 
+  getLabel(): string;
+  setLabel(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): CreateAccountRequest.AsObject;
   static toObject(includeInstance: boolean, msg: CreateAccountRequest): CreateAccountRequest.AsObject;
@@ -24,6 +27,7 @@ export namespace CreateAccountRequest {
   export type AsObject = {
     accountBalance: string,
     expirationDate: string,
+    label: string,
   }
 }
 
@@ -81,6 +85,9 @@ export class Account extends jspb.Message {
   setPaymentsList(value: Array<AccountPayment>): void;
   addPayments(value?: AccountPayment, index?: number): AccountPayment;
 
+  getLabel(): string;
+  setLabel(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Account.AsObject;
   static toObject(includeInstance: boolean, msg: Account): Account.AsObject;
@@ -100,6 +107,7 @@ export namespace Account {
     expirationDate: string,
     invoicesList: Array<AccountInvoice.AsObject>,
     paymentsList: Array<AccountPayment.AsObject>,
+    label: string,
   }
 }
 
