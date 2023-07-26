@@ -1054,8 +1054,8 @@ github.com/lightninglabs/protobuf-go-hex-display v1.30.0-hex-display h1:pRdza2wl
 github.com/lightninglabs/protobuf-go-hex-display v1.30.0-hex-display/go.mod h1:HV8QOd/L58Z+nl8r43ehVNZIU/HEI6OcFqwMG9pJV4I=
 github.com/lightninglabs/protobuf-hex-display v1.4.3-hex-display h1:RZJ8H4ueU/aQ9pFtx5wqsuD3B/DezrewJeVwDKKYY8E=
 github.com/lightninglabs/protobuf-hex-display v1.4.3-hex-display/go.mod h1:2oKOBU042GKFHrdbgGiKax4xVrFiZu51lhacUZQ9MnE=
-github.com/lightninglabs/taproot-assets v0.2.2 h1:DREtlSdtzgCMKeUWSlYpbXfqguNbA5Yn3c5wRy3IIgY=
-github.com/lightninglabs/taproot-assets v0.2.2/go.mod h1:ge1z/jmqgcMvP9LrYvLZPbQGgsWixLsKH2OagOVoTBo=
+github.com/lightninglabs/taproot-assets v0.2.3 h1:napiqnloxmu0iHfV0ai1P1P4CFf2IbunDQdF6+RD+io=
+github.com/lightninglabs/taproot-assets v0.2.3/go.mod h1:ok8A01D8FBc88JfLTuivUdmzBJ1mj7cCnpC3sWWihgQ=
 github.com/lightningnetwork/lightning-onion v1.0.2-0.20220211021909-bb84a1ccb0c5/go.mod h1:7dDx73ApjEZA0kcknI799m2O5kkpfg4/gr7N092ojNo=
 github.com/lightningnetwork/lightning-onion v1.2.1-0.20221202012345-ca23184850a1 h1:Wm0g70gkcAu2pGpNZwfWPSVOY21j8IyYsNewwK4OkT4=
 github.com/lightningnetwork/lightning-onion v1.2.1-0.20221202012345-ca23184850a1/go.mod h1:7dDx73ApjEZA0kcknI799m2O5kkpfg4/gr7N092ojNo=
