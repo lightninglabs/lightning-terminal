@@ -11,7 +11,6 @@ import (
 
 	"github.com/btcsuite/btcwallet/walletdb"
 	"github.com/lightningnetwork/lnd/kvdb"
-	"github.com/lightningnetwork/lnd/lntypes"
 	"github.com/lightningnetwork/lnd/lnwire"
 	"go.etcd.io/bbolt"
 )
@@ -146,8 +145,8 @@ func (s *BoltStore) NewAccount(balance lnwire.MilliSatoshi,
 		CurrentBalance: int64(balance),
 		ExpirationDate: expirationDate,
 		LastUpdate:     time.Now(),
-		Invoices:       make(map[lntypes.Hash]struct{}),
-		Payments:       make(map[lntypes.Hash]*PaymentEntry),
+		Invoices:       make(AccountInvoices),
+		Payments:       make(AccountPayments),
 		Label:          label,
 	}
 

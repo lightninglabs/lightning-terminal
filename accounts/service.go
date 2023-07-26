@@ -96,7 +96,7 @@ func (s *InterceptorService) Start(lightningClient lndclient.LightningClient,
 	// also track payments that aren't in a final state yet.
 	existingAccounts, err := s.store.Accounts()
 	if err != nil {
-		return fmt.Errorf("error querying existing accounts: %v", err)
+		return fmt.Errorf("error querying existing accounts: %w", err)
 	}
 	for _, acct := range existingAccounts {
 		acct := acct
@@ -109,15 +109,13 @@ func (s *InterceptorService) Start(lightningClient lndclient.LightningClient,
 		// state of being in-flight.
 		for hash, entry := range acct.Payments {
 			entry := entry
-			if entry.Status == lnrpc.Payment_IN_FLIGHT ||
-				entry.Status == lnrpc.Payment_UNKNOWN {
-
+			if !successState(entry.Status) {
 				err := s.TrackPayment(
 					acct.ID, hash, entry.FullAmount,
 				)
 				if err != nil {
 					return fmt.Errorf("error tracking "+
-						"payment: %v", err)
+						"payment: %w", err)
 				}
 			}
 		}
@@ -146,7 +144,7 @@ func (s *InterceptorService) Start(lightningClient lndclient.LightningClient,
 		s.currentSettleIndex = 0
 
 	default:
-		return fmt.Errorf("error determining last invoice indexes: %v",
+		return fmt.Errorf("error determining last invoice indexes: %w",
 			err)
 	}
 
@@ -157,7 +155,7 @@ func (s *InterceptorService) Start(lightningClient lndclient.LightningClient,
 		},
 	)
 	if err != nil {
-		return fmt.Errorf("error subscribing invoices: %v", err)
+		return fmt.Errorf("error subscribing invoices: %w", err)
 	}
 
 	s.wg.Add(1)
@@ -209,6 +207,16 @@ func (s *InterceptorService) Start(lightningClient lndclient.LightningClient,
 	return nil
 }
 
+// Stop shuts down the account service.
+func (s *InterceptorService) Stop() error {
+	s.contextCancel()
+	close(s.quit)
+
+	s.wg.Wait()
+
+	return s.store.Close()
+}
+
 // NewAccount creates a new OffChainBalanceAccount with the given balance and a
 // randomly chosen ID.
 func (s *InterceptorService) NewAccount(balance lnwire.MilliSatoshi,
@@ -231,7 +239,7 @@ func (s *InterceptorService) UpdateAccount(accountID AccountID, accountBalance,
 
 	account, err := s.store.Account(accountID)
 	if err != nil {
-		return nil, fmt.Errorf("error fetching account: %v", err)
+		return nil, fmt.Errorf("error fetching account: %w", err)
 	}
 
 	// If the expiration date was set, parse it as a unix time stamp. A
@@ -255,7 +263,7 @@ func (s *InterceptorService) UpdateAccount(accountID AccountID, accountBalance,
 	// Create the actual account in the macaroon account store.
 	err = s.store.UpdateAccount(account)
 	if err != nil {
-		return nil, fmt.Errorf("unable to update account: %v", err)
+		return nil, fmt.Errorf("unable to update account: %w", err)
 	}
 
 	return account, nil
@@ -395,7 +403,7 @@ func (s *InterceptorService) invoiceUpdate(invoice *lndclient.Invoice) error {
 
 	account, err := s.store.Account(acctID)
 	if err != nil {
-		return fmt.Errorf("error fetching account: %v", err)
+		return fmt.Errorf("error fetching account: %w", err)
 	}
 
 	// If we get here, the current account has the invoice associated with
@@ -403,7 +411,7 @@ func (s *InterceptorService) invoiceUpdate(invoice *lndclient.Invoice) error {
 	// in the DB.
 	account.CurrentBalance += int64(invoice.AmountPaid)
 	if err := s.store.UpdateAccount(account); err != nil {
-		return fmt.Errorf("error updating account: %v", err)
+		return fmt.Errorf("error updating account: %w", err)
 	}
 
 	// We've now fully processed the invoice and don't need to keep it
@@ -431,15 +439,13 @@ func (s *InterceptorService) TrackPayment(id AccountID, hash lntypes.Hash,
 	// is a reference in the account with the given state.
 	account, err := s.store.Account(id)
 	if err != nil {
-		return fmt.Errorf("error fetching account: %v", err)
+		return fmt.Errorf("error fetching account: %w", err)
 	}
 
 	// If the account already stored a terminal state, we also don't need to
 	// track the payment again.
 	entry, ok := account.Payments[hash]
-	if ok && (entry.Status == lnrpc.Payment_SUCCEEDED ||
-		entry.Status == lnrpc.Payment_FAILED) {
-
+	if ok && successState(entry.Status) {
 		return nil
 	}
 
@@ -450,7 +456,7 @@ func (s *InterceptorService) TrackPayment(id AccountID, hash lntypes.Hash,
 		FullAmount: fullAmt,
 	}
 	if err := s.store.UpdateAccount(account); err != nil {
-		return fmt.Errorf("error updating account: %v", err)
+		return fmt.Errorf("error updating account: %w", err)
 	}
 
 	// And start the long-running TrackPayment RPC.
@@ -566,7 +572,7 @@ func (s *InterceptorService) paymentUpdate(hash lntypes.Hash,
 		FullAmount: fullAmount,
 	}
 	if err := s.store.UpdateAccount(account); err != nil {
-		return terminalState, fmt.Errorf("error updating account: %v",
+		return terminalState, fmt.Errorf("error updating account: %w",
 			err)
 	}
 
@@ -618,12 +624,7 @@ func (s *InterceptorService) removePayment(hash lntypes.Hash,
 	return s.store.UpdateAccount(account)
 }
 
-// Stop shuts down the account service.
-func (s *InterceptorService) Stop() error {
-	s.contextCancel()
-	close(s.quit)
-
-	s.wg.Wait()
-
-	return s.store.Close()
+// successState returns true if a payment was completed successfully.
+func successState(status lnrpc.Payment_PaymentStatus) bool {
+	return status == lnrpc.Payment_SUCCEEDED
 }

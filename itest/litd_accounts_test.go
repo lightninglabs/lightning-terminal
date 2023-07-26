@@ -2,7 +2,7 @@ package itest
 
 import (
 	"context"
-	"io/ioutil"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -89,9 +89,11 @@ func runAccountSystemTest(t *harnessTest, node *HarnessNode, hostPort,
 	// authentication mechanism.
 	rawConn, err := connectRPC(ctxt, hostPort, tlsCertPath)
 	require.NoError(t.t, err)
-	defer rawConn.Close()
+	defer func() {
+		require.NoError(t.t, rawConn.Close())
+	}()
 
-	macBytes, err := ioutil.ReadFile(macPath)
+	macBytes, err := os.ReadFile(macPath)
 	require.NoError(t.t, err)
 	ctxm := macaroonContext(ctxt, macBytes)
 	acctClient := litrpc.NewAccountsClient(rawConn)
@@ -191,7 +193,9 @@ func testAccountRestrictionsLNC(ctxm context.Context, t *harnessTest,
 
 	rawLNCConn, err := connectMailboxWithPairingPhrase(ctxt, connectPhrase)
 	require.NoError(t.t, err)
-	defer rawLNCConn.Close()
+	defer func() {
+		require.NoError(t.t, rawLNCConn.Close())
+	}()
 
 	lightningClient := lnrpc.NewLightningClient(rawLNCConn)
 

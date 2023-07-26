@@ -153,7 +153,7 @@ func parseRPCMessage(msg *lnrpc.RPCMessage) (proto.Message, error) {
 	// No, it's a normal message.
 	parsedMsg, err := mid.ParseProtobuf(msg.TypeName, msg.Serialized)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing proto of type %v: %v",
+		return nil, fmt.Errorf("error parsing proto of type %v: %w",
 			msg.TypeName, err)
 	}
 

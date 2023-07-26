@@ -74,7 +74,7 @@ func (s *RPCServer) CreateAccount(ctx context.Context,
 		balanceMsat, expirationDate, req.Label,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create account: %v", err)
+		return nil, fmt.Errorf("unable to create account: %w", err)
 	}
 
 	var rootKeyIdSuffix [4]byte
@@ -93,12 +93,12 @@ func (s *RPCServer) CreateAccount(ctx context.Context,
 		}},
 	})
 	if err != nil {
-		return nil, fmt.Errorf("error baking account macaroon: %v", err)
+		return nil, fmt.Errorf("error baking account macaroon: %w", err)
 	}
 
 	macBytes, err := hex.DecodeString(macHex)
 	if err != nil {
-		return nil, fmt.Errorf("error decoding account macaroon: %v",
+		return nil, fmt.Errorf("error decoding account macaroon: %w",
 			err)
 	}
 
@@ -141,7 +141,7 @@ func (s *RPCServer) ListAccounts(context.Context,
 	// Retrieve all accounts from the macaroon account store.
 	accts, err := s.service.Accounts()
 	if err != nil {
-		return nil, fmt.Errorf("unable to list accounts: %v", err)
+		return nil, fmt.Errorf("unable to list accounts: %w", err)
 	}
 
 	// Map the response into the proper response type and return it.
@@ -191,7 +191,7 @@ func (s *RPCServer) RemoveAccount(_ context.Context,
 	// Now remove the account.
 	err = s.service.RemoveAccount(accountID)
 	if err != nil {
-		return nil, fmt.Errorf("error removing account: %v", err)
+		return nil, fmt.Errorf("error removing account: %w", err)
 	}
 
 	return &litrpc.RemoveAccountResponse{}, nil
@@ -211,7 +211,7 @@ func (s *RPCServer) findAccount(id string, label string) (AccountID, error) {
 		decoded, err := hex.DecodeString(id)
 		if err != nil {
 			return AccountID{}, fmt.Errorf("error decoding "+
-				"account ID: %v", err)
+				"account ID: %w", err)
 		}
 		copy(accountID[:], decoded)
 

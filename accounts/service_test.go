@@ -186,10 +186,10 @@ func TestAccountService(t *testing.T) {
 				ID:             testID,
 				Type:           TypeInitialBalance,
 				CurrentBalance: 1234,
-				Invoices: map[lntypes.Hash]struct{}{
+				Invoices: AccountInvoices{
 					testHash: {},
 				},
-				Payments: make(map[lntypes.Hash]*PaymentEntry),
+				Payments: make(AccountPayments),
 			}
 
 			err := s.store.UpdateAccount(acct)
@@ -213,7 +213,7 @@ func TestAccountService(t *testing.T) {
 
 			acct.Invoices[testHash] = struct{}{}
 			acct.Payments[testHash] = &PaymentEntry{
-				Status:     lnrpc.Payment_FAILED,
+				Status:     lnrpc.Payment_SUCCEEDED,
 				FullAmount: 1234,
 			}
 
@@ -235,10 +235,10 @@ func TestAccountService(t *testing.T) {
 				ID:             testID,
 				Type:           TypeInitialBalance,
 				CurrentBalance: 1234,
-				Invoices: map[lntypes.Hash]struct{}{
+				Invoices: AccountInvoices{
 					testHash: {},
 				},
-				Payments: map[lntypes.Hash]*PaymentEntry{
+				Payments: AccountPayments{
 					testHash: {
 						Status:     lnrpc.Payment_IN_FLIGHT,
 						FullAmount: 1234,
@@ -362,10 +362,10 @@ func TestAccountService(t *testing.T) {
 				ID:             testID,
 				Type:           TypeInitialBalance,
 				CurrentBalance: 1234,
-				Invoices: map[lntypes.Hash]struct{}{
+				Invoices: AccountInvoices{
 					testHash: {},
 				},
-				Payments: make(map[lntypes.Hash]*PaymentEntry),
+				Payments: make(AccountPayments),
 			}
 
 			err := s.store.UpdateAccount(acct)
@@ -400,10 +400,10 @@ func TestAccountService(t *testing.T) {
 				ID:             testID,
 				Type:           TypeInitialBalance,
 				CurrentBalance: 5000,
-				Invoices: map[lntypes.Hash]struct{}{
+				Invoices: AccountInvoices{
 					testHash: {},
 				},
-				Payments: map[lntypes.Hash]*PaymentEntry{
+				Payments: AccountPayments{
 					testHash: {
 						Status:     lnrpc.Payment_IN_FLIGHT,
 						FullAmount: 2000,

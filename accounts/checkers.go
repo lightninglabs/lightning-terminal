@@ -525,7 +525,7 @@ func checkSend(ctx context.Context, chainParams *chaincfg.Params,
 	if len(invoice) > 0 {
 		payReq, err := zpay32.Decode(invoice, chainParams)
 		if err != nil {
-			return fmt.Errorf("error decoding pay req: %v", err)
+			return fmt.Errorf("error decoding pay req: %w", err)
 		}
 
 		if payReq.MilliSat != nil && *payReq.MilliSat > sendAmt {
@@ -546,7 +546,7 @@ func checkSend(ctx context.Context, chainParams *chaincfg.Params,
 
 	err = service.CheckBalance(acct.ID, sendAmt)
 	if err != nil {
-		return fmt.Errorf("error validating account balance: %v", err)
+		return fmt.Errorf("error validating account balance: %w", err)
 	}
 
 	return nil
@@ -609,7 +609,7 @@ func checkSendToRoute(ctx context.Context, service Service,
 
 	err = service.CheckBalance(acct.ID, sendAmt)
 	if err != nil {
-		return fmt.Errorf("error validating account balance: %v", err)
+		return fmt.Errorf("error validating account balance: %w", err)
 	}
 
 	return nil

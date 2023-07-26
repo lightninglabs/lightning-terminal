@@ -55,7 +55,7 @@ func serializeAccount(account *OffChainBalanceAccount) ([]byte, error) {
 
 	tlvRecords = append(
 		tlvRecords,
-		newHashMapRecord(typeInvoices, &account.Invoices),
+		newInvoiceEntryMapRecord(typeInvoices, &account.Invoices),
 		newPaymentEntryMapRecord(typePayments, &account.Payments),
 		tlv.MakePrimitiveRecord(typeLabel, &label),
 	)
@@ -81,8 +81,8 @@ func deserializeAccount(content []byte) (*OffChainBalanceAccount, error) {
 		currentBalance uint64
 		lastUpdate     uint64
 		expirationDate uint64
-		invoices       map[lntypes.Hash]struct{}
-		payments       map[lntypes.Hash]*PaymentEntry
+		invoices       AccountInvoices
+		payments       AccountPayments
 		label          []byte
 	)
 
@@ -93,7 +93,7 @@ func deserializeAccount(content []byte) (*OffChainBalanceAccount, error) {
 		tlv.MakePrimitiveRecord(typeCurrentBalance, &currentBalance),
 		tlv.MakePrimitiveRecord(typeLastUpdate, &lastUpdate),
 		tlv.MakePrimitiveRecord(typeExpirationDate, &expirationDate),
-		newHashMapRecord(typeInvoices, &invoices),
+		newInvoiceEntryMapRecord(typeInvoices, &invoices),
 		newPaymentEntryMapRecord(typePayments, &payments),
 		tlv.MakePrimitiveRecord(typeLabel, &label),
 	)
@@ -124,22 +124,23 @@ func deserializeAccount(content []byte) (*OffChainBalanceAccount, error) {
 	return account, nil
 }
 
-// newHashMapRecord returns a new TLV record for encoding the given map of
-// hashes.
-func newHashMapRecord(tlvType tlv.Type,
-	hashMap *map[lntypes.Hash]struct{}) tlv.Record {
+// newInvoiceEntryMapRecord returns a new TLV record for encoding the given map
+// of invoice hashes.
+func newInvoiceEntryMapRecord(tlvType tlv.Type,
+	invoiceMap *AccountInvoices) tlv.Record {
 
 	recordSize := func() uint64 {
-		return uint64(len(*hashMap) * lntypes.HashSize)
+		return uint64(len(*invoiceMap) * lntypes.HashSize)
 	}
 	return tlv.MakeDynamicRecord(
-		tlvType, hashMap, recordSize, HashMapEncoder, HashMapDecoder,
+		tlvType, invoiceMap, recordSize, InvoiceEntryMapEncoder,
+		InvoiceEntryMapDecoder,
 	)
 }
 
-// HashMapEncoder encodes a map of hashes.
-func HashMapEncoder(w io.Writer, val any, buf *[8]byte) error {
-	if t, ok := val.(*map[lntypes.Hash]struct{}); ok {
+// InvoiceEntryMapEncoder encodes a map of invoice hashes.
+func InvoiceEntryMapEncoder(w io.Writer, val any, buf *[8]byte) error {
+	if t, ok := val.(*AccountInvoices); ok {
 		if err := tlv.WriteVarInt(w, uint64(len(*t)), buf); err != nil {
 			return err
 		}
@@ -152,18 +153,20 @@ func HashMapEncoder(w io.Writer, val any, buf *[8]byte) error {
 		}
 		return nil
 	}
-	return tlv.NewTypeForEncodingErr(val, "*map[lntypes.Hash]struct{}")
+	return tlv.NewTypeForEncodingErr(val, "*AccountInvoices")
 }
 
-// HashMapDecoder decodes a map of hashes.
-func HashMapDecoder(r io.Reader, val any, buf *[8]byte, _ uint64) error {
-	if typ, ok := val.(*map[lntypes.Hash]struct{}); ok {
+// InvoiceEntryMapDecoder decodes a map of invoice hashes.
+func InvoiceEntryMapDecoder(r io.Reader, val any, buf *[8]byte,
+	_ uint64) error {
+
+	if typ, ok := val.(*AccountInvoices); ok {
 		numItems, err := tlv.ReadVarInt(r, buf)
 		if err != nil {
 			return err
 		}
 
-		hashes := make(map[lntypes.Hash]struct{}, numItems)
+		hashes := make(AccountInvoices, numItems)
 		for i := uint64(0); i < numItems; i++ {
 			var item [32]byte
 			if err := tlv.DBytes32(r, &item, buf, 32); err != nil {
@@ -174,13 +177,13 @@ func HashMapDecoder(r io.Reader, val any, buf *[8]byte, _ uint64) error {
 		*typ = hashes
 		return nil
 	}
-	return tlv.NewTypeForEncodingErr(val, "*map[lntypes.Hash]struct{}")
+	return tlv.NewTypeForEncodingErr(val, "*AccountInvoices")
 }
 
 // newPaymentEntryMapRecord returns a new TLV record for encoding the given map
 // of payment entries.
 func newPaymentEntryMapRecord(tlvType tlv.Type,
-	hashMap *map[lntypes.Hash]*PaymentEntry) tlv.Record {
+	hashMap *AccountPayments) tlv.Record {
 
 	recordSize := func() uint64 {
 		// We have a 32-byte hash, a single byte for the status and
@@ -195,7 +198,7 @@ func newPaymentEntryMapRecord(tlvType tlv.Type,
 
 // PaymentEntryMapEncoder encodes a map of payment entries.
 func PaymentEntryMapEncoder(w io.Writer, val any, buf *[8]byte) error {
-	if t, ok := val.(*map[lntypes.Hash]*PaymentEntry); ok {
+	if t, ok := val.(*AccountPayments); ok {
 		if err := tlv.WriteVarInt(w, uint64(len(*t)), buf); err != nil {
 			return err
 		}
@@ -220,20 +223,18 @@ func PaymentEntryMapEncoder(w io.Writer, val any, buf *[8]byte) error {
 		}
 		return nil
 	}
-	return tlv.NewTypeForEncodingErr(
-		val, "*map[lntypes.Hash]*PaymentEntry",
-	)
+	return tlv.NewTypeForEncodingErr(val, "*AccountPayments")
 }
 
 // PaymentEntryMapDecoder decodes a map of payment entries.
 func PaymentEntryMapDecoder(r io.Reader, val any, buf *[8]byte, _ uint64) error {
-	if typ, ok := val.(*map[lntypes.Hash]*PaymentEntry); ok {
+	if typ, ok := val.(*AccountPayments); ok {
 		numItems, err := tlv.ReadVarInt(r, buf)
 		if err != nil {
 			return err
 		}
 
-		entries := make(map[lntypes.Hash]*PaymentEntry, numItems)
+		entries := make(AccountPayments, numItems)
 		for i := uint64(0); i < numItems; i++ {
 			var item [32]byte
 			if err := tlv.DBytes32(r, &item, buf, 32); err != nil {
@@ -260,7 +261,5 @@ func PaymentEntryMapDecoder(r io.Reader, val any, buf *[8]byte, _ uint64) error 
 		*typ = entries
 		return nil
 	}
-	return tlv.NewTypeForEncodingErr(
-		val, "*map[lntypes.Hash]*PaymentEntry",
-	)
+	return tlv.NewTypeForEncodingErr(val, "*AccountPayments")
 }
