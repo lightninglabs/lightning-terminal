@@ -92,9 +92,16 @@
         "parameters": [
           {
             "name": "id",
-            "description": "The hexadecimal ID of the account to remove.",
+            "description": "The hexadecimal ID of the account to remove. Either the ID or the label must\nbe set.",
             "in": "path",
             "required": true,
+            "type": "string"
+          },
+          {
+            "name": "label",
+            "description": "The label of the account to remove. If an account has no label, then the ID\nmust be used instead.",
+            "in": "query",
+            "required": false,
             "type": "string"
           }
         ],
@@ -122,7 +129,7 @@
         "parameters": [
           {
             "name": "id",
-            "description": "The ID of the account to update.",
+            "description": "The ID of the account to update. Either the ID or the label must be set.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -143,6 +150,10 @@
                   "type": "string",
                   "format": "int64",
                   "description": "The new account expiry to set. Set to -1 to not update the expiry. Set to 0\nto never expire."
+                },
+                "label": {
+                  "type": "string",
+                  "description": "The label of the account to update. If an account has no label, then the ID\nmust be used instead."
                 }
               }
             }
@@ -195,6 +206,10 @@
             "$ref": "#/definitions/litrpcAccountPayment"
           },
           "description": "The list of payments made by the account. A payment made by an account will\ndebit the account balance if it is settled."
+        },
+        "label": {
+          "type": "string",
+          "description": "An optional label to identify the account. If this is not empty, then it is\nguaranteed to be unique."
         }
       }
     },
@@ -239,6 +254,10 @@
           "type": "string",
           "format": "int64",
           "description": "The expiration date of the account as a timestamp. Set to 0 to never expire."
+        },
+        "label": {
+          "type": "string",
+          "description": "An optional label to identify the account. If the label is not empty, then\nit must be unique, otherwise it couldn't be used to query a single account."
         }
       }
     },

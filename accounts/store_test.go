@@ -18,11 +18,11 @@ func TestAccountStore(t *testing.T) {
 
 	// An initial balance of 0 is not allowed, but later we can reach a
 	// zero balance.
-	_, err = store.NewAccount(0, time.Time{})
+	_, err = store.NewAccount(0, time.Time{}, "")
 	require.ErrorContains(t, err, "cannot have balance of 0")
 
 	// Create an account that does not expire.
-	acct1, err := store.NewAccount(123, time.Time{})
+	acct1, err := store.NewAccount(123, time.Time{}, "foo")
 	require.NoError(t, err)
 	require.False(t, acct1.HasExpired())
 
@@ -30,6 +30,14 @@ func TestAccountStore(t *testing.T) {
 	require.NoError(t, err)
 
 	assertEqualAccounts(t, acct1, dbAccount)
+
+	// Make sure we cannot create a second account with the same label.
+	_, err = store.NewAccount(123, time.Time{}, "foo")
+	require.ErrorContains(t, err, "account with the label 'foo' already")
+
+	// Make sure we cannot set a label that looks like an account ID.
+	_, err = store.NewAccount(123, time.Time{}, "0011223344556677")
+	require.ErrorContains(t, err, "is not allowed as it can be mistaken")
 
 	// Update all values of the account that we can modify.
 	acct1.CurrentBalance = -500

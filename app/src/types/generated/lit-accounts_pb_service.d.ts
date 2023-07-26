@@ -31,6 +31,15 @@ type AccountsListAccounts = {
   readonly responseType: typeof lit_accounts_pb.ListAccountsResponse;
 };
 
+type AccountsAccountInfo = {
+  readonly methodName: string;
+  readonly service: typeof Accounts;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof lit_accounts_pb.AccountInfoRequest;
+  readonly responseType: typeof lit_accounts_pb.Account;
+};
+
 type AccountsRemoveAccount = {
   readonly methodName: string;
   readonly service: typeof Accounts;
@@ -45,6 +54,7 @@ export class Accounts {
   static readonly CreateAccount: AccountsCreateAccount;
   static readonly UpdateAccount: AccountsUpdateAccount;
   static readonly ListAccounts: AccountsListAccounts;
+  static readonly AccountInfo: AccountsAccountInfo;
   static readonly RemoveAccount: AccountsRemoveAccount;
 }
 
@@ -106,6 +116,15 @@ export class AccountsClient {
   listAccounts(
     requestMessage: lit_accounts_pb.ListAccountsRequest,
     callback: (error: ServiceError|null, responseMessage: lit_accounts_pb.ListAccountsResponse|null) => void
+  ): UnaryResponse;
+  accountInfo(
+    requestMessage: lit_accounts_pb.AccountInfoRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: lit_accounts_pb.Account|null) => void
+  ): UnaryResponse;
+  accountInfo(
+    requestMessage: lit_accounts_pb.AccountInfoRequest,
+    callback: (error: ServiceError|null, responseMessage: lit_accounts_pb.Account|null) => void
   ): UnaryResponse;
   removeAccount(
     requestMessage: lit_accounts_pb.RemoveAccountRequest,

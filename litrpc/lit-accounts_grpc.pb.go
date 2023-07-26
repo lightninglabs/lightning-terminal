@@ -38,6 +38,9 @@ type AccountsClient interface {
 	// ListAccounts returns all accounts that are currently stored in the account
 	// database.
 	ListAccounts(ctx context.Context, in *ListAccountsRequest, opts ...grpc.CallOption) (*ListAccountsResponse, error)
+	// litcli: `accounts info`
+	// AccountInfo returns the account with the given ID or label.
+	AccountInfo(ctx context.Context, in *AccountInfoRequest, opts ...grpc.CallOption) (*Account, error)
 	// litcli: `accounts remove`
 	// RemoveAccount removes the given account from the account database.
 	RemoveAccount(ctx context.Context, in *RemoveAccountRequest, opts ...grpc.CallOption) (*RemoveAccountResponse, error)
@@ -78,6 +81,15 @@ func (c *accountsClient) ListAccounts(ctx context.Context, in *ListAccountsReque
 	return out, nil
 }
 
+func (c *accountsClient) AccountInfo(ctx context.Context, in *AccountInfoRequest, opts ...grpc.CallOption) (*Account, error) {
+	out := new(Account)
+	err := c.cc.Invoke(ctx, "/litrpc.Accounts/AccountInfo", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *accountsClient) RemoveAccount(ctx context.Context, in *RemoveAccountRequest, opts ...grpc.CallOption) (*RemoveAccountResponse, error) {
 	out := new(RemoveAccountResponse)
 	err := c.cc.Invoke(ctx, "/litrpc.Accounts/RemoveAccount", in, out, opts...)
@@ -111,6 +123,9 @@ type AccountsServer interface {
 	// ListAccounts returns all accounts that are currently stored in the account
 	// database.
 	ListAccounts(context.Context, *ListAccountsRequest) (*ListAccountsResponse, error)
+	// litcli: `accounts info`
+	// AccountInfo returns the account with the given ID or label.
+	AccountInfo(context.Context, *AccountInfoRequest) (*Account, error)
 	// litcli: `accounts remove`
 	// RemoveAccount removes the given account from the account database.
 	RemoveAccount(context.Context, *RemoveAccountRequest) (*RemoveAccountResponse, error)
@@ -129,6 +144,9 @@ func (UnimplementedAccountsServer) UpdateAccount(context.Context, *UpdateAccount
 }
 func (UnimplementedAccountsServer) ListAccounts(context.Context, *ListAccountsRequest) (*ListAccountsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListAccounts not implemented")
+}
+func (UnimplementedAccountsServer) AccountInfo(context.Context, *AccountInfoRequest) (*Account, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AccountInfo not implemented")
 }
 func (UnimplementedAccountsServer) RemoveAccount(context.Context, *RemoveAccountRequest) (*RemoveAccountResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveAccount not implemented")
@@ -200,6 +218,24 @@ func _Accounts_ListAccounts_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Accounts_AccountInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AccountInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountsServer).AccountInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/litrpc.Accounts/AccountInfo",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountsServer).AccountInfo(ctx, req.(*AccountInfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Accounts_RemoveAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RemoveAccountRequest)
 	if err := dec(in); err != nil {
@@ -236,6 +272,10 @@ var Accounts_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListAccounts",
 			Handler:    _Accounts_ListAccounts_Handler,
+		},
+		{
+			MethodName: "AccountInfo",
+			Handler:    _Accounts_AccountInfo_Handler,
 		},
 		{
 			MethodName: "RemoveAccount",

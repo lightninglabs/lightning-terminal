@@ -7,9 +7,15 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightningnetwork/lnd/lncfg"
 	"github.com/urfave/cli"
+)
+
+const (
+	idName    = "id"
+	labelName = "label"
 )
 
 var accountsCommands = []cli.Command{
@@ -22,6 +28,7 @@ var accountsCommands = []cli.Command{
 			createAccountCommand,
 			updateAccountCommand,
 			listAccountsCommand,
+			accountInfoCommand,
 			removeAccountCommand,
 		},
 	},
@@ -31,7 +38,7 @@ var createAccountCommand = cli.Command{
 	Name:      "create",
 	ShortName: "c",
 	Usage:     "Create a new off-chain account with a balance.",
-	ArgsUsage: "balance [expiration_date]",
+	ArgsUsage: "balance [expiration_date] [--label=LABEL] [--save_to=FILE]",
 	Description: `
 	Adds an entry to the account database. This entry represents an amount
 	of satoshis (account balance) that can be spent using off-chain
@@ -60,6 +67,10 @@ var createAccountCommand = cli.Command{
 			Name: "save_to",
 			Usage: "store the account macaroon created for the " +
 				"account to the given file",
+		},
+		cli.StringFlag{
+			Name:  labelName,
+			Usage: "(optional) the unique label of the account",
 		},
 	},
 	Action: createAccount,
@@ -111,6 +122,7 @@ func createAccount(ctx *cli.Context) error {
 	req := &litrpc.CreateAccountRequest{
 		AccountBalance: initialBalance,
 		ExpirationDate: expirationDate,
+		Label:          ctx.String(labelName),
 	}
 	resp, err := client.CreateAccount(ctxb, req)
 	if err != nil {
@@ -139,15 +151,19 @@ var updateAccountCommand = cli.Command{
 	Name:      "update",
 	ShortName: "u",
 	Usage:     "Update an existing off-chain account.",
-	ArgsUsage: "id new_balance [new_expiration_date] [--save_to=]",
+	ArgsUsage: "[id | label] new_balance [new_expiration_date] [--save_to=]",
 	Description: `
 	Updates an existing off-chain account and sets either a new balance or
 	new expiration date or both.
 	`,
 	Flags: []cli.Flag{
 		cli.StringFlag{
-			Name:  "id",
+			Name:  idName,
 			Usage: "the ID of the account to update",
+		},
+		cli.StringFlag{
+			Name:  labelName,
+			Usage: "(optional) the unique label of the account",
 		},
 		cli.Int64Flag{
 			Name: "new_balance",
@@ -176,29 +192,15 @@ func updateAccount(ctx *cli.Context) error {
 	defer cleanup()
 	client := litrpc.NewAccountsClient(clientConn)
 
+	id, label, args, err := parseIDOrLabel(ctx)
+	if err != nil {
+		return err
+	}
+
 	var (
-		id             []byte
 		newBalance     int64
 		expirationDate int64
 	)
-	args := ctx.Args()
-
-	// We parse the ID as hex even though we're supposed to send it as a hex
-	// encoded string over the RPC. But that way we can verify it's actually
-	// the id.
-	switch {
-	case ctx.IsSet("id"):
-		id, err = hex.DecodeString(ctx.String("id"))
-	case args.Present():
-		id, err = hex.DecodeString(args.First())
-		args = args.Tail()
-	default:
-		return fmt.Errorf("id is missing")
-	}
-	if err != nil {
-		return fmt.Errorf("error decoding id: %v", err)
-	}
-
 	switch {
 	case ctx.IsSet("new_balance"):
 		newBalance = ctx.Int64("new_balance")
@@ -224,7 +226,8 @@ func updateAccount(ctx *cli.Context) error {
 	}
 
 	req := &litrpc.UpdateAccountRequest{
-		Id:             hex.EncodeToString(id),
+		Id:             id,
+		Label:          label,
 		AccountBalance: newBalance,
 		ExpirationDate: expirationDate,
 	}
@@ -267,18 +270,70 @@ func listAccounts(ctx *cli.Context) error {
 	return nil
 }
 
+var accountInfoCommand = cli.Command{
+	Name:      "info",
+	ShortName: "i",
+	Usage:     "Show information about a single off-chain account.",
+	ArgsUsage: "[id | label]",
+	Description: `
+	Returns a single account entry from the account database.
+	`,
+	Flags: []cli.Flag{
+		cli.StringFlag{
+			Name:  idName,
+			Usage: "the ID of the account",
+		},
+		cli.StringFlag{
+			Name:  labelName,
+			Usage: "(optional) the unique label of the account",
+		},
+	},
+	Action: accountInfo,
+}
+
+func accountInfo(ctx *cli.Context) error {
+	ctxb := context.Background()
+	clientConn, cleanup, err := connectClient(ctx)
+	if err != nil {
+		return err
+	}
+	defer cleanup()
+	client := litrpc.NewAccountsClient(clientConn)
+
+	id, label, _, err := parseIDOrLabel(ctx)
+	if err != nil {
+		return err
+	}
+
+	req := &litrpc.AccountInfoRequest{
+		Id:    id,
+		Label: label,
+	}
+	resp, err := client.AccountInfo(ctxb, req)
+	if err != nil {
+		return err
+	}
+
+	printRespJSON(resp)
+	return nil
+}
+
 var removeAccountCommand = cli.Command{
 	Name:      "remove",
 	ShortName: "r",
 	Usage:     "Removes an off-chain account from the database.",
-	ArgsUsage: "id",
+	ArgsUsage: "[id | label]",
 	Description: `
 	Removes an account entry from the account database.
 	`,
 	Flags: []cli.Flag{
 		cli.StringFlag{
-			Name:  "id",
+			Name:  idName,
 			Usage: "the ID of the account",
+		},
+		cli.StringFlag{
+			Name:  labelName,
+			Usage: "(optional) the unique label of the account",
 		},
 	},
 	Action: removeAccount,
@@ -293,29 +348,59 @@ func removeAccount(ctx *cli.Context) error {
 	defer cleanup()
 	client := litrpc.NewAccountsClient(clientConn)
 
-	var accountID string
-	args := ctx.Args()
-
-	switch {
-	case ctx.IsSet("id"):
-		accountID = ctx.String("id")
-	case args.Present():
-		accountID = args.First()
-		args = args.Tail()
-	default:
-		return fmt.Errorf("id argument missing")
-	}
-
-	if len(accountID) == 0 {
-		return fmt.Errorf("id argument missing")
-	}
-	if _, err := hex.DecodeString(accountID); err != nil {
+	id, label, _, err := parseIDOrLabel(ctx)
+	if err != nil {
 		return err
 	}
 
 	req := &litrpc.RemoveAccountRequest{
-		Id: accountID,
+		Id:    id,
+		Label: label,
 	}
 	_, err = client.RemoveAccount(ctxb, req)
 	return err
+}
+
+// parseIDOrLabel parses either the id or label from the command line.
+func parseIDOrLabel(ctx *cli.Context) (string, string, cli.Args, error) {
+	var (
+		accountID string
+		label     string
+	)
+	args := ctx.Args()
+
+	switch {
+	case ctx.IsSet(idName) && ctx.IsSet(labelName):
+		return "", "", nil, fmt.Errorf("either account ID or label " +
+			"must be specified, not both")
+
+	case ctx.IsSet(idName):
+		accountID = ctx.String(idName)
+
+	case ctx.IsSet(labelName):
+		label = ctx.String(labelName)
+
+	case args.Present():
+		accountID = args.First()
+		args = args.Tail()
+
+		// Since we have a positional argument, we cannot be sure it's
+		// an ID. So we check if it's an ID by trying to hex decode it
+		// and by checking the length. This will break if the user
+		// chooses labels that are also valid hex encoded IDs. But since
+		// the label is supposed to be human-readable, this should be
+		// unlikely.
+		_, err := hex.DecodeString(accountID)
+		if len(accountID) != hex.EncodedLen(accounts.AccountIDLen) ||
+			err != nil {
+
+			label = accountID
+			accountID = ""
+		}
+
+	default:
+		return "", "", nil, fmt.Errorf("id argument missing")
+	}
+
+	return accountID, label, args, nil
 }

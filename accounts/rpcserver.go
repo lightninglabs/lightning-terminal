@@ -50,8 +50,8 @@ func (s *RPCServer) CreateAccount(ctx context.Context,
 	req *litrpc.CreateAccountRequest) (*litrpc.CreateAccountResponse,
 	error) {
 
-	log.Infof("[createaccount] balance=%d, expiration=%d",
-		req.AccountBalance, req.ExpirationDate)
+	log.Infof("[createaccount] label=%v, balance=%d, expiration=%d",
+		req.Label, req.AccountBalance, req.ExpirationDate)
 
 	var (
 		balanceMsat    lnwire.MilliSatoshi
@@ -70,9 +70,11 @@ func (s *RPCServer) CreateAccount(ctx context.Context,
 	balanceMsat = lnwire.NewMSatFromSatoshis(balance)
 
 	// Create the actual account in the macaroon account store.
-	account, err := s.service.NewAccount(balanceMsat, expirationDate)
+	account, err := s.service.NewAccount(
+		balanceMsat, expirationDate, req.Label,
+	)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create account: %v", err)
+		return nil, fmt.Errorf("unable to create account: %w", err)
 	}
 
 	var rootKeyIdSuffix [4]byte
@@ -91,12 +93,12 @@ func (s *RPCServer) CreateAccount(ctx context.Context,
 		}},
 	})
 	if err != nil {
-		return nil, fmt.Errorf("error baking account macaroon: %v", err)
+		return nil, fmt.Errorf("error baking account macaroon: %w", err)
 	}
 
 	macBytes, err := hex.DecodeString(macHex)
 	if err != nil {
-		return nil, fmt.Errorf("error decoding account macaroon: %v",
+		return nil, fmt.Errorf("error decoding account macaroon: %w",
 			err)
 	}
 
@@ -110,16 +112,13 @@ func (s *RPCServer) CreateAccount(ctx context.Context,
 func (s *RPCServer) UpdateAccount(_ context.Context,
 	req *litrpc.UpdateAccountRequest) (*litrpc.Account, error) {
 
-	log.Infof("[updateaccount] id=%s, balance=%d, expiration=%d", req.Id,
-		req.AccountBalance, req.ExpirationDate)
+	log.Infof("[updateaccount] id=%s, label=%v, balance=%d, expiration=%d",
+		req.Id, req.Label, req.AccountBalance, req.ExpirationDate)
 
-	// Account ID is always a hex string, convert it to our account ID type.
-	var accountID AccountID
-	decoded, err := hex.DecodeString(req.Id)
+	accountID, err := s.findAccount(req.Id, req.Label)
 	if err != nil {
-		return nil, fmt.Errorf("error decoding account ID: %v", err)
+		return nil, err
 	}
-	copy(accountID[:], decoded)
 
 	// Ask the service to update the account.
 	account, err := s.service.UpdateAccount(
@@ -142,7 +141,7 @@ func (s *RPCServer) ListAccounts(context.Context,
 	// Retrieve all accounts from the macaroon account store.
 	accts, err := s.service.Accounts()
 	if err != nil {
-		return nil, fmt.Errorf("unable to list accounts: %v", err)
+		return nil, fmt.Errorf("unable to list accounts: %w", err)
 	}
 
 	// Map the response into the proper response type and return it.
@@ -158,28 +157,87 @@ func (s *RPCServer) ListAccounts(context.Context,
 	}, nil
 }
 
+// AccountInfo returns the account with the given ID or label.
+func (s *RPCServer) AccountInfo(_ context.Context,
+	req *litrpc.AccountInfoRequest) (*litrpc.Account, error) {
+
+	log.Infof("[accountinfo] id=%v, label=%v", req.Id, req.Label)
+
+	accountID, err := s.findAccount(req.Id, req.Label)
+	if err != nil {
+		return nil, err
+	}
+
+	dbAccount, err := s.service.Account(accountID)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving account: %w", err)
+	}
+
+	return marshalAccount(dbAccount), nil
+}
+
 // RemoveAccount removes the given account from the account database.
 func (s *RPCServer) RemoveAccount(_ context.Context,
 	req *litrpc.RemoveAccountRequest) (*litrpc.RemoveAccountResponse,
 	error) {
 
-	log.Infof("[removeaccount] id=%v", req.Id)
+	log.Infof("[removeaccount] id=%v, label=%v", req.Id, req.Label)
 
-	// Account ID is always a hex string, convert it to our account ID type.
-	var accountID AccountID
-	decoded, err := hex.DecodeString(req.Id)
+	accountID, err := s.findAccount(req.Id, req.Label)
 	if err != nil {
-		return nil, fmt.Errorf("error decoding account ID: %v", err)
+		return nil, err
 	}
-	copy(accountID[:], decoded)
 
 	// Now remove the account.
 	err = s.service.RemoveAccount(accountID)
 	if err != nil {
-		return nil, fmt.Errorf("error removing account: %v", err)
+		return nil, fmt.Errorf("error removing account: %w", err)
 	}
 
 	return &litrpc.RemoveAccountResponse{}, nil
+}
+
+// findAccount finds an account by its ID or label.
+func (s *RPCServer) findAccount(id string, label string) (AccountID, error) {
+	switch {
+	case id != "" && label != "":
+		return AccountID{}, fmt.Errorf("either account ID or label " +
+			"must be specified, not both")
+
+	case id != "":
+		// Account ID is always a hex string, convert it to our account
+		// ID type.
+		var accountID AccountID
+		decoded, err := hex.DecodeString(id)
+		if err != nil {
+			return AccountID{}, fmt.Errorf("error decoding "+
+				"account ID: %w", err)
+		}
+		copy(accountID[:], decoded)
+
+		return accountID, nil
+
+	case label != "":
+		// We need to find the account by its label.
+		accounts, err := s.service.Accounts()
+		if err != nil {
+			return AccountID{}, fmt.Errorf("unable to list "+
+				"accounts: %w", err)
+		}
+
+		for _, acct := range accounts {
+			if acct.Label == label {
+				return acct.ID, nil
+			}
+		}
+
+		return AccountID{}, fmt.Errorf("unable to find account "+
+			"with label '%s'", label)
+
+	default:
+		return AccountID{}, fmt.Errorf("either account ID or label " +
+			"must be specified")
+	}
 }
 
 // marshalAccount converts an account into its RPC counterpart.
@@ -196,6 +254,7 @@ func marshalAccount(acct *OffChainBalanceAccount) *litrpc.Account {
 		Payments: make(
 			[]*litrpc.AccountPayment, 0, len(acct.Payments),
 		),
+		Label: acct.Label,
 	}
 
 	for hash := range acct.Invoices {

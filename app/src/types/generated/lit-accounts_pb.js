@@ -15,6 +15,7 @@ var goog = jspb;
 var global = Function('return this')();
 
 goog.exportSymbol('proto.litrpc.Account', null, global);
+goog.exportSymbol('proto.litrpc.AccountInfoRequest', null, global);
 goog.exportSymbol('proto.litrpc.AccountInvoice', null, global);
 goog.exportSymbol('proto.litrpc.AccountPayment', null, global);
 goog.exportSymbol('proto.litrpc.CreateAccountRequest', null, global);
@@ -72,7 +73,8 @@ proto.litrpc.CreateAccountRequest.prototype.toObject = function(opt_includeInsta
 proto.litrpc.CreateAccountRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
     accountBalance: jspb.Message.getFieldWithDefault(msg, 1, "0"),
-    expirationDate: jspb.Message.getFieldWithDefault(msg, 2, "0")
+    expirationDate: jspb.Message.getFieldWithDefault(msg, 2, "0"),
+    label: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -117,6 +119,10 @@ proto.litrpc.CreateAccountRequest.deserializeBinaryFromReader = function(msg, re
       var value = /** @type {string} */ (reader.readInt64String());
       msg.setExpirationDate(value);
       break;
+    case 3:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setLabel(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -160,6 +166,13 @@ proto.litrpc.CreateAccountRequest.serializeBinaryToWriter = function(message, wr
       f
     );
   }
+  f = message.getLabel();
+  if (f.length > 0) {
+    writer.writeString(
+      3,
+      f
+    );
+  }
 };
 
 
@@ -190,6 +203,21 @@ proto.litrpc.CreateAccountRequest.prototype.getExpirationDate = function() {
 /** @param {string} value */
 proto.litrpc.CreateAccountRequest.prototype.setExpirationDate = function(value) {
   jspb.Message.setProto3StringIntField(this, 2, value);
+};
+
+
+/**
+ * optional string label = 3;
+ * @return {string}
+ */
+proto.litrpc.CreateAccountRequest.prototype.getLabel = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
+};
+
+
+/** @param {string} value */
+proto.litrpc.CreateAccountRequest.prototype.setLabel = function(value) {
+  jspb.Message.setProto3StringField(this, 3, value);
 };
 
 
@@ -465,7 +493,8 @@ proto.litrpc.Account.toObject = function(includeInstance, msg) {
     invoicesList: jspb.Message.toObjectList(msg.getInvoicesList(),
     proto.litrpc.AccountInvoice.toObject, includeInstance),
     paymentsList: jspb.Message.toObjectList(msg.getPaymentsList(),
-    proto.litrpc.AccountPayment.toObject, includeInstance)
+    proto.litrpc.AccountPayment.toObject, includeInstance),
+    label: jspb.Message.getFieldWithDefault(msg, 8, "")
   };
 
   if (includeInstance) {
@@ -531,6 +560,10 @@ proto.litrpc.Account.deserializeBinaryFromReader = function(msg, reader) {
       var value = new proto.litrpc.AccountPayment;
       reader.readMessage(value,proto.litrpc.AccountPayment.deserializeBinaryFromReader);
       msg.addPayments(value);
+      break;
+    case 8:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setLabel(value);
       break;
     default:
       reader.skipField();
@@ -610,6 +643,13 @@ proto.litrpc.Account.serializeBinaryToWriter = function(message, writer) {
       7,
       f,
       proto.litrpc.AccountPayment.serializeBinaryToWriter
+    );
+  }
+  f = message.getLabel();
+  if (f.length > 0) {
+    writer.writeString(
+      8,
+      f
     );
   }
 };
@@ -749,6 +789,21 @@ proto.litrpc.Account.prototype.addPayments = function(opt_value, opt_index) {
 
 proto.litrpc.Account.prototype.clearPaymentsList = function() {
   this.setPaymentsList([]);
+};
+
+
+/**
+ * optional string label = 8;
+ * @return {string}
+ */
+proto.litrpc.Account.prototype.getLabel = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 8, ""));
+};
+
+
+/** @param {string} value */
+proto.litrpc.Account.prototype.setLabel = function(value) {
+  jspb.Message.setProto3StringField(this, 8, value);
 };
 
 
@@ -1187,7 +1242,8 @@ proto.litrpc.UpdateAccountRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
     id: jspb.Message.getFieldWithDefault(msg, 1, ""),
     accountBalance: jspb.Message.getFieldWithDefault(msg, 2, "0"),
-    expirationDate: jspb.Message.getFieldWithDefault(msg, 3, "0")
+    expirationDate: jspb.Message.getFieldWithDefault(msg, 3, "0"),
+    label: jspb.Message.getFieldWithDefault(msg, 4, "")
   };
 
   if (includeInstance) {
@@ -1235,6 +1291,10 @@ proto.litrpc.UpdateAccountRequest.deserializeBinaryFromReader = function(msg, re
     case 3:
       var value = /** @type {string} */ (reader.readInt64String());
       msg.setExpirationDate(value);
+      break;
+    case 4:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setLabel(value);
       break;
     default:
       reader.skipField();
@@ -1286,6 +1346,13 @@ proto.litrpc.UpdateAccountRequest.serializeBinaryToWriter = function(message, wr
       f
     );
   }
+  f = message.getLabel();
+  if (f.length > 0) {
+    writer.writeString(
+      4,
+      f
+    );
+  }
 };
 
 
@@ -1331,6 +1398,21 @@ proto.litrpc.UpdateAccountRequest.prototype.getExpirationDate = function() {
 /** @param {string} value */
 proto.litrpc.UpdateAccountRequest.prototype.setExpirationDate = function(value) {
   jspb.Message.setProto3StringIntField(this, 3, value);
+};
+
+
+/**
+ * optional string label = 4;
+ * @return {string}
+ */
+proto.litrpc.UpdateAccountRequest.prototype.getLabel = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 4, ""));
+};
+
+
+/** @param {string} value */
+proto.litrpc.UpdateAccountRequest.prototype.setLabel = function(value) {
+  jspb.Message.setProto3StringField(this, 4, value);
 };
 
 
@@ -1629,6 +1711,175 @@ proto.litrpc.ListAccountsResponse.prototype.clearAccountsList = function() {
  * @extends {jspb.Message}
  * @constructor
  */
+proto.litrpc.AccountInfoRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.litrpc.AccountInfoRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.litrpc.AccountInfoRequest.displayName = 'proto.litrpc.AccountInfoRequest';
+}
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.litrpc.AccountInfoRequest.prototype.toObject = function(opt_includeInstance) {
+  return proto.litrpc.AccountInfoRequest.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.litrpc.AccountInfoRequest} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.litrpc.AccountInfoRequest.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    id: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    label: jspb.Message.getFieldWithDefault(msg, 2, "")
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.litrpc.AccountInfoRequest}
+ */
+proto.litrpc.AccountInfoRequest.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.litrpc.AccountInfoRequest;
+  return proto.litrpc.AccountInfoRequest.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.litrpc.AccountInfoRequest} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.litrpc.AccountInfoRequest}
+ */
+proto.litrpc.AccountInfoRequest.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setId(value);
+      break;
+    case 2:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setLabel(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.litrpc.AccountInfoRequest.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.litrpc.AccountInfoRequest.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.litrpc.AccountInfoRequest} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.litrpc.AccountInfoRequest.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getId();
+  if (f.length > 0) {
+    writer.writeString(
+      1,
+      f
+    );
+  }
+  f = message.getLabel();
+  if (f.length > 0) {
+    writer.writeString(
+      2,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional string id = 1;
+ * @return {string}
+ */
+proto.litrpc.AccountInfoRequest.prototype.getId = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+};
+
+
+/** @param {string} value */
+proto.litrpc.AccountInfoRequest.prototype.setId = function(value) {
+  jspb.Message.setProto3StringField(this, 1, value);
+};
+
+
+/**
+ * optional string label = 2;
+ * @return {string}
+ */
+proto.litrpc.AccountInfoRequest.prototype.getLabel = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+};
+
+
+/** @param {string} value */
+proto.litrpc.AccountInfoRequest.prototype.setLabel = function(value) {
+  jspb.Message.setProto3StringField(this, 2, value);
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
 proto.litrpc.RemoveAccountRequest = function(opt_data) {
   jspb.Message.initialize(this, opt_data, 0, -1, null, null);
 };
@@ -1665,7 +1916,8 @@ proto.litrpc.RemoveAccountRequest.prototype.toObject = function(opt_includeInsta
  */
 proto.litrpc.RemoveAccountRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-    id: jspb.Message.getFieldWithDefault(msg, 1, "")
+    id: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    label: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -1706,6 +1958,10 @@ proto.litrpc.RemoveAccountRequest.deserializeBinaryFromReader = function(msg, re
       var value = /** @type {string} */ (reader.readString());
       msg.setId(value);
       break;
+    case 2:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setLabel(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -1742,6 +1998,13 @@ proto.litrpc.RemoveAccountRequest.serializeBinaryToWriter = function(message, wr
       f
     );
   }
+  f = message.getLabel();
+  if (f.length > 0) {
+    writer.writeString(
+      2,
+      f
+    );
+  }
 };
 
 
@@ -1757,6 +2020,21 @@ proto.litrpc.RemoveAccountRequest.prototype.getId = function() {
 /** @param {string} value */
 proto.litrpc.RemoveAccountRequest.prototype.setId = function(value) {
   jspb.Message.setProto3StringField(this, 1, value);
+};
+
+
+/**
+ * optional string label = 2;
+ * @return {string}
+ */
+proto.litrpc.RemoveAccountRequest.prototype.getLabel = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+};
+
+
+/** @param {string} value */
+proto.litrpc.RemoveAccountRequest.prototype.setLabel = function(value) {
+  jspb.Message.setProto3StringField(this, 2, value);
 };
 
 

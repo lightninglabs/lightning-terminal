@@ -44,7 +44,7 @@ func ParseAccountID(idStr string) (*AccountID, error) {
 
 	idBytes, err := hex.DecodeString(idStr)
 	if err != nil {
-		return nil, fmt.Errorf("error decoding account ID: %v", err)
+		return nil, fmt.Errorf("error decoding account ID: %w", err)
 	}
 
 	var id AccountID
@@ -66,6 +66,12 @@ type PaymentEntry struct {
 	// actual routing fee when the payment settles.
 	FullAmount lnwire.MilliSatoshi
 }
+
+// AccountInvoices is the set of invoices that are associated with an account.
+type AccountInvoices map[lntypes.Hash]struct{}
+
+// AccountPayments is the set of payments that are associated with an account.
+type AccountPayments map[lntypes.Hash]*PaymentEntry
 
 // OffChainBalanceAccount holds all information that is needed to keep track of
 // a user's off-chain account balance. This balance can only be spent by paying
@@ -99,11 +105,15 @@ type OffChainBalanceAccount struct {
 
 	// Invoices is a list of all invoices that are associated with the
 	// account.
-	Invoices map[lntypes.Hash]struct{}
+	Invoices AccountInvoices
 
 	// Payments is a list of all payments that are associated with the
 	// account and the last status we were aware of.
-	Payments map[lntypes.Hash]*PaymentEntry
+	Payments AccountPayments
+
+	// Label is an optional label that can be set for the account. If it is
+	// not empty then it must be unique.
+	Label string
 }
 
 // HasExpired returns true if the account has an expiration date set and that
@@ -180,8 +190,8 @@ var (
 type Store interface {
 	// NewAccount creates a new OffChainBalanceAccount with the given
 	// balance and a randomly chosen ID.
-	NewAccount(balance lnwire.MilliSatoshi,
-		expirationDate time.Time) (*OffChainBalanceAccount, error)
+	NewAccount(balance lnwire.MilliSatoshi, expirationDate time.Time,
+		label string) (*OffChainBalanceAccount, error)
 
 	// UpdateAccount writes an account to the database, overwriting the
 	// existing one if it exists.

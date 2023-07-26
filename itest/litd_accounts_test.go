@@ -2,7 +2,8 @@ package itest
 
 import (
 	"context"
-	"io/ioutil"
+	"fmt"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -89,18 +90,22 @@ func runAccountSystemTest(t *harnessTest, node *HarnessNode, hostPort,
 	// authentication mechanism.
 	rawConn, err := connectRPC(ctxt, hostPort, tlsCertPath)
 	require.NoError(t.t, err)
-	defer rawConn.Close()
+	defer func() {
+		require.NoError(t.t, rawConn.Close())
+	}()
 
-	macBytes, err := ioutil.ReadFile(macPath)
+	macBytes, err := os.ReadFile(macPath)
 	require.NoError(t.t, err)
 	ctxm := macaroonContext(ctxt, macBytes)
 	acctClient := litrpc.NewAccountsClient(rawConn)
 
 	// Create a new account with a balance of 50k sats.
 	const acctBalance uint64 = 50_000
+	acctLabel := fmt.Sprintf("test account %d", runNumber)
 	acctResp, err := acctClient.CreateAccount(
 		ctxm, &litrpc.CreateAccountRequest{
 			AccountBalance: acctBalance,
+			Label:          acctLabel,
 		},
 	)
 	require.NoError(t.t, err)
@@ -108,6 +113,18 @@ func runAccountSystemTest(t *harnessTest, node *HarnessNode, hostPort,
 	require.Greater(t.t, len(acctResp.Account.Id), 12)
 	require.EqualValues(t.t, acctBalance, acctResp.Account.CurrentBalance)
 	require.EqualValues(t.t, acctBalance, acctResp.Account.InitialBalance)
+	require.Equal(t.t, acctLabel, acctResp.Account.Label)
+
+	// Make sure we can also query the account by its name.
+	infoResp, err := acctClient.AccountInfo(
+		ctxm, &litrpc.AccountInfoRequest{
+			Label: acctLabel,
+		},
+	)
+	require.Equal(t.t, acctResp.Account.Id, infoResp.Id)
+	require.EqualValues(t.t, acctBalance, infoResp.CurrentBalance)
+	require.EqualValues(t.t, acctBalance, infoResp.InitialBalance)
+	require.Equal(t.t, acctLabel, infoResp.Label)
 
 	// Now we got a new macaroon that has the account caveat attached to it.
 	ctxa := macaroonContext(ctxt, acctResp.Macaroon)
@@ -191,7 +208,9 @@ func testAccountRestrictionsLNC(ctxm context.Context, t *harnessTest,
 
 	rawLNCConn, err := connectMailboxWithPairingPhrase(ctxt, connectPhrase)
 	require.NoError(t.t, err)
-	defer rawLNCConn.Close()
+	defer func() {
+		require.NoError(t.t, rawLNCConn.Close())
+	}()
 
 	lightningClient := lnrpc.NewLightningClient(rawLNCConn)
 

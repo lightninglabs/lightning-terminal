@@ -41,14 +41,14 @@ type mockService struct {
 	acctBalanceMsat lnwire.MilliSatoshi
 
 	trackedInvoices map[lntypes.Hash]AccountID
-	trackedPayments map[lntypes.Hash]*PaymentEntry
+	trackedPayments AccountPayments
 }
 
 func newMockService() *mockService {
 	return &mockService{
 		acctBalanceMsat: 0,
 		trackedInvoices: make(map[lntypes.Hash]AccountID),
-		trackedPayments: make(map[lntypes.Hash]*PaymentEntry),
+		trackedPayments: make(AccountPayments),
 	}
 }
 
@@ -68,7 +68,7 @@ func (m *mockService) AssociateInvoice(id AccountID, hash lntypes.Hash) error {
 	return nil
 }
 
-func (m *mockService) TrackPayment(id AccountID, hash lntypes.Hash,
+func (m *mockService) TrackPayment(_ AccountID, hash lntypes.Hash,
 	amt lnwire.MilliSatoshi) error {
 
 	m.trackedPayments[hash] = &PaymentEntry{
@@ -403,8 +403,8 @@ func TestAccountCheckers(t *testing.T) {
 			acct := &OffChainBalanceAccount{
 				ID:       testID,
 				Type:     TypeInitialBalance,
-				Invoices: make(map[lntypes.Hash]struct{}),
-				Payments: make(map[lntypes.Hash]*PaymentEntry),
+				Invoices: make(AccountInvoices),
+				Payments: make(AccountPayments),
 			}
 			ctx := AddToContext(
 				context.Background(), KeyAccount, acct,
