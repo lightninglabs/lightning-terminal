@@ -112,16 +112,13 @@ func (s *RPCServer) CreateAccount(ctx context.Context,
 func (s *RPCServer) UpdateAccount(_ context.Context,
 	req *litrpc.UpdateAccountRequest) (*litrpc.Account, error) {
 
-	log.Infof("[updateaccount] id=%s, balance=%d, expiration=%d", req.Id,
-		req.AccountBalance, req.ExpirationDate)
+	log.Infof("[updateaccount] id=%s, label=%v, balance=%d, expiration=%d",
+		req.Id, req.Label, req.AccountBalance, req.ExpirationDate)
 
-	// Account ID is always a hex string, convert it to our account ID type.
-	var accountID AccountID
-	decoded, err := hex.DecodeString(req.Id)
+	accountID, err := s.findAccount(req.Id, req.Label)
 	if err != nil {
-		return nil, fmt.Errorf("error decoding account ID: %v", err)
+		return nil, err
 	}
-	copy(accountID[:], decoded)
 
 	// Ask the service to update the account.
 	account, err := s.service.UpdateAccount(
@@ -165,15 +162,12 @@ func (s *RPCServer) RemoveAccount(_ context.Context,
 	req *litrpc.RemoveAccountRequest) (*litrpc.RemoveAccountResponse,
 	error) {
 
-	log.Infof("[removeaccount] id=%v", req.Id)
+	log.Infof("[removeaccount] id=%v, label=%v", req.Id, req.Label)
 
-	// Account ID is always a hex string, convert it to our account ID type.
-	var accountID AccountID
-	decoded, err := hex.DecodeString(req.Id)
+	accountID, err := s.findAccount(req.Id, req.Label)
 	if err != nil {
-		return nil, fmt.Errorf("error decoding account ID: %v", err)
+		return nil, err
 	}
-	copy(accountID[:], decoded)
 
 	// Now remove the account.
 	err = s.service.RemoveAccount(accountID)
@@ -182,6 +176,49 @@ func (s *RPCServer) RemoveAccount(_ context.Context,
 	}
 
 	return &litrpc.RemoveAccountResponse{}, nil
+}
+
+// findAccount finds an account by its ID or label.
+func (s *RPCServer) findAccount(id string, label string) (AccountID, error) {
+	switch {
+	case id != "" && label != "":
+		return AccountID{}, fmt.Errorf("either account ID or label " +
+			"must be specified, not both")
+
+	case id != "":
+		// Account ID is always a hex string, convert it to our account
+		// ID type.
+		var accountID AccountID
+		decoded, err := hex.DecodeString(id)
+		if err != nil {
+			return AccountID{}, fmt.Errorf("error decoding "+
+				"account ID: %v", err)
+		}
+		copy(accountID[:], decoded)
+
+		return accountID, nil
+
+	case label != "":
+		// We need to find the account by its label.
+		accounts, err := s.service.Accounts()
+		if err != nil {
+			return AccountID{}, fmt.Errorf("unable to list "+
+				"accounts: %w", err)
+		}
+
+		for _, acct := range accounts {
+			if acct.Label == label {
+				return acct.ID, nil
+			}
+		}
+
+		return AccountID{}, fmt.Errorf("unable to find account "+
+			"with label '%s'", label)
+
+	default:
+		return AccountID{}, fmt.Errorf("either account ID or label " +
+			"must be specified")
+	}
 }
 
 // marshalAccount converts an account into its RPC counterpart.

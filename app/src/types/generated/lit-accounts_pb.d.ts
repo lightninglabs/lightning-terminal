@@ -173,6 +173,9 @@ export class UpdateAccountRequest extends jspb.Message {
   getExpirationDate(): string;
   setExpirationDate(value: string): void;
 
+  getLabel(): string;
+  setLabel(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): UpdateAccountRequest.AsObject;
   static toObject(includeInstance: boolean, msg: UpdateAccountRequest): UpdateAccountRequest.AsObject;
@@ -188,6 +191,7 @@ export namespace UpdateAccountRequest {
     id: string,
     accountBalance: string,
     expirationDate: string,
+    label: string,
   }
 }
 
@@ -233,6 +237,9 @@ export class RemoveAccountRequest extends jspb.Message {
   getId(): string;
   setId(value: string): void;
 
+  getLabel(): string;
+  setLabel(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RemoveAccountRequest.AsObject;
   static toObject(includeInstance: boolean, msg: RemoveAccountRequest): RemoveAccountRequest.AsObject;
@@ -246,6 +253,7 @@ export class RemoveAccountRequest extends jspb.Message {
 export namespace RemoveAccountRequest {
   export type AsObject = {
     id: string,
+    label: string,
   }
 }
 

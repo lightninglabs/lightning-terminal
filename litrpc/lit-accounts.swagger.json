@@ -92,9 +92,16 @@
         "parameters": [
           {
             "name": "id",
-            "description": "The hexadecimal ID of the account to remove.",
+            "description": "The hexadecimal ID of the account to remove. Either the ID or the label must\nbe set.",
             "in": "path",
             "required": true,
+            "type": "string"
+          },
+          {
+            "name": "label",
+            "description": "The label of the account to remove. If an account has no label, then the ID\nmust be used instead.",
+            "in": "query",
+            "required": false,
             "type": "string"
           }
         ],
@@ -122,7 +129,7 @@
         "parameters": [
           {
             "name": "id",
-            "description": "The ID of the account to update.",
+            "description": "The ID of the account to update. Either the ID or the label must be set.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -143,6 +150,10 @@
                   "type": "string",
                   "format": "int64",
                   "description": "The new account expiry to set. Set to -1 to not update the expiry. Set to 0\nto never expire."
+                },
+                "label": {
+                  "type": "string",
+                  "description": "The label of the account to update. If an account has no label, then the ID\nmust be used instead."
                 }
               }
             }
