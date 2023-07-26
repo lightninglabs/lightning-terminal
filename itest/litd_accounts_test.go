@@ -2,6 +2,7 @@ package itest
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -100,9 +101,11 @@ func runAccountSystemTest(t *harnessTest, node *HarnessNode, hostPort,
 
 	// Create a new account with a balance of 50k sats.
 	const acctBalance uint64 = 50_000
+	acctLabel := fmt.Sprintf("test account %d", runNumber)
 	acctResp, err := acctClient.CreateAccount(
 		ctxm, &litrpc.CreateAccountRequest{
 			AccountBalance: acctBalance,
+			Label:          acctLabel,
 		},
 	)
 	require.NoError(t.t, err)
@@ -110,6 +113,18 @@ func runAccountSystemTest(t *harnessTest, node *HarnessNode, hostPort,
 	require.Greater(t.t, len(acctResp.Account.Id), 12)
 	require.EqualValues(t.t, acctBalance, acctResp.Account.CurrentBalance)
 	require.EqualValues(t.t, acctBalance, acctResp.Account.InitialBalance)
+	require.Equal(t.t, acctLabel, acctResp.Account.Label)
+
+	// Make sure we can also query the account by its name.
+	infoResp, err := acctClient.AccountInfo(
+		ctxm, &litrpc.AccountInfoRequest{
+			Label: acctLabel,
+		},
+	)
+	require.Equal(t.t, acctResp.Account.Id, infoResp.Id)
+	require.EqualValues(t.t, acctBalance, infoResp.CurrentBalance)
+	require.EqualValues(t.t, acctBalance, infoResp.InitialBalance)
+	require.Equal(t.t, acctLabel, infoResp.Label)
 
 	// Now we got a new macaroon that has the account caveat attached to it.
 	ctxa := macaroonContext(ctxt, acctResp.Macaroon)
