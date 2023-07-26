@@ -22,7 +22,7 @@ require (
 	github.com/lightninglabs/pool v0.6.4-beta
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.0
 	github.com/lightninglabs/protobuf-hex-display v1.4.3-hex-display
-	github.com/lightninglabs/taproot-assets v0.2.2
+	github.com/lightninglabs/taproot-assets v0.2.3
 	github.com/lightningnetwork/lnd v0.16.4-beta
 	github.com/lightningnetwork/lnd/cert v1.2.1
 	github.com/lightningnetwork/lnd/kvdb v1.4.1
