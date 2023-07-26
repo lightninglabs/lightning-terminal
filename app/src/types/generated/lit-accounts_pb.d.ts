@@ -233,6 +233,30 @@ export namespace ListAccountsResponse {
   }
 }
 
+export class AccountInfoRequest extends jspb.Message {
+  getId(): string;
+  setId(value: string): void;
+
+  getLabel(): string;
+  setLabel(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AccountInfoRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: AccountInfoRequest): AccountInfoRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: AccountInfoRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AccountInfoRequest;
+  static deserializeBinaryFromReader(message: AccountInfoRequest, reader: jspb.BinaryReader): AccountInfoRequest;
+}
+
+export namespace AccountInfoRequest {
+  export type AsObject = {
+    id: string,
+    label: string,
+  }
+}
+
 export class RemoveAccountRequest extends jspb.Message {
   getId(): string;
   setId(value: string): void;

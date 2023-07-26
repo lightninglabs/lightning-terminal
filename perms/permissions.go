@@ -32,6 +32,10 @@ var (
 			Entity: "account",
 			Action: "read",
 		}},
+		"/litrpc.Accounts/AccountInfo": {{
+			Entity: "account",
+			Action: "read",
+		}},
 		"/litrpc.Accounts/RemoveAccount": {{
 			Entity: "account",
 			Action: "write",

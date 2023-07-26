@@ -157,6 +157,25 @@ func (s *RPCServer) ListAccounts(context.Context,
 	}, nil
 }
 
+// AccountInfo returns the account with the given ID or label.
+func (s *RPCServer) AccountInfo(_ context.Context,
+	req *litrpc.AccountInfoRequest) (*litrpc.Account, error) {
+
+	log.Infof("[accountinfo] id=%v, label=%v", req.Id, req.Label)
+
+	accountID, err := s.findAccount(req.Id, req.Label)
+	if err != nil {
+		return nil, err
+	}
+
+	dbAccount, err := s.service.Account(accountID)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving account: %w", err)
+	}
+
+	return marshalAccount(dbAccount), nil
+}
+
 // RemoveAccount removes the given account from the account database.
 func (s *RPCServer) RemoveAccount(_ context.Context,
 	req *litrpc.RemoveAccountRequest) (*litrpc.RemoveAccountResponse,
