@@ -43,6 +43,7 @@ func TestPrivacyMapper(t *testing.T) {
 		"0000000000000141":      "2fd42e84b9ffaaeb",
 		"00000000000002a6":      "7859bf41241787c2",
 		"000000000000036c":      "1320e5d25b7b5973",
+		clearTxID:               obfusTxID0,
 		outPoint(clearTxID, 0):  outPoint(obfusTxID0, obfusOut0),
 		outPoint(clearTxID, 1):  outPoint(obfusTxID1, obfusOut1),
 		"01020304":              "c8134495",
@@ -415,6 +416,104 @@ func TestPrivacyMapper(t *testing.T) {
 					"first": {
 						ConfirmedBalance:   1_000_000,
 						UnconfirmedBalance: 1_000_000,
+					},
+				},
+			},
+		},
+		{
+			name:    "ClosedChannels Response",
+			uri:     "/lnrpc.Lightning/ClosedChannels",
+			msgType: rpcperms.TypeResponse,
+			msg: &lnrpc.ClosedChannelsResponse{
+				Channels: []*lnrpc.ChannelCloseSummary{
+					{
+						ChannelPoint: outPoint(
+							clearTxID, 1,
+						),
+						ChanId:         123,
+						ClosingTxHash:  clearTxID,
+						RemotePubkey:   "01020304",
+						Capacity:       1_000_000,
+						SettledBalance: 500_000,
+						CloseType:      lnrpc.ChannelCloseSummary_LOCAL_FORCE_CLOSE,
+						CloseInitiator: lnrpc.Initiator_INITIATOR_LOCAL,
+						OpenInitiator:  lnrpc.Initiator_INITIATOR_LOCAL,
+						CloseHeight:    100_000,
+						Resolutions: []*lnrpc.Resolution{
+							{
+								ResolutionType: lnrpc.ResolutionType_ANCHOR,
+								Outcome:        lnrpc.ResolutionOutcome_CLAIMED,
+							},
+						},
+					},
+				},
+			},
+			expectedReplacement: &lnrpc.ClosedChannelsResponse{
+				Channels: []*lnrpc.ChannelCloseSummary{
+					{
+						ChannelPoint: outPoint(
+							obfusTxID1, obfusOut1,
+						),
+						ChanId:         5178778334600911958,
+						ClosingTxHash:  obfusTxID0,
+						RemotePubkey:   "c8134495",
+						Capacity:       950_100,
+						SettledBalance: 475_100,
+						CloseType:      lnrpc.ChannelCloseSummary_LOCAL_FORCE_CLOSE,
+						CloseInitiator: lnrpc.Initiator_INITIATOR_LOCAL,
+						OpenInitiator:  lnrpc.Initiator_INITIATOR_LOCAL,
+					},
+				},
+			},
+		},
+		{
+			name:    "ClosedChannels Response clear",
+			uri:     "/lnrpc.Lightning/ClosedChannels",
+			msgType: rpcperms.TypeResponse,
+			msg: &lnrpc.ClosedChannelsResponse{
+				Channels: []*lnrpc.ChannelCloseSummary{
+					{
+						ChannelPoint: outPoint(
+							clearTxID, 1,
+						),
+						ChanId:         123,
+						ClosingTxHash:  clearTxID,
+						RemotePubkey:   "01020304",
+						Capacity:       1_000_000,
+						SettledBalance: 500_000,
+						CloseType:      lnrpc.ChannelCloseSummary_LOCAL_FORCE_CLOSE,
+						CloseInitiator: lnrpc.Initiator_INITIATOR_LOCAL,
+						OpenInitiator:  lnrpc.Initiator_INITIATOR_LOCAL,
+						CloseHeight:    100_000,
+						Resolutions: []*lnrpc.Resolution{
+							{
+								ResolutionType: lnrpc.ResolutionType_ANCHOR,
+								Outcome:        lnrpc.ResolutionOutcome_CLAIMED,
+							},
+						},
+					},
+				},
+			},
+			privacyFlags: []session.PrivacyFlag{
+				session.ClearPubkeys,
+				session.ClearChanIDs,
+				session.ClearClosingTxIds,
+				session.ClearAmounts,
+			},
+			expectedReplacement: &lnrpc.ClosedChannelsResponse{
+				Channels: []*lnrpc.ChannelCloseSummary{
+					{
+						ChannelPoint: outPoint(
+							clearTxID, 1,
+						),
+						ChanId:         123,
+						ClosingTxHash:  clearTxID,
+						RemotePubkey:   "01020304",
+						Capacity:       1_000_000,
+						SettledBalance: 500_000,
+						CloseType:      lnrpc.ChannelCloseSummary_LOCAL_FORCE_CLOSE,
+						CloseInitiator: lnrpc.Initiator_INITIATOR_LOCAL,
+						OpenInitiator:  lnrpc.Initiator_INITIATOR_LOCAL,
 					},
 				},
 			},

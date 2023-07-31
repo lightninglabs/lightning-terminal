@@ -284,6 +284,12 @@ func (p *PrivacyMapper) checkers(db firewalldb.PrivacyMapDB,
 			handleWalletBalanceResponse(db, flags, p.randIntn),
 			mid.PassThroughErrorHandler,
 		),
+		"/lnrpc.Lightning/ClosedChannels": mid.NewResponseRewriter(
+			&lnrpc.ClosedChannelsRequest{},
+			&lnrpc.ClosedChannelsResponse{},
+			handleClosedChannelsResponse(db, flags, p.randIntn),
+			mid.PassThroughErrorHandler,
+		),
 	}
 }
 
@@ -883,6 +889,119 @@ func handleWalletBalanceResponse(_ firewalldb.PrivacyMapDB,
 			LockedBalance:             lockedBalance,
 			ReservedBalanceAnchorChan: reservedBalanceAnchorChan,
 			AccountBalance:            accountBalance,
+		}, nil
+	}
+}
+
+func handleClosedChannelsResponse(db firewalldb.PrivacyMapDB,
+	flags session.PrivacyFlags,
+	randIntn func(int) (int, error)) func(ctx context.Context,
+	r *lnrpc.ClosedChannelsResponse) (proto.Message, error) {
+
+	return func(_ context.Context, r *lnrpc.ClosedChannelsResponse) (
+		proto.Message, error) {
+
+		closedChannels := make(
+			[]*lnrpc.ChannelCloseSummary,
+			len(r.Channels),
+		)
+
+		err := db.Update(func(tx firewalldb.PrivacyMapTx) error {
+			for i, c := range r.Channels {
+				var err error
+
+				remotePub := c.RemotePubkey
+				if !flags.Contains(session.ClearPubkeys) {
+					remotePub, err = firewalldb.HideString(
+						tx, remotePub,
+					)
+					if err != nil {
+						return err
+					}
+				}
+
+				capacity, err := maybeHideAmount(
+					flags, randIntn, c.Capacity,
+				)
+				if err != nil {
+					return err
+				}
+
+				settledBalance, err := maybeHideAmount(
+					flags, randIntn, c.SettledBalance,
+				)
+				if err != nil {
+					return err
+				}
+
+				if settledBalance > capacity {
+					settledBalance = capacity
+				}
+
+				channelPoint := c.ChannelPoint
+				if !flags.Contains(session.ClearChanIDs) {
+					channelPoint, err = firewalldb.HideChanPointStr(
+						tx, c.ChannelPoint,
+					)
+					if err != nil {
+						return err
+					}
+				}
+
+				chanID := c.ChanId
+				if !flags.Contains(session.ClearChanIDs) {
+					chanID, err = firewalldb.HideUint64(
+						tx, c.ChanId,
+					)
+					if err != nil {
+						return err
+					}
+				}
+
+				closingTxid := c.ClosingTxHash
+				if !flags.Contains(session.ClearClosingTxIds) {
+					closingTxid, err = firewalldb.HideString(
+						tx, c.ClosingTxHash,
+					)
+					if err != nil {
+						return err
+					}
+				}
+
+				channel := lnrpc.ChannelCloseSummary{
+					// Obfuscated fields.
+					RemotePubkey:   remotePub,
+					Capacity:       capacity,
+					SettledBalance: settledBalance,
+					ChannelPoint:   channelPoint,
+					ChanId:         chanID,
+					ClosingTxHash:  closingTxid,
+
+					// Non-obfuscated fields.
+					ChainHash:      c.ChainHash,
+					CloseInitiator: c.CloseInitiator,
+					CloseType:      c.CloseType,
+					OpenInitiator:  c.OpenInitiator,
+
+					// Omitted fields.
+					// CloseHeight
+					// TimeLockedBalance
+					// Resolutions
+					// AliasScids
+					// ZeroConfConfirmedScid
+				}
+
+				closedChannels[i] = &channel
+			}
+
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		return &lnrpc.ClosedChannelsResponse{
+			Channels: closedChannels,
 		}, nil
 	}
 }

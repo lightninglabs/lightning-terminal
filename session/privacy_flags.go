@@ -41,15 +41,20 @@ const (
 	// ClearHTLCs is a privacy flag that indicates that the HTLCs in the API
 	// should not be obfuscated.
 	ClearHTLCs PrivacyFlag = 5
+
+	// ClearClosingTxIds is a privacy flag that indicates that the channel
+	// closing transaction ids in the API should not be obfuscated.
+	ClearClosingTxIds PrivacyFlag = 6
 )
 
 var flagMap = map[PrivacyFlag]string{
-	ClearPubkeys:       "ClearPubkeys",
-	ClearAmounts:       "ClearAmounts",
-	ClearChanIDs:       "ClearChanIDs",
-	ClearTimeStamps:    "ClearTimeStamps",
-	ClearChanInitiator: "ClearChanInitiator",
-	ClearHTLCs:         "ClearHTLCs",
+	ClearPubkeys:         "ClearPubkeys",
+	ClearAmounts:         "ClearAmounts",
+	ClearChanIDs:         "ClearChanIDs",
+	ClearTimeStamps:      "ClearTimeStamps",
+	ClearChanInitiator:   "ClearChanInitiator",
+	ClearHTLCs:           "ClearHTLCs",
+	ClearClosingTxIds:    "ClearClosingTxIds",
 }
 
 // String returns a string representation of the privacy flag.
