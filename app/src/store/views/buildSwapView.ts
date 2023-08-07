@@ -493,7 +493,7 @@ class BuildSwapView {
             amount,
             quote,
             this.selectedChanIds,
-            deadline,
+            Math.round(deadline / 1000), // convert milli-secs to secs
             this.confTarget,
             this.loopOutAddress,
           );
