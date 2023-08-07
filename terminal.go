@@ -116,6 +116,7 @@ var (
 	lndRESTRegistrations = []restRegistration{
 		lnrpc.RegisterLightningHandlerFromEndpoint,
 		lnrpc.RegisterWalletUnlockerHandlerFromEndpoint,
+		lnrpc.RegisterStateHandlerFromEndpoint,
 		autopilotrpc.RegisterAutopilotHandlerFromEndpoint,
 		chainrpc.RegisterChainNotifierHandlerFromEndpoint,
 		invoicesrpc.RegisterInvoicesHandlerFromEndpoint,
