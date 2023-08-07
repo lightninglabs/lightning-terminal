@@ -536,31 +536,56 @@ func (g *LightningTerminal) start() error {
 		return fmt.Errorf("error displaying startup info: %v", err)
 	}
 
+	// waitForSignal is a helper closure that can be used to wait on the
+	// given channel for a signal while also being responsive to an error
+	// from the error Queue, LND quiting or the interceptor receiving a
+	// shutdown signal.
+	waitForSignal := func(c chan struct{}) error {
+		select {
+		case <-c:
+			return nil
+
+		case err := <-g.errQueue.ChanOut():
+			return err
+
+		case <-lndQuit:
+			return nil
+
+		case <-interceptor.ShutdownChannel():
+			return fmt.Errorf("received the shutdown signal")
+		}
+	}
+
 	// Wait for lnd to be unlocked, then start all clients.
-	select {
-	case <-readyChan:
-
-	case err := <-g.errQueue.ChanOut():
+	if err = waitForSignal(readyChan); err != nil {
 		return err
-
-	case <-lndQuit:
-		return nil
-
-	case <-interceptor.ShutdownChannel():
-		return fmt.Errorf("received the shutdown signal")
 	}
 
 	// If we're in integrated mode, we'll need to wait for lnd to send the
 	// macaroon after unlock before going any further.
 	if g.cfg.LndMode == ModeIntegrated {
-		<-bufReadyChan
-		g.cfg.lndAdminMacaroon = <-macChan
+		if err = waitForSignal(bufReadyChan); err != nil {
+			return err
+		}
+
+		// Create a new macReady channel that will serve to signal that
+		// the LND macaroon is ready. Spin off a goroutine that will
+		// close this channel when the macaroon has been received.
+		macReady := make(chan struct{})
+		go func() {
+			g.cfg.lndAdminMacaroon = <-macChan
+			close(macReady)
+		}()
+
+		if err = waitForSignal(macReady); err != nil {
+			return err
+		}
 	}
 
 	// Set up all the LND clients required by LiT.
 	err = g.setUpLNDClients()
 	if err != nil {
-		log.Errorf("Could not set up LND clients: %w", err)
+		log.Errorf("Could not set up LND clients: %v", err)
 		return err
 	}
 
