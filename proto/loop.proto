@@ -212,6 +212,29 @@ message LoopOutRequest {
     triggering the swap (loop CLI, autolooper, LiT UI, other 3rd party UI).
     */
     string initiator = 14;
+
+    /*
+    An alternative destination address source for the swap. This field
+    represents the name of the account in the backing lnd instance.
+    Refer to lnd's wallet import functions for reference.
+     */
+    string account = 15;
+
+    /*
+    The address type of the account specified in the account field.
+     */
+    AddressType account_addr_type = 16;
+}
+
+/*
+`AddressType` has to be one of:
+
+- `unknown`: Unknown address type
+- `p2tr`: Pay to taproot pubkey (`TAPROOT_PUBKEY` = 1)
+*/
+enum AddressType {
+    ADDRESS_TYPE_UNKNOWN = 0;
+    TAPROOT_PUBKEY = 1;
 }
 
 message LoopInRequest {
@@ -970,6 +993,18 @@ message LiquidityParameters {
     autoloop to determine how much liquidity should be maintained in channels.
     */
     uint64 easy_autoloop_local_target_sat = 22 [jstype = JS_STRING];
+
+    /*
+   An alternative destination address source for the swap. This field
+   represents the name of the account in the backing lnd instance.
+   Refer to lnd's wallet import functions for reference.
+    */
+    string account = 23;
+
+    /*
+    The address type of the account specified in the account field.
+    */
+    AddressType account_addr_type = 24;
 }
 
 enum LiquidityRuleType {

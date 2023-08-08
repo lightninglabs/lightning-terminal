@@ -89,8 +89,8 @@ enum ProtocolVersion {
     // The client supports loop out swap cancelation.
     LOOP_OUT_CANCEL = 7;
 
-    // The client is able to ask the server to probe to test inbound
-    // liquidity.
+    // The client is able to ask the server to probe to test inbound liquidity
+    // and provide more accurate loop-in fees.
     PROBE = 8;
 
     // The client may ask the server to use a custom routing helper plugin in
@@ -161,6 +161,15 @@ message ServerLoopOutQuoteRequest {
     // subjected to min and max constraints as reported in the LoopOutTerms
     // response.
     int32 expiry = 4;
+
+    // The user agent string that identifies the software running on the user's
+    // side. This can be changed in the user's client software but it _SHOULD_
+    // conform to the following pattern:
+    //    Agent-Name/semver-version(/additional-info)
+    // Examples:
+    //    loopd/v0.10.0-beta/commit=3b635821
+    //    litd/v0.2.0-alpha/commit=326d754
+    string user_agent = 5;
 }
 
 message ServerLoopOutQuote {
@@ -186,6 +195,15 @@ message ServerLoopOutQuote {
 message ServerLoopOutTermsRequest {
     /// The protocol version that the client adheres to.
     ProtocolVersion protocol_version = 1;
+
+    // The user agent string that identifies the software running on the user's
+    // side. This can be changed in the user's client software but it _SHOULD_
+    // conform to the following pattern:
+    //    Agent-Name/semver-version(/additional-info)
+    // Examples:
+    //    loopd/v0.10.0-beta/commit=3b635821
+    //    litd/v0.2.0-alpha/commit=326d754
+    string user_agent = 2;
 }
 
 message ServerLoopOutTerms {
@@ -243,11 +261,10 @@ message ServerLoopInQuoteRequest {
     /// The swap amount. If zero, a quote for a maximum amt swap will be given.
     uint64 amt = 1 [jstype = JS_STRING];
 
-    // The destination pubkey. Will be used to retrieve cached probed routing
-    // fee.
+    // The destination pubkey.
     bytes pubkey = 3;
 
-    // The last hop to use. Will be used to retrieve cached probed routing fee.
+    // Optional last hop to use.
     bytes last_hop = 4;
 
     // Optional route hints to reach the destination through private channels.
@@ -255,6 +272,15 @@ message ServerLoopInQuoteRequest {
 
     /// The protocol version that the client adheres to.
     ProtocolVersion protocol_version = 2;
+
+    // The user agent string that identifies the software running on the user's
+    // side. This can be changed in the user's client software but it _SHOULD_
+    // conform to the following pattern:
+    //    Agent-Name/semver-version(/additional-info)
+    // Examples:
+    //    loopd/v0.10.0-beta/commit=3b635821
+    //    litd/v0.2.0-alpha/commit=326d754
+    string user_agent = 6;
 }
 
 message ServerLoopInQuoteResponse {
@@ -268,6 +294,15 @@ message ServerLoopInQuoteResponse {
 message ServerLoopInTermsRequest {
     /// The protocol version that the client adheres to.
     ProtocolVersion protocol_version = 1;
+
+    // The user agent string that identifies the software running on the user's
+    // side. This can be changed in the user's client software but it _SHOULD_
+    // conform to the following pattern:
+    //    Agent-Name/semver-version(/additional-info)
+    // Examples:
+    //    loopd/v0.10.0-beta/commit=3b635821
+    //    litd/v0.2.0-alpha/commit=326d754
+    string user_agent = 2;
 }
 
 message ServerLoopInTerms {

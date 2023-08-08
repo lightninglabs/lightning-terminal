@@ -103,6 +103,9 @@ export class ServerLoopOutQuoteRequest extends jspb.Message {
   getExpiry(): number;
   setExpiry(value: number): void;
 
+  getUserAgent(): string;
+  setUserAgent(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServerLoopOutQuoteRequest.AsObject;
   static toObject(includeInstance: boolean, msg: ServerLoopOutQuoteRequest): ServerLoopOutQuoteRequest.AsObject;
@@ -119,6 +122,7 @@ export namespace ServerLoopOutQuoteRequest {
     swapPublicationDeadline: string,
     protocolVersion: ProtocolVersionMap[keyof ProtocolVersionMap],
     expiry: number,
+    userAgent: string,
   }
 }
 
@@ -170,6 +174,9 @@ export class ServerLoopOutTermsRequest extends jspb.Message {
   getProtocolVersion(): ProtocolVersionMap[keyof ProtocolVersionMap];
   setProtocolVersion(value: ProtocolVersionMap[keyof ProtocolVersionMap]): void;
 
+  getUserAgent(): string;
+  setUserAgent(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServerLoopOutTermsRequest.AsObject;
   static toObject(includeInstance: boolean, msg: ServerLoopOutTermsRequest): ServerLoopOutTermsRequest.AsObject;
@@ -183,6 +190,7 @@ export class ServerLoopOutTermsRequest extends jspb.Message {
 export namespace ServerLoopOutTermsRequest {
   export type AsObject = {
     protocolVersion: ProtocolVersionMap[keyof ProtocolVersionMap],
+    userAgent: string,
   }
 }
 
@@ -336,6 +344,9 @@ export class ServerLoopInQuoteRequest extends jspb.Message {
   getProtocolVersion(): ProtocolVersionMap[keyof ProtocolVersionMap];
   setProtocolVersion(value: ProtocolVersionMap[keyof ProtocolVersionMap]): void;
 
+  getUserAgent(): string;
+  setUserAgent(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServerLoopInQuoteRequest.AsObject;
   static toObject(includeInstance: boolean, msg: ServerLoopInQuoteRequest): ServerLoopInQuoteRequest.AsObject;
@@ -353,6 +364,7 @@ export namespace ServerLoopInQuoteRequest {
     lastHop: Uint8Array | string,
     routeHintsList: Array<swapserverrpc_common_pb.RouteHint.AsObject>,
     protocolVersion: ProtocolVersionMap[keyof ProtocolVersionMap],
+    userAgent: string,
   }
 }
 
@@ -396,6 +408,9 @@ export class ServerLoopInTermsRequest extends jspb.Message {
   getProtocolVersion(): ProtocolVersionMap[keyof ProtocolVersionMap];
   setProtocolVersion(value: ProtocolVersionMap[keyof ProtocolVersionMap]): void;
 
+  getUserAgent(): string;
+  setUserAgent(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServerLoopInTermsRequest.AsObject;
   static toObject(includeInstance: boolean, msg: ServerLoopInTermsRequest): ServerLoopInTermsRequest.AsObject;
@@ -409,6 +424,7 @@ export class ServerLoopInTermsRequest extends jspb.Message {
 export namespace ServerLoopInTermsRequest {
   export type AsObject = {
     protocolVersion: ProtocolVersionMap[keyof ProtocolVersionMap],
+    userAgent: string,
   }
 }
 

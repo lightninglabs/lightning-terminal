@@ -15,6 +15,7 @@ var goog = jspb;
 var global = Function('return this')();
 
 var swapserverrpc_common_pb = require('./swapserverrpc/common_pb.js');
+goog.exportSymbol('proto.looprpc.AddressType', null, global);
 goog.exportSymbol('proto.looprpc.AutoReason', null, global);
 goog.exportSymbol('proto.looprpc.Disqualified', null, global);
 goog.exportSymbol('proto.looprpc.FailureReason', null, global);
@@ -117,7 +118,9 @@ proto.looprpc.LoopOutRequest.toObject = function(includeInstance, msg) {
     htlcConfirmations: jspb.Message.getFieldWithDefault(msg, 13, 0),
     swapPublicationDeadline: jspb.Message.getFieldWithDefault(msg, 10, "0"),
     label: jspb.Message.getFieldWithDefault(msg, 12, ""),
-    initiator: jspb.Message.getFieldWithDefault(msg, 14, "")
+    initiator: jspb.Message.getFieldWithDefault(msg, 14, ""),
+    account: jspb.Message.getFieldWithDefault(msg, 15, ""),
+    accountAddrType: jspb.Message.getFieldWithDefault(msg, 16, 0)
   };
 
   if (includeInstance) {
@@ -209,6 +212,14 @@ proto.looprpc.LoopOutRequest.deserializeBinaryFromReader = function(msg, reader)
     case 14:
       var value = /** @type {string} */ (reader.readString());
       msg.setInitiator(value);
+      break;
+    case 15:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setAccount(value);
+      break;
+    case 16:
+      var value = /** @type {!proto.looprpc.AddressType} */ (reader.readEnum());
+      msg.setAccountAddrType(value);
       break;
     default:
       reader.skipField();
@@ -334,6 +345,20 @@ proto.looprpc.LoopOutRequest.serializeBinaryToWriter = function(message, writer)
   if (f.length > 0) {
     writer.writeString(
       14,
+      f
+    );
+  }
+  f = message.getAccount();
+  if (f.length > 0) {
+    writer.writeString(
+      15,
+      f
+    );
+  }
+  f = message.getAccountAddrType();
+  if (f !== 0.0) {
+    writer.writeEnum(
+      16,
       f
     );
   }
@@ -561,6 +586,36 @@ proto.looprpc.LoopOutRequest.prototype.getInitiator = function() {
 /** @param {string} value */
 proto.looprpc.LoopOutRequest.prototype.setInitiator = function(value) {
   jspb.Message.setProto3StringField(this, 14, value);
+};
+
+
+/**
+ * optional string account = 15;
+ * @return {string}
+ */
+proto.looprpc.LoopOutRequest.prototype.getAccount = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 15, ""));
+};
+
+
+/** @param {string} value */
+proto.looprpc.LoopOutRequest.prototype.setAccount = function(value) {
+  jspb.Message.setProto3StringField(this, 15, value);
+};
+
+
+/**
+ * optional AddressType account_addr_type = 16;
+ * @return {!proto.looprpc.AddressType}
+ */
+proto.looprpc.LoopOutRequest.prototype.getAccountAddrType = function() {
+  return /** @type {!proto.looprpc.AddressType} */ (jspb.Message.getFieldWithDefault(this, 16, 0));
+};
+
+
+/** @param {!proto.looprpc.AddressType} value */
+proto.looprpc.LoopOutRequest.prototype.setAccountAddrType = function(value) {
+  jspb.Message.setProto3EnumField(this, 16, value);
 };
 
 
@@ -5904,7 +5959,9 @@ proto.looprpc.LiquidityParameters.toObject = function(includeInstance, msg) {
     autoloopBudgetRefreshPeriodSec: jspb.Message.getFieldWithDefault(msg, 19, "0"),
     autoloopBudgetLastRefresh: jspb.Message.getFieldWithDefault(msg, 20, "0"),
     easyAutoloop: jspb.Message.getFieldWithDefault(msg, 21, false),
-    easyAutoloopLocalTargetSat: jspb.Message.getFieldWithDefault(msg, 22, "0")
+    easyAutoloopLocalTargetSat: jspb.Message.getFieldWithDefault(msg, 22, "0"),
+    account: jspb.Message.getFieldWithDefault(msg, 23, ""),
+    accountAddrType: jspb.Message.getFieldWithDefault(msg, 24, 0)
   };
 
   if (includeInstance) {
@@ -6029,6 +6086,14 @@ proto.looprpc.LiquidityParameters.deserializeBinaryFromReader = function(msg, re
     case 22:
       var value = /** @type {string} */ (reader.readUint64String());
       msg.setEasyAutoloopLocalTargetSat(value);
+      break;
+    case 23:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setAccount(value);
+      break;
+    case 24:
+      var value = /** @type {!proto.looprpc.AddressType} */ (reader.readEnum());
+      msg.setAccountAddrType(value);
       break;
     default:
       reader.skipField();
@@ -6211,6 +6276,20 @@ proto.looprpc.LiquidityParameters.serializeBinaryToWriter = function(message, wr
   if (parseInt(f, 10) !== 0) {
     writer.writeUint64String(
       22,
+      f
+    );
+  }
+  f = message.getAccount();
+  if (f.length > 0) {
+    writer.writeString(
+      23,
+      f
+    );
+  }
+  f = message.getAccountAddrType();
+  if (f !== 0.0) {
+    writer.writeEnum(
+      24,
       f
     );
   }
@@ -6564,6 +6643,36 @@ proto.looprpc.LiquidityParameters.prototype.getEasyAutoloopLocalTargetSat = func
 /** @param {string} value */
 proto.looprpc.LiquidityParameters.prototype.setEasyAutoloopLocalTargetSat = function(value) {
   jspb.Message.setProto3StringIntField(this, 22, value);
+};
+
+
+/**
+ * optional string account = 23;
+ * @return {string}
+ */
+proto.looprpc.LiquidityParameters.prototype.getAccount = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 23, ""));
+};
+
+
+/** @param {string} value */
+proto.looprpc.LiquidityParameters.prototype.setAccount = function(value) {
+  jspb.Message.setProto3StringField(this, 23, value);
+};
+
+
+/**
+ * optional AddressType account_addr_type = 24;
+ * @return {!proto.looprpc.AddressType}
+ */
+proto.looprpc.LiquidityParameters.prototype.getAccountAddrType = function() {
+  return /** @type {!proto.looprpc.AddressType} */ (jspb.Message.getFieldWithDefault(this, 24, 0));
+};
+
+
+/** @param {!proto.looprpc.AddressType} value */
+proto.looprpc.LiquidityParameters.prototype.setAccountAddrType = function(value) {
+  jspb.Message.setProto3EnumField(this, 24, value);
 };
 
 
@@ -7738,6 +7847,14 @@ proto.looprpc.SuggestSwapsResponse.prototype.clearDisqualifiedList = function() 
   this.setDisqualifiedList([]);
 };
 
+
+/**
+ * @enum {number}
+ */
+proto.looprpc.AddressType = {
+  ADDRESS_TYPE_UNKNOWN: 0,
+  TAPROOT_PUBKEY: 1
+};
 
 /**
  * @enum {number}

@@ -49,6 +49,12 @@ export class LoopOutRequest extends jspb.Message {
   getInitiator(): string;
   setInitiator(value: string): void;
 
+  getAccount(): string;
+  setAccount(value: string): void;
+
+  getAccountAddrType(): AddressTypeMap[keyof AddressTypeMap];
+  setAccountAddrType(value: AddressTypeMap[keyof AddressTypeMap]): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LoopOutRequest.AsObject;
   static toObject(includeInstance: boolean, msg: LoopOutRequest): LoopOutRequest.AsObject;
@@ -75,6 +81,8 @@ export namespace LoopOutRequest {
     swapPublicationDeadline: string,
     label: string,
     initiator: string,
+    account: string,
+    accountAddrType: AddressTypeMap[keyof AddressTypeMap],
   }
 }
 
@@ -873,6 +881,12 @@ export class LiquidityParameters extends jspb.Message {
   getEasyAutoloopLocalTargetSat(): string;
   setEasyAutoloopLocalTargetSat(value: string): void;
 
+  getAccount(): string;
+  setAccount(value: string): void;
+
+  getAccountAddrType(): AddressTypeMap[keyof AddressTypeMap];
+  setAccountAddrType(value: AddressTypeMap[keyof AddressTypeMap]): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LiquidityParameters.AsObject;
   static toObject(includeInstance: boolean, msg: LiquidityParameters): LiquidityParameters.AsObject;
@@ -907,6 +921,8 @@ export namespace LiquidityParameters {
     autoloopBudgetLastRefresh: string,
     easyAutoloop: boolean,
     easyAutoloopLocalTargetSat: string,
+    account: string,
+    accountAddrType: AddressTypeMap[keyof AddressTypeMap],
   }
 }
 
@@ -1069,6 +1085,13 @@ export namespace SuggestSwapsResponse {
     disqualifiedList: Array<Disqualified.AsObject>,
   }
 }
+
+export interface AddressTypeMap {
+  ADDRESS_TYPE_UNKNOWN: 0;
+  TAPROOT_PUBKEY: 1;
+}
+
+export const AddressType: AddressTypeMap;
 
 export interface SwapTypeMap {
   LOOP_OUT: 0;
