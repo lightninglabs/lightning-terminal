@@ -128,3 +128,11 @@ func (l *loopSubServer) MacPath() string {
 func (l *loopSubServer) Permissions() map[string][]bakery.Op {
 	return perms.RequiredPermissions
 }
+
+// WhiteListedURLs returns a map of all the sub-server's URLs that can be
+// accessed without a macaroon.
+//
+// NOTE: this is part of the SubServer interface.
+func (l *loopSubServer) WhiteListedURLs() map[string]struct{} {
+	return nil
+}

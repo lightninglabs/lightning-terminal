@@ -118,3 +118,11 @@ func (p *poolSubServer) MacPath() string {
 func (p *poolSubServer) Permissions() map[string][]bakery.Op {
 	return perms.RequiredPermissions
 }
+
+// WhiteListedURLs returns a map of all the sub-server's URLs that can be
+// accessed without a macaroon.
+//
+// NOTE: this is part of the SubServer interface.
+func (p *poolSubServer) WhiteListedURLs() map[string]struct{} {
+	return nil
+}

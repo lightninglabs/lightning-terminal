@@ -58,4 +58,8 @@ type SubServer interface {
 	// Permissions returns a map of all RPC methods and their required
 	// macaroon permissions to access the sub-server.
 	Permissions() map[string][]bakery.Op
+
+	// WhiteListedURLs returns a map of all the sub-server's URLs that can
+	// be accessed without a macaroon.
+	WhiteListedURLs() map[string]struct{}
 }

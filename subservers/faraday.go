@@ -118,3 +118,11 @@ func (f *faradaySubServer) MacPath() string {
 func (f *faradaySubServer) Permissions() map[string][]bakery.Op {
 	return perms.RequiredPermissions
 }
+
+// WhiteListedURLs returns a map of all the sub-server's URLs that can be
+// accessed without a macaroon.
+//
+// NOTE: this is part of the SubServer interface.
+func (f *faradaySubServer) WhiteListedURLs() map[string]struct{} {
+	return nil
+}
