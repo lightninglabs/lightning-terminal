@@ -727,7 +727,8 @@ proto.looprpc.ServerLoopOutQuoteRequest.toObject = function(includeInstance, msg
     amt: jspb.Message.getFieldWithDefault(msg, 1, "0"),
     swapPublicationDeadline: jspb.Message.getFieldWithDefault(msg, 2, "0"),
     protocolVersion: jspb.Message.getFieldWithDefault(msg, 3, 0),
-    expiry: jspb.Message.getFieldWithDefault(msg, 4, 0)
+    expiry: jspb.Message.getFieldWithDefault(msg, 4, 0),
+    userAgent: jspb.Message.getFieldWithDefault(msg, 5, "")
   };
 
   if (includeInstance) {
@@ -779,6 +780,10 @@ proto.looprpc.ServerLoopOutQuoteRequest.deserializeBinaryFromReader = function(m
     case 4:
       var value = /** @type {number} */ (reader.readInt32());
       msg.setExpiry(value);
+      break;
+    case 5:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setUserAgent(value);
       break;
     default:
       reader.skipField();
@@ -834,6 +839,13 @@ proto.looprpc.ServerLoopOutQuoteRequest.serializeBinaryToWriter = function(messa
   if (f !== 0) {
     writer.writeInt32(
       4,
+      f
+    );
+  }
+  f = message.getUserAgent();
+  if (f.length > 0) {
+    writer.writeString(
+      5,
       f
     );
   }
@@ -897,6 +909,21 @@ proto.looprpc.ServerLoopOutQuoteRequest.prototype.getExpiry = function() {
 /** @param {number} value */
 proto.looprpc.ServerLoopOutQuoteRequest.prototype.setExpiry = function(value) {
   jspb.Message.setProto3IntField(this, 4, value);
+};
+
+
+/**
+ * optional string user_agent = 5;
+ * @return {string}
+ */
+proto.looprpc.ServerLoopOutQuoteRequest.prototype.getUserAgent = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, ""));
+};
+
+
+/** @param {string} value */
+proto.looprpc.ServerLoopOutQuoteRequest.prototype.setUserAgent = function(value) {
+  jspb.Message.setProto3StringField(this, 5, value);
 };
 
 
@@ -1251,7 +1278,8 @@ proto.looprpc.ServerLoopOutTermsRequest.prototype.toObject = function(opt_includ
  */
 proto.looprpc.ServerLoopOutTermsRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-    protocolVersion: jspb.Message.getFieldWithDefault(msg, 1, 0)
+    protocolVersion: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    userAgent: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -1292,6 +1320,10 @@ proto.looprpc.ServerLoopOutTermsRequest.deserializeBinaryFromReader = function(m
       var value = /** @type {!proto.looprpc.ProtocolVersion} */ (reader.readEnum());
       msg.setProtocolVersion(value);
       break;
+    case 2:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setUserAgent(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -1328,6 +1360,13 @@ proto.looprpc.ServerLoopOutTermsRequest.serializeBinaryToWriter = function(messa
       f
     );
   }
+  f = message.getUserAgent();
+  if (f.length > 0) {
+    writer.writeString(
+      2,
+      f
+    );
+  }
 };
 
 
@@ -1343,6 +1382,21 @@ proto.looprpc.ServerLoopOutTermsRequest.prototype.getProtocolVersion = function(
 /** @param {!proto.looprpc.ProtocolVersion} value */
 proto.looprpc.ServerLoopOutTermsRequest.prototype.setProtocolVersion = function(value) {
   jspb.Message.setProto3EnumField(this, 1, value);
+};
+
+
+/**
+ * optional string user_agent = 2;
+ * @return {string}
+ */
+proto.looprpc.ServerLoopOutTermsRequest.prototype.getUserAgent = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+};
+
+
+/** @param {string} value */
+proto.looprpc.ServerLoopOutTermsRequest.prototype.setUserAgent = function(value) {
+  jspb.Message.setProto3StringField(this, 2, value);
 };
 
 
@@ -2353,7 +2407,8 @@ proto.looprpc.ServerLoopInQuoteRequest.toObject = function(includeInstance, msg)
     lastHop: msg.getLastHop_asB64(),
     routeHintsList: jspb.Message.toObjectList(msg.getRouteHintsList(),
     swapserverrpc_common_pb.RouteHint.toObject, includeInstance),
-    protocolVersion: jspb.Message.getFieldWithDefault(msg, 2, 0)
+    protocolVersion: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    userAgent: jspb.Message.getFieldWithDefault(msg, 6, "")
   };
 
   if (includeInstance) {
@@ -2410,6 +2465,10 @@ proto.looprpc.ServerLoopInQuoteRequest.deserializeBinaryFromReader = function(ms
     case 2:
       var value = /** @type {!proto.looprpc.ProtocolVersion} */ (reader.readEnum());
       msg.setProtocolVersion(value);
+      break;
+    case 6:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setUserAgent(value);
       break;
     default:
       reader.skipField();
@@ -2473,6 +2532,13 @@ proto.looprpc.ServerLoopInQuoteRequest.serializeBinaryToWriter = function(messag
   if (f !== 0.0) {
     writer.writeEnum(
       2,
+      f
+    );
+  }
+  f = message.getUserAgent();
+  if (f.length > 0) {
+    writer.writeString(
+      6,
       f
     );
   }
@@ -2615,6 +2681,21 @@ proto.looprpc.ServerLoopInQuoteRequest.prototype.getProtocolVersion = function()
 /** @param {!proto.looprpc.ProtocolVersion} value */
 proto.looprpc.ServerLoopInQuoteRequest.prototype.setProtocolVersion = function(value) {
   jspb.Message.setProto3EnumField(this, 2, value);
+};
+
+
+/**
+ * optional string user_agent = 6;
+ * @return {string}
+ */
+proto.looprpc.ServerLoopInQuoteRequest.prototype.getUserAgent = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 6, ""));
+};
+
+
+/** @param {string} value */
+proto.looprpc.ServerLoopInQuoteRequest.prototype.setUserAgent = function(value) {
+  jspb.Message.setProto3StringField(this, 6, value);
 };
 
 
@@ -2915,7 +2996,8 @@ proto.looprpc.ServerLoopInTermsRequest.prototype.toObject = function(opt_include
  */
 proto.looprpc.ServerLoopInTermsRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-    protocolVersion: jspb.Message.getFieldWithDefault(msg, 1, 0)
+    protocolVersion: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    userAgent: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -2956,6 +3038,10 @@ proto.looprpc.ServerLoopInTermsRequest.deserializeBinaryFromReader = function(ms
       var value = /** @type {!proto.looprpc.ProtocolVersion} */ (reader.readEnum());
       msg.setProtocolVersion(value);
       break;
+    case 2:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setUserAgent(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -2992,6 +3078,13 @@ proto.looprpc.ServerLoopInTermsRequest.serializeBinaryToWriter = function(messag
       f
     );
   }
+  f = message.getUserAgent();
+  if (f.length > 0) {
+    writer.writeString(
+      2,
+      f
+    );
+  }
 };
 
 
@@ -3007,6 +3100,21 @@ proto.looprpc.ServerLoopInTermsRequest.prototype.getProtocolVersion = function()
 /** @param {!proto.looprpc.ProtocolVersion} value */
 proto.looprpc.ServerLoopInTermsRequest.prototype.setProtocolVersion = function(value) {
   jspb.Message.setProto3EnumField(this, 1, value);
+};
+
+
+/**
+ * optional string user_agent = 2;
+ * @return {string}
+ */
+proto.looprpc.ServerLoopInTermsRequest.prototype.getUserAgent = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+};
+
+
+/** @param {string} value */
+proto.looprpc.ServerLoopInTermsRequest.prototype.setUserAgent = function(value) {
+  jspb.Message.setProto3StringField(this, 2, value);
 };
 
 

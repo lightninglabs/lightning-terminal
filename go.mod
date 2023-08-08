@@ -17,8 +17,8 @@ require (
 	github.com/lightninglabs/lightning-node-connect v0.1.12-alpha
 	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.1
 	github.com/lightninglabs/lndclient v0.16.0-14
-	github.com/lightninglabs/loop v0.25.2-beta
-	github.com/lightninglabs/loop/swapserverrpc v1.0.4
+	github.com/lightninglabs/loop v0.26.2-beta
+	github.com/lightninglabs/loop/swapserverrpc v1.0.5
 	github.com/lightninglabs/pool v0.6.4-beta
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.0
 	github.com/lightninglabs/protobuf-hex-display v1.4.3-hex-display

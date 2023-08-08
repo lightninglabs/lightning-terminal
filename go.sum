@@ -1036,10 +1036,10 @@ github.com/lightninglabs/lightning-node-connect/hashmailrpc v1.0.2/go.mod h1:ant
 github.com/lightninglabs/lndclient v0.15.0-0/go.mod h1:ORS/YFe9hAXlzN/Uj+gvTmrnXEml6yD6dWwzCjpTJyQ=
 github.com/lightninglabs/lndclient v0.16.0-14 h1:8NpqbitVIqOoSjjXT0G/Tksmu0QzRpocvAsIDS8xKtQ=
 github.com/lightninglabs/lndclient v0.16.0-14/go.mod h1:mqY0znSNa+M40HZowwKfno29RyZnmxoqo++BlYP82EY=
-github.com/lightninglabs/loop v0.25.2-beta h1:v4eP/34Qho1Pw90LlAwZAjGN217NsvM1SpcienTF5ps=
-github.com/lightninglabs/loop v0.25.2-beta/go.mod h1:GwY3pDrM6DWXhK0eEG7mSD30EEy9kmn1WQkW5YKf1qA=
-github.com/lightninglabs/loop/swapserverrpc v1.0.4 h1:cEX+mt7xmQlEbmuQ52vOBT7l+a471v94ofdJbB6MmXs=
-github.com/lightninglabs/loop/swapserverrpc v1.0.4/go.mod h1:imy1/sqnb70EEyBKMo4pHwwLBPW8uYahWZ8s+1Xcq1o=
+github.com/lightninglabs/loop v0.26.2-beta h1:aUPD+jj5BTW7Kwc45I2UzTN9sS2kFB5rlVVaUGA0t2w=
+github.com/lightninglabs/loop v0.26.2-beta/go.mod h1:ajgWPGeG4eGLA12eNnxoZ5s+AFL8ijM4E+j005CZl1Q=
+github.com/lightninglabs/loop/swapserverrpc v1.0.5 h1:wxgAnxO8d20+t8AppNfdoZZY69++9dvx9mkuWST4nxE=
+github.com/lightninglabs/loop/swapserverrpc v1.0.5/go.mod h1:vrUYQjRLzV7fZZkM8I1AlmwTdPjCtKPCzeBeKemMGa4=
 github.com/lightninglabs/neutrino v0.13.2/go.mod h1:Cv/v8oHiPhuGiGvGgO+rIMhwCwEdsQFu6as840i2afw=
 github.com/lightninglabs/neutrino v0.14.1/go.mod h1:SV9ccrw2m6t6UvJX8xB//W0Dv+LEwMTbjg4V/Fb5KwU=
 github.com/lightninglabs/neutrino v0.15.0 h1:yr3uz36fLAq8hyM0TRUVlef1TRNoWAqpmmNlVtKUDtI=
