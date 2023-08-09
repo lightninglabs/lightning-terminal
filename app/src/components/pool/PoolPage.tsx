@@ -5,6 +5,7 @@ import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Badge, Column, Row } from 'components/base';
 import PageHeader from 'components/common/PageHeader';
+import SubServerRequired from 'components/common/SubServerRequired';
 import AccountSection from './AccountSection';
 import BatchSection from './BatchSection';
 import OrderFormSection from './OrderFormSection';
@@ -34,18 +35,24 @@ const Styled = {
 
 const PoolPage: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.pool.PoolPage');
-  const { accountStore, orderStore, batchStore } = useStore();
+  const { accountStore, orderStore, batchStore, subServerStore } = useStore();
 
   useEffect(() => {
-    accountStore.fetchAccounts();
-    orderStore.fetchOrders();
-    batchStore.fetchNextBatchInfo();
-    if (!batchStore.batches.size) {
-      // fetch batches if there aren't any in the store
-      batchStore.fetchBatches();
+    if (
+      subServerStore.subServers.pool?.running &&
+      !subServerStore.subServers.pool?.error
+    ) {
+      accountStore.fetchAccounts();
+      orderStore.fetchOrders();
+      batchStore.fetchNextBatchInfo();
+      if (!batchStore.batches.size) {
+        // fetch batches if there aren't any in the store
+        batchStore.fetchBatches();
+      }
+      // start polling when this component is mounted
+      batchStore.startPolling();
     }
-    // start polling when this component is mounted
-    batchStore.startPolling();
+
     // stop polling when this component is unmounted
     return () => {
       batchStore.stopPolling();
@@ -63,23 +70,25 @@ const PoolPage: React.FC = () => {
 
   const { Wrapper, Row, Col } = Styled;
   return (
-    <Wrapper>
-      <PageHeader
-        title={title}
-        exportTip={l('exportTip')}
-        onExportClick={orderStore.exportLeases}
-      />
-      <Row>
-        <Col cols={4} colsXl={3}>
-          <AccountSection />
-          <OrderFormSection />
-        </Col>
-        <Col>
-          <BatchSection />
-          <OrderListSection />
-        </Col>
-      </Row>
-    </Wrapper>
+    <SubServerRequired status={subServerStore.subServers.pool}>
+      <Wrapper>
+        <PageHeader
+          title={title}
+          exportTip={l('exportTip')}
+          onExportClick={orderStore.exportLeases}
+        />
+        <Row>
+          <Col cols={4} colsXl={3}>
+            <AccountSection />
+            <OrderFormSection />
+          </Col>
+          <Col>
+            <BatchSection />
+            <OrderListSection />
+          </Col>
+        </Row>
+      </Wrapper>
+    </SubServerRequired>
   );
 };
 

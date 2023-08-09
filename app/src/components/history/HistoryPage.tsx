@@ -4,6 +4,7 @@ import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import PageHeader from 'components/common/PageHeader';
+import SubServerRequired from 'components/common/SubServerRequired';
 import HistoryList from './HistoryList';
 
 const Styled = {
@@ -14,14 +15,16 @@ const Styled = {
 
 const HistoryPage: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.history.HistoryPage');
-  const { swapStore } = useStore();
+  const { swapStore, subServerStore } = useStore();
 
   const { Wrapper } = Styled;
   return (
-    <Wrapper>
-      <PageHeader title={l('pageTitle')} onExportClick={swapStore.exportSwaps} />
-      <HistoryList />
-    </Wrapper>
+    <SubServerRequired status={subServerStore.subServers.loop}>
+      <Wrapper>
+        <PageHeader title={l('pageTitle')} onExportClick={swapStore.exportSwaps} />
+        <HistoryList />
+      </Wrapper>
+    </SubServerRequired>
   );
 };
 
