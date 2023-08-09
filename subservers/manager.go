@@ -54,7 +54,9 @@ func (s *Manager) AddServer(ss SubServer) {
 		quit:      make(chan struct{}),
 	})
 
-	s.permsMgr.RegisterSubServer(ss.Name(), ss.Permissions())
+	s.permsMgr.RegisterSubServer(
+		ss.Name(), ss.Permissions(), ss.WhiteListedURLs(),
+	)
 }
 
 // StartIntegratedServers starts all the manager's sub-servers that should be

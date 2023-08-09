@@ -116,7 +116,7 @@ func (pm *Manager) IsWhiteListedURL(url string) bool {
 // RegisterSubServer adds the permissions of a given sub-server to the set
 // managed by the Manager.
 func (pm *Manager) RegisterSubServer(name string,
-	permissions map[string][]bakery.Op) {
+	permissions map[string][]bakery.Op, whiteListURLs map[string]struct{}) {
 
 	pm.permsMu.Lock()
 	defer pm.permsMu.Unlock()
@@ -125,6 +125,15 @@ func (pm *Manager) RegisterSubServer(name string,
 
 	for uri, ops := range permissions {
 		pm.perms[uri] = ops
+	}
+
+	for url := range whiteListURLs {
+		pm.perms[url] = nil
+
+		if pm.fixedPerms[name] == nil {
+			pm.fixedPerms[name] = make(map[string][]bakery.Op)
+		}
+		pm.fixedPerms[name][url] = []bakery.Op{}
 	}
 }
 

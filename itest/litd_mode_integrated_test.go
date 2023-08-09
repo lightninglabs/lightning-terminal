@@ -1278,13 +1278,21 @@ func bakeSuperMacaroon(cfg *LitNodeConfig, readOnly bool) (string, error) {
 		return "", err
 	}
 
-	permsMgr.RegisterSubServer(subservers.LOOP, loop.RequiredPermissions)
-	permsMgr.RegisterSubServer(subservers.POOL, pool.RequiredPermissions)
-	permsMgr.RegisterSubServer(subservers.TAP, tap.RequiredPermissions)
 	permsMgr.RegisterSubServer(
-		subservers.FARADAY, faraday.RequiredPermissions,
+		subservers.LOOP, loop.RequiredPermissions, nil,
 	)
-	permsMgr.RegisterSubServer(subservers.TAP, tap.RequiredPermissions)
+	permsMgr.RegisterSubServer(
+		subservers.POOL, pool.RequiredPermissions, nil,
+	)
+	permsMgr.RegisterSubServer(
+		subservers.TAP, tap.RequiredPermissions, nil,
+	)
+	permsMgr.RegisterSubServer(
+		subservers.FARADAY, faraday.RequiredPermissions, nil,
+	)
+	permsMgr.RegisterSubServer(
+		subservers.TAP, tap.RequiredPermissions, nil,
+	)
 
 	superMacPermissions := permsMgr.ActivePermissions(readOnly)
 	nullID := [4]byte{}
@@ -1300,13 +1308,13 @@ func bakeSuperMacaroon(cfg *LitNodeConfig, readOnly bool) (string, error) {
 	// it's valid.
 	superMacBytes, _ := hex.DecodeString(superMacHex)
 
-	tempFile, err := ioutil.TempFile("", "lit-super-macaroon")
+	tempFile, err := os.CreateTemp("", "lit-super-macaroon")
 	if err != nil {
 		_ = os.Remove(tempFile.Name())
 		return "", err
 	}
 
-	err = ioutil.WriteFile(tempFile.Name(), superMacBytes, 0644)
+	err = os.WriteFile(tempFile.Name(), superMacBytes, 0644)
 	if err != nil {
 		_ = os.Remove(tempFile.Name())
 		return "", err
