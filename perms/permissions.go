@@ -80,7 +80,7 @@ var (
 
 	// whiteListedLNDMethods is a map of all lnd RPC methods that don't
 	// require any macaroon authentication.
-	whiteListedLNDMethods = map[string][]bakery.Op{
+	whiteListedLNDMethods = map[string]struct{}{
 		"/lnrpc.WalletUnlocker/GenSeed":        {},
 		"/lnrpc.WalletUnlocker/InitWallet":     {},
 		"/lnrpc.WalletUnlocker/UnlockWallet":   {},
@@ -91,6 +91,10 @@ var (
 		"/lnrpc.State/SubscribeState": {},
 		"/lnrpc.State/GetState":       {},
 	}
+
+	// whiteListedLitMethods is a map of all LiT's RPC methods that don't
+	// require any macaroon authentication.
+	whiteListedLitMethods = map[string]struct{}{}
 
 	// lndSubServerNameToTag is a map from the name of an LND subserver to
 	// the name of the LND tag that corresponds to the subserver. This map
