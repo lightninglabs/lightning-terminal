@@ -16,6 +16,7 @@ import {
   RouterStore,
   SessionStore,
   SettingsStore,
+  SubServerStore,
   SwapStore,
 } from './stores';
 import {
@@ -49,6 +50,7 @@ export class Store {
   orderStore = new OrderStore(this);
   settingsStore = new SettingsStore(this);
   sessionStore = new SessionStore(this);
+  subServerStore = new SubServerStore(this);
 
   /** the store which synchronizes with the browser history */
   router: RouterStore;
@@ -157,11 +159,18 @@ export class Store {
    * makes the initial API calls to fetch the data we need to display in the app
    */
   async fetchAllData() {
+    await this.subServerStore.fetchStatus();
     await this.nodeStore.fetchInfo();
     await this.channelStore.fetchChannels();
-    await this.swapStore.fetchSwaps();
     await this.nodeStore.fetchBalances();
     await this.sessionStore.fetchSessions();
+
+    if (
+      this.subServerStore.subServers.loop?.running &&
+      !this.subServerStore.subServers.loop?.error
+    ) {
+      await this.swapStore.fetchSwaps();
+    }
   }
 
   /** connects to the LND and Loop websocket streams if not already connected */
