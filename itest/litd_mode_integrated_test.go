@@ -422,8 +422,7 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					endpoint.requestFn,
 					endpoint.successPattern,
 					endpointDisabled,
-					"unknown permissions required for "+
-						"method",
+					"unknown request",
 				)
 			})
 		}
@@ -459,8 +458,7 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					shouldFailWithoutMacaroon,
 					endpoint.successPattern,
 					endpointDisabled,
-					"unknown permissions required for "+
-						"method",
+					"unknown request",
 				)
 			})
 		}
@@ -485,8 +483,7 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					ttt, cfg.LitAddr(), cfg.UIPassword,
 					endpoint.grpcWebURI,
 					withoutUIPassword, endpointDisabled,
-					"unknown permissions required for "+
-						"method",
+					"unknown request",
 				)
 			})
 		}
@@ -525,8 +522,7 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					endpoint.requestFn,
 					endpoint.successPattern,
 					endpointDisabled,
-					"unknown permissions required for "+
-						"method",
+					"unknown request",
 				)
 			})
 		}
@@ -1062,26 +1058,19 @@ func runLNCAuthTest(t *testing.T, rawLNCConn grpc.ClientConnInterface,
 	// macaroon permissions properly set up).
 	resp, err := makeRequest(ctxt, rawLNCConn)
 
-	// Is this a disallowed call?
-	if !callAllowed {
-		if disabled {
-			require.ErrorContains(t, err, "unknown permissions "+
-				"required for method")
-		} else {
-			require.ErrorContains(t, err, expectErrContains)
-		}
-
-		return
-	}
-
+	switch {
 	// The call should be allowed, so we expect no error unless this is
 	// for a disabled sub-server.
-	if disabled {
-		require.ErrorContains(t, err, "unknown permissions "+
-			"required for method")
+	case disabled:
+		require.ErrorContains(t, err, "unknown request")
 
 		return
-	} else {
+
+	// Is this a disallowed call?
+	case !callAllowed:
+		require.ErrorContains(t, err, expectErrContains)
+
+	default:
 		require.NoError(t, err)
 	}
 
