@@ -1,5 +1,6 @@
 import * as AUCT from 'types/generated/auctioneerrpc/auctioneer_pb';
 import * as LIT from 'types/generated/lit-sessions_pb';
+import * as STATUS from 'types/generated/lit-status_pb';
 import * as LND from 'types/generated/lnd_pb';
 import * as LOOP from 'types/generated/loop_pb';
 import * as POOL from 'types/generated/trader_pb';
@@ -1059,6 +1060,59 @@ export const litListSessions: LIT.ListSessionsResponse.AsObject = {
   ],
 };
 
+export const litSubServerStatus: STATUS.SubServerStatusResp.AsObject = {
+  subServersMap: [
+    [
+      'faraday',
+      {
+        disabled: false,
+        running: true,
+        error: '',
+      },
+    ],
+    [
+      'lit',
+      {
+        disabled: false,
+        running: true,
+        error: '',
+      },
+    ],
+    [
+      'lnd',
+      {
+        disabled: false,
+        running: true,
+        error: '',
+      },
+    ],
+    [
+      'loop',
+      {
+        disabled: false,
+        running: true,
+        error: '',
+      },
+    ],
+    [
+      'pool',
+      {
+        disabled: false,
+        running: true,
+        error: '',
+      },
+    ],
+    [
+      'taproot-assets',
+      {
+        disabled: false,
+        running: true,
+        error: '',
+      },
+    ],
+  ],
+};
+
 // collection of sample API responses
 export const sampleApiResponses: Record<string, any> = {
   'lnrpc.Lightning.GetInfo': lndGetInfo,
@@ -1095,4 +1149,5 @@ export const sampleApiResponses: Record<string, any> = {
   'poolrpc.Trader.Leases': poolLeases,
   'poolrpc.Trader.RegisterSidecar': poolRegisterSidecar,
   'litrpc.Sessions.ListSessions': litListSessions,
+  'litrpc.Status.SubServerStatus': litSubServerStatus,
 };
