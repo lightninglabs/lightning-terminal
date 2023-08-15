@@ -782,6 +782,7 @@ func (s *sessionRpcServer) ListAutopilotFeatures(ctx context.Context,
 			Rules:           rules,
 			PermissionsList: marshalPerms(f.Permissions),
 			RequiresUpgrade: upgrade,
+			Configuration:   string(f.Configuration),
 		}
 	}
 
