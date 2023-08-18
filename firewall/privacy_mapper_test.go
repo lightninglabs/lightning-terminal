@@ -127,7 +127,7 @@ func TestPrivacyMapper(t *testing.T) {
 					},
 					{
 						ChanId:       3446430762436373227,
-						ChannelPoint: "45ec471bfccb0b7b9a8bc4008248931c59ad994903e07b54f54821ea3ef5cc5c62:1642614131",
+						ChannelPoint: "45ec471bfccb0b7b9a8bc4008248931c59ad994903e07b54f54821ea3ef5cc5c:1642614131",
 					},
 				},
 			},
@@ -287,7 +287,7 @@ func TestPrivacyMapper(t *testing.T) {
 		"00000000000002a6":      "7859bf41241787c2",
 		"000000000000036c":      "1320e5d25b7b5973",
 		"abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd:0": "097ef666a61919ff3413b3b701eae3a5cbac08f70c0ca567806e1fa6acbfe384:2161781494",
-		"abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd:1": "45ec471bfccb0b7b9a8bc4008248931c59ad994903e07b54f54821ea3ef5cc5c62:1642614131",
+		"abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd:1": "45ec471bfccb0b7b9a8bc4008248931c59ad994903e07b54f54821ea3ef5cc5c:1642614131",
 		"01020304": "c8134495",
 	}
 

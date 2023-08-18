@@ -393,7 +393,7 @@ func HideChanPoint(tx PrivacyMapTx, txid string, index uint32) (string,
 		return "", 0, err
 	}
 	if err == nil {
-		return decodeChannelPoint(pseudo)
+		return DecodeChannelPoint(pseudo)
 	}
 
 	newCp, err := NewPseudoChanPoint()
@@ -405,7 +405,7 @@ func HideChanPoint(tx PrivacyMapTx, txid string, index uint32) (string,
 		return "", 0, err
 	}
 
-	return decodeChannelPoint(newCp)
+	return DecodeChannelPoint(newCp)
 }
 
 func NewPseudoChanPoint() (string, error) {
@@ -427,7 +427,7 @@ func RevealChanPoint(tx PrivacyMapTx, txid string, index uint32) (string,
 		return "", 0, err
 	}
 
-	return decodeChannelPoint(real)
+	return DecodeChannelPoint(real)
 }
 
 func NewPseudoUint32() uint32 {
@@ -438,7 +438,7 @@ func NewPseudoUint32() uint32 {
 }
 
 func HideChanPointStr(tx PrivacyMapTx, cp string) (string, error) {
-	txid, index, err := decodeChannelPoint(cp)
+	txid, index, err := DecodeChannelPoint(cp)
 	if err != nil {
 		return "", err
 	}
@@ -500,7 +500,7 @@ func StrToUint64(s string) (uint64, error) {
 	return binary.BigEndian.Uint64(b), nil
 }
 
-func decodeChannelPoint(cp string) (string, uint32, error) {
+func DecodeChannelPoint(cp string) (string, uint32, error) {
 	parts := strings.Split(cp, ":")
 	if len(parts) != 2 {
 		return "", 0, fmt.Errorf("bad channel point encoding")
@@ -509,6 +509,11 @@ func decodeChannelPoint(cp string) (string, uint32, error) {
 	index, err := strconv.ParseInt(parts[1], 10, 64)
 	if err != nil {
 		return "", 0, err
+	}
+
+	if len(parts[0]) != txidStringLen {
+		return "", 0, fmt.Errorf("wrong txid length want %v, got %v",
+			txidStringLen, len(parts[0]))
 	}
 
 	return parts[0], uint32(index), nil
