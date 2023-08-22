@@ -38,10 +38,7 @@ const PoolPage: React.FC = () => {
   const { accountStore, orderStore, batchStore, subServerStore } = useStore();
 
   useEffect(() => {
-    if (
-      subServerStore.subServers.pool?.running &&
-      !subServerStore.subServers.pool?.error
-    ) {
+    if (batchStore.canFetchData) {
       accountStore.fetchAccounts();
       orderStore.fetchOrders();
       batchStore.fetchNextBatchInfo();

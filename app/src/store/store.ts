@@ -165,10 +165,7 @@ export class Store {
     await this.nodeStore.fetchBalances();
     await this.sessionStore.fetchSessions();
 
-    if (
-      this.subServerStore.subServers.loop?.running &&
-      !this.subServerStore.subServers.loop?.error
-    ) {
+    if (this.swapStore.canFetchData) {
       await this.swapStore.fetchSwaps();
     }
   }

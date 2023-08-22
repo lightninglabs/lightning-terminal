@@ -111,6 +111,18 @@ export default class BatchStore {
     return false;
   }
 
+  /** checks the subserver status to ensure pool is running */
+  get canFetchData() {
+    if (
+      this._store.subServerStore.subServers.pool.running &&
+      !this._store.subServerStore.subServers.pool.error
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+
   /**
    * fetches the next set of past batches from the API
    */
@@ -314,10 +326,7 @@ export default class BatchStore {
    */
   init() {
     // make sure the pool subserver is running before initializing
-    if (
-      this._store.subServerStore.subServers.pool?.running &&
-      !this._store.subServerStore.subServers.pool?.error
-    ) {
+    if (this.canFetchData) {
       // when the pubkey is fetched from the API and set in the nodeStore, fetch
       // the node's tier
       when(
