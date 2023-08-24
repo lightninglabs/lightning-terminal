@@ -265,6 +265,10 @@
         "requires_upgrade": {
           "type": "boolean",
           "description": "A boolean indicating if the user would need to upgrade their Litd version in\norder to subscribe to the Autopilot feature. This will be true if the\nfeature rules set contains a rule that Litd is unaware of."
+        },
+        "default_config": {
+          "type": "string",
+          "description": "The JSON-marshaled representation of a feature's default configuration."
         }
       }
     },
