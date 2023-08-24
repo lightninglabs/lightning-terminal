@@ -128,6 +128,16 @@ func NewSession(id ID, localPrivKey *btcec.PrivateKey, label string, typ Type,
 	return sess, nil
 }
 
+// IDToGroupIndex defines an interface for the session ID to group ID index.
+type IDToGroupIndex interface {
+	// GetGroupID will return the group ID for the given session ID.
+	GetGroupID(sessionID ID) (ID, error)
+
+	// GetSessionIDs will return the set of session IDs that are in the
+	// group with the given ID.
+	GetSessionIDs(groupID ID) ([]ID, error)
+}
+
 // Store is the interface a persistent storage must implement for storing and
 // retrieving Terminal Connect sessions.
 type Store interface {
@@ -160,4 +170,6 @@ type Store interface {
 
 	// GetSessionByID fetches the session with the given ID.
 	GetSessionByID(id ID) (*Session, error)
+
+	IDToGroupIndex
 }

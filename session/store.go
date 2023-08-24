@@ -341,6 +341,91 @@ func (db *DB) GetUnusedIDAndKeyPair() (ID, *btcec.PrivateKey, error) {
 	return id, privKey, nil
 }
 
+// GetGroupID will return the group ID for the given session ID.
+//
+// NOTE: this is part of the IDToGroupIndex interface.
+func (db *DB) GetGroupID(sessionID ID) (ID, error) {
+	var groupID ID
+	err := db.View(func(tx *bbolt.Tx) error {
+		sessionBkt, err := getBucket(tx, sessionBucketKey)
+		if err != nil {
+			return err
+		}
+
+		idIndex := sessionBkt.Bucket(idIndexKey)
+		if idIndex == nil {
+			return ErrDBInitErr
+		}
+
+		sessionIDBkt := idIndex.Bucket(sessionID[:])
+		if sessionIDBkt == nil {
+			return fmt.Errorf("no index entry for session ID: %x",
+				sessionID)
+		}
+
+		groupIDBytes := sessionIDBkt.Get(groupIDKey)
+		if len(groupIDBytes) == 0 {
+			return fmt.Errorf("group ID not found for session "+
+				"ID %x", sessionID)
+		}
+
+		copy(groupID[:], groupIDBytes)
+
+		return nil
+	})
+	if err != nil {
+		return groupID, err
+	}
+
+	return groupID, nil
+}
+
+// GetSessionIDs will return the set of session IDs that are in the
+// group with the given ID.
+//
+// NOTE: this is part of the IDToGroupIndex interface.
+func (db *DB) GetSessionIDs(groupID ID) ([]ID, error) {
+	var sessionIDs []ID
+	err := db.View(func(tx *bbolt.Tx) error {
+		sessionBkt, err := getBucket(tx, sessionBucketKey)
+		if err != nil {
+			return err
+		}
+
+		groupIndexBkt := sessionBkt.Bucket(groupIDIndexKey)
+		if groupIndexBkt == nil {
+			return ErrDBInitErr
+		}
+
+		groupIDBkt := groupIndexBkt.Bucket(groupID[:])
+		if groupIDBkt == nil {
+			return fmt.Errorf("no sessions for group ID %v",
+				groupID)
+		}
+
+		sessionIDsBkt := groupIDBkt.Bucket(sessionIDKey)
+		if sessionIDsBkt == nil {
+			return fmt.Errorf("no sessions for group ID %v",
+				groupID)
+		}
+
+		return sessionIDsBkt.ForEach(func(_,
+			sessionIDBytes []byte) error {
+
+			var sessionID ID
+			copy(sessionID[:], sessionIDBytes)
+			sessionIDs = append(sessionIDs, sessionID)
+
+			return nil
+		})
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return sessionIDs, nil
+}
+
 // addIdToKeyPair inserts the mapping from session ID to session key into the
 // id-index bucket. An error is returned if an entry for this ID already exists.
 func addIDToKeyPair(sessionBkt *bbolt.Bucket, id ID, sessionKey []byte) error {
