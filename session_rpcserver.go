@@ -1080,9 +1080,9 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 		return nil, err
 	}
 
-	featureConfig := make(map[string][]byte, len(req.Features))
+	clientConfig := make(session.FeaturesConfig, len(req.Features))
 	for name, f := range req.Features {
-		featureConfig[name] = f.Config
+		clientConfig[name] = f.Config
 	}
 
 	caveats := []macaroon.Caveat{{Id: []byte(rulesCaveatStr)}}
@@ -1101,7 +1101,7 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 	sess, err := session.NewSession(
 		id, localPrivKey, req.Label, session.TypeAutopilot, expiry,
 		req.MailboxServerAddr, req.DevServer, perms, caveats,
-		featureConfig, privacy, linkedGroupID,
+		clientConfig, privacy, linkedGroupID,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating new session: %v", err)
@@ -1143,7 +1143,7 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 	// Attempt to register the session with the Autopilot server.
 	remoteKey, err := s.cfg.autopilot.RegisterSession(
 		ctx, sess.LocalPublicKey, sess.ServerAddr, sess.DevServer,
-		featureConfig, prevSessionPub, linkSig,
+		clientConfig, prevSessionPub, linkSig,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error registering session with "+
@@ -1387,6 +1387,13 @@ func (s *sessionRpcServer) marshalRPCSession(sess *session.Session) (
 		}
 	}
 
+	clientConfig := make(map[string]string)
+	if sess.FeatureConfig != nil {
+		for k, v := range *sess.FeatureConfig {
+			clientConfig[k] = string(v)
+		}
+	}
+
 	return &litrpc.Session{
 		Id:                     sess.ID[:],
 		Label:                  sess.Label,
@@ -1404,6 +1411,7 @@ func (s *sessionRpcServer) marshalRPCSession(sess *session.Session) (
 		MacaroonRecipe:         macRecipe,
 		AutopilotFeatureInfo:   featureInfo,
 		GroupId:                sess.GroupID[:],
+		FeatureConfigs:         clientConfig,
 	}, nil
 }
 
