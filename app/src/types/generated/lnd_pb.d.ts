@@ -1485,6 +1485,9 @@ export class Channel extends jspb.Message {
   getPeerScidAlias(): string;
   setPeerScidAlias(value: string): void;
 
+  getMemo(): string;
+  setMemo(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Channel.AsObject;
   static toObject(includeInstance: boolean, msg: Channel): Channel.AsObject;
@@ -1532,6 +1535,7 @@ export namespace Channel {
     zeroConfConfirmedScid: string,
     peerAlias: string,
     peerScidAlias: string,
+    memo: string,
   }
 }
 
@@ -2523,6 +2527,39 @@ export class BatchOpenChannel extends jspb.Message {
   getCommitmentType(): CommitmentTypeMap[keyof CommitmentTypeMap];
   setCommitmentType(value: CommitmentTypeMap[keyof CommitmentTypeMap]): void;
 
+  getRemoteMaxValueInFlightMsat(): string;
+  setRemoteMaxValueInFlightMsat(value: string): void;
+
+  getRemoteMaxHtlcs(): number;
+  setRemoteMaxHtlcs(value: number): void;
+
+  getMaxLocalCsv(): number;
+  setMaxLocalCsv(value: number): void;
+
+  getZeroConf(): boolean;
+  setZeroConf(value: boolean): void;
+
+  getScidAlias(): boolean;
+  setScidAlias(value: boolean): void;
+
+  getBaseFee(): string;
+  setBaseFee(value: string): void;
+
+  getFeeRate(): string;
+  setFeeRate(value: string): void;
+
+  getUseBaseFee(): boolean;
+  setUseBaseFee(value: boolean): void;
+
+  getUseFeeRate(): boolean;
+  setUseFeeRate(value: boolean): void;
+
+  getRemoteChanReserveSat(): string;
+  setRemoteChanReserveSat(value: string): void;
+
+  getMemo(): string;
+  setMemo(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): BatchOpenChannel.AsObject;
   static toObject(includeInstance: boolean, msg: BatchOpenChannel): BatchOpenChannel.AsObject;
@@ -2544,6 +2581,17 @@ export namespace BatchOpenChannel {
     closeAddress: string,
     pendingChanId: Uint8Array | string,
     commitmentType: CommitmentTypeMap[keyof CommitmentTypeMap],
+    remoteMaxValueInFlightMsat: string,
+    remoteMaxHtlcs: number,
+    maxLocalCsv: number,
+    zeroConf: boolean,
+    scidAlias: boolean,
+    baseFee: string,
+    feeRate: string,
+    useBaseFee: boolean,
+    useFeeRate: boolean,
+    remoteChanReserveSat: string,
+    memo: string,
   }
 }
 
@@ -2652,6 +2700,14 @@ export class OpenChannelRequest extends jspb.Message {
   getFundMax(): boolean;
   setFundMax(value: boolean): void;
 
+  getMemo(): string;
+  setMemo(value: string): void;
+
+  clearOutpointsList(): void;
+  getOutpointsList(): Array<OutPoint>;
+  setOutpointsList(value: Array<OutPoint>): void;
+  addOutpoints(value?: OutPoint, index?: number): OutPoint;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): OpenChannelRequest.AsObject;
   static toObject(includeInstance: boolean, msg: OpenChannelRequest): OpenChannelRequest.AsObject;
@@ -2690,6 +2746,8 @@ export namespace OpenChannelRequest {
     useFeeRate: boolean,
     remoteChanReserveSat: string,
     fundMax: boolean,
+    memo: string,
+    outpointsList: Array<OutPoint.AsObject>,
   }
 }
 
@@ -3197,6 +3255,9 @@ export namespace PendingChannelsResponse {
     getPrivate(): boolean;
     setPrivate(value: boolean): void;
 
+    getMemo(): string;
+    setMemo(value: string): void;
+
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): PendingChannel.AsObject;
     static toObject(includeInstance: boolean, msg: PendingChannel): PendingChannel.AsObject;
@@ -3221,6 +3282,7 @@ export namespace PendingChannelsResponse {
       numForwardingPackages: string,
       chanStatusFlags: string,
       pb_private: boolean,
+      memo: string,
     }
   }
 
@@ -3239,6 +3301,9 @@ export namespace PendingChannelsResponse {
     getFeePerKw(): string;
     setFeePerKw(value: string): void;
 
+    getFundingExpiryBlocks(): number;
+    setFundingExpiryBlocks(value: number): void;
+
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): PendingOpenChannel.AsObject;
     static toObject(includeInstance: boolean, msg: PendingOpenChannel): PendingOpenChannel.AsObject;
@@ -3255,6 +3320,7 @@ export namespace PendingChannelsResponse {
       commitFee: string,
       commitWeight: string,
       feePerKw: string,
+      fundingExpiryBlocks: number,
     }
   }
 
@@ -3540,6 +3606,9 @@ export namespace WalletAccountBalance {
 }
 
 export class WalletBalanceRequest extends jspb.Message {
+  getAccount(): string;
+  setAccount(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): WalletBalanceRequest.AsObject;
   static toObject(includeInstance: boolean, msg: WalletBalanceRequest): WalletBalanceRequest.AsObject;
@@ -3552,6 +3621,7 @@ export class WalletBalanceRequest extends jspb.Message {
 
 export namespace WalletBalanceRequest {
   export type AsObject = {
+    account: string,
   }
 }
 
@@ -7008,6 +7078,7 @@ export interface CommitmentTypeMap {
   STATIC_REMOTE_KEY: 2;
   ANCHORS: 3;
   SCRIPT_ENFORCED_LEASE: 4;
+  SIMPLE_TAPROOT: 5;
 }
 
 export const CommitmentType: CommitmentTypeMap;
