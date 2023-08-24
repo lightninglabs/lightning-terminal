@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/lightninglabs/lightning-terminal/session/migration1"
+	"github.com/lightninglabs/lightning-terminal/session/migration2"
 	"go.etcd.io/bbolt"
 )
 
@@ -37,6 +38,7 @@ var (
 				tx, time.Now,
 			)
 		},
+		migration2.MigrateSessionIDToGroupIndex,
 	}
 
 	latestDBVersion = uint32(len(dbVersions))
