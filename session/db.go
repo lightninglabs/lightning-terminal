@@ -111,6 +111,11 @@ func initDB(filepath string, firstInit bool) (*bbolt.DB, error) {
 		}
 
 		_, err = sessionBkt.CreateBucketIfNotExists(idIndexKey)
+		if err != nil {
+			return err
+		}
+
+		_, err = sessionBkt.CreateBucketIfNotExists(groupIDIndexKey)
 
 		return err
 	})

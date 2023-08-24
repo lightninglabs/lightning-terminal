@@ -18,6 +18,8 @@ var (
 	// The session bucket has the following structure:
 	// session -> <key>        -> <serialised session>
 	//	   -> id-index     -> <session-id> -> key -> <session key>
+	// 			                   -> group -> <group-ID>
+	// 	   -> group-id-index -> <group-id> -> session-id -> sequence -> <session-id>
 	sessionBucketKey = []byte("session")
 
 	// idIndexKey is the key used to define the id-index sub-bucket within
@@ -29,6 +31,20 @@ var (
 	// session key (serialised local public key) associated with the given
 	// session ID.
 	sessionKeyKey = []byte("key")
+
+	// groupIDKey is the key used within the id-index bucket to store the
+	// group ID associated with the given session ID.
+	groupIDKey = []byte("group")
+
+	// groupIDIndexKey is the key used to define the group-id-index
+	// sub-bucket within the main session bucket. This bucket will be used
+	// to store the mapping from group ID to various other fields.
+	groupIDIndexKey = []byte("group-id-index")
+
+	// sessionIDKey is a key used in the group-id-index under a sub-bucket
+	// defined by a specific group ID. It will be used to store the session
+	// IDs associated with the given group ID.
+	sessionIDKey = []byte("session-id")
 
 	// ErrSessionNotFound is an error returned when we attempt to retrieve
 	// information about a session but it is not found.
@@ -83,6 +99,14 @@ func (db *DB) CreateSession(session *Session) error {
 		// Add the mapping from session ID to session key to the ID
 		// index.
 		err = addIDToKeyPair(sessionBucket, session.ID, sessionKey)
+		if err != nil {
+			return err
+		}
+
+		// Add the mapping from session ID to group ID and vice versa.
+		err = addIDToGroupIDPair(
+			sessionBucket, session.ID, session.GroupID,
+		)
 		if err != nil {
 			return err
 		}
@@ -357,4 +381,51 @@ func getKeyForID(sessionBkt *bbolt.Bucket, id ID) ([]byte, error) {
 	}
 
 	return sessionKeyBytes, nil
+}
+
+// addIDToGroupIDPair inserts the mapping from session ID to group ID into the
+// id-index bucket and also inserts the mapping from group ID to session ID into
+// the group-id-index bucket.
+func addIDToGroupIDPair(sessionBkt *bbolt.Bucket, id, groupID ID) error {
+	// First we will add the mapping from session ID to group ID.
+	idIndexBkt := sessionBkt.Bucket(idIndexKey)
+	if idIndexBkt == nil {
+		return ErrDBInitErr
+	}
+
+	idBkt, err := idIndexBkt.CreateBucketIfNotExists(id[:])
+	if err != nil {
+		return err
+	}
+
+	err = idBkt.Put(groupIDKey, groupID[:])
+	if err != nil {
+		return err
+	}
+
+	// Now we add the mapping from group ID to session.
+	groupIdIndexBkt := sessionBkt.Bucket(groupIDIndexKey)
+	if groupIdIndexBkt == nil {
+		return ErrDBInitErr
+	}
+
+	groupBkt, err := groupIdIndexBkt.CreateBucketIfNotExists(groupID[:])
+	if err != nil {
+		return err
+	}
+
+	sessionIDsBkt, err := groupBkt.CreateBucketIfNotExists(sessionIDKey)
+	if err != nil {
+		return err
+	}
+
+	nextSeq, err := sessionIDsBkt.NextSequence()
+	if err != nil {
+		return err
+	}
+
+	var seqNoBytes [8]byte
+	byteOrder.PutUint64(seqNoBytes[:], nextSeq)
+
+	return sessionIDsBkt.Put(seqNoBytes[:], id[:])
 }
