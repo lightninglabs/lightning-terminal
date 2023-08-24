@@ -18,7 +18,7 @@ func TestKVStoreTxs(t *testing.T) {
 	ctx := context.Background()
 	tmpDir := t.TempDir()
 
-	db, err := NewDB(tmpDir, "test.db")
+	db, err := NewDB(tmpDir, "test.db", nil)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
@@ -65,7 +65,7 @@ func TestTempAndPermStores(t *testing.T) {
 	ctx := context.Background()
 	tmpDir := t.TempDir()
 
-	db, err := NewDB(tmpDir, "test.db")
+	db, err := NewDB(tmpDir, "test.db", nil)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
@@ -113,7 +113,7 @@ func TestTempAndPermStores(t *testing.T) {
 	require.NoError(t, db.Close())
 
 	// Restart it.
-	db, err = NewDB(tmpDir, "test.db")
+	db, err = NewDB(tmpDir, "test.db", nil)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
@@ -147,7 +147,7 @@ func TestKVStoreNameSpaces(t *testing.T) {
 	ctx := context.Background()
 	tmpDir := t.TempDir()
 
-	db, err := NewDB(tmpDir, "test.db")
+	db, err := NewDB(tmpDir, "test.db", nil)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/lightninglabs/lightning-terminal/session"
 	"go.etcd.io/bbolt"
 )
 
@@ -40,10 +41,14 @@ var (
 // DB is a bolt-backed persistent store.
 type DB struct {
 	*bbolt.DB
+
+	sessionIDIndex session.IDToGroupIndex
 }
 
 // NewDB creates a new bolt database that can be found at the given directory.
-func NewDB(dir, fileName string) (*DB, error) {
+func NewDB(dir, fileName string, sessionIDIndex session.IDToGroupIndex) (*DB,
+	error) {
+
 	firstInit := false
 	path := filepath.Join(dir, fileName)
 
@@ -66,7 +71,10 @@ func NewDB(dir, fileName string) (*DB, error) {
 		return nil, err
 	}
 
-	return &DB{DB: db}, nil
+	return &DB{
+		DB:             db,
+		sessionIDIndex: sessionIDIndex,
+	}, nil
 }
 
 // fileExists reports whether the named file or directory exists.

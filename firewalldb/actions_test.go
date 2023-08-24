@@ -12,7 +12,7 @@ import (
 func TestActionStorage(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	db, err := NewDB(tmpDir, "test.db")
+	db, err := NewDB(tmpDir, "test.db", nil)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
@@ -147,7 +147,7 @@ func TestActionStorage(t *testing.T) {
 func TestListActions(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	db, err := NewDB(tmpDir, "test.db")
+	db, err := NewDB(tmpDir, "test.db", nil)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
