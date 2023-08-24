@@ -1659,7 +1659,8 @@ proto.litrpc.Feature.toObject = function(includeInstance, msg) {
     rulesMap: (f = msg.getRulesMap()) ? f.toObject(includeInstance, proto.litrpc.RuleValues.toObject) : [],
     permissionsListList: jspb.Message.toObjectList(msg.getPermissionsListList(),
     proto.litrpc.Permissions.toObject, includeInstance),
-    requiresUpgrade: jspb.Message.getFieldWithDefault(msg, 5, false)
+    requiresUpgrade: jspb.Message.getFieldWithDefault(msg, 5, false),
+    defaultConfig: jspb.Message.getFieldWithDefault(msg, 6, "")
   };
 
   if (includeInstance) {
@@ -1718,6 +1719,10 @@ proto.litrpc.Feature.deserializeBinaryFromReader = function(msg, reader) {
     case 5:
       var value = /** @type {boolean} */ (reader.readBool());
       msg.setRequiresUpgrade(value);
+      break;
+    case 6:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setDefaultConfig(value);
       break;
     default:
       reader.skipField();
@@ -1778,6 +1783,13 @@ proto.litrpc.Feature.serializeBinaryToWriter = function(message, writer) {
   if (f) {
     writer.writeBool(
       5,
+      f
+    );
+  }
+  f = message.getDefaultConfig();
+  if (f.length > 0) {
+    writer.writeString(
+      6,
       f
     );
   }
@@ -1877,6 +1889,21 @@ proto.litrpc.Feature.prototype.getRequiresUpgrade = function() {
 /** @param {boolean} value */
 proto.litrpc.Feature.prototype.setRequiresUpgrade = function(value) {
   jspb.Message.setProto3BooleanField(this, 5, value);
+};
+
+
+/**
+ * optional string default_config = 6;
+ * @return {string}
+ */
+proto.litrpc.Feature.prototype.getDefaultConfig = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 6, ""));
+};
+
+
+/** @param {string} value */
+proto.litrpc.Feature.prototype.setDefaultConfig = function(value) {
+  jspb.Message.setProto3StringField(this, 6, value);
 };
 
 

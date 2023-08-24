@@ -759,7 +759,8 @@ proto.litrpc.Session.toObject = function(includeInstance, msg) {
     accountId: jspb.Message.getFieldWithDefault(msg, 13, ""),
     autopilotFeatureInfoMap: (f = msg.getAutopilotFeatureInfoMap()) ? f.toObject(includeInstance, proto.litrpc.RulesMap.toObject) : [],
     revokedAt: jspb.Message.getFieldWithDefault(msg, 16, "0"),
-    groupId: msg.getGroupId_asB64()
+    groupId: msg.getGroupId_asB64(),
+    featureConfigsMap: (f = msg.getFeatureConfigsMap()) ? f.toObject(includeInstance, undefined) : []
   };
 
   if (includeInstance) {
@@ -866,6 +867,12 @@ proto.litrpc.Session.deserializeBinaryFromReader = function(msg, reader) {
     case 17:
       var value = /** @type {!Uint8Array} */ (reader.readBytes());
       msg.setGroupId(value);
+      break;
+    case 18:
+      var value = msg.getFeatureConfigsMap();
+      reader.readMessage(value, function(message, reader) {
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readString, null, "");
+         });
       break;
     default:
       reader.skipField();
@@ -1012,6 +1019,10 @@ proto.litrpc.Session.serializeBinaryToWriter = function(message, writer) {
       17,
       f
     );
+  }
+  f = message.getFeatureConfigsMap(true);
+  if (f && f.getLength() > 0) {
+    f.serializeBinary(18, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeString);
   }
 };
 
@@ -1408,6 +1419,24 @@ proto.litrpc.Session.prototype.getGroupId_asU8 = function() {
 /** @param {!(string|Uint8Array)} value */
 proto.litrpc.Session.prototype.setGroupId = function(value) {
   jspb.Message.setProto3BytesField(this, 17, value);
+};
+
+
+/**
+ * map<string, string> feature_configs = 18;
+ * @param {boolean=} opt_noLazyCreate Do not create the map if
+ * empty, instead returning `undefined`
+ * @return {!jspb.Map<string,string>}
+ */
+proto.litrpc.Session.prototype.getFeatureConfigsMap = function(opt_noLazyCreate) {
+  return /** @type {!jspb.Map<string,string>} */ (
+      jspb.Message.getMapField(this, 18, opt_noLazyCreate,
+      null));
+};
+
+
+proto.litrpc.Session.prototype.clearFeatureConfigsMap = function() {
+  this.getFeatureConfigsMap().clear();
 };
 
 

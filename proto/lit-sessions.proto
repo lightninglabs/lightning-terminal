@@ -206,6 +206,12 @@ message Session {
     same as the ID.
     */
     bytes group_id = 17;
+
+    /*
+    Configurations for each individual feature mapping from the feature name to
+    a JSON-serialized configuration.
+    */
+    map<string, string> feature_configs = 18;
 }
 
 message MacaroonRecipe {
