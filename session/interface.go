@@ -128,8 +128,11 @@ type Store interface {
 	// overwritten instead.
 	StoreSession(*Session) error
 
+	// GetSession fetches the session with the given key.
+	GetSession(key *btcec.PublicKey) (*Session, error)
+
 	// ListSessions returns all sessions currently known to the store.
-	ListSessions() ([]*Session, error)
+	ListSessions(filterFn func(s *Session) bool) ([]*Session, error)
 
 	// RevokeSession updates the state of the session with the given local
 	// public key to be revoked.

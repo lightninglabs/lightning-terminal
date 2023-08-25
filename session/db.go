@@ -37,6 +37,9 @@ type DB struct {
 	*bbolt.DB
 }
 
+// A compile-time check to ensure that DB implements the Store interface.
+var _ Store = (*DB)(nil)
+
 // NewDB creates a new bolt database that can be found at the given directory.
 func NewDB(dir, fileName string) (*DB, error) {
 	firstInit := false

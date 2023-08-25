@@ -28,6 +28,8 @@ func getSessionKey(session *Session) []byte {
 // StoreSession stores a session in the store. If a session with the
 // same local public key already exists, the existing record is updated/
 // overwritten instead.
+//
+// NOTE: this is part of the Store interface.
 func (db *DB) StoreSession(session *Session) error {
 	var buf bytes.Buffer
 	if err := SerializeSession(&buf, session); err != nil {
@@ -46,6 +48,8 @@ func (db *DB) StoreSession(session *Session) error {
 }
 
 // GetSession fetches the session with the given key.
+//
+// NOTE: this is part of the Store interface.
 func (db *DB) GetSession(key *btcec.PublicKey) (*Session, error) {
 	var session *Session
 	err := db.View(func(tx *bbolt.Tx) error {
@@ -74,6 +78,8 @@ func (db *DB) GetSession(key *btcec.PublicKey) (*Session, error) {
 }
 
 // ListSessions returns all sessions currently known to the store.
+//
+// NOTE: this is part of the Store interface.
 func (db *DB) ListSessions(filterFn func(s *Session) bool) ([]*Session, error) {
 	var sessions []*Session
 	err := db.View(func(tx *bbolt.Tx) error {
@@ -112,6 +118,8 @@ func (db *DB) ListSessions(filterFn func(s *Session) bool) ([]*Session, error) {
 
 // RevokeSession updates the state of the session with the given local
 // public key to be revoked.
+//
+// NOTE: this is part of the Store interface.
 func (db *DB) RevokeSession(key *btcec.PublicKey) error {
 	var session *Session
 	err := db.View(func(tx *bbolt.Tx) error {
