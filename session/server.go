@@ -33,7 +33,7 @@ func newMailboxSession() *mailboxSession {
 
 func (m *mailboxSession) start(session *Session,
 	serverCreator GRPCServerCreator, authData []byte,
-	onUpdate func(sess *Session) error,
+	onUpdate func(local, remote *btcec.PublicKey) error,
 	onNewStatus func(s mailbox.ServerStatus)) error {
 
 	tlsConfig := &tls.Config{}
@@ -46,8 +46,7 @@ func (m *mailboxSession) start(session *Session,
 	keys := mailbox.NewConnData(
 		ecdh, session.RemotePublicKey, session.PairingSecret[:],
 		authData, func(key *btcec.PublicKey) error {
-			session.RemotePublicKey = key
-			return onUpdate(session)
+			return onUpdate(session.LocalPublicKey, key)
 		}, nil,
 	)
 
@@ -105,7 +104,7 @@ func NewServer(serverCreator GRPCServerCreator) *Server {
 }
 
 func (s *Server) StartSession(session *Session, authData []byte,
-	onUpdate func(sess *Session) error,
+	onUpdate func(local, remote *btcec.PublicKey) error,
 	onNewStatus func(s mailbox.ServerStatus)) (chan struct{}, error) {
 
 	s.activeSessionsMtx.Lock()

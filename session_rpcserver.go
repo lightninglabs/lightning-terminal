@@ -323,7 +323,7 @@ func (s *sessionRpcServer) AddSession(_ context.Context,
 		return nil, fmt.Errorf("error creating new session: %v", err)
 	}
 
-	if err := s.db.StoreSession(sess); err != nil {
+	if err := s.db.CreateSession(sess); err != nil {
 		return nil, fmt.Errorf("error storing session: %v", err)
 	}
 
@@ -477,7 +477,7 @@ func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
 
 	authData := []byte(fmt.Sprintf("%s: %s", HeaderMacaroon, mac))
 	sessionClosedSub, err := s.sessionServer.StartSession(
-		sess, authData, s.db.StoreSession, onNewStatus,
+		sess, authData, s.db.UpdateSessionRemotePubKey, onNewStatus,
 	)
 	if err != nil {
 		return err
@@ -1015,7 +1015,7 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 	// We only persist this session if we successfully retrieved the
 	// autopilot's static key.
 	sess.RemotePublicKey = remoteKey
-	if err := s.db.StoreSession(sess); err != nil {
+	if err := s.db.CreateSession(sess); err != nil {
 		return nil, fmt.Errorf("error storing session: %v", err)
 	}
 

@@ -123,10 +123,9 @@ func NewSession(label string, typ Type, expiry time.Time, serverAddr string,
 // Store is the interface a persistent storage must implement for storing and
 // retrieving Terminal Connect sessions.
 type Store interface {
-	// StoreSession stores a session in the store. If a session with the
-	// same local public key already exists, the existing record is updated/
-	// overwritten instead.
-	StoreSession(*Session) error
+	// CreateSession adds a new session to the store. If a session with the same
+	// local public key already exists an error is returned.
+	CreateSession(*Session) error
 
 	// GetSession fetches the session with the given key.
 	GetSession(key *btcec.PublicKey) (*Session, error)
@@ -137,4 +136,9 @@ type Store interface {
 	// RevokeSession updates the state of the session with the given local
 	// public key to be revoked.
 	RevokeSession(*btcec.PublicKey) error
+
+	// UpdateSessionRemotePubKey can be used to add the given remote pub key
+	// to the session with the given local pub key.
+	UpdateSessionRemotePubKey(localPubKey,
+		remotePubKey *btcec.PublicKey) error
 }

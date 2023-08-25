@@ -3,6 +3,7 @@ package session
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/btcsuite/btcd/btcec/v2"
@@ -25,12 +26,11 @@ func getSessionKey(session *Session) []byte {
 	return session.LocalPublicKey.SerializeCompressed()
 }
 
-// StoreSession stores a session in the store. If a session with the
-// same local public key already exists, the existing record is updated/
-// overwritten instead.
+// CreateSession adds a new session to the store. If a session with the same
+// local public key already exists an error is returned.
 //
 // NOTE: this is part of the Store interface.
-func (db *DB) StoreSession(session *Session) error {
+func (db *DB) CreateSession(session *Session) error {
 	var buf bytes.Buffer
 	if err := SerializeSession(&buf, session); err != nil {
 		return err
@@ -43,7 +43,52 @@ func (db *DB) StoreSession(session *Session) error {
 			return err
 		}
 
+		if len(sessionBucket.Get(sessionKey)) != 0 {
+			return fmt.Errorf("session with local public "+
+				"key(%x) already exists",
+				session.LocalPublicKey.SerializeCompressed())
+		}
+
 		return sessionBucket.Put(sessionKey, buf.Bytes())
+	})
+}
+
+// UpdateSessionRemotePubKey can be used to add the given remote pub key
+// to the session with the given local pub key.
+//
+// NOTE: this is part of the Store interface.
+func (db *DB) UpdateSessionRemotePubKey(localPubKey,
+	remotePubKey *btcec.PublicKey) error {
+
+	key := localPubKey.SerializeCompressed()
+
+	return db.Update(func(tx *bbolt.Tx) error {
+		sessionBucket, err := getBucket(tx, sessionBucketKey)
+		if err != nil {
+			return err
+		}
+
+		serialisedSession := sessionBucket.Get(key)
+
+		if len(serialisedSession) == 0 {
+			return ErrSessionNotFound
+		}
+
+		session, err := DeserializeSession(
+			bytes.NewReader(serialisedSession),
+		)
+		if err != nil {
+			return err
+		}
+
+		session.RemotePublicKey = remotePubKey
+
+		var buf bytes.Buffer
+		if err := SerializeSession(&buf, session); err != nil {
+			return err
+		}
+
+		return sessionBucket.Put(key, buf.Bytes())
 	})
 }
 
@@ -122,7 +167,7 @@ func (db *DB) ListSessions(filterFn func(s *Session) bool) ([]*Session, error) {
 // NOTE: this is part of the Store interface.
 func (db *DB) RevokeSession(key *btcec.PublicKey) error {
 	var session *Session
-	err := db.View(func(tx *bbolt.Tx) error {
+	return db.Update(func(tx *bbolt.Tx) error {
 		sessionBucket, err := getBucket(tx, sessionBucketKey)
 		if err != nil {
 			return err
@@ -134,14 +179,18 @@ func (db *DB) RevokeSession(key *btcec.PublicKey) error {
 		}
 
 		session, err = DeserializeSession(bytes.NewReader(sessionBytes))
-		return err
+		if err != nil {
+			return err
+		}
+
+		session.State = StateRevoked
+		session.RevokedAt = time.Now()
+
+		var buf bytes.Buffer
+		if err := SerializeSession(&buf, session); err != nil {
+			return err
+		}
+
+		return sessionBucket.Put(key.SerializeCompressed(), buf.Bytes())
 	})
-	if err != nil {
-		return err
-	}
-
-	session.State = StateRevoked
-	session.RevokedAt = time.Now()
-
-	return db.StoreSession(session)
 }
