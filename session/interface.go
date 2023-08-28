@@ -171,5 +171,11 @@ type Store interface {
 	// GetSessionByID fetches the session with the given ID.
 	GetSessionByID(id ID) (*Session, error)
 
+	// CheckSessionGroupPredicate iterates over all the sessions in a group
+	// and checks if each one passes the given predicate function. True is
+	// returned if each session passes.
+	CheckSessionGroupPredicate(groupID ID,
+		fn func(s *Session) bool) (bool, error)
+
 	IDToGroupIndex
 }

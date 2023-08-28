@@ -385,39 +385,115 @@ func (db *DB) GetGroupID(sessionID ID) (ID, error) {
 //
 // NOTE: this is part of the IDToGroupIndex interface.
 func (db *DB) GetSessionIDs(groupID ID) ([]ID, error) {
-	var sessionIDs []ID
+	var (
+		sessionIDs []ID
+		err        error
+	)
+	err = db.View(func(tx *bbolt.Tx) error {
+		sessionIDs, err = getSessionIDs(tx, groupID)
+
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return sessionIDs, nil
+}
+
+// CheckSessionGroupPredicate iterates over all the sessions in a group and
+// checks if each one passes the given predicate function. True is returned if
+// each session passes.
+//
+// NOTE: this is part of the Store interface.
+func (db *DB) CheckSessionGroupPredicate(groupID ID,
+	fn func(s *Session) bool) (bool, error) {
+
+	var (
+		pass          bool
+		errFailedPred = errors.New("session failed predicate")
+	)
 	err := db.View(func(tx *bbolt.Tx) error {
 		sessionBkt, err := getBucket(tx, sessionBucketKey)
 		if err != nil {
 			return err
 		}
 
-		groupIndexBkt := sessionBkt.Bucket(groupIDIndexKey)
-		if groupIndexBkt == nil {
-			return ErrDBInitErr
+		sessionIDs, err := getSessionIDs(tx, groupID)
+		if err != nil {
+			return err
 		}
 
-		groupIDBkt := groupIndexBkt.Bucket(groupID[:])
-		if groupIDBkt == nil {
-			return fmt.Errorf("no sessions for group ID %v",
-				groupID)
+		// Iterate over all the sessions.
+		for _, id := range sessionIDs {
+			key, err := getKeyForID(sessionBkt, id)
+			if err != nil {
+				return err
+			}
+
+			v := sessionBkt.Get(key)
+			if len(v) == 0 {
+				return ErrSessionNotFound
+			}
+
+			session, err := DeserializeSession(bytes.NewReader(v))
+			if err != nil {
+				return err
+			}
+
+			if !fn(session) {
+				return errFailedPred
+			}
 		}
 
-		sessionIDsBkt := groupIDBkt.Bucket(sessionIDKey)
-		if sessionIDsBkt == nil {
-			return fmt.Errorf("no sessions for group ID %v",
-				groupID)
-		}
+		pass = true
 
-		return sessionIDsBkt.ForEach(func(_,
-			sessionIDBytes []byte) error {
+		return nil
+	})
+	if errors.Is(err, errFailedPred) {
+		return pass, nil
+	}
+	if err != nil {
+		return pass, err
+	}
 
-			var sessionID ID
-			copy(sessionID[:], sessionIDBytes)
-			sessionIDs = append(sessionIDs, sessionID)
+	return pass, nil
+}
 
-			return nil
-		})
+// getSessionIDs returns all the session IDs associated with the given group ID.
+func getSessionIDs(tx *bbolt.Tx, groupID ID) ([]ID, error) {
+	var sessionIDs []ID
+
+	sessionBkt, err := getBucket(tx, sessionBucketKey)
+	if err != nil {
+		return nil, err
+	}
+
+	groupIndexBkt := sessionBkt.Bucket(groupIDIndexKey)
+	if groupIndexBkt == nil {
+		return nil, ErrDBInitErr
+	}
+
+	groupIDBkt := groupIndexBkt.Bucket(groupID[:])
+	if groupIDBkt == nil {
+		return nil, fmt.Errorf("no sessions for group ID %v",
+			groupID)
+	}
+
+	sessionIDsBkt := groupIDBkt.Bucket(sessionIDKey)
+	if sessionIDsBkt == nil {
+		return nil, fmt.Errorf("no sessions for group ID %v",
+			groupID)
+	}
+
+	err = sessionIDsBkt.ForEach(func(_,
+		sessionIDBytes []byte) error {
+
+		var sessionID ID
+		copy(sessionID[:], sessionIDBytes)
+		sessionIDs = append(sessionIDs, sessionID)
+
+		return nil
 	})
 	if err != nil {
 		return nil, err

@@ -1,6 +1,7 @@
 package session
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -170,6 +171,94 @@ func TestLinkedSessions(t *testing.T) {
 	sIDs, err = db.GetSessionIDs(s5.GroupID)
 	require.NoError(t, err)
 	require.EqualValues(t, []ID{s4.ID, s5.ID}, sIDs)
+}
+
+// TestCheckSessionGroupPredicate asserts that the CheckSessionGroupPredicate
+// method correctly checks if each session in a group passes a predicate.
+func TestCheckSessionGroupPredicate(t *testing.T) {
+	// Set up a new DB.
+	db, err := NewDB(t.TempDir(), "test.db")
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_ = db.Close()
+	})
+
+	// We will use the Label of the Session to test that the predicate
+	// function is checked correctly.
+
+	// Add a new session to the DB.
+	s1 := newSession(t, db, "label 1", nil)
+	require.NoError(t, db.CreateSession(s1))
+
+	// Check that the group passes against an appropriate predicate.
+	ok, err := db.CheckSessionGroupPredicate(
+		s1.GroupID, func(s *Session) bool {
+			return strings.Contains(s.Label, "label 1")
+		},
+	)
+	require.NoError(t, err)
+	require.True(t, ok)
+
+	// Check that the group fails against an appropriate predicate.
+	ok, err = db.CheckSessionGroupPredicate(
+		s1.GroupID, func(s *Session) bool {
+			return strings.Contains(s.Label, "label 2")
+		},
+	)
+	require.NoError(t, err)
+	require.False(t, ok)
+
+	// Add a new session to the same group as the first one.
+	s2 := newSession(t, db, "label 2", &s1.GroupID)
+	require.NoError(t, db.CreateSession(s2))
+
+	// Check that the group passes against an appropriate predicate.
+	ok, err = db.CheckSessionGroupPredicate(
+		s1.GroupID, func(s *Session) bool {
+			return strings.Contains(s.Label, "label")
+		},
+	)
+	require.NoError(t, err)
+	require.True(t, ok)
+
+	// Check that the group fails against an appropriate predicate.
+	ok, err = db.CheckSessionGroupPredicate(
+		s1.GroupID, func(s *Session) bool {
+			return strings.Contains(s.Label, "label 1")
+		},
+	)
+	require.NoError(t, err)
+	require.False(t, ok)
+
+	// Add a new session that is not linked to the first one.
+	s3 := newSession(t, db, "completely different", nil)
+	require.NoError(t, db.CreateSession(s3))
+
+	// Ensure that the first group is unaffected.
+	ok, err = db.CheckSessionGroupPredicate(
+		s1.GroupID, func(s *Session) bool {
+			return strings.Contains(s.Label, "label")
+		},
+	)
+	require.NoError(t, err)
+	require.True(t, ok)
+
+	// And that the new session is evaluated separately.
+	ok, err = db.CheckSessionGroupPredicate(
+		s3.GroupID, func(s *Session) bool {
+			return strings.Contains(s.Label, "label")
+		},
+	)
+	require.NoError(t, err)
+	require.False(t, ok)
+
+	ok, err = db.CheckSessionGroupPredicate(
+		s3.GroupID, func(s *Session) bool {
+			return strings.Contains(s.Label, "different")
+		},
+	)
+	require.NoError(t, err)
+	require.True(t, ok)
 }
 
 func newSession(t *testing.T, db Store, label string,
