@@ -44,6 +44,11 @@ type sessionRpcServer struct {
 	db            *session.DB
 	sessionServer *session.Server
 
+	// sessRegMu is a mutex that should be held between acquiring an unused
+	// session ID and key pair from the session store and persisting that
+	// new session.
+	sessRegMu sync.Mutex
+
 	quit     chan struct{}
 	wg       sync.WaitGroup
 	stopOnce sync.Once
@@ -315,9 +320,17 @@ func (s *sessionRpcServer) AddSession(_ context.Context,
 		}
 	}
 
+	s.sessRegMu.Lock()
+	defer s.sessRegMu.Unlock()
+
+	id, localPrivKey, err := s.db.GetUnusedIDAndKeyPair()
+	if err != nil {
+		return nil, err
+	}
+
 	sess, err := session.NewSession(
-		req.Label, typ, expiry, req.MailboxServerAddr, req.DevServer,
-		uniquePermissions, caveats, nil, false,
+		id, localPrivKey, req.Label, typ, expiry, req.MailboxServerAddr,
+		req.DevServer, uniquePermissions, caveats, nil, false,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating new session: %v", err)
@@ -979,9 +992,18 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 		caveats = append(caveats, firewall.MetaPrivacyCaveat)
 	}
 
+	s.sessRegMu.Lock()
+	defer s.sessRegMu.Unlock()
+
+	id, localPrivKey, err := s.db.GetUnusedIDAndKeyPair()
+	if err != nil {
+		return nil, err
+	}
+
 	sess, err := session.NewSession(
-		req.Label, session.TypeAutopilot, expiry, req.MailboxServerAddr,
-		req.DevServer, perms, caveats, featureConfig, privacy,
+		id, localPrivKey, req.Label, session.TypeAutopilot, expiry,
+		req.MailboxServerAddr, req.DevServer, perms, caveats,
+		featureConfig, privacy,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating new session: %v", err)

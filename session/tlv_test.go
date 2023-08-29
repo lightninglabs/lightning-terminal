@@ -83,8 +83,11 @@ func TestSerializeDeserializeSession(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			priv, id, err := NewSessionPrivKeyAndID()
+			require.NoError(t, err)
+
 			session, err := NewSession(
-				test.name, test.sessType,
+				id, priv, test.name, test.sessType,
 				time.Date(99999, 1, 1, 0, 0, 0, 0, time.UTC),
 				"foo.bar.baz:1234", true, test.perms,
 				test.caveats, test.featureConfig, true,

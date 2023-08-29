@@ -1,7 +1,6 @@
-package session
+package migration1
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -65,25 +64,33 @@ type Session struct {
 	WithPrivacyMapper bool
 }
 
-// MacaroonBaker is a function type for baking a super macaroon.
-type MacaroonBaker func(ctx context.Context, rootKeyID uint64,
-	recipe *MacaroonRecipe) (string, error)
-
 // NewSession creates a new session with the given user-defined parameters.
-func NewSession(id ID, localPrivKey *btcec.PrivateKey, label string, typ Type,
-	expiry time.Time, serverAddr string, devServer bool, perms []bakery.Op,
-	caveats []macaroon.Caveat, featureConfig FeaturesConfig,
-	privacy bool) (*Session, error) {
+func NewSession(label string, typ Type, expiry time.Time, serverAddr string,
+	devServer bool, perms []bakery.Op, caveats []macaroon.Caveat,
+	featureConfig FeaturesConfig, privacy bool) (*Session, error) {
 
 	_, pairingSecret, err := mailbox.NewPassphraseEntropy()
 	if err != nil {
 		return nil, fmt.Errorf("error deriving pairing secret: %v", err)
 	}
 
-	macRootKey := NewSuperMacaroonRootKeyID(id)
+	privateKey, err := btcec.NewPrivateKey()
+	if err != nil {
+		return nil, fmt.Errorf("error deriving private key: %v", err)
+	}
+	pubKey := privateKey.PubKey()
+
+	// NOTE: after this migration, no new sessions use the first 4 bytes of
+	// the serialised pub key for the macaroon root key. After this
+	// migration, bytes 1-4 are used (instead of 0-3) this is so that we
+	// get the full 4 byte entropy instead of wasting one byte on the 0x02
+	// and 0x03 prefix of the public key.
+	var macRootKeyBase [4]byte
+	copy(macRootKeyBase[:], pubKey.SerializeCompressed())
+	macRootKey := NewSuperMacaroonRootKeyID(macRootKeyBase)
 
 	sess := &Session{
-		ID:                id,
+		ID:                macRootKeyBase,
 		Label:             label,
 		State:             StateCreated,
 		Type:              typ,
@@ -93,8 +100,8 @@ func NewSession(id ID, localPrivKey *btcec.PrivateKey, label string, typ Type,
 		DevServer:         devServer,
 		MacaroonRootKey:   macRootKey,
 		PairingSecret:     pairingSecret,
-		LocalPrivateKey:   localPrivKey,
-		LocalPublicKey:    localPrivKey.PubKey(),
+		LocalPrivateKey:   privateKey,
+		LocalPublicKey:    pubKey,
 		RemotePublicKey:   nil,
 		WithPrivacyMapper: privacy,
 	}
@@ -111,38 +118,4 @@ func NewSession(id ID, localPrivKey *btcec.PrivateKey, label string, typ Type,
 	}
 
 	return sess, nil
-}
-
-// Store is the interface a persistent storage must implement for storing and
-// retrieving Terminal Connect sessions.
-type Store interface {
-	// CreateSession adds a new session to the store. If a session with the
-	// same local public key already exists an error is returned. This
-	// can only be called with a Session with an ID that the Store has
-	// reserved.
-	CreateSession(*Session) error
-
-	// GetSession fetches the session with the given key.
-	GetSession(key *btcec.PublicKey) (*Session, error)
-
-	// ListSessions returns all sessions currently known to the store.
-	ListSessions(filterFn func(s *Session) bool) ([]*Session, error)
-
-	// RevokeSession updates the state of the session with the given local
-	// public key to be revoked.
-	RevokeSession(*btcec.PublicKey) error
-
-	// UpdateSessionRemotePubKey can be used to add the given remote pub key
-	// to the session with the given local pub key.
-	UpdateSessionRemotePubKey(localPubKey,
-		remotePubKey *btcec.PublicKey) error
-
-	// GetUnusedIDAndKeyPair can be used to generate a new, unused, local
-	// private key and session ID pair. Care must be taken to ensure that no
-	// other thread calls this before the returned ID and key pair from this
-	// method are either used or discarded.
-	GetUnusedIDAndKeyPair() (ID, *btcec.PrivateKey, error)
-
-	// GetSessionByID fetches the session with the given ID.
-	GetSessionByID(id ID) (*Session, error)
 }
