@@ -85,14 +85,53 @@ func (db *DB) CreateSession(session *Session) error {
 
 		// If this is a linked session (meaning the group ID is
 		// different from the ID) the make sure that the Group ID of
-		// this session is an ID known by the store. We can do this by
-		// checking that an entry for this ID exists in the id-to-key
-		// index.
+		// this session is an ID known by the store. We also need to
+		// check that all older sessions in this group have been
+		// revoked.
 		if session.ID != session.GroupID {
 			_, err = getKeyForID(sessionBucket, session.GroupID)
 			if err != nil {
 				return fmt.Errorf("unknown linked session "+
 					"%x: %w", session.GroupID, err)
+			}
+
+			// Fetch all the session IDs for this group. This will
+			// through an error if this group does not exist.
+			sessionIDs, err := getSessionIDs(
+				sessionBucket, session.GroupID,
+			)
+			if err != nil {
+				return err
+			}
+
+			for _, id := range sessionIDs {
+				keyBytes, err := getKeyForID(
+					sessionBucket, id,
+				)
+				if err != nil {
+					return err
+				}
+
+				v := sessionBucket.Get(keyBytes)
+				if len(v) == 0 {
+					return ErrSessionNotFound
+				}
+
+				sess, err := DeserializeSession(
+					bytes.NewReader(v),
+				)
+				if err != nil {
+					return err
+				}
+
+				// Ensure that the session is no longer active.
+				if sess.State == StateCreated ||
+					sess.State == StateInUse {
+
+					return fmt.Errorf("session (id=%x) "+
+						"in group %x is still active",
+						sess.ID, sess.GroupID)
+				}
 			}
 		}
 
@@ -390,7 +429,12 @@ func (db *DB) GetSessionIDs(groupID ID) ([]ID, error) {
 		err        error
 	)
 	err = db.View(func(tx *bbolt.Tx) error {
-		sessionIDs, err = getSessionIDs(tx, groupID)
+		sessionBkt, err := getBucket(tx, sessionBucketKey)
+		if err != nil {
+			return err
+		}
+
+		sessionIDs, err = getSessionIDs(sessionBkt, groupID)
 
 		return err
 	})
@@ -419,7 +463,7 @@ func (db *DB) CheckSessionGroupPredicate(groupID ID,
 			return err
 		}
 
-		sessionIDs, err := getSessionIDs(tx, groupID)
+		sessionIDs, err := getSessionIDs(sessionBkt, groupID)
 		if err != nil {
 			return err
 		}
@@ -461,13 +505,8 @@ func (db *DB) CheckSessionGroupPredicate(groupID ID,
 }
 
 // getSessionIDs returns all the session IDs associated with the given group ID.
-func getSessionIDs(tx *bbolt.Tx, groupID ID) ([]ID, error) {
+func getSessionIDs(sessionBkt *bbolt.Bucket, groupID ID) ([]ID, error) {
 	var sessionIDs []ID
-
-	sessionBkt, err := getBucket(tx, sessionBucketKey)
-	if err != nil {
-		return nil, err
-	}
 
 	groupIndexBkt := sessionBkt.Bucket(groupIDIndexKey)
 	if groupIndexBkt == nil {
@@ -486,7 +525,7 @@ func getSessionIDs(tx *bbolt.Tx, groupID ID) ([]ID, error) {
 			groupID)
 	}
 
-	err = sessionIDsBkt.ForEach(func(_,
+	err := sessionIDsBkt.ForEach(func(_,
 		sessionIDBytes []byte) error {
 
 		var sessionID ID

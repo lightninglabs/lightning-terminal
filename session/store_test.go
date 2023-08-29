@@ -108,6 +108,15 @@ func TestLinkingSessions(t *testing.T) {
 	// Now persist the first session and retry persisting the second one
 	// and assert that this now works.
 	require.NoError(t, db.CreateSession(s1))
+
+	// Persisting the second session immediately should fail due to the
+	// first session still being active.
+	require.ErrorContains(t, db.CreateSession(s2), "is still active")
+
+	// Revoke the first session.
+	require.NoError(t, db.RevokeSession(s1.LocalPublicKey))
+
+	// Persisting the second linked session should now work.
 	require.NoError(t, db.CreateSession(s2))
 }
 
@@ -132,7 +141,11 @@ func TestLinkedSessions(t *testing.T) {
 
 	// Persist the sessions.
 	require.NoError(t, db.CreateSession(s1))
+
+	require.NoError(t, db.RevokeSession(s1.LocalPublicKey))
 	require.NoError(t, db.CreateSession(s2))
+
+	require.NoError(t, db.RevokeSession(s2.LocalPublicKey))
 	require.NoError(t, db.CreateSession(s3))
 
 	// Assert that the session ID to group ID index works as expected.
@@ -157,6 +170,8 @@ func TestLinkedSessions(t *testing.T) {
 
 	// Persist the sessions.
 	require.NoError(t, db.CreateSession(s4))
+	require.NoError(t, db.RevokeSession(s4.LocalPublicKey))
+
 	require.NoError(t, db.CreateSession(s5))
 
 	// Assert that the session ID to group ID index works as expected.
@@ -207,6 +222,9 @@ func TestCheckSessionGroupPredicate(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.False(t, ok)
+
+	// Revoke the first session.
+	require.NoError(t, db.RevokeSession(s1.LocalPublicKey))
 
 	// Add a new session to the same group as the first one.
 	s2 := newSession(t, db, "label 2", &s1.GroupID)
