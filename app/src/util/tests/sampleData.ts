@@ -906,6 +906,7 @@ export const litListSessions: LIT.ListSessionsResponse.AsObject = {
       sessionType: LIT.SessionType.TYPE_UI_PASSWORD,
       createdAt: '253300000000',
       accountId: '',
+      groupId: '',
       revokedAt: '453300000000',
       autopilotFeatureInfoMap: [
         [
@@ -986,6 +987,7 @@ export const litListSessions: LIT.ListSessionsResponse.AsObject = {
       sessionType: LIT.SessionType.TYPE_UI_PASSWORD,
       createdAt: '253300000000',
       revokedAt: '453300000000',
+      groupId: '',
       accountId: '',
       autopilotFeatureInfoMap: [
         [

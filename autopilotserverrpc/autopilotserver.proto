@@ -170,6 +170,18 @@ message RegisterSessionRequest {
     The version of the LND that the Lit client is using.
     */
     Version lnd_version = 6;
+
+    /*
+    If set, this is the responder public key of a first session in the group
+    that this new session should be linked to.
+    */
+    bytes group_responder_key = 7;
+
+    /*
+    The signature by the first responder key of the serialised new responder
+    key.
+    */
+    bytes group_responder_sig = 8;
 }
 
 message RegisterSessionResponse {

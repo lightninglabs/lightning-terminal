@@ -2,6 +2,7 @@ package firewall
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -292,9 +293,12 @@ func TestPrivacyMapper(t *testing.T) {
 
 	db := newMockDB(t, mapPreloadRealToPseudo, sessionID)
 
+	err = db.AddSessionAndGroupIDPair(sessionID, sessionID)
+	require.NoError(t, err)
+
 	// randIntn is used for deterministic testing.
 	randIntn := func(n int) (int, error) { return 100, nil }
-	p := NewPrivacyMapper(db.NewSessionDB, randIntn)
+	p := NewPrivacyMapper(db.NewSessionDB, randIntn, db)
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -355,7 +359,7 @@ func TestPrivacyMapper(t *testing.T) {
 		rawMsg, err := proto.Marshal(msg)
 		require.NoError(t, err)
 
-		p = NewPrivacyMapper(db.NewSessionDB, CryptoRandIntn)
+		p = NewPrivacyMapper(db.NewSessionDB, CryptoRandIntn, db)
 		require.NoError(t, err)
 
 		// We test the independent outgoing amount (incoming amount
@@ -440,12 +444,21 @@ func TestPrivacyMapper(t *testing.T) {
 	})
 }
 
-type mockDB map[string]*mockPrivacyMapDB
+type mockDB struct {
+	privDB map[string]*mockPrivacyMapDB
+
+	sessionIDIndex map[session.ID]session.ID
+	groupIDIndex   map[session.ID][]session.ID
+}
 
 func newMockDB(t *testing.T, preloadRealToPseudo map[string]string,
 	sessID session.ID) mockDB {
 
-	db := make(mockDB)
+	db := mockDB{
+		privDB:         make(map[string]*mockPrivacyMapDB),
+		sessionIDIndex: make(map[session.ID]session.ID),
+		groupIDIndex:   make(map[session.ID][]session.ID),
+	}
 	sessDB := db.NewSessionDB(sessID)
 
 	_ = sessDB.Update(func(tx firewalldb.PrivacyMapTx) error {
@@ -459,15 +472,39 @@ func newMockDB(t *testing.T, preloadRealToPseudo map[string]string,
 }
 
 func (m mockDB) NewSessionDB(sessionID session.ID) firewalldb.PrivacyMapDB {
-	db, ok := m[string(sessionID[:])]
+	db, ok := m.privDB[string(sessionID[:])]
 	if ok {
 		return db
 	}
 
 	newDB := newMockPrivacyMapDB()
-	m[string(sessionID[:])] = newDB
+	m.privDB[string(sessionID[:])] = newDB
 
 	return newDB
+}
+
+func (m mockDB) AddSessionAndGroupIDPair(sessionID, groupID session.ID) error {
+	m.sessionIDIndex[sessionID] = groupID
+	m.groupIDIndex[groupID] = append(m.groupIDIndex[groupID], sessionID)
+	return nil
+}
+
+func (m mockDB) GetGroupID(sessionID session.ID) (session.ID, error) {
+	groupID, ok := m.sessionIDIndex[sessionID]
+	if !ok {
+		return session.ID{}, fmt.Errorf("group ID not found")
+	}
+
+	return groupID, nil
+}
+
+func (m mockDB) GetSessionIDs(groupID session.ID) ([]session.ID, error) {
+	sessionIDs, ok := m.groupIDIndex[groupID]
+	if !ok {
+		return nil, fmt.Errorf("group ID not found")
+	}
+
+	return sessionIDs, nil
 }
 
 func newMockPrivacyMapDB() *mockPrivacyMapDB {

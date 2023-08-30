@@ -153,6 +153,11 @@ export class Session extends jspb.Message {
   getRevokedAt(): string;
   setRevokedAt(value: string): void;
 
+  getGroupId(): Uint8Array | string;
+  getGroupId_asU8(): Uint8Array;
+  getGroupId_asB64(): string;
+  setGroupId(value: Uint8Array | string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Session.AsObject;
   static toObject(includeInstance: boolean, msg: Session): Session.AsObject;
@@ -181,6 +186,7 @@ export namespace Session {
     accountId: string,
     autopilotFeatureInfoMap: Array<[string, RulesMap.AsObject]>,
     revokedAt: string,
+    groupId: Uint8Array | string,
   }
 }
 

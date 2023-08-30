@@ -10,7 +10,7 @@ import (
 // TestPrivacyMapStorage tests the privacy mapper CRUD logic.
 func TestPrivacyMapStorage(t *testing.T) {
 	tmpDir := t.TempDir()
-	db, err := NewDB(tmpDir, "test.db")
+	db, err := NewDB(tmpDir, "test.db", nil)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
@@ -68,7 +68,7 @@ func TestPrivacyMapStorage(t *testing.T) {
 // `Update` function, then all the changes prior should be rolled back.
 func TestPrivacyMapTxs(t *testing.T) {
 	tmpDir := t.TempDir()
-	db, err := NewDB(tmpDir, "test.db")
+	db, err := NewDB(tmpDir, "test.db", nil)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()

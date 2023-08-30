@@ -7,6 +7,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/stretchr/testify/require"
 )
 
@@ -17,7 +18,7 @@ func TestKVStoreTxs(t *testing.T) {
 	ctx := context.Background()
 	tmpDir := t.TempDir()
 
-	db, err := NewDB(tmpDir, "test.db")
+	db, err := NewDB(tmpDir, "test.db", nil)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
@@ -64,7 +65,7 @@ func TestTempAndPermStores(t *testing.T) {
 	ctx := context.Background()
 	tmpDir := t.TempDir()
 
-	db, err := NewDB(tmpDir, "test.db")
+	db, err := NewDB(tmpDir, "test.db", nil)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
@@ -112,7 +113,7 @@ func TestTempAndPermStores(t *testing.T) {
 	require.NoError(t, db.Close())
 
 	// Restart it.
-	db, err = NewDB(tmpDir, "test.db")
+	db, err = NewDB(tmpDir, "test.db", nil)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
@@ -146,24 +147,24 @@ func TestKVStoreNameSpaces(t *testing.T) {
 	ctx := context.Background()
 	tmpDir := t.TempDir()
 
-	db, err := NewDB(tmpDir, "test.db")
+	db, err := NewDB(tmpDir, "test.db", nil)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
 	})
 
 	var (
-		sessionID1 = [4]byte{1, 1, 1, 1}
-		sessionID2 = [4]byte{2, 2, 2, 2}
+		groupID1 = intToSessionID(1)
+		groupID2 = intToSessionID(2)
 	)
 
-	// Two DBs for same session but different features.
-	rulesDB1 := db.GetKVStores("test-rule", sessionID1, "auto-fees")
-	rulesDB2 := db.GetKVStores("test-rule", sessionID1, "re-balance")
+	// Two DBs for same group but different features.
+	rulesDB1 := db.GetKVStores("test-rule", groupID1, "auto-fees")
+	rulesDB2 := db.GetKVStores("test-rule", groupID1, "re-balance")
 
-	// The third DB is for the same rule but a different session. It is
+	// The third DB is for the same rule but a different group. It is
 	// for the same feature as db 2.
-	rulesDB3 := db.GetKVStores("test-rule", sessionID2, "re-balance")
+	rulesDB3 := db.GetKVStores("test-rule", groupID2, "re-balance")
 
 	// Test that the three ruleDBs share the same global space.
 	err = rulesDB1.Update(func(tx KVStoreTx) error {
@@ -270,12 +271,12 @@ func TestKVStoreNameSpaces(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, bytes.Equal(v, []byte("3")))
 
-	// Test that the session space is shared by the first two dbs but not
+	// Test that the group space is shared by the first two dbs but not
 	// the third. To do this, we re-init the DB's but leave the feature
-	// names out. This way, we will access the session storage.
-	rulesDB1 = db.GetKVStores("test-rule", sessionID1, "")
-	rulesDB2 = db.GetKVStores("test-rule", sessionID1, "")
-	rulesDB3 = db.GetKVStores("test-rule", sessionID2, "")
+	// names out. This way, we will access the group storage.
+	rulesDB1 = db.GetKVStores("test-rule", groupID1, "")
+	rulesDB2 = db.GetKVStores("test-rule", groupID1, "")
+	rulesDB3 = db.GetKVStores("test-rule", groupID2, "")
 
 	err = rulesDB1.Update(func(tx KVStoreTx) error {
 		return tx.Local().Set(ctx, "test", []byte("thing 1"))
@@ -324,4 +325,11 @@ func TestKVStoreNameSpaces(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.True(t, bytes.Equal(v, []byte("thing 3")))
+}
+
+func intToSessionID(i uint32) session.ID {
+	var id session.ID
+	byteOrder.PutUint32(id[:], i)
+
+	return id
 }

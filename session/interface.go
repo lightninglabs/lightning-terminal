@@ -63,6 +63,11 @@ type Session struct {
 	RemotePublicKey   *btcec.PublicKey
 	FeatureConfig     *FeaturesConfig
 	WithPrivacyMapper bool
+
+	// GroupID is the Session ID of the very first Session in the linked
+	// group of sessions. If this is the very first session in the group
+	// then this will be the same as ID.
+	GroupID ID
 }
 
 // MacaroonBaker is a function type for baking a super macaroon.
@@ -70,27 +75,29 @@ type MacaroonBaker func(ctx context.Context, rootKeyID uint64,
 	recipe *MacaroonRecipe) (string, error)
 
 // NewSession creates a new session with the given user-defined parameters.
-func NewSession(label string, typ Type, expiry time.Time, serverAddr string,
-	devServer bool, perms []bakery.Op, caveats []macaroon.Caveat,
-	featureConfig FeaturesConfig, privacy bool) (*Session, error) {
+func NewSession(id ID, localPrivKey *btcec.PrivateKey, label string, typ Type,
+	expiry time.Time, serverAddr string, devServer bool, perms []bakery.Op,
+	caveats []macaroon.Caveat, featureConfig FeaturesConfig,
+	privacy bool, linkedGroupID *ID) (*Session, error) {
 
 	_, pairingSecret, err := mailbox.NewPassphraseEntropy()
 	if err != nil {
 		return nil, fmt.Errorf("error deriving pairing secret: %v", err)
 	}
 
-	privateKey, err := btcec.NewPrivateKey()
-	if err != nil {
-		return nil, fmt.Errorf("error deriving private key: %v", err)
-	}
-	pubKey := privateKey.PubKey()
+	macRootKey := NewSuperMacaroonRootKeyID(id)
 
-	var macRootKeyBase [4]byte
-	copy(macRootKeyBase[:], pubKey.SerializeCompressed())
-	macRootKey := NewSuperMacaroonRootKeyID(macRootKeyBase)
+	// The group ID will by default be the same as the Session ID
+	// unless this session links to a previous session.
+	groupID := id
+	if linkedGroupID != nil {
+		// If this session is linked to a previous session, then the
+		// group ID is the same as the linked session's group ID.
+		groupID = *linkedGroupID
+	}
 
 	sess := &Session{
-		ID:                macRootKeyBase,
+		ID:                id,
 		Label:             label,
 		State:             StateCreated,
 		Type:              typ,
@@ -100,10 +107,11 @@ func NewSession(label string, typ Type, expiry time.Time, serverAddr string,
 		DevServer:         devServer,
 		MacaroonRootKey:   macRootKey,
 		PairingSecret:     pairingSecret,
-		LocalPrivateKey:   privateKey,
-		LocalPublicKey:    pubKey,
+		LocalPrivateKey:   localPrivKey,
+		LocalPublicKey:    localPrivKey.PubKey(),
 		RemotePublicKey:   nil,
 		WithPrivacyMapper: privacy,
+		GroupID:           groupID,
 	}
 
 	if perms != nil || caveats != nil {
@@ -120,18 +128,54 @@ func NewSession(label string, typ Type, expiry time.Time, serverAddr string,
 	return sess, nil
 }
 
+// IDToGroupIndex defines an interface for the session ID to group ID index.
+type IDToGroupIndex interface {
+	// GetGroupID will return the group ID for the given session ID.
+	GetGroupID(sessionID ID) (ID, error)
+
+	// GetSessionIDs will return the set of session IDs that are in the
+	// group with the given ID.
+	GetSessionIDs(groupID ID) ([]ID, error)
+}
+
 // Store is the interface a persistent storage must implement for storing and
 // retrieving Terminal Connect sessions.
 type Store interface {
-	// StoreSession stores a session in the store. If a session with the
-	// same local public key already exists, the existing record is updated/
-	// overwritten instead.
-	StoreSession(*Session) error
+	// CreateSession adds a new session to the store. If a session with the
+	// same local public key already exists an error is returned. This
+	// can only be called with a Session with an ID that the Store has
+	// reserved.
+	CreateSession(*Session) error
+
+	// GetSession fetches the session with the given key.
+	GetSession(key *btcec.PublicKey) (*Session, error)
 
 	// ListSessions returns all sessions currently known to the store.
-	ListSessions() ([]*Session, error)
+	ListSessions(filterFn func(s *Session) bool) ([]*Session, error)
 
 	// RevokeSession updates the state of the session with the given local
 	// public key to be revoked.
 	RevokeSession(*btcec.PublicKey) error
+
+	// UpdateSessionRemotePubKey can be used to add the given remote pub key
+	// to the session with the given local pub key.
+	UpdateSessionRemotePubKey(localPubKey,
+		remotePubKey *btcec.PublicKey) error
+
+	// GetUnusedIDAndKeyPair can be used to generate a new, unused, local
+	// private key and session ID pair. Care must be taken to ensure that no
+	// other thread calls this before the returned ID and key pair from this
+	// method are either used or discarded.
+	GetUnusedIDAndKeyPair() (ID, *btcec.PrivateKey, error)
+
+	// GetSessionByID fetches the session with the given ID.
+	GetSessionByID(id ID) (*Session, error)
+
+	// CheckSessionGroupPredicate iterates over all the sessions in a group
+	// and checks if each one passes the given predicate function. True is
+	// returned if each session passes.
+	CheckSessionGroupPredicate(groupID ID,
+		fn func(s *Session) bool) (bool, error)
+
+	IDToGroupIndex
 }

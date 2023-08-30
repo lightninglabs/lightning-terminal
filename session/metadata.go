@@ -3,7 +3,10 @@ package session
 import (
 	"errors"
 	"fmt"
+	"time"
 
+	"github.com/lightninglabs/lightning-terminal/session/migration1"
+	"github.com/lightninglabs/lightning-terminal/session/migration2"
 	"go.etcd.io/bbolt"
 )
 
@@ -29,7 +32,14 @@ var (
 	// version of the database doesn't match the latest version this list
 	// will be used for retrieving all migration function that are need to
 	// apply to the current db.
-	dbVersions []migration
+	dbVersions = []migration{
+		func(tx *bbolt.Tx) error {
+			return migration1.MigrateSessionIDToKeyIndex(
+				tx, time.Now,
+			)
+		},
+		migration2.MigrateSessionIDToGroupIndex,
+	}
 
 	latestDBVersion = uint32(len(dbVersions))
 )

@@ -65,6 +65,11 @@ var addAutopilotSessionCmd = cli.Command{
 				"perform actions on. In the " +
 				"form of: peerID1,peerID2,...",
 		},
+		cli.StringFlag{
+			Name: "group_id",
+			Usage: "The hex encoded group ID of the session " +
+				"group to link this one to",
+		},
 	},
 }
 
@@ -224,6 +229,14 @@ func initAutopilotSession(ctx *cli.Context) error {
 		}
 	}
 
+	var groupID []byte
+	if ctx.IsSet("group_id") {
+		groupID, err = hex.DecodeString(ctx.String("group_id"))
+		if err != nil {
+			return err
+		}
+	}
+
 	resp, err := client.AddAutopilotSession(
 		ctxb, &litrpc.AddAutopilotSessionRequest{
 			Label:                  ctx.String("label"),
@@ -231,6 +244,7 @@ func initAutopilotSession(ctx *cli.Context) error {
 			MailboxServerAddr:      ctx.String("mailboxserveraddr"),
 			DevServer:              ctx.Bool("devserver"),
 			Features:               featureMap,
+			LinkedGroupId:          groupID,
 		},
 	)
 	if err != nil {

@@ -45,7 +45,7 @@ func TestAutopilotClient(t *testing.T) {
 	require.ErrorContains(t, err, "no such client")
 
 	// Register the client.
-	_, err = client.RegisterSession(ctx, pubKey, "", false, nil)
+	_, err = client.RegisterSession(ctx, pubKey, "", false, nil, nil, nil)
 	require.NoError(t, err)
 
 	// Assert that the server sees the new client and has it in the Active

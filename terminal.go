@@ -184,6 +184,7 @@ type LightningTerminal struct {
 	accountRpcServer *accounts.RPCServer
 
 	firewallDB *firewalldb.DB
+	sessionDB  *session.DB
 
 	restHandler http.Handler
 	restCancel  func()
@@ -317,10 +318,18 @@ func (g *LightningTerminal) start() error {
 
 	g.ruleMgrs = rules.NewRuleManagerSet()
 
+	// Create an instance of the local Terminal Connect session store DB.
 	networkDir := filepath.Join(g.cfg.LitDir, g.cfg.Network)
-	g.firewallDB, err = firewalldb.NewDB(networkDir, firewalldb.DBFilename)
+	g.sessionDB, err = session.NewDB(networkDir, session.DBFilename)
 	if err != nil {
 		return fmt.Errorf("error creating session DB: %v", err)
+	}
+
+	g.firewallDB, err = firewalldb.NewDB(
+		networkDir, firewalldb.DBFilename, g.sessionDB,
+	)
+	if err != nil {
+		return fmt.Errorf("error creating firewall DB: %v", err)
 	}
 
 	if !g.cfg.Autopilot.Disable {
@@ -353,8 +362,8 @@ func (g *LightningTerminal) start() error {
 	}
 
 	g.sessionRpcServer, err = newSessionRPCServer(&sessionRpcServerConfig{
+		db:        g.sessionDB,
 		basicAuth: g.rpcProxy.basicAuth,
-		dbDir:     filepath.Join(g.cfg.LitDir, g.cfg.Network),
 		grpcOptions: []grpc.ServerOption{
 			grpc.CustomCodec(grpcProxy.Codec()), // nolint: staticcheck,
 			grpc.ChainStreamInterceptor(
@@ -805,6 +814,7 @@ func (g *LightningTerminal) startInternalSubServers(
 
 	privacyMapper := firewall.NewPrivacyMapper(
 		g.firewallDB.PrivacyDB, firewall.CryptoRandIntn,
+		g.sessionDB,
 	)
 
 	mw := []mid.RequestInterceptor{
@@ -815,7 +825,7 @@ func (g *LightningTerminal) startInternalSubServers(
 
 	if !g.cfg.Autopilot.Disable {
 		ruleEnforcer := firewall.NewRuleEnforcer(
-			g.firewallDB, g.firewallDB,
+			g.firewallDB, g.firewallDB, g.sessionDB,
 			g.autopilotClient.ListFeaturePerms,
 			g.permsMgr, g.lndClient.NodePubkey,
 			g.lndClient.Router,

@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcec/v2/ecdsa"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/lightninglabs/lightning-node-connect/mailbox"
 	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/autopilotserver"
@@ -41,8 +43,12 @@ type sessionRpcServer struct {
 	litrpc.UnimplementedAutopilotServer
 
 	cfg           *sessionRpcServerConfig
-	db            *session.DB
 	sessionServer *session.Server
+
+	// sessRegMu is a mutex that should be held between acquiring an unused
+	// session ID and key pair from the session store and persisting that
+	// new session.
+	sessRegMu sync.Mutex
 
 	quit     chan struct{}
 	wg       sync.WaitGroup
@@ -52,8 +58,8 @@ type sessionRpcServer struct {
 // sessionRpcServerConfig holds the values used to configure the
 // sessionRpcServer.
 type sessionRpcServerConfig struct {
+	db                      *session.DB
 	basicAuth               string
-	dbDir                   string
 	grpcOptions             []grpc.ServerOption
 	registerGrpcServers     func(server *grpc.Server)
 	superMacBaker           session.MacaroonBaker
@@ -68,12 +74,6 @@ type sessionRpcServerConfig struct {
 // newSessionRPCServer creates a new sessionRpcServer using the passed config.
 func newSessionRPCServer(cfg *sessionRpcServerConfig) (*sessionRpcServer,
 	error) {
-
-	// Create an instance of the local Terminal Connect session store DB.
-	db, err := session.NewDB(cfg.dbDir, session.DBFilename)
-	if err != nil {
-		return nil, fmt.Errorf("error creating session DB: %v", err)
-	}
 
 	// Create the gRPC server that handles adding/removing sessions and the
 	// actual mailbox server that spins up the Terminal Connect server
@@ -91,7 +91,6 @@ func newSessionRPCServer(cfg *sessionRpcServerConfig) (*sessionRpcServer,
 
 	return &sessionRpcServer{
 		cfg:           cfg,
-		db:            db,
 		sessionServer: server,
 		quit:          make(chan struct{}),
 	}, nil
@@ -101,7 +100,7 @@ func newSessionRPCServer(cfg *sessionRpcServerConfig) (*sessionRpcServer,
 // requests. This includes resuming all non-revoked sessions.
 func (s *sessionRpcServer) start() error {
 	// Start up all previously created sessions.
-	sessions, err := s.db.ListSessions(nil)
+	sessions, err := s.cfg.db.ListSessions(nil)
 	if err != nil {
 		return fmt.Errorf("error listing sessions: %v", err)
 	}
@@ -152,7 +151,7 @@ func (s *sessionRpcServer) start() error {
 					err)
 
 				if perm {
-					err := s.db.RevokeSession(
+					err := s.cfg.db.RevokeSession(
 						sess.LocalPublicKey,
 					)
 					if err != nil {
@@ -177,7 +176,7 @@ func (s *sessionRpcServer) start() error {
 func (s *sessionRpcServer) stop() error {
 	var returnErr error
 	s.stopOnce.Do(func() {
-		if err := s.db.Close(); err != nil {
+		if err := s.cfg.db.Close(); err != nil {
 			log.Errorf("Error closing session DB: %v", err)
 			returnErr = err
 		}
@@ -315,15 +314,23 @@ func (s *sessionRpcServer) AddSession(_ context.Context,
 		}
 	}
 
+	s.sessRegMu.Lock()
+	defer s.sessRegMu.Unlock()
+
+	id, localPrivKey, err := s.cfg.db.GetUnusedIDAndKeyPair()
+	if err != nil {
+		return nil, err
+	}
+
 	sess, err := session.NewSession(
-		req.Label, typ, expiry, req.MailboxServerAddr, req.DevServer,
-		uniquePermissions, caveats, nil, false,
+		id, localPrivKey, req.Label, typ, expiry, req.MailboxServerAddr,
+		req.DevServer, uniquePermissions, caveats, nil, false, nil,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating new session: %v", err)
 	}
 
-	if err := s.db.StoreSession(sess); err != nil {
+	if err := s.cfg.db.CreateSession(sess); err != nil {
 		return nil, fmt.Errorf("error storing session: %v", err)
 	}
 
@@ -362,7 +369,7 @@ func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
 		log.Debugf("Not resuming session %x with expiry %s",
 			pubKeyBytes, sess.Expiry)
 
-		if err := s.db.RevokeSession(pubKey); err != nil {
+		if err := s.cfg.db.RevokeSession(pubKey); err != nil {
 			return fmt.Errorf("error revoking session: %v", err)
 		}
 
@@ -442,7 +449,7 @@ func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
 			log.Debugf("Deadline for session %x has already "+
 				"passed. Revoking session", pubKeyBytes)
 
-			return s.db.RevokeSession(pubKey)
+			return s.cfg.db.RevokeSession(pubKey)
 		}
 
 		// Start the deadline timer.
@@ -477,7 +484,7 @@ func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
 
 	authData := []byte(fmt.Sprintf("%s: %s", HeaderMacaroon, mac))
 	sessionClosedSub, err := s.sessionServer.StartSession(
-		sess, authData, s.db.StoreSession, onNewStatus,
+		sess, authData, s.cfg.db.UpdateSessionRemotePubKey, onNewStatus,
 	)
 	if err != nil {
 		return err
@@ -522,7 +529,7 @@ func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
 			log.Debugf("Error stopping session: %v", err)
 		}
 
-		err = s.db.RevokeSession(pubKey)
+		err = s.cfg.db.RevokeSession(pubKey)
 		if err != nil {
 			log.Debugf("error revoking session: %v", err)
 		}
@@ -535,7 +542,7 @@ func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
 func (s *sessionRpcServer) ListSessions(_ context.Context,
 	_ *litrpc.ListSessionsRequest) (*litrpc.ListSessionsResponse, error) {
 
-	sessions, err := s.db.ListSessions(nil)
+	sessions, err := s.cfg.db.ListSessions(nil)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching sessions: %v", err)
 	}
@@ -564,7 +571,7 @@ func (s *sessionRpcServer) RevokeSession(ctx context.Context,
 		return nil, fmt.Errorf("error parsing public key: %v", err)
 	}
 
-	if err := s.db.RevokeSession(pubKey); err != nil {
+	if err := s.cfg.db.RevokeSession(pubKey); err != nil {
 		return nil, fmt.Errorf("error revoking session: %v", err)
 	}
 
@@ -587,13 +594,29 @@ func (s *sessionRpcServer) PrivacyMapConversion(_ context.Context,
 	req *litrpc.PrivacyMapConversionRequest) (
 	*litrpc.PrivacyMapConversionResponse, error) {
 
-	sessionID, err := session.IDFromBytes(req.SessionId)
-	if err != nil {
-		return nil, err
+	var (
+		groupID session.ID
+		err     error
+	)
+	if len(req.GroupId) != 0 {
+		groupID, err = session.IDFromBytes(req.GroupId)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		sessionID, err := session.IDFromBytes(req.SessionId)
+		if err != nil {
+			return nil, err
+		}
+
+		groupID, err = s.cfg.db.GetGroupID(sessionID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var res string
-	privMap := s.cfg.privMap(sessionID)
+	privMap := s.cfg.privMap(groupID)
 	err = privMap.View(func(tx firewalldb.PrivacyMapTx) error {
 		var err error
 		if req.RealToPseudo {
@@ -717,6 +740,16 @@ func (s *sessionRpcServer) ListActions(_ context.Context,
 		actions, lastIndex, totalCount, err = db.ListSessionActions(
 			sessionID, filterFn, query,
 		)
+		if err != nil {
+			return nil, err
+		}
+	} else if req.GroupId != nil {
+		groupID, err := session.IDFromBytes(req.GroupId)
+		if err != nil {
+			return nil, err
+		}
+
+		actions, err = db.ListGroupActions(groupID, filterFn)
 		if err != nil {
 			return nil, err
 		}
@@ -979,16 +1012,89 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 		caveats = append(caveats, firewall.MetaPrivacyCaveat)
 	}
 
+	// If a previous session ID has been set to link this new one to, we
+	// first check if we have the referenced session, and we make sure it
+	// has been revoked.
+	var (
+		linkedGroupID      *session.ID
+		linkedGroupSession *session.Session
+	)
+	if len(req.LinkedGroupId) != 0 {
+		var groupID session.ID
+		copy(groupID[:], req.LinkedGroupId)
+
+		// Check that the group actually does exist.
+		groupSess, err := s.cfg.db.GetSessionByID(groupID)
+		if err != nil {
+			return nil, err
+		}
+
+		// Ensure that the linked session is in fact the first session
+		// in its group.
+		if groupSess.ID != groupSess.GroupID {
+			return nil, fmt.Errorf("can not link to session "+
+				"%x since it is not the first in the session "+
+				"group %x", groupSess.ID, groupSess.GroupID)
+		}
+
+		// Now we need to check that all the sessions in the group are
+		// no longer active.
+		ok, err := s.cfg.db.CheckSessionGroupPredicate(
+			groupID, func(s *session.Session) bool {
+				return s.State == session.StateRevoked ||
+					s.State == session.StateExpired
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		if !ok {
+			return nil, fmt.Errorf("a linked session in group "+
+				"%x is still active", groupID)
+		}
+
+		linkedGroupID = &groupID
+		linkedGroupSession = groupSess
+	}
+
+	s.sessRegMu.Lock()
+	defer s.sessRegMu.Unlock()
+
+	id, localPrivKey, err := s.cfg.db.GetUnusedIDAndKeyPair()
+	if err != nil {
+		return nil, err
+	}
+
 	sess, err := session.NewSession(
-		req.Label, session.TypeAutopilot, expiry, req.MailboxServerAddr,
-		req.DevServer, perms, caveats, featureConfig, privacy,
+		id, localPrivKey, req.Label, session.TypeAutopilot, expiry,
+		req.MailboxServerAddr, req.DevServer, perms, caveats,
+		featureConfig, privacy, linkedGroupID,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating new session: %v", err)
 	}
 
+	// If this session is being linked to a previous one, then we need to
+	// use the previous session's local private key to sign the new
+	// session's public key in order to prove to the Autopilot server that
+	// the two session's belong to the same owner.
+	var (
+		linkSig        []byte
+		prevSessionPub *btcec.PublicKey
+	)
+	if linkedGroupID != nil {
+		privKey := linkedGroupSession.LocalPrivateKey
+		pubKey := sess.LocalPublicKey.SerializeCompressed()
+
+		msg := chainhash.HashB(pubKey)
+		linkSig = ecdsa.Sign(privKey, msg).Serialize()
+
+		prevSessionPub = linkedGroupSession.LocalPublicKey
+	}
+
 	// Register all the privacy map pairs for this session ID.
-	privDB := s.cfg.privMap(sess.ID)
+	privDB := s.cfg.privMap(sess.GroupID)
 	err = privDB.Update(func(tx firewalldb.PrivacyMapTx) error {
 		for r, p := range privacyMapPairs {
 			err := tx.NewPair(r, p)
@@ -1005,7 +1111,7 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 	// Attempt to register the session with the Autopilot server.
 	remoteKey, err := s.cfg.autopilot.RegisterSession(
 		ctx, sess.LocalPublicKey, sess.ServerAddr, sess.DevServer,
-		featureConfig,
+		featureConfig, prevSessionPub, linkSig,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error registering session with "+
@@ -1015,7 +1121,7 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 	// We only persist this session if we successfully retrieved the
 	// autopilot's static key.
 	sess.RemotePublicKey = remoteKey
-	if err := s.db.StoreSession(sess); err != nil {
+	if err := s.cfg.db.CreateSession(sess); err != nil {
 		return nil, fmt.Errorf("error storing session: %v", err)
 	}
 
@@ -1039,7 +1145,7 @@ func (s *sessionRpcServer) ListAutopilotSessions(_ context.Context,
 	_ *litrpc.ListAutopilotSessionsRequest) (
 	*litrpc.ListAutopilotSessionsResponse, error) {
 
-	sessions, err := s.db.ListSessions(func(s *session.Session) bool {
+	sessions, err := s.cfg.db.ListSessions(func(s *session.Session) bool {
 		return s.Type == session.TypeAutopilot
 	})
 	if err != nil {
@@ -1070,7 +1176,7 @@ func (s *sessionRpcServer) RevokeAutopilotSession(ctx context.Context,
 		return nil, fmt.Errorf("error parsing public key: %v", err)
 	}
 
-	sess, err := s.db.GetSession(pubKey)
+	sess, err := s.cfg.db.GetSession(pubKey)
 	if err != nil {
 		return nil, err
 	}
@@ -1206,7 +1312,10 @@ func (s *sessionRpcServer) marshalRPCSession(sess *session.Session) (
 		revokedAt = uint64(sess.RevokedAt.Unix())
 	}
 
-	featureInfo := make(map[string]*litrpc.RulesMap)
+	var (
+		featureInfo    = make(map[string]*litrpc.RulesMap)
+		initRuleValues = s.cfg.ruleMgrs.InitRuleValues
+	)
 	if sess.MacaroonRecipe != nil {
 		for _, cav := range sess.MacaroonRecipe.Caveats {
 			info, err := firewall.ParseRuleCaveat(string(cav.Id))
@@ -1219,13 +1328,17 @@ func (s *sessionRpcServer) marshalRPCSession(sess *session.Session) (
 			for feature, rules := range info.FeatureRules {
 				ruleMap := make(map[string]*litrpc.RuleValue)
 				for name, rule := range rules {
-					val, err := s.cfg.ruleMgrs.InitRuleValues(name, []byte(rule))
+					val, err := initRuleValues(
+						name, []byte(rule),
+					)
 					if err != nil {
 						return nil, err
 					}
 
 					if sess.WithPrivacyMapper {
-						db := s.cfg.privMap(sess.ID)
+						db := s.cfg.privMap(
+							sess.GroupID,
+						)
 						val, err = val.PseudoToReal(db)
 						if err != nil {
 							return nil, err
@@ -1235,7 +1348,9 @@ func (s *sessionRpcServer) marshalRPCSession(sess *session.Session) (
 					ruleMap[name] = val.ToProto()
 				}
 
-				featureInfo[feature] = &litrpc.RulesMap{Rules: ruleMap}
+				featureInfo[feature] = &litrpc.RulesMap{
+					Rules: ruleMap,
+				}
 			}
 		}
 	}
@@ -1256,6 +1371,7 @@ func (s *sessionRpcServer) marshalRPCSession(sess *session.Session) (
 		RevokedAt:              revokedAt,
 		MacaroonRecipe:         macRecipe,
 		AutopilotFeatureInfo:   featureInfo,
+		GroupId:                sess.GroupID[:],
 	}, nil
 }
 

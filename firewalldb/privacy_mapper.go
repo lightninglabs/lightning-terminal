@@ -16,8 +16,8 @@ import (
 /*
 	The PrivacyMapper data is stored in the following structure in the db:
 
-	privacy -> session id -> real-to-pseudo -> {k:v}
-			      -> pseudo-to-real -> {k:v}
+	privacy -> group id -> real-to-pseudo -> {k:v}
+			    -> pseudo-to-real -> {k:v}
 */
 
 const (
@@ -33,16 +33,16 @@ var (
 	pseudoStrAlphabetLen = len(pseudoStrAlphabet)
 )
 
-// NewPrivacyMapDB is a function type that takes a session ID and uses it to
+// NewPrivacyMapDB is a function type that takes a group ID and uses it to
 // construct a new PrivacyMapDB.
-type NewPrivacyMapDB func(sessionID session.ID) PrivacyMapDB
+type NewPrivacyMapDB func(groupID session.ID) PrivacyMapDB
 
 // PrivacyDB constructs a PrivacyMapDB that will be indexed under the given
-// sessionID key.
-func (db *DB) PrivacyDB(sessionID session.ID) PrivacyMapDB {
+// group ID key.
+func (db *DB) PrivacyDB(groupID session.ID) PrivacyMapDB {
 	return &privacyMapDB{
-		DB:        db,
-		sessionID: sessionID,
+		DB:      db,
+		groupID: groupID,
 	}
 }
 
@@ -83,7 +83,7 @@ type PrivacyMapTx interface {
 // privacyMapDB is an implementation of PrivacyMapDB.
 type privacyMapDB struct {
 	*DB
-	sessionID session.ID
+	groupID session.ID
 }
 
 // beginTx starts db transaction. The transaction will be a read or read-write
@@ -175,7 +175,7 @@ func (p *privacyMapTx) NewPair(real, pseudo string) error {
 		return err
 	}
 
-	sessBucket, err := privacyBucket.CreateBucketIfNotExists(p.sessionID[:])
+	sessBucket, err := privacyBucket.CreateBucketIfNotExists(p.groupID[:])
 	if err != nil {
 		return err
 	}
@@ -210,7 +210,7 @@ func (p *privacyMapTx) PseudoToReal(pseudo string) (string, error) {
 		return "", err
 	}
 
-	sessBucket := privacyBucket.Bucket(p.sessionID[:])
+	sessBucket := privacyBucket.Bucket(p.groupID[:])
 	if sessBucket == nil {
 		return "", ErrNoSuchKeyFound
 	}
@@ -236,7 +236,7 @@ func (p *privacyMapTx) RealToPseudo(real string) (string, error) {
 		return "", err
 	}
 
-	sessBucket := privacyBucket.Bucket(p.sessionID[:])
+	sessBucket := privacyBucket.Bucket(p.groupID[:])
 	if sessBucket == nil {
 		return "", ErrNoSuchKeyFound
 	}

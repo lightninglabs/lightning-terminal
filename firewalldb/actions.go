@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -386,6 +387,79 @@ func (db *DB) ListSessionActions(sessionID session.ID,
 	return actions, lastIndex, totalCount, nil
 }
 
+// ListGroupActions returns a list of the given session group's Actions that
+// pass the filterFn requirements.
+//
+// TODO: update to allow for pagination.
+func (db *DB) ListGroupActions(groupID session.ID,
+	filterFn ListActionsFilterFn) ([]*Action, error) {
+
+	if filterFn == nil {
+		filterFn = func(a *Action, reversed bool) (bool, bool) {
+			return true, true
+		}
+	}
+
+	sessionIDs, err := db.sessionIDIndex.GetSessionIDs(groupID)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		actions []*Action
+		errDone = errors.New("done iterating")
+	)
+	err = db.View(func(tx *bbolt.Tx) error {
+		mainActionsBucket, err := getBucket(tx, actionsBucketKey)
+		if err != nil {
+			return err
+		}
+
+		actionsBucket := mainActionsBucket.Bucket(actionsKey)
+		if actionsBucket == nil {
+			return ErrNoSuchKeyFound
+		}
+
+		// Iterate over each session ID in this group.
+		for _, sessionID := range sessionIDs {
+			sessionsBucket := actionsBucket.Bucket(sessionID[:])
+			if sessionsBucket == nil {
+				return nil
+			}
+
+			err = sessionsBucket.ForEach(func(_, v []byte) error {
+				action, err := DeserializeAction(
+					bytes.NewReader(v), sessionID,
+				)
+				if err != nil {
+					return err
+				}
+
+				include, cont := filterFn(action, false)
+				if include {
+					actions = append(actions, action)
+				}
+
+				if !cont {
+					return errDone
+				}
+
+				return nil
+			})
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+	if err != nil && !errors.Is(err, errDone) {
+		return nil, err
+	}
+
+	return actions, nil
+}
+
 // SerializeAction binary serializes the given action to the writer using the
 // tlv format.
 func SerializeAction(w io.Writer, action *Action) error {
@@ -501,26 +575,26 @@ type ActionsDB interface {
 	ListActions(ctx context.Context) ([]*RuleAction, error)
 }
 
-// ActionsReadDB is an abstraction gives a caller access to either a session
-// specific or feature specific rules.ActionDB
+// ActionsReadDB is an abstraction gives a caller access to either a group
+// specific or group and feature specific rules.ActionDB.
 type ActionsReadDB interface {
-	SessionActionsDB() ActionsDB
-	FeatureActionsDB() ActionsDB
+	GroupActionsDB() ActionsDB
+	GroupFeatureActionsDB() ActionsDB
 }
 
 // ActionReadDBGetter represents a function that can be used to construct
 // an ActionsReadDB.
 type ActionReadDBGetter interface {
-	GetActionsReadDB(sessionID session.ID, featureName string) ActionsReadDB
+	GetActionsReadDB(groupID session.ID, featureName string) ActionsReadDB
 }
 
 // GetActionsReadDB is a method on DB that constructs an ActionsReadDB.
-func (db *DB) GetActionsReadDB(sessionID session.ID,
+func (db *DB) GetActionsReadDB(groupID session.ID,
 	featureName string) ActionsReadDB {
 
 	return &allActionsReadDB{
 		db:          db,
-		sessionID:   sessionID,
+		groupID:     groupID,
 		featureName: featureName,
 	}
 }
@@ -528,40 +602,40 @@ func (db *DB) GetActionsReadDB(sessionID session.ID,
 // allActionsReadDb is an implementation of the ActionsReadDB.
 type allActionsReadDB struct {
 	db          *DB
-	sessionID   session.ID
+	groupID     session.ID
 	featureName string
 }
 
 var _ ActionsReadDB = (*allActionsReadDB)(nil)
 
-// SessionActionsDB returns a rules.ActionsDB that will give the caller access
-// to all of a sessions Actions.
-func (a *allActionsReadDB) SessionActionsDB() ActionsDB {
-	return &sessionActionsReadDB{a}
+// GroupActionsDB returns a rules.ActionsDB that will give the caller access
+// to all of a groups Actions.
+func (a *allActionsReadDB) GroupActionsDB() ActionsDB {
+	return &groupActionsReadDB{a}
 }
 
-// FeatureActionsDB returns an rules.ActionsDB that will give the caller access
-// to only a specific features Actions in a specific session.
-func (a *allActionsReadDB) FeatureActionsDB() ActionsDB {
-	return &featureActionsReadDB{a}
+// GroupFeatureActionsDB returns a rules.ActionsDB that will give the caller
+// access to only a specific features Actions in a specific group.
+func (a *allActionsReadDB) GroupFeatureActionsDB() ActionsDB {
+	return &groupFeatureActionsReadDB{a}
 }
 
-// sessionActionReadDB is an implementation of the rules.ActionsDB that will
-// provide read access to all the Actions of a particular session.
-type sessionActionsReadDB struct {
+// groupActionsReadDB is an implementation of the rules.ActionsDB that will
+// provide read access to all the Actions of a particular group.
+type groupActionsReadDB struct {
 	*allActionsReadDB
 }
 
-var _ ActionsDB = (*sessionActionsReadDB)(nil)
+var _ ActionsDB = (*groupActionsReadDB)(nil)
 
-// ListActions will return all the Actions for a particular session.
-func (s *sessionActionsReadDB) ListActions(_ context.Context) ([]*RuleAction,
+// ListActions will return all the Actions for a particular group.
+func (s *groupActionsReadDB) ListActions(_ context.Context) ([]*RuleAction,
 	error) {
 
-	sessionActions, _, _, err := s.db.ListSessionActions(
-		s.sessionID, func(a *Action, _ bool) (bool, bool) {
+	sessionActions, err := s.db.ListGroupActions(
+		s.groupID, func(a *Action, _ bool) (bool, bool) {
 			return a.State == ActionStateDone, true
-		}, nil,
+		},
 	)
 	if err != nil {
 		return nil, err
@@ -575,25 +649,25 @@ func (s *sessionActionsReadDB) ListActions(_ context.Context) ([]*RuleAction,
 	return actions, nil
 }
 
-// featureActionReadDB is an implementation of the rules.ActionsDB that will
-// provide read access to all the Actions of a feature within a particular
-// session.
-type featureActionsReadDB struct {
+// groupFeatureActionsReadDB is an implementation of the rules.ActionsDB that
+// will provide read access to all the Actions of a feature within a particular
+// group.
+type groupFeatureActionsReadDB struct {
 	*allActionsReadDB
 }
 
-var _ ActionsDB = (*featureActionsReadDB)(nil)
+var _ ActionsDB = (*groupFeatureActionsReadDB)(nil)
 
-// ListActions will return all the Actions for a particular session that were
+// ListActions will return all the Actions for a particular group that were
 // executed by a particular feature.
-func (a *featureActionsReadDB) ListActions(_ context.Context) ([]*RuleAction,
-	error) {
+func (a *groupFeatureActionsReadDB) ListActions(_ context.Context) (
+	[]*RuleAction, error) {
 
-	featureActions, _, _, err := a.db.ListSessionActions(
-		a.sessionID, func(action *Action, _ bool) (bool, bool) {
+	featureActions, err := a.db.ListGroupActions(
+		a.groupID, func(action *Action, _ bool) (bool, bool) {
 			return action.State == ActionStateDone &&
 				action.FeatureName == a.featureName, true
-		}, nil,
+		},
 	)
 	if err != nil {
 		return nil, err

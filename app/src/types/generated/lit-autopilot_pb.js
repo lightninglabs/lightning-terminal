@@ -80,7 +80,8 @@ proto.litrpc.AddAutopilotSessionRequest.toObject = function(includeInstance, msg
     devServer: jspb.Message.getFieldWithDefault(msg, 4, false),
     featuresMap: (f = msg.getFeaturesMap()) ? f.toObject(includeInstance, proto.litrpc.FeatureConfig.toObject) : [],
     sessionRules: (f = msg.getSessionRules()) && lit$sessions_pb.RulesMap.toObject(includeInstance, f),
-    noPrivacyMapper: jspb.Message.getFieldWithDefault(msg, 7, false)
+    noPrivacyMapper: jspb.Message.getFieldWithDefault(msg, 7, false),
+    linkedGroupId: msg.getLinkedGroupId_asB64()
   };
 
   if (includeInstance) {
@@ -147,6 +148,10 @@ proto.litrpc.AddAutopilotSessionRequest.deserializeBinaryFromReader = function(m
     case 7:
       var value = /** @type {boolean} */ (reader.readBool());
       msg.setNoPrivacyMapper(value);
+      break;
+    case 8:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setLinkedGroupId(value);
       break;
     default:
       reader.skipField();
@@ -221,6 +226,13 @@ proto.litrpc.AddAutopilotSessionRequest.serializeBinaryToWriter = function(messa
   if (f) {
     writer.writeBool(
       7,
+      f
+    );
+  }
+  f = message.getLinkedGroupId_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      8,
       f
     );
   }
@@ -351,6 +363,45 @@ proto.litrpc.AddAutopilotSessionRequest.prototype.getNoPrivacyMapper = function(
 /** @param {boolean} value */
 proto.litrpc.AddAutopilotSessionRequest.prototype.setNoPrivacyMapper = function(value) {
   jspb.Message.setProto3BooleanField(this, 7, value);
+};
+
+
+/**
+ * optional bytes linked_group_id = 8;
+ * @return {!(string|Uint8Array)}
+ */
+proto.litrpc.AddAutopilotSessionRequest.prototype.getLinkedGroupId = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 8, ""));
+};
+
+
+/**
+ * optional bytes linked_group_id = 8;
+ * This is a type-conversion wrapper around `getLinkedGroupId()`
+ * @return {string}
+ */
+proto.litrpc.AddAutopilotSessionRequest.prototype.getLinkedGroupId_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getLinkedGroupId()));
+};
+
+
+/**
+ * optional bytes linked_group_id = 8;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getLinkedGroupId()`
+ * @return {!Uint8Array}
+ */
+proto.litrpc.AddAutopilotSessionRequest.prototype.getLinkedGroupId_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getLinkedGroupId()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.litrpc.AddAutopilotSessionRequest.prototype.setLinkedGroupId = function(value) {
+  jspb.Message.setProto3BytesField(this, 8, value);
 };
 
 

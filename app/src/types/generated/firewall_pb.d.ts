@@ -15,6 +15,11 @@ export class PrivacyMapConversionRequest extends jspb.Message {
   getInput(): string;
   setInput(value: string): void;
 
+  getGroupId(): Uint8Array | string;
+  getGroupId_asU8(): Uint8Array;
+  getGroupId_asB64(): string;
+  setGroupId(value: Uint8Array | string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): PrivacyMapConversionRequest.AsObject;
   static toObject(includeInstance: boolean, msg: PrivacyMapConversionRequest): PrivacyMapConversionRequest.AsObject;
@@ -30,6 +35,7 @@ export namespace PrivacyMapConversionRequest {
     realToPseudo: boolean,
     sessionId: Uint8Array | string,
     input: string,
+    groupId: Uint8Array | string,
   }
 }
 
@@ -89,6 +95,11 @@ export class ListActionsRequest extends jspb.Message {
   getEndTimestamp(): string;
   setEndTimestamp(value: string): void;
 
+  getGroupId(): Uint8Array | string;
+  getGroupId_asU8(): Uint8Array;
+  getGroupId_asB64(): string;
+  setGroupId(value: Uint8Array | string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ListActionsRequest.AsObject;
   static toObject(includeInstance: boolean, msg: ListActionsRequest): ListActionsRequest.AsObject;
@@ -112,6 +123,7 @@ export namespace ListActionsRequest {
     sessionId: Uint8Array | string,
     startTimestamp: string,
     endTimestamp: string,
+    groupId: Uint8Array | string,
   }
 }
 

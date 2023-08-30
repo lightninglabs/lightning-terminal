@@ -197,6 +197,11 @@
           "type": "string",
           "format": "uint64",
           "description": "If specified, then only actions created before the given timestamp will be\nconsidered."
+        },
+        "group_id": {
+          "type": "string",
+          "format": "byte",
+          "description": "If specified, then only actions under the given group will be queried."
         }
       }
     },
@@ -232,11 +237,16 @@
         "session_id": {
           "type": "string",
           "format": "byte",
-          "description": "The session ID under which to search for the real-pseudo pair."
+          "description": "Deprecated, use group_id.\nThe session ID under which to search for the real-pseudo pair."
         },
         "input": {
           "type": "string",
           "description": "The input to be converted into the real or pseudo value."
+        },
+        "group_id": {
+          "type": "string",
+          "format": "byte",
+          "description": "The group ID under which to search for the real-pseudo pair."
         }
       }
     },

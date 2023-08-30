@@ -37,6 +37,9 @@ type DB struct {
 	*bbolt.DB
 }
 
+// A compile-time check to ensure that DB implements the Store interface.
+var _ Store = (*DB)(nil)
+
 // NewDB creates a new bolt database that can be found at the given directory.
 func NewDB(dir, fileName string) (*DB, error) {
 	firstInit := false
@@ -102,7 +105,18 @@ func initDB(filepath string, firstInit bool) (*bbolt.DB, error) {
 			}
 		}
 
-		_, err = tx.CreateBucketIfNotExists(sessionBucketKey)
+		sessionBkt, err := tx.CreateBucketIfNotExists(sessionBucketKey)
+		if err != nil {
+			return err
+		}
+
+		_, err = sessionBkt.CreateBucketIfNotExists(idIndexKey)
+		if err != nil {
+			return err
+		}
+
+		_, err = sessionBkt.CreateBucketIfNotExists(groupIDIndexKey)
+
 		return err
 	})
 	if err != nil {
