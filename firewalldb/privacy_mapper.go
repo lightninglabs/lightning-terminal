@@ -194,6 +194,16 @@ func (p *privacyMapTx) NewPair(real, pseudo string) error {
 		return err
 	}
 
+	if len(realToPseudoBucket.Get([]byte(real))) != 0 {
+		return fmt.Errorf("an entry already exists for real "+
+			"value: %x", real)
+	}
+
+	if len(pseudoToRealBucket.Get([]byte(pseudo))) != 0 {
+		return fmt.Errorf("an entry already exists for pseudo "+
+			"value: %x", pseudo)
+	}
+
 	err = realToPseudoBucket.Put([]byte(real), []byte(pseudo))
 	if err != nil {
 		return err

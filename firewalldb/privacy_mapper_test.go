@@ -61,6 +61,28 @@ func TestPrivacyMapStorage(t *testing.T) {
 
 		return nil
 	})
+
+	pdb3 := db.PrivacyDB([4]byte{3, 3, 3, 3})
+
+	_ = pdb3.Update(func(tx PrivacyMapTx) error {
+		// Add a new pair.
+		err = tx.NewPair("real 1", "pseudo 1")
+		require.NoError(t, err)
+
+		// Try to add a new pair that has the same real value as the
+		// first pair. This should fail.
+		err = tx.NewPair("real 1", "pseudo 2")
+		require.ErrorContains(t, err, "an entry already exists for "+
+			"real value")
+
+		// Try to add a new pair that has the same pseudo value as the
+		// first pair. This should fail.
+		err = tx.NewPair("real 2", "pseudo 1")
+		require.ErrorContains(t, err, "an entry already exists for "+
+			"pseudo value")
+
+		return nil
+	})
 }
 
 // TestPrivacyMapTxs tests that the `Update` and `View` functions correctly
