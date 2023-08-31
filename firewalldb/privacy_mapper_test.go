@@ -36,6 +36,13 @@ func TestPrivacyMapStorage(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "real", real)
 
+		pairs, err := tx.FetchAllPairs()
+		require.NoError(t, err)
+
+		require.EqualValues(t, pairs.pairs, map[string]string{
+			"real": "pseudo",
+		})
+
 		return nil
 	})
 
@@ -59,6 +66,13 @@ func TestPrivacyMapStorage(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "real 2", real)
 
+		pairs, err := tx.FetchAllPairs()
+		require.NoError(t, err)
+
+		require.EqualValues(t, pairs.pairs, map[string]string{
+			"real 2": "pseudo 2",
+		})
+
 		return nil
 	})
 
@@ -80,6 +94,77 @@ func TestPrivacyMapStorage(t *testing.T) {
 		err = tx.NewPair("real 2", "pseudo 1")
 		require.ErrorContains(t, err, "an entry already exists for "+
 			"pseudo value")
+
+		// Add a few more pairs.
+		err = tx.NewPair("real 2", "pseudo 2")
+		require.NoError(t, err)
+
+		err = tx.NewPair("real 3", "pseudo 3")
+		require.NoError(t, err)
+
+		err = tx.NewPair("real 4", "pseudo 4")
+		require.NoError(t, err)
+
+		// Check that FetchAllPairs correctly returns all the pairs.
+		pairs, err := tx.FetchAllPairs()
+		require.NoError(t, err)
+
+		require.EqualValues(t, pairs.pairs, map[string]string{
+			"real 1": "pseudo 1",
+			"real 2": "pseudo 2",
+			"real 3": "pseudo 3",
+			"real 4": "pseudo 4",
+		})
+
+		// Do a few tests to ensure that the PrivacyMapPairs struct
+		// returned from FetchAllPairs also works as expected.
+		pseudo, ok := pairs.GetPseudo("real 1")
+		require.True(t, ok)
+		require.Equal(t, "pseudo 1", pseudo)
+
+		// Fetch a real value that is not present.
+		_, ok = pairs.GetPseudo("real 5")
+		require.False(t, ok)
+
+		// Try to add a conflicting pair.
+		err = pairs.Add(map[string]string{"real 2": "pseudo 10"})
+		require.ErrorContains(t, err, "cannot replace existing "+
+			"pseudo entry for real value")
+
+		// Add a new pair.
+		err = pairs.Add(map[string]string{"real 5": "pseudo 5"})
+		require.NoError(t, err)
+
+		pseudo, ok = pairs.GetPseudo("real 5")
+		require.True(t, ok)
+		require.Equal(t, "pseudo 5", pseudo)
+
+		// Finally, also test adding multiple new pairs with some
+		// overlapping with previously added pairs.
+		err = pairs.Add(map[string]string{
+			// Add some pairs that already exist.
+			"real 1": "pseudo 1",
+			"real 3": "pseudo 3",
+			// Add some new pairs.
+			"real 6": "pseudo 6",
+			"real 7": "pseudo 7",
+		})
+		require.NoError(t, err)
+
+		// Verify that all the expected pairs can be found.
+		for r, p := range map[string]string{
+			"real 1": "pseudo 1",
+			"real 2": "pseudo 2",
+			"real 3": "pseudo 3",
+			"real 4": "pseudo 4",
+			"real 5": "pseudo 5",
+			"real 6": "pseudo 6",
+			"real 7": "pseudo 7",
+		} {
+			pseudo, ok = pairs.GetPseudo(r)
+			require.True(t, ok)
+			require.Equal(t, p, pseudo)
+		}
 
 		return nil
 	})

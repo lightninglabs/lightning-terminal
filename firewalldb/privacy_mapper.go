@@ -8,6 +8,7 @@ import (
 	"math/big"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/lightninglabs/lightning-terminal/session"
 	"go.etcd.io/bbolt"
@@ -78,6 +79,10 @@ type PrivacyMapTx interface {
 	// RealToPseudo returns the pseudo value associated with the given real
 	// value. If no such pair is found, then ErrNoSuchKeyFound is returned.
 	RealToPseudo(real string) (string, error)
+
+	// FetchAllPairs loads and returns the real-to-pseudo pairs in the form
+	// of a PrivacyMapPairs struct.
+	FetchAllPairs() (*PrivacyMapPairs, error)
 }
 
 // privacyMapDB is an implementation of PrivacyMapDB.
@@ -169,6 +174,8 @@ type privacyMapTx struct {
 }
 
 // NewPair inserts a new real-pseudo pair into the db.
+//
+// NOTE: this is part of the PrivacyMapTx interface.
 func (p *privacyMapTx) NewPair(real, pseudo string) error {
 	privacyBucket, err := getBucket(p.boltTx, privacyBucketKey)
 	if err != nil {
@@ -214,6 +221,8 @@ func (p *privacyMapTx) NewPair(real, pseudo string) error {
 
 // PseudoToReal will check the db to see if the given pseudo key exists. If
 // it does then the real value is returned, else an error is returned.
+//
+// NOTE: this is part of the PrivacyMapTx interface.
 func (p *privacyMapTx) PseudoToReal(pseudo string) (string, error) {
 	privacyBucket, err := getBucket(p.boltTx, privacyBucketKey)
 	if err != nil {
@@ -240,6 +249,8 @@ func (p *privacyMapTx) PseudoToReal(pseudo string) (string, error) {
 
 // RealToPseudo will check the db to see if the given real key exists. If
 // it does then the pseudo value is returned, else an error is returned.
+//
+// NOTE: this is part of the PrivacyMapTx interface.
 func (p *privacyMapTx) RealToPseudo(real string) (string, error) {
 	privacyBucket, err := getBucket(p.boltTx, privacyBucketKey)
 	if err != nil {
@@ -262,6 +273,38 @@ func (p *privacyMapTx) RealToPseudo(real string) (string, error) {
 	}
 
 	return string(pseudo), nil
+}
+
+// FetchAllPairs loads and returns the real-to-pseudo pairs.
+//
+// NOTE: this is part of the PrivacyMapTx interface.
+func (p *privacyMapTx) FetchAllPairs() (*PrivacyMapPairs, error) {
+	privacyBucket, err := getBucket(p.boltTx, privacyBucketKey)
+	if err != nil {
+		return nil, err
+	}
+
+	sessBucket := privacyBucket.Bucket(p.groupID[:])
+	if sessBucket == nil {
+		return nil, ErrNoSuchKeyFound
+	}
+
+	realToPseudoBucket := sessBucket.Bucket(realToPseudoKey)
+	if realToPseudoBucket == nil {
+		return nil, ErrNoSuchKeyFound
+	}
+
+	pairs := make(map[string]string)
+	err = realToPseudoBucket.ForEach(func(r, p []byte) error {
+		pairs[string(r)] = string(p)
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return NewPrivacyMapPairs(pairs), nil
 }
 
 func HideString(tx PrivacyMapTx, real string) (string, error) {
@@ -469,4 +512,74 @@ func decodeChannelPoint(cp string) (string, uint32, error) {
 	}
 
 	return parts[0], uint32(index), nil
+}
+
+// PrivacyMapReader is an interface that gives read access to a privacy map
+// DB.
+type PrivacyMapReader interface {
+	// GetPseudo returns the associated pseudo value for a given real value.
+	// If no such real value exists in the DB, then false is returned.
+	GetPseudo(real string) (string, bool)
+}
+
+// PrivacyMapPairs is an in memory implementation of the PrivacyMapReader.
+type PrivacyMapPairs struct {
+	// pairs is a map from real to psuedo strings.
+	pairs map[string]string
+
+	mu sync.Mutex
+}
+
+// NewPrivacyMapPairs constructs a new PrivacyMapPairs struct. It may be
+// initialised with either a nil map or a pre-defined real-to-pseudo strings
+// map.
+func NewPrivacyMapPairs(m map[string]string) *PrivacyMapPairs {
+	if m != nil {
+		return &PrivacyMapPairs{
+			pairs: m,
+		}
+	}
+
+	return &PrivacyMapPairs{
+		pairs: make(map[string]string),
+	}
+}
+
+// GetPseudo returns the associated pseudo value for a given real value. If no
+// such real value exists in the DB, then false is returned.
+//
+// NOTE: this is part of the PrivacyMapReader interface.
+func (p *PrivacyMapPairs) GetPseudo(real string) (string, bool) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	pseudo, ok := p.pairs[real]
+
+	return pseudo, ok
+}
+
+// Add adds the passed set of real-to-pseudo pairs to the PrivacyMapPairs
+// structure. It will throw an error if the new pairs conflict with any of the
+// existing pairs.
+func (p *PrivacyMapPairs) Add(pairs map[string]string) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	// Do a first pass to ensure that none of the new entries conflict with
+	// the existing entries. We do this so that we don't mutate the set of
+	// pairs before we know that the new set is valid.
+	for realStr, pseudoStr := range pairs {
+		ps, ok := p.pairs[realStr]
+		if ok && ps != pseudoStr {
+			return fmt.Errorf("cannot replace existing pseudo "+
+				"entry for real value: %s", realStr)
+		}
+	}
+
+	// In our second pass, we can add the new pairs to our set.
+	for realStr, pseudoStr := range pairs {
+		p.pairs[realStr] = pseudoStr
+	}
+
+	return nil
 }

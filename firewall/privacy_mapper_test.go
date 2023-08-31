@@ -555,6 +555,12 @@ func (m *mockPrivacyMapDB) RealToPseudo(real string) (string, error) {
 	return p, nil
 }
 
+func (m *mockPrivacyMapDB) FetchAllPairs() (*firewalldb.PrivacyMapPairs,
+	error) {
+
+	return firewalldb.NewPrivacyMapPairs(m.r2p), nil
+}
+
 var _ firewalldb.PrivacyMapDB = (*mockPrivacyMapDB)(nil)
 
 // TestRandBetween tests random number generation for numbers in an interval.
