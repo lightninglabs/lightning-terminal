@@ -367,17 +367,22 @@ func (c *PeerRestrict) PseudoToReal(db firewalldb.PrivacyMapDB) (Values,
 	}, nil
 }
 
-// RealToPseudo converts all the real peer IDs into pseudo IDs.
+// RealToPseudo converts all the real peer IDs into pseudo IDs. It returns a map
+// of any new real to pseudo strings that should be persisted that it did not
+// find in the given PrivacyMapReader.
 //
 // NOTE: this is part of the Values interface.
-func (c *PeerRestrict) RealToPseudo() (Values, map[string]string, error) {
+func (c *PeerRestrict) RealToPseudo(db firewalldb.PrivacyMapReader) (Values,
+	map[string]string, error) {
+
 	pseudoIDs := make([]string, len(c.DenyList))
 	privMapPairs := make(map[string]string)
 	for i, id := range c.DenyList {
 		// TODO(elle): check that this peer is actually one of our
 		//  channel peers.
 
-		if pseudo, ok := privMapPairs[id]; ok {
+		pseudo, ok := pseudoFromReal(db, privMapPairs, id)
+		if ok {
 			pseudoIDs[i] = pseudo
 			continue
 		}
@@ -392,4 +397,20 @@ func (c *PeerRestrict) RealToPseudo() (Values, map[string]string, error) {
 	}
 
 	return &PeerRestrict{DenyList: pseudoIDs}, privMapPairs, nil
+}
+
+// pseudoFromReal is a helper that can be used to get the associated pseudo
+// value for a given real value from either the privacy map db if it is defined
+// or from a set of real-to-pseudo pairs.
+func pseudoFromReal(db firewalldb.PrivacyMapReader,
+	privMapPairs map[string]string, real string) (string, bool) {
+
+	// First check the map.
+	pseudo, ok := privMapPairs[real]
+	if ok {
+		return pseudo, true
+	}
+
+	// Then check the DB reader.
+	return db.GetPseudo(real)
 }

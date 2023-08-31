@@ -329,6 +329,8 @@ func (f *ChanPolicyBounds) PseudoToReal(_ firewalldb.PrivacyMapDB) (Values,
 // that should be persisted. This is a no-op for the ChanPolicyBounds rule.
 //
 // NOTE: this is part of the Values interface.
-func (f *ChanPolicyBounds) RealToPseudo() (Values, map[string]string, error) {
+func (f *ChanPolicyBounds) RealToPseudo(_ firewalldb.PrivacyMapReader) (Values,
+	map[string]string, error) {
+
 	return f, nil, nil
 }

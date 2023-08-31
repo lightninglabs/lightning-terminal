@@ -838,8 +838,11 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 		return nil, fmt.Errorf("expiry must be in the future")
 	}
 
-	privacy := !req.NoPrivacyMapper
-	privacyMapPairs := make(map[string]string)
+	var (
+		privacy           = !req.NoPrivacyMapper
+		privacyMapPairs   = make(map[string]string)
+		knownPrivMapPairs = firewalldb.NewPrivacyMapPairs(nil)
+	)
 
 	// First need to fetch all the perms that need to be baked into this
 	// mac based on the features.
@@ -882,7 +885,9 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 
 				if privacy {
 					var privMapPairs map[string]string
-					v, privMapPairs, err = v.RealToPseudo()
+					v, privMapPairs, err = v.RealToPseudo(
+						knownPrivMapPairs,
+					)
 					if err != nil {
 						return nil, err
 					}

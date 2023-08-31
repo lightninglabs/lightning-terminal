@@ -150,3 +150,100 @@ func TestPeerRestrictCheckRequest(t *testing.T) {
 	)
 	require.NoError(t, err)
 }
+
+// TestPeerRestrictionRealToPseudo tests that the PeerRestriction's RealToPseudo
+// method correctly determines which real strings to generate pseudo pairs for
+// based on the privacy map db passed to it.
+func TestPeerRestrictRealToPseudo(t *testing.T) {
+	tests := []struct {
+		name           string
+		dbPreLoad      map[string]string
+		expectNewPairs map[string]bool
+	}{
+		{
+			// If there is no preloaded DB, then we expect all the
+			// values in the deny list to be returned from the
+			// RealToPseudo method.
+			name: "no pre loaded db",
+			expectNewPairs: map[string]bool{
+				"peer 1": true,
+				"peer 2": true,
+				"peer 3": true,
+			},
+		},
+		{
+			// If the DB is preloaded with an entry for "peer 2"
+			// then we don't expect that entry to be returned in the
+			// set of new pairs.
+			name: "partially pre-loaded DB",
+			dbPreLoad: map[string]string{
+				"peer 2": "obfuscated peer 2",
+			},
+			expectNewPairs: map[string]bool{
+				"peer 1": true,
+				"peer 3": true,
+			},
+		},
+	}
+
+	// Construct the PeerRestrict deny list. Note that we repeat one of
+	// the entries here in order to ensure that the RealToPseudo method is
+	// forced to look up any real-to-pseudo pairs that it already
+	// generated.
+	pr := &PeerRestrict{
+		DenyList: []string{
+			"peer 1",
+			"peer 2",
+			"peer 2",
+			"peer 3",
+		},
+	}
+
+	for _, test := range tests {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			privMapPairDB := firewalldb.NewPrivacyMapPairs(
+				test.dbPreLoad,
+			)
+
+			// Add the pseudo values from the preloaded DB to the
+			// expected deny list.
+			expectedDenyList := make(map[string]bool)
+			for _, p := range test.dbPreLoad {
+				expectedDenyList[p] = true
+			}
+
+			// Call the RealToPseudo method on the PeerRestrict
+			// rule. This will return the rule value in its pseudo
+			// form along with any new privacy map pairs that should
+			// be added to the DB.
+			v, newPairs, err := pr.RealToPseudo(privMapPairDB)
+			require.NoError(t, err)
+			require.Len(t, newPairs, len(test.expectNewPairs))
+
+			// We add each new pair to the expected deny list too.
+			for r, p := range newPairs {
+				require.True(t, test.expectNewPairs[r])
+
+				expectedDenyList[p] = true
+			}
+
+			// Assert that the element in the resulting deny list
+			// matches all the elements in our expected deny list.
+			denyList, ok := v.(*PeerRestrict)
+			require.True(t, ok)
+
+			// Assert that the resulting deny list is the same
+			// length as the un-obfuscated one.
+			require.Len(t, denyList.DenyList, len(pr.DenyList))
+
+			// Now iterate over the deny list and assert that each
+			// value appears in our expected deny list.
+			for _, channel := range denyList.DenyList {
+				require.True(t, expectedDenyList[channel])
+			}
+		})
+	}
+}

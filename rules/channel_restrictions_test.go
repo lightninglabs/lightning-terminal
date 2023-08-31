@@ -161,3 +161,111 @@ func (m *mockLndClient) ListChannels(_ context.Context, _, _ bool) (
 
 	return m.channels, nil
 }
+
+// TestChannelRestrictRealToPseudo tests that the ChannelRestrict's RealToPseudo
+// method correctly determines which real strings to generate pseudo pairs for
+// based on the privacy map db passed to it.
+func TestChannelRestrictRealToPseudo(t *testing.T) {
+	chanID1 := firewalldb.Uint64ToStr(1)
+	chanID2 := firewalldb.Uint64ToStr(2)
+	chanID3 := firewalldb.Uint64ToStr(3)
+	chanID2Obfuscated := firewalldb.Uint64ToStr(200)
+
+	tests := []struct {
+		name           string
+		dbPreLoad      map[string]string
+		expectNewPairs map[string]bool
+	}{
+		{
+			// If there is no preloaded DB, then we expect all the
+			// values in the deny list to be returned from the
+			// RealToPseudo method.
+			name: "no pre loaded db",
+			expectNewPairs: map[string]bool{
+				chanID1: true,
+				chanID2: true,
+				chanID3: true,
+			},
+		},
+		{
+			// If the DB is preloaded with an entry for "channel 2"
+			// then we don't expect that entry to be returned in the
+			// set of new pairs.
+			name: "partially pre-loaded DB",
+			dbPreLoad: map[string]string{
+				chanID2: chanID2Obfuscated,
+			},
+			expectNewPairs: map[string]bool{
+				chanID1: true,
+				chanID3: true,
+			},
+		},
+	}
+
+	// Construct the ChannelRestrict deny list. Note that we repeat one of
+	// the entries here in order to ensure that the RealToPseudo method is
+	// forced to look up any real-to-pseudo pairs that it already
+	// generated.
+	cr := &ChannelRestrict{
+		DenyList: []uint64{
+			1,
+			2,
+			3,
+			3,
+		},
+	}
+
+	for _, test := range tests {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			privMapPairDB := firewalldb.NewPrivacyMapPairs(
+				test.dbPreLoad,
+			)
+
+			// Iterate over the preload key value pairs and load
+			// them into the DB.
+			expectedDenyList := make(map[uint64]bool)
+			for _, p := range test.dbPreLoad {
+				// Add the pseudo value to the expected deny
+				// list.
+				pInt, err := firewalldb.StrToUint64(p)
+				require.NoError(t, err)
+
+				expectedDenyList[pInt] = true
+			}
+
+			// Call the RealToPseudo method on the ChannelRestrict
+			// rule. This will return the rule value in its pseudo
+			// form along with any new privacy map pairs that should
+			// be added to the DB.
+			v, newPairs, err := cr.RealToPseudo(privMapPairDB)
+			require.NoError(t, err)
+			require.Len(t, newPairs, len(test.expectNewPairs))
+
+			// We add each new pair to the expected deny list too.
+			for r, p := range newPairs {
+				require.True(t, test.expectNewPairs[r])
+
+				pInt, err := firewalldb.StrToUint64(p)
+				require.NoError(t, err)
+
+				expectedDenyList[pInt] = true
+			}
+
+			denyList, ok := v.(*ChannelRestrict)
+			require.True(t, ok)
+
+			// Assert that the resulting deny list is the same
+			// length as the un-obfuscated one.
+			require.Len(t, denyList.DenyList, len(cr.DenyList))
+
+			// Now iterate over the deny list and assert that each
+			// value appears in our expected deny list.
+			for _, channel := range denyList.DenyList {
+				require.True(t, expectedDenyList[channel])
+			}
+		})
+	}
+}

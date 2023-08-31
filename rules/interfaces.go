@@ -59,9 +59,11 @@ type Values interface {
 	ToProto() *litrpc.RuleValue
 
 	// RealToPseudo converts the rule Values to a new one that uses pseudo
-	// keys, channel IDs, channel points etc. It returns a map of real to
-	// pseudo strings that should be persisted.
-	RealToPseudo() (Values, map[string]string, error)
+	// keys, channel IDs, channel points etc. It returns a map of any new
+	// real to pseudo strings that should be persisted that it did not find
+	// in the given PrivacyMapReader.
+	RealToPseudo(db firewalldb.PrivacyMapReader) (Values, map[string]string,
+		error)
 
 	// PseudoToReal attempts to convert any appropriate pseudo fields in
 	// the rule Values to their corresponding real values. It uses the
