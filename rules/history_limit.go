@@ -266,6 +266,8 @@ func (h *HistoryLimit) PseudoToReal(_ firewalldb.PrivacyMapDB) (Values,
 // that should be persisted. This is a no-op for the HistoryLimit rule.
 //
 // NOTE: this is part of the Values interface.
-func (h *HistoryLimit) RealToPseudo() (Values, map[string]string, error) {
+func (h *HistoryLimit) RealToPseudo(_ firewalldb.PrivacyMapReader) (Values,
+	map[string]string, error) {
+
 	return h, nil, nil
 }

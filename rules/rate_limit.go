@@ -277,6 +277,8 @@ func (r *RateLimit) PseudoToReal(_ firewalldb.PrivacyMapDB) (Values,
 // that should be persisted. This is a no-op for the RateLimit rule.
 //
 // NOTE: this is part of the Values interface.
-func (r *RateLimit) RealToPseudo() (Values, map[string]string, error) {
+func (r *RateLimit) RealToPseudo(_ firewalldb.PrivacyMapReader) (Values,
+	map[string]string, error) {
+
 	return r, nil, nil
 }
