@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -17,6 +18,7 @@ import (
 	"github.com/lightninglabs/lightning-node-connect/mailbox"
 	"github.com/lightninglabs/lightning-terminal/autopilotserver/mock"
 	"github.com/lightninglabs/lightning-terminal/firewall"
+	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/lightning-terminal/rules"
 	"github.com/lightninglabs/lightning-terminal/session"
@@ -178,6 +180,474 @@ func testFirewallRules(ctx context.Context, net *NetworkHarness,
 	t.t.Run("rate limit and privacy mapper", func(_ *testing.T) {
 		testRateLimitAndPrivacyMapper(net, t)
 	})
+
+	t.t.Run("session linking", func(_ *testing.T) {
+		testSessionLinking(net, t)
+	})
+}
+
+// testSessionLinking will test the expected behaviour across linked sessions.
+func testSessionLinking(net *NetworkHarness, t *harnessTest) {
+	ctx := context.Background()
+
+	/*
+		Open up a few more channels for Alice so that we can make use
+		of the channel restriction rule in the sessions that we will
+		create in this test. One channel already exists, so let's open
+		two more.
+	*/
+	channelAB2Op := openChannelAndAssert(
+		t, net, net.Alice, net.Bob, lntest.OpenChannelParams{
+			Amt: 100000,
+		},
+	)
+	defer closeChannelAndAssert(t, net, net.Alice, channelAB2Op, true)
+
+	channelAB3Op := openChannelAndAssert(
+		t, net, net.Alice, net.Bob, lntest.OpenChannelParams{
+			Amt: 100000,
+		},
+	)
+	defer closeChannelAndAssert(t, net, net.Alice, channelAB3Op, true)
+
+	// List Alice's channels so that we can extract the channel points for
+	// the three channels.
+	chans, err := net.Alice.ListChannels(ctx, &lnrpc.ListChannelsRequest{})
+	require.NoError(t.t, err)
+	require.Len(t.t, chans.Channels, 3)
+
+	// Create a lookup map with Alice's channels. Also let the first 2
+	// channels be in the "restricted" list.
+	var (
+		aliceChans = make(
+			map[string]bool, len(chans.Channels),
+		)
+		chansToRestrict       = make([]uint64, 2)
+		unrestrictedChanID    uint64
+		unrestrictedChanPoint string
+	)
+	for i, c := range chans.Channels {
+		aliceChans[c.ChannelPoint] = true
+
+		if i >= 2 {
+			unrestrictedChanID = c.ChanId
+			unrestrictedChanPoint = c.ChannelPoint
+
+			continue
+		}
+
+		chansToRestrict[i] = c.ChanId
+	}
+
+	channelRestrict := &litrpc.RuleValue_ChannelRestrict{
+		ChannelRestrict: &litrpc.ChannelRestrict{
+			ChannelIds: chansToRestrict,
+		},
+	}
+
+	// Construct a new feature definition that allows for both channel
+	// restriction and rate limit rules.
+	autofeesFeature := &mock.Feature{
+		Description: "manages your channel fees",
+		Rules: map[string]*mock.RuleRanges{
+			rules.ChannelRestrictName: {
+				Default: &rules.ChannelRestrict{},
+				MinVal:  &rules.ChannelRestrict{},
+				MaxVal:  &rules.ChannelRestrict{},
+			},
+			rules.RateLimitName: mock.RateLimitRule,
+		},
+		Permissions: map[string][]bakery.Op{
+			"/lnrpc.Lightning/UpdateChannelPolicy": {{
+				Entity: "offchain",
+				Action: "write",
+			}},
+			"/lnrpc.Lightning/FeeReport": {{
+				Entity: "offchain",
+				Action: "read",
+			}},
+		},
+	}
+
+	// Override the autopilots feature set with two identical looking
+	// features with different names. The reason we do this is so that
+	// we can test that obfuscated values are shared amongst features in
+	// the same session.
+	net.autopilotServer.SetFeatures(map[string]*mock.Feature{
+		"AutoFees":  autofeesFeature,
+		"AutoFees2": autofeesFeature,
+	})
+
+	// Set up a connection to Alice's RPC server.
+	cfg := net.Alice.Cfg
+	rawConn, err := connectRPC(ctx, cfg.LitAddr(), cfg.LitTLSCertPath)
+	require.NoError(t.t, err)
+	defer rawConn.Close()
+
+	macBytes, err := os.ReadFile(cfg.LitMacPath)
+	require.NoError(t.t, err)
+	ctxm := macaroonContext(ctx, macBytes)
+
+	// Test that the connection to Alice's rpc server is working and that
+	// the autopilot server is returning a non-empty feature list.
+	litFWClient := litrpc.NewFirewallClient(rawConn)
+	litAutopilotClient := litrpc.NewAutopilotClient(rawConn)
+	featResp, err := litAutopilotClient.ListAutopilotFeatures(
+		ctxm, &litrpc.ListAutopilotFeaturesRequest{},
+	)
+	require.NoError(t.t, err)
+	require.NotEmpty(t.t, featResp)
+
+	// Create a feature configuration map.
+	config := struct {
+		PubKeys    []string `json:"pubkeys"`
+		ChanPoints []string `json:"chanpoints"`
+	}{
+		PubKeys: []string{
+			hex.EncodeToString(net.Bob.PubKey[:]),
+			"0e092708c9e737115ff14a85b65466561280d" +
+				"77c1b8cd666bc655536ad81ccca85",
+		},
+		ChanPoints: []string{
+			unrestrictedChanPoint,
+			"0e092708c9e737115ff14a85b65466561280d" +
+				"77c1b8cd666bc655536ad81ccca3:1",
+		},
+	}
+
+	configBytes, err := json.Marshal(config)
+	require.NoError(t.t, err)
+
+	// Now we set up an initial autopilot session. The session will register
+	// to both features, and it will place the channel restriction on both
+	// features. It will also apply a low rate limit on both features, and
+	// it will have some feature configs.
+	sessFeatures := map[string]*litrpc.FeatureConfig{
+		"AutoFees": {
+			Rules: &litrpc.RulesMap{
+				Rules: map[string]*litrpc.RuleValue{
+					rules.ChannelRestrictName: {
+						Value: channelRestrict,
+					},
+					rules.RateLimitName: {
+						Value: rateLimit,
+					},
+				},
+			},
+			Config: configBytes,
+		},
+		"AutoFees2": {
+			Rules: &litrpc.RulesMap{
+				Rules: map[string]*litrpc.RuleValue{
+					rules.ChannelRestrictName: {
+						Value: channelRestrict,
+					},
+					rules.RateLimitName: {
+						Value: rateLimit,
+					},
+				},
+			},
+			Config: configBytes,
+		},
+	}
+
+	sessResp, err := litAutopilotClient.AddAutopilotSession(
+		ctxm, &litrpc.AddAutopilotSessionRequest{
+			Label: "integration-test",
+			ExpiryTimestampSeconds: uint64(
+				time.Now().Add(5 * time.Minute).Unix(),
+			),
+			MailboxServerAddr: mailboxServerAddr,
+			Features:          sessFeatures,
+		},
+	)
+	require.NoError(t.t, err)
+
+	// getPseudo is a helper that can be used to query Alice's privacy map
+	// DB to get the pseudo value for a given real value.
+	getPseudo := func(groupID []byte, input any, expError string) string {
+		var in string
+
+		switch inp := input.(type) {
+		case string:
+			in = inp
+		case uint64:
+			in = firewalldb.Uint64ToStr(inp)
+		default:
+			t.Fatalf("unhandled input type: %T", input)
+		}
+
+		privMapResp, err := litFWClient.PrivacyMapConversion(
+			ctxm, &litrpc.PrivacyMapConversionRequest{
+				GroupId:      groupID,
+				RealToPseudo: true,
+				Input:        in,
+			},
+		)
+		if expError != "" {
+			require.ErrorContains(t.t, err, expError)
+
+			return ""
+		}
+		require.NoError(t.t, err)
+
+		return privMapResp.Output
+	}
+
+	// At this point, we already expect there to be entries in the privacy
+	// map DB for the restricted channel IDs. Collect them now.
+	obfuscatedChansToRestrict := make(map[uint64]bool)
+	for _, c := range chansToRestrict {
+		oc := getPseudo(sessResp.Session.GroupId, c, "")
+		ocInt, err := firewalldb.StrToUint64(oc)
+		require.NoError(t.t, err)
+
+		obfuscatedChansToRestrict[ocInt] = true
+	}
+
+	// Also try to query the channel that does not have a restriction. At
+	// this point we do not expect an entry in the privacy mapper.
+	getPseudo(
+		sessResp.Session.GroupId, unrestrictedChanID,
+		"no such key found",
+	)
+
+	// We do expect an entry in the privacy mapper for all items in the
+	// config map though. So we make sure that the channel point of the
+	// unrestricted channel is in the db.
+	obfUnrestrictedChanPoint := getPseudo(
+		sessResp.Session.GroupId, unrestrictedChanPoint, "",
+	)
+
+	// Now, let's connect to the LiT node from the point of view of the
+	// autopilot server.
+
+	// From the session creation response, we can extract Lit's local public
+	// key.
+	litdPub, err := btcec.ParsePubKey(sessResp.Session.LocalPublicKey)
+	require.NoError(t.t, err)
+
+	// We then query the autopilot server to extract the private key that
+	// it will be using for this session.
+	pilotPriv, err := net.autopilotServer.GetPrivKey(litdPub)
+	require.NoError(t.t, err)
+
+	// Now we can connect to the mailbox from the PoV of the autopilot
+	// server.
+	pilotConn, metaDataInjector, err := connectMailboxWithRemoteKey(
+		ctx, pilotPriv, litdPub,
+	)
+	require.NoError(t.t, err)
+	defer pilotConn.Close()
+
+	lndConn := lnrpc.NewLightningClient(pilotConn)
+
+	// The autopilot server is expected to add a MetaInfo caveat to any
+	// request that it makes. So we add that now and specify that it is
+	// initially making requests on behalf of the AutoFees feature.
+	metaInfo1 := &firewall.InterceptMetaInfo{
+		ActorName: "Autopilot Server",
+		Feature:   "AutoFees",
+	}
+	caveat1, err := metaInfo1.ToCaveat()
+	require.NoError(t.t, err)
+	caveatCreds1 := metaDataInjector.addCaveat(caveat1)
+
+	// From the PoV of the Autopilot server, we do a quick FeeReport call.
+	// This will force the Privacy Mapper on Alice's node to create the
+	// real-pseudo pairs for all her channel id's and points. Note that
+	// this should only create one new ChanID entry since two were already
+	// created previously.
+	feeReport, err := lndConn.FeeReport(
+		ctx, &lnrpc.FeeReportRequest{}, caveatCreds1,
+	)
+	require.NoError(t.t, err)
+	require.Len(t.t, feeReport.ChannelFees, 3)
+
+	// For completeness, we do the same call from the autopilot server but
+	// from the "AutoFees2" feature. This should return the same result.
+	metaInfo2 := &firewall.InterceptMetaInfo{
+		ActorName: "Autopilot Server",
+		Feature:   "AutoFees2",
+	}
+	caveat2, err := metaInfo2.ToCaveat()
+	require.NoError(t.t, err)
+	caveatCreds2 := metaDataInjector.addCaveat(caveat2)
+	feeReport2, err := lndConn.FeeReport(
+		ctx, &lnrpc.FeeReportRequest{}, caveatCreds2,
+	)
+	require.NoError(t.t, err)
+	require.ElementsMatch(
+		t.t, feeReport.ChannelFees, feeReport2.ChannelFees,
+	)
+
+	// Once again query Alice's privacy mapper to ensure that the obfuscated
+	// channel IDs of the restricted channels have not changed.
+	aliceObfchans := make(map[uint64]bool)
+	for _, c := range chansToRestrict {
+		oc := getPseudo(sessResp.Session.GroupId, c, "")
+		ocInt, err := firewalldb.StrToUint64(oc)
+		require.NoError(t.t, err)
+		require.True(t.t, obfuscatedChansToRestrict[ocInt])
+
+		aliceObfchans[ocInt] = true
+	}
+
+	// This time, there should also be an entry for the unrestricted
+	// channel.
+	obfuscatedUnrestrictedChan := getPseudo(
+		sessResp.Session.GroupId, unrestrictedChanID, "",
+	)
+	obfUnrestrictedChanID, err := firewalldb.StrToUint64(
+		obfuscatedUnrestrictedChan,
+	)
+	require.NoError(t.t, err)
+
+	aliceObfchans[obfUnrestrictedChanID] = true
+
+	// Iterate over the channels list sent to the autopilot server in the
+	// fee report and ensure that they match the set of obfuscated channel
+	// IDs we have for Alice.
+	for _, channel := range feeReport.ChannelFees {
+		require.True(t.t, aliceObfchans[channel.ChanId])
+
+		// Check that the obfuscated channel point for the unrestricted
+		// channel's ID is equal to the one created before due to the
+		// contents of the feature config.
+		if channel.ChanId == obfUnrestrictedChanID {
+			require.Equal(t.t, channel.ChannelPoint,
+				obfUnrestrictedChanPoint)
+		}
+	}
+
+	// Now we will perform a single write call from the autopilot server on
+	// the unrestricted channel.
+	pseudoTxid, pseudoIndex, err := decodeChannelPoint(
+		obfUnrestrictedChanPoint,
+	)
+	require.NoError(t.t, err)
+
+	chanPoint := &lnrpc.ChannelPoint{
+		FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
+			FundingTxidStr: pseudoTxid,
+		},
+		OutputIndex: pseudoIndex,
+	}
+	_, err = lndConn.UpdateChannelPolicy(
+		ctx, &lnrpc.PolicyUpdateRequest{
+			BaseFeeMsat: 9,
+			FeeRate:     8,
+			Scope: &lnrpc.PolicyUpdateRequest_ChanPoint{
+				ChanPoint: chanPoint,
+			},
+			TimeLockDelta: 20,
+			MaxHtlcMsat:   100000,
+		}, caveatCreds1,
+	)
+	require.NoError(t.t, err)
+
+	// Try to create a new session linked to the previous one. This should
+	// fail due to the previous one still being active.
+	_, err = litAutopilotClient.AddAutopilotSession(
+		ctxm, &litrpc.AddAutopilotSessionRequest{
+			Label: "integration-test",
+			ExpiryTimestampSeconds: uint64(
+				time.Now().Add(5 * time.Minute).Unix(),
+			),
+			MailboxServerAddr: mailboxServerAddr,
+			Features:          sessFeatures,
+			LinkedGroupId:     sessResp.Session.GroupId,
+		},
+	)
+	require.ErrorContains(t.t, err, "is still active")
+
+	// Revoke the previous one and repeat.
+	_, err = litAutopilotClient.RevokeAutopilotSession(
+		ctxm, &litrpc.RevokeAutopilotSessionRequest{
+			LocalPublicKey: sessResp.Session.LocalPublicKey,
+		},
+	)
+	require.NoError(t.t, err)
+
+	// Also close the autopilot connection to the first session so that it
+	// doesn't continue to try and connect.
+	require.NoError(t.t, pilotConn.Close())
+	pilotConn = nil
+
+	sessResp2, err := litAutopilotClient.AddAutopilotSession(
+		ctxm, &litrpc.AddAutopilotSessionRequest{
+			Label: "integration-test",
+			ExpiryTimestampSeconds: uint64(
+				time.Now().Add(5 * time.Minute).Unix(),
+			),
+			MailboxServerAddr: mailboxServerAddr,
+			Features:          sessFeatures,
+			LinkedGroupId:     sessResp.Session.GroupId,
+		},
+	)
+	require.NoError(t.t, err)
+
+	// Since the new session is linked to the first one, we expect the
+	// channel IDs in the restricted list to have the same privacy mapping
+	// as before.
+	for _, c := range chansToRestrict {
+		oc := getPseudo(sessResp2.Session.GroupId, c, "")
+		ocInt, err := firewalldb.StrToUint64(oc)
+		require.NoError(t.t, err)
+
+		require.True(t.t, obfuscatedChansToRestrict[ocInt])
+	}
+
+	// Now we connect to LiT from the PoV of the autopilot server but this
+	// time using the new session.
+	litdPub, err = btcec.ParsePubKey(sessResp2.Session.LocalPublicKey)
+	require.NoError(t.t, err)
+
+	pilotPriv, err = net.autopilotServer.GetPrivKey(litdPub)
+	require.NoError(t.t, err)
+
+	pilotConn, metaDataInjector, err = connectMailboxWithRemoteKey(
+		ctx, pilotPriv, litdPub,
+	)
+	require.NoError(t.t, err)
+	defer pilotConn.Close()
+
+	lndConn = lnrpc.NewLightningClient(pilotConn)
+	caveatCreds1 = metaDataInjector.addCaveat(caveat1)
+
+	// List the channels and ensure that the same mapping was used as for
+	// the previous session.
+	feeReport3, err := lndConn.FeeReport(
+		ctx, &lnrpc.FeeReportRequest{}, caveatCreds1,
+	)
+	require.NoError(t.t, err)
+
+	for _, channel := range feeReport3.ChannelFees {
+		require.True(t.t, aliceObfchans[channel.ChanId])
+	}
+
+	// Now we will test that the rule enforcer's DB is shared across the two
+	// linked sessions. In the first session, we made one read call and one
+	// write call with the "AutoFees" feature. Since this new session is
+	// linked to that one, we should have one read call remaining and no
+	// write calls remaining. We used the second read call above for the
+	// call to FeeReport, and so we now expect a second call to FeeReport
+	// to fail too.
+	_, err = lndConn.FeeReport(ctx, &lnrpc.FeeReportRequest{}, caveatCreds1)
+	assertStatusErr(t.t, err, codes.ResourceExhausted)
+
+	_, err = lndConn.UpdateChannelPolicy(
+		ctx, &lnrpc.PolicyUpdateRequest{
+			BaseFeeMsat: 9,
+			FeeRate:     8,
+			Scope: &lnrpc.PolicyUpdateRequest_ChanPoint{
+				ChanPoint: chanPoint,
+			},
+			TimeLockDelta: 20,
+			MaxHtlcMsat:   100000,
+		}, caveatCreds1,
+	)
+	assertStatusErr(t.t, err, codes.ResourceExhausted)
 }
 
 // testRateLimitAndPrivacyMapper tests that an Autopilot session is forced to
