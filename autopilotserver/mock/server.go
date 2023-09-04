@@ -103,6 +103,11 @@ func (m *Server) SetFeatures(f map[string]*Feature) {
 	m.featureSet = f
 }
 
+// ResetDefaultFeatures resets the servers features set to the default set.
+func (m *Server) ResetDefaultFeatures() {
+	m.featureSet = defaultFeatures
+}
+
 // Terms returns any meta data from the autopilot server.
 //
 // Note: this is part of the autopilotrpc.AutopilotServer interface.

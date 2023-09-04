@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -13,7 +14,6 @@ import (
 
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcutil"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/lightninglabs/lightning-node-connect/mailbox"
 	"github.com/lightninglabs/lightning-terminal/autopilotserver/mock"
 	"github.com/lightninglabs/lightning-terminal/firewall"
@@ -133,11 +133,16 @@ var (
 	}
 )
 
-// testFWRateLimitAndPrivacyMapper tests that an Autopilot session is forced to
-// adhere to the rate limits applied to the features of a session. Along the
-// way, the privacy mapper is also tested.
-func testFWRateLimitAndPrivacyMapper(net *NetworkHarness, t *harnessTest) {
-	ctx := context.Background()
+// assertStatusErr asserts that the given error contains the given status code.
+func assertStatusErr(t *testing.T, err error, code codes.Code) {
+	require.Error(t, err)
+	require.Contains(t, err.Error(), code.String())
+}
+
+// testFirewallRules tests that the various firewall rules are enforced
+// correctly.
+func testFirewallRules(ctx context.Context, net *NetworkHarness,
+	t *harnessTest) {
 
 	// Some very basic functionality tests to make sure lnd is working fine
 	// in integrated mode.
@@ -158,14 +163,40 @@ func testFWRateLimitAndPrivacyMapper(net *NetworkHarness, t *harnessTest) {
 	)
 	defer closeChannelAndAssert(t, net, net.Alice, channelOp, true)
 
+	t.t.Run("history limit rule", func(_ *testing.T) {
+		testHistoryLimitRule(net, t)
+	})
+
+	t.t.Run("channel policy bounds rule", func(_ *testing.T) {
+		testChanPolicyBoundsRule(net, t)
+	})
+
+	t.t.Run("peer and channel restrict rules", func(_ *testing.T) {
+		testPeerAndChannelRestrictRules(net, t)
+	})
+
+	t.t.Run("rate limit and privacy mapper", func(_ *testing.T) {
+		testRateLimitAndPrivacyMapper(net, t)
+	})
+}
+
+// testRateLimitAndPrivacyMapper tests that an Autopilot session is forced to
+// adhere to the rate limits applied to the features of a session. Along the
+// way, the privacy mapper is also tested.
+func testRateLimitAndPrivacyMapper(net *NetworkHarness, t *harnessTest) {
+	ctx := context.Background()
+
+	// Fetch the channel that Alice has so that we can get the channel
+	// point.
+	resp, err := net.Alice.ListChannels(ctx, &lnrpc.ListChannelsRequest{})
+	require.NoError(t.t, err)
+	require.Len(t.t, resp.Channels, 1)
+
 	// We extract the txid of the channel so that we can use it later to
 	// check that the autopilot's actions successfully completed and to
 	// check that the txid that the autopilot server sees is not the same
 	// as this one.
-	realTxidBytes, err := getChanPointFundingTxid(channelOp)
-	require.NoError(t.t, err)
-	realTxid, err := chainhash.NewHash(realTxidBytes)
-	require.NoError(t.t, err)
+	realTxid := strings.Split(resp.Channels[0].ChannelPoint, ":")[0]
 
 	// We create a connection to the Alice node's RPC server.
 	cfg := net.Alice.Cfg
@@ -173,7 +204,7 @@ func testFWRateLimitAndPrivacyMapper(net *NetworkHarness, t *harnessTest) {
 	require.NoError(t.t, err)
 	defer rawConn.Close()
 
-	macBytes, err := ioutil.ReadFile(cfg.LitMacPath)
+	macBytes, err := os.ReadFile(cfg.LitMacPath)
 	require.NoError(t.t, err)
 	ctxm := macaroonContext(ctx, macBytes)
 
@@ -185,6 +216,8 @@ func testFWRateLimitAndPrivacyMapper(net *NetworkHarness, t *harnessTest) {
 	)
 	require.NoError(t.t, err)
 	require.NotEmpty(t.t, featResp)
+
+	net.autopilotServer.ResetDefaultFeatures()
 
 	// Add a new Autopilot session that subscribes to both a "HealthCheck",
 	// and an "AutoFees" feature. Apply rate limits to the two features.
@@ -305,7 +338,7 @@ func testFWRateLimitAndPrivacyMapper(net *NetworkHarness, t *harnessTest) {
 
 	// Make sure that the txid returned by the call for Alice's channel is
 	// not the same as the real txid of the channel.
-	require.NotEqual(t.t, txid, realTxid.String())
+	require.NotEqual(t.t, txid, realTxid)
 
 	chanPoint := &lnrpc.ChannelPoint{
 		FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
@@ -336,7 +369,7 @@ func testFWRateLimitAndPrivacyMapper(net *NetworkHarness, t *harnessTest) {
 
 	txid2, _, err := decodeChannelPoint(feeResp.ChannelFees[0].ChannelPoint)
 	require.NoError(t.t, err)
-	require.Equal(t.t, realTxid.String(), txid2)
+	require.Equal(t.t, realTxid, txid2)
 	require.Equal(t.t, float64(8), feeResp.ChannelFees[0].FeeRate)
 
 	// Now we will check the same thing but from the PoV of the autopilot
@@ -369,49 +402,6 @@ func testFWRateLimitAndPrivacyMapper(net *NetworkHarness, t *harnessTest) {
 		}, caveatCreds,
 	)
 	assertStatusErr(t.t, err, codes.ResourceExhausted)
-}
-
-// assertStatusErr asserts that the given error contains the given status code.
-func assertStatusErr(t *testing.T, err error, code codes.Code) {
-	require.Error(t, err)
-	require.True(t, strings.Contains(err.Error(), code.String()))
-}
-
-// testFirewallRules tests that the various firewall rules are enforced
-// correctly.
-func testFirewallRules(ctx context.Context, net *NetworkHarness,
-	t *harnessTest) {
-
-	// Some very basic functionality tests to make sure lnd is working fine
-	// in integrated mode.
-	net.SendCoins(t.t, btcutil.SatoshiPerBitcoin, net.Alice)
-
-	// We expect a non-empty alias (truncated node ID) to be returned.
-	resp, err := net.Alice.GetInfo(ctx, &lnrpc.GetInfoRequest{})
-	require.NoError(t.t, err)
-	require.NotEmpty(t.t, resp.Alias)
-	require.Contains(t.t, resp.Alias, "0")
-
-	// Open a channel between Alice and Bob so that we have something to
-	// query later.
-	channelOp := openChannelAndAssert(
-		t, net, net.Alice, net.Bob, lntest.OpenChannelParams{
-			Amt: 100000,
-		},
-	)
-	defer closeChannelAndAssert(t, net, net.Alice, channelOp, true)
-
-	t.t.Run("history limit rule", func(_ *testing.T) {
-		testHistoryLimitRule(net, t)
-	})
-
-	t.t.Run("channel policy bounds rule", func(_ *testing.T) {
-		testChanPolicyBoundsRule(net, t)
-	})
-
-	t.t.Run("peer and channel restrict rules", func(_ *testing.T) {
-		testPeerAndChannelRestrictRules(net, t)
-	})
 }
 
 // testHistoryLimitRule tests that the autopilot server is forced to adhere to
