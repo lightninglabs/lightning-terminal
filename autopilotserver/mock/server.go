@@ -310,7 +310,7 @@ var defaultFeatures = map[string]*Feature{
 	"HealthCheck": {
 		Description: "check that your node is up",
 		Rules: map[string]*RuleRanges{
-			rules.RateLimitName: rateLimitRule,
+			rules.RateLimitName: RateLimitRule,
 		},
 		Permissions: map[string][]bakery.Op{
 			"/lnrpc.Lightning/GetInfo": {{
@@ -322,7 +322,7 @@ var defaultFeatures = map[string]*Feature{
 	"AutoFees": {
 		Description: "manages your channel fees",
 		Rules: map[string]*RuleRanges{
-			rules.RateLimitName: rateLimitRule,
+			rules.RateLimitName: RateLimitRule,
 		},
 		Permissions: map[string][]bakery.Op{
 			"/lnrpc.Lightning/ListChannels": {{
@@ -341,7 +341,7 @@ var defaultFeatures = map[string]*Feature{
 	},
 }
 
-var rateLimitRule = &RuleRanges{
+var RateLimitRule = &RuleRanges{
 	Default: &rules.RateLimit{
 		WriteLimit: &rules.Rate{
 			Iterations: 1,
