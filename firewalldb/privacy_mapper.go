@@ -286,7 +286,9 @@ func (p *privacyMapTx) FetchAllPairs() (*PrivacyMapPairs, error) {
 
 	sessBucket := privacyBucket.Bucket(p.groupID[:])
 	if sessBucket == nil {
-		return nil, ErrNoSuchKeyFound
+		// If the bucket has not been created yet, then there are no
+		// privacy pairs yet.
+		return NewPrivacyMapPairs(nil), nil
 	}
 
 	realToPseudoBucket := sessBucket.Bucket(realToPseudoKey)

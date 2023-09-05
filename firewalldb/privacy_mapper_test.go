@@ -79,6 +79,12 @@ func TestPrivacyMapStorage(t *testing.T) {
 	pdb3 := db.PrivacyDB([4]byte{3, 3, 3, 3})
 
 	_ = pdb3.Update(func(tx PrivacyMapTx) error {
+		// Check that calling FetchAllPairs returns an empty map if
+		// nothing exists in the DB yet.
+		m, err := tx.FetchAllPairs()
+		require.NoError(t, err)
+		require.Empty(t, m.pairs)
+
 		// Add a new pair.
 		err = tx.NewPair("real 1", "pseudo 1")
 		require.NoError(t, err)
