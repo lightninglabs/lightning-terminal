@@ -3,9 +3,13 @@ package firewall
 import (
 	"context"
 	"crypto/rand"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
@@ -30,6 +34,15 @@ const (
 	// between which timeVariation can be set.
 	minTimeVariation = time.Minute
 	maxTimeVariation = time.Duration(24) * time.Hour
+
+	// min and maxChanIDLen are the lengths to consider an int to be a
+	// channel id. 13 corresponds to block height 1 and 20 to block height
+	// 10_000_000.
+	minChanIDLen = 13
+	maxChanIDLen = 20
+
+	// pubKeyLen is the length of a node pubkey.
+	pubKeyLen = 66
 )
 
 var (
@@ -844,4 +857,146 @@ func CryptoRandIntn(n int) (int, error) {
 	}
 
 	return int(nBig.Int64()), nil
+}
+
+// ObfuscateConfig alters the config string by replacing sensitive data with
+// random values and returns new replacement pairs. We only substitute items in
+// strings, numbers are left unchanged.
+func ObfuscateConfig(db firewalldb.PrivacyMapReader, configB []byte) ([]byte,
+	map[string]string, error) {
+
+	if len(configB) == 0 {
+		return nil, nil, nil
+	}
+
+	// We assume that the config is a json dict.
+	var configMap map[string]any
+	err := json.Unmarshal(configB, &configMap)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	privMapPairs := make(map[string]string)
+	newConfigMap := make(map[string]any)
+	for k, v := range configMap {
+		// We only substitute items in lists.
+		list, ok := v.([]any)
+		if !ok {
+			newConfigMap[k] = v
+			continue
+		}
+
+		// We only substitute items in lists of strings.
+		stringList := make([]string, len(list))
+		anyString := false
+		allStrings := true
+		for i, item := range list {
+			item, ok := item.(string)
+			allStrings = allStrings && ok
+			anyString = anyString || ok
+
+			if !ok {
+				continue
+			}
+
+			stringList[i] = item
+		}
+		if anyString && !allStrings {
+			return nil, nil, fmt.Errorf("invalid config, "+
+				"expected list of only strings for key %s", k)
+		} else if !anyString {
+			newConfigMap[k] = v
+			continue
+		}
+
+		obfuscatedValues := make([]string, len(stringList))
+		for i, value := range stringList {
+			value := strings.TrimSpace(value)
+
+			// We first check if we have a mapping for this value
+			// already.
+			obfVal, haveValue := db.GetPseudo(value)
+			if haveValue {
+				obfuscatedValues[i] = obfVal
+
+				continue
+			}
+
+			// We check if we have obfuscated this value already in
+			// this run.
+			obfVal, haveValue = privMapPairs[value]
+			if haveValue {
+				obfuscatedValues[i] = obfVal
+
+				continue
+			}
+
+			// From here on we create new obfuscated values.
+			// Try to replace with a chan point.
+			_, _, err := firewalldb.DecodeChannelPoint(value)
+			if err == nil {
+				obfVal, err = firewalldb.NewPseudoChanPoint()
+				if err != nil {
+					return nil, nil, err
+				}
+
+				obfuscatedValues[i] = obfVal
+				privMapPairs[value] = obfVal
+
+				continue
+			}
+
+			// If the value is a pubkey, replace it with a random
+			// value.
+			_, err = hex.DecodeString(value)
+			if err == nil && len(value) == pubKeyLen {
+				obfVal, err := firewalldb.NewPseudoStr(
+					len(value),
+				)
+				if err != nil {
+					return nil, nil, err
+				}
+
+				obfuscatedValues[i] = obfVal
+				privMapPairs[value] = obfVal
+
+				continue
+			}
+
+			// If the value is a channel id, replace it with
+			// a random value.
+			_, err = strconv.ParseInt(value, 10, 64)
+			length := len(value)
+
+			// Channel ids can have different lenghts depending on
+			// the blockheight, 20 is equivalent to 10E9 blocks.
+			if err == nil && minChanIDLen <= length &&
+				length <= maxChanIDLen {
+
+				obfVal, err := firewalldb.NewPseudoStr(length)
+				if err != nil {
+					return nil, nil, err
+				}
+
+				obfuscatedValues[i] = obfVal
+				privMapPairs[value] = obfVal
+
+				continue
+			}
+
+			// If we don't have a replacement for this value, we
+			// just leave it as is.
+			obfuscatedValues[i] = value
+		}
+
+		newConfigMap[k] = obfuscatedValues
+	}
+
+	// Marshal the map back into a JSON blob.
+	newConfigB, err := json.Marshal(newConfigMap)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return newConfigB, privMapPairs, nil
 }

@@ -972,6 +972,7 @@ export const litListSessions: LIT.ListSessionsResponse.AsObject = {
           },
         ],
       ],
+      featureConfigsMap: [['SampleFeature', '{}']],
     },
     {
       id: '',
@@ -1053,6 +1054,7 @@ export const litListSessions: LIT.ListSessionsResponse.AsObject = {
           },
         ],
       ],
+      featureConfigsMap: [['SampleFeature', '{}']],
     },
   ],
 };

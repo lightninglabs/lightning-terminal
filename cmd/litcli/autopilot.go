@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -39,8 +41,10 @@ var addAutopilotSessionCmd = cli.Command{
 	ShortName: "a",
 	Usage:     "Initialize an Autopilot session.",
 	Description: `
-	Initialize an Autopilot session.	
-	`,
+	Initialize an Autopilot session.
+
+	If set for any feature, configuration flags need to be repeated for each
+	feature that is registered, corresponding to the order of features.`,
 	Action: initAutopilotSession,
 	Flags: []cli.Flag{
 		labelFlag,
@@ -69,6 +73,15 @@ var addAutopilotSessionCmd = cli.Command{
 			Name: "group_id",
 			Usage: "The hex encoded group ID of the session " +
 				"group to link this one to",
+		},
+		cli.StringSliceFlag{
+			Name: "feature-config",
+			Usage: `JSON-serialized configuration with the ` +
+				`expected format: {"version":0,` +
+				`"option1":"parameter1",` +
+				`"option2":"parameter2",...}. An empty ` +
+				`configuration is allowed with {} to use the ` +
+				`default configuration`,
 		},
 	},
 }
@@ -221,11 +234,36 @@ func initAutopilotSession(ctx *cli.Context) error {
 		}
 	}
 
+	features := ctx.StringSlice("feature")
+	configs := ctx.StringSlice("feature-config")
+	if len(configs) > 0 && len(features) != len(configs) {
+		return fmt.Errorf("number of features (%v) and configurations "+
+			"(%v) must match", len(features), len(configs))
+	}
+
 	featureMap := make(map[string]*litrpc.FeatureConfig)
-	for _, feature := range ctx.StringSlice("feature") {
+	for i, feature := range ctx.StringSlice("feature") {
+		var config []byte
+
+		// We allow empty configs, to signal the usage of the default
+		// configuration when the session is registered.
+		if len(configs) > 0 && configs[i] != "{}" {
+			// We expect the config to be a JSON dictionary, so we
+			// unmarshal it into a map to do a first validation.
+			var configMap map[string]interface{}
+			err := json.Unmarshal([]byte(configs[i]), &configMap)
+			if err != nil {
+				return fmt.Errorf("could not parse "+
+					"configuration for feature %v: %v",
+					feature, err)
+			}
+
+			config = []byte(configs[i])
+		}
+
 		featureMap[feature] = &litrpc.FeatureConfig{
 			Rules:  ruleMap,
-			Config: nil,
+			Config: config,
 		}
 	}
 

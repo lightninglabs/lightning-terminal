@@ -161,6 +161,11 @@ message Feature {
     feature rules set contains a rule that Litd is unaware of.
     */
     bool requires_upgrade = 5;
+
+    /*
+    The JSON-marshaled representation of a feature's default configuration.
+    */
+    string default_config = 6;
 }
 
 message RuleValues {

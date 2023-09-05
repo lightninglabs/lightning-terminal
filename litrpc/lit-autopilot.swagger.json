@@ -265,6 +265,10 @@
         "requires_upgrade": {
           "type": "boolean",
           "description": "A boolean indicating if the user would need to upgrade their Litd version in\norder to subscribe to the Autopilot feature. This will be true if the\nfeature rules set contains a rule that Litd is unaware of."
+        },
+        "default_config": {
+          "type": "string",
+          "description": "The JSON-marshaled representation of a feature's default configuration."
         }
       }
     },
@@ -588,6 +592,13 @@
           "type": "string",
           "format": "byte",
           "description": "The ID of the group of Session's that this Session is linked to. If this\nsession is not linked to any older Session, then this value will be the\nsame as the ID."
+        },
+        "feature_configs": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Configurations for each individual feature mapping from the feature name to\na JSON-serialized configuration."
         }
       }
     },

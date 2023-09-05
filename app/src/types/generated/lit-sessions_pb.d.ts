@@ -158,6 +158,8 @@ export class Session extends jspb.Message {
   getGroupId_asB64(): string;
   setGroupId(value: Uint8Array | string): void;
 
+  getFeatureConfigsMap(): jspb.Map<string, string>;
+  clearFeatureConfigsMap(): void;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Session.AsObject;
   static toObject(includeInstance: boolean, msg: Session): Session.AsObject;
@@ -187,6 +189,7 @@ export namespace Session {
     autopilotFeatureInfoMap: Array<[string, RulesMap.AsObject]>,
     revokedAt: string,
     groupId: Uint8Array | string,
+    featureConfigsMap: Array<[string, string]>,
   }
 }
 

@@ -815,6 +815,7 @@ func (s *sessionRpcServer) ListAutopilotFeatures(ctx context.Context,
 			Rules:           rules,
 			PermissionsList: marshalPerms(f.Permissions),
 			RequiresUpgrade: upgrade,
+			DefaultConfig:   string(f.DefaultConfig),
 		}
 	}
 
@@ -1079,9 +1080,9 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 		return nil, err
 	}
 
-	featureConfig := make(map[string][]byte, len(req.Features))
+	clientConfig := make(session.FeaturesConfig, len(req.Features))
 	for name, f := range req.Features {
-		featureConfig[name] = f.Config
+		clientConfig[name] = f.Config
 	}
 
 	caveats := []macaroon.Caveat{{Id: []byte(rulesCaveatStr)}}
@@ -1100,7 +1101,7 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 	sess, err := session.NewSession(
 		id, localPrivKey, req.Label, session.TypeAutopilot, expiry,
 		req.MailboxServerAddr, req.DevServer, perms, caveats,
-		featureConfig, privacy, linkedGroupID,
+		clientConfig, privacy, linkedGroupID,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating new session: %v", err)
@@ -1124,6 +1125,37 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 		prevSessionPub = linkedGroupSession.LocalPublicKey
 	}
 
+	// The feature configurations may contain sensitive data like pubkeys,
+	// which we replace here and add to the privacy map.
+	obfuscatedConfig := make(session.FeaturesConfig, len(clientConfig))
+	if privacy {
+		for name, configB := range clientConfig {
+			configB, privMapPairs, err := firewall.ObfuscateConfig(
+				knownPrivMapPairs, configB,
+			)
+			if err != nil {
+				return nil, err
+			}
+
+			// Store the new privacy map pairs in the newPrivMap
+			// pairs map so that they are later persisted to the
+			// real priv map db.
+			for k, v := range privMapPairs {
+				newPrivMapPairs[k] = v
+			}
+
+			// Also add the new pairs to the known set of pairs.
+			err = knownPrivMapPairs.Add(privMapPairs)
+			if err != nil {
+				return nil, err
+			}
+
+			obfuscatedConfig[name] = configB
+		}
+	} else {
+		obfuscatedConfig = clientConfig
+	}
+
 	// Register all the privacy map pairs for this session ID.
 	privDB := s.cfg.privMap(sess.GroupID)
 	err = privDB.Update(func(tx firewalldb.PrivacyMapTx) error {
@@ -1142,7 +1174,7 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 	// Attempt to register the session with the Autopilot server.
 	remoteKey, err := s.cfg.autopilot.RegisterSession(
 		ctx, sess.LocalPublicKey, sess.ServerAddr, sess.DevServer,
-		featureConfig, prevSessionPub, linkSig,
+		obfuscatedConfig, prevSessionPub, linkSig,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error registering session with "+
@@ -1386,6 +1418,13 @@ func (s *sessionRpcServer) marshalRPCSession(sess *session.Session) (
 		}
 	}
 
+	clientConfig := make(map[string]string)
+	if sess.FeatureConfig != nil {
+		for k, v := range *sess.FeatureConfig {
+			clientConfig[k] = string(v)
+		}
+	}
+
 	return &litrpc.Session{
 		Id:                     sess.ID[:],
 		Label:                  sess.Label,
@@ -1403,6 +1442,7 @@ func (s *sessionRpcServer) marshalRPCSession(sess *session.Session) (
 		MacaroonRecipe:         macRecipe,
 		AutopilotFeatureInfo:   featureInfo,
 		GroupId:                sess.GroupID[:],
+		FeatureConfigs:         clientConfig,
 	}, nil
 }
 

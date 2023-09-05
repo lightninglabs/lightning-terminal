@@ -233,6 +233,9 @@ export class Feature extends jspb.Message {
   getRequiresUpgrade(): boolean;
   setRequiresUpgrade(value: boolean): void;
 
+  getDefaultConfig(): string;
+  setDefaultConfig(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Feature.AsObject;
   static toObject(includeInstance: boolean, msg: Feature): Feature.AsObject;
@@ -250,6 +253,7 @@ export namespace Feature {
     rulesMap: Array<[string, RuleValues.AsObject]>,
     permissionsListList: Array<Permissions.AsObject>,
     requiresUpgrade: boolean,
+    defaultConfig: string,
   }
 }
 

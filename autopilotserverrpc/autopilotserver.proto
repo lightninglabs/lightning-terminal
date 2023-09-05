@@ -87,6 +87,11 @@ message Feature {
     A list of the permissions that the feature will require to operate.
     */
     repeated Permissions permissions_list = 4;
+
+    /*
+    The JSON-marshaled representation of a feature's default configuration.
+    */
+    bytes default_config = 5;
 }
 
 message Rule {
