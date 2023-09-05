@@ -163,7 +163,7 @@ func testFirewallRules(ctx context.Context, net *NetworkHarness,
 			Amt: 100000,
 		},
 	)
-	defer closeChannelAndAssert(t, net, net.Alice, channelOp, true)
+	defer closeChannelAndAssert(t, net, net.Alice, channelOp, false)
 
 	t.t.Run("history limit rule", func(_ *testing.T) {
 		testHistoryLimitRule(net, t)
@@ -201,14 +201,14 @@ func testSessionLinking(net *NetworkHarness, t *harnessTest) {
 			Amt: 100000,
 		},
 	)
-	defer closeChannelAndAssert(t, net, net.Alice, channelAB2Op, true)
+	defer closeChannelAndAssert(t, net, net.Alice, channelAB2Op, false)
 
 	channelAB3Op := openChannelAndAssert(
 		t, net, net.Alice, net.Bob, lntest.OpenChannelParams{
 			Amt: 100000,
 		},
 	)
-	defer closeChannelAndAssert(t, net, net.Alice, channelAB3Op, true)
+	defer closeChannelAndAssert(t, net, net.Alice, channelAB3Op, false)
 
 	// List Alice's channels so that we can extract the channel points for
 	// the three channels.
@@ -1271,7 +1271,7 @@ func testPeerAndChannelRestrictRules(net *NetworkHarness, t *harnessTest) {
 			Amt: 100000,
 		},
 	)
-	defer closeChannelAndAssert(t, net, net.Alice, channelAB2Op, true)
+	defer closeChannelAndAssert(t, net, net.Alice, channelAB2Op, false)
 
 	// Open two channels between Alice and Charlie.
 	channelAC1Op := openChannelAndAssert(
@@ -1279,14 +1279,14 @@ func testPeerAndChannelRestrictRules(net *NetworkHarness, t *harnessTest) {
 			Amt: 100000,
 		},
 	)
-	defer closeChannelAndAssert(t, net, net.Alice, channelAC1Op, true)
+	defer closeChannelAndAssert(t, net, net.Alice, channelAC1Op, false)
 
 	channelAC2Op := openChannelAndAssert(
 		t, net, net.Alice, charlie, lntest.OpenChannelParams{
 			Amt: 100000,
 		},
 	)
-	defer closeChannelAndAssert(t, net, net.Alice, channelAC2Op, true)
+	defer closeChannelAndAssert(t, net, net.Alice, channelAC2Op, false)
 
 	// List Alice's channels so that we can extract the channel points
 	// for the four channels.
