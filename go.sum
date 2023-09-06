@@ -615,6 +615,8 @@ github.com/lightningnetwork/lnd v0.14.1-beta.0.20220324135938-0dcaa511a249/go.mo
 github.com/lightningnetwork/lnd v0.15.0-beta.rc3/go.mod h1:NzCE1ZGct0YEW9u74TXUpXp5AoUXzpkI5lgrO7x0ugM=
 github.com/lightningnetwork/lnd v0.17.0-beta.rc1 h1:svQC1hxmoPYx1CsZDbMuH0sn9JRILdmpXbwDiZQmv4U=
 github.com/lightningnetwork/lnd v0.17.0-beta.rc1/go.mod h1:QdklavIi6ioc3BCl3EYXcL9gdrJn4Wz1Mx3pYjsu5NM=
+github.com/lightningnetwork/lnd v0.17.0-beta.rc2.0.20230905224656-fd58cbfe6b5a h1:aCxoPWoxVQYXJd2NejXHtHGPejs7gB/DXd3jUTE1Yks=
+github.com/lightningnetwork/lnd v0.17.0-beta.rc2.0.20230905224656-fd58cbfe6b5a/go.mod h1:eaA/BOm3CyQ3dCCjWugyyZ/Nhg1ftnOayXWvCrjXiE8=
 github.com/lightningnetwork/lnd/cert v1.1.1/go.mod h1:1P46svkkd73oSoeI4zjkVKgZNwGq8bkGuPR8z+5vQUs=
 github.com/lightningnetwork/lnd/cert v1.2.1 h1:CTrTcU0L66J73oqdRLVfNylZyp1Fh97ZezX6IuzkrqE=
 github.com/lightningnetwork/lnd/cert v1.2.1/go.mod h1:04JhIEodoR6usBN5+XBRtLEEmEHsclLi0tEyxZQNP+w=

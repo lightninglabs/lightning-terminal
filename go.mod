@@ -23,7 +23,7 @@ require (
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.0
 	github.com/lightninglabs/protobuf-hex-display v1.4.3-hex-display
 	github.com/lightninglabs/taproot-assets v0.2.3
-	github.com/lightningnetwork/lnd v0.17.0-beta.rc1
+	github.com/lightningnetwork/lnd v0.17.0-beta.rc2.0.20230905224656-fd58cbfe6b5a
 	github.com/lightningnetwork/lnd/cert v1.2.1
 	github.com/lightningnetwork/lnd/kvdb v1.4.2
 	github.com/lightningnetwork/lnd/tlv v1.1.0
