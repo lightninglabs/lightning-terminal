@@ -2,12 +2,14 @@ package accounts
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/lightninglabs/lndclient"
+	"github.com/lightningnetwork/lnd/channeldb"
 	invpkg "github.com/lightningnetwork/lnd/invoices"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
@@ -501,6 +503,22 @@ func (s *InterceptorService) TrackPayment(id AccountID, hash lntypes.Hash,
 				}
 
 			case err := <-errChan:
+				// If the payment wasn't initiated, we can't
+				// track it really. We'll try again on next
+				// startup, to make sure we don't miss any
+				// payments.
+				if errors.Is(
+					err, channeldb.ErrPaymentNotInitiated,
+				) {
+					log.Debugf("Payment %v not initiated, "+
+						"stopping tracking", hash)
+
+					return
+				}
+
+				log.Errorf("Received error from TrackPayment "+
+					"RPC for payment %v: %v", hash, err)
+
 				if err != nil {
 					select {
 					case s.mainErrChan <- err:
