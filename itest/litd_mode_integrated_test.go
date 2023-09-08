@@ -31,6 +31,7 @@ import (
 	"github.com/lightninglabs/pool/poolrpc"
 	tap "github.com/lightninglabs/taproot-assets/perms"
 	"github.com/lightninglabs/taproot-assets/taprpc"
+	"github.com/lightninglabs/taproot-assets/taprpc/universerpc"
 	"github.com/lightningnetwork/lnd/keychain"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
@@ -102,6 +103,17 @@ var (
 	lndMacaroonFn = func(cfg *LitNodeConfig) string {
 		return cfg.AdminMacPath
 	}
+	lnrpcStateRequestFn = func(ctx context.Context,
+		c grpc.ClientConnInterface) (proto.Message, error) {
+
+		lnrpcConn := lnrpc.NewStateClient(c)
+		return lnrpcConn.GetState(
+			ctx, &lnrpc.GetStateRequest{},
+		)
+	}
+	emptyMacaroonFn = func(_ *LitNodeConfig) string {
+		return ""
+	}
 	routerrpcRequestFn = func(ctx context.Context,
 		c grpc.ClientConnInterface) (proto.Message, error) {
 
@@ -153,6 +165,12 @@ var (
 		tapConn := taprpc.NewTaprootAssetsClient(c)
 		return tapConn.ListAssets(ctx, &taprpc.ListAssetRequest{})
 	}
+	tapUniverseRequestFn = func(ctx context.Context,
+		c grpc.ClientConnInterface) (proto.Message, error) {
+
+		universeConn := universerpc.NewUniverseClient(c)
+		return universeConn.Info(ctx, &universerpc.InfoRequest{})
+	}
 	tapMacaroonFn = func(cfg *LitNodeConfig) string {
 		return cfg.TapMacPath
 	}
@@ -196,6 +214,9 @@ var (
 		restWebURI        string
 		restPOST          bool
 		canDisable        bool
+
+		// noAuth is true if the call does not require a macaroon.
+		noAuth bool
 	}{{
 		name:              "lnrpc",
 		macaroonFn:        lndMacaroonFn,
@@ -204,6 +225,15 @@ var (
 		allowedThroughLNC: true,
 		grpcWebURI:        "/lnrpc.Lightning/GetInfo",
 		restWebURI:        "/v1/getinfo",
+	}, {
+		name:              "lnrpc-whitelist",
+		macaroonFn:        emptyMacaroonFn,
+		requestFn:         lnrpcStateRequestFn,
+		successPattern:    "\"state\":",
+		allowedThroughLNC: true,
+		grpcWebURI:        "/lnrpc.State/GetState",
+		restWebURI:        "/v1/state",
+		noAuth:            true,
 	}, {
 		name:              "routerrpc",
 		macaroonFn:        lndMacaroonFn,
@@ -254,6 +284,16 @@ var (
 		grpcWebURI:        "/taprpc.TaprootAssets/ListAssets",
 		restWebURI:        "/v1/taproot-assets/assets",
 		canDisable:        true,
+	}, {
+		name:              "taprpc-whitelist",
+		macaroonFn:        emptyMacaroonFn,
+		requestFn:         tapUniverseRequestFn,
+		successPattern:    "\"num_assets\":",
+		allowedThroughLNC: true,
+		grpcWebURI:        "/universerpc.Universe/Info",
+		restWebURI:        "/v1/taproot-assets/universe/info",
+		canDisable:        true,
+		noAuth:            true,
 	}, {
 		name:       "litrpc-sessions",
 		macaroonFn: litMacaroonFn,
@@ -408,6 +448,7 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 				runGRPCAuthTest(
 					ttt, cfg.RPCAddr(), cfg.TLSCertPath,
 					endpoint.macaroonFn(cfg),
+					endpoint.noAuth,
 					endpoint.requestFn,
 					endpoint.successPattern,
 					endpointDisabled,
@@ -419,11 +460,11 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 				runGRPCAuthTest(
 					ttt, cfg.LitAddr(), cfg.LitTLSCertPath,
 					endpoint.macaroonFn(cfg),
+					endpoint.noAuth,
 					endpoint.requestFn,
 					endpoint.successPattern,
 					endpointDisabled,
-					"unknown permissions required for "+
-						"method",
+					"unknown request",
 				)
 			})
 		}
@@ -441,6 +482,7 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 				runUIPasswordCheck(
 					ttt, cfg.RPCAddr(), cfg.TLSCertPath,
 					cfg.UIPassword, endpoint.requestFn,
+					endpoint.noAuth,
 					true, endpoint.successPattern,
 					endpointDisabled,
 					"Unimplemented desc = unknown service",
@@ -456,11 +498,11 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 				runUIPasswordCheck(
 					ttt, cfg.LitAddr(), cfg.LitTLSCertPath,
 					cfg.UIPassword, endpoint.requestFn,
+					endpoint.noAuth,
 					shouldFailWithoutMacaroon,
 					endpoint.successPattern,
 					endpointDisabled,
-					"unknown permissions required for "+
-						"method",
+					"unknown request",
 				)
 			})
 		}
@@ -485,8 +527,7 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					ttt, cfg.LitAddr(), cfg.UIPassword,
 					endpoint.grpcWebURI,
 					withoutUIPassword, endpointDisabled,
-					"unknown permissions required for "+
-						"method",
+					"unknown request", endpoint.noAuth,
 				)
 			})
 		}
@@ -510,7 +551,7 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 			tt.Run(endpoint.name+" lnd port", func(ttt *testing.T) {
 				runGRPCAuthTest(
 					ttt, cfg.RPCAddr(), cfg.TLSCertPath,
-					superMacFile,
+					superMacFile, endpoint.noAuth,
 					endpoint.requestFn,
 					endpoint.successPattern,
 					endpointDisabled,
@@ -521,12 +562,11 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
 				runGRPCAuthTest(
 					ttt, cfg.LitAddr(), cfg.LitTLSCertPath,
-					superMacFile,
+					superMacFile, endpoint.noAuth,
 					endpoint.requestFn,
 					endpoint.successPattern,
 					endpointDisabled,
-					"unknown permissions required for "+
-						"method",
+					"unknown request",
 				)
 			})
 		}
@@ -548,6 +588,7 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					endpoint.successPattern,
 					endpoint.restPOST,
 					withoutUIPassword, endpointDisabled,
+					endpoint.noAuth,
 				)
 			})
 		}
@@ -578,7 +619,7 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					endpoint.successPattern,
 					endpoint.allowedThroughLNC,
 					"unknown service",
-					endpointDisabled,
+					endpointDisabled, endpoint.noAuth,
 				)
 			})
 		}
@@ -644,7 +685,7 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					ttt, rawLNCConn, endpoint.requestFn,
 					endpoint.successPattern,
 					allowed, "permission denied",
-					endpointDisabled,
+					endpointDisabled, endpoint.noAuth,
 				)
 			})
 		}
@@ -709,7 +750,7 @@ func runCertificateCheck(t *testing.T, node *HarnessNode) {
 
 // runGRPCAuthTest tests authentication of the given gRPC interface.
 func runGRPCAuthTest(t *testing.T, hostPort, tlsCertPath, macPath string,
-	makeRequest requestFn, successContent string, disabled bool,
+	noMac bool, makeRequest requestFn, successContent string, disabled bool,
 	disabledErr string) {
 
 	ctxb := context.Background()
@@ -720,50 +761,51 @@ func runGRPCAuthTest(t *testing.T, hostPort, tlsCertPath, macPath string,
 	require.NoError(t, err)
 	defer rawConn.Close()
 
-	// We have a connection without any macaroon. A call should fail.
-	_, err = makeRequest(ctxt, rawConn)
-	if disabled {
+	resp, err := makeRequest(ctxt, rawConn)
+
+	switch {
+	case disabled:
 		require.ErrorContains(t, err, disabledErr)
-	} else {
+		return
+
+	case noMac:
+		require.NoError(t, err)
+
+		json, err := marshalOptions.Marshal(resp)
+		require.NoError(t, err)
+		require.Contains(t, string(json), successContent)
+
+		return
+
+	// We have a connection without any macaroon. A call should fail.
+	default:
 		require.ErrorContains(t, err, "expected 1 macaroon, got 0")
 	}
 
 	// Add dummy data as the macaroon, that should fail as well.
 	ctxm := macaroonContext(ctxt, []byte("dummy"))
 	_, err = makeRequest(ctxm, rawConn)
-	if disabled {
-		require.ErrorContains(t, err, disabledErr)
-	} else {
-		require.ErrorContains(t, err, "packet too short")
-	}
+	require.ErrorContains(t, err, "packet too short")
 
 	// Add a macaroon that can be parsed but that's not issued by lnd, which
 	// should also fail.
 	ctxm = macaroonContext(ctxt, dummyMacBytes)
 	_, err = makeRequest(ctxm, rawConn)
-	if disabled {
-		require.ErrorContains(t, err, disabledErr)
-	} else {
-		errStr := err.Error()
-		err1 := strings.Contains(errStr, "cannot get macaroon: root")
-		err2 := strings.Contains(errStr, "cannot get macaroon: sql: no")
-		require.Truef(
-			t, err1 || err2, "no macaroon, got unexpected error: "+
-				"%v", err,
-		)
-	}
+	errStr := err.Error()
+	err1 := strings.Contains(errStr, "cannot get macaroon: root")
+	err2 := strings.Contains(errStr, "cannot get macaroon: sql: no")
+	require.Truef(
+		t, err1 || err2, "no macaroon, got unexpected error: "+
+			"%v", err,
+	)
 
 	// Then finally we try with the correct macaroon which should now
 	// succeed, as long as it is not for a disabled sub-server.
 	macBytes, err := os.ReadFile(macPath)
 	require.NoError(t, err)
 	ctxm = macaroonContext(ctxt, macBytes)
-	resp, err := makeRequest(ctxm, rawConn)
-	if disabled {
-		require.ErrorContains(t, err, disabledErr)
-	} else {
-		require.NoError(t, err)
-	}
+	resp, err = makeRequest(ctxm, rawConn)
+	require.NoError(t, err)
 
 	json, err := marshalOptions.Marshal(resp)
 	require.NoError(t, err)
@@ -772,7 +814,7 @@ func runGRPCAuthTest(t *testing.T, hostPort, tlsCertPath, macPath string,
 
 // runUIPasswordCheck tests UI password authentication.
 func runUIPasswordCheck(t *testing.T, hostPort, tlsCertPath, uiPassword string,
-	makeRequest requestFn, shouldFailWithoutMacaroon bool,
+	makeRequest requestFn, noAuth, shouldFailWithoutMacaroon bool,
 	successContent string, disabled bool, disabledErr string) {
 
 	ctxb := context.Background()
@@ -783,11 +825,21 @@ func runUIPasswordCheck(t *testing.T, hostPort, tlsCertPath, uiPassword string,
 	require.NoError(t, err)
 	defer rawConn.Close()
 
-	// Make sure that a call without any metadata results in an error.
-	_, err = makeRequest(ctxt, rawConn)
-	if disabled {
+	// Make sure that a call without any metadata results in an error unless
+	// this is a call that is allowed to be un-authenticated in which case
+	// we expect it to succeed.
+	resp, err := makeRequest(ctxt, rawConn)
+	switch {
+	case disabled:
 		require.ErrorContains(t, err, disabledErr)
-	} else {
+	case noAuth:
+		require.NoError(t, err)
+		json, err := marshalOptions.Marshal(resp)
+		require.NoError(t, err)
+		require.Contains(t, string(json), successContent)
+
+		return
+	default:
 		require.ErrorContains(t, err, "expected 1 macaroon, got 0")
 	}
 
@@ -826,7 +878,7 @@ func runUIPasswordCheck(t *testing.T, hostPort, tlsCertPath, uiPassword string,
 	// Using the correct UI password should work for all requests unless the
 	// request is for a disabled sub-server.
 	ctxm = uiPasswordContext(ctxt, uiPassword, false)
-	resp, err := makeRequest(ctxm, rawConn)
+	resp, err = makeRequest(ctxm, rawConn)
 
 	// On lnd's gRPC interface we don't support using the UI password.
 	if shouldFailWithoutMacaroon {
@@ -898,7 +950,8 @@ func runIndexPageCheck(t *testing.T, hostPort string, uiDisabled bool) {
 
 // runGRPCWebAuthTest tests authentication of the given gRPC interface.
 func runGRPCWebAuthTest(t *testing.T, hostPort, uiPassword, grpcWebURI string,
-	shouldFailWithUIPassword, disabled bool, disableErr string) {
+	shouldFailWithUIPassword, disabled bool, disableErr string,
+	noAuth bool) {
 
 	basicAuth := base64.StdEncoding.EncodeToString(
 		[]byte(fmt.Sprintf("%s:%s", uiPassword, uiPassword)),
@@ -911,15 +964,30 @@ func runGRPCWebAuthTest(t *testing.T, hostPort, uiPassword, grpcWebURI string,
 
 	url := fmt.Sprintf("https://%s%s", hostPort, grpcWebURI)
 
-	// First test a grpc-web call without authorization, which should fail.
-	_, responseHeader, err := postURL(url, emptyGrpcWebRequest, header)
+	// First test a grpc-web call without authorization, which should fail
+	// unless this call does not require authentication.
+	body, responseHeader, err := postURL(url, emptyGrpcWebRequest, header)
 	require.NoError(t, err)
 
-	if disabled {
+	switch {
+	case disabled:
 		require.Contains(
 			t, responseHeader.Get("grpc-message"), disableErr,
 		)
-	} else {
+
+		if noAuth {
+			return
+		}
+
+	case noAuth:
+		require.Empty(t, responseHeader.Get("grpc-message"))
+		require.Empty(t, responseHeader.Get("grpc-status"))
+
+		// We get the status encoded as trailer in the response.
+		require.Contains(t, body, "grpc-status: 0")
+
+		return
+	default:
 		require.Equal(
 			t, "expected 1 macaroon, got 0",
 			responseHeader.Get("grpc-message"),
@@ -933,7 +1001,7 @@ func runGRPCWebAuthTest(t *testing.T, hostPort, uiPassword, grpcWebURI string,
 
 	// Now add the basic auth and try again.
 	header["authorization"] = []string{fmt.Sprintf("Basic %s", basicAuth)}
-	body, responseHeader, err := postURL(url, emptyGrpcWebRequest, header)
+	body, responseHeader, err = postURL(url, emptyGrpcWebRequest, header)
 	require.NoError(t, err)
 
 	if shouldFailWithUIPassword {
@@ -968,7 +1036,7 @@ func runGRPCWebAuthTest(t *testing.T, hostPort, uiPassword, grpcWebURI string,
 // runRESTAuthTest tests authentication of the given REST interface.
 func runRESTAuthTest(t *testing.T, hostPort, uiPassword, macaroonPath, restURI,
 	successPattern string, usePOST, shouldFailWithUIPassword,
-	disabled bool) {
+	disabled, noMac bool) {
 
 	basicAuth := base64.StdEncoding.EncodeToString(
 		[]byte(fmt.Sprintf("%s:%s", uiPassword, uiPassword)),
@@ -983,7 +1051,9 @@ func runRESTAuthTest(t *testing.T, hostPort, uiPassword, macaroonPath, restURI,
 		method = "POST"
 	}
 
-	// First test a REST call without authorization, which should fail.
+	// First test a REST call without authorization, which should fail
+	// unless this is a call for an endpoint that does not require
+	// authorization.
 	body, responseHeader, err := callURL(url, method, nil, nil, false)
 	require.NoError(t, err)
 
@@ -992,12 +1062,22 @@ func runRESTAuthTest(t *testing.T, hostPort, uiPassword, macaroonPath, restURI,
 		responseHeader.Get("content-type"),
 	)
 
-	if disabled {
+	switch {
+	case disabled:
 		require.Empty(
 			t, responseHeader.Get("grpc-metadata-content-type"),
 		)
 		require.Contains(t, body, "Not Found")
-	} else {
+
+		if noMac {
+			return
+		}
+
+	case noMac:
+		require.Contains(t, body, successPattern)
+		return
+
+	default:
 		require.Equalf(
 			t, "application/grpc",
 			responseHeader.Get("grpc-metadata-content-type"),
@@ -1021,11 +1101,10 @@ func runRESTAuthTest(t *testing.T, hostPort, uiPassword, macaroonPath, restURI,
 
 	default:
 		require.Contains(t, body, successPattern)
-
 	}
 
 	// And finally, try with the given macaroon.
-	macBytes, err := ioutil.ReadFile(macaroonPath)
+	macBytes, err := os.ReadFile(macaroonPath)
 	require.NoError(t, err)
 
 	macaroonHeader := http.Header{
@@ -1049,7 +1128,7 @@ func runRESTAuthTest(t *testing.T, hostPort, uiPassword, macaroonPath, restURI,
 // through Lightning Node Connect.
 func runLNCAuthTest(t *testing.T, rawLNCConn grpc.ClientConnInterface,
 	makeRequest requestFn, successContent string, callAllowed bool,
-	expectErrContains string, disabled bool) {
+	expectErrContains string, disabled, noMac bool) {
 
 	ctxt, cancel := context.WithTimeout(
 		context.Background(), defaultTimeout,
@@ -1062,26 +1141,29 @@ func runLNCAuthTest(t *testing.T, rawLNCConn grpc.ClientConnInterface,
 	// macaroon permissions properly set up).
 	resp, err := makeRequest(ctxt, rawLNCConn)
 
-	// Is this a disallowed call?
-	if !callAllowed {
-		if disabled {
-			require.ErrorContains(t, err, "unknown permissions "+
-				"required for method")
-		} else {
-			require.ErrorContains(t, err, expectErrContains)
-		}
-
-		return
-	}
-
+	switch {
 	// The call should be allowed, so we expect no error unless this is
 	// for a disabled sub-server.
-	if disabled {
-		require.ErrorContains(t, err, "unknown permissions "+
-			"required for method")
+	case disabled:
+		require.ErrorContains(t, err, "unknown request")
+		return
+
+	case noMac:
+		require.NoError(t, err)
+
+		json, err := marshalOptions.Marshal(resp)
+		require.NoError(t, err)
+		require.Contains(t, string(json), successContent)
 
 		return
-	} else {
+
+	// Is this a disallowed call?
+	case !callAllowed:
+		require.ErrorContains(t, err, expectErrContains)
+
+		return
+
+	default:
 		require.NoError(t, err)
 	}
 
@@ -1289,13 +1371,21 @@ func bakeSuperMacaroon(cfg *LitNodeConfig, readOnly bool) (string, error) {
 		return "", err
 	}
 
-	permsMgr.RegisterSubServer(subservers.LOOP, loop.RequiredPermissions)
-	permsMgr.RegisterSubServer(subservers.POOL, pool.RequiredPermissions)
-	permsMgr.RegisterSubServer(subservers.TAP, tap.RequiredPermissions)
 	permsMgr.RegisterSubServer(
-		subservers.FARADAY, faraday.RequiredPermissions,
+		subservers.LOOP, loop.RequiredPermissions, nil,
 	)
-	permsMgr.RegisterSubServer(subservers.TAP, tap.RequiredPermissions)
+	permsMgr.RegisterSubServer(
+		subservers.POOL, pool.RequiredPermissions, nil,
+	)
+	permsMgr.RegisterSubServer(
+		subservers.TAP, tap.RequiredPermissions, nil,
+	)
+	permsMgr.RegisterSubServer(
+		subservers.FARADAY, faraday.RequiredPermissions, nil,
+	)
+	permsMgr.RegisterSubServer(
+		subservers.TAP, tap.RequiredPermissions, nil,
+	)
 
 	superMacPermissions := permsMgr.ActivePermissions(readOnly)
 	nullID := [4]byte{}
@@ -1311,13 +1401,13 @@ func bakeSuperMacaroon(cfg *LitNodeConfig, readOnly bool) (string, error) {
 	// it's valid.
 	superMacBytes, _ := hex.DecodeString(superMacHex)
 
-	tempFile, err := ioutil.TempFile("", "lit-super-macaroon")
+	tempFile, err := os.CreateTemp("", "lit-super-macaroon")
 	if err != nil {
 		_ = os.Remove(tempFile.Name())
 		return "", err
 	}
 
-	err = ioutil.WriteFile(tempFile.Name(), superMacBytes, 0644)
+	err = os.WriteFile(tempFile.Name(), superMacBytes, 0644)
 	if err != nil {
 		_ = os.Remove(tempFile.Name())
 		return "", err

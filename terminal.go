@@ -116,6 +116,7 @@ var (
 	lndRESTRegistrations = []restRegistration{
 		lnrpc.RegisterLightningHandlerFromEndpoint,
 		lnrpc.RegisterWalletUnlockerHandlerFromEndpoint,
+		lnrpc.RegisterStateHandlerFromEndpoint,
 		autopilotrpc.RegisterAutopilotHandlerFromEndpoint,
 		chainrpc.RegisterChainNotifierHandlerFromEndpoint,
 		invoicesrpc.RegisterInvoicesHandlerFromEndpoint,
@@ -962,6 +963,12 @@ func (g *LightningTerminal) RegisterRestSubserver(ctx context.Context,
 // NOTE: This is part of the lnd.ExternalValidator interface.
 func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 	requiredPermissions []bakery.Op, fullMethod string) error {
+
+	// If the URL being queried has been whitelisted, then no macaroon
+	// validation is required for the query.
+	if g.permsMgr.IsWhiteListedURL(fullMethod) {
+		return nil
+	}
 
 	macHex, err := macaroons.RawMacaroonFromContext(ctx)
 	if err != nil {

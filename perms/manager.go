@@ -49,8 +49,13 @@ func NewManager(withAllSubServers bool) (*Manager, error) {
 	permissions := make(map[string]map[string][]bakery.Op)
 	permissions[litPerms] = RequiredPermissions
 	permissions[lndPerms] = lnd.MainRPCServerPermissions()
-	for k, v := range whiteListedLNDMethods {
-		permissions[lndPerms][k] = v
+
+	for url := range whiteListedLitMethods {
+		permissions[litPerms][url] = []bakery.Op{}
+	}
+
+	for url := range whiteListedLNDMethods {
+		permissions[lndPerms][url] = []bakery.Op{}
 	}
 
 	// Collect all LND sub-server permissions along with the name of the
@@ -96,10 +101,22 @@ func NewManager(withAllSubServers bool) (*Manager, error) {
 	}, nil
 }
 
+// IsWhiteListedURL returns true if the given URL has been whitelisted meaning
+// that it does not require a macaroon for validation. A URL is considered
+// white-listed if it has no operations associated with a URL.
+func (pm *Manager) IsWhiteListedURL(url string) bool {
+	pm.permsMu.Lock()
+	defer pm.permsMu.Unlock()
+
+	ops, ok := pm.perms[url]
+
+	return ok && len(ops) == 0
+}
+
 // RegisterSubServer adds the permissions of a given sub-server to the set
 // managed by the Manager.
 func (pm *Manager) RegisterSubServer(name string,
-	permissions map[string][]bakery.Op) {
+	permissions map[string][]bakery.Op, whiteListURLs map[string]struct{}) {
 
 	pm.permsMu.Lock()
 	defer pm.permsMu.Unlock()
@@ -108,6 +125,15 @@ func (pm *Manager) RegisterSubServer(name string,
 
 	for uri, ops := range permissions {
 		pm.perms[uri] = ops
+	}
+
+	for url := range whiteListURLs {
+		pm.perms[url] = nil
+
+		if pm.fixedPerms[name] == nil {
+			pm.fixedPerms[name] = make(map[string][]bakery.Op)
+		}
+		pm.fixedPerms[name][url] = []bakery.Op{}
 	}
 }
 

@@ -63,11 +63,11 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 				runGRPCAuthTest(
 					ttt, cfg.LitAddr(), cfg.LitTLSCertPath,
 					endpoint.macaroonFn(cfg),
+					endpoint.noAuth,
 					endpoint.requestFn,
 					endpoint.successPattern,
 					endpointEnabled,
-					"unknown permissions required for "+
-						"method",
+					"unknown request",
 				)
 			})
 		}
@@ -90,11 +90,11 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 				runUIPasswordCheck(
 					ttt, cfg.LitAddr(), cfg.LitTLSCertPath,
 					cfg.UIPassword, endpoint.requestFn,
+					endpoint.noAuth,
 					shouldFailWithoutMacaroon,
 					endpoint.successPattern,
 					endpointEnabled,
-					"unknown permissions required for "+
-						"method",
+					"unknown request",
 				)
 			})
 		}
@@ -117,8 +117,7 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					ttt, cfg.LitAddr(), cfg.UIPassword,
 					endpoint.grpcWebURI, withoutUIPassword,
 					endpointEnabled,
-					"unknown permissions required for "+
-						"method",
+					"unknown request", endpoint.noAuth,
 				)
 			})
 		}
@@ -142,12 +141,11 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
 				runGRPCAuthTest(
 					ttt, cfg.LitAddr(), cfg.LitTLSCertPath,
-					superMacFile,
+					superMacFile, endpoint.noAuth,
 					endpoint.requestFn,
 					endpoint.successPattern,
 					endpointEnabled,
-					"unknown permissions required for "+
-						"method",
+					"unknown request",
 				)
 			})
 		}
@@ -168,7 +166,7 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					endpoint.restWebURI,
 					endpoint.successPattern,
 					endpoint.restPOST, withoutUIPassword,
-					endpointDisabled,
+					endpointDisabled, endpoint.noAuth,
 				)
 			})
 		}
@@ -199,7 +197,7 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					endpoint.successPattern,
 					endpoint.allowedThroughLNC,
 					"unknown service",
-					endpointDisabled,
+					endpointDisabled, endpoint.noAuth,
 				)
 			})
 		}
@@ -244,7 +242,7 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					ttt, rawLNCConn, endpoint.requestFn,
 					endpoint.successPattern,
 					allowed, "permission denied",
-					endpointDisabled,
+					endpointDisabled, endpoint.noAuth,
 				)
 			})
 		}

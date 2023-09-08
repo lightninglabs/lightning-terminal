@@ -34,9 +34,15 @@ const (
 	HeaderMacaroon = "Macaroon"
 )
 
-// ErrWaitingToStart is returned if Lit's rpcProxy is not yet ready to handle
-// calls.
-var ErrWaitingToStart = fmt.Errorf("waiting for the RPC server to start")
+var (
+	// ErrWaitingToStart is returned if Lit's rpcProxy is not yet ready to
+	// handle calls.
+	ErrWaitingToStart = fmt.Errorf("waiting for the RPC server to start")
+
+	// ErrUnknownRequest is an error returned when the request URI is
+	// unknown if the permissions for the request are unknown.
+	ErrUnknownRequest = fmt.Errorf("unknown request")
+)
 
 // proxyErr is an error type that adds more context to an error occurring in the
 // proxy.
@@ -375,8 +381,7 @@ func (p *rpcProxy) UnaryServerInterceptor(ctx context.Context, req interface{},
 
 	uriPermissions, ok := p.permsMgr.URIPermissions(info.FullMethod)
 	if !ok {
-		return nil, fmt.Errorf("%s: unknown permissions "+
-			"required for method", info.FullMethod)
+		return nil, ErrUnknownRequest
 	}
 
 	// For now, basic authentication is just a quick fix until we
@@ -420,8 +425,7 @@ func (p *rpcProxy) StreamServerInterceptor(srv interface{},
 
 	uriPermissions, ok := p.permsMgr.URIPermissions(info.FullMethod)
 	if !ok {
-		return fmt.Errorf("%s: unknown permissions required "+
-			"for method", info.FullMethod)
+		return ErrUnknownRequest
 	}
 
 	// For now, basic authentication is just a quick fix until we
@@ -521,8 +525,7 @@ func (p *rpcProxy) basicAuthToMacaroon(basicAuth, requestURI string,
 		macPath = p.cfg.MacaroonPath
 
 	default:
-		return nil, fmt.Errorf("unknown gRPC web request: %v",
-			requestURI)
+		return nil, ErrUnknownRequest
 	}
 
 	switch {
@@ -572,8 +575,7 @@ func (p *rpcProxy) convertSuperMacaroon(ctx context.Context, macHex string,
 
 	requiredPermissions, ok := p.permsMgr.URIPermissions(fullMethod)
 	if !ok {
-		return nil, fmt.Errorf("%s: unknown permissions required for "+
-			"method", fullMethod)
+		return nil, ErrUnknownRequest
 	}
 
 	// We have a super macaroon, from here on out we'll return errors if
