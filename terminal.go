@@ -305,8 +305,14 @@ func (g *LightningTerminal) Run() error {
 func (g *LightningTerminal) start() error {
 	var err error
 
+	accountServiceErrCallback := func(err error) {
+		log.Errorf("Error thrown in the accounts service, keeping "+
+			"litd running: %v", err,
+		)
+	}
+
 	g.accountService, err = accounts.NewService(
-		filepath.Dir(g.cfg.MacaroonPath), g.errQueue.ChanIn(),
+		filepath.Dir(g.cfg.MacaroonPath), accountServiceErrCallback,
 	)
 	if err != nil {
 		return fmt.Errorf("error creating account service: %v", err)
@@ -843,9 +849,12 @@ func (g *LightningTerminal) startInternalSubServers(
 		g.lndClient.ChainParams,
 	)
 	if err != nil {
-		return fmt.Errorf("error starting account service: %v",
-			err)
+		log.Errorf("error starting account service: %v, disabling "+
+			"account service", err)
 	}
+	// Even if we error on accountService.Start, we still want to mark the
+	// service as started so that we can properly shut it down in the
+	// shutdownSubServers call.
 	g.accountServiceStarted = true
 
 	requestLogger, err := firewall.NewRequestLogger(

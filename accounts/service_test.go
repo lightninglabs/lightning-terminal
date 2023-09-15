@@ -287,7 +287,7 @@ func TestAccountService(t *testing.T) {
 			err := s.store.UpdateAccount(acct)
 			require.NoError(t, err)
 
-			lnd.mainErrChan <- testErr
+			s.mainErrCallback(testErr)
 		},
 		validate: func(t *testing.T, lnd *mockLnd,
 			s *InterceptorService) {
@@ -672,9 +672,10 @@ func TestAccountService(t *testing.T) {
 			tt.Parallel()
 
 			lndMock := newMockLnd()
-			service, err := NewService(
-				t.TempDir(), lndMock.mainErrChan,
-			)
+			errFunc := func(err error) {
+				lndMock.mainErrChan <- err
+			}
+			service, err := NewService(t.TempDir(), errFunc)
 			require.NoError(t, err)
 
 			// Is a setup call required to initialize initial

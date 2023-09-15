@@ -60,16 +60,18 @@ type InterceptorService struct {
 	invoiceToAccount map[lntypes.Hash]AccountID
 	pendingPayments  map[lntypes.Hash]*trackedPayment
 
-	mainErrChan chan<- error
-	wg          sync.WaitGroup
-	quit        chan struct{}
+	mainErrCallback func(error)
+	wg              sync.WaitGroup
+	quit            chan struct{}
 
 	isEnabled bool
 }
 
 // NewService returns a service backed by the macaroon Bolt DB stored in the
 // passed-in directory.
-func NewService(dir string, errChan chan<- error) (*InterceptorService, error) {
+func NewService(dir string,
+	errCallback func(error)) (*InterceptorService, error) {
+
 	accountStore, err := NewBoltStore(dir, DBFilename)
 	if err != nil {
 		return nil, err
@@ -83,7 +85,7 @@ func NewService(dir string, errChan chan<- error) (*InterceptorService, error) {
 		contextCancel:    contextCancel,
 		invoiceToAccount: make(map[lntypes.Hash]AccountID),
 		pendingPayments:  make(map[lntypes.Hash]*trackedPayment),
-		mainErrChan:      errChan,
+		mainErrCallback:  errCallback,
 		quit:             make(chan struct{}),
 		isEnabled:        false,
 	}, nil
@@ -184,11 +186,7 @@ func (s *InterceptorService) Start(lightningClient lndclient.LightningClient,
 					log.Errorf("Error processing invoice "+
 						"update: %v", err)
 
-					select {
-					case s.mainErrChan <- err:
-					case <-s.mainCtx.Done():
-					case <-s.quit:
-					}
+					s.mainErrCallback(err)
 					return
 				}
 
@@ -199,11 +197,7 @@ func (s *InterceptorService) Start(lightningClient lndclient.LightningClient,
 				err = s.disableAndErrorf("Error in invoice "+
 					"subscription: %w", err)
 
-				select {
-				case s.mainErrChan <- err:
-				case <-s.mainCtx.Done():
-				case <-s.quit:
-				}
+				s.mainErrCallback(err)
 				return
 
 			case <-s.mainCtx.Done():
@@ -581,11 +575,7 @@ func (s *InterceptorService) TrackPayment(id AccountID, hash lntypes.Hash,
 					hash, paymentUpdate,
 				)
 				if err != nil {
-					select {
-					case s.mainErrChan <- err:
-					case <-s.mainCtx.Done():
-					case <-s.quit:
-					}
+					s.mainErrCallback(err)
 					return
 				}
 
@@ -614,11 +604,7 @@ func (s *InterceptorService) TrackPayment(id AccountID, hash lntypes.Hash,
 						"error from TrackPayment RPC "+
 						"for payment %v: %w", hash, err)
 
-					select {
-					case s.mainErrChan <- err:
-					case <-s.mainCtx.Done():
-					case <-s.quit:
-					}
+					s.mainErrCallback(err)
 				}
 				return
 
