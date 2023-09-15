@@ -85,6 +85,10 @@ func (m *mockService) RemovePayment(hash lntypes.Hash) error {
 	return nil
 }
 
+func (*mockService) IsRunning() bool {
+	return true
+}
+
 var _ Service = (*mockService)(nil)
 
 // TestAccountChecker makes sure all round trip checkers can be instantiated

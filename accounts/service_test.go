@@ -72,6 +72,18 @@ func (m *mockLnd) assertMainErr(t *testing.T, expectedErr error) {
 	}
 }
 
+// assertMainErrContains asserts that the main error contains the expected error
+// string.
+func (m *mockLnd) assertMainErrContains(t *testing.T, expectedStr string) {
+	select {
+	case err := <-m.mainErrChan:
+		require.ErrorContains(t, err, expectedStr)
+
+	case <-time.After(testTimeout):
+		t.Fatalf("Did not get expected main err before timeout")
+	}
+}
+
 func (m *mockLnd) assertNoInvoiceRequest(t *testing.T) {
 	select {
 	case req := <-m.invoiceReq:
@@ -201,7 +213,7 @@ func TestAccountService(t *testing.T) {
 			s *InterceptorService) {
 
 			lnd.assertInvoiceRequest(t, 0, 0)
-			lnd.assertMainErr(t, testErr)
+			lnd.assertMainErrContains(t, testErr.Error())
 		},
 	}, {
 		name: "startup do not track completed payments",

@@ -160,6 +160,12 @@ var (
 	ErrNotSupportedWithAccounts = errors.New("this RPC call is not " +
 		"supported with restricted account macaroons")
 
+	// ErrAccountServiceDisabled is the error that is returned when the
+	// account service has been disabled due to an error being thrown
+	// in the service that cannot be recovered from.
+	ErrAccountServiceDisabled = errors.New("the account service has been " +
+		"stopped")
+
 	// MacaroonPermissions are the permissions required for an account
 	// macaroon.
 	MacaroonPermissions = []bakery.Op{{
@@ -240,4 +246,7 @@ type Service interface {
 	// longer needs to be tracked. The payment is certain to never succeed,
 	// so we never need to debit the amount from the account.
 	RemovePayment(hash lntypes.Hash) error
+
+	// IsRunning returns true if the service can be used.
+	IsRunning() bool
 }
