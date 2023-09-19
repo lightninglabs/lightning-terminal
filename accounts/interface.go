@@ -247,6 +247,9 @@ type Service interface {
 	// so we never need to debit the amount from the account.
 	RemovePayment(hash lntypes.Hash) error
 
-	// IsRunning returns true if the service can be used.
-	IsRunning() bool
+	// AssociatePayment associates a payment (hash) with the given account,
+	// ensuring that the payment will be tracked for a user when LiT is
+	// restarted.
+	AssociatePayment(id AccountID, paymentHash lntypes.Hash,
+		fullAmt lnwire.MilliSatoshi) error
 }

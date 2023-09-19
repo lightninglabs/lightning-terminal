@@ -416,6 +416,40 @@ func (s *InterceptorService) AssociateInvoice(id AccountID,
 	return s.store.UpdateAccount(account)
 }
 
+// AssociatePayment associates a payment (hash) with the given account,
+// ensuring that the payment will be tracked for a user when LiT is
+// restarted.
+func (s *InterceptorService) AssociatePayment(id AccountID,
+	paymentHash lntypes.Hash, fullAmt lnwire.MilliSatoshi) error {
+
+	s.Lock()
+	defer s.Unlock()
+
+	account, err := s.store.Account(id)
+	if err != nil {
+		return err
+	}
+
+	// If the payment is already associated with the account, we don't need
+	// to associate it again.
+	_, ok := account.Payments[paymentHash]
+	if ok {
+		return nil
+	}
+
+	// Associate the payment with the account and store it.
+	account.Payments[paymentHash] = &PaymentEntry{
+		Status:     lnrpc.Payment_UNKNOWN,
+		FullAmount: fullAmt,
+	}
+
+	if err := s.store.UpdateAccount(account); err != nil {
+		return fmt.Errorf("error updating account: %w", err)
+	}
+
+	return nil
+}
+
 // invoiceUpdate credits the account an invoice was registered with, in case the
 // invoice was settled.
 //
@@ -527,13 +561,33 @@ func (s *InterceptorService) TrackPayment(id AccountID, hash lntypes.Hash,
 		return nil
 	}
 
-	// Okay, we haven't tracked this payment before. So let's now associate
-	// the account with it.
 	account.Payments[hash] = &PaymentEntry{
 		Status:     lnrpc.Payment_UNKNOWN,
 		FullAmount: fullAmt,
 	}
+
 	if err := s.store.UpdateAccount(account); err != nil {
+		if !ok {
+			// In the rare case that the payment isn't associated
+			// with an account yet, and we fail to update the
+			// account we will not be tracking the payment, even if
+			// track the service is restarted. Therefore the node
+			// runner needs to manually check if the payment was
+			// made and debit the account if that's the case.
+			errStr := "critical error: failed to store the " +
+				"payment with hash %v for user with account " +
+				"id %v. Manual intervention required! " +
+				"Verify if the payment was executed, and " +
+				"manually update the user account balance by " +
+				"subtracting the payment amount if it was"
+
+			mainChanErr := s.disableAndErrorfUnsafe(
+				errStr, hash, id,
+			)
+
+			s.mainErrCallback(mainChanErr)
+		}
+
 		return fmt.Errorf("error updating account: %w", err)
 	}
 
