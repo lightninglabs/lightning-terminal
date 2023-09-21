@@ -53,10 +53,6 @@ func (s *RPCServer) CreateAccount(ctx context.Context,
 	log.Infof("[createaccount] label=%v, balance=%d, expiration=%d",
 		req.Label, req.AccountBalance, req.ExpirationDate)
 
-	if !s.service.IsRunning() {
-		return nil, ErrAccountServiceDisabled
-	}
-
 	var (
 		balanceMsat    lnwire.MilliSatoshi
 		expirationDate time.Time
@@ -119,10 +115,6 @@ func (s *RPCServer) UpdateAccount(_ context.Context,
 	log.Infof("[updateaccount] id=%s, label=%v, balance=%d, expiration=%d",
 		req.Id, req.Label, req.AccountBalance, req.ExpirationDate)
 
-	if !s.service.IsRunning() {
-		return nil, ErrAccountServiceDisabled
-	}
-
 	accountID, err := s.findAccount(req.Id, req.Label)
 	if err != nil {
 		return nil, err
@@ -145,10 +137,6 @@ func (s *RPCServer) ListAccounts(context.Context,
 	*litrpc.ListAccountsRequest) (*litrpc.ListAccountsResponse, error) {
 
 	log.Info("[listaccounts]")
-
-	if !s.service.IsRunning() {
-		return nil, ErrAccountServiceDisabled
-	}
 
 	// Retrieve all accounts from the macaroon account store.
 	accts, err := s.service.Accounts()
@@ -175,10 +163,6 @@ func (s *RPCServer) AccountInfo(_ context.Context,
 
 	log.Infof("[accountinfo] id=%v, label=%v", req.Id, req.Label)
 
-	if !s.service.IsRunning() {
-		return nil, ErrAccountServiceDisabled
-	}
-
 	accountID, err := s.findAccount(req.Id, req.Label)
 	if err != nil {
 		return nil, err
@@ -198,10 +182,6 @@ func (s *RPCServer) RemoveAccount(_ context.Context,
 	error) {
 
 	log.Infof("[removeaccount] id=%v, label=%v", req.Id, req.Label)
-
-	if !s.service.IsRunning() {
-		return nil, ErrAccountServiceDisabled
-	}
 
 	accountID, err := s.findAccount(req.Id, req.Label)
 	if err != nil {

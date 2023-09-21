@@ -232,9 +232,10 @@ func (g *LightningTerminal) Run() error {
 		return fmt.Errorf("could not create permissions manager")
 	}
 
-	// Register LND and LiT with the status manager.
+	// Register LND, LiT and Accounts with the status manager.
 	g.statusMgr.RegisterAndEnableSubServer(subservers.LND)
 	g.statusMgr.RegisterAndEnableSubServer(subservers.LIT)
+	g.statusMgr.RegisterAndEnableSubServer(subservers.ACCOUNTS)
 
 	// Create the instances of our subservers now so we can hook them up to
 	// lnd once it's fully started.
@@ -306,6 +307,11 @@ func (g *LightningTerminal) start() error {
 	var err error
 
 	accountServiceErrCallback := func(err error) {
+		g.statusMgr.SetErrored(
+			subservers.ACCOUNTS,
+			err.Error(),
+		)
+
 		log.Errorf("Error thrown in the accounts service, keeping "+
 			"litd running: %v", err,
 		)
@@ -851,6 +857,10 @@ func (g *LightningTerminal) startInternalSubServers(
 	if err != nil {
 		log.Errorf("error starting account service: %v, disabling "+
 			"account service", err)
+
+		g.statusMgr.SetErrored(subservers.ACCOUNTS, err.Error())
+	} else {
+		g.statusMgr.SetRunning(subservers.ACCOUNTS)
 	}
 	// Even if we error on accountService.Start, we still want to mark the
 	// service as started so that we can properly shut it down in the
