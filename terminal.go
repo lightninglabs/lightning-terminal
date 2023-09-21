@@ -235,7 +235,12 @@ func (g *LightningTerminal) Run() error {
 	// Register LND, LiT and Accounts with the status manager.
 	g.statusMgr.RegisterAndEnableSubServer(subservers.LND)
 	g.statusMgr.RegisterAndEnableSubServer(subservers.LIT)
-	g.statusMgr.RegisterAndEnableSubServer(subservers.ACCOUNTS)
+	g.statusMgr.RegisterSubServer(subservers.ACCOUNTS)
+
+	// Also enable the accounts subserver if it's not disabled.
+	if !g.cfg.Accounts.Disable {
+		g.statusMgr.SetEnabled(subservers.ACCOUNTS)
+	}
 
 	// Create the instances of our subservers now so we can hook them up to
 	// lnd once it's fully started.
@@ -849,23 +854,41 @@ func (g *LightningTerminal) startInternalSubServers(
 		return nil
 	}
 
-	log.Infof("Starting LiT account service")
-	err = g.accountService.Start(
-		g.lndClient.Client, g.lndClient.Router,
-		g.lndClient.ChainParams,
-	)
-	if err != nil {
-		log.Errorf("error starting account service: %v, disabling "+
-			"account service", err)
-
-		g.statusMgr.SetErrored(subservers.ACCOUNTS, err.Error())
-	} else {
-		g.statusMgr.SetRunning(subservers.ACCOUNTS)
+	// Even if the accounts service fails on the Start function, or the
+	// accounts service is disabled, we still want to call Stop function as
+	// this closes the contexts and the db store which were opened with the
+	// accounts.NewService function call in the LightningTerminal start
+	// function above.
+	closeAccountService := func() {
+		if err := g.accountService.Stop(); err != nil {
+			// We only log the error if we fail to stop the service,
+			// as it's not critical that this succeeds in order to
+			// keep litd running
+			log.Errorf("Error stopping account service: %v", err)
+		}
 	}
-	// Even if we error on accountService.Start, we still want to mark the
-	// service as started so that we can properly shut it down in the
-	// shutdownSubServers call.
-	g.accountServiceStarted = true
+
+	log.Infof("Starting LiT account service")
+	if !g.cfg.Accounts.Disable {
+		err = g.accountService.Start(
+			g.lndClient.Client, g.lndClient.Router,
+			g.lndClient.ChainParams,
+		)
+		if err != nil {
+			log.Errorf("error starting account service: %v, "+
+				"disabling account service", err)
+
+			g.statusMgr.SetErrored(subservers.ACCOUNTS, err.Error())
+
+			closeAccountService()
+		} else {
+			g.statusMgr.SetRunning(subservers.ACCOUNTS)
+
+			g.accountServiceStarted = true
+		}
+	} else {
+		closeAccountService()
+	}
 
 	requestLogger, err := firewall.NewRequestLogger(
 		g.cfg.Firewall.RequestLogger, g.firewallDB,
@@ -952,7 +975,12 @@ func (g *LightningTerminal) registerSubDaemonGrpcServers(server *grpc.Server,
 		litrpc.RegisterStatusServer(server, g.statusMgr)
 	} else {
 		litrpc.RegisterSessionsServer(server, g.sessionRpcServer)
-		litrpc.RegisterAccountsServer(server, g.accountRpcServer)
+
+		if !g.cfg.Accounts.Disable {
+			litrpc.RegisterAccountsServer(
+				server, g.accountRpcServer,
+			)
+		}
 	}
 
 	litrpc.RegisterFirewallServer(server, g.sessionRpcServer)
@@ -979,11 +1007,13 @@ func (g *LightningTerminal) RegisterRestSubserver(ctx context.Context,
 		return err
 	}
 
-	err = litrpc.RegisterAccountsHandlerFromEndpoint(
-		ctx, mux, endpoint, dialOpts,
-	)
-	if err != nil {
-		return err
+	if !g.cfg.Accounts.Disable {
+		err = litrpc.RegisterAccountsHandlerFromEndpoint(
+			ctx, mux, endpoint, dialOpts,
+		)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = litrpc.RegisterFirewallHandlerFromEndpoint(

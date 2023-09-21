@@ -16,6 +16,12 @@ import (
 	"github.com/lightningnetwork/lnd/lnwire"
 )
 
+// Config holds the configuration options for the accounts service.
+type Config struct {
+	// Disable will disable the accounts service if set.
+	Disable bool `long:"disable" description:"disable the accounts service"`
+}
+
 // trackedPayment is a struct that holds all information that identifies a
 // payment that we are tracking in the service.
 type trackedPayment struct {
