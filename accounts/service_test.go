@@ -32,10 +32,12 @@ type mockLnd struct {
 	invoiceReq chan lndclient.InvoiceSubscriptionRequest
 	paymentReq chan lntypes.Hash
 
-	callErr      error
-	errChan      chan error
-	invoiceChan  chan *lndclient.Invoice
-	paymentChans map[lntypes.Hash]chan lndclient.PaymentStatus
+	invoiceSubscriptionErr error
+	trackPaymentErr        error
+	invoiceErrChan         chan error
+	paymentErrChan         chan error
+	invoiceChan            chan *lndclient.Invoice
+	paymentChans           map[lntypes.Hash]chan lndclient.PaymentStatus
 }
 
 func newMockLnd() *mockLnd {
@@ -44,9 +46,10 @@ func newMockLnd() *mockLnd {
 		invoiceReq: make(
 			chan lndclient.InvoiceSubscriptionRequest, 10,
 		),
-		paymentReq:  make(chan lntypes.Hash, 10),
-		errChan:     make(chan error, 10),
-		invoiceChan: make(chan *lndclient.Invoice),
+		paymentReq:     make(chan lntypes.Hash, 10),
+		invoiceErrChan: make(chan error, 10),
+		paymentErrChan: make(chan error, 10),
+		invoiceChan:    make(chan *lndclient.Invoice),
 		paymentChans: make(
 			map[lntypes.Hash]chan lndclient.PaymentStatus,
 		),
@@ -144,13 +147,13 @@ func (m *mockLnd) SubscribeInvoices(_ context.Context,
 	req lndclient.InvoiceSubscriptionRequest) (<-chan *lndclient.Invoice,
 	<-chan error, error) {
 
-	if m.callErr != nil {
-		return nil, nil, m.callErr
+	if m.invoiceSubscriptionErr != nil {
+		return nil, nil, m.invoiceSubscriptionErr
 	}
 
 	m.invoiceReq <- req
 
-	return m.invoiceChan, m.errChan, nil
+	return m.invoiceChan, m.invoiceErrChan, nil
 }
 
 // TrackPayment picks up a previously started payment and returns a payment
@@ -158,14 +161,14 @@ func (m *mockLnd) SubscribeInvoices(_ context.Context,
 func (m *mockLnd) TrackPayment(_ context.Context,
 	hash lntypes.Hash) (chan lndclient.PaymentStatus, chan error, error) {
 
-	if m.callErr != nil {
-		return nil, nil, m.callErr
+	if m.trackPaymentErr != nil {
+		return nil, nil, m.trackPaymentErr
 	}
 
 	m.paymentReq <- hash
 	m.paymentChans[hash] = make(chan lndclient.PaymentStatus, 1)
 
-	return m.paymentChans[hash], m.errChan, nil
+	return m.paymentChans[hash], m.paymentErrChan, nil
 }
 
 // TestAccountService tests that the account service can track payments and
@@ -181,15 +184,92 @@ func TestAccountService(t *testing.T) {
 		validate   func(t *testing.T, lnd *mockLnd,
 			s *InterceptorService)
 	}{{
-		name: "startup err on tracking payment",
+		name: "startup err on invoice subscription",
 		setup: func(t *testing.T, lnd *mockLnd, s *InterceptorService) {
-			lnd.callErr = testErr
+			lnd.invoiceSubscriptionErr = testErr
 		},
 		startupErr: testErr.Error(),
 		validate: func(t *testing.T, lnd *mockLnd,
 			s *InterceptorService) {
 
 			lnd.assertNoInvoiceRequest(t)
+			require.False(t, s.IsRunning())
+		},
+	}, {
+		name: "err on invoice update",
+		setup: func(t *testing.T, lnd *mockLnd, s *InterceptorService) {
+			acct := &OffChainBalanceAccount{
+				ID:             testID,
+				Type:           TypeInitialBalance,
+				CurrentBalance: 1234,
+				Invoices: AccountInvoices{
+					testHash: {},
+				},
+			}
+
+			err := s.store.UpdateAccount(acct)
+			require.NoError(t, err)
+		},
+		validate: func(t *testing.T, lnd *mockLnd,
+			s *InterceptorService) {
+
+			// Start by closing the store. This should cause an
+			// error once we make an invoice update, as the service
+			// will fail when persisting the invoice update.
+			s.store.Close()
+
+			// Ensure that the service was started successfully and
+			// still running though, despite the closing of the
+			// db store.
+			require.True(t, s.IsRunning())
+
+			// Now let's send the invoice update, which should fail.
+			lnd.invoiceChan <- &lndclient.Invoice{
+				AddIndex:    12,
+				SettleIndex: 12,
+				Hash:        testHash,
+				AmountPaid:  777,
+				State:       invpkg.ContractSettled,
+			}
+
+			// Ensure that the service was eventually disabled.
+			assertEventually(t, func() bool {
+				isRunning := s.IsRunning()
+				return isRunning == false
+			})
+			lnd.assertMainErrContains(t, "database not open")
+		},
+	}, {
+		name: "err in invoice err channel",
+		setup: func(t *testing.T, lnd *mockLnd, s *InterceptorService) {
+			acct := &OffChainBalanceAccount{
+				ID:             testID,
+				Type:           TypeInitialBalance,
+				CurrentBalance: 1234,
+				Invoices: AccountInvoices{
+					testHash: {},
+				},
+			}
+
+			err := s.store.UpdateAccount(acct)
+			require.NoError(t, err)
+		},
+		validate: func(t *testing.T, lnd *mockLnd,
+			s *InterceptorService) {
+			// Ensure that the service was started successfully.
+			require.True(t, s.IsRunning())
+
+			// Now let's send an error over the invoice error
+			// channel. This should disable the service.
+			lnd.invoiceErrChan <- testErr
+
+			// Ensure that the service was eventually disabled.
+			assertEventually(t, func() bool {
+				isRunning := s.IsRunning()
+				return isRunning == false
+			})
+
+			lnd.assertMainErrContains(t, testErr.Error())
 		},
 	}, {
 		name: "goroutine err sent on main err chan",
@@ -207,7 +287,7 @@ func TestAccountService(t *testing.T) {
 			err := s.store.UpdateAccount(acct)
 			require.NoError(t, err)
 
-			lnd.errChan <- testErr
+			lnd.mainErrChan <- testErr
 		},
 		validate: func(t *testing.T, lnd *mockLnd,
 			s *InterceptorService) {
@@ -239,6 +319,135 @@ func TestAccountService(t *testing.T) {
 			lnd.assertNoPaymentRequest(t)
 			lnd.assertInvoiceRequest(t, 0, 0)
 			lnd.assertNoMainErr(t)
+			require.True(t, s.IsRunning())
+		},
+	}, {
+		name: "startup err on payment tracking",
+		setup: func(t *testing.T, lnd *mockLnd, s *InterceptorService) {
+			acct := &OffChainBalanceAccount{
+				ID:             testID,
+				Type:           TypeInitialBalance,
+				CurrentBalance: 1234,
+				Invoices: AccountInvoices{
+					testHash: {},
+				},
+				Payments: AccountPayments{
+					testHash: {
+						Status:     lnrpc.Payment_IN_FLIGHT,
+						FullAmount: 1234,
+					},
+				},
+			}
+
+			err := s.store.UpdateAccount(acct)
+			require.NoError(t, err)
+
+			lnd.trackPaymentErr = testErr
+		},
+		validate: func(t *testing.T, lnd *mockLnd,
+			s *InterceptorService) {
+
+			// Assert that the invoice subscription succeeded.
+			require.Contains(t, s.invoiceToAccount, testHash)
+
+			// But setting up the payment tracking should have failed.
+			require.False(t, s.IsRunning())
+
+			// Finally let's assert that we didn't successfully add the
+			// payment to pending payment, and that lnd isn't awaiting
+			// the payment request.
+			require.NotContains(t, s.pendingPayments, testHash)
+			lnd.assertNoPaymentRequest(t)
+		},
+	}, {
+		name: "err on payment update",
+		setup: func(t *testing.T, lnd *mockLnd, s *InterceptorService) {
+			acct := &OffChainBalanceAccount{
+				ID:             testID,
+				Type:           TypeInitialBalance,
+				CurrentBalance: 1234,
+				Payments: AccountPayments{
+					testHash: {
+						Status:     lnrpc.Payment_IN_FLIGHT,
+						FullAmount: 1234,
+					},
+				},
+			}
+
+			err := s.store.UpdateAccount(acct)
+			require.NoError(t, err)
+		},
+		validate: func(t *testing.T, lnd *mockLnd,
+			s *InterceptorService) {
+			// Ensure that the service was started successfully,
+			// and lnd contains the payment request.
+			require.True(t, s.IsRunning())
+			lnd.assertPaymentRequests(t, map[lntypes.Hash]struct{}{
+				testHash: {},
+			})
+
+			// Now let's wipe the service's pending payments.
+			// This will cause an error send an update over
+			// the payment channel, which should disable the
+			// service.
+			s.pendingPayments = make(map[lntypes.Hash]*trackedPayment)
+
+			// Send an invalid payment over the payment chan
+			// which should error and disable the service
+			lnd.paymentChans[testHash] <- lndclient.PaymentStatus{
+				State: lnrpc.Payment_SUCCEEDED,
+				Fee:   234,
+				Value: 1000,
+			}
+
+			// Ensure that the service was eventually disabled.
+			assertEventually(t, func() bool {
+				isRunning := s.IsRunning()
+				return isRunning == false
+			})
+			lnd.assertMainErrContains(
+				t, "not mapped to any account",
+			)
+
+		},
+	}, {
+		name: "err in payment update chan",
+		setup: func(t *testing.T, lnd *mockLnd, s *InterceptorService) {
+			acct := &OffChainBalanceAccount{
+				ID:             testID,
+				Type:           TypeInitialBalance,
+				CurrentBalance: 1234,
+				Payments: AccountPayments{
+					testHash: {
+						Status:     lnrpc.Payment_IN_FLIGHT,
+						FullAmount: 1234,
+					},
+				},
+			}
+
+			err := s.store.UpdateAccount(acct)
+			require.NoError(t, err)
+		},
+		validate: func(t *testing.T, lnd *mockLnd,
+			s *InterceptorService) {
+			// Ensure that the service was started successfully,
+			// and lnd contains the payment request.
+			require.True(t, s.IsRunning())
+			lnd.assertPaymentRequests(t, map[lntypes.Hash]struct{}{
+				testHash: {},
+			})
+
+			// Now let's send an error over the payment error
+			// channel. This should disable the service.
+			lnd.paymentErrChan <- testErr
+
+			// Ensure that the service was eventually disabled.
+			assertEventually(t, func() bool {
+				isRunning := s.IsRunning()
+				return isRunning == false
+			})
+
+			lnd.assertMainErrContains(t, testErr.Error())
 		},
 	}, {
 		name: "startup track in-flight payments",
