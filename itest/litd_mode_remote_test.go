@@ -67,7 +67,7 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					endpoint.requestFn,
 					endpoint.successPattern,
 					endpointEnabled,
-					"unknown request",
+					endpoint.disabledPattern,
 				)
 			})
 		}
@@ -94,7 +94,7 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					shouldFailWithoutMacaroon,
 					endpoint.successPattern,
 					endpointEnabled,
-					"unknown request",
+					endpoint.disabledPattern,
 				)
 			})
 		}
@@ -117,7 +117,8 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					ttt, cfg.LitAddr(), cfg.UIPassword,
 					endpoint.grpcWebURI, withoutUIPassword,
 					endpointEnabled,
-					"unknown request", endpoint.noAuth,
+					endpoint.disabledPattern,
+					endpoint.noAuth,
 				)
 			})
 		}
@@ -145,7 +146,7 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					endpoint.requestFn,
 					endpoint.successPattern,
 					endpointEnabled,
-					"unknown request",
+					endpoint.disabledPattern,
 				)
 			})
 		}
@@ -197,7 +198,9 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					endpoint.successPattern,
 					endpoint.allowedThroughLNC,
 					"unknown service",
-					endpointDisabled, endpoint.noAuth,
+					endpointDisabled,
+					endpoint.disabledPattern,
+					endpoint.noAuth,
 				)
 			})
 		}
@@ -248,6 +251,7 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					endpoint.successPattern,
 					allowed, expectedErr,
 					endpointDisabled,
+					endpoint.disabledPattern,
 					endpoint.noAuth,
 				)
 			})
@@ -256,6 +260,12 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 
 	t.Run("gRPC super macaroon account system test", func(tt *testing.T) {
 		cfg := net.Bob.Cfg
+
+		// If the accounts service is disabled, we skip this test as it
+		// will fail due to the accounts service being disabled.
+		if subServersDisabled {
+			return
+		}
 
 		superMacFile, err := bakeSuperMacaroon(cfg, false)
 		require.NoError(tt, err)
