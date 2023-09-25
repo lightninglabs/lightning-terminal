@@ -116,7 +116,7 @@ var listAutopilotSessionsCmd = cli.Command{
 
 func revokeAutopilotSession(ctx *cli.Context) error {
 	ctxb := context.Background()
-	clientConn, cleanup, err := connectClient(ctx)
+	clientConn, cleanup, err := connectClient(ctx, false)
 	if err != nil {
 		return err
 	}
@@ -144,7 +144,7 @@ func revokeAutopilotSession(ctx *cli.Context) error {
 
 func listAutopilotSessions(ctx *cli.Context) error {
 	ctxb := context.Background()
-	clientConn, cleanup, err := connectClient(ctx)
+	clientConn, cleanup, err := connectClient(ctx, false)
 	if err != nil {
 		return err
 	}
@@ -165,7 +165,7 @@ func listAutopilotSessions(ctx *cli.Context) error {
 
 func listFeatures(ctx *cli.Context) error {
 	ctxb := context.Background()
-	clientConn, cleanup, err := connectClient(ctx)
+	clientConn, cleanup, err := connectClient(ctx, false)
 	if err != nil {
 		return err
 	}
@@ -189,7 +189,7 @@ func initAutopilotSession(ctx *cli.Context) error {
 	sessionExpiry := time.Now().Add(sessionLength).Unix()
 
 	ctxb := context.Background()
-	clientConn, cleanup, err := connectClient(ctx)
+	clientConn, cleanup, err := connectClient(ctx, false)
 	if err != nil {
 		return err
 	}

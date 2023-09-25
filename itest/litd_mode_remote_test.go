@@ -236,13 +236,19 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 			endpointDisabled := subServersDisabled &&
 				endpoint.canDisable
 
+			expectedErr := "permission denied"
+			if endpoint.noAuth {
+				expectedErr = "unknown service"
+			}
+
 			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
 				allowed := customURIs[endpoint.grpcWebURI]
 				runLNCAuthTest(
 					ttt, rawLNCConn, endpoint.requestFn,
 					endpoint.successPattern,
-					allowed, "permission denied",
-					endpointDisabled, endpoint.noAuth,
+					allowed, expectedErr,
+					endpointDisabled,
+					endpoint.noAuth,
 				)
 			})
 		}

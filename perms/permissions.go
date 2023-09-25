@@ -94,7 +94,11 @@ var (
 
 	// whiteListedLitMethods is a map of all LiT's RPC methods that don't
 	// require any macaroon authentication.
-	whiteListedLitMethods = map[string]struct{}{}
+	whiteListedLitMethods = map[string][]bakery.Op{
+		// The Status service must be available at all times, even
+		// before we can check macaroons, so we whitelist it.
+		"/litrpc.Status/SubServerStatus": {},
+	}
 
 	// lndSubServerNameToTag is a map from the name of an LND subserver to
 	// the name of the LND tag that corresponds to the subserver. This map

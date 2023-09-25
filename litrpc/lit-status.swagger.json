@@ -1,0 +1,103 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "lit-status.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "Status"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/status": {
+      "get": {
+        "operationId": "Status_SubServerStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/litrpcSubServerStatusResp"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Status"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "litrpcSubServerStatus": {
+      "type": "object",
+      "properties": {
+        "disabled": {
+          "type": "boolean",
+          "description": "disabled is true if the sub-server is available in the LiT package but\nhas explicitly been disabled."
+        },
+        "running": {
+          "type": "boolean",
+          "description": "running is true if the sub-server is currently running."
+        },
+        "error": {
+          "type": "string",
+          "description": "error describes an error that might have resulted in the sub-server not\nstarting up properly."
+        }
+      }
+    },
+    "litrpcSubServerStatusResp": {
+      "type": "object",
+      "properties": {
+        "sub_servers": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/litrpcSubServerStatus"
+          },
+          "description": "A map of sub-server names to their status."
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "type_url": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}

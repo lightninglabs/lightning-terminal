@@ -50,6 +50,7 @@ var Registrations = []StubPackageRegistration{
 	litrpc.RegisterAccountsJSONCallbacks,
 	litrpc.RegisterAutopilotJSONCallbacks,
 	litrpc.RegisterFirewallJSONCallbacks,
+	litrpc.RegisterStatusJSONCallbacks,
 	taprpc.RegisterTaprootAssetsJSONCallbacks,
 	assetwalletrpc.RegisterAssetWalletJSONCallbacks,
 	universerpc.RegisterUniverseJSONCallbacks,

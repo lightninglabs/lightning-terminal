@@ -99,7 +99,8 @@ func (s *subServerWrapper) stop() error {
 
 // startIntegrated starts the subServer in integrated mode.
 func (s *subServerWrapper) startIntegrated(lndClient lnrpc.LightningClient,
-	lndGrpc *lndclient.GrpcLndServices, withMacaroonService bool) error {
+	lndGrpc *lndclient.GrpcLndServices, withMacaroonService bool,
+	onError func(error)) error {
 
 	err := s.Start(lndClient, lndGrpc, withMacaroonService)
 	if err != nil {
@@ -121,11 +122,11 @@ func (s *subServerWrapper) startIntegrated(lndClient lnrpc.LightningClient,
 			// happens. We don't need to try to stop it again.
 			s.setStarted(false)
 
-			err = fmt.Errorf("received critical error from "+
-				"sub-server (%s), shutting down: %v",
-				s.Name(), err)
-
-			log.Error(err)
+			onError(
+				fmt.Errorf("received critical error from "+
+					"sub-server (%s), shutting down: %v",
+					s.Name(), err),
+			)
 
 		case <-s.quit:
 		}

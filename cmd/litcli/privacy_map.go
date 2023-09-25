@@ -58,7 +58,7 @@ var privacyMapConvertStrCommand = cli.Command{
 
 func privacyMapConvertStr(ctx *cli.Context) error {
 	ctxb := context.Background()
-	clientConn, cleanup, err := connectClient(ctx)
+	clientConn, cleanup, err := connectClient(ctx, false)
 	if err != nil {
 		return err
 	}
@@ -112,7 +112,7 @@ var privacyMapConvertUint64Command = cli.Command{
 
 func privacyMapConvertUint64(ctx *cli.Context) error {
 	ctxb := context.Background()
-	clientConn, cleanup, err := connectClient(ctx)
+	clientConn, cleanup, err := connectClient(ctx, false)
 	if err != nil {
 		return err
 	}

@@ -26,6 +26,7 @@ import (
 	"github.com/lightninglabs/faraday/frdrpc"
 	terminal "github.com/lightninglabs/lightning-terminal"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
+	"github.com/lightninglabs/lightning-terminal/subservers"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/lightninglabs/pool/poolrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc"
@@ -723,49 +724,93 @@ func (hn *HarnessNode) Start(litdBinary string, litdError chan<- error,
 func (hn *HarnessNode) WaitUntilStarted(conn grpc.ClientConnInterface,
 	timeout time.Duration) error {
 
-	err := hn.waitForState(conn, timeout, func(s lnrpc.WalletState) bool {
+	// First wait for Litd status server to show that LND has started.
+	ctx := context.Background()
+	rawConn, err := connectLitRPC(
+		ctx, hn.Cfg.LitAddr(), hn.Cfg.LitTLSCertPath, "",
+	)
+	if err != nil {
+		return err
+	}
+
+	litConn := litrpc.NewStatusClient(rawConn)
+
+	err = wait.NoError(func() error {
+		states, err := litConn.SubServerStatus(
+			ctx, &litrpc.SubServerStatusReq{},
+		)
+		if err != nil {
+			return err
+		}
+
+		lndStatus, ok := states.SubServers[subservers.LND]
+		if !ok || !lndStatus.Running {
+			return fmt.Errorf("LND has not yet started")
+		}
+
+		return nil
+	}, lntest.DefaultTimeout)
+	if err != nil {
+		return err
+	}
+
+	err = hn.waitForState(conn, timeout, func(s lnrpc.WalletState) bool {
 		return s >= lnrpc.WalletState_SERVER_ACTIVE
 	})
 	if err != nil {
 		return err
 	}
 
+	faradayMode, _ := hn.Cfg.ActiveArgs.getArg("faraday-mode")
+	loopMode, _ := hn.Cfg.ActiveArgs.getArg("loop-mode")
+	poolMode, _ := hn.Cfg.ActiveArgs.getArg("pool-mode")
+	tapMode, _ := hn.Cfg.ActiveArgs.getArg("taproot-assets-mode")
+
 	ctxt, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	return wait.NoError(func() error {
-		faradayClient, err := hn.faradayClient()
-		if err != nil {
-			return err
+		if faradayMode != terminal.ModeDisable {
+			faradayClient, err := hn.faradayClient()
+			if err != nil {
+				return err
+			}
+
+			_, err = faradayClient.RevenueReport(
+				ctxt, &frdrpc.RevenueReportRequest{},
+			)
+			if err != nil {
+				return err
+			}
 		}
 
-		_, err = faradayClient.RevenueReport(
-			ctxt, &frdrpc.RevenueReportRequest{},
-		)
-		if err != nil {
-			return err
+		if loopMode != terminal.ModeDisable {
+			loopClient, err := hn.loopClient()
+			if err != nil {
+				return err
+			}
+
+			_, err = loopClient.ListSwaps(
+				ctxt, &looprpc.ListSwapsRequest{},
+			)
+			if err != nil {
+				return err
+			}
 		}
 
-		loopClient, err := hn.loopClient()
-		if err != nil {
-			return err
+		if poolMode != terminal.ModeDisable {
+			poolClient, err := hn.poolClient()
+			if err != nil {
+				return err
+			}
+
+			_, err = poolClient.GetInfo(
+				ctxt, &poolrpc.GetInfoRequest{},
+			)
+			if err != nil {
+				return err
+			}
 		}
 
-		_, err = loopClient.ListSwaps(ctxt, &looprpc.ListSwapsRequest{})
-		if err != nil {
-			return err
-		}
-
-		poolClient, err := hn.poolClient()
-		if err != nil {
-			return err
-		}
-
-		_, err = poolClient.GetInfo(ctxt, &poolrpc.GetInfoRequest{})
-		if err != nil {
-			return err
-		}
-
-		tapMode, _ := hn.Cfg.ActiveArgs.getArg("taproot-assets-mode")
 		if tapMode != terminal.ModeDisable {
 			tapClient, err := hn.tapClient()
 			if err != nil {

@@ -77,6 +77,7 @@ func main() {
 	app.Commands = append(app.Commands, autopilotCommands)
 	app.Commands = append(app.Commands, litCommands...)
 	app.Commands = append(app.Commands, helperCommands)
+	app.Commands = append(app.Commands, statusCommands...)
 
 	err := app.Run(os.Args)
 	if err != nil {
@@ -89,13 +90,15 @@ func fatal(err error) {
 	os.Exit(1)
 }
 
-func connectClient(ctx *cli.Context) (grpc.ClientConnInterface, func(), error) {
+func connectClient(ctx *cli.Context, noMac bool) (grpc.ClientConnInterface,
+	func(), error) {
+
 	rpcServer := ctx.GlobalString("rpcserver")
 	tlsCertPath, macPath, err := extractPathArgs(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
-	conn, err := getClientConn(rpcServer, tlsCertPath, macPath)
+	conn, err := getClientConn(rpcServer, tlsCertPath, macPath, noMac)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -104,18 +107,20 @@ func connectClient(ctx *cli.Context) (grpc.ClientConnInterface, func(), error) {
 	return conn, cleanup, nil
 }
 
-func getClientConn(address, tlsCertPath, macaroonPath string) (*grpc.ClientConn,
-	error) {
-
-	// We always need to send a macaroon.
-	macOption, err := readMacaroon(macaroonPath)
-	if err != nil {
-		return nil, err
-	}
+func getClientConn(address, tlsCertPath, macaroonPath string, noMac bool) (
+	*grpc.ClientConn, error) {
 
 	opts := []grpc.DialOption{
 		grpc.WithDefaultCallOptions(maxMsgRecvSize),
-		macOption,
+	}
+
+	if !noMac {
+		macOption, err := readMacaroon(macaroonPath)
+		if err != nil {
+			return nil, err
+		}
+
+		opts = append(opts, macOption)
 	}
 
 	// TLS cannot be disabled, we'll always have a cert file to read.

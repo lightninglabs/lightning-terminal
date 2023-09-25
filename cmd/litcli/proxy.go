@@ -53,7 +53,7 @@ var litCommands = []cli.Command{
 }
 
 func getInfo(ctx *cli.Context) error {
-	clientConn, cleanup, err := connectClient(ctx)
+	clientConn, cleanup, err := connectClient(ctx, false)
 	if err != nil {
 		return err
 	}
@@ -72,7 +72,7 @@ func getInfo(ctx *cli.Context) error {
 }
 
 func shutdownLit(ctx *cli.Context) error {
-	clientConn, cleanup, err := connectClient(ctx)
+	clientConn, cleanup, err := connectClient(ctx, false)
 	if err != nil {
 		return err
 	}
@@ -109,7 +109,7 @@ func bakeSuperMacaroon(ctx *cli.Context) error {
 	}
 	suffix := binary.BigEndian.Uint32(suffixBytes[:])
 
-	clientConn, cleanup, err := connectClient(ctx)
+	clientConn, cleanup, err := connectClient(ctx, false)
 	if err != nil {
 		return err
 	}
