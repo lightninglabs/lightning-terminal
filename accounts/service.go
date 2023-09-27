@@ -214,6 +214,18 @@ func (s *InterceptorService) Start(lightningClient lndclient.LightningClient,
 
 // Stop shuts down the account service.
 func (s *InterceptorService) Stop() error {
+	// We need to lock the request mutex to ensure that we don't stop the
+	// service while we're processing a request.
+	// This is especially important to ensure that we don't stop the service
+	// exactly after a user has made an rpc call to send a payment we can't
+	// know the payment hash for prior to the actual payment being sent
+	// (i.e. Keysend or SendToRoute). This is because if we stop the service
+	// after the send request has been sent to lnd, but before TrackPayment
+	// has been called, we won't be able to track the payment and debit the
+	// account.
+	s.requestMtx.Lock()
+	defer s.requestMtx.Unlock()
+
 	s.contextCancel()
 	close(s.quit)
 
