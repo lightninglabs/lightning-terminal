@@ -52,6 +52,17 @@ func (s *InterceptorService) Intercept(ctx context.Context,
 	s.requestMtx.Lock()
 	defer s.requestMtx.Unlock()
 
+	// If the account service is not running, we reject all requests.
+	// Note that this is by no means a guarantee that the account service
+	// will be running throughout processing the request, but at least we
+	// can stop requests early if the service was already disabled when the
+	// request came in.
+	if !s.IsRunning() {
+		return mid.RPCErrString(
+			req, "the account service has been stopped",
+		)
+	}
+
 	mac := &macaroon.Macaroon{}
 	err := mac.UnmarshalBinary(req.RawMacaroon)
 	if err != nil {

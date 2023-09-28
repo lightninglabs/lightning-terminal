@@ -522,6 +522,7 @@ func checkSend(ctx context.Context, chainParams *chaincfg.Params,
 	}
 
 	// The invoice is optional.
+	var paymentHash lntypes.Hash
 	if len(invoice) > 0 {
 		payReq, err := zpay32.Decode(invoice, chainParams)
 		if err != nil {
@@ -530,6 +531,10 @@ func checkSend(ctx context.Context, chainParams *chaincfg.Params,
 
 		if payReq.MilliSat != nil && *payReq.MilliSat > sendAmt {
 			sendAmt = *payReq.MilliSat
+		}
+
+		if payReq.PaymentHash != nil {
+			paymentHash = *payReq.PaymentHash
 		}
 	}
 
@@ -547,6 +552,14 @@ func checkSend(ctx context.Context, chainParams *chaincfg.Params,
 	err = service.CheckBalance(acct.ID, sendAmt)
 	if err != nil {
 		return fmt.Errorf("error validating account balance: %w", err)
+	}
+
+	emptyHash := lntypes.Hash{}
+	if paymentHash != emptyHash {
+		err = service.AssociatePayment(acct.ID, paymentHash, sendAmt)
+		if err != nil {
+			return fmt.Errorf("error associating payment: %w", err)
+		}
 	}
 
 	return nil

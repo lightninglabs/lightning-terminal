@@ -213,10 +213,21 @@ var (
 	}
 
 	endpoints = []struct {
-		name              string
-		macaroonFn        macaroonFn
-		requestFn         requestFn
-		successPattern    string
+		name           string
+		macaroonFn     macaroonFn
+		requestFn      requestFn
+		successPattern string
+
+		// disabledPattern represents a substring that is expected to be
+		// part of the error returned when a gRPC request is made to the
+		// disabled endpoint.
+		// TODO: once we have a subsystem manager, we can unify the
+		// returned for disabled endpoints for both subsystems and
+		// subservers by not registering the subsystem URIs to the
+		// permsMgr if it has been disabled. This field will then be
+		// unnecessary and can be removed.
+		disabledPattern string
+
 		allowedThroughLNC bool
 		grpcWebURI        string
 		restWebURI        string
@@ -269,6 +280,7 @@ var (
 		macaroonFn:        faradayMacaroonFn,
 		requestFn:         faradayRequestFn,
 		successPattern:    "\"reports\":[]",
+		disabledPattern:   "unknown request",
 		allowedThroughLNC: true,
 		grpcWebURI:        "/frdrpc.FaradayServer/RevenueReport",
 		restWebURI:        "/v1/faraday/revenue",
@@ -278,6 +290,7 @@ var (
 		macaroonFn:        loopMacaroonFn,
 		requestFn:         loopRequestFn,
 		successPattern:    "\"swaps\":[]",
+		disabledPattern:   "unknown request",
 		allowedThroughLNC: true,
 		grpcWebURI:        "/looprpc.SwapClient/ListSwaps",
 		restWebURI:        "/v1/loop/swaps",
@@ -287,6 +300,7 @@ var (
 		macaroonFn:        poolMacaroonFn,
 		requestFn:         poolRequestFn,
 		successPattern:    "\"accounts_active\":0",
+		disabledPattern:   "unknown request",
 		allowedThroughLNC: true,
 		grpcWebURI:        "/poolrpc.Trader/GetInfo",
 		restWebURI:        "/v1/pool/info",
@@ -296,6 +310,7 @@ var (
 		macaroonFn:        tapMacaroonFn,
 		requestFn:         tapRequestFn,
 		successPattern:    "\"assets\":[]",
+		disabledPattern:   "unknown request",
 		allowedThroughLNC: true,
 		grpcWebURI:        "/taprpc.TaprootAssets/ListAssets",
 		restWebURI:        "/v1/taproot-assets/assets",
@@ -305,6 +320,7 @@ var (
 		macaroonFn:        emptyMacaroonFn,
 		requestFn:         tapUniverseRequestFn,
 		successPattern:    "\"num_assets\":",
+		disabledPattern:   "unknown request",
 		allowedThroughLNC: true,
 		grpcWebURI:        "/universerpc.Universe/Info",
 		restWebURI:        "/v1/taproot-assets/universe/info",
@@ -326,9 +342,11 @@ var (
 		macaroonFn:        litMacaroonFn,
 		requestFn:         litAccountRequestFn,
 		successPattern:    "\"accounts\":[",
+		disabledPattern:   "accounts has been disabled",
 		allowedThroughLNC: false,
 		grpcWebURI:        "/litrpc.Accounts/ListAccounts",
 		restWebURI:        "/v1/accounts",
+		canDisable:        true,
 	}, {
 		name:              "litrpc-autopilot",
 		macaroonFn:        litMacaroonFn,
@@ -384,6 +402,7 @@ func testDisablingSubServers(ctx context.Context, net *NetworkHarness,
 			WithLitArg("loop-mode", "disable"),
 			WithLitArg("pool-mode", "disable"),
 			WithLitArg("faraday-mode", "disable"),
+			WithLitArg("accounts.disable", ""),
 		},
 	)
 	require.NoError(t, err)
@@ -494,7 +513,7 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					endpoint.requestFn,
 					endpoint.successPattern,
 					endpointDisabled,
-					"unknown request",
+					endpoint.disabledPattern,
 				)
 			})
 		}
@@ -532,7 +551,7 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					shouldFailWithoutMacaroon,
 					endpoint.successPattern,
 					endpointDisabled,
-					"unknown request",
+					endpoint.disabledPattern,
 				)
 			})
 		}
@@ -557,7 +576,8 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					ttt, cfg.LitAddr(), cfg.UIPassword,
 					endpoint.grpcWebURI,
 					withoutUIPassword, endpointDisabled,
-					"unknown request", endpoint.noAuth,
+					endpoint.disabledPattern,
+					endpoint.noAuth,
 				)
 			})
 		}
@@ -596,7 +616,7 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					endpoint.requestFn,
 					endpoint.successPattern,
 					endpointDisabled,
-					"unknown request",
+					endpoint.disabledPattern,
 				)
 			})
 		}
@@ -649,7 +669,9 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					endpoint.successPattern,
 					endpoint.allowedThroughLNC,
 					"unknown service",
-					endpointDisabled, endpoint.noAuth,
+					endpointDisabled,
+					endpoint.disabledPattern,
+					endpoint.noAuth,
 				)
 			})
 		}
@@ -657,6 +679,12 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 
 	t.Run("gRPC super macaroon account system test", func(tt *testing.T) {
 		cfg := net.Alice.Cfg
+
+		// If the accounts service is disabled, we skip this test as it
+		// will fail due to the accounts service being disabled.
+		if subServersDisabled {
+			return
+		}
 
 		superMacFile, err := bakeSuperMacaroon(cfg, false)
 		require.NoError(tt, err)
@@ -722,6 +750,7 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					endpoint.successPattern,
 					allowed, expectedErr,
 					endpointDisabled,
+					endpoint.disabledPattern,
 					endpoint.noAuth,
 				)
 			})
@@ -1169,7 +1198,8 @@ func runRESTAuthTest(t *testing.T, hostPort, uiPassword, macaroonPath, restURI,
 // through Lightning Node Connect.
 func runLNCAuthTest(t *testing.T, rawLNCConn grpc.ClientConnInterface,
 	makeRequest requestFn, successContent string, callAllowed bool,
-	expectErrContains string, disabled, noMac bool) {
+	expectErrContains string, disabled bool, disabledPattern string,
+	noMac bool) {
 
 	ctxt, cancel := context.WithTimeout(
 		context.Background(), defaultTimeout,
@@ -1186,7 +1216,7 @@ func runLNCAuthTest(t *testing.T, rawLNCConn grpc.ClientConnInterface,
 	// The call should be allowed, so we expect no error unless this is
 	// for a disabled sub-server.
 	case disabled:
-		require.ErrorContains(t, err, "unknown request")
+		require.ErrorContains(t, err, disabledPattern)
 		return
 
 	case noMac:

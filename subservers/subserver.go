@@ -11,12 +11,13 @@ import (
 )
 
 const (
-	LND     string = "lnd"
-	LIT     string = "lit"
-	LOOP    string = "loop"
-	POOL    string = "pool"
-	TAP     string = "taproot-assets"
-	FARADAY string = "faraday"
+	LND      string = "lnd"
+	LIT      string = "lit"
+	LOOP     string = "loop"
+	POOL     string = "pool"
+	TAP      string = "taproot-assets"
+	FARADAY  string = "faraday"
+	ACCOUNTS string = "accounts"
 )
 
 // subServerWrapper is a wrapper around the SubServer interface and is used by

@@ -17,6 +17,7 @@ import (
 	"github.com/lightninglabs/faraday"
 	"github.com/lightninglabs/faraday/chain"
 	"github.com/lightninglabs/faraday/frdrpcserver"
+	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/autopilotserver"
 	"github.com/lightninglabs/lightning-terminal/firewall"
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
@@ -205,6 +206,8 @@ type Config struct {
 
 	Firewall *firewall.Config `group:"Firewall options" namespace:"firewall"`
 
+	Accounts *accounts.Config `group:"Accounts options" namespace:"accounts"`
+
 	// faradayRpcConfig is a subset of faraday's full configuration that is
 	// passed into faraday's RPC server.
 	faradayRpcConfig *frdrpcserver.Config
@@ -320,6 +323,7 @@ func defaultConfig() *Config {
 			PingCadence: time.Hour,
 		},
 		Firewall: firewall.DefaultConfig(),
+		Accounts: &accounts.Config{},
 	}
 }
 

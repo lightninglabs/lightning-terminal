@@ -68,6 +68,12 @@ func (m *mockService) AssociateInvoice(id AccountID, hash lntypes.Hash) error {
 	return nil
 }
 
+func (m *mockService) AssociatePayment(id AccountID, paymentHash lntypes.Hash,
+	amt lnwire.MilliSatoshi) error {
+
+	return nil
+}
+
 func (m *mockService) TrackPayment(_ AccountID, hash lntypes.Hash,
 	amt lnwire.MilliSatoshi) error {
 
@@ -83,6 +89,10 @@ func (m *mockService) RemovePayment(hash lntypes.Hash) error {
 	delete(m.trackedPayments, hash)
 
 	return nil
+}
+
+func (*mockService) IsRunning() bool {
+	return true
 }
 
 var _ Service = (*mockService)(nil)

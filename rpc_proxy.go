@@ -623,6 +623,9 @@ func (p *rpcProxy) checkSubSystemStarted(requestURI string) error {
 	switch {
 	case handled:
 
+	case isAccountsReq(requestURI):
+		system = subservers.ACCOUNTS
+
 	case p.permsMgr.IsSubServerURI(subservers.LIT, requestURI):
 		system = subservers.LIT
 
@@ -692,5 +695,15 @@ func isStatusReq(uri string) bool {
 func isProxyReq(uri string) bool {
 	return strings.HasPrefix(
 		uri, fmt.Sprintf("/%s", litrpc.Proxy_ServiceDesc.ServiceName),
+	)
+}
+
+// isAccountsReq returns true if the given request is intended for the
+// litrpc.Accounts service.
+func isAccountsReq(uri string) bool {
+	return strings.HasPrefix(
+		uri, fmt.Sprintf(
+			"/%s", litrpc.Accounts_ServiceDesc.ServiceName,
+		),
 	)
 }
