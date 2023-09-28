@@ -11,6 +11,7 @@ module.exports = function (app) {
         '/frdrpc.FaradayServer',
         '/litrpc.Session',
         '/litrpc.Accounts',
+        '/litrpc.Status',
       ],
       {
         target: 'https://localhost:8443',

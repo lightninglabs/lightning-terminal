@@ -5,6 +5,7 @@ import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
 import { Badge } from 'components/base';
 import PageHeader from 'components/common/PageHeader';
+import SubServerRequired from 'components/common/SubServerRequired';
 import ChannelList from './ChannelList';
 import LoopActions from './LoopActions';
 import LoopTiles from './LoopTiles';
@@ -26,6 +27,7 @@ const LoopPage: React.FC = () => {
     registerSidecarView,
     channelStore,
     nodeStore,
+    subServerStore,
   } = useStore();
 
   const title = (
@@ -41,26 +43,28 @@ const LoopPage: React.FC = () => {
 
   const { PageWrap } = Styled;
   return (
-    <PageWrap>
-      {appView.processingSwapsVisible ? (
-        <ProcessingSwaps />
-      ) : buildSwapView.showWizard ? (
-        <SwapWizard />
-      ) : registerSidecarView.showWizard ? (
-        <SidecarWizard />
-      ) : (
-        <>
-          <PageHeader
-            title={title}
-            onHelpClick={appView.showTour}
-            onExportClick={channelStore.exportChannels}
-          />
-          <LoopTiles />
-          <LoopActions />
-        </>
-      )}
-      <ChannelList />
-    </PageWrap>
+    <SubServerRequired status={subServerStore.subServers.loop}>
+      <PageWrap>
+        {appView.processingSwapsVisible ? (
+          <ProcessingSwaps />
+        ) : buildSwapView.showWizard ? (
+          <SwapWizard />
+        ) : registerSidecarView.showWizard ? (
+          <SidecarWizard />
+        ) : (
+          <>
+            <PageHeader
+              title={title}
+              onHelpClick={appView.showTour}
+              onExportClick={channelStore.exportChannels}
+            />
+            <LoopTiles />
+            <LoopActions />
+          </>
+        )}
+        <ChannelList />
+      </PageWrap>
+    </SubServerRequired>
   );
 };
 

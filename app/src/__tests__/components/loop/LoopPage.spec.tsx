@@ -9,6 +9,7 @@ import { formatSats } from 'util/formatters';
 import { renderWithProviders } from 'util/tests';
 import { loopListSwaps } from 'util/tests/sampleData';
 import { createStore, Store } from 'store';
+import { prefixTranslation } from 'util/translate';
 import LoopPage from 'components/loop/LoopPage';
 
 const grpcMock = grpc as jest.Mocked<typeof grpc>;
@@ -215,6 +216,16 @@ describe('LoopPage component', () => {
       fireEvent.click(getByText('slash.svg'));
       expect(store.settingsStore.channelSort.field).toBeUndefined();
       expect(store.settingsStore.channelSort.descending).toBe(true);
+    });
+
+    it('should display subserver disabled message', () => {
+      const { getByText, store } = render();
+      const { l } = prefixTranslation('cmps.common.SubServerStatus');
+
+      store.subServerStore.subServers.loop.disabled = true;
+      render();
+
+      expect(getByText(l('isDisabled'))).toBeInTheDocument();
     });
   });
 });

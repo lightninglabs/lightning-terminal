@@ -32,9 +32,10 @@ import { ReactComponent as CancelIcon } from 'assets/icons/slash.svg';
 import { ReactComponent as UserPlusIcon } from 'assets/icons/user-plus.svg';
 import { ReactComponent as QRCodeIcon } from 'assets/icons/qr.svg';
 import { ReactComponent as BoltOutlinedIcon } from 'assets/icons/bolt-outlined.svg';
+import { ReactComponent as PlugIcon } from 'assets/icons/plug.svg';
 
 interface IconProps {
-  size?: 'x-small' | 'small' | 'medium' | 'large';
+  size?: 'x-small' | 'small' | 'medium' | 'large' | 'x-large';
   onClick?: () => void;
   disabled?: boolean;
 }
@@ -51,7 +52,7 @@ const Icon = styled.span<IconProps>`
     cursor: pointer;
     &:hover {
       color: ${props.theme.colors.blue};
-      background-color: ${props.theme.colors.offWhite}; 
+      background-color: ${props.theme.colors.offWhite};
     }
   `}
 
@@ -88,6 +89,13 @@ const Icon = styled.span<IconProps>`
       width: 36px;
       height: 36px;
     `}
+
+  ${props =>
+    props.size === 'x-large' &&
+    `
+      width: 48px;
+      height: 48px;
+    `}
 `;
 
 export const AlertTriangle = Icon.withComponent(AlertTriangleIcon);
@@ -123,3 +131,4 @@ export const BarChart = Icon.withComponent(BarChartIcon);
 export const List = Icon.withComponent(ListIcon);
 export const QRCode = Icon.withComponent(QRCodeIcon);
 export const BoltOutlined = Icon.withComponent(BoltOutlinedIcon);
+export const Plug = Icon.withComponent(PlugIcon);

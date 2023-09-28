@@ -1,7 +1,9 @@
 import * as ACCOUNT from 'types/generated/lit-accounts_pb';
 import * as SESSION from 'types/generated/lit-sessions_pb';
+import * as STATUS from 'types/generated/lit-status_pb';
 import { Accounts } from 'types/generated/lit-accounts_pb_service';
 import { Sessions } from 'types/generated/lit-sessions_pb_service';
+import { Status } from 'types/generated/lit-status_pb_service';
 import { b64 } from 'util/strings';
 import { MAX_DATE } from 'util/constants';
 import BaseApi from './base';
@@ -82,6 +84,12 @@ class LitApi extends BaseApi<LitEvents> {
     const req = new SESSION.RevokeSessionRequest();
     req.setLocalPublicKey(b64(localPublicKey));
     const res = await this._grpc.request(Sessions.RevokeSession, req, this._meta);
+    return res.toObject();
+  }
+
+  async listSubServerStatus(): Promise<STATUS.SubServerStatusResp.AsObject> {
+    const req = new STATUS.SubServerStatusReq();
+    const res = await this._grpc.request(Status.SubServerStatus, req, this._meta);
     return res.toObject();
   }
 }

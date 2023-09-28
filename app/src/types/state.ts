@@ -69,3 +69,9 @@ export enum ChannelStatus {
  * duration is not just a random number.
  */
 export type LeaseDuration = number;
+
+export interface SubServerStatus {
+  disabled: boolean;
+  running: boolean;
+  error: string;
+}

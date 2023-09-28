@@ -59,6 +59,18 @@ export default class SwapStore {
     );
   }
 
+  /** checks the subserver status to ensure loop is running */
+  get canFetchData() {
+    if (
+      this._store.subServerStore.subServers.loop.running &&
+      !this._store.subServerStore.subServers.loop.error
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+
   /** stores the id of a dismissed swap */
   dismissSwap(swapId: string) {
     this.dismissedSwapIds.push(swapId);
