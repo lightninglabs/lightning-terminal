@@ -242,7 +242,6 @@ func TestGroupID(t *testing.T) {
 
 	// Instead, the group ID should match the session ID of session 1.
 	require.Equal(t, session1.ID, session2.GroupID)
-
 }
 
 // TestSerializeDeserializeCaveats makes sure that a list of caveats can be
