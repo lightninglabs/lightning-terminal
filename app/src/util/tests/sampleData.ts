@@ -131,6 +131,7 @@ export const lndChannel: LND.Channel.AsObject = {
   zeroConfConfirmedScid: '',
   peerAlias: '',
   peerScidAlias: '',
+  memo: 'test channel',
 };
 
 export const lndListChannelsMany: LND.ListChannelsResponse.AsObject = {
@@ -170,6 +171,7 @@ export const lndPendingChannel: LND.PendingChannelsResponse.PendingChannel.AsObj
   numForwardingPackages: '7',
   chanStatusFlags: 'ChanStatusDefault',
   pb_private: false,
+  memo: 'test channel',
 };
 
 export const lndPendingChannels: LND.PendingChannelsResponse.AsObject = {
@@ -183,6 +185,7 @@ export const lndPendingChannels: LND.PendingChannelsResponse.AsObject = {
       commitFee: '9050',
       commitWeight: '552',
       feePerKw: '12500',
+      fundingExpiryBlocks: 100,
     },
   ],
   pendingClosingChannelsList: [

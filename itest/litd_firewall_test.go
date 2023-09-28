@@ -2,6 +2,7 @@ package itest
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
@@ -1270,13 +1271,15 @@ func connectMailboxWithRemoteKey(ctx context.Context,
 
 	ecdh := &keychain.PrivKeyECDH{PrivKey: localKey}
 	connData := mailbox.NewConnData(ecdh, remoteKey, nil, nil, nil, nil)
+	noiseConn := mailbox.NewNoiseGrpcConn(connData)
 
-	transportConn, err := mailbox.NewClient(ctx, connData)
+	transportConn, err := mailbox.NewGrpcClient(
+		ctx, mailboxServerAddr, connData,
+		grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})),
+	)
 	if err != nil {
 		return nil, nil, err
 	}
-
-	noiseConn := mailbox.NewNoiseGrpcConn(connData)
 
 	dialOpts := []grpc.DialOption{
 		grpc.WithContextDialer(transportConn.Dial),
