@@ -7,11 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
 	"github.com/lightninglabs/lightning-terminal/session"
-	"github.com/lightninglabs/protobuf-hex-display/jsonpb"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/macaroons"
 )
@@ -207,19 +205,12 @@ func (r *RequestLogger) addNewAction(ri *RequestInfo,
 			return err
 		}
 
-		jsonMarshaler := &jsonpb.Marshaler{
-			EmitDefaults: true,
-			OrigName:     true,
-		}
-
-		jsonStr, err := jsonMarshaler.MarshalToString(
-			proto.MessageV1(msg),
-		)
+		jsonBytes, err := lnrpc.ProtoJSONMarshalOpts.Marshal(msg)
 		if err != nil {
 			return fmt.Errorf("unable to decode response: %v", err)
 		}
 
-		action.RPCParamsJson = []byte(jsonStr)
+		action.RPCParamsJson = jsonBytes
 
 		meta := ri.MetaInfo
 		if meta != nil {

@@ -663,6 +663,7 @@ func (s *InterceptorService) TrackPayment(id AccountID, hash lntypes.Hash,
 				if errors.Is(
 					err, channeldb.ErrPaymentNotInitiated,
 				) {
+
 					log.Debugf("Payment %v not initiated, "+
 						"stopping tracking", hash)
 

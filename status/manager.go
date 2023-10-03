@@ -90,7 +90,6 @@ func (s *Manager) RegisterAndEnableSubServer(name string) {
 	ss.Disabled = false
 
 	s.subServers[name] = ss
-
 }
 
 // GetStatus returns the current status of a given sub-server. This will

@@ -121,6 +121,7 @@ func runAccountSystemTest(t *harnessTest, node *HarnessNode, hostPort,
 			Label: acctLabel,
 		},
 	)
+	require.NoError(t.t, err)
 	require.Equal(t.t, acctResp.Account.Id, infoResp.Id)
 	require.EqualValues(t.t, acctBalance, infoResp.CurrentBalance)
 	require.EqualValues(t.t, acctBalance, infoResp.InitialBalance)

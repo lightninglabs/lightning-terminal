@@ -1339,13 +1339,15 @@ func connectMailboxWithPairingPhrase(ctx context.Context,
 	ecdh := &keychain.PrivKeyECDH{PrivKey: privKey}
 
 	connData := mailbox.NewConnData(ecdh, nil, passphrase[:], nil, nil, nil)
+	noiseConn := mailbox.NewNoiseGrpcConn(connData)
 
-	transportConn, err := mailbox.NewClient(ctx, connData)
+	transportConn, err := mailbox.NewGrpcClient(
+		ctx, mailboxServerAddr, connData,
+		grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})),
+	)
 	if err != nil {
 		return nil, err
 	}
-
-	noiseConn := mailbox.NewNoiseGrpcConn(connData)
 
 	dialOpts := []grpc.DialOption{
 		grpc.WithContextDialer(transportConn.Dial),

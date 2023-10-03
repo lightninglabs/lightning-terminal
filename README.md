@@ -76,6 +76,7 @@ versioning](#daemon-versions-packaged-with-lit).
 
 | LiT               | LND          |
 |-------------------|--------------|
+| **v0.11.0-alpha** | v0.16.0-beta |
 | **v0.10.5-alpha** | v0.16.0-beta |
 | **v0.10.4-alpha** | v0.16.0-beta |
 | **v0.10.2-alpha** | v0.16.0-beta |
@@ -120,9 +121,9 @@ a standalone process on the same or remote machine (called "lnd remote mode",
 set by `lnd-mode=remote` config option)](doc/config-lnd-remote.md).
 
 In addition to those main modes, the individual bundled daemons (Faraday, Loop
-and Pool) can be toggled to be integrated or remote as well. This offers a
-large number of possible configuration combinations, of which not all are
-fully supported due to technical reasons.
+and Pool) can be toggled to be integrated or remote as well, or as disabled.
+This offers a large number of possible configuration combinations, of which not
+all are fully supported due to technical reasons.
 
 The following table shows the supported combinations:
 
@@ -136,12 +137,17 @@ The following table shows the supported combinations:
 | `loop-mode=remote`                     |                       | X                 |
 | `pool-mode=remote`                     |                       | X                 |
 | `taprootassets-mode=remote`            |                       | X                 |
+| `faraday-mode=disable`                 | X                     | X                 |
+| `loop-mode=disable`                    | X                     | X                 |
+| `pool-mode=disable`                    | X                     | X                 |
+| `taprootassets-mode=disable`           | X                     | X                 |
 | `lnd` running in "stateless init" mode | X                     |                   |
 
 ## Daemon Versions packaged with LiT
 
 | LiT               | LND          | Loop         | Faraday       | Pool         | Taproot Assets |
 |-------------------|--------------|--------------|---------------|--------------|----------------|
+| **v0.11.0-alpha** | v0.17.0-beta | v0.26.3-beta | v0.2.11-alpha | v0.6.4-beta  | v0.2.3-alpha   |
 | **v0.10.5-alpha** | v0.16.4-beta | v0.26.2-beta | v0.2.11-alpha | v0.6.4-beta  | v0.2.3-alpha   |
 | **v0.10.4-alpha** | v0.16.4-beta | v0.25.2-beta | v0.2.11-alpha | v0.6.4-beta  | v0.2.3-alpha   |
 | **v0.10.2-alpha** | v0.16.4-beta | v0.25.2-beta | v0.2.11-alpha | v0.6.4-beta  | v0.2.2-alpha   |
