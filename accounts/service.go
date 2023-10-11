@@ -305,7 +305,7 @@ func (s *InterceptorService) UpdateAccount(accountID AccountID, accountBalance,
 
 	// As this function updates account balances, we require that the
 	// service is running before we execute it.
-	if s.isRunningUnsafe() {
+	if !s.isRunningUnsafe() {
 		// This case can only happen if the service is disabled while
 		// we we're processing a request.
 		return nil, ErrAccountServiceDisabled
