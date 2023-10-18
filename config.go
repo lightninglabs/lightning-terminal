@@ -362,19 +362,6 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 		return nil, err
 	}
 
-	// TODO(positiveblue): Taproot Assets do not support mainnet yet so we
-	// want the subserver disabled for that specific net.
-	// We cannot distinguish if the user manually set the flag
-	// `taproot-assets-mode` or we are using the default value (integrated)
-	// so we will disable the server in both cases.
-	if cfg.Network == "mainnet" {
-		log.Infof("LiT is running in mainnet, the taproot assets " +
-			"subserver do not support the `mainnet` network yet, " +
-			"disabling taproot assets subserver")
-
-		cfg.TaprootAssetsMode = ModeDisable
-	}
-
 	// Translate the more user friendly string modes into the more developer
 	// friendly internal bool variables now.
 	cfg.lndRemote = cfg.LndMode == ModeRemote
