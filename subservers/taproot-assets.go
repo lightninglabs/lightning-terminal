@@ -181,12 +181,14 @@ func (t *taprootAssetsSubServer) Permissions() map[string][]bakery.Op {
 // NOTE: this is part of the SubServer interface.
 func (t *taprootAssetsSubServer) WhiteListedURLs() map[string]struct{} {
 	// If the taproot-asset daemon is running in integrated mode, then we
-	// use cfg.RpcConf.AllowPublicStats to determine if the public stats
-	// endpoints should be included in the whitelist. If it is running in
-	// remote mode, however, then we don't know if the public stats are
-	// allowed, and so we just allow the request through since the remote
-	// daemon will handle blocking the call if it is not whitelisted there.
+	// use cfg.RpcConf.AllowPublicUniProofCourier to determine if universe
+	// proof courier RPC endpoints should be included in the whitelist, as
+	// well as cfg.RpcConf.AllowPublicStats for the public stats endpoints.
+	// If it is running in remote mode however, we just allow the request
+	// through since the remote daemon will handle blocking the call if it
+	// is not whitelisted there.
 	return perms.MacaroonWhitelist(
+		t.cfg.RpcConf.AllowPublicUniProofCourier || t.remote,
 		t.cfg.RpcConf.AllowPublicStats || t.remote,
 	)
 }
