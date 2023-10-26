@@ -14,8 +14,8 @@ var privacyMapCommands = cli.Command{
 	Name:      "privacy",
 	ShortName: "p",
 	Usage: "Access the real-pseudo string pairs of the " +
-		"privacy mapper",
-	Category: "Privacy",
+		"privacy mapper.",
+	Category: "Firewall",
 	Flags: []cli.Flag{
 		cli.StringFlag{
 			Name:   "session_id",
@@ -24,7 +24,7 @@ var privacyMapCommands = cli.Command{
 		},
 		cli.BoolFlag{
 			Name: "realtopseudo",
-			Usage: "set to true if the input should be " +
+			Usage: "Set to true if the input should be " +
 				"mapped to its pseudo counterpart. " +
 				"Otherwise the input will be taken " +
 				"as the pseudo value that should be " +
@@ -40,17 +40,24 @@ var privacyMapCommands = cli.Command{
 		privacyMapConvertStrCommand,
 		privacyMapConvertUint64Command,
 	},
+	Description: "Access the real-pseudo string pairs of the " +
+		"privacy mapper. To improve privacy around data " +
+		"sharing, channel ids, channel points and node " +
+		"pubkeys are obfuscated by litd through a system " +
+		"called the Privacy Mapper. The Privacy Mapper can " +
+		"convert both strings and uint64 to the pseudo " +
+		"counter part and back.",
 }
 
 var privacyMapConvertStrCommand = cli.Command{
 	Name:      "str",
 	ShortName: "s",
-	Usage:     "convert a string to its real or pseudo counter part",
+	Usage:     "Convert a string to its real or pseudo counter part.",
 	Action:    privacyMapConvertStr,
 	Flags: []cli.Flag{
 		cli.StringFlag{
 			Name:     "input",
-			Usage:    "the string to convert",
+			Usage:    "The string to convert.",
 			Required: true,
 		},
 	},
@@ -99,12 +106,12 @@ func privacyMapConvertStr(ctx *cli.Context) error {
 var privacyMapConvertUint64Command = cli.Command{
 	Name:      "uint64",
 	ShortName: "u",
-	Usage:     "convert a uint64 to its real or pseudo counter part",
+	Usage:     "Convert a uint64 to its real or pseudo counter part.",
 	Action:    privacyMapConvertUint64,
 	Flags: []cli.Flag{
 		cli.Uint64Flag{
 			Name:     "input",
-			Usage:    "the uint64 to convert",
+			Usage:    "The uint64 to convert.",
 			Required: true,
 		},
 	},

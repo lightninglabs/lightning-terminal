@@ -33,22 +33,22 @@ var (
 	baseDirFlag = cli.StringFlag{
 		Name:  "basedir",
 		Value: terminal.DefaultLitDir,
-		Usage: "path to lit's base directory",
+		Usage: "Path to LiT's base directory",
 	}
 	networkFlag = cli.StringFlag{
 		Name: "network, n",
-		Usage: "the network litd is running on e.g. mainnet, " +
+		Usage: "The network litd is running on e.g. mainnet, " +
 			"testnet, etc.",
 		Value: terminal.DefaultNetwork,
 	}
 	tlsCertFlag = cli.StringFlag{
 		Name:  "tlscertpath",
-		Usage: "path to lit's TLS certificate",
+		Usage: "Path to lit's TLS certificate",
 		Value: terminal.DefaultTLSCertPath,
 	}
 	macaroonPathFlag = cli.StringFlag{
 		Name:  "macaroonpath",
-		Usage: "path to lit's macaroon file",
+		Usage: "Path to lit's macaroon file",
 		Value: terminal.DefaultMacaroonPath,
 	}
 )
@@ -63,7 +63,7 @@ func main() {
 		cli.StringFlag{
 			Name:  "rpcserver",
 			Value: "localhost:8443",
-			Usage: "lit daemon address host:port",
+			Usage: "LiT daemon address host:port",
 		},
 		networkFlag,
 		baseDirFlag,

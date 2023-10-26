@@ -22,7 +22,7 @@ var accountsCommands = []cli.Command{
 	{
 		Name:      "accounts",
 		ShortName: "a",
-		Usage:     "manage accounts",
+		Usage:     "Manage accounts",
 		Category:  "Accounts",
 		Subcommands: []cli.Command{
 			createAccountCommand,
@@ -31,6 +31,7 @@ var accountsCommands = []cli.Command{
 			accountInfoCommand,
 			removeAccountCommand,
 		},
+		Description: "Manage accounts.",
 	},
 }
 
@@ -39,38 +40,38 @@ var createAccountCommand = cli.Command{
 	ShortName: "c",
 	Usage:     "Create a new off-chain account with a balance.",
 	ArgsUsage: "balance [expiration_date] [--label=LABEL] [--save_to=FILE]",
-	Description: `
-	Adds an entry to the account database. This entry represents an amount
-	of satoshis (account balance) that can be spent using off-chain
-	transactions (e.g. paying invoices).
+	Description: "Adds an entry to the account database. " +
+		"This entry represents an amount of satoshis (account " +
+		"balance) that can be spent using off-chain transactions " +
+		"(e.g. paying invoices).\n\n" +
 
-	Macaroons can be created to be locked to an account. This makes sure
-	that the bearer of the macaroon can only spend at most that amount of
-	satoshis through the daemon that has issued the macaroon.
+		"   Macaroons can be created to be locked to an account. " +
+		"This makes sure that the bearer of the macaroon can only " +
+		"spend at most that amount of satoshis through the daemon " +
+		"that has issued the macaroon.\n\n" +
 
-	Accounts only assert a maximum amount spendable. Having a certain
-	account balance does not guarantee that the node has the channel
-	liquidity to actually spend that amount.
-	`,
+		"   Accounts only assert a maximum amount spendable. Having " +
+		"a certain account balance does not guarantee that the node " +
+		"has the channel liquidity to actually spend that amount.",
 	Flags: []cli.Flag{
 		cli.Uint64Flag{
 			Name:  "balance",
-			Usage: "the initial balance of the account",
+			Usage: "The initial balance of the account.",
 		},
 		cli.Int64Flag{
 			Name: "expiration_date",
-			Usage: "the expiration date of the account expressed " +
+			Usage: "The expiration date of the account expressed " +
 				"in seconds since the unix epoch. 0 means " +
-				"it does not expire",
+				"it does not expire.",
 		},
 		cli.StringFlag{
 			Name: "save_to",
-			Usage: "store the account macaroon created for the " +
-				"account to the given file",
+			Usage: "Store the account macaroon created for the " +
+				"account to the given file.",
 		},
 		cli.StringFlag{
 			Name:  labelName,
-			Usage: "(optional) the unique label of the account",
+			Usage: "(optional) The unique label of the account.",
 		},
 	},
 	Action: createAccount,
@@ -152,31 +153,29 @@ var updateAccountCommand = cli.Command{
 	ShortName: "u",
 	Usage:     "Update an existing off-chain account.",
 	ArgsUsage: "[id | label] new_balance [new_expiration_date] [--save_to=]",
-	Description: `
-	Updates an existing off-chain account and sets either a new balance or
-	new expiration date or both.
-	`,
+	Description: "Updates an existing off-chain account and sets " +
+		"either a new balance or new expiration date or both.",
 	Flags: []cli.Flag{
 		cli.StringFlag{
 			Name:  idName,
-			Usage: "the ID of the account to update",
+			Usage: "The ID of the account to update.",
 		},
 		cli.StringFlag{
 			Name:  labelName,
-			Usage: "(optional) the unique label of the account",
+			Usage: "(optional) The unique label of the account.",
 		},
 		cli.Int64Flag{
 			Name: "new_balance",
-			Usage: "the new balance of the account; -1 means do " +
-				"not update the balance",
+			Usage: "The new balance of the account; -1 means do " +
+				"not update the balance.",
 			Value: -1,
 		},
 		cli.Int64Flag{
 			Name: "new_expiration_date",
-			Usage: "the new expiration date of the account " +
+			Usage: "The new expiration date of the account " +
 				"expressed in seconds since the unix epoch; " +
 				"-1 means do not update the expiration date; " +
-				"0 means it does not expire",
+				"0 means it does not expire.",
 			Value: -1,
 		},
 	},
@@ -243,11 +242,9 @@ func updateAccount(ctx *cli.Context) error {
 var listAccountsCommand = cli.Command{
 	Name:      "list",
 	ShortName: "l",
-	Usage:     "Lists all off-chain accounts.",
-	Description: `
-	Returns all accounts that are currently stored in the account
-	database.
-	`,
+	Usage:     "List all off-chain accounts.",
+	Description: "Returns all accounts that are currently stored in " +
+		"the account database.",
 	Action: listAccounts,
 }
 
@@ -275,17 +272,16 @@ var accountInfoCommand = cli.Command{
 	ShortName: "i",
 	Usage:     "Show information about a single off-chain account.",
 	ArgsUsage: "[id | label]",
-	Description: `
-	Returns a single account entry from the account database.
-	`,
+	Description: "Returns a single account entry from the account " +
+		"database.",
 	Flags: []cli.Flag{
 		cli.StringFlag{
 			Name:  idName,
-			Usage: "the ID of the account",
+			Usage: "The ID of the account.",
 		},
 		cli.StringFlag{
 			Name:  labelName,
-			Usage: "(optional) the unique label of the account",
+			Usage: "(optional) The unique label of the account.",
 		},
 	},
 	Action: accountInfo,
@@ -321,19 +317,17 @@ func accountInfo(ctx *cli.Context) error {
 var removeAccountCommand = cli.Command{
 	Name:      "remove",
 	ShortName: "r",
-	Usage:     "Removes an off-chain account from the database.",
+	Usage:     "Remove an off-chain account from the database.",
 	ArgsUsage: "[id | label]",
-	Description: `
-	Removes an account entry from the account database.
-	`,
+	Description: "Removes an account entry from the account database.",
 	Flags: []cli.Flag{
 		cli.StringFlag{
 			Name:  idName,
-			Usage: "the ID of the account",
+			Usage: "The ID of the account.",
 		},
 		cli.StringFlag{
 			Name:  labelName,
-			Usage: "(optional) the unique label of the account",
+			Usage: "(optional) The unique label of the account.",
 		},
 	},
 	Action: removeAccount,

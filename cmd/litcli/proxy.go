@@ -15,21 +15,10 @@ import (
 
 var litCommands = []cli.Command{
 	{
-		Name:     "stop",
-		Usage:    "shutdown the LiT daemon",
-		Category: "LiT",
-		Action:   shutdownLit,
-	},
-	{
-		Name: "getinfo",
-		Usage: "Returns basic information related to the active " +
-			"daemon.",
-		Category: "LiT",
-		Action:   getInfo,
-	},
-	{
 		Name: "bakesupermacaroon",
 		Usage: "Bake a new super macaroon with all of LiT's active " +
+			"permissions",
+		Description: "Bake a new super macaroon with all of LiT's active " +
 			"permissions.",
 		Category: "LiT",
 		Action:   bakeSuperMacaroon,
@@ -45,10 +34,26 @@ var litCommands = []cli.Command{
 			},
 			cli.StringFlag{
 				Name: "save_to",
-				Usage: "save returned admin macaroon to " +
-					"this file",
+				Usage: "Save returned admin macaroon to " +
+					"this file.",
 			},
 		},
+	},
+	{
+		Name: "getinfo",
+		Usage: "Returns basic information related to the active " +
+			"daemon",
+		Description: "Returns basic information related to the active " +
+			"daemon.",
+		Category: "LiT",
+		Action:   getInfo,
+	},
+	{
+		Name:        "stop",
+		Usage:       "Shutdown the LiT daemon",
+		Description: "Shutdown the LiT daemon.\n",
+		Category:    "LiT",
+		Action:      shutdownLit,
 	},
 }
 
