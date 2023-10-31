@@ -10,9 +10,10 @@ import (
 
 var statusCommands = []cli.Command{
 	{
-		Name:     "status",
-		Usage:    "info about litd status",
-		Category: "Status",
+		Name:        "status",
+		Usage:       "View info about litd status",
+		Description: "View info about litd status.\n",
+		Category:    "LiT",
 		Action:   getStatus,
 	},
 }

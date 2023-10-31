@@ -16,23 +16,22 @@ import (
 
 var autopilotCommands = cli.Command{
 	Name:     "autopilot",
-	Usage:    "manage autopilot sessions",
-	Category: "Autopilot",
+	Usage:    "Manage autopilot sessions",
+	Category: "LNC",
 	Subcommands: []cli.Command{
 		listAutopilotFeaturesCmd,
 		addAutopilotSessionCmd,
 		revokeAutopilotSessionCmd,
 		listAutopilotSessionsCmd,
 	},
+	Description: "Manage autopilot sessions.",
 }
 
 var listAutopilotFeaturesCmd = cli.Command{
 	Name:      "features",
 	ShortName: "f",
 	Usage:     "List available Autopilot features.",
-	Description: `
-	List available Autopilot features.	
-	`,
+	Description: "List available Autopilot features.",
 	Action: listFeatures,
 }
 
@@ -40,11 +39,10 @@ var addAutopilotSessionCmd = cli.Command{
 	Name:      "add",
 	ShortName: "a",
 	Usage:     "Initialize an Autopilot session.",
-	Description: `
-	Initialize an Autopilot session.
-
-	If set for any feature, configuration flags need to be repeated for each
-	feature that is registered, corresponding to the order of features.`,
+	Description: "Initialize an Autopilot session.\n\n" +
+		"   If set for any feature, configuration flags need to be " +
+		"repeated for each feature that is registered, corresponding " +
+		"to the order of features.",
 	Action: initAutopilotSession,
 	Flags: []cli.Flag{
 		labelFlag,
@@ -57,14 +55,14 @@ var addAutopilotSessionCmd = cli.Command{
 		},
 		cli.StringFlag{
 			Name: "channel-restrict-list",
-			Usage: "list of channel IDs that the " +
+			Usage: "List of channel IDs that the " +
 				"Autopilot server should not " +
 				"perform actions on. In the " +
 				"form of: chanID1,chanID2,...",
 		},
 		cli.StringFlag{
 			Name: "peer-restrict-list",
-			Usage: "list of peer IDs that the " +
+			Usage: "List of peer IDs that the " +
 				"Autopilot server should not " +
 				"perform actions on. In the " +
 				"form of: peerID1,peerID2,...",
@@ -72,16 +70,16 @@ var addAutopilotSessionCmd = cli.Command{
 		cli.StringFlag{
 			Name: "group_id",
 			Usage: "The hex encoded group ID of the session " +
-				"group to link this one to",
+				"group to link this one to.",
 		},
 		cli.StringSliceFlag{
 			Name: "feature-config",
-			Usage: `JSON-serialized configuration with the ` +
-				`expected format: {"version":0,` +
-				`"option1":"parameter1",` +
-				`"option2":"parameter2",...}. An empty ` +
-				`configuration is allowed with {} to use the ` +
-				`default configuration`,
+			Usage: "JSON-serialized configuration with the " +
+				"expected format: {\"version\":0," +
+				"\"option1\":\"parameter1\"," +
+				"\"option2\":\"parameter2\",...}. An empty " +
+				"configuration is allowed with {} to use the " +
+				"default configuration.",
 		},
 	},
 }
@@ -90,15 +88,13 @@ var revokeAutopilotSessionCmd = cli.Command{
 	Name:      "revoke",
 	ShortName: "r",
 	Usage:     "Revoke an Autopilot session.",
-	Description: `
-	Revoke an active Autopilot session.
-	`,
+	Description: "Revoke an active Autopilot session.",
 	Action: revokeAutopilotSession,
 	Flags: []cli.Flag{
 		cli.StringFlag{
 			Name: "localpubkey",
-			Usage: "local pubkey of the " +
-				"session to revoke",
+			Usage: "Local pubkey of the " +
+				"session to revoke.",
 			Required: true,
 		},
 	},
@@ -108,9 +104,7 @@ var listAutopilotSessionsCmd = cli.Command{
 	Name:      "list",
 	ShortName: "l",
 	Usage:     "List all Autopilot sessions.",
-	Description: `
-	List all Autopilot sessions.
-	`,
+	Description: "List all Autopilot sessions.\n",
 	Action: listAutopilotSessions,
 }
 

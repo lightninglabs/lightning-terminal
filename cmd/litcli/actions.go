@@ -12,6 +12,7 @@ import (
 var listActionsCommand = cli.Command{
 	Name:   "actions",
 	Usage:  "List actions performed on the Litd server",
+	Category: "Firewall",
 	Action: listActions,
 	Flags: []cli.Flag{
 		cli.StringFlag{
@@ -53,22 +54,22 @@ var listActionsCommand = cli.Command{
 			Name: "state",
 			Usage: "The action state to filter on. If not set, " +
 				"then actions of any state will be returned. " +
-				"Options include: 'pending', 'done' and 'error",
+				"Options include: 'pending', 'done' and 'error'.",
 		},
 		cli.Uint64Flag{
 			Name: "index_offset",
 			Usage: "The index of an action that will be used as " +
-				"either the start a query to determine which " +
-				"actions should be returned in the response",
+				"the start of a query to determine which " +
+				"actions should be returned in the response.",
 		},
 		cli.Uint64Flag{
 			Name:  "max_num_actions",
-			Usage: "The max number of actions to return",
+			Usage: "The max number of actions to return.",
 		},
 		cli.BoolFlag{
 			Name: "oldest_first",
-			Usage: "Tf set, actions succeeding the index_offset " +
-				"will be returned",
+			Usage: "If set, actions succeeding the index_offset " +
+				"will be returned.",
 		},
 		cli.BoolFlag{
 			Name: "count_total",

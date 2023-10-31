@@ -14,9 +14,10 @@ import (
 // helperCommands are commands that do not require a connection to LiTd to
 // return a response.
 var helperCommands = cli.Command{
-	Name:     "helper",
-	Usage:    "helper commands",
-	Category: "Helper",
+	Name:        "helper",
+	Usage:       "Helper commands",
+	Description: "Helper commands.",
+	Category:     "LiT",
 	Subcommands: []cli.Command{
 		generateSuperMacRootIDCmd,
 		isSuperMacaroonCmd,
@@ -27,12 +28,11 @@ var helperCommands = cli.Command{
 // key ID for a super macaroon. A suffix may be specified.
 var generateSuperMacRootIDCmd = cli.Command{
 	Name: "supermacrootkey",
-	Usage: "Generate a valid super macaroon root key ID from scratch " +
-		"or from a given root key ID suffix",
-	Description: `
-	This command can be used to generate a valid super macaroon root key ID
-	from scratch or from a given root key ID suffix.
-	`,
+	Usage: "Generate a valid super macaroon root key ID from " +
+		"scratch or from a given root key ID suffix.",
+	Description: "This command can be used to generate a valid " +
+		"super macaroon root key ID from scratch or from " +
+		"a given root key ID suffix.",
 	Action: superMacRootKey,
 	Flags: []cli.Flag{
 		cli.StringFlag{
@@ -40,8 +40,8 @@ var generateSuperMacRootIDCmd = cli.Command{
 			Usage: "A 4-byte suffix to use in the construction " +
 				"of the root key ID. If not provided, then a " +
 				"random one will be generated. This must be " +
-				"specified as a hex string using a maximum of " +
-				"8 characters.",
+				"specified as a hex string using a maximum " +
+				"of 8 characters.",
 		},
 	},
 }
@@ -81,16 +81,14 @@ func superMacRootKey(ctx *cli.Context) error {
 // a macaroon is a super macaroon.
 var isSuperMacaroonCmd = cli.Command{
 	Name:  "issupermacaroon",
-	Usage: "Prints 'true' if the given macaroon is a super macaroon",
-	Description: `
-	This command can be used to verify if a macaroon is considered a 
-	super macaroon.
-	`,
+	Usage: "Prints 'true' if the given macaroon is a super macaroon.",
+	Description: "This command can be used to verify if a macaroon is " +
+		"considered a super macaroon.",
 	Action: isSuperMacaroon,
 	Flags: []cli.Flag{
 		cli.StringFlag{
 			Name:     "mac",
-			Usage:    "The hex-encoded macaroon",
+			Usage:    "The hex-encoded macaroon.",
 			Required: true,
 		},
 	},

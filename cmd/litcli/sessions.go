@@ -17,24 +17,24 @@ var (
 	defaultSessionExpiry = time.Hour * 24 * 90
 
 	labelFlag = cli.StringFlag{
-		Name:     "label",
-		Usage:    "session label",
+		Name: "label",
+		Usage: "The session label.",
 		Required: true,
 	}
 	expiryFlag = cli.Uint64Flag{
 		Name: "expiry",
-		Usage: "number of seconds that the session should " +
-			"remain active",
+		Usage: "The number of seconds that the session should " +
+			"remain active.",
 		Value: uint64(defaultSessionExpiry.Seconds()),
 	}
 	mailboxServerAddrFlag = cli.StringFlag{
 		Name:  "mailboxserveraddr",
-		Usage: "the host:port of the mailbox server to be used",
+		Usage: "The host:port of the mailbox server to be used.",
 		Value: "mailbox.terminal.lightning.today:443",
 	}
 	devserver = cli.BoolFlag{
 		Name: "devserver",
-		Usage: "set to true to skip verification of the " +
+		Usage: "Set to true to skip verification of the " +
 			"server's tls cert.",
 	}
 )
@@ -43,20 +43,21 @@ var sessionCommands = []cli.Command{
 	{
 		Name:      "sessions",
 		ShortName: "s",
-		Usage:     "manage Terminal Web sessions",
-		Category:  "Sessions",
+		Usage:     "Manage Lightning Node Connect sessions",
+		Category:  "LNC",
 		Subcommands: []cli.Command{
 			addSessionCommand,
 			listSessionCommand,
 			revokeSessionCommand,
 		},
+		Description: "Manage Lightning Node Connect sessions.",
 	},
 }
 
 var addSessionCommand = cli.Command{
 	Name:        "add",
 	ShortName:   "a",
-	Usage:       "create a new Terminal Web session",
+	Usage:       "Create a new Lightning Node Connect session.",
 	Description: "Add a new active session.",
 	Action:      addSession,
 	Flags: []cli.Flag{
@@ -66,15 +67,15 @@ var addSessionCommand = cli.Command{
 		devserver,
 		cli.StringFlag{
 			Name: "type",
-			Usage: "session type to be created which will " +
+			Usage: "The session type to be created which will " +
 				"determine the permissions a user has when " +
-				"connecting with the session. Options " +
-				"include readonly|admin|account|custom",
+				"connecting with the session; options " +
+				"include readonly|admin|account|custom.",
 			Value: "readonly",
 		},
 		cli.StringSliceFlag{
 			Name: "uri",
-			Usage: "A URI that should be included in the " +
+			Usage: "The URI that should be included in the " +
 				"macaroon of a custom session. Note that " +
 				"this flag will only be used if the 'type' " +
 				"flag is set to 'custom'. This flag can be " +
@@ -159,7 +160,7 @@ func parseSessionType(sessionType string) (litrpc.SessionType, error) {
 var listSessionCommand = cli.Command{
 	Name:        "list",
 	ShortName:   "l",
-	Usage:       "list Terminal Web sessions",
+	Usage:       "List Lightning Node Connect sessions.",
 	Description: "List sessions.",
 	Subcommands: []cli.Command{
 		listAllSessionsCommand,
@@ -173,40 +174,40 @@ var listSessionCommand = cli.Command{
 var listAllSessionsCommand = cli.Command{
 	Name:        "all",
 	ShortName:   "a",
-	Usage:       "list all Terminal Web sessions",
-	Description: "List all sessions.",
+	Usage:       "List all Lightning Node Connect sessions.",
+	Description: "List all sessions.\n",
 	Action:      listSessions(sessionFilterAll),
 }
 
 var listRevokedSessions = cli.Command{
 	Name:        "revoked",
 	ShortName:   "r",
-	Usage:       "list revoked Terminal Web sessions",
-	Description: "List revoked sessions.",
+	Usage:       "List revoked Lightning Node Connect sessions.",
+	Description: "List revoked sessions.\n",
 	Action:      listSessions(sessionFilterRevoked),
 }
 
 var listInUseSessions = cli.Command{
 	Name:        "inuse",
 	ShortName:   "u",
-	Usage:       "list in-use Terminal Web sessions",
-	Description: "List in-use sessions.",
+	Usage:       "List in-use Lightning Node Connect sessions.",
+	Description: "List in-use sessions.\n",
 	Action:      listSessions(sessionFilterInUse),
 }
 
 var listExpiredSessions = cli.Command{
 	Name:        "expired",
 	ShortName:   "e",
-	Usage:       "list expired Terminal Web sessions",
-	Description: "List expired sessions.",
+	Usage:       "List expired Lightning Node Connect sessions.",
+	Description: "List expired sessions.\n",
 	Action:      listSessions(sessionFilterExpired),
 }
 
 var listCreatedSessions = cli.Command{
 	Name:        "created",
 	ShortName:   "c",
-	Usage:       "list created Terminal Web sessions",
-	Description: "List created sessions.",
+	Usage:       "List created Lightning Node Connect sessions.",
+	Description: "List created sessions.\n",
 	Action:      listSessions(sessionFilterCreated),
 }
 
@@ -266,13 +267,13 @@ func listSessions(filter sessionFilter) func(ctx *cli.Context) error {
 var revokeSessionCommand = cli.Command{
 	Name:        "revoke",
 	ShortName:   "r",
-	Usage:       "revoke a Terminal Web session",
-	Description: "Revoke an active session",
+	Usage:       "Revoke a Lightning Node Connect session.",
+	Description: "Revoke an active session.",
 	Action:      revokeSession,
 	Flags: []cli.Flag{
 		cli.StringFlag{
 			Name:     "localpubkey",
-			Usage:    "local pubkey of the session to revoke",
+			Usage:    "The local pubkey of the session to revoke.",
 			Required: true,
 		},
 	},
