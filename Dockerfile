@@ -35,7 +35,7 @@ RUN apk add --no-cache --update alpine-sdk \
 # If you change this value, please also update:
 # /dev.Dockerfile
 # /.github/workflows/main.yml
-FROM golang:1.19-alpine as golangbuilder
+FROM golang:1.21-alpine as golangbuilder
 
 # Instead of checking out from git again, we just copy the whole working
 # directory of the previous stage that includes the generated static assets.
