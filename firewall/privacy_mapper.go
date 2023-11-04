@@ -278,6 +278,12 @@ func (p *PrivacyMapper) checkers(db firewalldb.PrivacyMapDB,
 			handleUpdatePolicyResponse(db, flags),
 			mid.PassThroughErrorHandler,
 		),
+		"/lnrpc.Lightning/WalletBalance": mid.NewResponseRewriter(
+			&lnrpc.WalletBalanceRequest{},
+			&lnrpc.WalletBalanceResponse{},
+			handleWalletBalanceResponse(db, flags, p.randIntn),
+			mid.PassThroughErrorHandler,
+		),
 	}
 }
 
@@ -535,21 +541,6 @@ func handleListChannelsResponse(db firewalldb.PrivacyMapDB,
 	return func(_ context.Context, r *lnrpc.ListChannelsResponse) (
 		proto.Message, error) {
 
-		hideAmount := func(a int64) (int64, error) {
-			if !flags.Contains(session.ClearAmounts) {
-				hiddenAmount, err := hideAmount(
-					randIntn, amountVariation, uint64(a),
-				)
-				if err != nil {
-					return 0, err
-				}
-
-				return int64(hiddenAmount), nil
-			}
-
-			return a, nil
-		}
-
 		hidePubkeys := !flags.Contains(session.ClearPubkeys)
 		hideChanIds := !flags.Contains(session.ClearChanIDs)
 
@@ -606,7 +597,9 @@ func handleListChannelsResponse(db firewalldb.PrivacyMapDB,
 				// state as a non-funder.
 
 				// We randomize local/remote balances.
-				localBalance, err := hideAmount(c.LocalBalance)
+				localBalance, err := maybeHideAmount(
+					flags, randIntn, c.LocalBalance,
+				)
 				if err != nil {
 					return err
 				}
@@ -625,15 +618,16 @@ func handleListChannelsResponse(db firewalldb.PrivacyMapDB,
 				}
 
 				// We hide the total sats sent and received.
-				satsReceived, err := hideAmount(
+				satsReceived, err := maybeHideAmount(
+					flags, randIntn,
 					c.TotalSatoshisReceived,
 				)
 				if err != nil {
 					return err
 				}
 
-				satsSent, err := hideAmount(
-					c.TotalSatoshisSent,
+				satsSent, err := maybeHideAmount(
+					flags, randIntn, c.TotalSatoshisSent,
 				)
 				if err != nil {
 					return err
@@ -651,7 +645,9 @@ func handleListChannelsResponse(db firewalldb.PrivacyMapDB,
 				}
 
 				// We hide the unsettled balance.
-				unsettled, err := hideAmount(c.UnsettledBalance)
+				unsettled, err := maybeHideAmount(
+					flags, randIntn, c.UnsettledBalance,
+				)
 				if err != nil {
 					return err
 				}
@@ -810,6 +806,103 @@ func handleUpdatePolicyResponse(db firewalldb.PrivacyMapDB,
 			FailedUpdates: failedUpdates,
 		}, nil
 	}
+}
+
+func handleWalletBalanceResponse(_ firewalldb.PrivacyMapDB,
+	flags session.PrivacyFlags,
+	randIntn func(int) (int, error)) func(ctx context.Context,
+	r *lnrpc.WalletBalanceResponse) (proto.Message, error) {
+
+	return func(_ context.Context, r *lnrpc.WalletBalanceResponse) (
+		proto.Message, error) {
+
+		totalBalance, err := maybeHideAmount(
+			flags, randIntn, r.TotalBalance,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		confirmedBalance, err := maybeHideAmount(
+			flags, randIntn, r.ConfirmedBalance,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		unconfirmedBalance, err := maybeHideAmount(
+			flags, randIntn, r.UnconfirmedBalance,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		lockedBalance, err := maybeHideAmount(
+			flags, randIntn, r.LockedBalance,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		reservedBalanceAnchorChan, err := maybeHideAmount(
+			flags, randIntn, r.ReservedBalanceAnchorChan,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		accountBalance := make(
+			map[string]*lnrpc.WalletAccountBalance,
+			len(r.AccountBalance),
+		)
+		for k, v := range r.AccountBalance {
+			confirmed, err := maybeHideAmount(
+				flags, randIntn, v.ConfirmedBalance,
+			)
+			if err != nil {
+				return nil, err
+			}
+
+			unconfirmed, err := maybeHideAmount(
+				flags, randIntn, v.UnconfirmedBalance,
+			)
+			if err != nil {
+				return nil, err
+			}
+
+			accountBalance[k] = &lnrpc.WalletAccountBalance{
+				ConfirmedBalance:   confirmed,
+				UnconfirmedBalance: unconfirmed,
+			}
+		}
+
+		return &lnrpc.WalletBalanceResponse{
+			TotalBalance:              totalBalance,
+			ConfirmedBalance:          confirmedBalance,
+			UnconfirmedBalance:        unconfirmedBalance,
+			LockedBalance:             lockedBalance,
+			ReservedBalanceAnchorChan: reservedBalanceAnchorChan,
+			AccountBalance:            accountBalance,
+		}, nil
+	}
+}
+
+// maybeHideAmount hides an amount if the privacy flag is not set.
+func maybeHideAmount(flags session.PrivacyFlags, randIntn func(int) (int,
+	error), a int64) (int64, error) {
+
+	if !flags.Contains(session.ClearAmounts) {
+		hiddenAmount, err := hideAmount(
+			randIntn, amountVariation, uint64(a),
+		)
+		if err != nil {
+			return 0, err
+		}
+
+		return int64(hiddenAmount), nil
+	}
+
+	return a, nil
 }
 
 // hideAmount symmetrically randomizes an amount around a given relative

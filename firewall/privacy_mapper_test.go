@@ -353,6 +353,72 @@ func TestPrivacyMapper(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:    "WalletBalance Response",
+			uri:     "/lnrpc.Lightning/WalletBalance",
+			msgType: rpcperms.TypeResponse,
+			msg: &lnrpc.WalletBalanceResponse{
+				TotalBalance:              1_000_000,
+				ConfirmedBalance:          1_000_000,
+				UnconfirmedBalance:        1_000_000,
+				LockedBalance:             1_000_000,
+				ReservedBalanceAnchorChan: 1_000_000,
+				AccountBalance: map[string]*lnrpc.WalletAccountBalance{
+					"first": {
+						ConfirmedBalance:   1_000_000,
+						UnconfirmedBalance: 1_000_000,
+					},
+				},
+			},
+
+			expectedReplacement: &lnrpc.WalletBalanceResponse{
+				TotalBalance:              950_100,
+				ConfirmedBalance:          950_100,
+				UnconfirmedBalance:        950_100,
+				LockedBalance:             950_100,
+				ReservedBalanceAnchorChan: 950_100,
+				AccountBalance: map[string]*lnrpc.WalletAccountBalance{
+					"first": {
+						ConfirmedBalance:   950_100,
+						UnconfirmedBalance: 950_100,
+					},
+				},
+			},
+		},
+		{
+			name:    "WalletBalance Response clear",
+			uri:     "/lnrpc.Lightning/WalletBalance",
+			msgType: rpcperms.TypeResponse,
+			msg: &lnrpc.WalletBalanceResponse{
+				TotalBalance:              1_000_000,
+				ConfirmedBalance:          1_000_000,
+				UnconfirmedBalance:        1_000_000,
+				LockedBalance:             1_000_000,
+				ReservedBalanceAnchorChan: 1_000_000,
+				AccountBalance: map[string]*lnrpc.WalletAccountBalance{
+					"first": {
+						ConfirmedBalance:   1_000_000,
+						UnconfirmedBalance: 1_000_000,
+					},
+				},
+			},
+			privacyFlags: []session.PrivacyFlag{
+				session.ClearAmounts,
+			},
+			expectedReplacement: &lnrpc.WalletBalanceResponse{
+				TotalBalance:              1_000_000,
+				ConfirmedBalance:          1_000_000,
+				UnconfirmedBalance:        1_000_000,
+				LockedBalance:             1_000_000,
+				ReservedBalanceAnchorChan: 1_000_000,
+				AccountBalance: map[string]*lnrpc.WalletAccountBalance{
+					"first": {
+						ConfirmedBalance:   1_000_000,
+						UnconfirmedBalance: 1_000_000,
+					},
+				},
+			},
+		},
 	}
 
 	decodedID := &lnrpc.MacaroonId{
