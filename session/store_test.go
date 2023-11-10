@@ -289,6 +289,7 @@ func newSession(t *testing.T, db Store, label string,
 		id, priv, label, TypeMacaroonAdmin,
 		time.Date(99999, 1, 1, 0, 0, 0, 0, time.UTC),
 		"foo.bar.baz:1234", true, nil, nil, nil, true, linkedGroupID,
+		[]PrivacyFlag{ClearPubkeys},
 	)
 	require.NoError(t, err)
 

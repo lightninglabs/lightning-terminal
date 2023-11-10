@@ -29,6 +29,7 @@ const (
 	typeWithPrivacy     tlv.Type = 15
 	typeRevokedAt       tlv.Type = 16
 	typeGroupID         tlv.Type = 17
+	typePrivacyFlags    tlv.Type = 18
 
 	// typeMacaroon is no longer used, but we leave it defined for backwards
 	// compatibility.
@@ -89,6 +90,7 @@ func constructSessionTLVRecords(session *Session, withGroupID bool) (
 		createdAt     = uint64(session.CreatedAt.Unix())
 		revokedAt     uint64
 		withPrivacy   = uint8(0)
+		privacyFlags  = uint64(0)
 	)
 
 	if !session.RevokedAt.IsZero() {
@@ -98,6 +100,8 @@ func constructSessionTLVRecords(session *Session, withGroupID bool) (
 	if session.WithPrivacyMapper {
 		withPrivacy = 1
 	}
+
+	privacyFlags = session.PrivacyFlags.Serialize()
 
 	if session.DevServer {
 		devServer = 1
@@ -170,6 +174,11 @@ func constructSessionTLVRecords(session *Session, withGroupID bool) (
 		))
 	}
 
+	tlvRecords = append(
+		tlvRecords,
+		tlv.MakePrimitiveRecord(typePrivacyFlags, &privacyFlags),
+	)
+
 	return tlvRecords, nil
 }
 
@@ -177,14 +186,14 @@ func constructSessionTLVRecords(session *Session, withGroupID bool) (
 // the data to be encoded in the tlv format.
 func DeserializeSession(r io.Reader) (*Session, error) {
 	var (
-		session                        = &Session{}
-		label, serverAddr              []byte
-		pairingSecret, privateKey      []byte
-		state, typ, devServer, privacy uint8
-		expiry, createdAt, revokedAt   uint64
-		macRecipe                      MacaroonRecipe
-		featureConfig                  FeaturesConfig
-		groupID                        []byte
+		session                                    = &Session{}
+		label, serverAddr                          []byte
+		pairingSecret, privateKey                  []byte
+		state, typ, devServer, privacy             uint8
+		expiry, createdAt, revokedAt, privacyFlags uint64
+		macRecipe                                  MacaroonRecipe
+		featureConfig                              FeaturesConfig
+		groupID                                    []byte
 	)
 	tlvStream, err := tlv.NewStream(
 		tlv.MakePrimitiveRecord(typeLabel, &label),
@@ -213,6 +222,7 @@ func DeserializeSession(r io.Reader) (*Session, error) {
 		tlv.MakePrimitiveRecord(typeWithPrivacy, &privacy),
 		tlv.MakePrimitiveRecord(typeRevokedAt, &revokedAt),
 		tlv.MakePrimitiveRecord(typeGroupID, &groupID),
+		tlv.MakePrimitiveRecord(typePrivacyFlags, &privacyFlags),
 	)
 	if err != nil {
 		return nil, err
@@ -232,6 +242,10 @@ func DeserializeSession(r io.Reader) (*Session, error) {
 	session.ServerAddr = string(serverAddr)
 	session.DevServer = devServer == 1
 	session.WithPrivacyMapper = privacy == 1
+	session.PrivacyFlags, err = Deserialize(privacyFlags)
+	if err != nil {
+		return nil, err
+	}
 
 	if revokedAt != 0 {
 		session.RevokedAt = time.Unix(int64(revokedAt), 0)

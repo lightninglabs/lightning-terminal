@@ -63,6 +63,7 @@ type Session struct {
 	RemotePublicKey   *btcec.PublicKey
 	FeatureConfig     *FeaturesConfig
 	WithPrivacyMapper bool
+	PrivacyFlags      PrivacyFlags
 
 	// GroupID is the Session ID of the very first Session in the linked
 	// group of sessions. If this is the very first session in the group
@@ -78,7 +79,7 @@ type MacaroonBaker func(ctx context.Context, rootKeyID uint64,
 func NewSession(id ID, localPrivKey *btcec.PrivateKey, label string, typ Type,
 	expiry time.Time, serverAddr string, devServer bool, perms []bakery.Op,
 	caveats []macaroon.Caveat, featureConfig FeaturesConfig,
-	privacy bool, linkedGroupID *ID) (*Session, error) {
+	privacy bool, linkedGroupID *ID, flags PrivacyFlags) (*Session, error) {
 
 	_, pairingSecret, err := mailbox.NewPassphraseEntropy()
 	if err != nil {
@@ -111,6 +112,7 @@ func NewSession(id ID, localPrivKey *btcec.PrivateKey, label string, typ Type,
 		LocalPublicKey:    localPrivKey.PubKey(),
 		RemotePublicKey:   nil,
 		WithPrivacyMapper: privacy,
+		PrivacyFlags:      flags,
 		GroupID:           groupID,
 	}
 
