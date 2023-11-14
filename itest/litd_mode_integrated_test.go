@@ -319,7 +319,7 @@ var (
 		name:              "taprpc-whitelist",
 		macaroonFn:        emptyMacaroonFn,
 		requestFn:         tapUniverseRequestFn,
-		successPattern:    "\"num_assets\":",
+		successPattern:    "\"runtime_id\":",
 		disabledPattern:   "unknown request",
 		allowedThroughLNC: true,
 		grpcWebURI:        "/universerpc.Universe/Info",
@@ -857,13 +857,7 @@ func runGRPCAuthTest(t *testing.T, hostPort, tlsCertPath, macPath string,
 	// should also fail.
 	ctxm = macaroonContext(ctxt, dummyMacBytes)
 	_, err = makeRequest(ctxm, rawConn)
-	errStr := err.Error()
-	err1 := strings.Contains(errStr, "cannot get macaroon: root")
-	err2 := strings.Contains(errStr, "cannot get macaroon: sql: no")
-	require.Truef(
-		t, err1 || err2, "no macaroon, got unexpected error: "+
-			"%v", err,
-	)
+	require.ErrorContains(t, err, "invalid ID")
 
 	// Then finally we try with the correct macaroon which should now
 	// succeed, as long as it is not for a disabled sub-server.
@@ -930,19 +924,7 @@ func runUIPasswordCheck(t *testing.T, hostPort, tlsCertPath, uiPassword string,
 	if disabled {
 		require.ErrorContains(t, err, disabledErr)
 	} else {
-		errStr := err.Error()
-		err1 := strings.Contains(
-			errStr, "invalid auth: invalid basic auth",
-		)
-		err2 := strings.Contains(
-			errStr, "cannot get macaroon: root key with",
-		)
-		err3 := strings.Contains(
-			errStr, "cannot get macaroon: sql: no rows",
-		)
-
-		require.Truef(t, err1 || err2 || err3, "wrong UI password and "+
-			"dummy mac, got unexpected error: %v", err)
+		require.ErrorContains(t, err, "invalid ID")
 	}
 
 	// Using the correct UI password should work for all requests unless the
@@ -970,17 +952,7 @@ func runUIPasswordCheck(t *testing.T, hostPort, tlsCertPath, uiPassword string,
 		if disabled {
 			require.ErrorContains(t, err, disabledErr)
 		} else {
-			require.Error(t, err)
-			errStr := err.Error()
-			err1 := strings.Contains(
-				errStr, "cannot get macaroon: root",
-			)
-			err2 := strings.Contains(
-				errStr, "cannot get macaroon: sql: no",
-			)
-
-			require.Truef(t, err1 || err2, "no macaroon, got "+
-				"unexpected error: %v", err)
+			require.ErrorContains(t, err, "invalid ID")
 		}
 
 		return
