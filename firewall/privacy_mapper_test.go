@@ -698,12 +698,14 @@ func TestHideBool(t *testing.T) {
 // correctly.
 func TestObfuscateConfig(t *testing.T) {
 	tests := []struct {
-		name             string
-		config           []byte
-		knownMap         map[string]string
-		expectedNewPairs int
-		expectErr        bool
-		notExpectSameLen bool
+		name               string
+		config             []byte
+		knownMap           map[string]string
+		privacyFlags       session.PrivacyFlags
+		expectedNewPairs   int
+		expectErr          bool
+		notExpectSameLen   bool
+		expectUnobfuscated bool
 	}{
 		{
 			name: "empty",
@@ -719,6 +721,18 @@ func TestObfuscateConfig(t *testing.T) {
 			expectedNewPairs: 4,
 		},
 		{
+			// A flag can be used to turn off obfuscation for
+			// pubkeys.
+			name: "no pubkeys obfuscation",
+			config: []byte(`{"version":1,"list":` +
+				`["d23da57575cdcb878ac191e1e0c8a5c4f061b11cfdc7a8ec5c9d495270de66fdbf",` +
+				`"1234567890123"]}`),
+			privacyFlags: []session.PrivacyFlag{
+				session.ClearPubkeys,
+			},
+			expectedNewPairs: 1,
+		},
+		{
 			// We don't generate new pairs for pubkeys that we
 			// already have a mapping.
 			name: "several pubkeys with known replacement or duplicates",
@@ -732,6 +746,20 @@ func TestObfuscateConfig(t *testing.T) {
 				"586b59212da4623c40dcc68c4573da1719e5893630790c9f2db8940fff3efd8cd4": "123456789012345678901234567890123456789012345678901234567890123456",
 			},
 			expectedNewPairs: 3,
+		},
+		{
+			// We don't obfuscate if we already have a mapping, but
+			// the obfuscation is turned off.
+			name: "several pubkeys with known replacement or duplicates",
+			config: []byte(`{"list":` +
+				`["586b59212da4623c40dcc68c4573da1719e5893630790c9f2db8940fff3efd8cd4",` +
+				`"0e092708c9e737115ff14a85b65466561280d77c1b8cd666bc655536ad81ccca85"]}`),
+			knownMap: map[string]string{
+				"586b59212da4623c40dcc68c4573da1719e5893630790c9f2db8940fff3efd8cd4": "123456789012345678901234567890123456789012345678901234567890123456",
+			},
+			privacyFlags:       []session.PrivacyFlag{session.ClearPubkeys},
+			expectedNewPairs:   0,
+			expectUnobfuscated: true,
 		},
 		{
 			// We don't substitute unknown items.
@@ -804,6 +832,19 @@ func TestObfuscateConfig(t *testing.T) {
 				`123456789012345678901]}`),
 			expectedNewPairs: 0,
 		},
+		{
+			// We don't obfuscate channel ids and points if the
+			// corresponding privacy flag is set.
+			// format.
+			name: "clear channel ids",
+			config: []byte(`{"version":1,"list":` +
+				`["1234567890123",` +
+				`"e092708c9e737115ff14a85ab65466561280d77c1b8cd666bc655536ad81ccca:1"]}`),
+			expectedNewPairs: 0,
+			privacyFlags: []session.PrivacyFlag{
+				session.ClearChanIDs,
+			},
+		},
 	}
 
 	// assertConfigStructure checks that the structure of the config is
@@ -852,7 +893,7 @@ func TestObfuscateConfig(t *testing.T) {
 			db := firewalldb.NewPrivacyMapPairs(tt.knownMap)
 
 			config, privMapPairs, err := ObfuscateConfig(
-				db, tt.config,
+				db, tt.config, tt.privacyFlags,
 			)
 			if tt.expectErr {
 				require.Error(t, err)
@@ -879,6 +920,12 @@ func TestObfuscateConfig(t *testing.T) {
 			// we know the length can change.
 			if !tt.notExpectSameLen {
 				require.Equal(t, len(tt.config), len(config))
+			}
+
+			// We expect the config to be unobfuscated if we have
+			// the corresponding privacy flag.
+			if tt.expectUnobfuscated {
+				require.Equal(t, tt.config, config)
 			}
 		})
 	}

@@ -862,8 +862,8 @@ func CryptoRandIntn(n int) (int, error) {
 // ObfuscateConfig alters the config string by replacing sensitive data with
 // random values and returns new replacement pairs. We only substitute items in
 // strings, numbers are left unchanged.
-func ObfuscateConfig(db firewalldb.PrivacyMapReader, configB []byte) ([]byte,
-	map[string]string, error) {
+func ObfuscateConfig(db firewalldb.PrivacyMapReader, configB []byte,
+	flags session.PrivacyFlags) ([]byte, map[string]string, error) {
 
 	if len(configB) == 0 {
 		return nil, nil, nil
@@ -913,29 +913,46 @@ func ObfuscateConfig(db firewalldb.PrivacyMapReader, configB []byte) ([]byte,
 		for i, value := range stringList {
 			value := strings.TrimSpace(value)
 
-			// We first check if we have a mapping for this value
-			// already.
-			obfVal, haveValue := db.GetPseudo(value)
-			if haveValue {
-				obfuscatedValues[i] = obfVal
+			alreadyHave := func() (string, bool) {
+				// We check if we have obfuscated this value
+				// already in this run.
+				obfVal, ok := privMapPairs[value]
+				if ok {
+					return obfVal, true
+				}
 
-				continue
-			}
+				// We first check if we have a mapping for this
+				// value already within the database.
+				obfVal, ok = db.GetPseudo(value)
+				if ok {
+					return obfVal, true
+				}
 
-			// We check if we have obfuscated this value already in
-			// this run.
-			obfVal, haveValue = privMapPairs[value]
-			if haveValue {
-				obfuscatedValues[i] = obfVal
-
-				continue
+				return "", false
 			}
 
 			// From here on we create new obfuscated values.
 			// Try to replace with a chan point.
 			_, _, err := firewalldb.DecodeChannelPoint(value)
 			if err == nil {
-				obfVal, err = firewalldb.NewPseudoChanPoint()
+				// We don't obfuscate channel points if the flag
+				// is set.
+				if flags.Contains(session.ClearChanIDs) {
+					obfuscatedValues[i] = value
+
+					continue
+				}
+
+				// We replace the channel point with a random
+				// value, should we already have it.
+				if obfVal, ok := alreadyHave(); ok {
+					obfuscatedValues[i] = obfVal
+
+					continue
+				}
+
+				// Otherwise we create a new mapping.
+				obfVal, err := firewalldb.NewPseudoChanPoint()
 				if err != nil {
 					return nil, nil, err
 				}
@@ -950,6 +967,23 @@ func ObfuscateConfig(db firewalldb.PrivacyMapReader, configB []byte) ([]byte,
 			// value.
 			_, err = hex.DecodeString(value)
 			if err == nil && len(value) == pubKeyLen {
+				// We don't obfuscate pubkeys if the flag is
+				// set.
+				if flags.Contains(session.ClearPubkeys) {
+					obfuscatedValues[i] = value
+
+					continue
+				}
+
+				// We replace the pubkey with a random value,
+				// should we already have it.
+				if obfVal, ok := alreadyHave(); ok {
+					obfuscatedValues[i] = obfVal
+
+					continue
+				}
+
+				// Otherwise we create a new mapping.
 				obfVal, err := firewalldb.NewPseudoStr(
 					len(value),
 				)
@@ -973,6 +1007,23 @@ func ObfuscateConfig(db firewalldb.PrivacyMapReader, configB []byte) ([]byte,
 			if err == nil && minChanIDLen <= length &&
 				length <= maxChanIDLen {
 
+				// We don't obfuscate channel ids if the flag is
+				// set.
+				if flags.Contains(session.ClearChanIDs) {
+					obfuscatedValues[i] = value
+
+					continue
+				}
+
+				// We replace the channel id with a random
+				// value, should we already have it.
+				if obfVal, ok := alreadyHave(); ok {
+					obfuscatedValues[i] = obfVal
+
+					continue
+				}
+
+				// Otherwise we create a new mapping.
 				obfVal, err := firewalldb.NewPseudoStr(length)
 				if err != nil {
 					return nil, nil, err

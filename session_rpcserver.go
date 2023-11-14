@@ -1134,6 +1134,7 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 		for name, configB := range clientConfig {
 			configB, privMapPairs, err := firewall.ObfuscateConfig(
 				knownPrivMapPairs, configB,
+				session.PrivacyFlags{},
 			)
 			if err != nil {
 				return nil, err
