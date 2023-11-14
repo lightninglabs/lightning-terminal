@@ -110,12 +110,6 @@ func (p *PrivacyMapper) Intercept(ctx context.Context,
 		return nil, fmt.Errorf("could not extract ID from macaroon")
 	}
 
-	// Get group ID for session ID.
-	groupID, err := p.sessionDB.GetGroupID(sessionID)
-	if err != nil {
-		return nil, err
-	}
-
 	log.Tracef("PrivacyMapper: Intercepting %v", ri)
 
 	switch r := req.InterceptType.(type) {
@@ -133,7 +127,7 @@ func (p *PrivacyMapper) Intercept(ctx context.Context,
 		}
 
 		replacement, err := p.checkAndReplaceIncomingRequest(
-			ctx, r.Request.MethodFullUri, msg, groupID,
+			ctx, r.Request.MethodFullUri, msg, sessionID,
 		)
 		if err != nil {
 			return mid.RPCErr(req, err)
@@ -167,7 +161,7 @@ func (p *PrivacyMapper) Intercept(ctx context.Context,
 		}
 
 		replacement, err := p.replaceOutgoingResponse(
-			ctx, r.Response.MethodFullUri, msg, groupID,
+			ctx, r.Response.MethodFullUri, msg, sessionID,
 		)
 		if err != nil {
 			return mid.RPCErr(req, err)
@@ -192,14 +186,19 @@ func (p *PrivacyMapper) Intercept(ctx context.Context,
 // checkAndReplaceIncomingRequest inspects an incoming request and optionally
 // modifies some of the request parameters.
 func (p *PrivacyMapper) checkAndReplaceIncomingRequest(ctx context.Context,
-	uri string, req proto.Message, groupID session.ID) (proto.Message,
+	uri string, req proto.Message, sessionID session.ID) (proto.Message,
 	error) {
 
-	db := p.newDB(groupID)
+	session, err := p.sessionDB.GetSessionByID(sessionID)
+	if err != nil {
+		return nil, err
+	}
+
+	db := p.newDB(session.GroupID)
 
 	// If we don't have a handler for the URI, we don't allow the request
 	// to go through.
-	checker, ok := p.checkers(db)[uri]
+	checker, ok := p.checkers(db, session.PrivacyFlags)[uri]
 	if !ok {
 		return nil, ErrNotSupportedByPrivacyMapper
 	}
@@ -218,13 +217,18 @@ func (p *PrivacyMapper) checkAndReplaceIncomingRequest(ctx context.Context,
 // replaceOutgoingResponse inspects the responses before sending them out to the
 // client and replaces them if needed.
 func (p *PrivacyMapper) replaceOutgoingResponse(ctx context.Context, uri string,
-	resp proto.Message, groupID session.ID) (proto.Message, error) {
+	resp proto.Message, sessionID session.ID) (proto.Message, error) {
 
-	db := p.newDB(groupID)
+	session, err := p.sessionDB.GetSessionByID(sessionID)
+	if err != nil {
+		return nil, err
+	}
+
+	db := p.newDB(session.GroupID)
 
 	// If we don't have a handler for the URI, we don't allow the response
 	// to go to avoid accidental leaks.
-	checker, ok := p.checkers(db)[uri]
+	checker, ok := p.checkers(db, session.PrivacyFlags)[uri]
 	if !ok {
 		return nil, ErrNotSupportedByPrivacyMapper
 	}
@@ -240,64 +244,66 @@ func (p *PrivacyMapper) replaceOutgoingResponse(ctx context.Context, uri string,
 	return checker.HandleResponse(ctx, resp)
 }
 
-func (p *PrivacyMapper) checkers(
-	db firewalldb.PrivacyMapDB) map[string]mid.RoundTripChecker {
+func (p *PrivacyMapper) checkers(db firewalldb.PrivacyMapDB,
+	flags session.PrivacyFlags) map[string]mid.RoundTripChecker {
 
 	return map[string]mid.RoundTripChecker{
 		"/lnrpc.Lightning/GetInfo": mid.NewResponseRewriter(
 			&lnrpc.GetInfoRequest{}, &lnrpc.GetInfoResponse{},
-			handleGetInfoResponse(db), mid.PassThroughErrorHandler,
+			handleGetInfoResponse(db, flags),
+			mid.PassThroughErrorHandler,
 		),
 		"/lnrpc.Lightning/ForwardingHistory": mid.NewResponseRewriter(
 			&lnrpc.ForwardingHistoryRequest{},
 			&lnrpc.ForwardingHistoryResponse{},
-			handleFwdHistoryResponse(db, p.randIntn),
+			handleFwdHistoryResponse(db, flags, p.randIntn),
 			mid.PassThroughErrorHandler,
 		),
 		"/lnrpc.Lightning/FeeReport": mid.NewResponseRewriter(
 			&lnrpc.FeeReportRequest{}, &lnrpc.FeeReportResponse{},
-			handleFeeReportResponse(db),
+			handleFeeReportResponse(db, flags),
 			mid.PassThroughErrorHandler,
 		),
 		"/lnrpc.Lightning/ListChannels": mid.NewFullRewriter(
 			&lnrpc.ListChannelsRequest{},
 			&lnrpc.ListChannelsResponse{},
-			handleListChannelsRequest(db),
-			handleListChannelsResponse(db, p.randIntn),
+			handleListChannelsRequest(db, flags),
+			handleListChannelsResponse(db, flags, p.randIntn),
 			mid.PassThroughErrorHandler,
 		),
 		"/lnrpc.Lightning/UpdateChannelPolicy": mid.NewFullRewriter(
 			&lnrpc.PolicyUpdateRequest{},
 			&lnrpc.PolicyUpdateResponse{},
-			handleUpdatePolicyRequest(db),
-			handleUpdatePolicyResponse(db),
+			handleUpdatePolicyRequest(db, flags),
+			handleUpdatePolicyResponse(db, flags),
 			mid.PassThroughErrorHandler,
 		),
 	}
 }
 
-func handleGetInfoResponse(db firewalldb.PrivacyMapDB) func(ctx context.Context,
+func handleGetInfoResponse(db firewalldb.PrivacyMapDB,
+	flags session.PrivacyFlags) func(ctx context.Context,
 	r *lnrpc.GetInfoResponse) (proto.Message, error) {
 
-	return func(ctx context.Context, r *lnrpc.GetInfoResponse) (
+	return func(_ context.Context, r *lnrpc.GetInfoResponse) (
 		proto.Message, error) {
 
-		var pseudoPubKey string
-		err := db.Update(
-			func(tx firewalldb.PrivacyMapTx) error {
-				var err error
-				pseudoPubKey, err = firewalldb.HideString(
-					tx, r.IdentityPubkey,
-				)
-				if err != nil {
-					return err
-				}
+		// We hide the pubkey unless it is disabled.
+		pseudoPubKey := r.IdentityPubkey
+		if !flags.Contains(session.ClearPubkeys) {
+			err := db.Update(
+				func(tx firewalldb.PrivacyMapTx) error {
+					var err error
+					pseudoPubKey, err = firewalldb.HideString(
+						tx, r.IdentityPubkey,
+					)
 
-				return nil
-			},
-		)
-		if err != nil {
-			return nil, err
+					return err
+				},
+			)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		return &lnrpc.GetInfoResponse{
@@ -327,6 +333,7 @@ func handleGetInfoResponse(db firewalldb.PrivacyMapDB) func(ctx context.Context,
 }
 
 func handleFwdHistoryResponse(db firewalldb.PrivacyMapDB,
+	flags session.PrivacyFlags,
 	randIntn func(int) (int, error)) func(ctx context.Context,
 	r *lnrpc.ForwardingHistoryResponse) (proto.Message, error) {
 
@@ -339,36 +346,48 @@ func handleFwdHistoryResponse(db firewalldb.PrivacyMapDB,
 
 		err := db.Update(func(tx firewalldb.PrivacyMapTx) error {
 			for i, fe := range r.ForwardingEvents {
-				// Deterministically hide channel ids.
-				chanIn, err := firewalldb.HideUint64(
-					tx, fe.ChanIdIn,
-				)
-				if err != nil {
-					return err
+				var err error
+
+				chanIn := fe.ChanIdIn
+				chanOut := fe.ChanIdOut
+				if !flags.Contains(session.ClearChanIDs) {
+					// Deterministically hide channel ids.
+					chanIn, err = firewalldb.HideUint64(
+						tx, chanIn,
+					)
+					if err != nil {
+						return err
+					}
+
+					chanOut, err = firewalldb.HideUint64(
+						tx, chanOut,
+					)
+					if err != nil {
+						return err
+					}
 				}
 
-				chanOut, err := firewalldb.HideUint64(
-					tx, fe.ChanIdOut,
-				)
-				if err != nil {
-					return err
-				}
+				amtOutMsat := fe.AmtOutMsat
+				feeMsat := fe.FeeMsat
+				if !flags.Contains(session.ClearAmounts) {
+					// We randomize the outgoing amount for
+					// privacy.
+					amtOutMsat, err = hideAmount(
+						randIntn, amountVariation,
+						amtOutMsat,
+					)
+					if err != nil {
+						return err
+					}
 
-				// We randomize the outgoing amount for privacy.
-				amtOutMsat, err := hideAmount(
-					randIntn, amountVariation,
-					fe.AmtOutMsat,
-				)
-				if err != nil {
-					return err
-				}
-
-				// We randomize fees for privacy.
-				feeMsat, err := hideAmount(
-					randIntn, amountVariation, fe.FeeMsat,
-				)
-				if err != nil {
-					return err
+					// We randomize fees for privacy.
+					feeMsat, err = hideAmount(
+						randIntn, amountVariation,
+						feeMsat,
+					)
+					if err != nil {
+						return err
+					}
 				}
 
 				// Populate other fields in a consistent manner.
@@ -377,13 +396,16 @@ func handleFwdHistoryResponse(db firewalldb.PrivacyMapDB,
 				amtIn := amtInMsat / 1000
 				fee := feeMsat / 1000
 
-				// We randomize the forwarding timestamp.
-				timestamp, err := hideTimestamp(
-					randIntn, timeVariation,
-					time.Unix(0, int64(fe.TimestampNs)),
-				)
-				if err != nil {
-					return err
+				timestamp := time.Unix(0, int64(fe.TimestampNs))
+				if !flags.Contains(session.ClearTimeStamps) {
+					// We randomize the forwarding timestamp.
+					timestamp, err = hideTimestamp(
+						randIntn, timeVariation,
+						timestamp,
+					)
+					if err != nil {
+						return err
+					}
 				}
 
 				fwdEvents[i] = &lnrpc.ForwardingEvent{
@@ -416,9 +438,9 @@ func handleFwdHistoryResponse(db firewalldb.PrivacyMapDB,
 	}
 }
 
-func handleFeeReportResponse(db firewalldb.PrivacyMapDB) func(
-	ctx context.Context, r *lnrpc.FeeReportResponse) (proto.Message,
-	error) {
+func handleFeeReportResponse(db firewalldb.PrivacyMapDB,
+	flags session.PrivacyFlags) func(ctx context.Context,
+	r *lnrpc.FeeReportResponse) (proto.Message, error) {
 
 	return func(ctx context.Context, r *lnrpc.FeeReportResponse) (
 		proto.Message, error) {
@@ -426,19 +448,27 @@ func handleFeeReportResponse(db firewalldb.PrivacyMapDB) func(
 		chanFees := make([]*lnrpc.ChannelFeeReport, len(r.ChannelFees))
 
 		err := db.Update(func(tx firewalldb.PrivacyMapTx) error {
+			var err error
+
 			for i, c := range r.ChannelFees {
-				chanID, err := firewalldb.HideUint64(
-					tx, c.ChanId,
-				)
-				if err != nil {
-					return err
+				chanID := c.ChanId
+				if !flags.Contains(session.ClearChanIDs) {
+					chanID, err = firewalldb.HideUint64(
+						tx, chanID,
+					)
+					if err != nil {
+						return err
+					}
 				}
 
-				chanPoint, err := firewalldb.HideChanPointStr(
-					tx, c.ChannelPoint,
-				)
-				if err != nil {
-					return err
+				chanPoint := c.ChannelPoint
+				if !flags.Contains(session.ClearChanIDs) {
+					chanPoint, err = firewalldb.HideChanPointStr(
+						tx, chanPoint,
+					)
+					if err != nil {
+						return err
+					}
 				}
 
 				chanFees[i] = &lnrpc.ChannelFeeReport{
@@ -465,15 +495,19 @@ func handleFeeReportResponse(db firewalldb.PrivacyMapDB) func(
 	}
 }
 
-func handleListChannelsRequest(db firewalldb.PrivacyMapDB) func(
-	ctx context.Context, r *lnrpc.ListChannelsRequest) (proto.Message,
-	error) {
+func handleListChannelsRequest(db firewalldb.PrivacyMapDB,
+	flags session.PrivacyFlags) func(ctx context.Context,
+	r *lnrpc.ListChannelsRequest) (proto.Message, error) {
 
 	return func(ctx context.Context, r *lnrpc.ListChannelsRequest) (
 		proto.Message, error) {
 
 		if len(r.Peer) == 0 {
 			return nil, nil
+		}
+
+		if flags.Contains(session.ClearPubkeys) {
+			return r, nil
 		}
 
 		err := db.View(func(tx firewalldb.PrivacyMapTx) error {
@@ -494,6 +528,7 @@ func handleListChannelsRequest(db firewalldb.PrivacyMapDB) func(
 }
 
 func handleListChannelsResponse(db firewalldb.PrivacyMapDB,
+	flags session.PrivacyFlags,
 	randIntn func(int) (int, error)) func(ctx context.Context,
 	r *lnrpc.ListChannelsResponse) (proto.Message, error) {
 
@@ -501,47 +536,66 @@ func handleListChannelsResponse(db firewalldb.PrivacyMapDB,
 		proto.Message, error) {
 
 		hideAmount := func(a int64) (int64, error) {
-			hiddenAmount, err := hideAmount(
-				randIntn, amountVariation, uint64(a),
-			)
-			if err != nil {
-				return 0, err
+			if !flags.Contains(session.ClearAmounts) {
+				hiddenAmount, err := hideAmount(
+					randIntn, amountVariation, uint64(a),
+				)
+				if err != nil {
+					return 0, err
+				}
+
+				return int64(hiddenAmount), nil
 			}
 
-			return int64(hiddenAmount), nil
+			return a, nil
 		}
+
+		hidePubkeys := !flags.Contains(session.ClearPubkeys)
+		hideChanIds := !flags.Contains(session.ClearChanIDs)
 
 		channels := make([]*lnrpc.Channel, len(r.Channels))
 
 		err := db.Update(func(tx firewalldb.PrivacyMapTx) error {
 			for i, c := range r.Channels {
-				// Deterministically hide the peer pubkey,
-				// the channel point, and the channel id.
-				remotePub, err := firewalldb.HideString(
-					tx, c.RemotePubkey,
-				)
-				if err != nil {
-					return err
+				var err error
+
+				// We hide the remote pubkey unless it is
+				// disabled.
+				remotePub := c.RemotePubkey
+				if hidePubkeys {
+					remotePub, err = firewalldb.HideString(
+						tx, c.RemotePubkey,
+					)
+					if err != nil {
+						return err
+					}
 				}
 
-				chanPoint, err := firewalldb.HideChanPointStr(
-					tx, c.ChannelPoint,
-				)
-				if err != nil {
-					return err
-				}
+				chanPoint := c.ChannelPoint
+				chanID := c.ChanId
+				if hideChanIds {
+					chanPoint, err = firewalldb.HideChanPointStr(
+						tx, c.ChannelPoint,
+					)
+					if err != nil {
+						return err
+					}
 
-				chanID, err := firewalldb.HideUint64(
-					tx, c.ChanId,
-				)
-				if err != nil {
-					return err
+					chanID, err = firewalldb.HideUint64(
+						tx, c.ChanId,
+					)
+					if err != nil {
+						return err
+					}
 				}
 
 				// We hide the initiator.
-				initiator, err := hideBool(randIntn)
-				if err != nil {
-					return err
+				initiator := c.Initiator
+				if !flags.Contains(session.ClearChanInitiator) {
+					initiator, err = hideBool(randIntn)
+					if err != nil {
+						return err
+					}
 				}
 
 				// Consider the capacity to be public
@@ -563,8 +617,12 @@ func handleListChannelsResponse(db firewalldb.PrivacyMapDB,
 					localBalance = c.Capacity
 				}
 
-				// We adapt the remote balance accordingly.
-				remoteBalance := c.Capacity - localBalance
+				remoteBalance := c.RemoteBalance
+				if !flags.Contains(session.ClearAmounts) {
+					// We adapt the remote balance
+					// accordingly.
+					remoteBalance = c.Capacity - localBalance
+				}
 
 				// We hide the total sats sent and received.
 				satsReceived, err := hideAmount(
@@ -586,6 +644,11 @@ func handleListChannelsResponse(db firewalldb.PrivacyMapDB,
 				pendingHtlcs := make(
 					[]*lnrpc.HTLC, len(c.PendingHtlcs),
 				)
+
+				// Only show the HTLCs if the flag is set.
+				if flags.Contains(session.ClearHTLCs) {
+					copy(pendingHtlcs, c.PendingHtlcs)
+				}
 
 				// We hide the unsettled balance.
 				unsettled, err := hideAmount(c.UnsettledBalance)
@@ -648,11 +711,11 @@ func handleListChannelsResponse(db firewalldb.PrivacyMapDB,
 	}
 }
 
-func handleUpdatePolicyRequest(db firewalldb.PrivacyMapDB) func(
-	ctx context.Context, r *lnrpc.PolicyUpdateRequest) (proto.Message,
-	error) {
+func handleUpdatePolicyRequest(db firewalldb.PrivacyMapDB,
+	flags session.PrivacyFlags) func(ctx context.Context,
+	r *lnrpc.PolicyUpdateRequest) (proto.Message, error) {
 
-	return func(ctx context.Context, r *lnrpc.PolicyUpdateRequest) (
+	return func(_ context.Context, r *lnrpc.PolicyUpdateRequest) (
 		proto.Message, error) {
 
 		chanPoint := r.GetChanPoint()
@@ -668,21 +731,19 @@ func handleUpdatePolicyRequest(db firewalldb.PrivacyMapDB) func(
 			return nil, err
 		}
 
-		index := chanPoint.GetOutputIndex()
-
-		var (
-			newTxid  string
-			newIndex uint32
-		)
-		err = db.View(func(tx firewalldb.PrivacyMapTx) error {
-			var err error
-			newTxid, newIndex, err = firewalldb.RevealChanPoint(
-				tx, txid.String(), index,
-			)
-			return err
-		})
-		if err != nil {
-			return nil, err
+		newTxid := txid.String()
+		newIndex := chanPoint.GetOutputIndex()
+		if !flags.Contains(session.ClearChanIDs) {
+			err = db.View(func(tx firewalldb.PrivacyMapTx) error {
+				var err error
+				newTxid, newIndex, err = firewalldb.RevealChanPoint(
+					tx, newTxid, newIndex,
+				)
+				return err
+			})
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		r.Scope = &lnrpc.PolicyUpdateRequest_ChanPoint{
@@ -698,12 +759,16 @@ func handleUpdatePolicyRequest(db firewalldb.PrivacyMapDB) func(
 	}
 }
 
-func handleUpdatePolicyResponse(db firewalldb.PrivacyMapDB) func(
-	ctx context.Context, r *lnrpc.PolicyUpdateResponse) (proto.Message,
-	error) {
+func handleUpdatePolicyResponse(db firewalldb.PrivacyMapDB,
+	flags session.PrivacyFlags) func(ctx context.Context,
+	r *lnrpc.PolicyUpdateResponse) (proto.Message, error) {
 
-	return func(ctx context.Context, r *lnrpc.PolicyUpdateResponse) (
+	return func(_ context.Context, r *lnrpc.PolicyUpdateResponse) (
 		proto.Message, error) {
+
+		if flags.Contains(session.ClearChanIDs) {
+			return r, nil
+		}
 
 		failedUpdates := make(
 			[]*lnrpc.FailedUpdate, len(r.FailedUpdates),

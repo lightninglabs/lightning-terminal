@@ -19,8 +19,58 @@ import (
 // TestPrivacyMapper tests that the PrivacyMapper correctly intercepts specific
 // RPC calls.
 func TestPrivacyMapper(t *testing.T) {
+	var (
+		clearForwarding = &lnrpc.ForwardingHistoryResponse{
+			ForwardingEvents: []*lnrpc.ForwardingEvent{
+				{
+					AmtIn:       2_000,
+					AmtInMsat:   2_000_000,
+					AmtOut:      1_000,
+					AmtOutMsat:  1_000_000,
+					Fee:         1_000,
+					FeeMsat:     1_000_000,
+					Timestamp:   1_000,
+					TimestampNs: 1_000_000_000_000,
+					ChanIdIn:    123,
+					ChanIdOut:   321,
+				},
+				{
+					AmtIn:       3_000,
+					AmtInMsat:   3_000_000,
+					AmtOut:      2_000,
+					AmtOutMsat:  2_000_000,
+					Fee:         1_000,
+					FeeMsat:     1_000_000,
+					Timestamp:   1_000,
+					TimestampNs: 1_000_000_000_000,
+					ChanIdIn:    678,
+					ChanIdOut:   876,
+				},
+			},
+		}
+
+		clearListChannel = &lnrpc.ListChannelsResponse{
+			Channels: []*lnrpc.Channel{
+				{
+					Capacity:              1_000_000,
+					RemoteBalance:         600_000,
+					LocalBalance:          499_000,
+					CommitFee:             1_000,
+					TotalSatoshisSent:     500_000,
+					TotalSatoshisReceived: 450_000,
+					RemotePubkey:          "01020304",
+					Initiator:             false,
+					ChanId:                123,
+					ChannelPoint:          "abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd:0",
+					PendingHtlcs:          []*lnrpc.HTLC{{HashLock: []byte("aaaa")}, {HashLock: []byte("bbbb")}},
+				},
+			},
+		}
+	)
+
 	tests := []struct {
 		name                string
+		privacyFlags        session.PrivacyFlags
 		uri                 string
 		msgType             rpcperms.InterceptType
 		msg                 proto.Message
@@ -43,37 +93,41 @@ func TestPrivacyMapper(t *testing.T) {
 			},
 		},
 		{
+			name:    "GetInfo Response clear pubkey",
+			uri:     "/lnrpc.Lightning/GetInfo",
+			msgType: rpcperms.TypeResponse,
+			privacyFlags: session.PrivacyFlags{
+				session.ClearPubkeys,
+			},
+			msg: &lnrpc.GetInfoResponse{
+				Alias:          "Tinker Bell",
+				IdentityPubkey: "Tinker Bell's pub key",
+				Uris: []string{
+					"Neverland 1",
+					"Neverland 2",
+				},
+			},
+			expectedReplacement: &lnrpc.GetInfoResponse{
+				IdentityPubkey: "Tinker Bell's pub key",
+			},
+		},
+		{
+			name: "ForwardingHistory Response clear",
+			uri:  "/lnrpc.Lightning/ForwardingHistory",
+			privacyFlags: []session.PrivacyFlag{
+				session.ClearChanIDs,
+				session.ClearAmounts,
+				session.ClearTimeStamps,
+			},
+			msgType:             rpcperms.TypeResponse,
+			msg:                 clearForwarding,
+			expectedReplacement: clearForwarding,
+		},
+		{
 			name:    "ForwardingHistory Response",
 			uri:     "/lnrpc.Lightning/ForwardingHistory",
 			msgType: rpcperms.TypeResponse,
-			msg: &lnrpc.ForwardingHistoryResponse{
-				ForwardingEvents: []*lnrpc.ForwardingEvent{
-					{
-						AmtIn:       2_000,
-						AmtInMsat:   2_000_000,
-						AmtOut:      1_000,
-						AmtOutMsat:  1_000_000,
-						Fee:         1_000,
-						FeeMsat:     1_000_000,
-						Timestamp:   1_000,
-						TimestampNs: 1_000_000_000_000,
-						ChanIdIn:    123,
-						ChanIdOut:   321,
-					},
-					{
-						AmtIn:       3_000,
-						AmtInMsat:   3_000_000,
-						AmtOut:      2_000,
-						AmtOutMsat:  2_000_000,
-						Fee:         1_000,
-						FeeMsat:     1_000_000,
-						Timestamp:   1_000,
-						TimestampNs: 1_000_000_000_000,
-						ChanIdIn:    678,
-						ChanIdOut:   876,
-					},
-				},
-			},
+			msg:     clearForwarding,
 			expectedReplacement: &lnrpc.ForwardingHistoryResponse{
 				ForwardingEvents: []*lnrpc.ForwardingEvent{
 					{
@@ -147,23 +201,7 @@ func TestPrivacyMapper(t *testing.T) {
 			name:    "ListChannels Response",
 			uri:     "/lnrpc.Lightning/ListChannels",
 			msgType: rpcperms.TypeResponse,
-			msg: &lnrpc.ListChannelsResponse{
-				Channels: []*lnrpc.Channel{
-					{
-						Capacity:              1_000_000,
-						RemoteBalance:         600_000,
-						LocalBalance:          499_000,
-						CommitFee:             1_000,
-						TotalSatoshisSent:     500_000,
-						TotalSatoshisReceived: 450_000,
-						RemotePubkey:          "01020304",
-						Initiator:             false,
-						ChanId:                123,
-						ChannelPoint:          "abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd:0",
-						PendingHtlcs:          []*lnrpc.HTLC{{HashLock: []byte("aaaa")}, {HashLock: []byte("bbbb")}},
-					},
-				},
-			},
+			msg:     clearListChannel,
 			expectedReplacement: &lnrpc.ListChannelsResponse{
 				Channels: []*lnrpc.Channel{
 					{
@@ -181,6 +219,20 @@ func TestPrivacyMapper(t *testing.T) {
 					},
 				},
 			},
+		},
+		{
+			name: "ListChannels Response clear",
+			privacyFlags: []session.PrivacyFlag{
+				session.ClearPubkeys,
+				session.ClearChanIDs,
+				session.ClearAmounts,
+				session.ClearHTLCs,
+				session.ClearChanInitiator,
+			},
+			uri:                 "/lnrpc.Lightning/ListChannels",
+			msgType:             rpcperms.TypeResponse,
+			msg:                 clearListChannel,
+			expectedReplacement: clearListChannel,
 		},
 		{
 			name:    "UpdateChannelPolicy Request txid string",
@@ -298,6 +350,8 @@ func TestPrivacyMapper(t *testing.T) {
 
 			pd := firewalldb.NewMockSessionDB()
 			pd.AddPair(sessionID, sessionID)
+			err = pd.AddPrivacyFlags(sessionID, test.privacyFlags)
+			require.NoError(t, err)
 
 			// randIntn is used for deterministic testing.
 			randIntn := func(n int) (int, error) { return 100, nil }
@@ -346,6 +400,8 @@ func TestPrivacyMapper(t *testing.T) {
 
 		pd := firewalldb.NewMockSessionDB()
 		pd.AddPair(sessionID, sessionID)
+		err := pd.AddPrivacyFlags(sessionID, session.PrivacyFlags{})
+		require.NoError(t, err)
 
 		msg := &lnrpc.ForwardingHistoryResponse{
 			ForwardingEvents: []*lnrpc.ForwardingEvent{
