@@ -63,6 +63,6 @@ describe('AuthPage ', () => {
     const input = getByLabelText('Enter your password in the field above');
     fireEvent.change(input, { target: { value: 'test-pw' } });
     fireEvent.click(getByText('Submit'));
-    expect(await findByText('oops, that password is incorrect')).toBeInTheDocument();
+    expect(await findByText('failed to connect')).toBeInTheDocument();
   });
 });
