@@ -7,7 +7,7 @@ export default class AddSessionView {
   private _store: Store;
 
   label = '';
-  permissionType = 'admin'; // Expected values: admin | read-only | custodial | custom | liquidity | payments
+  permissionType = 'admin'; // Expected values: admin | read-only | custodial | custom | liquidity | payments | messenger
   editing = false;
   permissions: { [key: string]: boolean } = {
     openChannel: false,
@@ -17,6 +17,7 @@ export default class AddSessionView {
     pool: false,
     send: false,
     receive: false,
+    sign: false,
   };
   expiration = 'never'; // Expected values: 7 | 30 | 60 | 90 | never | custom
   expirationOptions = [
@@ -155,6 +156,13 @@ export default class AddSessionView {
         this.setAllPermissions(false);
         this.permissions.send = true;
         this.permissions.receive = true;
+        break;
+
+      case 'messenger':
+        this.setAllPermissions(false);
+        this.permissions.send = true;
+        this.permissions.receive = true;
+        this.permissions.sign = true;
         break;
 
       case 'custodial':

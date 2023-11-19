@@ -116,4 +116,5 @@ export const PermissionUriMap: { [key: string]: string[] } = {
     '/lnrpc.Lightning/ListInvoices',
     '/lnrpc.Lightning/SubscribeInvoices',
   ],
+  sign: ['/lnrpc.Lightning/SignMessage'],
 };

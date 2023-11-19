@@ -207,6 +207,14 @@ const CustomSessionPage: React.FC = () => {
                 </PermissionType>
 
                 <PermissionType
+                  active={addSessionView.permissionType === 'messenger'}
+                  onClick={setPermissionType('messenger')}
+                >
+                  <Paragraph bold>{l('messenger')}</Paragraph>
+                  <Small>{l('messengerDesc')}</Small>
+                </PermissionType>
+
+                <PermissionType
                   active={addSessionView.permissionType === 'custodial'}
                   onClick={setPermissionType('custodial')}
                 >
@@ -333,6 +341,18 @@ const CustomSessionPage: React.FC = () => {
                   <FormSwitch
                     checked={addSessionView.permissions.receive}
                     onChange={togglePermission('receive')}
+                  />
+                </Permission>
+
+                <Permission>
+                  <div>
+                    <Paragraph bold>{l('permSign')}</Paragraph>
+                    <Small>{l('permSignDesc')}</Small>
+                  </div>
+
+                  <FormSwitch
+                    checked={addSessionView.permissions.sign}
+                    onChange={togglePermission('sign')}
                   />
                 </Permission>
               </Permissions>
