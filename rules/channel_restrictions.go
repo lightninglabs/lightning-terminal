@@ -8,6 +8,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
+	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"google.golang.org/protobuf/proto"
 )
@@ -334,10 +335,18 @@ func (c *ChannelRestrict) ToProto() *litrpc.RuleValue {
 // It constructs a new ChannelRestrict instance with these real channel IDs.
 //
 // NOTE: this is part of the Values interface.
-func (c *ChannelRestrict) PseudoToReal(db firewalldb.PrivacyMapDB) (Values,
-	error) {
+func (c *ChannelRestrict) PseudoToReal(db firewalldb.PrivacyMapDB,
+	flags session.PrivacyFlags) (Values, error) {
 
 	restrictList := make([]uint64, len(c.DenyList))
+
+	// We don't obfuscate the channel IDs if the channel id flag is set.
+	if flags.Contains(session.ClearChanIDs) {
+		copy(restrictList, c.DenyList)
+
+		return &ChannelRestrict{DenyList: restrictList}, nil
+	}
+
 	err := db.View(func(tx firewalldb.PrivacyMapTx) error {
 		for i, chanID := range c.DenyList {
 			real, err := firewalldb.RevealUint64(tx, chanID)
@@ -349,15 +358,12 @@ func (c *ChannelRestrict) PseudoToReal(db firewalldb.PrivacyMapDB) (Values,
 		}
 
 		return nil
-	},
-	)
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	return &ChannelRestrict{
-		DenyList: restrictList,
-	}, nil
+	return &ChannelRestrict{DenyList: restrictList}, nil
 }
 
 // RealToPseudo converts all the real channel IDs into pseudo IDs. It returns a
@@ -365,11 +371,19 @@ func (c *ChannelRestrict) PseudoToReal(db firewalldb.PrivacyMapDB) (Values,
 // not find in the given PrivacyMapReader.
 //
 // NOTE: this is part of the Values interface.
-func (c *ChannelRestrict) RealToPseudo(db firewalldb.PrivacyMapReader) (Values,
-	map[string]string, error) {
+func (c *ChannelRestrict) RealToPseudo(db firewalldb.PrivacyMapReader,
+	flags session.PrivacyFlags) (Values, map[string]string, error) {
 
 	pseudoIDs := make([]uint64, len(c.DenyList))
 	privMapPairs := make(map[string]string)
+
+	// We don't obfuscate the channel IDs if the channel id flag is set.
+	if flags.Contains(session.ClearChanIDs) {
+		copy(pseudoIDs, c.DenyList)
+
+		return &ChannelRestrict{DenyList: pseudoIDs}, privMapPairs, nil
+	}
+
 	for i, c := range c.DenyList {
 		// TODO(elle): check that this channel actually exists
 
@@ -390,7 +404,5 @@ func (c *ChannelRestrict) RealToPseudo(db firewalldb.PrivacyMapReader) (Values,
 		pseudoIDs[i] = pseudoCp
 	}
 
-	return &ChannelRestrict{
-		DenyList: pseudoIDs,
-	}, privMapPairs, nil
+	return &ChannelRestrict{DenyList: pseudoIDs}, privMapPairs, nil
 }

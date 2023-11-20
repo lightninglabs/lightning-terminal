@@ -948,6 +948,7 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 					var privMapPairs map[string]string
 					v, privMapPairs, err = v.RealToPseudo(
 						knownPrivMapPairs,
+						session.PrivacyFlags{},
 					)
 					if err != nil {
 						return nil, err
@@ -1403,7 +1404,10 @@ func (s *sessionRpcServer) marshalRPCSession(sess *session.Session) (
 						db := s.cfg.privMap(
 							sess.GroupID,
 						)
-						val, err = val.PseudoToReal(db)
+						val, err = val.PseudoToReal(
+							db,
+							session.PrivacyFlags{},
+						)
 						if err != nil {
 							return nil, err
 						}

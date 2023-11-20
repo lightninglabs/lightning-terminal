@@ -8,6 +8,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
+	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"google.golang.org/protobuf/proto"
 )
@@ -318,8 +319,8 @@ func (f *ChanPolicyBounds) RuleName() string {
 // find the real values. This is a no-op for the ChanPolicyBounds rule.
 //
 // NOTE: this is part of the Values interface.
-func (f *ChanPolicyBounds) PseudoToReal(_ firewalldb.PrivacyMapDB) (Values,
-	error) {
+func (f *ChanPolicyBounds) PseudoToReal(_ firewalldb.PrivacyMapDB,
+	_ session.PrivacyFlags) (Values, error) {
 
 	return f, nil
 }
@@ -329,8 +330,8 @@ func (f *ChanPolicyBounds) PseudoToReal(_ firewalldb.PrivacyMapDB) (Values,
 // that should be persisted. This is a no-op for the ChanPolicyBounds rule.
 //
 // NOTE: this is part of the Values interface.
-func (f *ChanPolicyBounds) RealToPseudo(_ firewalldb.PrivacyMapReader) (Values,
-	map[string]string, error) {
+func (f *ChanPolicyBounds) RealToPseudo(_ firewalldb.PrivacyMapReader,
+	_ session.PrivacyFlags) (Values, map[string]string, error) {
 
 	return f, nil, nil
 }

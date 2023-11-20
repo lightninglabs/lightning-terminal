@@ -8,6 +8,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
+	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"google.golang.org/protobuf/proto"
@@ -341,13 +342,21 @@ func (c *PeerRestrict) ToProto() *litrpc.RuleValue {
 // It constructs a new PeerRestrict instance with these real peer IDs.
 //
 // NOTE: this is part of the Values interface.
-func (c *PeerRestrict) PseudoToReal(db firewalldb.PrivacyMapDB) (Values,
-	error) {
+func (c *PeerRestrict) PseudoToReal(db firewalldb.PrivacyMapDB,
+	flags session.PrivacyFlags) (Values, error) {
 
 	restrictList := make([]string, len(c.DenyList))
+
+	// We don't obfuscate if the clear pubkeys flag is set.
+	if flags.Contains(session.ClearPubkeys) {
+		copy(restrictList, c.DenyList)
+
+		return &PeerRestrict{DenyList: restrictList}, nil
+	}
+
 	err := db.View(func(tx firewalldb.PrivacyMapTx) error {
-		for i, chanID := range c.DenyList {
-			real, err := firewalldb.RevealString(tx, chanID)
+		for i, peerPubKey := range c.DenyList {
+			real, err := firewalldb.RevealString(tx, peerPubKey)
 			if err != nil {
 				return err
 			}
@@ -362,9 +371,7 @@ func (c *PeerRestrict) PseudoToReal(db firewalldb.PrivacyMapDB) (Values,
 		return nil, err
 	}
 
-	return &PeerRestrict{
-		DenyList: restrictList,
-	}, nil
+	return &PeerRestrict{DenyList: restrictList}, nil
 }
 
 // RealToPseudo converts all the real peer IDs into pseudo IDs. It returns a map
@@ -372,11 +379,19 @@ func (c *PeerRestrict) PseudoToReal(db firewalldb.PrivacyMapDB) (Values,
 // find in the given PrivacyMapReader.
 //
 // NOTE: this is part of the Values interface.
-func (c *PeerRestrict) RealToPseudo(db firewalldb.PrivacyMapReader) (Values,
-	map[string]string, error) {
+func (c *PeerRestrict) RealToPseudo(db firewalldb.PrivacyMapReader,
+	flags session.PrivacyFlags) (Values, map[string]string, error) {
 
 	pseudoIDs := make([]string, len(c.DenyList))
 	privMapPairs := make(map[string]string)
+
+	// We don't obfuscate if the clear pubkeys flag is set.
+	if flags.Contains(session.ClearPubkeys) {
+		copy(pseudoIDs, c.DenyList)
+
+		return &PeerRestrict{DenyList: pseudoIDs}, privMapPairs, nil
+	}
+
 	for i, id := range c.DenyList {
 		// TODO(elle): check that this peer is actually one of our
 		//  channel peers.
