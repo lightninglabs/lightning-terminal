@@ -15,8 +15,8 @@
     "lint": "eslint --ext .ts,.tsx --ignore-path .eslintignore .",
     "tsc": "tsc --noEmit",
     "protos": "node ./scripts/build-protos.js",
-    "storybook": "start-storybook -p 9009 -s public",
-    "build-storybook": "build-storybook -s public"
+    "storybook": "storybook dev -p 9009 -s public",
+    "build-storybook": "storybook build -s public"
   },
   "dependencies": {
     "@emotion/react": "11.4.0",
@@ -57,14 +57,13 @@
     "styled-components": "5.1.1"
   },
   "devDependencies": {
-    "@storybook/addon-actions": "6.5.9",
-    "@storybook/addon-docs": "6.5.9",
-    "@storybook/addon-links": "6.5.9",
-    "@storybook/addons": "6.5.9",
-    "@storybook/builder-webpack5": "6.5.9",
-    "@storybook/manager-webpack5": "6.5.9",
-    "@storybook/preset-create-react-app": "4.1.2",
-    "@storybook/react": "6.5.9",
+    "@storybook/addon-actions": "7.5.3",
+    "@storybook/addon-docs": "7.5.3",
+    "@storybook/addon-links": "7.5.3",
+    "@storybook/addons": "7.5.3",
+    "@storybook/preset-create-react-app": "7.5.3",
+    "@storybook/react": "7.5.3",
+    "@storybook/react-webpack5": "7.5.3",
     "@testing-library/jest-dom": "5.11.5",
     "@testing-library/react": "11.1.1",
     "@testing-library/user-event": "12.2.0",
@@ -94,6 +93,7 @@
     "jest-environment-jsdom": "27.5.1",
     "prettier": "2.1.2",
     "sass": "1.43.4",
+    "storybook": "7.5.3",
     "ts-protoc-gen": "0.12.0",
     "typescript": "4.1.6",
     "webpack": "5.89.0"
