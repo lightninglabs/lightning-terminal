@@ -379,11 +379,12 @@ func (c *Client) ListFeatures(ctx context.Context) (map[string]*Feature,
 // Note: this is part of the Autopilot interface.
 func (c *Client) RegisterSession(ctx context.Context, pubKey *btcec.PublicKey,
 	mailboxAddr string, devServer bool, featureConf map[string][]byte,
-	groupKey *btcec.PublicKey, linkSig []byte) (*btcec.PublicKey, error) {
+	groupKey *btcec.PublicKey, linkSig []byte,
+	privacyFlags uint64) (*btcec.PublicKey, error) {
 
 	remotePub, err := c.registerSession(
 		ctx, pubKey, mailboxAddr, devServer, featureConf,
-		groupKey, linkSig,
+		groupKey, linkSig, privacyFlags,
 	)
 	if err != nil {
 		log.Errorf("unsuccessful registration of session %x",
@@ -429,8 +430,8 @@ func (c *Client) trackClient(pubKey *btcec.PublicKey) {
 // public key with the autopilot server.
 func (c *Client) registerSession(ctx context.Context, pubKey *btcec.PublicKey,
 	mailboxAddr string, devServer bool, featureConfig map[string][]byte,
-	groupLocalPub *btcec.PublicKey, linkSig []byte) (*btcec.PublicKey,
-	error) {
+	groupLocalPub *btcec.PublicKey, linkSig []byte,
+	privacyFlags uint64) (*btcec.PublicKey, error) {
 
 	client, cleanup, err := c.getClientConn()
 	if err != nil {
@@ -453,6 +454,7 @@ func (c *Client) registerSession(ctx context.Context, pubKey *btcec.PublicKey,
 			LndVersion:        marshalVersion(c.cfg.LndVersion),
 			GroupResponderKey: groupKey,
 			GroupResponderSig: linkSig,
+			PrivacyFlags:      privacyFlags,
 		},
 	)
 	if err != nil {
