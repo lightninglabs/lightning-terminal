@@ -14,6 +14,7 @@ import FormSelect from 'components/common/FormSelect';
 import FormDate from 'components/common/FormDate';
 import FormSwitch from 'components/common/v2/FormSwitch';
 import PurpleButton from './PurpleButton';
+import { PermissionTypeValues } from 'store/views/addSessionView';
 
 const Styled = {
   Wrapper: styled.div`
@@ -108,7 +109,7 @@ const CustomSessionPage: React.FC = () => {
     addSessionView.handleCustomSubmit();
   }, []);
 
-  const setPermissionType = (permissionType: string) => {
+  const setPermissionType = (permissionType: PermissionTypeValues) => {
     return () => {
       addSessionView.setPermissionType(permissionType);
     };
@@ -175,48 +176,62 @@ const CustomSessionPage: React.FC = () => {
 
               <PermissionTypes>
                 <PermissionType
-                  active={addSessionView.permissionType === 'admin'}
-                  onClick={setPermissionType('admin')}
+                  active={addSessionView.permissionType === PermissionTypeValues.Admin}
+                  onClick={setPermissionType(PermissionTypeValues.Admin)}
                 >
                   <Paragraph bold>{l('admin')}</Paragraph>
                   <Small>{l('adminDesc')}</Small>
                 </PermissionType>
 
                 <PermissionType
-                  active={addSessionView.permissionType === 'read-only'}
-                  onClick={setPermissionType('read-only')}
+                  active={addSessionView.permissionType === PermissionTypeValues.ReadOnly}
+                  onClick={setPermissionType(PermissionTypeValues.ReadOnly)}
                 >
                   <Paragraph bold>{l('readonly')}</Paragraph>
                   <Small>{l('readonlyDesc')}</Small>
                 </PermissionType>
 
                 <PermissionType
-                  active={addSessionView.permissionType === 'liquidity'}
-                  onClick={setPermissionType('liquidity')}
+                  active={
+                    addSessionView.permissionType === PermissionTypeValues.Liquidity
+                  }
+                  onClick={setPermissionType(PermissionTypeValues.Liquidity)}
                 >
                   <Paragraph bold>{l('liquidity')}</Paragraph>
                   <Small>{l('liquidityDesc')}</Small>
                 </PermissionType>
 
                 <PermissionType
-                  active={addSessionView.permissionType === 'payments'}
-                  onClick={setPermissionType('payments')}
+                  active={addSessionView.permissionType === PermissionTypeValues.Payments}
+                  onClick={setPermissionType(PermissionTypeValues.Payments)}
                 >
                   <Paragraph bold>{l('payments')}</Paragraph>
                   <Small>{l('paymentsDesc')}</Small>
                 </PermissionType>
 
                 <PermissionType
-                  active={addSessionView.permissionType === 'custodial'}
-                  onClick={setPermissionType('custodial')}
+                  active={
+                    addSessionView.permissionType === PermissionTypeValues.Messenger
+                  }
+                  onClick={setPermissionType(PermissionTypeValues.Messenger)}
+                >
+                  <Paragraph bold>{l('messenger')}</Paragraph>
+                  <Small>{l('messengerDesc')}</Small>
+                </PermissionType>
+
+                <PermissionType
+                  active={
+                    addSessionView.permissionType === PermissionTypeValues.Custodial
+                  }
+                  onClick={setPermissionType(PermissionTypeValues.Custodial)}
                 >
                   <Paragraph bold>{l('custodial')}</Paragraph>
                   <Small>{l('custodialDesc')}</Small>
                 </PermissionType>
 
                 <PermissionType
-                  active={addSessionView.permissionType === 'custom'}
-                  onClick={setPermissionType('custom')}
+                  active={addSessionView.permissionType === PermissionTypeValues.Custom}
+                  onClick={setPermissionType(PermissionTypeValues.Custom)}
                 >
                   <Paragraph bold>{l('custom')}</Paragraph>
                   <Small>{l('customDesc')}</Small>
@@ -228,7 +243,7 @@ const CustomSessionPage: React.FC = () => {
               <Label semiBold>Permissions</Label>
 
               <Permissions>
-                {addSessionView.permissionType === 'custodial' && (
+                {addSessionView.permissionType === PermissionTypeValues.Custodial && (
                   <FormField>
                     <Label semiBold space={8}>
                       {l('addBalance')}
@@ -333,6 +348,18 @@ const CustomSessionPage: React.FC = () => {
                   <FormSwitch
                     checked={addSessionView.permissions.receive}
                     onChange={togglePermission('receive')}
+                  />
+                </Permission>
+
+                <Permission>
+                  <div>
+                    <Paragraph bold>{l('permSign')}</Paragraph>
+                    <Small>{l('permSignDesc')}</Small>
+                  </div>
+
+                  <FormSwitch
+                    checked={addSessionView.permissions.sign}
+                    onChange={togglePermission('sign')}
                   />
                 </Permission>
               </Permissions>

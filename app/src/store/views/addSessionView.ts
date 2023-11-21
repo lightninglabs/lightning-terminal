@@ -3,11 +3,21 @@ import { Store } from 'store';
 import * as LIT from 'types/generated/lit-sessions_pb';
 import { MAX_DATE, PermissionUriMap } from 'util/constants';
 
+export enum PermissionTypeValues {
+  Admin = 'admin',
+  ReadOnly = 'read-only',
+  Liquidity = 'liquidity',
+  Payments = 'payments',
+  Messenger = 'messenger',
+  Custodial = 'custodial',
+  Custom = 'custom',
+}
+
 export default class AddSessionView {
   private _store: Store;
 
   label = '';
-  permissionType = 'admin'; // Expected values: admin | read-only | custodial | custom | liquidity | payments
+  permissionType: PermissionTypeValues = PermissionTypeValues.Admin;
   editing = false;
   permissions: { [key: string]: boolean } = {
     openChannel: false,
@@ -17,6 +27,7 @@ export default class AddSessionView {
     pool: false,
     send: false,
     receive: false,
+    sign: false,
   };
   expiration = 'never'; // Expected values: 7 | 30 | 60 | 90 | never | custom
   expirationOptions = [
@@ -49,11 +60,11 @@ export default class AddSessionView {
   //
 
   get sessionType() {
-    if (this.permissionType === 'admin') {
+    if (this.permissionType === PermissionTypeValues.Admin) {
       return LIT.SessionType.TYPE_MACAROON_ADMIN;
-    } else if (this.permissionType === 'read-only') {
+    } else if (this.permissionType === PermissionTypeValues.ReadOnly) {
       return LIT.SessionType.TYPE_MACAROON_READONLY;
-    } else if (this.permissionType === 'custodial') {
+    } else if (this.permissionType === PermissionTypeValues.Custodial) {
       return LIT.SessionType.TYPE_MACAROON_ACCOUNT;
     }
 
@@ -132,45 +143,52 @@ export default class AddSessionView {
     this.custodialBalance = balance;
   }
 
-  setPermissionType(permissionType: string) {
+  setPermissionType(permissionType: PermissionTypeValues) {
     this.permissionType = permissionType;
 
     switch (permissionType) {
-      case 'admin':
+      case PermissionTypeValues.Admin:
         this.setAllPermissions(true);
         break;
 
-      case 'read-only':
+      case PermissionTypeValues.ReadOnly:
         this.setAllPermissions(false);
         break;
 
-      case 'liquidity':
+      case PermissionTypeValues.Liquidity:
         this.setAllPermissions(false);
         this.permissions.setFees = true;
         this.permissions.loop = true;
         this.permissions.pool = true;
         break;
 
-      case 'payments':
+      case PermissionTypeValues.Payments:
         this.setAllPermissions(false);
         this.permissions.send = true;
         this.permissions.receive = true;
         break;
 
-      case 'custodial':
+      case PermissionTypeValues.Messenger:
+        this.setAllPermissions(false);
+        this.permissions.send = true;
+        this.permissions.receive = true;
+        this.permissions.sign = true;
+        break;
+
+      case PermissionTypeValues.Custodial:
         this.setAllPermissions(false);
         this.permissions.send = true;
         this.permissions.receive = true;
         break;
 
-      case 'custom':
+      case PermissionTypeValues.Custom:
         // We don't need to change anything, let the user customize permissions how they want
         break;
     }
   }
 
   togglePermission(permission: string) {
-    this.setPermissionType('custom');
+    this.setPermissionType(PermissionTypeValues.Custom);
     this.permissions[permission] = !this.permissions[permission];
   }
 
@@ -184,7 +202,7 @@ export default class AddSessionView {
 
   cancel() {
     this.label = '';
-    this.permissionType = 'admin';
+    this.permissionType = PermissionTypeValues.Admin;
     this.editing = false;
     this.setAllPermissions(false);
     this.expiration = 'never';
@@ -197,7 +215,7 @@ export default class AddSessionView {
   //
 
   async handleSubmit() {
-    if (this.permissionType === 'custom') {
+    if (this.permissionType === PermissionTypeValues.Custom) {
       this._store.settingsStore.sidebarVisible = false;
       this._store.router.push('/connect/custom');
     } else {
@@ -223,7 +241,7 @@ export default class AddSessionView {
       label = `My ${this.permissionType} session`;
     }
 
-    if (this.permissionType === 'custodial') {
+    if (this.permissionType === PermissionTypeValues.Custodial) {
       const custodialAccountId = await this.registerCustodialAccount();
 
       // Return immediately to prevent a session being created when there is an error creating the custodial account

@@ -8,6 +8,7 @@ import FormField from 'components/common/FormField';
 import FormInput from 'components/common/FormInput';
 import FormSelect from 'components/common/FormSelect';
 import PurpleButton from './PurpleButton';
+import { PermissionTypeValues } from 'store/views/addSessionView';
 
 const Styled = {
   Wrapper: styled.div``,
@@ -50,6 +51,14 @@ const AddSession: React.FC<Props> = ({ primary }) => {
     );
   }
 
+  const validatePermissionType = (v: string) => {
+    const permissionType = Object.values(PermissionTypeValues).find(value => value === v);
+
+    if (!permissionType) return;
+
+    addSessionView.setPermissionType(permissionType);
+  };
+
   return (
     <Wrapper>
       <Row>
@@ -74,18 +83,18 @@ const AddSession: React.FC<Props> = ({ primary }) => {
           <FormField>
             <FormSelect
               value={addSessionView.permissionType}
-              onChange={addSessionView.setPermissionType}
+              onChange={validatePermissionType}
               options={[
-                { label: l('admin'), value: 'admin' },
-                { label: l('readonly'), value: 'read-only' },
-                { label: l('custom'), value: 'custom' },
+                { label: l('admin'), value: PermissionTypeValues.Admin },
+                { label: l('readonly'), value: PermissionTypeValues.ReadOnly },
+                { label: l('custom'), value: PermissionTypeValues.Custom },
               ]}
             />
           </FormField>
         </Column>
         <Column>
           <PurpleButton onClick={addSessionView.handleSubmit}>
-            {addSessionView.permissionType === 'custom'
+            {addSessionView.permissionType === PermissionTypeValues.Custom
               ? l('common.next')
               : l('common.submit')}
           </PurpleButton>
