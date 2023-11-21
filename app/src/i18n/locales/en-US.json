@@ -57,7 +57,7 @@
   "cmps.connect.CustomSessionPage.payments": "Payments Manager",
   "cmps.connect.CustomSessionPage.paymentsDesc": "User can only send and receive payments.",
   "cmps.connect.CustomSessionPage.messenger": "Keysend Messenger",
-  "cmps.connect.CustomSessionPage.messengerDesc": "Payments Manager permissions plus user can sign messages.",
+  "cmps.connect.CustomSessionPage.messengerDesc": "User can send and receive payments plus sign messages.",
   "cmps.connect.CustomSessionPage.custodial": "Custodial Account",
   "cmps.connect.CustomSessionPage.custodialDesc": "Create a custodial off-chain account for your node.",
   "cmps.connect.CustomSessionPage.custom": "Custom",
