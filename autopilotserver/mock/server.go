@@ -8,6 +8,8 @@ import (
 	"sync"
 
 	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcec/v2/ecdsa"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/lightninglabs/lightning-terminal/autopilotserverrpc"
 	"github.com/lightninglabs/lightning-terminal/rules"
 	"github.com/lightningnetwork/lnd/lntest/node"
@@ -44,6 +46,7 @@ type ClientState uint8
 const (
 	ClientStateActive = iota
 	ClientStateInactive
+	ClientStateRevoked
 )
 
 type clientSession struct {
@@ -101,6 +104,11 @@ func (m *Server) GetPort() int {
 // autopilot server.
 func (m *Server) SetFeatures(f map[string]*Feature) {
 	m.featureSet = f
+}
+
+// ResetDefaultFeatures resets the servers features set to the default set.
+func (m *Server) ResetDefaultFeatures() {
+	m.featureSet = defaultFeatures
 }
 
 // Terms returns any meta data from the autopilot server.
@@ -167,6 +175,32 @@ func (m *Server) RegisterSession(_ context.Context,
 		return nil, err
 	}
 
+	// If linked session, check that signature is valid.
+	if len(req.GroupResponderKey) != 0 {
+		// Check that the group key is a known key.
+		_, ok := m.sessions[hex.EncodeToString(req.GroupResponderKey)]
+		if !ok {
+			return nil, fmt.Errorf("unknown group key")
+		}
+
+		// Check that the signature provided is valid.
+		sig, err := ecdsa.ParseDERSignature(req.GroupResponderSig)
+		if err != nil {
+			return nil, err
+		}
+
+		msg := chainhash.HashB(req.ResponderPubKey)
+
+		groupKey, err := btcec.ParsePubKey(req.GroupResponderKey)
+		if err != nil {
+			return nil, err
+		}
+
+		if !sig.Verify(msg, groupKey) {
+			return nil, fmt.Errorf("invalid signature")
+		}
+	}
+
 	m.sessions[hex.EncodeToString(req.ResponderPubKey)] = &clientSession{
 		key:   priv,
 		state: ClientStateActive,
@@ -204,7 +238,12 @@ func (m *Server) RevokeSession(_ context.Context,
 	m.sessMu.Lock()
 	defer m.sessMu.Unlock()
 
-	delete(m.sessions, hex.EncodeToString(req.ResponderPubKey))
+	sess, ok := m.sessions[hex.EncodeToString(req.ResponderPubKey)]
+	if !ok {
+		return nil, nil
+	}
+
+	sess.state = ClientStateRevoked
 
 	return &autopilotserverrpc.RevokeSessionResponse{}, nil
 }
@@ -271,7 +310,7 @@ var defaultFeatures = map[string]*Feature{
 	"HealthCheck": {
 		Description: "check that your node is up",
 		Rules: map[string]*RuleRanges{
-			rules.RateLimitName: rateLimitRule,
+			rules.RateLimitName: RateLimitRule,
 		},
 		Permissions: map[string][]bakery.Op{
 			"/lnrpc.Lightning/GetInfo": {{
@@ -283,7 +322,7 @@ var defaultFeatures = map[string]*Feature{
 	"AutoFees": {
 		Description: "manages your channel fees",
 		Rules: map[string]*RuleRanges{
-			rules.RateLimitName: rateLimitRule,
+			rules.RateLimitName: RateLimitRule,
 		},
 		Permissions: map[string][]bakery.Op{
 			"/lnrpc.Lightning/ListChannels": {{
@@ -302,7 +341,7 @@ var defaultFeatures = map[string]*Feature{
 	},
 }
 
-var rateLimitRule = &RuleRanges{
+var RateLimitRule = &RuleRanges{
 	Default: &rules.RateLimit{
 		WriteLimit: &rules.Rate{
 			Iterations: 1,
