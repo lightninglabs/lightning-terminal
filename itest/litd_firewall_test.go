@@ -366,32 +366,9 @@ func testSessionLinking(net *NetworkHarness, t *harnessTest) {
 	// getPseudo is a helper that can be used to query Alice's privacy map
 	// DB to get the pseudo value for a given real value.
 	getPseudo := func(groupID []byte, input any, expError string) string {
-		var in string
-
-		switch inp := input.(type) {
-		case string:
-			in = inp
-		case uint64:
-			in = firewalldb.Uint64ToStr(inp)
-		default:
-			t.Fatalf("unhandled input type: %T", input)
-		}
-
-		privMapResp, err := litFWClient.PrivacyMapConversion(
-			ctxm, &litrpc.PrivacyMapConversionRequest{
-				GroupId:      groupID,
-				RealToPseudo: true,
-				Input:        in,
-			},
+		return assertPseudo(
+			ctxm, t.t, litFWClient, groupID, input, expError,
 		)
-		if expError != "" {
-			require.ErrorContains(t.t, err, expError)
-
-			return ""
-		}
-		require.NoError(t.t, err)
-
-		return privMapResp.Output
 	}
 
 	// At this point, we already expect there to be entries in the privacy
@@ -421,26 +398,10 @@ func testSessionLinking(net *NetworkHarness, t *harnessTest) {
 
 	// Now, let's connect to the LiT node from the point of view of the
 	// autopilot server.
-
-	// From the session creation response, we can extract Lit's local public
-	// key.
-	litdPub, err := btcec.ParsePubKey(sessResp.Session.LocalPublicKey)
-	require.NoError(t.t, err)
-
-	// We then query the autopilot server to extract the private key that
-	// it will be using for this session.
-	pilotPriv, err := net.autopilotServer.GetPrivKey(litdPub)
-	require.NoError(t.t, err)
-
-	// Now we can connect to the mailbox from the PoV of the autopilot
-	// server.
-	pilotConn, metaDataInjector, err := connectMailboxWithRemoteKey(
-		ctx, pilotPriv, litdPub,
+	lndConn, metaDataInjector, cleanup1 := newAutopilotLndConn(
+		ctx, t.t, net, sessResp.Session,
 	)
-	require.NoError(t.t, err)
-	defer pilotConn.Close()
-
-	lndConn := lnrpc.NewLightningClient(pilotConn)
+	t.t.Cleanup(func() { require.NoError(t.t, cleanup1()) })
 
 	// The autopilot server is expected to add a MetaInfo caveat to any
 	// request that it makes. So we add that now and specify that it is
@@ -569,11 +530,6 @@ func testSessionLinking(net *NetworkHarness, t *harnessTest) {
 	)
 	require.NoError(t.t, err)
 
-	// Also close the autopilot connection to the first session so that it
-	// doesn't continue to try and connect.
-	require.NoError(t.t, pilotConn.Close())
-	pilotConn = nil
-
 	sessResp2, err := litAutopilotClient.AddAutopilotSession(
 		ctxm, &litrpc.AddAutopilotSessionRequest{
 			Label: "integration-test",
@@ -600,19 +556,11 @@ func testSessionLinking(net *NetworkHarness, t *harnessTest) {
 
 	// Now we connect to LiT from the PoV of the autopilot server but this
 	// time using the new session.
-	litdPub, err = btcec.ParsePubKey(sessResp2.Session.LocalPublicKey)
-	require.NoError(t.t, err)
-
-	pilotPriv, err = net.autopilotServer.GetPrivKey(litdPub)
-	require.NoError(t.t, err)
-
-	pilotConn, metaDataInjector, err = connectMailboxWithRemoteKey(
-		ctx, pilotPriv, litdPub,
+	lndConn, metaDataInjector, cleanup2 := newAutopilotLndConn(
+		ctx, t.t, net, sessResp2.Session,
 	)
-	require.NoError(t.t, err)
-	defer pilotConn.Close()
+	t.t.Cleanup(func() { require.NoError(t.t, cleanup2()) })
 
-	lndConn = lnrpc.NewLightningClient(pilotConn)
 	caveatCreds1 = metaDataInjector.addCaveat(caveat1)
 
 	// List the channels and ensure that the same mapping was used as for
@@ -724,23 +672,11 @@ func testRateLimitAndPrivacyMapper(net *NetworkHarness, t *harnessTest) {
 	)
 	require.NoError(t.t, err)
 
-	// From the response, we can extract Lit's local public key.
-	litdPub, err := btcec.ParsePubKey(sessResp.Session.LocalPublicKey)
-	require.NoError(t.t, err)
-
-	// We then query the autopilot server to extract the private key that
-	// it will be using for this session.
-	pilotPriv, err := net.autopilotServer.GetPrivKey(litdPub)
-	require.NoError(t.t, err)
-
-	// Now we can connect to the mailbox from the PoV of the autopilot
-	// server.
-	pilotConn, metaDataInjector, err := connectMailboxWithRemoteKey(
-		ctx, pilotPriv, litdPub,
+	// We now connect to the mailbox from the PoV of the autopilot server.
+	lndConn, metaDataInjector, cleanup := newAutopilotLndConn(
+		ctx, t.t, net, sessResp.Session,
 	)
-	require.NoError(t.t, err)
-	defer pilotConn.Close()
-	lndConn := lnrpc.NewLightningClient(pilotConn)
+	t.t.Cleanup(func() { require.NoError(t.t, cleanup()) })
 
 	// The autopilot server is expected to add a MetaInfo caveat to any
 	// request that it makes. So we add that now and specify that it is
@@ -962,24 +898,11 @@ func testHistoryLimitRule(net *NetworkHarness, t *harnessTest) {
 	)
 	require.NoError(t.t, err)
 
-	// From the response, we can extract Lit's local public key.
-	litdPub, err := btcec.ParsePubKey(sessResp.Session.LocalPublicKey)
-	require.NoError(t.t, err)
-
-	// We then query the autopilot server to extract the private key that
-	// it will be using for this session.
-	pilotPriv, err := net.autopilotServer.GetPrivKey(litdPub)
-	require.NoError(t.t, err)
-
-	// Now we can connect to the mailbox from the PoV of the autopilot
-	// server.
-	pilotConn, metaDataInjector, err := connectMailboxWithRemoteKey(
-		ctx, pilotPriv, litdPub,
+	// We now connect to the mailbox from the PoV of the autopilot server.
+	lndConn, metaDataInjector, cleanup := newAutopilotLndConn(
+		ctx, t.t, net, sessResp.Session,
 	)
-	require.NoError(t.t, err)
-	defer pilotConn.Close()
-
-	lndConn := lnrpc.NewLightningClient(pilotConn)
+	t.t.Cleanup(func() { require.NoError(t.t, cleanup()) })
 
 	// First, we will test the "AutoFees" feature which uses a duration to
 	// specify a history limit. The duration specified is 48 hours and so
@@ -1120,23 +1043,11 @@ func testChanPolicyBoundsRule(net *NetworkHarness, t *harnessTest) {
 	)
 	require.NoError(t.t, err)
 
-	// From the response, we can extract Lit's local public key.
-	litdPub, err := btcec.ParsePubKey(sessResp.Session.LocalPublicKey)
-	require.NoError(t.t, err)
-
-	// We then query the autopilot server to extract the private key that
-	// it will be using for this session.
-	pilotPriv, err := net.autopilotServer.GetPrivKey(litdPub)
-	require.NoError(t.t, err)
-
-	// Now we can connect to the mailbox from the PoV of the autopilot
-	// server.
-	pilotConn, metaDataInjector, err := connectMailboxWithRemoteKey(
-		ctx, pilotPriv, litdPub,
+	// We now connect to the mailbox from the PoV of the autopilot server.
+	lndConn, metaDataInjector, cleanup := newAutopilotLndConn(
+		ctx, t.t, net, sessResp.Session,
 	)
-	require.NoError(t.t, err)
-	defer pilotConn.Close()
-	lndConn := lnrpc.NewLightningClient(pilotConn)
+	t.t.Cleanup(func() { require.NoError(t.t, cleanup()) })
 
 	// The autopilot server is expected to add a MetaInfo caveat to any
 	// request that it makes. So we add that now and specify that it is
@@ -1396,23 +1307,11 @@ func testPeerAndChannelRestrictRules(net *NetworkHarness, t *harnessTest) {
 	)
 	require.NoError(t.t, err)
 
-	// From the response, we can extract Lit's local public key.
-	litdPub, err := btcec.ParsePubKey(sessResp.Session.LocalPublicKey)
-	require.NoError(t.t, err)
-
-	// We then query the autopilot server to extract the private key that
-	// it will be using for this session.
-	pilotPriv, err := net.autopilotServer.GetPrivKey(litdPub)
-	require.NoError(t.t, err)
-
-	// Now we can connect to the mailbox from the PoV of the autopilot
-	// server.
-	pilotConn, metaDataInjector, err := connectMailboxWithRemoteKey(
-		ctx, pilotPriv, litdPub,
+	// We now connect to the mailbox from the PoV of the autopilot server.
+	lndConn, metaDataInjector, cleanup := newAutopilotLndConn(
+		ctx, t.t, net, sessResp.Session,
 	)
-	require.NoError(t.t, err)
-	defer pilotConn.Close()
-	lndConn := lnrpc.NewLightningClient(pilotConn)
+	t.t.Cleanup(func() { require.NoError(t.t, cleanup()) })
 
 	// The autopilot server is expected to add a MetaInfo caveat to any
 	// request that it makes. So we add that now and specify that it is
@@ -1680,23 +1579,11 @@ func testLargeHttpHeader(ctx context.Context, net *NetworkHarness,
 	)
 	require.NoError(t.t, err)
 
-	// From the response, we can extract Lit's local public key.
-	litdPub, err := btcec.ParsePubKey(sessResp.Session.LocalPublicKey)
-	require.NoError(t.t, err)
-
-	// We then query the autopilot server to extract the private key that
-	// it will be using for this session.
-	pilotPriv, err := net.autopilotServer.GetPrivKey(litdPub)
-	require.NoError(t.t, err)
-
-	// Now we can connect to the mailbox from the PoV of the autopilot
-	// server.
-	pilotConn, metaDataInjector, err := connectMailboxWithRemoteKey(
-		ctx, pilotPriv, litdPub,
+	// We now connect to the mailbox from the PoV of the autopilot server.
+	lndConn, metaDataInjector, cleanup := newAutopilotLndConn(
+		ctx, t.t, net, sessResp.Session,
 	)
-	require.NoError(t.t, err)
-	defer pilotConn.Close()
-	lndConn := lnrpc.NewLightningClient(pilotConn)
+	t.t.Cleanup(func() { require.NoError(t.t, cleanup()) })
 
 	// The autopilot server is expected to add a MetaInfo caveat to any
 	// request that it makes. So we add that now and specify that it is
@@ -1721,6 +1608,69 @@ func testLargeHttpHeader(ctx context.Context, net *NetworkHarness,
 	)
 	require.NoError(t.t, err)
 	require.Equal(t.t, aliceInfo.Alias, getInfoReq.Alias)
+}
+
+// assertPseudo is a helper that can be used to query a privacy map DB to get
+// the pseudo value for a given real value.
+func assertPseudo(ctxm context.Context, t *testing.T,
+	litFWClient litrpc.FirewallClient, groupID []byte, input any,
+	expError string) string {
+
+	var in string
+
+	switch inp := input.(type) {
+	case string:
+		in = inp
+	case uint64:
+		in = firewalldb.Uint64ToStr(inp)
+	default:
+		t.Fatalf("unhandled input type: %T", input)
+	}
+
+	privMapResp, err := litFWClient.PrivacyMapConversion(
+		ctxm, &litrpc.PrivacyMapConversionRequest{
+			GroupId:      groupID,
+			RealToPseudo: true,
+			Input:        in,
+		},
+	)
+	if expError != "" {
+		require.ErrorContains(t, err, expError)
+
+		return ""
+	}
+	require.NoError(t, err)
+
+	return privMapResp.Output
+}
+
+// newAutopilotLndConn creates a new connection to the mailbox server from the
+// PoV of the autopilot server. It also returns a cleanup function that should
+// be called when the test is done.
+func newAutopilotLndConn(ctx context.Context, t *testing.T, net *NetworkHarness,
+	session *litrpc.Session) (lnrpc.LightningClient, *metadataInjector,
+	func() error) {
+
+	// From the session creation response, we can extract Lit's local public
+	// key.
+	litdPub, err := btcec.ParsePubKey(session.LocalPublicKey)
+	require.NoError(t, err)
+
+	// We then query the autopilot server to extract the private key that
+	// will be used for this session.
+	pilotPriv, err := net.autopilotServer.GetPrivKey(litdPub)
+	require.NoError(t, err)
+
+	// Now we can connect to the mailbox from the PoV of the autopilot
+	// server.
+	pilotConn, metaDataInjector, err := connectMailboxWithRemoteKey(
+		ctx, pilotPriv, litdPub,
+	)
+	require.NoError(t, err)
+
+	lndConn := lnrpc.NewLightningClient(pilotConn)
+
+	return lndConn, metaDataInjector, pilotConn.Close
 }
 
 // connectMailboxWithRemoteKey tries to establish a connection through LNC using
