@@ -531,7 +531,7 @@ type PrivacyMapReader interface {
 
 // PrivacyMapPairs is an in memory implementation of the PrivacyMapReader.
 type PrivacyMapPairs struct {
-	// pairs is a map from real to psuedo strings.
+	// pairs is a map from real to pseudo strings.
 	pairs map[string]string
 
 	mu sync.Mutex

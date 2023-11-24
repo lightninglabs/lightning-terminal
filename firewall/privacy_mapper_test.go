@@ -734,7 +734,7 @@ func TestObfuscateConfig(t *testing.T) {
 			name: "empty",
 		},
 		{
-			// We substitue pubkeys of different forms.
+			// We substitute pubkeys of different forms.
 			name: "several pubkeys",
 			config: []byte(`{"version":1,"list":` +
 				`["d23da57575cdcb878ac191e1e0c8a5c4f061b11cfdc7a8ec5c9d495270de66fdbf",` +
