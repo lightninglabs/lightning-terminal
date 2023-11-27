@@ -968,7 +968,7 @@ func ObfuscateConfig(db firewalldb.PrivacyMapReader, configB []byte) ([]byte,
 			_, err = strconv.ParseInt(value, 10, 64)
 			length := len(value)
 
-			// Channel ids can have different lenghts depending on
+			// Channel ids can have different lengths depending on
 			// the blockheight, 20 is equivalent to 10E9 blocks.
 			if err == nil && minChanIDLen <= length &&
 				length <= maxChanIDLen {
