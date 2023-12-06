@@ -48,7 +48,6 @@ import (
 	"github.com/lightningnetwork/lnd/lnrpc/walletrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/watchtowerrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/wtclientrpc"
-	"github.com/lightningnetwork/lnd/lntest/wait"
 	"github.com/lightningnetwork/lnd/lnwallet/btcwallet"
 	"github.com/lightningnetwork/lnd/macaroons"
 	"github.com/lightningnetwork/lnd/rpcperms"
@@ -634,7 +633,7 @@ func (g *LightningTerminal) start() error {
 	}
 
 	// Set up all the LND clients required by LiT.
-	err = g.setUpLNDClients()
+	err = g.setUpLNDClients(lndQuit)
 	if err != nil {
 		g.statusMgr.SetErrored(
 			subservers.LND, "could not set up LND clients: %v", err,
@@ -699,8 +698,9 @@ func (g *LightningTerminal) start() error {
 }
 
 // setUpLNDClients sets up the various LND clients required by LiT.
-func (g *LightningTerminal) setUpLNDClients() error {
+func (g *LightningTerminal) setUpLNDClients(lndQuit chan struct{}) error {
 	var (
+		err           error
 		insecure      bool
 		clientOptions []lndclient.BasicClientOption
 	)
@@ -722,25 +722,57 @@ func (g *LightningTerminal) setUpLNDClients() error {
 		clientOptions = append(clientOptions, lndclient.Insecure())
 	}
 
+	// checkRunning checks if we should continue running for the duration of
+	// the defaultStartupTimeout, or else returns an error indicating why
+	// a shut-down is needed.
+	checkRunning := func() error {
+		select {
+		case err := <-g.errQueue.ChanOut():
+			return fmt.Errorf("error from subsystem: %v", err)
+
+		case <-lndQuit:
+			return fmt.Errorf("LND has stopped")
+
+		case <-interceptor.ShutdownChannel():
+			return fmt.Errorf("received the shutdown signal")
+
+		case <-time.After(defaultStartupTimeout):
+			return nil
+		}
+	}
+
 	// The main RPC listener of lnd might need some time to start, it could
 	// be that we run into a connection refused a few times. We use the
 	// basic client connection to find out if the RPC server is started yet
 	// because that doesn't do anything else than just connect. We'll check
 	// if lnd is also ready to be used in the next step.
 	log.Infof("Connecting basic lnd client")
-	err := wait.NoError(func() error {
+
+	for {
 		// Create an lnd client now that we have the full configuration.
 		// We'll need a basic client and a full client because not all
 		// subservers have the same requirements.
-		var err error
 		g.basicClient, err = lndclient.NewBasicClient(
-			host, tlsPath, filepath.Dir(macPath), string(network),
-			clientOptions...,
+			host, tlsPath, filepath.Dir(macPath),
+			string(network), clientOptions...,
 		)
-		return err
-	}, defaultStartupTimeout)
-	if err != nil {
-		return fmt.Errorf("could not create basic LND Client: %v", err)
+		if err == nil {
+			log.Infof("Basic lnd client connected")
+
+			break
+		}
+
+		g.statusMgr.SetErrored(
+			subservers.LIT,
+			"Error when setting up basic LND Client: %v", err,
+		)
+
+		err = checkRunning()
+		if err != nil {
+			return err
+		}
+
+		log.Infof("Retrying to connect basic lnd client")
 	}
 
 	// Now we know that the connection itself is ready. But we also need to
@@ -768,23 +800,39 @@ func (g *LightningTerminal) setUpLNDClients() error {
 	}()
 
 	log.Infof("Connecting full lnd client")
-	g.lndClient, err = lndclient.NewLndServices(
-		&lndclient.LndServicesConfig{
-			LndAddress:            host,
-			Network:               network,
-			TLSPath:               tlsPath,
-			Insecure:              insecure,
-			CustomMacaroonPath:    macPath,
-			CustomMacaroonHex:     hex.EncodeToString(macData),
-			BlockUntilChainSynced: true,
-			BlockUntilUnlocked:    true,
-			CallerCtx:             ctxc,
-			CheckVersion:          minimalCompatibleVersion,
-		},
-	)
-	if err != nil {
-		return fmt.Errorf("could not create LND Services client: %v",
-			err)
+	for {
+		g.lndClient, err = lndclient.NewLndServices(
+			&lndclient.LndServicesConfig{
+				LndAddress:            host,
+				Network:               network,
+				TLSPath:               tlsPath,
+				Insecure:              insecure,
+				CustomMacaroonPath:    macPath,
+				CustomMacaroonHex:     hex.EncodeToString(macData),
+				BlockUntilChainSynced: true,
+				BlockUntilUnlocked:    true,
+				CallerCtx:             ctxc,
+				CheckVersion:          minimalCompatibleVersion,
+			},
+		)
+		if err == nil {
+			log.Infof("Full lnd client connected")
+
+			break
+		}
+
+		g.statusMgr.SetErrored(
+			subservers.LIT,
+			"Error when creating LND Services client: %v",
+			err,
+		)
+
+		err = checkRunning()
+		if err != nil {
+			return err
+		}
+
+		log.Infof("Retrying to create LND Services client")
 	}
 
 	// Pass LND's build tags to the permission manager so that it can
