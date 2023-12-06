@@ -37,9 +37,7 @@ describe('AuthStore', () => {
       if (desc.methodName === 'GetInfo') throw new Error('test-err');
       return undefined as any;
     });
-    await expect(store.login('test-pw')).rejects.toThrow(
-      'oops, that password is incorrect',
-    );
+    await expect(store.login('test-pw')).rejects.toThrow('failed to connect');
     expect(store.credentials).toBe('');
   });
 

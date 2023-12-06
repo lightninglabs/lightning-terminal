@@ -5,6 +5,18 @@ import { Store } from 'store';
 
 const { l } = prefixTranslation('stores.authStore');
 
+class SubServerStatus {
+  disabled: boolean;
+  error: string;
+  running: boolean;
+
+  constructor() {
+    this.disabled = false;
+    this.error = '';
+    this.running = false;
+  }
+}
+
 export default class AuthStore {
   private _store: Store;
 
@@ -13,6 +25,8 @@ export default class AuthStore {
 
   /** the password encoded to base64 */
   credentials = '';
+
+  errors = { mainErr: '', litDetail: '', lndDetail: '' };
 
   constructor(store: Store) {
     makeAutoObservable(this, {}, { deep: false, autoBind: true });
@@ -29,6 +43,67 @@ export default class AuthStore {
     this._store.storage.setSession('credentials', this.credentials);
     // set the credentials in all API wrappers
     Object.values(this._store.api).forEach(api => api.setCredentials(credentials));
+  }
+
+  /**
+   * Convert exception to error message
+   */
+  async getErrMsg(error: string) {
+    // determine the main error message
+    const invalidPassMsg = ['expected 1 macaroon, got 0'];
+    for (const m in invalidPassMsg) {
+      const errPos = error.lastIndexOf(invalidPassMsg[m]);
+      if (error.length - invalidPassMsg[m].length == errPos) {
+        this.errors.mainErr = l('invalidPassErr');
+        break;
+      }
+    }
+
+    let walletLocked = false;
+    if (this.errors.mainErr.length == 0) {
+      const walletLockedMsg = [
+        'wallet locked, unlock it to enable full RPC access',
+        'proxy error with context auth: unknown macaroon to use',
+      ];
+      for (const m in walletLockedMsg) {
+        const errPos = error.lastIndexOf(walletLockedMsg[m]);
+        if (error.length - walletLockedMsg[m].length == errPos) {
+          walletLocked = true;
+          this.errors.mainErr = l('walletLockedErr');
+          break;
+        }
+      }
+    }
+
+    if (this.errors.mainErr.length == 0) this.errors.mainErr = l('noConnectionErr');
+
+    // get the subserver status message
+    try {
+      const serverStatus = await this._store.api.lit.listSubServerStatus();
+      // convert the response's nested arrays to an object mapping `subServerName` -> `{ disabled, running, error }`
+      const status = serverStatus.subServersMap.reduce(
+        (acc, [serverName, serverStatus]) => ({ ...acc, [serverName]: serverStatus }),
+        {} as Record<string, SubServerStatus>,
+      );
+
+      // check status
+      if (status.lit?.error) {
+        this.errors.litDetail = status.lit.error;
+      } else if (!status.lit?.running) {
+        this.errors.litDetail = l('litNotRunning');
+        if (walletLocked) this.errors.litDetail += l('suggestWalletUnlock');
+      }
+
+      if (status.lnd?.error) {
+        this.errors.lndDetail = status.lnd.error;
+      } else if (!status.lnd?.running) {
+        this.errors.lndDetail = l('lndNotRunning');
+      }
+    } catch (e) {
+      this.errors.litDetail = l('litNotConnected');
+    }
+
+    return this.errors.mainErr;
   }
 
   /**
@@ -49,8 +124,9 @@ export default class AuthStore {
     } catch (error) {
       // clear the credentials if incorrect
       this.setCredentials('');
-      this._store.log.error('incorrect credentials');
-      throw new Error(l('invalidPassErr'));
+      this._store.log.error('connection failure');
+      this.errors = { mainErr: '', litDetail: '', lndDetail: '' };
+      throw new Error(await this.getErrMsg(error.message));
     }
   }
 
