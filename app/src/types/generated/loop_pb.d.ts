@@ -1086,6 +1086,48 @@ export namespace SuggestSwapsResponse {
   }
 }
 
+export class AbandonSwapRequest extends jspb.Message {
+  getId(): Uint8Array | string;
+  getId_asU8(): Uint8Array;
+  getId_asB64(): string;
+  setId(value: Uint8Array | string): void;
+
+  getIKnowWhatIAmDoing(): boolean;
+  setIKnowWhatIAmDoing(value: boolean): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AbandonSwapRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: AbandonSwapRequest): AbandonSwapRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: AbandonSwapRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AbandonSwapRequest;
+  static deserializeBinaryFromReader(message: AbandonSwapRequest, reader: jspb.BinaryReader): AbandonSwapRequest;
+}
+
+export namespace AbandonSwapRequest {
+  export type AsObject = {
+    id: Uint8Array | string,
+    iKnowWhatIAmDoing: boolean,
+  }
+}
+
+export class AbandonSwapResponse extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AbandonSwapResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: AbandonSwapResponse): AbandonSwapResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: AbandonSwapResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AbandonSwapResponse;
+  static deserializeBinaryFromReader(message: AbandonSwapResponse, reader: jspb.BinaryReader): AbandonSwapResponse;
+}
+
+export namespace AbandonSwapResponse {
+  export type AsObject = {
+  }
+}
+
 export interface AddressTypeMap {
   ADDRESS_TYPE_UNKNOWN: 0;
   TAPROOT_PUBKEY: 1;
@@ -1119,6 +1161,8 @@ export interface FailureReasonMap {
   FAILURE_REASON_INSUFFICIENT_VALUE: 4;
   FAILURE_REASON_TEMPORARY: 5;
   FAILURE_REASON_INCORRECT_AMOUNT: 6;
+  FAILURE_REASON_ABANDONED: 7;
+  FAILURE_REASON_INSUFFICIENT_CONFIRMED_BALANCE: 8;
 }
 
 export const FailureReason: FailureReasonMap;
