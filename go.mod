@@ -14,13 +14,13 @@ require (
 	github.com/lightninglabs/faraday v0.2.11-alpha.0.20231003174141-945b7188032f
 	github.com/lightninglabs/lightning-node-connect v0.2.7-alpha
 	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.1
-	github.com/lightninglabs/lndclient v0.17.0-1
-	github.com/lightninglabs/loop v0.26.5-beta
+	github.com/lightninglabs/lndclient v0.17.0-4
+	github.com/lightninglabs/loop v0.26.6-beta
 	github.com/lightninglabs/loop/swapserverrpc v1.0.5
 	github.com/lightninglabs/pool v0.6.4-beta.0.20231003174306-80d8854a0c4b
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.1
-	github.com/lightninglabs/taproot-assets v0.3.1
-	github.com/lightningnetwork/lnd v0.17.1-beta
+	github.com/lightninglabs/taproot-assets v0.3.2
+	github.com/lightningnetwork/lnd v0.17.3-beta
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/kvdb v1.4.4
 	github.com/lightningnetwork/lnd/tlv v1.1.1
@@ -51,7 +51,7 @@ require (
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/btcsuite/btcd/btcutil/psbt v1.1.8 // indirect
-	github.com/btcsuite/btcwallet v0.16.10-0.20231017144732-e3ff37491e9c // indirect
+	github.com/btcsuite/btcwallet v0.16.10-0.20231129183218-5df09dd43358 // indirect
 	github.com/btcsuite/btcwallet/wallet/txauthor v1.3.2 // indirect
 	github.com/btcsuite/btcwallet/wallet/txrules v1.2.0 // indirect
 	github.com/btcsuite/btcwallet/wallet/txsizes v1.2.3 // indirect
