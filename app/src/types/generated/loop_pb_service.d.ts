@@ -49,6 +49,15 @@ type SwapClientSwapInfo = {
   readonly responseType: typeof loop_pb.SwapStatus;
 };
 
+type SwapClientAbandonSwap = {
+  readonly methodName: string;
+  readonly service: typeof SwapClient;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof loop_pb.AbandonSwapRequest;
+  readonly responseType: typeof loop_pb.AbandonSwapResponse;
+};
+
 type SwapClientLoopOutTerms = {
   readonly methodName: string;
   readonly service: typeof SwapClient;
@@ -146,6 +155,7 @@ export class SwapClient {
   static readonly Monitor: SwapClientMonitor;
   static readonly ListSwaps: SwapClientListSwaps;
   static readonly SwapInfo: SwapClientSwapInfo;
+  static readonly AbandonSwap: SwapClientAbandonSwap;
   static readonly LoopOutTerms: SwapClientLoopOutTerms;
   static readonly LoopOutQuote: SwapClientLoopOutQuote;
   static readonly GetLoopInTerms: SwapClientGetLoopInTerms;
@@ -226,6 +236,15 @@ export class SwapClientClient {
   swapInfo(
     requestMessage: loop_pb.SwapInfoRequest,
     callback: (error: ServiceError|null, responseMessage: loop_pb.SwapStatus|null) => void
+  ): UnaryResponse;
+  abandonSwap(
+    requestMessage: loop_pb.AbandonSwapRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.AbandonSwapResponse|null) => void
+  ): UnaryResponse;
+  abandonSwap(
+    requestMessage: loop_pb.AbandonSwapRequest,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.AbandonSwapResponse|null) => void
   ): UnaryResponse;
   loopOutTerms(
     requestMessage: loop_pb.TermsRequest,

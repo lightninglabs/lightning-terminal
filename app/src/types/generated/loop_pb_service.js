@@ -55,6 +55,15 @@ SwapClient.SwapInfo = {
   responseType: loop_pb.SwapStatus
 };
 
+SwapClient.AbandonSwap = {
+  methodName: "AbandonSwap",
+  service: SwapClient,
+  requestStream: false,
+  responseStream: false,
+  requestType: loop_pb.AbandonSwapRequest,
+  responseType: loop_pb.AbandonSwapResponse
+};
+
 SwapClient.LoopOutTerms = {
   methodName: "LoopOutTerms",
   service: SwapClient,
@@ -289,6 +298,37 @@ SwapClientClient.prototype.swapInfo = function swapInfo(requestMessage, metadata
     callback = arguments[1];
   }
   var client = grpc.unary(SwapClient.SwapInfo, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+SwapClientClient.prototype.abandonSwap = function abandonSwap(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(SwapClient.AbandonSwap, {
     request: requestMessage,
     host: this.serviceHost,
     metadata: metadata,

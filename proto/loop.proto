@@ -43,6 +43,11 @@ service SwapClient {
     */
     rpc SwapInfo (SwapInfoRequest) returns (SwapStatus);
 
+    /* loop: `abandonswap`
+    AbandonSwap allows the client to abandon a swap.
+    */
+    rpc AbandonSwap (AbandonSwapRequest) returns (AbandonSwapResponse);
+
     /* loop: `terms`
     LoopOutTerms returns the terms that the server enforces for a loop out swap.
     */
@@ -524,6 +529,18 @@ enum FailureReason {
     because the amount extended by an external loop in htlc is insufficient.
     */
     FAILURE_REASON_INCORRECT_AMOUNT = 6;
+
+    /*
+    FAILURE_REASON_ABANDONED indicates that a swap permanently failed because
+    the client manually abandoned the swap.
+    */
+    FAILURE_REASON_ABANDONED = 7;
+
+    /*
+    FAILURE_REASON_INSUFFICIENT_CONFIRMED_BALANCE indicates that a swap
+    wasn't published due to insufficient confirmed balance.
+    */
+    FAILURE_REASON_INSUFFICIENT_CONFIRMED_BALANCE = 8;
 }
 
 message ListSwapsRequest {
@@ -1179,4 +1196,22 @@ message SuggestSwapsResponse {
     for.
     */
     repeated Disqualified disqualified = 2;
+}
+
+message AbandonSwapRequest {
+    /*
+    The swap identifier which currently is the hash that locks the HTLCs. When
+    using REST, this field must be encoded as URL safe base64.
+    */
+    bytes id = 1;
+
+    /*
+    A flag that tries to ensure that the client understands that they are
+    risking loss of funds by abandoning a swap. This could happen if an
+    abandoned swap would wait on a timeout sweep by the client.
+     */
+    bool i_know_what_i_am_doing = 2;
+}
+
+message AbandonSwapResponse {
 }
