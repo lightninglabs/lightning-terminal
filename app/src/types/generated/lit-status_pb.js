@@ -326,7 +326,8 @@ proto.litrpc.SubServerStatus.toObject = function(includeInstance, msg) {
   var f, obj = {
     disabled: jspb.Message.getFieldWithDefault(msg, 1, false),
     running: jspb.Message.getFieldWithDefault(msg, 2, false),
-    error: jspb.Message.getFieldWithDefault(msg, 3, "")
+    error: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    customStatus: jspb.Message.getFieldWithDefault(msg, 4, "")
   };
 
   if (includeInstance) {
@@ -375,6 +376,10 @@ proto.litrpc.SubServerStatus.deserializeBinaryFromReader = function(msg, reader)
       var value = /** @type {string} */ (reader.readString());
       msg.setError(value);
       break;
+    case 4:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setCustomStatus(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -422,6 +427,13 @@ proto.litrpc.SubServerStatus.serializeBinaryToWriter = function(message, writer)
   if (f.length > 0) {
     writer.writeString(
       3,
+      f
+    );
+  }
+  f = message.getCustomStatus();
+  if (f.length > 0) {
+    writer.writeString(
+      4,
       f
     );
   }
@@ -474,6 +486,21 @@ proto.litrpc.SubServerStatus.prototype.getError = function() {
 /** @param {string} value */
 proto.litrpc.SubServerStatus.prototype.setError = function(value) {
   jspb.Message.setProto3StringField(this, 3, value);
+};
+
+
+/**
+ * optional string custom_status = 4;
+ * @return {string}
+ */
+proto.litrpc.SubServerStatus.prototype.getCustomStatus = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 4, ""));
+};
+
+
+/** @param {string} value */
+proto.litrpc.SubServerStatus.prototype.setCustomStatus = function(value) {
+  jspb.Message.setProto3StringField(this, 4, value);
 };
 
 

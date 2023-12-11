@@ -1071,6 +1071,7 @@ export const litSubServerStatus: STATUS.SubServerStatusResp.AsObject = {
         disabled: false,
         running: true,
         error: '',
+        customStatus: '',
       },
     ],
     [
@@ -1079,6 +1080,7 @@ export const litSubServerStatus: STATUS.SubServerStatusResp.AsObject = {
         disabled: false,
         running: true,
         error: '',
+        customStatus: '',
       },
     ],
     [
@@ -1087,6 +1089,7 @@ export const litSubServerStatus: STATUS.SubServerStatusResp.AsObject = {
         disabled: false,
         running: true,
         error: '',
+        customStatus: '',
       },
     ],
     [
@@ -1095,6 +1098,7 @@ export const litSubServerStatus: STATUS.SubServerStatusResp.AsObject = {
         disabled: false,
         running: true,
         error: '',
+        customStatus: '',
       },
     ],
     [
@@ -1103,6 +1107,7 @@ export const litSubServerStatus: STATUS.SubServerStatusResp.AsObject = {
         disabled: false,
         running: true,
         error: '',
+        customStatus: '',
       },
     ],
     [
@@ -1111,6 +1116,7 @@ export const litSubServerStatus: STATUS.SubServerStatusResp.AsObject = {
         disabled: false,
         running: true,
         error: '',
+        customStatus: '',
       },
     ],
   ],

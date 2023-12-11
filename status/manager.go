@@ -73,9 +73,10 @@ func (s *Manager) SubServerStatus(_ context.Context,
 	resp := make(map[string]*litrpc.SubServerStatus, len(s.subServers))
 	for server, status := range s.subServers {
 		resp[server] = &litrpc.SubServerStatus{
-			Disabled: status.Disabled,
-			Running:  status.Running,
-			Error:    status.Err,
+			Disabled:     status.Disabled,
+			Running:      status.Running,
+			Error:        status.Err,
+			CustomStatus: status.customStatus,
 		}
 	}
 
