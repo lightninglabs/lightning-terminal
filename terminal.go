@@ -238,8 +238,24 @@ func (g *LightningTerminal) Run() error {
 		return fmt.Errorf("could not create permissions manager")
 	}
 
+	// The litcli status command will call the "/lnrpc.State/GetState" RPC.
+	// As the status command is available to the user before the macaroons
+	// have been loaded/created, and before the lnd clients have been
+	// set up, we need to override the isReady check for this specific
+	// URI as soon as LND can accept the call, i.e. when the lnd sub-server
+	// is in the "Wallet Ready" state.
+	lndOverride := func(uri, manualStatus string) (bool, bool) {
+		if uri != "/lnrpc.State/GetState" {
+			return false, false
+		}
+
+		return manualStatus == lndWalletReadyStatus, true
+	}
+
 	// Register LND, LiT and Accounts with the status manager.
-	g.statusMgr.RegisterAndEnableSubServer(subservers.LND)
+	g.statusMgr.RegisterAndEnableSubServer(
+		subservers.LND, status.WithIsReadyOverride(lndOverride),
+	)
 	g.statusMgr.RegisterAndEnableSubServer(subservers.LIT)
 	g.statusMgr.RegisterSubServer(subservers.ACCOUNTS)
 
@@ -556,6 +572,9 @@ func (g *LightningTerminal) start() error {
 
 	// We now set a custom status for the LND sub-server to indicate that
 	// the wallet is ready.
+	// This is done _before_ we have set up the lnd clients so that the
+	// litcli status command won't error before the lnd sub-server has
+	// been marked as running.
 	g.statusMgr.SetCustomStatus(subservers.LND, lndWalletReadyStatus)
 
 	// Now that we have started the main UI web server, show some useful
