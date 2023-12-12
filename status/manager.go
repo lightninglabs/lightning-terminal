@@ -23,6 +23,13 @@ type SubServerStatus struct {
 	// been started.
 	Running bool
 
+	// customStatus is a string that details a custom status of the
+	// sub-server, if the the sub-server is in a custom state. This status
+	// can be set to a unique status that only exists for the specific
+	// sub-server, and will be displayed to the user with the
+	// litrpc.SubServerStatus.
+	customStatus string
+
 	// Err will be a non-empty string if the sub-server failed to start.
 	Err string
 }
@@ -105,6 +112,20 @@ func (s *Manager) registerSubServerUnsafe(name string, disabled bool,
 	s.subServers[name] = ss
 }
 
+// SetCustomStatus updates the custom status of the given sub-server to the
+// passed status.
+func (s *Manager) SetCustomStatus(name, customStatus string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	ss, ok := s.subServers[name]
+	if !ok {
+		return
+	}
+
+	ss.customStatus = customStatus
+}
+
 // GetStatus returns the current status of a given sub-server. This will
 // silently fail if the referenced sub-server has not yet been registered.
 func (s *Manager) GetStatus(name string) (*SubServerStatus, error) {
@@ -155,6 +176,7 @@ func (s *Manager) SetRunning(name string) {
 	}
 
 	ss.Running = true
+	ss.customStatus = ""
 }
 
 // SetStopped can be used to set the status of a sub-server as not Running and
@@ -175,6 +197,7 @@ func (s *Manager) SetStopped(name string) {
 
 	ss.Running = false
 	ss.Err = ""
+	ss.customStatus = ""
 }
 
 // SetErrored can be used to set the status of a sub-server as not Running
@@ -201,4 +224,5 @@ func (s *Manager) SetErrored(name string, errStr string,
 
 	ss.Running = false
 	ss.Err = err
+	ss.customStatus = ""
 }
