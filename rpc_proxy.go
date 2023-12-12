@@ -638,18 +638,17 @@ func (p *rpcProxy) checkSubSystemStarted(requestURI string) error {
 
 	// Check with the status manger to see if the sub-server is ready to
 	// handle the request.
-	serverStatus, err := p.statusMgr.GetStatus(system)
+	ready, disabled, err := p.statusMgr.IsSystemReady(system, requestURI)
 	if err != nil {
 		return err
 	}
 
-	if serverStatus.Disabled {
+	if disabled {
 		return fmt.Errorf("%s has been disabled", system)
 	}
 
-	if !serverStatus.Running {
-		return fmt.Errorf("%s is not running: %s", system,
-			serverStatus.Err)
+	if !ready {
+		return fmt.Errorf("%s is not ready for: %s", system, requestURI)
 	}
 
 	return nil

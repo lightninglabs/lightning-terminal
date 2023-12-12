@@ -181,21 +181,6 @@ func (s *Manager) SetCustomStatus(name, customStatus string) {
 	ss.customStatus = customStatus
 }
 
-// GetStatus returns the current status of a given sub-server. This will
-// silently fail if the referenced sub-server has not yet been registered.
-func (s *Manager) GetStatus(name string) (*SubServerStatus, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	status, ok := s.subServers[name]
-	if !ok {
-		return nil, errors.New("a sub-server with name %s has not " +
-			"yet been registered")
-	}
-
-	return status, nil
-}
-
 // SetEnabled marks the sub-server with the given name as enabled.
 //
 // NOTE: This will silently fail if the referenced sub-server has not yet been
