@@ -66,6 +66,12 @@ const (
 	MainnetServer = "autopilot.lightning.finance:12010"
 	TestnetServer = "test.autopilot.lightning.finance:12010"
 
+	// lndWalletReadyStatus is a custom status that will be used with the
+	// LND subserver. If the subserver is in this state then it will allow
+	// certain wallet calls through while denying other calls that require
+	// LND to be fully started.
+	lndWalletReadyStatus = "Wallet Ready"
+
 	defaultServerTimeout  = 10 * time.Second
 	defaultConnectTimeout = 15 * time.Second
 	defaultStartupTimeout = 5 * time.Second
@@ -548,10 +554,9 @@ func (g *LightningTerminal) start() error {
 			err)
 	}
 
-	// We can now set the status of LND as running.
-	// This is done _before_ we wait for the macaroon so that
-	// LND commands to create and unlock a wallet can be allowed.
-	g.statusMgr.SetRunning(subservers.LND)
+	// We now set a custom status for the LND sub-server to indicate that
+	// the wallet is ready.
+	g.statusMgr.SetCustomStatus(subservers.LND, lndWalletReadyStatus)
 
 	// Now that we have started the main UI web server, show some useful
 	// information to the user so they can access the web UI easily.
@@ -618,6 +623,10 @@ func (g *LightningTerminal) start() error {
 
 		return fmt.Errorf("could not start LND")
 	}
+
+	// Mark that lnd is now completely running after connecting the
+	// lnd clients.
+	g.statusMgr.SetRunning(subservers.LND)
 
 	// If we're in integrated and stateless init mode, we won't create
 	// macaroon files in any of the subserver daemons.
