@@ -10,28 +10,28 @@ import (
 )
 
 // SubServerOption defines a functional option that can be used to modify the
-// values of a SubServerStatus's fields.
-type SubServerOption func(status *SubServerStatus)
+// values of a subServer's fields.
+type SubServerOption func(status *subServer)
 
 // WithIsReadyOverride is a functional option that can be used to set a callback
 // function that is used to check if a system is ready _iff_ the system running
 // status is not yet true. The call-back will be passed the request URI along
 // with any manual status that has been set for the subsystem.
 func WithIsReadyOverride(fn func(string, string) (bool, bool)) SubServerOption {
-	return func(status *SubServerStatus) {
+	return func(status *subServer) {
 		status.isReadyOverride = fn
 	}
 }
 
-// SubServerStatus represents the status of a sub-server.
-type SubServerStatus struct {
-	// Disabled is true if the sub-server is available in the LiT bundle but
+// subServer represents the status of a sub-server.
+type subServer struct {
+	// disabled is true if the sub-server is available in the LiT bundle but
 	// has explicitly been disabled by the user.
-	Disabled bool
+	disabled bool
 
-	// Running is true if the sub-server is enabled and has successfully
+	// running is true if the sub-server is enabled and has successfully
 	// been started.
-	Running bool
+	running bool
 
 	// customStatus is a string that details a custom status of the
 	// sub-server, if the the sub-server is in a custom state. This status
@@ -40,8 +40,8 @@ type SubServerStatus struct {
 	// litrpc.SubServerStatus.
 	customStatus string
 
-	// Err will be a non-empty string if the sub-server failed to start.
-	Err string
+	// err will be a non-empty string if the sub-server failed to start.
+	err string
 
 	// isReadyOverride is a call back that, when set and only if `running`
 	// is not yet true, will be used to determine if a system is ready for
@@ -53,12 +53,10 @@ type SubServerStatus struct {
 	isReadyOverride func(string, string) (bool, bool)
 }
 
-// newSubServerStatus constructs a new SubServerStatus.
-func newSubServerStatus(disabled bool,
-	opts ...SubServerOption) *SubServerStatus {
-
-	return &SubServerStatus{
-		Disabled: disabled,
+// newSubServer constructs a new subServer.
+func newSubServer(disabled bool, opts ...SubServerOption) *subServer {
+	return &subServer{
+		disabled: disabled,
 	}
 }
 
@@ -68,14 +66,14 @@ func newSubServerStatus(disabled bool,
 type Manager struct {
 	litrpc.UnimplementedStatusServer
 
-	subServers map[string]*SubServerStatus
+	subServers map[string]*subServer
 	mu         sync.RWMutex
 }
 
 // NewStatusManager constructs a new Manager.
 func NewStatusManager() *Manager {
 	return &Manager{
-		subServers: make(map[string]*SubServerStatus),
+		subServers: make(map[string]*subServer),
 	}
 }
 
@@ -93,14 +91,14 @@ func (s *Manager) IsSystemReady(name, req string) (bool, bool, error) {
 			"name %s has not yet been registered")
 	}
 
-	if server.Disabled {
+	if server.disabled {
 		return false, true, nil
 	}
 
 	// If there is no override for this server or if the server is already
 	// running then we just return the 'running' status.
-	if server.isReadyOverride == nil || server.Running {
-		return server.Running, false, nil
+	if server.isReadyOverride == nil || server.running {
+		return server.running, false, nil
 	}
 
 	// Otherwise, we check the override to see if this request is handled
@@ -111,7 +109,7 @@ func (s *Manager) IsSystemReady(name, req string) (bool, bool, error) {
 	}
 
 	// Otherwise, we just return the running status.
-	return server.Running, false, nil
+	return server.running, false, nil
 }
 
 // SubServerStatus queries the current status of a given sub-server.
@@ -127,9 +125,9 @@ func (s *Manager) SubServerStatus(_ context.Context,
 	resp := make(map[string]*litrpc.SubServerStatus, len(s.subServers))
 	for server, status := range s.subServers {
 		resp[server] = &litrpc.SubServerStatus{
-			Disabled:     status.Disabled,
-			Running:      status.Running,
-			Error:        status.Err,
+			Disabled:     status.disabled,
+			Running:      status.running,
+			Error:        status.err,
 			CustomStatus: status.customStatus,
 		}
 	}
@@ -162,7 +160,7 @@ func (s *Manager) RegisterAndEnableSubServer(name string,
 func (s *Manager) registerSubServerUnsafe(name string, disabled bool,
 	opts ...SubServerOption) {
 
-	ss := newSubServerStatus(disabled, opts...)
+	ss := newSubServer(disabled, opts...)
 
 	s.subServers[name] = ss
 }
@@ -196,7 +194,7 @@ func (s *Manager) SetEnabled(name string) {
 		return
 	}
 
-	ss.Disabled = false
+	ss.disabled = false
 }
 
 // SetRunning can be used to set the status of a sub-server as Running
@@ -215,8 +213,8 @@ func (s *Manager) SetRunning(name string) {
 		return
 	}
 
-	ss.Running = true
-	ss.Err = ""
+	ss.running = true
+	ss.err = ""
 	ss.customStatus = ""
 }
 
@@ -236,8 +234,8 @@ func (s *Manager) SetStopped(name string) {
 		return
 	}
 
-	ss.Running = false
-	ss.Err = ""
+	ss.running = false
+	ss.err = ""
 	ss.customStatus = ""
 }
 
@@ -263,7 +261,7 @@ func (s *Manager) SetErrored(name string, errStr string,
 
 	log.Errorf("could not start the %s sub-server: %s", name, err)
 
-	ss.Running = false
-	ss.Err = err
+	ss.running = false
+	ss.err = err
 	ss.customStatus = ""
 }
