@@ -105,8 +105,10 @@ export const PermissionUriMap: { [key: string]: string[] } = {
     '/lnrpc.Lightning/SendCoins',
     '/lnrpc.Lightning/SendMany',
     '/lnrpc.Lightning/SendPayment',
+    '/routerrpc.Router/SendPaymentV2',
     '/lnrpc.Lightning/SendPaymentSync',
     '/lnrpc.Lightning/SendToRoute',
+    '/routerrpc.Router/SendToRouteV2',
     '/lnrpc.Lightning/SendToRouteSync',
   ],
   receive: [
