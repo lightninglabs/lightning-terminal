@@ -17,7 +17,7 @@ var helperCommands = cli.Command{
 	Name:        "helper",
 	Usage:       "Helper commands",
 	Description: "Helper commands.",
-	Category:     "LiT",
+	Category:    "LiT",
 	Subcommands: []cli.Command{
 		generateSuperMacRootIDCmd,
 		isSuperMacaroonCmd,

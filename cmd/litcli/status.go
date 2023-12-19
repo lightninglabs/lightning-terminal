@@ -14,7 +14,7 @@ var statusCommands = []cli.Command{
 		Usage:       "View info about litd status",
 		Description: "View info about litd status.\n",
 		Category:    "LiT",
-		Action:   getStatus,
+		Action:      getStatus,
 	},
 }
 

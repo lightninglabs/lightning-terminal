@@ -40,19 +40,17 @@ var createAccountCommand = cli.Command{
 	ShortName: "c",
 	Usage:     "Create a new off-chain account with a balance.",
 	ArgsUsage: "balance [expiration_date] [--label=LABEL] [--save_to=FILE]",
-	Description: "Adds an entry to the account database. " +
-		"This entry represents an amount of satoshis (account " +
-		"balance) that can be spent using off-chain transactions " +
-		"(e.g. paying invoices).\n\n" +
+	Description: `Adds an entry to the account database.
+This entry represents an amount of satoshis (account balance) that can be spent
+using off-chain transactions (e.g. paying invoices).
 
-		"   Macaroons can be created to be locked to an account. " +
-		"This makes sure that the bearer of the macaroon can only " +
-		"spend at most that amount of satoshis through the daemon " +
-		"that has issued the macaroon.\n\n" +
+Macaroons can be created to be locked to an account. This makes sure that the
+bearer of the macaroon can only spend at most that amount of satoshis through
+the daemon that has issued the macaroon.
 
-		"   Accounts only assert a maximum amount spendable. Having " +
-		"a certain account balance does not guarantee that the node " +
-		"has the channel liquidity to actually spend that amount.",
+Accounts only assert a maximum amount spendable. Having a certain account
+balance does not guarantee that the node has the channel liquidity to actually
+spend that amount.`,
 	Flags: []cli.Flag{
 		cli.Uint64Flag{
 			Name:  "balance",
@@ -315,10 +313,10 @@ func accountInfo(ctx *cli.Context) error {
 }
 
 var removeAccountCommand = cli.Command{
-	Name:      "remove",
-	ShortName: "r",
-	Usage:     "Remove an off-chain account from the database.",
-	ArgsUsage: "[id | label]",
+	Name:        "remove",
+	ShortName:   "r",
+	Usage:       "Remove an off-chain account from the database.",
+	ArgsUsage:   "[id | label]",
 	Description: "Removes an account entry from the account database.",
 	Flags: []cli.Flag{
 		cli.StringFlag{

@@ -10,10 +10,10 @@ import (
 )
 
 var listActionsCommand = cli.Command{
-	Name:   "actions",
-	Usage:  "List actions performed on the Litd server",
+	Name:     "actions",
+	Usage:    "List actions performed on the Litd server",
 	Category: "Firewall",
-	Action: listActions,
+	Action:   listActions,
 	Flags: []cli.Flag{
 		cli.StringFlag{
 			Name: "feature",
