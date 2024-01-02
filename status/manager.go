@@ -13,6 +13,16 @@ import (
 // values of a SubServerStatus's fields.
 type SubServerOption func(status *SubServerStatus)
 
+// WithIsReadyOverride is a functional option that can be used to set a callback
+// function that is used to check if a system is ready _iff_ the system running
+// status is not yet true. The call-back will be passed the request URI along
+// with any manual status that has been set for the subsystem.
+func WithIsReadyOverride(fn func(string, string) (bool, bool)) SubServerOption {
+	return func(status *SubServerStatus) {
+		status.isReadyOverride = fn
+	}
+}
+
 // SubServerStatus represents the status of a sub-server.
 type SubServerStatus struct {
 	// Disabled is true if the sub-server is available in the LiT bundle but
@@ -32,6 +42,15 @@ type SubServerStatus struct {
 
 	// Err will be a non-empty string if the sub-server failed to start.
 	Err string
+
+	// isReadyOverride is a call back that, when set and only if `running`
+	// is not yet true, will be used to determine if a system is ready for
+	// a call. We will pass the request URI to this method along with the
+	// `manualStatus`. The first returned boolean is true if the system
+	// should be seen as ready and the second is true if the override does
+	// handle the given request. If it does not, then we will fall back to
+	// our normal is-ready check.
+	isReadyOverride func(string, string) (bool, bool)
 }
 
 // newSubServerStatus constructs a new SubServerStatus.
@@ -58,6 +77,41 @@ func NewStatusManager() *Manager {
 	return &Manager{
 		subServers: make(map[string]*SubServerStatus),
 	}
+}
+
+// IsSystemReady shows if the given sub-server ready to handle the a request for
+// the passed request URI. The first returned boolean is true if the system
+// is ready to handle the request. The second returned boolean is true if the
+// system has been disabled.
+func (s *Manager) IsSystemReady(name, req string) (bool, bool, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	server, ok := s.subServers[name]
+	if !ok {
+		return false, false, errors.New("a sub-server with " +
+			"name %s has not yet been registered")
+	}
+
+	if server.Disabled {
+		return false, true, nil
+	}
+
+	// If there is no override for this server or if the server is already
+	// running then we just return the 'running' status.
+	if server.isReadyOverride == nil || server.Running {
+		return server.Running, false, nil
+	}
+
+	// Otherwise, we check the override to see if this request is handled
+	// by the override and if it is, then if the override permits this call.
+	isReady, handled := server.isReadyOverride(req, server.customStatus)
+	if handled {
+		return isReady, false, nil
+	}
+
+	// Otherwise, we just return the running status.
+	return server.Running, false, nil
 }
 
 // SubServerStatus queries the current status of a given sub-server.
