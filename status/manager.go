@@ -9,6 +9,10 @@ import (
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 )
 
+// SubServerOption defines a functional option that can be used to modify the
+// values of a SubServerStatus's fields.
+type SubServerOption func(status *SubServerStatus)
+
 // SubServerStatus represents the status of a sub-server.
 type SubServerStatus struct {
 	// Disabled is true if the sub-server is available in the LiT bundle but
@@ -24,9 +28,11 @@ type SubServerStatus struct {
 }
 
 // newSubServerStatus constructs a new SubServerStatus.
-func newSubServerStatus() *SubServerStatus {
+func newSubServerStatus(disabled bool,
+	opts ...SubServerOption) *SubServerStatus {
+
 	return &SubServerStatus{
-		Disabled: true,
+		Disabled: disabled,
 	}
 }
 
@@ -73,21 +79,28 @@ func (s *Manager) SubServerStatus(_ context.Context,
 
 // RegisterSubServer will create a new sub-server entry for the Manager to
 // keep track of.
-func (s *Manager) RegisterSubServer(name string) {
+func (s *Manager) RegisterSubServer(name string, opts ...SubServerOption) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	s.subServers[name] = newSubServerStatus()
+	s.registerSubServerUnsafe(name, true, opts...)
 }
 
 // RegisterAndEnableSubServer will create a new sub-server entry for the
 // Manager to keep track of and will set it as enabled.
-func (s *Manager) RegisterAndEnableSubServer(name string) {
+func (s *Manager) RegisterAndEnableSubServer(name string,
+	opts ...SubServerOption) {
+
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	ss := newSubServerStatus()
-	ss.Disabled = false
+	s.registerSubServerUnsafe(name, false, opts...)
+}
+
+func (s *Manager) registerSubServerUnsafe(name string, disabled bool,
+	opts ...SubServerOption) {
+
+	ss := newSubServerStatus(disabled, opts...)
 
 	s.subServers[name] = ss
 }
