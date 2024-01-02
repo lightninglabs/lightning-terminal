@@ -216,6 +216,7 @@ func (s *Manager) SetRunning(name string) {
 	}
 
 	ss.Running = true
+	ss.Err = ""
 	ss.customStatus = ""
 }
 
