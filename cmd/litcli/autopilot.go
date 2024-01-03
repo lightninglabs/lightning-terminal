@@ -28,11 +28,11 @@ var autopilotCommands = cli.Command{
 }
 
 var listAutopilotFeaturesCmd = cli.Command{
-	Name:      "features",
-	ShortName: "f",
-	Usage:     "List available Autopilot features.",
+	Name:        "features",
+	ShortName:   "f",
+	Usage:       "List available Autopilot features.",
 	Description: "List available Autopilot features.",
-	Action: listFeatures,
+	Action:      listFeatures,
 }
 
 var addAutopilotSessionCmd = cli.Command{
@@ -85,11 +85,11 @@ var addAutopilotSessionCmd = cli.Command{
 }
 
 var revokeAutopilotSessionCmd = cli.Command{
-	Name:      "revoke",
-	ShortName: "r",
-	Usage:     "Revoke an Autopilot session.",
+	Name:        "revoke",
+	ShortName:   "r",
+	Usage:       "Revoke an Autopilot session.",
 	Description: "Revoke an active Autopilot session.",
-	Action: revokeAutopilotSession,
+	Action:      revokeAutopilotSession,
 	Flags: []cli.Flag{
 		cli.StringFlag{
 			Name: "localpubkey",
@@ -101,11 +101,11 @@ var revokeAutopilotSessionCmd = cli.Command{
 }
 
 var listAutopilotSessionsCmd = cli.Command{
-	Name:      "list",
-	ShortName: "l",
-	Usage:     "List all Autopilot sessions.",
+	Name:        "list",
+	ShortName:   "l",
+	Usage:       "List all Autopilot sessions.",
 	Description: "List all Autopilot sessions.\n",
-	Action: listAutopilotSessions,
+	Action:      listAutopilotSessions,
 }
 
 func revokeAutopilotSession(ctx *cli.Context) error {

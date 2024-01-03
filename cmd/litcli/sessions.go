@@ -17,8 +17,8 @@ var (
 	defaultSessionExpiry = time.Hour * 24 * 90
 
 	labelFlag = cli.StringFlag{
-		Name: "label",
-		Usage: "The session label.",
+		Name:     "label",
+		Usage:    "The session label.",
 		Required: true,
 	}
 	expiryFlag = cli.Uint64Flag{

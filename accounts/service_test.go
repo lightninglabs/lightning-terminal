@@ -65,16 +65,6 @@ func (m *mockLnd) assertNoMainErr(t *testing.T) {
 	}
 }
 
-func (m *mockLnd) assertMainErr(t *testing.T, expectedErr error) {
-	select {
-	case err := <-m.mainErrChan:
-		require.Equal(t, expectedErr, err)
-
-	case <-time.After(testTimeout):
-		t.Fatalf("Did not get expected main err before timeout")
-	}
-}
-
 // assertMainErrContains asserts that the main error contains the expected error
 // string.
 func (m *mockLnd) assertMainErrContains(t *testing.T, expectedStr string) {
@@ -408,7 +398,6 @@ func TestAccountService(t *testing.T) {
 			lnd.assertMainErrContains(
 				t, "not mapped to any account",
 			)
-
 		},
 	}, {
 		name: "err in payment update chan",
