@@ -28,4 +28,9 @@ message SubServerStatus {
     // error describes an error that might have resulted in the sub-server not
     // starting up properly.
     string error = 3;
+
+    // custom_status details a custom state that the sub-server has entered,
+    // which is unique to the sub-server, and which is not the standard
+    // disabled, running or errored state.
+    string custom_status = 4;
 }

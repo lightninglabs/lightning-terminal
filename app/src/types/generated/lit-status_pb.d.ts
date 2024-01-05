@@ -48,6 +48,9 @@ export class SubServerStatus extends jspb.Message {
   getError(): string;
   setError(value: string): void;
 
+  getCustomStatus(): string;
+  setCustomStatus(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): SubServerStatus.AsObject;
   static toObject(includeInstance: boolean, msg: SubServerStatus): SubServerStatus.AsObject;
@@ -63,6 +66,7 @@ export namespace SubServerStatus {
     disabled: boolean,
     running: boolean,
     error: string,
+    customStatus: string,
   }
 }
 

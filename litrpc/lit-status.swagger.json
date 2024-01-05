@@ -54,6 +54,10 @@
         "error": {
           "type": "string",
           "description": "error describes an error that might have resulted in the sub-server not\nstarting up properly."
+        },
+        "custom_status": {
+          "type": "string",
+          "description": "custom_status details a custom state that the sub-server has entered,\nwhich is unique to the sub-server, and which is not the standard\ndisabled, running or errored state."
         }
       }
     },

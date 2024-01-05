@@ -48,7 +48,6 @@ import (
 	"github.com/lightningnetwork/lnd/lnrpc/walletrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/watchtowerrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/wtclientrpc"
-	"github.com/lightningnetwork/lnd/lntest/wait"
 	"github.com/lightningnetwork/lnd/lnwallet/btcwallet"
 	"github.com/lightningnetwork/lnd/macaroons"
 	"github.com/lightningnetwork/lnd/rpcperms"
@@ -65,6 +64,12 @@ import (
 const (
 	MainnetServer = "autopilot.lightning.finance:12010"
 	TestnetServer = "test.autopilot.lightning.finance:12010"
+
+	// lndWalletReadyStatus is a custom status that will be used with the
+	// LND subserver. If the subserver is in this state then it will allow
+	// certain wallet calls through while denying other calls that require
+	// LND to be fully started.
+	lndWalletReadyStatus = "Wallet Ready"
 
 	defaultServerTimeout  = 10 * time.Second
 	defaultConnectTimeout = 15 * time.Second
@@ -232,8 +237,24 @@ func (g *LightningTerminal) Run() error {
 		return fmt.Errorf("could not create permissions manager")
 	}
 
+	// The litcli status command will call the "/lnrpc.State/GetState" RPC.
+	// As the status command is available to the user before the macaroons
+	// have been loaded/created, and before the lnd clients have been
+	// set up, we need to override the isReady check for this specific
+	// URI as soon as LND can accept the call, i.e. when the lnd sub-server
+	// is in the "Wallet Ready" state.
+	lndOverride := func(uri, manualStatus string) (bool, bool) {
+		if uri != "/lnrpc.State/GetState" {
+			return false, false
+		}
+
+		return manualStatus == lndWalletReadyStatus, true
+	}
+
 	// Register LND, LiT and Accounts with the status manager.
-	g.statusMgr.RegisterAndEnableSubServer(subservers.LND)
+	g.statusMgr.RegisterAndEnableSubServer(
+		subservers.LND, status.WithIsReadyOverride(lndOverride),
+	)
 	g.statusMgr.RegisterAndEnableSubServer(subservers.LIT)
 	g.statusMgr.RegisterSubServer(subservers.ACCOUNTS)
 
@@ -548,10 +569,12 @@ func (g *LightningTerminal) start() error {
 			err)
 	}
 
-	// We can now set the status of LND as running.
-	// This is done _before_ we wait for the macaroon so that
-	// LND commands to create and unlock a wallet can be allowed.
-	g.statusMgr.SetRunning(subservers.LND)
+	// We now set a custom status for the LND sub-server to indicate that
+	// the wallet is ready.
+	// This is done _before_ we have set up the lnd clients so that the
+	// litcli status command won't error before the lnd sub-server has
+	// been marked as running.
+	g.statusMgr.SetCustomStatus(subservers.LND, lndWalletReadyStatus)
 
 	// Now that we have started the main UI web server, show some useful
 	// information to the user so they can access the web UI easily.
@@ -610,7 +633,7 @@ func (g *LightningTerminal) start() error {
 	}
 
 	// Set up all the LND clients required by LiT.
-	err = g.setUpLNDClients()
+	err = g.setUpLNDClients(lndQuit)
 	if err != nil {
 		g.statusMgr.SetErrored(
 			subservers.LND, "could not set up LND clients: %v", err,
@@ -618,6 +641,10 @@ func (g *LightningTerminal) start() error {
 
 		return fmt.Errorf("could not start LND")
 	}
+
+	// Mark that lnd is now completely running after connecting the
+	// lnd clients.
+	g.statusMgr.SetRunning(subservers.LND)
 
 	// If we're in integrated and stateless init mode, we won't create
 	// macaroon files in any of the subserver daemons.
@@ -671,8 +698,9 @@ func (g *LightningTerminal) start() error {
 }
 
 // setUpLNDClients sets up the various LND clients required by LiT.
-func (g *LightningTerminal) setUpLNDClients() error {
+func (g *LightningTerminal) setUpLNDClients(lndQuit chan struct{}) error {
 	var (
+		err           error
 		insecure      bool
 		clientOptions []lndclient.BasicClientOption
 	)
@@ -694,25 +722,57 @@ func (g *LightningTerminal) setUpLNDClients() error {
 		clientOptions = append(clientOptions, lndclient.Insecure())
 	}
 
+	// checkRunning checks if we should continue running for the duration of
+	// the defaultStartupTimeout, or else returns an error indicating why
+	// a shut-down is needed.
+	checkRunning := func() error {
+		select {
+		case err := <-g.errQueue.ChanOut():
+			return fmt.Errorf("error from subsystem: %v", err)
+
+		case <-lndQuit:
+			return fmt.Errorf("LND has stopped")
+
+		case <-interceptor.ShutdownChannel():
+			return fmt.Errorf("received the shutdown signal")
+
+		case <-time.After(defaultStartupTimeout):
+			return nil
+		}
+	}
+
 	// The main RPC listener of lnd might need some time to start, it could
 	// be that we run into a connection refused a few times. We use the
 	// basic client connection to find out if the RPC server is started yet
 	// because that doesn't do anything else than just connect. We'll check
 	// if lnd is also ready to be used in the next step.
 	log.Infof("Connecting basic lnd client")
-	err := wait.NoError(func() error {
+
+	for {
 		// Create an lnd client now that we have the full configuration.
 		// We'll need a basic client and a full client because not all
 		// subservers have the same requirements.
-		var err error
 		g.basicClient, err = lndclient.NewBasicClient(
-			host, tlsPath, filepath.Dir(macPath), string(network),
-			clientOptions...,
+			host, tlsPath, filepath.Dir(macPath),
+			string(network), clientOptions...,
 		)
-		return err
-	}, defaultStartupTimeout)
-	if err != nil {
-		return fmt.Errorf("could not create basic LND Client: %v", err)
+		if err == nil {
+			log.Infof("Basic lnd client connected")
+
+			break
+		}
+
+		g.statusMgr.SetErrored(
+			subservers.LIT,
+			"Error when setting up basic LND Client: %v", err,
+		)
+
+		err = checkRunning()
+		if err != nil {
+			return err
+		}
+
+		log.Infof("Retrying to connect basic lnd client")
 	}
 
 	// Now we know that the connection itself is ready. But we also need to
@@ -740,23 +800,39 @@ func (g *LightningTerminal) setUpLNDClients() error {
 	}()
 
 	log.Infof("Connecting full lnd client")
-	g.lndClient, err = lndclient.NewLndServices(
-		&lndclient.LndServicesConfig{
-			LndAddress:            host,
-			Network:               network,
-			TLSPath:               tlsPath,
-			Insecure:              insecure,
-			CustomMacaroonPath:    macPath,
-			CustomMacaroonHex:     hex.EncodeToString(macData),
-			BlockUntilChainSynced: true,
-			BlockUntilUnlocked:    true,
-			CallerCtx:             ctxc,
-			CheckVersion:          minimalCompatibleVersion,
-		},
-	)
-	if err != nil {
-		return fmt.Errorf("could not create LND Services client: %v",
-			err)
+	for {
+		g.lndClient, err = lndclient.NewLndServices(
+			&lndclient.LndServicesConfig{
+				LndAddress:            host,
+				Network:               network,
+				TLSPath:               tlsPath,
+				Insecure:              insecure,
+				CustomMacaroonPath:    macPath,
+				CustomMacaroonHex:     hex.EncodeToString(macData),
+				BlockUntilChainSynced: true,
+				BlockUntilUnlocked:    true,
+				CallerCtx:             ctxc,
+				CheckVersion:          minimalCompatibleVersion,
+			},
+		)
+		if err == nil {
+			log.Infof("Full lnd client connected")
+
+			break
+		}
+
+		g.statusMgr.SetErrored(
+			subservers.LIT,
+			"Error when creating LND Services client: %v",
+			err,
+		)
+
+		err = checkRunning()
+		if err != nil {
+			return err
+		}
+
+		log.Infof("Retrying to create LND Services client")
 	}
 
 	// Pass LND's build tags to the permission manager so that it can
