@@ -188,14 +188,15 @@ func (s *Manager) SetErrored(name string, errStr string,
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	log.Debugf("Setting the %s sub-server as errored: %s", name, errStr)
+	err := fmt.Sprintf(errStr, params...)
+
+	log.Debugf("Setting the %s sub-server as errored: %s", name, err)
 
 	ss, ok := s.subServers[name]
 	if !ok {
 		return
 	}
 
-	err := fmt.Sprintf(errStr, params...)
 	log.Errorf("could not start the %s sub-server: %s", name, err)
 
 	ss.Running = false
