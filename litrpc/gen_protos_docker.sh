@@ -19,5 +19,7 @@ docker run \
   --rm \
   --user $UID:$UID \
   -e UID=$UID \
+  -e COMPILE_MOBILE \
+  -e SUBSERVER_PREFIX \
   -v "$DIR/../:/build" \
   lit-protobuf-builder

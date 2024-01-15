@@ -60,3 +60,9 @@ pushd autopilotserverrpc
 format
 generate no-rest
 popd
+
+if [[ "$COMPILE_MOBILE" == "1" ]]; then
+  pushd mobile
+  ./gen_bindings.sh $FALAFEL_VERSION
+  popd
+fi

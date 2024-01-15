@@ -19,6 +19,7 @@ RUN cd /tmp \
   && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@${PROTOC_GEN_GO_GRPC_VERSION} \
   && go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@${GRPC_GATEWAY_VERSION} \
   && go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2@${GRPC_GATEWAY_VERSION} \
+  && go install golang.org/x/tools/cmd/goimports@v0.1.7 \
   && go install github.com/lightninglabs/falafel@${FALAFEL_VERSION}
 
 WORKDIR /build
