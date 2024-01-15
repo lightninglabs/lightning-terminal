@@ -8,6 +8,10 @@ litcli-debug
 # MacOS junk
 .DS_Store
 
+# Files from mobile build.
+mobile/build
+mobile/*_generated.go
+
 itest/btcd-itest
 itest/litd-itest
 itest/lnd-itest

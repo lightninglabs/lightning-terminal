@@ -55,9 +55,13 @@ type subServer struct {
 
 // newSubServer constructs a new subServer.
 func newSubServer(disabled bool, opts ...SubServerOption) *subServer {
-	return &subServer{
+	s := &subServer{
 		disabled: disabled,
 	}
+	for _, opt := range opts {
+		opt(s)
+	}
+	return s
 }
 
 // Manager manages the status of any sub-server registered to it. It is also an

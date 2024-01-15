@@ -196,13 +196,22 @@ type LightningTerminal struct {
 
 	restHandler http.Handler
 	restCancel  func()
+
+	mobileListener  *bufconn.Listener
+	mobileReadyChan chan struct{}
 }
 
 // New creates a new instance of the lightning-terminal daemon.
-func New() *LightningTerminal {
+func New(listener *bufconn.Listener, readyChan chan struct{}) *LightningTerminal {
 	return &LightningTerminal{
-		statusMgr: status.NewStatusManager(),
+		statusMgr:       status.NewStatusManager(),
+		mobileListener:  listener,
+		mobileReadyChan: readyChan,
 	}
+}
+
+func (g *LightningTerminal) GetConfig() *Config {
+	return g.cfg
 }
 
 // Run starts everything and then blocks until either the application is shut
@@ -244,7 +253,7 @@ func (g *LightningTerminal) Run() error {
 	// URI as soon as LND can accept the call, i.e. when the lnd sub-server
 	// is in the "Wallet Ready" state.
 	lndOverride := func(uri, manualStatus string) (bool, bool) {
-		if uri != "/lnrpc.State/GetState" {
+		if uri != "/lnrpc.State/GetState" && !strings.HasPrefix(uri, "/lnrpc.WalletUnlocker") {
 			return false, false
 		}
 
@@ -283,19 +292,34 @@ func (g *LightningTerminal) Run() error {
 	litrpc.RegisterProxyServer(g.rpcProxy.grpcServer, g.rpcProxy)
 	litrpc.RegisterStatusServer(g.rpcProxy.grpcServer, g.statusMgr)
 
-	// Start the main web server that dispatches requests either to the
-	// static UI file server or the RPC proxy. This makes it possible to
-	// unlock lnd through the UI.
-	if err := g.startMainWebServer(); err != nil {
-		return fmt.Errorf("error starting main proxy HTTP server: %v",
-			err)
-	}
+	// Set up the in-memory listener
+	if g.mobileListener != nil && g.mobileReadyChan != nil {
+		log.Info("Setting up mobile listener")
+		tlsConfig, err := buildTLSConfigForHttp2(g.cfg)
+		if err != nil {
+			log.Infof("Failed to create mobileListener tlsConfig: %v", err)
+			os.Exit(1)
+		}
+		go func() {
+			tlsListener := tls.NewListener(g.mobileListener, tlsConfig)
+			close(g.mobileReadyChan)
+			_ = g.rpcProxy.grpcServer.Serve(tlsListener)
+		}()
+	} else {
+		// Start the main web server that dispatches requests either to the
+		// static UI file server or the RPC proxy. This makes it possible to
+		// unlock lnd through the UI.
+		if err := g.startMainWebServer(); err != nil {
+			return fmt.Errorf("error starting main proxy HTTP server: %v",
+				err)
+		}
 
-	// We'll also create a REST proxy that'll convert any REST calls to gRPC
-	// calls and forward them to the internal listener.
-	if g.cfg.EnableREST {
-		if err := g.createRESTProxy(); err != nil {
-			return fmt.Errorf("error creating REST proxy: %v", err)
+		// We'll also create a REST proxy that'll convert any REST calls to gRPC
+		// calls and forward them to the internal listener.
+		if g.cfg.EnableREST {
+			if err := g.createRESTProxy(); err != nil {
+				return fmt.Errorf("error creating REST proxy: %v", err)
+			}
 		}
 	}
 
