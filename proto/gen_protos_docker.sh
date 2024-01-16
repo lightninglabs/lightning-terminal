@@ -13,5 +13,6 @@ docker run \
   --rm \
   --user $UID:$UID \
   -e UID=$UID \
+  -e SUBSERVER_PREFIX \
   -v "$DIR/../:/build" \
   lit-protobuf-builder

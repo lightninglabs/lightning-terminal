@@ -161,8 +161,9 @@ type Config struct {
 	LetsEncryptDir    string `long:"letsencryptdir" description:"The directory where the Let's Encrypt library will store its key and certificate."`
 	LetsEncryptListen string `long:"letsencryptlisten" description:"The IP:port on which LiT will listen for Let's Encrypt challenges. Let's Encrypt will always try to contact on port 80. Often non-root processes are not allowed to bind to ports lower than 1024. This configuration option allows a different port to be used, but must be used in combination with port forwarding from port 80. This configuration can also be used to specify another IP address to listen on, for example an IPv6 address."`
 
-	TLSCertPath string `long:"tlscertpath" description:"Path to write the self signed TLS certificate for LiT's RPC and REST proxy service (if Let's Encrypt is not used). This only applies to the HTTPSListen port."`
-	TLSKeyPath  string `long:"tlskeypath" description:"Path to write the self signed TLS private key for LiT's RPC and REST proxy service (if Let's Encrypt is not used). This only applies to the HTTPSListen port."`
+	TLSCertPath        string `long:"tlscertpath" description:"Path to write the self signed TLS certificate for LiT's RPC and REST proxy service (if Let's Encrypt is not used). This only applies to the HTTPSListen port."`
+	TLSKeyPath         string `long:"tlskeypath" description:"Path to write the self signed TLS private key for LiT's RPC and REST proxy service (if Let's Encrypt is not used). This only applies to the HTTPSListen port."`
+	TLSDisableAutofill bool   `long:"tlsdisableautofill" description:"Do not include the interface IPs or the system hostname in TLS certificate"`
 
 	LitDir     string `long:"lit-dir" description:"The main directory where LiT looks for its configuration file. If LiT is running in 'remote' lnd mode, this is also the directory where the TLS certificates and log files are stored by default."`
 	ConfigFile string `long:"configfile" description:"Path to LiT's configuration file."`
@@ -826,13 +827,15 @@ func buildTLSConfigForHttp2(config *Config) (*tls.Config, error) {
 	} else {
 		tlsCertPath := config.TLSCertPath
 		tlsKeyPath := config.TLSKeyPath
+		tlsDisableAutoFill := config.TLSDisableAutofill
 
 		if !lnrpc.FileExists(tlsCertPath) &&
 			!lnrpc.FileExists(tlsKeyPath) {
 
+			//TODO(kevin): make this a config option, not a hardcoded flag
 			certBytes, keyBytes, err := cert.GenCertPair(
 				defaultSelfSignedCertOrganization, nil, nil,
-				false, DefaultAutogenValidity,
+				tlsDisableAutoFill, DefaultAutogenValidity,
 			)
 			if err != nil {
 				return nil, fmt.Errorf("failed creating "+
