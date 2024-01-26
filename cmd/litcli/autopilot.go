@@ -11,6 +11,7 @@ import (
 
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/lightning-terminal/rules"
+	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/urfave/cli"
 )
 
@@ -39,10 +40,48 @@ var addAutopilotSessionCmd = cli.Command{
 	Name:      "add",
 	ShortName: "a",
 	Usage:     "Initialize an Autopilot session.",
-	Description: "Initialize an Autopilot session.\n\n" +
-		"   If set for any feature, configuration flags need to be " +
-		"repeated for each feature that is registered, corresponding " +
-		"to the order of features.",
+	Description: `
+	Initialize an Autopilot session.
+
+	If one of the 'feature-' flags is set for any 'feature', then that flag
+	must be provided for each 'feature'.
+
+	The rules and configuration options available for each feature can be
+	seen in the 'autopilot features' output. For a rule, all fields must be
+	set since the unset ones are interpreteded as zero values. Rule values
+	must adhere to the limits found in 'autopilot features'. If a rule is
+	not set, default values are used.
+	
+	An example call for AutoFees reads:
+	
+	#!/bin/bash
+	./litcli autopilot add --label=customRules \
+	--feature=AutoFees \
+	--feature-rules='{
+		"rules": {
+			"channel-policy-bounds":  {
+				"chan_policy_bounds":  {
+					"min_base_msat":  "0",
+					"max_base_msat":  "10000",
+					"min_rate_ppm":   10,
+					"max_rate_ppm":   5000,
+					"min_cltv_delta": 60,
+					"max_cltv_delta": 120,
+					"min_htlc_msat":  "1",
+					"max_htlc_msat":  "100000000000"
+				}
+			},
+			"peer-restriction":  {
+				"peer_restrict":  {
+					"peer_ids":  [
+						"abcabc", 
+						"defdef"
+					]
+				}
+			}
+		}
+	}' \
+	--feature-config='{}'`,
 	Action: initAutopilotSession,
 	Flags: []cli.Flag{
 		labelFlag,
@@ -53,19 +92,21 @@ var addAutopilotSessionCmd = cli.Command{
 			Name:     "feature",
 			Required: true,
 		},
-		cli.StringFlag{
+		cli.StringSliceFlag{
 			Name: "channel-restrict-list",
-			Usage: "List of channel IDs that the " +
+			Usage: "[deprecated] List of channel IDs that the " +
 				"Autopilot server should not " +
 				"perform actions on. In the " +
 				"form of: chanID1,chanID2,...",
+			Hidden: true,
 		},
-		cli.StringFlag{
+		cli.StringSliceFlag{
 			Name: "peer-restrict-list",
-			Usage: "List of peer IDs that the " +
+			Usage: "[deprecated] List of peer IDs that the " +
 				"Autopilot server should not " +
 				"perform actions on. In the " +
 				"form of: peerID1,peerID2,...",
+			Hidden: true,
 		},
 		cli.StringFlag{
 			Name: "group_id",
@@ -80,6 +121,13 @@ var addAutopilotSessionCmd = cli.Command{
 				"\"option2\":\"parameter2\",...}. An empty " +
 				"configuration is allowed with {} to use the " +
 				"default configuration.",
+		},
+		cli.StringSliceFlag{
+			Name: "feature-rules",
+			Usage: `JSON-serialized rule map (see main ` +
+				`description for a format example).` +
+				`An empty rule map is allowed with {} to ` +
+				`use the default rules.`,
 		},
 	},
 }
@@ -190,58 +238,137 @@ func initAutopilotSession(ctx *cli.Context) error {
 	defer cleanup()
 	client := litrpc.NewAutopilotClient(clientConn)
 
-	ruleMap := &litrpc.RulesMap{
-		Rules: make(map[string]*litrpc.RuleValue),
-	}
-
-	chanRestrictList := ctx.String("channel-restrict-list")
-	if chanRestrictList != "" {
-		var chanIDs []uint64
-		chans := strings.Split(chanRestrictList, ",")
-		for _, c := range chans {
-			i, err := strconv.ParseUint(c, 10, 64)
-			if err != nil {
-				return err
-			}
-			chanIDs = append(chanIDs, i)
-		}
-
-		ruleMap.Rules[rules.ChannelRestrictName] = &litrpc.RuleValue{
-			Value: &litrpc.RuleValue_ChannelRestrict{
-				ChannelRestrict: &litrpc.ChannelRestrict{
-					ChannelIds: chanIDs,
-				},
-			},
-		}
-	}
-
-	peerRestrictList := ctx.String("peer-restrict-list")
-	if peerRestrictList != "" {
-		peerIDs := strings.Split(peerRestrictList, ",")
-
-		ruleMap.Rules[rules.PeersRestrictName] = &litrpc.RuleValue{
-			Value: &litrpc.RuleValue_PeerRestrict{
-				PeerRestrict: &litrpc.PeerRestrict{
-					PeerIds: peerIDs,
-				},
-			},
-		}
-	}
-
 	features := ctx.StringSlice("feature")
+
+	// Check that the user only sets unique features.
+	fs := make(map[string]struct{})
+	for _, feature := range features {
+		if _, ok := fs[feature]; ok {
+			return fmt.Errorf("feature %v is set multiple times",
+				feature)
+		}
+		fs[feature] = struct{}{}
+	}
+
+	// Check that the user did not set multiple restrict lists.
+	var chanRestrictList, peerRestrictList string
+
+	channelRestrictSlice := ctx.StringSlice("channel-restrict-list")
+	if len(channelRestrictSlice) > 1 {
+		return fmt.Errorf("channel-restrict-list can only be used once")
+	} else if len(channelRestrictSlice) == 1 {
+		chanRestrictList = channelRestrictSlice[0]
+	}
+
+	peerRestrictSlice := ctx.StringSlice("peer-restrict-list")
+	if len(peerRestrictSlice) > 1 {
+		return fmt.Errorf("peer-restrict-list can only be used once")
+	} else if len(peerRestrictSlice) == 1 {
+		peerRestrictList = peerRestrictSlice[0]
+	}
+
+	// rulesMap stores the rules per each feature.
+	rulesMap := make(map[string]*litrpc.RulesMap)
+	rulesFlags := ctx.StringSlice("feature-rules")
+
+	// For legacy flags, we allow setting the channel and peer restrict
+	// lists when only a single feature is added.
+	if chanRestrictList != "" || peerRestrictList != "" {
+		// Check that the user did not set both the legacy flags and the
+		// generic rules flags together.
+		if len(rulesFlags) > 0 {
+			return fmt.Errorf("either set channel-restrict-list/" +
+				"peer-restrict-list or feature-rules, not both")
+		}
+
+		if len(features) > 1 {
+			return fmt.Errorf("cannot set channel-restrict-list/" +
+				"peer-restrict-list when multiple features " +
+				"are set")
+		}
+
+		feature := features[0]
+
+		// Init the rule map for this feature.
+		ruleMap := make(map[string]*litrpc.RuleValue)
+
+		if chanRestrictList != "" {
+			var chanIDs []uint64
+			chans := strings.Split(chanRestrictList, ",")
+			for _, c := range chans {
+				i, err := strconv.ParseUint(c, 10, 64)
+				if err != nil {
+					return err
+				}
+				chanIDs = append(chanIDs, i)
+			}
+
+			channelRestrict := &litrpc.ChannelRestrict{
+				ChannelIds: chanIDs,
+			}
+
+			ruleMap[rules.ChannelRestrictName] = &litrpc.RuleValue{
+				Value: &litrpc.RuleValue_ChannelRestrict{
+					ChannelRestrict: channelRestrict,
+				},
+			}
+		}
+
+		if peerRestrictList != "" {
+			peerIDs := strings.Split(peerRestrictList, ",")
+
+			ruleMap[rules.PeersRestrictName] = &litrpc.RuleValue{
+				Value: &litrpc.RuleValue_PeerRestrict{
+					PeerRestrict: &litrpc.PeerRestrict{
+						PeerIds: peerIDs,
+					},
+				},
+			}
+		}
+
+		rulesMap[feature] = &litrpc.RulesMap{Rules: ruleMap}
+	} else {
+		// We make sure that if the rules or configs flags are set, they
+		// are set for all features, to avoid ambiguity.
+		if len(rulesFlags) > 0 && len(features) != len(rulesFlags) {
+			return fmt.Errorf("number of features (%v) and rules "+
+				"(%v) must match", len(features),
+				len(rulesFlags))
+		}
+
+		// Parse the rules and store them in the rulesMap.
+		for i, rulesFlag := range rulesFlags {
+			var ruleMap litrpc.RulesMap
+
+			// We allow empty rules, to signal the usage of the
+			// default rules when the session is registered.
+			if rulesFlag != "{}" {
+				err = lnrpc.ProtoJSONUnmarshalOpts.Unmarshal(
+					[]byte(rulesFlag), &ruleMap,
+				)
+				if err != nil {
+					return err
+				}
+			}
+
+			rulesMap[features[i]] = &ruleMap
+		}
+	}
+
 	configs := ctx.StringSlice("feature-config")
 	if len(configs) > 0 && len(features) != len(configs) {
 		return fmt.Errorf("number of features (%v) and configurations "+
 			"(%v) must match", len(features), len(configs))
 	}
 
-	featureMap := make(map[string]*litrpc.FeatureConfig)
-	for i, feature := range ctx.StringSlice("feature") {
+	// Parse the configs and store them in the configsMap.
+	configsMap := make(map[string][]byte)
+	for i, configFlag := range configs {
 		var config []byte
 
 		// We allow empty configs, to signal the usage of the default
 		// configuration when the session is registered.
-		if len(configs) > 0 && configs[i] != "{}" {
+		if configFlag != "{}" {
 			// We expect the config to be a JSON dictionary, so we
 			// unmarshal it into a map to do a first validation.
 			var configMap map[string]interface{}
@@ -249,15 +376,22 @@ func initAutopilotSession(ctx *cli.Context) error {
 			if err != nil {
 				return fmt.Errorf("could not parse "+
 					"configuration for feature %v: %v",
-					feature, err)
+					features[i], err)
 			}
 
 			config = []byte(configs[i])
 		}
 
+		configsMap[features[i]] = config
+	}
+
+	featureMap := make(map[string]*litrpc.FeatureConfig)
+	for _, feature := range features {
+		// Map access for unknown features will return their zero value
+		// if not set, which is what we want to signal default usage.
 		featureMap[feature] = &litrpc.FeatureConfig{
-			Rules:  ruleMap,
-			Config: config,
+			Rules:  rulesMap[feature],
+			Config: configsMap[feature],
 		}
 	}
 
