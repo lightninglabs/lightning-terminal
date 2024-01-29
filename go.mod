@@ -1,10 +1,10 @@
 module github.com/lightninglabs/lightning-terminal
 
 require (
-	github.com/btcsuite/btcd v0.23.5-0.20230905170901-80f5a0ffdf36
+	github.com/btcsuite/btcd v0.24.1-0.20240123000108-62e6af035ec5
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2
-	github.com/btcsuite/btcd/btcutil v1.1.4-0.20230904040416-d4f519f5dc05
-	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.2
+	github.com/btcsuite/btcd/btcutil v1.1.5
+	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0
 	github.com/btcsuite/btclog v0.0.0-20170628155309-84c8d2346e9f
 	github.com/btcsuite/btcwallet/walletdb v1.4.0
 	github.com/go-errors/errors v1.0.1
@@ -23,7 +23,7 @@ require (
 	github.com/lightningnetwork/lnd v0.17.3-beta
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/kvdb v1.4.4
-	github.com/lightningnetwork/lnd/tlv v1.1.1
+	github.com/lightningnetwork/lnd/tlv v1.2.1
 	github.com/lightningnetwork/lnd/tor v1.1.2
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
 	github.com/mwitkow/grpc-proxy v0.0.0-20230212185441-f345521cb9c9
@@ -32,7 +32,7 @@ require (
 	go.etcd.io/bbolt v1.3.7
 	golang.org/x/crypto v0.14.0
 	golang.org/x/net v0.17.0
-	golang.org/x/sync v0.3.0
+	golang.org/x/sync v0.4.0
 	google.golang.org/grpc v1.59.0
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/macaroon-bakery.v2 v2.1.0
@@ -51,7 +51,7 @@ require (
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/btcsuite/btcd/btcutil/psbt v1.1.8 // indirect
-	github.com/btcsuite/btcwallet v0.16.10-0.20231129183218-5df09dd43358 // indirect
+	github.com/btcsuite/btcwallet v0.16.10-0.20240122184004-f1648e92097f // indirect
 	github.com/btcsuite/btcwallet/wallet/txauthor v1.3.2 // indirect
 	github.com/btcsuite/btcwallet/wallet/txrules v1.2.0 // indirect
 	github.com/btcsuite/btcwallet/wallet/txsizes v1.2.3 // indirect
@@ -91,7 +91,7 @@ require (
 	github.com/google/btree v1.0.1 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.3.1 // indirect
-	github.com/gorilla/websocket v1.4.2 // indirect
+	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.0-rc.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.3 // indirect
@@ -131,6 +131,7 @@ require (
 	github.com/lightninglabs/neutrino/cache v1.1.1 // indirect
 	github.com/lightningnetwork/lightning-onion v1.2.1-0.20230823005744-06182b1d7d2f // indirect
 	github.com/lightningnetwork/lnd/clock v1.1.1 // indirect
+	github.com/lightningnetwork/lnd/fn v1.0.1 // indirect
 	github.com/lightningnetwork/lnd/healthcheck v1.2.3 // indirect
 	github.com/lightningnetwork/lnd/queue v1.1.1 // indirect
 	github.com/lightningnetwork/lnd/ticker v1.1.1 // indirect
@@ -198,13 +199,13 @@ require (
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.23.0 // indirect
-	golang.org/x/exp v0.0.0-20230315142452-642cacee5cc0 // indirect
-	golang.org/x/mod v0.10.0 // indirect
+	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
+	golang.org/x/mod v0.13.0 // indirect
 	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/term v0.13.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
-	golang.org/x/tools v0.9.1 // indirect
+	golang.org/x/tools v0.14.0 // indirect
 	google.golang.org/genproto v0.0.0-20230822172742-b8732ec3820d // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20230822172742-b8732ec3820d // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230822172742-b8732ec3820d // indirect
@@ -232,5 +233,7 @@ replace github.com/lightninglabs/lightning-terminal/autopilotserverrpc => ./auto
 // allows us to specify that as an option. This is required for the
 // taproot-assets dependency to function properly.
 replace google.golang.org/protobuf => github.com/lightninglabs/protobuf-go-hex-display v1.30.0-hex-display
+
+replace github.com/lightningnetwork/lnd => github.com/ellemouton/lnd v0.8.0-beta-rc3.0.20240129113805-c94479fc8ea6
 
 go 1.21
