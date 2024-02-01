@@ -107,10 +107,6 @@ func (s *BoltStore) NewAccount(balance lnwire.MilliSatoshi,
 	expirationDate time.Time, label string) (*OffChainBalanceAccount,
 	error) {
 
-	if balance == 0 {
-		return nil, fmt.Errorf("a new account cannot have balance of 0")
-	}
-
 	// If a label is set, it must be unique, as we use it to identify the
 	// account in some of the RPCs. It also can't be mistaken for a hex
 	// encoded account ID to avoid confusion and make it easier for the CLI
