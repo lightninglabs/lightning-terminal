@@ -16,13 +16,8 @@ func TestAccountStore(t *testing.T) {
 	store, err := NewBoltStore(t.TempDir(), DBFilename)
 	require.NoError(t, err)
 
-	// An initial balance of 0 is not allowed, but later we can reach a
-	// zero balance.
-	_, err = store.NewAccount(0, time.Time{}, "")
-	require.ErrorContains(t, err, "cannot have balance of 0")
-
 	// Create an account that does not expire.
-	acct1, err := store.NewAccount(123, time.Time{}, "foo")
+	acct1, err := store.NewAccount(0, time.Time{}, "foo")
 	require.NoError(t, err)
 	require.False(t, acct1.HasExpired())
 

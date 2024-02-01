@@ -571,9 +571,10 @@ func TestAccountService(t *testing.T) {
 			acct := &OffChainBalanceAccount{
 				ID:             testID,
 				Type:           TypeInitialBalance,
-				CurrentBalance: 1234,
+				CurrentBalance: 0,
 				Invoices: AccountInvoices{
-					testHash: {},
+					testHash:  {},
+					testHash2: {},
 				},
 				Payments: make(AccountPayments),
 			}
@@ -589,7 +590,7 @@ func TestAccountService(t *testing.T) {
 				AddIndex:    12,
 				SettleIndex: 12,
 				Hash:        testHash,
-				AmountPaid:  777,
+				AmountPaid:  1000,
 				State:       invpkg.ContractSettled,
 			}
 
@@ -598,7 +599,25 @@ func TestAccountService(t *testing.T) {
 				acct, err := s.store.Account(testID)
 				require.NoError(t, err)
 
-				return acct.CurrentBalance == (1234 + 777)
+				return acct.CurrentBalance == 1000
+			})
+
+			// Then settle a second invoice.
+			lnd.invoiceChan <- &lndclient.Invoice{
+				AddIndex:    13,
+				SettleIndex: 13,
+				Hash:        testHash2,
+				AmountPaid:  777,
+				State:       invpkg.ContractSettled,
+			}
+
+			// Ensure that the balance now adds up to the sum of
+			// both invoices.
+			assertEventually(t, func() bool {
+				acct, err := s.store.Account(testID)
+				require.NoError(t, err)
+
+				return acct.CurrentBalance == (1000 + 777)
 			})
 		},
 	}, {

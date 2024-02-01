@@ -114,10 +114,6 @@ func createAccount(ctx *cli.Context) error {
 		args = args.Tail()
 	}
 
-	if initialBalance <= 0 {
-		return fmt.Errorf("initial balance cannot be smaller than 1")
-	}
-
 	req := &litrpc.CreateAccountRequest{
 		AccountBalance: initialBalance,
 		ExpirationDate: expirationDate,
