@@ -148,6 +148,15 @@ type SwapClientSuggestSwaps = {
   readonly responseType: typeof loop_pb.SuggestSwapsResponse;
 };
 
+type SwapClientListReservations = {
+  readonly methodName: string;
+  readonly service: typeof SwapClient;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof loop_pb.ListReservationsRequest;
+  readonly responseType: typeof loop_pb.ListReservationsResponse;
+};
+
 export class SwapClient {
   static readonly serviceName: string;
   static readonly LoopOut: SwapClientLoopOut;
@@ -166,6 +175,7 @@ export class SwapClient {
   static readonly GetLiquidityParams: SwapClientGetLiquidityParams;
   static readonly SetLiquidityParams: SwapClientSetLiquidityParams;
   static readonly SuggestSwaps: SwapClientSuggestSwaps;
+  static readonly ListReservations: SwapClientListReservations;
 }
 
 export type ServiceError = { message: string, code: number; metadata: grpc.Metadata }
@@ -335,6 +345,15 @@ export class SwapClientClient {
   suggestSwaps(
     requestMessage: loop_pb.SuggestSwapsRequest,
     callback: (error: ServiceError|null, responseMessage: loop_pb.SuggestSwapsResponse|null) => void
+  ): UnaryResponse;
+  listReservations(
+    requestMessage: loop_pb.ListReservationsRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.ListReservationsResponse|null) => void
+  ): UnaryResponse;
+  listReservations(
+    requestMessage: loop_pb.ListReservationsRequest,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.ListReservationsResponse|null) => void
   ): UnaryResponse;
 }
 

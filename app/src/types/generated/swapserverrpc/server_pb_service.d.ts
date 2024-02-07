@@ -139,6 +139,15 @@ type SwapServerPushKey = {
   readonly responseType: typeof swapserverrpc_server_pb.ServerPushKeyRes;
 };
 
+type SwapServerFetchL402 = {
+  readonly methodName: string;
+  readonly service: typeof SwapServer;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof swapserverrpc_server_pb.FetchL402Request;
+  readonly responseType: typeof swapserverrpc_server_pb.FetchL402Response;
+};
+
 export class SwapServer {
   static readonly serviceName: string;
   static readonly LoopOutTerms: SwapServerLoopOutTerms;
@@ -156,6 +165,7 @@ export class SwapServer {
   static readonly ReportRoutingResult: SwapServerReportRoutingResult;
   static readonly MuSig2SignSweep: SwapServerMuSig2SignSweep;
   static readonly PushKey: SwapServerPushKey;
+  static readonly FetchL402: SwapServerFetchL402;
 }
 
 export type ServiceError = { message: string, code: number; metadata: grpc.Metadata }
@@ -308,6 +318,15 @@ export class SwapServerClient {
   pushKey(
     requestMessage: swapserverrpc_server_pb.ServerPushKeyReq,
     callback: (error: ServiceError|null, responseMessage: swapserverrpc_server_pb.ServerPushKeyRes|null) => void
+  ): UnaryResponse;
+  fetchL402(
+    requestMessage: swapserverrpc_server_pb.FetchL402Request,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: swapserverrpc_server_pb.FetchL402Response|null) => void
+  ): UnaryResponse;
+  fetchL402(
+    requestMessage: swapserverrpc_server_pb.FetchL402Request,
+    callback: (error: ServiceError|null, responseMessage: swapserverrpc_server_pb.FetchL402Response|null) => void
   ): UnaryResponse;
 }
 
