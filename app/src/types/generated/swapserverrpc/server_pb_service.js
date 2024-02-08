@@ -145,6 +145,15 @@ SwapServer.PushKey = {
   responseType: swapserverrpc_server_pb.ServerPushKeyRes
 };
 
+SwapServer.FetchL402 = {
+  methodName: "FetchL402",
+  service: SwapServer,
+  requestStream: false,
+  responseStream: false,
+  requestType: swapserverrpc_server_pb.FetchL402Request,
+  responseType: swapserverrpc_server_pb.FetchL402Response
+};
+
 exports.SwapServer = SwapServer;
 
 function SwapServerClient(serviceHost, options) {
@@ -607,6 +616,37 @@ SwapServerClient.prototype.pushKey = function pushKey(requestMessage, metadata, 
     callback = arguments[1];
   }
   var client = grpc.unary(SwapServer.PushKey, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+SwapServerClient.prototype.fetchL402 = function fetchL402(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(SwapServer.FetchL402, {
     request: requestMessage,
     host: this.serviceHost,
     metadata: metadata,

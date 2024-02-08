@@ -154,6 +154,15 @@ SwapClient.SuggestSwaps = {
   responseType: loop_pb.SuggestSwapsResponse
 };
 
+SwapClient.ListReservations = {
+  methodName: "ListReservations",
+  service: SwapClient,
+  requestStream: false,
+  responseStream: false,
+  requestType: loop_pb.ListReservationsRequest,
+  responseType: loop_pb.ListReservationsResponse
+};
+
 exports.SwapClient = SwapClient;
 
 function SwapClientClient(serviceHost, options) {
@@ -639,6 +648,37 @@ SwapClientClient.prototype.suggestSwaps = function suggestSwaps(requestMessage, 
     callback = arguments[1];
   }
   var client = grpc.unary(SwapClient.SuggestSwaps, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+SwapClientClient.prototype.listReservations = function listReservations(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(SwapClient.ListReservations, {
     request: requestMessage,
     host: this.serviceHost,
     metadata: metadata,

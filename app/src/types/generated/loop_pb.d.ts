@@ -55,6 +55,9 @@ export class LoopOutRequest extends jspb.Message {
   getAccountAddrType(): AddressTypeMap[keyof AddressTypeMap];
   setAccountAddrType(value: AddressTypeMap[keyof AddressTypeMap]): void;
 
+  getIsExternalAddr(): boolean;
+  setIsExternalAddr(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LoopOutRequest.AsObject;
   static toObject(includeInstance: boolean, msg: LoopOutRequest): LoopOutRequest.AsObject;
@@ -83,6 +86,7 @@ export namespace LoopOutRequest {
     initiator: string,
     account: string,
     accountAddrType: AddressTypeMap[keyof AddressTypeMap],
+    isExternalAddr: boolean,
   }
 }
 
@@ -295,6 +299,11 @@ export namespace SwapStatus {
 }
 
 export class ListSwapsRequest extends jspb.Message {
+  hasListSwapFilter(): boolean;
+  clearListSwapFilter(): void;
+  getListSwapFilter(): ListSwapsFilter | undefined;
+  setListSwapFilter(value?: ListSwapsFilter): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ListSwapsRequest.AsObject;
   static toObject(includeInstance: boolean, msg: ListSwapsRequest): ListSwapsRequest.AsObject;
@@ -307,7 +316,56 @@ export class ListSwapsRequest extends jspb.Message {
 
 export namespace ListSwapsRequest {
   export type AsObject = {
+    listSwapFilter?: ListSwapsFilter.AsObject,
   }
+}
+
+export class ListSwapsFilter extends jspb.Message {
+  getSwapType(): ListSwapsFilter.SwapTypeFilterMap[keyof ListSwapsFilter.SwapTypeFilterMap];
+  setSwapType(value: ListSwapsFilter.SwapTypeFilterMap[keyof ListSwapsFilter.SwapTypeFilterMap]): void;
+
+  getPendingOnly(): boolean;
+  setPendingOnly(value: boolean): void;
+
+  clearOutgoingChanSetList(): void;
+  getOutgoingChanSetList(): Array<string>;
+  setOutgoingChanSetList(value: Array<string>): void;
+  addOutgoingChanSet(value: string, index?: number): string;
+
+  getLabel(): string;
+  setLabel(value: string): void;
+
+  getLoopInLastHop(): Uint8Array | string;
+  getLoopInLastHop_asU8(): Uint8Array;
+  getLoopInLastHop_asB64(): string;
+  setLoopInLastHop(value: Uint8Array | string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListSwapsFilter.AsObject;
+  static toObject(includeInstance: boolean, msg: ListSwapsFilter): ListSwapsFilter.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ListSwapsFilter, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListSwapsFilter;
+  static deserializeBinaryFromReader(message: ListSwapsFilter, reader: jspb.BinaryReader): ListSwapsFilter;
+}
+
+export namespace ListSwapsFilter {
+  export type AsObject = {
+    swapType: ListSwapsFilter.SwapTypeFilterMap[keyof ListSwapsFilter.SwapTypeFilterMap],
+    pendingOnly: boolean,
+    outgoingChanSetList: Array<string>,
+    label: string,
+    loopInLastHop: Uint8Array | string,
+  }
+
+  export interface SwapTypeFilterMap {
+    ANY: 0;
+    LOOP_OUT: 1;
+    LOOP_IN: 2;
+  }
+
+  export const SwapTypeFilter: SwapTypeFilterMap;
 }
 
 export class ListSwapsResponse extends jspb.Message {
@@ -1125,6 +1183,88 @@ export class AbandonSwapResponse extends jspb.Message {
 
 export namespace AbandonSwapResponse {
   export type AsObject = {
+  }
+}
+
+export class ListReservationsRequest extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListReservationsRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: ListReservationsRequest): ListReservationsRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ListReservationsRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListReservationsRequest;
+  static deserializeBinaryFromReader(message: ListReservationsRequest, reader: jspb.BinaryReader): ListReservationsRequest;
+}
+
+export namespace ListReservationsRequest {
+  export type AsObject = {
+  }
+}
+
+export class ListReservationsResponse extends jspb.Message {
+  clearReservationsList(): void;
+  getReservationsList(): Array<ClientReservation>;
+  setReservationsList(value: Array<ClientReservation>): void;
+  addReservations(value?: ClientReservation, index?: number): ClientReservation;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListReservationsResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: ListReservationsResponse): ListReservationsResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ListReservationsResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListReservationsResponse;
+  static deserializeBinaryFromReader(message: ListReservationsResponse, reader: jspb.BinaryReader): ListReservationsResponse;
+}
+
+export namespace ListReservationsResponse {
+  export type AsObject = {
+    reservationsList: Array<ClientReservation.AsObject>,
+  }
+}
+
+export class ClientReservation extends jspb.Message {
+  getReservationId(): Uint8Array | string;
+  getReservationId_asU8(): Uint8Array;
+  getReservationId_asB64(): string;
+  setReservationId(value: Uint8Array | string): void;
+
+  getState(): string;
+  setState(value: string): void;
+
+  getAmount(): string;
+  setAmount(value: string): void;
+
+  getTxId(): Uint8Array | string;
+  getTxId_asU8(): Uint8Array;
+  getTxId_asB64(): string;
+  setTxId(value: Uint8Array | string): void;
+
+  getVout(): number;
+  setVout(value: number): void;
+
+  getExpiry(): number;
+  setExpiry(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ClientReservation.AsObject;
+  static toObject(includeInstance: boolean, msg: ClientReservation): ClientReservation.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ClientReservation, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ClientReservation;
+  static deserializeBinaryFromReader(message: ClientReservation, reader: jspb.BinaryReader): ClientReservation;
+}
+
+export namespace ClientReservation {
+  export type AsObject = {
+    reservationId: Uint8Array | string,
+    state: string,
+    amount: string,
+    txId: Uint8Array | string,
+    vout: number,
+    expiry: number,
   }
 }
 

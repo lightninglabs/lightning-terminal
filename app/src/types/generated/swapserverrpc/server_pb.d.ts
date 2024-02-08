@@ -876,6 +876,11 @@ export class MuSig2SignSweepReq extends jspb.Message {
   getSweepTxPsbt_asB64(): string;
   setSweepTxPsbt(value: Uint8Array | string): void;
 
+  clearPrevoutInfoList(): void;
+  getPrevoutInfoList(): Array<PrevoutInfo>;
+  setPrevoutInfoList(value: Array<PrevoutInfo>): void;
+  addPrevoutInfo(value?: PrevoutInfo, index?: number): PrevoutInfo;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): MuSig2SignSweepReq.AsObject;
   static toObject(includeInstance: boolean, msg: MuSig2SignSweepReq): MuSig2SignSweepReq.AsObject;
@@ -893,6 +898,43 @@ export namespace MuSig2SignSweepReq {
     paymentAddress: Uint8Array | string,
     nonce: Uint8Array | string,
     sweepTxPsbt: Uint8Array | string,
+    prevoutInfoList: Array<PrevoutInfo.AsObject>,
+  }
+}
+
+export class PrevoutInfo extends jspb.Message {
+  getValue(): string;
+  setValue(value: string): void;
+
+  getPkScript(): Uint8Array | string;
+  getPkScript_asU8(): Uint8Array;
+  getPkScript_asB64(): string;
+  setPkScript(value: Uint8Array | string): void;
+
+  getTxidBytes(): Uint8Array | string;
+  getTxidBytes_asU8(): Uint8Array;
+  getTxidBytes_asB64(): string;
+  setTxidBytes(value: Uint8Array | string): void;
+
+  getOutputIndex(): number;
+  setOutputIndex(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): PrevoutInfo.AsObject;
+  static toObject(includeInstance: boolean, msg: PrevoutInfo): PrevoutInfo.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: PrevoutInfo, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): PrevoutInfo;
+  static deserializeBinaryFromReader(message: PrevoutInfo, reader: jspb.BinaryReader): PrevoutInfo;
+}
+
+export namespace PrevoutInfo {
+  export type AsObject = {
+    value: string,
+    pkScript: Uint8Array | string,
+    txidBytes: Uint8Array | string,
+    outputIndex: number,
   }
 }
 
@@ -968,6 +1010,38 @@ export class ServerPushKeyRes extends jspb.Message {
 }
 
 export namespace ServerPushKeyRes {
+  export type AsObject = {
+  }
+}
+
+export class FetchL402Request extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): FetchL402Request.AsObject;
+  static toObject(includeInstance: boolean, msg: FetchL402Request): FetchL402Request.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: FetchL402Request, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): FetchL402Request;
+  static deserializeBinaryFromReader(message: FetchL402Request, reader: jspb.BinaryReader): FetchL402Request;
+}
+
+export namespace FetchL402Request {
+  export type AsObject = {
+  }
+}
+
+export class FetchL402Response extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): FetchL402Response.AsObject;
+  static toObject(includeInstance: boolean, msg: FetchL402Response): FetchL402Response.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: FetchL402Response, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): FetchL402Response;
+  static deserializeBinaryFromReader(message: FetchL402Response, reader: jspb.BinaryReader): FetchL402Response;
+}
+
+export namespace FetchL402Response {
   export type AsObject = {
   }
 }
