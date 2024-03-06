@@ -184,6 +184,299 @@ func testFirewallRules(ctx context.Context, net *NetworkHarness,
 	t.t.Run("session linking", func(_ *testing.T) {
 		testSessionLinking(net, t)
 	})
+
+	t.t.Run("privacy flags", func(_ *testing.T) {
+		testPrivacyFlags(net, t)
+	})
+}
+
+// testPrivacyFlags tests that the privacy flags are enforced correctly.
+// We want to test the three privacy related interactions:
+// 1. the privacy mapper for the interception of messages
+// 2. the rule enforcer's privacy mapping
+// 3. the feature config's obfuscation
+func testPrivacyFlags(net *NetworkHarness, t *harnessTest) {
+	ctx := context.Background()
+
+	net.autopilotServer.ResetDefaultFeatures()
+
+	// We assert that we only have a single channel open between Alice and
+	// Bob.
+	aliceChannels, err := net.Alice.ListChannels(
+		ctx, &lnrpc.ListChannelsRequest{},
+	)
+	require.NoError(t.t, err)
+	require.Len(t.t, aliceChannels.Channels, 1)
+	require.Equal(t.t, net.Bob.PubKeyStr,
+		aliceChannels.Channels[0].RemotePubkey)
+
+	// Set up a connection to Alice's lit RPC server.
+	cfg := net.Alice.Cfg
+	rawConn, err := connectRPC(ctx, cfg.LitAddr(), cfg.LitTLSCertPath)
+	require.NoError(t.t, err)
+	defer rawConn.Close()
+
+	litAutopilotClient := litrpc.NewAutopilotClient(rawConn)
+
+	macBytes, err := os.ReadFile(cfg.LitMacPath)
+	require.NoError(t.t, err)
+	ctxm := macaroonContext(ctx, macBytes)
+
+	// Set up private and non-private features within the mock autopilot
+	// server.
+	privateFeature := &mock.Feature{
+		Description: "manages your channel privately",
+		Rules: map[string]*mock.RuleRanges{
+			rules.PeersRestrictName: {
+				Default: &rules.PeerRestrict{},
+				MinVal:  &rules.PeerRestrict{},
+				MaxVal:  &rules.PeerRestrict{},
+			},
+		},
+		Permissions: map[string][]bakery.Op{
+			"/lnrpc.Lightning/ListChannels": {{
+				Entity: "offchain",
+				Action: "read",
+			}},
+		},
+		// We set no flags to indicate that we want full privacy.
+		PrivacyFlags: 0,
+	}
+
+	clearPubkeysFlags := session.PrivacyFlags{session.ClearPubkeys}
+	nonPrivateFeature := &mock.Feature{
+		Description: "manages your channel with cleartext pubkeys",
+		Rules: map[string]*mock.RuleRanges{
+			rules.PeersRestrictName: {
+				Default: &rules.PeerRestrict{},
+				MinVal:  &rules.PeerRestrict{},
+				MaxVal:  &rules.PeerRestrict{},
+			},
+		},
+		Permissions: map[string][]bakery.Op{
+			"/lnrpc.Lightning/ListChannels": {{
+				Entity: "offchain",
+				Action: "read",
+			}},
+		},
+		PrivacyFlags: clearPubkeysFlags.Serialize(),
+	}
+
+	net.autopilotServer.SetFeatures(map[string]*mock.Feature{
+		"Private":    privateFeature,
+		"NonPrivate": nonPrivateFeature,
+	})
+
+	featResp, err := litAutopilotClient.ListAutopilotFeatures(
+		ctxm, &litrpc.ListAutopilotFeaturesRequest{},
+	)
+	require.NoError(t.t, err)
+	require.Len(t.t, featResp.Features, 2)
+
+	// Now we set up an initial autopilot session. The session will register
+	// both features. They have different privacy flags, which will result
+	// in registering a session with the lowest overall privacy.
+	sessFeatures := map[string]*litrpc.FeatureConfig{
+		"Private":    {},
+		"NonPrivate": {},
+	}
+
+	session0, err := litAutopilotClient.AddAutopilotSession(
+		ctxm, &litrpc.AddAutopilotSessionRequest{
+			Label: "integration-test",
+			ExpiryTimestampSeconds: uint64(
+				time.Now().Add(5 * time.Minute).Unix(),
+			),
+			MailboxServerAddr: mailboxServerAddr,
+			Features:          sessFeatures,
+		},
+	)
+	require.NoError(t.t, err)
+
+	assertPrivacyFlags(net, t, session0.Session, clearPubkeysFlags)
+
+	// The peer restrict list contains Bob's pubkey in order to check
+	// against the privacy db later if the pubkey was obfuscated before any
+	// request was made or not.
+	peerRestrict := &litrpc.RuleValue_PeerRestrict{
+		PeerRestrict: &litrpc.PeerRestrict{
+			PeerIds: []string{net.Bob.PubKeyStr},
+		},
+	}
+
+	// Create a feature configuration map for some pubkey, it will be
+	// obfuscated depending on the privacy flags.
+	configPubkey := "0e092708c9e737115ff14a85b65466561280d" +
+		"77c1b8cd666bc655536ad81ccca85"
+
+	config := struct {
+		PubKeys []string `json:"pubkeys"`
+	}{
+		PubKeys: []string{configPubkey},
+	}
+	configBytes, err := json.Marshal(config)
+	require.NoError(t.t, err)
+
+	// We now set up a single *private* feature within a session using
+	// restrictions and a config.
+	privFeature := map[string]*litrpc.FeatureConfig{
+		"Private": {
+			Rules: &litrpc.RulesMap{
+				Rules: map[string]*litrpc.RuleValue{
+					rules.PeersRestrictName: {
+						Value: peerRestrict,
+					},
+				},
+			},
+			Config: configBytes,
+		},
+	}
+
+	session1, err := litAutopilotClient.AddAutopilotSession(
+		ctxm, &litrpc.AddAutopilotSessionRequest{
+			Label: "integration-test",
+			ExpiryTimestampSeconds: uint64(
+				time.Now().Add(5 * time.Minute).Unix(),
+			),
+			MailboxServerAddr: mailboxServerAddr,
+			Features:          privFeature,
+		},
+	)
+	require.NoError(t.t, err)
+
+	assertPrivacyFlags(net, t, session1.Session, session.PrivacyFlags{})
+
+	// Set up a client connection to query the privacy mapper.
+	litFWClient := litrpc.NewFirewallClient(rawConn)
+
+	// We should have a pseudo pair in the privacy mapper for Bob's pubkey
+	// due to the peer restriction and a pseudo pair for the config pubkey
+	// due to the feature config.
+	assertPseudo(ctxm, t.t, litFWClient, session1.Session.GroupId,
+		net.Bob.PubKeyStr, "")
+	assertPseudo(ctxm, t.t, litFWClient, session1.Session.GroupId,
+		configPubkey, "")
+
+	// We now set up a partially deobfuscated session.
+	nonPrivFeature := map[string]*litrpc.FeatureConfig{
+		"NonPrivate": {
+			Rules: &litrpc.RulesMap{
+				Rules: map[string]*litrpc.RuleValue{
+					rules.PeersRestrictName: {
+						Value: peerRestrict,
+					},
+				},
+			},
+			Config: configBytes,
+		},
+	}
+
+	session2, err := litAutopilotClient.AddAutopilotSession(
+		ctxm, &litrpc.AddAutopilotSessionRequest{
+			Label: "integration-test",
+			ExpiryTimestampSeconds: uint64(
+				time.Now().Add(5 * time.Minute).Unix(),
+			),
+			MailboxServerAddr: mailboxServerAddr,
+			Features:          nonPrivFeature,
+		},
+	)
+	require.NoError(t.t, err)
+
+	assertPrivacyFlags(net, t, session2.Session, clearPubkeysFlags)
+
+	// We shouldn't have a pseudo pair in the privacy mapper for Bob's
+	// pubkey or the config pubkey as pubkey mapping was turned off.
+	assertPseudo(ctxm, t.t, litFWClient, session2.Session.GroupId,
+		net.Bob.PubKeyStr, "no such key found")
+	assertPseudo(ctxm, t.t, litFWClient, session2.Session.GroupId,
+		configPubkey, "no such key found")
+
+	// Set up a client from the PoV of the autopilot server for the private
+	// session.
+	lndConn1, metaDataInjector, cleanup1 := newAutopilotLndConn(
+		ctx, t.t, net, session1.Session,
+	)
+	t.t.Cleanup(func() { require.NoError(t.t, cleanup1()) })
+
+	metaInfo1 := &firewall.InterceptMetaInfo{
+		ActorName: "Autopilot Server",
+		Feature:   "Private",
+	}
+	caveat1, err := metaInfo1.ToCaveat()
+	require.NoError(t.t, err)
+	caveatCreds1 := metaDataInjector.addCaveat(caveat1)
+
+	// Set up a client from the PoV of the autopilot server for the
+	// non-private session.
+	lndConn2, metaDataInjector, cleanup2 := newAutopilotLndConn(
+		ctx, t.t, net, session2.Session,
+	)
+	t.t.Cleanup(func() { require.NoError(t.t, cleanup2()) })
+
+	// The autopilot server is expected to add a MetaInfo caveat to any
+	// request that it makes. So we add that now and specify that it is
+	// initially making requests on behalf of the NonPrivate feature.
+	metaInfo2 := &firewall.InterceptMetaInfo{
+		ActorName: "Autopilot Server",
+		Feature:   "NonPrivate",
+	}
+	caveat2, err := metaInfo2.ToCaveat()
+	require.NoError(t.t, err)
+	caveatCreds2 := metaDataInjector.addCaveat(caveat2)
+
+	// We compare Alice's channels to the obfuscated and non-obfuscated
+	// channels.
+	obfuscatedChannels, err := lndConn1.ListChannels(
+		ctx, &lnrpc.ListChannelsRequest{}, caveatCreds1,
+	)
+	require.NoError(t.t, err)
+	require.Len(t.t, obfuscatedChannels.Channels, 1)
+
+	nonObfuscatedChannels, err := lndConn2.ListChannels(
+		ctx, &lnrpc.ListChannelsRequest{}, caveatCreds2,
+	)
+	require.NoError(t.t, err)
+	require.Len(t.t, nonObfuscatedChannels.Channels, 1)
+
+	clearChan := aliceChannels.Channels[0]
+	nonObfChan := nonObfuscatedChannels.Channels[0]
+	obfChan := obfuscatedChannels.Channels[0]
+
+	// In the non-obfuscated response we expect to see the clear text
+	// pubkey, while in the obfuscated response we expect to see a different
+	// pubkey.
+	require.Equal(t.t, clearChan.RemotePubkey, nonObfChan.RemotePubkey)
+	require.NotEqual(t.t, clearChan.RemotePubkey, obfChan.RemotePubkey)
+
+	// Other fields are still obfuscated.
+	require.NotEqual(t.t, clearChan.ChannelPoint, nonObfChan.ChannelPoint)
+	require.NotEqual(t.t, obfChan.ChannelPoint, nonObfChan.ChannelPoint)
+
+	// We now link to the private session registering a non-private
+	// feature. We expect that the new privacy flags have downgraded the
+	// privacy. Revoke the previous obfuscated session.
+	_, err = litAutopilotClient.RevokeAutopilotSession(
+		ctxm, &litrpc.RevokeAutopilotSessionRequest{
+			LocalPublicKey: session1.Session.LocalPublicKey,
+		},
+	)
+	require.NoError(t.t, err)
+
+	session3, err := litAutopilotClient.AddAutopilotSession(
+		ctxm, &litrpc.AddAutopilotSessionRequest{
+			Label: "integration-test",
+			ExpiryTimestampSeconds: uint64(
+				time.Now().Add(5 * time.Minute).Unix(),
+			),
+			MailboxServerAddr: mailboxServerAddr,
+			Features:          nonPrivFeature,
+			LinkedGroupId:     session1.Session.GroupId,
+		},
+	)
+	require.NoError(t.t, err)
+
+	assertPrivacyFlags(net, t, session3.Session, clearPubkeysFlags)
 }
 
 // testSessionLinking will test the expected behaviour across linked sessions.
@@ -1608,6 +1901,20 @@ func testLargeHttpHeader(ctx context.Context, net *NetworkHarness,
 	)
 	require.NoError(t.t, err)
 	require.Equal(t.t, aliceInfo.Alias, getInfoReq.Alias)
+}
+
+// assertPrivacyFlags is a helper function that asserts that the privacy
+// flags for the session are as expected.
+func assertPrivacyFlags(net *NetworkHarness, t *harnessTest,
+	sess *litrpc.Session, expectedFlags session.PrivacyFlags) {
+
+	litdPub, err := btcec.ParsePubKey(sess.LocalPublicKey)
+	require.NoError(t.t, err)
+
+	flags, err := net.autopilotServer.GetPrivacyFlags(litdPub)
+	require.NoError(t.t, err)
+
+	require.True(t.t, flags.Equal(expectedFlags))
 }
 
 // assertPseudo is a helper that can be used to query a privacy map DB to get
