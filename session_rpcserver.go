@@ -810,6 +810,15 @@ func (s *sessionRpcServer) ListAutopilotFeatures(ctx context.Context,
 			return nil, err
 		}
 
+		// We check whether we should upgrade because of unknown privacy
+		// flags.
+		_, err = session.Deserialize(f.PrivacyFlags)
+		if errors.Is(err, session.ErrUnknownPrivacyFlag) {
+			upgrade = true
+		} else if err != nil {
+			return nil, err
+		}
+
 		features[i] = &litrpc.Feature{
 			Name:            f.Name,
 			Description:     f.Description,
@@ -817,6 +826,7 @@ func (s *sessionRpcServer) ListAutopilotFeatures(ctx context.Context,
 			PermissionsList: marshalPerms(f.Permissions),
 			RequiresUpgrade: upgrade,
 			DefaultConfig:   string(f.DefaultConfig),
+			PrivacyFlags:    f.PrivacyFlags,
 		}
 	}
 

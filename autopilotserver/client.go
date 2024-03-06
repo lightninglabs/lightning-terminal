@@ -362,6 +362,7 @@ func (c *Client) ListFeatures(ctx context.Context) (map[string]*Feature,
 			Permissions:   perms,
 			Rules:         rules,
 			DefaultConfig: feature.DefaultConfig,
+			PrivacyFlags:  feature.PrivacyFlags,
 		}
 	}
 

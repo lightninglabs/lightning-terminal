@@ -73,6 +73,9 @@ type Feature struct {
 	// represents the default configuration we can use if the user doesn't
 	// specify any.
 	DefaultConfig []byte
+
+	// PrivacyFlags is a list of privacy flags that the feature requires.
+	PrivacyFlags uint64
 }
 
 // RuleValues holds the default value along with the sane max and min values
