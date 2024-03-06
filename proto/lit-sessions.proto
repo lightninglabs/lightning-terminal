@@ -212,6 +212,12 @@ message Session {
     a JSON-serialized configuration.
     */
     map<string, string> feature_configs = 18;
+
+    /*
+    Privacy flags used for the session that determine how the privacy mapper
+    operates.
+    */
+    uint64 privacy_flags = 19 [jstype = JS_STRING];
 }
 
 message MacaroonRecipe {

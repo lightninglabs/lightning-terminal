@@ -81,7 +81,9 @@ proto.litrpc.AddAutopilotSessionRequest.toObject = function(includeInstance, msg
     featuresMap: (f = msg.getFeaturesMap()) ? f.toObject(includeInstance, proto.litrpc.FeatureConfig.toObject) : [],
     sessionRules: (f = msg.getSessionRules()) && lit$sessions_pb.RulesMap.toObject(includeInstance, f),
     noPrivacyMapper: jspb.Message.getFieldWithDefault(msg, 7, false),
-    linkedGroupId: msg.getLinkedGroupId_asB64()
+    linkedGroupId: msg.getLinkedGroupId_asB64(),
+    privacyFlags: jspb.Message.getFieldWithDefault(msg, 9, "0"),
+    privacyFlagsSet: jspb.Message.getFieldWithDefault(msg, 10, false)
   };
 
   if (includeInstance) {
@@ -152,6 +154,14 @@ proto.litrpc.AddAutopilotSessionRequest.deserializeBinaryFromReader = function(m
     case 8:
       var value = /** @type {!Uint8Array} */ (reader.readBytes());
       msg.setLinkedGroupId(value);
+      break;
+    case 9:
+      var value = /** @type {string} */ (reader.readUint64String());
+      msg.setPrivacyFlags(value);
+      break;
+    case 10:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setPrivacyFlagsSet(value);
       break;
     default:
       reader.skipField();
@@ -233,6 +243,20 @@ proto.litrpc.AddAutopilotSessionRequest.serializeBinaryToWriter = function(messa
   if (f.length > 0) {
     writer.writeBytes(
       8,
+      f
+    );
+  }
+  f = message.getPrivacyFlags();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
+      9,
+      f
+    );
+  }
+  f = message.getPrivacyFlagsSet();
+  if (f) {
+    writer.writeBool(
+      10,
       f
     );
   }
@@ -402,6 +426,38 @@ proto.litrpc.AddAutopilotSessionRequest.prototype.getLinkedGroupId_asU8 = functi
 /** @param {!(string|Uint8Array)} value */
 proto.litrpc.AddAutopilotSessionRequest.prototype.setLinkedGroupId = function(value) {
   jspb.Message.setProto3BytesField(this, 8, value);
+};
+
+
+/**
+ * optional uint64 privacy_flags = 9;
+ * @return {string}
+ */
+proto.litrpc.AddAutopilotSessionRequest.prototype.getPrivacyFlags = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 9, "0"));
+};
+
+
+/** @param {string} value */
+proto.litrpc.AddAutopilotSessionRequest.prototype.setPrivacyFlags = function(value) {
+  jspb.Message.setProto3StringIntField(this, 9, value);
+};
+
+
+/**
+ * optional bool privacy_flags_set = 10;
+ * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
+ * You should avoid comparisons like {@code val === true/false} in those cases.
+ * @return {boolean}
+ */
+proto.litrpc.AddAutopilotSessionRequest.prototype.getPrivacyFlagsSet = function() {
+  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 10, false));
+};
+
+
+/** @param {boolean} value */
+proto.litrpc.AddAutopilotSessionRequest.prototype.setPrivacyFlagsSet = function(value) {
+  jspb.Message.setProto3BooleanField(this, 10, value);
 };
 
 

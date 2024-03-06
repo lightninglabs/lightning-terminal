@@ -32,6 +32,12 @@ export class AddAutopilotSessionRequest extends jspb.Message {
   getLinkedGroupId_asB64(): string;
   setLinkedGroupId(value: Uint8Array | string): void;
 
+  getPrivacyFlags(): string;
+  setPrivacyFlags(value: string): void;
+
+  getPrivacyFlagsSet(): boolean;
+  setPrivacyFlagsSet(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): AddAutopilotSessionRequest.AsObject;
   static toObject(includeInstance: boolean, msg: AddAutopilotSessionRequest): AddAutopilotSessionRequest.AsObject;
@@ -52,6 +58,8 @@ export namespace AddAutopilotSessionRequest {
     sessionRules?: lit_sessions_pb.RulesMap.AsObject,
     noPrivacyMapper: boolean,
     linkedGroupId: Uint8Array | string,
+    privacyFlags: string,
+    privacyFlagsSet: boolean,
   }
 }
 
