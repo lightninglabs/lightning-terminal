@@ -236,6 +236,9 @@ export class Feature extends jspb.Message {
   getDefaultConfig(): string;
   setDefaultConfig(value: string): void;
 
+  getPrivacyFlags(): string;
+  setPrivacyFlags(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Feature.AsObject;
   static toObject(includeInstance: boolean, msg: Feature): Feature.AsObject;
@@ -254,6 +257,7 @@ export namespace Feature {
     permissionsListList: Array<Permissions.AsObject>,
     requiresUpgrade: boolean,
     defaultConfig: string,
+    privacyFlags: string,
   }
 }
 

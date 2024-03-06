@@ -269,6 +269,11 @@
         "default_config": {
           "type": "string",
           "description": "The JSON-marshaled representation of a feature's default configuration."
+        },
+        "privacy_flags": {
+          "type": "string",
+          "format": "uint64",
+          "description": "This feature may require relaxed privacy obfuscation that can be enabled\nwith these flags."
         }
       }
     },

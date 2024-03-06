@@ -166,6 +166,12 @@ message Feature {
     The JSON-marshaled representation of a feature's default configuration.
     */
     string default_config = 6;
+
+    /*
+    This feature may require relaxed privacy obfuscation that can be enabled
+    with these flags.
+    */
+    uint64 privacy_flags = 7;
 }
 
 message RuleValues {

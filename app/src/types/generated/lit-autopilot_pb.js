@@ -1660,7 +1660,8 @@ proto.litrpc.Feature.toObject = function(includeInstance, msg) {
     permissionsListList: jspb.Message.toObjectList(msg.getPermissionsListList(),
     proto.litrpc.Permissions.toObject, includeInstance),
     requiresUpgrade: jspb.Message.getFieldWithDefault(msg, 5, false),
-    defaultConfig: jspb.Message.getFieldWithDefault(msg, 6, "")
+    defaultConfig: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    privacyFlags: jspb.Message.getFieldWithDefault(msg, 7, "0")
   };
 
   if (includeInstance) {
@@ -1723,6 +1724,10 @@ proto.litrpc.Feature.deserializeBinaryFromReader = function(msg, reader) {
     case 6:
       var value = /** @type {string} */ (reader.readString());
       msg.setDefaultConfig(value);
+      break;
+    case 7:
+      var value = /** @type {string} */ (reader.readUint64String());
+      msg.setPrivacyFlags(value);
       break;
     default:
       reader.skipField();
@@ -1790,6 +1795,13 @@ proto.litrpc.Feature.serializeBinaryToWriter = function(message, writer) {
   if (f.length > 0) {
     writer.writeString(
       6,
+      f
+    );
+  }
+  f = message.getPrivacyFlags();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
+      7,
       f
     );
   }
@@ -1904,6 +1916,21 @@ proto.litrpc.Feature.prototype.getDefaultConfig = function() {
 /** @param {string} value */
 proto.litrpc.Feature.prototype.setDefaultConfig = function(value) {
   jspb.Message.setProto3StringField(this, 6, value);
+};
+
+
+/**
+ * optional uint64 privacy_flags = 7;
+ * @return {string}
+ */
+proto.litrpc.Feature.prototype.getPrivacyFlags = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 7, "0"));
+};
+
+
+/** @param {string} value */
+proto.litrpc.Feature.prototype.setPrivacyFlags = function(value) {
+  jspb.Message.setProto3StringIntField(this, 7, value);
 };
 
 
