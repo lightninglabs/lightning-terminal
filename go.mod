@@ -11,12 +11,12 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.11.3
 	github.com/improbable-eng/grpc-web v0.12.0
 	github.com/jessevdk/go-flags v1.4.0
-	github.com/lightninglabs/faraday v0.2.11-alpha.0.20231003174141-945b7188032f
-	github.com/lightninglabs/lightning-node-connect v0.3.0-alpha.0.20240208172904-08e5d9e85972
+	github.com/lightninglabs/faraday v0.2.13-alpha
+	github.com/lightninglabs/lightning-node-connect v0.3.1-alpha
 	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.1
-	github.com/lightninglabs/lndclient v0.17.0-4
-	github.com/lightninglabs/loop v0.27.0-beta
-	github.com/lightninglabs/loop/swapserverrpc v1.0.6
+	github.com/lightninglabs/lndclient v0.17.4-1
+	github.com/lightninglabs/loop v0.28.0-beta
+	github.com/lightninglabs/loop/swapserverrpc v1.0.7
 	github.com/lightninglabs/pool v0.6.4-beta.0.20231003174306-80d8854a0c4b
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.1
 	github.com/lightninglabs/taproot-assets v0.3.3
