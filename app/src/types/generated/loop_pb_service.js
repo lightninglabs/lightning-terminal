@@ -163,6 +163,33 @@ SwapClient.ListReservations = {
   responseType: loop_pb.ListReservationsResponse
 };
 
+SwapClient.InstantOut = {
+  methodName: "InstantOut",
+  service: SwapClient,
+  requestStream: false,
+  responseStream: false,
+  requestType: loop_pb.InstantOutRequest,
+  responseType: loop_pb.InstantOutResponse
+};
+
+SwapClient.InstantOutQuote = {
+  methodName: "InstantOutQuote",
+  service: SwapClient,
+  requestStream: false,
+  responseStream: false,
+  requestType: loop_pb.InstantOutQuoteRequest,
+  responseType: loop_pb.InstantOutQuoteResponse
+};
+
+SwapClient.ListInstantOuts = {
+  methodName: "ListInstantOuts",
+  service: SwapClient,
+  requestStream: false,
+  responseStream: false,
+  requestType: loop_pb.ListInstantOutsRequest,
+  responseType: loop_pb.ListInstantOutsResponse
+};
+
 exports.SwapClient = SwapClient;
 
 function SwapClientClient(serviceHost, options) {
@@ -679,6 +706,99 @@ SwapClientClient.prototype.listReservations = function listReservations(requestM
     callback = arguments[1];
   }
   var client = grpc.unary(SwapClient.ListReservations, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+SwapClientClient.prototype.instantOut = function instantOut(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(SwapClient.InstantOut, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+SwapClientClient.prototype.instantOutQuote = function instantOutQuote(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(SwapClient.InstantOutQuote, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+SwapClientClient.prototype.listInstantOuts = function listInstantOuts(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(SwapClient.ListInstantOuts, {
     request: requestMessage,
     host: this.serviceHost,
     metadata: metadata,

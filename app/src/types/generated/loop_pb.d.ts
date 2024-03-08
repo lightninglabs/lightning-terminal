@@ -58,6 +58,13 @@ export class LoopOutRequest extends jspb.Message {
   getIsExternalAddr(): boolean;
   setIsExternalAddr(value: boolean): void;
 
+  clearReservationIdsList(): void;
+  getReservationIdsList(): Array<Uint8Array | string>;
+  getReservationIdsList_asU8(): Array<Uint8Array>;
+  getReservationIdsList_asB64(): Array<string>;
+  setReservationIdsList(value: Array<Uint8Array | string>): void;
+  addReservationIds(value: Uint8Array | string, index?: number): Uint8Array | string;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LoopOutRequest.AsObject;
   static toObject(includeInstance: boolean, msg: LoopOutRequest): LoopOutRequest.AsObject;
@@ -87,6 +94,7 @@ export namespace LoopOutRequest {
     account: string,
     accountAddrType: AddressTypeMap[keyof AddressTypeMap],
     isExternalAddr: boolean,
+    reservationIdsList: Array<Uint8Array | string>,
   }
 }
 
@@ -1236,10 +1244,8 @@ export class ClientReservation extends jspb.Message {
   getAmount(): string;
   setAmount(value: string): void;
 
-  getTxId(): Uint8Array | string;
-  getTxId_asU8(): Uint8Array;
-  getTxId_asB64(): string;
-  setTxId(value: Uint8Array | string): void;
+  getTxId(): string;
+  setTxId(value: string): void;
 
   getVout(): number;
   setVout(value: number): void;
@@ -1262,9 +1268,201 @@ export namespace ClientReservation {
     reservationId: Uint8Array | string,
     state: string,
     amount: string,
-    txId: Uint8Array | string,
+    txId: string,
     vout: number,
     expiry: number,
+  }
+}
+
+export class InstantOutRequest extends jspb.Message {
+  clearReservationIdsList(): void;
+  getReservationIdsList(): Array<Uint8Array | string>;
+  getReservationIdsList_asU8(): Array<Uint8Array>;
+  getReservationIdsList_asB64(): Array<string>;
+  setReservationIdsList(value: Array<Uint8Array | string>): void;
+  addReservationIds(value: Uint8Array | string, index?: number): Uint8Array | string;
+
+  clearOutgoingChanSetList(): void;
+  getOutgoingChanSetList(): Array<string>;
+  setOutgoingChanSetList(value: Array<string>): void;
+  addOutgoingChanSet(value: string, index?: number): string;
+
+  getDestAddr(): string;
+  setDestAddr(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): InstantOutRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: InstantOutRequest): InstantOutRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: InstantOutRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): InstantOutRequest;
+  static deserializeBinaryFromReader(message: InstantOutRequest, reader: jspb.BinaryReader): InstantOutRequest;
+}
+
+export namespace InstantOutRequest {
+  export type AsObject = {
+    reservationIdsList: Array<Uint8Array | string>,
+    outgoingChanSetList: Array<string>,
+    destAddr: string,
+  }
+}
+
+export class InstantOutResponse extends jspb.Message {
+  getInstantOutHash(): Uint8Array | string;
+  getInstantOutHash_asU8(): Uint8Array;
+  getInstantOutHash_asB64(): string;
+  setInstantOutHash(value: Uint8Array | string): void;
+
+  getSweepTxId(): string;
+  setSweepTxId(value: string): void;
+
+  getState(): string;
+  setState(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): InstantOutResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: InstantOutResponse): InstantOutResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: InstantOutResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): InstantOutResponse;
+  static deserializeBinaryFromReader(message: InstantOutResponse, reader: jspb.BinaryReader): InstantOutResponse;
+}
+
+export namespace InstantOutResponse {
+  export type AsObject = {
+    instantOutHash: Uint8Array | string,
+    sweepTxId: string,
+    state: string,
+  }
+}
+
+export class InstantOutQuoteRequest extends jspb.Message {
+  getAmt(): string;
+  setAmt(value: string): void;
+
+  getNumReservations(): number;
+  setNumReservations(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): InstantOutQuoteRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: InstantOutQuoteRequest): InstantOutQuoteRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: InstantOutQuoteRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): InstantOutQuoteRequest;
+  static deserializeBinaryFromReader(message: InstantOutQuoteRequest, reader: jspb.BinaryReader): InstantOutQuoteRequest;
+}
+
+export namespace InstantOutQuoteRequest {
+  export type AsObject = {
+    amt: string,
+    numReservations: number,
+  }
+}
+
+export class InstantOutQuoteResponse extends jspb.Message {
+  getServiceFeeSat(): string;
+  setServiceFeeSat(value: string): void;
+
+  getSweepFeeSat(): string;
+  setSweepFeeSat(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): InstantOutQuoteResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: InstantOutQuoteResponse): InstantOutQuoteResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: InstantOutQuoteResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): InstantOutQuoteResponse;
+  static deserializeBinaryFromReader(message: InstantOutQuoteResponse, reader: jspb.BinaryReader): InstantOutQuoteResponse;
+}
+
+export namespace InstantOutQuoteResponse {
+  export type AsObject = {
+    serviceFeeSat: string,
+    sweepFeeSat: string,
+  }
+}
+
+export class ListInstantOutsRequest extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListInstantOutsRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: ListInstantOutsRequest): ListInstantOutsRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ListInstantOutsRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListInstantOutsRequest;
+  static deserializeBinaryFromReader(message: ListInstantOutsRequest, reader: jspb.BinaryReader): ListInstantOutsRequest;
+}
+
+export namespace ListInstantOutsRequest {
+  export type AsObject = {
+  }
+}
+
+export class ListInstantOutsResponse extends jspb.Message {
+  clearSwapsList(): void;
+  getSwapsList(): Array<InstantOut>;
+  setSwapsList(value: Array<InstantOut>): void;
+  addSwaps(value?: InstantOut, index?: number): InstantOut;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListInstantOutsResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: ListInstantOutsResponse): ListInstantOutsResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ListInstantOutsResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListInstantOutsResponse;
+  static deserializeBinaryFromReader(message: ListInstantOutsResponse, reader: jspb.BinaryReader): ListInstantOutsResponse;
+}
+
+export namespace ListInstantOutsResponse {
+  export type AsObject = {
+    swapsList: Array<InstantOut.AsObject>,
+  }
+}
+
+export class InstantOut extends jspb.Message {
+  getSwapHash(): Uint8Array | string;
+  getSwapHash_asU8(): Uint8Array;
+  getSwapHash_asB64(): string;
+  setSwapHash(value: Uint8Array | string): void;
+
+  getState(): string;
+  setState(value: string): void;
+
+  getAmount(): string;
+  setAmount(value: string): void;
+
+  clearReservationIdsList(): void;
+  getReservationIdsList(): Array<Uint8Array | string>;
+  getReservationIdsList_asU8(): Array<Uint8Array>;
+  getReservationIdsList_asB64(): Array<string>;
+  setReservationIdsList(value: Array<Uint8Array | string>): void;
+  addReservationIds(value: Uint8Array | string, index?: number): Uint8Array | string;
+
+  getSweepTxId(): string;
+  setSweepTxId(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): InstantOut.AsObject;
+  static toObject(includeInstance: boolean, msg: InstantOut): InstantOut.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: InstantOut, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): InstantOut;
+  static deserializeBinaryFromReader(message: InstantOut, reader: jspb.BinaryReader): InstantOut;
+}
+
+export namespace InstantOut {
+  export type AsObject = {
+    swapHash: Uint8Array | string,
+    state: string,
+    amount: string,
+    reservationIdsList: Array<Uint8Array | string>,
+    sweepTxId: string,
   }
 }
 
@@ -1303,6 +1501,7 @@ export interface FailureReasonMap {
   FAILURE_REASON_INCORRECT_AMOUNT: 6;
   FAILURE_REASON_ABANDONED: 7;
   FAILURE_REASON_INSUFFICIENT_CONFIRMED_BALANCE: 8;
+  FAILURE_REASON_INCORRECT_HTLC_AMT_SWEPT: 9;
 }
 
 export const FailureReason: FailureReasonMap;

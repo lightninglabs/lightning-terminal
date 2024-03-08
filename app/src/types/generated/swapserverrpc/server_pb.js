@@ -51,6 +51,7 @@ goog.exportSymbol('proto.looprpc.ServerProbeResponse', null, global);
 goog.exportSymbol('proto.looprpc.ServerPushKeyReq', null, global);
 goog.exportSymbol('proto.looprpc.ServerPushKeyRes', null, global);
 goog.exportSymbol('proto.looprpc.ServerSwapState', null, global);
+goog.exportSymbol('proto.looprpc.StaticAddressProtocolVersion', null, global);
 goog.exportSymbol('proto.looprpc.SubscribeLoopInUpdatesResponse', null, global);
 goog.exportSymbol('proto.looprpc.SubscribeLoopOutUpdatesResponse', null, global);
 goog.exportSymbol('proto.looprpc.SubscribeUpdatesRequest', null, global);
@@ -7766,6 +7767,13 @@ proto.looprpc.PaymentFailureReason = {
 proto.looprpc.RoutingPlugin = {
   NONE: 0,
   LOW_HIGH: 1
+};
+
+/**
+ * @enum {number}
+ */
+proto.looprpc.StaticAddressProtocolVersion = {
+  V0: 0
 };
 
 goog.object.extend(exports, proto.looprpc);

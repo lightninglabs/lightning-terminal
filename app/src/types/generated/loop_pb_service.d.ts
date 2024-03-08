@@ -157,6 +157,33 @@ type SwapClientListReservations = {
   readonly responseType: typeof loop_pb.ListReservationsResponse;
 };
 
+type SwapClientInstantOut = {
+  readonly methodName: string;
+  readonly service: typeof SwapClient;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof loop_pb.InstantOutRequest;
+  readonly responseType: typeof loop_pb.InstantOutResponse;
+};
+
+type SwapClientInstantOutQuote = {
+  readonly methodName: string;
+  readonly service: typeof SwapClient;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof loop_pb.InstantOutQuoteRequest;
+  readonly responseType: typeof loop_pb.InstantOutQuoteResponse;
+};
+
+type SwapClientListInstantOuts = {
+  readonly methodName: string;
+  readonly service: typeof SwapClient;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof loop_pb.ListInstantOutsRequest;
+  readonly responseType: typeof loop_pb.ListInstantOutsResponse;
+};
+
 export class SwapClient {
   static readonly serviceName: string;
   static readonly LoopOut: SwapClientLoopOut;
@@ -176,6 +203,9 @@ export class SwapClient {
   static readonly SetLiquidityParams: SwapClientSetLiquidityParams;
   static readonly SuggestSwaps: SwapClientSuggestSwaps;
   static readonly ListReservations: SwapClientListReservations;
+  static readonly InstantOut: SwapClientInstantOut;
+  static readonly InstantOutQuote: SwapClientInstantOutQuote;
+  static readonly ListInstantOuts: SwapClientListInstantOuts;
 }
 
 export type ServiceError = { message: string, code: number; metadata: grpc.Metadata }
@@ -354,6 +384,33 @@ export class SwapClientClient {
   listReservations(
     requestMessage: loop_pb.ListReservationsRequest,
     callback: (error: ServiceError|null, responseMessage: loop_pb.ListReservationsResponse|null) => void
+  ): UnaryResponse;
+  instantOut(
+    requestMessage: loop_pb.InstantOutRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.InstantOutResponse|null) => void
+  ): UnaryResponse;
+  instantOut(
+    requestMessage: loop_pb.InstantOutRequest,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.InstantOutResponse|null) => void
+  ): UnaryResponse;
+  instantOutQuote(
+    requestMessage: loop_pb.InstantOutQuoteRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.InstantOutQuoteResponse|null) => void
+  ): UnaryResponse;
+  instantOutQuote(
+    requestMessage: loop_pb.InstantOutQuoteRequest,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.InstantOutQuoteResponse|null) => void
+  ): UnaryResponse;
+  listInstantOuts(
+    requestMessage: loop_pb.ListInstantOutsRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.ListInstantOutsResponse|null) => void
+  ): UnaryResponse;
+  listInstantOuts(
+    requestMessage: loop_pb.ListInstantOutsRequest,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.ListInstantOutsResponse|null) => void
   ): UnaryResponse;
 }
 

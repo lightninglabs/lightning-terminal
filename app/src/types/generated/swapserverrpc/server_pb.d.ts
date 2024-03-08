@@ -1111,3 +1111,9 @@ export interface RoutingPluginMap {
 
 export const RoutingPlugin: RoutingPluginMap;
 
+export interface StaticAddressProtocolVersionMap {
+  V0: 0;
+}
+
+export const StaticAddressProtocolVersion: StaticAddressProtocolVersionMap;
+
