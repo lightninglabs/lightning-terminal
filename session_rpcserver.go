@@ -1503,6 +1503,7 @@ func (s *sessionRpcServer) marshalRPCSession(sess *session.Session) (
 		AutopilotFeatureInfo:   featureInfo,
 		GroupId:                sess.GroupID[:],
 		FeatureConfigs:         clientConfig,
+		PrivacyFlags:           sess.PrivacyFlags.Serialize(),
 	}, nil
 }
 
