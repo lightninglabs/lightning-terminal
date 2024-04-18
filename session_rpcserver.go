@@ -1348,10 +1348,13 @@ func convertRules(ruleMgr rules.ManagerSet,
 		knownRules = ruleMgr.GetAllRules()
 	)
 	for name, rule := range ruleList {
-		known := true
 		if !knownRules[name] {
 			upgrade = true
-			known = false
+			res[name] = &litrpc.RuleValues{
+				Known: false,
+			}
+
+			continue
 		}
 
 		defaultVals, err := ruleMgr.InitRuleValues(name, rule.Default)
@@ -1370,7 +1373,7 @@ func convertRules(ruleMgr rules.ManagerSet,
 		}
 
 		res[name] = &litrpc.RuleValues{
-			Known:    known,
+			Known:    true,
 			Defaults: defaultVals.ToProto(),
 			MinValue: minVals.ToProto(),
 			MaxValue: maxVals.ToProto(),
