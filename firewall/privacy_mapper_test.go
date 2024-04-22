@@ -77,6 +77,7 @@ func TestPrivacyMapper(t *testing.T) {
 		outPoint(clearTxID, 0):  outPoint(obfusTxID0, obfusOut0),
 		outPoint(clearTxID, 1):  outPoint(obfusTxID1, obfusOut1),
 		"01020304":              "c8134495",
+		"secret-host.com":       "sksiuekalkdoowurekdf",
 	}
 
 	var (
@@ -825,6 +826,45 @@ func TestPrivacyMapper(t *testing.T) {
 					FundingTxidBytes: clearTxIDReveresed[:],
 				},
 				OutputIndex: 0,
+			},
+		},
+
+		{
+			name:    "ConnectPeer Request",
+			uri:     "/lnrpc.Lightning/ConnectPeer",
+			msgType: rpcperms.TypeRequest,
+			msg: &lnrpc.ConnectPeerRequest{
+				Addr: &lnrpc.LightningAddress{
+					Pubkey: "c8134495",
+					Host:   "sksiuekalkdoowurekdf",
+				},
+			},
+			expectedReplacement: &lnrpc.ConnectPeerRequest{
+				Addr: &lnrpc.LightningAddress{
+					Pubkey: "01020304",
+					Host:   "secret-host.com",
+				},
+			},
+		},
+		{
+			name:    "ConnectPeer Request clear",
+			uri:     "/lnrpc.Lightning/ConnectPeer",
+			msgType: rpcperms.TypeRequest,
+			msg: &lnrpc.ConnectPeerRequest{
+				Addr: &lnrpc.LightningAddress{
+					Pubkey: "c8134495",
+					Host:   "secret-host.com",
+				},
+			},
+			privacyFlags: []session.PrivacyFlag{
+				session.ClearPubkeys,
+				session.ClearNetworkAddresses,
+			},
+			expectedReplacement: &lnrpc.ConnectPeerRequest{
+				Addr: &lnrpc.LightningAddress{
+					Pubkey: "c8134495",
+					Host:   "secret-host.com",
+				},
 			},
 		},
 	}

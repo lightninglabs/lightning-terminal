@@ -312,6 +312,12 @@ func (p *PrivacyMapper) checkers(db firewalldb.PrivacyMapDB,
 			handleChannelOpenResponse(db, flags),
 			mid.PassThroughErrorHandler,
 		),
+
+		"/lnrpc.Lightning/ConnectPeer": mid.NewRequestRewriter(
+			&lnrpc.ConnectPeerRequest{},
+			&lnrpc.ConnectPeerResponse{},
+			handleConnectPeerRequest(db, flags),
+		),
 	}
 }
 
@@ -1609,6 +1615,63 @@ func handleChannelOpenResponse(db firewalldb.PrivacyMapDB,
 			return nil, fmt.Errorf("channel point has no funding " +
 				"txid")
 		}
+	}
+}
+
+func handleConnectPeerRequest(db firewalldb.PrivacyMapDB,
+	flags session.PrivacyFlags) func(ctx context.Context,
+	r *lnrpc.ConnectPeerRequest) (proto.Message, error) {
+
+	return func(_ context.Context, r *lnrpc.ConnectPeerRequest) (
+		proto.Message, error) {
+
+		var addr *lnrpc.LightningAddress
+
+		err := db.View(func(tx firewalldb.PrivacyMapTx) error {
+			var err error
+
+			// Note, this only works if the pubkey alias was
+			// already created via other calls, e.g. via
+			// ListChannels or GetNodeInfo.
+			pubkey := r.Addr.Pubkey
+			if !flags.Contains(session.ClearPubkeys) {
+				pubkey, err = firewalldb.RevealString(
+					tx, r.Addr.Pubkey,
+				)
+				if err != nil {
+					return err
+				}
+			}
+
+			host := r.Addr.Host
+			if !flags.Contains(session.ClearNetworkAddresses) {
+				host, err = firewalldb.RevealString(
+					tx, r.Addr.Host,
+				)
+				if err != nil {
+					return err
+				}
+			}
+
+			addr = &lnrpc.LightningAddress{
+				Pubkey: pubkey,
+				Host:   host,
+			}
+
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		return &lnrpc.ConnectPeerRequest{
+			// Obfuscated fields.
+			Addr: addr,
+
+			// Non-obfuscated fields.
+			Perm:    r.Perm,
+			Timeout: r.Timeout,
+		}, nil
 	}
 }
 
