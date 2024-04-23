@@ -30,7 +30,7 @@ var _ mid.RequestInterceptor = (*RuleEnforcer)(nil)
 type RuleEnforcer struct {
 	ruleDB            firewalldb.RulesDB
 	actionsDB         firewalldb.ActionReadDBGetter
-	sessionIDIndexDB  session.IDToGroupIndex
+	sessionDB         firewalldb.SessionDB
 	markActionErrored func(reqID uint64, reason string) error
 	newPrivMap        firewalldb.NewPrivacyMapDB
 
@@ -52,7 +52,7 @@ type featurePerms func(ctx context.Context) (map[string]map[string]bool, error)
 // NewRuleEnforcer constructs a new RuleEnforcer instance.
 func NewRuleEnforcer(ruleDB firewalldb.RulesDB,
 	actionsDB firewalldb.ActionReadDBGetter,
-	sessionIDIndex session.IDToGroupIndex,
+	sessionIDIndex firewalldb.SessionDB,
 	getFeaturePerms featurePerms, permsMgr *perms.Manager, nodeID [33]byte,
 	routerClient lndclient.RouterClient,
 	lndClient lndclient.LightningClient, ruleMgrs rules.ManagerSet,
@@ -70,7 +70,7 @@ func NewRuleEnforcer(ruleDB firewalldb.RulesDB,
 		ruleMgrs:          ruleMgrs,
 		markActionErrored: markActionErrored,
 		newPrivMap:        privMap,
-		sessionIDIndexDB:  sessionIDIndex,
+		sessionDB:         sessionIDIndex,
 	}
 }
 
@@ -224,7 +224,7 @@ func (r *RuleEnforcer) handleRequest(ctx context.Context,
 		return nil, fmt.Errorf("could not extract ID from macaroon")
 	}
 
-	groupID, err := r.sessionIDIndexDB.GetGroupID(sessionID)
+	groupID, err := r.sessionDB.GetGroupID(sessionID)
 	if err != nil {
 		return nil, err
 	}
@@ -269,7 +269,7 @@ func (r *RuleEnforcer) handleResponse(ctx context.Context,
 		return nil, fmt.Errorf("could not extract ID from macaroon")
 	}
 
-	groupID, err := r.sessionIDIndexDB.GetGroupID(sessionID)
+	groupID, err := r.sessionDB.GetGroupID(sessionID)
 	if err != nil {
 		return nil, err
 	}
@@ -308,7 +308,7 @@ func (r *RuleEnforcer) handleErrorResponse(ctx context.Context,
 		return nil, fmt.Errorf("could not extract ID from macaroon")
 	}
 
-	groupID, err := r.sessionIDIndexDB.GetGroupID(sessionID)
+	groupID, err := r.sessionDB.GetGroupID(sessionID)
 	if err != nil {
 		return nil, err
 	}

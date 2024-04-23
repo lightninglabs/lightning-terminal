@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/stretchr/testify/require"
 )
 
@@ -346,9 +345,9 @@ func TestListGroupActions(t *testing.T) {
 	group1 := intToSessionID(0)
 
 	// Link session 1 and session 2 to group 1.
-	index := newMockSessionIDIndex()
-	index.addPair(sessionID1, group1)
-	index.addPair(sessionID2, group1)
+	index := NewMockSessionDB()
+	index.AddPair(sessionID1, group1)
+	index.AddPair(sessionID2, group1)
 
 	db, err := NewDB(t.TempDir(), "test.db", index)
 	require.NoError(t, err)
@@ -381,49 +380,4 @@ func TestListGroupActions(t *testing.T) {
 	require.Len(t, al, 2)
 	require.Equal(t, sessionID1, al[0].SessionID)
 	require.Equal(t, sessionID2, al[1].SessionID)
-}
-
-type mockSessionIDIndex struct {
-	sessionToGroupID  map[session.ID]session.ID
-	groupToSessionIDs map[session.ID][]session.ID
-}
-
-var _ session.IDToGroupIndex = (*mockSessionIDIndex)(nil)
-
-func newMockSessionIDIndex() *mockSessionIDIndex {
-	return &mockSessionIDIndex{
-		sessionToGroupID:  make(map[session.ID]session.ID),
-		groupToSessionIDs: make(map[session.ID][]session.ID),
-	}
-}
-
-func (m *mockSessionIDIndex) addPair(sessionID, groupID session.ID) {
-	m.sessionToGroupID[sessionID] = groupID
-
-	m.groupToSessionIDs[groupID] = append(
-		m.groupToSessionIDs[groupID], sessionID,
-	)
-}
-
-func (m *mockSessionIDIndex) GetGroupID(sessionID session.ID) (session.ID,
-	error) {
-
-	id, ok := m.sessionToGroupID[sessionID]
-	if !ok {
-		return session.ID{}, fmt.Errorf("no group ID found for " +
-			"session ID")
-	}
-
-	return id, nil
-}
-
-func (m *mockSessionIDIndex) GetSessionIDs(groupID session.ID) ([]session.ID,
-	error) {
-
-	ids, ok := m.groupToSessionIDs[groupID]
-	if !ok {
-		return nil, fmt.Errorf("no session IDs found for group ID")
-	}
-
-	return ids, nil
 }

@@ -3,7 +3,6 @@ package firewall
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"testing"
 	"time"
 
@@ -292,17 +291,18 @@ func TestPrivacyMapper(t *testing.T) {
 		"01020304": "c8134495",
 	}
 
-	db := newMockDB(t, mapPreloadRealToPseudo, sessionID)
-
-	err = db.AddSessionAndGroupIDPair(sessionID, sessionID)
-	require.NoError(t, err)
-
-	// randIntn is used for deterministic testing.
-	randIntn := func(n int) (int, error) { return 100, nil }
-	p := NewPrivacyMapper(db.NewSessionDB, randIntn, db)
-
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			// Initialize privacy mapping.
+			db := newMockDB(t, mapPreloadRealToPseudo, sessionID)
+
+			pd := firewalldb.NewMockSessionDB()
+			pd.AddPair(sessionID, sessionID)
+
+			// randIntn is used for deterministic testing.
+			randIntn := func(n int) (int, error) { return 100, nil }
+			p := NewPrivacyMapper(db.NewSessionDB, randIntn, pd)
+
 			rawMsg, err := proto.Marshal(test.msg)
 			require.NoError(t, err)
 
@@ -341,6 +341,12 @@ func TestPrivacyMapper(t *testing.T) {
 
 	// Subtest to test behavior with real randomness.
 	t.Run("Response with randomness", func(t *testing.T) {
+		// Initialize privacy mapping.
+		db := newMockDB(t, mapPreloadRealToPseudo, sessionID)
+
+		pd := firewalldb.NewMockSessionDB()
+		pd.AddPair(sessionID, sessionID)
+
 		msg := &lnrpc.ForwardingHistoryResponse{
 			ForwardingEvents: []*lnrpc.ForwardingEvent{
 				{
@@ -360,7 +366,7 @@ func TestPrivacyMapper(t *testing.T) {
 		rawMsg, err := proto.Marshal(msg)
 		require.NoError(t, err)
 
-		p = NewPrivacyMapper(db.NewSessionDB, CryptoRandIntn, db)
+		p := NewPrivacyMapper(db.NewSessionDB, CryptoRandIntn, pd)
 		require.NoError(t, err)
 
 		// We test the independent outgoing amount (incoming amount
@@ -373,7 +379,7 @@ func TestPrivacyMapper(t *testing.T) {
 		// We keep track of the timestamp. We test only the timestamp in
 		// seconds as there can be numerical inaccuracies with the
 		// nanosecond one.
-		timestamp := msg.ForwardingEvents[0].Timestamp
+		timestamp := msg.ForwardingEvents[0].TimestampNs / 1e9
 		timestampInterval := uint64(timeVariation) / 1e9
 		minTime := timestamp - timestampInterval
 		maxTime := timestamp + timestampInterval
@@ -447,19 +453,12 @@ func TestPrivacyMapper(t *testing.T) {
 
 type mockDB struct {
 	privDB map[string]*mockPrivacyMapDB
-
-	sessionIDIndex map[session.ID]session.ID
-	groupIDIndex   map[session.ID][]session.ID
 }
 
 func newMockDB(t *testing.T, preloadRealToPseudo map[string]string,
 	sessID session.ID) mockDB {
 
-	db := mockDB{
-		privDB:         make(map[string]*mockPrivacyMapDB),
-		sessionIDIndex: make(map[session.ID]session.ID),
-		groupIDIndex:   make(map[session.ID][]session.ID),
-	}
+	db := mockDB{privDB: make(map[string]*mockPrivacyMapDB)}
 	sessDB := db.NewSessionDB(sessID)
 
 	_ = sessDB.Update(func(tx firewalldb.PrivacyMapTx) error {
@@ -482,30 +481,6 @@ func (m mockDB) NewSessionDB(sessionID session.ID) firewalldb.PrivacyMapDB {
 	m.privDB[string(sessionID[:])] = newDB
 
 	return newDB
-}
-
-func (m mockDB) AddSessionAndGroupIDPair(sessionID, groupID session.ID) error {
-	m.sessionIDIndex[sessionID] = groupID
-	m.groupIDIndex[groupID] = append(m.groupIDIndex[groupID], sessionID)
-	return nil
-}
-
-func (m mockDB) GetGroupID(sessionID session.ID) (session.ID, error) {
-	groupID, ok := m.sessionIDIndex[sessionID]
-	if !ok {
-		return session.ID{}, fmt.Errorf("group ID not found")
-	}
-
-	return groupID, nil
-}
-
-func (m mockDB) GetSessionIDs(groupID session.ID) ([]session.ID, error) {
-	sessionIDs, ok := m.groupIDIndex[groupID]
-	if !ok {
-		return nil, fmt.Errorf("group ID not found")
-	}
-
-	return sessionIDs, nil
 }
 
 func newMockPrivacyMapDB() *mockPrivacyMapDB {

@@ -59,21 +59,21 @@ var _ mid.RequestInterceptor = (*PrivacyMapper)(nil)
 // PrivacyMapper is a RequestInterceptor that maps any pseudo names in certain
 // requests to their real values and vice versa for responses.
 type PrivacyMapper struct {
-	newDB            firewalldb.NewPrivacyMapDB
-	randIntn         func(int) (int, error)
-	sessionIDIndexDB session.IDToGroupIndex
+	newDB     firewalldb.NewPrivacyMapDB
+	randIntn  func(int) (int, error)
+	sessionDB firewalldb.SessionDB
 }
 
 // NewPrivacyMapper returns a new instance of PrivacyMapper. The randIntn
 // function is used to draw randomness for request field obfuscation.
 func NewPrivacyMapper(newDB firewalldb.NewPrivacyMapDB,
 	randIntn func(int) (int, error),
-	sessionIDIndexDB session.IDToGroupIndex) *PrivacyMapper {
+	sessionDB firewalldb.SessionDB) *PrivacyMapper {
 
 	return &PrivacyMapper{
-		newDB:            newDB,
-		randIntn:         randIntn,
-		sessionIDIndexDB: sessionIDIndexDB,
+		newDB:     newDB,
+		randIntn:  randIntn,
+		sessionDB: sessionDB,
 	}
 }
 
@@ -111,7 +111,7 @@ func (p *PrivacyMapper) Intercept(ctx context.Context,
 	}
 
 	// Get group ID for session ID.
-	groupID, err := p.sessionIDIndexDB.GetGroupID(sessionID)
+	groupID, err := p.sessionDB.GetGroupID(sessionID)
 	if err != nil {
 		return nil, err
 	}
