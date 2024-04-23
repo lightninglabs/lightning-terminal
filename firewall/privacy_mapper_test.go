@@ -3,9 +3,11 @@ package firewall
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
 
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -19,6 +21,33 @@ import (
 // TestPrivacyMapper tests that the PrivacyMapper correctly intercepts specific
 // RPC calls.
 func TestPrivacyMapper(t *testing.T) {
+	outPoint := func(txid string, index uint32) string {
+		return fmt.Sprintf("%s:%d", txid, index)
+	}
+
+	// Define some transaction outpoints used for mapping.
+	clearTxID := "abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd"
+
+	obfusTxID0 := "097ef666a61919ff3413b3b701eae3a5cbac08f70c0ca567806e1fa6acbfe384"
+	obfusOut0 := uint32(2161781494)
+	obfusTxID0Reversed, err := chainhash.NewHashFromStr(obfusTxID0)
+	require.NoError(t, err)
+
+	obfusTxID1 := "45ec471bfccb0b7b9a8bc4008248931c59ad994903e07b54f54821ea3ef5cc5c"
+	obfusOut1 := uint32(1642614131)
+
+	// Define some preexisting mappings for the privacy mapper.
+	mapPreloadRealToPseudo := map[string]string{
+		"Tinker Bell's pub key": "a44ef01c3bff970ef495c",
+		"000000000000007b":      "47deb774fc605c56",
+		"0000000000000141":      "2fd42e84b9ffaaeb",
+		"00000000000002a6":      "7859bf41241787c2",
+		"000000000000036c":      "1320e5d25b7b5973",
+		outPoint(clearTxID, 0):  outPoint(obfusTxID0, obfusOut0),
+		outPoint(clearTxID, 1):  outPoint(obfusTxID1, obfusOut1),
+		"01020304":              "c8134495",
+	}
+
 	var (
 		clearForwarding = &lnrpc.ForwardingHistoryResponse{
 			ForwardingEvents: []*lnrpc.ForwardingEvent{
@@ -61,8 +90,13 @@ func TestPrivacyMapper(t *testing.T) {
 					RemotePubkey:          "01020304",
 					Initiator:             false,
 					ChanId:                123,
-					ChannelPoint:          "abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd:0",
-					PendingHtlcs:          []*lnrpc.HTLC{{HashLock: []byte("aaaa")}, {HashLock: []byte("bbbb")}},
+					ChannelPoint: outPoint(
+						clearTxID, 0,
+					),
+					PendingHtlcs: []*lnrpc.HTLC{
+						{HashLock: []byte("aaaa")},
+						{HashLock: []byte("bbbb")},
+					},
 				},
 			},
 		}
@@ -164,24 +198,32 @@ func TestPrivacyMapper(t *testing.T) {
 			msg: &lnrpc.FeeReportResponse{
 				ChannelFees: []*lnrpc.ChannelFeeReport{
 					{
-						ChanId:       123,
-						ChannelPoint: "abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd:0",
+						ChanId: 123,
+						ChannelPoint: outPoint(
+							clearTxID, 0,
+						),
 					},
 					{
-						ChanId:       321,
-						ChannelPoint: "abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd:1",
+						ChanId: 321,
+						ChannelPoint: outPoint(
+							clearTxID, 1,
+						),
 					},
 				},
 			},
 			expectedReplacement: &lnrpc.FeeReportResponse{
 				ChannelFees: []*lnrpc.ChannelFeeReport{
 					{
-						ChanId:       5178778334600911958,
-						ChannelPoint: "097ef666a61919ff3413b3b701eae3a5cbac08f70c0ca567806e1fa6acbfe384:2161781494",
+						ChanId: 5178778334600911958,
+						ChannelPoint: outPoint(
+							obfusTxID0, obfusOut0,
+						),
 					},
 					{
-						ChanId:       3446430762436373227,
-						ChannelPoint: "45ec471bfccb0b7b9a8bc4008248931c59ad994903e07b54f54821ea3ef5cc5c:1642614131",
+						ChanId: 3446430762436373227,
+						ChannelPoint: outPoint(
+							obfusTxID1, obfusOut1,
+						),
 					},
 				},
 			},
@@ -214,8 +256,10 @@ func TestPrivacyMapper(t *testing.T) {
 						RemotePubkey:          "c8134495",
 						Initiator:             true,
 						ChanId:                5178778334600911958,
-						ChannelPoint:          "097ef666a61919ff3413b3b701eae3a5cbac08f70c0ca567806e1fa6acbfe384:2161781494",
-						PendingHtlcs:          []*lnrpc.HTLC{{}, {}},
+						ChannelPoint: outPoint(
+							obfusTxID0, obfusOut0,
+						),
+						PendingHtlcs: []*lnrpc.HTLC{{}, {}},
 					},
 				},
 			},
@@ -242,9 +286,9 @@ func TestPrivacyMapper(t *testing.T) {
 				Scope: &lnrpc.PolicyUpdateRequest_ChanPoint{
 					ChanPoint: &lnrpc.ChannelPoint{
 						FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
-							FundingTxidStr: "097ef666a61919ff3413b3b701eae3a5cbac08f70c0ca567806e1fa6acbfe384",
+							FundingTxidStr: obfusTxID0,
 						},
-						OutputIndex: 2161781494,
+						OutputIndex: obfusOut0,
 					},
 				},
 			},
@@ -252,7 +296,7 @@ func TestPrivacyMapper(t *testing.T) {
 				Scope: &lnrpc.PolicyUpdateRequest_ChanPoint{
 					ChanPoint: &lnrpc.ChannelPoint{
 						FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
-							FundingTxidStr: "abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd",
+							FundingTxidStr: clearTxID,
 						},
 						OutputIndex: 0,
 					},
@@ -267,9 +311,9 @@ func TestPrivacyMapper(t *testing.T) {
 				Scope: &lnrpc.PolicyUpdateRequest_ChanPoint{
 					ChanPoint: &lnrpc.ChannelPoint{
 						FundingTxid: &lnrpc.ChannelPoint_FundingTxidBytes{
-							FundingTxidBytes: []byte{132, 227, 191, 172, 166, 31, 110, 128, 103, 165, 12, 12, 247, 8, 172, 203, 165, 227, 234, 1, 183, 179, 19, 52, 255, 25, 25, 166, 102, 246, 126, 9},
+							FundingTxidBytes: obfusTxID0Reversed[:],
 						},
-						OutputIndex: 2161781494,
+						OutputIndex: obfusOut0,
 					},
 				},
 			},
@@ -277,7 +321,7 @@ func TestPrivacyMapper(t *testing.T) {
 				Scope: &lnrpc.PolicyUpdateRequest_ChanPoint{
 					ChanPoint: &lnrpc.ChannelPoint{
 						FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
-							FundingTxidStr: "abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd",
+							FundingTxidStr: clearTxID,
 						},
 						OutputIndex: 0,
 					},
@@ -292,7 +336,7 @@ func TestPrivacyMapper(t *testing.T) {
 				FailedUpdates: []*lnrpc.FailedUpdate{
 					{
 						Outpoint: &lnrpc.OutPoint{
-							TxidStr:     "abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd",
+							TxidStr:     clearTxID,
 							OutputIndex: 0,
 						},
 					},
@@ -302,8 +346,8 @@ func TestPrivacyMapper(t *testing.T) {
 				FailedUpdates: []*lnrpc.FailedUpdate{
 					{
 						Outpoint: &lnrpc.OutPoint{
-							TxidStr:     "097ef666a61919ff3413b3b701eae3a5cbac08f70c0ca567806e1fa6acbfe384",
-							OutputIndex: 2161781494,
+							TxidStr:     obfusTxID0,
+							OutputIndex: uint32(obfusOut0),
 						},
 					},
 				},
@@ -331,17 +375,6 @@ func TestPrivacyMapper(t *testing.T) {
 
 	sessionID, err := session.IDFromMacaroon(mac)
 	require.NoError(t, err)
-
-	mapPreloadRealToPseudo := map[string]string{
-		"Tinker Bell's pub key": "a44ef01c3bff970ef495c",
-		"000000000000007b":      "47deb774fc605c56",
-		"0000000000000141":      "2fd42e84b9ffaaeb",
-		"00000000000002a6":      "7859bf41241787c2",
-		"000000000000036c":      "1320e5d25b7b5973",
-		"abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd:0": "097ef666a61919ff3413b3b701eae3a5cbac08f70c0ca567806e1fa6acbfe384:2161781494",
-		"abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd:1": "45ec471bfccb0b7b9a8bc4008248931c59ad994903e07b54f54821ea3ef5cc5c:1642614131",
-		"01020304": "c8134495",
-	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -382,6 +415,15 @@ func TestPrivacyMapper(t *testing.T) {
 				require.False(t, feedback.ReplaceResponse)
 				return
 			}
+
+			// Snippet to print the replacement for debugging, works
+			// only for specific test.
+			// mes := &lnrpc.PendingChannelsResponse{}
+			// err = proto.Unmarshal(
+			// 	feedback.ReplacementSerialized, mes,
+			// )
+			// require.NoError(t, err)
+			// t.Log(mes)
 
 			expectedRaw, err := proto.Marshal(
 				test.expectedReplacement,
