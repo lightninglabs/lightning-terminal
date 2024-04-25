@@ -567,15 +567,17 @@ func permsDecoder(r io.Reader, val interface{}, buf *[8]byte, l uint64) error {
 func caveatsEncoder(w io.Writer, val interface{}, buf *[8]byte) error {
 	if v, ok := val.(*[]macaroon.Caveat); ok {
 		for _, c := range *v {
+			id := c.Id
 			tlvRecords := []tlv.Record{
-				tlv.MakePrimitiveRecord(typeCaveatID, &c.Id),
+				tlv.MakePrimitiveRecord(typeCaveatID, &id),
 			}
 
-			if c.VerificationId != nil {
+			verificationId := c.VerificationId
+			if verificationId != nil {
 				tlvRecords = append(tlvRecords,
 					tlv.MakePrimitiveRecord(
 						typeCaveatVerificationID,
-						&c.VerificationId,
+						&verificationId,
 					),
 				)
 			}
