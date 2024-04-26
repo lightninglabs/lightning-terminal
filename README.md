@@ -66,13 +66,15 @@ If you’d prefer to compile from source code please follow [these instructions]
 
 ## Compatibility
 
-Full Lightning Terminal functionality can be dependent on running a certain
-version of `lnd`. View the table below to ensure that you run the correct
+Full Lightning Terminal functionality can be dependent on running a compatible
+version of `lnd`. View the table below to ensure that you run a compatible
 version of `lnd` with the relevant `litd` release.
 
-This version compatibility dependency is only relevant for running remote mode
-`litd`. The bundled version will always come with the correct, [compatible
-versioning](#daemon-versions-packaged-with-lit).
+This version compatibility dependency table is only relevant when running litd
+in remote mode (meaning that `lnd-mode=remote` is set). It shows the
+**_minimum_** `lnd` version that can be used with different versions of `litd`
+(LiT). The bundled version will always come with the correct,
+[compatible versioning](#daemon-versions-packaged-with-lit).
 
 | LiT               | LND          |
 |-------------------|--------------|
