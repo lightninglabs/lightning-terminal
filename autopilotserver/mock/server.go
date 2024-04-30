@@ -12,6 +12,7 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/lightninglabs/lightning-terminal/autopilotserverrpc"
 	"github.com/lightninglabs/lightning-terminal/rules"
+	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/lntest/node"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -50,8 +51,9 @@ const (
 )
 
 type clientSession struct {
-	key   *btcec.PrivateKey
-	state ClientState
+	key          *btcec.PrivateKey
+	state        ClientState
+	privacyFlags uint64
 }
 
 // NewServer constructs a new MockAutoPilotServer.
@@ -127,7 +129,7 @@ func (m *Server) Terms(context.Context, *autopilotserverrpc.TermsRequest) (
 }
 
 // ListFeatures converts the mockFeatures into the form that the autopilot
-// server would.
+// server would return.
 //
 // Note: this is part of the autopilotrpc.AutopilotServer interface.
 func (m *Server) ListFeatures(_ context.Context,
@@ -146,6 +148,7 @@ func (m *Server) ListFeatures(_ context.Context,
 			Description:     f.Description,
 			Rules:           rules,
 			PermissionsList: permissionsToRPC(f.Permissions),
+			PrivacyFlags:    f.PrivacyFlags,
 		}
 	}
 
@@ -202,8 +205,9 @@ func (m *Server) RegisterSession(_ context.Context,
 	}
 
 	m.sessions[hex.EncodeToString(req.ResponderPubKey)] = &clientSession{
-		key:   priv,
-		state: ClientStateActive,
+		key:          priv,
+		state:        ClientStateActive,
+		privacyFlags: req.PrivacyFlags,
 	}
 
 	return &autopilotserverrpc.RegisterSessionResponse{
@@ -297,11 +301,32 @@ func (m *Server) SetClientState(remoteKey *btcec.PublicKey,
 	return nil
 }
 
+func (m *Server) GetPrivacyFlags(remoteKey *btcec.PublicKey) (
+	session.PrivacyFlags, error) {
+
+	m.sessMu.Lock()
+	defer m.sessMu.Unlock()
+
+	key := hex.EncodeToString(remoteKey.SerializeCompressed())
+	sess, ok := m.sessions[key]
+	if !ok {
+		return session.PrivacyFlags{}, fmt.Errorf("no such client found")
+	}
+
+	privacyFlags, err := session.Deserialize(sess.privacyFlags)
+	if err != nil {
+		return session.PrivacyFlags{}, err
+	}
+
+	return privacyFlags, nil
+}
+
 // Feature is a feature that the autopilot server could return.
 type Feature struct {
-	Description string
-	Rules       map[string]*RuleRanges
-	Permissions map[string][]bakery.Op
+	Description  string
+	Rules        map[string]*RuleRanges
+	Permissions  map[string][]bakery.Op
+	PrivacyFlags uint64
 }
 
 // defaultFeatures is an example of a set of features that the autopilot server

@@ -11,6 +11,7 @@ import (
 
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/lightning-terminal/rules"
+	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/urfave/cli"
 )
@@ -128,6 +129,29 @@ var addAutopilotSessionCmd = cli.Command{
 				`description for a format example).` +
 				`An empty rule map is allowed with {} to ` +
 				`use the default rules.`,
+		},
+		cli.StringFlag{
+			Name: "privacy-flags",
+			Usage: "String representation of privacy flags to set " +
+				"for the session. Each individual flag will " +
+				"remove privacy from certain aspects of " +
+				"messages transmitted to autopilot. " +
+				"The strongest privacy is on by " +
+				"default and an empty string means full " +
+				"privacy. Some features may not be able to " +
+				"run correctly with full privacy, see the " +
+				"autopilot features call for a list of " +
+				"default required privacy flags. Those " +
+				"minimally required privacy flags are set " +
+				"automatically if nothing is specified here. " +
+				"Combining several features will " +
+				"require the union of all individual " +
+				"feature's privacy flags, which is why it is " +
+				"recommended to register each feature " +
+				"separately for best privacy. Linking to a " +
+				"previous session must preserve privacy " +
+				"flags of the previous session. Example: " +
+				"\"ClearPubkeys|ClearAmounts\"",
 		},
 	},
 }
@@ -403,6 +427,19 @@ func initAutopilotSession(ctx *cli.Context) error {
 		}
 	}
 
+	var privacyFlags uint64
+	var privacyFlagsSet bool
+	if ctx.IsSet("privacy-flags") {
+		privacyFlagsSet = true
+
+		flags, err := session.Parse(ctx.String("privacy-flags"))
+		if err != nil {
+			return err
+		}
+
+		privacyFlags = flags.Serialize()
+	}
+
 	resp, err := client.AddAutopilotSession(
 		ctxb, &litrpc.AddAutopilotSessionRequest{
 			Label:                  ctx.String("label"),
@@ -411,6 +448,8 @@ func initAutopilotSession(ctx *cli.Context) error {
 			DevServer:              ctx.Bool("devserver"),
 			Features:               featureMap,
 			LinkedGroupId:          groupID,
+			PrivacyFlags:           privacyFlags,
+			PrivacyFlagsSet:        privacyFlagsSet,
 		},
 	)
 	if err != nil {

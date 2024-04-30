@@ -167,6 +167,15 @@
           "type": "string",
           "format": "byte",
           "description": "Set to the ID of the group to link this session to, if any."
+        },
+        "privacy_flags": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The privacy flags used by this session. If set, then privacy_flags_set must\nbe set."
+        },
+        "privacy_flags_set": {
+          "type": "boolean",
+          "description": "Indicates whether privacy flags are set."
         }
       }
     },
@@ -269,6 +278,11 @@
         "default_config": {
           "type": "string",
           "description": "The JSON-marshaled representation of a feature's default configuration."
+        },
+        "privacy_flags": {
+          "type": "string",
+          "format": "uint64",
+          "description": "This feature may require relaxed privacy obfuscation that can be enabled\nwith these flags."
         }
       }
     },
@@ -599,6 +613,11 @@
             "type": "string"
           },
           "description": "Configurations for each individual feature mapping from the feature name to\na JSON-serialized configuration."
+        },
+        "privacy_flags": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Privacy flags used for the session that determine how the privacy mapper\noperates."
         }
       }
     },

@@ -760,7 +760,8 @@ proto.litrpc.Session.toObject = function(includeInstance, msg) {
     autopilotFeatureInfoMap: (f = msg.getAutopilotFeatureInfoMap()) ? f.toObject(includeInstance, proto.litrpc.RulesMap.toObject) : [],
     revokedAt: jspb.Message.getFieldWithDefault(msg, 16, "0"),
     groupId: msg.getGroupId_asB64(),
-    featureConfigsMap: (f = msg.getFeatureConfigsMap()) ? f.toObject(includeInstance, undefined) : []
+    featureConfigsMap: (f = msg.getFeatureConfigsMap()) ? f.toObject(includeInstance, undefined) : [],
+    privacyFlags: jspb.Message.getFieldWithDefault(msg, 19, "0")
   };
 
   if (includeInstance) {
@@ -873,6 +874,10 @@ proto.litrpc.Session.deserializeBinaryFromReader = function(msg, reader) {
       reader.readMessage(value, function(message, reader) {
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readString, null, "");
          });
+      break;
+    case 19:
+      var value = /** @type {string} */ (reader.readUint64String());
+      msg.setPrivacyFlags(value);
       break;
     default:
       reader.skipField();
@@ -1023,6 +1028,13 @@ proto.litrpc.Session.serializeBinaryToWriter = function(message, writer) {
   f = message.getFeatureConfigsMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(18, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeString);
+  }
+  f = message.getPrivacyFlags();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
+      19,
+      f
+    );
   }
 };
 
@@ -1437,6 +1449,21 @@ proto.litrpc.Session.prototype.getFeatureConfigsMap = function(opt_noLazyCreate)
 
 proto.litrpc.Session.prototype.clearFeatureConfigsMap = function() {
   this.getFeatureConfigsMap().clear();
+};
+
+
+/**
+ * optional uint64 privacy_flags = 19;
+ * @return {string}
+ */
+proto.litrpc.Session.prototype.getPrivacyFlags = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 19, "0"));
+};
+
+
+/** @param {string} value */
+proto.litrpc.Session.prototype.setPrivacyFlags = function(value) {
+  jspb.Message.setProto3StringIntField(this, 19, value);
 };
 
 

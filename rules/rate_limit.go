@@ -7,6 +7,7 @@ import (
 
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
+	"github.com/lightninglabs/lightning-terminal/session"
 	"google.golang.org/protobuf/proto"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 )
@@ -266,8 +267,8 @@ func (r *RateLimit) ToProto() *litrpc.RuleValue {
 // find the real values. This is a no-op for the RateLimit rule.
 //
 // NOTE: this is part of the Values interface.
-func (r *RateLimit) PseudoToReal(_ firewalldb.PrivacyMapDB) (Values,
-	error) {
+func (r *RateLimit) PseudoToReal(_ firewalldb.PrivacyMapDB,
+	_ session.PrivacyFlags) (Values, error) {
 
 	return r, nil
 }
@@ -277,8 +278,8 @@ func (r *RateLimit) PseudoToReal(_ firewalldb.PrivacyMapDB) (Values,
 // that should be persisted. This is a no-op for the RateLimit rule.
 //
 // NOTE: this is part of the Values interface.
-func (r *RateLimit) RealToPseudo(_ firewalldb.PrivacyMapReader) (Values,
-	map[string]string, error) {
+func (r *RateLimit) RealToPseudo(_ firewalldb.PrivacyMapReader,
+	flags session.PrivacyFlags) (Values, map[string]string, error) {
 
 	return r, nil, nil
 }

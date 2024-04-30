@@ -325,6 +325,7 @@ func (s *sessionRpcServer) AddSession(_ context.Context,
 	sess, err := session.NewSession(
 		id, localPrivKey, req.Label, typ, expiry, req.MailboxServerAddr,
 		req.DevServer, uniquePermissions, caveats, nil, false, nil,
+		session.PrivacyFlags{},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating new session: %v", err)
@@ -809,6 +810,15 @@ func (s *sessionRpcServer) ListAutopilotFeatures(ctx context.Context,
 			return nil, err
 		}
 
+		// We check whether we should upgrade because of unknown privacy
+		// flags.
+		_, err = session.Deserialize(f.PrivacyFlags)
+		if errors.Is(err, session.ErrUnknownPrivacyFlag) {
+			upgrade = true
+		} else if err != nil {
+			return nil, err
+		}
+
 		features[i] = &litrpc.Feature{
 			Name:            f.Name,
 			Description:     f.Description,
@@ -816,6 +826,7 @@ func (s *sessionRpcServer) ListAutopilotFeatures(ctx context.Context,
 			PermissionsList: marshalPerms(f.Permissions),
 			RequiresUpgrade: upgrade,
 			DefaultConfig:   string(f.DefaultConfig),
+			PrivacyFlags:    f.PrivacyFlags,
 		}
 	}
 
@@ -923,6 +934,52 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 	// Check that each requested feature is a valid autopilot feature and
 	// that the necessary rules for the feature have been specified.
 	featureRules := make(map[string]map[string]string, len(req.Features))
+
+	// Determine privacy flags to use for session registration.
+	var privacyFlags session.PrivacyFlags
+	if req.PrivacyFlagsSet {
+		// We apply privacy flags from the session request in order to
+		// to be able to set flags resulting from non-standard feature
+		// configurations.
+		privacyFlags, err = session.Deserialize(req.PrivacyFlags)
+		if err != nil {
+			return nil, fmt.Errorf("error deserializing privacy "+
+				"flags (%v) from request: %w",
+				req.PrivacyFlags, err)
+		}
+	} else {
+		// Otherwise, privacyFlags will contain all the combined (ORed)
+		// privacy flags for all requested features with defaults from
+		// the autopilot. This means that if any of the features
+		// includes a less restrictive privacy flag, this will also
+		// apply to features that in principle can be run with better
+		// privacy. Checks for features' privacy flag and previous
+		// session compatibility are done on the autopilot's side for
+		// upgrade flexibility.
+		for f := range req.Features {
+			// Check that the features is known by the autopilot
+			// server.
+			autopilotFeature, ok := autopilotFeatureMap[f]
+			if !ok {
+				return nil, fmt.Errorf("%s is not a features "+
+					"provided by the Autopilot server", f)
+			}
+
+			// Deserialize and check that we know the privacy flags.
+			featurePrivacyFlags, err := session.Deserialize(
+				autopilotFeature.PrivacyFlags,
+			)
+			if err != nil {
+				return nil, fmt.Errorf("error deserializing "+
+					"privacy flags (%v) from autopilot: %w",
+					autopilotFeature.PrivacyFlags, err)
+			}
+
+			// We combine all privacy flags.
+			privacyFlags = privacyFlags.Add(featurePrivacyFlags)
+		}
+	}
+
 	for f, rs := range req.Features {
 		// Check that the features is known by the autopilot server.
 		autopilotFeature, ok := autopilotFeatureMap[f]
@@ -946,7 +1003,7 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 				if privacy {
 					var privMapPairs map[string]string
 					v, privMapPairs, err = v.RealToPseudo(
-						knownPrivMapPairs,
+						knownPrivMapPairs, privacyFlags,
 					)
 					if err != nil {
 						return nil, err
@@ -1101,7 +1158,7 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 	sess, err := session.NewSession(
 		id, localPrivKey, req.Label, session.TypeAutopilot, expiry,
 		req.MailboxServerAddr, req.DevServer, perms, caveats,
-		clientConfig, privacy, linkedGroupID,
+		clientConfig, privacy, linkedGroupID, privacyFlags,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating new session: %v", err)
@@ -1131,7 +1188,7 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 	if privacy {
 		for name, configB := range clientConfig {
 			configB, privMapPairs, err := firewall.ObfuscateConfig(
-				knownPrivMapPairs, configB,
+				knownPrivMapPairs, configB, privacyFlags,
 			)
 			if err != nil {
 				return nil, err
@@ -1175,6 +1232,7 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 	remoteKey, err := s.cfg.autopilot.RegisterSession(
 		ctx, sess.LocalPublicKey, sess.ServerAddr, sess.DevServer,
 		obfuscatedConfig, prevSessionPub, linkSig,
+		privacyFlags.Serialize(),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error registering session with "+
@@ -1290,10 +1348,13 @@ func convertRules(ruleMgr rules.ManagerSet,
 		knownRules = ruleMgr.GetAllRules()
 	)
 	for name, rule := range ruleList {
-		known := true
 		if !knownRules[name] {
 			upgrade = true
-			known = false
+			res[name] = &litrpc.RuleValues{
+				Known: false,
+			}
+
+			continue
 		}
 
 		defaultVals, err := ruleMgr.InitRuleValues(name, rule.Default)
@@ -1312,7 +1373,7 @@ func convertRules(ruleMgr rules.ManagerSet,
 		}
 
 		res[name] = &litrpc.RuleValues{
-			Known:    known,
+			Known:    true,
 			Defaults: defaultVals.ToProto(),
 			MinValue: minVals.ToProto(),
 			MaxValue: maxVals.ToProto(),
@@ -1402,7 +1463,9 @@ func (s *sessionRpcServer) marshalRPCSession(sess *session.Session) (
 						db := s.cfg.privMap(
 							sess.GroupID,
 						)
-						val, err = val.PseudoToReal(db)
+						val, err = val.PseudoToReal(
+							db, sess.PrivacyFlags,
+						)
 						if err != nil {
 							return nil, err
 						}
@@ -1443,6 +1506,7 @@ func (s *sessionRpcServer) marshalRPCSession(sess *session.Session) (
 		AutopilotFeatureInfo:   featureInfo,
 		GroupId:                sess.GroupID[:],
 		FeatureConfigs:         clientConfig,
+		PrivacyFlags:           sess.PrivacyFlags.Serialize(),
 	}, nil
 }
 

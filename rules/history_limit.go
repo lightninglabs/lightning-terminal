@@ -8,6 +8,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
+	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"google.golang.org/protobuf/proto"
 )
@@ -255,8 +256,8 @@ func (h *HistoryLimit) GetStartDate() time.Time {
 // find the real values. This is a no-op for the HistoryLimit rule.
 //
 // NOTE: this is part of the Values interface.
-func (h *HistoryLimit) PseudoToReal(_ firewalldb.PrivacyMapDB) (Values,
-	error) {
+func (h *HistoryLimit) PseudoToReal(_ firewalldb.PrivacyMapDB,
+	_ session.PrivacyFlags) (Values, error) {
 
 	return h, nil
 }
@@ -266,8 +267,8 @@ func (h *HistoryLimit) PseudoToReal(_ firewalldb.PrivacyMapDB) (Values,
 // that should be persisted. This is a no-op for the HistoryLimit rule.
 //
 // NOTE: this is part of the Values interface.
-func (h *HistoryLimit) RealToPseudo(_ firewalldb.PrivacyMapReader) (Values,
-	map[string]string, error) {
+func (h *HistoryLimit) RealToPseudo(_ firewalldb.PrivacyMapReader,
+	_ session.PrivacyFlags) (Values, map[string]string, error) {
 
 	return h, nil, nil
 }

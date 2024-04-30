@@ -8,6 +8,7 @@ import (
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
+	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/routing/route"
@@ -157,6 +158,7 @@ func TestPeerRestrictCheckRequest(t *testing.T) {
 func TestPeerRestrictRealToPseudo(t *testing.T) {
 	tests := []struct {
 		name           string
+		privacyFlags   session.PrivacyFlags
 		dbPreLoad      map[string]string
 		expectNewPairs map[string]bool
 	}{
@@ -182,6 +184,12 @@ func TestPeerRestrictRealToPseudo(t *testing.T) {
 			expectNewPairs: map[string]bool{
 				"peer 1": true,
 				"peer 3": true,
+			},
+		},
+		{
+			name: "turned off mapping",
+			privacyFlags: []session.PrivacyFlag{
+				session.ClearPubkeys,
 			},
 		},
 	}
@@ -219,7 +227,9 @@ func TestPeerRestrictRealToPseudo(t *testing.T) {
 			// rule. This will return the rule value in its pseudo
 			// form along with any new privacy map pairs that should
 			// be added to the DB.
-			v, newPairs, err := pr.RealToPseudo(privMapPairDB)
+			v, newPairs, err := pr.RealToPseudo(
+				privMapPairDB, test.privacyFlags,
+			)
 			require.NoError(t, err)
 			require.Len(t, newPairs, len(test.expectNewPairs))
 
@@ -228,6 +238,14 @@ func TestPeerRestrictRealToPseudo(t *testing.T) {
 				require.True(t, test.expectNewPairs[r])
 
 				expectedDenyList[p] = true
+			}
+
+			// We expect the original deny list if we switch off
+			// privacy mapping.
+			if test.privacyFlags.Contains(session.ClearPubkeys) {
+				for _, p := range pr.DenyList {
+					expectedDenyList[p] = true
+				}
 			}
 
 			// Assert that the element in the resulting deny list
@@ -241,8 +259,8 @@ func TestPeerRestrictRealToPseudo(t *testing.T) {
 
 			// Now iterate over the deny list and assert that each
 			// value appears in our expected deny list.
-			for _, channel := range denyList.DenyList {
-				require.True(t, expectedDenyList[channel])
+			for _, peer := range denyList.DenyList {
+				require.True(t, expectedDenyList[peer])
 			}
 		})
 	}

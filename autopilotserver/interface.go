@@ -30,7 +30,7 @@ type Autopilot interface {
 	RegisterSession(ctx context.Context, pubKey *btcec.PublicKey,
 		mailboxAddr string, devServer bool,
 		featureConf map[string][]byte, linkedGroupKey *btcec.PublicKey,
-		linkSig []byte) (*btcec.PublicKey, error)
+		linkSig []byte, privacyFlags uint64) (*btcec.PublicKey, error)
 
 	// ActivateSession attempts to inform the autopilot server that the
 	// given session is still active. After this is called, the autopilot
@@ -73,6 +73,9 @@ type Feature struct {
 	// represents the default configuration we can use if the user doesn't
 	// specify any.
 	DefaultConfig []byte
+
+	// PrivacyFlags is a list of privacy flags that the feature requires.
+	PrivacyFlags uint64
 }
 
 // RuleValues holds the default value along with the sane max and min values

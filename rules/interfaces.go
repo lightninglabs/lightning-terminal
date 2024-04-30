@@ -6,6 +6,7 @@ import (
 
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
+	"github.com/lightninglabs/lightning-terminal/session"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -62,13 +63,14 @@ type Values interface {
 	// keys, channel IDs, channel points etc. It returns a map of any new
 	// real to pseudo strings that should be persisted that it did not find
 	// in the given PrivacyMapReader.
-	RealToPseudo(db firewalldb.PrivacyMapReader) (Values, map[string]string,
-		error)
+	RealToPseudo(db firewalldb.PrivacyMapReader,
+		flags session.PrivacyFlags) (Values, map[string]string, error)
 
 	// PseudoToReal attempts to convert any appropriate pseudo fields in
 	// the rule Values to their corresponding real values. It uses the
 	// passed PrivacyMapDB to find the real values.
-	PseudoToReal(db firewalldb.PrivacyMapDB) (Values, error)
+	PseudoToReal(db firewalldb.PrivacyMapDB,
+		flags session.PrivacyFlags) (Values, error)
 }
 
 // Marshal converts the rule Values to a json byte slice.

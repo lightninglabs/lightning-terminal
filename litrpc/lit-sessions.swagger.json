@@ -473,6 +473,11 @@
             "type": "string"
           },
           "description": "Configurations for each individual feature mapping from the feature name to\na JSON-serialized configuration."
+        },
+        "privacy_flags": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Privacy flags used for the session that determine how the privacy mapper\noperates."
         }
       }
     },

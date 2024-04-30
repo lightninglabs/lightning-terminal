@@ -92,6 +92,12 @@ message Feature {
     The JSON-marshaled representation of a feature's default configuration.
     */
     bytes default_config = 5;
+
+    /*
+    This feature may require relaxed privacy obfuscation that can be enabled
+    with these flags.
+    */
+    uint64 privacy_flags = 6;
 }
 
 message Rule {
@@ -187,6 +193,11 @@ message RegisterSessionRequest {
     key.
     */
     bytes group_responder_sig = 8;
+
+    /*
+    The privacy flags used by this session.
+    */
+    uint64 privacy_flags = 9;
 }
 
 message RegisterSessionResponse {

@@ -31,7 +31,8 @@ func (m ManagerSet) InitEnforcer(cfg Config, name string,
 
 	mgr, ok := m[name]
 	if !ok {
-		return nil, ErrUnknownRule
+		return nil, fmt.Errorf("%w %s, please upgrade", ErrUnknownRule,
+			name)
 	}
 
 	return mgr.NewEnforcer(cfg, values)
@@ -54,7 +55,8 @@ func (m ManagerSet) UnmarshalRuleValues(name string, proto *litrpc.RuleValue) (
 
 	mgr, ok := m[name]
 	if !ok {
-		return nil, ErrUnknownRule
+		return nil, fmt.Errorf("%w %s, please upgrade", ErrUnknownRule,
+			name)
 	}
 
 	return mgr.NewValueFromProto(proto)
@@ -67,7 +69,8 @@ func (m ManagerSet) InitRuleValues(name string, valueBytes []byte) (Values,
 
 	mgr, ok := m[name]
 	if !ok {
-		return nil, ErrUnknownRule
+		return nil, fmt.Errorf("%w %s, please upgrade", ErrUnknownRule,
+			name)
 	}
 
 	v := mgr.EmptyValue()

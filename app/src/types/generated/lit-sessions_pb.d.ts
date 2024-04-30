@@ -160,6 +160,9 @@ export class Session extends jspb.Message {
 
   getFeatureConfigsMap(): jspb.Map<string, string>;
   clearFeatureConfigsMap(): void;
+  getPrivacyFlags(): string;
+  setPrivacyFlags(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Session.AsObject;
   static toObject(includeInstance: boolean, msg: Session): Session.AsObject;
@@ -190,6 +193,7 @@ export namespace Session {
     revokedAt: string,
     groupId: Uint8Array | string,
     featureConfigsMap: Array<[string, string]>,
+    privacyFlags: string,
   }
 }
 

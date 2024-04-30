@@ -3,7 +3,6 @@ package firewall
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"testing"
 	"time"
 
@@ -20,8 +19,58 @@ import (
 // TestPrivacyMapper tests that the PrivacyMapper correctly intercepts specific
 // RPC calls.
 func TestPrivacyMapper(t *testing.T) {
+	var (
+		clearForwarding = &lnrpc.ForwardingHistoryResponse{
+			ForwardingEvents: []*lnrpc.ForwardingEvent{
+				{
+					AmtIn:       2_000,
+					AmtInMsat:   2_000_000,
+					AmtOut:      1_000,
+					AmtOutMsat:  1_000_000,
+					Fee:         1_000,
+					FeeMsat:     1_000_000,
+					Timestamp:   1_000,
+					TimestampNs: 1_000_000_000_000,
+					ChanIdIn:    123,
+					ChanIdOut:   321,
+				},
+				{
+					AmtIn:       3_000,
+					AmtInMsat:   3_000_000,
+					AmtOut:      2_000,
+					AmtOutMsat:  2_000_000,
+					Fee:         1_000,
+					FeeMsat:     1_000_000,
+					Timestamp:   1_000,
+					TimestampNs: 1_000_000_000_000,
+					ChanIdIn:    678,
+					ChanIdOut:   876,
+				},
+			},
+		}
+
+		clearListChannel = &lnrpc.ListChannelsResponse{
+			Channels: []*lnrpc.Channel{
+				{
+					Capacity:              1_000_000,
+					RemoteBalance:         600_000,
+					LocalBalance:          499_000,
+					CommitFee:             1_000,
+					TotalSatoshisSent:     500_000,
+					TotalSatoshisReceived: 450_000,
+					RemotePubkey:          "01020304",
+					Initiator:             false,
+					ChanId:                123,
+					ChannelPoint:          "abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd:0",
+					PendingHtlcs:          []*lnrpc.HTLC{{HashLock: []byte("aaaa")}, {HashLock: []byte("bbbb")}},
+				},
+			},
+		}
+	)
+
 	tests := []struct {
 		name                string
+		privacyFlags        session.PrivacyFlags
 		uri                 string
 		msgType             rpcperms.InterceptType
 		msg                 proto.Message
@@ -44,37 +93,41 @@ func TestPrivacyMapper(t *testing.T) {
 			},
 		},
 		{
+			name:    "GetInfo Response clear pubkey",
+			uri:     "/lnrpc.Lightning/GetInfo",
+			msgType: rpcperms.TypeResponse,
+			privacyFlags: session.PrivacyFlags{
+				session.ClearPubkeys,
+			},
+			msg: &lnrpc.GetInfoResponse{
+				Alias:          "Tinker Bell",
+				IdentityPubkey: "Tinker Bell's pub key",
+				Uris: []string{
+					"Neverland 1",
+					"Neverland 2",
+				},
+			},
+			expectedReplacement: &lnrpc.GetInfoResponse{
+				IdentityPubkey: "Tinker Bell's pub key",
+			},
+		},
+		{
+			name: "ForwardingHistory Response clear",
+			uri:  "/lnrpc.Lightning/ForwardingHistory",
+			privacyFlags: []session.PrivacyFlag{
+				session.ClearChanIDs,
+				session.ClearAmounts,
+				session.ClearTimeStamps,
+			},
+			msgType:             rpcperms.TypeResponse,
+			msg:                 clearForwarding,
+			expectedReplacement: clearForwarding,
+		},
+		{
 			name:    "ForwardingHistory Response",
 			uri:     "/lnrpc.Lightning/ForwardingHistory",
 			msgType: rpcperms.TypeResponse,
-			msg: &lnrpc.ForwardingHistoryResponse{
-				ForwardingEvents: []*lnrpc.ForwardingEvent{
-					{
-						AmtIn:       2_000,
-						AmtInMsat:   2_000_000,
-						AmtOut:      1_000,
-						AmtOutMsat:  1_000_000,
-						Fee:         1_000,
-						FeeMsat:     1_000_000,
-						Timestamp:   1_000,
-						TimestampNs: 1_000_000_000_000,
-						ChanIdIn:    123,
-						ChanIdOut:   321,
-					},
-					{
-						AmtIn:       3_000,
-						AmtInMsat:   3_000_000,
-						AmtOut:      2_000,
-						AmtOutMsat:  2_000_000,
-						Fee:         1_000,
-						FeeMsat:     1_000_000,
-						Timestamp:   1_000,
-						TimestampNs: 1_000_000_000_000,
-						ChanIdIn:    678,
-						ChanIdOut:   876,
-					},
-				},
-			},
+			msg:     clearForwarding,
 			expectedReplacement: &lnrpc.ForwardingHistoryResponse{
 				ForwardingEvents: []*lnrpc.ForwardingEvent{
 					{
@@ -148,23 +201,7 @@ func TestPrivacyMapper(t *testing.T) {
 			name:    "ListChannels Response",
 			uri:     "/lnrpc.Lightning/ListChannels",
 			msgType: rpcperms.TypeResponse,
-			msg: &lnrpc.ListChannelsResponse{
-				Channels: []*lnrpc.Channel{
-					{
-						Capacity:              1_000_000,
-						RemoteBalance:         600_000,
-						LocalBalance:          499_000,
-						CommitFee:             1_000,
-						TotalSatoshisSent:     500_000,
-						TotalSatoshisReceived: 450_000,
-						RemotePubkey:          "01020304",
-						Initiator:             false,
-						ChanId:                123,
-						ChannelPoint:          "abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd:0",
-						PendingHtlcs:          []*lnrpc.HTLC{{HashLock: []byte("aaaa")}, {HashLock: []byte("bbbb")}},
-					},
-				},
-			},
+			msg:     clearListChannel,
 			expectedReplacement: &lnrpc.ListChannelsResponse{
 				Channels: []*lnrpc.Channel{
 					{
@@ -182,6 +219,20 @@ func TestPrivacyMapper(t *testing.T) {
 					},
 				},
 			},
+		},
+		{
+			name: "ListChannels Response clear",
+			privacyFlags: []session.PrivacyFlag{
+				session.ClearPubkeys,
+				session.ClearChanIDs,
+				session.ClearAmounts,
+				session.ClearHTLCs,
+				session.ClearChanInitiator,
+			},
+			uri:                 "/lnrpc.Lightning/ListChannels",
+			msgType:             rpcperms.TypeResponse,
+			msg:                 clearListChannel,
+			expectedReplacement: clearListChannel,
 		},
 		{
 			name:    "UpdateChannelPolicy Request txid string",
@@ -292,17 +343,20 @@ func TestPrivacyMapper(t *testing.T) {
 		"01020304": "c8134495",
 	}
 
-	db := newMockDB(t, mapPreloadRealToPseudo, sessionID)
-
-	err = db.AddSessionAndGroupIDPair(sessionID, sessionID)
-	require.NoError(t, err)
-
-	// randIntn is used for deterministic testing.
-	randIntn := func(n int) (int, error) { return 100, nil }
-	p := NewPrivacyMapper(db.NewSessionDB, randIntn, db)
-
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			// Initialize privacy mapping.
+			db := newMockDB(t, mapPreloadRealToPseudo, sessionID)
+
+			pd := firewalldb.NewMockSessionDB()
+			pd.AddPair(sessionID, sessionID)
+			err = pd.AddPrivacyFlags(sessionID, test.privacyFlags)
+			require.NoError(t, err)
+
+			// randIntn is used for deterministic testing.
+			randIntn := func(n int) (int, error) { return 100, nil }
+			p := NewPrivacyMapper(db.NewSessionDB, randIntn, pd)
+
 			rawMsg, err := proto.Marshal(test.msg)
 			require.NoError(t, err)
 
@@ -341,6 +395,14 @@ func TestPrivacyMapper(t *testing.T) {
 
 	// Subtest to test behavior with real randomness.
 	t.Run("Response with randomness", func(t *testing.T) {
+		// Initialize privacy mapping.
+		db := newMockDB(t, mapPreloadRealToPseudo, sessionID)
+
+		pd := firewalldb.NewMockSessionDB()
+		pd.AddPair(sessionID, sessionID)
+		err := pd.AddPrivacyFlags(sessionID, session.PrivacyFlags{})
+		require.NoError(t, err)
+
 		msg := &lnrpc.ForwardingHistoryResponse{
 			ForwardingEvents: []*lnrpc.ForwardingEvent{
 				{
@@ -360,7 +422,7 @@ func TestPrivacyMapper(t *testing.T) {
 		rawMsg, err := proto.Marshal(msg)
 		require.NoError(t, err)
 
-		p = NewPrivacyMapper(db.NewSessionDB, CryptoRandIntn, db)
+		p := NewPrivacyMapper(db.NewSessionDB, CryptoRandIntn, pd)
 		require.NoError(t, err)
 
 		// We test the independent outgoing amount (incoming amount
@@ -373,7 +435,7 @@ func TestPrivacyMapper(t *testing.T) {
 		// We keep track of the timestamp. We test only the timestamp in
 		// seconds as there can be numerical inaccuracies with the
 		// nanosecond one.
-		timestamp := msg.ForwardingEvents[0].Timestamp
+		timestamp := msg.ForwardingEvents[0].TimestampNs / 1e9
 		timestampInterval := uint64(timeVariation) / 1e9
 		minTime := timestamp - timestampInterval
 		maxTime := timestamp + timestampInterval
@@ -447,19 +509,12 @@ func TestPrivacyMapper(t *testing.T) {
 
 type mockDB struct {
 	privDB map[string]*mockPrivacyMapDB
-
-	sessionIDIndex map[session.ID]session.ID
-	groupIDIndex   map[session.ID][]session.ID
 }
 
 func newMockDB(t *testing.T, preloadRealToPseudo map[string]string,
 	sessID session.ID) mockDB {
 
-	db := mockDB{
-		privDB:         make(map[string]*mockPrivacyMapDB),
-		sessionIDIndex: make(map[session.ID]session.ID),
-		groupIDIndex:   make(map[session.ID][]session.ID),
-	}
+	db := mockDB{privDB: make(map[string]*mockPrivacyMapDB)}
 	sessDB := db.NewSessionDB(sessID)
 
 	_ = sessDB.Update(func(tx firewalldb.PrivacyMapTx) error {
@@ -482,30 +537,6 @@ func (m mockDB) NewSessionDB(sessionID session.ID) firewalldb.PrivacyMapDB {
 	m.privDB[string(sessionID[:])] = newDB
 
 	return newDB
-}
-
-func (m mockDB) AddSessionAndGroupIDPair(sessionID, groupID session.ID) error {
-	m.sessionIDIndex[sessionID] = groupID
-	m.groupIDIndex[groupID] = append(m.groupIDIndex[groupID], sessionID)
-	return nil
-}
-
-func (m mockDB) GetGroupID(sessionID session.ID) (session.ID, error) {
-	groupID, ok := m.sessionIDIndex[sessionID]
-	if !ok {
-		return session.ID{}, fmt.Errorf("group ID not found")
-	}
-
-	return groupID, nil
-}
-
-func (m mockDB) GetSessionIDs(groupID session.ID) ([]session.ID, error) {
-	sessionIDs, ok := m.groupIDIndex[groupID]
-	if !ok {
-		return nil, fmt.Errorf("group ID not found")
-	}
-
-	return sessionIDs, nil
 }
 
 func newMockPrivacyMapDB() *mockPrivacyMapDB {
@@ -723,12 +754,14 @@ func TestHideBool(t *testing.T) {
 // correctly.
 func TestObfuscateConfig(t *testing.T) {
 	tests := []struct {
-		name             string
-		config           []byte
-		knownMap         map[string]string
-		expectedNewPairs int
-		expectErr        bool
-		notExpectSameLen bool
+		name               string
+		config             []byte
+		knownMap           map[string]string
+		privacyFlags       session.PrivacyFlags
+		expectedNewPairs   int
+		expectErr          bool
+		notExpectSameLen   bool
+		expectUnobfuscated bool
 	}{
 		{
 			name: "empty",
@@ -744,6 +777,18 @@ func TestObfuscateConfig(t *testing.T) {
 			expectedNewPairs: 4,
 		},
 		{
+			// A flag can be used to turn off obfuscation for
+			// pubkeys.
+			name: "no pubkeys obfuscation",
+			config: []byte(`{"version":1,"list":` +
+				`["d23da57575cdcb878ac191e1e0c8a5c4f061b11cfdc7a8ec5c9d495270de66fdbf",` +
+				`"1234567890123"]}`),
+			privacyFlags: []session.PrivacyFlag{
+				session.ClearPubkeys,
+			},
+			expectedNewPairs: 1,
+		},
+		{
 			// We don't generate new pairs for pubkeys that we
 			// already have a mapping.
 			name: "several pubkeys with known replacement or duplicates",
@@ -757,6 +802,20 @@ func TestObfuscateConfig(t *testing.T) {
 				"586b59212da4623c40dcc68c4573da1719e5893630790c9f2db8940fff3efd8cd4": "123456789012345678901234567890123456789012345678901234567890123456",
 			},
 			expectedNewPairs: 3,
+		},
+		{
+			// We don't obfuscate if we already have a mapping, but
+			// the obfuscation is turned off.
+			name: "several pubkeys with known replacement or duplicates",
+			config: []byte(`{"list":` +
+				`["586b59212da4623c40dcc68c4573da1719e5893630790c9f2db8940fff3efd8cd4",` +
+				`"0e092708c9e737115ff14a85b65466561280d77c1b8cd666bc655536ad81ccca85"]}`),
+			knownMap: map[string]string{
+				"586b59212da4623c40dcc68c4573da1719e5893630790c9f2db8940fff3efd8cd4": "123456789012345678901234567890123456789012345678901234567890123456",
+			},
+			privacyFlags:       []session.PrivacyFlag{session.ClearPubkeys},
+			expectedNewPairs:   0,
+			expectUnobfuscated: true,
 		},
 		{
 			// We don't substitute unknown items.
@@ -829,6 +888,19 @@ func TestObfuscateConfig(t *testing.T) {
 				`123456789012345678901]}`),
 			expectedNewPairs: 0,
 		},
+		{
+			// We don't obfuscate channel ids and points if the
+			// corresponding privacy flag is set.
+			// format.
+			name: "clear channel ids",
+			config: []byte(`{"version":1,"list":` +
+				`["1234567890123",` +
+				`"e092708c9e737115ff14a85ab65466561280d77c1b8cd666bc655536ad81ccca:1"]}`),
+			expectedNewPairs: 0,
+			privacyFlags: []session.PrivacyFlag{
+				session.ClearChanIDs,
+			},
+		},
 	}
 
 	// assertConfigStructure checks that the structure of the config is
@@ -877,7 +949,7 @@ func TestObfuscateConfig(t *testing.T) {
 			db := firewalldb.NewPrivacyMapPairs(tt.knownMap)
 
 			config, privMapPairs, err := ObfuscateConfig(
-				db, tt.config,
+				db, tt.config, tt.privacyFlags,
 			)
 			if tt.expectErr {
 				require.Error(t, err)
@@ -904,6 +976,12 @@ func TestObfuscateConfig(t *testing.T) {
 			// we know the length can change.
 			if !tt.notExpectSameLen {
 				require.Equal(t, len(tt.config), len(config))
+			}
+
+			// We expect the config to be unobfuscated if we have
+			// the corresponding privacy flag.
+			if tt.expectUnobfuscated {
+				require.Equal(t, tt.config, config)
 			}
 		})
 	}

@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/lightninglabs/lightning-terminal/session"
 	"go.etcd.io/bbolt"
 )
 
@@ -42,13 +41,11 @@ var (
 type DB struct {
 	*bbolt.DB
 
-	sessionIDIndex session.IDToGroupIndex
+	sessionIDIndex SessionDB
 }
 
 // NewDB creates a new bolt database that can be found at the given directory.
-func NewDB(dir, fileName string, sessionIDIndex session.IDToGroupIndex) (*DB,
-	error) {
-
+func NewDB(dir, fileName string, sessionIDIndex SessionDB) (*DB, error) {
 	firstInit := false
 	path := filepath.Join(dir, fileName)
 

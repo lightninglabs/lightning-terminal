@@ -9,6 +9,7 @@ import (
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
+	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/stretchr/testify/require"
@@ -173,6 +174,7 @@ func TestChannelRestrictRealToPseudo(t *testing.T) {
 
 	tests := []struct {
 		name           string
+		privacyFlags   session.PrivacyFlags
 		dbPreLoad      map[string]string
 		expectNewPairs map[string]bool
 	}{
@@ -198,6 +200,12 @@ func TestChannelRestrictRealToPseudo(t *testing.T) {
 			expectNewPairs: map[string]bool{
 				chanID1: true,
 				chanID3: true,
+			},
+		},
+		{
+			name: "turned off mapping",
+			privacyFlags: session.PrivacyFlags{
+				session.ClearChanIDs,
 			},
 		},
 	}
@@ -240,7 +248,9 @@ func TestChannelRestrictRealToPseudo(t *testing.T) {
 			// rule. This will return the rule value in its pseudo
 			// form along with any new privacy map pairs that should
 			// be added to the DB.
-			v, newPairs, err := cr.RealToPseudo(privMapPairDB)
+			v, newPairs, err := cr.RealToPseudo(
+				privMapPairDB, test.privacyFlags,
+			)
 			require.NoError(t, err)
 			require.Len(t, newPairs, len(test.expectNewPairs))
 
@@ -256,6 +266,16 @@ func TestChannelRestrictRealToPseudo(t *testing.T) {
 
 			denyList, ok := v.(*ChannelRestrict)
 			require.True(t, ok)
+
+			// We expect the original deny list if we switch off
+			// privacy mapping.
+			if test.privacyFlags.Contains(
+				session.ClearChanIDs) {
+
+				for _, p := range cr.DenyList {
+					expectedDenyList[p] = true
+				}
+			}
 
 			// Assert that the resulting deny list is the same
 			// length as the un-obfuscated one.
