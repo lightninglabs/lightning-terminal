@@ -368,6 +368,86 @@ func TestChannelPolicyBoundsCheckers(t *testing.T) {
 			},
 			expectErr: true,
 		},
+		{
+			name: "channel opening sync in bounds",
+			uri:  "/lnrpc.Lightning/OpenChannelSync",
+			msg: &lnrpc.OpenChannelRequest{
+				UseBaseFee:  true,
+				BaseFee:     6,
+				UseFeeRate:  true,
+				FeeRate:     6000000,
+				MinHtlcMsat: 20,
+			},
+		},
+		{
+			name: "channel opening high fee rate",
+			uri:  "/lnrpc.Lightning/OpenChannelSync",
+			msg: &lnrpc.OpenChannelRequest{
+				UseBaseFee:  true,
+				BaseFee:     6,
+				UseFeeRate:  true,
+				FeeRate:     11000000,
+				MinHtlcMsat: 20,
+			},
+			expectErr: true,
+		},
+		{
+			name: "channel opening high base fee",
+			uri:  "/lnrpc.Lightning/OpenChannelSync",
+			msg: &lnrpc.OpenChannelRequest{
+				UseBaseFee:  true,
+				BaseFee:     11,
+				UseFeeRate:  true,
+				FeeRate:     6000000,
+				MinHtlcMsat: 20,
+			},
+			expectErr: true,
+		},
+		{
+			name: "allowed batch channel opening",
+			uri:  "/lnrpc.Lightning/BatchOpenChannel",
+			msg: &lnrpc.BatchOpenChannelRequest{
+				Channels: []*lnrpc.BatchOpenChannel{
+					{
+						UseBaseFee:  true,
+						BaseFee:     5,
+						UseFeeRate:  true,
+						FeeRate:     5000000,
+						MinHtlcMsat: 10,
+					},
+					{
+						UseBaseFee:  true,
+						BaseFee:     10,
+						UseFeeRate:  true,
+						FeeRate:     10000000,
+						MinHtlcMsat: 10,
+					},
+				},
+			},
+		},
+		{
+			name: "batch channel opening low min htlc msat",
+			uri:  "/lnrpc.Lightning/BatchOpenChannel",
+			msg: &lnrpc.BatchOpenChannelRequest{
+				Channels: []*lnrpc.BatchOpenChannel{
+					{
+						UseBaseFee:  true,
+						BaseFee:     6,
+						UseFeeRate:  true,
+						FeeRate:     6000000,
+						MinHtlcMsat: 20,
+					},
+					{
+						UseBaseFee:  true,
+						BaseFee:     6,
+						UseFeeRate:  true,
+						FeeRate:     6000000,
+						MinHtlcMsat: 9,
+					},
+				},
+			},
+			expectErr: true,
+		},
 	}
 
 	for _, test := range tests {

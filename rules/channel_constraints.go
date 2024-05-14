@@ -207,6 +207,11 @@ type ChanOpenReq interface {
 	GetCloseAddress() string
 	GetPrivate() bool
 	GetNodePubkey() []byte
+	GetBaseFee() uint64
+	GetUseBaseFee() bool
+	GetFeeRate() uint64
+	GetUseFeeRate() bool
+	GetMinHtlcMsat() int64
 }
 
 // checkOpenRequest verifies that the given request is valid given the

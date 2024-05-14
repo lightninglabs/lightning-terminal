@@ -175,6 +175,24 @@ func (f *ChanPolicyBounds) checkers() map[string]mid.RoundTripChecker {
 				return f.checkPolicyUpdate(ctx, r)
 			},
 		),
+		"/lnrpc.Lightning/OpenChannelSync": mid.NewRequestChecker(
+			&lnrpc.OpenChannelRequest{},
+			&lnrpc.ChannelPoint{},
+			func(ctx context.Context,
+				r *lnrpc.OpenChannelRequest) error {
+
+				return f.checkOpenChannelRequestFee(ctx, r)
+			},
+		),
+		"/lnrpc.Lightning/BatchOpenChannel": mid.NewRequestChecker(
+			&lnrpc.BatchOpenChannelRequest{},
+			&lnrpc.BatchOpenChannelResponse{},
+			func(ctx context.Context,
+				r *lnrpc.BatchOpenChannelRequest) error {
+
+				return f.checkBatchOpenChannelRequestFee(ctx, r)
+			},
+		),
 	}
 }
 
@@ -216,6 +234,65 @@ func (f *ChanPolicyBounds) checkPolicyUpdate(_ context.Context,
 
 	if req.MaxHtlcMsat > f.MaxHtlcMsat {
 		return fmt.Errorf("invalid max htlc msat amount")
+	}
+
+	return nil
+}
+
+// checkOpenChannelRequest verifies that the given lnrpc.OpenChannelRequest is
+// valid given the ChannelConstraint values.
+// Note: the onchain fee rate is checked by the onchain budget rule.
+func (f *ChanPolicyBounds) checkOpenChannelRequestFee(_ context.Context,
+	req *lnrpc.OpenChannelRequest) error {
+
+	return checkOpenRequestFee(f, req)
+}
+
+// checkBatchOpenChannelRequest verifies that the given
+// lnrpc.BatchOpenChannelRequest is valid for each individual channel requested
+// given the ChannelConstraint values.
+// Note: the onchain fee rate is checked by the onchain budget rule.
+func (f *ChanPolicyBounds) checkBatchOpenChannelRequestFee(_ context.Context,
+	req *lnrpc.BatchOpenChannelRequest) error {
+
+	// We check that each channel in the batch request is valid.
+	for _, openReq := range req.Channels {
+		err := checkOpenRequestFee(f, openReq)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// checkOpenRequestFee verifies that the given lnrpc.OpenChannelRequest is valid
+// given the ChanPolicyBounds values.
+func checkOpenRequestFee(f *ChanPolicyBounds, req ChanOpenReq) error {
+	if req.GetUseBaseFee() {
+		if req.GetBaseFee() < f.MinBaseMsat ||
+			req.GetBaseFee() > f.MaxBaseMsat {
+
+			return fmt.Errorf("invalid base fee amount")
+		}
+	}
+
+	if req.GetUseFeeRate() {
+		if req.GetFeeRate() > math.MaxUint32 {
+			return fmt.Errorf("fee rate is too large")
+		}
+
+		if uint32(req.GetFeeRate()) < f.MinRatePPM ||
+			uint32(req.GetFeeRate()) > f.MaxRatePPM {
+
+			return fmt.Errorf("invalid fee rate")
+		}
+	}
+
+	if req.GetMinHtlcMsat() < int64(f.MinHtlcMsat) ||
+		req.GetMinHtlcMsat() > int64(f.MaxHtlcMsat) {
+
+		return fmt.Errorf("invalid min htlc msat amount")
 	}
 
 	return nil
