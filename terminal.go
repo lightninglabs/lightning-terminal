@@ -1221,14 +1221,15 @@ func (g *LightningTerminal) Permissions() map[string][]bakery.Op {
 //
 // NOTE: This is part of the lnd.WalletConfigBuilder interface.
 func (g *LightningTerminal) BuildWalletConfig(ctx context.Context,
-	dbs *lnd.DatabaseInstances, interceptorChain *rpcperms.InterceptorChain,
+	dbs *lnd.DatabaseInstances, auxComponents *lnd.AuxComponents,
+	interceptorChain *rpcperms.InterceptorChain,
 	grpcListeners []*lnd.ListenerWithSignal) (*chainreg.PartialChainControl,
 	*btcwallet.Config, func(), error) {
 
 	g.lndInterceptorChain = interceptorChain
 
 	return g.defaultImplCfg.WalletConfigBuilder.BuildWalletConfig(
-		ctx, dbs, interceptorChain, grpcListeners,
+		ctx, dbs, auxComponents, interceptorChain, grpcListeners,
 	)
 }
 
@@ -1654,7 +1655,7 @@ func (g *LightningTerminal) initSubServers() {
 	g.subServerMgr.AddServer(
 		subservers.NewTaprootAssetsSubServer(
 			g.cfg.TaprootAssets, g.cfg.Remote.TaprootAssets,
-			g.cfg.tapRemote,
+			g.cfg.tapRemote, g.cfg.lndRemote,
 		), g.cfg.TaprootAssetsMode != ModeDisable,
 	)
 }

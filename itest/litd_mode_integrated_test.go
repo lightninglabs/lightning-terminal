@@ -480,7 +480,7 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 	resp, err := net.Alice.GetInfo(ctx, &lnrpc.GetInfoRequest{})
 	require.NoError(t, err)
 	require.NotEmpty(t, resp.Alias)
-	require.Contains(t, resp.Alias, "0")
+	require.Contains(t, resp.Alias, "Alice")
 
 	t.Run("certificate check", func(tt *testing.T) {
 		runCertificateCheck(tt, net.Alice)
