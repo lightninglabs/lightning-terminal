@@ -3,14 +3,18 @@ package itest
 import (
 	"context"
 	"fmt"
+	"testing"
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
+	"github.com/lightninglabs/taproot-assets/taprpc"
 	"github.com/lightningnetwork/lnd/channeldb"
 	"github.com/lightningnetwork/lnd/lnrpc"
+	"github.com/lightningnetwork/lnd/lnrpc/walletrpc"
 	"github.com/lightningnetwork/lnd/lntest"
 	"github.com/lightningnetwork/lnd/lntest/wait"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 // shutdownAndAssert shuts down the given node and asserts that no errors
@@ -172,24 +176,25 @@ func assertChannelClosed(ctx context.Context, t *harnessTest,
 	// block.
 	block := mineBlocks(t, net, 1, 1)[0]
 
-	closingTxid, err := net.WaitForChannelClose(closeUpdates)
+	closingUpdate, err := net.WaitForChannelClose(closeUpdates)
 	require.NoError(t.t, err, "error while waiting for channel close")
 
+	closingTxid, err := chainhash.NewHash(closingUpdate.ClosingTxid)
+	require.NoError(t.t, err)
 	assertTxInBlock(t, block, closingTxid)
 
 	// Finally, the transaction should no longer be in the waiting close
 	// state as we've just mined a block that should include the closing
 	// transaction.
 	err = wait.Predicate(func() bool {
-		pendingChansRequest := &lnrpc.PendingChannelsRequest{}
-		pendingChanResp, err := node.PendingChannels(
-			ctx, pendingChansRequest,
+		resp, err := node.PendingChannels(
+			ctx, &lnrpc.PendingChannelsRequest{},
 		)
 		if err != nil {
 			return false
 		}
 
-		for _, pendingClose := range pendingChanResp.WaitingCloseChannels {
+		for _, pendingClose := range resp.WaitingCloseChannels {
 			if pendingClose.Channel.ChannelPoint == chanPointStr {
 				return false
 			}
@@ -202,4 +207,35 @@ func assertChannelClosed(ctx context.Context, t *harnessTest,
 	)
 
 	return closingTxid
+}
+
+func assertSweepExists(t *testing.T, node *HarnessNode,
+	witnessType walletrpc.WitnessType) {
+
+	ctxb := context.Background()
+	err := wait.NoError(func() error {
+		pendingSweeps, err := node.WalletKitClient.PendingSweeps(
+			ctxb, &walletrpc.PendingSweepsRequest{},
+		)
+		if err != nil {
+			return err
+		}
+
+		for _, sweep := range pendingSweeps.PendingSweeps {
+			if sweep.WitnessType == witnessType {
+				return nil
+			}
+		}
+
+		return fmt.Errorf("failed to find second level sweep: %v",
+			toProtoJSON(t, pendingSweeps))
+	}, defaultTimeout)
+	require.NoError(t, err)
+}
+
+func toProtoJSON(t *testing.T, resp proto.Message) string {
+	jsonBytes, err := taprpc.ProtoJSONMarshalOpts.Marshal(resp)
+	require.NoError(t, err)
+
+	return string(jsonBytes)
 }
