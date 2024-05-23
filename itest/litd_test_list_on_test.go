@@ -20,4 +20,8 @@ var allTestCases = []*testCase{
 		name: "test large http header",
 		test: testLargeHttpHeader,
 	},
+	{
+		name: "test custom channels",
+		test: testCustomChannels,
+	},
 }

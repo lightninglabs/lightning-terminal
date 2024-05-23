@@ -1037,7 +1037,8 @@ func (n *NetworkHarness) CloseChannel(lnNode *HarnessNode,
 // passed context has a timeout, then if the timeout is reached before the
 // notification is received then an error is returned.
 func (n *NetworkHarness) WaitForChannelClose(
-	closeChanStream lnrpc.Lightning_CloseChannelClient) (*chainhash.Hash, error) {
+	stream lnrpc.Lightning_CloseChannelClient) (*lnrpc.ChannelCloseUpdate,
+	error) {
 
 	ctxb := context.Background()
 	ctx, cancel := context.WithTimeout(ctxb, wait.ChannelCloseTimeout)
@@ -1046,13 +1047,14 @@ func (n *NetworkHarness) WaitForChannelClose(
 	errChan := make(chan error)
 	updateChan := make(chan *lnrpc.CloseStatusUpdate_ChanClose)
 	go func() {
-		closeResp, err := closeChanStream.Recv()
+		closeResp, err := stream.Recv()
 		if err != nil {
 			errChan <- err
 			return
 		}
 
-		closeFin, ok := closeResp.Update.(*lnrpc.CloseStatusUpdate_ChanClose)
+		update := closeResp.Update
+		closeFin, ok := update.(*lnrpc.CloseStatusUpdate_ChanClose)
 		if !ok {
 			errChan <- fmt.Errorf("expected channel close update, "+
 				"instead got %v", closeFin)
@@ -1070,7 +1072,7 @@ func (n *NetworkHarness) WaitForChannelClose(
 	case err := <-errChan:
 		return nil, err
 	case update := <-updateChan:
-		return chainhash.NewHash(update.ChanClose.ClosingTxid)
+		return update.ChanClose, nil
 	}
 }
 
