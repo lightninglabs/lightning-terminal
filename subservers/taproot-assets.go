@@ -177,6 +177,20 @@ func (t *taprootAssetsSubServer) RegisterRestService(ctx context.Context,
 		return err
 	}
 
+	err = rfqrpc.RegisterRfqHandlerFromEndpoint(
+		ctx, mux, endpoint, dialOpts,
+	)
+	if err != nil {
+		return err
+	}
+
+	err = tchrpc.RegisterTaprootAssetChannelsHandlerFromEndpoint(
+		ctx, mux, endpoint, dialOpts,
+	)
+	if err != nil {
+		return err
+	}
+
 	err = universerpc.RegisterUniverseHandlerFromEndpoint(
 		ctx, mux, endpoint, dialOpts,
 	)
@@ -238,4 +252,10 @@ func (t *taprootAssetsSubServer) WhiteListedURLs() map[string]struct{} {
 		t.cfg.RpcConf.AllowPublicUniProofCourier || t.remote,
 		t.cfg.RpcConf.AllowPublicStats || t.remote,
 	)
+}
+
+// Impl returns the actual implementation of the sub-server. This might not be
+// set if the sub-server is running in remote mode.
+func (t *taprootAssetsSubServer) Impl() any {
+	return t.Server
 }
