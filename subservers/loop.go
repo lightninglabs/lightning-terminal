@@ -9,6 +9,7 @@ import (
 	"github.com/lightninglabs/loop/loopd"
 	"github.com/lightninglabs/loop/loopd/perms"
 	"github.com/lightninglabs/loop/looprpc"
+	"github.com/lightninglabs/taproot-assets/fn"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"google.golang.org/grpc"
 	"gopkg.in/macaroon-bakery.v2/bakery"
@@ -135,4 +136,14 @@ func (l *loopSubServer) Permissions() map[string][]bakery.Op {
 // NOTE: this is part of the SubServer interface.
 func (l *loopSubServer) WhiteListedURLs() map[string]struct{} {
 	return nil
+}
+
+// Impl returns the actual implementation of the sub-server. This might not be
+// set if the sub-server is running in remote mode.
+func (l *loopSubServer) Impl() fn.Option[any] {
+	if l.Daemon == nil {
+		return fn.None[any]()
+	}
+
+	return fn.Some[any](l.Daemon)
 }
