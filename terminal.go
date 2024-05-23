@@ -33,9 +33,12 @@ import (
 	"github.com/lightninglabs/lightning-terminal/status"
 	"github.com/lightninglabs/lightning-terminal/subservers"
 	"github.com/lightninglabs/lndclient"
+	taprootassets "github.com/lightninglabs/taproot-assets"
 	"github.com/lightningnetwork/lnd"
 	"github.com/lightningnetwork/lnd/build"
 	"github.com/lightningnetwork/lnd/chainreg"
+	"github.com/lightningnetwork/lnd/fn"
+	"github.com/lightningnetwork/lnd/funding"
 	"github.com/lightningnetwork/lnd/kvdb"
 	"github.com/lightningnetwork/lnd/lncfg"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -48,8 +51,12 @@ import (
 	"github.com/lightningnetwork/lnd/lnrpc/walletrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/watchtowerrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/wtclientrpc"
+	"github.com/lightningnetwork/lnd/lnwallet"
 	"github.com/lightningnetwork/lnd/lnwallet/btcwallet"
+	"github.com/lightningnetwork/lnd/lnwallet/chancloser"
 	"github.com/lightningnetwork/lnd/macaroons"
+	"github.com/lightningnetwork/lnd/protofsm"
+	"github.com/lightningnetwork/lnd/routing"
 	"github.com/lightningnetwork/lnd/rpcperms"
 	"github.com/lightningnetwork/lnd/signal"
 	grpcProxy "github.com/mwitkow/grpc-proxy/proxy"
@@ -234,7 +241,8 @@ func (g *LightningTerminal) Run() error {
 	// Construct a new Manager.
 	g.permsMgr, err = perms.NewManager(false)
 	if err != nil {
-		return fmt.Errorf("could not create permissions manager")
+		return fmt.Errorf("could not create permissions manager: %w",
+			err)
 	}
 
 	// The litcli status command will call the "/lnrpc.State/GetState" RPC.
@@ -466,6 +474,25 @@ func (g *LightningTerminal) start() error {
 			}},
 		}
 
+		var auxComponents lnd.AuxComponents
+		switch g.cfg.TaprootAssetsMode {
+		case ModeRemote, ModeDisable:
+			log.Warnf("Taproot Assets daemon is either disabled " +
+				"or running in remote mode. Taproot Asset " +
+				"channel functionality will NOT be " +
+				"available. To enable, set Taproot Assets " +
+				"mode to 'integrated' in the config file.")
+
+		case ModeIntegrated:
+			components, err := g.buildAuxComponents()
+			if err != nil {
+				return fmt.Errorf("could not build aux "+
+					"components: %w", err)
+			}
+
+			auxComponents = *components
+		}
+
 		implCfg := &lnd.ImplementationCfg{
 			GrpcRegistrar:       g,
 			RestRegistrar:       g,
@@ -473,6 +500,7 @@ func (g *LightningTerminal) start() error {
 			DatabaseBuilder:     g.defaultImplCfg.DatabaseBuilder,
 			WalletConfigBuilder: g,
 			ChainControlBuilder: g.defaultImplCfg.ChainControlBuilder,
+			AuxComponents:       auxComponents,
 		}
 
 		g.wg.Add(1)
@@ -1231,6 +1259,46 @@ func (g *LightningTerminal) BuildWalletConfig(ctx context.Context,
 	return g.defaultImplCfg.WalletConfigBuilder.BuildWalletConfig(
 		ctx, dbs, auxComponents, interceptorChain, grpcListeners,
 	)
+}
+
+// buildAuxComponent builds the auxiliary components required by lnd when
+// running in integrated mode with tapd being the service that provides the
+// aux component implementations.
+func (g *LightningTerminal) buildAuxComponents() (*lnd.AuxComponents, error) {
+	errNotAvailable := fmt.Errorf("tapd is not available, both lnd and " +
+		"tapd must be started in integrated mode for Taproot " +
+		"Assets Channels to be available")
+
+	tapdWrapper, available := g.subServerMgr.GetServer(subservers.TAP)
+	if !available {
+		return nil, errNotAvailable
+	}
+
+	if tapdWrapper.Remote() {
+		return nil, errNotAvailable
+	}
+
+	tapd := tapdWrapper.Impl().(*taprootassets.Server)
+
+	router := protofsm.NewMultiMsgRouter()
+	router.Start()
+	err := router.RegisterEndpoint(tapd)
+	if err != nil {
+		return nil, fmt.Errorf("error registering tapd endpoint: %w",
+			err)
+	}
+
+	return &lnd.AuxComponents{
+		AuxLeafStore: fn.Some[lnwallet.AuxLeafStore](tapd),
+		MsgRouter:    fn.Some[protofsm.MsgRouter](router),
+		AuxFundingController: fn.Some[funding.AuxFundingController](
+			tapd,
+		),
+		AuxSigner:     fn.Some[lnwallet.AuxSigner](tapd),
+		TrafficShaper: fn.Some[routing.TlvTrafficShaper](tapd),
+		AuxDataParser: fn.Some[lnd.AuxDataParser](tapd),
+		AuxChanCloser: fn.Some[chancloser.AuxChanCloser](tapd),
+	}, nil
 }
 
 // shutdownSubServers stops all subservers that were started and attached to
