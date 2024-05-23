@@ -3,11 +3,13 @@ package itest
 import (
 	"context"
 	"fmt"
+	"testing"
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/lightningnetwork/lnd/channeldb"
 	"github.com/lightningnetwork/lnd/lnrpc"
+	"github.com/lightningnetwork/lnd/lnrpc/walletrpc"
 	"github.com/lightningnetwork/lnd/lntest"
 	"github.com/lightningnetwork/lnd/lntest/wait"
 	"github.com/stretchr/testify/require"
@@ -172,9 +174,11 @@ func assertChannelClosed(ctx context.Context, t *harnessTest,
 	// block.
 	block := mineBlocks(t, net, 1, 1)[0]
 
-	closingTxid, err := net.WaitForChannelClose(closeUpdates)
+	closingUpdate, err := net.WaitForChannelClose(closeUpdates)
 	require.NoError(t.t, err, "error while waiting for channel close")
 
+	closingTxid, err := chainhash.NewHash(closingUpdate.ClosingTxid)
+	require.NoError(t.t, err)
 	assertTxInBlock(t, block, closingTxid)
 
 	// Finally, the transaction should no longer be in the waiting close
@@ -202,4 +206,28 @@ func assertChannelClosed(ctx context.Context, t *harnessTest,
 	)
 
 	return closingTxid
+}
+
+func assertSweepExists(t *testing.T, node *HarnessNode,
+	witnessType walletrpc.WitnessType) {
+
+	ctxb := context.Background()
+	err := wait.NoError(func() error {
+		pendingSweeps, err := node.WalletKitClient.PendingSweeps(
+			ctxb, &walletrpc.PendingSweepsRequest{},
+		)
+		if err != nil {
+			return err
+		}
+
+		for _, sweep := range pendingSweeps.PendingSweeps {
+			if sweep.WitnessType == witnessType {
+				return nil
+			}
+		}
+
+		return fmt.Errorf("failed to find second level sweep: %v",
+			toProtoJSON(t, pendingSweeps))
+	}, defaultTimeout)
+	require.NoError(t, err)
 }
