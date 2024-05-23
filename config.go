@@ -190,9 +190,10 @@ type Config struct {
 	// friendly. Because then we can reference the explicit modes in the
 	// help descriptions of the section headers. We'll parse the mode into
 	// a bool for internal use for better code readability.
-	LndMode       string        `long:"lnd-mode" description:"The mode to run lnd in, either 'remote' (default) or 'integrated'. 'integrated' means lnd is started alongside the UI and everything is stored in lnd's main data directory, configure everything by using the --lnd.* flags. 'remote' means the UI connects to an existing lnd node and acts as a proxy for gRPC calls to it. In the remote node LiT creates its own directory for log and configuration files, configure everything using the --remote.* flags." choice:"integrated" choice:"remote"`
-	Lnd           *lnd.Config   `group:"Integrated lnd (use when lnd-mode=integrated)" namespace:"lnd"`
-	LndRPCTimeout time.Duration `long:"lndrpctimeout" description:"The timeout for RPC calls to lnd from other sub servers. This can be adjusted for slow lnd instances to give loop/pool/faraday/taproot-assets more time when querying into lnd's RPC methods. This value should NOT be set to anything below 30 seconds to avoid problems."`
+	LndMode            string        `long:"lnd-mode" description:"The mode to run lnd in, either 'remote' (default) or 'integrated'. 'integrated' means lnd is started alongside the UI and everything is stored in lnd's main data directory, configure everything by using the --lnd.* flags. 'remote' means the UI connects to an existing lnd node and acts as a proxy for gRPC calls to it. In the remote node LiT creates its own directory for log and configuration files, configure everything using the --remote.* flags." choice:"integrated" choice:"remote"`
+	Lnd                *lnd.Config   `group:"Integrated lnd (use when lnd-mode=integrated)" namespace:"lnd"`
+	LndRPCTimeout      time.Duration `long:"lndrpctimeout" description:"The timeout for RPC calls to lnd from other sub servers. This can be adjusted for slow lnd instances to give loop/pool/faraday/taproot-assets more time when querying into lnd's RPC methods. This value should NOT be set to anything below 30 seconds to avoid problems."`
+	LndConnectInterval time.Duration `long:"lndconnectinterval" hidden:"true" description:"The interval at which LiT tries to connect to the lnd node. This value should only be changed for development mode."`
 
 	FaradayMode string          `long:"faraday-mode" description:"The mode to run faraday in, either 'integrated' (default), 'remote' or 'disable'. 'integrated' means faraday is started alongside the UI and everything is stored in faraday's main data directory, configure everything by using the --faraday.* flags. 'remote' means the UI connects to an existing faraday node and acts as a proxy for gRPC calls to it. 'disable' means that LiT is started without faraday." choice:"integrated" choice:"remote" choice:"disable"`
 	Faraday     *faraday.Config `group:"Integrated faraday options (use when faraday-mode=integrated)" namespace:"faraday"`
@@ -314,6 +315,7 @@ func defaultConfig() *Config {
 		LndMode:              DefaultLndMode,
 		Lnd:                  &lndDefaultConfig,
 		LndRPCTimeout:        defaultRPCTimeout,
+		LndConnectInterval:   defaultStartupTimeout,
 		LitDir:               DefaultLitDir,
 		LetsEncryptListen:    defaultLetsEncryptListen,
 		LetsEncryptDir:       defaultLetsEncryptDir,
