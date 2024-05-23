@@ -795,7 +795,7 @@ func (g *LightningTerminal) setUpLNDClients(lndQuit chan struct{}) error {
 		case <-interceptor.ShutdownChannel():
 			return fmt.Errorf("received the shutdown signal")
 
-		case <-time.After(defaultStartupTimeout):
+		case <-time.After(g.cfg.LndConnectInterval):
 			return nil
 		}
 	}
@@ -862,16 +862,19 @@ func (g *LightningTerminal) setUpLNDClients(lndQuit chan struct{}) error {
 	for {
 		g.lndClient, err = lndclient.NewLndServices(
 			&lndclient.LndServicesConfig{
-				LndAddress:            host,
-				Network:               network,
-				TLSPath:               tlsPath,
-				Insecure:              insecure,
-				CustomMacaroonPath:    macPath,
-				CustomMacaroonHex:     hex.EncodeToString(macData),
+				LndAddress:         host,
+				Network:            network,
+				TLSPath:            tlsPath,
+				Insecure:           insecure,
+				CustomMacaroonPath: macPath,
+				CustomMacaroonHex: hex.EncodeToString(
+					macData,
+				),
 				BlockUntilChainSynced: true,
 				BlockUntilUnlocked:    true,
 				CallerCtx:             ctxc,
 				CheckVersion:          minimalCompatibleVersion,
+				ChainSyncPollInterval: g.cfg.LndConnectInterval,
 			},
 		)
 		if err == nil {
