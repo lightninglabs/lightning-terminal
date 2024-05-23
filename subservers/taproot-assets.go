@@ -103,9 +103,10 @@ func (t *taprootAssetsSubServer) Start(_ lnrpc.LightningClient,
 		return err
 	}
 
-	// The taproot asset channel feature is still experimental, so we
-	// disable it for now.
-	const enableChannelFeatures = false
+	// If we're being called here, it means tapd is running in integrated
+	// mode. But we can only offer Taproot Asset channel functionality if
+	// lnd is also running in integrated mode.
+	enableChannelFeatures := !t.lndRemote
 
 	err = tapcfg.ConfigureSubServer(
 		t.Server, t.cfg, log, &lndGrpc.LndServices,

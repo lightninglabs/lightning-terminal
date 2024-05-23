@@ -127,6 +127,15 @@ SwapClient.GetLsatTokens = {
   responseType: loop_pb.TokensResponse
 };
 
+SwapClient.FetchL402Token = {
+  methodName: "FetchL402Token",
+  service: SwapClient,
+  requestStream: false,
+  responseStream: false,
+  requestType: loop_pb.FetchL402TokenRequest,
+  responseType: loop_pb.FetchL402TokenResponse
+};
+
 SwapClient.GetInfo = {
   methodName: "GetInfo",
   service: SwapClient,
@@ -197,6 +206,69 @@ SwapClient.ListInstantOuts = {
   responseStream: false,
   requestType: loop_pb.ListInstantOutsRequest,
   responseType: loop_pb.ListInstantOutsResponse
+};
+
+SwapClient.NewStaticAddress = {
+  methodName: "NewStaticAddress",
+  service: SwapClient,
+  requestStream: false,
+  responseStream: false,
+  requestType: loop_pb.NewStaticAddressRequest,
+  responseType: loop_pb.NewStaticAddressResponse
+};
+
+SwapClient.ListUnspentDeposits = {
+  methodName: "ListUnspentDeposits",
+  service: SwapClient,
+  requestStream: false,
+  responseStream: false,
+  requestType: loop_pb.ListUnspentDepositsRequest,
+  responseType: loop_pb.ListUnspentDepositsResponse
+};
+
+SwapClient.WithdrawDeposits = {
+  methodName: "WithdrawDeposits",
+  service: SwapClient,
+  requestStream: false,
+  responseStream: false,
+  requestType: loop_pb.WithdrawDepositsRequest,
+  responseType: loop_pb.WithdrawDepositsResponse
+};
+
+SwapClient.ListStaticAddressDeposits = {
+  methodName: "ListStaticAddressDeposits",
+  service: SwapClient,
+  requestStream: false,
+  responseStream: false,
+  requestType: loop_pb.ListStaticAddressDepositsRequest,
+  responseType: loop_pb.ListStaticAddressDepositsResponse
+};
+
+SwapClient.ListStaticAddressSwaps = {
+  methodName: "ListStaticAddressSwaps",
+  service: SwapClient,
+  requestStream: false,
+  responseStream: false,
+  requestType: loop_pb.ListStaticAddressSwapsRequest,
+  responseType: loop_pb.ListStaticAddressSwapsResponse
+};
+
+SwapClient.GetStaticAddressSummary = {
+  methodName: "GetStaticAddressSummary",
+  service: SwapClient,
+  requestStream: false,
+  responseStream: false,
+  requestType: loop_pb.StaticAddressSummaryRequest,
+  responseType: loop_pb.StaticAddressSummaryResponse
+};
+
+SwapClient.StaticAddressLoopIn = {
+  methodName: "StaticAddressLoopIn",
+  service: SwapClient,
+  requestStream: false,
+  responseStream: false,
+  requestType: loop_pb.StaticAddressLoopInRequest,
+  responseType: loop_pb.StaticAddressLoopInResponse
 };
 
 exports.SwapClient = SwapClient;
@@ -617,6 +689,37 @@ SwapClientClient.prototype.getLsatTokens = function getLsatTokens(requestMessage
   };
 };
 
+SwapClientClient.prototype.fetchL402Token = function fetchL402Token(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(SwapClient.FetchL402Token, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
 SwapClientClient.prototype.getInfo = function getInfo(requestMessage, metadata, callback) {
   if (arguments.length === 2) {
     callback = arguments[1];
@@ -839,6 +942,223 @@ SwapClientClient.prototype.listInstantOuts = function listInstantOuts(requestMes
     callback = arguments[1];
   }
   var client = grpc.unary(SwapClient.ListInstantOuts, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+SwapClientClient.prototype.newStaticAddress = function newStaticAddress(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(SwapClient.NewStaticAddress, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+SwapClientClient.prototype.listUnspentDeposits = function listUnspentDeposits(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(SwapClient.ListUnspentDeposits, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+SwapClientClient.prototype.withdrawDeposits = function withdrawDeposits(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(SwapClient.WithdrawDeposits, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+SwapClientClient.prototype.listStaticAddressDeposits = function listStaticAddressDeposits(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(SwapClient.ListStaticAddressDeposits, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+SwapClientClient.prototype.listStaticAddressSwaps = function listStaticAddressSwaps(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(SwapClient.ListStaticAddressSwaps, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+SwapClientClient.prototype.getStaticAddressSummary = function getStaticAddressSummary(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(SwapClient.GetStaticAddressSummary, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+SwapClientClient.prototype.staticAddressLoopIn = function staticAddressLoopIn(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(SwapClient.StaticAddressLoopIn, {
     request: requestMessage,
     host: this.serviceHost,
     metadata: metadata,

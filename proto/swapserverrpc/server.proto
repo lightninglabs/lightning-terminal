@@ -289,11 +289,10 @@ message ServerLoopInQuoteRequest {
     //    litd/v0.2.0-alpha/commit=326d754
     string user_agent = 6;
 
-    // If this is a quote request for a static address loop in, this value
-    // defines the number of static address deposits that the client wants to
-    // quote for. The amount of the quote reflects the sum of all deposits. The
-    // number of deposits here is taken into consideration for the total swap
-    // fee.
+    // The number of static address deposits the client wants to quote for.
+    // If the number of deposits exceeds one the server will apply a per-input
+    // service fee. This is to cover for the increased on-chain fee the server
+    // has to pay when the sweeping transaction is broadcast.
     uint32 num_static_address_deposits = 7;
 }
 
@@ -668,69 +667,23 @@ message SubscribeNotificationsRequest {
 message SubscribeNotificationsResponse {
     oneof notification {
         ServerReservationNotification reservation_notification = 1;
+        ServerStaticLoopInSweepNotification static_loop_in_sweep = 2;
     }
 }
 
-// StaticAddressProtocolVersion represents the static address protocol version
-// the client adheres to.
-enum StaticAddressProtocolVersion {
-    // V0 is the initially released static address protocol version.
-    V0 = 0;
-}
+// ServerStaticLoopInSweepNotification is a request from the server to the
+// client to cosign a transaction that contains deposits from a finished static
+// loop ins.
+message ServerStaticLoopInSweepNotification {
+    // The psbt of the sweep transaction.
+    bytes sweep_tx_psbt = 1;
 
-service StaticAddressServer {
-    // ServerNewAddress generates a new static address for the client to use.
-    // The server will generate the address and return the server key and the
-    // address's CSV expiry.
-    rpc ServerNewAddress (ServerNewAddressRequest)
-        returns (ServerNewAddressResponse);
+    // The swap hash the deposits are associated with.
+    bytes swap_hash = 2;
 
-    // ServerWithdrawDeposits allows to cooperatively sweep deposits that
-    // haven't timed out yet to the client's wallet. The server will generate
-    // the partial sigs for the client's selected deposits.
-    rpc ServerWithdrawDeposits (ServerWithdrawRequest)
-        returns (ServerWithdrawResponse);
-}
+    // The map of deposit txid:idx to the nonce used by the server.
+    map<string, bytes> deposit_to_nonces = 3;
 
-message ServerNewAddressRequest {
-    // The protocol version that the client adheres to.
-    StaticAddressProtocolVersion protocol_version = 1;
-
-    // The client key for the MuSig2 static address output.
-    bytes client_key = 2;
-}
-
-message ServerNewAddressResponse {
-    ServerAddressParameters params = 1;
-}
-
-message ServerAddressParameters {
-    // The server key for the MuSig2 static address output.
-    bytes server_key = 1;
-
-    // The CSV expiry of the static address output.
-    uint32 expiry = 2;
-}
-
-message ServerWithdrawRequest {
-    // The deposit outpoints the client wishes to close.
-    repeated PrevoutInfo outpoints = 1;
-
-    // The nonces that the client used to generate the coop close tx sigs.
-    repeated bytes client_nonces = 2;
-
-    // The address that the client wants to sweep the static address deposits
-    // to.
-    string client_sweep_addr = 3;
-
-    // The fee rate in sat/kw that the client wants to use for the sweep.
-    uint64 tx_fee_rate = 4 [jstype = JS_STRING];
-}
-
-message ServerWithdrawResponse {
-    // The sweep sigs that the server generated for the htlc.
-    repeated bytes musig2_sweep_sigs = 1;
-
-    // The nonces that the server used to generate the sweepless sweep sigs.
-    repeated bytes server_nonces = 2;
+    // The prevout information of the sweep txn.
+    repeated PrevoutInfo prevout_info = 4;
 }
