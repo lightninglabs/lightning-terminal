@@ -202,7 +202,7 @@ func testFirewallRules(ctx context.Context, net *NetworkHarness,
 	resp, err := net.Alice.GetInfo(ctx, &lnrpc.GetInfoRequest{})
 	require.NoError(t.t, err)
 	require.NotEmpty(t.t, resp.Alias)
-	require.Contains(t.t, resp.Alias, "0")
+	require.Contains(t.t, resp.Alias, "Alice")
 
 	// Open a channel between Alice and Bob so that we have something to
 	// query later.
