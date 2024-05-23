@@ -56,7 +56,8 @@ func TestLightningTerminal(t *testing.T) {
 
 			// Start a chain backend.
 			chainBackend, _, err := lntest.NewBackend(
-				lndHarness.Miner().P2PAddress(), harnessNetParams,
+				lndHarness.Miner().P2PAddress(),
+				harnessNetParams,
 			)
 			require.NoError(t1, err, "new backend")
 
