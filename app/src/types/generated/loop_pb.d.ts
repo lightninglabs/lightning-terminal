@@ -704,6 +704,38 @@ export namespace TokensResponse {
   }
 }
 
+export class FetchL402TokenRequest extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): FetchL402TokenRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: FetchL402TokenRequest): FetchL402TokenRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: FetchL402TokenRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): FetchL402TokenRequest;
+  static deserializeBinaryFromReader(message: FetchL402TokenRequest, reader: jspb.BinaryReader): FetchL402TokenRequest;
+}
+
+export namespace FetchL402TokenRequest {
+  export type AsObject = {
+  }
+}
+
+export class FetchL402TokenResponse extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): FetchL402TokenResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: FetchL402TokenResponse): FetchL402TokenResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: FetchL402TokenResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): FetchL402TokenResponse;
+  static deserializeBinaryFromReader(message: FetchL402TokenResponse, reader: jspb.BinaryReader): FetchL402TokenResponse;
+}
+
+export namespace FetchL402TokenResponse {
+  export type AsObject = {
+  }
+}
+
 export class L402Token extends jspb.Message {
   getBaseMacaroon(): Uint8Array | string;
   getBaseMacaroon_asU8(): Uint8Array;

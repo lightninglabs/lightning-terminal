@@ -285,11 +285,14 @@ func (n *NetworkHarness) litArgs() []string {
 
 // NewNode initializes a new HarnessNode.
 func (n *NetworkHarness) NewNode(t *testing.T, name string, extraArgs []string,
-	remoteMode bool, wait bool) (*HarnessNode, error) {
+	remoteMode bool, wait bool, additionalLitArgs ...string) (*HarnessNode,
+	error) {
+
+	allLitArgs := append(n.litArgs(), additionalLitArgs...)
 
 	return n.newNode(
-		t, name, extraArgs, n.litArgs(), false, remoteMode, nil,
-		wait, false,
+		t, name, extraArgs, allLitArgs, false, remoteMode, nil, wait,
+		false,
 	)
 }
 
@@ -1048,7 +1051,9 @@ func (n *NetworkHarness) CloseChannel(lnNode *HarnessNode,
 
 	err = wait.NoError(func() error {
 		closeReq := &lnrpc.CloseChannelRequest{
-			ChannelPoint: cp, Force: force,
+			ChannelPoint: cp,
+			Force:        force,
+			SatPerVbyte:  5,
 		}
 		closeRespStream, err = lnNode.CloseChannel(ctx, closeReq)
 		if err != nil {
@@ -1076,7 +1081,7 @@ func (n *NetworkHarness) CloseChannel(lnNode *HarnessNode,
 			return fmt.Errorf("unable to decode closeTxid: "+
 				"%v", err)
 		}
-		n.LNDHarness.Miner().AssertTxInMempool(closeTxid)
+		n.LNDHarness.Miner().AssertTxInMempool(*closeTxid)
 
 		return nil
 	}, wait.ChannelCloseTimeout)

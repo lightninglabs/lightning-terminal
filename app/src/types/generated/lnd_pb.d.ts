@@ -1506,6 +1506,11 @@ export class Channel extends jspb.Message {
   getMemo(): string;
   setMemo(value: string): void;
 
+  getCustomChannelData(): Uint8Array | string;
+  getCustomChannelData_asU8(): Uint8Array;
+  getCustomChannelData_asB64(): string;
+  setCustomChannelData(value: Uint8Array | string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Channel.AsObject;
   static toObject(includeInstance: boolean, msg: Channel): Channel.AsObject;
@@ -1554,6 +1559,7 @@ export namespace Channel {
     peerAlias: string,
     peerScidAlias: string,
     memo: string,
+    customChannelData: Uint8Array | string,
   }
 }
 
@@ -2349,6 +2355,42 @@ export namespace ChannelOpenUpdate {
   }
 }
 
+export class CloseOutput extends jspb.Message {
+  getAmountSat(): string;
+  setAmountSat(value: string): void;
+
+  getPkScript(): Uint8Array | string;
+  getPkScript_asU8(): Uint8Array;
+  getPkScript_asB64(): string;
+  setPkScript(value: Uint8Array | string): void;
+
+  getIsLocal(): boolean;
+  setIsLocal(value: boolean): void;
+
+  getCustomChannelData(): Uint8Array | string;
+  getCustomChannelData_asU8(): Uint8Array;
+  getCustomChannelData_asB64(): string;
+  setCustomChannelData(value: Uint8Array | string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): CloseOutput.AsObject;
+  static toObject(includeInstance: boolean, msg: CloseOutput): CloseOutput.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: CloseOutput, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): CloseOutput;
+  static deserializeBinaryFromReader(message: CloseOutput, reader: jspb.BinaryReader): CloseOutput;
+}
+
+export namespace CloseOutput {
+  export type AsObject = {
+    amountSat: string,
+    pkScript: Uint8Array | string,
+    isLocal: boolean,
+    customChannelData: Uint8Array | string,
+  }
+}
+
 export class ChannelCloseUpdate extends jspb.Message {
   getClosingTxid(): Uint8Array | string;
   getClosingTxid_asU8(): Uint8Array;
@@ -2357,6 +2399,21 @@ export class ChannelCloseUpdate extends jspb.Message {
 
   getSuccess(): boolean;
   setSuccess(value: boolean): void;
+
+  hasLocalCloseOutput(): boolean;
+  clearLocalCloseOutput(): void;
+  getLocalCloseOutput(): CloseOutput | undefined;
+  setLocalCloseOutput(value?: CloseOutput): void;
+
+  hasRemoteCloseOutput(): boolean;
+  clearRemoteCloseOutput(): void;
+  getRemoteCloseOutput(): CloseOutput | undefined;
+  setRemoteCloseOutput(value?: CloseOutput): void;
+
+  clearAdditionalOutputsList(): void;
+  getAdditionalOutputsList(): Array<CloseOutput>;
+  setAdditionalOutputsList(value: Array<CloseOutput>): void;
+  addAdditionalOutputs(value?: CloseOutput, index?: number): CloseOutput;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ChannelCloseUpdate.AsObject;
@@ -2372,6 +2429,9 @@ export namespace ChannelCloseUpdate {
   export type AsObject = {
     closingTxid: Uint8Array | string,
     success: boolean,
+    localCloseOutput?: CloseOutput.AsObject,
+    remoteCloseOutput?: CloseOutput.AsObject,
+    additionalOutputsList: Array<CloseOutput.AsObject>,
   }
 }
 
@@ -3356,6 +3416,11 @@ export namespace PendingChannelsResponse {
     getMemo(): string;
     setMemo(value: string): void;
 
+    getCustomChannelData(): Uint8Array | string;
+    getCustomChannelData_asU8(): Uint8Array;
+    getCustomChannelData_asB64(): string;
+    setCustomChannelData(value: Uint8Array | string): void;
+
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): PendingChannel.AsObject;
     static toObject(includeInstance: boolean, msg: PendingChannel): PendingChannel.AsObject;
@@ -3381,6 +3446,7 @@ export namespace PendingChannelsResponse {
       chanStatusFlags: string,
       pb_private: boolean,
       memo: string,
+      customChannelData: Uint8Array | string,
     }
   }
 
@@ -3847,6 +3913,11 @@ export class ChannelBalanceResponse extends jspb.Message {
   getPendingOpenRemoteBalance(): Amount | undefined;
   setPendingOpenRemoteBalance(value?: Amount): void;
 
+  getCustomChannelData(): Uint8Array | string;
+  getCustomChannelData_asU8(): Uint8Array;
+  getCustomChannelData_asB64(): string;
+  setCustomChannelData(value: Uint8Array | string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ChannelBalanceResponse.AsObject;
   static toObject(includeInstance: boolean, msg: ChannelBalanceResponse): ChannelBalanceResponse.AsObject;
@@ -3867,6 +3938,7 @@ export namespace ChannelBalanceResponse {
     unsettledRemoteBalance?: Amount.AsObject,
     pendingOpenLocalBalance?: Amount.AsObject,
     pendingOpenRemoteBalance?: Amount.AsObject,
+    customChannelData: Uint8Array | string,
   }
 }
 
@@ -4221,6 +4293,14 @@ export class Route extends jspb.Message {
   getTotalAmtMsat(): string;
   setTotalAmtMsat(value: string): void;
 
+  getFirstHopAmountMsat(): string;
+  setFirstHopAmountMsat(value: string): void;
+
+  getCustomChannelData(): Uint8Array | string;
+  getCustomChannelData_asU8(): Uint8Array;
+  getCustomChannelData_asB64(): string;
+  setCustomChannelData(value: Uint8Array | string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Route.AsObject;
   static toObject(includeInstance: boolean, msg: Route): Route.AsObject;
@@ -4239,6 +4319,8 @@ export namespace Route {
     hopsList: Array<Hop.AsObject>,
     totalFeesMsat: string,
     totalAmtMsat: string,
+    firstHopAmountMsat: string,
+    customChannelData: Uint8Array | string,
   }
 }
 
@@ -5354,6 +5436,11 @@ export class InvoiceHTLC extends jspb.Message {
   getAmp(): AMP | undefined;
   setAmp(value?: AMP): void;
 
+  getCustomChannelData(): Uint8Array | string;
+  getCustomChannelData_asU8(): Uint8Array;
+  getCustomChannelData_asB64(): string;
+  setCustomChannelData(value: Uint8Array | string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): InvoiceHTLC.AsObject;
   static toObject(includeInstance: boolean, msg: InvoiceHTLC): InvoiceHTLC.AsObject;
@@ -5377,6 +5464,7 @@ export namespace InvoiceHTLC {
     customRecordsMap: Array<[number, Uint8Array | string]>,
     mppTotalAmtMsat: string,
     amp?: AMP.AsObject,
+    customChannelData: Uint8Array | string,
   }
 }
 
@@ -5628,6 +5716,8 @@ export class Payment extends jspb.Message {
   getFailureReason(): PaymentFailureReasonMap[keyof PaymentFailureReasonMap];
   setFailureReason(value: PaymentFailureReasonMap[keyof PaymentFailureReasonMap]): void;
 
+  getFirstHopCustomRecordsMap(): jspb.Map<number, Uint8Array | string>;
+  clearFirstHopCustomRecordsMap(): void;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Payment.AsObject;
   static toObject(includeInstance: boolean, msg: Payment): Payment.AsObject;
@@ -5655,6 +5745,7 @@ export namespace Payment {
     htlcsList: Array<HTLCAttempt.AsObject>,
     paymentIndex: string,
     failureReason: PaymentFailureReasonMap[keyof PaymentFailureReasonMap],
+    firstHopCustomRecordsMap: Array<[number, Uint8Array | string]>,
   }
 
   export interface PaymentStatusMap {
@@ -7439,6 +7530,7 @@ export interface CommitmentTypeMap {
   ANCHORS: 3;
   SCRIPT_ENFORCED_LEASE: 4;
   SIMPLE_TAPROOT: 5;
+  SIMPLE_TAPROOT_OVERLAY: 6;
 }
 
 export const CommitmentType: CommitmentTypeMap;
