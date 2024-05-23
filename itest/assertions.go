@@ -172,9 +172,11 @@ func assertChannelClosed(ctx context.Context, t *harnessTest,
 	// block.
 	block := mineBlocks(t, net, 1, 1)[0]
 
-	closingTxid, err := net.WaitForChannelClose(closeUpdates)
+	closingUpdate, err := net.WaitForChannelClose(closeUpdates)
 	require.NoError(t.t, err, "error while waiting for channel close")
 
+	closingTxid, err := chainhash.NewHash(closingUpdate.ClosingTxid)
+	require.NoError(t.t, err)
 	assertTxInBlock(t, block, closingTxid)
 
 	// Finally, the transaction should no longer be in the waiting close

@@ -46,7 +46,8 @@ type NetworkHarness struct {
 
 	// Miner is a reference to a running full node that can be used to create
 	// new blocks on the network.
-	Miner      *miner.HarnessMiner
+	Miner *miner.HarnessMiner
+
 	LNDHarness *lntest.HarnessTest
 
 	// server is an instance of the local Loop/Pool mock server.
@@ -375,6 +376,12 @@ tryconnect:
 					"finish syncing")
 			}
 		}
+
+		// Ignore "already connected to peer" errors.
+		if strings.Contains(err.Error(), "already connected to peer") {
+			return nil
+		}
+
 		return err
 	}
 
@@ -707,6 +714,58 @@ func (n *NetworkHarness) StopNode(node *HarnessNode) error {
 	return node.Stop()
 }
 
+// StopAndBackupDB backs up the database of the target node.
+func (n *NetworkHarness) StopAndBackupDB(node *HarnessNode) error {
+	restart, err := n.SuspendNode(node)
+	if err != nil {
+		return err
+	}
+
+	// Backup files.
+	tempDir, err := os.MkdirTemp("", "past-state")
+	if err != nil {
+		return fmt.Errorf("unable to create temp db folder: %w",
+			err)
+	}
+
+	if err := copyAll(tempDir, node.Cfg.DBDir()); err != nil {
+		return fmt.Errorf("unable to copy database files: %w",
+			err)
+	}
+
+	node.Cfg.backupDBDir = tempDir
+
+	return restart()
+}
+
+// StopAndRestoreDB stops the target node, restores the database from a backup
+// and starts the node again.
+func (n *NetworkHarness) StopAndRestoreDB(node *HarnessNode) error {
+	restart, err := n.SuspendNode(node)
+	if err != nil {
+		return err
+	}
+
+	// Restore files.
+	if node.Cfg.backupDBDir == "" {
+		return fmt.Errorf("no database backup created")
+	}
+
+	err = copyAll(node.Cfg.DBDir(), node.Cfg.backupDBDir)
+	if err != nil {
+		return fmt.Errorf("unable to copy database files: %w",
+			err)
+	}
+
+	if err := os.RemoveAll(node.Cfg.backupDBDir); err != nil {
+		return fmt.Errorf("unable to remove backup dir: %w",
+			err)
+	}
+	node.Cfg.backupDBDir = ""
+
+	return restart()
+}
+
 // OpenChannel attempts to open a channel between srcNode and destNode with the
 // passed channel funding parameters. If the passed context has a timeout, then
 // if the timeout is reached before the channel pending notification is
@@ -993,8 +1052,11 @@ func (n *NetworkHarness) CloseChannel(lnNode *HarnessNode,
 		closeReq := &lnrpc.CloseChannelRequest{
 			ChannelPoint: cp,
 			Force:        force,
-			SatPerVbyte:  5,
 		}
+		if !force {
+			closeReq.SatPerVbyte = 5
+		}
+
 		closeRespStream, err = lnNode.CloseChannel(ctx, closeReq)
 		if err != nil {
 			return fmt.Errorf("unable to close channel: %v", err)
@@ -1037,7 +1099,8 @@ func (n *NetworkHarness) CloseChannel(lnNode *HarnessNode,
 // passed context has a timeout, then if the timeout is reached before the
 // notification is received then an error is returned.
 func (n *NetworkHarness) WaitForChannelClose(
-	closeChanStream lnrpc.Lightning_CloseChannelClient) (*chainhash.Hash, error) {
+	stream lnrpc.Lightning_CloseChannelClient) (*lnrpc.ChannelCloseUpdate,
+	error) {
 
 	ctxb := context.Background()
 	ctx, cancel := context.WithTimeout(ctxb, wait.ChannelCloseTimeout)
@@ -1046,13 +1109,14 @@ func (n *NetworkHarness) WaitForChannelClose(
 	errChan := make(chan error)
 	updateChan := make(chan *lnrpc.CloseStatusUpdate_ChanClose)
 	go func() {
-		closeResp, err := closeChanStream.Recv()
+		closeResp, err := stream.Recv()
 		if err != nil {
 			errChan <- err
 			return
 		}
 
-		closeFin, ok := closeResp.Update.(*lnrpc.CloseStatusUpdate_ChanClose)
+		update := closeResp.Update
+		closeFin, ok := update.(*lnrpc.CloseStatusUpdate_ChanClose)
 		if !ok {
 			errChan <- fmt.Errorf("expected channel close update, "+
 				"instead got %v", closeFin)
@@ -1070,7 +1134,7 @@ func (n *NetworkHarness) WaitForChannelClose(
 	case err := <-errChan:
 		return nil, err
 	case update := <-updateChan:
-		return chainhash.NewHash(update.ChanClose.ClosingTxid)
+		return update.ChanClose, nil
 	}
 }
 
@@ -1114,6 +1178,54 @@ func (n *NetworkHarness) AssertChannelExists(node *HarnessNode,
 		}
 
 		return fmt.Errorf("channel %s not found", chanPoint)
+	}, lntest.DefaultTimeout)
+}
+
+// AssertNodeKnown makes sure the given node knows about the target node in the
+// network graph.
+func (n *NetworkHarness) AssertNodeKnown(node, target *HarnessNode) error {
+	ctxb := context.Background()
+	ctxt, cancel := context.WithTimeout(ctxb, wait.DefaultTimeout)
+	defer cancel()
+
+	req := &lnrpc.NodeInfoRequest{
+		PubKey: hex.EncodeToString(
+			target.PubKey[:],
+		),
+	}
+	return wait.NoError(func() error {
+		info, err := node.GetNodeInfo(ctxt, req)
+		if err != nil {
+			return err
+		}
+
+		if info.Node == nil {
+			return fmt.Errorf("node %x has no info about %x",
+				node.PubKey[:], target.PubKey[:])
+		}
+
+		// TODO(guggero): Uncomment this once the lnd bug of the node
+		// announcement timing is fixed:
+		// https://github.com/lightningnetwork/lnd/issues/8870
+		//
+		// if len(info.Node.Features) == 0 {
+		//	return fmt.Errorf("node %x has no features for %x",
+		//		node.PubKey[:], target.PubKey[:])
+		// }
+		//
+		// _, optional := info.Node.Features[uint32(
+		//	lnwire.TLVOnionPayloadOptional,
+		// )]
+		// _, required := info.Node.Features[uint32(
+		//	lnwire.TLVOnionPayloadRequired,
+		// )]
+		// if !optional && !required {
+		//	return fmt.Errorf("node %x has no onion payload "+
+		//		"features for %x", node.PubKey[:],
+		//		target.PubKey[:])
+		// }
+
+		return nil
 	}, lntest.DefaultTimeout)
 }
 

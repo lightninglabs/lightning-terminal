@@ -89,6 +89,9 @@ type LitNodeConfig struct {
 
 	LitPort     int
 	LitRESTPort int
+
+	// backupDBDir is the path where a database backup is stored, if any.
+	backupDBDir string
 }
 
 func (cfg *LitNodeConfig) LitAddr() string {
@@ -2062,4 +2065,39 @@ func connectLitRPC(ctx context.Context, hostPort, tlsCertPath,
 	}
 
 	return grpc.DialContext(ctx, hostPort, opts...)
+}
+
+// copyAll copies all files and directories from srcDir to dstDir recursively.
+// Note that this function does not support links.
+func copyAll(dstDir, srcDir string) error {
+	entries, err := os.ReadDir(srcDir)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		srcPath := filepath.Join(srcDir, entry.Name())
+		dstPath := filepath.Join(dstDir, entry.Name())
+
+		info, err := os.Stat(srcPath)
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			err := os.Mkdir(dstPath, info.Mode())
+			if err != nil && !os.IsExist(err) {
+				return err
+			}
+
+			err = copyAll(dstPath, srcPath)
+			if err != nil {
+				return err
+			}
+		} else if err := CopyFile(dstPath, srcPath); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
