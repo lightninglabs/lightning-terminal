@@ -12,6 +12,8 @@ import (
 	"github.com/lightninglabs/taproot-assets/taprpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/assetwalletrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/mintrpc"
+	"github.com/lightninglabs/taproot-assets/taprpc/rfqrpc"
+	tchrpc "github.com/lightninglabs/taproot-assets/taprpc/tapchannelrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/universerpc"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"google.golang.org/grpc"
@@ -45,6 +47,7 @@ func NewTaprootAssetsSubServer(cfg *tapcfg.Config,
 	tap.SetAgentName("litd")
 
 	return &taprootAssetsSubServer{
+		Server:    tap.NewServer(nil),
 		cfg:       cfg,
 		remoteCfg: remoteCfg,
 		remote:    remote,
@@ -116,6 +119,8 @@ func (t *taprootAssetsSubServer) RegisterGrpcService(
 	taprpc.RegisterTaprootAssetsServer(registrar, t)
 	mintrpc.RegisterMintServer(registrar, t)
 	assetwalletrpc.RegisterAssetWalletServer(registrar, t)
+	rfqrpc.RegisterRfqServer(registrar, t)
+	tchrpc.RegisterTaprootAssetChannelsServer(registrar, t)
 	universerpc.RegisterUniverseServer(registrar, t)
 }
 
@@ -142,6 +147,20 @@ func (t *taprootAssetsSubServer) RegisterRestService(ctx context.Context,
 	}
 
 	err = assetwalletrpc.RegisterAssetWalletHandlerFromEndpoint(
+		ctx, mux, endpoint, dialOpts,
+	)
+	if err != nil {
+		return err
+	}
+
+	err = rfqrpc.RegisterRfqHandlerFromEndpoint(
+		ctx, mux, endpoint, dialOpts,
+	)
+	if err != nil {
+		return err
+	}
+
+	err = tchrpc.RegisterTaprootAssetChannelsHandlerFromEndpoint(
 		ctx, mux, endpoint, dialOpts,
 	)
 	if err != nil {
@@ -208,4 +227,10 @@ func (t *taprootAssetsSubServer) WhiteListedURLs() map[string]struct{} {
 		t.cfg.RpcConf.AllowPublicUniProofCourier || t.remote,
 		t.cfg.RpcConf.AllowPublicStats || t.remote,
 	)
+}
+
+// Impl returns the actual implementation of the sub-server. This might not be
+// set if the sub-server is running in remote mode.
+func (t *taprootAssetsSubServer) Impl() any {
+	return t.Server
 }

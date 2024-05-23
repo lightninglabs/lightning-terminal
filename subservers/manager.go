@@ -78,6 +78,20 @@ func (s *Manager) AddServer(ss SubServer, enable bool) {
 	s.statusServer.SetEnabled(ss.Name())
 }
 
+// GetServer returns the sub-server with the given name if it exists.
+func (s *Manager) GetServer(name string) (SubServer, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	for _, ss := range s.servers {
+		if ss.Name() == name {
+			return ss.SubServer, true
+		}
+	}
+
+	return nil, false
+}
+
 // StartIntegratedServers starts all the manager's sub-servers that should be
 // started in integrated mode.
 func (s *Manager) StartIntegratedServers(lndClient lnrpc.LightningClient,
