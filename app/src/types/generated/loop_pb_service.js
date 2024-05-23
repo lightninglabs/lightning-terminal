@@ -127,6 +127,15 @@ SwapClient.GetLsatTokens = {
   responseType: loop_pb.TokensResponse
 };
 
+SwapClient.FetchL402Token = {
+  methodName: "FetchL402Token",
+  service: SwapClient,
+  requestStream: false,
+  responseStream: false,
+  requestType: loop_pb.FetchL402TokenRequest,
+  responseType: loop_pb.FetchL402TokenResponse
+};
+
 SwapClient.GetInfo = {
   methodName: "GetInfo",
   service: SwapClient,
@@ -591,6 +600,37 @@ SwapClientClient.prototype.getLsatTokens = function getLsatTokens(requestMessage
     callback = arguments[1];
   }
   var client = grpc.unary(SwapClient.GetLsatTokens, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+SwapClientClient.prototype.fetchL402Token = function fetchL402Token(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(SwapClient.FetchL402Token, {
     request: requestMessage,
     host: this.serviceHost,
     metadata: metadata,
