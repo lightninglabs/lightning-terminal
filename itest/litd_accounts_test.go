@@ -10,6 +10,7 @@ import (
 
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
+	"github.com/lightninglabs/taproot-assets/taprpc/tapchannelrpc"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
 	"github.com/lightningnetwork/lnd/lntest"
@@ -426,6 +427,33 @@ func getPaymentResult(stream routerrpc.Router_SendPaymentV2Client) (
 		payment, err := stream.Recv()
 		if err != nil {
 			return nil, err
+		}
+
+		if payment.Status != lnrpc.Payment_IN_FLIGHT {
+			return payment, nil
+		}
+	}
+}
+
+func getAssetPaymentResult(
+	s tapchannelrpc.TaprootAssetChannels_SendPaymentClient) (*lnrpc.Payment,
+	error) {
+
+	// No idea why it makes a difference whether we wait before calling
+	// s.Recv() or not, but it does. Without the sleep, the test will fail
+	// with "insufficient local balance"... ¯\_(ツ)_/¯
+	// Probably something weird within lnd itself.
+	time.Sleep(time.Second)
+
+	for {
+		msg, err := s.Recv()
+		if err != nil {
+			return nil, err
+		}
+
+		payment := msg.GetPaymentResult()
+		if payment == nil {
+			return nil, fmt.Errorf("unexpected message: %v", msg)
 		}
 
 		if payment.Status != lnrpc.Payment_IN_FLIGHT {
