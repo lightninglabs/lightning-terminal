@@ -126,3 +126,9 @@ func (f *faradaySubServer) Permissions() map[string][]bakery.Op {
 func (f *faradaySubServer) WhiteListedURLs() map[string]struct{} {
 	return nil
 }
+
+// Impl returns the actual implementation of the sub-server. This might not be
+// set if the sub-server is running in remote mode.
+func (f *faradaySubServer) Impl() any {
+	return f.RPCServer
+}
