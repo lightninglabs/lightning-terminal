@@ -271,7 +271,8 @@ func (n *NetworkHarness) Stop() {
 
 // NewNode initializes a new HarnessNode.
 func (n *NetworkHarness) NewNode(t *testing.T, name string, extraArgs []string,
-	remoteMode bool, wait bool) (*HarnessNode, error) {
+	remoteMode bool, wait bool,
+	additionalLitArgs ...string) (*HarnessNode, error) {
 
 	litArgs := []string{
 		fmt.Sprintf("--loop.server.host=%s", n.server.ServerHost),
@@ -284,6 +285,7 @@ func (n *NetworkHarness) NewNode(t *testing.T, name string, extraArgs []string,
 			n.autopilotServer.GetPort(),
 		),
 	}
+	litArgs = append(litArgs, additionalLitArgs...)
 
 	return n.newNode(
 		t, name, extraArgs, litArgs, false, remoteMode, nil, wait,
@@ -989,7 +991,9 @@ func (n *NetworkHarness) CloseChannel(lnNode *HarnessNode,
 
 	err = wait.NoError(func() error {
 		closeReq := &lnrpc.CloseChannelRequest{
-			ChannelPoint: cp, Force: force,
+			ChannelPoint: cp,
+			Force:        force,
+			SatPerVbyte:  5,
 		}
 		closeRespStream, err = lnNode.CloseChannel(ctx, closeReq)
 		if err != nil {
