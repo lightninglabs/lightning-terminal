@@ -268,7 +268,7 @@ func (tx *kvStoreTx) GlobalTemp() KVStore {
 //
 // NOTE: this is part of the KVStoreTx interface.
 func (tx *kvStoreTx) LocalTemp() KVStore {
-	fn := getSessionRuleBucket(true, tx.ruleName, tx.groupID)
+	fn := getSessionRuleBucket(false, tx.ruleName, tx.groupID)
 	if tx.featureName != "" {
 		fn = getSessionFeatureRuleBucket(
 			false, tx.ruleName, tx.groupID, tx.featureName,
