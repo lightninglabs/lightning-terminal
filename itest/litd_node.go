@@ -39,6 +39,7 @@ import (
 	"github.com/lightningnetwork/lnd/lnrpc/wtclientrpc"
 	"github.com/lightningnetwork/lnd/lntest"
 	"github.com/lightningnetwork/lnd/lntest/node"
+	"github.com/lightningnetwork/lnd/lntest/port"
 	"github.com/lightningnetwork/lnd/lntest/wait"
 	"github.com/lightningnetwork/lnd/macaroons"
 	"google.golang.org/grpc"
@@ -102,10 +103,10 @@ func (cfg *LitNodeConfig) GenerateListeningPorts() {
 	cfg.BaseNodeConfig.GenerateListeningPorts()
 
 	if cfg.LitPort == 0 {
-		cfg.LitPort = node.NextAvailablePort()
+		cfg.LitPort = port.NextAvailablePort()
 	}
 	if cfg.LitRESTPort == 0 {
-		cfg.LitRESTPort = node.NextAvailablePort()
+		cfg.LitRESTPort = port.NextAvailablePort()
 	}
 }
 

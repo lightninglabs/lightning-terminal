@@ -13,7 +13,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/autopilotserverrpc"
 	"github.com/lightninglabs/lightning-terminal/rules"
 	"github.com/lightninglabs/lightning-terminal/session"
-	"github.com/lightningnetwork/lnd/lntest/node"
+	"github.com/lightningnetwork/lnd/lntest/port"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"gopkg.in/macaroon-bakery.v2/bakery"
@@ -59,7 +59,7 @@ type clientSession struct {
 // NewServer constructs a new MockAutoPilotServer.
 func NewServer() *Server {
 	return &Server{
-		port:     node.NextAvailablePort(),
+		port:     port.NextAvailablePort(),
 		sessions: make(map[string]*clientSession),
 		grpcServer: grpc.NewServer(
 			grpc.Creds(insecure.NewCredentials()),

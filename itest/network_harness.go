@@ -23,6 +23,7 @@ import (
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntest"
 	"github.com/lightningnetwork/lnd/lntest/node"
+	"github.com/lightningnetwork/lnd/lntest/port"
 	"github.com/lightningnetwork/lnd/lntest/wait"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
@@ -128,7 +129,7 @@ func (n *NetworkHarness) SetUp(t *testing.T,
 
 	// Start our mock Loop/Pool server first.
 	mockServerAddr := fmt.Sprintf(
-		node.ListenerFormat, node.NextAvailablePort(),
+		node.ListenerFormat, port.NextAvailablePort(),
 	)
 	n.server = NewServerHarness(mockServerAddr)
 	err := n.server.Start()
