@@ -9,8 +9,11 @@ import (
 
 /*
 The KVStores are stored in the following structure in the KV db. Note that
-the `perm` and `temp` buckets are identical in structure. The only difference is
-that the `temp` bucket is cleared on restart of the db.
+the `perm` and `temp` buckets are identical in structure. The only difference
+is that the `temp` bucket is cleared on restart of the db. The reason persisting
+the temporary store changes instead of just keeping an in-memory store is that
+we can then guarantee idempotency if changes are made to both the permanent and
+temporary stores.
 
 rules -> perm -> rule-name -> global   -> {k:v}
               -> sessions -> group ID  -> session-kv-store  -> {k:v}
@@ -81,11 +84,17 @@ type KVStoreTx interface {
 	Local() KVStore
 
 	// GlobalTemp is similar to the Global store except that its contents
-	// is cleared upon restart of the database.
+	// is cleared upon restart of the database. The reason persisting the
+	// temporary store changes instead of just keeping an in-memory store is
+	// that we can then guarantee idempotency if changes are made to both
+	// the permanent and temporary stores.
 	GlobalTemp() KVStore
 
 	// LocalTemp is similar to the Local store except that its contents is
-	// cleared upon restart of the database.
+	// cleared upon restart of the database. The reason persisting the
+	// temporary store changes instead of just keeping an in-memory store is
+	// that we can then guarantee idempotency if changes are made to both
+	// the permanent and temporary stores.
 	LocalTemp() KVStore
 }
 
