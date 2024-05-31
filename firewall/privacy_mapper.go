@@ -305,6 +305,13 @@ func (p *PrivacyMapper) checkers(db firewalldb.PrivacyMapDB,
 			handleBatchOpenChannelResponse(db, flags),
 			mid.PassThroughErrorHandler,
 		),
+		"/lnrpc.Lightning/OpenChannelSync": mid.NewFullRewriter(
+			&lnrpc.OpenChannelRequest{},
+			&lnrpc.ChannelPoint{},
+			handleChannelOpenRequest(db, flags),
+			handleChannelOpenResponse(db, flags),
+			mid.PassThroughErrorHandler,
+		),
 	}
 }
 
@@ -1451,6 +1458,157 @@ func handleBatchOpenChannelResponse(db firewalldb.PrivacyMapDB,
 		return &lnrpc.BatchOpenChannelResponse{
 			PendingChannels: resps,
 		}, nil
+	}
+}
+
+func handleChannelOpenRequest(db firewalldb.PrivacyMapDB,
+	flags session.PrivacyFlags) func(ctx context.Context,
+	r *lnrpc.OpenChannelRequest) (proto.Message, error) {
+
+	return func(_ context.Context, r *lnrpc.OpenChannelRequest) (
+		proto.Message, error) {
+
+		var nodePubkey []byte
+
+		err := db.View(func(tx firewalldb.PrivacyMapTx) error {
+			var err error
+
+			// We use the byte slice representation of the
+			// pubkey and fall back to the hex string if present.
+			nodePubkey = r.NodePubkey
+			if len(nodePubkey) == 0 && r.NodePubkeyString != "" {
+				nodePubkey, err = hex.DecodeString(
+					r.NodePubkeyString,
+				)
+				if err != nil {
+					return err
+				}
+			}
+
+			if !flags.Contains(session.ClearPubkeys) {
+				nodePubkey, err = firewalldb.RevealBytes(
+					tx, nodePubkey,
+				)
+				if err != nil {
+					return err
+				}
+			}
+
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		return &lnrpc.OpenChannelRequest{
+			// Obfuscated fields.
+			NodePubkey: nodePubkey,
+
+			// Omitted fields.
+			// NodePubkeyString
+
+			// Non-obfuscated fields.
+			SatPerVbyte:                r.SatPerVbyte,
+			LocalFundingAmount:         r.LocalFundingAmount,
+			PushSat:                    r.PushSat,
+			TargetConf:                 r.TargetConf,
+			SatPerByte:                 r.SatPerByte,
+			Private:                    r.Private,
+			MinHtlcMsat:                r.MinHtlcMsat,
+			RemoteCsvDelay:             r.RemoteCsvDelay,
+			MinConfs:                   r.MinConfs,
+			SpendUnconfirmed:           r.SpendUnconfirmed,
+			CloseAddress:               r.CloseAddress,
+			FundingShim:                r.FundingShim,
+			RemoteMaxValueInFlightMsat: r.RemoteMaxValueInFlightMsat,
+			RemoteMaxHtlcs:             r.RemoteMaxHtlcs,
+			MaxLocalCsv:                r.MaxLocalCsv,
+			CommitmentType:             r.CommitmentType,
+			ZeroConf:                   r.ZeroConf,
+			ScidAlias:                  r.ScidAlias,
+			BaseFee:                    r.BaseFee,
+			FeeRate:                    r.FeeRate,
+			UseBaseFee:                 r.UseBaseFee,
+			UseFeeRate:                 r.UseFeeRate,
+			RemoteChanReserveSat:       r.RemoteChanReserveSat,
+			FundMax:                    r.FundMax,
+			Memo:                       r.Memo,
+			Outpoints:                  r.Outpoints,
+		}, nil
+	}
+}
+
+func handleChannelOpenResponse(db firewalldb.PrivacyMapDB,
+	flags session.PrivacyFlags) func(ctx context.Context,
+	r *lnrpc.ChannelPoint) (proto.Message, error) {
+
+	return func(_ context.Context, r *lnrpc.ChannelPoint) (
+		proto.Message, error) {
+
+		var (
+			txid  string
+			index uint32
+		)
+
+		err := db.Update(func(tx firewalldb.PrivacyMapTx) error {
+			var err error
+
+			txid = r.GetFundingTxidStr()
+			if len(r.GetFundingTxidBytes()) != 0 {
+				hash, err := chainhash.NewHash(
+					r.GetFundingTxidBytes(),
+				)
+				if err != nil {
+					return err
+				}
+
+				txid = hash.String()
+			}
+
+			index = r.OutputIndex
+
+			if !flags.Contains(session.ClearChanIDs) {
+				txid, index, err = firewalldb.HideChanPoint(
+					tx, txid, index,
+				)
+				if err != nil {
+					return err
+				}
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			return nil, err
+		}
+
+		switch {
+		case len(r.GetFundingTxidBytes()) != 0:
+			hash, err := chainhash.NewHashFromStr(txid)
+			if err != nil {
+				return nil, err
+			}
+
+			return &lnrpc.ChannelPoint{
+				FundingTxid: &lnrpc.ChannelPoint_FundingTxidBytes{
+					FundingTxidBytes: hash[:],
+				},
+				OutputIndex: index,
+			}, nil
+
+		case r.GetFundingTxidStr() != "":
+			return &lnrpc.ChannelPoint{
+				FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
+					FundingTxidStr: txid,
+				},
+				OutputIndex: index,
+			}, nil
+
+		default:
+			return nil, fmt.Errorf("channel point has no funding " +
+				"txid")
+		}
 	}
 }
 

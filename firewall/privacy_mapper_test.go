@@ -728,6 +728,105 @@ func TestPrivacyMapper(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:    "OpenChannelSync Request",
+			uri:     "/lnrpc.Lightning/OpenChannelSync",
+			msgType: rpcperms.TypeRequest,
+			msg: &lnrpc.OpenChannelRequest{
+				NodePubkey: []byte{
+					200, 19, 68, 149,
+				},
+				LocalFundingAmount: 1_000_000,
+				PushSat:            1_000_000,
+				MinHtlcMsat:        100,
+			},
+			expectedReplacement: &lnrpc.OpenChannelRequest{
+				NodePubkey: []byte{
+					1, 2, 3, 4,
+				},
+				LocalFundingAmount: 1_000_000,
+				PushSat:            1_000_000,
+				MinHtlcMsat:        100,
+			},
+		},
+		{
+			name:    "OpenChannelSync Request clear",
+			uri:     "/lnrpc.Lightning/OpenChannelSync",
+			msgType: rpcperms.TypeRequest,
+			privacyFlags: []session.PrivacyFlag{
+				session.ClearPubkeys,
+			},
+			msg: &lnrpc.OpenChannelRequest{
+				NodePubkey: []byte{
+					200, 19, 68, 149,
+				},
+				LocalFundingAmount: 1_000_000,
+				PushSat:            1_000_000,
+				MinHtlcMsat:        100,
+			},
+			expectedReplacement: &lnrpc.OpenChannelRequest{
+				NodePubkey: []byte{
+					200, 19, 68, 149,
+				},
+				LocalFundingAmount: 1_000_000,
+				PushSat:            1_000_000,
+				MinHtlcMsat:        100,
+			},
+		},
+		{
+			name:    "OpenChannelSync Response bytes",
+			uri:     "/lnrpc.Lightning/OpenChannelSync",
+			msgType: rpcperms.TypeResponse,
+			msg: &lnrpc.ChannelPoint{
+				FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
+					FundingTxidStr: clearTxID,
+				},
+				OutputIndex: 0,
+			},
+			expectedReplacement: &lnrpc.ChannelPoint{
+				FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
+					FundingTxidStr: obfusTxID0,
+				},
+				OutputIndex: obfusOut0,
+			},
+		},
+		{
+			name:    "OpenChannelSync Response string",
+			uri:     "/lnrpc.Lightning/OpenChannelSync",
+			msgType: rpcperms.TypeResponse,
+			msg: &lnrpc.ChannelPoint{
+				FundingTxid: &lnrpc.ChannelPoint_FundingTxidBytes{
+					FundingTxidBytes: clearTxIDReveresed[:],
+				},
+				OutputIndex: 0,
+			},
+			expectedReplacement: &lnrpc.ChannelPoint{
+				FundingTxid: &lnrpc.ChannelPoint_FundingTxidBytes{
+					FundingTxidBytes: obfusTxID0Reversed[:],
+				},
+				OutputIndex: obfusOut0,
+			},
+		},
+		{
+			name:    "OpenChannelSync Response clear",
+			uri:     "/lnrpc.Lightning/OpenChannelSync",
+			msgType: rpcperms.TypeResponse,
+			privacyFlags: []session.PrivacyFlag{
+				session.ClearChanIDs,
+			},
+			msg: &lnrpc.ChannelPoint{
+				FundingTxid: &lnrpc.ChannelPoint_FundingTxidBytes{
+					FundingTxidBytes: clearTxIDReveresed[:],
+				},
+				OutputIndex: 0,
+			},
+			expectedReplacement: &lnrpc.ChannelPoint{
+				FundingTxid: &lnrpc.ChannelPoint_FundingTxidBytes{
+					FundingTxidBytes: clearTxIDReveresed[:],
+				},
+				OutputIndex: 0,
+			},
+		},
 	}
 
 	decodedID := &lnrpc.MacaroonId{
