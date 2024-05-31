@@ -149,6 +149,12 @@ func (r *RuleEnforcer) Intercept(ctx context.Context,
 
 	// Parse incoming requests and act on them.
 	case MWRequestTypeRequest:
+		// Support for streaming requests is not yet implemented.
+		if ri.Streaming {
+			return mid.RPCErrString(req, "streaming requests not "+
+				"supported")
+		}
+
 		replacement, err := r.handleRequest(ctx, ri)
 		if err != nil {
 			dbErr := r.markActionErrored(ri.RequestID, err.Error())
