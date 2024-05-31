@@ -2,6 +2,7 @@ package firewall
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
@@ -236,19 +237,35 @@ func (r *RuleEnforcer) handleRequest(ctx context.Context,
 		return nil, fmt.Errorf("error parsing proto: %v", err)
 	}
 
+	var errs []error
 	for _, rule := range rules {
 		newRequest, err := rule.HandleRequest(ctx, ri.URI, msg)
 		if err != nil {
-			st := status.Errorf(
-				codes.ResourceExhausted, "rule violation: %v",
-				err,
-			)
-			return nil, st
+			errs = append(errs, err)
+			continue
 		}
 
 		if newRequest != nil {
 			msg = newRequest
 		}
+	}
+
+	// Should we have encountered any errors for rules in the request, we
+	// need to roll back any pending state changes.
+	if len(errs) > 0 {
+		for _, rule := range rules {
+			// We call HandleErrorResponse to undo any persisted
+			// state changes.
+			_, err := rule.HandleErrorResponse(ctx, ri.URI, nil)
+			if err != nil {
+				log.Errorf("Error rolling back request: %v",
+					err)
+			}
+		}
+
+		// We join any errors to report all rule violations.
+		return nil, status.Errorf(codes.ResourceExhausted,
+			"rule violation: %s", errors.Join(errs...))
 	}
 
 	return nil, nil
