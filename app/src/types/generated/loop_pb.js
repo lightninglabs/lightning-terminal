@@ -32,6 +32,7 @@ goog.exportSymbol('proto.looprpc.InstantOutQuoteRequest', null, global);
 goog.exportSymbol('proto.looprpc.InstantOutQuoteResponse', null, global);
 goog.exportSymbol('proto.looprpc.InstantOutRequest', null, global);
 goog.exportSymbol('proto.looprpc.InstantOutResponse', null, global);
+goog.exportSymbol('proto.looprpc.L402Token', null, global);
 goog.exportSymbol('proto.looprpc.LiquidityParameters', null, global);
 goog.exportSymbol('proto.looprpc.LiquidityRule', null, global);
 goog.exportSymbol('proto.looprpc.LiquidityRuleType', null, global);
@@ -46,7 +47,6 @@ goog.exportSymbol('proto.looprpc.ListSwapsResponse', null, global);
 goog.exportSymbol('proto.looprpc.LoopInRequest', null, global);
 goog.exportSymbol('proto.looprpc.LoopOutRequest', null, global);
 goog.exportSymbol('proto.looprpc.LoopStats', null, global);
-goog.exportSymbol('proto.looprpc.LsatToken', null, global);
 goog.exportSymbol('proto.looprpc.MonitorRequest', null, global);
 goog.exportSymbol('proto.looprpc.OutQuoteResponse', null, global);
 goog.exportSymbol('proto.looprpc.OutTermsResponse', null, global);
@@ -136,7 +136,8 @@ proto.looprpc.LoopOutRequest.toObject = function(includeInstance, msg) {
     account: jspb.Message.getFieldWithDefault(msg, 15, ""),
     accountAddrType: jspb.Message.getFieldWithDefault(msg, 16, 0),
     isExternalAddr: jspb.Message.getFieldWithDefault(msg, 17, false),
-    reservationIdsList: msg.getReservationIdsList_asB64()
+    reservationIdsList: msg.getReservationIdsList_asB64(),
+    paymentTimeout: jspb.Message.getFieldWithDefault(msg, 19, 0)
   };
 
   if (includeInstance) {
@@ -244,6 +245,10 @@ proto.looprpc.LoopOutRequest.deserializeBinaryFromReader = function(msg, reader)
     case 18:
       var value = /** @type {!Uint8Array} */ (reader.readBytes());
       msg.addReservationIds(value);
+      break;
+    case 19:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setPaymentTimeout(value);
       break;
     default:
       reader.skipField();
@@ -397,6 +402,13 @@ proto.looprpc.LoopOutRequest.serializeBinaryToWriter = function(message, writer)
   if (f.length > 0) {
     writer.writeRepeatedBytes(
       18,
+      f
+    );
+  }
+  f = message.getPaymentTimeout();
+  if (f !== 0) {
+    writer.writeUint32(
+      19,
       f
     );
   }
@@ -724,6 +736,21 @@ proto.looprpc.LoopOutRequest.prototype.addReservationIds = function(value, opt_i
 
 proto.looprpc.LoopOutRequest.prototype.clearReservationIdsList = function() {
   this.setReservationIdsList([]);
+};
+
+
+/**
+ * optional uint32 payment_timeout = 19;
+ * @return {number}
+ */
+proto.looprpc.LoopOutRequest.prototype.getPaymentTimeout = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 19, 0));
+};
+
+
+/** @param {number} value */
+proto.looprpc.LoopOutRequest.prototype.setPaymentTimeout = function(value) {
+  jspb.Message.setProto3IntField(this, 19, value);
 };
 
 
@@ -4948,7 +4975,7 @@ proto.looprpc.TokensResponse.prototype.toObject = function(opt_includeInstance) 
 proto.looprpc.TokensResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
     tokensList: jspb.Message.toObjectList(msg.getTokensList(),
-    proto.looprpc.LsatToken.toObject, includeInstance)
+    proto.looprpc.L402Token.toObject, includeInstance)
   };
 
   if (includeInstance) {
@@ -4986,8 +5013,8 @@ proto.looprpc.TokensResponse.deserializeBinaryFromReader = function(msg, reader)
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = new proto.looprpc.LsatToken;
-      reader.readMessage(value,proto.looprpc.LsatToken.deserializeBinaryFromReader);
+      var value = new proto.looprpc.L402Token;
+      reader.readMessage(value,proto.looprpc.L402Token.deserializeBinaryFromReader);
       msg.addTokens(value);
       break;
     default:
@@ -5024,35 +5051,35 @@ proto.looprpc.TokensResponse.serializeBinaryToWriter = function(message, writer)
     writer.writeRepeatedMessage(
       1,
       f,
-      proto.looprpc.LsatToken.serializeBinaryToWriter
+      proto.looprpc.L402Token.serializeBinaryToWriter
     );
   }
 };
 
 
 /**
- * repeated LsatToken tokens = 1;
- * @return {!Array<!proto.looprpc.LsatToken>}
+ * repeated L402Token tokens = 1;
+ * @return {!Array<!proto.looprpc.L402Token>}
  */
 proto.looprpc.TokensResponse.prototype.getTokensList = function() {
-  return /** @type{!Array<!proto.looprpc.LsatToken>} */ (
-    jspb.Message.getRepeatedWrapperField(this, proto.looprpc.LsatToken, 1));
+  return /** @type{!Array<!proto.looprpc.L402Token>} */ (
+    jspb.Message.getRepeatedWrapperField(this, proto.looprpc.L402Token, 1));
 };
 
 
-/** @param {!Array<!proto.looprpc.LsatToken>} value */
+/** @param {!Array<!proto.looprpc.L402Token>} value */
 proto.looprpc.TokensResponse.prototype.setTokensList = function(value) {
   jspb.Message.setRepeatedWrapperField(this, 1, value);
 };
 
 
 /**
- * @param {!proto.looprpc.LsatToken=} opt_value
+ * @param {!proto.looprpc.L402Token=} opt_value
  * @param {number=} opt_index
- * @return {!proto.looprpc.LsatToken}
+ * @return {!proto.looprpc.L402Token}
  */
 proto.looprpc.TokensResponse.prototype.addTokens = function(opt_value, opt_index) {
-  return jspb.Message.addToRepeatedWrapperField(this, 1, opt_value, proto.looprpc.LsatToken, opt_index);
+  return jspb.Message.addToRepeatedWrapperField(this, 1, opt_value, proto.looprpc.L402Token, opt_index);
 };
 
 
@@ -5072,12 +5099,12 @@ proto.looprpc.TokensResponse.prototype.clearTokensList = function() {
  * @extends {jspb.Message}
  * @constructor
  */
-proto.looprpc.LsatToken = function(opt_data) {
+proto.looprpc.L402Token = function(opt_data) {
   jspb.Message.initialize(this, opt_data, 0, -1, null, null);
 };
-goog.inherits(proto.looprpc.LsatToken, jspb.Message);
+goog.inherits(proto.looprpc.L402Token, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
-  proto.looprpc.LsatToken.displayName = 'proto.looprpc.LsatToken';
+  proto.looprpc.L402Token.displayName = 'proto.looprpc.L402Token';
 }
 
 
@@ -5092,8 +5119,8 @@ if (jspb.Message.GENERATE_TO_OBJECT) {
  *     for transitional soy proto support: http://goto/soy-param-migration
  * @return {!Object}
  */
-proto.looprpc.LsatToken.prototype.toObject = function(opt_includeInstance) {
-  return proto.looprpc.LsatToken.toObject(opt_includeInstance, this);
+proto.looprpc.L402Token.prototype.toObject = function(opt_includeInstance) {
+  return proto.looprpc.L402Token.toObject(opt_includeInstance, this);
 };
 
 
@@ -5102,11 +5129,11 @@ proto.looprpc.LsatToken.prototype.toObject = function(opt_includeInstance) {
  * @param {boolean|undefined} includeInstance Whether to include the JSPB
  *     instance for transitional soy proto support:
  *     http://goto/soy-param-migration
- * @param {!proto.looprpc.LsatToken} msg The msg instance to transform.
+ * @param {!proto.looprpc.L402Token} msg The msg instance to transform.
  * @return {!Object}
  * @suppress {unusedLocalVariables} f is only used for nested messages
  */
-proto.looprpc.LsatToken.toObject = function(includeInstance, msg) {
+proto.looprpc.L402Token.toObject = function(includeInstance, msg) {
   var f, obj = {
     baseMacaroon: msg.getBaseMacaroon_asB64(),
     paymentHash: msg.getPaymentHash_asB64(),
@@ -5130,23 +5157,23 @@ proto.looprpc.LsatToken.toObject = function(includeInstance, msg) {
 /**
  * Deserializes binary data (in protobuf wire format).
  * @param {jspb.ByteSource} bytes The bytes to deserialize.
- * @return {!proto.looprpc.LsatToken}
+ * @return {!proto.looprpc.L402Token}
  */
-proto.looprpc.LsatToken.deserializeBinary = function(bytes) {
+proto.looprpc.L402Token.deserializeBinary = function(bytes) {
   var reader = new jspb.BinaryReader(bytes);
-  var msg = new proto.looprpc.LsatToken;
-  return proto.looprpc.LsatToken.deserializeBinaryFromReader(msg, reader);
+  var msg = new proto.looprpc.L402Token;
+  return proto.looprpc.L402Token.deserializeBinaryFromReader(msg, reader);
 };
 
 
 /**
  * Deserializes binary data (in protobuf wire format) from the
  * given reader into the given message object.
- * @param {!proto.looprpc.LsatToken} msg The message object to deserialize into.
+ * @param {!proto.looprpc.L402Token} msg The message object to deserialize into.
  * @param {!jspb.BinaryReader} reader The BinaryReader to use.
- * @return {!proto.looprpc.LsatToken}
+ * @return {!proto.looprpc.L402Token}
  */
-proto.looprpc.LsatToken.deserializeBinaryFromReader = function(msg, reader) {
+proto.looprpc.L402Token.deserializeBinaryFromReader = function(msg, reader) {
   while (reader.nextField()) {
     if (reader.isEndGroup()) {
       break;
@@ -5202,9 +5229,9 @@ proto.looprpc.LsatToken.deserializeBinaryFromReader = function(msg, reader) {
  * Serializes the message to binary data (in protobuf wire format).
  * @return {!Uint8Array}
  */
-proto.looprpc.LsatToken.prototype.serializeBinary = function() {
+proto.looprpc.L402Token.prototype.serializeBinary = function() {
   var writer = new jspb.BinaryWriter();
-  proto.looprpc.LsatToken.serializeBinaryToWriter(this, writer);
+  proto.looprpc.L402Token.serializeBinaryToWriter(this, writer);
   return writer.getResultBuffer();
 };
 
@@ -5212,11 +5239,11 @@ proto.looprpc.LsatToken.prototype.serializeBinary = function() {
 /**
  * Serializes the given message to binary data (in protobuf wire
  * format), writing to the given BinaryWriter.
- * @param {!proto.looprpc.LsatToken} message
+ * @param {!proto.looprpc.L402Token} message
  * @param {!jspb.BinaryWriter} writer
  * @suppress {unusedLocalVariables} f is only used for nested messages
  */
-proto.looprpc.LsatToken.serializeBinaryToWriter = function(message, writer) {
+proto.looprpc.L402Token.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getBaseMacaroon_asU8();
   if (f.length > 0) {
@@ -5288,7 +5315,7 @@ proto.looprpc.LsatToken.serializeBinaryToWriter = function(message, writer) {
  * optional bytes base_macaroon = 1;
  * @return {!(string|Uint8Array)}
  */
-proto.looprpc.LsatToken.prototype.getBaseMacaroon = function() {
+proto.looprpc.L402Token.prototype.getBaseMacaroon = function() {
   return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
@@ -5298,7 +5325,7 @@ proto.looprpc.LsatToken.prototype.getBaseMacaroon = function() {
  * This is a type-conversion wrapper around `getBaseMacaroon()`
  * @return {string}
  */
-proto.looprpc.LsatToken.prototype.getBaseMacaroon_asB64 = function() {
+proto.looprpc.L402Token.prototype.getBaseMacaroon_asB64 = function() {
   return /** @type {string} */ (jspb.Message.bytesAsB64(
       this.getBaseMacaroon()));
 };
@@ -5311,14 +5338,14 @@ proto.looprpc.LsatToken.prototype.getBaseMacaroon_asB64 = function() {
  * This is a type-conversion wrapper around `getBaseMacaroon()`
  * @return {!Uint8Array}
  */
-proto.looprpc.LsatToken.prototype.getBaseMacaroon_asU8 = function() {
+proto.looprpc.L402Token.prototype.getBaseMacaroon_asU8 = function() {
   return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
       this.getBaseMacaroon()));
 };
 
 
 /** @param {!(string|Uint8Array)} value */
-proto.looprpc.LsatToken.prototype.setBaseMacaroon = function(value) {
+proto.looprpc.L402Token.prototype.setBaseMacaroon = function(value) {
   jspb.Message.setProto3BytesField(this, 1, value);
 };
 
@@ -5327,7 +5354,7 @@ proto.looprpc.LsatToken.prototype.setBaseMacaroon = function(value) {
  * optional bytes payment_hash = 2;
  * @return {!(string|Uint8Array)}
  */
-proto.looprpc.LsatToken.prototype.getPaymentHash = function() {
+proto.looprpc.L402Token.prototype.getPaymentHash = function() {
   return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
 };
 
@@ -5337,7 +5364,7 @@ proto.looprpc.LsatToken.prototype.getPaymentHash = function() {
  * This is a type-conversion wrapper around `getPaymentHash()`
  * @return {string}
  */
-proto.looprpc.LsatToken.prototype.getPaymentHash_asB64 = function() {
+proto.looprpc.L402Token.prototype.getPaymentHash_asB64 = function() {
   return /** @type {string} */ (jspb.Message.bytesAsB64(
       this.getPaymentHash()));
 };
@@ -5350,14 +5377,14 @@ proto.looprpc.LsatToken.prototype.getPaymentHash_asB64 = function() {
  * This is a type-conversion wrapper around `getPaymentHash()`
  * @return {!Uint8Array}
  */
-proto.looprpc.LsatToken.prototype.getPaymentHash_asU8 = function() {
+proto.looprpc.L402Token.prototype.getPaymentHash_asU8 = function() {
   return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
       this.getPaymentHash()));
 };
 
 
 /** @param {!(string|Uint8Array)} value */
-proto.looprpc.LsatToken.prototype.setPaymentHash = function(value) {
+proto.looprpc.L402Token.prototype.setPaymentHash = function(value) {
   jspb.Message.setProto3BytesField(this, 2, value);
 };
 
@@ -5366,7 +5393,7 @@ proto.looprpc.LsatToken.prototype.setPaymentHash = function(value) {
  * optional bytes payment_preimage = 3;
  * @return {!(string|Uint8Array)}
  */
-proto.looprpc.LsatToken.prototype.getPaymentPreimage = function() {
+proto.looprpc.L402Token.prototype.getPaymentPreimage = function() {
   return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
 };
 
@@ -5376,7 +5403,7 @@ proto.looprpc.LsatToken.prototype.getPaymentPreimage = function() {
  * This is a type-conversion wrapper around `getPaymentPreimage()`
  * @return {string}
  */
-proto.looprpc.LsatToken.prototype.getPaymentPreimage_asB64 = function() {
+proto.looprpc.L402Token.prototype.getPaymentPreimage_asB64 = function() {
   return /** @type {string} */ (jspb.Message.bytesAsB64(
       this.getPaymentPreimage()));
 };
@@ -5389,14 +5416,14 @@ proto.looprpc.LsatToken.prototype.getPaymentPreimage_asB64 = function() {
  * This is a type-conversion wrapper around `getPaymentPreimage()`
  * @return {!Uint8Array}
  */
-proto.looprpc.LsatToken.prototype.getPaymentPreimage_asU8 = function() {
+proto.looprpc.L402Token.prototype.getPaymentPreimage_asU8 = function() {
   return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
       this.getPaymentPreimage()));
 };
 
 
 /** @param {!(string|Uint8Array)} value */
-proto.looprpc.LsatToken.prototype.setPaymentPreimage = function(value) {
+proto.looprpc.L402Token.prototype.setPaymentPreimage = function(value) {
   jspb.Message.setProto3BytesField(this, 3, value);
 };
 
@@ -5405,13 +5432,13 @@ proto.looprpc.LsatToken.prototype.setPaymentPreimage = function(value) {
  * optional int64 amount_paid_msat = 4;
  * @return {string}
  */
-proto.looprpc.LsatToken.prototype.getAmountPaidMsat = function() {
+proto.looprpc.L402Token.prototype.getAmountPaidMsat = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 4, "0"));
 };
 
 
 /** @param {string} value */
-proto.looprpc.LsatToken.prototype.setAmountPaidMsat = function(value) {
+proto.looprpc.L402Token.prototype.setAmountPaidMsat = function(value) {
   jspb.Message.setProto3StringIntField(this, 4, value);
 };
 
@@ -5420,13 +5447,13 @@ proto.looprpc.LsatToken.prototype.setAmountPaidMsat = function(value) {
  * optional int64 routing_fee_paid_msat = 5;
  * @return {string}
  */
-proto.looprpc.LsatToken.prototype.getRoutingFeePaidMsat = function() {
+proto.looprpc.L402Token.prototype.getRoutingFeePaidMsat = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, "0"));
 };
 
 
 /** @param {string} value */
-proto.looprpc.LsatToken.prototype.setRoutingFeePaidMsat = function(value) {
+proto.looprpc.L402Token.prototype.setRoutingFeePaidMsat = function(value) {
   jspb.Message.setProto3StringIntField(this, 5, value);
 };
 
@@ -5435,13 +5462,13 @@ proto.looprpc.LsatToken.prototype.setRoutingFeePaidMsat = function(value) {
  * optional int64 time_created = 6;
  * @return {string}
  */
-proto.looprpc.LsatToken.prototype.getTimeCreated = function() {
+proto.looprpc.L402Token.prototype.getTimeCreated = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 6, "0"));
 };
 
 
 /** @param {string} value */
-proto.looprpc.LsatToken.prototype.setTimeCreated = function(value) {
+proto.looprpc.L402Token.prototype.setTimeCreated = function(value) {
   jspb.Message.setProto3StringIntField(this, 6, value);
 };
 
@@ -5452,13 +5479,13 @@ proto.looprpc.LsatToken.prototype.setTimeCreated = function(value) {
  * You should avoid comparisons like {@code val === true/false} in those cases.
  * @return {boolean}
  */
-proto.looprpc.LsatToken.prototype.getExpired = function() {
+proto.looprpc.L402Token.prototype.getExpired = function() {
   return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 7, false));
 };
 
 
 /** @param {boolean} value */
-proto.looprpc.LsatToken.prototype.setExpired = function(value) {
+proto.looprpc.L402Token.prototype.setExpired = function(value) {
   jspb.Message.setProto3BooleanField(this, 7, value);
 };
 
@@ -5467,13 +5494,13 @@ proto.looprpc.LsatToken.prototype.setExpired = function(value) {
  * optional string storage_name = 8;
  * @return {string}
  */
-proto.looprpc.LsatToken.prototype.getStorageName = function() {
+proto.looprpc.L402Token.prototype.getStorageName = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 8, ""));
 };
 
 
 /** @param {string} value */
-proto.looprpc.LsatToken.prototype.setStorageName = function(value) {
+proto.looprpc.L402Token.prototype.setStorageName = function(value) {
   jspb.Message.setProto3StringField(this, 8, value);
 };
 
@@ -5482,13 +5509,13 @@ proto.looprpc.LsatToken.prototype.setStorageName = function(value) {
  * optional string id = 9;
  * @return {string}
  */
-proto.looprpc.LsatToken.prototype.getId = function() {
+proto.looprpc.L402Token.prototype.getId = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 9, ""));
 };
 
 
 /** @param {string} value */
-proto.looprpc.LsatToken.prototype.setId = function(value) {
+proto.looprpc.L402Token.prototype.setId = function(value) {
   jspb.Message.setProto3StringField(this, 9, value);
 };
 

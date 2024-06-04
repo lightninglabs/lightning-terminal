@@ -148,6 +148,15 @@ type LightningGetInfo = {
   readonly responseType: typeof lnd_pb.GetInfoResponse;
 };
 
+type LightningGetDebugInfo = {
+  readonly methodName: string;
+  readonly service: typeof Lightning;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof lnd_pb.GetDebugInfoRequest;
+  readonly responseType: typeof lnd_pb.GetDebugInfoResponse;
+};
+
 type LightningGetRecoveryInfo = {
   readonly methodName: string;
   readonly service: typeof Lightning;
@@ -625,6 +634,7 @@ export class Lightning {
   static readonly ListPeers: LightningListPeers;
   static readonly SubscribePeerEvents: LightningSubscribePeerEvents;
   static readonly GetInfo: LightningGetInfo;
+  static readonly GetDebugInfo: LightningGetDebugInfo;
   static readonly GetRecoveryInfo: LightningGetRecoveryInfo;
   static readonly PendingChannels: LightningPendingChannels;
   static readonly ListChannels: LightningListChannels;
@@ -837,6 +847,15 @@ export class LightningClient {
   getInfo(
     requestMessage: lnd_pb.GetInfoRequest,
     callback: (error: ServiceError|null, responseMessage: lnd_pb.GetInfoResponse|null) => void
+  ): UnaryResponse;
+  getDebugInfo(
+    requestMessage: lnd_pb.GetDebugInfoRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: lnd_pb.GetDebugInfoResponse|null) => void
+  ): UnaryResponse;
+  getDebugInfo(
+    requestMessage: lnd_pb.GetDebugInfoRequest,
+    callback: (error: ServiceError|null, responseMessage: lnd_pb.GetDebugInfoResponse|null) => void
   ): UnaryResponse;
   getRecoveryInfo(
     requestMessage: lnd_pb.GetRecoveryInfoRequest,

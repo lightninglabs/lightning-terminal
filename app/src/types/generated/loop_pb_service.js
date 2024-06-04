@@ -109,6 +109,15 @@ SwapClient.Probe = {
   responseType: loop_pb.ProbeResponse
 };
 
+SwapClient.GetL402Tokens = {
+  methodName: "GetL402Tokens",
+  service: SwapClient,
+  requestStream: false,
+  responseStream: false,
+  requestType: loop_pb.TokensRequest,
+  responseType: loop_pb.TokensResponse
+};
+
 SwapClient.GetLsatTokens = {
   methodName: "GetLsatTokens",
   service: SwapClient,
@@ -520,6 +529,37 @@ SwapClientClient.prototype.probe = function probe(requestMessage, metadata, call
     callback = arguments[1];
   }
   var client = grpc.unary(SwapClient.Probe, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+SwapClientClient.prototype.getL402Tokens = function getL402Tokens(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(SwapClient.GetL402Tokens, {
     request: requestMessage,
     host: this.serviceHost,
     metadata: metadata,

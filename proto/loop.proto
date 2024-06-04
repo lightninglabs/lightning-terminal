@@ -76,7 +76,16 @@ service SwapClient {
     rpc Probe (ProbeRequest) returns (ProbeResponse);
 
     /* loop: `listauth`
-    GetLsatTokens returns all LSAT tokens the daemon ever paid for.
+    GetL402Tokens returns all L402 tokens the daemon ever paid for.
+    */
+    rpc GetL402Tokens (TokensRequest) returns (TokensResponse);
+
+    /*
+    Deprecated: use GetL402Tokens.
+    This API is provided to maintain backward compatibility with gRPC clients
+    (e.g. `loop listauth`, Terminal Web, RTL).
+    Type LsatToken used by GetLsatTokens in the past was renamed to L402Token,
+    but this does not affect binary encoding, so we can use type L402Token here.
     */
     rpc GetLsatTokens (TokensRequest) returns (TokensResponse);
 
@@ -269,6 +278,13 @@ message LoopOutRequest {
     be equal to the sum of the amounts of the reservations.
     */
     repeated bytes reservation_ids = 18;
+
+    /*
+    The timeout in seconds to use for off-chain payments. Note that the swap
+    payment is attempted multiple times where each attempt will set this value
+    as the timeout for the payment.
+    */
+    uint32 payment_timeout = 19;
 }
 
 /*
@@ -811,10 +827,10 @@ message TokensResponse {
     /*
     List of all tokens the daemon knows of, including old/expired tokens.
     */
-    repeated LsatToken tokens = 1;
+    repeated L402Token tokens = 1;
 }
 
-message LsatToken {
+message L402Token {
     /*
     The base macaroon that was baked by the auth server.
     */

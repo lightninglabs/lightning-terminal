@@ -2216,6 +2216,7 @@ export interface ChannelTypeMap {
   TWEAKLESS: 0;
   ANCHORS: 1;
   SCRIPT_ENFORCED_LEASE: 2;
+  SIMPLE_TAPROOT: 3;
 }
 
 export const ChannelType: ChannelTypeMap;
@@ -2236,6 +2237,7 @@ export interface OrderChannelTypeMap {
   ORDER_CHANNEL_TYPE_UNKNOWN: 0;
   ORDER_CHANNEL_TYPE_PEER_DEPENDENT: 1;
   ORDER_CHANNEL_TYPE_SCRIPT_ENFORCED: 2;
+  ORDER_CHANNEL_TYPE_SIMPLE_TAPROOT: 3;
 }
 
 export const OrderChannelType: OrderChannelTypeMap;

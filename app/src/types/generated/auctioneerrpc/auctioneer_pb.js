@@ -16172,7 +16172,8 @@ proto.poolrpc.MarketInfoResponse.prototype.clearMarketsMap = function() {
 proto.poolrpc.ChannelType = {
   TWEAKLESS: 0,
   ANCHORS: 1,
-  SCRIPT_ENFORCED_LEASE: 2
+  SCRIPT_ENFORCED_LEASE: 2,
+  SIMPLE_TAPROOT: 3
 };
 
 /**
@@ -16194,7 +16195,8 @@ proto.poolrpc.AuctionAccountState = {
 proto.poolrpc.OrderChannelType = {
   ORDER_CHANNEL_TYPE_UNKNOWN: 0,
   ORDER_CHANNEL_TYPE_PEER_DEPENDENT: 1,
-  ORDER_CHANNEL_TYPE_SCRIPT_ENFORCED: 2
+  ORDER_CHANNEL_TYPE_SCRIPT_ENFORCED: 2,
+  ORDER_CHANNEL_TYPE_SIMPLE_TAPROOT: 3
 };
 
 /**
