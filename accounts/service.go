@@ -405,6 +405,15 @@ func (s *InterceptorService) CheckBalance(id AccountID,
 		return ErrAccExpired
 	}
 
+	availableAmount := calcAvailableAccountBalance(account)
+	if availableAmount < int64(requiredBalance) {
+		return ErrAccBalanceInsufficient
+	}
+
+	return nil
+}
+
+func calcAvailableAccountBalance(account *OffChainBalanceAccount) int64 {
 	var inFlightAmt int64
 	for _, payment := range account.Payments {
 		if inflightState(payment.Status) {
@@ -415,12 +424,7 @@ func (s *InterceptorService) CheckBalance(id AccountID,
 		}
 	}
 
-	availableAmount := account.CurrentBalance - inFlightAmt
-	if availableAmount < int64(requiredBalance) {
-		return ErrAccBalanceInsufficient
-	}
-
-	return nil
+	return account.CurrentBalance - inFlightAmt
 }
 
 // AssociateInvoice associates a generated invoice with the given account,
@@ -641,6 +645,13 @@ func (s *InterceptorService) TrackPayment(id AccountID, hash lntypes.Hash,
 		return nil
 	}
 
+	// There is a case where the passed in fullAmt is zero but the pending
+	// amount is not. In that case, we should not overwrite the pending
+	// amount.
+	if fullAmt == 0 {
+		fullAmt = entry.FullAmount
+	}
+
 	account.Payments[hash] = &PaymentEntry{
 		Status:     lnrpc.Payment_UNKNOWN,
 		FullAmount: fullAmt,
@@ -728,6 +739,20 @@ func (s *InterceptorService) TrackPayment(id AccountID, hash lntypes.Hash,
 
 					log.Debugf("Payment %v not initiated, "+
 						"stopping tracking", hash)
+
+					// We also remove the payment from the
+					// account, so that the payment won't be
+					// seen as in-flight balance when
+					// calculating the account's available
+					// balance.
+					err := s.RemovePayment(hash)
+					if err != nil {
+						// We don't disable the service
+						// here, as the worst that can
+						// happen is that the payment is
+						// seen as still in-flight.
+						s.mainErrCallback(err)
+					}
 
 					return
 				}
