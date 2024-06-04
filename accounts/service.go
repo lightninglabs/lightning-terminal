@@ -729,6 +729,20 @@ func (s *InterceptorService) TrackPayment(id AccountID, hash lntypes.Hash,
 					log.Debugf("Payment %v not initiated, "+
 						"stopping tracking", hash)
 
+					// We also remove the payment from the
+					// account, so that the payment won't be
+					// seen as in-flight balance when
+					// calculating the account's available
+					// balance.
+					err := s.RemovePayment(hash)
+					if err != nil {
+						// We don't disable the service
+						// here, as the worst that can
+						// happen is that the payment is
+						// seen as still in-flight.
+						s.mainErrCallback(err)
+					}
+
 					return
 				}
 

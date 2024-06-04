@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/lightninglabs/lndclient"
+	"github.com/lightningnetwork/lnd/channeldb"
 	invpkg "github.com/lightningnetwork/lnd/invoices"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
@@ -447,18 +448,22 @@ func TestAccountService(t *testing.T) {
 			acct := &OffChainBalanceAccount{
 				ID:             testID,
 				Type:           TypeInitialBalance,
-				CurrentBalance: 1234,
+				CurrentBalance: 5000,
 				Invoices: AccountInvoices{
 					testHash: {},
 				},
 				Payments: AccountPayments{
 					testHash: {
 						Status:     lnrpc.Payment_IN_FLIGHT,
-						FullAmount: 1234,
+						FullAmount: 2000,
 					},
 					testHash2: {
 						Status:     lnrpc.Payment_UNKNOWN,
-						FullAmount: 3456,
+						FullAmount: 1000,
+					},
+					testHash3: {
+						Status:     lnrpc.Payment_UNKNOWN,
+						FullAmount: 2000,
 					},
 				},
 			}
@@ -473,6 +478,7 @@ func TestAccountService(t *testing.T) {
 			lnd.assertPaymentRequests(t, map[lntypes.Hash]struct{}{
 				testHash:  {},
 				testHash2: {},
+				testHash3: {},
 			})
 			lnd.assertInvoiceRequest(t, 0, 0)
 			lnd.assertNoMainErr(t)
@@ -481,15 +487,15 @@ func TestAccountService(t *testing.T) {
 			// amount is debited from the account.
 			lnd.paymentChans[testHash] <- lndclient.PaymentStatus{
 				State: lnrpc.Payment_SUCCEEDED,
-				Fee:   234,
-				Value: 1000,
+				Fee:   500,
+				Value: 1500,
 			}
 
 			assertEventually(t, func() bool {
 				acct, err := s.store.Account(testID)
 				require.NoError(t, err)
 
-				return acct.CurrentBalance == 0
+				return acct.CurrentBalance == 3000
 			})
 
 			// Remove the other payment and make sure it disappears
@@ -497,7 +503,7 @@ func TestAccountService(t *testing.T) {
 			// correctly in the account store.
 			lnd.paymentChans[testHash2] <- lndclient.PaymentStatus{
 				State: lnrpc.Payment_FAILED,
-				Fee:   234,
+				Fee:   0,
 				Value: 1000,
 			}
 
@@ -505,7 +511,7 @@ func TestAccountService(t *testing.T) {
 				acct, err := s.store.Account(testID)
 				require.NoError(t, err)
 
-				if len(acct.Payments) != 2 {
+				if len(acct.Payments) != 3 {
 					return false
 				}
 
@@ -518,6 +524,54 @@ func TestAccountService(t *testing.T) {
 			})
 
 			require.NotContains(t, s.pendingPayments, testHash2)
+
+			// Finally, if an unknown payment turns out to be
+			// a non-initiated payment, we should stop the tracking
+			// of the payment, fail it and remove it from the
+			// pendingPayments map. As the payment is failed, that
+			// will ensure that the payment is not considered when
+			// calculating the in-flight balance for the account.
+			// First check that the account has an available balance
+			// of 1000. That means that the payment with testHash3
+			// and amount 2000 is still considered to be in-flight.
+			err := s.CheckBalance(testID, 1000)
+			require.NoError(t, err)
+
+			err = s.CheckBalance(testID, 1001)
+			require.ErrorIs(t, err, ErrAccBalanceInsufficient)
+
+			// Now signal that the payment was non-initiated.
+			lnd.paymentErrChan <- channeldb.ErrPaymentNotInitiated
+
+			// Once the error is handled in the service.TrackPayment
+			// goroutine, and therefore free up the 2000 in-flight
+			// balance.
+			assertEventually(t, func() bool {
+				bal3000Err := s.CheckBalance(testID, 3000)
+				bal3001Err := s.CheckBalance(testID, 3001)
+				require.ErrorIs(
+					t, bal3001Err,
+					ErrAccBalanceInsufficient,
+				)
+
+				correctBalance := bal3000Err == nil
+
+				// Ensure that the payment is also set to the
+				// failed status.
+				acct, err := s.store.Account(testID)
+				require.NoError(t, err)
+
+				p, ok := acct.Payments[testHash3]
+
+				correctStatus := ok &&
+					p.Status == lnrpc.Payment_FAILED
+
+				return correctBalance && correctStatus
+			})
+
+			// Ensure that the payment was removed from the pending
+			// payments.
+			require.NotContains(t, s.pendingPayments, testHash3)
 		},
 	}, {
 		name: "keep track of invoice indexes",
