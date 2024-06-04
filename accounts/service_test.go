@@ -20,7 +20,10 @@ var (
 	testTimeout    = time.Millisecond * 500
 	testInterval   = time.Millisecond * 20
 
-	testHash2 = lntypes.Hash{99, 88, 77}
+	testID2 = AccountID{22, 22, 22}
+
+	testHash2 = lntypes.Hash{2, 2, 2, 2, 2}
+	testHash3 = lntypes.Hash{3, 3, 3, 3, 3}
 )
 
 type mockLnd struct {
@@ -623,8 +626,10 @@ func TestAccountService(t *testing.T) {
 	}, {
 		name: "in-flight payments",
 		setup: func(t *testing.T, lnd *mockLnd, s *InterceptorService) {
-			// We set up our account with a balance of 5k msats and
-			// two in-flight payments with a total or 3k msats.
+			// We set up two accounts with a balance of 5k msats.
+
+			// The first account has two in-flight payments, one of
+			// 2k msats and one of 1k msats, totaling 3k msats.
 			acct := &OffChainBalanceAccount{
 				ID:             testID,
 				Type:           TypeInitialBalance,
@@ -646,12 +651,34 @@ func TestAccountService(t *testing.T) {
 
 			err := s.store.UpdateAccount(acct)
 			require.NoError(t, err)
+
+			// The second account has one in-flight payment of 4k
+			// msats.
+			acct2 := &OffChainBalanceAccount{
+				ID:             testID2,
+				Type:           TypeInitialBalance,
+				CurrentBalance: 5000,
+				Invoices: AccountInvoices{
+					testHash: {},
+				},
+				Payments: AccountPayments{
+					testHash3: {
+						Status:     lnrpc.Payment_IN_FLIGHT,
+						FullAmount: 4000,
+					},
+				},
+			}
+
+			err = s.store.UpdateAccount(acct2)
+			require.NoError(t, err)
 		},
 		validate: func(t *testing.T, lnd *mockLnd,
 			s *InterceptorService) {
 
-			// We should be able to initiate another payment with an
-			// amount smaller or equal to 2k msats.
+			// The first should be able to initiate another payment
+			// with an amount smaller or equal to 2k msats. This
+			// also asserts that the second accounts in-flight
+			// payment doesn't affect the first account.
 			err := s.CheckBalance(testID, 2000)
 			require.NoError(t, err)
 
@@ -670,6 +697,15 @@ func TestAccountService(t *testing.T) {
 				err = s.CheckBalance(testID, 4000)
 				return err == nil
 			})
+
+			// The second account should be able to initiate a
+			// payment of 1k msats.
+			err = s.CheckBalance(testID2, 1000)
+			require.NoError(t, err)
+
+			// But exactly one sat over it should fail.
+			err = s.CheckBalance(testID2, 1001)
+			require.ErrorIs(t, err, ErrAccBalanceInsufficient)
 		},
 	}}
 
