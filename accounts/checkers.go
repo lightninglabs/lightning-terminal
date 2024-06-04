@@ -398,6 +398,30 @@ func NewAccountChecker(service Service,
 	}
 }
 
+// handleErrorResponse passes an error to a checker if the checker has
+// registered an error handler.
+func (a *AccountChecker) handleErrorResponse(ctx context.Context,
+	fullUri string, parsedErr error) (error, error) {
+
+	// If we don't have a handler for the URI, it means we don't support
+	// that RPC.
+	checker, ok := a.checkers[fullUri]
+	if !ok {
+		return nil, ErrNotSupportedWithAccounts
+	}
+
+	newErr, err := checker.HandleErrorResponse(ctx, parsedErr)
+	if err != nil {
+		return nil, err
+	}
+
+	if newErr != nil {
+		parsedErr = newErr
+	}
+
+	return parsedErr, nil
+}
+
 // checkIncomingRequest makes sure the type of incoming call is supported and
 // if it is, that it is allowed with the current account balance.
 func (a *AccountChecker) checkIncomingRequest(ctx context.Context,

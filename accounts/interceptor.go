@@ -126,6 +126,30 @@ func (s *InterceptorService) Intercept(ctx context.Context,
 
 	// Parse and possibly manipulate outgoing responses.
 	case *lnrpc.RPCMiddlewareRequest_Response:
+		if r.Response.IsError {
+			parsedErr := mid.ParseResponseErr(r.Response.Serialized)
+
+			replacementErr, err := s.checkers.handleErrorResponse(
+				ctx, r.Response.MethodFullUri, parsedErr,
+			)
+			if err != nil {
+				return mid.RPCErr(req, err)
+			}
+
+			// No error occurred but the response error should be
+			// replaced with the given custom error. Wrap it in the
+			// correct RPC response of the interceptor now.
+			if replacementErr != nil {
+				return mid.RPCErrReplacement(
+					req, replacementErr,
+				)
+			}
+
+			// No error and no replacement, just return an empty
+			// response of the correct type.
+			return mid.RPCOk(req)
+		}
+
 		msg, err := parseRPCMessage(r.Response)
 		if err != nil {
 			return mid.RPCErr(req, err)
