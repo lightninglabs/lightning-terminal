@@ -437,6 +437,45 @@ func (s *InterceptorService) AssociateInvoice(id AccountID,
 	return s.store.UpdateAccount(account)
 }
 
+// PaymentErrored removes a pending payment from the account's registered
+// payment list. This should only ever be called if we are sure that the payment
+// request errored out.
+func (s *InterceptorService) PaymentErrored(id AccountID,
+	hash lntypes.Hash) error {
+
+	s.Lock()
+	defer s.Unlock()
+
+	// If we have already started tracking this payment, then RemovePayment
+	// should have been called instead.
+	_, ok := s.pendingPayments[hash]
+	if ok {
+		return fmt.Errorf("cannot disassociate payment if tracking " +
+			"has already started")
+	}
+
+	account, err := s.store.Account(id)
+	if err != nil {
+		return err
+	}
+
+	// Check that this payment is actually associated with this account.
+	_, ok = account.Payments[hash]
+	if !ok {
+		return fmt.Errorf("payment with hash %s is not associated "+
+			"with this account", hash)
+	}
+
+	// Delete the payment and update the persisted account.
+	delete(account.Payments, hash)
+
+	if err := s.store.UpdateAccount(account); err != nil {
+		return fmt.Errorf("error updating account: %w", err)
+	}
+
+	return nil
+}
+
 // AssociatePayment associates a payment (hash) with the given account,
 // ensuring that the payment will be tracked for a user when LiT is
 // restarted.
@@ -451,11 +490,26 @@ func (s *InterceptorService) AssociatePayment(id AccountID,
 		return err
 	}
 
-	// If the payment is already associated with the account, we don't need
-	// to associate it again.
+	// Check if this payment is associated with the account already.
 	_, ok := account.Payments[paymentHash]
 	if ok {
-		return nil
+		// We do not allow another payment to the same hash if the
+		// payment is already in-flight or succeeded. This mitigates a
+		// user being able to launch a second RPC-erring payment with
+		// the same hash that would remove the payment from being
+		// tracked. Note that this prevents launching multipart
+		// payments, but allows retrying a payment if it has failed.
+		if account.Payments[paymentHash].Status !=
+			lnrpc.Payment_FAILED {
+
+			return fmt.Errorf("payment with hash %s is already in "+
+				"flight or succeeded (status %v)", paymentHash,
+				account.Payments[paymentHash].Status)
+		}
+
+		// Otherwise, we fall through to correctly update the payment
+		// amount, in case we have a zero-amount invoice that is
+		// retried.
 	}
 
 	// Associate the payment with the account and store it.

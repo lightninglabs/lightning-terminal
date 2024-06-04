@@ -35,7 +35,9 @@ var (
 
 	// PassThroughErrorHandler is an ErrorHandler that does not modify an
 	// error and instead just passes it through.
-	PassThroughErrorHandler ErrorHandler = func(error) (error, error) {
+	PassThroughErrorHandler ErrorHandler = func(context.Context, error) (
+		error, error) {
+
 		return nil, nil
 	}
 
@@ -81,7 +83,7 @@ type messageHandler func(context.Context, proto.Message) (proto.Message, error)
 // pass through the error unchanged (=return nil, nil), replace the error with
 // a different one (=return non-nil error, nil error) or abort by returning a
 // non-nil error.
-type ErrorHandler func(respErr error) (error, error)
+type ErrorHandler func(ctx context.Context, respErr error) (error, error)
 
 // RoundTripChecker is a type that represents a basic request/response round
 // trip checker.
@@ -115,7 +117,7 @@ type RoundTripChecker interface {
 	// The handler can pass through the error (=return nil, nil), replace
 	// the response error with a new one (=return non-nil error, nil) or
 	// abort by returning a non nil error (=return nil, non-nil error).
-	HandleErrorResponse(error) (error, error)
+	HandleErrorResponse(context.Context, error) (error, error)
 }
 
 // DefaultChecker is the default implementation of a round trip checker.
@@ -171,8 +173,10 @@ func (r *DefaultChecker) HandleResponse(ctx context.Context,
 // The handler can pass through the error (=return nil, nil), replace
 // the response error with a new one (=return non-nil error, nil) or
 // abort by returning a non nil error (=return nil, non-nil error).
-func (r *DefaultChecker) HandleErrorResponse(respErr error) (error, error) {
-	return r.errorHandler(respErr)
+func (r *DefaultChecker) HandleErrorResponse(ctx context.Context,
+	respErr error) (error, error) {
+
+	return r.errorHandler(ctx, respErr)
 }
 
 // NewPassThrough returns a round trip checker that allows the incoming request

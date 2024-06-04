@@ -80,6 +80,10 @@ func (m *mockService) AssociatePayment(id AccountID, paymentHash lntypes.Hash,
 	return nil
 }
 
+func (m *mockService) PaymentErrored(id AccountID, hash lntypes.Hash) error {
+	return nil
+}
+
 func (m *mockService) TrackPayment(_ AccountID, hash lntypes.Hash,
 	amt lnwire.MilliSatoshi) error {
 

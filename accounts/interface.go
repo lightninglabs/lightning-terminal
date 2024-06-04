@@ -258,6 +258,11 @@ type Service interface {
 	AssociatePayment(id AccountID, paymentHash lntypes.Hash,
 		fullAmt lnwire.MilliSatoshi) error
 
+	// PaymentErrored removes a pending payment from the accounts
+	// registered payment list. This should only ever be called if we are
+	// sure that the payment request errored out.
+	PaymentErrored(id AccountID, hash lntypes.Hash) error
+
 	RequestValuesStore
 }
 
