@@ -406,8 +406,13 @@ func (s *InterceptorService) CheckBalance(id AccountID,
 	}
 
 	var inFlightAmt int64
-	for _, pendingPayment := range s.pendingPayments {
-		inFlightAmt += int64(pendingPayment.fullAmount)
+	for _, payment := range account.Payments {
+		if inflightState(payment.Status) {
+			// If a payment is in-flight and associated with the
+			// account, the user should not be able to spend that
+			// amount while it's in-flight.
+			inFlightAmt += int64(payment.FullAmount)
+		}
 	}
 
 	availableAmount := account.CurrentBalance - inFlightAmt
