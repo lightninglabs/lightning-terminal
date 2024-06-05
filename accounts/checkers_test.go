@@ -42,13 +42,16 @@ type mockService struct {
 
 	trackedInvoices map[lntypes.Hash]AccountID
 	trackedPayments AccountPayments
+
+	*requestValuesStore
 }
 
 func newMockService() *mockService {
 	return &mockService{
-		acctBalanceMsat: 0,
-		trackedInvoices: make(map[lntypes.Hash]AccountID),
-		trackedPayments: make(AccountPayments),
+		acctBalanceMsat:    0,
+		trackedInvoices:    make(map[lntypes.Hash]AccountID),
+		trackedPayments:    make(AccountPayments),
+		requestValuesStore: newRequestValuesStore(),
 	}
 }
 
