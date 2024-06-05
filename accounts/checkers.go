@@ -262,7 +262,7 @@ func NewAccountChecker(service Service,
 			}, sendResponseHandler, mid.PassThroughErrorHandler,
 		),
 		// routerrpc.Router/SendToRoute is deprecated.
-		"/routerrpc.Router/SendToRouteV2": mid.NewRequestChecker(
+		"/routerrpc.Router/SendToRouteV2": mid.NewFullChecker(
 			&routerrpc.SendToRouteRequest{},
 			&lnrpc.HTLCAttempt{},
 			func(ctx context.Context,
@@ -272,10 +272,8 @@ func NewAccountChecker(service Service,
 					ctx, service, r.PaymentHash, r.Route,
 				)
 			},
-			// We don't get the payment hash in the response to this
-			// call. So we can't optimize things and need to rely on
-			// the payment being tracked by the hash sent in the
-			// request.
+			sendToRouteHTLCResponseHandler(service),
+			mid.PassThroughErrorHandler,
 		),
 		"/lnrpc.Lightning/DecodePayReq": DecodePayReqPassThrough,
 		"/lnrpc.Lightning/ListPayments": mid.NewResponseRewriter(
@@ -616,23 +614,42 @@ func checkSendResponse(ctx context.Context, service Service,
 	status lnrpc.Payment_PaymentStatus, hash lntypes.Hash,
 	fullAmt int64) (proto.Message, error) {
 
-	acct, err := AccountFromContext(ctx)
+	log, acct, reqID, err := requestScopedValuesFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
+
+	reqVals, ok := service.GetValues(reqID)
+	if !ok {
+		return nil, nil
+	}
+
+	if hash != reqVals.PaymentHash {
+		return nil, fmt.Errorf("response hash did not match request " +
+			"hash")
+	}
+
+	log.Tracef("Handling response payment with hash: %s", hash)
 
 	// If we directly observe a failure, make sure
 	// we stop tracking the payment and then exit
 	// early.
 	if status == lnrpc.Payment_FAILED {
+		service.DeleteValues(reqID)
+
 		return nil, service.RemovePayment(hash)
 	}
 
-	// If there is no immediate failure, make sure
-	// we track the payment.
-	return nil, service.TrackPayment(
-		acct.ID, hash, lnwire.MilliSatoshi(fullAmt),
-	)
+	// If there is no immediate failure, make sure we track the payment.
+	err = service.TrackPayment(acct.ID, hash, lnwire.MilliSatoshi(fullAmt))
+	if err != nil {
+		return nil, err
+	}
+
+	// We can now delete the request values for this request ID.
+	service.DeleteValues(reqID)
+
+	return nil, nil
 }
 
 // checkSendToRoute checks if a payment can be sent to the route by making sure
@@ -687,4 +704,70 @@ func checkSendToRoute(ctx context.Context, service Service, paymentHash []byte,
 		PaymentHash:   hash,
 		PaymentAmount: sendAmt,
 	})
+}
+
+// sendToRouteHTLCResponseHandler creates a response handler for the
+// SendToRouteV2 endpoint which is a streaming endpoint that may return multiple
+// HTLCAttempt updates.
+func sendToRouteHTLCResponseHandler(service Service) func(ctx context.Context,
+	r *lnrpc.HTLCAttempt) (proto.Message, error) {
+
+	return func(ctx context.Context, r *lnrpc.HTLCAttempt) (proto.Message,
+		error) {
+
+		log, acct, reqID, err := requestScopedValuesFromCtx(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		// Since SendToRouteV2 is a streaming endpoint, we may get
+		// multiple responses for it. If we have already handled it then
+		// we would have deleted the request ID to hash mapping, and so
+		// we can exit early here.
+		reqValues, ok := service.GetValues(reqID)
+		if !ok {
+			return nil, nil
+		}
+
+		log.Tracef("Handling response for payment with hash: %s and "+
+			"amount: %d", reqValues.PaymentHash,
+			reqValues.PaymentAmount)
+
+		// If the pre-image is provided, do a sanity check to make sure
+		// that this does actually match the hash we stored for this
+		// payment.
+		if len(r.Preimage) != 0 {
+			preimage, err := lntypes.MakePreimage(r.Preimage)
+			if err != nil {
+				return nil, err
+			}
+
+			if !preimage.Matches(reqValues.PaymentHash) {
+				return nil, fmt.Errorf("the preimage (%s) "+
+					"returned by the response does not "+
+					"match the payment hash (%s) of the "+
+					"payment", preimage,
+					reqValues.PaymentHash)
+			}
+		}
+
+		route := r.Route
+		totalAmount := int64(0)
+		if route != nil {
+			totalAmount = route.TotalAmtMsat + route.TotalFeesMsat
+		}
+
+		err = service.TrackPayment(
+			acct.ID, reqValues.PaymentHash,
+			lnwire.MilliSatoshi(totalAmount),
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		// We can now delete the request values for this ID.
+		service.DeleteValues(reqID)
+
+		return nil, nil
+	}
 }
