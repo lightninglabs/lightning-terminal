@@ -112,6 +112,8 @@ func TestAccountChecker(t *testing.T) {
 func TestAccountCheckers(t *testing.T) {
 	t.Parallel()
 
+	const reqID = uint64(55)
+
 	testCases := []struct {
 		name    string
 		fullURI string
@@ -416,9 +418,8 @@ func TestAccountCheckers(t *testing.T) {
 				Invoices: make(AccountInvoices),
 				Payments: make(AccountPayments),
 			}
-			ctx := AddToContext(
-				context.Background(), KeyAccount, acct,
-			)
+			ctx := AddAccountToContext(context.Background(), acct)
+			ctx = AddRequestIDToContext(ctx, reqID)
 
 			// Is a setup call required to initialize initial
 			// conditions?

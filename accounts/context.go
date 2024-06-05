@@ -18,6 +18,10 @@ var (
 	// KeyAccount is the key under which we store the account in the request
 	// context.
 	KeyAccount = ContextKey{"account"}
+
+	// KeyRequestID is the key under which we store the middleware request
+	// ID.
+	KeyRequestID = ContextKey{"request_id"}
 )
 
 // FromContext tries to extract a value from the given context.
@@ -25,11 +29,12 @@ func FromContext(ctx context.Context, key ContextKey) interface{} {
 	return ctx.Value(key)
 }
 
-// AddToContext adds the given value to the context for easy retrieval later on.
-func AddToContext(ctx context.Context, key ContextKey,
+// AddAccountToContext adds the given value to the context for easy retrieval
+// later on.
+func AddAccountToContext(ctx context.Context,
 	value *OffChainBalanceAccount) context.Context {
 
-	return context.WithValue(ctx, key, value)
+	return context.WithValue(ctx, KeyAccount, value)
 }
 
 // AccountFromContext attempts to extract an account from the given context.
@@ -45,4 +50,25 @@ func AccountFromContext(ctx context.Context) (*OffChainBalanceAccount, error) {
 	}
 
 	return acct, nil
+}
+
+// AddRequestIDToContext adds the given request ID to the context for easy
+// retrieval later on.
+func AddRequestIDToContext(ctx context.Context, value uint64) context.Context {
+	return context.WithValue(ctx, KeyRequestID, value)
+}
+
+// RequestIDFromContext attempts to extract a request ID from the given context.
+func RequestIDFromContext(ctx context.Context) (uint64, error) {
+	val := FromContext(ctx, KeyRequestID)
+	if val == nil {
+		return 0, fmt.Errorf("no request ID found in context")
+	}
+
+	reqID, ok := val.(uint64)
+	if !ok {
+		return 0, fmt.Errorf("invalid request ID value in context")
+	}
+
+	return reqID, nil
 }

@@ -101,9 +101,10 @@ func (s *InterceptorService) Intercept(ctx context.Context,
 		)
 	}
 
-	// We now add the account to the incoming context to give each checker
-	// access to it if required.
-	ctxAccount := AddToContext(ctx, KeyAccount, acct)
+	// We now add the account and request ID to the incoming context to give
+	// each checker access to them if required.
+	ctx = AddAccountToContext(ctx, acct)
+	ctx = AddRequestIDToContext(ctx, req.RequestId)
 
 	switch r := req.InterceptType.(type) {
 	// In the authentication phase we just check that the account hasn't
@@ -120,7 +121,7 @@ func (s *InterceptorService) Intercept(ctx context.Context,
 		}
 
 		return mid.RPCErr(req, s.checkers.checkIncomingRequest(
-			ctxAccount, r.Request.MethodFullUri, msg,
+			ctx, r.Request.MethodFullUri, msg,
 		))
 
 	// Parse and possibly manipulate outgoing responses.
@@ -131,7 +132,7 @@ func (s *InterceptorService) Intercept(ctx context.Context,
 		}
 
 		replacement, err := s.checkers.replaceOutgoingResponse(
-			ctxAccount, r.Response.MethodFullUri, msg,
+			ctx, r.Response.MethodFullUri, msg,
 		)
 		if err != nil {
 			return mid.RPCErr(req, err)
