@@ -764,9 +764,7 @@ func (s *InterceptorService) paymentUpdate(hash lntypes.Hash,
 	// Are we still in-flight? Then we don't have to do anything just yet.
 	// The unknown state should never happen in practice but if it ever did
 	// we couldn't handle it anyway, so let's also ignore it.
-	if status.State == lnrpc.Payment_IN_FLIGHT ||
-		status.State == lnrpc.Payment_UNKNOWN {
-
+	if inflightState(status.State) {
 		return false, nil
 	}
 
@@ -886,6 +884,13 @@ func (s *InterceptorService) removePayment(hash lntypes.Hash,
 // successState returns true if a payment was completed successfully.
 func successState(status lnrpc.Payment_PaymentStatus) bool {
 	return status == lnrpc.Payment_SUCCEEDED
+}
+
+// inflightState returns true if a payment should be seen as in-flight by the
+// accounts system.
+func inflightState(status lnrpc.Payment_PaymentStatus) bool {
+	return status != lnrpc.Payment_SUCCEEDED &&
+		status != lnrpc.Payment_FAILED
 }
 
 // requestValuesStore is an in-memory implementation of the
