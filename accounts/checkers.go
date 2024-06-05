@@ -186,7 +186,7 @@ func NewAccountChecker(service Service,
 					r.AmtMsat, r.PaymentRequest,
 					r.PaymentHash, r.FeeLimit,
 				)
-			}, sendResponseHandler, mid.PassThroughErrorHandler,
+			}, sendResponseHandler, erroredPaymentHandler(service),
 		),
 		"/lnrpc.Lightning/SendPaymentSync": mid.NewFullChecker(
 			&lnrpc.SendRequest{},
@@ -197,7 +197,7 @@ func NewAccountChecker(service Service,
 					r.AmtMsat, r.PaymentRequest,
 					r.PaymentHash, r.FeeLimit,
 				)
-			}, sendResponseHandler, mid.PassThroughErrorHandler,
+			}, sendResponseHandler, erroredPaymentHandler(service),
 		),
 		// routerrpc.Router/SendPayment is deprecated.
 		"/routerrpc.Router/SendPaymentV2": mid.NewFullChecker(
@@ -237,7 +237,7 @@ func NewAccountChecker(service Service,
 				return checkSendResponse(
 					ctx, service, r.Status, hash, fullAmt,
 				)
-			}, mid.PassThroughErrorHandler,
+			}, erroredPaymentHandler(service),
 		),
 		"/lnrpc.Lightning/SendToRoute": mid.NewFullChecker(
 			&lnrpc.SendToRouteRequest{},
@@ -248,7 +248,7 @@ func NewAccountChecker(service Service,
 				return checkSendToRoute(
 					ctx, service, r.PaymentHash, r.Route,
 				)
-			}, sendResponseHandler, mid.PassThroughErrorHandler,
+			}, sendResponseHandler, erroredPaymentHandler(service),
 		),
 		"/lnrpc.Lightning/SendToRouteSync": mid.NewFullChecker(
 			&lnrpc.SendToRouteRequest{},
@@ -259,7 +259,7 @@ func NewAccountChecker(service Service,
 				return checkSendToRoute(
 					ctx, service, r.PaymentHash, r.Route,
 				)
-			}, sendResponseHandler, mid.PassThroughErrorHandler,
+			}, sendResponseHandler, erroredPaymentHandler(service),
 		),
 		// routerrpc.Router/SendToRoute is deprecated.
 		"/routerrpc.Router/SendToRouteV2": mid.NewFullChecker(
@@ -273,7 +273,7 @@ func NewAccountChecker(service Service,
 				)
 			},
 			sendToRouteHTLCResponseHandler(service),
-			mid.PassThroughErrorHandler,
+			erroredPaymentHandler(service),
 		),
 		"/lnrpc.Lightning/DecodePayReq": DecodePayReqPassThrough,
 		"/lnrpc.Lightning/ListPayments": mid.NewResponseRewriter(
@@ -728,6 +728,36 @@ func checkSendToRoute(ctx context.Context, service Service, paymentHash []byte,
 		PaymentHash:   hash,
 		PaymentAmount: sendAmt,
 	})
+}
+
+// erroredPaymentHandler does some trace logging about the errored payment and
+// clears up any state we may have had for the payment.
+func erroredPaymentHandler(service Service) mid.ErrorHandler {
+	return func(ctx context.Context, respErr error) (error, error) {
+		log, acct, reqID, err := requestScopedValuesFromCtx(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		reqVals, ok := service.GetValues(reqID)
+		if !ok {
+			return nil, fmt.Errorf("no request values found for "+
+				"request: %d", reqID)
+		}
+
+		log.Tracef("Handling payment request error for payment with "+
+			"hash: %s and amount: %d", reqVals.PaymentHash,
+			reqVals.PaymentAmount)
+
+		err = service.PaymentErrored(acct.ID, reqVals.PaymentHash)
+		if err != nil {
+			return nil, err
+		}
+
+		service.DeleteValues(reqID)
+
+		return nil, nil
+	}
 }
 
 // sendToRouteHTLCResponseHandler creates a response handler for the
