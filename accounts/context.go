@@ -3,6 +3,9 @@ package accounts
 import (
 	"context"
 	"fmt"
+
+	"github.com/btcsuite/btclog"
+	"github.com/lightningnetwork/lnd/build"
 )
 
 // ContextKey is the type that we use to identify account specific values in the
@@ -71,4 +74,26 @@ func RequestIDFromContext(ctx context.Context) (uint64, error) {
 	}
 
 	return reqID, nil
+}
+
+// requestScopedValuesFromCtx is a helper function that can be used to extract
+// an account and requestID from the given context. It also creates a new
+// prefixed logger that can be used by account request and response handlers.
+// Each log line will be prefixed by the account ID and the request ID.
+func requestScopedValuesFromCtx(ctx context.Context) (btclog.Logger,
+	*OffChainBalanceAccount, uint64, error) {
+
+	acc, err := AccountFromContext(ctx)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+
+	reqID, err := RequestIDFromContext(ctx)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+
+	prefix := fmt.Sprintf("[account: %s, request: %d]", acc.ID, reqID)
+
+	return build.NewPrefixLog(prefix, log), acc, reqID, nil
 }
