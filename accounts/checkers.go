@@ -63,6 +63,8 @@ var (
 	ListPeersEmptyRewriter = mid.NewResponseEmptier[
 		*lnrpc.ListPeersRequest, *lnrpc.ListPeersResponse,
 	]()
+
+	emptyHash lntypes.Hash
 )
 
 // CheckerMap is a type alias that maps gRPC request URIs to their
@@ -181,7 +183,8 @@ func NewAccountChecker(service Service,
 			func(ctx context.Context, r *lnrpc.SendRequest) error {
 				return checkSend(
 					ctx, chainParams, service, r.Amt,
-					r.AmtMsat, r.PaymentRequest, r.FeeLimit,
+					r.AmtMsat, r.PaymentRequest,
+					r.PaymentHash, r.FeeLimit,
 				)
 			}, sendResponseHandler, mid.PassThroughErrorHandler,
 		),
@@ -191,7 +194,8 @@ func NewAccountChecker(service Service,
 			func(ctx context.Context, r *lnrpc.SendRequest) error {
 				return checkSend(
 					ctx, chainParams, service, r.Amt,
-					r.AmtMsat, r.PaymentRequest, r.FeeLimit,
+					r.AmtMsat, r.PaymentRequest,
+					r.PaymentHash, r.FeeLimit,
 				)
 			}, sendResponseHandler, mid.PassThroughErrorHandler,
 		),
@@ -210,6 +214,7 @@ func NewAccountChecker(service Service,
 				return checkSend(
 					ctx, chainParams, service, r.Amt,
 					r.AmtMsat, r.PaymentRequest,
+					r.PaymentHash,
 					&lnrpc.FeeLimit{
 						Limit: &lnrpc.FeeLimit_FixedMsat{
 							FixedMsat: feeLimitMsat,
@@ -240,7 +245,9 @@ func NewAccountChecker(service Service,
 			func(ctx context.Context,
 				r *lnrpc.SendToRouteRequest) error {
 
-				return checkSendToRoute(ctx, service, r.Route)
+				return checkSendToRoute(
+					ctx, service, r.PaymentHash, r.Route,
+				)
 			}, sendResponseHandler, mid.PassThroughErrorHandler,
 		),
 		"/lnrpc.Lightning/SendToRouteSync": mid.NewFullChecker(
@@ -249,7 +256,9 @@ func NewAccountChecker(service Service,
 			func(ctx context.Context,
 				r *lnrpc.SendToRouteRequest) error {
 
-				return checkSendToRoute(ctx, service, r.Route)
+				return checkSendToRoute(
+					ctx, service, r.PaymentHash, r.Route,
+				)
 			}, sendResponseHandler, mid.PassThroughErrorHandler,
 		),
 		// routerrpc.Router/SendToRoute is deprecated.
@@ -259,7 +268,9 @@ func NewAccountChecker(service Service,
 			func(ctx context.Context,
 				r *routerrpc.SendToRouteRequest) error {
 
-				return checkSendToRoute(ctx, service, r.Route)
+				return checkSendToRoute(
+					ctx, service, r.PaymentHash, r.Route,
+				)
 			},
 			// We don't get the payment hash in the response to this
 			// call. So we can't optimize things and need to rely on
@@ -509,9 +520,14 @@ func filterPayments(ctx context.Context,
 // the context has enough balance to pay for it.
 func checkSend(ctx context.Context, chainParams *chaincfg.Params,
 	service Service, amt, amtMsat int64, invoice string,
-	feeLimit *lnrpc.FeeLimit) error {
+	paymentHash []byte, feeLimit *lnrpc.FeeLimit) error {
 
 	acct, err := AccountFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	reqID, err := RequestIDFromContext(ctx)
 	if err != nil {
 		return err
 	}
@@ -521,8 +537,12 @@ func checkSend(ctx context.Context, chainParams *chaincfg.Params,
 		sendAmt = lnwire.MilliSatoshi(amtMsat)
 	}
 
-	// The invoice is optional.
-	var paymentHash lntypes.Hash
+	// We require that a payment hash is set, which we either read from the
+	// payment hash from the invoice or from the request.
+	var pHash lntypes.Hash
+
+	// Check if an invoice was provided. If so, glean the payment hash from
+	// that.
 	if len(invoice) > 0 {
 		payReq, err := zpay32.Decode(invoice, chainParams)
 		if err != nil {
@@ -534,8 +554,34 @@ func checkSend(ctx context.Context, chainParams *chaincfg.Params,
 		}
 
 		if payReq.PaymentHash != nil {
-			paymentHash = *payReq.PaymentHash
+			pHash = *payReq.PaymentHash
 		}
+	}
+
+	// If a payment hash was separately provided in the request, then glean
+	// derive the hash from there. If the invoice was set then the two
+	// payment hashes must match.
+	if len(paymentHash) != 0 {
+		hash, err := lntypes.MakeHash(paymentHash)
+		if err != nil {
+			return err
+		}
+
+		if pHash != emptyHash && hash != pHash {
+			return fmt.Errorf("two conflicting hashes provided")
+		}
+
+		pHash = hash
+	}
+
+	// If at this point we still have no payment hash, then we error out
+	// for now.
+	// TODO(elle): support key sends by:
+	//  1) allowing the user to set a pre-image
+	//  2) deriving a pre-image here.
+	//  Then glean the payment hash from that.
+	if pHash == emptyHash {
+		return fmt.Errorf("a payment hash is required")
 	}
 
 	// We also add the max fee to the amount to check. This might mean that
@@ -554,15 +600,15 @@ func checkSend(ctx context.Context, chainParams *chaincfg.Params,
 		return fmt.Errorf("error validating account balance: %w", err)
 	}
 
-	emptyHash := lntypes.Hash{}
-	if paymentHash != emptyHash {
-		err = service.AssociatePayment(acct.ID, paymentHash, sendAmt)
-		if err != nil {
-			return fmt.Errorf("error associating payment: %w", err)
-		}
+	err = service.AssociatePayment(acct.ID, pHash, sendAmt)
+	if err != nil {
+		return fmt.Errorf("error associating payment: %w", err)
 	}
 
-	return nil
+	return service.RegisterValues(reqID, &RequestValues{
+		PaymentHash:   pHash,
+		PaymentAmount: sendAmt,
+	})
 }
 
 // checkSendResponse makes sure that a payment that is in flight is tracked
@@ -593,10 +639,20 @@ func checkSendResponse(ctx context.Context, service Service,
 
 // checkSendToRoute checks if a payment can be sent to the route by making sure
 // the account in the context has enough balance to pay for it.
-func checkSendToRoute(ctx context.Context, service Service,
+func checkSendToRoute(ctx context.Context, service Service, paymentHash []byte,
 	route *lnrpc.Route) error {
 
 	acct, err := AccountFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	hash, err := lntypes.MakeHash(paymentHash)
+	if err != nil {
+		return err
+	}
+
+	reqID, err := RequestIDFromContext(ctx)
 	if err != nil {
 		return err
 	}
@@ -625,5 +681,14 @@ func checkSendToRoute(ctx context.Context, service Service,
 		return fmt.Errorf("error validating account balance: %w", err)
 	}
 
-	return nil
+	err = service.AssociatePayment(acct.ID, hash, sendAmt)
+	if err != nil {
+		return fmt.Errorf("error associating payment with hash %s: %w",
+			hash, err)
+	}
+
+	return service.RegisterValues(reqID, &RequestValues{
+		PaymentHash:   hash,
+		PaymentAmount: sendAmt,
+	})
 }

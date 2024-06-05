@@ -25,7 +25,10 @@ var (
 	}
 
 	testID   = AccountID{77, 88, 99}
-	testHash = lntypes.Hash{1, 2, 3, 4, 5}
+	testHash = lntypes.Hash{
+		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+	}
 
 	testAmount = &lnrpc.Amount{
 		Sat:  456,
@@ -207,7 +210,8 @@ func TestAccountCheckers(t *testing.T) {
 		name:    "send payment, not enough balance",
 		fullURI: "/lnrpc.Lightning/SendPaymentSync",
 		originalRequest: &lnrpc.SendRequest{
-			AmtMsat: 5000,
+			AmtMsat:     5000,
+			PaymentHash: testHash[:],
 		},
 		requestErr: "error validating account balance: invalid balance",
 	}, {
@@ -223,6 +227,7 @@ func TestAccountCheckers(t *testing.T) {
 					Percent: 1,
 				},
 			},
+			PaymentHash: testHash[:],
 		},
 		requestErr: "error validating account balance: invalid balance",
 	}, {
@@ -238,6 +243,7 @@ func TestAccountCheckers(t *testing.T) {
 					FixedMsat: 123,
 				},
 			},
+			PaymentHash: testHash[:],
 		},
 		originalResponse: &lnrpc.SendResponse{
 			PaymentHash: testHash[:],
