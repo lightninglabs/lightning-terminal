@@ -522,12 +522,7 @@ func checkSend(ctx context.Context, chainParams *chaincfg.Params,
 	service Service, amt, amtMsat int64, invoice string,
 	paymentHash []byte, feeLimit *lnrpc.FeeLimit) error {
 
-	acct, err := AccountFromContext(ctx)
-	if err != nil {
-		return err
-	}
-
-	reqID, err := RequestIDFromContext(ctx)
+	log, acct, reqID, err := requestScopedValuesFromCtx(ctx)
 	if err != nil {
 		return err
 	}
@@ -583,6 +578,9 @@ func checkSend(ctx context.Context, chainParams *chaincfg.Params,
 	if pHash == emptyHash {
 		return fmt.Errorf("a payment hash is required")
 	}
+
+	log.Tracef("Handling send request for payment with hash: %s and "+
+		"amount: %d", pHash, sendAmt)
 
 	// We also add the max fee to the amount to check. This might mean that
 	// not every single satoshi of an account can be used up. But it
@@ -642,17 +640,12 @@ func checkSendResponse(ctx context.Context, service Service,
 func checkSendToRoute(ctx context.Context, service Service, paymentHash []byte,
 	route *lnrpc.Route) error {
 
-	acct, err := AccountFromContext(ctx)
+	log, acct, reqID, err := requestScopedValuesFromCtx(ctx)
 	if err != nil {
 		return err
 	}
 
 	hash, err := lntypes.MakeHash(paymentHash)
-	if err != nil {
-		return err
-	}
-
-	reqID, err := RequestIDFromContext(ctx)
 	if err != nil {
 		return err
 	}
@@ -665,6 +658,9 @@ func checkSendToRoute(ctx context.Context, service Service, paymentHash []byte,
 	if lnwire.MilliSatoshi(route.TotalAmtMsat) > sendAmt {
 		sendAmt = lnwire.MilliSatoshi(route.TotalAmtMsat)
 	}
+
+	log.Tracef("Handling send request for payment with hash: %s and "+
+		"amount: %d", hash, sendAmt)
 
 	// We also add the max fee to the amount to check. This might mean that
 	// not every single satoshi of an account can be used up. But it

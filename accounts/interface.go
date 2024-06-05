@@ -53,6 +53,11 @@ func ParseAccountID(idStr string) (*AccountID, error) {
 	return &id, nil
 }
 
+// String returns the string representation of the AccountID.
+func (a AccountID) String() string {
+	return hex.EncodeToString(a[:])
+}
+
 // PaymentEntry is the data we track per payment that is associated with an
 // account. This basically includes all information required to make sure
 // in-flight payments don't exceed the total available account balance.
