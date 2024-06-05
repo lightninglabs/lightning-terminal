@@ -66,6 +66,8 @@ type InterceptorService struct {
 	invoiceToAccount map[lntypes.Hash]AccountID
 	pendingPayments  map[lntypes.Hash]*trackedPayment
 
+	*requestValuesStore
+
 	mainErrCallback func(error)
 	wg              sync.WaitGroup
 	quit            chan struct{}
@@ -86,14 +88,15 @@ func NewService(dir string,
 	mainCtx, contextCancel := context.WithCancel(context.Background())
 
 	return &InterceptorService{
-		store:            accountStore,
-		mainCtx:          mainCtx,
-		contextCancel:    contextCancel,
-		invoiceToAccount: make(map[lntypes.Hash]AccountID),
-		pendingPayments:  make(map[lntypes.Hash]*trackedPayment),
-		mainErrCallback:  errCallback,
-		quit:             make(chan struct{}),
-		isEnabled:        false,
+		store:              accountStore,
+		mainCtx:            mainCtx,
+		contextCancel:      contextCancel,
+		invoiceToAccount:   make(map[lntypes.Hash]AccountID),
+		pendingPayments:    make(map[lntypes.Hash]*trackedPayment),
+		requestValuesStore: newRequestValuesStore(),
+		mainErrCallback:    errCallback,
+		quit:               make(chan struct{}),
+		isEnabled:          false,
 	}, nil
 }
 
@@ -829,4 +832,60 @@ func (s *InterceptorService) removePayment(hash lntypes.Hash,
 // successState returns true if a payment was completed successfully.
 func successState(status lnrpc.Payment_PaymentStatus) bool {
 	return status == lnrpc.Payment_SUCCEEDED
+}
+
+// requestValuesStore is an in-memory implementation of the
+// RequestValuesStore interface.
+type requestValuesStore struct {
+	m map[uint64]*RequestValues
+
+	mu sync.Mutex
+}
+
+// A compile-time check to ensure that requestValuesStore implements the
+// RequestValuesStore interface.
+var _ RequestValuesStore = (*requestValuesStore)(nil)
+
+// newRequestValuesStore constructs a new requestValuesStore which is an
+// implementation of the RequestValuesStore interface.
+func newRequestValuesStore() *requestValuesStore {
+	return &requestValuesStore{
+		m: make(map[uint64]*RequestValues),
+	}
+}
+
+// RegisterValues stores values for the given request ID.
+func (s *requestValuesStore) RegisterValues(reqID uint64,
+	values *RequestValues) error {
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if _, ok := s.m[reqID]; ok {
+		return fmt.Errorf("values for request ID %d have already "+
+			"been registered", reqID)
+	}
+
+	s.m[reqID] = values
+
+	return nil
+}
+
+// GetValues returns the corresponding request values for the given request ID
+// if they exist.
+func (s *requestValuesStore) GetValues(reqID uint64) (*RequestValues, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	values, ok := s.m[reqID]
+
+	return values, ok
+}
+
+// DeleteValues deletes any values stored for the given request ID.
+func (s *requestValuesStore) DeleteValues(reqID uint64) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	delete(s.m, reqID)
 }

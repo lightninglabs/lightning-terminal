@@ -252,4 +252,33 @@ type Service interface {
 	// restarted.
 	AssociatePayment(id AccountID, paymentHash lntypes.Hash,
 		fullAmt lnwire.MilliSatoshi) error
+
+	RequestValuesStore
+}
+
+// RequestValues holds various values associated with a specific request that
+// we may want access to when handling the response. At the moment this only
+// stores payment related data.
+type RequestValues struct {
+	// PaymentHash is the hash of the payment that this request is
+	// associated with.
+	PaymentHash lntypes.Hash
+
+	// PaymentAmount is the value of the payment being made.
+	PaymentAmount lnwire.MilliSatoshi
+}
+
+// RequestValuesStore is a store that can be used to keep track of the mapping
+// between a request ID and various values associated with that request which
+// we may want access to when handling the request response.
+type RequestValuesStore interface {
+	// RegisterValues stores values for the given request ID.
+	RegisterValues(reqID uint64, values *RequestValues) error
+
+	// GetValues returns the corresponding request values for the given
+	// request ID if they exist.
+	GetValues(reqID uint64) (*RequestValues, bool)
+
+	// DeleteValues deletes any values stored for the given request ID.
+	DeleteValues(reqID uint64)
 }
