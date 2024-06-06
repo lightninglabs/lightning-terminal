@@ -66,6 +66,8 @@ type InterceptorService struct {
 	invoiceToAccount map[lntypes.Hash]AccountID
 	pendingPayments  map[lntypes.Hash]*trackedPayment
 
+	*requestValuesStore
+
 	mainErrCallback func(error)
 	wg              sync.WaitGroup
 	quit            chan struct{}
@@ -86,14 +88,15 @@ func NewService(dir string,
 	mainCtx, contextCancel := context.WithCancel(context.Background())
 
 	return &InterceptorService{
-		store:            accountStore,
-		mainCtx:          mainCtx,
-		contextCancel:    contextCancel,
-		invoiceToAccount: make(map[lntypes.Hash]AccountID),
-		pendingPayments:  make(map[lntypes.Hash]*trackedPayment),
-		mainErrCallback:  errCallback,
-		quit:             make(chan struct{}),
-		isEnabled:        false,
+		store:              accountStore,
+		mainCtx:            mainCtx,
+		contextCancel:      contextCancel,
+		invoiceToAccount:   make(map[lntypes.Hash]AccountID),
+		pendingPayments:    make(map[lntypes.Hash]*trackedPayment),
+		requestValuesStore: newRequestValuesStore(),
+		mainErrCallback:    errCallback,
+		quit:               make(chan struct{}),
+		isEnabled:          false,
 	}, nil
 }
 
@@ -402,17 +405,26 @@ func (s *InterceptorService) CheckBalance(id AccountID,
 		return ErrAccExpired
 	}
 
-	var inFlightAmt int64
-	for _, pendingPayment := range s.pendingPayments {
-		inFlightAmt += int64(pendingPayment.fullAmount)
-	}
-
-	availableAmount := account.CurrentBalance - inFlightAmt
+	availableAmount := calcAvailableAccountBalance(account)
 	if availableAmount < int64(requiredBalance) {
 		return ErrAccBalanceInsufficient
 	}
 
 	return nil
+}
+
+func calcAvailableAccountBalance(account *OffChainBalanceAccount) int64 {
+	var inFlightAmt int64
+	for _, payment := range account.Payments {
+		if inflightState(payment.Status) {
+			// If a payment is in-flight and associated with the
+			// account, the user should not be able to spend that
+			// amount while it's in-flight.
+			inFlightAmt += int64(payment.FullAmount)
+		}
+	}
+
+	return account.CurrentBalance - inFlightAmt
 }
 
 // AssociateInvoice associates a generated invoice with the given account,
@@ -434,6 +446,45 @@ func (s *InterceptorService) AssociateInvoice(id AccountID,
 	return s.store.UpdateAccount(account)
 }
 
+// PaymentErrored removes a pending payment from the account's registered
+// payment list. This should only ever be called if we are sure that the payment
+// request errored out.
+func (s *InterceptorService) PaymentErrored(id AccountID,
+	hash lntypes.Hash) error {
+
+	s.Lock()
+	defer s.Unlock()
+
+	// If we have already started tracking this payment, then RemovePayment
+	// should have been called instead.
+	_, ok := s.pendingPayments[hash]
+	if ok {
+		return fmt.Errorf("cannot disassociate payment if tracking " +
+			"has already started")
+	}
+
+	account, err := s.store.Account(id)
+	if err != nil {
+		return err
+	}
+
+	// Check that this payment is actually associated with this account.
+	_, ok = account.Payments[hash]
+	if !ok {
+		return fmt.Errorf("payment with hash %s is not associated "+
+			"with this account", hash)
+	}
+
+	// Delete the payment and update the persisted account.
+	delete(account.Payments, hash)
+
+	if err := s.store.UpdateAccount(account); err != nil {
+		return fmt.Errorf("error updating account: %w", err)
+	}
+
+	return nil
+}
+
 // AssociatePayment associates a payment (hash) with the given account,
 // ensuring that the payment will be tracked for a user when LiT is
 // restarted.
@@ -448,11 +499,26 @@ func (s *InterceptorService) AssociatePayment(id AccountID,
 		return err
 	}
 
-	// If the payment is already associated with the account, we don't need
-	// to associate it again.
+	// Check if this payment is associated with the account already.
 	_, ok := account.Payments[paymentHash]
 	if ok {
-		return nil
+		// We do not allow another payment to the same hash if the
+		// payment is already in-flight or succeeded. This mitigates a
+		// user being able to launch a second RPC-erring payment with
+		// the same hash that would remove the payment from being
+		// tracked. Note that this prevents launching multipart
+		// payments, but allows retrying a payment if it has failed.
+		if account.Payments[paymentHash].Status !=
+			lnrpc.Payment_FAILED {
+
+			return fmt.Errorf("payment with hash %s is already in "+
+				"flight or succeeded (status %v)", paymentHash,
+				account.Payments[paymentHash].Status)
+		}
+
+		// Otherwise, we fall through to correctly update the payment
+		// amount, in case we have a zero-amount invoice that is
+		// retried.
 	}
 
 	// Associate the payment with the account and store it.
@@ -579,6 +645,13 @@ func (s *InterceptorService) TrackPayment(id AccountID, hash lntypes.Hash,
 		return nil
 	}
 
+	// There is a case where the passed in fullAmt is zero but the pending
+	// amount is not. In that case, we should not overwrite the pending
+	// amount.
+	if fullAmt == 0 {
+		fullAmt = entry.FullAmount
+	}
+
 	account.Payments[hash] = &PaymentEntry{
 		Status:     lnrpc.Payment_UNKNOWN,
 		FullAmount: fullAmt,
@@ -667,6 +740,20 @@ func (s *InterceptorService) TrackPayment(id AccountID, hash lntypes.Hash,
 					log.Debugf("Payment %v not initiated, "+
 						"stopping tracking", hash)
 
+					// We also remove the payment from the
+					// account, so that the payment won't be
+					// seen as in-flight balance when
+					// calculating the account's available
+					// balance.
+					err := s.RemovePayment(hash)
+					if err != nil {
+						// We don't disable the service
+						// here, as the worst that can
+						// happen is that the payment is
+						// seen as still in-flight.
+						s.mainErrCallback(err)
+					}
+
 					return
 				}
 
@@ -707,9 +794,7 @@ func (s *InterceptorService) paymentUpdate(hash lntypes.Hash,
 	// Are we still in-flight? Then we don't have to do anything just yet.
 	// The unknown state should never happen in practice but if it ever did
 	// we couldn't handle it anyway, so let's also ignore it.
-	if status.State == lnrpc.Payment_IN_FLIGHT ||
-		status.State == lnrpc.Payment_UNKNOWN {
-
+	if inflightState(status.State) {
 		return false, nil
 	}
 
@@ -829,4 +914,67 @@ func (s *InterceptorService) removePayment(hash lntypes.Hash,
 // successState returns true if a payment was completed successfully.
 func successState(status lnrpc.Payment_PaymentStatus) bool {
 	return status == lnrpc.Payment_SUCCEEDED
+}
+
+// inflightState returns true if a payment should be seen as in-flight by the
+// accounts system.
+func inflightState(status lnrpc.Payment_PaymentStatus) bool {
+	return status != lnrpc.Payment_SUCCEEDED &&
+		status != lnrpc.Payment_FAILED
+}
+
+// requestValuesStore is an in-memory implementation of the
+// RequestValuesStore interface.
+type requestValuesStore struct {
+	m map[uint64]*RequestValues
+
+	mu sync.Mutex
+}
+
+// A compile-time check to ensure that requestValuesStore implements the
+// RequestValuesStore interface.
+var _ RequestValuesStore = (*requestValuesStore)(nil)
+
+// newRequestValuesStore constructs a new requestValuesStore which is an
+// implementation of the RequestValuesStore interface.
+func newRequestValuesStore() *requestValuesStore {
+	return &requestValuesStore{
+		m: make(map[uint64]*RequestValues),
+	}
+}
+
+// RegisterValues stores values for the given request ID.
+func (s *requestValuesStore) RegisterValues(reqID uint64,
+	values *RequestValues) error {
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if _, ok := s.m[reqID]; ok {
+		return fmt.Errorf("values for request ID %d have already "+
+			"been registered", reqID)
+	}
+
+	s.m[reqID] = values
+
+	return nil
+}
+
+// GetValues returns the corresponding request values for the given request ID
+// if they exist.
+func (s *requestValuesStore) GetValues(reqID uint64) (*RequestValues, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	values, ok := s.m[reqID]
+
+	return values, ok
+}
+
+// DeleteValues deletes any values stored for the given request ID.
+func (s *requestValuesStore) DeleteValues(reqID uint64) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	delete(s.m, reqID)
 }

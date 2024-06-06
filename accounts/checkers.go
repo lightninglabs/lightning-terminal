@@ -63,6 +63,8 @@ var (
 	ListPeersEmptyRewriter = mid.NewResponseEmptier[
 		*lnrpc.ListPeersRequest, *lnrpc.ListPeersResponse,
 	]()
+
+	emptyHash lntypes.Hash
 )
 
 // CheckerMap is a type alias that maps gRPC request URIs to their
@@ -181,9 +183,10 @@ func NewAccountChecker(service Service,
 			func(ctx context.Context, r *lnrpc.SendRequest) error {
 				return checkSend(
 					ctx, chainParams, service, r.Amt,
-					r.AmtMsat, r.PaymentRequest, r.FeeLimit,
+					r.AmtMsat, r.PaymentRequest,
+					r.PaymentHash, r.FeeLimit,
 				)
-			}, sendResponseHandler, mid.PassThroughErrorHandler,
+			}, sendResponseHandler, erroredPaymentHandler(service),
 		),
 		"/lnrpc.Lightning/SendPaymentSync": mid.NewFullChecker(
 			&lnrpc.SendRequest{},
@@ -191,9 +194,10 @@ func NewAccountChecker(service Service,
 			func(ctx context.Context, r *lnrpc.SendRequest) error {
 				return checkSend(
 					ctx, chainParams, service, r.Amt,
-					r.AmtMsat, r.PaymentRequest, r.FeeLimit,
+					r.AmtMsat, r.PaymentRequest,
+					r.PaymentHash, r.FeeLimit,
 				)
-			}, sendResponseHandler, mid.PassThroughErrorHandler,
+			}, sendResponseHandler, erroredPaymentHandler(service),
 		),
 		// routerrpc.Router/SendPayment is deprecated.
 		"/routerrpc.Router/SendPaymentV2": mid.NewFullChecker(
@@ -210,6 +214,7 @@ func NewAccountChecker(service Service,
 				return checkSend(
 					ctx, chainParams, service, r.Amt,
 					r.AmtMsat, r.PaymentRequest,
+					r.PaymentHash,
 					&lnrpc.FeeLimit{
 						Limit: &lnrpc.FeeLimit_FixedMsat{
 							FixedMsat: feeLimitMsat,
@@ -232,7 +237,7 @@ func NewAccountChecker(service Service,
 				return checkSendResponse(
 					ctx, service, r.Status, hash, fullAmt,
 				)
-			}, mid.PassThroughErrorHandler,
+			}, erroredPaymentHandler(service),
 		),
 		"/lnrpc.Lightning/SendToRoute": mid.NewFullChecker(
 			&lnrpc.SendToRouteRequest{},
@@ -240,8 +245,10 @@ func NewAccountChecker(service Service,
 			func(ctx context.Context,
 				r *lnrpc.SendToRouteRequest) error {
 
-				return checkSendToRoute(ctx, service, r.Route)
-			}, sendResponseHandler, mid.PassThroughErrorHandler,
+				return checkSendToRoute(
+					ctx, service, r.PaymentHash, r.Route,
+				)
+			}, sendResponseHandler, erroredPaymentHandler(service),
 		),
 		"/lnrpc.Lightning/SendToRouteSync": mid.NewFullChecker(
 			&lnrpc.SendToRouteRequest{},
@@ -249,22 +256,24 @@ func NewAccountChecker(service Service,
 			func(ctx context.Context,
 				r *lnrpc.SendToRouteRequest) error {
 
-				return checkSendToRoute(ctx, service, r.Route)
-			}, sendResponseHandler, mid.PassThroughErrorHandler,
+				return checkSendToRoute(
+					ctx, service, r.PaymentHash, r.Route,
+				)
+			}, sendResponseHandler, erroredPaymentHandler(service),
 		),
 		// routerrpc.Router/SendToRoute is deprecated.
-		"/routerrpc.Router/SendToRouteV2": mid.NewRequestChecker(
+		"/routerrpc.Router/SendToRouteV2": mid.NewFullChecker(
 			&routerrpc.SendToRouteRequest{},
 			&lnrpc.HTLCAttempt{},
 			func(ctx context.Context,
 				r *routerrpc.SendToRouteRequest) error {
 
-				return checkSendToRoute(ctx, service, r.Route)
+				return checkSendToRoute(
+					ctx, service, r.PaymentHash, r.Route,
+				)
 			},
-			// We don't get the payment hash in the response to this
-			// call. So we can't optimize things and need to rely on
-			// the payment being tracked by the hash sent in the
-			// request.
+			sendToRouteHTLCResponseHandler(service),
+			erroredPaymentHandler(service),
 		),
 		"/lnrpc.Lightning/DecodePayReq": DecodePayReqPassThrough,
 		"/lnrpc.Lightning/ListPayments": mid.NewResponseRewriter(
@@ -389,6 +398,30 @@ func NewAccountChecker(service Service,
 	}
 }
 
+// handleErrorResponse passes an error to a checker if the checker has
+// registered an error handler.
+func (a *AccountChecker) handleErrorResponse(ctx context.Context,
+	fullUri string, parsedErr error) (error, error) {
+
+	// If we don't have a handler for the URI, it means we don't support
+	// that RPC.
+	checker, ok := a.checkers[fullUri]
+	if !ok {
+		return nil, ErrNotSupportedWithAccounts
+	}
+
+	newErr, err := checker.HandleErrorResponse(ctx, parsedErr)
+	if err != nil {
+		return nil, err
+	}
+
+	if newErr != nil {
+		parsedErr = newErr
+	}
+
+	return parsedErr, nil
+}
+
 // checkIncomingRequest makes sure the type of incoming call is supported and
 // if it is, that it is allowed with the current account balance.
 func (a *AccountChecker) checkIncomingRequest(ctx context.Context,
@@ -509,9 +542,9 @@ func filterPayments(ctx context.Context,
 // the context has enough balance to pay for it.
 func checkSend(ctx context.Context, chainParams *chaincfg.Params,
 	service Service, amt, amtMsat int64, invoice string,
-	feeLimit *lnrpc.FeeLimit) error {
+	paymentHash []byte, feeLimit *lnrpc.FeeLimit) error {
 
-	acct, err := AccountFromContext(ctx)
+	log, acct, reqID, err := requestScopedValuesFromCtx(ctx)
 	if err != nil {
 		return err
 	}
@@ -521,8 +554,12 @@ func checkSend(ctx context.Context, chainParams *chaincfg.Params,
 		sendAmt = lnwire.MilliSatoshi(amtMsat)
 	}
 
-	// The invoice is optional.
-	var paymentHash lntypes.Hash
+	// We require that a payment hash is set, which we either read from the
+	// payment hash from the invoice or from the request.
+	var pHash lntypes.Hash
+
+	// Check if an invoice was provided. If so, glean the payment hash from
+	// that.
 	if len(invoice) > 0 {
 		payReq, err := zpay32.Decode(invoice, chainParams)
 		if err != nil {
@@ -534,9 +571,38 @@ func checkSend(ctx context.Context, chainParams *chaincfg.Params,
 		}
 
 		if payReq.PaymentHash != nil {
-			paymentHash = *payReq.PaymentHash
+			pHash = *payReq.PaymentHash
 		}
 	}
+
+	// If a payment hash was separately provided in the request, then glean
+	// derive the hash from there. If the invoice was set then the two
+	// payment hashes must match.
+	if len(paymentHash) != 0 {
+		hash, err := lntypes.MakeHash(paymentHash)
+		if err != nil {
+			return err
+		}
+
+		if pHash != emptyHash && hash != pHash {
+			return fmt.Errorf("two conflicting hashes provided")
+		}
+
+		pHash = hash
+	}
+
+	// If at this point we still have no payment hash, then we error out
+	// for now.
+	// TODO(elle): support key sends by:
+	//  1) allowing the user to set a pre-image
+	//  2) deriving a pre-image here.
+	//  Then glean the payment hash from that.
+	if pHash == emptyHash {
+		return fmt.Errorf("a payment hash is required")
+	}
+
+	log.Tracef("Handling send request for payment with hash: %s and "+
+		"amount: %d", pHash, sendAmt)
 
 	// We also add the max fee to the amount to check. This might mean that
 	// not every single satoshi of an account can be used up. But it
@@ -554,15 +620,15 @@ func checkSend(ctx context.Context, chainParams *chaincfg.Params,
 		return fmt.Errorf("error validating account balance: %w", err)
 	}
 
-	emptyHash := lntypes.Hash{}
-	if paymentHash != emptyHash {
-		err = service.AssociatePayment(acct.ID, paymentHash, sendAmt)
-		if err != nil {
-			return fmt.Errorf("error associating payment: %w", err)
-		}
+	err = service.AssociatePayment(acct.ID, pHash, sendAmt)
+	if err != nil {
+		return fmt.Errorf("error associating payment: %w", err)
 	}
 
-	return nil
+	return service.RegisterValues(reqID, &RequestValues{
+		PaymentHash:   pHash,
+		PaymentAmount: sendAmt,
+	})
 }
 
 // checkSendResponse makes sure that a payment that is in flight is tracked
@@ -572,31 +638,55 @@ func checkSendResponse(ctx context.Context, service Service,
 	status lnrpc.Payment_PaymentStatus, hash lntypes.Hash,
 	fullAmt int64) (proto.Message, error) {
 
-	acct, err := AccountFromContext(ctx)
+	log, acct, reqID, err := requestScopedValuesFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
+
+	reqVals, ok := service.GetValues(reqID)
+	if !ok {
+		return nil, nil
+	}
+
+	if hash != reqVals.PaymentHash {
+		return nil, fmt.Errorf("response hash did not match request " +
+			"hash")
+	}
+
+	log.Tracef("Handling response payment with hash: %s", hash)
 
 	// If we directly observe a failure, make sure
 	// we stop tracking the payment and then exit
 	// early.
 	if status == lnrpc.Payment_FAILED {
+		service.DeleteValues(reqID)
+
 		return nil, service.RemovePayment(hash)
 	}
 
-	// If there is no immediate failure, make sure
-	// we track the payment.
-	return nil, service.TrackPayment(
-		acct.ID, hash, lnwire.MilliSatoshi(fullAmt),
-	)
+	// If there is no immediate failure, make sure we track the payment.
+	err = service.TrackPayment(acct.ID, hash, lnwire.MilliSatoshi(fullAmt))
+	if err != nil {
+		return nil, err
+	}
+
+	// We can now delete the request values for this request ID.
+	service.DeleteValues(reqID)
+
+	return nil, nil
 }
 
 // checkSendToRoute checks if a payment can be sent to the route by making sure
 // the account in the context has enough balance to pay for it.
-func checkSendToRoute(ctx context.Context, service Service,
+func checkSendToRoute(ctx context.Context, service Service, paymentHash []byte,
 	route *lnrpc.Route) error {
 
-	acct, err := AccountFromContext(ctx)
+	log, acct, reqID, err := requestScopedValuesFromCtx(ctx)
+	if err != nil {
+		return err
+	}
+
+	hash, err := lntypes.MakeHash(paymentHash)
 	if err != nil {
 		return err
 	}
@@ -609,6 +699,9 @@ func checkSendToRoute(ctx context.Context, service Service,
 	if lnwire.MilliSatoshi(route.TotalAmtMsat) > sendAmt {
 		sendAmt = lnwire.MilliSatoshi(route.TotalAmtMsat)
 	}
+
+	log.Tracef("Handling send request for payment with hash: %s and "+
+		"amount: %d", hash, sendAmt)
 
 	// We also add the max fee to the amount to check. This might mean that
 	// not every single satoshi of an account can be used up. But it
@@ -625,5 +718,110 @@ func checkSendToRoute(ctx context.Context, service Service,
 		return fmt.Errorf("error validating account balance: %w", err)
 	}
 
-	return nil
+	err = service.AssociatePayment(acct.ID, hash, sendAmt)
+	if err != nil {
+		return fmt.Errorf("error associating payment with hash %s: %w",
+			hash, err)
+	}
+
+	return service.RegisterValues(reqID, &RequestValues{
+		PaymentHash:   hash,
+		PaymentAmount: sendAmt,
+	})
+}
+
+// erroredPaymentHandler does some trace logging about the errored payment and
+// clears up any state we may have had for the payment.
+func erroredPaymentHandler(service Service) mid.ErrorHandler {
+	return func(ctx context.Context, respErr error) (error, error) {
+		log, acct, reqID, err := requestScopedValuesFromCtx(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		reqVals, ok := service.GetValues(reqID)
+		if !ok {
+			return nil, fmt.Errorf("no request values found for "+
+				"request: %d", reqID)
+		}
+
+		log.Tracef("Handling payment request error for payment with "+
+			"hash: %s and amount: %d", reqVals.PaymentHash,
+			reqVals.PaymentAmount)
+
+		err = service.PaymentErrored(acct.ID, reqVals.PaymentHash)
+		if err != nil {
+			return nil, err
+		}
+
+		service.DeleteValues(reqID)
+
+		return nil, nil
+	}
+}
+
+// sendToRouteHTLCResponseHandler creates a response handler for the
+// SendToRouteV2 endpoint which is a streaming endpoint that may return multiple
+// HTLCAttempt updates.
+func sendToRouteHTLCResponseHandler(service Service) func(ctx context.Context,
+	r *lnrpc.HTLCAttempt) (proto.Message, error) {
+
+	return func(ctx context.Context, r *lnrpc.HTLCAttempt) (proto.Message,
+		error) {
+
+		log, acct, reqID, err := requestScopedValuesFromCtx(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		// Since SendToRouteV2 is a streaming endpoint, we may get
+		// multiple responses for it. If we have already handled it then
+		// we would have deleted the request ID to hash mapping, and so
+		// we can exit early here.
+		reqValues, ok := service.GetValues(reqID)
+		if !ok {
+			return nil, nil
+		}
+
+		log.Tracef("Handling response for payment with hash: %s and "+
+			"amount: %d", reqValues.PaymentHash,
+			reqValues.PaymentAmount)
+
+		// If the pre-image is provided, do a sanity check to make sure
+		// that this does actually match the hash we stored for this
+		// payment.
+		if len(r.Preimage) != 0 {
+			preimage, err := lntypes.MakePreimage(r.Preimage)
+			if err != nil {
+				return nil, err
+			}
+
+			if !preimage.Matches(reqValues.PaymentHash) {
+				return nil, fmt.Errorf("the preimage (%s) "+
+					"returned by the response does not "+
+					"match the payment hash (%s) of the "+
+					"payment", preimage,
+					reqValues.PaymentHash)
+			}
+		}
+
+		route := r.Route
+		totalAmount := int64(0)
+		if route != nil {
+			totalAmount = route.TotalAmtMsat + route.TotalFeesMsat
+		}
+
+		err = service.TrackPayment(
+			acct.ID, reqValues.PaymentHash,
+			lnwire.MilliSatoshi(totalAmount),
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		// We can now delete the request values for this ID.
+		service.DeleteValues(reqID)
+
+		return nil, nil
+	}
 }

@@ -101,9 +101,10 @@ func (s *InterceptorService) Intercept(ctx context.Context,
 		)
 	}
 
-	// We now add the account to the incoming context to give each checker
-	// access to it if required.
-	ctxAccount := AddToContext(ctx, KeyAccount, acct)
+	// We now add the account and request ID to the incoming context to give
+	// each checker access to them if required.
+	ctx = AddAccountToContext(ctx, acct)
+	ctx = AddRequestIDToContext(ctx, req.RequestId)
 
 	switch r := req.InterceptType.(type) {
 	// In the authentication phase we just check that the account hasn't
@@ -120,18 +121,42 @@ func (s *InterceptorService) Intercept(ctx context.Context,
 		}
 
 		return mid.RPCErr(req, s.checkers.checkIncomingRequest(
-			ctxAccount, r.Request.MethodFullUri, msg,
+			ctx, r.Request.MethodFullUri, msg,
 		))
 
 	// Parse and possibly manipulate outgoing responses.
 	case *lnrpc.RPCMiddlewareRequest_Response:
+		if r.Response.IsError {
+			parsedErr := mid.ParseResponseErr(r.Response.Serialized)
+
+			replacementErr, err := s.checkers.handleErrorResponse(
+				ctx, r.Response.MethodFullUri, parsedErr,
+			)
+			if err != nil {
+				return mid.RPCErr(req, err)
+			}
+
+			// No error occurred but the response error should be
+			// replaced with the given custom error. Wrap it in the
+			// correct RPC response of the interceptor now.
+			if replacementErr != nil {
+				return mid.RPCErrReplacement(
+					req, replacementErr,
+				)
+			}
+
+			// No error and no replacement, just return an empty
+			// response of the correct type.
+			return mid.RPCOk(req)
+		}
+
 		msg, err := parseRPCMessage(r.Response)
 		if err != nil {
 			return mid.RPCErr(req, err)
 		}
 
 		replacement, err := s.checkers.replaceOutgoingResponse(
-			ctxAccount, r.Response.MethodFullUri, msg,
+			ctx, r.Response.MethodFullUri, msg,
 		)
 		if err != nil {
 			return mid.RPCErr(req, err)

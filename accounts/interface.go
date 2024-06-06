@@ -53,6 +53,11 @@ func ParseAccountID(idStr string) (*AccountID, error) {
 	return &id, nil
 }
 
+// String returns the string representation of the AccountID.
+func (a AccountID) String() string {
+	return hex.EncodeToString(a[:])
+}
+
 // PaymentEntry is the data we track per payment that is associated with an
 // account. This basically includes all information required to make sure
 // in-flight payments don't exceed the total available account balance.
@@ -252,4 +257,38 @@ type Service interface {
 	// restarted.
 	AssociatePayment(id AccountID, paymentHash lntypes.Hash,
 		fullAmt lnwire.MilliSatoshi) error
+
+	// PaymentErrored removes a pending payment from the accounts
+	// registered payment list. This should only ever be called if we are
+	// sure that the payment request errored out.
+	PaymentErrored(id AccountID, hash lntypes.Hash) error
+
+	RequestValuesStore
+}
+
+// RequestValues holds various values associated with a specific request that
+// we may want access to when handling the response. At the moment this only
+// stores payment related data.
+type RequestValues struct {
+	// PaymentHash is the hash of the payment that this request is
+	// associated with.
+	PaymentHash lntypes.Hash
+
+	// PaymentAmount is the value of the payment being made.
+	PaymentAmount lnwire.MilliSatoshi
+}
+
+// RequestValuesStore is a store that can be used to keep track of the mapping
+// between a request ID and various values associated with that request which
+// we may want access to when handling the request response.
+type RequestValuesStore interface {
+	// RegisterValues stores values for the given request ID.
+	RegisterValues(reqID uint64, values *RequestValues) error
+
+	// GetValues returns the corresponding request values for the given
+	// request ID if they exist.
+	GetValues(reqID uint64) (*RequestValues, bool)
+
+	// DeleteValues deletes any values stored for the given request ID.
+	DeleteValues(reqID uint64)
 }

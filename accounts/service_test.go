@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/lightninglabs/lndclient"
+	"github.com/lightningnetwork/lnd/channeldb"
 	invpkg "github.com/lightningnetwork/lnd/invoices"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
@@ -20,7 +21,7 @@ var (
 	testTimeout    = time.Millisecond * 500
 	testInterval   = time.Millisecond * 20
 
-	testHash2 = lntypes.Hash{99, 88, 77}
+	testID2 = AccountID{22, 22, 22}
 )
 
 type mockLnd struct {
@@ -444,18 +445,22 @@ func TestAccountService(t *testing.T) {
 			acct := &OffChainBalanceAccount{
 				ID:             testID,
 				Type:           TypeInitialBalance,
-				CurrentBalance: 1234,
+				CurrentBalance: 5000,
 				Invoices: AccountInvoices{
 					testHash: {},
 				},
 				Payments: AccountPayments{
 					testHash: {
 						Status:     lnrpc.Payment_IN_FLIGHT,
-						FullAmount: 1234,
+						FullAmount: 2000,
 					},
 					testHash2: {
 						Status:     lnrpc.Payment_UNKNOWN,
-						FullAmount: 3456,
+						FullAmount: 1000,
+					},
+					testHash3: {
+						Status:     lnrpc.Payment_UNKNOWN,
+						FullAmount: 2000,
 					},
 				},
 			}
@@ -470,6 +475,7 @@ func TestAccountService(t *testing.T) {
 			lnd.assertPaymentRequests(t, map[lntypes.Hash]struct{}{
 				testHash:  {},
 				testHash2: {},
+				testHash3: {},
 			})
 			lnd.assertInvoiceRequest(t, 0, 0)
 			lnd.assertNoMainErr(t)
@@ -478,15 +484,15 @@ func TestAccountService(t *testing.T) {
 			// amount is debited from the account.
 			lnd.paymentChans[testHash] <- lndclient.PaymentStatus{
 				State: lnrpc.Payment_SUCCEEDED,
-				Fee:   234,
-				Value: 1000,
+				Fee:   500,
+				Value: 1500,
 			}
 
 			assertEventually(t, func() bool {
 				acct, err := s.store.Account(testID)
 				require.NoError(t, err)
 
-				return acct.CurrentBalance == 0
+				return acct.CurrentBalance == 3000
 			})
 
 			// Remove the other payment and make sure it disappears
@@ -494,7 +500,7 @@ func TestAccountService(t *testing.T) {
 			// correctly in the account store.
 			lnd.paymentChans[testHash2] <- lndclient.PaymentStatus{
 				State: lnrpc.Payment_FAILED,
-				Fee:   234,
+				Fee:   0,
 				Value: 1000,
 			}
 
@@ -502,7 +508,7 @@ func TestAccountService(t *testing.T) {
 				acct, err := s.store.Account(testID)
 				require.NoError(t, err)
 
-				if len(acct.Payments) != 2 {
+				if len(acct.Payments) != 3 {
 					return false
 				}
 
@@ -515,6 +521,54 @@ func TestAccountService(t *testing.T) {
 			})
 
 			require.NotContains(t, s.pendingPayments, testHash2)
+
+			// Finally, if an unknown payment turns out to be
+			// a non-initiated payment, we should stop the tracking
+			// of the payment, fail it and remove it from the
+			// pendingPayments map. As the payment is failed, that
+			// will ensure that the payment is not considered when
+			// calculating the in-flight balance for the account.
+			// First check that the account has an available balance
+			// of 1000. That means that the payment with testHash3
+			// and amount 2000 is still considered to be in-flight.
+			err := s.CheckBalance(testID, 1000)
+			require.NoError(t, err)
+
+			err = s.CheckBalance(testID, 1001)
+			require.ErrorIs(t, err, ErrAccBalanceInsufficient)
+
+			// Now signal that the payment was non-initiated.
+			lnd.paymentErrChan <- channeldb.ErrPaymentNotInitiated
+
+			// Once the error is handled in the service.TrackPayment
+			// goroutine, and therefore free up the 2000 in-flight
+			// balance.
+			assertEventually(t, func() bool {
+				bal3000Err := s.CheckBalance(testID, 3000)
+				bal3001Err := s.CheckBalance(testID, 3001)
+				require.ErrorIs(
+					t, bal3001Err,
+					ErrAccBalanceInsufficient,
+				)
+
+				correctBalance := bal3000Err == nil
+
+				// Ensure that the payment is also set to the
+				// failed status.
+				acct, err := s.store.Account(testID)
+				require.NoError(t, err)
+
+				p, ok := acct.Payments[testHash3]
+
+				correctStatus := ok &&
+					p.Status == lnrpc.Payment_FAILED
+
+				return correctBalance && correctStatus
+			})
+
+			// Ensure that the payment was removed from the pending
+			// payments.
+			require.NotContains(t, s.pendingPayments, testHash3)
 		},
 	}, {
 		name: "keep track of invoice indexes",
@@ -623,8 +677,10 @@ func TestAccountService(t *testing.T) {
 	}, {
 		name: "in-flight payments",
 		setup: func(t *testing.T, lnd *mockLnd, s *InterceptorService) {
-			// We set up our account with a balance of 5k msats and
-			// two in-flight payments with a total or 3k msats.
+			// We set up two accounts with a balance of 5k msats.
+
+			// The first account has two in-flight payments, one of
+			// 2k msats and one of 1k msats, totaling 3k msats.
 			acct := &OffChainBalanceAccount{
 				ID:             testID,
 				Type:           TypeInitialBalance,
@@ -646,12 +702,34 @@ func TestAccountService(t *testing.T) {
 
 			err := s.store.UpdateAccount(acct)
 			require.NoError(t, err)
+
+			// The second account has one in-flight payment of 4k
+			// msats.
+			acct2 := &OffChainBalanceAccount{
+				ID:             testID2,
+				Type:           TypeInitialBalance,
+				CurrentBalance: 5000,
+				Invoices: AccountInvoices{
+					testHash: {},
+				},
+				Payments: AccountPayments{
+					testHash3: {
+						Status:     lnrpc.Payment_IN_FLIGHT,
+						FullAmount: 4000,
+					},
+				},
+			}
+
+			err = s.store.UpdateAccount(acct2)
+			require.NoError(t, err)
 		},
 		validate: func(t *testing.T, lnd *mockLnd,
 			s *InterceptorService) {
 
-			// We should be able to initiate another payment with an
-			// amount smaller or equal to 2k msats.
+			// The first should be able to initiate another payment
+			// with an amount smaller or equal to 2k msats. This
+			// also asserts that the second accounts in-flight
+			// payment doesn't affect the first account.
 			err := s.CheckBalance(testID, 2000)
 			require.NoError(t, err)
 
@@ -670,6 +748,15 @@ func TestAccountService(t *testing.T) {
 				err = s.CheckBalance(testID, 4000)
 				return err == nil
 			})
+
+			// The second account should be able to initiate a
+			// payment of 1k msats.
+			err = s.CheckBalance(testID2, 1000)
+			require.NoError(t, err)
+
+			// But exactly one sat over it should fail.
+			err = s.CheckBalance(testID2, 1001)
+			require.ErrorIs(t, err, ErrAccBalanceInsufficient)
 		},
 	}}
 
