@@ -60,10 +60,31 @@ func TestKVStoreTxs(t *testing.T) {
 
 // TestTempAndPermStores tests that the kv stores stored under the `temp` bucket
 // are properly deleted and re-initialised upon restart but that anything under
-// the `perm` bucket is retained.
+// the `perm` bucket is retained. We repeat the test for both the session level
+// KV stores and the session feature level stores.
 func TestTempAndPermStores(t *testing.T) {
+	t.Run("session level kv store", func(t *testing.T) {
+		testTempAndPermStores(t, false)
+	})
+
+	t.Run("session feature level kv store", func(t *testing.T) {
+		testTempAndPermStores(t, true)
+	})
+}
+
+// testTempAndPermStores tests that the kv stores stored under the `temp` bucket
+// are properly deleted and re-initialised upon restart but that anything under
+// the `perm` bucket is retained. If featureSpecificStore is true, then this
+// will test the session feature level KV stores. Otherwise, it will test the
+// session level KV stores.
+func testTempAndPermStores(t *testing.T, featureSpecificStore bool) {
 	ctx := context.Background()
 	tmpDir := t.TempDir()
+
+	var featureName string
+	if featureSpecificStore {
+		featureName = "auto-fees"
+	}
 
 	db, err := NewDB(tmpDir, "test.db", nil)
 	require.NoError(t, err)
@@ -71,7 +92,7 @@ func TestTempAndPermStores(t *testing.T) {
 		_ = db.Close()
 	})
 
-	store := db.GetKVStores("test-rule", [4]byte{1, 1, 1, 1}, "auto-fees")
+	store := db.GetKVStores("test-rule", [4]byte{1, 1, 1, 1}, featureName)
 
 	err = store.Update(func(tx KVStoreTx) error {
 		// Set an item in the temp store.
@@ -119,7 +140,7 @@ func TestTempAndPermStores(t *testing.T) {
 		_ = db.Close()
 		_ = os.RemoveAll(tmpDir)
 	})
-	store = db.GetKVStores("test-rule", [4]byte{1, 1, 1, 1}, "auto-fees")
+	store = db.GetKVStores("test-rule", [4]byte{1, 1, 1, 1}, featureName)
 
 	// The temp store should no longer have the stored value but the perm
 	// store should .
