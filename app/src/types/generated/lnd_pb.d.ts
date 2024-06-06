@@ -831,6 +831,9 @@ export class EstimateFeeRequest extends jspb.Message {
   getSpendUnconfirmed(): boolean;
   setSpendUnconfirmed(value: boolean): void;
 
+  getCoinSelectionStrategy(): CoinSelectionStrategyMap[keyof CoinSelectionStrategyMap];
+  setCoinSelectionStrategy(value: CoinSelectionStrategyMap[keyof CoinSelectionStrategyMap]): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): EstimateFeeRequest.AsObject;
   static toObject(includeInstance: boolean, msg: EstimateFeeRequest): EstimateFeeRequest.AsObject;
@@ -847,6 +850,7 @@ export namespace EstimateFeeRequest {
     targetConf: number,
     minConfs: number,
     spendUnconfirmed: boolean,
+    coinSelectionStrategy: CoinSelectionStrategyMap[keyof CoinSelectionStrategyMap],
   }
 }
 
@@ -899,6 +903,9 @@ export class SendManyRequest extends jspb.Message {
   getSpendUnconfirmed(): boolean;
   setSpendUnconfirmed(value: boolean): void;
 
+  getCoinSelectionStrategy(): CoinSelectionStrategyMap[keyof CoinSelectionStrategyMap];
+  setCoinSelectionStrategy(value: CoinSelectionStrategyMap[keyof CoinSelectionStrategyMap]): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): SendManyRequest.AsObject;
   static toObject(includeInstance: boolean, msg: SendManyRequest): SendManyRequest.AsObject;
@@ -918,6 +925,7 @@ export namespace SendManyRequest {
     label: string,
     minConfs: number,
     spendUnconfirmed: boolean,
+    coinSelectionStrategy: CoinSelectionStrategyMap[keyof CoinSelectionStrategyMap],
   }
 }
 
@@ -969,6 +977,9 @@ export class SendCoinsRequest extends jspb.Message {
   getSpendUnconfirmed(): boolean;
   setSpendUnconfirmed(value: boolean): void;
 
+  getCoinSelectionStrategy(): CoinSelectionStrategyMap[keyof CoinSelectionStrategyMap];
+  setCoinSelectionStrategy(value: CoinSelectionStrategyMap[keyof CoinSelectionStrategyMap]): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): SendCoinsRequest.AsObject;
   static toObject(includeInstance: boolean, msg: SendCoinsRequest): SendCoinsRequest.AsObject;
@@ -990,6 +1001,7 @@ export namespace SendCoinsRequest {
     label: string,
     minConfs: number,
     spendUnconfirmed: boolean,
+    coinSelectionStrategy: CoinSelectionStrategyMap[keyof CoinSelectionStrategyMap],
   }
 }
 
@@ -2170,6 +2182,47 @@ export namespace GetInfoResponse {
   }
 }
 
+export class GetDebugInfoRequest extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GetDebugInfoRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: GetDebugInfoRequest): GetDebugInfoRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: GetDebugInfoRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetDebugInfoRequest;
+  static deserializeBinaryFromReader(message: GetDebugInfoRequest, reader: jspb.BinaryReader): GetDebugInfoRequest;
+}
+
+export namespace GetDebugInfoRequest {
+  export type AsObject = {
+  }
+}
+
+export class GetDebugInfoResponse extends jspb.Message {
+  getConfigMap(): jspb.Map<string, string>;
+  clearConfigMap(): void;
+  clearLogList(): void;
+  getLogList(): Array<string>;
+  setLogList(value: Array<string>): void;
+  addLog(value: string, index?: number): string;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GetDebugInfoResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: GetDebugInfoResponse): GetDebugInfoResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: GetDebugInfoResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetDebugInfoResponse;
+  static deserializeBinaryFromReader(message: GetDebugInfoResponse, reader: jspb.BinaryReader): GetDebugInfoResponse;
+}
+
+export namespace GetDebugInfoResponse {
+  export type AsObject = {
+    configMap: Array<[string, string]>,
+    logList: Array<string>,
+  }
+}
+
 export class GetRecoveryInfoRequest extends jspb.Message {
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetRecoveryInfoRequest.AsObject;
@@ -2340,6 +2393,9 @@ export class CloseChannelRequest extends jspb.Message {
   getMaxFeePerVbyte(): string;
   setMaxFeePerVbyte(value: string): void;
 
+  getNoWait(): boolean;
+  setNoWait(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): CloseChannelRequest.AsObject;
   static toObject(includeInstance: boolean, msg: CloseChannelRequest): CloseChannelRequest.AsObject;
@@ -2359,6 +2415,7 @@ export namespace CloseChannelRequest {
     deliveryAddress: string,
     satPerVbyte: string,
     maxFeePerVbyte: string,
+    noWait: boolean,
   }
 }
 
@@ -2372,6 +2429,11 @@ export class CloseStatusUpdate extends jspb.Message {
   clearChanClose(): void;
   getChanClose(): ChannelCloseUpdate | undefined;
   setChanClose(value?: ChannelCloseUpdate): void;
+
+  hasCloseInstant(): boolean;
+  clearCloseInstant(): void;
+  getCloseInstant(): InstantUpdate | undefined;
+  setCloseInstant(value?: InstantUpdate): void;
 
   getUpdateCase(): CloseStatusUpdate.UpdateCase;
   serializeBinary(): Uint8Array;
@@ -2388,12 +2450,14 @@ export namespace CloseStatusUpdate {
   export type AsObject = {
     closePending?: PendingUpdate.AsObject,
     chanClose?: ChannelCloseUpdate.AsObject,
+    closeInstant?: InstantUpdate.AsObject,
   }
 
   export enum UpdateCase {
     UPDATE_NOT_SET = 0,
     CLOSE_PENDING = 1,
     CHAN_CLOSE = 3,
+    CLOSE_INSTANT = 4,
   }
 }
 
@@ -2420,6 +2484,22 @@ export namespace PendingUpdate {
   export type AsObject = {
     txid: Uint8Array | string,
     outputIndex: number,
+  }
+}
+
+export class InstantUpdate extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): InstantUpdate.AsObject;
+  static toObject(includeInstance: boolean, msg: InstantUpdate): InstantUpdate.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: InstantUpdate, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): InstantUpdate;
+  static deserializeBinaryFromReader(message: InstantUpdate, reader: jspb.BinaryReader): InstantUpdate;
+}
+
+export namespace InstantUpdate {
+  export type AsObject = {
   }
 }
 
@@ -2474,6 +2554,9 @@ export class BatchOpenChannelRequest extends jspb.Message {
   getLabel(): string;
   setLabel(value: string): void;
 
+  getCoinSelectionStrategy(): CoinSelectionStrategyMap[keyof CoinSelectionStrategyMap];
+  setCoinSelectionStrategy(value: CoinSelectionStrategyMap[keyof CoinSelectionStrategyMap]): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): BatchOpenChannelRequest.AsObject;
   static toObject(includeInstance: boolean, msg: BatchOpenChannelRequest): BatchOpenChannelRequest.AsObject;
@@ -2492,6 +2575,7 @@ export namespace BatchOpenChannelRequest {
     minConfs: number,
     spendUnconfirmed: boolean,
     label: string,
+    coinSelectionStrategy: CoinSelectionStrategyMap[keyof CoinSelectionStrategyMap],
   }
 }
 
@@ -3164,6 +3248,9 @@ export namespace PendingHTLC {
 }
 
 export class PendingChannelsRequest extends jspb.Message {
+  getIncludeRawTx(): boolean;
+  setIncludeRawTx(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): PendingChannelsRequest.AsObject;
   static toObject(includeInstance: boolean, msg: PendingChannelsRequest): PendingChannelsRequest.AsObject;
@@ -3176,6 +3263,7 @@ export class PendingChannelsRequest extends jspb.Message {
 
 export namespace PendingChannelsRequest {
   export type AsObject = {
+    includeRawTx: boolean,
   }
 }
 
@@ -3345,6 +3433,9 @@ export namespace PendingChannelsResponse {
     getClosingTxid(): string;
     setClosingTxid(value: string): void;
 
+    getClosingTxHex(): string;
+    setClosingTxHex(value: string): void;
+
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): WaitingCloseChannel.AsObject;
     static toObject(includeInstance: boolean, msg: WaitingCloseChannel): WaitingCloseChannel.AsObject;
@@ -3361,6 +3452,7 @@ export namespace PendingChannelsResponse {
       limboBalance: string,
       commitments?: PendingChannelsResponse.Commitments.AsObject,
       closingTxid: string,
+      closingTxHex: string,
     }
   }
 
@@ -3613,6 +3705,9 @@ export class WalletBalanceRequest extends jspb.Message {
   getAccount(): string;
   setAccount(value: string): void;
 
+  getMinConfs(): number;
+  setMinConfs(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): WalletBalanceRequest.AsObject;
   static toObject(includeInstance: boolean, msg: WalletBalanceRequest): WalletBalanceRequest.AsObject;
@@ -3626,6 +3721,7 @@ export class WalletBalanceRequest extends jspb.Message {
 export namespace WalletBalanceRequest {
   export type AsObject = {
     account: string,
+    minConfs: number,
   }
 }
 
@@ -3827,6 +3923,11 @@ export class QueryRoutesRequest extends jspb.Message {
   setRouteHintsList(value: Array<RouteHint>): void;
   addRouteHints(value?: RouteHint, index?: number): RouteHint;
 
+  clearBlindedPaymentPathsList(): void;
+  getBlindedPaymentPathsList(): Array<BlindedPaymentPath>;
+  setBlindedPaymentPathsList(value: Array<BlindedPaymentPath>): void;
+  addBlindedPaymentPaths(value?: BlindedPaymentPath, index?: number): BlindedPaymentPath;
+
   clearDestFeaturesList(): void;
   getDestFeaturesList(): Array<FeatureBitMap[keyof FeatureBitMap]>;
   setDestFeaturesList(value: Array<FeatureBitMap[keyof FeatureBitMap]>): void;
@@ -3862,6 +3963,7 @@ export namespace QueryRoutesRequest {
     outgoingChanId: string,
     lastHopPubkey: Uint8Array | string,
     routeHintsList: Array<RouteHint.AsObject>,
+    blindedPaymentPathsList: Array<BlindedPaymentPath.AsObject>,
     destFeaturesList: Array<FeatureBitMap[keyof FeatureBitMap]>,
     timePref: number,
   }
@@ -3990,6 +4092,19 @@ export class Hop extends jspb.Message {
   getMetadata_asB64(): string;
   setMetadata(value: Uint8Array | string): void;
 
+  getBlindingPoint(): Uint8Array | string;
+  getBlindingPoint_asU8(): Uint8Array;
+  getBlindingPoint_asB64(): string;
+  setBlindingPoint(value: Uint8Array | string): void;
+
+  getEncryptedData(): Uint8Array | string;
+  getEncryptedData_asU8(): Uint8Array;
+  getEncryptedData_asB64(): string;
+  setEncryptedData(value: Uint8Array | string): void;
+
+  getTotalAmtMsat(): string;
+  setTotalAmtMsat(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Hop.AsObject;
   static toObject(includeInstance: boolean, msg: Hop): Hop.AsObject;
@@ -4015,6 +4130,9 @@ export namespace Hop {
     ampRecord?: AMPRecord.AsObject,
     customRecordsMap: Array<[number, Uint8Array | string]>,
     metadata: Uint8Array | string,
+    blindingPoint: Uint8Array | string,
+    encryptedData: Uint8Array | string,
+    totalAmtMsat: string,
   }
 }
 
@@ -4270,6 +4388,12 @@ export class RoutingPolicy extends jspb.Message {
 
   getCustomRecordsMap(): jspb.Map<number, Uint8Array | string>;
   clearCustomRecordsMap(): void;
+  getInboundFeeBaseMsat(): number;
+  setInboundFeeBaseMsat(value: number): void;
+
+  getInboundFeeRateMilliMsat(): number;
+  setInboundFeeRateMilliMsat(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RoutingPolicy.AsObject;
   static toObject(includeInstance: boolean, msg: RoutingPolicy): RoutingPolicy.AsObject;
@@ -4290,6 +4414,8 @@ export namespace RoutingPolicy {
     maxHtlcMsat: string,
     lastUpdate: number,
     customRecordsMap: Array<[number, Uint8Array | string]>,
+    inboundFeeBaseMsat: number,
+    inboundFeeRateMilliMsat: number,
   }
 }
 
@@ -4846,6 +4972,116 @@ export namespace RouteHint {
   }
 }
 
+export class BlindedPaymentPath extends jspb.Message {
+  hasBlindedPath(): boolean;
+  clearBlindedPath(): void;
+  getBlindedPath(): BlindedPath | undefined;
+  setBlindedPath(value?: BlindedPath): void;
+
+  getBaseFeeMsat(): string;
+  setBaseFeeMsat(value: string): void;
+
+  getProportionalFeeRate(): number;
+  setProportionalFeeRate(value: number): void;
+
+  getTotalCltvDelta(): number;
+  setTotalCltvDelta(value: number): void;
+
+  getHtlcMinMsat(): string;
+  setHtlcMinMsat(value: string): void;
+
+  getHtlcMaxMsat(): string;
+  setHtlcMaxMsat(value: string): void;
+
+  clearFeaturesList(): void;
+  getFeaturesList(): Array<FeatureBitMap[keyof FeatureBitMap]>;
+  setFeaturesList(value: Array<FeatureBitMap[keyof FeatureBitMap]>): void;
+  addFeatures(value: FeatureBitMap[keyof FeatureBitMap], index?: number): FeatureBitMap[keyof FeatureBitMap];
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): BlindedPaymentPath.AsObject;
+  static toObject(includeInstance: boolean, msg: BlindedPaymentPath): BlindedPaymentPath.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: BlindedPaymentPath, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): BlindedPaymentPath;
+  static deserializeBinaryFromReader(message: BlindedPaymentPath, reader: jspb.BinaryReader): BlindedPaymentPath;
+}
+
+export namespace BlindedPaymentPath {
+  export type AsObject = {
+    blindedPath?: BlindedPath.AsObject,
+    baseFeeMsat: string,
+    proportionalFeeRate: number,
+    totalCltvDelta: number,
+    htlcMinMsat: string,
+    htlcMaxMsat: string,
+    featuresList: Array<FeatureBitMap[keyof FeatureBitMap]>,
+  }
+}
+
+export class BlindedPath extends jspb.Message {
+  getIntroductionNode(): Uint8Array | string;
+  getIntroductionNode_asU8(): Uint8Array;
+  getIntroductionNode_asB64(): string;
+  setIntroductionNode(value: Uint8Array | string): void;
+
+  getBlindingPoint(): Uint8Array | string;
+  getBlindingPoint_asU8(): Uint8Array;
+  getBlindingPoint_asB64(): string;
+  setBlindingPoint(value: Uint8Array | string): void;
+
+  clearBlindedHopsList(): void;
+  getBlindedHopsList(): Array<BlindedHop>;
+  setBlindedHopsList(value: Array<BlindedHop>): void;
+  addBlindedHops(value?: BlindedHop, index?: number): BlindedHop;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): BlindedPath.AsObject;
+  static toObject(includeInstance: boolean, msg: BlindedPath): BlindedPath.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: BlindedPath, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): BlindedPath;
+  static deserializeBinaryFromReader(message: BlindedPath, reader: jspb.BinaryReader): BlindedPath;
+}
+
+export namespace BlindedPath {
+  export type AsObject = {
+    introductionNode: Uint8Array | string,
+    blindingPoint: Uint8Array | string,
+    blindedHopsList: Array<BlindedHop.AsObject>,
+  }
+}
+
+export class BlindedHop extends jspb.Message {
+  getBlindedNode(): Uint8Array | string;
+  getBlindedNode_asU8(): Uint8Array;
+  getBlindedNode_asB64(): string;
+  setBlindedNode(value: Uint8Array | string): void;
+
+  getEncryptedData(): Uint8Array | string;
+  getEncryptedData_asU8(): Uint8Array;
+  getEncryptedData_asB64(): string;
+  setEncryptedData(value: Uint8Array | string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): BlindedHop.AsObject;
+  static toObject(includeInstance: boolean, msg: BlindedHop): BlindedHop.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: BlindedHop, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): BlindedHop;
+  static deserializeBinaryFromReader(message: BlindedHop, reader: jspb.BinaryReader): BlindedHop;
+}
+
+export namespace BlindedHop {
+  export type AsObject = {
+    blindedNode: Uint8Array | string,
+    encryptedData: Uint8Array | string,
+  }
+}
+
 export class AMPInvoiceState extends jspb.Message {
   getState(): InvoiceHTLCStateMap[keyof InvoiceHTLCStateMap];
   setState(value: InvoiceHTLCStateMap[keyof InvoiceHTLCStateMap]): void;
@@ -5364,6 +5600,7 @@ export namespace Payment {
     IN_FLIGHT: 1;
     SUCCEEDED: 2;
     FAILED: 3;
+    INITIATED: 4;
   }
 
   export const PaymentStatus: PaymentStatusMap;
@@ -5538,6 +5775,9 @@ export class DeleteAllPaymentsRequest extends jspb.Message {
   getFailedHtlcsOnly(): boolean;
   setFailedHtlcsOnly(value: boolean): void;
 
+  getAllPayments(): boolean;
+  setAllPayments(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): DeleteAllPaymentsRequest.AsObject;
   static toObject(includeInstance: boolean, msg: DeleteAllPaymentsRequest): DeleteAllPaymentsRequest.AsObject;
@@ -5552,6 +5792,7 @@ export namespace DeleteAllPaymentsRequest {
   export type AsObject = {
     failedPaymentsOnly: boolean,
     failedHtlcsOnly: boolean,
+    allPayments: boolean,
   }
 }
 
@@ -5828,6 +6069,12 @@ export class ChannelFeeReport extends jspb.Message {
   getFeeRate(): number;
   setFeeRate(value: number): void;
 
+  getInboundBaseFeeMsat(): number;
+  setInboundBaseFeeMsat(value: number): void;
+
+  getInboundFeePerMil(): number;
+  setInboundFeePerMil(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ChannelFeeReport.AsObject;
   static toObject(includeInstance: boolean, msg: ChannelFeeReport): ChannelFeeReport.AsObject;
@@ -5845,6 +6092,8 @@ export namespace ChannelFeeReport {
     baseFeeMsat: string,
     feePerMil: string,
     feeRate: number,
+    inboundBaseFeeMsat: number,
+    inboundFeePerMil: number,
   }
 }
 
@@ -5882,6 +6131,30 @@ export namespace FeeReportResponse {
   }
 }
 
+export class InboundFee extends jspb.Message {
+  getBaseFeeMsat(): number;
+  setBaseFeeMsat(value: number): void;
+
+  getFeeRatePpm(): number;
+  setFeeRatePpm(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): InboundFee.AsObject;
+  static toObject(includeInstance: boolean, msg: InboundFee): InboundFee.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: InboundFee, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): InboundFee;
+  static deserializeBinaryFromReader(message: InboundFee, reader: jspb.BinaryReader): InboundFee;
+}
+
+export namespace InboundFee {
+  export type AsObject = {
+    baseFeeMsat: number,
+    feeRatePpm: number,
+  }
+}
+
 export class PolicyUpdateRequest extends jspb.Message {
   hasGlobal(): boolean;
   clearGlobal(): void;
@@ -5914,6 +6187,11 @@ export class PolicyUpdateRequest extends jspb.Message {
   getMinHtlcMsatSpecified(): boolean;
   setMinHtlcMsatSpecified(value: boolean): void;
 
+  hasInboundFee(): boolean;
+  clearInboundFee(): void;
+  getInboundFee(): InboundFee | undefined;
+  setInboundFee(value?: InboundFee): void;
+
   getScopeCase(): PolicyUpdateRequest.ScopeCase;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): PolicyUpdateRequest.AsObject;
@@ -5936,6 +6214,7 @@ export namespace PolicyUpdateRequest {
     maxHtlcMsat: string,
     minHtlcMsat: string,
     minHtlcMsatSpecified: boolean,
+    inboundFee?: InboundFee.AsObject,
   }
 
   export enum ScopeCase {
@@ -6638,6 +6917,7 @@ export namespace Failure {
     EXPIRY_TOO_FAR: 22;
     MPP_TIMEOUT: 23;
     INVALID_ONION_PAYLOAD: 24;
+    INVALID_ONION_BLINDING: 25;
     INTERNAL_FAILURE: 997;
     UNKNOWN_FAILURE: 998;
     UNREADABLE_FAILURE: 999;
@@ -7065,6 +7345,14 @@ export interface OutputScriptTypeMap {
 
 export const OutputScriptType: OutputScriptTypeMap;
 
+export interface CoinSelectionStrategyMap {
+  STRATEGY_USE_GLOBAL_CONFIG: 0;
+  STRATEGY_LARGEST: 1;
+  STRATEGY_RANDOM: 2;
+}
+
+export const CoinSelectionStrategy: CoinSelectionStrategyMap;
+
 export interface AddressTypeMap {
   WITNESS_PUBKEY_HASH: 0;
   NESTED_PUBKEY_HASH: 1;
@@ -7167,6 +7455,8 @@ export interface FeatureBitMap {
   ANCHORS_OPT: 21;
   ANCHORS_ZERO_FEE_HTLC_REQ: 22;
   ANCHORS_ZERO_FEE_HTLC_OPT: 23;
+  ROUTE_BLINDING_REQUIRED: 24;
+  ROUTE_BLINDING_OPTIONAL: 25;
   AMP_REQ: 30;
   AMP_OPT: 31;
 }

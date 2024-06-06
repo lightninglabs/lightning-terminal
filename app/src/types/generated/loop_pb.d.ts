@@ -65,6 +65,9 @@ export class LoopOutRequest extends jspb.Message {
   setReservationIdsList(value: Array<Uint8Array | string>): void;
   addReservationIds(value: Uint8Array | string, index?: number): Uint8Array | string;
 
+  getPaymentTimeout(): number;
+  setPaymentTimeout(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LoopOutRequest.AsObject;
   static toObject(includeInstance: boolean, msg: LoopOutRequest): LoopOutRequest.AsObject;
@@ -95,6 +98,7 @@ export namespace LoopOutRequest {
     accountAddrType: AddressTypeMap[keyof AddressTypeMap],
     isExternalAddr: boolean,
     reservationIdsList: Array<Uint8Array | string>,
+    paymentTimeout: number,
   }
 }
 
@@ -680,9 +684,9 @@ export namespace TokensRequest {
 
 export class TokensResponse extends jspb.Message {
   clearTokensList(): void;
-  getTokensList(): Array<LsatToken>;
-  setTokensList(value: Array<LsatToken>): void;
-  addTokens(value?: LsatToken, index?: number): LsatToken;
+  getTokensList(): Array<L402Token>;
+  setTokensList(value: Array<L402Token>): void;
+  addTokens(value?: L402Token, index?: number): L402Token;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): TokensResponse.AsObject;
@@ -696,11 +700,11 @@ export class TokensResponse extends jspb.Message {
 
 export namespace TokensResponse {
   export type AsObject = {
-    tokensList: Array<LsatToken.AsObject>,
+    tokensList: Array<L402Token.AsObject>,
   }
 }
 
-export class LsatToken extends jspb.Message {
+export class L402Token extends jspb.Message {
   getBaseMacaroon(): Uint8Array | string;
   getBaseMacaroon_asU8(): Uint8Array;
   getBaseMacaroon_asB64(): string;
@@ -735,16 +739,16 @@ export class LsatToken extends jspb.Message {
   setId(value: string): void;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): LsatToken.AsObject;
-  static toObject(includeInstance: boolean, msg: LsatToken): LsatToken.AsObject;
+  toObject(includeInstance?: boolean): L402Token.AsObject;
+  static toObject(includeInstance: boolean, msg: L402Token): L402Token.AsObject;
   static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-  static serializeBinaryToWriter(message: LsatToken, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): LsatToken;
-  static deserializeBinaryFromReader(message: LsatToken, reader: jspb.BinaryReader): LsatToken;
+  static serializeBinaryToWriter(message: L402Token, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): L402Token;
+  static deserializeBinaryFromReader(message: L402Token, reader: jspb.BinaryReader): L402Token;
 }
 
-export namespace LsatToken {
+export namespace L402Token {
   export type AsObject = {
     baseMacaroon: Uint8Array | string,
     paymentHash: Uint8Array | string,

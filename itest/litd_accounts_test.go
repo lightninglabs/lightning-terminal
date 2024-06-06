@@ -174,6 +174,7 @@ func runAccountSystemTest(t *harnessTest, node *HarnessNode, hostPort,
 	_, err = node.DeleteAllPayments(ctxt, &lnrpc.DeleteAllPaymentsRequest{
 		FailedPaymentsOnly: false,
 		FailedHtlcsOnly:    false,
+		AllPayments:        true,
 	})
 	require.NoError(t.t, err)
 }

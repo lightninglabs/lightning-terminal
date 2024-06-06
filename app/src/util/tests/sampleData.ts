@@ -213,6 +213,8 @@ export const lndPendingChannels: LND.PendingChannelsResponse.AsObject = {
       },
       limboBalance: '0',
       closingTxid: '6c151252215b73547a5415051c82dd25c725c4309b93fed4f38c4c5b610c3fb0',
+      closingTxHex:
+        '020000000001016f9a71a385d0a47493bb90989a09e8a584a224642a7a10626e6d4758558e82840000000000ffffffff02c0c62d0000000000225120abf5dc0b60016088bdf7d3c24a34c859bfee2bc4d2ac2f6ad9d8ab1d97edf4bb8e2e89000000000022512079f87cbcdd62fd388bb5c36a79f00a781b03b5574bb1258a82b7b208327bf1cf0400483045022100cf735a9c71ddb2f5bbd20e0595e318c0e26f77f61f35f3e05f5d74423423bd0b022071c6bde4f404cf8a65260ca254357a6261d11e81731c2d7bef744f84f3a988ef01483045022100fbf7dd92231203fe9071383c2c9bf546db0045b425162fa53cbceaf618d2d2ac022075161f505bb3713d50d0c330e9362b7dcdf148cb3c2e14245a7f908ee203d610014752210285f92268f3bed65624f72fe1cbae77afbe99e3502a413678bfba235c0715a2692103854e0e992839be71891348eb0054fa22ef3203bd7a16290f2021ed4e64ddbea652ae00000000',
     },
   ],
   pendingForceClosingChannelsList: [
@@ -308,6 +310,8 @@ export const lndGetChanInfo: Required<LND.ChannelEdge.AsObject> = {
     disabled: false,
     maxHtlcMsat: '1782000000',
     lastUpdate: 1591622793,
+    inboundFeeBaseMsat: 0,
+    inboundFeeRateMilliMsat: 0,
     customRecordsMap: [],
   },
   node2Policy: {
@@ -318,6 +322,8 @@ export const lndGetChanInfo: Required<LND.ChannelEdge.AsObject> = {
     disabled: false,
     maxHtlcMsat: '1782000000',
     lastUpdate: 1591622772,
+    inboundFeeBaseMsat: 0,
+    inboundFeeRateMilliMsat: 0,
     customRecordsMap: [],
   },
   customRecordsMap: [],

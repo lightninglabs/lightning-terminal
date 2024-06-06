@@ -48,7 +48,7 @@ func TestLightningTerminal(t *testing.T) {
 
 			feeService := lntest.NewFeeService(t)
 			lndHarness := lntest.SetupHarness(
-				t1, lndBinary, "bbolt", feeService,
+				t1, lndBinary, "bbolt", true, feeService,
 			)
 			t1.Cleanup(func() {
 				lndHarness.Stop()
