@@ -118,7 +118,6 @@ goog.exportSymbol('proto.lnrpc.HTLCAttempt', null, global);
 goog.exportSymbol('proto.lnrpc.HTLCAttempt.HTLCStatus', null, global);
 goog.exportSymbol('proto.lnrpc.Hop', null, global);
 goog.exportSymbol('proto.lnrpc.HopHint', null, global);
-goog.exportSymbol('proto.lnrpc.InboundFee', null, global);
 goog.exportSymbol('proto.lnrpc.Initiator', null, global);
 goog.exportSymbol('proto.lnrpc.InstantUpdate', null, global);
 goog.exportSymbol('proto.lnrpc.InterceptFeedback', null, global);
@@ -43977,175 +43976,6 @@ proto.lnrpc.FeeReportResponse.prototype.setMonthFeeSum = function(value) {
  * @extends {jspb.Message}
  * @constructor
  */
-proto.lnrpc.InboundFee = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
-};
-goog.inherits(proto.lnrpc.InboundFee, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.lnrpc.InboundFee.displayName = 'proto.lnrpc.InboundFee';
-}
-
-
-if (jspb.Message.GENERATE_TO_OBJECT) {
-/**
- * Creates an object representation of this proto suitable for use in Soy templates.
- * Field names that are reserved in JavaScript and will be renamed to pb_name.
- * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
- * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
- * @return {!Object}
- */
-proto.lnrpc.InboundFee.prototype.toObject = function(opt_includeInstance) {
-  return proto.lnrpc.InboundFee.toObject(opt_includeInstance, this);
-};
-
-
-/**
- * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
- *     http://goto/soy-param-migration
- * @param {!proto.lnrpc.InboundFee} msg The msg instance to transform.
- * @return {!Object}
- * @suppress {unusedLocalVariables} f is only used for nested messages
- */
-proto.lnrpc.InboundFee.toObject = function(includeInstance, msg) {
-  var f, obj = {
-    baseFeeMsat: jspb.Message.getFieldWithDefault(msg, 1, 0),
-    feeRatePpm: jspb.Message.getFieldWithDefault(msg, 2, 0)
-  };
-
-  if (includeInstance) {
-    obj.$jspbMessageInstance = msg;
-  }
-  return obj;
-};
-}
-
-
-/**
- * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
- * @return {!proto.lnrpc.InboundFee}
- */
-proto.lnrpc.InboundFee.deserializeBinary = function(bytes) {
-  var reader = new jspb.BinaryReader(bytes);
-  var msg = new proto.lnrpc.InboundFee;
-  return proto.lnrpc.InboundFee.deserializeBinaryFromReader(msg, reader);
-};
-
-
-/**
- * Deserializes binary data (in protobuf wire format) from the
- * given reader into the given message object.
- * @param {!proto.lnrpc.InboundFee} msg The message object to deserialize into.
- * @param {!jspb.BinaryReader} reader The BinaryReader to use.
- * @return {!proto.lnrpc.InboundFee}
- */
-proto.lnrpc.InboundFee.deserializeBinaryFromReader = function(msg, reader) {
-  while (reader.nextField()) {
-    if (reader.isEndGroup()) {
-      break;
-    }
-    var field = reader.getFieldNumber();
-    switch (field) {
-    case 1:
-      var value = /** @type {number} */ (reader.readInt32());
-      msg.setBaseFeeMsat(value);
-      break;
-    case 2:
-      var value = /** @type {number} */ (reader.readInt32());
-      msg.setFeeRatePpm(value);
-      break;
-    default:
-      reader.skipField();
-      break;
-    }
-  }
-  return msg;
-};
-
-
-/**
- * Serializes the message to binary data (in protobuf wire format).
- * @return {!Uint8Array}
- */
-proto.lnrpc.InboundFee.prototype.serializeBinary = function() {
-  var writer = new jspb.BinaryWriter();
-  proto.lnrpc.InboundFee.serializeBinaryToWriter(this, writer);
-  return writer.getResultBuffer();
-};
-
-
-/**
- * Serializes the given message to binary data (in protobuf wire
- * format), writing to the given BinaryWriter.
- * @param {!proto.lnrpc.InboundFee} message
- * @param {!jspb.BinaryWriter} writer
- * @suppress {unusedLocalVariables} f is only used for nested messages
- */
-proto.lnrpc.InboundFee.serializeBinaryToWriter = function(message, writer) {
-  var f = undefined;
-  f = message.getBaseFeeMsat();
-  if (f !== 0) {
-    writer.writeInt32(
-      1,
-      f
-    );
-  }
-  f = message.getFeeRatePpm();
-  if (f !== 0) {
-    writer.writeInt32(
-      2,
-      f
-    );
-  }
-};
-
-
-/**
- * optional int32 base_fee_msat = 1;
- * @return {number}
- */
-proto.lnrpc.InboundFee.prototype.getBaseFeeMsat = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
-};
-
-
-/** @param {number} value */
-proto.lnrpc.InboundFee.prototype.setBaseFeeMsat = function(value) {
-  jspb.Message.setProto3IntField(this, 1, value);
-};
-
-
-/**
- * optional int32 fee_rate_ppm = 2;
- * @return {number}
- */
-proto.lnrpc.InboundFee.prototype.getFeeRatePpm = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
-};
-
-
-/** @param {number} value */
-proto.lnrpc.InboundFee.prototype.setFeeRatePpm = function(value) {
-  jspb.Message.setProto3IntField(this, 2, value);
-};
-
-
-
-/**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
- */
 proto.lnrpc.PolicyUpdateRequest = function(opt_data) {
   jspb.Message.initialize(this, opt_data, 0, -1, null, proto.lnrpc.PolicyUpdateRequest.oneofGroups_);
 };
@@ -44217,7 +44047,8 @@ proto.lnrpc.PolicyUpdateRequest.toObject = function(includeInstance, msg) {
     maxHtlcMsat: jspb.Message.getFieldWithDefault(msg, 6, "0"),
     minHtlcMsat: jspb.Message.getFieldWithDefault(msg, 7, "0"),
     minHtlcMsatSpecified: jspb.Message.getFieldWithDefault(msg, 8, false),
-    inboundFee: (f = msg.getInboundFee()) && proto.lnrpc.InboundFee.toObject(includeInstance, f)
+    inboundBaseFeeMsat: jspb.Message.getFieldWithDefault(msg, 10, 0),
+    inboundFeeRatePpm: jspb.Message.getFieldWithDefault(msg, 11, 0)
   };
 
   if (includeInstance) {
@@ -44292,9 +44123,12 @@ proto.lnrpc.PolicyUpdateRequest.deserializeBinaryFromReader = function(msg, read
       msg.setMinHtlcMsatSpecified(value);
       break;
     case 10:
-      var value = new proto.lnrpc.InboundFee;
-      reader.readMessage(value,proto.lnrpc.InboundFee.deserializeBinaryFromReader);
-      msg.setInboundFee(value);
+      var value = /** @type {number} */ (reader.readInt32());
+      msg.setInboundBaseFeeMsat(value);
+      break;
+    case 11:
+      var value = /** @type {number} */ (reader.readInt32());
+      msg.setInboundFeeRatePpm(value);
       break;
     default:
       reader.skipField();
@@ -44389,12 +44223,18 @@ proto.lnrpc.PolicyUpdateRequest.serializeBinaryToWriter = function(message, writ
       f
     );
   }
-  f = message.getInboundFee();
-  if (f != null) {
-    writer.writeMessage(
+  f = message.getInboundBaseFeeMsat();
+  if (f !== 0) {
+    writer.writeInt32(
       10,
-      f,
-      proto.lnrpc.InboundFee.serializeBinaryToWriter
+      f
+    );
+  }
+  f = message.getInboundFeeRatePpm();
+  if (f !== 0) {
+    writer.writeInt32(
+      11,
+      f
     );
   }
 };
@@ -44569,32 +44409,32 @@ proto.lnrpc.PolicyUpdateRequest.prototype.setMinHtlcMsatSpecified = function(val
 
 
 /**
- * optional InboundFee inbound_fee = 10;
- * @return {?proto.lnrpc.InboundFee}
+ * optional int32 inbound_base_fee_msat = 10;
+ * @return {number}
  */
-proto.lnrpc.PolicyUpdateRequest.prototype.getInboundFee = function() {
-  return /** @type{?proto.lnrpc.InboundFee} */ (
-    jspb.Message.getWrapperField(this, proto.lnrpc.InboundFee, 10));
+proto.lnrpc.PolicyUpdateRequest.prototype.getInboundBaseFeeMsat = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 10, 0));
 };
 
 
-/** @param {?proto.lnrpc.InboundFee|undefined} value */
-proto.lnrpc.PolicyUpdateRequest.prototype.setInboundFee = function(value) {
-  jspb.Message.setWrapperField(this, 10, value);
-};
-
-
-proto.lnrpc.PolicyUpdateRequest.prototype.clearInboundFee = function() {
-  this.setInboundFee(undefined);
+/** @param {number} value */
+proto.lnrpc.PolicyUpdateRequest.prototype.setInboundBaseFeeMsat = function(value) {
+  jspb.Message.setProto3IntField(this, 10, value);
 };
 
 
 /**
- * Returns whether this field is set.
- * @return {!boolean}
+ * optional int32 inbound_fee_rate_ppm = 11;
+ * @return {number}
  */
-proto.lnrpc.PolicyUpdateRequest.prototype.hasInboundFee = function() {
-  return jspb.Message.getField(this, 10) != null;
+proto.lnrpc.PolicyUpdateRequest.prototype.getInboundFeeRatePpm = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 11, 0));
+};
+
+
+/** @param {number} value */
+proto.lnrpc.PolicyUpdateRequest.prototype.setInboundFeeRatePpm = function(value) {
+  jspb.Message.setProto3IntField(this, 11, value);
 };
 
 
