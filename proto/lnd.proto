@@ -1190,8 +1190,9 @@ message SendCoinsRequest {
     int64 sat_per_byte = 5 [deprecated = true, jstype = JS_STRING];
 
     /*
-    If set, the amount field should be unset. It indicates lnd will send all
-    wallet coins or all selected coins to the specified address.
+    If set, then the amount field will be ignored, and lnd will attempt to
+    send all the coins under control of the internal wallet to the specified
+    address.
     */
     bool send_all = 6;
 
@@ -1207,9 +1208,6 @@ message SendCoinsRequest {
 
     // The strategy to use for selecting coins.
     CoinSelectionStrategy coin_selection_strategy = 10;
-
-    // A list of selected outpoints as inputs for the transaction.
-    repeated OutPoint outpoints = 11;
 }
 message SendCoinsResponse {
     // The transaction ID of the transaction
@@ -3445,10 +3443,6 @@ message ChanInfoRequest {
     output index for the channel.
     */
     uint64 chan_id = 1 [jstype = JS_STRING];
-
-    // The channel point of the channel in format funding_txid:output_index. If
-    // chan_id is specified, this field is ignored.
-    string chan_point = 2;
 }
 
 message NetworkInfoRequest {
@@ -3838,48 +3832,6 @@ message Invoice {
     Note: Output only, don't specify for creating an invoice.
     */
     map<string, AMPInvoiceState> amp_invoice_state = 28;
-
-    /*
-    Signals that the invoice should include blinded paths to hide the true
-    identity of the recipient.
-    */
-    bool is_blinded = 29;
-
-    /*
-    Config values to use when creating blinded paths for this invoice. These
-    can be used to override the defaults config values provided in by the
-    global config. This field is only used if is_blinded is true.
-    */
-    BlindedPathConfig blinded_path_config = 30;
-}
-
-message BlindedPathConfig {
-    /*
-    The minimum number of real hops to include in a blinded path. This doesn't
-    include our node, so if the minimum is 1, then the path will contain at
-    minimum our node along with an introduction node hop. If it is zero then
-    the shortest path will use our node as an introduction node.
-    */
-    optional uint32 min_num_real_hops = 1;
-
-    /*
-    The number of hops to include in a blinded path. This doesn't include our
-    node, so if it is 1, then the path will contain our node along with an
-    introduction node or dummy node hop. If paths shorter than NumHops is
-    found, then they will be padded using dummy hops.
-    */
-    optional uint32 num_hops = 2;
-
-    /*
-    The maximum number of blinded paths to select and add to an invoice.
-    */
-    optional uint32 max_num_paths = 3;
-
-    /*
-    A list of node IDs of nodes that should not be used in any of our generated
-    blinded paths.
-    */
-    repeated bytes node_omission_list = 4;
 }
 
 enum InvoiceHTLCState {
@@ -4088,11 +4040,6 @@ enum PaymentFailureReason {
     Insufficient local balance.
     */
     FAILURE_REASON_INSUFFICIENT_BALANCE = 5;
-
-    /*
-    The payment was canceled.
-    */
-    FAILURE_REASON_CANCELED = 6;
 }
 
 message Payment {
@@ -4338,7 +4285,6 @@ message PayReq {
     bytes payment_addr = 11;
     int64 num_msat = 12 [jstype = JS_STRING];
     map<uint32, Feature> features = 13;
-    repeated BlindedPaymentPath blinded_paths = 14;
 }
 
 enum FeatureBit {
