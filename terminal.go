@@ -59,6 +59,7 @@ import (
 	"github.com/lightningnetwork/lnd/routing"
 	"github.com/lightningnetwork/lnd/rpcperms"
 	"github.com/lightningnetwork/lnd/signal"
+	"github.com/lightningnetwork/lnd/sweep"
 	grpcProxy "github.com/mwitkow/grpc-proxy/proxy"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -1301,6 +1302,10 @@ func (g *LightningTerminal) buildAuxComponents() (*lnd.AuxComponents, error) {
 		TrafficShaper: fn.Some[routing.TlvTrafficShaper](tapd),
 		AuxDataParser: fn.Some[lnd.AuxDataParser](tapd),
 		AuxChanCloser: fn.Some[chancloser.AuxChanCloser](tapd),
+		AuxSweeper:    fn.Some[sweep.AuxSweeper](tapd),
+		AuxContractResolver: fn.Some[lnwallet.AuxContractResolver](
+			tapd,
+		),
 	}, nil
 }
 
