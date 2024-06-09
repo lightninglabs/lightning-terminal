@@ -993,7 +993,9 @@ func (n *NetworkHarness) CloseChannel(lnNode *HarnessNode,
 		closeReq := &lnrpc.CloseChannelRequest{
 			ChannelPoint: cp,
 			Force:        force,
-			SatPerVbyte:  5,
+		}
+		if !force {
+			closeReq.SatPerVbyte = 5
 		}
 		closeRespStream, err = lnNode.CloseChannel(ctx, closeReq)
 		if err != nil {

@@ -24,4 +24,8 @@ var allTestCases = []*testCase{
 		name: "test custom channels",
 		test: testCustomChannels,
 	},
+	{
+		name: "test custom channels force close",
+		test: testCustomChannelsForceClose,
+	},
 }
