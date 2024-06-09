@@ -941,6 +941,227 @@ func testCustomChannelsForceClose(_ context.Context, net *NetworkHarness,
 	t.Logf("Dave UTXOs: %v", toProtoJSON(t.t, daveUTXOs))
 }
 
+func testCustomChannelsBreach(_ context.Context, net *NetworkHarness,
+	t *harnessTest) {
+
+	lndArgs := slices.Clone(lndArgsTemplate)
+	litdArgs := slices.Clone(litdArgsTemplate)
+
+	// Zane will act as our Universe server for the duration of the test.
+	zane, err := net.NewNode(
+		t.t, "Zane", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	// For our litd args, make sure that they all seen Zane as the main
+	// Universe server.
+	litdArgs = append(litdArgs, fmt.Sprintf(
+		"--taproot-assets.proofcourieraddr=%s://%s",
+		proof.UniverseRpcCourierType, zane.Cfg.LitAddr(),
+	))
+
+	// Charlie will be the breached party. We set --nolisten to ensure Dave
+	// won't be able to connect to him and trigger the channel protection
+	// logic automatically. We also can't have Charlie automatically
+	// reconnect too early, otherwise DLP would be initiated instead of the
+	// breach we want to provoke.
+	charlieFlags := append(
+		slices.Clone(lndArgs), "--nolisten", "--minbackoff=1h",
+	)
+
+	// For this simple test, we'll just have Carol -> Dave as an assets
+	// channel.
+	charlie, err := net.NewNode(
+		t.t, "Charlie", charlieFlags, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	dave, err := net.NewNode(t.t, "Dave", lndArgs, false, true, litdArgs...)
+	require.NoError(t.t, err)
+
+	// Next we'll connect all the nodes and also fund them with some coins.
+	nodes := []*HarnessNode{charlie, dave}
+	connectAllNodes(t.t, net, nodes)
+	fundAllNodes(t.t, net, nodes)
+
+	charlieTap := newTapClient(t.t, charlie)
+	daveTap := newTapClient(t.t, dave)
+
+	ctxb := context.Background()
+
+	// Now we'll make an asset for Charlie that we'll use in the test to
+	// open a channel.
+	mintedAssets := itest.MintAssetsConfirmBatch(
+		t.t, t.lndHarness.Miner.Client, charlieTap,
+		[]*mintrpc.MintAssetRequest{
+			{
+				Asset: itestAsset,
+			},
+		},
+	)
+	cents := mintedAssets[0]
+	assetID := cents.AssetGenesis.AssetId
+
+	t.Logf("Minted %d lightning cents, syncing universes...", cents.Amount)
+	syncUniverses(t.t, charlieTap, dave)
+	t.Logf("Universes synced between all nodes, distributing assets...")
+
+	// TODO(roasbeef): consolidate w/ the other test
+
+	// Next we can open an asset channel from Charlie -> Dave, then kick
+	// off the main scenario.
+	t.Logf("Opening asset channels...")
+	assetFundResp, err := charlieTap.FundChannel(
+		ctxb, &tchrpc.FundChannelRequest{
+			AssetAmount:        fundingAmount,
+			AssetId:            assetID,
+			PeerPubkey:         dave.PubKey[:],
+			FeeRateSatPerVbyte: 5,
+		},
+	)
+	require.NoError(t.t, err)
+	t.Logf("Funded channel between Charlie and Dave: %v", assetFundResp)
+
+	// With the channel open, mine a block to confirm it.
+	mineBlocks(t, net, 6, 1)
+
+	time.Sleep(time.Second * 1)
+
+	// Next, we'll make keysend payments from Charlie to Dave. we'll use
+	// this to reach a state where both parties have funds in the channel.
+	const (
+		numPayments   = 5
+		keySendAmount = 100
+		btcAmt        = int64(5_000)
+	)
+	for i := 0; i < numPayments; i++ {
+		sendAssetKeySendPayment(
+			t.t, charlie, dave, keySendAmount, assetID,
+			fn.Some(btcAmt),
+		)
+	}
+
+	logBalance(t.t, nodes, assetID, "after keysend -- breach state")
+
+	// Now we'll create an on disk snapshot that we'll use to restore back
+	// to as our breached state.
+	require.NoError(t.t, net.StopAndBackupDB(dave))
+	connectAllNodes(t.t, net, nodes)
+
+	// We'll send one more keysend payment now to revoke the state we were
+	// just at above.
+	sendAssetKeySendPayment(
+		t.t, charlie, dave, keySendAmount, assetID, fn.Some(btcAmt),
+	)
+	logBalance(t.t, nodes, assetID, "after keysend -- final state")
+
+	// With the final state achieved, we'll now restore Dave (who will be
+	// force closing) to that old state, the breach state.
+	require.NoError(t.t, net.StopAndRestoreDB(dave))
+
+	// With Dave restored, we'll now execute the force close.
+	t.Logf("Force close by Dave to breach...")
+	daveChanPoint := &lnrpc.ChannelPoint{
+		OutputIndex: uint32(assetFundResp.OutputIndex),
+		FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
+			FundingTxidStr: assetFundResp.Txid,
+		},
+	}
+	_, breachTxid, err := net.CloseChannel(dave, daveChanPoint, true)
+	require.NoError(t.t, err)
+
+	t.Logf("Channel closed! Mining blocks, close_txid=%v", breachTxid)
+
+	// Next, we'll mine a block to confirm the breach transaction.
+	mineBlocks(t, net, 1, 1)
+
+	// We should be able to find the transfer of the breach for both
+	// parties.
+	charlieBreachTransfer := locateAssetTransfers(
+		t.t, charlieTap, *breachTxid,
+	)
+	daveBreachTransfer := locateAssetTransfers(
+		t.t, daveTap, *breachTxid,
+	)
+
+	t.Logf("Charlie breach transfer: %v",
+		toProtoJSON(t.t, charlieBreachTransfer))
+	t.Logf("Dave breach transfer: %v",
+		toProtoJSON(t.t, daveBreachTransfer))
+
+	// With the breach transaction mined, Charlie should now have a
+	// transaction in the mempool sweeping the *both* commitment outputs.
+	charlieJusticeTxid, err := waitForNTxsInMempool(
+		net.Miner.Client, 1, time.Second*5,
+	)
+	require.NoError(t.t, err)
+
+	t.Logf("Charlie justice txid: %v", charlieJusticeTxid)
+
+	// Next, we'll mine a block to confirm Charlie's justice transaction.
+	mineBlocks(t, net, 1, 1)
+
+	// Charlie should now have a transfer for his justice transaction.
+	charlieJusticeTransfer := locateAssetTransfers(
+		t.t, charlieTap, *charlieJusticeTxid[0],
+	)
+
+	t.Logf("Charlie justice transfer: %v",
+		toProtoJSON(t.t, charlieJusticeTransfer))
+
+	// Charlie's balance should now be the same as before the breach
+	// attempt: the amount he minted at the very start.
+	charlieBalance := itestAsset.Amount
+	assertAssetBalance(t.t, charlieTap, assetID, charlieBalance)
+
+	t.Logf("Charlie balance after breach: %d", charlieBalance)
+
+	// Charlie should now have 2 total UTXOs: the change from the funding
+	// output, and now the sweep output from the justice transaction.
+	charlieUTXOs := assertNumAssetUTXOs(t.t, charlieTap, 2)
+
+	t.Logf("Charlie UTXOs after breach: %v", toProtoJSON(t.t, charlieUTXOs))
+}
+
+func assertNumAssetUTXOs(t *testing.T, tapdClient *tapClient,
+	numUTXOs int) *taprpc.ListUtxosResponse {
+
+	ctxb := context.Background()
+
+	err := wait.NoError(func() error {
+		clientUTXOs, err := tapdClient.ListUtxos(
+			ctxb, &taprpc.ListUtxosRequest{},
+		)
+		if err != nil {
+			return err
+		}
+
+		if len(clientUTXOs.ManagedUtxos) != numUTXOs {
+			return fmt.Errorf("expected %v UTXO, got %d", numUTXOs,
+				len(clientUTXOs.ManagedUtxos))
+		}
+
+		return nil
+	}, defaultTimeout)
+
+	clientUTXOs, err2 := tapdClient.ListUtxos(
+		ctxb, &taprpc.ListUtxosRequest{},
+	)
+	require.NoError(t, err2)
+
+	if err != nil {
+		t.Logf("wrong amount of UTXOs, got %d, expected %d: %v",
+			len(clientUTXOs.ManagedUtxos), numUTXOs,
+			toProtoJSON(t, clientUTXOs))
+
+		t.Fatalf("failed to assert UTXOs: %v", err)
+
+		return nil
+	}
+
+	return clientUTXOs
+}
+
 func locateAssetTransfers(t *testing.T, tapdClient *tapClient,
 	txid chainhash.Hash) *taprpc.AssetTransfer {
 
@@ -953,12 +1174,12 @@ func locateAssetTransfers(t *testing.T, tapdClient *tapClient,
 			},
 		)
 		if err != nil {
-			return fmt.Errorf("unable to list charlie "+
-				"transfers: %w", err)
+			return fmt.Errorf("unable to list %v transfers: %w",
+				tapdClient.node.Name(), err)
 		}
 		if len(forceCloseTransfer.Transfers) != 1 {
-			return fmt.Errorf("charlie is missing force close " +
-				"transfer")
+			return fmt.Errorf("%v is missing force close "+
+				"transfer", tapdClient.node.Name())
 		}
 
 		transfer = forceCloseTransfer.Transfers[0]
