@@ -126,3 +126,9 @@ func (p *poolSubServer) Permissions() map[string][]bakery.Op {
 func (p *poolSubServer) WhiteListedURLs() map[string]struct{} {
 	return nil
 }
+
+// Impl returns the actual implementation of the sub-server. This might not be
+// set if the sub-server is running in remote mode.
+func (p *poolSubServer) Impl() any {
+	return p.Server
+}

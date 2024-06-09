@@ -2,6 +2,7 @@ package subservers
 
 import (
 	"context"
+	"strings"
 
 	restProxy "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lightninglabs/lndclient"
@@ -11,6 +12,8 @@ import (
 	"github.com/lightninglabs/taproot-assets/taprpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/assetwalletrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/mintrpc"
+	"github.com/lightninglabs/taproot-assets/taprpc/rfqrpc"
+	tchrpc "github.com/lightninglabs/taproot-assets/taprpc/tapchannelrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/universerpc"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"google.golang.org/grpc"
@@ -22,6 +25,8 @@ type taprootAssetsSubServer struct {
 	*tap.Server
 
 	remote    bool
+	lndRemote bool
+
 	cfg       *tapcfg.Config
 	remoteCfg *RemoteDaemonConfig
 
@@ -35,16 +40,18 @@ var _ SubServer = (*taprootAssetsSubServer)(nil)
 // NewTaprootAssetsSubServer returns a new tap implementation of the SubServer
 // interface.
 func NewTaprootAssetsSubServer(cfg *tapcfg.Config,
-	remoteCfg *RemoteDaemonConfig, remote bool) SubServer {
+	remoteCfg *RemoteDaemonConfig, remote, lndRemote bool) SubServer {
 
 	// Overwrite the tap daemon's user agent name, so it sends "litd"
 	// instead of "tapd".
 	tap.SetAgentName("litd")
 
 	return &taprootAssetsSubServer{
+		Server:    tap.NewServer(nil),
 		cfg:       cfg,
 		remoteCfg: remoteCfg,
 		remote:    remote,
+		lndRemote: lndRemote,
 		errChan:   make(chan error, 1),
 	}
 }
@@ -86,14 +93,18 @@ func (t *taprootAssetsSubServer) Start(_ lnrpc.LightningClient,
 		return err
 	}
 
-	server, err := tapcfg.CreateSubServerFromConfig(
-		t.cfg, log, &lndGrpc.LndServices, t.errChan,
+	// If we're being called here, it means tapd is running in integrated
+	// mode. But we can only offer Taproot Asset channel functionality if
+	// lnd is also running in integrated mode.
+	enableChannelFeatures := !t.lndRemote
+
+	err = tapcfg.ConfigureSubServer(
+		t.Server, t.cfg, log, &lndGrpc.LndServices,
+		enableChannelFeatures, t.errChan,
 	)
 	if err != nil {
 		return err
 	}
-
-	t.Server = server
 
 	return t.StartAsSubserver(lndGrpc)
 }
@@ -108,6 +119,8 @@ func (t *taprootAssetsSubServer) RegisterGrpcService(
 	taprpc.RegisterTaprootAssetsServer(registrar, t)
 	mintrpc.RegisterMintServer(registrar, t)
 	assetwalletrpc.RegisterAssetWalletServer(registrar, t)
+	rfqrpc.RegisterRfqServer(registrar, t)
+	tchrpc.RegisterTaprootAssetChannelsServer(registrar, t)
 	universerpc.RegisterUniverseServer(registrar, t)
 }
 
@@ -134,6 +147,20 @@ func (t *taprootAssetsSubServer) RegisterRestService(ctx context.Context,
 	}
 
 	err = assetwalletrpc.RegisterAssetWalletHandlerFromEndpoint(
+		ctx, mux, endpoint, dialOpts,
+	)
+	if err != nil {
+		return err
+	}
+
+	err = rfqrpc.RegisterRfqHandlerFromEndpoint(
+		ctx, mux, endpoint, dialOpts,
+	)
+	if err != nil {
+		return err
+	}
+
+	err = tchrpc.RegisterTaprootAssetChannelsHandlerFromEndpoint(
 		ctx, mux, endpoint, dialOpts,
 	)
 	if err != nil {
@@ -187,8 +214,23 @@ func (t *taprootAssetsSubServer) WhiteListedURLs() map[string]struct{} {
 	// If it is running in remote mode however, we just allow the request
 	// through since the remote daemon will handle blocking the call if it
 	// is not whitelisted there.
+	publicUniRead := strings.Contains(
+		t.cfg.Universe.PublicAccess,
+		string(tap.UniversePublicAccessStatusRead),
+	)
+	publicUniWrite := strings.Contains(
+		t.cfg.Universe.PublicAccess,
+		string(tap.UniversePublicAccessStatusWrite),
+	)
 	return perms.MacaroonWhitelist(
+		publicUniRead || t.remote, publicUniWrite || t.remote,
 		t.cfg.RpcConf.AllowPublicUniProofCourier || t.remote,
 		t.cfg.RpcConf.AllowPublicStats || t.remote,
 	)
+}
+
+// Impl returns the actual implementation of the sub-server. This might not be
+// set if the sub-server is running in remote mode.
+func (t *taprootAssetsSubServer) Impl() any {
+	return t.Server
 }

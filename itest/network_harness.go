@@ -271,7 +271,8 @@ func (n *NetworkHarness) Stop() {
 
 // NewNode initializes a new HarnessNode.
 func (n *NetworkHarness) NewNode(t *testing.T, name string, extraArgs []string,
-	remoteMode bool, wait bool) (*HarnessNode, error) {
+	remoteMode bool, wait bool,
+	additionalLitArgs ...string) (*HarnessNode, error) {
 
 	litArgs := []string{
 		fmt.Sprintf("--loop.server.host=%s", n.server.ServerHost),
@@ -284,6 +285,7 @@ func (n *NetworkHarness) NewNode(t *testing.T, name string, extraArgs []string,
 			n.autopilotServer.GetPort(),
 		),
 	}
+	litArgs = append(litArgs, additionalLitArgs...)
 
 	return n.newNode(
 		t, name, extraArgs, litArgs, false, remoteMode, nil, wait,
@@ -989,7 +991,9 @@ func (n *NetworkHarness) CloseChannel(lnNode *HarnessNode,
 
 	err = wait.NoError(func() error {
 		closeReq := &lnrpc.CloseChannelRequest{
-			ChannelPoint: cp, Force: force,
+			ChannelPoint: cp,
+			Force:        force,
+			SatPerVbyte:  5,
 		}
 		closeRespStream, err = lnNode.CloseChannel(ctx, closeReq)
 		if err != nil {
@@ -1033,7 +1037,8 @@ func (n *NetworkHarness) CloseChannel(lnNode *HarnessNode,
 // passed context has a timeout, then if the timeout is reached before the
 // notification is received then an error is returned.
 func (n *NetworkHarness) WaitForChannelClose(
-	closeChanStream lnrpc.Lightning_CloseChannelClient) (*chainhash.Hash, error) {
+	stream lnrpc.Lightning_CloseChannelClient) (*lnrpc.ChannelCloseUpdate,
+	error) {
 
 	ctxb := context.Background()
 	ctx, cancel := context.WithTimeout(ctxb, wait.ChannelCloseTimeout)
@@ -1042,13 +1047,14 @@ func (n *NetworkHarness) WaitForChannelClose(
 	errChan := make(chan error)
 	updateChan := make(chan *lnrpc.CloseStatusUpdate_ChanClose)
 	go func() {
-		closeResp, err := closeChanStream.Recv()
+		closeResp, err := stream.Recv()
 		if err != nil {
 			errChan <- err
 			return
 		}
 
-		closeFin, ok := closeResp.Update.(*lnrpc.CloseStatusUpdate_ChanClose)
+		update := closeResp.Update
+		closeFin, ok := update.(*lnrpc.CloseStatusUpdate_ChanClose)
 		if !ok {
 			errChan <- fmt.Errorf("expected channel close update, "+
 				"instead got %v", closeFin)
@@ -1066,7 +1072,7 @@ func (n *NetworkHarness) WaitForChannelClose(
 	case err := <-errChan:
 		return nil, err
 	case update := <-updateChan:
-		return chainhash.NewHash(update.ChanClose.ClosingTxid)
+		return update.ChanClose, nil
 	}
 }
 

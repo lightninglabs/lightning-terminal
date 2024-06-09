@@ -1,14 +1,18 @@
 package main
 
 import (
+	"context"
+	"encoding/hex"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
 	terminal "github.com/lightninglabs/lightning-terminal"
+	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightninglabs/lndclient"
+	"github.com/lightninglabs/taproot-assets/perms"
+	"github.com/lightningnetwork/lnd/cmd/commands"
 	"github.com/lightningnetwork/lnd/lncfg"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/macaroons"
@@ -69,6 +73,19 @@ func main() {
 		baseDirFlag,
 		tlsCertFlag,
 		macaroonPathFlag,
+		cli.StringFlag{
+			Name:   "lnddir",
+			Usage:  "Path to lnd's base directory",
+			Hidden: true,
+			Value:  commands.DefaultLndDir,
+		},
+		cli.Int64Flag{
+			Name:   "macaroontimeout",
+			Value:  60,
+			Hidden: true,
+			Usage: "Anti-replay macaroon validity time in " +
+				"seconds.",
+		},
 	}
 	app.Commands = append(app.Commands, sessionCommands...)
 	app.Commands = append(app.Commands, accountsCommands...)
@@ -78,6 +95,7 @@ func main() {
 	app.Commands = append(app.Commands, litCommands...)
 	app.Commands = append(app.Commands, helperCommands)
 	app.Commands = append(app.Commands, statusCommands...)
+	app.Commands = append(app.Commands, lnCommands...)
 
 	err := app.Run(os.Args)
 	if err != nil {
@@ -98,7 +116,7 @@ func connectClient(ctx *cli.Context, noMac bool) (grpc.ClientConnInterface,
 	if err != nil {
 		return nil, nil, err
 	}
-	conn, err := getClientConn(rpcServer, tlsCertPath, macPath, noMac)
+	conn, err := getClientConn(rpcServer, tlsCertPath, macPath, noMac, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -107,14 +125,42 @@ func connectClient(ctx *cli.Context, noMac bool) (grpc.ClientConnInterface,
 	return conn, cleanup, nil
 }
 
-func getClientConn(address, tlsCertPath, macaroonPath string, noMac bool) (
-	*grpc.ClientConn, error) {
+func connectClientWithMac(ctx *cli.Context,
+	mac []byte) (grpc.ClientConnInterface, func(), error) {
+
+	rpcServer := ctx.GlobalString("rpcserver")
+	tlsCertPath, macPath, err := extractPathArgs(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	conn, err := getClientConn(rpcServer, tlsCertPath, macPath, false, mac)
+	if err != nil {
+		return nil, nil, err
+	}
+	cleanup := func() { _ = conn.Close() }
+
+	return conn, cleanup, nil
+}
+
+func getClientConn(address, tlsCertPath, macaroonPath string, noMac bool,
+	customMac []byte) (*grpc.ClientConn, error) {
 
 	opts := []grpc.DialOption{
 		grpc.WithDefaultCallOptions(maxMsgRecvSize),
 	}
 
-	if !noMac {
+	switch {
+	case len(customMac) > 0:
+		macOption, err := macFromBytes(customMac)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, macOption)
+
+	case noMac:
+		// Don't do anything.
+
+	default:
 		macOption, err := readMacaroon(macaroonPath)
 		if err != nil {
 			return nil, err
@@ -196,13 +242,18 @@ func extractPathArgs(ctx *cli.Context) (string, string, error) {
 // gRPC dial options from it.
 func readMacaroon(macPath string) (grpc.DialOption, error) {
 	// Load the specified macaroon file.
-	macBytes, err := ioutil.ReadFile(macPath)
+	macBytes, err := os.ReadFile(macPath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read macaroon path : %v", err)
 	}
 
+	return macFromBytes(macBytes)
+}
+
+// macFromBytes returns a macaroon from the given byte slice.
+func macFromBytes(macBytes []byte) (grpc.DialOption, error) {
 	mac := &macaroon.Macaroon{}
-	if err = mac.UnmarshalBinary(macBytes); err != nil {
+	if err := mac.UnmarshalBinary(macBytes); err != nil {
 		return nil, fmt.Errorf("unable to decode macaroon: %v", err)
 	}
 
@@ -243,4 +294,70 @@ func printRespJSON(resp proto.Message) { // nolint
 	}
 
 	fmt.Println(string(jsonBytes))
+}
+
+func connectTapdClient(ctx *cli.Context) (grpc.ClientConnInterface, func(),
+	error) {
+
+	lndConn, cleanup, err := connectClient(ctx, false)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error connecting client: %w", err)
+	}
+
+	defer cleanup()
+
+	var suffixBytes [4]byte
+	superMacID := session.NewSuperMacaroonRootKeyID(suffixBytes)
+	lndClient := lnrpc.NewLightningClient(lndConn)
+	ctxb := context.Background()
+
+	tapdPerms := perms.RequiredPermissions
+
+	deDupMap := make(map[string]map[string]bool)
+	for _, methodPerms := range tapdPerms {
+		for _, methodPerm := range methodPerms {
+			if methodPerm.Action == "" || methodPerm.Entity == "" {
+				continue
+			}
+
+			if deDupMap[methodPerm.Entity] == nil {
+				deDupMap[methodPerm.Entity] = make(
+					map[string]bool,
+				)
+			}
+			deDupMap[methodPerm.Entity][methodPerm.Action] = true
+		}
+	}
+
+	rpcPerms := make([]*lnrpc.MacaroonPermission, 0, len(tapdPerms))
+	rpcPerms = append(rpcPerms, &lnrpc.MacaroonPermission{
+		Entity: "uri",
+		Action: "/lnrpc.Lightning/CheckMacaroonPermissions",
+	})
+	for entity, actions := range deDupMap {
+		for action := range actions {
+			rpcPerms = append(rpcPerms, &lnrpc.MacaroonPermission{
+				Entity: entity,
+				Action: action,
+			})
+		}
+	}
+
+	macResp, err := lndClient.BakeMacaroon(
+		ctxb, &lnrpc.BakeMacaroonRequest{
+			Permissions:              rpcPerms,
+			RootKeyId:                superMacID,
+			AllowExternalPermissions: true,
+		},
+	)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error baking macaroon: %w", err)
+	}
+
+	macBytes, err := hex.DecodeString(macResp.Macaroon)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error decoding macaroon: %w", err)
+	}
+
+	return connectClientWithMac(ctx, macBytes)
 }
