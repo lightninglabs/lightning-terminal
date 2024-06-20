@@ -179,7 +179,8 @@ unit-race:
 	env CGO_ENABLED=1 GORACE="history_size=7 halt_on_errors=1" $(UNIT_RACE) -tags="$(LND_RELEASE_TAGS)"
 
 build-itest: app-build
-	@$(call print, "Building itest btcd and litd.")
+	@$(call print, "Building itest binaries.")
+	CGO_ENABLED=0 $(GOBUILD) -tags="$(ITEST_TAGS)" -o itest/litd-itest -ldflags "$(ITEST_LDFLAGS)" $(PKG)/cmd/litd
 	CGO_ENABLED=0 $(GOBUILD) -tags="$(ITEST_TAGS)" -o itest/btcd-itest -ldflags "$(ITEST_LDFLAGS)" $(BTCD_PKG)
 	CGO_ENABLED=0 $(GOBUILD) -tags="$(ITEST_TAGS)" -o itest/lnd-itest -ldflags "$(ITEST_LDFLAGS)" $(LND_PKG)/cmd/lnd
 
