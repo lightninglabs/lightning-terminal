@@ -44,6 +44,11 @@ type RuleEnforcer struct {
 	lndClient    lndclient.LightningClient
 
 	ruleMgrs rules.ManagerSet
+
+	// lndConnID is a random identifier for an lnd run. It is used to
+	// generate unique request identifiers that amend the non-unique request
+	// identifiers that are passed from lnd.
+	lndConnID string
 }
 
 // featurePerms defines the signature of a function that can be used to fetch
@@ -56,7 +61,8 @@ func NewRuleEnforcer(ruleDB firewalldb.RulesDB,
 	sessionIDIndex firewalldb.SessionDB,
 	getFeaturePerms featurePerms, permsMgr *perms.Manager, nodeID [33]byte,
 	routerClient lndclient.RouterClient,
-	lndClient lndclient.LightningClient, ruleMgrs rules.ManagerSet,
+	lndClient lndclient.LightningClient, lndConnID string,
+	ruleMgrs rules.ManagerSet,
 	markActionErrored func(reqID uint64, reason string) error,
 	privMap firewalldb.NewPrivacyMapDB) *RuleEnforcer {
 
@@ -72,6 +78,7 @@ func NewRuleEnforcer(ruleDB firewalldb.RulesDB,
 		markActionErrored: markActionErrored,
 		newPrivMap:        privMap,
 		sessionDB:         sessionIDIndex,
+		lndConnID:         lndConnID,
 	}
 }
 
@@ -415,6 +422,7 @@ func (r *RuleEnforcer) initRule(reqID uint64, name string, value []byte,
 		RouterClient: r.routerClient,
 		LndClient:    r.lndClient,
 		ReqID:        int64(reqID),
+		LndConnID:    r.lndConnID,
 	}
 
 	return r.ruleMgrs.InitEnforcer(cfg, name, ruleValues)
