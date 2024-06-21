@@ -274,7 +274,7 @@ func (r *RuleEnforcer) handleRequest(ctx context.Context,
 			"rule violation: %s", errors.Join(errs...))
 	}
 
-	return nil, nil
+	return msg, nil
 }
 
 // handleResponse gathers the rules that will need to be enforced for the given
