@@ -23,6 +23,7 @@ func NewRuleManagerSet() ManagerSet {
 		RateLimitName:        &RateLimitMgr{},
 		ChanPolicyBoundsName: &ChanPolicyBoundsMgr{},
 		HistoryLimitName:     &HistoryLimitMgr{},
+		OnChainBudgetName:    &OnChainBudgetMgr{},
 		ChannelRestrictName:  NewChannelRestrictMgr(),
 		PeersRestrictName:    NewPeerRestrictMgr(),
 	}
