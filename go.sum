@@ -1172,12 +1172,12 @@ github.com/lightninglabs/pool/auctioneerrpc v1.1.2 h1:Dbg+9Z9jXnhimR27EN37foc4aB
 github.com/lightninglabs/pool/auctioneerrpc v1.1.2/go.mod h1:1wKDzN2zEP8srOi0B9iySlEsPdoPhw6oo3Vbm1v4Mhw=
 github.com/lightninglabs/protobuf-go-hex-display v1.30.0-hex-display h1:pRdza2wleRN1L2fJXd6ZoQ9ZegVFTAb2bOQfruJPKcY=
 github.com/lightninglabs/protobuf-go-hex-display v1.30.0-hex-display/go.mod h1:HV8QOd/L58Z+nl8r43ehVNZIU/HEI6OcFqwMG9pJV4I=
-github.com/lightninglabs/taproot-assets v0.3.3-0.20240609154533-2b3c60ae77a9 h1:A7GSIxahO2AaYnDaruiHh5kqmQ1ilEo2L76TGjU7B0o=
-github.com/lightninglabs/taproot-assets v0.3.3-0.20240609154533-2b3c60ae77a9/go.mod h1:Km86kikQR/ZVPgK/bi9khZnt/FOoHEErx4itPiHi2i4=
+github.com/lightninglabs/taproot-assets v0.3.3-0.20240621151738-7a0a009cea0b h1:VFDiq9WM8XuQ8/Q13gzvXE6MZ+bp4U3idTHCVFYG+YI=
+github.com/lightninglabs/taproot-assets v0.3.3-0.20240621151738-7a0a009cea0b/go.mod h1:6pirBUx8UaalAug+XR2g+TsaivwT6+nVcQZwC571rl4=
 github.com/lightningnetwork/lightning-onion v1.2.1-0.20230823005744-06182b1d7d2f h1:Pua7+5TcFEJXIIZ1I2YAUapmbcttmLj4TTi786bIi3s=
 github.com/lightningnetwork/lightning-onion v1.2.1-0.20230823005744-06182b1d7d2f/go.mod h1:c0kvRShutpj3l6B9WtTsNTBUtjSmjZXbJd9ZBRQOSKI=
-github.com/lightningnetwork/lnd v0.18.0-beta.rc3.0.20240607141010-393d6829ca7d h1:9tUVysV2TP6pAP4Mxcbm4TQwsMp6Vg6KiTG9ouSyACE=
-github.com/lightningnetwork/lnd v0.18.0-beta.rc3.0.20240607141010-393d6829ca7d/go.mod h1:ZZ8c08GgxS6bbtPQv8hPZYB4m2SrhBQJa3N+JgnpR0o=
+github.com/lightningnetwork/lnd v0.18.0-beta.rc3.0.20240621142354-5fc4d4b1ec2b h1:lXQjDLthlVKX2cR1cZzoRDhB/n1WsVm9FeiWv894d8U=
+github.com/lightningnetwork/lnd v0.18.0-beta.rc3.0.20240621142354-5fc4d4b1ec2b/go.mod h1:ZZ8c08GgxS6bbtPQv8hPZYB4m2SrhBQJa3N+JgnpR0o=
 github.com/lightningnetwork/lnd/cert v1.2.2 h1:71YK6hogeJtxSxw2teq3eGeuy4rHGKcFf0d0Uy4qBjI=
 github.com/lightningnetwork/lnd/cert v1.2.2/go.mod h1:jQmFn/Ez4zhDgq2hnYSw8r35bqGVxViXhX6Cd7HXM6U=
 github.com/lightningnetwork/lnd/clock v1.1.1 h1:OfR3/zcJd2RhH0RU+zX/77c0ZiOnIMsDIBjgjWdZgA0=
