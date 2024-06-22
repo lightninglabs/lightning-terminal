@@ -377,7 +377,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	// Test case 1: Send a direct keysend payment from Charlie to Dave.
 	// ------------
 	const keySendAmount = 100
-	sendKeySendPayment(t.t, charlie, dave, keySendAmount, assetID)
+	sendAssetKeySendPayment(t.t, charlie, dave, keySendAmount, assetID)
 	logBalance(t.t, nodes, assetID, "after keysend")
 
 	charlieAssetBalance -= keySendAmount
@@ -386,11 +386,15 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	// We should be able to send the 100 assets back immediately, because
 	// there is enough on-chain balance on Dave's side to be able to create
 	// an HTLC.
-	sendKeySendPayment(t.t, dave, charlie, keySendAmount, assetID)
+	sendAssetKeySendPayment(t.t, dave, charlie, keySendAmount, assetID)
 	logBalance(t.t, nodes, assetID, "after keysend back")
 
 	charlieAssetBalance += keySendAmount
 	daveAssetBalance -= keySendAmount
+
+	// We should also be able to do a non-asset (BTC only) keysend payment.
+	sendKeySendPayment(t.t, charlie, dave, 2000, nil)
+	logBalance(t.t, nodes, assetID, "after BTC only keysend")
 
 	// ------------
 	// Test case 2: Pay a normal invoice from Dave by Charlie, making it
@@ -404,6 +408,11 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 
 	charlieAssetBalance -= paidAssetAmount
 	daveAssetBalance += paidAssetAmount
+
+	// We should also be able to do a multi-hop BTC only payment, paying an
+	// invoice from Erin by Charlie.
+	createAndPayNormalInvoiceWithBtc(t.t, charlie, erin, 2000)
+	logBalance(t.t, nodes, assetID, "after BTC only invoice")
 
 	// ------------
 	// Test case 3: Pay an asset invoice from Dave by Charlie, making it
@@ -861,7 +870,7 @@ func getAssetChannelBalance(t *testing.T, node *HarnessNode, assetID []byte,
 	return localSum, remoteSum
 }
 
-func sendKeySendPayment(t *testing.T, src, dst *HarnessNode, amt uint64,
+func sendAssetKeySendPayment(t *testing.T, src, dst *HarnessNode, amt uint64,
 	assetID []byte) {
 
 	ctxb := context.Background()
@@ -886,9 +895,22 @@ func sendKeySendPayment(t *testing.T, src, dst *HarnessNode, amt uint64,
 	)
 	require.NoError(t, err)
 
+	const htlcCarrierAmt = 500
+	sendKeySendPayment(
+		t, src, dst, htlcCarrierAmt, encodeResp.CustomRecords,
+	)
+}
+
+func sendKeySendPayment(t *testing.T, src, dst *HarnessNode, amt btcutil.Amount,
+	firstHopCustomRecords map[uint64][]byte) {
+
+	ctxb := context.Background()
+	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
+	defer cancel()
+
 	// Read out the custom preimage for the keysend payment.
 	var preimage lntypes.Preimage
-	_, err = rand.Read(preimage[:])
+	_, err := rand.Read(preimage[:])
 	require.NoError(t, err)
 
 	hash := preimage.Hash()
@@ -898,12 +920,11 @@ func sendKeySendPayment(t *testing.T, src, dst *HarnessNode, amt uint64,
 	customRecords := make(map[uint64][]byte)
 	customRecords[record.KeySendType] = preimage[:]
 
-	const htlcCarrierAmt = 500
 	req := &routerrpc.SendPaymentRequest{
 		Dest:                  dst.PubKey[:],
-		Amt:                   htlcCarrierAmt,
+		Amt:                   int64(amt),
 		DestCustomRecords:     customRecords,
-		FirstHopCustomRecords: encodeResp.CustomRecords,
+		FirstHopCustomRecords: firstHopCustomRecords,
 		PaymentHash:           hash[:],
 		TimeoutSeconds:        3,
 	}
@@ -916,6 +937,24 @@ func sendKeySendPayment(t *testing.T, src, dst *HarnessNode, amt uint64,
 	result, err := getPaymentResult(stream)
 	require.NoError(t, err)
 	require.Equal(t, lnrpc.Payment_SUCCEEDED, result.Status)
+}
+
+func createAndPayNormalInvoiceWithBtc(t *testing.T, src, dst *HarnessNode,
+	amountSat btcutil.Amount) {
+
+	ctxb := context.Background()
+	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
+	defer cancel()
+
+	expirySeconds := 10
+	invoiceResp, err := dst.AddInvoice(ctxt, &lnrpc.Invoice{
+		Value:  int64(amountSat),
+		Memo:   "normal invoice",
+		Expiry: int64(expirySeconds),
+	})
+	require.NoError(t, err)
+
+	payInvoiceWithSatoshi(t, src, invoiceResp)
 }
 
 func createAndPayNormalInvoice(t *testing.T, src, rfqPeer, dst *HarnessNode,
