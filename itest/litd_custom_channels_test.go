@@ -280,6 +280,16 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	require.NoError(t.t, err)
 	t.Logf("Funded channel between Charlie and Dave: %v", fundRespCD)
 
+	// Ensure that Dave's asset balance has been updated.
+	respLiAssets, err := daveTap.ListAssets(ctxb, &taprpc.ListAssetRequest{})
+	require.NoError(t.t, err)
+	expectedDavePreFundBalance := 100_000
+	require.EqualValues(
+		t.t, expectedDavePreFundBalance, respLiAssets.Assets[0].Amount,
+	)
+
+	// Fund channel between Dave and Yara.
+	//daveFundingAmount := uint64(20000)
 	daveFundingAmount := uint64(startAmount)
 	fundRespDY, err := daveTap.FundChannel(
 		ctxb, &tchrpc.FundChannelRequest{
@@ -315,6 +325,10 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	// Now that we've looked at the pending channels, let's actually confirm
 	// all three of them.
 	mineBlocks(t, net, 6, 3)
+
+	respLiAssets, err = daveTap.ListAssets(ctxb, &taprpc.ListAssetRequest{})
+	require.NoError(t.t, err)
+	require.NotNil(t.t, respLiAssets.Assets)
 
 	// We'll be tracking the expected asset balances throughout the test, so
 	// we can assert it after each action.
