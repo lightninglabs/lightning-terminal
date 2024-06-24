@@ -220,9 +220,8 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	})
 	require.NoError(t.t, err)
 
-	t.Logf("Sending %v asset units to Dave...", startAmount)
+	t.Logf("Sending asset units from Charlie to Dave (amt=%v)", startAmount)
 
-	// Send the assets to Erin.
 	itest.AssertAddrCreated(t.t, daveTap, cents, daveAddr)
 	sendResp, err := charlieTap.SendAsset(ctxb, &taprpc.SendAssetRequest{
 		TapAddrs: []string{daveAddr.Encoded},
@@ -246,9 +245,8 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	})
 	require.NoError(t.t, err)
 
-	t.Logf("Sending %v asset units to Erin...", startAmount)
+	t.Logf("Sending asset units from Charlie to Erin (amt=%v)", startAmount)
 
-	// Send the assets to Erin.
 	itest.AssertAddrCreated(t.t, erinTap, cents, erinAddr)
 	sendResp, err = charlieTap.SendAsset(ctxb, &taprpc.SendAssetRequest{
 		TapAddrs: []string{erinAddr.Encoded},
