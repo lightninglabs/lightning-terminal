@@ -161,8 +161,10 @@ type Config struct {
 	LetsEncryptDir    string `long:"letsencryptdir" description:"The directory where the Let's Encrypt library will store its key and certificate."`
 	LetsEncryptListen string `long:"letsencryptlisten" description:"The IP:port on which LiT will listen for Let's Encrypt challenges. Let's Encrypt will always try to contact on port 80. Often non-root processes are not allowed to bind to ports lower than 1024. This configuration option allows a different port to be used, but must be used in combination with port forwarding from port 80. This configuration can also be used to specify another IP address to listen on, for example an IPv6 address."`
 
-	TLSCertPath string `long:"tlscertpath" description:"Path to write the self signed TLS certificate for LiT's RPC and REST proxy service (if Let's Encrypt is not used). This only applies to the HTTPSListen port."`
-	TLSKeyPath  string `long:"tlskeypath" description:"Path to write the self signed TLS private key for LiT's RPC and REST proxy service (if Let's Encrypt is not used). This only applies to the HTTPSListen port."`
+	TLSCertPath     string   `long:"tlscertpath" description:"Path to write the self signed TLS certificate for LiT's RPC and REST proxy service (if Let's Encrypt is not used). This only applies to the HTTPSListen port."`
+	TLSKeyPath      string   `long:"tlskeypath" description:"Path to write the self signed TLS private key for LiT's RPC and REST proxy service (if Let's Encrypt is not used). This only applies to the HTTPSListen port."`
+	TLSExtraIPs     []string `long:"tlsextraip" description:"Adds an extra ip to the generated LiT TLS certificate (if Let's Encrypt is not used)"`
+	TLSExtraDomains []string `long:"tlsextradomain" description:"Adds an extra domain to the generated LiT TLS certificate (if Let's Encrypt is not used)"`
 
 	LitDir     string `long:"lit-dir" description:"The main directory where LiT looks for its configuration file. If LiT is running in 'remote' lnd mode, this is also the directory where the TLS certificates and log files are stored by default."`
 	ConfigFile string `long:"configfile" description:"Path to LiT's configuration file."`
@@ -831,7 +833,8 @@ func buildTLSConfigForHttp2(config *Config) (*tls.Config, error) {
 			!lnrpc.FileExists(tlsKeyPath) {
 
 			certBytes, keyBytes, err := cert.GenCertPair(
-				defaultSelfSignedCertOrganization, nil, nil,
+				defaultSelfSignedCertOrganization,
+				config.TLSExtraIPs, config.TLSExtraDomains,
 				false, DefaultAutogenValidity,
 			)
 			if err != nil {
