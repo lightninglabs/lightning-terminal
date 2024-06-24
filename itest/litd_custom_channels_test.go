@@ -204,6 +204,9 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	syncUniverses(t.t, charlieTap, dave, erin, fabia, yara)
 	t.Logf("Universes synced between all nodes, distributing assets...")
 
+	// Keep a running total of the remaining asset units held by Charlie.
+	charlieRunningTotalAmt := cents.Amount
+
 	// We need to send some assets to Dave, so he can fund an asset channel
 	// with Yara.
 	const (
@@ -227,9 +230,10 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 		TapAddrs: []string{daveAddr.Encoded},
 	})
 	require.NoError(t.t, err)
+	charlieRunningTotalAmt -= startAmount
 	itest.ConfirmAndAssertOutboundTransfer(
 		t.t, t.lndHarness.Miner.Client, charlieTap, sendResp, assetID,
-		[]uint64{cents.Amount - startAmount, startAmount}, 0, 1,
+		[]uint64{charlieRunningTotalAmt, startAmount}, 0, 1,
 	)
 	itest.AssertNonInteractiveRecvComplete(t.t, daveTap, 1)
 
@@ -252,9 +256,10 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 		TapAddrs: []string{erinAddr.Encoded},
 	})
 	require.NoError(t.t, err)
+	charlieRunningTotalAmt -= startAmount
 	itest.ConfirmAndAssertOutboundTransfer(
 		t.t, t.lndHarness.Miner.Client, charlieTap, sendResp, assetID,
-		[]uint64{cents.Amount - 2*startAmount, startAmount}, 1, 2,
+		[]uint64{charlieRunningTotalAmt, startAmount}, 1, 2,
 	)
 	itest.AssertNonInteractiveRecvComplete(t.t, erinTap, 1)
 
