@@ -25,6 +25,10 @@ var allTestCases = []*testCase{
 		test: testCustomChannels,
 	},
 	{
+		name: "test custom channels grouped asset",
+		test: testCustomChannelsGroupedAsset,
+	},
+	{
 		name: "test custom channels force close",
 		test: testCustomChannelsForceClose,
 	},
