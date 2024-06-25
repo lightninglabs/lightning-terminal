@@ -375,6 +375,12 @@ tryconnect:
 					"finish syncing")
 			}
 		}
+
+		// Ignore "already connected to peer" errors.
+		if strings.Contains(err.Error(), "already connected to peer") {
+			return nil
+		}
+
 		return err
 	}
 
@@ -707,6 +713,58 @@ func (n *NetworkHarness) StopNode(node *HarnessNode) error {
 	return node.Stop()
 }
 
+// StopAndBackupDB backs up the database of the target node.
+func (n *NetworkHarness) StopAndBackupDB(node *HarnessNode) error {
+	restart, err := n.SuspendNode(node)
+	if err != nil {
+		return err
+	}
+
+	// Backup files.
+	tempDir, err := os.MkdirTemp("", "past-state")
+	if err != nil {
+		return fmt.Errorf("unable to create temp db folder: %w",
+			err)
+	}
+
+	if err := copyAll(tempDir, node.Cfg.DBDir()); err != nil {
+		return fmt.Errorf("unable to copy database files: %w",
+			err)
+	}
+
+	node.Cfg.backupDBDir = tempDir
+
+	return restart()
+}
+
+// StopAndRestoreDB stops the target node, restores the database from a backup
+// and starts the node again.
+func (n *NetworkHarness) StopAndRestoreDB(node *HarnessNode) error {
+	restart, err := n.SuspendNode(node)
+	if err != nil {
+		return err
+	}
+
+	// Restore files.
+	if node.Cfg.backupDBDir == "" {
+		return fmt.Errorf("no database backup created")
+	}
+
+	err = copyAll(node.Cfg.DBDir(), node.Cfg.backupDBDir)
+	if err != nil {
+		return fmt.Errorf("unable to copy database files: %w",
+			err)
+	}
+
+	if err := os.RemoveAll(node.Cfg.backupDBDir); err != nil {
+		return fmt.Errorf("unable to remove backup dir: %w",
+			err)
+	}
+	node.Cfg.backupDBDir = ""
+
+	return restart()
+}
+
 // OpenChannel attempts to open a channel between srcNode and destNode with the
 // passed channel funding parameters. If the passed context has a timeout, then
 // if the timeout is reached before the channel pending notification is
@@ -997,6 +1055,7 @@ func (n *NetworkHarness) CloseChannel(lnNode *HarnessNode,
 		if !force {
 			closeReq.SatPerVbyte = 5
 		}
+
 		closeRespStream, err = lnNode.CloseChannel(ctx, closeReq)
 		if err != nil {
 			return fmt.Errorf("unable to close channel: %v", err)

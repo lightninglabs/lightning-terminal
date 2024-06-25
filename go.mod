@@ -20,8 +20,8 @@ require (
 	github.com/lightninglabs/loop/swapserverrpc v1.0.8
 	github.com/lightninglabs/pool v0.6.5-beta.0.20240604070222-e121aadb3289
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.2
-	github.com/lightninglabs/taproot-assets v0.3.3-0.20240621202612-eae23c4f77e8
-	github.com/lightningnetwork/lnd v0.18.0-beta.rc3.0.20240621222000-c6e4d621d2b0
+	github.com/lightninglabs/taproot-assets v0.3.3-0.20240625161215-838206d62c99
+	github.com/lightningnetwork/lnd v0.18.0-beta.rc3.0.20240625154246-4e968d9b520c
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/fn v1.1.0
 	github.com/lightningnetwork/lnd/kvdb v1.4.8
@@ -227,3 +227,5 @@ replace github.com/lightninglabs/lightning-terminal/autopilotserverrpc => ./auto
 replace google.golang.org/protobuf => github.com/lightninglabs/protobuf-go-hex-display v1.30.0-hex-display
 
 go 1.22.3
+
+toolchain go1.22.4
