@@ -380,6 +380,16 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	assertAssetChan(t.t, dave, yara, daveFundingAmount, assetID)
 	assertAssetChan(t.t, erin, fabia, erinFundingAmount, assetID)
 
+	// Before we start sending out payments, let's make sure each node can
+	// see the other one in the graph and has all required features.
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(charlie, dave))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(dave, charlie))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(dave, yara))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(yara, dave))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(erin, fabia))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(fabia, erin))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(charlie, erin))
+
 	// Print initial channel balances.
 	logBalance(t.t, nodes, assetID, "initial")
 
@@ -723,18 +733,16 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	fabiaTap := newTapClient(t.t, fabia)
 	yaraTap := newTapClient(t.t, yara)
 
-	groupAsset := itestAsset
-	groupAsset.NewGroupedAsset = true
+	groupAssetReq := itest.CopyRequest(&mintrpc.MintAssetRequest{
+		Asset: itestAsset,
+	})
+	groupAssetReq.Asset.NewGroupedAsset = true
 
 	// Mint an asset on Charlie and sync all nodes to Charlie as the
 	// universe.
 	mintedAssets := itest.MintAssetsConfirmBatch(
 		t.t, t.lndHarness.Miner.Client, charlieTap,
-		[]*mintrpc.MintAssetRequest{
-			{
-				Asset: groupAsset,
-			},
-		},
+		[]*mintrpc.MintAssetRequest{groupAssetReq},
 	)
 
 	cents := mintedAssets[0]
@@ -923,6 +931,16 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	assertAssetChan(t.t, charlie, dave, charlieFundingAmount, assetID)
 	assertAssetChan(t.t, dave, yara, daveFundingAmount, assetID)
 	assertAssetChan(t.t, erin, fabia, erinFundingAmount, assetID)
+
+	// Before we start sending out payments, let's make sure each node can
+	// see the other one in the graph and has all required features.
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(charlie, dave))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(dave, charlie))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(dave, yara))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(yara, dave))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(erin, fabia))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(fabia, erin))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(charlie, erin))
 
 	// Print initial channel balances.
 	logBalance(t.t, nodes, assetID, "initial")
@@ -1276,9 +1294,7 @@ func testCustomChannelsForceClose(_ context.Context, net *NetworkHarness,
 
 	// Charlie's balance should reflect that the funding asset was added to
 	// the DB.
-	assertAssetBalance(
-		t.t, charlieTap, assetID, uint64(itestAsset.Amount),
-	)
+	assertAssetBalance(t.t, charlieTap, assetID, itestAsset.Amount)
 
 	// Make sure that Charlie properly uploaded funding proof to the
 	// Universe server.
@@ -1290,6 +1306,14 @@ func testCustomChannelsForceClose(_ context.Context, net *NetworkHarness,
 			"%v:%v", assetFundResp.Txid, assetFundResp.OutputIndex,
 		),
 	)
+
+	// Make sure the channel shows the correct asset information.
+	assertAssetChan(t.t, charlie, dave, fundingAmount, assetID)
+
+	// Before we start sending out payments, let's make sure each node can
+	// see the other one in the graph and has all required features.
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(charlie, dave))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(dave, charlie))
 
 	// We'll also have dave sync with Charlie+Zane to ensure he has the
 	// proof for the funding output. We sync the transfers as well so he
@@ -1441,22 +1465,6 @@ func testCustomChannelsForceClose(_ context.Context, net *NetworkHarness,
 		t.t, charlieSweepTransfer,
 	))
 
-	charlieUTXOs, err := charlieTap.ListUtxos(
-		ctxb, &taprpc.ListUtxosRequest{},
-	)
-	require.NoError(t.t, err)
-
-	t.Logf("Charlie UTXOs: %v", toProtoJSON(t.t, charlieUTXOs))
-
-	daveUTXOs, err := daveTap.ListUtxos(
-		ctxb, &taprpc.ListUtxosRequest{},
-	)
-	require.NoError(t.t, err)
-
-	t.Logf("Dave UTXOs: %v", toProtoJSON(t.t, daveUTXOs))
-
-	// TODO(roasbeef): assert 2 charlie UTXOs
-
 	// Both sides should now reflect their updated asset balances.
 	daveBalance := uint64(numPayments * keySendAmount)
 	charlieBalance := itestAsset.Amount - daveBalance
@@ -1465,26 +1473,12 @@ func testCustomChannelsForceClose(_ context.Context, net *NetworkHarness,
 
 	// Dave should have a single managed UTXO that shows he has a new asset
 	// UTXO he can use.
-	err = wait.NoError(func() error {
-		daveUTXOs, err = daveTap.ListUtxos(
-			ctxb, &taprpc.ListUtxosRequest{},
-		)
-		if err != nil {
-			return err
-		}
-
-		if len(daveUTXOs.ManagedUtxos) != 1 {
-			return fmt.Errorf("expected 1 UTXO, got %d",
-				len(daveUTXOs.ManagedUtxos))
-		}
-
-		return nil
-	}, defaultTimeout)
-	require.NoError(t.t, err)
-
-	t.Logf("Dave UTXOs: %v", toProtoJSON(t.t, daveUTXOs))
+	assertNumAssetUTXOs(t.t, daveTap, 1)
+	assertNumAssetUTXOs(t.t, charlieTap, 2)
 }
 
+// testCustomChannelsBreach tests a force close scenario that breaches an old
+// state, after both parties have an active asset balance.
 func testCustomChannelsBreach(_ context.Context, net *NetworkHarness,
 	t *harnessTest) {
 
@@ -1528,6 +1522,7 @@ func testCustomChannelsBreach(_ context.Context, net *NetworkHarness,
 	connectAllNodes(t.t, net, nodes)
 	fundAllNodes(t.t, net, nodes)
 
+	universeTap := newTapClient(t.t, zane)
 	charlieTap := newTapClient(t.t, charlie)
 	daveTap := newTapClient(t.t, dave)
 
@@ -1569,7 +1564,39 @@ func testCustomChannelsBreach(_ context.Context, net *NetworkHarness,
 	// With the channel open, mine a block to confirm it.
 	mineBlocks(t, net, 6, 1)
 
-	time.Sleep(time.Second * 1)
+	// A transfer for the funding transaction should be found in Charlie's
+	// DB.
+	fundingTxid, err := chainhash.NewHashFromStr(assetFundResp.Txid)
+	require.NoError(t.t, err)
+	assetFundingTransfer := locateAssetTransfers(
+		t.t, charlieTap, *fundingTxid,
+	)
+
+	t.Logf("Channel funding transfer: %v",
+		toProtoJSON(t.t, assetFundingTransfer))
+
+	// Charlie's balance should reflect that the funding asset was added to
+	// the DB.
+	assertAssetBalance(t.t, charlieTap, assetID, itestAsset.Amount)
+
+	// Make sure that Charlie properly uploaded funding proof to the
+	// Universe server.
+	fundingScriptTree := tapchannel.NewFundingScriptTree()
+	fundingScriptKey := fundingScriptTree.TaprootKey
+	fundingScriptTreeBytes := fundingScriptKey.SerializeCompressed()
+	assertUniverseProofExists(
+		t.t, universeTap, assetID, fundingScriptTreeBytes, fmt.Sprintf(
+			"%v:%v", assetFundResp.Txid, assetFundResp.OutputIndex,
+		),
+	)
+
+	// Make sure the channel shows the correct asset information.
+	assertAssetChan(t.t, charlie, dave, fundingAmount, assetID)
+
+	// Before we start sending out payments, let's make sure each node can
+	// see the other one in the graph and has all required features.
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(charlie, dave))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(dave, charlie))
 
 	// Next, we'll make keysend payments from Charlie to Dave. we'll use
 	// this to reach a state where both parties have funds in the channel.
@@ -1672,8 +1699,10 @@ func assertNumAssetUTXOs(t *testing.T, tapdClient *tapClient,
 
 	ctxb := context.Background()
 
+	var clientUTXOs *taprpc.ListUtxosResponse
 	err := wait.NoError(func() error {
-		clientUTXOs, err := tapdClient.ListUtxos(
+		var err error
+		clientUTXOs, err = tapdClient.ListUtxos(
 			ctxb, &taprpc.ListUtxosRequest{},
 		)
 		if err != nil {
@@ -1687,21 +1716,8 @@ func assertNumAssetUTXOs(t *testing.T, tapdClient *tapClient,
 
 		return nil
 	}, defaultTimeout)
-
-	clientUTXOs, err2 := tapdClient.ListUtxos(
-		ctxb, &taprpc.ListUtxosRequest{},
-	)
-	require.NoError(t, err2)
-
-	if err != nil {
-		t.Logf("wrong amount of UTXOs, got %d, expected %d: %v",
-			len(clientUTXOs.ManagedUtxos), numUTXOs,
-			toProtoJSON(t, clientUTXOs))
-
-		t.Fatalf("failed to assert UTXOs: %v", err)
-
-		return nil
-	}
+	require.NoErrorf(t, err, "failed to assert UTXOs: %v, last state: %v",
+		err, clientUTXOs)
 
 	return clientUTXOs
 }
