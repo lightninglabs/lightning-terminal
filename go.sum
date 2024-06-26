@@ -1176,8 +1176,8 @@ github.com/lightninglabs/taproot-assets v0.3.3-0.20240625161215-838206d62c99 h1:
 github.com/lightninglabs/taproot-assets v0.3.3-0.20240625161215-838206d62c99/go.mod h1:KhiaNUkgI3zIYNzfUoEClJjInXt5vScmnLVIvuUzWXY=
 github.com/lightningnetwork/lightning-onion v1.2.1-0.20230823005744-06182b1d7d2f h1:Pua7+5TcFEJXIIZ1I2YAUapmbcttmLj4TTi786bIi3s=
 github.com/lightningnetwork/lightning-onion v1.2.1-0.20230823005744-06182b1d7d2f/go.mod h1:c0kvRShutpj3l6B9WtTsNTBUtjSmjZXbJd9ZBRQOSKI=
-github.com/lightningnetwork/lnd v0.18.0-beta.rc3.0.20240625154246-4e968d9b520c h1:10hVKzgsnpuzOOgkYAhThUtDiq3fBBJBeZWdir+0ptk=
-github.com/lightningnetwork/lnd v0.18.0-beta.rc3.0.20240625154246-4e968d9b520c/go.mod h1:L3IArArdRrWtuw+wNsUlibuGmf/08Odsm/zo3+bPXuM=
+github.com/lightningnetwork/lnd v0.18.0-beta.rc4.0.20240626210328-034df60aaa3d h1:G6nnSCeX+sj/1HjZYsqFJT3DfaHkYa+JtcmjKNWUR7g=
+github.com/lightningnetwork/lnd v0.18.0-beta.rc4.0.20240626210328-034df60aaa3d/go.mod h1:L3IArArdRrWtuw+wNsUlibuGmf/08Odsm/zo3+bPXuM=
 github.com/lightningnetwork/lnd/cert v1.2.2 h1:71YK6hogeJtxSxw2teq3eGeuy4rHGKcFf0d0Uy4qBjI=
 github.com/lightningnetwork/lnd/cert v1.2.2/go.mod h1:jQmFn/Ez4zhDgq2hnYSw8r35bqGVxViXhX6Cd7HXM6U=
 github.com/lightningnetwork/lnd/clock v1.1.1 h1:OfR3/zcJd2RhH0RU+zX/77c0ZiOnIMsDIBjgjWdZgA0=

@@ -6131,6 +6131,30 @@ export namespace FeeReportResponse {
   }
 }
 
+export class InboundFee extends jspb.Message {
+  getBaseFeeMsat(): number;
+  setBaseFeeMsat(value: number): void;
+
+  getFeeRatePpm(): number;
+  setFeeRatePpm(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): InboundFee.AsObject;
+  static toObject(includeInstance: boolean, msg: InboundFee): InboundFee.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: InboundFee, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): InboundFee;
+  static deserializeBinaryFromReader(message: InboundFee, reader: jspb.BinaryReader): InboundFee;
+}
+
+export namespace InboundFee {
+  export type AsObject = {
+    baseFeeMsat: number,
+    feeRatePpm: number,
+  }
+}
+
 export class PolicyUpdateRequest extends jspb.Message {
   hasGlobal(): boolean;
   clearGlobal(): void;
@@ -6163,11 +6187,10 @@ export class PolicyUpdateRequest extends jspb.Message {
   getMinHtlcMsatSpecified(): boolean;
   setMinHtlcMsatSpecified(value: boolean): void;
 
-  getInboundBaseFeeMsat(): number;
-  setInboundBaseFeeMsat(value: number): void;
-
-  getInboundFeeRatePpm(): number;
-  setInboundFeeRatePpm(value: number): void;
+  hasInboundFee(): boolean;
+  clearInboundFee(): void;
+  getInboundFee(): InboundFee | undefined;
+  setInboundFee(value?: InboundFee): void;
 
   getScopeCase(): PolicyUpdateRequest.ScopeCase;
   serializeBinary(): Uint8Array;
@@ -6191,8 +6214,7 @@ export namespace PolicyUpdateRequest {
     maxHtlcMsat: string,
     minHtlcMsat: string,
     minHtlcMsatSpecified: boolean,
-    inboundBaseFeeMsat: number,
-    inboundFeeRatePpm: number,
+    inboundFee?: InboundFee.AsObject,
   }
 
   export enum ScopeCase {
