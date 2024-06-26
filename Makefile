@@ -217,6 +217,10 @@ flake-unit:
 	@$(call print, "Flake hunting unit tests.")
 	while [ $$? -eq 0 ]; do GOTRACEBACK=all $(UNIT) -count=1; done
 
+flake-itest-only:
+	@$(call print, "Flake hunting unit tests.")
+	while [ $$? -eq 0 ]; do make itest-only icase='${icase}'; done
+
 # =========
 # UTILITIES
 # =========
