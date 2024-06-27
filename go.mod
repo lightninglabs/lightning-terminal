@@ -20,8 +20,8 @@ require (
 	github.com/lightninglabs/loop/swapserverrpc v1.0.8
 	github.com/lightninglabs/pool v0.6.5-beta.0.20240604070222-e121aadb3289
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.2
-	github.com/lightninglabs/taproot-assets v0.3.3-0.20240625161215-838206d62c99
-	github.com/lightningnetwork/lnd v0.18.0-beta.rc4.0.20240626210328-034df60aaa3d
+	github.com/lightninglabs/taproot-assets v0.4.0-alpha.rc1
+	github.com/lightningnetwork/lnd v0.18.0-beta.rc4.0.20240627024114-9eec9b504509
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/fn v1.1.0
 	github.com/lightningnetwork/lnd/kvdb v1.4.8
@@ -83,6 +83,7 @@ require (
 	github.com/fortytw2/leaktest v1.3.0 // indirect
 	github.com/go-logr/logr v1.3.0 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/gobwas/ws v1.2.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.4.2 // indirect
 	github.com/golang-migrate/migrate/v4 v4.17.0 // indirect
@@ -209,10 +210,10 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	modernc.org/gc/v3 v3.0.0-20240107210532-573471604cb6 // indirect
-	modernc.org/libc v1.49.3 // indirect
+	modernc.org/libc v1.50.9 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.8.0 // indirect
-	modernc.org/sqlite v1.29.8 // indirect
+	modernc.org/sqlite v1.30.0 // indirect
 	modernc.org/strutil v1.2.0 // indirect
 	modernc.org/token v1.1.0 // indirect
 	nhooyr.io/websocket v1.8.7 // indirect
