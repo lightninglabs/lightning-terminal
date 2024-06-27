@@ -72,6 +72,7 @@ var (
 		"--protocol.option-scid-alias",
 		"--protocol.zero-conf",
 		"--protocol.simple-taproot-chans",
+		"--protocol.simple-taproot-overlay-chans",
 		"--protocol.custom-message=17",
 		"--accept-keysend",
 		"--debuglevel=trace,GRPC=error,BTCN=info",
