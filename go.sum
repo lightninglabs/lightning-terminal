@@ -1175,8 +1175,8 @@ github.com/lightninglabs/pool/auctioneerrpc v1.1.2 h1:Dbg+9Z9jXnhimR27EN37foc4aB
 github.com/lightninglabs/pool/auctioneerrpc v1.1.2/go.mod h1:1wKDzN2zEP8srOi0B9iySlEsPdoPhw6oo3Vbm1v4Mhw=
 github.com/lightninglabs/protobuf-go-hex-display v1.30.0-hex-display h1:pRdza2wleRN1L2fJXd6ZoQ9ZegVFTAb2bOQfruJPKcY=
 github.com/lightninglabs/protobuf-go-hex-display v1.30.0-hex-display/go.mod h1:HV8QOd/L58Z+nl8r43ehVNZIU/HEI6OcFqwMG9pJV4I=
-github.com/lightninglabs/taproot-assets v0.4.0-alpha.rc1 h1:BkAj2SUPD9bRoRhoIDpoSivQ0QxivGOI7GjvW7cybUM=
-github.com/lightninglabs/taproot-assets v0.4.0-alpha.rc1/go.mod h1:B7E0mbocEHBDRS0nymfk7ysnvNONnd7+FgFjh2IrNkY=
+github.com/lightninglabs/taproot-assets v0.4.0-rc1.0.20240628154545-41138961f664 h1:LylPRvmkkVAZHSrGaKDQf9Ah5qkZZ5ut3AdnI9JZo7A=
+github.com/lightninglabs/taproot-assets v0.4.0-rc1.0.20240628154545-41138961f664/go.mod h1:B7E0mbocEHBDRS0nymfk7ysnvNONnd7+FgFjh2IrNkY=
 github.com/lightningnetwork/lightning-onion v1.2.1-0.20230823005744-06182b1d7d2f h1:Pua7+5TcFEJXIIZ1I2YAUapmbcttmLj4TTi786bIi3s=
 github.com/lightningnetwork/lightning-onion v1.2.1-0.20230823005744-06182b1d7d2f/go.mod h1:c0kvRShutpj3l6B9WtTsNTBUtjSmjZXbJd9ZBRQOSKI=
 github.com/lightningnetwork/lnd v0.18.0-beta.rc4.0.20240627024114-9eec9b504509 h1:3Mf45BhHztEjofy0eYtaYM6hs+I/03/Z5AZ0W+zNdIU=
