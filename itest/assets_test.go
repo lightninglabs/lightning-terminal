@@ -20,6 +20,7 @@ import (
 	"github.com/lightninglabs/taproot-assets/proof"
 	"github.com/lightninglabs/taproot-assets/rfqmsg"
 	"github.com/lightninglabs/taproot-assets/tapchannel"
+	"github.com/lightninglabs/taproot-assets/tapfreighter"
 	"github.com/lightninglabs/taproot-assets/taprpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/assetwalletrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/mintrpc"
@@ -890,13 +891,38 @@ func createAssetInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 	return invoiceResp
 }
 
+func waitForSendEvent(t *testing.T,
+	sendEvents taprpc.TaprootAssets_SubscribeSendEventsClient,
+	expectedState tapfreighter.SendState) {
+
+	for {
+		sendEvent, err := sendEvents.Recv()
+		require.NoError(t, err)
+
+		t.Logf("Received send event: %v", sendEvent.SendState)
+		if sendEvent.SendState == expectedState.String() {
+			return
+		}
+	}
+}
+
 func closeAssetChannelAndAssert(t *harnessTest, net *NetworkHarness,
 	local, remote *HarnessNode, chanPoint *lnrpc.ChannelPoint,
 	assetID, groupKey []byte, universeTap *tapClient, remoteBtcBalance,
 	remoteAssetBalance bool) {
 
+	ctxb := context.Background()
+	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
+	defer cancel()
+
 	closeStream, _, err := t.lndHarness.CloseChannel(
 		local, chanPoint, false,
+	)
+	require.NoError(t.t, err)
+
+	localTapd := newTapClient(t.t, local)
+	sendEvents, err := localTapd.SubscribeSendEvents(
+		ctxt, &taprpc.SubscribeSendEventsRequest{},
 	)
 	require.NoError(t.t, err)
 
@@ -912,6 +938,14 @@ func closeAssetChannelAndAssert(t *harnessTest, net *NetworkHarness,
 	closeTx := closeTransaction.MsgTx()
 	t.Logf("Channel closed with txid: %v", closeTxid)
 	t.Logf("Close transaction: %v", spew.Sdump(closeTx))
+
+	// TODO(guggero): Remove this if once the receiver of a channel imports
+	// the proofs correctly as well.
+	if localTapd.node.Name() != "Yara" {
+		waitForSendEvent(
+			t.t, sendEvents, tapfreighter.SendStateComplete,
+		)
+	}
 
 	// With the channel closed, we'll now assert that the co-op close
 	// transaction was inserted into the local universe.
@@ -1027,8 +1061,6 @@ func closeAssetChannelAndAssert(t *harnessTest, net *NetworkHarness,
 			t.t, universeTap, assetID, groupKey, scriptKeyBytes,
 			fmt.Sprintf("%v:%v", closeTxid, localAssetIndex),
 		)
-
-		localTapd := newTapClient(t.t, local)
 
 		scriptKey, err := btcec.ParsePubKey(scriptKeyBytes)
 		require.NoError(t.t, err)

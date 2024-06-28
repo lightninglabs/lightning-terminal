@@ -447,6 +447,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	)
 
 	// Charlie should still have four asset pieces, two with the same size.
+	assertNumAssetOutputs(t.t, charlieTap, assetID, 2)
 	assertAssetExists(
 		t.t, charlieTap, assetID, charlieAssetBalance-fundingAmount,
 		nil, true, false, false,
@@ -456,14 +457,44 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 		false,
 	)
 
-	// For some reason, the channel funding output of the immediately closed
-	// channel is still present in the asset DB, even after we import the
-	// co-op close transaction proof.
-	// TODO(guggero): Investigate this. The actual number of outputs should
-	// be two here, and we shouldn't have the extra fundingAmount in the
-	// balance.
-	charlieAssetBalance += fundingAmount
-	assertNumAssetOutputs(t.t, charlieTap, assetID, 3)
+	// Dave should have two outputs, one from the initial channel with Yara
+	// and one from the remaining amount of the channel with Charlie.
+	assertNumAssetOutputs(t.t, daveTap, assetID, 2)
+	daveFirstChannelRemainder := daveFundingAmount - yaraInvoiceAssetAmount1
+	assertAssetExists(
+		t.t, daveTap, assetID, daveFirstChannelRemainder, nil, true,
+		true, false,
+	)
+	assertAssetExists(
+		t.t, daveTap, assetID,
+		daveAssetBalance-daveFirstChannelRemainder, nil, true, true,
+		false,
+	)
+
+	// Fabia and Yara should all have a single output each, just what was
+	// left over from the initial channel.
+	assertNumAssetOutputs(t.t, fabiaTap, assetID, 1)
+	assertAssetExists(
+		t.t, fabiaTap, assetID, fabiaAssetBalance, nil, true, true,
+		false,
+	)
+	assertNumAssetOutputs(t.t, yaraTap, assetID, 1)
+	assertAssetExists(
+		t.t, yaraTap, assetID, yaraAssetBalance, nil, true, true, false,
+	)
+
+	// Erin didn't use all of his assets when opening the channel, so he
+	// should have two outputs, the change from the channel opening and the
+	// remaining amount after closing the channel.
+	assertNumAssetOutputs(t.t, erinTap, assetID, 2)
+	erinChange := startAmount - erinFundingAmount
+	assertAssetExists(
+		t.t, erinTap, assetID, erinAssetBalance-erinChange, nil, true,
+		true, false,
+	)
+	assertAssetExists(
+		t.t, erinTap, assetID, erinChange, nil, true, false, false,
+	)
 
 	// The asset balances should still remain unchanged.
 	assertAssetBalance(t.t, charlieTap, assetID, charlieAssetBalance)
