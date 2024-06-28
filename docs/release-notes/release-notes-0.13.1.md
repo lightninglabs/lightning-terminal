@@ -3,20 +3,11 @@
 # Integrated Binary Updates
 
 ### LND
+  * [Update the integrated LND version to v0.18.1-beta](https://github.com/lightninglabs/lightning-terminal/pull/783) 
 ### Loop
 ### Pool
 ### Faraday
 ### Taproot Assets
-
-# Autopilot 
-
-# Accounts
-
-# Architectural Updates
-
-# Bug Fixes
-
-# `litcli` Updates
 
 # Misc
 
