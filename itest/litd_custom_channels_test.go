@@ -381,9 +381,9 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 		universeTap, true, true,
 	)
 
-	t.Logf("Closing Dave -> Yara channel")
+	t.Logf("Closing Dave -> Yara channel, close initiated by Yara")
 	closeAssetChannelAndAssert(
-		t, net, dave, yara, daveChanPoint, assetID, nil,
+		t, net, yara, dave, daveChanPoint, assetID, nil,
 		universeTap, false, true,
 	)
 
@@ -776,9 +776,9 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 		universeTap, true, true,
 	)
 
-	t.Logf("Closing Dave -> Yara channel")
+	t.Logf("Closing Dave -> Yara channel, close initiated by Yara")
 	closeAssetChannelAndAssert(
-		t, net, dave, yara, daveChanPoint, assetID, groupID,
+		t, net, yara, dave, daveChanPoint, assetID, groupID,
 		universeTap, false, true,
 	)
 
