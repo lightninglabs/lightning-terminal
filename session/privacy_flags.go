@@ -56,7 +56,7 @@ var flagMap = map[PrivacyFlag]string{
 func (f PrivacyFlag) String() string {
 	flagStr, ok := flagMap[f]
 	if !ok {
-		return "Unknown"
+		return fmt.Sprintf("Unknown: %d", f)
 	}
 
 	return flagStr
@@ -66,7 +66,7 @@ func (f PrivacyFlag) String() string {
 func (f PrivacyFlag) Validate() error {
 	_, ok := flagMap[f]
 	if !ok {
-		return ErrUnknownPrivacyFlag
+		return fmt.Errorf("%w: %s", ErrUnknownPrivacyFlag, f)
 	}
 
 	return nil
