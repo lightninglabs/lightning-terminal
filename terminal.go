@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"math/rand"
 	"net"
 	"net/http"
 	"os"
@@ -162,6 +163,7 @@ type LightningTerminal struct {
 	wg       sync.WaitGroup
 	errQueue *queue.ConcurrentQueue[error]
 
+	lndConnID   string
 	lndConn     *grpc.ClientConn
 	lndClient   *lndclient.GrpcLndServices
 	basicClient lnrpc.LightningClient
@@ -541,6 +543,15 @@ func (g *LightningTerminal) start() error {
 
 		return fmt.Errorf("could not connect to LND")
 	}
+
+	// In order to be able to create unique middleware request identifiers,
+	// we set a new unique connection ID. This should be refreshed every
+	// time we (re)connect to LND.
+	// TODO: This assumes that litd needs to be restarted when the
+	// connection to LND is interrupted, leading to a unique connection ID.
+	// When automatic reconnection is implemented, we need to make sure that
+	// the connection ID is refreshed when the connection is re-established.
+	g.lndConnID = randId(rules.LndConnIdLen)
 
 	// Initialise any connections to sub-servers that we are running in
 	// remote mode.
@@ -990,7 +1001,7 @@ func (g *LightningTerminal) startInternalSubServers(
 			g.autopilotClient.ListFeaturePerms,
 			g.permsMgr, g.lndClient.NodePubkey,
 			g.lndClient.Router,
-			g.lndClient.Client, g.ruleMgrs,
+			g.lndClient.Client, g.lndConnID, g.ruleMgrs,
 			func(reqID uint64, reason string) error {
 				return requestLogger.MarkAction(
 					reqID, firewalldb.ActionStateError,
@@ -1892,4 +1903,18 @@ func toLocalAddress(listenerAddress string) string {
 // with /v1/ or /v2/.
 func isRESTRequest(req *http.Request) bool {
 	return patternRESTRequest.MatchString(req.URL.Path)
+}
+
+// randId generates a random character string of length n.
+func randId(n int) string {
+	var letters = []rune(
+		"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+	)
+
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))] //nolint: gosec
+	}
+
+	return string(b)
 }

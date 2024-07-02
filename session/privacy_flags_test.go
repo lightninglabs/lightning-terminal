@@ -56,4 +56,9 @@ func TestPrivacyFlags(t *testing.T) {
 	require.True(t, flags.Contains(ClearPubkeys))
 	require.True(t, flags.Contains(ClearAmounts))
 	require.False(t, flags.Contains(ClearChanIDs))
+
+	autoOpenFlags := PrivacyFlags{ClearPubkeys, ClearNetworkAddresses}
+	require.NoError(t, err)
+	require.Equal(t, "ClearPubkeys|ClearNetworkAddresses",
+		autoOpenFlags.String())
 }

@@ -150,6 +150,54 @@ func TestPeerRestrictCheckRequest(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
+
+	// Test that we can open a channel to a non-restricted peer.
+	openReqNonRestricted := &lnrpc.OpenChannelRequest{
+		NodePubkey: peerKey3[:],
+	}
+	_, err = enf.HandleRequest(
+		ctx, "/lnrpc.Lightning/OpenChannelSync", openReqNonRestricted,
+	)
+	require.NoError(t, err)
+
+	// Test that we deny channel opening for a restricted peer.
+	openReqRestricted := &lnrpc.OpenChannelRequest{
+		NodePubkey: peerKey1[:],
+	}
+	_, err = enf.HandleRequest(
+		ctx, "/lnrpc.Lightning/OpenChannelSync", openReqRestricted,
+	)
+	require.ErrorContainsf(t, err, "illegal action on peer in peer ", "")
+
+	// Test that we cannot perform a batched channel opening when a
+	// restricted peer is present.
+	batchOpenReq := &lnrpc.BatchOpenChannelRequest{
+		Channels: []*lnrpc.BatchOpenChannel{
+			{
+				NodePubkey: peerKey1[:],
+			},
+			{
+				NodePubkey: peerKey3[:],
+			},
+		},
+	}
+	_, err = enf.HandleRequest(
+		ctx, "/lnrpc.Lightning/BatchOpenChannel", batchOpenReq,
+	)
+	require.ErrorContainsf(t, err, "illegal action on peer in peer ", "")
+
+	// Test that we can batch open channels if all peers are unrestricted.
+	batchOpenReq = &lnrpc.BatchOpenChannelRequest{
+		Channels: []*lnrpc.BatchOpenChannel{
+			{
+				NodePubkey: peerKey3[:],
+			},
+		},
+	}
+	_, err = enf.HandleRequest(
+		ctx, "/lnrpc.Lightning/BatchOpenChannel", batchOpenReq,
+	)
+	require.NoError(t, err)
 }
 
 // TestPeerRestrictionRealToPseudo tests that the PeerRestriction's RealToPseudo

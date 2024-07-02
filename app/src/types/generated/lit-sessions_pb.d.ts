@@ -361,6 +361,11 @@ export class RuleValue extends jspb.Message {
   getPeerRestrict(): PeerRestrict | undefined;
   setPeerRestrict(value?: PeerRestrict): void;
 
+  hasChannelConstraint(): boolean;
+  clearChannelConstraint(): void;
+  getChannelConstraint(): ChannelConstraint | undefined;
+  setChannelConstraint(value?: ChannelConstraint): void;
+
   getValueCase(): RuleValue.ValueCase;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RuleValue.AsObject;
@@ -382,6 +387,7 @@ export namespace RuleValue {
     sendToSelf?: SendToSelf.AsObject,
     channelRestrict?: ChannelRestrict.AsObject,
     peerRestrict?: PeerRestrict.AsObject,
+    channelConstraint?: ChannelConstraint.AsObject,
   }
 
   export enum ValueCase {
@@ -394,6 +400,7 @@ export namespace RuleValue {
     SEND_TO_SELF = 6,
     CHANNEL_RESTRICT = 7,
     PEER_RESTRICT = 8,
+    CHANNEL_CONSTRAINT = 9,
   }
 }
 
@@ -626,6 +633,42 @@ export class PeerRestrict extends jspb.Message {
 export namespace PeerRestrict {
   export type AsObject = {
     peerIdsList: Array<string>,
+  }
+}
+
+export class ChannelConstraint extends jspb.Message {
+  getMinCapacitySat(): string;
+  setMinCapacitySat(value: string): void;
+
+  getMaxCapacitySat(): string;
+  setMaxCapacitySat(value: string): void;
+
+  getMaxPushSat(): string;
+  setMaxPushSat(value: string): void;
+
+  getPrivateAllowed(): boolean;
+  setPrivateAllowed(value: boolean): void;
+
+  getPublicAllowed(): boolean;
+  setPublicAllowed(value: boolean): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ChannelConstraint.AsObject;
+  static toObject(includeInstance: boolean, msg: ChannelConstraint): ChannelConstraint.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ChannelConstraint, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ChannelConstraint;
+  static deserializeBinaryFromReader(message: ChannelConstraint, reader: jspb.BinaryReader): ChannelConstraint;
+}
+
+export namespace ChannelConstraint {
+  export type AsObject = {
+    minCapacitySat: string,
+    maxCapacitySat: string,
+    maxPushSat: string,
+    privateAllowed: boolean,
+    publicAllowed: boolean,
   }
 }
 
