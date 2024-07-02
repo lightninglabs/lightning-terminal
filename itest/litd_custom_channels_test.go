@@ -882,14 +882,9 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 		false,
 	)
 
-	// For some reason, the channel funding output of the immediately closed
-	// channel is still present in the asset DB, even after we import the
-	// co-op close transaction proof.
-	// TODO(guggero): Investigate this. The actual number of outputs should
-	// be two here, and we shouldn't have the extra fundingAmount in the
-	// balance.
-	charlieAssetBalance += fundingAmount
-	assertNumAssetOutputs(t.t, charlieTap, assetID, 3)
+	// Charlie should have asset outputs: the left over change from the
+	// channel funding, and the new close output.
+	assertNumAssetOutputs(t.t, charlieTap, assetID, 2)
 
 	// The asset balances should still remain unchanged.
 	assertAssetBalance(t.t, charlieTap, assetID, charlieAssetBalance)
