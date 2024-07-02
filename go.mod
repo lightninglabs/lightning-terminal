@@ -20,8 +20,8 @@ require (
 	github.com/lightninglabs/loop/swapserverrpc v1.0.8
 	github.com/lightninglabs/pool v0.6.5-beta.0.20240604070222-e121aadb3289
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.2
-	github.com/lightninglabs/taproot-assets v0.4.0-alpha.rc1
-	github.com/lightningnetwork/lnd v0.18.0-beta.rc4.0.20240627024114-9eec9b504509
+	github.com/lightninglabs/taproot-assets v0.4.0-rc1.0.20240702015557-48c6e81962ea
+	github.com/lightningnetwork/lnd v0.18.0-beta.rc4.0.20240702005542-da001ebfa726
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/fn v1.1.0
 	github.com/lightningnetwork/lnd/kvdb v1.4.8
