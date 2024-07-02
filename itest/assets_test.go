@@ -895,6 +895,8 @@ func waitForSendEvent(t *testing.T,
 	sendEvents taprpc.TaprootAssets_SubscribeSendEventsClient,
 	expectedState tapfreighter.SendState) {
 
+	t.Helper()
+
 	for {
 		sendEvent, err := sendEvents.Recv()
 		require.NoError(t, err)
@@ -910,6 +912,8 @@ func closeAssetChannelAndAssert(t *harnessTest, net *NetworkHarness,
 	local, remote *HarnessNode, chanPoint *lnrpc.ChannelPoint,
 	assetID, groupKey []byte, universeTap *tapClient, remoteBtcBalance,
 	remoteAssetBalance bool) {
+
+	t.t.Helper()
 
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
