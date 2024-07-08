@@ -943,13 +943,7 @@ func closeAssetChannelAndAssert(t *harnessTest, net *NetworkHarness,
 	t.Logf("Channel closed with txid: %v", closeTxid)
 	t.Logf("Close transaction: %v", spew.Sdump(closeTx))
 
-	// TODO(guggero): Remove this if once the receiver of a channel imports
-	// the proofs correctly as well.
-	if localTapd.node.Name() != "Yara" {
-		waitForSendEvent(
-			t.t, sendEvents, tapfreighter.SendStateComplete,
-		)
-	}
+	waitForSendEvent(t.t, sendEvents, tapfreighter.SendStateComplete)
 
 	// With the channel closed, we'll now assert that the co-op close
 	// transaction was inserted into the local universe.
