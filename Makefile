@@ -178,8 +178,13 @@ unit-race:
 	mkdir -p app/build && touch app/build/index.html
 	env CGO_ENABLED=1 GORACE="history_size=7 halt_on_errors=1" $(UNIT_RACE) -tags="$(LND_RELEASE_TAGS)"
 
+clean-itest:
+	@$(call print, "Cleaning itest binaries.")
+	rm -rf itest/litd-itest itest/btcd-itest itest/lnd-itest
+
 build-itest: app-build
-	@$(call print, "Building itest btcd and litd.")
+	@$(call print, "Building itest binaries.")
+	CGO_ENABLED=0 $(GOBUILD) -tags="$(ITEST_TAGS)" -o itest/litd-itest -ldflags "$(ITEST_LDFLAGS)" $(PKG)/cmd/litd
 	CGO_ENABLED=0 $(GOBUILD) -tags="$(ITEST_TAGS)" -o itest/btcd-itest -ldflags "$(ITEST_LDFLAGS)" $(BTCD_PKG)
 	CGO_ENABLED=0 $(GOBUILD) -tags="$(ITEST_TAGS)" -o itest/lnd-itest -ldflags "$(ITEST_LDFLAGS)" $(LND_PKG)/cmd/lnd
 
@@ -250,7 +255,7 @@ rpc-js-compile:
 	@$(call print, "Compiling JSON/WASM stubs.")
 	GOOS=js GOARCH=wasm $(GOBUILD) $(PKG)/litrpc
 
-clean:
+clean: clean-itest
 	@$(call print, "Cleaning source.$(NC)")
 	$(RM) ./litcli-debug
 	$(RM) ./litd-debug

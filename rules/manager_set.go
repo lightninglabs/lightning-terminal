@@ -10,6 +10,10 @@ import (
 // ErrUnknownRule indicates that LiT is unaware of a values name.
 var ErrUnknownRule = fmt.Errorf("unknown rule")
 
+// LndConnIdLen is the length of the random connection ID used to create
+// unique request identifiers.
+const LndConnIdLen = 16
+
 // ManagerSet is a map from a rule name to a rule Manager.
 type ManagerSet map[string]Manager
 
@@ -19,8 +23,10 @@ func NewRuleManagerSet() ManagerSet {
 		RateLimitName:        &RateLimitMgr{},
 		ChanPolicyBoundsName: &ChanPolicyBoundsMgr{},
 		HistoryLimitName:     &HistoryLimitMgr{},
+		OnChainBudgetName:    &OnChainBudgetMgr{},
 		ChannelRestrictName:  NewChannelRestrictMgr(),
 		PeersRestrictName:    NewPeerRestrictMgr(),
+		ChanConstraintName:   &ChanConstraintMgr{},
 	}
 }
 
