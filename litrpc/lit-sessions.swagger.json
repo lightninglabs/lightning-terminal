@@ -151,6 +151,34 @@
         }
       }
     },
+    "litrpcChannelConstraint": {
+      "type": "object",
+      "properties": {
+        "min_capacity_sat": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The minimum channel size autopilot has to set for a channel."
+        },
+        "max_capacity_sat": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The maximum channel size autopilot can set for a channel."
+        },
+        "max_push_sat": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The maximum push amount for a channel."
+        },
+        "private_allowed": {
+          "type": "boolean",
+          "description": "Indicates whether opening of private channels is allowed."
+        },
+        "public_allowed": {
+          "type": "boolean",
+          "description": "Indicates whether opening of public channels is allowed."
+        }
+      }
+    },
     "litrpcChannelPolicyBounds": {
       "type": "object",
       "properties": {
@@ -367,6 +395,9 @@
         },
         "peer_restrict": {
           "$ref": "#/definitions/litrpcPeerRestrict"
+        },
+        "channel_constraint": {
+          "$ref": "#/definitions/litrpcChannelConstraint"
         }
       }
     },

@@ -2,6 +2,7 @@ package firewall
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
@@ -43,6 +44,11 @@ type RuleEnforcer struct {
 	lndClient    lndclient.LightningClient
 
 	ruleMgrs rules.ManagerSet
+
+	// lndConnID is a random identifier for an lnd run. It is used to
+	// generate unique request identifiers that amend the non-unique request
+	// identifiers that are passed from lnd.
+	lndConnID string
 }
 
 // featurePerms defines the signature of a function that can be used to fetch
@@ -55,7 +61,8 @@ func NewRuleEnforcer(ruleDB firewalldb.RulesDB,
 	sessionIDIndex firewalldb.SessionDB,
 	getFeaturePerms featurePerms, permsMgr *perms.Manager, nodeID [33]byte,
 	routerClient lndclient.RouterClient,
-	lndClient lndclient.LightningClient, ruleMgrs rules.ManagerSet,
+	lndClient lndclient.LightningClient, lndConnID string,
+	ruleMgrs rules.ManagerSet,
 	markActionErrored func(reqID uint64, reason string) error,
 	privMap firewalldb.NewPrivacyMapDB) *RuleEnforcer {
 
@@ -71,6 +78,7 @@ func NewRuleEnforcer(ruleDB firewalldb.RulesDB,
 		markActionErrored: markActionErrored,
 		newPrivMap:        privMap,
 		sessionDB:         sessionIDIndex,
+		lndConnID:         lndConnID,
 	}
 }
 
@@ -148,6 +156,12 @@ func (r *RuleEnforcer) Intercept(ctx context.Context,
 
 	// Parse incoming requests and act on them.
 	case MWRequestTypeRequest:
+		// Support for streaming requests is not yet implemented.
+		if ri.Streaming {
+			return mid.RPCErrString(req, "streaming requests not "+
+				"supported")
+		}
+
 		replacement, err := r.handleRequest(ctx, ri)
 		if err != nil {
 			dbErr := r.markActionErrored(ri.RequestID, err.Error())
@@ -236,14 +250,12 @@ func (r *RuleEnforcer) handleRequest(ctx context.Context,
 		return nil, fmt.Errorf("error parsing proto: %v", err)
 	}
 
+	var errs []error
 	for _, rule := range rules {
 		newRequest, err := rule.HandleRequest(ctx, ri.URI, msg)
 		if err != nil {
-			st := status.Errorf(
-				codes.ResourceExhausted, "rule violation: %v",
-				err,
-			)
-			return nil, st
+			errs = append(errs, err)
+			continue
 		}
 
 		if newRequest != nil {
@@ -251,7 +263,25 @@ func (r *RuleEnforcer) handleRequest(ctx context.Context,
 		}
 	}
 
-	return nil, nil
+	// Should we have encountered any errors for rules in the request, we
+	// need to roll back any pending state changes.
+	if len(errs) > 0 {
+		for _, rule := range rules {
+			// We call HandleErrorResponse to undo any persisted
+			// state changes.
+			_, err := rule.HandleErrorResponse(ctx, ri.URI, nil)
+			if err != nil {
+				log.Errorf("Error rolling back request: %v",
+					err)
+			}
+		}
+
+		// We join any errors to report all rule violations.
+		return nil, status.Errorf(codes.ResourceExhausted,
+			"rule violation: %s", errors.Join(errs...))
+	}
+
+	return msg, nil
 }
 
 // handleResponse gathers the rules that will need to be enforced for the given
@@ -392,6 +422,7 @@ func (r *RuleEnforcer) initRule(reqID uint64, name string, value []byte,
 		RouterClient: r.routerClient,
 		LndClient:    r.lndClient,
 		ReqID:        int64(reqID),
+		LndConnID:    r.lndConnID,
 	}
 
 	return r.ruleMgrs.InitEnforcer(cfg, name, ruleValues)

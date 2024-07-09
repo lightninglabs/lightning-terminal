@@ -15,6 +15,8 @@ import (
 
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcutil"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/btcsuite/btcd/wire"
 	"github.com/lightninglabs/lightning-node-connect/mailbox"
 	"github.com/lightninglabs/lightning-terminal/autopilotserver/mock"
 	"github.com/lightninglabs/lightning-terminal/firewall"
@@ -26,6 +28,7 @@ import (
 	"github.com/lightningnetwork/lnd/keychain"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntest"
+	"github.com/lightningnetwork/lnd/lntest/wait"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -80,14 +83,20 @@ var (
 		},
 	}
 
-	sendToSelf = &litrpc.RuleValue_SendToSelf{
-		SendToSelf: &litrpc.SendToSelf{},
+	pubChannelsOnly = &litrpc.RuleValue_ChannelConstraint{
+		ChannelConstraint: &litrpc.ChannelConstraint{
+			MinCapacitySat: 500_000,
+			MaxCapacitySat: 6_000_000,
+			MaxPushSat:     0,
+			PrivateAllowed: false,
+			PublicAllowed:  true,
+		},
 	}
 
-	offChainBudget = &litrpc.RuleValue_OffChainBudget{
-		OffChainBudget: &litrpc.OffChainBudget{
-			MaxAmtMsat:  1200000000,
-			MaxFeesMsat: 200000,
+	onchainBudget = &litrpc.RuleValue_OnChainBudget{
+		OnChainBudget: &litrpc.OnChainBudget{
+			AbsoluteAmtSats: 10_000_000,
+			MaxSatPerVByte:  30,
 		},
 	}
 
@@ -132,6 +141,45 @@ var (
 			Duration: time.Hour * 24,
 		},
 		MaxVal: &rules.HistoryLimit{},
+	}
+
+	onChainBudgetRule = &mock.RuleRanges{
+		Default: &rules.OnChainBudget{
+			AbsoluteAmtSats: 10_000_000,
+			MaxSatPerVByte:  30,
+		},
+		MinVal: &rules.OnChainBudget{
+			AbsoluteAmtSats: 1_000_000,
+			MaxSatPerVByte:  20,
+		},
+		MaxVal: &rules.OnChainBudget{
+			AbsoluteAmtSats: 100_000_000,
+			MaxSatPerVByte:  2_000,
+		},
+	}
+
+	chanConstraintsRule = &mock.RuleRanges{
+		Default: &rules.ChannelConstraint{
+			MinCapacitySat: 600_000,
+			MaxCapacitySat: 6_000_000,
+			MaxPushSat:     0,
+			PrivateAllowed: true,
+			PublicAllowed:  true,
+		},
+		MinVal: &rules.ChannelConstraint{
+			MinCapacitySat: 500_000,
+			MaxCapacitySat: 500_000,
+			MaxPushSat:     0,
+			PrivateAllowed: false,
+			PublicAllowed:  false,
+		},
+		MaxVal: &rules.ChannelConstraint{
+			MinCapacitySat: 10_000_000,
+			MaxCapacitySat: 10_000_000_000,
+			MaxPushSat:     0,
+			PrivateAllowed: true,
+			PublicAllowed:  true,
+		},
 	}
 )
 
@@ -183,6 +231,10 @@ func testFirewallRules(ctx context.Context, net *NetworkHarness,
 
 	t.t.Run("session linking", func(_ *testing.T) {
 		testSessionLinking(net, t)
+	})
+
+	t.t.Run("channel constraint and budget rules", func(tt *testing.T) {
+		testChannelOpening(net, t, tt)
 	})
 
 	t.t.Run("privacy flags", func(_ *testing.T) {
@@ -889,6 +941,481 @@ func testSessionLinking(net *NetworkHarness, t *harnessTest) {
 		}, caveatCreds1,
 	)
 	assertStatusErr(t.t, err, codes.ResourceExhausted)
+}
+
+// testChannelOpening tests that a client connected via a firewall can open
+// channels to a peer respecting the channel rules set by the firewall.
+func testChannelOpening(net *NetworkHarness, ht *harnessTest, t *testing.T) {
+	ctx := context.Background()
+
+	// We create a connection to the Alice node's RPC server.
+	cfg := net.Alice.Cfg
+	rawConn, err := connectRPC(ctx, cfg.LitAddr(), cfg.LitTLSCertPath)
+	require.NoError(t, err)
+	defer rawConn.Close()
+
+	// Create a node to open channels to.
+	charlie, err := net.NewNode(t, "Charlie", nil, false, true)
+	require.NoError(t, err)
+	defer shutdownAndAssert(net, ht, charlie)
+
+	macBytes, err := os.ReadFile(cfg.LitMacPath)
+	require.NoError(t, err)
+	ctxm := macaroonContext(ctx, macBytes)
+
+	// Set up the privacy flags used for channel opening.
+	flags := session.PrivacyFlags{
+		session.ClearPubkeys, session.ClearNetworkAddresses,
+	}
+
+	// We override the autopilot to offer a channel open service that has a
+	// rules attached that apply to channel opening.
+	net.autopilotServer.SetFeatures(map[string]*mock.Feature{
+		"OpenChannels": {
+			Description: "open channels while you sleep!",
+			Rules: map[string]*mock.RuleRanges{
+				rules.OnChainBudgetName:    onChainBudgetRule,
+				rules.ChanConstraintName:   chanConstraintsRule,
+				rules.ChanPolicyBoundsName: chanPolicyBoundsRule,
+			},
+			Permissions: map[string][]bakery.Op{
+				"/lnrpc.Lightning/ListChannels": {{
+					Entity: "offchain",
+					Action: "read",
+				}},
+				"/lnrpc.Lightning/OpenChannelSync": {{
+					Entity: "onchain",
+					Action: "write",
+				}},
+				"/lnrpc.Lightning/BatchOpenChannel": {{
+					Entity: "onchain",
+					Action: "write",
+				}},
+				"/lnrpc.Lightning/ConnectPeer": {{
+					Entity: "peers",
+					Action: "write",
+				}},
+				"/lnrpc.Lightning/PendingChannels": {{
+					Entity: "offchain",
+					Action: "read",
+				}},
+			},
+			PrivacyFlags: flags.Serialize(),
+		},
+	})
+
+	// Test that the connection to Alice's rpc server is working and that
+	// the autopilot server is returning a non-empty feature list.
+	litClient := litrpc.NewAutopilotClient(rawConn)
+	featResp, err := litClient.ListAutopilotFeatures(
+		ctxm, &litrpc.ListAutopilotFeaturesRequest{},
+	)
+	require.NoError(t, err)
+	require.NotEmpty(t, featResp)
+
+	// Add a new Autopilot session that subscribes to the "OpenChannels"
+	// feature and set the rule that disallows private channels and allows
+	// public ones. We set budget and policy rules as well.
+	sessResp, err := litClient.AddAutopilotSession(
+		ctxm, &litrpc.AddAutopilotSessionRequest{
+			Label: "integration-test",
+			ExpiryTimestampSeconds: uint64(
+				time.Now().Add(5 * time.Minute).Unix(),
+			),
+			MailboxServerAddr: mailboxServerAddr,
+			Features: map[string]*litrpc.FeatureConfig{
+				"OpenChannels": {
+					Rules: &litrpc.RulesMap{
+						Rules: map[string]*litrpc.RuleValue{
+							rules.ChanConstraintName: {
+								Value: pubChannelsOnly,
+							},
+							rules.OnChainBudgetName: {
+								Value: onchainBudget,
+							},
+							rules.ChanPolicyBoundsName: {
+								Value: policyBounds,
+							},
+						},
+					},
+				},
+			},
+			PrivacyFlags:    flags.Serialize(),
+			PrivacyFlagsSet: true,
+		},
+	)
+	require.NoError(t, err)
+
+	// We now connect to the mailbox from the PoV of the autopilot server.
+	lndConn1, metaDataInjector, cleanup1 := newAutopilotLndConn(
+		ctx, t, net, sessResp.Session,
+	)
+	t.Cleanup(func() { require.NoError(t, cleanup1()) })
+
+	// The autopilot server is expected to add a MetaInfo caveat to any
+	// request that it makes. So we add that now and specify that it is
+	// initially making requests on behalf of the OpenChannels feature.
+	metaInfo := &firewall.InterceptMetaInfo{
+		ActorName: "Autopilot Server",
+		Feature:   "OpenChannels",
+	}
+	caveat, err := metaInfo.ToCaveat()
+	require.NoError(t, err)
+	caveatCreds := metaDataInjector.addCaveat(caveat)
+
+	// Should be able to tell alice to connect to charlie using charlie's
+	// real pub key and address since the relevant flags were set.
+	_, err = lndConn1.ConnectPeer(
+		ctx, &lnrpc.ConnectPeerRequest{
+			Addr: &lnrpc.LightningAddress{
+				Pubkey: charlie.PubKeyStr,
+				Host:   charlie.Cfg.P2PAddr(),
+			},
+		}, caveatCreds,
+	)
+	require.NoError(t, err)
+
+	// Private channels are not allowed (testing the channel constraint
+	// rule).
+	_, err = lndConn1.BatchOpenChannel(
+		ctx, &lnrpc.BatchOpenChannelRequest{
+			Channels: []*lnrpc.BatchOpenChannel{
+				{
+					NodePubkey:         charlie.PubKey[:],
+					LocalFundingAmount: 6_000_000,
+					Private:            true,
+					MinHtlcMsat:        1_000,
+				},
+			},
+		}, caveatCreds,
+	)
+	require.ErrorContains(t, err, "private channels not allowed")
+
+	// A public channel that is too big should also fail (testing the
+	// channel constraint rule). We also test that the min htlc amount is
+	// wrong (testing the policy rule), giving us back an error for both
+	// rule violations.
+	_, err = lndConn1.BatchOpenChannel(
+		ctx, &lnrpc.BatchOpenChannelRequest{
+			Channels: []*lnrpc.BatchOpenChannel{
+				{
+					NodePubkey:         charlie.PubKey[:],
+					LocalFundingAmount: 6_000_001,
+					MinHtlcMsat:        10,
+				},
+			},
+		}, caveatCreds,
+	)
+	require.ErrorContains(t, err, "invalid total capacity")
+	require.ErrorContains(t, err, "invalid min htlc msat amount")
+
+	// Now test a successful channel open, spending 6 Msat out of the 10
+	// Msat budget.
+	batchResp, err := lndConn1.BatchOpenChannel(
+		ctx, &lnrpc.BatchOpenChannelRequest{
+			Channels: []*lnrpc.BatchOpenChannel{
+				{
+					NodePubkey:         charlie.PubKey[:],
+					LocalFundingAmount: 6_000_000,
+					MinHtlcMsat:        1_000,
+					Memo:               "mymemo",
+				},
+			},
+		}, caveatCreds,
+	)
+	require.NoError(t, err)
+
+	// lastMemo is used to check that the memo field is unique accross
+	// different channel opens.
+	var lastMemo string
+	assertChannelExistsAndClose := func(txIdHidden []byte,
+		outIdxHidden uint32) {
+
+		net.Miner.AssertNumTxsInMempool(1)
+		net.Miner.MineBlocks(6)
+
+		// The channel open response's txid is to be interpreted as a
+		// byte reveresed hash, which is used to check that the channel
+		// is present.
+		txHashHidden, err := chainhash.NewHash(txIdHidden)
+		require.NoError(t, err)
+
+		aliceFW := litrpc.NewFirewallClient(rawConn)
+
+		// Query Alice's privacy mapper to see what the real txid is.
+		chanPoint := fmt.Sprintf(
+			"%s:%d", txHashHidden.String(), outIdxHidden,
+		)
+		privMapResp, err := aliceFW.PrivacyMapConversion(
+			ctxm, &litrpc.PrivacyMapConversionRequest{
+				SessionId: sessResp.Session.Id,
+				Input:     chanPoint,
+			},
+		)
+		require.NoError(t, err)
+
+		// We assert that the channel exists using the real channel
+		// point.
+		txid, outputIndex, err := firewalldb.DecodeChannelPoint(
+			privMapResp.Output,
+		)
+		require.NoError(t, err)
+
+		tx, err := chainhash.NewHashFromStr(txid)
+		require.NoError(t, err)
+
+		outpoint := wire.OutPoint{
+			Hash:  *tx,
+			Index: outputIndex,
+		}
+		err = ht.lndHarness.AssertChannelExists(
+			ht.lndHarness.Alice, &outpoint,
+		)
+		require.NoError(t, err)
+
+		// Before doing any further tests, make sure to close out the
+		// channel should tests fail.
+		defer closeChannelAndAssert(ht, net, net.Alice,
+			&lnrpc.ChannelPoint{
+				FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
+					FundingTxidStr: txid,
+				},
+				OutputIndex: outputIndex,
+			}, false)
+
+		// We check that a memo was added to the channel.
+		channels, err := net.Alice.ListChannels(
+			ctx, &lnrpc.ListChannelsRequest{},
+		)
+		require.NoError(t, err)
+
+		var thisMemo string
+		for _, channel := range channels.Channels {
+			if channel.ChannelPoint == outpoint.String() {
+				parts := strings.Split(channel.Memo, ":")
+				require.GreaterOrEqual(t, len(parts), 2)
+				thisMemo = parts[0]
+				require.NotEqual(t, thisMemo, lastMemo)
+
+				// We expect the format of
+				// onBudget-lndConnID-reqID.
+				parts = strings.Split(thisMemo, "-")
+				require.Len(t, parts, 3)
+				require.Equal(t, parts[0], "onBudget")
+				require.Len(t, parts[1], rules.LndConnIdLen)
+			}
+		}
+
+		lastMemo = thisMemo
+	}
+
+	require.Len(t, batchResp.PendingChannels, 1)
+	open := batchResp.PendingChannels[0]
+
+	// We check that the memo prefix was removed from pending open channels.
+	var pending *lnrpc.PendingChannelsResponse
+	err = wait.NoError(func() error {
+		pending, err = lndConn1.PendingChannels(
+			ctx, &lnrpc.PendingChannelsRequest{}, caveatCreds,
+		)
+		require.NoError(t, err)
+
+		if len(pending.PendingOpenChannels) != 1 {
+			return fmt.Errorf("unexpected number of channels")
+		}
+		return nil
+	}, lntest.DefaultTimeout)
+	require.NoError(t, err)
+	require.Equal(t, "mymemo", pending.PendingOpenChannels[0].Channel.Memo)
+
+	assertChannelExistsAndClose(open.Txid, open.OutputIndex)
+
+	// We try to open another channel, spending more than the budget allows.
+	_, err = lndConn1.BatchOpenChannel(
+		ctx, &lnrpc.BatchOpenChannelRequest{
+			Channels: []*lnrpc.BatchOpenChannel{
+				{
+					NodePubkey:         charlie.PubKey[:],
+					LocalFundingAmount: 4_000_001,
+					MinHtlcMsat:        1_000,
+				},
+			},
+		}, caveatCreds,
+	)
+	require.ErrorContains(t, err, "exceeds budget limit")
+
+	// Now test a successful open that is within the budget.
+	batchResp, err = lndConn1.BatchOpenChannel(
+		ctx, &lnrpc.BatchOpenChannelRequest{
+			Channels: []*lnrpc.BatchOpenChannel{
+				{
+					NodePubkey:         charlie.PubKey[:],
+					LocalFundingAmount: 4_000_000,
+					FeeRate:            30,
+					MinHtlcMsat:        1_000,
+				},
+			},
+		}, caveatCreds,
+	)
+	require.NoError(t, err)
+
+	require.Len(t, batchResp.PendingChannels, 1)
+	open = batchResp.PendingChannels[0]
+	assertChannelExistsAndClose(open.Txid, open.OutputIndex)
+
+	// Revoke the previous session.
+	_, err = litClient.RevokeAutopilotSession(
+		ctxm, &litrpc.RevokeAutopilotSessionRequest{
+			LocalPublicKey: sessResp.Session.LocalPublicKey,
+		},
+	)
+	require.NoError(t, err)
+
+	// Link another session to the first one increasing the budget, which
+	// effectively adds another 5 Msat to the budget.
+	increasedBudget := &litrpc.RuleValue_OnChainBudget{
+		OnChainBudget: &litrpc.OnChainBudget{
+			AbsoluteAmtSats: 15_000_000,
+			MaxSatPerVByte:  200,
+		},
+	}
+
+	sessResp, err = litClient.AddAutopilotSession(
+		ctxm, &litrpc.AddAutopilotSessionRequest{
+			Label: "integration-test",
+			ExpiryTimestampSeconds: uint64(
+				time.Now().Add(5 * time.Minute).Unix(),
+			),
+			MailboxServerAddr: mailboxServerAddr,
+			Features: map[string]*litrpc.FeatureConfig{
+				"OpenChannels": {
+					Rules: &litrpc.RulesMap{
+						Rules: map[string]*litrpc.RuleValue{
+							rules.OnChainBudgetName: {
+								Value: increasedBudget,
+							},
+							rules.ChanConstraintName: {
+								Value: pubChannelsOnly,
+							},
+							rules.ChanPolicyBoundsName: {
+								Value: policyBounds,
+							},
+						},
+					},
+				},
+			},
+			PrivacyFlags:    flags.Serialize(),
+			PrivacyFlagsSet: true,
+			LinkedGroupId:   sessResp.Session.GroupId,
+		},
+	)
+	require.NoError(t, err)
+
+	lndConn2, metaDataInjector, cleanup2 := newAutopilotLndConn(
+		ctx, t, net, sessResp.Session,
+	)
+
+	// The autopilot server is expected to add a MetaInfo caveat to any
+	// request that it makes. So we add that now and specify that it is
+	// initially making requests on behalf of the OpenChannels feature.
+	caveatCreds = metaDataInjector.addCaveat(caveat)
+
+	// We can't open a channel that is too big.
+	_, err = lndConn2.BatchOpenChannel(
+		ctx, &lnrpc.BatchOpenChannelRequest{
+			Channels: []*lnrpc.BatchOpenChannel{
+				{
+					NodePubkey:         charlie.PubKey[:],
+					LocalFundingAmount: 5_000_001,
+					FeeRate:            30,
+					MinHtlcMsat:        1_000,
+				},
+			},
+		}, caveatCreds,
+	)
+	require.ErrorContains(t, err, "exceeds budget limit")
+
+	// But we can open another 2.5 Msat channel.
+	batchResp, err = lndConn2.BatchOpenChannel(
+		ctx, &lnrpc.BatchOpenChannelRequest{
+			Channels: []*lnrpc.BatchOpenChannel{
+				{
+					NodePubkey:         charlie.PubKey[:],
+					LocalFundingAmount: 2_500_000,
+					FeeRate:            30,
+					MinHtlcMsat:        1_000,
+				},
+			},
+		}, caveatCreds,
+	)
+	require.NoError(t, err)
+
+	require.Len(t, batchResp.PendingChannels, 1)
+	open = batchResp.PendingChannels[0]
+	assertChannelExistsAndClose(open.Txid, open.OutputIndex)
+
+	// Test that the ChannelOpenSync call also checks rules.
+	_, err = lndConn2.OpenChannelSync(
+		ctx, &lnrpc.OpenChannelRequest{
+			NodePubkey:         charlie.PubKey[:],
+			LocalFundingAmount: 2_500_001,
+			FeeRate:            30,
+			MinHtlcMsat:        10,
+			Private:            true,
+		}, caveatCreds,
+	)
+	require.ErrorContains(t, err, "private channels not allowed")
+	require.ErrorContains(t, err, "invalid min htlc msat amount")
+	require.ErrorContains(t, err, "exceeds budget limit")
+
+	// Test that ChannelOpenSync can open a channel.
+	openResp, err := lndConn2.OpenChannelSync(
+		ctx, &lnrpc.OpenChannelRequest{
+			NodePubkey:         charlie.PubKey[:],
+			LocalFundingAmount: 1_250_000,
+			FeeRate:            30,
+			MinHtlcMsat:        1000,
+		}, caveatCreds,
+	)
+	require.NoError(t, err)
+
+	assertChannelExistsAndClose(
+		openResp.GetFundingTxidBytes(), openResp.OutputIndex,
+	)
+
+	// We check that a restart of litd will change the channel memo prefix
+	// which should be unique per litd run. We restart Alice and open a new
+	// connection and test that a different memo prefix is used.
+	require.NoError(t, cleanup2())
+
+	err = ht.lndHarness.RestartNode(ht.lndHarness.Alice, nil, nil)
+	require.NoError(t, err)
+
+	lndConn2, metaDataInjector, cleanup2 = newAutopilotLndConn(
+		ctx, t, net, sessResp.Session,
+	)
+	t.Cleanup(func() { require.NoError(t, cleanup2()) })
+
+	caveatCreds = metaDataInjector.addCaveat(caveat)
+
+	memoBefore := lastMemo
+	openResp, err = lndConn2.OpenChannelSync(
+		ctx, &lnrpc.OpenChannelRequest{
+			NodePubkey:         charlie.PubKey[:],
+			LocalFundingAmount: 1_250_000,
+			FeeRate:            30,
+			MinHtlcMsat:        1000,
+		}, caveatCreds,
+	)
+	require.NoError(t, err)
+
+	assertChannelExistsAndClose(
+		openResp.GetFundingTxidBytes(), openResp.OutputIndex,
+	)
+
+	prefixBefore := strings.Split(memoBefore, "-")[1]
+	prefixAfter := strings.Split(lastMemo, "-")[1]
+	require.NotEqual(t, prefixBefore, prefixAfter)
 }
 
 // testRateLimitAndPrivacyMapper tests that an Autopilot session is forced to

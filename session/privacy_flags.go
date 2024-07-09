@@ -41,22 +41,32 @@ const (
 	// ClearHTLCs is a privacy flag that indicates that the HTLCs in the API
 	// should not be obfuscated.
 	ClearHTLCs PrivacyFlag = 5
+
+	// ClearClosingTxIds is a privacy flag that indicates that the channel
+	// closing transaction ids in the API should not be obfuscated.
+	ClearClosingTxIds PrivacyFlag = 6
+
+	// ClearNetworkAddresses is a privacy flag that indicates that the
+	// network addresses in the API should not be obfuscated.
+	ClearNetworkAddresses PrivacyFlag = 7
 )
 
 var flagMap = map[PrivacyFlag]string{
-	ClearPubkeys:       "ClearPubkeys",
-	ClearAmounts:       "ClearAmounts",
-	ClearChanIDs:       "ClearChanIDs",
-	ClearTimeStamps:    "ClearTimeStamps",
-	ClearChanInitiator: "ClearChanInitiator",
-	ClearHTLCs:         "ClearHTLCs",
+	ClearPubkeys:          "ClearPubkeys",
+	ClearAmounts:          "ClearAmounts",
+	ClearChanIDs:          "ClearChanIDs",
+	ClearTimeStamps:       "ClearTimeStamps",
+	ClearChanInitiator:    "ClearChanInitiator",
+	ClearHTLCs:            "ClearHTLCs",
+	ClearClosingTxIds:     "ClearClosingTxIds",
+	ClearNetworkAddresses: "ClearNetworkAddresses",
 }
 
 // String returns a string representation of the privacy flag.
 func (f PrivacyFlag) String() string {
 	flagStr, ok := flagMap[f]
 	if !ok {
-		return "Unknown"
+		return fmt.Sprintf("Unknown: %d", f)
 	}
 
 	return flagStr
@@ -66,7 +76,7 @@ func (f PrivacyFlag) String() string {
 func (f PrivacyFlag) Validate() error {
 	_, ok := flagMap[f]
 	if !ok {
-		return ErrUnknownPrivacyFlag
+		return fmt.Errorf("%w: %s", ErrUnknownPrivacyFlag, f)
 	}
 
 	return nil

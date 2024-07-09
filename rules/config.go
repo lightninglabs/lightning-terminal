@@ -32,6 +32,9 @@ type Config interface {
 	// used to link a request with a response.
 	GetReqID() int64
 
+	// GetLndConnID returns the unique identifier for the lnd connection.
+	GetLndConnID() string
+
 	// GetLndClient returns an lnd client.
 	GetLndClient() lndclient.LightningClient
 }
@@ -60,6 +63,9 @@ type ConfigImpl struct {
 	// ReqID is the request ID of the call being evaluated. This can be used
 	// to link a request with a response.
 	ReqID int64
+
+	// LndConnID is the unique identifier for the lnd connection.
+	LndConnID string
 
 	// LndClient is a connection to the Lit node's LND node.
 	LndClient lndclient.LightningClient
@@ -93,6 +99,12 @@ func (c *ConfigImpl) GetRouterClient() lndclient.RouterClient {
 // GetReqID returns the request ID of the request or response being evaluated.
 func (c *ConfigImpl) GetReqID() int64 {
 	return c.ReqID
+}
+
+// GetLndConnID returns the unique identifier for the lnd connection to create
+// unique request ids per lnd runtime.
+func (c *ConfigImpl) GetLndConnID() string {
+	return c.LndConnID
 }
 
 // GetLndClient returns an lnd client.

@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
 	"github.com/lightninglabs/lightning-terminal/session"
@@ -278,6 +279,45 @@ func (p *PrivacyMapper) checkers(db firewalldb.PrivacyMapDB,
 			handleUpdatePolicyResponse(db, flags),
 			mid.PassThroughErrorHandler,
 		),
+		"/lnrpc.Lightning/WalletBalance": mid.NewResponseRewriter(
+			&lnrpc.WalletBalanceRequest{},
+			&lnrpc.WalletBalanceResponse{},
+			handleWalletBalanceResponse(db, flags, p.randIntn),
+			mid.PassThroughErrorHandler,
+		),
+		"/lnrpc.Lightning/ClosedChannels": mid.NewResponseRewriter(
+			&lnrpc.ClosedChannelsRequest{},
+			&lnrpc.ClosedChannelsResponse{},
+			handleClosedChannelsResponse(db, flags, p.randIntn),
+			mid.PassThroughErrorHandler,
+		),
+		"/lnrpc.Lightning/PendingChannels": mid.NewResponseRewriter(
+			&lnrpc.PendingChannelsRequest{},
+			&lnrpc.PendingChannelsResponse{},
+			handlePendingChannelsResponse(db, flags, p.randIntn),
+			mid.PassThroughErrorHandler,
+		),
+
+		"/lnrpc.Lightning/BatchOpenChannel": mid.NewFullRewriter(
+			&lnrpc.BatchOpenChannelRequest{},
+			&lnrpc.BatchOpenChannelResponse{},
+			handleBatchOpenChannelRequest(db, flags),
+			handleBatchOpenChannelResponse(db, flags),
+			mid.PassThroughErrorHandler,
+		),
+		"/lnrpc.Lightning/OpenChannelSync": mid.NewFullRewriter(
+			&lnrpc.OpenChannelRequest{},
+			&lnrpc.ChannelPoint{},
+			handleChannelOpenRequest(db, flags),
+			handleChannelOpenResponse(db, flags),
+			mid.PassThroughErrorHandler,
+		),
+
+		"/lnrpc.Lightning/ConnectPeer": mid.NewRequestRewriter(
+			&lnrpc.ConnectPeerRequest{},
+			&lnrpc.ConnectPeerResponse{},
+			handleConnectPeerRequest(db, flags),
+		),
 	}
 }
 
@@ -535,21 +575,6 @@ func handleListChannelsResponse(db firewalldb.PrivacyMapDB,
 	return func(_ context.Context, r *lnrpc.ListChannelsResponse) (
 		proto.Message, error) {
 
-		hideAmount := func(a int64) (int64, error) {
-			if !flags.Contains(session.ClearAmounts) {
-				hiddenAmount, err := hideAmount(
-					randIntn, amountVariation, uint64(a),
-				)
-				if err != nil {
-					return 0, err
-				}
-
-				return int64(hiddenAmount), nil
-			}
-
-			return a, nil
-		}
-
 		hidePubkeys := !flags.Contains(session.ClearPubkeys)
 		hideChanIds := !flags.Contains(session.ClearChanIDs)
 
@@ -606,7 +631,9 @@ func handleListChannelsResponse(db firewalldb.PrivacyMapDB,
 				// state as a non-funder.
 
 				// We randomize local/remote balances.
-				localBalance, err := hideAmount(c.LocalBalance)
+				localBalance, err := maybeHideAmount(
+					flags, randIntn, c.LocalBalance,
+				)
 				if err != nil {
 					return err
 				}
@@ -625,15 +652,16 @@ func handleListChannelsResponse(db firewalldb.PrivacyMapDB,
 				}
 
 				// We hide the total sats sent and received.
-				satsReceived, err := hideAmount(
+				satsReceived, err := maybeHideAmount(
+					flags, randIntn,
 					c.TotalSatoshisReceived,
 				)
 				if err != nil {
 					return err
 				}
 
-				satsSent, err := hideAmount(
-					c.TotalSatoshisSent,
+				satsSent, err := maybeHideAmount(
+					flags, randIntn, c.TotalSatoshisSent,
 				)
 				if err != nil {
 					return err
@@ -651,7 +679,9 @@ func handleListChannelsResponse(db firewalldb.PrivacyMapDB,
 				}
 
 				// We hide the unsettled balance.
-				unsettled, err := hideAmount(c.UnsettledBalance)
+				unsettled, err := maybeHideAmount(
+					flags, randIntn, c.UnsettledBalance,
+				)
 				if err != nil {
 					return err
 				}
@@ -810,6 +840,857 @@ func handleUpdatePolicyResponse(db firewalldb.PrivacyMapDB,
 			FailedUpdates: failedUpdates,
 		}, nil
 	}
+}
+
+func handleWalletBalanceResponse(_ firewalldb.PrivacyMapDB,
+	flags session.PrivacyFlags,
+	randIntn func(int) (int, error)) func(ctx context.Context,
+	r *lnrpc.WalletBalanceResponse) (proto.Message, error) {
+
+	return func(_ context.Context, r *lnrpc.WalletBalanceResponse) (
+		proto.Message, error) {
+
+		totalBalance, err := maybeHideAmount(
+			flags, randIntn, r.TotalBalance,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		confirmedBalance, err := maybeHideAmount(
+			flags, randIntn, r.ConfirmedBalance,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		unconfirmedBalance, err := maybeHideAmount(
+			flags, randIntn, r.UnconfirmedBalance,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		lockedBalance, err := maybeHideAmount(
+			flags, randIntn, r.LockedBalance,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		reservedBalanceAnchorChan, err := maybeHideAmount(
+			flags, randIntn, r.ReservedBalanceAnchorChan,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		accountBalance := make(
+			map[string]*lnrpc.WalletAccountBalance,
+			len(r.AccountBalance),
+		)
+		for k, v := range r.AccountBalance {
+			confirmed, err := maybeHideAmount(
+				flags, randIntn, v.ConfirmedBalance,
+			)
+			if err != nil {
+				return nil, err
+			}
+
+			unconfirmed, err := maybeHideAmount(
+				flags, randIntn, v.UnconfirmedBalance,
+			)
+			if err != nil {
+				return nil, err
+			}
+
+			accountBalance[k] = &lnrpc.WalletAccountBalance{
+				ConfirmedBalance:   confirmed,
+				UnconfirmedBalance: unconfirmed,
+			}
+		}
+
+		return &lnrpc.WalletBalanceResponse{
+			TotalBalance:              totalBalance,
+			ConfirmedBalance:          confirmedBalance,
+			UnconfirmedBalance:        unconfirmedBalance,
+			LockedBalance:             lockedBalance,
+			ReservedBalanceAnchorChan: reservedBalanceAnchorChan,
+			AccountBalance:            accountBalance,
+		}, nil
+	}
+}
+
+func handleClosedChannelsResponse(db firewalldb.PrivacyMapDB,
+	flags session.PrivacyFlags,
+	randIntn func(int) (int, error)) func(ctx context.Context,
+	r *lnrpc.ClosedChannelsResponse) (proto.Message, error) {
+
+	return func(_ context.Context, r *lnrpc.ClosedChannelsResponse) (
+		proto.Message, error) {
+
+		closedChannels := make(
+			[]*lnrpc.ChannelCloseSummary,
+			len(r.Channels),
+		)
+
+		err := db.Update(func(tx firewalldb.PrivacyMapTx) error {
+			for i, c := range r.Channels {
+				var err error
+
+				remotePub := c.RemotePubkey
+				if !flags.Contains(session.ClearPubkeys) {
+					remotePub, err = firewalldb.HideString(
+						tx, remotePub,
+					)
+					if err != nil {
+						return err
+					}
+				}
+
+				capacity, err := maybeHideAmount(
+					flags, randIntn, c.Capacity,
+				)
+				if err != nil {
+					return err
+				}
+
+				settledBalance, err := maybeHideAmount(
+					flags, randIntn, c.SettledBalance,
+				)
+				if err != nil {
+					return err
+				}
+
+				if settledBalance > capacity {
+					settledBalance = capacity
+				}
+
+				channelPoint := c.ChannelPoint
+				if !flags.Contains(session.ClearChanIDs) {
+					channelPoint, err = firewalldb.HideChanPointStr(
+						tx, c.ChannelPoint,
+					)
+					if err != nil {
+						return err
+					}
+				}
+
+				chanID := c.ChanId
+				if !flags.Contains(session.ClearChanIDs) {
+					chanID, err = firewalldb.HideUint64(
+						tx, c.ChanId,
+					)
+					if err != nil {
+						return err
+					}
+				}
+
+				closingTxid := c.ClosingTxHash
+				if !flags.Contains(session.ClearClosingTxIds) {
+					closingTxid, err = firewalldb.HideString(
+						tx, c.ClosingTxHash,
+					)
+					if err != nil {
+						return err
+					}
+				}
+
+				channel := lnrpc.ChannelCloseSummary{
+					// Obfuscated fields.
+					RemotePubkey:   remotePub,
+					Capacity:       capacity,
+					SettledBalance: settledBalance,
+					ChannelPoint:   channelPoint,
+					ChanId:         chanID,
+					ClosingTxHash:  closingTxid,
+
+					// Non-obfuscated fields.
+					ChainHash:      c.ChainHash,
+					CloseInitiator: c.CloseInitiator,
+					CloseType:      c.CloseType,
+					OpenInitiator:  c.OpenInitiator,
+
+					// Omitted fields.
+					// CloseHeight
+					// TimeLockedBalance
+					// Resolutions
+					// AliasScids
+					// ZeroConfConfirmedScid
+				}
+
+				closedChannels[i] = &channel
+			}
+
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		return &lnrpc.ClosedChannelsResponse{
+			Channels: closedChannels,
+		}, nil
+	}
+}
+
+// obfuscatePendingChannel is a helper to obfuscate the fields of a pending
+// channel.
+func obfuscatePendingChannel(c *lnrpc.PendingChannelsResponse_PendingChannel,
+	tx firewalldb.PrivacyMapTx, randIntn func(int) (int, error),
+	flags session.PrivacyFlags) (
+	*lnrpc.PendingChannelsResponse_PendingChannel, error) {
+
+	var err error
+
+	remotePub := c.RemoteNodePub
+	if !flags.Contains(session.ClearPubkeys) {
+		remotePub, err = firewalldb.HideString(
+			tx, remotePub,
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	capacity, err := maybeHideAmount(
+		flags, randIntn, c.Capacity,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// We randomize local/remote balances.
+	localBalance, err := maybeHideAmount(
+		flags, randIntn, c.LocalBalance,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// We may have a too large value for the local
+	// balance, restrict it to the capacity.
+	if localBalance > capacity {
+		localBalance = capacity
+	}
+
+	// The remote balance is set constently to the local balance.
+	remoteBalance := c.RemoteBalance
+	if !flags.Contains(session.ClearAmounts) {
+		remoteBalance = capacity - localBalance
+	}
+
+	chanPoint := c.ChannelPoint
+	if !flags.Contains(session.ClearChanIDs) {
+		chanPoint, err = firewalldb.HideChanPointStr(
+			tx, c.ChannelPoint,
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &lnrpc.PendingChannelsResponse_PendingChannel{
+		// Obfuscated fields.
+		ChannelPoint:  chanPoint,
+		RemoteNodePub: remotePub,
+		Capacity:      capacity,
+		LocalBalance:  localBalance,
+		RemoteBalance: remoteBalance,
+
+		// Non-obfuscated fields.
+		ChanStatusFlags:       c.ChanStatusFlags,
+		Private:               c.Private,
+		CommitmentType:        c.CommitmentType,
+		Initiator:             c.Initiator,
+		NumForwardingPackages: c.NumForwardingPackages,
+		Memo:                  c.Memo,
+
+		// Omitted fields.
+		// LocalChanReserveSat
+		// RemoteChanReserveSat
+	}, nil
+}
+
+func handlePendingChannelsResponse(db firewalldb.PrivacyMapDB,
+	flags session.PrivacyFlags,
+	randIntn func(int) (int, error)) func(ctx context.Context,
+	r *lnrpc.PendingChannelsResponse) (proto.Message, error) {
+
+	return func(_ context.Context, r *lnrpc.PendingChannelsResponse) (
+		proto.Message, error) {
+
+		pendingOpens := make(
+			[]*lnrpc.PendingChannelsResponse_PendingOpenChannel,
+			len(r.PendingOpenChannels),
+		)
+
+		pendingCloses := make(
+			[]*lnrpc.PendingChannelsResponse_ClosedChannel,
+			len(r.PendingClosingChannels),
+		)
+
+		pendingForceCloses := make(
+			[]*lnrpc.PendingChannelsResponse_ForceClosedChannel,
+			len(r.PendingForceClosingChannels),
+		)
+
+		waitingCloses := make(
+			[]*lnrpc.PendingChannelsResponse_WaitingCloseChannel,
+			len(r.WaitingCloseChannels),
+		)
+
+		err := db.Update(func(tx firewalldb.PrivacyMapTx) error {
+			for i, c := range r.PendingOpenChannels {
+				var err error
+
+				pendingChannel, err := obfuscatePendingChannel(
+					c.Channel, tx, randIntn, flags,
+				)
+				if err != nil {
+					return err
+				}
+
+				pendingOpen := lnrpc.PendingChannelsResponse_PendingOpenChannel{
+					// Non-obfuscated fields.
+					CommitFee:           c.CommitFee,
+					CommitWeight:        c.CommitWeight,
+					FeePerKw:            c.FeePerKw,
+					FundingExpiryBlocks: c.FundingExpiryBlocks,
+
+					// Obfuscated fields.
+					Channel: pendingChannel,
+				}
+
+				pendingOpens[i] = &pendingOpen
+			}
+
+			for i, c := range r.PendingClosingChannels {
+				var err error
+
+				pendingChannel, err := obfuscatePendingChannel(
+					c.Channel, tx, randIntn, flags,
+				)
+				if err != nil {
+					return err
+				}
+
+				closingTxid := c.ClosingTxid
+				if !flags.Contains(session.ClearClosingTxIds) {
+					closingTxid, err = firewalldb.HideString(
+						tx, c.ClosingTxid,
+					)
+					if err != nil {
+						return err
+					}
+				}
+
+				pendingClose := lnrpc.PendingChannelsResponse_ClosedChannel{
+					// Obfuscated fields.
+					ClosingTxid: closingTxid,
+					Channel:     pendingChannel,
+				}
+
+				pendingCloses[i] = &pendingClose
+			}
+
+			for i, c := range r.PendingForceClosingChannels {
+				var err error
+
+				pendingChannel, err := obfuscatePendingChannel(
+					c.Channel, tx, randIntn, flags,
+				)
+				if err != nil {
+					return err
+				}
+
+				closingTxid := c.ClosingTxid
+				if !flags.Contains(session.ClearClosingTxIds) {
+					closingTxid, err = firewalldb.HideString(
+						tx, c.ClosingTxid,
+					)
+					if err != nil {
+						return err
+					}
+				}
+
+				limboBalance, err := maybeHideAmount(
+					flags, randIntn, c.LimboBalance,
+				)
+				if err != nil {
+					return err
+				}
+
+				if limboBalance > pendingChannel.Capacity {
+					limboBalance = pendingChannel.Capacity
+				}
+
+				recoveredBalance, err := maybeHideAmount(
+					flags, randIntn, c.RecoveredBalance,
+				)
+				if err != nil {
+					return err
+				}
+
+				if recoveredBalance > pendingChannel.Capacity {
+					limboBalance = pendingChannel.Capacity
+				}
+
+				pendingForceClose := lnrpc.PendingChannelsResponse_ForceClosedChannel{
+					// Obfuscated fields.
+					ClosingTxid:      closingTxid,
+					LimboBalance:     limboBalance,
+					RecoveredBalance: recoveredBalance,
+					Channel:          pendingChannel,
+
+					// Non-obfuscated fields.
+					MaturityHeight:    c.MaturityHeight,
+					BlocksTilMaturity: c.BlocksTilMaturity,
+					Anchor:            c.Anchor,
+
+					// Omitted fields.
+					PendingHtlcs: []*lnrpc.PendingHTLC{},
+				}
+
+				pendingForceCloses[i] = &pendingForceClose
+			}
+
+			for i, c := range r.WaitingCloseChannels {
+				var err error
+
+				pendingChannel, err := obfuscatePendingChannel(
+					c.Channel, tx, randIntn, flags,
+				)
+				if err != nil {
+					return err
+				}
+
+				limboBalance, err := maybeHideAmount(
+					flags, randIntn, c.LimboBalance,
+				)
+				if err != nil {
+					return err
+				}
+
+				if limboBalance > pendingChannel.Capacity {
+					limboBalance = pendingChannel.Capacity
+				}
+
+				closingTxid := c.ClosingTxid
+				if !flags.Contains(session.ClearClosingTxIds) {
+					closingTxid, err = firewalldb.HideString(
+						tx, closingTxid,
+					)
+					if err != nil {
+						return err
+					}
+				}
+
+				// The closing tx hash is constrained by the
+				// request, see docstring, which is why we only
+				// obfuscate if a value is set.
+				closingTxHex := c.ClosingTxHex
+				if c.ClosingTxHex != "" &&
+					!flags.Contains(
+						session.ClearClosingTxIds,
+					) {
+
+					closingTxHex, err = firewalldb.HideString(
+						tx, closingTxHex,
+					)
+					if err != nil {
+						return err
+					}
+				}
+
+				waitingCloseChannel := lnrpc.PendingChannelsResponse_WaitingCloseChannel{
+					Channel:      pendingChannel,
+					LimboBalance: limboBalance,
+					ClosingTxid:  closingTxid,
+					ClosingTxHex: closingTxHex,
+
+					// Omitted.
+					Commitments: &lnrpc.PendingChannelsResponse_Commitments{},
+				}
+
+				waitingCloses[i] = &waitingCloseChannel
+			}
+
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		totalLimbo, err := maybeHideAmount(
+			flags, randIntn, r.TotalLimboBalance,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		return &lnrpc.PendingChannelsResponse{
+			TotalLimboBalance:           totalLimbo,
+			PendingOpenChannels:         pendingOpens,
+			PendingClosingChannels:      pendingCloses,
+			PendingForceClosingChannels: pendingForceCloses,
+			WaitingCloseChannels:        waitingCloses,
+		}, nil
+	}
+}
+
+func handleBatchOpenChannelRequest(db firewalldb.PrivacyMapDB,
+	flags session.PrivacyFlags) func(ctx context.Context,
+	r *lnrpc.BatchOpenChannelRequest) (proto.Message, error) {
+
+	return func(_ context.Context, r *lnrpc.BatchOpenChannelRequest) (
+		proto.Message, error) {
+
+		var reqs = make([]*lnrpc.BatchOpenChannel, len(r.Channels))
+
+		err := db.View(func(tx firewalldb.PrivacyMapTx) error {
+			for i, c := range r.Channels {
+				var err error
+
+				// Note, this only works if the obfuscated
+				// pubkey was already created via other
+				// calls, e.g. via ListChannels or
+				// GetInfo or the like.
+				nodePubkey := c.NodePubkey
+				if !flags.Contains(session.ClearPubkeys) {
+					nodePubkey, err = firewalldb.RevealBytes(
+						tx, c.NodePubkey,
+					)
+					if err != nil {
+						return err
+					}
+				}
+
+				reqs[i] = &lnrpc.BatchOpenChannel{
+					// Obfuscated fields.
+					NodePubkey: nodePubkey,
+
+					// Non-obfuscated fields.
+					LocalFundingAmount:         c.LocalFundingAmount,
+					PushSat:                    c.PushSat,
+					Private:                    c.Private,
+					MinHtlcMsat:                c.MinHtlcMsat,
+					RemoteCsvDelay:             c.RemoteCsvDelay,
+					CloseAddress:               c.CloseAddress,
+					PendingChanId:              c.PendingChanId,
+					CommitmentType:             c.CommitmentType,
+					RemoteMaxValueInFlightMsat: c.RemoteMaxValueInFlightMsat,
+					RemoteMaxHtlcs:             c.RemoteMaxHtlcs,
+					MaxLocalCsv:                c.MaxLocalCsv,
+					ZeroConf:                   c.ZeroConf,
+					ScidAlias:                  c.ScidAlias,
+					BaseFee:                    c.BaseFee,
+					FeeRate:                    c.FeeRate,
+					UseBaseFee:                 c.UseBaseFee,
+					UseFeeRate:                 c.UseFeeRate,
+					RemoteChanReserveSat:       c.RemoteChanReserveSat,
+					Memo:                       c.Memo,
+				}
+			}
+
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		return &lnrpc.BatchOpenChannelRequest{
+			Channels:         reqs,
+			TargetConf:       r.TargetConf,
+			SatPerVbyte:      r.SatPerVbyte,
+			MinConfs:         r.MinConfs,
+			SpendUnconfirmed: r.SpendUnconfirmed,
+			Label:            r.Label,
+		}, nil
+	}
+}
+
+func handleBatchOpenChannelResponse(db firewalldb.PrivacyMapDB,
+	flags session.PrivacyFlags) func(ctx context.Context,
+	r *lnrpc.BatchOpenChannelResponse) (proto.Message, error) {
+
+	return func(_ context.Context, r *lnrpc.BatchOpenChannelResponse) (
+		proto.Message, error) {
+
+		resps := make([]*lnrpc.PendingUpdate, len(r.PendingChannels))
+
+		err := db.Update(func(tx firewalldb.PrivacyMapTx) error {
+			for i, p := range r.PendingChannels {
+				var (
+					txIdBytes   = p.Txid
+					outputIndex = p.OutputIndex
+				)
+
+				if !flags.Contains(session.ClearChanIDs) {
+					txId, err := chainhash.NewHash(p.Txid)
+					if err != nil {
+						return err
+					}
+
+					txID, outIdx, err := firewalldb.HideChanPoint(
+						tx, txId.String(), p.OutputIndex,
+					)
+					if err != nil {
+						return err
+					}
+					outputIndex = outIdx
+
+					txHash, err := chainhash.NewHashFromStr(
+						txID,
+					)
+					if err != nil {
+						return err
+					}
+					txIdBytes = txHash[:]
+				}
+
+				resps[i] = &lnrpc.PendingUpdate{
+					Txid:        txIdBytes,
+					OutputIndex: outputIndex,
+				}
+			}
+
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		return &lnrpc.BatchOpenChannelResponse{
+			PendingChannels: resps,
+		}, nil
+	}
+}
+
+func handleChannelOpenRequest(db firewalldb.PrivacyMapDB,
+	flags session.PrivacyFlags) func(ctx context.Context,
+	r *lnrpc.OpenChannelRequest) (proto.Message, error) {
+
+	return func(_ context.Context, r *lnrpc.OpenChannelRequest) (
+		proto.Message, error) {
+
+		var nodePubkey []byte
+
+		err := db.View(func(tx firewalldb.PrivacyMapTx) error {
+			var err error
+
+			// We use the byte slice representation of the
+			// pubkey and fall back to the hex string if present.
+			nodePubkey = r.NodePubkey
+			if len(nodePubkey) == 0 && r.NodePubkeyString != "" {
+				nodePubkey, err = hex.DecodeString(
+					r.NodePubkeyString,
+				)
+				if err != nil {
+					return err
+				}
+			}
+
+			if !flags.Contains(session.ClearPubkeys) {
+				nodePubkey, err = firewalldb.RevealBytes(
+					tx, nodePubkey,
+				)
+				if err != nil {
+					return err
+				}
+			}
+
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		return &lnrpc.OpenChannelRequest{
+			// Obfuscated fields.
+			NodePubkey: nodePubkey,
+
+			// Omitted fields.
+			// NodePubkeyString
+
+			// Non-obfuscated fields.
+			SatPerVbyte:                r.SatPerVbyte,
+			LocalFundingAmount:         r.LocalFundingAmount,
+			PushSat:                    r.PushSat,
+			TargetConf:                 r.TargetConf,
+			SatPerByte:                 r.SatPerByte,
+			Private:                    r.Private,
+			MinHtlcMsat:                r.MinHtlcMsat,
+			RemoteCsvDelay:             r.RemoteCsvDelay,
+			MinConfs:                   r.MinConfs,
+			SpendUnconfirmed:           r.SpendUnconfirmed,
+			CloseAddress:               r.CloseAddress,
+			FundingShim:                r.FundingShim,
+			RemoteMaxValueInFlightMsat: r.RemoteMaxValueInFlightMsat,
+			RemoteMaxHtlcs:             r.RemoteMaxHtlcs,
+			MaxLocalCsv:                r.MaxLocalCsv,
+			CommitmentType:             r.CommitmentType,
+			ZeroConf:                   r.ZeroConf,
+			ScidAlias:                  r.ScidAlias,
+			BaseFee:                    r.BaseFee,
+			FeeRate:                    r.FeeRate,
+			UseBaseFee:                 r.UseBaseFee,
+			UseFeeRate:                 r.UseFeeRate,
+			RemoteChanReserveSat:       r.RemoteChanReserveSat,
+			FundMax:                    r.FundMax,
+			Memo:                       r.Memo,
+			Outpoints:                  r.Outpoints,
+		}, nil
+	}
+}
+
+func handleChannelOpenResponse(db firewalldb.PrivacyMapDB,
+	flags session.PrivacyFlags) func(ctx context.Context,
+	r *lnrpc.ChannelPoint) (proto.Message, error) {
+
+	return func(_ context.Context, r *lnrpc.ChannelPoint) (
+		proto.Message, error) {
+
+		var (
+			txid  string
+			index uint32
+		)
+
+		err := db.Update(func(tx firewalldb.PrivacyMapTx) error {
+			var err error
+
+			txid = r.GetFundingTxidStr()
+			if len(r.GetFundingTxidBytes()) != 0 {
+				hash, err := chainhash.NewHash(
+					r.GetFundingTxidBytes(),
+				)
+				if err != nil {
+					return err
+				}
+
+				txid = hash.String()
+			}
+
+			index = r.OutputIndex
+
+			if !flags.Contains(session.ClearChanIDs) {
+				txid, index, err = firewalldb.HideChanPoint(
+					tx, txid, index,
+				)
+				if err != nil {
+					return err
+				}
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			return nil, err
+		}
+
+		switch {
+		case len(r.GetFundingTxidBytes()) != 0:
+			hash, err := chainhash.NewHashFromStr(txid)
+			if err != nil {
+				return nil, err
+			}
+
+			return &lnrpc.ChannelPoint{
+				FundingTxid: &lnrpc.ChannelPoint_FundingTxidBytes{
+					FundingTxidBytes: hash[:],
+				},
+				OutputIndex: index,
+			}, nil
+
+		case r.GetFundingTxidStr() != "":
+			return &lnrpc.ChannelPoint{
+				FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
+					FundingTxidStr: txid,
+				},
+				OutputIndex: index,
+			}, nil
+
+		default:
+			return nil, fmt.Errorf("channel point has no funding " +
+				"txid")
+		}
+	}
+}
+
+func handleConnectPeerRequest(db firewalldb.PrivacyMapDB,
+	flags session.PrivacyFlags) func(ctx context.Context,
+	r *lnrpc.ConnectPeerRequest) (proto.Message, error) {
+
+	return func(_ context.Context, r *lnrpc.ConnectPeerRequest) (
+		proto.Message, error) {
+
+		var addr *lnrpc.LightningAddress
+
+		err := db.View(func(tx firewalldb.PrivacyMapTx) error {
+			var err error
+
+			// Note, this only works if the pubkey alias was
+			// already created via other calls, e.g. via
+			// ListChannels or GetNodeInfo.
+			pubkey := r.Addr.Pubkey
+			if !flags.Contains(session.ClearPubkeys) {
+				pubkey, err = firewalldb.RevealString(
+					tx, r.Addr.Pubkey,
+				)
+				if err != nil {
+					return err
+				}
+			}
+
+			host := r.Addr.Host
+			if !flags.Contains(session.ClearNetworkAddresses) {
+				host, err = firewalldb.RevealString(
+					tx, r.Addr.Host,
+				)
+				if err != nil {
+					return err
+				}
+			}
+
+			addr = &lnrpc.LightningAddress{
+				Pubkey: pubkey,
+				Host:   host,
+			}
+
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		return &lnrpc.ConnectPeerRequest{
+			// Obfuscated fields.
+			Addr: addr,
+
+			// Non-obfuscated fields.
+			Perm:    r.Perm,
+			Timeout: r.Timeout,
+		}, nil
+	}
+}
+
+// maybeHideAmount hides an amount if the privacy flag is not set.
+func maybeHideAmount(flags session.PrivacyFlags, randIntn func(int) (int,
+	error), a int64) (int64, error) {
+
+	if !flags.Contains(session.ClearAmounts) {
+		hiddenAmount, err := hideAmount(
+			randIntn, amountVariation, uint64(a),
+		)
+		if err != nil {
+			return 0, err
+		}
+
+		return int64(hiddenAmount), nil
+	}
+
+	return a, nil
 }
 
 // hideAmount symmetrically randomizes an amount around a given relative
