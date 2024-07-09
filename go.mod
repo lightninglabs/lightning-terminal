@@ -20,7 +20,7 @@ require (
 	github.com/lightninglabs/pool v0.6.5-beta.0.20240531084722-4000ec802aaa
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.2
 	github.com/lightninglabs/taproot-assets v0.3.4-0.20240531080458-69ff7704168c
-	github.com/lightningnetwork/lnd v0.18.1-beta
+	github.com/lightningnetwork/lnd v0.18.2-beta
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/kvdb v1.4.8
 	github.com/lightningnetwork/lnd/tlv v1.2.6
@@ -31,7 +31,7 @@ require (
 	github.com/urfave/cli v1.22.9
 	go.etcd.io/bbolt v1.3.7
 	golang.org/x/crypto v0.22.0
-	golang.org/x/net v0.23.0
+	golang.org/x/net v0.24.0
 	golang.org/x/sync v0.6.0
 	google.golang.org/grpc v1.59.0
 	google.golang.org/protobuf v1.33.0
@@ -51,7 +51,7 @@ require (
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/btcsuite/btcd/btcutil/psbt v1.1.8 // indirect
-	github.com/btcsuite/btcwallet v0.16.10-0.20240625163855-b42ed59f0528 // indirect
+	github.com/btcsuite/btcwallet v0.16.10-0.20240706055350-e391a1c31df2 // indirect
 	github.com/btcsuite/btcwallet/wallet/txauthor v1.3.4 // indirect
 	github.com/btcsuite/btcwallet/wallet/txrules v1.2.1 // indirect
 	github.com/btcsuite/btcwallet/wallet/txsizes v1.2.4 // indirect
