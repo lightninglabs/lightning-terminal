@@ -4,9 +4,11 @@ import (
 	"context"
 	"strings"
 
+	"github.com/btcsuite/btcd/chaincfg"
 	restProxy "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lightninglabs/lndclient"
 	tap "github.com/lightninglabs/taproot-assets"
+	"github.com/lightninglabs/taproot-assets/address"
 	"github.com/lightninglabs/taproot-assets/perms"
 	"github.com/lightninglabs/taproot-assets/tapcfg"
 	"github.com/lightninglabs/taproot-assets/taprpc"
@@ -39,15 +41,23 @@ var _ SubServer = (*taprootAssetsSubServer)(nil)
 
 // NewTaprootAssetsSubServer returns a new tap implementation of the SubServer
 // interface.
-func NewTaprootAssetsSubServer(cfg *tapcfg.Config,
+func NewTaprootAssetsSubServer(network string, cfg *tapcfg.Config,
 	remoteCfg *RemoteDaemonConfig, remote, lndRemote bool) SubServer {
 
 	// Overwrite the tap daemon's user agent name, so it sends "litd"
 	// instead of "tapd".
 	tap.SetAgentName("litd")
 
+	// A quirk of the address package is that it requires the exact testnet
+	// name, not the generic one...
+	if network == "testnet" {
+		network = chaincfg.TestNet3Params.Name
+	}
+
+	chainCfg := address.ParamsForChain(network)
+
 	return &taprootAssetsSubServer{
-		Server:    tap.NewServer(nil),
+		Server:    tap.NewServer(&chainCfg, nil),
 		cfg:       cfg,
 		remoteCfg: remoteCfg,
 		remote:    remote,

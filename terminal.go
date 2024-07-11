@@ -1741,7 +1741,8 @@ func (g *LightningTerminal) initSubServers() {
 
 	g.subServerMgr.AddServer(
 		subservers.NewTaprootAssetsSubServer(
-			g.cfg.TaprootAssets, g.cfg.Remote.TaprootAssets,
+			g.cfg.Network, g.cfg.TaprootAssets,
+			g.cfg.Remote.TaprootAssets,
 			g.cfg.tapRemote, g.cfg.lndRemote,
 		), g.cfg.TaprootAssetsMode != ModeDisable,
 	)

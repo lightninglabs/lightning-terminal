@@ -65,7 +65,7 @@ var (
 		"--taproot-assets.experimental.rfq.priceoracleaddress=" +
 			"use_mock_price_oracle_service_promise_to_" +
 			"not_use_on_mainnet",
-		"--taproot-assets.experimental.rfq.mockoraclecentpersat=" +
+		"--taproot-assets.experimental.rfq.mockoracleassetsperbtc=" +
 			"5820600",
 		"--taproot-assets.universerpccourier.skipinitdelay",
 		"--taproot-assets.universerpccourier.backoffresetwait=100ms",
