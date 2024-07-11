@@ -276,6 +276,19 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	daveAssetBalance += daveInvoiceAssetAmount
 
 	// ------------
+	// Test case 3.5: Pay an asset invoice from Dave by Charlie with normal
+	// payment flow.
+	// ------------
+	invoiceResp = createAssetInvoice(
+		t.t, charlie, dave, daveInvoiceAssetAmount, assetID,
+	)
+	payInvoiceWithSatoshi(t.t, charlie, invoiceResp)
+	logBalance(t.t, nodes, assetID, "after asset invoice paid with sats")
+
+	// We don't need to update the asset balances of Charlie and Dave here
+	// as the invoice was paid with sats.
+
+	// ------------
 	// Test case 4: Pay a normal invoice from Erin by Charlie.
 	// ------------
 	paidAssetAmount = createAndPayNormalInvoice(
