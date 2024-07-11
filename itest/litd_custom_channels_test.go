@@ -218,7 +218,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	// ------------
 	// Test case 1: Send a direct keysend payment from Charlie to Dave.
 	// ------------
-	const keySendAmount = 100
+	const keySendAmount = 1000
 	sendAssetKeySendPayment(
 		t.t, charlie, dave, keySendAmount, assetID, fn.None[int64](),
 	)
@@ -227,13 +227,13 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	charlieAssetBalance -= keySendAmount
 	daveAssetBalance += keySendAmount
 
-	// We should be able to send the 100 assets back immediately, because
+	// We should be able to send the 1000 assets back immediately, because
 	// there is enough on-chain balance on Dave's side to be able to create
-	// an HTLC.
-	sendAssetKeySendPayment(
-		t.t, dave, charlie, keySendAmount, assetID, fn.None[int64](),
+	// an HTLC. We use an invoice to execute another code path.
+	invoiceResp := createAssetInvoice(
+		t.t, dave, charlie, keySendAmount, assetID,
 	)
-	logBalance(t.t, nodes, assetID, "after keysend back")
+	payInvoiceWithAssets(t.t, dave, charlie, invoiceResp, assetID)
 
 	charlieAssetBalance += keySendAmount
 	daveAssetBalance -= keySendAmount
@@ -266,7 +266,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	// invoice.
 	// ------------
 	const daveInvoiceAssetAmount = 2_000
-	invoiceResp := createAssetInvoice(
+	invoiceResp = createAssetInvoice(
 		t.t, charlie, dave, daveInvoiceAssetAmount, assetID,
 	)
 	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp, assetID)
