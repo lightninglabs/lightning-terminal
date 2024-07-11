@@ -154,6 +154,7 @@ func createTestAssetNetwork(t *harnessTest, net *NetworkHarness, charlieTap,
 			AssetId:            assetID,
 			PeerPubkey:         fabiaTap.node.PubKey[:],
 			FeeRateSatPerVbyte: 5,
+			PushSat:            1065,
 		},
 	)
 	require.NoError(t.t, err)
