@@ -32,7 +32,7 @@ Visit https://localhost:8443 to access Terminal.
 
 Note that a password with a minimum of 8 characters is required to run Lightning Terminal. In a production environment, it's recommended that you store this password as an environment variable to avoid it being recorded in the command history.
 
-To use LiT with a remote `lnd` instance please [follow these instructions](./doc/config-lnd-remote.md). If you would like to replace your existing LND instance with the one integrated within LiT please see [configuring Terminal](./doc/config-lnd-integrated.md).
+To use LiT with a remote `lnd` instance please [follow these instructions](./docs/config-lnd-remote.md). If you would like to replace your existing LND instance with the one integrated within LiT please see [configuring Terminal](./doc/config-lnd-integrated.md).
 
 ## LND
 Note that LiT requires `lnd` to be built with **all of its subservers** and requires running at least v0.11.0. Download the latest [official release binary](https://github.com/lightningnetwork/lnd/releases/latest) or build `lnd` from source by following the [installation instructions](https://github.com/lightningnetwork/lnd/blob/master/docs/INSTALL.md). If you choose to build `lnd` from source, use the following command to enable all the relevant subservers:
@@ -43,7 +43,7 @@ Note that LiT requires `lnd` to be built with **all of its subservers** and requ
 
 ## Interaction
 If you plan to run LiT on a remote machine but access the web-interface from your computer you may not want to deal with self-signed certificate browser warnings. To avoid these warnings configure the HTTP server to use a certificate from [Let's Encrypt](https://letsencrypt.org/). View the
-[Let's Encrypt Configuration](./doc/letsencrypt.md) doc for instructions on how to configure this.
+[Let's Encrypt Configuration](./docs/letsencrypt.md) doc for instructions on how to configure this.
 
 ## Upgrading
 If you used command line arguments with previous versions then you don't need to change anything when upgrading. 
@@ -56,13 +56,13 @@ To upgrade from v0.1.1-alpha or earlier simply create a `lit.conf` file in your 
 Move all the configuration settings specific to LiT from `lnd.conf` to `lit.conf` and remove any previous LiT-specific customizations from the configuration settings in `lnd.conf`. Note that any section headers (`[ Example ]`) in `lit.conf` should be removed or changed to comments (`# Example`). 
 
 ## Usage
-Read the [walkthrough](doc/WALKTHROUGH.md) document to learn more about how to use LiT.
+Read the [walkthrough](docs/WALKTHROUGH.md) document to learn more about how to use LiT.
 
 ## Troubleshooting
-If you encounter any issues please see our [troubleshooting guide](./doc/troubleshooting.md).
+If you encounter any issues please see our [troubleshooting guide](./docs/troubleshooting.md).
 
 ## Build from source
-If you’d prefer to compile from source code please follow [these instructions](./doc/compile.md).
+If you’d prefer to compile from source code please follow [these instructions](./docs/compile.md).
 
 ## Compatibility
 
@@ -126,9 +126,9 @@ in remote mode (meaning that `lnd-mode=remote` is set). It shows the
 
 LiT offers two main operating modes, one in which [`lnd` is running inside the
 LiT process (called "lnd integrated mode", set by `lnd-mode=integrated` config
-option)](doc/config-lnd-integrated.md) and one in which [`lnd` is running in
+option)](docs/config-lnd-integrated.md) and one in which [`lnd` is running in
 a standalone process on the same or remote machine (called "lnd remote mode",
-set by `lnd-mode=remote` config option)](doc/config-lnd-remote.md).
+set by `lnd-mode=remote` config option)](docs/config-lnd-remote.md).
 
 In addition to those main modes, the individual bundled daemons (Faraday, Loop
 and Pool) can be toggled to be integrated or remote as well, or as disabled.
