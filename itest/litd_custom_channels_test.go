@@ -203,7 +203,7 @@ func testCustomChannelsLarge(_ context.Context, net *NetworkHarness,
 	// Print initial channel balances.
 	logBalance(t.t, nodes, assetID, "initial")
 
-	// Try larger invoice payments, first from Charlie to Erin, then half
+	// Try larger invoice payments, first from Charlie to Fabia, then half
 	// of the amount back in the other direction.
 	const fabiaInvoiceAssetAmount = 20_000
 	invoiceResp := createAssetInvoice(
@@ -215,6 +215,12 @@ func testCustomChannelsLarge(_ context.Context, net *NetworkHarness,
 	invoiceResp2 := createAssetInvoice(
 		t.t, dave, charlie, fabiaInvoiceAssetAmount/2, assetID,
 	)
+
+	// Sleep for a second to make sure the balances fully propagated before
+	// we make the payment. Otherwise, we'll make an RFQ order with a max
+	// amount of zero.
+	time.Sleep(time.Second * 1)
+
 	payInvoiceWithAssets(t.t, fabia, erin, invoiceResp2, assetID, false)
 	logBalance(t.t, nodes, assetID, "after invoice 2")
 
