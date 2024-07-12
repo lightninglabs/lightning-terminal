@@ -154,6 +154,7 @@ func createTestAssetNetwork(t *harnessTest, net *NetworkHarness, charlieTap,
 			AssetId:            assetID,
 			PeerPubkey:         fabiaTap.node.PubKey[:],
 			FeeRateSatPerVbyte: 5,
+			PushSat:            1065,
 		},
 	)
 	require.NoError(t.t, err)
@@ -662,7 +663,7 @@ func createAndPayNormalInvoiceWithBtc(t *testing.T, src, dst *HarnessNode,
 }
 
 func createAndPayNormalInvoice(t *testing.T, src, rfqPeer, dst *HarnessNode,
-	amountSat btcutil.Amount, assetID []byte) uint64 {
+	amountSat btcutil.Amount, assetID []byte, smallShards bool) uint64 {
 
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
@@ -676,7 +677,9 @@ func createAndPayNormalInvoice(t *testing.T, src, rfqPeer, dst *HarnessNode,
 	})
 	require.NoError(t, err)
 
-	return payInvoiceWithAssets(t, src, rfqPeer, invoiceResp, assetID)
+	return payInvoiceWithAssets(
+		t, src, rfqPeer, invoiceResp, assetID, smallShards,
+	)
 }
 
 func payInvoiceWithSatoshi(t *testing.T, payer *HarnessNode,
@@ -703,7 +706,8 @@ func payInvoiceWithSatoshi(t *testing.T, payer *HarnessNode,
 }
 
 func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
-	invoice *lnrpc.AddInvoiceResponse, assetID []byte) uint64 {
+	invoice *lnrpc.AddInvoiceResponse, assetID []byte,
+	smallShards bool) uint64 {
 
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
@@ -782,9 +786,13 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 		PaymentRequest:        invoice.PaymentRequest,
 		TimeoutSeconds:        2,
 		FirstHopCustomRecords: encodeResp.CustomRecords,
-		MaxShardSizeMsat:      80_000_000,
 		FeeLimitMsat:          1_000_000,
 	}
+
+	if smallShards {
+		sendReq.MaxShardSizeMsat = 80_000_000
+	}
+
 	stream, err := payer.RouterClient.SendPaymentV2(ctxt, sendReq)
 	require.NoError(t, err)
 

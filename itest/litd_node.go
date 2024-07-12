@@ -219,6 +219,7 @@ func (cfg *LitNodeConfig) defaultLitdArgs() *litArgs {
 			"enablerest":             "",
 			"restcors":               "*",
 			"lndconnectinterval":     "200ms",
+			"lnd.debuglevel":         "trace,GRPC=error,PEER=info",
 		}
 	)
 	for _, arg := range cfg.LitArgs {

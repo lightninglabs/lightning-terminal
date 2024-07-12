@@ -727,7 +727,7 @@ func addInvoice(ctx *cli.Context) error {
 		ValueMsat:       int64(numMSats),
 		DescriptionHash: descHash,
 		FallbackAddr:    ctx.String("fallback_addr"),
-		Expiry:          int64(timeoutSeconds),
+		Expiry:          int64(ctx.Uint64("expiry")),
 		Private:         ctx.Bool("private"),
 		IsAmp:           ctx.Bool("amp"),
 		RouteHints: []*lnrpc.RouteHint{

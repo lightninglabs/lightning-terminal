@@ -65,7 +65,7 @@ var (
 		"--taproot-assets.experimental.rfq.priceoracleaddress=" +
 			"use_mock_price_oracle_service_promise_to_" +
 			"not_use_on_mainnet",
-		"--taproot-assets.experimental.rfq.mockoraclecentpersat=" +
+		"--taproot-assets.experimental.rfq.mockoracleassetsperbtc=" +
 			"5820600",
 		"--taproot-assets.universerpccourier.skipinitdelay",
 		"--taproot-assets.universerpccourier.backoffresetwait=100ms",
@@ -79,6 +79,159 @@ const (
 	fundingAmount = 50_000
 	startAmount   = fundingAmount * 2
 )
+
+// testCustomChannelsLarge tests that we can create a network with custom
+// channels and send large asset payments over them.
+func testCustomChannelsLarge(_ context.Context, net *NetworkHarness,
+	t *harnessTest) {
+
+	lndArgs := slices.Clone(lndArgsTemplate)
+	litdArgs := slices.Clone(litdArgsTemplate)
+
+	// Explicitly set the proof courier as Alice (how has no other role
+	// other than proof shuffling), otherwise a hashmail courier will be
+	// used. For the funding transaction, we're just posting it and don't
+	// expect a true receiver.
+	zane, err := net.NewNode(
+		t.t, "Zane", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	litdArgs = append(litdArgs, fmt.Sprintf(
+		"--taproot-assets.proofcourieraddr=%s://%s",
+		proof.UniverseRpcCourierType, zane.Cfg.LitAddr(),
+	))
+
+	// The topology we are going for looks like the following:
+	//
+	// Charlie  --[assets]-->  Dave  --[sats]-->  Erin  --[assets]-->  Fabia
+	//                          |
+	//                          |
+	//                       [assets]
+	//                          |
+	//                          v
+	//                        Yara
+	//
+	// With [assets] being a custom channel and [sats] being a normal, BTC
+	// only channel.
+	// All 5 nodes need to be full litd nodes running in integrated mode
+	// with tapd included. We also need specific flags to be enabled, so we
+	// create 5 completely new nodes, ignoring the two default nodes that
+	// are created by the harness.
+	charlie, err := net.NewNode(
+		t.t, "Charlie", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	dave, err := net.NewNode(t.t, "Dave", lndArgs, false, true, litdArgs...)
+	require.NoError(t.t, err)
+	erin, err := net.NewNode(t.t, "Erin", lndArgs, false, true, litdArgs...)
+	require.NoError(t.t, err)
+	fabia, err := net.NewNode(
+		t.t, "Fabia", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+	yara, err := net.NewNode(
+		t.t, "Yara", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	nodes := []*HarnessNode{charlie, dave, erin, fabia, yara}
+	connectAllNodes(t.t, net, nodes)
+	fundAllNodes(t.t, net, nodes)
+
+	// Create the normal channel between Dave and Erin.
+	t.Logf("Opening normal channel between Dave and Erin...")
+	channelOp := openChannelAndAssert(
+		t, net, dave, erin, lntest.OpenChannelParams{
+			Amt:         10_000_000,
+			SatPerVByte: 5,
+		},
+	)
+	defer closeChannelAndAssert(t, net, dave, channelOp, false)
+
+	// This is the only public channel, we need everyone to be aware of it.
+	assertChannelKnown(t.t, charlie, channelOp)
+	assertChannelKnown(t.t, fabia, channelOp)
+
+	universeTap := newTapClient(t.t, zane)
+	charlieTap := newTapClient(t.t, charlie)
+	daveTap := newTapClient(t.t, dave)
+	erinTap := newTapClient(t.t, erin)
+	fabiaTap := newTapClient(t.t, fabia)
+	yaraTap := newTapClient(t.t, yara)
+
+	// Mint an asset on Charlie and sync all nodes to Charlie as the
+	// universe.
+	mintedAssets := itest.MintAssetsConfirmBatch(
+		t.t, t.lndHarness.Miner.Client, charlieTap,
+		[]*mintrpc.MintAssetRequest{
+			{
+				Asset: itestAsset,
+			},
+		},
+	)
+	cents := mintedAssets[0]
+	assetID := cents.AssetGenesis.AssetId
+
+	t.Logf("Minted %d lightning cents, syncing universes...", cents.Amount)
+	syncUniverses(t.t, charlieTap, dave, erin, fabia, yara)
+	t.Logf("Universes synced between all nodes, distributing assets...")
+
+	const (
+		daveFundingAmount = uint64(400_000)
+		erinFundingAmount = uint64(200_000)
+	)
+	charlieFundingAmount := cents.Amount - uint64(2*400_000)
+
+	createTestAssetNetwork(
+		t, net, charlieTap, daveTap, erinTap, fabiaTap, yaraTap,
+		universeTap, cents, 400_000, charlieFundingAmount,
+		daveFundingAmount, erinFundingAmount,
+	)
+
+	// Before we start sending out payments, let's make sure each node can
+	// see the other one in the graph and has all required features.
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(charlie, dave))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(dave, charlie))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(dave, yara))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(yara, dave))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(erin, fabia))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(fabia, erin))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(charlie, erin))
+
+	// Print initial channel balances.
+	logBalance(t.t, nodes, assetID, "initial")
+
+	// Try larger invoice payments, first from Charlie to Fabia, then half
+	// of the amount back in the other direction.
+	const fabiaInvoiceAssetAmount = 20_000
+	invoiceResp := createAssetInvoice(
+		t.t, erin, fabia, fabiaInvoiceAssetAmount, assetID,
+	)
+	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp, assetID, false)
+	logBalance(t.t, nodes, assetID, "after invoice")
+
+	invoiceResp2 := createAssetInvoice(
+		t.t, dave, charlie, fabiaInvoiceAssetAmount/2, assetID,
+	)
+
+	// Sleep for a second to make sure the balances fully propagated before
+	// we make the payment. Otherwise, we'll make an RFQ order with a max
+	// amount of zero.
+	time.Sleep(time.Second * 1)
+
+	payInvoiceWithAssets(t.t, fabia, erin, invoiceResp2, assetID, false)
+	logBalance(t.t, nodes, assetID, "after invoice 2")
+
+	// Now we send a large invoice from Charlie to Dave.
+	const largeInvoiceAmount = 100_000
+	invoiceResp3 := createAssetInvoice(
+		t.t, charlie, dave, largeInvoiceAmount, assetID,
+	)
+	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp3, assetID, false)
+	logBalance(t.t, nodes, assetID, "after invoice 3")
+}
 
 // testCustomChannels tests that we can create a network with custom channels
 // and send asset payments over them.
@@ -218,7 +371,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	// ------------
 	// Test case 1: Send a direct keysend payment from Charlie to Dave.
 	// ------------
-	const keySendAmount = 100
+	const keySendAmount = 1000
 	sendAssetKeySendPayment(
 		t.t, charlie, dave, keySendAmount, assetID, fn.None[int64](),
 	)
@@ -227,13 +380,13 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	charlieAssetBalance -= keySendAmount
 	daveAssetBalance += keySendAmount
 
-	// We should be able to send the 100 assets back immediately, because
+	// We should be able to send the 1000 assets back immediately, because
 	// there is enough on-chain balance on Dave's side to be able to create
-	// an HTLC.
-	sendAssetKeySendPayment(
-		t.t, dave, charlie, keySendAmount, assetID, fn.None[int64](),
+	// an HTLC. We use an invoice to execute another code path.
+	invoiceResp := createAssetInvoice(
+		t.t, dave, charlie, keySendAmount, assetID,
 	)
-	logBalance(t.t, nodes, assetID, "after keysend back")
+	payInvoiceWithAssets(t.t, dave, charlie, invoiceResp, assetID, true)
 
 	charlieAssetBalance += keySendAmount
 	daveAssetBalance -= keySendAmount
@@ -248,7 +401,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	// invoice.
 	// ------------
 	paidAssetAmount := createAndPayNormalInvoice(
-		t.t, charlie, dave, dave, 20_000, assetID,
+		t.t, charlie, dave, dave, 20_000, assetID, true,
 	)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
@@ -266,20 +419,33 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	// invoice.
 	// ------------
 	const daveInvoiceAssetAmount = 2_000
-	invoiceResp := createAssetInvoice(
+	invoiceResp = createAssetInvoice(
 		t.t, charlie, dave, daveInvoiceAssetAmount, assetID,
 	)
-	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp, assetID)
+	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp, assetID, true)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
 	charlieAssetBalance -= daveInvoiceAssetAmount
 	daveAssetBalance += daveInvoiceAssetAmount
 
 	// ------------
+	// Test case 3.5: Pay an asset invoice from Dave by Charlie with normal
+	// payment flow.
+	// ------------
+	invoiceResp = createAssetInvoice(
+		t.t, charlie, dave, daveInvoiceAssetAmount, assetID,
+	)
+	payInvoiceWithSatoshi(t.t, charlie, invoiceResp)
+	logBalance(t.t, nodes, assetID, "after asset invoice paid with sats")
+
+	// We don't need to update the asset balances of Charlie and Dave here
+	// as the invoice was paid with sats.
+
+	// ------------
 	// Test case 4: Pay a normal invoice from Erin by Charlie.
 	// ------------
 	paidAssetAmount = createAndPayNormalInvoice(
-		t.t, charlie, dave, erin, 20_000, assetID,
+		t.t, charlie, dave, erin, 20_000, assetID, true,
 	)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
@@ -294,7 +460,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	invoiceResp = createAssetInvoice(
 		t.t, erin, fabia, fabiaInvoiceAssetAmount1, assetID,
 	)
-	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp, assetID)
+	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp, assetID, true)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
 	charlieAssetBalance -= fabiaInvoiceAssetAmount1
@@ -328,7 +494,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	invoiceResp = createAssetInvoice(
 		t.t, erin, fabia, fabiaInvoiceAssetAmount3, assetID,
 	)
-	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp, assetID)
+	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp, assetID, true)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
 	charlieAssetBalance -= fabiaInvoiceAssetAmount3
@@ -346,7 +512,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	invoiceResp = createAssetInvoice(
 		t.t, dave, yara, yaraInvoiceAssetAmount1, assetID,
 	)
-	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp, assetID)
+	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp, assetID, true)
 	logBalance(t.t, nodes, assetID, "after asset-to-asset")
 
 	charlieAssetBalance -= yaraInvoiceAssetAmount1
@@ -674,7 +840,7 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	// invoice.
 	// ------------
 	paidAssetAmount := createAndPayNormalInvoice(
-		t.t, charlie, dave, dave, 20_000, assetID,
+		t.t, charlie, dave, dave, 20_000, assetID, true,
 	)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
@@ -695,7 +861,7 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	invoiceResp := createAssetInvoice(
 		t.t, charlie, dave, daveInvoiceAssetAmount, assetID,
 	)
-	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp, assetID)
+	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp, assetID, true)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
 	charlieAssetBalance -= daveInvoiceAssetAmount
@@ -705,7 +871,7 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	// Test case 4: Pay a normal invoice from Erin by Charlie.
 	// ------------
 	paidAssetAmount = createAndPayNormalInvoice(
-		t.t, charlie, dave, erin, 20_000, assetID,
+		t.t, charlie, dave, erin, 20_000, assetID, true,
 	)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
@@ -720,7 +886,7 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	invoiceResp = createAssetInvoice(
 		t.t, erin, fabia, fabiaInvoiceAssetAmount1, assetID,
 	)
-	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp, assetID)
+	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp, assetID, true)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
 	charlieAssetBalance -= fabiaInvoiceAssetAmount1
@@ -754,7 +920,7 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	invoiceResp = createAssetInvoice(
 		t.t, erin, fabia, fabiaInvoiceAssetAmount3, assetID,
 	)
-	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp, assetID)
+	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp, assetID, true)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
 	charlieAssetBalance -= fabiaInvoiceAssetAmount3
@@ -772,7 +938,7 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	invoiceResp = createAssetInvoice(
 		t.t, dave, yara, yaraInvoiceAssetAmount1, assetID,
 	)
-	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp, assetID)
+	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp, assetID, true)
 	logBalance(t.t, nodes, assetID, "after asset-to-asset")
 
 	charlieAssetBalance -= yaraInvoiceAssetAmount1
