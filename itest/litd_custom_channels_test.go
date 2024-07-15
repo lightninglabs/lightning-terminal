@@ -369,31 +369,49 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	logBalance(t.t, nodes, assetID, "initial")
 
 	// ------------
-	// Test case 1: Send a direct keysend payment from Charlie to Dave.
+	// Test case 1: Send a direct keysend payment from Charlie to Dave,
+	// sending the whole balance.
 	// ------------
-	const keySendAmount = 1000
+	keySendAmount := charlieFundingAmount
 	sendAssetKeySendPayment(
-		t.t, charlie, dave, keySendAmount, assetID, fn.None[int64](),
+		t.t, charlie, dave, charlieFundingAmount, assetID,
+		fn.None[int64](),
 	)
 	logBalance(t.t, nodes, assetID, "after keysend")
 
 	charlieAssetBalance -= keySendAmount
 	daveAssetBalance += keySendAmount
 
-	// We should be able to send the 1000 assets back immediately, because
+	// We should be able to send 1000 assets back immediately, because
 	// there is enough on-chain balance on Dave's side to be able to create
 	// an HTLC. We use an invoice to execute another code path.
+	const charlieInvoiceAmount = 1_000
 	invoiceResp := createAssetInvoice(
-		t.t, dave, charlie, keySendAmount, assetID,
+		t.t, dave, charlie, charlieInvoiceAmount, assetID,
 	)
 	payInvoiceWithAssets(t.t, dave, charlie, invoiceResp, assetID, true)
+	logBalance(t.t, nodes, assetID, "after invoice back")
 
-	charlieAssetBalance += keySendAmount
-	daveAssetBalance -= keySendAmount
+	charlieAssetBalance += charlieInvoiceAmount
+	daveAssetBalance -= charlieInvoiceAmount
 
-	// We should also be able to do a non-asset (BTC only) keysend payment.
+	// We should also be able to do a non-asset (BTC only) keysend payment
+	// from Charlie to Dave. This'll also replenish the BTC balance of
+	// Dave, making it possible to send another asset HTLC below, sending
+	// all assets back to Charlie (so we have enough balance for further
+	// tests).
 	sendKeySendPayment(t.t, charlie, dave, 2000, nil)
 	logBalance(t.t, nodes, assetID, "after BTC only keysend")
+
+	// Let's keysend the rest of the balance back to Charlie.
+	sendAssetKeySendPayment(
+		t.t, dave, charlie, charlieFundingAmount-charlieInvoiceAmount,
+		assetID, fn.None[int64](),
+	)
+	logBalance(t.t, nodes, assetID, "after keysend back")
+
+	charlieAssetBalance += charlieFundingAmount - charlieInvoiceAmount
+	daveAssetBalance -= charlieFundingAmount - charlieInvoiceAmount
 
 	// ------------
 	// Test case 2: Pay a normal invoice from Dave by Charlie, making it
