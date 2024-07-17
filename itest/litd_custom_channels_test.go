@@ -562,19 +562,19 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	t.Logf("Closing Charlie -> Dave channel")
 	closeAssetChannelAndAssert(
 		t, net, charlie, dave, charlieChanPoint, assetID, nil,
-		universeTap, true, true,
+		universeTap, assertDefaultCoOpCloseBalance(true, true),
 	)
 
 	t.Logf("Closing Dave -> Yara channel, close initiated by Yara")
 	closeAssetChannelAndAssert(
 		t, net, yara, dave, daveChanPoint, assetID, nil,
-		universeTap, false, true,
+		universeTap, assertDefaultCoOpCloseBalance(false, true),
 	)
 
 	t.Logf("Closing Erin -> Fabia channel")
 	closeAssetChannelAndAssert(
 		t, net, erin, fabia, erinChanPoint, assetID, nil,
-		universeTap, true, true,
+		universeTap, assertDefaultCoOpCloseBalance(true, true),
 	)
 
 	// We've been tracking the off-chain channel balances all this time, so
@@ -627,7 +627,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	t.Logf("Closing Charlie -> Dave channel")
 	closeAssetChannelAndAssert(
 		t, net, charlie, dave, charlieChanPoint, assetID, nil,
-		universeTap, false, false,
+		universeTap, assertDefaultCoOpCloseBalance(false, false),
 	)
 
 	// Charlie should still have four asset pieces, two with the same size.
@@ -988,19 +988,19 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	t.Logf("Closing Charlie -> Dave channel")
 	closeAssetChannelAndAssert(
 		t, net, charlie, dave, charlieChanPoint, assetID, groupID,
-		universeTap, true, true,
+		universeTap, assertDefaultCoOpCloseBalance(true, true),
 	)
 
 	t.Logf("Closing Dave -> Yara channel, close initiated by Yara")
 	closeAssetChannelAndAssert(
 		t, net, yara, dave, daveChanPoint, assetID, groupID,
-		universeTap, false, true,
+		universeTap, assertDefaultCoOpCloseBalance(false, true),
 	)
 
 	t.Logf("Closing Erin -> Fabia channel")
 	closeAssetChannelAndAssert(
 		t, net, erin, fabia, erinChanPoint, assetID, groupID,
-		universeTap, true, true,
+		universeTap, assertDefaultCoOpCloseBalance(true, true),
 	)
 
 	// We've been tracking the off-chain channel balances all this time, so
@@ -1053,7 +1053,7 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	t.Logf("Closing Charlie -> Dave channel")
 	closeAssetChannelAndAssert(
 		t, net, charlie, dave, charlieChanPoint, assetID, groupID,
-		universeTap, false, false,
+		universeTap, assertDefaultCoOpCloseBalance(false, false),
 	)
 
 	// Charlie should still have four asset pieces, two with the same size.

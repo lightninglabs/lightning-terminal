@@ -15,6 +15,7 @@ import (
 	"github.com/btcsuite/btcd/btcec/v2/schnorr"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/btcsuite/btcd/wire"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/lightninglabs/taproot-assets/itest"
 	"github.com/lightninglabs/taproot-assets/proof"
@@ -916,10 +917,19 @@ func waitForSendEvent(t *testing.T,
 	}
 }
 
+// coOpCloseBalanceCheck is a function type that can be passed into
+// closeAssetChannelAndAsset to asset the final balance of the closing
+// transaction.
+type coOpCloseBalanceCheck func(t *testing.T, local, remote *HarnessNode,
+	closeTx *wire.MsgTx, closeUpdate *lnrpc.ChannelCloseUpdate,
+	assetID, groupKey []byte, universeTap *tapClient)
+
+// closeAssetChannelAndAssert closes the channel between the local and remote
+// node and asserts the final balances of the closing transaction.
 func closeAssetChannelAndAssert(t *harnessTest, net *NetworkHarness,
 	local, remote *HarnessNode, chanPoint *lnrpc.ChannelPoint,
-	assetID, groupKey []byte, universeTap *tapClient, remoteBtcBalance,
-	remoteAssetBalance bool) {
+	assetID, groupKey []byte, universeTap *tapClient,
+	balanceCheck coOpCloseBalanceCheck) {
 
 	t.t.Helper()
 
@@ -953,6 +963,41 @@ func closeAssetChannelAndAssert(t *harnessTest, net *NetworkHarness,
 
 	waitForSendEvent(t.t, sendEvents, tapfreighter.SendStateComplete)
 
+	// Check the final balance of the closing transaction.
+	balanceCheck(
+		t.t, local, remote, closeTx, closeUpdate, assetID, groupKey,
+		universeTap,
+	)
+}
+
+// assertDefaultCoOpCloseBalance returns a default implementation of the co-op
+// close balance check that can be used in tests. It assumes the initiator has
+// both an asset and BTC balance left, while the responder's balance can be
+// specified with the boolean variables.
+func assertDefaultCoOpCloseBalance(remoteBtcBalance,
+	remoteAssetBalance bool) coOpCloseBalanceCheck {
+
+	return func(t *testing.T, local, remote *HarnessNode,
+		closeTx *wire.MsgTx, closeUpdate *lnrpc.ChannelCloseUpdate,
+		assetID, groupKey []byte, universeTap *tapClient) {
+
+		defaultCoOpCloseBalanceCheck(
+			t, local, remote, closeTx, closeUpdate, assetID,
+			groupKey, universeTap, remoteBtcBalance,
+			remoteAssetBalance,
+		)
+	}
+}
+
+// defaultCoOpCloseBalanceCheck is a default implementation of the co-op close
+// balance check that can be used in tests. It assumes the initiator has both
+// an asset and BTC balance left, while the responder's balance can be specified
+// with the boolean variables.
+func defaultCoOpCloseBalanceCheck(t *testing.T, local, remote *HarnessNode,
+	closeTx *wire.MsgTx, closeUpdate *lnrpc.ChannelCloseUpdate,
+	assetID, groupKey []byte, universeTap *tapClient, remoteBtcBalance,
+	remoteAssetBalance bool) {
+
 	// With the channel closed, we'll now assert that the co-op close
 	// transaction was inserted into the local universe.
 	//
@@ -972,20 +1017,21 @@ func closeAssetChannelAndAssert(t *harnessTest, net *NetworkHarness,
 		additionalOutputs++
 	}
 
-	require.Len(t.t, closeTx.TxOut, numOutputs)
+	closeTxid := closeTx.TxHash()
+	require.Len(t, closeTx.TxOut, numOutputs)
 
 	outIdx := 0
 	dummyAmt := int64(1000)
-	require.LessOrEqual(t.t, closeTx.TxOut[outIdx].Value, dummyAmt)
+	require.LessOrEqual(t, closeTx.TxOut[outIdx].Value, dummyAmt)
 
 	if remoteAssetBalance {
 		outIdx++
-		require.LessOrEqual(t.t, closeTx.TxOut[outIdx].Value, dummyAmt)
+		require.LessOrEqual(t, closeTx.TxOut[outIdx].Value, dummyAmt)
 	}
 
 	// We also require there to be at most two additional outputs, one for
 	// each of the asset outputs with balance.
-	require.Len(t.t, closeUpdate.AdditionalOutputs, additionalOutputs)
+	require.Len(t, closeUpdate.AdditionalOutputs, additionalOutputs)
 
 	var remoteCloseOut *lnrpc.CloseOutput
 	if remoteBtcBalance {
@@ -993,11 +1039,11 @@ func closeAssetChannelAndAssert(t *harnessTest, net *NetworkHarness,
 		// dust value, so it should also have accumulated a non-dust
 		// balance, even after subtracting 1k sats for the asset output.
 		remoteCloseOut = closeUpdate.RemoteCloseOutput
-		require.NotNil(t.t, remoteCloseOut)
+		require.NotNil(t, remoteCloseOut)
 
 		outIdx++
 		require.EqualValues(
-			t.t, remoteCloseOut.AmountSat-dummyAmt,
+			t, remoteCloseOut.AmountSat-dummyAmt,
 			closeTx.TxOut[outIdx].Value,
 		)
 	} else if remoteAssetBalance {
@@ -1005,16 +1051,16 @@ func closeAssetChannelAndAssert(t *harnessTest, net *NetworkHarness,
 		// to go above dust. So it should still have an asset balance
 		// that we can verify.
 		remoteCloseOut = closeUpdate.RemoteCloseOutput
-		require.NotNil(t.t, remoteCloseOut)
+		require.NotNil(t, remoteCloseOut)
 	}
 
 	// The local node should have received the local BTC balance minus the
 	// TX fees and 1k sats for the asset output.
 	localCloseOut := closeUpdate.LocalCloseOutput
-	require.NotNil(t.t, localCloseOut)
+	require.NotNil(t, localCloseOut)
 	outIdx++
 	require.Greater(
-		t.t, closeTx.TxOut[outIdx].Value,
+		t, closeTx.TxOut[outIdx].Value,
 		localCloseOut.AmountSat-dummyAmt,
 	)
 
@@ -1039,39 +1085,41 @@ func closeAssetChannelAndAssert(t *harnessTest, net *NetworkHarness,
 
 	if remoteAuxOut != nil {
 		require.Equal(
-			t.t, remoteAuxOut.PkScript,
+			t, remoteAuxOut.PkScript,
 			closeTx.TxOut[remoteAssetIndex].PkScript,
 		)
 	}
 
 	require.Equal(
-		t.t, localAuxOut.PkScript,
+		t, localAuxOut.PkScript,
 		closeTx.TxOut[localAssetIndex].PkScript,
 	)
 
 	// We now verify the arrival of the local balance asset proof at the
 	// universe server.
 	var localAssetCloseOut rfqmsg.JsonCloseOutput
-	err = json.Unmarshal(
+	err := json.Unmarshal(
 		localCloseOut.CustomChannelData, &localAssetCloseOut,
 	)
-	require.NoError(t.t, err)
+	require.NoError(t, err)
 
 	for assetIDStr, scriptKeyStr := range localAssetCloseOut.ScriptKeys {
 		scriptKeyBytes, err := hex.DecodeString(scriptKeyStr)
-		require.NoError(t.t, err)
+		require.NoError(t, err)
 
-		require.Equal(t.t, hex.EncodeToString(assetID), assetIDStr)
+		require.Equal(t, hex.EncodeToString(assetID), assetIDStr)
 
 		a := assertUniverseProofExists(
-			t.t, universeTap, assetID, groupKey, scriptKeyBytes,
+			t, universeTap, assetID, groupKey, scriptKeyBytes,
 			fmt.Sprintf("%v:%v", closeTxid, localAssetIndex),
 		)
 
+		localTapd := newTapClient(t, local)
+
 		scriptKey, err := btcec.ParsePubKey(scriptKeyBytes)
-		require.NoError(t.t, err)
+		require.NoError(t, err)
 		assertAssetExists(
-			t.t, localTapd, assetID, a.Amount, scriptKey, true,
+			t, localTapd, assetID, a.Amount, scriptKey, true,
 			true, false,
 		)
 	}
@@ -1083,7 +1131,7 @@ func closeAssetChannelAndAssert(t *harnessTest, net *NetworkHarness,
 
 	// At this point the remote close output should be defined, otherwise
 	// something went wrong.
-	require.NotNil(t.t, remoteCloseOut)
+	require.NotNil(t, remoteCloseOut)
 
 	// And then we verify the arrival of the remote balance asset proof at
 	// the universe server as well.
@@ -1091,25 +1139,25 @@ func closeAssetChannelAndAssert(t *harnessTest, net *NetworkHarness,
 	err = json.Unmarshal(
 		remoteCloseOut.CustomChannelData, &remoteAssetCloseOut,
 	)
-	require.NoError(t.t, err)
+	require.NoError(t, err)
 
 	for assetIDStr, scriptKeyStr := range remoteAssetCloseOut.ScriptKeys {
 		scriptKeyBytes, err := hex.DecodeString(scriptKeyStr)
-		require.NoError(t.t, err)
+		require.NoError(t, err)
 
-		require.Equal(t.t, hex.EncodeToString(assetID), assetIDStr)
+		require.Equal(t, hex.EncodeToString(assetID), assetIDStr)
 
 		a := assertUniverseProofExists(
-			t.t, universeTap, assetID, groupKey, scriptKeyBytes,
+			t, universeTap, assetID, groupKey, scriptKeyBytes,
 			fmt.Sprintf("%v:%v", closeTxid, remoteAssetIndex),
 		)
 
-		remoteTapd := newTapClient(t.t, remote)
+		remoteTapd := newTapClient(t, remote)
 
 		scriptKey, err := btcec.ParsePubKey(scriptKeyBytes)
-		require.NoError(t.t, err)
+		require.NoError(t, err)
 		assertAssetExists(
-			t.t, remoteTapd, assetID, a.Amount, scriptKey, true,
+			t, remoteTapd, assetID, a.Amount, scriptKey, true,
 			true, false,
 		)
 	}
