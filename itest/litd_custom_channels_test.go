@@ -6,6 +6,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/lightninglabs/taproot-assets/itest"
 	"github.com/lightninglabs/taproot-assets/proof"
@@ -1159,6 +1160,36 @@ func testCustomChannelsForceClose(_ context.Context, net *NetworkHarness,
 	t.Logf("Minted %d lightning cents, syncing universes...", cents.Amount)
 	syncUniverses(t.t, charlieTap, dave)
 	t.Logf("Universes synced between all nodes, distributing assets...")
+
+	// Before we actually create the asset channel, we want to make sure
+	// that failed attempts of creating a channel (e.g. due to insufficient
+	// on-chain funds) are cleaned up properly on the recipient side.
+	// We do this by sending all of Charlie's coins to a burn address then
+	// just sending him 50k sats, which isn't enough to fund a channel.
+	_, err = charlie.LightningClient.SendCoins(
+		ctxb, &lnrpc.SendCoinsRequest{
+			Addr:             burnAddr,
+			SendAll:          true,
+			MinConfs:         0,
+			SpendUnconfirmed: true,
+		},
+	)
+	require.NoError(t.t, err)
+	net.SendCoins(t.t, 50_000, charlie)
+
+	// The attempt should fail. But the recipient should receive the error,
+	// clean up the state and allow Charlie to try again after acquiring
+	// more funds.
+	_, err = charlieTap.FundChannel(ctxb, &tchrpc.FundChannelRequest{
+		AssetAmount:        fundingAmount,
+		AssetId:            assetID,
+		PeerPubkey:         dave.PubKey[:],
+		FeeRateSatPerVbyte: 5,
+	})
+	require.ErrorContains(t.t, err, "not enough witness outputs to create")
+
+	// Now we'll fund the channel with the correct amount.
+	net.SendCoins(t.t, btcutil.SatoshiPerBitcoin, charlie)
 
 	// Next we can open an asset channel from Charlie -> Dave, then kick
 	// off the main scenario.
