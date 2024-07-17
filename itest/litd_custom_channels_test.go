@@ -184,7 +184,7 @@ func testCustomChannelsLarge(_ context.Context, net *NetworkHarness,
 	)
 	charlieFundingAmount := cents.Amount - uint64(2*400_000)
 
-	createTestAssetNetwork(
+	fundRespCD, _, _ := createTestAssetNetwork(
 		t, net, charlieTap, daveTap, erinTap, fabiaTap, yaraTap,
 		universeTap, cents, 400_000, charlieFundingAmount,
 		daveFundingAmount, erinFundingAmount,
@@ -231,6 +231,30 @@ func testCustomChannelsLarge(_ context.Context, net *NetworkHarness,
 	)
 	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp3, assetID, false)
 	logBalance(t.t, nodes, assetID, "after invoice 3")
+
+	// We keysend the rest, so that all the balance is on Dave's side.
+	charlieRemainingBalance := charlieFundingAmount - largeInvoiceAmount -
+		fabiaInvoiceAssetAmount/2
+	sendAssetKeySendPayment(
+		t.t, charlie, dave, charlieRemainingBalance,
+		assetID, fn.None[int64](),
+	)
+	logBalance(t.t, nodes, assetID, "after keysend")
+
+	// And now we close the channel to test how things look if all the
+	// balance is on the non-initiator (recipient) side.
+	charlieChanPoint := &lnrpc.ChannelPoint{
+		OutputIndex: uint32(fundRespCD.OutputIndex),
+		FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
+			FundingTxidStr: fundRespCD.Txid,
+		},
+	}
+
+	t.Logf("Closing Charlie -> Dave channel")
+	closeAssetChannelAndAssert(
+		t, net, charlie, dave, charlieChanPoint, assetID, nil,
+		universeTap, initiatorZeroAssetBalanceCoOpBalanceCheck,
+	)
 }
 
 // testCustomChannels tests that we can create a network with custom channels

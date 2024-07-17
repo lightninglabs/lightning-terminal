@@ -1163,6 +1163,113 @@ func defaultCoOpCloseBalanceCheck(t *testing.T, local, remote *HarnessNode,
 	}
 }
 
+// initiatorZeroAssetBalanceCoOpBalanceCheck is a co-op close balance check
+// function that can be used when the initiator has a zero asset balance.
+func initiatorZeroAssetBalanceCoOpBalanceCheck(t *testing.T, _,
+	remote *HarnessNode, closeTx *wire.MsgTx,
+	closeUpdate *lnrpc.ChannelCloseUpdate, assetID, groupKey []byte,
+	universeTap *tapClient) {
+
+	// With the channel closed, we'll now assert that the co-op close
+	// transaction was inserted into the local universe.
+	//
+	// Since the initiator has a zero asset balance, we expect that at most
+	// three outputs exist: one for the remote asset output, one for the
+	// remote BTC channel balance and one for the initiator's BTC channel
+	// balance (which cannot be zero or below dust due to the mandatory
+	// channel reserve).
+	numOutputs := 3
+
+	closeTxid := closeTx.TxHash()
+	require.Len(t, closeTx.TxOut, numOutputs)
+
+	// We assume that the local node has a non-zero BTC balance left.
+	localOut, _ := closeTxOut(t, closeTx, closeUpdate, true)
+	require.Greater(t, localOut.Value, int64(1000))
+
+	// We also require there to be exactly one additional output, which is
+	// the remote asset output.
+	require.Len(t, closeUpdate.AdditionalOutputs, 1)
+	assetTxOut, assetOutputIndex := findTxOut(
+		t, closeTx, closeUpdate.AdditionalOutputs[0].PkScript,
+	)
+	require.LessOrEqual(t, assetTxOut.Value, int64(1000))
+
+	// The remote node has received a couple of HTLCs with an above
+	// dust value, so it should also have accumulated a non-dust
+	// balance, even after subtracting 1k sats for the asset output.
+	remoteCloseOut := closeUpdate.RemoteCloseOutput
+	require.NotNil(t, remoteCloseOut)
+
+	// Find out which of the additional outputs is the local one and which
+	// is the remote.
+	remoteAuxOut := closeUpdate.AdditionalOutputs[0]
+	require.False(t, remoteAuxOut.IsLocal)
+
+	// And then we verify the arrival of the remote balance asset proof at
+	// the universe server as well.
+	var remoteAssetCloseOut rfqmsg.JsonCloseOutput
+	err := json.Unmarshal(
+		remoteCloseOut.CustomChannelData, &remoteAssetCloseOut,
+	)
+	require.NoError(t, err)
+
+	for assetIDStr, scriptKeyStr := range remoteAssetCloseOut.ScriptKeys {
+		scriptKeyBytes, err := hex.DecodeString(scriptKeyStr)
+		require.NoError(t, err)
+
+		require.Equal(t, hex.EncodeToString(assetID), assetIDStr)
+
+		a := assertUniverseProofExists(
+			t, universeTap, assetID, groupKey, scriptKeyBytes,
+			fmt.Sprintf("%v:%v", closeTxid, assetOutputIndex),
+		)
+
+		remoteTapd := newTapClient(t, remote)
+
+		scriptKey, err := btcec.ParsePubKey(scriptKeyBytes)
+		require.NoError(t, err)
+		assertAssetExists(
+			t, remoteTapd, assetID, a.Amount, scriptKey, true,
+			true, false,
+		)
+	}
+}
+
+// closeTxOut returns either the local or remote output from the close
+// transaction, based on the information given in the close update.
+func closeTxOut(t *testing.T, closeTx *wire.MsgTx,
+	closeUpdate *lnrpc.ChannelCloseUpdate, local bool) (*wire.TxOut, int) {
+
+	var targetPkScript []byte
+	if local {
+		require.NotNil(t, closeUpdate.LocalCloseOutput)
+		targetPkScript = closeUpdate.LocalCloseOutput.PkScript
+	} else {
+		require.NotNil(t, closeUpdate.RemoteCloseOutput)
+		targetPkScript = closeUpdate.RemoteCloseOutput.PkScript
+	}
+
+	return findTxOut(t, closeTx, targetPkScript)
+}
+
+// findTxOut returns the transaction output with the target pk script from the
+// given transaction.
+func findTxOut(t *testing.T, tx *wire.MsgTx, targetPkScript []byte) (
+	*wire.TxOut, int) {
+
+	for i, txOut := range tx.TxOut {
+		if bytes.Equal(txOut.PkScript, targetPkScript) {
+			return txOut, i
+		}
+	}
+
+	t.Fatalf("close output (targetPkScript=%x) not found in close "+
+		"transaction", targetPkScript)
+
+	return &wire.TxOut{}, 0
+}
+
 type tapClient struct {
 	node *HarnessNode
 	lnd  *rpc.HarnessRPC
