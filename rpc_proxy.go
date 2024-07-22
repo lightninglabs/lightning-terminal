@@ -636,7 +636,7 @@ func (p *rpcProxy) checkSubSystemStarted(requestURI string) error {
 		return ErrUnknownRequest
 	}
 
-	// Check with the status manger to see if the sub-server is ready to
+	// Check with the status manager to see if the sub-server is ready to
 	// handle the request.
 	ready, disabled, err := p.statusMgr.IsSystemReady(system, requestURI)
 	if err != nil {
