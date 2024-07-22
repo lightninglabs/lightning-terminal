@@ -400,19 +400,6 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 		cfg.Lnd.RPCMiddleware.Enable = true
 	}
 
-	// For the integration of tapd with lnd, we need to allow tapd to send
-	// custom error messages to peers through the SendCustomMessage RPC in
-	// lnd. Since the error messages aren't in the custom range, we
-	// explicitly need to allow them. This isn't currently needed in remote
-	// mode, because custom channels are only available if both lnd and tapd
-	// are running in integrated mode.
-	if !cfg.lndRemote {
-		cfg.Lnd.ProtocolOptions.CustomMessage = append(
-			cfg.Lnd.ProtocolOptions.CustomMessage,
-			lnwire.MsgError,
-		)
-	}
-
 	// Validate the lightning-terminal config options.
 	litDir := lnd.CleanAndExpandPath(preCfg.LitDir)
 	cfg.LetsEncryptDir = lncfg.CleanAndExpandPath(cfg.LetsEncryptDir)
@@ -620,6 +607,19 @@ func loadConfigFile(preCfg *Config, interceptor signal.Interceptor) (*Config,
 	// configuration is fully valid. This also sets up the main logger that
 	// logs to a sub-directory in the .lnd folder.
 	case ModeIntegrated:
+		// For the integration of tapd with lnd, we need to allow tapd
+		// to send custom error messages to peers through the
+		// SendCustomMessage RPC in lnd. Since the error messages aren't
+		// in the custom range, we explicitly need to allow them. This
+		// isn't currently needed in remote mode, because custom
+		// channels are only available if both lnd and tapd are running
+		// in integrated mode. We need to set this value before we call
+		// lnd.ValidateConfig() below, because that's what's going to
+		// inject these values into the lnwire package.
+		cfg.Lnd.ProtocolOptions.CustomMessage = append(
+			cfg.Lnd.ProtocolOptions.CustomMessage, lnwire.MsgError,
+		)
+
 		var err error
 		cfg.Lnd, err = lnd.ValidateConfig(
 			*cfg.Lnd, interceptor, fileParser, flagParser,

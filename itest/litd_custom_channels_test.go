@@ -6,6 +6,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/lightninglabs/taproot-assets/itest"
 	"github.com/lightninglabs/taproot-assets/proof"
@@ -184,7 +185,7 @@ func testCustomChannelsLarge(_ context.Context, net *NetworkHarness,
 	)
 	charlieFundingAmount := cents.Amount - uint64(2*400_000)
 
-	createTestAssetNetwork(
+	fundRespCD, _, _ := createTestAssetNetwork(
 		t, net, charlieTap, daveTap, erinTap, fabiaTap, yaraTap,
 		universeTap, cents, 400_000, charlieFundingAmount,
 		daveFundingAmount, erinFundingAmount,
@@ -231,6 +232,30 @@ func testCustomChannelsLarge(_ context.Context, net *NetworkHarness,
 	)
 	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp3, assetID, false)
 	logBalance(t.t, nodes, assetID, "after invoice 3")
+
+	// We keysend the rest, so that all the balance is on Dave's side.
+	charlieRemainingBalance := charlieFundingAmount - largeInvoiceAmount -
+		fabiaInvoiceAssetAmount/2
+	sendAssetKeySendPayment(
+		t.t, charlie, dave, charlieRemainingBalance,
+		assetID, fn.None[int64](),
+	)
+	logBalance(t.t, nodes, assetID, "after keysend")
+
+	// And now we close the channel to test how things look if all the
+	// balance is on the non-initiator (recipient) side.
+	charlieChanPoint := &lnrpc.ChannelPoint{
+		OutputIndex: uint32(fundRespCD.OutputIndex),
+		FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
+			FundingTxidStr: fundRespCD.Txid,
+		},
+	}
+
+	t.Logf("Closing Charlie -> Dave channel")
+	closeAssetChannelAndAssert(
+		t, net, charlie, dave, charlieChanPoint, assetID, nil,
+		universeTap, initiatorZeroAssetBalanceCoOpBalanceCheck,
+	)
 }
 
 // testCustomChannels tests that we can create a network with custom channels
@@ -562,19 +587,19 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	t.Logf("Closing Charlie -> Dave channel")
 	closeAssetChannelAndAssert(
 		t, net, charlie, dave, charlieChanPoint, assetID, nil,
-		universeTap, true, true,
+		universeTap, assertDefaultCoOpCloseBalance(true, true),
 	)
 
 	t.Logf("Closing Dave -> Yara channel, close initiated by Yara")
 	closeAssetChannelAndAssert(
 		t, net, yara, dave, daveChanPoint, assetID, nil,
-		universeTap, false, true,
+		universeTap, assertDefaultCoOpCloseBalance(false, true),
 	)
 
 	t.Logf("Closing Erin -> Fabia channel")
 	closeAssetChannelAndAssert(
 		t, net, erin, fabia, erinChanPoint, assetID, nil,
-		universeTap, true, true,
+		universeTap, assertDefaultCoOpCloseBalance(true, true),
 	)
 
 	// We've been tracking the off-chain channel balances all this time, so
@@ -627,7 +652,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	t.Logf("Closing Charlie -> Dave channel")
 	closeAssetChannelAndAssert(
 		t, net, charlie, dave, charlieChanPoint, assetID, nil,
-		universeTap, false, false,
+		universeTap, assertDefaultCoOpCloseBalance(false, false),
 	)
 
 	// Charlie should still have four asset pieces, two with the same size.
@@ -988,19 +1013,19 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	t.Logf("Closing Charlie -> Dave channel")
 	closeAssetChannelAndAssert(
 		t, net, charlie, dave, charlieChanPoint, assetID, groupID,
-		universeTap, true, true,
+		universeTap, assertDefaultCoOpCloseBalance(true, true),
 	)
 
 	t.Logf("Closing Dave -> Yara channel, close initiated by Yara")
 	closeAssetChannelAndAssert(
 		t, net, yara, dave, daveChanPoint, assetID, groupID,
-		universeTap, false, true,
+		universeTap, assertDefaultCoOpCloseBalance(false, true),
 	)
 
 	t.Logf("Closing Erin -> Fabia channel")
 	closeAssetChannelAndAssert(
 		t, net, erin, fabia, erinChanPoint, assetID, groupID,
-		universeTap, true, true,
+		universeTap, assertDefaultCoOpCloseBalance(true, true),
 	)
 
 	// We've been tracking the off-chain channel balances all this time, so
@@ -1053,7 +1078,7 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	t.Logf("Closing Charlie -> Dave channel")
 	closeAssetChannelAndAssert(
 		t, net, charlie, dave, charlieChanPoint, assetID, groupID,
-		universeTap, false, false,
+		universeTap, assertDefaultCoOpCloseBalance(false, false),
 	)
 
 	// Charlie should still have four asset pieces, two with the same size.
@@ -1135,6 +1160,36 @@ func testCustomChannelsForceClose(_ context.Context, net *NetworkHarness,
 	t.Logf("Minted %d lightning cents, syncing universes...", cents.Amount)
 	syncUniverses(t.t, charlieTap, dave)
 	t.Logf("Universes synced between all nodes, distributing assets...")
+
+	// Before we actually create the asset channel, we want to make sure
+	// that failed attempts of creating a channel (e.g. due to insufficient
+	// on-chain funds) are cleaned up properly on the recipient side.
+	// We do this by sending all of Charlie's coins to a burn address then
+	// just sending him 50k sats, which isn't enough to fund a channel.
+	_, err = charlie.LightningClient.SendCoins(
+		ctxb, &lnrpc.SendCoinsRequest{
+			Addr:             burnAddr,
+			SendAll:          true,
+			MinConfs:         0,
+			SpendUnconfirmed: true,
+		},
+	)
+	require.NoError(t.t, err)
+	net.SendCoins(t.t, 50_000, charlie)
+
+	// The attempt should fail. But the recipient should receive the error,
+	// clean up the state and allow Charlie to try again after acquiring
+	// more funds.
+	_, err = charlieTap.FundChannel(ctxb, &tchrpc.FundChannelRequest{
+		AssetAmount:        fundingAmount,
+		AssetId:            assetID,
+		PeerPubkey:         dave.PubKey[:],
+		FeeRateSatPerVbyte: 5,
+	})
+	require.ErrorContains(t.t, err, "not enough witness outputs to create")
+
+	// Now we'll fund the channel with the correct amount.
+	net.SendCoins(t.t, btcutil.SatoshiPerBitcoin, charlie)
 
 	// Next we can open an asset channel from Charlie -> Dave, then kick
 	// off the main scenario.
