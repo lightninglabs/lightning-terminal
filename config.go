@@ -147,7 +147,7 @@ var (
 // all config items of its enveloping subservers, each prefixed with their
 // daemon's short name.
 type Config struct {
-	HTTPSListen    string   `long:"httpslisten" description:"The host:port to listen for incoming HTTP/2 connections on for the web UI only."`
+	HTTPSListen    string   `long:"httpslisten" description:"The main litd host:port to listen on for incoming HTTP/2 connections. On this port all gRPC services of all enabled daemons are exposed as well as REST (if --enablerest is specified), grpc-web and the web UI itself."`
 	HTTPListen     string   `long:"insecure-httplisten" description:"The host:port to listen on with TLS disabled. This is dangerous to enable as credentials will be submitted without encryption. Should only be used in combination with Tor hidden services or other external encryption."`
 	EnableREST     bool     `long:"enablerest" description:"Also allow REST requests to be made to the main HTTP(s) port(s) configured above."`
 	RestCORS       []string `long:"restcors" description:"Add an ip:port/hostname to allow cross origin access from. To allow all origins, set as \"*\"."`
