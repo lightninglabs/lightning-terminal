@@ -215,6 +215,7 @@ func (cfg *LitNodeConfig) defaultLitdArgs() *litArgs {
 			"uipassword":             cfg.UIPassword,
 			"enablerest":             "",
 			"restcors":               "*",
+			"lnd.debuglevel":         "trace,GRPC=error,PEER=info",
 		}
 	)
 	for _, arg := range cfg.LitArgs {
@@ -263,6 +264,8 @@ func (cfg *LitNodeConfig) defaultLitdArgs() *litArgs {
 			args[option] = ""
 		case 2:
 			args[option] = parts[1]
+		default:
+			args[option] = strings.Join(parts[1:], "=")
 		}
 	}
 
