@@ -236,7 +236,8 @@ func (g *LightningTerminal) Run() error {
 	// Construct a new Manager.
 	g.permsMgr, err = perms.NewManager(false)
 	if err != nil {
-		return fmt.Errorf("could not create permissions manager")
+		return fmt.Errorf("could not create permissions manager: %w",
+			err)
 	}
 
 	// The litcli status command will call the "/lnrpc.State/GetState" RPC.
@@ -1664,8 +1665,9 @@ func (g *LightningTerminal) initSubServers() {
 
 	g.subServerMgr.AddServer(
 		subservers.NewTaprootAssetsSubServer(
-			g.cfg.TaprootAssets, g.cfg.Remote.TaprootAssets,
-			g.cfg.tapRemote,
+			g.cfg.Network, g.cfg.TaprootAssets,
+			g.cfg.Remote.TaprootAssets,
+			g.cfg.tapRemote, g.cfg.lndRemote,
 		), g.cfg.TaprootAssetsMode != ModeDisable,
 	)
 }

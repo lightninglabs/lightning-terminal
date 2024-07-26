@@ -2,15 +2,20 @@ package subservers
 
 import (
 	"context"
+	"strings"
 
+	"github.com/btcsuite/btcd/chaincfg"
 	restProxy "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lightninglabs/lndclient"
 	tap "github.com/lightninglabs/taproot-assets"
+	"github.com/lightninglabs/taproot-assets/address"
 	"github.com/lightninglabs/taproot-assets/perms"
 	"github.com/lightninglabs/taproot-assets/tapcfg"
 	"github.com/lightninglabs/taproot-assets/taprpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/assetwalletrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/mintrpc"
+	"github.com/lightninglabs/taproot-assets/taprpc/rfqrpc"
+	tchrpc "github.com/lightninglabs/taproot-assets/taprpc/tapchannelrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/universerpc"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"google.golang.org/grpc"
@@ -22,6 +27,8 @@ type taprootAssetsSubServer struct {
 	*tap.Server
 
 	remote    bool
+	lndRemote bool
+
 	cfg       *tapcfg.Config
 	remoteCfg *RemoteDaemonConfig
 
@@ -34,17 +41,27 @@ var _ SubServer = (*taprootAssetsSubServer)(nil)
 
 // NewTaprootAssetsSubServer returns a new tap implementation of the SubServer
 // interface.
-func NewTaprootAssetsSubServer(cfg *tapcfg.Config,
-	remoteCfg *RemoteDaemonConfig, remote bool) SubServer {
+func NewTaprootAssetsSubServer(network string, cfg *tapcfg.Config,
+	remoteCfg *RemoteDaemonConfig, remote, lndRemote bool) SubServer {
 
 	// Overwrite the tap daemon's user agent name, so it sends "litd"
 	// instead of "tapd".
 	tap.SetAgentName("litd")
 
+	// A quirk of the address package is that it requires the exact testnet
+	// name, not the generic one...
+	if network == "testnet" {
+		network = chaincfg.TestNet3Params.Name
+	}
+
+	chainCfg := address.ParamsForChain(network)
+
 	return &taprootAssetsSubServer{
+		Server:    tap.NewServer(&chainCfg, nil),
 		cfg:       cfg,
 		remoteCfg: remoteCfg,
 		remote:    remote,
+		lndRemote: lndRemote,
 		errChan:   make(chan error, 1),
 	}
 }
@@ -86,14 +103,17 @@ func (t *taprootAssetsSubServer) Start(_ lnrpc.LightningClient,
 		return err
 	}
 
-	server, err := tapcfg.CreateSubServerFromConfig(
-		t.cfg, log, &lndGrpc.LndServices, t.errChan,
+	// The taproot asset channel feature is still experimental, so we
+	// disable it for now.
+	const enableChannelFeatures = false
+
+	err = tapcfg.ConfigureSubServer(
+		t.Server, t.cfg, log, &lndGrpc.LndServices,
+		enableChannelFeatures, t.errChan,
 	)
 	if err != nil {
 		return err
 	}
-
-	t.Server = server
 
 	return t.StartAsSubserver(lndGrpc)
 }
@@ -108,6 +128,8 @@ func (t *taprootAssetsSubServer) RegisterGrpcService(
 	taprpc.RegisterTaprootAssetsServer(registrar, t)
 	mintrpc.RegisterMintServer(registrar, t)
 	assetwalletrpc.RegisterAssetWalletServer(registrar, t)
+	rfqrpc.RegisterRfqServer(registrar, t)
+	tchrpc.RegisterTaprootAssetChannelsServer(registrar, t)
 	universerpc.RegisterUniverseServer(registrar, t)
 }
 
@@ -134,6 +156,20 @@ func (t *taprootAssetsSubServer) RegisterRestService(ctx context.Context,
 	}
 
 	err = assetwalletrpc.RegisterAssetWalletHandlerFromEndpoint(
+		ctx, mux, endpoint, dialOpts,
+	)
+	if err != nil {
+		return err
+	}
+
+	err = rfqrpc.RegisterRfqHandlerFromEndpoint(
+		ctx, mux, endpoint, dialOpts,
+	)
+	if err != nil {
+		return err
+	}
+
+	err = tchrpc.RegisterTaprootAssetChannelsHandlerFromEndpoint(
 		ctx, mux, endpoint, dialOpts,
 	)
 	if err != nil {
@@ -187,7 +223,17 @@ func (t *taprootAssetsSubServer) WhiteListedURLs() map[string]struct{} {
 	// If it is running in remote mode however, we just allow the request
 	// through since the remote daemon will handle blocking the call if it
 	// is not whitelisted there.
+	publicUniRead := strings.Contains(
+		t.cfg.Universe.PublicAccess,
+		string(tap.UniversePublicAccessStatusRead),
+	)
+	publicUniWrite := strings.Contains(
+		t.cfg.Universe.PublicAccess,
+		string(tap.UniversePublicAccessStatusWrite),
+	)
+
 	return perms.MacaroonWhitelist(
+		publicUniRead || t.remote, publicUniWrite || t.remote,
 		t.cfg.RpcConf.AllowPublicUniProofCourier || t.remote,
 		t.cfg.RpcConf.AllowPublicStats || t.remote,
 	)
