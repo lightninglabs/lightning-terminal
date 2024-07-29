@@ -584,31 +584,40 @@ func sendAssetKeySendPayment(t *testing.T, src, dst *HarnessNode, amt uint64,
 
 	srcTapd := newTapClient(t, src)
 
-	// Now that we know the amount we need to send, we'll convert that into
-	// an HTLC tlv, which'll be used as the first hop TLV value.
-	encodeReq := &tchrpc.EncodeCustomRecordsRequest_RouterSendPayment{
-		RouterSendPayment: &tchrpc.RouterSendPaymentData{
-			AssetAmounts: map[string]uint64{
-				hex.EncodeToString(assetID): amt,
-			},
-		},
-	}
-	encodeResp, err := srcTapd.EncodeCustomRecords(
-		ctxt, &tchrpc.EncodeCustomRecordsRequest{
-			Input: encodeReq,
-		},
-	)
+	// Read out the custom preimage for the keysend payment.
+	var preimage lntypes.Preimage
+	_, err := rand.Read(preimage[:])
 	require.NoError(t, err)
 
-	htlcCarrierAmt := btcAmt.UnwrapOr(500)
-	sendKeySendPayment(
-		t, src, dst, btcutil.Amount(htlcCarrierAmt),
-		encodeResp.CustomRecords,
-	)
+	hash := preimage.Hash()
+
+	// Set the preimage. If the user supplied a preimage with the data
+	// flag, the preimage that is set here will be overwritten later.
+	customRecords := make(map[uint64][]byte)
+	customRecords[record.KeySendType] = preimage[:]
+
+	sendReq := &routerrpc.SendPaymentRequest{
+		Dest:              dst.PubKey[:],
+		Amt:               btcAmt.UnwrapOr(500),
+		DestCustomRecords: customRecords,
+		PaymentHash:       hash[:],
+		TimeoutSeconds:    3,
+	}
+
+	stream, err := srcTapd.SendPayment(ctxt, &tchrpc.SendPaymentRequest{
+		AssetId:        assetID,
+		AssetAmount:    amt,
+		PaymentRequest: sendReq,
+	})
+	require.NoError(t, err)
+
+	result, err := getAssetPaymentResult(stream)
+	require.NoError(t, err)
+	require.Equal(t, lnrpc.Payment_SUCCEEDED, result.Status)
 }
 
-func sendKeySendPayment(t *testing.T, src, dst *HarnessNode, amt btcutil.Amount,
-	firstHopCustomRecords map[uint64][]byte) {
+func sendKeySendPayment(t *testing.T, src, dst *HarnessNode,
+	amt btcutil.Amount) {
 
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
@@ -627,18 +636,15 @@ func sendKeySendPayment(t *testing.T, src, dst *HarnessNode, amt btcutil.Amount,
 	customRecords[record.KeySendType] = preimage[:]
 
 	req := &routerrpc.SendPaymentRequest{
-		Dest:                  dst.PubKey[:],
-		Amt:                   int64(amt),
-		DestCustomRecords:     customRecords,
-		FirstHopCustomRecords: firstHopCustomRecords,
-		PaymentHash:           hash[:],
-		TimeoutSeconds:        3,
+		Dest:              dst.PubKey[:],
+		Amt:               int64(amt),
+		DestCustomRecords: customRecords,
+		PaymentHash:       hash[:],
+		TimeoutSeconds:    3,
 	}
 
 	stream, err := src.RouterClient.SendPaymentV2(ctxt, req)
 	require.NoError(t, err)
-
-	time.Sleep(time.Second)
 
 	result, err := getPaymentResult(stream)
 	require.NoError(t, err)
@@ -699,8 +705,6 @@ func payInvoiceWithSatoshi(t *testing.T, payer *HarnessNode,
 	stream, err := payer.RouterClient.SendPaymentV2(ctxt, sendReq)
 	require.NoError(t, err)
 
-	time.Sleep(time.Second)
-
 	result, err := getPaymentResult(stream)
 	require.NoError(t, err)
 	require.Equal(t, lnrpc.Payment_SUCCEEDED, result.Status)
@@ -721,85 +725,40 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 	})
 	require.NoError(t, err)
 
-	balancePayer, err := getChannelCustomData(payer, rfqPeer)
-	require.NoError(t, err)
-
-	timeoutSeconds := uint32(60)
-	resp, err := payerTapd.AddAssetSellOrder(
-		ctxb, &rfqrpc.AddAssetSellOrderRequest{
-			AssetSpecifier: &rfqrpc.AssetSpecifier{
-				Id: &rfqrpc.AssetSpecifier_AssetId{
-					AssetId: assetID,
-				},
-			},
-			// TODO(guggero): This should actually be the max BTC
-			// amount (invoice amount plus fee limit) in
-			// milli-satoshi, not the asset amount. Need to change
-			// the whole RFQ API to do that though.
-			MaxAssetAmount: balancePayer.LocalBalance,
-			MinAsk:         uint64(decodedInvoice.NumMsat),
-			Expiry:         uint64(decodedInvoice.Expiry),
-			PeerPubKey:     rfqPeer.PubKey[:],
-			TimeoutSeconds: timeoutSeconds,
-		},
-	)
-	require.NoError(t, err)
-
-	var acceptedQuote *rfqrpc.PeerAcceptedSellQuote
-	switch r := resp.Response.(type) {
-	case *rfqrpc.AddAssetSellOrderResponse_AcceptedQuote:
-		acceptedQuote = r.AcceptedQuote
-
-	case *rfqrpc.AddAssetSellOrderResponse_InvalidQuote:
-		t.Fatalf("peer %v sent back an invalid quote, "+
-			"status: %v", r.InvalidQuote.Peer,
-			r.InvalidQuote.Status.String())
-
-	case *rfqrpc.AddAssetSellOrderResponse_RejectedQuote:
-		t.Fatalf("peer %v rejected the quote, code: %v, "+
-			"error message: %v", r.RejectedQuote.Peer,
-			r.RejectedQuote.ErrorCode, r.RejectedQuote.ErrorMessage)
-
-	default:
-		t.Fatalf("unexpected response type: %T", r)
-	}
-
-	mSatPerUnit := acceptedQuote.BidPrice
-	numUnits := uint64(decodedInvoice.NumMsat) / mSatPerUnit
-
-	t.Logf("Got quote for %v asset units at %v msat/unit from peer "+
-		"%x with SCID %d", numUnits, mSatPerUnit, rfqPeer.PubKey[:],
-		acceptedQuote.Scid)
-
-	encodeReq := &tchrpc.EncodeCustomRecordsRequest_RouterSendPayment{
-		RouterSendPayment: &tchrpc.RouterSendPaymentData{
-			RfqId: acceptedQuote.Id,
-		},
-	}
-	encodeResp, err := payerTapd.EncodeCustomRecords(
-		ctxt, &tchrpc.EncodeCustomRecordsRequest{
-			Input: encodeReq,
-		},
-	)
-	require.NoError(t, err)
-
 	sendReq := &routerrpc.SendPaymentRequest{
-		PaymentRequest:        invoice.PaymentRequest,
-		TimeoutSeconds:        2,
-		FirstHopCustomRecords: encodeResp.CustomRecords,
-		FeeLimitMsat:          1_000_000,
+		PaymentRequest: invoice.PaymentRequest,
+		TimeoutSeconds: 2,
+		FeeLimitMsat:   1_000_000,
 	}
 
 	if smallShards {
 		sendReq.MaxShardSizeMsat = 80_000_000
 	}
 
-	stream, err := payer.RouterClient.SendPaymentV2(ctxt, sendReq)
+	stream, err := payerTapd.SendPayment(ctxt, &tchrpc.SendPaymentRequest{
+		AssetId:        assetID,
+		PeerPubkey:     rfqPeer.PubKey[:],
+		PaymentRequest: sendReq,
+	})
 	require.NoError(t, err)
 
-	time.Sleep(time.Second)
+	// We want to receive the accepted quote message first, so we know how
+	// many assets we're going to pay.
+	quoteMsg, err := stream.Recv()
+	require.NoError(t, err)
+	acceptedQuote := quoteMsg.GetAcceptedSellOrder()
+	require.NotNil(t, acceptedQuote)
 
-	result, err := getPaymentResult(stream)
+	peerPubKey := acceptedQuote.Peer
+	require.Equal(t, peerPubKey, rfqPeer.PubKeyStr)
+
+	msatPerUnit := acceptedQuote.BidPrice
+	numUnits := uint64(decodedInvoice.NumMsat) / msatPerUnit
+	t.Logf("Got quote for %v asset units at %v msat/unit from peer %s "+
+		"with SCID %d", numUnits, msatPerUnit, peerPubKey,
+		acceptedQuote.Scid)
+
+	result, err := getAssetPaymentResult(stream)
 	require.NoError(t, err)
 	require.Equal(t, lnrpc.Payment_SUCCEEDED, result.Status)
 

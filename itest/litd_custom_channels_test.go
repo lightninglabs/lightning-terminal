@@ -425,7 +425,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	// Dave, making it possible to send another asset HTLC below, sending
 	// all assets back to Charlie (so we have enough balance for further
 	// tests).
-	sendKeySendPayment(t.t, charlie, dave, 2000, nil)
+	sendKeySendPayment(t.t, charlie, dave, 2000)
 	logBalance(t.t, nodes, assetID, "after BTC only keysend")
 
 	// Let's keysend the rest of the balance back to Charlie.
@@ -874,7 +874,7 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	daveAssetBalance -= keySendAmount
 
 	// We should also be able to do a non-asset (BTC only) keysend payment.
-	sendKeySendPayment(t.t, charlie, dave, 2000, nil)
+	sendKeySendPayment(t.t, charlie, dave, 2000)
 	logBalance(t.t, nodes, assetID, "after BTC only keysend")
 
 	// ------------
