@@ -145,6 +145,27 @@ var (
 			"signrpc", "walletrpc", "chainrpc", "invoicesrpc",
 		},
 	}
+
+	// walletUnlockerServiceMethods defines methods of the wallet unlocker
+	// service that we don't require macaroons to access. We also allow
+	// these methods to be called even if lnd is not yet fully marked as
+	// started up (because it cannot start if it's still locked or no wallet
+	// exists).
+	walletUnlockerServiceMethods = map[string]struct{}{
+		"/lnrpc.WalletUnlocker/GenSeed":        {},
+		"/lnrpc.WalletUnlocker/InitWallet":     {},
+		"/lnrpc.WalletUnlocker/UnlockWallet":   {},
+		"/lnrpc.WalletUnlocker/ChangePassword": {},
+	}
+
+	// stateServiceMethods defines status methods that we don't require
+	// macaroons to access.
+	stateServiceMethods = map[string]struct{}{
+		// The State service must be available at all times, even
+		// before we can check macaroons, so we whitelist it.
+		"/lnrpc.State/SubscribeState": {},
+		"/lnrpc.State/GetState":       {},
+	}
 )
 
 // LightningTerminal is the main grand unified binary instance. Its task is to
@@ -244,13 +265,21 @@ func (g *LightningTerminal) Run() error {
 	// have been loaded/created, and before the lnd clients have been
 	// set up, we need to override the isReady check for this specific
 	// URI as soon as LND can accept the call, i.e. when the lnd sub-server
-	// is in the "Wallet Ready" state.
+	// is in the "Wallet Ready" state. The same goes for the streaming
+	// variant of the status RPC and any calls to the wallet unlocker
+	// service.
 	lndOverride := func(uri, manualStatus string) (bool, bool) {
-		if uri != "/lnrpc.State/GetState" {
-			return false, false
+		_, isWalletUnlockerService := walletUnlockerServiceMethods[uri]
+		_, isStatusService := stateServiceMethods[uri]
+
+		// If this is a call to the wallet unlocker or status subserver,
+		// we return true for ready if we've set up everything for lnd,
+		// and it is just waiting to be unlocked.
+		if isWalletUnlockerService || isStatusService {
+			return manualStatus == lndWalletReadyStatus, true
 		}
 
-		return manualStatus == lndWalletReadyStatus, true
+		return false, false
 	}
 
 	// Register LND, LiT and Accounts with the status manager.
