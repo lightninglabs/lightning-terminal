@@ -513,13 +513,14 @@ func testSendPayment(t *testing.T, uri string) {
 	}
 
 	lndMock := newMockLnd()
+	routerMock := newMockRouter()
 	errFunc := func(err error) {
 		lndMock.mainErrChan <- err
 	}
 	service, err := NewService(t.TempDir(), errFunc)
 	require.NoError(t, err)
 
-	err = service.Start(lndMock, lndMock, chainParams)
+	err = service.Start(lndMock, routerMock, chainParams)
 	require.NoError(t, err)
 
 	assertBalance := func(id AccountID, expectedBalance int64) {
@@ -615,7 +616,7 @@ func testSendPayment(t *testing.T, uri string) {
 	require.NoError(t, err)
 	assertBalance(acct.ID, 4000)
 
-	lndMock.assertPaymentRequests(t, map[lntypes.Hash]struct{}{
+	routerMock.assertPaymentRequests(t, map[lntypes.Hash]struct{}{
 		testHash: {},
 	})
 
@@ -646,7 +647,7 @@ func testSendPayment(t *testing.T, uri string) {
 	// was initiated.
 	assertBalance(acct.ID, 4000)
 
-	lndMock.assertNoPaymentRequest(t)
+	routerMock.assertNoPaymentRequest(t)
 
 	// The final test we will do is to have two send requests initiated
 	// before the response for the first one has been received.
@@ -708,13 +709,14 @@ func TestSendPaymentV2(t *testing.T) {
 	}
 
 	lndMock := newMockLnd()
+	routerMock := newMockRouter()
 	errFunc := func(err error) {
 		lndMock.mainErrChan <- err
 	}
 	service, err := NewService(t.TempDir(), errFunc)
 	require.NoError(t, err)
 
-	err = service.Start(lndMock, lndMock, chainParams)
+	err = service.Start(lndMock, routerMock, chainParams)
 	require.NoError(t, err)
 
 	assertBalance := func(id AccountID, expectedBalance int64) {
@@ -808,7 +810,7 @@ func TestSendPaymentV2(t *testing.T) {
 	require.NoError(t, err)
 	assertBalance(acct.ID, 4000)
 
-	lndMock.assertPaymentRequests(t, map[lntypes.Hash]struct{}{
+	routerMock.assertPaymentRequests(t, map[lntypes.Hash]struct{}{
 		testHash: {},
 	})
 
@@ -836,7 +838,7 @@ func TestSendPaymentV2(t *testing.T) {
 	// was initiated.
 	assertBalance(acct.ID, 4000)
 
-	lndMock.assertNoPaymentRequest(t)
+	routerMock.assertNoPaymentRequest(t)
 
 	// The final test we will do is to have two send requests initiated
 	// before the response for the first one has been received.
@@ -894,13 +896,14 @@ func TestSendToRouteV2(t *testing.T) {
 	}
 
 	lndMock := newMockLnd()
+	routerMock := newMockRouter()
 	errFunc := func(err error) {
 		lndMock.mainErrChan <- err
 	}
 	service, err := NewService(t.TempDir(), errFunc)
 	require.NoError(t, err)
 
-	err = service.Start(lndMock, lndMock, chainParams)
+	err = service.Start(lndMock, routerMock, chainParams)
 	require.NoError(t, err)
 
 	assertBalance := func(id AccountID, expectedBalance int64) {
@@ -998,7 +1001,7 @@ func TestSendToRouteV2(t *testing.T) {
 	require.NoError(t, err)
 	assertBalance(acct.ID, 4000)
 
-	lndMock.assertPaymentRequests(t, map[lntypes.Hash]struct{}{
+	routerMock.assertPaymentRequests(t, map[lntypes.Hash]struct{}{
 		testHash: {},
 	})
 
@@ -1028,7 +1031,7 @@ func TestSendToRouteV2(t *testing.T) {
 	// was initiated.
 	assertBalance(acct.ID, 4000)
 
-	lndMock.assertNoPaymentRequest(t)
+	routerMock.assertNoPaymentRequest(t)
 
 	// The final test we will do is to have two send requests initiated
 	// before the response for the first one has been received.
