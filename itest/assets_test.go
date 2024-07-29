@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcec/v2/schnorr"
@@ -19,6 +18,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/lightninglabs/taproot-assets/itest"
 	"github.com/lightninglabs/taproot-assets/proof"
+	"github.com/lightninglabs/taproot-assets/rfq"
 	"github.com/lightninglabs/taproot-assets/rfqmsg"
 	"github.com/lightninglabs/taproot-assets/tapchannel"
 	"github.com/lightninglabs/taproot-assets/tapfreighter"
@@ -772,91 +772,41 @@ func createAssetInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
 	defer cancel()
 
-	timeoutSeconds := uint32(60)
-	expiry := time.Now().Add(time.Duration(timeoutSeconds) * time.Second)
+	timeoutSeconds := int64(rfq.DefaultInvoiceExpiry.Seconds())
 
 	t.Logf("Asking peer %x for quote to buy assets to receive for "+
 		"invoice over %d units; waiting up to %ds",
 		dstRfqPeer.PubKey[:], assetAmount, timeoutSeconds)
 
 	dstTapd := newTapClient(t, dst)
-	resp, err := dstTapd.AddAssetBuyOrder(
-		ctxt, &rfqrpc.AddAssetBuyOrderRequest{
-			AssetSpecifier: &rfqrpc.AssetSpecifier{
-				Id: &rfqrpc.AssetSpecifier_AssetId{
-					AssetId: assetID,
-				},
-			},
-			MinAssetAmount: assetAmount,
-			Expiry:         uint64(expiry.Unix()),
-			PeerPubKey:     dstRfqPeer.PubKey[:],
-			TimeoutSeconds: timeoutSeconds,
+
+	resp, err := dstTapd.AddInvoice(ctxt, &tchrpc.AddInvoiceRequest{
+		AssetId:     assetID,
+		AssetAmount: assetAmount,
+		PeerPubkey:  dstRfqPeer.PubKey[:],
+		InvoiceRequest: &lnrpc.Invoice{
+			Memo: fmt.Sprintf("this is an asset invoice over "+
+				"%d units", assetAmount),
+			Expiry: timeoutSeconds,
 		},
-	)
-	require.NoError(t, err)
-
-	var acceptedQuote *rfqrpc.PeerAcceptedBuyQuote
-	switch r := resp.Response.(type) {
-	case *rfqrpc.AddAssetBuyOrderResponse_AcceptedQuote:
-		acceptedQuote = r.AcceptedQuote
-
-	case *rfqrpc.AddAssetBuyOrderResponse_InvalidQuote:
-		t.Fatalf("peer %v sent back an invalid quote, "+
-			"status: %v", r.InvalidQuote.Peer,
-			r.InvalidQuote.Status.String())
-
-	case *rfqrpc.AddAssetBuyOrderResponse_RejectedQuote:
-		t.Fatalf("peer %v rejected the quote, code: %v, "+
-			"error message: %v", r.RejectedQuote.Peer,
-			r.RejectedQuote.ErrorCode, r.RejectedQuote.ErrorMessage)
-
-	default:
-		t.Fatalf("unexpected response type: %T", r)
-	}
-
-	mSatPerUnit := acceptedQuote.AskPrice
-	numMSats := lnwire.MilliSatoshi(assetAmount * mSatPerUnit)
-
-	t.Logf("Got quote for %d sats at %v msat/unit from peer %x with SCID "+
-		"%d", numMSats.ToSatoshis(), mSatPerUnit, dstRfqPeer.PubKey[:],
-		acceptedQuote.Scid)
-
-	peerChannels, err := dst.ListChannels(ctxt, &lnrpc.ListChannelsRequest{
-		Peer: dstRfqPeer.PubKey[:],
 	})
 	require.NoError(t, err)
-	require.Len(t, peerChannels.Channels, 1)
-	peerChannel := peerChannels.Channels[0]
 
-	ourPolicy, err := getOurPolicy(
-		dst, peerChannel.ChanId, dstRfqPeer.PubKeyStr,
-	)
+	decodedInvoice, err := dst.DecodePayReq(ctxt, &lnrpc.PayReqString{
+		PayReq: resp.InvoiceResult.PaymentRequest,
+	})
 	require.NoError(t, err)
 
-	hopHint := &lnrpc.HopHint{
-		NodeId:                    dstRfqPeer.PubKeyStr,
-		ChanId:                    acceptedQuote.Scid,
-		FeeBaseMsat:               uint32(ourPolicy.FeeBaseMsat),
-		FeeProportionalMillionths: uint32(ourPolicy.FeeRateMilliMsat),
-		CltvExpiryDelta:           ourPolicy.TimeLockDelta,
-	}
+	mSatPerUnit := resp.AcceptedBuyQuote.AskPrice
+	numMSats := lnwire.MilliSatoshi(assetAmount * mSatPerUnit)
 
-	invoice := &lnrpc.Invoice{
-		Memo: fmt.Sprintf("this is an asset invoice over "+
-			"%d units", assetAmount),
-		ValueMsat: int64(numMSats),
-		Expiry:    int64(timeoutSeconds),
-		RouteHints: []*lnrpc.RouteHint{
-			{
-				HopHints: []*lnrpc.HopHint{hopHint},
-			},
-		},
-	}
+	require.EqualValues(t, numMSats, decodedInvoice.NumMsat)
 
-	invoiceResp, err := dst.AddInvoice(ctxb, invoice)
-	require.NoError(t, err)
+	t.Logf("Got quote for %d sats at %v msat/unit from peer %x with SCID "+
+		"%d", decodedInvoice.NumMsat, mSatPerUnit, dstRfqPeer.PubKey[:],
+		resp.AcceptedBuyQuote.Scid)
 
-	return invoiceResp
+	return resp.InvoiceResult
 }
 
 func waitForSendEvent(t *testing.T,

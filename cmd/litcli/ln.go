@@ -5,22 +5,18 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/lightninglabs/taproot-assets/asset"
-	"github.com/lightninglabs/taproot-assets/rfqmsg"
+	"github.com/lightninglabs/taproot-assets/rfq"
 	"github.com/lightninglabs/taproot-assets/taprpc"
-	"github.com/lightninglabs/taproot-assets/taprpc/rfqrpc"
 	tchrpc "github.com/lightninglabs/taproot-assets/taprpc/tapchannelrpc"
 	"github.com/lightningnetwork/lnd/cmd/commands"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
-	"github.com/lightningnetwork/lnd/lnwire"
 	"github.com/lightningnetwork/lnd/record"
 	"github.com/urfave/cli"
 	"google.golang.org/grpc"
@@ -158,64 +154,6 @@ func fundChannel(c *cli.Context) error {
 	printJSON(resp)
 
 	return nil
-}
-
-type assetBalance struct {
-	AssetID       string
-	Name          string
-	LocalBalance  uint64
-	RemoteBalance uint64
-	Channel       *lnrpc.Channel
-}
-
-type channelBalResp struct {
-	Assets map[string]*assetBalance `json:"assets"`
-}
-
-func computeAssetBalances(lnd lnrpc.LightningClient) (*channelBalResp, error) {
-	ctxb := context.Background()
-	openChans, err := lnd.ListChannels(
-		ctxb, &lnrpc.ListChannelsRequest{},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("unable to fetch channels: %w", err)
-	}
-
-	balanceResp := &channelBalResp{
-		Assets: make(map[string]*assetBalance),
-	}
-	for _, openChan := range openChans.Channels {
-		if len(openChan.CustomChannelData) == 0 {
-			continue
-		}
-
-		var assetData rfqmsg.JsonAssetChannel
-		err = json.Unmarshal(openChan.CustomChannelData, &assetData)
-		if err != nil {
-			return nil, fmt.Errorf("unable to unmarshal asset "+
-				"data: %w", err)
-		}
-
-		for _, assetOutput := range assetData.Assets {
-			assetID := assetOutput.AssetInfo.AssetGenesis.AssetID
-			assetName := assetOutput.AssetInfo.AssetGenesis.Name
-
-			balance, ok := balanceResp.Assets[assetID]
-			if !ok {
-				balance = &assetBalance{
-					AssetID: assetID,
-					Name:    assetName,
-					Channel: openChan,
-				}
-				balanceResp.Assets[assetID] = balance
-			}
-
-			balance.LocalBalance += assetOutput.LocalBalance
-			balance.RemoteBalance += assetOutput.RemoteBalance
-		}
-	}
-
-	return balanceResp, nil
 }
 
 var (
@@ -517,7 +455,8 @@ func payInvoice(ctx *cli.Context) error {
 
 			stream, err := tchrpcClient.SendPayment(
 				ctx, &tchrpc.SendPaymentRequest{
-					AssetId: assetIDBytes,
+					AssetId:        assetIDBytes,
+					PaymentRequest: req,
 				},
 			)
 			if err != nil {
@@ -551,6 +490,14 @@ var addInvoiceCommand = cli.Command{
 			Name:  "asset_amount",
 			Usage: "the amount of assets to receive",
 		},
+		cli.StringFlag{
+			Name: "rfq_peer_pubkey",
+			Usage: "(optional) the public key of the peer to ask " +
+				"for a quote when converting from assets to " +
+				"sats for the invoice; must be set if there " +
+				"are multiple channels with the same " +
+				"asset ID present",
+		},
 	),
 	Action: addInvoice,
 }
@@ -572,6 +519,8 @@ func addInvoice(ctx *cli.Context) error {
 
 	var (
 		assetAmount uint64
+		preimage    []byte
+		descHash    []byte
 		err         error
 	)
 	switch {
@@ -587,167 +536,63 @@ func addInvoice(ctx *cli.Context) error {
 		return fmt.Errorf("asset_amount argument missing")
 	}
 
-	expiry := time.Now().Add(300 * time.Second)
-	if ctx.IsSet("expiry") {
-		expirySeconds := ctx.Uint64("expiry")
-		expiry = time.Now().Add(
-			time.Duration(expirySeconds) * time.Second,
-		)
+	if ctx.IsSet("preimage") {
+		preimage, err = hex.DecodeString(ctx.String("preimage"))
+		if err != nil {
+			return fmt.Errorf("unable to parse preimage: %w", err)
+		}
 	}
 
-	lndConn, cleanup, err := connectClient(ctx, false)
+	descHash, err = hex.DecodeString(ctx.String("description_hash"))
 	if err != nil {
-		return fmt.Errorf("unable to make rpc con: %w", err)
+		return fmt.Errorf("unable to parse description_hash: %w", err)
 	}
 
-	defer cleanup()
-
-	lndClient := lnrpc.NewLightningClient(lndConn)
+	expirySeconds := int64(rfq.DefaultInvoiceExpiry.Seconds())
+	if ctx.IsSet("expiry") {
+		expirySeconds = ctx.Int64("expiry")
+	}
 
 	assetIDBytes, err := hex.DecodeString(assetIDStr)
 	if err != nil {
 		return fmt.Errorf("unable to decode assetID: %v", err)
 	}
 
-	// First, based on the asset ID and amount, we'll make sure that this
-	// channel even has enough funds to send.
-	assetBalances, err := computeAssetBalances(lndClient)
-	if err != nil {
-		return fmt.Errorf("unable to compute asset balances: %w", err)
-	}
-
-	balance, ok := assetBalances.Assets[assetIDStr]
-	if !ok {
-		return fmt.Errorf("unable to send asset_id=%v, not in "+
-			"channel", assetIDStr)
-	}
-
-	if balance.RemoteBalance == 0 {
-		return fmt.Errorf("no remote asset balance available for "+
-			"receiving asset_id=%v", assetIDStr)
-	}
-
 	var assetID asset.ID
 	copy(assetID[:], assetIDBytes)
+
+	rfqPeerKey, err := hex.DecodeString(ctx.String(rfqPeerPubKeyFlag.Name))
+	if err != nil {
+		return fmt.Errorf("unable to decode RFQ peer public key: "+
+			"%w", err)
+	}
 
 	tapdConn, cleanup, err := connectTapdClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating tapd connection: %w", err)
 	}
-
 	defer cleanup()
 
-	peerPubKey, err := hex.DecodeString(balance.Channel.RemotePubkey)
-	if err != nil {
-		return fmt.Errorf("unable to decode peer pubkey: %w", err)
-	}
-
-	rfqClient := rfqrpc.NewRfqClient(tapdConn)
-
-	timeoutSeconds := uint32(60)
-	fmt.Printf("Asking peer %x for quote to buy assets to receive for "+
-		"invoice over %d units; waiting up to %ds\n", peerPubKey,
-		assetAmount, timeoutSeconds)
-
-	resp, err := rfqClient.AddAssetBuyOrder(
-		ctxb, &rfqrpc.AddAssetBuyOrderRequest{
-			AssetSpecifier: &rfqrpc.AssetSpecifier{
-				Id: &rfqrpc.AssetSpecifier_AssetIdStr{
-					AssetIdStr: assetIDStr,
-				},
-			},
-			MinAssetAmount: assetAmount,
-			Expiry:         uint64(expiry.Unix()),
-			PeerPubKey:     peerPubKey,
-			TimeoutSeconds: timeoutSeconds,
+	channelsClient := tchrpc.NewTaprootAssetChannelsClient(tapdConn)
+	resp, err := channelsClient.AddInvoice(ctxb, &tchrpc.AddInvoiceRequest{
+		AssetId:     assetIDBytes,
+		AssetAmount: assetAmount,
+		PeerPubkey:  rfqPeerKey,
+		InvoiceRequest: &lnrpc.Invoice{
+			Memo:            ctx.String("memo"),
+			RPreimage:       preimage,
+			DescriptionHash: descHash,
+			FallbackAddr:    ctx.String("fallback_addr"),
+			Expiry:          expirySeconds,
+			Private:         ctx.Bool("private"),
+			IsAmp:           ctx.Bool("amp"),
 		},
-	)
-	if err != nil {
-		return fmt.Errorf("error adding sell order: %w", err)
-	}
-
-	var acceptedQuote *rfqrpc.PeerAcceptedBuyQuote
-	switch r := resp.Response.(type) {
-	case *rfqrpc.AddAssetBuyOrderResponse_AcceptedQuote:
-		acceptedQuote = r.AcceptedQuote
-
-	case *rfqrpc.AddAssetBuyOrderResponse_InvalidQuote:
-		return fmt.Errorf("peer %v sent back an invalid quote, "+
-			"status: %v", r.InvalidQuote.Peer,
-			r.InvalidQuote.Status.String())
-
-	case *rfqrpc.AddAssetBuyOrderResponse_RejectedQuote:
-		return fmt.Errorf("peer %v rejected the quote, code: %v, "+
-			"error message: %v", r.RejectedQuote.Peer,
-			r.RejectedQuote.ErrorCode, r.RejectedQuote.ErrorMessage)
-
-	default:
-		return fmt.Errorf("unexpected response type: %T", r)
-	}
-
-	msatPerUnit := acceptedQuote.AskPrice
-	numMSats := lnwire.MilliSatoshi(assetAmount * msatPerUnit)
-
-	descHash, err := hex.DecodeString(ctx.String("description_hash"))
-	if err != nil {
-		return fmt.Errorf("unable to parse description_hash: %w", err)
-	}
-
-	ourPolicy, err := getOurPolicy(
-		lndClient, balance.Channel.ChanId, balance.Channel.RemotePubkey,
-	)
-	if err != nil {
-		return fmt.Errorf("unable to get our policy: %w", err)
-	}
-
-	hopHint := &lnrpc.HopHint{
-		NodeId:                    balance.Channel.RemotePubkey,
-		ChanId:                    acceptedQuote.Scid,
-		FeeBaseMsat:               uint32(ourPolicy.FeeBaseMsat),
-		FeeProportionalMillionths: uint32(ourPolicy.FeeRateMilliMsat),
-		CltvExpiryDelta:           ourPolicy.TimeLockDelta,
-	}
-
-	invoice := &lnrpc.Invoice{
-		Memo:            ctx.String("memo"),
-		ValueMsat:       int64(numMSats),
-		DescriptionHash: descHash,
-		FallbackAddr:    ctx.String("fallback_addr"),
-		Expiry:          int64(ctx.Uint64("expiry")),
-		Private:         ctx.Bool("private"),
-		IsAmp:           ctx.Bool("amp"),
-		RouteHints: []*lnrpc.RouteHint{
-			{
-				HopHints: []*lnrpc.HopHint{hopHint},
-			},
-		},
-	}
-
-	invoiceResp, err := lndClient.AddInvoice(ctxb, invoice)
-	if err != nil {
-		return err
-	}
-
-	printRespJSON(invoiceResp)
-
-	return nil
-}
-
-func getOurPolicy(lndClient lnrpc.LightningClient, chanID uint64,
-	remotePubKey string) (*lnrpc.RoutingPolicy, error) {
-
-	ctxb := context.Background()
-	edge, err := lndClient.GetChanInfo(ctxb, &lnrpc.ChanInfoRequest{
-		ChanId: chanID,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("unable to fetch channel: %w", err)
+		return fmt.Errorf("error adding invoice: %w", err)
 	}
 
-	policy := edge.Node1Policy
-	if edge.Node1Pub == remotePubKey {
-		policy = edge.Node2Policy
-	}
+	printRespJSON(resp)
 
-	return policy, nil
+	return nil
 }
