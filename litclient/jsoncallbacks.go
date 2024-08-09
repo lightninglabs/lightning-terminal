@@ -10,6 +10,9 @@ import (
 	"github.com/lightninglabs/taproot-assets/taprpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/assetwalletrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/mintrpc"
+	"github.com/lightninglabs/taproot-assets/taprpc/priceoraclerpc"
+	"github.com/lightninglabs/taproot-assets/taprpc/rfqrpc"
+	"github.com/lightninglabs/taproot-assets/taprpc/tapchannelrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/universerpc"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/autopilotrpc"
@@ -55,4 +58,7 @@ var Registrations = []StubPackageRegistration{
 	assetwalletrpc.RegisterAssetWalletJSONCallbacks,
 	universerpc.RegisterUniverseJSONCallbacks,
 	mintrpc.RegisterMintJSONCallbacks,
+	priceoraclerpc.RegisterPriceOracleJSONCallbacks,
+	rfqrpc.RegisterRfqJSONCallbacks,
+	tapchannelrpc.RegisterTaprootAssetChannelsJSONCallbacks,
 }
