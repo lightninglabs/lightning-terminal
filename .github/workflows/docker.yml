@@ -4,15 +4,24 @@ on:
   push:
     tags:
       - 'v*'
-
+  schedule:
+    # Every day at midnight (UTC).
+    - cron: '0 0 * * *'
+  # Manual trigger through the UI for testing.
+  workflow_dispatch:
 
 defaults:
   run:
     shell: bash
 
 env:
-  DOCKER_REPO: lightninglabs
-  DOCKER_IMAGE: lightning-terminal
+  DOCKER_ORG: lightninglabs
+  DOCKER_REPO: lightning-terminal
+  NIGHTLY_DOCKER_REPO: lightning-terminal-nightly
+  # TODO(guggero): Change the branch to 'master' once the experimental branch is
+  # merged into master.
+  NIGHTLY_BRANCH_NAME: 0-19-staging
+  NIGHTLY_TAG_NAME: experimental-daily-testing
 
 jobs:
   main:
@@ -30,8 +39,21 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_API_KEY }}
 
+      # Make it possible to use different values for the version (used for git
+      # checkout) and the image tag (used for the docker image tag).
       - name: Set env
-        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+        run: |
+          echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+          echo "IMAGE_TAG=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+
+      # The daily/nightly build (or manual trigger) will always use the
+      # experimental branch and push to a different docker repo.
+      - name: Set daily tag
+        if: ${{ github.event.schedule == '0 0 * * *' || github.event_name == 'workflow_dispatch' }}
+        run: |
+          echo "RELEASE_VERSION=${{env.NIGHTLY_BRANCH_NAME}}" >> $GITHUB_ENV
+          echo "DOCKER_REPO=${{env.NIGHTLY_DOCKER_REPO}}" >> $GITHUB_ENV
+          echo "IMAGE_TAG=${{env.NIGHTLY_TAG_NAME}}-$(date -u +%Y%m%d)" >> $GITHUB_ENV
 
       - name: Build and push default image
         id: docker_build
@@ -39,7 +61,7 @@ jobs:
         with:
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: "${{ env.DOCKER_REPO }}/${{ env.DOCKER_IMAGE }}:${{ env.RELEASE_VERSION }}"
+          tags: "${{ env.DOCKER_ORG }}/${{ env.DOCKER_REPO }}:${{ env.IMAGE_TAG }}"
           build-args: checkout=${{ env.RELEASE_VERSION }}
 
       - name: Build and push image with /lit path
@@ -48,7 +70,7 @@ jobs:
         with:
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: "${{ env.DOCKER_REPO }}/${{ env.DOCKER_IMAGE }}:${{ env.RELEASE_VERSION }}-path-prefix"
+          tags: "${{ env.DOCKER_ORG }}/${{ env.DOCKER_REPO }}:${{ env.IMAGE_TAG }}-path-prefix"
           build-args: |
             checkout=${{ env.RELEASE_VERSION }}
             public_url=/lit
