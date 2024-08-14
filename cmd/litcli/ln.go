@@ -385,6 +385,7 @@ var payInvoiceCommand = cli.Command{
 				"invoice",
 		},
 		assetIDFlag,
+		rfqPeerPubKeyFlag,
 	),
 	Action: payInvoice,
 }
