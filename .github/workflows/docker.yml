@@ -11,8 +11,8 @@ defaults:
     shell: bash
 
 env:
-  DOCKER_REPO: lightninglabs
-  DOCKER_IMAGE: lightning-terminal
+  DOCKER_ORG: lightninglabs
+  DOCKER_REPO: lightning-terminal
 
 jobs:
   main:
@@ -39,7 +39,7 @@ jobs:
         with:
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: "${{ env.DOCKER_REPO }}/${{ env.DOCKER_IMAGE }}:${{ env.RELEASE_VERSION }}"
+          tags: "${{ env.DOCKER_ORG }}/${{ env.DOCKER_REPO }}:${{ env.RELEASE_VERSION }}"
           build-args: checkout=${{ env.RELEASE_VERSION }}
 
       - name: Build and push image with /lit path
@@ -48,7 +48,7 @@ jobs:
         with:
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: "${{ env.DOCKER_REPO }}/${{ env.DOCKER_IMAGE }}:${{ env.RELEASE_VERSION }}-path-prefix"
+          tags: "${{ env.DOCKER_ORG }}/${{ env.DOCKER_REPO }}:${{ env.RELEASE_VERSION }}-path-prefix"
           build-args: |
             checkout=${{ env.RELEASE_VERSION }}
             public_url=/lit
