@@ -63,6 +63,9 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: "${{ env.DOCKER_ORG }}/${{ env.DOCKER_REPO }}:${{ env.IMAGE_TAG }}"
           build-args: checkout=${{ env.RELEASE_VERSION }}
+      
+      - name: Clear the build cache
+        run: docker builder prune -a -f
 
       - name: Build and push image with /lit path
         id: docker_build2
