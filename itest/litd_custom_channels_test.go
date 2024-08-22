@@ -1403,6 +1403,61 @@ func testCustomChannelsForceClose(_ context.Context, net *NetworkHarness,
 	// UTXO he can use.
 	assertNumAssetUTXOs(t.t, daveTap, 1)
 	assertNumAssetUTXOs(t.t, charlieTap, 2)
+
+	// We'll make sure Dave can spend his asset UTXO by sending it all but
+	// one unit to Zane (the universe).
+	assetSendAmount := daveBalance - 1
+	zaneAddr, err := universeTap.NewAddr(ctxb, &taprpc.NewAddrRequest{
+		Amt:     assetSendAmount,
+		AssetId: assetID,
+		ProofCourierAddr: fmt.Sprintf(
+			"%s://%s", proof.UniverseRpcCourierType,
+			charlieTap.node.Cfg.LitAddr(),
+		),
+	})
+	require.NoError(t.t, err)
+
+	t.Logf("Sending %v asset from Dave units to Zane...", assetSendAmount)
+
+	// Send the assets to Zane. We expect Dave to have 3 transfers: the
+	// funding txn, their force close sweep, and now this new send.
+	itest.AssertAddrCreated(t.t, universeTap, cents, zaneAddr)
+	sendResp, err := daveTap.SendAsset(ctxb, &taprpc.SendAssetRequest{
+		TapAddrs: []string{zaneAddr.Encoded},
+	})
+	require.NoError(t.t, err)
+	itest.ConfirmAndAssertOutboundTransfer(
+		t.t, t.lndHarness.Miner.Client, daveTap, sendResp, assetID,
+		[]uint64{1, assetSendAmount}, 2, 3,
+	)
+	itest.AssertNonInteractiveRecvComplete(t.t, universeTap, 1)
+
+	// And now we also send all assets but one from Charlie to the universe
+	// to make sure the time lock sweep output can also be spent correctly.
+	assetSendAmount = charlieBalance - 1
+	zaneAddr2, err := universeTap.NewAddr(ctxb, &taprpc.NewAddrRequest{
+		Amt:     assetSendAmount,
+		AssetId: assetID,
+		ProofCourierAddr: fmt.Sprintf(
+			"%s://%s", proof.UniverseRpcCourierType,
+			charlieTap.node.Cfg.LitAddr(),
+		),
+	})
+	require.NoError(t.t, err)
+
+	t.Logf("Sending %v asset from Charlie units to Zane...",
+		assetSendAmount)
+
+	itest.AssertAddrCreated(t.t, universeTap, cents, zaneAddr2)
+	sendResp2, err := charlieTap.SendAsset(ctxb, &taprpc.SendAssetRequest{
+		TapAddrs: []string{zaneAddr2.Encoded},
+	})
+	require.NoError(t.t, err)
+	itest.ConfirmAndAssertOutboundTransfer(
+		t.t, t.lndHarness.Miner.Client, charlieTap, sendResp2, assetID,
+		[]uint64{1, assetSendAmount}, 3, 4,
+	)
+	itest.AssertNonInteractiveRecvComplete(t.t, universeTap, 2)
 }
 
 // testCustomChannelsBreach tests a force close scenario that breaches an old
