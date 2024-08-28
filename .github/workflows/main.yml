@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - "*"
+  workflow_dispatch:
 
 env:
   # If you change this value, please change it in the following files as well:
