@@ -147,6 +147,8 @@ var (
 // all config items of its enveloping subservers, each prefixed with their
 // daemon's short name.
 type Config struct {
+	ShowVersion bool `long:"version" description:"Display version information and exit."`
+
 	HTTPSListen    string   `long:"httpslisten" description:"The main litd host:port to listen on for incoming HTTP/2 connections. On this port all gRPC services of all enabled daemons are exposed as well as REST (if --enablerest is specified), grpc-web and the web UI itself."`
 	HTTPListen     string   `long:"insecure-httplisten" description:"The host:port to listen on with TLS disabled. This is dangerous to enable as credentials will be submitted without encryption. Should only be used in combination with Tor hidden services or other external encryption."`
 	EnableREST     bool     `long:"enablerest" description:"Also allow REST requests to be made to the main HTTP(s) port(s) configured above."`
@@ -345,6 +347,10 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 	// Show the version and exit if the version flag was specified.
 	appName := filepath.Base(os.Args[0])
 	appName = strings.TrimSuffix(appName, filepath.Ext(appName))
+	if preCfg.ShowVersion {
+		fmt.Println(appName, "version", Version())
+		os.Exit(0)
+	}
 	if preCfg.Lnd.ShowVersion {
 		fmt.Println(appName, "version", build.Version(),
 			"commit="+build.Commit)
