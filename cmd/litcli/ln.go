@@ -433,6 +433,12 @@ func payInvoice(ctx *cli.Context) error {
 	var assetID asset.ID
 	copy(assetID[:], assetIDBytes)
 
+	rfqPeerKey, err := hex.DecodeString(ctx.String(rfqPeerPubKeyFlag.Name))
+	if err != nil {
+		return fmt.Errorf("unable to decode RFQ peer public key: "+
+			"%w", err)
+	}
+
 	tapdConn, cleanup, err := connectTapdClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating tapd connection: %w", err)
@@ -457,6 +463,7 @@ func payInvoice(ctx *cli.Context) error {
 			stream, err := tchrpcClient.SendPayment(
 				ctx, &tchrpc.SendPaymentRequest{
 					AssetId:        assetIDBytes,
+					PeerPubkey:     rfqPeerKey,
 					PaymentRequest: req,
 				},
 			)
