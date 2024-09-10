@@ -238,7 +238,8 @@ func testCustomChannelsLarge(_ context.Context, net *NetworkHarness,
 		fabiaInvoiceAssetAmount/2
 	sendAssetKeySendPayment(
 		t.t, charlie, dave, charlieRemainingBalance,
-		assetID, fn.None[int64](),
+		assetID, fn.None[int64](), lnrpc.Payment_SUCCEEDED,
+		fn.None[lnrpc.PaymentFailureReason](),
 	)
 	logBalance(t.t, nodes, assetID, "after keysend")
 
@@ -400,7 +401,8 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	keySendAmount := charlieFundingAmount
 	sendAssetKeySendPayment(
 		t.t, charlie, dave, charlieFundingAmount, assetID,
-		fn.None[int64](),
+		fn.None[int64](), lnrpc.Payment_SUCCEEDED,
+		fn.None[lnrpc.PaymentFailureReason](),
 	)
 	logBalance(t.t, nodes, assetID, "after keysend")
 
@@ -431,7 +433,8 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	// Let's keysend the rest of the balance back to Charlie.
 	sendAssetKeySendPayment(
 		t.t, dave, charlie, charlieFundingAmount-charlieInvoiceAmount,
-		assetID, fn.None[int64](),
+		assetID, fn.None[int64](), lnrpc.Payment_SUCCEEDED,
+		fn.None[lnrpc.PaymentFailureReason](),
 	)
 	logBalance(t.t, nodes, assetID, "after keysend back")
 
@@ -856,6 +859,7 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	const keySendAmount = 100
 	sendAssetKeySendPayment(
 		t.t, charlie, dave, keySendAmount, assetID, fn.None[int64](),
+		lnrpc.Payment_SUCCEEDED, fn.None[lnrpc.PaymentFailureReason](),
 	)
 	logBalance(t.t, nodes, assetID, "after keysend")
 
@@ -867,6 +871,7 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	// an HTLC.
 	sendAssetKeySendPayment(
 		t.t, dave, charlie, keySendAmount, assetID, fn.None[int64](),
+		lnrpc.Payment_SUCCEEDED, fn.None[lnrpc.PaymentFailureReason](),
 	)
 	logBalance(t.t, nodes, assetID, "after keysend back")
 
@@ -1266,7 +1271,8 @@ func testCustomChannelsForceClose(_ context.Context, net *NetworkHarness,
 	for i := 0; i < numPayments; i++ {
 		sendAssetKeySendPayment(
 			t.t, charlie, dave, keySendAmount, assetID,
-			fn.Some(btcAmt),
+			fn.Some(btcAmt), lnrpc.Payment_SUCCEEDED,
+			fn.None[lnrpc.PaymentFailureReason](),
 		)
 	}
 
@@ -1590,7 +1596,8 @@ func testCustomChannelsBreach(_ context.Context, net *NetworkHarness,
 	for i := 0; i < numPayments; i++ {
 		sendAssetKeySendPayment(
 			t.t, charlie, dave, keySendAmount, assetID,
-			fn.Some(btcAmt),
+			fn.Some(btcAmt), lnrpc.Payment_SUCCEEDED,
+			fn.None[lnrpc.PaymentFailureReason](),
 		)
 	}
 
@@ -1605,6 +1612,8 @@ func testCustomChannelsBreach(_ context.Context, net *NetworkHarness,
 	// just at above.
 	sendAssetKeySendPayment(
 		t.t, charlie, dave, keySendAmount, assetID, fn.Some(btcAmt),
+		lnrpc.Payment_SUCCEEDED,
+		fn.None[lnrpc.PaymentFailureReason](),
 	)
 	logBalance(t.t, nodes, assetID, "after keysend -- final state")
 
@@ -1674,4 +1683,214 @@ func testCustomChannelsBreach(_ context.Context, net *NetworkHarness,
 	charlieUTXOs := assertNumAssetUTXOs(t.t, charlieTap, 2)
 
 	t.Logf("Charlie UTXOs after breach: %v", toProtoJSON(t.t, charlieUTXOs))
+}
+
+// testCustomChannelsLiquidityEdgeCases is a test that runs through some
+// taproot asset channel liquidity related edge cases.
+func testCustomChannelsLiquidityEdgeCases(_ context.Context,
+	net *NetworkHarness, t *harnessTest) {
+
+	ctxb := context.Background()
+	lndArgs := slices.Clone(lndArgsTemplate)
+	litdArgs := slices.Clone(litdArgsTemplate)
+
+	zane, err := net.NewNode(
+		t.t, "Zane", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	litdArgs = append(litdArgs, fmt.Sprintf(
+		"--taproot-assets.proofcourieraddr=%s://%s",
+		proof.UniverseRpcCourierType, zane.Cfg.LitAddr(),
+	))
+
+	charlie, err := net.NewNode(
+		t.t, "Charlie", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+	dave, err := net.NewNode(t.t, "Dave", lndArgs, false, true, litdArgs...)
+	require.NoError(t.t, err)
+	erin, err := net.NewNode(t.t, "Erin", lndArgs, false, true, litdArgs...)
+	require.NoError(t.t, err)
+
+	nodes := []*HarnessNode{charlie, dave, erin}
+	connectAllNodes(t.t, net, nodes)
+	fundAllNodes(t.t, net, nodes)
+
+	// Create the normal channel between Dave and Erin.
+	t.Logf("Opening normal channel between Dave and Erin...")
+	channelOp := openChannelAndAssert(
+		t, net, dave, erin, lntest.OpenChannelParams{
+			Amt:         5_000_000,
+			SatPerVByte: 5,
+		},
+	)
+	defer closeChannelAndAssert(t, net, dave, channelOp, false)
+
+	assertChannelKnown(t.t, charlie, channelOp)
+
+	charlieTap := newTapClient(t.t, charlie)
+	daveTap := newTapClient(t.t, dave)
+	universeTap := newTapClient(t.t, zane)
+
+	// Mint an asset on Charlie and sync Dave to Charlie as the universe.
+	mintedAssets := itest.MintAssetsConfirmBatch(
+		t.t, t.lndHarness.Miner.Client, charlieTap,
+		[]*mintrpc.MintAssetRequest{
+			{
+				Asset: itestAsset,
+			},
+		},
+	)
+	cents := mintedAssets[0]
+	assetID := cents.AssetGenesis.AssetId
+	var groupKey []byte
+	if cents.AssetGroup != nil {
+		groupKey = cents.AssetGroup.TweakedGroupKey
+	}
+	fundingScriptTree := tapchannel.NewFundingScriptTree()
+	fundingScriptKey := fundingScriptTree.TaprootKey
+	fundingScriptTreeBytes := fundingScriptKey.SerializeCompressed()
+
+	t.Logf("Minted %d lightning cents, syncing universes...", cents.Amount)
+	syncUniverses(t.t, charlieTap, dave)
+	t.Logf("Universes synced between all nodes, distributing assets...")
+
+	charlieBalance := cents.Amount
+
+	fundRespCD, err := charlieTap.FundChannel(
+		ctxb, &tchrpc.FundChannelRequest{
+			AssetAmount:        charlieBalance,
+			AssetId:            assetID,
+			PeerPubkey:         daveTap.node.PubKey[:],
+			FeeRateSatPerVbyte: 5,
+			PushSat:            0,
+		},
+	)
+	require.NoError(t.t, err)
+	t.Logf("Funded channel between Charlie and Dave: %v", fundRespCD)
+
+	// Make sure the pending channel shows up in the list and has the
+	// custom records set as JSON.
+	assertPendingChannels(
+		t.t, charlieTap.node, assetID, 1, charlieBalance, 0,
+	)
+
+	// Let's confirm the channel.
+	mineBlocks(t, net, 6, 1)
+
+	assertAssetBalance(t.t, charlieTap, assetID, cents.Amount)
+
+	// There should only be a single asset piece for Charlie, the one in the
+	// channel.
+	assertNumAssetOutputs(t.t, charlieTap, assetID, 1)
+	assertAssetExists(
+		t.t, charlieTap, assetID, charlieBalance,
+		fundingScriptKey, false, true, true,
+	)
+
+	// Assert that the proofs for both channels has been uploaded to the
+	// designated Universe server.
+	assertUniverseProofExists(
+		t.t, universeTap, assetID, groupKey, fundingScriptTreeBytes,
+		fmt.Sprintf("%v:%v", fundRespCD.Txid, fundRespCD.OutputIndex),
+	)
+
+	// Make sure the channel shows the correct asset information.
+	assertAssetChan(
+		t.t, charlieTap.node, daveTap.node, charlieBalance, assetID,
+	)
+
+	logBalance(t.t, nodes, assetID, "initial")
+
+	// Normal case.
+	// Send 50 assets from Charlie to Dave.
+	sendAssetKeySendPayment(
+		t.t, charlie, dave, 50, assetID,
+		fn.None[int64](), lnrpc.Payment_SUCCEEDED,
+		fn.None[lnrpc.PaymentFailureReason](),
+	)
+
+	logBalance(t.t, nodes, assetID, "after 50 assets")
+
+	// Normal case.
+	// Send 1k sats from Charlie to Dave.
+	sendKeySendPayment(t.t, charlie, dave, 1000)
+
+	logBalance(t.t, nodes, assetID, "after 1k sats")
+
+	// Edge case: The channel reserve check should trigger, and we should
+	// get a payment failure, not a timeout.
+	//
+	// Now Dave tries to send 50 assets to Charlie. There shouldn't be
+	// enough sats in the channel, since asset keysend payments use 500 sats
+	// by default.
+	//
+	// Assume an acceptable completion window which is half the payment
+	// timeout. If the payment succeeds within this duration this means we
+	// didn't fall into a routing loop.
+	timeoutChan := time.After(PaymentTimeout / 2)
+	done := make(chan bool, 1)
+
+	//nolint:lll
+	go func() {
+		sendAssetKeySendPayment(
+			t.t, dave, charlie, 50, assetID,
+			fn.None[int64](), lnrpc.Payment_FAILED,
+			fn.Some(lnrpc.PaymentFailureReason_FAILURE_REASON_NO_ROUTE),
+		)
+
+		done <- true
+	}()
+
+	select {
+	case <-done:
+	case <-timeoutChan:
+		t.Fatalf("Payment didn't fail within expected time duration")
+	}
+
+	logBalance(t.t, nodes, assetID, "after failed 50 assets")
+
+	// Send 10k sats from Charlie to Dave.
+	sendKeySendPayment(t.t, charlie, dave, 10000)
+
+	logBalance(t.t, nodes, assetID, "10k sats")
+
+	// Now Dave tries to send 50 assets again, this time he should have
+	// enough sats.
+	sendAssetKeySendPayment(
+		t.t, dave, charlie, 50, assetID,
+		fn.None[int64](), lnrpc.Payment_SUCCEEDED,
+		fn.None[lnrpc.PaymentFailureReason](),
+	)
+
+	logBalance(t.t, nodes, assetID, "after 50 sats backwards")
+
+	// Edge case: This refers to a bug where an asset allocation would be
+	// expected for this HTLC. This is a dust HTLC and it can not carry
+	// assets.
+	//
+	// Send 1 sat from Charlie to Dave.
+	sendKeySendPayment(t.t, charlie, dave, 1)
+
+	logBalance(t.t, nodes, assetID, "after 1 sat")
+
+	// Pay a normal bolt11 invoice involving RFQ flow.
+	_ = createAndPayNormalInvoice(
+		t.t, charlie, dave, erin, 20_000, assetID, true,
+	)
+
+	logBalance(t.t, nodes, assetID, "after 20k sat asset payment")
+
+	// Edge case: There was a bug when paying an asset invoice that would
+	// evaluate to more than the channel capacity, causing a payment failure
+	// even though enough asset balance exists.
+	//
+	// Pay a bolt11 invoice with assets, which evaluates to more than the
+	// channel btc capacity.
+	_ = createAndPayNormalInvoice(
+		t.t, charlie, dave, erin, 220_000, assetID, true,
+	)
+
+	logBalance(t.t, nodes, assetID, "after giant asset payment")
 }
