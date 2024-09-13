@@ -33,10 +33,10 @@ type Manager struct {
 	// are available for use. This map will start out not including any of
 	// lnd's sub-server permissions. Only when the LND build tags are
 	// obtained and OnLNDBuildTags is called will this map include the
-	// available LND sub-server permissions. This map must only be accessed
-	// once the permsMu mutex is held.
-	perms   map[string][]bakery.Op
-	permsMu sync.RWMutex
+	// available LND sub-server permissions.
+	perms map[string][]bakery.Op
+
+	mu sync.RWMutex
 }
 
 // NewManager constructs a new Manager instance and collects any of the
@@ -105,8 +105,8 @@ func NewManager(withAllSubServers bool) (*Manager, error) {
 // that it does not require a macaroon for validation. A URL is considered
 // white-listed if it has no operations associated with a URL.
 func (pm *Manager) IsWhiteListedURL(url string) bool {
-	pm.permsMu.Lock()
-	defer pm.permsMu.Unlock()
+	pm.mu.Lock()
+	defer pm.mu.Unlock()
 
 	ops, ok := pm.perms[url]
 
@@ -118,8 +118,8 @@ func (pm *Manager) IsWhiteListedURL(url string) bool {
 func (pm *Manager) RegisterSubServer(name string,
 	permissions map[string][]bakery.Op, whiteListURLs map[string]struct{}) {
 
-	pm.permsMu.Lock()
-	defer pm.permsMu.Unlock()
+	pm.mu.Lock()
+	defer pm.mu.Unlock()
 
 	pm.fixedPerms[name] = permissions
 
@@ -142,8 +142,8 @@ func (pm *Manager) RegisterSubServer(name string,
 // permissions to add to the main permissions list. This method should only
 // be called once.
 func (pm *Manager) OnLNDBuildTags(lndBuildTags []string) {
-	pm.permsMu.Lock()
-	defer pm.permsMu.Unlock()
+	pm.mu.Lock()
+	defer pm.mu.Unlock()
 
 	tagLookup := make(map[string]bool)
 	for _, t := range lndBuildTags {
@@ -170,8 +170,8 @@ func (pm *Manager) OnLNDBuildTags(lndBuildTags []string) {
 // the uri is known to the manager. The second return parameter will be false
 // if the URI is unknown to the manager.
 func (pm *Manager) URIPermissions(uri string) ([]bakery.Op, bool) {
-	pm.permsMu.RLock()
-	defer pm.permsMu.RUnlock()
+	pm.mu.RLock()
+	defer pm.mu.RUnlock()
 
 	ops, ok := pm.perms[uri]
 	return ops, ok
@@ -182,8 +182,8 @@ func (pm *Manager) URIPermissions(uri string) ([]bakery.Op, bool) {
 // are a list of URIs that match the regex and the boolean represents whether
 // the given uri is in fact a regex.
 func (pm *Manager) MatchRegexURI(uriRegex string) ([]string, bool) {
-	pm.permsMu.RLock()
-	defer pm.permsMu.RUnlock()
+	pm.mu.RLock()
+	defer pm.mu.RUnlock()
 
 	// If the given uri string is one of our permissions, then it is not
 	// a regex.
@@ -215,8 +215,8 @@ func (pm *Manager) MatchRegexURI(uriRegex string) ([]string, bool) {
 // manager is aware of. Optionally, readOnly can be set to true if only the
 // read-only permissions should be returned.
 func (pm *Manager) ActivePermissions(readOnly bool) []bakery.Op {
-	pm.permsMu.RLock()
-	defer pm.permsMu.RUnlock()
+	pm.mu.RLock()
+	defer pm.mu.RUnlock()
 
 	// De-dup the permissions and optionally apply the read-only filter.
 	dedupMap := make(map[string]map[string]bool)
@@ -256,6 +256,9 @@ func (pm *Manager) ActivePermissions(readOnly bool) []bakery.Op {
 // _except_ for any LND permissions. In other words, this returns permissions
 // for which the external validator of Lit is responsible.
 func (pm *Manager) GetLitPerms() map[string][]bakery.Op {
+	pm.mu.Lock()
+	defer pm.mu.Unlock()
+
 	result := make(map[string][]bakery.Op)
 	for subserver, ops := range pm.fixedPerms {
 		if subserver == lndPerms {
@@ -271,6 +274,9 @@ func (pm *Manager) GetLitPerms() map[string][]bakery.Op {
 
 // IsSubServerURI if the given URI belongs to the RPC of the given server.
 func (pm *Manager) IsSubServerURI(name string, uri string) bool {
+	pm.mu.Lock()
+	defer pm.mu.Unlock()
+
 	if name == lndPerms {
 		return pm.isLndURI(uri)
 	}
