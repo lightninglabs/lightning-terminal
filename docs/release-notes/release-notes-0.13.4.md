@@ -16,15 +16,13 @@ with 'make go-build-noui' and 'make go-install-noui'](https://github.com/lightni
 
 ### LND
 
+* [Update the integrated LND version to
+  v0.18.3-beta](https://github.com/lightninglabs/lightning-terminal/pull/843).
+
 ### Loop
 
-### Pool
-
-### Faraday
-
-### Taproot Assets
-
-# Autopilot
+* [Update the integrated Loop version to
+  v0.28.7-beta](https://github.com/lightninglabs/lightning-terminal/pull/843).
 
 # Contributors (Alphabetical Order)
 
