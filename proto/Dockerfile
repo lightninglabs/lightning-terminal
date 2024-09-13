@@ -1,10 +1,10 @@
 # Start with a NodeJS base image that also contains yarn.
-FROM node:16.14.2-buster as nodejsbuilder
+FROM node:22.8.0-bookworm as nodejsbuilder
 
 RUN apt-get update && apt-get install -y \
   git \
-  protobuf-compiler='3.6*' \
-  clang-format='1:7.0*'
+  protobuf-compiler='3.21.12*' \
+  clang-format='1:14.0*'
 
 RUN mkdir /build
 

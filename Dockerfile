@@ -1,5 +1,5 @@
 # Start with a NodeJS base image that also contains yarn.
-FROM node:16.14.2-alpine as nodejsbuilder
+FROM node:22.8.0-alpine as nodejsbuilder
 
 # Pass a tag, branch or a commit using build-arg. This allows a docker image to
 # be built from a specified Git state. The default image will use the Git tip of
