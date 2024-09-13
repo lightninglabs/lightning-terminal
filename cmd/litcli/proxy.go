@@ -32,6 +32,17 @@ var litCommands = []cli.Command{
 					"specified as a hex string using a " +
 					"maximum of 8 characters.",
 			},
+			cli.BoolFlag{
+				Name: "stateless_init",
+				Usage: "When set, it will be assumed that " +
+					"the provided macaroon is one " +
+					"created by LND. It is required " +
+					"that the macaroon has the " +
+					"permissions required to bake a " +
+					"macaroon via LND. This option may " +
+					"only be set if LND is running in " +
+					"stateless-init mode within LiT.",
+			},
 			cli.StringFlag{
 				Name: "save_to",
 				Usage: "Save returned admin macaroon to " +
@@ -125,6 +136,7 @@ func bakeSuperMacaroon(ctx *cli.Context) error {
 	resp, err := client.BakeSuperMacaroon(
 		ctxb, &litrpc.BakeSuperMacaroonRequest{
 			RootKeyIdSuffix: suffix,
+			StatelessInit:   ctx.IsSet("stateless_init"),
 		},
 	)
 	if err != nil {
