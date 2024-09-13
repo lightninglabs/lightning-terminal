@@ -66,7 +66,8 @@ func (e *proxyErr) Unwrap() error {
 // newRpcProxy creates a new RPC proxy that can take any native gRPC, grpc-web
 // or REST request and delegate (and convert if necessary) it to the correct
 // component.
-func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
+func newRpcProxy(cfg *Config, validator,
+	litMacValidator macaroons.MacaroonValidator,
 	superMacValidator session.SuperMacaroonValidator,
 	permsMgr *perms.Manager, subServerMgr *subservers.Manager,
 	statusMgr *litstatus.Manager) *rpcProxy {
@@ -87,6 +88,7 @@ func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 		cfg:               cfg,
 		basicAuth:         basicAuth,
 		permsMgr:          permsMgr,
+		litMacValidator:   litMacValidator,
 		macValidator:      validator,
 		superMacValidator: superMacValidator,
 		subServerMgr:      subServerMgr,
@@ -169,6 +171,7 @@ type rpcProxy struct {
 
 	bakeSuperMac bakeSuperMac
 
+	litMacValidator   macaroons.MacaroonValidator
 	macValidator      macaroons.MacaroonValidator
 	superMacValidator session.SuperMacaroonValidator
 

@@ -296,8 +296,8 @@ func (g *LightningTerminal) Run() error {
 	// Construct the rpcProxy. It must be initialised before the main web
 	// server is started.
 	g.rpcProxy = newRpcProxy(
-		g.cfg, g, g.validateSuperMacaroon, g.permsMgr, g.subServerMgr,
-		g.statusMgr,
+		g.cfg, g, &litMacValidator{g}, g.validateSuperMacaroon,
+		g.permsMgr, g.subServerMgr, g.statusMgr,
 	)
 
 	// Register any gRPC services that should be served using LiT's
@@ -1212,19 +1212,12 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 	}
 
 	if g.permsMgr.IsSubServerURI(subservers.LIT, fullMethod) {
-		if !g.macaroonServiceStarted {
-			return fmt.Errorf("the macaroon service has not " +
-				"started yet")
-		}
-
-		if err := g.macaroonService.ValidateMacaroon(
+		validator := &litMacValidator{g}
+		err = validator.ValidateMacaroon(
 			ctx, requiredPermissions, fullMethod,
-		); err != nil {
-			return &proxyErr{
-				proxyContext: "lit",
-				wrapped: fmt.Errorf("invalid macaroon: %w",
-					err),
-			}
+		)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -1233,6 +1226,40 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 	// macaroons there. If lnd is running remotely, that process will check
 	// the macaroons. So we don't need to worry about anything other than
 	// the subservers that are running in the local process.
+	return nil
+}
+
+// litMacValidator wraps the LightningTerminal struct and uses it to implement
+// the macaroons.ValidateMacaroon interface. Unlike the LightningTerminal's
+// ValidateMacaroon method which does whitelist checks and possibly uses a
+// different sub-server's macaroon validator, this implementation uses only
+// LiT's own macaroon service to verify the call.
+type litMacValidator struct {
+	*LightningTerminal
+}
+
+// ValidateMacaroon checks that the given call is properly authenticated
+// according to LiT's macaroon service.
+//
+// NOTE: This is part of the macaroons.ValidateMacaroon interface.
+func (g *litMacValidator) ValidateMacaroon(ctx context.Context,
+	requiredPermissions []bakery.Op, fullMethod string) error {
+
+	if !g.macaroonServiceStarted {
+		return fmt.Errorf("the macaroon service has not " +
+			"started yet")
+	}
+
+	if err := g.macaroonService.ValidateMacaroon(
+		ctx, requiredPermissions, fullMethod,
+	); err != nil {
+		return &proxyErr{
+			proxyContext: "lit",
+			wrapped: fmt.Errorf("invalid macaroon: %w",
+				err),
+		}
+	}
+
 	return nil
 }
 
