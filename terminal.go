@@ -679,7 +679,6 @@ func (g *LightningTerminal) start() error {
 
 	// If we're in integrated and stateless init mode, we won't create
 	// macaroon files in any of the subserver daemons.
-	createDefaultMacaroons := true
 	if g.cfg.LndMode == ModeIntegrated && g.lndInterceptorChain != nil &&
 		g.lndInterceptorChain.MacaroonService() != nil {
 
@@ -689,16 +688,17 @@ func (g *LightningTerminal) start() error {
 		// daemons. In all other cases we want default macaroons so we
 		// can use the CLI tools to interact with loop/pool/faraday.
 		macService := g.lndInterceptorChain.MacaroonService()
-		createDefaultMacaroons = !macService.StatelessInit
+		g.cfg.statelessInitMode = macService.StatelessInit
 	}
 
 	// Both connection types are ready now, let's start our sub-servers if
 	// they should be started locally as an integrated service.
+	createDefaultMacaroons := !g.cfg.statelessInitMode
 	g.subServerMgr.StartIntegratedServers(
 		g.basicClient, g.lndClient, createDefaultMacaroons,
 	)
 
-	err = g.startInternalSubServers(createDefaultMacaroons)
+	err = g.startInternalSubServers(!g.cfg.statelessInitMode)
 	if err != nil {
 		return fmt.Errorf("could not start litd sub-servers: %v", err)
 	}
