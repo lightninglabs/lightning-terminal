@@ -1,6 +1,7 @@
 package perms
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 	"sync"
@@ -35,6 +36,13 @@ type Manager struct {
 	// obtained and OnLNDBuildTags is called will this map include the
 	// available LND sub-server permissions.
 	perms map[string][]bakery.Op
+
+	// forcedWhiteListPerms holds a set of URIs that should be considered
+	// white listed even if they do have associated required permissions.
+	// IsWhiteListedURL will return true for any of these URIs but
+	// URIPermissions will continue to return the real permissions of the
+	// URI.
+	forcedWhiteListPerms map[string]struct{}
 
 	mu sync.RWMutex
 }
@@ -95,18 +103,47 @@ func NewManager(withAllSubServers bool) (*Manager, error) {
 	}
 
 	return &Manager{
-		lndSubServerPerms: lndSubServerPerms,
-		fixedPerms:        permissions,
-		perms:             allPerms,
+		lndSubServerPerms:    lndSubServerPerms,
+		fixedPerms:           permissions,
+		perms:                allPerms,
+		forcedWhiteListPerms: make(map[string]struct{}),
 	}, nil
+}
+
+// ForceWhiteListURL will whitelist the given URL resulting in
+// IsWhiteListedURL returning true for this URL in future calls. It will return
+// an error if this URL is unknown to the Manager. URIPermissions will continue
+// to return the real set of permissions for the URL.
+//
+// NOTE: URLs should be whitelisted with caution. This should only be done if
+// the caller will explicitly handle the verification of a URL in a location
+// other than where the usual permission verification is done (ie, in a code
+// path other than the one calling IsWhiteListedURL.
+func (pm *Manager) ForceWhiteListURL(url string) error {
+	pm.mu.Lock()
+	defer pm.mu.Unlock()
+
+	_, ok := pm.perms[url]
+	if !ok {
+		return fmt.Errorf("only known URLs can be white listed")
+	}
+
+	pm.forcedWhiteListPerms[url] = struct{}{}
+
+	return nil
 }
 
 // IsWhiteListedURL returns true if the given URL has been whitelisted meaning
 // that it does not require a macaroon for validation. A URL is considered
-// white-listed if it has no operations associated with a URL.
+// white-listed if it has no operations associated with a URL or if it has
+// been explicitly whitelisted.
 func (pm *Manager) IsWhiteListedURL(url string) bool {
 	pm.mu.Lock()
 	defer pm.mu.Unlock()
+
+	if _, ok := pm.forcedWhiteListPerms[url]; ok {
+		return true
+	}
 
 	ops, ok := pm.perms[url]
 
