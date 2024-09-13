@@ -17,6 +17,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/session"
 	litstatus "github.com/lightninglabs/lightning-terminal/status"
 	"github.com/lightninglabs/lightning-terminal/subservers"
+	"github.com/lightninglabs/lndclient"
 	"github.com/lightningnetwork/lnd/lncfg"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/macaroons"
@@ -34,6 +35,10 @@ const (
 	// HeaderMacaroon is the HTTP header field name that is used to send
 	// the macaroon.
 	HeaderMacaroon = "Macaroon"
+
+	// bakeSuperMacURI is the LiT service URI that can be used to bake a
+	// super macaroon.
+	bakeSuperMacURI = "/litrpc.Proxy/BakeSuperMacaroon"
 )
 
 var (
@@ -251,6 +256,14 @@ func (p *rpcProxy) GetInfo(_ context.Context, _ *litrpc.GetInfoRequest) (
 // BakeSuperMacaroon bakes a new macaroon that includes permissions for
 // all the active daemons that LiT is connected to.
 //
+// NOTE that we must always explicitly check the provided macaroon for this
+// method. If req.StatelessInit is false, then we check the macaroon against
+// LiT's macaroon validator, and then we just use LiT's existing, authenticated,
+// connection to LND to bake the macaroon. Otherwise, when StatelessInit is
+// true, we don't verify the macaroon here. We instead create a new connection
+// to LND using the provided macaroon for authentication, and we use this new
+// connection to bake the macaroon.
+//
 // NOTE: this is part of the litrpc.ProxyServiceServer interface.
 func (p *rpcProxy) BakeSuperMacaroon(ctx context.Context,
 	req *litrpc.BakeSuperMacaroonRequest) (
@@ -260,7 +273,59 @@ func (p *rpcProxy) BakeSuperMacaroon(ctx context.Context,
 		return nil, ErrWaitingToStart
 	}
 
-	superMac, err := p.bakeSuperMac(ctx, p.basicClient, req.RootKeyIdSuffix)
+	// Error out early if we are not in integrated mode and the
+	// stateless_init flag was set. Note that if we pass this check, we
+	// also know that LND is running in integrated mode
+	if req.StatelessInit && !p.cfg.statelessInitMode {
+		return nil, fmt.Errorf("LiT is not running in " +
+			"stateless-init mode")
+	}
+
+	var lndClient lnrpc.LightningClient
+	if !req.StatelessInit {
+		perms, ok := p.permsMgr.URIPermissions(bakeSuperMacURI)
+		if !ok {
+			return nil, fmt.Errorf("unknown perms for %s",
+				bakeSuperMacURI)
+		}
+
+		// Verify the macaroon using LiT's macaroon validator.
+		err := p.litMacValidator.ValidateMacaroon(
+			ctx, perms, bakeSuperMacURI,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		// Use LiT's authenticated connection to LND to bake the
+		// macaroon.
+		lndClient = p.basicClient
+	} else {
+		// If we are in stateless Init mode, then this call was made
+		// unauthenticated into LiT. However, it should have an LND
+		// macaroon attached which can be used to bake the macaroon.
+		// So we create a new connection to LND using this macaroon.
+
+		// Extract the macaroon from the context. This should be an
+		// LND macaroon.
+		macHex, err := macaroons.RawMacaroonFromContext(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		// Create a new connection to LND using the macaroon provided
+		// in the context.
+		lndClient, err = lndclient.NewBasicClient(
+			p.cfg.lndDialAddr(), "", "", p.cfg.Network,
+			lndclient.MacaroonData(macHex),
+			lndclient.Insecure(),
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	superMac, err := p.bakeSuperMac(ctx, lndClient, req.RootKeyIdSuffix)
 	if err != nil {
 		return nil, err
 	}

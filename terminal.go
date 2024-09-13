@@ -251,6 +251,11 @@ func (g *LightningTerminal) Run() error {
 			err)
 	}
 
+	// We will check the BakeSuperMacaroon auth within the handler itself.
+	if err = g.permsMgr.ForceWhiteListURL(bakeSuperMacURI); err != nil {
+		return err
+	}
+
 	// The litcli status command will call the "/lnrpc.State/GetState" RPC.
 	// As the status command is available to the user before the macaroons
 	// have been loaded/created, and before the lnd clients have been
