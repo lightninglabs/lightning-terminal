@@ -805,6 +805,7 @@ func (g *LightningTerminal) setUpLNDClients(lndQuit chan struct{}) error {
 
 		log.Infof("Retrying to connect basic lnd client")
 	}
+	g.rpcProxy.setBasicLNDClient(g.basicClient)
 
 	// Now we know that the connection itself is ready. But we also need to
 	// wait for two things: The chain notifier to be ready and the lnd

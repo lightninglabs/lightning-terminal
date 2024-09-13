@@ -18,6 +18,7 @@ import (
 	litstatus "github.com/lightninglabs/lightning-terminal/status"
 	"github.com/lightninglabs/lightning-terminal/subservers"
 	"github.com/lightningnetwork/lnd/lncfg"
+	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/macaroons"
 	grpcProxy "github.com/mwitkow/grpc-proxy/proxy"
 	"google.golang.org/grpc"
@@ -179,6 +180,10 @@ type rpcProxy struct {
 
 	lndConn *grpc.ClientConn
 
+	// basicClient is an interface to an LND node. Note that this may be nil
+	// until it is set via setBasicLNDClient.
+	basicClient lnrpc.LightningClient
+
 	grpcServer   *grpc.Server
 	grpcWebProxy *grpcweb.WrappedGrpcServer
 }
@@ -209,6 +214,12 @@ func (p *rpcProxy) Stop() error {
 	p.grpcServer.Stop()
 
 	return nil
+}
+
+// setBasicLNDClient provides the rpcProxy with a connection to LND
+// implementing the lnrpc.LightningClient interface.
+func (p *rpcProxy) setBasicLNDClient(client lnrpc.LightningClient) {
+	p.basicClient = client
 }
 
 // StopDaemon will send a shutdown request to the interrupt handler, triggering
