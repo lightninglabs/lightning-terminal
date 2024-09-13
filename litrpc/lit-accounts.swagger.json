@@ -196,6 +196,7 @@
         "invoices": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/litrpcAccountInvoice"
           },
           "description": "The list of invoices created by the account. An invoice created by an\naccount will credit the account balance if it is settled."
@@ -203,6 +204,7 @@
         "payments": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/litrpcAccountPayment"
           },
           "description": "The list of payments made by the account. A payment made by an account will\ndebit the account balance if it is settled."
@@ -281,6 +283,7 @@
         "accounts": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/litrpcAccount"
           },
           "description": "All accounts in the account database."
@@ -312,6 +315,7 @@
         "details": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
         }

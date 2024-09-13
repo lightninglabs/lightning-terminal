@@ -67,7 +67,8 @@ proto.litrpc.BakeSuperMacaroonRequest.prototype.toObject = function(opt_includeI
  */
 proto.litrpc.BakeSuperMacaroonRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-    rootKeyIdSuffix: jspb.Message.getFieldWithDefault(msg, 1, 0)
+    rootKeyIdSuffix: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    statelessInit: jspb.Message.getFieldWithDefault(msg, 2, false)
   };
 
   if (includeInstance) {
@@ -108,6 +109,10 @@ proto.litrpc.BakeSuperMacaroonRequest.deserializeBinaryFromReader = function(msg
       var value = /** @type {number} */ (reader.readUint32());
       msg.setRootKeyIdSuffix(value);
       break;
+    case 2:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setStatelessInit(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -144,6 +149,13 @@ proto.litrpc.BakeSuperMacaroonRequest.serializeBinaryToWriter = function(message
       f
     );
   }
+  f = message.getStatelessInit();
+  if (f) {
+    writer.writeBool(
+      2,
+      f
+    );
+  }
 };
 
 
@@ -159,6 +171,23 @@ proto.litrpc.BakeSuperMacaroonRequest.prototype.getRootKeyIdSuffix = function() 
 /** @param {number} value */
 proto.litrpc.BakeSuperMacaroonRequest.prototype.setRootKeyIdSuffix = function(value) {
   jspb.Message.setProto3IntField(this, 1, value);
+};
+
+
+/**
+ * optional bool stateless_init = 2;
+ * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
+ * You should avoid comparisons like {@code val === true/false} in those cases.
+ * @return {boolean}
+ */
+proto.litrpc.BakeSuperMacaroonRequest.prototype.getStatelessInit = function() {
+  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 2, false));
+};
+
+
+/** @param {boolean} value */
+proto.litrpc.BakeSuperMacaroonRequest.prototype.setStatelessInit = function(value) {
+  jspb.Message.setProto3BooleanField(this, 2, value);
 };
 
 

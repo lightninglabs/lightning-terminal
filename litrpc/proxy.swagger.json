@@ -114,6 +114,10 @@
           "type": "integer",
           "format": "int64",
           "description": "The root key ID suffix is the 4-byte suffix of the root key ID that will\nbe used to create the macaroon."
+        },
+        "stateless_init": {
+          "type": "boolean",
+          "description": "Whether LND and LiT are running in stateless_init mode. If this is true,\nthen call's macaroon will be authenticated against LND's macaroon service."
         }
       }
     },
@@ -163,6 +167,7 @@
         "details": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
         }

@@ -7,6 +7,9 @@ export class BakeSuperMacaroonRequest extends jspb.Message {
   getRootKeyIdSuffix(): number;
   setRootKeyIdSuffix(value: number): void;
 
+  getStatelessInit(): boolean;
+  setStatelessInit(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): BakeSuperMacaroonRequest.AsObject;
   static toObject(includeInstance: boolean, msg: BakeSuperMacaroonRequest): BakeSuperMacaroonRequest.AsObject;
@@ -20,6 +23,7 @@ export class BakeSuperMacaroonRequest extends jspb.Message {
 export namespace BakeSuperMacaroonRequest {
   export type AsObject = {
     rootKeyIdSuffix: number,
+    statelessInit: boolean,
   }
 }
 

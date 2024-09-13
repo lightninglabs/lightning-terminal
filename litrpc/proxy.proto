@@ -30,6 +30,12 @@ message BakeSuperMacaroonRequest {
     be used to create the macaroon.
     */
     uint32 root_key_id_suffix = 1;
+
+    /*
+    Whether LND and LiT are running in stateless_init mode. If this is true,
+    then call's macaroon will be authenticated against LND's macaroon service.
+    */
+    bool stateless_init = 2;
 }
 
 message BakeSuperMacaroonResponse {
