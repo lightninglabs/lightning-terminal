@@ -579,8 +579,9 @@ func (g *LightningTerminal) start() error {
 
 	// bakeSuperMac is a closure that can be used to bake a new super
 	// macaroon that contains all active permissions.
-	bakeSuperMac := func(ctx context.Context, rootKeyIDSuffix uint32) (
-		string, error) {
+	bakeSuperMac := func(ctx context.Context,
+		lndClient lnrpc.LightningClient,
+		rootKeyIDSuffix uint32) (string, error) {
 
 		var suffixBytes [4]byte
 		binary.BigEndian.PutUint32(suffixBytes[:], rootKeyIDSuffix)
@@ -588,7 +589,7 @@ func (g *LightningTerminal) start() error {
 		rootKeyID := session.NewSuperMacaroonRootKeyID(suffixBytes)
 
 		return BakeSuperMacaroon(
-			ctx, g.basicClient, rootKeyID,
+			ctx, lndClient, rootKeyID,
 			g.permsMgr.ActivePermissions(false), nil,
 		)
 	}

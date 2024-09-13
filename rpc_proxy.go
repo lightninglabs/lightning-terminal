@@ -189,7 +189,8 @@ type rpcProxy struct {
 }
 
 // bakeSuperMac can be used to bake a new super macaroon.
-type bakeSuperMac func(ctx context.Context, rootKeyID uint32) (string, error)
+type bakeSuperMac func(ctx context.Context, lndClient lnrpc.LightningClient,
+	rootKeyID uint32) (string, error)
 
 // Start creates initial connection to lnd.
 func (p *rpcProxy) Start(lndConn *grpc.ClientConn,
@@ -259,7 +260,7 @@ func (p *rpcProxy) BakeSuperMacaroon(ctx context.Context,
 		return nil, ErrWaitingToStart
 	}
 
-	superMac, err := p.bakeSuperMac(ctx, req.RootKeyIdSuffix)
+	superMac, err := p.bakeSuperMac(ctx, p.basicClient, req.RootKeyIdSuffix)
 	if err != nil {
 		return nil, err
 	}
