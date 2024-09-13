@@ -224,6 +224,9 @@ type Config struct {
 	poolRemote    bool
 	tapRemote     bool
 
+	// Whether or not LND and LiT are running in stateless init mode.
+	statelessInitMode bool
+
 	// lndAdminMacaroon is the admin macaroon that is given to us by lnd
 	// over an in-memory connection on startup. This is only set in
 	// integrated lnd mode.
