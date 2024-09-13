@@ -235,21 +235,32 @@ type Config struct {
 func (c *Config) lndConnectParams() (string, lndclient.Network, string,
 	string, []byte) {
 
+	lndDialAddr := c.lndDialAddr()
+
 	// In remote lnd mode, we just pass along what was configured in the
 	// remote section of the lnd config.
-	if c.LndMode == ModeRemote {
-		return c.Remote.Lnd.RPCServer,
+	if c.lndRemote {
+		return lndDialAddr,
 			lndclient.Network(c.Network),
 			lncfg.CleanAndExpandPath(c.Remote.Lnd.TLSCertPath),
 			lncfg.CleanAndExpandPath(c.Remote.Lnd.MacaroonPath),
 			nil
 	}
 
-	// When we start lnd internally, we take the listen address as
-	// the client dial address. But with TLS enabled by default, we
-	// cannot call 0.0.0.0 internally when dialing lnd as that IP
-	// address isn't in the cert. We need to rewrite it to the
-	// loopback address.
+	return lndDialAddr, lndclient.Network(c.Network), "", "",
+		c.lndAdminMacaroon
+}
+
+// lndDialAddr returns the address to connect to LND on.
+func (c *Config) lndDialAddr() string {
+	if c.lndRemote {
+		return c.Remote.Lnd.RPCServer
+	}
+
+	// When we start lnd internally, we take the listen address as the
+	// client dial address. But with TLS enabled by default, we cannot call
+	// 0.0.0.0 internally when dialing lnd as that IP address isn't in the
+	// cert. We need to rewrite it to the loopback address.
 	lndDialAddr := c.Lnd.RPCListeners[0].String()
 	switch {
 	case strings.Contains(lndDialAddr, "0.0.0.0"):
@@ -258,13 +269,10 @@ func (c *Config) lndConnectParams() (string, lndclient.Network, string,
 		)
 
 	case strings.Contains(lndDialAddr, "[::]"):
-		lndDialAddr = strings.Replace(
-			lndDialAddr, "[::]", "[::1]", 1,
-		)
+		lndDialAddr = strings.Replace(lndDialAddr, "[::]", "[::1]", 1)
 	}
 
-	return lndDialAddr, lndclient.Network(c.Network), "", "",
-		c.lndAdminMacaroon
+	return lndDialAddr
 }
 
 // defaultConfig returns a configuration struct with all default values set.
