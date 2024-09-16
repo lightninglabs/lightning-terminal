@@ -1,22 +1,34 @@
 /* eslint-disable */
 var proto = { poolrpc: {} };
 
+// source: trader.proto
 /**
  * @fileoverview
  * @enhanceable
+ * @suppress {missingRequire} reports error on implicit type usages.
  * @suppress {messageConventions} JS Compiler reports an error if a variable or
  *     field starts with 'MSG_' and isn't a translatable message.
  * @public
  */
 // GENERATED CODE -- DO NOT EDIT!
+/* eslint-disable */
+// @ts-nocheck
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = Function('return this')();
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var auctioneerrpc_auctioneer_pb = require('./auctioneerrpc/auctioneer_pb.js');
+goog.object.extend(proto, auctioneerrpc_auctioneer_pb);
 goog.exportSymbol('proto.poolrpc.Account', null, global);
 goog.exportSymbol('proto.poolrpc.AccountModificationFee', null, global);
+goog.exportSymbol('proto.poolrpc.AccountModificationFee.FeeCase', null, global);
 goog.exportSymbol('proto.poolrpc.AccountModificationFeesRequest', null, global);
 goog.exportSymbol('proto.poolrpc.AccountModificationFeesResponse', null, global);
 goog.exportSymbol('proto.poolrpc.AccountState', null, global);
@@ -32,15 +44,19 @@ goog.exportSymbol('proto.poolrpc.CancelOrderResponse', null, global);
 goog.exportSymbol('proto.poolrpc.CancelSidecarRequest', null, global);
 goog.exportSymbol('proto.poolrpc.CancelSidecarResponse', null, global);
 goog.exportSymbol('proto.poolrpc.CloseAccountRequest', null, global);
+goog.exportSymbol('proto.poolrpc.CloseAccountRequest.FundsDestinationCase', null, global);
 goog.exportSymbol('proto.poolrpc.CloseAccountResponse', null, global);
 goog.exportSymbol('proto.poolrpc.DecodedSidecarTicket', null, global);
 goog.exportSymbol('proto.poolrpc.DepositAccountRequest', null, global);
+goog.exportSymbol('proto.poolrpc.DepositAccountRequest.AccountExpiryCase', null, global);
 goog.exportSymbol('proto.poolrpc.DepositAccountResponse', null, global);
 goog.exportSymbol('proto.poolrpc.ExpectSidecarChannelRequest', null, global);
 goog.exportSymbol('proto.poolrpc.ExpectSidecarChannelResponse', null, global);
 goog.exportSymbol('proto.poolrpc.GetInfoRequest', null, global);
 goog.exportSymbol('proto.poolrpc.GetInfoResponse', null, global);
 goog.exportSymbol('proto.poolrpc.InitAccountRequest', null, global);
+goog.exportSymbol('proto.poolrpc.InitAccountRequest.AccountExpiryCase', null, global);
+goog.exportSymbol('proto.poolrpc.InitAccountRequest.FeesCase', null, global);
 goog.exportSymbol('proto.poolrpc.Lease', null, global);
 goog.exportSymbol('proto.poolrpc.LeaseDurationRequest', null, global);
 goog.exportSymbol('proto.poolrpc.LeaseDurationResponse', null, global);
@@ -64,10 +80,13 @@ goog.exportSymbol('proto.poolrpc.NodeRatingResponse', null, global);
 goog.exportSymbol('proto.poolrpc.OfferSidecarRequest', null, global);
 goog.exportSymbol('proto.poolrpc.Order', null, global);
 goog.exportSymbol('proto.poolrpc.OrderEvent', null, global);
+goog.exportSymbol('proto.poolrpc.OrderEvent.EventCase', null, global);
 goog.exportSymbol('proto.poolrpc.Output', null, global);
 goog.exportSymbol('proto.poolrpc.OutputWithFee', null, global);
+goog.exportSymbol('proto.poolrpc.OutputWithFee.FeesCase', null, global);
 goog.exportSymbol('proto.poolrpc.OutputsWithImplicitFee', null, global);
 goog.exportSymbol('proto.poolrpc.QuoteAccountRequest', null, global);
+goog.exportSymbol('proto.poolrpc.QuoteAccountRequest.FeesCase', null, global);
 goog.exportSymbol('proto.poolrpc.QuoteAccountResponse', null, global);
 goog.exportSymbol('proto.poolrpc.QuoteOrderRequest', null, global);
 goog.exportSymbol('proto.poolrpc.QuoteOrderResponse', null, global);
@@ -75,18 +94,21 @@ goog.exportSymbol('proto.poolrpc.RecoverAccountsRequest', null, global);
 goog.exportSymbol('proto.poolrpc.RecoverAccountsResponse', null, global);
 goog.exportSymbol('proto.poolrpc.RegisterSidecarRequest', null, global);
 goog.exportSymbol('proto.poolrpc.RenewAccountRequest', null, global);
+goog.exportSymbol('proto.poolrpc.RenewAccountRequest.AccountExpiryCase', null, global);
 goog.exportSymbol('proto.poolrpc.RenewAccountResponse', null, global);
 goog.exportSymbol('proto.poolrpc.SidecarTicket', null, global);
 goog.exportSymbol('proto.poolrpc.StopDaemonRequest', null, global);
 goog.exportSymbol('proto.poolrpc.StopDaemonResponse', null, global);
 goog.exportSymbol('proto.poolrpc.SubmitOrderRequest', null, global);
+goog.exportSymbol('proto.poolrpc.SubmitOrderRequest.DetailsCase', null, global);
 goog.exportSymbol('proto.poolrpc.SubmitOrderResponse', null, global);
+goog.exportSymbol('proto.poolrpc.SubmitOrderResponse.DetailsCase', null, global);
 goog.exportSymbol('proto.poolrpc.TokensRequest', null, global);
 goog.exportSymbol('proto.poolrpc.TokensResponse', null, global);
 goog.exportSymbol('proto.poolrpc.UpdatedEvent', null, global);
 goog.exportSymbol('proto.poolrpc.WithdrawAccountRequest', null, global);
+goog.exportSymbol('proto.poolrpc.WithdrawAccountRequest.AccountExpiryCase', null, global);
 goog.exportSymbol('proto.poolrpc.WithdrawAccountResponse', null, global);
-
 /**
  * Generated by JsPbCodeGenerator.
  * @param {Array=} opt_data Optional initial data array, typically from a
@@ -102,8 +124,1399 @@ proto.poolrpc.InitAccountRequest = function(opt_data) {
 };
 goog.inherits(proto.poolrpc.InitAccountRequest, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
   proto.poolrpc.InitAccountRequest.displayName = 'proto.poolrpc.InitAccountRequest';
 }
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.QuoteAccountRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.poolrpc.QuoteAccountRequest.oneofGroups_);
+};
+goog.inherits(proto.poolrpc.QuoteAccountRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.QuoteAccountRequest.displayName = 'proto.poolrpc.QuoteAccountRequest';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.QuoteAccountResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.QuoteAccountResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.QuoteAccountResponse.displayName = 'proto.poolrpc.QuoteAccountResponse';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.ListAccountsRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.ListAccountsRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.ListAccountsRequest.displayName = 'proto.poolrpc.ListAccountsRequest';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.ListAccountsResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.ListAccountsResponse.repeatedFields_, null);
+};
+goog.inherits(proto.poolrpc.ListAccountsResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.ListAccountsResponse.displayName = 'proto.poolrpc.ListAccountsResponse';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.Output = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.Output, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.Output.displayName = 'proto.poolrpc.Output';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.OutputWithFee = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.poolrpc.OutputWithFee.oneofGroups_);
+};
+goog.inherits(proto.poolrpc.OutputWithFee, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.OutputWithFee.displayName = 'proto.poolrpc.OutputWithFee';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.OutputsWithImplicitFee = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.OutputsWithImplicitFee.repeatedFields_, null);
+};
+goog.inherits(proto.poolrpc.OutputsWithImplicitFee, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.OutputsWithImplicitFee.displayName = 'proto.poolrpc.OutputsWithImplicitFee';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.CloseAccountRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.poolrpc.CloseAccountRequest.oneofGroups_);
+};
+goog.inherits(proto.poolrpc.CloseAccountRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.CloseAccountRequest.displayName = 'proto.poolrpc.CloseAccountRequest';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.CloseAccountResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.CloseAccountResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.CloseAccountResponse.displayName = 'proto.poolrpc.CloseAccountResponse';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.WithdrawAccountRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.WithdrawAccountRequest.repeatedFields_, proto.poolrpc.WithdrawAccountRequest.oneofGroups_);
+};
+goog.inherits(proto.poolrpc.WithdrawAccountRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.WithdrawAccountRequest.displayName = 'proto.poolrpc.WithdrawAccountRequest';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.WithdrawAccountResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.WithdrawAccountResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.WithdrawAccountResponse.displayName = 'proto.poolrpc.WithdrawAccountResponse';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.DepositAccountRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.poolrpc.DepositAccountRequest.oneofGroups_);
+};
+goog.inherits(proto.poolrpc.DepositAccountRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.DepositAccountRequest.displayName = 'proto.poolrpc.DepositAccountRequest';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.DepositAccountResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.DepositAccountResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.DepositAccountResponse.displayName = 'proto.poolrpc.DepositAccountResponse';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.RenewAccountRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.poolrpc.RenewAccountRequest.oneofGroups_);
+};
+goog.inherits(proto.poolrpc.RenewAccountRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.RenewAccountRequest.displayName = 'proto.poolrpc.RenewAccountRequest';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.RenewAccountResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.RenewAccountResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.RenewAccountResponse.displayName = 'proto.poolrpc.RenewAccountResponse';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.BumpAccountFeeRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.BumpAccountFeeRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.BumpAccountFeeRequest.displayName = 'proto.poolrpc.BumpAccountFeeRequest';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.BumpAccountFeeResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.BumpAccountFeeResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.BumpAccountFeeResponse.displayName = 'proto.poolrpc.BumpAccountFeeResponse';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.Account = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.Account, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.Account.displayName = 'proto.poolrpc.Account';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.SubmitOrderRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.poolrpc.SubmitOrderRequest.oneofGroups_);
+};
+goog.inherits(proto.poolrpc.SubmitOrderRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.SubmitOrderRequest.displayName = 'proto.poolrpc.SubmitOrderRequest';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.SubmitOrderResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.poolrpc.SubmitOrderResponse.oneofGroups_);
+};
+goog.inherits(proto.poolrpc.SubmitOrderResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.SubmitOrderResponse.displayName = 'proto.poolrpc.SubmitOrderResponse';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.ListOrdersRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.ListOrdersRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.ListOrdersRequest.displayName = 'proto.poolrpc.ListOrdersRequest';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.ListOrdersResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.ListOrdersResponse.repeatedFields_, null);
+};
+goog.inherits(proto.poolrpc.ListOrdersResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.ListOrdersResponse.displayName = 'proto.poolrpc.ListOrdersResponse';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.CancelOrderRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.CancelOrderRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.CancelOrderRequest.displayName = 'proto.poolrpc.CancelOrderRequest';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.CancelOrderResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.CancelOrderResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.CancelOrderResponse.displayName = 'proto.poolrpc.CancelOrderResponse';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.Order = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.Order.repeatedFields_, null);
+};
+goog.inherits(proto.poolrpc.Order, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.Order.displayName = 'proto.poolrpc.Order';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.Bid = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.Bid, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.Bid.displayName = 'proto.poolrpc.Bid';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.Ask = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.Ask, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.Ask.displayName = 'proto.poolrpc.Ask';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.QuoteOrderRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.QuoteOrderRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.QuoteOrderRequest.displayName = 'proto.poolrpc.QuoteOrderRequest';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.QuoteOrderResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.QuoteOrderResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.QuoteOrderResponse.displayName = 'proto.poolrpc.QuoteOrderResponse';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.OrderEvent = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.poolrpc.OrderEvent.oneofGroups_);
+};
+goog.inherits(proto.poolrpc.OrderEvent, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.OrderEvent.displayName = 'proto.poolrpc.OrderEvent';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.UpdatedEvent = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.UpdatedEvent, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.UpdatedEvent.displayName = 'proto.poolrpc.UpdatedEvent';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.MatchEvent = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.MatchEvent, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.MatchEvent.displayName = 'proto.poolrpc.MatchEvent';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.RecoverAccountsRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.RecoverAccountsRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.RecoverAccountsRequest.displayName = 'proto.poolrpc.RecoverAccountsRequest';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.RecoverAccountsResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.RecoverAccountsResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.RecoverAccountsResponse.displayName = 'proto.poolrpc.RecoverAccountsResponse';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.AccountModificationFeesRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.AccountModificationFeesRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.AccountModificationFeesRequest.displayName = 'proto.poolrpc.AccountModificationFeesRequest';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.AccountModificationFee = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.poolrpc.AccountModificationFee.oneofGroups_);
+};
+goog.inherits(proto.poolrpc.AccountModificationFee, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.AccountModificationFee.displayName = 'proto.poolrpc.AccountModificationFee';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.ListOfAccountModificationFees = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.ListOfAccountModificationFees.repeatedFields_, null);
+};
+goog.inherits(proto.poolrpc.ListOfAccountModificationFees, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.ListOfAccountModificationFees.displayName = 'proto.poolrpc.ListOfAccountModificationFees';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.AccountModificationFeesResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.AccountModificationFeesResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.AccountModificationFeesResponse.displayName = 'proto.poolrpc.AccountModificationFeesResponse';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.AuctionFeeRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.AuctionFeeRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.AuctionFeeRequest.displayName = 'proto.poolrpc.AuctionFeeRequest';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.AuctionFeeResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.AuctionFeeResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.AuctionFeeResponse.displayName = 'proto.poolrpc.AuctionFeeResponse';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.Lease = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.Lease, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.Lease.displayName = 'proto.poolrpc.Lease';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.LeasesRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.LeasesRequest.repeatedFields_, null);
+};
+goog.inherits(proto.poolrpc.LeasesRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.LeasesRequest.displayName = 'proto.poolrpc.LeasesRequest';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.LeasesResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.LeasesResponse.repeatedFields_, null);
+};
+goog.inherits(proto.poolrpc.LeasesResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.LeasesResponse.displayName = 'proto.poolrpc.LeasesResponse';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.TokensRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.TokensRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.TokensRequest.displayName = 'proto.poolrpc.TokensRequest';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.TokensResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.TokensResponse.repeatedFields_, null);
+};
+goog.inherits(proto.poolrpc.TokensResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.TokensResponse.displayName = 'proto.poolrpc.TokensResponse';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.LsatToken = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.LsatToken, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.LsatToken.displayName = 'proto.poolrpc.LsatToken';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.LeaseDurationRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.LeaseDurationRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.LeaseDurationRequest.displayName = 'proto.poolrpc.LeaseDurationRequest';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.LeaseDurationResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.LeaseDurationResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.LeaseDurationResponse.displayName = 'proto.poolrpc.LeaseDurationResponse';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.NextBatchInfoRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.NextBatchInfoRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.NextBatchInfoRequest.displayName = 'proto.poolrpc.NextBatchInfoRequest';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.NextBatchInfoResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.NextBatchInfoResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.NextBatchInfoResponse.displayName = 'proto.poolrpc.NextBatchInfoResponse';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.NodeRatingRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.NodeRatingRequest.repeatedFields_, null);
+};
+goog.inherits(proto.poolrpc.NodeRatingRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.NodeRatingRequest.displayName = 'proto.poolrpc.NodeRatingRequest';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.NodeRatingResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.NodeRatingResponse.repeatedFields_, null);
+};
+goog.inherits(proto.poolrpc.NodeRatingResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.NodeRatingResponse.displayName = 'proto.poolrpc.NodeRatingResponse';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.GetInfoRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.GetInfoRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.GetInfoRequest.displayName = 'proto.poolrpc.GetInfoRequest';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.GetInfoResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.GetInfoResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.GetInfoResponse.displayName = 'proto.poolrpc.GetInfoResponse';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.StopDaemonRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.StopDaemonRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.StopDaemonRequest.displayName = 'proto.poolrpc.StopDaemonRequest';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.StopDaemonResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.StopDaemonResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.StopDaemonResponse.displayName = 'proto.poolrpc.StopDaemonResponse';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.OfferSidecarRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.OfferSidecarRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.OfferSidecarRequest.displayName = 'proto.poolrpc.OfferSidecarRequest';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.SidecarTicket = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.SidecarTicket, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.SidecarTicket.displayName = 'proto.poolrpc.SidecarTicket';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.DecodedSidecarTicket = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.DecodedSidecarTicket, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.DecodedSidecarTicket.displayName = 'proto.poolrpc.DecodedSidecarTicket';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.RegisterSidecarRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.RegisterSidecarRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.RegisterSidecarRequest.displayName = 'proto.poolrpc.RegisterSidecarRequest';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.ExpectSidecarChannelRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.ExpectSidecarChannelRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.ExpectSidecarChannelRequest.displayName = 'proto.poolrpc.ExpectSidecarChannelRequest';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.ExpectSidecarChannelResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.ExpectSidecarChannelResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.ExpectSidecarChannelResponse.displayName = 'proto.poolrpc.ExpectSidecarChannelResponse';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.ListSidecarsRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.ListSidecarsRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.ListSidecarsRequest.displayName = 'proto.poolrpc.ListSidecarsRequest';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.ListSidecarsResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.ListSidecarsResponse.repeatedFields_, null);
+};
+goog.inherits(proto.poolrpc.ListSidecarsResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.ListSidecarsResponse.displayName = 'proto.poolrpc.ListSidecarsResponse';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.CancelSidecarRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.CancelSidecarRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.CancelSidecarRequest.displayName = 'proto.poolrpc.CancelSidecarRequest';
+}
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.poolrpc.CancelSidecarResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.poolrpc.CancelSidecarResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  /**
+   * @public
+   * @override
+   */
+  proto.poolrpc.CancelSidecarResponse.displayName = 'proto.poolrpc.CancelSidecarResponse';
+}
+
 /**
  * Oneof group definitions for this message. Each group defines the field
  * numbers belonging to that group. When of these fields' value is set, all
@@ -150,13 +1563,15 @@ proto.poolrpc.InitAccountRequest.prototype.getFeesCase = function() {
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.InitAccountRequest.prototype.toObject = function(opt_includeInstance) {
@@ -166,8 +1581,8 @@ proto.poolrpc.InitAccountRequest.prototype.toObject = function(opt_includeInstan
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.InitAccountRequest} msg The msg instance to transform.
  * @return {!Object}
@@ -336,9 +1751,12 @@ proto.poolrpc.InitAccountRequest.prototype.getAccountValue = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.InitAccountRequest} returns this
+ */
 proto.poolrpc.InitAccountRequest.prototype.setAccountValue = function(value) {
-  jspb.Message.setProto3StringIntField(this, 1, value);
+  return jspb.Message.setProto3StringIntField(this, 1, value);
 };
 
 
@@ -351,20 +1769,27 @@ proto.poolrpc.InitAccountRequest.prototype.getAbsoluteHeight = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.InitAccountRequest} returns this
+ */
 proto.poolrpc.InitAccountRequest.prototype.setAbsoluteHeight = function(value) {
-  jspb.Message.setOneofField(this, 2, proto.poolrpc.InitAccountRequest.oneofGroups_[0], value);
+  return jspb.Message.setOneofField(this, 2, proto.poolrpc.InitAccountRequest.oneofGroups_[0], value);
 };
 
 
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.poolrpc.InitAccountRequest} returns this
+ */
 proto.poolrpc.InitAccountRequest.prototype.clearAbsoluteHeight = function() {
-  jspb.Message.setOneofField(this, 2, proto.poolrpc.InitAccountRequest.oneofGroups_[0], undefined);
+  return jspb.Message.setOneofField(this, 2, proto.poolrpc.InitAccountRequest.oneofGroups_[0], undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.InitAccountRequest.prototype.hasAbsoluteHeight = function() {
   return jspb.Message.getField(this, 2) != null;
@@ -380,20 +1805,27 @@ proto.poolrpc.InitAccountRequest.prototype.getRelativeHeight = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.InitAccountRequest} returns this
+ */
 proto.poolrpc.InitAccountRequest.prototype.setRelativeHeight = function(value) {
-  jspb.Message.setOneofField(this, 3, proto.poolrpc.InitAccountRequest.oneofGroups_[0], value);
+  return jspb.Message.setOneofField(this, 3, proto.poolrpc.InitAccountRequest.oneofGroups_[0], value);
 };
 
 
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.poolrpc.InitAccountRequest} returns this
+ */
 proto.poolrpc.InitAccountRequest.prototype.clearRelativeHeight = function() {
-  jspb.Message.setOneofField(this, 3, proto.poolrpc.InitAccountRequest.oneofGroups_[0], undefined);
+  return jspb.Message.setOneofField(this, 3, proto.poolrpc.InitAccountRequest.oneofGroups_[0], undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.InitAccountRequest.prototype.hasRelativeHeight = function() {
   return jspb.Message.getField(this, 3) != null;
@@ -409,20 +1841,27 @@ proto.poolrpc.InitAccountRequest.prototype.getConfTarget = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.InitAccountRequest} returns this
+ */
 proto.poolrpc.InitAccountRequest.prototype.setConfTarget = function(value) {
-  jspb.Message.setOneofField(this, 4, proto.poolrpc.InitAccountRequest.oneofGroups_[1], value);
+  return jspb.Message.setOneofField(this, 4, proto.poolrpc.InitAccountRequest.oneofGroups_[1], value);
 };
 
 
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.poolrpc.InitAccountRequest} returns this
+ */
 proto.poolrpc.InitAccountRequest.prototype.clearConfTarget = function() {
-  jspb.Message.setOneofField(this, 4, proto.poolrpc.InitAccountRequest.oneofGroups_[1], undefined);
+  return jspb.Message.setOneofField(this, 4, proto.poolrpc.InitAccountRequest.oneofGroups_[1], undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.InitAccountRequest.prototype.hasConfTarget = function() {
   return jspb.Message.getField(this, 4) != null;
@@ -438,20 +1877,27 @@ proto.poolrpc.InitAccountRequest.prototype.getFeeRateSatPerKw = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.InitAccountRequest} returns this
+ */
 proto.poolrpc.InitAccountRequest.prototype.setFeeRateSatPerKw = function(value) {
-  jspb.Message.setOneofField(this, 6, proto.poolrpc.InitAccountRequest.oneofGroups_[1], value);
+  return jspb.Message.setOneofField(this, 6, proto.poolrpc.InitAccountRequest.oneofGroups_[1], value);
 };
 
 
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.poolrpc.InitAccountRequest} returns this
+ */
 proto.poolrpc.InitAccountRequest.prototype.clearFeeRateSatPerKw = function() {
-  jspb.Message.setOneofField(this, 6, proto.poolrpc.InitAccountRequest.oneofGroups_[1], undefined);
+  return jspb.Message.setOneofField(this, 6, proto.poolrpc.InitAccountRequest.oneofGroups_[1], undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.InitAccountRequest.prototype.hasFeeRateSatPerKw = function() {
   return jspb.Message.getField(this, 6) != null;
@@ -467,9 +1913,12 @@ proto.poolrpc.InitAccountRequest.prototype.getInitiator = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.InitAccountRequest} returns this
+ */
 proto.poolrpc.InitAccountRequest.prototype.setInitiator = function(value) {
-  jspb.Message.setProto3StringField(this, 5, value);
+  return jspb.Message.setProto3StringField(this, 5, value);
 };
 
 
@@ -482,30 +1931,16 @@ proto.poolrpc.InitAccountRequest.prototype.getVersion = function() {
 };
 
 
-/** @param {!proto.poolrpc.AccountVersion} value */
-proto.poolrpc.InitAccountRequest.prototype.setVersion = function(value) {
-  jspb.Message.setProto3EnumField(this, 7, value);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {!proto.poolrpc.AccountVersion} value
+ * @return {!proto.poolrpc.InitAccountRequest} returns this
  */
-proto.poolrpc.QuoteAccountRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.poolrpc.QuoteAccountRequest.oneofGroups_);
+proto.poolrpc.InitAccountRequest.prototype.setVersion = function(value) {
+  return jspb.Message.setProto3EnumField(this, 7, value);
 };
-goog.inherits(proto.poolrpc.QuoteAccountRequest, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.QuoteAccountRequest.displayName = 'proto.poolrpc.QuoteAccountRequest';
-}
+
+
+
 /**
  * Oneof group definitions for this message. Each group defines the field
  * numbers belonging to that group. When of these fields' value is set, all
@@ -535,13 +1970,15 @@ proto.poolrpc.QuoteAccountRequest.prototype.getFeesCase = function() {
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.QuoteAccountRequest.prototype.toObject = function(opt_includeInstance) {
@@ -551,8 +1988,8 @@ proto.poolrpc.QuoteAccountRequest.prototype.toObject = function(opt_includeInsta
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.QuoteAccountRequest} msg The msg instance to transform.
  * @return {!Object}
@@ -661,9 +2098,12 @@ proto.poolrpc.QuoteAccountRequest.prototype.getAccountValue = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.QuoteAccountRequest} returns this
+ */
 proto.poolrpc.QuoteAccountRequest.prototype.setAccountValue = function(value) {
-  jspb.Message.setProto3StringIntField(this, 1, value);
+  return jspb.Message.setProto3StringIntField(this, 1, value);
 };
 
 
@@ -676,20 +2116,27 @@ proto.poolrpc.QuoteAccountRequest.prototype.getConfTarget = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.QuoteAccountRequest} returns this
+ */
 proto.poolrpc.QuoteAccountRequest.prototype.setConfTarget = function(value) {
-  jspb.Message.setOneofField(this, 2, proto.poolrpc.QuoteAccountRequest.oneofGroups_[0], value);
+  return jspb.Message.setOneofField(this, 2, proto.poolrpc.QuoteAccountRequest.oneofGroups_[0], value);
 };
 
 
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.poolrpc.QuoteAccountRequest} returns this
+ */
 proto.poolrpc.QuoteAccountRequest.prototype.clearConfTarget = function() {
-  jspb.Message.setOneofField(this, 2, proto.poolrpc.QuoteAccountRequest.oneofGroups_[0], undefined);
+  return jspb.Message.setOneofField(this, 2, proto.poolrpc.QuoteAccountRequest.oneofGroups_[0], undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.QuoteAccountRequest.prototype.hasConfTarget = function() {
   return jspb.Message.getField(this, 2) != null;
@@ -697,34 +2144,19 @@ proto.poolrpc.QuoteAccountRequest.prototype.hasConfTarget = function() {
 
 
 
-/**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
- */
-proto.poolrpc.QuoteAccountResponse = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
-};
-goog.inherits(proto.poolrpc.QuoteAccountResponse, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.QuoteAccountResponse.displayName = 'proto.poolrpc.QuoteAccountResponse';
-}
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.QuoteAccountResponse.prototype.toObject = function(opt_includeInstance) {
@@ -734,8 +2166,8 @@ proto.poolrpc.QuoteAccountResponse.prototype.toObject = function(opt_includeInst
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.QuoteAccountResponse} msg The msg instance to transform.
  * @return {!Object}
@@ -844,9 +2276,12 @@ proto.poolrpc.QuoteAccountResponse.prototype.getMinerFeeRateSatPerKw = function(
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.QuoteAccountResponse} returns this
+ */
 proto.poolrpc.QuoteAccountResponse.prototype.setMinerFeeRateSatPerKw = function(value) {
-  jspb.Message.setProto3StringIntField(this, 1, value);
+  return jspb.Message.setProto3StringIntField(this, 1, value);
 };
 
 
@@ -859,41 +2294,29 @@ proto.poolrpc.QuoteAccountResponse.prototype.getMinerFeeTotal = function() {
 };
 
 
-/** @param {string} value */
-proto.poolrpc.QuoteAccountResponse.prototype.setMinerFeeTotal = function(value) {
-  jspb.Message.setProto3StringIntField(this, 2, value);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {string} value
+ * @return {!proto.poolrpc.QuoteAccountResponse} returns this
  */
-proto.poolrpc.ListAccountsRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+proto.poolrpc.QuoteAccountResponse.prototype.setMinerFeeTotal = function(value) {
+  return jspb.Message.setProto3StringIntField(this, 2, value);
 };
-goog.inherits(proto.poolrpc.ListAccountsRequest, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.ListAccountsRequest.displayName = 'proto.poolrpc.ListAccountsRequest';
-}
+
+
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.ListAccountsRequest.prototype.toObject = function(opt_includeInstance) {
@@ -903,8 +2326,8 @@ proto.poolrpc.ListAccountsRequest.prototype.toObject = function(opt_includeInsta
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.ListAccountsRequest} msg The msg instance to transform.
  * @return {!Object}
@@ -912,7 +2335,7 @@ proto.poolrpc.ListAccountsRequest.prototype.toObject = function(opt_includeInsta
  */
 proto.poolrpc.ListAccountsRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-    activeOnly: jspb.Message.getFieldWithDefault(msg, 1, false)
+    activeOnly: jspb.Message.getBooleanFieldWithDefault(msg, 1, false)
   };
 
   if (includeInstance) {
@@ -994,39 +2417,23 @@ proto.poolrpc.ListAccountsRequest.serializeBinaryToWriter = function(message, wr
 
 /**
  * optional bool active_only = 1;
- * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
- * You should avoid comparisons like {@code val === true/false} in those cases.
  * @return {boolean}
  */
 proto.poolrpc.ListAccountsRequest.prototype.getActiveOnly = function() {
-  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 1, false));
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 1, false));
 };
-
-
-/** @param {boolean} value */
-proto.poolrpc.ListAccountsRequest.prototype.setActiveOnly = function(value) {
-  jspb.Message.setProto3BooleanField(this, 1, value);
-};
-
 
 
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {boolean} value
+ * @return {!proto.poolrpc.ListAccountsRequest} returns this
  */
-proto.poolrpc.ListAccountsResponse = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.ListAccountsResponse.repeatedFields_, null);
+proto.poolrpc.ListAccountsRequest.prototype.setActiveOnly = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 1, value);
 };
-goog.inherits(proto.poolrpc.ListAccountsResponse, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.ListAccountsResponse.displayName = 'proto.poolrpc.ListAccountsResponse';
-}
+
+
+
 /**
  * List of repeated fields within this message type.
  * @private {!Array<number>}
@@ -1038,13 +2445,15 @@ proto.poolrpc.ListAccountsResponse.repeatedFields_ = [1];
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.ListAccountsResponse.prototype.toObject = function(opt_includeInstance) {
@@ -1054,8 +2463,8 @@ proto.poolrpc.ListAccountsResponse.prototype.toObject = function(opt_includeInst
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.ListAccountsResponse} msg The msg instance to transform.
  * @return {!Object}
@@ -1156,9 +2565,12 @@ proto.poolrpc.ListAccountsResponse.prototype.getAccountsList = function() {
 };
 
 
-/** @param {!Array<!proto.poolrpc.Account>} value */
+/**
+ * @param {!Array<!proto.poolrpc.Account>} value
+ * @return {!proto.poolrpc.ListAccountsResponse} returns this
+*/
 proto.poolrpc.ListAccountsResponse.prototype.setAccountsList = function(value) {
-  jspb.Message.setRepeatedWrapperField(this, 1, value);
+  return jspb.Message.setRepeatedWrapperField(this, 1, value);
 };
 
 
@@ -1172,40 +2584,29 @@ proto.poolrpc.ListAccountsResponse.prototype.addAccounts = function(opt_value, o
 };
 
 
-proto.poolrpc.ListAccountsResponse.prototype.clearAccountsList = function() {
-  this.setAccountsList([]);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * Clears the list making it empty but non-null.
+ * @return {!proto.poolrpc.ListAccountsResponse} returns this
  */
-proto.poolrpc.Output = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+proto.poolrpc.ListAccountsResponse.prototype.clearAccountsList = function() {
+  return this.setAccountsList([]);
 };
-goog.inherits(proto.poolrpc.Output, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.Output.displayName = 'proto.poolrpc.Output';
-}
+
+
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.Output.prototype.toObject = function(opt_includeInstance) {
@@ -1215,8 +2616,8 @@ proto.poolrpc.Output.prototype.toObject = function(opt_includeInstance) {
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.Output} msg The msg instance to transform.
  * @return {!Object}
@@ -1325,9 +2726,12 @@ proto.poolrpc.Output.prototype.getValueSat = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.Output} returns this
+ */
 proto.poolrpc.Output.prototype.setValueSat = function(value) {
-  jspb.Message.setProto3StringIntField(this, 1, value);
+  return jspb.Message.setProto3StringIntField(this, 1, value);
 };
 
 
@@ -1340,30 +2744,16 @@ proto.poolrpc.Output.prototype.getAddress = function() {
 };
 
 
-/** @param {string} value */
-proto.poolrpc.Output.prototype.setAddress = function(value) {
-  jspb.Message.setProto3StringField(this, 2, value);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {string} value
+ * @return {!proto.poolrpc.Output} returns this
  */
-proto.poolrpc.OutputWithFee = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.poolrpc.OutputWithFee.oneofGroups_);
+proto.poolrpc.Output.prototype.setAddress = function(value) {
+  return jspb.Message.setProto3StringField(this, 2, value);
 };
-goog.inherits(proto.poolrpc.OutputWithFee, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.OutputWithFee.displayName = 'proto.poolrpc.OutputWithFee';
-}
+
+
+
 /**
  * Oneof group definitions for this message. Each group defines the field
  * numbers belonging to that group. When of these fields' value is set, all
@@ -1394,13 +2784,15 @@ proto.poolrpc.OutputWithFee.prototype.getFeesCase = function() {
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.OutputWithFee.prototype.toObject = function(opt_includeInstance) {
@@ -1410,8 +2802,8 @@ proto.poolrpc.OutputWithFee.prototype.toObject = function(opt_includeInstance) {
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.OutputWithFee} msg The msg instance to transform.
  * @return {!Object}
@@ -1532,9 +2924,12 @@ proto.poolrpc.OutputWithFee.prototype.getAddress = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.OutputWithFee} returns this
+ */
 proto.poolrpc.OutputWithFee.prototype.setAddress = function(value) {
-  jspb.Message.setProto3StringField(this, 1, value);
+  return jspb.Message.setProto3StringField(this, 1, value);
 };
 
 
@@ -1547,20 +2942,27 @@ proto.poolrpc.OutputWithFee.prototype.getConfTarget = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.OutputWithFee} returns this
+ */
 proto.poolrpc.OutputWithFee.prototype.setConfTarget = function(value) {
-  jspb.Message.setOneofField(this, 2, proto.poolrpc.OutputWithFee.oneofGroups_[0], value);
+  return jspb.Message.setOneofField(this, 2, proto.poolrpc.OutputWithFee.oneofGroups_[0], value);
 };
 
 
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.poolrpc.OutputWithFee} returns this
+ */
 proto.poolrpc.OutputWithFee.prototype.clearConfTarget = function() {
-  jspb.Message.setOneofField(this, 2, proto.poolrpc.OutputWithFee.oneofGroups_[0], undefined);
+  return jspb.Message.setOneofField(this, 2, proto.poolrpc.OutputWithFee.oneofGroups_[0], undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.OutputWithFee.prototype.hasConfTarget = function() {
   return jspb.Message.getField(this, 2) != null;
@@ -1576,20 +2978,27 @@ proto.poolrpc.OutputWithFee.prototype.getFeeRateSatPerKw = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.OutputWithFee} returns this
+ */
 proto.poolrpc.OutputWithFee.prototype.setFeeRateSatPerKw = function(value) {
-  jspb.Message.setOneofField(this, 3, proto.poolrpc.OutputWithFee.oneofGroups_[0], value);
+  return jspb.Message.setOneofField(this, 3, proto.poolrpc.OutputWithFee.oneofGroups_[0], value);
 };
 
 
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.poolrpc.OutputWithFee} returns this
+ */
 proto.poolrpc.OutputWithFee.prototype.clearFeeRateSatPerKw = function() {
-  jspb.Message.setOneofField(this, 3, proto.poolrpc.OutputWithFee.oneofGroups_[0], undefined);
+  return jspb.Message.setOneofField(this, 3, proto.poolrpc.OutputWithFee.oneofGroups_[0], undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.OutputWithFee.prototype.hasFeeRateSatPerKw = function() {
   return jspb.Message.getField(this, 3) != null;
@@ -1597,23 +3006,6 @@ proto.poolrpc.OutputWithFee.prototype.hasFeeRateSatPerKw = function() {
 
 
 
-/**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
- */
-proto.poolrpc.OutputsWithImplicitFee = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.OutputsWithImplicitFee.repeatedFields_, null);
-};
-goog.inherits(proto.poolrpc.OutputsWithImplicitFee, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.OutputsWithImplicitFee.displayName = 'proto.poolrpc.OutputsWithImplicitFee';
-}
 /**
  * List of repeated fields within this message type.
  * @private {!Array<number>}
@@ -1625,13 +3017,15 @@ proto.poolrpc.OutputsWithImplicitFee.repeatedFields_ = [1];
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.OutputsWithImplicitFee.prototype.toObject = function(opt_includeInstance) {
@@ -1641,8 +3035,8 @@ proto.poolrpc.OutputsWithImplicitFee.prototype.toObject = function(opt_includeIn
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.OutputsWithImplicitFee} msg The msg instance to transform.
  * @return {!Object}
@@ -1743,9 +3137,12 @@ proto.poolrpc.OutputsWithImplicitFee.prototype.getOutputsList = function() {
 };
 
 
-/** @param {!Array<!proto.poolrpc.Output>} value */
+/**
+ * @param {!Array<!proto.poolrpc.Output>} value
+ * @return {!proto.poolrpc.OutputsWithImplicitFee} returns this
+*/
 proto.poolrpc.OutputsWithImplicitFee.prototype.setOutputsList = function(value) {
-  jspb.Message.setRepeatedWrapperField(this, 1, value);
+  return jspb.Message.setRepeatedWrapperField(this, 1, value);
 };
 
 
@@ -1759,29 +3156,16 @@ proto.poolrpc.OutputsWithImplicitFee.prototype.addOutputs = function(opt_value, 
 };
 
 
-proto.poolrpc.OutputsWithImplicitFee.prototype.clearOutputsList = function() {
-  this.setOutputsList([]);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * Clears the list making it empty but non-null.
+ * @return {!proto.poolrpc.OutputsWithImplicitFee} returns this
  */
-proto.poolrpc.CloseAccountRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.poolrpc.CloseAccountRequest.oneofGroups_);
+proto.poolrpc.OutputsWithImplicitFee.prototype.clearOutputsList = function() {
+  return this.setOutputsList([]);
 };
-goog.inherits(proto.poolrpc.CloseAccountRequest, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.CloseAccountRequest.displayName = 'proto.poolrpc.CloseAccountRequest';
-}
+
+
+
 /**
  * Oneof group definitions for this message. Each group defines the field
  * numbers belonging to that group. When of these fields' value is set, all
@@ -1812,13 +3196,15 @@ proto.poolrpc.CloseAccountRequest.prototype.getFundsDestinationCase = function()
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.CloseAccountRequest.prototype.toObject = function(opt_includeInstance) {
@@ -1828,8 +3214,8 @@ proto.poolrpc.CloseAccountRequest.prototype.toObject = function(opt_includeInsta
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.CloseAccountRequest} msg The msg instance to transform.
  * @return {!Object}
@@ -1978,9 +3364,12 @@ proto.poolrpc.CloseAccountRequest.prototype.getTraderKey_asU8 = function() {
 };
 
 
-/** @param {!(string|Uint8Array)} value */
+/**
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.CloseAccountRequest} returns this
+ */
 proto.poolrpc.CloseAccountRequest.prototype.setTraderKey = function(value) {
-  jspb.Message.setProto3BytesField(this, 1, value);
+  return jspb.Message.setProto3BytesField(this, 1, value);
 };
 
 
@@ -1994,20 +3383,27 @@ proto.poolrpc.CloseAccountRequest.prototype.getOutputWithFee = function() {
 };
 
 
-/** @param {?proto.poolrpc.OutputWithFee|undefined} value */
+/**
+ * @param {?proto.poolrpc.OutputWithFee|undefined} value
+ * @return {!proto.poolrpc.CloseAccountRequest} returns this
+*/
 proto.poolrpc.CloseAccountRequest.prototype.setOutputWithFee = function(value) {
-  jspb.Message.setOneofWrapperField(this, 2, proto.poolrpc.CloseAccountRequest.oneofGroups_[0], value);
+  return jspb.Message.setOneofWrapperField(this, 2, proto.poolrpc.CloseAccountRequest.oneofGroups_[0], value);
 };
 
 
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.poolrpc.CloseAccountRequest} returns this
+ */
 proto.poolrpc.CloseAccountRequest.prototype.clearOutputWithFee = function() {
-  this.setOutputWithFee(undefined);
+  return this.setOutputWithFee(undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.CloseAccountRequest.prototype.hasOutputWithFee = function() {
   return jspb.Message.getField(this, 2) != null;
@@ -2024,20 +3420,27 @@ proto.poolrpc.CloseAccountRequest.prototype.getOutputs = function() {
 };
 
 
-/** @param {?proto.poolrpc.OutputsWithImplicitFee|undefined} value */
+/**
+ * @param {?proto.poolrpc.OutputsWithImplicitFee|undefined} value
+ * @return {!proto.poolrpc.CloseAccountRequest} returns this
+*/
 proto.poolrpc.CloseAccountRequest.prototype.setOutputs = function(value) {
-  jspb.Message.setOneofWrapperField(this, 3, proto.poolrpc.CloseAccountRequest.oneofGroups_[0], value);
+  return jspb.Message.setOneofWrapperField(this, 3, proto.poolrpc.CloseAccountRequest.oneofGroups_[0], value);
 };
 
 
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.poolrpc.CloseAccountRequest} returns this
+ */
 proto.poolrpc.CloseAccountRequest.prototype.clearOutputs = function() {
-  this.setOutputs(undefined);
+  return this.setOutputs(undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.CloseAccountRequest.prototype.hasOutputs = function() {
   return jspb.Message.getField(this, 3) != null;
@@ -2045,34 +3448,19 @@ proto.poolrpc.CloseAccountRequest.prototype.hasOutputs = function() {
 
 
 
-/**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
- */
-proto.poolrpc.CloseAccountResponse = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
-};
-goog.inherits(proto.poolrpc.CloseAccountResponse, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.CloseAccountResponse.displayName = 'proto.poolrpc.CloseAccountResponse';
-}
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.CloseAccountResponse.prototype.toObject = function(opt_includeInstance) {
@@ -2082,8 +3470,8 @@ proto.poolrpc.CloseAccountResponse.prototype.toObject = function(opt_includeInst
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.CloseAccountResponse} msg The msg instance to transform.
  * @return {!Object}
@@ -2204,30 +3592,16 @@ proto.poolrpc.CloseAccountResponse.prototype.getCloseTxid_asU8 = function() {
 };
 
 
-/** @param {!(string|Uint8Array)} value */
-proto.poolrpc.CloseAccountResponse.prototype.setCloseTxid = function(value) {
-  jspb.Message.setProto3BytesField(this, 1, value);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.CloseAccountResponse} returns this
  */
-proto.poolrpc.WithdrawAccountRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.WithdrawAccountRequest.repeatedFields_, proto.poolrpc.WithdrawAccountRequest.oneofGroups_);
+proto.poolrpc.CloseAccountResponse.prototype.setCloseTxid = function(value) {
+  return jspb.Message.setProto3BytesField(this, 1, value);
 };
-goog.inherits(proto.poolrpc.WithdrawAccountRequest, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.WithdrawAccountRequest.displayName = 'proto.poolrpc.WithdrawAccountRequest';
-}
+
+
+
 /**
  * List of repeated fields within this message type.
  * @private {!Array<number>}
@@ -2265,13 +3639,15 @@ proto.poolrpc.WithdrawAccountRequest.prototype.getAccountExpiryCase = function()
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.WithdrawAccountRequest.prototype.toObject = function(opt_includeInstance) {
@@ -2281,8 +3657,8 @@ proto.poolrpc.WithdrawAccountRequest.prototype.toObject = function(opt_includeIn
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.WithdrawAccountRequest} msg The msg instance to transform.
  * @return {!Object}
@@ -2466,9 +3842,12 @@ proto.poolrpc.WithdrawAccountRequest.prototype.getTraderKey_asU8 = function() {
 };
 
 
-/** @param {!(string|Uint8Array)} value */
+/**
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.WithdrawAccountRequest} returns this
+ */
 proto.poolrpc.WithdrawAccountRequest.prototype.setTraderKey = function(value) {
-  jspb.Message.setProto3BytesField(this, 1, value);
+  return jspb.Message.setProto3BytesField(this, 1, value);
 };
 
 
@@ -2482,9 +3861,12 @@ proto.poolrpc.WithdrawAccountRequest.prototype.getOutputsList = function() {
 };
 
 
-/** @param {!Array<!proto.poolrpc.Output>} value */
+/**
+ * @param {!Array<!proto.poolrpc.Output>} value
+ * @return {!proto.poolrpc.WithdrawAccountRequest} returns this
+*/
 proto.poolrpc.WithdrawAccountRequest.prototype.setOutputsList = function(value) {
-  jspb.Message.setRepeatedWrapperField(this, 2, value);
+  return jspb.Message.setRepeatedWrapperField(this, 2, value);
 };
 
 
@@ -2498,8 +3880,12 @@ proto.poolrpc.WithdrawAccountRequest.prototype.addOutputs = function(opt_value, 
 };
 
 
+/**
+ * Clears the list making it empty but non-null.
+ * @return {!proto.poolrpc.WithdrawAccountRequest} returns this
+ */
 proto.poolrpc.WithdrawAccountRequest.prototype.clearOutputsList = function() {
-  this.setOutputsList([]);
+  return this.setOutputsList([]);
 };
 
 
@@ -2512,9 +3898,12 @@ proto.poolrpc.WithdrawAccountRequest.prototype.getFeeRateSatPerKw = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.WithdrawAccountRequest} returns this
+ */
 proto.poolrpc.WithdrawAccountRequest.prototype.setFeeRateSatPerKw = function(value) {
-  jspb.Message.setProto3StringIntField(this, 3, value);
+  return jspb.Message.setProto3StringIntField(this, 3, value);
 };
 
 
@@ -2527,20 +3916,27 @@ proto.poolrpc.WithdrawAccountRequest.prototype.getAbsoluteExpiry = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.WithdrawAccountRequest} returns this
+ */
 proto.poolrpc.WithdrawAccountRequest.prototype.setAbsoluteExpiry = function(value) {
-  jspb.Message.setOneofField(this, 4, proto.poolrpc.WithdrawAccountRequest.oneofGroups_[0], value);
+  return jspb.Message.setOneofField(this, 4, proto.poolrpc.WithdrawAccountRequest.oneofGroups_[0], value);
 };
 
 
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.poolrpc.WithdrawAccountRequest} returns this
+ */
 proto.poolrpc.WithdrawAccountRequest.prototype.clearAbsoluteExpiry = function() {
-  jspb.Message.setOneofField(this, 4, proto.poolrpc.WithdrawAccountRequest.oneofGroups_[0], undefined);
+  return jspb.Message.setOneofField(this, 4, proto.poolrpc.WithdrawAccountRequest.oneofGroups_[0], undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.WithdrawAccountRequest.prototype.hasAbsoluteExpiry = function() {
   return jspb.Message.getField(this, 4) != null;
@@ -2556,20 +3952,27 @@ proto.poolrpc.WithdrawAccountRequest.prototype.getRelativeExpiry = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.WithdrawAccountRequest} returns this
+ */
 proto.poolrpc.WithdrawAccountRequest.prototype.setRelativeExpiry = function(value) {
-  jspb.Message.setOneofField(this, 5, proto.poolrpc.WithdrawAccountRequest.oneofGroups_[0], value);
+  return jspb.Message.setOneofField(this, 5, proto.poolrpc.WithdrawAccountRequest.oneofGroups_[0], value);
 };
 
 
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.poolrpc.WithdrawAccountRequest} returns this
+ */
 proto.poolrpc.WithdrawAccountRequest.prototype.clearRelativeExpiry = function() {
-  jspb.Message.setOneofField(this, 5, proto.poolrpc.WithdrawAccountRequest.oneofGroups_[0], undefined);
+  return jspb.Message.setOneofField(this, 5, proto.poolrpc.WithdrawAccountRequest.oneofGroups_[0], undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.WithdrawAccountRequest.prototype.hasRelativeExpiry = function() {
   return jspb.Message.getField(this, 5) != null;
@@ -2585,41 +3988,29 @@ proto.poolrpc.WithdrawAccountRequest.prototype.getNewVersion = function() {
 };
 
 
-/** @param {!proto.poolrpc.AccountVersion} value */
-proto.poolrpc.WithdrawAccountRequest.prototype.setNewVersion = function(value) {
-  jspb.Message.setProto3EnumField(this, 6, value);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {!proto.poolrpc.AccountVersion} value
+ * @return {!proto.poolrpc.WithdrawAccountRequest} returns this
  */
-proto.poolrpc.WithdrawAccountResponse = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+proto.poolrpc.WithdrawAccountRequest.prototype.setNewVersion = function(value) {
+  return jspb.Message.setProto3EnumField(this, 6, value);
 };
-goog.inherits(proto.poolrpc.WithdrawAccountResponse, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.WithdrawAccountResponse.displayName = 'proto.poolrpc.WithdrawAccountResponse';
-}
+
+
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.WithdrawAccountResponse.prototype.toObject = function(opt_includeInstance) {
@@ -2629,8 +4020,8 @@ proto.poolrpc.WithdrawAccountResponse.prototype.toObject = function(opt_includeI
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.WithdrawAccountResponse} msg The msg instance to transform.
  * @return {!Object}
@@ -2742,20 +4133,27 @@ proto.poolrpc.WithdrawAccountResponse.prototype.getAccount = function() {
 };
 
 
-/** @param {?proto.poolrpc.Account|undefined} value */
+/**
+ * @param {?proto.poolrpc.Account|undefined} value
+ * @return {!proto.poolrpc.WithdrawAccountResponse} returns this
+*/
 proto.poolrpc.WithdrawAccountResponse.prototype.setAccount = function(value) {
-  jspb.Message.setWrapperField(this, 1, value);
+  return jspb.Message.setWrapperField(this, 1, value);
 };
 
 
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.poolrpc.WithdrawAccountResponse} returns this
+ */
 proto.poolrpc.WithdrawAccountResponse.prototype.clearAccount = function() {
-  this.setAccount(undefined);
+  return this.setAccount(undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.WithdrawAccountResponse.prototype.hasAccount = function() {
   return jspb.Message.getField(this, 1) != null;
@@ -2795,30 +4193,16 @@ proto.poolrpc.WithdrawAccountResponse.prototype.getWithdrawTxid_asU8 = function(
 };
 
 
-/** @param {!(string|Uint8Array)} value */
-proto.poolrpc.WithdrawAccountResponse.prototype.setWithdrawTxid = function(value) {
-  jspb.Message.setProto3BytesField(this, 2, value);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.WithdrawAccountResponse} returns this
  */
-proto.poolrpc.DepositAccountRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.poolrpc.DepositAccountRequest.oneofGroups_);
+proto.poolrpc.WithdrawAccountResponse.prototype.setWithdrawTxid = function(value) {
+  return jspb.Message.setProto3BytesField(this, 2, value);
 };
-goog.inherits(proto.poolrpc.DepositAccountRequest, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.DepositAccountRequest.displayName = 'proto.poolrpc.DepositAccountRequest';
-}
+
+
+
 /**
  * Oneof group definitions for this message. Each group defines the field
  * numbers belonging to that group. When of these fields' value is set, all
@@ -2849,13 +4233,15 @@ proto.poolrpc.DepositAccountRequest.prototype.getAccountExpiryCase = function() 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.DepositAccountRequest.prototype.toObject = function(opt_includeInstance) {
@@ -2865,8 +4251,8 @@ proto.poolrpc.DepositAccountRequest.prototype.toObject = function(opt_includeIns
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.DepositAccountRequest} msg The msg instance to transform.
  * @return {!Object}
@@ -3047,9 +4433,12 @@ proto.poolrpc.DepositAccountRequest.prototype.getTraderKey_asU8 = function() {
 };
 
 
-/** @param {!(string|Uint8Array)} value */
+/**
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.DepositAccountRequest} returns this
+ */
 proto.poolrpc.DepositAccountRequest.prototype.setTraderKey = function(value) {
-  jspb.Message.setProto3BytesField(this, 1, value);
+  return jspb.Message.setProto3BytesField(this, 1, value);
 };
 
 
@@ -3062,9 +4451,12 @@ proto.poolrpc.DepositAccountRequest.prototype.getAmountSat = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.DepositAccountRequest} returns this
+ */
 proto.poolrpc.DepositAccountRequest.prototype.setAmountSat = function(value) {
-  jspb.Message.setProto3StringIntField(this, 2, value);
+  return jspb.Message.setProto3StringIntField(this, 2, value);
 };
 
 
@@ -3077,9 +4469,12 @@ proto.poolrpc.DepositAccountRequest.prototype.getFeeRateSatPerKw = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.DepositAccountRequest} returns this
+ */
 proto.poolrpc.DepositAccountRequest.prototype.setFeeRateSatPerKw = function(value) {
-  jspb.Message.setProto3StringIntField(this, 3, value);
+  return jspb.Message.setProto3StringIntField(this, 3, value);
 };
 
 
@@ -3092,20 +4487,27 @@ proto.poolrpc.DepositAccountRequest.prototype.getAbsoluteExpiry = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.DepositAccountRequest} returns this
+ */
 proto.poolrpc.DepositAccountRequest.prototype.setAbsoluteExpiry = function(value) {
-  jspb.Message.setOneofField(this, 4, proto.poolrpc.DepositAccountRequest.oneofGroups_[0], value);
+  return jspb.Message.setOneofField(this, 4, proto.poolrpc.DepositAccountRequest.oneofGroups_[0], value);
 };
 
 
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.poolrpc.DepositAccountRequest} returns this
+ */
 proto.poolrpc.DepositAccountRequest.prototype.clearAbsoluteExpiry = function() {
-  jspb.Message.setOneofField(this, 4, proto.poolrpc.DepositAccountRequest.oneofGroups_[0], undefined);
+  return jspb.Message.setOneofField(this, 4, proto.poolrpc.DepositAccountRequest.oneofGroups_[0], undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.DepositAccountRequest.prototype.hasAbsoluteExpiry = function() {
   return jspb.Message.getField(this, 4) != null;
@@ -3121,20 +4523,27 @@ proto.poolrpc.DepositAccountRequest.prototype.getRelativeExpiry = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.DepositAccountRequest} returns this
+ */
 proto.poolrpc.DepositAccountRequest.prototype.setRelativeExpiry = function(value) {
-  jspb.Message.setOneofField(this, 5, proto.poolrpc.DepositAccountRequest.oneofGroups_[0], value);
+  return jspb.Message.setOneofField(this, 5, proto.poolrpc.DepositAccountRequest.oneofGroups_[0], value);
 };
 
 
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.poolrpc.DepositAccountRequest} returns this
+ */
 proto.poolrpc.DepositAccountRequest.prototype.clearRelativeExpiry = function() {
-  jspb.Message.setOneofField(this, 5, proto.poolrpc.DepositAccountRequest.oneofGroups_[0], undefined);
+  return jspb.Message.setOneofField(this, 5, proto.poolrpc.DepositAccountRequest.oneofGroups_[0], undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.DepositAccountRequest.prototype.hasRelativeExpiry = function() {
   return jspb.Message.getField(this, 5) != null;
@@ -3150,41 +4559,29 @@ proto.poolrpc.DepositAccountRequest.prototype.getNewVersion = function() {
 };
 
 
-/** @param {!proto.poolrpc.AccountVersion} value */
-proto.poolrpc.DepositAccountRequest.prototype.setNewVersion = function(value) {
-  jspb.Message.setProto3EnumField(this, 6, value);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {!proto.poolrpc.AccountVersion} value
+ * @return {!proto.poolrpc.DepositAccountRequest} returns this
  */
-proto.poolrpc.DepositAccountResponse = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+proto.poolrpc.DepositAccountRequest.prototype.setNewVersion = function(value) {
+  return jspb.Message.setProto3EnumField(this, 6, value);
 };
-goog.inherits(proto.poolrpc.DepositAccountResponse, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.DepositAccountResponse.displayName = 'proto.poolrpc.DepositAccountResponse';
-}
+
+
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.DepositAccountResponse.prototype.toObject = function(opt_includeInstance) {
@@ -3194,8 +4591,8 @@ proto.poolrpc.DepositAccountResponse.prototype.toObject = function(opt_includeIn
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.DepositAccountResponse} msg The msg instance to transform.
  * @return {!Object}
@@ -3307,20 +4704,27 @@ proto.poolrpc.DepositAccountResponse.prototype.getAccount = function() {
 };
 
 
-/** @param {?proto.poolrpc.Account|undefined} value */
+/**
+ * @param {?proto.poolrpc.Account|undefined} value
+ * @return {!proto.poolrpc.DepositAccountResponse} returns this
+*/
 proto.poolrpc.DepositAccountResponse.prototype.setAccount = function(value) {
-  jspb.Message.setWrapperField(this, 1, value);
+  return jspb.Message.setWrapperField(this, 1, value);
 };
 
 
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.poolrpc.DepositAccountResponse} returns this
+ */
 proto.poolrpc.DepositAccountResponse.prototype.clearAccount = function() {
-  this.setAccount(undefined);
+  return this.setAccount(undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.DepositAccountResponse.prototype.hasAccount = function() {
   return jspb.Message.getField(this, 1) != null;
@@ -3360,30 +4764,16 @@ proto.poolrpc.DepositAccountResponse.prototype.getDepositTxid_asU8 = function() 
 };
 
 
-/** @param {!(string|Uint8Array)} value */
-proto.poolrpc.DepositAccountResponse.prototype.setDepositTxid = function(value) {
-  jspb.Message.setProto3BytesField(this, 2, value);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.DepositAccountResponse} returns this
  */
-proto.poolrpc.RenewAccountRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.poolrpc.RenewAccountRequest.oneofGroups_);
+proto.poolrpc.DepositAccountResponse.prototype.setDepositTxid = function(value) {
+  return jspb.Message.setProto3BytesField(this, 2, value);
 };
-goog.inherits(proto.poolrpc.RenewAccountRequest, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.RenewAccountRequest.displayName = 'proto.poolrpc.RenewAccountRequest';
-}
+
+
+
 /**
  * Oneof group definitions for this message. Each group defines the field
  * numbers belonging to that group. When of these fields' value is set, all
@@ -3414,13 +4804,15 @@ proto.poolrpc.RenewAccountRequest.prototype.getAccountExpiryCase = function() {
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.RenewAccountRequest.prototype.toObject = function(opt_includeInstance) {
@@ -3430,8 +4822,8 @@ proto.poolrpc.RenewAccountRequest.prototype.toObject = function(opt_includeInsta
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.RenewAccountRequest} msg The msg instance to transform.
  * @return {!Object}
@@ -3600,9 +4992,12 @@ proto.poolrpc.RenewAccountRequest.prototype.getAccountKey_asU8 = function() {
 };
 
 
-/** @param {!(string|Uint8Array)} value */
+/**
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.RenewAccountRequest} returns this
+ */
 proto.poolrpc.RenewAccountRequest.prototype.setAccountKey = function(value) {
-  jspb.Message.setProto3BytesField(this, 1, value);
+  return jspb.Message.setProto3BytesField(this, 1, value);
 };
 
 
@@ -3615,20 +5010,27 @@ proto.poolrpc.RenewAccountRequest.prototype.getAbsoluteExpiry = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.RenewAccountRequest} returns this
+ */
 proto.poolrpc.RenewAccountRequest.prototype.setAbsoluteExpiry = function(value) {
-  jspb.Message.setOneofField(this, 2, proto.poolrpc.RenewAccountRequest.oneofGroups_[0], value);
+  return jspb.Message.setOneofField(this, 2, proto.poolrpc.RenewAccountRequest.oneofGroups_[0], value);
 };
 
 
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.poolrpc.RenewAccountRequest} returns this
+ */
 proto.poolrpc.RenewAccountRequest.prototype.clearAbsoluteExpiry = function() {
-  jspb.Message.setOneofField(this, 2, proto.poolrpc.RenewAccountRequest.oneofGroups_[0], undefined);
+  return jspb.Message.setOneofField(this, 2, proto.poolrpc.RenewAccountRequest.oneofGroups_[0], undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.RenewAccountRequest.prototype.hasAbsoluteExpiry = function() {
   return jspb.Message.getField(this, 2) != null;
@@ -3644,20 +5046,27 @@ proto.poolrpc.RenewAccountRequest.prototype.getRelativeExpiry = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.RenewAccountRequest} returns this
+ */
 proto.poolrpc.RenewAccountRequest.prototype.setRelativeExpiry = function(value) {
-  jspb.Message.setOneofField(this, 3, proto.poolrpc.RenewAccountRequest.oneofGroups_[0], value);
+  return jspb.Message.setOneofField(this, 3, proto.poolrpc.RenewAccountRequest.oneofGroups_[0], value);
 };
 
 
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.poolrpc.RenewAccountRequest} returns this
+ */
 proto.poolrpc.RenewAccountRequest.prototype.clearRelativeExpiry = function() {
-  jspb.Message.setOneofField(this, 3, proto.poolrpc.RenewAccountRequest.oneofGroups_[0], undefined);
+  return jspb.Message.setOneofField(this, 3, proto.poolrpc.RenewAccountRequest.oneofGroups_[0], undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.RenewAccountRequest.prototype.hasRelativeExpiry = function() {
   return jspb.Message.getField(this, 3) != null;
@@ -3673,9 +5082,12 @@ proto.poolrpc.RenewAccountRequest.prototype.getFeeRateSatPerKw = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.RenewAccountRequest} returns this
+ */
 proto.poolrpc.RenewAccountRequest.prototype.setFeeRateSatPerKw = function(value) {
-  jspb.Message.setProto3StringIntField(this, 4, value);
+  return jspb.Message.setProto3StringIntField(this, 4, value);
 };
 
 
@@ -3688,41 +5100,29 @@ proto.poolrpc.RenewAccountRequest.prototype.getNewVersion = function() {
 };
 
 
-/** @param {!proto.poolrpc.AccountVersion} value */
-proto.poolrpc.RenewAccountRequest.prototype.setNewVersion = function(value) {
-  jspb.Message.setProto3EnumField(this, 5, value);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {!proto.poolrpc.AccountVersion} value
+ * @return {!proto.poolrpc.RenewAccountRequest} returns this
  */
-proto.poolrpc.RenewAccountResponse = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+proto.poolrpc.RenewAccountRequest.prototype.setNewVersion = function(value) {
+  return jspb.Message.setProto3EnumField(this, 5, value);
 };
-goog.inherits(proto.poolrpc.RenewAccountResponse, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.RenewAccountResponse.displayName = 'proto.poolrpc.RenewAccountResponse';
-}
+
+
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.RenewAccountResponse.prototype.toObject = function(opt_includeInstance) {
@@ -3732,8 +5132,8 @@ proto.poolrpc.RenewAccountResponse.prototype.toObject = function(opt_includeInst
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.RenewAccountResponse} msg The msg instance to transform.
  * @return {!Object}
@@ -3845,20 +5245,27 @@ proto.poolrpc.RenewAccountResponse.prototype.getAccount = function() {
 };
 
 
-/** @param {?proto.poolrpc.Account|undefined} value */
+/**
+ * @param {?proto.poolrpc.Account|undefined} value
+ * @return {!proto.poolrpc.RenewAccountResponse} returns this
+*/
 proto.poolrpc.RenewAccountResponse.prototype.setAccount = function(value) {
-  jspb.Message.setWrapperField(this, 1, value);
+  return jspb.Message.setWrapperField(this, 1, value);
 };
 
 
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.poolrpc.RenewAccountResponse} returns this
+ */
 proto.poolrpc.RenewAccountResponse.prototype.clearAccount = function() {
-  this.setAccount(undefined);
+  return this.setAccount(undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.RenewAccountResponse.prototype.hasAccount = function() {
   return jspb.Message.getField(this, 1) != null;
@@ -3898,41 +5305,29 @@ proto.poolrpc.RenewAccountResponse.prototype.getRenewalTxid_asU8 = function() {
 };
 
 
-/** @param {!(string|Uint8Array)} value */
-proto.poolrpc.RenewAccountResponse.prototype.setRenewalTxid = function(value) {
-  jspb.Message.setProto3BytesField(this, 2, value);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.RenewAccountResponse} returns this
  */
-proto.poolrpc.BumpAccountFeeRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+proto.poolrpc.RenewAccountResponse.prototype.setRenewalTxid = function(value) {
+  return jspb.Message.setProto3BytesField(this, 2, value);
 };
-goog.inherits(proto.poolrpc.BumpAccountFeeRequest, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.BumpAccountFeeRequest.displayName = 'proto.poolrpc.BumpAccountFeeRequest';
-}
+
+
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.BumpAccountFeeRequest.prototype.toObject = function(opt_includeInstance) {
@@ -3942,8 +5337,8 @@ proto.poolrpc.BumpAccountFeeRequest.prototype.toObject = function(opt_includeIns
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.BumpAccountFeeRequest} msg The msg instance to transform.
  * @return {!Object}
@@ -4076,9 +5471,12 @@ proto.poolrpc.BumpAccountFeeRequest.prototype.getTraderKey_asU8 = function() {
 };
 
 
-/** @param {!(string|Uint8Array)} value */
+/**
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.BumpAccountFeeRequest} returns this
+ */
 proto.poolrpc.BumpAccountFeeRequest.prototype.setTraderKey = function(value) {
-  jspb.Message.setProto3BytesField(this, 1, value);
+  return jspb.Message.setProto3BytesField(this, 1, value);
 };
 
 
@@ -4091,41 +5489,29 @@ proto.poolrpc.BumpAccountFeeRequest.prototype.getFeeRateSatPerKw = function() {
 };
 
 
-/** @param {string} value */
-proto.poolrpc.BumpAccountFeeRequest.prototype.setFeeRateSatPerKw = function(value) {
-  jspb.Message.setProto3StringIntField(this, 2, value);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {string} value
+ * @return {!proto.poolrpc.BumpAccountFeeRequest} returns this
  */
-proto.poolrpc.BumpAccountFeeResponse = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+proto.poolrpc.BumpAccountFeeRequest.prototype.setFeeRateSatPerKw = function(value) {
+  return jspb.Message.setProto3StringIntField(this, 2, value);
 };
-goog.inherits(proto.poolrpc.BumpAccountFeeResponse, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.BumpAccountFeeResponse.displayName = 'proto.poolrpc.BumpAccountFeeResponse';
-}
+
+
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.BumpAccountFeeResponse.prototype.toObject = function(opt_includeInstance) {
@@ -4135,8 +5521,8 @@ proto.poolrpc.BumpAccountFeeResponse.prototype.toObject = function(opt_includeIn
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.BumpAccountFeeResponse} msg The msg instance to transform.
  * @return {!Object}
@@ -4214,34 +5600,19 @@ proto.poolrpc.BumpAccountFeeResponse.serializeBinaryToWriter = function(message,
 
 
 
-/**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
- */
-proto.poolrpc.Account = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
-};
-goog.inherits(proto.poolrpc.Account, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.Account.displayName = 'proto.poolrpc.Account';
-}
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.Account.prototype.toObject = function(opt_includeInstance) {
@@ -4251,8 +5622,8 @@ proto.poolrpc.Account.prototype.toObject = function(opt_includeInstance) {
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.Account} msg The msg instance to transform.
  * @return {!Object}
@@ -4459,9 +5830,12 @@ proto.poolrpc.Account.prototype.getTraderKey_asU8 = function() {
 };
 
 
-/** @param {!(string|Uint8Array)} value */
+/**
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.Account} returns this
+ */
 proto.poolrpc.Account.prototype.setTraderKey = function(value) {
-  jspb.Message.setProto3BytesField(this, 1, value);
+  return jspb.Message.setProto3BytesField(this, 1, value);
 };
 
 
@@ -4475,20 +5849,27 @@ proto.poolrpc.Account.prototype.getOutpoint = function() {
 };
 
 
-/** @param {?proto.poolrpc.OutPoint|undefined} value */
+/**
+ * @param {?proto.poolrpc.OutPoint|undefined} value
+ * @return {!proto.poolrpc.Account} returns this
+*/
 proto.poolrpc.Account.prototype.setOutpoint = function(value) {
-  jspb.Message.setWrapperField(this, 2, value);
+  return jspb.Message.setWrapperField(this, 2, value);
 };
 
 
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.poolrpc.Account} returns this
+ */
 proto.poolrpc.Account.prototype.clearOutpoint = function() {
-  this.setOutpoint(undefined);
+  return this.setOutpoint(undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.Account.prototype.hasOutpoint = function() {
   return jspb.Message.getField(this, 2) != null;
@@ -4504,9 +5885,12 @@ proto.poolrpc.Account.prototype.getValue = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.Account} returns this
+ */
 proto.poolrpc.Account.prototype.setValue = function(value) {
-  jspb.Message.setProto3StringIntField(this, 3, value);
+  return jspb.Message.setProto3StringIntField(this, 3, value);
 };
 
 
@@ -4519,9 +5903,12 @@ proto.poolrpc.Account.prototype.getAvailableBalance = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.Account} returns this
+ */
 proto.poolrpc.Account.prototype.setAvailableBalance = function(value) {
-  jspb.Message.setProto3StringIntField(this, 4, value);
+  return jspb.Message.setProto3StringIntField(this, 4, value);
 };
 
 
@@ -4534,9 +5921,12 @@ proto.poolrpc.Account.prototype.getExpirationHeight = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.Account} returns this
+ */
 proto.poolrpc.Account.prototype.setExpirationHeight = function(value) {
-  jspb.Message.setProto3IntField(this, 5, value);
+  return jspb.Message.setProto3IntField(this, 5, value);
 };
 
 
@@ -4549,9 +5939,12 @@ proto.poolrpc.Account.prototype.getState = function() {
 };
 
 
-/** @param {!proto.poolrpc.AccountState} value */
+/**
+ * @param {!proto.poolrpc.AccountState} value
+ * @return {!proto.poolrpc.Account} returns this
+ */
 proto.poolrpc.Account.prototype.setState = function(value) {
-  jspb.Message.setProto3EnumField(this, 6, value);
+  return jspb.Message.setProto3EnumField(this, 6, value);
 };
 
 
@@ -4588,9 +5981,12 @@ proto.poolrpc.Account.prototype.getLatestTxid_asU8 = function() {
 };
 
 
-/** @param {!(string|Uint8Array)} value */
+/**
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.Account} returns this
+ */
 proto.poolrpc.Account.prototype.setLatestTxid = function(value) {
-  jspb.Message.setProto3BytesField(this, 7, value);
+  return jspb.Message.setProto3BytesField(this, 7, value);
 };
 
 
@@ -4603,30 +5999,16 @@ proto.poolrpc.Account.prototype.getVersion = function() {
 };
 
 
-/** @param {!proto.poolrpc.AccountVersion} value */
-proto.poolrpc.Account.prototype.setVersion = function(value) {
-  jspb.Message.setProto3EnumField(this, 8, value);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {!proto.poolrpc.AccountVersion} value
+ * @return {!proto.poolrpc.Account} returns this
  */
-proto.poolrpc.SubmitOrderRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.poolrpc.SubmitOrderRequest.oneofGroups_);
+proto.poolrpc.Account.prototype.setVersion = function(value) {
+  return jspb.Message.setProto3EnumField(this, 8, value);
 };
-goog.inherits(proto.poolrpc.SubmitOrderRequest, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.SubmitOrderRequest.displayName = 'proto.poolrpc.SubmitOrderRequest';
-}
+
+
+
 /**
  * Oneof group definitions for this message. Each group defines the field
  * numbers belonging to that group. When of these fields' value is set, all
@@ -4657,13 +6039,15 @@ proto.poolrpc.SubmitOrderRequest.prototype.getDetailsCase = function() {
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.SubmitOrderRequest.prototype.toObject = function(opt_includeInstance) {
@@ -4673,8 +6057,8 @@ proto.poolrpc.SubmitOrderRequest.prototype.toObject = function(opt_includeInstan
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.SubmitOrderRequest} msg The msg instance to transform.
  * @return {!Object}
@@ -4800,20 +6184,27 @@ proto.poolrpc.SubmitOrderRequest.prototype.getAsk = function() {
 };
 
 
-/** @param {?proto.poolrpc.Ask|undefined} value */
+/**
+ * @param {?proto.poolrpc.Ask|undefined} value
+ * @return {!proto.poolrpc.SubmitOrderRequest} returns this
+*/
 proto.poolrpc.SubmitOrderRequest.prototype.setAsk = function(value) {
-  jspb.Message.setOneofWrapperField(this, 1, proto.poolrpc.SubmitOrderRequest.oneofGroups_[0], value);
+  return jspb.Message.setOneofWrapperField(this, 1, proto.poolrpc.SubmitOrderRequest.oneofGroups_[0], value);
 };
 
 
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.poolrpc.SubmitOrderRequest} returns this
+ */
 proto.poolrpc.SubmitOrderRequest.prototype.clearAsk = function() {
-  this.setAsk(undefined);
+  return this.setAsk(undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.SubmitOrderRequest.prototype.hasAsk = function() {
   return jspb.Message.getField(this, 1) != null;
@@ -4830,20 +6221,27 @@ proto.poolrpc.SubmitOrderRequest.prototype.getBid = function() {
 };
 
 
-/** @param {?proto.poolrpc.Bid|undefined} value */
+/**
+ * @param {?proto.poolrpc.Bid|undefined} value
+ * @return {!proto.poolrpc.SubmitOrderRequest} returns this
+*/
 proto.poolrpc.SubmitOrderRequest.prototype.setBid = function(value) {
-  jspb.Message.setOneofWrapperField(this, 2, proto.poolrpc.SubmitOrderRequest.oneofGroups_[0], value);
+  return jspb.Message.setOneofWrapperField(this, 2, proto.poolrpc.SubmitOrderRequest.oneofGroups_[0], value);
 };
 
 
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.poolrpc.SubmitOrderRequest} returns this
+ */
 proto.poolrpc.SubmitOrderRequest.prototype.clearBid = function() {
-  this.setBid(undefined);
+  return this.setBid(undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.SubmitOrderRequest.prototype.hasBid = function() {
   return jspb.Message.getField(this, 2) != null;
@@ -4859,30 +6257,16 @@ proto.poolrpc.SubmitOrderRequest.prototype.getInitiator = function() {
 };
 
 
-/** @param {string} value */
-proto.poolrpc.SubmitOrderRequest.prototype.setInitiator = function(value) {
-  jspb.Message.setProto3StringField(this, 3, value);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {string} value
+ * @return {!proto.poolrpc.SubmitOrderRequest} returns this
  */
-proto.poolrpc.SubmitOrderResponse = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.poolrpc.SubmitOrderResponse.oneofGroups_);
+proto.poolrpc.SubmitOrderRequest.prototype.setInitiator = function(value) {
+  return jspb.Message.setProto3StringField(this, 3, value);
 };
-goog.inherits(proto.poolrpc.SubmitOrderResponse, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.SubmitOrderResponse.displayName = 'proto.poolrpc.SubmitOrderResponse';
-}
+
+
+
 /**
  * Oneof group definitions for this message. Each group defines the field
  * numbers belonging to that group. When of these fields' value is set, all
@@ -4913,13 +6297,15 @@ proto.poolrpc.SubmitOrderResponse.prototype.getDetailsCase = function() {
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.SubmitOrderResponse.prototype.toObject = function(opt_includeInstance) {
@@ -4929,8 +6315,8 @@ proto.poolrpc.SubmitOrderResponse.prototype.toObject = function(opt_includeInsta
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.SubmitOrderResponse} msg The msg instance to transform.
  * @return {!Object}
@@ -5054,20 +6440,27 @@ proto.poolrpc.SubmitOrderResponse.prototype.getInvalidOrder = function() {
 };
 
 
-/** @param {?proto.poolrpc.InvalidOrder|undefined} value */
+/**
+ * @param {?proto.poolrpc.InvalidOrder|undefined} value
+ * @return {!proto.poolrpc.SubmitOrderResponse} returns this
+*/
 proto.poolrpc.SubmitOrderResponse.prototype.setInvalidOrder = function(value) {
-  jspb.Message.setOneofWrapperField(this, 1, proto.poolrpc.SubmitOrderResponse.oneofGroups_[0], value);
+  return jspb.Message.setOneofWrapperField(this, 1, proto.poolrpc.SubmitOrderResponse.oneofGroups_[0], value);
 };
 
 
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.poolrpc.SubmitOrderResponse} returns this
+ */
 proto.poolrpc.SubmitOrderResponse.prototype.clearInvalidOrder = function() {
-  this.setInvalidOrder(undefined);
+  return this.setInvalidOrder(undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.SubmitOrderResponse.prototype.hasInvalidOrder = function() {
   return jspb.Message.getField(this, 1) != null;
@@ -5107,20 +6500,27 @@ proto.poolrpc.SubmitOrderResponse.prototype.getAcceptedOrderNonce_asU8 = functio
 };
 
 
-/** @param {!(string|Uint8Array)} value */
+/**
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.SubmitOrderResponse} returns this
+ */
 proto.poolrpc.SubmitOrderResponse.prototype.setAcceptedOrderNonce = function(value) {
-  jspb.Message.setOneofField(this, 2, proto.poolrpc.SubmitOrderResponse.oneofGroups_[0], value);
+  return jspb.Message.setOneofField(this, 2, proto.poolrpc.SubmitOrderResponse.oneofGroups_[0], value);
 };
 
 
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.poolrpc.SubmitOrderResponse} returns this
+ */
 proto.poolrpc.SubmitOrderResponse.prototype.clearAcceptedOrderNonce = function() {
-  jspb.Message.setOneofField(this, 2, proto.poolrpc.SubmitOrderResponse.oneofGroups_[0], undefined);
+  return jspb.Message.setOneofField(this, 2, proto.poolrpc.SubmitOrderResponse.oneofGroups_[0], undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.SubmitOrderResponse.prototype.hasAcceptedOrderNonce = function() {
   return jspb.Message.getField(this, 2) != null;
@@ -5136,41 +6536,29 @@ proto.poolrpc.SubmitOrderResponse.prototype.getUpdatedSidecarTicket = function()
 };
 
 
-/** @param {string} value */
-proto.poolrpc.SubmitOrderResponse.prototype.setUpdatedSidecarTicket = function(value) {
-  jspb.Message.setProto3StringField(this, 3, value);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {string} value
+ * @return {!proto.poolrpc.SubmitOrderResponse} returns this
  */
-proto.poolrpc.ListOrdersRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+proto.poolrpc.SubmitOrderResponse.prototype.setUpdatedSidecarTicket = function(value) {
+  return jspb.Message.setProto3StringField(this, 3, value);
 };
-goog.inherits(proto.poolrpc.ListOrdersRequest, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.ListOrdersRequest.displayName = 'proto.poolrpc.ListOrdersRequest';
-}
+
+
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.ListOrdersRequest.prototype.toObject = function(opt_includeInstance) {
@@ -5180,8 +6568,8 @@ proto.poolrpc.ListOrdersRequest.prototype.toObject = function(opt_includeInstanc
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.ListOrdersRequest} msg The msg instance to transform.
  * @return {!Object}
@@ -5189,8 +6577,8 @@ proto.poolrpc.ListOrdersRequest.prototype.toObject = function(opt_includeInstanc
  */
 proto.poolrpc.ListOrdersRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-    verbose: jspb.Message.getFieldWithDefault(msg, 1, false),
-    activeOnly: jspb.Message.getFieldWithDefault(msg, 2, false)
+    verbose: jspb.Message.getBooleanFieldWithDefault(msg, 1, false),
+    activeOnly: jspb.Message.getBooleanFieldWithDefault(msg, 2, false)
   };
 
   if (includeInstance) {
@@ -5283,56 +6671,41 @@ proto.poolrpc.ListOrdersRequest.serializeBinaryToWriter = function(message, writ
 
 /**
  * optional bool verbose = 1;
- * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
- * You should avoid comparisons like {@code val === true/false} in those cases.
  * @return {boolean}
  */
 proto.poolrpc.ListOrdersRequest.prototype.getVerbose = function() {
-  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 1, false));
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 1, false));
 };
 
 
-/** @param {boolean} value */
+/**
+ * @param {boolean} value
+ * @return {!proto.poolrpc.ListOrdersRequest} returns this
+ */
 proto.poolrpc.ListOrdersRequest.prototype.setVerbose = function(value) {
-  jspb.Message.setProto3BooleanField(this, 1, value);
+  return jspb.Message.setProto3BooleanField(this, 1, value);
 };
 
 
 /**
  * optional bool active_only = 2;
- * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
- * You should avoid comparisons like {@code val === true/false} in those cases.
  * @return {boolean}
  */
 proto.poolrpc.ListOrdersRequest.prototype.getActiveOnly = function() {
-  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 2, false));
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 2, false));
 };
-
-
-/** @param {boolean} value */
-proto.poolrpc.ListOrdersRequest.prototype.setActiveOnly = function(value) {
-  jspb.Message.setProto3BooleanField(this, 2, value);
-};
-
 
 
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {boolean} value
+ * @return {!proto.poolrpc.ListOrdersRequest} returns this
  */
-proto.poolrpc.ListOrdersResponse = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.ListOrdersResponse.repeatedFields_, null);
+proto.poolrpc.ListOrdersRequest.prototype.setActiveOnly = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 2, value);
 };
-goog.inherits(proto.poolrpc.ListOrdersResponse, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.ListOrdersResponse.displayName = 'proto.poolrpc.ListOrdersResponse';
-}
+
+
+
 /**
  * List of repeated fields within this message type.
  * @private {!Array<number>}
@@ -5344,13 +6717,15 @@ proto.poolrpc.ListOrdersResponse.repeatedFields_ = [1,2];
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.ListOrdersResponse.prototype.toObject = function(opt_includeInstance) {
@@ -5360,8 +6735,8 @@ proto.poolrpc.ListOrdersResponse.prototype.toObject = function(opt_includeInstan
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.ListOrdersResponse} msg The msg instance to transform.
  * @return {!Object}
@@ -5477,9 +6852,12 @@ proto.poolrpc.ListOrdersResponse.prototype.getAsksList = function() {
 };
 
 
-/** @param {!Array<!proto.poolrpc.Ask>} value */
+/**
+ * @param {!Array<!proto.poolrpc.Ask>} value
+ * @return {!proto.poolrpc.ListOrdersResponse} returns this
+*/
 proto.poolrpc.ListOrdersResponse.prototype.setAsksList = function(value) {
-  jspb.Message.setRepeatedWrapperField(this, 1, value);
+  return jspb.Message.setRepeatedWrapperField(this, 1, value);
 };
 
 
@@ -5493,8 +6871,12 @@ proto.poolrpc.ListOrdersResponse.prototype.addAsks = function(opt_value, opt_ind
 };
 
 
+/**
+ * Clears the list making it empty but non-null.
+ * @return {!proto.poolrpc.ListOrdersResponse} returns this
+ */
 proto.poolrpc.ListOrdersResponse.prototype.clearAsksList = function() {
-  this.setAsksList([]);
+  return this.setAsksList([]);
 };
 
 
@@ -5508,9 +6890,12 @@ proto.poolrpc.ListOrdersResponse.prototype.getBidsList = function() {
 };
 
 
-/** @param {!Array<!proto.poolrpc.Bid>} value */
+/**
+ * @param {!Array<!proto.poolrpc.Bid>} value
+ * @return {!proto.poolrpc.ListOrdersResponse} returns this
+*/
 proto.poolrpc.ListOrdersResponse.prototype.setBidsList = function(value) {
-  jspb.Message.setRepeatedWrapperField(this, 2, value);
+  return jspb.Message.setRepeatedWrapperField(this, 2, value);
 };
 
 
@@ -5524,40 +6909,29 @@ proto.poolrpc.ListOrdersResponse.prototype.addBids = function(opt_value, opt_ind
 };
 
 
-proto.poolrpc.ListOrdersResponse.prototype.clearBidsList = function() {
-  this.setBidsList([]);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * Clears the list making it empty but non-null.
+ * @return {!proto.poolrpc.ListOrdersResponse} returns this
  */
-proto.poolrpc.CancelOrderRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+proto.poolrpc.ListOrdersResponse.prototype.clearBidsList = function() {
+  return this.setBidsList([]);
 };
-goog.inherits(proto.poolrpc.CancelOrderRequest, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.CancelOrderRequest.displayName = 'proto.poolrpc.CancelOrderRequest';
-}
+
+
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.CancelOrderRequest.prototype.toObject = function(opt_includeInstance) {
@@ -5567,8 +6941,8 @@ proto.poolrpc.CancelOrderRequest.prototype.toObject = function(opt_includeInstan
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.CancelOrderRequest} msg The msg instance to transform.
  * @return {!Object}
@@ -5689,41 +7063,29 @@ proto.poolrpc.CancelOrderRequest.prototype.getOrderNonce_asU8 = function() {
 };
 
 
-/** @param {!(string|Uint8Array)} value */
-proto.poolrpc.CancelOrderRequest.prototype.setOrderNonce = function(value) {
-  jspb.Message.setProto3BytesField(this, 1, value);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.CancelOrderRequest} returns this
  */
-proto.poolrpc.CancelOrderResponse = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+proto.poolrpc.CancelOrderRequest.prototype.setOrderNonce = function(value) {
+  return jspb.Message.setProto3BytesField(this, 1, value);
 };
-goog.inherits(proto.poolrpc.CancelOrderResponse, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.CancelOrderResponse.displayName = 'proto.poolrpc.CancelOrderResponse';
-}
+
+
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.CancelOrderResponse.prototype.toObject = function(opt_includeInstance) {
@@ -5733,8 +7095,8 @@ proto.poolrpc.CancelOrderResponse.prototype.toObject = function(opt_includeInsta
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.CancelOrderResponse} msg The msg instance to transform.
  * @return {!Object}
@@ -5813,23 +7175,6 @@ proto.poolrpc.CancelOrderResponse.serializeBinaryToWriter = function(message, wr
 
 
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
- */
-proto.poolrpc.Order = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.Order.repeatedFields_, null);
-};
-goog.inherits(proto.poolrpc.Order, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.Order.displayName = 'proto.poolrpc.Order';
-}
-/**
  * List of repeated fields within this message type.
  * @private {!Array<number>}
  * @const
@@ -5840,13 +7185,15 @@ proto.poolrpc.Order.repeatedFields_ = [11,14,15];
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.Order.prototype.toObject = function(opt_includeInstance) {
@@ -5856,8 +7203,8 @@ proto.poolrpc.Order.prototype.toObject = function(opt_includeInstance) {
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.Order} msg The msg instance to transform.
  * @return {!Object}
@@ -5882,7 +7229,7 @@ proto.poolrpc.Order.toObject = function(includeInstance, msg) {
     allowedNodeIdsList: msg.getAllowedNodeIdsList_asB64(),
     notAllowedNodeIdsList: msg.getNotAllowedNodeIdsList_asB64(),
     auctionType: jspb.Message.getFieldWithDefault(msg, 16, 0),
-    isPublic: jspb.Message.getFieldWithDefault(msg, 17, false)
+    isPublic: jspb.Message.getBooleanFieldWithDefault(msg, 17, false)
   };
 
   if (includeInstance) {
@@ -6173,9 +7520,12 @@ proto.poolrpc.Order.prototype.getTraderKey_asU8 = function() {
 };
 
 
-/** @param {!(string|Uint8Array)} value */
+/**
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.Order} returns this
+ */
 proto.poolrpc.Order.prototype.setTraderKey = function(value) {
-  jspb.Message.setProto3BytesField(this, 1, value);
+  return jspb.Message.setProto3BytesField(this, 1, value);
 };
 
 
@@ -6188,9 +7538,12 @@ proto.poolrpc.Order.prototype.getRateFixed = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.Order} returns this
+ */
 proto.poolrpc.Order.prototype.setRateFixed = function(value) {
-  jspb.Message.setProto3IntField(this, 2, value);
+  return jspb.Message.setProto3IntField(this, 2, value);
 };
 
 
@@ -6203,9 +7556,12 @@ proto.poolrpc.Order.prototype.getAmt = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.Order} returns this
+ */
 proto.poolrpc.Order.prototype.setAmt = function(value) {
-  jspb.Message.setProto3StringIntField(this, 3, value);
+  return jspb.Message.setProto3StringIntField(this, 3, value);
 };
 
 
@@ -6218,9 +7574,12 @@ proto.poolrpc.Order.prototype.getMaxBatchFeeRateSatPerKw = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.Order} returns this
+ */
 proto.poolrpc.Order.prototype.setMaxBatchFeeRateSatPerKw = function(value) {
-  jspb.Message.setProto3StringIntField(this, 4, value);
+  return jspb.Message.setProto3StringIntField(this, 4, value);
 };
 
 
@@ -6257,9 +7616,12 @@ proto.poolrpc.Order.prototype.getOrderNonce_asU8 = function() {
 };
 
 
-/** @param {!(string|Uint8Array)} value */
+/**
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.Order} returns this
+ */
 proto.poolrpc.Order.prototype.setOrderNonce = function(value) {
-  jspb.Message.setProto3BytesField(this, 5, value);
+  return jspb.Message.setProto3BytesField(this, 5, value);
 };
 
 
@@ -6272,9 +7634,12 @@ proto.poolrpc.Order.prototype.getState = function() {
 };
 
 
-/** @param {!proto.poolrpc.OrderState} value */
+/**
+ * @param {!proto.poolrpc.OrderState} value
+ * @return {!proto.poolrpc.Order} returns this
+ */
 proto.poolrpc.Order.prototype.setState = function(value) {
-  jspb.Message.setProto3EnumField(this, 6, value);
+  return jspb.Message.setProto3EnumField(this, 6, value);
 };
 
 
@@ -6287,9 +7652,12 @@ proto.poolrpc.Order.prototype.getUnits = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.Order} returns this
+ */
 proto.poolrpc.Order.prototype.setUnits = function(value) {
-  jspb.Message.setProto3IntField(this, 7, value);
+  return jspb.Message.setProto3IntField(this, 7, value);
 };
 
 
@@ -6302,9 +7670,12 @@ proto.poolrpc.Order.prototype.getUnitsUnfulfilled = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.Order} returns this
+ */
 proto.poolrpc.Order.prototype.setUnitsUnfulfilled = function(value) {
-  jspb.Message.setProto3IntField(this, 8, value);
+  return jspb.Message.setProto3IntField(this, 8, value);
 };
 
 
@@ -6317,9 +7688,12 @@ proto.poolrpc.Order.prototype.getReservedValueSat = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.Order} returns this
+ */
 proto.poolrpc.Order.prototype.setReservedValueSat = function(value) {
-  jspb.Message.setProto3StringIntField(this, 9, value);
+  return jspb.Message.setProto3StringIntField(this, 9, value);
 };
 
 
@@ -6332,9 +7706,12 @@ proto.poolrpc.Order.prototype.getCreationTimestampNs = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.Order} returns this
+ */
 proto.poolrpc.Order.prototype.setCreationTimestampNs = function(value) {
-  jspb.Message.setProto3StringIntField(this, 10, value);
+  return jspb.Message.setProto3StringIntField(this, 10, value);
 };
 
 
@@ -6348,9 +7725,12 @@ proto.poolrpc.Order.prototype.getEventsList = function() {
 };
 
 
-/** @param {!Array<!proto.poolrpc.OrderEvent>} value */
+/**
+ * @param {!Array<!proto.poolrpc.OrderEvent>} value
+ * @return {!proto.poolrpc.Order} returns this
+*/
 proto.poolrpc.Order.prototype.setEventsList = function(value) {
-  jspb.Message.setRepeatedWrapperField(this, 11, value);
+  return jspb.Message.setRepeatedWrapperField(this, 11, value);
 };
 
 
@@ -6364,8 +7744,12 @@ proto.poolrpc.Order.prototype.addEvents = function(opt_value, opt_index) {
 };
 
 
+/**
+ * Clears the list making it empty but non-null.
+ * @return {!proto.poolrpc.Order} returns this
+ */
 proto.poolrpc.Order.prototype.clearEventsList = function() {
-  this.setEventsList([]);
+  return this.setEventsList([]);
 };
 
 
@@ -6378,9 +7762,12 @@ proto.poolrpc.Order.prototype.getMinUnitsMatch = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.Order} returns this
+ */
 proto.poolrpc.Order.prototype.setMinUnitsMatch = function(value) {
-  jspb.Message.setProto3IntField(this, 12, value);
+  return jspb.Message.setProto3IntField(this, 12, value);
 };
 
 
@@ -6393,9 +7780,12 @@ proto.poolrpc.Order.prototype.getChannelType = function() {
 };
 
 
-/** @param {!proto.poolrpc.OrderChannelType} value */
+/**
+ * @param {!proto.poolrpc.OrderChannelType} value
+ * @return {!proto.poolrpc.Order} returns this
+ */
 proto.poolrpc.Order.prototype.setChannelType = function(value) {
-  jspb.Message.setProto3EnumField(this, 13, value);
+  return jspb.Message.setProto3EnumField(this, 13, value);
 };
 
 
@@ -6432,23 +7822,31 @@ proto.poolrpc.Order.prototype.getAllowedNodeIdsList_asU8 = function() {
 };
 
 
-/** @param {!(Array<!Uint8Array>|Array<string>)} value */
+/**
+ * @param {!(Array<!Uint8Array>|Array<string>)} value
+ * @return {!proto.poolrpc.Order} returns this
+ */
 proto.poolrpc.Order.prototype.setAllowedNodeIdsList = function(value) {
-  jspb.Message.setField(this, 14, value || []);
+  return jspb.Message.setField(this, 14, value || []);
 };
 
 
 /**
  * @param {!(string|Uint8Array)} value
  * @param {number=} opt_index
+ * @return {!proto.poolrpc.Order} returns this
  */
 proto.poolrpc.Order.prototype.addAllowedNodeIds = function(value, opt_index) {
-  jspb.Message.addToRepeatedField(this, 14, value, opt_index);
+  return jspb.Message.addToRepeatedField(this, 14, value, opt_index);
 };
 
 
+/**
+ * Clears the list making it empty but non-null.
+ * @return {!proto.poolrpc.Order} returns this
+ */
 proto.poolrpc.Order.prototype.clearAllowedNodeIdsList = function() {
-  this.setAllowedNodeIdsList([]);
+  return this.setAllowedNodeIdsList([]);
 };
 
 
@@ -6485,23 +7883,31 @@ proto.poolrpc.Order.prototype.getNotAllowedNodeIdsList_asU8 = function() {
 };
 
 
-/** @param {!(Array<!Uint8Array>|Array<string>)} value */
+/**
+ * @param {!(Array<!Uint8Array>|Array<string>)} value
+ * @return {!proto.poolrpc.Order} returns this
+ */
 proto.poolrpc.Order.prototype.setNotAllowedNodeIdsList = function(value) {
-  jspb.Message.setField(this, 15, value || []);
+  return jspb.Message.setField(this, 15, value || []);
 };
 
 
 /**
  * @param {!(string|Uint8Array)} value
  * @param {number=} opt_index
+ * @return {!proto.poolrpc.Order} returns this
  */
 proto.poolrpc.Order.prototype.addNotAllowedNodeIds = function(value, opt_index) {
-  jspb.Message.addToRepeatedField(this, 15, value, opt_index);
+  return jspb.Message.addToRepeatedField(this, 15, value, opt_index);
 };
 
 
+/**
+ * Clears the list making it empty but non-null.
+ * @return {!proto.poolrpc.Order} returns this
+ */
 proto.poolrpc.Order.prototype.clearNotAllowedNodeIdsList = function() {
-  this.setNotAllowedNodeIdsList([]);
+  return this.setNotAllowedNodeIdsList([]);
 };
 
 
@@ -6514,58 +7920,47 @@ proto.poolrpc.Order.prototype.getAuctionType = function() {
 };
 
 
-/** @param {!proto.poolrpc.AuctionType} value */
+/**
+ * @param {!proto.poolrpc.AuctionType} value
+ * @return {!proto.poolrpc.Order} returns this
+ */
 proto.poolrpc.Order.prototype.setAuctionType = function(value) {
-  jspb.Message.setProto3EnumField(this, 16, value);
+  return jspb.Message.setProto3EnumField(this, 16, value);
 };
 
 
 /**
  * optional bool is_public = 17;
- * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
- * You should avoid comparisons like {@code val === true/false} in those cases.
  * @return {boolean}
  */
 proto.poolrpc.Order.prototype.getIsPublic = function() {
-  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 17, false));
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 17, false));
 };
-
-
-/** @param {boolean} value */
-proto.poolrpc.Order.prototype.setIsPublic = function(value) {
-  jspb.Message.setProto3BooleanField(this, 17, value);
-};
-
 
 
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {boolean} value
+ * @return {!proto.poolrpc.Order} returns this
  */
-proto.poolrpc.Bid = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+proto.poolrpc.Order.prototype.setIsPublic = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 17, value);
 };
-goog.inherits(proto.poolrpc.Bid, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.Bid.displayName = 'proto.poolrpc.Bid';
-}
+
+
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.Bid.prototype.toObject = function(opt_includeInstance) {
@@ -6575,8 +7970,8 @@ proto.poolrpc.Bid.prototype.toObject = function(opt_includeInstance) {
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.Bid} msg The msg instance to transform.
  * @return {!Object}
@@ -6590,8 +7985,8 @@ proto.poolrpc.Bid.toObject = function(includeInstance, msg) {
     minNodeTier: jspb.Message.getFieldWithDefault(msg, 4, 0),
     selfChanBalance: jspb.Message.getFieldWithDefault(msg, 5, "0"),
     sidecarTicket: jspb.Message.getFieldWithDefault(msg, 6, ""),
-    unannouncedChannel: jspb.Message.getFieldWithDefault(msg, 7, false),
-    zeroConfChannel: jspb.Message.getFieldWithDefault(msg, 8, false)
+    unannouncedChannel: jspb.Message.getBooleanFieldWithDefault(msg, 7, false),
+    zeroConfChannel: jspb.Message.getBooleanFieldWithDefault(msg, 8, false)
   };
 
   if (includeInstance) {
@@ -6760,20 +8155,27 @@ proto.poolrpc.Bid.prototype.getDetails = function() {
 };
 
 
-/** @param {?proto.poolrpc.Order|undefined} value */
+/**
+ * @param {?proto.poolrpc.Order|undefined} value
+ * @return {!proto.poolrpc.Bid} returns this
+*/
 proto.poolrpc.Bid.prototype.setDetails = function(value) {
-  jspb.Message.setWrapperField(this, 1, value);
+  return jspb.Message.setWrapperField(this, 1, value);
 };
 
 
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.poolrpc.Bid} returns this
+ */
 proto.poolrpc.Bid.prototype.clearDetails = function() {
-  this.setDetails(undefined);
+  return this.setDetails(undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.Bid.prototype.hasDetails = function() {
   return jspb.Message.getField(this, 1) != null;
@@ -6789,9 +8191,12 @@ proto.poolrpc.Bid.prototype.getLeaseDurationBlocks = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.Bid} returns this
+ */
 proto.poolrpc.Bid.prototype.setLeaseDurationBlocks = function(value) {
-  jspb.Message.setProto3IntField(this, 2, value);
+  return jspb.Message.setProto3IntField(this, 2, value);
 };
 
 
@@ -6804,9 +8209,12 @@ proto.poolrpc.Bid.prototype.getVersion = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.Bid} returns this
+ */
 proto.poolrpc.Bid.prototype.setVersion = function(value) {
-  jspb.Message.setProto3IntField(this, 3, value);
+  return jspb.Message.setProto3IntField(this, 3, value);
 };
 
 
@@ -6819,9 +8227,12 @@ proto.poolrpc.Bid.prototype.getMinNodeTier = function() {
 };
 
 
-/** @param {!proto.poolrpc.NodeTier} value */
+/**
+ * @param {!proto.poolrpc.NodeTier} value
+ * @return {!proto.poolrpc.Bid} returns this
+ */
 proto.poolrpc.Bid.prototype.setMinNodeTier = function(value) {
-  jspb.Message.setProto3EnumField(this, 4, value);
+  return jspb.Message.setProto3EnumField(this, 4, value);
 };
 
 
@@ -6834,9 +8245,12 @@ proto.poolrpc.Bid.prototype.getSelfChanBalance = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.Bid} returns this
+ */
 proto.poolrpc.Bid.prototype.setSelfChanBalance = function(value) {
-  jspb.Message.setProto3StringIntField(this, 5, value);
+  return jspb.Message.setProto3StringIntField(this, 5, value);
 };
 
 
@@ -6849,75 +8263,65 @@ proto.poolrpc.Bid.prototype.getSidecarTicket = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.Bid} returns this
+ */
 proto.poolrpc.Bid.prototype.setSidecarTicket = function(value) {
-  jspb.Message.setProto3StringField(this, 6, value);
+  return jspb.Message.setProto3StringField(this, 6, value);
 };
 
 
 /**
  * optional bool unannounced_channel = 7;
- * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
- * You should avoid comparisons like {@code val === true/false} in those cases.
  * @return {boolean}
  */
 proto.poolrpc.Bid.prototype.getUnannouncedChannel = function() {
-  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 7, false));
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 7, false));
 };
 
 
-/** @param {boolean} value */
+/**
+ * @param {boolean} value
+ * @return {!proto.poolrpc.Bid} returns this
+ */
 proto.poolrpc.Bid.prototype.setUnannouncedChannel = function(value) {
-  jspb.Message.setProto3BooleanField(this, 7, value);
+  return jspb.Message.setProto3BooleanField(this, 7, value);
 };
 
 
 /**
  * optional bool zero_conf_channel = 8;
- * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
- * You should avoid comparisons like {@code val === true/false} in those cases.
  * @return {boolean}
  */
 proto.poolrpc.Bid.prototype.getZeroConfChannel = function() {
-  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 8, false));
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 8, false));
 };
-
-
-/** @param {boolean} value */
-proto.poolrpc.Bid.prototype.setZeroConfChannel = function(value) {
-  jspb.Message.setProto3BooleanField(this, 8, value);
-};
-
 
 
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {boolean} value
+ * @return {!proto.poolrpc.Bid} returns this
  */
-proto.poolrpc.Ask = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+proto.poolrpc.Bid.prototype.setZeroConfChannel = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 8, value);
 };
-goog.inherits(proto.poolrpc.Ask, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.Ask.displayName = 'proto.poolrpc.Ask';
-}
+
+
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.Ask.prototype.toObject = function(opt_includeInstance) {
@@ -6927,8 +8331,8 @@ proto.poolrpc.Ask.prototype.toObject = function(opt_includeInstance) {
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.Ask} msg The msg instance to transform.
  * @return {!Object}
@@ -7076,20 +8480,27 @@ proto.poolrpc.Ask.prototype.getDetails = function() {
 };
 
 
-/** @param {?proto.poolrpc.Order|undefined} value */
+/**
+ * @param {?proto.poolrpc.Order|undefined} value
+ * @return {!proto.poolrpc.Ask} returns this
+*/
 proto.poolrpc.Ask.prototype.setDetails = function(value) {
-  jspb.Message.setWrapperField(this, 1, value);
+  return jspb.Message.setWrapperField(this, 1, value);
 };
 
 
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.poolrpc.Ask} returns this
+ */
 proto.poolrpc.Ask.prototype.clearDetails = function() {
-  this.setDetails(undefined);
+  return this.setDetails(undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.Ask.prototype.hasDetails = function() {
   return jspb.Message.getField(this, 1) != null;
@@ -7105,9 +8516,12 @@ proto.poolrpc.Ask.prototype.getLeaseDurationBlocks = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.Ask} returns this
+ */
 proto.poolrpc.Ask.prototype.setLeaseDurationBlocks = function(value) {
-  jspb.Message.setProto3IntField(this, 2, value);
+  return jspb.Message.setProto3IntField(this, 2, value);
 };
 
 
@@ -7120,9 +8534,12 @@ proto.poolrpc.Ask.prototype.getVersion = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.Ask} returns this
+ */
 proto.poolrpc.Ask.prototype.setVersion = function(value) {
-  jspb.Message.setProto3IntField(this, 3, value);
+  return jspb.Message.setProto3IntField(this, 3, value);
 };
 
 
@@ -7135,9 +8552,12 @@ proto.poolrpc.Ask.prototype.getAnnouncementConstraints = function() {
 };
 
 
-/** @param {!proto.poolrpc.ChannelAnnouncementConstraints} value */
+/**
+ * @param {!proto.poolrpc.ChannelAnnouncementConstraints} value
+ * @return {!proto.poolrpc.Ask} returns this
+ */
 proto.poolrpc.Ask.prototype.setAnnouncementConstraints = function(value) {
-  jspb.Message.setProto3EnumField(this, 4, value);
+  return jspb.Message.setProto3EnumField(this, 4, value);
 };
 
 
@@ -7150,41 +8570,29 @@ proto.poolrpc.Ask.prototype.getConfirmationConstraints = function() {
 };
 
 
-/** @param {!proto.poolrpc.ChannelConfirmationConstraints} value */
-proto.poolrpc.Ask.prototype.setConfirmationConstraints = function(value) {
-  jspb.Message.setProto3EnumField(this, 5, value);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {!proto.poolrpc.ChannelConfirmationConstraints} value
+ * @return {!proto.poolrpc.Ask} returns this
  */
-proto.poolrpc.QuoteOrderRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+proto.poolrpc.Ask.prototype.setConfirmationConstraints = function(value) {
+  return jspb.Message.setProto3EnumField(this, 5, value);
 };
-goog.inherits(proto.poolrpc.QuoteOrderRequest, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.QuoteOrderRequest.displayName = 'proto.poolrpc.QuoteOrderRequest';
-}
+
+
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.QuoteOrderRequest.prototype.toObject = function(opt_includeInstance) {
@@ -7194,8 +8602,8 @@ proto.poolrpc.QuoteOrderRequest.prototype.toObject = function(opt_includeInstanc
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.QuoteOrderRequest} msg The msg instance to transform.
  * @return {!Object}
@@ -7340,9 +8748,12 @@ proto.poolrpc.QuoteOrderRequest.prototype.getAmt = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.QuoteOrderRequest} returns this
+ */
 proto.poolrpc.QuoteOrderRequest.prototype.setAmt = function(value) {
-  jspb.Message.setProto3StringIntField(this, 1, value);
+  return jspb.Message.setProto3StringIntField(this, 1, value);
 };
 
 
@@ -7355,9 +8766,12 @@ proto.poolrpc.QuoteOrderRequest.prototype.getRateFixed = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.QuoteOrderRequest} returns this
+ */
 proto.poolrpc.QuoteOrderRequest.prototype.setRateFixed = function(value) {
-  jspb.Message.setProto3IntField(this, 2, value);
+  return jspb.Message.setProto3IntField(this, 2, value);
 };
 
 
@@ -7370,9 +8784,12 @@ proto.poolrpc.QuoteOrderRequest.prototype.getLeaseDurationBlocks = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.QuoteOrderRequest} returns this
+ */
 proto.poolrpc.QuoteOrderRequest.prototype.setLeaseDurationBlocks = function(value) {
-  jspb.Message.setProto3IntField(this, 3, value);
+  return jspb.Message.setProto3IntField(this, 3, value);
 };
 
 
@@ -7385,9 +8802,12 @@ proto.poolrpc.QuoteOrderRequest.prototype.getMaxBatchFeeRateSatPerKw = function(
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.QuoteOrderRequest} returns this
+ */
 proto.poolrpc.QuoteOrderRequest.prototype.setMaxBatchFeeRateSatPerKw = function(value) {
-  jspb.Message.setProto3StringIntField(this, 4, value);
+  return jspb.Message.setProto3StringIntField(this, 4, value);
 };
 
 
@@ -7400,41 +8820,29 @@ proto.poolrpc.QuoteOrderRequest.prototype.getMinUnitsMatch = function() {
 };
 
 
-/** @param {number} value */
-proto.poolrpc.QuoteOrderRequest.prototype.setMinUnitsMatch = function(value) {
-  jspb.Message.setProto3IntField(this, 5, value);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {number} value
+ * @return {!proto.poolrpc.QuoteOrderRequest} returns this
  */
-proto.poolrpc.QuoteOrderResponse = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+proto.poolrpc.QuoteOrderRequest.prototype.setMinUnitsMatch = function(value) {
+  return jspb.Message.setProto3IntField(this, 5, value);
 };
-goog.inherits(proto.poolrpc.QuoteOrderResponse, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.QuoteOrderResponse.displayName = 'proto.poolrpc.QuoteOrderResponse';
-}
+
+
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.QuoteOrderResponse.prototype.toObject = function(opt_includeInstance) {
@@ -7444,8 +8852,8 @@ proto.poolrpc.QuoteOrderResponse.prototype.toObject = function(opt_includeInstan
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.QuoteOrderResponse} msg The msg instance to transform.
  * @return {!Object}
@@ -7454,8 +8862,8 @@ proto.poolrpc.QuoteOrderResponse.prototype.toObject = function(opt_includeInstan
 proto.poolrpc.QuoteOrderResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
     totalPremiumSat: jspb.Message.getFieldWithDefault(msg, 1, "0"),
-    ratePerBlock: +jspb.Message.getFieldWithDefault(msg, 2, 0.0),
-    ratePercent: +jspb.Message.getFieldWithDefault(msg, 3, 0.0),
+    ratePerBlock: jspb.Message.getFloatingPointFieldWithDefault(msg, 2, 0.0),
+    ratePercent: jspb.Message.getFloatingPointFieldWithDefault(msg, 3, 0.0),
     totalExecutionFeeSat: jspb.Message.getFieldWithDefault(msg, 4, "0"),
     worstCaseChainFeeSat: jspb.Message.getFieldWithDefault(msg, 5, "0")
   };
@@ -7590,9 +8998,12 @@ proto.poolrpc.QuoteOrderResponse.prototype.getTotalPremiumSat = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.QuoteOrderResponse} returns this
+ */
 proto.poolrpc.QuoteOrderResponse.prototype.setTotalPremiumSat = function(value) {
-  jspb.Message.setProto3StringIntField(this, 1, value);
+  return jspb.Message.setProto3StringIntField(this, 1, value);
 };
 
 
@@ -7601,13 +9012,16 @@ proto.poolrpc.QuoteOrderResponse.prototype.setTotalPremiumSat = function(value) 
  * @return {number}
  */
 proto.poolrpc.QuoteOrderResponse.prototype.getRatePerBlock = function() {
-  return /** @type {number} */ (+jspb.Message.getFieldWithDefault(this, 2, 0.0));
+  return /** @type {number} */ (jspb.Message.getFloatingPointFieldWithDefault(this, 2, 0.0));
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.QuoteOrderResponse} returns this
+ */
 proto.poolrpc.QuoteOrderResponse.prototype.setRatePerBlock = function(value) {
-  jspb.Message.setProto3FloatField(this, 2, value);
+  return jspb.Message.setProto3FloatField(this, 2, value);
 };
 
 
@@ -7616,13 +9030,16 @@ proto.poolrpc.QuoteOrderResponse.prototype.setRatePerBlock = function(value) {
  * @return {number}
  */
 proto.poolrpc.QuoteOrderResponse.prototype.getRatePercent = function() {
-  return /** @type {number} */ (+jspb.Message.getFieldWithDefault(this, 3, 0.0));
+  return /** @type {number} */ (jspb.Message.getFloatingPointFieldWithDefault(this, 3, 0.0));
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.QuoteOrderResponse} returns this
+ */
 proto.poolrpc.QuoteOrderResponse.prototype.setRatePercent = function(value) {
-  jspb.Message.setProto3FloatField(this, 3, value);
+  return jspb.Message.setProto3FloatField(this, 3, value);
 };
 
 
@@ -7635,9 +9052,12 @@ proto.poolrpc.QuoteOrderResponse.prototype.getTotalExecutionFeeSat = function() 
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.QuoteOrderResponse} returns this
+ */
 proto.poolrpc.QuoteOrderResponse.prototype.setTotalExecutionFeeSat = function(value) {
-  jspb.Message.setProto3StringIntField(this, 4, value);
+  return jspb.Message.setProto3StringIntField(this, 4, value);
 };
 
 
@@ -7650,30 +9070,16 @@ proto.poolrpc.QuoteOrderResponse.prototype.getWorstCaseChainFeeSat = function() 
 };
 
 
-/** @param {string} value */
-proto.poolrpc.QuoteOrderResponse.prototype.setWorstCaseChainFeeSat = function(value) {
-  jspb.Message.setProto3StringIntField(this, 5, value);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {string} value
+ * @return {!proto.poolrpc.QuoteOrderResponse} returns this
  */
-proto.poolrpc.OrderEvent = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.poolrpc.OrderEvent.oneofGroups_);
+proto.poolrpc.QuoteOrderResponse.prototype.setWorstCaseChainFeeSat = function(value) {
+  return jspb.Message.setProto3StringIntField(this, 5, value);
 };
-goog.inherits(proto.poolrpc.OrderEvent, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.OrderEvent.displayName = 'proto.poolrpc.OrderEvent';
-}
+
+
+
 /**
  * Oneof group definitions for this message. Each group defines the field
  * numbers belonging to that group. When of these fields' value is set, all
@@ -7704,13 +9110,15 @@ proto.poolrpc.OrderEvent.prototype.getEventCase = function() {
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.OrderEvent.prototype.toObject = function(opt_includeInstance) {
@@ -7720,8 +9128,8 @@ proto.poolrpc.OrderEvent.prototype.toObject = function(opt_includeInstance) {
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.OrderEvent} msg The msg instance to transform.
  * @return {!Object}
@@ -7858,9 +9266,12 @@ proto.poolrpc.OrderEvent.prototype.getTimestampNs = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.OrderEvent} returns this
+ */
 proto.poolrpc.OrderEvent.prototype.setTimestampNs = function(value) {
-  jspb.Message.setProto3StringIntField(this, 1, value);
+  return jspb.Message.setProto3StringIntField(this, 1, value);
 };
 
 
@@ -7873,9 +9284,12 @@ proto.poolrpc.OrderEvent.prototype.getEventStr = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.OrderEvent} returns this
+ */
 proto.poolrpc.OrderEvent.prototype.setEventStr = function(value) {
-  jspb.Message.setProto3StringField(this, 2, value);
+  return jspb.Message.setProto3StringField(this, 2, value);
 };
 
 
@@ -7889,20 +9303,27 @@ proto.poolrpc.OrderEvent.prototype.getStateChange = function() {
 };
 
 
-/** @param {?proto.poolrpc.UpdatedEvent|undefined} value */
+/**
+ * @param {?proto.poolrpc.UpdatedEvent|undefined} value
+ * @return {!proto.poolrpc.OrderEvent} returns this
+*/
 proto.poolrpc.OrderEvent.prototype.setStateChange = function(value) {
-  jspb.Message.setOneofWrapperField(this, 3, proto.poolrpc.OrderEvent.oneofGroups_[0], value);
+  return jspb.Message.setOneofWrapperField(this, 3, proto.poolrpc.OrderEvent.oneofGroups_[0], value);
 };
 
 
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.poolrpc.OrderEvent} returns this
+ */
 proto.poolrpc.OrderEvent.prototype.clearStateChange = function() {
-  this.setStateChange(undefined);
+  return this.setStateChange(undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.OrderEvent.prototype.hasStateChange = function() {
   return jspb.Message.getField(this, 3) != null;
@@ -7919,20 +9340,27 @@ proto.poolrpc.OrderEvent.prototype.getMatched = function() {
 };
 
 
-/** @param {?proto.poolrpc.MatchEvent|undefined} value */
+/**
+ * @param {?proto.poolrpc.MatchEvent|undefined} value
+ * @return {!proto.poolrpc.OrderEvent} returns this
+*/
 proto.poolrpc.OrderEvent.prototype.setMatched = function(value) {
-  jspb.Message.setOneofWrapperField(this, 4, proto.poolrpc.OrderEvent.oneofGroups_[0], value);
+  return jspb.Message.setOneofWrapperField(this, 4, proto.poolrpc.OrderEvent.oneofGroups_[0], value);
 };
 
 
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.poolrpc.OrderEvent} returns this
+ */
 proto.poolrpc.OrderEvent.prototype.clearMatched = function() {
-  this.setMatched(undefined);
+  return this.setMatched(undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.OrderEvent.prototype.hasMatched = function() {
   return jspb.Message.getField(this, 4) != null;
@@ -7940,34 +9368,19 @@ proto.poolrpc.OrderEvent.prototype.hasMatched = function() {
 
 
 
-/**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
- */
-proto.poolrpc.UpdatedEvent = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
-};
-goog.inherits(proto.poolrpc.UpdatedEvent, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.UpdatedEvent.displayName = 'proto.poolrpc.UpdatedEvent';
-}
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.UpdatedEvent.prototype.toObject = function(opt_includeInstance) {
@@ -7977,8 +9390,8 @@ proto.poolrpc.UpdatedEvent.prototype.toObject = function(opt_includeInstance) {
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.UpdatedEvent} msg The msg instance to transform.
  * @return {!Object}
@@ -8099,9 +9512,12 @@ proto.poolrpc.UpdatedEvent.prototype.getPreviousState = function() {
 };
 
 
-/** @param {!proto.poolrpc.OrderState} value */
+/**
+ * @param {!proto.poolrpc.OrderState} value
+ * @return {!proto.poolrpc.UpdatedEvent} returns this
+ */
 proto.poolrpc.UpdatedEvent.prototype.setPreviousState = function(value) {
-  jspb.Message.setProto3EnumField(this, 1, value);
+  return jspb.Message.setProto3EnumField(this, 1, value);
 };
 
 
@@ -8114,9 +9530,12 @@ proto.poolrpc.UpdatedEvent.prototype.getNewState = function() {
 };
 
 
-/** @param {!proto.poolrpc.OrderState} value */
+/**
+ * @param {!proto.poolrpc.OrderState} value
+ * @return {!proto.poolrpc.UpdatedEvent} returns this
+ */
 proto.poolrpc.UpdatedEvent.prototype.setNewState = function(value) {
-  jspb.Message.setProto3EnumField(this, 2, value);
+  return jspb.Message.setProto3EnumField(this, 2, value);
 };
 
 
@@ -8129,41 +9548,29 @@ proto.poolrpc.UpdatedEvent.prototype.getUnitsFilled = function() {
 };
 
 
-/** @param {number} value */
-proto.poolrpc.UpdatedEvent.prototype.setUnitsFilled = function(value) {
-  jspb.Message.setProto3IntField(this, 3, value);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {number} value
+ * @return {!proto.poolrpc.UpdatedEvent} returns this
  */
-proto.poolrpc.MatchEvent = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+proto.poolrpc.UpdatedEvent.prototype.setUnitsFilled = function(value) {
+  return jspb.Message.setProto3IntField(this, 3, value);
 };
-goog.inherits(proto.poolrpc.MatchEvent, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.MatchEvent.displayName = 'proto.poolrpc.MatchEvent';
-}
+
+
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.MatchEvent.prototype.toObject = function(opt_includeInstance) {
@@ -8173,8 +9580,8 @@ proto.poolrpc.MatchEvent.prototype.toObject = function(opt_includeInstance) {
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.MatchEvent} msg The msg instance to transform.
  * @return {!Object}
@@ -8307,9 +9714,12 @@ proto.poolrpc.MatchEvent.prototype.getMatchState = function() {
 };
 
 
-/** @param {!proto.poolrpc.MatchState} value */
+/**
+ * @param {!proto.poolrpc.MatchState} value
+ * @return {!proto.poolrpc.MatchEvent} returns this
+ */
 proto.poolrpc.MatchEvent.prototype.setMatchState = function(value) {
-  jspb.Message.setProto3EnumField(this, 1, value);
+  return jspb.Message.setProto3EnumField(this, 1, value);
 };
 
 
@@ -8322,9 +9732,12 @@ proto.poolrpc.MatchEvent.prototype.getUnitsFilled = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.MatchEvent} returns this
+ */
 proto.poolrpc.MatchEvent.prototype.setUnitsFilled = function(value) {
-  jspb.Message.setProto3IntField(this, 2, value);
+  return jspb.Message.setProto3IntField(this, 2, value);
 };
 
 
@@ -8361,9 +9774,12 @@ proto.poolrpc.MatchEvent.prototype.getMatchedOrder_asU8 = function() {
 };
 
 
-/** @param {!(string|Uint8Array)} value */
+/**
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.MatchEvent} returns this
+ */
 proto.poolrpc.MatchEvent.prototype.setMatchedOrder = function(value) {
-  jspb.Message.setProto3BytesField(this, 3, value);
+  return jspb.Message.setProto3BytesField(this, 3, value);
 };
 
 
@@ -8376,41 +9792,29 @@ proto.poolrpc.MatchEvent.prototype.getRejectReason = function() {
 };
 
 
-/** @param {!proto.poolrpc.MatchRejectReason} value */
-proto.poolrpc.MatchEvent.prototype.setRejectReason = function(value) {
-  jspb.Message.setProto3EnumField(this, 4, value);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {!proto.poolrpc.MatchRejectReason} value
+ * @return {!proto.poolrpc.MatchEvent} returns this
  */
-proto.poolrpc.RecoverAccountsRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+proto.poolrpc.MatchEvent.prototype.setRejectReason = function(value) {
+  return jspb.Message.setProto3EnumField(this, 4, value);
 };
-goog.inherits(proto.poolrpc.RecoverAccountsRequest, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.RecoverAccountsRequest.displayName = 'proto.poolrpc.RecoverAccountsRequest';
-}
+
+
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.RecoverAccountsRequest.prototype.toObject = function(opt_includeInstance) {
@@ -8420,8 +9824,8 @@ proto.poolrpc.RecoverAccountsRequest.prototype.toObject = function(opt_includeIn
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.RecoverAccountsRequest} msg The msg instance to transform.
  * @return {!Object}
@@ -8429,15 +9833,15 @@ proto.poolrpc.RecoverAccountsRequest.prototype.toObject = function(opt_includeIn
  */
 proto.poolrpc.RecoverAccountsRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-    fullClient: jspb.Message.getFieldWithDefault(msg, 1, false),
+    fullClient: jspb.Message.getBooleanFieldWithDefault(msg, 1, false),
     accountTarget: jspb.Message.getFieldWithDefault(msg, 2, 0),
     auctioneerKey: jspb.Message.getFieldWithDefault(msg, 3, ""),
     heightHint: jspb.Message.getFieldWithDefault(msg, 4, 0),
     bitcoinHost: jspb.Message.getFieldWithDefault(msg, 5, ""),
     bitcoinUser: jspb.Message.getFieldWithDefault(msg, 6, ""),
     bitcoinPassword: jspb.Message.getFieldWithDefault(msg, 7, ""),
-    bitcoinHttppostmode: jspb.Message.getFieldWithDefault(msg, 8, false),
-    bitcoinUsetls: jspb.Message.getFieldWithDefault(msg, 9, false),
+    bitcoinHttppostmode: jspb.Message.getBooleanFieldWithDefault(msg, 8, false),
+    bitcoinUsetls: jspb.Message.getBooleanFieldWithDefault(msg, 9, false),
     bitcoinTlspath: jspb.Message.getFieldWithDefault(msg, 10, "")
   };
 
@@ -8619,18 +10023,19 @@ proto.poolrpc.RecoverAccountsRequest.serializeBinaryToWriter = function(message,
 
 /**
  * optional bool full_client = 1;
- * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
- * You should avoid comparisons like {@code val === true/false} in those cases.
  * @return {boolean}
  */
 proto.poolrpc.RecoverAccountsRequest.prototype.getFullClient = function() {
-  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 1, false));
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 1, false));
 };
 
 
-/** @param {boolean} value */
+/**
+ * @param {boolean} value
+ * @return {!proto.poolrpc.RecoverAccountsRequest} returns this
+ */
 proto.poolrpc.RecoverAccountsRequest.prototype.setFullClient = function(value) {
-  jspb.Message.setProto3BooleanField(this, 1, value);
+  return jspb.Message.setProto3BooleanField(this, 1, value);
 };
 
 
@@ -8643,9 +10048,12 @@ proto.poolrpc.RecoverAccountsRequest.prototype.getAccountTarget = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.RecoverAccountsRequest} returns this
+ */
 proto.poolrpc.RecoverAccountsRequest.prototype.setAccountTarget = function(value) {
-  jspb.Message.setProto3IntField(this, 2, value);
+  return jspb.Message.setProto3IntField(this, 2, value);
 };
 
 
@@ -8658,9 +10066,12 @@ proto.poolrpc.RecoverAccountsRequest.prototype.getAuctioneerKey = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.RecoverAccountsRequest} returns this
+ */
 proto.poolrpc.RecoverAccountsRequest.prototype.setAuctioneerKey = function(value) {
-  jspb.Message.setProto3StringField(this, 3, value);
+  return jspb.Message.setProto3StringField(this, 3, value);
 };
 
 
@@ -8673,9 +10084,12 @@ proto.poolrpc.RecoverAccountsRequest.prototype.getHeightHint = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.RecoverAccountsRequest} returns this
+ */
 proto.poolrpc.RecoverAccountsRequest.prototype.setHeightHint = function(value) {
-  jspb.Message.setProto3IntField(this, 4, value);
+  return jspb.Message.setProto3IntField(this, 4, value);
 };
 
 
@@ -8688,9 +10102,12 @@ proto.poolrpc.RecoverAccountsRequest.prototype.getBitcoinHost = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.RecoverAccountsRequest} returns this
+ */
 proto.poolrpc.RecoverAccountsRequest.prototype.setBitcoinHost = function(value) {
-  jspb.Message.setProto3StringField(this, 5, value);
+  return jspb.Message.setProto3StringField(this, 5, value);
 };
 
 
@@ -8703,9 +10120,12 @@ proto.poolrpc.RecoverAccountsRequest.prototype.getBitcoinUser = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.RecoverAccountsRequest} returns this
+ */
 proto.poolrpc.RecoverAccountsRequest.prototype.setBitcoinUser = function(value) {
-  jspb.Message.setProto3StringField(this, 6, value);
+  return jspb.Message.setProto3StringField(this, 6, value);
 };
 
 
@@ -8718,43 +10138,48 @@ proto.poolrpc.RecoverAccountsRequest.prototype.getBitcoinPassword = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.RecoverAccountsRequest} returns this
+ */
 proto.poolrpc.RecoverAccountsRequest.prototype.setBitcoinPassword = function(value) {
-  jspb.Message.setProto3StringField(this, 7, value);
+  return jspb.Message.setProto3StringField(this, 7, value);
 };
 
 
 /**
  * optional bool bitcoin_httppostmode = 8;
- * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
- * You should avoid comparisons like {@code val === true/false} in those cases.
  * @return {boolean}
  */
 proto.poolrpc.RecoverAccountsRequest.prototype.getBitcoinHttppostmode = function() {
-  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 8, false));
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 8, false));
 };
 
 
-/** @param {boolean} value */
+/**
+ * @param {boolean} value
+ * @return {!proto.poolrpc.RecoverAccountsRequest} returns this
+ */
 proto.poolrpc.RecoverAccountsRequest.prototype.setBitcoinHttppostmode = function(value) {
-  jspb.Message.setProto3BooleanField(this, 8, value);
+  return jspb.Message.setProto3BooleanField(this, 8, value);
 };
 
 
 /**
  * optional bool bitcoin_usetls = 9;
- * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
- * You should avoid comparisons like {@code val === true/false} in those cases.
  * @return {boolean}
  */
 proto.poolrpc.RecoverAccountsRequest.prototype.getBitcoinUsetls = function() {
-  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 9, false));
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 9, false));
 };
 
 
-/** @param {boolean} value */
+/**
+ * @param {boolean} value
+ * @return {!proto.poolrpc.RecoverAccountsRequest} returns this
+ */
 proto.poolrpc.RecoverAccountsRequest.prototype.setBitcoinUsetls = function(value) {
-  jspb.Message.setProto3BooleanField(this, 9, value);
+  return jspb.Message.setProto3BooleanField(this, 9, value);
 };
 
 
@@ -8767,41 +10192,29 @@ proto.poolrpc.RecoverAccountsRequest.prototype.getBitcoinTlspath = function() {
 };
 
 
-/** @param {string} value */
-proto.poolrpc.RecoverAccountsRequest.prototype.setBitcoinTlspath = function(value) {
-  jspb.Message.setProto3StringField(this, 10, value);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {string} value
+ * @return {!proto.poolrpc.RecoverAccountsRequest} returns this
  */
-proto.poolrpc.RecoverAccountsResponse = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+proto.poolrpc.RecoverAccountsRequest.prototype.setBitcoinTlspath = function(value) {
+  return jspb.Message.setProto3StringField(this, 10, value);
 };
-goog.inherits(proto.poolrpc.RecoverAccountsResponse, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.RecoverAccountsResponse.displayName = 'proto.poolrpc.RecoverAccountsResponse';
-}
+
+
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.RecoverAccountsResponse.prototype.toObject = function(opt_includeInstance) {
@@ -8811,8 +10224,8 @@ proto.poolrpc.RecoverAccountsResponse.prototype.toObject = function(opt_includeI
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.RecoverAccountsResponse} msg The msg instance to transform.
  * @return {!Object}
@@ -8909,41 +10322,29 @@ proto.poolrpc.RecoverAccountsResponse.prototype.getNumRecoveredAccounts = functi
 };
 
 
-/** @param {number} value */
-proto.poolrpc.RecoverAccountsResponse.prototype.setNumRecoveredAccounts = function(value) {
-  jspb.Message.setProto3IntField(this, 1, value);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {number} value
+ * @return {!proto.poolrpc.RecoverAccountsResponse} returns this
  */
-proto.poolrpc.AccountModificationFeesRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+proto.poolrpc.RecoverAccountsResponse.prototype.setNumRecoveredAccounts = function(value) {
+  return jspb.Message.setProto3IntField(this, 1, value);
 };
-goog.inherits(proto.poolrpc.AccountModificationFeesRequest, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.AccountModificationFeesRequest.displayName = 'proto.poolrpc.AccountModificationFeesRequest';
-}
+
+
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.AccountModificationFeesRequest.prototype.toObject = function(opt_includeInstance) {
@@ -8953,8 +10354,8 @@ proto.poolrpc.AccountModificationFeesRequest.prototype.toObject = function(opt_i
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.AccountModificationFeesRequest} msg The msg instance to transform.
  * @return {!Object}
@@ -9033,23 +10434,6 @@ proto.poolrpc.AccountModificationFeesRequest.serializeBinaryToWriter = function(
 
 
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
- */
-proto.poolrpc.AccountModificationFee = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.poolrpc.AccountModificationFee.oneofGroups_);
-};
-goog.inherits(proto.poolrpc.AccountModificationFee, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.AccountModificationFee.displayName = 'proto.poolrpc.AccountModificationFee';
-}
-/**
  * Oneof group definitions for this message. Each group defines the field
  * numbers belonging to that group. When of these fields' value is set, all
  * other fields in the group are cleared. During deserialization, if multiple
@@ -9079,13 +10463,15 @@ proto.poolrpc.AccountModificationFee.prototype.getFeeCase = function() {
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.AccountModificationFee.prototype.toObject = function(opt_includeInstance) {
@@ -9095,8 +10481,8 @@ proto.poolrpc.AccountModificationFee.prototype.toObject = function(opt_includeIn
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.AccountModificationFee} msg The msg instance to transform.
  * @return {!Object}
@@ -9109,7 +10495,7 @@ proto.poolrpc.AccountModificationFee.toObject = function(includeInstance, msg) {
     blockHeight: jspb.Message.getFieldWithDefault(msg, 3, 0),
     timestamp: jspb.Message.getFieldWithDefault(msg, 4, "0"),
     outputAmount: jspb.Message.getFieldWithDefault(msg, 5, "0"),
-    feeNull: jspb.Message.getFieldWithDefault(msg, 6, false),
+    feeNull: jspb.Message.getBooleanFieldWithDefault(msg, 6, false),
     feeValue: jspb.Message.getFieldWithDefault(msg, 7, "0")
   };
 
@@ -9265,9 +10651,12 @@ proto.poolrpc.AccountModificationFee.prototype.getAction = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.AccountModificationFee} returns this
+ */
 proto.poolrpc.AccountModificationFee.prototype.setAction = function(value) {
-  jspb.Message.setProto3StringField(this, 1, value);
+  return jspb.Message.setProto3StringField(this, 1, value);
 };
 
 
@@ -9280,9 +10669,12 @@ proto.poolrpc.AccountModificationFee.prototype.getTxid = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.AccountModificationFee} returns this
+ */
 proto.poolrpc.AccountModificationFee.prototype.setTxid = function(value) {
-  jspb.Message.setProto3StringField(this, 2, value);
+  return jspb.Message.setProto3StringField(this, 2, value);
 };
 
 
@@ -9295,9 +10687,12 @@ proto.poolrpc.AccountModificationFee.prototype.getBlockHeight = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.AccountModificationFee} returns this
+ */
 proto.poolrpc.AccountModificationFee.prototype.setBlockHeight = function(value) {
-  jspb.Message.setProto3IntField(this, 3, value);
+  return jspb.Message.setProto3IntField(this, 3, value);
 };
 
 
@@ -9310,9 +10705,12 @@ proto.poolrpc.AccountModificationFee.prototype.getTimestamp = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.AccountModificationFee} returns this
+ */
 proto.poolrpc.AccountModificationFee.prototype.setTimestamp = function(value) {
-  jspb.Message.setProto3StringIntField(this, 4, value);
+  return jspb.Message.setProto3StringIntField(this, 4, value);
 };
 
 
@@ -9325,37 +10723,45 @@ proto.poolrpc.AccountModificationFee.prototype.getOutputAmount = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.AccountModificationFee} returns this
+ */
 proto.poolrpc.AccountModificationFee.prototype.setOutputAmount = function(value) {
-  jspb.Message.setProto3StringIntField(this, 5, value);
+  return jspb.Message.setProto3StringIntField(this, 5, value);
 };
 
 
 /**
  * optional bool fee_null = 6;
- * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
- * You should avoid comparisons like {@code val === true/false} in those cases.
  * @return {boolean}
  */
 proto.poolrpc.AccountModificationFee.prototype.getFeeNull = function() {
-  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 6, false));
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 6, false));
 };
 
 
-/** @param {boolean} value */
+/**
+ * @param {boolean} value
+ * @return {!proto.poolrpc.AccountModificationFee} returns this
+ */
 proto.poolrpc.AccountModificationFee.prototype.setFeeNull = function(value) {
-  jspb.Message.setOneofField(this, 6, proto.poolrpc.AccountModificationFee.oneofGroups_[0], value);
+  return jspb.Message.setOneofField(this, 6, proto.poolrpc.AccountModificationFee.oneofGroups_[0], value);
 };
 
 
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.poolrpc.AccountModificationFee} returns this
+ */
 proto.poolrpc.AccountModificationFee.prototype.clearFeeNull = function() {
-  jspb.Message.setOneofField(this, 6, proto.poolrpc.AccountModificationFee.oneofGroups_[0], undefined);
+  return jspb.Message.setOneofField(this, 6, proto.poolrpc.AccountModificationFee.oneofGroups_[0], undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.AccountModificationFee.prototype.hasFeeNull = function() {
   return jspb.Message.getField(this, 6) != null;
@@ -9371,20 +10777,27 @@ proto.poolrpc.AccountModificationFee.prototype.getFeeValue = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.AccountModificationFee} returns this
+ */
 proto.poolrpc.AccountModificationFee.prototype.setFeeValue = function(value) {
-  jspb.Message.setOneofField(this, 7, proto.poolrpc.AccountModificationFee.oneofGroups_[0], value);
+  return jspb.Message.setOneofField(this, 7, proto.poolrpc.AccountModificationFee.oneofGroups_[0], value);
 };
 
 
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.poolrpc.AccountModificationFee} returns this
+ */
 proto.poolrpc.AccountModificationFee.prototype.clearFeeValue = function() {
-  jspb.Message.setOneofField(this, 7, proto.poolrpc.AccountModificationFee.oneofGroups_[0], undefined);
+  return jspb.Message.setOneofField(this, 7, proto.poolrpc.AccountModificationFee.oneofGroups_[0], undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.AccountModificationFee.prototype.hasFeeValue = function() {
   return jspb.Message.getField(this, 7) != null;
@@ -9392,23 +10805,6 @@ proto.poolrpc.AccountModificationFee.prototype.hasFeeValue = function() {
 
 
 
-/**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
- */
-proto.poolrpc.ListOfAccountModificationFees = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.ListOfAccountModificationFees.repeatedFields_, null);
-};
-goog.inherits(proto.poolrpc.ListOfAccountModificationFees, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.ListOfAccountModificationFees.displayName = 'proto.poolrpc.ListOfAccountModificationFees';
-}
 /**
  * List of repeated fields within this message type.
  * @private {!Array<number>}
@@ -9420,13 +10816,15 @@ proto.poolrpc.ListOfAccountModificationFees.repeatedFields_ = [1];
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.ListOfAccountModificationFees.prototype.toObject = function(opt_includeInstance) {
@@ -9436,8 +10834,8 @@ proto.poolrpc.ListOfAccountModificationFees.prototype.toObject = function(opt_in
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.ListOfAccountModificationFees} msg The msg instance to transform.
  * @return {!Object}
@@ -9538,9 +10936,12 @@ proto.poolrpc.ListOfAccountModificationFees.prototype.getModificationFeesList = 
 };
 
 
-/** @param {!Array<!proto.poolrpc.AccountModificationFee>} value */
+/**
+ * @param {!Array<!proto.poolrpc.AccountModificationFee>} value
+ * @return {!proto.poolrpc.ListOfAccountModificationFees} returns this
+*/
 proto.poolrpc.ListOfAccountModificationFees.prototype.setModificationFeesList = function(value) {
-  jspb.Message.setRepeatedWrapperField(this, 1, value);
+  return jspb.Message.setRepeatedWrapperField(this, 1, value);
 };
 
 
@@ -9554,40 +10955,29 @@ proto.poolrpc.ListOfAccountModificationFees.prototype.addModificationFees = func
 };
 
 
-proto.poolrpc.ListOfAccountModificationFees.prototype.clearModificationFeesList = function() {
-  this.setModificationFeesList([]);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * Clears the list making it empty but non-null.
+ * @return {!proto.poolrpc.ListOfAccountModificationFees} returns this
  */
-proto.poolrpc.AccountModificationFeesResponse = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+proto.poolrpc.ListOfAccountModificationFees.prototype.clearModificationFeesList = function() {
+  return this.setModificationFeesList([]);
 };
-goog.inherits(proto.poolrpc.AccountModificationFeesResponse, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.AccountModificationFeesResponse.displayName = 'proto.poolrpc.AccountModificationFeesResponse';
-}
+
+
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.AccountModificationFeesResponse.prototype.toObject = function(opt_includeInstance) {
@@ -9597,8 +10987,8 @@ proto.poolrpc.AccountModificationFeesResponse.prototype.toObject = function(opt_
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.AccountModificationFeesResponse} msg The msg instance to transform.
  * @return {!Object}
@@ -9646,7 +11036,7 @@ proto.poolrpc.AccountModificationFeesResponse.deserializeBinaryFromReader = func
     case 1:
       var value = msg.getAccountsMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.poolrpc.ListOfAccountModificationFees.deserializeBinaryFromReader, "");
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.poolrpc.ListOfAccountModificationFees.deserializeBinaryFromReader, "", new proto.poolrpc.ListOfAccountModificationFees());
          });
       break;
     default:
@@ -9698,40 +11088,30 @@ proto.poolrpc.AccountModificationFeesResponse.prototype.getAccountsMap = functio
 };
 
 
+/**
+ * Clears values from the map. The map will be non-null.
+ * @return {!proto.poolrpc.AccountModificationFeesResponse} returns this
+ */
 proto.poolrpc.AccountModificationFeesResponse.prototype.clearAccountsMap = function() {
   this.getAccountsMap().clear();
+  return this;
 };
 
 
 
-/**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
- */
-proto.poolrpc.AuctionFeeRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
-};
-goog.inherits(proto.poolrpc.AuctionFeeRequest, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.AuctionFeeRequest.displayName = 'proto.poolrpc.AuctionFeeRequest';
-}
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.AuctionFeeRequest.prototype.toObject = function(opt_includeInstance) {
@@ -9741,8 +11121,8 @@ proto.poolrpc.AuctionFeeRequest.prototype.toObject = function(opt_includeInstanc
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.AuctionFeeRequest} msg The msg instance to transform.
  * @return {!Object}
@@ -9820,34 +11200,19 @@ proto.poolrpc.AuctionFeeRequest.serializeBinaryToWriter = function(message, writ
 
 
 
-/**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
- */
-proto.poolrpc.AuctionFeeResponse = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
-};
-goog.inherits(proto.poolrpc.AuctionFeeResponse, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.AuctionFeeResponse.displayName = 'proto.poolrpc.AuctionFeeResponse';
-}
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.AuctionFeeResponse.prototype.toObject = function(opt_includeInstance) {
@@ -9857,8 +11222,8 @@ proto.poolrpc.AuctionFeeResponse.prototype.toObject = function(opt_includeInstan
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.AuctionFeeResponse} msg The msg instance to transform.
  * @return {!Object}
@@ -9958,20 +11323,27 @@ proto.poolrpc.AuctionFeeResponse.prototype.getExecutionFee = function() {
 };
 
 
-/** @param {?proto.poolrpc.ExecutionFee|undefined} value */
+/**
+ * @param {?proto.poolrpc.ExecutionFee|undefined} value
+ * @return {!proto.poolrpc.AuctionFeeResponse} returns this
+*/
 proto.poolrpc.AuctionFeeResponse.prototype.setExecutionFee = function(value) {
-  jspb.Message.setWrapperField(this, 1, value);
+  return jspb.Message.setWrapperField(this, 1, value);
 };
 
 
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.poolrpc.AuctionFeeResponse} returns this
+ */
 proto.poolrpc.AuctionFeeResponse.prototype.clearExecutionFee = function() {
-  this.setExecutionFee(undefined);
+  return this.setExecutionFee(undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.AuctionFeeResponse.prototype.hasExecutionFee = function() {
   return jspb.Message.getField(this, 1) != null;
@@ -9979,34 +11351,19 @@ proto.poolrpc.AuctionFeeResponse.prototype.hasExecutionFee = function() {
 
 
 
-/**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
- */
-proto.poolrpc.Lease = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
-};
-goog.inherits(proto.poolrpc.Lease, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.Lease.displayName = 'proto.poolrpc.Lease';
-}
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.Lease.prototype.toObject = function(opt_includeInstance) {
@@ -10016,8 +11373,8 @@ proto.poolrpc.Lease.prototype.toObject = function(opt_includeInstance) {
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.Lease} msg The msg instance to transform.
  * @return {!Object}
@@ -10036,11 +11393,11 @@ proto.poolrpc.Lease.toObject = function(includeInstance, msg) {
     orderFixedRate: jspb.Message.getFieldWithDefault(msg, 9, "0"),
     orderNonce: msg.getOrderNonce_asB64(),
     matchedOrderNonce: msg.getMatchedOrderNonce_asB64(),
-    purchased: jspb.Message.getFieldWithDefault(msg, 11, false),
+    purchased: jspb.Message.getBooleanFieldWithDefault(msg, 11, false),
     channelRemoteNodeKey: msg.getChannelRemoteNodeKey_asB64(),
     channelNodeTier: jspb.Message.getFieldWithDefault(msg, 13, 0),
     selfChanBalance: jspb.Message.getFieldWithDefault(msg, 14, "0"),
-    sidecarChannel: jspb.Message.getFieldWithDefault(msg, 15, false)
+    sidecarChannel: jspb.Message.getBooleanFieldWithDefault(msg, 15, false)
   };
 
   if (includeInstance) {
@@ -10297,20 +11654,27 @@ proto.poolrpc.Lease.prototype.getChannelPoint = function() {
 };
 
 
-/** @param {?proto.poolrpc.OutPoint|undefined} value */
+/**
+ * @param {?proto.poolrpc.OutPoint|undefined} value
+ * @return {!proto.poolrpc.Lease} returns this
+*/
 proto.poolrpc.Lease.prototype.setChannelPoint = function(value) {
-  jspb.Message.setWrapperField(this, 1, value);
+  return jspb.Message.setWrapperField(this, 1, value);
 };
 
 
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.poolrpc.Lease} returns this
+ */
 proto.poolrpc.Lease.prototype.clearChannelPoint = function() {
-  this.setChannelPoint(undefined);
+  return this.setChannelPoint(undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.Lease.prototype.hasChannelPoint = function() {
   return jspb.Message.getField(this, 1) != null;
@@ -10326,9 +11690,12 @@ proto.poolrpc.Lease.prototype.getChannelAmtSat = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.Lease} returns this
+ */
 proto.poolrpc.Lease.prototype.setChannelAmtSat = function(value) {
-  jspb.Message.setProto3StringIntField(this, 2, value);
+  return jspb.Message.setProto3StringIntField(this, 2, value);
 };
 
 
@@ -10341,9 +11708,12 @@ proto.poolrpc.Lease.prototype.getChannelDurationBlocks = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.Lease} returns this
+ */
 proto.poolrpc.Lease.prototype.setChannelDurationBlocks = function(value) {
-  jspb.Message.setProto3IntField(this, 3, value);
+  return jspb.Message.setProto3IntField(this, 3, value);
 };
 
 
@@ -10356,9 +11726,12 @@ proto.poolrpc.Lease.prototype.getChannelLeaseExpiry = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.Lease} returns this
+ */
 proto.poolrpc.Lease.prototype.setChannelLeaseExpiry = function(value) {
-  jspb.Message.setProto3IntField(this, 4, value);
+  return jspb.Message.setProto3IntField(this, 4, value);
 };
 
 
@@ -10371,9 +11744,12 @@ proto.poolrpc.Lease.prototype.getPremiumSat = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.Lease} returns this
+ */
 proto.poolrpc.Lease.prototype.setPremiumSat = function(value) {
-  jspb.Message.setProto3StringIntField(this, 5, value);
+  return jspb.Message.setProto3StringIntField(this, 5, value);
 };
 
 
@@ -10386,9 +11762,12 @@ proto.poolrpc.Lease.prototype.getExecutionFeeSat = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.Lease} returns this
+ */
 proto.poolrpc.Lease.prototype.setExecutionFeeSat = function(value) {
-  jspb.Message.setProto3StringIntField(this, 6, value);
+  return jspb.Message.setProto3StringIntField(this, 6, value);
 };
 
 
@@ -10401,9 +11780,12 @@ proto.poolrpc.Lease.prototype.getChainFeeSat = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.Lease} returns this
+ */
 proto.poolrpc.Lease.prototype.setChainFeeSat = function(value) {
-  jspb.Message.setProto3StringIntField(this, 7, value);
+  return jspb.Message.setProto3StringIntField(this, 7, value);
 };
 
 
@@ -10416,9 +11798,12 @@ proto.poolrpc.Lease.prototype.getClearingRatePrice = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.Lease} returns this
+ */
 proto.poolrpc.Lease.prototype.setClearingRatePrice = function(value) {
-  jspb.Message.setProto3StringIntField(this, 8, value);
+  return jspb.Message.setProto3StringIntField(this, 8, value);
 };
 
 
@@ -10431,9 +11816,12 @@ proto.poolrpc.Lease.prototype.getOrderFixedRate = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.Lease} returns this
+ */
 proto.poolrpc.Lease.prototype.setOrderFixedRate = function(value) {
-  jspb.Message.setProto3StringIntField(this, 9, value);
+  return jspb.Message.setProto3StringIntField(this, 9, value);
 };
 
 
@@ -10470,9 +11858,12 @@ proto.poolrpc.Lease.prototype.getOrderNonce_asU8 = function() {
 };
 
 
-/** @param {!(string|Uint8Array)} value */
+/**
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.Lease} returns this
+ */
 proto.poolrpc.Lease.prototype.setOrderNonce = function(value) {
-  jspb.Message.setProto3BytesField(this, 10, value);
+  return jspb.Message.setProto3BytesField(this, 10, value);
 };
 
 
@@ -10509,26 +11900,30 @@ proto.poolrpc.Lease.prototype.getMatchedOrderNonce_asU8 = function() {
 };
 
 
-/** @param {!(string|Uint8Array)} value */
+/**
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.Lease} returns this
+ */
 proto.poolrpc.Lease.prototype.setMatchedOrderNonce = function(value) {
-  jspb.Message.setProto3BytesField(this, 16, value);
+  return jspb.Message.setProto3BytesField(this, 16, value);
 };
 
 
 /**
  * optional bool purchased = 11;
- * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
- * You should avoid comparisons like {@code val === true/false} in those cases.
  * @return {boolean}
  */
 proto.poolrpc.Lease.prototype.getPurchased = function() {
-  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 11, false));
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 11, false));
 };
 
 
-/** @param {boolean} value */
+/**
+ * @param {boolean} value
+ * @return {!proto.poolrpc.Lease} returns this
+ */
 proto.poolrpc.Lease.prototype.setPurchased = function(value) {
-  jspb.Message.setProto3BooleanField(this, 11, value);
+  return jspb.Message.setProto3BooleanField(this, 11, value);
 };
 
 
@@ -10565,9 +11960,12 @@ proto.poolrpc.Lease.prototype.getChannelRemoteNodeKey_asU8 = function() {
 };
 
 
-/** @param {!(string|Uint8Array)} value */
+/**
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.Lease} returns this
+ */
 proto.poolrpc.Lease.prototype.setChannelRemoteNodeKey = function(value) {
-  jspb.Message.setProto3BytesField(this, 12, value);
+  return jspb.Message.setProto3BytesField(this, 12, value);
 };
 
 
@@ -10580,9 +11978,12 @@ proto.poolrpc.Lease.prototype.getChannelNodeTier = function() {
 };
 
 
-/** @param {!proto.poolrpc.NodeTier} value */
+/**
+ * @param {!proto.poolrpc.NodeTier} value
+ * @return {!proto.poolrpc.Lease} returns this
+ */
 proto.poolrpc.Lease.prototype.setChannelNodeTier = function(value) {
-  jspb.Message.setProto3EnumField(this, 13, value);
+  return jspb.Message.setProto3EnumField(this, 13, value);
 };
 
 
@@ -10595,47 +11996,34 @@ proto.poolrpc.Lease.prototype.getSelfChanBalance = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.Lease} returns this
+ */
 proto.poolrpc.Lease.prototype.setSelfChanBalance = function(value) {
-  jspb.Message.setProto3StringIntField(this, 14, value);
+  return jspb.Message.setProto3StringIntField(this, 14, value);
 };
 
 
 /**
  * optional bool sidecar_channel = 15;
- * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
- * You should avoid comparisons like {@code val === true/false} in those cases.
  * @return {boolean}
  */
 proto.poolrpc.Lease.prototype.getSidecarChannel = function() {
-  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 15, false));
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 15, false));
 };
-
-
-/** @param {boolean} value */
-proto.poolrpc.Lease.prototype.setSidecarChannel = function(value) {
-  jspb.Message.setProto3BooleanField(this, 15, value);
-};
-
 
 
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {boolean} value
+ * @return {!proto.poolrpc.Lease} returns this
  */
-proto.poolrpc.LeasesRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.LeasesRequest.repeatedFields_, null);
+proto.poolrpc.Lease.prototype.setSidecarChannel = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 15, value);
 };
-goog.inherits(proto.poolrpc.LeasesRequest, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.LeasesRequest.displayName = 'proto.poolrpc.LeasesRequest';
-}
+
+
+
 /**
  * List of repeated fields within this message type.
  * @private {!Array<number>}
@@ -10647,13 +12035,15 @@ proto.poolrpc.LeasesRequest.repeatedFields_ = [1,2];
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.LeasesRequest.prototype.toObject = function(opt_includeInstance) {
@@ -10663,8 +12053,8 @@ proto.poolrpc.LeasesRequest.prototype.toObject = function(opt_includeInstance) {
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.LeasesRequest} msg The msg instance to transform.
  * @return {!Object}
@@ -10797,23 +12187,31 @@ proto.poolrpc.LeasesRequest.prototype.getBatchIdsList_asU8 = function() {
 };
 
 
-/** @param {!(Array<!Uint8Array>|Array<string>)} value */
+/**
+ * @param {!(Array<!Uint8Array>|Array<string>)} value
+ * @return {!proto.poolrpc.LeasesRequest} returns this
+ */
 proto.poolrpc.LeasesRequest.prototype.setBatchIdsList = function(value) {
-  jspb.Message.setField(this, 1, value || []);
+  return jspb.Message.setField(this, 1, value || []);
 };
 
 
 /**
  * @param {!(string|Uint8Array)} value
  * @param {number=} opt_index
+ * @return {!proto.poolrpc.LeasesRequest} returns this
  */
 proto.poolrpc.LeasesRequest.prototype.addBatchIds = function(value, opt_index) {
-  jspb.Message.addToRepeatedField(this, 1, value, opt_index);
+  return jspb.Message.addToRepeatedField(this, 1, value, opt_index);
 };
 
 
+/**
+ * Clears the list making it empty but non-null.
+ * @return {!proto.poolrpc.LeasesRequest} returns this
+ */
 proto.poolrpc.LeasesRequest.prototype.clearBatchIdsList = function() {
-  this.setBatchIdsList([]);
+  return this.setBatchIdsList([]);
 };
 
 
@@ -10850,44 +12248,35 @@ proto.poolrpc.LeasesRequest.prototype.getAccountsList_asU8 = function() {
 };
 
 
-/** @param {!(Array<!Uint8Array>|Array<string>)} value */
+/**
+ * @param {!(Array<!Uint8Array>|Array<string>)} value
+ * @return {!proto.poolrpc.LeasesRequest} returns this
+ */
 proto.poolrpc.LeasesRequest.prototype.setAccountsList = function(value) {
-  jspb.Message.setField(this, 2, value || []);
+  return jspb.Message.setField(this, 2, value || []);
 };
 
 
 /**
  * @param {!(string|Uint8Array)} value
  * @param {number=} opt_index
+ * @return {!proto.poolrpc.LeasesRequest} returns this
  */
 proto.poolrpc.LeasesRequest.prototype.addAccounts = function(value, opt_index) {
-  jspb.Message.addToRepeatedField(this, 2, value, opt_index);
+  return jspb.Message.addToRepeatedField(this, 2, value, opt_index);
 };
-
-
-proto.poolrpc.LeasesRequest.prototype.clearAccountsList = function() {
-  this.setAccountsList([]);
-};
-
 
 
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * Clears the list making it empty but non-null.
+ * @return {!proto.poolrpc.LeasesRequest} returns this
  */
-proto.poolrpc.LeasesResponse = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.LeasesResponse.repeatedFields_, null);
+proto.poolrpc.LeasesRequest.prototype.clearAccountsList = function() {
+  return this.setAccountsList([]);
 };
-goog.inherits(proto.poolrpc.LeasesResponse, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.LeasesResponse.displayName = 'proto.poolrpc.LeasesResponse';
-}
+
+
+
 /**
  * List of repeated fields within this message type.
  * @private {!Array<number>}
@@ -10899,13 +12288,15 @@ proto.poolrpc.LeasesResponse.repeatedFields_ = [1];
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.LeasesResponse.prototype.toObject = function(opt_includeInstance) {
@@ -10915,8 +12306,8 @@ proto.poolrpc.LeasesResponse.prototype.toObject = function(opt_includeInstance) 
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.LeasesResponse} msg The msg instance to transform.
  * @return {!Object}
@@ -11041,9 +12432,12 @@ proto.poolrpc.LeasesResponse.prototype.getLeasesList = function() {
 };
 
 
-/** @param {!Array<!proto.poolrpc.Lease>} value */
+/**
+ * @param {!Array<!proto.poolrpc.Lease>} value
+ * @return {!proto.poolrpc.LeasesResponse} returns this
+*/
 proto.poolrpc.LeasesResponse.prototype.setLeasesList = function(value) {
-  jspb.Message.setRepeatedWrapperField(this, 1, value);
+  return jspb.Message.setRepeatedWrapperField(this, 1, value);
 };
 
 
@@ -11057,8 +12451,12 @@ proto.poolrpc.LeasesResponse.prototype.addLeases = function(opt_value, opt_index
 };
 
 
+/**
+ * Clears the list making it empty but non-null.
+ * @return {!proto.poolrpc.LeasesResponse} returns this
+ */
 proto.poolrpc.LeasesResponse.prototype.clearLeasesList = function() {
-  this.setLeasesList([]);
+  return this.setLeasesList([]);
 };
 
 
@@ -11071,9 +12469,12 @@ proto.poolrpc.LeasesResponse.prototype.getTotalAmtEarnedSat = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.LeasesResponse} returns this
+ */
 proto.poolrpc.LeasesResponse.prototype.setTotalAmtEarnedSat = function(value) {
-  jspb.Message.setProto3StringIntField(this, 2, value);
+  return jspb.Message.setProto3StringIntField(this, 2, value);
 };
 
 
@@ -11086,41 +12487,29 @@ proto.poolrpc.LeasesResponse.prototype.getTotalAmtPaidSat = function() {
 };
 
 
-/** @param {string} value */
-proto.poolrpc.LeasesResponse.prototype.setTotalAmtPaidSat = function(value) {
-  jspb.Message.setProto3StringIntField(this, 3, value);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {string} value
+ * @return {!proto.poolrpc.LeasesResponse} returns this
  */
-proto.poolrpc.TokensRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+proto.poolrpc.LeasesResponse.prototype.setTotalAmtPaidSat = function(value) {
+  return jspb.Message.setProto3StringIntField(this, 3, value);
 };
-goog.inherits(proto.poolrpc.TokensRequest, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.TokensRequest.displayName = 'proto.poolrpc.TokensRequest';
-}
+
+
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.TokensRequest.prototype.toObject = function(opt_includeInstance) {
@@ -11130,8 +12519,8 @@ proto.poolrpc.TokensRequest.prototype.toObject = function(opt_includeInstance) {
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.TokensRequest} msg The msg instance to transform.
  * @return {!Object}
@@ -11210,23 +12599,6 @@ proto.poolrpc.TokensRequest.serializeBinaryToWriter = function(message, writer) 
 
 
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
- */
-proto.poolrpc.TokensResponse = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.TokensResponse.repeatedFields_, null);
-};
-goog.inherits(proto.poolrpc.TokensResponse, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.TokensResponse.displayName = 'proto.poolrpc.TokensResponse';
-}
-/**
  * List of repeated fields within this message type.
  * @private {!Array<number>}
  * @const
@@ -11237,13 +12609,15 @@ proto.poolrpc.TokensResponse.repeatedFields_ = [1];
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.TokensResponse.prototype.toObject = function(opt_includeInstance) {
@@ -11253,8 +12627,8 @@ proto.poolrpc.TokensResponse.prototype.toObject = function(opt_includeInstance) 
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.TokensResponse} msg The msg instance to transform.
  * @return {!Object}
@@ -11355,9 +12729,12 @@ proto.poolrpc.TokensResponse.prototype.getTokensList = function() {
 };
 
 
-/** @param {!Array<!proto.poolrpc.LsatToken>} value */
+/**
+ * @param {!Array<!proto.poolrpc.LsatToken>} value
+ * @return {!proto.poolrpc.TokensResponse} returns this
+*/
 proto.poolrpc.TokensResponse.prototype.setTokensList = function(value) {
-  jspb.Message.setRepeatedWrapperField(this, 1, value);
+  return jspb.Message.setRepeatedWrapperField(this, 1, value);
 };
 
 
@@ -11371,40 +12748,29 @@ proto.poolrpc.TokensResponse.prototype.addTokens = function(opt_value, opt_index
 };
 
 
-proto.poolrpc.TokensResponse.prototype.clearTokensList = function() {
-  this.setTokensList([]);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * Clears the list making it empty but non-null.
+ * @return {!proto.poolrpc.TokensResponse} returns this
  */
-proto.poolrpc.LsatToken = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+proto.poolrpc.TokensResponse.prototype.clearTokensList = function() {
+  return this.setTokensList([]);
 };
-goog.inherits(proto.poolrpc.LsatToken, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.LsatToken.displayName = 'proto.poolrpc.LsatToken';
-}
+
+
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.LsatToken.prototype.toObject = function(opt_includeInstance) {
@@ -11414,8 +12780,8 @@ proto.poolrpc.LsatToken.prototype.toObject = function(opt_includeInstance) {
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.LsatToken} msg The msg instance to transform.
  * @return {!Object}
@@ -11429,7 +12795,7 @@ proto.poolrpc.LsatToken.toObject = function(includeInstance, msg) {
     amountPaidMsat: jspb.Message.getFieldWithDefault(msg, 4, "0"),
     routingFeePaidMsat: jspb.Message.getFieldWithDefault(msg, 5, "0"),
     timeCreated: jspb.Message.getFieldWithDefault(msg, 6, "0"),
-    expired: jspb.Message.getFieldWithDefault(msg, 7, false),
+    expired: jspb.Message.getBooleanFieldWithDefault(msg, 7, false),
     storageName: jspb.Message.getFieldWithDefault(msg, 8, "")
   };
 
@@ -11620,9 +12986,12 @@ proto.poolrpc.LsatToken.prototype.getBaseMacaroon_asU8 = function() {
 };
 
 
-/** @param {!(string|Uint8Array)} value */
+/**
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.LsatToken} returns this
+ */
 proto.poolrpc.LsatToken.prototype.setBaseMacaroon = function(value) {
-  jspb.Message.setProto3BytesField(this, 1, value);
+  return jspb.Message.setProto3BytesField(this, 1, value);
 };
 
 
@@ -11659,9 +13028,12 @@ proto.poolrpc.LsatToken.prototype.getPaymentHash_asU8 = function() {
 };
 
 
-/** @param {!(string|Uint8Array)} value */
+/**
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.LsatToken} returns this
+ */
 proto.poolrpc.LsatToken.prototype.setPaymentHash = function(value) {
-  jspb.Message.setProto3BytesField(this, 2, value);
+  return jspb.Message.setProto3BytesField(this, 2, value);
 };
 
 
@@ -11698,9 +13070,12 @@ proto.poolrpc.LsatToken.prototype.getPaymentPreimage_asU8 = function() {
 };
 
 
-/** @param {!(string|Uint8Array)} value */
+/**
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.LsatToken} returns this
+ */
 proto.poolrpc.LsatToken.prototype.setPaymentPreimage = function(value) {
-  jspb.Message.setProto3BytesField(this, 3, value);
+  return jspb.Message.setProto3BytesField(this, 3, value);
 };
 
 
@@ -11713,9 +13088,12 @@ proto.poolrpc.LsatToken.prototype.getAmountPaidMsat = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.LsatToken} returns this
+ */
 proto.poolrpc.LsatToken.prototype.setAmountPaidMsat = function(value) {
-  jspb.Message.setProto3StringIntField(this, 4, value);
+  return jspb.Message.setProto3StringIntField(this, 4, value);
 };
 
 
@@ -11728,9 +13106,12 @@ proto.poolrpc.LsatToken.prototype.getRoutingFeePaidMsat = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.LsatToken} returns this
+ */
 proto.poolrpc.LsatToken.prototype.setRoutingFeePaidMsat = function(value) {
-  jspb.Message.setProto3StringIntField(this, 5, value);
+  return jspb.Message.setProto3StringIntField(this, 5, value);
 };
 
 
@@ -11743,26 +13124,30 @@ proto.poolrpc.LsatToken.prototype.getTimeCreated = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.LsatToken} returns this
+ */
 proto.poolrpc.LsatToken.prototype.setTimeCreated = function(value) {
-  jspb.Message.setProto3StringIntField(this, 6, value);
+  return jspb.Message.setProto3StringIntField(this, 6, value);
 };
 
 
 /**
  * optional bool expired = 7;
- * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
- * You should avoid comparisons like {@code val === true/false} in those cases.
  * @return {boolean}
  */
 proto.poolrpc.LsatToken.prototype.getExpired = function() {
-  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 7, false));
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 7, false));
 };
 
 
-/** @param {boolean} value */
+/**
+ * @param {boolean} value
+ * @return {!proto.poolrpc.LsatToken} returns this
+ */
 proto.poolrpc.LsatToken.prototype.setExpired = function(value) {
-  jspb.Message.setProto3BooleanField(this, 7, value);
+  return jspb.Message.setProto3BooleanField(this, 7, value);
 };
 
 
@@ -11775,41 +13160,29 @@ proto.poolrpc.LsatToken.prototype.getStorageName = function() {
 };
 
 
-/** @param {string} value */
-proto.poolrpc.LsatToken.prototype.setStorageName = function(value) {
-  jspb.Message.setProto3StringField(this, 8, value);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {string} value
+ * @return {!proto.poolrpc.LsatToken} returns this
  */
-proto.poolrpc.LeaseDurationRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+proto.poolrpc.LsatToken.prototype.setStorageName = function(value) {
+  return jspb.Message.setProto3StringField(this, 8, value);
 };
-goog.inherits(proto.poolrpc.LeaseDurationRequest, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.LeaseDurationRequest.displayName = 'proto.poolrpc.LeaseDurationRequest';
-}
+
+
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.LeaseDurationRequest.prototype.toObject = function(opt_includeInstance) {
@@ -11819,8 +13192,8 @@ proto.poolrpc.LeaseDurationRequest.prototype.toObject = function(opt_includeInst
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.LeaseDurationRequest} msg The msg instance to transform.
  * @return {!Object}
@@ -11898,34 +13271,19 @@ proto.poolrpc.LeaseDurationRequest.serializeBinaryToWriter = function(message, w
 
 
 
-/**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
- */
-proto.poolrpc.LeaseDurationResponse = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
-};
-goog.inherits(proto.poolrpc.LeaseDurationResponse, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.LeaseDurationResponse.displayName = 'proto.poolrpc.LeaseDurationResponse';
-}
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.LeaseDurationResponse.prototype.toObject = function(opt_includeInstance) {
@@ -11935,8 +13293,8 @@ proto.poolrpc.LeaseDurationResponse.prototype.toObject = function(opt_includeIns
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.LeaseDurationResponse} msg The msg instance to transform.
  * @return {!Object}
@@ -11985,13 +13343,13 @@ proto.poolrpc.LeaseDurationResponse.deserializeBinaryFromReader = function(msg, 
     case 1:
       var value = msg.getLeaseDurationsMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readUint32, jspb.BinaryReader.prototype.readBool, null, 0);
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readUint32, jspb.BinaryReader.prototype.readBool, null, 0, false);
          });
       break;
     case 2:
       var value = msg.getLeaseDurationBucketsMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readUint32, jspb.BinaryReader.prototype.readEnum, null, 0);
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readUint32, jspb.BinaryReader.prototype.readEnum, null, 0, 0);
          });
       break;
     default:
@@ -12047,8 +13405,13 @@ proto.poolrpc.LeaseDurationResponse.prototype.getLeaseDurationsMap = function(op
 };
 
 
+/**
+ * Clears values from the map. The map will be non-null.
+ * @return {!proto.poolrpc.LeaseDurationResponse} returns this
+ */
 proto.poolrpc.LeaseDurationResponse.prototype.clearLeaseDurationsMap = function() {
   this.getLeaseDurationsMap().clear();
+  return this;
 };
 
 
@@ -12065,40 +13428,30 @@ proto.poolrpc.LeaseDurationResponse.prototype.getLeaseDurationBucketsMap = funct
 };
 
 
+/**
+ * Clears values from the map. The map will be non-null.
+ * @return {!proto.poolrpc.LeaseDurationResponse} returns this
+ */
 proto.poolrpc.LeaseDurationResponse.prototype.clearLeaseDurationBucketsMap = function() {
   this.getLeaseDurationBucketsMap().clear();
+  return this;
 };
 
 
 
-/**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
- */
-proto.poolrpc.NextBatchInfoRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
-};
-goog.inherits(proto.poolrpc.NextBatchInfoRequest, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.NextBatchInfoRequest.displayName = 'proto.poolrpc.NextBatchInfoRequest';
-}
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.NextBatchInfoRequest.prototype.toObject = function(opt_includeInstance) {
@@ -12108,8 +13461,8 @@ proto.poolrpc.NextBatchInfoRequest.prototype.toObject = function(opt_includeInst
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.NextBatchInfoRequest} msg The msg instance to transform.
  * @return {!Object}
@@ -12187,34 +13540,19 @@ proto.poolrpc.NextBatchInfoRequest.serializeBinaryToWriter = function(message, w
 
 
 
-/**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
- */
-proto.poolrpc.NextBatchInfoResponse = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
-};
-goog.inherits(proto.poolrpc.NextBatchInfoResponse, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.NextBatchInfoResponse.displayName = 'proto.poolrpc.NextBatchInfoResponse';
-}
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.NextBatchInfoResponse.prototype.toObject = function(opt_includeInstance) {
@@ -12224,8 +13562,8 @@ proto.poolrpc.NextBatchInfoResponse.prototype.toObject = function(opt_includeIns
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.NextBatchInfoResponse} msg The msg instance to transform.
  * @return {!Object}
@@ -12358,9 +13696,12 @@ proto.poolrpc.NextBatchInfoResponse.prototype.getConfTarget = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.NextBatchInfoResponse} returns this
+ */
 proto.poolrpc.NextBatchInfoResponse.prototype.setConfTarget = function(value) {
-  jspb.Message.setProto3IntField(this, 5, value);
+  return jspb.Message.setProto3IntField(this, 5, value);
 };
 
 
@@ -12373,9 +13714,12 @@ proto.poolrpc.NextBatchInfoResponse.prototype.getFeeRateSatPerKw = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.NextBatchInfoResponse} returns this
+ */
 proto.poolrpc.NextBatchInfoResponse.prototype.setFeeRateSatPerKw = function(value) {
-  jspb.Message.setProto3StringIntField(this, 6, value);
+  return jspb.Message.setProto3StringIntField(this, 6, value);
 };
 
 
@@ -12388,9 +13732,12 @@ proto.poolrpc.NextBatchInfoResponse.prototype.getClearTimestamp = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.NextBatchInfoResponse} returns this
+ */
 proto.poolrpc.NextBatchInfoResponse.prototype.setClearTimestamp = function(value) {
-  jspb.Message.setProto3StringIntField(this, 7, value);
+  return jspb.Message.setProto3StringIntField(this, 7, value);
 };
 
 
@@ -12403,30 +13750,16 @@ proto.poolrpc.NextBatchInfoResponse.prototype.getAutoRenewExtensionBlocks = func
 };
 
 
-/** @param {number} value */
-proto.poolrpc.NextBatchInfoResponse.prototype.setAutoRenewExtensionBlocks = function(value) {
-  jspb.Message.setProto3IntField(this, 8, value);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {number} value
+ * @return {!proto.poolrpc.NextBatchInfoResponse} returns this
  */
-proto.poolrpc.NodeRatingRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.NodeRatingRequest.repeatedFields_, null);
+proto.poolrpc.NextBatchInfoResponse.prototype.setAutoRenewExtensionBlocks = function(value) {
+  return jspb.Message.setProto3IntField(this, 8, value);
 };
-goog.inherits(proto.poolrpc.NodeRatingRequest, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.NodeRatingRequest.displayName = 'proto.poolrpc.NodeRatingRequest';
-}
+
+
+
 /**
  * List of repeated fields within this message type.
  * @private {!Array<number>}
@@ -12438,13 +13771,15 @@ proto.poolrpc.NodeRatingRequest.repeatedFields_ = [1];
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.NodeRatingRequest.prototype.toObject = function(opt_includeInstance) {
@@ -12454,8 +13789,8 @@ proto.poolrpc.NodeRatingRequest.prototype.toObject = function(opt_includeInstanc
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.NodeRatingRequest} msg The msg instance to transform.
  * @return {!Object}
@@ -12576,44 +13911,35 @@ proto.poolrpc.NodeRatingRequest.prototype.getNodePubkeysList_asU8 = function() {
 };
 
 
-/** @param {!(Array<!Uint8Array>|Array<string>)} value */
+/**
+ * @param {!(Array<!Uint8Array>|Array<string>)} value
+ * @return {!proto.poolrpc.NodeRatingRequest} returns this
+ */
 proto.poolrpc.NodeRatingRequest.prototype.setNodePubkeysList = function(value) {
-  jspb.Message.setField(this, 1, value || []);
+  return jspb.Message.setField(this, 1, value || []);
 };
 
 
 /**
  * @param {!(string|Uint8Array)} value
  * @param {number=} opt_index
+ * @return {!proto.poolrpc.NodeRatingRequest} returns this
  */
 proto.poolrpc.NodeRatingRequest.prototype.addNodePubkeys = function(value, opt_index) {
-  jspb.Message.addToRepeatedField(this, 1, value, opt_index);
+  return jspb.Message.addToRepeatedField(this, 1, value, opt_index);
 };
-
-
-proto.poolrpc.NodeRatingRequest.prototype.clearNodePubkeysList = function() {
-  this.setNodePubkeysList([]);
-};
-
 
 
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * Clears the list making it empty but non-null.
+ * @return {!proto.poolrpc.NodeRatingRequest} returns this
  */
-proto.poolrpc.NodeRatingResponse = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.NodeRatingResponse.repeatedFields_, null);
+proto.poolrpc.NodeRatingRequest.prototype.clearNodePubkeysList = function() {
+  return this.setNodePubkeysList([]);
 };
-goog.inherits(proto.poolrpc.NodeRatingResponse, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.NodeRatingResponse.displayName = 'proto.poolrpc.NodeRatingResponse';
-}
+
+
+
 /**
  * List of repeated fields within this message type.
  * @private {!Array<number>}
@@ -12625,13 +13951,15 @@ proto.poolrpc.NodeRatingResponse.repeatedFields_ = [1];
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.NodeRatingResponse.prototype.toObject = function(opt_includeInstance) {
@@ -12641,8 +13969,8 @@ proto.poolrpc.NodeRatingResponse.prototype.toObject = function(opt_includeInstan
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.NodeRatingResponse} msg The msg instance to transform.
  * @return {!Object}
@@ -12743,9 +14071,12 @@ proto.poolrpc.NodeRatingResponse.prototype.getNodeRatingsList = function() {
 };
 
 
-/** @param {!Array<!proto.poolrpc.NodeRating>} value */
+/**
+ * @param {!Array<!proto.poolrpc.NodeRating>} value
+ * @return {!proto.poolrpc.NodeRatingResponse} returns this
+*/
 proto.poolrpc.NodeRatingResponse.prototype.setNodeRatingsList = function(value) {
-  jspb.Message.setRepeatedWrapperField(this, 1, value);
+  return jspb.Message.setRepeatedWrapperField(this, 1, value);
 };
 
 
@@ -12759,40 +14090,29 @@ proto.poolrpc.NodeRatingResponse.prototype.addNodeRatings = function(opt_value, 
 };
 
 
-proto.poolrpc.NodeRatingResponse.prototype.clearNodeRatingsList = function() {
-  this.setNodeRatingsList([]);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * Clears the list making it empty but non-null.
+ * @return {!proto.poolrpc.NodeRatingResponse} returns this
  */
-proto.poolrpc.GetInfoRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+proto.poolrpc.NodeRatingResponse.prototype.clearNodeRatingsList = function() {
+  return this.setNodeRatingsList([]);
 };
-goog.inherits(proto.poolrpc.GetInfoRequest, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.GetInfoRequest.displayName = 'proto.poolrpc.GetInfoRequest';
-}
+
+
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.GetInfoRequest.prototype.toObject = function(opt_includeInstance) {
@@ -12802,8 +14122,8 @@ proto.poolrpc.GetInfoRequest.prototype.toObject = function(opt_includeInstance) 
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.GetInfoRequest} msg The msg instance to transform.
  * @return {!Object}
@@ -12881,34 +14201,19 @@ proto.poolrpc.GetInfoRequest.serializeBinaryToWriter = function(message, writer)
 
 
 
-/**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
- */
-proto.poolrpc.GetInfoResponse = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
-};
-goog.inherits(proto.poolrpc.GetInfoResponse, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.GetInfoResponse.displayName = 'proto.poolrpc.GetInfoResponse';
-}
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.GetInfoResponse.prototype.toObject = function(opt_includeInstance) {
@@ -12918,8 +14223,8 @@ proto.poolrpc.GetInfoResponse.prototype.toObject = function(opt_includeInstance)
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.GetInfoResponse} msg The msg instance to transform.
  * @return {!Object}
@@ -12939,8 +14244,8 @@ proto.poolrpc.GetInfoResponse.toObject = function(includeInstance, msg) {
     batchesInvolved: jspb.Message.getFieldWithDefault(msg, 10, 0),
     nodeRating: (f = msg.getNodeRating()) && auctioneerrpc_auctioneer_pb.NodeRating.toObject(includeInstance, f),
     lsatTokens: jspb.Message.getFieldWithDefault(msg, 12, 0),
-    subscribedToAuctioneer: jspb.Message.getFieldWithDefault(msg, 13, false),
-    newNodesOnly: jspb.Message.getFieldWithDefault(msg, 14, false)
+    subscribedToAuctioneer: jspb.Message.getBooleanFieldWithDefault(msg, 13, false),
+    newNodesOnly: jspb.Message.getBooleanFieldWithDefault(msg, 14, false)
   };
 
   if (includeInstance) {
@@ -13174,9 +14479,12 @@ proto.poolrpc.GetInfoResponse.prototype.getVersion = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.GetInfoResponse} returns this
+ */
 proto.poolrpc.GetInfoResponse.prototype.setVersion = function(value) {
-  jspb.Message.setProto3StringField(this, 1, value);
+  return jspb.Message.setProto3StringField(this, 1, value);
 };
 
 
@@ -13189,9 +14497,12 @@ proto.poolrpc.GetInfoResponse.prototype.getAccountsTotal = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.GetInfoResponse} returns this
+ */
 proto.poolrpc.GetInfoResponse.prototype.setAccountsTotal = function(value) {
-  jspb.Message.setProto3IntField(this, 2, value);
+  return jspb.Message.setProto3IntField(this, 2, value);
 };
 
 
@@ -13204,9 +14515,12 @@ proto.poolrpc.GetInfoResponse.prototype.getAccountsActive = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.GetInfoResponse} returns this
+ */
 proto.poolrpc.GetInfoResponse.prototype.setAccountsActive = function(value) {
-  jspb.Message.setProto3IntField(this, 3, value);
+  return jspb.Message.setProto3IntField(this, 3, value);
 };
 
 
@@ -13219,9 +14533,12 @@ proto.poolrpc.GetInfoResponse.prototype.getAccountsActiveExpired = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.GetInfoResponse} returns this
+ */
 proto.poolrpc.GetInfoResponse.prototype.setAccountsActiveExpired = function(value) {
-  jspb.Message.setProto3IntField(this, 4, value);
+  return jspb.Message.setProto3IntField(this, 4, value);
 };
 
 
@@ -13234,9 +14551,12 @@ proto.poolrpc.GetInfoResponse.prototype.getAccountsArchived = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.GetInfoResponse} returns this
+ */
 proto.poolrpc.GetInfoResponse.prototype.setAccountsArchived = function(value) {
-  jspb.Message.setProto3IntField(this, 5, value);
+  return jspb.Message.setProto3IntField(this, 5, value);
 };
 
 
@@ -13249,9 +14569,12 @@ proto.poolrpc.GetInfoResponse.prototype.getOrdersTotal = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.GetInfoResponse} returns this
+ */
 proto.poolrpc.GetInfoResponse.prototype.setOrdersTotal = function(value) {
-  jspb.Message.setProto3IntField(this, 6, value);
+  return jspb.Message.setProto3IntField(this, 6, value);
 };
 
 
@@ -13264,9 +14587,12 @@ proto.poolrpc.GetInfoResponse.prototype.getOrdersActive = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.GetInfoResponse} returns this
+ */
 proto.poolrpc.GetInfoResponse.prototype.setOrdersActive = function(value) {
-  jspb.Message.setProto3IntField(this, 7, value);
+  return jspb.Message.setProto3IntField(this, 7, value);
 };
 
 
@@ -13279,9 +14605,12 @@ proto.poolrpc.GetInfoResponse.prototype.getOrdersArchived = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.GetInfoResponse} returns this
+ */
 proto.poolrpc.GetInfoResponse.prototype.setOrdersArchived = function(value) {
-  jspb.Message.setProto3IntField(this, 8, value);
+  return jspb.Message.setProto3IntField(this, 8, value);
 };
 
 
@@ -13294,9 +14623,12 @@ proto.poolrpc.GetInfoResponse.prototype.getCurrentBlockHeight = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.GetInfoResponse} returns this
+ */
 proto.poolrpc.GetInfoResponse.prototype.setCurrentBlockHeight = function(value) {
-  jspb.Message.setProto3IntField(this, 9, value);
+  return jspb.Message.setProto3IntField(this, 9, value);
 };
 
 
@@ -13309,9 +14641,12 @@ proto.poolrpc.GetInfoResponse.prototype.getBatchesInvolved = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.GetInfoResponse} returns this
+ */
 proto.poolrpc.GetInfoResponse.prototype.setBatchesInvolved = function(value) {
-  jspb.Message.setProto3IntField(this, 10, value);
+  return jspb.Message.setProto3IntField(this, 10, value);
 };
 
 
@@ -13325,20 +14660,27 @@ proto.poolrpc.GetInfoResponse.prototype.getNodeRating = function() {
 };
 
 
-/** @param {?proto.poolrpc.NodeRating|undefined} value */
+/**
+ * @param {?proto.poolrpc.NodeRating|undefined} value
+ * @return {!proto.poolrpc.GetInfoResponse} returns this
+*/
 proto.poolrpc.GetInfoResponse.prototype.setNodeRating = function(value) {
-  jspb.Message.setWrapperField(this, 11, value);
+  return jspb.Message.setWrapperField(this, 11, value);
 };
 
 
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.poolrpc.GetInfoResponse} returns this
+ */
 proto.poolrpc.GetInfoResponse.prototype.clearNodeRating = function() {
-  this.setNodeRating(undefined);
+  return this.setNodeRating(undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.GetInfoResponse.prototype.hasNodeRating = function() {
   return jspb.Message.getField(this, 11) != null;
@@ -13354,75 +14696,65 @@ proto.poolrpc.GetInfoResponse.prototype.getLsatTokens = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.GetInfoResponse} returns this
+ */
 proto.poolrpc.GetInfoResponse.prototype.setLsatTokens = function(value) {
-  jspb.Message.setProto3IntField(this, 12, value);
+  return jspb.Message.setProto3IntField(this, 12, value);
 };
 
 
 /**
  * optional bool subscribed_to_auctioneer = 13;
- * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
- * You should avoid comparisons like {@code val === true/false} in those cases.
  * @return {boolean}
  */
 proto.poolrpc.GetInfoResponse.prototype.getSubscribedToAuctioneer = function() {
-  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 13, false));
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 13, false));
 };
 
 
-/** @param {boolean} value */
+/**
+ * @param {boolean} value
+ * @return {!proto.poolrpc.GetInfoResponse} returns this
+ */
 proto.poolrpc.GetInfoResponse.prototype.setSubscribedToAuctioneer = function(value) {
-  jspb.Message.setProto3BooleanField(this, 13, value);
+  return jspb.Message.setProto3BooleanField(this, 13, value);
 };
 
 
 /**
  * optional bool new_nodes_only = 14;
- * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
- * You should avoid comparisons like {@code val === true/false} in those cases.
  * @return {boolean}
  */
 proto.poolrpc.GetInfoResponse.prototype.getNewNodesOnly = function() {
-  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 14, false));
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 14, false));
 };
-
-
-/** @param {boolean} value */
-proto.poolrpc.GetInfoResponse.prototype.setNewNodesOnly = function(value) {
-  jspb.Message.setProto3BooleanField(this, 14, value);
-};
-
 
 
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {boolean} value
+ * @return {!proto.poolrpc.GetInfoResponse} returns this
  */
-proto.poolrpc.StopDaemonRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+proto.poolrpc.GetInfoResponse.prototype.setNewNodesOnly = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 14, value);
 };
-goog.inherits(proto.poolrpc.StopDaemonRequest, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.StopDaemonRequest.displayName = 'proto.poolrpc.StopDaemonRequest';
-}
+
+
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.StopDaemonRequest.prototype.toObject = function(opt_includeInstance) {
@@ -13432,8 +14764,8 @@ proto.poolrpc.StopDaemonRequest.prototype.toObject = function(opt_includeInstanc
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.StopDaemonRequest} msg The msg instance to transform.
  * @return {!Object}
@@ -13511,34 +14843,19 @@ proto.poolrpc.StopDaemonRequest.serializeBinaryToWriter = function(message, writ
 
 
 
-/**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
- */
-proto.poolrpc.StopDaemonResponse = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
-};
-goog.inherits(proto.poolrpc.StopDaemonResponse, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.StopDaemonResponse.displayName = 'proto.poolrpc.StopDaemonResponse';
-}
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.StopDaemonResponse.prototype.toObject = function(opt_includeInstance) {
@@ -13548,8 +14865,8 @@ proto.poolrpc.StopDaemonResponse.prototype.toObject = function(opt_includeInstan
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.StopDaemonResponse} msg The msg instance to transform.
  * @return {!Object}
@@ -13627,34 +14944,19 @@ proto.poolrpc.StopDaemonResponse.serializeBinaryToWriter = function(message, wri
 
 
 
-/**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
- */
-proto.poolrpc.OfferSidecarRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
-};
-goog.inherits(proto.poolrpc.OfferSidecarRequest, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.OfferSidecarRequest.displayName = 'proto.poolrpc.OfferSidecarRequest';
-}
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.OfferSidecarRequest.prototype.toObject = function(opt_includeInstance) {
@@ -13664,8 +14966,8 @@ proto.poolrpc.OfferSidecarRequest.prototype.toObject = function(opt_includeInsta
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.OfferSidecarRequest} msg The msg instance to transform.
  * @return {!Object}
@@ -13673,7 +14975,7 @@ proto.poolrpc.OfferSidecarRequest.prototype.toObject = function(opt_includeInsta
  */
 proto.poolrpc.OfferSidecarRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-    autoNegotiate: jspb.Message.getFieldWithDefault(msg, 1, false),
+    autoNegotiate: jspb.Message.getBooleanFieldWithDefault(msg, 1, false),
     bid: (f = msg.getBid()) && proto.poolrpc.Bid.toObject(includeInstance, f)
   };
 
@@ -13769,18 +15071,19 @@ proto.poolrpc.OfferSidecarRequest.serializeBinaryToWriter = function(message, wr
 
 /**
  * optional bool auto_negotiate = 1;
- * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
- * You should avoid comparisons like {@code val === true/false} in those cases.
  * @return {boolean}
  */
 proto.poolrpc.OfferSidecarRequest.prototype.getAutoNegotiate = function() {
-  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 1, false));
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 1, false));
 };
 
 
-/** @param {boolean} value */
+/**
+ * @param {boolean} value
+ * @return {!proto.poolrpc.OfferSidecarRequest} returns this
+ */
 proto.poolrpc.OfferSidecarRequest.prototype.setAutoNegotiate = function(value) {
-  jspb.Message.setProto3BooleanField(this, 1, value);
+  return jspb.Message.setProto3BooleanField(this, 1, value);
 };
 
 
@@ -13794,20 +15097,27 @@ proto.poolrpc.OfferSidecarRequest.prototype.getBid = function() {
 };
 
 
-/** @param {?proto.poolrpc.Bid|undefined} value */
+/**
+ * @param {?proto.poolrpc.Bid|undefined} value
+ * @return {!proto.poolrpc.OfferSidecarRequest} returns this
+*/
 proto.poolrpc.OfferSidecarRequest.prototype.setBid = function(value) {
-  jspb.Message.setWrapperField(this, 2, value);
+  return jspb.Message.setWrapperField(this, 2, value);
 };
 
 
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.poolrpc.OfferSidecarRequest} returns this
+ */
 proto.poolrpc.OfferSidecarRequest.prototype.clearBid = function() {
-  this.setBid(undefined);
+  return this.setBid(undefined);
 };
 
 
 /**
  * Returns whether this field is set.
- * @return {!boolean}
+ * @return {boolean}
  */
 proto.poolrpc.OfferSidecarRequest.prototype.hasBid = function() {
   return jspb.Message.getField(this, 2) != null;
@@ -13815,34 +15125,19 @@ proto.poolrpc.OfferSidecarRequest.prototype.hasBid = function() {
 
 
 
-/**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
- */
-proto.poolrpc.SidecarTicket = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
-};
-goog.inherits(proto.poolrpc.SidecarTicket, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.SidecarTicket.displayName = 'proto.poolrpc.SidecarTicket';
-}
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.SidecarTicket.prototype.toObject = function(opt_includeInstance) {
@@ -13852,8 +15147,8 @@ proto.poolrpc.SidecarTicket.prototype.toObject = function(opt_includeInstance) {
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.SidecarTicket} msg The msg instance to transform.
  * @return {!Object}
@@ -13950,41 +15245,29 @@ proto.poolrpc.SidecarTicket.prototype.getTicket = function() {
 };
 
 
-/** @param {string} value */
-proto.poolrpc.SidecarTicket.prototype.setTicket = function(value) {
-  jspb.Message.setProto3StringField(this, 1, value);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {string} value
+ * @return {!proto.poolrpc.SidecarTicket} returns this
  */
-proto.poolrpc.DecodedSidecarTicket = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+proto.poolrpc.SidecarTicket.prototype.setTicket = function(value) {
+  return jspb.Message.setProto3StringField(this, 1, value);
 };
-goog.inherits(proto.poolrpc.DecodedSidecarTicket, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.DecodedSidecarTicket.displayName = 'proto.poolrpc.DecodedSidecarTicket';
-}
+
+
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.DecodedSidecarTicket.prototype.toObject = function(opt_includeInstance) {
@@ -13994,8 +15277,8 @@ proto.poolrpc.DecodedSidecarTicket.prototype.toObject = function(opt_includeInst
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.DecodedSidecarTicket} msg The msg instance to transform.
  * @return {!Object}
@@ -14011,7 +15294,7 @@ proto.poolrpc.DecodedSidecarTicket.toObject = function(includeInstance, msg) {
     offerLeaseDurationBlocks: jspb.Message.getFieldWithDefault(msg, 6, 0),
     offerSignPubkey: msg.getOfferSignPubkey_asB64(),
     offerSignature: msg.getOfferSignature_asB64(),
-    offerAuto: jspb.Message.getFieldWithDefault(msg, 9, false),
+    offerAuto: jspb.Message.getBooleanFieldWithDefault(msg, 9, false),
     recipientNodePubkey: msg.getRecipientNodePubkey_asB64(),
     recipientMultisigPubkey: msg.getRecipientMultisigPubkey_asB64(),
     recipientMultisigPubkeyIndex: jspb.Message.getFieldWithDefault(msg, 12, 0),
@@ -14019,8 +15302,8 @@ proto.poolrpc.DecodedSidecarTicket.toObject = function(includeInstance, msg) {
     orderSignature: msg.getOrderSignature_asB64(),
     executionPendingChannelId: msg.getExecutionPendingChannelId_asB64(),
     encodedTicket: jspb.Message.getFieldWithDefault(msg, 16, ""),
-    offerUnannouncedChannel: jspb.Message.getFieldWithDefault(msg, 17, false),
-    offerZeroConfChannel: jspb.Message.getFieldWithDefault(msg, 18, false)
+    offerUnannouncedChannel: jspb.Message.getBooleanFieldWithDefault(msg, 17, false),
+    offerZeroConfChannel: jspb.Message.getBooleanFieldWithDefault(msg, 18, false)
   };
 
   if (includeInstance) {
@@ -14320,9 +15603,12 @@ proto.poolrpc.DecodedSidecarTicket.prototype.getId_asU8 = function() {
 };
 
 
-/** @param {!(string|Uint8Array)} value */
+/**
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.DecodedSidecarTicket} returns this
+ */
 proto.poolrpc.DecodedSidecarTicket.prototype.setId = function(value) {
-  jspb.Message.setProto3BytesField(this, 1, value);
+  return jspb.Message.setProto3BytesField(this, 1, value);
 };
 
 
@@ -14335,9 +15621,12 @@ proto.poolrpc.DecodedSidecarTicket.prototype.getVersion = function() {
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.DecodedSidecarTicket} returns this
+ */
 proto.poolrpc.DecodedSidecarTicket.prototype.setVersion = function(value) {
-  jspb.Message.setProto3IntField(this, 2, value);
+  return jspb.Message.setProto3IntField(this, 2, value);
 };
 
 
@@ -14350,9 +15639,12 @@ proto.poolrpc.DecodedSidecarTicket.prototype.getState = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.DecodedSidecarTicket} returns this
+ */
 proto.poolrpc.DecodedSidecarTicket.prototype.setState = function(value) {
-  jspb.Message.setProto3StringField(this, 3, value);
+  return jspb.Message.setProto3StringField(this, 3, value);
 };
 
 
@@ -14365,9 +15657,12 @@ proto.poolrpc.DecodedSidecarTicket.prototype.getOfferCapacity = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.DecodedSidecarTicket} returns this
+ */
 proto.poolrpc.DecodedSidecarTicket.prototype.setOfferCapacity = function(value) {
-  jspb.Message.setProto3StringIntField(this, 4, value);
+  return jspb.Message.setProto3StringIntField(this, 4, value);
 };
 
 
@@ -14380,9 +15675,12 @@ proto.poolrpc.DecodedSidecarTicket.prototype.getOfferPushAmount = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.DecodedSidecarTicket} returns this
+ */
 proto.poolrpc.DecodedSidecarTicket.prototype.setOfferPushAmount = function(value) {
-  jspb.Message.setProto3StringIntField(this, 5, value);
+  return jspb.Message.setProto3StringIntField(this, 5, value);
 };
 
 
@@ -14395,9 +15693,12 @@ proto.poolrpc.DecodedSidecarTicket.prototype.getOfferLeaseDurationBlocks = funct
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.DecodedSidecarTicket} returns this
+ */
 proto.poolrpc.DecodedSidecarTicket.prototype.setOfferLeaseDurationBlocks = function(value) {
-  jspb.Message.setProto3IntField(this, 6, value);
+  return jspb.Message.setProto3IntField(this, 6, value);
 };
 
 
@@ -14434,9 +15735,12 @@ proto.poolrpc.DecodedSidecarTicket.prototype.getOfferSignPubkey_asU8 = function(
 };
 
 
-/** @param {!(string|Uint8Array)} value */
+/**
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.DecodedSidecarTicket} returns this
+ */
 proto.poolrpc.DecodedSidecarTicket.prototype.setOfferSignPubkey = function(value) {
-  jspb.Message.setProto3BytesField(this, 7, value);
+  return jspb.Message.setProto3BytesField(this, 7, value);
 };
 
 
@@ -14473,26 +15777,30 @@ proto.poolrpc.DecodedSidecarTicket.prototype.getOfferSignature_asU8 = function()
 };
 
 
-/** @param {!(string|Uint8Array)} value */
+/**
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.DecodedSidecarTicket} returns this
+ */
 proto.poolrpc.DecodedSidecarTicket.prototype.setOfferSignature = function(value) {
-  jspb.Message.setProto3BytesField(this, 8, value);
+  return jspb.Message.setProto3BytesField(this, 8, value);
 };
 
 
 /**
  * optional bool offer_auto = 9;
- * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
- * You should avoid comparisons like {@code val === true/false} in those cases.
  * @return {boolean}
  */
 proto.poolrpc.DecodedSidecarTicket.prototype.getOfferAuto = function() {
-  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 9, false));
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 9, false));
 };
 
 
-/** @param {boolean} value */
+/**
+ * @param {boolean} value
+ * @return {!proto.poolrpc.DecodedSidecarTicket} returns this
+ */
 proto.poolrpc.DecodedSidecarTicket.prototype.setOfferAuto = function(value) {
-  jspb.Message.setProto3BooleanField(this, 9, value);
+  return jspb.Message.setProto3BooleanField(this, 9, value);
 };
 
 
@@ -14529,9 +15837,12 @@ proto.poolrpc.DecodedSidecarTicket.prototype.getRecipientNodePubkey_asU8 = funct
 };
 
 
-/** @param {!(string|Uint8Array)} value */
+/**
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.DecodedSidecarTicket} returns this
+ */
 proto.poolrpc.DecodedSidecarTicket.prototype.setRecipientNodePubkey = function(value) {
-  jspb.Message.setProto3BytesField(this, 10, value);
+  return jspb.Message.setProto3BytesField(this, 10, value);
 };
 
 
@@ -14568,9 +15879,12 @@ proto.poolrpc.DecodedSidecarTicket.prototype.getRecipientMultisigPubkey_asU8 = f
 };
 
 
-/** @param {!(string|Uint8Array)} value */
+/**
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.DecodedSidecarTicket} returns this
+ */
 proto.poolrpc.DecodedSidecarTicket.prototype.setRecipientMultisigPubkey = function(value) {
-  jspb.Message.setProto3BytesField(this, 11, value);
+  return jspb.Message.setProto3BytesField(this, 11, value);
 };
 
 
@@ -14583,9 +15897,12 @@ proto.poolrpc.DecodedSidecarTicket.prototype.getRecipientMultisigPubkeyIndex = f
 };
 
 
-/** @param {number} value */
+/**
+ * @param {number} value
+ * @return {!proto.poolrpc.DecodedSidecarTicket} returns this
+ */
 proto.poolrpc.DecodedSidecarTicket.prototype.setRecipientMultisigPubkeyIndex = function(value) {
-  jspb.Message.setProto3IntField(this, 12, value);
+  return jspb.Message.setProto3IntField(this, 12, value);
 };
 
 
@@ -14622,9 +15939,12 @@ proto.poolrpc.DecodedSidecarTicket.prototype.getOrderBidNonce_asU8 = function() 
 };
 
 
-/** @param {!(string|Uint8Array)} value */
+/**
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.DecodedSidecarTicket} returns this
+ */
 proto.poolrpc.DecodedSidecarTicket.prototype.setOrderBidNonce = function(value) {
-  jspb.Message.setProto3BytesField(this, 13, value);
+  return jspb.Message.setProto3BytesField(this, 13, value);
 };
 
 
@@ -14661,9 +15981,12 @@ proto.poolrpc.DecodedSidecarTicket.prototype.getOrderSignature_asU8 = function()
 };
 
 
-/** @param {!(string|Uint8Array)} value */
+/**
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.DecodedSidecarTicket} returns this
+ */
 proto.poolrpc.DecodedSidecarTicket.prototype.setOrderSignature = function(value) {
-  jspb.Message.setProto3BytesField(this, 14, value);
+  return jspb.Message.setProto3BytesField(this, 14, value);
 };
 
 
@@ -14700,9 +16023,12 @@ proto.poolrpc.DecodedSidecarTicket.prototype.getExecutionPendingChannelId_asU8 =
 };
 
 
-/** @param {!(string|Uint8Array)} value */
+/**
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.DecodedSidecarTicket} returns this
+ */
 proto.poolrpc.DecodedSidecarTicket.prototype.setExecutionPendingChannelId = function(value) {
-  jspb.Message.setProto3BytesField(this, 15, value);
+  return jspb.Message.setProto3BytesField(this, 15, value);
 };
 
 
@@ -14715,75 +16041,65 @@ proto.poolrpc.DecodedSidecarTicket.prototype.getEncodedTicket = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.DecodedSidecarTicket} returns this
+ */
 proto.poolrpc.DecodedSidecarTicket.prototype.setEncodedTicket = function(value) {
-  jspb.Message.setProto3StringField(this, 16, value);
+  return jspb.Message.setProto3StringField(this, 16, value);
 };
 
 
 /**
  * optional bool offer_unannounced_channel = 17;
- * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
- * You should avoid comparisons like {@code val === true/false} in those cases.
  * @return {boolean}
  */
 proto.poolrpc.DecodedSidecarTicket.prototype.getOfferUnannouncedChannel = function() {
-  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 17, false));
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 17, false));
 };
 
 
-/** @param {boolean} value */
+/**
+ * @param {boolean} value
+ * @return {!proto.poolrpc.DecodedSidecarTicket} returns this
+ */
 proto.poolrpc.DecodedSidecarTicket.prototype.setOfferUnannouncedChannel = function(value) {
-  jspb.Message.setProto3BooleanField(this, 17, value);
+  return jspb.Message.setProto3BooleanField(this, 17, value);
 };
 
 
 /**
  * optional bool offer_zero_conf_channel = 18;
- * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
- * You should avoid comparisons like {@code val === true/false} in those cases.
  * @return {boolean}
  */
 proto.poolrpc.DecodedSidecarTicket.prototype.getOfferZeroConfChannel = function() {
-  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 18, false));
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 18, false));
 };
-
-
-/** @param {boolean} value */
-proto.poolrpc.DecodedSidecarTicket.prototype.setOfferZeroConfChannel = function(value) {
-  jspb.Message.setProto3BooleanField(this, 18, value);
-};
-
 
 
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {boolean} value
+ * @return {!proto.poolrpc.DecodedSidecarTicket} returns this
  */
-proto.poolrpc.RegisterSidecarRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+proto.poolrpc.DecodedSidecarTicket.prototype.setOfferZeroConfChannel = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 18, value);
 };
-goog.inherits(proto.poolrpc.RegisterSidecarRequest, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.RegisterSidecarRequest.displayName = 'proto.poolrpc.RegisterSidecarRequest';
-}
+
+
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.RegisterSidecarRequest.prototype.toObject = function(opt_includeInstance) {
@@ -14793,8 +16109,8 @@ proto.poolrpc.RegisterSidecarRequest.prototype.toObject = function(opt_includeIn
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.RegisterSidecarRequest} msg The msg instance to transform.
  * @return {!Object}
@@ -14803,7 +16119,7 @@ proto.poolrpc.RegisterSidecarRequest.prototype.toObject = function(opt_includeIn
 proto.poolrpc.RegisterSidecarRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
     ticket: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    autoNegotiate: jspb.Message.getFieldWithDefault(msg, 2, false)
+    autoNegotiate: jspb.Message.getBooleanFieldWithDefault(msg, 2, false)
   };
 
   if (includeInstance) {
@@ -14903,58 +16219,47 @@ proto.poolrpc.RegisterSidecarRequest.prototype.getTicket = function() {
 };
 
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @return {!proto.poolrpc.RegisterSidecarRequest} returns this
+ */
 proto.poolrpc.RegisterSidecarRequest.prototype.setTicket = function(value) {
-  jspb.Message.setProto3StringField(this, 1, value);
+  return jspb.Message.setProto3StringField(this, 1, value);
 };
 
 
 /**
  * optional bool auto_negotiate = 2;
- * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
- * You should avoid comparisons like {@code val === true/false} in those cases.
  * @return {boolean}
  */
 proto.poolrpc.RegisterSidecarRequest.prototype.getAutoNegotiate = function() {
-  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 2, false));
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 2, false));
 };
-
-
-/** @param {boolean} value */
-proto.poolrpc.RegisterSidecarRequest.prototype.setAutoNegotiate = function(value) {
-  jspb.Message.setProto3BooleanField(this, 2, value);
-};
-
 
 
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {boolean} value
+ * @return {!proto.poolrpc.RegisterSidecarRequest} returns this
  */
-proto.poolrpc.ExpectSidecarChannelRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+proto.poolrpc.RegisterSidecarRequest.prototype.setAutoNegotiate = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 2, value);
 };
-goog.inherits(proto.poolrpc.ExpectSidecarChannelRequest, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.ExpectSidecarChannelRequest.displayName = 'proto.poolrpc.ExpectSidecarChannelRequest';
-}
+
+
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.ExpectSidecarChannelRequest.prototype.toObject = function(opt_includeInstance) {
@@ -14964,8 +16269,8 @@ proto.poolrpc.ExpectSidecarChannelRequest.prototype.toObject = function(opt_incl
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.ExpectSidecarChannelRequest} msg The msg instance to transform.
  * @return {!Object}
@@ -15062,41 +16367,29 @@ proto.poolrpc.ExpectSidecarChannelRequest.prototype.getTicket = function() {
 };
 
 
-/** @param {string} value */
-proto.poolrpc.ExpectSidecarChannelRequest.prototype.setTicket = function(value) {
-  jspb.Message.setProto3StringField(this, 1, value);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {string} value
+ * @return {!proto.poolrpc.ExpectSidecarChannelRequest} returns this
  */
-proto.poolrpc.ExpectSidecarChannelResponse = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+proto.poolrpc.ExpectSidecarChannelRequest.prototype.setTicket = function(value) {
+  return jspb.Message.setProto3StringField(this, 1, value);
 };
-goog.inherits(proto.poolrpc.ExpectSidecarChannelResponse, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.ExpectSidecarChannelResponse.displayName = 'proto.poolrpc.ExpectSidecarChannelResponse';
-}
+
+
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.ExpectSidecarChannelResponse.prototype.toObject = function(opt_includeInstance) {
@@ -15106,8 +16399,8 @@ proto.poolrpc.ExpectSidecarChannelResponse.prototype.toObject = function(opt_inc
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.ExpectSidecarChannelResponse} msg The msg instance to transform.
  * @return {!Object}
@@ -15185,34 +16478,19 @@ proto.poolrpc.ExpectSidecarChannelResponse.serializeBinaryToWriter = function(me
 
 
 
-/**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
- */
-proto.poolrpc.ListSidecarsRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
-};
-goog.inherits(proto.poolrpc.ListSidecarsRequest, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.ListSidecarsRequest.displayName = 'proto.poolrpc.ListSidecarsRequest';
-}
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.ListSidecarsRequest.prototype.toObject = function(opt_includeInstance) {
@@ -15222,8 +16500,8 @@ proto.poolrpc.ListSidecarsRequest.prototype.toObject = function(opt_includeInsta
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.ListSidecarsRequest} msg The msg instance to transform.
  * @return {!Object}
@@ -15344,30 +16622,16 @@ proto.poolrpc.ListSidecarsRequest.prototype.getSidecarId_asU8 = function() {
 };
 
 
-/** @param {!(string|Uint8Array)} value */
-proto.poolrpc.ListSidecarsRequest.prototype.setSidecarId = function(value) {
-  jspb.Message.setProto3BytesField(this, 1, value);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.ListSidecarsRequest} returns this
  */
-proto.poolrpc.ListSidecarsResponse = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, proto.poolrpc.ListSidecarsResponse.repeatedFields_, null);
+proto.poolrpc.ListSidecarsRequest.prototype.setSidecarId = function(value) {
+  return jspb.Message.setProto3BytesField(this, 1, value);
 };
-goog.inherits(proto.poolrpc.ListSidecarsResponse, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.ListSidecarsResponse.displayName = 'proto.poolrpc.ListSidecarsResponse';
-}
+
+
+
 /**
  * List of repeated fields within this message type.
  * @private {!Array<number>}
@@ -15379,13 +16643,15 @@ proto.poolrpc.ListSidecarsResponse.repeatedFields_ = [1];
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.ListSidecarsResponse.prototype.toObject = function(opt_includeInstance) {
@@ -15395,8 +16661,8 @@ proto.poolrpc.ListSidecarsResponse.prototype.toObject = function(opt_includeInst
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.ListSidecarsResponse} msg The msg instance to transform.
  * @return {!Object}
@@ -15497,9 +16763,12 @@ proto.poolrpc.ListSidecarsResponse.prototype.getTicketsList = function() {
 };
 
 
-/** @param {!Array<!proto.poolrpc.DecodedSidecarTicket>} value */
+/**
+ * @param {!Array<!proto.poolrpc.DecodedSidecarTicket>} value
+ * @return {!proto.poolrpc.ListSidecarsResponse} returns this
+*/
 proto.poolrpc.ListSidecarsResponse.prototype.setTicketsList = function(value) {
-  jspb.Message.setRepeatedWrapperField(this, 1, value);
+  return jspb.Message.setRepeatedWrapperField(this, 1, value);
 };
 
 
@@ -15513,40 +16782,29 @@ proto.poolrpc.ListSidecarsResponse.prototype.addTickets = function(opt_value, op
 };
 
 
-proto.poolrpc.ListSidecarsResponse.prototype.clearTicketsList = function() {
-  this.setTicketsList([]);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * Clears the list making it empty but non-null.
+ * @return {!proto.poolrpc.ListSidecarsResponse} returns this
  */
-proto.poolrpc.CancelSidecarRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+proto.poolrpc.ListSidecarsResponse.prototype.clearTicketsList = function() {
+  return this.setTicketsList([]);
 };
-goog.inherits(proto.poolrpc.CancelSidecarRequest, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.CancelSidecarRequest.displayName = 'proto.poolrpc.CancelSidecarRequest';
-}
+
+
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.CancelSidecarRequest.prototype.toObject = function(opt_includeInstance) {
@@ -15556,8 +16814,8 @@ proto.poolrpc.CancelSidecarRequest.prototype.toObject = function(opt_includeInst
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.CancelSidecarRequest} msg The msg instance to transform.
  * @return {!Object}
@@ -15678,41 +16936,29 @@ proto.poolrpc.CancelSidecarRequest.prototype.getSidecarId_asU8 = function() {
 };
 
 
-/** @param {!(string|Uint8Array)} value */
-proto.poolrpc.CancelSidecarRequest.prototype.setSidecarId = function(value) {
-  jspb.Message.setProto3BytesField(this, 1, value);
-};
-
-
-
 /**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.poolrpc.CancelSidecarRequest} returns this
  */
-proto.poolrpc.CancelSidecarResponse = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+proto.poolrpc.CancelSidecarRequest.prototype.setSidecarId = function(value) {
+  return jspb.Message.setProto3BytesField(this, 1, value);
 };
-goog.inherits(proto.poolrpc.CancelSidecarResponse, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.poolrpc.CancelSidecarResponse.displayName = 'proto.poolrpc.CancelSidecarResponse';
-}
+
+
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
 /**
- * Creates an object representation of this proto suitable for use in Soy templates.
+ * Creates an object representation of this proto.
  * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * Optional fields that are not set will be set to undefined.
  * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
  * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
+ *     net/proto2/compiler/js/internal/generator.cc#kKeyword.
+ * @param {boolean=} opt_includeInstance Deprecated. whether to include the
+ *     JSPB instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
  * @return {!Object}
  */
 proto.poolrpc.CancelSidecarResponse.prototype.toObject = function(opt_includeInstance) {
@@ -15722,8 +16968,8 @@ proto.poolrpc.CancelSidecarResponse.prototype.toObject = function(opt_includeIns
 
 /**
  * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
+ * @param {boolean|undefined} includeInstance Deprecated. Whether to include
+ *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
  * @param {!proto.poolrpc.CancelSidecarResponse} msg The msg instance to transform.
  * @return {!Object}

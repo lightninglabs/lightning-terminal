@@ -22,6 +22,7 @@ import (
 	"github.com/lightningnetwork/lnd"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntest"
+	"github.com/lightningnetwork/lnd/lntest/miner"
 	"github.com/lightningnetwork/lnd/lntest/node"
 	"github.com/lightningnetwork/lnd/lntest/port"
 	"github.com/lightningnetwork/lnd/lntest/wait"
@@ -45,8 +46,7 @@ type NetworkHarness struct {
 
 	// Miner is a reference to a running full node that can be used to create
 	// new blocks on the network.
-	Miner *lntest.HarnessMiner
-
+	Miner      *miner.HarnessMiner
 	LNDHarness *lntest.HarnessTest
 
 	// server is an instance of the local Loop/Pool mock server.
@@ -82,8 +82,8 @@ func NewNetworkHarness(lndHarness *lntest.HarnessTest, b node.BackendConfig,
 		activeNodes:  make(map[int]*HarnessNode),
 		nodesByPub:   make(map[string]*HarnessNode),
 		lndErrorChan: make(chan error),
-		netParams:    lndHarness.Miner.ActiveNet,
-		Miner:        lndHarness.Miner,
+		netParams:    lndHarness.Miner().ActiveNet,
+		Miner:        lndHarness.Miner(),
 		LNDHarness:   lndHarness,
 		BackendCfg:   b,
 		litdBinary:   litdBinary,
@@ -1017,7 +1017,7 @@ func (n *NetworkHarness) CloseChannel(lnNode *HarnessNode,
 			return fmt.Errorf("unable to decode closeTxid: "+
 				"%v", err)
 		}
-		n.LNDHarness.Miner.AssertTxInMempool(closeTxid)
+		n.LNDHarness.Miner().AssertTxInMempool(closeTxid)
 
 		return nil
 	}, wait.ChannelCloseTimeout)
