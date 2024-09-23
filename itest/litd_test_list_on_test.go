@@ -40,4 +40,8 @@ var allTestCases = []*testCase{
 		name: "test custom channels breach",
 		test: testCustomChannelsBreach,
 	},
+	{
+		name: "test custom channels liquidity",
+		test: testCustomChannelsLiquidityEdgeCases,
+	},
 }

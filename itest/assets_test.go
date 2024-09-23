@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcec/v2/schnorr"
@@ -44,6 +45,9 @@ import (
 	"google.golang.org/protobuf/proto"
 	"gopkg.in/macaroon.v2"
 )
+
+// PaymentTimeout is the default payment timeout we use in our tests.
+const PaymentTimeout = 6 * time.Second
 
 // createTestAssetNetwork sends asset funds from Charlie to Dave and Erin, so
 // they can fund asset channels with Yara and Fabia, respectively. So the asset
@@ -429,9 +433,10 @@ func assertPendingChannels(t *testing.T, node *HarnessNode, assetID []byte,
 
 	require.NotZero(t, pendingJSON.Assets[0].Capacity)
 
-	pendingLocalBalance, pendingRemoteBalance := getAssetChannelBalance(
-		t, node, assetID, true,
-	)
+	pendingLocalBalance, pendingRemoteBalance, _, _ :=
+		getAssetChannelBalance(
+			t, node, assetID, true,
+		)
 	require.EqualValues(t, localSum, pendingLocalBalance)
 	require.EqualValues(t, remoteSum, pendingRemoteBalance)
 }
@@ -542,7 +547,7 @@ func getChannelCustomData(src, dst *HarnessNode) (*rfqmsg.JsonAssetChanInfo,
 }
 
 func getAssetChannelBalance(t *testing.T, node *HarnessNode, assetID []byte,
-	pending bool) (uint64, uint64) {
+	pending bool) (uint64, uint64, uint64, uint64) {
 
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
@@ -572,11 +577,14 @@ func getAssetChannelBalance(t *testing.T, node *HarnessNode, assetID []byte,
 		remoteSum += balances[assetIDString].RemoteBalance
 	}
 
-	return localSum, remoteSum
+	return localSum, remoteSum, balance.LocalBalance.Sat,
+		balance.RemoteBalance.Sat
 }
 
 func sendAssetKeySendPayment(t *testing.T, src, dst *HarnessNode, amt uint64,
-	assetID []byte, btcAmt fn.Option[int64]) {
+	assetID []byte, btcAmt fn.Option[int64],
+	expectedStatus lnrpc.Payment_PaymentStatus,
+	failReason fn.Option[lnrpc.PaymentFailureReason]) {
 
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
@@ -601,7 +609,7 @@ func sendAssetKeySendPayment(t *testing.T, src, dst *HarnessNode, amt uint64,
 		Amt:               btcAmt.UnwrapOr(500),
 		DestCustomRecords: customRecords,
 		PaymentHash:       hash[:],
-		TimeoutSeconds:    3,
+		TimeoutSeconds:    int32(PaymentTimeout.Seconds()),
 	}
 
 	stream, err := srcTapd.SendPayment(ctxt, &tchrpc.SendPaymentRequest{
@@ -613,7 +621,12 @@ func sendAssetKeySendPayment(t *testing.T, src, dst *HarnessNode, amt uint64,
 
 	result, err := getAssetPaymentResult(stream)
 	require.NoError(t, err)
-	require.Equal(t, lnrpc.Payment_SUCCEEDED, result.Status)
+	require.Equal(t, expectedStatus, result.Status)
+
+	expectedReason := failReason.UnwrapOr(
+		lnrpc.PaymentFailureReason_FAILURE_REASON_NONE,
+	)
+	require.Equal(t, result.FailureReason, expectedReason)
 }
 
 func sendKeySendPayment(t *testing.T, src, dst *HarnessNode,
@@ -640,7 +653,7 @@ func sendKeySendPayment(t *testing.T, src, dst *HarnessNode,
 		Amt:               int64(amt),
 		DestCustomRecords: customRecords,
 		PaymentHash:       hash[:],
-		TimeoutSeconds:    3,
+		TimeoutSeconds:    int32(PaymentTimeout.Seconds()),
 	}
 
 	stream, err := src.RouterClient.SendPaymentV2(ctxt, req)
@@ -698,7 +711,7 @@ func payInvoiceWithSatoshi(t *testing.T, payer *HarnessNode,
 
 	sendReq := &routerrpc.SendPaymentRequest{
 		PaymentRequest:   invoice.PaymentRequest,
-		TimeoutSeconds:   2,
+		TimeoutSeconds:   int32(PaymentTimeout.Seconds()),
 		MaxShardSizeMsat: 80_000_000,
 		FeeLimitMsat:     1_000_000,
 	}
@@ -727,7 +740,7 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 
 	sendReq := &routerrpc.SendPaymentRequest{
 		PaymentRequest: invoice.PaymentRequest,
-		TimeoutSeconds: 2,
+		TimeoutSeconds: int32(PaymentTimeout.Seconds()),
 		FeeLimitMsat:   1_000_000,
 	}
 
@@ -1422,10 +1435,15 @@ func logBalance(t *testing.T, nodes []*HarnessNode, assetID []byte,
 
 	t.Helper()
 
+	time.Sleep(time.Millisecond * 250)
+
 	for _, node := range nodes {
-		local, remote := getAssetChannelBalance(t, node, assetID, false)
-		t.Logf("%-7s balance: local=%-9d remote=%-9d (%v)",
-			node.Cfg.Name, local, remote, occasion)
+		local, remote, localSat, remoteSat :=
+			getAssetChannelBalance(t, node, assetID, false)
+
+		t.Logf("%-7s balance: local=%-9d remote=%-9d, localSat=%-9d, "+
+			"remoteSat=%-9d (%v)", node.Cfg.Name, local, remote,
+			localSat, remoteSat, occasion)
 	}
 }
 
