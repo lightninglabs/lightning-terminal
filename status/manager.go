@@ -34,7 +34,7 @@ type subServer struct {
 	running bool
 
 	// customStatus is a string that details a custom status of the
-	// sub-server, if the the sub-server is in a custom state. This status
+	// sub-server, if the sub-server is in a custom state. This status
 	// can be set to a unique status that only exists for the specific
 	// sub-server, and will be displayed to the user with the
 	// litrpc.SubServerStatus.
@@ -83,7 +83,7 @@ func NewStatusManager() *Manager {
 	}
 }
 
-// IsSystemReady shows if the given sub-server ready to handle the a request for
+// IsSystemReady shows if the given sub-server ready to handle the request for
 // the passed request URI. The first returned boolean is true if the system
 // is ready to handle the request. The second returned boolean is true if the
 // system has been disabled.
