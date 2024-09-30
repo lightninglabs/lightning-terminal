@@ -18,6 +18,7 @@ import (
 	litstatus "github.com/lightninglabs/lightning-terminal/status"
 	"github.com/lightninglabs/lightning-terminal/subservers"
 	"github.com/lightningnetwork/lnd/lncfg"
+	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/macaroons"
 	grpcProxy "github.com/mwitkow/grpc-proxy/proxy"
 	"google.golang.org/grpc"
@@ -69,7 +70,7 @@ func (e *proxyErr) Unwrap() error {
 func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 	superMacValidator session.SuperMacaroonValidator,
 	permsMgr *perms.Manager, subServerMgr *subservers.Manager,
-	statusMgr *litstatus.Manager) *rpcProxy {
+	statusMgr *litstatus.Manager, getLNDClient lndBasicClientFn) *rpcProxy {
 
 	// The gRPC web calls are protected by HTTP basic auth which is defined
 	// by base64(username:password). Because we only have a password, we
@@ -91,6 +92,7 @@ func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 		superMacValidator: superMacValidator,
 		subServerMgr:      subServerMgr,
 		statusMgr:         statusMgr,
+		getBasicLNDClient: getLNDClient,
 	}
 	p.grpcServer = grpc.NewServer(
 		// From the grpxProxy doc: This codec is *crucial* to the
@@ -161,11 +163,12 @@ type rpcProxy struct {
 	// must only ever be used atomically.
 	started int32
 
-	cfg          *Config
-	basicAuth    string
-	permsMgr     *perms.Manager
-	subServerMgr *subservers.Manager
-	statusMgr    *litstatus.Manager
+	cfg               *Config
+	basicAuth         string
+	permsMgr          *perms.Manager
+	subServerMgr      *subservers.Manager
+	statusMgr         *litstatus.Manager
+	getBasicLNDClient lndBasicClientFn
 
 	bakeSuperMac bakeSuperMac
 
@@ -182,6 +185,10 @@ type rpcProxy struct {
 
 // bakeSuperMac can be used to bake a new super macaroon.
 type bakeSuperMac func(ctx context.Context, rootKeyID uint32) (string, error)
+
+// lndBasicClientFn can be used to obtain access to an lnrpc.LightningClient if
+// it is available.
+type lndBasicClientFn func() (lnrpc.LightningClient, error)
 
 // Start creates initial connection to lnd.
 func (p *rpcProxy) Start(lndConn *grpc.ClientConn,

@@ -16,6 +16,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	restProxy "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -174,10 +175,14 @@ type LightningTerminal struct {
 	wg       sync.WaitGroup
 	errQueue *queue.ConcurrentQueue[error]
 
-	lndConnID   string
-	lndConn     *grpc.ClientConn
-	lndClient   *lndclient.GrpcLndServices
-	basicClient lnrpc.LightningClient
+	lndConnID string
+	lndConn   *grpc.ClientConn
+	lndClient *lndclient.GrpcLndServices
+
+	// basicClient may be accessed by other sub-systems but this access
+	// should be provided via the basicLNDClient method.
+	basicClient    lnrpc.LightningClient
+	basicClientSet atomic.Bool
 
 	subServerMgr *subservers.Manager
 	statusMgr    *status.Manager
@@ -297,7 +302,7 @@ func (g *LightningTerminal) Run() error {
 	// server is started.
 	g.rpcProxy = newRpcProxy(
 		g.cfg, g, g.validateSuperMacaroon, g.permsMgr, g.subServerMgr,
-		g.statusMgr,
+		g.statusMgr, g.basicLNDClient,
 	)
 
 	// Register any gRPC services that should be served using LiT's
@@ -728,6 +733,15 @@ func (g *LightningTerminal) start() error {
 	return nil
 }
 
+// basicLNDClient provides access to LiT's basicClient if it has been set.
+func (g *LightningTerminal) basicLNDClient() (lnrpc.LightningClient, error) {
+	if !g.basicClientSet.Load() {
+		return nil, fmt.Errorf("basic LND client has not yet been set")
+	}
+
+	return g.basicClient, nil
+}
+
 // setUpLNDClients sets up the various LND clients required by LiT.
 func (g *LightningTerminal) setUpLNDClients(lndQuit chan struct{}) error {
 	var (
@@ -805,6 +819,7 @@ func (g *LightningTerminal) setUpLNDClients(lndQuit chan struct{}) error {
 
 		log.Infof("Retrying to connect basic lnd client")
 	}
+	g.basicClientSet.Store(true)
 
 	// Now we know that the connection itself is ready. But we also need to
 	// wait for two things: The chain notifier to be ready and the lnd
