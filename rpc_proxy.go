@@ -34,6 +34,9 @@ const (
 	// HeaderMacaroon is the HTTP header field name that is used to send
 	// the macaroon.
 	HeaderMacaroon = "Macaroon"
+
+	lndBakeMacMethod      = "/lnrpc.Lightning/BakeMacaroon"
+	litBakeSuperMacMethod = "/litrpc.Proxy/BakeSuperMacaroon"
 )
 
 var (
@@ -408,6 +411,87 @@ func (p *rpcProxy) UnaryServerInterceptor(ctx context.Context, req interface{},
 				"%v", pErr)
 		}
 		return nil, err
+	}
+
+	// We special case the handling of a call to LiT's BakeSuperMacaroon
+	// method if we are in stateless init mode. If a user has called this
+	// method, they are either calling with an LND macaroon or a baked
+	// super macaroon.
+	if p.cfg.statelessInitMode &&
+		info.FullMethod == litBakeSuperMacMethod {
+
+		// Fetch permissions that are required for LND's BakeMacaroon
+		// method. Since this will only be called in stateless-init mode
+		// which is only possible in integrated mode, we can be sure
+		// that the permissions returned here are the up-to-date
+		// permissions for the LND method.
+		requiredPerms, ok := p.permsMgr.URIPermissions(lndBakeMacMethod)
+		if !ok {
+			return nil, fmt.Errorf("unknown permissions for %s",
+				lndBakeMacMethod)
+		}
+		permissions := make(
+			[]*lnrpc.MacaroonPermission, len(requiredPerms),
+		)
+		for idx, perm := range requiredPerms {
+			permissions[idx] = &lnrpc.MacaroonPermission{
+				Entity: perm.Entity,
+				Action: perm.Action,
+			}
+		}
+
+		// Next, we extract the macaroon provided by the user.
+		macHex, err := macaroons.RawMacaroonFromContext(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		macBytes, err := hex.DecodeString(macHex)
+		if err != nil {
+			return nil, err
+		}
+
+		lndClient, err := p.getBasicLNDClient()
+		if err != nil {
+			return nil, err
+		}
+
+		// Using LiT's existing connection to LND, we verify that the
+		// provided macaroon contains the required permissions for the
+		// LND BakeMacaroon method.
+		resp, err := lndClient.CheckMacaroonPermissions(
+			ctx, &lnrpc.CheckMacPermRequest{
+				Macaroon:    macBytes,
+				Permissions: permissions,
+				FullMethod:  lndBakeMacMethod,
+			},
+		)
+
+		// There are two valid possible outcomes depending on if the
+		// user used LND's macaroon which contains the permissions
+		// required for LND's BakeMacaroon method or if they used a
+		// super macaroon that contains the necessary permissions for
+		// LiT's BakeSuperMacaroon method. If the former is the case,
+		// and the macaroon is valid, then we can now directly call the
+		// handler without further checking the macaroon.
+		if err == nil && resp.Valid {
+			// Call LiT's BakeSuperMacaroon function.
+			return handler(ctx, req)
+		}
+
+		// If we do get an error from the above call, then the later
+		// case described above might be true: the call might have
+		// been performed with a macaroon that has the permissions for
+		// LiT's BakeSuperMacaroon method. In that case, we log the
+		// error, but we pass the call on to LiT's macaroon validator
+		// as normal.
+		log.Warnf("The call to LiT's %s method did not contain a "+
+			"macaroon with the permissions required for LND's %s "+
+			"method: %v. The call will instead be verified "+
+			"against LiT's macaroon validator to check if it has "+
+			"direct permissions for LiT's %s method.",
+			litBakeSuperMacMethod, lndBakeMacMethod, err,
+			litBakeSuperMacMethod)
 	}
 
 	// With the basic auth converted to a macaroon if necessary,
