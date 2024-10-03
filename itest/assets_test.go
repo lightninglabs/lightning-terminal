@@ -47,7 +47,10 @@ import (
 )
 
 // PaymentTimeout is the default payment timeout we use in our tests.
-const PaymentTimeout = 6 * time.Second
+const (
+	PaymentTimeout       = 6 * time.Second
+	DefaultPushSat int64 = 1062
+)
 
 // createTestAssetNetwork sends asset funds from Charlie to Dave and Erin, so
 // they can fund asset channels with Yara and Fabia, respectively. So the asset
@@ -57,7 +60,7 @@ func createTestAssetNetwork(t *harnessTest, net *NetworkHarness, charlieTap,
 	daveTap, erinTap, fabiaTap, yaraTap, universeTap *tapClient,
 	mintedAsset *taprpc.Asset, assetSendAmount, charlieFundingAmount,
 	daveFundingAmount,
-	erinFundingAmount uint64) (*tchrpc.FundChannelResponse,
+	erinFundingAmount uint64, pushSat int64) (*tchrpc.FundChannelResponse,
 	*tchrpc.FundChannelResponse, *tchrpc.FundChannelResponse) {
 
 	ctxb := context.Background()
@@ -136,7 +139,7 @@ func createTestAssetNetwork(t *harnessTest, net *NetworkHarness, charlieTap,
 			AssetId:            assetID,
 			PeerPubkey:         daveTap.node.PubKey[:],
 			FeeRateSatPerVbyte: 5,
-			PushSat:            1065,
+			PushSat:            pushSat,
 		},
 	)
 	require.NoError(t.t, err)
@@ -159,7 +162,7 @@ func createTestAssetNetwork(t *harnessTest, net *NetworkHarness, charlieTap,
 			AssetId:            assetID,
 			PeerPubkey:         fabiaTap.node.PubKey[:],
 			FeeRateSatPerVbyte: 5,
-			PushSat:            1065,
+			PushSat:            pushSat,
 		},
 	)
 	require.NoError(t.t, err)
