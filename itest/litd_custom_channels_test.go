@@ -1893,8 +1893,51 @@ func testCustomChannelsLiquidityEdgeCases(_ context.Context,
 	// Pay a bolt11 invoice with assets, which evaluates to more than the
 	// channel btc capacity.
 	_ = createAndPayNormalInvoice(
-		t.t, charlie, dave, erin, 220_000, assetID, true,
+		t.t, charlie, dave, erin, 1_000_000, assetID, true,
 	)
 
-	logBalance(t.t, nodes, assetID, "after giant asset payment")
+	logBalance(t.t, nodes, assetID, "after big asset payment (btc "+
+		"invoice, multi-hop)")
+
+	// Edge case: Big asset invoice paid by direct peer with assets.
+	invoiceResp := createAssetInvoice(
+		t.t, charlie, dave, 100_000, assetID,
+	)
+
+	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp, assetID, false)
+
+	logBalance(t.t, nodes, assetID, "after big asset payment (asset "+
+		"invoice, direct)")
+
+	// Edge case: Big normal invoice, paid by direct channel peer with
+	// assets.
+	_ = createAndPayNormalInvoice(
+		t.t, dave, charlie, charlie, 1_000_000, assetID, true,
+	)
+
+	logBalance(t.t, nodes, assetID, "after big asset payment (btc "+
+		"invoice, direct)")
+
+	// Dave sends 200k assets and 2k sats to Yara.
+	sendAssetKeySendPayment(
+		t.t, dave, yara, 200_000, assetID,
+		fn.None[int64](), lnrpc.Payment_SUCCEEDED,
+		fn.None[lnrpc.PaymentFailureReason](),
+	)
+	sendKeySendPayment(t.t, dave, yara, 2000)
+
+	logBalance(t.t, nodes, assetID, "after 200k assets to Yara")
+
+	// Edge case: Now Charlie creates a big asset invoice to be paid for by
+	// Yara with assets. This is a multi-hop payment going over 2 asset
+	// channels, where the total asset value exceeds the btc capacity of the
+	// channels.
+	invoiceResp = createAssetInvoice(
+		t.t, dave, charlie, 100_000, assetID,
+	)
+
+	payInvoiceWithAssets(t.t, yara, dave, invoiceResp, assetID, false)
+
+	logBalance(t.t, nodes, assetID, "after big asset payment (asset "+
+		"invoice, multi-hop)")
 }
