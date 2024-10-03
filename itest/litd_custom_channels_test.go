@@ -188,7 +188,7 @@ func testCustomChannelsLarge(_ context.Context, net *NetworkHarness,
 	fundRespCD, _, _ := createTestAssetNetwork(
 		t, net, charlieTap, daveTap, erinTap, fabiaTap, yaraTap,
 		universeTap, cents, 400_000, charlieFundingAmount,
-		daveFundingAmount, erinFundingAmount,
+		daveFundingAmount, erinFundingAmount, DefaultPushSat,
 	)
 
 	// Before we start sending out payments, let's make sure each node can
@@ -370,7 +370,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	fundRespCD, fundRespDY, fundRespEF := createTestAssetNetwork(
 		t, net, charlieTap, daveTap, erinTap, fabiaTap, yaraTap,
 		universeTap, cents, startAmount, charlieFundingAmount,
-		daveFundingAmount, erinFundingAmount,
+		daveFundingAmount, erinFundingAmount, DefaultPushSat,
 	)
 
 	// We'll be tracking the expected asset balances throughout the test, so
@@ -829,7 +829,7 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	fundRespCD, fundRespDY, fundRespEF := createTestAssetNetwork(
 		t, net, charlieTap, daveTap, erinTap, fabiaTap, yaraTap,
 		universeTap, cents, startAmount, charlieFundingAmount,
-		daveFundingAmount, erinFundingAmount,
+		daveFundingAmount, erinFundingAmount, DefaultPushSat,
 	)
 
 	// We'll be tracking the expected asset balances throughout the test, so
@@ -1690,10 +1690,13 @@ func testCustomChannelsBreach(_ context.Context, net *NetworkHarness,
 func testCustomChannelsLiquidityEdgeCases(_ context.Context,
 	net *NetworkHarness, t *harnessTest) {
 
-	ctxb := context.Background()
 	lndArgs := slices.Clone(lndArgsTemplate)
 	litdArgs := slices.Clone(litdArgsTemplate)
 
+	// Explicitly set the proof courier as Alice (how has no other role
+	// other than proof shuffling), otherwise a hashmail courier will be
+	// used. For the funding transaction, we're just posting it and don't
+	// expect a true receiver.
 	zane, err := net.NewNode(
 		t.t, "Zane", lndArgs, false, true, litdArgs...,
 	)
@@ -1704,16 +1707,41 @@ func testCustomChannelsLiquidityEdgeCases(_ context.Context,
 		proof.UniverseRpcCourierType, zane.Cfg.LitAddr(),
 	))
 
+	// The topology we are going for looks like the following:
+	//
+	// Charlie  --[assets]-->  Dave  --[sats]-->  Erin  --[assets]-->  Fabia
+	//                          |
+	//                          |
+	//                       [assets]
+	//                          |
+	//                          v
+	//                        Yara
+	//
+	// With [assets] being a custom channel and [sats] being a normal, BTC
+	// only channel.
+	// All 5 nodes need to be full litd nodes running in integrated mode
+	// with tapd included. We also need specific flags to be enabled, so we
+	// create 5 completely new nodes, ignoring the two default nodes that
+	// are created by the harness.
 	charlie, err := net.NewNode(
 		t.t, "Charlie", lndArgs, false, true, litdArgs...,
 	)
 	require.NoError(t.t, err)
+
 	dave, err := net.NewNode(t.t, "Dave", lndArgs, false, true, litdArgs...)
 	require.NoError(t.t, err)
 	erin, err := net.NewNode(t.t, "Erin", lndArgs, false, true, litdArgs...)
 	require.NoError(t.t, err)
+	fabia, err := net.NewNode(
+		t.t, "Fabia", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+	yara, err := net.NewNode(
+		t.t, "Yara", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
 
-	nodes := []*HarnessNode{charlie, dave, erin}
+	nodes := []*HarnessNode{charlie, dave, erin, fabia, yara}
 	connectAllNodes(t.t, net, nodes)
 	fundAllNodes(t.t, net, nodes)
 
@@ -1721,19 +1749,25 @@ func testCustomChannelsLiquidityEdgeCases(_ context.Context,
 	t.Logf("Opening normal channel between Dave and Erin...")
 	channelOp := openChannelAndAssert(
 		t, net, dave, erin, lntest.OpenChannelParams{
-			Amt:         5_000_000,
+			Amt:         10_000_000,
 			SatPerVByte: 5,
 		},
 	)
 	defer closeChannelAndAssert(t, net, dave, channelOp, false)
 
+	// This is the only public channel, we need everyone to be aware of it.
 	assertChannelKnown(t.t, charlie, channelOp)
+	assertChannelKnown(t.t, fabia, channelOp)
 
+	universeTap := newTapClient(t.t, zane)
 	charlieTap := newTapClient(t.t, charlie)
 	daveTap := newTapClient(t.t, dave)
-	universeTap := newTapClient(t.t, zane)
+	erinTap := newTapClient(t.t, erin)
+	fabiaTap := newTapClient(t.t, fabia)
+	yaraTap := newTapClient(t.t, yara)
 
-	// Mint an asset on Charlie and sync Dave to Charlie as the universe.
+	// Mint an asset on Charlie and sync all nodes to Charlie as the
+	// universe.
 	mintedAssets := itest.MintAssetsConfirmBatch(
 		t.t, t.lndHarness.Miner.Client, charlieTap,
 		[]*mintrpc.MintAssetRequest{
@@ -1744,62 +1778,32 @@ func testCustomChannelsLiquidityEdgeCases(_ context.Context,
 	)
 	cents := mintedAssets[0]
 	assetID := cents.AssetGenesis.AssetId
-	var groupKey []byte
-	if cents.AssetGroup != nil {
-		groupKey = cents.AssetGroup.TweakedGroupKey
-	}
-	fundingScriptTree := tapchannel.NewFundingScriptTree()
-	fundingScriptKey := fundingScriptTree.TaprootKey
-	fundingScriptTreeBytes := fundingScriptKey.SerializeCompressed()
 
 	t.Logf("Minted %d lightning cents, syncing universes...", cents.Amount)
-	syncUniverses(t.t, charlieTap, dave)
+	syncUniverses(t.t, charlieTap, dave, erin, fabia, yara)
 	t.Logf("Universes synced between all nodes, distributing assets...")
 
-	charlieBalance := cents.Amount
-
-	fundRespCD, err := charlieTap.FundChannel(
-		ctxb, &tchrpc.FundChannelRequest{
-			AssetAmount:        charlieBalance,
-			AssetId:            assetID,
-			PeerPubkey:         daveTap.node.PubKey[:],
-			FeeRateSatPerVbyte: 5,
-			PushSat:            0,
-		},
+	const (
+		daveFundingAmount = uint64(400_000)
+		erinFundingAmount = uint64(200_000)
 	)
-	require.NoError(t.t, err)
-	t.Logf("Funded channel between Charlie and Dave: %v", fundRespCD)
+	charlieFundingAmount := cents.Amount - uint64(2*400_000)
 
-	// Make sure the pending channel shows up in the list and has the
-	// custom records set as JSON.
-	assertPendingChannels(
-		t.t, charlieTap.node, assetID, 1, charlieBalance, 0,
+	_, _, _ = createTestAssetNetwork(
+		t, net, charlieTap, daveTap, erinTap, fabiaTap, yaraTap,
+		universeTap, cents, 400_000, charlieFundingAmount,
+		daveFundingAmount, erinFundingAmount, 0,
 	)
 
-	// Let's confirm the channel.
-	mineBlocks(t, net, 6, 1)
-
-	assertAssetBalance(t.t, charlieTap, assetID, cents.Amount)
-
-	// There should only be a single asset piece for Charlie, the one in the
-	// channel.
-	assertNumAssetOutputs(t.t, charlieTap, assetID, 1)
-	assertAssetExists(
-		t.t, charlieTap, assetID, charlieBalance,
-		fundingScriptKey, false, true, true,
-	)
-
-	// Assert that the proofs for both channels has been uploaded to the
-	// designated Universe server.
-	assertUniverseProofExists(
-		t.t, universeTap, assetID, groupKey, fundingScriptTreeBytes,
-		fmt.Sprintf("%v:%v", fundRespCD.Txid, fundRespCD.OutputIndex),
-	)
-
-	// Make sure the channel shows the correct asset information.
-	assertAssetChan(
-		t.t, charlieTap.node, daveTap.node, charlieBalance, assetID,
-	)
+	// Before we start sending out payments, let's make sure each node can
+	// see the other one in the graph and has all required features.
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(charlie, dave))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(dave, charlie))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(dave, yara))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(yara, dave))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(erin, fabia))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(fabia, erin))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(charlie, erin))
 
 	logBalance(t.t, nodes, assetID, "initial")
 
