@@ -682,20 +682,6 @@ func (g *LightningTerminal) start() error {
 	// lnd clients.
 	g.statusMgr.SetRunning(subservers.LND)
 
-	// If we're in integrated and stateless init mode, we won't create
-	// macaroon files in any of the subserver daemons.
-	if g.cfg.LndMode == ModeIntegrated && g.lndInterceptorChain != nil &&
-		g.lndInterceptorChain.MacaroonService() != nil {
-
-		// If the wallet was initialized in stateless mode, we don't
-		// want any macaroons lying around on the filesystem. In that
-		// case only the UI will be able to access any of the integrated
-		// daemons. In all other cases we want default macaroons so we
-		// can use the CLI tools to interact with loop/pool/faraday.
-		macService := g.lndInterceptorChain.MacaroonService()
-		g.cfg.statelessInitMode = macService.StatelessInit
-	}
-
 	// Both connection types are ready now, let's start our sub-servers if
 	// they should be started locally as an integrated service.
 	createDefaultMacaroons := !g.cfg.statelessInitMode
@@ -820,6 +806,20 @@ func (g *LightningTerminal) setUpLNDClients(lndQuit chan struct{}) error {
 		log.Infof("Retrying to connect basic lnd client")
 	}
 	g.basicClientSet.Store(true)
+
+	// If we're in integrated and stateless init mode, we won't create
+	// macaroon files in any of the subserver daemons.
+	if g.cfg.LndMode == ModeIntegrated && g.lndInterceptorChain != nil &&
+		g.lndInterceptorChain.MacaroonService() != nil {
+
+		// If the wallet was initialized in stateless mode, we don't
+		// want any macaroons lying around on the filesystem. In that
+		// case only the UI will be able to access any of the integrated
+		// daemons. In all other cases we want default macaroons so we
+		// can use the CLI tools to interact with loop/pool/faraday.
+		macService := g.lndInterceptorChain.MacaroonService()
+		g.cfg.statelessInitMode = macService.StatelessInit
+	}
 
 	// Now we know that the connection itself is ready. But we also need to
 	// wait for two things: The chain notifier to be ready and the lnd
