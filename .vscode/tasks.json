@@ -1,0 +1,62 @@
+{
+  "version": "2.0.0",
+        "tasks": [
+                {
+                        "type": "shell",
+                        "label": "build itest all",
+                        "command": "make build-itest; make build-itest-litd",
+                        "presentation": {
+                                "echo": true,
+                                "reveal": "always",
+                                "focus": false,
+                                "panel": "shared",
+                                "clear": false
+                        },
+                        "problemMatcher": []
+                },
+                {
+                        "type": "shell",
+                        "label": "build itest litd",
+                        "command": "make build-itest-litd",
+                        "presentation": {
+                                "echo": true,
+                                "reveal": "always",
+                                "focus": false,
+                                "panel": "shared",
+                                "clear": false
+                        },
+                        "problemMatcher": []
+                },
+                {
+                        "type": "shell",
+                        "label": "clear itest logs",
+                        "options": {
+                                "cwd": "${workspaceFolder}/itest"
+                        },
+                        "command": "rm -rf ./*.log .logs*",
+                        "presentation": {
+                                "echo": true,
+                                "reveal": "always",
+                                "focus": false,
+                                "panel": "shared",
+                                "clear": false
+                        },
+                        "problemMatcher": []
+                },
+                {
+                        "label": "reset before itest",
+                        "dependsOn": [
+                                "build itest litd",
+                                "clear itest logs"
+                        ],
+                        "presentation": {
+                                "echo": true,
+                                "reveal": "always",
+                                "focus": false,
+                                "panel": "shared",
+                                "clear": false
+                        },
+                        "problemMatcher": []
+                }
+        ]
+}
