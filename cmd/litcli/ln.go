@@ -120,22 +120,23 @@ func fundChannel(c *cli.Context) error {
 	}
 
 	assetFound := false
+	totalAmount := uint64(0)
 	for _, rpcAsset := range assets.Assets {
 		if !bytes.Equal(rpcAsset.AssetGenesis.AssetId, assetIDBytes) {
 			continue
 		}
 
-		if rpcAsset.Amount < requestedAmount {
-			continue
+		totalAmount += rpcAsset.Amount
+		if totalAmount >= requestedAmount {
+			assetFound = true
+			break
 		}
-
-		assetFound = true
 	}
 
 	if !assetFound {
-		return fmt.Errorf("asset with ID %x not found or no UTXO with "+
-			"at least amount %d is available", assetIDBytes,
-			requestedAmount)
+		return fmt.Errorf("asset with ID %x not found or no combined "+
+			"UTXOs with at least amount %d is available",
+			assetIDBytes, requestedAmount)
 	}
 
 	resp, err := tchrpcClient.FundChannel(
