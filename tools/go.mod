@@ -3,7 +3,7 @@ module github.com/lightninglabs/lightning-terminal/tools
 go 1.22.3
 
 require (
-	github.com/btcsuite/btcd v0.24.0
+	github.com/btcsuite/btcd v0.24.2
 	github.com/golangci/golangci-lint v1.57.2
 	github.com/ory/go-acc v0.2.6
 	github.com/rinchsan/gosimports v0.1.5
