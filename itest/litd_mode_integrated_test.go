@@ -225,6 +225,7 @@ var (
 		restWebURI        string
 		restPOST          bool
 		canDisable        bool
+		isSubServer       bool
 
 		// noAuth is true if the call does not require a macaroon.
 		noAuth bool
@@ -277,6 +278,7 @@ var (
 		grpcWebURI:        "/frdrpc.FaradayServer/RevenueReport",
 		restWebURI:        "/v1/faraday/revenue",
 		canDisable:        true,
+		isSubServer:       true,
 	}, {
 		name:              "looprpc",
 		macaroonFn:        loopMacaroonFn,
@@ -287,6 +289,7 @@ var (
 		grpcWebURI:        "/looprpc.SwapClient/ListSwaps",
 		restWebURI:        "/v1/loop/swaps",
 		canDisable:        true,
+		isSubServer:       true,
 	}, {
 		name:              "poolrpc",
 		macaroonFn:        poolMacaroonFn,
@@ -297,6 +300,7 @@ var (
 		grpcWebURI:        "/poolrpc.Trader/GetInfo",
 		restWebURI:        "/v1/pool/info",
 		canDisable:        true,
+		isSubServer:       true,
 	}, {
 		name:              "taprpc",
 		macaroonFn:        tapMacaroonFn,
@@ -307,6 +311,7 @@ var (
 		grpcWebURI:        "/taprpc.TaprootAssets/ListAssets",
 		restWebURI:        "/v1/taproot-assets/assets",
 		canDisable:        true,
+		isSubServer:       true,
 	}, {
 		name:              "taprpc-whitelist",
 		macaroonFn:        emptyMacaroonFn,
@@ -318,6 +323,7 @@ var (
 		restWebURI:        "/v1/taproot-assets/universe/info",
 		canDisable:        true,
 		noAuth:            true,
+		isSubServer:       true,
 	}, {
 		name:       "litrpc-sessions",
 		macaroonFn: litMacaroonFn,
@@ -494,6 +500,7 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					endpoint.successPattern,
 					endpointDisabled || endpoint.litOnly,
 					"Unimplemented desc = unknown service",
+					endpoint.isSubServer, false,
 				)
 			})
 
@@ -506,47 +513,18 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					endpoint.successPattern,
 					endpointDisabled,
 					endpoint.disabledPattern,
+					endpoint.isSubServer,
+					false,
 				)
 			})
 		}
 	})
 
 	t.Run("UI password auth check", func(tt *testing.T) {
-		cfg := net.Alice.Cfg
-
-		for _, endpoint := range endpoints {
-			endpoint := endpoint
-			endpointDisabled := subServersDisabled &&
-				endpoint.canDisable
-
-			tt.Run(endpoint.name+" lnd port", func(ttt *testing.T) {
-				runUIPasswordCheck(
-					ttt, cfg.RPCAddr(), cfg.TLSCertPath,
-					cfg.UIPassword, endpoint.requestFn,
-					endpoint.noAuth,
-					true, endpoint.successPattern,
-					endpointDisabled || endpoint.litOnly,
-					"Unimplemented desc = unknown service",
-				)
-			})
-
-			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
-				shouldFailWithoutMacaroon := false
-				if withoutUIPassword {
-					shouldFailWithoutMacaroon = true
-				}
-
-				runUIPasswordCheck(
-					ttt, cfg.LitAddr(), cfg.LitTLSCertPath,
-					cfg.UIPassword, endpoint.requestFn,
-					endpoint.noAuth,
-					shouldFailWithoutMacaroon,
-					endpoint.successPattern,
-					endpointDisabled,
-					endpoint.disabledPattern,
-				)
-			})
-		}
+		uiPasswordAuthCheck(
+			tt, net.Alice.Cfg, subServersDisabled,
+			withoutUIPassword, false,
+		)
 	})
 
 	t.Run("UI index page fallback", func(tt *testing.T) {
@@ -576,37 +554,10 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 	})
 
 	t.Run("gRPC super macaroon auth check", func(tt *testing.T) {
-		cfg := net.Alice.Cfg
-
-		superMacFile := bakeSuperMacaroon(tt, cfg, true)
-
-		for _, endpoint := range endpoints {
-			endpoint := endpoint
-			endpointDisabled := subServersDisabled &&
-				endpoint.canDisable
-
-			tt.Run(endpoint.name+" lnd port", func(ttt *testing.T) {
-				runGRPCAuthTest(
-					ttt, cfg.RPCAddr(), cfg.TLSCertPath,
-					superMacFile, endpoint.noAuth,
-					endpoint.requestFn,
-					endpoint.successPattern,
-					endpointDisabled || endpoint.litOnly,
-					"Unimplemented desc = unknown service",
-				)
-			})
-
-			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
-				runGRPCAuthTest(
-					ttt, cfg.LitAddr(), cfg.LitTLSCertPath,
-					superMacFile, endpoint.noAuth,
-					endpoint.requestFn,
-					endpoint.successPattern,
-					endpointDisabled,
-					endpoint.disabledPattern,
-				)
-			})
-		}
+		superMacaroonAuth(
+			tt, net.Alice.Cfg, subServersDisabled, false,
+			getLiTMacFromFile,
+		)
 	})
 
 	t.Run("REST auth", func(tt *testing.T) {
@@ -673,7 +624,9 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 			return
 		}
 
-		superMacFile := bakeSuperMacaroon(tt, cfg, false)
+		superMacFile := bakeSuperMacaroon(
+			tt, cfg, getLiTMacFromFile, false,
+		)
 
 		ht := newHarnessTest(tt, net)
 		runAccountSystemTest(
@@ -740,6 +693,48 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 	})
 }
 
+func uiPasswordAuthCheck(t *testing.T, cfg *LitNodeConfig, subServersDisabled,
+	withoutUIPassword, statelessInit bool) {
+
+	for _, endpoint := range endpoints {
+		endpoint := endpoint
+		endpointDisabled := subServersDisabled &&
+			endpoint.canDisable
+
+		t.Run(endpoint.name+" lnd port", func(ttt *testing.T) {
+			runUIPasswordCheck(
+				ttt, cfg.RPCAddr(), cfg.TLSCertPath,
+				cfg.UIPassword, endpoint.requestFn,
+				endpoint.noAuth,
+				true,
+				endpoint.successPattern,
+				endpointDisabled || endpoint.litOnly,
+				"Unimplemented desc = unknown service",
+				endpoint.isSubServer,
+				statelessInit,
+			)
+		})
+
+		t.Run(endpoint.name+" lit port", func(ttt *testing.T) {
+			shouldFailWithoutMacaroon := false
+			if withoutUIPassword {
+				shouldFailWithoutMacaroon = true
+			}
+
+			runUIPasswordCheck(
+				ttt, cfg.LitAddr(), cfg.LitTLSCertPath,
+				cfg.UIPassword, endpoint.requestFn,
+				endpoint.noAuth,
+				shouldFailWithoutMacaroon,
+				endpoint.successPattern,
+				endpointDisabled,
+				endpoint.disabledPattern,
+				endpoint.isSubServer, statelessInit,
+			)
+		})
+	}
+}
+
 // setUpLNCConn creates a new LNC session and then creates a connection to that
 // session via the mailbox that the session was created with.
 func setUpLNCConn(ctx context.Context, t *testing.T, hostPort, tlsCertPath,
@@ -778,6 +773,43 @@ func setUpLNCConn(ctx context.Context, t *testing.T, hostPort, tlsCertPath,
 	return rawLNCConn
 }
 
+func superMacaroonAuth(t *testing.T, cfg *LitNodeConfig,
+	subServersDisabled, statelessInit bool,
+	getMac func(*testing.T, *LitNodeConfig) []byte) {
+
+	superMacFile := bakeSuperMacaroon(t, cfg, getMac, true)
+
+	for _, endpoint := range endpoints {
+		endpoint := endpoint
+		endpointDisabled := subServersDisabled &&
+			endpoint.canDisable
+
+		t.Run(endpoint.name+" lnd port", func(ttt *testing.T) {
+			runGRPCAuthTest(
+				ttt, cfg.RPCAddr(), cfg.TLSCertPath,
+				superMacFile, endpoint.noAuth,
+				endpoint.requestFn,
+				endpoint.successPattern,
+				endpointDisabled || endpoint.litOnly,
+				"Unimplemented desc = unknown service",
+				endpoint.isSubServer, statelessInit,
+			)
+		})
+
+		t.Run(endpoint.name+" lit port", func(ttt *testing.T) {
+			runGRPCAuthTest(
+				ttt, cfg.LitAddr(), cfg.LitTLSCertPath,
+				superMacFile, endpoint.noAuth,
+				endpoint.requestFn,
+				endpoint.successPattern,
+				endpointDisabled,
+				endpoint.disabledPattern,
+				endpoint.isSubServer, statelessInit,
+			)
+		})
+	}
+}
+
 // runCertificateCheck checks that the TLS certificates presented to clients are
 // what we expect them to be.
 func runCertificateCheck(t *testing.T, node *HarnessNode) {
@@ -799,7 +831,7 @@ func runCertificateCheck(t *testing.T, node *HarnessNode) {
 // runGRPCAuthTest tests authentication of the given gRPC interface.
 func runGRPCAuthTest(t *testing.T, hostPort, tlsCertPath, macPath string,
 	noMac bool, makeRequest requestFn, successContent string, disabled bool,
-	disabledErr string) {
+	disabledErr string, isSubServer, statelessInit bool) {
 
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
@@ -833,13 +865,27 @@ func runGRPCAuthTest(t *testing.T, hostPort, tlsCertPath, macPath string,
 	// Add dummy data as the macaroon, that should fail as well.
 	ctxm := macaroonContext(ctxt, []byte("dummy"))
 	_, err = makeRequest(ctxm, rawConn)
-	require.ErrorContains(t, err, "packet too short")
+	if statelessInit && isSubServer {
+		// Some sub-servers have slightly different structured
+		// errors but all of them contain these two words/phrases.
+		require.ErrorContains(t, err, "macaroon service")
+		require.ErrorContains(t, err, "initialised")
+	} else {
+		require.ErrorContains(t, err, "packet too short")
+	}
 
 	// Add a macaroon that can be parsed but that's not issued by lnd, which
 	// should also fail.
 	ctxm = macaroonContext(ctxt, dummyMacBytes)
 	_, err = makeRequest(ctxm, rawConn)
-	require.ErrorContains(t, err, "invalid ID")
+	if statelessInit && isSubServer {
+		// Some sub-servers have slightly different structured
+		// errors but all of them contain these two words/phrases.
+		require.ErrorContains(t, err, "macaroon service")
+		require.ErrorContains(t, err, "initialised")
+	} else {
+		require.ErrorContains(t, err, "invalid ID")
+	}
 
 	// Then finally we try with the correct macaroon which should now
 	// succeed, as long as it is not for a disabled sub-server.
@@ -861,7 +907,8 @@ func runGRPCAuthTest(t *testing.T, hostPort, tlsCertPath, macPath string,
 // runUIPasswordCheck tests UI password authentication.
 func runUIPasswordCheck(t *testing.T, hostPort, tlsCertPath, uiPassword string,
 	makeRequest requestFn, noAuth, shouldFailWithoutMacaroon bool,
-	successContent string, disabled bool, disabledErr string) {
+	successContent string, disabled bool, disabledErr string,
+	isSubServer, statelessInit bool) {
 
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
@@ -903,9 +950,15 @@ func runUIPasswordCheck(t *testing.T, hostPort, tlsCertPath, uiPassword string,
 	// shouldn't be allowed and result in an error.
 	ctxm = uiPasswordContext(ctxt, "foobar", true)
 	_, err = makeRequest(ctxm, rawConn)
-	if disabled {
+	switch {
+	case disabled:
 		require.ErrorContains(t, err, disabledErr)
-	} else {
+	case statelessInit && isSubServer:
+		// Some sub-servers have slightly different structured
+		// errors but all of them contain these two words/phrases.
+		require.ErrorContains(t, err, "macaroon service")
+		require.ErrorContains(t, err, "initialised")
+	default:
 		require.ErrorContains(t, err, "invalid ID")
 	}
 
@@ -931,9 +984,16 @@ func runUIPasswordCheck(t *testing.T, hostPort, tlsCertPath, uiPassword string,
 		ctxm = uiPasswordContext(ctxt, uiPassword, true)
 		_, err = makeRequest(ctxm, rawConn)
 
-		if disabled {
+		switch {
+		case disabled:
 			require.ErrorContains(t, err, disabledErr)
-		} else {
+		case statelessInit && isSubServer:
+			// Some sub-servers have slightly different structured
+			// errors but all of them contain these two
+			// words/phrases.
+			require.ErrorContains(t, err, "macaroon service")
+			require.ErrorContains(t, err, "initialised")
+		default:
 			require.ErrorContains(t, err, "invalid ID")
 		}
 
@@ -1373,8 +1433,16 @@ func connectRPC(ctx context.Context, hostPort,
 	return grpc.DialContext(ctx, hostPort, opts...)
 }
 
-func bakeSuperMacaroon(t *testing.T, cfg *LitNodeConfig, readOnly bool) string {
+func getLiTMacFromFile(t *testing.T, cfg *LitNodeConfig) []byte {
 	litMac := litMacaroonFn(cfg)
+	litMacBytes, err := os.ReadFile(litMac)
+	require.NoError(t, err)
+
+	return litMacBytes
+}
+
+func bakeSuperMacaroon(t *testing.T, cfg *LitNodeConfig,
+	getMac func(*testing.T, *LitNodeConfig) []byte, readOnly bool) string {
 
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
@@ -1385,14 +1453,11 @@ func bakeSuperMacaroon(t *testing.T, cfg *LitNodeConfig, readOnly bool) string {
 
 	defer rawConn.Close()
 
-	litMacBytes, err := os.ReadFile(litMac)
-	require.NoError(t, err)
-
-	litMacCtx := macaroonContext(ctxt, litMacBytes)
+	macCtx := macaroonContext(ctxt, getMac(t, cfg))
 	litConn := litrpc.NewProxyClient(rawConn)
 
 	bakeMacResp, err := litConn.BakeSuperMacaroon(
-		litMacCtx, &litrpc.BakeSuperMacaroonRequest{
+		macCtx, &litrpc.BakeSuperMacaroonRequest{
 			RootKeyIdSuffix: 0,
 			ReadOnly:        readOnly,
 		},

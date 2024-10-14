@@ -67,6 +67,8 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					endpoint.successPattern,
 					endpointEnabled,
 					endpoint.disabledPattern,
+					endpoint.isSubServer,
+					false,
 				)
 			})
 		}
@@ -94,6 +96,7 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					endpoint.successPattern,
 					endpointEnabled,
 					endpoint.disabledPattern,
+					endpoint.isSubServer, false,
 				)
 			})
 		}
@@ -126,7 +129,9 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 	t.Run("gRPC super macaroon auth check", func(tt *testing.T) {
 		cfg := net.Bob.Cfg
 
-		superMacFile := bakeSuperMacaroon(tt, cfg, true)
+		superMacFile := bakeSuperMacaroon(
+			tt, cfg, getLiTMacFromFile, true,
+		)
 
 		for _, endpoint := range endpoints {
 			endpoint := endpoint
@@ -141,6 +146,8 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 					endpoint.successPattern,
 					endpointEnabled,
 					endpoint.disabledPattern,
+					endpoint.isSubServer,
+					false,
 				)
 			})
 		}
@@ -261,7 +268,9 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 			return
 		}
 
-		superMacFile := bakeSuperMacaroon(tt, cfg, false)
+		superMacFile := bakeSuperMacaroon(
+			tt, cfg, getLiTMacFromFile, false,
+		)
 
 		ht := newHarnessTest(tt, net)
 		runAccountSystemTest(

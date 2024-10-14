@@ -13,6 +13,10 @@ var allTestCases = []*testCase{
 		test: testModeRemote,
 	},
 	{
+		name: "stateless init mode",
+		test: testStatelessInitMode,
+	},
+	{
 		name: "test firewall rules",
 		test: testFirewallRules,
 	},
