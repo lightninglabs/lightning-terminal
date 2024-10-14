@@ -14,7 +14,7 @@ require (
 	github.com/lightninglabs/faraday v0.2.13-alpha
 	github.com/lightninglabs/lightning-node-connect v0.3.2-alpha.0.20240822142323-ee4e7ff52f83
 	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.1
-	github.com/lightninglabs/lightning-terminal/litrpc v0.0.0-00010101000000-000000000000
+	github.com/lightninglabs/lightning-terminal/litrpc v1.0.0
 	github.com/lightninglabs/lndclient v0.18.0-3
 	github.com/lightninglabs/loop v0.28.7-beta
 	github.com/lightninglabs/loop/swapserverrpc v1.0.8
@@ -227,7 +227,7 @@ replace github.com/lightninglabs/lightning-terminal/autopilotserverrpc => ./auto
 // We want to format raw bytes as hex instead of base64. The forked version
 // allows us to specify that as an option. This is required for the
 // taproot-assets dependency to function properly.
-replace google.golang.org/protobuf => github.com/lightninglabs/protobuf-go-hex-display v1.30.0-hex-display
+replace google.golang.org/protobuf => github.com/lightninglabs/protobuf-go-hex-display v1.34.2-hex-display
 
 replace github.com/lightninglabs/lightning-terminal/litrpc => ./litrpc
 
