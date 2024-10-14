@@ -287,6 +287,7 @@ func (n *NetworkHarness) NewNode(t *testing.T, name string, extraArgs []string,
 
 	return n.newNode(
 		t, name, extraArgs, litArgs, false, remoteMode, nil, wait,
+		false,
 	)
 }
 
@@ -295,8 +296,8 @@ func (n *NetworkHarness) NewNode(t *testing.T, name string, extraArgs []string,
 // can be used immediately. Otherwise, the node will require an additional
 // initialization phase where the wallet is either created or restored.
 func (n *NetworkHarness) newNode(t *testing.T, name string, extraArgs,
-	litArgs []string, hasSeed, remoteMode bool, password []byte, wait bool,
-	opts ...node.Option) (*HarnessNode, error) {
+	litArgs []string, hasSeed, remoteMode bool, password []byte, wait,
+	skipUnlock bool, opts ...node.Option) (*HarnessNode, error) {
 
 	baseCfg := &node.BaseNodeConfig{
 		Name:              name,
@@ -305,6 +306,7 @@ func (n *NetworkHarness) newNode(t *testing.T, name string, extraArgs,
 		BackendCfg:        n.BackendCfg,
 		NetParams:         n.netParams,
 		ExtraArgs:         extraArgs,
+		SkipUnlock:        skipUnlock,
 	}
 	for _, opt := range opts {
 		opt(baseCfg)
