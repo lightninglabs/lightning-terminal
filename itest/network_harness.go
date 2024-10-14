@@ -269,11 +269,8 @@ func (n *NetworkHarness) Stop() {
 	n.autopilotServer.Stop()
 }
 
-// NewNode initializes a new HarnessNode.
-func (n *NetworkHarness) NewNode(t *testing.T, name string, extraArgs []string,
-	remoteMode bool, wait bool) (*HarnessNode, error) {
-
-	litArgs := []string{
+func (n *NetworkHarness) litArgs() []string {
+	return []string{
 		fmt.Sprintf("--loop.server.host=%s", n.server.ServerHost),
 		fmt.Sprintf("--loop.server.tlspath=%s", n.server.CertFile),
 		fmt.Sprintf("--pool.auctionserver=%s", n.server.ServerHost),
@@ -284,10 +281,15 @@ func (n *NetworkHarness) NewNode(t *testing.T, name string, extraArgs []string,
 			n.autopilotServer.GetPort(),
 		),
 	}
+}
+
+// NewNode initializes a new HarnessNode.
+func (n *NetworkHarness) NewNode(t *testing.T, name string, extraArgs []string,
+	remoteMode bool, wait bool) (*HarnessNode, error) {
 
 	return n.newNode(
-		t, name, extraArgs, litArgs, false, remoteMode, nil, wait,
-		false,
+		t, name, extraArgs, n.litArgs(), false, remoteMode, nil,
+		wait, false,
 	)
 }
 
@@ -346,6 +348,61 @@ func (n *NetworkHarness) newNode(t *testing.T, name string, extraArgs,
 	n.RegisterNode(node)
 
 	return node, nil
+}
+
+// NewNodeWithSeed fully initializes a new HarnessNode after creating a fresh
+// aezeed. The provided password is used as both the aezeed password and the
+// wallet password. The harness node is returned along with an admin macaroon
+// for the LND node.
+func (n *NetworkHarness) NewNodeWithSeed(t *testing.T, name string,
+	extraArgs []string, walletPassword []byte, remoteMode,
+	statelessInit bool) (*HarnessNode, []byte) {
+
+	node, err := n.newNode(
+		t, name, extraArgs, n.litArgs(), true, remoteMode,
+		walletPassword, false, true,
+	)
+	require.NoError(t, err)
+
+	conn, err := node.ConnectRPC(false)
+	require.NoError(t, err)
+
+	// Initially, we just care about LND's wallet being ready for unlock.
+	err = node.WaitForLNDWalletReady()
+	require.NoError(t, err)
+
+	// Set the wallet unlocker client.
+	node.WalletUnlockerClient = lnrpc.NewWalletUnlockerClient(conn)
+
+	ctxt, cancel := context.WithTimeout(
+		context.Background(), defaultTimeout,
+	)
+	defer cancel()
+
+	// Generate a new seed.
+	genSeedResp, err := node.GenSeed(ctxt, &lnrpc.GenSeedRequest{
+		AezeedPassphrase: walletPassword,
+	})
+	require.NoError(t, err)
+
+	// With the seed created, construct the init request to the node,
+	// including the newly generated seed.
+	initReq := &lnrpc.InitWalletRequest{
+		WalletPassword:     walletPassword,
+		CipherSeedMnemonic: genSeedResp.CipherSeedMnemonic,
+		AezeedPassphrase:   walletPassword,
+		StatelessInit:      statelessInit,
+	}
+
+	// Create the wallet and obtain the admin macaroon.
+	resp, err := node.Init(ctxt, initReq)
+	require.NoError(t, err)
+
+	// Now wait for the full LiT node to start.
+	err = node.WaitUntilStarted(conn, defaultTimeout)
+	require.NoError(t, err)
+
+	return node, resp.AdminMacaroon
 }
 
 // RegisterNode records a new HarnessNode in the NetworkHarnesses map of known
