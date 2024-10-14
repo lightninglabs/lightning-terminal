@@ -18,18 +18,10 @@ import (
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/lightninglabs/faraday/frdrpc"
-	faraday "github.com/lightninglabs/faraday/frdrpcserver/perms"
 	"github.com/lightninglabs/lightning-node-connect/mailbox"
-	terminal "github.com/lightninglabs/lightning-terminal"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
-	"github.com/lightninglabs/lightning-terminal/perms"
-	"github.com/lightninglabs/lightning-terminal/session"
-	"github.com/lightninglabs/lightning-terminal/subservers"
-	loop "github.com/lightninglabs/loop/loopd/perms"
 	"github.com/lightninglabs/loop/looprpc"
-	pool "github.com/lightninglabs/pool/perms"
 	"github.com/lightninglabs/pool/poolrpc"
-	tap "github.com/lightninglabs/taproot-assets/perms"
 	"github.com/lightninglabs/taproot-assets/taprpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/universerpc"
 	"github.com/lightningnetwork/lnd/keychain"
@@ -1382,53 +1374,34 @@ func connectRPC(ctx context.Context, hostPort,
 }
 
 func bakeSuperMacaroon(t *testing.T, cfg *LitNodeConfig, readOnly bool) string {
-	lndAdminMac := lndMacaroonFn(cfg)
+	litMac := litMacaroonFn(cfg)
 
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
 	defer cancel()
 
-	rawConn, err := connectRPC(ctxt, cfg.RPCAddr(), cfg.TLSCertPath)
+	rawConn, err := connectRPC(ctxt, cfg.LitAddr(), cfg.LitTLSCertPath)
 	require.NoError(t, err)
 
 	defer rawConn.Close()
 
-	lndAdminMacBytes, err := os.ReadFile(lndAdminMac)
+	litMacBytes, err := os.ReadFile(litMac)
 	require.NoError(t, err)
 
-	lndAdminCtx := macaroonContext(ctxt, lndAdminMacBytes)
-	lndConn := lnrpc.NewLightningClient(rawConn)
+	litMacCtx := macaroonContext(ctxt, litMacBytes)
+	litConn := litrpc.NewProxyClient(rawConn)
 
-	permsMgr, err := perms.NewManager(false)
-	require.NoError(t, err)
-
-	permsMgr.RegisterSubServer(
-		subservers.LOOP, loop.RequiredPermissions, nil,
-	)
-	permsMgr.RegisterSubServer(
-		subservers.POOL, pool.RequiredPermissions, nil,
-	)
-	permsMgr.RegisterSubServer(
-		subservers.TAP, tap.RequiredPermissions, nil,
-	)
-	permsMgr.RegisterSubServer(
-		subservers.FARADAY, faraday.RequiredPermissions, nil,
-	)
-	permsMgr.RegisterSubServer(
-		subservers.TAP, tap.RequiredPermissions, nil,
-	)
-
-	superMacPermissions := permsMgr.ActivePermissions(readOnly)
-	nullID := [4]byte{}
-	superMacHex, err := terminal.BakeSuperMacaroon(
-		lndAdminCtx, lndConn, session.NewSuperMacaroonRootKeyID(nullID),
-		superMacPermissions, nil,
+	bakeMacResp, err := litConn.BakeSuperMacaroon(
+		litMacCtx, &litrpc.BakeSuperMacaroonRequest{
+			RootKeyIdSuffix: 0,
+			ReadOnly:        readOnly,
+		},
 	)
 	require.NoError(t, err)
 
 	// The BakeSuperMacaroon function just hex encoded the macaroon, we know
 	// it's valid.
-	superMacBytes, _ := hex.DecodeString(superMacHex)
+	superMacBytes, _ := hex.DecodeString(bakeMacResp.Macaroon)
 
 	tempDir := t.TempDir()
 	tempFile, err := os.CreateTemp(tempDir, "lit-super-macaroon")
