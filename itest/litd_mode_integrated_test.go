@@ -586,12 +586,7 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 	t.Run("gRPC super macaroon auth check", func(tt *testing.T) {
 		cfg := net.Alice.Cfg
 
-		superMacFile, err := bakeSuperMacaroon(cfg, true)
-		require.NoError(tt, err)
-
-		defer func() {
-			_ = os.Remove(superMacFile)
-		}()
+		superMacFile := bakeSuperMacaroon(tt, cfg, true)
 
 		for _, endpoint := range endpoints {
 			endpoint := endpoint
@@ -686,12 +681,7 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 			return
 		}
 
-		superMacFile, err := bakeSuperMacaroon(cfg, false)
-		require.NoError(tt, err)
-
-		defer func() {
-			_ = os.Remove(superMacFile)
-		}()
+		superMacFile := bakeSuperMacaroon(tt, cfg, false)
 
 		ht := newHarnessTest(tt, net)
 		runAccountSystemTest(
@@ -1391,7 +1381,7 @@ func connectRPC(ctx context.Context, hostPort,
 	return grpc.DialContext(ctx, hostPort, opts...)
 }
 
-func bakeSuperMacaroon(cfg *LitNodeConfig, readOnly bool) (string, error) {
+func bakeSuperMacaroon(t *testing.T, cfg *LitNodeConfig, readOnly bool) string {
 	lndAdminMac := lndMacaroonFn(cfg)
 
 	ctxb := context.Background()
@@ -1399,22 +1389,18 @@ func bakeSuperMacaroon(cfg *LitNodeConfig, readOnly bool) (string, error) {
 	defer cancel()
 
 	rawConn, err := connectRPC(ctxt, cfg.RPCAddr(), cfg.TLSCertPath)
-	if err != nil {
-		return "", err
-	}
+	require.NoError(t, err)
+
 	defer rawConn.Close()
 
-	lndAdminMacBytes, err := ioutil.ReadFile(lndAdminMac)
-	if err != nil {
-		return "", err
-	}
+	lndAdminMacBytes, err := os.ReadFile(lndAdminMac)
+	require.NoError(t, err)
+
 	lndAdminCtx := macaroonContext(ctxt, lndAdminMacBytes)
 	lndConn := lnrpc.NewLightningClient(rawConn)
 
 	permsMgr, err := perms.NewManager(false)
-	if err != nil {
-		return "", err
-	}
+	require.NoError(t, err)
 
 	permsMgr.RegisterSubServer(
 		subservers.LOOP, loop.RequiredPermissions, nil,
@@ -1438,25 +1424,18 @@ func bakeSuperMacaroon(cfg *LitNodeConfig, readOnly bool) (string, error) {
 		lndAdminCtx, lndConn, session.NewSuperMacaroonRootKeyID(nullID),
 		superMacPermissions, nil,
 	)
-	if err != nil {
-		return "", err
-	}
+	require.NoError(t, err)
 
 	// The BakeSuperMacaroon function just hex encoded the macaroon, we know
 	// it's valid.
 	superMacBytes, _ := hex.DecodeString(superMacHex)
 
-	tempFile, err := os.CreateTemp("", "lit-super-macaroon")
-	if err != nil {
-		_ = os.Remove(tempFile.Name())
-		return "", err
-	}
+	tempDir := t.TempDir()
+	tempFile, err := os.CreateTemp(tempDir, "lit-super-macaroon")
+	require.NoError(t, err)
 
 	err = os.WriteFile(tempFile.Name(), superMacBytes, 0644)
-	if err != nil {
-		_ = os.Remove(tempFile.Name())
-		return "", err
-	}
+	require.NoError(t, err)
 
-	return tempFile.Name(), nil
+	return tempFile.Name()
 }

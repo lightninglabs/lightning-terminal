@@ -2,7 +2,6 @@ package itest
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	"github.com/btcsuite/btcd/btcutil"
@@ -127,12 +126,7 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 	t.Run("gRPC super macaroon auth check", func(tt *testing.T) {
 		cfg := net.Bob.Cfg
 
-		superMacFile, err := bakeSuperMacaroon(cfg, true)
-		require.NoError(tt, err)
-
-		defer func() {
-			_ = os.Remove(superMacFile)
-		}()
+		superMacFile := bakeSuperMacaroon(tt, cfg, true)
 
 		for _, endpoint := range endpoints {
 			endpoint := endpoint
@@ -267,12 +261,7 @@ func remoteTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 			return
 		}
 
-		superMacFile, err := bakeSuperMacaroon(cfg, false)
-		require.NoError(tt, err)
-
-		defer func() {
-			_ = os.Remove(superMacFile)
-		}()
+		superMacFile := bakeSuperMacaroon(tt, cfg, false)
 
 		ht := newHarnessTest(tt, net)
 		runAccountSystemTest(
