@@ -230,3 +230,5 @@ replace google.golang.org/protobuf => github.com/lightninglabs/protobuf-go-hex-d
 go 1.22.3
 
 toolchain go1.22.4
+
+replace github.com/lightninglabs/taproot-assets => github.com/lightninglabs/taproot-assets v0.4.2-0.20241018073747-bacd6589ee90

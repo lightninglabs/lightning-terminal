@@ -21,7 +21,6 @@ import (
 	"github.com/lightninglabs/taproot-assets/proof"
 	"github.com/lightninglabs/taproot-assets/rfq"
 	"github.com/lightninglabs/taproot-assets/rfqmsg"
-	"github.com/lightninglabs/taproot-assets/tapchannel"
 	"github.com/lightninglabs/taproot-assets/tapfreighter"
 	"github.com/lightninglabs/taproot-assets/taprpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/assetwalletrpc"
@@ -30,6 +29,7 @@ import (
 	tchrpc "github.com/lightninglabs/taproot-assets/taprpc/tapchannelrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/tapdevrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/universerpc"
+	"github.com/lightninglabs/taproot-assets/tapscript"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
@@ -70,7 +70,7 @@ func createTestAssetNetwork(t *harnessTest, net *NetworkHarness, charlieTap,
 		groupKey = mintedAsset.AssetGroup.TweakedGroupKey
 	}
 
-	fundingScriptTree := tapchannel.NewFundingScriptTree()
+	fundingScriptTree := tapscript.NewChannelFundingScriptTree()
 	fundingScriptKey := fundingScriptTree.TaprootKey
 	fundingScriptTreeBytes := fundingScriptKey.SerializeCompressed()
 
@@ -88,7 +88,7 @@ func createTestAssetNetwork(t *harnessTest, net *NetworkHarness, charlieTap,
 
 	t.Logf("Sending %v asset units to Dave...", assetSendAmount)
 
-	// Send the assets to Erin.
+	// Send the assets to Dave.
 	itest.AssertAddrCreated(t.t, daveTap, mintedAsset, daveAddr)
 	sendResp, err := charlieTap.SendAsset(ctxb, &taprpc.SendAssetRequest{
 		TapAddrs: []string{daveAddr.Encoded},
@@ -187,14 +187,15 @@ func createTestAssetNetwork(t *harnessTest, net *NetworkHarness, charlieTap,
 
 	// We'll be tracking the expected asset balances throughout the test, so
 	// we can assert it after each action.
-	charlieAssetBalance := charlieFundingAmount
-	daveAssetBalance := assetSendAmount
-	erinAssetBalance := assetSendAmount
+	charlieAssetBalance := mintedAsset.Amount - 2*assetSendAmount -
+		charlieFundingAmount
+	daveAssetBalance := assetSendAmount - daveFundingAmount
+	erinAssetBalance := assetSendAmount - erinFundingAmount
 
 	// After opening the channels, the asset balance of the funding nodes
-	// shouldn't have been decreased, since the asset with the funding
-	// output was imported into the asset DB and should count toward the
-	// balance.
+	// should have been decreased with the funding amount. The asset with
+	// the funding output was imported into the asset DB but are kept out of
+	// the balance reporting by tapd.
 	assertAssetBalance(t.t, charlieTap, assetID, charlieAssetBalance)
 	assertAssetBalance(t.t, daveTap, assetID, daveAssetBalance)
 	assertAssetBalance(t.t, erinTap, assetID, erinAssetBalance)

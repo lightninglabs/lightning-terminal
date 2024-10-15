@@ -6,15 +6,16 @@ import (
 	"slices"
 	"time"
 
+	"github.com/btcsuite/btcd/btcec/v2/schnorr"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/lightninglabs/taproot-assets/itest"
 	"github.com/lightninglabs/taproot-assets/proof"
-	"github.com/lightninglabs/taproot-assets/tapchannel"
 	"github.com/lightninglabs/taproot-assets/taprpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/mintrpc"
 	tchrpc "github.com/lightninglabs/taproot-assets/taprpc/tapchannelrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/universerpc"
+	"github.com/lightninglabs/taproot-assets/tapscript"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntest"
@@ -353,7 +354,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	)
 	cents := mintedAssets[0]
 	assetID := cents.AssetGenesis.AssetId
-	fundingScriptTree := tapchannel.NewFundingScriptTree()
+	fundingScriptTree := tapscript.NewChannelFundingScriptTree()
 	fundingScriptKey := fundingScriptTree.TaprootKey
 	fundingScriptTreeBytes := fundingScriptKey.SerializeCompressed()
 
@@ -812,7 +813,7 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	cents := mintedAssets[0]
 	assetID := cents.AssetGenesis.AssetId
 	groupID := cents.GetAssetGroup().GetTweakedGroupKey()
-	fundingScriptTree := tapchannel.NewFundingScriptTree()
+	fundingScriptTree := tapscript.NewChannelFundingScriptTree()
 	fundingScriptKey := fundingScriptTree.TaprootKey
 	fundingScriptTreeBytes := fundingScriptKey.SerializeCompressed()
 
@@ -1224,13 +1225,15 @@ func testCustomChannelsForceClose(_ context.Context, net *NetworkHarness,
 	t.Logf("Channel funding transfer: %v",
 		toProtoJSON(t.t, assetFundingTransfer))
 
-	// Charlie's balance should reflect that the funding asset was added to
-	// the DB.
-	assertAssetBalance(t.t, charlieTap, assetID, itestAsset.Amount)
+	// Charlie's balance should reflect that the funding asset is now
+	// excluded from balance reporting by tapd.
+	assertAssetBalance(
+		t.t, charlieTap, assetID, itestAsset.Amount-fundingAmount,
+	)
 
 	// Make sure that Charlie properly uploaded funding proof to the
 	// Universe server.
-	fundingScriptTree := tapchannel.NewFundingScriptTree()
+	fundingScriptTree := tapscript.NewChannelFundingScriptTree()
 	fundingScriptKey := fundingScriptTree.TaprootKey
 	fundingScriptTreeBytes := fundingScriptKey.SerializeCompressed()
 	assertUniverseProofExists(
@@ -1562,13 +1565,15 @@ func testCustomChannelsBreach(_ context.Context, net *NetworkHarness,
 	t.Logf("Channel funding transfer: %v",
 		toProtoJSON(t.t, assetFundingTransfer))
 
-	// Charlie's balance should reflect that the funding asset was added to
-	// the DB.
-	assertAssetBalance(t.t, charlieTap, assetID, itestAsset.Amount)
+	// Charlie's balance should reflect that the funding asset is now
+	// excluded from balance reporting by tapd.
+	assertAssetBalance(
+		t.t, charlieTap, assetID, itestAsset.Amount-fundingAmount,
+	)
 
 	// Make sure that Charlie properly uploaded funding proof to the
 	// Universe server.
-	fundingScriptTree := tapchannel.NewFundingScriptTree()
+	fundingScriptTree := tapscript.NewChannelFundingScriptTree()
 	fundingScriptKey := fundingScriptTree.TaprootKey
 	fundingScriptTreeBytes := fundingScriptKey.SerializeCompressed()
 	assertUniverseProofExists(
@@ -1940,4 +1945,203 @@ func testCustomChannelsLiquidityEdgeCases(_ context.Context,
 
 	logBalance(t.t, nodes, assetID, "after big asset payment (asset "+
 		"invoice, multi-hop)")
+}
+
+// testCustomChannelsBalanceConsistency is a test that test the balance .
+func testCustomChannelsBalanceConsistency(_ context.Context,
+	net *NetworkHarness, t *harnessTest) {
+
+	ctxb := context.Background()
+	lndArgs := slices.Clone(lndArgsTemplate)
+	litdArgs := slices.Clone(litdArgsTemplate)
+
+	zane, err := net.NewNode(
+		t.t, "Zane", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	litdArgs = append(litdArgs, fmt.Sprintf(
+		"--taproot-assets.proofcourieraddr=%s://%s",
+		proof.UniverseRpcCourierType, zane.Cfg.LitAddr(),
+	))
+
+	charlie, err := net.NewNode(
+		t.t, "Charlie", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+	dave, err := net.NewNode(t.t, "Dave", lndArgs, false, true, litdArgs...)
+	require.NoError(t.t, err)
+
+	nodes := []*HarnessNode{charlie, dave}
+	connectAllNodes(t.t, net, nodes)
+	fundAllNodes(t.t, net, nodes)
+
+	charlieTap := newTapClient(t.t, charlie)
+	daveTap := newTapClient(t.t, dave)
+	universeTap := newTapClient(t.t, zane)
+
+	// Mint an asset on Charlie and sync Dave to Charlie as the universe.
+	mintedAssets := itest.MintAssetsConfirmBatch(
+		t.t, t.lndHarness.Miner.Client, charlieTap,
+		[]*mintrpc.MintAssetRequest{
+			{
+				Asset: itestAsset,
+			},
+		},
+	)
+	cents := mintedAssets[0]
+	assetID := cents.AssetGenesis.AssetId
+	var groupKey []byte
+	if cents.AssetGroup != nil {
+		groupKey = cents.AssetGroup.TweakedGroupKey
+	}
+
+	t.Logf("Minted %d lightning cents, syncing universes...", cents.Amount)
+	syncUniverses(t.t, charlieTap, dave)
+	t.Logf("Universes synced between all nodes, distributing assets...")
+
+	charlieBalance := cents.Amount
+
+	// Charlie should have a single balance output with the full balance.
+	assertAssetBalance(t.t, charlieTap, assetID, cents.Amount)
+
+	// The script key should be local to charlie, and the script key should
+	// be known. It is after all the asset he just minted himself.
+	scriptKeyLocal := true
+	scriptKeyKnown := false
+	scriptKeyHasScriptPath := false
+
+	scriptKey, err := schnorr.ParsePubKey(cents.ScriptKey[1:])
+	require.NoError(t.t, err)
+	assertAssetExists(
+		t.t, charlieTap, assetID, charlieBalance,
+		scriptKey, scriptKeyLocal, scriptKeyKnown,
+		scriptKeyHasScriptPath,
+	)
+
+	fundingScriptTree := tapscript.NewChannelFundingScriptTree()
+	fundingScriptKey := fundingScriptTree.TaprootKey
+	fundingScriptTreeBytes := fundingScriptKey.SerializeCompressed()
+
+	fundRespCD, err := charlieTap.FundChannel(
+		ctxb, &tchrpc.FundChannelRequest{
+			AssetAmount:        charlieBalance,
+			AssetId:            assetID,
+			PeerPubkey:         daveTap.node.PubKey[:],
+			FeeRateSatPerVbyte: 5,
+			PushSat:            0,
+		},
+	)
+	require.NoError(t.t, err)
+	t.Logf("Funded channel between Charlie and Dave: %v", fundRespCD)
+
+	// Make sure the pending channel shows up in the list and has the
+	// custom records set as JSON.
+	assertPendingChannels(
+		t.t, charlieTap.node, assetID, 1, charlieBalance, 0,
+	)
+
+	// Let's confirm the channel.
+	mineBlocks(t, net, 6, 1)
+
+	// Tapd should not report any balance for Charlie, since the asset is
+	// used in a funding transaction. It should also not report any balance
+	// for Dave. All those balances are reported through channel balances.
+	assertAssetBalance(t.t, charlieTap, assetID, 0)
+	assertAssetBalance(t.t, daveTap, assetID, 0)
+
+	// There should only be a single asset piece for Charlie, the one in the
+	// channel.
+	assertNumAssetOutputs(t.t, charlieTap, assetID, 1)
+
+	// The script key should now not be local anymore, since he funded a
+	// channel with it. Charlie does still know the script key though.
+	scriptKeyLocal = false
+	scriptKeyKnown = true
+	scriptKeyHasScriptPath = true
+	assertAssetExists(
+		t.t, charlieTap, assetID, charlieBalance,
+		fundingScriptKey, scriptKeyLocal, scriptKeyKnown,
+		scriptKeyHasScriptPath,
+	)
+
+	// Assert that the proofs for both channels has been uploaded to the
+	// designated Universe server.
+	assertUniverseProofExists(
+		t.t, universeTap, assetID, groupKey, fundingScriptTreeBytes,
+		fmt.Sprintf("%v:%v", fundRespCD.Txid, fundRespCD.OutputIndex),
+	)
+
+	// Make sure the channel shows the correct asset information.
+	assertAssetChan(
+		t.t, charlieTap.node, daveTap.node, charlieBalance, assetID,
+	)
+
+	logBalance(t.t, nodes, assetID, "initial")
+
+	// Normal case.
+	// Send 500 assets from Charlie to Dave.
+	sendAssetKeySendPayment(
+		t.t, charlie, dave, 500, assetID,
+		fn.None[int64](), lnrpc.Payment_SUCCEEDED,
+		fn.None[lnrpc.PaymentFailureReason](),
+	)
+
+	logBalance(t.t, nodes, assetID, "after 500 assets")
+
+	// Tapd stould still not report balances for Charlie and Dave, since
+	// they are still locked up in the funding transaction.
+	assertAssetBalance(t.t, charlieTap, assetID, 0)
+	assertAssetBalance(t.t, daveTap, assetID, 0)
+
+	// Send 10k sats from Charlie to Dave. Dave needs the sats to be able to
+	// send assets.
+	sendKeySendPayment(t.t, charlie, dave, 10000)
+
+	// Now Dave tries to send 250 assets.
+	sendAssetKeySendPayment(
+		t.t, dave, charlie, 250, assetID,
+		fn.None[int64](), lnrpc.Payment_SUCCEEDED,
+		fn.None[lnrpc.PaymentFailureReason](),
+	)
+
+	logBalance(t.t, nodes, assetID, "after 250 sats backwards")
+
+	// Tapd stould still not report balances for Charlie and Dave, since
+	// they are still locked up in the funding transaction.
+	assertAssetBalance(t.t, charlieTap, assetID, 0)
+	assertAssetBalance(t.t, daveTap, assetID, 0)
+
+	// We will now close the channel.
+	t.Logf("Close the channel between Charlie and Dave...")
+	charlieChanPoint := &lnrpc.ChannelPoint{
+		OutputIndex: uint32(fundRespCD.OutputIndex),
+		FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
+			FundingTxidStr: fundRespCD.Txid,
+		},
+	}
+
+	closeChannelAndAssert(t, net, charlie, charlieChanPoint, false)
+
+	// Charlie should have a single balance output with the balance 250 less
+	// than the total amount minted.
+	assertAssetBalance(t.t, charlieTap, assetID, charlieBalance-250)
+	assertAssetBalance(t.t, daveTap, assetID, 250)
+
+	// The script key should now be local to both Charlie and Dave, since
+	// the channel was closed.
+	scriptKeyLocal = true
+	scriptKeyKnown = true
+	scriptKeyHasScriptPath = false
+	assertAssetExists(
+		t.t, charlieTap, assetID, charlieBalance-250,
+		nil, scriptKeyLocal, scriptKeyKnown, scriptKeyHasScriptPath,
+	)
+	assertAssetExists(
+		t.t, daveTap, assetID, 250,
+		nil, scriptKeyLocal, scriptKeyKnown, scriptKeyHasScriptPath,
+	)
+
+	assertNumAssetOutputs(t.t, charlieTap, assetID, 1)
+	assertNumAssetOutputs(t.t, daveTap, assetID, 1)
 }
