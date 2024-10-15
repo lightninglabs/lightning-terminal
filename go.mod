@@ -227,6 +227,8 @@ replace github.com/lightninglabs/lightning-terminal/autopilotserverrpc => ./auto
 // taproot-assets dependency to function properly.
 replace google.golang.org/protobuf => github.com/lightninglabs/protobuf-go-hex-display v1.30.0-hex-display
 
+replace github.com/lightninglabs/taproot-assets => github.com/lightninglabs/taproot-assets v0.4.2-0.20241016192705-31d333cce24b
+
 go 1.22.3
 
 toolchain go1.22.4
