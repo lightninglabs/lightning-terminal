@@ -765,7 +765,7 @@ func createAndPayNormalInvoiceWithBtc(t *testing.T, src, dst *HarnessNode,
 	})
 	require.NoError(t, err)
 
-	payInvoiceWithSatoshi(t, src, invoiceResp)
+	payInvoiceWithSatoshi(t, src, invoiceResp, lnrpc.Payment_SUCCEEDED)
 }
 
 func createAndPayNormalInvoice(t *testing.T, src, rfqPeer, dst *HarnessNode,
@@ -791,7 +791,8 @@ func createAndPayNormalInvoice(t *testing.T, src, rfqPeer, dst *HarnessNode,
 }
 
 func payInvoiceWithSatoshi(t *testing.T, payer *HarnessNode,
-	invoice *lnrpc.AddInvoiceResponse) {
+	invoice *lnrpc.AddInvoiceResponse,
+	expectedStatus lnrpc.Payment_PaymentStatus) {
 
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
@@ -808,7 +809,7 @@ func payInvoiceWithSatoshi(t *testing.T, payer *HarnessNode,
 
 	result, err := getPaymentResult(stream)
 	require.NoError(t, err)
-	require.Equal(t, lnrpc.Payment_SUCCEEDED, result.Status)
+	require.Equal(t, expectedStatus, result.Status)
 }
 
 func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
