@@ -726,6 +726,41 @@ func payInvoiceWithSatoshi(t *testing.T, payer *HarnessNode,
 	require.Equal(t, lnrpc.Payment_SUCCEEDED, result.Status)
 }
 
+func payInvoiceWithSatoshiLastHop(t *testing.T, payer *HarnessNode,
+	invoice *lnrpc.AddInvoiceResponse, hopPub []byte,
+	expectedStatus lnrpc.Payment_PaymentStatus) {
+
+	ctxb := context.Background()
+	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
+	defer cancel()
+
+	routeRes, err := payer.RouterClient.BuildRoute(
+		ctxb,
+		&routerrpc.BuildRouteRequest{
+			AmtMsat:        17800,
+			FinalCltvDelta: 80,
+			PaymentAddr:    invoice.PaymentAddr,
+			HopPubkeys:     [][]byte{hopPub},
+		},
+	)
+	require.NoError(t, err)
+
+	res, err := payer.RouterClient.SendToRouteV2(ctxt,
+		&routerrpc.SendToRouteRequest{
+			PaymentHash: invoice.RHash,
+			Route:       routeRes.Route,
+		})
+
+	switch expectedStatus {
+	case lnrpc.Payment_FAILED:
+		require.ErrorContains(t, err, "context deadline exceeded")
+
+	case lnrpc.Payment_SUCCEEDED:
+		t.Logf("HTLC attempt succeeded")
+		require.Equal(t, lnrpc.HTLCAttempt_SUCCEEDED, res.Status)
+	}
+}
+
 func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 	invoice *lnrpc.AddInvoiceResponse, assetID []byte,
 	smallShards bool) uint64 {
