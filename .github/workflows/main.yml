@@ -24,8 +24,8 @@ jobs:
 
     strategy:
       matrix:
-        node_version: [16.x]
-        os: [ubuntu-latest, windows-latest, macOS-latest]
+        node_version: [ 16.x ]
+        os: [ ubuntu-latest, windows-latest, macOS-latest ]
 
     steps:
       - name: git checkout
@@ -63,8 +63,8 @@ jobs:
 
     strategy:
       matrix:
-        go_version: [1.18.x]
-        os: [ubuntu-latest, windows-latest, macOS-latest]
+        go_version: [ 1.18.x ]
+        os: [ ubuntu-latest, windows-latest, macOS-latest ]
 
     steps:
       - name: git checkout
@@ -84,7 +84,7 @@ jobs:
 
       - name: build backend binary
         run: make build
-        
+
       - name: build CLI binaries
         run: make go-install-cli
 
@@ -243,6 +243,19 @@ jobs:
 
       - name: run check
         run: make itest
+
+      - name: Zip log files on failure
+        if: ${{ failure() }}
+        timeout-minutes: 5
+        run: 7z a logs-itest.zip itest/**/*.log
+
+      - name: Upload log files on failure
+        uses: actions/upload-artifact@v3
+        if: ${{ failure() }}
+        with:
+          name: logs-itest
+          path: logs-itest.zip
+          retention-days: 5
 
   ########################
   # check PR updates release notes

@@ -31,6 +31,7 @@ import (
 	"github.com/lightningnetwork/lnd/cert"
 	"github.com/lightningnetwork/lnd/lncfg"
 	"github.com/lightningnetwork/lnd/lnrpc"
+	"github.com/lightningnetwork/lnd/lnwire"
 	"github.com/lightningnetwork/lnd/signal"
 	"github.com/mwitkow/go-conntrack/connhelpers"
 	"golang.org/x/crypto/acme/autocert"
@@ -189,8 +190,9 @@ type Config struct {
 	// friendly. Because then we can reference the explicit modes in the
 	// help descriptions of the section headers. We'll parse the mode into
 	// a bool for internal use for better code readability.
-	LndMode string      `long:"lnd-mode" description:"The mode to run lnd in, either 'remote' (default) or 'integrated'. 'integrated' means lnd is started alongside the UI and everything is stored in lnd's main data directory, configure everything by using the --lnd.* flags. 'remote' means the UI connects to an existing lnd node and acts as a proxy for gRPC calls to it. In the remote node LiT creates its own directory for log and configuration files, configure everything using the --remote.* flags." choice:"integrated" choice:"remote"`
-	Lnd     *lnd.Config `group:"Integrated lnd (use when lnd-mode=integrated)" namespace:"lnd"`
+	LndMode            string        `long:"lnd-mode" description:"The mode to run lnd in, either 'remote' (default) or 'integrated'. 'integrated' means lnd is started alongside the UI and everything is stored in lnd's main data directory, configure everything by using the --lnd.* flags. 'remote' means the UI connects to an existing lnd node and acts as a proxy for gRPC calls to it. In the remote node LiT creates its own directory for log and configuration files, configure everything using the --remote.* flags." choice:"integrated" choice:"remote"`
+	Lnd                *lnd.Config   `group:"Integrated lnd (use when lnd-mode=integrated)" namespace:"lnd"`
+	LndConnectInterval time.Duration `long:"lndconnectinterval" hidden:"true" description:"The interval at which LiT tries to connect to the lnd node. This value should only be changed for development mode."`
 
 	FaradayMode string          `long:"faraday-mode" description:"The mode to run faraday in, either 'integrated' (default), 'remote' or 'disable'. 'integrated' means faraday is started alongside the UI and everything is stored in faraday's main data directory, configure everything by using the --faraday.* flags. 'remote' means the UI connects to an existing faraday node and acts as a proxy for gRPC calls to it. 'disable' means that LiT is started without faraday." choice:"integrated" choice:"remote" choice:"disable"`
 	Faraday     *faraday.Config `group:"Integrated faraday options (use when faraday-mode=integrated)" namespace:"faraday"`
@@ -307,6 +309,7 @@ func defaultConfig() *Config {
 		Network:              DefaultNetwork,
 		LndMode:              DefaultLndMode,
 		Lnd:                  &lndDefaultConfig,
+		LndConnectInterval:   defaultStartupTimeout,
 		LitDir:               DefaultLitDir,
 		LetsEncryptListen:    defaultLetsEncryptListen,
 		LetsEncryptDir:       defaultLetsEncryptDir,
@@ -610,6 +613,19 @@ func loadConfigFile(preCfg *Config, interceptor signal.Interceptor) (*Config,
 	// configuration is fully valid. This also sets up the main logger that
 	// logs to a sub-directory in the .lnd folder.
 	case ModeIntegrated:
+		// For the integration of tapd with lnd, we need to allow tapd
+		// to send custom error messages to peers through the
+		// SendCustomMessage RPC in lnd. Since the error messages aren't
+		// in the custom range, we explicitly need to allow them. This
+		// isn't currently needed in remote mode, because custom
+		// channels are only available if both lnd and tapd are running
+		// in integrated mode. We need to set this value before we call
+		// lnd.ValidateConfig() below, because that's what's going to
+		// inject these values into the lnwire package.
+		cfg.Lnd.ProtocolOptions.CustomMessage = append(
+			cfg.Lnd.ProtocolOptions.CustomMessage, lnwire.MsgError,
+		)
+
 		var err error
 		cfg.Lnd, err = lnd.ValidateConfig(
 			*cfg.Lnd, interceptor, fileParser, flagParser,

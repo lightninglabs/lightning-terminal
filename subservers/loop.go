@@ -136,3 +136,9 @@ func (l *loopSubServer) Permissions() map[string][]bakery.Op {
 func (l *loopSubServer) WhiteListedURLs() map[string]struct{} {
 	return nil
 }
+
+// Impl returns the actual implementation of the sub-server. This might not be
+// set if the sub-server is running in remote mode.
+func (l *loopSubServer) Impl() any {
+	return l.Daemon
+}
