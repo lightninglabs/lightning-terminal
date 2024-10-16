@@ -5,7 +5,7 @@ require (
 	github.com/btcsuite/btcd/btcec/v2 v2.3.4
 	github.com/btcsuite/btcd/btcutil v1.1.5
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0
-	github.com/btcsuite/btclog v0.0.0-20170628155309-84c8d2346e9f
+	github.com/btcsuite/btclog v0.0.0-20241003133417-09c4e92e319c
 	github.com/btcsuite/btcwallet/walletdb v1.4.4
 	github.com/davecgh/go-spew v1.1.1
 	github.com/go-errors/errors v1.0.1
@@ -16,17 +16,17 @@ require (
 	github.com/lightninglabs/lightning-node-connect v0.3.2-alpha.0.20240822142323-ee4e7ff52f83
 	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.1
 	github.com/lightninglabs/lightning-terminal/litrpc v1.0.0
-	github.com/lightninglabs/lndclient v0.18.4-0
+	github.com/lightninglabs/lndclient v0.18.4-1
 	github.com/lightninglabs/loop v0.28.8-beta.0.20241022072406-1e8ae31ddc27
 	github.com/lightninglabs/loop/looprpc v1.0.0
 	github.com/lightninglabs/loop/swapserverrpc v1.0.10
 	github.com/lightninglabs/pool v0.6.5-beta.0.20241015105339-044cb451b5df
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.2
 	github.com/lightninglabs/pool/poolrpc v1.0.0
-	github.com/lightninglabs/taproot-assets v0.4.2-0.20241022143621-54f007d7cfc3
-	github.com/lightningnetwork/lnd v0.18.3-beta.rc3.0.20241021112623-6f0d7f9a87d3
+	github.com/lightninglabs/taproot-assets v0.4.2-0.20241031160301-588e58bfae6c
+	github.com/lightningnetwork/lnd v0.18.3-beta.rc3.0.20241025090009-615f3d633e61
 	github.com/lightningnetwork/lnd/cert v1.2.2
-	github.com/lightningnetwork/lnd/fn v1.2.1
+	github.com/lightningnetwork/lnd/fn v1.2.3
 	github.com/lightningnetwork/lnd/kvdb v1.4.10
 	github.com/lightningnetwork/lnd/tlv v1.2.6
 	github.com/lightningnetwork/lnd/tor v1.1.2
