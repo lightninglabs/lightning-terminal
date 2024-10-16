@@ -504,7 +504,9 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	invoiceResp = createAssetInvoice(
 		t.t, charlie, dave, daveInvoiceAssetAmount, assetID,
 	)
-	payInvoiceWithSatoshi(t.t, charlie, invoiceResp)
+	payInvoiceWithSatoshi(
+		t.t, charlie, invoiceResp, lnrpc.Payment_SUCCEEDED,
+	)
 	logBalance(t.t, nodes, assetID, "after asset invoice paid with sats")
 
 	// We don't need to update the asset balances of Charlie and Dave here
@@ -547,7 +549,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	invoiceResp = createAssetInvoice(
 		t.t, erin, fabia, fabiaInvoiceAssetAmount2, assetID,
 	)
-	payInvoiceWithSatoshi(t.t, dave, invoiceResp)
+	payInvoiceWithSatoshi(t.t, dave, invoiceResp, lnrpc.Payment_SUCCEEDED)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
 	erinAssetBalance -= fabiaInvoiceAssetAmount2
@@ -967,7 +969,7 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	invoiceResp = createAssetInvoice(
 		t.t, erin, fabia, fabiaInvoiceAssetAmount2, assetID,
 	)
-	payInvoiceWithSatoshi(t.t, dave, invoiceResp)
+	payInvoiceWithSatoshi(t.t, dave, invoiceResp, lnrpc.Payment_SUCCEEDED)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
 	erinAssetBalance -= fabiaInvoiceAssetAmount2
@@ -1957,6 +1959,16 @@ func testCustomChannelsLiquidityEdgeCases(_ context.Context,
 
 	logBalance(t.t, nodes, assetID, "after big asset payment (asset "+
 		"invoice, multi-hop)")
+
+	// Edge case: Now Charlie creates a tiny asset invoice to be paid for by
+	// Yara with satoshi. This is a multi-hop payment going over 2 asset
+	// channels, where the total asset value is less than the default anchor
+	// amount of 354 sats.
+	invoiceResp = createAssetInvoice(t.t, dave, charlie, 1, assetID)
+	payInvoiceWithSatoshi(t.t, yara, invoiceResp, lnrpc.Payment_FAILED)
+
+	logBalance(t.t, nodes, assetID, "after small payment (asset "+
+		"invoice, <354sats)")
 }
 
 // testCustomChannelsBalanceConsistency is a test that test the balance of nodes
