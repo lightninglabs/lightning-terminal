@@ -5,6 +5,22 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Debug itest",
+      "type": "go",
+      "request": "launch",
+      "mode": "exec",
+      "preLaunchTask": "reset before itest",
+      "program": "itest/itest.test",
+      "args": [
+        "-test.v",
+        "-test.run=TestLightningTerminal/test_custom_channels",
+        "-logoutput",
+        "-logdir=${workspaceFolder}/itest/.logs",
+        "-litdexec=${workspaceFolder}/itest/litd-itest",
+        "-btcdexec=${workspaceFolder}/itest/btcd-itest",
+      ]
+    },
+    {
       "name": "Debug Tests",
       "type": "node",
       "request": "launch",
