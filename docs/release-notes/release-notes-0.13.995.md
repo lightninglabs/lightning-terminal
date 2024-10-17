@@ -25,6 +25,10 @@ See [tapd PR](https://github.com/lightninglabs/taproot-assets/pull/1120).
 leased asset balances in the response.
 * [The sanity checks for `fundchannel` now allow for composite 
 UTXOs.](https://github.com/lightninglabs/lightning-terminal/pull/865)
+* [Inconsistent balance 
+  reporting](https://github.com/lightninglabs/lightning-terminal/pull/871) has
+  been fixed: on-channel balances are now exclusively reported through channel
+  balances and will not show up in asset balances reported by tapd.
 
 # Autopilot
 
