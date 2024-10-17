@@ -1312,17 +1312,23 @@ func assertAssetBalance(t *testing.T, client *tapClient, assetID []byte,
 			return err
 		}
 
+		assetIDFound := false
 		for _, balance := range assetIDBalances.AssetBalances {
 			if !bytes.Equal(balance.AssetGenesis.AssetId, assetID) {
 				continue
 			}
 
+			assetIDFound = true
 			if expectedBalance != balance.Balance {
 				return fmt.Errorf("expected balance %d, got %d",
 					expectedBalance, balance.Balance)
 			}
 		}
 
+		if expectedBalance > 0 && !assetIDFound {
+			return fmt.Errorf("expected balance %d, got 0",
+				expectedBalance)
+		}
 		return nil
 	}, shortTimeout)
 	if err != nil {
