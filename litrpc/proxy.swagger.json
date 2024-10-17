@@ -114,6 +114,10 @@
           "type": "integer",
           "format": "int64",
           "description": "The root key ID suffix is the 4-byte suffix of the root key ID that will\nbe used to create the macaroon."
+        },
+        "read_only": {
+          "type": "boolean",
+          "description": "Whether the macaroon should only contain read permissions."
         }
       }
     },
@@ -163,6 +167,7 @@
         "details": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
         }

@@ -16,6 +16,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	restProxy "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -174,10 +175,14 @@ type LightningTerminal struct {
 	wg       sync.WaitGroup
 	errQueue *queue.ConcurrentQueue[error]
 
-	lndConnID   string
-	lndConn     *grpc.ClientConn
-	lndClient   *lndclient.GrpcLndServices
-	basicClient lnrpc.LightningClient
+	lndConnID string
+	lndConn   *grpc.ClientConn
+	lndClient *lndclient.GrpcLndServices
+
+	// basicClient may be accessed by other sub-systems but this access
+	// should be provided via the basicLNDClient method.
+	basicClient    lnrpc.LightningClient
+	basicClientSet atomic.Bool
 
 	subServerMgr *subservers.Manager
 	statusMgr    *status.Manager
@@ -297,7 +302,7 @@ func (g *LightningTerminal) Run() error {
 	// server is started.
 	g.rpcProxy = newRpcProxy(
 		g.cfg, g, g.validateSuperMacaroon, g.permsMgr, g.subServerMgr,
-		g.statusMgr,
+		g.statusMgr, g.basicLNDClient,
 	)
 
 	// Register any gRPC services that should be served using LiT's
@@ -579,8 +584,8 @@ func (g *LightningTerminal) start() error {
 
 	// bakeSuperMac is a closure that can be used to bake a new super
 	// macaroon that contains all active permissions.
-	bakeSuperMac := func(ctx context.Context, rootKeyIDSuffix uint32) (
-		string, error) {
+	bakeSuperMac := func(ctx context.Context, rootKeyIDSuffix uint32,
+		readOnly bool) (string, error) {
 
 		var suffixBytes [4]byte
 		binary.BigEndian.PutUint32(suffixBytes[:], rootKeyIDSuffix)
@@ -589,7 +594,7 @@ func (g *LightningTerminal) start() error {
 
 		return BakeSuperMacaroon(
 			ctx, g.basicClient, rootKeyID,
-			g.permsMgr.ActivePermissions(false), nil,
+			g.permsMgr.ActivePermissions(readOnly), nil,
 		)
 	}
 
@@ -677,28 +682,14 @@ func (g *LightningTerminal) start() error {
 	// lnd clients.
 	g.statusMgr.SetRunning(subservers.LND)
 
-	// If we're in integrated and stateless init mode, we won't create
-	// macaroon files in any of the subserver daemons.
-	createDefaultMacaroons := true
-	if g.cfg.LndMode == ModeIntegrated && g.lndInterceptorChain != nil &&
-		g.lndInterceptorChain.MacaroonService() != nil {
-
-		// If the wallet was initialized in stateless mode, we don't
-		// want any macaroons lying around on the filesystem. In that
-		// case only the UI will be able to access any of the integrated
-		// daemons. In all other cases we want default macaroons so we
-		// can use the CLI tools to interact with loop/pool/faraday.
-		macService := g.lndInterceptorChain.MacaroonService()
-		createDefaultMacaroons = !macService.StatelessInit
-	}
-
 	// Both connection types are ready now, let's start our sub-servers if
 	// they should be started locally as an integrated service.
+	createDefaultMacaroons := !g.cfg.statelessInitMode
 	g.subServerMgr.StartIntegratedServers(
 		g.basicClient, g.lndClient, createDefaultMacaroons,
 	)
 
-	err = g.startInternalSubServers(createDefaultMacaroons)
+	err = g.startInternalSubServers(!g.cfg.statelessInitMode)
 	if err != nil {
 		return fmt.Errorf("could not start litd sub-servers: %v", err)
 	}
@@ -726,6 +717,15 @@ func (g *LightningTerminal) start() error {
 	}
 
 	return nil
+}
+
+// basicLNDClient provides access to LiT's basicClient if it has been set.
+func (g *LightningTerminal) basicLNDClient() (lnrpc.LightningClient, error) {
+	if !g.basicClientSet.Load() {
+		return nil, fmt.Errorf("basic LND client has not yet been set")
+	}
+
+	return g.basicClient, nil
 }
 
 // setUpLNDClients sets up the various LND clients required by LiT.
@@ -804,6 +804,21 @@ func (g *LightningTerminal) setUpLNDClients(lndQuit chan struct{}) error {
 		}
 
 		log.Infof("Retrying to connect basic lnd client")
+	}
+	g.basicClientSet.Store(true)
+
+	// If we're in integrated and stateless init mode, we won't create
+	// macaroon files in any of the subserver daemons.
+	if g.cfg.LndMode == ModeIntegrated && g.lndInterceptorChain != nil &&
+		g.lndInterceptorChain.MacaroonService() != nil {
+
+		// If the wallet was initialized in stateless mode, we don't
+		// want any macaroons lying around on the filesystem. In that
+		// case only the UI will be able to access any of the integrated
+		// daemons. In all other cases we want default macaroons so we
+		// can use the CLI tools to interact with loop/pool/faraday.
+		macService := g.lndInterceptorChain.MacaroonService()
+		g.cfg.statelessInitMode = macService.StatelessInit
 	}
 
 	// Now we know that the connection itself is ready. But we also need to

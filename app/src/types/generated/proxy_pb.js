@@ -188,7 +188,8 @@ proto.litrpc.BakeSuperMacaroonRequest.prototype.toObject = function(opt_includeI
  */
 proto.litrpc.BakeSuperMacaroonRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-    rootKeyIdSuffix: jspb.Message.getFieldWithDefault(msg, 1, 0)
+    rootKeyIdSuffix: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    readOnly: jspb.Message.getBooleanFieldWithDefault(msg, 2, false)
   };
 
   if (includeInstance) {
@@ -229,6 +230,10 @@ proto.litrpc.BakeSuperMacaroonRequest.deserializeBinaryFromReader = function(msg
       var value = /** @type {number} */ (reader.readUint32());
       msg.setRootKeyIdSuffix(value);
       break;
+    case 2:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setReadOnly(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -265,6 +270,13 @@ proto.litrpc.BakeSuperMacaroonRequest.serializeBinaryToWriter = function(message
       f
     );
   }
+  f = message.getReadOnly();
+  if (f) {
+    writer.writeBool(
+      2,
+      f
+    );
+  }
 };
 
 
@@ -283,6 +295,24 @@ proto.litrpc.BakeSuperMacaroonRequest.prototype.getRootKeyIdSuffix = function() 
  */
 proto.litrpc.BakeSuperMacaroonRequest.prototype.setRootKeyIdSuffix = function(value) {
   return jspb.Message.setProto3IntField(this, 1, value);
+};
+
+
+/**
+ * optional bool read_only = 2;
+ * @return {boolean}
+ */
+proto.litrpc.BakeSuperMacaroonRequest.prototype.getReadOnly = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 2, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.litrpc.BakeSuperMacaroonRequest} returns this
+ */
+proto.litrpc.BakeSuperMacaroonRequest.prototype.setReadOnly = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 2, value);
 };
 
 

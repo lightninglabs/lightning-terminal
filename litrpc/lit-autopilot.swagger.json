@@ -295,6 +295,7 @@
         "permissions_list": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/litrpcPermissions"
           },
           "description": "A list of URI permissions required by the feature."
@@ -361,6 +362,7 @@
         "sessions": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/litrpcSession"
           },
           "description": "A list of the Autopilot sessions."
@@ -386,6 +388,7 @@
         "permissions": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/litrpcMacaroonPermission"
           },
           "description": "A list of permissions that should be included in the macaroon."
@@ -451,6 +454,7 @@
         "operations": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/litrpcMacaroonPermission"
           },
           "description": "A list of the permissions required for this method."
@@ -696,6 +700,7 @@
         "details": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
         }
