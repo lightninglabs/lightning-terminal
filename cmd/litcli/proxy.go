@@ -32,6 +32,11 @@ var litCommands = []cli.Command{
 					"specified as a hex string using a " +
 					"maximum of 8 characters.",
 			},
+			cli.BoolFlag{
+				Name: "read_only",
+				Usage: "Whether the macaroon should " +
+					"only contain read permissions.",
+			},
 			cli.StringFlag{
 				Name: "save_to",
 				Usage: "Save returned admin macaroon to " +
@@ -125,6 +130,7 @@ func bakeSuperMacaroon(ctx *cli.Context) error {
 	resp, err := client.BakeSuperMacaroon(
 		ctxb, &litrpc.BakeSuperMacaroonRequest{
 			RootKeyIdSuffix: suffix,
+			ReadOnly:        ctx.Bool("read_only"),
 		},
 	)
 	if err != nil {

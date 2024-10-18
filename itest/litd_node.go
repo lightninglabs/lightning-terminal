@@ -724,7 +724,47 @@ func (hn *HarnessNode) Start(litdBinary string, litdError chan<- error,
 	}, lntest.DefaultTimeout)
 }
 
-// WaitUntilStarted waits until the wallet state flips from "WAITING_TO_START".
+// WaitForLNDWalletReady waits until the wallet state flips from
+// "WAITING_TO_START".
+func (hn *HarnessNode) WaitForLNDWalletReady() error {
+	// First wait for Litd status server to show that LND has started.
+	ctx := context.Background()
+	rawConn, err := connectLitRPC(
+		ctx, hn.Cfg.LitAddr(), hn.Cfg.LitTLSCertPath, "",
+	)
+	if err != nil {
+		return err
+	}
+
+	litConn := litrpc.NewStatusClient(rawConn)
+
+	return wait.NoError(func() error {
+		states, err := litConn.SubServerStatus(
+			ctx, &litrpc.SubServerStatusReq{},
+		)
+		if err != nil {
+			return err
+		}
+
+		lndStatus, ok := states.SubServers[subservers.LND]
+		if !ok {
+			return fmt.Errorf("LND has not yet started")
+		}
+
+		if lndStatus.Running {
+			return nil
+		}
+
+		if lndStatus.CustomStatus != "Wallet Ready" {
+			return fmt.Errorf("LND has not yet started")
+		}
+
+		return nil
+	}, defaultTimeout)
+}
+
+// WaitUntilStarted waits until the wallet state flips from "WAITING_TO_START"
+// and waits for all LiT's active sub-servers to be ready.
 func (hn *HarnessNode) WaitUntilStarted(conn grpc.ClientConnInterface,
 	timeout time.Duration) error {
 
@@ -753,7 +793,7 @@ func (hn *HarnessNode) WaitUntilStarted(conn grpc.ClientConnInterface,
 		}
 
 		return nil
-	}, lntest.DefaultTimeout)
+	}, timeout)
 	if err != nil {
 		return err
 	}
@@ -773,59 +813,38 @@ func (hn *HarnessNode) WaitUntilStarted(conn grpc.ClientConnInterface,
 	ctxt, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	return wait.NoError(func() error {
-		if faradayMode != terminal.ModeDisable {
-			faradayClient, err := hn.faradayClient()
-			if err != nil {
-				return err
-			}
+		states, err := litConn.SubServerStatus(
+			ctxt, &litrpc.SubServerStatusReq{},
+		)
+		if err != nil {
+			return err
+		}
 
-			_, err = faradayClient.RevenueReport(
-				ctxt, &frdrpc.RevenueReportRequest{},
-			)
-			if err != nil {
-				return err
+		if faradayMode != terminal.ModeDisable {
+			faraday, ok := states.SubServers[subservers.FARADAY]
+			if !ok || !faraday.Running {
+				return fmt.Errorf("faraday has not yet started")
 			}
 		}
 
 		if loopMode != terminal.ModeDisable {
-			loopClient, err := hn.loopClient()
-			if err != nil {
-				return err
-			}
-
-			_, err = loopClient.ListSwaps(
-				ctxt, &looprpc.ListSwapsRequest{},
-			)
-			if err != nil {
-				return err
+			loop, ok := states.SubServers[subservers.LOOP]
+			if !ok || !loop.Running {
+				return fmt.Errorf("loop has not yet started")
 			}
 		}
 
 		if poolMode != terminal.ModeDisable {
-			poolClient, err := hn.poolClient()
-			if err != nil {
-				return err
-			}
-
-			_, err = poolClient.GetInfo(
-				ctxt, &poolrpc.GetInfoRequest{},
-			)
-			if err != nil {
-				return err
+			pool, ok := states.SubServers[subservers.POOL]
+			if !ok || !pool.Running {
+				return fmt.Errorf("pool has not yet started")
 			}
 		}
 
 		if tapMode != terminal.ModeDisable {
-			tapClient, err := hn.tapClient()
-			if err != nil {
-				return err
-			}
-
-			_, err = tapClient.ListAssets(
-				ctxt, &taprpc.ListAssetRequest{},
-			)
-			if err != nil {
-				return err
+			tap, ok := states.SubServers[subservers.TAP]
+			if !ok || !tap.Running {
+				return fmt.Errorf("tap has not yet started")
 			}
 		}
 

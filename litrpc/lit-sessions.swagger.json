@@ -132,6 +132,7 @@
         "macaroon_custom_permissions": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/litrpcMacaroonPermission"
           },
           "description": "Any custom permissions to add the session's macaroon."
@@ -258,6 +259,7 @@
         "sessions": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/litrpcSession"
           },
           "description": "A list of sessions."
@@ -283,6 +285,7 @@
         "permissions": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/litrpcMacaroonPermission"
           },
           "description": "A list of permissions that should be included in the macaroon."
@@ -556,6 +559,7 @@
         "details": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
         }

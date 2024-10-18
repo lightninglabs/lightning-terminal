@@ -211,6 +211,7 @@
         "actions": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/litrpcAction"
           },
           "description": "A list of actions performed by the autopilot server."
@@ -281,6 +282,7 @@
         "details": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
         }
