@@ -17,6 +17,10 @@
 
 - [Convert litrpc package into a module](https://github.com/lightninglabs/lightning-terminal/pull/823).
 
+- [Ensured reproducible
+  releases](https://github.com/lightninglabs/lightning-terminal/pull/852) by
+  setting a fixed timestamps for the files in the release script.
+
 ### LND
 
 ### Loop
