@@ -234,6 +234,16 @@ func testCustomChannelsLarge(_ context.Context, net *NetworkHarness,
 	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp3, assetID, false)
 	logBalance(t.t, nodes, assetID, "after invoice 3")
 
+	// Make sure the invoice on the receiver side and the payment on the
+	// sender side show the individual HTLCs that arrived for it and that
+	// they show the correct asset amounts when decoded.
+	assertInvoiceHtlcAssets(
+		t.t, dave, invoiceResp3, largeInvoiceAmount,
+	)
+	assertPaymentHtlcAssets(
+		t.t, charlie, invoiceResp3.RHash, largeInvoiceAmount,
+	)
+
 	// We keysend the rest, so that all the balance is on Dave's side.
 	charlieRemainingBalance := charlieFundingAmount - largeInvoiceAmount -
 		fabiaInvoiceAssetAmount/2
@@ -419,6 +429,16 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	)
 	payInvoiceWithAssets(t.t, dave, charlie, invoiceResp, assetID, true)
 	logBalance(t.t, nodes, assetID, "after invoice back")
+
+	// Make sure the invoice on the receiver side and the payment on the
+	// sender side show the individual HTLCs that arrived for it and that
+	// they show the correct asset amounts when decoded.
+	assertInvoiceHtlcAssets(
+		t.t, charlie, invoiceResp, charlieInvoiceAmount,
+	)
+	assertPaymentHtlcAssets(
+		t.t, dave, invoiceResp.RHash, charlieInvoiceAmount,
+	)
 
 	charlieAssetBalance += charlieInvoiceAmount
 	daveAssetBalance -= charlieInvoiceAmount
@@ -913,6 +933,16 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	)
 	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp, assetID, true)
 	logBalance(t.t, nodes, assetID, "after invoice")
+
+	// Make sure the invoice on the receiver side and the payment on the
+	// sender side show the individual HTLCs that arrived for it and that
+	// they show the correct asset amounts when decoded.
+	assertInvoiceHtlcAssets(
+		t.t, dave, invoiceResp, daveInvoiceAssetAmount,
+	)
+	assertPaymentHtlcAssets(
+		t.t, charlie, invoiceResp.RHash, daveInvoiceAssetAmount,
+	)
 
 	charlieAssetBalance -= daveInvoiceAssetAmount
 	daveAssetBalance += daveInvoiceAssetAmount
@@ -1906,19 +1936,30 @@ func testCustomChannelsLiquidityEdgeCases(_ context.Context,
 		"invoice, multi-hop)")
 
 	// Edge case: Big asset invoice paid by direct peer with assets.
+	const bigAssetAmount = 100_000
 	invoiceResp := createAssetInvoice(
-		t.t, charlie, dave, 100_000, assetID,
+		t.t, charlie, dave, bigAssetAmount, assetID,
 	)
-
 	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp, assetID, false)
 
 	logBalance(t.t, nodes, assetID, "after big asset payment (asset "+
 		"invoice, direct)")
 
+	// Make sure the invoice on the receiver side and the payment on the
+	// sender side show the individual HTLCs that arrived for it and that
+	// they show the correct asset amounts when decoded.
+	assertInvoiceHtlcAssets(
+		t.t, dave, invoiceResp, bigAssetAmount,
+	)
+	assertPaymentHtlcAssets(
+		t.t, charlie, invoiceResp.RHash, bigAssetAmount,
+	)
+
 	// Edge case: Big normal invoice, paid by direct channel peer with
 	// assets.
+	const hugeAssetAmount = 1_000_000
 	_ = createAndPayNormalInvoice(
-		t.t, dave, charlie, charlie, 1_000_000, assetID, true,
+		t.t, dave, charlie, charlie, hugeAssetAmount, assetID, true,
 	)
 
 	logBalance(t.t, nodes, assetID, "after big asset payment (btc "+
@@ -1926,7 +1967,7 @@ func testCustomChannelsLiquidityEdgeCases(_ context.Context,
 
 	// Dave sends 200k assets and 2k sats to Yara.
 	sendAssetKeySendPayment(
-		t.t, dave, yara, 200_000, assetID,
+		t.t, dave, yara, 2*bigAssetAmount, assetID,
 		fn.None[int64](), lnrpc.Payment_SUCCEEDED,
 		fn.None[lnrpc.PaymentFailureReason](),
 	)
@@ -1939,7 +1980,7 @@ func testCustomChannelsLiquidityEdgeCases(_ context.Context,
 	// channels, where the total asset value exceeds the btc capacity of the
 	// channels.
 	invoiceResp = createAssetInvoice(
-		t.t, dave, charlie, 100_000, assetID,
+		t.t, dave, charlie, bigAssetAmount, assetID,
 	)
 
 	payInvoiceWithAssets(t.t, yara, dave, invoiceResp, assetID, false)
