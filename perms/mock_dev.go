@@ -1,13 +1,15 @@
-//go:build !dev
-// +build !dev
+//go:build dev
+// +build dev
 
 package perms
 
 import (
 	"net"
 
+	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/lightningnetwork/lnd/autopilot"
 	"github.com/lightningnetwork/lnd/chainreg"
+	"github.com/lightningnetwork/lnd/channeldb"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/autopilotrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
@@ -60,7 +62,10 @@ func (t *mockConfig) FetchConfig(subServerName string) (interface{}, bool) {
 			Chain:         &mock.ChainIO{},
 		}, true
 	case "DevRPC":
-		return &devrpc.Config{}, true
+		return &devrpc.Config{
+			ActiveNetParams: &chaincfg.RegressionNetParams,
+			GraphDB:         &channeldb.ChannelGraph{},
+		}, true
 	case "NeutrinoKitRPC":
 		return &neutrinorpc.Config{}, true
 	case "PeersRPC":

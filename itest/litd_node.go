@@ -89,6 +89,9 @@ type LitNodeConfig struct {
 
 	LitPort     int
 	LitRESTPort int
+
+	// backupDBDir is the path where a database backup is stored, if any.
+	backupDBDir string
 }
 
 func (cfg *LitNodeConfig) LitAddr() string {
@@ -150,7 +153,7 @@ func (l *litArgs) getArg(name string) (string, bool) {
 }
 
 // toArgList converts the litArgs map to an arguments string slice.
-func (l *litArgs) toArgList() []string {
+func (l *litArgs) toArgList(nodeName string) []string {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -164,7 +167,7 @@ func (l *litArgs) toArgList() []string {
 		args = append(args, fmt.Sprintf("--%s=%s", arg, setting))
 	}
 
-	return args
+	return append([]string{"--lnd.alias=" + nodeName}, args...)
 }
 
 // LitArgOption defines the signature of a functional option that can be used
@@ -197,7 +200,7 @@ func (cfg *LitNodeConfig) GenArgs(opts ...LitArgOption) []string {
 
 	cfg.ActiveArgs = args
 
-	return args.toArgList()
+	return args.toArgList(cfg.Name)
 }
 
 // defaultLitArgs generates the default arguments to be used with a Litd node.
@@ -216,6 +219,7 @@ func (cfg *LitNodeConfig) defaultLitdArgs() *litArgs {
 			"enablerest":             "",
 			"restcors":               "*",
 			"lnd.debuglevel":         "trace,GRPC=error,PEER=info",
+			"lndconnectinterval":     "200ms",
 		}
 	)
 	for _, arg := range cfg.LitArgs {
@@ -2080,4 +2084,39 @@ func connectLitRPC(ctx context.Context, hostPort, tlsCertPath,
 	}
 
 	return grpc.DialContext(ctx, hostPort, opts...)
+}
+
+// copyAll copies all files and directories from srcDir to dstDir recursively.
+// Note that this function does not support links.
+func copyAll(dstDir, srcDir string) error {
+	entries, err := os.ReadDir(srcDir)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		srcPath := filepath.Join(srcDir, entry.Name())
+		dstPath := filepath.Join(dstDir, entry.Name())
+
+		info, err := os.Stat(srcPath)
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			err := os.Mkdir(dstPath, info.Mode())
+			if err != nil && !os.IsExist(err) {
+				return err
+			}
+
+			err = copyAll(dstPath, srcPath)
+			if err != nil {
+				return err
+			}
+		} else if err := CopyFile(dstPath, srcPath); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
