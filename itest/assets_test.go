@@ -33,6 +33,7 @@ import (
 	"github.com/lightninglabs/taproot-assets/tapscript"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/lnrpc"
+	"github.com/lightningnetwork/lnd/lnrpc/invoicesrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
 	"github.com/lightningnetwork/lnd/lntest/rpc"
 	"github.com/lightningnetwork/lnd/lntest/wait"
@@ -922,6 +923,52 @@ func createAssetInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 		dstRfqPeer.PubKey[:], resp.AcceptedBuyQuote.Scid)
 
 	return resp.InvoiceResult
+}
+
+// assertInvoiceHtlcAssets makes sure the invoice with the given hash shows the
+// individual HTLCs that arrived for it and that they show the correct asset
+// amounts for the given ID when decoded.
+func assertInvoiceHtlcAssets(t *testing.T, node *HarnessNode,
+	addedInvoice *lnrpc.AddInvoiceResponse, assetID []byte,
+	assetAmount uint64) {
+
+	ctxb := context.Background()
+	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
+	defer cancel()
+
+	invoice, err := node.InvoicesClient.LookupInvoiceV2(
+		ctxt, &invoicesrpc.LookupInvoiceMsg{
+			InvoiceRef: &invoicesrpc.LookupInvoiceMsg_PaymentAddr{
+				PaymentAddr: addedInvoice.PaymentAddr,
+			},
+		},
+	)
+	require.NoError(t, err)
+	require.NotEmpty(t, invoice.Htlcs)
+
+	t.Logf("Asset invoice: %v", toProtoJSON(t, invoice))
+
+	targetID := hex.EncodeToString(assetID)
+
+	var totalAssetAmount uint64
+	for _, htlc := range invoice.Htlcs {
+		require.NotEmpty(t, htlc.CustomChannelData)
+
+		jsonHtlc := &rfqmsg.JsonHtlc{}
+		err := json.Unmarshal(htlc.CustomChannelData, jsonHtlc)
+		require.NoError(t, err)
+
+		for _, balance := range jsonHtlc.Balances {
+			if balance.AssetID != targetID {
+				continue
+			}
+
+			totalAssetAmount += balance.Amount
+		}
+	}
+
+	// Due to rounding we allow up to 1 unit of error.
+	require.InDelta(t, assetAmount, totalAssetAmount, 1)
 }
 
 // assertPaymentHtlcAssets makes sure the payment with the given hash shows the
