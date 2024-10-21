@@ -32,6 +32,9 @@
 ### Technical and Architectural Updates
 
 * [Convert litrpc package into a module](https://github.com/lightninglabs/lightning-terminal/pull/823).
+
+* Check internal maps before registering new sub-servers for both the 
+  [status and sub-server manager.](https://github.com/lightninglabs/lightning-terminal/pull/877)
  
 ### Autopilot
 
