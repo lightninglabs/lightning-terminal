@@ -29,6 +29,14 @@
   especially useful in stateless-init mode where users will not have access to 
   a LiT macaroon to perform this call with. 
 
+* [Convert litrpc package into a module](https://github.com/lightninglabs/lightning-terminal/pull/823).
+
+* Add [custom channel
+  functionality](https://github.com/lightninglabs/lightning-terminal/pull/848)
+  to `litd`. Custom channels with Taproot Assets can now be created when `litd`
+  runs in integrated `lnd` mode (`lnd-mode=integrated`) with the Taproot Assets
+  daemon also running in integrated mode (`taproot-assets-mode=integrated`).
+
 ### Technical and Architectural Updates
 
 * [Convert litrpc package into a module](https://github.com/lightninglabs/lightning-terminal/pull/823).
@@ -51,4 +59,9 @@
 
 * Andras Banki-Horvath
 * Elle Mouton
+* George Tsagkarelis
+* Gijs van Dam
+* Jamal James
+* Jonathan Harvey-Buschel
 * Kevin Cai
+* Oliver Gugger
