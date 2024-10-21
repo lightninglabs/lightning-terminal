@@ -145,30 +145,38 @@ func (s *Manager) SubServerStatus(_ context.Context,
 
 // RegisterSubServer will create a new sub-server entry for the Manager to
 // keep track of.
-func (s *Manager) RegisterSubServer(name string, opts ...SubServerOption) {
+func (s *Manager) RegisterSubServer(name string,
+	opts ...SubServerOption) error {
+
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	s.registerSubServerUnsafe(name, true, opts...)
+	return s.registerSubServerUnsafe(name, true, opts...)
 }
 
 // RegisterAndEnableSubServer will create a new sub-server entry for the
 // Manager to keep track of and will set it as enabled.
 func (s *Manager) RegisterAndEnableSubServer(name string,
-	opts ...SubServerOption) {
+	opts ...SubServerOption) error {
 
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	s.registerSubServerUnsafe(name, false, opts...)
+	return s.registerSubServerUnsafe(name, false, opts...)
 }
 
 func (s *Manager) registerSubServerUnsafe(name string, disabled bool,
-	opts ...SubServerOption) {
+	opts ...SubServerOption) error {
 
-	ss := newSubServer(disabled, opts...)
+	_, ok := s.subServers[name]
+	if ok {
+		return fmt.Errorf("a subserver with name %s has already "+
+			"been registered with the status manager", name)
+	}
 
-	s.subServers[name] = ss
+	s.subServers[name] = newSubServer(disabled, opts...)
+
+	return nil
 }
 
 // SetCustomStatus updates the custom status of the given sub-server to the

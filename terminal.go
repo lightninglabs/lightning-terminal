@@ -279,11 +279,22 @@ func (g *LightningTerminal) Run() error {
 	}
 
 	// Register LND, LiT and Accounts with the status manager.
-	g.statusMgr.RegisterAndEnableSubServer(
+	err = g.statusMgr.RegisterAndEnableSubServer(
 		subservers.LND, status.WithIsReadyOverride(lndOverride),
 	)
-	g.statusMgr.RegisterAndEnableSubServer(subservers.LIT)
-	g.statusMgr.RegisterSubServer(subservers.ACCOUNTS)
+	if err != nil {
+		return err
+	}
+
+	err = g.statusMgr.RegisterAndEnableSubServer(subservers.LIT)
+	if err != nil {
+		return err
+	}
+
+	err = g.statusMgr.RegisterSubServer(subservers.ACCOUNTS)
+	if err != nil {
+		return err
+	}
 
 	// Also enable the accounts subserver if it's not disabled.
 	if !g.cfg.Accounts.Disable {
