@@ -33,7 +33,7 @@ var (
 
 // Manager manages a set of subServer objects.
 type Manager struct {
-	servers      []*subServerWrapper
+	servers      map[string]*subServerWrapper
 	permsMgr     *perms.Manager
 	statusServer *status.Manager
 	mu           sync.RWMutex
@@ -44,30 +44,37 @@ func NewManager(permsMgr *perms.Manager,
 	statusServer *status.Manager) *Manager {
 
 	return &Manager{
+		servers:      make(map[string]*subServerWrapper),
 		permsMgr:     permsMgr,
 		statusServer: statusServer,
 	}
 }
 
 // AddServer adds a new subServer to the manager's set.
-func (s *Manager) AddServer(ss SubServer, enable bool) {
+func (s *Manager) AddServer(ss SubServer, enable bool) error {
 	// Register all sub-servers with the status server.
 	s.statusServer.RegisterSubServer(ss.Name())
 
 	// If the sub-server has explicitly been disabled, then we don't add it
 	// to the set of servers tracked by the Manager.
 	if !enable {
-		return
+		return nil
 	}
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	_, ok := s.servers[ss.Name()]
+	if ok {
+		return fmt.Errorf("a subserver with name %s has already "+
+			"been registered with the subserver manager", ss.Name())
+	}
+
 	// Add the enabled server to the set of servers tracked by the Manager.
-	s.servers = append(s.servers, &subServerWrapper{
+	s.servers[ss.Name()] = &subServerWrapper{
 		SubServer: ss,
 		quit:      make(chan struct{}),
-	})
+	}
 
 	// Register the sub-server's permissions with the permission manager.
 	s.permsMgr.RegisterSubServer(
@@ -76,6 +83,8 @@ func (s *Manager) AddServer(ss SubServer, enable bool) {
 
 	// Mark the sub-server as enabled with the status manager.
 	s.statusServer.SetEnabled(ss.Name())
+
+	return nil
 }
 
 // StartIntegratedServers starts all the manager's sub-servers that should be
