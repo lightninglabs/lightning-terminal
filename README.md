@@ -78,6 +78,7 @@ in remote mode (meaning that `lnd-mode=remote` is set). It shows the
 
 | LiT               | LND          |
 |-------------------|--------------|
+| **v0.14.0-alpha** | v0.18.4-beta |
 | **v0.13.6-alpha** | v0.17.1-beta |
 | **v0.13.5-alpha** | v0.17.1-beta |
 | **v0.13.4-alpha** | v0.17.1-beta |
@@ -158,10 +159,16 @@ The following table shows the supported combinations:
 | `taproot-assets-mode=disable`           | X                     | X                 |
 | `lnd` running in "stateless init" mode | X                     |                   |
 
+NOTE: Taproot Assets **Channel** functionality is only available when both `lnd`
+and `tapd` are running in the same process (by setting both
+`lnd-mode=integrated` and `taproot-assets-mode=integrated`). Remote mode support
+will be added in the future.
+
 ## Daemon Versions packaged with LiT
 
 | LiT               | LND          | Loop         | Faraday       | Pool         | Taproot Assets |
 |-------------------|--------------|--------------|---------------|--------------|----------------|
+| **v0.14.0-alpha** | v0.18.4-beta | v0.29.0-beta | v0.2.13-alpha | v0.6.5-beta  | v0.5.0-alpha   |
 | **v0.13.6-alpha** | v0.18.3-beta | v0.28.8-beta | v0.2.13-alpha | v0.6.5-beta  | v0.4.1-alpha   |
 | **v0.13.5-alpha** | v0.18.3-beta | v0.28.8-beta | v0.2.13-alpha | v0.6.5-beta  | v0.4.1-alpha   |
 | **v0.13.4-alpha** | v0.18.3-beta | v0.28.7-beta | v0.2.13-alpha | v0.6.5-beta  | v0.4.1-alpha   |
