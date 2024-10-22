@@ -279,11 +279,22 @@ func (g *LightningTerminal) Run() error {
 	}
 
 	// Register LND, LiT and Accounts with the status manager.
-	g.statusMgr.RegisterAndEnableSubServer(
+	err = g.statusMgr.RegisterAndEnableSubServer(
 		subservers.LND, status.WithIsReadyOverride(lndOverride),
 	)
-	g.statusMgr.RegisterAndEnableSubServer(subservers.LIT)
-	g.statusMgr.RegisterSubServer(subservers.ACCOUNTS)
+	if err != nil {
+		return err
+	}
+
+	err = g.statusMgr.RegisterAndEnableSubServer(subservers.LIT)
+	if err != nil {
+		return err
+	}
+
+	err = g.statusMgr.RegisterSubServer(subservers.ACCOUNTS)
+	if err != nil {
+		return err
+	}
 
 	// Also enable the accounts subserver if it's not disabled.
 	if !g.cfg.Accounts.Disable {
@@ -296,7 +307,10 @@ func (g *LightningTerminal) Run() error {
 
 	// Register our sub-servers. This must be done before the REST proxy is
 	// set up so that the correct REST handlers are registered.
-	g.initSubServers()
+	err = g.initSubServers()
+	if err != nil {
+		return fmt.Errorf("could not initialise sub-servers: %w", err)
+	}
 
 	// Construct the rpcProxy. It must be initialised before the main web
 	// server is started.
@@ -1677,33 +1691,49 @@ func (g *LightningTerminal) validateSuperMacaroon(ctx context.Context,
 
 // initSubServers registers the faraday and loop sub-servers with the
 // subServerMgr.
-func (g *LightningTerminal) initSubServers() {
-	g.subServerMgr.AddServer(
+func (g *LightningTerminal) initSubServers() error {
+	err := g.subServerMgr.AddServer(
 		subservers.NewFaradaySubServer(
 			g.cfg.Faraday, g.cfg.faradayRpcConfig,
 			g.cfg.Remote.Faraday, g.cfg.faradayRemote,
 		), g.cfg.FaradayMode != ModeDisable,
 	)
+	if err != nil {
+		return fmt.Errorf("could not register Faraday subserver: %w",
+			err)
+	}
 
-	g.subServerMgr.AddServer(
+	err = g.subServerMgr.AddServer(
 		subservers.NewLoopSubServer(
 			g.cfg.Loop, g.cfg.Remote.Loop, g.cfg.loopRemote,
 		), g.cfg.LoopMode != ModeDisable,
 	)
+	if err != nil {
+		return fmt.Errorf("could not register Loop subserver: %w", err)
+	}
 
-	g.subServerMgr.AddServer(
+	err = g.subServerMgr.AddServer(
 		subservers.NewPoolSubServer(
 			g.cfg.Pool, g.cfg.Remote.Pool, g.cfg.poolRemote,
 		), g.cfg.PoolMode != ModeDisable,
 	)
+	if err != nil {
+		return fmt.Errorf("could not register Pool subserver: %w", err)
+	}
 
-	g.subServerMgr.AddServer(
+	err = g.subServerMgr.AddServer(
 		subservers.NewTaprootAssetsSubServer(
 			g.cfg.Network, g.cfg.TaprootAssets,
 			g.cfg.Remote.TaprootAssets,
 			g.cfg.tapRemote, g.cfg.lndRemote,
 		), g.cfg.TaprootAssetsMode != ModeDisable,
 	)
+	if err != nil {
+		return fmt.Errorf("could not register Taproot Assets "+
+			"subserver: %w", err)
+	}
+
+	return nil
 }
 
 // BakeSuperMacaroon uses the lnd client to bake a macaroon that can include
