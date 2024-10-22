@@ -1,5 +1,4 @@
-# Create a globally-consistent, build-input identifier.
-VERSION_TAG = $(shell git describe --abbrev=40 --broken --tags --always)
+VERSION_TAG = $(shell git describe --tags)
 VERSION_CHECK = @$(call print, "Building master with date version tag")
 
 BUILD_SYSTEM = darwin-amd64 \
