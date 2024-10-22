@@ -90,6 +90,19 @@ func (s *Manager) AddServer(ss SubServer, enable bool) error {
 	return nil
 }
 
+// GetServer returns the sub-server with the given name if it exists.
+func (s *Manager) GetServer(name string) (SubServer, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	ss, ok := s.servers[name]
+	if !ok {
+		return nil, false
+	}
+
+	return ss.SubServer, true
+}
+
 // StartIntegratedServers starts all the manager's sub-servers that should be
 // started in integrated mode.
 func (s *Manager) StartIntegratedServers(lndClient lnrpc.LightningClient,

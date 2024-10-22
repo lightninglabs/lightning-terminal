@@ -44,6 +44,7 @@ const protoSources = async () => {
     loop: `lightninglabs/loop/${loopVersion[1]}/looprpc/client.proto`,
     'swapserverrpc/server': `lightninglabs/loop/${loopVersion[1]}/swapserverrpc/server.proto`,
     'swapserverrpc/common': `lightninglabs/loop/${loopVersion[1]}/swapserverrpc/common.proto`,
+    'swapserverrpc/reservation': `lightninglabs/loop/${loopVersion[1]}/swapserverrpc/reservation.proto`,
     trader: `lightninglabs/pool/${poolVersion[1]}/poolrpc/trader.proto`,
     'auctioneerrpc/auctioneer': `lightninglabs/pool/${poolVersion[1]}/auctioneerrpc/auctioneer.proto`,
   };
@@ -54,6 +55,7 @@ const filePatches = {
   lnd: 'lnrpc: {}',
   loop: 'looprpc: {}',
   'swapserverrpc/common': 'looprpc: {}',
+  'swapserverrpc/reservation': 'looprpc: {}',
   'swapserverrpc/server': 'looprpc: {}',
   trader: 'poolrpc: {}',
   'auctioneerrpc/auctioneer': 'poolrpc: {}',
@@ -117,6 +119,10 @@ const sanitize = async () => {
     content = content.replace(
       'import "common.proto"',
       'import "swapserverrpc/common.proto"',
+    );
+    content = content.replace(
+        'import "reservation.proto"',
+        'import "swapserverrpc/reservation.proto"',
     );
     await fs.writeFile(path, content);
   }

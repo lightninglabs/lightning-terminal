@@ -139,23 +139,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "type": "object",
-              "properties": {
-                "account_balance": {
-                  "type": "string",
-                  "format": "int64",
-                  "description": "The new account balance to set. Set to -1 to not update the balance."
-                },
-                "expiration_date": {
-                  "type": "string",
-                  "format": "int64",
-                  "description": "The new account expiry to set. Set to -1 to not update the expiry. Set to 0\nto never expire."
-                },
-                "label": {
-                  "type": "string",
-                  "description": "The label of the account to update. If an account has no label, then the ID\nmust be used instead."
-                }
-              }
+              "$ref": "#/definitions/AccountsUpdateAccountBody"
             }
           }
         ],
@@ -166,6 +150,25 @@
     }
   },
   "definitions": {
+    "AccountsUpdateAccountBody": {
+      "type": "object",
+      "properties": {
+        "account_balance": {
+          "type": "string",
+          "format": "int64",
+          "description": "The new account balance to set. Set to -1 to not update the balance."
+        },
+        "expiration_date": {
+          "type": "string",
+          "format": "int64",
+          "description": "The new account expiry to set. Set to -1 to not update the expiry. Set to 0\nto never expire."
+        },
+        "label": {
+          "type": "string",
+          "description": "The label of the account to update. If an account has no label, then the ID\nmust be used instead."
+        }
+      }
+    },
     "litrpcAccount": {
       "type": "object",
       "properties": {

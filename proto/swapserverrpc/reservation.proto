@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+// We can't change this to swapserverrpc, it would be a breaking change because
+// the package name is also contained in the HTTP URIs and old clients would
+// call the wrong endpoints. Luckily with the go_package option we can have
+// different golang and RPC package names to fix protobuf namespace conflicts.
+package looprpc;
+
+option go_package = "github.com/lightninglabs/loop/swapserverrpc";
+
+service ReservationService {
+    // ReservationNotificationStream is a server side stream that sends
+    // notifications if the server wants to open a reservation to the client.
+    rpc ReservationNotificationStream (ReservationNotificationRequest)
+        returns (stream ServerReservationNotification) {
+        option deprecated = true;
+    }
+
+    // OpenReservation requests a new reservation UTXO from the server.
+    rpc OpenReservation (ServerOpenReservationRequest)
+        returns (ServerOpenReservationResponse);
+}
+
+// ReservationNotificationRequest is an empty request sent from the client to
+// the server to open a stream to receive reservation notifications.
+message ReservationNotificationRequest {
+    // protocol_version is the maximum version the client supports.
+    ReservationProtocolVersion protocol_version = 1;
+}
+
+// ServerReservationNotification is a notification sent from the server to the
+// client if the server wants to open a reservation.
+message ServerReservationNotification {
+    // reservation_id is the id of the reservation.
+    bytes reservation_id = 1;
+
+    // value is the value of the reservation in satoshis.
+    uint64 value = 2 [jstype = JS_STRING];
+
+    // server_key is the public key of the server.
+    bytes server_key = 3;
+
+    // expiry is the absolute expiry of the reservation.
+    uint32 expiry = 4;
+
+    // protocol_version is the version of the reservation protocol.
+    ReservationProtocolVersion protocol_version = 5;
+}
+
+// ServerOpenReservationRequest is a request sent from the client to the server
+// to confirm a reservation opening.
+message ServerOpenReservationRequest {
+    // reservation_id is the id of the reservation.
+    bytes reservation_id = 1;
+
+    // client_key is the public key of the client.
+    bytes client_key = 2;
+}
+
+// ServerOpenReservationResponse is a response sent from the server to the
+// client to confirm a reservation opening.
+message ServerOpenReservationResponse {
+}
+
+// ReservationProtocolVersion is the version of the reservation protocol.
+enum ReservationProtocolVersion {
+    // RESERVATION_NONE is the default value and means that the reservation
+    // protocol version is not set.
+    RESERVATION_NONE = 0;
+
+    // RESERVATION_SERVER_NOTIFY is the first version of the reservation
+    // protocol where the server notifies the client about a reservation.
+    RESERVATION_SERVER_NOTIFY = 1;
+};

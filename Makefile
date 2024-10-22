@@ -89,7 +89,7 @@ DOCKER_TOOLS = docker run \
   -v $(shell bash -c "mkdir -p /tmp/go-lint-cache; echo /tmp/go-lint-cache"):/root/.cache/golangci-lint \
   -v $$(pwd):/build litd-tools
 
-ITEST_TAGS := integration itest $(LND_RELEASE_TAGS)
+ITEST_TAGS := dev integration itest lowscrypt $(LND_RELEASE_TAGS)
 ITEST_LDFLAGS := $(call make_ldflags, $(ITEST_TAGS))
 
 GREEN := "\\033[0;32m"
@@ -216,6 +216,10 @@ itest: build-itest itest-only
 flake-unit:
 	@$(call print, "Flake hunting unit tests.")
 	while [ $$? -eq 0 ]; do GOTRACEBACK=all $(UNIT) -count=1; done
+
+flake-itest-only:
+	@$(call print, "Flake hunting unit tests.")
+	while [ $$? -eq 0 ]; do make itest-only icase='${icase}'; done
 
 # =========
 # UTILITIES
