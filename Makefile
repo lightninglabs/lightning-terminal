@@ -18,6 +18,11 @@ COMMIT := $(shell git describe --abbrev=40 --dirty --tags)
 COMMIT_HASH := $(shell git rev-parse HEAD)
 PUBLIC_URL := 
 
+# GO_VERSION is the Go version used for the release build, docker files, and
+# GitHub Actions. This is the reference version for the project. All other Go
+# versions are checked against this version.
+GO_VERSION = 1.22.6
+
 LOOP_COMMIT := $(shell cat go.mod | \
 		grep $(LOOP_PKG) | \
 		head -n1 | \
@@ -238,7 +243,17 @@ fmt: $(GOIMPORTS_BIN)
 	@$(call print, "Formatting source.")
 	gofmt -l -w -s $(GOFILES_NOVENDOR)
 
-lint: docker-tools
+check-go-version-yaml:
+	@$(call print, "Checking for target Go version (v$(GO_VERSION)) in YAML files (*.yaml, *.yml)")
+	./scripts/check-go-version-yaml.sh $(GO_VERSION)
+
+check-go-version-dockerfile:
+	@$(call print, "Checking for target Go version (v$(GO_VERSION)) in Dockerfile files (*Dockerfile)")
+	./scripts/check-go-version-dockerfile.sh $(GO_VERSION)
+
+check-go-version: check-go-version-dockerfile check-go-version-yaml
+
+lint: check-go-version docker-tools
 	@$(call print, "Linting source.")
 	$(DOCKER_TOOLS) golangci-lint run -v $(LINT_WORKERS)
 
