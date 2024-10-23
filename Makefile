@@ -163,7 +163,7 @@ release: app-build go-release
 
 go-release:
 	@$(call print, "Creating release of lightning-terminal.")
-	./release.sh build-release "$(VERSION_TAG)" "$(BUILD_SYSTEM)" "$(LND_RELEASE_TAGS)" "$(RELEASE_LDFLAGS)"
+	./scripts/release.sh build-release "$(VERSION_TAG)" "$(BUILD_SYSTEM)" "$(LND_RELEASE_TAGS)" "$(RELEASE_LDFLAGS)"
 
 docker-release: app-build
 	@$(call print, "Building release helper docker image.")
@@ -279,3 +279,11 @@ clean: clean-itest
 	$(RM) ./litcli-debug
 	$(RM) ./litd-debug
 	$(RM) coverage.txt
+
+# Prevent make from interpreting any of the defined goals as folders or files to
+# include in the build process.
+.PHONY: default all yarn-install build install go-build go-build-noui \
+	go-install go-install-noui go-install-cli app-build release go-release \
+	docker-release docker-tools scratch check unit unit-cover unit-race \
+	clean-itest build-itest itest-only itest flake-unit fmt lint mod mod-check \
+	list rpc protos protos-check rpc-js-compile clean
