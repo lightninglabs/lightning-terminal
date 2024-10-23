@@ -164,13 +164,17 @@ app-build: yarn-install
 	@$(call print, "Building production app.")
 	cd app; yarn build
 
-release: app-build go-release
+docker-app-build:
+	@$(call print, "Building production app in docker.")
+	cd app; ./gen_app_docker.sh
+
+release: docker-app-build go-release
 
 go-release:
 	@$(call print, "Creating release of lightning-terminal.")
 	./scripts/release.sh build-release "$(VERSION_TAG)" "$(BUILD_SYSTEM)" "$(LND_RELEASE_TAGS)" "$(RELEASE_LDFLAGS)" "$(GO_VERSION)"
 
-docker-release: app-build
+docker-release: docker-app-build
 	@$(call print, "Building release helper docker image.")
 	if [ "$(tag)" = "" ]; then echo "Must specify tag=<commit_or_tag>!"; exit 1; fi
 
