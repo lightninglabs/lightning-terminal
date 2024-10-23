@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/btcsuite/btclog"
 	"github.com/lightningnetwork/lnd/build"
 	"github.com/lightningnetwork/lnd/lntest"
 	"github.com/lightningnetwork/lnd/signal"
@@ -130,6 +131,10 @@ func (h *harnessTest) setupLogging() {
 	ic, err := signal.Intercept()
 	require.NoError(h.t, err)
 	interceptor = &ic
+
+	UseLogger(build.NewSubLogger(Subsystem, func(tag string) btclog.Logger {
+		return logWriter.GenSubLogger(tag, func() {})
+	}))
 
 	err = build.ParseAndSetDebugLevels("debug", logWriter)
 	require.NoError(h.t, err)
