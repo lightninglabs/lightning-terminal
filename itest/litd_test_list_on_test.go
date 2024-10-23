@@ -56,4 +56,8 @@ var allTestCases = []*testCase{
 		name: "test custom channels single asset multi input",
 		test: testCustomChannelsSingleAssetMultiInput,
 	},
+	{
+		name: "test custom channels oracle pricing",
+		test: testCustomChannelsOraclePricing,
+	},
 }
