@@ -168,7 +168,7 @@ release: app-build go-release
 
 go-release:
 	@$(call print, "Creating release of lightning-terminal.")
-	./scripts/release.sh build-release "$(VERSION_TAG)" "$(BUILD_SYSTEM)" "$(LND_RELEASE_TAGS)" "$(RELEASE_LDFLAGS)"
+	./scripts/release.sh build-release "$(VERSION_TAG)" "$(BUILD_SYSTEM)" "$(LND_RELEASE_TAGS)" "$(RELEASE_LDFLAGS)" "$(GO_VERSION)"
 
 docker-release: app-build
 	@$(call print, "Building release helper docker image.")

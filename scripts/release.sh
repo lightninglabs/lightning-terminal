@@ -84,11 +84,21 @@ function red() {
 
 # build_release builds the actual release binaries.
 #   arguments: <version-tag> <build-system(s)> <build-tags> <ldflags>
+#              <go-version>
 function build_release() {
   local tag=$1
   local sys=$2
   local buildtags=$3
   local ldflags=$4
+  local goversion=$5
+
+  # Check if the active Go version matches the specified Go version.
+  active_go_version=$(go version | awk '{print $3}' | sed 's/go//')
+  if [ "$active_go_version" != "$goversion" ]; then
+    echo "Error: active Go version ($active_go_version) does not match \
+required Go version ($goversion)."
+    exit 1
+  fi
 
   green " - Packaging vendor"
   go mod vendor
