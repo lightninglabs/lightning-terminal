@@ -2147,3 +2147,123 @@ func testCustomChannelsBalanceConsistency(_ context.Context,
 	assertNumAssetOutputs(t.t, charlieTap, assetID, 1)
 	assertNumAssetOutputs(t.t, daveTap, assetID, 1)
 }
+
+// testCustomChannelsSingleAssetMultiInput tests whether it is possible to fund
+// a channel using FundChannel that uses multiple inputs from the same asset.
+func testCustomChannelsSingleAssetMultiInput(_ context.Context,
+	net *NetworkHarness, t *harnessTest) {
+
+	ctxb := context.Background()
+	lndArgs := slices.Clone(lndArgsTemplate)
+	litdArgs := slices.Clone(litdArgsTemplate)
+
+	zane, err := net.NewNode(
+		t.t, "Zane", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	litdArgs = append(litdArgs, fmt.Sprintf(
+		"--taproot-assets.proofcourieraddr=%s://%s",
+		proof.UniverseRpcCourierType, zane.Cfg.LitAddr(),
+	))
+
+	charlie, err := net.NewNode(
+		t.t, "Charlie", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+	dave, err := net.NewNode(t.t, "Dave", lndArgs, false, true, litdArgs...)
+	require.NoError(t.t, err)
+
+	nodes := []*HarnessNode{charlie, dave}
+	connectAllNodes(t.t, net, nodes)
+	fundAllNodes(t.t, net, nodes)
+
+	charlieTap := newTapClient(t.t, charlie)
+	daveTap := newTapClient(t.t, dave)
+
+	// Mint an assets on Charlie and sync Dave to Charlie as the universe.
+	mintedAssets := itest.MintAssetsConfirmBatch(
+		t.t, t.lndHarness.Miner.Client, charlieTap,
+		[]*mintrpc.MintAssetRequest{
+			{
+				Asset: itestAsset,
+			},
+		},
+	)
+	cents := mintedAssets[0]
+	assetID := cents.AssetGenesis.AssetId
+
+	t.Logf("Minted %d lightning cents, syncing universes...",
+		cents.Amount)
+	syncUniverses(t.t, charlieTap, dave)
+	t.Logf("Universes synced between all nodes, distributing assets...")
+
+	// Charlie should have two balance outputs with the full balance.
+	assertAssetBalance(t.t, charlieTap, assetID, cents.Amount)
+
+	// Send assets to Dave so he can fund a channel.
+	halfCentsAmount := cents.Amount / 2
+	daveAddr1, err := daveTap.NewAddr(ctxb, &taprpc.NewAddrRequest{
+		Amt:     halfCentsAmount,
+		AssetId: assetID,
+		ProofCourierAddr: fmt.Sprintf(
+			"%s://%s", proof.UniverseRpcCourierType,
+			charlieTap.node.Cfg.LitAddr(),
+		),
+	})
+	require.NoError(t.t, err)
+	daveAddr2, err := daveTap.NewAddr(ctxb, &taprpc.NewAddrRequest{
+		Amt:     halfCentsAmount,
+		AssetId: assetID,
+		ProofCourierAddr: fmt.Sprintf(
+			"%s://%s", proof.UniverseRpcCourierType,
+			charlieTap.node.Cfg.LitAddr(),
+		),
+	})
+	require.NoError(t.t, err)
+
+	t.Logf("Sending %v asset units to Dave twice...", halfCentsAmount)
+
+	// Send the assets to Dave.
+	itest.AssertAddrCreated(t.t, daveTap, cents, daveAddr1)
+	itest.AssertAddrCreated(t.t, daveTap, cents, daveAddr2)
+	sendResp, err := charlieTap.SendAsset(ctxb, &taprpc.SendAssetRequest{
+		TapAddrs: []string{daveAddr1.Encoded, daveAddr2.Encoded},
+	})
+	require.NoError(t.t, err)
+	itest.ConfirmAndAssertOutboundTransferWithOutputs(
+		t.t, t.lndHarness.Miner.Client, charlieTap, sendResp, assetID,
+		[]uint64{
+			cents.Amount - 2*halfCentsAmount, halfCentsAmount,
+			halfCentsAmount,
+		}, 0, 1, 3,
+	)
+	itest.AssertNonInteractiveRecvComplete(t.t, daveTap, 2)
+
+	// Fund a channel using multiple inputs from the same asset.
+	fundRespCD, err := daveTap.FundChannel(
+		ctxb, &tchrpc.FundChannelRequest{
+			AssetAmount:        2 * halfCentsAmount,
+			AssetId:            assetID,
+			PeerPubkey:         charlieTap.node.PubKey[:],
+			FeeRateSatPerVbyte: 5,
+			PushSat:            0,
+		},
+	)
+	require.NoError(t.t, err)
+	t.Logf("Funded channel between Charlie and Dave: %v", fundRespCD)
+
+	// Let's confirm the channel.
+	mineBlocks(t, net, 6, 1)
+
+	// Tapd should not report any balance for Charlie, since the asset is
+	// used in a funding transaction. It should also not report any balance
+	// for Dave. All those balances are reported through channel balances.
+	assertAssetBalance(t.t, charlieTap, assetID, 0)
+	assertAssetBalance(t.t, daveTap, assetID, 0)
+
+	// Make sure the channel shows the correct asset information.
+	assertAssetChan(
+		t.t, charlieTap.node, daveTap.node, 2*halfCentsAmount, assetID,
+	)
+}
