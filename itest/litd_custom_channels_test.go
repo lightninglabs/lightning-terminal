@@ -3,14 +3,19 @@ package itest
 import (
 	"context"
 	"fmt"
+	"math"
+	"math/big"
 	"slices"
 	"time"
 
 	"github.com/btcsuite/btcd/btcec/v2/schnorr"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/lightninglabs/taproot-assets/asset"
 	"github.com/lightninglabs/taproot-assets/itest"
 	"github.com/lightninglabs/taproot-assets/proof"
+	"github.com/lightninglabs/taproot-assets/rfqmath"
+	"github.com/lightninglabs/taproot-assets/tapchannel"
 	"github.com/lightninglabs/taproot-assets/taprpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/mintrpc"
 	tchrpc "github.com/lightninglabs/taproot-assets/taprpc/tapchannelrpc"
@@ -19,7 +24,9 @@ import (
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntest"
+	"github.com/lightningnetwork/lnd/lntest/port"
 	"github.com/lightningnetwork/lnd/lntest/wait"
+	"github.com/lightningnetwork/lnd/lnwire"
 	"github.com/stretchr/testify/require"
 )
 
@@ -55,7 +62,7 @@ var (
 		"--accept-keysend",
 		"--debuglevel=trace,GRPC=error,BTCN=info",
 	}
-	litdArgsTemplate = []string{
+	litdArgsTemplateNoOracle = []string{
 		"--taproot-assets.allow-public-uni-proof-courier",
 		"--taproot-assets.universe.public-access=rw",
 		"--taproot-assets.universe.sync-all-assets",
@@ -64,17 +71,19 @@ var (
 		"--taproot-assets.universerpccourier.numtries=5",
 		"--taproot-assets.universerpccourier.initialbackoff=300ms",
 		"--taproot-assets.universerpccourier.maxbackoff=600ms",
-		"--taproot-assets.experimental.rfq.priceoracleaddress=" +
-			"use_mock_price_oracle_service_promise_to_" +
-			"not_use_on_mainnet",
-		"--taproot-assets.experimental.rfq.mockoracleassetsperbtc=" +
-			"5820600",
 		"--taproot-assets.universerpccourier.skipinitdelay",
 		"--taproot-assets.universerpccourier.backoffresetwait=100ms",
 		"--taproot-assets.universerpccourier.initialbackoff=300ms",
 		"--taproot-assets.universerpccourier.maxbackoff=600ms",
 		"--taproot-assets.custodianproofretrievaldelay=500ms",
 	}
+	litdArgsTemplate = append(litdArgsTemplateNoOracle, []string{
+		"--taproot-assets.experimental.rfq.priceoracleaddress=" +
+			"use_mock_price_oracle_service_promise_to_" +
+			"not_use_on_mainnet",
+		"--taproot-assets.experimental.rfq.mockoracleassetsperbtc=" +
+			"5820600",
+	}...)
 )
 
 const (
@@ -90,7 +99,7 @@ func testCustomChannelsLarge(_ context.Context, net *NetworkHarness,
 	lndArgs := slices.Clone(lndArgsTemplate)
 	litdArgs := slices.Clone(litdArgsTemplate)
 
-	// Explicitly set the proof courier as Alice (how has no other role
+	// Explicitly set the proof courier as Zane (now has no other role
 	// other than proof shuffling), otherwise a hashmail courier will be
 	// used. For the funding transaction, we're just posting it and don't
 	// expect a true receiver.
@@ -186,7 +195,7 @@ func testCustomChannelsLarge(_ context.Context, net *NetworkHarness,
 	)
 	charlieFundingAmount := cents.Amount - uint64(2*400_000)
 
-	fundRespCD, _, _ := createTestAssetNetwork(
+	chanPointCD, _, _ := createTestAssetNetwork(
 		t, net, charlieTap, daveTap, erinTap, fabiaTap, yaraTap,
 		universeTap, cents, 400_000, charlieFundingAmount,
 		daveFundingAmount, erinFundingAmount, DefaultPushSat,
@@ -246,16 +255,9 @@ func testCustomChannelsLarge(_ context.Context, net *NetworkHarness,
 
 	// And now we close the channel to test how things look if all the
 	// balance is on the non-initiator (recipient) side.
-	charlieChanPoint := &lnrpc.ChannelPoint{
-		OutputIndex: uint32(fundRespCD.OutputIndex),
-		FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
-			FundingTxidStr: fundRespCD.Txid,
-		},
-	}
-
 	t.Logf("Closing Charlie -> Dave channel")
 	closeAssetChannelAndAssert(
-		t, net, charlie, dave, charlieChanPoint, assetID, nil,
+		t, net, charlie, dave, chanPointCD, assetID, nil,
 		universeTap, initiatorZeroAssetBalanceCoOpBalanceCheck,
 	)
 }
@@ -269,7 +271,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	lndArgs := slices.Clone(lndArgsTemplate)
 	litdArgs := slices.Clone(litdArgsTemplate)
 
-	// Explicitly set the proof courier as Alice (how has no other role
+	// Explicitly set the proof courier as Zane (now has no other role
 	// other than proof shuffling), otherwise a hashmail courier will be
 	// used. For the funding transaction, we're just posting it and don't
 	// expect a true receiver.
@@ -368,7 +370,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	)
 	charlieFundingAmount := cents.Amount - 2*startAmount
 
-	fundRespCD, fundRespDY, fundRespEF := createTestAssetNetwork(
+	chanPointCD, chanPointDY, chanPointEF := createTestAssetNetwork(
 		t, net, charlieTap, daveTap, erinTap, fabiaTap, yaraTap,
 		universeTap, cents, startAmount, charlieFundingAmount,
 		daveFundingAmount, erinFundingAmount, DefaultPushSat,
@@ -569,40 +571,21 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	// Test case 8: Now we'll close each of the channels, starting with the
 	// Charlie -> Dave custom channel.
 	// ------------
-	charlieChanPoint := &lnrpc.ChannelPoint{
-		OutputIndex: uint32(fundRespCD.OutputIndex),
-		FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
-			FundingTxidStr: fundRespCD.Txid,
-		},
-	}
-	daveChanPoint := &lnrpc.ChannelPoint{
-		OutputIndex: uint32(fundRespDY.OutputIndex),
-		FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
-			FundingTxidStr: fundRespDY.Txid,
-		},
-	}
-	erinChanPoint := &lnrpc.ChannelPoint{
-		OutputIndex: uint32(fundRespEF.OutputIndex),
-		FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
-			FundingTxidStr: fundRespEF.Txid,
-		},
-	}
-
 	t.Logf("Closing Charlie -> Dave channel")
 	closeAssetChannelAndAssert(
-		t, net, charlie, dave, charlieChanPoint, assetID, nil,
+		t, net, charlie, dave, chanPointCD, assetID, nil,
 		universeTap, assertDefaultCoOpCloseBalance(true, true),
 	)
 
 	t.Logf("Closing Dave -> Yara channel, close initiated by Yara")
 	closeAssetChannelAndAssert(
-		t, net, yara, dave, daveChanPoint, assetID, nil,
+		t, net, yara, dave, chanPointDY, assetID, nil,
 		universeTap, assertDefaultCoOpCloseBalance(false, true),
 	)
 
 	t.Logf("Closing Erin -> Fabia channel")
 	closeAssetChannelAndAssert(
-		t, net, erin, fabia, erinChanPoint, assetID, nil,
+		t, net, erin, fabia, chanPointEF, assetID, nil,
 		universeTap, assertDefaultCoOpCloseBalance(true, true),
 	)
 
@@ -624,7 +607,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	// Test case 10: We now open a new asset channel and close it again, to
 	// make sure that a non-existent remote balance is handled correctly.
 	t.Logf("Opening new asset channel between Charlie and Dave...")
-	fundRespCD, err = charlieTap.FundChannel(
+	fundRespCD, err := charlieTap.FundChannel(
 		ctxb, &tchrpc.FundChannelRequest{
 			AssetAmount:        fundingAmount,
 			AssetId:            assetID,
@@ -646,7 +629,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	assertAssetChan(t.t, charlie, dave, fundingAmount, assetID)
 
 	// And let's just close the channel again.
-	charlieChanPoint = &lnrpc.ChannelPoint{
+	chanPointCD = &lnrpc.ChannelPoint{
 		OutputIndex: uint32(fundRespCD.OutputIndex),
 		FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
 			FundingTxidStr: fundRespCD.Txid,
@@ -655,7 +638,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 
 	t.Logf("Closing Charlie -> Dave channel")
 	closeAssetChannelAndAssert(
-		t, net, charlie, dave, charlieChanPoint, assetID, nil,
+		t, net, charlie, dave, chanPointCD, assetID, nil,
 		universeTap, assertDefaultCoOpCloseBalance(false, false),
 	)
 
@@ -726,10 +709,10 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	lndArgs := slices.Clone(lndArgsTemplate)
 	litdArgs := slices.Clone(litdArgsTemplate)
 
-	// Explicitly set the proof courier as Alice (has no other role other
-	// than proof shuffling), otherwise a hashmail courier will be used.
-	// For the funding transaction, we're just posting it and don't expect a
-	// true receiver.
+	// Explicitly set the proof courier as Zane (now has no other role
+	// other than proof shuffling), otherwise a hashmail courier will be
+	// used. For the funding transaction, we're just posting it and don't
+	// expect a true receiver.
 	zane, err := net.NewNode(
 		t.t, "Zane", lndArgs, false, true, litdArgs...,
 	)
@@ -828,7 +811,7 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	)
 	charlieFundingAmount := cents.Amount - 2*startAmount
 
-	fundRespCD, fundRespDY, fundRespEF := createTestAssetNetwork(
+	chanPointCD, chanPointDY, chanPointEF := createTestAssetNetwork(
 		t, net, charlieTap, daveTap, erinTap, fabiaTap, yaraTap,
 		universeTap, cents, startAmount, charlieFundingAmount,
 		daveFundingAmount, erinFundingAmount, DefaultPushSat,
@@ -998,40 +981,21 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	// Test case 8: Now we'll close each of the channels, starting with the
 	// Charlie -> Dave custom channel.
 	// ------------
-	charlieChanPoint := &lnrpc.ChannelPoint{
-		OutputIndex: uint32(fundRespCD.OutputIndex),
-		FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
-			FundingTxidStr: fundRespCD.Txid,
-		},
-	}
-	daveChanPoint := &lnrpc.ChannelPoint{
-		OutputIndex: uint32(fundRespDY.OutputIndex),
-		FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
-			FundingTxidStr: fundRespDY.Txid,
-		},
-	}
-	erinChanPoint := &lnrpc.ChannelPoint{
-		OutputIndex: uint32(fundRespEF.OutputIndex),
-		FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
-			FundingTxidStr: fundRespEF.Txid,
-		},
-	}
-
 	t.Logf("Closing Charlie -> Dave channel")
 	closeAssetChannelAndAssert(
-		t, net, charlie, dave, charlieChanPoint, assetID, groupID,
+		t, net, charlie, dave, chanPointCD, assetID, groupID,
 		universeTap, assertDefaultCoOpCloseBalance(true, true),
 	)
 
 	t.Logf("Closing Dave -> Yara channel, close initiated by Yara")
 	closeAssetChannelAndAssert(
-		t, net, yara, dave, daveChanPoint, assetID, groupID,
+		t, net, yara, dave, chanPointDY, assetID, groupID,
 		universeTap, assertDefaultCoOpCloseBalance(false, true),
 	)
 
 	t.Logf("Closing Erin -> Fabia channel")
 	closeAssetChannelAndAssert(
-		t, net, erin, fabia, erinChanPoint, assetID, groupID,
+		t, net, erin, fabia, chanPointEF, assetID, groupID,
 		universeTap, assertDefaultCoOpCloseBalance(true, true),
 	)
 
@@ -1054,7 +1018,7 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	// Test case 10: We now open a new asset channel and close it again, to
 	// make sure that a non-existent remote balance is handled correctly.
 	t.Logf("Opening new asset channel between Charlie and Dave...")
-	fundRespCD, err = charlieTap.FundChannel(
+	fundRespCD, err := charlieTap.FundChannel(
 		ctxb, &tchrpc.FundChannelRequest{
 			AssetAmount:        fundingAmount,
 			AssetId:            assetID,
@@ -1076,7 +1040,7 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	assertAssetChan(t.t, charlie, dave, fundingAmount, assetID)
 
 	// And let's just close the channel again.
-	charlieChanPoint = &lnrpc.ChannelPoint{
+	chanPointCD = &lnrpc.ChannelPoint{
 		OutputIndex: uint32(fundRespCD.OutputIndex),
 		FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
 			FundingTxidStr: fundRespCD.Txid,
@@ -1085,7 +1049,7 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 
 	t.Logf("Closing Charlie -> Dave channel")
 	closeAssetChannelAndAssert(
-		t, net, charlie, dave, charlieChanPoint, assetID, groupID,
+		t, net, charlie, dave, chanPointCD, assetID, groupID,
 		universeTap, assertDefaultCoOpCloseBalance(false, false),
 	)
 
@@ -1118,7 +1082,10 @@ func testCustomChannelsForceClose(_ context.Context, net *NetworkHarness,
 	lndArgs := slices.Clone(lndArgsTemplate)
 	litdArgs := slices.Clone(litdArgsTemplate)
 
-	// Zane will act as our Universe server for the duration of the test.
+	// Explicitly set the proof courier as Zane (now has no other role
+	// other than proof shuffling), otherwise a hashmail courier will be
+	// used. For the funding transaction, we're just posting it and don't
+	// expect a true receiver.
 	zane, err := net.NewNode(
 		t.t, "Zane", lndArgs, false, true, litdArgs...,
 	)
@@ -1479,7 +1446,10 @@ func testCustomChannelsBreach(_ context.Context, net *NetworkHarness,
 	lndArgs := slices.Clone(lndArgsTemplate)
 	litdArgs := slices.Clone(litdArgsTemplate)
 
-	// Zane will act as our Universe server for the duration of the test.
+	// Explicitly set the proof courier as Zane (now has no other role
+	// other than proof shuffling), otherwise a hashmail courier will be
+	// used. For the funding transaction, we're just posting it and don't
+	// expect a true receiver.
 	zane, err := net.NewNode(
 		t.t, "Zane", lndArgs, false, true, litdArgs...,
 	)
@@ -1700,7 +1670,7 @@ func testCustomChannelsLiquidityEdgeCases(_ context.Context,
 	lndArgs := slices.Clone(lndArgsTemplate)
 	litdArgs := slices.Clone(litdArgsTemplate)
 
-	// Explicitly set the proof courier as Alice (how has no other role
+	// Explicitly set the proof courier as Zane (now has no other role
 	// other than proof shuffling), otherwise a hashmail courier will be
 	// used. For the funding transaction, we're just posting it and don't
 	// expect a true receiver.
@@ -1957,6 +1927,10 @@ func testCustomChannelsBalanceConsistency(_ context.Context,
 	lndArgs := slices.Clone(lndArgsTemplate)
 	litdArgs := slices.Clone(litdArgsTemplate)
 
+	// Explicitly set the proof courier as Zane (now has no other role
+	// other than proof shuffling), otherwise a hashmail courier will be
+	// used. For the funding transaction, we're just posting it and don't
+	// expect a true receiver.
 	zane, err := net.NewNode(
 		t.t, "Zane", lndArgs, false, true, litdArgs...,
 	)
@@ -2265,5 +2239,318 @@ func testCustomChannelsSingleAssetMultiInput(_ context.Context,
 	// Make sure the channel shows the correct asset information.
 	assertAssetChan(
 		t.t, charlieTap.node, daveTap.node, 2*halfCentsAmount, assetID,
+	)
+}
+
+// testCustomChannelsOraclePricing tests that all asset transfers are correctly
+// priced when using an oracle that isn't tapd's mock oracle.
+func testCustomChannelsOraclePricing(_ context.Context,
+	net *NetworkHarness, t *harnessTest) {
+
+	usdMetaData := &taprpc.AssetMeta{
+		Data: []byte(`{
+"description":"this is a USD stablecoin with decimal display of 6"
+}`),
+		Type: taprpc.AssetMetaType_META_TYPE_JSON,
+	}
+
+	const decimalDisplay = 6
+	itestAsset = &mintrpc.MintAsset{
+		AssetType: taprpc.AssetType_NORMAL,
+		Name:      "USD",
+		AssetMeta: usdMetaData,
+		// We mint 1 million USD with a decimal display of 6, which
+		// results in 1 trillion asset units.
+		Amount:         1_000_000_000_000,
+		DecimalDisplay: decimalDisplay,
+	}
+
+	oracleAddr := fmt.Sprintf("localhost:%d", port.NextAvailablePort())
+	oracle := newOracleHarness(oracleAddr)
+	oracle.start(t.t)
+	t.t.Cleanup(oracle.stop)
+
+	ctxb := context.Background()
+	lndArgs := slices.Clone(lndArgsTemplate)
+	litdArgs := slices.Clone(litdArgsTemplateNoOracle)
+	litdArgs = append(litdArgs, fmt.Sprintf(
+		"--taproot-assets.experimental.rfq.priceoracleaddress="+
+			"rfqrpc://%s", oracleAddr,
+	))
+
+	// Explicitly set the proof courier as Zane (now has no other role
+	// other than proof shuffling), otherwise a hashmail courier will be
+	// used. For the funding transaction, we're just posting it and don't
+	// expect a true receiver.
+	zane, err := net.NewNode(
+		t.t, "Zane", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	litdArgs = append(litdArgs, fmt.Sprintf(
+		"--taproot-assets.proofcourieraddr=%s://%s",
+		proof.UniverseRpcCourierType, zane.Cfg.LitAddr(),
+	))
+
+	// The topology we are going for looks like the following:
+	//
+	// Charlie  --[assets]-->  Dave  --[sats]-->  Erin  --[assets]-->  Fabia
+	//                          |
+	//                          |
+	//                       [assets]
+	//                          |
+	//                          v
+	//                        Yara
+	//
+	// With [assets] being a custom channel and [sats] being a normal, BTC
+	// only channel.
+	// All 5 nodes need to be full litd nodes running in integrated mode
+	// with tapd included. We also need specific flags to be enabled, so we
+	// create 5 completely new nodes, ignoring the two default nodes that
+	// are created by the harness.
+	charlie, err := net.NewNode(
+		t.t, "Charlie", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	dave, err := net.NewNode(t.t, "Dave", lndArgs, false, true, litdArgs...)
+	require.NoError(t.t, err)
+	erin, err := net.NewNode(t.t, "Erin", lndArgs, false, true, litdArgs...)
+	require.NoError(t.t, err)
+	fabia, err := net.NewNode(
+		t.t, "Fabia", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+	yara, err := net.NewNode(
+		t.t, "Yara", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	nodes := []*HarnessNode{charlie, dave, erin, fabia, yara}
+	connectAllNodes(t.t, net, nodes)
+	fundAllNodes(t.t, net, nodes)
+
+	// Create the normal channel between Dave and Erin.
+	t.Logf("Opening normal channel between Dave and Erin...")
+	const btcChannelFundingAmount = 10_000_000
+	chanPointDE := openChannelAndAssert(
+		t, net, dave, erin, lntest.OpenChannelParams{
+			Amt:         btcChannelFundingAmount,
+			SatPerVByte: 5,
+		},
+	)
+	defer closeChannelAndAssert(t, net, dave, chanPointDE, false)
+
+	// This is the only public channel, we need everyone to be aware of it.
+	assertChannelKnown(t.t, charlie, chanPointDE)
+	assertChannelKnown(t.t, fabia, chanPointDE)
+
+	universeTap := newTapClient(t.t, zane)
+	charlieTap := newTapClient(t.t, charlie)
+	daveTap := newTapClient(t.t, dave)
+	erinTap := newTapClient(t.t, erin)
+	fabiaTap := newTapClient(t.t, fabia)
+	yaraTap := newTapClient(t.t, yara)
+
+	// Mint an asset on Charlie and sync Dave to Charlie as the universe.
+	mintedAssets := itest.MintAssetsConfirmBatch(
+		t.t, t.lndHarness.Miner.Client, charlieTap,
+		[]*mintrpc.MintAssetRequest{
+			{
+				Asset: itestAsset,
+			},
+		},
+	)
+	usdAsset := mintedAssets[0]
+	assetID := usdAsset.AssetGenesis.AssetId
+
+	// Now that we've minted the asset, we can set the price in the oracle.
+	var id asset.ID
+	copy(id[:], assetID)
+
+	// Let's assume the current USD price for 1 BTC is 66,548.40. We'll take
+	// that price and add a 4% spread, 2% on each side (buy/sell) to earn
+	// money as the oracle. 2% is 1,330.97, so we'll set the sell price to
+	// 65,217.43 and the purchase price to 67,879.37.
+	// The following numbers are to help understand the magic numbers below.
+	// They're the price in USD/BTC, the price of 1 USD in sats and the
+	// expected price in asset units per BTC.
+	// 65,217.43 => 1533.332 => 65_217_430_000
+	// 66,548.40 => 1502.666 => 66_548_400_000
+	// 67,879.37 => 1473.202 => 67_879_370_000
+	salePrice := rfqmath.NewBigIntFixedPoint(65_217_43, 2)
+	purchasePrice := rfqmath.NewBigIntFixedPoint(67_879_37, 2)
+
+	// We now have the prices defined in USD. But the asset has a decimal
+	// display of 6, so we need to multiply them by 10^6.
+	factor := rfqmath.NewBigInt(
+		big.NewInt(int64(math.Pow10(decimalDisplay))),
+	)
+	salePrice.Coefficient = salePrice.Coefficient.Mul(factor)
+	purchasePrice.Coefficient = purchasePrice.Coefficient.Mul(factor)
+	oracle.setPrice(id, purchasePrice, salePrice)
+
+	t.Logf("Minted %d USD assets, syncing universes...", usdAsset.Amount)
+	syncUniverses(t.t, charlieTap, dave, erin, fabia, yara)
+	t.Logf("Universes synced between all nodes, distributing assets...")
+
+	const (
+		sendAmount        = uint64(400_000_000)
+		daveFundingAmount = uint64(400_000_000)
+		erinFundingAmount = uint64(200_000_000)
+	)
+	charlieFundingAmount := usdAsset.Amount - 2*sendAmount
+
+	chanPointCD, chanPointDY, chanPointEF := createTestAssetNetwork(
+		t, net, charlieTap, daveTap, erinTap, fabiaTap, yaraTap,
+		universeTap, usdAsset, sendAmount, charlieFundingAmount,
+		daveFundingAmount, erinFundingAmount, 0,
+	)
+
+	// Before we start sending out payments, let's make sure each node can
+	// see the other one in the graph and has all required features.
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(charlie, dave))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(dave, charlie))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(dave, yara))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(yara, dave))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(erin, fabia))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(fabia, erin))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(charlie, erin))
+
+	// We now create an invoice at Fabia for 100 USD, which is 100_000_000
+	// asset units with decimal display of 6.
+	const fabiaInvoiceAssetAmount = 100_000_000
+	invoiceResp := createAssetInvoice(
+		t.t, erin, fabia, fabiaInvoiceAssetAmount, assetID,
+	)
+	decodedInvoice, err := fabia.DecodePayReq(ctxb, &lnrpc.PayReqString{
+		PayReq: invoiceResp.PaymentRequest,
+	})
+	require.NoError(t.t, err)
+
+	// The invoice amount should come out as 100 * 1533.332.
+	require.EqualValues(t.t, 153_333_242, decodedInvoice.NumMsat)
+
+	numUnits, rate := payInvoiceWithAssets(
+		t.t, charlie, dave, invoiceResp, assetID, false,
+	)
+	logBalance(t.t, nodes, assetID, "after invoice")
+
+	// The calculated amount Charlie has to pay should come out as
+	// 153_333_242 / 1473.202, which is quite exactly 4% more than will
+	// arrive at the destination (which is the oracle's configured spread).
+	// This is before routing fees though.
+	const charlieInvoiceAmount = 104_081_638
+	require.EqualValues(t.t, charlieInvoiceAmount, numUnits)
+
+	// The default routing fees are 1ppm + 1msat per hop, and we have 2
+	// hops in total.
+	charliePaidMSat := addRoutingFee(addRoutingFee(lnwire.MilliSatoshi(
+		decodedInvoice.NumMsat,
+	)))
+	charliePaidAmount := rfqmath.MilliSatoshiToUnits(
+		charliePaidMSat, rate,
+	).ScaleTo(0).ToUint64()
+	assertPaymentHtlcAssets(
+		t.t, charlie, invoiceResp.RHash, assetID, charliePaidAmount,
+	)
+
+	// We now make sure the asset and satoshi channel balances are exactly
+	// what we expect them to be.
+	var (
+		// channelFundingAmount is the hard coded satoshi amount that
+		// currently goes into asset channels.
+		channelFundingAmount int64 = 100_000
+
+		// commitFeeP2TR is the default commit fee for a P2TR channel
+		// commitment with 4 outputs (to_local, to_remote, 2 anchors).
+		commitFeeP2TR        int64 = 2420
+		commitFeeP2WSH       int64 = 2810
+		anchorAmount         int64 = 330
+		assetHtlcCarryAmount       = int64(
+			tapchannel.DefaultOnChainHtlcAmount,
+		)
+		unbalancedLocalAmount = channelFundingAmount - commitFeeP2TR -
+			anchorAmount
+		balancedLocalAmount = unbalancedLocalAmount - anchorAmount
+	)
+
+	// Checking Charlie's sat and asset balances in channel Charlie->Dave.
+	assertChannelSatBalance(
+		t.t, charlie, chanPointCD,
+		balancedLocalAmount-assetHtlcCarryAmount, assetHtlcCarryAmount,
+	)
+	assertChannelAssetBalance(
+		t.t, charlie, chanPointCD,
+		charlieFundingAmount-charliePaidAmount, charliePaidAmount,
+	)
+
+	// Checking Dave's sat and asset balances in channel Charlie->Dave.
+	assertChannelSatBalance(
+		t.t, dave, chanPointCD,
+		assetHtlcCarryAmount, balancedLocalAmount-assetHtlcCarryAmount,
+	)
+	assertChannelAssetBalance(
+		t.t, dave, chanPointCD,
+		charliePaidAmount, charlieFundingAmount-charliePaidAmount,
+	)
+
+	// Checking Dave's sat balance in channel Dave->Erin.
+	forwardAmountDave := addRoutingFee(
+		lnwire.MilliSatoshi(decodedInvoice.NumMsat),
+	).ToSatoshis()
+	assertChannelSatBalance(
+		t.t, dave, chanPointDE,
+		btcChannelFundingAmount-commitFeeP2WSH-2*anchorAmount-
+			int64(forwardAmountDave),
+		int64(forwardAmountDave),
+	)
+
+	// Checking Erin's sat balance in channel Dave->Erin.
+	assertChannelSatBalance(
+		t.t, erin, chanPointDE,
+		int64(forwardAmountDave),
+		btcChannelFundingAmount-commitFeeP2WSH-2*anchorAmount-
+			int64(forwardAmountDave),
+	)
+
+	// Checking Erin's sat and asset balances in channel Erin->Fabia.
+	assertChannelSatBalance(
+		t.t, erin, chanPointEF,
+		balancedLocalAmount-assetHtlcCarryAmount, assetHtlcCarryAmount,
+	)
+	assertChannelAssetBalance(
+		t.t, erin, chanPointEF,
+		erinFundingAmount-fabiaInvoiceAssetAmount,
+		fabiaInvoiceAssetAmount,
+	)
+
+	// Checking Fabia's sat and asset balances in channel Erin->Fabia.
+	assertChannelSatBalance(
+		t.t, fabia, chanPointEF,
+		assetHtlcCarryAmount, balancedLocalAmount-assetHtlcCarryAmount,
+	)
+	assertChannelAssetBalance(
+		t.t, erin, chanPointEF,
+		fabiaInvoiceAssetAmount,
+		erinFundingAmount-fabiaInvoiceAssetAmount,
+	)
+
+	t.Logf("Closing Charlie -> Dave channel")
+	closeAssetChannelAndAssert(
+		t, net, charlie, dave, chanPointCD, assetID, nil, universeTap,
+		noOpCoOpCloseBalanceCheck,
+	)
+
+	t.Logf("Closing Dave -> Yara channel, close initiated by Yara")
+	closeAssetChannelAndAssert(
+		t, net, yara, dave, chanPointDY, assetID, nil, universeTap,
+		noOpCoOpCloseBalanceCheck,
+	)
+
+	t.Logf("Closing Erin -> Fabia channel")
+	closeAssetChannelAndAssert(
+		t, net, erin, fabia, chanPointEF, assetID, nil, universeTap,
+		noOpCoOpCloseBalanceCheck,
 	)
 }

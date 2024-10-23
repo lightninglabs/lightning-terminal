@@ -61,8 +61,8 @@ func createTestAssetNetwork(t *harnessTest, net *NetworkHarness, charlieTap,
 	daveTap, erinTap, fabiaTap, yaraTap, universeTap *tapClient,
 	mintedAsset *taprpc.Asset, assetSendAmount, charlieFundingAmount,
 	daveFundingAmount,
-	erinFundingAmount uint64, pushSat int64) (*tchrpc.FundChannelResponse,
-	*tchrpc.FundChannelResponse, *tchrpc.FundChannelResponse) {
+	erinFundingAmount uint64, pushSat int64) (*lnrpc.ChannelPoint,
+	*lnrpc.ChannelPoint, *lnrpc.ChannelPoint) {
 
 	ctxb := context.Background()
 	assetID := mintedAsset.AssetGenesis.AssetId
@@ -256,7 +256,26 @@ func createTestAssetNetwork(t *harnessTest, net *NetworkHarness, charlieTap,
 		t.t, erinTap.node, fabiaTap.node, erinFundingAmount, assetID,
 	)
 
-	return fundRespCD, fundRespDY, fundRespEF
+	chanPointCD := &lnrpc.ChannelPoint{
+		OutputIndex: uint32(fundRespCD.OutputIndex),
+		FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
+			FundingTxidStr: fundRespCD.Txid,
+		},
+	}
+	chanPointDY := &lnrpc.ChannelPoint{
+		OutputIndex: uint32(fundRespDY.OutputIndex),
+		FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
+			FundingTxidStr: fundRespDY.Txid,
+		},
+	}
+	chanPointEF := &lnrpc.ChannelPoint{
+		OutputIndex: uint32(fundRespEF.OutputIndex),
+		FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
+			FundingTxidStr: fundRespEF.Txid,
+		},
+	}
+
+	return chanPointCD, chanPointDY, chanPointEF
 }
 
 func assertNumAssetUTXOs(t *testing.T, tapdClient *tapClient,
@@ -586,6 +605,67 @@ func getAssetChannelBalance(t *testing.T, node *HarnessNode, assetID []byte,
 		balance.RemoteBalance.Sat
 }
 
+func fetchChannel(t *testing.T, node *HarnessNode,
+	chanPoint *lnrpc.ChannelPoint) *lnrpc.Channel {
+
+	ctxb := context.Background()
+	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
+	defer cancel()
+
+	channelResp, err := node.ListChannels(ctxt, &lnrpc.ListChannelsRequest{
+		ActiveOnly: true,
+	})
+	require.NoError(t, err)
+
+	chanFundingHash, err := lnrpc.GetChanPointFundingTxid(chanPoint)
+	require.NoError(t, err)
+
+	chanPointStr := fmt.Sprintf("%v:%v", chanFundingHash,
+		chanPoint.OutputIndex)
+
+	var targetChan *lnrpc.Channel
+	for _, channel := range channelResp.Channels {
+		if channel.ChannelPoint == chanPointStr {
+			targetChan = channel
+
+			break
+		}
+	}
+	require.NotNil(t, targetChan)
+
+	return targetChan
+}
+
+func assertChannelSatBalance(t *testing.T, node *HarnessNode,
+	chanPoint *lnrpc.ChannelPoint, local, remote int64) {
+
+	targetChan := fetchChannel(t, node, chanPoint)
+
+	require.InDelta(t, local, targetChan.LocalBalance, 1)
+	require.InDelta(t, remote, targetChan.RemoteBalance, 1)
+}
+
+func assertChannelAssetBalance(t *testing.T, node *HarnessNode,
+	chanPoint *lnrpc.ChannelPoint, local, remote uint64) {
+
+	targetChan := fetchChannel(t, node, chanPoint)
+
+	var assetBalance rfqmsg.JsonAssetChannel
+	err := json.Unmarshal(targetChan.CustomChannelData, &assetBalance)
+	require.NoError(t, err)
+
+	require.Len(t, assetBalance.Assets, 1)
+
+	require.InDelta(t, local, assetBalance.Assets[0].LocalBalance, 1)
+	require.InDelta(t, remote, assetBalance.Assets[0].RemoteBalance, 1)
+}
+
+// addRoutingFee adds the default routing fee (1 part per million fee rate plus
+// 1000 milli-satoshi base fee) to the given milli-satoshi amount.
+func addRoutingFee(amt lnwire.MilliSatoshi) lnwire.MilliSatoshi {
+	return amt + (amt / 1000_000) + 1000
+}
+
 func sendAssetKeySendPayment(t *testing.T, src, dst *HarnessNode, amt uint64,
 	assetID []byte, btcAmt fn.Option[int64],
 	expectedStatus lnrpc.Payment_PaymentStatus,
@@ -702,9 +782,11 @@ func createAndPayNormalInvoice(t *testing.T, src, rfqPeer, dst *HarnessNode,
 	})
 	require.NoError(t, err)
 
-	return payInvoiceWithAssets(
+	numUnits, _ := payInvoiceWithAssets(
 		t, src, rfqPeer, invoiceResp, assetID, smallShards,
 	)
+
+	return numUnits
 }
 
 func payInvoiceWithSatoshi(t *testing.T, payer *HarnessNode,
@@ -730,7 +812,7 @@ func payInvoiceWithSatoshi(t *testing.T, payer *HarnessNode,
 
 func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 	invoice *lnrpc.AddInvoiceResponse, assetID []byte,
-	smallShards bool) uint64 {
+	smallShards bool) (uint64, rfqmath.BigIntFixedPoint) {
 
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
@@ -774,11 +856,13 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 	rate, err := rfqrpc.UnmarshalFixedPoint(rpcRate)
 	require.NoError(t, err)
 
+	t.Logf("Got quote for %v asset units per BTC", rate)
+
 	amountMsat := lnwire.MilliSatoshi(decodedInvoice.NumMsat)
 	milliSatsFP := rfqmath.MilliSatoshiToUnits(amountMsat, *rate)
 	numUnits := milliSatsFP.ScaleTo(0).ToUint64()
-	msatPerUnit := uint64(decodedInvoice.NumMsat) / numUnits
-	t.Logf("Got quote for %v asset units at %v msat/unit from peer %s "+
+	msatPerUnit := float64(decodedInvoice.NumMsat) / float64(numUnits)
+	t.Logf("Got quote for %v asset units at %3f msat/unit from peer %s "+
 		"with SCID %d", numUnits, msatPerUnit, peerPubKey,
 		acceptedQuote.Scid)
 
@@ -786,7 +870,7 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 	require.NoError(t, err)
 	require.Equal(t, lnrpc.Payment_SUCCEEDED, result.Status)
 
-	return numUnits
+	return numUnits, *rate
 }
 
 func createAssetInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
@@ -825,17 +909,68 @@ func createAssetInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 	rate, err := rfqrpc.UnmarshalFixedPoint(rpcRate)
 	require.NoError(t, err)
 
+	t.Logf("Got quote for %v asset units per BTC", rate)
+
 	assetUnits := rfqmath.NewBigIntFixedPoint(assetAmount, 0)
 	numMSats := rfqmath.UnitsToMilliSatoshi(assetUnits, *rate)
-	mSatPerUnit := uint64(decodedInvoice.NumMsat) / assetAmount
+	mSatPerUnit := float64(decodedInvoice.NumMsat) / float64(assetAmount)
 
 	require.EqualValues(t, numMSats, decodedInvoice.NumMsat)
 
-	t.Logf("Got quote for %d sats at %v msat/unit from peer %x with SCID "+
-		"%d", decodedInvoice.NumMsat, mSatPerUnit, dstRfqPeer.PubKey[:],
-		resp.AcceptedBuyQuote.Scid)
+	t.Logf("Got quote for %d mSats at %3f msat/unit from peer %x with "+
+		"SCID %d", decodedInvoice.NumMsat, mSatPerUnit,
+		dstRfqPeer.PubKey[:], resp.AcceptedBuyQuote.Scid)
 
 	return resp.InvoiceResult
+}
+
+// assertPaymentHtlcAssets makes sure the payment with the given hash shows the
+// individual HTLCs that arrived for it and that they show the correct asset
+// amounts for the given ID when decoded.
+func assertPaymentHtlcAssets(t *testing.T, node *HarnessNode, payHash []byte,
+	assetID []byte, assetAmount uint64) {
+
+	ctxb := context.Background()
+	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
+	defer cancel()
+
+	stream, err := node.RouterClient.TrackPaymentV2(
+		ctxt, &routerrpc.TrackPaymentRequest{
+			PaymentHash:       payHash,
+			NoInflightUpdates: true,
+		},
+	)
+	require.NoError(t, err)
+
+	payment, err := stream.Recv()
+	require.NoError(t, err)
+	require.NotNil(t, payment)
+	require.NotEmpty(t, payment.Htlcs)
+
+	t.Logf("Asset payment: %v", toProtoJSON(t, payment))
+
+	targetID := hex.EncodeToString(assetID)
+
+	var totalAssetAmount uint64
+	for _, htlc := range payment.Htlcs {
+		require.NotNil(t, htlc.Route)
+		require.NotEmpty(t, htlc.Route.CustomChannelData)
+
+		jsonHtlc := &rfqmsg.JsonHtlc{}
+		err := json.Unmarshal(htlc.Route.CustomChannelData, jsonHtlc)
+		require.NoError(t, err)
+
+		for _, balance := range jsonHtlc.Balances {
+			if balance.AssetID != targetID {
+				continue
+			}
+
+			totalAssetAmount += balance.Amount
+		}
+	}
+
+	// Due to rounding we allow up to 1 unit of error.
+	require.InDelta(t, assetAmount, totalAssetAmount, 1)
 }
 
 func waitForSendEvent(t *testing.T,
@@ -861,6 +996,14 @@ func waitForSendEvent(t *testing.T,
 type coOpCloseBalanceCheck func(t *testing.T, local, remote *HarnessNode,
 	closeTx *wire.MsgTx, closeUpdate *lnrpc.ChannelCloseUpdate,
 	assetID, groupKey []byte, universeTap *tapClient)
+
+// noOpCoOpCloseBalanceCheck is a no-op implementation of the co-op close
+// balance check that can be used in tests.
+func noOpCoOpCloseBalanceCheck(_ *testing.T, _, _ *HarnessNode, _ *wire.MsgTx,
+	_ *lnrpc.ChannelCloseUpdate, _, _ []byte, _ *tapClient) {
+
+	// This is a no-op function.
+}
 
 // closeAssetChannelAndAssert closes the channel between the local and remote
 // node and asserts the final balances of the closing transaction.
