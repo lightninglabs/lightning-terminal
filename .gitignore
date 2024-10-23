@@ -14,3 +14,15 @@ itest/lnd-itest
 itest/itest.test
 itest/.logs
 itest/*.log
+
+vendor
+*.idea
+*.run
+*.iml
+profile.cov
+profile.tmp
+
+.DS_Store
+
+.vscode
+*.code-workspace
