@@ -159,9 +159,21 @@ app-build: yarn-install
 	@$(call print, "Building production app.")
 	cd app; yarn build
 
-release: app-build
+release: app-build go-release
+
+go-release:
 	@$(call print, "Creating release of lightning-terminal.")
 	./release.sh build-release "$(VERSION_TAG)" "$(BUILD_SYSTEM)" "$(LND_RELEASE_TAGS)" "$(RELEASE_LDFLAGS)"
+
+docker-release: app-build
+	@$(call print, "Building release helper docker image.")
+	if [ "$(tag)" = "" ]; then echo "Must specify tag=<commit_or_tag>!"; exit 1; fi
+
+	docker build -t litd-release-helper -f make/builder.Dockerfile make/
+
+	# Run the actual compilation inside the docker image. We pass in all flags
+	# that we might want to overwrite in manual tests.
+	$(DOCKER_RELEASE_HELPER) make go-release tag="$(tag)" sys="$(sys)" COMMIT="$(COMMIT)" 
 
 docker-tools:
 	@$(call print, "Building tools docker image.")

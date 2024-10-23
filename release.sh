@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Simple bash script to build basic lnd tools for all the platforms
+# Simple bash script to build basic litd tools for all the platforms
 # we support with the golang cross-compiler.
 #
 # Copyright (c) 2016 Company 0, LLC.
@@ -113,6 +113,9 @@ function build_release() {
   rm "${package_source}.tar"
   reproducible_tar_gzip ${package_source}
   mv "${package_source}.tar.gz" "${package_source}-$tag.tar.gz"
+
+  echo "Current git status before starting build: "
+  git status
 
   for i in $sys; do
     os=$(echo $i | cut -f1 -d-)
