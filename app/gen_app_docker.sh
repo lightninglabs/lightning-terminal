@@ -5,12 +5,12 @@ set -e
 # Directory of the script file, independent of where it's called from.
 DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
-echo "Building protobuf compiler docker image..."
-docker build -q -t lit-protobuf-builder .
+echo "Building app compiler docker image..."
+docker build -q -t lit-app-builder .
 
-echo "Compiling and formatting *.proto files..."
+echo "Compiling app files..."
 docker run \
   --rm \
   --user $(id -u):$(id -g) \
   -v "$DIR/../:/build" \
-  lit-protobuf-builder
+  lit-app-builder

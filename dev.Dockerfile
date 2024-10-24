@@ -1,5 +1,5 @@
 # Start with a NodeJS base image that also contains yarn.
-FROM node:22.8.0-alpine as nodejsbuilder
+FROM node:22.8.0-alpine@sha256:bec0ea49c2333c429b62e74e91f8ba1201b060110745c3a12ff957cd51b363c6 as nodejsbuilder
 
 # Copy in the local repository to build from.
 COPY . /go/src/github.com/lightninglabs/lightning-terminal
@@ -10,10 +10,7 @@ RUN cd /go/src/github.com/lightninglabs/lightning-terminal/app \
 
 # The first stage is already done and all static assets should now be generated
 # in the app/build sub directory.
-# If you change this value, please also update:
-# /Dockerfile
-# /.github/workflows/main.yml
-FROM golang:1.22.3-alpine as golangbuilder
+FROM golang:1.22.6-alpine@sha256:1a478681b671001b7f029f94b5016aed984a23ad99c707f6a0ab6563860ae2f3 as golangbuilder
 
 # Instead of checking out from git again, we just copy the whole working
 # directory of the previous stage that includes the generated static assets.
@@ -31,7 +28,7 @@ RUN apk add --no-cache --update alpine-sdk \
   && make go-install-cli
 
 # Start a new, final image to reduce size.
-FROM alpine as final
+FROM alpine:3.20.3@sha256:beefdbd8a1da6d2915566fde36db9db0b524eb737fc57cd1367effd16dc0d06d as final
 
 # Define a root volume for data persistence.
 VOLUME /root/.lnd

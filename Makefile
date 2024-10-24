@@ -18,6 +18,11 @@ COMMIT := $(shell git describe --abbrev=40 --dirty --tags)
 COMMIT_HASH := $(shell git rev-parse HEAD)
 PUBLIC_URL := 
 
+# GO_VERSION is the Go version used for the release build, docker files, and
+# GitHub Actions. This is the reference version for the project. All other Go
+# versions are checked against this version.
+GO_VERSION = 1.22.6
+
 LOOP_COMMIT := $(shell cat go.mod | \
 		grep $(LOOP_PKG) | \
 		head -n1 | \
@@ -159,9 +164,25 @@ app-build: yarn-install
 	@$(call print, "Building production app.")
 	cd app; yarn build
 
-release: app-build
+docker-app-build:
+	@$(call print, "Building production app in docker.")
+	cd app; ./gen_app_docker.sh
+
+release: docker-app-build go-release
+
+go-release:
 	@$(call print, "Creating release of lightning-terminal.")
-	./release.sh build-release "$(VERSION_TAG)" "$(BUILD_SYSTEM)" "$(LND_RELEASE_TAGS)" "$(RELEASE_LDFLAGS)"
+	./scripts/release.sh build-release "$(VERSION_TAG)" "$(BUILD_SYSTEM)" "$(LND_RELEASE_TAGS)" "$(RELEASE_LDFLAGS)" "$(GO_VERSION)"
+
+docker-release: docker-app-build
+	@$(call print, "Building release helper docker image.")
+	if [ "$(tag)" = "" ]; then echo "Must specify tag=<commit_or_tag>!"; exit 1; fi
+
+	docker build -t litd-release-helper -f make/builder.Dockerfile make/
+
+	# Run the actual compilation inside the docker image. We pass in all flags
+	# that we might want to overwrite in manual tests.
+	$(DOCKER_RELEASE_HELPER) make go-release tag="$(tag)" sys="$(sys)" COMMIT="$(COMMIT)" 
 
 docker-tools:
 	@$(call print, "Building tools docker image.")
@@ -226,7 +247,17 @@ fmt: $(GOIMPORTS_BIN)
 	@$(call print, "Formatting source.")
 	gofmt -l -w -s $(GOFILES_NOVENDOR)
 
-lint: docker-tools
+check-go-version-yaml:
+	@$(call print, "Checking for target Go version (v$(GO_VERSION)) in YAML files (*.yaml, *.yml)")
+	./scripts/check-go-version-yaml.sh $(GO_VERSION)
+
+check-go-version-dockerfile:
+	@$(call print, "Checking for target Go version (v$(GO_VERSION)) in Dockerfile files (*Dockerfile)")
+	./scripts/check-go-version-dockerfile.sh $(GO_VERSION)
+
+check-go-version: check-go-version-dockerfile check-go-version-yaml
+
+lint: check-go-version docker-tools
 	@$(call print, "Linting source.")
 	$(DOCKER_TOOLS) golangci-lint run -v $(LINT_WORKERS)
 
@@ -267,3 +298,11 @@ clean: clean-itest
 	$(RM) ./litcli-debug
 	$(RM) ./litd-debug
 	$(RM) coverage.txt
+
+# Prevent make from interpreting any of the defined goals as folders or files to
+# include in the build process.
+.PHONY: default all yarn-install build install go-build go-build-noui \
+	go-install go-install-noui go-install-cli app-build release go-release \
+	docker-release docker-tools scratch check unit unit-cover unit-race \
+	clean-itest build-itest itest-only itest flake-unit fmt lint mod mod-check \
+	list rpc protos protos-check rpc-js-compile clean

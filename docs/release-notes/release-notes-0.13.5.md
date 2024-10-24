@@ -40,6 +40,11 @@
 
 ## Integrated Binary Updates
 
+- [Ensured reproducible
+  releases](https://github.com/lightninglabs/lightning-terminal/pull/881) by
+  setting a fixed timestamps for the files in the release script and by
+  providing a dockerized release build command `make docker-release` for MacOS.
+
 ### LND
 
 ### Loop
