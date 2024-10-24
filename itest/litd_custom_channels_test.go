@@ -18,6 +18,7 @@ import (
 	"github.com/lightninglabs/taproot-assets/tapscript"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/lnrpc"
+	"github.com/lightningnetwork/lnd/lnrpc/invoicesrpc"
 	"github.com/lightningnetwork/lnd/lntest"
 	"github.com/lightningnetwork/lnd/lntest/wait"
 	"github.com/stretchr/testify/require"
@@ -1924,13 +1925,13 @@ func testCustomChannelsLiquidityEdgeCases(_ context.Context,
 	logBalance(t.t, nodes, assetID, "after big asset payment (btc "+
 		"invoice, direct)")
 
-	// Dave sends 200k assets and 2k sats to Yara.
+	// Dave sends 200k assets and 5k sats to Yara.
 	sendAssetKeySendPayment(
 		t.t, dave, yara, 200_000, assetID,
 		fn.None[int64](), lnrpc.Payment_SUCCEEDED,
 		fn.None[lnrpc.PaymentFailureReason](),
 	)
-	sendKeySendPayment(t.t, dave, yara, 2000)
+	sendKeySendPayment(t.t, dave, yara, 5_000)
 
 	logBalance(t.t, nodes, assetID, "after 200k assets to Yara")
 
@@ -1946,6 +1947,33 @@ func testCustomChannelsLiquidityEdgeCases(_ context.Context,
 
 	logBalance(t.t, nodes, assetID, "after big asset payment (asset "+
 		"invoice, multi-hop)")
+
+	// Edge case: Now Charlie creates an asset invoice to be paid for by
+	// Yara with satoshi. For the last hop we try to settle the invoice in
+	// satoshi, where we will check whether Charlie's strict forwarding
+	// works as expected.
+	invoiceResp = createAssetInvoice(
+		t.t, charlie, dave, 1, assetID,
+	)
+
+	ctxb := context.Background()
+	stream, err := dave.InvoicesClient.SubscribeSingleInvoice(
+		ctxb, &invoicesrpc.SubscribeSingleInvoiceRequest{
+			RHash: invoiceResp.RHash,
+		},
+	)
+	require.NoError(t.t, err)
+
+	// Yara pays Dave with enough satoshis, but Charlie will not settle as
+	// he expects assets.
+	payInvoiceWithSatoshiLastHop(
+		t.t, yara, invoiceResp, dave.PubKey[:], lnrpc.Payment_FAILED,
+	)
+
+	t.lndHarness.LNDHarness.AssertInvoiceState(stream, lnrpc.Invoice_OPEN)
+
+	logBalance(t.t, nodes, assetID, "after failed payment (asset "+
+		"invoice, strict forwarding)")
 }
 
 // testCustomChannelsBalanceConsistency is a test that test the balance of nodes

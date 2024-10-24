@@ -26,7 +26,7 @@ require (
 	github.com/lightninglabs/taproot-assets v0.4.2-0.20241022143621-54f007d7cfc3
 	github.com/lightningnetwork/lnd v0.18.3-beta.rc3.0.20241021112623-6f0d7f9a87d3
 	github.com/lightningnetwork/lnd/cert v1.2.2
-	github.com/lightningnetwork/lnd/fn v1.2.1
+	github.com/lightningnetwork/lnd/fn v1.2.2
 	github.com/lightningnetwork/lnd/kvdb v1.4.10
 	github.com/lightningnetwork/lnd/tlv v1.2.6
 	github.com/lightningnetwork/lnd/tor v1.1.2
@@ -234,5 +234,11 @@ replace github.com/lightninglabs/lightning-terminal/autopilotserverrpc => ./auto
 replace google.golang.org/protobuf => github.com/lightninglabs/protobuf-go-hex-display v1.34.2-hex-display
 
 replace github.com/lightninglabs/lightning-terminal/litrpc => ./litrpc
+
+replace github.com/lightninglabs/taproot-assets => github.com/GeorgeTsagk/taproot-assets v0.0.0-20241024022025-3a80ed512ee5
+
+replace github.com/lightninglabs/lndclient => github.com/GeorgeTsagk/lndclient v0.0.0-20241021130618-033333290ad5
+
+replace github.com/lightningnetwork/lnd => github.com/GeorgeTsagk/lnd v0.0.0-20241024100034-d38204e3fe58
 
 go 1.22.6
