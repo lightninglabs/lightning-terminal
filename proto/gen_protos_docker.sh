@@ -11,7 +11,6 @@ docker build -q -t lit-protobuf-builder .
 echo "Compiling and formatting *.proto files..."
 docker run \
   --rm \
-  --user $UID:$UID \
-  -e UID=$UID \
+  --user $(id -u):$(id -g) \
   -v "$DIR/../:/build" \
   lit-protobuf-builder
