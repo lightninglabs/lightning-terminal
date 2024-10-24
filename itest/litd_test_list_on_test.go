@@ -52,4 +52,8 @@ var allTestCases = []*testCase{
 		name: "test custom channels balance consistency",
 		test: testCustomChannelsBalanceConsistency,
 	},
+	{
+		name: "test custom channels oracle pricing",
+		test: testCustomChannelsOraclePricing,
+	},
 }
