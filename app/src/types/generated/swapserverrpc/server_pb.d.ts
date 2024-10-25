@@ -3,6 +3,7 @@
 
 import * as jspb from "google-protobuf";
 import * as swapserverrpc_common_pb from "../swapserverrpc/common_pb";
+import * as swapserverrpc_reservation_pb from "../swapserverrpc/reservation_pb";
 
 export class ServerLoopOutRequest extends jspb.Message {
   getReceiverKey(): Uint8Array | string;
@@ -347,6 +348,9 @@ export class ServerLoopInQuoteRequest extends jspb.Message {
   getUserAgent(): string;
   setUserAgent(value: string): void;
 
+  getNumStaticAddressDeposits(): number;
+  setNumStaticAddressDeposits(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServerLoopInQuoteRequest.AsObject;
   static toObject(includeInstance: boolean, msg: ServerLoopInQuoteRequest): ServerLoopInQuoteRequest.AsObject;
@@ -365,6 +369,7 @@ export namespace ServerLoopInQuoteRequest {
     routeHintsList: Array<swapserverrpc_common_pb.RouteHint.AsObject>,
     protocolVersion: ProtocolVersionMap[keyof ProtocolVersionMap],
     userAgent: string,
+    numStaticAddressDeposits: number,
   }
 }
 
@@ -1043,6 +1048,194 @@ export class FetchL402Response extends jspb.Message {
 
 export namespace FetchL402Response {
   export type AsObject = {
+  }
+}
+
+export class SubscribeNotificationsRequest extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): SubscribeNotificationsRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: SubscribeNotificationsRequest): SubscribeNotificationsRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: SubscribeNotificationsRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): SubscribeNotificationsRequest;
+  static deserializeBinaryFromReader(message: SubscribeNotificationsRequest, reader: jspb.BinaryReader): SubscribeNotificationsRequest;
+}
+
+export namespace SubscribeNotificationsRequest {
+  export type AsObject = {
+  }
+}
+
+export class SubscribeNotificationsResponse extends jspb.Message {
+  hasReservationNotification(): boolean;
+  clearReservationNotification(): void;
+  getReservationNotification(): swapserverrpc_reservation_pb.ServerReservationNotification | undefined;
+  setReservationNotification(value?: swapserverrpc_reservation_pb.ServerReservationNotification): void;
+
+  getNotificationCase(): SubscribeNotificationsResponse.NotificationCase;
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): SubscribeNotificationsResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: SubscribeNotificationsResponse): SubscribeNotificationsResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: SubscribeNotificationsResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): SubscribeNotificationsResponse;
+  static deserializeBinaryFromReader(message: SubscribeNotificationsResponse, reader: jspb.BinaryReader): SubscribeNotificationsResponse;
+}
+
+export namespace SubscribeNotificationsResponse {
+  export type AsObject = {
+    reservationNotification?: swapserverrpc_reservation_pb.ServerReservationNotification.AsObject,
+  }
+
+  export enum NotificationCase {
+    NOTIFICATION_NOT_SET = 0,
+    RESERVATION_NOTIFICATION = 1,
+  }
+}
+
+export class ServerNewAddressRequest extends jspb.Message {
+  getProtocolVersion(): StaticAddressProtocolVersionMap[keyof StaticAddressProtocolVersionMap];
+  setProtocolVersion(value: StaticAddressProtocolVersionMap[keyof StaticAddressProtocolVersionMap]): void;
+
+  getClientKey(): Uint8Array | string;
+  getClientKey_asU8(): Uint8Array;
+  getClientKey_asB64(): string;
+  setClientKey(value: Uint8Array | string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ServerNewAddressRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: ServerNewAddressRequest): ServerNewAddressRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ServerNewAddressRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ServerNewAddressRequest;
+  static deserializeBinaryFromReader(message: ServerNewAddressRequest, reader: jspb.BinaryReader): ServerNewAddressRequest;
+}
+
+export namespace ServerNewAddressRequest {
+  export type AsObject = {
+    protocolVersion: StaticAddressProtocolVersionMap[keyof StaticAddressProtocolVersionMap],
+    clientKey: Uint8Array | string,
+  }
+}
+
+export class ServerNewAddressResponse extends jspb.Message {
+  hasParams(): boolean;
+  clearParams(): void;
+  getParams(): ServerAddressParameters | undefined;
+  setParams(value?: ServerAddressParameters): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ServerNewAddressResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: ServerNewAddressResponse): ServerNewAddressResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ServerNewAddressResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ServerNewAddressResponse;
+  static deserializeBinaryFromReader(message: ServerNewAddressResponse, reader: jspb.BinaryReader): ServerNewAddressResponse;
+}
+
+export namespace ServerNewAddressResponse {
+  export type AsObject = {
+    params?: ServerAddressParameters.AsObject,
+  }
+}
+
+export class ServerAddressParameters extends jspb.Message {
+  getServerKey(): Uint8Array | string;
+  getServerKey_asU8(): Uint8Array;
+  getServerKey_asB64(): string;
+  setServerKey(value: Uint8Array | string): void;
+
+  getExpiry(): number;
+  setExpiry(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ServerAddressParameters.AsObject;
+  static toObject(includeInstance: boolean, msg: ServerAddressParameters): ServerAddressParameters.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ServerAddressParameters, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ServerAddressParameters;
+  static deserializeBinaryFromReader(message: ServerAddressParameters, reader: jspb.BinaryReader): ServerAddressParameters;
+}
+
+export namespace ServerAddressParameters {
+  export type AsObject = {
+    serverKey: Uint8Array | string,
+    expiry: number,
+  }
+}
+
+export class ServerWithdrawRequest extends jspb.Message {
+  clearOutpointsList(): void;
+  getOutpointsList(): Array<PrevoutInfo>;
+  setOutpointsList(value: Array<PrevoutInfo>): void;
+  addOutpoints(value?: PrevoutInfo, index?: number): PrevoutInfo;
+
+  clearClientNoncesList(): void;
+  getClientNoncesList(): Array<Uint8Array | string>;
+  getClientNoncesList_asU8(): Array<Uint8Array>;
+  getClientNoncesList_asB64(): Array<string>;
+  setClientNoncesList(value: Array<Uint8Array | string>): void;
+  addClientNonces(value: Uint8Array | string, index?: number): Uint8Array | string;
+
+  getClientSweepAddr(): string;
+  setClientSweepAddr(value: string): void;
+
+  getTxFeeRate(): string;
+  setTxFeeRate(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ServerWithdrawRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: ServerWithdrawRequest): ServerWithdrawRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ServerWithdrawRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ServerWithdrawRequest;
+  static deserializeBinaryFromReader(message: ServerWithdrawRequest, reader: jspb.BinaryReader): ServerWithdrawRequest;
+}
+
+export namespace ServerWithdrawRequest {
+  export type AsObject = {
+    outpointsList: Array<PrevoutInfo.AsObject>,
+    clientNoncesList: Array<Uint8Array | string>,
+    clientSweepAddr: string,
+    txFeeRate: string,
+  }
+}
+
+export class ServerWithdrawResponse extends jspb.Message {
+  clearMusig2SweepSigsList(): void;
+  getMusig2SweepSigsList(): Array<Uint8Array | string>;
+  getMusig2SweepSigsList_asU8(): Array<Uint8Array>;
+  getMusig2SweepSigsList_asB64(): Array<string>;
+  setMusig2SweepSigsList(value: Array<Uint8Array | string>): void;
+  addMusig2SweepSigs(value: Uint8Array | string, index?: number): Uint8Array | string;
+
+  clearServerNoncesList(): void;
+  getServerNoncesList(): Array<Uint8Array | string>;
+  getServerNoncesList_asU8(): Array<Uint8Array>;
+  getServerNoncesList_asB64(): Array<string>;
+  setServerNoncesList(value: Array<Uint8Array | string>): void;
+  addServerNonces(value: Uint8Array | string, index?: number): Uint8Array | string;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ServerWithdrawResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: ServerWithdrawResponse): ServerWithdrawResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ServerWithdrawResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ServerWithdrawResponse;
+  static deserializeBinaryFromReader(message: ServerWithdrawResponse, reader: jspb.BinaryReader): ServerWithdrawResponse;
+}
+
+export namespace ServerWithdrawResponse {
+  export type AsObject = {
+    musig2SweepSigsList: Array<Uint8Array | string>,
+    serverNoncesList: Array<Uint8Array | string>,
   }
 }
 

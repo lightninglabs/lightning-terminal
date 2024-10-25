@@ -154,6 +154,15 @@ SwapServer.FetchL402 = {
   responseType: swapserverrpc_server_pb.FetchL402Response
 };
 
+SwapServer.SubscribeNotifications = {
+  methodName: "SubscribeNotifications",
+  service: SwapServer,
+  requestStream: false,
+  responseStream: true,
+  requestType: swapserverrpc_server_pb.SubscribeNotificationsRequest,
+  responseType: swapserverrpc_server_pb.SubscribeNotificationsResponse
+};
+
 exports.SwapServer = SwapServer;
 
 function SwapServerClient(serviceHost, options) {
@@ -673,5 +682,139 @@ SwapServerClient.prototype.fetchL402 = function fetchL402(requestMessage, metada
   };
 };
 
+SwapServerClient.prototype.subscribeNotifications = function subscribeNotifications(requestMessage, metadata) {
+  var listeners = {
+    data: [],
+    end: [],
+    status: []
+  };
+  var client = grpc.invoke(SwapServer.SubscribeNotifications, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onMessage: function (responseMessage) {
+      listeners.data.forEach(function (handler) {
+        handler(responseMessage);
+      });
+    },
+    onEnd: function (status, statusMessage, trailers) {
+      listeners.status.forEach(function (handler) {
+        handler({ code: status, details: statusMessage, metadata: trailers });
+      });
+      listeners.end.forEach(function (handler) {
+        handler({ code: status, details: statusMessage, metadata: trailers });
+      });
+      listeners = null;
+    }
+  });
+  return {
+    on: function (type, handler) {
+      listeners[type].push(handler);
+      return this;
+    },
+    cancel: function () {
+      listeners = null;
+      client.close();
+    }
+  };
+};
+
 exports.SwapServerClient = SwapServerClient;
+
+var StaticAddressServer = (function () {
+  function StaticAddressServer() {}
+  StaticAddressServer.serviceName = "looprpc.StaticAddressServer";
+  return StaticAddressServer;
+}());
+
+StaticAddressServer.ServerNewAddress = {
+  methodName: "ServerNewAddress",
+  service: StaticAddressServer,
+  requestStream: false,
+  responseStream: false,
+  requestType: swapserverrpc_server_pb.ServerNewAddressRequest,
+  responseType: swapserverrpc_server_pb.ServerNewAddressResponse
+};
+
+StaticAddressServer.ServerWithdrawDeposits = {
+  methodName: "ServerWithdrawDeposits",
+  service: StaticAddressServer,
+  requestStream: false,
+  responseStream: false,
+  requestType: swapserverrpc_server_pb.ServerWithdrawRequest,
+  responseType: swapserverrpc_server_pb.ServerWithdrawResponse
+};
+
+exports.StaticAddressServer = StaticAddressServer;
+
+function StaticAddressServerClient(serviceHost, options) {
+  this.serviceHost = serviceHost;
+  this.options = options || {};
+}
+
+StaticAddressServerClient.prototype.serverNewAddress = function serverNewAddress(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(StaticAddressServer.ServerNewAddress, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+StaticAddressServerClient.prototype.serverWithdrawDeposits = function serverWithdrawDeposits(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(StaticAddressServer.ServerWithdrawDeposits, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+exports.StaticAddressServerClient = StaticAddressServerClient;
 

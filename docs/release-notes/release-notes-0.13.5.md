@@ -35,8 +35,6 @@
 
 * Check internal maps before registering new sub-servers for both the 
   [status and sub-server manager.](https://github.com/lightninglabs/lightning-terminal/pull/877)
- 
-### Autopilot
 
 ## Integrated Binary Updates
 
@@ -45,15 +43,9 @@
   setting a fixed timestamps for the files in the release script and by
   providing a dockerized release build command `make docker-release` for MacOS.
 
-### LND
-
 ### Loop
-
-### Pool
-
-### Faraday
-
-### Taproot Assets
+* [Update the integrated Loop version to
+  v0.28.8-beta](https://github.com/lightninglabs/lightning-terminal/pull/885).
 
 # Contributors (Alphabetical Order)
 
