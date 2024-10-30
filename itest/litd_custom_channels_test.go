@@ -27,6 +27,7 @@ import (
 	"github.com/lightningnetwork/lnd/lntest"
 	"github.com/lightningnetwork/lnd/lntest/port"
 	"github.com/lightningnetwork/lnd/lntest/wait"
+	"github.com/lightningnetwork/lnd/lnwallet/chainfee"
 	"github.com/lightningnetwork/lnd/lnwire"
 	"github.com/stretchr/testify/require"
 )
@@ -2636,4 +2637,88 @@ func testCustomChannelsOraclePricing(_ context.Context,
 		t, net, erin, fabia, chanPointEF, assetID, nil, universeTap,
 		noOpCoOpCloseBalanceCheck,
 	)
+}
+
+// testCustomChannelsFee tests the whether the custom channel funding process
+// fails if the proposed fee rate is lower than the minimum relay fee.
+func testCustomChannelsFee(_ context.Context,
+	net *NetworkHarness, t *harnessTest) {
+
+	ctxb := context.Background()
+	lndArgs := slices.Clone(lndArgsTemplate)
+	litdArgs := slices.Clone(litdArgsTemplate)
+
+	zane, err := net.NewNode(
+		t.t, "Zane", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	litdArgs = append(litdArgs, fmt.Sprintf(
+		"--taproot-assets.proofcourieraddr=%s://%s",
+		proof.UniverseRpcCourierType, zane.Cfg.LitAddr(),
+	))
+
+	charlie, err := net.NewNode(
+		t.t, "Charlie", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+	dave, err := net.NewNode(t.t, "Dave", lndArgs, false, true, litdArgs...)
+	require.NoError(t.t, err)
+
+	nodes := []*HarnessNode{charlie, dave}
+	connectAllNodes(t.t, net, nodes)
+	fundAllNodes(t.t, net, nodes)
+
+	charlieTap := newTapClient(t.t, charlie)
+	daveTap := newTapClient(t.t, dave)
+
+	// Mint an assets on Charlie and sync Dave to Charlie as the universe.
+	mintedAssets := itest.MintAssetsConfirmBatch(
+		t.t, t.lndHarness.Miner.Client, charlieTap,
+		[]*mintrpc.MintAssetRequest{
+			{
+				Asset: itestAsset,
+			},
+		},
+	)
+	cents := mintedAssets[0]
+	assetID := cents.AssetGenesis.AssetId
+
+	t.Logf("Minted %d lightning cents, syncing universes...", cents.Amount)
+	syncUniverses(t.t, charlieTap, dave)
+	t.Logf("Universes synced between all nodes, distributing assets...")
+
+	// Fund a channel with a fee rate of zero.
+	zeroFeeRate := uint32(0)
+
+	_, err = charlieTap.FundChannel(
+		ctxb, &tchrpc.FundChannelRequest{
+			AssetAmount:        cents.Amount,
+			AssetId:            assetID,
+			PeerPubkey:         daveTap.node.PubKey[:],
+			FeeRateSatPerVbyte: zeroFeeRate,
+			PushSat:            0,
+		},
+	)
+
+	errSpecifyFeerate := "fee rate must be specified"
+	require.ErrorContains(t.t, err, errSpecifyFeerate)
+
+	// Fund a channel with a fee rate that is too low.
+	tooLowFeeRate := uint32(1)
+	tooLowFeeRateAmount := chainfee.SatPerVByte(tooLowFeeRate)
+
+	_, err = charlieTap.FundChannel(
+		ctxb, &tchrpc.FundChannelRequest{
+			AssetAmount:        cents.Amount,
+			AssetId:            assetID,
+			PeerPubkey:         daveTap.node.PubKey[:],
+			FeeRateSatPerVbyte: tooLowFeeRate,
+			PushSat:            0,
+		},
+	)
+
+	errFeeRateTooLow := fmt.Sprintf("fee rate %s too low, "+
+		"min_relay_fee: ", tooLowFeeRateAmount.FeePerKWeight())
+	require.ErrorContains(t.t, err, errFeeRateTooLow)
 }

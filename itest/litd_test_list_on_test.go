@@ -60,4 +60,8 @@ var allTestCases = []*testCase{
 		name: "test custom channels oracle pricing",
 		test: testCustomChannelsOraclePricing,
 	},
+	{
+		name: "test custom channels fee",
+		test: testCustomChannelsFee,
+	},
 }
