@@ -20,7 +20,7 @@ that the promised balance of the account is actually spendable.
 
 ## How do accounts work?
 
-The accounts systems are made possible thanks to the power of
+The accounts system is made possible thanks to the power of
 [macaroons](https://github.com/lightningnetwork/lnd/blob/master/docs/macaroons.md)
 and the [RPC middleware
 interceptor](https://github.com/lightningnetwork/lnd/blob/master/lnrpc/lightning.proto#L558)
