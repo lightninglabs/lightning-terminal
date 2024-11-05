@@ -64,7 +64,6 @@ var fundChannelCommand = cli.Command{
 			Usage: "(optional) a manual fee expressed in " +
 				"sat/vByte that should be used when crafting " +
 				"the transaction",
-			Value: 1,
 		},
 		cli.Uint64Flag{
 			Name: "push_amt",
