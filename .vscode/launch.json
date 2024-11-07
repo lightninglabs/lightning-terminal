@@ -8,29 +8,42 @@
       "name": "Debug itest",
       "type": "go",
       "request": "launch",
-      "mode": "exec",
+      "mode": "test",
       "preLaunchTask": "reset before itest",
-      "program": "itest/itest.test",
+      "program": "${workspaceFolder}/itest",
+      "env": {
+        "CGO_ENABLED": "0",
+      },
       "args": [
         "-test.v",
         "-test.run=TestLightningTerminal/test_custom_channels",
         "-logoutput",
         "-logdir=${workspaceFolder}/itest/.logs",
         "-litdexec=${workspaceFolder}/itest/litd-itest",
-        "-btcdexec=${workspaceFolder}/itest/btcd-itest",
-      ]
+      ],
+      "buildFlags": [
+        "-ldflags=-X github.com/lightningnetwork/lnd/build.RawTags=chainrpc,walletrpc,signrpc,invoicesrpc,autopilotrpc,watchtowerrpc,twclientrpc -X github.com/lightningnetwork/lnd/build.Commit=lightning-terminal-v0.4.0-alpha -X github.com/lightninglabs/loop.Commit=localbuild -X github.com/lightninglabs/pool.Commit=localbuild -X github.com/lightninglabs/lightning-terminal.Commit=localbuild",
+        "-tags=dev integration itest lowscrypt litd autopilotrpc signrpc walletrpc chainrpc invoicesrpc watchtowerrpc neutrinorpc peersrpc",
+      ],
     },
     {
       "name": "Debug Tests",
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "${workspaceRoot}/app/node_modules/.bin/react-scripts",
-      "args": ["test", "--runInBand", "--no-cache", "--watchAll=false"],
+      "args": [
+        "test",
+        "--runInBand",
+        "--no-cache",
+        "--watchAll=false"
+      ],
       "cwd": "${workspaceRoot}/app/",
       "protocol": "inspector",
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
-      "env": { "CI": "true" },
+      "env": {
+        "CI": "true"
+      },
       "disableOptimisticBPs": true
     }
   ]
