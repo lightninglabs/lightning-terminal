@@ -16,12 +16,19 @@
 
 ### Bug Fixes
 
+### Functional Changes/Additions
+
 * [Disable the `GRPC` internal low-level connection logger by
   default](https://github.com/lightninglabs/lightning-terminal/pull/896).
   It can still be enabled by adding `,GRPC=info` at the end of the
   `lnd.debuglevel` or `remote.lit-debuglevel` configuration options.
 
-### Functional Changes/Additions
+* [Add a new `lndrpctimeout` configuration
+  option](https://github.com/lightninglabs/lightning-terminal/pull/899) that
+  configures the default timeout that is used when waiting for a response on any
+  call to `lnd`. This value is used by **all** subservers for all calls, so a
+  sufficiently long duration (>= 30 seconds) should be used. The default value
+  was bumped from 30 seconds to 3 minutes.
 
 ### Technical and Architectural Updates
 

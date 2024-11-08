@@ -189,8 +189,9 @@ type Config struct {
 	// friendly. Because then we can reference the explicit modes in the
 	// help descriptions of the section headers. We'll parse the mode into
 	// a bool for internal use for better code readability.
-	LndMode string      `long:"lnd-mode" description:"The mode to run lnd in, either 'remote' (default) or 'integrated'. 'integrated' means lnd is started alongside the UI and everything is stored in lnd's main data directory, configure everything by using the --lnd.* flags. 'remote' means the UI connects to an existing lnd node and acts as a proxy for gRPC calls to it. In the remote node LiT creates its own directory for log and configuration files, configure everything using the --remote.* flags." choice:"integrated" choice:"remote"`
-	Lnd     *lnd.Config `group:"Integrated lnd (use when lnd-mode=integrated)" namespace:"lnd"`
+	LndMode       string        `long:"lnd-mode" description:"The mode to run lnd in, either 'remote' (default) or 'integrated'. 'integrated' means lnd is started alongside the UI and everything is stored in lnd's main data directory, configure everything by using the --lnd.* flags. 'remote' means the UI connects to an existing lnd node and acts as a proxy for gRPC calls to it. In the remote node LiT creates its own directory for log and configuration files, configure everything using the --remote.* flags." choice:"integrated" choice:"remote"`
+	Lnd           *lnd.Config   `group:"Integrated lnd (use when lnd-mode=integrated)" namespace:"lnd"`
+	LndRPCTimeout time.Duration `long:"lndrpctimeout" description:"The timeout for RPC calls to lnd from other sub servers. This can be adjusted for slow lnd instances to give loop/pool/faraday/taproot-assets more time when querying into lnd's RPC methods. This value should NOT be set to anything below 30 seconds to avoid problems."`
 
 	FaradayMode string          `long:"faraday-mode" description:"The mode to run faraday in, either 'integrated' (default), 'remote' or 'disable'. 'integrated' means faraday is started alongside the UI and everything is stored in faraday's main data directory, configure everything by using the --faraday.* flags. 'remote' means the UI connects to an existing faraday node and acts as a proxy for gRPC calls to it. 'disable' means that LiT is started without faraday." choice:"integrated" choice:"remote" choice:"disable"`
 	Faraday     *faraday.Config `group:"Integrated faraday options (use when faraday-mode=integrated)" namespace:"faraday"`
@@ -311,6 +312,7 @@ func defaultConfig() *Config {
 		Network:              DefaultNetwork,
 		LndMode:              DefaultLndMode,
 		Lnd:                  &lndDefaultConfig,
+		LndRPCTimeout:        defaultRPCTimeout,
 		LitDir:               DefaultLitDir,
 		LetsEncryptListen:    defaultLetsEncryptListen,
 		LetsEncryptDir:       defaultLetsEncryptDir,
@@ -409,6 +411,13 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 	// can overwrite the flag here.
 	if !cfg.lndRemote && !cfg.RPCMiddleware.Disabled {
 		cfg.Lnd.RPCMiddleware.Enable = true
+	}
+
+	// We want to make sure the users don't shoot themselves in the foot by
+	// using a too low value for the lnd RPC timeout.
+	if cfg.LndRPCTimeout < minimumRPCTimeout {
+		return nil, fmt.Errorf("lnd RPC timeout must be at least %v "+
+			"to avoid problems", minimumRPCTimeout)
 	}
 
 	// Validate the lightning-terminal config options.
