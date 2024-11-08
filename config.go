@@ -386,15 +386,19 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 	// the debug log level(s). In remote lnd mode we have a global log level
 	// that overwrites all others. In integrated mode we use the lnd log
 	// level as the master level.
+	debuglevel := cfg.Lnd.DebugLevel
 	if cfg.lndRemote {
-		err = build.ParseAndSetDebugLevels(
-			cfg.Remote.LitDebugLevel, cfg.Lnd.LogWriter,
-		)
-	} else {
-		err = build.ParseAndSetDebugLevels(
-			cfg.Lnd.DebugLevel, cfg.Lnd.LogWriter,
-		)
+		debuglevel = cfg.Remote.LitDebugLevel
 	}
+
+	// By default, we don't want the GRPC connection-level logger to be
+	// turned on. So if it isn't specifically mentioned in the debug level
+	// string, we'll disable it.
+	if !strings.Contains(debuglevel, GrpcLogSubsystem) {
+		debuglevel += fmt.Sprintf(",%s=off", GrpcLogSubsystem)
+	}
+
+	err = build.ParseAndSetDebugLevels(debuglevel, cfg.Lnd.LogWriter)
 	if err != nil {
 		return nil, err
 	}
