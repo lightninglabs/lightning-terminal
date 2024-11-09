@@ -1059,6 +1059,74 @@ func assertPaymentHtlcAssets(t *testing.T, node *HarnessNode, payHash []byte,
 	require.InDelta(t, assetAmount, totalAssetAmount, 1)
 }
 
+type assetHodlInvoice struct {
+	preimage lntypes.Preimage
+	payReq   string
+}
+
+func createAssetHodlInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
+	assetAmount uint64, assetID []byte) assetHodlInvoice {
+
+	ctxb := context.Background()
+	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
+	defer cancel()
+
+	timeoutSeconds := int64(rfq.DefaultInvoiceExpiry.Seconds())
+
+	t.Logf("Asking peer %x for quote to buy assets to receive for "+
+		"invoice over %d units; waiting up to %ds",
+		dstRfqPeer.PubKey[:], assetAmount, timeoutSeconds)
+
+	dstTapd := newTapClient(t, dst)
+
+	// As this is a hodl invoice, we'll also need to create a preimage external
+	// to lnd.
+	var preimage lntypes.Preimage
+	_, err := rand.Read(preimage[:])
+	require.NoError(t, err)
+
+	payHash := preimage.Hash()
+
+	resp, err := dstTapd.AddInvoice(ctxt, &tchrpc.AddInvoiceRequest{
+		AssetId:     assetID,
+		AssetAmount: assetAmount,
+		PeerPubkey:  dstRfqPeer.PubKey[:],
+		InvoiceRequest: &lnrpc.Invoice{
+			Memo: fmt.Sprintf("this is an asset invoice over "+
+				"%d units", assetAmount),
+			Expiry: timeoutSeconds,
+		},
+		HodlInvoice: &tchrpc.HodlInvoice{
+			PaymentHash: payHash[:],
+		},
+	})
+	require.NoError(t, err)
+
+	decodedInvoice, err := dst.DecodePayReq(ctxt, &lnrpc.PayReqString{
+		PayReq: resp.InvoiceResult.PaymentRequest,
+	})
+	require.NoError(t, err)
+
+	rpcRate := resp.AcceptedBuyQuote.AskAssetRate
+	rate, err := rfqrpc.UnmarshalFixedPoint(rpcRate)
+	require.NoError(t, err)
+
+	assetUnits := rfqmath.NewBigIntFixedPoint(assetAmount, 0)
+	numMSats := rfqmath.UnitsToMilliSatoshi(assetUnits, *rate)
+	mSatPerUnit := float64(decodedInvoice.NumMsat) / float64(assetAmount)
+
+	require.EqualValues(t, uint64(numMSats), uint64(decodedInvoice.NumMsat))
+
+	t.Logf("Got quote for %d sats at %v msat/unit from peer %x with SCID "+
+		"%d", decodedInvoice.NumMsat, mSatPerUnit, dstRfqPeer.PubKey[:],
+		resp.AcceptedBuyQuote.Scid)
+
+	return assetHodlInvoice{
+		preimage: preimage,
+		payReq:   resp.InvoiceResult.PaymentRequest,
+	}
+}
+
 func waitForSendEvent(t *testing.T,
 	sendEvents taprpc.TaprootAssets_SubscribeSendEventsClient,
 	expectedState tapfreighter.SendState) {
