@@ -3,11 +3,13 @@ package itest
 import (
 	"context"
 	"fmt"
+	"testing"
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/lightningnetwork/lnd/channeldb"
 	"github.com/lightningnetwork/lnd/lnrpc"
+	"github.com/lightningnetwork/lnd/lnrpc/walletrpc"
 	"github.com/lightningnetwork/lnd/lntest"
 	"github.com/lightningnetwork/lnd/lntest/wait"
 	"github.com/stretchr/testify/require"
@@ -204,4 +206,28 @@ func assertChannelClosed(ctx context.Context, t *harnessTest,
 	)
 
 	return closingTxid
+}
+
+func assertSweepExists(t *testing.T, node *HarnessNode,
+	witnessType walletrpc.WitnessType) {
+
+	ctxb := context.Background()
+	err := wait.NoError(func() error {
+		pendingSweeps, err := node.WalletKitClient.PendingSweeps(
+			ctxb, &walletrpc.PendingSweepsRequest{},
+		)
+		if err != nil {
+			return err
+		}
+
+		for _, sweep := range pendingSweeps.PendingSweeps {
+			if sweep.WitnessType == witnessType {
+				return nil
+			}
+		}
+
+		return fmt.Errorf("failed to find second level sweep: %v",
+			toProtoJSON(t, pendingSweeps))
+	}, defaultTimeout)
+	require.NoError(t, err)
 }

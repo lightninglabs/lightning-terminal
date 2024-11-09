@@ -1868,3 +1868,91 @@ func toProtoJSON(t *testing.T, resp proto.Message) string {
 
 	return string(jsonBytes)
 }
+
+func assertNumHtlcs(t *testing.T, node *HarnessNode, expected int) {
+	t.Helper()
+
+	ctxb := context.Background()
+
+	err := wait.NoError(func() error {
+		listChansRequest := &lnrpc.ListChannelsRequest{}
+		listChansResp, err := node.ListChannels(ctxb, listChansRequest)
+		if err != nil {
+			return err
+		}
+
+		var numHtlcs int
+		for _, channel := range listChansResp.Channels {
+			numHtlcs += len(channel.PendingHtlcs)
+		}
+
+		if numHtlcs != expected {
+			return fmt.Errorf("expected %v HTLCs, got %v, %v", expected, numHtlcs, spew.Sdump(toProtoJSON(t, listChansResp)))
+		}
+
+		return nil
+	}, defaultTimeout)
+	require.NoError(t, err)
+}
+
+type forceCloseExpiryInfo struct {
+	currentHeight uint32
+	csvDelay      uint32
+
+	cltvDelays map[lntypes.Hash]uint32
+
+	localAssetBalance  uint64
+	remoteAssetBalance uint64
+
+	t *testing.T
+
+	node *HarnessNode
+}
+
+func (f *forceCloseExpiryInfo) blockTillExpiry(hash lntypes.Hash) uint32 {
+	ctxb := context.Background()
+	nodeInfo, err := f.node.GetInfo(ctxb, &lnrpc.GetInfoRequest{})
+	require.NoError(f.t, err)
+
+	cltv, ok := f.cltvDelays[hash]
+	require.True(f.t, ok)
+
+	f.t.Logf("current_height=%v, expiry=%v, mining %v blocks",
+		nodeInfo.BlockHeight, cltv, cltv-nodeInfo.BlockHeight)
+
+	return cltv - nodeInfo.BlockHeight
+}
+
+func newCloseExpiryInfo(t *testing.T, node *HarnessNode) forceCloseExpiryInfo {
+	ctxb := context.Background()
+
+	listChansRequest := &lnrpc.ListChannelsRequest{}
+	listChansResp, err := node.ListChannels(ctxb, listChansRequest)
+	require.NoError(t, err)
+
+	mainChan := listChansResp.Channels[0]
+
+	nodeInfo, err := node.GetInfo(ctxb, &lnrpc.GetInfoRequest{})
+	require.NoError(t, err)
+
+	cltvs := make(map[lntypes.Hash]uint32)
+	for _, htlc := range mainChan.PendingHtlcs {
+		var payHash lntypes.Hash
+		copy(payHash[:], htlc.HashLock)
+		cltvs[payHash] = htlc.ExpirationHeight
+	}
+
+	var assetData rfqmsg.JsonAssetChannel
+	err = json.Unmarshal(mainChan.CustomChannelData, &assetData)
+	require.NoError(t, err)
+
+	return forceCloseExpiryInfo{
+		csvDelay:           mainChan.CsvDelay,
+		currentHeight:      nodeInfo.BlockHeight,
+		cltvDelays:         cltvs,
+		localAssetBalance:  assetData.Assets[0].LocalBalance,
+		remoteAssetBalance: assetData.Assets[0].RemoteBalance,
+		t:                  t,
+		node:               node,
+	}
+}
