@@ -436,8 +436,8 @@ func getPaymentResult(stream routerrpc.Router_SendPaymentV2Client) (
 }
 
 func getAssetPaymentResult(
-	s tapchannelrpc.TaprootAssetChannels_SendPaymentClient) (*lnrpc.Payment,
-	error) {
+	s tapchannelrpc.TaprootAssetChannels_SendPaymentClient,
+	isHodl bool) (*lnrpc.Payment, error) {
 
 	// No idea why it makes a difference whether we wait before calling
 	// s.Recv() or not, but it does. Without the sleep, the test will fail
@@ -456,7 +456,14 @@ func getAssetPaymentResult(
 			return nil, fmt.Errorf("unexpected message: %v", msg)
 		}
 
-		if payment.Status != lnrpc.Payment_IN_FLIGHT {
+		// If this is a hodl payment, then we'll return the first expected
+		// response. Otherwise, we'll wait until the in flight clears to we can
+		// observe the other payment states.
+		switch {
+		case isHodl:
+			return payment, nil
+
+		case payment.Status != lnrpc.Payment_IN_FLIGHT:
 			return payment, nil
 		}
 	}

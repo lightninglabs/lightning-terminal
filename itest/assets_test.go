@@ -707,7 +707,7 @@ func sendAssetKeySendPayment(t *testing.T, src, dst *HarnessNode, amt uint64,
 	})
 	require.NoError(t, err)
 
-	result, err := getAssetPaymentResult(stream)
+	result, err := getAssetPaymentResult(stream, false)
 	require.NoError(t, err)
 	require.Equal(t, expectedStatus, result.Status)
 
@@ -786,7 +786,8 @@ func createAndPayNormalInvoice(t *testing.T, src, rfqPeer, dst *HarnessNode,
 	require.NoError(t, err)
 
 	numUnits, _ := payInvoiceWithAssets(
-		t, src, rfqPeer, invoiceResp, assetID, smallShards,
+		t, src, rfqPeer, invoiceResp.PaymentRequest, assetID, smallShards,
+		fn.None[lnrpc.Payment_PaymentStatus](),
 	)
 
 	return numUnits
@@ -851,8 +852,9 @@ func payInvoiceWithSatoshiLastHop(t *testing.T, payer *HarnessNode,
 }
 
 func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
-	invoice *lnrpc.AddInvoiceResponse, assetID []byte,
-	smallShards bool) (uint64, rfqmath.BigIntFixedPoint) {
+	payReq string, assetID []byte, smallShards bool,
+	expectedPayStatus fn.Option[lnrpc.Payment_PaymentStatus]) (uint64,
+	rfqmath.BigIntFixedPoint) {
 
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
@@ -861,12 +863,12 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 	payerTapd := newTapClient(t, payer)
 
 	decodedInvoice, err := payer.DecodePayReq(ctxt, &lnrpc.PayReqString{
-		PayReq: invoice.PaymentRequest,
+		PayReq: payReq,
 	})
 	require.NoError(t, err)
 
 	sendReq := &routerrpc.SendPaymentRequest{
-		PaymentRequest: invoice.PaymentRequest,
+		PaymentRequest: payReq,
 		TimeoutSeconds: int32(PaymentTimeout.Seconds()),
 		FeeLimitMsat:   1_000_000,
 	}
@@ -906,9 +908,11 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 		"with SCID %d", numUnits, msatPerUnit, peerPubKey,
 		acceptedQuote.Scid)
 
-	result, err := getAssetPaymentResult(stream)
+	expectedStatus := expectedPayStatus.UnwrapOr(lnrpc.Payment_SUCCEEDED)
+
+	result, err := getAssetPaymentResult(stream, expectedPayStatus.IsSome())
 	require.NoError(t, err)
-	require.Equal(t, lnrpc.Payment_SUCCEEDED, result.Status)
+	require.Equal(t, expectedStatus, result.Status)
 
 	return numUnits, *rate
 }

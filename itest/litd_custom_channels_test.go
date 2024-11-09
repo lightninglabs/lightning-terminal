@@ -45,6 +45,8 @@ var (
 	}
 
 	shortTimeout = time.Second * 5
+
+	defaultPaymentStatus = fn.None[lnrpc.Payment_PaymentStatus]()
 )
 
 var (
@@ -222,7 +224,10 @@ func testCustomChannelsLarge(_ context.Context, net *NetworkHarness,
 	invoiceResp := createAssetInvoice(
 		t.t, erin, fabia, fabiaInvoiceAssetAmount, assetID,
 	)
-	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp, assetID, false)
+	payInvoiceWithAssets(
+		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID, false,
+		defaultPaymentStatus,
+	)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
 	invoiceResp2 := createAssetInvoice(
@@ -234,7 +239,10 @@ func testCustomChannelsLarge(_ context.Context, net *NetworkHarness,
 	// amount of zero.
 	time.Sleep(time.Second * 1)
 
-	payInvoiceWithAssets(t.t, fabia, erin, invoiceResp2, assetID, false)
+	payInvoiceWithAssets(
+		t.t, fabia, erin, invoiceResp2.PaymentRequest, assetID, false,
+		defaultPaymentStatus,
+	)
 	logBalance(t.t, nodes, assetID, "after invoice 2")
 
 	// Now we send a large invoice from Charlie to Dave.
@@ -242,7 +250,10 @@ func testCustomChannelsLarge(_ context.Context, net *NetworkHarness,
 	invoiceResp3 := createAssetInvoice(
 		t.t, charlie, dave, largeInvoiceAmount, assetID,
 	)
-	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp3, assetID, false)
+	payInvoiceWithAssets(
+		t.t, charlie, dave, invoiceResp3.PaymentRequest, assetID, false,
+		defaultPaymentStatus,
+	)
 	logBalance(t.t, nodes, assetID, "after invoice 3")
 
 	// Make sure the invoice on the receiver side and the payment on the
@@ -431,7 +442,10 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	invoiceResp := createAssetInvoice(
 		t.t, dave, charlie, charlieInvoiceAmount, assetID,
 	)
-	payInvoiceWithAssets(t.t, dave, charlie, invoiceResp, assetID, true)
+	payInvoiceWithAssets(
+		t.t, dave, charlie, invoiceResp.PaymentRequest, assetID, true,
+		defaultPaymentStatus,
+	)
 	logBalance(t.t, nodes, assetID, "after invoice back")
 
 	// Make sure the invoice on the receiver side and the payment on the
@@ -493,7 +507,10 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	invoiceResp = createAssetInvoice(
 		t.t, charlie, dave, daveInvoiceAssetAmount, assetID,
 	)
-	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp, assetID, true)
+	payInvoiceWithAssets(
+		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID, true,
+		defaultPaymentStatus,
+	)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
 	charlieAssetBalance -= daveInvoiceAssetAmount
@@ -535,7 +552,10 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	invoiceResp = createAssetInvoice(
 		t.t, erin, fabia, fabiaInvoiceAssetAmount1, assetID,
 	)
-	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp, assetID, true)
+	payInvoiceWithAssets(
+		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID, true,
+		defaultPaymentStatus,
+	)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
 	charlieAssetBalance -= fabiaInvoiceAssetAmount1
@@ -569,7 +589,10 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	invoiceResp = createAssetInvoice(
 		t.t, erin, fabia, fabiaInvoiceAssetAmount3, assetID,
 	)
-	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp, assetID, true)
+	payInvoiceWithAssets(
+		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID, true,
+		defaultPaymentStatus,
+	)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
 	charlieAssetBalance -= fabiaInvoiceAssetAmount3
@@ -587,7 +610,10 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	invoiceResp = createAssetInvoice(
 		t.t, dave, yara, yaraInvoiceAssetAmount1, assetID,
 	)
-	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp, assetID, true)
+	payInvoiceWithAssets(
+		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID, true,
+		defaultPaymentStatus,
+	)
 	logBalance(t.t, nodes, assetID, "after asset-to-asset")
 
 	charlieAssetBalance -= yaraInvoiceAssetAmount1
@@ -920,7 +946,10 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	invoiceResp := createAssetInvoice(
 		t.t, charlie, dave, daveInvoiceAssetAmount, assetID,
 	)
-	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp, assetID, true)
+	payInvoiceWithAssets(
+		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID, true,
+		defaultPaymentStatus,
+	)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
 	// Make sure the invoice on the receiver side and the payment on the
@@ -955,7 +984,10 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	invoiceResp = createAssetInvoice(
 		t.t, erin, fabia, fabiaInvoiceAssetAmount1, assetID,
 	)
-	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp, assetID, true)
+	payInvoiceWithAssets(
+		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID, true,
+		defaultPaymentStatus,
+	)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
 	charlieAssetBalance -= fabiaInvoiceAssetAmount1
@@ -989,7 +1021,10 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	invoiceResp = createAssetInvoice(
 		t.t, erin, fabia, fabiaInvoiceAssetAmount3, assetID,
 	)
-	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp, assetID, true)
+	payInvoiceWithAssets(
+		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID, true,
+		defaultPaymentStatus,
+	)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
 	charlieAssetBalance -= fabiaInvoiceAssetAmount3
@@ -1007,7 +1042,10 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	invoiceResp = createAssetInvoice(
 		t.t, dave, yara, yaraInvoiceAssetAmount1, assetID,
 	)
-	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp, assetID, true)
+	payInvoiceWithAssets(
+		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID, true,
+		defaultPaymentStatus,
+	)
 	logBalance(t.t, nodes, assetID, "after asset-to-asset")
 
 	charlieAssetBalance -= yaraInvoiceAssetAmount1
@@ -1916,7 +1954,11 @@ func testCustomChannelsLiquidityEdgeCases(_ context.Context,
 	invoiceResp := createAssetInvoice(
 		t.t, charlie, dave, bigAssetAmount, assetID,
 	)
-	payInvoiceWithAssets(t.t, charlie, dave, invoiceResp, assetID, false)
+
+	payInvoiceWithAssets(
+		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID, false,
+		defaultPaymentStatus,
+	)
 
 	logBalance(t.t, nodes, assetID, "after big asset payment (asset "+
 		"invoice, direct)")
@@ -1959,7 +2001,10 @@ func testCustomChannelsLiquidityEdgeCases(_ context.Context,
 		t.t, dave, charlie, bigAssetAmount, assetID,
 	)
 
-	payInvoiceWithAssets(t.t, yara, dave, invoiceResp, assetID, false)
+	payInvoiceWithAssets(
+		t.t, yara, dave, invoiceResp.PaymentRequest, assetID, false,
+		defaultPaymentStatus,
+	)
 
 	logBalance(t.t, nodes, assetID, "after big asset payment (asset "+
 		"invoice, multi-hop)")
@@ -2516,7 +2561,8 @@ func testCustomChannelsOraclePricing(_ context.Context,
 	require.EqualValues(t.t, 153_333_242, decodedInvoice.NumMsat)
 
 	numUnits, rate := payInvoiceWithAssets(
-		t.t, charlie, dave, invoiceResp, assetID, false,
+		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID, false,
+		defaultPaymentStatus,
 	)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
