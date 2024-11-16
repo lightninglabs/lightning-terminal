@@ -656,6 +656,8 @@ func (hn *HarnessNode) Start(litdBinary string, litdError chan<- error,
 		return err
 	}
 
+	fmt.Printf("Starting node=%v, pid=%v\n", hn.Cfg.Name, hn.cmd.Process.Pid)
+
 	// Launch a new goroutine which that bubbles up any potential fatal
 	// process errors to the goroutine running the tests.
 	hn.processExit = make(chan struct{})
