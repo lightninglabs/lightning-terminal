@@ -30,6 +30,10 @@
   sufficiently long duration (>= 30 seconds) should be used. The default value
   was bumped from 30 seconds to 3 minutes.
 
+* Add support for connecting LiT to a [signet 
+  network](https://github.com/lightninglabs/lightning-terminal/pull/902). This 
+  can be done using the `--network=signet` config option.
+
 ### Technical and Architectural Updates
 
 ## Integrated Binary Updates
@@ -46,4 +50,5 @@
 
 # Contributors (Alphabetical Order)
 
-- Oliver Gugger
+* Elle Mouton
+* Oliver Gugger
