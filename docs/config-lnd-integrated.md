@@ -310,7 +310,7 @@ as it is the default directory (`~/.lnd` on Linux).
 
 ### Example `loop` command
 
-This is where things get a bit tricky. Because as mentioned above, `loopd` also
+This is where things get a bit tricky, because as mentioned above, `loopd` also
 runs on the same gRPC server as `lnd`. That's why we have to both specify the
 `host:port` as well as the TLS certificate of `lnd`. But `loopd` verifies its
 own macaroon, so we have to specify that one from the `.loop` directory.
