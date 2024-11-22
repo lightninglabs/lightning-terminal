@@ -56,6 +56,10 @@ const (
 	DefaultPushSat int64 = 1062
 )
 
+var (
+	NoRfqIDOpt = fn.None[rfqmsg.ID]()
+)
+
 // createTestAssetNetwork sends asset funds from Charlie to Dave and Erin, so
 // they can fund asset channels with Yara and Fabia, respectively. So the asset
 // channels created are Charlie->Dave, Dave->Yara, Erin->Fabia. The channels
@@ -714,6 +718,9 @@ func sendAssetKeySendPayment(t *testing.T, src, dst *HarnessNode, amt uint64,
 
 	result, err := getAssetPaymentResult(stream, false)
 	require.NoError(t, err)
+	if result.Status == lnrpc.Payment_FAILED {
+		t.Logf("Failure reason: %v", result.FailureReason)
+	}
 	require.Equal(t, expectedStatus, result.Status)
 
 	expectedReason := failReason.UnwrapOr(
@@ -772,7 +779,9 @@ func createAndPayNormalInvoiceWithBtc(t *testing.T, src, dst *HarnessNode,
 	})
 	require.NoError(t, err)
 
-	payInvoiceWithSatoshi(t, src, invoiceResp, lnrpc.Payment_SUCCEEDED)
+	payInvoiceWithSatoshi(
+		t, src, invoiceResp, lnrpc.Payment_SUCCEEDED, false,
+	)
 }
 
 func createAndPayNormalInvoice(t *testing.T, src, rfqPeer, dst *HarnessNode,
@@ -792,7 +801,7 @@ func createAndPayNormalInvoice(t *testing.T, src, rfqPeer, dst *HarnessNode,
 
 	numUnits, _ := payInvoiceWithAssets(
 		t, src, rfqPeer, invoiceResp.PaymentRequest, assetID, smallShards,
-		fn.None[lnrpc.Payment_PaymentStatus](),
+		fn.None[lnrpc.Payment_PaymentStatus](), NoRfqIDOpt,
 	)
 
 	return numUnits
@@ -800,7 +809,7 @@ func createAndPayNormalInvoice(t *testing.T, src, rfqPeer, dst *HarnessNode,
 
 func payInvoiceWithSatoshi(t *testing.T, payer *HarnessNode,
 	invoice *lnrpc.AddInvoiceResponse,
-	expectedStatus lnrpc.Payment_PaymentStatus) {
+	expectedStatus lnrpc.Payment_PaymentStatus, expectTimeout bool) {
 
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
@@ -816,8 +825,12 @@ func payInvoiceWithSatoshi(t *testing.T, payer *HarnessNode,
 	require.NoError(t, err)
 
 	result, err := getPaymentResult(stream)
-	require.NoError(t, err)
-	require.Equal(t, expectedStatus, result.Status)
+	if expectTimeout {
+		require.ErrorContains(t, err, "context deadline exceeded")
+	} else {
+		require.NoError(t, err)
+		require.Equal(t, expectedStatus, result.Status)
+	}
 }
 
 func payInvoiceWithSatoshiLastHop(t *testing.T, payer *HarnessNode,
@@ -858,7 +871,8 @@ func payInvoiceWithSatoshiLastHop(t *testing.T, payer *HarnessNode,
 
 func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 	payReq string, assetID []byte, smallShards bool,
-	expectedPayStatus fn.Option[lnrpc.Payment_PaymentStatus]) (uint64,
+	expectedPayStatus fn.Option[lnrpc.Payment_PaymentStatus],
+	manualRfq fn.Option[rfqmsg.ID]) (uint64,
 	rfqmath.BigIntFixedPoint) {
 
 	ctxb := context.Background()
@@ -882,44 +896,62 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 		sendReq.MaxShardSizeMsat = 80_000_000
 	}
 
+	var rfqBytes []byte
+	manualRfq.WhenSome(func(i rfqmsg.ID) {
+		rfqBytes = make([]byte, len(i[:]))
+		copy(rfqBytes, i[:])
+	})
+
 	stream, err := payerTapd.SendPayment(ctxt, &tchrpc.SendPaymentRequest{
 		AssetId:        assetID,
 		PeerPubkey:     rfqPeer.PubKey[:],
 		PaymentRequest: sendReq,
+		RfqId:          rfqBytes,
 	})
 	require.NoError(t, err)
 
-	// We want to receive the accepted quote message first, so we know how
-	// many assets we're going to pay.
-	quoteMsg, err := stream.Recv()
-	require.NoError(t, err)
-	acceptedQuote := quoteMsg.GetAcceptedSellOrder()
-	require.NotNil(t, acceptedQuote)
+	var (
+		numUnits uint64
+		rateVal  rfqmath.FixedPoint[rfqmath.BigInt]
+	)
 
-	peerPubKey := acceptedQuote.Peer
-	require.Equal(t, peerPubKey, rfqPeer.PubKeyStr)
+	if manualRfq.IsNone() {
+		// We want to receive the accepted quote message first, so we know how
+		// many assets we're going to pay.
+		quoteMsg, err := stream.Recv()
+		require.NoError(t, err)
+		acceptedQuote := quoteMsg.GetAcceptedSellOrder()
+		require.NotNil(t, acceptedQuote)
 
-	rpcRate := acceptedQuote.BidAssetRate
-	rate, err := rfqrpc.UnmarshalFixedPoint(rpcRate)
-	require.NoError(t, err)
+		peerPubKey := acceptedQuote.Peer
+		require.Equal(t, peerPubKey, rfqPeer.PubKeyStr)
 
-	t.Logf("Got quote for %v asset units per BTC", rate)
+		rpcRate := acceptedQuote.BidAssetRate
+		rate, err := rfqrpc.UnmarshalFixedPoint(rpcRate)
+		require.NoError(t, err)
 
-	amountMsat := lnwire.MilliSatoshi(decodedInvoice.NumMsat)
-	milliSatsFP := rfqmath.MilliSatoshiToUnits(amountMsat, *rate)
-	numUnits := milliSatsFP.ScaleTo(0).ToUint64()
-	msatPerUnit := float64(decodedInvoice.NumMsat) / float64(numUnits)
-	t.Logf("Got quote for %v asset units at %3f msat/unit from peer %s "+
-		"with SCID %d", numUnits, msatPerUnit, peerPubKey,
-		acceptedQuote.Scid)
+		rateVal = *rate
+
+		t.Logf("Got quote for %v asset units per BTC", rate)
+
+		amountMsat := lnwire.MilliSatoshi(decodedInvoice.NumMsat)
+		milliSatsFP := rfqmath.MilliSatoshiToUnits(amountMsat, *rate)
+		numUnits = milliSatsFP.ScaleTo(0).ToUint64()
+		msatPerUnit := float64(decodedInvoice.NumMsat) / float64(numUnits)
+		t.Logf("Got quote for %v asset units at %3f msat/unit from peer %s "+
+			"with SCID %d", numUnits, msatPerUnit, peerPubKey,
+			acceptedQuote.Scid)
+	}
 
 	expectedStatus := expectedPayStatus.UnwrapOr(lnrpc.Payment_SUCCEEDED)
 
-	result, err := getAssetPaymentResult(stream, expectedPayStatus.IsSome())
+	result, err := getAssetPaymentResult(
+		stream, expectedStatus == lnrpc.Payment_IN_FLIGHT,
+	)
 	require.NoError(t, err)
 	require.Equal(t, expectedStatus, result.Status)
 
-	return numUnits, *rate
+	return numUnits, rateVal
 }
 
 func createAssetInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,

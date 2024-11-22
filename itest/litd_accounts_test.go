@@ -451,6 +451,13 @@ func getAssetPaymentResult(
 			return nil, err
 		}
 
+		// Ignore RFQ quote acceptance messages read from the send
+		// payment stream, as they are not relevant.
+		quote := msg.GetAcceptedSellOrder()
+		if quote != nil {
+			continue
+		}
+
 		payment := msg.GetPaymentResult()
 		if payment == nil {
 			return nil, fmt.Errorf("unexpected message: %v", msg)

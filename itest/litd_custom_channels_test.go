@@ -1,6 +1,7 @@
 package itest
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"math"
@@ -15,9 +16,11 @@ import (
 	"github.com/lightninglabs/taproot-assets/itest"
 	"github.com/lightninglabs/taproot-assets/proof"
 	"github.com/lightninglabs/taproot-assets/rfqmath"
+	"github.com/lightninglabs/taproot-assets/rfqmsg"
 	"github.com/lightninglabs/taproot-assets/tapchannel"
 	"github.com/lightninglabs/taproot-assets/taprpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/mintrpc"
+	"github.com/lightninglabs/taproot-assets/taprpc/rfqrpc"
 	tchrpc "github.com/lightninglabs/taproot-assets/taprpc/tapchannelrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/universerpc"
 	"github.com/lightninglabs/taproot-assets/tapscript"
@@ -47,7 +50,7 @@ var (
 
 	shortTimeout = time.Second * 5
 
-	defaultPaymentStatus = fn.None[lnrpc.Payment_PaymentStatus]()
+	defaultPaymentStatusOpt = fn.None[lnrpc.Payment_PaymentStatus]()
 )
 
 var (
@@ -227,7 +230,7 @@ func testCustomChannelsLarge(_ context.Context, net *NetworkHarness,
 	)
 	payInvoiceWithAssets(
 		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID, false,
-		defaultPaymentStatus,
+		defaultPaymentStatusOpt, NoRfqIDOpt,
 	)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
@@ -242,7 +245,7 @@ func testCustomChannelsLarge(_ context.Context, net *NetworkHarness,
 
 	payInvoiceWithAssets(
 		t.t, fabia, erin, invoiceResp2.PaymentRequest, assetID, false,
-		defaultPaymentStatus,
+		defaultPaymentStatusOpt, NoRfqIDOpt,
 	)
 	logBalance(t.t, nodes, assetID, "after invoice 2")
 
@@ -253,7 +256,7 @@ func testCustomChannelsLarge(_ context.Context, net *NetworkHarness,
 	)
 	payInvoiceWithAssets(
 		t.t, charlie, dave, invoiceResp3.PaymentRequest, assetID, false,
-		defaultPaymentStatus,
+		defaultPaymentStatusOpt, NoRfqIDOpt,
 	)
 	logBalance(t.t, nodes, assetID, "after invoice 3")
 
@@ -445,7 +448,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	)
 	payInvoiceWithAssets(
 		t.t, dave, charlie, invoiceResp.PaymentRequest, assetID, true,
-		defaultPaymentStatus,
+		defaultPaymentStatusOpt, NoRfqIDOpt,
 	)
 	logBalance(t.t, nodes, assetID, "after invoice back")
 
@@ -510,7 +513,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	)
 	payInvoiceWithAssets(
 		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID, true,
-		defaultPaymentStatus,
+		defaultPaymentStatusOpt, NoRfqIDOpt,
 	)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
@@ -527,7 +530,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 		t.t, charlie, dave, daveInvoiceAssetAmount, assetID,
 	)
 	payInvoiceWithSatoshi(
-		t.t, charlie, invoiceResp, lnrpc.Payment_FAILED,
+		t.t, charlie, invoiceResp, lnrpc.Payment_FAILED, false,
 	)
 	logBalance(t.t, nodes, assetID, "after asset invoice paid with sats")
 
@@ -555,7 +558,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	)
 	payInvoiceWithAssets(
 		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID, true,
-		defaultPaymentStatus,
+		defaultPaymentStatusOpt, NoRfqIDOpt,
 	)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
@@ -574,7 +577,9 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	invoiceResp = createAssetInvoice(
 		t.t, erin, fabia, fabiaInvoiceAssetAmount2, assetID,
 	)
-	payInvoiceWithSatoshi(t.t, dave, invoiceResp, lnrpc.Payment_SUCCEEDED)
+	payInvoiceWithSatoshi(
+		t.t, dave, invoiceResp, lnrpc.Payment_SUCCEEDED, false,
+	)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
 	erinAssetBalance -= fabiaInvoiceAssetAmount2
@@ -592,7 +597,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	)
 	payInvoiceWithAssets(
 		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID, true,
-		defaultPaymentStatus,
+		defaultPaymentStatusOpt, NoRfqIDOpt,
 	)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
@@ -613,7 +618,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	)
 	payInvoiceWithAssets(
 		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID, true,
-		defaultPaymentStatus,
+		defaultPaymentStatusOpt, NoRfqIDOpt,
 	)
 	logBalance(t.t, nodes, assetID, "after asset-to-asset")
 
@@ -949,7 +954,7 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	)
 	payInvoiceWithAssets(
 		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID, true,
-		defaultPaymentStatus,
+		defaultPaymentStatusOpt, NoRfqIDOpt,
 	)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
@@ -987,7 +992,7 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	)
 	payInvoiceWithAssets(
 		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID, true,
-		defaultPaymentStatus,
+		defaultPaymentStatusOpt, NoRfqIDOpt,
 	)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
@@ -1006,7 +1011,9 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	invoiceResp = createAssetInvoice(
 		t.t, erin, fabia, fabiaInvoiceAssetAmount2, assetID,
 	)
-	payInvoiceWithSatoshi(t.t, dave, invoiceResp, lnrpc.Payment_SUCCEEDED)
+	payInvoiceWithSatoshi(
+		t.t, dave, invoiceResp, lnrpc.Payment_SUCCEEDED, false,
+	)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
 	erinAssetBalance -= fabiaInvoiceAssetAmount2
@@ -1024,7 +1031,7 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	)
 	payInvoiceWithAssets(
 		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID, true,
-		defaultPaymentStatus,
+		defaultPaymentStatusOpt, NoRfqIDOpt,
 	)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
@@ -1045,7 +1052,7 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	)
 	payInvoiceWithAssets(
 		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID, true,
-		defaultPaymentStatus,
+		defaultPaymentStatusOpt, NoRfqIDOpt,
 	)
 	logBalance(t.t, nodes, assetID, "after asset-to-asset")
 
@@ -1805,7 +1812,7 @@ func testCustomChannelsLiquidityEdgeCases(_ context.Context,
 			SatPerVByte: 5,
 		},
 	)
-	defer closeChannelAndAssert(t, net, dave, channelOp, false)
+	defer closeChannelAndAssert(t, net, dave, channelOp, true)
 
 	// This is the only public channel, we need everyone to be aware of it.
 	assertChannelKnown(t.t, charlie, channelOp)
@@ -1958,7 +1965,7 @@ func testCustomChannelsLiquidityEdgeCases(_ context.Context,
 
 	payInvoiceWithAssets(
 		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID, false,
-		defaultPaymentStatus,
+		defaultPaymentStatusOpt, NoRfqIDOpt,
 	)
 
 	logBalance(t.t, nodes, assetID, "after big asset payment (asset "+
@@ -2004,7 +2011,7 @@ func testCustomChannelsLiquidityEdgeCases(_ context.Context,
 
 	payInvoiceWithAssets(
 		t.t, yara, dave, invoiceResp.PaymentRequest, assetID, false,
-		defaultPaymentStatus,
+		defaultPaymentStatusOpt, NoRfqIDOpt,
 	)
 
 	logBalance(t.t, nodes, assetID, "after big asset payment (asset "+
@@ -2015,15 +2022,18 @@ func testCustomChannelsLiquidityEdgeCases(_ context.Context,
 	// channels, where the total asset value is less than the default anchor
 	// amount of 354 sats.
 	invoiceResp = createAssetInvoice(t.t, dave, charlie, 1, assetID)
-	payInvoiceWithSatoshi(t.t, yara, invoiceResp, lnrpc.Payment_FAILED)
+	payInvoiceWithSatoshi(
+		t.t, yara, invoiceResp, lnrpc.Payment_FAILED, false,
+	)
 
 	logBalance(t.t, nodes, assetID, "after small payment (asset "+
 		"invoice, <354sats)")
 
-	// Edge case: Now Charlie creates an asset invoice to be paid for by
+	// Edge case: Now Dave creates an asset invoice to be paid for by
 	// Yara with satoshi. For the last hop we try to settle the invoice in
-	// satoshi, where we will check whether Charlie's strict forwarding
-	// works as expected.
+	// satoshi, where we will check whether Dave's strict forwarding works
+	// as expected. Charlie is only used as a dummy RFQ peer in this case,
+	// Yara totally ignored the RFQ hint and pays agnostically with sats.
 	invoiceResp = createAssetInvoice(
 		t.t, charlie, dave, 1, assetID,
 	)
@@ -2046,6 +2056,144 @@ func testCustomChannelsLiquidityEdgeCases(_ context.Context,
 
 	logBalance(t.t, nodes, assetID, "after failed payment (asset "+
 		"invoice, strict forwarding)")
+
+	// Edge case: Check if the RFQ HTLC tracking accounts for cancelled
+	// htlcs. We achieve this by manually creating & using an RFQ quote with
+	// a set max amount. We first pay to a hodl invoice that we eventually
+	// cancel, then pay to a normal invoice which should succeed.
+
+	// We start by sloshing some funds in the Erin<->Fabia
+	sendAssetKeySendPayment(
+		t.t, erin, fabia, 100_000, assetID,
+		fn.Some[int64](20_000), lnrpc.Payment_SUCCEEDED,
+		fn.None[lnrpc.PaymentFailureReason](),
+	)
+
+	logBalance(t.t, nodes, assetID, "balance after 1st slosh")
+
+	// We create the RFQ order. We set the max amt to ~180k sats which is
+	// going to evaluate to about 10k assets.
+	resQ, err := charlieTap.RfqClient.AddAssetSellOrder(
+		ctxb, &rfqrpc.AddAssetSellOrderRequest{
+			AssetSpecifier: &rfqrpc.AssetSpecifier{
+				Id: &rfqrpc.AssetSpecifier_AssetId{
+					AssetId: assetID,
+				},
+			},
+			PaymentMaxAmt:  180_000_000,
+			Expiry:         uint64(time.Now().Add(time.Hour).Unix()),
+			PeerPubKey:     dave.PubKey[:],
+			TimeoutSeconds: 100,
+		},
+	)
+	require.NoError(t.t, err)
+
+	// We now create a hodl invoice on Fabia, for 10k assets.
+	hodlInv := createAssetHodlInvoice(t.t, erin, fabia, 10_000, assetID)
+
+	// Charlie tries to pay via Dave, by providing the rfq quote ID that was
+	// manually created above.
+	var quoteID rfqmsg.ID
+	copy(quoteID[:], resQ.GetAcceptedQuote().Id)
+	payInvoiceWithAssets(
+		t.t, charlie, dave, hodlInv.payReq, assetID, true,
+		fn.Some(lnrpc.Payment_IN_FLIGHT), fn.Some(quoteID),
+	)
+
+	// We now assert that the expected numbers of HTLCs are present on each
+	// node.
+	// Reminder, topology looks like this:
+	//
+	// Charlie <-> Dave <-> Erin <-> Fabia
+	//
+	// Therefore the routing nodes should have double the number of HTLCs
+	// required for the payment present.
+	assertNumHtlcs(t.t, charlie, 3)
+	assertNumHtlcs(t.t, dave, 6)
+	assertNumHtlcs(t.t, erin, 6)
+	assertNumHtlcs(t.t, fabia, 3)
+
+	// Now let's cancel the invoice on Fabia.
+	payHash := hodlInv.preimage.Hash()
+	_, err = fabia.InvoicesClient.CancelInvoice(
+		ctxb, &invoicesrpc.CancelInvoiceMsg{
+			PaymentHash: payHash[:],
+		},
+	)
+	require.NoError(t.t, err)
+
+	// There should be no HTLCs present on any channel.
+	assertNumHtlcs(t.t, charlie, 0)
+	assertNumHtlcs(t.t, dave, 0)
+	assertNumHtlcs(t.t, erin, 0)
+	assertNumHtlcs(t.t, fabia, 0)
+
+	// Now Fabia creates the normal invoice.
+	invoiceResp = createAssetInvoice(
+		t.t, erin, fabia, 10_000, assetID,
+	)
+
+	// Now Charlie pays the invoice, again by using the manually specified
+	// rfq quote ID. This payment should succeed.
+	payInvoiceWithAssets(
+		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID, true,
+		defaultPaymentStatusOpt, fn.Some(quoteID),
+	)
+
+	logBalance(t.t, nodes, assetID, "after manual rfq hodl")
+
+	// Edge case: Charlie negotiates a quote with Dave which has a low max
+	// amount (~170k sats). Then Charlie creates an invoice with a total
+	// amount slightly larger than the max allowed in the quote (200k sats).
+	// Erin will try to pay that invoice with sats, in shards of max size
+	// 80k sats. Dave will eventually stop forwarding HTLCs as the RFQ HTLC
+	// tracking mechanism should stop them from being forwarded, as they
+	// violate the maximum allowed amount of the quote.
+
+	// Charlie starts by negotiating the quote.
+	res, err := charlieTap.RfqClient.AddAssetBuyOrder(
+		ctxb, &rfqrpc.AddAssetBuyOrderRequest{
+			AssetSpecifier: &rfqrpc.AssetSpecifier{
+				Id: &rfqrpc.AssetSpecifier_AssetId{
+					AssetId: assetID,
+				},
+			},
+			AssetMaxAmt:    10_000,
+			Expiry:         uint64(time.Now().Add(time.Hour).Unix()),
+			PeerPubKey:     dave.PubKey[:],
+			TimeoutSeconds: 10,
+		},
+	)
+	require.NoError(t.t, err)
+
+	quote, ok := res.Response.(*rfqrpc.AddAssetBuyOrderResponse_AcceptedQuote)
+	require.True(t.t, ok)
+
+	// We now manually add the invoice in order to inject the above,
+	// manually generated, quote.
+	iResp, err := charlie.AddInvoice(ctxb, &lnrpc.Invoice{
+		Memo:       "",
+		Value:      200_000,
+		RPreimage:  bytes.Repeat([]byte{11}, 32),
+		CltvExpiry: 60,
+		RouteHints: []*lnrpc.RouteHint{
+			{
+				HopHints: []*lnrpc.HopHint{
+					{
+						NodeId: dave.PubKeyStr,
+						ChanId: quote.AcceptedQuote.Scid,
+					},
+				},
+			},
+		},
+	})
+	require.NoError(t.t, err)
+
+	// Now Erin tries to pay the invoice. Since rfq quote cannot satisfy the
+	// total amount of the invoice this payment will fail.
+	payInvoiceWithSatoshi(t.t, erin, iResp, lnrpc.Payment_FAILED, true)
+
+	logBalance(t.t, nodes, assetID, "after small manual rfq")
 }
 
 // testCustomChannelsBalanceConsistency is a test that test the balance of nodes
@@ -2563,7 +2711,7 @@ func testCustomChannelsOraclePricing(_ context.Context,
 
 	numUnits, rate := payInvoiceWithAssets(
 		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID, false,
-		defaultPaymentStatus,
+		defaultPaymentStatusOpt, NoRfqIDOpt,
 	)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
@@ -2911,13 +3059,13 @@ func runCustomChannelsHtlcForceClose(ctxb context.Context, t *harnessTest,
 	for _, aliceInvoice := range aliceHodlInvoices {
 		payInvoiceWithAssets(
 			t.t, bob, alice, aliceInvoice.payReq, assetID, mpp,
-			fn.Some(lnrpc.Payment_IN_FLIGHT),
+			fn.Some(lnrpc.Payment_IN_FLIGHT), NoRfqIDOpt,
 		)
 	}
 	for _, bobInvoice := range bobHodlInvoices {
 		payInvoiceWithAssets(
 			t.t, alice, bob, bobInvoice.payReq, assetID, false,
-			fn.Some(lnrpc.Payment_IN_FLIGHT),
+			fn.Some(lnrpc.Payment_IN_FLIGHT), NoRfqIDOpt,
 		)
 	}
 
