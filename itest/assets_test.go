@@ -331,6 +331,11 @@ func locateAssetTransfers(t *testing.T, tapdClient *tapClient,
 
 		transfer = forceCloseTransfer.Transfers[0]
 
+		if transfer.AnchorTxBlockHash == nil {
+			return fmt.Errorf("missing anchor block hash, " +
+				"transfer not confirmed")
+		}
+
 		return nil
 	}, defaultTimeout)
 	require.NoError(t, err)
@@ -1083,8 +1088,8 @@ func createAssetHodlInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 
 	dstTapd := newTapClient(t, dst)
 
-	// As this is a hodl invoice, we'll also need to create a preimage external
-	// to lnd.
+	// As this is a hodl invoice, we'll also need to create a preimage
+	// external to lnd.
 	var preimage lntypes.Preimage
 	_, err := rand.Read(preimage[:])
 	require.NoError(t, err)
@@ -1651,7 +1656,9 @@ func assertAssetBalance(t *testing.T, client *tapClient, assetID []byte,
 		t.Logf("Failed to assert expected balance of %d, current "+
 			"assets: %v", expectedBalance, toProtoJSON(t, r))
 
-		utxos, err3 := client.ListUtxos(ctxb, &taprpc.ListUtxosRequest{})
+		utxos, err3 := client.ListUtxos(
+			ctxb, &taprpc.ListUtxosRequest{},
+		)
 		require.NoError(t, err3)
 
 		t.Logf("Current UTXOs: %v", toProtoJSON(t, utxos))
@@ -1697,8 +1704,8 @@ func assertSpendableBalance(t *testing.T, client *tapClient, assetID []byte,
 		}
 
 		if assetSum != expectedBalance {
-			return fmt.Errorf("expected balance %d, got %d", expectedBalance,
-				assetSum)
+			return fmt.Errorf("expected balance %d, got %d",
+				expectedBalance, assetSum)
 		}
 
 		return nil
@@ -1710,7 +1717,9 @@ func assertSpendableBalance(t *testing.T, client *tapClient, assetID []byte,
 		t.Logf("Failed to assert expected balance of %d, current "+
 			"assets: %v", expectedBalance, toProtoJSON(t, r))
 
-		utxos, err3 := client.ListUtxos(ctxb, &taprpc.ListUtxosRequest{})
+		utxos, err3 := client.ListUtxos(
+			ctxb, &taprpc.ListUtxosRequest{},
+		)
 		require.NoError(t, err3)
 
 		t.Logf("Current UTXOs: %v", toProtoJSON(t, utxos))
@@ -1887,7 +1896,9 @@ func assertNumHtlcs(t *testing.T, node *HarnessNode, expected int) {
 		}
 
 		if numHtlcs != expected {
-			return fmt.Errorf("expected %v HTLCs, got %v, %v", expected, numHtlcs, spew.Sdump(toProtoJSON(t, listChansResp)))
+			return fmt.Errorf("expected %v HTLCs, got %v, %v",
+				expected, numHtlcs,
+				spew.Sdump(toProtoJSON(t, listChansResp)))
 		}
 
 		return nil
