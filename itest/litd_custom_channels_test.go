@@ -2773,8 +2773,19 @@ func testCustomChannelsFee(_ context.Context,
 // testCustomChannelsHtlcForceClose tests that we can force close a channel
 // with HTLCs in both directions and that the HTLC outputs are correctly
 // swept.
-func testCustomChannelsHtlcForceClose(_ context.Context, net *NetworkHarness,
+func testCustomChannelsHtlcForceClose(ctxb context.Context, net *NetworkHarness,
 	t *harnessTest) {
+
+	runCustomChannelsHtlcForceClose(ctxb, t, net, false)
+	runCustomChannelsHtlcForceClose(ctxb, t, net, true)
+}
+
+// runCustomChannelsHtlcForceClose is a helper function that runs the HTLC force
+// close test with the given MPP setting.
+func runCustomChannelsHtlcForceClose(ctxb context.Context, t *harnessTest,
+	net *NetworkHarness, mpp bool) {
+
+	t.Logf("Running test with MPP: %v", mpp)
 
 	lndArgs := slices.Clone(lndArgsTemplate)
 	litdArgs := slices.Clone(litdArgsTemplate)
@@ -2829,7 +2840,6 @@ func testCustomChannelsHtlcForceClose(_ context.Context, net *NetworkHarness,
 	// With the assets created, and synced -- we'll now open the channel
 	// between Alice and Bob.
 	t.Logf("Opening asset channels...")
-	ctxb := context.Background()
 	assetFundResp, err := aliceTap.FundChannel(
 		ctxb, &tchrpc.FundChannelRequest{
 			AssetAmount:        fundingAmount,
@@ -2853,7 +2863,7 @@ func testCustomChannelsHtlcForceClose(_ context.Context, net *NetworkHarness,
 	// to be able to extend HTLCs in the other direction.
 	const (
 		numPayments   = 10
-		keySendAmount = 1_000
+		keySendAmount = 2_500
 	)
 	for i := 0; i < numPayments; i++ {
 		sendAssetKeySendPayment(
@@ -2866,11 +2876,19 @@ func testCustomChannelsHtlcForceClose(_ context.Context, net *NetworkHarness,
 	// Now that both parties have some funds, we'll move onto the main test.
 	//
 	// We'll make 2 hodl invoice for each peer, so 4 total. From Alice's
-	// PoV, she'll have two outgoing HTLCs, and two incoming HTLCs.
+	// PoV, she'll have two outgoing HTLCs (or +4 with MPP), and two
+	// incoming HTLCs.
 	var (
 		bobHodlInvoices   []assetHodlInvoice
 		aliceHodlInvoices []assetHodlInvoice
-		assetInvoiceAmt   = 100
+
+		// The default oracle rate is 17_180 mSat/asset unit, so 10_000
+		// will be equal to 171_800_000 mSat. When we use the mpp bool
+		// for the smallShards param of payInvoiceWithAssets, that
+		// means we'll split the payment into shards of 80_000_000 mSat
+		// max. So we'll get three shards per payment.
+		assetInvoiceAmt   = 10_000
+		assetsPerMPPShard = 4656
 	)
 	for i := 0; i < 2; i++ {
 		bobHodlInvoices = append(
@@ -2892,7 +2910,7 @@ func testCustomChannelsHtlcForceClose(_ context.Context, net *NetworkHarness,
 	// yet.
 	for _, aliceInvoice := range aliceHodlInvoices {
 		payInvoiceWithAssets(
-			t.t, bob, alice, aliceInvoice.payReq, assetID, false,
+			t.t, bob, alice, aliceInvoice.payReq, assetID, mpp,
 			fn.Some(lnrpc.Payment_IN_FLIGHT),
 		)
 	}
@@ -2903,9 +2921,15 @@ func testCustomChannelsHtlcForceClose(_ context.Context, net *NetworkHarness,
 		)
 	}
 
-	// At this point, both sides should have 4 HTLCs active.
-	assertNumHtlcs(t.t, alice, 4)
-	assertNumHtlcs(t.t, bob, 4)
+	// At this point, both sides should have 4 (or +4 with MPP) HTLCs
+	// active.
+	numHtlcs := 4
+	if mpp {
+		numAdditionalShards := assetInvoiceAmt / assetsPerMPPShard
+		numHtlcs += numAdditionalShards * 2
+	}
+	assertNumHtlcs(t.t, alice, numHtlcs)
+	assertNumHtlcs(t.t, bob, numHtlcs)
 
 	// Before we force close, we'll grab the current height, the CSV delay
 	// needed, and also the absolute timeout of the set of active HTLCs.
@@ -2947,8 +2971,8 @@ func testCustomChannelsHtlcForceClose(_ context.Context, net *NetworkHarness,
 	// At this point, the commitment transaction has been mined, and we have
 	// 4 total HTLCs on Alice's commitment transaction:
 	//
-	//  * 2x outgoing HTLCs to Alice to Bob
-	//  * 2x incoming HTLCs from Bob to Alice
+	//  * 2x outgoing HTLCs from Alice to Bob
+	//  * 2x incoming HTLCs from Bob to Alice (+2 with MPP)
 	//
 	// We'll leave half the HTLCs timeout, while pulling the other half.
 	// To start, we'll signal Bob to settle one of his incoming HTLCs on
@@ -2971,7 +2995,7 @@ func testCustomChannelsHtlcForceClose(_ context.Context, net *NetworkHarness,
 	// We'll mine an empty block to get the sweeper to tick.
 	mineBlocks(t, net, 1, 0)
 
-	sweepTx1, err := waitForNTxsInMempool(
+	bobSweepTx1, err := waitForNTxsInMempool(
 		net.Miner.Client, 1, shortTimeout,
 	)
 	require.NoError(t.t, err)
@@ -2984,15 +3008,17 @@ func testCustomChannelsHtlcForceClose(_ context.Context, net *NetworkHarness,
 	// At this point, we should have the next sweep transaction in the
 	// mempool: Bob's incoming HTLC sweep directly off the commitment
 	// transaction.
-	sweepTx2, err := waitForNTxsInMempool(net.Miner.Client, 1, shortTimeout)
+	bobSweepTx2, err := waitForNTxsInMempool(
+		net.Miner.Client, 1, shortTimeout,
+	)
 	require.NoError(t.t, err)
 
 	// We'll now mine the next block, which should confirm Bob's HTLC sweep
 	// transaction.
 	mineBlocks(t, net, 1, 1)
 
-	bobSweepTransfer1 := locateAssetTransfers(t.t, bobTap, *sweepTx1[0])
-	bobSweepTransfer2 := locateAssetTransfers(t.t, bobTap, *sweepTx2[0])
+	bobSweepTransfer1 := locateAssetTransfers(t.t, bobTap, *bobSweepTx1[0])
+	bobSweepTransfer2 := locateAssetTransfers(t.t, bobTap, *bobSweepTx2[0])
 	t.Logf("Bob's sweep transfer 1: %v",
 		toProtoJSON(t.t, bobSweepTransfer1))
 	t.Logf("Bob's sweep transfer 2: %v",
@@ -3006,9 +3032,8 @@ func testCustomChannelsHtlcForceClose(_ context.Context, net *NetworkHarness,
 	// RFQ conversion.
 	bobExpectedBalance := closeExpiryInfo.remoteAssetBalance +
 		uint64(assetInvoiceAmt-1)
-	assertSpendableBalance(
-		t.t, bobTap, assetID, bobExpectedBalance,
-	)
+	t.Logf("Expecting Bob's balance to be %d", bobExpectedBalance)
+	assertSpendableBalance(t.t, bobTap, assetID, bobExpectedBalance)
 
 	// With Bob's HTLC settled, we'll now have Alice do the same. For her,
 	// it'll be a 2nd level sweep, which requires an extra transaction.
@@ -3018,15 +3043,26 @@ func testCustomChannelsHtlcForceClose(_ context.Context, net *NetworkHarness,
 	// that she's swept everything properly. With the way the sweeper works,
 	// we need to mine one extra block before the sweeper picks things up.
 	mineBlocks(t, net, 1, 0)
-	time.Sleep(time.Second * 1)
+
+	aliceSweepTx1, err := waitForNTxsInMempool(
+		net.Miner.Client, 1, shortTimeout,
+	)
+	require.NoError(t.t, err)
+
 	mineBlocks(t, net, 1, 1)
+
+	aliceSweepTransfer1 := locateAssetTransfers(
+		t.t, aliceTap, *aliceSweepTx1[0],
+	)
+	t.Logf("Alice's sweep transfer 1: %v",
+		toProtoJSON(t.t, aliceSweepTransfer1))
 
 	t.Logf("Confirming Alice's to-local sweep")
 
 	// With this extra block mined, Alice's settled balance should be the
 	// starting balance, minus the 2 HTLCs, plus her settled balance.
 	aliceExpectedBalance := itestAsset.Amount - fundingAmount
-	aliceExpectedBalance += uint64(closeExpiryInfo.localAssetBalance)
+	aliceExpectedBalance += closeExpiryInfo.localAssetBalance
 	assertSpendableBalance(
 		t.t, aliceTap, assetID, aliceExpectedBalance,
 	)
@@ -3056,9 +3092,27 @@ func testCustomChannelsHtlcForceClose(_ context.Context, net *NetworkHarness,
 	// If the block mined above didn't also mine our sweep, then we'll mine
 	// one final block which will confirm Alice's sweep transaction.
 	if len(sweepBlocks[0].Transactions) == 1 {
+		sweepTx, err := waitForNTxsInMempool(
+			net.Miner.Client, 1, shortTimeout,
+		)
+		require.NoError(t.t, err)
+
 		// With the sweep transaction in the mempool, we'll mine a block
 		// to confirm the sweep.
 		mineBlocks(t, net, 1, 1)
+
+		aliceSweepTransfer := locateAssetTransfers(
+			t.t, aliceTap, *sweepTx[0],
+		)
+		t.Logf("Alice's first-level sweep transfer: %v",
+			toProtoJSON(t.t, aliceSweepTransfer))
+	} else {
+		sweepTx := sweepBlocks[0].Transactions[1]
+		aliceSweepTransfer := locateAssetTransfers(
+			t.t, aliceTap, sweepTx.TxHash(),
+		)
+		t.Logf("Alice's first-level sweep transfer: %v",
+			toProtoJSON(t.t, aliceSweepTransfer))
 	}
 
 	t.Logf("Confirming Alice's second level remote HTLC success sweep")
@@ -3085,7 +3139,25 @@ func testCustomChannelsHtlcForceClose(_ context.Context, net *NetworkHarness,
 	// If the block mined above didn't also mine our sweep, then we'll mine
 	// one final block which will confirm Alice's sweep transaction.
 	if len(sweepBlocks[0].Transactions) == 1 {
+		sweepTx, err := waitForNTxsInMempool(
+			net.Miner.Client, 1, shortTimeout,
+		)
+		require.NoError(t.t, err)
+
 		mineBlocks(t, net, 1, 1)
+
+		aliceSweepTransfer := locateAssetTransfers(
+			t.t, aliceTap, *sweepTx[0],
+		)
+		t.Logf("Alice's second-level sweep transfer: %v",
+			toProtoJSON(t.t, aliceSweepTransfer))
+	} else {
+		sweepTx := sweepBlocks[0].Transactions[1]
+		aliceSweepTransfer := locateAssetTransfers(
+			t.t, aliceTap, sweepTx.TxHash(),
+		)
+		t.Logf("Alice's second-level sweep transfer: %v",
+			toProtoJSON(t.t, aliceSweepTransfer))
 	}
 
 	// With the sweep transaction confirmed, Alice's balance should have
@@ -3153,14 +3225,33 @@ func testCustomChannelsHtlcForceClose(_ context.Context, net *NetworkHarness,
 	// If the block mined above didn't also mine our sweep, then we'll mine
 	// one final block which will confirm Alice's sweep transaction.
 	if len(sweepBlocks[0].Transactions) == 1 {
+		sweepTx, err := waitForNTxsInMempool(
+			net.Miner.Client, 1, shortTimeout,
+		)
+		require.NoError(t.t, err)
+
 		// We'll mine one final block which will confirm Alice's sweep
 		// transaction.
 		mineBlocks(t, net, 1, 1)
+
+		aliceSweepTransfer := locateAssetTransfers(
+			t.t, aliceTap, *sweepTx[0],
+		)
+		t.Logf("Alice's final timeout sweep transfer: %v",
+			toProtoJSON(t.t, aliceSweepTransfer))
+	} else {
+		sweepTx := sweepBlocks[0].Transactions[1]
+		aliceSweepTransfer := locateAssetTransfers(
+			t.t, aliceTap, sweepTx.TxHash(),
+		)
+		t.Logf("Alice's final timeout sweep transfer: %v",
+			toProtoJSON(t.t, aliceSweepTransfer))
 	}
 
 	// Finally, we'll assert that Alice's balance has been incremented by
 	// the timeout value.
 	aliceExpectedBalance += uint64(assetInvoiceAmt - 1)
+	t.Logf("Expecting Alice's balance to be %d", aliceExpectedBalance)
 	assertSpendableBalance(
 		t.t, aliceTap, assetID, aliceExpectedBalance,
 	)
