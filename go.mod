@@ -16,14 +16,14 @@ require (
 	github.com/lightninglabs/lightning-node-connect v0.3.2-alpha.0.20240822142323-ee4e7ff52f83
 	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.1
 	github.com/lightninglabs/lightning-terminal/litrpc v1.0.0
-	github.com/lightninglabs/lndclient v0.18.4-6
+	github.com/lightninglabs/lndclient v0.18.4-7
 	github.com/lightninglabs/loop v0.28.8-beta.0.20241022072406-1e8ae31ddc27
 	github.com/lightninglabs/loop/looprpc v1.0.0
 	github.com/lightninglabs/loop/swapserverrpc v1.0.10
 	github.com/lightninglabs/pool v0.6.5-beta.0.20241015105339-044cb451b5df
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.2
 	github.com/lightninglabs/pool/poolrpc v1.0.0
-	github.com/lightninglabs/taproot-assets v0.4.2-0.20241125202051-783fb1e5ab03
+	github.com/lightninglabs/taproot-assets v0.5.0-rc1
 	github.com/lightningnetwork/lnd v0.18.4-beta.rc1
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/fn v1.2.3

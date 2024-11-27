@@ -1157,8 +1157,8 @@ github.com/lightninglabs/lightning-node-connect v0.3.2-alpha.0.20240822142323-ee
 github.com/lightninglabs/lightning-node-connect v0.3.2-alpha.0.20240822142323-ee4e7ff52f83/go.mod h1:+SasPOt0evcJdfApb/ALTaTz4x3a2/kWy5KqFoTpiX8=
 github.com/lightninglabs/lightning-node-connect/hashmailrpc v1.0.2 h1:Er1miPZD2XZwcfE4xoS5AILqP1mj7kqnhbBSxW9BDxY=
 github.com/lightninglabs/lightning-node-connect/hashmailrpc v1.0.2/go.mod h1:antQGRDRJiuyQF6l+k6NECCSImgCpwaZapATth2Chv4=
-github.com/lightninglabs/lndclient v0.18.4-6 h1:2PYXJLvXtDmt2A12Q7/RVRdh1CRaMyVAqJmuGsxK/d8=
-github.com/lightninglabs/lndclient v0.18.4-6/go.mod h1:qaIx+eqEV+Bdf1j7GVeJiDqJbtZXsr9XTfHu/8HmgQU=
+github.com/lightninglabs/lndclient v0.18.4-7 h1:3lV3jeaL66wtxFeR+7YTo+1ZJ8YzD3gYHG8U9yas3YM=
+github.com/lightninglabs/lndclient v0.18.4-7/go.mod h1:qaIx+eqEV+Bdf1j7GVeJiDqJbtZXsr9XTfHu/8HmgQU=
 github.com/lightninglabs/loop v0.28.8-beta.0.20241022072406-1e8ae31ddc27 h1:eZBvG9XvDL0zsUIqFfD7SCk+Ex8rGWEL8j5UQ/aqjco=
 github.com/lightninglabs/loop v0.28.8-beta.0.20241022072406-1e8ae31ddc27/go.mod h1:4B1DqrcOc5Yv9KyclAeQJY9Ah9UMX7RpI4Uru7aEzl4=
 github.com/lightninglabs/loop/looprpc v1.0.0 h1:xry4QPCZShPww660xJm1BVcNFj8etgNeN2vMpfsv3c4=
@@ -1177,8 +1177,8 @@ github.com/lightninglabs/pool/poolrpc v1.0.0 h1:vvosrgNx9WXF4mcHGqLjZOW8wNM0q+BL
 github.com/lightninglabs/pool/poolrpc v1.0.0/go.mod h1:ZqpEpBFRMMBAerMmilEjh27tqauSXDwLaLR0O3jvmMA=
 github.com/lightninglabs/protobuf-go-hex-display v1.34.2-hex-display h1:w7FM5LH9Z6CpKxl13mS48idsu6F+cEZf0lkyiV+Dq9g=
 github.com/lightninglabs/protobuf-go-hex-display v1.34.2-hex-display/go.mod h1:qYOHts0dSfpeUzUFpOMr/WGzszTmLH+DiWniOlNbLDw=
-github.com/lightninglabs/taproot-assets v0.4.2-0.20241125202051-783fb1e5ab03 h1:O/+vkoVnoB0HsUnBPRDFg5E4khFapbi82OEZg+PScEY=
-github.com/lightninglabs/taproot-assets v0.4.2-0.20241125202051-783fb1e5ab03/go.mod h1:xWtQ/I7KAUIJlLU0fdiQgwRUXIKoXuNCjpqLcdge6eQ=
+github.com/lightninglabs/taproot-assets v0.5.0-rc1 h1:UuDuvOJErqvapdF5gA8gfTy7X8Dfi96fCoNhrRuB9ZA=
+github.com/lightninglabs/taproot-assets v0.5.0-rc1/go.mod h1:3MxoqsBdZGju3ExSIA9kFle5nqjWeb4alK4aVlfT0tA=
 github.com/lightningnetwork/lightning-onion v1.2.1-0.20240712235311-98bd56499dfb h1:yfM05S8DXKhuCBp5qSMZdtSwvJ+GFzl94KbXMNB1JDY=
 github.com/lightningnetwork/lightning-onion v1.2.1-0.20240712235311-98bd56499dfb/go.mod h1:c0kvRShutpj3l6B9WtTsNTBUtjSmjZXbJd9ZBRQOSKI=
 github.com/lightningnetwork/lnd v0.18.4-beta.rc1 h1:z6hFKvtbfo8udPrIb81GbSoKlUWd06d4LRxTkD19IMQ=
