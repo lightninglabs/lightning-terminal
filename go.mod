@@ -17,8 +17,8 @@ require (
 	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.1
 	github.com/lightninglabs/lightning-terminal/litrpc v1.0.0
 	github.com/lightninglabs/lndclient v0.18.4-7
-	github.com/lightninglabs/loop v0.28.8-beta.0.20241022072406-1e8ae31ddc27
-	github.com/lightninglabs/loop/looprpc v1.0.0
+	github.com/lightninglabs/loop v0.28.9-beta.0.20241121150838-d198bb8230a8
+	github.com/lightninglabs/loop/looprpc v1.0.1
 	github.com/lightninglabs/loop/swapserverrpc v1.0.10
 	github.com/lightninglabs/pool v0.6.5-beta.0.20241015105339-044cb451b5df
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.2
@@ -131,7 +131,7 @@ require (
 	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
 	github.com/lib/pq v1.10.9 // indirect
 	github.com/libdns/libdns v0.2.1 // indirect
-	github.com/lightninglabs/aperture v0.3.2-beta.0.20241015115230-d59b5514c19a // indirect
+	github.com/lightninglabs/aperture v0.3.4-beta // indirect
 	github.com/lightninglabs/gozmq v0.0.0-20191113021534-d20a764486bf // indirect
 	github.com/lightninglabs/lightning-node-connect/hashmailrpc v1.0.2 // indirect
 	github.com/lightninglabs/neutrino v0.16.1-0.20240425105051-602843d34ffd // indirect
@@ -235,5 +235,7 @@ replace github.com/lightninglabs/lightning-terminal/autopilotserverrpc => ./auto
 replace google.golang.org/protobuf => github.com/lightninglabs/protobuf-go-hex-display v1.34.2-hex-display
 
 replace github.com/lightninglabs/lightning-terminal/litrpc => ./litrpc
+
+replace github.com/lightninglabs/aperture => github.com/lightninglabs/aperture v0.3.4-beta
 
 go 1.22.6
