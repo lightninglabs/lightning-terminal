@@ -882,7 +882,7 @@ func closeAssetChannelAndAssert(t *harnessTest, net *NetworkHarness,
 	closeTxid, err := chainhash.NewHash(closeUpdate.ClosingTxid)
 	require.NoError(t.t, err)
 
-	closeTransaction := t.lndHarness.Miner.GetRawTransaction(closeTxid)
+	closeTransaction := t.lndHarness.Miner.GetRawTransaction(*closeTxid)
 	closeTx := closeTransaction.MsgTx()
 	t.Logf("Channel closed with txid: %v", closeTxid)
 	t.Logf("Close transaction: %v", spew.Sdump(closeTx))

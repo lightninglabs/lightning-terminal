@@ -55,7 +55,7 @@ import (
 	"github.com/lightningnetwork/lnd/lnwallet/btcwallet"
 	"github.com/lightningnetwork/lnd/lnwallet/chancloser"
 	"github.com/lightningnetwork/lnd/macaroons"
-	"github.com/lightningnetwork/lnd/protofsm"
+	"github.com/lightningnetwork/lnd/msgmux"
 	"github.com/lightningnetwork/lnd/routing"
 	"github.com/lightningnetwork/lnd/rpcperms"
 	"github.com/lightningnetwork/lnd/signal"
@@ -1285,7 +1285,7 @@ func (g *LightningTerminal) buildAuxComponents() (*lnd.AuxComponents, error) {
 
 	tapd := tapdWrapper.Impl().(*taprootassets.Server)
 
-	router := protofsm.NewMultiMsgRouter()
+	router := msgmux.NewMultiMsgRouter()
 	router.Start()
 	err := router.RegisterEndpoint(tapd)
 	if err != nil {
@@ -1295,7 +1295,7 @@ func (g *LightningTerminal) buildAuxComponents() (*lnd.AuxComponents, error) {
 
 	return &lnd.AuxComponents{
 		AuxLeafStore: fn.Some[lnwallet.AuxLeafStore](tapd),
-		MsgRouter:    fn.Some[protofsm.MsgRouter](router),
+		MsgRouter:    fn.Some[msgmux.Router](router),
 		AuxFundingController: fn.Some[funding.AuxFundingController](
 			tapd,
 		),
