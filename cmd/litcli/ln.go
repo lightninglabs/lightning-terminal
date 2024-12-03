@@ -216,6 +216,28 @@ func (w *resultStreamWrapper) Recv() (*lnrpc.Payment, error) {
 		amountMsat := lnwire.MilliSatoshi(w.amountMsat)
 		milliSatsFP := rfqmath.MilliSatoshiToUnits(amountMsat, *rate)
 		numUnits := milliSatsFP.ScaleTo(0).ToUint64()
+
+		// If the calculated number of units is 0 then the asset rate
+		// was not sufficient to represent the value of this payment.
+		if numUnits == 0 {
+			// We will calculate the minimum amount that can be
+			// effectively sent with this asset by calculating the
+			// value of a single asset unit, based on the provided
+			// asset rate.
+
+			// We create the single unit.
+			unit := rfqmath.FixedPointFromUint64[rfqmath.BigInt](
+				1, 0,
+			)
+			// We derive the minimum amount.
+			minAmt := rfqmath.UnitsToMilliSatoshi(unit, *rate)
+
+			// We return the error to the user.
+			return nil, fmt.Errorf("smallest payment with asset "+
+				"rate %v is %v, cannot send %v",
+				rate.ToUint64(), minAmt, amountMsat)
+		}
+
 		msatPerUnit := uint64(w.amountMsat) / numUnits
 
 		fmt.Printf("Got quote for %v asset units at %v msat/unit from "+
