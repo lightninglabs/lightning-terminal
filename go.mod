@@ -23,8 +23,8 @@ require (
 	github.com/lightninglabs/pool v0.6.5-beta.0.20241015105339-044cb451b5df
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.2
 	github.com/lightninglabs/pool/poolrpc v1.0.0
-	github.com/lightninglabs/taproot-assets v0.5.0-rc1.0.20241209075049-4a15eb2ab84e
-	github.com/lightningnetwork/lnd v0.18.4-beta.rc1
+	github.com/lightninglabs/taproot-assets v0.5.0-rc1.0.20241209175552-fde673202d0d
+	github.com/lightningnetwork/lnd v0.18.4-beta.rc1.0.20241205204908-f312064bfbd5
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/fn v1.2.3
 	github.com/lightningnetwork/lnd/kvdb v1.4.10
@@ -235,7 +235,5 @@ replace github.com/lightninglabs/lightning-terminal/autopilotserverrpc => ./auto
 replace google.golang.org/protobuf => github.com/lightninglabs/protobuf-go-hex-display v1.34.2-hex-display
 
 replace github.com/lightninglabs/lightning-terminal/litrpc => ./litrpc
-
-replace github.com/lightninglabs/aperture => github.com/lightninglabs/aperture v0.3.4-beta
 
 go 1.22.6

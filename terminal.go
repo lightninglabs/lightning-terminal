@@ -40,6 +40,7 @@ import (
 	"github.com/lightningnetwork/lnd/chainreg"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/funding"
+	"github.com/lightningnetwork/lnd/htlcswitch"
 	"github.com/lightningnetwork/lnd/kvdb"
 	"github.com/lightningnetwork/lnd/lncfg"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -57,7 +58,6 @@ import (
 	"github.com/lightningnetwork/lnd/lnwallet/chancloser"
 	"github.com/lightningnetwork/lnd/macaroons"
 	"github.com/lightningnetwork/lnd/msgmux"
-	"github.com/lightningnetwork/lnd/routing"
 	"github.com/lightningnetwork/lnd/rpcperms"
 	"github.com/lightningnetwork/lnd/signal"
 	"github.com/lightningnetwork/lnd/sweep"
@@ -1370,7 +1370,7 @@ func (g *LightningTerminal) buildAuxComponents() (*lnd.AuxComponents, error) {
 			tapd,
 		),
 		AuxSigner:     fn.Some[lnwallet.AuxSigner](tapd),
-		TrafficShaper: fn.Some[routing.TlvTrafficShaper](tapd),
+		TrafficShaper: fn.Some[htlcswitch.AuxTrafficShaper](tapd),
 		AuxDataParser: fn.Some[lnd.AuxDataParser](tapd),
 		AuxChanCloser: fn.Some[chancloser.AuxChanCloser](tapd),
 		AuxSweeper:    fn.Some[sweep.AuxSweeper](tapd),
