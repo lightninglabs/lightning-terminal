@@ -718,9 +718,12 @@ func addRoutingFee(amt lnwire.MilliSatoshi) lnwire.MilliSatoshi {
 }
 
 func sendAssetKeySendPayment(t *testing.T, src, dst *HarnessNode, amt uint64,
-	assetID []byte, btcAmt fn.Option[int64],
-	expectedStatus lnrpc.Payment_PaymentStatus,
-	failReason fn.Option[lnrpc.PaymentFailureReason]) {
+	assetID []byte, btcAmt fn.Option[int64], opts ...payOpt) {
+
+	cfg := defaultPayConfig()
+	for _, opt := range opts {
+		opt(cfg)
+	}
 
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
@@ -760,12 +763,8 @@ func sendAssetKeySendPayment(t *testing.T, src, dst *HarnessNode, amt uint64,
 	if result.Status == lnrpc.Payment_FAILED {
 		t.Logf("Failure reason: %v", result.FailureReason)
 	}
-	require.Equal(t, expectedStatus, result.Status)
-
-	expectedReason := failReason.UnwrapOr(
-		lnrpc.PaymentFailureReason_FAILURE_REASON_NONE,
-	)
-	require.Equal(t, expectedReason, result.FailureReason)
+	require.Equal(t, cfg.payStatus, result.Status)
+	require.Equal(t, cfg.failureReason, result.FailureReason)
 }
 
 func sendKeySendPayment(t *testing.T, src, dst *HarnessNode,
@@ -818,9 +817,7 @@ func createAndPayNormalInvoiceWithBtc(t *testing.T, src, dst *HarnessNode,
 	})
 	require.NoError(t, err)
 
-	payInvoiceWithSatoshi(
-		t, src, invoiceResp, lnrpc.Payment_SUCCEEDED, false,
-	)
+	payInvoiceWithSatoshi(t, src, invoiceResp)
 }
 
 func createAndPayNormalInvoice(t *testing.T, src, rfqPeer, dst *HarnessNode,
@@ -846,8 +843,12 @@ func createAndPayNormalInvoice(t *testing.T, src, rfqPeer, dst *HarnessNode,
 }
 
 func payInvoiceWithSatoshi(t *testing.T, payer *HarnessNode,
-	invoice *lnrpc.AddInvoiceResponse,
-	expectedStatus lnrpc.Payment_PaymentStatus, expectTimeout bool) {
+	invoice *lnrpc.AddInvoiceResponse, opts ...payOpt) {
+
+	cfg := defaultPayConfig()
+	for _, opt := range opts {
+		opt(cfg)
+	}
 
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
@@ -863,11 +864,12 @@ func payInvoiceWithSatoshi(t *testing.T, payer *HarnessNode,
 	require.NoError(t, err)
 
 	result, err := getPaymentResult(stream)
-	if expectTimeout {
+	if cfg.expectTimeout {
 		require.ErrorContains(t, err, "context deadline exceeded")
 	} else {
 		require.NoError(t, err)
-		require.Equal(t, expectedStatus, result.Status)
+		require.Equal(t, cfg.payStatus, result.Status)
+		require.Equal(t, cfg.failureReason, result.FailureReason)
 	}
 }
 
@@ -910,6 +912,7 @@ func payInvoiceWithSatoshiLastHop(t *testing.T, payer *HarnessNode,
 
 type payConfig struct {
 	smallShards   bool
+	expectTimeout bool
 	payStatus     lnrpc.Payment_PaymentStatus
 	failureReason lnrpc.PaymentFailureReason
 	rfq           fn.Option[rfqmsg.ID]
@@ -918,6 +921,7 @@ type payConfig struct {
 func defaultPayConfig() *payConfig {
 	return &payConfig{
 		smallShards:   false,
+		expectTimeout: false,
 		payStatus:     lnrpc.Payment_SUCCEEDED,
 		failureReason: lnrpc.PaymentFailureReason_FAILURE_REASON_NONE,
 	}
@@ -928,6 +932,12 @@ type payOpt func(*payConfig)
 func withSmallShards() payOpt {
 	return func(c *payConfig) {
 		c.smallShards = true
+	}
+}
+
+func withExpectTimeout() payOpt {
+	return func(c *payConfig) {
+		c.expectTimeout = true
 	}
 }
 
