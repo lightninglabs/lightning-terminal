@@ -49,8 +49,6 @@ var (
 	}
 
 	shortTimeout = time.Second * 5
-
-	defaultPaymentStatusOpt = fn.None[lnrpc.Payment_PaymentStatus]()
 )
 
 var (
@@ -272,8 +270,7 @@ func testCustomChannelsLarge(_ context.Context, net *NetworkHarness,
 		fabiaInvoiceAssetAmount/2
 	sendAssetKeySendPayment(
 		t.t, charlie, dave, charlieRemainingBalance,
-		assetID, fn.None[int64](), lnrpc.Payment_SUCCEEDED,
-		fn.None[lnrpc.PaymentFailureReason](),
+		assetID, fn.None[int64](),
 	)
 	logBalance(t.t, nodes, assetID, "after keysend")
 
@@ -428,8 +425,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	keySendAmount := charlieFundingAmount
 	sendAssetKeySendPayment(
 		t.t, charlie, dave, charlieFundingAmount, assetID,
-		fn.None[int64](), lnrpc.Payment_SUCCEEDED,
-		fn.None[lnrpc.PaymentFailureReason](),
+		fn.None[int64](),
 	)
 	logBalance(t.t, nodes, assetID, "after keysend")
 
@@ -473,8 +469,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	// Let's keysend the rest of the balance back to Charlie.
 	sendAssetKeySendPayment(
 		t.t, dave, charlie, charlieFundingAmount-charlieInvoiceAmount,
-		assetID, fn.None[int64](), lnrpc.Payment_SUCCEEDED,
-		fn.None[lnrpc.PaymentFailureReason](),
+		assetID, fn.None[int64](),
 	)
 	logBalance(t.t, nodes, assetID, "after keysend back")
 
@@ -527,7 +522,9 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 		t.t, charlie, dave, daveInvoiceAssetAmount, assetID,
 	)
 	payInvoiceWithSatoshi(
-		t.t, charlie, invoiceResp, lnrpc.Payment_FAILED, false,
+		t.t, charlie, invoiceResp, withFailure(
+			lnrpc.Payment_FAILED, failureIncorrectDetails,
+		),
 	)
 	logBalance(t.t, nodes, assetID, "after asset invoice paid with sats")
 
@@ -574,9 +571,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	invoiceResp = createAssetInvoice(
 		t.t, erin, fabia, fabiaInvoiceAssetAmount2, assetID,
 	)
-	payInvoiceWithSatoshi(
-		t.t, dave, invoiceResp, lnrpc.Payment_SUCCEEDED, false,
-	)
+	payInvoiceWithSatoshi(t.t, dave, invoiceResp)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
 	erinAssetBalance -= fabiaInvoiceAssetAmount2
@@ -899,7 +894,6 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	const keySendAmount = 100
 	sendAssetKeySendPayment(
 		t.t, charlie, dave, keySendAmount, assetID, fn.None[int64](),
-		lnrpc.Payment_SUCCEEDED, fn.None[lnrpc.PaymentFailureReason](),
 	)
 	logBalance(t.t, nodes, assetID, "after keysend")
 
@@ -911,7 +905,6 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	// an HTLC.
 	sendAssetKeySendPayment(
 		t.t, dave, charlie, keySendAmount, assetID, fn.None[int64](),
-		lnrpc.Payment_SUCCEEDED, fn.None[lnrpc.PaymentFailureReason](),
 	)
 	logBalance(t.t, nodes, assetID, "after keysend back")
 
@@ -1008,9 +1001,7 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	invoiceResp = createAssetInvoice(
 		t.t, erin, fabia, fabiaInvoiceAssetAmount2, assetID,
 	)
-	payInvoiceWithSatoshi(
-		t.t, dave, invoiceResp, lnrpc.Payment_SUCCEEDED, false,
-	)
+	payInvoiceWithSatoshi(t.t, dave, invoiceResp)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
 	erinAssetBalance -= fabiaInvoiceAssetAmount2
@@ -1322,8 +1313,7 @@ func testCustomChannelsForceClose(_ context.Context, net *NetworkHarness,
 	for i := 0; i < numPayments; i++ {
 		sendAssetKeySendPayment(
 			t.t, charlie, dave, keySendAmount, assetID,
-			fn.Some(btcAmt), lnrpc.Payment_SUCCEEDED,
-			fn.None[lnrpc.PaymentFailureReason](),
+			fn.Some(btcAmt),
 		)
 	}
 
@@ -1652,8 +1642,7 @@ func testCustomChannelsBreach(_ context.Context, net *NetworkHarness,
 	for i := 0; i < numPayments; i++ {
 		sendAssetKeySendPayment(
 			t.t, charlie, dave, keySendAmount, assetID,
-			fn.Some(btcAmt), lnrpc.Payment_SUCCEEDED,
-			fn.None[lnrpc.PaymentFailureReason](),
+			fn.Some(btcAmt),
 		)
 	}
 
@@ -1668,8 +1657,6 @@ func testCustomChannelsBreach(_ context.Context, net *NetworkHarness,
 	// just at above.
 	sendAssetKeySendPayment(
 		t.t, charlie, dave, keySendAmount, assetID, fn.Some(btcAmt),
-		lnrpc.Payment_SUCCEEDED,
-		fn.None[lnrpc.PaymentFailureReason](),
 	)
 	logBalance(t.t, nodes, assetID, "after keysend -- final state")
 
@@ -1866,9 +1853,7 @@ func testCustomChannelsLiquidityEdgeCases(_ context.Context,
 	// Normal case.
 	// Send 50 assets from Charlie to Dave.
 	sendAssetKeySendPayment(
-		t.t, charlie, dave, 50, assetID,
-		fn.None[int64](), lnrpc.Payment_SUCCEEDED,
-		fn.None[lnrpc.PaymentFailureReason](),
+		t.t, charlie, dave, 50, assetID, fn.None[int64](),
 	)
 
 	logBalance(t.t, nodes, assetID, "after 50 assets")
@@ -1891,12 +1876,10 @@ func testCustomChannelsLiquidityEdgeCases(_ context.Context,
 	timeoutChan := time.After(PaymentTimeout / 2)
 	done := make(chan bool, 1)
 
-	//nolint:lll
 	go func() {
 		sendAssetKeySendPayment(
-			t.t, dave, charlie, 50, assetID,
-			fn.None[int64](), lnrpc.Payment_FAILED,
-			fn.Some(lnrpc.PaymentFailureReason_FAILURE_REASON_NO_ROUTE),
+			t.t, dave, charlie, 50, assetID, fn.None[int64](),
+			withFailure(lnrpc.Payment_FAILED, failureNoRoute),
 		)
 
 		done <- true
@@ -1918,9 +1901,7 @@ func testCustomChannelsLiquidityEdgeCases(_ context.Context,
 	// Now Dave tries to send 50 assets again, this time he should have
 	// enough sats.
 	sendAssetKeySendPayment(
-		t.t, dave, charlie, 50, assetID,
-		fn.None[int64](), lnrpc.Payment_SUCCEEDED,
-		fn.None[lnrpc.PaymentFailureReason](),
+		t.t, dave, charlie, 50, assetID, fn.None[int64](),
 	)
 
 	logBalance(t.t, nodes, assetID, "after 50 sats backwards")
@@ -1990,9 +1971,7 @@ func testCustomChannelsLiquidityEdgeCases(_ context.Context,
 
 	// Dave sends 200k assets and 5k sats to Yara.
 	sendAssetKeySendPayment(
-		t.t, dave, yara, 2*bigAssetAmount, assetID,
-		fn.None[int64](), lnrpc.Payment_SUCCEEDED,
-		fn.None[lnrpc.PaymentFailureReason](),
+		t.t, dave, yara, 2*bigAssetAmount, assetID, fn.None[int64](),
 	)
 	sendKeySendPayment(t.t, dave, yara, 5_000)
 
@@ -2018,9 +1997,9 @@ func testCustomChannelsLiquidityEdgeCases(_ context.Context,
 	// channels, where the total asset value is less than the default anchor
 	// amount of 354 sats.
 	invoiceResp = createAssetInvoice(t.t, dave, charlie, 1, assetID)
-	payInvoiceWithSatoshi(
-		t.t, yara, invoiceResp, lnrpc.Payment_FAILED, false,
-	)
+	payInvoiceWithSatoshi(t.t, yara, invoiceResp, withFailure(
+		lnrpc.Payment_FAILED, failureNoRoute,
+	))
 
 	logBalance(t.t, nodes, assetID, "after small payment (asset "+
 		"invoice, <354sats)")
@@ -2060,9 +2039,7 @@ func testCustomChannelsLiquidityEdgeCases(_ context.Context,
 
 	// We start by sloshing some funds in the Erin<->Fabia.
 	sendAssetKeySendPayment(
-		t.t, erin, fabia, 100_000, assetID,
-		fn.Some[int64](20_000), lnrpc.Payment_SUCCEEDED,
-		fn.None[lnrpc.PaymentFailureReason](),
+		t.t, erin, fabia, 100_000, assetID, fn.Some[int64](20_000),
 	)
 
 	logBalance(t.t, nodes, assetID, "balance after 1st slosh")
@@ -2188,7 +2165,10 @@ func testCustomChannelsLiquidityEdgeCases(_ context.Context,
 
 	// Now Erin tries to pay the invoice. Since rfq quote cannot satisfy the
 	// total amount of the invoice this payment will fail.
-	payInvoiceWithSatoshi(t.t, erin, iResp, lnrpc.Payment_FAILED, true)
+	payInvoiceWithSatoshi(
+		t.t, erin, iResp, withExpectTimeout(),
+		withFailure(lnrpc.Payment_FAILED, failureNone),
+	)
 
 	logBalance(t.t, nodes, assetID, "after small manual rfq")
 }
@@ -2333,9 +2313,7 @@ func testCustomChannelsBalanceConsistency(_ context.Context,
 	// Normal case.
 	// Send 500 assets from Charlie to Dave.
 	sendAssetKeySendPayment(
-		t.t, charlie, dave, 500, assetID,
-		fn.None[int64](), lnrpc.Payment_SUCCEEDED,
-		fn.None[lnrpc.PaymentFailureReason](),
+		t.t, charlie, dave, 500, assetID, fn.None[int64](),
 	)
 
 	logBalance(t.t, nodes, assetID, "after 500 assets")
@@ -2351,9 +2329,7 @@ func testCustomChannelsBalanceConsistency(_ context.Context,
 
 	// Now Dave tries to send 250 assets.
 	sendAssetKeySendPayment(
-		t.t, dave, charlie, 250, assetID,
-		fn.None[int64](), lnrpc.Payment_SUCCEEDED,
-		fn.None[lnrpc.PaymentFailureReason](),
+		t.t, dave, charlie, 250, assetID, fn.None[int64](),
 	)
 
 	logBalance(t.t, nodes, assetID, "after 250 sats backwards")
@@ -3012,8 +2988,7 @@ func runCustomChannelsHtlcForceClose(ctxb context.Context, t *harnessTest,
 	for i := 0; i < numPayments; i++ {
 		sendAssetKeySendPayment(
 			t.t, alice, bob, keySendAmount, assetID,
-			fn.None[int64](), lnrpc.Payment_SUCCEEDED,
-			fn.None[lnrpc.PaymentFailureReason](),
+			fn.None[int64](),
 		)
 	}
 
