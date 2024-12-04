@@ -68,4 +68,8 @@ var allTestCases = []*testCase{
 		name: "test custom channels fee",
 		test: testCustomChannelsFee,
 	},
+	{
+		name: "test custom channels forward bandwidth",
+		test: testCustomChannelsForwardBandwidth,
+	},
 }

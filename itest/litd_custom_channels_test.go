@@ -20,6 +20,7 @@ import (
 	"github.com/lightninglabs/taproot-assets/tapchannel"
 	"github.com/lightninglabs/taproot-assets/taprpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/mintrpc"
+	oraclerpc "github.com/lightninglabs/taproot-assets/taprpc/priceoraclerpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/rfqrpc"
 	tchrpc "github.com/lightninglabs/taproot-assets/taprpc/tapchannelrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/universerpc"
@@ -1730,7 +1731,7 @@ func testCustomChannelsBreach(_ context.Context, net *NetworkHarness,
 
 // testCustomChannelsLiquidityEdgeCases is a test that runs through some
 // taproot asset channel liquidity related edge cases.
-func testCustomChannelsLiquidityEdgeCases(_ context.Context,
+func testCustomChannelsLiquidityEdgeCases(ctxb context.Context,
 	net *NetworkHarness, t *harnessTest) {
 
 	lndArgs := slices.Clone(lndArgsTemplate)
@@ -2009,11 +2010,8 @@ func testCustomChannelsLiquidityEdgeCases(_ context.Context,
 	// satoshi, where we will check whether Dave's strict forwarding works
 	// as expected. Charlie is only used as a dummy RFQ peer in this case,
 	// Yara totally ignored the RFQ hint and pays agnostically with sats.
-	invoiceResp = createAssetInvoice(
-		t.t, charlie, dave, 1, assetID,
-	)
+	invoiceResp = createAssetInvoice(t.t, charlie, dave, 1, assetID)
 
-	ctxb := context.Background()
 	stream, err := dave.InvoicesClient.SubscribeSingleInvoice(
 		ctxb, &invoicesrpc.SubscribeSingleInvoiceRequest{
 			RHash: invoiceResp.RHash,
@@ -3432,5 +3430,225 @@ func runCustomChannelsHtlcForceClose(ctxb context.Context, t *harnessTest,
 	zaneExpectedBalance := aliceExpectedBalance + bobExpectedBalance
 	assertSpendableBalance(
 		t.t, zaneTap, assetID, zaneExpectedBalance,
+	)
+}
+
+// testCustomChannelsForwardBandwidth is a test that runs through some Taproot
+// Assets Channel liquidity edge cases, specifically related to forwarding HTLCs
+// into channels with no available asset bandwidth.
+func testCustomChannelsForwardBandwidth(ctxb context.Context,
+	net *NetworkHarness, t *harnessTest) {
+
+	lndArgs := slices.Clone(lndArgsTemplate)
+	litdArgs := slices.Clone(litdArgsTemplate)
+
+	// Explicitly set the proof courier as Zane (now has no other role
+	// other than proof shuffling), otherwise a hashmail courier will be
+	// used. For the funding transaction, we're just posting it and don't
+	// expect a true receiver.
+	zane, err := net.NewNode(
+		t.t, "Zane", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	litdArgs = append(litdArgs, fmt.Sprintf(
+		"--taproot-assets.proofcourieraddr=%s://%s",
+		proof.UniverseRpcCourierType, zane.Cfg.LitAddr(),
+	))
+
+	// The topology we are going for looks like the following:
+	//
+	// Charlie  --[assets]-->  Dave  --[sats]-->  Erin  --[assets]-->  Fabia
+	//                          |
+	//                          |
+	//                       [assets]
+	//                          |
+	//                          v
+	//                        Yara
+	//
+	// With [assets] being a custom channel and [sats] being a normal, BTC
+	// only channel.
+	// All 5 nodes need to be full litd nodes running in integrated mode
+	// with tapd included. We also need specific flags to be enabled, so we
+	// create 5 completely new nodes, ignoring the two default nodes that
+	// are created by the harness.
+	charlie, err := net.NewNode(
+		t.t, "Charlie", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	dave, err := net.NewNode(t.t, "Dave", lndArgs, false, true, litdArgs...)
+	require.NoError(t.t, err)
+	erin, err := net.NewNode(t.t, "Erin", lndArgs, false, true, litdArgs...)
+	require.NoError(t.t, err)
+	fabia, err := net.NewNode(
+		t.t, "Fabia", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+	yara, err := net.NewNode(
+		t.t, "Yara", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	nodes := []*HarnessNode{charlie, dave, erin, fabia, yara}
+	connectAllNodes(t.t, net, nodes)
+	fundAllNodes(t.t, net, nodes)
+
+	// Create the normal channel between Dave and Erin.
+	t.Logf("Opening normal channel between Dave and Erin...")
+	channelOp := openChannelAndAssert(
+		t, net, dave, erin, lntest.OpenChannelParams{
+			Amt:         10_000_000,
+			SatPerVByte: 5,
+		},
+	)
+	defer closeChannelAndAssert(t, net, dave, channelOp, false)
+
+	// This is the only public channel, we need everyone to be aware of it.
+	assertChannelKnown(t.t, charlie, channelOp)
+	assertChannelKnown(t.t, fabia, channelOp)
+
+	universeTap := newTapClient(t.t, zane)
+	charlieTap := newTapClient(t.t, charlie)
+	daveTap := newTapClient(t.t, dave)
+	erinTap := newTapClient(t.t, erin)
+	fabiaTap := newTapClient(t.t, fabia)
+	yaraTap := newTapClient(t.t, yara)
+
+	// Mint an asset on Charlie and sync all nodes to Charlie as the
+	// universe.
+	mintedAssets := itest.MintAssetsConfirmBatch(
+		t.t, t.lndHarness.Miner.Client, charlieTap,
+		[]*mintrpc.MintAssetRequest{
+			{
+				Asset: itestAsset,
+			},
+		},
+	)
+	cents := mintedAssets[0]
+	assetID := cents.AssetGenesis.AssetId
+
+	t.Logf("Minted %d lightning cents, syncing universes...", cents.Amount)
+	syncUniverses(t.t, charlieTap, dave, erin, fabia, yara)
+	t.Logf("Universes synced between all nodes, distributing assets...")
+
+	const (
+		daveFundingAmount = uint64(400_000)
+		erinFundingAmount = uint64(200_000)
+	)
+	charlieFundingAmount := cents.Amount - uint64(2*400_000)
+
+	_, _, chanPointEF := createTestAssetNetwork(
+		t, net, charlieTap, daveTap, erinTap, fabiaTap, yaraTap,
+		universeTap, cents, 400_000, charlieFundingAmount,
+		daveFundingAmount, erinFundingAmount, 0,
+	)
+
+	// Before we start sending out payments, let's make sure each node can
+	// see the other one in the graph and has all required features.
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(charlie, dave))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(dave, charlie))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(dave, yara))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(yara, dave))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(erin, fabia))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(fabia, erin))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(charlie, erin))
+
+	logBalance(t.t, nodes, assetID, "initial")
+
+	// We now deplete the channel between Erin and Fabia by moving all
+	// assets to Fabia.
+	sendAssetKeySendPayment(
+		t.t, erin, fabia, erinFundingAmount, assetID, fn.None[int64](),
+	)
+	logBalance(t.t, nodes, assetID, "after moving assets to Fabia")
+
+	// Test case 1: We cannot keysend more assets from Erin to Fabia.
+	sendAssetKeySendPayment(
+		t.t, erin, fabia, 1, assetID, fn.None[int64](),
+		withFailure(lnrpc.Payment_FAILED, failureNoBalance),
+	)
+
+	// Test case 2: We cannot pay an invoice from Charlie to Fabia.
+	invoiceResp := createAssetInvoice(t.t, erin, fabia, 123, assetID)
+	payInvoiceWithSatoshi(
+		t.t, charlie, invoiceResp,
+		withFailure(lnrpc.Payment_FAILED, failureNoRoute),
+	)
+
+	// Test case 3: We now create an asset buy order for a normal amount of
+	// assets. We then "fake" an invoice referencing that buy order that
+	// is for an amount that is too small to be paid with a single asset
+	// unit. This should be handled gracefully and not lead to a crash.
+	// Ideally such an invoice shouldn't be created in the first place, but
+	// we want to make sure that the system doesn't crash in this case.
+	numUnits := uint64(10)
+	buyOrderResp, err := fabiaTap.RfqClient.AddAssetBuyOrder(
+		ctxb, &rfqrpc.AddAssetBuyOrderRequest{
+			AssetSpecifier: &rfqrpc.AssetSpecifier{
+				Id: &rfqrpc.AssetSpecifier_AssetId{
+					AssetId: assetID,
+				},
+			},
+			AssetMaxAmt: numUnits,
+			Expiry: uint64(
+				time.Now().Add(time.Hour).Unix(),
+			),
+			PeerPubKey:     erin.PubKey[:],
+			TimeoutSeconds: 10,
+		},
+	)
+	require.NoError(t.t, err)
+
+	quoteResp := buyOrderResp.Response
+	quote, ok := quoteResp.(*rfqrpc.AddAssetBuyOrderResponse_AcceptedQuote)
+	require.True(t.t, ok)
+
+	// We calculate the milli-satoshi amount one below the equivalent of a
+	// single asset unit.
+	rate, err := oraclerpc.UnmarshalFixedPoint(&oraclerpc.FixedPoint{
+		Coefficient: quote.AcceptedQuote.AskAssetRate.Coefficient,
+		Scale:       quote.AcceptedQuote.AskAssetRate.Scale,
+	})
+	require.NoError(t.t, err)
+
+	oneUnit := uint64(1)
+	oneUnitFP := rfqmath.NewBigIntFixedPoint(oneUnit, 0)
+	oneUnitMilliSat := rfqmath.UnitsToMilliSatoshi(oneUnitFP, *rate)
+
+	t.Logf("Got quote for %v asset units per BTC", rate)
+	msatPerUnit := float64(oneUnitMilliSat) / float64(oneUnit)
+	t.Logf("Got quote for %v asset units at %3f msat/unit from peer %s "+
+		"with SCID %d", numUnits, msatPerUnit, erin.PubKeyStr,
+		quote.AcceptedQuote.Scid)
+
+	// We now manually add the invoice in order to inject the above,
+	// manually generated, quote.
+	invoiceResp2, err := fabia.AddInvoice(ctxb, &lnrpc.Invoice{
+		Memo:      "too small invoice",
+		ValueMsat: int64(oneUnitMilliSat - 1),
+		RouteHints: []*lnrpc.RouteHint{{
+			HopHints: []*lnrpc.HopHint{{
+				NodeId: erin.PubKeyStr,
+				ChanId: quote.AcceptedQuote.Scid,
+			}},
+		}},
+	})
+	require.NoError(t.t, err)
+
+	payInvoiceWithSatoshi(t.t, dave, invoiceResp2, withFailure(
+		lnrpc.Payment_FAILED, failureNoRoute,
+	))
+
+	// Let's make sure we can still use the channel between Erin and Fabia
+	// by doing a satoshi keysend payment.
+	sendKeySendPayment(t.t, erin, fabia, 2000)
+	logBalance(t.t, nodes, assetID, "after BTC only keysend")
+
+	// Finally, we close the channel between Erin and Fabia to make sure
+	// everything is settled correctly.
+	closeAssetChannelAndAssert(
+		t, net, erin, fabia, chanPointEF, assetID, nil,
+		universeTap, noOpCoOpCloseBalanceCheck,
 	)
 }
