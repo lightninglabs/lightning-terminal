@@ -681,7 +681,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 		t.t, universeTap, assetID, nil, fundingScriptTreeBytes,
 		fmt.Sprintf("%v:%v", fundRespCD.Txid, fundRespCD.OutputIndex),
 	)
-	assertAssetChan(t.t, charlie, dave, fundingAmount, assetID)
+	assertAssetChan(t.t, charlie, dave, fundingAmount, cents)
 
 	// And let's just close the channel again.
 	chanPointCD = &lnrpc.ChannelPoint{
@@ -1116,7 +1116,7 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 		t.t, universeTap, nil, groupID, fundingScriptTreeBytes,
 		fmt.Sprintf("%v:%v", fundRespCD.Txid, fundRespCD.OutputIndex),
 	)
-	assertAssetChan(t.t, charlie, dave, fundingAmount, assetID)
+	assertAssetChan(t.t, charlie, dave, fundingAmount, cents)
 
 	// And let's just close the channel again.
 	chanPointCD = &lnrpc.ChannelPoint{
@@ -1292,7 +1292,7 @@ func testCustomChannelsForceClose(_ context.Context, net *NetworkHarness,
 	)
 
 	// Make sure the channel shows the correct asset information.
-	assertAssetChan(t.t, charlie, dave, fundingAmount, assetID)
+	assertAssetChan(t.t, charlie, dave, fundingAmount, cents)
 
 	// Before we start sending out payments, let's make sure each node can
 	// see the other one in the graph and has all required features.
@@ -1635,7 +1635,7 @@ func testCustomChannelsBreach(_ context.Context, net *NetworkHarness,
 	)
 
 	// Make sure the channel shows the correct asset information.
-	assertAssetChan(t.t, charlie, dave, fundingAmount, assetID)
+	assertAssetChan(t.t, charlie, dave, fundingAmount, cents)
 
 	// Before we start sending out payments, let's make sure each node can
 	// see the other one in the graph and has all required features.
@@ -2289,7 +2289,7 @@ func testCustomChannelsBalanceConsistency(_ context.Context,
 	// Make sure the pending channel shows up in the list and has the
 	// custom records set as JSON.
 	assertPendingChannels(
-		t.t, charlieTap.node, assetID, 1, charlieBalance, 0,
+		t.t, charlieTap.node, cents, 1, charlieBalance, 0,
 	)
 
 	// Let's confirm the channel.
@@ -2325,7 +2325,7 @@ func testCustomChannelsBalanceConsistency(_ context.Context,
 
 	// Make sure the channel shows the correct asset information.
 	assertAssetChan(
-		t.t, charlieTap.node, daveTap.node, charlieBalance, assetID,
+		t.t, charlieTap.node, daveTap.node, charlieBalance, cents,
 	)
 
 	logBalance(t.t, nodes, assetID, "initial")
@@ -2513,7 +2513,7 @@ func testCustomChannelsSingleAssetMultiInput(_ context.Context,
 
 	// Make sure the channel shows the correct asset information.
 	assertAssetChan(
-		t.t, charlieTap.node, daveTap.node, 2*halfCentsAmount, assetID,
+		t.t, charlieTap.node, daveTap.node, 2*halfCentsAmount, cents,
 	)
 }
 
