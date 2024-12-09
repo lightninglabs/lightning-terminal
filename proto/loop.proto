@@ -89,6 +89,12 @@ service SwapClient {
     */
     rpc GetLsatTokens (TokensRequest) returns (TokensResponse);
 
+    /* loop: `fetchl402`
+    FetchL402Token fetches an L402 token from the server, this is required in
+    order to receive reservation notifications from the server.
+    */
+    rpc FetchL402Token (FetchL402TokenRequest) returns (FetchL402TokenResponse);
+
     /* loop: `getinfo`
     GetInfo gets basic information about the loop daemon.
     */
@@ -828,6 +834,12 @@ message TokensResponse {
     List of all tokens the daemon knows of, including old/expired tokens.
     */
     repeated L402Token tokens = 1;
+}
+
+message FetchL402TokenRequest {
+}
+
+message FetchL402TokenResponse {
 }
 
 message L402Token {

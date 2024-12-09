@@ -9,6 +9,7 @@ import (
 	"github.com/lightninglabs/lndclient"
 	tap "github.com/lightninglabs/taproot-assets"
 	"github.com/lightninglabs/taproot-assets/address"
+	"github.com/lightninglabs/taproot-assets/fn"
 	"github.com/lightninglabs/taproot-assets/perms"
 	"github.com/lightninglabs/taproot-assets/tapcfg"
 	"github.com/lightninglabs/taproot-assets/taprpc"
@@ -103,9 +104,10 @@ func (t *taprootAssetsSubServer) Start(_ lnrpc.LightningClient,
 		return err
 	}
 
-	// The taproot asset channel feature is still experimental, so we
-	// disable it for now.
-	const enableChannelFeatures = false
+	// If we're being called here, it means tapd is running in integrated
+	// mode. But we can only offer Taproot Asset channel functionality if
+	// lnd is also running in integrated mode.
+	enableChannelFeatures := !t.lndRemote
 
 	err = tapcfg.ConfigureSubServer(
 		t.Server, t.cfg, log, &lndGrpc.LndServices,
@@ -156,6 +158,20 @@ func (t *taprootAssetsSubServer) RegisterRestService(ctx context.Context,
 	}
 
 	err = assetwalletrpc.RegisterAssetWalletHandlerFromEndpoint(
+		ctx, mux, endpoint, dialOpts,
+	)
+	if err != nil {
+		return err
+	}
+
+	err = rfqrpc.RegisterRfqHandlerFromEndpoint(
+		ctx, mux, endpoint, dialOpts,
+	)
+	if err != nil {
+		return err
+	}
+
+	err = tchrpc.RegisterTaprootAssetChannelsHandlerFromEndpoint(
 		ctx, mux, endpoint, dialOpts,
 	)
 	if err != nil {
@@ -237,4 +253,14 @@ func (t *taprootAssetsSubServer) WhiteListedURLs() map[string]struct{} {
 		t.cfg.RpcConf.AllowPublicUniProofCourier || t.remote,
 		t.cfg.RpcConf.AllowPublicStats || t.remote,
 	)
+}
+
+// Impl returns the actual implementation of the sub-server. This might not be
+// set if the sub-server is running in remote mode.
+func (t *taprootAssetsSubServer) Impl() fn.Option[any] {
+	if t.Server == nil {
+		return fn.None[any]()
+	}
+
+	return fn.Some[any](t.Server)
 }
