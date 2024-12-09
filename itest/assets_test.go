@@ -184,14 +184,14 @@ func createTestAssetNetwork(t *harnessTest, net *NetworkHarness, charlieTap,
 	// Make sure the pending channel shows up in the list and has the
 	// custom records set as JSON.
 	assertPendingChannels(
-		t.t, charlieTap.node, assetID, 1, charlieFundingAmount, 0,
+		t.t, charlieTap.node, mintedAsset, 1, charlieFundingAmount, 0,
 	)
 	assertPendingChannels(
-		t.t, daveTap.node, assetID, 2, daveFundingAmount,
+		t.t, daveTap.node, mintedAsset, 2, daveFundingAmount,
 		charlieFundingAmount,
 	)
 	assertPendingChannels(
-		t.t, erinTap.node, assetID, 1, erinFundingAmount, 0,
+		t.t, erinTap.node, mintedAsset, 1, erinFundingAmount, 0,
 	)
 
 	// Now that we've looked at the pending channels, let's actually confirm
@@ -259,13 +259,14 @@ func createTestAssetNetwork(t *harnessTest, net *NetworkHarness, charlieTap,
 	// Make sure the channel shows the correct asset information.
 	assertAssetChan(
 		t.t, charlieTap.node, daveTap.node, charlieFundingAmount,
-		assetID,
+		mintedAsset,
 	)
 	assertAssetChan(
-		t.t, daveTap.node, yaraTap.node, daveFundingAmount, assetID,
+		t.t, daveTap.node, yaraTap.node, daveFundingAmount, mintedAsset,
 	)
 	assertAssetChan(
-		t.t, erinTap.node, fabiaTap.node, erinFundingAmount, assetID,
+		t.t, erinTap.node, fabiaTap.node, erinFundingAmount,
+		mintedAsset,
 	)
 
 	chanPointCD := &lnrpc.ChannelPoint{
@@ -451,8 +452,9 @@ func assertUniverseProofExists(t *testing.T, universe *tapClient,
 	return a
 }
 
-func assertPendingChannels(t *testing.T, node *HarnessNode, assetID []byte,
-	numChannels int, localSum, remoteSum uint64) {
+func assertPendingChannels(t *testing.T, node *HarnessNode,
+	mintedAsset *taprpc.Asset, numChannels int, localSum,
+	remoteSum uint64) {
 
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
@@ -474,6 +476,22 @@ func assertPendingChannels(t *testing.T, node *HarnessNode, assetID []byte,
 
 	require.NotZero(t, pendingJSON.Assets[0].Capacity)
 
+	// Check the decimal display of the channel funding blob. If no explicit
+	// value was set, we assume and expect the value of 0.
+	var expectedDecimalDisplay uint8
+	if mintedAsset.DecimalDisplay != nil {
+		expectedDecimalDisplay = uint8(
+			mintedAsset.DecimalDisplay.DecimalDisplay,
+		)
+	}
+
+	require.Equal(
+		t, expectedDecimalDisplay,
+		pendingJSON.Assets[0].AssetInfo.DecimalDisplay,
+	)
+
+	// Check the balance of the pending channel.
+	assetID := mintedAsset.AssetGenesis.AssetId
 	pendingLocalBalance, pendingRemoteBalance, _, _ :=
 		getAssetChannelBalance(
 			t, node, assetID, true,
@@ -483,8 +501,9 @@ func assertPendingChannels(t *testing.T, node *HarnessNode, assetID []byte,
 }
 
 func assertAssetChan(t *testing.T, src, dst *HarnessNode, fundingAmount uint64,
-	assetID []byte) {
+	mintedAsset *taprpc.Asset) {
 
+	assetID := mintedAsset.AssetGenesis.AssetId
 	assetIDStr := hex.EncodeToString(assetID)
 	err := wait.NoError(func() error {
 		a, err := getChannelCustomData(src, dst)
@@ -499,6 +518,21 @@ func assertAssetChan(t *testing.T, src, dst *HarnessNode, fundingAmount uint64,
 		if a.Capacity != fundingAmount {
 			return fmt.Errorf("expected capacity %d, got %d",
 				fundingAmount, a.Capacity)
+		}
+
+		// Check the decimal display of the channel funding blob. If no
+		// explicit value was set, we assume and expect the value of 0.
+		var expectedDecimalDisplay uint8
+		if mintedAsset.DecimalDisplay != nil {
+			expectedDecimalDisplay = uint8(
+				mintedAsset.DecimalDisplay.DecimalDisplay,
+			)
+		}
+
+		if a.AssetInfo.DecimalDisplay != expectedDecimalDisplay {
+			return fmt.Errorf("expected decimal display %d, got %d",
+				expectedDecimalDisplay,
+				a.AssetInfo.DecimalDisplay)
 		}
 
 		return nil

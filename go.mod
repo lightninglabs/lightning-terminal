@@ -23,7 +23,7 @@ require (
 	github.com/lightninglabs/pool v0.6.5-beta.0.20241015105339-044cb451b5df
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.2
 	github.com/lightninglabs/pool/poolrpc v1.0.0
-	github.com/lightninglabs/taproot-assets v0.5.0-rc1.0.20241206085244-8113fa8bb314
+	github.com/lightninglabs/taproot-assets v0.5.0-rc1.0.20241209075049-4a15eb2ab84e
 	github.com/lightningnetwork/lnd v0.18.4-beta.rc1
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/fn v1.2.3
