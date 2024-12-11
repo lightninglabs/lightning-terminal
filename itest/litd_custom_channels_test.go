@@ -482,13 +482,11 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	// a direct channel invoice payment with no RFQ SCID present in the
 	// invoice.
 	// ------------
-	paidAssetAmount := createAndPayNormalInvoice(
+	createAndPayNormalInvoice(
 		t.t, charlie, dave, dave, 20_000, assetID, withSmallShards(),
+		withFailure(lnrpc.Payment_FAILED, failureIncorrectDetails),
 	)
 	logBalance(t.t, nodes, assetID, "after invoice")
-
-	charlieAssetBalance -= paidAssetAmount
-	daveAssetBalance += paidAssetAmount
 
 	// We should also be able to do a multi-hop BTC only payment, paying an
 	// invoice from Erin by Charlie.
@@ -535,7 +533,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	// ------------
 	// Test case 4: Pay a normal invoice from Erin by Charlie.
 	// ------------
-	paidAssetAmount = createAndPayNormalInvoice(
+	paidAssetAmount := createAndPayNormalInvoice(
 		t.t, charlie, dave, erin, 20_000, assetID, withSmallShards(),
 	)
 	logBalance(t.t, nodes, assetID, "after invoice")
@@ -921,13 +919,11 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	// a direct channel invoice payment with no RFQ SCID present in the
 	// invoice.
 	// ------------
-	paidAssetAmount := createAndPayNormalInvoice(
+	createAndPayNormalInvoice(
 		t.t, charlie, dave, dave, 20_000, assetID, withSmallShards(),
+		withFailure(lnrpc.Payment_FAILED, failureIncorrectDetails),
 	)
 	logBalance(t.t, nodes, assetID, "after invoice")
-
-	charlieAssetBalance -= paidAssetAmount
-	daveAssetBalance += paidAssetAmount
 
 	// We should also be able to do a multi-hop BTC only payment, paying an
 	// invoice from Erin by Charlie.
@@ -966,7 +962,7 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	// ------------
 	// Test case 4: Pay a normal invoice from Erin by Charlie.
 	// ------------
-	paidAssetAmount = createAndPayNormalInvoice(
+	paidAssetAmount := createAndPayNormalInvoice(
 		t.t, charlie, dave, erin, 20_000, assetID, withSmallShards(),
 	)
 	logBalance(t.t, nodes, assetID, "after invoice")
@@ -1959,17 +1955,6 @@ func testCustomChannelsLiquidityEdgeCases(ctxb context.Context,
 	assertPaymentHtlcAssets(
 		t.t, charlie, invoiceResp.RHash, assetID, bigAssetAmount,
 	)
-
-	// Edge case: Big normal invoice, paid by direct channel peer with
-	// assets.
-	const hugeAssetAmount = 1_000_000
-	_ = createAndPayNormalInvoice(
-		t.t, dave, charlie, charlie, hugeAssetAmount, assetID,
-		withSmallShards(),
-	)
-
-	logBalance(t.t, nodes, assetID, "after big asset payment (btc "+
-		"invoice, direct)")
 
 	// Dave sends 200k assets and 5k sats to Yara.
 	sendAssetKeySendPayment(
