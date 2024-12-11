@@ -236,4 +236,6 @@ replace google.golang.org/protobuf => github.com/lightninglabs/protobuf-go-hex-d
 
 replace github.com/lightninglabs/lightning-terminal/litrpc => ./litrpc
 
+replace github.com/lightninglabs/taproot-assets => github.com/GeorgeTsagk/taproot-assets v0.0.0-20241211105555-7a8eb9f82ef8
+
 go 1.22.6
