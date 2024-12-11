@@ -23,8 +23,9 @@ COPY --from=nodejsbuilder /go/src/github.com/lightninglabs/lightning-terminal /g
 # queries required to connect to linked containers succeed.
 ENV GODEBUG netdns=cgo
 
-# allow forcing a specific taproot-assets version through a build argument
-# see https://go.dev/ref/mod#version-queries for the types of queries that can be used to define a version
+# Allow forcing a specific taproot-assets version through a build argument.
+# Please see https://go.dev/ref/mod#version-queries for the types of
+# queries that can be used to define a version.
 ARG TAPROOT_ASSETS_VERSION
 
 # Install dependencies and install/build lightning-terminal.
