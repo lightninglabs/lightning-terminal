@@ -16,7 +16,7 @@ require (
 	github.com/lightninglabs/lightning-node-connect v0.3.2-alpha.0.20240822142323-ee4e7ff52f83
 	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.1
 	github.com/lightninglabs/lightning-terminal/litrpc v1.0.0
-	github.com/lightninglabs/lndclient v0.18.4-7
+	github.com/lightninglabs/lndclient v1.0.1-0.20241212185726-f8f7e3fa3ad8
 	github.com/lightninglabs/loop v0.28.9-beta
 	github.com/lightninglabs/loop/looprpc v1.0.1
 	github.com/lightninglabs/loop/swapserverrpc v1.0.10

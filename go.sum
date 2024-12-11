@@ -1157,8 +1157,8 @@ github.com/lightninglabs/lightning-node-connect v0.3.2-alpha.0.20240822142323-ee
 github.com/lightninglabs/lightning-node-connect v0.3.2-alpha.0.20240822142323-ee4e7ff52f83/go.mod h1:+SasPOt0evcJdfApb/ALTaTz4x3a2/kWy5KqFoTpiX8=
 github.com/lightninglabs/lightning-node-connect/hashmailrpc v1.0.2 h1:Er1miPZD2XZwcfE4xoS5AILqP1mj7kqnhbBSxW9BDxY=
 github.com/lightninglabs/lightning-node-connect/hashmailrpc v1.0.2/go.mod h1:antQGRDRJiuyQF6l+k6NECCSImgCpwaZapATth2Chv4=
-github.com/lightninglabs/lndclient v0.18.4-7 h1:3lV3jeaL66wtxFeR+7YTo+1ZJ8YzD3gYHG8U9yas3YM=
-github.com/lightninglabs/lndclient v0.18.4-7/go.mod h1:qaIx+eqEV+Bdf1j7GVeJiDqJbtZXsr9XTfHu/8HmgQU=
+github.com/lightninglabs/lndclient v1.0.1-0.20241212185726-f8f7e3fa3ad8 h1:aOa99sBtrwSvnAED/BVTVjRYY/KoUtltuQmTF2FARJg=
+github.com/lightninglabs/lndclient v1.0.1-0.20241212185726-f8f7e3fa3ad8/go.mod h1:qaIx+eqEV+Bdf1j7GVeJiDqJbtZXsr9XTfHu/8HmgQU=
 github.com/lightninglabs/loop v0.28.9-beta h1:JpAUpC7JEjYML36ZEJKwaTbtOfm1CgFuoykfYVok8Uc=
 github.com/lightninglabs/loop v0.28.9-beta/go.mod h1:XnB5JYj+8Vo9UBsvuxmx8NBO3HzoZa7gWNmJAACrnww=
 github.com/lightninglabs/loop/looprpc v1.0.1 h1:r/Nj9A26T/rZkbmUg6AttkK9n5r4jR4Hul4OOCM/5t0=
