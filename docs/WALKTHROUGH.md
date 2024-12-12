@@ -141,7 +141,7 @@ submitted.
     swap id, amount, and current status as a progress bar.
 
     Swaps require on-chain transactions, so you will need to wait for confirmations before
-    they will complete successfully. For more detailed information about the swap process,
+    they will completed successfully. For more detailed information about the swap process,
     take a look at the
     [Loop Out In-depth](https://lightning.engineering/posts/2019-04-15-loop-out-in-depth/)
     blog post.
