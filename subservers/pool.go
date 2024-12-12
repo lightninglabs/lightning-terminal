@@ -8,6 +8,7 @@ import (
 	"github.com/lightninglabs/pool"
 	"github.com/lightninglabs/pool/perms"
 	"github.com/lightninglabs/pool/poolrpc"
+	"github.com/lightninglabs/taproot-assets/fn"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"google.golang.org/grpc"
 	"gopkg.in/macaroon-bakery.v2/bakery"
@@ -125,4 +126,14 @@ func (p *poolSubServer) Permissions() map[string][]bakery.Op {
 // NOTE: this is part of the SubServer interface.
 func (p *poolSubServer) WhiteListedURLs() map[string]struct{} {
 	return nil
+}
+
+// Impl returns the actual implementation of the sub-server. This might not be
+// set if the sub-server is running in remote mode.
+func (p *poolSubServer) Impl() fn.Option[any] {
+	if p.Server == nil {
+		return fn.None[any]()
+	}
+
+	return fn.Some[any](p.Server)
 }

@@ -29,6 +29,8 @@
   especially useful in stateless-init mode where users will not have access to 
   a LiT macaroon to perform this call with. 
 
+* [Convert litrpc package into a module](https://github.com/lightninglabs/lightning-terminal/pull/823).
+
 ### Technical and Architectural Updates
 
 * [Convert litrpc package into a module](https://github.com/lightninglabs/lightning-terminal/pull/823).

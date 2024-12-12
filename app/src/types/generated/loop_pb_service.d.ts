@@ -121,6 +121,15 @@ type SwapClientGetLsatTokens = {
   readonly responseType: typeof loop_pb.TokensResponse;
 };
 
+type SwapClientFetchL402Token = {
+  readonly methodName: string;
+  readonly service: typeof SwapClient;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof loop_pb.FetchL402TokenRequest;
+  readonly responseType: typeof loop_pb.FetchL402TokenResponse;
+};
+
 type SwapClientGetInfo = {
   readonly methodName: string;
   readonly service: typeof SwapClient;
@@ -208,6 +217,7 @@ export class SwapClient {
   static readonly Probe: SwapClientProbe;
   static readonly GetL402Tokens: SwapClientGetL402Tokens;
   static readonly GetLsatTokens: SwapClientGetLsatTokens;
+  static readonly FetchL402Token: SwapClientFetchL402Token;
   static readonly GetInfo: SwapClientGetInfo;
   static readonly GetLiquidityParams: SwapClientGetLiquidityParams;
   static readonly SetLiquidityParams: SwapClientSetLiquidityParams;
@@ -358,6 +368,15 @@ export class SwapClientClient {
   getLsatTokens(
     requestMessage: loop_pb.TokensRequest,
     callback: (error: ServiceError|null, responseMessage: loop_pb.TokensResponse|null) => void
+  ): UnaryResponse;
+  fetchL402Token(
+    requestMessage: loop_pb.FetchL402TokenRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.FetchL402TokenResponse|null) => void
+  ): UnaryResponse;
+  fetchL402Token(
+    requestMessage: loop_pb.FetchL402TokenRequest,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.FetchL402TokenResponse|null) => void
   ): UnaryResponse;
   getInfo(
     requestMessage: loop_pb.GetInfoRequest,

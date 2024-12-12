@@ -5,6 +5,7 @@ import (
 
 	restProxy "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lightninglabs/lndclient"
+	"github.com/lightninglabs/taproot-assets/fn"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/macaroons"
 	"google.golang.org/grpc"
@@ -62,4 +63,8 @@ type SubServer interface {
 	// WhiteListedURLs returns a map of all the sub-server's URLs that can
 	// be accessed without a macaroon.
 	WhiteListedURLs() map[string]struct{}
+
+	// Impl returns the actual implementation of the sub-server. This might
+	// not be set if the sub-server is running in remote mode.
+	Impl() fn.Option[any]
 }
