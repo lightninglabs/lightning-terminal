@@ -864,8 +864,8 @@ func payInvoiceWithSatoshi(t *testing.T, payer *HarnessNode,
 	require.NoError(t, err)
 
 	result, err := getPaymentResult(stream)
-	if cfg.expectTimeout {
-		require.ErrorContains(t, err, "context deadline exceeded")
+	if cfg.errSubStr != "" {
+		require.ErrorContains(t, err, cfg.errSubStr)
 	} else {
 		require.NoError(t, err)
 		require.Equal(t, cfg.payStatus, result.Status)
@@ -912,7 +912,9 @@ func payInvoiceWithSatoshiLastHop(t *testing.T, payer *HarnessNode,
 
 type payConfig struct {
 	smallShards   bool
-	expectTimeout bool
+	errSubStr     string
+	allowOverpay  bool
+	feeLimit      lnwire.MilliSatoshi
 	payStatus     lnrpc.Payment_PaymentStatus
 	failureReason lnrpc.PaymentFailureReason
 	rfq           fn.Option[rfqmsg.ID]
@@ -921,7 +923,8 @@ type payConfig struct {
 func defaultPayConfig() *payConfig {
 	return &payConfig{
 		smallShards:   false,
-		expectTimeout: false,
+		errSubStr:     "",
+		feeLimit:      1_000_000,
 		payStatus:     lnrpc.Payment_SUCCEEDED,
 		failureReason: lnrpc.PaymentFailureReason_FAILURE_REASON_NONE,
 	}
@@ -935,9 +938,9 @@ func withSmallShards() payOpt {
 	}
 }
 
-func withExpectTimeout() payOpt {
+func withPayErrSubStr(errSubStr string) payOpt {
 	return func(c *payConfig) {
-		c.expectTimeout = true
+		c.errSubStr = errSubStr
 	}
 }
 
@@ -953,6 +956,18 @@ func withFailure(status lnrpc.Payment_PaymentStatus,
 func withRFQ(rfqID rfqmsg.ID) payOpt {
 	return func(c *payConfig) {
 		c.rfq = fn.Some(rfqID)
+	}
+}
+
+func withFeeLimit(limit lnwire.MilliSatoshi) payOpt {
+	return func(c *payConfig) {
+		c.feeLimit = limit
+	}
+}
+
+func withAllowOverpay() payOpt {
+	return func(c *payConfig) {
+		c.allowOverpay = true
 	}
 }
 
@@ -979,7 +994,7 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 	sendReq := &routerrpc.SendPaymentRequest{
 		PaymentRequest: payReq,
 		TimeoutSeconds: int32(PaymentTimeout.Seconds()),
-		FeeLimitMsat:   1_000_000,
+		FeeLimitMsat:   int64(cfg.feeLimit),
 	}
 
 	if cfg.smallShards {
@@ -997,8 +1012,19 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 		PeerPubkey:     rfqPeer.PubKey[:],
 		PaymentRequest: sendReq,
 		RfqId:          rfqBytes,
+		AllowOverpay:   cfg.allowOverpay,
 	})
 	require.NoError(t, err)
+
+	// If an error is returned by the RPC method (meaning the stream itself
+	// was established, no network or auth error), we expect the error to be
+	// returned on the first read on the stream.
+	if cfg.errSubStr != "" {
+		_, err := stream.Recv()
+		require.ErrorContains(t, err, cfg.errSubStr)
+
+		return 0, rfqmath.BigIntFixedPoint{}
+	}
 
 	var (
 		numUnits uint64
@@ -1043,8 +1069,32 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 	return numUnits, rateVal
 }
 
+type invoiceConfig struct {
+	errSubStr string
+}
+
+func defaultInvoiceConfig() *invoiceConfig {
+	return &invoiceConfig{
+		errSubStr: "",
+	}
+}
+
+type invoiceOpt func(*invoiceConfig)
+
+func withInvoiceErrSubStr(errSubStr string) invoiceOpt {
+	return func(c *invoiceConfig) {
+		c.errSubStr = errSubStr
+	}
+}
+
 func createAssetInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
-	assetAmount uint64, assetID []byte) *lnrpc.AddInvoiceResponse {
+	assetAmount uint64, assetID []byte,
+	opts ...invoiceOpt) *lnrpc.AddInvoiceResponse {
+
+	cfg := defaultInvoiceConfig()
+	for _, opt := range opts {
+		opt(cfg)
+	}
 
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
@@ -1068,7 +1118,13 @@ func createAssetInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 			Expiry: timeoutSeconds,
 		},
 	})
-	require.NoError(t, err)
+	if cfg.errSubStr != "" {
+		require.ErrorContains(t, err, cfg.errSubStr)
+
+		return nil
+	} else {
+		require.NoError(t, err)
+	}
 
 	decodedInvoice, err := dst.DecodePayReq(ctxt, &lnrpc.PayReqString{
 		PayReq: resp.InvoiceResult.PaymentRequest,

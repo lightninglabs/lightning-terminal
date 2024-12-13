@@ -17,7 +17,6 @@ import (
 	"github.com/lightninglabs/taproot-assets/proof"
 	"github.com/lightninglabs/taproot-assets/rfqmath"
 	"github.com/lightninglabs/taproot-assets/rfqmsg"
-	"github.com/lightninglabs/taproot-assets/tapchannel"
 	"github.com/lightninglabs/taproot-assets/taprpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/mintrpc"
 	oraclerpc "github.com/lightninglabs/taproot-assets/taprpc/priceoraclerpc"
@@ -1983,20 +1982,61 @@ func testCustomChannelsLiquidityEdgeCases(ctxb context.Context,
 	// Yara with satoshi. This is a multi-hop payment going over 2 asset
 	// channels, where the total asset value is less than the default anchor
 	// amount of 354 sats.
-	invoiceResp = createAssetInvoice(t.t, dave, charlie, 1, assetID)
-	payInvoiceWithSatoshi(t.t, yara, invoiceResp, withFailure(
-		lnrpc.Payment_FAILED, failureNoRoute,
+	createAssetInvoice(t.t, dave, charlie, 1, assetID, withInvoiceErrSubStr(
+		"cannot create invoice over 1 asset units, as the minimal "+
+			"transportable amount",
 	))
 
 	logBalance(t.t, nodes, assetID, "after small payment (asset "+
 		"invoice, <354sats)")
+
+	// Edge case: We now create a small BTC invoice on Erin and ask Charlie
+	// to pay it with assets. We should get a payment failure as the amount
+	// is too small to be paid with assets economically. But a payment is
+	// still possible, since the amount is large enough to represent a
+	// single unit (17.1 sat per unit).
+	btcInvoiceResp, err := erin.AddInvoice(ctxb, &lnrpc.Invoice{
+		Memo:      "small BTC invoice",
+		ValueMsat: 18_000,
+	})
+	require.NoError(t.t, err)
+	payInvoiceWithAssets(
+		t.t, charlie, dave, btcInvoiceResp.PaymentRequest, assetID,
+		withFeeLimit(2_000), withPayErrSubStr(
+			"rejecting payment of 20000 mSAT",
+		),
+	)
+
+	// When we override the uneconomical payment, it should succeed.
+	payInvoiceWithAssets(
+		t.t, charlie, dave, btcInvoiceResp.PaymentRequest, assetID,
+		withFeeLimit(2_000), withAllowOverpay(),
+	)
+	logBalance(
+		t.t, nodes, assetID, "after small payment (BTC invoice 1 sat)",
+	)
+
+	// When we try to pay an invoice amount that's smaller than the
+	// corresponding value of a single asset unit, the payment will always
+	// be rejected, even if we set the allow_uneconomical flag.
+	btcInvoiceResp, err = erin.AddInvoice(ctxb, &lnrpc.Invoice{
+		Memo:      "very small BTC invoice",
+		ValueMsat: 1_000,
+	})
+	require.NoError(t.t, err)
+	payInvoiceWithAssets(
+		t.t, charlie, dave, btcInvoiceResp.PaymentRequest, assetID,
+		withFeeLimit(1_000), withAllowOverpay(), withPayErrSubStr(
+			"rejecting payment of 2000 mSAT",
+		),
+	)
 
 	// Edge case: Now Dave creates an asset invoice to be paid for by
 	// Yara with satoshi. For the last hop we try to settle the invoice in
 	// satoshi, where we will check whether Dave's strict forwarding works
 	// as expected. Charlie is only used as a dummy RFQ peer in this case,
 	// Yara totally ignored the RFQ hint and pays agnostically with sats.
-	invoiceResp = createAssetInvoice(t.t, charlie, dave, 1, assetID)
+	invoiceResp = createAssetInvoice(t.t, charlie, dave, 22, assetID)
 
 	stream, err := dave.InvoicesClient.SubscribeSingleInvoice(
 		ctxb, &invoicesrpc.SubscribeSingleInvoiceRequest{
@@ -2149,7 +2189,7 @@ func testCustomChannelsLiquidityEdgeCases(ctxb context.Context,
 	// Now Erin tries to pay the invoice. Since rfq quote cannot satisfy the
 	// total amount of the invoice this payment will fail.
 	payInvoiceWithSatoshi(
-		t.t, erin, iResp, withExpectTimeout(),
+		t.t, erin, iResp, withPayErrSubStr("context deadline exceeded"),
 		withFailure(lnrpc.Payment_FAILED, failureNone),
 	)
 
@@ -2702,7 +2742,7 @@ func testCustomChannelsOraclePricing(_ context.Context,
 		commitFeeP2WSH       int64 = 2810
 		anchorAmount         int64 = 330
 		assetHtlcCarryAmount       = int64(
-			tapchannel.DefaultOnChainHtlcAmount,
+			rfqmath.DefaultOnChainHtlcSat,
 		)
 		unbalancedLocalAmount = channelFundingAmount - commitFeeP2TR -
 			anchorAmount
