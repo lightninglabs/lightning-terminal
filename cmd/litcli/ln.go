@@ -361,13 +361,12 @@ func sendPayment(ctx *cli.Context) error {
 			"%w", err)
 	}
 
-	// We use a constant amount of 500 to carry the asset HTLCs. In the
-	// future, we can use the double HTLC trick here, though it consumes
-	// more commitment space.
-	const htlcCarrierAmt = 500
+	// Use the smallest possible non-dust HTLC amount to carry the asset
+	// HTLCs. In the future, we can use the double HTLC trick here, though
+	// it consumes more commitment space.
 	req := &routerrpc.SendPaymentRequest{
 		Dest:              destNode,
-		Amt:               htlcCarrierAmt,
+		Amt:               int64(rfqmath.DefaultOnChainHtlcSat),
 		DestCustomRecords: make(map[uint64][]byte),
 	}
 
