@@ -16,6 +16,10 @@
 
 ### Bug Fixes
 
+* [Add `lastHop` parameter for Loop In 
+  quotes](https://github.com/lightninglabs/lightning-terminal/pull/920).
+  Fixes fee estimation bug when using Loop In for a specific channel.
+
 ### Functional Changes/Additions
 
 * [Disable the `GRPC` internal low-level connection logger by
@@ -52,3 +56,4 @@
 
 * Elle Mouton
 * Oliver Gugger
+* Rachel Fish
