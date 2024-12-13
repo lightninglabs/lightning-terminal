@@ -182,6 +182,16 @@ var (
 			"set if there are multiple channels with the same " +
 			"asset ID present",
 	}
+
+	allowOverpayFlag = cli.BoolFlag{
+		Name: "allow_overpay",
+		Usage: "allow sending asset payments that are uneconomical " +
+			"because the required non-dust amount for an asset " +
+			"carrier HTLC plus one asset unit is higher than the " +
+			"total invoice/payment amount that arrives at the " +
+			"destination; meaning that the total amount sent " +
+			"exceeds the total amount received plus routing fees",
+	}
 )
 
 // resultStreamWrapper is a wrapper around the SendPaymentClient stream that
@@ -279,7 +289,7 @@ var sendPaymentCommand = cli.Command{
 		"--asset_amount=Y [--rfq_peer_pubkey=Z]",
 	Flags: append(
 		commands.SendPaymentCommand.Flags, assetIDFlag, assetAmountFlag,
-		rfqPeerPubKeyFlag,
+		rfqPeerPubKeyFlag, allowOverpayFlag,
 	),
 	Action: sendPayment,
 }
@@ -380,6 +390,7 @@ func sendPayment(ctx *cli.Context) error {
 	rHash = hash[:]
 
 	req.PaymentHash = rHash
+	allowOverpay := ctx.Bool(allowOverpayFlag.Name)
 
 	return commands.SendPaymentRequest(
 		ctx, req, lndConn, tapdConn, func(ctx context.Context,
@@ -397,6 +408,7 @@ func sendPayment(ctx *cli.Context) error {
 					AssetAmount:    assetAmountToSend,
 					PeerPubkey:     rfqPeerKey,
 					PaymentRequest: req,
+					AllowOverpay:   allowOverpay,
 				},
 			)
 			if err != nil {
@@ -428,6 +440,7 @@ var payInvoiceCommand = cli.Command{
 		},
 		assetIDFlag,
 		rfqPeerPubKeyFlag,
+		allowOverpayFlag,
 	),
 	Action: payInvoice,
 }
@@ -472,15 +485,13 @@ func payInvoice(ctx *cli.Context) error {
 		return fmt.Errorf("unable to decode assetID: %v", err)
 	}
 
-	var assetID asset.ID
-	copy(assetID[:], assetIDBytes)
-
 	rfqPeerKey, err := hex.DecodeString(ctx.String(rfqPeerPubKeyFlag.Name))
 	if err != nil {
 		return fmt.Errorf("unable to decode RFQ peer public key: "+
 			"%w", err)
 	}
 
+	allowOverpay := ctx.Bool(allowOverpayFlag.Name)
 	req := &routerrpc.SendPaymentRequest{
 		PaymentRequest: commands.StripPrefix(payReq),
 	}
@@ -500,6 +511,7 @@ func payInvoice(ctx *cli.Context) error {
 					AssetId:        assetIDBytes,
 					PeerPubkey:     rfqPeerKey,
 					PaymentRequest: req,
+					AllowOverpay:   allowOverpay,
 				},
 			)
 			if err != nil {
