@@ -43,6 +43,7 @@ var lnCommands = []cli.Command{
 			sendPaymentCommand,
 			payInvoiceCommand,
 			addInvoiceCommand,
+			decodeAssetInvoiceCommand,
 		},
 	},
 }
@@ -641,6 +642,68 @@ func addInvoice(ctx *cli.Context) error {
 			Private:         ctx.Bool("private"),
 			IsAmp:           ctx.Bool("amp"),
 		},
+	})
+	if err != nil {
+		return fmt.Errorf("error adding invoice: %w", err)
+	}
+
+	printRespJSON(resp)
+
+	return nil
+}
+
+var decodeAssetInvoiceCommand = cli.Command{
+	Name:     "decodeassetinvoice",
+	Category: "Payments",
+	Usage: "Decodes an LN invoice and displays the invoice's amount in asset " +
+		"units specified by an asset ID",
+	Description: `
+  This command can be used to display the information encoded in an invoice.
+  Given a chosen asset_id, the invoice's amount expressed in units of the asset
+  will be displayed.
+
+  Other information such as the decimal display of an asset, and the asset
+  group information (if applicable) are also shown.
+	`,
+	ArgsUsage: "--pay_req=X --asset_id=X",
+	Flags: []cli.Flag{
+		cli.StringFlag{
+			Name:  "pay_req",
+			Usage: "a zpay32 encoded payment request to fulfill",
+		},
+		assetIDFlag,
+	},
+	Action: decodeAssetInvoice,
+}
+
+func decodeAssetInvoice(ctx *cli.Context) error {
+	ctxb := context.Background()
+
+	switch {
+	case !ctx.IsSet("pay_req"):
+		return fmt.Errorf("pay_req argument missing")
+	case !ctx.IsSet(assetIDFlag.Name):
+		return fmt.Errorf("the --asset_id flag must be set")
+	}
+
+	payReq := ctx.String("pay_req")
+
+	assetIDStr := ctx.String(assetIDFlag.Name)
+	assetIDBytes, err := hex.DecodeString(assetIDStr)
+	if err != nil {
+		return fmt.Errorf("unable to decode assetID: %v", err)
+	}
+
+	tapdConn, cleanup, err := connectSuperMacClient(ctx)
+	if err != nil {
+		return fmt.Errorf("unable to make rpc con: %w", err)
+	}
+	defer cleanup()
+
+	channelsClient := tchrpc.NewTaprootAssetChannelsClient(tapdConn)
+	resp, err := channelsClient.DecodeAssetPayReq(ctxb, &tchrpc.AssetPayReq{
+		AssetId:      assetIDBytes,
+		PayReqString: payReq,
 	})
 	if err != nil {
 		return fmt.Errorf("error adding invoice: %w", err)
