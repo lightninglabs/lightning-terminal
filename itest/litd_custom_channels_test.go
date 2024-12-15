@@ -21,6 +21,7 @@ import (
 	"github.com/lightninglabs/taproot-assets/taprpc/mintrpc"
 	oraclerpc "github.com/lightninglabs/taproot-assets/taprpc/priceoraclerpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/rfqrpc"
+	"github.com/lightninglabs/taproot-assets/taprpc/tapchannelrpc"
 	tchrpc "github.com/lightninglabs/taproot-assets/taprpc/tapchannelrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/universerpc"
 	"github.com/lightninglabs/taproot-assets/tapscript"
@@ -3677,4 +3678,130 @@ func testCustomChannelsForwardBandwidth(ctxb context.Context,
 		t, net, erin, fabia, chanPointEF, assetID, nil,
 		universeTap, noOpCoOpCloseBalanceCheck,
 	)
+}
+
+// testCustomChannelsDecodeAssetInvoice tests that we're able to properly
+// decode and display asset invoice related information.
+//
+// TODO(roasbeef): just move to tapd repo due to new version that doesn't req a
+// chan?
+func testCustomChannelsDecodeAssetInvoice(ctx context.Context,
+	net *NetworkHarness, t *harnessTest) {
+
+	// First, we'll set up some information for our custom oracle that we'll use
+	// to feed in price information.
+	oracleAddr := fmt.Sprintf("localhost:%d", port.NextAvailablePort())
+	oracle := newOracleHarness(oracleAddr)
+	oracle.start(t.t)
+	t.t.Cleanup(oracle.stop)
+
+	ctxb := context.Background()
+	lndArgs := slices.Clone(lndArgsTemplate)
+	litdArgs := slices.Clone(litdArgsTemplateNoOracle)
+	litdArgs = append(litdArgs, fmt.Sprintf(
+		"--taproot-assets.experimental.rfq.priceoracleaddress="+
+			"rfqrpc://%s", oracleAddr,
+	))
+
+	// For this test, Zane will be our dedicated Universe server for all parties.
+	zane, err := net.NewNode(
+		t.t, "Zane", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	litdArgs = append(litdArgs, fmt.Sprintf(
+		"--taproot-assets.proofcourieraddr=%s://%s",
+		proof.UniverseRpcCourierType, zane.Cfg.LitAddr(),
+	))
+
+	// We'll just make a single node here, as this doesn't actually rely on a set
+	// of active channels.
+	alice, err := net.NewNode(t.t, "Alice", lndArgs, false, true, litdArgs...)
+	require.NoError(t.t, err)
+	aliceTap := newTapClient(t.t, alice)
+
+	// Fund Alice so she'll have enough funds to mint the asset.
+	fundAllNodes(t.t, net, []*HarnessNode{alice})
+
+	// Next, we'll make a new asset with a specified decimal display. We'll also
+	// make grouped asset as well.
+	usdMetaData := &taprpc.AssetMeta{
+		Data: []byte(`{
+"description":"this is a USD stablecoin with decimal display of 6"
+}`),
+		Type: taprpc.AssetMetaType_META_TYPE_JSON,
+	}
+
+	const decimalDisplay = 6
+	itestAsset = &mintrpc.MintAsset{
+		AssetType: taprpc.AssetType_NORMAL,
+		Name:      "USD",
+		AssetMeta: usdMetaData,
+		// We mint 1 million USD with a decimal display of 6, which
+		// results in 1 trillion asset units.
+		Amount:          1_000_000_000_000,
+		DecimalDisplay:  decimalDisplay,
+		NewGroupedAsset: true,
+	}
+
+	// Mint an asset on Charlie and sync Dave to Charlie as the universe.
+	mintedAssets := itest.MintAssetsConfirmBatch(
+		t.t, t.lndHarness.Miner.Client, aliceTap,
+		[]*mintrpc.MintAssetRequest{
+			{
+				Asset: itestAsset,
+			},
+		},
+	)
+	usdAsset := mintedAssets[0]
+	assetID := usdAsset.AssetGenesis.AssetId
+
+	// Now that we've minted the asset, we can set the price in the oracle.
+	var id asset.ID
+	copy(id[:], assetID)
+
+	// We'll assume a price of $100,000.00 USD for a single BTC. This is just the
+	// current subjective price our oracle will use. From this BTC price, we'll
+	// scale things up to be in the precision of the asset we minted above.
+	btcPrice := rfqmath.NewBigIntFixedPoint(
+		100_000_00, 2,
+	)
+	factor := rfqmath.NewBigInt(
+		big.NewInt(int64(math.Pow10(decimalDisplay))),
+	)
+	btcPrice.Coefficient = btcPrice.Coefficient.Mul(factor)
+	oracle.setPrice(id, btcPrice, btcPrice)
+
+	// Now we'll make a normal invoice for 1 BTC using Alice.
+	expirySeconds := 10
+	amountSat := 100_000_000
+	invoiceResp, err := alice.AddInvoice(ctxb, &lnrpc.Invoice{
+		Value:  int64(amountSat),
+		Memo:   "normal invoice",
+		Expiry: int64(expirySeconds),
+	})
+	require.NoError(t.t, err)
+
+	payReq := invoiceResp.PaymentRequest
+
+	// Now that we have our payment request, we'll call into the new decode asset
+	// pay req call.
+	decodeResp, err := aliceTap.DecodeAssetPayReq(ctxb, &tapchannelrpc.AssetPayReq{
+		AssetId:      assetID,
+		PayReqString: payReq,
+	})
+	require.NoError(t.t, err)
+
+	// The decimal display information, genesis, and asset group information
+	// should all match.
+	require.Equal(
+		t.t, int64(decimalDisplay), int64(decodeResp.DecimalDisplay.DecimalDisplay),
+	)
+	require.Equal(t.t, usdAsset.AssetGenesis, decodeResp.GenesisInfo)
+	require.Equal(t.t, usdAsset.AssetGroup, decodeResp.AssetGroup)
+
+	// The 1 BTC invoice should map to 100k asset units, with decimal display 6
+	// that's 100 billion asset units.
+	const expectedUnits = 100_000_000_000
+	require.Equal(t.t, int64(expectedUnits), int64(decodeResp.AssetAmount))
 }
