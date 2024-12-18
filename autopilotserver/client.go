@@ -103,7 +103,7 @@ type featurePerms struct {
 	sync.Mutex
 }
 
-// NewClient returns a autopilot-server client.
+// NewClient returns an autopilot-server client.
 func NewClient(cfg *Config) (Autopilot, error) {
 	var err error
 	cfg.DialOpts, err = getAutopilotServerDialOpts(
