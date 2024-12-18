@@ -182,7 +182,7 @@ export default class AppView {
     this._store.log.info('Switch to Setting screen', name);
   }
 
-  /** adds a alert to the store */
+  /** adds an alert to the store */
   notify(message: string, title?: string, type: Alert['type'] = 'error') {
     const alert: Alert = { id: Date.now(), type, message, title };
     if (type === 'success') alert.ms = 3000;
