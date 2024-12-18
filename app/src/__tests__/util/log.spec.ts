@@ -60,7 +60,7 @@ describe('log Util', () => {
       expect(debugMock).toBeCalledWith('[warn] sample message');
     });
 
-    it('should output a error log message', () => {
+    it('should output an error log message', () => {
       log.error('sample message');
       expect(debugMock).toBeCalledWith('[error] sample message');
     });
@@ -84,7 +84,7 @@ describe('log Util', () => {
       expect(debugMock).toBeCalledWith('[warn] sample message');
     });
 
-    it('should output a error log message', () => {
+    it('should output an error log message', () => {
       log.error('sample message');
       expect(debugMock).toBeCalledWith('[error] sample message');
     });
@@ -108,7 +108,7 @@ describe('log Util', () => {
       expect(debugMock).toBeCalledWith('[warn] sample message');
     });
 
-    it('should output a error log message', () => {
+    it('should output an error log message', () => {
       log.error('sample message');
       expect(debugMock).toBeCalledWith('[error] sample message');
     });
@@ -132,7 +132,7 @@ describe('log Util', () => {
       expect(debugMock).not.toBeCalledWith('[warn] sample message');
     });
 
-    it('should output a error log message', () => {
+    it('should output an error log message', () => {
       log.error('sample message');
       expect(debugMock).toBeCalledWith('[error] sample message');
     });
