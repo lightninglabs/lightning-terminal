@@ -9,6 +9,7 @@ import (
 	"github.com/lightninglabs/faraday/frdrpcserver"
 	"github.com/lightninglabs/faraday/frdrpcserver/perms"
 	"github.com/lightninglabs/lndclient"
+	"github.com/lightninglabs/taproot-assets/fn"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"google.golang.org/grpc"
 	"gopkg.in/macaroon-bakery.v2/bakery"
@@ -125,4 +126,14 @@ func (f *faradaySubServer) Permissions() map[string][]bakery.Op {
 // NOTE: this is part of the SubServer interface.
 func (f *faradaySubServer) WhiteListedURLs() map[string]struct{} {
 	return nil
+}
+
+// Impl returns the actual implementation of the sub-server. This might not be
+// set if the sub-server is running in remote mode.
+func (f *faradaySubServer) Impl() fn.Option[any] {
+	if f.RPCServer == nil {
+		return fn.None[any]()
+	}
+
+	return fn.Some[any](f.RPCServer)
 }
