@@ -522,6 +522,11 @@ export class QuoteRequest extends jspb.Message {
   getPrivate(): boolean;
   setPrivate(value: boolean): void;
 
+  clearDepositOutpointsList(): void;
+  getDepositOutpointsList(): Array<string>;
+  setDepositOutpointsList(value: Array<string>): void;
+  addDepositOutpoints(value: string, index?: number): string;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): QuoteRequest.AsObject;
   static toObject(includeInstance: boolean, msg: QuoteRequest): QuoteRequest.AsObject;
@@ -541,6 +546,7 @@ export namespace QuoteRequest {
     loopInLastHop: Uint8Array | string,
     loopInRouteHintsList: Array<swapserverrpc_common_pb.RouteHint.AsObject>,
     pb_private: boolean,
+    depositOutpointsList: Array<string>,
   }
 }
 
@@ -701,6 +707,38 @@ export class TokensResponse extends jspb.Message {
 export namespace TokensResponse {
   export type AsObject = {
     tokensList: Array<L402Token.AsObject>,
+  }
+}
+
+export class FetchL402TokenRequest extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): FetchL402TokenRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: FetchL402TokenRequest): FetchL402TokenRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: FetchL402TokenRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): FetchL402TokenRequest;
+  static deserializeBinaryFromReader(message: FetchL402TokenRequest, reader: jspb.BinaryReader): FetchL402TokenRequest;
+}
+
+export namespace FetchL402TokenRequest {
+  export type AsObject = {
+  }
+}
+
+export class FetchL402TokenResponse extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): FetchL402TokenResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: FetchL402TokenResponse): FetchL402TokenResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: FetchL402TokenResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): FetchL402TokenResponse;
+  static deserializeBinaryFromReader(message: FetchL402TokenResponse, reader: jspb.BinaryReader): FetchL402TokenResponse;
+}
+
+export namespace FetchL402TokenResponse {
+  export type AsObject = {
   }
 }
 
@@ -1470,6 +1508,570 @@ export namespace InstantOut {
   }
 }
 
+export class NewStaticAddressRequest extends jspb.Message {
+  getClientKey(): Uint8Array | string;
+  getClientKey_asU8(): Uint8Array;
+  getClientKey_asB64(): string;
+  setClientKey(value: Uint8Array | string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): NewStaticAddressRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: NewStaticAddressRequest): NewStaticAddressRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: NewStaticAddressRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): NewStaticAddressRequest;
+  static deserializeBinaryFromReader(message: NewStaticAddressRequest, reader: jspb.BinaryReader): NewStaticAddressRequest;
+}
+
+export namespace NewStaticAddressRequest {
+  export type AsObject = {
+    clientKey: Uint8Array | string,
+  }
+}
+
+export class NewStaticAddressResponse extends jspb.Message {
+  getAddress(): string;
+  setAddress(value: string): void;
+
+  getExpiry(): number;
+  setExpiry(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): NewStaticAddressResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: NewStaticAddressResponse): NewStaticAddressResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: NewStaticAddressResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): NewStaticAddressResponse;
+  static deserializeBinaryFromReader(message: NewStaticAddressResponse, reader: jspb.BinaryReader): NewStaticAddressResponse;
+}
+
+export namespace NewStaticAddressResponse {
+  export type AsObject = {
+    address: string,
+    expiry: number,
+  }
+}
+
+export class ListUnspentDepositsRequest extends jspb.Message {
+  getMinConfs(): number;
+  setMinConfs(value: number): void;
+
+  getMaxConfs(): number;
+  setMaxConfs(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListUnspentDepositsRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: ListUnspentDepositsRequest): ListUnspentDepositsRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ListUnspentDepositsRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListUnspentDepositsRequest;
+  static deserializeBinaryFromReader(message: ListUnspentDepositsRequest, reader: jspb.BinaryReader): ListUnspentDepositsRequest;
+}
+
+export namespace ListUnspentDepositsRequest {
+  export type AsObject = {
+    minConfs: number,
+    maxConfs: number,
+  }
+}
+
+export class ListUnspentDepositsResponse extends jspb.Message {
+  clearUtxosList(): void;
+  getUtxosList(): Array<Utxo>;
+  setUtxosList(value: Array<Utxo>): void;
+  addUtxos(value?: Utxo, index?: number): Utxo;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListUnspentDepositsResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: ListUnspentDepositsResponse): ListUnspentDepositsResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ListUnspentDepositsResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListUnspentDepositsResponse;
+  static deserializeBinaryFromReader(message: ListUnspentDepositsResponse, reader: jspb.BinaryReader): ListUnspentDepositsResponse;
+}
+
+export namespace ListUnspentDepositsResponse {
+  export type AsObject = {
+    utxosList: Array<Utxo.AsObject>,
+  }
+}
+
+export class Utxo extends jspb.Message {
+  getStaticAddress(): string;
+  setStaticAddress(value: string): void;
+
+  getAmountSat(): string;
+  setAmountSat(value: string): void;
+
+  getOutpoint(): string;
+  setOutpoint(value: string): void;
+
+  getConfirmations(): string;
+  setConfirmations(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): Utxo.AsObject;
+  static toObject(includeInstance: boolean, msg: Utxo): Utxo.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: Utxo, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): Utxo;
+  static deserializeBinaryFromReader(message: Utxo, reader: jspb.BinaryReader): Utxo;
+}
+
+export namespace Utxo {
+  export type AsObject = {
+    staticAddress: string,
+    amountSat: string,
+    outpoint: string,
+    confirmations: string,
+  }
+}
+
+export class WithdrawDepositsRequest extends jspb.Message {
+  clearOutpointsList(): void;
+  getOutpointsList(): Array<OutPoint>;
+  setOutpointsList(value: Array<OutPoint>): void;
+  addOutpoints(value?: OutPoint, index?: number): OutPoint;
+
+  getAll(): boolean;
+  setAll(value: boolean): void;
+
+  getDestAddr(): string;
+  setDestAddr(value: string): void;
+
+  getSatPerVbyte(): string;
+  setSatPerVbyte(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): WithdrawDepositsRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: WithdrawDepositsRequest): WithdrawDepositsRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: WithdrawDepositsRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): WithdrawDepositsRequest;
+  static deserializeBinaryFromReader(message: WithdrawDepositsRequest, reader: jspb.BinaryReader): WithdrawDepositsRequest;
+}
+
+export namespace WithdrawDepositsRequest {
+  export type AsObject = {
+    outpointsList: Array<OutPoint.AsObject>,
+    all: boolean,
+    destAddr: string,
+    satPerVbyte: string,
+  }
+}
+
+export class WithdrawDepositsResponse extends jspb.Message {
+  getWithdrawalTxHash(): string;
+  setWithdrawalTxHash(value: string): void;
+
+  getPkScript(): string;
+  setPkScript(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): WithdrawDepositsResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: WithdrawDepositsResponse): WithdrawDepositsResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: WithdrawDepositsResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): WithdrawDepositsResponse;
+  static deserializeBinaryFromReader(message: WithdrawDepositsResponse, reader: jspb.BinaryReader): WithdrawDepositsResponse;
+}
+
+export namespace WithdrawDepositsResponse {
+  export type AsObject = {
+    withdrawalTxHash: string,
+    pkScript: string,
+  }
+}
+
+export class OutPoint extends jspb.Message {
+  getTxidBytes(): Uint8Array | string;
+  getTxidBytes_asU8(): Uint8Array;
+  getTxidBytes_asB64(): string;
+  setTxidBytes(value: Uint8Array | string): void;
+
+  getTxidStr(): string;
+  setTxidStr(value: string): void;
+
+  getOutputIndex(): number;
+  setOutputIndex(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): OutPoint.AsObject;
+  static toObject(includeInstance: boolean, msg: OutPoint): OutPoint.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: OutPoint, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): OutPoint;
+  static deserializeBinaryFromReader(message: OutPoint, reader: jspb.BinaryReader): OutPoint;
+}
+
+export namespace OutPoint {
+  export type AsObject = {
+    txidBytes: Uint8Array | string,
+    txidStr: string,
+    outputIndex: number,
+  }
+}
+
+export class ListStaticAddressDepositsRequest extends jspb.Message {
+  getStateFilter(): DepositStateMap[keyof DepositStateMap];
+  setStateFilter(value: DepositStateMap[keyof DepositStateMap]): void;
+
+  clearOutpointsList(): void;
+  getOutpointsList(): Array<string>;
+  setOutpointsList(value: Array<string>): void;
+  addOutpoints(value: string, index?: number): string;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListStaticAddressDepositsRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: ListStaticAddressDepositsRequest): ListStaticAddressDepositsRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ListStaticAddressDepositsRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListStaticAddressDepositsRequest;
+  static deserializeBinaryFromReader(message: ListStaticAddressDepositsRequest, reader: jspb.BinaryReader): ListStaticAddressDepositsRequest;
+}
+
+export namespace ListStaticAddressDepositsRequest {
+  export type AsObject = {
+    stateFilter: DepositStateMap[keyof DepositStateMap],
+    outpointsList: Array<string>,
+  }
+}
+
+export class ListStaticAddressDepositsResponse extends jspb.Message {
+  clearFilteredDepositsList(): void;
+  getFilteredDepositsList(): Array<Deposit>;
+  setFilteredDepositsList(value: Array<Deposit>): void;
+  addFilteredDeposits(value?: Deposit, index?: number): Deposit;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListStaticAddressDepositsResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: ListStaticAddressDepositsResponse): ListStaticAddressDepositsResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ListStaticAddressDepositsResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListStaticAddressDepositsResponse;
+  static deserializeBinaryFromReader(message: ListStaticAddressDepositsResponse, reader: jspb.BinaryReader): ListStaticAddressDepositsResponse;
+}
+
+export namespace ListStaticAddressDepositsResponse {
+  export type AsObject = {
+    filteredDepositsList: Array<Deposit.AsObject>,
+  }
+}
+
+export class ListStaticAddressSwapsRequest extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListStaticAddressSwapsRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: ListStaticAddressSwapsRequest): ListStaticAddressSwapsRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ListStaticAddressSwapsRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListStaticAddressSwapsRequest;
+  static deserializeBinaryFromReader(message: ListStaticAddressSwapsRequest, reader: jspb.BinaryReader): ListStaticAddressSwapsRequest;
+}
+
+export namespace ListStaticAddressSwapsRequest {
+  export type AsObject = {
+  }
+}
+
+export class ListStaticAddressSwapsResponse extends jspb.Message {
+  clearSwapsList(): void;
+  getSwapsList(): Array<StaticAddressLoopInSwap>;
+  setSwapsList(value: Array<StaticAddressLoopInSwap>): void;
+  addSwaps(value?: StaticAddressLoopInSwap, index?: number): StaticAddressLoopInSwap;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListStaticAddressSwapsResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: ListStaticAddressSwapsResponse): ListStaticAddressSwapsResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ListStaticAddressSwapsResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListStaticAddressSwapsResponse;
+  static deserializeBinaryFromReader(message: ListStaticAddressSwapsResponse, reader: jspb.BinaryReader): ListStaticAddressSwapsResponse;
+}
+
+export namespace ListStaticAddressSwapsResponse {
+  export type AsObject = {
+    swapsList: Array<StaticAddressLoopInSwap.AsObject>,
+  }
+}
+
+export class StaticAddressSummaryRequest extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): StaticAddressSummaryRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: StaticAddressSummaryRequest): StaticAddressSummaryRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: StaticAddressSummaryRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StaticAddressSummaryRequest;
+  static deserializeBinaryFromReader(message: StaticAddressSummaryRequest, reader: jspb.BinaryReader): StaticAddressSummaryRequest;
+}
+
+export namespace StaticAddressSummaryRequest {
+  export type AsObject = {
+  }
+}
+
+export class StaticAddressSummaryResponse extends jspb.Message {
+  getStaticAddress(): string;
+  setStaticAddress(value: string): void;
+
+  getRelativeExpiryBlocks(): string;
+  setRelativeExpiryBlocks(value: string): void;
+
+  getTotalNumDeposits(): number;
+  setTotalNumDeposits(value: number): void;
+
+  getValueUnconfirmedSatoshis(): string;
+  setValueUnconfirmedSatoshis(value: string): void;
+
+  getValueDepositedSatoshis(): string;
+  setValueDepositedSatoshis(value: string): void;
+
+  getValueExpiredSatoshis(): string;
+  setValueExpiredSatoshis(value: string): void;
+
+  getValueWithdrawnSatoshis(): string;
+  setValueWithdrawnSatoshis(value: string): void;
+
+  getValueLoopedInSatoshis(): string;
+  setValueLoopedInSatoshis(value: string): void;
+
+  getValueHtlcTimeoutSweepsSatoshis(): string;
+  setValueHtlcTimeoutSweepsSatoshis(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): StaticAddressSummaryResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: StaticAddressSummaryResponse): StaticAddressSummaryResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: StaticAddressSummaryResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StaticAddressSummaryResponse;
+  static deserializeBinaryFromReader(message: StaticAddressSummaryResponse, reader: jspb.BinaryReader): StaticAddressSummaryResponse;
+}
+
+export namespace StaticAddressSummaryResponse {
+  export type AsObject = {
+    staticAddress: string,
+    relativeExpiryBlocks: string,
+    totalNumDeposits: number,
+    valueUnconfirmedSatoshis: string,
+    valueDepositedSatoshis: string,
+    valueExpiredSatoshis: string,
+    valueWithdrawnSatoshis: string,
+    valueLoopedInSatoshis: string,
+    valueHtlcTimeoutSweepsSatoshis: string,
+  }
+}
+
+export class Deposit extends jspb.Message {
+  getId(): Uint8Array | string;
+  getId_asU8(): Uint8Array;
+  getId_asB64(): string;
+  setId(value: Uint8Array | string): void;
+
+  getState(): DepositStateMap[keyof DepositStateMap];
+  setState(value: DepositStateMap[keyof DepositStateMap]): void;
+
+  getOutpoint(): string;
+  setOutpoint(value: string): void;
+
+  getValue(): string;
+  setValue(value: string): void;
+
+  getConfirmationHeight(): string;
+  setConfirmationHeight(value: string): void;
+
+  getBlocksUntilExpiry(): string;
+  setBlocksUntilExpiry(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): Deposit.AsObject;
+  static toObject(includeInstance: boolean, msg: Deposit): Deposit.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: Deposit, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): Deposit;
+  static deserializeBinaryFromReader(message: Deposit, reader: jspb.BinaryReader): Deposit;
+}
+
+export namespace Deposit {
+  export type AsObject = {
+    id: Uint8Array | string,
+    state: DepositStateMap[keyof DepositStateMap],
+    outpoint: string,
+    value: string,
+    confirmationHeight: string,
+    blocksUntilExpiry: string,
+  }
+}
+
+export class StaticAddressLoopInSwap extends jspb.Message {
+  getSwapHash(): Uint8Array | string;
+  getSwapHash_asU8(): Uint8Array;
+  getSwapHash_asB64(): string;
+  setSwapHash(value: Uint8Array | string): void;
+
+  clearDepositOutpointsList(): void;
+  getDepositOutpointsList(): Array<string>;
+  setDepositOutpointsList(value: Array<string>): void;
+  addDepositOutpoints(value: string, index?: number): string;
+
+  getState(): StaticAddressLoopInSwapStateMap[keyof StaticAddressLoopInSwapStateMap];
+  setState(value: StaticAddressLoopInSwapStateMap[keyof StaticAddressLoopInSwapStateMap]): void;
+
+  getSwapAmountSatoshis(): string;
+  setSwapAmountSatoshis(value: string): void;
+
+  getPaymentRequestAmountSatoshis(): string;
+  setPaymentRequestAmountSatoshis(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): StaticAddressLoopInSwap.AsObject;
+  static toObject(includeInstance: boolean, msg: StaticAddressLoopInSwap): StaticAddressLoopInSwap.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: StaticAddressLoopInSwap, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StaticAddressLoopInSwap;
+  static deserializeBinaryFromReader(message: StaticAddressLoopInSwap, reader: jspb.BinaryReader): StaticAddressLoopInSwap;
+}
+
+export namespace StaticAddressLoopInSwap {
+  export type AsObject = {
+    swapHash: Uint8Array | string,
+    depositOutpointsList: Array<string>,
+    state: StaticAddressLoopInSwapStateMap[keyof StaticAddressLoopInSwapStateMap],
+    swapAmountSatoshis: string,
+    paymentRequestAmountSatoshis: string,
+  }
+}
+
+export class StaticAddressLoopInRequest extends jspb.Message {
+  clearOutpointsList(): void;
+  getOutpointsList(): Array<string>;
+  setOutpointsList(value: Array<string>): void;
+  addOutpoints(value: string, index?: number): string;
+
+  getMaxSwapFeeSatoshis(): string;
+  setMaxSwapFeeSatoshis(value: string): void;
+
+  getLastHop(): Uint8Array | string;
+  getLastHop_asU8(): Uint8Array;
+  getLastHop_asB64(): string;
+  setLastHop(value: Uint8Array | string): void;
+
+  getLabel(): string;
+  setLabel(value: string): void;
+
+  getInitiator(): string;
+  setInitiator(value: string): void;
+
+  clearRouteHintsList(): void;
+  getRouteHintsList(): Array<swapserverrpc_common_pb.RouteHint>;
+  setRouteHintsList(value: Array<swapserverrpc_common_pb.RouteHint>): void;
+  addRouteHints(value?: swapserverrpc_common_pb.RouteHint, index?: number): swapserverrpc_common_pb.RouteHint;
+
+  getPrivate(): boolean;
+  setPrivate(value: boolean): void;
+
+  getPaymentTimeoutSeconds(): number;
+  setPaymentTimeoutSeconds(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): StaticAddressLoopInRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: StaticAddressLoopInRequest): StaticAddressLoopInRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: StaticAddressLoopInRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StaticAddressLoopInRequest;
+  static deserializeBinaryFromReader(message: StaticAddressLoopInRequest, reader: jspb.BinaryReader): StaticAddressLoopInRequest;
+}
+
+export namespace StaticAddressLoopInRequest {
+  export type AsObject = {
+    outpointsList: Array<string>,
+    maxSwapFeeSatoshis: string,
+    lastHop: Uint8Array | string,
+    label: string,
+    initiator: string,
+    routeHintsList: Array<swapserverrpc_common_pb.RouteHint.AsObject>,
+    pb_private: boolean,
+    paymentTimeoutSeconds: number,
+  }
+}
+
+export class StaticAddressLoopInResponse extends jspb.Message {
+  getSwapHash(): Uint8Array | string;
+  getSwapHash_asU8(): Uint8Array;
+  getSwapHash_asB64(): string;
+  setSwapHash(value: Uint8Array | string): void;
+
+  getState(): string;
+  setState(value: string): void;
+
+  getAmount(): string;
+  setAmount(value: string): void;
+
+  getHtlcCltv(): number;
+  setHtlcCltv(value: number): void;
+
+  getQuotedSwapFeeSatoshis(): string;
+  setQuotedSwapFeeSatoshis(value: string): void;
+
+  getMaxSwapFeeSatoshis(): string;
+  setMaxSwapFeeSatoshis(value: string): void;
+
+  getInitiationHeight(): number;
+  setInitiationHeight(value: number): void;
+
+  getProtocolVersion(): string;
+  setProtocolVersion(value: string): void;
+
+  getLabel(): string;
+  setLabel(value: string): void;
+
+  getInitiator(): string;
+  setInitiator(value: string): void;
+
+  getPaymentTimeoutSeconds(): number;
+  setPaymentTimeoutSeconds(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): StaticAddressLoopInResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: StaticAddressLoopInResponse): StaticAddressLoopInResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: StaticAddressLoopInResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StaticAddressLoopInResponse;
+  static deserializeBinaryFromReader(message: StaticAddressLoopInResponse, reader: jspb.BinaryReader): StaticAddressLoopInResponse;
+}
+
+export namespace StaticAddressLoopInResponse {
+  export type AsObject = {
+    swapHash: Uint8Array | string,
+    state: string,
+    amount: string,
+    htlcCltv: number,
+    quotedSwapFeeSatoshis: string,
+    maxSwapFeeSatoshis: string,
+    initiationHeight: number,
+    protocolVersion: string,
+    label: string,
+    initiator: string,
+    paymentTimeoutSeconds: number,
+  }
+}
+
 export interface AddressTypeMap {
   ADDRESS_TYPE_UNKNOWN: 0;
   TAPROOT_PUBKEY: 1;
@@ -1535,4 +2137,37 @@ export interface AutoReasonMap {
 }
 
 export const AutoReason: AutoReasonMap;
+
+export interface DepositStateMap {
+  UNKNOWN_STATE: 0;
+  DEPOSITED: 1;
+  WITHDRAWING: 2;
+  WITHDRAWN: 3;
+  LOOPING_IN: 4;
+  LOOPED_IN: 5;
+  SWEEP_HTLC_TIMEOUT: 6;
+  HTLC_TIMEOUT_SWEPT: 7;
+  PUBLISH_EXPIRED: 8;
+  WAIT_FOR_EXPIRY_SWEEP: 9;
+  EXPIRED: 10;
+}
+
+export const DepositState: DepositStateMap;
+
+export interface StaticAddressLoopInSwapStateMap {
+  UNKNOWN_STATIC_ADDRESS_SWAP_STATE: 0;
+  INIT_HTLC: 1;
+  SIGN_HTLC_TX: 2;
+  MONITOR_INVOICE_HTLC_TX: 3;
+  PAYMENT_RECEIVED: 4;
+  SWEEP_STATIC_ADDRESS_HTLC_TIMEOUT: 5;
+  MONITOR_HTLC_TIMEOUT_SWEEP: 6;
+  HTLC_STATIC_ADDRESS_TIMEOUT_SWEPT: 7;
+  SUCCEEDED: 8;
+  SUCCEEDED_TRANSITIONING_FAILED: 9;
+  UNLOCK_DEPOSITS: 10;
+  FAILED_STATIC_ADDRESS_SWAP: 11;
+}
+
+export const StaticAddressLoopInSwapState: StaticAddressLoopInSwapStateMap;
 

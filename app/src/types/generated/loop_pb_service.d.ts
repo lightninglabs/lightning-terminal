@@ -121,6 +121,15 @@ type SwapClientGetLsatTokens = {
   readonly responseType: typeof loop_pb.TokensResponse;
 };
 
+type SwapClientFetchL402Token = {
+  readonly methodName: string;
+  readonly service: typeof SwapClient;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof loop_pb.FetchL402TokenRequest;
+  readonly responseType: typeof loop_pb.FetchL402TokenResponse;
+};
+
 type SwapClientGetInfo = {
   readonly methodName: string;
   readonly service: typeof SwapClient;
@@ -193,6 +202,69 @@ type SwapClientListInstantOuts = {
   readonly responseType: typeof loop_pb.ListInstantOutsResponse;
 };
 
+type SwapClientNewStaticAddress = {
+  readonly methodName: string;
+  readonly service: typeof SwapClient;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof loop_pb.NewStaticAddressRequest;
+  readonly responseType: typeof loop_pb.NewStaticAddressResponse;
+};
+
+type SwapClientListUnspentDeposits = {
+  readonly methodName: string;
+  readonly service: typeof SwapClient;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof loop_pb.ListUnspentDepositsRequest;
+  readonly responseType: typeof loop_pb.ListUnspentDepositsResponse;
+};
+
+type SwapClientWithdrawDeposits = {
+  readonly methodName: string;
+  readonly service: typeof SwapClient;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof loop_pb.WithdrawDepositsRequest;
+  readonly responseType: typeof loop_pb.WithdrawDepositsResponse;
+};
+
+type SwapClientListStaticAddressDeposits = {
+  readonly methodName: string;
+  readonly service: typeof SwapClient;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof loop_pb.ListStaticAddressDepositsRequest;
+  readonly responseType: typeof loop_pb.ListStaticAddressDepositsResponse;
+};
+
+type SwapClientListStaticAddressSwaps = {
+  readonly methodName: string;
+  readonly service: typeof SwapClient;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof loop_pb.ListStaticAddressSwapsRequest;
+  readonly responseType: typeof loop_pb.ListStaticAddressSwapsResponse;
+};
+
+type SwapClientGetStaticAddressSummary = {
+  readonly methodName: string;
+  readonly service: typeof SwapClient;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof loop_pb.StaticAddressSummaryRequest;
+  readonly responseType: typeof loop_pb.StaticAddressSummaryResponse;
+};
+
+type SwapClientStaticAddressLoopIn = {
+  readonly methodName: string;
+  readonly service: typeof SwapClient;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof loop_pb.StaticAddressLoopInRequest;
+  readonly responseType: typeof loop_pb.StaticAddressLoopInResponse;
+};
+
 export class SwapClient {
   static readonly serviceName: string;
   static readonly LoopOut: SwapClientLoopOut;
@@ -208,6 +280,7 @@ export class SwapClient {
   static readonly Probe: SwapClientProbe;
   static readonly GetL402Tokens: SwapClientGetL402Tokens;
   static readonly GetLsatTokens: SwapClientGetLsatTokens;
+  static readonly FetchL402Token: SwapClientFetchL402Token;
   static readonly GetInfo: SwapClientGetInfo;
   static readonly GetLiquidityParams: SwapClientGetLiquidityParams;
   static readonly SetLiquidityParams: SwapClientSetLiquidityParams;
@@ -216,6 +289,13 @@ export class SwapClient {
   static readonly InstantOut: SwapClientInstantOut;
   static readonly InstantOutQuote: SwapClientInstantOutQuote;
   static readonly ListInstantOuts: SwapClientListInstantOuts;
+  static readonly NewStaticAddress: SwapClientNewStaticAddress;
+  static readonly ListUnspentDeposits: SwapClientListUnspentDeposits;
+  static readonly WithdrawDeposits: SwapClientWithdrawDeposits;
+  static readonly ListStaticAddressDeposits: SwapClientListStaticAddressDeposits;
+  static readonly ListStaticAddressSwaps: SwapClientListStaticAddressSwaps;
+  static readonly GetStaticAddressSummary: SwapClientGetStaticAddressSummary;
+  static readonly StaticAddressLoopIn: SwapClientStaticAddressLoopIn;
 }
 
 export type ServiceError = { message: string, code: number; metadata: grpc.Metadata }
@@ -359,6 +439,15 @@ export class SwapClientClient {
     requestMessage: loop_pb.TokensRequest,
     callback: (error: ServiceError|null, responseMessage: loop_pb.TokensResponse|null) => void
   ): UnaryResponse;
+  fetchL402Token(
+    requestMessage: loop_pb.FetchL402TokenRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.FetchL402TokenResponse|null) => void
+  ): UnaryResponse;
+  fetchL402Token(
+    requestMessage: loop_pb.FetchL402TokenRequest,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.FetchL402TokenResponse|null) => void
+  ): UnaryResponse;
   getInfo(
     requestMessage: loop_pb.GetInfoRequest,
     metadata: grpc.Metadata,
@@ -430,6 +519,69 @@ export class SwapClientClient {
   listInstantOuts(
     requestMessage: loop_pb.ListInstantOutsRequest,
     callback: (error: ServiceError|null, responseMessage: loop_pb.ListInstantOutsResponse|null) => void
+  ): UnaryResponse;
+  newStaticAddress(
+    requestMessage: loop_pb.NewStaticAddressRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.NewStaticAddressResponse|null) => void
+  ): UnaryResponse;
+  newStaticAddress(
+    requestMessage: loop_pb.NewStaticAddressRequest,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.NewStaticAddressResponse|null) => void
+  ): UnaryResponse;
+  listUnspentDeposits(
+    requestMessage: loop_pb.ListUnspentDepositsRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.ListUnspentDepositsResponse|null) => void
+  ): UnaryResponse;
+  listUnspentDeposits(
+    requestMessage: loop_pb.ListUnspentDepositsRequest,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.ListUnspentDepositsResponse|null) => void
+  ): UnaryResponse;
+  withdrawDeposits(
+    requestMessage: loop_pb.WithdrawDepositsRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.WithdrawDepositsResponse|null) => void
+  ): UnaryResponse;
+  withdrawDeposits(
+    requestMessage: loop_pb.WithdrawDepositsRequest,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.WithdrawDepositsResponse|null) => void
+  ): UnaryResponse;
+  listStaticAddressDeposits(
+    requestMessage: loop_pb.ListStaticAddressDepositsRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.ListStaticAddressDepositsResponse|null) => void
+  ): UnaryResponse;
+  listStaticAddressDeposits(
+    requestMessage: loop_pb.ListStaticAddressDepositsRequest,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.ListStaticAddressDepositsResponse|null) => void
+  ): UnaryResponse;
+  listStaticAddressSwaps(
+    requestMessage: loop_pb.ListStaticAddressSwapsRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.ListStaticAddressSwapsResponse|null) => void
+  ): UnaryResponse;
+  listStaticAddressSwaps(
+    requestMessage: loop_pb.ListStaticAddressSwapsRequest,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.ListStaticAddressSwapsResponse|null) => void
+  ): UnaryResponse;
+  getStaticAddressSummary(
+    requestMessage: loop_pb.StaticAddressSummaryRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.StaticAddressSummaryResponse|null) => void
+  ): UnaryResponse;
+  getStaticAddressSummary(
+    requestMessage: loop_pb.StaticAddressSummaryRequest,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.StaticAddressSummaryResponse|null) => void
+  ): UnaryResponse;
+  staticAddressLoopIn(
+    requestMessage: loop_pb.StaticAddressLoopInRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.StaticAddressLoopInResponse|null) => void
+  ): UnaryResponse;
+  staticAddressLoopIn(
+    requestMessage: loop_pb.StaticAddressLoopInRequest,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.StaticAddressLoopInResponse|null) => void
   ): UnaryResponse;
 }
 

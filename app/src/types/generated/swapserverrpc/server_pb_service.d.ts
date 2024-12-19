@@ -178,30 +178,6 @@ export class SwapServer {
   static readonly SubscribeNotifications: SwapServerSubscribeNotifications;
 }
 
-type StaticAddressServerServerNewAddress = {
-  readonly methodName: string;
-  readonly service: typeof StaticAddressServer;
-  readonly requestStream: false;
-  readonly responseStream: false;
-  readonly requestType: typeof swapserverrpc_server_pb.ServerNewAddressRequest;
-  readonly responseType: typeof swapserverrpc_server_pb.ServerNewAddressResponse;
-};
-
-type StaticAddressServerServerWithdrawDeposits = {
-  readonly methodName: string;
-  readonly service: typeof StaticAddressServer;
-  readonly requestStream: false;
-  readonly responseStream: false;
-  readonly requestType: typeof swapserverrpc_server_pb.ServerWithdrawRequest;
-  readonly responseType: typeof swapserverrpc_server_pb.ServerWithdrawResponse;
-};
-
-export class StaticAddressServer {
-  static readonly serviceName: string;
-  static readonly ServerNewAddress: StaticAddressServerServerNewAddress;
-  static readonly ServerWithdrawDeposits: StaticAddressServerServerWithdrawDeposits;
-}
-
 export type ServiceError = { message: string, code: number; metadata: grpc.Metadata }
 export type Status = { details: string, code: number; metadata: grpc.Metadata }
 
@@ -363,29 +339,5 @@ export class SwapServerClient {
     callback: (error: ServiceError|null, responseMessage: swapserverrpc_server_pb.FetchL402Response|null) => void
   ): UnaryResponse;
   subscribeNotifications(requestMessage: swapserverrpc_server_pb.SubscribeNotificationsRequest, metadata?: grpc.Metadata): ResponseStream<swapserverrpc_server_pb.SubscribeNotificationsResponse>;
-}
-
-export class StaticAddressServerClient {
-  readonly serviceHost: string;
-
-  constructor(serviceHost: string, options?: grpc.RpcOptions);
-  serverNewAddress(
-    requestMessage: swapserverrpc_server_pb.ServerNewAddressRequest,
-    metadata: grpc.Metadata,
-    callback: (error: ServiceError|null, responseMessage: swapserverrpc_server_pb.ServerNewAddressResponse|null) => void
-  ): UnaryResponse;
-  serverNewAddress(
-    requestMessage: swapserverrpc_server_pb.ServerNewAddressRequest,
-    callback: (error: ServiceError|null, responseMessage: swapserverrpc_server_pb.ServerNewAddressResponse|null) => void
-  ): UnaryResponse;
-  serverWithdrawDeposits(
-    requestMessage: swapserverrpc_server_pb.ServerWithdrawRequest,
-    metadata: grpc.Metadata,
-    callback: (error: ServiceError|null, responseMessage: swapserverrpc_server_pb.ServerWithdrawResponse|null) => void
-  ): UnaryResponse;
-  serverWithdrawDeposits(
-    requestMessage: swapserverrpc_server_pb.ServerWithdrawRequest,
-    callback: (error: ServiceError|null, responseMessage: swapserverrpc_server_pb.ServerWithdrawResponse|null) => void
-  ): UnaryResponse;
 }
 
