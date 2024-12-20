@@ -38,7 +38,7 @@ describe('appStorage util', () => {
     expect(data).toBeUndefined();
   });
 
-  it('should save an value to sessionStorage', () => {
+  it('should save a value to sessionStorage', () => {
     appStorage.setSession(key, 'test-value');
 
     const value = sessionStorage.getItem(key);
