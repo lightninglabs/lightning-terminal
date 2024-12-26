@@ -15,12 +15,12 @@ amount of the node's channel balance.
 NOTE: An account's balance is purely virtual. If an account is created with an
 initial balance higher than the node's actual overall channel balance, that is
 equivalent to fractional reserve banking. Therefore, the user accepting an
-account restricted access enters a trust relationship with the node operator
+account-restricted access enters a trust relationship with the node operator
 that the promised balance of the account is actually spendable.
 
 ## How do accounts work?
 
-The accounts systems is made possible thanks to the power of
+The accounts system is made possible thanks to the power of
 [macaroons](https://github.com/lightningnetwork/lnd/blob/master/docs/macaroons.md)
 and the [RPC middleware
 interceptor](https://github.com/lightningnetwork/lnd/blob/master/lnrpc/lightning.proto#L558)
