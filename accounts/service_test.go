@@ -197,6 +197,7 @@ func (r *mockRouter) TrackPayment(_ context.Context,
 // invoices of account related calls correctly.
 func TestAccountService(t *testing.T) {
 	t.Parallel()
+	ctx := context.Background()
 
 	testCases := []struct {
 		name  string
@@ -233,7 +234,7 @@ func TestAccountService(t *testing.T) {
 				},
 			}
 
-			err := s.store.UpdateAccount(acct)
+			err := s.store.UpdateAccount(ctx, acct)
 			require.NoError(t, err)
 		},
 		validate: func(t *testing.T, lnd *mockLnd, r *mockRouter,
@@ -279,7 +280,7 @@ func TestAccountService(t *testing.T) {
 				},
 			}
 
-			err := s.store.UpdateAccount(acct)
+			err := s.store.UpdateAccount(ctx, acct)
 			require.NoError(t, err)
 		},
 		validate: func(t *testing.T, lnd *mockLnd, r *mockRouter,
@@ -314,7 +315,7 @@ func TestAccountService(t *testing.T) {
 				Payments: make(AccountPayments),
 			}
 
-			err := s.store.UpdateAccount(acct)
+			err := s.store.UpdateAccount(ctx, acct)
 			require.NoError(t, err)
 
 			s.mainErrCallback(testErr)
@@ -331,7 +332,7 @@ func TestAccountService(t *testing.T) {
 			s *InterceptorService) {
 
 			acct, err := s.store.NewAccount(
-				1234, testExpiration, "",
+				ctx, 1234, testExpiration, "",
 			)
 			require.NoError(t, err)
 
@@ -341,7 +342,7 @@ func TestAccountService(t *testing.T) {
 				FullAmount: 1234,
 			}
 
-			err = s.store.UpdateAccount(acct)
+			err = s.store.UpdateAccount(ctx, acct)
 			require.NoError(t, err)
 		},
 		validate: func(t *testing.T, lnd *mockLnd, r *mockRouter,
@@ -373,7 +374,7 @@ func TestAccountService(t *testing.T) {
 				},
 			}
 
-			err := s.store.UpdateAccount(acct)
+			err := s.store.UpdateAccount(ctx, acct)
 			require.NoError(t, err)
 
 			r.trackPaymentErr = testErr
@@ -410,7 +411,7 @@ func TestAccountService(t *testing.T) {
 				},
 			}
 
-			err := s.store.UpdateAccount(acct)
+			err := s.store.UpdateAccount(ctx, acct)
 			require.NoError(t, err)
 		},
 		validate: func(t *testing.T, lnd *mockLnd, r *mockRouter,
@@ -463,7 +464,7 @@ func TestAccountService(t *testing.T) {
 				},
 			}
 
-			err := s.store.UpdateAccount(acct)
+			err := s.store.UpdateAccount(ctx, acct)
 			require.NoError(t, err)
 		},
 		validate: func(t *testing.T, lnd *mockLnd, r *mockRouter,
@@ -516,7 +517,7 @@ func TestAccountService(t *testing.T) {
 				},
 			}
 
-			err := s.store.UpdateAccount(acct)
+			err := s.store.UpdateAccount(ctx, acct)
 			require.NoError(t, err)
 		},
 		validate: func(t *testing.T, lnd *mockLnd, r *mockRouter,
@@ -540,7 +541,7 @@ func TestAccountService(t *testing.T) {
 			}
 
 			assertEventually(t, func() bool {
-				acct, err := s.store.Account(testID)
+				acct, err := s.store.Account(ctx, testID)
 				require.NoError(t, err)
 
 				return acct.CurrentBalance == 3000
@@ -556,7 +557,7 @@ func TestAccountService(t *testing.T) {
 			}
 
 			assertEventually(t, func() bool {
-				acct, err := s.store.Account(testID)
+				acct, err := s.store.Account(ctx, testID)
 				require.NoError(t, err)
 
 				if len(acct.Payments) != 3 {
@@ -582,10 +583,10 @@ func TestAccountService(t *testing.T) {
 			// First check that the account has an available balance
 			// of 1000. That means that the payment with testHash3
 			// and amount 2000 is still considered to be in-flight.
-			err := s.CheckBalance(testID, 1000)
+			err := s.CheckBalance(ctx, testID, 1000)
 			require.NoError(t, err)
 
-			err = s.CheckBalance(testID, 1001)
+			err = s.CheckBalance(ctx, testID, 1001)
 			require.ErrorIs(t, err, ErrAccBalanceInsufficient)
 
 			// Now signal that the payment was non-initiated.
@@ -595,8 +596,8 @@ func TestAccountService(t *testing.T) {
 			// goroutine, and therefore free up the 2000 in-flight
 			// balance.
 			assertEventually(t, func() bool {
-				bal3000Err := s.CheckBalance(testID, 3000)
-				bal3001Err := s.CheckBalance(testID, 3001)
+				bal3000Err := s.CheckBalance(ctx, testID, 3000)
+				bal3001Err := s.CheckBalance(ctx, testID, 3001)
 				require.ErrorIs(
 					t, bal3001Err,
 					ErrAccBalanceInsufficient,
@@ -606,7 +607,7 @@ func TestAccountService(t *testing.T) {
 
 				// Ensure that the payment is also set to the
 				// failed status.
-				acct, err := s.store.Account(testID)
+				acct, err := s.store.Account(ctx, testID)
 				require.NoError(t, err)
 
 				p, ok := acct.Payments[testHash3]
@@ -626,7 +627,7 @@ func TestAccountService(t *testing.T) {
 		setup: func(t *testing.T, lnd *mockLnd, r *mockRouter,
 			s *InterceptorService) {
 
-			err := s.store.StoreLastIndexes(987_654, 555_555)
+			err := s.store.StoreLastIndexes(ctx, 987_654, 555_555)
 			require.NoError(t, err)
 		},
 		validate: func(t *testing.T, lnd *mockLnd, r *mockRouter,
@@ -645,7 +646,9 @@ func TestAccountService(t *testing.T) {
 			}
 
 			assertEventually(t, func() bool {
-				addIdx, settleIdx, err := s.store.LastIndexes()
+				addIdx, settleIdx, err := s.store.LastIndexes(
+					ctx,
+				)
 				require.NoError(t, err)
 
 				if addIdx != 987_654 {
@@ -662,7 +665,9 @@ func TestAccountService(t *testing.T) {
 			}
 
 			assertEventually(t, func() bool {
-				addIdx, settleIdx, err := s.store.LastIndexes()
+				addIdx, settleIdx, err := s.store.LastIndexes(
+					ctx,
+				)
 				require.NoError(t, err)
 
 				if addIdx != 1_000_000 {
@@ -688,7 +693,7 @@ func TestAccountService(t *testing.T) {
 				Payments: make(AccountPayments),
 			}
 
-			err := s.store.UpdateAccount(acct)
+			err := s.store.UpdateAccount(ctx, acct)
 			require.NoError(t, err)
 		},
 		validate: func(t *testing.T, lnd *mockLnd, r *mockRouter,
@@ -705,7 +710,7 @@ func TestAccountService(t *testing.T) {
 
 			// Make sure the amount paid is eventually credited.
 			assertEventually(t, func() bool {
-				acct, err := s.store.Account(testID)
+				acct, err := s.store.Account(ctx, testID)
 				require.NoError(t, err)
 
 				return acct.CurrentBalance == 1000
@@ -723,7 +728,7 @@ func TestAccountService(t *testing.T) {
 			// Ensure that the balance now adds up to the sum of
 			// both invoices.
 			assertEventually(t, func() bool {
-				acct, err := s.store.Account(testID)
+				acct, err := s.store.Account(ctx, testID)
 				require.NoError(t, err)
 
 				return acct.CurrentBalance == (1000 + 777)
@@ -757,7 +762,7 @@ func TestAccountService(t *testing.T) {
 				},
 			}
 
-			err := s.store.UpdateAccount(acct)
+			err := s.store.UpdateAccount(ctx, acct)
 			require.NoError(t, err)
 
 			// The second account has one in-flight payment of 4k
@@ -777,7 +782,7 @@ func TestAccountService(t *testing.T) {
 				},
 			}
 
-			err = s.store.UpdateAccount(acct2)
+			err = s.store.UpdateAccount(ctx, acct2)
 			require.NoError(t, err)
 		},
 		validate: func(t *testing.T, lnd *mockLnd, r *mockRouter,
@@ -787,11 +792,11 @@ func TestAccountService(t *testing.T) {
 			// with an amount smaller or equal to 2k msats. This
 			// also asserts that the second accounts in-flight
 			// payment doesn't affect the first account.
-			err := s.CheckBalance(testID, 2000)
+			err := s.CheckBalance(ctx, testID, 2000)
 			require.NoError(t, err)
 
 			// But exactly one sat over it should fail.
-			err = s.CheckBalance(testID, 2001)
+			err = s.CheckBalance(ctx, testID, 2001)
 			require.ErrorIs(t, err, ErrAccBalanceInsufficient)
 
 			// Remove one of the payments (to simulate it failed)
@@ -802,17 +807,17 @@ func TestAccountService(t *testing.T) {
 
 			// We should now have up to 4k msats available.
 			assertEventually(t, func() bool {
-				err = s.CheckBalance(testID, 4000)
+				err = s.CheckBalance(ctx, testID, 4000)
 				return err == nil
 			})
 
 			// The second account should be able to initiate a
 			// payment of 1k msats.
-			err = s.CheckBalance(testID2, 1000)
+			err = s.CheckBalance(ctx, testID2, 1000)
 			require.NoError(t, err)
 
 			// But exactly one sat over it should fail.
-			err = s.CheckBalance(testID2, 1001)
+			err = s.CheckBalance(ctx, testID2, 1001)
 			require.ErrorIs(t, err, ErrAccBalanceInsufficient)
 		},
 	}}
@@ -839,8 +844,7 @@ func TestAccountService(t *testing.T) {
 
 			// Any errors during startup expected?
 			err = service.Start(
-				context.Background(), lndMock, routerMock,
-				chainParams,
+				ctx, lndMock, routerMock, chainParams,
 			)
 			if tc.startupErr != "" {
 				require.ErrorContains(tt, err, tc.startupErr)

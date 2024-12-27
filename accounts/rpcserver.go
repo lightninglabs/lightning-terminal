@@ -71,7 +71,7 @@ func (s *RPCServer) CreateAccount(ctx context.Context,
 
 	// Create the actual account in the macaroon account store.
 	account, err := s.service.NewAccount(
-		balanceMsat, expirationDate, req.Label,
+		ctx, balanceMsat, expirationDate, req.Label,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create account: %w", err)
@@ -109,20 +109,20 @@ func (s *RPCServer) CreateAccount(ctx context.Context,
 }
 
 // UpdateAccount updates an existing account in the account database.
-func (s *RPCServer) UpdateAccount(_ context.Context,
+func (s *RPCServer) UpdateAccount(ctx context.Context,
 	req *litrpc.UpdateAccountRequest) (*litrpc.Account, error) {
 
 	log.Infof("[updateaccount] id=%s, label=%v, balance=%d, expiration=%d",
 		req.Id, req.Label, req.AccountBalance, req.ExpirationDate)
 
-	accountID, err := s.findAccount(req.Id, req.Label)
+	accountID, err := s.findAccount(ctx, req.Id, req.Label)
 	if err != nil {
 		return nil, err
 	}
 
 	// Ask the service to update the account.
 	account, err := s.service.UpdateAccount(
-		accountID, req.AccountBalance, req.ExpirationDate,
+		ctx, accountID, req.AccountBalance, req.ExpirationDate,
 	)
 	if err != nil {
 		return nil, err
@@ -133,13 +133,13 @@ func (s *RPCServer) UpdateAccount(_ context.Context,
 
 // ListAccounts returns all accounts that are currently stored in the account
 // database.
-func (s *RPCServer) ListAccounts(context.Context,
-	*litrpc.ListAccountsRequest) (*litrpc.ListAccountsResponse, error) {
+func (s *RPCServer) ListAccounts(ctx context.Context,
+	_ *litrpc.ListAccountsRequest) (*litrpc.ListAccountsResponse, error) {
 
 	log.Info("[listaccounts]")
 
 	// Retrieve all accounts from the macaroon account store.
-	accts, err := s.service.Accounts()
+	accts, err := s.service.Accounts(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to list accounts: %w", err)
 	}
@@ -158,17 +158,17 @@ func (s *RPCServer) ListAccounts(context.Context,
 }
 
 // AccountInfo returns the account with the given ID or label.
-func (s *RPCServer) AccountInfo(_ context.Context,
+func (s *RPCServer) AccountInfo(ctx context.Context,
 	req *litrpc.AccountInfoRequest) (*litrpc.Account, error) {
 
 	log.Infof("[accountinfo] id=%v, label=%v", req.Id, req.Label)
 
-	accountID, err := s.findAccount(req.Id, req.Label)
+	accountID, err := s.findAccount(ctx, req.Id, req.Label)
 	if err != nil {
 		return nil, err
 	}
 
-	dbAccount, err := s.service.Account(accountID)
+	dbAccount, err := s.service.Account(ctx, accountID)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving account: %w", err)
 	}
@@ -177,19 +177,19 @@ func (s *RPCServer) AccountInfo(_ context.Context,
 }
 
 // RemoveAccount removes the given account from the account database.
-func (s *RPCServer) RemoveAccount(_ context.Context,
+func (s *RPCServer) RemoveAccount(ctx context.Context,
 	req *litrpc.RemoveAccountRequest) (*litrpc.RemoveAccountResponse,
 	error) {
 
 	log.Infof("[removeaccount] id=%v, label=%v", req.Id, req.Label)
 
-	accountID, err := s.findAccount(req.Id, req.Label)
+	accountID, err := s.findAccount(ctx, req.Id, req.Label)
 	if err != nil {
 		return nil, err
 	}
 
 	// Now remove the account.
-	err = s.service.RemoveAccount(accountID)
+	err = s.service.RemoveAccount(ctx, accountID)
 	if err != nil {
 		return nil, fmt.Errorf("error removing account: %w", err)
 	}
@@ -198,7 +198,9 @@ func (s *RPCServer) RemoveAccount(_ context.Context,
 }
 
 // findAccount finds an account by its ID or label.
-func (s *RPCServer) findAccount(id string, label string) (AccountID, error) {
+func (s *RPCServer) findAccount(ctx context.Context, id string, label string) (
+	AccountID, error) {
+
 	switch {
 	case id != "" && label != "":
 		return AccountID{}, fmt.Errorf("either account ID or label " +
@@ -219,7 +221,7 @@ func (s *RPCServer) findAccount(id string, label string) (AccountID, error) {
 
 	case label != "":
 		// We need to find the account by its label.
-		accounts, err := s.service.Accounts()
+		accounts, err := s.service.Accounts(ctx)
 		if err != nil {
 			return AccountID{}, fmt.Errorf("unable to list "+
 				"accounts: %w", err)

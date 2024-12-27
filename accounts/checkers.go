@@ -131,7 +131,7 @@ func NewAccountChecker(service Service,
 				}
 
 				return nil, service.AssociateInvoice(
-					acct.ID, hash,
+					ctx, acct.ID, hash,
 				)
 			}, mid.PassThroughErrorHandler,
 		),
@@ -615,12 +615,12 @@ func checkSend(ctx context.Context, chainParams *chaincfg.Params,
 	fee := lnrpc.CalculateFeeLimit(limit, sendAmt)
 	sendAmt += fee
 
-	err = service.CheckBalance(acct.ID, sendAmt)
+	err = service.CheckBalance(ctx, acct.ID, sendAmt)
 	if err != nil {
 		return fmt.Errorf("error validating account balance: %w", err)
 	}
 
-	err = service.AssociatePayment(acct.ID, pHash, sendAmt)
+	err = service.AssociatePayment(ctx, acct.ID, pHash, sendAmt)
 	if err != nil {
 		return fmt.Errorf("error associating payment: %w", err)
 	}
@@ -661,11 +661,13 @@ func checkSendResponse(ctx context.Context, service Service,
 	if status == lnrpc.Payment_FAILED {
 		service.DeleteValues(reqID)
 
-		return nil, service.RemovePayment(hash)
+		return nil, service.RemovePayment(ctx, hash)
 	}
 
 	// If there is no immediate failure, make sure we track the payment.
-	err = service.TrackPayment(acct.ID, hash, lnwire.MilliSatoshi(fullAmt))
+	err = service.TrackPayment(
+		ctx, acct.ID, hash, lnwire.MilliSatoshi(fullAmt),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -713,12 +715,12 @@ func checkSendToRoute(ctx context.Context, service Service, paymentHash []byte,
 	}
 	sendAmt += fee
 
-	err = service.CheckBalance(acct.ID, sendAmt)
+	err = service.CheckBalance(ctx, acct.ID, sendAmt)
 	if err != nil {
 		return fmt.Errorf("error validating account balance: %w", err)
 	}
 
-	err = service.AssociatePayment(acct.ID, hash, sendAmt)
+	err = service.AssociatePayment(ctx, acct.ID, hash, sendAmt)
 	if err != nil {
 		return fmt.Errorf("error associating payment with hash %s: %w",
 			hash, err)
@@ -749,7 +751,7 @@ func erroredPaymentHandler(service Service) mid.ErrorHandler {
 			"hash: %s and amount: %d", reqVals.PaymentHash,
 			reqVals.PaymentAmount)
 
-		err = service.PaymentErrored(acct.ID, reqVals.PaymentHash)
+		err = service.PaymentErrored(ctx, acct.ID, reqVals.PaymentHash)
 		if err != nil {
 			return nil, err
 		}
@@ -812,7 +814,7 @@ func sendToRouteHTLCResponseHandler(service Service) func(ctx context.Context,
 		}
 
 		err = service.TrackPayment(
-			acct.ID, reqValues.PaymentHash,
+			ctx, acct.ID, reqValues.PaymentHash,
 			lnwire.MilliSatoshi(totalAmount),
 		)
 		if err != nil {

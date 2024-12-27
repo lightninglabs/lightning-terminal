@@ -2,6 +2,7 @@ package accounts
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"encoding/binary"
 	"encoding/hex"
@@ -103,7 +104,7 @@ func (s *BoltStore) Close() error {
 
 // NewAccount creates a new OffChainBalanceAccount with the given balance and a
 // randomly chosen ID.
-func (s *BoltStore) NewAccount(balance lnwire.MilliSatoshi,
+func (s *BoltStore) NewAccount(ctx context.Context, balance lnwire.MilliSatoshi,
 	expirationDate time.Time, label string) (*OffChainBalanceAccount,
 	error) {
 
@@ -120,7 +121,7 @@ func (s *BoltStore) NewAccount(balance lnwire.MilliSatoshi,
 				label)
 		}
 
-		accounts, err := s.Accounts()
+		accounts, err := s.Accounts(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("error checking label "+
 				"uniqueness: %w", err)
@@ -174,7 +175,9 @@ func (s *BoltStore) NewAccount(balance lnwire.MilliSatoshi,
 
 // UpdateAccount writes an account to the database, overwriting the existing one
 // if it exists.
-func (s *BoltStore) UpdateAccount(account *OffChainBalanceAccount) error {
+func (s *BoltStore) UpdateAccount(_ context.Context,
+	account *OffChainBalanceAccount) error {
+
 	return s.db.Update(func(tx kvdb.RwTx) error {
 		bucket := tx.ReadWriteBucket(accountBucketName)
 		if bucket == nil {
@@ -225,7 +228,9 @@ func uniqueRandomAccountID(accountBucket kvdb.RBucket) (AccountID, error) {
 
 // Account retrieves an account from the bolt DB and un-marshals it. If the
 // account cannot be found, then ErrAccNotFound is returned.
-func (s *BoltStore) Account(id AccountID) (*OffChainBalanceAccount, error) {
+func (s *BoltStore) Account(_ context.Context, id AccountID) (
+	*OffChainBalanceAccount, error) {
+
 	// Try looking up and reading the account by its ID from the local
 	// bolt DB.
 	var accountBinary []byte
@@ -259,7 +264,9 @@ func (s *BoltStore) Account(id AccountID) (*OffChainBalanceAccount, error) {
 }
 
 // Accounts retrieves all accounts from the bolt DB and un-marshals them.
-func (s *BoltStore) Accounts() ([]*OffChainBalanceAccount, error) {
+func (s *BoltStore) Accounts(_ context.Context) ([]*OffChainBalanceAccount,
+	error) {
+
 	var accounts []*OffChainBalanceAccount
 	err := s.db.View(func(tx kvdb.RTx) error {
 		// This function will be called in the ForEach and receive
@@ -302,7 +309,7 @@ func (s *BoltStore) Accounts() ([]*OffChainBalanceAccount, error) {
 }
 
 // RemoveAccount finds an account by its ID and removes it from the DB.
-func (s *BoltStore) RemoveAccount(id AccountID) error {
+func (s *BoltStore) RemoveAccount(_ context.Context, id AccountID) error {
 	return s.db.Update(func(tx kvdb.RwTx) error {
 		bucket := tx.ReadWriteBucket(accountBucketName)
 		if bucket == nil {
@@ -320,7 +327,7 @@ func (s *BoltStore) RemoveAccount(id AccountID) error {
 
 // LastIndexes returns the last invoice add and settle index or
 // ErrNoInvoiceIndexKnown if no indexes are known yet.
-func (s *BoltStore) LastIndexes() (uint64, uint64, error) {
+func (s *BoltStore) LastIndexes(_ context.Context) (uint64, uint64, error) {
 	var (
 		addValue, settleValue []byte
 	)
@@ -352,7 +359,9 @@ func (s *BoltStore) LastIndexes() (uint64, uint64, error) {
 }
 
 // StoreLastIndexes stores the last invoice add and settle index.
-func (s *BoltStore) StoreLastIndexes(addIndex, settleIndex uint64) error {
+func (s *BoltStore) StoreLastIndexes(_ context.Context, addIndex,
+	settleIndex uint64) error {
+
 	addValue := make([]byte, 8)
 	settleValue := make([]byte, 8)
 	byteOrder.PutUint64(addValue, addIndex)
