@@ -523,7 +523,9 @@ func testSendPayment(t *testing.T, uri string) {
 	errFunc := func(err error) {
 		lndMock.mainErrChan <- err
 	}
-	service, err := NewService(t.TempDir(), errFunc)
+	store, err := NewBoltStore(t.TempDir(), DBFilename)
+	require.NoError(t, err)
+	service, err := NewService(store, errFunc)
 	require.NoError(t, err)
 
 	err = service.Start(ctx, lndMock, routerMock, chainParams)
@@ -719,7 +721,9 @@ func TestSendPaymentV2(t *testing.T) {
 	errFunc := func(err error) {
 		lndMock.mainErrChan <- err
 	}
-	service, err := NewService(t.TempDir(), errFunc)
+	store, err := NewBoltStore(t.TempDir(), DBFilename)
+	require.NoError(t, err)
+	service, err := NewService(store, errFunc)
 	require.NoError(t, err)
 
 	err = service.Start(ctx, lndMock, routerMock, chainParams)
@@ -906,7 +910,9 @@ func TestSendToRouteV2(t *testing.T) {
 	errFunc := func(err error) {
 		lndMock.mainErrChan <- err
 	}
-	service, err := NewService(t.TempDir(), errFunc)
+	store, err := NewBoltStore(t.TempDir(), DBFilename)
+	require.NoError(t, err)
+	service, err := NewService(store, errFunc)
 	require.NoError(t, err)
 
 	err = service.Start(ctx, lndMock, routerMock, chainParams)

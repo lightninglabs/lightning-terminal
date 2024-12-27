@@ -243,7 +243,7 @@ func TestAccountService(t *testing.T) {
 			// Start by closing the store. This should cause an
 			// error once we make an invoice update, as the service
 			// will fail when persisting the invoice update.
-			s.store.Close()
+			require.NoError(t, s.store.Close())
 
 			// Ensure that the service was started successfully and
 			// still running though, despite the closing of the
@@ -833,7 +833,9 @@ func TestAccountService(t *testing.T) {
 			errFunc := func(err error) {
 				lndMock.mainErrChan <- err
 			}
-			service, err := NewService(t.TempDir(), errFunc)
+			store, err := NewBoltStore(t.TempDir(), DBFilename)
+			require.NoError(tt, err)
+			service, err := NewService(store, errFunc)
 			require.NoError(t, err)
 
 			// Is a setup call required to initialize initial

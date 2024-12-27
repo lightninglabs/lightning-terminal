@@ -214,6 +214,7 @@ type LightningTerminal struct {
 	middleware        *mid.Manager
 	middlewareStarted bool
 
+	accountsStore         *accounts.BoltStore
 	accountService        *accounts.InterceptorService
 	accountServiceStarted bool
 
@@ -412,8 +413,15 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 		)
 	}
 
+	g.accountsStore, err = accounts.NewBoltStore(
+		filepath.Dir(g.cfg.MacaroonPath), accounts.DBFilename,
+	)
+	if err != nil {
+		return fmt.Errorf("error creating accounts store: %w", err)
+	}
+
 	g.accountService, err = accounts.NewService(
-		filepath.Dir(g.cfg.MacaroonPath), accountServiceErrCallback,
+		g.accountsStore, accountServiceErrCallback,
 	)
 	if err != nil {
 		return fmt.Errorf("error creating account service: %v", err)
@@ -1417,6 +1425,14 @@ func (g *LightningTerminal) shutdownSubServers() error {
 	if g.accountServiceStarted {
 		if err := g.accountService.Stop(); err != nil {
 			log.Errorf("Error stopping account service: %v", err)
+			returnErr = err
+		}
+	}
+
+	if g.accountsStore != nil {
+		err = g.accountsStore.Close()
+		if err != nil {
+			log.Errorf("Error closing accounts store: %v", err)
 			returnErr = err
 		}
 	}

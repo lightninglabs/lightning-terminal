@@ -78,16 +78,11 @@ type InterceptorService struct {
 
 // NewService returns a service backed by the macaroon Bolt DB stored in the
 // passed-in directory.
-func NewService(dir string,
-	errCallback func(error)) (*InterceptorService, error) {
-
-	accountStore, err := NewBoltStore(dir, DBFilename)
-	if err != nil {
-		return nil, err
-	}
+func NewService(store Store, errCallback func(error)) (*InterceptorService,
+	error) {
 
 	return &InterceptorService{
-		store:              accountStore,
+		store:              store,
 		invoiceToAccount:   make(map[lntypes.Hash]AccountID),
 		pendingPayments:    make(map[lntypes.Hash]*trackedPayment),
 		requestValuesStore: newRequestValuesStore(),
@@ -242,7 +237,7 @@ func (s *InterceptorService) Stop() error {
 	close(s.quit)
 	s.wg.Wait()
 
-	return s.store.Close()
+	return nil
 }
 
 // IsRunning checks if the account service is running, and returns a boolean
