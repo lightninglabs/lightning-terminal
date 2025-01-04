@@ -176,31 +176,18 @@ jobs:
         run: make lint mod-check
 
   ########################
-  # unit race tests
-  ########################
-  unit-race:
-    name: unit-race
-    runs-on: ubuntu-latest
-    steps:
-      - name: git checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: setup go ${{ env.GO_VERSION }}
-        uses: ./.github/actions/setup-go
-        with:
-          go-version: '${{ env.GO_VERSION }}'
-
-      - name: run check
-        run: make unit-race
-
-  ########################
   # unit tests
   ########################
-  unit:
-    name: unit tests
+  unit-test:
+    name: run unit tests
     runs-on: ubuntu-latest
+    strategy:
+      # Allow other tests in the matrix to continue if one fails.
+      fail-fast: false
+      matrix:
+        unit_type:
+          - unit-race
+          - unit
     steps:
       - name: git checkout
         uses: actions/checkout@v3
@@ -212,8 +199,8 @@ jobs:
         with:
           go-version: '${{ env.GO_VERSION }}'
 
-      - name: run check
-        run: make unit
+      - name: run ${{ matrix.unit_type }}
+        run: make ${{ matrix.unit_type }}
 
   ########################
   # integration tests
