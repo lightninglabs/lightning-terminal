@@ -317,6 +317,33 @@ func (s *BoltStore) UpsertAccountPayment(_ context.Context, id AccountID,
 	return known, s.updateAccount(id, update)
 }
 
+// DeleteAccountPayment removes a payment entry from the account with the given
+// ID. It will return the ErrPaymentNotAssociated error if the payment is not
+// associated with the account.
+//
+// NOTE: This is part of the Store interface.
+func (s *BoltStore) DeleteAccountPayment(_ context.Context, id AccountID,
+	hash lntypes.Hash) error {
+
+	update := func(account *OffChainBalanceAccount) error {
+		// Check that this payment is actually associated with this
+		// account.
+		_, ok := account.Payments[hash]
+		if !ok {
+			return fmt.Errorf("payment with hash %s is not "+
+				"associated with this account: %w", hash,
+				ErrPaymentNotAssociated)
+		}
+
+		// Delete the payment and update the persisted account.
+		delete(account.Payments, hash)
+
+		return nil
+	}
+
+	return s.updateAccount(id, update)
+}
+
 func (s *BoltStore) updateAccount(id AccountID,
 	updateFn func(*OffChainBalanceAccount) error) error {
 

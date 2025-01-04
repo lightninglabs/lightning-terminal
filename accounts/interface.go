@@ -246,6 +246,12 @@ type Store interface {
 		status lnrpc.Payment_PaymentStatus,
 		options ...UpsertPaymentOption) (bool, error)
 
+	// DeleteAccountPayment removes a payment entry from the account with
+	// the given ID. It will return the ErrPaymentNotAssociated error if the
+	// payment is not associated with the account.
+	DeleteAccountPayment(_ context.Context, id AccountID,
+		hash lntypes.Hash) error
+
 	// RemoveAccount finds an account by its ID and removes it from the¨
 	// store.
 	RemoveAccount(ctx context.Context, id AccountID) error

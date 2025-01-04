@@ -467,26 +467,7 @@ func (s *InterceptorService) PaymentErrored(ctx context.Context, id AccountID,
 			"has already started")
 	}
 
-	account, err := s.store.Account(ctx, id)
-	if err != nil {
-		return err
-	}
-
-	// Check that this payment is actually associated with this account.
-	_, ok = account.Payments[hash]
-	if !ok {
-		return fmt.Errorf("payment with hash %s is not associated "+
-			"with this account", hash)
-	}
-
-	// Delete the payment and update the persisted account.
-	delete(account.Payments, hash)
-
-	if err := s.store.UpdateAccount(ctx, account); err != nil {
-		return fmt.Errorf("error updating account: %w", err)
-	}
-
-	return nil
+	return s.store.DeleteAccountPayment(ctx, id, hash)
 }
 
 // AssociatePayment associates a payment (hash) with the given account,
