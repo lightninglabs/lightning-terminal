@@ -258,22 +258,33 @@ func (s *BoltStore) IncreaseAccountBalance(_ context.Context, id AccountID,
 
 // UpsertAccountPayment updates or inserts a payment entry for the given
 // account. Various functional options can be passed to modify the behavior of
-// the method.
+// the method. The returned boolean is true if the payment was already known
+// before the update. This is to be treated as a best-effort indication if an
+// error is also returned since the method may error before the boolean can be
+// set correctly.
 //
 // NOTE: This is part of the Store interface.
 func (s *BoltStore) UpsertAccountPayment(_ context.Context, id AccountID,
 	paymentHash lntypes.Hash, fullAmount lnwire.MilliSatoshi,
 	status lnrpc.Payment_PaymentStatus,
-	options ...UpsertPaymentOption) error {
+	options ...UpsertPaymentOption) (bool, error) {
 
 	opts := newUpsertPaymentOption()
 	for _, o := range options {
 		o(opts)
 	}
 
+	var known bool
 	update := func(account *OffChainBalanceAccount) error {
-		entry, ok := account.Payments[paymentHash]
-		if ok {
+		var entry *PaymentEntry
+		entry, known = account.Payments[paymentHash]
+		if known {
+			if opts.errIfAlreadySucceeded &&
+				successState(entry.Status) {
+
+				return ErrAlreadySucceeded
+			}
+
 			// If the errIfAlreadyPending option is set, we return
 			// an error if the payment is already in-flight or
 			// succeeded.
@@ -284,6 +295,10 @@ func (s *BoltStore) UpsertAccountPayment(_ context.Context, id AccountID,
 					"already in flight or succeeded "+
 					"(status %v)", paymentHash,
 					account.Payments[paymentHash].Status)
+			}
+
+			if opts.usePendingAmount {
+				fullAmount = entry.FullAmount
 			}
 		}
 
@@ -299,7 +314,7 @@ func (s *BoltStore) UpsertAccountPayment(_ context.Context, id AccountID,
 		return nil
 	}
 
-	return s.updateAccount(id, update)
+	return known, s.updateAccount(id, update)
 }
 
 func (s *BoltStore) updateAccount(id AccountID,

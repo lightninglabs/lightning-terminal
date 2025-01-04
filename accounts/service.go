@@ -510,10 +510,12 @@ func (s *InterceptorService) AssociatePayment(ctx context.Context, id AccountID,
 	// If the payment is already associated with the account but not in
 	// flight, we update the payment amount in case we have a zero-amount
 	// invoice that is retried.
-	return s.store.UpsertAccountPayment(
+	_, err := s.store.UpsertAccountPayment(
 		ctx, id, paymentHash, fullAmt, lnrpc.Payment_UNKNOWN,
 		WithErrIfAlreadyPending(),
 	)
+
+	return err
 }
 
 // invoiceUpdate credits the account an invoice was registered with, in case the
@@ -607,34 +609,30 @@ func (s *InterceptorService) TrackPayment(ctx context.Context, id AccountID,
 		return nil
 	}
 
-	// Similarly, if we've already processed the payment in the past, there
-	// is a reference in the account with the given state.
-	account, err := s.store.Account(ctx, id)
-	if err != nil {
-		return fmt.Errorf("error fetching account: %w", err)
-	}
-
 	// If the account already stored a terminal state, we also don't need to
-	// track the payment again.
-	entry, ok := account.Payments[hash]
-	if ok && successState(entry.Status) {
-		return nil
+	// track the payment again. So we add the WithErrIfAlreadySucceeded
+	// option to ensure that we return an error if the payment has already
+	// succeeded. We can then match on the ErrAlreadySucceeded error and
+	// exit early if it is returned.
+	opts := []UpsertPaymentOption{
+		WithErrIfAlreadySucceeded(),
 	}
 
 	// There is a case where the passed in fullAmt is zero but the pending
 	// amount is not. In that case, we should not overwrite the pending
 	// amount.
 	if fullAmt == 0 {
-		fullAmt = entry.FullAmount
+		opts = append(opts, WithPendingAmount())
 	}
 
-	account.Payments[hash] = &PaymentEntry{
-		Status:     lnrpc.Payment_UNKNOWN,
-		FullAmount: fullAmt,
-	}
-
-	if err := s.store.UpdateAccount(ctx, account); err != nil {
-		if !ok {
+	known, err := s.store.UpsertAccountPayment(
+		ctx, id, hash, fullAmt, lnrpc.Payment_UNKNOWN, opts...,
+	)
+	if err != nil {
+		if errors.Is(err, ErrAlreadySucceeded) {
+			return nil
+		}
+		if !known {
 			// In the rare case that the payment isn't associated
 			// with an account yet, and we fail to update the
 			// account we will not be tracking the payment, even if
@@ -813,7 +811,7 @@ func (s *InterceptorService) paymentUpdate(ctx context.Context,
 	fullAmount := status.Value + status.Fee
 
 	// Update the persisted account.
-	err := s.store.UpsertAccountPayment(
+	_, err := s.store.UpsertAccountPayment(
 		ctx, pendingPayment.accountID, hash, fullAmount,
 		lnrpc.Payment_SUCCEEDED, WithDebitAccount(),
 	)

@@ -237,11 +237,14 @@ type Store interface {
 
 	// UpsertAccountPayment updates or inserts a payment entry for the given
 	// account. Various functional options can be passed to modify the
-	// behavior of the method.
+	// behavior of the method. The returned boolean is true if the payment
+	// was already known before the update. This is to be treated as a
+	// best-effort indication if an error is also returned since the method
+	// may error before the boolean can be set correctly.
 	UpsertAccountPayment(_ context.Context, id AccountID,
 		paymentHash lntypes.Hash, fullAmount lnwire.MilliSatoshi,
 		status lnrpc.Payment_PaymentStatus,
-		options ...UpsertPaymentOption) error
+		options ...UpsertPaymentOption) (bool, error)
 
 	// RemoveAccount finds an account by its ID and removes it from the¨
 	// store.
@@ -332,16 +335,20 @@ type UpsertPaymentOption func(*upsertAcctPaymentOption)
 // upsertAcctPaymentOption is a struct that holds optional parameters for the
 // UpsertAccountPayment method.
 type upsertAcctPaymentOption struct {
-	debitAccount        bool
-	errIfAlreadyPending bool
+	debitAccount          bool
+	errIfAlreadyPending   bool
+	usePendingAmount      bool
+	errIfAlreadySucceeded bool
 }
 
 // newUpsertPaymentOption creates a new upsertAcctPaymentOption with default
 // values.
 func newUpsertPaymentOption() *upsertAcctPaymentOption {
 	return &upsertAcctPaymentOption{
-		debitAccount:        false,
-		errIfAlreadyPending: false,
+		debitAccount:          false,
+		errIfAlreadyPending:   false,
+		usePendingAmount:      false,
+		errIfAlreadySucceeded: false,
 	}
 }
 
@@ -360,5 +367,24 @@ func WithDebitAccount() UpsertPaymentOption {
 func WithErrIfAlreadyPending() UpsertPaymentOption {
 	return func(o *upsertAcctPaymentOption) {
 		o.errIfAlreadyPending = true
+	}
+}
+
+// WithErrIfAlreadySucceeded is a functional option that can be passed to the
+// UpsertAccountPayment method to indicate that the ErrAlreadySucceeded error
+// should be returned if the payment is already in a succeeded state.
+func WithErrIfAlreadySucceeded() UpsertPaymentOption {
+	return func(o *upsertAcctPaymentOption) {
+		o.errIfAlreadySucceeded = true
+	}
+}
+
+// WithPendingAmount is a functional option that can be passed to the
+// UpsertAccountPayment method to indicate that if the payment already exists,
+// then the known payment amount should be used instead of the new value passed
+// to the method.
+func WithPendingAmount() UpsertPaymentOption {
+	return func(o *upsertAcctPaymentOption) {
+		o.usePendingAmount = true
 	}
 }
