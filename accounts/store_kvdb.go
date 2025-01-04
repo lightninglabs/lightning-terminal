@@ -145,7 +145,6 @@ func (s *BoltStore) NewAccount(ctx context.Context, balance lnwire.MilliSatoshi,
 		InitialBalance: balance,
 		CurrentBalance: int64(balance),
 		ExpirationDate: expirationDate,
-		LastUpdate:     time.Now(),
 		Invoices:       make(AccountInvoices),
 		Payments:       make(AccountPayments),
 		Label:          label,
@@ -190,7 +189,6 @@ func (s *BoltStore) UpdateAccount(_ context.Context,
 			return ErrAccountBucketNotFound
 		}
 
-		account.LastUpdate = time.Now()
 		return storeAccount(bucket, account)
 	}, func() {})
 }
@@ -199,6 +197,8 @@ func (s *BoltStore) UpdateAccount(_ context.Context,
 // bucket.
 func storeAccount(accountBucket kvdb.RwBucket,
 	account *OffChainBalanceAccount) error {
+
+	account.LastUpdate = time.Now()
 
 	accountBinary, err := serializeAccount(account)
 	if err != nil {
