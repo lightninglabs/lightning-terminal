@@ -226,6 +226,10 @@ type Store interface {
 		newBalance fn.Option[lnwire.MilliSatoshi],
 		newExpiry fn.Option[time.Time]) error
 
+	// AddAccountInvoice adds an invoice hash to an account.
+	AddAccountInvoice(ctx context.Context, id AccountID,
+		hash lntypes.Hash) error
+
 	// RemoveAccount finds an account by its ID and removes it from the¨
 	// store.
 	RemoveAccount(ctx context.Context, id AccountID) error

@@ -13,6 +13,7 @@ import (
 	"github.com/btcsuite/btcwallet/walletdb"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/kvdb"
+	"github.com/lightningnetwork/lnd/lntypes"
 	"github.com/lightningnetwork/lnd/lnwire"
 	"go.etcd.io/bbolt"
 )
@@ -210,6 +211,21 @@ func (s *BoltStore) UpdateAccountBalanceAndExpiry(_ context.Context,
 		newExpiry.WhenSome(func(expiry time.Time) {
 			account.ExpirationDate = expiry
 		})
+
+		return nil
+	}
+
+	return s.updateAccount(id, update)
+}
+
+// AddAccountInvoice adds an invoice hash to the account with the given ID.
+//
+// NOTE: This is part of the Store interface.
+func (s *BoltStore) AddAccountInvoice(_ context.Context, id AccountID,
+	hash lntypes.Hash) error {
+
+	update := func(account *OffChainBalanceAccount) error {
+		account.Invoices[hash] = struct{}{}
 
 		return nil
 	}

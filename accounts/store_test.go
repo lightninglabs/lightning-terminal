@@ -177,6 +177,53 @@ func TestAccountUpdateMethods(t *testing.T) {
 		require.NoError(t, err)
 		assertBalanceAndExpiry(newBalance, newExpiry)
 	})
+
+	t.Run("AddAccountInvoice", func(t *testing.T) {
+		store := NewTestDB(t)
+
+		acct, err := store.NewAccount(ctx, 0, time.Time{}, "foo")
+		require.NoError(t, err)
+
+		assertInvoices := func(invoices ...lntypes.Hash) {
+			dbAcct, err := store.Account(ctx, acct.ID)
+			require.NoError(t, err)
+
+			// First make sure the number of invoices match before
+			// de-duping the hashes.
+			require.Len(t, dbAcct.Invoices, len(invoices))
+
+			dbInvs := make([]lntypes.Hash, 0, len(dbAcct.Invoices))
+			for hash := range dbAcct.Invoices {
+				dbInvs = append(dbInvs, hash)
+			}
+
+			require.ElementsMatch(t, invoices, dbInvs)
+		}
+
+		// The account initially has no invoices.
+		assertInvoices()
+
+		// Add an invoice to the account.
+		hash1 := lntypes.Hash{1, 2, 3, 4}
+		err = store.AddAccountInvoice(ctx, acct.ID, hash1)
+		require.NoError(t, err)
+
+		assertInvoices(hash1)
+
+		// Assert that adding the same invoice again does not change the
+		// state.
+		err = store.AddAccountInvoice(ctx, acct.ID, hash1)
+		require.NoError(t, err)
+
+		assertInvoices(hash1)
+
+		// Now add a second invoice.
+		hash2 := lntypes.Hash{5, 6, 7, 8}
+		err = store.AddAccountInvoice(ctx, acct.ID, hash2)
+		require.NoError(t, err)
+
+		assertInvoices(hash1, hash2)
+	})
 }
 
 // TestLastInvoiceIndexes makes sure the last known invoice indexes can be
