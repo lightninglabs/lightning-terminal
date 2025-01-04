@@ -300,6 +300,8 @@ func (s *BoltStore) UpsertAccountPayment(_ context.Context, id AccountID,
 			if opts.usePendingAmount {
 				fullAmount = entry.FullAmount
 			}
+		} else if opts.errIfUnknown {
+			return ErrPaymentNotAssociated
 		}
 
 		account.Payments[paymentHash] = &PaymentEntry{

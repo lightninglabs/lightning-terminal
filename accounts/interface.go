@@ -345,6 +345,7 @@ type upsertAcctPaymentOption struct {
 	errIfAlreadyPending   bool
 	usePendingAmount      bool
 	errIfAlreadySucceeded bool
+	errIfUnknown          bool
 }
 
 // newUpsertPaymentOption creates a new upsertAcctPaymentOption with default
@@ -355,6 +356,7 @@ func newUpsertPaymentOption() *upsertAcctPaymentOption {
 		errIfAlreadyPending:   false,
 		usePendingAmount:      false,
 		errIfAlreadySucceeded: false,
+		errIfUnknown:          false,
 	}
 }
 
@@ -392,5 +394,14 @@ func WithErrIfAlreadySucceeded() UpsertPaymentOption {
 func WithPendingAmount() UpsertPaymentOption {
 	return func(o *upsertAcctPaymentOption) {
 		o.usePendingAmount = true
+	}
+}
+
+// WithErrIfUnknown is a functional option that can be passed to the
+// UpsertAccountPayment method to indicate that the ErrPaymentNotAssociated
+// error should be returned if the payment is not associated with the account.
+func WithErrIfUnknown() UpsertPaymentOption {
+	return func(o *upsertAcctPaymentOption) {
+		o.errIfUnknown = true
 	}
 }

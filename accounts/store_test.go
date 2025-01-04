@@ -430,6 +430,74 @@ func TestAccountUpdateMethods(t *testing.T) {
 		// error.
 		err = store.DeleteAccountPayment(ctx, acct.ID, hash1)
 		require.ErrorIs(t, err, ErrPaymentNotAssociated)
+
+		// Try once more to insert a payment that is currently unknown
+		// but this time add the WithErrIfUnknown option. This should
+		// return the ErrPaymentNotAssociated error.
+		_, err = store.UpsertAccountPayment(
+			ctx, acct.ID, hash1, 600, lnrpc.Payment_SUCCEEDED,
+			WithErrIfUnknown(),
+		)
+		require.ErrorIs(t, err, ErrPaymentNotAssociated)
+
+		// Show that using the two options WithErrIfUnknown and
+		// WithPendingAmount together will return the
+		// ErrPaymentNotAssociated and will not successfully update
+		// the status. We call this for hash1 since it is no longer
+		// known. We do this to simulate the behaviour of
+		// removePayment.
+		_, err = store.UpsertAccountPayment(
+			ctx, acct.ID, hash1, 0, lnrpc.Payment_SUCCEEDED,
+			WithErrIfUnknown(),
+			WithPendingAmount(),
+		)
+		require.ErrorIs(t, err, ErrPaymentNotAssociated)
+
+		assertBalanceAndPayments(400, AccountPayments{
+			hash2: &PaymentEntry{
+				Status:     lnrpc.Payment_SUCCEEDED,
+				FullAmount: 100,
+			},
+		})
+
+		// Now insert hash 1 again.
+		_, err = store.UpsertAccountPayment(
+			ctx, acct.ID, hash1, 600, lnrpc.Payment_IN_FLIGHT,
+		)
+		require.NoError(t, err)
+
+		assertBalanceAndPayments(400, AccountPayments{
+			hash1: &PaymentEntry{
+				Status:     lnrpc.Payment_IN_FLIGHT,
+				FullAmount: 600,
+			},
+			hash2: &PaymentEntry{
+				Status:     lnrpc.Payment_SUCCEEDED,
+				FullAmount: 100,
+			},
+		})
+
+		// Once again call UpsertAccountPayment with both the
+		// WithErrIfUnknown and WithPendingAmount options. This time
+		// it should succeed since the payment is now known and so the
+		// status should be updated.
+		_, err = store.UpsertAccountPayment(
+			ctx, acct.ID, hash1, 0, lnrpc.Payment_SUCCEEDED,
+			WithErrIfUnknown(),
+			WithPendingAmount(),
+		)
+		require.NoError(t, err)
+
+		assertBalanceAndPayments(400, AccountPayments{
+			hash1: &PaymentEntry{
+				Status:     lnrpc.Payment_SUCCEEDED,
+				FullAmount: 600,
+			},
+			hash2: &PaymentEntry{
+				Status:     lnrpc.Payment_SUCCEEDED,
+				FullAmount: 100,
+			},
+		})
 	})
 }
 

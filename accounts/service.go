@@ -840,23 +840,24 @@ func (s *InterceptorService) removePayment(ctx context.Context,
 		return nil
 	}
 
-	account, err := s.store.Account(ctx, pendingPayment.accountID)
-	if err != nil {
-		return err
+	_, err := s.store.UpsertAccountPayment(
+		ctx, pendingPayment.accountID, hash, 0, status,
+		// We don't want the payment to be inserted if it isn't already
+		// known. So we pass in this option to ensure that the call
+		// exits early if the payment is unknown.
+		WithErrIfUnknown(),
+		// Otherwise, we just want to update the status of the payment
+		// and use the existing pending amount.
+		WithPendingAmount(),
+	)
+	if err != nil && !errors.Is(err, ErrPaymentNotAssociated) {
+		return fmt.Errorf("error updating account: %w", err)
 	}
 
 	pendingPayment.cancel()
 	delete(s.pendingPayments, hash)
 
-	// Have we associated the payment with the account already?
-	_, ok = account.Payments[hash]
-	if !ok {
-		return nil
-	}
-
-	// If we did, let's set the status correctly in the DB now.
-	account.Payments[hash].Status = status
-	return s.store.UpdateAccount(ctx, account)
+	return nil
 }
 
 // successState returns true if a payment was completed successfully.
