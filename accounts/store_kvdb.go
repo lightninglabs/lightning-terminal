@@ -186,23 +186,6 @@ func (s *BoltStore) NewAccount(ctx context.Context, balance lnwire.MilliSatoshi,
 	return account, nil
 }
 
-// UpdateAccount writes an account to the database, overwriting the existing one
-// if it exists.
-//
-// NOTE: This is part of the Store interface.
-func (s *BoltStore) UpdateAccount(_ context.Context,
-	account *OffChainBalanceAccount) error {
-
-	return s.db.Update(func(tx kvdb.RwTx) error {
-		bucket := tx.ReadWriteBucket(accountBucketName)
-		if bucket == nil {
-			return ErrAccountBucketNotFound
-		}
-
-		return s.storeAccount(bucket, account)
-	}, func() {})
-}
-
 // UpdateAccountBalanceAndExpiry updates the balance and/or expiry of an
 // account.
 //
