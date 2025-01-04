@@ -598,21 +598,13 @@ func (s *InterceptorService) invoiceUpdate(ctx context.Context,
 		return nil
 	}
 
-	account, err := s.store.Account(ctx, acctID)
-	if err != nil {
-		return s.disableAndErrorfUnsafe(
-			"error fetching account: %w", err,
-		)
-	}
-
 	// If we get here, the current account has the invoice associated with
 	// it that was just paid. Credit the amount to the account and update it
 	// in the DB.
-	account.CurrentBalance += int64(invoice.AmountPaid)
-	if err := s.store.UpdateAccount(ctx, account); err != nil {
-		return s.disableAndErrorfUnsafe(
-			"error updating account: %w", err,
-		)
+	err := s.store.IncreaseAccountBalance(ctx, acctID, invoice.AmountPaid)
+	if err != nil {
+		return s.disableAndErrorfUnsafe("error increasing account "+
+			"balance account: %w", err)
 	}
 
 	// We've now fully processed the invoice and don't need to keep it

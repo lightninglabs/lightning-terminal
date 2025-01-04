@@ -230,6 +230,11 @@ type Store interface {
 	AddAccountInvoice(ctx context.Context, id AccountID,
 		hash lntypes.Hash) error
 
+	// IncreaseAccountBalance increases the balance of the account with the
+	// given ID by the given amount.
+	IncreaseAccountBalance(ctx context.Context, id AccountID,
+		amount lnwire.MilliSatoshi) error
+
 	// RemoveAccount finds an account by its ID and removes it from the¨
 	// store.
 	RemoveAccount(ctx context.Context, id AccountID) error

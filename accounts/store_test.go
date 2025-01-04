@@ -203,6 +203,11 @@ func TestAccountUpdateMethods(t *testing.T) {
 		// The account initially has no invoices.
 		assertInvoices()
 
+		// Adding an invoice to an account that doesnt exist yet should
+		// error out.
+		err = store.AddAccountInvoice(ctx, AccountID{}, lntypes.Hash{})
+		require.ErrorIs(t, err, ErrAccNotFound)
+
 		// Add an invoice to the account.
 		hash1 := lntypes.Hash{1, 2, 3, 4}
 		err = store.AddAccountInvoice(ctx, acct.ID, hash1)
@@ -223,6 +228,34 @@ func TestAccountUpdateMethods(t *testing.T) {
 		require.NoError(t, err)
 
 		assertInvoices(hash1, hash2)
+	})
+
+	t.Run("IncreaseAccountBalance", func(t *testing.T) {
+		store := NewTestDB(t)
+
+		// Increasing the balance of an account that doesn't exist
+		// should error out.
+		err := store.IncreaseAccountBalance(ctx, AccountID{}, 100)
+		require.ErrorIs(t, err, ErrAccNotFound)
+
+		acct, err := store.NewAccount(ctx, 123, time.Time{}, "foo")
+		require.NoError(t, err)
+
+		assertBalance := func(balance int64) {
+			dbAcct, err := store.Account(ctx, acct.ID)
+			require.NoError(t, err)
+			require.EqualValues(t, balance, dbAcct.CurrentBalance)
+		}
+
+		// The account initially has a balance of 123.
+		assertBalance(123)
+
+		// Increase the balance by 100 and assert that the new balance
+		// is 223.
+		err = store.IncreaseAccountBalance(ctx, acct.ID, 100)
+		require.NoError(t, err)
+
+		assertBalance(223)
 	})
 }
 
