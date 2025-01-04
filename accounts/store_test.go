@@ -15,8 +15,7 @@ func TestAccountStore(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	store, err := NewBoltStore(t.TempDir(), DBFilename)
-	require.NoError(t, err)
+	store := NewTestDB(t)
 
 	// Create an account that does not expire.
 	acct1, err := store.NewAccount(ctx, 0, time.Time{}, "foo")
@@ -112,10 +111,9 @@ func TestLastInvoiceIndexes(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	store, err := NewBoltStore(t.TempDir(), DBFilename)
-	require.NoError(t, err)
+	store := NewTestDB(t)
 
-	_, _, err = store.LastIndexes(ctx)
+	_, _, err := store.LastIndexes(ctx)
 	require.ErrorIs(t, err, ErrNoInvoiceIndexKnown)
 
 	require.NoError(t, store.StoreLastIndexes(ctx, 7, 99))

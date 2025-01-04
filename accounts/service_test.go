@@ -264,7 +264,7 @@ func TestAccountService(t *testing.T) {
 				isRunning := s.IsRunning()
 				return isRunning == false
 			})
-			lnd.assertMainErrContains(t, "database not open")
+			lnd.assertMainErrContains(t, ErrDBClosed.Error())
 		},
 	}, {
 		name: "err in invoice err channel",
@@ -833,8 +833,7 @@ func TestAccountService(t *testing.T) {
 			errFunc := func(err error) {
 				lndMock.mainErrChan <- err
 			}
-			store, err := NewBoltStore(t.TempDir(), DBFilename)
-			require.NoError(tt, err)
+			store := NewTestDB(t)
 			service, err := NewService(store, errFunc)
 			require.NoError(t, err)
 
