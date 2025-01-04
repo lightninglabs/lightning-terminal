@@ -98,12 +98,16 @@ func NewBoltStore(dir, fileName string) (*BoltStore, error) {
 }
 
 // Close closes the underlying bolt DB.
+//
+// NOTE: This is part of the Store interface.
 func (s *BoltStore) Close() error {
 	return s.db.Close()
 }
 
 // NewAccount creates a new OffChainBalanceAccount with the given balance and a
 // randomly chosen ID.
+//
+// NOTE: This is part of the Store interface.
 func (s *BoltStore) NewAccount(ctx context.Context, balance lnwire.MilliSatoshi,
 	expirationDate time.Time, label string) (*OffChainBalanceAccount,
 	error) {
@@ -175,6 +179,8 @@ func (s *BoltStore) NewAccount(ctx context.Context, balance lnwire.MilliSatoshi,
 
 // UpdateAccount writes an account to the database, overwriting the existing one
 // if it exists.
+//
+// NOTE: This is part of the Store interface.
 func (s *BoltStore) UpdateAccount(_ context.Context,
 	account *OffChainBalanceAccount) error {
 
@@ -228,6 +234,8 @@ func uniqueRandomAccountID(accountBucket kvdb.RBucket) (AccountID, error) {
 
 // Account retrieves an account from the bolt DB and un-marshals it. If the
 // account cannot be found, then ErrAccNotFound is returned.
+//
+// NOTE: This is part of the Store interface.
 func (s *BoltStore) Account(_ context.Context, id AccountID) (
 	*OffChainBalanceAccount, error) {
 
@@ -264,6 +272,8 @@ func (s *BoltStore) Account(_ context.Context, id AccountID) (
 }
 
 // Accounts retrieves all accounts from the bolt DB and un-marshals them.
+//
+// NOTE: This is part of the Store interface.
 func (s *BoltStore) Accounts(_ context.Context) ([]*OffChainBalanceAccount,
 	error) {
 
@@ -309,6 +319,8 @@ func (s *BoltStore) Accounts(_ context.Context) ([]*OffChainBalanceAccount,
 }
 
 // RemoveAccount finds an account by its ID and removes it from the DB.
+//
+// NOTE: This is part of the Store interface.
 func (s *BoltStore) RemoveAccount(_ context.Context, id AccountID) error {
 	return s.db.Update(func(tx kvdb.RwTx) error {
 		bucket := tx.ReadWriteBucket(accountBucketName)
@@ -327,6 +339,8 @@ func (s *BoltStore) RemoveAccount(_ context.Context, id AccountID) error {
 
 // LastIndexes returns the last invoice add and settle index or
 // ErrNoInvoiceIndexKnown if no indexes are known yet.
+//
+// NOTE: This is part of the Store interface.
 func (s *BoltStore) LastIndexes(_ context.Context) (uint64, uint64, error) {
 	var (
 		addValue, settleValue []byte
@@ -359,6 +373,8 @@ func (s *BoltStore) LastIndexes(_ context.Context) (uint64, uint64, error) {
 }
 
 // StoreLastIndexes stores the last invoice add and settle index.
+//
+// NOTE: This is part of the Store interface.
 func (s *BoltStore) StoreLastIndexes(_ context.Context, addIndex,
 	settleIndex uint64) error {
 
