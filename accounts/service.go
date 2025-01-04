@@ -9,8 +9,8 @@ import (
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/lightninglabs/lndclient"
-	"github.com/lightninglabs/taproot-assets/fn"
 	"github.com/lightningnetwork/lnd/channeldb"
+	"github.com/lightningnetwork/lnd/fn"
 	invpkg "github.com/lightningnetwork/lnd/invoices"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
@@ -313,36 +313,35 @@ func (s *InterceptorService) UpdateAccount(ctx context.Context,
 		return nil, ErrAccountServiceDisabled
 	}
 
-	account, err := s.store.Account(ctx, accountID)
-	if err != nil {
-		return nil, fmt.Errorf("error fetching account: %w", err)
-	}
-
 	// If the expiration date was set, parse it as a unix time stamp. A
 	// value of -1 signals "don't update the expiration date".
+	var expiry fn.Option[time.Time]
 	if expirationDate > 0 {
-		account.ExpirationDate = time.Unix(expirationDate, 0)
+		expiry = fn.Some(time.Unix(expirationDate, 0))
 	} else if expirationDate == 0 {
 		// Setting the expiration to 0 means don't expire in which case
 		// we use a zero time (zero unix time would still be 1970, so
 		// that doesn't work for us).
-		account.ExpirationDate = time.Time{}
+		expiry = fn.Some(time.Time{})
 	}
 
 	// If the new account balance was set, parse it as millisatoshis. A
 	// value of -1 signals "don't update the balance".
+	var balance fn.Option[lnwire.MilliSatoshi]
 	if accountBalance >= 0 {
 		// Convert from satoshis to millisatoshis for storage.
-		account.CurrentBalance = int64(accountBalance) * 1000
+		balance = fn.Some(lnwire.MilliSatoshi(accountBalance) * 1000)
 	}
 
 	// Create the actual account in the macaroon account store.
-	err = s.store.UpdateAccount(ctx, account)
+	err := s.store.UpdateAccountBalanceAndExpiry(
+		ctx, accountID, balance, expiry,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to update account: %w", err)
 	}
 
-	return account, nil
+	return s.store.Account(ctx, accountID)
 }
 
 // Account retrieves an account from the bolt DB and un-marshals it. If the

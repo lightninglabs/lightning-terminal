@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcwallet/walletdb"
+	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/kvdb"
 	"github.com/lightningnetwork/lnd/lnwire"
 	"go.etcd.io/bbolt"
@@ -194,6 +195,56 @@ func (s *BoltStore) UpdateAccount(_ context.Context,
 	}, func() {})
 }
 
+// UpdateAccountBalanceAndExpiry updates the balance and/or expiry of an
+// account.
+//
+// NOTE: This is part of the Store interface.
+func (s *BoltStore) UpdateAccountBalanceAndExpiry(_ context.Context,
+	id AccountID, newBalance fn.Option[lnwire.MilliSatoshi],
+	newExpiry fn.Option[time.Time]) error {
+
+	update := func(account *OffChainBalanceAccount) error {
+		newBalance.WhenSome(func(balance lnwire.MilliSatoshi) {
+			account.CurrentBalance = int64(balance)
+		})
+		newExpiry.WhenSome(func(expiry time.Time) {
+			account.ExpirationDate = expiry
+		})
+
+		return nil
+	}
+
+	return s.updateAccount(id, update)
+}
+
+func (s *BoltStore) updateAccount(id AccountID,
+	updateFn func(*OffChainBalanceAccount) error) error {
+
+	return s.db.Update(func(tx kvdb.RwTx) error {
+		bucket := tx.ReadWriteBucket(accountBucketName)
+		if bucket == nil {
+			return ErrAccountBucketNotFound
+		}
+
+		account, err := getAccount(bucket, id)
+		if err != nil {
+			return fmt.Errorf("error fetching account, %w", err)
+		}
+
+		err = updateFn(account)
+		if err != nil {
+			return fmt.Errorf("error updating account, %w", err)
+		}
+
+		err = storeAccount(bucket, account)
+		if err != nil {
+			return fmt.Errorf("error storing account, %w", err)
+		}
+
+		return nil
+	}, func() {})
+}
+
 // storeAccount serializes and writes the given account to the given account
 // bucket.
 func storeAccount(accountBucket kvdb.RwBucket,
@@ -207,6 +258,19 @@ func storeAccount(accountBucket kvdb.RwBucket,
 	}
 
 	return accountBucket.Put(account.ID[:], accountBinary)
+}
+
+// getAccount retrieves an account from the given account bucket and
+// deserializes it.
+func getAccount(accountBucket kvdb.RwBucket, id AccountID) (
+	*OffChainBalanceAccount, error) {
+
+	accountBinary := accountBucket.Get(id[:])
+	if len(accountBinary) == 0 {
+		return nil, ErrAccNotFound
+	}
+
+	return deserializeAccount(accountBinary)
 }
 
 // uniqueRandomAccountID generates a new random ID and makes sure it does not
