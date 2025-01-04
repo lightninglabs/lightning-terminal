@@ -36,9 +36,43 @@ func TestAccountStore(t *testing.T) {
 	_, err = store.NewAccount(ctx, 123, time.Time{}, "0011223344556677")
 	require.ErrorContains(t, err, "is not allowed as it can be mistaken")
 
+	now := time.Now()
+
 	// Update all values of the account that we can modify.
+	//
+	// Update the balance and expiry.
+	err = store.UpdateAccountBalanceAndExpiry(
+		ctx, acct1.ID, fn.Some(int64(-500)), fn.Some(now),
+	)
+	require.NoError(t, err)
+
+	// Add 2 payments.
+	_, err = store.UpsertAccountPayment(
+		ctx, acct1.ID, lntypes.Hash{12, 34, 56, 78}, 123456,
+		lnrpc.Payment_FAILED,
+	)
+	require.NoError(t, err)
+
+	_, err = store.UpsertAccountPayment(
+		ctx, acct1.ID, lntypes.Hash{34, 56, 78, 90}, 789456123789,
+		lnrpc.Payment_SUCCEEDED,
+	)
+	require.NoError(t, err)
+
+	// Add 2 invoices.
+	err = store.AddAccountInvoice(
+		ctx, acct1.ID, lntypes.Hash{12, 34, 56, 78},
+	)
+	require.NoError(t, err)
+	err = store.AddAccountInvoice(
+		ctx, acct1.ID, lntypes.Hash{34, 56, 78, 90},
+	)
+	require.NoError(t, err)
+
+	// Update the in-memory account so that we can compare it with the
+	// account we get from the store.
 	acct1.CurrentBalance = -500
-	acct1.ExpirationDate = time.Now()
+	acct1.ExpirationDate = now
 	acct1.Payments[lntypes.Hash{12, 34, 56, 78}] = &PaymentEntry{
 		Status:     lnrpc.Payment_FAILED,
 		FullAmount: 123456,
@@ -49,8 +83,6 @@ func TestAccountStore(t *testing.T) {
 	}
 	acct1.Invoices[lntypes.Hash{12, 34, 56, 78}] = struct{}{}
 	acct1.Invoices[lntypes.Hash{34, 56, 78, 90}] = struct{}{}
-	err = store.UpdateAccount(ctx, acct1)
-	require.NoError(t, err)
 
 	dbAccount, err = store.Account(ctx, acct1.ID)
 	require.NoError(t, err)
@@ -96,8 +128,8 @@ func assertEqualAccounts(t *testing.T, expected,
 	actual.LastUpdate = time.Time{}
 
 	require.Equal(t, expected, actual)
-	require.Equal(t, expectedExpiry.UnixNano(), actualExpiry.UnixNano())
-	require.Equal(t, expectedUpdate.UnixNano(), actualUpdate.UnixNano())
+	require.Equal(t, expectedExpiry.Unix(), actualExpiry.Unix())
+	require.Equal(t, expectedUpdate.Unix(), actualUpdate.Unix())
 
 	// Restore the old values to not influence the tests.
 	expected.ExpirationDate = expectedExpiry
