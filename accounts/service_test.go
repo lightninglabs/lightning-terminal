@@ -261,8 +261,7 @@ func TestAccountService(t *testing.T) {
 
 			// Ensure that the service was eventually disabled.
 			assertEventually(t, func() bool {
-				isRunning := s.IsRunning()
-				return isRunning == false
+				return !s.IsRunning()
 			})
 			lnd.assertMainErrContains(t, ErrDBClosed.Error())
 		},
@@ -294,8 +293,7 @@ func TestAccountService(t *testing.T) {
 
 			// Ensure that the service was eventually disabled.
 			assertEventually(t, func() bool {
-				isRunning := s.IsRunning()
-				return isRunning == false
+				return !s.IsRunning()
 			})
 
 			lnd.assertMainErrContains(t, testErr.Error())
@@ -440,8 +438,7 @@ func TestAccountService(t *testing.T) {
 
 			// Ensure that the service was eventually disabled.
 			assertEventually(t, func() bool {
-				isRunning := s.IsRunning()
-				return isRunning == false
+				return !s.IsRunning()
 			})
 			lnd.assertMainErrContains(
 				t, "not mapped to any account",
@@ -483,8 +480,7 @@ func TestAccountService(t *testing.T) {
 
 			// Ensure that the service was eventually disabled.
 			assertEventually(t, func() bool {
-				isRunning := s.IsRunning()
-				return isRunning == false
+				return !s.IsRunning()
 			})
 
 			lnd.assertMainErrContains(t, testErr.Error())
