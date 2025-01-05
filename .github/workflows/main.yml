@@ -275,6 +275,17 @@ jobs:
   itest:
     name: integration test
     runs-on: ubuntu-latest
+    strategy:
+      # Allow other tests in the matrix to continue if one fails.
+      fail-fast: false
+      matrix:
+        include:
+          - name: bbolt
+            args: dbbackend=bbolt
+          - name: sqlite
+            args: dbbackend=sqlite
+          - name: postgres
+            args: dbbackend=postgres
     steps:
       - name: git checkout
         uses: actions/checkout@v4
@@ -295,8 +306,8 @@ jobs:
         working-directory: ./app
         run: yarn
 
-      - name: run check
-        run: make itest
+      - name: run itest ${{ matrix.name }}
+        run: make itest ${{ matrix.args }}
 
       - name: Zip log files on failure
         if: ${{ failure() }}
