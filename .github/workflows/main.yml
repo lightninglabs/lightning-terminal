@@ -253,6 +253,8 @@ jobs:
         unit_type:
           - unit-race
           - unit
+          - unit dbbackend=postgres
+          - unit dbbackend=sqlite
     steps:
       - name: git checkout
         uses: actions/checkout@v4
