@@ -133,7 +133,8 @@ func (s *BoltStore) NewAccount(ctx context.Context, balance lnwire.MilliSatoshi,
 		for _, account := range accounts {
 			if account.Label == label {
 				return nil, fmt.Errorf("an account with the "+
-					"label '%s' already exists", label)
+					"label '%s' already exists: %w", label,
+					ErrLabelAlreadyExists)
 			}
 		}
 	}
