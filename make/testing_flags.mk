@@ -1,4 +1,4 @@
-ITEST_FLAGS = 
+ITEST_FLAGS =
 
 # Define the integration test.run filter if the icase argument was provided.
 ifneq ($(icase),)
