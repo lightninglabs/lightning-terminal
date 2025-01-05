@@ -216,7 +216,7 @@ type LightningTerminal struct {
 	middleware        *mid.Manager
 	middlewareStarted bool
 
-	accountsStore         *accounts.BoltStore
+	accountsStore         accounts.Store
 	accountService        *accounts.InterceptorService
 	accountServiceStarted bool
 
@@ -415,10 +415,14 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 		)
 	}
 
-	g.accountsStore, err = accounts.NewBoltStore(
-		filepath.Dir(g.cfg.MacaroonPath), accounts.DBFilename,
-		clock.NewDefaultClock(),
-	)
+	networkDir := filepath.Join(g.cfg.LitDir, g.cfg.Network)
+	err = makeDirectories(networkDir)
+	if err != nil {
+		return fmt.Errorf("could not create network directory: %v", err)
+	}
+
+	clock := clock.NewDefaultClock()
+	g.accountsStore, err = NewAccountStore(g.cfg, clock)
 	if err != nil {
 		return fmt.Errorf("error creating accounts store: %w", err)
 	}
@@ -445,10 +449,7 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 	g.ruleMgrs = rules.NewRuleManagerSet()
 
 	// Create an instance of the local Terminal Connect session store DB.
-	networkDir := filepath.Join(g.cfg.LitDir, g.cfg.Network)
-	g.sessionDB, err = session.NewDB(
-		networkDir, session.DBFilename, clock.NewDefaultClock(),
-	)
+	g.sessionDB, err = session.NewDB(networkDir, session.DBFilename, clock)
 	if err != nil {
 		return fmt.Errorf("error creating session DB: %v", err)
 	}

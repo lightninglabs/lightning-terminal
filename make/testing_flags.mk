@@ -1,12 +1,16 @@
 include make/compile_flags.mk
 
-ITEST_FLAGS =
 TEST_FLAGS =
 DEV_TAGS = dev
 
 # Define the integration test.run filter if the icase argument was provided.
 ifneq ($(icase),)
 ITEST_FLAGS += -test.run="TestLightningTerminal/$(icase)"
+endif
+
+# Run itests with specified db backend.
+ifneq ($(dbbackend),)
+ITEST_FLAGS += -litdbbackend=$(dbbackend)
 endif
 
 # If a specific unit test case is being targeted, construct test.run filter.
