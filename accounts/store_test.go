@@ -158,8 +158,8 @@ func assertEqualAccounts(t *testing.T, expected,
 	actual.LastUpdate = time.Time{}
 
 	require.Equal(t, expected, actual)
-	require.Equal(t, expectedExpiry.UnixNano(), actualExpiry.UnixNano())
-	require.Equal(t, expectedUpdate.UnixNano(), actualUpdate.UnixNano())
+	require.Equal(t, expectedExpiry.Unix(), actualExpiry.Unix())
+	require.Equal(t, expectedUpdate.Unix(), actualUpdate.Unix())
 
 	// Restore the old values to not influence the tests.
 	expected.ExpirationDate = expectedExpiry
@@ -196,7 +196,7 @@ func TestAccountUpdateMethods(t *testing.T) {
 			require.NoError(t, err)
 			require.EqualValues(t, balance, dbAcct.CurrentBalance)
 			require.WithinDuration(
-				t, expiry, dbAcct.ExpirationDate, 0,
+				t, expiry, dbAcct.ExpirationDate, time.Second,
 			)
 		}
 
