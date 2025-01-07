@@ -235,14 +235,30 @@ func New() *LightningTerminal {
 
 // Run starts everything and then blocks until either the application is shut
 // down or a critical error happens.
-func (g *LightningTerminal) Run() error {
-	ctx := context.TODO()
-
+func (g *LightningTerminal) Run(ctx context.Context) error {
 	// Hook interceptor for os signals.
 	shutdownInterceptor, err := signal.Intercept()
 	if err != nil {
 		return fmt.Errorf("could not intercept signals: %v", err)
 	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// Make sure the context is canceled if the user requests shutdown and
+	// that the shutdown signal is requested if the context is canceled.
+	go func() {
+		select {
+		// Client requests shutdown, cancel the wait.
+		case <-shutdownInterceptor.ShutdownChannel():
+			cancel()
+
+		// The check was completed and the above defer canceled the
+		// context. We can just exit the goroutine, nothing more to do.
+		case <-ctx.Done():
+			shutdownInterceptor.RequestShutdown()
+		}
+	}()
 
 	cfg, err := loadAndValidateConfig(shutdownInterceptor)
 	if err != nil {
@@ -601,8 +617,8 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 
 		return fmt.Errorf("LND has stopped")
 
-	case <-interceptor.ShutdownChannel():
-		return fmt.Errorf("received the shutdown signal")
+	case <-ctx.Done():
+		return ctx.Err()
 	}
 
 	// Connect to LND.
@@ -683,8 +699,8 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 
 			return fmt.Errorf("LND has stopped")
 
-		case <-interceptor.ShutdownChannel():
-			return fmt.Errorf("received the shutdown signal")
+		case <-ctx.Done():
+			return ctx.Err()
 		}
 	}
 
@@ -758,7 +774,7 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 
 		return fmt.Errorf("LND is not running")
 
-	case <-interceptor.ShutdownChannel():
+	case <-ctx.Done():
 		log.Infof("Shutdown signal received")
 	}
 
@@ -812,8 +828,8 @@ func (g *LightningTerminal) setUpLNDClients(ctx context.Context,
 		case <-lndQuit:
 			return fmt.Errorf("LND has stopped")
 
-		case <-interceptor.ShutdownChannel():
-			return fmt.Errorf("received the shutdown signal")
+		case <-ctx.Done():
+			return ctx.Err()
 
 		case <-time.After(g.cfg.LndConnectInterval):
 			return nil
@@ -874,25 +890,7 @@ func (g *LightningTerminal) setUpLNDClients(ctx context.Context,
 	// wallet being fully synced to its chain backend. The chain notifier
 	// will always be ready first so if we instruct the lndclient to wait
 	// for the wallet sync, we should be fully ready to start all our
-	// subservers. This will just block until lnd signals readiness. But we
-	// still want to react to shutdown requests, so we need to listen for
-	// those.
-	ctxc, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	// Make sure the context is canceled if the user requests shutdown.
-	go func() {
-		select {
-		// Client requests shutdown, cancel the wait.
-		case <-interceptor.ShutdownChannel():
-			cancel()
-
-		// The check was completed and the above defer canceled the
-		// context. We can just exit the goroutine, nothing more to do.
-		case <-ctxc.Done():
-		}
-	}()
-
+	// subservers. This will just block until lnd signals readiness.
 	log.Infof("Connecting full lnd client")
 	for {
 		g.lndClient, err = lndclient.NewLndServices(
@@ -907,7 +905,7 @@ func (g *LightningTerminal) setUpLNDClients(ctx context.Context,
 				),
 				BlockUntilChainSynced: true,
 				BlockUntilUnlocked:    true,
-				CallerCtx:             ctxc,
+				CallerCtx:             ctx,
 				CheckVersion:          minimalCompatibleVersion,
 				RPCTimeout:            g.cfg.LndRPCTimeout,
 				ChainSyncPollInterval: g.cfg.LndConnectInterval,
