@@ -1,3 +1,5 @@
+include make/compile_flags.mk
+
 # Create a globally-consistent, build-input identifier.
 VERSION_TAG = $(shell git describe --abbrev=40 --broken --tags --always)
 VERSION_CHECK = @$(call print, "Building master with date version tag")
@@ -21,7 +23,7 @@ linux-armv7 \
 linux-arm64 \
 windows-amd64
 
-LND_RELEASE_TAGS = litd autopilotrpc signrpc walletrpc chainrpc invoicesrpc watchtowerrpc neutrinorpc peersrpc
+LND_RELEASE_TAGS = litd $(COMPILE_TAGS)
 
 # By default we will build all systems. But with the 'sys' tag, a specific
 # system can be specified. This is useful to release for a subset of
