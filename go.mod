@@ -18,8 +18,8 @@ require (
 	github.com/lightninglabs/lightning-terminal/litrpc v1.0.0
 	github.com/lightninglabs/lndclient v0.18.4-9
 	github.com/lightninglabs/loop v0.29.0-beta
-	github.com/lightninglabs/loop/looprpc v1.0.2
-	github.com/lightninglabs/loop/swapserverrpc v1.0.11
+	github.com/lightninglabs/loop/looprpc v1.0.3
+	github.com/lightninglabs/loop/swapserverrpc v1.0.12
 	github.com/lightninglabs/pool v0.6.5-beta.0.20241015105339-044cb451b5df
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.2
 	github.com/lightninglabs/pool/poolrpc v1.0.0

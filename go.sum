@@ -1161,10 +1161,10 @@ github.com/lightninglabs/lndclient v0.18.4-9 h1:8PRBmJLyegs1zbqBvpN/0d8qGLiNst3M
 github.com/lightninglabs/lndclient v0.18.4-9/go.mod h1:11hKoRxXk+1IoIndEIvbmo18dwAJnTqr/lylRpYDVSU=
 github.com/lightninglabs/loop v0.29.0-beta h1:YRxZ3h41LsFOLTyvisxbijmvCf5UOUx4T0YUemdi0wA=
 github.com/lightninglabs/loop v0.29.0-beta/go.mod h1:Lc1qXyO0LoOHQVkzwxVlHTavybGGz0I1t5YozWH1WNo=
-github.com/lightninglabs/loop/looprpc v1.0.2 h1:evL3GpceeFaYmkeqf4hzeXQXgjrHeF3fzcB5Eajh7SM=
-github.com/lightninglabs/loop/looprpc v1.0.2/go.mod h1:w6zur9qV9EBY7I7bpnUYp0QGjVqNl9cjnozpPal9/XY=
-github.com/lightninglabs/loop/swapserverrpc v1.0.11 h1:R/8c/bo4rpqm5/cfi944rj24oQUlZu+xXjzMhEDSkrc=
-github.com/lightninglabs/loop/swapserverrpc v1.0.11/go.mod h1:Ml3gMwe/iTRLvu1QGGZzXcr0DYSa9sJGwKPktLaWtwE=
+github.com/lightninglabs/loop/looprpc v1.0.3 h1:TLJe6/SPY8ee3FzHaYx9E2isjWmdKR2HnYcF5Hdth98=
+github.com/lightninglabs/loop/looprpc v1.0.3/go.mod h1:w6zur9qV9EBY7I7bpnUYp0QGjVqNl9cjnozpPal9/XY=
+github.com/lightninglabs/loop/swapserverrpc v1.0.12 h1:A6ym5sCupNOPNsEhYEgTqWYR9C7Cev1cRpVetm6TewA=
+github.com/lightninglabs/loop/swapserverrpc v1.0.12/go.mod h1:Ml3gMwe/iTRLvu1QGGZzXcr0DYSa9sJGwKPktLaWtwE=
 github.com/lightninglabs/neutrino v0.16.1-0.20240425105051-602843d34ffd h1:D8aRocHpoCv43hL8egXEMYyPmyOiefFHZ66338KQB2s=
 github.com/lightninglabs/neutrino v0.16.1-0.20240425105051-602843d34ffd/go.mod h1:x3OmY2wsA18+Kc3TSV2QpSUewOCiscw2mKpXgZv2kZk=
 github.com/lightninglabs/neutrino/cache v1.1.2 h1:C9DY/DAPaPxbFC+xNNEI/z1SJY9GS3shmlu5hIQ798g=
