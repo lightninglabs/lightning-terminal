@@ -60,8 +60,8 @@ func (c *ChannelRestrictMgr) Stop() error {
 // values and config.
 //
 // NOTE: This is part of the Manager interface.
-func (c *ChannelRestrictMgr) NewEnforcer(cfg Config, values Values) (Enforcer,
-	error) {
+func (c *ChannelRestrictMgr) NewEnforcer(ctx context.Context, cfg Config,
+	values Values) (Enforcer, error) {
 
 	channels, ok := values.(*ChannelRestrict)
 	if !ok {
@@ -72,7 +72,8 @@ func (c *ChannelRestrictMgr) NewEnforcer(cfg Config, values Values) (Enforcer,
 	chanMap := make(map[uint64]bool, len(channels.DenyList))
 	for _, chanID := range channels.DenyList {
 		chanMap[chanID] = true
-		if err := c.maybeUpdateChannelMaps(cfg, chanID); err != nil {
+		err := c.maybeUpdateChannelMaps(ctx, cfg, chanID)
+		if err != nil {
 			return nil, err
 		}
 	}
@@ -118,8 +119,8 @@ func (c *ChannelRestrictMgr) EmptyValue() Values {
 
 // maybeUpdateChannelMaps updates the ChannelRestrictMgrs set of known channels
 // iff the channel given by the caller is not found in the current map set.
-func (c *ChannelRestrictMgr) maybeUpdateChannelMaps(cfg Config,
-	chanID uint64) error {
+func (c *ChannelRestrictMgr) maybeUpdateChannelMaps(ctx context.Context,
+	cfg Config, chanID uint64) error {
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -133,7 +134,7 @@ func (c *ChannelRestrictMgr) maybeUpdateChannelMaps(cfg Config,
 
 	// Fetch a list of our open channels from LND.
 	lnd := cfg.GetLndClient()
-	chans, err := lnd.ListChannels(context.Background(), false, false)
+	chans, err := lnd.ListChannels(ctx, false, false)
 	if err != nil {
 		return err
 	}

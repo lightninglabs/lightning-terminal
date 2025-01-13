@@ -53,7 +53,7 @@ func TestChannelRestrictCheckRequest(t *testing.T) {
 			},
 		},
 	}
-	enf, err := mgr.NewEnforcer(cfg, &ChannelRestrict{
+	enf, err := mgr.NewEnforcer(ctx, cfg, &ChannelRestrict{
 		DenyList: []uint64{
 			chanID1, chanID2,
 		},

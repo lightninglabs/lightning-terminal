@@ -53,8 +53,8 @@ func (c *PeerRestrictMgr) Stop() error {
 // values and config.
 //
 // NOTE: This is part of the Manager interface.
-func (c *PeerRestrictMgr) NewEnforcer(cfg Config, values Values) (Enforcer,
-	error) {
+func (c *PeerRestrictMgr) NewEnforcer(ctx context.Context, cfg Config,
+	values Values) (Enforcer, error) {
 
 	peers, ok := values.(*PeerRestrict)
 	if !ok {
@@ -65,7 +65,7 @@ func (c *PeerRestrictMgr) NewEnforcer(cfg Config, values Values) (Enforcer,
 	peerMap := make(map[string]bool, len(peers.DenyList))
 	for _, peerID := range peers.DenyList {
 		peerMap[peerID] = true
-		if err := c.maybeUpdateMaps(cfg, peerID); err != nil {
+		if err := c.maybeUpdateMaps(ctx, cfg, peerID); err != nil {
 			return nil, err
 		}
 	}
@@ -112,8 +112,8 @@ func (c *PeerRestrictMgr) EmptyValue() Values {
 
 // maybeUpdateMaps updates the managers peer-to-channel and channel-to-peer maps
 // if the given peer ID is unknown to the manager.
-func (c *PeerRestrictMgr) maybeUpdateMaps(cfg peerRestrictCfg,
-	id string) error {
+func (c *PeerRestrictMgr) maybeUpdateMaps(ctx context.Context,
+	cfg peerRestrictCfg, id string) error {
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -122,15 +122,17 @@ func (c *PeerRestrictMgr) maybeUpdateMaps(cfg peerRestrictCfg,
 		return nil
 	}
 
-	return c.updateMapsUnsafe(cfg)
+	return c.updateMapsUnsafe(ctx, cfg)
 }
 
 // updateMapsUnsafe updates the manager's peer-to-channel and channel-to-peer
 // maps. It is not thread safe and so must only be called if the manager's
 // mutex is being held.
-func (c *PeerRestrictMgr) updateMapsUnsafe(cfg peerRestrictCfg) error {
+func (c *PeerRestrictMgr) updateMapsUnsafe(ctx context.Context,
+	cfg peerRestrictCfg) error {
+
 	lnd := cfg.GetLndClient()
-	chans, err := lnd.ListChannels(context.Background(), false, false)
+	chans, err := lnd.ListChannels(ctx, false, false)
 	if err != nil {
 		return err
 	}
@@ -152,8 +154,8 @@ func (c *PeerRestrictMgr) updateMapsUnsafe(cfg peerRestrictCfg) error {
 	return nil
 }
 
-func (c *PeerRestrictMgr) getPeerFromChanPoint(cfg peerRestrictCfg,
-	cp string) (string, bool, error) {
+func (c *PeerRestrictMgr) getPeerFromChanPoint(ctx context.Context,
+	cfg peerRestrictCfg, cp string) (string, bool, error) {
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -163,7 +165,7 @@ func (c *PeerRestrictMgr) getPeerFromChanPoint(cfg peerRestrictCfg,
 		return peer, ok, nil
 	}
 
-	err := c.updateMapsUnsafe(cfg)
+	err := c.updateMapsUnsafe(ctx, cfg)
 	if err != nil {
 		return "", false, err
 	}
@@ -295,7 +297,7 @@ func (c *PeerRestrictEnforcer) checkers() map[string]mid.RoundTripChecker {
 				point := fmt.Sprintf("%s:%d", txid, index)
 
 				peerID, ok, err := c.mgr.getPeerFromChanPoint(
-					c.cfg, point,
+					ctx, c.cfg, point,
 				)
 				if err != nil {
 					return err

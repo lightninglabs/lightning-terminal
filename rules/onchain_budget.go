@@ -63,8 +63,8 @@ func (o *OnChainBudgetMgr) Stop() error {
 // passed values and config.
 //
 // NOTE: This is part of the Manager interface.
-func (o *OnChainBudgetMgr) NewEnforcer(cfg Config, values Values) (Enforcer,
-	error) {
+func (o *OnChainBudgetMgr) NewEnforcer(_ context.Context, cfg Config,
+	values Values) (Enforcer, error) {
 
 	budget, ok := values.(*OnChainBudget)
 	if !ok {

@@ -38,8 +38,8 @@ func (m *ChanConstraintMgr) Stop() error {
 // values and config.
 //
 // NOTE: This is part of the Manager interface.
-func (m *ChanConstraintMgr) NewEnforcer(_ Config, values Values) (Enforcer,
-	error) {
+func (m *ChanConstraintMgr) NewEnforcer(_ context.Context, _ Config,
+	values Values) (Enforcer, error) {
 
 	bounds, ok := values.(*ChannelConstraint)
 	if !ok {
