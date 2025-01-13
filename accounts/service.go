@@ -9,6 +9,7 @@ import (
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/lightninglabs/lndclient"
+	"github.com/lightninglabs/taproot-assets/fn"
 	"github.com/lightningnetwork/lnd/channeldb"
 	invpkg "github.com/lightningnetwork/lnd/invoices"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -55,7 +56,7 @@ type InterceptorService struct {
 	routerClient lndclient.RouterClient
 
 	mainCtx       context.Context
-	contextCancel context.CancelFunc
+	contextCancel fn.Option[context.CancelFunc]
 
 	requestMtx sync.Mutex
 	checkers   *AccountChecker
@@ -85,12 +86,8 @@ func NewService(dir string,
 		return nil, err
 	}
 
-	mainCtx, contextCancel := context.WithCancel(context.Background())
-
 	return &InterceptorService{
 		store:              accountStore,
-		mainCtx:            mainCtx,
-		contextCancel:      contextCancel,
 		invoiceToAccount:   make(map[lntypes.Hash]AccountID),
 		pendingPayments:    make(map[lntypes.Hash]*trackedPayment),
 		requestValuesStore: newRequestValuesStore(),
@@ -101,8 +98,13 @@ func NewService(dir string,
 }
 
 // Start starts the account service and its interceptor capability.
-func (s *InterceptorService) Start(lightningClient lndclient.LightningClient,
+func (s *InterceptorService) Start(ctx context.Context,
+	lightningClient lndclient.LightningClient,
 	routerClient lndclient.RouterClient, params *chaincfg.Params) error {
+
+	mainCtx, contextCancel := context.WithCancel(ctx)
+	s.mainCtx = mainCtx
+	s.contextCancel = fn.Some(contextCancel)
 
 	s.routerClient = routerClient
 	s.checkers = NewAccountChecker(s, params)
@@ -180,7 +182,7 @@ func (s *InterceptorService) Start(lightningClient lndclient.LightningClient,
 	s.wg.Add(1)
 	go func() {
 		defer s.wg.Done()
-		defer s.contextCancel()
+		defer contextCancel()
 
 		for {
 			select {
@@ -235,9 +237,8 @@ func (s *InterceptorService) Stop() error {
 	s.requestMtx.Lock()
 	defer s.requestMtx.Unlock()
 
-	s.contextCancel()
+	s.contextCancel.WhenSome(func(fn context.CancelFunc) { fn() })
 	close(s.quit)
-
 	s.wg.Wait()
 
 	return s.store.Close()

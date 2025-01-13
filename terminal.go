@@ -1042,7 +1042,7 @@ func (g *LightningTerminal) startInternalSubServers(ctx context.Context,
 	log.Infof("Starting LiT account service")
 	if !g.cfg.Accounts.Disable {
 		err = g.accountService.Start(
-			g.lndClient.Client, g.lndClient.Router,
+			ctx, g.lndClient.Client, g.lndClient.Router,
 			g.lndClient.ChainParams,
 		)
 		if err != nil {

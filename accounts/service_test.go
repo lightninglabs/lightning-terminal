@@ -838,7 +838,10 @@ func TestAccountService(t *testing.T) {
 			}
 
 			// Any errors during startup expected?
-			err = service.Start(lndMock, routerMock, chainParams)
+			err = service.Start(
+				context.Background(), lndMock, routerMock,
+				chainParams,
+			)
 			if tc.startupErr != "" {
 				require.ErrorContains(tt, err, tc.startupErr)
 
