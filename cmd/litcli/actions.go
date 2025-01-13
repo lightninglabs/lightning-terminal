@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/hex"
 	"fmt"
 
@@ -98,49 +97,49 @@ var listActionsCommand = cli.Command{
 	},
 }
 
-func listActions(ctx *cli.Context) error {
-	ctxb := context.Background()
-	clientConn, cleanup, err := connectClient(ctx, false)
+func listActions(cli *cli.Context) error {
+	ctx := getContext()
+	clientConn, cleanup, err := connectClient(cli, false)
 	if err != nil {
 		return err
 	}
 	defer cleanup()
 	client := litrpc.NewFirewallClient(clientConn)
 
-	state, err := parseActionState(ctx.String("state"))
+	state, err := parseActionState(cli.String("state"))
 	if err != nil {
 		return err
 	}
 
 	var sessionID []byte
-	if ctx.String("session_id") != "" {
-		sessionID, err = hex.DecodeString(ctx.String("session_id"))
+	if cli.String("session_id") != "" {
+		sessionID, err = hex.DecodeString(cli.String("session_id"))
 		if err != nil {
 			return err
 		}
 	}
 
 	var groupID []byte
-	if ctx.String("group_id") != "" {
-		groupID, err = hex.DecodeString(ctx.String("group_id"))
+	if cli.String("group_id") != "" {
+		groupID, err = hex.DecodeString(cli.String("group_id"))
 		if err != nil {
 			return err
 		}
 	}
 
 	resp, err := client.ListActions(
-		ctxb, &litrpc.ListActionsRequest{
+		ctx, &litrpc.ListActionsRequest{
 			SessionId:      sessionID,
-			FeatureName:    ctx.String("feature"),
-			ActorName:      ctx.String("actor"),
-			MethodName:     ctx.String("method"),
+			FeatureName:    cli.String("feature"),
+			ActorName:      cli.String("actor"),
+			MethodName:     cli.String("method"),
 			State:          state,
-			IndexOffset:    ctx.Uint64("index_offset"),
-			MaxNumActions:  ctx.Uint64("max_num_actions"),
-			Reversed:       !ctx.Bool("oldest_first"),
-			CountTotal:     ctx.Bool("count_total"),
-			StartTimestamp: ctx.Uint64("start_timestamp"),
-			EndTimestamp:   ctx.Uint64("end_timestamp"),
+			IndexOffset:    cli.Uint64("index_offset"),
+			MaxNumActions:  cli.Uint64("max_num_actions"),
+			Reversed:       !cli.Bool("oldest_first"),
+			CountTotal:     cli.Bool("count_total"),
+			StartTimestamp: cli.Uint64("start_timestamp"),
+			EndTimestamp:   cli.Uint64("end_timestamp"),
 			GroupId:        groupID,
 		},
 	)

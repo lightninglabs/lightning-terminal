@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -180,22 +179,22 @@ var listAutopilotSessionsCmd = cli.Command{
 	Action:      listAutopilotSessions,
 }
 
-func revokeAutopilotSession(ctx *cli.Context) error {
-	ctxb := context.Background()
-	clientConn, cleanup, err := connectClient(ctx, false)
+func revokeAutopilotSession(cli *cli.Context) error {
+	ctx := getContext()
+	clientConn, cleanup, err := connectClient(cli, false)
 	if err != nil {
 		return err
 	}
 	defer cleanup()
 	client := litrpc.NewAutopilotClient(clientConn)
 
-	pubkey, err := hex.DecodeString(ctx.String("localpubkey"))
+	pubkey, err := hex.DecodeString(cli.String("localpubkey"))
 	if err != nil {
 		return err
 	}
 
 	resp, err := client.RevokeAutopilotSession(
-		ctxb, &litrpc.RevokeAutopilotSessionRequest{
+		ctx, &litrpc.RevokeAutopilotSessionRequest{
 			LocalPublicKey: pubkey,
 		},
 	)
@@ -208,9 +207,9 @@ func revokeAutopilotSession(ctx *cli.Context) error {
 	return nil
 }
 
-func listAutopilotSessions(ctx *cli.Context) error {
-	ctxb := context.Background()
-	clientConn, cleanup, err := connectClient(ctx, false)
+func listAutopilotSessions(cli *cli.Context) error {
+	ctx := getContext()
+	clientConn, cleanup, err := connectClient(cli, false)
 	if err != nil {
 		return err
 	}
@@ -218,7 +217,7 @@ func listAutopilotSessions(ctx *cli.Context) error {
 	client := litrpc.NewAutopilotClient(clientConn)
 
 	resp, err := client.ListAutopilotSessions(
-		ctxb, &litrpc.ListAutopilotSessionsRequest{},
+		ctx, &litrpc.ListAutopilotSessionsRequest{},
 	)
 	if err != nil {
 		return err
@@ -229,9 +228,9 @@ func listAutopilotSessions(ctx *cli.Context) error {
 	return nil
 }
 
-func listFeatures(ctx *cli.Context) error {
-	ctxb := context.Background()
-	clientConn, cleanup, err := connectClient(ctx, false)
+func listFeatures(cli *cli.Context) error {
+	ctx := getContext()
+	clientConn, cleanup, err := connectClient(cli, false)
 	if err != nil {
 		return err
 	}
@@ -239,7 +238,7 @@ func listFeatures(ctx *cli.Context) error {
 	client := litrpc.NewAutopilotClient(clientConn)
 
 	resp, err := client.ListAutopilotFeatures(
-		ctxb, &litrpc.ListAutopilotFeaturesRequest{},
+		ctx, &litrpc.ListAutopilotFeaturesRequest{},
 	)
 	if err != nil {
 		return err
@@ -250,19 +249,19 @@ func listFeatures(ctx *cli.Context) error {
 	return nil
 }
 
-func initAutopilotSession(ctx *cli.Context) error {
-	sessionLength := time.Second * time.Duration(ctx.Uint64("expiry"))
+func initAutopilotSession(cli *cli.Context) error {
+	sessionLength := time.Second * time.Duration(cli.Uint64("expiry"))
 	sessionExpiry := time.Now().Add(sessionLength).Unix()
 
-	ctxb := context.Background()
-	clientConn, cleanup, err := connectClient(ctx, false)
+	ctx := getContext()
+	clientConn, cleanup, err := connectClient(cli, false)
 	if err != nil {
 		return err
 	}
 	defer cleanup()
 	client := litrpc.NewAutopilotClient(clientConn)
 
-	features := ctx.StringSlice("feature")
+	features := cli.StringSlice("feature")
 
 	// Check that the user only sets unique features.
 	fs := make(map[string]struct{})
@@ -277,14 +276,14 @@ func initAutopilotSession(ctx *cli.Context) error {
 	// Check that the user did not set multiple restrict lists.
 	var chanRestrictList, peerRestrictList string
 
-	channelRestrictSlice := ctx.StringSlice("channel-restrict-list")
+	channelRestrictSlice := cli.StringSlice("channel-restrict-list")
 	if len(channelRestrictSlice) > 1 {
 		return fmt.Errorf("channel-restrict-list can only be used once")
 	} else if len(channelRestrictSlice) == 1 {
 		chanRestrictList = channelRestrictSlice[0]
 	}
 
-	peerRestrictSlice := ctx.StringSlice("peer-restrict-list")
+	peerRestrictSlice := cli.StringSlice("peer-restrict-list")
 	if len(peerRestrictSlice) > 1 {
 		return fmt.Errorf("peer-restrict-list can only be used once")
 	} else if len(peerRestrictSlice) == 1 {
@@ -293,7 +292,7 @@ func initAutopilotSession(ctx *cli.Context) error {
 
 	// rulesMap stores the rules per each feature.
 	rulesMap := make(map[string]*litrpc.RulesMap)
-	rulesFlags := ctx.StringSlice("feature-rules")
+	rulesFlags := cli.StringSlice("feature-rules")
 
 	// For legacy flags, we allow setting the channel and peer restrict
 	// lists when only a single feature is added.
@@ -379,7 +378,7 @@ func initAutopilotSession(ctx *cli.Context) error {
 		}
 	}
 
-	configs := ctx.StringSlice("feature-config")
+	configs := cli.StringSlice("feature-config")
 	if len(configs) > 0 && len(features) != len(configs) {
 		return fmt.Errorf("number of features (%v) and configurations "+
 			"(%v) must match", len(features), len(configs))
@@ -420,8 +419,8 @@ func initAutopilotSession(ctx *cli.Context) error {
 	}
 
 	var groupID []byte
-	if ctx.IsSet("group_id") {
-		groupID, err = hex.DecodeString(ctx.String("group_id"))
+	if cli.IsSet("group_id") {
+		groupID, err = hex.DecodeString(cli.String("group_id"))
 		if err != nil {
 			return err
 		}
@@ -429,10 +428,10 @@ func initAutopilotSession(ctx *cli.Context) error {
 
 	var privacyFlags uint64
 	var privacyFlagsSet bool
-	if ctx.IsSet("privacy-flags") {
+	if cli.IsSet("privacy-flags") {
 		privacyFlagsSet = true
 
-		flags, err := session.Parse(ctx.String("privacy-flags"))
+		flags, err := session.Parse(cli.String("privacy-flags"))
 		if err != nil {
 			return err
 		}
@@ -441,11 +440,11 @@ func initAutopilotSession(ctx *cli.Context) error {
 	}
 
 	resp, err := client.AddAutopilotSession(
-		ctxb, &litrpc.AddAutopilotSessionRequest{
-			Label:                  ctx.String("label"),
+		ctx, &litrpc.AddAutopilotSessionRequest{
+			Label:                  cli.String("label"),
 			ExpiryTimestampSeconds: uint64(sessionExpiry),
-			MailboxServerAddr:      ctx.String("mailboxserveraddr"),
-			DevServer:              ctx.Bool("devserver"),
+			MailboxServerAddr:      cli.String("mailboxserveraddr"),
+			DevServer:              cli.Bool("devserver"),
 			Features:               featureMap,
 			LinkedGroupId:          groupID,
 			PrivacyFlags:           privacyFlags,

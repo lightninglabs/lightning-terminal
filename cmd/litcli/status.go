@@ -1,8 +1,6 @@
 package main
 
 import (
-	"context"
-
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/urfave/cli"
@@ -18,8 +16,8 @@ var statusCommands = []cli.Command{
 	},
 }
 
-func getStatus(ctx *cli.Context) error {
-	clientConn, cleanup, err := connectClient(ctx, true)
+func getStatus(cli *cli.Context) error {
+	clientConn, cleanup, err := connectClient(cli, true)
 	if err != nil {
 		return err
 	}
@@ -27,9 +25,9 @@ func getStatus(ctx *cli.Context) error {
 	litClient := litrpc.NewStatusClient(clientConn)
 
 	// Get LiT's status.
-	ctxb := context.Background()
+	ctx := getContext()
 	litResp, err := litClient.SubServerStatus(
-		ctxb, &litrpc.SubServerStatusReq{},
+		ctx, &litrpc.SubServerStatusReq{},
 	)
 	if err != nil {
 		return err
@@ -39,7 +37,7 @@ func getStatus(ctx *cli.Context) error {
 
 	// Get LND's state.
 	lndClient := lnrpc.NewStateClient(clientConn)
-	lndResp, err := lndClient.GetState(ctxb, &lnrpc.GetStateRequest{})
+	lndResp, err := lndClient.GetState(ctx, &lnrpc.GetStateRequest{})
 	if err != nil {
 		return err
 	}

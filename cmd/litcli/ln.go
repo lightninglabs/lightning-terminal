@@ -91,17 +91,17 @@ var fundChannelCommand = cli.Command{
 }
 
 func fundChannel(c *cli.Context) error {
-	tapdConn, cleanup, err := connectSuperMacClient(c)
+	ctx := getContext()
+	tapdConn, cleanup, err := connectSuperMacClient(ctx, c)
 	if err != nil {
 		return fmt.Errorf("error creating tapd connection: %w", err)
 	}
 
 	defer cleanup()
 
-	ctxb := context.Background()
 	tapdClient := taprpc.NewTaprootAssetsClient(tapdConn)
 	tchrpcClient := tchrpc.NewTaprootAssetChannelsClient(tapdConn)
-	assets, err := tapdClient.ListAssets(ctxb, &taprpc.ListAssetRequest{})
+	assets, err := tapdClient.ListAssets(ctx, &taprpc.ListAssetRequest{})
 	if err != nil {
 		return fmt.Errorf("error fetching assets: %w", err)
 	}
@@ -146,7 +146,7 @@ func fundChannel(c *cli.Context) error {
 	}
 
 	resp, err := tchrpcClient.FundChannel(
-		ctxb, &tchrpc.FundChannelRequest{
+		ctx, &tchrpc.FundChannelRequest{
 			AssetAmount:        requestedAmount,
 			AssetId:            assetIDBytes,
 			PeerPubkey:         nodePubBytes,
@@ -297,41 +297,46 @@ var sendPaymentCommand = cli.Command{
 	Action: sendPayment,
 }
 
-func sendPayment(ctx *cli.Context) error {
+func sendPayment(cliCtx *cli.Context) error {
 	// Show command help if no arguments provided
-	if ctx.NArg() == 0 && ctx.NumFlags() == 0 {
-		_ = cli.ShowCommandHelp(ctx, "sendpayment")
+	if cliCtx.NArg() == 0 && cliCtx.NumFlags() == 0 {
+		_ = cli.ShowCommandHelp(cliCtx, "sendpayment")
 		return nil
 	}
 
-	lndConn, cleanup, err := connectClient(ctx, false)
+	lndConn, cleanup, err := connectClient(cliCtx, false)
 	if err != nil {
 		return fmt.Errorf("unable to make rpc conn: %w", err)
 	}
 	defer cleanup()
 
-	tapdConn, cleanup, err := connectSuperMacClient(ctx)
+	// NOTE: we don't use `getContext()` here since it assigns the global
+	// signal interceptor variable which will then cause
+	// commands.SendPaymentRequest to error out since it will try to do the
+	// same.
+	ctx := context.Background()
+	tapdConn, cleanup, err := connectSuperMacClient(ctx, cliCtx)
 	if err != nil {
 		return fmt.Errorf("error creating tapd connection: %w", err)
 	}
 	defer cleanup()
 
 	switch {
-	case !ctx.IsSet(assetIDFlag.Name):
+	case !cliCtx.IsSet(assetIDFlag.Name):
 		return fmt.Errorf("the --asset_id flag must be set")
-	case !ctx.IsSet("keysend"):
+	case !cliCtx.IsSet("keysend"):
 		return fmt.Errorf("the --keysend flag must be set")
-	case !ctx.IsSet(assetAmountFlag.Name):
+	case !cliCtx.IsSet(assetAmountFlag.Name):
 		return fmt.Errorf("--asset_amount must be set")
 	}
 
-	assetIDStr := ctx.String(assetIDFlag.Name)
+	assetIDStr := cliCtx.String(assetIDFlag.Name)
 	assetIDBytes, err := hex.DecodeString(assetIDStr)
 	if err != nil {
 		return fmt.Errorf("unable to decode assetID: %v", err)
 	}
 
-	assetAmountToSend := ctx.Uint64(assetAmountFlag.Name)
+	assetAmountToSend := cliCtx.Uint64(assetAmountFlag.Name)
 	if assetAmountToSend == 0 {
 		return fmt.Errorf("must specify asset amount to send")
 	}
@@ -344,8 +349,8 @@ func sendPayment(ctx *cli.Context) error {
 	)
 
 	switch {
-	case ctx.IsSet("dest"):
-		destNode, err = hex.DecodeString(ctx.String("dest"))
+	case cliCtx.IsSet("dest"):
+		destNode, err = hex.DecodeString(cliCtx.String("dest"))
 	default:
 		return fmt.Errorf("destination txid argument missing")
 	}
@@ -358,7 +363,7 @@ func sendPayment(ctx *cli.Context) error {
 			"is instead: %v", len(destNode))
 	}
 
-	rfqPeerKey, err := hex.DecodeString(ctx.String(rfqPeerPubKeyFlag.Name))
+	rfqPeerKey, err := hex.DecodeString(cliCtx.String(rfqPeerPubKeyFlag.Name))
 	if err != nil {
 		return fmt.Errorf("unable to decode RFQ peer public key: "+
 			"%w", err)
@@ -373,7 +378,7 @@ func sendPayment(ctx *cli.Context) error {
 		DestCustomRecords: make(map[uint64][]byte),
 	}
 
-	if ctx.IsSet("payment_hash") {
+	if cliCtx.IsSet("payment_hash") {
 		return errors.New("cannot set payment hash when using " +
 			"keysend")
 	}
@@ -392,10 +397,10 @@ func sendPayment(ctx *cli.Context) error {
 	rHash = hash[:]
 
 	req.PaymentHash = rHash
-	allowOverpay := ctx.Bool(allowOverpayFlag.Name)
+	allowOverpay := cliCtx.Bool(allowOverpayFlag.Name)
 
 	return commands.SendPaymentRequest(
-		ctx, req, lndConn, tapdConn, func(ctx context.Context,
+		cliCtx, req, lndConn, tapdConn, func(ctx context.Context,
 			payConn grpc.ClientConnInterface,
 			req *routerrpc.SendPaymentRequest) (
 			commands.PaymentResultStream, error) {
@@ -447,21 +452,26 @@ var payInvoiceCommand = cli.Command{
 	Action: payInvoice,
 }
 
-func payInvoice(ctx *cli.Context) error {
-	args := ctx.Args()
-	ctxb := context.Background()
+func payInvoice(cli *cli.Context) error {
+	args := cli.Args()
+
+	// NOTE: we don't use `getContext()` here since it assigns the global
+	// signal interceptor variable which will then cause
+	// commands.SendPaymentRequest to error out since it will try to do the
+	// same.
+	ctx := context.Background()
 
 	var payReq string
 	switch {
-	case ctx.IsSet("pay_req"):
-		payReq = ctx.String("pay_req")
+	case cli.IsSet("pay_req"):
+		payReq = cli.String("pay_req")
 	case args.Present():
 		payReq = args.First()
 	default:
 		return fmt.Errorf("pay_req argument missing")
 	}
 
-	superMacConn, cleanup, err := connectSuperMacClient(ctx)
+	superMacConn, cleanup, err := connectSuperMacClient(ctx, cli)
 	if err != nil {
 		return fmt.Errorf("unable to make rpc con: %w", err)
 	}
@@ -471,35 +481,35 @@ func payInvoice(ctx *cli.Context) error {
 	lndClient := lnrpc.NewLightningClient(superMacConn)
 
 	decodeReq := &lnrpc.PayReqString{PayReq: payReq}
-	decodeResp, err := lndClient.DecodePayReq(ctxb, decodeReq)
+	decodeResp, err := lndClient.DecodePayReq(ctx, decodeReq)
 	if err != nil {
 		return err
 	}
 
-	if !ctx.IsSet(assetIDFlag.Name) {
+	if !cli.IsSet(assetIDFlag.Name) {
 		return fmt.Errorf("the --asset_id flag must be set")
 	}
 
-	assetIDStr := ctx.String(assetIDFlag.Name)
+	assetIDStr := cli.String(assetIDFlag.Name)
 
 	assetIDBytes, err := hex.DecodeString(assetIDStr)
 	if err != nil {
 		return fmt.Errorf("unable to decode assetID: %v", err)
 	}
 
-	rfqPeerKey, err := hex.DecodeString(ctx.String(rfqPeerPubKeyFlag.Name))
+	rfqPeerKey, err := hex.DecodeString(cli.String(rfqPeerPubKeyFlag.Name))
 	if err != nil {
 		return fmt.Errorf("unable to decode RFQ peer public key: "+
 			"%w", err)
 	}
 
-	allowOverpay := ctx.Bool(allowOverpayFlag.Name)
+	allowOverpay := cli.Bool(allowOverpayFlag.Name)
 	req := &routerrpc.SendPaymentRequest{
 		PaymentRequest: commands.StripPrefix(payReq),
 	}
 
 	return commands.SendPaymentRequest(
-		ctx, req, superMacConn, superMacConn, func(ctx context.Context,
+		cli, req, superMacConn, superMacConn, func(ctx context.Context,
 			payConn grpc.ClientConnInterface,
 			req *routerrpc.SendPaymentRequest) (
 			commands.PaymentResultStream, error) {
@@ -559,14 +569,14 @@ var addInvoiceCommand = cli.Command{
 	Action: addInvoice,
 }
 
-func addInvoice(ctx *cli.Context) error {
-	args := ctx.Args()
-	ctxb := context.Background()
+func addInvoice(cli *cli.Context) error {
+	args := cli.Args()
+	ctx := getContext()
 
 	var assetIDStr string
 	switch {
-	case ctx.IsSet("asset_id"):
-		assetIDStr = ctx.String("asset_id")
+	case cli.IsSet("asset_id"):
+		assetIDStr = cli.String("asset_id")
 	case args.Present():
 		assetIDStr = args.First()
 		args = args.Tail()
@@ -581,8 +591,8 @@ func addInvoice(ctx *cli.Context) error {
 		err         error
 	)
 	switch {
-	case ctx.IsSet("asset_amount"):
-		assetAmount = ctx.Uint64("asset_amount")
+	case cli.IsSet("asset_amount"):
+		assetAmount = cli.Uint64("asset_amount")
 	case args.Present():
 		assetAmount, err = strconv.ParseUint(args.First(), 10, 64)
 		if err != nil {
@@ -593,21 +603,21 @@ func addInvoice(ctx *cli.Context) error {
 		return fmt.Errorf("asset_amount argument missing")
 	}
 
-	if ctx.IsSet("preimage") {
-		preimage, err = hex.DecodeString(ctx.String("preimage"))
+	if cli.IsSet("preimage") {
+		preimage, err = hex.DecodeString(cli.String("preimage"))
 		if err != nil {
 			return fmt.Errorf("unable to parse preimage: %w", err)
 		}
 	}
 
-	descHash, err = hex.DecodeString(ctx.String("description_hash"))
+	descHash, err = hex.DecodeString(cli.String("description_hash"))
 	if err != nil {
 		return fmt.Errorf("unable to parse description_hash: %w", err)
 	}
 
 	expirySeconds := int64(rfq.DefaultInvoiceExpiry.Seconds())
-	if ctx.IsSet("expiry") {
-		expirySeconds = ctx.Int64("expiry")
+	if cli.IsSet("expiry") {
+		expirySeconds = cli.Int64("expiry")
 	}
 
 	assetIDBytes, err := hex.DecodeString(assetIDStr)
@@ -618,31 +628,31 @@ func addInvoice(ctx *cli.Context) error {
 	var assetID asset.ID
 	copy(assetID[:], assetIDBytes)
 
-	rfqPeerKey, err := hex.DecodeString(ctx.String(rfqPeerPubKeyFlag.Name))
+	rfqPeerKey, err := hex.DecodeString(cli.String(rfqPeerPubKeyFlag.Name))
 	if err != nil {
 		return fmt.Errorf("unable to decode RFQ peer public key: "+
 			"%w", err)
 	}
 
-	tapdConn, cleanup, err := connectSuperMacClient(ctx)
+	tapdConn, cleanup, err := connectSuperMacClient(ctx, cli)
 	if err != nil {
 		return fmt.Errorf("error creating tapd connection: %w", err)
 	}
 	defer cleanup()
 
 	channelsClient := tchrpc.NewTaprootAssetChannelsClient(tapdConn)
-	resp, err := channelsClient.AddInvoice(ctxb, &tchrpc.AddInvoiceRequest{
+	resp, err := channelsClient.AddInvoice(ctx, &tchrpc.AddInvoiceRequest{
 		AssetId:     assetIDBytes,
 		AssetAmount: assetAmount,
 		PeerPubkey:  rfqPeerKey,
 		InvoiceRequest: &lnrpc.Invoice{
-			Memo:            ctx.String("memo"),
+			Memo:            cli.String("memo"),
 			RPreimage:       preimage,
 			DescriptionHash: descHash,
-			FallbackAddr:    ctx.String("fallback_addr"),
+			FallbackAddr:    cli.String("fallback_addr"),
 			Expiry:          expirySeconds,
-			Private:         ctx.Bool("private"),
-			IsAmp:           ctx.Bool("amp"),
+			Private:         cli.Bool("private"),
+			IsAmp:           cli.Bool("amp"),
 		},
 	})
 	if err != nil {
@@ -679,32 +689,32 @@ var decodeAssetInvoiceCommand = cli.Command{
 	Action: decodeAssetInvoice,
 }
 
-func decodeAssetInvoice(ctx *cli.Context) error {
-	ctxb := context.Background()
+func decodeAssetInvoice(cli *cli.Context) error {
+	ctx := getContext()
 
 	switch {
-	case !ctx.IsSet("pay_req"):
+	case !cli.IsSet("pay_req"):
 		return fmt.Errorf("pay_req argument missing")
-	case !ctx.IsSet(assetIDFlag.Name):
+	case !cli.IsSet(assetIDFlag.Name):
 		return fmt.Errorf("the --asset_id flag must be set")
 	}
 
-	payReq := ctx.String("pay_req")
+	payReq := cli.String("pay_req")
 
-	assetIDStr := ctx.String(assetIDFlag.Name)
+	assetIDStr := cli.String(assetIDFlag.Name)
 	assetIDBytes, err := hex.DecodeString(assetIDStr)
 	if err != nil {
 		return fmt.Errorf("unable to decode assetID: %v", err)
 	}
 
-	tapdConn, cleanup, err := connectSuperMacClient(ctx)
+	tapdConn, cleanup, err := connectSuperMacClient(ctx, cli)
 	if err != nil {
 		return fmt.Errorf("unable to make rpc con: %w", err)
 	}
 	defer cleanup()
 
 	channelsClient := tchrpc.NewTaprootAssetChannelsClient(tapdConn)
-	resp, err := channelsClient.DecodeAssetPayReq(ctxb, &tchrpc.AssetPayReq{
+	resp, err := channelsClient.DecodeAssetPayReq(ctx, &tchrpc.AssetPayReq{
 		AssetId:      assetIDBytes,
 		PayReqString: payReq,
 	})

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/hex"
 	"fmt"
 	"os"
@@ -75,9 +74,9 @@ spend that amount.`,
 	Action: createAccount,
 }
 
-func createAccount(ctx *cli.Context) error {
-	ctxb := context.Background()
-	clientConn, cleanup, err := connectClient(ctx, false)
+func createAccount(cli *cli.Context) error {
+	ctx := getContext()
+	clientConn, cleanup, err := connectClient(cli, false)
 	if err != nil {
 		return err
 	}
@@ -88,11 +87,11 @@ func createAccount(ctx *cli.Context) error {
 		initialBalance uint64
 		expirationDate int64
 	)
-	args := ctx.Args()
+	args := cli.Args()
 
 	switch {
-	case ctx.IsSet("balance"):
-		initialBalance = ctx.Uint64("balance")
+	case cli.IsSet("balance"):
+		initialBalance = cli.Uint64("balance")
 	case args.Present():
 		initialBalance, err = strconv.ParseUint(args.First(), 10, 64)
 		if err != nil {
@@ -102,8 +101,8 @@ func createAccount(ctx *cli.Context) error {
 	}
 
 	switch {
-	case ctx.IsSet("expiration_date"):
-		expirationDate = ctx.Int64("expiration_date")
+	case cli.IsSet("expiration_date"):
+		expirationDate = cli.Int64("expiration_date")
 	case args.Present():
 		expirationDate, err = strconv.ParseInt(args.First(), 10, 64)
 		if err != nil {
@@ -117,9 +116,9 @@ func createAccount(ctx *cli.Context) error {
 	req := &litrpc.CreateAccountRequest{
 		AccountBalance: initialBalance,
 		ExpirationDate: expirationDate,
-		Label:          ctx.String(labelName),
+		Label:          cli.String(labelName),
 	}
-	resp, err := client.CreateAccount(ctxb, req)
+	resp, err := client.CreateAccount(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -128,8 +127,8 @@ func createAccount(ctx *cli.Context) error {
 
 	// User requested to store the newly baked account macaroon to a file
 	// in addition to printing it to the console.
-	if ctx.IsSet("save_to") {
-		fileName := lncfg.CleanAndExpandPath(ctx.String("save_to"))
+	if cli.IsSet("save_to") {
+		fileName := lncfg.CleanAndExpandPath(cli.String("save_to"))
 		err := os.WriteFile(fileName, resp.Macaroon, 0644)
 		if err != nil {
 			return fmt.Errorf("error writing account macaroon "+
@@ -176,16 +175,16 @@ var updateAccountCommand = cli.Command{
 	Action: updateAccount,
 }
 
-func updateAccount(ctx *cli.Context) error {
-	ctxb := context.Background()
-	clientConn, cleanup, err := connectClient(ctx, false)
+func updateAccount(cli *cli.Context) error {
+	ctx := getContext()
+	clientConn, cleanup, err := connectClient(cli, false)
 	if err != nil {
 		return err
 	}
 	defer cleanup()
 	client := litrpc.NewAccountsClient(clientConn)
 
-	id, label, args, err := parseIDOrLabel(ctx)
+	id, label, args, err := parseIDOrLabel(cli)
 	if err != nil {
 		return err
 	}
@@ -195,8 +194,8 @@ func updateAccount(ctx *cli.Context) error {
 		expirationDate int64
 	)
 	switch {
-	case ctx.IsSet("new_balance"):
-		newBalance = ctx.Int64("new_balance")
+	case cli.IsSet("new_balance"):
+		newBalance = cli.Int64("new_balance")
 	case args.Present():
 		newBalance, err = strconv.ParseInt(args.First(), 10, 64)
 		if err != nil {
@@ -206,8 +205,8 @@ func updateAccount(ctx *cli.Context) error {
 	}
 
 	switch {
-	case ctx.IsSet("new_expiration_date"):
-		expirationDate = ctx.Int64("new_expiration_date")
+	case cli.IsSet("new_expiration_date"):
+		expirationDate = cli.Int64("new_expiration_date")
 	case args.Present():
 		expirationDate, err = strconv.ParseInt(args.First(), 10, 64)
 		if err != nil {
@@ -224,7 +223,7 @@ func updateAccount(ctx *cli.Context) error {
 		AccountBalance: newBalance,
 		ExpirationDate: expirationDate,
 	}
-	resp, err := client.UpdateAccount(ctxb, req)
+	resp, err := client.UpdateAccount(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -242,9 +241,9 @@ var listAccountsCommand = cli.Command{
 	Action: listAccounts,
 }
 
-func listAccounts(ctx *cli.Context) error {
-	ctxb := context.Background()
-	clientConn, cleanup, err := connectClient(ctx, false)
+func listAccounts(cli *cli.Context) error {
+	ctx := getContext()
+	clientConn, cleanup, err := connectClient(cli, false)
 	if err != nil {
 		return err
 	}
@@ -252,7 +251,7 @@ func listAccounts(ctx *cli.Context) error {
 	client := litrpc.NewAccountsClient(clientConn)
 
 	req := &litrpc.ListAccountsRequest{}
-	resp, err := client.ListAccounts(ctxb, req)
+	resp, err := client.ListAccounts(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -281,16 +280,16 @@ var accountInfoCommand = cli.Command{
 	Action: accountInfo,
 }
 
-func accountInfo(ctx *cli.Context) error {
-	ctxb := context.Background()
-	clientConn, cleanup, err := connectClient(ctx, false)
+func accountInfo(cli *cli.Context) error {
+	ctx := getContext()
+	clientConn, cleanup, err := connectClient(cli, false)
 	if err != nil {
 		return err
 	}
 	defer cleanup()
 	client := litrpc.NewAccountsClient(clientConn)
 
-	id, label, _, err := parseIDOrLabel(ctx)
+	id, label, _, err := parseIDOrLabel(cli)
 	if err != nil {
 		return err
 	}
@@ -299,7 +298,7 @@ func accountInfo(ctx *cli.Context) error {
 		Id:    id,
 		Label: label,
 	}
-	resp, err := client.AccountInfo(ctxb, req)
+	resp, err := client.AccountInfo(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -327,16 +326,16 @@ var removeAccountCommand = cli.Command{
 	Action: removeAccount,
 }
 
-func removeAccount(ctx *cli.Context) error {
-	ctxb := context.Background()
-	clientConn, cleanup, err := connectClient(ctx, false)
+func removeAccount(cli *cli.Context) error {
+	ctx := getContext()
+	clientConn, cleanup, err := connectClient(cli, false)
 	if err != nil {
 		return err
 	}
 	defer cleanup()
 	client := litrpc.NewAccountsClient(clientConn)
 
-	id, label, _, err := parseIDOrLabel(ctx)
+	id, label, _, err := parseIDOrLabel(cli)
 	if err != nil {
 		return err
 	}
@@ -345,7 +344,7 @@ func removeAccount(ctx *cli.Context) error {
 		Id:    id,
 		Label: label,
 	}
-	_, err = client.RemoveAccount(ctxb, req)
+	_, err = client.RemoveAccount(ctx, req)
 	return err
 }
 
