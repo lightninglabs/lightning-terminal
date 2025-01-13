@@ -36,8 +36,8 @@ func NewManager(interceptTimeout time.Duration,
 }
 
 // Start starts the firewall by registering the interceptors with lnd.
-func (f *Manager) Start() error {
-	ctxc, cancel := context.WithCancel(context.Background())
+func (f *Manager) Start(ctx context.Context) error {
+	ctxc, cancel := context.WithCancel(ctx)
 	f.cancel = cancel
 
 	for _, i := range f.interceptors {

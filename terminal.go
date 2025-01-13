@@ -1104,7 +1104,7 @@ func (g *LightningTerminal) startInternalSubServers(ctx context.Context,
 		g.lndClient.Client, g.errQueue.ChanIn(), mw...,
 	)
 
-	if err = g.middleware.Start(); err != nil {
+	if err = g.middleware.Start(ctx); err != nil {
 		return err
 	}
 	g.middlewareStarted = true
