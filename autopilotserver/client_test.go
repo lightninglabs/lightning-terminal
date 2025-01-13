@@ -32,7 +32,7 @@ func TestAutopilotClient(t *testing.T) {
 		PingCadence: time.Second,
 	})
 	require.NoError(t, err)
-	require.NoError(t, client.Start())
+	require.NoError(t, client.Start(ctx))
 	t.Cleanup(client.Stop)
 
 	privKey, err := btcec.NewPrivateKey()

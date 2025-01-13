@@ -13,6 +13,7 @@ import (
 
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/lightninglabs/lightning-terminal/autopilotserverrpc"
+	"github.com/lightninglabs/taproot-assets/fn"
 	"github.com/lightningnetwork/lnd/tor"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -88,8 +89,9 @@ type Client struct {
 
 	featurePerms *featurePerms
 
-	quit chan struct{}
-	wg   sync.WaitGroup
+	quit   chan struct{}
+	wg     sync.WaitGroup
+	cancel fn.Option[context.CancelFunc]
 }
 
 type session struct {
@@ -124,16 +126,19 @@ func NewClient(cfg *Config) (Autopilot, error) {
 }
 
 // Start kicks off all the goroutines required by the Client.
-func (c *Client) Start(opts ...func(cfg *Config)) error {
+func (c *Client) Start(ctx context.Context, opts ...func(cfg *Config)) error {
 	var startErr error
 	c.start.Do(func() {
 		log.Infof("Starting Autopilot Client")
+
+		ctx, cancel := context.WithCancel(ctx)
+		c.cancel = fn.Some(cancel)
 
 		for _, o := range opts {
 			o(c.cfg)
 		}
 
-		version, err := c.getMinVersion(context.Background())
+		version, err := c.getMinVersion(ctx)
 		if err != nil {
 			startErr = err
 			return
@@ -154,8 +159,8 @@ func (c *Client) Start(opts ...func(cfg *Config)) error {
 		}
 
 		c.wg.Add(2)
-		go c.activateSessionsForever()
-		go c.updateFeaturePermsForever()
+		go c.activateSessionsForever(ctx)
+		go c.updateFeaturePermsForever(ctx)
 	})
 
 	return startErr
@@ -164,6 +169,7 @@ func (c *Client) Start(opts ...func(cfg *Config)) error {
 // Stop cleans up any resources or goroutines managed by the Client.
 func (c *Client) Stop() {
 	c.stop.Do(func() {
+		c.cancel.WhenSome(func(fn context.CancelFunc) { fn() })
 		close(c.quit)
 		c.wg.Wait()
 	})
@@ -222,10 +228,9 @@ func (c *Client) SessionRevoked(ctx context.Context, pubKey *btcec.PublicKey) {
 
 // activateSessionsForever periodically ensures that each of our active
 // autopilot sessions are known by the autopilot to be active.
-func (c *Client) activateSessionsForever() {
+func (c *Client) activateSessionsForever(ctx context.Context) {
 	defer c.wg.Done()
 
-	ctx := context.Background()
 	ticker := time.NewTicker(c.cfg.PingCadence)
 	defer ticker.Stop()
 
@@ -273,10 +278,9 @@ func (c *Client) activateSessionsForever() {
 // feature permissions list.
 //
 // NOTE: this MUST be called in a goroutine.
-func (c *Client) updateFeaturePermsForever() {
+func (c *Client) updateFeaturePermsForever(ctx context.Context) {
 	defer c.wg.Done()
 
-	ctx := context.Background()
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 

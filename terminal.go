@@ -1005,7 +1005,8 @@ func (g *LightningTerminal) startInternalSubServers(ctx context.Context,
 			}
 		}
 
-		if err = g.autopilotClient.Start(withLndVersion); err != nil {
+		err = g.autopilotClient.Start(ctx, withLndVersion)
+		if err != nil {
 			return fmt.Errorf("could not start the autopilot "+
 				"client: %v", err)
 		}

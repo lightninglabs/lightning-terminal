@@ -45,7 +45,7 @@ type Autopilot interface {
 	SessionRevoked(ctx context.Context, key *btcec.PublicKey)
 
 	// Start kicks off the goroutines of the client.
-	Start(opts ...func(cfg *Config)) error
+	Start(ctx context.Context, opts ...func(cfg *Config)) error
 
 	// Stop cleans up any resources held by the client.
 	Stop()
