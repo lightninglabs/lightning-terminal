@@ -162,13 +162,7 @@ func Parse(flags string) (PrivacyFlags, error) {
 
 // Contains checks if a privacy flag is contained in the set.
 func (f PrivacyFlags) Contains(other PrivacyFlag) bool {
-	for _, flag := range f {
-		if flag == other {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(f, other)
 }
 
 // Equal checks if two sets of privacy flags are equal.
