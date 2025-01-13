@@ -98,7 +98,7 @@ func newSessionRPCServer(cfg *sessionRpcServerConfig) (*sessionRpcServer,
 
 // start all the components necessary for the sessionRpcServer to start serving
 // requests. This includes resuming all non-revoked sessions.
-func (s *sessionRpcServer) start() error {
+func (s *sessionRpcServer) start(ctx context.Context) error {
 	// Start up all previously created sessions.
 	sessions, err := s.cfg.db.ListSessions(nil)
 	if err != nil {
@@ -135,7 +135,6 @@ func (s *sessionRpcServer) start() error {
 				continue
 			}
 
-			ctx := context.Background()
 			ctxc, cancel := context.WithTimeout(
 				ctx, defaultConnectTimeout,
 			)
@@ -147,7 +146,7 @@ func (s *sessionRpcServer) start() error {
 			cancel()
 			if err != nil {
 				log.Errorf("error activating autopilot "+
-					"session (%x) with the client", key,
+					"session (%x) with the client: %v", key,
 					err)
 
 				if perm {
@@ -164,7 +163,7 @@ func (s *sessionRpcServer) start() error {
 			}
 		}
 
-		if err := s.resumeSession(sess); err != nil {
+		if err := s.resumeSession(ctx, sess); err != nil {
 			log.Errorf("error resuming session (%x): %v", key, err)
 		}
 	}
@@ -190,7 +189,7 @@ func (s *sessionRpcServer) stop() error {
 }
 
 // AddSession adds and starts a new Terminal Connect session.
-func (s *sessionRpcServer) AddSession(_ context.Context,
+func (s *sessionRpcServer) AddSession(ctx context.Context,
 	req *litrpc.AddSessionRequest) (*litrpc.AddSessionResponse, error) {
 
 	expiry := time.Unix(int64(req.ExpiryTimestampSeconds), 0)
@@ -335,7 +334,7 @@ func (s *sessionRpcServer) AddSession(_ context.Context,
 		return nil, fmt.Errorf("error storing session: %v", err)
 	}
 
-	if err := s.resumeSession(sess); err != nil {
+	if err := s.resumeSession(ctx, sess); err != nil {
 		return nil, fmt.Errorf("error starting session: %v", err)
 	}
 
@@ -351,7 +350,9 @@ func (s *sessionRpcServer) AddSession(_ context.Context,
 
 // resumeSession tries to start an existing session if it is not expired, not
 // revoked and a LiT session.
-func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
+func (s *sessionRpcServer) resumeSession(ctx context.Context,
+	sess *session.Session) error {
+
 	pubKey := sess.LocalPublicKey
 	pubKeyBytes := pubKey.SerializeCompressed()
 
@@ -423,7 +424,7 @@ func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
 	})
 
 	mac, err := s.cfg.superMacBaker(
-		context.Background(), sess.MacaroonRootKey,
+		ctx, sess.MacaroonRootKey,
 		&session.MacaroonRecipe{
 			Permissions: permissions,
 			Caveats:     caveats,
@@ -431,7 +432,7 @@ func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
 	)
 	if err != nil {
 		log.Debugf("Not resuming session %x. Could not bake "+
-			"the necessary macaroon: %w", pubKeyBytes, err)
+			"the necessary macaroon: %v", pubKeyBytes, err)
 		return nil
 	}
 
@@ -516,7 +517,6 @@ func (s *sessionRpcServer) resumeSession(sess *session.Session) error {
 		}
 
 		if s.cfg.autopilot != nil {
-			ctx := context.Background()
 			ctxc, cancel := context.WithTimeout(
 				ctx, defaultConnectTimeout,
 			)
@@ -1246,7 +1246,7 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 		return nil, fmt.Errorf("error storing session: %v", err)
 	}
 
-	if err := s.resumeSession(sess); err != nil {
+	if err := s.resumeSession(ctx, sess); err != nil {
 		return nil, fmt.Errorf("error starting session: %v", err)
 	}
 

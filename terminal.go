@@ -751,7 +751,7 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 		g.basicClient, g.lndClient, createDefaultMacaroons,
 	)
 
-	err = g.startInternalSubServers(!g.cfg.statelessInitMode)
+	err = g.startInternalSubServers(ctx, !g.cfg.statelessInitMode)
 	if err != nil {
 		return fmt.Errorf("could not start litd sub-servers: %v", err)
 	}
@@ -959,7 +959,7 @@ func (g *LightningTerminal) setUpLNDClients(ctx context.Context,
 }
 
 // startInternalSubServers starts all Litd specific sub-servers.
-func (g *LightningTerminal) startInternalSubServers(
+func (g *LightningTerminal) startInternalSubServers(ctx context.Context,
 	createDefaultMacaroons bool) error {
 
 	log.Infof("Starting LiT macaroon service")
@@ -1012,7 +1012,7 @@ func (g *LightningTerminal) startInternalSubServers(
 	}
 
 	log.Infof("Starting LiT session server")
-	if err = g.sessionRpcServer.start(); err != nil {
+	if err = g.sessionRpcServer.start(ctx); err != nil {
 		return err
 	}
 	g.sessionRpcServerStarted = true
