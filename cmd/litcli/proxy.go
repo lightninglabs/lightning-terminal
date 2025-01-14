@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"crypto/rand"
 	"encoding/binary"
 	"encoding/hex"
@@ -62,16 +61,16 @@ var litCommands = []cli.Command{
 	},
 }
 
-func getInfo(ctx *cli.Context) error {
-	clientConn, cleanup, err := connectClient(ctx, false)
+func getInfo(cli *cli.Context) error {
+	clientConn, cleanup, err := connectClient(cli, false)
 	if err != nil {
 		return err
 	}
 	defer cleanup()
 	client := litrpc.NewProxyClient(clientConn)
 
-	ctxb := context.Background()
-	resp, err := client.GetInfo(ctxb, &litrpc.GetInfoRequest{})
+	ctx := getContext()
+	resp, err := client.GetInfo(ctx, &litrpc.GetInfoRequest{})
 	if err != nil {
 		return err
 	}
@@ -81,16 +80,16 @@ func getInfo(ctx *cli.Context) error {
 	return nil
 }
 
-func shutdownLit(ctx *cli.Context) error {
-	clientConn, cleanup, err := connectClient(ctx, false)
+func shutdownLit(cli *cli.Context) error {
+	clientConn, cleanup, err := connectClient(cli, false)
 	if err != nil {
 		return err
 	}
 	defer cleanup()
 	client := litrpc.NewProxyClient(clientConn)
 
-	ctxb := context.Background()
-	_, err = client.StopDaemon(ctxb, &litrpc.StopDaemonRequest{})
+	ctx := getContext()
+	_, err = client.StopDaemon(ctx, &litrpc.StopDaemonRequest{})
 	if err != nil {
 		return err
 	}
@@ -100,11 +99,11 @@ func shutdownLit(ctx *cli.Context) error {
 	return nil
 }
 
-func bakeSuperMacaroon(ctx *cli.Context) error {
+func bakeSuperMacaroon(cli *cli.Context) error {
 	var suffixBytes [4]byte
-	if ctx.IsSet("root_key_suffix") {
+	if cli.IsSet("root_key_suffix") {
 		suffixHex, err := hex.DecodeString(
-			ctx.String("root_key_suffix"),
+			cli.String("root_key_suffix"),
 		)
 		if err != nil {
 			return err
@@ -119,18 +118,18 @@ func bakeSuperMacaroon(ctx *cli.Context) error {
 	}
 	suffix := binary.BigEndian.Uint32(suffixBytes[:])
 
-	clientConn, cleanup, err := connectClient(ctx, false)
+	clientConn, cleanup, err := connectClient(cli, false)
 	if err != nil {
 		return err
 	}
 	defer cleanup()
 	client := litrpc.NewProxyClient(clientConn)
 
-	ctxb := context.Background()
+	ctx := getContext()
 	resp, err := client.BakeSuperMacaroon(
-		ctxb, &litrpc.BakeSuperMacaroonRequest{
+		ctx, &litrpc.BakeSuperMacaroonRequest{
 			RootKeyIdSuffix: suffix,
-			ReadOnly:        ctx.Bool("read_only"),
+			ReadOnly:        cli.Bool("read_only"),
 		},
 	)
 	if err != nil {
@@ -139,8 +138,8 @@ func bakeSuperMacaroon(ctx *cli.Context) error {
 
 	// If the user specified the optional --save_to parameter, we'll save
 	// the macaroon to that file.
-	if ctx.IsSet("save_to") {
-		macSavePath := lncfg.CleanAndExpandPath(ctx.String("save_to"))
+	if cli.IsSet("save_to") {
+		macSavePath := lncfg.CleanAndExpandPath(cli.String("save_to"))
 		superMacBytes, err := hex.DecodeString(resp.Macaroon)
 		if err != nil {
 			return err

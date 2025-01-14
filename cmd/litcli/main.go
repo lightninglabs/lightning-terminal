@@ -15,6 +15,7 @@ import (
 	"github.com/lightningnetwork/lnd/lncfg"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/macaroons"
+	"github.com/lightningnetwork/lnd/signal"
 	"github.com/urfave/cli"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -299,19 +300,18 @@ func printRespJSON(resp proto.Message) { // nolint
 	fmt.Println(string(jsonBytes))
 }
 
-func connectSuperMacClient(ctx *cli.Context) (grpc.ClientConnInterface,
-	func(), error) {
+func connectSuperMacClient(ctx context.Context, cli *cli.Context) (
+	grpc.ClientConnInterface, func(), error) {
 
-	litdConn, cleanup, err := connectClient(ctx, false)
+	litdConn, cleanup, err := connectClient(cli, false)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error connecting client: %w", err)
 	}
 	defer cleanup()
 
-	ctxb := context.Background()
 	litClient := litrpc.NewProxyClient(litdConn)
 	macResp, err := litClient.BakeSuperMacaroon(
-		ctxb, &litrpc.BakeSuperMacaroonRequest{},
+		ctx, &litrpc.BakeSuperMacaroonRequest{},
 	)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error baking macaroon: %w", err)
@@ -322,5 +322,21 @@ func connectSuperMacClient(ctx *cli.Context) (grpc.ClientConnInterface,
 		return nil, nil, fmt.Errorf("error decoding macaroon: %w", err)
 	}
 
-	return connectClientWithMac(ctx, macBytes)
+	return connectClientWithMac(cli, macBytes)
+}
+
+func getContext() context.Context {
+	shutdownInterceptor, err := signal.Intercept()
+	if err != nil {
+		_, _ = fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
+	ctxc, cancel := context.WithCancel(context.Background())
+	go func() {
+		<-shutdownInterceptor.ShutdownChannel()
+		cancel()
+	}()
+
+	return ctxc
 }

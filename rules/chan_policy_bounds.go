@@ -39,8 +39,8 @@ func (b *ChanPolicyBoundsMgr) Stop() error {
 // values and config.
 //
 // NOTE: This is part of the Manager interface.
-func (b *ChanPolicyBoundsMgr) NewEnforcer(_ Config, values Values) (Enforcer,
-	error) {
+func (b *ChanPolicyBoundsMgr) NewEnforcer(_ context.Context, _ Config,
+	values Values) (Enforcer, error) {
 
 	bounds, ok := values.(*ChanPolicyBounds)
 	if !ok {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -11,7 +12,7 @@ import (
 
 // main starts the lightning-terminal application.
 func main() {
-	err := terminal.New().Run()
+	err := terminal.New().Run(context.Background())
 	var flagErr *flags.Error
 	isFlagErr := errors.As(err, &flagErr)
 	if err != nil && (!isFlagErr || flagErr.Type != flags.ErrHelp) {

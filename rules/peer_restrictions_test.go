@@ -68,7 +68,7 @@ func TestPeerRestrictCheckRequest(t *testing.T) {
 		},
 	}
 
-	enf, err := mgr.NewEnforcer(cfg, &PeerRestrict{
+	enf, err := mgr.NewEnforcer(ctx, cfg, &PeerRestrict{
 		DenyList: []string{
 			peerID1, peerID2,
 		},

@@ -38,8 +38,8 @@ func (h *HistoryLimitMgr) Stop() error {
 // values and config.
 //
 // NOTE: This is part of the Manager interface.
-func (h *HistoryLimitMgr) NewEnforcer(_ Config, values Values) (Enforcer,
-	error) {
+func (h *HistoryLimitMgr) NewEnforcer(_ context.Context, _ Config,
+	values Values) (Enforcer, error) {
 
 	limit, ok := values.(*HistoryLimit)
 	if !ok {

@@ -16,7 +16,8 @@ import (
 type Manager interface {
 	// NewEnforcer constructs a new rule enforcer using the passed values
 	// and config.
-	NewEnforcer(cfg Config, values Values) (Enforcer, error)
+	NewEnforcer(ctx context.Context, cfg Config, values Values) (Enforcer,
+		error)
 
 	// NewValueFromProto converts the given proto value into a Value object.
 	NewValueFromProto(p *litrpc.RuleValue) (Values, error)

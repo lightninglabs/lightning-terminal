@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/hex"
 	"fmt"
 	"time"
@@ -96,41 +95,41 @@ var addSessionCommand = cli.Command{
 	},
 }
 
-func addSession(ctx *cli.Context) error {
-	clientConn, cleanup, err := connectClient(ctx, false)
+func addSession(cli *cli.Context) error {
+	clientConn, cleanup, err := connectClient(cli, false)
 	if err != nil {
 		return err
 	}
 	defer cleanup()
 	client := litrpc.NewSessionsClient(clientConn)
 
-	sessTypeStr := ctx.String("type")
+	sessTypeStr := cli.String("type")
 	sessType, err := parseSessionType(sessTypeStr)
 	if err != nil {
 		return err
 	}
 
 	var macPerms []*litrpc.MacaroonPermission
-	for _, uri := range ctx.StringSlice("uri") {
+	for _, uri := range cli.StringSlice("uri") {
 		macPerms = append(macPerms, &litrpc.MacaroonPermission{
 			Entity: macaroons.PermissionEntityCustomURI,
 			Action: uri,
 		})
 	}
 
-	sessionLength := time.Second * time.Duration(ctx.Uint64("expiry"))
+	sessionLength := time.Second * time.Duration(cli.Uint64("expiry"))
 	sessionExpiry := time.Now().Add(sessionLength).Unix()
 
-	ctxb := context.Background()
+	ctx := getContext()
 	resp, err := client.AddSession(
-		ctxb, &litrpc.AddSessionRequest{
-			Label:                     ctx.String("label"),
+		ctx, &litrpc.AddSessionRequest{
+			Label:                     cli.String("label"),
 			SessionType:               sessType,
 			ExpiryTimestampSeconds:    uint64(sessionExpiry),
-			MailboxServerAddr:         ctx.String("mailboxserveraddr"),
-			DevServer:                 ctx.Bool("devserver"),
+			MailboxServerAddr:         cli.String("mailboxserveraddr"),
+			DevServer:                 cli.Bool("devserver"),
 			MacaroonCustomPermissions: macPerms,
-			AccountId:                 ctx.String("account_id"),
+			AccountId:                 cli.String("account_id"),
 		},
 	)
 	if err != nil {
@@ -229,17 +228,17 @@ var sessionStateMap = map[litrpc.SessionState]sessionFilter{
 }
 
 func listSessions(filter sessionFilter) func(ctx *cli.Context) error {
-	return func(ctx *cli.Context) error {
-		clientConn, cleanup, err := connectClient(ctx, false)
+	return func(cli *cli.Context) error {
+		clientConn, cleanup, err := connectClient(cli, false)
 		if err != nil {
 			return err
 		}
 		defer cleanup()
 		client := litrpc.NewSessionsClient(clientConn)
 
-		ctxb := context.Background()
+		ctx := getContext()
 		resp, err := client.ListSessions(
-			ctxb, &litrpc.ListSessionsRequest{},
+			ctx, &litrpc.ListSessionsRequest{},
 		)
 		if err != nil {
 			return err
@@ -279,22 +278,22 @@ var revokeSessionCommand = cli.Command{
 	},
 }
 
-func revokeSession(ctx *cli.Context) error {
-	clientConn, cleanup, err := connectClient(ctx, false)
+func revokeSession(cli *cli.Context) error {
+	clientConn, cleanup, err := connectClient(cli, false)
 	if err != nil {
 		return err
 	}
 	defer cleanup()
 	client := litrpc.NewSessionsClient(clientConn)
 
-	pubkey, err := hex.DecodeString(ctx.String("localpubkey"))
+	pubkey, err := hex.DecodeString(cli.String("localpubkey"))
 	if err != nil {
 		return err
 	}
 
-	ctxb := context.Background()
+	ctx := getContext()
 	resp, err := client.RevokeSession(
-		ctxb, &litrpc.RevokeSessionRequest{
+		ctx, &litrpc.RevokeSessionRequest{
 			LocalPublicKey: pubkey,
 		},
 	)

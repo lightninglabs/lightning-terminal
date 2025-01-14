@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -32,7 +33,7 @@ func NewRuleManagerSet() ManagerSet {
 
 // InitEnforcer gets the appropriate rule Manager for the given name and uses it
 // to create an appropriate rule Enforcer.
-func (m ManagerSet) InitEnforcer(cfg Config, name string,
+func (m ManagerSet) InitEnforcer(ctx context.Context, cfg Config, name string,
 	values Values) (Enforcer, error) {
 
 	mgr, ok := m[name]
@@ -41,7 +42,7 @@ func (m ManagerSet) InitEnforcer(cfg Config, name string,
 			name)
 	}
 
-	return mgr.NewEnforcer(cfg, values)
+	return mgr.NewEnforcer(ctx, cfg, values)
 }
 
 // GetAllRules returns a map of names of all the rules supported by rule

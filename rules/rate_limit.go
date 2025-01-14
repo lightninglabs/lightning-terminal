@@ -38,8 +38,8 @@ func (r *RateLimitMgr) Stop() error {
 // and config.
 //
 // NOTE: This is part of the Manager interface.
-func (r *RateLimitMgr) NewEnforcer(cfg Config, values Values) (Enforcer,
-	error) {
+func (r *RateLimitMgr) NewEnforcer(_ context.Context, cfg Config,
+	values Values) (Enforcer, error) {
 
 	limits, ok := values.(*RateLimit)
 	if !ok {
