@@ -14,6 +14,7 @@ import (
 	"github.com/btcsuite/btcwallet/walletdb"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/kvdb"
+	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
 	"github.com/lightningnetwork/lnd/lnwire"
 	"go.etcd.io/bbolt"
@@ -248,6 +249,52 @@ func (s *BoltStore) IncreaseAccountBalance(_ context.Context, id AccountID,
 		}
 
 		account.CurrentBalance += int64(amount)
+
+		return nil
+	}
+
+	return s.updateAccount(id, update)
+}
+
+// UpsertAccountPayment updates or inserts a payment entry for the given
+// account. Various functional options can be passed to modify the behavior of
+// the method.
+//
+// NOTE: This is part of the Store interface.
+func (s *BoltStore) UpsertAccountPayment(_ context.Context, id AccountID,
+	paymentHash lntypes.Hash, fullAmount lnwire.MilliSatoshi,
+	status lnrpc.Payment_PaymentStatus,
+	options ...UpsertPaymentOption) error {
+
+	opts := newUpsertPaymentOption()
+	for _, o := range options {
+		o(opts)
+	}
+
+	update := func(account *OffChainBalanceAccount) error {
+		entry, ok := account.Payments[paymentHash]
+		if ok {
+			// If the errIfAlreadyPending option is set, we return
+			// an error if the payment is already in-flight or
+			// succeeded.
+			if opts.errIfAlreadyPending &&
+				entry.Status != lnrpc.Payment_FAILED {
+
+				return fmt.Errorf("payment with hash %s is "+
+					"already in flight or succeeded "+
+					"(status %v)", paymentHash,
+					account.Payments[paymentHash].Status)
+			}
+		}
+
+		account.Payments[paymentHash] = &PaymentEntry{
+			Status:     status,
+			FullAmount: fullAmount,
+		}
+
+		if opts.debitAccount {
+			account.CurrentBalance -= int64(fullAmount)
+		}
 
 		return nil
 	}

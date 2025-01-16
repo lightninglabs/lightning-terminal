@@ -498,44 +498,22 @@ func (s *InterceptorService) AssociatePayment(ctx context.Context, id AccountID,
 	s.Lock()
 	defer s.Unlock()
 
-	account, err := s.store.Account(ctx, id)
-	if err != nil {
-		return err
-	}
-
-	// Check if this payment is associated with the account already.
-	_, ok := account.Payments[paymentHash]
-	if ok {
-		// We do not allow another payment to the same hash if the
-		// payment is already in-flight or succeeded. This mitigates a
-		// user being able to launch a second RPC-erring payment with
-		// the same hash that would remove the payment from being
-		// tracked. Note that this prevents launching multipart
-		// payments, but allows retrying a payment if it has failed.
-		if account.Payments[paymentHash].Status !=
-			lnrpc.Payment_FAILED {
-
-			return fmt.Errorf("payment with hash %s is already in "+
-				"flight or succeeded (status %v)", paymentHash,
-				account.Payments[paymentHash].Status)
-		}
-
-		// Otherwise, we fall through to correctly update the payment
-		// amount, in case we have a zero-amount invoice that is
-		// retried.
-	}
-
-	// Associate the payment with the account and store it.
-	account.Payments[paymentHash] = &PaymentEntry{
-		Status:     lnrpc.Payment_UNKNOWN,
-		FullAmount: fullAmt,
-	}
-
-	if err := s.store.UpdateAccount(ctx, account); err != nil {
-		return fmt.Errorf("error updating account: %w", err)
-	}
-
-	return nil
+	// We add the WithErrIfAlreadyPending option to ensure that if the
+	// payment is already associated with the account, then we return
+	// an error if the payment is already in-flight or succeeded. This
+	// prevents a user from being able to launch a second RPC-erring payment
+	// with the same hash that would remove the payment from being tracked.
+	//
+	// NOTE: this prevents launching multipart payments, but allows
+	// retrying a payment if it has failed.
+	//
+	// If the payment is already associated with the account but not in
+	// flight, we update the payment amount in case we have a zero-amount
+	// invoice that is retried.
+	return s.store.UpsertAccountPayment(
+		ctx, id, paymentHash, fullAmt, lnrpc.Payment_UNKNOWN,
+		WithErrIfAlreadyPending(),
+	)
 }
 
 // invoiceUpdate credits the account an invoice was registered with, in case the
@@ -832,23 +810,14 @@ func (s *InterceptorService) paymentUpdate(ctx context.Context,
 
 	// The payment went through! We now need to debit the full amount from
 	// the account.
-	account, err := s.store.Account(ctx, pendingPayment.accountID)
-	if err != nil {
-		err = s.disableAndErrorfUnsafe("error fetching account: %w",
-			err)
-
-		return terminalState, err
-	}
-
 	fullAmount := status.Value + status.Fee
 
-	// Update the account and store it in the database.
-	account.CurrentBalance -= int64(fullAmount)
-	account.Payments[hash] = &PaymentEntry{
-		Status:     lnrpc.Payment_SUCCEEDED,
-		FullAmount: fullAmount,
-	}
-	if err := s.store.UpdateAccount(ctx, account); err != nil {
+	// Update the persisted account.
+	err := s.store.UpsertAccountPayment(
+		ctx, pendingPayment.accountID, hash, fullAmount,
+		lnrpc.Payment_SUCCEEDED, WithDebitAccount(),
+	)
+	if err != nil {
 		err = s.disableAndErrorfUnsafe("error updating account: %w",
 			err)
 

@@ -257,6 +257,123 @@ func TestAccountUpdateMethods(t *testing.T) {
 
 		assertBalance(223)
 	})
+
+	t.Run("UpsertAccountPayment", func(t *testing.T) {
+		store := NewTestDB(t)
+
+		acct, err := store.NewAccount(ctx, 1000, time.Time{}, "foo")
+		require.NoError(t, err)
+
+		assertBalanceAndPayments := func(balance int64,
+			payments AccountPayments) {
+
+			dbAcct, err := store.Account(ctx, acct.ID)
+			require.NoError(t, err)
+			require.EqualValues(t, balance, dbAcct.CurrentBalance)
+
+			require.Len(t, dbAcct.Payments, len(payments))
+			for hash, payment := range payments {
+				dbPayment, ok := dbAcct.Payments[hash]
+				require.True(t, ok)
+				require.Equal(t, payment, dbPayment)
+			}
+		}
+
+		// The account initially has a balance of 1000 and no payments.
+		assertBalanceAndPayments(1000, nil)
+
+		// Assert that calling the method for a non-existent account
+		// errors out.
+		err = store.UpsertAccountPayment(
+			ctx, AccountID{}, lntypes.Hash{}, 0,
+			lnrpc.Payment_UNKNOWN,
+		)
+		require.ErrorIs(t, err, ErrAccNotFound)
+
+		// Add a payment to the account but don't update the balance.
+		// We do add a WithErrIfAlreadyPending option here just to show
+		// that no error is returned since the payment does not exist
+		// yet.
+		hash1 := lntypes.Hash{1, 2, 3, 4}
+		err = store.UpsertAccountPayment(
+			ctx, acct.ID, hash1, 600, lnrpc.Payment_UNKNOWN,
+			WithErrIfAlreadyPending(),
+		)
+		require.NoError(t, err)
+
+		assertBalanceAndPayments(1000, AccountPayments{
+			hash1: &PaymentEntry{
+				Status:     lnrpc.Payment_UNKNOWN,
+				FullAmount: 600,
+			},
+		})
+
+		// Add a second payment to the account and again don't update
+		// the balance.
+		hash2 := lntypes.Hash{5, 6, 7, 8}
+		err = store.UpsertAccountPayment(
+			ctx, acct.ID, hash2, 100, lnrpc.Payment_UNKNOWN,
+		)
+		require.NoError(t, err)
+
+		assertBalanceAndPayments(1000, AccountPayments{
+			hash1: &PaymentEntry{
+				Status:     lnrpc.Payment_UNKNOWN,
+				FullAmount: 600,
+			},
+			hash2: &PaymentEntry{
+				Status:     lnrpc.Payment_UNKNOWN,
+				FullAmount: 100,
+			},
+		})
+
+		// Now, update the first payment to have a new status and this
+		// time, debit the account.
+		err = store.UpsertAccountPayment(
+			ctx, acct.ID, hash1, 600, lnrpc.Payment_SUCCEEDED,
+			WithDebitAccount(),
+		)
+		require.NoError(t, err)
+
+		// The account should now have a balance of 400 and the first
+		// payment should have a status of succeeded.
+		assertBalanceAndPayments(400, AccountPayments{
+			hash1: &PaymentEntry{
+				Status:     lnrpc.Payment_SUCCEEDED,
+				FullAmount: 600,
+			},
+			hash2: &PaymentEntry{
+				Status:     lnrpc.Payment_UNKNOWN,
+				FullAmount: 100,
+			},
+		})
+
+		// Calling the same method again with the same payment hash
+		// should have no effect by default.
+		err = store.UpsertAccountPayment(
+			ctx, acct.ID, hash1, 600, lnrpc.Payment_SUCCEEDED,
+		)
+		require.NoError(t, err)
+
+		assertBalanceAndPayments(400, AccountPayments{
+			hash1: &PaymentEntry{
+				Status:     lnrpc.Payment_SUCCEEDED,
+				FullAmount: 600,
+			},
+			hash2: &PaymentEntry{
+				Status:     lnrpc.Payment_UNKNOWN,
+				FullAmount: 100,
+			},
+		})
+
+		// But, if we use the WithErrIfAlreadyPending option, we should
+		// get an error since the payment already exists.
+		err = store.UpsertAccountPayment(
+			ctx, acct.ID, hash1, 600, lnrpc.Payment_SUCCEEDED,
+			WithErrIfAlreadyPending(),
+		)
+		require.ErrorContains(t, err, "is already in flight")
+	})
 }
 
 // TestLastInvoiceIndexes makes sure the last known invoice indexes can be

@@ -235,6 +235,14 @@ type Store interface {
 	IncreaseAccountBalance(ctx context.Context, id AccountID,
 		amount lnwire.MilliSatoshi) error
 
+	// UpsertAccountPayment updates or inserts a payment entry for the given
+	// account. Various functional options can be passed to modify the
+	// behavior of the method.
+	UpsertAccountPayment(_ context.Context, id AccountID,
+		paymentHash lntypes.Hash, fullAmount lnwire.MilliSatoshi,
+		status lnrpc.Payment_PaymentStatus,
+		options ...UpsertPaymentOption) error
+
 	// RemoveAccount finds an account by its ID and removes it from the¨
 	// store.
 	RemoveAccount(ctx context.Context, id AccountID) error
@@ -315,4 +323,42 @@ type RequestValuesStore interface {
 
 	// DeleteValues deletes any values stored for the given request ID.
 	DeleteValues(reqID uint64)
+}
+
+// UpsertPaymentOption is a functional option that can be passed to the
+// UpsertAccountPayment method to modify its behavior.
+type UpsertPaymentOption func(*upsertAcctPaymentOption)
+
+// upsertAcctPaymentOption is a struct that holds optional parameters for the
+// UpsertAccountPayment method.
+type upsertAcctPaymentOption struct {
+	debitAccount        bool
+	errIfAlreadyPending bool
+}
+
+// newUpsertPaymentOption creates a new upsertAcctPaymentOption with default
+// values.
+func newUpsertPaymentOption() *upsertAcctPaymentOption {
+	return &upsertAcctPaymentOption{
+		debitAccount:        false,
+		errIfAlreadyPending: false,
+	}
+}
+
+// WithDebitAccount is a functional option that can be passed to the
+// UpsertAccountPayment method to indicate that the account balance should be
+// debited by the full amount of the payment.
+func WithDebitAccount() UpsertPaymentOption {
+	return func(o *upsertAcctPaymentOption) {
+		o.debitAccount = true
+	}
+}
+
+// WithErrIfAlreadyPending is a functional option that can be passed to the
+// UpsertAccountPayment method to indicate that an error should be returned if
+// the payment is already pending or succeeded.
+func WithErrIfAlreadyPending() UpsertPaymentOption {
+	return func(o *upsertAcctPaymentOption) {
+		o.errIfAlreadyPending = true
+	}
 }
