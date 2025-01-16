@@ -78,16 +78,11 @@ type InterceptorService struct {
 
 // NewService returns a service backed by the macaroon Bolt DB stored in the
 // passed-in directory.
-func NewService(dir string,
-	errCallback func(error)) (*InterceptorService, error) {
-
-	accountStore, err := NewBoltStore(dir, DBFilename)
-	if err != nil {
-		return nil, err
-	}
+func NewService(store Store, errCallback func(error)) (*InterceptorService,
+	error) {
 
 	return &InterceptorService{
-		store:              accountStore,
+		store:              store,
 		invoiceToAccount:   make(map[lntypes.Hash]AccountID),
 		pendingPayments:    make(map[lntypes.Hash]*trackedPayment),
 		requestValuesStore: newRequestValuesStore(),
@@ -114,7 +109,7 @@ func (s *InterceptorService) Start(ctx context.Context,
 	// Let's first fill our cache that maps invoices to accounts, which
 	// allows us to credit an account easily once an invoice is settled. We
 	// also track payments that aren't in a final state yet.
-	existingAccounts, err := s.store.Accounts()
+	existingAccounts, err := s.store.Accounts(ctx)
 	if err != nil {
 		return s.disableAndErrorf("error querying existing "+
 			"accounts: %w", err)
@@ -132,7 +127,7 @@ func (s *InterceptorService) Start(ctx context.Context,
 			entry := entry
 			if !successState(entry.Status) {
 				err := s.TrackPayment(
-					acct.ID, hash, entry.FullAmount,
+					ctx, acct.ID, hash, entry.FullAmount,
 				)
 				if err != nil {
 					return s.disableAndErrorf("error "+
@@ -145,7 +140,7 @@ func (s *InterceptorService) Start(ctx context.Context,
 	// First ask our DB about the highest indexes we know. If this is the
 	// first startup then the ErrNoInvoiceIndexKnown error is returned, and
 	// we know we need to do a lookup.
-	s.currentAddIndex, s.currentSettleIndex, err = s.store.LastIndexes()
+	s.currentAddIndex, s.currentSettleIndex, err = s.store.LastIndexes(ctx)
 	switch err {
 	case nil:
 		// All good, we stored indexes in the DB, use those values.
@@ -193,7 +188,8 @@ func (s *InterceptorService) Start(ctx context.Context,
 					return
 				}
 
-				if err := s.invoiceUpdate(invoice); err != nil {
+				err := s.invoiceUpdate(ctx, invoice)
+				if err != nil {
 					log.Errorf("Error processing invoice "+
 						"update: %v", err)
 
@@ -241,7 +237,7 @@ func (s *InterceptorService) Stop() error {
 	close(s.quit)
 	s.wg.Wait()
 
-	return s.store.Close()
+	return nil
 }
 
 // IsRunning checks if the account service is running, and returns a boolean
@@ -289,19 +285,21 @@ func (s *InterceptorService) disableAndErrorfUnsafe(format string,
 
 // NewAccount creates a new OffChainBalanceAccount with the given balance and a
 // randomly chosen ID.
-func (s *InterceptorService) NewAccount(balance lnwire.MilliSatoshi,
+func (s *InterceptorService) NewAccount(ctx context.Context,
+	balance lnwire.MilliSatoshi,
 	expirationDate time.Time, label string) (*OffChainBalanceAccount,
 	error) {
 
 	s.Lock()
 	defer s.Unlock()
 
-	return s.store.NewAccount(balance, expirationDate, label)
+	return s.store.NewAccount(ctx, balance, expirationDate, label)
 }
 
 // UpdateAccount writes an account to the database, overwriting the existing one
 // if it exists.
-func (s *InterceptorService) UpdateAccount(accountID AccountID, accountBalance,
+func (s *InterceptorService) UpdateAccount(ctx context.Context,
+	accountID AccountID, accountBalance,
 	expirationDate int64) (*OffChainBalanceAccount, error) {
 
 	s.Lock()
@@ -315,7 +313,7 @@ func (s *InterceptorService) UpdateAccount(accountID AccountID, accountBalance,
 		return nil, ErrAccountServiceDisabled
 	}
 
-	account, err := s.store.Account(accountID)
+	account, err := s.store.Account(ctx, accountID)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching account: %w", err)
 	}
@@ -339,7 +337,7 @@ func (s *InterceptorService) UpdateAccount(accountID AccountID, accountBalance,
 	}
 
 	// Create the actual account in the macaroon account store.
-	err = s.store.UpdateAccount(account)
+	err = s.store.UpdateAccount(ctx, account)
 	if err != nil {
 		return nil, fmt.Errorf("unable to update account: %w", err)
 	}
@@ -349,25 +347,29 @@ func (s *InterceptorService) UpdateAccount(accountID AccountID, accountBalance,
 
 // Account retrieves an account from the bolt DB and un-marshals it. If the
 // account cannot be found, then ErrAccNotFound is returned.
-func (s *InterceptorService) Account(id AccountID) (*OffChainBalanceAccount,
-	error) {
+func (s *InterceptorService) Account(ctx context.Context,
+	id AccountID) (*OffChainBalanceAccount, error) {
 
 	s.RLock()
 	defer s.RUnlock()
 
-	return s.store.Account(id)
+	return s.store.Account(ctx, id)
 }
 
 // Accounts retrieves all accounts from the bolt DB and un-marshals them.
-func (s *InterceptorService) Accounts() ([]*OffChainBalanceAccount, error) {
+func (s *InterceptorService) Accounts(ctx context.Context) (
+	[]*OffChainBalanceAccount, error) {
+
 	s.RLock()
 	defer s.RUnlock()
 
-	return s.store.Accounts()
+	return s.store.Accounts(ctx)
 }
 
 // RemoveAccount finds an account by its ID and removes it from the DB.
-func (s *InterceptorService) RemoveAccount(id AccountID) error {
+func (s *InterceptorService) RemoveAccount(ctx context.Context,
+	id AccountID) error {
+
 	s.Lock()
 	defer s.Unlock()
 
@@ -378,18 +380,18 @@ func (s *InterceptorService) RemoveAccount(id AccountID) error {
 		}
 
 		// Let's remove the payment (which also cancels the tracking).
-		err := s.removePayment(hash, lnrpc.Payment_FAILED)
+		err := s.removePayment(ctx, hash, lnrpc.Payment_FAILED)
 		if err != nil {
 			return err
 		}
 	}
 
-	return s.store.RemoveAccount(id)
+	return s.store.RemoveAccount(ctx, id)
 }
 
 // CheckBalance ensures an account is valid and has a balance equal to or larger
 // than the amount that is required.
-func (s *InterceptorService) CheckBalance(id AccountID,
+func (s *InterceptorService) CheckBalance(ctx context.Context, id AccountID,
 	requiredBalance lnwire.MilliSatoshi) error {
 
 	s.RLock()
@@ -397,7 +399,7 @@ func (s *InterceptorService) CheckBalance(id AccountID,
 
 	// Check that the account exists, it hasn't expired and has sufficient
 	// balance.
-	account, err := s.store.Account(id)
+	account, err := s.store.Account(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -431,26 +433,27 @@ func calcAvailableAccountBalance(account *OffChainBalanceAccount) int64 {
 // AssociateInvoice associates a generated invoice with the given account,
 // making it possible for the account to be credited in case the invoice is
 // paid.
-func (s *InterceptorService) AssociateInvoice(id AccountID,
+func (s *InterceptorService) AssociateInvoice(ctx context.Context, id AccountID,
 	hash lntypes.Hash) error {
 
 	s.Lock()
 	defer s.Unlock()
 
-	account, err := s.store.Account(id)
+	account, err := s.store.Account(ctx, id)
 	if err != nil {
 		return err
 	}
 
 	account.Invoices[hash] = struct{}{}
 	s.invoiceToAccount[hash] = id
-	return s.store.UpdateAccount(account)
+
+	return s.store.UpdateAccount(ctx, account)
 }
 
 // PaymentErrored removes a pending payment from the account's registered
 // payment list. This should only ever be called if we are sure that the payment
 // request errored out.
-func (s *InterceptorService) PaymentErrored(id AccountID,
+func (s *InterceptorService) PaymentErrored(ctx context.Context, id AccountID,
 	hash lntypes.Hash) error {
 
 	s.Lock()
@@ -464,7 +467,7 @@ func (s *InterceptorService) PaymentErrored(id AccountID,
 			"has already started")
 	}
 
-	account, err := s.store.Account(id)
+	account, err := s.store.Account(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -479,7 +482,7 @@ func (s *InterceptorService) PaymentErrored(id AccountID,
 	// Delete the payment and update the persisted account.
 	delete(account.Payments, hash)
 
-	if err := s.store.UpdateAccount(account); err != nil {
+	if err := s.store.UpdateAccount(ctx, account); err != nil {
 		return fmt.Errorf("error updating account: %w", err)
 	}
 
@@ -489,13 +492,13 @@ func (s *InterceptorService) PaymentErrored(id AccountID,
 // AssociatePayment associates a payment (hash) with the given account,
 // ensuring that the payment will be tracked for a user when LiT is
 // restarted.
-func (s *InterceptorService) AssociatePayment(id AccountID,
+func (s *InterceptorService) AssociatePayment(ctx context.Context, id AccountID,
 	paymentHash lntypes.Hash, fullAmt lnwire.MilliSatoshi) error {
 
 	s.Lock()
 	defer s.Unlock()
 
-	account, err := s.store.Account(id)
+	account, err := s.store.Account(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -528,7 +531,7 @@ func (s *InterceptorService) AssociatePayment(id AccountID,
 		FullAmount: fullAmt,
 	}
 
-	if err := s.store.UpdateAccount(account); err != nil {
+	if err := s.store.UpdateAccount(ctx, account); err != nil {
 		return fmt.Errorf("error updating account: %w", err)
 	}
 
@@ -543,7 +546,9 @@ func (s *InterceptorService) AssociatePayment(id AccountID,
 // the same lock. Else we risk that other threads will try to update invoices
 // while the service should be disabled, which could lead to us missing invoice
 // updates on next startup.
-func (s *InterceptorService) invoiceUpdate(invoice *lndclient.Invoice) error {
+func (s *InterceptorService) invoiceUpdate(ctx context.Context,
+	invoice *lndclient.Invoice) error {
+
 	s.Lock()
 	defer s.Unlock()
 
@@ -572,7 +577,7 @@ func (s *InterceptorService) invoiceUpdate(invoice *lndclient.Invoice) error {
 
 	if needUpdate {
 		err := s.store.StoreLastIndexes(
-			s.currentAddIndex, s.currentSettleIndex,
+			ctx, s.currentAddIndex, s.currentSettleIndex,
 		)
 		if err != nil {
 			return s.disableAndErrorfUnsafe(
@@ -594,7 +599,7 @@ func (s *InterceptorService) invoiceUpdate(invoice *lndclient.Invoice) error {
 		return nil
 	}
 
-	account, err := s.store.Account(acctID)
+	account, err := s.store.Account(ctx, acctID)
 	if err != nil {
 		return s.disableAndErrorfUnsafe(
 			"error fetching account: %w", err,
@@ -605,7 +610,7 @@ func (s *InterceptorService) invoiceUpdate(invoice *lndclient.Invoice) error {
 	// it that was just paid. Credit the amount to the account and update it
 	// in the DB.
 	account.CurrentBalance += int64(invoice.AmountPaid)
-	if err := s.store.UpdateAccount(account); err != nil {
+	if err := s.store.UpdateAccount(ctx, account); err != nil {
 		return s.disableAndErrorfUnsafe(
 			"error updating account: %w", err,
 		)
@@ -620,8 +625,8 @@ func (s *InterceptorService) invoiceUpdate(invoice *lndclient.Invoice) error {
 
 // TrackPayment adds a new payment to be tracked to the service. If the payment
 // is eventually settled, its amount needs to be debited from the given account.
-func (s *InterceptorService) TrackPayment(id AccountID, hash lntypes.Hash,
-	fullAmt lnwire.MilliSatoshi) error {
+func (s *InterceptorService) TrackPayment(ctx context.Context, id AccountID,
+	hash lntypes.Hash, fullAmt lnwire.MilliSatoshi) error {
 
 	s.Lock()
 	defer s.Unlock()
@@ -634,7 +639,7 @@ func (s *InterceptorService) TrackPayment(id AccountID, hash lntypes.Hash,
 
 	// Similarly, if we've already processed the payment in the past, there
 	// is a reference in the account with the given state.
-	account, err := s.store.Account(id)
+	account, err := s.store.Account(ctx, id)
 	if err != nil {
 		return fmt.Errorf("error fetching account: %w", err)
 	}
@@ -658,7 +663,7 @@ func (s *InterceptorService) TrackPayment(id AccountID, hash lntypes.Hash,
 		FullAmount: fullAmt,
 	}
 
-	if err := s.store.UpdateAccount(account); err != nil {
+	if err := s.store.UpdateAccount(ctx, account); err != nil {
 		if !ok {
 			// In the rare case that the payment isn't associated
 			// with an account yet, and we fail to update the
@@ -718,7 +723,7 @@ func (s *InterceptorService) TrackPayment(id AccountID, hash lntypes.Hash,
 			select {
 			case paymentUpdate := <-statusChan:
 				terminalState, err := s.paymentUpdate(
-					hash, paymentUpdate,
+					s.mainCtx, hash, paymentUpdate,
 				)
 				if err != nil {
 					s.mainErrCallback(err)
@@ -746,7 +751,7 @@ func (s *InterceptorService) TrackPayment(id AccountID, hash lntypes.Hash,
 					// seen as in-flight balance when
 					// calculating the account's available
 					// balance.
-					err := s.RemovePayment(hash)
+					err := s.RemovePayment(ctx, hash)
 					if err != nil {
 						// We don't disable the service
 						// here, as the worst that can
@@ -789,8 +794,8 @@ func (s *InterceptorService) TrackPayment(id AccountID, hash lntypes.Hash,
 // NOTE: Any code that errors in this function MUST call disableAndErrorfUnsafe
 // while the store lock is held to ensure that the service is disabled under
 // the same lock.
-func (s *InterceptorService) paymentUpdate(hash lntypes.Hash,
-	status lndclient.PaymentStatus) (bool, error) {
+func (s *InterceptorService) paymentUpdate(ctx context.Context,
+	hash lntypes.Hash, status lndclient.PaymentStatus) (bool, error) {
 
 	// Are we still in-flight? Then we don't have to do anything just yet.
 	// The unknown state should never happen in practice but if it ever did
@@ -824,7 +829,7 @@ func (s *InterceptorService) paymentUpdate(hash lntypes.Hash,
 
 	// A failed payment can just be removed, no further action needed.
 	if status.State == lnrpc.Payment_FAILED {
-		err := s.removePayment(hash, status.State)
+		err := s.removePayment(ctx, hash, status.State)
 		if err != nil {
 			err = s.disableAndErrorfUnsafe("error removing "+
 				"payment: %w", err)
@@ -835,7 +840,7 @@ func (s *InterceptorService) paymentUpdate(hash lntypes.Hash,
 
 	// The payment went through! We now need to debit the full amount from
 	// the account.
-	account, err := s.store.Account(pendingPayment.accountID)
+	account, err := s.store.Account(ctx, pendingPayment.accountID)
 	if err != nil {
 		err = s.disableAndErrorfUnsafe("error fetching account: %w",
 			err)
@@ -851,7 +856,7 @@ func (s *InterceptorService) paymentUpdate(hash lntypes.Hash,
 		Status:     lnrpc.Payment_SUCCEEDED,
 		FullAmount: fullAmount,
 	}
-	if err := s.store.UpdateAccount(account); err != nil {
+	if err := s.store.UpdateAccount(ctx, account); err != nil {
 		err = s.disableAndErrorfUnsafe("error updating account: %w",
 			err)
 
@@ -860,7 +865,7 @@ func (s *InterceptorService) paymentUpdate(hash lntypes.Hash,
 
 	// We've now fully processed the payment and don't need to keep it
 	// mapped or tracked anymore.
-	err = s.removePayment(hash, lnrpc.Payment_SUCCEEDED)
+	err = s.removePayment(ctx, hash, lnrpc.Payment_SUCCEEDED)
 	if err != nil {
 		err = s.disableAndErrorfUnsafe("error removing payment: %w",
 			err)
@@ -872,19 +877,21 @@ func (s *InterceptorService) paymentUpdate(hash lntypes.Hash,
 // RemovePayment removes a failed payment from the service because it no longer
 // needs to be tracked. The payment is certain to never succeed, so we never
 // need to debit the amount from the account.
-func (s *InterceptorService) RemovePayment(hash lntypes.Hash) error {
+func (s *InterceptorService) RemovePayment(ctx context.Context,
+	hash lntypes.Hash) error {
+
 	s.Lock()
 	defer s.Unlock()
 
-	return s.removePayment(hash, lnrpc.Payment_FAILED)
+	return s.removePayment(ctx, hash, lnrpc.Payment_FAILED)
 }
 
 // removePayment stops tracking a payment and updates the status in the account
 // to the given status.
 //
 // NOTE: The store lock MUST be held when calling this method.
-func (s *InterceptorService) removePayment(hash lntypes.Hash,
-	status lnrpc.Payment_PaymentStatus) error {
+func (s *InterceptorService) removePayment(ctx context.Context,
+	hash lntypes.Hash, status lnrpc.Payment_PaymentStatus) error {
 
 	// It could be that we haven't actually started tracking the payment
 	// yet, so if we can't find it, we just do nothing.
@@ -893,7 +900,7 @@ func (s *InterceptorService) removePayment(hash lntypes.Hash,
 		return nil
 	}
 
-	account, err := s.store.Account(pendingPayment.accountID)
+	account, err := s.store.Account(ctx, pendingPayment.accountID)
 	if err != nil {
 		return err
 	}
@@ -909,7 +916,7 @@ func (s *InterceptorService) removePayment(hash lntypes.Hash,
 
 	// If we did, let's set the status correctly in the DB now.
 	account.Payments[hash].Status = status
-	return s.store.UpdateAccount(account)
+	return s.store.UpdateAccount(ctx, account)
 }
 
 // successState returns true if a payment was completed successfully.

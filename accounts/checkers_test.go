@@ -71,7 +71,7 @@ func newMockService() *mockService {
 	}
 }
 
-func (m *mockService) CheckBalance(_ AccountID,
+func (m *mockService) CheckBalance(_ context.Context, _ AccountID,
 	wantBalance lnwire.MilliSatoshi) error {
 
 	if wantBalance > m.acctBalanceMsat {
@@ -81,24 +81,28 @@ func (m *mockService) CheckBalance(_ AccountID,
 	return nil
 }
 
-func (m *mockService) AssociateInvoice(id AccountID, hash lntypes.Hash) error {
+func (m *mockService) AssociateInvoice(_ context.Context, id AccountID,
+	hash lntypes.Hash) error {
+
 	m.trackedInvoices[hash] = id
 
 	return nil
 }
 
-func (m *mockService) AssociatePayment(id AccountID, paymentHash lntypes.Hash,
-	amt lnwire.MilliSatoshi) error {
+func (m *mockService) AssociatePayment(_ context.Context, id AccountID,
+	paymentHash lntypes.Hash, amt lnwire.MilliSatoshi) error {
 
 	return nil
 }
 
-func (m *mockService) PaymentErrored(id AccountID, hash lntypes.Hash) error {
+func (m *mockService) PaymentErrored(_ context.Context, id AccountID,
+	hash lntypes.Hash) error {
+
 	return nil
 }
 
-func (m *mockService) TrackPayment(_ AccountID, hash lntypes.Hash,
-	amt lnwire.MilliSatoshi) error {
+func (m *mockService) TrackPayment(_ context.Context, _ AccountID,
+	hash lntypes.Hash, amt lnwire.MilliSatoshi) error {
 
 	m.trackedPayments[hash] = &PaymentEntry{
 		Status:     lnrpc.Payment_UNKNOWN,
@@ -108,7 +112,9 @@ func (m *mockService) TrackPayment(_ AccountID, hash lntypes.Hash,
 	return nil
 }
 
-func (m *mockService) RemovePayment(hash lntypes.Hash) error {
+func (m *mockService) RemovePayment(_ context.Context,
+	hash lntypes.Hash) error {
+
 	delete(m.trackedPayments, hash)
 
 	return nil
@@ -517,14 +523,15 @@ func testSendPayment(t *testing.T, uri string) {
 	errFunc := func(err error) {
 		lndMock.mainErrChan <- err
 	}
-	service, err := NewService(t.TempDir(), errFunc)
+	store := NewTestDB(t)
+	service, err := NewService(store, errFunc)
 	require.NoError(t, err)
 
 	err = service.Start(ctx, lndMock, routerMock, chainParams)
 	require.NoError(t, err)
 
 	assertBalance := func(id AccountID, expectedBalance int64) {
-		acct, err := service.Account(id)
+		acct, err := service.Account(ctx, id)
 		require.NoError(t, err)
 
 		require.Equal(t, expectedBalance,
@@ -539,7 +546,7 @@ func testSendPayment(t *testing.T, uri string) {
 
 	// Create an account and add it to the context.
 	acct, err := service.NewAccount(
-		5000, time.Now().Add(time.Hour), "test",
+		ctx, 5000, time.Now().Add(time.Hour), "test",
 	)
 	require.NoError(t, err)
 
@@ -713,14 +720,15 @@ func TestSendPaymentV2(t *testing.T) {
 	errFunc := func(err error) {
 		lndMock.mainErrChan <- err
 	}
-	service, err := NewService(t.TempDir(), errFunc)
+	store := NewTestDB(t)
+	service, err := NewService(store, errFunc)
 	require.NoError(t, err)
 
 	err = service.Start(ctx, lndMock, routerMock, chainParams)
 	require.NoError(t, err)
 
 	assertBalance := func(id AccountID, expectedBalance int64) {
-		acct, err := service.Account(id)
+		acct, err := service.Account(ctx, id)
 		require.NoError(t, err)
 
 		require.Equal(t, expectedBalance,
@@ -735,7 +743,7 @@ func TestSendPaymentV2(t *testing.T) {
 
 	// Create an account and add it to the context.
 	acct, err := service.NewAccount(
-		5000, time.Now().Add(time.Hour), "test",
+		ctx, 5000, time.Now().Add(time.Hour), "test",
 	)
 	require.NoError(t, err)
 
@@ -900,14 +908,15 @@ func TestSendToRouteV2(t *testing.T) {
 	errFunc := func(err error) {
 		lndMock.mainErrChan <- err
 	}
-	service, err := NewService(t.TempDir(), errFunc)
+	store := NewTestDB(t)
+	service, err := NewService(store, errFunc)
 	require.NoError(t, err)
 
 	err = service.Start(ctx, lndMock, routerMock, chainParams)
 	require.NoError(t, err)
 
 	assertBalance := func(id AccountID, expectedBalance int64) {
-		acct, err := service.Account(id)
+		acct, err := service.Account(ctx, id)
 		require.NoError(t, err)
 
 		require.Equal(t, expectedBalance,
@@ -922,7 +931,7 @@ func TestSendToRouteV2(t *testing.T) {
 
 	// Create an account and add it to the context.
 	acct, err := service.NewAccount(
-		5000, time.Now().Add(time.Hour), "test",
+		ctx, 5000, time.Now().Add(time.Hour), "test",
 	)
 	require.NoError(t, err)
 

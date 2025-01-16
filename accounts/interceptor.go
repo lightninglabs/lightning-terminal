@@ -84,7 +84,7 @@ func (s *InterceptorService) Intercept(ctx context.Context,
 			"macaroon caveat")
 	}
 
-	acct, err := s.Account(*acctID)
+	acct, err := s.Account(ctx, *acctID)
 	if err != nil {
 		return mid.RPCErrString(
 			req, "error getting account %x: %v", acctID[:], err,
