@@ -426,6 +426,7 @@ class BuildSwapView {
         const inQuote = await this._store.api.loop.getLoopInQuote(
           amount,
           this.confTarget,
+          this.loopInLastHop,
         );
         quote = {
           swapFee: Big(inQuote.swapFeeSat),
