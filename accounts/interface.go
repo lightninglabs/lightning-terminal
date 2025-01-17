@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
 	"github.com/lightningnetwork/lnd/lnwire"
@@ -218,6 +219,21 @@ type Store interface {
 
 	// Accounts retrieves all accounts from the store and un-marshals them.
 	Accounts(ctx context.Context) ([]*OffChainBalanceAccount, error)
+
+	// UpdateAccountBalanceAndExpiry updates the balance and/or expiry of an
+	// account.
+	UpdateAccountBalanceAndExpiry(ctx context.Context, id AccountID,
+		newBalance fn.Option[lnwire.MilliSatoshi],
+		newExpiry fn.Option[time.Time]) error
+
+	// AddAccountInvoice adds an invoice hash to an account.
+	AddAccountInvoice(ctx context.Context, id AccountID,
+		hash lntypes.Hash) error
+
+	// IncreaseAccountBalance increases the balance of the account with the
+	// given ID by the given amount.
+	IncreaseAccountBalance(ctx context.Context, id AccountID,
+		amount lnwire.MilliSatoshi) error
 
 	// RemoveAccount finds an account by its ID and removes it from the¨
 	// store.
