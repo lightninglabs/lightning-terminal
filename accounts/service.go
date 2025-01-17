@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightningnetwork/lnd/channeldb"
@@ -299,7 +300,7 @@ func (s *InterceptorService) NewAccount(ctx context.Context,
 // UpdateAccount writes an account to the database, overwriting the existing one
 // if it exists.
 func (s *InterceptorService) UpdateAccount(ctx context.Context,
-	accountID AccountID, accountBalance,
+	accountID AccountID, accountBalance btcutil.Amount,
 	expirationDate int64) (*OffChainBalanceAccount, error) {
 
 	s.Lock()
