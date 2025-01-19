@@ -9,7 +9,6 @@ import (
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
-	"github.com/lightningnetwork/lnd/lnwire"
 	"github.com/stretchr/testify/require"
 )
 
@@ -122,7 +121,7 @@ func TestAccountUpdateMethods(t *testing.T) {
 		// Ensure that the function errors out if we try update an
 		// account that does not exist.
 		err := store.UpdateAccountBalanceAndExpiry(
-			ctx, AccountID{}, fn.None[lnwire.MilliSatoshi](),
+			ctx, AccountID{}, fn.None[int64](),
 			fn.None[time.Time](),
 		)
 		require.ErrorIs(t, err, ErrAccNotFound)
@@ -130,7 +129,7 @@ func TestAccountUpdateMethods(t *testing.T) {
 		acct, err := store.NewAccount(ctx, 0, time.Time{}, "foo")
 		require.NoError(t, err)
 
-		assertBalanceAndExpiry := func(balance lnwire.MilliSatoshi,
+		assertBalanceAndExpiry := func(balance int64,
 			expiry time.Time) {
 
 			dbAcct, err := store.Account(ctx, acct.ID)
@@ -146,7 +145,7 @@ func TestAccountUpdateMethods(t *testing.T) {
 		assertBalanceAndExpiry(0, time.Time{})
 
 		// Now, update just the balance of the account.
-		newBalance := lnwire.MilliSatoshi(123)
+		newBalance := int64(123)
 		err = store.UpdateAccountBalanceAndExpiry(
 			ctx, acct.ID, fn.Some(newBalance), fn.None[time.Time](),
 		)
@@ -156,8 +155,7 @@ func TestAccountUpdateMethods(t *testing.T) {
 		// Now update just the expiry of the account.
 		newExpiry := clock.Now().Add(time.Hour)
 		err = store.UpdateAccountBalanceAndExpiry(
-			ctx, acct.ID, fn.None[lnwire.MilliSatoshi](),
-			fn.Some(newExpiry),
+			ctx, acct.ID, fn.None[int64](), fn.Some(newExpiry),
 		)
 		require.NoError(t, err)
 		assertBalanceAndExpiry(newBalance, newExpiry)
@@ -174,8 +172,7 @@ func TestAccountUpdateMethods(t *testing.T) {
 		// Finally, test an update that has no net changes to the
 		// balance or expiry.
 		err = store.UpdateAccountBalanceAndExpiry(
-			ctx, acct.ID, fn.None[lnwire.MilliSatoshi](),
-			fn.None[time.Time](),
+			ctx, acct.ID, fn.None[int64](), fn.None[time.Time](),
 		)
 		require.NoError(t, err)
 		assertBalanceAndExpiry(newBalance, newExpiry)

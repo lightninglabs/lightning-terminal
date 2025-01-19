@@ -208,12 +208,12 @@ func (s *BoltStore) UpdateAccount(_ context.Context,
 //
 // NOTE: This is part of the Store interface.
 func (s *BoltStore) UpdateAccountBalanceAndExpiry(_ context.Context,
-	id AccountID, newBalance fn.Option[lnwire.MilliSatoshi],
+	id AccountID, newBalance fn.Option[int64],
 	newExpiry fn.Option[time.Time]) error {
 
 	update := func(account *OffChainBalanceAccount) error {
-		newBalance.WhenSome(func(balance lnwire.MilliSatoshi) {
-			account.CurrentBalance = int64(balance)
+		newBalance.WhenSome(func(balance int64) {
+			account.CurrentBalance = balance
 		})
 		newExpiry.WhenSome(func(expiry time.Time) {
 			account.ExpirationDate = expiry
