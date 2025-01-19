@@ -223,7 +223,7 @@ type Store interface {
 	// UpdateAccountBalanceAndExpiry updates the balance and/or expiry of an
 	// account.
 	UpdateAccountBalanceAndExpiry(ctx context.Context, id AccountID,
-		newBalance fn.Option[lnwire.MilliSatoshi],
+		newBalance fn.Option[int64],
 		newExpiry fn.Option[time.Time]) error
 
 	// AddAccountInvoice adds an invoice hash to an account.
