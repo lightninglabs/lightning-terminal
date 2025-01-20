@@ -442,7 +442,7 @@ func TestHandleMemoResponse(t *testing.T) {
 	}
 }
 
-// TestRemoveMemo tests that request identifiers are correcly removed from the
+// TestRemoveMemo tests that request identifiers are correctly removed from the
 // memo string.
 func TestRemoveMemo(t *testing.T) {
 	tests := []struct {

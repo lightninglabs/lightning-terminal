@@ -1125,7 +1125,7 @@ func testChannelOpening(net *NetworkHarness, ht *harnessTest, t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	// lastMemo is used to check that the memo field is unique accross
+	// lastMemo is used to check that the memo field is unique across
 	// different channel opens.
 	var lastMemo string
 	assertChannelExistsAndClose := func(txIdHidden []byte,
@@ -1135,7 +1135,7 @@ func testChannelOpening(net *NetworkHarness, ht *harnessTest, t *testing.T) {
 		net.Miner.MineBlocks(6)
 
 		// The channel open response's txid is to be interpreted as a
-		// byte reveresed hash, which is used to check that the channel
+		// byte reversed hash, which is used to check that the channel
 		// is present.
 		txHashHidden, err := chainhash.NewHash(txIdHidden)
 		require.NoError(t, err)
