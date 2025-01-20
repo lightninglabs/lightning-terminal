@@ -390,7 +390,7 @@ func (o *OnChainBudgetEnforcer) checkFeeRate(satPerVByte uint64) error {
 }
 
 // formatReqId creates a unique identifier for the request that can be used to
-// associate the action accross request-response handling.
+// associate the action across request-response handling.
 func formatReqId(lndConnID string, reqID int64) string {
 	return fmt.Sprintf("%s-%s-%d", memoPrefix, lndConnID, reqID)
 }
