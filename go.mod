@@ -14,7 +14,7 @@ require (
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/lightninglabs/faraday v0.2.13-alpha
 	github.com/lightninglabs/lightning-node-connect v0.3.2-alpha.0.20240822142323-ee4e7ff52f83
-	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.1
+	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.2
 	github.com/lightninglabs/lightning-terminal/litrpc v1.0.0
 	github.com/lightninglabs/lndclient v0.18.4-9
 	github.com/lightninglabs/loop v0.29.0-beta
