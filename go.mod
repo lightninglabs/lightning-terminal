@@ -37,7 +37,7 @@ require (
 	go.etcd.io/bbolt v1.3.11
 	golang.org/x/crypto v0.31.0
 	golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8
-	golang.org/x/net v0.27.0
+	golang.org/x/net v0.33.0
 	golang.org/x/sync v0.10.0
 	google.golang.org/grpc v1.65.0
 	google.golang.org/protobuf v1.34.2
@@ -227,13 +227,14 @@ require (
 	sigs.k8s.io/yaml v1.2.0 // indirect
 )
 
-replace github.com/lightninglabs/lightning-terminal/autopilotserverrpc => ./autopilotserverrpc
+replace (
+	github.com/lightninglabs/lightning-terminal/autopilotserverrpc => ./autopilotserverrpc
+	github.com/lightninglabs/lightning-terminal/litrpc => ./litrpc
+)
 
 // We want to format raw bytes as hex instead of base64. The forked version
 // allows us to specify that as an option. This is required for the
 // taproot-assets dependency to function properly.
 replace google.golang.org/protobuf => github.com/lightninglabs/protobuf-go-hex-display v1.34.2-hex-display
-
-replace github.com/lightninglabs/lightning-terminal/litrpc => ./litrpc
 
 go 1.22.6
