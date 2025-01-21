@@ -860,6 +860,18 @@ func (s *InterceptorService) removePayment(ctx context.Context,
 	return nil
 }
 
+// hasPayment returns true if the payment is currently being tracked by the
+// service.
+//
+// NOTE: this is currently used only for tests.
+func (s *InterceptorService) hasPayment(hash lntypes.Hash) bool {
+	s.RLock()
+	defer s.RUnlock()
+
+	_, ok := s.pendingPayments[hash]
+	return ok
+}
+
 // successState returns true if a payment was completed successfully.
 func successState(status lnrpc.Payment_PaymentStatus) bool {
 	return status == lnrpc.Payment_SUCCEEDED
