@@ -8,6 +8,7 @@ import (
 
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightningnetwork/lnd/channeldb"
+	"github.com/lightningnetwork/lnd/clock"
 	invpkg "github.com/lightningnetwork/lnd/invoices"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
@@ -832,7 +833,7 @@ func TestAccountService(t *testing.T) {
 			errFunc := func(err error) {
 				lndMock.mainErrChan <- err
 			}
-			store := NewTestDB(t)
+			store := NewTestDB(t, clock.NewTestClock(time.Now()))
 			service, err := NewService(store, errFunc)
 			require.NoError(t, err)
 

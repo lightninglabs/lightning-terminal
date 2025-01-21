@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
@@ -523,7 +524,8 @@ func testSendPayment(t *testing.T, uri string) {
 	errFunc := func(err error) {
 		lndMock.mainErrChan <- err
 	}
-	store := NewTestDB(t)
+	clock := clock.NewTestClock(time.Now())
+	store := NewTestDB(t, clock)
 	service, err := NewService(store, errFunc)
 	require.NoError(t, err)
 
@@ -546,7 +548,7 @@ func testSendPayment(t *testing.T, uri string) {
 
 	// Create an account and add it to the context.
 	acct, err := service.NewAccount(
-		ctx, 5000, time.Now().Add(time.Hour), "test",
+		ctx, 5000, clock.Now().Add(time.Hour), "test",
 	)
 	require.NoError(t, err)
 
@@ -720,7 +722,8 @@ func TestSendPaymentV2(t *testing.T) {
 	errFunc := func(err error) {
 		lndMock.mainErrChan <- err
 	}
-	store := NewTestDB(t)
+	clock := clock.NewTestClock(time.Now())
+	store := NewTestDB(t, clock)
 	service, err := NewService(store, errFunc)
 	require.NoError(t, err)
 
@@ -743,7 +746,7 @@ func TestSendPaymentV2(t *testing.T) {
 
 	// Create an account and add it to the context.
 	acct, err := service.NewAccount(
-		ctx, 5000, time.Now().Add(time.Hour), "test",
+		ctx, 5000, clock.Now().Add(time.Hour), "test",
 	)
 	require.NoError(t, err)
 
@@ -908,7 +911,8 @@ func TestSendToRouteV2(t *testing.T) {
 	errFunc := func(err error) {
 		lndMock.mainErrChan <- err
 	}
-	store := NewTestDB(t)
+	clock := clock.NewTestClock(time.Now())
+	store := NewTestDB(t, clock)
 	service, err := NewService(store, errFunc)
 	require.NoError(t, err)
 
@@ -931,7 +935,7 @@ func TestSendToRouteV2(t *testing.T) {
 
 	// Create an account and add it to the context.
 	acct, err := service.NewAccount(
-		ctx, 5000, time.Now().Add(time.Hour), "test",
+		ctx, 5000, clock.Now().Add(time.Hour), "test",
 	)
 	require.NoError(t, err)
 

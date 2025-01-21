@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
@@ -17,7 +18,8 @@ func TestAccountStore(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	store := NewTestDB(t)
+	clock := clock.NewTestClock(time.Now())
+	store := NewTestDB(t, clock)
 
 	// Create an account that does not expire.
 	acct1, err := store.NewAccount(ctx, 0, time.Time{}, "foo")
@@ -39,7 +41,7 @@ func TestAccountStore(t *testing.T) {
 
 	// Update all values of the account that we can modify.
 	acct1.CurrentBalance = -500
-	acct1.ExpirationDate = time.Now()
+	acct1.ExpirationDate = clock.Now()
 	acct1.Payments[lntypes.Hash{12, 34, 56, 78}] = &PaymentEntry{
 		Status:     lnrpc.Payment_FAILED,
 		FullAmount: 123456,
@@ -114,7 +116,8 @@ func TestAccountUpdateMethods(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("UpdateAccountBalanceAndExpiry", func(t *testing.T) {
-		store := NewTestDB(t)
+		clock := clock.NewTestClock(time.Now())
+		store := NewTestDB(t, clock)
 
 		// Ensure that the function errors out if we try update an
 		// account that does not exist.
@@ -151,7 +154,7 @@ func TestAccountUpdateMethods(t *testing.T) {
 		assertBalanceAndExpiry(newBalance, time.Time{})
 
 		// Now update just the expiry of the account.
-		newExpiry := time.Now().Add(time.Hour)
+		newExpiry := clock.Now().Add(time.Hour)
 		err = store.UpdateAccountBalanceAndExpiry(
 			ctx, acct.ID, fn.None[lnwire.MilliSatoshi](),
 			fn.Some(newExpiry),
@@ -161,7 +164,7 @@ func TestAccountUpdateMethods(t *testing.T) {
 
 		// Update both the balance and expiry of the account.
 		newBalance = 456
-		newExpiry = time.Now().Add(2 * time.Hour)
+		newExpiry = clock.Now().Add(2 * time.Hour)
 		err = store.UpdateAccountBalanceAndExpiry(
 			ctx, acct.ID, fn.Some(newBalance), fn.Some(newExpiry),
 		)
@@ -179,7 +182,7 @@ func TestAccountUpdateMethods(t *testing.T) {
 	})
 
 	t.Run("AddAccountInvoice", func(t *testing.T) {
-		store := NewTestDB(t)
+		store := NewTestDB(t, clock.NewTestClock(time.Now()))
 
 		acct, err := store.NewAccount(ctx, 0, time.Time{}, "foo")
 		require.NoError(t, err)
@@ -231,7 +234,7 @@ func TestAccountUpdateMethods(t *testing.T) {
 	})
 
 	t.Run("IncreaseAccountBalance", func(t *testing.T) {
-		store := NewTestDB(t)
+		store := NewTestDB(t, clock.NewTestClock(time.Now()))
 
 		// Increasing the balance of an account that doesn't exist
 		// should error out.
@@ -259,7 +262,7 @@ func TestAccountUpdateMethods(t *testing.T) {
 	})
 
 	t.Run("Upsert and Delete AccountPayment", func(t *testing.T) {
-		store := NewTestDB(t)
+		store := NewTestDB(t, clock.NewTestClock(time.Now()))
 
 		acct, err := store.NewAccount(ctx, 1000, time.Time{}, "foo")
 		require.NoError(t, err)
@@ -507,7 +510,7 @@ func TestLastInvoiceIndexes(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	store := NewTestDB(t)
+	store := NewTestDB(t, clock.NewTestClock(time.Now()))
 
 	_, _, err := store.LastIndexes(ctx)
 	require.ErrorIs(t, err, ErrNoInvoiceIndexKnown)

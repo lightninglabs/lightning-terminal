@@ -38,6 +38,7 @@ import (
 	"github.com/lightningnetwork/lnd"
 	"github.com/lightningnetwork/lnd/build"
 	"github.com/lightningnetwork/lnd/chainreg"
+	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/funding"
 	"github.com/lightningnetwork/lnd/htlcswitch"
@@ -415,6 +416,7 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 
 	g.accountsStore, err = accounts.NewBoltStore(
 		filepath.Dir(g.cfg.MacaroonPath), accounts.DBFilename,
+		clock.NewDefaultClock(),
 	)
 	if err != nil {
 		return fmt.Errorf("error creating accounts store: %w", err)
