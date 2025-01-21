@@ -328,10 +328,10 @@ func (s *InterceptorService) UpdateAccount(ctx context.Context,
 
 	// If the new account balance was set, parse it as millisatoshis. A
 	// value of -1 signals "don't update the balance".
-	var balance fn.Option[lnwire.MilliSatoshi]
+	var balance fn.Option[int64]
 	if accountBalance >= 0 {
 		// Convert from satoshis to millisatoshis for storage.
-		balance = fn.Some(lnwire.MilliSatoshi(accountBalance) * 1000)
+		balance = fn.Some(int64(accountBalance) * 1000)
 	}
 
 	// Create the actual account in the macaroon account store.
