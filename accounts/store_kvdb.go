@@ -14,6 +14,7 @@ import (
 	"github.com/btcsuite/btcwallet/walletdb"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/kvdb"
+	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
 	"github.com/lightningnetwork/lnd/lnwire"
 	"go.etcd.io/bbolt"
@@ -248,6 +249,96 @@ func (s *BoltStore) IncreaseAccountBalance(_ context.Context, id AccountID,
 		}
 
 		account.CurrentBalance += int64(amount)
+
+		return nil
+	}
+
+	return s.updateAccount(id, update)
+}
+
+// UpsertAccountPayment updates or inserts a payment entry for the given
+// account. Various functional options can be passed to modify the behavior of
+// the method. The returned boolean is true if the payment was already known
+// before the update. This is to be treated as a best-effort indication if an
+// error is also returned since the method may error before the boolean can be
+// set correctly.
+//
+// NOTE: This is part of the Store interface.
+func (s *BoltStore) UpsertAccountPayment(_ context.Context, id AccountID,
+	paymentHash lntypes.Hash, fullAmount lnwire.MilliSatoshi,
+	status lnrpc.Payment_PaymentStatus,
+	options ...UpsertPaymentOption) (bool, error) {
+
+	opts := newUpsertPaymentOption()
+	for _, o := range options {
+		o(opts)
+	}
+
+	var known bool
+	update := func(account *OffChainBalanceAccount) error {
+		var entry *PaymentEntry
+		entry, known = account.Payments[paymentHash]
+		if known {
+			if opts.errIfAlreadySucceeded &&
+				successState(entry.Status) {
+
+				return ErrAlreadySucceeded
+			}
+
+			// If the errIfAlreadyPending option is set, we return
+			// an error if the payment is already in-flight or
+			// succeeded.
+			if opts.errIfAlreadyPending &&
+				entry.Status != lnrpc.Payment_FAILED {
+
+				return fmt.Errorf("payment with hash %s is "+
+					"already in flight or succeeded "+
+					"(status %v)", paymentHash,
+					account.Payments[paymentHash].Status)
+			}
+
+			if opts.usePendingAmount {
+				fullAmount = entry.FullAmount
+			}
+		} else if opts.errIfUnknown {
+			return ErrPaymentNotAssociated
+		}
+
+		account.Payments[paymentHash] = &PaymentEntry{
+			Status:     status,
+			FullAmount: fullAmount,
+		}
+
+		if opts.debitAccount {
+			account.CurrentBalance -= int64(fullAmount)
+		}
+
+		return nil
+	}
+
+	return known, s.updateAccount(id, update)
+}
+
+// DeleteAccountPayment removes a payment entry from the account with the given
+// ID. It will return the ErrPaymentNotAssociated error if the payment is not
+// associated with the account.
+//
+// NOTE: This is part of the Store interface.
+func (s *BoltStore) DeleteAccountPayment(_ context.Context, id AccountID,
+	hash lntypes.Hash) error {
+
+	update := func(account *OffChainBalanceAccount) error {
+		// Check that this payment is actually associated with this
+		// account.
+		_, ok := account.Payments[hash]
+		if !ok {
+			return fmt.Errorf("payment with hash %s is not "+
+				"associated with this account: %w", hash,
+				ErrPaymentNotAssociated)
+		}
+
+		// Delete the payment and update the persisted account.
+		delete(account.Payments, hash)
 
 		return nil
 	}

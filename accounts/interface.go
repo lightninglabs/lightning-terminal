@@ -235,6 +235,23 @@ type Store interface {
 	IncreaseAccountBalance(ctx context.Context, id AccountID,
 		amount lnwire.MilliSatoshi) error
 
+	// UpsertAccountPayment updates or inserts a payment entry for the given
+	// account. Various functional options can be passed to modify the
+	// behavior of the method. The returned boolean is true if the payment
+	// was already known before the update. This is to be treated as a
+	// best-effort indication if an error is also returned since the method
+	// may error before the boolean can be set correctly.
+	UpsertAccountPayment(_ context.Context, id AccountID,
+		paymentHash lntypes.Hash, fullAmount lnwire.MilliSatoshi,
+		status lnrpc.Payment_PaymentStatus,
+		options ...UpsertPaymentOption) (bool, error)
+
+	// DeleteAccountPayment removes a payment entry from the account with
+	// the given ID. It will return the ErrPaymentNotAssociated error if the
+	// payment is not associated with the account.
+	DeleteAccountPayment(_ context.Context, id AccountID,
+		hash lntypes.Hash) error
+
 	// RemoveAccount finds an account by its ID and removes it from the¨
 	// store.
 	RemoveAccount(ctx context.Context, id AccountID) error
@@ -315,4 +332,76 @@ type RequestValuesStore interface {
 
 	// DeleteValues deletes any values stored for the given request ID.
 	DeleteValues(reqID uint64)
+}
+
+// UpsertPaymentOption is a functional option that can be passed to the
+// UpsertAccountPayment method to modify its behavior.
+type UpsertPaymentOption func(*upsertAcctPaymentOption)
+
+// upsertAcctPaymentOption is a struct that holds optional parameters for the
+// UpsertAccountPayment method.
+type upsertAcctPaymentOption struct {
+	debitAccount          bool
+	errIfAlreadyPending   bool
+	usePendingAmount      bool
+	errIfAlreadySucceeded bool
+	errIfUnknown          bool
+}
+
+// newUpsertPaymentOption creates a new upsertAcctPaymentOption with default
+// values.
+func newUpsertPaymentOption() *upsertAcctPaymentOption {
+	return &upsertAcctPaymentOption{
+		debitAccount:          false,
+		errIfAlreadyPending:   false,
+		usePendingAmount:      false,
+		errIfAlreadySucceeded: false,
+		errIfUnknown:          false,
+	}
+}
+
+// WithDebitAccount is a functional option that can be passed to the
+// UpsertAccountPayment method to indicate that the account balance should be
+// debited by the full amount of the payment.
+func WithDebitAccount() UpsertPaymentOption {
+	return func(o *upsertAcctPaymentOption) {
+		o.debitAccount = true
+	}
+}
+
+// WithErrIfAlreadyPending is a functional option that can be passed to the
+// UpsertAccountPayment method to indicate that an error should be returned if
+// the payment is already pending or succeeded.
+func WithErrIfAlreadyPending() UpsertPaymentOption {
+	return func(o *upsertAcctPaymentOption) {
+		o.errIfAlreadyPending = true
+	}
+}
+
+// WithErrIfAlreadySucceeded is a functional option that can be passed to the
+// UpsertAccountPayment method to indicate that the ErrAlreadySucceeded error
+// should be returned if the payment is already in a succeeded state.
+func WithErrIfAlreadySucceeded() UpsertPaymentOption {
+	return func(o *upsertAcctPaymentOption) {
+		o.errIfAlreadySucceeded = true
+	}
+}
+
+// WithPendingAmount is a functional option that can be passed to the
+// UpsertAccountPayment method to indicate that if the payment already exists,
+// then the known payment amount should be used instead of the new value passed
+// to the method.
+func WithPendingAmount() UpsertPaymentOption {
+	return func(o *upsertAcctPaymentOption) {
+		o.usePendingAmount = true
+	}
+}
+
+// WithErrIfUnknown is a functional option that can be passed to the
+// UpsertAccountPayment method to indicate that the ErrPaymentNotAssociated
+// error should be returned if the payment is not associated with the account.
+func WithErrIfUnknown() UpsertPaymentOption {
+	return func(o *upsertAcctPaymentOption) {
+		o.errIfUnknown = true
+	}
 }
