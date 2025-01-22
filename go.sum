@@ -661,8 +661,8 @@ github.com/btcsuite/btcd/btcutil v1.0.0/go.mod h1:Uoxwv0pqYWhD//tfTiipkxNfdhG9Ur
 github.com/btcsuite/btcd/btcutil v1.1.0/go.mod h1:5OapHB7A2hBBWLm48mmw4MOHNJCcUBTwmWH/0Jn8VHE=
 github.com/btcsuite/btcd/btcutil v1.1.5 h1:+wER79R5670vs/ZusMTF1yTcRYE5GUsFbdjdisflzM8=
 github.com/btcsuite/btcd/btcutil v1.1.5/go.mod h1:PSZZ4UitpLBWzxGd5VGOrLnmOjtPP/a6HaFo12zMs00=
-github.com/btcsuite/btcd/btcutil/psbt v1.1.8 h1:4voqtT8UppT7nmKQkXV+T9K8UyQjKOn2z/ycpmJK8wg=
-github.com/btcsuite/btcd/btcutil/psbt v1.1.8/go.mod h1:kA6FLH/JfUx++j9pYU0pyu+Z8XGBQuuTmuKYUf6q7/U=
+github.com/btcsuite/btcd/btcutil/psbt v1.1.10 h1:TC1zhxhFfhnGqoPjsrlEpoqzh+9TPOHrCgnPR47Mj9I=
+github.com/btcsuite/btcd/btcutil/psbt v1.1.10/go.mod h1:ehBEvU91lxSlXtA+zZz3iFYx7Yq9eqnKx4/kSrnsvMY=
 github.com/btcsuite/btcd/chaincfg/chainhash v1.0.0/go.mod h1:7SFka0XMvUgj3hfZtydOrQY2mwhPclbT2snogU7SQQc=
 github.com/btcsuite/btcd/chaincfg/chainhash v1.0.1/go.mod h1:7SFka0XMvUgj3hfZtydOrQY2mwhPclbT2snogU7SQQc=
 github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0 h1:59Kx4K6lzOW5w6nFlA0v5+lk/6sjybR934QNHSJZPTQ=
@@ -1177,8 +1177,8 @@ github.com/lightninglabs/pool/poolrpc v1.0.0 h1:vvosrgNx9WXF4mcHGqLjZOW8wNM0q+BL
 github.com/lightninglabs/pool/poolrpc v1.0.0/go.mod h1:ZqpEpBFRMMBAerMmilEjh27tqauSXDwLaLR0O3jvmMA=
 github.com/lightninglabs/protobuf-go-hex-display v1.34.2-hex-display h1:w7FM5LH9Z6CpKxl13mS48idsu6F+cEZf0lkyiV+Dq9g=
 github.com/lightninglabs/protobuf-go-hex-display v1.34.2-hex-display/go.mod h1:qYOHts0dSfpeUzUFpOMr/WGzszTmLH+DiWniOlNbLDw=
-github.com/lightninglabs/taproot-assets v0.5.0 h1:aXX08DsV9ObUCm5jAbUsd0B1llcAqQHVAfrxtRu+q7Q=
-github.com/lightninglabs/taproot-assets v0.5.0/go.mod h1:7XEbJ8DZ79hkYUNuZceuynT6vGqDNdAn7l20knK9DfI=
+github.com/lightninglabs/taproot-assets v0.5.1-rc1 h1:2DjdSLgx3rSLp1ripu+uBLA4TaCkptMloPtR5p3pagY=
+github.com/lightninglabs/taproot-assets v0.5.1-rc1/go.mod h1:W/R7DYNT8su4SkmHfea1sASR6o4t+Ztfu7wF/Gzdtnw=
 github.com/lightningnetwork/lightning-onion v1.2.1-0.20240712235311-98bd56499dfb h1:yfM05S8DXKhuCBp5qSMZdtSwvJ+GFzl94KbXMNB1JDY=
 github.com/lightningnetwork/lightning-onion v1.2.1-0.20240712235311-98bd56499dfb/go.mod h1:c0kvRShutpj3l6B9WtTsNTBUtjSmjZXbJd9ZBRQOSKI=
 github.com/lightningnetwork/lnd v0.18.4-beta h1:4pGmIjIMisrs4TMDYp4fk8NeI1YFpcuqwaSiFwLcd1g=
