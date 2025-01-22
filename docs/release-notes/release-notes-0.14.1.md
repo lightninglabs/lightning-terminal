@@ -36,6 +36,16 @@
 
 ### Taproot Assets
 
+* The integrated `tapd` instance was
+  [updated](https://github.com/lightninglabs/lightning-terminal/pull/950) to
+  [`v0.5.1-alpha.rc1`](https://github.com/lightninglabs/taproot-assets/releases/tag/v0.5.1-rc1).
+
 # Contributors (Alphabetical Order)
 
+* Andras Banki-Horvath
+* Elias Rad
 * Elle Mouton
+* jiangmencity
+* Oliver Gugger
+* Tristav
+* zhoufanjin
