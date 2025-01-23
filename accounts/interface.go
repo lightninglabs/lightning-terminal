@@ -207,11 +207,6 @@ type Store interface {
 		expirationDate time.Time, label string) (
 		*OffChainBalanceAccount, error)
 
-	// UpdateAccount writes an account to the database, overwriting the
-	// existing one if it exists.
-	UpdateAccount(ctx context.Context,
-		account *OffChainBalanceAccount) error
-
 	// Account retrieves an account from the Store and un-marshals it. If
 	// the account cannot be found, then ErrAccNotFound is returned.
 	Account(ctx context.Context, id AccountID) (*OffChainBalanceAccount,
@@ -223,7 +218,7 @@ type Store interface {
 	// UpdateAccountBalanceAndExpiry updates the balance and/or expiry of an
 	// account.
 	UpdateAccountBalanceAndExpiry(ctx context.Context, id AccountID,
-		newBalance fn.Option[lnwire.MilliSatoshi],
+		newBalance fn.Option[int64],
 		newExpiry fn.Option[time.Time]) error
 
 	// AddAccountInvoice adds an invoice hash to an account.
