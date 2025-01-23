@@ -232,8 +232,8 @@ func (s *BoltStore) IncreaseAccountBalance(_ context.Context, id AccountID,
 
 	update := func(account *OffChainBalanceAccount) error {
 		if amount > math.MaxInt64 {
-			return fmt.Errorf("amount %d exceeds the maximum of %d",
-				amount, math.MaxInt64)
+			return fmt.Errorf("amount %v exceeds the maximum of %v",
+				amount, int64(math.MaxInt64))
 		}
 
 		account.CurrentBalance += int64(amount)

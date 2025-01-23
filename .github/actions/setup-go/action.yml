@@ -4,6 +4,15 @@ inputs:
   go-version:
     description: "The version of Golang to set up"
     required: true
+  key-prefix:
+    description: "A prefix to use for the cache key, to separate cache entries from other workflows"
+    required: false
+  use-build-cache:
+    description: "Whether to use the build cache"
+    required: false
+    # Boolean values aren't supported in the workflow syntax, so we use a
+    # string. To not confuse the value with true/false, we use 'yes' and 'no'.
+    default: 'yes'
 
 runs:
   using: "composite"
@@ -16,19 +25,42 @@ runs:
         git config --global core.autocrlf false
 
     - name: setup go ${{ inputs.go-version }}
-      uses: actions/setup-go@v3
+      uses: actions/setup-go@v5
       with:
         go-version: '${{ inputs.go-version }}'
 
-    - name: go cache
-      uses: actions/cache@v3
+    - name: go module and build cache
+      if: ${{ inputs.use-build-cache == 'yes' }}
+      uses: actions/cache@v4
       with:
+        # In order:
+        # * Module download cache
+        # * Build cache (Linux)
+        # * Build cache (Mac)
+        # * Build cache (Windows)
         path: |
-          /home/runner/go/pkg/mod
-          /home/runner/.cache/go-build
-        key: litd-${{ runner.os }}-go-${{ inputs.go-version }}-${{ github.job }}-${{ hashFiles('**/go.sum') }}
+          ~/go/pkg/mod
+          ~/.cache/go-build
+          ~/Library/Caches/go-build
+          ~\AppData\Local\go-build
+        key: ${{ runner.os }}-go-${{ inputs.go-version }}-${{ inputs.key-prefix }}-${{ github.job }}-${{ hashFiles('**/go.sum') }}
         restore-keys: |
-          litd-${{ runner.os }}-go-${{ inputs.go-version }}-${{ github.job }}-${{ hashFiles('**/go.sum') }}
-          litd-${{ runner.os }}-go-${{ inputs.go-version }}-${{ github.job }}-
-          litd-${{ runner.os }}-go-${{ inputs.go-version }}-
-          litd-${{ runner.os }}-go-
+          ${{ runner.os }}-go-${{ inputs.go-version }}-${{ inputs.key-prefix }}-${{ github.job }}-
+          ${{ runner.os }}-go-${{ inputs.go-version }}-${{ inputs.key-prefix }}-
+
+    - name: go module cache
+      if: ${{ inputs.use-build-cache == 'no' }}
+      uses: actions/cache@v4
+      with:
+        # Just the module download cache.
+        path: |
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ inputs.go-version }}-${{ inputs.key-prefix }}-no-build-cache-${{ github.job }}-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-${{ inputs.go-version }}-${{ inputs.key-prefix }}-no-build-cache-${{ github.job }}-
+          ${{ runner.os }}-go-${{ inputs.go-version }}-${{ inputs.key-prefix }}-no-build-cache-
+
+    - name: set GOPATH
+      shell: bash
+      run: |
+        echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV

@@ -8,6 +8,15 @@ on:
     branches:
       - "*"
 
+concurrency:
+  # Cancel any previous workflows if they are from a PR or push.
+  group: ${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
 env:
   # If you change this value, please change it in the following files as well:
   # /Dockerfile
@@ -29,7 +38,7 @@ jobs:
 
     steps:
       - name: git checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -68,7 +77,7 @@ jobs:
 
     steps:
       - name: git checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -89,6 +98,40 @@ jobs:
         run: make go-install-cli
 
   ########################
+  # cross compilation
+  ########################
+  cross-compile:
+    name: cross compilation
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        # Please keep this list in sync with make/release_flags.mk!
+        include:
+          - name: i386
+            sys: linux-386
+          - name: amd64
+            sys: darwin-amd64 linux-amd64 windows-amd64
+          - name: arm
+            sys: darwin-arm64 linux-armv6 linux-armv7 linux-arm64
+    steps:
+      - name: cleanup space
+        run: rm -rf /opt/hostedtoolcache
+
+      - name: git checkout
+        uses: actions/checkout@v4
+
+      - name: setup go ${{ env.GO_VERSION }}
+        uses: ./.github/actions/setup-go
+        with:
+          go-version: '${{ env.GO_VERSION }}'
+          key-prefix: cross-compile
+          use-build-cache: 'no'
+
+      - name: build release for all architectures (skip app build)
+        run: make go-release sys="${{ matrix.sys }}"
+
+  ########################
   # proto compile check
   ########################
   proto-compile-check:
@@ -96,7 +139,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: git checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -132,7 +175,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: git checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -160,7 +203,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: git checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -173,7 +216,7 @@ jobs:
         run: mkdir -p app/build; touch app/build/index.html
 
       - name: run check
-        run: make lint mod-check
+        run: make mod-check && make lint
 
   ########################
   # unit tests
@@ -190,7 +233,7 @@ jobs:
           - unit
     steps:
       - name: git checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -210,7 +253,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: git checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -253,7 +296,7 @@ jobs:
     if: '!contains(github.event.pull_request.labels.*.name, ''no-changelog'')'
     steps:
       - name: git checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: release notes check
         run: scripts/check-release-notes.sh
