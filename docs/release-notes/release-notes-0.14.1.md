@@ -34,6 +34,10 @@
 
 ### Faraday
 
+* The integrated `faraday` instance was
+  [updated](https://github.com/lightninglabs/lightning-terminal/pull/952) to
+  [`v0.2.14-alpha](https://github.com/lightninglabs/faraday/releases/tag/v0.2.14-alpha).
+
 ### Taproot Assets
 
 * The integrated `tapd` instance was
