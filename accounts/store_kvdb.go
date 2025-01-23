@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcwallet/walletdb"
+	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/kvdb"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -59,12 +60,13 @@ var (
 
 // BoltStore wraps the bolt DB that stores all accounts and their balances.
 type BoltStore struct {
-	db kvdb.Backend
+	db    kvdb.Backend
+	clock clock.Clock
 }
 
 // NewBoltStore creates a BoltStore instance and the corresponding bucket in the
 // bolt DB if it does not exist yet.
-func NewBoltStore(dir, fileName string) (*BoltStore, error) {
+func NewBoltStore(dir, fileName string, clock clock.Clock) (*BoltStore, error) {
 	// Ensure that the path to the directory exists.
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		if err := os.MkdirAll(dir, dbPathPermission); err != nil {
@@ -98,7 +100,10 @@ func NewBoltStore(dir, fileName string) (*BoltStore, error) {
 	}
 
 	// Return the DB wrapped in a BoltStore object.
-	return &BoltStore{db: db}, nil
+	return &BoltStore{
+		db:    db,
+		clock: clock,
+	}, nil
 }
 
 // Close closes the underlying bolt DB.
@@ -170,7 +175,7 @@ func (s *BoltStore) NewAccount(ctx context.Context, balance lnwire.MilliSatoshi,
 		}
 
 		account.ID = id
-		return storeAccount(bucket, account)
+		return s.storeAccount(bucket, account)
 	}, func() {
 		account.ID = zeroID
 	})
@@ -194,7 +199,7 @@ func (s *BoltStore) UpdateAccount(_ context.Context,
 			return ErrAccountBucketNotFound
 		}
 
-		return storeAccount(bucket, account)
+		return s.storeAccount(bucket, account)
 	}, func() {})
 }
 
@@ -365,7 +370,7 @@ func (s *BoltStore) updateAccount(id AccountID,
 			return fmt.Errorf("error updating account, %w", err)
 		}
 
-		err = storeAccount(bucket, account)
+		err = s.storeAccount(bucket, account)
 		if err != nil {
 			return fmt.Errorf("error storing account, %w", err)
 		}
@@ -376,10 +381,10 @@ func (s *BoltStore) updateAccount(id AccountID,
 
 // storeAccount serializes and writes the given account to the given account
 // bucket.
-func storeAccount(accountBucket kvdb.RwBucket,
+func (s *BoltStore) storeAccount(accountBucket kvdb.RwBucket,
 	account *OffChainBalanceAccount) error {
 
-	account.LastUpdate = time.Now()
+	account.LastUpdate = s.clock.Now()
 
 	accountBinary, err := serializeAccount(account)
 	if err != nil {

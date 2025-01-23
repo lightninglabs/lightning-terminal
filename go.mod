@@ -26,6 +26,7 @@ require (
 	github.com/lightninglabs/taproot-assets v0.5.1-rc1
 	github.com/lightningnetwork/lnd v0.18.4-beta
 	github.com/lightningnetwork/lnd/cert v1.2.2
+	github.com/lightningnetwork/lnd/clock v1.1.1
 	github.com/lightningnetwork/lnd/fn v1.2.3
 	github.com/lightningnetwork/lnd/kvdb v1.4.10
 	github.com/lightningnetwork/lnd/tlv v1.2.6
@@ -137,7 +138,6 @@ require (
 	github.com/lightninglabs/neutrino v0.16.1-0.20240425105051-602843d34ffd // indirect
 	github.com/lightninglabs/neutrino/cache v1.1.2 // indirect
 	github.com/lightningnetwork/lightning-onion v1.2.1-0.20240712235311-98bd56499dfb // indirect
-	github.com/lightningnetwork/lnd/clock v1.1.1 // indirect
 	github.com/lightningnetwork/lnd/healthcheck v1.2.5 // indirect
 	github.com/lightningnetwork/lnd/queue v1.1.1 // indirect
 	github.com/lightningnetwork/lnd/sqldb v1.0.4 // indirect
