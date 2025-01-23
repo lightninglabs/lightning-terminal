@@ -372,6 +372,7 @@ func TestAccountService(t *testing.T) {
 
 			return []AccountID{acct.ID}
 		},
+		startupErr: testErr.Error(),
 		validate: func(t *testing.T, lnd *mockLnd, r *mockRouter,
 			ids []AccountID, s *InterceptorService) {
 
@@ -852,6 +853,8 @@ func TestAccountService(t *testing.T) {
 				}
 
 				return
+			} else {
+				require.NoError(t, err)
 			}
 
 			// Any post execution validation that we need to run?
