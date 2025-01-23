@@ -207,7 +207,7 @@ jobs:
         run: mkdir -p app/build; touch app/build/index.html
 
       - name: run check
-        run: make lint mod-check
+        run: make mod-check && make lint
 
   ########################
   # unit tests
