@@ -195,6 +195,28 @@ jobs:
       - name: check commits
         run: scripts/check-each-commit.sh upstream/${{ github.base_ref }}
 
+  #######################
+  # sql model generation
+  #######################
+  sqlc-check:
+    name: Sqlc check
+    runs-on: ubuntu-latest
+    steps:
+      - name: git checkout
+        uses: actions/checkout@v3
+
+      - name: setup go ${{ env.GO_VERSION }}
+        uses: ./.github/actions/setup-go
+        with:
+          go-version: '${{ env.GO_VERSION }}'
+
+      - name: docker image cache
+        uses: jpribyl/action-docker-layer-caching@v0.1.1
+        continue-on-error: true
+
+      - name: Generate sql models
+        run: make sqlc-check
+
   ########################
   # lint code
   ########################
