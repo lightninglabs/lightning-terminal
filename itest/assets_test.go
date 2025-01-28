@@ -928,13 +928,14 @@ func payInvoiceWithSatoshiLastHop(t *testing.T, payer *HarnessNode,
 }
 
 type payConfig struct {
-	smallShards   bool
-	errSubStr     string
-	allowOverpay  bool
-	feeLimit      lnwire.MilliSatoshi
-	payStatus     lnrpc.Payment_PaymentStatus
-	failureReason lnrpc.PaymentFailureReason
-	rfq           fn.Option[rfqmsg.ID]
+	smallShards       bool
+	errSubStr         string
+	allowOverpay      bool
+	feeLimit          lnwire.MilliSatoshi
+	destCustomRecords map[uint64][]byte
+	payStatus         lnrpc.Payment_PaymentStatus
+	failureReason     lnrpc.PaymentFailureReason
+	rfq               fn.Option[rfqmsg.ID]
 }
 
 func defaultPayConfig() *payConfig {
@@ -982,6 +983,12 @@ func withFeeLimit(limit lnwire.MilliSatoshi) payOpt {
 	}
 }
 
+func withDestCustomRecords(records map[uint64][]byte) payOpt {
+	return func(c *payConfig) {
+		c.destCustomRecords = records
+	}
+}
+
 func withAllowOverpay() payOpt {
 	return func(c *payConfig) {
 		c.allowOverpay = true
@@ -1009,9 +1016,10 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 	require.NoError(t, err)
 
 	sendReq := &routerrpc.SendPaymentRequest{
-		PaymentRequest: payReq,
-		TimeoutSeconds: int32(PaymentTimeout.Seconds()),
-		FeeLimitMsat:   int64(cfg.feeLimit),
+		PaymentRequest:    payReq,
+		TimeoutSeconds:    int32(PaymentTimeout.Seconds()),
+		FeeLimitMsat:      int64(cfg.feeLimit),
+		DestCustomRecords: cfg.destCustomRecords,
 	}
 
 	if cfg.smallShards {
@@ -2134,4 +2142,70 @@ func newCloseExpiryInfo(t *testing.T, node *HarnessNode) forceCloseExpiryInfo {
 		t:                  t,
 		node:               node,
 	}
+}
+
+// AssertHLTCNotActive asserts the node doesn't have a pending HTLC in the
+// given channel, which mean either the HTLC never exists, or it was pending
+// and now settled. Returns the HTLC if found and active.
+func assertHTLCNotActive(t *testing.T, hn *HarnessNode,
+	cp *lnrpc.ChannelPoint, payHash []byte) *lnrpc.HTLC {
+
+	var result *lnrpc.HTLC
+	target := hex.EncodeToString(payHash)
+
+	err := wait.NoError(func() error {
+		// We require the RPC call to be succeeded and won't wait for
+		// it as it's an unexpected behavior.
+		ch := fetchChannel(t, hn, cp)
+
+		// Check all payment hashes active for this channel.
+		for _, htlc := range ch.PendingHtlcs {
+			h := hex.EncodeToString(htlc.HashLock)
+
+			// Break if found the htlc.
+			if h == target {
+				result = htlc
+				break
+			}
+		}
+
+		// If we've found nothing, we're done.
+		if result == nil {
+			return nil
+		}
+
+		// Otherwise return an error.
+		return fmt.Errorf("node [%s:%x] still has: the payHash %x",
+			hn.Name(), hn.PubKey[:], payHash)
+	}, defaultTimeout)
+	require.NoError(t, err, "timeout checking pending HTLC")
+
+	return result
+}
+
+func assertInvoiceState(t *testing.T, hn *HarnessNode, payAddr []byte,
+	expectedState lnrpc.Invoice_InvoiceState) {
+
+	msg := &invoicesrpc.LookupInvoiceMsg{
+		InvoiceRef: &invoicesrpc.LookupInvoiceMsg_PaymentAddr{
+			PaymentAddr: payAddr,
+		},
+	}
+
+	err := wait.NoError(func() error {
+		invoice, err := hn.InvoicesClient.LookupInvoiceV2(
+			context.Background(), msg,
+		)
+		if err != nil {
+			return err
+		}
+
+		if invoice.State == expectedState {
+			return nil
+		}
+
+		return fmt.Errorf("%s: invoice with payment address %x not "+
+			"in state %s", hn.Name(), payAddr, expectedState)
+	}, defaultTimeout)
+	require.NoError(t, err, "timeout waiting for invoice settled state")
 }
