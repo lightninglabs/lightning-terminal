@@ -2042,9 +2042,10 @@ func testCustomChannelsLiquidityEdgeCases(ctx context.Context,
 
 	// Yara pays Dave with enough satoshis, but Charlie will not settle as
 	// he expects assets.
-	payInvoiceWithSatoshiLastHop(
-		t.t, yara, invoiceResp, dave.PubKey[:], lnrpc.Payment_FAILED,
-	)
+	hops := [][]byte{dave.PubKey[:]}
+	payInvoiceWithSatoshiLastHop(t.t, yara, invoiceResp, hops, withFailure(
+		lnrpc.Payment_FAILED, 0,
+	))
 
 	t.lndHarness.LNDHarness.AssertInvoiceState(stream, lnrpc.Invoice_OPEN)
 

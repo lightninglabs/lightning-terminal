@@ -820,8 +820,8 @@ func createAndPayNormalInvoiceWithBtc(t *testing.T, src, dst *HarnessNode,
 	payInvoiceWithSatoshi(t, src, invoiceResp)
 }
 
-func createAndPayNormalInvoice(t *testing.T, src, rfqPeer, dst *HarnessNode,
-	amountSat btcutil.Amount, assetID []byte, opts ...payOpt) uint64 {
+func createNormalInvoice(t *testing.T, dst *HarnessNode,
+	amountSat btcutil.Amount) *lnrpc.AddInvoiceResponse {
 
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
@@ -835,6 +835,13 @@ func createAndPayNormalInvoice(t *testing.T, src, rfqPeer, dst *HarnessNode,
 	})
 	require.NoError(t, err)
 
+	return invoiceResp
+}
+
+func createAndPayNormalInvoice(t *testing.T, src, rfqPeer, dst *HarnessNode,
+	amountSat btcutil.Amount, assetID []byte, opts ...payOpt) uint64 {
+
+	invoiceResp := createNormalInvoice(t, dst, amountSat)
 	numUnits, _ := payInvoiceWithAssets(
 		t, src, rfqPeer, invoiceResp.PaymentRequest, assetID, opts...,
 	)
@@ -874,19 +881,27 @@ func payInvoiceWithSatoshi(t *testing.T, payer *HarnessNode,
 }
 
 func payInvoiceWithSatoshiLastHop(t *testing.T, payer *HarnessNode,
-	invoice *lnrpc.AddInvoiceResponse, hopPub []byte,
-	expectedStatus lnrpc.Payment_PaymentStatus) {
+	invoice *lnrpc.AddInvoiceResponse, hops [][]byte, opts ...payOpt) {
+
+	cfg := defaultPayConfig()
+	for _, opt := range opts {
+		opt(cfg)
+	}
 
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
 	defer cancel()
 
+	decodedInvoice, err := payer.DecodePayReq(ctxt, &lnrpc.PayReqString{
+		PayReq: invoice.PaymentRequest,
+	})
+	require.NoError(t, err)
+
 	routeRes, err := payer.RouterClient.BuildRoute(
 		ctxb, &routerrpc.BuildRouteRequest{
-			AmtMsat:        17800,
-			FinalCltvDelta: 80,
-			PaymentAddr:    invoice.PaymentAddr,
-			HopPubkeys:     [][]byte{hopPub},
+			AmtMsat:     decodedInvoice.NumMsat,
+			PaymentAddr: invoice.PaymentAddr,
+			HopPubkeys:  hops,
 		},
 	)
 	require.NoError(t, err)
@@ -897,11 +912,13 @@ func payInvoiceWithSatoshiLastHop(t *testing.T, payer *HarnessNode,
 			Route:       routeRes.Route,
 		},
 	)
+	require.NoError(t, err)
 
-	switch expectedStatus {
+	switch cfg.payStatus {
 	case lnrpc.Payment_FAILED:
 		require.NoError(t, err)
 		require.Equal(t, lnrpc.HTLCAttempt_FAILED, res.Status)
+		require.NotNil(t, res.Failure)
 		require.Nil(t, res.Preimage)
 
 	case lnrpc.Payment_SUCCEEDED:
