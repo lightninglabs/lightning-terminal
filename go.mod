@@ -29,7 +29,9 @@ require (
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.2
 	github.com/lightninglabs/pool/poolrpc v1.0.0
 	github.com/lightninglabs/taproot-assets v0.5.1-rc3
-	github.com/lightningnetwork/lnd v0.18.4-beta
+	// TODO(guggero): Update to v0.18.5-beta.rc1 as soon as the release is
+	// tagged.
+	github.com/lightningnetwork/lnd v0.18.4-beta.rc2.0.20250130074910-e25f8fcc817c
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/clock v1.1.1
 	github.com/lightningnetwork/lnd/fn v1.2.3
