@@ -28,7 +28,7 @@ require (
 	github.com/lightninglabs/pool v0.6.5-beta.0.20241015105339-044cb451b5df
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.2
 	github.com/lightninglabs/pool/poolrpc v1.0.0
-	github.com/lightninglabs/taproot-assets v0.5.1-rc1
+	github.com/lightninglabs/taproot-assets v0.5.1-rc3
 	github.com/lightningnetwork/lnd v0.18.4-beta
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/clock v1.1.1
@@ -66,7 +66,7 @@ require (
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/btcsuite/btcd/btcutil/psbt v1.1.10 // indirect
-	github.com/btcsuite/btcwallet v0.16.10-0.20240912233857-ffb143c77cc5 // indirect
+	github.com/btcsuite/btcwallet v0.16.10-0.20241127094224-93c858b2ad63 // indirect
 	github.com/btcsuite/btcwallet/wallet/txauthor v1.3.5 // indirect
 	github.com/btcsuite/btcwallet/wallet/txrules v1.2.2 // indirect
 	github.com/btcsuite/btcwallet/wallet/txsizes v1.2.5 // indirect
