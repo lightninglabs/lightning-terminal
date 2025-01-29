@@ -300,6 +300,14 @@ clean: clean-itest
 	$(RM) ./litd-debug
 	$(RM) coverage.txt
 
+sqlc:
+	@$(call print, "Generating sql models and queries in Go")
+	./scripts/gen_sqlc_docker.sh
+
+sqlc-check: sqlc
+	@$(call print, "Verifying sql code generation.")
+	if test -n "$$(git status --porcelain '*.go')"; then echo "SQL models not properly generated!"; git status --porcelain '*.go'; exit 1; fi
+
 # Prevent make from interpreting any of the defined goals as folders or files to
 # include in the build process.
 .PHONY: default all yarn-install build install go-build go-build-noui \
