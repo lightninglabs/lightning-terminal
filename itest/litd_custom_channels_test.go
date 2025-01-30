@@ -286,10 +286,9 @@ func testCustomChannelsLarge(_ context.Context, net *NetworkHarness,
 
 // testCustomChannels tests that we can create a network with custom channels
 // and send asset payments over them.
-func testCustomChannels(_ context.Context, net *NetworkHarness,
+func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	t *harnessTest) {
 
-	ctxb := context.Background()
 	lndArgs := slices.Clone(lndArgsTemplate)
 	litdArgs := slices.Clone(litdArgsTemplate)
 
@@ -657,7 +656,7 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 	// make sure that a non-existent remote balance is handled correctly.
 	t.Logf("Opening new asset channel between Charlie and Dave...")
 	fundRespCD, err := charlieTap.FundChannel(
-		ctxb, &tchrpc.FundChannelRequest{
+		ctx, &tchrpc.FundChannelRequest{
 			AssetAmount:        fundingAmount,
 			AssetId:            assetID,
 			PeerPubkey:         dave.PubKey[:],
@@ -751,10 +750,9 @@ func testCustomChannels(_ context.Context, net *NetworkHarness,
 
 // testCustomChannelsGroupedAsset tests that we can create a network with custom
 // channels that use grouped assets and send asset payments over them.
-func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
+func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 	t *harnessTest) {
 
-	ctxb := context.Background()
 	lndArgs := slices.Clone(lndArgsTemplate)
 	litdArgs := slices.Clone(litdArgsTemplate)
 
@@ -1087,7 +1085,7 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 	// make sure that a non-existent remote balance is handled correctly.
 	t.Logf("Opening new asset channel between Charlie and Dave...")
 	fundRespCD, err := charlieTap.FundChannel(
-		ctxb, &tchrpc.FundChannelRequest{
+		ctx, &tchrpc.FundChannelRequest{
 			AssetAmount:        fundingAmount,
 			AssetId:            assetID,
 			PeerPubkey:         dave.PubKey[:],
@@ -1144,7 +1142,7 @@ func testCustomChannelsGroupedAsset(_ context.Context, net *NetworkHarness,
 
 // testCustomChannelsForceClose tests a force close scenario after both parties
 // have an active asset balance.
-func testCustomChannelsForceClose(_ context.Context, net *NetworkHarness,
+func testCustomChannelsForceClose(ctx context.Context, net *NetworkHarness,
 	t *harnessTest) {
 
 	lndArgs := slices.Clone(lndArgsTemplate)
@@ -1185,8 +1183,6 @@ func testCustomChannelsForceClose(_ context.Context, net *NetworkHarness,
 	charlieTap := newTapClient(t.t, charlie)
 	daveTap := newTapClient(t.t, dave)
 
-	ctxb := context.Background()
-
 	// Now we'll make an asset for Charlie that we'll use in the test to
 	// open a channel.
 	mintedAssets := itest.MintAssetsConfirmBatch(
@@ -1210,7 +1206,7 @@ func testCustomChannelsForceClose(_ context.Context, net *NetworkHarness,
 	// We do this by sending all of Charlie's coins to a burn address then
 	// just sending him 50k sats, which isn't enough to fund a channel.
 	_, err = charlie.LightningClient.SendCoins(
-		ctxb, &lnrpc.SendCoinsRequest{
+		ctx, &lnrpc.SendCoinsRequest{
 			Addr:             burnAddr,
 			SendAll:          true,
 			MinConfs:         0,
@@ -1223,7 +1219,7 @@ func testCustomChannelsForceClose(_ context.Context, net *NetworkHarness,
 	// The attempt should fail. But the recipient should receive the error,
 	// clean up the state and allow Charlie to try again after acquiring
 	// more funds.
-	_, err = charlieTap.FundChannel(ctxb, &tchrpc.FundChannelRequest{
+	_, err = charlieTap.FundChannel(ctx, &tchrpc.FundChannelRequest{
 		AssetAmount:        fundingAmount,
 		AssetId:            assetID,
 		PeerPubkey:         dave.PubKey[:],
@@ -1238,7 +1234,7 @@ func testCustomChannelsForceClose(_ context.Context, net *NetworkHarness,
 	// off the main scenario.
 	t.Logf("Opening asset channels...")
 	assetFundResp, err := charlieTap.FundChannel(
-		ctxb, &tchrpc.FundChannelRequest{
+		ctx, &tchrpc.FundChannelRequest{
 			AssetAmount:        fundingAmount,
 			AssetId:            assetID,
 			PeerPubkey:         dave.PubKey[:],
@@ -1292,7 +1288,7 @@ func testCustomChannelsForceClose(_ context.Context, net *NetworkHarness,
 	// proof for the funding output. We sync the transfers as well so he
 	// has all the proofs needed.
 	mode := universerpc.UniverseSyncMode_SYNC_FULL
-	diff, err := daveTap.SyncUniverse(ctxb, &universerpc.SyncRequest{
+	diff, err := daveTap.SyncUniverse(ctx, &universerpc.SyncRequest{
 		UniverseHost: zane.Cfg.LitAddr(),
 		SyncMode:     mode,
 	})
@@ -1339,7 +1335,7 @@ func testCustomChannelsForceClose(_ context.Context, net *NetworkHarness,
 	var forceCloseTransfer *taprpc.ListTransfersResponse
 	fErr := wait.NoError(func() error {
 		forceCloseTransfer, err = charlieTap.ListTransfers(
-			ctxb, &taprpc.ListTransfersRequest{
+			ctx, &taprpc.ListTransfersRequest{
 				AnchorTxid: closeTxid.String(),
 			},
 		)
@@ -1353,7 +1349,7 @@ func testCustomChannelsForceClose(_ context.Context, net *NetworkHarness,
 		}
 
 		forceCloseTransfer2, err := daveTap.ListTransfers(
-			ctxb, &taprpc.ListTransfersRequest{
+			ctx, &taprpc.ListTransfersRequest{
 				AnchorTxid: closeTxid.String(),
 			},
 		)
@@ -1452,7 +1448,7 @@ func testCustomChannelsForceClose(_ context.Context, net *NetworkHarness,
 	// We'll make sure Dave can spend his asset UTXO by sending it all but
 	// one unit to Zane (the universe).
 	assetSendAmount := daveBalance - 1
-	zaneAddr, err := universeTap.NewAddr(ctxb, &taprpc.NewAddrRequest{
+	zaneAddr, err := universeTap.NewAddr(ctx, &taprpc.NewAddrRequest{
 		Amt:     assetSendAmount,
 		AssetId: assetID,
 		ProofCourierAddr: fmt.Sprintf(
@@ -1467,7 +1463,7 @@ func testCustomChannelsForceClose(_ context.Context, net *NetworkHarness,
 	// Send the assets to Zane. We expect Dave to have 3 transfers: the
 	// funding txn, their force close sweep, and now this new send.
 	itest.AssertAddrCreated(t.t, universeTap, cents, zaneAddr)
-	sendResp, err := daveTap.SendAsset(ctxb, &taprpc.SendAssetRequest{
+	sendResp, err := daveTap.SendAsset(ctx, &taprpc.SendAssetRequest{
 		TapAddrs: []string{zaneAddr.Encoded},
 	})
 	require.NoError(t.t, err)
@@ -1480,7 +1476,7 @@ func testCustomChannelsForceClose(_ context.Context, net *NetworkHarness,
 	// And now we also send all assets but one from Charlie to the universe
 	// to make sure the time lock sweep output can also be spent correctly.
 	assetSendAmount = charlieBalance - 1
-	zaneAddr2, err := universeTap.NewAddr(ctxb, &taprpc.NewAddrRequest{
+	zaneAddr2, err := universeTap.NewAddr(ctx, &taprpc.NewAddrRequest{
 		Amt:     assetSendAmount,
 		AssetId: assetID,
 		ProofCourierAddr: fmt.Sprintf(
@@ -1494,7 +1490,7 @@ func testCustomChannelsForceClose(_ context.Context, net *NetworkHarness,
 		assetSendAmount)
 
 	itest.AssertAddrCreated(t.t, universeTap, cents, zaneAddr2)
-	sendResp2, err := charlieTap.SendAsset(ctxb, &taprpc.SendAssetRequest{
+	sendResp2, err := charlieTap.SendAsset(ctx, &taprpc.SendAssetRequest{
 		TapAddrs: []string{zaneAddr2.Encoded},
 	})
 	require.NoError(t.t, err)
@@ -1507,7 +1503,7 @@ func testCustomChannelsForceClose(_ context.Context, net *NetworkHarness,
 
 // testCustomChannelsBreach tests a force close scenario that breaches an old
 // state, after both parties have an active asset balance.
-func testCustomChannelsBreach(_ context.Context, net *NetworkHarness,
+func testCustomChannelsBreach(ctx context.Context, net *NetworkHarness,
 	t *harnessTest) {
 
 	lndArgs := slices.Clone(lndArgsTemplate)
@@ -1557,8 +1553,6 @@ func testCustomChannelsBreach(_ context.Context, net *NetworkHarness,
 	charlieTap := newTapClient(t.t, charlie)
 	daveTap := newTapClient(t.t, dave)
 
-	ctxb := context.Background()
-
 	// Now we'll make an asset for Charlie that we'll use in the test to
 	// open a channel.
 	mintedAssets := itest.MintAssetsConfirmBatch(
@@ -1580,7 +1574,7 @@ func testCustomChannelsBreach(_ context.Context, net *NetworkHarness,
 	// off the main scenario.
 	t.Logf("Opening asset channels...")
 	assetFundResp, err := charlieTap.FundChannel(
-		ctxb, &tchrpc.FundChannelRequest{
+		ctx, &tchrpc.FundChannelRequest{
 			AssetAmount:        fundingAmount,
 			AssetId:            assetID,
 			PeerPubkey:         dave.PubKey[:],
@@ -1728,7 +1722,7 @@ func testCustomChannelsBreach(_ context.Context, net *NetworkHarness,
 
 // testCustomChannelsLiquidityEdgeCases is a test that runs through some
 // taproot asset channel liquidity related edge cases.
-func testCustomChannelsLiquidityEdgeCases(ctxb context.Context,
+func testCustomChannelsLiquidityEdgeCases(ctx context.Context,
 	net *NetworkHarness, t *harnessTest) {
 
 	lndArgs := slices.Clone(lndArgsTemplate)
@@ -1996,7 +1990,7 @@ func testCustomChannelsLiquidityEdgeCases(ctxb context.Context,
 	// is too small to be paid with assets economically. But a payment is
 	// still possible, since the amount is large enough to represent a
 	// single unit (17.1 sat per unit).
-	btcInvoiceResp, err := erin.AddInvoice(ctxb, &lnrpc.Invoice{
+	btcInvoiceResp, err := erin.AddInvoice(ctx, &lnrpc.Invoice{
 		Memo:      "small BTC invoice",
 		ValueMsat: 18_000,
 	})
@@ -2020,7 +2014,7 @@ func testCustomChannelsLiquidityEdgeCases(ctxb context.Context,
 	// When we try to pay an invoice amount that's smaller than the
 	// corresponding value of a single asset unit, the payment will always
 	// be rejected, even if we set the allow_uneconomical flag.
-	btcInvoiceResp, err = erin.AddInvoice(ctxb, &lnrpc.Invoice{
+	btcInvoiceResp, err = erin.AddInvoice(ctx, &lnrpc.Invoice{
 		Memo:      "very small BTC invoice",
 		ValueMsat: 1_000,
 	})
@@ -2031,31 +2025,6 @@ func testCustomChannelsLiquidityEdgeCases(ctxb context.Context,
 			"rejecting payment of 2000 mSAT",
 		),
 	)
-
-	// Edge case: Now Dave creates an asset invoice to be paid for by
-	// Yara with satoshi. For the last hop we try to settle the invoice in
-	// satoshi, where we will check whether Dave's strict forwarding works
-	// as expected. Charlie is only used as a dummy RFQ peer in this case,
-	// Yara totally ignored the RFQ hint and pays agnostically with sats.
-	invoiceResp = createAssetInvoice(t.t, charlie, dave, 22, assetID)
-
-	stream, err := dave.InvoicesClient.SubscribeSingleInvoice(
-		ctxb, &invoicesrpc.SubscribeSingleInvoiceRequest{
-			RHash: invoiceResp.RHash,
-		},
-	)
-	require.NoError(t.t, err)
-
-	// Yara pays Dave with enough satoshis, but Charlie will not settle as
-	// he expects assets.
-	payInvoiceWithSatoshiLastHop(
-		t.t, yara, invoiceResp, dave.PubKey[:], lnrpc.Payment_FAILED,
-	)
-
-	t.lndHarness.LNDHarness.AssertInvoiceState(stream, lnrpc.Invoice_OPEN)
-
-	logBalance(t.t, nodes, assetID, "after failed payment (asset "+
-		"invoice, strict forwarding)")
 
 	// Edge case: Check if the RFQ HTLC tracking accounts for cancelled
 	// HTLCs. We achieve this by manually creating & using an RFQ quote with
@@ -2073,7 +2042,7 @@ func testCustomChannelsLiquidityEdgeCases(ctxb context.Context,
 	// going to evaluate to about 10k assets.
 	inOneHour := time.Now().Add(time.Hour)
 	resQ, err := charlieTap.RfqClient.AddAssetSellOrder(
-		ctxb, &rfqrpc.AddAssetSellOrderRequest{
+		ctx, &rfqrpc.AddAssetSellOrderRequest{
 			AssetSpecifier: &rfqrpc.AssetSpecifier{
 				Id: &rfqrpc.AssetSpecifier_AssetId{
 					AssetId: assetID,
@@ -2116,7 +2085,7 @@ func testCustomChannelsLiquidityEdgeCases(ctxb context.Context,
 	// Now let's cancel the invoice on Fabia.
 	payHash := hodlInv.preimage.Hash()
 	_, err = fabia.InvoicesClient.CancelInvoice(
-		ctxb, &invoicesrpc.CancelInvoiceMsg{
+		ctx, &invoicesrpc.CancelInvoiceMsg{
 			PaymentHash: payHash[:],
 		},
 	)
@@ -2153,7 +2122,7 @@ func testCustomChannelsLiquidityEdgeCases(ctxb context.Context,
 	// Charlie starts by negotiating the quote.
 	inOneHour = time.Now().Add(time.Hour)
 	res, err := charlieTap.RfqClient.AddAssetBuyOrder(
-		ctxb, &rfqrpc.AddAssetBuyOrderRequest{
+		ctx, &rfqrpc.AddAssetBuyOrderRequest{
 			AssetSpecifier: &rfqrpc.AssetSpecifier{
 				Id: &rfqrpc.AssetSpecifier_AssetId{
 					AssetId: assetID,
@@ -2173,7 +2142,7 @@ func testCustomChannelsLiquidityEdgeCases(ctxb context.Context,
 
 	// We now manually add the invoice in order to inject the above,
 	// manually generated, quote.
-	iResp, err := charlie.AddInvoice(ctxb, &lnrpc.Invoice{
+	iResp, err := charlie.AddInvoice(ctx, &lnrpc.Invoice{
 		Memo:       "",
 		Value:      200_000,
 		RPreimage:  bytes.Repeat([]byte{11}, 32),
@@ -2197,12 +2166,226 @@ func testCustomChannelsLiquidityEdgeCases(ctxb context.Context,
 	logBalance(t.t, nodes, assetID, "after small manual rfq")
 }
 
-// testCustomChannelsBalanceConsistency is a test that test the balance of nodes
-// under channel opening circumstances.
-func testCustomChannelsBalanceConsistency(_ context.Context,
+// testCustomChannelsStrictForwarding is a test that tests the strict forwarding
+// behavior of a node when it comes to paying asset invoices with assets and
+// BTC invoices with satoshis.
+func testCustomChannelsStrictForwarding(ctx context.Context,
 	net *NetworkHarness, t *harnessTest) {
 
-	ctxb := context.Background()
+	lndArgs := slices.Clone(lndArgsTemplate)
+	litdArgs := slices.Clone(litdArgsTemplate)
+
+	// Explicitly set the proof courier as Zane (now has no other role
+	// other than proof shuffling), otherwise a hashmail courier will be
+	// used. For the funding transaction, we're just posting it and don't
+	// expect a true receiver.
+	zane, err := net.NewNode(
+		t.t, "Zane", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	litdArgs = append(litdArgs, fmt.Sprintf(
+		"--taproot-assets.proofcourieraddr=%s://%s",
+		proof.UniverseRpcCourierType, zane.Cfg.LitAddr(),
+	))
+
+	// The topology we are going for looks like the following:
+	//
+	// Charlie  --[assets]-->  Dave  --[sats]-->  Erin  --[assets]-->  Fabia
+	//                          |
+	//                          |
+	//                       [assets]
+	//                          |
+	//                          v
+	//                        Yara
+	//
+	// With [assets] being a custom channel and [sats] being a normal, BTC
+	// only channel.
+	// All 5 nodes need to be full litd nodes running in integrated mode
+	// with tapd included. We also need specific flags to be enabled, so we
+	// create 5 completely new nodes, ignoring the two default nodes that
+	// are created by the harness.
+	charlie, err := net.NewNode(
+		t.t, "Charlie", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	dave, err := net.NewNode(t.t, "Dave", lndArgs, false, true, litdArgs...)
+	require.NoError(t.t, err)
+	erin, err := net.NewNode(t.t, "Erin", lndArgs, false, true, litdArgs...)
+	require.NoError(t.t, err)
+	fabia, err := net.NewNode(
+		t.t, "Fabia", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+	yara, err := net.NewNode(
+		t.t, "Yara", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	nodes := []*HarnessNode{charlie, dave, erin, fabia, yara}
+	connectAllNodes(t.t, net, nodes)
+	fundAllNodes(t.t, net, nodes)
+
+	// Create the normal channel between Dave and Erin.
+	t.Logf("Opening normal channel between Dave and Erin...")
+	channelOp := openChannelAndAssert(
+		t, net, dave, erin, lntest.OpenChannelParams{
+			Amt:         10_000_000,
+			SatPerVByte: 5,
+		},
+	)
+	defer closeChannelAndAssert(t, net, dave, channelOp, true)
+
+	// This is the only public channel, we need everyone to be aware of it.
+	assertChannelKnown(t.t, charlie, channelOp)
+	assertChannelKnown(t.t, fabia, channelOp)
+
+	universeTap := newTapClient(t.t, zane)
+	charlieTap := newTapClient(t.t, charlie)
+	daveTap := newTapClient(t.t, dave)
+	erinTap := newTapClient(t.t, erin)
+	fabiaTap := newTapClient(t.t, fabia)
+	yaraTap := newTapClient(t.t, yara)
+
+	// Mint an asset on Charlie and sync all nodes to Charlie as the
+	// universe.
+	mintedAssets := itest.MintAssetsConfirmBatch(
+		t.t, t.lndHarness.Miner.Client, charlieTap,
+		[]*mintrpc.MintAssetRequest{
+			{
+				Asset: itestAsset,
+			},
+		},
+	)
+	cents := mintedAssets[0]
+	assetID := cents.AssetGenesis.AssetId
+
+	t.Logf("Minted %d lightning cents, syncing universes...", cents.Amount)
+	syncUniverses(t.t, charlieTap, dave, erin, fabia, yara)
+	t.Logf("Universes synced between all nodes, distributing assets...")
+
+	const (
+		daveFundingAmount = uint64(400_000)
+		erinFundingAmount = uint64(200_000)
+	)
+	charlieFundingAmount := cents.Amount - uint64(2*400_000)
+
+	_, _, _ = createTestAssetNetwork(
+		t, net, charlieTap, daveTap, erinTap, fabiaTap, yaraTap,
+		universeTap, cents, 400_000, charlieFundingAmount,
+		daveFundingAmount, erinFundingAmount, 0,
+	)
+
+	// Before we start sending out payments, let's make sure each node can
+	// see the other one in the graph and has all required features.
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(charlie, dave))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(dave, charlie))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(dave, yara))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(yara, dave))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(erin, fabia))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(fabia, erin))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(charlie, erin))
+
+	logBalance(t.t, nodes, assetID, "initial")
+
+	// Do a payment from Charlie to Erin to shift the balances in all
+	// channels enough to allow for the following payments in any direction.
+	// Pay a normal bolt11 invoice involving RFQ flow.
+	_ = createAndPayNormalInvoice(
+		t.t, charlie, dave, erin, 500_000, assetID, withSmallShards(),
+	)
+
+	logBalance(t.t, nodes, assetID, "after payment")
+
+	// Edge case: Now Dave creates an asset invoice to be paid for by Erin
+	// with satoshi. For the last hop we try to settle the invoice in
+	// satoshi, where we will check whether Daves's strict forwarding
+	// works as expected. Charlie is only used as a dummy RFQ peer in this
+	// case, Erin totally ignores the RFQ hint and just pays with sats.
+	assetInvoice := createAssetInvoice(t.t, charlie, dave, 40, assetID)
+
+	assetInvoiceStream, err := dave.InvoicesClient.SubscribeSingleInvoice(
+		ctx, &invoicesrpc.SubscribeSingleInvoiceRequest{
+			RHash: assetInvoice.RHash,
+		},
+	)
+	require.NoError(t.t, err)
+
+	// Erin pays Dave with enough satoshis, but Charlie will not settle as
+	// he expects assets.
+	hops := [][]byte{dave.PubKey[:]}
+	payInvoiceWithSatoshiLastHop(
+		t.t, erin, assetInvoice, hops, withFailure(
+			lnrpc.Payment_FAILED, 0,
+		),
+	)
+
+	// Make sure the invoice hasn't been settled and there's no HTLC on the
+	// channel between Erin and Dave.
+	t.lndHarness.LNDHarness.AssertInvoiceState(
+		assetInvoiceStream, lnrpc.Invoice_OPEN,
+	)
+	assertHTLCNotActive(t.t, erin, channelOp, assetInvoice.RHash)
+	assertInvoiceState(
+		t.t, dave, assetInvoice.PaymentAddr, lnrpc.Invoice_OPEN,
+	)
+
+	logBalance(t.t, nodes, assetID, "after failed payment (asset "+
+		"invoice, strict forwarding)")
+
+	// Now let's make sure that we can actually still pay the invoice with
+	// assets from Charlie.
+	payInvoiceWithAssets(
+		t.t, charlie, dave, assetInvoice.PaymentRequest, assetID,
+	)
+	t.lndHarness.LNDHarness.AssertInvoiceState(
+		assetInvoiceStream, lnrpc.Invoice_SETTLED,
+	)
+	assertInvoiceState(
+		t.t, dave, assetInvoice.PaymentAddr, lnrpc.Invoice_SETTLED,
+	)
+
+	// Edge case: We now try the opposite: Dave creates a BTC invoice but
+	// Charlie tries to pay it with assets. This should fail as well.
+	btcInvoice := createNormalInvoice(t.t, dave, 1_000)
+	btcInvoiceStream, err := dave.InvoicesClient.SubscribeSingleInvoice(
+		ctx, &invoicesrpc.SubscribeSingleInvoiceRequest{
+			RHash: btcInvoice.RHash,
+		},
+	)
+	require.NoError(t.t, err)
+
+	payInvoiceWithAssets(
+		t.t, charlie, dave, btcInvoice.PaymentRequest, assetID,
+		withFailure(lnrpc.Payment_FAILED, failureIncorrectDetails),
+	)
+	t.lndHarness.LNDHarness.AssertInvoiceState(
+		btcInvoiceStream, lnrpc.Invoice_OPEN,
+	)
+	assertHTLCNotActive(t.t, erin, channelOp, btcInvoice.RHash)
+	assertInvoiceState(
+		t.t, dave, btcInvoice.PaymentAddr, lnrpc.Invoice_OPEN,
+	)
+
+	// And finally we make sure that we can still pay the invoice with
+	// satoshis from Erin, using custom records.
+	payInvoiceWithSatoshi(t.t, erin, btcInvoice, withDestCustomRecords(
+		map[uint64][]byte{106823: {0x01}},
+	))
+	t.lndHarness.LNDHarness.AssertInvoiceState(
+		btcInvoiceStream, lnrpc.Invoice_SETTLED,
+	)
+	assertInvoiceState(
+		t.t, dave, btcInvoice.PaymentAddr, lnrpc.Invoice_SETTLED,
+	)
+}
+
+// testCustomChannelsBalanceConsistency is a test that test the balance of nodes
+// under channel opening circumstances.
+func testCustomChannelsBalanceConsistency(ctx context.Context,
+	net *NetworkHarness, t *harnessTest) {
+
 	lndArgs := slices.Clone(lndArgsTemplate)
 	litdArgs := slices.Clone(litdArgsTemplate)
 
@@ -2279,7 +2462,7 @@ func testCustomChannelsBalanceConsistency(_ context.Context,
 	fundingScriptTreeBytes := fundingScriptKey.SerializeCompressed()
 
 	fundRespCD, err := charlieTap.FundChannel(
-		ctxb, &tchrpc.FundChannelRequest{
+		ctx, &tchrpc.FundChannelRequest{
 			AssetAmount:        charlieBalance,
 			AssetId:            assetID,
 			PeerPubkey:         daveTap.node.PubKey[:],
@@ -2399,10 +2582,9 @@ func testCustomChannelsBalanceConsistency(_ context.Context,
 
 // testCustomChannelsSingleAssetMultiInput tests whether it is possible to fund
 // a channel using FundChannel that uses multiple inputs from the same asset.
-func testCustomChannelsSingleAssetMultiInput(_ context.Context,
+func testCustomChannelsSingleAssetMultiInput(ctx context.Context,
 	net *NetworkHarness, t *harnessTest) {
 
-	ctxb := context.Background()
 	lndArgs := slices.Clone(lndArgsTemplate)
 	litdArgs := slices.Clone(litdArgsTemplate)
 
@@ -2452,7 +2634,7 @@ func testCustomChannelsSingleAssetMultiInput(_ context.Context,
 
 	// Send assets to Dave so he can fund a channel.
 	halfCentsAmount := cents.Amount / 2
-	daveAddr1, err := daveTap.NewAddr(ctxb, &taprpc.NewAddrRequest{
+	daveAddr1, err := daveTap.NewAddr(ctx, &taprpc.NewAddrRequest{
 		Amt:     halfCentsAmount,
 		AssetId: assetID,
 		ProofCourierAddr: fmt.Sprintf(
@@ -2461,7 +2643,7 @@ func testCustomChannelsSingleAssetMultiInput(_ context.Context,
 		),
 	})
 	require.NoError(t.t, err)
-	daveAddr2, err := daveTap.NewAddr(ctxb, &taprpc.NewAddrRequest{
+	daveAddr2, err := daveTap.NewAddr(ctx, &taprpc.NewAddrRequest{
 		Amt:     halfCentsAmount,
 		AssetId: assetID,
 		ProofCourierAddr: fmt.Sprintf(
@@ -2476,7 +2658,7 @@ func testCustomChannelsSingleAssetMultiInput(_ context.Context,
 	// Send the assets to Dave.
 	itest.AssertAddrCreated(t.t, daveTap, cents, daveAddr1)
 	itest.AssertAddrCreated(t.t, daveTap, cents, daveAddr2)
-	sendResp, err := charlieTap.SendAsset(ctxb, &taprpc.SendAssetRequest{
+	sendResp, err := charlieTap.SendAsset(ctx, &taprpc.SendAssetRequest{
 		TapAddrs: []string{daveAddr1.Encoded, daveAddr2.Encoded},
 	})
 	require.NoError(t.t, err)
@@ -2491,7 +2673,7 @@ func testCustomChannelsSingleAssetMultiInput(_ context.Context,
 
 	// Fund a channel using multiple inputs from the same asset.
 	fundRespCD, err := daveTap.FundChannel(
-		ctxb, &tchrpc.FundChannelRequest{
+		ctx, &tchrpc.FundChannelRequest{
 			AssetAmount:        2 * halfCentsAmount,
 			AssetId:            assetID,
 			PeerPubkey:         charlieTap.node.PubKey[:],
@@ -2519,8 +2701,8 @@ func testCustomChannelsSingleAssetMultiInput(_ context.Context,
 
 // testCustomChannelsOraclePricing tests that all asset transfers are correctly
 // priced when using an oracle that isn't tapd's mock oracle.
-func testCustomChannelsOraclePricing(_ context.Context,
-	net *NetworkHarness, t *harnessTest) {
+func testCustomChannelsOraclePricing(ctx context.Context, net *NetworkHarness,
+	t *harnessTest) {
 
 	usdMetaData := &taprpc.AssetMeta{
 		Data: []byte(`{
@@ -2545,7 +2727,6 @@ func testCustomChannelsOraclePricing(_ context.Context,
 	oracle.start(t.t)
 	t.t.Cleanup(oracle.stop)
 
-	ctxb := context.Background()
 	lndArgs := slices.Clone(lndArgsTemplate)
 	litdArgs := slices.Clone(litdArgsTemplateNoOracle)
 	litdArgs = append(litdArgs, fmt.Sprintf(
@@ -2698,7 +2879,7 @@ func testCustomChannelsOraclePricing(_ context.Context,
 	invoiceResp := createAssetInvoice(
 		t.t, erin, fabia, fabiaInvoiceAssetAmount, assetID,
 	)
-	decodedInvoice, err := fabia.DecodePayReq(ctxb, &lnrpc.PayReqString{
+	decodedInvoice, err := fabia.DecodePayReq(ctx, &lnrpc.PayReqString{
 		PayReq: invoiceResp.PaymentRequest,
 	})
 	require.NoError(t.t, err)
@@ -2832,10 +3013,9 @@ func testCustomChannelsOraclePricing(_ context.Context,
 
 // testCustomChannelsFee tests whether the custom channel funding process
 // fails if the proposed fee rate is lower than the minimum relay fee.
-func testCustomChannelsFee(_ context.Context,
-	net *NetworkHarness, t *harnessTest) {
+func testCustomChannelsFee(ctx context.Context, net *NetworkHarness,
+	t *harnessTest) {
 
-	ctxb := context.Background()
 	lndArgs := slices.Clone(lndArgsTemplate)
 	litdArgs := slices.Clone(litdArgsTemplate)
 
@@ -2883,7 +3063,7 @@ func testCustomChannelsFee(_ context.Context,
 	zeroFeeRate := uint32(0)
 
 	_, err = charlieTap.FundChannel(
-		ctxb, &tchrpc.FundChannelRequest{
+		ctx, &tchrpc.FundChannelRequest{
 			AssetAmount:        cents.Amount,
 			AssetId:            assetID,
 			PeerPubkey:         daveTap.node.PubKey[:],
@@ -2900,7 +3080,7 @@ func testCustomChannelsFee(_ context.Context,
 	tooLowFeeRateAmount := chainfee.SatPerVByte(tooLowFeeRate)
 
 	_, err = charlieTap.FundChannel(
-		ctxb, &tchrpc.FundChannelRequest{
+		ctx, &tchrpc.FundChannelRequest{
 			AssetAmount:        cents.Amount,
 			AssetId:            assetID,
 			PeerPubkey:         daveTap.node.PubKey[:],
@@ -2926,7 +3106,7 @@ func testCustomChannelsHtlcForceClose(ctxb context.Context, net *NetworkHarness,
 
 // runCustomChannelsHtlcForceClose is a helper function that runs the HTLC force
 // close test with the given MPP setting.
-func runCustomChannelsHtlcForceClose(ctxb context.Context, t *harnessTest,
+func runCustomChannelsHtlcForceClose(ctx context.Context, t *harnessTest,
 	net *NetworkHarness, mpp bool) {
 
 	t.Logf("Running test with MPP: %v", mpp)
@@ -2985,7 +3165,7 @@ func runCustomChannelsHtlcForceClose(ctxb context.Context, t *harnessTest,
 	// between Alice and Bob.
 	t.Logf("Opening asset channels...")
 	assetFundResp, err := aliceTap.FundChannel(
-		ctxb, &tchrpc.FundChannelRequest{
+		ctx, &tchrpc.FundChannelRequest{
 			AssetAmount:        fundingAmount,
 			AssetId:            assetID,
 			PeerPubkey:         bob.PubKey[:],
@@ -3134,7 +3314,7 @@ func runCustomChannelsHtlcForceClose(ctxb context.Context, t *harnessTest,
 	// spend, so there's no CSV delay other than the 1 CSV (carve out), and
 	// he can spend directly from the commitment transaction.
 	_, err = bob.InvoicesClient.SettleInvoice(
-		ctxb, &invoicesrpc.SettleInvoiceMsg{
+		ctx, &invoicesrpc.SettleInvoiceMsg{
 			Preimage: bobHodlInvoices[0].preimage[:],
 		},
 	)
@@ -3226,7 +3406,7 @@ func runCustomChannelsHtlcForceClose(ctxb context.Context, t *harnessTest,
 	// With her commitment output swept above, we'll now settle one of
 	// Alice's incoming HTLCs.
 	_, err = alice.InvoicesClient.SettleInvoice(
-		ctxb, &invoicesrpc.SettleInvoiceMsg{
+		ctx, &invoicesrpc.SettleInvoiceMsg{
 			Preimage: aliceHodlInvoices[0].preimage[:],
 		},
 	)
@@ -3418,7 +3598,7 @@ func runCustomChannelsHtlcForceClose(ctxb context.Context, t *harnessTest,
 	//
 	// We'll make two addrs for Zane, one for Alice, and one for bob.
 	zaneTap := newTapClient(t.t, zane)
-	aliceAddr, err := zaneTap.NewAddr(ctxb, &taprpc.NewAddrRequest{
+	aliceAddr, err := zaneTap.NewAddr(ctx, &taprpc.NewAddrRequest{
 		Amt:     aliceExpectedBalance,
 		AssetId: assetID,
 		ProofCourierAddr: fmt.Sprintf(
@@ -3427,7 +3607,7 @@ func runCustomChannelsHtlcForceClose(ctxb context.Context, t *harnessTest,
 		),
 	})
 	require.NoError(t.t, err)
-	bobAddr, err := zaneTap.NewAddr(ctxb, &taprpc.NewAddrRequest{
+	bobAddr, err := zaneTap.NewAddr(ctx, &taprpc.NewAddrRequest{
 		Amt:     bobExpectedBalance,
 		AssetId: assetID,
 		ProofCourierAddr: fmt.Sprintf(
@@ -3437,7 +3617,7 @@ func runCustomChannelsHtlcForceClose(ctxb context.Context, t *harnessTest,
 	})
 	require.NoError(t.t, err)
 
-	_, err = aliceTap.SendAsset(ctxb, &taprpc.SendAssetRequest{
+	_, err = aliceTap.SendAsset(ctx, &taprpc.SendAssetRequest{
 		TapAddrs: []string{aliceAddr.Encoded},
 	})
 	require.NoError(t.t, err)
@@ -3445,7 +3625,7 @@ func runCustomChannelsHtlcForceClose(ctxb context.Context, t *harnessTest,
 
 	itest.AssertNonInteractiveRecvComplete(t.t, zaneTap, 1)
 
-	_, err = bobTap.SendAsset(ctxb, &taprpc.SendAssetRequest{
+	_, err = bobTap.SendAsset(ctx, &taprpc.SendAssetRequest{
 		TapAddrs: []string{bobAddr.Encoded},
 	})
 	require.NoError(t.t, err)
@@ -3463,7 +3643,7 @@ func runCustomChannelsHtlcForceClose(ctxb context.Context, t *harnessTest,
 // testCustomChannelsForwardBandwidth is a test that runs through some Taproot
 // Assets Channel liquidity edge cases, specifically related to forwarding HTLCs
 // into channels with no available asset bandwidth.
-func testCustomChannelsForwardBandwidth(ctxb context.Context,
+func testCustomChannelsForwardBandwidth(ctx context.Context,
 	net *NetworkHarness, t *harnessTest) {
 
 	lndArgs := slices.Clone(lndArgsTemplate)
@@ -3611,7 +3791,7 @@ func testCustomChannelsForwardBandwidth(ctxb context.Context,
 	// we want to make sure that the system doesn't crash in this case.
 	numUnits := uint64(10)
 	buyOrderResp, err := fabiaTap.RfqClient.AddAssetBuyOrder(
-		ctxb, &rfqrpc.AddAssetBuyOrderRequest{
+		ctx, &rfqrpc.AddAssetBuyOrderRequest{
 			AssetSpecifier: &rfqrpc.AssetSpecifier{
 				Id: &rfqrpc.AssetSpecifier_AssetId{
 					AssetId: assetID,
@@ -3651,7 +3831,7 @@ func testCustomChannelsForwardBandwidth(ctxb context.Context,
 
 	// We now manually add the invoice in order to inject the above,
 	// manually generated, quote.
-	invoiceResp2, err := fabia.AddInvoice(ctxb, &lnrpc.Invoice{
+	invoiceResp2, err := fabia.AddInvoice(ctx, &lnrpc.Invoice{
 		Memo:      "too small invoice",
 		ValueMsat: int64(oneUnitMilliSat - 1),
 		RouteHints: []*lnrpc.RouteHint{{
@@ -3682,20 +3862,16 @@ func testCustomChannelsForwardBandwidth(ctxb context.Context,
 
 // testCustomChannelsDecodeAssetInvoice tests that we're able to properly
 // decode and display asset invoice related information.
-//
-// TODO(roasbeef): just move to tapd repo due to new version that doesn't req a
-// chan?
 func testCustomChannelsDecodeAssetInvoice(ctx context.Context,
 	net *NetworkHarness, t *harnessTest) {
 
-	// First, we'll set up some information for our custom oracle that we'll use
-	// to feed in price information.
+	// First, we'll set up some information for our custom oracle that we'll
+	// use to feed in price information.
 	oracleAddr := fmt.Sprintf("localhost:%d", port.NextAvailablePort())
 	oracle := newOracleHarness(oracleAddr)
 	oracle.start(t.t)
 	t.t.Cleanup(oracle.stop)
 
-	ctxb := context.Background()
 	lndArgs := slices.Clone(lndArgsTemplate)
 	litdArgs := slices.Clone(litdArgsTemplateNoOracle)
 	litdArgs = append(litdArgs, fmt.Sprintf(
@@ -3703,7 +3879,8 @@ func testCustomChannelsDecodeAssetInvoice(ctx context.Context,
 			"rfqrpc://%s", oracleAddr,
 	))
 
-	// For this test, Zane will be our dedicated Universe server for all parties.
+	// For this test, Zane will be our dedicated Universe server for all
+	// parties.
 	zane, err := net.NewNode(
 		t.t, "Zane", lndArgs, false, true, litdArgs...,
 	)
@@ -3714,17 +3891,19 @@ func testCustomChannelsDecodeAssetInvoice(ctx context.Context,
 		proof.UniverseRpcCourierType, zane.Cfg.LitAddr(),
 	))
 
-	// We'll just make a single node here, as this doesn't actually rely on a set
-	// of active channels.
-	alice, err := net.NewNode(t.t, "Alice", lndArgs, false, true, litdArgs...)
+	// We'll just make a single node here, as this doesn't actually rely on
+	// a set of active channels.
+	alice, err := net.NewNode(
+		t.t, "Alice", lndArgs, false, true, litdArgs...,
+	)
 	require.NoError(t.t, err)
 	aliceTap := newTapClient(t.t, alice)
 
 	// Fund Alice so she'll have enough funds to mint the asset.
 	fundAllNodes(t.t, net, []*HarnessNode{alice})
 
-	// Next, we'll make a new asset with a specified decimal display. We'll also
-	// make grouped asset as well.
+	// Next, we'll make a new asset with a specified decimal display. We'll
+	// also make grouped asset as well.
 	usdMetaData := &taprpc.AssetMeta{
 		Data: []byte(`{
 "description":"this is a USD stablecoin with decimal display of 6"
@@ -3760,9 +3939,10 @@ func testCustomChannelsDecodeAssetInvoice(ctx context.Context,
 	var id asset.ID
 	copy(id[:], assetID)
 
-	// We'll assume a price of $100,000.00 USD for a single BTC. This is just the
-	// current subjective price our oracle will use. From this BTC price, we'll
-	// scale things up to be in the precision of the asset we minted above.
+	// We'll assume a price of $100,000.00 USD for a single BTC. This is
+	// just the current subjective price our oracle will use. From this BTC
+	// price, we'll scale things up to be in the precision of the asset we
+	// minted above.
 	btcPrice := rfqmath.NewBigIntFixedPoint(
 		100_000_00, 2,
 	)
@@ -3775,7 +3955,7 @@ func testCustomChannelsDecodeAssetInvoice(ctx context.Context,
 	// Now we'll make a normal invoice for 1 BTC using Alice.
 	expirySeconds := 10
 	amountSat := 100_000_000
-	invoiceResp, err := alice.AddInvoice(ctxb, &lnrpc.Invoice{
+	invoiceResp, err := alice.AddInvoice(ctx, &lnrpc.Invoice{
 		Value:  int64(amountSat),
 		Memo:   "normal invoice",
 		Expiry: int64(expirySeconds),
@@ -3784,24 +3964,26 @@ func testCustomChannelsDecodeAssetInvoice(ctx context.Context,
 
 	payReq := invoiceResp.PaymentRequest
 
-	// Now that we have our payment request, we'll call into the new decode asset
-	// pay req call.
-	decodeResp, err := aliceTap.DecodeAssetPayReq(ctxb, &tapchannelrpc.AssetPayReq{
-		AssetId:      assetID,
-		PayReqString: payReq,
-	})
+	// Now that we have our payment request, we'll call into the new decode
+	// asset pay req call.
+	decodeResp, err := aliceTap.DecodeAssetPayReq(
+		ctx, &tapchannelrpc.AssetPayReq{
+			AssetId:      assetID,
+			PayReqString: payReq,
+		},
+	)
 	require.NoError(t.t, err)
 
 	// The decimal display information, genesis, and asset group information
 	// should all match.
-	require.Equal(
-		t.t, int64(decimalDisplay), int64(decodeResp.DecimalDisplay.DecimalDisplay),
+	require.EqualValues(
+		t.t, decimalDisplay, decodeResp.DecimalDisplay.DecimalDisplay,
 	)
 	require.Equal(t.t, usdAsset.AssetGenesis, decodeResp.GenesisInfo)
 	require.Equal(t.t, usdAsset.AssetGroup, decodeResp.AssetGroup)
 
-	// The 1 BTC invoice should map to 100k asset units, with decimal display 6
-	// that's 100 billion asset units.
+	// The 1 BTC invoice should map to 100k asset units, with decimal
+	// display 6 that's 100 billion asset units.
 	const expectedUnits = 100_000_000_000
 	require.Equal(t.t, int64(expectedUnits), int64(decodeResp.AssetAmount))
 }

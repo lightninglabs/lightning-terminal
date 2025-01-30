@@ -73,6 +73,10 @@ var allTestCases = []*testCase{
 		test: testCustomChannelsForwardBandwidth,
 	},
 	{
+		name: "test custom channels strict forwarding",
+		test: testCustomChannelsStrictForwarding,
+	},
+	{
 		name: "test custom channels decode payreq",
 		test: testCustomChannelsDecodeAssetInvoice,
 	},
