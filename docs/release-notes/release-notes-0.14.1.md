@@ -16,6 +16,10 @@
 
 ### Bug Fixes
 
+* [Add `lastHop` parameter for Loop In 
+  quotes](https://github.com/lightninglabs/lightning-terminal/pull/920).
+  Fixes fee estimation bug when using Loop In for a specific channel.
+
 ### Functional Changes/Additions
 
 ### Technical and Architectural Updates
@@ -36,7 +40,7 @@
 
 ### Pool
 
-### Faraday
+### Faradayaa
 
 * The integrated `faraday` instance was
   [updated](https://github.com/lightninglabs/lightning-terminal/pull/952) to
@@ -55,5 +59,6 @@
 * Elle Mouton
 * jiangmencity
 * Oliver Gugger
+* Rachel Fish
 * Tristav
 * zhoufanjin

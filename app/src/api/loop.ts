@@ -57,10 +57,12 @@ class LoopApi extends BaseApi<LoopEvents> {
   async getLoopInQuote(
     amount: Big,
     confTarget?: number,
+    lastHop?: string,
   ): Promise<LOOP.InQuoteResponse.AsObject> {
     const req = new LOOP.QuoteRequest();
     req.setAmt(amount.toString());
     if (confTarget) req.setConfTarget(confTarget);
+    if (lastHop) req.setLoopInLastHop(b64(lastHop));
     const res = await this._grpc.request(SwapClient.GetLoopInQuote, req, this._meta);
     return res.toObject();
   }
