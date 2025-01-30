@@ -11,6 +11,7 @@ run:
     - watchtowerrpc
     - neutrinorpc
     - peersrpc
+    - dev
 
 linters-settings:
   govet:

@@ -1,12 +1,16 @@
 include make/compile_flags.mk
 
-ITEST_FLAGS =
 TEST_FLAGS =
 DEV_TAGS = dev
 
 # Define the integration test.run filter if the icase argument was provided.
 ifneq ($(icase),)
 ITEST_FLAGS += -test.run="TestLightningTerminal/$(icase)"
+endif
+
+# Run itests with specified db backend.
+ifneq ($(dbbackend),)
+ITEST_FLAGS += -litdbbackend=$(dbbackend)
 endif
 
 # If a specific unit test case is being targeted, construct test.run filter.
@@ -22,6 +26,16 @@ UNITPKG := $(PKG)/$(pkg)
 COVER_PKG := $(PKG)/$(pkg)
 UNIT_TARGETED = yes
 GOLIST = echo '$(PKG)/$(pkg)'
+endif
+
+# Add the build tag for running unit tests against a postgres DB.
+ifeq ($(dbbackend),postgres)
+DEV_TAGS += test_db_postgres
+endif
+
+# Add the build tag for running unit tests against a sqlite DB.
+ifeq ($(dbbackend),sqlite)
+DEV_TAGS += test_db_sqlite
 endif
 
 # Add any additional tags that are passed in to make.
