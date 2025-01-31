@@ -24,6 +24,16 @@ UNIT_TARGETED = yes
 GOLIST = echo '$(PKG)/$(pkg)'
 endif
 
+# Add the build tag for running unit tests against a postgres DB.
+ifeq ($(dbbackend),postgres)
+DEV_TAGS += test_db_postgres
+endif
+
+# Add the build tag for running unit tests against a sqlite DB.
+ifeq ($(dbbackend),sqlite)
+DEV_TAGS += test_db_sqlite
+endif
+
 # Add any additional tags that are passed in to make.
 ifneq ($(tags),)
 DEV_TAGS += ${tags}

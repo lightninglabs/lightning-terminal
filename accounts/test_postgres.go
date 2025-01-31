@@ -1,4 +1,4 @@
-//go:build !test_db_sqlite && !test_db_postgres
+//go:build test_db_postgres && !test_db_sqlite
 
 package accounts
 
@@ -6,30 +6,23 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/lightninglabs/lightning-terminal/db"
 	"github.com/lightningnetwork/lnd/clock"
-	"github.com/stretchr/testify/require"
 )
 
 // ErrDBClosed is an error that is returned when a database operation is
 // performed on a closed database.
-var ErrDBClosed = errors.New("database not open")
+var ErrDBClosed = errors.New("database is closed")
 
 // NewTestDB is a helper function that creates an BBolt database for testing.
-func NewTestDB(t *testing.T, clock clock.Clock) *BoltStore {
-	return NewTestDBFromPath(t, t.TempDir(), clock)
+func NewTestDB(t *testing.T, clock clock.Clock) *SQLStore {
+	return NewSQLStore(db.NewTestPostgresDB(t).BaseDB, clock)
 }
 
 // NewTestDBFromPath is a helper function that creates a new BoltStore with a
 // connection to an existing BBolt database for testing.
 func NewTestDBFromPath(t *testing.T, dbPath string,
-	clock clock.Clock) *BoltStore {
+	clock clock.Clock) *SQLStore {
 
-	store, err := NewBoltStore(dbPath, DBFilename, clock)
-	require.NoError(t, err)
-
-	t.Cleanup(func() {
-		require.NoError(t, store.db.Close())
-	})
-
-	return store
+	return NewSQLStore(db.NewTestPostgresDB(t).BaseDB, clock)
 }
