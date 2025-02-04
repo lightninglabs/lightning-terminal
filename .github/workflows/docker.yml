@@ -18,9 +18,7 @@ env:
   DOCKER_ORG: lightninglabs
   DOCKER_REPO: lightning-terminal
   NIGHTLY_DOCKER_REPO: lightning-terminal-nightly
-  # TODO(guggero): Change the branch to 'master' once the experimental branch is
-  # merged into master.
-  NIGHTLY_BRANCH_NAME: 0-19-staging
+  NIGHTLY_BRANCH_NAME: master
   NIGHTLY_TAG_NAME: experimental-daily-testing
 
 jobs:
