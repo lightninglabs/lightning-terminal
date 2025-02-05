@@ -195,6 +195,49 @@ export namespace UpdateAccountRequest {
   }
 }
 
+export class UpdateAccountBalanceRequest extends jspb.Message {
+  getId(): string;
+  setId(value: string): void;
+
+  getLabel(): string;
+  setLabel(value: string): void;
+
+  hasAdd(): boolean;
+  clearAdd(): void;
+  getAdd(): string;
+  setAdd(value: string): void;
+
+  hasDeduct(): boolean;
+  clearDeduct(): void;
+  getDeduct(): string;
+  setDeduct(value: string): void;
+
+  getUpdateCase(): UpdateAccountBalanceRequest.UpdateCase;
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): UpdateAccountBalanceRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: UpdateAccountBalanceRequest): UpdateAccountBalanceRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: UpdateAccountBalanceRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): UpdateAccountBalanceRequest;
+  static deserializeBinaryFromReader(message: UpdateAccountBalanceRequest, reader: jspb.BinaryReader): UpdateAccountBalanceRequest;
+}
+
+export namespace UpdateAccountBalanceRequest {
+  export type AsObject = {
+    id: string,
+    label: string,
+    add: string,
+    deduct: string,
+  }
+
+  export enum UpdateCase {
+    UPDATE_NOT_SET = 0,
+    ADD = 3,
+    DEDUCT = 4,
+  }
+}
+
 export class ListAccountsRequest extends jspb.Message {
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ListAccountsRequest.AsObject;

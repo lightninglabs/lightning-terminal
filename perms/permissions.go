@@ -28,6 +28,10 @@ var (
 			Entity: "account",
 			Action: "write",
 		}},
+		"/litrpc.Accounts/UpdateBalance": {{
+			Entity: "account",
+			Action: "write",
+		}},
 		"/litrpc.Accounts/ListAccounts": {{
 			Entity: "account",
 			Action: "read",

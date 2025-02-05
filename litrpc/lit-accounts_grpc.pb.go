@@ -34,6 +34,10 @@ type AccountsClient interface {
 	// litcli: `accounts update`
 	// UpdateAccount updates an existing account in the account database.
 	UpdateAccount(ctx context.Context, in *UpdateAccountRequest, opts ...grpc.CallOption) (*Account, error)
+	// litcli: `accounts updatebalance`
+	// UpdateBalance adds or deducts an amount from an existing account in the
+	// account database.
+	UpdateBalance(ctx context.Context, in *UpdateAccountBalanceRequest, opts ...grpc.CallOption) (*Account, error)
 	// litcli: `accounts list`
 	// ListAccounts returns all accounts that are currently stored in the account
 	// database.
@@ -66,6 +70,15 @@ func (c *accountsClient) CreateAccount(ctx context.Context, in *CreateAccountReq
 func (c *accountsClient) UpdateAccount(ctx context.Context, in *UpdateAccountRequest, opts ...grpc.CallOption) (*Account, error) {
 	out := new(Account)
 	err := c.cc.Invoke(ctx, "/litrpc.Accounts/UpdateAccount", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountsClient) UpdateBalance(ctx context.Context, in *UpdateAccountBalanceRequest, opts ...grpc.CallOption) (*Account, error) {
+	out := new(Account)
+	err := c.cc.Invoke(ctx, "/litrpc.Accounts/UpdateBalance", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -119,6 +132,10 @@ type AccountsServer interface {
 	// litcli: `accounts update`
 	// UpdateAccount updates an existing account in the account database.
 	UpdateAccount(context.Context, *UpdateAccountRequest) (*Account, error)
+	// litcli: `accounts updatebalance`
+	// UpdateBalance adds or deducts an amount from an existing account in the
+	// account database.
+	UpdateBalance(context.Context, *UpdateAccountBalanceRequest) (*Account, error)
 	// litcli: `accounts list`
 	// ListAccounts returns all accounts that are currently stored in the account
 	// database.
@@ -141,6 +158,9 @@ func (UnimplementedAccountsServer) CreateAccount(context.Context, *CreateAccount
 }
 func (UnimplementedAccountsServer) UpdateAccount(context.Context, *UpdateAccountRequest) (*Account, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateAccount not implemented")
+}
+func (UnimplementedAccountsServer) UpdateBalance(context.Context, *UpdateAccountBalanceRequest) (*Account, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateBalance not implemented")
 }
 func (UnimplementedAccountsServer) ListAccounts(context.Context, *ListAccountsRequest) (*ListAccountsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListAccounts not implemented")
@@ -196,6 +216,24 @@ func _Accounts_UpdateAccount_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AccountsServer).UpdateAccount(ctx, req.(*UpdateAccountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Accounts_UpdateBalance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateAccountBalanceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountsServer).UpdateBalance(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/litrpc.Accounts/UpdateBalance",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountsServer).UpdateBalance(ctx, req.(*UpdateAccountBalanceRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -268,6 +306,10 @@ var Accounts_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateAccount",
 			Handler:    _Accounts_UpdateAccount_Handler,
+		},
+		{
+			MethodName: "UpdateBalance",
+			Handler:    _Accounts_UpdateBalance_Handler,
 		},
 		{
 			MethodName: "ListAccounts",

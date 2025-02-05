@@ -132,6 +132,14 @@ func (s *RPCServer) UpdateAccount(ctx context.Context,
 	return marshalAccount(account), nil
 }
 
+// UpdateBalance adds or deducts an amount from an existing account in the
+// account database.
+func (s *RPCServer) UpdateBalance(ctx context.Context,
+	req *litrpc.UpdateAccountBalanceRequest) (*litrpc.Account, error) {
+
+	return nil, fmt.Errorf("not implemented")
+}
+
 // ListAccounts returns all accounts that are currently stored in the account
 // database.
 func (s *RPCServer) ListAccounts(ctx context.Context,
