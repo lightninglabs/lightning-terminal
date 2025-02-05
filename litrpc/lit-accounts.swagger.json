@@ -71,6 +71,86 @@
         ]
       }
     },
+    "/v1/accounts/credit/{account.id}": {
+      "post": {
+        "summary": "litcli: `accounts update credit`\nCreditAccount increases the balance of an existing account in the account\ndatabase.",
+        "operationId": "Accounts_CreditAccount",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/litrpcCreditAccountResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "account.id",
+            "description": "The ID of the account.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/AccountsCreditAccountBody"
+            }
+          }
+        ],
+        "tags": [
+          "Accounts"
+        ]
+      }
+    },
+    "/v1/accounts/debit/{account.id}": {
+      "post": {
+        "summary": "litcli: `accounts update debit`\nDebitAccount decreases the balance of an existing account in the account\ndatabase.",
+        "operationId": "Accounts_DebitAccount",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/litrpcDebitAccountResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "account.id",
+            "description": "The ID of the account.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/AccountsDebitAccountBody"
+            }
+          }
+        ],
+        "tags": [
+          "Accounts"
+        ]
+      }
+    },
     "/v1/accounts/{id}": {
       "delete": {
         "summary": "litcli: `accounts remove`\nRemoveAccount removes the given account from the account database.",
@@ -150,6 +230,48 @@
     }
   },
   "definitions": {
+    "AccountsCreditAccountBody": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "type": "object",
+          "properties": {
+            "label": {
+              "type": "string",
+              "description": "The label of the account."
+            }
+          },
+          "description": "The identifier of the account to credit.",
+          "title": "The identifier of the account to credit."
+        },
+        "amount": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The amount by which the account's balance should be credited."
+        }
+      }
+    },
+    "AccountsDebitAccountBody": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "type": "object",
+          "properties": {
+            "label": {
+              "type": "string",
+              "description": "The label of the account."
+            }
+          },
+          "description": "The identifier of the account to debit.",
+          "title": "The identifier of the account to debit."
+        },
+        "amount": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The amount by which the account's balance should be debited."
+        }
+      }
+    },
     "AccountsUpdateAccountBody": {
       "type": "object",
       "properties": {
@@ -218,6 +340,19 @@
         }
       }
     },
+    "litrpcAccountIdentifier": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The ID of the account."
+        },
+        "label": {
+          "type": "string",
+          "description": "The label of the account."
+        }
+      }
+    },
     "litrpcAccountInvoice": {
       "type": "object",
       "properties": {
@@ -277,6 +412,24 @@
           "type": "string",
           "format": "byte",
           "description": "The macaroon with all permissions required to access the account."
+        }
+      }
+    },
+    "litrpcCreditAccountResponse": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "#/definitions/litrpcAccount",
+          "description": "The credited account."
+        }
+      }
+    },
+    "litrpcDebitAccountResponse": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "#/definitions/litrpcAccount",
+          "description": "The debited account."
         }
       }
     },
