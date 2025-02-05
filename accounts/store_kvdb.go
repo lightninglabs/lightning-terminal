@@ -310,6 +310,8 @@ func (s *BoltStore) UpsertAccountPayment(_ context.Context, id AccountID,
 // AdjustAccountBalance modifies the given account balance by adding or
 // deducting the specified amount, depending on whether isAddition is true or
 // false.
+//
+// NOTE: This is part of the Store interface.
 func (s *BoltStore) AdjustAccountBalance(_ context.Context,
 	id AccountID, amount lnwire.MilliSatoshi, isAddition bool) error {
 

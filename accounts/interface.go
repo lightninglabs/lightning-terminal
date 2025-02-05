@@ -268,6 +268,12 @@ type Store interface {
 		status lnrpc.Payment_PaymentStatus,
 		options ...UpsertPaymentOption) (bool, error)
 
+	// AdjustAccountBalance modifies the given account balance by adding or
+	// deducting the specified amount, depending on whether isAddition is
+	// true or false.
+	AdjustAccountBalance(ctx context.Context, alias AccountID,
+		amount lnwire.MilliSatoshi, isAddition bool) error
+
 	// DeleteAccountPayment removes a payment entry from the account with
 	// the given ID. It will return the ErrPaymentNotAssociated error if the
 	// payment is not associated with the account.

@@ -26,6 +26,29 @@ func (q *Queries) AddAccountInvoice(ctx context.Context, arg AddAccountInvoicePa
 	return err
 }
 
+const adjustAccountBalance = `-- name: AdjustAccountBalance :one
+UPDATE accounts
+SET current_balance_msat = current_balance_msat + CASE
+    WHEN $1 THEN $2  -- If IsAddition is true, add the amount
+    ELSE -$2         -- If IsAddition is false, subtract the amount
+END
+WHERE id = $3
+RETURNING id
+`
+
+type AdjustAccountBalanceParams struct {
+	IsAddition int64
+	Amount     int64
+	ID         int64
+}
+
+func (q *Queries) AdjustAccountBalance(ctx context.Context, arg AdjustAccountBalanceParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, adjustAccountBalance, arg.IsAddition, arg.Amount, arg.ID)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
 const deleteAccount = `-- name: DeleteAccount :exec
 DELETE FROM accounts
 WHERE id = $1

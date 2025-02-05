@@ -11,6 +11,7 @@ import (
 
 type Querier interface {
 	AddAccountInvoice(ctx context.Context, arg AddAccountInvoiceParams) error
+	AdjustAccountBalance(ctx context.Context, arg AdjustAccountBalanceParams) (int64, error)
 	DeleteAccount(ctx context.Context, id int64) error
 	DeleteAccountPayment(ctx context.Context, arg DeleteAccountPaymentParams) error
 	GetAccount(ctx context.Context, id int64) (Account, error)

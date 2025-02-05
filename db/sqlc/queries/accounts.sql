@@ -9,6 +9,15 @@ SET current_balance_msat = $1
 WHERE id = $2
 RETURNING id;
 
+-- name: AdjustAccountBalance :one
+UPDATE accounts
+SET current_balance_msat = current_balance_msat + CASE
+    WHEN sqlc.arg(is_addition) THEN sqlc.arg(amount)  -- If IsAddition is true, add the amount
+    ELSE -sqlc.arg(amount)         -- If IsAddition is false, subtract the amount
+END
+WHERE id = sqlc.arg(id)
+RETURNING id;
+
 -- name: UpdateAccountExpiry :one
 UPDATE accounts
 SET expiration = $1

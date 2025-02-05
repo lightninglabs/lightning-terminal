@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/lightninglabs/lightning-terminal/db"
@@ -34,6 +35,7 @@ const (
 //nolint:lll
 type SQLQueries interface {
 	AddAccountInvoice(ctx context.Context, arg sqlc.AddAccountInvoiceParams) error
+	AdjustAccountBalance(ctx context.Context, arg sqlc.AdjustAccountBalanceParams) (int64, error)
 	DeleteAccount(ctx context.Context, id int64) error
 	DeleteAccountPayment(ctx context.Context, arg sqlc.DeleteAccountPaymentParams) error
 	GetAccount(ctx context.Context, id int64) (sqlc.Account, error)
@@ -592,6 +594,63 @@ func (s *SQLStore) UpsertAccountPayment(ctx context.Context, alias AccountID,
 			} else if err != nil {
 				return err
 			}
+		}
+
+		return s.markAccountUpdated(ctx, db, id)
+	})
+}
+
+// AdjustAccountBalance modifies the given account balance by adding or
+// deducting the specified amount, depending on whether isAddition is true or
+// false.
+//
+// NOTE: This is part of the Store interface.
+func (s *SQLStore) AdjustAccountBalance(ctx context.Context,
+	alias AccountID, amount lnwire.MilliSatoshi, isAddition bool) error {
+
+	if amount > math.MaxInt64 {
+		return fmt.Errorf("amount %v exceeds the maximum of %v",
+			amount/1000, int64(math.MaxInt64)/1000)
+	}
+
+	var writeTxOpts db.QueriesTxOptions
+	return s.db.ExecTx(ctx, &writeTxOpts, func(db SQLQueries) error {
+		id, err := getAccountIDByAlias(ctx, db, alias)
+		if err != nil {
+			return err
+		}
+
+		if !isAddition {
+			acct, err := db.GetAccount(ctx, id)
+			if err != nil {
+				return err
+			}
+
+			if acct.CurrentBalanceMsat-int64(amount) < 0 {
+				return fmt.Errorf("cannot deduct %v from the "+
+					"current balance %v, as the resulting "+
+					"balance would be below 0",
+					int64(amount/1000),
+					acct.CurrentBalanceMsat/1000)
+			}
+		}
+
+		isAdditionInt := int64(0)
+		if isAddition {
+			isAdditionInt = 1
+		}
+
+		_, err = db.AdjustAccountBalance(
+			ctx, sqlc.AdjustAccountBalanceParams{
+				IsAddition: isAdditionInt,
+				Amount:     int64(amount),
+				ID:         id,
+			},
+		)
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrAccNotFound
+		} else if err != nil {
+			return err
 		}
 
 		return s.markAccountUpdated(ctx, db, id)
