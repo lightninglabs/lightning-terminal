@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -26,6 +27,7 @@ var accountsCommands = []cli.Command{
 		Subcommands: []cli.Command{
 			createAccountCommand,
 			updateAccountCommand,
+			updateBalanceCommands,
 			listAccountsCommand,
 			accountInfoCommand,
 			removeAccountCommand,
@@ -224,6 +226,131 @@ func updateAccount(cli *cli.Context) error {
 		ExpirationDate: expirationDate,
 	}
 	resp, err := client.UpdateAccount(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	printRespJSON(resp)
+	return nil
+}
+
+var updateBalanceCommands = cli.Command{
+	Name:      "updatebalance",
+	ShortName: "b",
+	Usage:     "Update the balance of an existing off-chain account.",
+	Subcommands: []cli.Command{
+		addBalanceCommand,
+		deductBalanceCommand,
+	},
+	Description: "Updates the balance of an existing off-chain account.",
+}
+
+var addBalanceCommand = cli.Command{
+	Name:      "add",
+	ShortName: "a",
+	Usage:     "Adds the given amount to an account's balance.",
+	ArgsUsage: "[id | label] amount",
+	Description: "Adds the given amount to an existing off-chain " +
+		"account's balance.",
+	Flags: []cli.Flag{
+		cli.StringFlag{
+			Name:  idName,
+			Usage: "The ID of the account to add balance to.",
+		},
+		cli.StringFlag{
+			Name:  labelName,
+			Usage: "(optional) The unique label of the account.",
+		},
+		cli.Uint64Flag{
+			Name:  "amount",
+			Usage: "The amount to add to the account.",
+		},
+	},
+	Action: addBalance,
+}
+
+func addBalance(cli *cli.Context) error {
+	return updateBalance(cli, true)
+}
+
+var deductBalanceCommand = cli.Command{
+	Name:      "deduct",
+	ShortName: "d",
+	Usage:     "Deducts the given amount from an account's balance.",
+	ArgsUsage: "[id | label] amount",
+	Description: "Deducts the given amount from an existing off-chain " +
+		"account's balance.",
+	Flags: []cli.Flag{
+		cli.StringFlag{
+			Name:  idName,
+			Usage: "The ID of the account to deduct balance from.",
+		},
+		cli.StringFlag{
+			Name:  labelName,
+			Usage: "(optional) The unique label of the account.",
+		},
+		cli.Uint64Flag{
+			Name:  "amount",
+			Usage: "The amount to deduct from the account.",
+		},
+	},
+	Action: deductBalance,
+}
+
+func deductBalance(cli *cli.Context) error {
+	return updateBalance(cli, false)
+}
+
+func updateBalance(cli *cli.Context, add bool) error {
+	ctx := getContext()
+	clientConn, cleanup, err := connectClient(cli, false)
+	if err != nil {
+		return err
+	}
+	defer cleanup()
+	client := litrpc.NewAccountsClient(clientConn)
+
+	id, label, args, err := parseIDOrLabel(cli)
+	if err != nil {
+		return err
+	}
+
+	if (!cli.IsSet("amount") && len(args) != 1) ||
+		(cli.IsSet("amount") && len(args) != 0) {
+
+		return errors.New("invalid number of arguments")
+	}
+
+	var amount int64
+	switch {
+	case cli.IsSet("amount"):
+		amount = cli.Int64("amount")
+	case args.Present():
+		amount, err = strconv.ParseInt(args.First(), 10, 64)
+		if err != nil {
+			return fmt.Errorf("unable to decode balance %v", err)
+		}
+		args = args.Tail()
+	default:
+		return errors.New("must set a value for amount")
+	}
+
+	req := &litrpc.UpdateAccountBalanceRequest{
+		Id:    id,
+		Label: label,
+	}
+
+	if add {
+		req.Update = &litrpc.UpdateAccountBalanceRequest_Add{
+			Add: amount,
+		}
+	} else {
+		req.Update = &litrpc.UpdateAccountBalanceRequest_Deduct{
+			Deduct: amount,
+		}
+	}
+
+	resp, err := client.UpdateBalance(ctx, req)
 	if err != nil {
 		return err
 	}
