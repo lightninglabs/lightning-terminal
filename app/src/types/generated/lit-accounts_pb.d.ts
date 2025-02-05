@@ -195,6 +195,102 @@ export namespace UpdateAccountRequest {
   }
 }
 
+export class CreditAccountRequest extends jspb.Message {
+  hasAccount(): boolean;
+  clearAccount(): void;
+  getAccount(): AccountIdentifier | undefined;
+  setAccount(value?: AccountIdentifier): void;
+
+  getAmount(): string;
+  setAmount(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): CreditAccountRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: CreditAccountRequest): CreditAccountRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: CreditAccountRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): CreditAccountRequest;
+  static deserializeBinaryFromReader(message: CreditAccountRequest, reader: jspb.BinaryReader): CreditAccountRequest;
+}
+
+export namespace CreditAccountRequest {
+  export type AsObject = {
+    account?: AccountIdentifier.AsObject,
+    amount: string,
+  }
+}
+
+export class CreditAccountResponse extends jspb.Message {
+  hasAccount(): boolean;
+  clearAccount(): void;
+  getAccount(): Account | undefined;
+  setAccount(value?: Account): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): CreditAccountResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: CreditAccountResponse): CreditAccountResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: CreditAccountResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): CreditAccountResponse;
+  static deserializeBinaryFromReader(message: CreditAccountResponse, reader: jspb.BinaryReader): CreditAccountResponse;
+}
+
+export namespace CreditAccountResponse {
+  export type AsObject = {
+    account?: Account.AsObject,
+  }
+}
+
+export class DebitAccountRequest extends jspb.Message {
+  hasAccount(): boolean;
+  clearAccount(): void;
+  getAccount(): AccountIdentifier | undefined;
+  setAccount(value?: AccountIdentifier): void;
+
+  getAmount(): string;
+  setAmount(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): DebitAccountRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: DebitAccountRequest): DebitAccountRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: DebitAccountRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): DebitAccountRequest;
+  static deserializeBinaryFromReader(message: DebitAccountRequest, reader: jspb.BinaryReader): DebitAccountRequest;
+}
+
+export namespace DebitAccountRequest {
+  export type AsObject = {
+    account?: AccountIdentifier.AsObject,
+    amount: string,
+  }
+}
+
+export class DebitAccountResponse extends jspb.Message {
+  hasAccount(): boolean;
+  clearAccount(): void;
+  getAccount(): Account | undefined;
+  setAccount(value?: Account): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): DebitAccountResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: DebitAccountResponse): DebitAccountResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: DebitAccountResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): DebitAccountResponse;
+  static deserializeBinaryFromReader(message: DebitAccountResponse, reader: jspb.BinaryReader): DebitAccountResponse;
+}
+
+export namespace DebitAccountResponse {
+  export type AsObject = {
+    account?: Account.AsObject,
+  }
+}
+
 export class ListAccountsRequest extends jspb.Message {
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ListAccountsRequest.AsObject;
@@ -294,6 +390,41 @@ export class RemoveAccountResponse extends jspb.Message {
 
 export namespace RemoveAccountResponse {
   export type AsObject = {
+  }
+}
+
+export class AccountIdentifier extends jspb.Message {
+  hasId(): boolean;
+  clearId(): void;
+  getId(): string;
+  setId(value: string): void;
+
+  hasLabel(): boolean;
+  clearLabel(): void;
+  getLabel(): string;
+  setLabel(value: string): void;
+
+  getIdentifierCase(): AccountIdentifier.IdentifierCase;
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AccountIdentifier.AsObject;
+  static toObject(includeInstance: boolean, msg: AccountIdentifier): AccountIdentifier.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: AccountIdentifier, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AccountIdentifier;
+  static deserializeBinaryFromReader(message: AccountIdentifier, reader: jspb.BinaryReader): AccountIdentifier;
+}
+
+export namespace AccountIdentifier {
+  export type AsObject = {
+    id: string,
+    label: string,
+  }
+
+  export enum IdentifierCase {
+    IDENTIFIER_NOT_SET = 0,
+    ID = 1,
+    LABEL = 2,
   }
 }
 

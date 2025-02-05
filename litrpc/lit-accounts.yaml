@@ -15,3 +15,9 @@ http:
       get: "/v1/accounts"
     - selector: litrpc.Accounts.RemoveAccount
       delete: "/v1/accounts/{id}"
+    - selector: litrpc.Accounts.CreditAccount
+      post: "/v1/accounts/credit/{account.id}"
+      body: "*"
+    - selector: litrpc.Accounts.DebitAccount
+      post: "/v1/accounts/debit/{account.id}"
+      body: "*"
