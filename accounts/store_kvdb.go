@@ -307,6 +307,43 @@ func (s *BoltStore) UpsertAccountPayment(_ context.Context, id AccountID,
 	return known, s.updateAccount(id, update)
 }
 
+// AdjustAccountBalance modifies the given account balance by adding or
+// deducting the specified amount, depending on whether isAddition is true or
+// false.
+func (s *BoltStore) AdjustAccountBalance(_ context.Context,
+	id AccountID, amount lnwire.MilliSatoshi, isAddition bool) error {
+
+	update := func(account *OffChainBalanceAccount) error {
+		if amount > math.MaxInt64 {
+			return fmt.Errorf("amount %v exceeds the maximum of %v",
+				int64(amount/1000), int64(math.MaxInt64)/1000)
+		}
+
+		if amount <= 0 {
+			return fmt.Errorf("amount %v must be greater that 0",
+				amount)
+		}
+
+		if isAddition {
+			account.CurrentBalance += int64(amount)
+		} else {
+			if account.CurrentBalance-int64(amount) < 0 {
+				return fmt.Errorf("cannot deduct %v from the "+
+					"current balance %v, as the resulting "+
+					"balance would be below 0",
+					int64(amount/1000),
+					account.CurrentBalance/1000)
+			}
+
+			account.CurrentBalance -= int64(amount)
+		}
+
+		return nil
+	}
+
+	return s.updateAccount(id, update)
+}
+
 // DeleteAccountPayment removes a payment entry from the account with the given
 // ID. It will return the ErrPaymentNotAssociated error if the payment is not
 // associated with the account.
