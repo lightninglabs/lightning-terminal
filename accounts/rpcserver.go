@@ -137,7 +137,46 @@ func (s *RPCServer) UpdateAccount(ctx context.Context,
 func (s *RPCServer) UpdateBalance(ctx context.Context,
 	req *litrpc.UpdateAccountBalanceRequest) (*litrpc.Account, error) {
 
-	return nil, fmt.Errorf("not implemented")
+	var (
+		isAddition bool
+		amount     lnwire.MilliSatoshi
+	)
+
+	switch reqType := req.GetUpdate().(type) {
+	case *litrpc.UpdateAccountBalanceRequest_Add:
+		log.Infof("[addbalance] id=%s, label=%v, amount=%d",
+			req.Id, req.Label, reqType.Add)
+
+		isAddition = true
+		amount = lnwire.MilliSatoshi(reqType.Add * 1000)
+
+	case *litrpc.UpdateAccountBalanceRequest_Deduct:
+		log.Infof("[deductbalance] id=%s, label=%v, amount=%d",
+			req.Id, req.Label, reqType.Deduct)
+
+		isAddition = false
+		amount = lnwire.MilliSatoshi(reqType.Deduct * 1000)
+	}
+
+	if amount <= 0 {
+		return nil, fmt.Errorf("amount %v must be greater than 0",
+			int64(amount/1000))
+	}
+
+	accountID, err := s.findAccount(ctx, req.Id, req.Label)
+	if err != nil {
+		return nil, err
+	}
+
+	// Ask the service to update the account.
+	account, err := s.service.UpdateBalance(
+		ctx, accountID, amount, isAddition,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return marshalAccount(account), nil
 }
 
 // ListAccounts returns all accounts that are currently stored in the account

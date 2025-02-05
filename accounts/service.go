@@ -345,6 +345,32 @@ func (s *InterceptorService) UpdateAccount(ctx context.Context,
 	return s.store.Account(ctx, accountID)
 }
 
+// UpdateBalance adds or deducts an amount from an existing account in the
+// account database.
+func (s *InterceptorService) UpdateBalance(ctx context.Context,
+	accountID AccountID, amount lnwire.MilliSatoshi,
+	isAddition bool) (*OffChainBalanceAccount, error) {
+
+	s.Lock()
+	defer s.Unlock()
+
+	// As this function updates account balances, we require that the
+	// service is running before we execute it.
+	if !s.isRunningUnsafe() {
+		// This case can only happen if the service is disabled while
+		// we're processing a request.
+		return nil, ErrAccountServiceDisabled
+	}
+
+	// Adjust the balance of the account in the db.
+	err := s.store.AdjustAccountBalance(ctx, accountID, amount, isAddition)
+	if err != nil {
+		return nil, fmt.Errorf("unable to update account: %w", err)
+	}
+
+	return s.store.Account(ctx, accountID)
+}
+
 // Account retrieves an account from the bolt DB and un-marshals it. If the
 // account cannot be found, then ErrAccNotFound is returned.
 func (s *InterceptorService) Account(ctx context.Context,
