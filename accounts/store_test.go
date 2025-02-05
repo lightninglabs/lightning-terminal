@@ -2,6 +2,7 @@ package accounts
 
 import (
 	"context"
+	"github.com/lightningnetwork/lnd/lnwire"
 	"testing"
 	"time"
 
@@ -71,6 +72,14 @@ func TestAccountStore(t *testing.T) {
 	)
 	require.NoError(t, err)
 
+	// Adjust the account balance by first crediting 10000, and then
+	// debiting 5000.
+	err = store.CreditAccount(ctx, acct1.ID, lnwire.MilliSatoshi(10000))
+	require.NoError(t, err)
+
+	err = store.DebitAccount(ctx, acct1.ID, lnwire.MilliSatoshi(5000))
+	require.NoError(t, err)
+
 	// Update the in-memory account so that we can compare it with the
 	// account we get from the store.
 	acct1.CurrentBalance = -500
@@ -85,10 +94,29 @@ func TestAccountStore(t *testing.T) {
 	}
 	acct1.Invoices[lntypes.Hash{12, 34, 56, 78}] = struct{}{}
 	acct1.Invoices[lntypes.Hash{34, 56, 78, 90}] = struct{}{}
+	acct1.CurrentBalance += 10000
+	acct1.CurrentBalance -= 5000
 
 	dbAccount, err = store.Account(ctx, acct1.ID)
 	require.NoError(t, err)
 	assertEqualAccounts(t, acct1, dbAccount)
+
+	// Test that adjusting the balance to exactly 0 should work, while
+	// adjusting the balance to below 0 should fail.
+	err = store.DebitAccount(
+		ctx, acct1.ID, lnwire.MilliSatoshi(acct1.CurrentBalance),
+	)
+	require.NoError(t, err)
+
+	acct1.CurrentBalance = 0
+
+	dbAccount, err = store.Account(ctx, acct1.ID)
+	require.NoError(t, err)
+	assertEqualAccounts(t, acct1, dbAccount)
+
+	// Adjusting the value to below 0 should fail.
+	err = store.DebitAccount(ctx, acct1.ID, lnwire.MilliSatoshi(1))
+	require.ErrorContains(t, err, "balance would be below 0")
 
 	// Sleep just a tiny bit to make sure we are never too quick to measure
 	// the expiry, even though the time is nanosecond scale and writing to

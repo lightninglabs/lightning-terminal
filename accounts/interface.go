@@ -230,6 +230,11 @@ type Store interface {
 	CreditAccount(ctx context.Context, id AccountID,
 		amount lnwire.MilliSatoshi) error
 
+	// DebitAccount decreases the balance of the account with the
+	// given ID by the given amount.
+	DebitAccount(ctx context.Context, id AccountID,
+		amount lnwire.MilliSatoshi) error
+
 	// UpsertAccountPayment updates or inserts a payment entry for the given
 	// account. Various functional options can be passed to modify the
 	// behavior of the method. The returned boolean is true if the payment
