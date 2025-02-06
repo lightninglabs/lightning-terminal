@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -25,6 +26,7 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	"github.com/lightninglabs/faraday/frdrpc"
 	terminal "github.com/lightninglabs/lightning-terminal"
+	"github.com/lightninglabs/lightning-terminal/db"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/lightning-terminal/subservers"
 	"github.com/lightninglabs/loop/looprpc"
@@ -60,7 +62,12 @@ var (
 	numActiveNodes    = 0
 	numActiveNodesMtx sync.Mutex
 
-	defaultLndPassphrase = []byte("default-wallet-password")
+	// litDBBackend is a command line flag for specifying the database
+	// backend to use when starting a LiT daemon.
+	litDBBackend = flag.String(
+		"litdbbackend", terminal.DatabaseBackendBbolt, "Set the "+
+			"database backend to use when starting a LiT daemon.",
+	)
 )
 
 type LitNodeConfig struct {
@@ -79,6 +86,9 @@ type LitNodeConfig struct {
 	TapMacPath     string
 	LitTLSCertPath string
 	LitMacPath     string
+
+	DBBackend      string
+	PostgresConfig *db.PostgresConfig
 
 	UIPassword string
 	LitDir     string
@@ -220,8 +230,20 @@ func (cfg *LitNodeConfig) defaultLitdArgs() *litArgs {
 			"restcors":               "*",
 			"lnd.debuglevel":         "trace,GRPC=error,PEER=info",
 			"lndconnectinterval":     "200ms",
+			"databasebackend":        cfg.DBBackend,
 		}
 	)
+
+	if cfg.DBBackend == terminal.DatabaseBackendPostgres {
+		args["postgres.host"] = cfg.PostgresConfig.Host
+		args["postgres.port"] = fmt.Sprintf(
+			"%d", cfg.PostgresConfig.Port,
+		)
+		args["postgres.user"] = cfg.PostgresConfig.User
+		args["postgres.password"] = cfg.PostgresConfig.Password
+		args["postgres.dbname"] = cfg.PostgresConfig.DBName
+	}
+
 	for _, arg := range cfg.LitArgs {
 		parts := strings.Split(arg, "=")
 		option := strings.TrimLeft(parts[0], "--")
@@ -416,6 +438,28 @@ func NewNode(t *testing.T, cfg *LitNodeConfig,
 	)
 	cfg.LitTLSCertPath = filepath.Join(cfg.LitDir, "tls.cert")
 	cfg.GenerateListeningPorts()
+
+	// Decide which DB backend to use.
+	switch *litDBBackend {
+	case terminal.DatabaseBackendSqlite:
+		cfg.DBBackend = terminal.DatabaseBackendSqlite
+
+	case terminal.DatabaseBackendPostgres:
+		fixture := db.NewTestPgFixture(
+			t, db.DefaultPostgresFixtureLifetime, true,
+		)
+		t.Cleanup(func() {
+			fixture.TearDown(t)
+		})
+
+		cfg.DBBackend = terminal.DatabaseBackendPostgres
+		cfg.PostgresConfig = fixture.GetConfig()
+
+	default:
+		cfg.DBBackend = terminal.DatabaseBackendBbolt
+	}
+
+	t.Logf("Using %v database backend", cfg.DBBackend)
 
 	// Generate a random UI password by reading 16 random bytes and base64
 	// encoding them.
