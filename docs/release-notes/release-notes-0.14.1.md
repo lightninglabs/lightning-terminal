@@ -18,6 +18,11 @@
 
 ### Functional Changes/Additions
 
+* [Add account updatebalance
+  commands](https://github.com/lightninglabs/lightning-terminal/pull/962) that
+  allow increasing or decreasing the balance of an off-chain account by a
+  specified amount.
+
 ### Technical and Architectural Updates
 
 * [Add some Makefile 
@@ -52,4 +57,5 @@
 * jiangmencity
 * Oliver Gugger
 * Tristav
+* Viktor
 * zhoufanjin
