@@ -381,6 +381,7 @@ func syncUniverses(t *testing.T, universe *tapClient, nodes ...*HarnessNode) {
 
 		itest.SyncUniverses(
 			ctxt, t, nodeTapClient, universe, universeHostAddr,
+			universerpc.UniverseSyncMode_SYNC_ISSUANCE_ONLY,
 			defaultTimeout,
 		)
 	}
