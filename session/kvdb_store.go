@@ -371,6 +371,16 @@ func (db *BoltStore) ListSessions(filterFn func(s *Session) bool) ([]*Session, e
 	return db.listSessions(filterFn)
 }
 
+// ListSessionsByType returns all sessions currently known to the store that
+// have the given type.
+//
+// NOTE: this is part of the Store interface.
+func (db *BoltStore) ListSessionsByType(t Type) ([]*Session, error) {
+	return db.listSessions(func(s *Session) bool {
+		return s.Type == t
+	})
+}
+
 // listSessions returns all sessions currently known to the store that pass the
 // given filter function.
 func (db *BoltStore) listSessions(filterFn func(s *Session) bool) ([]*Session,

@@ -1259,9 +1259,7 @@ func (s *sessionRpcServer) ListAutopilotSessions(_ context.Context,
 	_ *litrpc.ListAutopilotSessionsRequest) (
 	*litrpc.ListAutopilotSessionsResponse, error) {
 
-	sessions, err := s.cfg.db.ListSessions(func(s *session.Session) bool {
-		return s.Type == session.TypeAutopilot
-	})
+	sessions, err := s.cfg.db.ListSessionsByType(session.TypeAutopilot)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching sessions: %v", err)
 	}

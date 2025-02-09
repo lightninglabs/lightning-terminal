@@ -31,7 +31,7 @@ func TestBasicSessionStore(t *testing.T) {
 	clock.SetTime(testTime.Add(time.Second))
 	s2 := newSession(t, db, clock, "session 2")
 	clock.SetTime(testTime.Add(2 * time.Second))
-	s3 := newSession(t, db, clock, "session 3")
+	s3 := newSession(t, db, clock, "session 3", withType(TypeAutopilot))
 	clock.SetTime(testTime.Add(3 * time.Second))
 	s4 := newSession(t, db, clock, "session 4")
 
@@ -63,6 +63,22 @@ func TestBasicSessionStore(t *testing.T) {
 	assertEqualSessions(t, s1, sessions[0])
 	assertEqualSessions(t, s2, sessions[1])
 	assertEqualSessions(t, s3, sessions[2])
+
+	// Test the ListSessionsByType method.
+	sessions, err = db.ListSessionsByType(TypeMacaroonAdmin)
+	require.NoError(t, err)
+	require.Equal(t, 2, len(sessions))
+	assertEqualSessions(t, s1, sessions[0])
+	assertEqualSessions(t, s2, sessions[1])
+
+	sessions, err = db.ListSessionsByType(TypeAutopilot)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(sessions))
+	assertEqualSessions(t, s3, sessions[0])
+
+	sessions, err = db.ListSessionsByType(TypeMacaroonReadonly)
+	require.NoError(t, err)
+	require.Empty(t, sessions)
 
 	// Ensure that we can retrieve each session by both its local pub key
 	// and by its ID.
@@ -307,6 +323,12 @@ type testSessionModifier func(*Session)
 func withLinkedGroupID(groupID *ID) testSessionModifier {
 	return func(s *Session) {
 		s.GroupID = *groupID
+	}
+}
+
+func withType(t Type) testSessionModifier {
+	return func(s *Session) {
+		s.Type = t
 	}
 }
 
