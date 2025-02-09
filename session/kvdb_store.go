@@ -249,9 +249,7 @@ func (db *BoltStore) NewSession(label string, typ Type, expiry time.Time,
 				}
 
 				// Ensure that the session is no longer active.
-				if sess.State == StateCreated ||
-					sess.State == StateInUse {
-
+				if !sess.State.Terminal() {
 					return fmt.Errorf("session (id=%x) "+
 						"in group %x is still active",
 						sess.ID, sess.GroupID)
@@ -677,65 +675,6 @@ func (db *BoltStore) GetSessionIDs(groupID ID) ([]ID, error) {
 	}
 
 	return sessionIDs, nil
-}
-
-// CheckSessionGroupPredicate iterates over all the sessions in a group and
-// checks if each one passes the given predicate function. True is returned if
-// each session passes.
-//
-// NOTE: this is part of the Store interface.
-func (db *BoltStore) CheckSessionGroupPredicate(groupID ID,
-	fn func(s *Session) bool) (bool, error) {
-
-	var (
-		pass          bool
-		errFailedPred = errors.New("session failed predicate")
-	)
-	err := db.View(func(tx *bbolt.Tx) error {
-		sessionBkt, err := getBucket(tx, sessionBucketKey)
-		if err != nil {
-			return err
-		}
-
-		sessionIDs, err := getSessionIDs(sessionBkt, groupID)
-		if err != nil {
-			return err
-		}
-
-		// Iterate over all the sessions.
-		for _, id := range sessionIDs {
-			key, err := getKeyForID(sessionBkt, id)
-			if err != nil {
-				return err
-			}
-
-			v := sessionBkt.Get(key)
-			if len(v) == 0 {
-				return ErrSessionNotFound
-			}
-
-			session, err := DeserializeSession(bytes.NewReader(v))
-			if err != nil {
-				return err
-			}
-
-			if !fn(session) {
-				return errFailedPred
-			}
-		}
-
-		pass = true
-
-		return nil
-	})
-	if errors.Is(err, errFailedPred) {
-		return pass, nil
-	}
-	if err != nil {
-		return pass, err
-	}
-
-	return pass, nil
 }
 
 // getSessionIDs returns all the session IDs associated with the given group ID.

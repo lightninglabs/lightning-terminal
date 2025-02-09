@@ -874,23 +874,6 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 				"group %x", groupSess.ID, groupSess.GroupID)
 		}
 
-		// Now we need to check that all the sessions in the group are
-		// no longer active.
-		ok, err := s.cfg.db.CheckSessionGroupPredicate(
-			groupID, func(s *session.Session) bool {
-				return s.State == session.StateRevoked ||
-					s.State == session.StateExpired
-			},
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		if !ok {
-			return nil, fmt.Errorf("a linked session in group "+
-				"%x is still active", groupID)
-		}
-
 		linkedGroupID = &groupID
 		linkedGroupSession = groupSess
 
