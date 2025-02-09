@@ -27,15 +27,15 @@ const (
 type State uint8
 
 /*
-		/---> StateExpired
-StateCreated ---
-       		\---> StateRevoked
+				   /---> StateExpired
+StateReserved ---> StateCreated ---
+       				   \---> StateRevoked
 */
 
 const (
 	// StateCreated is the state of a session once it has been fully
-	// committed to the Store and is ready to be used. This is the first
-	// state of a session.
+	// committed to the BoltStore and is ready to be used. This is the
+	// first state after StateReserved.
 	StateCreated State = 0
 
 	// StateInUse is the state of a session that is currently being used.
@@ -52,10 +52,10 @@ const (
 	// date.
 	StateExpired State = 3
 
-	// StateReserved is a temporary initial state of a session. On start-up,
-	// any sessions in this state should be cleaned up.
-	//
-	// NOTE: this isn't used yet.
+	// StateReserved is a temporary initial state of a session. This is used
+	// to reserve a unique ID and private key pair for a session before it
+	// is fully created. On start-up, any sessions in this state should be
+	// cleaned up.
 	StateReserved State = 4
 )
 
@@ -123,7 +123,7 @@ func buildSession(id ID, localPrivKey *btcec.PrivateKey, label string, typ Type,
 	sess := &Session{
 		ID:                id,
 		Label:             label,
-		State:             StateCreated,
+		State:             StateReserved,
 		Type:              typ,
 		Expiry:            expiry.UTC(),
 		CreatedAt:         created.UTC(),
@@ -167,22 +167,16 @@ type IDToGroupIndex interface {
 // retrieving Terminal Connect sessions.
 type Store interface {
 	// NewSession creates a new session with the given user-defined
-	// parameters.
-	//
-	// NOTE: currently this purely a constructor of the Session type and
-	// does not make any database calls. This will be changed in a future
-	// commit.
-	NewSession(id ID, localPrivKey *btcec.PrivateKey, label string,
-		typ Type, expiry time.Time, serverAddr string, devServer bool,
-		perms []bakery.Op, caveats []macaroon.Caveat,
+	// parameters. The session will remain in the StateReserved state until
+	// CreateSession is called for the session.
+	NewSession(label string, typ Type, expiry time.Time, serverAddr string,
+		devServer bool, perms []bakery.Op, caveats []macaroon.Caveat,
 		featureConfig FeaturesConfig, privacy bool, linkedGroupID *ID,
 		flags PrivacyFlags) (*Session, error)
 
-	// CreateSession adds a new session to the store. If a session with the
-	// same local public key already exists an error is returned. This
-	// can only be called with a Session with an ID that the Store has
-	// reserved.
-	CreateSession(*Session) error
+	// CreateSession moves the given session from the StateReserved state to
+	// the StateCreated state.
+	CreateSession(ID) (*Session, error)
 
 	// GetSession fetches the session with the given key.
 	GetSession(key *btcec.PublicKey) (*Session, error)
@@ -203,12 +197,6 @@ type Store interface {
 	// to the session with the given local pub key.
 	UpdateSessionRemotePubKey(localPubKey,
 		remotePubKey *btcec.PublicKey) error
-
-	// GetUnusedIDAndKeyPair can be used to generate a new, unused, local
-	// private key and session ID pair. Care must be taken to ensure that no
-	// other thread calls this before the returned ID and key pair from this
-	// method are either used or discarded.
-	GetUnusedIDAndKeyPair() (ID, *btcec.PrivateKey, error)
 
 	// GetSessionByID fetches the session with the given ID.
 	GetSessionByID(id ID) (*Session, error)

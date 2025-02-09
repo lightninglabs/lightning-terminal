@@ -46,11 +46,6 @@ type sessionRpcServer struct {
 	cfg           *sessionRpcServerConfig
 	sessionServer *session.Server
 
-	// sessRegMu is a mutex that should be held between acquiring an unused
-	// session ID and key pair from the session store and persisting that
-	// new session.
-	sessRegMu sync.Mutex
-
 	quit     chan struct{}
 	wg       sync.WaitGroup
 	stopOnce sync.Once
@@ -313,16 +308,8 @@ func (s *sessionRpcServer) AddSession(ctx context.Context,
 		}
 	}
 
-	s.sessRegMu.Lock()
-	defer s.sessRegMu.Unlock()
-
-	id, localPrivKey, err := s.cfg.db.GetUnusedIDAndKeyPair()
-	if err != nil {
-		return nil, err
-	}
-
 	sess, err := s.cfg.db.NewSession(
-		id, localPrivKey, req.Label, typ, expiry, req.MailboxServerAddr,
+		req.Label, typ, expiry, req.MailboxServerAddr,
 		req.DevServer, uniquePermissions, caveats, nil, false, nil,
 		session.PrivacyFlags{},
 	)
@@ -330,7 +317,8 @@ func (s *sessionRpcServer) AddSession(ctx context.Context,
 		return nil, fmt.Errorf("error creating new session: %v", err)
 	}
 
-	if err := s.cfg.db.CreateSession(sess); err != nil {
+	sess, err = s.cfg.db.CreateSession(sess.ID)
+	if err != nil {
 		return nil, fmt.Errorf("error storing session: %v", err)
 	}
 
@@ -1133,16 +1121,8 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 		caveats = append(caveats, firewall.MetaPrivacyCaveat)
 	}
 
-	s.sessRegMu.Lock()
-	defer s.sessRegMu.Unlock()
-
-	id, localPrivKey, err := s.cfg.db.GetUnusedIDAndKeyPair()
-	if err != nil {
-		return nil, err
-	}
-
 	sess, err := s.cfg.db.NewSession(
-		id, localPrivKey, req.Label, session.TypeAutopilot, expiry,
+		req.Label, session.TypeAutopilot, expiry,
 		req.MailboxServerAddr, req.DevServer, perms, caveats,
 		clientConfig, privacy, linkedGroupID, privacyFlags,
 	)
@@ -1225,10 +1205,15 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 			"autopilot server: %v", err)
 	}
 
-	// We only persist this session if we successfully retrieved the
-	// autopilot's static key.
-	sess.RemotePublicKey = remoteKey
-	if err := s.cfg.db.CreateSession(sess); err != nil {
+	err = s.cfg.db.UpdateSessionRemotePubKey(sess.LocalPublicKey, remoteKey)
+	if err != nil {
+		return nil, fmt.Errorf("error setting remote pubkey: %v", err)
+	}
+
+	// We only activate the session if the Autopilot server registration
+	// was successful.
+	sess, err = s.cfg.db.CreateSession(sess.ID)
+	if err != nil {
 		return nil, fmt.Errorf("error storing session: %v", err)
 	}
 
