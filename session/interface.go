@@ -164,6 +164,9 @@ type Store interface {
 	// ListSessions returns all sessions currently known to the store.
 	ListSessions(filterFn func(s *Session) bool) ([]*Session, error)
 
+	// ListSessionsByType returns all sessions of the given type.
+	ListSessionsByType(t Type) ([]*Session, error)
+
 	// RevokeSession updates the state of the session with the given local
 	// public key to be revoked.
 	RevokeSession(*btcec.PublicKey) error
