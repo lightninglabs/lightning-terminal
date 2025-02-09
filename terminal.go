@@ -446,7 +446,9 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 
 	// Create an instance of the local Terminal Connect session store DB.
 	networkDir := filepath.Join(g.cfg.LitDir, g.cfg.Network)
-	g.sessionDB, err = session.NewDB(networkDir, session.DBFilename)
+	g.sessionDB, err = session.NewDB(
+		networkDir, session.DBFilename, clock.NewDefaultClock(),
+	)
 	if err != nil {
 		return fmt.Errorf("error creating session DB: %v", err)
 	}

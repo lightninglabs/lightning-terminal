@@ -6,14 +6,17 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/lightningnetwork/lnd/clock"
 	"github.com/stretchr/testify/require"
 )
+
+var testTime = time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 
 // TestBasicSessionStore tests the basic getters and setters of the session
 // store.
 func TestBasicSessionStore(t *testing.T) {
 	// Set up a new DB.
-	db, err := NewDB(t.TempDir(), "test.db")
+	db, err := NewDB(t.TempDir(), "test.db", clock.NewTestClock(testTime))
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
@@ -89,7 +92,7 @@ func TestBasicSessionStore(t *testing.T) {
 // TestLinkingSessions tests that session linking works as expected.
 func TestLinkingSessions(t *testing.T) {
 	// Set up a new DB.
-	db, err := NewDB(t.TempDir(), "test.db")
+	db, err := NewDB(t.TempDir(), "test.db", clock.NewTestClock(testTime))
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
@@ -125,7 +128,7 @@ func TestLinkingSessions(t *testing.T) {
 // of the GetGroupID and GetSessionIDs methods.
 func TestLinkedSessions(t *testing.T) {
 	// Set up a new DB.
-	db, err := NewDB(t.TempDir(), "test.db")
+	db, err := NewDB(t.TempDir(), "test.db", clock.NewTestClock(testTime))
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
@@ -192,7 +195,7 @@ func TestLinkedSessions(t *testing.T) {
 // method correctly checks if each session in a group passes a predicate.
 func TestCheckSessionGroupPredicate(t *testing.T) {
 	// Set up a new DB.
-	db, err := NewDB(t.TempDir(), "test.db")
+	db, err := NewDB(t.TempDir(), "test.db", clock.NewTestClock(testTime))
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()

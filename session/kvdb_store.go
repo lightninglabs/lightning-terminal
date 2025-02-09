@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/lightningnetwork/lnd/clock"
 	"go.etcd.io/bbolt"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 	"gopkg.in/macaroon.v2"
@@ -79,13 +80,15 @@ const (
 // BoltStore is a bolt-backed persistent store.
 type BoltStore struct {
 	*bbolt.DB
+
+	clock clock.Clock
 }
 
 // A compile-time check to ensure that BoltStore implements the Store interface.
 var _ Store = (*BoltStore)(nil)
 
 // NewDB creates a new bolt database that can be found at the given directory.
-func NewDB(dir, fileName string) (*BoltStore, error) {
+func NewDB(dir, fileName string, clock clock.Clock) (*BoltStore, error) {
 	firstInit := false
 	path := filepath.Join(dir, fileName)
 
@@ -108,7 +111,10 @@ func NewDB(dir, fileName string) (*BoltStore, error) {
 		return nil, err
 	}
 
-	return &BoltStore{DB: db}, nil
+	return &BoltStore{
+		DB:    db,
+		clock: clock,
+	}, nil
 }
 
 // fileExists reports whether the named file or directory exists.
