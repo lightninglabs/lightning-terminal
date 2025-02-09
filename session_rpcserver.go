@@ -58,7 +58,7 @@ type sessionRpcServer struct {
 // sessionRpcServerConfig holds the values used to configure the
 // sessionRpcServer.
 type sessionRpcServerConfig struct {
-	db                      *session.BoltStore
+	db                      session.Store
 	basicAuth               string
 	grpcOptions             []grpc.ServerOption
 	registerGrpcServers     func(server *grpc.Server)
@@ -175,10 +175,6 @@ func (s *sessionRpcServer) start(ctx context.Context) error {
 func (s *sessionRpcServer) stop() error {
 	var returnErr error
 	s.stopOnce.Do(func() {
-		if err := s.cfg.db.Close(); err != nil {
-			log.Errorf("Error closing session DB: %v", err)
-			returnErr = err
-		}
 		s.sessionServer.Stop()
 
 		close(s.quit)

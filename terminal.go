@@ -1457,6 +1457,13 @@ func (g *LightningTerminal) shutdownSubServers() error {
 		}
 	}
 
+	if g.sessionDB != nil {
+		if err := g.sessionDB.Close(); err != nil {
+			log.Errorf("Error closing session DB: %v", err)
+			returnErr = err
+		}
+	}
+
 	if g.lndClient != nil {
 		g.lndClient.Close()
 	}
