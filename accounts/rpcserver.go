@@ -87,12 +87,10 @@ func (s *RPCServer) CreateAccount(ctx context.Context,
 		fmt.Sprintf("%s %x", CondAccount, account.ID[:]),
 	)
 
-	macHex, err := s.superMacBaker(ctx, macRootKey, &session.MacaroonRecipe{
-		Permissions: MacaroonPermissions,
-		Caveats: []macaroon.Caveat{{
-			Id: []byte(accountCaveat),
-		}},
-	})
+	macHex, err := s.superMacBaker(
+		ctx, macRootKey, MacaroonPermissions,
+		[]macaroon.Caveat{{Id: []byte(accountCaveat)}},
+	)
 	if err != nil {
 		return nil, fmt.Errorf("error baking account macaroon: %w", err)
 	}

@@ -69,6 +69,7 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 	"google.golang.org/protobuf/encoding/protojson"
 	"gopkg.in/macaroon-bakery.v2/bakery"
+	"gopkg.in/macaroon.v2"
 )
 
 const (
@@ -430,11 +431,10 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 	}
 
 	superMacBaker := func(ctx context.Context, rootKeyID uint64,
-		recipe *session.MacaroonRecipe) (string, error) {
+		perms []bakery.Op, caveats []macaroon.Caveat) (string, error) {
 
 		return litmac.BakeSuperMacaroon(
-			ctx, g.basicClient, rootKeyID,
-			recipe.Permissions, recipe.Caveats,
+			ctx, g.basicClient, rootKeyID, perms, caveats,
 		)
 	}
 

@@ -424,11 +424,7 @@ func (s *sessionRpcServer) resumeSession(ctx context.Context,
 	})
 
 	mac, err := s.cfg.superMacBaker(
-		ctx, sess.MacaroonRootKey,
-		&session.MacaroonRecipe{
-			Permissions: permissions,
-			Caveats:     caveats,
-		},
+		ctx, sess.MacaroonRootKey, permissions, caveats,
 	)
 	if err != nil {
 		log.Debugf("Not resuming session %x. Could not bake "+
