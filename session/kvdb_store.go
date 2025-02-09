@@ -49,10 +49,6 @@ var (
 	// IDs associated with the given group ID.
 	sessionIDKey = []byte("session-id")
 
-	// ErrSessionNotFound is an error returned when we attempt to retrieve
-	// information about a session but it is not found.
-	ErrSessionNotFound = errors.New("session not found")
-
 	// ErrDBInitErr is returned when a bucket that we expect to have been
 	// set up during DB initialisation is not found.
 	ErrDBInitErr = errors.New("db did not initialise properly")
