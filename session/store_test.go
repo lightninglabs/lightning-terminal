@@ -51,11 +51,11 @@ func TestBasicSessionStore(t *testing.T) {
 	for _, s := range []*Session{s1, s2, s3} {
 		session, err := db.GetSession(s.LocalPublicKey)
 		require.NoError(t, err)
-		require.Equal(t, s.Label, session.Label)
+		assertEqualSessions(t, s, session)
 
 		session, err = db.GetSessionByID(s.ID)
 		require.NoError(t, err)
-		require.Equal(t, s.Label, session.Label)
+		assertEqualSessions(t, s, session)
 	}
 
 	// Fetch session 1 and assert that it currently has no remote pub key.
@@ -294,4 +294,33 @@ func newSession(t *testing.T, db Store, label string,
 	require.NoError(t, err)
 
 	return session
+}
+
+func assertEqualSessions(t *testing.T, expected, actual *Session) {
+	expectedExpiry := expected.Expiry
+	actualExpiry := actual.Expiry
+	expectedRevoked := expected.RevokedAt
+	actualRevoked := actual.RevokedAt
+	expectedCreated := expected.CreatedAt
+	actualCreated := actual.CreatedAt
+
+	expected.Expiry = time.Time{}
+	expected.RevokedAt = time.Time{}
+	expected.CreatedAt = time.Time{}
+	actual.Expiry = time.Time{}
+	actual.RevokedAt = time.Time{}
+	actual.CreatedAt = time.Time{}
+
+	require.Equal(t, expected, actual)
+	require.Equal(t, expectedExpiry.Unix(), actualExpiry.Unix())
+	require.Equal(t, expectedRevoked.Unix(), actualRevoked.Unix())
+	require.Equal(t, expectedCreated.Unix(), actualCreated.Unix())
+
+	// Restore the old values to not influence the tests.
+	expected.Expiry = expectedExpiry
+	expected.RevokedAt = expectedRevoked
+	expected.CreatedAt = expectedCreated
+	actual.Expiry = actualExpiry
+	actual.RevokedAt = actualRevoked
+	actual.CreatedAt = actualCreated
 }
