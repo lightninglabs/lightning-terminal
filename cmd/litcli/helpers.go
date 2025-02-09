@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/lightninglabs/lightning-terminal/session"
+	"github.com/lightninglabs/lightning-terminal/macaroons"
 	"github.com/urfave/cli"
 )
 
@@ -66,7 +66,7 @@ func superMacRootKey(ctx *cli.Context) error {
 		}
 	}
 
-	id := session.NewSuperMacaroonRootKeyID(suffix)
+	id := macaroons.NewSuperMacaroonRootKeyID(suffix)
 
 	printJSON(struct {
 		RootKeyID uint64 `json:"root_key_id"`
@@ -97,7 +97,7 @@ var isSuperMacaroonCmd = cli.Command{
 // isSuperMacaroon checks if the users given macaroon is considered a super
 // macaroon.
 func isSuperMacaroon(ctx *cli.Context) error {
-	isSuperMac := session.IsSuperMacaroon(ctx.String("mac"))
+	isSuperMac := macaroons.IsSuperMacaroon(ctx.String("mac"))
 
 	printJSON(struct {
 		IsSuperMacaroon bool `json:"is_super_macaroon"`

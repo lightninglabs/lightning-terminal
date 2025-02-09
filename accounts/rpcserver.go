@@ -8,6 +8,7 @@ import (
 
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
+	litmac "github.com/lightninglabs/lightning-terminal/macaroons"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/lntypes"
 	"github.com/lightningnetwork/lnd/lnwire"
@@ -79,7 +80,7 @@ func (s *RPCServer) CreateAccount(ctx context.Context,
 
 	var rootKeyIdSuffix [4]byte
 	copy(rootKeyIdSuffix[:], account.ID[0:4])
-	macRootKey := session.NewSuperMacaroonRootKeyID(rootKeyIdSuffix)
+	macRootKey := litmac.NewSuperMacaroonRootKeyID(rootKeyIdSuffix)
 
 	accountCaveat := checkers.Condition(
 		macaroons.CondLndCustom,

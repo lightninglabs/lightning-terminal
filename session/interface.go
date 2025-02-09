@@ -7,6 +7,7 @@ import (
 
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/lightninglabs/lightning-node-connect/mailbox"
+	"github.com/lightninglabs/lightning-terminal/macaroons"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 	"gopkg.in/macaroon.v2"
 )
@@ -86,7 +87,7 @@ func NewSession(id ID, localPrivKey *btcec.PrivateKey, label string, typ Type,
 		return nil, fmt.Errorf("error deriving pairing secret: %v", err)
 	}
 
-	macRootKey := NewSuperMacaroonRootKeyID(id)
+	macRootKey := macaroons.NewSuperMacaroonRootKeyID(id)
 
 	// The group ID will by default be the same as the Session ID
 	// unless this session links to a previous session.

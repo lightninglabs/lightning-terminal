@@ -13,8 +13,8 @@ import (
 
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
+	litmac "github.com/lightninglabs/lightning-terminal/macaroons"
 	"github.com/lightninglabs/lightning-terminal/perms"
-	"github.com/lightninglabs/lightning-terminal/session"
 	litstatus "github.com/lightninglabs/lightning-terminal/status"
 	"github.com/lightninglabs/lightning-terminal/subservers"
 	"github.com/lightningnetwork/lnd/lncfg"
@@ -71,7 +71,7 @@ func (e *proxyErr) Unwrap() error {
 // or REST request and delegate (and convert if necessary) it to the correct
 // component.
 func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
-	superMacValidator session.SuperMacaroonValidator,
+	superMacValidator litmac.SuperMacaroonValidator,
 	permsMgr *perms.Manager, subServerMgr *subservers.Manager,
 	statusMgr *litstatus.Manager, getLNDClient lndBasicClientFn) *rpcProxy {
 
@@ -176,7 +176,7 @@ type rpcProxy struct {
 	bakeSuperMac bakeSuperMac
 
 	macValidator      macaroons.MacaroonValidator
-	superMacValidator session.SuperMacaroonValidator
+	superMacValidator litmac.SuperMacaroonValidator
 
 	superMacaroon string
 
@@ -331,7 +331,9 @@ func (p *rpcProxy) makeDirector(allowLitRPC bool) func(ctx context.Context,
 				))
 			}
 
-		case len(macHeader) == 1 && session.IsSuperMacaroon(macHeader[0]):
+		case len(macHeader) == 1 &&
+			litmac.IsSuperMacaroon(macHeader[0]):
+
 			// If we have a macaroon, and it's a super macaroon,
 			// then we need to convert it into the actual daemon
 			// macaroon if they're running in remote mode.

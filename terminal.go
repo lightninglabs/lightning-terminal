@@ -26,6 +26,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/firewall"
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
+	litmac "github.com/lightninglabs/lightning-terminal/macaroons"
 	"github.com/lightninglabs/lightning-terminal/perms"
 	"github.com/lightninglabs/lightning-terminal/queue"
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
@@ -662,7 +663,7 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 		var suffixBytes [4]byte
 		binary.BigEndian.PutUint32(suffixBytes[:], rootKeyIDSuffix)
 
-		rootKeyID := session.NewSuperMacaroonRootKeyID(suffixBytes)
+		rootKeyID := litmac.NewSuperMacaroonRootKeyID(suffixBytes)
 
 		return BakeSuperMacaroon(
 			ctx, g.basicClient, rootKeyID,
@@ -953,7 +954,7 @@ func (g *LightningTerminal) setUpLNDClients(ctx context.Context,
 		// faraday, loop, and pool, all at the same time.
 		log.Infof("Baking internal super macaroon")
 		superMacaroon, err := BakeSuperMacaroon(
-			ctx, g.basicClient, session.NewSuperMacaroonRootKeyID(
+			ctx, g.basicClient, litmac.NewSuperMacaroonRootKeyID(
 				[4]byte{},
 			),
 			g.permsMgr.ActivePermissions(false), nil,
@@ -1265,7 +1266,7 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 	// the proxy and its director and any super macaroon will be converted
 	// to a daemon specific macaroon before directing the call to the remote
 	// daemon. Those calls don't land here.
-	if session.IsSuperMacaroon(macHex) {
+	if litmac.IsSuperMacaroon(macHex) {
 		macBytes, err := hex.DecodeString(macHex)
 		if err != nil {
 			return err
@@ -1873,7 +1874,7 @@ func BakeSuperMacaroon(ctx context.Context, lnd lnrpc.LightningClient,
 		return "", err
 	}
 
-	mac, err := session.ParseMacaroon(res.Macaroon)
+	mac, err := litmac.ParseMacaroon(res.Macaroon)
 	if err != nil {
 		return "", err
 	}

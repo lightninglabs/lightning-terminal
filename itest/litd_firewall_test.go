@@ -22,6 +22,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/firewall"
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
+	"github.com/lightninglabs/lightning-terminal/macaroons"
 	"github.com/lightninglabs/lightning-terminal/rules"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd"
@@ -2566,7 +2567,7 @@ func (c *caveatCredentials) GetRequestMetadata(ctx context.Context,
 		return metadata, nil
 	}
 
-	mac, err := session.ParseMacaroon(macHex)
+	mac, err := macaroons.ParseMacaroon(macHex)
 	if err != nil {
 		return nil, err
 	}
