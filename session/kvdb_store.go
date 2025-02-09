@@ -11,6 +11,8 @@ import (
 
 	"github.com/btcsuite/btcd/btcec/v2"
 	"go.etcd.io/bbolt"
+	"gopkg.in/macaroon-bakery.v2/bakery"
+	"gopkg.in/macaroon.v2"
 )
 
 var (
@@ -171,6 +173,24 @@ func initDB(filepath string, firstInit bool) (*bbolt.DB, error) {
 // getSessionKey returns the key for a session.
 func getSessionKey(session *Session) []byte {
 	return session.LocalPublicKey.SerializeCompressed()
+}
+
+// NewSession creates a new session with the given user-defined parameters.
+//
+// NOTE: currently this purely a constructor of the Session type and does not
+// make any database calls. This will be changed in a future commit.
+//
+// NOTE: this is part of the Store interface.
+func (db *BoltStore) NewSession(id ID, localPrivKey *btcec.PrivateKey,
+	label string, typ Type, expiry time.Time, serverAddr string,
+	devServer bool, perms []bakery.Op, caveats []macaroon.Caveat,
+	featureConfig FeaturesConfig, privacy bool, linkedGroupID *ID,
+	flags PrivacyFlags) (*Session, error) {
+
+	return buildSession(
+		id, localPrivKey, label, typ, expiry, serverAddr, devServer,
+		perms, caveats, featureConfig, privacy, linkedGroupID, flags,
+	)
 }
 
 // CreateSession adds a new session to the store. If a session with the same

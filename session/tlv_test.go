@@ -129,7 +129,7 @@ func TestSerializeDeserializeSession(t *testing.T) {
 			priv, id, err := NewSessionPrivKeyAndID()
 			require.NoError(t, err)
 
-			session, err := NewSession(
+			session, err := buildSession(
 				id, priv, test.name, test.sessType,
 				time.Date(99999, 1, 1, 0, 0, 0, 0, time.UTC),
 				"foo.bar.baz:1234", true, test.perms,
@@ -183,7 +183,7 @@ func TestGroupIDForOlderSessions(t *testing.T) {
 	priv, id, err := NewSessionPrivKeyAndID()
 	require.NoError(t, err)
 
-	session, err := NewSession(
+	session, err := buildSession(
 		id, priv, "test-session", TypeMacaroonAdmin,
 		time.Date(99999, 1, 1, 0, 0, 0, 0, time.UTC),
 		"foo.bar.baz:1234", true, nil, nil, nil, false, nil,
@@ -218,7 +218,7 @@ func TestGroupID(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create session 1 which is not linked to any previous session.
-	session1, err := NewSession(
+	session1, err := buildSession(
 		id, priv, "test-session", TypeMacaroonAdmin,
 		time.Date(99999, 1, 1, 0, 0, 0, 0, time.UTC),
 		"foo.bar.baz:1234", true, nil, nil, nil, false, nil,
@@ -232,7 +232,7 @@ func TestGroupID(t *testing.T) {
 	// Create session 2 and link it to session 1.
 	priv, id, err = NewSessionPrivKeyAndID()
 	require.NoError(t, err)
-	session2, err := NewSession(
+	session2, err := buildSession(
 		id, priv, "test-session", TypeMacaroonAdmin,
 		time.Date(99999, 1, 1, 0, 0, 0, 0, time.UTC),
 		"foo.bar.baz:1234", true, nil, nil, nil, false,
