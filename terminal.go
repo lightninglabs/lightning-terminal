@@ -69,7 +69,6 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 	"google.golang.org/protobuf/encoding/protojson"
 	"gopkg.in/macaroon-bakery.v2/bakery"
-	"gopkg.in/macaroon.v2"
 )
 
 const (
@@ -433,7 +432,7 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 	superMacBaker := func(ctx context.Context, rootKeyID uint64,
 		recipe *session.MacaroonRecipe) (string, error) {
 
-		return BakeSuperMacaroon(
+		return litmac.BakeSuperMacaroon(
 			ctx, g.basicClient, rootKeyID,
 			recipe.Permissions, recipe.Caveats,
 		)
@@ -665,7 +664,7 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 
 		rootKeyID := litmac.NewSuperMacaroonRootKeyID(suffixBytes)
 
-		return BakeSuperMacaroon(
+		return litmac.BakeSuperMacaroon(
 			ctx, g.basicClient, rootKeyID,
 			g.permsMgr.ActivePermissions(readOnly), nil,
 		)
@@ -953,7 +952,7 @@ func (g *LightningTerminal) setUpLNDClients(ctx context.Context,
 		// Create a super macaroon that can be used to control lnd,
 		// faraday, loop, and pool, all at the same time.
 		log.Infof("Baking internal super macaroon")
-		superMacaroon, err := BakeSuperMacaroon(
+		superMacaroon, err := litmac.BakeSuperMacaroon(
 			ctx, g.basicClient, litmac.NewSuperMacaroonRootKeyID(
 				[4]byte{},
 			),
@@ -1843,54 +1842,6 @@ func (g *LightningTerminal) initSubServers() error {
 	}
 
 	return nil
-}
-
-// BakeSuperMacaroon uses the lnd client to bake a macaroon that can include
-// permissions for multiple daemons.
-func BakeSuperMacaroon(ctx context.Context, lnd lnrpc.LightningClient,
-	rootKeyID uint64, perms []bakery.Op, caveats []macaroon.Caveat) (string,
-	error) {
-
-	if lnd == nil {
-		return "", errors.New("lnd not yet connected")
-	}
-
-	req := &lnrpc.BakeMacaroonRequest{
-		Permissions: make(
-			[]*lnrpc.MacaroonPermission, len(perms),
-		),
-		AllowExternalPermissions: true,
-		RootKeyId:                rootKeyID,
-	}
-	for idx, perm := range perms {
-		req.Permissions[idx] = &lnrpc.MacaroonPermission{
-			Entity: perm.Entity,
-			Action: perm.Action,
-		}
-	}
-
-	res, err := lnd.BakeMacaroon(ctx, req)
-	if err != nil {
-		return "", err
-	}
-
-	mac, err := litmac.ParseMacaroon(res.Macaroon)
-	if err != nil {
-		return "", err
-	}
-
-	for _, caveat := range caveats {
-		if err := mac.AddFirstPartyCaveat(caveat.Id); err != nil {
-			return "", err
-		}
-	}
-
-	macBytes, err := mac.MarshalBinary()
-	if err != nil {
-		return "", err
-	}
-
-	return hex.EncodeToString(macBytes), err
 }
 
 // allowCORS wraps the given http.Handler with a function that adds the

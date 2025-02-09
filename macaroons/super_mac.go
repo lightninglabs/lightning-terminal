@@ -5,7 +5,9 @@ import (
 	"context"
 	"encoding/binary"
 	"encoding/hex"
+	"errors"
 
+	"github.com/lightningnetwork/lnd/lnrpc"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 	"gopkg.in/macaroon.v2"
 )
@@ -67,4 +69,52 @@ func isSuperMacaroonRootKeyID(rootKeyID uint64) bool {
 	rootKeyBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(rootKeyBytes, rootKeyID)
 	return bytes.HasPrefix(rootKeyBytes, SuperMacaroonRootKeyPrefix[:])
+}
+
+// BakeSuperMacaroon uses the lnd client to bake a macaroon that can include
+// permissions for multiple daemons.
+func BakeSuperMacaroon(ctx context.Context, lnd lnrpc.LightningClient,
+	rootKeyID uint64, perms []bakery.Op, caveats []macaroon.Caveat) (string,
+	error) {
+
+	if lnd == nil {
+		return "", errors.New("lnd not yet connected")
+	}
+
+	req := &lnrpc.BakeMacaroonRequest{
+		Permissions: make(
+			[]*lnrpc.MacaroonPermission, len(perms),
+		),
+		AllowExternalPermissions: true,
+		RootKeyId:                rootKeyID,
+	}
+	for idx, perm := range perms {
+		req.Permissions[idx] = &lnrpc.MacaroonPermission{
+			Entity: perm.Entity,
+			Action: perm.Action,
+		}
+	}
+
+	res, err := lnd.BakeMacaroon(ctx, req)
+	if err != nil {
+		return "", err
+	}
+
+	mac, err := ParseMacaroon(res.Macaroon)
+	if err != nil {
+		return "", err
+	}
+
+	for _, caveat := range caveats {
+		if err := mac.AddFirstPartyCaveat(caveat.Id); err != nil {
+			return "", err
+		}
+	}
+
+	macBytes, err := mac.MarshalBinary()
+	if err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(macBytes), err
 }
