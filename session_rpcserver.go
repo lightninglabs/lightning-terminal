@@ -18,6 +18,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/firewall"
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
+	litmac "github.com/lightninglabs/lightning-terminal/macaroons"
 	"github.com/lightninglabs/lightning-terminal/perms"
 	"github.com/lightninglabs/lightning-terminal/rules"
 	"github.com/lightninglabs/lightning-terminal/session"
@@ -62,7 +63,7 @@ type sessionRpcServerConfig struct {
 	basicAuth               string
 	grpcOptions             []grpc.ServerOption
 	registerGrpcServers     func(server *grpc.Server)
-	superMacBaker           session.MacaroonBaker
+	superMacBaker           litmac.Baker
 	firstConnectionDeadline time.Duration
 	permMgr                 *perms.Manager
 	actionsDB               *firewalldb.DB

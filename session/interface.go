@@ -1,7 +1,6 @@
 package session
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -71,10 +70,6 @@ type Session struct {
 	// then this will be the same as ID.
 	GroupID ID
 }
-
-// MacaroonBaker is a function type for baking a super macaroon.
-type MacaroonBaker func(ctx context.Context, rootKeyID uint64,
-	perms []bakery.Op, caveats []macaroon.Caveat) (string, error)
 
 // NewSession creates a new session with the given user-defined parameters.
 func NewSession(id ID, localPrivKey *btcec.PrivateKey, label string, typ Type,

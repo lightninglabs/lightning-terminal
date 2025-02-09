@@ -9,7 +9,6 @@ import (
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	litmac "github.com/lightninglabs/lightning-terminal/macaroons"
-	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/lntypes"
 	"github.com/lightningnetwork/lnd/lnwire"
 	"github.com/lightningnetwork/lnd/macaroons"
@@ -23,12 +22,12 @@ type RPCServer struct {
 
 	service *InterceptorService
 
-	superMacBaker session.MacaroonBaker
+	superMacBaker litmac.Baker
 }
 
 // NewRPCServer returns a new RPC server for the given service.
 func NewRPCServer(service *InterceptorService,
-	superMacBaker session.MacaroonBaker) *RPCServer {
+	superMacBaker litmac.Baker) *RPCServer {
 
 	return &RPCServer{
 		service:       service,
