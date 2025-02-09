@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"time"
 
 	"github.com/btcsuite/btcd/btcec/v2"
@@ -367,6 +368,14 @@ func (db *BoltStore) GetSession(key *btcec.PublicKey) (*Session, error) {
 //
 // NOTE: this is part of the Store interface.
 func (db *BoltStore) ListSessions(filterFn func(s *Session) bool) ([]*Session, error) {
+	return db.listSessions(filterFn)
+}
+
+// listSessions returns all sessions currently known to the store that pass the
+// given filter function.
+func (db *BoltStore) listSessions(filterFn func(s *Session) bool) ([]*Session,
+	error) {
+
 	var sessions []*Session
 	err := db.View(func(tx *bbolt.Tx) error {
 		sessionBucket, err := getBucket(tx, sessionBucketKey)
@@ -398,6 +407,11 @@ func (db *BoltStore) ListSessions(filterFn func(s *Session) bool) ([]*Session, e
 	if err != nil {
 		return nil, err
 	}
+
+	// Make sure to sort the sessions by creation time.
+	sort.Slice(sessions, func(i, j int) bool {
+		return sessions[i].CreatedAt.Before(sessions[j].CreatedAt)
+	})
 
 	return sessions, nil
 }

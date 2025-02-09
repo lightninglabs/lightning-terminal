@@ -23,10 +23,16 @@ func TestBasicSessionStore(t *testing.T) {
 		_ = db.Close()
 	})
 
-	// Create a few sessions.
+	// Create a few sessions. We increment the time by one second between
+	// each session to ensure that the created at time is unique and hence
+	// that the ListSessions method returns the sessions in a deterministic
+	// order.
 	s1 := newSession(t, db, clock, "session 1")
+	clock.SetTime(testTime.Add(time.Second))
 	s2 := newSession(t, db, clock, "session 2")
+	clock.SetTime(testTime.Add(2 * time.Second))
 	s3 := newSession(t, db, clock, "session 3")
+	clock.SetTime(testTime.Add(3 * time.Second))
 	s4 := newSession(t, db, clock, "session 4")
 
 	// Persist session 1. This should now succeed.
@@ -49,6 +55,14 @@ func TestBasicSessionStore(t *testing.T) {
 	// Persist a few more sessions.
 	require.NoError(t, db.CreateSession(s2))
 	require.NoError(t, db.CreateSession(s3))
+
+	// Check that all sessions are returned in ListSessions.
+	sessions, err := db.ListSessions(nil)
+	require.NoError(t, err)
+	require.Equal(t, 3, len(sessions))
+	assertEqualSessions(t, s1, sessions[0])
+	assertEqualSessions(t, s2, sessions[1])
+	assertEqualSessions(t, s3, sessions[2])
 
 	// Ensure that we can retrieve each session by both its local pub key
 	// and by its ID.
