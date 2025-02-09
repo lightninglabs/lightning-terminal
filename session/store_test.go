@@ -23,38 +23,36 @@ func TestBasicSessionStore(t *testing.T) {
 		_ = db.Close()
 	})
 
-	// Create a few sessions. We increment the time by one second between
-	// each session to ensure that the created at time is unique and hence
-	// that the ListSessions method returns the sessions in a deterministic
-	// order.
-	s1 := newSession(t, db, clock, "session 1")
+	// Reserve a session. This should succeed.
+	s1, err := reserveSession(db, "session 1")
+	require.NoError(t, err)
+
+	// Show that the session starts in the reserved state.
+	s1, err = db.GetSessionByID(s1.ID)
+	require.NoError(t, err)
+	require.Equal(t, StateReserved, s1.State)
+
+	// Move session 1 to the created state. This should succeed.
+	err = db.ShiftState(s1.ID, StateCreated)
+	require.NoError(t, err)
+
+	// Show that the session is now in the created state.
+	s1, err = db.GetSessionByID(s1.ID)
+	require.NoError(t, err)
+	require.Equal(t, StateCreated, s1.State)
+
+	// Trying to move session 1 again should have no effect since it is
+	// already in the created state.
+	require.NoError(t, db.ShiftState(s1.ID, StateCreated))
+
+	// Reserve and create a few more sessions. We increment the time by one
+	// second between each session to ensure that the created at time is
+	// unique and hence that the ListSessions method returns the sessions in
+	// a deterministic order.
 	clock.SetTime(testTime.Add(time.Second))
-	s2 := newSession(t, db, clock, "session 2")
+	s2 := createSession(t, db, "session 2")
 	clock.SetTime(testTime.Add(2 * time.Second))
-	s3 := newSession(t, db, clock, "session 3", withType(TypeAutopilot))
-	clock.SetTime(testTime.Add(3 * time.Second))
-	s4 := newSession(t, db, clock, "session 4")
-
-	// Persist session 1. This should now succeed.
-	require.NoError(t, db.CreateSession(s1))
-
-	// Trying to persist session 1 again should fail due to a session with
-	// the given pub key already existing.
-	require.ErrorContains(t, db.CreateSession(s1), "already exists")
-
-	// Change the local pub key of session 4 such that it has the same
-	// ID as session 1.
-	s4.ID = s1.ID
-	s4.GroupID = s1.GroupID
-
-	// Now try to insert session 4. This should fail due to an entry for
-	// the ID already existing.
-	require.ErrorContains(t, db.CreateSession(s4), "a session with the "+
-		"given ID already exists")
-
-	// Persist a few more sessions.
-	require.NoError(t, db.CreateSession(s2))
-	require.NoError(t, db.CreateSession(s3))
+	s3 := createSession(t, db, "session 3", withType(TypeAutopilot))
 
 	// Test the ListSessionsByType method.
 	sessions, err := db.ListSessionsByType(TypeMacaroonAdmin)
@@ -156,28 +154,26 @@ func TestBasicSessionStore(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, sessions)
 
-	// Add a session and put it in the StateReserved state. We'll also
-	// link it to session 1.
-	s5 := newSession(
-		t, db, clock, "session 5", withState(StateReserved),
-		withLinkedGroupID(&session1.GroupID),
+	// Reserve a new session and link it to session 1.
+	s4, err := reserveSession(
+		db, "session 4", withLinkedGroupID(&session1.GroupID),
 	)
-	require.NoError(t, db.CreateSession(s5))
+	require.NoError(t, err)
 
 	sessions, err = db.ListSessionsByState(StateReserved)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(sessions))
-	assertEqualSessions(t, s5, sessions[0])
+	assertEqualSessions(t, s4, sessions[0])
 
 	// Show that the group ID/session ID index has also been populated with
 	// this session.
-	groupID, err := db.GetGroupID(s5.ID)
+	groupID, err := db.GetGroupID(s4.ID)
 	require.NoError(t, err)
 	require.Equal(t, s1.ID, groupID)
 
-	sessIDs, err := db.GetSessionIDs(s5.GroupID)
+	sessIDs, err := db.GetSessionIDs(s4.GroupID)
 	require.NoError(t, err)
-	require.ElementsMatch(t, []ID{s5.ID, s1.ID}, sessIDs)
+	require.ElementsMatch(t, []ID{s4.ID, s1.ID}, sessIDs)
 
 	// Now delete the reserved session and show that it is no longer in the
 	// database and no longer in the group ID/session ID index.
@@ -187,17 +183,19 @@ func TestBasicSessionStore(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, sessions)
 
-	_, err = db.GetGroupID(s5.ID)
+	_, err = db.GetGroupID(s4.ID)
 	require.ErrorContains(t, err, "no index entry")
 
 	// Only session 1 should remain in this group.
-	sessIDs, err = db.GetSessionIDs(s5.GroupID)
+	sessIDs, err = db.GetSessionIDs(s4.GroupID)
 	require.NoError(t, err)
 	require.ElementsMatch(t, []ID{s1.ID}, sessIDs)
 }
 
 // TestLinkingSessions tests that session linking works as expected.
 func TestLinkingSessions(t *testing.T) {
+	t.Parallel()
+
 	// Set up a new DB.
 	clock := clock.NewTestClock(testTime)
 	db, err := NewDB(t.TempDir(), "test.db", clock)
@@ -206,35 +204,39 @@ func TestLinkingSessions(t *testing.T) {
 		_ = db.Close()
 	})
 
+	groupID, err := IDFromBytes([]byte{1, 2, 3, 4})
+	require.NoError(t, err)
+
+	// Try to reserve a session that links to another and assert that it
+	// fails due to the linked session not existing in the BoltStore yet.
+	_, err = reserveSession(
+		db, "session 2", withLinkedGroupID(&groupID),
+	)
+	require.ErrorContains(t, err, "unknown linked session")
+
 	// Create a new session with no previous link.
-	s1 := newSession(t, db, clock, "session 1")
+	s1 := createSession(t, db, "session 1")
 
-	// Create another session and link it to the first.
-	s2 := newSession(t, db, clock, "session 2", withLinkedGroupID(&s1.GroupID))
-
-	// Try to persist the second session and assert that it fails due to the
-	// linked session not existing in the DB yet.
-	require.ErrorContains(t, db.CreateSession(s2), "unknown linked session")
-
-	// Now persist the first session and retry persisting the second one
-	// and assert that this now works.
-	require.NoError(t, db.CreateSession(s1))
-
-	// Persisting the second session immediately should fail due to the
-	// first session still being active.
-	require.ErrorContains(t, db.CreateSession(s2), "is still active")
+	// Once again try to reserve a session that links to the now existing
+	// session. This should fail due to the first session still being
+	// active.
+	_, err = reserveSession(db, "session 2", withLinkedGroupID(&s1.GroupID))
+	require.ErrorContains(t, err, "is still active")
 
 	// Revoke the first session.
 	require.NoError(t, db.ShiftState(s1.ID, StateRevoked))
 
 	// Persisting the second linked session should now work.
-	require.NoError(t, db.CreateSession(s2))
+	_, err = reserveSession(db, "session 2", withLinkedGroupID(&s1.GroupID))
+	require.NoError(t, err)
 }
 
 // TestIDToGroupIDIndex tests that the session-ID-to-group-ID and
 // group-ID-to-session-ID indexes work as expected by asserting the behaviour
 // of the GetGroupID and GetSessionIDs methods.
 func TestLinkedSessions(t *testing.T) {
+	t.Parallel()
+
 	// Set up a new DB.
 	clock := clock.NewTestClock(testTime)
 	db, err := NewDB(t.TempDir(), "test.db", clock)
@@ -247,22 +249,13 @@ func TestLinkedSessions(t *testing.T) {
 	// after are all linked to the prior one. All these sessions belong to
 	// the same group. The group ID is equivalent to the session ID of the
 	// first session.
-	s1 := newSession(t, db, clock, "session 1")
-	s2 := newSession(
-		t, db, clock, "session 2", withLinkedGroupID(&s1.GroupID),
-	)
-	s3 := newSession(
-		t, db, clock, "session 3", withLinkedGroupID(&s2.GroupID),
-	)
-
-	// Persist the sessions.
-	require.NoError(t, db.CreateSession(s1))
+	s1 := createSession(t, db, "session 1")
 
 	require.NoError(t, db.ShiftState(s1.ID, StateRevoked))
-	require.NoError(t, db.CreateSession(s2))
+	s2 := createSession(t, db, "session 2", withLinkedGroupID(&s1.GroupID))
 
 	require.NoError(t, db.ShiftState(s2.ID, StateRevoked))
-	require.NoError(t, db.CreateSession(s3))
+	s3 := createSession(t, db, "session 3", withLinkedGroupID(&s2.GroupID))
 
 	// Assert that the session ID to group ID index works as expected.
 	for _, s := range []*Session{s1, s2, s3} {
@@ -279,16 +272,10 @@ func TestLinkedSessions(t *testing.T) {
 
 	// To ensure that different groups don't interfere with each other,
 	// let's add another set of linked sessions not linked to the first.
-	s4 := newSession(t, db, clock, "session 4")
-	s5 := newSession(t, db, clock, "session 5", withLinkedGroupID(&s4.GroupID))
-
-	require.NotEqual(t, s4.GroupID, s1.GroupID)
-
-	// Persist the sessions.
-	require.NoError(t, db.CreateSession(s4))
+	s4 := createSession(t, db, "session 4")
 	require.NoError(t, db.ShiftState(s4.ID, StateRevoked))
-
-	require.NoError(t, db.CreateSession(s5))
+	s5 := createSession(t, db, "session 5", withLinkedGroupID(&s4.GroupID))
+	require.NotEqual(t, s4.GroupID, s1.GroupID)
 
 	// Assert that the session ID to group ID index works as expected.
 	for _, s := range []*Session{s4, s5} {
@@ -307,6 +294,8 @@ func TestLinkedSessions(t *testing.T) {
 // TestCheckSessionGroupPredicate asserts that the CheckSessionGroupPredicate
 // method correctly checks if each session in a group passes a predicate.
 func TestCheckSessionGroupPredicate(t *testing.T) {
+	t.Parallel()
+
 	// Set up a new DB.
 	clock := clock.NewTestClock(testTime)
 	db, err := NewDB(t.TempDir(), "test.db", clock)
@@ -319,8 +308,7 @@ func TestCheckSessionGroupPredicate(t *testing.T) {
 	// function is checked correctly.
 
 	// Add a new session to the DB.
-	s1 := newSession(t, db, clock, "label 1")
-	require.NoError(t, db.CreateSession(s1))
+	s1 := createSession(t, db, "label 1")
 
 	// Check that the group passes against an appropriate predicate.
 	ok, err := db.CheckSessionGroupPredicate(
@@ -344,8 +332,7 @@ func TestCheckSessionGroupPredicate(t *testing.T) {
 	require.NoError(t, db.ShiftState(s1.ID, StateRevoked))
 
 	// Add a new session to the same group as the first one.
-	s2 := newSession(t, db, clock, "label 2", withLinkedGroupID(&s1.GroupID))
-	require.NoError(t, db.CreateSession(s2))
+	_ = createSession(t, db, "label 2", withLinkedGroupID(&s1.GroupID))
 
 	// Check that the group passes against an appropriate predicate.
 	ok, err = db.CheckSessionGroupPredicate(
@@ -366,8 +353,7 @@ func TestCheckSessionGroupPredicate(t *testing.T) {
 	require.False(t, ok)
 
 	// Add a new session that is not linked to the first one.
-	s3 := newSession(t, db, clock, "completely different")
-	require.NoError(t, db.CreateSession(s3))
+	s3 := createSession(t, db, "completely different")
 
 	// Ensure that the first group is unaffected.
 	ok, err = db.CheckSessionGroupPredicate(
@@ -407,8 +393,7 @@ func TestStateShift(t *testing.T) {
 	})
 
 	// Add a new session to the DB.
-	s1 := newSession(t, db, clock, "label 1")
-	require.NoError(t, db.CreateSession(s1))
+	s1 := createSession(t, db, "label 1")
 
 	// Check that the session is in the StateCreated state. Also check that
 	// the "RevokedAt" time has not yet been set.
@@ -443,48 +428,62 @@ func TestStateShift(t *testing.T) {
 	require.ErrorContains(t, err, "illegal session state transition")
 }
 
+type testSessionOpts struct {
+	groupID  *ID
+	sessType Type
+}
+
+func defaultTestSessOpts() *testSessionOpts {
+	return &testSessionOpts{
+		groupID:  nil,
+		sessType: TypeMacaroonAdmin,
+	}
+}
+
 // testSessionModifier is a functional option that can be used to modify the
 // default test session created by newSession.
-type testSessionModifier func(*Session)
+type testSessionModifier func(*testSessionOpts)
 
 func withLinkedGroupID(groupID *ID) testSessionModifier {
-	return func(s *Session) {
-		s.GroupID = *groupID
+	return func(s *testSessionOpts) {
+		s.groupID = groupID
 	}
 }
 
 func withType(t Type) testSessionModifier {
-	return func(s *Session) {
-		s.Type = t
+	return func(s *testSessionOpts) {
+		s.sessType = t
 	}
 }
 
-func withState(state State) testSessionModifier {
-	return func(s *Session) {
-		s.State = state
+func reserveSession(db Store, label string,
+	mods ...testSessionModifier) (*Session, error) {
+
+	opts := defaultTestSessOpts()
+	for _, mod := range mods {
+		mod(opts)
 	}
-}
 
-func newSession(t *testing.T, db Store, clock clock.Clock, label string,
-	mods ...testSessionModifier) *Session {
-
-	id, priv, err := db.GetUnusedIDAndKeyPair()
-	require.NoError(t, err)
-
-	session, err := buildSession(
-		id, priv, label, TypeMacaroonAdmin,
-		clock.Now(),
+	return db.NewSession(label, opts.sessType,
 		time.Date(99999, 1, 1, 0, 0, 0, 0, time.UTC),
-		"foo.bar.baz:1234", true, nil, nil, nil, true, nil,
+		"foo.bar.baz:1234", true, nil, nil, nil, true, opts.groupID,
 		[]PrivacyFlag{ClearPubkeys},
 	)
+}
+
+func createSession(t *testing.T, db Store, label string,
+	mods ...testSessionModifier) *Session {
+
+	s, err := reserveSession(db, label, mods...)
 	require.NoError(t, err)
 
-	for _, mod := range mods {
-		mod(session)
-	}
+	err = db.ShiftState(s.ID, StateCreated)
+	require.NoError(t, err)
 
-	return session
+	s, err = db.GetSessionByID(s.ID)
+	require.NoError(t, err)
+
+	return s
 }
 
 func assertEqualSessions(t *testing.T, expected, actual *Session) {
