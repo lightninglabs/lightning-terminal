@@ -161,8 +161,10 @@ type Store interface {
 	// GetSession fetches the session with the given key.
 	GetSession(key *btcec.PublicKey) (*Session, error)
 
-	// ListSessions returns all sessions currently known to the store.
-	ListSessions(filterFn func(s *Session) bool) ([]*Session, error)
+	// ListSessions returns all sessions currently known to the store that
+	// are in the given states. If no states are provided, all sessions are
+	// returned.
+	ListSessions(states ...State) ([]*Session, error)
 
 	// ListSessionsByType returns all sessions of the given type.
 	ListSessionsByType(t Type) ([]*Session, error)
