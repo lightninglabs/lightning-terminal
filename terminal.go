@@ -222,7 +222,7 @@ type LightningTerminal struct {
 	accountRpcServer *accounts.RPCServer
 
 	firewallDB *firewalldb.DB
-	sessionDB  *session.DB
+	sessionDB  *session.BoltStore
 
 	restHandler http.Handler
 	restCancel  func()

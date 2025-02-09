@@ -78,16 +78,16 @@ const (
 	DefaultSessionDBTimeout = 5 * time.Second
 )
 
-// DB is a bolt-backed persistent store.
-type DB struct {
+// BoltStore is a bolt-backed persistent store.
+type BoltStore struct {
 	*bbolt.DB
 }
 
-// A compile-time check to ensure that DB implements the Store interface.
-var _ Store = (*DB)(nil)
+// A compile-time check to ensure that BoltStore implements the Store interface.
+var _ Store = (*BoltStore)(nil)
 
 // NewDB creates a new bolt database that can be found at the given directory.
-func NewDB(dir, fileName string) (*DB, error) {
+func NewDB(dir, fileName string) (*BoltStore, error) {
 	firstInit := false
 	path := filepath.Join(dir, fileName)
 
@@ -110,7 +110,7 @@ func NewDB(dir, fileName string) (*DB, error) {
 		return nil, err
 	}
 
-	return &DB{DB: db}, nil
+	return &BoltStore{DB: db}, nil
 }
 
 // fileExists reports whether the named file or directory exists.
@@ -181,7 +181,7 @@ func getSessionKey(session *Session) []byte {
 // local public key already exists an error is returned.
 //
 // NOTE: this is part of the Store interface.
-func (db *DB) CreateSession(session *Session) error {
+func (db *BoltStore) CreateSession(session *Session) error {
 	var buf bytes.Buffer
 	if err := SerializeSession(&buf, session); err != nil {
 		return err
@@ -275,7 +275,7 @@ func (db *DB) CreateSession(session *Session) error {
 // to the session with the given local pub key.
 //
 // NOTE: this is part of the Store interface.
-func (db *DB) UpdateSessionRemotePubKey(localPubKey,
+func (db *BoltStore) UpdateSessionRemotePubKey(localPubKey,
 	remotePubKey *btcec.PublicKey) error {
 
 	key := localPubKey.SerializeCompressed()
@@ -313,7 +313,7 @@ func (db *DB) UpdateSessionRemotePubKey(localPubKey,
 // GetSession fetches the session with the given key.
 //
 // NOTE: this is part of the Store interface.
-func (db *DB) GetSession(key *btcec.PublicKey) (*Session, error) {
+func (db *BoltStore) GetSession(key *btcec.PublicKey) (*Session, error) {
 	var session *Session
 	err := db.View(func(tx *bbolt.Tx) error {
 		sessionBucket, err := getBucket(tx, sessionBucketKey)
@@ -343,7 +343,7 @@ func (db *DB) GetSession(key *btcec.PublicKey) (*Session, error) {
 // ListSessions returns all sessions currently known to the store.
 //
 // NOTE: this is part of the Store interface.
-func (db *DB) ListSessions(filterFn func(s *Session) bool) ([]*Session, error) {
+func (db *BoltStore) ListSessions(filterFn func(s *Session) bool) ([]*Session, error) {
 	var sessions []*Session
 	err := db.View(func(tx *bbolt.Tx) error {
 		sessionBucket, err := getBucket(tx, sessionBucketKey)
@@ -383,7 +383,7 @@ func (db *DB) ListSessions(filterFn func(s *Session) bool) ([]*Session, error) {
 // public key to be revoked.
 //
 // NOTE: this is part of the Store interface.
-func (db *DB) RevokeSession(key *btcec.PublicKey) error {
+func (db *BoltStore) RevokeSession(key *btcec.PublicKey) error {
 	var session *Session
 	return db.Update(func(tx *bbolt.Tx) error {
 		sessionBucket, err := getBucket(tx, sessionBucketKey)
@@ -416,7 +416,7 @@ func (db *DB) RevokeSession(key *btcec.PublicKey) error {
 // GetSessionByID fetches the session with the given ID.
 //
 // NOTE: this is part of the Store interface.
-func (db *DB) GetSessionByID(id ID) (*Session, error) {
+func (db *BoltStore) GetSessionByID(id ID) (*Session, error) {
 	var session *Session
 	err := db.View(func(tx *bbolt.Tx) error {
 		sessionBucket, err := getBucket(tx, sessionBucketKey)
@@ -454,7 +454,7 @@ func (db *DB) GetSessionByID(id ID) (*Session, error) {
 // used or discarded.
 //
 // NOTE: this is part of the Store interface.
-func (db *DB) GetUnusedIDAndKeyPair() (ID, *btcec.PrivateKey, error) {
+func (db *BoltStore) GetUnusedIDAndKeyPair() (ID, *btcec.PrivateKey, error) {
 	var (
 		id      ID
 		privKey *btcec.PrivateKey
@@ -500,7 +500,7 @@ func (db *DB) GetUnusedIDAndKeyPair() (ID, *btcec.PrivateKey, error) {
 // GetGroupID will return the group ID for the given session ID.
 //
 // NOTE: this is part of the IDToGroupIndex interface.
-func (db *DB) GetGroupID(sessionID ID) (ID, error) {
+func (db *BoltStore) GetGroupID(sessionID ID) (ID, error) {
 	var groupID ID
 	err := db.View(func(tx *bbolt.Tx) error {
 		sessionBkt, err := getBucket(tx, sessionBucketKey)
@@ -540,7 +540,7 @@ func (db *DB) GetGroupID(sessionID ID) (ID, error) {
 // group with the given ID.
 //
 // NOTE: this is part of the IDToGroupIndex interface.
-func (db *DB) GetSessionIDs(groupID ID) ([]ID, error) {
+func (db *BoltStore) GetSessionIDs(groupID ID) ([]ID, error) {
 	var (
 		sessionIDs []ID
 		err        error
@@ -567,7 +567,7 @@ func (db *DB) GetSessionIDs(groupID ID) ([]ID, error) {
 // each session passes.
 //
 // NOTE: this is part of the Store interface.
-func (db *DB) CheckSessionGroupPredicate(groupID ID,
+func (db *BoltStore) CheckSessionGroupPredicate(groupID ID,
 	fn func(s *Session) bool) (bool, error) {
 
 	var (

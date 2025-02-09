@@ -58,7 +58,7 @@ type sessionRpcServer struct {
 // sessionRpcServerConfig holds the values used to configure the
 // sessionRpcServer.
 type sessionRpcServerConfig struct {
-	db                      *session.DB
+	db                      *session.BoltStore
 	basicAuth               string
 	grpcOptions             []grpc.ServerOption
 	registerGrpcServers     func(server *grpc.Server)
