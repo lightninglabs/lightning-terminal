@@ -73,9 +73,10 @@ type Session struct {
 
 // buildSession creates a new session with the given user-defined parameters.
 func buildSession(id ID, localPrivKey *btcec.PrivateKey, label string, typ Type,
-	expiry time.Time, serverAddr string, devServer bool, perms []bakery.Op,
-	caveats []macaroon.Caveat, featureConfig FeaturesConfig,
-	privacy bool, linkedGroupID *ID, flags PrivacyFlags) (*Session, error) {
+	created, expiry time.Time, serverAddr string, devServer bool,
+	perms []bakery.Op, caveats []macaroon.Caveat,
+	featureConfig FeaturesConfig, privacy bool, linkedGroupID *ID,
+	flags PrivacyFlags) (*Session, error) {
 
 	_, pairingSecret, err := mailbox.NewPassphraseEntropy()
 	if err != nil {
@@ -98,8 +99,8 @@ func buildSession(id ID, localPrivKey *btcec.PrivateKey, label string, typ Type,
 		Label:             label,
 		State:             StateCreated,
 		Type:              typ,
-		Expiry:            expiry,
-		CreatedAt:         time.Now(),
+		Expiry:            expiry.UTC(),
+		CreatedAt:         created.UTC(),
 		ServerAddr:        serverAddr,
 		DevServer:         devServer,
 		MacaroonRootKey:   macRootKey,

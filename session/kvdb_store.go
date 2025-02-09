@@ -194,8 +194,9 @@ func (db *BoltStore) NewSession(id ID, localPrivKey *btcec.PrivateKey,
 	flags PrivacyFlags) (*Session, error) {
 
 	return buildSession(
-		id, localPrivKey, label, typ, expiry, serverAddr, devServer,
-		perms, caveats, featureConfig, privacy, linkedGroupID, flags,
+		id, localPrivKey, label, typ, db.clock.Now(), expiry,
+		serverAddr, devServer, perms, caveats, featureConfig, privacy,
+		linkedGroupID, flags,
 	)
 }
 
@@ -424,7 +425,7 @@ func (db *BoltStore) RevokeSession(key *btcec.PublicKey) error {
 		}
 
 		session.State = StateRevoked
-		session.RevokedAt = time.Now()
+		session.RevokedAt = db.clock.Now().UTC()
 
 		var buf bytes.Buffer
 		if err := SerializeSession(&buf, session); err != nil {
