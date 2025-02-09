@@ -56,16 +56,8 @@ func TestBasicSessionStore(t *testing.T) {
 	require.NoError(t, db.CreateSession(s2))
 	require.NoError(t, db.CreateSession(s3))
 
-	// Check that all sessions are returned in ListSessions.
-	sessions, err := db.ListSessions(nil)
-	require.NoError(t, err)
-	require.Equal(t, 3, len(sessions))
-	assertEqualSessions(t, s1, sessions[0])
-	assertEqualSessions(t, s2, sessions[1])
-	assertEqualSessions(t, s3, sessions[2])
-
 	// Test the ListSessionsByType method.
-	sessions, err = db.ListSessionsByType(TypeMacaroonAdmin)
+	sessions, err := db.ListSessionsByType(TypeMacaroonAdmin)
 	require.NoError(t, err)
 	require.Equal(t, 2, len(sessions))
 	assertEqualSessions(t, s1, sessions[0])
@@ -115,9 +107,17 @@ func TestBasicSessionStore(t *testing.T) {
 
 	// Now revoke the session and assert that the state is revoked.
 	require.NoError(t, db.RevokeSession(s1.LocalPublicKey))
-	session1, err = db.GetSession(s1.LocalPublicKey)
+	s1, err = db.GetSession(s1.LocalPublicKey)
 	require.NoError(t, err)
-	require.Equal(t, session1.State, StateRevoked)
+	require.Equal(t, s1.State, StateRevoked)
+
+	// Test that ListAllSessions works.
+	sessions, err = db.ListAllSessions()
+	require.NoError(t, err)
+	require.Equal(t, 3, len(sessions))
+	assertEqualSessions(t, s1, sessions[0])
+	assertEqualSessions(t, s2, sessions[1])
+	assertEqualSessions(t, s3, sessions[2])
 }
 
 // TestLinkingSessions tests that session linking works as expected.

@@ -364,11 +364,13 @@ func (db *BoltStore) GetSession(key *btcec.PublicKey) (*Session, error) {
 	return session, nil
 }
 
-// ListSessions returns all sessions currently known to the store.
+// ListAllSessions returns all sessions currently known to the store.
 //
 // NOTE: this is part of the Store interface.
-func (db *BoltStore) ListSessions(filterFn func(s *Session) bool) ([]*Session, error) {
-	return db.listSessions(filterFn)
+func (db *BoltStore) ListAllSessions() ([]*Session, error) {
+	return db.listSessions(func(s *Session) bool {
+		return true
+	})
 }
 
 // ListSessionsByType returns all sessions currently known to the store that
