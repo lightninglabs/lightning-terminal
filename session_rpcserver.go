@@ -101,7 +101,10 @@ func newSessionRPCServer(cfg *sessionRpcServerConfig) (*sessionRpcServer,
 // requests. This includes resuming all non-revoked sessions.
 func (s *sessionRpcServer) start(ctx context.Context) error {
 	// Start up all previously created sessions.
-	sessions, err := s.cfg.db.ListSessions()
+	sessions, err := s.cfg.db.ListSessions(
+		session.StateCreated,
+		session.StateInUse,
+	)
 	if err != nil {
 		return fmt.Errorf("error listing sessions: %v", err)
 	}
@@ -122,12 +125,6 @@ func (s *sessionRpcServer) start(ctx context.Context) error {
 			if sess.RemotePublicKey == nil {
 				log.Errorf("no static remote key found for "+
 					"autopilot session %x", key)
-
-				continue
-			}
-
-			if sess.State != session.StateInUse &&
-				sess.State != session.StateCreated {
 
 				continue
 			}
@@ -352,16 +349,6 @@ func (s *sessionRpcServer) resumeSession(ctx context.Context,
 
 	pubKey := sess.LocalPublicKey
 	pubKeyBytes := pubKey.SerializeCompressed()
-
-	// We only start non-revoked, non-expired LiT sessions. Everything else
-	// we just skip.
-	if sess.State != session.StateInUse &&
-		sess.State != session.StateCreated {
-
-		log.Debugf("Not resuming session %x with state %d", pubKeyBytes,
-			sess.State)
-		return nil
-	}
 
 	// Don't resume an expired session.
 	if sess.Expiry.Before(time.Now()) {
