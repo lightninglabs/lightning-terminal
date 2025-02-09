@@ -142,9 +142,58 @@ func TestBasicSessionStore(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, sessions)
 
-	sessions, err = db.ListSessionsByState(StateInUse)
+	sessions, err = db.ListSessionsByState(StateReserved)
 	require.NoError(t, err)
 	require.Empty(t, sessions)
+
+	// Demonstrate deletion of a reserved session.
+	//
+	// Calling DeleteReservedSessions should have no effect yet since none
+	// of the sessions are reserved.
+	require.NoError(t, db.DeleteReservedSessions())
+
+	sessions, err = db.ListSessionsByState(StateReserved)
+	require.NoError(t, err)
+	require.Empty(t, sessions)
+
+	// Add a session and put it in the StateReserved state. We'll also
+	// link it to session 1.
+	s5 := newSession(
+		t, db, clock, "session 5", withState(StateReserved),
+		withLinkedGroupID(&session1.GroupID),
+	)
+	require.NoError(t, db.CreateSession(s5))
+
+	sessions, err = db.ListSessionsByState(StateReserved)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(sessions))
+	assertEqualSessions(t, s5, sessions[0])
+
+	// Show that the group ID/session ID index has also been populated with
+	// this session.
+	groupID, err := db.GetGroupID(s5.ID)
+	require.NoError(t, err)
+	require.Equal(t, s1.ID, groupID)
+
+	sessIDs, err := db.GetSessionIDs(s5.GroupID)
+	require.NoError(t, err)
+	require.ElementsMatch(t, []ID{s5.ID, s1.ID}, sessIDs)
+
+	// Now delete the reserved session and show that it is no longer in the
+	// database and no longer in the group ID/session ID index.
+	require.NoError(t, db.DeleteReservedSessions())
+
+	sessions, err = db.ListSessionsByState(StateReserved)
+	require.NoError(t, err)
+	require.Empty(t, sessions)
+
+	_, err = db.GetGroupID(s5.ID)
+	require.ErrorContains(t, err, "no index entry")
+
+	// Only session 1 should remain in this group.
+	sessIDs, err = db.GetSessionIDs(s5.GroupID)
+	require.NoError(t, err)
+	require.ElementsMatch(t, []ID{s1.ID}, sessIDs)
 }
 
 // TestLinkingSessions tests that session linking works as expected.
@@ -356,6 +405,12 @@ func withLinkedGroupID(groupID *ID) testSessionModifier {
 func withType(t Type) testSessionModifier {
 	return func(s *Session) {
 		s.Type = t
+	}
+}
+
+func withState(state State) testSessionModifier {
+	return func(s *Session) {
+		s.State = state
 	}
 }
 

@@ -51,6 +51,12 @@ const (
 	// StateExpired is the state of a session that has passed its expiry
 	// date.
 	StateExpired State = 3
+
+	// StateReserved is a temporary initial state of a session. On start-up,
+	// any sessions in this state should be cleaned up.
+	//
+	// NOTE: this isn't used yet.
+	StateReserved State = 4
 )
 
 // MacaroonRecipe defines the permissions and caveats that should be used
@@ -214,6 +220,10 @@ type Store interface {
 	// returned if each session passes.
 	CheckSessionGroupPredicate(groupID ID,
 		fn func(s *Session) bool) (bool, error)
+
+	// DeleteReservedSessions deletes all sessions that are in the
+	// StateReserved state.
+	DeleteReservedSessions() error
 
 	IDToGroupIndex
 }

@@ -444,6 +444,99 @@ func (db *BoltStore) listSessions(filterFn func(s *Session) bool) ([]*Session,
 	return sessions, nil
 }
 
+// DeleteReservedSessions deletes all sessions that are in the StateReserved
+// state.
+//
+// NOTE: this is part of the Store interface.
+func (db *BoltStore) DeleteReservedSessions() error {
+	return db.Update(func(tx *bbolt.Tx) error {
+		sessionBucket, err := getBucket(tx, sessionBucketKey)
+		if err != nil {
+			return err
+		}
+
+		return sessionBucket.ForEach(func(k, v []byte) error {
+			// We'll also get buckets here, skip those (identified
+			// by nil value).
+			if v == nil {
+				return nil
+			}
+
+			session, err := DeserializeSession(bytes.NewReader(v))
+			if err != nil {
+				return err
+			}
+
+			if session.State != StateReserved {
+				return nil
+			}
+
+			err = sessionBucket.Delete(k)
+			if err != nil {
+				return err
+			}
+
+			idIndexBkt := sessionBucket.Bucket(idIndexKey)
+			if idIndexBkt == nil {
+				return ErrDBInitErr
+			}
+
+			// Delete the entire session ID bucket.
+			err = idIndexBkt.DeleteBucket(session.ID[:])
+			if err != nil {
+				return err
+			}
+
+			groupIdIndexBkt := sessionBucket.Bucket(groupIDIndexKey)
+			if groupIdIndexBkt == nil {
+				return ErrDBInitErr
+			}
+
+			groupBkt := groupIdIndexBkt.Bucket(session.GroupID[:])
+			if groupBkt == nil {
+				return ErrDBInitErr
+			}
+
+			sessionIDsBkt := groupBkt.Bucket(sessionIDKey)
+			if sessionIDsBkt == nil {
+				return ErrDBInitErr
+			}
+
+			var (
+				seqKey      []byte
+				numSessions int
+			)
+			err = sessionIDsBkt.ForEach(func(k, v []byte) error {
+				numSessions++
+
+				if !bytes.Equal(v, session.ID[:]) {
+					return nil
+				}
+
+				seqKey = k
+
+				return nil
+			})
+			if err != nil {
+				return err
+			}
+
+			if numSessions == 0 {
+				return fmt.Errorf("no sessions found for "+
+					"group ID %x", session.GroupID)
+			}
+
+			if numSessions == 1 {
+				// Delete the whole group bucket.
+				return groupBkt.DeleteBucket(sessionIDKey)
+			}
+
+			// Else, delete just the session ID entry.
+			return sessionIDsBkt.Delete(seqKey)
+		})
+	})
+}
+
 // RevokeSession updates the state of the session with the given local
 // public key to be revoked.
 //

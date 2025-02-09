@@ -5276,7 +5276,8 @@ proto.litrpc.SessionState = {
   STATE_CREATED: 0,
   STATE_IN_USE: 1,
   STATE_REVOKED: 2,
-  STATE_EXPIRED: 3
+  STATE_EXPIRED: 3,
+  STATE_RESERVED: 4
 };
 
 goog.object.extend(exports, proto.litrpc);
