@@ -26,10 +26,30 @@ const (
 // State represents the state of a session.
 type State uint8
 
+/*
+		/---> StateExpired
+StateCreated ---
+       		\---> StateRevoked
+*/
+
 const (
+	// StateCreated is the state of a session once it has been fully
+	// committed to the Store and is ready to be used. This is the first
+	// state of a session.
 	StateCreated State = 0
-	StateInUse   State = 1
+
+	// StateInUse is the state of a session that is currently being used.
+	//
+	// NOTE: this state is not currently used, but we keep it around for now
+	// since old sessions might still have this state persisted.
+	StateInUse State = 1
+
+	// StateRevoked is the state of a session that has been revoked before
+	// its expiry date.
 	StateRevoked State = 2
+
+	// StateExpired is the state of a session that has passed its expiry
+	// date.
 	StateExpired State = 3
 )
 
