@@ -162,8 +162,8 @@ var updateAccountCommand = cli.Command{
 		},
 		cli.Int64Flag{
 			Name: "new_balance",
-			Usage: "The new balance of the account; -1 means do " +
-				"not update the balance.",
+			Usage: "(deprecated) The new balance of the account; " +
+				"-1 means do not update the balance.",
 			Value: -1,
 		},
 		cli.Int64Flag{
