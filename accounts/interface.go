@@ -331,6 +331,16 @@ type Service interface {
 	PaymentErrored(ctx context.Context, id AccountID,
 		hash lntypes.Hash) error
 
+	// CreditAccount increases the balance of an existing account in the
+	// database.
+	CreditAccount(ctx context.Context, accountID AccountID,
+		amount lnwire.MilliSatoshi) (*OffChainBalanceAccount, error)
+
+	// DebitAccount decreases the balance of an existing account in the
+	// database.
+	DebitAccount(ctx context.Context, accountID AccountID,
+		amount lnwire.MilliSatoshi) (*OffChainBalanceAccount, error)
+
 	RequestValuesStore
 }
 
