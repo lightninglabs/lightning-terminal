@@ -278,7 +278,7 @@
         "account_balance": {
           "type": "string",
           "format": "int64",
-          "description": "The new account balance to set. Set to -1 to not update the balance."
+          "description": "Deprecated, use the `litcli update credit` or `litcli update debit`\ncommands instead. The new account balance to set. Set to -1 to not\nupdate the balance."
         },
         "expiration_date": {
           "type": "string",

@@ -144,8 +144,12 @@ message UpdateAccountRequest {
     // The ID of the account to update. Either the ID or the label must be set.
     string id = 1;
 
-    // The new account balance to set. Set to -1 to not update the balance.
-    int64 account_balance = 2 [jstype = JS_STRING];
+    /*
+    Deprecated, use the `litcli update credit` or `litcli update debit`
+    commands instead. The new account balance to set. Set to -1 to not
+    update the balance.
+     */
+    int64 account_balance = 2 [deprecated = true, jstype = JS_STRING];
 
     /*
     The new account expiry to set. Set to -1 to not update the expiry. Set to 0
