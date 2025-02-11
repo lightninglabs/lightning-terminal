@@ -63,6 +63,18 @@ type mockService struct {
 	*requestValuesStore
 }
 
+func (m *mockService) CreditAccount(_ context.Context, _ AccountID,
+	_ lnwire.MilliSatoshi) (*OffChainBalanceAccount, error) {
+
+	return nil, nil
+}
+
+func (m *mockService) DebitAccount(_ context.Context, _ AccountID,
+	_ lnwire.MilliSatoshi) (*OffChainBalanceAccount, error) {
+
+	return nil, nil
+}
+
 func newMockService() *mockService {
 	return &mockService{
 		acctBalanceMsat:    0,
