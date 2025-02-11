@@ -382,7 +382,8 @@ type UpdateAccountRequest struct {
 
 	// The ID of the account to update. Either the ID or the label must be set.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// The new account balance to set. Set to -1 to not update the balance.
+	// Deprecated, use credit or debit command instead. The new account balance to
+	// set. Set to -1 to not update the balance.
 	AccountBalance int64 `protobuf:"varint,2,opt,name=account_balance,json=accountBalance,proto3" json:"account_balance,omitempty"`
 	// The new account expiry to set. Set to -1 to not update the expiry. Set to 0
 	// to never expire.

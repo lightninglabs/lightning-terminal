@@ -156,7 +156,7 @@
         "account_balance": {
           "type": "string",
           "format": "int64",
-          "description": "The new account balance to set. Set to -1 to not update the balance."
+          "description": "Deprecated, use credit or debit command instead. The new account balance to\nset. Set to -1 to not update the balance."
         },
         "expiration_date": {
           "type": "string",

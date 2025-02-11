@@ -144,7 +144,10 @@ message UpdateAccountRequest {
     // The ID of the account to update. Either the ID or the label must be set.
     string id = 1;
 
-    // The new account balance to set. Set to -1 to not update the balance.
+    /*
+    Deprecated, use credit or debit command instead. The new account balance to
+    set. Set to -1 to not update the balance.
+     */
     int64 account_balance = 2 [jstype = JS_STRING];
 
     /*
