@@ -9,6 +9,12 @@ SET current_balance_msat = $1
 WHERE id = $2
 RETURNING id;
 
+-- name: CreditAccount :one
+UPDATE accounts
+SET current_balance_msat = current_balance_msat + sqlc.arg(amount)
+WHERE id = sqlc.arg(id)
+RETURNING id;
+
 -- name: DebitAccount :one
 UPDATE accounts
 SET current_balance_msat = current_balance_msat - sqlc.arg(amount)
