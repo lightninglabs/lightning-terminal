@@ -222,7 +222,7 @@ type LightningTerminal struct {
 	accountRpcServer *accounts.RPCServer
 
 	firewallDB *firewalldb.DB
-	sessionDB  *session.DB
+	sessionDB  *session.BoltStore
 
 	restHandler http.Handler
 	restCancel  func()
@@ -1453,6 +1453,13 @@ func (g *LightningTerminal) shutdownSubServers() error {
 	if g.ruleMgrs != nil {
 		if err := g.ruleMgrs.Stop(); err != nil {
 			log.Errorf("Error stopping rule manager set: %v", err)
+			returnErr = err
+		}
+	}
+
+	if g.sessionDB != nil {
+		if err := g.sessionDB.Close(); err != nil {
+			log.Errorf("Error closing session DB: %v", err)
 			returnErr = err
 		}
 	}
