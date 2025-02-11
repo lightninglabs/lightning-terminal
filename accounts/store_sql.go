@@ -34,6 +34,7 @@ const (
 //nolint:lll
 type SQLQueries interface {
 	AddAccountInvoice(ctx context.Context, arg sqlc.AddAccountInvoiceParams) error
+	DebitAccount(ctx context.Context, arg sqlc.DebitAccountParams) (int64, error)
 	DeleteAccount(ctx context.Context, id int64) error
 	DeleteAccountPayment(ctx context.Context, arg sqlc.DeleteAccountPaymentParams) error
 	GetAccount(ctx context.Context, id int64) (sqlc.Account, error)
@@ -410,6 +411,38 @@ func (s *SQLStore) CreditAccount(ctx context.Context, alias AccountID,
 			},
 		)
 		if err != nil {
+			return err
+		}
+
+		return s.markAccountUpdated(ctx, db, id)
+	})
+}
+
+// DebitAccount decreases the balance of the account with the given alias by
+// the given amount.
+//
+// NOTE: This is part of the Store interface.
+func (s *SQLStore) DebitAccount(ctx context.Context, alias AccountID,
+	amount lnwire.MilliSatoshi) error {
+
+	var writeTxOpts db.QueriesTxOptions
+	return s.db.ExecTx(ctx, &writeTxOpts, func(db SQLQueries) error {
+		id, err := getAccountIDByAlias(ctx, db, alias)
+		if err != nil {
+			return err
+		}
+
+		id, err = db.DebitAccount(
+			ctx, sqlc.DebitAccountParams{
+				ID:     id,
+				Amount: int64(amount),
+			},
+		)
+		if errors.Is(err, sql.ErrNoRows) {
+			return fmt.Errorf("cannot debit %v from the account "+
+				"balance, as the resulting balance would be "+
+				"below 0", int64(amount/1000))
+		} else if err != nil {
 			return err
 		}
 

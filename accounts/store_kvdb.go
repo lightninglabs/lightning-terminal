@@ -246,6 +246,8 @@ func (s *BoltStore) CreditAccount(_ context.Context, id AccountID,
 
 // DebitAccount decreases the balance of the account with the given ID
 // by the given amount.
+//
+// NOTE: This is part of the Store interface.
 func (s *BoltStore) DebitAccount(_ context.Context, id AccountID,
 	amount lnwire.MilliSatoshi) error {
 
