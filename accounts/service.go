@@ -345,6 +345,56 @@ func (s *InterceptorService) UpdateAccount(ctx context.Context,
 	return s.store.Account(ctx, accountID)
 }
 
+// CreditAccount increases the balance of an existing account in the database.
+func (s *InterceptorService) CreditAccount(ctx context.Context,
+	accountID AccountID,
+	amount lnwire.MilliSatoshi) (*OffChainBalanceAccount, error) {
+
+	s.Lock()
+	defer s.Unlock()
+
+	// As this function updates account balances, we require that the
+	// service is running before we execute it.
+	if !s.isRunningUnsafe() {
+		// This case can only happen if the service is disabled while
+		// we're processing a request.
+		return nil, ErrAccountServiceDisabled
+	}
+
+	// Credit the account in the db.
+	err := s.store.CreditAccount(ctx, accountID, amount)
+	if err != nil {
+		return nil, fmt.Errorf("unable to credit account: %w", err)
+	}
+
+	return s.store.Account(ctx, accountID)
+}
+
+// DebitAccount decreases the balance of an existing account in the database.
+func (s *InterceptorService) DebitAccount(ctx context.Context,
+	accountID AccountID,
+	amount lnwire.MilliSatoshi) (*OffChainBalanceAccount, error) {
+
+	s.Lock()
+	defer s.Unlock()
+
+	// As this function updates account balances, we require that the
+	// service is running before we execute it.
+	if !s.isRunningUnsafe() {
+		// This case can only happen if the service is disabled while
+		// we're processing a request.
+		return nil, ErrAccountServiceDisabled
+	}
+
+	// Debit the account in the db.
+	err := s.store.DebitAccount(ctx, accountID, amount)
+	if err != nil {
+		return nil, fmt.Errorf("unable to debit account: %w", err)
+	}
+
+	return s.store.Account(ctx, accountID)
+}
+
 // Account retrieves an account from the bolt DB and un-marshals it. If the
 // account cannot be found, then ErrAccNotFound is returned.
 func (s *InterceptorService) Account(ctx context.Context,
