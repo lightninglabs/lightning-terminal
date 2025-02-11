@@ -262,12 +262,12 @@ func TestAccountUpdateMethods(t *testing.T) {
 		assertInvoices(hash1, hash2)
 	})
 
-	t.Run("IncreaseAccountBalance", func(t *testing.T) {
+	t.Run("CreditAccount", func(t *testing.T) {
 		store := NewTestDB(t, clock.NewTestClock(time.Now()))
 
 		// Increasing the balance of an account that doesn't exist
 		// should error out.
-		err := store.IncreaseAccountBalance(ctx, AccountID{}, 100)
+		err := store.CreditAccount(ctx, AccountID{}, 100)
 		require.ErrorIs(t, err, ErrAccNotFound)
 
 		acct, err := store.NewAccount(ctx, 123, time.Time{}, "foo")
@@ -284,7 +284,7 @@ func TestAccountUpdateMethods(t *testing.T) {
 
 		// Increase the balance by 100 and assert that the new balance
 		// is 223.
-		err = store.IncreaseAccountBalance(ctx, acct.ID, 100)
+		err = store.CreditAccount(ctx, acct.ID, 100)
 		require.NoError(t, err)
 
 		assertBalance(223)

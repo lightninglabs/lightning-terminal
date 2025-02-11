@@ -563,7 +563,7 @@ func (s *InterceptorService) invoiceUpdate(ctx context.Context,
 	// If we get here, the current account has the invoice associated with
 	// it that was just paid. Credit the amount to the account and update it
 	// in the DB.
-	err := s.store.IncreaseAccountBalance(ctx, acctID, invoice.AmountPaid)
+	err := s.store.CreditAccount(ctx, acctID, invoice.AmountPaid)
 	if err != nil {
 		return s.disableAndErrorfUnsafe("error increasing account "+
 			"balance account: %w", err)

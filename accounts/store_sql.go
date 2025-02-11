@@ -382,11 +382,11 @@ func (s *SQLStore) UpdateAccountBalanceAndExpiry(ctx context.Context,
 	})
 }
 
-// IncreaseAccountBalance increases the balance of the account with the given
-// alias by the given amount.
+// CreditAccount increases the balance of the account with the given alias by
+// the given amount.
 //
 // NOTE: This is part of the Store interface.
-func (s *SQLStore) IncreaseAccountBalance(ctx context.Context, alias AccountID,
+func (s *SQLStore) CreditAccount(ctx context.Context, alias AccountID,
 	amount lnwire.MilliSatoshi) error {
 
 	var writeTxOpts db.QueriesTxOptions

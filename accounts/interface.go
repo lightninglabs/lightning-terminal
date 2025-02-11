@@ -252,9 +252,9 @@ type Store interface {
 	AddAccountInvoice(ctx context.Context, id AccountID,
 		hash lntypes.Hash) error
 
-	// IncreaseAccountBalance increases the balance of the account with the
+	// CreditAccount increases the balance of the account with the
 	// given ID by the given amount.
-	IncreaseAccountBalance(ctx context.Context, id AccountID,
+	CreditAccount(ctx context.Context, id AccountID,
 		amount lnwire.MilliSatoshi) error
 
 	// UpsertAccountPayment updates or inserts a payment entry for the given
