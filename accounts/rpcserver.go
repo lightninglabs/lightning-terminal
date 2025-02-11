@@ -8,7 +8,7 @@ import (
 
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
-	"github.com/lightninglabs/lightning-terminal/session"
+	litmac "github.com/lightninglabs/lightning-terminal/macaroons"
 	"github.com/lightningnetwork/lnd/lntypes"
 	"github.com/lightningnetwork/lnd/lnwire"
 	"github.com/lightningnetwork/lnd/macaroons"
@@ -22,12 +22,12 @@ type RPCServer struct {
 
 	service *InterceptorService
 
-	superMacBaker session.MacaroonBaker
+	superMacBaker litmac.Baker
 }
 
 // NewRPCServer returns a new RPC server for the given service.
 func NewRPCServer(service *InterceptorService,
-	superMacBaker session.MacaroonBaker) *RPCServer {
+	superMacBaker litmac.Baker) *RPCServer {
 
 	return &RPCServer{
 		service:       service,
@@ -79,19 +79,17 @@ func (s *RPCServer) CreateAccount(ctx context.Context,
 
 	var rootKeyIdSuffix [4]byte
 	copy(rootKeyIdSuffix[:], account.ID[0:4])
-	macRootKey := session.NewSuperMacaroonRootKeyID(rootKeyIdSuffix)
+	macRootKey := litmac.NewSuperMacaroonRootKeyID(rootKeyIdSuffix)
 
 	accountCaveat := checkers.Condition(
 		macaroons.CondLndCustom,
 		fmt.Sprintf("%s %x", CondAccount, account.ID[:]),
 	)
 
-	macHex, err := s.superMacBaker(ctx, macRootKey, &session.MacaroonRecipe{
-		Permissions: MacaroonPermissions,
-		Caveats: []macaroon.Caveat{{
-			Id: []byte(accountCaveat),
-		}},
-	})
+	macHex, err := s.superMacBaker(
+		ctx, macRootKey, MacaroonPermissions,
+		[]macaroon.Caveat{{Id: []byte(accountCaveat)}},
+	)
 	if err != nil {
 		return nil, fmt.Errorf("error baking account macaroon: %w", err)
 	}

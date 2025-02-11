@@ -26,6 +26,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/firewall"
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
+	litmac "github.com/lightninglabs/lightning-terminal/macaroons"
 	"github.com/lightninglabs/lightning-terminal/perms"
 	"github.com/lightninglabs/lightning-terminal/queue"
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
@@ -430,11 +431,10 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 	}
 
 	superMacBaker := func(ctx context.Context, rootKeyID uint64,
-		recipe *session.MacaroonRecipe) (string, error) {
+		perms []bakery.Op, caveats []macaroon.Caveat) (string, error) {
 
-		return BakeSuperMacaroon(
-			ctx, g.basicClient, rootKeyID,
-			recipe.Permissions, recipe.Caveats,
+		return litmac.BakeSuperMacaroon(
+			ctx, g.basicClient, rootKeyID, perms, caveats,
 		)
 	}
 
@@ -662,9 +662,9 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 		var suffixBytes [4]byte
 		binary.BigEndian.PutUint32(suffixBytes[:], rootKeyIDSuffix)
 
-		rootKeyID := session.NewSuperMacaroonRootKeyID(suffixBytes)
+		rootKeyID := litmac.NewSuperMacaroonRootKeyID(suffixBytes)
 
-		return BakeSuperMacaroon(
+		return litmac.BakeSuperMacaroon(
 			ctx, g.basicClient, rootKeyID,
 			g.permsMgr.ActivePermissions(readOnly), nil,
 		)
@@ -952,8 +952,8 @@ func (g *LightningTerminal) setUpLNDClients(ctx context.Context,
 		// Create a super macaroon that can be used to control lnd,
 		// faraday, loop, and pool, all at the same time.
 		log.Infof("Baking internal super macaroon")
-		superMacaroon, err := BakeSuperMacaroon(
-			ctx, g.basicClient, session.NewSuperMacaroonRootKeyID(
+		superMacaroon, err := litmac.BakeSuperMacaroon(
+			ctx, g.basicClient, litmac.NewSuperMacaroonRootKeyID(
 				[4]byte{},
 			),
 			g.permsMgr.ActivePermissions(false), nil,
@@ -1265,7 +1265,7 @@ func (g *LightningTerminal) ValidateMacaroon(ctx context.Context,
 	// the proxy and its director and any super macaroon will be converted
 	// to a daemon specific macaroon before directing the call to the remote
 	// daemon. Those calls don't land here.
-	if session.IsSuperMacaroon(macHex) {
+	if litmac.IsSuperMacaroon(macHex) {
 		macBytes, err := hex.DecodeString(macHex)
 		if err != nil {
 			return err
@@ -1849,54 +1849,6 @@ func (g *LightningTerminal) initSubServers() error {
 	}
 
 	return nil
-}
-
-// BakeSuperMacaroon uses the lnd client to bake a macaroon that can include
-// permissions for multiple daemons.
-func BakeSuperMacaroon(ctx context.Context, lnd lnrpc.LightningClient,
-	rootKeyID uint64, perms []bakery.Op, caveats []macaroon.Caveat) (string,
-	error) {
-
-	if lnd == nil {
-		return "", errors.New("lnd not yet connected")
-	}
-
-	req := &lnrpc.BakeMacaroonRequest{
-		Permissions: make(
-			[]*lnrpc.MacaroonPermission, len(perms),
-		),
-		AllowExternalPermissions: true,
-		RootKeyId:                rootKeyID,
-	}
-	for idx, perm := range perms {
-		req.Permissions[idx] = &lnrpc.MacaroonPermission{
-			Entity: perm.Entity,
-			Action: perm.Action,
-		}
-	}
-
-	res, err := lnd.BakeMacaroon(ctx, req)
-	if err != nil {
-		return "", err
-	}
-
-	mac, err := session.ParseMacaroon(res.Macaroon)
-	if err != nil {
-		return "", err
-	}
-
-	for _, caveat := range caveats {
-		if err := mac.AddFirstPartyCaveat(caveat.Id); err != nil {
-			return "", err
-		}
-	}
-
-	macBytes, err := mac.MarshalBinary()
-	if err != nil {
-		return "", err
-	}
-
-	return hex.EncodeToString(macBytes), err
 }
 
 // allowCORS wraps the given http.Handler with a function that adds the

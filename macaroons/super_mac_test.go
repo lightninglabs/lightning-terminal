@@ -1,4 +1,4 @@
-package session
+package macaroons
 
 import (
 	"testing"
@@ -25,13 +25,21 @@ var (
 		"60a6caf"
 )
 
+// TestSuperMacaroonRootKeyID tests that adding the super macaroon prefix to
+// a root key ID results in a valid super macaroon root key ID.
 func TestSuperMacaroonRootKeyID(t *testing.T) {
+	t.Parallel()
+
 	someBytes := [4]byte{02, 03, 44, 88}
 	rootKeyID := NewSuperMacaroonRootKeyID(someBytes)
 	require.True(t, isSuperMacaroonRootKeyID(rootKeyID))
 	require.False(t, isSuperMacaroonRootKeyID(123))
 }
 
+// TestIsSuperMacaroon tests that we can correctly identify an example super
+// macaroon.
 func TestIsSuperMacaroon(t *testing.T) {
+	t.Parallel()
+
 	require.True(t, IsSuperMacaroon(testMacHex))
 }

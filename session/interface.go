@@ -1,12 +1,12 @@
 package session
 
 import (
-	"context"
 	"fmt"
 	"time"
 
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/lightninglabs/lightning-node-connect/mailbox"
+	"github.com/lightninglabs/lightning-terminal/macaroons"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 	"gopkg.in/macaroon.v2"
 )
@@ -71,10 +71,6 @@ type Session struct {
 	GroupID ID
 }
 
-// MacaroonBaker is a function type for baking a super macaroon.
-type MacaroonBaker func(ctx context.Context, rootKeyID uint64,
-	recipe *MacaroonRecipe) (string, error)
-
 // NewSession creates a new session with the given user-defined parameters.
 func NewSession(id ID, localPrivKey *btcec.PrivateKey, label string, typ Type,
 	expiry time.Time, serverAddr string, devServer bool, perms []bakery.Op,
@@ -86,7 +82,7 @@ func NewSession(id ID, localPrivKey *btcec.PrivateKey, label string, typ Type,
 		return nil, fmt.Errorf("error deriving pairing secret: %v", err)
 	}
 
-	macRootKey := NewSuperMacaroonRootKeyID(id)
+	macRootKey := macaroons.NewSuperMacaroonRootKeyID(id)
 
 	// The group ID will by default be the same as the Session ID
 	// unless this session links to a previous session.
