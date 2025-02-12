@@ -71,11 +71,12 @@ type Session struct {
 	GroupID ID
 }
 
-// NewSession creates a new session with the given user-defined parameters.
-func NewSession(id ID, localPrivKey *btcec.PrivateKey, label string, typ Type,
-	expiry time.Time, serverAddr string, devServer bool, perms []bakery.Op,
-	caveats []macaroon.Caveat, featureConfig FeaturesConfig,
-	privacy bool, linkedGroupID *ID, flags PrivacyFlags) (*Session, error) {
+// buildSession creates a new session with the given user-defined parameters.
+func buildSession(id ID, localPrivKey *btcec.PrivateKey, label string, typ Type,
+	created, expiry time.Time, serverAddr string, devServer bool,
+	perms []bakery.Op, caveats []macaroon.Caveat,
+	featureConfig FeaturesConfig, privacy bool, linkedGroupID *ID,
+	flags PrivacyFlags) (*Session, error) {
 
 	_, pairingSecret, err := mailbox.NewPassphraseEntropy()
 	if err != nil {
@@ -98,8 +99,8 @@ func NewSession(id ID, localPrivKey *btcec.PrivateKey, label string, typ Type,
 		Label:             label,
 		State:             StateCreated,
 		Type:              typ,
-		Expiry:            expiry,
-		CreatedAt:         time.Now(),
+		Expiry:            expiry.UTC(),
+		CreatedAt:         created.UTC(),
 		ServerAddr:        serverAddr,
 		DevServer:         devServer,
 		MacaroonRootKey:   macRootKey,
@@ -139,6 +140,18 @@ type IDToGroupIndex interface {
 // Store is the interface a persistent storage must implement for storing and
 // retrieving Terminal Connect sessions.
 type Store interface {
+	// NewSession creates a new session with the given user-defined
+	// parameters.
+	//
+	// NOTE: currently this purely a constructor of the Session type and
+	// does not make any database calls. This will be changed in a future
+	// commit.
+	NewSession(id ID, localPrivKey *btcec.PrivateKey, label string,
+		typ Type, expiry time.Time, serverAddr string, devServer bool,
+		perms []bakery.Op, caveats []macaroon.Caveat,
+		featureConfig FeaturesConfig, privacy bool, linkedGroupID *ID,
+		flags PrivacyFlags) (*Session, error)
+
 	// CreateSession adds a new session to the store. If a session with the
 	// same local public key already exists an error is returned. This
 	// can only be called with a Session with an ID that the Store has

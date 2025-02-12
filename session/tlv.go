@@ -237,8 +237,8 @@ func DeserializeSession(r io.Reader) (*Session, error) {
 	session.Label = string(label)
 	session.State = State(state)
 	session.Type = Type(typ)
-	session.Expiry = time.Unix(int64(expiry), 0)
-	session.CreatedAt = time.Unix(int64(createdAt), 0)
+	session.Expiry = time.Unix(int64(expiry), 0).UTC()
+	session.CreatedAt = time.Unix(int64(createdAt), 0).UTC()
 	session.ServerAddr = string(serverAddr)
 	session.DevServer = devServer == 1
 	session.WithPrivacyMapper = privacy == 1
@@ -248,7 +248,7 @@ func DeserializeSession(r io.Reader) (*Session, error) {
 	}
 
 	if revokedAt != 0 {
-		session.RevokedAt = time.Unix(int64(revokedAt), 0)
+		session.RevokedAt = time.Unix(int64(revokedAt), 0).UTC()
 	}
 
 	if t, ok := parsedTypes[typeMacaroonRecipe]; ok && t == nil {

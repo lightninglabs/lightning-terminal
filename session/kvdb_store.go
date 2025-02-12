@@ -10,7 +10,10 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/lightningnetwork/lnd/clock"
 	"go.etcd.io/bbolt"
+	"gopkg.in/macaroon-bakery.v2/bakery"
+	"gopkg.in/macaroon.v2"
 )
 
 var (
@@ -77,13 +80,15 @@ const (
 // BoltStore is a bolt-backed persistent store.
 type BoltStore struct {
 	*bbolt.DB
+
+	clock clock.Clock
 }
 
 // A compile-time check to ensure that BoltStore implements the Store interface.
 var _ Store = (*BoltStore)(nil)
 
 // NewDB creates a new bolt database that can be found at the given directory.
-func NewDB(dir, fileName string) (*BoltStore, error) {
+func NewDB(dir, fileName string, clock clock.Clock) (*BoltStore, error) {
 	firstInit := false
 	path := filepath.Join(dir, fileName)
 
@@ -106,7 +111,10 @@ func NewDB(dir, fileName string) (*BoltStore, error) {
 		return nil, err
 	}
 
-	return &BoltStore{DB: db}, nil
+	return &BoltStore{
+		DB:    db,
+		clock: clock,
+	}, nil
 }
 
 // fileExists reports whether the named file or directory exists.
@@ -171,6 +179,25 @@ func initDB(filepath string, firstInit bool) (*bbolt.DB, error) {
 // getSessionKey returns the key for a session.
 func getSessionKey(session *Session) []byte {
 	return session.LocalPublicKey.SerializeCompressed()
+}
+
+// NewSession creates a new session with the given user-defined parameters.
+//
+// NOTE: currently this purely a constructor of the Session type and does not
+// make any database calls. This will be changed in a future commit.
+//
+// NOTE: this is part of the Store interface.
+func (db *BoltStore) NewSession(id ID, localPrivKey *btcec.PrivateKey,
+	label string, typ Type, expiry time.Time, serverAddr string,
+	devServer bool, perms []bakery.Op, caveats []macaroon.Caveat,
+	featureConfig FeaturesConfig, privacy bool, linkedGroupID *ID,
+	flags PrivacyFlags) (*Session, error) {
+
+	return buildSession(
+		id, localPrivKey, label, typ, db.clock.Now(), expiry,
+		serverAddr, devServer, perms, caveats, featureConfig, privacy,
+		linkedGroupID, flags,
+	)
 }
 
 // CreateSession adds a new session to the store. If a session with the same
@@ -398,7 +425,7 @@ func (db *BoltStore) RevokeSession(key *btcec.PublicKey) error {
 		}
 
 		session.State = StateRevoked
-		session.RevokedAt = time.Now()
+		session.RevokedAt = db.clock.Now().UTC()
 
 		var buf bytes.Buffer
 		if err := SerializeSession(&buf, session); err != nil {
