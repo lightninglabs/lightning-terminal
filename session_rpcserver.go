@@ -46,11 +46,6 @@ type sessionRpcServer struct {
 	cfg           *sessionRpcServerConfig
 	sessionServer *session.Server
 
-	// sessRegMu is a mutex that should be held between acquiring an unused
-	// session ID and key pair from the session store and persisting that
-	// new session.
-	sessRegMu sync.Mutex
-
 	quit     chan struct{}
 	wg       sync.WaitGroup
 	stopOnce sync.Once
@@ -100,8 +95,17 @@ func newSessionRPCServer(cfg *sessionRpcServerConfig) (*sessionRpcServer,
 // start all the components necessary for the sessionRpcServer to start serving
 // requests. This includes resuming all non-revoked sessions.
 func (s *sessionRpcServer) start(ctx context.Context) error {
+	// Delete all sessions in the Reserved state.
+	err := s.cfg.db.DeleteReservedSessions()
+	if err != nil {
+		return fmt.Errorf("error deleting reserved sessions: %v", err)
+	}
+
 	// Start up all previously created sessions.
-	sessions, err := s.cfg.db.ListSessions(nil)
+	sessions, err := s.cfg.db.ListSessions(
+		session.StateCreated,
+		session.StateInUse,
+	)
 	if err != nil {
 		return fmt.Errorf("error listing sessions: %v", err)
 	}
@@ -122,12 +126,6 @@ func (s *sessionRpcServer) start(ctx context.Context) error {
 			if sess.RemotePublicKey == nil {
 				log.Errorf("no static remote key found for "+
 					"autopilot session %x", key)
-
-				continue
-			}
-
-			if sess.State != session.StateInUse &&
-				sess.State != session.StateCreated {
 
 				continue
 			}
@@ -310,16 +308,8 @@ func (s *sessionRpcServer) AddSession(ctx context.Context,
 		}
 	}
 
-	s.sessRegMu.Lock()
-	defer s.sessRegMu.Unlock()
-
-	id, localPrivKey, err := s.cfg.db.GetUnusedIDAndKeyPair()
-	if err != nil {
-		return nil, err
-	}
-
 	sess, err := s.cfg.db.NewSession(
-		id, localPrivKey, req.Label, typ, expiry, req.MailboxServerAddr,
+		req.Label, typ, expiry, req.MailboxServerAddr,
 		req.DevServer, uniquePermissions, caveats, nil, false, nil,
 		session.PrivacyFlags{},
 	)
@@ -327,7 +317,8 @@ func (s *sessionRpcServer) AddSession(ctx context.Context,
 		return nil, fmt.Errorf("error creating new session: %v", err)
 	}
 
-	if err := s.cfg.db.CreateSession(sess); err != nil {
+	sess, err = s.cfg.db.CreateSession(sess.ID)
+	if err != nil {
 		return nil, fmt.Errorf("error storing session: %v", err)
 	}
 
@@ -352,16 +343,6 @@ func (s *sessionRpcServer) resumeSession(ctx context.Context,
 
 	pubKey := sess.LocalPublicKey
 	pubKeyBytes := pubKey.SerializeCompressed()
-
-	// We only start non-revoked, non-expired LiT sessions. Everything else
-	// we just skip.
-	if sess.State != session.StateInUse &&
-		sess.State != session.StateCreated {
-
-		log.Debugf("Not resuming session %x with state %d", pubKeyBytes,
-			sess.State)
-		return nil
-	}
 
 	// Don't resume an expired session.
 	if sess.Expiry.Before(time.Now()) {
@@ -536,7 +517,7 @@ func (s *sessionRpcServer) resumeSession(ctx context.Context,
 func (s *sessionRpcServer) ListSessions(_ context.Context,
 	_ *litrpc.ListSessionsRequest) (*litrpc.ListSessionsResponse, error) {
 
-	sessions, err := s.cfg.db.ListSessions(nil)
+	sessions, err := s.cfg.db.ListSessions()
 	if err != nil {
 		return nil, fmt.Errorf("error fetching sessions: %v", err)
 	}
@@ -877,23 +858,6 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 				"group %x", groupSess.ID, groupSess.GroupID)
 		}
 
-		// Now we need to check that all the sessions in the group are
-		// no longer active.
-		ok, err := s.cfg.db.CheckSessionGroupPredicate(
-			groupID, func(s *session.Session) bool {
-				return s.State == session.StateRevoked ||
-					s.State == session.StateExpired
-			},
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		if !ok {
-			return nil, fmt.Errorf("a linked session in group "+
-				"%x is still active", groupID)
-		}
-
 		linkedGroupID = &groupID
 		linkedGroupSession = groupSess
 
@@ -1140,16 +1104,8 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 		caveats = append(caveats, firewall.MetaPrivacyCaveat)
 	}
 
-	s.sessRegMu.Lock()
-	defer s.sessRegMu.Unlock()
-
-	id, localPrivKey, err := s.cfg.db.GetUnusedIDAndKeyPair()
-	if err != nil {
-		return nil, err
-	}
-
 	sess, err := s.cfg.db.NewSession(
-		id, localPrivKey, req.Label, session.TypeAutopilot, expiry,
+		req.Label, session.TypeAutopilot, expiry,
 		req.MailboxServerAddr, req.DevServer, perms, caveats,
 		clientConfig, privacy, linkedGroupID, privacyFlags,
 	)
@@ -1232,10 +1188,15 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 			"autopilot server: %v", err)
 	}
 
-	// We only persist this session if we successfully retrieved the
-	// autopilot's static key.
-	sess.RemotePublicKey = remoteKey
-	if err := s.cfg.db.CreateSession(sess); err != nil {
+	err = s.cfg.db.UpdateSessionRemotePubKey(sess.LocalPublicKey, remoteKey)
+	if err != nil {
+		return nil, fmt.Errorf("error setting remote pubkey: %v", err)
+	}
+
+	// We only activate the session if the Autopilot server registration
+	// was successful.
+	sess, err = s.cfg.db.CreateSession(sess.ID)
+	if err != nil {
 		return nil, fmt.Errorf("error storing session: %v", err)
 	}
 
@@ -1259,9 +1220,7 @@ func (s *sessionRpcServer) ListAutopilotSessions(_ context.Context,
 	_ *litrpc.ListAutopilotSessionsRequest) (
 	*litrpc.ListAutopilotSessionsResponse, error) {
 
-	sessions, err := s.cfg.db.ListSessions(func(s *session.Session) bool {
-		return s.Type == session.TypeAutopilot
-	})
+	sessions, err := s.cfg.db.ListSessionsByType(session.TypeAutopilot)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching sessions: %v", err)
 	}
@@ -1534,6 +1493,9 @@ func marshalRPCMacaroonRecipe(
 // marshalRPCState converts a session state to its RPC counterpart.
 func marshalRPCState(state session.State) (litrpc.SessionState, error) {
 	switch state {
+	case session.StateReserved:
+		return litrpc.SessionState_STATE_RESERVED, nil
+
 	case session.StateCreated:
 		return litrpc.SessionState_STATE_CREATED, nil
 
