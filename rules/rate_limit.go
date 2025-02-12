@@ -134,7 +134,7 @@ func (r *RateLimitEnforcer) HandleRequest(ctx context.Context, uri string,
 	// Determine the start time of the actions window.
 	startTime := time.Now().Add(
 		-time.Duration(rateLim.NumHours) * time.Hour,
-	)
+	).UTC()
 
 	// Now count all relevant actions which have taken place after the
 	// start time.

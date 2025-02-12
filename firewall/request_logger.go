@@ -195,7 +195,7 @@ func (r *RequestLogger) addNewAction(ri *RequestInfo,
 
 	action := &firewalldb.Action{
 		RPCMethod:   ri.URI,
-		AttemptedAt: time.Now(),
+		AttemptedAt: time.Now().UTC(),
 		State:       firewalldb.ActionStateInit,
 	}
 

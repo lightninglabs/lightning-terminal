@@ -132,7 +132,7 @@ func (s *sessionRpcServer) start(ctx context.Context) error {
 				continue
 			}
 
-			if sess.Expiry.Before(time.Now()) {
+			if sess.Expiry.Before(time.Now().UTC()) {
 				continue
 			}
 
@@ -190,7 +190,7 @@ func (s *sessionRpcServer) AddSession(ctx context.Context,
 	req *litrpc.AddSessionRequest) (*litrpc.AddSessionResponse, error) {
 
 	expiry := time.Unix(int64(req.ExpiryTimestampSeconds), 0)
-	if time.Now().After(expiry) {
+	if time.Now().UTC().After(expiry) {
 		return nil, fmt.Errorf("expiry must be in the future")
 	}
 
@@ -364,7 +364,7 @@ func (s *sessionRpcServer) resumeSession(ctx context.Context,
 	}
 
 	// Don't resume an expired session.
-	if sess.Expiry.Before(time.Now()) {
+	if sess.Expiry.Before(time.Now().UTC()) {
 		log.Debugf("Not resuming session %x with expiry %s",
 			pubKeyBytes, sess.Expiry)
 
@@ -440,7 +440,7 @@ func (s *sessionRpcServer) resumeSession(ctx context.Context,
 	// we do not yet have a static remote pub key for.
 	if sess.RemotePublicKey == nil {
 		deadline := sess.CreatedAt.Add(s.cfg.firstConnectionDeadline)
-		if deadline.Before(time.Now()) {
+		if deadline.Before(time.Now().UTC()) {
 			log.Debugf("Deadline for session %x has already "+
 				"passed. Revoking session", pubKeyBytes)
 
@@ -448,7 +448,7 @@ func (s *sessionRpcServer) resumeSession(ctx context.Context,
 		}
 
 		// Start the deadline timer.
-		deadlineDuration := time.Until(deadline)
+		deadlineDuration := deadline.Sub(time.Now().UTC())
 		deadlineTimer := time.AfterFunc(deadlineDuration, func() {
 			close(firstConnTimout)
 		})
@@ -489,7 +489,7 @@ func (s *sessionRpcServer) resumeSession(ctx context.Context,
 	go func() {
 		defer s.wg.Done()
 
-		ticker := time.NewTimer(time.Until(sess.Expiry))
+		ticker := time.NewTimer(sess.Expiry.Sub(time.Now().UTC()))
 		defer ticker.Stop()
 
 		select {
@@ -839,7 +839,7 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 	}
 
 	expiry := time.Unix(int64(req.ExpiryTimestampSeconds), 0)
-	if time.Now().After(expiry) {
+	if time.Now().UTC().After(expiry) {
 		return nil, fmt.Errorf("expiry must be in the future")
 	}
 

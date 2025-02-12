@@ -130,7 +130,7 @@ func (a *OffChainBalanceAccount) HasExpired() bool {
 		return false
 	}
 
-	return a.ExpirationDate.Before(time.Now())
+	return a.ExpirationDate.Before(time.Now().UTC())
 }
 
 // CurrentBalanceSats returns the current account balance in satoshis.

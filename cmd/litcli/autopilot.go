@@ -251,7 +251,7 @@ func listFeatures(cli *cli.Context) error {
 
 func initAutopilotSession(cli *cli.Context) error {
 	sessionLength := time.Second * time.Duration(cli.Uint64("expiry"))
-	sessionExpiry := time.Now().Add(sessionLength).Unix()
+	sessionExpiry := time.Now().UTC().Add(sessionLength).Unix()
 
 	ctx := getContext()
 	clientConn, cleanup, err := connectClient(cli, false)
