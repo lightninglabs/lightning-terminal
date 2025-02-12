@@ -6351,6 +6351,9 @@ export class PolicyUpdateRequest extends jspb.Message {
   getInboundFee(): InboundFee | undefined;
   setInboundFee(value?: InboundFee): void;
 
+  getCreateMissingEdge(): boolean;
+  setCreateMissingEdge(value: boolean): void;
+
   getScopeCase(): PolicyUpdateRequest.ScopeCase;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): PolicyUpdateRequest.AsObject;
@@ -6374,6 +6377,7 @@ export namespace PolicyUpdateRequest {
     minHtlcMsat: string,
     minHtlcMsatSpecified: boolean,
     inboundFee?: InboundFee.AsObject,
+    createMissingEdge: boolean,
   }
 
   export enum ScopeCase {

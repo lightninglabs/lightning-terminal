@@ -49979,7 +49979,8 @@ proto.lnrpc.PolicyUpdateRequest.toObject = function(includeInstance, msg) {
     maxHtlcMsat: jspb.Message.getFieldWithDefault(msg, 6, "0"),
     minHtlcMsat: jspb.Message.getFieldWithDefault(msg, 7, "0"),
     minHtlcMsatSpecified: jspb.Message.getBooleanFieldWithDefault(msg, 8, false),
-    inboundFee: (f = msg.getInboundFee()) && proto.lnrpc.InboundFee.toObject(includeInstance, f)
+    inboundFee: (f = msg.getInboundFee()) && proto.lnrpc.InboundFee.toObject(includeInstance, f),
+    createMissingEdge: jspb.Message.getBooleanFieldWithDefault(msg, 11, false)
   };
 
   if (includeInstance) {
@@ -50057,6 +50058,10 @@ proto.lnrpc.PolicyUpdateRequest.deserializeBinaryFromReader = function(msg, read
       var value = new proto.lnrpc.InboundFee;
       reader.readMessage(value,proto.lnrpc.InboundFee.deserializeBinaryFromReader);
       msg.setInboundFee(value);
+      break;
+    case 11:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setCreateMissingEdge(value);
       break;
     default:
       reader.skipField();
@@ -50157,6 +50162,13 @@ proto.lnrpc.PolicyUpdateRequest.serializeBinaryToWriter = function(message, writ
       10,
       f,
       proto.lnrpc.InboundFee.serializeBinaryToWriter
+    );
+  }
+  f = message.getCreateMissingEdge();
+  if (f) {
+    writer.writeBool(
+      11,
+      f
     );
   }
 };
@@ -50395,6 +50407,24 @@ proto.lnrpc.PolicyUpdateRequest.prototype.clearInboundFee = function() {
  */
 proto.lnrpc.PolicyUpdateRequest.prototype.hasInboundFee = function() {
   return jspb.Message.getField(this, 10) != null;
+};
+
+
+/**
+ * optional bool create_missing_edge = 11;
+ * @return {boolean}
+ */
+proto.lnrpc.PolicyUpdateRequest.prototype.getCreateMissingEdge = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 11, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.lnrpc.PolicyUpdateRequest} returns this
+ */
+proto.lnrpc.PolicyUpdateRequest.prototype.setCreateMissingEdge = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 11, value);
 };
 
 
