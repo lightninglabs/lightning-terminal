@@ -20,6 +20,17 @@
   quotes](https://github.com/lightninglabs/lightning-terminal/pull/920).
   Fixes fee estimation bug when using Loop In for a specific channel.
 
+* [Fix inconsistent timestamp local such that we strictly use UTC 
+  time](https://github.com/lightninglabs/lightning-terminal/pull/976). 
+  This will mean that previously serialised timestamps that were not first 
+  converted to UTC will not be interpreted as UTC and so may be off by a few
+  hours depending on the timezone of where the server is running. This should 
+  not be an issue for majority of cases. The possible side effects are that an 
+  LNC session's expiry may differ by a few hours. There is an unlikely edge case
+  that can happen if an LNC session is created, not connected to, and then LiT
+  is upgraded all within a 10 min timespan. If this happens then the session may
+  immediately be revoked. The solution to this is just to recreate the session. 
+
 ### Functional Changes/Additions
 
 ### Technical and Architectural Updates
