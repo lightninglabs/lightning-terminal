@@ -662,7 +662,8 @@
         "STATE_CREATED",
         "STATE_IN_USE",
         "STATE_REVOKED",
-        "STATE_EXPIRED"
+        "STATE_EXPIRED",
+        "STATE_RESERVED"
       ],
       "default": "STATE_CREATED"
     },
