@@ -118,6 +118,33 @@ func TestBasicSessionStore(t *testing.T) {
 	assertEqualSessions(t, s1, sessions[0])
 	assertEqualSessions(t, s2, sessions[1])
 	assertEqualSessions(t, s3, sessions[2])
+
+	// Test that ListSessionsByState works.
+	sessions, err = db.ListSessionsByState(StateRevoked)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(sessions))
+	assertEqualSessions(t, s1, sessions[0])
+
+	sessions, err = db.ListSessionsByState(StateCreated)
+	require.NoError(t, err)
+	require.Equal(t, 2, len(sessions))
+	assertEqualSessions(t, s2, sessions[0])
+	assertEqualSessions(t, s3, sessions[1])
+
+	sessions, err = db.ListSessionsByState(StateCreated, StateRevoked)
+	require.NoError(t, err)
+	require.Equal(t, 3, len(sessions))
+	assertEqualSessions(t, s1, sessions[0])
+	assertEqualSessions(t, s2, sessions[1])
+	assertEqualSessions(t, s3, sessions[2])
+
+	sessions, err = db.ListSessionsByState()
+	require.NoError(t, err)
+	require.Empty(t, sessions)
+
+	sessions, err = db.ListSessionsByState(StateInUse)
+	require.NoError(t, err)
+	require.Empty(t, sessions)
 }
 
 // TestLinkingSessions tests that session linking works as expected.

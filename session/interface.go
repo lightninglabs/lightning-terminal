@@ -167,6 +167,10 @@ type Store interface {
 	// ListSessionsByType returns all sessions of the given type.
 	ListSessionsByType(t Type) ([]*Session, error)
 
+	// ListSessionsByState returns all sessions currently known to the store
+	// that are in the given states.
+	ListSessionsByState(...State) ([]*Session, error)
+
 	// RevokeSession updates the state of the session with the given local
 	// public key to be revoked.
 	RevokeSession(*btcec.PublicKey) error

@@ -383,6 +383,22 @@ func (db *BoltStore) ListSessionsByType(t Type) ([]*Session, error) {
 	})
 }
 
+// ListSessionsByState returns all sessions currently known to the store that
+// are in the given states.
+//
+// NOTE: this is part of the Store interface.
+func (db *BoltStore) ListSessionsByState(states ...State) ([]*Session, error) {
+	return db.listSessions(func(s *Session) bool {
+		for _, state := range states {
+			if s.State == state {
+				return true
+			}
+		}
+
+		return false
+	})
+}
+
 // listSessions returns all sessions currently known to the store that pass the
 // given filter function.
 func (db *BoltStore) listSessions(filterFn func(s *Session) bool) ([]*Session,
