@@ -1308,6 +1308,8 @@ func TestHideBool(t *testing.T) {
 
 // TestObfuscateConfig tests that we substitute substrings in the config
 // correctly.
+//
+//nolint:lll
 func TestObfuscateConfig(t *testing.T) {
 	tests := []struct {
 		name               string

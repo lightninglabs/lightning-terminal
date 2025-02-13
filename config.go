@@ -147,6 +147,8 @@ var (
 // Config is the main configuration struct of lightning-terminal. It contains
 // all config items of its enveloping subservers, each prefixed with their
 // daemon's short name.
+//
+//nolint:lll
 type Config struct {
 	ShowVersion bool `long:"version" description:"Display version information and exit."`
 
