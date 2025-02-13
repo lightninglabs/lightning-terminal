@@ -23,11 +23,17 @@ func TestBasicSessionStore(t *testing.T) {
 		_ = db.Close()
 	})
 
-	// Create a few sessions.
-	s1 := newSession(t, db, clock, "session 1", nil)
-	s2 := newSession(t, db, clock, "session 2", nil)
-	s3 := newSession(t, db, clock, "session 3", nil)
-	s4 := newSession(t, db, clock, "session 4", nil)
+	// Create a few sessions. We increment the time by one second between
+	// each session to ensure that the created at time is unique and hence
+	// that the ListSessions method returns the sessions in a deterministic
+	// order.
+	s1 := newSession(t, db, clock, "session 1")
+	clock.SetTime(testTime.Add(time.Second))
+	s2 := newSession(t, db, clock, "session 2")
+	clock.SetTime(testTime.Add(2 * time.Second))
+	s3 := newSession(t, db, clock, "session 3", withType(TypeAutopilot))
+	clock.SetTime(testTime.Add(3 * time.Second))
+	s4 := newSession(t, db, clock, "session 4")
 
 	// Persist session 1. This should now succeed.
 	require.NoError(t, db.CreateSession(s1))
@@ -49,6 +55,22 @@ func TestBasicSessionStore(t *testing.T) {
 	// Persist a few more sessions.
 	require.NoError(t, db.CreateSession(s2))
 	require.NoError(t, db.CreateSession(s3))
+
+	// Test the ListSessionsByType method.
+	sessions, err := db.ListSessionsByType(TypeMacaroonAdmin)
+	require.NoError(t, err)
+	require.Equal(t, 2, len(sessions))
+	assertEqualSessions(t, s1, sessions[0])
+	assertEqualSessions(t, s2, sessions[1])
+
+	sessions, err = db.ListSessionsByType(TypeAutopilot)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(sessions))
+	assertEqualSessions(t, s3, sessions[0])
+
+	sessions, err = db.ListSessionsByType(TypeMacaroonReadonly)
+	require.NoError(t, err)
+	require.Empty(t, sessions)
 
 	// Ensure that we can retrieve each session by both its local pub key
 	// and by its ID.
@@ -85,9 +107,44 @@ func TestBasicSessionStore(t *testing.T) {
 
 	// Now revoke the session and assert that the state is revoked.
 	require.NoError(t, db.RevokeSession(s1.LocalPublicKey))
-	session1, err = db.GetSession(s1.LocalPublicKey)
+	s1, err = db.GetSession(s1.LocalPublicKey)
 	require.NoError(t, err)
-	require.Equal(t, session1.State, StateRevoked)
+	require.Equal(t, s1.State, StateRevoked)
+
+	// Test that ListAllSessions works.
+	sessions, err = db.ListAllSessions()
+	require.NoError(t, err)
+	require.Equal(t, 3, len(sessions))
+	assertEqualSessions(t, s1, sessions[0])
+	assertEqualSessions(t, s2, sessions[1])
+	assertEqualSessions(t, s3, sessions[2])
+
+	// Test that ListSessionsByState works.
+	sessions, err = db.ListSessionsByState(StateRevoked)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(sessions))
+	assertEqualSessions(t, s1, sessions[0])
+
+	sessions, err = db.ListSessionsByState(StateCreated)
+	require.NoError(t, err)
+	require.Equal(t, 2, len(sessions))
+	assertEqualSessions(t, s2, sessions[0])
+	assertEqualSessions(t, s3, sessions[1])
+
+	sessions, err = db.ListSessionsByState(StateCreated, StateRevoked)
+	require.NoError(t, err)
+	require.Equal(t, 3, len(sessions))
+	assertEqualSessions(t, s1, sessions[0])
+	assertEqualSessions(t, s2, sessions[1])
+	assertEqualSessions(t, s3, sessions[2])
+
+	sessions, err = db.ListSessionsByState()
+	require.NoError(t, err)
+	require.Empty(t, sessions)
+
+	sessions, err = db.ListSessionsByState(StateInUse)
+	require.NoError(t, err)
+	require.Empty(t, sessions)
 }
 
 // TestLinkingSessions tests that session linking works as expected.
@@ -101,10 +158,10 @@ func TestLinkingSessions(t *testing.T) {
 	})
 
 	// Create a new session with no previous link.
-	s1 := newSession(t, db, clock, "session 1", nil)
+	s1 := newSession(t, db, clock, "session 1")
 
 	// Create another session and link it to the first.
-	s2 := newSession(t, db, clock, "session 2", &s1.GroupID)
+	s2 := newSession(t, db, clock, "session 2", withLinkedGroupID(&s1.GroupID))
 
 	// Try to persist the second session and assert that it fails due to the
 	// linked session not existing in the DB yet.
@@ -141,9 +198,9 @@ func TestLinkedSessions(t *testing.T) {
 	// after are all linked to the prior one. All these sessions belong to
 	// the same group. The group ID is equivalent to the session ID of the
 	// first session.
-	s1 := newSession(t, db, clock, "session 1", nil)
-	s2 := newSession(t, db, clock, "session 2", &s1.GroupID)
-	s3 := newSession(t, db, clock, "session 3", &s2.GroupID)
+	s1 := newSession(t, db, clock, "session 1")
+	s2 := newSession(t, db, clock, "session 2", withLinkedGroupID(&s1.GroupID))
+	s3 := newSession(t, db, clock, "session 3", withLinkedGroupID(&s2.GroupID))
 
 	// Persist the sessions.
 	require.NoError(t, db.CreateSession(s1))
@@ -169,8 +226,8 @@ func TestLinkedSessions(t *testing.T) {
 
 	// To ensure that different groups don't interfere with each other,
 	// let's add another set of linked sessions not linked to the first.
-	s4 := newSession(t, db, clock, "session 4", nil)
-	s5 := newSession(t, db, clock, "session 5", &s4.GroupID)
+	s4 := newSession(t, db, clock, "session 4")
+	s5 := newSession(t, db, clock, "session 5", withLinkedGroupID(&s4.GroupID))
 
 	require.NotEqual(t, s4.GroupID, s1.GroupID)
 
@@ -209,7 +266,7 @@ func TestCheckSessionGroupPredicate(t *testing.T) {
 	// function is checked correctly.
 
 	// Add a new session to the DB.
-	s1 := newSession(t, db, clock, "label 1", nil)
+	s1 := newSession(t, db, clock, "label 1")
 	require.NoError(t, db.CreateSession(s1))
 
 	// Check that the group passes against an appropriate predicate.
@@ -234,7 +291,7 @@ func TestCheckSessionGroupPredicate(t *testing.T) {
 	require.NoError(t, db.RevokeSession(s1.LocalPublicKey))
 
 	// Add a new session to the same group as the first one.
-	s2 := newSession(t, db, clock, "label 2", &s1.GroupID)
+	s2 := newSession(t, db, clock, "label 2", withLinkedGroupID(&s1.GroupID))
 	require.NoError(t, db.CreateSession(s2))
 
 	// Check that the group passes against an appropriate predicate.
@@ -256,7 +313,7 @@ func TestCheckSessionGroupPredicate(t *testing.T) {
 	require.False(t, ok)
 
 	// Add a new session that is not linked to the first one.
-	s3 := newSession(t, db, clock, "completely different", nil)
+	s3 := newSession(t, db, clock, "completely different")
 	require.NoError(t, db.CreateSession(s3))
 
 	// Ensure that the first group is unaffected.
@@ -286,8 +343,24 @@ func TestCheckSessionGroupPredicate(t *testing.T) {
 	require.True(t, ok)
 }
 
+// testSessionModifier is a functional option that can be used to modify the
+// default test session created by newSession.
+type testSessionModifier func(*Session)
+
+func withLinkedGroupID(groupID *ID) testSessionModifier {
+	return func(s *Session) {
+		s.GroupID = *groupID
+	}
+}
+
+func withType(t Type) testSessionModifier {
+	return func(s *Session) {
+		s.Type = t
+	}
+}
+
 func newSession(t *testing.T, db Store, clock clock.Clock, label string,
-	linkedGroupID *ID) *Session {
+	mods ...testSessionModifier) *Session {
 
 	id, priv, err := db.GetUnusedIDAndKeyPair()
 	require.NoError(t, err)
@@ -296,10 +369,14 @@ func newSession(t *testing.T, db Store, clock clock.Clock, label string,
 		id, priv, label, TypeMacaroonAdmin,
 		clock.Now(),
 		time.Date(99999, 1, 1, 0, 0, 0, 0, time.UTC),
-		"foo.bar.baz:1234", true, nil, nil, nil, true, linkedGroupID,
+		"foo.bar.baz:1234", true, nil, nil, nil, true, nil,
 		[]PrivacyFlag{ClearPubkeys},
 	)
 	require.NoError(t, err)
+
+	for _, mod := range mods {
+		mod(session)
+	}
 
 	return session
 }
