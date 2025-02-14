@@ -36,6 +36,7 @@ linters-settings:
 
 linters:
   enable:
+    - lll
     - gofmt
     - tagliatelle
     - whitespace

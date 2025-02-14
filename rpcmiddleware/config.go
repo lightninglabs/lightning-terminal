@@ -9,6 +9,8 @@ const (
 )
 
 // Config is the configuration struct for the RPC middleware.
+//
+//nolint:lll
 type Config struct {
 	Disabled         bool          `long:"disabled" description:"Disable the RPC middleware"`
 	InterceptTimeout time.Duration `long:"intercept-timeout" description:"The maximum time the RPC middleware is allowed to take for intercepting each RPC request"`
