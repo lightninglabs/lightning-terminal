@@ -1399,6 +1399,9 @@ func testChannelOpening(net *NetworkHarness, ht *harnessTest, t *testing.T) {
 
 	caveatCreds = metaDataInjector.addCaveat(caveat)
 
+	// Wait for alice to reconnect to charlie.
+	net.EnsureConnected(t, net.Alice, charlie)
+
 	memoBefore := lastMemo
 	openResp, err = lndConn2.OpenChannelSync(
 		ctx, &lnrpc.OpenChannelRequest{
