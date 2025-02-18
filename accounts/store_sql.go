@@ -34,6 +34,7 @@ const (
 //nolint:lll
 type SQLQueries interface {
 	AddAccountInvoice(ctx context.Context, arg sqlc.AddAccountInvoiceParams) error
+	CreditAccount(ctx context.Context, arg sqlc.CreditAccountParams) (int64, error)
 	DeleteAccount(ctx context.Context, id int64) error
 	DeleteAccountPayment(ctx context.Context, arg sqlc.DeleteAccountPaymentParams) error
 	GetAccount(ctx context.Context, id int64) (sqlc.Account, error)
@@ -394,17 +395,10 @@ func (s *SQLStore) CreditAccount(ctx context.Context, alias AccountID,
 			return err
 		}
 
-		acct, err := db.GetAccount(ctx, id)
-		if err != nil {
-			return err
-		}
-
-		newBalance := acct.CurrentBalanceMsat + int64(amount)
-
-		_, err = db.UpdateAccountBalance(
-			ctx, sqlc.UpdateAccountBalanceParams{
-				ID:                 id,
-				CurrentBalanceMsat: newBalance,
+		_, err = db.CreditAccount(
+			ctx, sqlc.CreditAccountParams{
+				ID:     id,
+				Amount: int64(amount),
 			},
 		)
 		if err != nil {
