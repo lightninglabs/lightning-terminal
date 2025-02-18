@@ -26,6 +26,25 @@ func (q *Queries) AddAccountInvoice(ctx context.Context, arg AddAccountInvoicePa
 	return err
 }
 
+const creditAccount = `-- name: CreditAccount :one
+UPDATE accounts
+SET current_balance_msat = current_balance_msat + $2
+WHERE id = $1
+RETURNING id
+`
+
+type CreditAccountParams struct {
+	ID     int64
+	Amount int64
+}
+
+func (q *Queries) CreditAccount(ctx context.Context, arg CreditAccountParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, creditAccount, arg.ID, arg.Amount)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
 const deleteAccount = `-- name: DeleteAccount :exec
 DELETE FROM accounts
 WHERE id = $1
