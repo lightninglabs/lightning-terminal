@@ -100,6 +100,12 @@ func newSessionRPCServer(cfg *sessionRpcServerConfig) (*sessionRpcServer,
 // start all the components necessary for the sessionRpcServer to start serving
 // requests. This includes resuming all non-revoked sessions.
 func (s *sessionRpcServer) start(ctx context.Context) error {
+	// Delete all sessions in the Reserved state.
+	err := s.cfg.db.DeleteReservedSessions()
+	if err != nil {
+		return fmt.Errorf("error deleting reserved sessions: %v", err)
+	}
+
 	// Start up all previously created sessions.
 	sessions, err := s.cfg.db.ListSessionsByState(
 		session.StateCreated,
@@ -1518,6 +1524,9 @@ func marshalRPCMacaroonRecipe(
 // marshalRPCState converts a session state to its RPC counterpart.
 func marshalRPCState(state session.State) (litrpc.SessionState, error) {
 	switch state {
+	case session.StateReserved:
+		return litrpc.SessionState_STATE_RESERVED, nil
+
 	case session.StateCreated:
 		return litrpc.SessionState_STATE_CREATED, nil
 

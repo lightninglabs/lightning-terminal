@@ -206,10 +206,6 @@ func (db *BoltStore) NewSession(id ID, localPrivKey *btcec.PrivateKey,
 //
 // NOTE: this is part of the Store interface.
 func (db *BoltStore) CreateSession(session *Session) error {
-	var buf bytes.Buffer
-	if err := SerializeSession(&buf, session); err != nil {
-		return err
-	}
 	sessionKey := getSessionKey(session)
 
 	return db.Update(func(tx *bbolt.Tx) error {
@@ -246,21 +242,7 @@ func (db *BoltStore) CreateSession(session *Session) error {
 			}
 
 			for _, id := range sessionIDs {
-				keyBytes, err := getKeyForID(
-					sessionBucket, id,
-				)
-				if err != nil {
-					return err
-				}
-
-				v := sessionBucket.Get(keyBytes)
-				if len(v) == 0 {
-					return ErrSessionNotFound
-				}
-
-				sess, err := DeserializeSession(
-					bytes.NewReader(v),
-				)
+				sess, err := getSessionByID(sessionBucket, id)
 				if err != nil {
 					return err
 				}
@@ -291,7 +273,7 @@ func (db *BoltStore) CreateSession(session *Session) error {
 			return err
 		}
 
-		return sessionBucket.Put(sessionKey, buf.Bytes())
+		return putSession(sessionBucket, session)
 	})
 }
 
@@ -325,12 +307,7 @@ func (db *BoltStore) UpdateSessionRemotePubKey(localPubKey,
 
 		session.RemotePublicKey = remotePubKey
 
-		var buf bytes.Buffer
-		if err := SerializeSession(&buf, session); err != nil {
-			return err
-		}
-
-		return sessionBucket.Put(key, buf.Bytes())
+		return putSession(sessionBucket, session)
 	})
 }
 
@@ -444,6 +421,99 @@ func (db *BoltStore) listSessions(filterFn func(s *Session) bool) ([]*Session,
 	return sessions, nil
 }
 
+// DeleteReservedSessions deletes all sessions that are in the StateReserved
+// state.
+//
+// NOTE: this is part of the Store interface.
+func (db *BoltStore) DeleteReservedSessions() error {
+	return db.Update(func(tx *bbolt.Tx) error {
+		sessionBucket, err := getBucket(tx, sessionBucketKey)
+		if err != nil {
+			return err
+		}
+
+		return sessionBucket.ForEach(func(k, v []byte) error {
+			// We'll also get buckets here, skip those (identified
+			// by nil value).
+			if v == nil {
+				return nil
+			}
+
+			session, err := DeserializeSession(bytes.NewReader(v))
+			if err != nil {
+				return err
+			}
+
+			if session.State != StateReserved {
+				return nil
+			}
+
+			err = sessionBucket.Delete(k)
+			if err != nil {
+				return err
+			}
+
+			idIndexBkt := sessionBucket.Bucket(idIndexKey)
+			if idIndexBkt == nil {
+				return ErrDBInitErr
+			}
+
+			// Delete the entire session ID bucket.
+			err = idIndexBkt.DeleteBucket(session.ID[:])
+			if err != nil {
+				return err
+			}
+
+			groupIdIndexBkt := sessionBucket.Bucket(groupIDIndexKey)
+			if groupIdIndexBkt == nil {
+				return ErrDBInitErr
+			}
+
+			groupBkt := groupIdIndexBkt.Bucket(session.GroupID[:])
+			if groupBkt == nil {
+				return ErrDBInitErr
+			}
+
+			sessionIDsBkt := groupBkt.Bucket(sessionIDKey)
+			if sessionIDsBkt == nil {
+				return ErrDBInitErr
+			}
+
+			var (
+				seqKey      []byte
+				numSessions int
+			)
+			err = sessionIDsBkt.ForEach(func(k, v []byte) error {
+				numSessions++
+
+				if !bytes.Equal(v, session.ID[:]) {
+					return nil
+				}
+
+				seqKey = k
+
+				return nil
+			})
+			if err != nil {
+				return err
+			}
+
+			if numSessions == 0 {
+				return fmt.Errorf("no sessions found for "+
+					"group ID %x", session.GroupID)
+			}
+
+			if numSessions == 1 {
+				// Delete the whole group bucket.
+				return groupBkt.DeleteBucket(sessionIDKey)
+			}
+
+			// Else, delete just the session ID entry.
+			return sessionIDsBkt.Delete(seqKey)
+		})
+	})
+}
+
 // RevokeSession updates the state of the session with the given local
 // public key to be revoked.
 //
@@ -469,12 +539,7 @@ func (db *BoltStore) RevokeSession(key *btcec.PublicKey) error {
 		session.State = StateRevoked
 		session.RevokedAt = db.clock.Now().UTC()
 
-		var buf bytes.Buffer
-		if err := SerializeSession(&buf, session); err != nil {
-			return err
-		}
-
-		return sessionBucket.Put(key.SerializeCompressed(), buf.Bytes())
+		return putSession(sessionBucket, session)
 	})
 }
 
@@ -489,22 +554,9 @@ func (db *BoltStore) GetSessionByID(id ID) (*Session, error) {
 			return err
 		}
 
-		keyBytes, err := getKeyForID(sessionBucket, id)
-		if err != nil {
-			return err
-		}
+		session, err = getSessionByID(sessionBucket, id)
 
-		v := sessionBucket.Get(keyBytes)
-		if len(v) == 0 {
-			return ErrSessionNotFound
-		}
-
-		session, err = DeserializeSession(bytes.NewReader(v))
-		if err != nil {
-			return err
-		}
-
-		return nil
+		return err
 	})
 	if err != nil {
 		return nil, err
@@ -810,4 +862,27 @@ func addIDToGroupIDPair(sessionBkt *bbolt.Bucket, id, groupID ID) error {
 	byteOrder.PutUint64(seqNoBytes[:], nextSeq)
 
 	return sessionIDsBkt.Put(seqNoBytes[:], id[:])
+}
+
+func getSessionByID(bucket *bbolt.Bucket, id ID) (*Session, error) {
+	keyBytes, err := getKeyForID(bucket, id)
+	if err != nil {
+		return nil, err
+	}
+
+	v := bucket.Get(keyBytes)
+	if len(v) == 0 {
+		return nil, ErrSessionNotFound
+	}
+
+	return DeserializeSession(bytes.NewReader(v))
+}
+
+func putSession(bucket *bbolt.Bucket, session *Session) error {
+	var buf bytes.Buffer
+	if err := SerializeSession(&buf, session); err != nil {
+		return err
+	}
+
+	return bucket.Put(getSessionKey(session), buf.Bytes())
 }

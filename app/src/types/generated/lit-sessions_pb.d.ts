@@ -688,6 +688,7 @@ export interface SessionStateMap {
   STATE_IN_USE: 1;
   STATE_REVOKED: 2;
   STATE_EXPIRED: 3;
+  STATE_RESERVED: 4;
 }
 
 export const SessionState: SessionStateMap;
