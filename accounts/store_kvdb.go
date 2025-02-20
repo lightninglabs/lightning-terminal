@@ -223,11 +223,11 @@ func (s *BoltStore) AddAccountInvoice(_ context.Context, id AccountID,
 	return s.updateAccount(id, update)
 }
 
-// IncreaseAccountBalance increases the balance of the account with the given ID
+// CreditAccount increases the balance of the account with the given ID
 // by the given amount.
 //
 // NOTE: This is part of the Store interface.
-func (s *BoltStore) IncreaseAccountBalance(_ context.Context, id AccountID,
+func (s *BoltStore) CreditAccount(_ context.Context, id AccountID,
 	amount lnwire.MilliSatoshi) error {
 
 	update := func(account *OffChainBalanceAccount) error {
@@ -237,6 +237,33 @@ func (s *BoltStore) IncreaseAccountBalance(_ context.Context, id AccountID,
 		}
 
 		account.CurrentBalance += int64(amount)
+
+		return nil
+	}
+
+	return s.updateAccount(id, update)
+}
+
+// DebitAccount decreases the balance of the account with the given ID
+// by the given amount.
+//
+// NOTE: This is part of the Store interface.
+func (s *BoltStore) DebitAccount(_ context.Context, id AccountID,
+	amount lnwire.MilliSatoshi) error {
+
+	if amount > math.MaxInt64 {
+		return fmt.Errorf("amount %v exceeds the maximum of %v",
+			amount, int64(math.MaxInt64))
+	}
+
+	update := func(account *OffChainBalanceAccount) error {
+		if account.CurrentBalance-int64(amount) < 0 {
+			return fmt.Errorf("cannot debit %v from the account "+
+				"balance, as the resulting balance would be "+
+				"below 0", int64(amount/1000))
+		}
+
+		account.CurrentBalance -= int64(amount)
 
 		return nil
 	}

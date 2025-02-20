@@ -2,6 +2,7 @@ package accounts
 
 import (
 	"context"
+	"github.com/lightningnetwork/lnd/lnwire"
 	"testing"
 	"time"
 
@@ -71,6 +72,14 @@ func TestAccountStore(t *testing.T) {
 	)
 	require.NoError(t, err)
 
+	// Adjust the account balance by first crediting 10000, and then
+	// debiting 5000.
+	err = store.CreditAccount(ctx, acct1.ID, lnwire.MilliSatoshi(10000))
+	require.NoError(t, err)
+
+	err = store.DebitAccount(ctx, acct1.ID, lnwire.MilliSatoshi(5000))
+	require.NoError(t, err)
+
 	// Update the in-memory account so that we can compare it with the
 	// account we get from the store.
 	acct1.CurrentBalance = -500
@@ -85,10 +94,29 @@ func TestAccountStore(t *testing.T) {
 	}
 	acct1.Invoices[lntypes.Hash{12, 34, 56, 78}] = struct{}{}
 	acct1.Invoices[lntypes.Hash{34, 56, 78, 90}] = struct{}{}
+	acct1.CurrentBalance += 10000
+	acct1.CurrentBalance -= 5000
 
 	dbAccount, err = store.Account(ctx, acct1.ID)
 	require.NoError(t, err)
 	assertEqualAccounts(t, acct1, dbAccount)
+
+	// Test that adjusting the balance to exactly 0 should work, while
+	// adjusting the balance to below 0 should fail.
+	err = store.DebitAccount(
+		ctx, acct1.ID, lnwire.MilliSatoshi(acct1.CurrentBalance),
+	)
+	require.NoError(t, err)
+
+	acct1.CurrentBalance = 0
+
+	dbAccount, err = store.Account(ctx, acct1.ID)
+	require.NoError(t, err)
+	assertEqualAccounts(t, acct1, dbAccount)
+
+	// Adjusting the value to below 0 should fail.
+	err = store.DebitAccount(ctx, acct1.ID, lnwire.MilliSatoshi(1))
+	require.ErrorContains(t, err, "balance would be below 0")
 
 	// Sleep just a tiny bit to make sure we are never too quick to measure
 	// the expiry, even though the time is nanosecond scale and writing to
@@ -262,12 +290,12 @@ func TestAccountUpdateMethods(t *testing.T) {
 		assertInvoices(hash1, hash2)
 	})
 
-	t.Run("IncreaseAccountBalance", func(t *testing.T) {
+	t.Run("CreditAccount", func(t *testing.T) {
 		store := NewTestDB(t, clock.NewTestClock(time.Now()))
 
 		// Increasing the balance of an account that doesn't exist
 		// should error out.
-		err := store.IncreaseAccountBalance(ctx, AccountID{}, 100)
+		err := store.CreditAccount(ctx, AccountID{}, 100)
 		require.ErrorIs(t, err, ErrAccNotFound)
 
 		acct, err := store.NewAccount(ctx, 123, time.Time{}, "foo")
@@ -284,7 +312,7 @@ func TestAccountUpdateMethods(t *testing.T) {
 
 		// Increase the balance by 100 and assert that the new balance
 		// is 223.
-		err = store.IncreaseAccountBalance(ctx, acct.ID, 100)
+		err = store.CreditAccount(ctx, acct.ID, 100)
 		require.NoError(t, err)
 
 		assertBalance(223)
