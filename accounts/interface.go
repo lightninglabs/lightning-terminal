@@ -1,7 +1,9 @@
 package accounts
 
 import (
+	"bytes"
 	"context"
+	"encoding/binary"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -53,6 +55,31 @@ func ParseAccountID(idStr string) (*AccountID, error) {
 	copy(id[:], idBytes)
 
 	return &id, nil
+}
+
+// ToInt64 converts an AccountID to its int64 representation.
+func (a AccountID) ToInt64() (int64, error) {
+	var value int64
+	buf := bytes.NewReader(a[:])
+	if err := binary.Read(buf, byteOrder, &value); err != nil {
+		return 0, err
+	}
+
+	return value, nil
+}
+
+// AccountIDFromInt64 converts an int64 to an AccountID.
+func AccountIDFromInt64(value int64) (AccountID, error) {
+	var (
+		a   = AccountID{}
+		buf = new(bytes.Buffer)
+	)
+	if err := binary.Write(buf, byteOrder, value); err != nil {
+		return a, err
+	}
+	copy(a[:], buf.Bytes())
+
+	return a, nil
 }
 
 // String returns the string representation of the AccountID.
