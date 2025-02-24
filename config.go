@@ -237,6 +237,13 @@ type Config struct {
 	// over an in-memory connection on startup. This is only set in
 	// integrated lnd mode.
 	lndAdminMacaroon []byte
+
+	// DevConfig is a config struct that is empty if lit is built without
+	// the `dev` flag (in other words when it is build for a production
+	// environment). This allows us to have config values that are then
+	// only available in development mode which lets us run itests against
+	// features not yet available in production.
+	*DevConfig
 }
 
 // lndConnectParams returns the connection parameters to connect to the local
@@ -337,8 +344,9 @@ func defaultConfig() *Config {
 		Autopilot: &autopilotserver.Config{
 			PingCadence: time.Hour,
 		},
-		Firewall: firewall.DefaultConfig(),
-		Accounts: &accounts.Config{},
+		Firewall:  firewall.DefaultConfig(),
+		Accounts:  &accounts.Config{},
+		DevConfig: defaultDevConfig(),
 	}
 }
 
@@ -465,6 +473,11 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 		cfg.MacaroonPath = filepath.Join(
 			litDir, cfg.Network, DefaultMacaroonFilename,
 		)
+	}
+
+	err = cfg.DevConfig.Validate(litDir, cfg.Network)
+	if err != nil {
+		return nil, err
 	}
 
 	// Initiate our listeners. For now, we only support listening on one
