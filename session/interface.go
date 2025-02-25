@@ -27,9 +27,9 @@ const (
 type State uint8
 
 /*
-		/---> StateExpired
+		/---> StateExpired (terminal)
 StateCreated ---
-       		\---> StateRevoked
+       		\---> StateRevoked (terminal)
 */
 
 const (
@@ -58,6 +58,24 @@ const (
 	// NOTE: this isn't used yet.
 	StateReserved State = 4
 )
+
+// Terminal returns true if the state is a terminal state.
+func (s State) Terminal() bool {
+	return s == StateExpired || s == StateRevoked
+}
+
+// legalStateShifts is a map that defines the legal State transitions that a
+// Session can be put through.
+var legalStateShifts = map[State]map[State]bool{
+	StateCreated: {
+		StateExpired: true,
+		StateRevoked: true,
+	},
+	StateInUse: {
+		StateRevoked: true,
+		StateExpired: true,
+	},
+}
 
 // MacaroonRecipe defines the permissions and caveats that should be used
 // to bake a macaroon.
@@ -197,10 +215,6 @@ type Store interface {
 	// that are in the given states.
 	ListSessionsByState(...State) ([]*Session, error)
 
-	// RevokeSession updates the state of the session with the given local
-	// public key to be revoked.
-	RevokeSession(*btcec.PublicKey) error
-
 	// UpdateSessionRemotePubKey can be used to add the given remote pub key
 	// to the session with the given local pub key.
 	UpdateSessionRemotePubKey(localPubKey,
@@ -224,6 +238,10 @@ type Store interface {
 	// DeleteReservedSessions deletes all sessions that are in the
 	// StateReserved state.
 	DeleteReservedSessions() error
+
+	// ShiftState updates the state of the session with the given ID to the
+	// "dest" state.
+	ShiftState(id ID, dest State) error
 
 	IDToGroupIndex
 }
