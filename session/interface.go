@@ -1,6 +1,7 @@
 package session
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -273,8 +274,9 @@ type Store interface {
 	// NewSession creates a new session with the given user-defined
 	// parameters. The session will remain in the StateReserved state until
 	// ShiftState is called to update the state.
-	NewSession(label string, typ Type, expiry time.Time, serverAddr string,
-		opts ...Option) (*Session, error)
+	NewSession(ctx context.Context, label string, typ Type,
+		expiry time.Time, serverAddr string, opts ...Option) (*Session,
+		error)
 
 	// GetSession fetches the session with the given key.
 	GetSession(key *btcec.PublicKey) (*Session, error)
