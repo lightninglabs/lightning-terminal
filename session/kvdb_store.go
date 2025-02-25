@@ -569,7 +569,9 @@ func (db *BoltStore) ShiftState(id ID, dest State) error {
 // GetSessionByID fetches the session with the given ID.
 //
 // NOTE: this is part of the Store interface.
-func (db *BoltStore) GetSessionByID(id ID) (*Session, error) {
+func (db *BoltStore) GetSessionByID(_ context.Context, id ID) (*Session,
+	error) {
+
 	var session *Session
 	err := db.View(func(tx *bbolt.Tx) error {
 		sessionBucket, err := getBucket(tx, sessionBucketKey)

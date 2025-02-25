@@ -298,7 +298,7 @@ type Store interface {
 		remotePubKey *btcec.PublicKey) error
 
 	// GetSessionByID fetches the session with the given ID.
-	GetSessionByID(id ID) (*Session, error)
+	GetSessionByID(ctx context.Context, id ID) (*Session, error)
 
 	// DeleteReservedSessions deletes all sessions that are in the
 	// StateReserved state.

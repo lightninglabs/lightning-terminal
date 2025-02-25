@@ -23,7 +23,7 @@ func TestBasicSessionStore(t *testing.T) {
 	db := NewTestDB(t, clock)
 
 	// Try fetch a session that doesn't exist yet.
-	_, err := db.GetSessionByID(ID{1, 3, 4, 4})
+	_, err := db.GetSessionByID(ctx, ID{1, 3, 4, 4})
 	require.ErrorIs(t, err, ErrSessionNotFound)
 
 	// Reserve a session. This should succeed.
@@ -31,7 +31,7 @@ func TestBasicSessionStore(t *testing.T) {
 	require.NoError(t, err)
 
 	// Show that the session starts in the reserved state.
-	s1, err = db.GetSessionByID(s1.ID)
+	s1, err = db.GetSessionByID(ctx, s1.ID)
 	require.NoError(t, err)
 	require.Equal(t, StateReserved, s1.State)
 
@@ -40,7 +40,7 @@ func TestBasicSessionStore(t *testing.T) {
 	require.NoError(t, err)
 
 	// Show that the session is now in the created state.
-	s1, err = db.GetSessionByID(s1.ID)
+	s1, err = db.GetSessionByID(ctx, s1.ID)
 	require.NoError(t, err)
 	require.Equal(t, StateCreated, s1.State)
 
@@ -80,7 +80,7 @@ func TestBasicSessionStore(t *testing.T) {
 		require.NoError(t, err)
 		assertEqualSessions(t, s, session)
 
-		session, err = db.GetSessionByID(s.ID)
+		session, err = db.GetSessionByID(ctx, s.ID)
 		require.NoError(t, err)
 		assertEqualSessions(t, s, session)
 	}
@@ -386,7 +386,7 @@ func createSession(t *testing.T, db Store, label string,
 	err = db.ShiftState(s.ID, StateCreated)
 	require.NoError(t, err)
 
-	s, err = db.GetSessionByID(s.ID)
+	s, err = db.GetSessionByID(context.Background(), s.ID)
 	require.NoError(t, err)
 
 	return s

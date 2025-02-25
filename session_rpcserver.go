@@ -335,7 +335,7 @@ func (s *sessionRpcServer) AddSession(ctx context.Context,
 
 	// Re-fetch the session to get the latest state of it before marshaling
 	// it.
-	sess, err = s.cfg.db.GetSessionByID(sess.ID)
+	sess, err = s.cfg.db.GetSessionByID(ctx, sess.ID)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching session: %v", err)
 	}
@@ -867,7 +867,7 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 		copy(groupID[:], req.LinkedGroupId)
 
 		// Check that the group actually does exist.
-		groupSess, err := s.cfg.db.GetSessionByID(groupID)
+		groupSess, err := s.cfg.db.GetSessionByID(ctx, groupID)
 		if err != nil {
 			return nil, err
 		}
@@ -1252,7 +1252,7 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 
 	// Re-fetch the session to get the latest state of it before marshaling
 	// it.
-	sess, err = s.cfg.db.GetSessionByID(sess.ID)
+	sess, err = s.cfg.db.GetSessionByID(ctx, sess.ID)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching session: %v", err)
 	}

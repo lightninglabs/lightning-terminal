@@ -1,6 +1,7 @@
 package firewalldb
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/lightninglabs/lightning-terminal/session"
@@ -54,8 +55,8 @@ func (m *mockSessionDB) GetSessionIDs(groupID session.ID) ([]session.ID, error) 
 }
 
 // GetSessionByID returns the session for a specific id.
-func (m *mockSessionDB) GetSessionByID(sessionID session.ID) (*session.Session,
-	error) {
+func (m *mockSessionDB) GetSessionByID(_ context.Context,
+	sessionID session.ID) (*session.Session, error) {
 
 	s, ok := m.sessionToGroupID[sessionID]
 	if !ok {

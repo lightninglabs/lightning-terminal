@@ -190,7 +190,7 @@ func (p *PrivacyMapper) checkAndReplaceIncomingRequest(ctx context.Context,
 	uri string, req proto.Message, sessionID session.ID) (proto.Message,
 	error) {
 
-	session, err := p.sessionDB.GetSessionByID(sessionID)
+	session, err := p.sessionDB.GetSessionByID(ctx, sessionID)
 	if err != nil {
 		return nil, err
 	}
@@ -220,7 +220,7 @@ func (p *PrivacyMapper) checkAndReplaceIncomingRequest(ctx context.Context,
 func (p *PrivacyMapper) replaceOutgoingResponse(ctx context.Context, uri string,
 	resp proto.Message, sessionID session.ID) (proto.Message, error) {
 
-	session, err := p.sessionDB.GetSessionByID(sessionID)
+	session, err := p.sessionDB.GetSessionByID(ctx, sessionID)
 	if err != nil {
 		return nil, err
 	}
