@@ -282,14 +282,15 @@ type Store interface {
 	GetSession(ctx context.Context, key *btcec.PublicKey) (*Session, error)
 
 	// ListAllSessions returns all sessions currently known to the store.
-	ListAllSessions() ([]*Session, error)
+	ListAllSessions(ctx context.Context) ([]*Session, error)
 
 	// ListSessionsByType returns all sessions of the given type.
-	ListSessionsByType(t Type) ([]*Session, error)
+	ListSessionsByType(ctx context.Context, t Type) ([]*Session, error)
 
 	// ListSessionsByState returns all sessions currently known to the store
 	// that are in the given states.
-	ListSessionsByState(...State) ([]*Session, error)
+	ListSessionsByState(ctx context.Context, state ...State) ([]*Session,
+		error)
 
 	// UpdateSessionRemotePubKey can be used to add the given remote pub key
 	// to the session with the given local pub key.

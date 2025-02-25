@@ -103,8 +103,7 @@ func (s *sessionRpcServer) start(ctx context.Context) error {
 
 	// Start up all previously created sessions.
 	sessions, err := s.cfg.db.ListSessionsByState(
-		session.StateCreated,
-		session.StateInUse,
+		ctx, session.StateCreated, session.StateInUse,
 	)
 	if err != nil {
 		return fmt.Errorf("error listing sessions: %v", err)
@@ -531,10 +530,10 @@ func (s *sessionRpcServer) resumeSession(ctx context.Context,
 }
 
 // ListSessions returns all sessions known to the session store.
-func (s *sessionRpcServer) ListSessions(_ context.Context,
+func (s *sessionRpcServer) ListSessions(ctx context.Context,
 	_ *litrpc.ListSessionsRequest) (*litrpc.ListSessionsResponse, error) {
 
-	sessions, err := s.cfg.db.ListAllSessions()
+	sessions, err := s.cfg.db.ListAllSessions(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching sessions: %v", err)
 	}
@@ -1270,11 +1269,11 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 
 // ListAutopilotSessions fetches and returns all the sessions from the DB that
 // are of type TypeAutopilot.
-func (s *sessionRpcServer) ListAutopilotSessions(_ context.Context,
+func (s *sessionRpcServer) ListAutopilotSessions(ctx context.Context,
 	_ *litrpc.ListAutopilotSessionsRequest) (
 	*litrpc.ListAutopilotSessionsResponse, error) {
 
-	sessions, err := s.cfg.db.ListSessionsByType(session.TypeAutopilot)
+	sessions, err := s.cfg.db.ListSessionsByType(ctx, session.TypeAutopilot)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching sessions: %v", err)
 	}

@@ -351,7 +351,7 @@ func (db *BoltStore) GetSession(_ context.Context, key *btcec.PublicKey) (
 // ListAllSessions returns all sessions currently known to the store.
 //
 // NOTE: this is part of the Store interface.
-func (db *BoltStore) ListAllSessions() ([]*Session, error) {
+func (db *BoltStore) ListAllSessions(_ context.Context) ([]*Session, error) {
 	return db.listSessions(func(s *Session) bool {
 		return true
 	})
@@ -361,7 +361,9 @@ func (db *BoltStore) ListAllSessions() ([]*Session, error) {
 // have the given type.
 //
 // NOTE: this is part of the Store interface.
-func (db *BoltStore) ListSessionsByType(t Type) ([]*Session, error) {
+func (db *BoltStore) ListSessionsByType(_ context.Context, t Type) ([]*Session,
+	error) {
+
 	return db.listSessions(func(s *Session) bool {
 		return s.Type == t
 	})
@@ -371,7 +373,9 @@ func (db *BoltStore) ListSessionsByType(t Type) ([]*Session, error) {
 // are in the given states.
 //
 // NOTE: this is part of the Store interface.
-func (db *BoltStore) ListSessionsByState(states ...State) ([]*Session, error) {
+func (db *BoltStore) ListSessionsByState(_ context.Context, states ...State) (
+	[]*Session, error) {
+
 	return db.listSessions(func(s *Session) bool {
 		for _, state := range states {
 			if s.State == state {

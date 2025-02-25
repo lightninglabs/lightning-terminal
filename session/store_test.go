@@ -58,18 +58,18 @@ func TestBasicSessionStore(t *testing.T) {
 	s3 := createSession(t, db, "session 3", withType(TypeAutopilot))
 
 	// Test the ListSessionsByType method.
-	sessions, err := db.ListSessionsByType(TypeMacaroonAdmin)
+	sessions, err := db.ListSessionsByType(ctx, TypeMacaroonAdmin)
 	require.NoError(t, err)
 	require.Equal(t, 2, len(sessions))
 	assertEqualSessions(t, s1, sessions[0])
 	assertEqualSessions(t, s2, sessions[1])
 
-	sessions, err = db.ListSessionsByType(TypeAutopilot)
+	sessions, err = db.ListSessionsByType(ctx, TypeAutopilot)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(sessions))
 	assertEqualSessions(t, s3, sessions[0])
 
-	sessions, err = db.ListSessionsByType(TypeMacaroonReadonly)
+	sessions, err = db.ListSessionsByType(ctx, TypeMacaroonReadonly)
 	require.NoError(t, err)
 	require.Empty(t, sessions)
 
@@ -113,7 +113,7 @@ func TestBasicSessionStore(t *testing.T) {
 	require.Equal(t, s1.State, StateRevoked)
 
 	// Test that ListAllSessions works.
-	sessions, err = db.ListAllSessions()
+	sessions, err = db.ListAllSessions(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 3, len(sessions))
 	assertEqualSessions(t, s1, sessions[0])
@@ -121,29 +121,29 @@ func TestBasicSessionStore(t *testing.T) {
 	assertEqualSessions(t, s3, sessions[2])
 
 	// Test that ListSessionsByState works.
-	sessions, err = db.ListSessionsByState(StateRevoked)
+	sessions, err = db.ListSessionsByState(ctx, StateRevoked)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(sessions))
 	assertEqualSessions(t, s1, sessions[0])
 
-	sessions, err = db.ListSessionsByState(StateCreated)
+	sessions, err = db.ListSessionsByState(ctx, StateCreated)
 	require.NoError(t, err)
 	require.Equal(t, 2, len(sessions))
 	assertEqualSessions(t, s2, sessions[0])
 	assertEqualSessions(t, s3, sessions[1])
 
-	sessions, err = db.ListSessionsByState(StateCreated, StateRevoked)
+	sessions, err = db.ListSessionsByState(ctx, StateCreated, StateRevoked)
 	require.NoError(t, err)
 	require.Equal(t, 3, len(sessions))
 	assertEqualSessions(t, s1, sessions[0])
 	assertEqualSessions(t, s2, sessions[1])
 	assertEqualSessions(t, s3, sessions[2])
 
-	sessions, err = db.ListSessionsByState()
+	sessions, err = db.ListSessionsByState(ctx)
 	require.NoError(t, err)
 	require.Empty(t, sessions)
 
-	sessions, err = db.ListSessionsByState(StateReserved)
+	sessions, err = db.ListSessionsByState(ctx, StateReserved)
 	require.NoError(t, err)
 	require.Empty(t, sessions)
 
@@ -153,7 +153,7 @@ func TestBasicSessionStore(t *testing.T) {
 	// of the sessions are reserved.
 	require.NoError(t, db.DeleteReservedSessions())
 
-	sessions, err = db.ListSessionsByState(StateReserved)
+	sessions, err = db.ListSessionsByState(ctx, StateReserved)
 	require.NoError(t, err)
 	require.Empty(t, sessions)
 
@@ -163,7 +163,7 @@ func TestBasicSessionStore(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	sessions, err = db.ListSessionsByState(StateReserved)
+	sessions, err = db.ListSessionsByState(ctx, StateReserved)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(sessions))
 	assertEqualSessions(t, s4, sessions[0])
@@ -182,7 +182,7 @@ func TestBasicSessionStore(t *testing.T) {
 	// database and no longer in the group ID/session ID index.
 	require.NoError(t, db.DeleteReservedSessions())
 
-	sessions, err = db.ListSessionsByState(StateReserved)
+	sessions, err = db.ListSessionsByState(ctx, StateReserved)
 	require.NoError(t, err)
 	require.Empty(t, sessions)
 
