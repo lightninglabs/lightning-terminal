@@ -34,7 +34,9 @@ func (m *mockSessionDB) AddPair(sessionID, groupID session.ID) {
 }
 
 // GetGroupID returns the group ID for the given session ID.
-func (m *mockSessionDB) GetGroupID(sessionID session.ID) (session.ID, error) {
+func (m *mockSessionDB) GetGroupID(_ context.Context, sessionID session.ID) (
+	session.ID, error) {
+
 	id, ok := m.sessionToGroupID[sessionID]
 	if !ok {
 		return session.ID{}, fmt.Errorf("no group ID found for " +
@@ -45,7 +47,9 @@ func (m *mockSessionDB) GetGroupID(sessionID session.ID) (session.ID, error) {
 }
 
 // GetSessionIDs returns the set of session IDs that are in the group
-func (m *mockSessionDB) GetSessionIDs(groupID session.ID) ([]session.ID, error) {
+func (m *mockSessionDB) GetSessionIDs(_ context.Context, groupID session.ID) (
+	[]session.ID, error) {
+
 	ids, ok := m.groupToSessionIDs[groupID]
 	if !ok {
 		return nil, fmt.Errorf("no session IDs found for group ID")

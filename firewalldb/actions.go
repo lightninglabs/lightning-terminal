@@ -391,7 +391,7 @@ func (db *DB) ListSessionActions(sessionID session.ID,
 // pass the filterFn requirements.
 //
 // TODO: update to allow for pagination.
-func (db *DB) ListGroupActions(_ context.Context, groupID session.ID,
+func (db *DB) ListGroupActions(ctx context.Context, groupID session.ID,
 	filterFn ListActionsFilterFn) ([]*Action, error) {
 
 	if filterFn == nil {
@@ -400,7 +400,7 @@ func (db *DB) ListGroupActions(_ context.Context, groupID session.ID,
 		}
 	}
 
-	sessionIDs, err := db.sessionIDIndex.GetSessionIDs(groupID)
+	sessionIDs, err := db.sessionIDIndex.GetSessionIDs(ctx, groupID)
 	if err != nil {
 		return nil, err
 	}

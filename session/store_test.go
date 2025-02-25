@@ -170,11 +170,11 @@ func TestBasicSessionStore(t *testing.T) {
 
 	// Show that the group ID/session ID index has also been populated with
 	// this session.
-	groupID, err := db.GetGroupID(s4.ID)
+	groupID, err := db.GetGroupID(ctx, s4.ID)
 	require.NoError(t, err)
 	require.Equal(t, s1.ID, groupID)
 
-	sessIDs, err := db.GetSessionIDs(s4.GroupID)
+	sessIDs, err := db.GetSessionIDs(ctx, s4.GroupID)
 	require.NoError(t, err)
 	require.ElementsMatch(t, []ID{s4.ID, s1.ID}, sessIDs)
 
@@ -186,11 +186,11 @@ func TestBasicSessionStore(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, sessions)
 
-	_, err = db.GetGroupID(s4.ID)
+	_, err = db.GetGroupID(ctx, s4.ID)
 	require.ErrorIs(t, err, ErrUnknownGroup)
 
 	// Only session 1 should remain in this group.
-	sessIDs, err = db.GetSessionIDs(s4.GroupID)
+	sessIDs, err = db.GetSessionIDs(ctx, s4.GroupID)
 	require.NoError(t, err)
 	require.ElementsMatch(t, []ID{s1.ID}, sessIDs)
 }
@@ -235,6 +235,7 @@ func TestLinkingSessions(t *testing.T) {
 // of the GetGroupID and GetSessionIDs methods.
 func TestLinkedSessions(t *testing.T) {
 	t.Parallel()
+	ctx := context.Background()
 
 	// Set up a new DB.
 	clock := clock.NewTestClock(testTime)
@@ -254,14 +255,14 @@ func TestLinkedSessions(t *testing.T) {
 
 	// Assert that the session ID to group ID index works as expected.
 	for _, s := range []*Session{s1, s2, s3} {
-		groupID, err := db.GetGroupID(s.ID)
+		groupID, err := db.GetGroupID(ctx, s.ID)
 		require.NoError(t, err)
 		require.Equal(t, s1.ID, groupID)
 		require.Equal(t, s.GroupID, groupID)
 	}
 
 	// Assert that the group ID to session ID index works as expected.
-	sIDs, err := db.GetSessionIDs(s1.GroupID)
+	sIDs, err := db.GetSessionIDs(ctx, s1.GroupID)
 	require.NoError(t, err)
 	require.EqualValues(t, []ID{s1.ID, s2.ID, s3.ID}, sIDs)
 
@@ -274,14 +275,14 @@ func TestLinkedSessions(t *testing.T) {
 
 	// Assert that the session ID to group ID index works as expected.
 	for _, s := range []*Session{s4, s5} {
-		groupID, err := db.GetGroupID(s.ID)
+		groupID, err := db.GetGroupID(ctx, s.ID)
 		require.NoError(t, err)
 		require.Equal(t, s4.ID, groupID)
 		require.Equal(t, s.GroupID, groupID)
 	}
 
 	// Assert that the group ID to session ID index works as expected.
-	sIDs, err = db.GetSessionIDs(s5.GroupID)
+	sIDs, err = db.GetSessionIDs(ctx, s5.GroupID)
 	require.NoError(t, err)
 	require.EqualValues(t, []ID{s4.ID, s5.ID}, sIDs)
 }

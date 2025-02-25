@@ -624,7 +624,7 @@ func getUnusedIDAndKeyPair(bucket *bbolt.Bucket) (ID, *btcec.PrivateKey,
 // GetGroupID will return the group ID for the given session ID.
 //
 // NOTE: this is part of the IDToGroupIndex interface.
-func (db *BoltStore) GetGroupID(sessionID ID) (ID, error) {
+func (db *BoltStore) GetGroupID(_ context.Context, sessionID ID) (ID, error) {
 	var groupID ID
 	err := db.View(func(tx *bbolt.Tx) error {
 		sessionBkt, err := getBucket(tx, sessionBucketKey)
@@ -664,7 +664,9 @@ func (db *BoltStore) GetGroupID(sessionID ID) (ID, error) {
 // group with the given ID.
 //
 // NOTE: this is part of the IDToGroupIndex interface.
-func (db *BoltStore) GetSessionIDs(groupID ID) ([]ID, error) {
+func (db *BoltStore) GetSessionIDs(_ context.Context, groupID ID) ([]ID,
+	error) {
+
 	var (
 		sessionIDs []ID
 		err        error

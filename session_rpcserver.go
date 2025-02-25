@@ -587,7 +587,7 @@ func (s *sessionRpcServer) RevokeSession(ctx context.Context,
 
 // PrivacyMapConversion can be used map real values to their pseudo counterpart
 // and vice versa.
-func (s *sessionRpcServer) PrivacyMapConversion(_ context.Context,
+func (s *sessionRpcServer) PrivacyMapConversion(ctx context.Context,
 	req *litrpc.PrivacyMapConversionRequest) (
 	*litrpc.PrivacyMapConversionResponse, error) {
 
@@ -606,7 +606,7 @@ func (s *sessionRpcServer) PrivacyMapConversion(_ context.Context,
 			return nil, err
 		}
 
-		groupID, err = s.cfg.db.GetGroupID(sessionID)
+		groupID, err = s.cfg.db.GetGroupID(ctx, sessionID)
 		if err != nil {
 			return nil, err
 		}
