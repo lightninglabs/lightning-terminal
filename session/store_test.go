@@ -392,6 +392,53 @@ func TestCheckSessionGroupPredicate(t *testing.T) {
 	require.True(t, ok)
 }
 
+// TestStateShift tests that the ShiftState method works as expected.
+func TestStateShift(t *testing.T) {
+	// Set up a new DB.
+	clock := clock.NewTestClock(testTime)
+	db, err := NewDB(t.TempDir(), "test.db", clock)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_ = db.Close()
+	})
+
+	// Add a new session to the DB.
+	s1 := newSession(t, db, clock, "label 1")
+	require.NoError(t, db.CreateSession(s1))
+
+	// Check that the session is in the StateCreated state. Also check that
+	// the "RevokedAt" time has not yet been set.
+	s1, err = db.GetSession(s1.LocalPublicKey)
+	require.NoError(t, err)
+	require.Equal(t, StateCreated, s1.State)
+	require.Equal(t, time.Time{}, s1.RevokedAt)
+
+	// Shift the state of the session to StateRevoked.
+	err = db.ShiftState(s1.ID, StateRevoked)
+	require.NoError(t, err)
+
+	// This should have worked. Since it is now in a terminal state, the
+	// "RevokedAt" time should be set.
+	s1, err = db.GetSession(s1.LocalPublicKey)
+	require.NoError(t, err)
+	require.Equal(t, StateRevoked, s1.State)
+	require.True(t, clock.Now().Equal(s1.RevokedAt))
+
+	// Trying to do the same state shift again should succeed since the
+	// session is already in the expected "dest" state. The revoked-at time
+	// should not have changed though.
+	prevTime := clock.Now()
+	clock.SetTime(prevTime.Add(time.Second))
+	err = db.ShiftState(s1.ID, StateRevoked)
+	require.NoError(t, err)
+	require.True(t, prevTime.Equal(s1.RevokedAt))
+
+	// Trying to shift the state from a terminal state back to StateCreated
+	// should also fail since this is not a legal state transition.
+	err = db.ShiftState(s1.ID, StateCreated)
+	require.ErrorContains(t, err, "illegal session state transition")
+}
+
 // testSessionModifier is a functional option that can be used to modify the
 // default test session created by newSession.
 type testSessionModifier func(*Session)

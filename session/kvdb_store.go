@@ -514,6 +514,47 @@ func (db *BoltStore) DeleteReservedSessions() error {
 	})
 }
 
+// ShiftState updates the state of the session with the given ID to the "dest"
+// state.
+//
+// NOTE: this is part of the Store interface.
+func (db *BoltStore) ShiftState(id ID, dest State) error {
+	return db.Update(func(tx *bbolt.Tx) error {
+		sessionBucket, err := getBucket(tx, sessionBucketKey)
+		if err != nil {
+			return err
+		}
+
+		session, err := getSessionByID(sessionBucket, id)
+		if err != nil {
+			return err
+		}
+
+		// If the session is already in the desired state, we return
+		// with no error to maintain idempotency.
+		if session.State == dest {
+			return nil
+		}
+
+		// Ensure that the wanted state change is allowed.
+		allowedDestinations, ok := legalStateShifts[session.State]
+		if !ok || !allowedDestinations[dest] {
+			return fmt.Errorf("illegal session state transition "+
+				"from %d to %d", session.State, dest)
+		}
+
+		session.State = dest
+
+		// If the session is terminal, we set the revoked at time to the
+		// current time.
+		if dest.Terminal() {
+			session.RevokedAt = db.clock.Now().UTC()
+		}
+
+		return putSession(sessionBucket, session)
+	})
+}
+
 // RevokeSession updates the state of the session with the given local
 // public key to be revoked.
 //
