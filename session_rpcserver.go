@@ -643,7 +643,7 @@ func (s *sessionRpcServer) PrivacyMapConversion(_ context.Context,
 // stored if the actions are interceptor actions, otherwise only the URI and
 // timestamp of the actions will be stored. The "full" mode will persist all
 // request data for all actions.
-func (s *sessionRpcServer) ListActions(_ context.Context,
+func (s *sessionRpcServer) ListActions(ctx context.Context,
 	req *litrpc.ListActionsRequest) (*litrpc.ListActionsResponse, error) {
 
 	// If no maximum number of actions is given, use a default of 100.
@@ -746,7 +746,7 @@ func (s *sessionRpcServer) ListActions(_ context.Context,
 			return nil, err
 		}
 
-		actions, err = db.ListGroupActions(groupID, filterFn)
+		actions, err = db.ListGroupActions(ctx, groupID, filterFn)
 		if err != nil {
 			return nil, err
 		}
