@@ -286,7 +286,7 @@ func (db *BoltStore) NewSession(ctx context.Context, label string, typ Type,
 // to the session with the given local pub key.
 //
 // NOTE: this is part of the Store interface.
-func (db *BoltStore) UpdateSessionRemotePubKey(localPubKey,
+func (db *BoltStore) UpdateSessionRemotePubKey(_ context.Context, localPubKey,
 	remotePubKey *btcec.PublicKey) error {
 
 	key := localPubKey.SerializeCompressed()

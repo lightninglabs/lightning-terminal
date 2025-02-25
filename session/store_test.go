@@ -95,7 +95,9 @@ func TestBasicSessionStore(t *testing.T) {
 	require.NoError(t, err)
 	remotePub := remotePriv.PubKey()
 
-	err = db.UpdateSessionRemotePubKey(session1.LocalPublicKey, remotePub)
+	err = db.UpdateSessionRemotePubKey(
+		ctx, session1.LocalPublicKey, remotePub,
+	)
 	require.NoError(t, err)
 
 	// Assert that the session now does have the remote pub key.

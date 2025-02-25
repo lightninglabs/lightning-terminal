@@ -294,7 +294,7 @@ type Store interface {
 
 	// UpdateSessionRemotePubKey can be used to add the given remote pub key
 	// to the session with the given local pub key.
-	UpdateSessionRemotePubKey(localPubKey,
+	UpdateSessionRemotePubKey(ctx context.Context, localPubKey,
 		remotePubKey *btcec.PublicKey) error
 
 	// GetSessionByID fetches the session with the given ID.
