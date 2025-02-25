@@ -149,7 +149,7 @@ func (s *sessionRpcServer) start(ctx context.Context) error {
 
 				if perm {
 					err := s.cfg.db.ShiftState(
-						sess.ID, session.StateRevoked,
+						ctx, sess.ID, session.StateRevoked,
 					)
 					if err != nil {
 						log.Errorf("error revoking "+
@@ -323,7 +323,7 @@ func (s *sessionRpcServer) AddSession(ctx context.Context,
 		return nil, fmt.Errorf("error creating new session: %v", err)
 	}
 
-	err = s.cfg.db.ShiftState(sess.ID, session.StateCreated)
+	err = s.cfg.db.ShiftState(ctx, sess.ID, session.StateCreated)
 	if err != nil {
 		return nil, fmt.Errorf("error shifting session state to "+
 			"Created: %v", err)
@@ -362,7 +362,7 @@ func (s *sessionRpcServer) resumeSession(ctx context.Context,
 		log.Debugf("Not resuming session %x with expiry %s",
 			pubKeyBytes, sess.Expiry)
 
-		err := s.cfg.db.ShiftState(sess.ID, session.StateExpired)
+		err := s.cfg.db.ShiftState(ctx, sess.ID, session.StateExpired)
 		if err != nil {
 			return fmt.Errorf("error revoking session: %v", err)
 		}
@@ -440,7 +440,7 @@ func (s *sessionRpcServer) resumeSession(ctx context.Context,
 				"passed. Revoking session", pubKeyBytes)
 
 			return s.cfg.db.ShiftState(
-				sess.ID, session.StateRevoked,
+				ctx, sess.ID, session.StateRevoked,
 			)
 		}
 
@@ -520,7 +520,7 @@ func (s *sessionRpcServer) resumeSession(ctx context.Context,
 			log.Debugf("Error stopping session: %v", err)
 		}
 
-		err = s.cfg.db.ShiftState(sess.ID, session.StateRevoked)
+		err = s.cfg.db.ShiftState(ctx, sess.ID, session.StateRevoked)
 		if err != nil {
 			log.Debugf("error revoking session: %v", err)
 		}
@@ -567,7 +567,7 @@ func (s *sessionRpcServer) RevokeSession(ctx context.Context,
 		return nil, fmt.Errorf("error fetching session: %v", err)
 	}
 
-	err = s.cfg.db.ShiftState(sess.ID, session.StateRevoked)
+	err = s.cfg.db.ShiftState(ctx, sess.ID, session.StateRevoked)
 	if err != nil {
 		return nil, fmt.Errorf("error revoking session: %v", err)
 	}
@@ -1240,7 +1240,7 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 
 	// We only activate the session if the Autopilot server registration
 	// was successful.
-	err = s.cfg.db.ShiftState(sess.ID, session.StateCreated)
+	err = s.cfg.db.ShiftState(ctx, sess.ID, session.StateCreated)
 	if err != nil {
 		return nil, fmt.Errorf("error shifting session state to "+
 			"Created: %v", err)

@@ -36,7 +36,7 @@ func TestBasicSessionStore(t *testing.T) {
 	require.Equal(t, StateReserved, s1.State)
 
 	// Move session 1 to the created state. This should succeed.
-	err = db.ShiftState(s1.ID, StateCreated)
+	err = db.ShiftState(ctx, s1.ID, StateCreated)
 	require.NoError(t, err)
 
 	// Show that the session is now in the created state.
@@ -46,7 +46,7 @@ func TestBasicSessionStore(t *testing.T) {
 
 	// Trying to move session 1 again should have no effect since it is
 	// already in the created state.
-	require.NoError(t, db.ShiftState(s1.ID, StateCreated))
+	require.NoError(t, db.ShiftState(ctx, s1.ID, StateCreated))
 
 	// Reserve and create a few more sessions. We increment the time by one
 	// second between each session to ensure that the created at time is
@@ -107,7 +107,7 @@ func TestBasicSessionStore(t *testing.T) {
 	require.Equal(t, session1.State, StateCreated)
 
 	// Now revoke the session and assert that the state is revoked.
-	require.NoError(t, db.ShiftState(s1.ID, StateRevoked))
+	require.NoError(t, db.ShiftState(ctx, s1.ID, StateRevoked))
 	s1, err = db.GetSession(ctx, s1.LocalPublicKey)
 	require.NoError(t, err)
 	require.Equal(t, s1.State, StateRevoked)
@@ -198,6 +198,7 @@ func TestBasicSessionStore(t *testing.T) {
 // TestLinkingSessions tests that session linking works as expected.
 func TestLinkingSessions(t *testing.T) {
 	t.Parallel()
+	ctx := context.Background()
 
 	// Set up a new DB.
 	clock := clock.NewTestClock(testTime)
@@ -223,7 +224,7 @@ func TestLinkingSessions(t *testing.T) {
 	require.ErrorIs(t, err, ErrSessionsInGroupStillActive)
 
 	// Revoke the first session.
-	require.NoError(t, db.ShiftState(s1.ID, StateRevoked))
+	require.NoError(t, db.ShiftState(ctx, s1.ID, StateRevoked))
 
 	// Persisting the second linked session should now work.
 	_, err = reserveSession(db, "session 2", withLinkedGroupID(&s1.GroupID))
@@ -247,10 +248,10 @@ func TestLinkedSessions(t *testing.T) {
 	// first session.
 	s1 := createSession(t, db, "session 1")
 
-	require.NoError(t, db.ShiftState(s1.ID, StateRevoked))
+	require.NoError(t, db.ShiftState(ctx, s1.ID, StateRevoked))
 	s2 := createSession(t, db, "session 2", withLinkedGroupID(&s1.GroupID))
 
-	require.NoError(t, db.ShiftState(s2.ID, StateRevoked))
+	require.NoError(t, db.ShiftState(ctx, s2.ID, StateRevoked))
 	s3 := createSession(t, db, "session 3", withLinkedGroupID(&s2.GroupID))
 
 	// Assert that the session ID to group ID index works as expected.
@@ -269,7 +270,7 @@ func TestLinkedSessions(t *testing.T) {
 	// To ensure that different groups don't interfere with each other,
 	// let's add another set of linked sessions not linked to the first.
 	s4 := createSession(t, db, "session 4")
-	require.NoError(t, db.ShiftState(s4.ID, StateRevoked))
+	require.NoError(t, db.ShiftState(ctx, s4.ID, StateRevoked))
 	s5 := createSession(t, db, "session 5", withLinkedGroupID(&s4.GroupID))
 	require.NotEqual(t, s4.GroupID, s1.GroupID)
 
@@ -307,7 +308,7 @@ func TestStateShift(t *testing.T) {
 	require.Equal(t, time.Time{}, s1.RevokedAt)
 
 	// Shift the state of the session to StateRevoked.
-	err = db.ShiftState(s1.ID, StateRevoked)
+	err = db.ShiftState(ctx, s1.ID, StateRevoked)
 	require.NoError(t, err)
 
 	// This should have worked. Since it is now in a terminal state, the
@@ -322,13 +323,13 @@ func TestStateShift(t *testing.T) {
 	// should not have changed though.
 	prevTime := clock.Now()
 	clock.SetTime(prevTime.Add(time.Second))
-	err = db.ShiftState(s1.ID, StateRevoked)
+	err = db.ShiftState(ctx, s1.ID, StateRevoked)
 	require.NoError(t, err)
 	require.True(t, prevTime.Equal(s1.RevokedAt))
 
 	// Trying to shift the state from a terminal state back to StateCreated
 	// should also fail since this is not a legal state transition.
-	err = db.ShiftState(s1.ID, StateCreated)
+	err = db.ShiftState(ctx, s1.ID, StateCreated)
 	require.ErrorContains(t, err, "illegal session state transition")
 }
 
@@ -384,7 +385,7 @@ func createSession(t *testing.T, db Store, label string,
 	s, err := reserveSession(db, label, mods...)
 	require.NoError(t, err)
 
-	err = db.ShiftState(s.ID, StateCreated)
+	err = db.ShiftState(context.Background(), s.ID, StateCreated)
 	require.NoError(t, err)
 
 	s, err = db.GetSessionByID(context.Background(), s.ID)

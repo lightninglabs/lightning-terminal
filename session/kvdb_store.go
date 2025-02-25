@@ -529,7 +529,7 @@ func (db *BoltStore) DeleteReservedSessions(_ context.Context) error {
 // state.
 //
 // NOTE: this is part of the Store interface.
-func (db *BoltStore) ShiftState(id ID, dest State) error {
+func (db *BoltStore) ShiftState(_ context.Context, id ID, dest State) error {
 	return db.Update(func(tx *bbolt.Tx) error {
 		sessionBucket, err := getBucket(tx, sessionBucketKey)
 		if err != nil {
