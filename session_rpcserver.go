@@ -360,7 +360,7 @@ func (s *sessionRpcServer) resumeSession(ctx context.Context,
 		log.Debugf("Not resuming session %x with expiry %s",
 			pubKeyBytes, sess.Expiry)
 
-		err := s.cfg.db.ShiftState(sess.ID, session.StateRevoked)
+		err := s.cfg.db.ShiftState(sess.ID, session.StateExpired)
 		if err != nil {
 			return fmt.Errorf("error revoking session: %v", err)
 		}
