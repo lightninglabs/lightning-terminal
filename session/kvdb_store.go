@@ -319,7 +319,9 @@ func (db *BoltStore) UpdateSessionRemotePubKey(localPubKey,
 // GetSession fetches the session with the given key.
 //
 // NOTE: this is part of the Store interface.
-func (db *BoltStore) GetSession(key *btcec.PublicKey) (*Session, error) {
+func (db *BoltStore) GetSession(_ context.Context, key *btcec.PublicKey) (
+	*Session, error) {
+
 	var session *Session
 	err := db.View(func(tx *bbolt.Tx) error {
 		sessionBucket, err := getBucket(tx, sessionBucketKey)

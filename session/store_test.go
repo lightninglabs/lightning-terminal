@@ -15,6 +15,9 @@ var testTime = time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 // TestBasicSessionStore tests the basic getters and setters of the session
 // store.
 func TestBasicSessionStore(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
 	// Set up a new DB.
 	clock := clock.NewTestClock(testTime)
 	db := NewTestDB(t, clock)
@@ -73,7 +76,7 @@ func TestBasicSessionStore(t *testing.T) {
 	// Ensure that we can retrieve each session by both its local pub key
 	// and by its ID.
 	for _, s := range []*Session{s1, s2, s3} {
-		session, err := db.GetSession(s.LocalPublicKey)
+		session, err := db.GetSession(ctx, s.LocalPublicKey)
 		require.NoError(t, err)
 		assertEqualSessions(t, s, session)
 
@@ -83,7 +86,7 @@ func TestBasicSessionStore(t *testing.T) {
 	}
 
 	// Fetch session 1 and assert that it currently has no remote pub key.
-	session1, err := db.GetSession(s1.LocalPublicKey)
+	session1, err := db.GetSession(ctx, s1.LocalPublicKey)
 	require.NoError(t, err)
 	require.Nil(t, session1.RemotePublicKey)
 
@@ -96,7 +99,7 @@ func TestBasicSessionStore(t *testing.T) {
 	require.NoError(t, err)
 
 	// Assert that the session now does have the remote pub key.
-	session1, err = db.GetSession(s1.LocalPublicKey)
+	session1, err = db.GetSession(ctx, s1.LocalPublicKey)
 	require.NoError(t, err)
 	require.True(t, remotePub.IsEqual(session1.RemotePublicKey))
 
@@ -105,7 +108,7 @@ func TestBasicSessionStore(t *testing.T) {
 
 	// Now revoke the session and assert that the state is revoked.
 	require.NoError(t, db.ShiftState(s1.ID, StateRevoked))
-	s1, err = db.GetSession(s1.LocalPublicKey)
+	s1, err = db.GetSession(ctx, s1.LocalPublicKey)
 	require.NoError(t, err)
 	require.Equal(t, s1.State, StateRevoked)
 
@@ -285,6 +288,9 @@ func TestLinkedSessions(t *testing.T) {
 
 // TestStateShift tests that the ShiftState method works as expected.
 func TestStateShift(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
 	// Set up a new DB.
 	clock := clock.NewTestClock(testTime)
 	db := NewTestDB(t, clock)
@@ -294,7 +300,7 @@ func TestStateShift(t *testing.T) {
 
 	// Check that the session is in the StateCreated state. Also check that
 	// the "RevokedAt" time has not yet been set.
-	s1, err := db.GetSession(s1.LocalPublicKey)
+	s1, err := db.GetSession(ctx, s1.LocalPublicKey)
 	require.NoError(t, err)
 	require.Equal(t, StateCreated, s1.State)
 	require.Equal(t, time.Time{}, s1.RevokedAt)
@@ -305,7 +311,7 @@ func TestStateShift(t *testing.T) {
 
 	// This should have worked. Since it is now in a terminal state, the
 	// "RevokedAt" time should be set.
-	s1, err = db.GetSession(s1.LocalPublicKey)
+	s1, err = db.GetSession(ctx, s1.LocalPublicKey)
 	require.NoError(t, err)
 	require.Equal(t, StateRevoked, s1.State)
 	require.True(t, clock.Now().Equal(s1.RevokedAt))

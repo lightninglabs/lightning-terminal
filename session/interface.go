@@ -279,7 +279,7 @@ type Store interface {
 		error)
 
 	// GetSession fetches the session with the given key.
-	GetSession(key *btcec.PublicKey) (*Session, error)
+	GetSession(ctx context.Context, key *btcec.PublicKey) (*Session, error)
 
 	// ListAllSessions returns all sessions currently known to the store.
 	ListAllSessions() ([]*Session, error)
