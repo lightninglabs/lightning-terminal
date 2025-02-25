@@ -106,7 +106,7 @@ func TestBasicSessionStore(t *testing.T) {
 	require.Equal(t, session1.State, StateCreated)
 
 	// Now revoke the session and assert that the state is revoked.
-	require.NoError(t, db.RevokeSession(s1.LocalPublicKey))
+	require.NoError(t, db.ShiftState(s1.ID, StateRevoked))
 	s1, err = db.GetSession(s1.LocalPublicKey)
 	require.NoError(t, err)
 	require.Equal(t, s1.State, StateRevoked)
@@ -225,7 +225,7 @@ func TestLinkingSessions(t *testing.T) {
 	require.ErrorContains(t, db.CreateSession(s2), "is still active")
 
 	// Revoke the first session.
-	require.NoError(t, db.RevokeSession(s1.LocalPublicKey))
+	require.NoError(t, db.ShiftState(s1.ID, StateRevoked))
 
 	// Persisting the second linked session should now work.
 	require.NoError(t, db.CreateSession(s2))
@@ -248,16 +248,20 @@ func TestLinkedSessions(t *testing.T) {
 	// the same group. The group ID is equivalent to the session ID of the
 	// first session.
 	s1 := newSession(t, db, clock, "session 1")
-	s2 := newSession(t, db, clock, "session 2", withLinkedGroupID(&s1.GroupID))
-	s3 := newSession(t, db, clock, "session 3", withLinkedGroupID(&s2.GroupID))
+	s2 := newSession(
+		t, db, clock, "session 2", withLinkedGroupID(&s1.GroupID),
+	)
+	s3 := newSession(
+		t, db, clock, "session 3", withLinkedGroupID(&s2.GroupID),
+	)
 
 	// Persist the sessions.
 	require.NoError(t, db.CreateSession(s1))
 
-	require.NoError(t, db.RevokeSession(s1.LocalPublicKey))
+	require.NoError(t, db.ShiftState(s1.ID, StateRevoked))
 	require.NoError(t, db.CreateSession(s2))
 
-	require.NoError(t, db.RevokeSession(s2.LocalPublicKey))
+	require.NoError(t, db.ShiftState(s2.ID, StateRevoked))
 	require.NoError(t, db.CreateSession(s3))
 
 	// Assert that the session ID to group ID index works as expected.
@@ -282,7 +286,7 @@ func TestLinkedSessions(t *testing.T) {
 
 	// Persist the sessions.
 	require.NoError(t, db.CreateSession(s4))
-	require.NoError(t, db.RevokeSession(s4.LocalPublicKey))
+	require.NoError(t, db.ShiftState(s4.ID, StateRevoked))
 
 	require.NoError(t, db.CreateSession(s5))
 
@@ -337,7 +341,7 @@ func TestCheckSessionGroupPredicate(t *testing.T) {
 	require.False(t, ok)
 
 	// Revoke the first session.
-	require.NoError(t, db.RevokeSession(s1.LocalPublicKey))
+	require.NoError(t, db.ShiftState(s1.ID, StateRevoked))
 
 	// Add a new session to the same group as the first one.
 	s2 := newSession(t, db, clock, "label 2", withLinkedGroupID(&s1.GroupID))

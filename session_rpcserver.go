@@ -154,8 +154,8 @@ func (s *sessionRpcServer) start(ctx context.Context) error {
 					err)
 
 				if perm {
-					err := s.cfg.db.RevokeSession(
-						sess.LocalPublicKey,
+					err := s.cfg.db.ShiftState(
+						sess.ID, session.StateRevoked,
 					)
 					if err != nil {
 						log.Errorf("error revoking "+
@@ -360,7 +360,8 @@ func (s *sessionRpcServer) resumeSession(ctx context.Context,
 		log.Debugf("Not resuming session %x with expiry %s",
 			pubKeyBytes, sess.Expiry)
 
-		if err := s.cfg.db.RevokeSession(pubKey); err != nil {
+		err := s.cfg.db.ShiftState(sess.ID, session.StateRevoked)
+		if err != nil {
 			return fmt.Errorf("error revoking session: %v", err)
 		}
 
@@ -436,7 +437,9 @@ func (s *sessionRpcServer) resumeSession(ctx context.Context,
 			log.Debugf("Deadline for session %x has already "+
 				"passed. Revoking session", pubKeyBytes)
 
-			return s.cfg.db.RevokeSession(pubKey)
+			return s.cfg.db.ShiftState(
+				sess.ID, session.StateRevoked,
+			)
 		}
 
 		// Start the deadline timer.
@@ -515,7 +518,7 @@ func (s *sessionRpcServer) resumeSession(ctx context.Context,
 			log.Debugf("Error stopping session: %v", err)
 		}
 
-		err = s.cfg.db.RevokeSession(pubKey)
+		err = s.cfg.db.ShiftState(sess.ID, session.StateRevoked)
 		if err != nil {
 			log.Debugf("error revoking session: %v", err)
 		}
@@ -557,7 +560,13 @@ func (s *sessionRpcServer) RevokeSession(ctx context.Context,
 		return nil, fmt.Errorf("error parsing public key: %v", err)
 	}
 
-	if err := s.cfg.db.RevokeSession(pubKey); err != nil {
+	sess, err := s.cfg.db.GetSession(pubKey)
+	if err != nil {
+		return nil, fmt.Errorf("error fetching session: %v", err)
+	}
+
+	err = s.cfg.db.ShiftState(sess.ID, session.StateRevoked)
+	if err != nil {
 		return nil, fmt.Errorf("error revoking session: %v", err)
 	}
 

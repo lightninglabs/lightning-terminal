@@ -555,35 +555,6 @@ func (db *BoltStore) ShiftState(id ID, dest State) error {
 	})
 }
 
-// RevokeSession updates the state of the session with the given local
-// public key to be revoked.
-//
-// NOTE: this is part of the Store interface.
-func (db *BoltStore) RevokeSession(key *btcec.PublicKey) error {
-	var session *Session
-	return db.Update(func(tx *bbolt.Tx) error {
-		sessionBucket, err := getBucket(tx, sessionBucketKey)
-		if err != nil {
-			return err
-		}
-
-		sessionBytes := sessionBucket.Get(key.SerializeCompressed())
-		if len(sessionBytes) == 0 {
-			return ErrSessionNotFound
-		}
-
-		session, err = DeserializeSession(bytes.NewReader(sessionBytes))
-		if err != nil {
-			return err
-		}
-
-		session.State = StateRevoked
-		session.RevokedAt = db.clock.Now().UTC()
-
-		return putSession(sessionBucket, session)
-	})
-}
-
 // GetSessionByID fetches the session with the given ID.
 //
 // NOTE: this is part of the Store interface.

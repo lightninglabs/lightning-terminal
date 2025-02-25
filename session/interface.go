@@ -215,10 +215,6 @@ type Store interface {
 	// that are in the given states.
 	ListSessionsByState(...State) ([]*Session, error)
 
-	// RevokeSession updates the state of the session with the given local
-	// public key to be revoked.
-	RevokeSession(*btcec.PublicKey) error
-
 	// UpdateSessionRemotePubKey can be used to add the given remote pub key
 	// to the session with the given local pub key.
 	UpdateSessionRemotePubKey(localPubKey,
