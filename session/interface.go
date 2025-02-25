@@ -302,7 +302,7 @@ type Store interface {
 
 	// DeleteReservedSessions deletes all sessions that are in the
 	// StateReserved state.
-	DeleteReservedSessions() error
+	DeleteReservedSessions(ctx context.Context) error
 
 	// ShiftState updates the state of the session with the given ID to the
 	// "dest" state.

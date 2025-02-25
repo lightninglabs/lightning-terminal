@@ -436,7 +436,7 @@ func (db *BoltStore) listSessions(filterFn func(s *Session) bool) ([]*Session,
 // state.
 //
 // NOTE: this is part of the Store interface.
-func (db *BoltStore) DeleteReservedSessions() error {
+func (db *BoltStore) DeleteReservedSessions(_ context.Context) error {
 	return db.Update(func(tx *bbolt.Tx) error {
 		sessionBucket, err := getBucket(tx, sessionBucketKey)
 		if err != nil {

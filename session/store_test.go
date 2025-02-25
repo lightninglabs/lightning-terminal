@@ -151,7 +151,7 @@ func TestBasicSessionStore(t *testing.T) {
 	//
 	// Calling DeleteReservedSessions should have no effect yet since none
 	// of the sessions are reserved.
-	require.NoError(t, db.DeleteReservedSessions())
+	require.NoError(t, db.DeleteReservedSessions(ctx))
 
 	sessions, err = db.ListSessionsByState(ctx, StateReserved)
 	require.NoError(t, err)
@@ -180,7 +180,7 @@ func TestBasicSessionStore(t *testing.T) {
 
 	// Now delete the reserved session and show that it is no longer in the
 	// database and no longer in the group ID/session ID index.
-	require.NoError(t, db.DeleteReservedSessions())
+	require.NoError(t, db.DeleteReservedSessions(ctx))
 
 	sessions, err = db.ListSessionsByState(ctx, StateReserved)
 	require.NoError(t, err)

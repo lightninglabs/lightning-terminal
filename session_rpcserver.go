@@ -96,7 +96,7 @@ func newSessionRPCServer(cfg *sessionRpcServerConfig) (*sessionRpcServer,
 // requests. This includes resuming all non-revoked sessions.
 func (s *sessionRpcServer) start(ctx context.Context) error {
 	// Delete all sessions in the Reserved state.
-	err := s.cfg.db.DeleteReservedSessions()
+	err := s.cfg.db.DeleteReservedSessions(ctx)
 	if err != nil {
 		return fmt.Errorf("error deleting reserved sessions: %v", err)
 	}
