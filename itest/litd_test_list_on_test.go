@@ -40,6 +40,11 @@ var allTestCases = []*testCase{
 		noAliceBob: true,
 	},
 	{
+		name:       "custom channels group tranches force close",
+		test:       testCustomChannelsGroupTranchesForceClose,
+		noAliceBob: true,
+	},
+	{
 		name:       "custom channels force close",
 		test:       testCustomChannelsForceClose,
 		noAliceBob: true,

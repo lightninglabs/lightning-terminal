@@ -17,6 +17,8 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/davecgh/go-spew/spew"
+	taprootassets "github.com/lightninglabs/taproot-assets"
+	"github.com/lightninglabs/taproot-assets/asset"
 	tapfn "github.com/lightninglabs/taproot-assets/fn"
 	"github.com/lightninglabs/taproot-assets/itest"
 	"github.com/lightninglabs/taproot-assets/proof"
@@ -290,6 +292,281 @@ func createTestAssetNetwork(t *harnessTest, net *NetworkHarness, charlieTap,
 	}
 
 	return chanPointCD, chanPointDY, chanPointEF
+}
+
+// createTestAssetNetworkGroupKey sets up a test network with Charlie, Dave,
+// Erin and Fabia and creates asset channels between Charlie->Dave and
+// Erin-Fabia in a way that there are two equally sized asset pieces for each
+// minted asset (currently limited to exactly two assets). The channels are then
+// confirmed and balances asserted.
+func createTestAssetNetworkGroupKey(ctx context.Context, t *harnessTest,
+	net *NetworkHarness, charlieTap, daveTap, erinTap, fabiaTap,
+	universeTap *tapClient, mintedAssets []*taprpc.Asset,
+	charlieFundingAmount, erinFundingAmount uint64,
+	pushSat int64) (*lnrpc.ChannelPoint, *lnrpc.ChannelPoint) {
+
+	var groupKey []byte
+	for _, mintedAsset := range mintedAssets {
+		require.NotNil(t.t, mintedAsset.AssetGroup)
+
+		if groupKey == nil {
+			groupKey = mintedAsset.AssetGroup.TweakedGroupKey
+
+			continue
+		}
+
+		require.Equal(
+			t.t, groupKey, mintedAsset.AssetGroup.TweakedGroupKey,
+		)
+	}
+
+	// We first do a transfer to Charlie by itself, so we get the correct
+	// asset pieces that we want for the channel funding.
+	sendAssetsAndAssert(
+		ctx, t, charlieTap, charlieTap, universeTap, mintedAssets[0],
+		charlieFundingAmount/2, 0, 1, 0,
+	)
+	sendAssetsAndAssert(
+		ctx, t, charlieTap, charlieTap, universeTap, mintedAssets[1],
+		charlieFundingAmount/2, 1, 2, 0,
+	)
+
+	// We need to send some assets to Erin, so he can fund an asset channel
+	// with Fabia.
+	sendAssetsAndAssert(
+		ctx, t, erinTap, charlieTap, universeTap, mintedAssets[0],
+		erinFundingAmount/2, 2, 1, charlieFundingAmount/2,
+	)
+	sendAssetsAndAssert(
+		ctx, t, erinTap, charlieTap, universeTap, mintedAssets[1],
+		erinFundingAmount/2, 3, 2, charlieFundingAmount/2,
+	)
+
+	// Then we burn everything but a single asset piece. We do this to make
+	// sure that the channel funding code will select the correct asset
+	// UTXOs during the channel funding. Otherwise, it's super hard to
+	// predict what exactly goes into the channel funding transaction. And
+	// this way it's also easier to assert overall balances.
+	assetID1 := mintedAssets[0].AssetGenesis.AssetId
+	assetID2 := mintedAssets[1].AssetGenesis.AssetId
+	burnAmount1 := mintedAssets[0].Amount - charlieFundingAmount/2 -
+		erinFundingAmount/2 - 1
+	_, err := charlieTap.BurnAsset(ctx, &taprpc.BurnAssetRequest{
+		Asset: &taprpc.BurnAssetRequest_AssetId{
+			AssetId: assetID1,
+		},
+		AmountToBurn:     burnAmount1,
+		ConfirmationText: taprootassets.AssetBurnConfirmationText,
+	})
+	require.NoError(t.t, err)
+
+	mineBlocks(t, net, 1, 1)
+
+	burnAmount2 := mintedAssets[1].Amount - charlieFundingAmount/2 -
+		erinFundingAmount/2 - 1
+	_, err = charlieTap.BurnAsset(ctx, &taprpc.BurnAssetRequest{
+		Asset: &taprpc.BurnAssetRequest_AssetId{
+			AssetId: assetID2,
+		},
+		AmountToBurn:     burnAmount2,
+		ConfirmationText: taprootassets.AssetBurnConfirmationText,
+	})
+	require.NoError(t.t, err)
+
+	mineBlocks(t, net, 1, 1)
+
+	t.Logf("Opening asset channels...")
+
+	// The first channel we create has a push amount, so Charlie can receive
+	// payments immediately and not run into the channel reserve issue.
+	fundRespCD, err := charlieTap.FundChannel(
+		ctx, &tchrpc.FundChannelRequest{
+			AssetAmount:        charlieFundingAmount,
+			GroupKey:           groupKey,
+			PeerPubkey:         daveTap.node.PubKey[:],
+			FeeRateSatPerVbyte: 5,
+			PushSat:            pushSat,
+		},
+	)
+	require.NoError(t.t, err)
+	t.Logf("Funded channel between Charlie and Dave: %v", fundRespCD)
+
+	fundRespEF, err := erinTap.FundChannel(
+		ctx, &tchrpc.FundChannelRequest{
+			AssetAmount:        erinFundingAmount,
+			GroupKey:           groupKey,
+			PeerPubkey:         fabiaTap.node.PubKey[:],
+			FeeRateSatPerVbyte: 5,
+			PushSat:            pushSat,
+		},
+	)
+	require.NoError(t.t, err)
+	t.Logf("Funded channel between Erin and Fabia: %v", fundRespEF)
+
+	// Make sure the pending channel shows up in the list and has the
+	// custom records set as JSON.
+	assertPendingChannels(
+		t.t, charlieTap.node, mintedAssets[0], 1,
+		charlieFundingAmount/2, 0,
+	)
+	assertPendingChannels(
+		t.t, charlieTap.node, mintedAssets[1], 1,
+		charlieFundingAmount/2, 0,
+	)
+	assertPendingChannels(
+		t.t, erinTap.node, mintedAssets[0], 1, erinFundingAmount/2, 0,
+	)
+	assertPendingChannels(
+		t.t, erinTap.node, mintedAssets[1], 1, erinFundingAmount/2, 0,
+	)
+
+	// Now that we've looked at the pending channels, let's actually confirm
+	// all three of them.
+	mineBlocks(t, net, 6, 2)
+
+	var id1, id2 asset.ID
+	copy(id1[:], assetID1)
+	copy(id2[:], assetID2)
+
+	fundingTree1, err := tapscript.NewChannelFundingScriptTreeUniqueID(
+		id1,
+	)
+	require.NoError(t.t, err)
+	fundingScriptKey1 := fundingTree1.TaprootKey
+	fundingScriptTreeBytes1 := fundingScriptKey1.SerializeCompressed()
+
+	fundingTree2, err := tapscript.NewChannelFundingScriptTreeUniqueID(
+		id2,
+	)
+	require.NoError(t.t, err)
+	fundingScriptKey2 := fundingTree2.TaprootKey
+	fundingScriptTreeBytes2 := fundingScriptKey2.SerializeCompressed()
+
+	// TODO(guggero): Those asset balances should be 1, 1, 0, 0
+	// respectively, but because we now have unique script keys, we need
+	// https://github.com/lightninglabs/taproot-assets/pull/1198 first.
+	assertAssetBalance(t.t, charlieTap, assetID1, 25001)
+	assertAssetBalance(t.t, charlieTap, assetID2, 25001)
+	assertAssetBalance(t.t, erinTap, assetID1, 25000)
+	assertAssetBalance(t.t, erinTap, assetID2, 25000)
+
+	// There should be two asset pieces for Charlie for both asset IDs, one
+	// in the channel and one with a single unit from the burn.
+	assertNumAssetOutputs(t.t, charlieTap, assetID1, 2)
+	assertNumAssetOutputs(t.t, charlieTap, assetID2, 2)
+	assertAssetExists(
+		t.t, charlieTap, assetID1, charlieFundingAmount/2,
+		fundingScriptKey1, false, true, true,
+	)
+	assertAssetExists(
+		t.t, charlieTap, assetID1, 1, nil, true, false, false,
+	)
+	assertAssetExists(
+		t.t, charlieTap, assetID2, charlieFundingAmount/2,
+		fundingScriptKey2, false, true, true,
+	)
+	assertAssetExists(
+		t.t, charlieTap, assetID2, 1, nil, true, false, false,
+	)
+
+	// Erin should just have one output for each asset ID, the one in the
+	// channel.
+	assertNumAssetOutputs(t.t, erinTap, assetID1, 1)
+	assertNumAssetOutputs(t.t, erinTap, assetID2, 1)
+	assertAssetExists(
+		t.t, erinTap, assetID1, erinFundingAmount/2, fundingScriptKey1,
+		false, true, true,
+	)
+	assertAssetExists(
+		t.t, erinTap, assetID2, erinFundingAmount/2, fundingScriptKey2,
+		false, true, true,
+	)
+
+	// Assert that the proofs for both channels has been uploaded to the
+	// designated Universe server.
+	assertUniverseProofExists(
+		t.t, universeTap, assetID1, groupKey, fundingScriptTreeBytes1,
+		fmt.Sprintf("%v:%v", fundRespCD.Txid, fundRespCD.OutputIndex),
+	)
+	assertUniverseProofExists(
+		t.t, universeTap, assetID2, groupKey, fundingScriptTreeBytes2,
+		fmt.Sprintf("%v:%v", fundRespCD.Txid, fundRespCD.OutputIndex),
+	)
+	assertUniverseProofExists(
+		t.t, universeTap, assetID1, groupKey, fundingScriptTreeBytes1,
+		fmt.Sprintf("%v:%v", fundRespEF.Txid, fundRespEF.OutputIndex),
+	)
+	assertUniverseProofExists(
+		t.t, universeTap, assetID2, groupKey, fundingScriptTreeBytes2,
+		fmt.Sprintf("%v:%v", fundRespEF.Txid, fundRespEF.OutputIndex),
+	)
+
+	// Make sure the channel shows the correct asset information.
+	assertAssetChan(
+		t.t, charlieTap.node, daveTap.node, charlieFundingAmount,
+		mintedAssets,
+	)
+	assertAssetChan(
+		t.t, erinTap.node, fabiaTap.node, erinFundingAmount,
+		mintedAssets,
+	)
+
+	chanPointCD := &lnrpc.ChannelPoint{
+		OutputIndex: uint32(fundRespCD.OutputIndex),
+		FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
+			FundingTxidStr: fundRespCD.Txid,
+		},
+	}
+	chanPointEF := &lnrpc.ChannelPoint{
+		OutputIndex: uint32(fundRespEF.OutputIndex),
+		FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
+			FundingTxidStr: fundRespEF.Txid,
+		},
+	}
+
+	return chanPointCD, chanPointEF
+}
+
+// sendAssetsAndAssert sends the given amount of assets to the recipient and
+// asserts that the transfer was successful. It also checks that the asset
+// balance of the sender and recipient is as expected.
+func sendAssetsAndAssert(ctx context.Context, t *harnessTest,
+	recipient, sender, universe *tapClient, mintedAsset *taprpc.Asset,
+	assetSendAmount uint64, idx, numTransfers int,
+	previousSentAmount uint64) {
+
+	assetID := mintedAsset.AssetGenesis.AssetId
+	recipientAddr, err := recipient.NewAddr(ctx, &taprpc.NewAddrRequest{
+		Amt:     assetSendAmount,
+		AssetId: assetID,
+		ProofCourierAddr: fmt.Sprintf(
+			"%s://%s", proof.UniverseRpcCourierType,
+			universe.node.Cfg.LitAddr(),
+		),
+	})
+	require.NoError(t.t, err)
+
+	t.Logf("Sending %v asset units to %s...", assetSendAmount,
+		recipient.node.Cfg.Name)
+
+	// We assume that we sent the same size in a previous send.
+	totalSent := assetSendAmount + previousSentAmount
+
+	// Send the assets to recipient.
+	itest.AssertAddrCreated(
+		t.t, recipient, mintedAsset, recipientAddr,
+	)
+	sendResp, err := sender.SendAsset(ctx, &taprpc.SendAssetRequest{
+		TapAddrs: []string{recipientAddr.Encoded},
+	})
+	require.NoError(t.t, err)
+	itest.ConfirmAndAssertOutboundTransfer(
+		t.t, t.lndHarness.Miner.Client, sender, sendResp,
+		assetID,
+		[]uint64{mintedAsset.Amount - totalSent, assetSendAmount},
+		idx, idx+1,
+	)
+	itest.AssertNonInteractiveRecvComplete(t.t, recipient, numTransfers)
 }
 
 func assertNumAssetUTXOs(t *testing.T, tapdClient *tapClient,
@@ -2160,6 +2437,24 @@ func logBalance(t *testing.T, nodes []*HarnessNode, assetID []byte,
 	for _, node := range nodes {
 		local, remote, localSat, remoteSat := getAssetChannelBalance(
 			t, node, [][]byte{assetID}, false,
+		)
+
+		t.Logf("%-7s balance: local=%-9d remote=%-9d, localSat=%-9d, "+
+			"remoteSat=%-9d (%v)", node.Cfg.Name, local, remote,
+			localSat, remoteSat, occasion)
+	}
+}
+
+func logBalanceGroup(t *testing.T, nodes []*HarnessNode, assetIDs [][]byte,
+	occasion string) {
+
+	t.Helper()
+
+	time.Sleep(time.Millisecond * 250)
+
+	for _, node := range nodes {
+		local, remote, localSat, remoteSat := getAssetChannelBalance(
+			t, node, assetIDs, false,
 		)
 
 		t.Logf("%-7s balance: local=%-9d remote=%-9d, localSat=%-9d, "+
