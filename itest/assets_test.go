@@ -390,8 +390,8 @@ func syncUniverses(t *testing.T, universe *tapClient, nodes ...*HarnessNode) {
 func assertUniverseProofExists(t *testing.T, universe *tapClient,
 	assetID, groupKey, scriptKey []byte, outpoint string) *taprpc.Asset {
 
-	t.Logf("Asserting proof outpoint=%v, script_key=%x", outpoint,
-		scriptKey)
+	t.Logf("Asserting proof outpoint=%v, script_key=%x, asset_id=%x, "+
+		"group_key=%x", outpoint, scriptKey, assetID, groupKey)
 
 	req := &universerpc.UniverseKey{
 		Id: &universerpc.ID{
@@ -473,9 +473,9 @@ func assertPendingChannels(t *testing.T, node *HarnessNode,
 		pendingChan.Channel.CustomChannelData, &pendingJSON,
 	)
 	require.NoError(t, err)
-	require.Len(t, pendingJSON.Assets, 1)
+	require.Len(t, pendingJSON.FundingAssets, 1)
 
-	require.NotZero(t, pendingJSON.Assets[0].Capacity)
+	require.NotZero(t, pendingJSON.Capacity)
 
 	// Check the decimal display of the channel funding blob. If no explicit
 	// value was set, we assume and expect the value of 0.
@@ -488,7 +488,7 @@ func assertPendingChannels(t *testing.T, node *HarnessNode,
 
 	require.Equal(
 		t, expectedDecimalDisplay,
-		pendingJSON.Assets[0].AssetInfo.DecimalDisplay,
+		pendingJSON.FundingAssets[0].DecimalDisplay,
 	)
 
 	// Check the balance of the pending channel.
@@ -501,21 +501,36 @@ func assertPendingChannels(t *testing.T, node *HarnessNode,
 	require.EqualValues(t, remoteSum, pendingRemoteBalance)
 }
 
-func assertAssetChan(t *testing.T, src, dst *HarnessNode, fundingAmount uint64,
-	mintedAsset *taprpc.Asset) {
+// haveFundingAsset returns true if the given channel has the asset with the
+// given asset ID as a funding asset.
+func haveFundingAsset(assetChannel *rfqmsg.JsonAssetChannel,
+	assetID []byte) bool {
 
-	assetID := mintedAsset.AssetGenesis.AssetId
 	assetIDStr := hex.EncodeToString(assetID)
+	for _, fundingAsset := range assetChannel.FundingAssets {
+		if fundingAsset.AssetGenesis.AssetID == assetIDStr {
+			return true
+		}
+	}
+
+	return false
+}
+
+func assertAssetChan(t *testing.T, src, dst *HarnessNode, fundingAmount uint64,
+	channelAsset *taprpc.Asset) {
+
 	err := wait.NoError(func() error {
 		a, err := getChannelCustomData(src, dst)
 		if err != nil {
 			return err
 		}
 
-		if a.AssetInfo.AssetGenesis.AssetID != assetIDStr {
-			return fmt.Errorf("expected asset ID %s, got %s",
-				assetIDStr, a.AssetInfo.AssetGenesis.AssetID)
+		assetID := channelAsset.AssetGenesis.AssetId
+		if !haveFundingAsset(a, assetID) {
+			return fmt.Errorf("expected asset ID %x, to "+
+				"be in channel", assetID)
 		}
+
 		if a.Capacity != fundingAmount {
 			return fmt.Errorf("expected capacity %d, got %d",
 				fundingAmount, a.Capacity)
@@ -523,17 +538,19 @@ func assertAssetChan(t *testing.T, src, dst *HarnessNode, fundingAmount uint64,
 
 		// Check the decimal display of the channel funding blob. If no
 		// explicit value was set, we assume and expect the value of 0.
+		// We only need to check the first funding asset, since we
+		// enforce them to be the same.
 		var expectedDecimalDisplay uint8
-		if mintedAsset.DecimalDisplay != nil {
+		if channelAsset.DecimalDisplay != nil {
 			expectedDecimalDisplay = uint8(
-				mintedAsset.DecimalDisplay.DecimalDisplay,
+				channelAsset.DecimalDisplay.DecimalDisplay,
 			)
 		}
 
-		if a.AssetInfo.DecimalDisplay != expectedDecimalDisplay {
+		if a.FundingAssets[0].DecimalDisplay != expectedDecimalDisplay {
 			return fmt.Errorf("expected decimal display %d, got %d",
 				expectedDecimalDisplay,
-				a.AssetInfo.DecimalDisplay)
+				a.FundingAssets[0].DecimalDisplay)
 		}
 
 		return nil
@@ -580,7 +597,7 @@ func assertChannelKnown(t *testing.T, node *HarnessNode,
 	require.NoError(t, err)
 }
 
-func getChannelCustomData(src, dst *HarnessNode) (*rfqmsg.JsonAssetChanInfo,
+func getChannelCustomData(src, dst *HarnessNode) (*rfqmsg.JsonAssetChannel,
 	error) {
 
 	ctxb := context.Background()
@@ -614,12 +631,12 @@ func getChannelCustomData(src, dst *HarnessNode) (*rfqmsg.JsonAssetChanInfo,
 			err)
 	}
 
-	if len(assetData.Assets) != 1 {
-		return nil, fmt.Errorf("expected 1 asset, got %d",
-			len(assetData.Assets))
+	if len(assetData.FundingAssets) == 0 {
+		return nil, fmt.Errorf("expected at least 1 asset, got %d",
+			len(assetData.FundingAssets))
 	}
 
-	return &assetData.Assets[0], nil
+	return &assetData, nil
 }
 
 func getAssetChannelBalance(t *testing.T, node *HarnessNode, assetID []byte,
@@ -706,10 +723,10 @@ func assertChannelAssetBalance(t *testing.T, node *HarnessNode,
 	err := json.Unmarshal(targetChan.CustomChannelData, &assetBalance)
 	require.NoError(t, err)
 
-	require.Len(t, assetBalance.Assets, 1)
+	require.Len(t, assetBalance.FundingAssets, 1)
 
-	require.InDelta(t, local, assetBalance.Assets[0].LocalBalance, 1)
-	require.InDelta(t, remote, assetBalance.Assets[0].RemoteBalance, 1)
+	require.InDelta(t, local, assetBalance.LocalBalance, 1)
+	require.InDelta(t, remote, assetBalance.RemoteBalance, 1)
 }
 
 // addRoutingFee adds the default routing fee (1 part per million fee rate plus
@@ -2128,8 +2145,8 @@ func newCloseExpiryInfo(t *testing.T, node *HarnessNode) forceCloseExpiryInfo {
 		csvDelay:           mainChan.CsvDelay,
 		currentHeight:      nodeInfo.BlockHeight,
 		cltvDelays:         cltvs,
-		localAssetBalance:  assetData.Assets[0].LocalBalance,
-		remoteAssetBalance: assetData.Assets[0].RemoteBalance,
+		localAssetBalance:  assetData.LocalBalance,
+		remoteAssetBalance: assetData.RemoteBalance,
 		t:                  t,
 		node:               node,
 	}
