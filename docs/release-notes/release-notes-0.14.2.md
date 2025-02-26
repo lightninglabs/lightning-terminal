@@ -11,7 +11,6 @@
     - [Faraday](#faraday)
     - [Taproot Assets](#taproot-assets)
 - [Contributors](#contributors-alphabetical-order)
-
 ## Lightning Terminal
 
 ### Bug Fixes
@@ -28,6 +27,18 @@
 
 ## RPC Updates
 
+* [Add account credit and debit
+  commands](https://github.com/lightninglabs/lightning-terminal/pull/974) that
+  allow increasing or decreasing the balance of an off-chain account by a
+  specified amount.
+
+
+* The [`accounts update` `--new_balance` flag has been
+  deprecated](https://github.com/lightninglabs/lightning-terminal/pull/974).
+  Use the `accounts credit` and `accounts debit` commands instead, to update
+  an account's balance. The flag will no longer be supported in Lightning
+  Terminal `v0.15.0-alpha`.
+
 ## Integrated Binary Updates
 
 ### LND
@@ -43,3 +54,4 @@
 # Contributors (Alphabetical Order)
 
 * Elle Mouton
+* Viktor

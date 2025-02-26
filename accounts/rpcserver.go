@@ -130,6 +130,56 @@ func (s *RPCServer) UpdateAccount(ctx context.Context,
 	return marshalAccount(account), nil
 }
 
+// CreditAccount increases the balance of an existing account in the account
+// database, by the given amount.
+func (s *RPCServer) CreditAccount(ctx context.Context,
+	req *litrpc.UpdateAccountBalanceRequest) (*litrpc.Account, error) {
+
+	log.Infof("[creditaccount] id=%s, label=%v, amount=%d",
+		req.Id, req.Label, req.Amount)
+
+	amount := lnwire.MilliSatoshi(req.Amount * 1000)
+
+	accountID, err := s.findAccount(ctx, req.Id, req.Label)
+	if err != nil {
+		return nil, err
+	}
+
+	account, err := s.service.CreditAccount(
+		ctx, accountID, amount,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return marshalAccount(account), nil
+}
+
+// DebitAccount decreases the balance of an existing account in the account
+// database, by the given amount.
+func (s *RPCServer) DebitAccount(ctx context.Context,
+	req *litrpc.UpdateAccountBalanceRequest) (*litrpc.Account, error) {
+
+	log.Infof("[debitaccount] id=%s, label=%v, amount=%d",
+		req.Id, req.Label, req.Amount)
+
+	amount := lnwire.MilliSatoshi(req.Amount * 1000)
+
+	accountID, err := s.findAccount(ctx, req.Id, req.Label)
+	if err != nil {
+		return nil, err
+	}
+
+	account, err := s.service.DebitAccount(
+		ctx, accountID, amount,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return marshalAccount(account), nil
+}
+
 // ListAccounts returns all accounts that are currently stored in the account
 // database.
 func (s *RPCServer) ListAccounts(ctx context.Context,
