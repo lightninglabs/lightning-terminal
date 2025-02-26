@@ -68,6 +68,16 @@ export class LoopOutRequest extends jspb.Message {
   getPaymentTimeout(): number;
   setPaymentTimeout(value: number): void;
 
+  hasAssetInfo(): boolean;
+  clearAssetInfo(): void;
+  getAssetInfo(): AssetLoopOutRequest | undefined;
+  setAssetInfo(value?: AssetLoopOutRequest): void;
+
+  hasAssetRfqInfo(): boolean;
+  clearAssetRfqInfo(): void;
+  getAssetRfqInfo(): AssetRfqInfo | undefined;
+  setAssetRfqInfo(value?: AssetRfqInfo): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LoopOutRequest.AsObject;
   static toObject(includeInstance: boolean, msg: LoopOutRequest): LoopOutRequest.AsObject;
@@ -99,6 +109,8 @@ export namespace LoopOutRequest {
     isExternalAddr: boolean,
     reservationIdsList: Array<Uint8Array | string>,
     paymentTimeout: number,
+    assetInfo?: AssetLoopOutRequest.AsObject,
+    assetRfqInfo?: AssetRfqInfo.AsObject,
   }
 }
 
@@ -278,6 +290,11 @@ export class SwapStatus extends jspb.Message {
   getLabel(): string;
   setLabel(value: string): void;
 
+  hasAssetInfo(): boolean;
+  clearAssetInfo(): void;
+  getAssetInfo(): AssetLoopOutInfo | undefined;
+  setAssetInfo(value?: AssetLoopOutInfo): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): SwapStatus.AsObject;
   static toObject(includeInstance: boolean, msg: SwapStatus): SwapStatus.AsObject;
@@ -307,6 +324,7 @@ export namespace SwapStatus {
     lastHop: Uint8Array | string,
     outgoingChanSetList: Array<string>,
     label: string,
+    assetInfo?: AssetLoopOutInfo.AsObject,
   }
 }
 
@@ -315,6 +333,9 @@ export class ListSwapsRequest extends jspb.Message {
   clearListSwapFilter(): void;
   getListSwapFilter(): ListSwapsFilter | undefined;
   setListSwapFilter(value?: ListSwapsFilter): void;
+
+  getMaxSwaps(): string;
+  setMaxSwaps(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ListSwapsRequest.AsObject;
@@ -329,6 +350,7 @@ export class ListSwapsRequest extends jspb.Message {
 export namespace ListSwapsRequest {
   export type AsObject = {
     listSwapFilter?: ListSwapsFilter.AsObject,
+    maxSwaps: string,
   }
 }
 
@@ -352,6 +374,12 @@ export class ListSwapsFilter extends jspb.Message {
   getLoopInLastHop_asB64(): string;
   setLoopInLastHop(value: Uint8Array | string): void;
 
+  getAssetSwapOnly(): boolean;
+  setAssetSwapOnly(value: boolean): void;
+
+  getStartTimestampNs(): string;
+  setStartTimestampNs(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ListSwapsFilter.AsObject;
   static toObject(includeInstance: boolean, msg: ListSwapsFilter): ListSwapsFilter.AsObject;
@@ -369,6 +397,8 @@ export namespace ListSwapsFilter {
     outgoingChanSetList: Array<string>,
     label: string,
     loopInLastHop: Uint8Array | string,
+    assetSwapOnly: boolean,
+    startTimestampNs: string,
   }
 
   export interface SwapTypeFilterMap {
@@ -386,6 +416,9 @@ export class ListSwapsResponse extends jspb.Message {
   setSwapsList(value: Array<SwapStatus>): void;
   addSwaps(value?: SwapStatus, index?: number): SwapStatus;
 
+  getNextStartTime(): string;
+  setNextStartTime(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ListSwapsResponse.AsObject;
   static toObject(includeInstance: boolean, msg: ListSwapsResponse): ListSwapsResponse.AsObject;
@@ -399,6 +432,7 @@ export class ListSwapsResponse extends jspb.Message {
 export namespace ListSwapsResponse {
   export type AsObject = {
     swapsList: Array<SwapStatus.AsObject>,
+    nextStartTime: string,
   }
 }
 
@@ -527,6 +561,11 @@ export class QuoteRequest extends jspb.Message {
   setDepositOutpointsList(value: Array<string>): void;
   addDepositOutpoints(value: string, index?: number): string;
 
+  hasAssetInfo(): boolean;
+  clearAssetInfo(): void;
+  getAssetInfo(): AssetLoopOutRequest | undefined;
+  setAssetInfo(value?: AssetLoopOutRequest): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): QuoteRequest.AsObject;
   static toObject(includeInstance: boolean, msg: QuoteRequest): QuoteRequest.AsObject;
@@ -547,6 +586,7 @@ export namespace QuoteRequest {
     loopInRouteHintsList: Array<swapserverrpc_common_pb.RouteHint.AsObject>,
     pb_private: boolean,
     depositOutpointsList: Array<string>,
+    assetInfo?: AssetLoopOutRequest.AsObject,
   }
 }
 
@@ -603,6 +643,11 @@ export class OutQuoteResponse extends jspb.Message {
   getConfTarget(): number;
   setConfTarget(value: number): void;
 
+  hasAssetRfqInfo(): boolean;
+  clearAssetRfqInfo(): void;
+  getAssetRfqInfo(): AssetRfqInfo | undefined;
+  setAssetRfqInfo(value?: AssetRfqInfo): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): OutQuoteResponse.AsObject;
   static toObject(includeInstance: boolean, msg: OutQuoteResponse): OutQuoteResponse.AsObject;
@@ -621,6 +666,7 @@ export namespace OutQuoteResponse {
     swapPaymentDest: Uint8Array | string,
     cltvDelta: number,
     confTarget: number,
+    assetRfqInfo?: AssetRfqInfo.AsObject,
   }
 }
 
@@ -881,6 +927,9 @@ export class GetInfoResponse extends jspb.Message {
   getLoopInStats(): LoopStats | undefined;
   setLoopInStats(value?: LoopStats): void;
 
+  getCommitHash(): string;
+  setCommitHash(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetInfoResponse.AsObject;
   static toObject(includeInstance: boolean, msg: GetInfoResponse): GetInfoResponse.AsObject;
@@ -901,6 +950,7 @@ export namespace GetInfoResponse {
     tlsCertPath: string,
     loopOutStats?: LoopStats.AsObject,
     loopInStats?: LoopStats.AsObject,
+    commitHash: string,
   }
 }
 
@@ -995,6 +1045,8 @@ export class LiquidityParameters extends jspb.Message {
   getAccountAddrType(): AddressTypeMap[keyof AddressTypeMap];
   setAccountAddrType(value: AddressTypeMap[keyof AddressTypeMap]): void;
 
+  getEasyAssetParamsMap(): jspb.Map<string, EasyAssetAutoloopParams>;
+  clearEasyAssetParamsMap(): void;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LiquidityParameters.AsObject;
   static toObject(includeInstance: boolean, msg: LiquidityParameters): LiquidityParameters.AsObject;
@@ -1031,6 +1083,31 @@ export namespace LiquidityParameters {
     easyAutoloopLocalTargetSat: string,
     account: string,
     accountAddrType: AddressTypeMap[keyof AddressTypeMap],
+    easyAssetParamsMap: Array<[string, EasyAssetAutoloopParams.AsObject]>,
+  }
+}
+
+export class EasyAssetAutoloopParams extends jspb.Message {
+  getEnabled(): boolean;
+  setEnabled(value: boolean): void;
+
+  getLocalTargetAssetAmt(): string;
+  setLocalTargetAssetAmt(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): EasyAssetAutoloopParams.AsObject;
+  static toObject(includeInstance: boolean, msg: EasyAssetAutoloopParams): EasyAssetAutoloopParams.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: EasyAssetAutoloopParams, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): EasyAssetAutoloopParams;
+  static deserializeBinaryFromReader(message: EasyAssetAutoloopParams, reader: jspb.BinaryReader): EasyAssetAutoloopParams;
+}
+
+export namespace EasyAssetAutoloopParams {
+  export type AsObject = {
+    enabled: boolean,
+    localTargetAssetAmt: string,
   }
 }
 
@@ -1647,6 +1724,9 @@ export class WithdrawDepositsRequest extends jspb.Message {
   getSatPerVbyte(): string;
   setSatPerVbyte(value: string): void;
 
+  getAmount(): string;
+  setAmount(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): WithdrawDepositsRequest.AsObject;
   static toObject(includeInstance: boolean, msg: WithdrawDepositsRequest): WithdrawDepositsRequest.AsObject;
@@ -1663,6 +1743,7 @@ export namespace WithdrawDepositsRequest {
     all: boolean,
     destAddr: string,
     satPerVbyte: string,
+    amount: string,
   }
 }
 
@@ -1670,8 +1751,8 @@ export class WithdrawDepositsResponse extends jspb.Message {
   getWithdrawalTxHash(): string;
   setWithdrawalTxHash(value: string): void;
 
-  getPkScript(): string;
-  setPkScript(value: string): void;
+  getAddress(): string;
+  setAddress(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): WithdrawDepositsResponse.AsObject;
@@ -1686,7 +1767,7 @@ export class WithdrawDepositsResponse extends jspb.Message {
 export namespace WithdrawDepositsResponse {
   export type AsObject = {
     withdrawalTxHash: string,
-    pkScript: string,
+    address: string,
   }
 }
 
@@ -2069,6 +2150,146 @@ export namespace StaticAddressLoopInResponse {
     label: string,
     initiator: string,
     paymentTimeoutSeconds: number,
+  }
+}
+
+export class AssetLoopOutRequest extends jspb.Message {
+  getAssetId(): Uint8Array | string;
+  getAssetId_asU8(): Uint8Array;
+  getAssetId_asB64(): string;
+  setAssetId(value: Uint8Array | string): void;
+
+  getAssetEdgeNode(): Uint8Array | string;
+  getAssetEdgeNode_asU8(): Uint8Array;
+  getAssetEdgeNode_asB64(): string;
+  setAssetEdgeNode(value: Uint8Array | string): void;
+
+  getMaxLimitMultiplier(): number;
+  setMaxLimitMultiplier(value: number): void;
+
+  getExpiry(): string;
+  setExpiry(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AssetLoopOutRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: AssetLoopOutRequest): AssetLoopOutRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: AssetLoopOutRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AssetLoopOutRequest;
+  static deserializeBinaryFromReader(message: AssetLoopOutRequest, reader: jspb.BinaryReader): AssetLoopOutRequest;
+}
+
+export namespace AssetLoopOutRequest {
+  export type AsObject = {
+    assetId: Uint8Array | string,
+    assetEdgeNode: Uint8Array | string,
+    maxLimitMultiplier: number,
+    expiry: string,
+  }
+}
+
+export class AssetRfqInfo extends jspb.Message {
+  getPrepayRfqId(): Uint8Array | string;
+  getPrepayRfqId_asU8(): Uint8Array;
+  getPrepayRfqId_asB64(): string;
+  setPrepayRfqId(value: Uint8Array | string): void;
+
+  getMaxPrepayAssetAmt(): string;
+  setMaxPrepayAssetAmt(value: string): void;
+
+  hasPrepayAssetRate(): boolean;
+  clearPrepayAssetRate(): void;
+  getPrepayAssetRate(): FixedPoint | undefined;
+  setPrepayAssetRate(value?: FixedPoint): void;
+
+  getSwapRfqId(): Uint8Array | string;
+  getSwapRfqId_asU8(): Uint8Array;
+  getSwapRfqId_asB64(): string;
+  setSwapRfqId(value: Uint8Array | string): void;
+
+  getMaxSwapAssetAmt(): string;
+  setMaxSwapAssetAmt(value: string): void;
+
+  hasSwapAssetRate(): boolean;
+  clearSwapAssetRate(): void;
+  getSwapAssetRate(): FixedPoint | undefined;
+  setSwapAssetRate(value?: FixedPoint): void;
+
+  getAssetName(): string;
+  setAssetName(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AssetRfqInfo.AsObject;
+  static toObject(includeInstance: boolean, msg: AssetRfqInfo): AssetRfqInfo.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: AssetRfqInfo, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AssetRfqInfo;
+  static deserializeBinaryFromReader(message: AssetRfqInfo, reader: jspb.BinaryReader): AssetRfqInfo;
+}
+
+export namespace AssetRfqInfo {
+  export type AsObject = {
+    prepayRfqId: Uint8Array | string,
+    maxPrepayAssetAmt: string,
+    prepayAssetRate?: FixedPoint.AsObject,
+    swapRfqId: Uint8Array | string,
+    maxSwapAssetAmt: string,
+    swapAssetRate?: FixedPoint.AsObject,
+    assetName: string,
+  }
+}
+
+export class FixedPoint extends jspb.Message {
+  getCoefficient(): string;
+  setCoefficient(value: string): void;
+
+  getScale(): number;
+  setScale(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): FixedPoint.AsObject;
+  static toObject(includeInstance: boolean, msg: FixedPoint): FixedPoint.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: FixedPoint, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): FixedPoint;
+  static deserializeBinaryFromReader(message: FixedPoint, reader: jspb.BinaryReader): FixedPoint;
+}
+
+export namespace FixedPoint {
+  export type AsObject = {
+    coefficient: string,
+    scale: number,
+  }
+}
+
+export class AssetLoopOutInfo extends jspb.Message {
+  getAssetId(): string;
+  setAssetId(value: string): void;
+
+  getAssetName(): string;
+  setAssetName(value: string): void;
+
+  getAssetCostOffchain(): string;
+  setAssetCostOffchain(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AssetLoopOutInfo.AsObject;
+  static toObject(includeInstance: boolean, msg: AssetLoopOutInfo): AssetLoopOutInfo.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: AssetLoopOutInfo, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AssetLoopOutInfo;
+  static deserializeBinaryFromReader(message: AssetLoopOutInfo, reader: jspb.BinaryReader): AssetLoopOutInfo;
+}
+
+export namespace AssetLoopOutInfo {
+  export type AsObject = {
+    assetId: string,
+    assetName: string,
+    assetCostOffchain: string,
   }
 }
 

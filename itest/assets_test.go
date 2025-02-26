@@ -390,8 +390,8 @@ func syncUniverses(t *testing.T, universe *tapClient, nodes ...*HarnessNode) {
 func assertUniverseProofExists(t *testing.T, universe *tapClient,
 	assetID, groupKey, scriptKey []byte, outpoint string) *taprpc.Asset {
 
-	t.Logf("Asserting proof outpoint=%v, script_key=%x", outpoint,
-		scriptKey)
+	t.Logf("Asserting proof outpoint=%v, script_key=%x, asset_id=%x, "+
+		"group_key=%x", outpoint, scriptKey, assetID, groupKey)
 
 	req := &universerpc.UniverseKey{
 		Id: &universerpc.ID{
@@ -517,7 +517,7 @@ func haveFundingAsset(assetChannel *rfqmsg.JsonAssetChannel,
 }
 
 func assertAssetChan(t *testing.T, src, dst *HarnessNode, fundingAmount uint64,
-	mintedAsset *taprpc.Asset) {
+	channelAsset *taprpc.Asset) {
 
 	err := wait.NoError(func() error {
 		a, err := getChannelCustomData(src, dst)
@@ -525,7 +525,7 @@ func assertAssetChan(t *testing.T, src, dst *HarnessNode, fundingAmount uint64,
 			return err
 		}
 
-		assetID := mintedAsset.AssetGenesis.AssetId
+		assetID := channelAsset.AssetGenesis.AssetId
 		if !haveFundingAsset(a, assetID) {
 			return fmt.Errorf("expected asset ID %x, to "+
 				"be in channel", assetID)
@@ -538,10 +538,12 @@ func assertAssetChan(t *testing.T, src, dst *HarnessNode, fundingAmount uint64,
 
 		// Check the decimal display of the channel funding blob. If no
 		// explicit value was set, we assume and expect the value of 0.
+		// We only need to check the first funding asset, since we
+		// enforce them to be the same.
 		var expectedDecimalDisplay uint8
-		if mintedAsset.DecimalDisplay != nil {
+		if channelAsset.DecimalDisplay != nil {
 			expectedDecimalDisplay = uint8(
-				mintedAsset.DecimalDisplay.DecimalDisplay,
+				channelAsset.DecimalDisplay.DecimalDisplay,
 			)
 		}
 
@@ -629,8 +631,8 @@ func getChannelCustomData(src, dst *HarnessNode) (*rfqmsg.JsonAssetChannel,
 			err)
 	}
 
-	if len(assetData.FundingAssets) != 1 {
-		return nil, fmt.Errorf("expected 1 asset, got %d",
+	if len(assetData.FundingAssets) == 0 {
+		return nil, fmt.Errorf("expected at least 1 asset, got %d",
 			len(assetData.FundingAssets))
 	}
 

@@ -157,8 +157,8 @@ func (m *mockLndClient) GetLndClient() lndclient.LightningClient {
 	return m
 }
 
-func (m *mockLndClient) ListChannels(_ context.Context, _, _ bool) (
-	[]lndclient.ChannelInfo, error) {
+func (m *mockLndClient) ListChannels(_ context.Context, _, _ bool,
+	_ ...lndclient.ListChannelsOption) ([]lndclient.ChannelInfo, error) {
 
 	return m.channels, nil
 }
