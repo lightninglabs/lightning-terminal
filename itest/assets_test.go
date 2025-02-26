@@ -290,6 +290,142 @@ func createTestAssetNetwork(t *harnessTest, net *NetworkHarness, charlieTap,
 	return chanPointCD, chanPointDY, chanPointEF
 }
 
+func createTestAssetNetworkGroupKey(ctx context.Context, t *harnessTest,
+	net *NetworkHarness, charlieTap, daveTap, erinTap, fabiaTap,
+	universeTap *tapClient, mintedAssets []*taprpc.Asset, assetSendAmount,
+	charlieFundingAmount, erinFundingAmount uint64,
+	pushSat int64) (*lnrpc.ChannelPoint, *lnrpc.ChannelPoint) {
+
+	var groupKey []byte
+	for _, mintedAsset := range mintedAssets {
+		require.NotNil(t.t, mintedAsset.AssetGroup)
+
+		if groupKey == nil {
+			groupKey = mintedAsset.AssetGroup.TweakedGroupKey
+
+			continue
+		}
+
+		require.Equal(
+			t.t, groupKey, mintedAsset.AssetGroup.TweakedGroupKey,
+		)
+	}
+
+	// We need to send some assets to Erin, so he can fund an asset channel
+	// with Fabia.
+	sendAssetsEqualAmounts(
+		ctx, t, erinTap, charlieTap, universeTap, mintedAssets,
+		assetSendAmount/2, 0,
+	)
+
+	t.Logf("Opening asset channels...")
+
+	// The first channel we create has a push amount, so Charlie can receive
+	// payments immediately and not run into the channel reserve issue.
+	fundRespCD, err := charlieTap.FundChannel(
+		ctx, &tchrpc.FundChannelRequest{
+			AssetAmount:        charlieFundingAmount,
+			GroupKey:           groupKey,
+			PeerPubkey:         daveTap.node.PubKey[:],
+			FeeRateSatPerVbyte: 5,
+			PushSat:            pushSat,
+		},
+	)
+	require.NoError(t.t, err)
+	t.Logf("Funded channel between Charlie and Dave: %v", fundRespCD)
+
+	fundRespEF, err := erinTap.FundChannel(
+		ctx, &tchrpc.FundChannelRequest{
+			AssetAmount:        erinFundingAmount,
+			GroupKey:           groupKey,
+			PeerPubkey:         fabiaTap.node.PubKey[:],
+			FeeRateSatPerVbyte: 5,
+			PushSat:            pushSat,
+		},
+	)
+	require.NoError(t.t, err)
+	t.Logf("Funded channel between Erin and Fabia: %v", fundRespEF)
+
+	// Make sure the pending channel shows up in the list and has the
+	// custom records set as JSON.
+	assertPendingChannels(
+		t.t, charlieTap.node, mintedAssets[1], 1, charlieFundingAmount,
+		0,
+	)
+	assertPendingChannels(
+		t.t, erinTap.node, mintedAssets[0], 1, erinFundingAmount/2, 0,
+	)
+	assertPendingChannels(
+		t.t, erinTap.node, mintedAssets[1], 1, erinFundingAmount/2, 0,
+	)
+
+	// Now that we've looked at the pending channels, let's actually confirm
+	// all three of them.
+	mineBlocks(t, net, 6, 2)
+
+	chanPointCD := &lnrpc.ChannelPoint{
+		OutputIndex: uint32(fundRespCD.OutputIndex),
+		FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
+			FundingTxidStr: fundRespCD.Txid,
+		},
+	}
+	chanPointEF := &lnrpc.ChannelPoint{
+		OutputIndex: uint32(fundRespEF.OutputIndex),
+		FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
+			FundingTxidStr: fundRespEF.Txid,
+		},
+	}
+
+	return chanPointCD, chanPointEF
+}
+
+func sendAssetsEqualAmounts(ctx context.Context, t *harnessTest,
+	recipient, sender, universe *tapClient, mintedAssets []*taprpc.Asset,
+	assetSendAmount uint64, previousSends uint64) {
+
+	numTranches := uint64(len(mintedAssets))
+	for idx, mintedAsset := range mintedAssets {
+		assetID := mintedAsset.AssetGenesis.AssetId
+		trancheAmount := assetSendAmount / numTranches
+		recipientAddr, err := recipient.NewAddr(
+			ctx, &taprpc.NewAddrRequest{
+				Amt:     trancheAmount,
+				AssetId: assetID,
+				ProofCourierAddr: fmt.Sprintf(
+					"%s://%s", proof.UniverseRpcCourierType,
+					universe.node.Cfg.LitAddr(),
+				),
+			},
+		)
+		require.NoError(t.t, err)
+
+		t.Logf("Sending %v asset units to %s...", trancheAmount,
+			recipient.node.Cfg.Name)
+
+		// We assume that we sent the same size in a previous send.
+		totalSent := trancheAmount + (previousSends * trancheAmount)
+
+		// Send the assets to recipient.
+		itest.AssertAddrCreated(
+			t.t, recipient, mintedAsset, recipientAddr,
+		)
+		sendResp, err := sender.SendAsset(ctx, &taprpc.SendAssetRequest{
+			TapAddrs: []string{recipientAddr.Encoded},
+		})
+		require.NoError(t.t, err)
+		itest.ConfirmAndAssertOutboundTransfer(
+			t.t, t.lndHarness.Miner.Client, sender, sendResp,
+			assetID,
+			[]uint64{mintedAsset.Amount - totalSent, trancheAmount},
+			int(previousSends*numTranches)+idx,
+			int(previousSends*numTranches)+idx+1,
+		)
+		itest.AssertNonInteractiveRecvComplete(
+			t.t, recipient, int(previousSends*numTranches)+idx+1,
+		)
+	}
+}
+
 func assertNumAssetUTXOs(t *testing.T, tapdClient *tapClient,
 	numUTXOs int) *taprpc.ListUtxosResponse {
 
@@ -472,9 +608,12 @@ func assertPendingChannels(t *testing.T, node *HarnessNode,
 		pendingChan.Channel.CustomChannelData, &pendingJSON,
 	)
 	require.NoError(t, err)
-	require.Len(t, pendingJSON.Assets, 1)
+	require.GreaterOrEqual(t, len(pendingJSON.Assets), 1)
 
 	require.NotZero(t, pendingJSON.Assets[0].Capacity)
+
+	pendingFormatted, _ := json.MarshalIndent(pendingJSON, "", "  ")
+	t.Logf("Pending channel: %v", string(pendingFormatted))
 
 	// Check the decimal display of the channel funding blob. If no explicit
 	// value was set, we assume and expect the value of 0.
@@ -493,9 +632,7 @@ func assertPendingChannels(t *testing.T, node *HarnessNode,
 	// Check the balance of the pending channel.
 	assetID := mintedAsset.AssetGenesis.AssetId
 	pendingLocalBalance, pendingRemoteBalance, _, _ :=
-		getAssetChannelBalance(
-			t, node, assetID, true,
-		)
+		getAssetChannelBalance(t, node, [][]byte{assetID}, true)
 	require.EqualValues(t, localSum, pendingLocalBalance)
 	require.EqualValues(t, remoteSum, pendingRemoteBalance)
 }
@@ -621,7 +758,7 @@ func getChannelCustomData(src, dst *HarnessNode) (*rfqmsg.JsonAssetChanInfo,
 	return &assetData.Assets[0], nil
 }
 
-func getAssetChannelBalance(t *testing.T, node *HarnessNode, assetID []byte,
+func getAssetChannelBalance(t *testing.T, node *HarnessNode, assetIDs [][]byte,
 	pending bool) (uint64, uint64, uint64, uint64) {
 
 	ctxb := context.Background()
@@ -642,9 +779,19 @@ func getAssetChannelBalance(t *testing.T, node *HarnessNode, assetID []byte,
 		balances = assetBalance.PendingChannels
 	}
 
+	idMatch := func(assetIDString string) bool {
+		for _, groupedID := range assetIDs {
+			if assetIDString == hex.EncodeToString(groupedID) {
+				return true
+			}
+		}
+
+		return false
+	}
+
 	var localSum, remoteSum uint64
 	for assetIDString := range balances {
-		if assetIDString != hex.EncodeToString(assetID) {
+		if !idMatch(assetIDString) {
 			continue
 		}
 
@@ -2017,8 +2164,27 @@ func logBalance(t *testing.T, nodes []*HarnessNode, assetID []byte,
 	time.Sleep(time.Millisecond * 250)
 
 	for _, node := range nodes {
-		local, remote, localSat, remoteSat :=
-			getAssetChannelBalance(t, node, assetID, false)
+		local, remote, localSat, remoteSat := getAssetChannelBalance(
+			t, node, [][]byte{assetID}, false,
+		)
+
+		t.Logf("%-7s balance: local=%-9d remote=%-9d, localSat=%-9d, "+
+			"remoteSat=%-9d (%v)", node.Cfg.Name, local, remote,
+			localSat, remoteSat, occasion)
+	}
+}
+
+func logBalanceGroup(t *testing.T, nodes []*HarnessNode, assetIDs [][]byte,
+	occasion string) {
+
+	t.Helper()
+
+	time.Sleep(time.Millisecond * 250)
+
+	for _, node := range nodes {
+		local, remote, localSat, remoteSat := getAssetChannelBalance(
+			t, node, assetIDs, false,
+		)
 
 		t.Logf("%-7s balance: local=%-9d remote=%-9d, localSat=%-9d, "+
 			"remoteSat=%-9d (%v)", node.Cfg.Name, local, remote,
