@@ -182,41 +182,42 @@ func getSessionKey(session *Session) []byte {
 	return session.LocalPublicKey.SerializeCompressed()
 }
 
-// NewSession creates a new session with the given user-defined parameters.
-//
-// NOTE: currently this purely a constructor of the Session type and does not
-// make any database calls. This will be changed in a future commit.
-//
-// NOTE: this is part of the Store interface.
-func (db *BoltStore) NewSession(id ID, localPrivKey *btcec.PrivateKey,
-	label string, typ Type, expiry time.Time, serverAddr string,
-	devServer bool, perms []bakery.Op, caveats []macaroon.Caveat,
-	featureConfig FeaturesConfig, privacy bool, linkedGroupID *ID,
-	flags PrivacyFlags) (*Session, error) {
-
-	return buildSession(
-		id, localPrivKey, label, typ, db.clock.Now(), expiry,
-		serverAddr, devServer, perms, caveats, featureConfig, privacy,
-		linkedGroupID, flags,
-	)
-}
-
-// CreateSession adds a new session to the store. If a session with the same
-// local public key already exists an error is returned.
+// NewSession creates and persists a new session with the given user-defined
+// parameters. The initial state of the session will be Reserved until
+// ShiftState is called with StateCreated.
 //
 // NOTE: this is part of the Store interface.
-func (db *BoltStore) CreateSession(session *Session) error {
-	sessionKey := getSessionKey(session)
+func (db *BoltStore) NewSession(label string, typ Type, expiry time.Time,
+	serverAddr string, devServer bool, perms []bakery.Op,
+	caveats []macaroon.Caveat, featureConfig FeaturesConfig, privacy bool,
+	linkedGroupID *ID, flags PrivacyFlags) (*Session, error) {
 
-	return db.Update(func(tx *bbolt.Tx) error {
+	var session *Session
+	err := db.Update(func(tx *bbolt.Tx) error {
 		sessionBucket, err := getBucket(tx, sessionBucketKey)
 		if err != nil {
 			return err
 		}
 
+		id, localPrivKey, err := getUnusedIDAndKeyPair(sessionBucket)
+		if err != nil {
+			return err
+		}
+
+		session, err = buildSession(
+			id, localPrivKey, label, typ, db.clock.Now(), expiry,
+			serverAddr, devServer, perms, caveats, featureConfig,
+			privacy, linkedGroupID, flags,
+		)
+		if err != nil {
+			return err
+		}
+
+		sessionKey := getSessionKey(session)
+
 		if len(sessionBucket.Get(sessionKey)) != 0 {
-			return fmt.Errorf("session with local public "+
-				"key(%x) already exists",
+			return fmt.Errorf("session with local public key(%x) "+
+				"already exists",
 				session.LocalPublicKey.SerializeCompressed())
 		}
 
@@ -248,9 +249,7 @@ func (db *BoltStore) CreateSession(session *Session) error {
 				}
 
 				// Ensure that the session is no longer active.
-				if sess.State == StateCreated ||
-					sess.State == StateInUse {
-
+				if !sess.State.Terminal() {
 					return fmt.Errorf("session (id=%x) "+
 						"in group %x is still active",
 						sess.ID, sess.GroupID)
@@ -275,6 +274,11 @@ func (db *BoltStore) CreateSession(session *Session) error {
 
 		return putSession(sessionBucket, session)
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	return session, nil
 }
 
 // UpdateSessionRemotePubKey can be used to add the given remote pub key
@@ -577,53 +581,35 @@ func (db *BoltStore) GetSessionByID(id ID) (*Session, error) {
 	return session, nil
 }
 
-// GetUnusedIDAndKeyPair can be used to generate a new, unused, local private
+// getUnusedIDAndKeyPair can be used to generate a new, unused, local private
 // key and session ID pair. Care must be taken to ensure that no other thread
 // calls this before the returned ID and key pair from this method are either
 // used or discarded.
-//
-// NOTE: this is part of the Store interface.
-func (db *BoltStore) GetUnusedIDAndKeyPair() (ID, *btcec.PrivateKey, error) {
-	var (
-		id      ID
-		privKey *btcec.PrivateKey
-	)
-	err := db.Update(func(tx *bbolt.Tx) error {
-		sessionBucket, err := getBucket(tx, sessionBucketKey)
-		if err != nil {
-			return err
-		}
+func getUnusedIDAndKeyPair(bucket *bbolt.Bucket) (ID, *btcec.PrivateKey,
+	error) {
 
-		idIndexBkt := sessionBucket.Bucket(idIndexKey)
-		if idIndexBkt == nil {
-			return ErrDBInitErr
-		}
-
-		// Spin until we find a key with an ID that does not collide
-		// with any of our existing IDs.
-		for {
-			// Generate a new private key and ID pair.
-			privKey, id, err = NewSessionPrivKeyAndID()
-			if err != nil {
-				return err
-			}
-
-			// Check that no such ID exits in our id-to-key index.
-			idBkt := idIndexBkt.Bucket(id[:])
-			if idBkt != nil {
-				continue
-			}
-
-			break
-		}
-
-		return nil
-	})
-	if err != nil {
-		return id, nil, err
+	idIndexBkt := bucket.Bucket(idIndexKey)
+	if idIndexBkt == nil {
+		return ID{}, nil, ErrDBInitErr
 	}
 
-	return id, privKey, nil
+	// Spin until we find a key with an ID that does not collide with any of
+	// our existing IDs.
+	for {
+		// Generate a new private key and ID pair.
+		privKey, id, err := NewSessionPrivKeyAndID()
+		if err != nil {
+			return ID{}, nil, err
+		}
+
+		// Check that no such ID exits in our id-to-key index.
+		idBkt := idIndexBkt.Bucket(id[:])
+		if idBkt != nil {
+			continue
+		}
+
+		return id, privKey, nil
+	}
 }
 
 // GetGroupID will return the group ID for the given session ID.
@@ -689,65 +675,6 @@ func (db *BoltStore) GetSessionIDs(groupID ID) ([]ID, error) {
 	}
 
 	return sessionIDs, nil
-}
-
-// CheckSessionGroupPredicate iterates over all the sessions in a group and
-// checks if each one passes the given predicate function. True is returned if
-// each session passes.
-//
-// NOTE: this is part of the Store interface.
-func (db *BoltStore) CheckSessionGroupPredicate(groupID ID,
-	fn func(s *Session) bool) (bool, error) {
-
-	var (
-		pass          bool
-		errFailedPred = errors.New("session failed predicate")
-	)
-	err := db.View(func(tx *bbolt.Tx) error {
-		sessionBkt, err := getBucket(tx, sessionBucketKey)
-		if err != nil {
-			return err
-		}
-
-		sessionIDs, err := getSessionIDs(sessionBkt, groupID)
-		if err != nil {
-			return err
-		}
-
-		// Iterate over all the sessions.
-		for _, id := range sessionIDs {
-			key, err := getKeyForID(sessionBkt, id)
-			if err != nil {
-				return err
-			}
-
-			v := sessionBkt.Get(key)
-			if len(v) == 0 {
-				return ErrSessionNotFound
-			}
-
-			session, err := DeserializeSession(bytes.NewReader(v))
-			if err != nil {
-				return err
-			}
-
-			if !fn(session) {
-				return errFailedPred
-			}
-		}
-
-		pass = true
-
-		return nil
-	})
-	if errors.Is(err, errFailedPred) {
-		return pass, nil
-	}
-	if err != nil {
-		return pass, err
-	}
-
-	return pass, nil
 }
 
 // getSessionIDs returns all the session IDs associated with the given group ID.
