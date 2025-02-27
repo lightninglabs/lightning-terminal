@@ -1140,6 +1140,133 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 	assertAssetBalance(t.t, fabiaTap, assetID, fabiaAssetBalance)
 }
 
+func testCustomChannelsGroupedAssetTranches(ctx context.Context,
+	net *NetworkHarness, t *harnessTest) {
+
+	lndArgs := slices.Clone(lndArgsTemplate)
+	litdArgs := slices.Clone(litdArgsTemplate)
+
+	// Explicitly set the proof courier as Zane (now has no other role
+	// other than proof shuffling), otherwise a hashmail courier will be
+	// used. For the funding transaction, we're just posting it and don't
+	// expect a true receiver.
+	zane, err := net.NewNode(
+		t.t, "Zane", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	litdArgs = append(litdArgs, fmt.Sprintf(
+		"--taproot-assets.proofcourieraddr=%s://%s",
+		proof.UniverseRpcCourierType, zane.Cfg.LitAddr(),
+	))
+
+	// The topology we are going for looks like the following:
+	//
+	// Charlie  --[assets]-->  Dave  --[sats]-->  Erin  --[assets]-->  Fabia
+	//
+	// With [assets] being a custom channel and [sats] being a normal, BTC
+	// only channel.
+	charlie, err := net.NewNode(
+		t.t, "Charlie", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	dave, err := net.NewNode(t.t, "Dave", lndArgs, false, true, litdArgs...)
+	require.NoError(t.t, err)
+	erin, err := net.NewNode(t.t, "Erin", lndArgs, false, true, litdArgs...)
+	require.NoError(t.t, err)
+	fabia, err := net.NewNode(
+		t.t, "Fabia", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	nodes := []*HarnessNode{charlie, dave, erin, fabia}
+	connectAllNodes(t.t, net, nodes)
+	fundAllNodes(t.t, net, nodes)
+
+	// Create the normal channel between Dave and Erin.
+	t.Logf("Opening normal channel between Dave and Erin...")
+	channelOp := openChannelAndAssert(
+		t, net, dave, erin, lntest.OpenChannelParams{
+			Amt:         5_000_000,
+			SatPerVByte: 5,
+		},
+	)
+	defer closeChannelAndAssert(t, net, dave, channelOp, false)
+
+	// This is the only public channel, we need everyone to be aware of it.
+	assertChannelKnown(t.t, charlie, channelOp)
+	assertChannelKnown(t.t, fabia, channelOp)
+
+	universeTap := newTapClient(t.t, zane)
+	charlieTap := newTapClient(t.t, charlie)
+	daveTap := newTapClient(t.t, dave)
+	erinTap := newTapClient(t.t, erin)
+	fabiaTap := newTapClient(t.t, fabia)
+
+	groupAssetReq := itest.CopyRequest(&mintrpc.MintAssetRequest{
+		Asset: itestAsset,
+	})
+	groupAssetReq.Asset.NewGroupedAsset = true
+
+	// Mint the asset tranches 1 and 2 on Charlie and sync all nodes to
+	// Charlie as the universe.
+	mintedAssetsT1 := itest.MintAssetsConfirmBatch(
+		t.t, t.lndHarness.Miner.Client, charlieTap,
+		[]*mintrpc.MintAssetRequest{groupAssetReq},
+	)
+	centsT1 := mintedAssetsT1[0]
+	assetID1 := centsT1.AssetGenesis.AssetId
+	groupKey := centsT1.GetAssetGroup().GetTweakedGroupKey()
+
+	groupAssetReq = itest.CopyRequest(&mintrpc.MintAssetRequest{
+		Asset: itestAsset,
+	})
+	groupAssetReq.Asset.GroupedAsset = true
+	groupAssetReq.Asset.GroupKey = groupKey
+	groupAssetReq.Asset.Name = "itest-asset-cents-tranche-2"
+
+	mintedAssetsT2 := itest.MintAssetsConfirmBatch(
+		t.t, t.lndHarness.Miner.Client, charlieTap,
+		[]*mintrpc.MintAssetRequest{groupAssetReq},
+	)
+	centsT2 := mintedAssetsT2[0]
+	assetID2 := centsT2.AssetGenesis.AssetId
+
+	t.Logf("Minted lightning cents tranche 1 (%x) and 2 (%x) for group "+
+		"key %x, syncing universes...", assetID1, assetID2, groupKey)
+	syncUniverses(t.t, charlieTap, dave, erin, fabia)
+	t.Logf("Universes synced between all nodes, distributing assets...")
+
+	chanPointCD, chanPointEF := createTestAssetNetworkGroupKey(
+		ctx, t, net, charlieTap, daveTap, erinTap, fabiaTap,
+		universeTap, []*taprpc.Asset{centsT1, centsT2}, startAmount,
+		fundingAmount, fundingAmount, DefaultPushSat,
+	)
+
+	t.Logf("Created channels %v and %v", chanPointCD, chanPointEF)
+
+	// We now send some assets over the channels to test the functionality.
+	// Print initial channel balances.
+	groupIDs := [][]byte{assetID1, assetID2}
+	logBalanceGroup(t.t, nodes, groupIDs, "initial")
+
+	// ------------
+	// Test case 1: Send a direct keysend payment from Charlie to Dave.
+	// ------------
+	const keySendAmount = 100
+	sendAssetKeySendPayment(
+		t.t, charlie, dave, keySendAmount, assetID1, fn.None[int64](),
+	)
+	logBalanceGroup(t.t, nodes, groupIDs, "after keysend")
+
+	t.Logf("Closing Charlie -> Dave channel")
+	closeAssetChannelAndAssert(
+		t, net, charlie, dave, chanPointCD, assetID1, groupKey,
+		universeTap, noOpCoOpCloseBalanceCheck,
+	)
+}
+
 // testCustomChannelsForceClose tests a force close scenario after both parties
 // have an active asset balance.
 func testCustomChannelsForceClose(ctx context.Context, net *NetworkHarness,
