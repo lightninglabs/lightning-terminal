@@ -2,12 +2,18 @@ package session
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightningnetwork/lnd/clock"
+	"github.com/lightningnetwork/lnd/fn"
+	"github.com/lightningnetwork/lnd/macaroons"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/macaroon-bakery.v2/bakery/checkers"
+	"gopkg.in/macaroon.v2"
 )
 
 var testTime = time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -324,9 +330,49 @@ func TestStateShift(t *testing.T) {
 	require.ErrorContains(t, err, "illegal session state transition")
 }
 
+// TestLinkedAccount tests that linking a session to an account works as
+// expected.
+func TestLinkedAccount(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	clock := clock.NewTestClock(testTime)
+
+	accts := accounts.NewTestDB(t, clock)
+	db := NewTestDBWithAccounts(t, clock, accts)
+
+	// Reserve a session. Link it to an account that does not yet exist.
+	// This should fail.
+	acctID := accounts.AccountID{1, 2, 3, 4}
+	_, err := reserveSession(db, "session 1", withAccount(acctID))
+	require.ErrorIs(t, err, accounts.ErrAccNotFound)
+
+	// Now, add a new account
+	acct, err := accts.NewAccount(ctx, 1234, clock.Now().Add(time.Hour), "")
+	require.NoError(t, err)
+
+	// Reserve a session. Link it to the account that was just created.
+	// This should succeed.
+
+	s1, err := reserveSession(db, "session 1", withAccount(acct.ID))
+	require.NoError(t, err)
+	require.True(t, s1.AccountID.IsSome())
+	s1.AccountID.WhenSome(func(id accounts.AccountID) {
+		require.Equal(t, acct.ID, id)
+	})
+
+	// Make sure that a fetched session includes the account ID.
+	s1, err = db.GetSessionByID(ctx, s1.ID)
+	require.NoError(t, err)
+	require.True(t, s1.AccountID.IsSome())
+	s1.AccountID.WhenSome(func(id accounts.AccountID) {
+		require.Equal(t, acct.ID, id)
+	})
+}
+
 type testSessionOpts struct {
 	groupID  *ID
 	sessType Type
+	account  fn.Option[accounts.AccountID]
 }
 
 func defaultTestSessOpts() *testSessionOpts {
@@ -352,6 +398,12 @@ func withType(t Type) testSessionModifier {
 	}
 }
 
+func withAccount(alias accounts.AccountID) testSessionModifier {
+	return func(s *testSessionOpts) {
+		s.account = fn.Some(alias)
+	}
+}
+
 func reserveSession(db Store, label string,
 	mods ...testSessionModifier) (*Session, error) {
 
@@ -360,13 +412,35 @@ func reserveSession(db Store, label string,
 		mod(opts)
 	}
 
-	return db.NewSession(
-		context.Background(), label, opts.sessType,
-		time.Date(9999, 1, 1, 0, 0, 0, 0, time.UTC),
-		"foo.bar.baz:1234",
+	options := []Option{
 		WithDevServer(),
 		WithPrivacy(PrivacyFlags{ClearPubkeys}),
 		WithLinkedGroupID(opts.groupID),
+	}
+
+	opts.account.WhenSome(func(id accounts.AccountID) {
+		// For now, we manually add the account caveat for bbolt
+		// compatibility.
+		accountCaveat := checkers.Condition(
+			macaroons.CondLndCustom,
+			fmt.Sprintf("%s %x", accounts.CondAccount, id[:]),
+		)
+
+		caveats := append(caveats, macaroon.Caveat{
+			Id: []byte(accountCaveat),
+		})
+
+		options = append(
+			options,
+			WithAccount(id),
+			WithMacaroonRecipe(caveats, nil),
+		)
+	})
+
+	return db.NewSession(
+		context.Background(), label, opts.sessType,
+		time.Date(9999, 1, 1, 0, 0, 0, 0, time.UTC),
+		"foo.bar.baz:1234", options...,
 	)
 }
 

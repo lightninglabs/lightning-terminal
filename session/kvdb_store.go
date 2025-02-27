@@ -217,6 +217,15 @@ func (db *BoltStore) NewSession(ctx context.Context, label string, typ Type,
 
 		sessionKey := getSessionKey(session)
 
+		// If an account is being linked, we first need to check that
+		// it exists.
+		session.AccountID.WhenSome(func(account accounts.AccountID) {
+			_, err = db.accounts.Account(ctx, account)
+		})
+		if err != nil {
+			return err
+		}
+
 		if len(sessionBucket.Get(sessionKey)) != 0 {
 			return fmt.Errorf("session with local public key(%x) "+
 				"already exists",
