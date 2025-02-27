@@ -235,12 +235,7 @@ func (s *sessionRpcServer) AddSession(ctx context.Context,
 			return nil, fmt.Errorf("invalid account ID: %v", err)
 		}
 
-		cav := checkers.Condition(macaroons.CondLndCustom, fmt.Sprintf(
-			"%s %x", accounts.CondAccount, id[:],
-		))
-		caveats = append(caveats, macaroon.Caveat{
-			Id: []byte(cav),
-		})
+		caveats = append(caveats, accounts.CaveatFromID(*id))
 
 	// For the custom macaroon type, we use the custom permissions specified
 	// in the request. For the time being, the caveats list will be empty
