@@ -911,6 +911,11 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 	// Determine privacy flags to use for session registration.
 	var privacyFlags session.PrivacyFlags
 	if req.PrivacyFlagsSet {
+		if !privacy {
+			return nil, fmt.Errorf("privacy flags can only be " +
+				"set when the privacy mapper is enabled")
+		}
+
 		// We apply privacy flags from the session request in order to
 		// to be able to set flags resulting from non-standard feature
 		// configurations.
