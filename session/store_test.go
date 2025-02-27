@@ -16,14 +16,10 @@ var testTime = time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 func TestBasicSessionStore(t *testing.T) {
 	// Set up a new DB.
 	clock := clock.NewTestClock(testTime)
-	db, err := NewDB(t.TempDir(), "test.db", clock)
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		_ = db.Close()
-	})
+	db := NewTestDB(t, clock)
 
 	// Try fetch a session that doesn't exist yet.
-	_, err = db.GetSessionByID(ID{1, 3, 4, 4})
+	_, err := db.GetSessionByID(ID{1, 3, 4, 4})
 	require.ErrorIs(t, err, ErrSessionNotFound)
 
 	// Reserve a session. This should succeed.
@@ -201,11 +197,7 @@ func TestLinkingSessions(t *testing.T) {
 
 	// Set up a new DB.
 	clock := clock.NewTestClock(testTime)
-	db, err := NewDB(t.TempDir(), "test.db", clock)
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		_ = db.Close()
-	})
+	db := NewTestDB(t, clock)
 
 	groupID, err := IDFromBytes([]byte{1, 2, 3, 4})
 	require.NoError(t, err)
@@ -242,11 +234,7 @@ func TestLinkedSessions(t *testing.T) {
 
 	// Set up a new DB.
 	clock := clock.NewTestClock(testTime)
-	db, err := NewDB(t.TempDir(), "test.db", clock)
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		_ = db.Close()
-	})
+	db := NewTestDB(t, clock)
 
 	// Create a few sessions. The first one is a new session and the two
 	// after are all linked to the prior one. All these sessions belong to
@@ -298,18 +286,14 @@ func TestLinkedSessions(t *testing.T) {
 func TestStateShift(t *testing.T) {
 	// Set up a new DB.
 	clock := clock.NewTestClock(testTime)
-	db, err := NewDB(t.TempDir(), "test.db", clock)
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		_ = db.Close()
-	})
+	db := NewTestDB(t, clock)
 
 	// Add a new session to the DB.
 	s1 := createSession(t, db, "label 1")
 
 	// Check that the session is in the StateCreated state. Also check that
 	// the "RevokedAt" time has not yet been set.
-	s1, err = db.GetSession(s1.LocalPublicKey)
+	s1, err := db.GetSession(s1.LocalPublicKey)
 	require.NoError(t, err)
 	require.Equal(t, StateCreated, s1.State)
 	require.Equal(t, time.Time{}, s1.RevokedAt)
