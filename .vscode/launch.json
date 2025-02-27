@@ -4,8 +4,12 @@
   // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
+
+    ////////////////////////////////
+    // golang itest example
+    ////////////////////////////////
     {
-      "name": "Debug itest",
+      "name": "single itest example (test_custom_channels)",
       "type": "go",
       "request": "launch",
       "mode": "test",
@@ -16,7 +20,16 @@
       },
       "args": [
         "-test.v",
+
+        // Find test names to run in `itest/litd_test_list_on_test.go` and
+        // then replace ` ` (spaces) with `_` (underscores).
+        // i.e. "test custom channels" -->  "test_custom_channels"
+        // Some related examples of how to choose multiple tests to run at the
+        // same time as well as how to run tests outside of vscode can be
+        // found at:
+        //   https://github.com/lightningnetwork/lnd/blob/master/itest/README.md
         "-test.run=TestLightningTerminal/test_custom_channels",
+
         "-logoutput",
         "-logdir=${workspaceFolder}/itest/.logs",
         "-litdexec=${workspaceFolder}/itest/litd-itest",
@@ -26,8 +39,14 @@
         "-tags=dev integration itest lowscrypt litd autopilotrpc signrpc walletrpc chainrpc invoicesrpc watchtowerrpc neutrinorpc peersrpc",
       ],
     },
+
+
+    ////////////////////////////////
+    // react GUI tests
+    ////////////////////////////////
+
     {
-      "name": "Debug Tests",
+      "name": "react Debug Tests",
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "${workspaceRoot}/app/node_modules/.bin/react-scripts",
