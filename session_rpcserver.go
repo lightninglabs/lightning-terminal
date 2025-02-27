@@ -308,10 +308,16 @@ func (s *sessionRpcServer) AddSession(ctx context.Context,
 		}
 	}
 
+	sessOpts := []session.Option{
+		session.WithMacaroonRecipe(caveats, uniquePermissions),
+	}
+
+	if req.DevServer {
+		sessOpts = append(sessOpts, session.WithDevServer())
+	}
+
 	sess, err := s.cfg.db.NewSession(
-		req.Label, typ, expiry, req.MailboxServerAddr,
-		req.DevServer, uniquePermissions, caveats, nil, false, nil,
-		session.PrivacyFlags{},
+		req.Label, typ, expiry, req.MailboxServerAddr, sessOpts...,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating new session: %v", err)
@@ -1125,10 +1131,25 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 		caveats = append(caveats, firewall.MetaPrivacyCaveat)
 	}
 
+	// Construct the functional options that will be used to create the
+	// session.
+	sessOpts := []session.Option{
+		session.WithMacaroonRecipe(caveats, perms),
+		session.WithFeatureConfig(clientConfig),
+		session.WithLinkedGroupID(linkedGroupID),
+	}
+
+	if req.DevServer {
+		sessOpts = append(sessOpts, session.WithDevServer())
+	}
+
+	if privacy {
+		sessOpts = append(sessOpts, session.WithPrivacy(privacyFlags))
+	}
+
 	sess, err := s.cfg.db.NewSession(
-		req.Label, session.TypeAutopilot, expiry,
-		req.MailboxServerAddr, req.DevServer, perms, caveats,
-		clientConfig, privacy, linkedGroupID, privacyFlags,
+		req.Label, session.TypeAutopilot, expiry, req.MailboxServerAddr,
+		sessOpts...,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating new session: %v", err)

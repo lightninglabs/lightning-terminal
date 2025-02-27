@@ -120,10 +120,13 @@ type Session struct {
 
 // buildSession creates a new session with the given user-defined parameters.
 func buildSession(id ID, localPrivKey *btcec.PrivateKey, label string, typ Type,
-	created, expiry time.Time, serverAddr string, devServer bool,
-	perms []bakery.Op, caveats []macaroon.Caveat,
-	featureConfig FeaturesConfig, privacy bool, linkedGroupID *ID,
-	flags PrivacyFlags) (*Session, error) {
+	created, expiry time.Time, serverAddr string,
+	options ...Option) (*Session, error) {
+
+	opts := defaultSessionOptions()
+	for _, o := range options {
+		o(opts)
+	}
 
 	_, pairingSecret, err := mailbox.NewPassphraseEntropy()
 	if err != nil {
@@ -135,10 +138,10 @@ func buildSession(id ID, localPrivKey *btcec.PrivateKey, label string, typ Type,
 	// The group ID will by default be the same as the Session ID
 	// unless this session links to a previous session.
 	groupID := id
-	if linkedGroupID != nil {
+	if opts.linkedGroupID != nil {
 		// If this session is linked to a previous session, then the
 		// group ID is the same as the linked session's group ID.
-		groupID = *linkedGroupID
+		groupID = *opts.linkedGroupID
 	}
 
 	sess := &Session{
@@ -149,29 +152,109 @@ func buildSession(id ID, localPrivKey *btcec.PrivateKey, label string, typ Type,
 		Expiry:            expiry.UTC(),
 		CreatedAt:         created.UTC(),
 		ServerAddr:        serverAddr,
-		DevServer:         devServer,
+		DevServer:         opts.devServer,
 		MacaroonRootKey:   macRootKey,
 		PairingSecret:     pairingSecret,
 		LocalPrivateKey:   localPrivKey,
 		LocalPublicKey:    localPrivKey.PubKey(),
 		RemotePublicKey:   nil,
-		WithPrivacyMapper: privacy,
-		PrivacyFlags:      flags,
+		WithPrivacyMapper: opts.privacy,
+		PrivacyFlags:      opts.privacyFlags,
 		GroupID:           groupID,
+		MacaroonRecipe:    opts.macaroonRecipe,
 	}
 
-	if perms != nil || caveats != nil {
-		sess.MacaroonRecipe = &MacaroonRecipe{
+	if len(opts.featureConfig) != 0 {
+		sess.FeatureConfig = &opts.featureConfig
+	}
+
+	return sess, nil
+}
+
+// sessionOptions defines various options that can be tweaked via functional
+// parameters for session creation.
+type sessionOptions struct {
+	// privacy indicates if a privacy map should be used with this session.
+	privacy bool
+
+	// privacyFlags to use in combination with the session's privacy mapper.
+	privacyFlags PrivacyFlags
+
+	// featureConfig holds any feature configuration bytes to use for this
+	// session.
+	featureConfig FeaturesConfig
+
+	// linkedGroupID is the ID of the group that this session is linked
+	// to. By default, a session is not linked to another group.
+	linkedGroupID *ID
+
+	// devServer is true if TLS should be skipped when connecting to the
+	// mailbox server.
+	devServer bool
+
+	// macaroonRecipe holds the permissions and caveats that should be used
+	// to bake the macaroon to be used with this session.
+	macaroonRecipe *MacaroonRecipe
+}
+
+// defaultSessionOptions returns a new sessionOptions struct with default
+// values set.
+func defaultSessionOptions() *sessionOptions {
+	return &sessionOptions{
+		privacy:       false,
+		privacyFlags:  PrivacyFlags{},
+		featureConfig: FeaturesConfig{},
+		linkedGroupID: nil,
+		devServer:     false,
+	}
+}
+
+// Option defines the signature of a functional option that can be used to
+// tweak various session creation options.
+type Option func(*sessionOptions)
+
+// WithPrivacy can be used to enable the privacy mapper for this session.
+// An optional set of privacy flags can be provided to further customize the
+// privacy mapper.
+func WithPrivacy(flags PrivacyFlags) Option {
+	return func(o *sessionOptions) {
+		o.privacy = true
+		o.privacyFlags = flags
+	}
+}
+
+// WithFeatureConfig can be used to set the feature configuration bytes for
+// this session.
+func WithFeatureConfig(config FeaturesConfig) Option {
+	return func(o *sessionOptions) {
+		o.featureConfig = config
+	}
+}
+
+// WithLinkedGroupID can be used to link this session to a previous session.
+func WithLinkedGroupID(groupID *ID) Option {
+	return func(o *sessionOptions) {
+		o.linkedGroupID = groupID
+	}
+}
+
+// WithDevServer can be used to set if TLS verification should be skipped when
+// connecting to the mailbox server.
+func WithDevServer() Option {
+	return func(o *sessionOptions) {
+		o.devServer = true
+	}
+}
+
+// WithMacaroonRecipe can be used to set the permissions and caveats that
+// should be used to bake the macaroon for a session.
+func WithMacaroonRecipe(caveats []macaroon.Caveat, perms []bakery.Op) Option {
+	return func(o *sessionOptions) {
+		o.macaroonRecipe = &MacaroonRecipe{
 			Permissions: perms,
 			Caveats:     caveats,
 		}
 	}
-
-	if len(featureConfig) != 0 {
-		sess.FeatureConfig = &featureConfig
-	}
-
-	return sess, nil
 }
 
 // IDToGroupIndex defines an interface for the session ID to group ID index.
@@ -191,9 +274,7 @@ type Store interface {
 	// parameters. The session will remain in the StateReserved state until
 	// ShiftState is called to update the state.
 	NewSession(label string, typ Type, expiry time.Time, serverAddr string,
-		devServer bool, perms []bakery.Op, caveats []macaroon.Caveat,
-		featureConfig FeaturesConfig, privacy bool, linkedGroupID *ID,
-		flags PrivacyFlags) (*Session, error)
+		opts ...Option) (*Session, error)
 
 	// GetSession fetches the session with the given key.
 	GetSession(key *btcec.PublicKey) (*Session, error)
