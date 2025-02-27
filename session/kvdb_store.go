@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightningnetwork/lnd/clock"
 	"go.etcd.io/bbolt"
 )
@@ -82,13 +83,17 @@ type BoltStore struct {
 	*bbolt.DB
 
 	clock clock.Clock
+
+	accounts accounts.Store
 }
 
 // A compile-time check to ensure that BoltStore implements the Store interface.
 var _ Store = (*BoltStore)(nil)
 
 // NewDB creates a new bolt database that can be found at the given directory.
-func NewDB(dir, fileName string, clock clock.Clock) (*BoltStore, error) {
+func NewDB(dir, fileName string, clock clock.Clock,
+	store accounts.Store) (*BoltStore, error) {
+
 	firstInit := false
 	path := filepath.Join(dir, fileName)
 
@@ -112,8 +117,9 @@ func NewDB(dir, fileName string, clock clock.Clock) (*BoltStore, error) {
 	}
 
 	return &BoltStore{
-		DB:    db,
-		clock: clock,
+		DB:       db,
+		clock:    clock,
+		accounts: store,
 	}, nil
 }
 
