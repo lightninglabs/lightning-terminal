@@ -22,6 +22,10 @@ func TestBasicSessionStore(t *testing.T) {
 		_ = db.Close()
 	})
 
+	// Try fetch a session that doesn't exist yet.
+	_, err = db.GetSessionByID(ID{1, 3, 4, 4})
+	require.ErrorIs(t, err, ErrSessionNotFound)
+
 	// Reserve a session. This should succeed.
 	s1, err := reserveSession(db, "session 1")
 	require.NoError(t, err)
@@ -183,7 +187,7 @@ func TestBasicSessionStore(t *testing.T) {
 	require.Empty(t, sessions)
 
 	_, err = db.GetGroupID(s4.ID)
-	require.ErrorContains(t, err, "no index entry")
+	require.ErrorIs(t, err, ErrUnknownGroup)
 
 	// Only session 1 should remain in this group.
 	sessIDs, err = db.GetSessionIDs(s4.GroupID)
@@ -211,7 +215,7 @@ func TestLinkingSessions(t *testing.T) {
 	_, err = reserveSession(
 		db, "session 2", withLinkedGroupID(&groupID),
 	)
-	require.ErrorContains(t, err, "unknown linked session")
+	require.ErrorIs(t, err, ErrUnknownGroup)
 
 	// Create a new session with no previous link.
 	s1 := createSession(t, db, "session 1")
@@ -220,7 +224,7 @@ func TestLinkingSessions(t *testing.T) {
 	// session. This should fail due to the first session still being
 	// active.
 	_, err = reserveSession(db, "session 2", withLinkedGroupID(&s1.GroupID))
-	require.ErrorContains(t, err, "is still active")
+	require.ErrorIs(t, err, ErrSessionsInGroupStillActive)
 
 	// Revoke the first session.
 	require.NoError(t, db.ShiftState(s1.ID, StateRevoked))
