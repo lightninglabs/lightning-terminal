@@ -21,11 +21,11 @@
       "args": [
         "-test.v",
 
-        // Find test names to run in `itest/litd_test_list_on_test.go` and
+        // Find itest names to run in `itest/litd_test_list_on_test.go` and
         // then replace ` ` (spaces) with `_` (underscores).
         // i.e. "test custom channels" -->  "test_custom_channels"
-        // Some related examples of how to choose multiple tests to run at the
-        // same time as well as how to run tests outside of vscode can be
+        // Some related examples of how to choose multiple itests to run at the
+        // same time as well as how to run itests outside of vscode can be
         // found at:
         //   https://github.com/lightningnetwork/lnd/blob/master/itest/README.md
         "-test.run=TestLightningTerminal/test_custom_channels",
@@ -42,9 +42,34 @@
 
 
     ////////////////////////////////
+    // run all golang itests
+    ////////////////////////////////
+    {
+      "name": "run all itests",
+      "type": "go",
+      "request": "launch",
+      "mode": "test",
+      "preLaunchTask": "reset before itest",
+      "program": "${workspaceFolder}/itest",
+      "env": {
+        "CGO_ENABLED": "0",
+      },
+      "args": [
+        "-test.v",
+        "-logoutput",
+        "-logdir=${workspaceFolder}/itest/.logs",
+        "-litdexec=${workspaceFolder}/itest/litd-itest",
+      ],
+      "buildFlags": [
+        "-ldflags=-X github.com/lightningnetwork/lnd/build.RawTags=chainrpc,walletrpc,signrpc,invoicesrpc,autopilotrpc,watchtowerrpc,twclientrpc -X github.com/lightningnetwork/lnd/build.Commit=lightning-terminal-v0.4.0-alpha -X github.com/lightninglabs/loop.Commit=localbuild -X github.com/lightninglabs/pool.Commit=localbuild -X github.com/lightninglabs/lightning-terminal.Commit=localbuild",
+        "-tags=dev integration itest lowscrypt litd autopilotrpc signrpc walletrpc chainrpc invoicesrpc watchtowerrpc neutrinorpc peersrpc",
+      ],
+    },
+
+
+    ////////////////////////////////
     // react GUI tests
     ////////////////////////////////
-
     {
       "name": "react Debug Tests",
       "type": "node",
