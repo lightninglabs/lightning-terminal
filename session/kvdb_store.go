@@ -2,6 +2,7 @@ package session
 
 import (
 	"bytes"
+	"context"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -185,8 +186,8 @@ func getSessionKey(session *Session) []byte {
 // ShiftState is called with StateCreated.
 //
 // NOTE: this is part of the Store interface.
-func (db *BoltStore) NewSession(label string, typ Type, expiry time.Time,
-	serverAddr string, opts ...Option) (*Session, error) {
+func (db *BoltStore) NewSession(ctx context.Context, label string, typ Type,
+	expiry time.Time, serverAddr string, opts ...Option) (*Session, error) {
 
 	var session *Session
 	err := db.Update(func(tx *bbolt.Tx) error {
@@ -285,7 +286,7 @@ func (db *BoltStore) NewSession(label string, typ Type, expiry time.Time,
 // to the session with the given local pub key.
 //
 // NOTE: this is part of the Store interface.
-func (db *BoltStore) UpdateSessionRemotePubKey(localPubKey,
+func (db *BoltStore) UpdateSessionRemotePubKey(_ context.Context, localPubKey,
 	remotePubKey *btcec.PublicKey) error {
 
 	key := localPubKey.SerializeCompressed()
@@ -318,7 +319,9 @@ func (db *BoltStore) UpdateSessionRemotePubKey(localPubKey,
 // GetSession fetches the session with the given key.
 //
 // NOTE: this is part of the Store interface.
-func (db *BoltStore) GetSession(key *btcec.PublicKey) (*Session, error) {
+func (db *BoltStore) GetSession(_ context.Context, key *btcec.PublicKey) (
+	*Session, error) {
+
 	var session *Session
 	err := db.View(func(tx *bbolt.Tx) error {
 		sessionBucket, err := getBucket(tx, sessionBucketKey)
@@ -348,7 +351,7 @@ func (db *BoltStore) GetSession(key *btcec.PublicKey) (*Session, error) {
 // ListAllSessions returns all sessions currently known to the store.
 //
 // NOTE: this is part of the Store interface.
-func (db *BoltStore) ListAllSessions() ([]*Session, error) {
+func (db *BoltStore) ListAllSessions(_ context.Context) ([]*Session, error) {
 	return db.listSessions(func(s *Session) bool {
 		return true
 	})
@@ -358,7 +361,9 @@ func (db *BoltStore) ListAllSessions() ([]*Session, error) {
 // have the given type.
 //
 // NOTE: this is part of the Store interface.
-func (db *BoltStore) ListSessionsByType(t Type) ([]*Session, error) {
+func (db *BoltStore) ListSessionsByType(_ context.Context, t Type) ([]*Session,
+	error) {
+
 	return db.listSessions(func(s *Session) bool {
 		return s.Type == t
 	})
@@ -368,7 +373,9 @@ func (db *BoltStore) ListSessionsByType(t Type) ([]*Session, error) {
 // are in the given states.
 //
 // NOTE: this is part of the Store interface.
-func (db *BoltStore) ListSessionsByState(states ...State) ([]*Session, error) {
+func (db *BoltStore) ListSessionsByState(_ context.Context, states ...State) (
+	[]*Session, error) {
+
 	return db.listSessions(func(s *Session) bool {
 		for _, state := range states {
 			if s.State == state {
@@ -429,7 +436,7 @@ func (db *BoltStore) listSessions(filterFn func(s *Session) bool) ([]*Session,
 // state.
 //
 // NOTE: this is part of the Store interface.
-func (db *BoltStore) DeleteReservedSessions() error {
+func (db *BoltStore) DeleteReservedSessions(_ context.Context) error {
 	return db.Update(func(tx *bbolt.Tx) error {
 		sessionBucket, err := getBucket(tx, sessionBucketKey)
 		if err != nil {
@@ -522,7 +529,7 @@ func (db *BoltStore) DeleteReservedSessions() error {
 // state.
 //
 // NOTE: this is part of the Store interface.
-func (db *BoltStore) ShiftState(id ID, dest State) error {
+func (db *BoltStore) ShiftState(_ context.Context, id ID, dest State) error {
 	return db.Update(func(tx *bbolt.Tx) error {
 		sessionBucket, err := getBucket(tx, sessionBucketKey)
 		if err != nil {
@@ -562,7 +569,9 @@ func (db *BoltStore) ShiftState(id ID, dest State) error {
 // GetSessionByID fetches the session with the given ID.
 //
 // NOTE: this is part of the Store interface.
-func (db *BoltStore) GetSessionByID(id ID) (*Session, error) {
+func (db *BoltStore) GetSessionByID(_ context.Context, id ID) (*Session,
+	error) {
+
 	var session *Session
 	err := db.View(func(tx *bbolt.Tx) error {
 		sessionBucket, err := getBucket(tx, sessionBucketKey)
@@ -615,7 +624,7 @@ func getUnusedIDAndKeyPair(bucket *bbolt.Bucket) (ID, *btcec.PrivateKey,
 // GetGroupID will return the group ID for the given session ID.
 //
 // NOTE: this is part of the IDToGroupIndex interface.
-func (db *BoltStore) GetGroupID(sessionID ID) (ID, error) {
+func (db *BoltStore) GetGroupID(_ context.Context, sessionID ID) (ID, error) {
 	var groupID ID
 	err := db.View(func(tx *bbolt.Tx) error {
 		sessionBkt, err := getBucket(tx, sessionBucketKey)
@@ -655,7 +664,9 @@ func (db *BoltStore) GetGroupID(sessionID ID) (ID, error) {
 // group with the given ID.
 //
 // NOTE: this is part of the IDToGroupIndex interface.
-func (db *BoltStore) GetSessionIDs(groupID ID) ([]ID, error) {
+func (db *BoltStore) GetSessionIDs(_ context.Context, groupID ID) ([]ID,
+	error) {
+
 	var (
 		sessionIDs []ID
 		err        error

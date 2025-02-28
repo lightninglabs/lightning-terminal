@@ -1,6 +1,7 @@
 package session
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"sync"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/lightninglabs/lightning-node-connect/mailbox"
+	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/keychain"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -21,8 +23,9 @@ type GRPCServerCreator func(opts ...grpc.ServerOption) *grpc.Server
 type mailboxSession struct {
 	server *grpc.Server
 
-	wg   sync.WaitGroup
-	quit chan struct{}
+	cancel fn.Option[context.CancelFunc]
+	wg     sync.WaitGroup
+	quit   chan struct{}
 }
 
 func newMailboxSession() *mailboxSession {
@@ -33,7 +36,8 @@ func newMailboxSession() *mailboxSession {
 
 func (m *mailboxSession) start(session *Session,
 	serverCreator GRPCServerCreator, authData []byte,
-	onUpdate func(local, remote *btcec.PublicKey) error,
+	onUpdate func(ctx context.Context, local,
+		remote *btcec.PublicKey) error,
 	onNewStatus func(s mailbox.ServerStatus)) error {
 
 	tlsConfig := &tls.Config{}
@@ -43,10 +47,13 @@ func (m *mailboxSession) start(session *Session,
 
 	ecdh := &keychain.PrivKeyECDH{PrivKey: session.LocalPrivateKey}
 
+	ctx, cancel := context.WithCancel(context.Background())
+	m.cancel = fn.Some(cancel)
+
 	keys := mailbox.NewConnData(
 		ecdh, session.RemotePublicKey, session.PairingSecret[:],
 		authData, func(key *btcec.PublicKey) error {
-			return onUpdate(session.LocalPublicKey, key)
+			return onUpdate(ctx, session.LocalPublicKey, key)
 		}, nil,
 	)
 
@@ -81,6 +88,7 @@ func (m *mailboxSession) run(mailboxServer *mailbox.Server) {
 }
 
 func (m *mailboxSession) stop() {
+	m.cancel.WhenSome(func(fn context.CancelFunc) { fn() })
 	m.server.Stop()
 	close(m.quit)
 	m.wg.Wait()
@@ -104,7 +112,8 @@ func NewServer(serverCreator GRPCServerCreator) *Server {
 }
 
 func (s *Server) StartSession(session *Session, authData []byte,
-	onUpdate func(local, remote *btcec.PublicKey) error,
+	onUpdate func(ctx context.Context, local,
+		remote *btcec.PublicKey) error,
 	onNewStatus func(s mailbox.ServerStatus)) (chan struct{}, error) {
 
 	s.activeSessionsMtx.Lock()

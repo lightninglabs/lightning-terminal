@@ -96,15 +96,14 @@ func newSessionRPCServer(cfg *sessionRpcServerConfig) (*sessionRpcServer,
 // requests. This includes resuming all non-revoked sessions.
 func (s *sessionRpcServer) start(ctx context.Context) error {
 	// Delete all sessions in the Reserved state.
-	err := s.cfg.db.DeleteReservedSessions()
+	err := s.cfg.db.DeleteReservedSessions(ctx)
 	if err != nil {
 		return fmt.Errorf("error deleting reserved sessions: %v", err)
 	}
 
 	// Start up all previously created sessions.
 	sessions, err := s.cfg.db.ListSessionsByState(
-		session.StateCreated,
-		session.StateInUse,
+		ctx, session.StateCreated, session.StateInUse,
 	)
 	if err != nil {
 		return fmt.Errorf("error listing sessions: %v", err)
@@ -150,7 +149,7 @@ func (s *sessionRpcServer) start(ctx context.Context) error {
 
 				if perm {
 					err := s.cfg.db.ShiftState(
-						sess.ID, session.StateRevoked,
+						ctx, sess.ID, session.StateRevoked,
 					)
 					if err != nil {
 						log.Errorf("error revoking "+
@@ -317,13 +316,14 @@ func (s *sessionRpcServer) AddSession(ctx context.Context,
 	}
 
 	sess, err := s.cfg.db.NewSession(
-		req.Label, typ, expiry, req.MailboxServerAddr, sessOpts...,
+		ctx, req.Label, typ, expiry, req.MailboxServerAddr,
+		sessOpts...,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating new session: %v", err)
 	}
 
-	err = s.cfg.db.ShiftState(sess.ID, session.StateCreated)
+	err = s.cfg.db.ShiftState(ctx, sess.ID, session.StateCreated)
 	if err != nil {
 		return nil, fmt.Errorf("error shifting session state to "+
 			"Created: %v", err)
@@ -335,7 +335,7 @@ func (s *sessionRpcServer) AddSession(ctx context.Context,
 
 	// Re-fetch the session to get the latest state of it before marshaling
 	// it.
-	sess, err = s.cfg.db.GetSessionByID(sess.ID)
+	sess, err = s.cfg.db.GetSessionByID(ctx, sess.ID)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching session: %v", err)
 	}
@@ -362,7 +362,7 @@ func (s *sessionRpcServer) resumeSession(ctx context.Context,
 		log.Debugf("Not resuming session %x with expiry %s",
 			pubKeyBytes, sess.Expiry)
 
-		err := s.cfg.db.ShiftState(sess.ID, session.StateExpired)
+		err := s.cfg.db.ShiftState(ctx, sess.ID, session.StateExpired)
 		if err != nil {
 			return fmt.Errorf("error revoking session: %v", err)
 		}
@@ -440,7 +440,7 @@ func (s *sessionRpcServer) resumeSession(ctx context.Context,
 				"passed. Revoking session", pubKeyBytes)
 
 			return s.cfg.db.ShiftState(
-				sess.ID, session.StateRevoked,
+				ctx, sess.ID, session.StateRevoked,
 			)
 		}
 
@@ -520,7 +520,7 @@ func (s *sessionRpcServer) resumeSession(ctx context.Context,
 			log.Debugf("Error stopping session: %v", err)
 		}
 
-		err = s.cfg.db.ShiftState(sess.ID, session.StateRevoked)
+		err = s.cfg.db.ShiftState(ctx, sess.ID, session.StateRevoked)
 		if err != nil {
 			log.Debugf("error revoking session: %v", err)
 		}
@@ -530,10 +530,10 @@ func (s *sessionRpcServer) resumeSession(ctx context.Context,
 }
 
 // ListSessions returns all sessions known to the session store.
-func (s *sessionRpcServer) ListSessions(_ context.Context,
+func (s *sessionRpcServer) ListSessions(ctx context.Context,
 	_ *litrpc.ListSessionsRequest) (*litrpc.ListSessionsResponse, error) {
 
-	sessions, err := s.cfg.db.ListAllSessions()
+	sessions, err := s.cfg.db.ListAllSessions(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching sessions: %v", err)
 	}
@@ -562,12 +562,12 @@ func (s *sessionRpcServer) RevokeSession(ctx context.Context,
 		return nil, fmt.Errorf("error parsing public key: %v", err)
 	}
 
-	sess, err := s.cfg.db.GetSession(pubKey)
+	sess, err := s.cfg.db.GetSession(ctx, pubKey)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching session: %v", err)
 	}
 
-	err = s.cfg.db.ShiftState(sess.ID, session.StateRevoked)
+	err = s.cfg.db.ShiftState(ctx, sess.ID, session.StateRevoked)
 	if err != nil {
 		return nil, fmt.Errorf("error revoking session: %v", err)
 	}
@@ -587,7 +587,7 @@ func (s *sessionRpcServer) RevokeSession(ctx context.Context,
 
 // PrivacyMapConversion can be used map real values to their pseudo counterpart
 // and vice versa.
-func (s *sessionRpcServer) PrivacyMapConversion(_ context.Context,
+func (s *sessionRpcServer) PrivacyMapConversion(ctx context.Context,
 	req *litrpc.PrivacyMapConversionRequest) (
 	*litrpc.PrivacyMapConversionResponse, error) {
 
@@ -606,7 +606,7 @@ func (s *sessionRpcServer) PrivacyMapConversion(_ context.Context,
 			return nil, err
 		}
 
-		groupID, err = s.cfg.db.GetGroupID(sessionID)
+		groupID, err = s.cfg.db.GetGroupID(ctx, sessionID)
 		if err != nil {
 			return nil, err
 		}
@@ -643,7 +643,7 @@ func (s *sessionRpcServer) PrivacyMapConversion(_ context.Context,
 // stored if the actions are interceptor actions, otherwise only the URI and
 // timestamp of the actions will be stored. The "full" mode will persist all
 // request data for all actions.
-func (s *sessionRpcServer) ListActions(_ context.Context,
+func (s *sessionRpcServer) ListActions(ctx context.Context,
 	req *litrpc.ListActionsRequest) (*litrpc.ListActionsResponse, error) {
 
 	// If no maximum number of actions is given, use a default of 100.
@@ -746,7 +746,7 @@ func (s *sessionRpcServer) ListActions(_ context.Context,
 			return nil, err
 		}
 
-		actions, err = db.ListGroupActions(groupID, filterFn)
+		actions, err = db.ListGroupActions(ctx, groupID, filterFn)
 		if err != nil {
 			return nil, err
 		}
@@ -867,7 +867,7 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 		copy(groupID[:], req.LinkedGroupId)
 
 		// Check that the group actually does exist.
-		groupSess, err := s.cfg.db.GetSessionByID(groupID)
+		groupSess, err := s.cfg.db.GetSessionByID(ctx, groupID)
 		if err != nil {
 			return nil, err
 		}
@@ -1148,8 +1148,8 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 	}
 
 	sess, err := s.cfg.db.NewSession(
-		req.Label, session.TypeAutopilot, expiry, req.MailboxServerAddr,
-		sessOpts...,
+		ctx, req.Label, session.TypeAutopilot, expiry,
+		req.MailboxServerAddr, sessOpts...,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating new session: %v", err)
@@ -1230,7 +1230,9 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 			"autopilot server: %v", err)
 	}
 
-	err = s.cfg.db.UpdateSessionRemotePubKey(sess.LocalPublicKey, remoteKey)
+	err = s.cfg.db.UpdateSessionRemotePubKey(
+		ctx, sess.LocalPublicKey, remoteKey,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("error setting remote pubkey: %v", err)
 	}
@@ -1240,7 +1242,7 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 
 	// We only activate the session if the Autopilot server registration
 	// was successful.
-	err = s.cfg.db.ShiftState(sess.ID, session.StateCreated)
+	err = s.cfg.db.ShiftState(ctx, sess.ID, session.StateCreated)
 	if err != nil {
 		return nil, fmt.Errorf("error shifting session state to "+
 			"Created: %v", err)
@@ -1252,7 +1254,7 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 
 	// Re-fetch the session to get the latest state of it before marshaling
 	// it.
-	sess, err = s.cfg.db.GetSessionByID(sess.ID)
+	sess, err = s.cfg.db.GetSessionByID(ctx, sess.ID)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching session: %v", err)
 	}
@@ -1269,11 +1271,11 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 
 // ListAutopilotSessions fetches and returns all the sessions from the DB that
 // are of type TypeAutopilot.
-func (s *sessionRpcServer) ListAutopilotSessions(_ context.Context,
+func (s *sessionRpcServer) ListAutopilotSessions(ctx context.Context,
 	_ *litrpc.ListAutopilotSessionsRequest) (
 	*litrpc.ListAutopilotSessionsResponse, error) {
 
-	sessions, err := s.cfg.db.ListSessionsByType(session.TypeAutopilot)
+	sessions, err := s.cfg.db.ListSessionsByType(ctx, session.TypeAutopilot)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching sessions: %v", err)
 	}
@@ -1302,7 +1304,7 @@ func (s *sessionRpcServer) RevokeAutopilotSession(ctx context.Context,
 		return nil, fmt.Errorf("error parsing public key: %v", err)
 	}
 
-	sess, err := s.cfg.db.GetSession(pubKey)
+	sess, err := s.cfg.db.GetSession(ctx, pubKey)
 	if err != nil {
 		return nil, err
 	}

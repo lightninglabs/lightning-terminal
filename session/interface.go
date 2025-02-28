@@ -1,6 +1,7 @@
 package session
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -260,11 +261,11 @@ func WithMacaroonRecipe(caveats []macaroon.Caveat, perms []bakery.Op) Option {
 // IDToGroupIndex defines an interface for the session ID to group ID index.
 type IDToGroupIndex interface {
 	// GetGroupID will return the group ID for the given session ID.
-	GetGroupID(sessionID ID) (ID, error)
+	GetGroupID(ctx context.Context, sessionID ID) (ID, error)
 
 	// GetSessionIDs will return the set of session IDs that are in the
 	// group with the given ID.
-	GetSessionIDs(groupID ID) ([]ID, error)
+	GetSessionIDs(ctx context.Context, groupID ID) ([]ID, error)
 }
 
 // Store is the interface a persistent storage must implement for storing and
@@ -273,37 +274,39 @@ type Store interface {
 	// NewSession creates a new session with the given user-defined
 	// parameters. The session will remain in the StateReserved state until
 	// ShiftState is called to update the state.
-	NewSession(label string, typ Type, expiry time.Time, serverAddr string,
-		opts ...Option) (*Session, error)
+	NewSession(ctx context.Context, label string, typ Type,
+		expiry time.Time, serverAddr string, opts ...Option) (*Session,
+		error)
 
 	// GetSession fetches the session with the given key.
-	GetSession(key *btcec.PublicKey) (*Session, error)
+	GetSession(ctx context.Context, key *btcec.PublicKey) (*Session, error)
 
 	// ListAllSessions returns all sessions currently known to the store.
-	ListAllSessions() ([]*Session, error)
+	ListAllSessions(ctx context.Context) ([]*Session, error)
 
 	// ListSessionsByType returns all sessions of the given type.
-	ListSessionsByType(t Type) ([]*Session, error)
+	ListSessionsByType(ctx context.Context, t Type) ([]*Session, error)
 
 	// ListSessionsByState returns all sessions currently known to the store
 	// that are in the given states.
-	ListSessionsByState(...State) ([]*Session, error)
+	ListSessionsByState(ctx context.Context, state ...State) ([]*Session,
+		error)
 
 	// UpdateSessionRemotePubKey can be used to add the given remote pub key
 	// to the session with the given local pub key.
-	UpdateSessionRemotePubKey(localPubKey,
+	UpdateSessionRemotePubKey(ctx context.Context, localPubKey,
 		remotePubKey *btcec.PublicKey) error
 
 	// GetSessionByID fetches the session with the given ID.
-	GetSessionByID(id ID) (*Session, error)
+	GetSessionByID(ctx context.Context, id ID) (*Session, error)
 
 	// DeleteReservedSessions deletes all sessions that are in the
 	// StateReserved state.
-	DeleteReservedSessions() error
+	DeleteReservedSessions(ctx context.Context) error
 
 	// ShiftState updates the state of the session with the given ID to the
 	// "dest" state.
-	ShiftState(id ID, dest State) error
+	ShiftState(ctx context.Context, id ID, dest State) error
 
 	IDToGroupIndex
 }

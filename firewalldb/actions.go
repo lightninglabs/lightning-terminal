@@ -391,7 +391,7 @@ func (db *DB) ListSessionActions(sessionID session.ID,
 // pass the filterFn requirements.
 //
 // TODO: update to allow for pagination.
-func (db *DB) ListGroupActions(groupID session.ID,
+func (db *DB) ListGroupActions(ctx context.Context, groupID session.ID,
 	filterFn ListActionsFilterFn) ([]*Action, error) {
 
 	if filterFn == nil {
@@ -400,7 +400,7 @@ func (db *DB) ListGroupActions(groupID session.ID,
 		}
 	}
 
-	sessionIDs, err := db.sessionIDIndex.GetSessionIDs(groupID)
+	sessionIDs, err := db.sessionIDIndex.GetSessionIDs(ctx, groupID)
 	if err != nil {
 		return nil, err
 	}
@@ -629,11 +629,11 @@ type groupActionsReadDB struct {
 var _ ActionsDB = (*groupActionsReadDB)(nil)
 
 // ListActions will return all the Actions for a particular group.
-func (s *groupActionsReadDB) ListActions(_ context.Context) ([]*RuleAction,
+func (s *groupActionsReadDB) ListActions(ctx context.Context) ([]*RuleAction,
 	error) {
 
 	sessionActions, err := s.db.ListGroupActions(
-		s.groupID, func(a *Action, _ bool) (bool, bool) {
+		ctx, s.groupID, func(a *Action, _ bool) (bool, bool) {
 			return a.State == ActionStateDone, true
 		},
 	)
@@ -660,11 +660,11 @@ var _ ActionsDB = (*groupFeatureActionsReadDB)(nil)
 
 // ListActions will return all the Actions for a particular group that were
 // executed by a particular feature.
-func (a *groupFeatureActionsReadDB) ListActions(_ context.Context) (
+func (a *groupFeatureActionsReadDB) ListActions(ctx context.Context) (
 	[]*RuleAction, error) {
 
 	featureActions, err := a.db.ListGroupActions(
-		a.groupID, func(action *Action, _ bool) (bool, bool) {
+		ctx, a.groupID, func(action *Action, _ bool) (bool, bool) {
 			return action.State == ActionStateDone &&
 				action.FeatureName == a.featureName, true
 		},
