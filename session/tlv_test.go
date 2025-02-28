@@ -133,10 +133,12 @@ func TestSerializeDeserializeSession(t *testing.T) {
 				id, priv, test.name, test.sessType,
 				time.Now(),
 				time.Date(99999, 1, 1, 0, 0, 0, 0, time.UTC),
-				"foo.bar.baz:1234", true, test.perms,
-				test.caveats, test.featureConfig, true,
-				test.linkedGroupID,
-				[]PrivacyFlag{ClearPubkeys},
+				"foo.bar.baz:1234",
+				WithDevServer(),
+				WithPrivacy(PrivacyFlags{ClearPubkeys}),
+				WithMacaroonRecipe(test.caveats, test.perms),
+				WithFeatureConfig(test.featureConfig),
+				WithLinkedGroupID(test.linkedGroupID),
 			)
 			require.NoError(t, err)
 
@@ -188,8 +190,8 @@ func TestGroupIDForOlderSessions(t *testing.T) {
 		id, priv, "test-session", TypeMacaroonAdmin,
 		time.Now(),
 		time.Date(99999, 1, 1, 0, 0, 0, 0, time.UTC),
-		"foo.bar.baz:1234", true, nil, nil, nil, false, nil,
-		PrivacyFlags{},
+		"foo.bar.baz:1234",
+		WithDevServer(),
 	)
 	require.NoError(t, err)
 
@@ -224,8 +226,8 @@ func TestGroupID(t *testing.T) {
 		id, priv, "test-session", TypeMacaroonAdmin,
 		time.Now(),
 		time.Date(99999, 1, 1, 0, 0, 0, 0, time.UTC),
-		"foo.bar.baz:1234", true, nil, nil, nil, false, nil,
-		PrivacyFlags{},
+		"foo.bar.baz:1234",
+		WithDevServer(),
 	)
 	require.NoError(t, err)
 
@@ -239,8 +241,9 @@ func TestGroupID(t *testing.T) {
 		id, priv, "test-session", TypeMacaroonAdmin,
 		time.Now(),
 		time.Date(99999, 1, 1, 0, 0, 0, 0, time.UTC),
-		"foo.bar.baz:1234", true, nil, nil, nil, false,
-		&session1.GroupID, PrivacyFlags{},
+		"foo.bar.baz:1234",
+		WithLinkedGroupID(&session1.ID),
+		WithDevServer(),
 	)
 	require.NoError(t, err)
 

@@ -13,8 +13,6 @@ import (
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/lightningnetwork/lnd/clock"
 	"go.etcd.io/bbolt"
-	"gopkg.in/macaroon-bakery.v2/bakery"
-	"gopkg.in/macaroon.v2"
 )
 
 var (
@@ -188,9 +186,7 @@ func getSessionKey(session *Session) []byte {
 //
 // NOTE: this is part of the Store interface.
 func (db *BoltStore) NewSession(label string, typ Type, expiry time.Time,
-	serverAddr string, devServer bool, perms []bakery.Op,
-	caveats []macaroon.Caveat, featureConfig FeaturesConfig, privacy bool,
-	linkedGroupID *ID, flags PrivacyFlags) (*Session, error) {
+	serverAddr string, opts ...Option) (*Session, error) {
 
 	var session *Session
 	err := db.Update(func(tx *bbolt.Tx) error {
@@ -206,8 +202,7 @@ func (db *BoltStore) NewSession(label string, typ Type, expiry time.Time,
 
 		session, err = buildSession(
 			id, localPrivKey, label, typ, db.clock.Now(), expiry,
-			serverAddr, devServer, perms, caveats, featureConfig,
-			privacy, linkedGroupID, flags,
+			serverAddr, opts...,
 		)
 		if err != nil {
 			return err
