@@ -866,7 +866,9 @@ func testSessionLinking(net *NetworkHarness, t *harnessTest) {
 			LinkedGroupId:     sessResp.Session.GroupId,
 		},
 	)
-	require.ErrorContains(t.t, err, "is still active")
+	require.ErrorContains(
+		t.t, err, session.ErrSessionsInGroupStillActive.Error(),
+	)
 
 	// Revoke the previous one and repeat.
 	_, err = litAutopilotClient.RevokeAutopilotSession(

@@ -16,11 +16,11 @@ var testTime = time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 func TestBasicSessionStore(t *testing.T) {
 	// Set up a new DB.
 	clock := clock.NewTestClock(testTime)
-	db, err := NewDB(t.TempDir(), "test.db", clock)
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		_ = db.Close()
-	})
+	db := NewTestDB(t, clock)
+
+	// Try fetch a session that doesn't exist yet.
+	_, err := db.GetSessionByID(ID{1, 3, 4, 4})
+	require.ErrorIs(t, err, ErrSessionNotFound)
 
 	// Reserve a session. This should succeed.
 	s1, err := reserveSession(db, "session 1")
@@ -183,7 +183,7 @@ func TestBasicSessionStore(t *testing.T) {
 	require.Empty(t, sessions)
 
 	_, err = db.GetGroupID(s4.ID)
-	require.ErrorContains(t, err, "no index entry")
+	require.ErrorIs(t, err, ErrUnknownGroup)
 
 	// Only session 1 should remain in this group.
 	sessIDs, err = db.GetSessionIDs(s4.GroupID)
@@ -197,11 +197,7 @@ func TestLinkingSessions(t *testing.T) {
 
 	// Set up a new DB.
 	clock := clock.NewTestClock(testTime)
-	db, err := NewDB(t.TempDir(), "test.db", clock)
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		_ = db.Close()
-	})
+	db := NewTestDB(t, clock)
 
 	groupID, err := IDFromBytes([]byte{1, 2, 3, 4})
 	require.NoError(t, err)
@@ -211,7 +207,7 @@ func TestLinkingSessions(t *testing.T) {
 	_, err = reserveSession(
 		db, "session 2", withLinkedGroupID(&groupID),
 	)
-	require.ErrorContains(t, err, "unknown linked session")
+	require.ErrorIs(t, err, ErrUnknownGroup)
 
 	// Create a new session with no previous link.
 	s1 := createSession(t, db, "session 1")
@@ -220,7 +216,7 @@ func TestLinkingSessions(t *testing.T) {
 	// session. This should fail due to the first session still being
 	// active.
 	_, err = reserveSession(db, "session 2", withLinkedGroupID(&s1.GroupID))
-	require.ErrorContains(t, err, "is still active")
+	require.ErrorIs(t, err, ErrSessionsInGroupStillActive)
 
 	// Revoke the first session.
 	require.NoError(t, db.ShiftState(s1.ID, StateRevoked))
@@ -238,11 +234,7 @@ func TestLinkedSessions(t *testing.T) {
 
 	// Set up a new DB.
 	clock := clock.NewTestClock(testTime)
-	db, err := NewDB(t.TempDir(), "test.db", clock)
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		_ = db.Close()
-	})
+	db := NewTestDB(t, clock)
 
 	// Create a few sessions. The first one is a new session and the two
 	// after are all linked to the prior one. All these sessions belong to
@@ -294,18 +286,14 @@ func TestLinkedSessions(t *testing.T) {
 func TestStateShift(t *testing.T) {
 	// Set up a new DB.
 	clock := clock.NewTestClock(testTime)
-	db, err := NewDB(t.TempDir(), "test.db", clock)
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		_ = db.Close()
-	})
+	db := NewTestDB(t, clock)
 
 	// Add a new session to the DB.
 	s1 := createSession(t, db, "label 1")
 
 	// Check that the session is in the StateCreated state. Also check that
 	// the "RevokedAt" time has not yet been set.
-	s1, err = db.GetSession(s1.LocalPublicKey)
+	s1, err := db.GetSession(s1.LocalPublicKey)
 	require.NoError(t, err)
 	require.Equal(t, StateCreated, s1.State)
 	require.Equal(t, time.Time{}, s1.RevokedAt)

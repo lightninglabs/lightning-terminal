@@ -224,8 +224,9 @@ func (db *BoltStore) NewSession(label string, typ Type, expiry time.Time,
 		if session.ID != session.GroupID {
 			_, err = getKeyForID(sessionBucket, session.GroupID)
 			if err != nil {
-				return fmt.Errorf("unknown linked session "+
-					"%x: %w", session.GroupID, err)
+				return fmt.Errorf("%w: unknown linked "+
+					"session %x: %w", ErrUnknownGroup,
+					session.GroupID, err)
 			}
 
 			// Fetch all the session IDs for this group. This will
@@ -237,18 +238,22 @@ func (db *BoltStore) NewSession(label string, typ Type, expiry time.Time,
 				return err
 			}
 
+			// Ensure that the all the linked sessions are no longer
+			// active.
 			for _, id := range sessionIDs {
 				sess, err := getSessionByID(sessionBucket, id)
 				if err != nil {
 					return err
 				}
 
-				// Ensure that the session is no longer active.
-				if !sess.State.Terminal() {
-					return fmt.Errorf("session (id=%x) "+
-						"in group %x is still active",
-						sess.ID, sess.GroupID)
+				if sess.State.Terminal() {
+					continue
 				}
+
+				return fmt.Errorf("%w: session (id=%x) in "+
+					"group %x is still active",
+					ErrSessionsInGroupStillActive, sess.ID,
+					sess.GroupID)
 			}
 		}
 
@@ -625,14 +630,14 @@ func (db *BoltStore) GetGroupID(sessionID ID) (ID, error) {
 
 		sessionIDBkt := idIndex.Bucket(sessionID[:])
 		if sessionIDBkt == nil {
-			return fmt.Errorf("no index entry for session ID: %x",
-				sessionID)
+			return fmt.Errorf("%w: no index entry for session "+
+				"ID: %x", ErrUnknownGroup, sessionID)
 		}
 
 		groupIDBytes := sessionIDBkt.Get(groupIDKey)
 		if len(groupIDBytes) == 0 {
-			return fmt.Errorf("group ID not found for session "+
-				"ID %x", sessionID)
+			return fmt.Errorf("%w: group ID not found for "+
+				"session ID %x", ErrUnknownGroup, sessionID)
 		}
 
 		copy(groupID[:], groupIDBytes)
@@ -801,7 +806,7 @@ func addIDToGroupIDPair(sessionBkt *bbolt.Bucket, id, groupID ID) error {
 func getSessionByID(bucket *bbolt.Bucket, id ID) (*Session, error) {
 	keyBytes, err := getKeyForID(bucket, id)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %w", ErrSessionNotFound, err)
 	}
 
 	v := bucket.Get(keyBytes)
