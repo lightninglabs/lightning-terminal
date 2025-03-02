@@ -362,7 +362,7 @@ func reserveSession(db Store, label string,
 
 	return db.NewSession(
 		context.Background(), label, opts.sessType,
-		time.Date(99999, 1, 1, 0, 0, 0, 0, time.UTC),
+		time.Date(9999, 1, 1, 0, 0, 0, 0, time.UTC),
 		"foo.bar.baz:1234",
 		WithDevServer(),
 		WithPrivacy(PrivacyFlags{ClearPubkeys}),
