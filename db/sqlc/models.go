@@ -36,3 +36,50 @@ type AccountPayment struct {
 	Status         int16
 	FullAmountMsat int64
 }
+
+type Session struct {
+	ID              int64
+	Alias           []byte
+	Label           string
+	State           int16
+	Type            int16
+	Expiry          time.Time
+	CreatedAt       time.Time
+	RevokedAt       sql.NullTime
+	ServerAddress   string
+	DevServer       bool
+	MacaroonRootKey int64
+	PairingSecret   []byte
+	LocalPrivateKey []byte
+	LocalPublicKey  []byte
+	RemotePublicKey []byte
+	Privacy         bool
+	AccountID       sql.NullInt64
+	GroupID         sql.NullInt64
+}
+
+type SessionFeatureConfig struct {
+	SessionID   int64
+	FeatureName string
+	Config      []byte
+}
+
+type SessionMacaroonCaveat struct {
+	ID             int64
+	SessionID      int64
+	CaveatID       []byte
+	VerificationID []byte
+	Location       sql.NullString
+}
+
+type SessionMacaroonPermission struct {
+	ID        int64
+	SessionID int64
+	Entity    string
+	Action    string
+}
+
+type SessionPrivacyFlag struct {
+	SessionID int64
+	Flag      int32
+}
