@@ -216,14 +216,14 @@ type LightningTerminal struct {
 	middleware        *mid.Manager
 	middlewareStarted bool
 
-	accountsStore         accounts.Store
 	accountService        *accounts.InterceptorService
 	accountServiceStarted bool
 
 	accountRpcServer *accounts.RPCServer
 
+	stores *stores
+
 	firewallDB *firewalldb.DB
-	sessionDB  *session.BoltStore
 
 	restHandler http.Handler
 	restCancel  func()
@@ -234,6 +234,16 @@ func New() *LightningTerminal {
 	return &LightningTerminal{
 		statusMgr: status.NewStatusManager(),
 	}
+}
+
+// stores holds a collection of the DB stores that are used by LiT.
+type stores struct {
+	accounts accounts.Store
+	sessions session.Store
+
+	// close is a callback that can be used to close all the stores in the
+	// stores struct.
+	close func() error
 }
 
 // Run starts everything and then blocks until either the application is shut
@@ -421,14 +431,13 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 		return fmt.Errorf("could not create network directory: %v", err)
 	}
 
-	clock := clock.NewDefaultClock()
-	g.accountsStore, err = NewAccountStore(g.cfg, clock)
+	g.stores, err = NewStores(g.cfg, clock.NewDefaultClock())
 	if err != nil {
-		return fmt.Errorf("error creating accounts store: %w", err)
+		return fmt.Errorf("could not create stores: %v", err)
 	}
 
 	g.accountService, err = accounts.NewService(
-		g.accountsStore, accountServiceErrCallback,
+		g.stores.accounts, accountServiceErrCallback,
 	)
 	if err != nil {
 		return fmt.Errorf("error creating account service: %v", err)
@@ -448,16 +457,8 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 
 	g.ruleMgrs = rules.NewRuleManagerSet()
 
-	// Create an instance of the local Terminal Connect session store DB.
-	g.sessionDB, err = session.NewDB(
-		networkDir, session.DBFilename, clock, g.accountsStore,
-	)
-	if err != nil {
-		return fmt.Errorf("error creating session DB: %v", err)
-	}
-
 	g.firewallDB, err = firewalldb.NewDB(
-		networkDir, firewalldb.DBFilename, g.sessionDB,
+		networkDir, firewalldb.DBFilename, g.stores.sessions,
 	)
 	if err != nil {
 		return fmt.Errorf("error creating firewall DB: %v", err)
@@ -493,7 +494,7 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 	}
 
 	g.sessionRpcServer, err = newSessionRPCServer(&sessionRpcServerConfig{
-		db:        g.sessionDB,
+		db:        g.stores.sessions,
 		basicAuth: g.rpcProxy.basicAuth,
 		grpcOptions: []grpc.ServerOption{
 			grpc.CustomCodec(grpcProxy.Codec()), // nolint: staticcheck,
@@ -1086,7 +1087,7 @@ func (g *LightningTerminal) startInternalSubServers(ctx context.Context,
 
 	privacyMapper := firewall.NewPrivacyMapper(
 		g.firewallDB.PrivacyDB, firewall.CryptoRandIntn,
-		g.sessionDB,
+		g.stores.sessions,
 	)
 
 	mw := []mid.RequestInterceptor{
@@ -1097,7 +1098,7 @@ func (g *LightningTerminal) startInternalSubServers(ctx context.Context,
 
 	if !g.cfg.Autopilot.Disable {
 		ruleEnforcer := firewall.NewRuleEnforcer(
-			g.firewallDB, g.firewallDB, g.sessionDB,
+			g.firewallDB, g.firewallDB, g.stores.sessions,
 			g.autopilotClient.ListFeaturePerms,
 			g.permsMgr, g.lndClient.NodePubkey,
 			g.lndClient.Router,
@@ -1436,14 +1437,6 @@ func (g *LightningTerminal) shutdownSubServers() error {
 		}
 	}
 
-	if g.accountsStore != nil {
-		err = g.accountsStore.Close()
-		if err != nil {
-			log.Errorf("Error closing accounts store: %v", err)
-			returnErr = err
-		}
-	}
-
 	if g.middlewareStarted {
 		g.middleware.Stop()
 	}
@@ -1462,9 +1455,10 @@ func (g *LightningTerminal) shutdownSubServers() error {
 		}
 	}
 
-	if g.sessionDB != nil {
-		if err := g.sessionDB.Close(); err != nil {
-			log.Errorf("Error closing session DB: %v", err)
+	if g.stores != nil {
+		err = g.stores.close()
+		if err != nil {
+			log.Errorf("Error closing stores: %v", err)
 			returnErr = err
 		}
 	}

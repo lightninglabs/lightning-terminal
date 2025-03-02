@@ -7,6 +7,7 @@ import (
 
 	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/db"
+	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/clock"
 )
 
@@ -80,14 +81,19 @@ func defaultDevConfig() *DevConfig {
 	}
 }
 
-// NewAccountStore creates a new account store based on the chosen database
-// backend.
-func NewAccountStore(cfg *Config, clock clock.Clock) (accounts.Store, error) {
+// NewStores creates a new stores instance based on the chosen database backend.
+func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
+	var (
+		networkDir = filepath.Join(cfg.LitDir, cfg.Network)
+		acctStore  accounts.Store
+		sessStore  session.Store
+		closeFn    func() error
+	)
+
 	switch cfg.DatabaseBackend {
 	case DatabaseBackendSqlite:
 		// Before we initialize the SQLite store, we'll make sure that
 		// the directory where we will store the database file exists.
-		networkDir := filepath.Join(cfg.LitDir, cfg.Network)
 		err := makeDirectories(networkDir)
 		if err != nil {
 			return nil, err
@@ -98,7 +104,9 @@ func NewAccountStore(cfg *Config, clock clock.Clock) (accounts.Store, error) {
 			return nil, err
 		}
 
-		return accounts.NewSQLStore(sqlStore.BaseDB, clock), nil
+		acctStore = accounts.NewSQLStore(sqlStore.BaseDB, clock)
+		sessStore = session.NewSQLStore(sqlStore.BaseDB, clock)
+		closeFn = sqlStore.BaseDB.Close
 
 	case DatabaseBackendPostgres:
 		sqlStore, err := db.NewPostgresStore(cfg.Postgres)
@@ -106,12 +114,47 @@ func NewAccountStore(cfg *Config, clock clock.Clock) (accounts.Store, error) {
 			return nil, err
 		}
 
-		return accounts.NewSQLStore(sqlStore.BaseDB, clock), nil
+		acctStore = accounts.NewSQLStore(sqlStore.BaseDB, clock)
+		sessStore = session.NewSQLStore(sqlStore.BaseDB, clock)
+		closeFn = sqlStore.BaseDB.Close
 
 	default:
-		return accounts.NewBoltStore(
+		accountStore, err := accounts.NewBoltStore(
 			filepath.Dir(cfg.MacaroonPath), accounts.DBFilename,
 			clock,
 		)
+		if err != nil {
+			return nil, err
+		}
+
+		sessionStore, err := session.NewDB(
+			networkDir, session.DBFilename, clock, accountStore,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		acctStore = accountStore
+		sessStore = sessionStore
+		closeFn = func() error {
+			var returnErr error
+			err = accountStore.Close()
+			if err != nil {
+				returnErr = err
+			}
+
+			err = sessionStore.Close()
+			if err != nil {
+				returnErr = err
+			}
+
+			return returnErr
+		}
 	}
+
+	return &stores{
+		accounts: acctStore,
+		sessions: sessStore,
+		close:    closeFn,
+	}, nil
 }
