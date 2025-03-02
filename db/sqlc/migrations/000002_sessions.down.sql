@@ -1,0 +1,12 @@
+DROP INDEX IF EXISTS sessions_type_idx;
+DROP INDEX IF EXISTS sessions_group_id_idx;
+DROP INDEX IF EXISTS session_feature_configs_unique;
+DROP INDEX IF EXISTS session_priv_flags_unique;
+DROP INDEX IF EXISTS session_mac_perms_idx;
+DROP INDEX IF EXISTS sessions_mac_caveats_idx;
+DROP INDEX IF EXISTS sessions_state_idx;
+DROP TABLE IF EXISTS session_macaroon_permissions;
+DROP TABLE IF EXISTS session_macaroon_caveats;
+DROP TABLE IF EXISTS session_feature_configs;
+DROP TABLE IF EXISTS session_privacy_flags;
+DROP TABLE IF EXISTS sessions;
