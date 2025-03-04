@@ -234,4 +234,6 @@ replace (
 // taproot-assets dependency to function properly.
 replace google.golang.org/protobuf => github.com/lightninglabs/protobuf-go-hex-display v1.34.2-hex-display
 
+replace github.com/lightninglabs/taproot-assets => ../taproot-assets
+
 go 1.22.6

@@ -17,6 +17,7 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/davecgh/go-spew/spew"
+	taprootassets "github.com/lightninglabs/taproot-assets"
 	tapfn "github.com/lightninglabs/taproot-assets/fn"
 	"github.com/lightninglabs/taproot-assets/itest"
 	"github.com/lightninglabs/taproot-assets/proof"
@@ -258,14 +259,15 @@ func createTestAssetNetwork(t *harnessTest, net *NetworkHarness, charlieTap,
 	// Make sure the channel shows the correct asset information.
 	assertAssetChan(
 		t.t, charlieTap.node, daveTap.node, charlieFundingAmount,
-		mintedAsset,
+		[]*taprpc.Asset{mintedAsset},
 	)
 	assertAssetChan(
-		t.t, daveTap.node, yaraTap.node, daveFundingAmount, mintedAsset,
+		t.t, daveTap.node, yaraTap.node, daveFundingAmount,
+		[]*taprpc.Asset{mintedAsset},
 	)
 	assertAssetChan(
 		t.t, erinTap.node, fabiaTap.node, erinFundingAmount,
-		mintedAsset,
+		[]*taprpc.Asset{mintedAsset},
 	)
 
 	chanPointCD := &lnrpc.ChannelPoint{
@@ -292,7 +294,7 @@ func createTestAssetNetwork(t *harnessTest, net *NetworkHarness, charlieTap,
 
 func createTestAssetNetworkGroupKey(ctx context.Context, t *harnessTest,
 	net *NetworkHarness, charlieTap, daveTap, erinTap, fabiaTap,
-	universeTap *tapClient, mintedAssets []*taprpc.Asset, assetSendAmount,
+	universeTap *tapClient, mintedAssets []*taprpc.Asset,
 	charlieFundingAmount, erinFundingAmount uint64,
 	pushSat int64) (*lnrpc.ChannelPoint, *lnrpc.ChannelPoint) {
 
@@ -311,12 +313,60 @@ func createTestAssetNetworkGroupKey(ctx context.Context, t *harnessTest,
 		)
 	}
 
+	fundingScriptTree := tapscript.NewChannelFundingScriptTree()
+	fundingScriptKey := fundingScriptTree.TaprootKey
+	fundingScriptTreeBytes := fundingScriptKey.SerializeCompressed()
+
+	// We first do a transfer to Charlie by itself, so we get the correct
+	// asset pieces that we want for the channel funding.
+	sendAssetsAndAssert(
+		ctx, t, charlieTap, charlieTap, universeTap, mintedAssets[0],
+		charlieFundingAmount/2, 0, 1, 0,
+	)
+	sendAssetsAndAssert(
+		ctx, t, charlieTap, charlieTap, universeTap, mintedAssets[1],
+		charlieFundingAmount/2, 1, 2, 0,
+	)
+
 	// We need to send some assets to Erin, so he can fund an asset channel
 	// with Fabia.
-	sendAssetsEqualAmounts(
-		ctx, t, erinTap, charlieTap, universeTap, mintedAssets,
-		assetSendAmount/2, 0,
+	sendAssetsAndAssert(
+		ctx, t, erinTap, charlieTap, universeTap, mintedAssets[0],
+		erinFundingAmount/2, 2, 1, charlieFundingAmount/2,
 	)
+	sendAssetsAndAssert(
+		ctx, t, erinTap, charlieTap, universeTap, mintedAssets[1],
+		erinFundingAmount/2, 3, 2, charlieFundingAmount/2,
+	)
+
+	// Then we burn everything but a single asset piece.
+	assetID1 := mintedAssets[0].AssetGenesis.AssetId
+	assetID2 := mintedAssets[1].AssetGenesis.AssetId
+	burnAmount1 := mintedAssets[0].Amount - charlieFundingAmount/2 -
+		erinFundingAmount/2 - 1
+	_, err := charlieTap.BurnAsset(ctx, &taprpc.BurnAssetRequest{
+		Asset: &taprpc.BurnAssetRequest_AssetId{
+			AssetId: assetID1,
+		},
+		AmountToBurn:     burnAmount1,
+		ConfirmationText: taprootassets.AssetBurnConfirmationText,
+	})
+	require.NoError(t.t, err)
+
+	mineBlocks(t, net, 1, 1)
+
+	burnAmount2 := mintedAssets[1].Amount - charlieFundingAmount/2 -
+		erinFundingAmount/2 - 1
+	_, err = charlieTap.BurnAsset(ctx, &taprpc.BurnAssetRequest{
+		Asset: &taprpc.BurnAssetRequest_AssetId{
+			AssetId: assetID2,
+		},
+		AmountToBurn:     burnAmount2,
+		ConfirmationText: taprootassets.AssetBurnConfirmationText,
+	})
+	require.NoError(t.t, err)
+
+	mineBlocks(t, net, 1, 1)
 
 	t.Logf("Opening asset channels...")
 
@@ -349,8 +399,12 @@ func createTestAssetNetworkGroupKey(ctx context.Context, t *harnessTest,
 	// Make sure the pending channel shows up in the list and has the
 	// custom records set as JSON.
 	assertPendingChannels(
-		t.t, charlieTap.node, mintedAssets[1], 1, charlieFundingAmount,
-		0,
+		t.t, charlieTap.node, mintedAssets[0], 1,
+		charlieFundingAmount/2, 0,
+	)
+	assertPendingChannels(
+		t.t, charlieTap.node, mintedAssets[1], 1,
+		charlieFundingAmount/2, 0,
 	)
 	assertPendingChannels(
 		t.t, erinTap.node, mintedAssets[0], 1, erinFundingAmount/2, 0,
@@ -362,6 +416,72 @@ func createTestAssetNetworkGroupKey(ctx context.Context, t *harnessTest,
 	// Now that we've looked at the pending channels, let's actually confirm
 	// all three of them.
 	mineBlocks(t, net, 6, 2)
+
+	assertAssetBalance(t.t, charlieTap, assetID1, 1)
+	assertAssetBalance(t.t, charlieTap, assetID2, 1)
+	assertAssetBalance(t.t, erinTap, assetID1, 0)
+	assertAssetBalance(t.t, erinTap, assetID2, 0)
+
+	// There should be two asset pieces for Charlie for both asset IDs, one
+	// in the channel and one with a single unit from the burn.
+	assertNumAssetOutputs(t.t, charlieTap, assetID1, 2)
+	assertNumAssetOutputs(t.t, charlieTap, assetID2, 2)
+	assertAssetExists(
+		t.t, charlieTap, assetID1, charlieFundingAmount/2,
+		fundingScriptKey, false, true, true,
+	)
+	assertAssetExists(
+		t.t, charlieTap, assetID1, 1, nil, true, false, false,
+	)
+	assertAssetExists(
+		t.t, charlieTap, assetID2, charlieFundingAmount/2,
+		fundingScriptKey, false, true, true,
+	)
+	assertAssetExists(
+		t.t, charlieTap, assetID2, 1, nil, true, false, false,
+	)
+
+	// Erin should just have one output for each asset ID, the one in the
+	// channel.
+	assertNumAssetOutputs(t.t, erinTap, assetID1, 1)
+	assertNumAssetOutputs(t.t, erinTap, assetID2, 1)
+	assertAssetExists(
+		t.t, erinTap, assetID1, erinFundingAmount/2, fundingScriptKey,
+		false, true, true,
+	)
+	assertAssetExists(
+		t.t, erinTap, assetID2, erinFundingAmount/2, fundingScriptKey,
+		false, true, true,
+	)
+
+	// Assert that the proofs for both channels has been uploaded to the
+	// designated Universe server.
+	assertUniverseProofExists(
+		t.t, universeTap, assetID1, groupKey, fundingScriptTreeBytes,
+		fmt.Sprintf("%v:%v", fundRespCD.Txid, fundRespCD.OutputIndex),
+	)
+	assertUniverseProofExists(
+		t.t, universeTap, assetID2, groupKey, fundingScriptTreeBytes,
+		fmt.Sprintf("%v:%v", fundRespCD.Txid, fundRespCD.OutputIndex),
+	)
+	assertUniverseProofExists(
+		t.t, universeTap, assetID1, groupKey, fundingScriptTreeBytes,
+		fmt.Sprintf("%v:%v", fundRespEF.Txid, fundRespEF.OutputIndex),
+	)
+	assertUniverseProofExists(
+		t.t, universeTap, assetID2, groupKey, fundingScriptTreeBytes,
+		fmt.Sprintf("%v:%v", fundRespEF.Txid, fundRespEF.OutputIndex),
+	)
+
+	// Make sure the channel shows the correct asset information.
+	assertAssetChan(
+		t.t, charlieTap.node, daveTap.node, charlieFundingAmount,
+		mintedAssets,
+	)
+	assertAssetChan(
+		t.t, erinTap.node, fabiaTap.node, erinFundingAmount,
+		mintedAssets,
+	)
 
 	chanPointCD := &lnrpc.ChannelPoint{
 		OutputIndex: uint32(fundRespCD.OutputIndex),
@@ -379,51 +499,43 @@ func createTestAssetNetworkGroupKey(ctx context.Context, t *harnessTest,
 	return chanPointCD, chanPointEF
 }
 
-func sendAssetsEqualAmounts(ctx context.Context, t *harnessTest,
-	recipient, sender, universe *tapClient, mintedAssets []*taprpc.Asset,
-	assetSendAmount uint64, previousSends uint64) {
+func sendAssetsAndAssert(ctx context.Context, t *harnessTest,
+	recipient, sender, universe *tapClient, mintedAsset *taprpc.Asset,
+	assetSendAmount uint64, idx, numTransfers int,
+	previousSentAmount uint64) {
 
-	numTranches := uint64(len(mintedAssets))
-	for idx, mintedAsset := range mintedAssets {
-		assetID := mintedAsset.AssetGenesis.AssetId
-		trancheAmount := assetSendAmount / numTranches
-		recipientAddr, err := recipient.NewAddr(
-			ctx, &taprpc.NewAddrRequest{
-				Amt:     trancheAmount,
-				AssetId: assetID,
-				ProofCourierAddr: fmt.Sprintf(
-					"%s://%s", proof.UniverseRpcCourierType,
-					universe.node.Cfg.LitAddr(),
-				),
-			},
-		)
-		require.NoError(t.t, err)
+	assetID := mintedAsset.AssetGenesis.AssetId
+	recipientAddr, err := recipient.NewAddr(ctx, &taprpc.NewAddrRequest{
+		Amt:     assetSendAmount,
+		AssetId: assetID,
+		ProofCourierAddr: fmt.Sprintf(
+			"%s://%s", proof.UniverseRpcCourierType,
+			universe.node.Cfg.LitAddr(),
+		),
+	})
+	require.NoError(t.t, err)
 
-		t.Logf("Sending %v asset units to %s...", trancheAmount,
-			recipient.node.Cfg.Name)
+	t.Logf("Sending %v asset units to %s...", assetSendAmount,
+		recipient.node.Cfg.Name)
 
-		// We assume that we sent the same size in a previous send.
-		totalSent := trancheAmount + (previousSends * trancheAmount)
+	// We assume that we sent the same size in a previous send.
+	totalSent := assetSendAmount + previousSentAmount
 
-		// Send the assets to recipient.
-		itest.AssertAddrCreated(
-			t.t, recipient, mintedAsset, recipientAddr,
-		)
-		sendResp, err := sender.SendAsset(ctx, &taprpc.SendAssetRequest{
-			TapAddrs: []string{recipientAddr.Encoded},
-		})
-		require.NoError(t.t, err)
-		itest.ConfirmAndAssertOutboundTransfer(
-			t.t, t.lndHarness.Miner.Client, sender, sendResp,
-			assetID,
-			[]uint64{mintedAsset.Amount - totalSent, trancheAmount},
-			int(previousSends*numTranches)+idx,
-			int(previousSends*numTranches)+idx+1,
-		)
-		itest.AssertNonInteractiveRecvComplete(
-			t.t, recipient, int(previousSends*numTranches)+idx+1,
-		)
-	}
+	// Send the assets to recipient.
+	itest.AssertAddrCreated(
+		t.t, recipient, mintedAsset, recipientAddr,
+	)
+	sendResp, err := sender.SendAsset(ctx, &taprpc.SendAssetRequest{
+		TapAddrs: []string{recipientAddr.Encoded},
+	})
+	require.NoError(t.t, err)
+	itest.ConfirmAndAssertOutboundTransfer(
+		t.t, t.lndHarness.Miner.Client, sender, sendResp,
+		assetID,
+		[]uint64{mintedAsset.Amount - totalSent, assetSendAmount},
+		idx, idx+1,
+	)
+	itest.AssertNonInteractiveRecvComplete(t.t, recipient, numTransfers)
 }
 
 func assertNumAssetUTXOs(t *testing.T, tapdClient *tapClient,
@@ -525,8 +637,8 @@ func syncUniverses(t *testing.T, universe *tapClient, nodes ...*HarnessNode) {
 func assertUniverseProofExists(t *testing.T, universe *tapClient,
 	assetID, groupKey, scriptKey []byte, outpoint string) *taprpc.Asset {
 
-	t.Logf("Asserting proof outpoint=%v, script_key=%x", outpoint,
-		scriptKey)
+	t.Logf("Asserting proof outpoint=%v, script_key=%x, asset_id=%x, "+
+		"group_key=%x", outpoint, scriptKey, assetID, groupKey)
 
 	req := &universerpc.UniverseKey{
 		Id: &universerpc.ID{
@@ -608,9 +720,9 @@ func assertPendingChannels(t *testing.T, node *HarnessNode,
 		pendingChan.Channel.CustomChannelData, &pendingJSON,
 	)
 	require.NoError(t, err)
-	require.GreaterOrEqual(t, len(pendingJSON.Assets), 1)
+	require.GreaterOrEqual(t, len(pendingJSON.FundingAssets), 1)
 
-	require.NotZero(t, pendingJSON.Assets[0].Capacity)
+	require.NotZero(t, pendingJSON.Capacity)
 
 	pendingFormatted, _ := json.MarshalIndent(pendingJSON, "", "  ")
 	t.Logf("Pending channel: %v", string(pendingFormatted))
@@ -626,7 +738,7 @@ func assertPendingChannels(t *testing.T, node *HarnessNode,
 
 	require.Equal(
 		t, expectedDecimalDisplay,
-		pendingJSON.Assets[0].AssetInfo.DecimalDisplay,
+		pendingJSON.FundingAssets[0].DecimalDisplay,
 	)
 
 	// Check the balance of the pending channel.
@@ -637,21 +749,38 @@ func assertPendingChannels(t *testing.T, node *HarnessNode,
 	require.EqualValues(t, remoteSum, pendingRemoteBalance)
 }
 
-func assertAssetChan(t *testing.T, src, dst *HarnessNode, fundingAmount uint64,
-	mintedAsset *taprpc.Asset) {
+// haveFundingAsset returns true if the given channel has the asset with the
+// given asset ID as a funding asset.
+func haveFundingAsset(assetChannel *rfqmsg.JsonAssetChannel,
+	assetID []byte) bool {
 
-	assetID := mintedAsset.AssetGenesis.AssetId
 	assetIDStr := hex.EncodeToString(assetID)
+	for _, fundingAsset := range assetChannel.FundingAssets {
+		if fundingAsset.AssetGenesis.AssetID == assetIDStr {
+			return true
+		}
+	}
+
+	return false
+}
+
+func assertAssetChan(t *testing.T, src, dst *HarnessNode, fundingAmount uint64,
+	channelAssets []*taprpc.Asset) {
+
 	err := wait.NoError(func() error {
 		a, err := getChannelCustomData(src, dst)
 		if err != nil {
 			return err
 		}
 
-		if a.AssetInfo.AssetGenesis.AssetID != assetIDStr {
-			return fmt.Errorf("expected asset ID %s, got %s",
-				assetIDStr, a.AssetInfo.AssetGenesis.AssetID)
+		for _, channelAsset := range channelAssets {
+			assetID := channelAsset.AssetGenesis.AssetId
+			if !haveFundingAsset(a, assetID) {
+				return fmt.Errorf("expected asset ID %x, to "+
+					"be in channel", assetID)
+			}
 		}
+
 		if a.Capacity != fundingAmount {
 			return fmt.Errorf("expected capacity %d, got %d",
 				fundingAmount, a.Capacity)
@@ -659,17 +788,19 @@ func assertAssetChan(t *testing.T, src, dst *HarnessNode, fundingAmount uint64,
 
 		// Check the decimal display of the channel funding blob. If no
 		// explicit value was set, we assume and expect the value of 0.
+		// We only need to check the first funding asset, since we
+		// enforce them to be the same.
 		var expectedDecimalDisplay uint8
-		if mintedAsset.DecimalDisplay != nil {
+		if channelAssets[0].DecimalDisplay != nil {
 			expectedDecimalDisplay = uint8(
-				mintedAsset.DecimalDisplay.DecimalDisplay,
+				channelAssets[0].DecimalDisplay.DecimalDisplay,
 			)
 		}
 
-		if a.AssetInfo.DecimalDisplay != expectedDecimalDisplay {
+		if a.FundingAssets[0].DecimalDisplay != expectedDecimalDisplay {
 			return fmt.Errorf("expected decimal display %d, got %d",
 				expectedDecimalDisplay,
-				a.AssetInfo.DecimalDisplay)
+				a.FundingAssets[0].DecimalDisplay)
 		}
 
 		return nil
@@ -716,7 +847,7 @@ func assertChannelKnown(t *testing.T, node *HarnessNode,
 	require.NoError(t, err)
 }
 
-func getChannelCustomData(src, dst *HarnessNode) (*rfqmsg.JsonAssetChanInfo,
+func getChannelCustomData(src, dst *HarnessNode) (*rfqmsg.JsonAssetChannel,
 	error) {
 
 	ctxb := context.Background()
@@ -750,12 +881,12 @@ func getChannelCustomData(src, dst *HarnessNode) (*rfqmsg.JsonAssetChanInfo,
 			err)
 	}
 
-	if len(assetData.Assets) != 1 {
-		return nil, fmt.Errorf("expected 1 asset, got %d",
-			len(assetData.Assets))
+	if len(assetData.FundingAssets) == 0 {
+		return nil, fmt.Errorf("expected at least 1 asset, got %d",
+			len(assetData.FundingAssets))
 	}
 
-	return &assetData.Assets[0], nil
+	return &assetData, nil
 }
 
 func getAssetChannelBalance(t *testing.T, node *HarnessNode, assetIDs [][]byte,
@@ -852,10 +983,10 @@ func assertChannelAssetBalance(t *testing.T, node *HarnessNode,
 	err := json.Unmarshal(targetChan.CustomChannelData, &assetBalance)
 	require.NoError(t, err)
 
-	require.Len(t, assetBalance.Assets, 1)
+	require.Len(t, assetBalance.FundingAssets, 1)
 
-	require.InDelta(t, local, assetBalance.Assets[0].LocalBalance, 1)
-	require.InDelta(t, remote, assetBalance.Assets[0].RemoteBalance, 1)
+	require.InDelta(t, local, assetBalance.LocalBalance, 1)
+	require.InDelta(t, remote, assetBalance.RemoteBalance, 1)
 }
 
 // addRoutingFee adds the default routing fee (1 part per million fee rate plus
@@ -1507,12 +1638,12 @@ func waitForSendEvent(t *testing.T,
 // transaction.
 type coOpCloseBalanceCheck func(t *testing.T, local, remote *HarnessNode,
 	closeTx *wire.MsgTx, closeUpdate *lnrpc.ChannelCloseUpdate,
-	assetID, groupKey []byte, universeTap *tapClient)
+	assetIDs [][]byte, groupKey []byte, universeTap *tapClient)
 
 // noOpCoOpCloseBalanceCheck is a no-op implementation of the co-op close
 // balance check that can be used in tests.
 func noOpCoOpCloseBalanceCheck(_ *testing.T, _, _ *HarnessNode, _ *wire.MsgTx,
-	_ *lnrpc.ChannelCloseUpdate, _, _ []byte, _ *tapClient) {
+	_ *lnrpc.ChannelCloseUpdate, _ [][]byte, _ []byte, _ *tapClient) {
 
 	// This is a no-op function.
 }
@@ -1521,7 +1652,7 @@ func noOpCoOpCloseBalanceCheck(_ *testing.T, _, _ *HarnessNode, _ *wire.MsgTx,
 // node and asserts the final balances of the closing transaction.
 func closeAssetChannelAndAssert(t *harnessTest, net *NetworkHarness,
 	local, remote *HarnessNode, chanPoint *lnrpc.ChannelPoint,
-	assetID, groupKey []byte, universeTap *tapClient,
+	assetIDs [][]byte, groupKey []byte, universeTap *tapClient,
 	balanceCheck coOpCloseBalanceCheck) {
 
 	t.t.Helper()
@@ -1558,7 +1689,7 @@ func closeAssetChannelAndAssert(t *harnessTest, net *NetworkHarness,
 
 	// Check the final balance of the closing transaction.
 	balanceCheck(
-		t.t, local, remote, closeTx, closeUpdate, assetID, groupKey,
+		t.t, local, remote, closeTx, closeUpdate, assetIDs, groupKey,
 		universeTap,
 	)
 }
@@ -1572,10 +1703,10 @@ func assertDefaultCoOpCloseBalance(remoteBtcBalance,
 
 	return func(t *testing.T, local, remote *HarnessNode,
 		closeTx *wire.MsgTx, closeUpdate *lnrpc.ChannelCloseUpdate,
-		assetID, groupKey []byte, universeTap *tapClient) {
+		assetIDs [][]byte, groupKey []byte, universeTap *tapClient) {
 
 		defaultCoOpCloseBalanceCheck(
-			t, local, remote, closeTx, closeUpdate, assetID,
+			t, local, remote, closeTx, closeUpdate, assetIDs,
 			groupKey, universeTap, remoteBtcBalance,
 			remoteAssetBalance,
 		)
@@ -1588,8 +1719,8 @@ func assertDefaultCoOpCloseBalance(remoteBtcBalance,
 // with the boolean variables.
 func defaultCoOpCloseBalanceCheck(t *testing.T, local, remote *HarnessNode,
 	closeTx *wire.MsgTx, closeUpdate *lnrpc.ChannelCloseUpdate,
-	assetID, groupKey []byte, universeTap *tapClient, remoteBtcBalance,
-	remoteAssetBalance bool) {
+	assetIDs [][]byte, groupKey []byte, universeTap *tapClient,
+	remoteBtcBalance, remoteAssetBalance bool) {
 
 	// With the channel closed, we'll now assert that the co-op close
 	// transaction was inserted into the local universe.
@@ -1696,11 +1827,15 @@ func defaultCoOpCloseBalanceCheck(t *testing.T, local, remote *HarnessNode,
 	)
 	require.NoError(t, err)
 
+	assetIDStrings := fn.Map(hex.EncodeToString, assetIDs)
 	for assetIDStr, scriptKeyStr := range localAssetCloseOut.ScriptKeys {
 		scriptKeyBytes, err := hex.DecodeString(scriptKeyStr)
 		require.NoError(t, err)
 
-		require.Equal(t, hex.EncodeToString(assetID), assetIDStr)
+		require.Contains(t, assetIDStrings, assetIDStr)
+
+		assetID, err := hex.DecodeString(assetIDStr)
+		require.NoError(t, err)
 
 		a := assertUniverseProofExists(
 			t, universeTap, assetID, groupKey, scriptKeyBytes,
@@ -1738,7 +1873,10 @@ func defaultCoOpCloseBalanceCheck(t *testing.T, local, remote *HarnessNode,
 		scriptKeyBytes, err := hex.DecodeString(scriptKeyStr)
 		require.NoError(t, err)
 
-		require.Equal(t, hex.EncodeToString(assetID), assetIDStr)
+		require.Contains(t, assetIDStrings, assetIDStr)
+
+		assetID, err := hex.DecodeString(assetIDStr)
+		require.NoError(t, err)
 
 		a := assertUniverseProofExists(
 			t, universeTap, assetID, groupKey, scriptKeyBytes,
@@ -1760,8 +1898,8 @@ func defaultCoOpCloseBalanceCheck(t *testing.T, local, remote *HarnessNode,
 // function that can be used when the initiator has a zero asset balance.
 func initiatorZeroAssetBalanceCoOpBalanceCheck(t *testing.T, _,
 	remote *HarnessNode, closeTx *wire.MsgTx,
-	closeUpdate *lnrpc.ChannelCloseUpdate, assetID, groupKey []byte,
-	universeTap *tapClient) {
+	closeUpdate *lnrpc.ChannelCloseUpdate, assetIDs [][]byte,
+	groupKey []byte, universeTap *tapClient) {
 
 	// With the channel closed, we'll now assert that the co-op close
 	// transaction was inserted into the local universe.
@@ -1807,11 +1945,15 @@ func initiatorZeroAssetBalanceCoOpBalanceCheck(t *testing.T, _,
 	)
 	require.NoError(t, err)
 
+	assetIDStrings := fn.Map(hex.EncodeToString, assetIDs)
 	for assetIDStr, scriptKeyStr := range remoteAssetCloseOut.ScriptKeys {
 		scriptKeyBytes, err := hex.DecodeString(scriptKeyStr)
 		require.NoError(t, err)
 
-		require.Equal(t, hex.EncodeToString(assetID), assetIDStr)
+		require.Contains(t, assetIDStrings, assetIDStr)
+
+		assetID, err := hex.DecodeString(assetIDStr)
+		require.NoError(t, err)
 
 		a := assertUniverseProofExists(
 			t, universeTap, assetID, groupKey, scriptKeyBytes,
@@ -1954,11 +2096,14 @@ func assertAssetBalance(t *testing.T, client *tapClient, assetID []byte,
 		},
 	}
 
+	var lastBalances *taprpc.ListBalancesResponse
 	err := wait.NoError(func() error {
 		assetIDBalances, err := client.ListBalances(ctxt, req)
 		if err != nil {
 			return err
 		}
+
+		lastBalances = assetIDBalances
 
 		assetIDFound := false
 		for _, balance := range assetIDBalances.AssetBalances {
@@ -1980,11 +2125,16 @@ func assertAssetBalance(t *testing.T, client *tapClient, assetID []byte,
 		return nil
 	}, shortTimeout)
 	if err != nil {
-		r, err2 := client.ListAssets(ctxb, &taprpc.ListAssetRequest{})
+		listAssetsResp, err2 := client.ListAssets(
+			ctxb, &taprpc.ListAssetRequest{},
+		)
 		require.NoError(t, err2)
 
-		t.Logf("Failed to assert expected balance of %d, current "+
-			"assets: %v", expectedBalance, toProtoJSON(t, r))
+		t.Logf("Failed to assert expected balance of %d for asset ID "+
+			"%x: %v", expectedBalance, assetID, err)
+
+		t.Logf("Last balances: %v", toProtoJSON(t, lastBalances))
+		t.Logf("Current assets: %v", toProtoJSON(t, listAssetsResp))
 
 		utxos, err3 := client.ListUtxos(
 			ctxb, &taprpc.ListUtxosRequest{},
@@ -2303,8 +2453,8 @@ func newCloseExpiryInfo(t *testing.T, node *HarnessNode) forceCloseExpiryInfo {
 		csvDelay:           mainChan.CsvDelay,
 		currentHeight:      nodeInfo.BlockHeight,
 		cltvDelays:         cltvs,
-		localAssetBalance:  assetData.Assets[0].LocalBalance,
-		remoteAssetBalance: assetData.Assets[0].RemoteBalance,
+		localAssetBalance:  assetData.LocalBalance,
+		remoteAssetBalance: assetData.RemoteBalance,
 		t:                  t,
 		node:               node,
 	}
@@ -2374,4 +2524,48 @@ func assertInvoiceState(t *testing.T, hn *HarnessNode, payAddr []byte,
 			"in state %s", hn.Name(), payAddr, expectedState)
 	}, defaultTimeout)
 	require.NoError(t, err, "timeout waiting for invoice settled state")
+}
+
+func findForceCloseTransfer(t *testing.T, node1, node2 *tapClient,
+	closeTxid *chainhash.Hash) *taprpc.ListTransfersResponse {
+
+	var (
+		ctxb   = context.Background()
+		result *taprpc.ListTransfersResponse
+		err    error
+	)
+	fErr := wait.NoError(func() error {
+		result, err = node1.ListTransfers(
+			ctxb, &taprpc.ListTransfersRequest{
+				AnchorTxid: closeTxid.String(),
+			},
+		)
+		if err != nil {
+			return fmt.Errorf("unable to list node1 transfers: %w",
+				err)
+		}
+		if len(result.Transfers) != 1 {
+			return fmt.Errorf("node1 is missing force close " +
+				"transfer")
+		}
+
+		forceCloseTransfer2, err := node2.ListTransfers(
+			ctxb, &taprpc.ListTransfersRequest{
+				AnchorTxid: closeTxid.String(),
+			},
+		)
+		if err != nil {
+			return fmt.Errorf("unable to list node2 transfers: %w",
+				err)
+		}
+		if len(forceCloseTransfer2.Transfers) != 1 {
+			return fmt.Errorf("node2 is missing force close " +
+				"transfer")
+		}
+
+		return nil
+	}, defaultTimeout)
+	require.NoError(t, fErr)
+
+	return result
 }

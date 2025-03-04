@@ -31,7 +31,6 @@ import (
 	"github.com/lightningnetwork/lnd/lnrpc/walletrpc"
 	"github.com/lightningnetwork/lnd/lntest"
 	"github.com/lightningnetwork/lnd/lntest/port"
-	"github.com/lightningnetwork/lnd/lntest/wait"
 	"github.com/lightningnetwork/lnd/lnwallet/chainfee"
 	"github.com/lightningnetwork/lnd/lnwire"
 	"github.com/stretchr/testify/require"
@@ -279,7 +278,7 @@ func testCustomChannelsLarge(_ context.Context, net *NetworkHarness,
 	// balance is on the non-initiator (recipient) side.
 	t.Logf("Closing Charlie -> Dave channel")
 	closeAssetChannelAndAssert(
-		t, net, charlie, dave, chanPointCD, assetID, nil,
+		t, net, charlie, dave, chanPointCD, [][]byte{assetID}, nil,
 		universeTap, initiatorZeroAssetBalanceCoOpBalanceCheck,
 	)
 }
@@ -621,19 +620,19 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	// ------------
 	t.Logf("Closing Charlie -> Dave channel")
 	closeAssetChannelAndAssert(
-		t, net, charlie, dave, chanPointCD, assetID, nil,
+		t, net, charlie, dave, chanPointCD, [][]byte{assetID}, nil,
 		universeTap, assertDefaultCoOpCloseBalance(true, true),
 	)
 
 	t.Logf("Closing Dave -> Yara channel, close initiated by Yara")
 	closeAssetChannelAndAssert(
-		t, net, yara, dave, chanPointDY, assetID, nil,
+		t, net, yara, dave, chanPointDY, [][]byte{assetID}, nil,
 		universeTap, assertDefaultCoOpCloseBalance(false, true),
 	)
 
 	t.Logf("Closing Erin -> Fabia channel")
 	closeAssetChannelAndAssert(
-		t, net, erin, fabia, chanPointEF, assetID, nil,
+		t, net, erin, fabia, chanPointEF, [][]byte{assetID}, nil,
 		universeTap, assertDefaultCoOpCloseBalance(true, true),
 	)
 
@@ -674,7 +673,9 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 		t.t, universeTap, assetID, nil, fundingScriptTreeBytes,
 		fmt.Sprintf("%v:%v", fundRespCD.Txid, fundRespCD.OutputIndex),
 	)
-	assertAssetChan(t.t, charlie, dave, fundingAmount, cents)
+	assertAssetChan(
+		t.t, charlie, dave, fundingAmount, []*taprpc.Asset{cents},
+	)
 
 	// And let's just close the channel again.
 	chanPointCD = &lnrpc.ChannelPoint{
@@ -686,7 +687,7 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 
 	t.Logf("Closing Charlie -> Dave channel")
 	closeAssetChannelAndAssert(
-		t, net, charlie, dave, chanPointCD, assetID, nil,
+		t, net, charlie, dave, chanPointCD, [][]byte{assetID}, nil,
 		universeTap, assertDefaultCoOpCloseBalance(false, false),
 	)
 
@@ -1049,19 +1050,19 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 	// ------------
 	t.Logf("Closing Charlie -> Dave channel")
 	closeAssetChannelAndAssert(
-		t, net, charlie, dave, chanPointCD, assetID, groupID,
+		t, net, charlie, dave, chanPointCD, [][]byte{assetID}, groupID,
 		universeTap, assertDefaultCoOpCloseBalance(true, true),
 	)
 
 	t.Logf("Closing Dave -> Yara channel, close initiated by Yara")
 	closeAssetChannelAndAssert(
-		t, net, yara, dave, chanPointDY, assetID, groupID,
+		t, net, yara, dave, chanPointDY, [][]byte{assetID}, groupID,
 		universeTap, assertDefaultCoOpCloseBalance(false, true),
 	)
 
 	t.Logf("Closing Erin -> Fabia channel")
 	closeAssetChannelAndAssert(
-		t, net, erin, fabia, chanPointEF, assetID, groupID,
+		t, net, erin, fabia, chanPointEF, [][]byte{assetID}, groupID,
 		universeTap, assertDefaultCoOpCloseBalance(true, true),
 	)
 
@@ -1103,7 +1104,9 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 		t.t, universeTap, nil, groupID, fundingScriptTreeBytes,
 		fmt.Sprintf("%v:%v", fundRespCD.Txid, fundRespCD.OutputIndex),
 	)
-	assertAssetChan(t.t, charlie, dave, fundingAmount, cents)
+	assertAssetChan(
+		t.t, charlie, dave, fundingAmount, []*taprpc.Asset{cents},
+	)
 
 	// And let's just close the channel again.
 	chanPointCD = &lnrpc.ChannelPoint{
@@ -1115,7 +1118,7 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 
 	t.Logf("Closing Charlie -> Dave channel")
 	closeAssetChannelAndAssert(
-		t, net, charlie, dave, chanPointCD, assetID, groupID,
+		t, net, charlie, dave, chanPointCD, [][]byte{assetID}, groupID,
 		universeTap, assertDefaultCoOpCloseBalance(false, false),
 	)
 
@@ -1240,7 +1243,7 @@ func testCustomChannelsGroupedAssetTranches(ctx context.Context,
 
 	chanPointCD, chanPointEF := createTestAssetNetworkGroupKey(
 		ctx, t, net, charlieTap, daveTap, erinTap, fabiaTap,
-		universeTap, []*taprpc.Asset{centsT1, centsT2}, startAmount,
+		universeTap, []*taprpc.Asset{centsT1, centsT2},
 		fundingAmount, fundingAmount, DefaultPushSat,
 	)
 
@@ -1252,19 +1255,92 @@ func testCustomChannelsGroupedAssetTranches(ctx context.Context,
 	logBalanceGroup(t.t, nodes, groupIDs, "initial")
 
 	// ------------
-	// Test case 1: Send a direct keysend payment from Charlie to Dave.
+	// Test case 1: Send a few direct keysend payment from Charlie to Dave.
 	// ------------
 	const keySendAmount = 100
-	sendAssetKeySendPayment(
-		t.t, charlie, dave, keySendAmount, assetID1, fn.None[int64](),
-	)
-	logBalanceGroup(t.t, nodes, groupIDs, "after keysend")
+	for i := 0; i < 5; i++ {
+		sendAssetKeySendPayment(
+			t.t, charlie, dave, keySendAmount, assetID1,
+			fn.None[int64](),
+		)
+	}
+	logBalanceGroup(t.t, nodes, groupIDs, "after keysend Charlie->Dave")
 
+	// ------------
+	// Test case 2: Send a few direct keysend payment from Erin to Fabia.
+	// ------------
+	for i := 0; i < 5; i++ {
+		sendAssetKeySendPayment(
+			t.t, erin, fabia, keySendAmount, assetID1,
+			fn.None[int64](),
+		)
+	}
+	logBalanceGroup(t.t, nodes, groupIDs, "after keysend Erin->Fabia")
+
+	// ------------
+	// Test case 3: Co-op close the channel between Charlie and Dave.
+	// ------------
 	t.Logf("Closing Charlie -> Dave channel")
 	closeAssetChannelAndAssert(
-		t, net, charlie, dave, chanPointCD, assetID1, groupKey,
-		universeTap, noOpCoOpCloseBalanceCheck,
+		t, net, charlie, dave, chanPointCD,
+		[][]byte{assetID1, assetID2}, groupKey, universeTap,
+		// TODO(guggero): replace this with
+		// assertDefaultCoOpCloseBalance(true, true) once we have the
+		// ability to check the custom data in the closed channel list.
+		noOpCoOpCloseBalanceCheck,
 	)
+
+	// TODO: assertSpendableBalance(t.t, charlieTap, assetID1, 0)
+
+	// ------------
+	// Test case 4: Force close the channel between Erin and Fabia.
+	// ------------
+	_, closeTxid, err := net.CloseChannel(erin, chanPointEF, true)
+	require.NoError(t.t, err)
+
+	t.Logf("Channel force closed! Mining blocks, close_txid=%v", closeTxid)
+
+	// Next, we'll mine a block to confirm the force close.
+	mineBlocks(t, net, 1, 1)
+
+	// At this point, we should have the force close transaction in the set
+	// of transfers for both nodes.
+	forceCloseTransfer := findForceCloseTransfer(
+		t.t, erinTap, fabiaTap, closeTxid,
+	)
+	t.Logf("Force close transfer: %v", toProtoJSON(t.t, forceCloseTransfer))
+
+	// Now that we have the transfer on disk, we'll also assert that the
+	// universe also has proof for both the relevant transfer outputs.
+	for _, transfer := range forceCloseTransfer.Transfers {
+		for _, transferOut := range transfer.Outputs {
+			assertUniverseProofExists(
+				t.t, universeTap, transferOut.AssetId, groupKey,
+				transferOut.ScriptKey,
+				transferOut.Anchor.Outpoint,
+			)
+		}
+	}
+
+	t.Logf("Universe proofs located!")
+
+	time.Sleep(time.Second * 1)
+
+	// We'll mine one more block, which triggers the 1 CSV needed for Fabia
+	// to sweep his output.
+	mineBlocks(t, net, 1, 0)
+
+	// We should also have a new sweep transaction in the mempool.
+	fabiaSweepTxid, err := waitForNTxsInMempool(
+		net.Miner.Client, 1, shortTimeout,
+	)
+	require.NoError(t.t, err)
+
+	t.Logf("Fabia sweep txid: %v", fabiaSweepTxid)
+
+	mineBlocks(t, net, 1, 1)
+
+	// TODO: assertSpendableBalance(t.t, charlieTap, assetID1, 0)
 }
 
 // testCustomChannelsForceClose tests a force close scenario after both parties
@@ -1404,7 +1480,9 @@ func testCustomChannelsForceClose(ctx context.Context, net *NetworkHarness,
 	)
 
 	// Make sure the channel shows the correct asset information.
-	assertAssetChan(t.t, charlie, dave, fundingAmount, cents)
+	assertAssetChan(
+		t.t, charlie, dave, fundingAmount, []*taprpc.Asset{cents},
+	)
 
 	// Before we start sending out payments, let's make sure each node can
 	// see the other one in the graph and has all required features.
@@ -1459,40 +1537,9 @@ func testCustomChannelsForceClose(ctx context.Context, net *NetworkHarness,
 
 	// At this point, we should have the force close transaction in the set
 	// of transfers for both nodes.
-	var forceCloseTransfer *taprpc.ListTransfersResponse
-	fErr := wait.NoError(func() error {
-		forceCloseTransfer, err = charlieTap.ListTransfers(
-			ctx, &taprpc.ListTransfersRequest{
-				AnchorTxid: closeTxid.String(),
-			},
-		)
-		if err != nil {
-			return fmt.Errorf("unable to list charlie transfers: "+
-				"%w", err)
-		}
-		if len(forceCloseTransfer.Transfers) != 1 {
-			return fmt.Errorf("charlie is missing force close " +
-				"transfer")
-		}
-
-		forceCloseTransfer2, err := daveTap.ListTransfers(
-			ctx, &taprpc.ListTransfersRequest{
-				AnchorTxid: closeTxid.String(),
-			},
-		)
-		if err != nil {
-			return fmt.Errorf("unable to list dave transfers: %w",
-				err)
-		}
-		if len(forceCloseTransfer2.Transfers) != 1 {
-			return fmt.Errorf("dave is missing force close " +
-				"transfer")
-		}
-
-		return nil
-	}, defaultTimeout)
-	require.NoError(t.t, fErr)
-
+	forceCloseTransfer := findForceCloseTransfer(
+		t.t, charlieTap, daveTap, closeTxid,
+	)
 	t.Logf("Force close transfer: %v", toProtoJSON(t.t, forceCloseTransfer))
 
 	// Now that we have the transfer on disk, we'll also assert that the
@@ -1744,7 +1791,9 @@ func testCustomChannelsBreach(ctx context.Context, net *NetworkHarness,
 	)
 
 	// Make sure the channel shows the correct asset information.
-	assertAssetChan(t.t, charlie, dave, fundingAmount, cents)
+	assertAssetChan(
+		t.t, charlie, dave, fundingAmount, []*taprpc.Asset{cents},
+	)
 
 	// Before we start sending out payments, let's make sure each node can
 	// see the other one in the graph and has all required features.
@@ -2639,7 +2688,8 @@ func testCustomChannelsBalanceConsistency(ctx context.Context,
 
 	// Make sure the channel shows the correct asset information.
 	assertAssetChan(
-		t.t, charlieTap.node, daveTap.node, charlieBalance, cents,
+		t.t, charlieTap.node, daveTap.node, charlieBalance,
+		[]*taprpc.Asset{cents},
 	)
 
 	logBalance(t.t, nodes, assetID, "initial")
@@ -2822,7 +2872,8 @@ func testCustomChannelsSingleAssetMultiInput(ctx context.Context,
 
 	// Make sure the channel shows the correct asset information.
 	assertAssetChan(
-		t.t, charlieTap.node, daveTap.node, 2*halfCentsAmount, cents,
+		t.t, charlieTap.node, daveTap.node, 2*halfCentsAmount,
+		[]*taprpc.Asset{cents},
 	)
 }
 
@@ -3121,20 +3172,20 @@ func testCustomChannelsOraclePricing(ctx context.Context, net *NetworkHarness,
 
 	t.Logf("Closing Charlie -> Dave channel")
 	closeAssetChannelAndAssert(
-		t, net, charlie, dave, chanPointCD, assetID, nil, universeTap,
-		noOpCoOpCloseBalanceCheck,
+		t, net, charlie, dave, chanPointCD, [][]byte{assetID}, nil,
+		universeTap, noOpCoOpCloseBalanceCheck,
 	)
 
 	t.Logf("Closing Dave -> Yara channel, close initiated by Yara")
 	closeAssetChannelAndAssert(
-		t, net, yara, dave, chanPointDY, assetID, nil, universeTap,
-		noOpCoOpCloseBalanceCheck,
+		t, net, yara, dave, chanPointDY, [][]byte{assetID}, nil,
+		universeTap, noOpCoOpCloseBalanceCheck,
 	)
 
 	t.Logf("Closing Erin -> Fabia channel")
 	closeAssetChannelAndAssert(
-		t, net, erin, fabia, chanPointEF, assetID, nil, universeTap,
-		noOpCoOpCloseBalanceCheck,
+		t, net, erin, fabia, chanPointEF, [][]byte{assetID}, nil,
+		universeTap, noOpCoOpCloseBalanceCheck,
 	)
 }
 
@@ -3982,7 +4033,7 @@ func testCustomChannelsForwardBandwidth(ctx context.Context,
 	// Finally, we close the channel between Erin and Fabia to make sure
 	// everything is settled correctly.
 	closeAssetChannelAndAssert(
-		t, net, erin, fabia, chanPointEF, assetID, nil,
+		t, net, erin, fabia, chanPointEF, [][]byte{assetID}, nil,
 		universeTap, noOpCoOpCloseBalanceCheck,
 	)
 }
