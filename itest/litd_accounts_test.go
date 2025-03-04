@@ -199,6 +199,7 @@ func testAccountRestrictionsLNC(ctxm context.Context, t *harnessTest,
 		AccountId:         accountID,
 	})
 	require.NoError(t.t, err)
+	require.Equal(t.t, accountID, sessResp.Session.AccountId)
 
 	// Try the LNC connection now.
 	connectPhrase := strings.Split(

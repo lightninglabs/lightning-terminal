@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightningnetwork/lnd/tlv"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 	"gopkg.in/macaroon.v2"
@@ -276,6 +277,18 @@ func DeserializeSession(r io.Reader) (*Session, error) {
 		copy(session.GroupID[:], groupID)
 	} else {
 		session.GroupID = session.ID
+	}
+
+	// For any sessions stored in the BBolt store, a coupled account (if
+	// any) is linked implicitly via the macaroon recipe caveat. So we
+	// need to extract it from there.
+	if session.MacaroonRecipe != nil {
+		session.AccountID, err = accounts.IDFromCaveats(
+			session.MacaroonRecipe.Caveats,
+		)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return session, nil

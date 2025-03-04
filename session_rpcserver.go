@@ -2,6 +2,7 @@ package terminal
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -22,6 +23,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/perms"
 	"github.com/lightninglabs/lightning-terminal/rules"
 	"github.com/lightninglabs/lightning-terminal/session"
+	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/macaroons"
 	"google.golang.org/grpc"
 	"gopkg.in/macaroon-bakery.v2/bakery"
@@ -221,7 +223,10 @@ func (s *sessionRpcServer) AddSession(ctx context.Context,
 		permissions[entity][action] = struct{}{}
 	}
 
-	var caveats []macaroon.Caveat
+	var (
+		caveats   []macaroon.Caveat
+		accountID fn.Option[accounts.AccountID]
+	)
 	switch typ {
 	// For the default session types we use empty caveats and permissions,
 	// the macaroons are baked correctly when creating the session.
@@ -235,12 +240,8 @@ func (s *sessionRpcServer) AddSession(ctx context.Context,
 			return nil, fmt.Errorf("invalid account ID: %v", err)
 		}
 
-		cav := checkers.Condition(macaroons.CondLndCustom, fmt.Sprintf(
-			"%s %x", accounts.CondAccount, id[:],
-		))
-		caveats = append(caveats, macaroon.Caveat{
-			Id: []byte(cav),
-		})
+		caveats = append(caveats, accounts.CaveatFromID(*id))
+		accountID = fn.Some(*id)
 
 	// For the custom macaroon type, we use the custom permissions specified
 	// in the request. For the time being, the caveats list will be empty
@@ -324,6 +325,10 @@ func (s *sessionRpcServer) AddSession(ctx context.Context,
 	if req.DevServer {
 		sessOpts = append(sessOpts, session.WithDevServer())
 	}
+
+	accountID.WhenSome(func(id accounts.AccountID) {
+		sessOpts = append(sessOpts, session.WithAccount(id))
+	})
 
 	sess, err := s.cfg.db.NewSession(
 		ctx, req.Label, typ, expiry, req.MailboxServerAddr,
@@ -1505,6 +1510,11 @@ func (s *sessionRpcServer) marshalRPCSession(sess *session.Session) (
 		}
 	}
 
+	var accountID string
+	sess.AccountID.WhenSome(func(id accounts.AccountID) {
+		accountID = hex.EncodeToString(id[:])
+	})
+
 	return &litrpc.Session{
 		Id:                     sess.ID[:],
 		Label:                  sess.Label,
@@ -1524,6 +1534,7 @@ func (s *sessionRpcServer) marshalRPCSession(sess *session.Session) (
 		GroupId:                sess.GroupID[:],
 		FeatureConfigs:         clientConfig,
 		PrivacyFlags:           sess.PrivacyFlags.Serialize(),
+		AccountId:              accountID,
 	}, nil
 }
 

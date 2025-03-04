@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightningnetwork/lnd/clock"
 	"go.etcd.io/bbolt"
 )
@@ -82,13 +83,17 @@ type BoltStore struct {
 	*bbolt.DB
 
 	clock clock.Clock
+
+	accounts accounts.Store
 }
 
 // A compile-time check to ensure that BoltStore implements the Store interface.
 var _ Store = (*BoltStore)(nil)
 
 // NewDB creates a new bolt database that can be found at the given directory.
-func NewDB(dir, fileName string, clock clock.Clock) (*BoltStore, error) {
+func NewDB(dir, fileName string, clock clock.Clock,
+	store accounts.Store) (*BoltStore, error) {
+
 	firstInit := false
 	path := filepath.Join(dir, fileName)
 
@@ -112,8 +117,9 @@ func NewDB(dir, fileName string, clock clock.Clock) (*BoltStore, error) {
 	}
 
 	return &BoltStore{
-		DB:    db,
-		clock: clock,
+		DB:       db,
+		clock:    clock,
+		accounts: store,
 	}, nil
 }
 
@@ -210,6 +216,15 @@ func (db *BoltStore) NewSession(ctx context.Context, label string, typ Type,
 		}
 
 		sessionKey := getSessionKey(session)
+
+		// If an account is being linked, we first need to check that
+		// it exists.
+		session.AccountID.WhenSome(func(account accounts.AccountID) {
+			_, err = db.accounts.Account(ctx, account)
+		})
+		if err != nil {
+			return err
+		}
 
 		if len(sessionBucket.Get(sessionKey)) != 0 {
 			return fmt.Errorf("session with local public key(%x) "+

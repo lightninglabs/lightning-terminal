@@ -7,7 +7,9 @@ import (
 
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/lightninglabs/lightning-node-connect/mailbox"
+	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/macaroons"
+	"github.com/lightningnetwork/lnd/fn"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 	"gopkg.in/macaroon.v2"
 )
@@ -117,6 +119,9 @@ type Session struct {
 	// group of sessions. If this is the very first session in the group
 	// then this will be the same as ID.
 	GroupID ID
+
+	// AccountID is an optional account that the session has been linked to.
+	AccountID fn.Option[accounts.AccountID]
 }
 
 // buildSession creates a new session with the given user-defined parameters.
@@ -163,6 +168,7 @@ func buildSession(id ID, localPrivKey *btcec.PrivateKey, label string, typ Type,
 		PrivacyFlags:      opts.privacyFlags,
 		GroupID:           groupID,
 		MacaroonRecipe:    opts.macaroonRecipe,
+		AccountID:         opts.accountID,
 	}
 
 	if len(opts.featureConfig) != 0 {
@@ -196,6 +202,9 @@ type sessionOptions struct {
 	// macaroonRecipe holds the permissions and caveats that should be used
 	// to bake the macaroon to be used with this session.
 	macaroonRecipe *MacaroonRecipe
+
+	// accountID is an optional account that the session has been linked to.
+	accountID fn.Option[accounts.AccountID]
 }
 
 // defaultSessionOptions returns a new sessionOptions struct with default
@@ -255,6 +264,13 @@ func WithMacaroonRecipe(caveats []macaroon.Caveat, perms []bakery.Op) Option {
 			Permissions: perms,
 			Caveats:     caveats,
 		}
+	}
+}
+
+// WithAccount can be used to link the session to an account.
+func WithAccount(id accounts.AccountID) Option {
+	return func(o *sessionOptions) {
+		o.accountID = fn.Some(id)
 	}
 }
 
