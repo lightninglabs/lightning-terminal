@@ -386,7 +386,7 @@ func (r *RuleEnforcer) initRule(ctx context.Context, reqID uint64, name string,
 		return nil, err
 	}
 
-	session, err := r.sessionDB.GetSessionByID(ctx, sessionID)
+	session, err := r.sessionDB.GetSession(ctx, sessionID)
 	if err != nil {
 		return nil, err
 	}

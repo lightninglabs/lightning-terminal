@@ -58,16 +58,16 @@ func (m *mockSessionDB) GetSessionIDs(_ context.Context, groupID session.ID) (
 	return ids, nil
 }
 
-// GetSessionByID returns the session for a specific id.
-func (m *mockSessionDB) GetSessionByID(_ context.Context,
-	sessionID session.ID) (*session.Session, error) {
+// GetSession returns the session for a specific id.
+func (m *mockSessionDB) GetSession(_ context.Context,
+	id session.ID) (*session.Session, error) {
 
-	s, ok := m.sessionToGroupID[sessionID]
+	s, ok := m.sessionToGroupID[id]
 	if !ok {
 		return nil, fmt.Errorf("no session found for session ID")
 	}
 
-	f, ok := m.privacyFlags[sessionID]
+	f, ok := m.privacyFlags[id]
 	if !ok {
 		return nil, fmt.Errorf("no privacy flags found for session ID")
 	}
