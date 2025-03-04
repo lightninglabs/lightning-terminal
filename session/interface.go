@@ -294,8 +294,10 @@ type Store interface {
 		expiry time.Time, serverAddr string, opts ...Option) (*Session,
 		error)
 
-	// GetSession fetches the session with the given key.
-	GetSession(ctx context.Context, key *btcec.PublicKey) (*Session, error)
+	// GetSessionByLocalPub fetches the session with the given local pub
+	// key.
+	GetSessionByLocalPub(ctx context.Context,
+		key *btcec.PublicKey) (*Session, error)
 
 	// ListAllSessions returns all sessions currently known to the store.
 	ListAllSessions(ctx context.Context) ([]*Session, error)

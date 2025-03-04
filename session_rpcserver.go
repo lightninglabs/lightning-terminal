@@ -577,7 +577,7 @@ func (s *sessionRpcServer) RevokeSession(ctx context.Context,
 		return nil, fmt.Errorf("error parsing public key: %v", err)
 	}
 
-	sess, err := s.cfg.db.GetSession(ctx, pubKey)
+	sess, err := s.cfg.db.GetSessionByLocalPub(ctx, pubKey)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching session: %v", err)
 	}
@@ -1319,7 +1319,7 @@ func (s *sessionRpcServer) RevokeAutopilotSession(ctx context.Context,
 		return nil, fmt.Errorf("error parsing public key: %v", err)
 	}
 
-	sess, err := s.cfg.db.GetSession(ctx, pubKey)
+	sess, err := s.cfg.db.GetSessionByLocalPub(ctx, pubKey)
 	if err != nil {
 		return nil, err
 	}
