@@ -134,17 +134,6 @@ func TestBasicSessionStore(t *testing.T) {
 	assertEqualSessions(t, s2, sessions[0])
 	assertEqualSessions(t, s3, sessions[1])
 
-	sessions, err = db.ListSessionsByState(ctx, StateCreated, StateRevoked)
-	require.NoError(t, err)
-	require.Equal(t, 3, len(sessions))
-	assertEqualSessions(t, s1, sessions[0])
-	assertEqualSessions(t, s2, sessions[1])
-	assertEqualSessions(t, s3, sessions[2])
-
-	sessions, err = db.ListSessionsByState(ctx)
-	require.NoError(t, err)
-	require.Empty(t, sessions)
-
 	sessions, err = db.ListSessionsByState(ctx, StateReserved)
 	require.NoError(t, err)
 	require.Empty(t, sessions)
@@ -373,7 +362,7 @@ func reserveSession(db Store, label string,
 
 	return db.NewSession(
 		context.Background(), label, opts.sessType,
-		time.Date(99999, 1, 1, 0, 0, 0, 0, time.UTC),
+		time.Date(9999, 1, 1, 0, 0, 0, 0, time.UTC),
 		"foo.bar.baz:1234",
 		WithDevServer(),
 		WithPrivacy(PrivacyFlags{ClearPubkeys}),

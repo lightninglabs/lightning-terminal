@@ -370,20 +370,14 @@ func (db *BoltStore) ListSessionsByType(_ context.Context, t Type) ([]*Session,
 }
 
 // ListSessionsByState returns all sessions currently known to the store that
-// are in the given states.
+// are in the given state.
 //
 // NOTE: this is part of the Store interface.
-func (db *BoltStore) ListSessionsByState(_ context.Context, states ...State) (
+func (db *BoltStore) ListSessionsByState(_ context.Context, state State) (
 	[]*Session, error) {
 
 	return db.listSessions(func(s *Session) bool {
-		for _, state := range states {
-			if s.State == state {
-				return true
-			}
-		}
-
-		return false
+		return s.State == state
 	})
 }
 
