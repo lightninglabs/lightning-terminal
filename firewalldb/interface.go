@@ -11,6 +11,6 @@ import (
 type SessionDB interface {
 	session.IDToGroupIndex
 
-	// GetSessionByID returns the session for a specific id.
-	GetSessionByID(context.Context, session.ID) (*session.Session, error)
+	// GetSession returns the session for a specific id.
+	GetSession(context.Context, session.ID) (*session.Session, error)
 }

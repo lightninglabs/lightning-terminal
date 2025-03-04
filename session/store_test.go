@@ -29,7 +29,7 @@ func TestBasicSessionStore(t *testing.T) {
 	db := NewTestDB(t, clock)
 
 	// Try fetch a session that doesn't exist yet.
-	_, err := db.GetSessionByID(ctx, ID{1, 3, 4, 4})
+	_, err := db.GetSession(ctx, ID{1, 3, 4, 4})
 	require.ErrorIs(t, err, ErrSessionNotFound)
 
 	// Reserve a session. This should succeed.
@@ -37,7 +37,7 @@ func TestBasicSessionStore(t *testing.T) {
 	require.NoError(t, err)
 
 	// Show that the session starts in the reserved state.
-	s1, err = db.GetSessionByID(ctx, s1.ID)
+	s1, err = db.GetSession(ctx, s1.ID)
 	require.NoError(t, err)
 	require.Equal(t, StateReserved, s1.State)
 
@@ -46,7 +46,7 @@ func TestBasicSessionStore(t *testing.T) {
 	require.NoError(t, err)
 
 	// Show that the session is now in the created state.
-	s1, err = db.GetSessionByID(ctx, s1.ID)
+	s1, err = db.GetSession(ctx, s1.ID)
 	require.NoError(t, err)
 	require.Equal(t, StateCreated, s1.State)
 
@@ -82,17 +82,17 @@ func TestBasicSessionStore(t *testing.T) {
 	// Ensure that we can retrieve each session by both its local pub key
 	// and by its ID.
 	for _, s := range []*Session{s1, s2, s3} {
-		session, err := db.GetSession(ctx, s.LocalPublicKey)
+		session, err := db.GetSessionByLocalPub(ctx, s.LocalPublicKey)
 		require.NoError(t, err)
 		assertEqualSessions(t, s, session)
 
-		session, err = db.GetSessionByID(ctx, s.ID)
+		session, err = db.GetSession(ctx, s.ID)
 		require.NoError(t, err)
 		assertEqualSessions(t, s, session)
 	}
 
 	// Fetch session 1 and assert that it currently has no remote pub key.
-	session1, err := db.GetSession(ctx, s1.LocalPublicKey)
+	session1, err := db.GetSessionByLocalPub(ctx, s1.LocalPublicKey)
 	require.NoError(t, err)
 	require.Nil(t, session1.RemotePublicKey)
 
@@ -101,13 +101,11 @@ func TestBasicSessionStore(t *testing.T) {
 	require.NoError(t, err)
 	remotePub := remotePriv.PubKey()
 
-	err = db.UpdateSessionRemotePubKey(
-		ctx, session1.LocalPublicKey, remotePub,
-	)
+	err = db.UpdateSessionRemotePubKey(ctx, session1.ID, remotePub)
 	require.NoError(t, err)
 
 	// Assert that the session now does have the remote pub key.
-	session1, err = db.GetSession(ctx, s1.LocalPublicKey)
+	session1, err = db.GetSessionByLocalPub(ctx, s1.LocalPublicKey)
 	require.NoError(t, err)
 	require.True(t, remotePub.IsEqual(session1.RemotePublicKey))
 
@@ -116,7 +114,7 @@ func TestBasicSessionStore(t *testing.T) {
 
 	// Now revoke the session and assert that the state is revoked.
 	require.NoError(t, db.ShiftState(ctx, s1.ID, StateRevoked))
-	s1, err = db.GetSession(ctx, s1.LocalPublicKey)
+	s1, err = db.GetSessionByLocalPub(ctx, s1.LocalPublicKey)
 	require.NoError(t, err)
 	require.Equal(t, s1.State, StateRevoked)
 
@@ -299,7 +297,7 @@ func TestStateShift(t *testing.T) {
 
 	// Check that the session is in the StateCreated state. Also check that
 	// the "RevokedAt" time has not yet been set.
-	s1, err := db.GetSession(ctx, s1.LocalPublicKey)
+	s1, err := db.GetSessionByLocalPub(ctx, s1.LocalPublicKey)
 	require.NoError(t, err)
 	require.Equal(t, StateCreated, s1.State)
 	require.Equal(t, time.Time{}, s1.RevokedAt)
@@ -310,7 +308,7 @@ func TestStateShift(t *testing.T) {
 
 	// This should have worked. Since it is now in a terminal state, the
 	// "RevokedAt" time should be set.
-	s1, err = db.GetSession(ctx, s1.LocalPublicKey)
+	s1, err = db.GetSessionByLocalPub(ctx, s1.LocalPublicKey)
 	require.NoError(t, err)
 	require.Equal(t, StateRevoked, s1.State)
 	require.True(t, clock.Now().Equal(s1.RevokedAt))
@@ -361,7 +359,7 @@ func TestLinkedAccount(t *testing.T) {
 	})
 
 	// Make sure that a fetched session includes the account ID.
-	s1, err = db.GetSessionByID(ctx, s1.ID)
+	s1, err = db.GetSession(ctx, s1.ID)
 	require.NoError(t, err)
 	require.True(t, s1.AccountID.IsSome())
 	s1.AccountID.WhenSome(func(id accounts.AccountID) {
@@ -453,7 +451,7 @@ func createSession(t *testing.T, db Store, label string,
 	err = db.ShiftState(context.Background(), s.ID, StateCreated)
 	require.NoError(t, err)
 
-	s, err = db.GetSessionByID(context.Background(), s.ID)
+	s, err = db.GetSession(context.Background(), s.ID)
 	require.NoError(t, err)
 
 	return s
