@@ -36,7 +36,7 @@ func newMailboxSession() *mailboxSession {
 
 func (m *mailboxSession) start(session *Session,
 	serverCreator GRPCServerCreator, authData []byte,
-	onUpdate func(ctx context.Context, local,
+	onUpdate func(ctx context.Context, id ID,
 		remote *btcec.PublicKey) error,
 	onNewStatus func(s mailbox.ServerStatus)) error {
 
@@ -53,7 +53,7 @@ func (m *mailboxSession) start(session *Session,
 	keys := mailbox.NewConnData(
 		ecdh, session.RemotePublicKey, session.PairingSecret[:],
 		authData, func(key *btcec.PublicKey) error {
-			return onUpdate(ctx, session.LocalPublicKey, key)
+			return onUpdate(ctx, session.ID, key)
 		}, nil,
 	)
 
@@ -112,7 +112,7 @@ func NewServer(serverCreator GRPCServerCreator) *Server {
 }
 
 func (s *Server) StartSession(session *Session, authData []byte,
-	onUpdate func(ctx context.Context, local,
+	onUpdate func(ctx context.Context, id ID,
 		remote *btcec.PublicKey) error,
 	onNewStatus func(s mailbox.ServerStatus)) (chan struct{}, error) {
 

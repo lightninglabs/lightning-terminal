@@ -1245,9 +1245,7 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 			"autopilot server: %v", err)
 	}
 
-	err = s.cfg.db.UpdateSessionRemotePubKey(
-		ctx, sess.LocalPublicKey, remoteKey,
-	)
+	err = s.cfg.db.UpdateSessionRemotePubKey(ctx, sess.ID, remoteKey)
 	if err != nil {
 		return nil, fmt.Errorf("error setting remote pubkey: %v", err)
 	}
