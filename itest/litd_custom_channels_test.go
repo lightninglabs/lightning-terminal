@@ -261,10 +261,11 @@ func testCustomChannelsLarge(_ context.Context, net *NetworkHarness,
 	// sender side show the individual HTLCs that arrived for it and that
 	// they show the correct asset amounts when decoded.
 	assertInvoiceHtlcAssets(
-		t.t, dave, invoiceResp3, assetID, largeInvoiceAmount,
+		t.t, dave, invoiceResp3, assetID, nil, largeInvoiceAmount,
 	)
 	assertPaymentHtlcAssets(
-		t.t, charlie, invoiceResp3.RHash, assetID, largeInvoiceAmount,
+		t.t, charlie, invoiceResp3.RHash, assetID, nil,
+		largeInvoiceAmount,
 	)
 
 	// We keysend the rest, so that all the balance is on Dave's side.
@@ -450,10 +451,11 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	// sender side show the individual HTLCs that arrived for it and that
 	// they show the correct asset amounts when decoded.
 	assertInvoiceHtlcAssets(
-		t.t, charlie, invoiceResp, assetID, charlieInvoiceAmount,
+		t.t, charlie, invoiceResp, assetID, nil, charlieInvoiceAmount,
 	)
 	assertPaymentHtlcAssets(
-		t.t, dave, invoiceResp.RHash, assetID, charlieInvoiceAmount,
+		t.t, dave, invoiceResp.RHash, assetID, nil,
+		charlieInvoiceAmount,
 	)
 
 	charlieAssetBalance += charlieInvoiceAmount
@@ -891,7 +893,8 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 	// ------------
 	const keySendAmount = 100
 	sendAssetKeySendPayment(
-		t.t, charlie, dave, keySendAmount, assetID, fn.None[int64](),
+		t.t, charlie, dave, keySendAmount, nil, fn.None[int64](),
+		withGroupKey(groupID),
 	)
 	logBalance(t.t, nodes, assetID, "after keysend")
 
@@ -919,10 +922,11 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 	// invoice.
 	// ------------
 	createAndPayNormalInvoice(
-		t.t, charlie, dave, dave, 20_000, assetID, withSmallShards(),
+		t.t, charlie, dave, dave, 20_000, nil, withSmallShards(),
 		withFailure(lnrpc.Payment_FAILED, failureIncorrectDetails),
+		withGroupKey(groupID),
 	)
-	logBalance(t.t, nodes, assetID, "after invoice")
+	logBalance(t.t, nodes, assetID, "after failed invoice")
 
 	// We should also be able to do a multi-hop BTC only payment, paying an
 	// invoice from Erin by Charlie.
@@ -936,11 +940,13 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 	// ------------
 	const daveInvoiceAssetAmount = 2_000
 	invoiceResp := createAssetInvoice(
-		t.t, charlie, dave, daveInvoiceAssetAmount, assetID,
+		t.t, charlie, dave, daveInvoiceAssetAmount, nil,
+		withInvGroupKey(groupID),
 	)
 	payInvoiceWithAssets(
-		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID,
+		t.t, charlie, dave, invoiceResp.PaymentRequest, nil,
 		withSmallShards(),
+		withGroupKey(groupID),
 	)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
@@ -948,10 +954,10 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 	// sender side show the individual HTLCs that arrived for it and that
 	// they show the correct asset amounts when decoded.
 	assertInvoiceHtlcAssets(
-		t.t, dave, invoiceResp, assetID, daveInvoiceAssetAmount,
+		t.t, dave, invoiceResp, nil, groupID, daveInvoiceAssetAmount,
 	)
 	assertPaymentHtlcAssets(
-		t.t, charlie, invoiceResp.RHash, assetID,
+		t.t, charlie, invoiceResp.RHash, nil, groupID,
 		daveInvoiceAssetAmount,
 	)
 
@@ -962,7 +968,8 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 	// Test case 4: Pay a normal invoice from Erin by Charlie.
 	// ------------
 	paidAssetAmount := createAndPayNormalInvoice(
-		t.t, charlie, dave, erin, 20_000, assetID, withSmallShards(),
+		t.t, charlie, dave, erin, 20_000, nil, withSmallShards(),
+		withGroupKey(groupID),
 	)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
@@ -975,7 +982,8 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 	// ------------
 	const fabiaInvoiceAssetAmount1 = 1000
 	invoiceResp = createAssetInvoice(
-		t.t, erin, fabia, fabiaInvoiceAssetAmount1, assetID,
+		t.t, erin, fabia, fabiaInvoiceAssetAmount1, nil,
+		withInvGroupKey(groupID),
 	)
 	payInvoiceWithAssets(
 		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID,
@@ -1015,8 +1023,8 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 		t.t, erin, fabia, fabiaInvoiceAssetAmount3, assetID,
 	)
 	payInvoiceWithAssets(
-		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID,
-		withSmallShards(),
+		t.t, charlie, dave, invoiceResp.PaymentRequest, nil,
+		withSmallShards(), withGroupKey(groupID),
 	)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
@@ -1033,7 +1041,8 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 
 	const yaraInvoiceAssetAmount1 = 1000
 	invoiceResp = createAssetInvoice(
-		t.t, dave, yara, yaraInvoiceAssetAmount1, assetID,
+		t.t, dave, yara, yaraInvoiceAssetAmount1, nil,
+		withInvGroupKey(groupID),
 	)
 	payInvoiceWithAssets(
 		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID,
@@ -1941,10 +1950,10 @@ func testCustomChannelsLiquidityEdgeCases(ctx context.Context,
 	// sender side show the individual HTLCs that arrived for it and that
 	// they show the correct asset amounts when decoded.
 	assertInvoiceHtlcAssets(
-		t.t, dave, invoiceResp, assetID, bigAssetAmount,
+		t.t, dave, invoiceResp, assetID, nil, bigAssetAmount,
 	)
 	assertPaymentHtlcAssets(
-		t.t, charlie, invoiceResp.RHash, assetID, bigAssetAmount,
+		t.t, charlie, invoiceResp.RHash, assetID, nil, bigAssetAmount,
 	)
 
 	// Dave sends 200k assets and 5k sats to Yara.
@@ -2903,7 +2912,8 @@ func testCustomChannelsOraclePricing(ctx context.Context, net *NetworkHarness,
 		charliePaidMSat, rate,
 	).ScaleTo(0).ToUint64()
 	assertPaymentHtlcAssets(
-		t.t, charlie, invoiceResp.RHash, assetID, charliePaidAmount,
+		t.t, charlie, invoiceResp.RHash, assetID, nil,
+		charliePaidAmount,
 	)
 
 	// We now make sure the asset and satoshi channel balances are exactly
