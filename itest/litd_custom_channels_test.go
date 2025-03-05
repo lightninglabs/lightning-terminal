@@ -10,6 +10,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcec/v2/schnorr"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
@@ -262,10 +263,11 @@ func testCustomChannelsLarge(_ context.Context, net *NetworkHarness,
 	// sender side show the individual HTLCs that arrived for it and that
 	// they show the correct asset amounts when decoded.
 	assertInvoiceHtlcAssets(
-		t.t, dave, invoiceResp3, assetID, largeInvoiceAmount,
+		t.t, dave, invoiceResp3, assetID, nil, largeInvoiceAmount,
 	)
 	assertPaymentHtlcAssets(
-		t.t, charlie, invoiceResp3.RHash, assetID, largeInvoiceAmount,
+		t.t, charlie, invoiceResp3.RHash, assetID, nil,
+		largeInvoiceAmount,
 	)
 
 	// We keysend the rest, so that all the balance is on Dave's side.
@@ -451,10 +453,11 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	// sender side show the individual HTLCs that arrived for it and that
 	// they show the correct asset amounts when decoded.
 	assertInvoiceHtlcAssets(
-		t.t, charlie, invoiceResp, assetID, charlieInvoiceAmount,
+		t.t, charlie, invoiceResp, assetID, nil, charlieInvoiceAmount,
 	)
 	assertPaymentHtlcAssets(
-		t.t, dave, invoiceResp.RHash, assetID, charlieInvoiceAmount,
+		t.t, dave, invoiceResp.RHash, assetID, nil,
+		charlieInvoiceAmount,
 	)
 
 	charlieAssetBalance += charlieInvoiceAmount
@@ -846,6 +849,8 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 	cents := mintedAssets[0]
 	assetID := cents.AssetGenesis.AssetId
 	groupID := cents.GetAssetGroup().GetTweakedGroupKey()
+	groupKey, err := btcec.ParsePubKey(groupID)
+	require.NoError(t.t, err)
 	fundingScriptTree := tapscript.NewChannelFundingScriptTree()
 	fundingScriptKey := fundingScriptTree.TaprootKey
 	fundingScriptTreeBytes := fundingScriptKey.SerializeCompressed()
@@ -892,7 +897,8 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 	// ------------
 	const keySendAmount = 100
 	sendAssetKeySendPayment(
-		t.t, charlie, dave, keySendAmount, assetID, fn.None[int64](),
+		t.t, charlie, dave, keySendAmount, nil, fn.None[int64](),
+		withGroupKey(groupID),
 	)
 	logBalance(t.t, nodes, assetID, "after keysend")
 
@@ -920,10 +926,11 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 	// invoice.
 	// ------------
 	createAndPayNormalInvoice(
-		t.t, charlie, dave, dave, 20_000, assetID, withSmallShards(),
+		t.t, charlie, dave, dave, 20_000, nil, withSmallShards(),
 		withFailure(lnrpc.Payment_FAILED, failureIncorrectDetails),
+		withGroupKey(groupID),
 	)
-	logBalance(t.t, nodes, assetID, "after invoice")
+	logBalance(t.t, nodes, assetID, "after failed invoice")
 
 	// We should also be able to do a multi-hop BTC only payment, paying an
 	// invoice from Erin by Charlie.
@@ -937,22 +944,25 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 	// ------------
 	const daveInvoiceAssetAmount = 2_000
 	invoiceResp := createAssetInvoice(
-		t.t, charlie, dave, daveInvoiceAssetAmount, assetID,
+		t.t, charlie, dave, daveInvoiceAssetAmount, nil,
+		withInvGroupKey(groupID),
 	)
 	payInvoiceWithAssets(
-		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID,
-		withSmallShards(),
+		t.t, charlie, dave, invoiceResp.PaymentRequest, nil,
+		withSmallShards(), withGroupKey(groupID),
 	)
 	logBalance(t.t, nodes, assetID, "after invoice")
+
+	groupBytes := schnorr.SerializePubKey(groupKey)
 
 	// Make sure the invoice on the receiver side and the payment on the
 	// sender side show the individual HTLCs that arrived for it and that
 	// they show the correct asset amounts when decoded.
 	assertInvoiceHtlcAssets(
-		t.t, dave, invoiceResp, assetID, daveInvoiceAssetAmount,
+		t.t, dave, invoiceResp, nil, groupBytes, daveInvoiceAssetAmount,
 	)
 	assertPaymentHtlcAssets(
-		t.t, charlie, invoiceResp.RHash, assetID,
+		t.t, charlie, invoiceResp.RHash, nil, groupBytes,
 		daveInvoiceAssetAmount,
 	)
 
@@ -963,7 +973,8 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 	// Test case 4: Pay a normal invoice from Erin by Charlie.
 	// ------------
 	paidAssetAmount := createAndPayNormalInvoice(
-		t.t, charlie, dave, erin, 20_000, assetID, withSmallShards(),
+		t.t, charlie, dave, erin, 20_000, nil, withSmallShards(),
+		withGroupKey(groupID),
 	)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
@@ -976,7 +987,8 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 	// ------------
 	const fabiaInvoiceAssetAmount1 = 1000
 	invoiceResp = createAssetInvoice(
-		t.t, erin, fabia, fabiaInvoiceAssetAmount1, assetID,
+		t.t, erin, fabia, fabiaInvoiceAssetAmount1, nil,
+		withInvGroupKey(groupID),
 	)
 	payInvoiceWithAssets(
 		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID,
@@ -1016,8 +1028,8 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 		t.t, erin, fabia, fabiaInvoiceAssetAmount3, assetID,
 	)
 	payInvoiceWithAssets(
-		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID,
-		withSmallShards(),
+		t.t, charlie, dave, invoiceResp.PaymentRequest, nil,
+		withSmallShards(), withGroupKey(groupID),
 	)
 	logBalance(t.t, nodes, assetID, "after invoice")
 
@@ -1034,7 +1046,8 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 
 	const yaraInvoiceAssetAmount1 = 1000
 	invoiceResp = createAssetInvoice(
-		t.t, dave, yara, yaraInvoiceAssetAmount1, assetID,
+		t.t, dave, yara, yaraInvoiceAssetAmount1, nil,
+		withInvGroupKey(groupID),
 	)
 	payInvoiceWithAssets(
 		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID,
@@ -1716,10 +1729,13 @@ func testCustomChannelsBreach(ctx context.Context, net *NetworkHarness,
 	t.Logf("Charlie UTXOs after breach: %v", toProtoJSON(t.t, charlieUTXOs))
 }
 
-// testCustomChannelsLiquidityEdgeCases is a test that runs through some
-// taproot asset channel liquidity related edge cases.
-func testCustomChannelsLiquidityEdgeCases(ctx context.Context,
-	net *NetworkHarness, t *harnessTest) {
+// testCustomChannelsLiquidtyEdgeCasesCore is the core logic of the liquidity
+// edge cases. This test goes through certain scenarios that expose edge cases
+// and behaviors that proved to be buggy in the past and have been directly
+// addressed. It accepts an extra parameter which dictates whether it should use
+// group keys or asset IDs.
+func testCustomChannelsLiquidtyEdgeCasesCore(ctx context.Context,
+	net *NetworkHarness, t *harnessTest, groupMode bool) {
 
 	lndArgs := slices.Clone(lndArgsTemplate)
 	litdArgs := slices.Clone(litdArgsTemplate)
@@ -1799,18 +1815,38 @@ func testCustomChannelsLiquidityEdgeCases(ctx context.Context,
 	fabiaTap := newTapClient(t.t, fabia)
 	yaraTap := newTapClient(t.t, yara)
 
+	assetReq := itest.CopyRequest(&mintrpc.MintAssetRequest{
+		Asset: itestAsset,
+	})
+
+	// In order to use group keys in this test, the asset must belong to a
+	// group.
+	if groupMode {
+		assetReq.Asset.NewGroupedAsset = true
+	}
+
 	// Mint an asset on Charlie and sync all nodes to Charlie as the
 	// universe.
 	mintedAssets := itest.MintAssetsConfirmBatch(
 		t.t, t.lndHarness.Miner.Client, charlieTap,
-		[]*mintrpc.MintAssetRequest{
-			{
-				Asset: itestAsset,
-			},
-		},
+		[]*mintrpc.MintAssetRequest{assetReq},
 	)
 	cents := mintedAssets[0]
 	assetID := cents.AssetGenesis.AssetId
+
+	// If groupMode is enabled, treat the asset as part of a group by
+	// assigning its tweaked group key. Otherwise, treat it as an ungrouped
+	// asset using only its asset ID.
+	var (
+		groupID  []byte
+		groupKey *btcec.PublicKey
+	)
+	if groupMode {
+		groupID = cents.GetAssetGroup().GetTweakedGroupKey()
+
+		groupKey, err = btcec.ParsePubKey(groupID)
+		require.NoError(t.t, err)
+	}
 
 	t.Logf("Minted %d lightning cents, syncing universes...", cents.Amount)
 	syncUniverses(t.t, charlieTap, dave, erin, fabia, yara)
@@ -1844,6 +1880,7 @@ func testCustomChannelsLiquidityEdgeCases(ctx context.Context,
 	// Send 50 assets from Charlie to Dave.
 	sendAssetKeySendPayment(
 		t.t, charlie, dave, 50, assetID, fn.None[int64](),
+		withGroupKey(groupID),
 	)
 
 	logBalance(t.t, nodes, assetID, "after 50 assets")
@@ -1870,6 +1907,7 @@ func testCustomChannelsLiquidityEdgeCases(ctx context.Context,
 		sendAssetKeySendPayment(
 			t.t, dave, charlie, 50, assetID, fn.None[int64](),
 			withFailure(lnrpc.Payment_FAILED, failureNoRoute),
+			withGroupKey(groupID),
 		)
 
 		done <- true
@@ -1892,6 +1930,7 @@ func testCustomChannelsLiquidityEdgeCases(ctx context.Context,
 	// enough sats.
 	sendAssetKeySendPayment(
 		t.t, dave, charlie, 50, assetID, fn.None[int64](),
+		withGroupKey(groupID),
 	)
 
 	logBalance(t.t, nodes, assetID, "after 50 sats backwards")
@@ -1908,6 +1947,7 @@ func testCustomChannelsLiquidityEdgeCases(ctx context.Context,
 	// Pay a normal bolt11 invoice involving RFQ flow.
 	_ = createAndPayNormalInvoice(
 		t.t, charlie, dave, erin, 20_000, assetID, withSmallShards(),
+		withGroupKey(groupID),
 	)
 
 	logBalance(t.t, nodes, assetID, "after 20k sat asset payment")
@@ -1920,6 +1960,7 @@ func testCustomChannelsLiquidityEdgeCases(ctx context.Context,
 	// channel btc capacity.
 	_ = createAndPayNormalInvoice(
 		t.t, charlie, dave, erin, 1_000_000, assetID, withSmallShards(),
+		withGroupKey(groupID),
 	)
 
 	logBalance(t.t, nodes, assetID, "after big asset payment (btc "+
@@ -1927,30 +1968,40 @@ func testCustomChannelsLiquidityEdgeCases(ctx context.Context,
 
 	// Edge case: Big asset invoice paid by direct peer with assets.
 	const bigAssetAmount = 100_000
+
 	invoiceResp := createAssetInvoice(
 		t.t, charlie, dave, bigAssetAmount, assetID,
+		withInvGroupKey(groupID),
 	)
 
 	payInvoiceWithAssets(
 		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID,
+		withGroupKey(groupID),
 	)
 
 	logBalance(t.t, nodes, assetID, "after big asset payment (asset "+
 		"invoice, direct)")
 
+	var groupBytes []byte
+	if groupMode {
+		groupBytes = schnorr.SerializePubKey(groupKey)
+	}
+
 	// Make sure the invoice on the receiver side and the payment on the
 	// sender side show the individual HTLCs that arrived for it and that
 	// they show the correct asset amounts when decoded.
 	assertInvoiceHtlcAssets(
-		t.t, dave, invoiceResp, assetID, bigAssetAmount,
+		t.t, dave, invoiceResp, assetID, groupBytes, bigAssetAmount,
 	)
 	assertPaymentHtlcAssets(
-		t.t, charlie, invoiceResp.RHash, assetID, bigAssetAmount,
+		t.t, charlie, invoiceResp.RHash, assetID, groupBytes,
+		bigAssetAmount,
 	)
 
 	// Dave sends 200k assets and 5k sats to Yara.
 	sendAssetKeySendPayment(
 		t.t, dave, yara, 2*bigAssetAmount, assetID, fn.None[int64](),
+		withGroupKey(groupID),
 	)
 	sendKeySendPayment(t.t, dave, yara, 5_000)
 
@@ -1962,10 +2013,12 @@ func testCustomChannelsLiquidityEdgeCases(ctx context.Context,
 	// channels.
 	invoiceResp = createAssetInvoice(
 		t.t, dave, charlie, bigAssetAmount, assetID,
+		withInvGroupKey(groupID),
 	)
 
 	payInvoiceWithAssets(
 		t.t, yara, dave, invoiceResp.PaymentRequest, assetID,
+		withGroupKey(groupID),
 	)
 
 	logBalance(t.t, nodes, assetID, "after big asset payment (asset "+
@@ -1975,9 +2028,12 @@ func testCustomChannelsLiquidityEdgeCases(ctx context.Context,
 	// Yara with satoshi. This is a multi-hop payment going over 2 asset
 	// channels, where the total asset value is less than the default anchor
 	// amount of 354 sats.
-	createAssetInvoice(t.t, dave, charlie, 1, assetID, withInvoiceErrSubStr(
-		"1 asset units, as the minimal transportable amount",
-	))
+	createAssetInvoice(
+		t.t, dave, charlie, 1, assetID, withInvoiceErrSubStr(
+			"1 asset units, as the minimal transportable amount",
+		),
+		withInvGroupKey(groupID),
+	)
 
 	logBalance(t.t, nodes, assetID, "after small payment (asset "+
 		"invoice, <354sats)")
@@ -1992,17 +2048,19 @@ func testCustomChannelsLiquidityEdgeCases(ctx context.Context,
 		ValueMsat: 18_000,
 	})
 	require.NoError(t.t, err)
+
 	payInvoiceWithAssets(
 		t.t, charlie, dave, btcInvoiceResp.PaymentRequest, assetID,
 		withFeeLimit(2_000), withPayErrSubStr(
 			"rejecting payment of 20000 mSAT",
-		),
+		), withGroupKey(groupID),
 	)
 
 	// When we override the uneconomical payment, it should succeed.
 	payInvoiceWithAssets(
 		t.t, charlie, dave, btcInvoiceResp.PaymentRequest, assetID,
 		withFeeLimit(2_000), withAllowOverpay(),
+		withGroupKey(groupID),
 	)
 	logBalance(
 		t.t, nodes, assetID, "after small payment (BTC invoice 1 sat)",
@@ -2016,11 +2074,12 @@ func testCustomChannelsLiquidityEdgeCases(ctx context.Context,
 		ValueMsat: 1_000,
 	})
 	require.NoError(t.t, err)
+
 	payInvoiceWithAssets(
 		t.t, charlie, dave, btcInvoiceResp.PaymentRequest, assetID,
 		withFeeLimit(1_000), withAllowOverpay(), withPayErrSubStr(
 			"rejecting payment of 2000 mSAT",
-		),
+		), withGroupKey(groupID),
 	)
 
 	// Edge case: Check if the RFQ HTLC tracking accounts for cancelled
@@ -2031,20 +2090,34 @@ func testCustomChannelsLiquidityEdgeCases(ctx context.Context,
 	// We start by sloshing some funds in the Erin<->Fabia.
 	sendAssetKeySendPayment(
 		t.t, erin, fabia, 100_000, assetID, fn.Some[int64](20_000),
+		withGroupKey(groupID),
 	)
 
 	logBalance(t.t, nodes, assetID, "balance after 1st slosh")
+
+	// If we are running this test in group mode, then the manual rfq
+	// negotiation needs to also happen on the group key.
+	var assetSpecifier rfqrpc.AssetSpecifier
+	if groupMode {
+		assetSpecifier = rfqrpc.AssetSpecifier{
+			Id: &rfqrpc.AssetSpecifier_GroupKey{
+				GroupKey: groupID,
+			},
+		}
+	} else {
+		assetSpecifier = rfqrpc.AssetSpecifier{
+			Id: &rfqrpc.AssetSpecifier_AssetId{
+				AssetId: assetID,
+			},
+		}
+	}
 
 	// We create the RFQ order. We set the max amt to ~180k sats which is
 	// going to evaluate to about 10k assets.
 	inOneHour := time.Now().Add(time.Hour)
 	resQ, err := charlieTap.RfqClient.AddAssetSellOrder(
 		ctx, &rfqrpc.AddAssetSellOrderRequest{
-			AssetSpecifier: &rfqrpc.AssetSpecifier{
-				Id: &rfqrpc.AssetSpecifier_AssetId{
-					AssetId: assetID,
-				},
-			},
+			AssetSpecifier: &assetSpecifier,
 			PaymentMaxAmt:  180_000_000,
 			Expiry:         uint64(inOneHour.Unix()),
 			PeerPubKey:     dave.PubKey[:],
@@ -2054,16 +2127,20 @@ func testCustomChannelsLiquidityEdgeCases(ctx context.Context,
 	require.NoError(t.t, err)
 
 	// We now create a hodl invoice on Fabia, for 10k assets.
-	hodlInv := createAssetHodlInvoice(t.t, erin, fabia, 10_000, assetID)
+	hodlInv := createAssetHodlInvoice(
+		t.t, erin, fabia, 10_000, assetID,
+		withInvGroupKey(groupID),
+	)
 
 	// Charlie tries to pay via Dave, by providing the RFQ quote ID that was
 	// manually created above.
 	var quoteID rfqmsg.ID
 	copy(quoteID[:], resQ.GetAcceptedQuote().Id)
+
 	payInvoiceWithAssets(
 		t.t, charlie, dave, hodlInv.payReq, assetID, withSmallShards(),
 		withFailure(lnrpc.Payment_IN_FLIGHT, failureNone),
-		withRFQ(quoteID),
+		withRFQ(quoteID), withGroupKey(groupID),
 	)
 
 	// We now assert that the expected numbers of HTLCs are present on each
@@ -2097,6 +2174,7 @@ func testCustomChannelsLiquidityEdgeCases(ctx context.Context,
 	// Now Fabia creates the normal invoice.
 	invoiceResp = createAssetInvoice(
 		t.t, erin, fabia, 10_000, assetID,
+		withInvGroupKey(groupID),
 	)
 
 	// Now Charlie pays the invoice, again by using the manually specified
@@ -2104,6 +2182,7 @@ func testCustomChannelsLiquidityEdgeCases(ctx context.Context,
 	payInvoiceWithAssets(
 		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID,
 		withSmallShards(), withRFQ(quoteID),
+		withGroupKey(groupID),
 	)
 
 	logBalance(t.t, nodes, assetID, "after manual rfq hodl")
@@ -2120,11 +2199,7 @@ func testCustomChannelsLiquidityEdgeCases(ctx context.Context,
 	inOneHour = time.Now().Add(time.Hour)
 	res, err := charlieTap.RfqClient.AddAssetBuyOrder(
 		ctx, &rfqrpc.AddAssetBuyOrderRequest{
-			AssetSpecifier: &rfqrpc.AssetSpecifier{
-				Id: &rfqrpc.AssetSpecifier_AssetId{
-					AssetId: assetID,
-				},
-			},
+			AssetSpecifier: &assetSpecifier,
 			AssetMaxAmt:    10_000,
 			Expiry:         uint64(inOneHour.Unix()),
 			PeerPubKey:     dave.PubKey[:],
@@ -2158,9 +2233,30 @@ func testCustomChannelsLiquidityEdgeCases(ctx context.Context,
 	payInvoiceWithSatoshi(
 		t.t, erin, iResp, withPayErrSubStr("context deadline exceeded"),
 		withFailure(lnrpc.Payment_FAILED, failureNone),
+		withGroupKey(groupID),
 	)
 
 	logBalance(t.t, nodes, assetID, "after small manual rfq")
+}
+
+// testCustomChannelsLiquidityEdgeCases is a test that runs through some
+// taproot asset channel liquidity related edge cases.
+func testCustomChannelsLiquidityEdgeCases(ctx context.Context,
+	net *NetworkHarness, t *harnessTest) {
+
+	// Run liquidity edge cases and only use single asset IDs for invoices
+	// and payments.
+	testCustomChannelsLiquidtyEdgeCasesCore(ctx, net, t, false)
+}
+
+// testCustomChannelsLiquidityEdgeCasesGroup is a test that runs through some
+// taproot asset channel liquidity related edge cases using group keys.
+func testCustomChannelsLiquidityEdgeCasesGroup(ctx context.Context,
+	net *NetworkHarness, t *harnessTest) {
+
+	// Run liquidity edge cases and only use group keys for invoices and
+	// payments.
+	testCustomChannelsLiquidtyEdgeCasesCore(ctx, net, t, true)
 }
 
 // testCustomChannelsStrictForwarding is a test that tests the strict forwarding
@@ -2903,7 +2999,8 @@ func testCustomChannelsOraclePricing(ctx context.Context, net *NetworkHarness,
 		charliePaidMSat, rate,
 	).ScaleTo(0).ToUint64()
 	assertPaymentHtlcAssets(
-		t.t, charlie, invoiceResp.RHash, assetID, charliePaidAmount,
+		t.t, charlie, invoiceResp.RHash, assetID, nil,
+		charliePaidAmount,
 	)
 
 	// We now make sure the asset and satoshi channel balances are exactly

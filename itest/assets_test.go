@@ -741,6 +741,12 @@ func sendAssetKeySendPayment(t *testing.T, src, dst *HarnessNode, amt uint64,
 		opt(cfg)
 	}
 
+	// Nullify assetID if group key is set. RPC methods won't accept both so
+	// let's prioritize the group key if set.
+	if len(cfg.groupKey) > 0 {
+		assetID = nil
+	}
+
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
 	defer cancel()
@@ -770,6 +776,7 @@ func sendAssetKeySendPayment(t *testing.T, src, dst *HarnessNode, amt uint64,
 	stream, err := srcTapd.SendPayment(ctxt, &tchrpc.SendPaymentRequest{
 		AssetId:        assetID,
 		AssetAmount:    amt,
+		GroupKey:       cfg.groupKey,
 		PaymentRequest: sendReq,
 	})
 	require.NoError(t, err)
@@ -942,6 +949,7 @@ type payConfig struct {
 	payStatus         lnrpc.Payment_PaymentStatus
 	failureReason     lnrpc.PaymentFailureReason
 	rfq               fn.Option[rfqmsg.ID]
+	groupKey          []byte
 }
 
 func defaultPayConfig() *payConfig {
@@ -955,6 +963,12 @@ func defaultPayConfig() *payConfig {
 }
 
 type payOpt func(*payConfig)
+
+func withGroupKey(groupKey []byte) payOpt {
+	return func(c *payConfig) {
+		c.groupKey = groupKey
+	}
+}
 
 func withSmallShards() payOpt {
 	return func(c *payConfig) {
@@ -1010,6 +1024,12 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 		opt(cfg)
 	}
 
+	// Nullify assetID if group key is set. RPC methods won't accept both so
+	// let's prioritize the group key if set.
+	if len(cfg.groupKey) > 0 {
+		assetID = []byte{}
+	}
+
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
 	defer cancel()
@@ -1041,6 +1061,7 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 	stream, err := payerTapd.SendPayment(ctxt, &tchrpc.SendPaymentRequest{
 		AssetId:        assetID,
 		PeerPubkey:     rfqPeer.PubKey[:],
+		GroupKey:       cfg.groupKey,
 		PaymentRequest: sendReq,
 		RfqId:          rfqBytes,
 		AllowOverpay:   cfg.allowOverpay,
@@ -1102,6 +1123,7 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 
 type invoiceConfig struct {
 	errSubStr string
+	groupKey  []byte
 }
 
 func defaultInvoiceConfig() *invoiceConfig {
@@ -1118,6 +1140,12 @@ func withInvoiceErrSubStr(errSubStr string) invoiceOpt {
 	}
 }
 
+func withInvGroupKey(groupKey []byte) invoiceOpt {
+	return func(c *invoiceConfig) {
+		c.groupKey = groupKey
+	}
+}
+
 func createAssetInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 	assetAmount uint64, assetID []byte,
 	opts ...invoiceOpt) *lnrpc.AddInvoiceResponse {
@@ -1125,6 +1153,12 @@ func createAssetInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 	cfg := defaultInvoiceConfig()
 	for _, opt := range opts {
 		opt(cfg)
+	}
+
+	// Nullify assetID if group key is set. RPC methods won't accept both so
+	// let's prioritize the group key if set.
+	if len(cfg.groupKey) > 0 {
+		assetID = []byte{}
 	}
 
 	ctxb := context.Background()
@@ -1141,6 +1175,7 @@ func createAssetInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 
 	resp, err := dstTapd.AddInvoice(ctxt, &tchrpc.AddInvoiceRequest{
 		AssetId:     assetID,
+		GroupKey:    cfg.groupKey,
 		AssetAmount: assetAmount,
 		PeerPubkey:  dstRfqPeer.PubKey[:],
 		InvoiceRequest: &lnrpc.Invoice{
@@ -1185,7 +1220,7 @@ func createAssetInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 // individual HTLCs that arrived for it and that they show the correct asset
 // amounts for the given ID when decoded.
 func assertInvoiceHtlcAssets(t *testing.T, node *HarnessNode,
-	addedInvoice *lnrpc.AddInvoiceResponse, assetID []byte,
+	addedInvoice *lnrpc.AddInvoiceResponse, assetID []byte, groupID []byte,
 	assetAmount uint64) {
 
 	ctxb := context.Background()
@@ -1204,7 +1239,14 @@ func assertInvoiceHtlcAssets(t *testing.T, node *HarnessNode,
 
 	t.Logf("Asset invoice: %v", toProtoJSON(t, invoice))
 
-	targetID := hex.EncodeToString(assetID)
+	var targetID string
+	switch {
+	case len(groupID) > 0:
+		targetID = hex.EncodeToString(groupID)
+
+	case len(assetID) > 0:
+		targetID = hex.EncodeToString(assetID)
+	}
 
 	var totalAssetAmount uint64
 	for _, htlc := range invoice.Htlcs {
@@ -1231,7 +1273,7 @@ func assertInvoiceHtlcAssets(t *testing.T, node *HarnessNode,
 // individual HTLCs that arrived for it and that they show the correct asset
 // amounts for the given ID when decoded.
 func assertPaymentHtlcAssets(t *testing.T, node *HarnessNode, payHash []byte,
-	assetID []byte, assetAmount uint64) {
+	assetID []byte, groupID []byte, assetAmount uint64) {
 
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
@@ -1252,7 +1294,14 @@ func assertPaymentHtlcAssets(t *testing.T, node *HarnessNode, payHash []byte,
 
 	t.Logf("Asset payment: %v", toProtoJSON(t, payment))
 
-	targetID := hex.EncodeToString(assetID)
+	var targetID string
+	switch {
+	case len(groupID) > 0:
+		targetID = hex.EncodeToString(groupID)
+
+	case len(assetID) > 0:
+		targetID = hex.EncodeToString(assetID)
+	}
 
 	var totalAssetAmount uint64
 	for _, htlc := range payment.Htlcs {
@@ -1282,7 +1331,19 @@ type assetHodlInvoice struct {
 }
 
 func createAssetHodlInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
-	assetAmount uint64, assetID []byte) assetHodlInvoice {
+	assetAmount uint64, assetID []byte,
+	opts ...invoiceOpt) assetHodlInvoice {
+
+	cfg := defaultInvoiceConfig()
+	for _, opt := range opts {
+		opt(cfg)
+	}
+
+	// Nullify assetID if group key is set. RPC methods won't accept both so
+	// let's prioritize the group key if set.
+	if len(cfg.groupKey) > 0 {
+		assetID = []byte{}
+	}
 
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
@@ -1306,6 +1367,7 @@ func createAssetHodlInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 
 	resp, err := dstTapd.AddInvoice(ctxt, &tchrpc.AddInvoiceRequest{
 		AssetId:     assetID,
+		GroupKey:    cfg.groupKey,
 		AssetAmount: assetAmount,
 		PeerPubkey:  dstRfqPeer.PubKey[:],
 		InvoiceRequest: &lnrpc.Invoice{
