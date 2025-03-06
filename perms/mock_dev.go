@@ -9,7 +9,7 @@ import (
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/lightningnetwork/lnd/autopilot"
 	"github.com/lightningnetwork/lnd/chainreg"
-	"github.com/lightningnetwork/lnd/channeldb"
+	graphdb "github.com/lightningnetwork/lnd/graph/db"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/autopilotrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/chainrpc"
@@ -64,7 +64,7 @@ func (t *mockConfig) FetchConfig(subServerName string) (interface{}, bool) {
 	case "DevRPC":
 		return &devrpc.Config{
 			ActiveNetParams: &chaincfg.RegressionNetParams,
-			GraphDB:         &channeldb.ChannelGraph{},
+			GraphDB:         &graphdb.ChannelGraph{},
 		}, true
 	case "NeutrinoKitRPC":
 		return &neutrinorpc.Config{}, true

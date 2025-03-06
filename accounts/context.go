@@ -4,8 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/btcsuite/btclog"
-	"github.com/lightningnetwork/lnd/build"
+	"github.com/btcsuite/btclog/v2"
 )
 
 // ContextKey is the type that we use to identify account specific values in the
@@ -95,5 +94,5 @@ func requestScopedValuesFromCtx(ctx context.Context) (btclog.Logger,
 
 	prefix := fmt.Sprintf("[account: %s, request: %d]", acc.ID, reqID)
 
-	return build.NewPrefixLog(prefix, log), acc, reqID, nil
+	return log.WithPrefix(prefix), acc, reqID, nil
 }
