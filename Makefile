@@ -198,6 +198,12 @@ unit:
 	mkdir -p app/build && touch app/build/index.html
 	$(UNIT)
 
+#? unit-debug: Run unit tests with debug log output enabled
+unit-debug:
+	@$(call print, "Running unit tests.")
+	mkdir -p app/build && touch app/build/index.html
+	$(UNIT_DEBUG)
+
 unit-cover: $(GOACC_BIN)
 	@$(call print, "Running unit coverage tests.")
 	$(GOACC_BIN) $(COVER_PKG)
@@ -307,6 +313,11 @@ sqlc:
 sqlc-check: sqlc
 	@$(call print, "Verifying sql code generation.")
 	if test -n "$$(git status --porcelain '*.go')"; then echo "SQL models not properly generated!"; git status --porcelain '*.go'; exit 1; fi
+
+#? flakehunter-unit: Run the unit tests continuously until one fails
+flakehunter-unit:
+	@$(call print, "Flake hunting unit test.")
+	scripts/unit-test-flake-hunter.sh ${pkg} ${case}
 
 # Prevent make from interpreting any of the defined goals as folders or files to
 # include in the build process.
