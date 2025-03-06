@@ -2,18 +2,15 @@ package itest
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/btcsuite/btclog"
-	"github.com/lightningnetwork/lnd/build"
+	"github.com/btcsuite/btclog/v2"
 	"github.com/lightningnetwork/lnd/lntest"
-	"github.com/lightningnetwork/lnd/signal"
 	"github.com/stretchr/testify/require"
 )
-
-var interceptor *signal.Interceptor
 
 // TestLightningTerminal performs a series of integration tests amongst a
 // programmatically driven network of lnd nodes.
@@ -23,10 +20,14 @@ func TestLightningTerminal(t *testing.T) {
 		t.Skip("integration tests not selected with flag 'itest'")
 	}
 
+	// TODO(elle): temporary override of the default maximum number of mined
+	//  blocks per test. We will need to do quite a bit of refactoring
+	//  before we can remove this so we override it for now to allow us to
+	//  do the refactor in stages.
+	lntest.MaxBlocksMinedPerTest = 200
+
 	// Now we can set up our test harness (LND instance), with the chain
 	// backend we just created.
-	ht := newHarnessTest(t, nil)
-	ht.setupLogging()
 	binary := getLitdBinary()
 
 	lndBinary := strings.ReplaceAll(
@@ -121,21 +122,7 @@ func TestLightningTerminal(t *testing.T) {
 	}
 }
 
-func (h *harnessTest) setupLogging() {
-	logWriter := build.NewRotatingLogWriter()
-
-	if interceptor != nil {
-		return
-	}
-
-	ic, err := signal.Intercept()
-	require.NoError(h.t, err)
-	interceptor = &ic
-
-	UseLogger(build.NewSubLogger(Subsystem, func(tag string) btclog.Logger {
-		return logWriter.GenSubLogger(tag, func() {})
-	}))
-
-	err = build.ParseAndSetDebugLevels("debug", logWriter)
-	require.NoError(h.t, err)
+func init() {
+	logger := btclog.NewSLogger(btclog.NewDefaultHandler(os.Stdout))
+	UseLogger(logger.SubSystem(Subsystem))
 }

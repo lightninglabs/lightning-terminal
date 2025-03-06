@@ -1,13 +1,17 @@
 package subservers
 
+import "github.com/lightningnetwork/lnd/build"
+
 // RemoteConfig holds the configuration parameters that are needed when running
 // LiT in the "remote" lnd mode.
 //
 //nolint:lll
 type RemoteConfig struct {
 	LitLogDir         string `long:"lit-logdir" description:"For lnd remote mode only: Directory to log output."`
-	LitMaxLogFiles    int    `long:"lit-maxlogfiles" description:"For lnd remote mode only: Maximum logfiles to keep (0 for no rotation)"`
-	LitMaxLogFileSize int    `long:"lit-maxlogfilesize" description:"For lnd remote mode only: Maximum logfile size in MB"`
+	LitMaxLogFiles    int    `long:"lit-maxlogfiles" description:"For lnd remote mode only: Maximum logfiles to keep (0 for no rotation). DEPRECATED: use --logging.file.max-files instead" hidden:"true"`
+	LitMaxLogFileSize int    `long:"lit-maxlogfilesize" description:"For lnd remote mode only: Maximum logfile size in MB. DEPRECATED: use --logging.file.max-file-size instead" hidden:"true"`
+
+	LitLogConfig *build.LogConfig `group:"lit-logging" namespace:"lit-logging"`
 
 	LitDebugLevel string `long:"lit-debuglevel" description:"For lnd remote mode only: Logging level for all subsystems {trace, debug, info, warn, error, critical} -- You may also specify <subsystem>=<level>,<subsystem2>=<level>,... to set the log level for individual subsystems."`
 
