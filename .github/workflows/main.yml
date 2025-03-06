@@ -318,8 +318,8 @@ jobs:
         uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
-          name: logs-itest
-          path: logs-itest.zip
+          name: logs-itest-${{ matrix.name }}
+          path: logs-itest-${{ matrix.name }}.zip
           retention-days: 5
 
   ########################
