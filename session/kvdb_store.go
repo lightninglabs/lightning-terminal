@@ -298,13 +298,11 @@ func (db *BoltStore) NewSession(ctx context.Context, label string, typ Type,
 }
 
 // UpdateSessionRemotePubKey can be used to add the given remote pub key
-// to the session with the given local pub key.
+// to the session with the given ID.
 //
 // NOTE: this is part of the Store interface.
-func (db *BoltStore) UpdateSessionRemotePubKey(_ context.Context, localPubKey,
+func (db *BoltStore) UpdateSessionRemotePubKey(_ context.Context, id ID,
 	remotePubKey *btcec.PublicKey) error {
-
-	key := localPubKey.SerializeCompressed()
 
 	return db.Update(func(tx *bbolt.Tx) error {
 		sessionBucket, err := getBucket(tx, sessionBucketKey)
@@ -312,15 +310,7 @@ func (db *BoltStore) UpdateSessionRemotePubKey(_ context.Context, localPubKey,
 			return err
 		}
 
-		serialisedSession := sessionBucket.Get(key)
-
-		if len(serialisedSession) == 0 {
-			return ErrSessionNotFound
-		}
-
-		session, err := DeserializeSession(
-			bytes.NewReader(serialisedSession),
-		)
+		session, err := getSessionByID(sessionBucket, id)
 		if err != nil {
 			return err
 		}
@@ -331,11 +321,11 @@ func (db *BoltStore) UpdateSessionRemotePubKey(_ context.Context, localPubKey,
 	})
 }
 
-// GetSession fetches the session with the given key.
+// GetSessionByLocalPub fetches the session with the given local pub key.
 //
 // NOTE: this is part of the Store interface.
-func (db *BoltStore) GetSession(_ context.Context, key *btcec.PublicKey) (
-	*Session, error) {
+func (db *BoltStore) GetSessionByLocalPub(_ context.Context,
+	key *btcec.PublicKey) (*Session, error) {
 
 	var session *Session
 	err := db.View(func(tx *bbolt.Tx) error {
@@ -575,12 +565,10 @@ func (db *BoltStore) ShiftState(_ context.Context, id ID, dest State) error {
 	})
 }
 
-// GetSessionByID fetches the session with the given ID.
+// GetSession fetches the session with the given ID.
 //
 // NOTE: this is part of the Store interface.
-func (db *BoltStore) GetSessionByID(_ context.Context, id ID) (*Session,
-	error) {
-
+func (db *BoltStore) GetSession(_ context.Context, id ID) (*Session, error) {
 	var session *Session
 	err := db.View(func(tx *bbolt.Tx) error {
 		sessionBucket, err := getBucket(tx, sessionBucketKey)

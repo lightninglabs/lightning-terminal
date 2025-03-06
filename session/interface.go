@@ -294,8 +294,10 @@ type Store interface {
 		expiry time.Time, serverAddr string, opts ...Option) (*Session,
 		error)
 
-	// GetSession fetches the session with the given key.
-	GetSession(ctx context.Context, key *btcec.PublicKey) (*Session, error)
+	// GetSessionByLocalPub fetches the session with the given local pub
+	// key.
+	GetSessionByLocalPub(ctx context.Context,
+		key *btcec.PublicKey) (*Session, error)
 
 	// ListAllSessions returns all sessions currently known to the store.
 	ListAllSessions(ctx context.Context) ([]*Session, error)
@@ -309,12 +311,12 @@ type Store interface {
 		error)
 
 	// UpdateSessionRemotePubKey can be used to add the given remote pub key
-	// to the session with the given local pub key.
-	UpdateSessionRemotePubKey(ctx context.Context, localPubKey,
+	// to the session with the given ID.
+	UpdateSessionRemotePubKey(ctx context.Context, id ID,
 		remotePubKey *btcec.PublicKey) error
 
-	// GetSessionByID fetches the session with the given ID.
-	GetSessionByID(ctx context.Context, id ID) (*Session, error)
+	// GetSession fetches the session with the given ID.
+	GetSession(ctx context.Context, id ID) (*Session, error)
 
 	// DeleteReservedSessions deletes all sessions that are in the
 	// StateReserved state.
