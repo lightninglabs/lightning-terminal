@@ -74,7 +74,6 @@ export const lndGetNodeInfo: Required<LND.NodeInfo.AsObject> = {
 export const lndChannelBalance: LND.ChannelBalanceResponse.AsObject = {
   balance: '9990950',
   pendingOpenBalance: '0',
-  customChannelData: '',
 };
 
 export const lndWalletBalance: LND.WalletBalanceResponse.AsObject = {
@@ -133,7 +132,6 @@ export const lndChannel: LND.Channel.AsObject = {
   peerAlias: '',
   peerScidAlias: '',
   memo: 'test channel',
-  customChannelData: '',
 };
 
 export const lndListChannelsMany: LND.ListChannelsResponse.AsObject = {
@@ -174,7 +172,6 @@ export const lndPendingChannel: LND.PendingChannelsResponse.PendingChannel.AsObj
   chanStatusFlags: 'ChanStatusDefault',
   pb_private: false,
   memo: 'test channel',
-  customChannelData: '',
 };
 
 export const lndPendingChannels: LND.PendingChannelsResponse.AsObject = {
