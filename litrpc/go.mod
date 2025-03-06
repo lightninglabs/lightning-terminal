@@ -1,13 +1,13 @@
 module github.com/lightninglabs/lightning-terminal/litrpc
 
-go 1.22.3
+go 1.23.6
 
 require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.22.0
 	github.com/lightninglabs/faraday/frdrpc v1.0.0
 	github.com/lightninglabs/loop/looprpc v1.0.0
 	github.com/lightninglabs/pool/poolrpc v1.0.0
-	github.com/lightningnetwork/lnd v0.18.0-beta.1
+	github.com/lightningnetwork/lnd v0.18.0-beta.rc4.0.20250304192711-9feb761b4ec4
 	google.golang.org/grpc v1.65.0
 	google.golang.org/protobuf v1.34.2
 )
@@ -19,18 +19,19 @@ require (
 	github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da // indirect
 	github.com/aead/siphash v1.0.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/btcsuite/btcd v0.24.2-beta.rc1.0.20240403021926-ae5533602c46 // indirect
-	github.com/btcsuite/btcd/btcec/v2 v2.3.3 // indirect
+	github.com/btcsuite/btcd v0.24.3-0.20241210095828-e646d437e95b // indirect
+	github.com/btcsuite/btcd/btcec/v2 v2.3.4 // indirect
 	github.com/btcsuite/btcd/btcutil v1.1.5 // indirect
 	github.com/btcsuite/btcd/btcutil/psbt v1.1.8 // indirect
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0 // indirect
-	github.com/btcsuite/btclog v0.0.0-20170628155309-84c8d2346e9f // indirect
-	github.com/btcsuite/btcwallet v0.16.10-0.20240404104514-b2f31f9045fb // indirect
-	github.com/btcsuite/btcwallet/wallet/txauthor v1.3.4 // indirect
-	github.com/btcsuite/btcwallet/wallet/txrules v1.2.1 // indirect
-	github.com/btcsuite/btcwallet/wallet/txsizes v1.2.4 // indirect
-	github.com/btcsuite/btcwallet/walletdb v1.4.2 // indirect
-	github.com/btcsuite/btcwallet/wtxmgr v1.5.3 // indirect
+	github.com/btcsuite/btclog v0.0.0-20241003133417-09c4e92e319c // indirect
+	github.com/btcsuite/btclog/v2 v2.0.1-0.20250110154127-3ae4bf1cb318 // indirect
+	github.com/btcsuite/btcwallet v0.16.10-0.20241127094224-93c858b2ad63 // indirect
+	github.com/btcsuite/btcwallet/wallet/txauthor v1.3.5 // indirect
+	github.com/btcsuite/btcwallet/wallet/txrules v1.2.2 // indirect
+	github.com/btcsuite/btcwallet/wallet/txsizes v1.2.5 // indirect
+	github.com/btcsuite/btcwallet/walletdb v1.4.4 // indirect
+	github.com/btcsuite/btcwallet/wtxmgr v1.5.4 // indirect
 	github.com/btcsuite/go-socks v0.0.0-20170105172521-4720035b7bfd // indirect
 	github.com/btcsuite/websocket v0.0.0-20150119174127-31079b680792 // indirect
 	github.com/btcsuite/winsvc v1.0.0 // indirect
@@ -79,9 +80,10 @@ require (
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
 	github.com/jackc/pgtype v1.14.0 // indirect
 	github.com/jackc/pgx/v4 v4.18.2 // indirect
+	github.com/jackc/pgx/v5 v5.3.1 // indirect
 	github.com/jessevdk/go-flags v1.4.0 // indirect
 	github.com/jonboulle/clockwork v0.2.2 // indirect
-	github.com/jrick/logrotate v1.0.0 // indirect
+	github.com/jrick/logrotate v1.1.2 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/juju/clock v1.1.1 // indirect
 	github.com/juju/errors v1.0.0 // indirect
@@ -89,22 +91,23 @@ require (
 	github.com/juju/testing v1.0.2 // indirect
 	github.com/juju/utils/v3 v3.2.0 // indirect
 	github.com/kkdai/bstream v1.0.0 // indirect
+	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/lib/pq v1.10.9 // indirect
 	github.com/lightninglabs/gozmq v0.0.0-20191113021534-d20a764486bf // indirect
 	github.com/lightninglabs/loop/swapserverrpc v1.0.8 // indirect
 	github.com/lightninglabs/neutrino v0.16.1-0.20240425105051-602843d34ffd // indirect
 	github.com/lightninglabs/neutrino/cache v1.1.2 // indirect
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.2 // indirect
-	github.com/lightningnetwork/lightning-onion v1.2.1-0.20230823005744-06182b1d7d2f // indirect
+	github.com/lightningnetwork/lightning-onion v1.2.1-0.20240712235311-98bd56499dfb // indirect
 	github.com/lightningnetwork/lnd/clock v1.1.1 // indirect
-	github.com/lightningnetwork/lnd/fn v1.0.5 // indirect
-	github.com/lightningnetwork/lnd/healthcheck v1.2.4 // indirect
-	github.com/lightningnetwork/lnd/kvdb v1.4.8 // indirect
+	github.com/lightningnetwork/lnd/fn/v2 v2.0.8 // indirect
+	github.com/lightningnetwork/lnd/healthcheck v1.2.6 // indirect
+	github.com/lightningnetwork/lnd/kvdb v1.4.12 // indirect
 	github.com/lightningnetwork/lnd/queue v1.1.1 // indirect
-	github.com/lightningnetwork/lnd/sqldb v1.0.2 // indirect
+	github.com/lightningnetwork/lnd/sqldb v1.0.7 // indirect
 	github.com/lightningnetwork/lnd/ticker v1.1.1 // indirect
-	github.com/lightningnetwork/lnd/tlv v1.2.3 // indirect
-	github.com/lightningnetwork/lnd/tor v1.1.2 // indirect
+	github.com/lightningnetwork/lnd/tlv v1.3.0 // indirect
+	github.com/lightningnetwork/lnd/tor v1.1.4 // indirect
 	github.com/ltcsuite/ltcd v0.0.0-20190101042124-f37f8bf35796 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
@@ -138,7 +141,7 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
-	go.etcd.io/bbolt v1.3.7 // indirect
+	go.etcd.io/bbolt v1.3.11 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.7 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.7 // indirect
 	go.etcd.io/etcd/client/v2 v2.305.7 // indirect
@@ -181,7 +184,7 @@ require (
 	modernc.org/libc v1.49.3 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.8.0 // indirect
-	modernc.org/sqlite v1.29.8 // indirect
+	modernc.org/sqlite v1.29.10 // indirect
 	modernc.org/strutil v1.2.0 // indirect
 	modernc.org/token v1.1.0 // indirect
 	sigs.k8s.io/yaml v1.2.0 // indirect
