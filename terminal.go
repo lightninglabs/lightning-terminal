@@ -40,7 +40,7 @@ import (
 	"github.com/lightningnetwork/lnd/build"
 	"github.com/lightningnetwork/lnd/chainreg"
 	"github.com/lightningnetwork/lnd/clock"
-	"github.com/lightningnetwork/lnd/fn"
+	"github.com/lightningnetwork/lnd/fn/v2"
 	"github.com/lightningnetwork/lnd/funding"
 	"github.com/lightningnetwork/lnd/htlcswitch"
 	"github.com/lightningnetwork/lnd/kvdb"
@@ -560,7 +560,7 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 				"mode to 'integrated' in the config file.")
 
 		case ModeIntegrated:
-			components, err := g.buildAuxComponents()
+			components, err := g.buildAuxComponents(ctx)
 			if err != nil {
 				return fmt.Errorf("could not build aux "+
 					"components: %w", err)
@@ -1347,7 +1347,9 @@ func (g *LightningTerminal) BuildWalletConfig(ctx context.Context,
 // buildAuxComponent builds the auxiliary components required by lnd when
 // running in integrated mode with tapd being the service that provides the
 // aux component implementations.
-func (g *LightningTerminal) buildAuxComponents() (*lnd.AuxComponents, error) {
+func (g *LightningTerminal) buildAuxComponents(
+	ctx context.Context) (*lnd.AuxComponents, error) {
+
 	errNotAvailable := fmt.Errorf("tapd is not available, both lnd and " +
 		"tapd must be started in integrated mode for Taproot " +
 		"Assets Channels to be available")
@@ -1373,7 +1375,7 @@ func (g *LightningTerminal) buildAuxComponents() (*lnd.AuxComponents, error) {
 	}
 
 	router := msgmux.NewMultiMsgRouter()
-	router.Start()
+	router.Start(ctx)
 	err = router.RegisterEndpoint(tapd)
 	if err != nil {
 		return nil, fmt.Errorf("error registering tapd endpoint: %w",
