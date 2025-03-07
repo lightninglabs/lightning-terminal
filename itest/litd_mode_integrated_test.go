@@ -629,8 +629,9 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 		)
 
 		ht := newHarnessTest(tt, net)
+		cfg.RPCAddr()
 		runAccountSystemTest(
-			ht, net.Alice, cfg.LitAddr(), cfg.LitTLSCertPath,
+			ht, net.Alice, cfg.RPCAddr(), cfg.TLSCertPath,
 			superMacFile, (runNum*2)-1,
 		)
 		runAccountSystemTest(

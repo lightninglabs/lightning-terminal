@@ -31,6 +31,8 @@ func runAccountSystemTest(t *harnessTest, node *HarnessNode, hostPort,
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
 	defer cancel()
 
+	assertNumChannels(ctxt, t.t, node.LightningClient, 0, 0, 0, 0)
+
 	// Before we start opening channels, we want to make sure we don't have
 	// any leftover funds in the tested node's wallet, so we can always
 	// exactly calculate what we are supposed to have during our test.
@@ -171,6 +173,7 @@ func runAccountSystemTest(t *harnessTest, node *HarnessNode, hostPort,
 	// Clean up our channel and payments, so we can start the next test
 	// iteration with a clean slate.
 	closeChannelAndAssert(t, net, node, channelOp, false)
+	assertNumChannels(ctxt, t.t, node.LightningClient, 0, 0, 0, 0)
 
 	_, err = node.DeleteAllPayments(ctxt, &lnrpc.DeleteAllPaymentsRequest{
 		FailedPaymentsOnly: false,
