@@ -49,6 +49,7 @@ type NetworkHarness struct {
 	Miner *miner.HarnessMiner
 
 	LNDHarness *lntest.HarnessTest
+	feeService lntest.WebFeeService
 
 	// server is an instance of the local Loop/Pool mock server.
 	server *ServerHarness
@@ -77,7 +78,8 @@ type NetworkHarness struct {
 
 // NewNetworkHarness creates a new network test harness.
 func NewNetworkHarness(lndHarness *lntest.HarnessTest, b node.BackendConfig,
-	litdBinary string) (*NetworkHarness, error) {
+	litdBinary string, feeService lntest.WebFeeService) (*NetworkHarness,
+	error) {
 
 	n := NetworkHarness{
 		activeNodes:  make(map[int]*HarnessNode),
@@ -88,6 +90,7 @@ func NewNetworkHarness(lndHarness *lntest.HarnessTest, b node.BackendConfig,
 		LNDHarness:   lndHarness,
 		BackendCfg:   b,
 		litdBinary:   litdBinary,
+		feeService:   feeService,
 	}
 	return &n, nil
 }
@@ -313,6 +316,7 @@ func (n *NetworkHarness) newNode(t *testing.T, name string, extraArgs,
 		NetParams:         n.netParams,
 		ExtraArgs:         extraArgs,
 		SkipUnlock:        skipUnlock,
+		FeeURL:            n.feeService.URL(),
 	}
 	for _, opt := range opts {
 		opt(baseCfg)
