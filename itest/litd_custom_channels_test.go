@@ -1256,9 +1256,18 @@ func testCustomChannelsGroupedAssetTranches(ctx context.Context,
 
 	// ------------
 	// Test case 1: Send a few direct keysend payment from Charlie to Dave.
+	// We want to send at least 30k assets, so we use up one channel
+	// internal tranche of assets and should at least once have an HTLC
+	// that transports assets from two tranches.
 	// ------------
-	const keySendAmount = 100
-	for i := 0; i < 5; i++ {
+	const (
+		keySendAmount  = 5000
+		numSends       = 6
+		totalFirstSend = keySendAmount * numSends
+	)
+	for i := 0; i < numSends; i++ {
+		// TODO(guggero): Actually specify group key here instead of
+		// assetID1 once that is supported by the API.
 		sendAssetKeySendPayment(
 			t.t, charlie, dave, keySendAmount, assetID1,
 			fn.None[int64](),
@@ -1269,7 +1278,9 @@ func testCustomChannelsGroupedAssetTranches(ctx context.Context,
 	// ------------
 	// Test case 2: Send a few direct keysend payment from Erin to Fabia.
 	// ------------
-	for i := 0; i < 5; i++ {
+	for i := 0; i < numSends; i++ {
+		// TODO(guggero): Actually specify group key here instead of
+		// assetID1 once that is supported by the API.
 		sendAssetKeySendPayment(
 			t.t, erin, fabia, keySendAmount, assetID1,
 			fn.None[int64](),
@@ -1290,7 +1301,10 @@ func testCustomChannelsGroupedAssetTranches(ctx context.Context,
 		noOpCoOpCloseBalanceCheck,
 	)
 
-	// TODO: assertSpendableBalance(t.t, charlieTap, assetID1, 0)
+	assertSpendableBalanceGroup(
+		t.t, charlieTap, groupKey, fundingAmount-totalFirstSend+2,
+	)
+	assertSpendableBalanceGroup(t.t, daveTap, groupKey, totalFirstSend)
 
 	// ------------
 	// Test case 4: Force close the channel between Erin and Fabia.
@@ -1340,7 +1354,37 @@ func testCustomChannelsGroupedAssetTranches(ctx context.Context,
 
 	mineBlocks(t, net, 1, 1)
 
-	// TODO: assertSpendableBalance(t.t, charlieTap, assetID1, 0)
+	// Fabia should have her sweep output confirmed now and the assets
+	// should be back in her on-chain wallet and spendable.
+	assertSpendableBalanceGroup(t.t, fabiaTap, groupKey, totalFirstSend)
+
+	// Next, we'll mine three additional blocks to trigger the CSV delay
+	// for Erin.
+	mineBlocks(t, net, 3, 0)
+
+	// We expect that Erin's sweep transaction has been broadcast.
+	erinSweepTxid, err := waitForNTxsInMempool(
+		net.Miner.Client, 1, shortTimeout,
+	)
+	require.NoError(t.t, err)
+
+	t.Logf("Erin sweep txid: %v", erinSweepTxid)
+
+	// Now we'll mine a block to confirm Erin's sweep transaction.
+	mineBlocks(t, net, 1, 0)
+
+	// Charlie should now have an asset transfer for his sweep transaction.
+	erinSweepTransfer := locateAssetTransfers(
+		t.t, erinTap, *erinSweepTxid[0],
+	)
+
+	t.Logf("Erin sweep transfer: %v", toProtoJSON(
+		t.t, erinSweepTransfer,
+	))
+
+	assertSpendableBalanceGroup(
+		t.t, erinTap, groupKey, fundingAmount-totalFirstSend,
+	)
 }
 
 // testCustomChannelsForceClose tests a force close scenario after both parties
