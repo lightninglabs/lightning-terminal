@@ -217,13 +217,13 @@ clean-itest:
 	@$(call print, "Cleaning itest binaries.")
 	rm -rf itest/litd-itest itest/btcd-itest itest/lnd-itest
 
-build-itest: app-build
+build-itest:
 	@$(call print, "Building itest binaries.")
 	CGO_ENABLED=0 $(GOBUILD) -tags="$(ITEST_TAGS)" -o itest/litd-itest -ldflags "$(ITEST_LDFLAGS)" $(PKG)/cmd/litd
 	CGO_ENABLED=0 $(GOBUILD) -tags="$(ITEST_TAGS)" -o itest/btcd-itest -ldflags "$(ITEST_LDFLAGS)" $(BTCD_PKG)
 	CGO_ENABLED=0 $(GOBUILD) -tags="$(ITEST_TAGS)" -o itest/lnd-itest -ldflags "$(ITEST_LDFLAGS)" $(LND_PKG)/cmd/lnd
 
-itest-only:
+itest-only: build-itest
 	@$(call print, "Building itest binary.")
 	CGO_ENABLED=0 $(GOBUILD) -tags="$(ITEST_TAGS)" -o itest/litd-itest -ldflags "$(ITEST_LDFLAGS)" $(PKG)/cmd/litd
 	CGO_ENABLED=0 $(GOTEST) -v ./itest -tags="$(DEV_TAGS) $(ITEST_TAGS)" -c -o itest/itest.test
@@ -232,7 +232,7 @@ itest-only:
 	rm -rf itest/*.log itest/.logs*; date
 	scripts/itest_part.sh $(ITEST_FLAGS)
 
-itest: build-itest itest-only
+itest: app-build build-itest itest-only
 
 # =============
 # FLAKE HUNTING
