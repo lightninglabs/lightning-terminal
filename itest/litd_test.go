@@ -9,6 +9,7 @@ import (
 
 	"github.com/btcsuite/btclog/v2"
 	"github.com/lightningnetwork/lnd/lntest"
+	"github.com/lightningnetwork/lnd/lnwallet/chainfee"
 	"github.com/stretchr/testify/require"
 )
 
@@ -49,6 +50,7 @@ func TestLightningTerminal(t *testing.T) {
 			)
 
 			feeService := lntest.NewFeeService(t)
+			feeService.SetFeeRate(chainfee.FeePerKwFloor, 1)
 			lndHarness := lntest.SetupHarness(
 				t1, lndBinary, "bbolt", true, feeService,
 			)
