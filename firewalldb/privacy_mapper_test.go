@@ -1,6 +1,7 @@
 package firewalldb
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -9,6 +10,9 @@ import (
 
 // TestPrivacyMapStorage tests the privacy mapper CRUD logic.
 func TestPrivacyMapStorage(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
 	tmpDir := t.TempDir()
 	db, err := NewDB(tmpDir, "test.db", nil)
 	require.NoError(t, err)
@@ -18,7 +22,7 @@ func TestPrivacyMapStorage(t *testing.T) {
 
 	pdb1 := db.PrivacyDB([4]byte{1, 1, 1, 1})
 
-	_ = pdb1.Update(func(tx PrivacyMapTx) error {
+	_ = pdb1.Update(ctx, func(ctx context.Context, tx PrivacyMapTx) error {
 		_, err = tx.RealToPseudo("real")
 		require.ErrorIs(t, err, ErrNoSuchKeyFound)
 
@@ -48,7 +52,7 @@ func TestPrivacyMapStorage(t *testing.T) {
 
 	pdb2 := db.PrivacyDB([4]byte{2, 2, 2, 2})
 
-	_ = pdb2.Update(func(tx PrivacyMapTx) error {
+	_ = pdb2.Update(ctx, func(ctx context.Context, tx PrivacyMapTx) error {
 		_, err = tx.RealToPseudo("real")
 		require.ErrorIs(t, err, ErrNoSuchKeyFound)
 
@@ -78,7 +82,7 @@ func TestPrivacyMapStorage(t *testing.T) {
 
 	pdb3 := db.PrivacyDB([4]byte{3, 3, 3, 3})
 
-	_ = pdb3.Update(func(tx PrivacyMapTx) error {
+	_ = pdb3.Update(ctx, func(ctx context.Context, tx PrivacyMapTx) error {
 		// Check that calling FetchAllPairs returns an empty map if
 		// nothing exists in the DB yet.
 		m, err := tx.FetchAllPairs()
@@ -180,6 +184,9 @@ func TestPrivacyMapStorage(t *testing.T) {
 // provide atomic access to the db. If anything fails in the middle of an
 // `Update` function, then all the changes prior should be rolled back.
 func TestPrivacyMapTxs(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
 	tmpDir := t.TempDir()
 	db, err := NewDB(tmpDir, "test.db", nil)
 	require.NoError(t, err)
@@ -191,7 +198,9 @@ func TestPrivacyMapTxs(t *testing.T) {
 
 	// Test that if an action fails midway through the transaction, then
 	// it is rolled back.
-	err = pdb1.Update(func(tx PrivacyMapTx) error {
+	err = pdb1.Update(ctx, func(ctx context.Context,
+		tx PrivacyMapTx) error {
+
 		err := tx.NewPair("real", "pseudo")
 		if err != nil {
 			return err
@@ -208,7 +217,7 @@ func TestPrivacyMapTxs(t *testing.T) {
 	})
 	require.Error(t, err)
 
-	err = pdb1.View(func(tx PrivacyMapTx) error {
+	err = pdb1.View(ctx, func(ctx context.Context, tx PrivacyMapTx) error {
 		_, err := tx.RealToPseudo("real")
 		return err
 	})

@@ -267,8 +267,8 @@ func (r *RateLimit) ToProto() *litrpc.RuleValue {
 // find the real values. This is a no-op for the RateLimit rule.
 //
 // NOTE: this is part of the Values interface.
-func (r *RateLimit) PseudoToReal(_ firewalldb.PrivacyMapDB,
-	_ session.PrivacyFlags) (Values, error) {
+func (r *RateLimit) PseudoToReal(_ context.Context,
+	_ firewalldb.PrivacyMapDB, _ session.PrivacyFlags) (Values, error) {
 
 	return r, nil
 }
@@ -278,8 +278,9 @@ func (r *RateLimit) PseudoToReal(_ firewalldb.PrivacyMapDB,
 // that should be persisted. This is a no-op for the RateLimit rule.
 //
 // NOTE: this is part of the Values interface.
-func (r *RateLimit) RealToPseudo(_ firewalldb.PrivacyMapReader,
-	flags session.PrivacyFlags) (Values, map[string]string, error) {
+func (r *RateLimit) RealToPseudo(_ context.Context,
+	_ firewalldb.PrivacyMapReader, flags session.PrivacyFlags) (Values,
+	map[string]string, error) {
 
 	return r, nil, nil
 }
