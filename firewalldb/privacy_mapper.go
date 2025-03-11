@@ -43,7 +43,7 @@ type NewPrivacyMapDB func(groupID session.ID) PrivacyMapDB
 // group ID key.
 func (db *DB) PrivacyDB(groupID session.ID) PrivacyMapDB {
 	return &privacyMapDB{
-		DB:      db,
+		db:      db,
 		groupID: groupID,
 	}
 }
@@ -51,21 +51,7 @@ func (db *DB) PrivacyDB(groupID session.ID) PrivacyMapDB {
 // PrivacyMapDB provides an Update and View method that will allow the caller
 // to perform atomic read and write transactions defined by PrivacyMapTx on the
 // underlying DB.
-type PrivacyMapDB interface {
-	// Update opens a database read/write transaction and executes the
-	// function f with the transaction passed as a parameter. After f exits,
-	// if f did not error, the transaction is committed. Otherwise, if f did
-	// error, the transaction is rolled back. If the rollback fails, the
-	// original error returned by f is still returned. If the commit fails,
-	// the commit error is returned.
-	Update(context.Context, func(context.Context, PrivacyMapTx) error) error
-
-	// View opens a database read transaction and executes the function f
-	// with the transaction passed as a parameter. After f exits, the
-	// transaction is rolled back. If f errors, its error is returned, not a
-	// rollback error (if any occur).
-	View(context.Context, func(context.Context, PrivacyMapTx) error) error
-}
+type PrivacyMapDB = DBExecutor[PrivacyMapTx]
 
 // PrivacyMapTx represents a db that can be used to create, store and fetch
 // real-pseudo pairs.
@@ -88,21 +74,8 @@ type PrivacyMapTx interface {
 
 // privacyMapDB is an implementation of PrivacyMapDB.
 type privacyMapDB struct {
-	*DB
+	db      *DB
 	groupID session.ID
-}
-
-// beginTx starts db transaction. The transaction will be a read or read-write
-// transaction depending on the value of the `writable` parameter.
-func (p *privacyMapDB) beginTx(writable bool) (*privacyMapTx, error) {
-	boltTx, err := p.Begin(writable)
-	if err != nil {
-		return nil, err
-	}
-	return &privacyMapTx{
-		privacyMapDB: p,
-		boltTx:       boltTx,
-	}, nil
 }
 
 // Update opens a database read/write transaction and executes the function f
@@ -113,30 +86,17 @@ func (p *privacyMapDB) beginTx(writable bool) (*privacyMapTx, error) {
 // returned.
 //
 // NOTE: this is part of the PrivacyMapDB interface.
-func (p *privacyMapDB) Update(ctx context.Context, f func(ctx context.Context,
+func (p *privacyMapDB) Update(ctx context.Context, fn func(ctx context.Context,
 	tx PrivacyMapTx) error) error {
 
-	tx, err := p.beginTx(true)
-	if err != nil {
-		return err
-	}
-
-	// Make sure the transaction rolls back in the event of a panic.
-	defer func() {
-		if tx != nil {
-			_ = tx.boltTx.Rollback()
+	return p.db.Update(func(tx *bbolt.Tx) error {
+		boltTx := &privacyMapTx{
+			privacyMapDB: p,
+			boltTx:       tx,
 		}
-	}()
 
-	err = f(ctx, tx)
-	if err != nil {
-		// Want to return the original error, not a rollback error if
-		// any occur.
-		_ = tx.boltTx.Rollback()
-		return err
-	}
-
-	return tx.boltTx.Commit()
+		return fn(ctx, boltTx)
+	})
 }
 
 // View opens a database read transaction and executes the function f with the
@@ -145,31 +105,17 @@ func (p *privacyMapDB) Update(ctx context.Context, f func(ctx context.Context,
 // occur).
 //
 // NOTE: this is part of the PrivacyMapDB interface.
-func (p *privacyMapDB) View(ctx context.Context, f func(ctx context.Context,
+func (p *privacyMapDB) View(ctx context.Context, fn func(ctx context.Context,
 	tx PrivacyMapTx) error) error {
 
-	tx, err := p.beginTx(false)
-	if err != nil {
-		return err
-	}
-
-	// Make sure the transaction rolls back in the event of a panic.
-	defer func() {
-		if tx != nil {
-			_ = tx.boltTx.Rollback()
+	return p.db.View(func(tx *bbolt.Tx) error {
+		boltTx := &privacyMapTx{
+			privacyMapDB: p,
+			boltTx:       tx,
 		}
-	}()
 
-	err = f(ctx, tx)
-	rollbackErr := tx.boltTx.Rollback()
-	if err != nil {
-		return err
-	}
-
-	if rollbackErr != nil {
-		return rollbackErr
-	}
-	return nil
+		return fn(ctx, boltTx)
+	})
 }
 
 // privacyMapTx is an implementation of PrivacyMapTx.
