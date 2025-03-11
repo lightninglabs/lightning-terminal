@@ -42,9 +42,11 @@ CREATE TABLE IF NOT EXISTS account_payments (
 
     -- The total amount of the payment in millisatoshis.
     -- This includes the payment amount and estimated routing fee.
-    full_amount_msat BIGINT NOT NULL,
+    full_amount_msat BIGINT NOT NULL
+);
 
-    UNIQUE(account_id, hash)
+CREATE UNIQUE INDEX account_payments_unique ON account_payments (
+    account_id, hash
 );
 
 -- The account_invoices table stores all the invoice payment hashes that
@@ -55,9 +57,11 @@ CREATE TABLE IF NOT EXISTS account_invoices (
     account_id BIGINT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
 
     -- The payment hash of the invoice.
-    hash BLOB NOT NULL,
+    hash BLOB NOT NULL
+);
 
-    UNIQUE(account_id, hash)
+CREATE UNIQUE INDEX account_invoices_unique ON account_invoices (
+    account_id, hash
 );
 
 -- The account_indices table stores any string-to-integer mappings that are
