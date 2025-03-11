@@ -108,7 +108,7 @@ func (db *DB) GetKVStores(rule string, groupID session.ID,
 	feature string) KVStores {
 
 	return &kvStores{
-		DB:          db,
+		db:          db.DB,
 		ruleName:    rule,
 		groupID:     groupID,
 		featureName: feature,
@@ -117,23 +117,10 @@ func (db *DB) GetKVStores(rule string, groupID session.ID,
 
 // kvStores implements the rules.KVStores interface.
 type kvStores struct {
-	*DB
+	db          *bbolt.DB
 	ruleName    string
 	groupID     session.ID
 	featureName string
-}
-
-// beginTx starts db transaction. The transaction will be a read or read-write
-// transaction depending on the value of the `writable` parameter.
-func (s *kvStores) beginTx(writable bool) (*kvStoreTx, error) {
-	boltTx, err := s.Begin(writable)
-	if err != nil {
-		return nil, err
-	}
-	return &kvStoreTx{
-		kvStores: s,
-		boltTx:   boltTx,
-	}, nil
 }
 
 // Update opens a database read/write transaction and executes the function f
@@ -144,30 +131,17 @@ func (s *kvStores) beginTx(writable bool) (*kvStoreTx, error) {
 // returned.
 //
 // NOTE: this is part of the KVStores interface.
-func (s *kvStores) Update(ctx context.Context, f func(ctx context.Context,
+func (s *kvStores) Update(ctx context.Context, fn func(ctx context.Context,
 	tx KVStoreTx) error) error {
 
-	tx, err := s.beginTx(true)
-	if err != nil {
-		return err
-	}
-
-	// Make sure the transaction rolls back in the event of a panic.
-	defer func() {
-		if tx != nil {
-			_ = tx.boltTx.Rollback()
+	return s.db.Update(func(tx *bbolt.Tx) error {
+		boltTx := &kvStoreTx{
+			boltTx:   tx,
+			kvStores: s,
 		}
-	}()
 
-	err = f(ctx, tx)
-	if err != nil {
-		// Want to return the original error, not a rollback error if
-		// any occur.
-		_ = tx.boltTx.Rollback()
-		return err
-	}
-
-	return tx.boltTx.Commit()
+		return fn(ctx, boltTx)
+	})
 }
 
 // View opens a database read transaction and executes the function f with the
@@ -176,31 +150,17 @@ func (s *kvStores) Update(ctx context.Context, f func(ctx context.Context,
 // occur).
 //
 // NOTE: this is part of the KVStores interface.
-func (s *kvStores) View(ctx context.Context, f func(ctx context.Context,
+func (s *kvStores) View(ctx context.Context, fn func(ctx context.Context,
 	tx KVStoreTx) error) error {
 
-	tx, err := s.beginTx(false)
-	if err != nil {
-		return err
-	}
-
-	// Make sure the transaction rolls back in the event of a panic.
-	defer func() {
-		if tx != nil {
-			_ = tx.boltTx.Rollback()
+	return s.db.View(func(tx *bbolt.Tx) error {
+		boltTx := &kvStoreTx{
+			boltTx:   tx,
+			kvStores: s,
 		}
-	}()
 
-	err = f(ctx, tx)
-	rollbackErr := tx.boltTx.Rollback()
-	if err != nil {
-		return err
-	}
-
-	if rollbackErr != nil {
-		return rollbackErr
-	}
-	return nil
+		return fn(ctx, boltTx)
+	})
 }
 
 // getBucketFunc defines the signature of the bucket creation/fetching function
