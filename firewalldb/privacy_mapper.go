@@ -42,9 +42,16 @@ type NewPrivacyMapDB func(groupID session.ID) PrivacyMapDB
 // PrivacyDB constructs a PrivacyMapDB that will be indexed under the given
 // group ID key.
 func (db *DB) PrivacyDB(groupID session.ID) PrivacyMapDB {
-	return &privacyMapDB{
-		db:      db,
-		groupID: groupID,
+	return &kvdbExecutor[PrivacyMapTx]{
+		db: db.DB,
+		wrapTx: func(tx *bbolt.Tx) PrivacyMapTx {
+			return &privacyMapTx{
+				boltTx: tx,
+				privacyMapDB: &privacyMapDB{
+					groupID: groupID,
+				},
+			}
+		},
 	}
 }
 
@@ -74,48 +81,7 @@ type PrivacyMapTx interface {
 
 // privacyMapDB is an implementation of PrivacyMapDB.
 type privacyMapDB struct {
-	db      *DB
 	groupID session.ID
-}
-
-// Update opens a database read/write transaction and executes the function f
-// with the transaction passed as a parameter. After f exits, if f did not
-// error, the transaction is committed. Otherwise, if f did error, the
-// transaction is rolled back. If the rollback fails, the original error
-// returned by f is still returned. If the commit fails, the commit error is
-// returned.
-//
-// NOTE: this is part of the PrivacyMapDB interface.
-func (p *privacyMapDB) Update(ctx context.Context, fn func(ctx context.Context,
-	tx PrivacyMapTx) error) error {
-
-	return p.db.Update(func(tx *bbolt.Tx) error {
-		boltTx := &privacyMapTx{
-			privacyMapDB: p,
-			boltTx:       tx,
-		}
-
-		return fn(ctx, boltTx)
-	})
-}
-
-// View opens a database read transaction and executes the function f with the
-// transaction passed as a parameter. After f exits, the transaction is rolled
-// back. If f errors, its error is returned, not a rollback error (if any
-// occur).
-//
-// NOTE: this is part of the PrivacyMapDB interface.
-func (p *privacyMapDB) View(ctx context.Context, fn func(ctx context.Context,
-	tx PrivacyMapTx) error) error {
-
-	return p.db.View(func(tx *bbolt.Tx) error {
-		boltTx := &privacyMapTx{
-			privacyMapDB: p,
-			boltTx:       tx,
-		}
-
-		return fn(ctx, boltTx)
-	})
 }
 
 // privacyMapTx is an implementation of PrivacyMapTx.
