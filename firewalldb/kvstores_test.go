@@ -28,7 +28,7 @@ func TestKVStoreTxs(t *testing.T) {
 
 	// Test that if an action fails midway through the transaction, then
 	// it is rolled back.
-	err = store.Update(func(tx KVStoreTx) error {
+	err = store.Update(ctx, func(ctx context.Context, tx KVStoreTx) error {
 		err := tx.Global().Set(ctx, "test", []byte{1})
 		if err != nil {
 			return err
@@ -46,7 +46,7 @@ func TestKVStoreTxs(t *testing.T) {
 	require.Error(t, err)
 
 	var v []byte
-	err = store.View(func(tx KVStoreTx) error {
+	err = store.View(ctx, func(ctx context.Context, tx KVStoreTx) error {
 		b, err := tx.Global().Get(ctx, "test")
 		if err != nil {
 			return err
@@ -94,7 +94,7 @@ func testTempAndPermStores(t *testing.T, featureSpecificStore bool) {
 
 	store := db.GetKVStores("test-rule", [4]byte{1, 1, 1, 1}, featureName)
 
-	err = store.Update(func(tx KVStoreTx) error {
+	err = store.Update(ctx, func(ctx context.Context, tx KVStoreTx) error {
 		// Set an item in the temp store.
 		err := tx.LocalTemp().Set(ctx, "test", []byte{4, 3, 2})
 		if err != nil {
@@ -112,7 +112,7 @@ func testTempAndPermStores(t *testing.T, featureSpecificStore bool) {
 		v1 []byte
 		v2 []byte
 	)
-	err = store.View(func(tx KVStoreTx) error {
+	err = store.View(ctx, func(ctx context.Context, tx KVStoreTx) error {
 		b, err := tx.LocalTemp().Get(ctx, "test")
 		if err != nil {
 			return err
@@ -144,7 +144,7 @@ func testTempAndPermStores(t *testing.T, featureSpecificStore bool) {
 
 	// The temp store should no longer have the stored value but the perm
 	// store should .
-	err = store.View(func(tx KVStoreTx) error {
+	err = store.View(ctx, func(ctx context.Context, tx KVStoreTx) error {
 		b, err := tx.LocalTemp().Get(ctx, "test")
 		if err != nil {
 			return err
@@ -188,21 +188,27 @@ func TestKVStoreNameSpaces(t *testing.T) {
 	rulesDB3 := db.GetKVStores("test-rule", groupID2, "re-balance")
 
 	// Test that the three ruleDBs share the same global space.
-	err = rulesDB1.Update(func(tx KVStoreTx) error {
+	err = rulesDB1.Update(ctx, func(ctx context.Context,
+		tx KVStoreTx) error {
+
 		return tx.Global().Set(
 			ctx, "test-global", []byte("global thing!"),
 		)
 	})
 	require.NoError(t, err)
 
-	err = rulesDB2.Update(func(tx KVStoreTx) error {
+	err = rulesDB2.Update(ctx, func(ctx context.Context,
+		tx KVStoreTx) error {
+
 		return tx.Global().Set(
 			ctx, "test-global", []byte("different global thing!"),
 		)
 	})
 	require.NoError(t, err)
 
-	err = rulesDB3.Update(func(tx KVStoreTx) error {
+	err = rulesDB3.Update(ctx, func(ctx context.Context,
+		tx KVStoreTx) error {
+
 		return tx.Global().Set(
 			ctx, "test-global", []byte("yet another global thing"),
 		)
@@ -210,7 +216,9 @@ func TestKVStoreNameSpaces(t *testing.T) {
 	require.NoError(t, err)
 
 	var v []byte
-	err = rulesDB1.View(func(tx KVStoreTx) error {
+	err = rulesDB1.View(ctx, func(ctx context.Context,
+		tx KVStoreTx) error {
+
 		b, err := tx.Global().Get(ctx, "test-global")
 		if err != nil {
 			return err
@@ -221,7 +229,9 @@ func TestKVStoreNameSpaces(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, bytes.Equal(v, []byte("yet another global thing")))
 
-	err = rulesDB2.View(func(tx KVStoreTx) error {
+	err = rulesDB2.View(ctx, func(ctx context.Context,
+		tx KVStoreTx) error {
+
 		b, err := tx.Global().Get(ctx, "test-global")
 		if err != nil {
 			return err
@@ -232,7 +242,9 @@ func TestKVStoreNameSpaces(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, bytes.Equal(v, []byte("yet another global thing")))
 
-	err = rulesDB3.View(func(tx KVStoreTx) error {
+	err = rulesDB3.View(ctx, func(ctx context.Context,
+		tx KVStoreTx) error {
+
 		b, err := tx.Global().Get(ctx, "test-global")
 		if err != nil {
 			return err
@@ -244,22 +256,30 @@ func TestKVStoreNameSpaces(t *testing.T) {
 	require.True(t, bytes.Equal(v, []byte("yet another global thing")))
 
 	// Test that the feature space is not shared by any of the dbs.
-	err = rulesDB1.Update(func(tx KVStoreTx) error {
+	err = rulesDB1.Update(ctx, func(ctx context.Context,
+		tx KVStoreTx) error {
+
 		return tx.Local().Set(ctx, "count", []byte("1"))
 	})
 	require.NoError(t, err)
 
-	err = rulesDB2.Update(func(tx KVStoreTx) error {
+	err = rulesDB2.Update(ctx, func(ctx context.Context,
+		tx KVStoreTx) error {
+
 		return tx.Local().Set(ctx, "count", []byte("2"))
 	})
 	require.NoError(t, err)
 
-	err = rulesDB3.Update(func(tx KVStoreTx) error {
+	err = rulesDB3.Update(ctx, func(ctx context.Context,
+		tx KVStoreTx) error {
+
 		return tx.Local().Set(ctx, "count", []byte("3"))
 	})
 	require.NoError(t, err)
 
-	err = rulesDB1.View(func(tx KVStoreTx) error {
+	err = rulesDB1.View(ctx, func(ctx context.Context,
+		tx KVStoreTx) error {
+
 		b, err := tx.Local().Get(ctx, "count")
 		if err != nil {
 			return err
@@ -270,7 +290,9 @@ func TestKVStoreNameSpaces(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, bytes.Equal(v, []byte("1")))
 
-	err = rulesDB2.View(func(tx KVStoreTx) error {
+	err = rulesDB2.View(ctx, func(ctx context.Context,
+		tx KVStoreTx) error {
+
 		b, err := tx.Local().Get(ctx, "count")
 		if err != nil {
 			return err
@@ -281,7 +303,9 @@ func TestKVStoreNameSpaces(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, bytes.Equal(v, []byte("2")))
 
-	err = rulesDB3.View(func(tx KVStoreTx) error {
+	err = rulesDB3.View(ctx, func(ctx context.Context,
+		tx KVStoreTx) error {
+
 		b, err := tx.Local().Get(ctx, "count")
 		if err != nil {
 			return err
@@ -299,22 +323,30 @@ func TestKVStoreNameSpaces(t *testing.T) {
 	rulesDB2 = db.GetKVStores("test-rule", groupID1, "")
 	rulesDB3 = db.GetKVStores("test-rule", groupID2, "")
 
-	err = rulesDB1.Update(func(tx KVStoreTx) error {
+	err = rulesDB1.Update(ctx, func(ctx context.Context,
+		tx KVStoreTx) error {
+
 		return tx.Local().Set(ctx, "test", []byte("thing 1"))
 	})
 	require.NoError(t, err)
 
-	err = rulesDB2.Update(func(tx KVStoreTx) error {
+	err = rulesDB2.Update(ctx, func(ctx context.Context,
+		tx KVStoreTx) error {
+
 		return tx.Local().Set(ctx, "test", []byte("thing 2"))
 	})
 	require.NoError(t, err)
 
-	err = rulesDB3.Update(func(tx KVStoreTx) error {
+	err = rulesDB3.Update(ctx, func(ctx context.Context,
+		tx KVStoreTx) error {
+
 		return tx.Local().Set(ctx, "test", []byte("thing 3"))
 	})
 	require.NoError(t, err)
 
-	err = rulesDB1.View(func(tx KVStoreTx) error {
+	err = rulesDB1.View(ctx, func(ctx context.Context,
+		tx KVStoreTx) error {
+
 		b, err := tx.Local().Get(ctx, "test")
 		if err != nil {
 			return err
@@ -325,7 +357,9 @@ func TestKVStoreNameSpaces(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, bytes.Equal(v, []byte("thing 2")))
 
-	err = rulesDB2.View(func(tx KVStoreTx) error {
+	err = rulesDB2.View(ctx, func(ctx context.Context,
+		tx KVStoreTx) error {
+
 		b, err := tx.Local().Get(ctx, "test")
 		if err != nil {
 			return err
@@ -336,7 +370,9 @@ func TestKVStoreNameSpaces(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, bytes.Equal(v, []byte("thing 2")))
 
-	err = rulesDB3.View(func(tx KVStoreTx) error {
+	err = rulesDB3.View(ctx, func(ctx context.Context,
+		tx KVStoreTx) error {
+
 		b, err := tx.Local().Get(ctx, "test")
 		if err != nil {
 			return err

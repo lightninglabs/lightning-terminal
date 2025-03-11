@@ -61,13 +61,15 @@ type KVStores interface {
 	// error, the transaction is rolled back. If the rollback fails, the
 	// original error returned by f is still returned. If the commit fails,
 	// the commit error is returned.
-	Update(f func(tx KVStoreTx) error) error
+	Update(ctx context.Context, f func(ctx context.Context,
+		tx KVStoreTx) error) error
 
 	// View opens a database read transaction and executes the function f
 	// with the transaction passed as a parameter. After f exits, the
 	// transaction is rolled back. If f errors, its error is returned, not a
 	// rollback error (if any occur).
-	View(f func(tx KVStoreTx) error) error
+	View(ctx context.Context, f func(ctx context.Context,
+		tx KVStoreTx) error) error
 }
 
 // KVStoreTx represents a database transaction that can be used for both read
@@ -158,7 +160,9 @@ func (s *kvStores) beginTx(writable bool) (*kvStoreTx, error) {
 // returned.
 //
 // NOTE: this is part of the KVStores interface.
-func (s *kvStores) Update(f func(tx KVStoreTx) error) error {
+func (s *kvStores) Update(ctx context.Context, f func(ctx context.Context,
+	tx KVStoreTx) error) error {
+
 	tx, err := s.beginTx(true)
 	if err != nil {
 		return err
@@ -171,7 +175,7 @@ func (s *kvStores) Update(f func(tx KVStoreTx) error) error {
 		}
 	}()
 
-	err = f(tx)
+	err = f(ctx, tx)
 	if err != nil {
 		// Want to return the original error, not a rollback error if
 		// any occur.
@@ -188,7 +192,9 @@ func (s *kvStores) Update(f func(tx KVStoreTx) error) error {
 // occur).
 //
 // NOTE: this is part of the KVStores interface.
-func (s *kvStores) View(f func(tx KVStoreTx) error) error {
+func (s *kvStores) View(ctx context.Context, f func(ctx context.Context,
+	tx KVStoreTx) error) error {
+
 	tx, err := s.beginTx(false)
 	if err != nil {
 		return err
@@ -201,7 +207,7 @@ func (s *kvStores) View(f func(tx KVStoreTx) error) error {
 		}
 	}()
 
-	err = f(tx)
+	err = f(ctx, tx)
 	rollbackErr := tx.boltTx.Rollback()
 	if err != nil {
 		return err
