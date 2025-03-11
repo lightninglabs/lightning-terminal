@@ -54,23 +54,7 @@ var (
 // KVStores provides an Update and View method that will allow the caller to
 // perform atomic read and write transactions on and of the key value stores
 // offered the KVStoreTx.
-type KVStores interface {
-	// Update opens a database read/write transaction and executes the
-	// function f with the transaction passed as a parameter. After f exits,
-	// if f did not error, the transaction is committed. Otherwise, if f did
-	// error, the transaction is rolled back. If the rollback fails, the
-	// original error returned by f is still returned. If the commit fails,
-	// the commit error is returned.
-	Update(ctx context.Context, f func(ctx context.Context,
-		tx KVStoreTx) error) error
-
-	// View opens a database read transaction and executes the function f
-	// with the transaction passed as a parameter. After f exits, the
-	// transaction is rolled back. If f errors, its error is returned, not a
-	// rollback error (if any occur).
-	View(ctx context.Context, f func(ctx context.Context,
-		tx KVStoreTx) error) error
-}
+type KVStores = DBExecutor[KVStoreTx]
 
 // KVStoreTx represents a database transaction that can be used for both read
 // and writes of the various different key value stores offered for the rule.
