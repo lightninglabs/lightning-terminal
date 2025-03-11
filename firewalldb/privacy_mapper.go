@@ -1,6 +1,7 @@
 package firewalldb
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/binary"
 	"encoding/hex"
@@ -57,13 +58,13 @@ type PrivacyMapDB interface {
 	// error, the transaction is rolled back. If the rollback fails, the
 	// original error returned by f is still returned. If the commit fails,
 	// the commit error is returned.
-	Update(f func(tx PrivacyMapTx) error) error
+	Update(context.Context, func(context.Context, PrivacyMapTx) error) error
 
 	// View opens a database read transaction and executes the function f
 	// with the transaction passed as a parameter. After f exits, the
 	// transaction is rolled back. If f errors, its error is returned, not a
 	// rollback error (if any occur).
-	View(f func(tx PrivacyMapTx) error) error
+	View(context.Context, func(context.Context, PrivacyMapTx) error) error
 }
 
 // PrivacyMapTx represents a db that can be used to create, store and fetch
@@ -112,7 +113,9 @@ func (p *privacyMapDB) beginTx(writable bool) (*privacyMapTx, error) {
 // returned.
 //
 // NOTE: this is part of the PrivacyMapDB interface.
-func (p *privacyMapDB) Update(f func(tx PrivacyMapTx) error) error {
+func (p *privacyMapDB) Update(ctx context.Context, f func(ctx context.Context,
+	tx PrivacyMapTx) error) error {
+
 	tx, err := p.beginTx(true)
 	if err != nil {
 		return err
@@ -125,7 +128,7 @@ func (p *privacyMapDB) Update(f func(tx PrivacyMapTx) error) error {
 		}
 	}()
 
-	err = f(tx)
+	err = f(ctx, tx)
 	if err != nil {
 		// Want to return the original error, not a rollback error if
 		// any occur.
@@ -142,7 +145,9 @@ func (p *privacyMapDB) Update(f func(tx PrivacyMapTx) error) error {
 // occur).
 //
 // NOTE: this is part of the PrivacyMapDB interface.
-func (p *privacyMapDB) View(f func(tx PrivacyMapTx) error) error {
+func (p *privacyMapDB) View(ctx context.Context, f func(ctx context.Context,
+	tx PrivacyMapTx) error) error {
+
 	tx, err := p.beginTx(false)
 	if err != nil {
 		return err
@@ -155,7 +160,7 @@ func (p *privacyMapDB) View(f func(tx PrivacyMapTx) error) error {
 		}
 	}()
 
-	err = f(tx)
+	err = f(ctx, tx)
 	rollbackErr := tx.boltTx.Rollback()
 	if err != nil {
 		return err

@@ -204,6 +204,9 @@ func TestPeerRestrictCheckRequest(t *testing.T) {
 // method correctly determines which real strings to generate pseudo pairs for
 // based on the privacy map db passed to it.
 func TestPeerRestrictRealToPseudo(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
 	tests := []struct {
 		name           string
 		privacyFlags   session.PrivacyFlags
@@ -276,7 +279,7 @@ func TestPeerRestrictRealToPseudo(t *testing.T) {
 			// form along with any new privacy map pairs that should
 			// be added to the DB.
 			v, newPairs, err := pr.RealToPseudo(
-				privMapPairDB, test.privacyFlags,
+				ctx, privMapPairDB, test.privacyFlags,
 			)
 			require.NoError(t, err)
 			require.Len(t, newPairs, len(test.expectNewPairs))

@@ -167,6 +167,9 @@ func (m *mockLndClient) ListChannels(_ context.Context, _, _ bool) (
 // method correctly determines which real strings to generate pseudo pairs for
 // based on the privacy map db passed to it.
 func TestChannelRestrictRealToPseudo(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
 	chanID1 := firewalldb.Uint64ToStr(1)
 	chanID2 := firewalldb.Uint64ToStr(2)
 	chanID3 := firewalldb.Uint64ToStr(3)
@@ -249,7 +252,7 @@ func TestChannelRestrictRealToPseudo(t *testing.T) {
 			// form along with any new privacy map pairs that should
 			// be added to the DB.
 			v, newPairs, err := cr.RealToPseudo(
-				privMapPairDB, test.privacyFlags,
+				ctx, privMapPairDB, test.privacyFlags,
 			)
 			require.NoError(t, err)
 			require.Len(t, newPairs, len(test.expectNewPairs))

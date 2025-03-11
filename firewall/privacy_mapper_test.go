@@ -1073,7 +1073,9 @@ func newMockDB(t *testing.T, preloadRealToPseudo map[string]string,
 	db := mockDB{privDB: make(map[string]*mockPrivacyMapDB)}
 	sessDB := db.NewSessionDB(sessID)
 
-	_ = sessDB.Update(func(tx firewalldb.PrivacyMapTx) error {
+	_ = sessDB.Update(context.Background(), func(ctx context.Context,
+		tx firewalldb.PrivacyMapTx) error {
+
 		for r, p := range preloadRealToPseudo {
 			require.NoError(t, tx.NewPair(r, p))
 		}
@@ -1107,16 +1109,16 @@ type mockPrivacyMapDB struct {
 	p2r map[string]string
 }
 
-func (m *mockPrivacyMapDB) Update(
-	f func(tx firewalldb.PrivacyMapTx) error) error {
+func (m *mockPrivacyMapDB) Update(ctx context.Context,
+	f func(ctx context.Context, tx firewalldb.PrivacyMapTx) error) error {
 
-	return f(m)
+	return f(ctx, m)
 }
 
-func (m *mockPrivacyMapDB) View(
-	f func(tx firewalldb.PrivacyMapTx) error) error {
+func (m *mockPrivacyMapDB) View(ctx context.Context,
+	f func(ctx context.Context, tx firewalldb.PrivacyMapTx) error) error {
 
-	return f(m)
+	return f(ctx, m)
 }
 
 func (m *mockPrivacyMapDB) NewPair(real, pseudo string) error {

@@ -64,13 +64,13 @@ type Values interface {
 	// keys, channel IDs, channel points etc. It returns a map of any new
 	// real to pseudo strings that should be persisted that it did not find
 	// in the given PrivacyMapReader.
-	RealToPseudo(db firewalldb.PrivacyMapReader,
+	RealToPseudo(ctx context.Context, db firewalldb.PrivacyMapReader,
 		flags session.PrivacyFlags) (Values, map[string]string, error)
 
 	// PseudoToReal attempts to convert any appropriate pseudo fields in
 	// the rule Values to their corresponding real values. It uses the
 	// passed PrivacyMapDB to find the real values.
-	PseudoToReal(db firewalldb.PrivacyMapDB,
+	PseudoToReal(ctx context.Context, db firewalldb.PrivacyMapDB,
 		flags session.PrivacyFlags) (Values, error)
 }
 
