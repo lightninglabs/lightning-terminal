@@ -14,20 +14,15 @@ import (
 // atomic access to the db. If anything fails in the middle of an `Update`
 // function, then all the changes prior should be rolled back.
 func TestKVStoreTxs(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
-	tmpDir := t.TempDir()
-
-	db, err := NewBoltDB(tmpDir, "test.db", nil)
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		_ = db.Close()
-	})
-
+	db := NewTestDB(t)
 	store := db.GetKVStores("AutoFees", [4]byte{1, 1, 1, 1}, "auto-fees")
 
 	// Test that if an action fails midway through the transaction, then
 	// it is rolled back.
-	err = store.Update(ctx, func(ctx context.Context, tx KVStoreTx) error {
+	err := store.Update(ctx, func(ctx context.Context, tx KVStoreTx) error {
 		err := tx.Global().Set(ctx, "test", []byte{1})
 		if err != nil {
 			return err
@@ -63,10 +58,14 @@ func TestKVStoreTxs(t *testing.T) {
 // KV stores and the session feature level stores.
 func TestTempAndPermStores(t *testing.T) {
 	t.Run("session level kv store", func(t *testing.T) {
+		t.Parallel()
+
 		testTempAndPermStores(t, false)
 	})
 
 	t.Run("session feature level kv store", func(t *testing.T) {
+		t.Parallel()
+
 		testTempAndPermStores(t, true)
 	})
 }
@@ -78,18 +77,13 @@ func TestTempAndPermStores(t *testing.T) {
 // session level KV stores.
 func testTempAndPermStores(t *testing.T, featureSpecificStore bool) {
 	ctx := context.Background()
-	tmpDir := t.TempDir()
 
 	var featureName string
 	if featureSpecificStore {
 		featureName = "auto-fees"
 	}
 
-	store, err := NewBoltDB(tmpDir, "test.db", nil)
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		_ = store.Close()
-	})
+	store := NewTestDB(t)
 	db := NewDB(store)
 	require.NoError(t, db.Start(ctx))
 
@@ -97,7 +91,7 @@ func testTempAndPermStores(t *testing.T, featureSpecificStore bool) {
 		"test-rule", [4]byte{1, 1, 1, 1}, featureName,
 	)
 
-	err = kvstores.Update(ctx, func(ctx context.Context,
+	err := kvstores.Update(ctx, func(ctx context.Context,
 		tx KVStoreTx) error {
 
 		// Set an item in the temp store.
@@ -168,14 +162,9 @@ func testTempAndPermStores(t *testing.T, featureSpecificStore bool) {
 
 // TestKVStoreNameSpaces tests that the various name spaces are used correctly.
 func TestKVStoreNameSpaces(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
-	tmpDir := t.TempDir()
-
-	db, err := NewBoltDB(tmpDir, "test.db", nil)
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		_ = db.Close()
-	})
+	db := NewTestDB(t)
 
 	var (
 		groupID1 = intToSessionID(1)
@@ -191,7 +180,7 @@ func TestKVStoreNameSpaces(t *testing.T) {
 	rulesDB3 := db.GetKVStores("test-rule", groupID2, "re-balance")
 
 	// Test that the three ruleDBs share the same global space.
-	err = rulesDB1.Update(ctx, func(ctx context.Context,
+	err := rulesDB1.Update(ctx, func(ctx context.Context,
 		tx KVStoreTx) error {
 
 		return tx.Global().Set(
