@@ -68,6 +68,7 @@ var (
 		"--protocol.custom-message=17",
 		"--accept-keysend",
 		"--debuglevel=trace,GRPC=error,BTCN=info",
+		"--height-hint-cache-query-disable",
 	}
 	litdArgsTemplateNoOracle = []string{
 		"--taproot-assets.allow-public-uni-proof-courier",
