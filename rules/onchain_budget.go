@@ -363,8 +363,8 @@ func (o *OnChainBudget) ToProto() *litrpc.RuleValue {
 // find the real values. This is a no-op for the OnChainBudget rule.
 //
 // NOTE: this is part of the Values interface.
-func (o *OnChainBudget) PseudoToReal(_ firewalldb.PrivacyMapDB,
-	_ session.PrivacyFlags) (Values, error) {
+func (o *OnChainBudget) PseudoToReal(_ context.Context,
+	_ firewalldb.PrivacyMapDB, _ session.PrivacyFlags) (Values, error) {
 
 	return o, nil
 }
@@ -374,8 +374,9 @@ func (o *OnChainBudget) PseudoToReal(_ firewalldb.PrivacyMapDB,
 // that should be persisted. This is a no-op for the OnChainBudget rule.
 //
 // NOTE: this is part of the Values interface.
-func (o *OnChainBudget) RealToPseudo(db firewalldb.PrivacyMapReader,
-	flags session.PrivacyFlags) (Values, map[string]string, error) {
+func (o *OnChainBudget) RealToPseudo(_ context.Context,
+	_ firewalldb.PrivacyMapReader, _ session.PrivacyFlags) (Values,
+	map[string]string, error) {
 
 	return o, nil, nil
 }

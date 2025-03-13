@@ -381,8 +381,9 @@ func (c *PeerRestrict) ToProto() *litrpc.RuleValue {
 // It constructs a new PeerRestrict instance with these real peer IDs.
 //
 // NOTE: this is part of the Values interface.
-func (c *PeerRestrict) PseudoToReal(db firewalldb.PrivacyMapDB,
-	flags session.PrivacyFlags) (Values, error) {
+func (c *PeerRestrict) PseudoToReal(ctx context.Context,
+	db firewalldb.PrivacyMapDB, flags session.PrivacyFlags) (Values,
+	error) {
 
 	restrictList := make([]string, len(c.DenyList))
 
@@ -393,9 +394,13 @@ func (c *PeerRestrict) PseudoToReal(db firewalldb.PrivacyMapDB,
 		return &PeerRestrict{DenyList: restrictList}, nil
 	}
 
-	err := db.View(func(tx firewalldb.PrivacyMapTx) error {
+	err := db.View(ctx, func(ctx context.Context,
+		tx firewalldb.PrivacyMapTx) error {
+
 		for i, peerPubKey := range c.DenyList {
-			real, err := firewalldb.RevealString(tx, peerPubKey)
+			real, err := firewalldb.RevealString(
+				ctx, tx, peerPubKey,
+			)
 			if err != nil {
 				return err
 			}
@@ -418,7 +423,8 @@ func (c *PeerRestrict) PseudoToReal(db firewalldb.PrivacyMapDB,
 // find in the given PrivacyMapReader.
 //
 // NOTE: this is part of the Values interface.
-func (c *PeerRestrict) RealToPseudo(db firewalldb.PrivacyMapReader,
+func (c *PeerRestrict) RealToPseudo(_ context.Context,
+	db firewalldb.PrivacyMapReader,
 	flags session.PrivacyFlags) (Values, map[string]string, error) {
 
 	pseudoIDs := make([]string, len(c.DenyList))

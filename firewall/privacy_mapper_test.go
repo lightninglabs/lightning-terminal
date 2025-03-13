@@ -1073,9 +1073,11 @@ func newMockDB(t *testing.T, preloadRealToPseudo map[string]string,
 	db := mockDB{privDB: make(map[string]*mockPrivacyMapDB)}
 	sessDB := db.NewSessionDB(sessID)
 
-	_ = sessDB.Update(func(tx firewalldb.PrivacyMapTx) error {
+	_ = sessDB.Update(context.Background(), func(ctx context.Context,
+		tx firewalldb.PrivacyMapTx) error {
+
 		for r, p := range preloadRealToPseudo {
-			require.NoError(t, tx.NewPair(r, p))
+			require.NoError(t, tx.NewPair(ctx, r, p))
 		}
 		return nil
 	})
@@ -1107,25 +1109,29 @@ type mockPrivacyMapDB struct {
 	p2r map[string]string
 }
 
-func (m *mockPrivacyMapDB) Update(
-	f func(tx firewalldb.PrivacyMapTx) error) error {
+func (m *mockPrivacyMapDB) Update(ctx context.Context,
+	f func(ctx context.Context, tx firewalldb.PrivacyMapTx) error) error {
 
-	return f(m)
+	return f(ctx, m)
 }
 
-func (m *mockPrivacyMapDB) View(
-	f func(tx firewalldb.PrivacyMapTx) error) error {
+func (m *mockPrivacyMapDB) View(ctx context.Context,
+	f func(ctx context.Context, tx firewalldb.PrivacyMapTx) error) error {
 
-	return f(m)
+	return f(ctx, m)
 }
 
-func (m *mockPrivacyMapDB) NewPair(real, pseudo string) error {
+func (m *mockPrivacyMapDB) NewPair(_ context.Context, real,
+	pseudo string) error {
+
 	m.r2p[real] = pseudo
 	m.p2r[pseudo] = real
 	return nil
 }
 
-func (m *mockPrivacyMapDB) PseudoToReal(pseudo string) (string, error) {
+func (m *mockPrivacyMapDB) PseudoToReal(_ context.Context, pseudo string) (
+	string, error) {
+
 	r, ok := m.p2r[pseudo]
 	if !ok {
 		return "", firewalldb.ErrNoSuchKeyFound
@@ -1134,7 +1140,9 @@ func (m *mockPrivacyMapDB) PseudoToReal(pseudo string) (string, error) {
 	return r, nil
 }
 
-func (m *mockPrivacyMapDB) RealToPseudo(real string) (string, error) {
+func (m *mockPrivacyMapDB) RealToPseudo(_ context.Context, real string) (string,
+	error) {
+
 	p, ok := m.r2p[real]
 	if !ok {
 		return "", firewalldb.ErrNoSuchKeyFound
@@ -1143,8 +1151,8 @@ func (m *mockPrivacyMapDB) RealToPseudo(real string) (string, error) {
 	return p, nil
 }
 
-func (m *mockPrivacyMapDB) FetchAllPairs() (*firewalldb.PrivacyMapPairs,
-	error) {
+func (m *mockPrivacyMapDB) FetchAllPairs(_ context.Context) (
+	*firewalldb.PrivacyMapPairs, error) {
 
 	return firewalldb.NewPrivacyMapPairs(m.r2p), nil
 }
