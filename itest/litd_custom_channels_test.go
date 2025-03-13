@@ -483,11 +483,13 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	// Test case 2: Pay a normal sats invoice from Dave by
 	// Charlie using an asset,
 	// making it a direct channel invoice payment with no RFQ SCID present in
-	// the invoice (but an RFQ is used when trying to send the payment). In this
-	// case, Charlie gets to choose if he wants to pay Dave using assets or
-	// sats. In contrast, test case 3.5 we have the opposite scenario where
+	// the invoice. This case should fail because Charlie can't choose
+	// to send something that dave is not expecting. More details about this
+	// scenario are discussed in
+	// https://github.com/lightninglabs/taproot-assets/issues/1421#issuecomment-2707614141
+	// In contrast, in test case 3.5 we have the opposite scenario where
 	// an asset invoice is used and Charlie must pay with assets and not have
-	// a choice (and that case is supposed to fail because Charlie tries to
+	// a choice (and that case is also supposed to fail because Charlie tries to
 	// pay with sats instead).
 	//
 	// Charlie  --[assets]-->  Dave
@@ -538,6 +540,8 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	// taproot asset from Charlie, that must be honored because Charlie did
 	// an RFQ with Dave when that invoice was created agreeing that when it
 	// was paid that Dave would receive taproot asset instead of sats.
+	// More information about this scenario is discussed in
+	// https://github.com/lightninglabs/taproot-assets/issues/1430
 	//
 	// Charlie  --[assets]-->  Dave
 	//
