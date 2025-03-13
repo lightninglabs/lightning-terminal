@@ -1,7 +1,7 @@
 module github.com/lightninglabs/lightning-terminal
 
 require (
-	github.com/btcsuite/btcd v0.24.3-0.20240921052913-67b8efd3ba53
+	github.com/btcsuite/btcd v0.24.3-0.20241210095828-e646d437e95b
 	github.com/btcsuite/btcd/btcec/v2 v2.3.4
 	github.com/btcsuite/btcd/btcutil v1.1.5
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0
@@ -28,7 +28,7 @@ require (
 	github.com/lightninglabs/pool v0.6.5-beta.0.20241015105339-044cb451b5df
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.2
 	github.com/lightninglabs/pool/poolrpc v1.0.0
-	github.com/lightninglabs/taproot-assets v0.5.1
+	github.com/lightninglabs/taproot-assets v0.5.2-0.20250226153156-129dd0659e21
 	github.com/lightningnetwork/lnd v0.18.5-beta
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/clock v1.1.1
@@ -50,7 +50,7 @@ require (
 	google.golang.org/protobuf v1.34.2
 	gopkg.in/macaroon-bakery.v2 v2.1.0
 	gopkg.in/macaroon.v2 v2.1.0
-	modernc.org/sqlite v1.30.0
+	modernc.org/sqlite v1.34.5
 )
 
 require (
@@ -113,7 +113,6 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
-	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
@@ -217,12 +216,9 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	modernc.org/gc/v3 v3.0.0-20240107210532-573471604cb6 // indirect
-	modernc.org/libc v1.50.9 // indirect
+	modernc.org/libc v1.55.3 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.8.0 // indirect
-	modernc.org/strutil v1.2.0 // indirect
-	modernc.org/token v1.1.0 // indirect
 	nhooyr.io/websocket v1.8.7 // indirect
 	pgregory.net/rapid v1.1.0 // indirect
 	sigs.k8s.io/yaml v1.2.0 // indirect
@@ -238,4 +234,6 @@ replace (
 // taproot-assets dependency to function properly.
 replace google.golang.org/protobuf => github.com/lightninglabs/protobuf-go-hex-display v1.34.2-hex-display
 
-go 1.22.6
+replace github.com/lightninglabs/taproot-assets => ../taproot-assets
+
+go 1.23.6
