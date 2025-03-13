@@ -1151,8 +1151,8 @@ func (m *mockPrivacyMapDB) RealToPseudo(_ context.Context, real string) (string,
 	return p, nil
 }
 
-func (m *mockPrivacyMapDB) FetchAllPairs() (*firewalldb.PrivacyMapPairs,
-	error) {
+func (m *mockPrivacyMapDB) FetchAllPairs(_ context.Context) (
+	*firewalldb.PrivacyMapPairs, error) {
 
 	return firewalldb.NewPrivacyMapPairs(m.r2p), nil
 }
