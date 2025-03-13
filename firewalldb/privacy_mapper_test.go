@@ -40,7 +40,7 @@ func TestPrivacyMapStorage(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "real", real)
 
-		pairs, err := tx.FetchAllPairs()
+		pairs, err := tx.FetchAllPairs(ctx)
 		require.NoError(t, err)
 
 		require.EqualValues(t, pairs.pairs, map[string]string{
@@ -70,7 +70,7 @@ func TestPrivacyMapStorage(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "real 2", real)
 
-		pairs, err := tx.FetchAllPairs()
+		pairs, err := tx.FetchAllPairs(ctx)
 		require.NoError(t, err)
 
 		require.EqualValues(t, pairs.pairs, map[string]string{
@@ -85,7 +85,7 @@ func TestPrivacyMapStorage(t *testing.T) {
 	_ = pdb3.Update(ctx, func(ctx context.Context, tx PrivacyMapTx) error {
 		// Check that calling FetchAllPairs returns an empty map if
 		// nothing exists in the DB yet.
-		m, err := tx.FetchAllPairs()
+		m, err := tx.FetchAllPairs(ctx)
 		require.NoError(t, err)
 		require.Empty(t, m.pairs)
 
@@ -116,7 +116,7 @@ func TestPrivacyMapStorage(t *testing.T) {
 		require.NoError(t, err)
 
 		// Check that FetchAllPairs correctly returns all the pairs.
-		pairs, err := tx.FetchAllPairs()
+		pairs, err := tx.FetchAllPairs(ctx)
 		require.NoError(t, err)
 
 		require.EqualValues(t, pairs.pairs, map[string]string{

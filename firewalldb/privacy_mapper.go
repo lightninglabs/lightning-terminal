@@ -83,7 +83,7 @@ type PrivacyMapTx interface {
 
 	// FetchAllPairs loads and returns the real-to-pseudo pairs in the form
 	// of a PrivacyMapPairs struct.
-	FetchAllPairs() (*PrivacyMapPairs, error)
+	FetchAllPairs(ctx context.Context) (*PrivacyMapPairs, error)
 }
 
 // privacyMapDB is an implementation of PrivacyMapDB.
@@ -287,7 +287,9 @@ func (p *privacyMapTx) RealToPseudo(_ context.Context, real string) (string,
 // FetchAllPairs loads and returns the real-to-pseudo pairs.
 //
 // NOTE: this is part of the PrivacyMapTx interface.
-func (p *privacyMapTx) FetchAllPairs() (*PrivacyMapPairs, error) {
+func (p *privacyMapTx) FetchAllPairs(_ context.Context) (*PrivacyMapPairs,
+	error) {
+
 	privacyBucket, err := getBucket(p.boltTx, privacyBucketKey)
 	if err != nil {
 		return nil, err

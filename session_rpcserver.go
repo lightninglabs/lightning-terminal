@@ -901,10 +901,10 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 		linkedGroupSession = groupSess
 
 		privDB := s.cfg.privMap(groupID)
-		err = privDB.View(ctx, func(_ context.Context,
+		err = privDB.View(ctx, func(ctx context.Context,
 			tx firewalldb.PrivacyMapTx) error {
 
-			knownPrivMapPairs, err = tx.FetchAllPairs()
+			knownPrivMapPairs, err = tx.FetchAllPairs(ctx)
 
 			return err
 		})
