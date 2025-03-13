@@ -1077,7 +1077,7 @@ func newMockDB(t *testing.T, preloadRealToPseudo map[string]string,
 		tx firewalldb.PrivacyMapTx) error {
 
 		for r, p := range preloadRealToPseudo {
-			require.NoError(t, tx.NewPair(r, p))
+			require.NoError(t, tx.NewPair(ctx, r, p))
 		}
 		return nil
 	})
@@ -1121,7 +1121,9 @@ func (m *mockPrivacyMapDB) View(ctx context.Context,
 	return f(ctx, m)
 }
 
-func (m *mockPrivacyMapDB) NewPair(real, pseudo string) error {
+func (m *mockPrivacyMapDB) NewPair(_ context.Context, real,
+	pseudo string) error {
+
 	m.r2p[real] = pseudo
 	m.p2r[pseudo] = real
 	return nil

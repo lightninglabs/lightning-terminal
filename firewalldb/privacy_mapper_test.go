@@ -29,7 +29,7 @@ func TestPrivacyMapStorage(t *testing.T) {
 		_, err = tx.PseudoToReal("pseudo")
 		require.ErrorIs(t, err, ErrNoSuchKeyFound)
 
-		err = tx.NewPair("real", "pseudo")
+		err = tx.NewPair(ctx, "real", "pseudo")
 		require.NoError(t, err)
 
 		pseudo, err := tx.RealToPseudo("real")
@@ -59,7 +59,7 @@ func TestPrivacyMapStorage(t *testing.T) {
 		_, err = tx.PseudoToReal("pseudo")
 		require.ErrorIs(t, err, ErrNoSuchKeyFound)
 
-		err = tx.NewPair("real 2", "pseudo 2")
+		err = tx.NewPair(ctx, "real 2", "pseudo 2")
 		require.NoError(t, err)
 
 		pseudo, err := tx.RealToPseudo("real 2")
@@ -90,29 +90,29 @@ func TestPrivacyMapStorage(t *testing.T) {
 		require.Empty(t, m.pairs)
 
 		// Add a new pair.
-		err = tx.NewPair("real 1", "pseudo 1")
+		err = tx.NewPair(ctx, "real 1", "pseudo 1")
 		require.NoError(t, err)
 
 		// Try to add a new pair that has the same real value as the
 		// first pair. This should fail.
-		err = tx.NewPair("real 1", "pseudo 2")
+		err = tx.NewPair(ctx, "real 1", "pseudo 2")
 		require.ErrorContains(t, err, "an entry already exists for "+
 			"real value")
 
 		// Try to add a new pair that has the same pseudo value as the
 		// first pair. This should fail.
-		err = tx.NewPair("real 2", "pseudo 1")
+		err = tx.NewPair(ctx, "real 2", "pseudo 1")
 		require.ErrorContains(t, err, "an entry already exists for "+
 			"pseudo value")
 
 		// Add a few more pairs.
-		err = tx.NewPair("real 2", "pseudo 2")
+		err = tx.NewPair(ctx, "real 2", "pseudo 2")
 		require.NoError(t, err)
 
-		err = tx.NewPair("real 3", "pseudo 3")
+		err = tx.NewPair(ctx, "real 3", "pseudo 3")
 		require.NoError(t, err)
 
-		err = tx.NewPair("real 4", "pseudo 4")
+		err = tx.NewPair(ctx, "real 4", "pseudo 4")
 		require.NoError(t, err)
 
 		// Check that FetchAllPairs correctly returns all the pairs.
@@ -201,7 +201,7 @@ func TestPrivacyMapTxs(t *testing.T) {
 	err = pdb1.Update(ctx, func(ctx context.Context,
 		tx PrivacyMapTx) error {
 
-		err := tx.NewPair("real", "pseudo")
+		err := tx.NewPair(ctx, "real", "pseudo")
 		if err != nil {
 			return err
 		}

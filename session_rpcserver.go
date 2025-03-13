@@ -1226,11 +1226,11 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 
 	// Register all the privacy map pairs for this session ID.
 	privDB := s.cfg.privMap(sess.GroupID)
-	err = privDB.Update(ctx, func(_ context.Context,
+	err = privDB.Update(ctx, func(ctx context.Context,
 		tx firewalldb.PrivacyMapTx) error {
 
 		for r, p := range newPrivMapPairs {
-			err := tx.NewPair(r, p)
+			err := tx.NewPair(ctx, r, p)
 			if err != nil {
 				return err
 			}

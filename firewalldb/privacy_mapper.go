@@ -71,7 +71,7 @@ type PrivacyMapDB interface {
 // real-pseudo pairs.
 type PrivacyMapTx interface {
 	// NewPair persists a new real-pseudo pair.
-	NewPair(real, pseudo string) error
+	NewPair(ctx context.Context, real, pseudo string) error
 
 	// PseudoToReal returns the real value associated with the given pseudo
 	// value. If no such pair is found, then ErrNoSuchKeyFound is returned.
@@ -181,7 +181,7 @@ type privacyMapTx struct {
 // NewPair inserts a new real-pseudo pair into the db.
 //
 // NOTE: this is part of the PrivacyMapTx interface.
-func (p *privacyMapTx) NewPair(real, pseudo string) error {
+func (p *privacyMapTx) NewPair(_ context.Context, real, pseudo string) error {
 	privacyBucket, err := getBucket(p.boltTx, privacyBucketKey)
 	if err != nil {
 		return err
@@ -314,7 +314,9 @@ func (p *privacyMapTx) FetchAllPairs() (*PrivacyMapPairs, error) {
 	return NewPrivacyMapPairs(pairs), nil
 }
 
-func HideString(tx PrivacyMapTx, real string) (string, error) {
+func HideString(ctx context.Context, tx PrivacyMapTx, real string) (string,
+	error) {
+
 	pseudo, err := tx.RealToPseudo(real)
 	if err != nil && err != ErrNoSuchKeyFound {
 		return "", err
@@ -328,7 +330,7 @@ func HideString(tx PrivacyMapTx, real string) (string, error) {
 		return "", err
 	}
 
-	if err = tx.NewPair(real, pseudo); err != nil {
+	if err = tx.NewPair(ctx, real, pseudo); err != nil {
 		return "", err
 	}
 
@@ -360,7 +362,9 @@ func RevealString(tx PrivacyMapTx, pseudo string) (string, error) {
 	return tx.PseudoToReal(pseudo)
 }
 
-func HideUint64(tx PrivacyMapTx, real uint64) (uint64, error) {
+func HideUint64(ctx context.Context, tx PrivacyMapTx, real uint64) (uint64,
+	error) {
+
 	str := Uint64ToStr(real)
 	pseudo, err := tx.RealToPseudo(str)
 	if err != nil && err != ErrNoSuchKeyFound {
@@ -371,7 +375,7 @@ func HideUint64(tx PrivacyMapTx, real uint64) (uint64, error) {
 	}
 
 	pseudoUint64, pseudoUint64Str := NewPseudoUint64()
-	if err := tx.NewPair(str, pseudoUint64Str); err != nil {
+	if err := tx.NewPair(ctx, str, pseudoUint64Str); err != nil {
 		return 0, err
 	}
 
@@ -391,8 +395,8 @@ func RevealUint64(tx PrivacyMapTx, pseudo uint64) (uint64, error) {
 	return StrToUint64(real)
 }
 
-func HideChanPoint(tx PrivacyMapTx, txid string, index uint32) (string,
-	uint32, error) {
+func HideChanPoint(ctx context.Context, tx PrivacyMapTx, txid string,
+	index uint32) (string, uint32, error) {
 
 	cp := fmt.Sprintf("%s:%d", txid, index)
 	pseudo, err := tx.RealToPseudo(cp)
@@ -408,7 +412,7 @@ func HideChanPoint(tx PrivacyMapTx, txid string, index uint32) (string,
 		return "", 0, err
 	}
 
-	if err := tx.NewPair(cp, newCp); err != nil {
+	if err := tx.NewPair(ctx, cp, newCp); err != nil {
 		return "", 0, err
 	}
 
@@ -444,13 +448,15 @@ func NewPseudoUint32() uint32 {
 	return binary.BigEndian.Uint32(b)
 }
 
-func HideChanPointStr(tx PrivacyMapTx, cp string) (string, error) {
+func HideChanPointStr(ctx context.Context, tx PrivacyMapTx, cp string) (string,
+	error) {
+
 	txid, index, err := DecodeChannelPoint(cp)
 	if err != nil {
 		return "", err
 	}
 
-	newTxid, newIndex, err := HideChanPoint(tx, txid, index)
+	newTxid, newIndex, err := HideChanPoint(ctx, tx, txid, index)
 	if err != nil {
 		return "", err
 	}
@@ -458,10 +464,12 @@ func HideChanPointStr(tx PrivacyMapTx, cp string) (string, error) {
 	return fmt.Sprintf("%s:%d", newTxid, newIndex), nil
 }
 
-func HideBytes(tx PrivacyMapTx, realBytes []byte) ([]byte, error) {
+func HideBytes(ctx context.Context, tx PrivacyMapTx, realBytes []byte) ([]byte,
+	error) {
+
 	real := hex.EncodeToString(realBytes)
 
-	pseudo, err := HideString(tx, real)
+	pseudo, err := HideString(ctx, tx, real)
 	if err != nil {
 		return nil, err
 	}

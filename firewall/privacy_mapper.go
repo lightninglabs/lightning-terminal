@@ -336,8 +336,8 @@ func handleGetInfoResponse(db firewalldb.PrivacyMapDB,
 					tx firewalldb.PrivacyMapTx) error {
 
 					var err error
-					pseudoPubKey, err = firewalldb.HideString(
-						tx, r.IdentityPubkey,
+					pseudoPubKey, err = firewalldb.HideString( //nolint:lll
+						ctx, tx, r.IdentityPubkey,
 					)
 
 					return err
@@ -397,14 +397,14 @@ func handleFwdHistoryResponse(db firewalldb.PrivacyMapDB,
 				if !flags.Contains(session.ClearChanIDs) {
 					// Deterministically hide channel ids.
 					chanIn, err = firewalldb.HideUint64(
-						tx, chanIn,
+						ctx, tx, chanIn,
 					)
 					if err != nil {
 						return err
 					}
 
 					chanOut, err = firewalldb.HideUint64(
-						tx, chanOut,
+						ctx, tx, chanOut,
 					)
 					if err != nil {
 						return err
@@ -500,7 +500,7 @@ func handleFeeReportResponse(db firewalldb.PrivacyMapDB,
 				chanID := c.ChanId
 				if !flags.Contains(session.ClearChanIDs) {
 					chanID, err = firewalldb.HideUint64(
-						tx, chanID,
+						ctx, tx, chanID,
 					)
 					if err != nil {
 						return err
@@ -510,7 +510,7 @@ func handleFeeReportResponse(db firewalldb.PrivacyMapDB,
 				chanPoint := c.ChannelPoint
 				if !flags.Contains(session.ClearChanIDs) {
 					chanPoint, err = firewalldb.HideChanPointStr(
-						tx, chanPoint,
+						ctx, tx, chanPoint,
 					)
 					if err != nil {
 						return err
@@ -599,7 +599,7 @@ func handleListChannelsResponse(db firewalldb.PrivacyMapDB,
 				remotePub := c.RemotePubkey
 				if hidePubkeys {
 					remotePub, err = firewalldb.HideString(
-						tx, c.RemotePubkey,
+						ctx, tx, c.RemotePubkey,
 					)
 					if err != nil {
 						return err
@@ -610,14 +610,14 @@ func handleListChannelsResponse(db firewalldb.PrivacyMapDB,
 				chanID := c.ChanId
 				if hideChanIds {
 					chanPoint, err = firewalldb.HideChanPointStr(
-						tx, c.ChannelPoint,
+						ctx, tx, c.ChannelPoint,
 					)
 					if err != nil {
 						return err
 					}
 
 					chanID, err = firewalldb.HideUint64(
-						tx, c.ChanId,
+						ctx, tx, c.ChanId,
 					)
 					if err != nil {
 						return err
@@ -830,7 +830,7 @@ func handleUpdatePolicyResponse(db firewalldb.PrivacyMapDB,
 				}
 
 				txid, index, err := firewalldb.HideChanPoint(
-					tx, u.Outpoint.TxidStr,
+					ctx, tx, u.Outpoint.TxidStr,
 					u.Outpoint.OutputIndex,
 				)
 				if err != nil {
@@ -957,7 +957,7 @@ func handleClosedChannelsResponse(db firewalldb.PrivacyMapDB,
 				remotePub := c.RemotePubkey
 				if !flags.Contains(session.ClearPubkeys) {
 					remotePub, err = firewalldb.HideString(
-						tx, remotePub,
+						ctx, tx, remotePub,
 					)
 					if err != nil {
 						return err
@@ -985,7 +985,7 @@ func handleClosedChannelsResponse(db firewalldb.PrivacyMapDB,
 				channelPoint := c.ChannelPoint
 				if !flags.Contains(session.ClearChanIDs) {
 					channelPoint, err = firewalldb.HideChanPointStr(
-						tx, c.ChannelPoint,
+						ctx, tx, c.ChannelPoint,
 					)
 					if err != nil {
 						return err
@@ -995,7 +995,7 @@ func handleClosedChannelsResponse(db firewalldb.PrivacyMapDB,
 				chanID := c.ChanId
 				if !flags.Contains(session.ClearChanIDs) {
 					chanID, err = firewalldb.HideUint64(
-						tx, c.ChanId,
+						ctx, tx, c.ChanId,
 					)
 					if err != nil {
 						return err
@@ -1005,7 +1005,7 @@ func handleClosedChannelsResponse(db firewalldb.PrivacyMapDB,
 				closingTxid := c.ClosingTxHash
 				if !flags.Contains(session.ClearClosingTxIds) {
 					closingTxid, err = firewalldb.HideString(
-						tx, c.ClosingTxHash,
+						ctx, tx, c.ClosingTxHash,
 					)
 					if err != nil {
 						return err
@@ -1052,7 +1052,8 @@ func handleClosedChannelsResponse(db firewalldb.PrivacyMapDB,
 
 // obfuscatePendingChannel is a helper to obfuscate the fields of a pending
 // channel.
-func obfuscatePendingChannel(c *lnrpc.PendingChannelsResponse_PendingChannel,
+func obfuscatePendingChannel(ctx context.Context,
+	c *lnrpc.PendingChannelsResponse_PendingChannel,
 	tx firewalldb.PrivacyMapTx, randIntn func(int) (int, error),
 	flags session.PrivacyFlags) (
 	*lnrpc.PendingChannelsResponse_PendingChannel, error) {
@@ -1062,7 +1063,7 @@ func obfuscatePendingChannel(c *lnrpc.PendingChannelsResponse_PendingChannel,
 	remotePub := c.RemoteNodePub
 	if !flags.Contains(session.ClearPubkeys) {
 		remotePub, err = firewalldb.HideString(
-			tx, remotePub,
+			ctx, tx, remotePub,
 		)
 		if err != nil {
 			return nil, err
@@ -1099,7 +1100,7 @@ func obfuscatePendingChannel(c *lnrpc.PendingChannelsResponse_PendingChannel,
 	chanPoint := c.ChannelPoint
 	if !flags.Contains(session.ClearChanIDs) {
 		chanPoint, err = firewalldb.HideChanPointStr(
-			tx, c.ChannelPoint,
+			ctx, tx, c.ChannelPoint,
 		)
 		if err != nil {
 			return nil, err
@@ -1163,7 +1164,7 @@ func handlePendingChannelsResponse(db firewalldb.PrivacyMapDB,
 				var err error
 
 				pendingChannel, err := obfuscatePendingChannel(
-					c.Channel, tx, randIntn, flags,
+					ctx, c.Channel, tx, randIntn, flags,
 				)
 				if err != nil {
 					return err
@@ -1187,7 +1188,7 @@ func handlePendingChannelsResponse(db firewalldb.PrivacyMapDB,
 				var err error
 
 				pendingChannel, err := obfuscatePendingChannel(
-					c.Channel, tx, randIntn, flags,
+					ctx, c.Channel, tx, randIntn, flags,
 				)
 				if err != nil {
 					return err
@@ -1195,8 +1196,8 @@ func handlePendingChannelsResponse(db firewalldb.PrivacyMapDB,
 
 				closingTxid := c.ClosingTxid
 				if !flags.Contains(session.ClearClosingTxIds) {
-					closingTxid, err = firewalldb.HideString(
-						tx, c.ClosingTxid,
+					closingTxid, err = firewalldb.HideString( //nolint:lll
+						ctx, tx, c.ClosingTxid,
 					)
 					if err != nil {
 						return err
@@ -1216,7 +1217,7 @@ func handlePendingChannelsResponse(db firewalldb.PrivacyMapDB,
 				var err error
 
 				pendingChannel, err := obfuscatePendingChannel(
-					c.Channel, tx, randIntn, flags,
+					ctx, c.Channel, tx, randIntn, flags,
 				)
 				if err != nil {
 					return err
@@ -1225,7 +1226,7 @@ func handlePendingChannelsResponse(db firewalldb.PrivacyMapDB,
 				closingTxid := c.ClosingTxid
 				if !flags.Contains(session.ClearClosingTxIds) {
 					closingTxid, err = firewalldb.HideString(
-						tx, c.ClosingTxid,
+						ctx, tx, c.ClosingTxid,
 					)
 					if err != nil {
 						return err
@@ -1277,7 +1278,7 @@ func handlePendingChannelsResponse(db firewalldb.PrivacyMapDB,
 				var err error
 
 				pendingChannel, err := obfuscatePendingChannel(
-					c.Channel, tx, randIntn, flags,
+					ctx, c.Channel, tx, randIntn, flags,
 				)
 				if err != nil {
 					return err
@@ -1297,7 +1298,7 @@ func handlePendingChannelsResponse(db firewalldb.PrivacyMapDB,
 				closingTxid := c.ClosingTxid
 				if !flags.Contains(session.ClearClosingTxIds) {
 					closingTxid, err = firewalldb.HideString(
-						tx, closingTxid,
+						ctx, tx, closingTxid,
 					)
 					if err != nil {
 						return err
@@ -1314,7 +1315,7 @@ func handlePendingChannelsResponse(db firewalldb.PrivacyMapDB,
 					) {
 
 					closingTxHex, err = firewalldb.HideString(
-						tx, closingTxHex,
+						ctx, tx, closingTxHex,
 					)
 					if err != nil {
 						return err
@@ -1454,8 +1455,9 @@ func handleBatchOpenChannelResponse(db firewalldb.PrivacyMapDB,
 						return err
 					}
 
-					txID, outIdx, err := firewalldb.HideChanPoint(
-						tx, txId.String(), p.OutputIndex,
+					txID, outIdx, err := firewalldb.HideChanPoint( //nolint:lll
+						ctx, tx, txId.String(),
+						p.OutputIndex,
 					)
 					if err != nil {
 						return err
@@ -1600,7 +1602,7 @@ func handleChannelOpenResponse(db firewalldb.PrivacyMapDB,
 
 			if !flags.Contains(session.ClearChanIDs) {
 				txid, index, err = firewalldb.HideChanPoint(
-					tx, txid, index,
+					ctx, tx, txid, index,
 				)
 				if err != nil {
 					return err
