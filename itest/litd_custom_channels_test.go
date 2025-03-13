@@ -415,9 +415,6 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	require.NoError(t.t, t.lndHarness.AssertNodeKnown(fabia, erin))
 	require.NoError(t.t, t.lndHarness.AssertNodeKnown(charlie, erin))
 
-	// Print initial channel balances.
-	logBalance(t.t, nodes, assetID, "initial")
-
 	// ------------
 	// Test case 1: Send a direct asset keysend payment from Charlie to Dave,
 	// sending the whole asset balance.
@@ -426,11 +423,19 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	//
 	// ------------
 	keySendAmount := charlieFundingAmount
+
+	// Print initial channel balances.
+	printExpectedRoute(t.t, []*HarnessNode{charlie, dave}, uint64(0),
+						keySendAmount, assetID, "initial")
+
 	sendAssetKeySendPayment(
 		t.t, charlie, dave, charlieFundingAmount, assetID,
 		fn.None[int64](),
 	)
-	logBalance(t.t, nodes, assetID, "after keysend")
+
+	// Print channel balances after sending.
+	printExpectedRoute(t.t, []*HarnessNode{charlie, dave}, uint64(0),
+						uint64(0), assetID, "after keysend")
 
 	charlieAssetBalance -= keySendAmount
 	daveAssetBalance += keySendAmount
@@ -442,11 +447,29 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	invoiceResp := createAssetInvoice(
 		t.t, dave, charlie, charlieInvoiceAmount, assetID,
 	)
+
+	
+	// Now that we have our payment request, we'll see how many assets are
+	// to be sent from dave's perspective
+	daveTapd := newTapClient(t.t, dave)
+	decodeResp, err := daveTapd.DecodeAssetPayReq(
+		ctx, &tapchannelrpc.AssetPayReq{
+			AssetId:      assetID,
+			PayReqString: invoiceResp.PaymentRequest,
+		},
+	)
+
+	// Print initial channel balances.
+	printExpectedRoute(t.t, []*HarnessNode{dave, charlie}, uint64(0),
+						decodeResp.AssetAmount, assetID, "initial")
+
 	payInvoiceWithAssets(
 		t.t, dave, charlie, invoiceResp.PaymentRequest, assetID,
 		withSmallShards(),
 	)
-	logBalance(t.t, nodes, assetID, "after invoice back")
+	// Print channel balances after sending.
+	printExpectedRoute(t.t, []*HarnessNode{dave, charlie}, uint64(0),
+						uint64(0), assetID, "after invoice back")
 
 	// Make sure the invoice on the receiver side and the payment on the
 	// sender side show the individual HTLCs that arrived for it and that
@@ -662,11 +685,21 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	invoiceResp = createAssetInvoice(
 		t.t, dave, yara, yaraInvoiceAssetAmount1, assetID,
 	)
+	
+	// Print initial channel balances.
+	printExpectedRoute(t.t, []*HarnessNode{charlie, dave, yara}, uint64(0),
+							yaraInvoiceAssetAmount1, assetID,
+							"before asset-to-asset")
+	
 	payInvoiceWithAssets(
 		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID,
 		withSmallShards(),
 	)
 	logBalance(t.t, nodes, assetID, "after asset-to-asset")
+
+	// Print channel balances after sending.
+	printExpectedRoute(t.t, []*HarnessNode{charlie, dave, yara}, uint64(0),
+						uint64(0), assetID, "after asset-to-asset")
 
 	charlieAssetBalance -= yaraInvoiceAssetAmount1
 	yaraAssetBalance += yaraInvoiceAssetAmount1

@@ -2009,6 +2009,136 @@ func assetExists(t *testing.T, client *tapClient, assetID []byte,
 		"found in list, got: %v", amount, toProtoJSON(t, resp))
 }
 
+func getAssetFromAssetList(assets []rfqmsg.JsonAssetChanInfo,
+							assetID []byte) rfqmsg.JsonAssetChanInfo {
+	for _, asset := range assets {
+		if asset.AssetInfo.AssetGenesis.AssetID == hex.EncodeToString(assetID) {
+			return asset
+		}
+	}
+	return rfqmsg.JsonAssetChanInfo{}
+}
+
+// use printChannels to print balances along a specified route.
+// This function is better than logBalance because it shows only the channels
+// that participate in the route so that you can distinguish between balances
+// in channels that are with nodes that aren't participating in the route.
+func printExpectedRoute(t *testing.T, route []*HarnessNode, satsToSend uint64,
+						assetsToSend uint64, assetID []byte, title string) {
+	expectedRouteNames := make([]string, 0)
+	for _, node := range route {
+		expectedRouteNames = append(expectedRouteNames, node.Cfg.Name)
+	}
+	t.Logf("actual channel capacities (" + title + "):")
+	t.Logf("expected route: %v", expectedRouteNames)
+	for i := 0; i < len(route)-1; i++ {
+		printChannels(t, route[i], route[i+1], satsToSend, assetsToSend,
+						assetID)
+	}
+}
+
+// Print channel sat and asset (if defined) balances between two nodes taking
+// into account the channel reserve.
+// Check (shows (✔) or (x) )to see if satsToSend and assetsToSend are available
+// to send/forward in the channel (if non-zero).
+// Check to see if the channel is active (A) or inactive (I).
+func printChannels(t *testing.T, node *HarnessNode, peer *HarnessNode,
+					satsToSend uint64, assetsToSend uint64, assetID []byte) {
+	ctxb := context.Background()
+	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
+	defer cancel()
+
+	channelResp, err := node.ListChannels(ctxt, &lnrpc.ListChannelsRequest{
+		Peer: peer.PubKey[:],
+	})
+	require.NoError(t, err)
+
+	// var targetChan *lnrpc.Channel
+	// note: the only field of the response is `channels`
+	for _, channel := range channelResp.Channels {
+
+		LocalSpendable := uint64(channel.LocalBalance) -
+							channel.LocalConstraints.ChanReserveSat
+		RemoteSpendable := uint64(channel.RemoteBalance) -
+							channel.RemoteConstraints.ChanReserveSat
+
+		var state string
+		var satsBalanceStatus string
+
+		// check to see if the channel should have the ability to actually
+		// make the sats payment
+		if satsToSend == 0 {
+			satsBalanceStatus = ""
+		} else if LocalSpendable >= satsToSend {
+			satsBalanceStatus = "(✔) "
+		} else {
+			satsBalanceStatus = "(x) "
+		}
+
+		// check if the channel is active or inactive
+		// this helps troubleshooting channels that have gone inactive
+		// due to mission control putting them in an inactive state due
+		// to some previous error.
+		if channel.Active {
+			state = "A"
+		} else {
+			state = "I"
+		}
+
+		// now actually print the sats channel details
+		t.Logf(satsBalanceStatus+"("+state+") cap: %v sat, "+
+			node.Cfg.Name+"->[bal: %v sat|res: %v sat|spend: %v sat], "+
+			peer.Cfg.Name+"->[bal: %v sat|res: %v sat|spend: %v sat], "+
+			"commit_fee: %v",
+			channel.Capacity,
+			channel.LocalBalance,
+			channel.LocalConstraints.ChanReserveSat,
+			LocalSpendable,
+			channel.RemoteBalance,
+			channel.RemoteConstraints.ChanReserveSat,
+			RemoteSpendable,
+			channel.CommitFee,
+		)
+
+		// if this channel has data defining an asset in it, read it too
+		if len(channel.CustomChannelData) > 0 {
+
+			var custom_channel_data rfqmsg.JsonAssetChannel
+			err = json.Unmarshal(channel.CustomChannelData,
+									&custom_channel_data)
+			require.NoError(t, err)
+
+			asset := getAssetFromAssetList(custom_channel_data.Assets, assetID)
+
+			var assetsBalanceStatus string
+
+			// check to see if the channel should have the ability to actually
+			// send the asset payment
+			if assetsToSend == 0 {
+				assetsBalanceStatus = ""
+			} else if asset.LocalBalance >= assetsToSend {
+				assetsBalanceStatus = "(✔) "
+			} else {
+				assetsBalanceStatus = "(x) "
+			}
+
+			// note: taproot assets channels don't currently have a concept of
+			// reserve like normal sats channels, so this printout is simpler
+			// than the sats channel printed above
+			t.Logf(assetsBalanceStatus+"("+state+") cap: %v " +
+				asset.AssetInfo.AssetGenesis.Name +
+				", "+node.Cfg.Name+"->[bal: %v " +
+				asset.AssetInfo.AssetGenesis.Name+"], " +
+				peer.Cfg.Name+"->[bal: %v " +
+				asset.AssetInfo.AssetGenesis.Name+"]",
+				asset.Capacity,
+				asset.LocalBalance,
+				asset.RemoteBalance,
+			)
+		}
+	}
+}
+
 func logBalance(t *testing.T, nodes []*HarnessNode, assetID []byte,
 	occasion string) {
 
