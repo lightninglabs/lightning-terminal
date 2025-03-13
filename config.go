@@ -54,9 +54,7 @@ const (
 
 	defaultConfigFilename = "lit.conf"
 
-	defaultLogLevel       = "info"
-	defaultMaxLogFiles    = 3
-	defaultMaxLogFileSize = 10
+	defaultLogLevel = "info"
 
 	defaultLetsEncryptSubDir          = "letsencrypt"
 	defaultLetsEncryptListen          = ":80"
@@ -285,15 +283,17 @@ func (c *Config) lndConnectParams() (string, lndclient.Network, string,
 
 // defaultConfig returns a configuration struct with all default values set.
 func defaultConfig() *Config {
+	defaultLogCfg := build.DefaultLogConfig()
 	return &Config{
 		HTTPSListen: defaultHTTPSListen,
 		TLSCertPath: DefaultTLSCertPath,
 		TLSKeyPath:  defaultTLSKeyPath,
 		Remote: &subservers.RemoteConfig{
+			LitLogConfig:      defaultLogCfg,
 			LitDebugLevel:     defaultLogLevel,
 			LitLogDir:         defaultLogDir,
-			LitMaxLogFiles:    defaultMaxLogFiles,
-			LitMaxLogFileSize: defaultMaxLogFileSize,
+			LitMaxLogFiles:    defaultLogCfg.File.MaxLogFiles,
+			LitMaxLogFileSize: defaultLogCfg.File.MaxLogFileSize,
 			Lnd: &subservers.RemoteDaemonConfig{
 				RPCServer:    defaultRemoteLndRpcServer,
 				MacaroonPath: DefaultRemoteLndMacaroonPath,
@@ -376,11 +376,21 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 		os.Exit(0)
 	}
 
+	// The logging config we use to initialise the sub-logger manager below
+	// depends on whether we're running in remote mode or not.
+	logCfg := preCfg.Lnd.LogConfig
+	if preCfg.LndMode == ModeRemote {
+		logCfg = preCfg.Remote.LitLogConfig
+	}
+
 	// Before we validate the config, we first hook up our own loggers.
 	// This must be done before the config is validated if LND is running
 	// in integrated mode so that the log levels for various non-LND related
 	// subsystems can be set via the `lnd.debuglevel` flag.
-	SetupLoggers(preCfg.Lnd.LogWriter, interceptor)
+	preCfg.Lnd.SubLogMgr = build.NewSubLoggerManager(
+		build.NewDefaultLogHandlers(logCfg, preCfg.Lnd.LogRotator)...,
+	)
+	SetupLoggers(preCfg.Lnd.SubLogMgr, interceptor)
 
 	// Load the main configuration file and parse any command line options.
 	// This function will also set up logging properly.
@@ -413,7 +423,7 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 		debuglevel += fmt.Sprintf(",%s=off", GrpcLogSubsystem)
 	}
 
-	err = build.ParseAndSetDebugLevels(debuglevel, cfg.Lnd.LogWriter)
+	err = build.ParseAndSetDebugLevels(debuglevel, cfg.Lnd.SubLogMgr)
 	if err != nil {
 		return nil, err
 	}
@@ -753,16 +763,34 @@ func validateRemoteModeConfig(cfg *Config) error {
 
 	r.LitLogDir = lncfg.CleanAndExpandPath(r.LitLogDir)
 
+	// Initialize the log manager with the actual logging configuration. We
+	// need to support the deprecated max log files and max log file size
+	// options for now.
+	if r.LitMaxLogFiles != build.DefaultMaxLogFiles {
+		log.Warnf("Config option 'remote.lit-maxlogfiles' is " +
+			"deprecated, please use " +
+			"'remote.lit-logging.file.max-files' instead")
+
+		r.LitLogConfig.File.MaxLogFiles = r.LitMaxLogFiles
+	}
+	if r.LitMaxLogFileSize != build.DefaultMaxLogFileSize {
+		log.Warnf("Config option 'remote.lit-maxlogfilesize' is " +
+			"deprecated, please use " +
+			"'remote.lit-logging.file.max-file-size' instead")
+
+		r.LitLogConfig.File.MaxLogFileSize = r.LitMaxLogFileSize
+	}
+
 	// In remote mode, we don't call lnd's ValidateConfig that sets up a
 	// logging backend for us. We need to manually create and start one. The
 	// root logger should've already been created as part of the default
 	// config though.
-	if cfg.Lnd.LogWriter == nil {
-		cfg.Lnd.LogWriter = build.NewRotatingLogWriter()
+	if cfg.Lnd.LogRotator == nil {
+		cfg.Lnd.LogRotator = build.NewRotatingLogWriter()
 	}
-	err := cfg.Lnd.LogWriter.InitLogRotator(
+	err := cfg.Lnd.LogRotator.InitLogRotator(
+		cfg.Remote.LitLogConfig.File,
 		filepath.Join(r.LitLogDir, cfg.Network, defaultLogFilename),
-		r.LitMaxLogFileSize, r.LitMaxLogFiles,
 	)
 	if err != nil {
 		return fmt.Errorf("log rotation setup failed: %v", err.Error())
