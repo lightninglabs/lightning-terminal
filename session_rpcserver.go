@@ -634,7 +634,7 @@ func (s *sessionRpcServer) PrivacyMapConversion(ctx context.Context,
 
 		var err error
 		if req.RealToPseudo {
-			res, err = tx.RealToPseudo(req.Input)
+			res, err = tx.RealToPseudo(ctx, req.Input)
 			return err
 		}
 
