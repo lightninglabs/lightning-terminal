@@ -26,7 +26,7 @@ func TestPrivacyMapStorage(t *testing.T) {
 		_, err = tx.RealToPseudo("real")
 		require.ErrorIs(t, err, ErrNoSuchKeyFound)
 
-		_, err = tx.PseudoToReal("pseudo")
+		_, err = tx.PseudoToReal(ctx, "pseudo")
 		require.ErrorIs(t, err, ErrNoSuchKeyFound)
 
 		err = tx.NewPair(ctx, "real", "pseudo")
@@ -36,7 +36,7 @@ func TestPrivacyMapStorage(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "pseudo", pseudo)
 
-		real, err := tx.PseudoToReal("pseudo")
+		real, err := tx.PseudoToReal(ctx, "pseudo")
 		require.NoError(t, err)
 		require.Equal(t, "real", real)
 
@@ -56,7 +56,7 @@ func TestPrivacyMapStorage(t *testing.T) {
 		_, err = tx.RealToPseudo("real")
 		require.ErrorIs(t, err, ErrNoSuchKeyFound)
 
-		_, err = tx.PseudoToReal("pseudo")
+		_, err = tx.PseudoToReal(ctx, "pseudo")
 		require.ErrorIs(t, err, ErrNoSuchKeyFound)
 
 		err = tx.NewPair(ctx, "real 2", "pseudo 2")
@@ -66,7 +66,7 @@ func TestPrivacyMapStorage(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "pseudo 2", pseudo)
 
-		real, err := tx.PseudoToReal("pseudo 2")
+		real, err := tx.PseudoToReal(ctx, "pseudo 2")
 		require.NoError(t, err)
 		require.Equal(t, "real 2", real)
 

@@ -629,7 +629,7 @@ func (s *sessionRpcServer) PrivacyMapConversion(ctx context.Context,
 
 	var res string
 	privMap := s.cfg.privMap(groupID)
-	err = privMap.View(ctx, func(_ context.Context,
+	err = privMap.View(ctx, func(ctx context.Context,
 		tx firewalldb.PrivacyMapTx) error {
 
 		var err error
@@ -638,7 +638,7 @@ func (s *sessionRpcServer) PrivacyMapConversion(ctx context.Context,
 			return err
 		}
 
-		res, err = tx.PseudoToReal(req.Input)
+		res, err = tx.PseudoToReal(ctx, req.Input)
 		return err
 	})
 	if err != nil {
