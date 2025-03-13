@@ -130,6 +130,75 @@ func (s *RPCServer) UpdateAccount(ctx context.Context,
 	return marshalAccount(account), nil
 }
 
+// CreditAccount increases the balance of an existing account in the account
+// database, by the given amount.
+func (s *RPCServer) CreditAccount(ctx context.Context,
+	req *litrpc.CreditAccountRequest) (*litrpc.CreditAccountResponse,
+	error) {
+
+	if req.GetAccount() == nil {
+		return nil, fmt.Errorf("account param must be specified")
+	}
+
+	log.Infof("[creditaccount] id=%s, label=%v, amount=%d",
+		req.GetAccount().GetId(), req.GetAccount().GetLabel(),
+		req.Amount)
+
+	amount := lnwire.MilliSatoshi(req.Amount * 1000)
+
+	accountID, err := s.findAccount(
+		ctx, req.GetAccount().GetId(), req.GetAccount().GetLabel(),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	account, err := s.service.CreditAccount(
+		ctx, accountID, amount,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &litrpc.CreditAccountResponse{
+		Account: marshalAccount(account),
+	}, nil
+}
+
+// DebitAccount decreases the balance of an existing account in the account
+// database, by the given amount.
+func (s *RPCServer) DebitAccount(ctx context.Context,
+	req *litrpc.DebitAccountRequest) (*litrpc.DebitAccountResponse, error) {
+
+	if req.GetAccount() == nil {
+		return nil, fmt.Errorf("account param must be specified")
+	}
+
+	log.Infof("[debitaccount] id=%s, label=%v, amount=%d",
+		req.GetAccount().GetId(), req.GetAccount().GetLabel(),
+		req.Amount)
+
+	amount := lnwire.MilliSatoshi(req.Amount * 1000)
+
+	accountID, err := s.findAccount(
+		ctx, req.GetAccount().GetId(), req.GetAccount().GetLabel(),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	account, err := s.service.DebitAccount(
+		ctx, accountID, amount,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &litrpc.DebitAccountResponse{
+		Account: marshalAccount(account),
+	}, nil
+}
+
 // ListAccounts returns all accounts that are currently stored in the account
 // database.
 func (s *RPCServer) ListAccounts(ctx context.Context,

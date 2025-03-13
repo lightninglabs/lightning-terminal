@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -26,6 +27,8 @@ var accountsCommands = []cli.Command{
 		Subcommands: []cli.Command{
 			createAccountCommand,
 			updateAccountCommand,
+			creditCommand,
+			debitCommand,
 			listAccountsCommand,
 			accountInfoCommand,
 			removeAccountCommand,
@@ -159,8 +162,8 @@ var updateAccountCommand = cli.Command{
 		},
 		cli.Int64Flag{
 			Name: "new_balance",
-			Usage: "The new balance of the account; -1 means do " +
-				"not update the balance.",
+			Usage: "(deprecated) The new balance of the account; " +
+				"-1 means do not update the balance.",
 			Value: -1,
 		},
 		cli.Int64Flag{
@@ -229,6 +232,130 @@ func updateAccount(cli *cli.Context) error {
 	}
 
 	printRespJSON(resp)
+	return nil
+}
+
+var creditCommand = cli.Command{
+	Name:      "credit",
+	Usage:     "Increase an account's balance by the given amount.",
+	ArgsUsage: "[id | label] amount",
+	Description: "Increases an existing off-chain account's balance by " +
+		"the given amount.",
+	Flags: []cli.Flag{
+		cli.StringFlag{
+			Name:  idName,
+			Usage: "The ID of the account to credit.",
+		},
+		cli.StringFlag{
+			Name:  labelName,
+			Usage: "(optional) The unique label of the account.",
+		},
+		cli.Uint64Flag{
+			Name:  "amount",
+			Usage: "The amount to credit the account.",
+		},
+	},
+	Action: creditBalance,
+}
+
+func creditBalance(cli *cli.Context) error {
+	return updateBalance(cli, true)
+}
+
+var debitCommand = cli.Command{
+	Name:      "debit",
+	Usage:     "Decrease an account's balance by the given amount.",
+	ArgsUsage: "[id | label] amount",
+	Description: "Decreases an existing off-chain account's balance by " +
+		"the given amount.",
+	Flags: []cli.Flag{
+		cli.StringFlag{
+			Name:  idName,
+			Usage: "The ID of the account to debit.",
+		},
+		cli.StringFlag{
+			Name:  labelName,
+			Usage: "(optional) The unique label of the account.",
+		},
+		cli.Uint64Flag{
+			Name:  "amount",
+			Usage: "The amount to debit the account.",
+		},
+	},
+	Action: debitBalance,
+}
+
+func debitBalance(cli *cli.Context) error {
+	return updateBalance(cli, false)
+}
+
+func updateBalance(cli *cli.Context, add bool) error {
+	ctx := getContext()
+	clientConn, cleanup, err := connectClient(cli, false)
+	if err != nil {
+		return err
+	}
+	defer cleanup()
+	client := litrpc.NewAccountsClient(clientConn)
+
+	id, label, args, err := parseIDOrLabel(cli)
+	if err != nil {
+		return err
+	}
+
+	if (!cli.IsSet("amount") && len(args) != 1) ||
+		(cli.IsSet("amount") && len(args) != 0) {
+
+		return errors.New("invalid number of arguments")
+	}
+
+	var amount uint64
+	switch {
+	case cli.IsSet("amount"):
+		amount = cli.Uint64("amount")
+	case args.Present():
+		amount, err = strconv.ParseUint(args.First(), 10, 64)
+		if err != nil {
+			return fmt.Errorf("unable to decode amount %v", err)
+		}
+		args = args.Tail()
+	default:
+		return errors.New("must set a value for amount")
+	}
+
+	account := &litrpc.AccountIdentifier{
+		Id:    id,
+		Label: label,
+	}
+
+	var respAccount *litrpc.Account
+	if add {
+		req := &litrpc.CreditAccountRequest{
+			Account: account,
+			Amount:  amount,
+		}
+
+		resp, err := client.CreditAccount(ctx, req)
+		if err != nil {
+			return err
+		}
+
+		respAccount = resp.Account
+	} else {
+		req := &litrpc.DebitAccountRequest{
+			Account: account,
+			Amount:  amount,
+		}
+
+		resp, err := client.DebitAccount(ctx, req)
+		if err != nil {
+			return err
+		}
+
+		respAccount = resp.Account
+	}
+
+	printRespJSON(respAccount)
 	return nil
 }
 
