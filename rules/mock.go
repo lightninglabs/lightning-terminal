@@ -47,12 +47,16 @@ type mockKVStores struct {
 	tx *mockKVStoresTX
 }
 
-func (m *mockKVStores) Update(f func(tx firewalldb.KVStoreTx) error) error {
-	return f(m.tx)
+func (m *mockKVStores) Update(ctx context.Context, f func(ctx context.Context,
+	tx firewalldb.KVStoreTx) error) error {
+
+	return f(ctx, m.tx)
 }
 
-func (m *mockKVStores) View(f func(tx firewalldb.KVStoreTx) error) error {
-	return f(m.tx)
+func (m *mockKVStores) View(ctx context.Context, f func(ctx context.Context,
+	tx firewalldb.KVStoreTx) error) error {
+
+	return f(ctx, m.tx)
 }
 
 var _ firewalldb.KVStores = (*mockKVStores)(nil)

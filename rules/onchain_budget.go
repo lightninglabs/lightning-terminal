@@ -531,7 +531,9 @@ func (o *OnChainBudgetEnforcer) handleBatchOpenChannelRequest(
 func (o *OnChainBudgetEnforcer) handlePendingPayment(ctx context.Context,
 	request *onChainAction, reqID string) error {
 
-	return o.GetStores().Update(func(tx firewalldb.KVStoreTx) error {
+	return o.GetStores().Update(ctx, func(ctx context.Context,
+		tx firewalldb.KVStoreTx) error {
+
 		// First, we fetch the current state of the budget.
 		spent, pending, err := o.getBudgetState(ctx, tx)
 		if err != nil {
@@ -586,7 +588,9 @@ type onChainAction struct {
 func (o *OnChainBudgetEnforcer) cancelPendingPayment(
 	ctx context.Context) error {
 
-	return o.GetStores().Update(func(tx firewalldb.KVStoreTx) error {
+	return o.GetStores().Update(ctx, func(ctx context.Context,
+		tx firewalldb.KVStoreTx) error {
+
 		// First, we get our current budget state.
 		_, pending, err := o.getBudgetState(ctx, tx)
 		if err != nil {
@@ -643,7 +647,9 @@ func (o *OnChainBudgetEnforcer) cancelPendingPayment(
 func (o *OnChainBudgetEnforcer) handlePaymentConfirmed(
 	ctx context.Context) error {
 
-	return o.GetStores().Update(func(tx firewalldb.KVStoreTx) error {
+	return o.GetStores().Update(ctx, func(ctx context.Context,
+		tx firewalldb.KVStoreTx) error {
+
 		// First, we get our current budget state.
 		complete, pending, err := o.getBudgetState(ctx, tx)
 		if err != nil {
