@@ -79,7 +79,7 @@ type PrivacyMapTx interface {
 
 	// RealToPseudo returns the pseudo value associated with the given real
 	// value. If no such pair is found, then ErrNoSuchKeyFound is returned.
-	RealToPseudo(real string) (string, error)
+	RealToPseudo(ctx context.Context, real string) (string, error)
 
 	// FetchAllPairs loads and returns the real-to-pseudo pairs in the form
 	// of a PrivacyMapPairs struct.
@@ -258,7 +258,9 @@ func (p *privacyMapTx) PseudoToReal(_ context.Context, pseudo string) (string,
 // it does then the pseudo value is returned, else an error is returned.
 //
 // NOTE: this is part of the PrivacyMapTx interface.
-func (p *privacyMapTx) RealToPseudo(real string) (string, error) {
+func (p *privacyMapTx) RealToPseudo(_ context.Context, real string) (string,
+	error) {
+
 	privacyBucket, err := getBucket(p.boltTx, privacyBucketKey)
 	if err != nil {
 		return "", err
@@ -319,7 +321,7 @@ func (p *privacyMapTx) FetchAllPairs() (*PrivacyMapPairs, error) {
 func HideString(ctx context.Context, tx PrivacyMapTx, real string) (string,
 	error) {
 
-	pseudo, err := tx.RealToPseudo(real)
+	pseudo, err := tx.RealToPseudo(ctx, real)
 	if err != nil && err != ErrNoSuchKeyFound {
 		return "", err
 	}
@@ -370,7 +372,7 @@ func HideUint64(ctx context.Context, tx PrivacyMapTx, real uint64) (uint64,
 	error) {
 
 	str := Uint64ToStr(real)
-	pseudo, err := tx.RealToPseudo(str)
+	pseudo, err := tx.RealToPseudo(ctx, str)
 	if err != nil && err != ErrNoSuchKeyFound {
 		return 0, err
 	}
@@ -405,7 +407,7 @@ func HideChanPoint(ctx context.Context, tx PrivacyMapTx, txid string,
 	index uint32) (string, uint32, error) {
 
 	cp := fmt.Sprintf("%s:%d", txid, index)
-	pseudo, err := tx.RealToPseudo(cp)
+	pseudo, err := tx.RealToPseudo(ctx, cp)
 	if err != nil && err != ErrNoSuchKeyFound {
 		return "", 0, err
 	}

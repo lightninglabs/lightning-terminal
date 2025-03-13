@@ -1140,7 +1140,9 @@ func (m *mockPrivacyMapDB) PseudoToReal(_ context.Context, pseudo string) (
 	return r, nil
 }
 
-func (m *mockPrivacyMapDB) RealToPseudo(real string) (string, error) {
+func (m *mockPrivacyMapDB) RealToPseudo(_ context.Context, real string) (string,
+	error) {
+
 	p, ok := m.r2p[real]
 	if !ok {
 		return "", firewalldb.ErrNoSuchKeyFound

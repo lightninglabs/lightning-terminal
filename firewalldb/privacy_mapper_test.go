@@ -23,7 +23,7 @@ func TestPrivacyMapStorage(t *testing.T) {
 	pdb1 := db.PrivacyDB([4]byte{1, 1, 1, 1})
 
 	_ = pdb1.Update(ctx, func(ctx context.Context, tx PrivacyMapTx) error {
-		_, err = tx.RealToPseudo("real")
+		_, err = tx.RealToPseudo(ctx, "real")
 		require.ErrorIs(t, err, ErrNoSuchKeyFound)
 
 		_, err = tx.PseudoToReal(ctx, "pseudo")
@@ -32,7 +32,7 @@ func TestPrivacyMapStorage(t *testing.T) {
 		err = tx.NewPair(ctx, "real", "pseudo")
 		require.NoError(t, err)
 
-		pseudo, err := tx.RealToPseudo("real")
+		pseudo, err := tx.RealToPseudo(ctx, "real")
 		require.NoError(t, err)
 		require.Equal(t, "pseudo", pseudo)
 
@@ -53,7 +53,7 @@ func TestPrivacyMapStorage(t *testing.T) {
 	pdb2 := db.PrivacyDB([4]byte{2, 2, 2, 2})
 
 	_ = pdb2.Update(ctx, func(ctx context.Context, tx PrivacyMapTx) error {
-		_, err = tx.RealToPseudo("real")
+		_, err = tx.RealToPseudo(ctx, "real")
 		require.ErrorIs(t, err, ErrNoSuchKeyFound)
 
 		_, err = tx.PseudoToReal(ctx, "pseudo")
@@ -62,7 +62,7 @@ func TestPrivacyMapStorage(t *testing.T) {
 		err = tx.NewPair(ctx, "real 2", "pseudo 2")
 		require.NoError(t, err)
 
-		pseudo, err := tx.RealToPseudo("real 2")
+		pseudo, err := tx.RealToPseudo(ctx, "real 2")
 		require.NoError(t, err)
 		require.Equal(t, "pseudo 2", pseudo)
 
@@ -206,7 +206,7 @@ func TestPrivacyMapTxs(t *testing.T) {
 			return err
 		}
 
-		p, err := tx.RealToPseudo("real")
+		p, err := tx.RealToPseudo(ctx, "real")
 		if err != nil {
 			return err
 		}
@@ -218,7 +218,7 @@ func TestPrivacyMapTxs(t *testing.T) {
 	require.Error(t, err)
 
 	err = pdb1.View(ctx, func(ctx context.Context, tx PrivacyMapTx) error {
-		_, err := tx.RealToPseudo("real")
+		_, err := tx.RealToPseudo(ctx, "real")
 		return err
 	})
 	require.ErrorIs(t, err, ErrNoSuchKeyFound)
