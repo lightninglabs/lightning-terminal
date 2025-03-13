@@ -52,6 +52,12 @@ type Kvstore struct {
 	Value     []byte
 }
 
+type PrivacyPair struct {
+	GroupID   int64
+	RealVal   string
+	PseudoVal string
+}
+
 type Rule struct {
 	ID   int64
 	Name string
