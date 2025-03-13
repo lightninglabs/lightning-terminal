@@ -559,7 +559,7 @@ func handleListChannelsRequest(db firewalldb.PrivacyMapDB,
 		err := db.View(ctx, func(ctx context.Context,
 			tx firewalldb.PrivacyMapTx) error {
 
-			peer, err := firewalldb.RevealBytes(tx, r.Peer)
+			peer, err := firewalldb.RevealBytes(ctx, tx, r.Peer)
 			if err != nil {
 				return err
 			}
@@ -778,8 +778,8 @@ func handleUpdatePolicyRequest(db firewalldb.PrivacyMapDB,
 				tx firewalldb.PrivacyMapTx) error {
 
 				var err error
-				newTxid, newIndex, err = firewalldb.RevealChanPoint(
-					tx, newTxid, newIndex,
+				newTxid, newIndex, err = firewalldb.RevealChanPoint( //nolint:lll
+					ctx, tx, newTxid, newIndex,
 				)
 				return err
 			})
@@ -1380,7 +1380,7 @@ func handleBatchOpenChannelRequest(db firewalldb.PrivacyMapDB,
 				nodePubkey := c.NodePubkey
 				if !flags.Contains(session.ClearPubkeys) {
 					nodePubkey, err = firewalldb.RevealBytes(
-						tx, c.NodePubkey,
+						ctx, tx, c.NodePubkey,
 					)
 					if err != nil {
 						return err
@@ -1518,7 +1518,7 @@ func handleChannelOpenRequest(db firewalldb.PrivacyMapDB,
 
 			if !flags.Contains(session.ClearPubkeys) {
 				nodePubkey, err = firewalldb.RevealBytes(
-					tx, nodePubkey,
+					ctx, tx, nodePubkey,
 				)
 				if err != nil {
 					return err
@@ -1665,7 +1665,7 @@ func handleConnectPeerRequest(db firewalldb.PrivacyMapDB,
 			pubkey := r.Addr.Pubkey
 			if !flags.Contains(session.ClearPubkeys) {
 				pubkey, err = firewalldb.RevealString(
-					tx, r.Addr.Pubkey,
+					ctx, tx, r.Addr.Pubkey,
 				)
 				if err != nil {
 					return err
@@ -1675,7 +1675,7 @@ func handleConnectPeerRequest(db firewalldb.PrivacyMapDB,
 			host := r.Addr.Host
 			if !flags.Contains(session.ClearNetworkAddresses) {
 				host, err = firewalldb.RevealString(
-					tx, r.Addr.Host,
+					ctx, tx, r.Addr.Host,
 				)
 				if err != nil {
 					return err

@@ -353,7 +353,7 @@ func (c *ChannelRestrict) PseudoToReal(ctx context.Context,
 		tx firewalldb.PrivacyMapTx) error {
 
 		for i, chanID := range c.DenyList {
-			real, err := firewalldb.RevealUint64(tx, chanID)
+			real, err := firewalldb.RevealUint64(ctx, tx, chanID)
 			if err != nil {
 				return err
 			}

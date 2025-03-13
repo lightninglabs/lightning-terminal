@@ -394,11 +394,13 @@ func (c *PeerRestrict) PseudoToReal(ctx context.Context,
 		return &PeerRestrict{DenyList: restrictList}, nil
 	}
 
-	err := db.View(ctx, func(_ context.Context,
+	err := db.View(ctx, func(ctx context.Context,
 		tx firewalldb.PrivacyMapTx) error {
 
 		for i, peerPubKey := range c.DenyList {
-			real, err := firewalldb.RevealString(tx, peerPubKey)
+			real, err := firewalldb.RevealString(
+				ctx, tx, peerPubKey,
+			)
 			if err != nil {
 				return err
 			}
