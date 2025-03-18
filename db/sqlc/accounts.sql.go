@@ -45,6 +45,26 @@ func (q *Queries) CreditAccount(ctx context.Context, arg CreditAccountParams) (i
 	return id, err
 }
 
+const debitAccount = `-- name: DebitAccount :one
+UPDATE accounts
+SET current_balance_msat = current_balance_msat - $2
+WHERE id = $1
+AND current_balance_msat >= $2
+RETURNING id
+`
+
+type DebitAccountParams struct {
+	ID     int64
+	Amount int64
+}
+
+func (q *Queries) DebitAccount(ctx context.Context, arg DebitAccountParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, debitAccount, arg.ID, arg.Amount)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
 const deleteAccount = `-- name: DeleteAccount :exec
 DELETE FROM accounts
 WHERE id = $1

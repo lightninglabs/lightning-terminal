@@ -12,6 +12,7 @@ import (
 type Querier interface {
 	AddAccountInvoice(ctx context.Context, arg AddAccountInvoiceParams) error
 	CreditAccount(ctx context.Context, arg CreditAccountParams) (int64, error)
+	DebitAccount(ctx context.Context, arg DebitAccountParams) (int64, error)
 	DeleteAccount(ctx context.Context, id int64) error
 	DeleteAccountPayment(ctx context.Context, arg DeleteAccountPaymentParams) error
 	DeleteSessionsWithState(ctx context.Context, state int16) error

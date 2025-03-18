@@ -35,6 +35,7 @@ const (
 type SQLQueries interface {
 	AddAccountInvoice(ctx context.Context, arg sqlc.AddAccountInvoiceParams) error
 	CreditAccount(ctx context.Context, arg sqlc.CreditAccountParams) (int64, error)
+	DebitAccount(ctx context.Context, arg sqlc.DebitAccountParams) (int64, error)
 	DeleteAccount(ctx context.Context, id int64) error
 	DeleteAccountPayment(ctx context.Context, arg sqlc.DeleteAccountPaymentParams) error
 	GetAccount(ctx context.Context, id int64) (sqlc.Account, error)
@@ -423,26 +424,17 @@ func (s *SQLStore) DebitAccount(ctx context.Context, alias AccountID,
 			return err
 		}
 
-		acct, err := db.GetAccount(ctx, id)
-		if err != nil {
-			return err
-		}
-
-		if acct.CurrentBalanceMsat-int64(amount) < 0 {
+		id, err = db.DebitAccount(
+			ctx, sqlc.DebitAccountParams{
+				ID:     id,
+				Amount: int64(amount),
+			},
+		)
+		if errors.Is(err, sql.ErrNoRows) {
 			return fmt.Errorf("cannot debit %v from the account "+
 				"balance, as the resulting balance would be "+
 				"below 0", int64(amount/1000))
-		}
-
-		newBalance := acct.CurrentBalanceMsat - int64(amount)
-
-		_, err = db.UpdateAccountBalance(
-			ctx, sqlc.UpdateAccountBalanceParams{
-				ID:                 id,
-				CurrentBalanceMsat: newBalance,
-			},
-		)
-		if err != nil {
+		} else if err != nil {
 			return err
 		}
 

@@ -15,6 +15,13 @@ SET current_balance_msat = current_balance_msat + sqlc.arg(amount)
 WHERE id = $1
 RETURNING id;
 
+-- name: DebitAccount :one
+UPDATE accounts
+SET current_balance_msat = current_balance_msat - sqlc.arg(amount)
+WHERE id = $1
+AND current_balance_msat >= sqlc.arg(amount)
+RETURNING id;
+
 -- name: UpdateAccountExpiry :one
 UPDATE accounts
 SET expiration = $1
