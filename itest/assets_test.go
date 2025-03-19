@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
-	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -727,6 +726,12 @@ func sendAssetKeySendPayment(t *testing.T, src, dst *HarnessNode, amt uint64,
 		opt(cfg)
 	}
 
+	// Nullify assetID if group key is set. RPC methods won't accept both so
+	// let's prioritize the group key if set.
+	if len(cfg.groupKey) > 0 {
+		assetID = []byte{}
+	}
+
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
 	defer cancel()
@@ -1004,6 +1009,12 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 		opt(cfg)
 	}
 
+	// Nullify assetID if group key is set. RPC methods won't accept both so
+	// let's prioritize the group key if set.
+	if len(cfg.groupKey) > 0 {
+		assetID = []byte{}
+	}
+
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
 	defer cancel()
@@ -1129,6 +1140,12 @@ func createAssetInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 		opt(cfg)
 	}
 
+	// Nullify assetID if group key is set. RPC methods won't accept both so
+	// let's prioritize the group key if set.
+	if len(cfg.groupKey) > 0 {
+		assetID = []byte{}
+	}
+
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
 	defer cancel()
@@ -1209,12 +1226,11 @@ func assertInvoiceHtlcAssets(t *testing.T, node *HarnessNode,
 
 	var targetID string
 	switch {
+	case len(groupID) > 0:
+		targetID = hex.EncodeToString(groupID)
+
 	case len(assetID) > 0:
 		targetID = hex.EncodeToString(assetID)
-
-	case len(groupID) > 0:
-		groupHash := sha256.Sum256(groupID)
-		targetID = hex.EncodeToString(groupHash[:])
 	}
 
 	var totalAssetAmount uint64
@@ -1265,12 +1281,11 @@ func assertPaymentHtlcAssets(t *testing.T, node *HarnessNode, payHash []byte,
 
 	var targetID string
 	switch {
+	case len(groupID) > 0:
+		targetID = hex.EncodeToString(groupID)
+
 	case len(assetID) > 0:
 		targetID = hex.EncodeToString(assetID)
-
-	case len(groupID) > 0:
-		groupHash := sha256.Sum256(groupID)
-		targetID = hex.EncodeToString(groupHash[:])
 	}
 
 	var totalAssetAmount uint64
@@ -1301,7 +1316,19 @@ type assetHodlInvoice struct {
 }
 
 func createAssetHodlInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
-	assetAmount uint64, assetID []byte) assetHodlInvoice {
+	assetAmount uint64, assetID []byte,
+	opts ...invoiceOpt) assetHodlInvoice {
+
+	cfg := defaultInvoiceConfig()
+	for _, opt := range opts {
+		opt(cfg)
+	}
+
+	// Nullify assetID if group key is set. RPC methods won't accept both so
+	// let's prioritize the group key if set.
+	if len(cfg.groupKey) > 0 {
+		assetID = []byte{}
+	}
 
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
@@ -1325,6 +1352,7 @@ func createAssetHodlInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 
 	resp, err := dstTapd.AddInvoice(ctxt, &tchrpc.AddInvoiceRequest{
 		AssetId:     assetID,
+		GroupKey:    cfg.groupKey,
 		AssetAmount: assetAmount,
 		PeerPubkey:  dstRfqPeer.PubKey[:],
 		InvoiceRequest: &lnrpc.Invoice{
@@ -1360,6 +1388,22 @@ func createAssetHodlInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 	return assetHodlInvoice{
 		preimage: preimage,
 		payReq:   resp.InvoiceResult.PaymentRequest,
+	}
+}
+
+// addGroupModeOpt may add a group key option to the opts array, if the group
+// mode boolean is true.
+func addGroupModeOpt(opts *[]payOpt, groupMode bool, groupID []byte) {
+	if groupMode {
+		*opts = append(*opts, withGroupKey(groupID))
+	}
+}
+
+// addGroupModeInvOpt may add a group key option to the opts array, if the group
+// mode boolean is true.
+func addGroupModeInvOpt(opts *[]invoiceOpt, groupMode bool, groupID []byte) {
+	if groupMode {
+		*opts = append(*opts, withInvGroupKey(groupID))
 	}
 }
 
