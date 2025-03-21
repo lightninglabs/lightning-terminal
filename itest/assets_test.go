@@ -2115,33 +2115,43 @@ func printChannels(t *testing.T, node *HarnessNode, peer *HarnessNode,
 									&custom_channel_data)
 			require.NoError(t, err)
 
-			asset := getAssetFromAssetList(custom_channel_data.Assets, assetID)
+			if len(assetID) > 0 {
 
-			var assetsBalanceStatus string
+				asset := getAssetFromAssetList(custom_channel_data.Assets,
+							assetID)
 
-			// check to see if the channel should have the ability to actually
-			// send the asset payment
-			if assetsToSend == 0 {
-				assetsBalanceStatus = ""
-			} else if asset.LocalBalance >= assetsToSend {
-				assetsBalanceStatus = "(✔) "
-			} else {
-				assetsBalanceStatus = "(x) "
+				if (asset != rfqmsg.JsonAssetChanInfo{}) {
+
+					var assetsBalanceStatus string
+					
+					// check to see if the channel should have the ability
+					// to actually send the asset payment
+					if assetsToSend == 0 {
+						assetsBalanceStatus = ""
+						} else if asset.LocalBalance >= assetsToSend {
+							assetsBalanceStatus = "(✔) "
+						} else {
+							assetsBalanceStatus = "(x) "
+						}
+
+						// note: taproot assets channels don't currently have
+						// a concept of reserve like normal sats channels, so
+						// this printout is simpler than the sats channel
+						// printed above
+						t.Logf(assetsBalanceStatus+"("+state+") cap: %v " +
+						asset.AssetInfo.AssetGenesis.Name +
+						", "+node.Cfg.Name+"->[bal: %v " +
+						asset.AssetInfo.AssetGenesis.Name+"], " +
+						peer.Cfg.Name+"->[bal: %v " +
+						asset.AssetInfo.AssetGenesis.Name+"]",
+						asset.Capacity,
+						asset.LocalBalance,
+						asset.RemoteBalance,
+					)
+				} else {
+					t.Logf("assetID %v not found", assetID)
+				}
 			}
-
-			// note: taproot assets channels don't currently have a concept of
-			// reserve like normal sats channels, so this printout is simpler
-			// than the sats channel printed above
-			t.Logf(assetsBalanceStatus+"("+state+") cap: %v " +
-				asset.AssetInfo.AssetGenesis.Name +
-				", "+node.Cfg.Name+"->[bal: %v " +
-				asset.AssetInfo.AssetGenesis.Name+"], " +
-				peer.Cfg.Name+"->[bal: %v " +
-				asset.AssetInfo.AssetGenesis.Name+"]",
-				asset.Capacity,
-				asset.LocalBalance,
-				asset.RemoteBalance,
-			)
 		}
 	}
 }
