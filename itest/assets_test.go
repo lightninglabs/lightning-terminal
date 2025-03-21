@@ -2057,10 +2057,17 @@ func printChannels(t *testing.T, node *HarnessNode, peer *HarnessNode,
 	// note: the only field of the response is `channels`
 	for _, channel := range channelResp.Channels {
 
-		LocalSpendable := uint64(channel.LocalBalance) -
-							channel.LocalConstraints.ChanReserveSat
-		RemoteSpendable := uint64(channel.RemoteBalance) -
-							channel.RemoteConstraints.ChanReserveSat
+		LocalSpendable := channel.LocalBalance -
+		int64(channel.LocalConstraints.ChanReserveSat)
+
+		RemoteSpendable := channel.RemoteBalance -
+		int64(channel.RemoteConstraints.ChanReserveSat)
+		
+		// Balance can be less than the reserve if funded by the peer and
+		// not enough payments received yet, so limit to 0 and don't let
+		// the Spendable value go negative.
+		if (LocalSpendable  < 0) {LocalSpendable  = 0}
+		if (RemoteSpendable < 0) {RemoteSpendable = 0}
 
 		var state string
 		var satsBalanceStatus string
@@ -2069,7 +2076,7 @@ func printChannels(t *testing.T, node *HarnessNode, peer *HarnessNode,
 		// make the sats payment
 		if satsToSend == 0 {
 			satsBalanceStatus = ""
-		} else if LocalSpendable >= satsToSend {
+		} else if LocalSpendable >= int64(satsToSend) {
 			satsBalanceStatus = "(✔) "
 		} else {
 			satsBalanceStatus = "(x) "
