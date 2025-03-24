@@ -18,13 +18,16 @@
 
 ### Functional Changes/Additions
 
+* [`litcli`: global flags to allow overrides via environment 
+  variables](https://github.com/lightninglabs/lightning-terminal/pull/1007) 
+  `litcli --help` for more details.
+
 ### Technical and Architectural Updates
 
 * Correctly [move a session to the Expired 
   state](https://github.com/lightninglabs/lightning-terminal/pull/985) instead
   of the Revoked state if it is in fact being revoked due to the session expiry
   being reached.
-
 
 ## RPC Updates
 

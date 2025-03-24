@@ -27,6 +27,15 @@ const (
 	// defaultMacaroonTimeout is the default macaroon timeout in seconds
 	// that we set when sending it over the line.
 	defaultMacaroonTimeout int64 = 60
+
+	// Environment variables names that can be used to set the global flags.
+	envVarRPCServer       = "LITCLI_RPCSERVER"
+	envVarNetwork         = "LITCLI_NETWORK"
+	envVarBaseDir         = "LITCLI_BASEDIR"
+	envVarTLSCert         = "LITCLI_TLSCERTPATH"
+	envVarMacaroonPath    = "LITCLI_MACAROONPATH"
+	envVarLNDDir          = "LITCLI_LNDDIR"
+	envVarMacaroonTimeout = "LITCLI_MACAROONTIMEOUT"
 )
 
 var (
@@ -35,25 +44,29 @@ var (
 	maxMsgRecvSize = grpc.MaxCallRecvMsgSize(1 * 1024 * 1024 * 200)
 
 	baseDirFlag = cli.StringFlag{
-		Name:  "basedir",
-		Value: terminal.DefaultLitDir,
-		Usage: "Path to LiT's base directory",
+		Name:   "basedir",
+		Value:  terminal.DefaultLitDir,
+		Usage:  "Path to LiT's base directory",
+		EnvVar: envVarBaseDir,
 	}
 	networkFlag = cli.StringFlag{
 		Name: "network, n",
 		Usage: "The network litd is running on e.g. mainnet, " +
 			"testnet, etc.",
-		Value: terminal.DefaultNetwork,
+		Value:  terminal.DefaultNetwork,
+		EnvVar: envVarNetwork,
 	}
 	tlsCertFlag = cli.StringFlag{
-		Name:  "tlscertpath",
-		Usage: "Path to lit's TLS certificate",
-		Value: terminal.DefaultTLSCertPath,
+		Name:   "tlscertpath",
+		Usage:  "Path to lit's TLS certificate",
+		Value:  terminal.DefaultTLSCertPath,
+		EnvVar: envVarTLSCert,
 	}
 	macaroonPathFlag = cli.StringFlag{
-		Name:  "macaroonpath",
-		Usage: "Path to lit's macaroon file",
-		Value: terminal.DefaultMacaroonPath,
+		Name:   "macaroonpath",
+		Usage:  "Path to lit's macaroon file",
+		Value:  terminal.DefaultMacaroonPath,
+		EnvVar: envVarMacaroonPath,
 	}
 )
 
@@ -65,9 +78,10 @@ func main() {
 	app.Usage = "control plane for your Lightning Terminal (lit) daemon"
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
-			Name:  "rpcserver",
-			Value: "localhost:8443",
-			Usage: "LiT daemon address host:port",
+			Name:   "rpcserver",
+			Value:  "localhost:8443",
+			Usage:  "LiT daemon address host:port",
+			EnvVar: envVarRPCServer,
 		},
 		networkFlag,
 		baseDirFlag,
@@ -82,6 +96,7 @@ func main() {
 			Usage:  "Path to lnd's base directory",
 			Hidden: true,
 			Value:  commands.DefaultLndDir,
+			EnvVar: envVarLNDDir,
 		},
 		cli.Int64Flag{
 			Name:   "macaroontimeout",
@@ -89,6 +104,7 @@ func main() {
 			Hidden: true,
 			Usage: "Anti-replay macaroon validity time in " +
 				"seconds.",
+			EnvVar: envVarMacaroonTimeout,
 		},
 	}
 	app.Commands = append(app.Commands, sessionCommands...)
