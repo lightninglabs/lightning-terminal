@@ -473,9 +473,9 @@ func assertPendingChannels(t *testing.T, node *HarnessNode,
 		pendingChan.Channel.CustomChannelData, &pendingJSON,
 	)
 	require.NoError(t, err)
-	require.Len(t, pendingJSON.Assets, 1)
+	require.Len(t, pendingJSON.FundingAssets, 1)
 
-	require.NotZero(t, pendingJSON.Assets[0].Capacity)
+	require.NotZero(t, pendingJSON.Capacity)
 
 	// Check the decimal display of the channel funding blob. If no explicit
 	// value was set, we assume and expect the value of 0.
@@ -488,7 +488,7 @@ func assertPendingChannels(t *testing.T, node *HarnessNode,
 
 	require.Equal(
 		t, expectedDecimalDisplay,
-		pendingJSON.Assets[0].AssetInfo.DecimalDisplay,
+		pendingJSON.FundingAssets[0].DecimalDisplay,
 	)
 
 	// Check the balance of the pending channel.
@@ -501,21 +501,36 @@ func assertPendingChannels(t *testing.T, node *HarnessNode,
 	require.EqualValues(t, remoteSum, pendingRemoteBalance)
 }
 
+// haveFundingAsset returns true if the given channel has the asset with the
+// given asset ID as a funding asset.
+func haveFundingAsset(assetChannel *rfqmsg.JsonAssetChannel,
+	assetID []byte) bool {
+
+	assetIDStr := hex.EncodeToString(assetID)
+	for _, fundingAsset := range assetChannel.FundingAssets {
+		if fundingAsset.AssetGenesis.AssetID == assetIDStr {
+			return true
+		}
+	}
+
+	return false
+}
+
 func assertAssetChan(t *testing.T, src, dst *HarnessNode, fundingAmount uint64,
 	mintedAsset *taprpc.Asset) {
 
-	assetID := mintedAsset.AssetGenesis.AssetId
-	assetIDStr := hex.EncodeToString(assetID)
 	err := wait.NoError(func() error {
 		a, err := getChannelCustomData(src, dst)
 		if err != nil {
 			return err
 		}
 
-		if a.AssetInfo.AssetGenesis.AssetID != assetIDStr {
-			return fmt.Errorf("expected asset ID %s, got %s",
-				assetIDStr, a.AssetInfo.AssetGenesis.AssetID)
+		assetID := mintedAsset.AssetGenesis.AssetId
+		if !haveFundingAsset(a, assetID) {
+			return fmt.Errorf("expected asset ID %x, to "+
+				"be in channel", assetID)
 		}
+
 		if a.Capacity != fundingAmount {
 			return fmt.Errorf("expected capacity %d, got %d",
 				fundingAmount, a.Capacity)
@@ -530,10 +545,10 @@ func assertAssetChan(t *testing.T, src, dst *HarnessNode, fundingAmount uint64,
 			)
 		}
 
-		if a.AssetInfo.DecimalDisplay != expectedDecimalDisplay {
+		if a.FundingAssets[0].DecimalDisplay != expectedDecimalDisplay {
 			return fmt.Errorf("expected decimal display %d, got %d",
 				expectedDecimalDisplay,
-				a.AssetInfo.DecimalDisplay)
+				a.FundingAssets[0].DecimalDisplay)
 		}
 
 		return nil
@@ -580,7 +595,7 @@ func assertChannelKnown(t *testing.T, node *HarnessNode,
 	require.NoError(t, err)
 }
 
-func getChannelCustomData(src, dst *HarnessNode) (*rfqmsg.JsonAssetChanInfo,
+func getChannelCustomData(src, dst *HarnessNode) (*rfqmsg.JsonAssetChannel,
 	error) {
 
 	ctxb := context.Background()
@@ -614,12 +629,12 @@ func getChannelCustomData(src, dst *HarnessNode) (*rfqmsg.JsonAssetChanInfo,
 			err)
 	}
 
-	if len(assetData.Assets) != 1 {
+	if len(assetData.FundingAssets) != 1 {
 		return nil, fmt.Errorf("expected 1 asset, got %d",
-			len(assetData.Assets))
+			len(assetData.FundingAssets))
 	}
 
-	return &assetData.Assets[0], nil
+	return &assetData, nil
 }
 
 func getAssetChannelBalance(t *testing.T, node *HarnessNode, assetID []byte,
@@ -706,10 +721,10 @@ func assertChannelAssetBalance(t *testing.T, node *HarnessNode,
 	err := json.Unmarshal(targetChan.CustomChannelData, &assetBalance)
 	require.NoError(t, err)
 
-	require.Len(t, assetBalance.Assets, 1)
+	require.Len(t, assetBalance.FundingAssets, 1)
 
-	require.InDelta(t, local, assetBalance.Assets[0].LocalBalance, 1)
-	require.InDelta(t, remote, assetBalance.Assets[0].RemoteBalance, 1)
+	require.InDelta(t, local, assetBalance.LocalBalance, 1)
+	require.InDelta(t, remote, assetBalance.RemoteBalance, 1)
 }
 
 // addRoutingFee adds the default routing fee (1 part per million fee rate plus
@@ -1385,6 +1400,9 @@ func closeAssetChannelAndAssert(t *harnessTest, net *NetworkHarness,
 	)
 	require.NoError(t.t, err)
 
+	assertWaitingCloseChannelAssetData(t.t, local, chanPoint)
+	assertWaitingCloseChannelAssetData(t.t, remote, chanPoint)
+
 	mineBlocks(t, net, 1, 1)
 
 	closeUpdate, err := t.lndHarness.WaitForChannelClose(closeStream)
@@ -1405,6 +1423,9 @@ func closeAssetChannelAndAssert(t *harnessTest, net *NetworkHarness,
 		t.t, local, remote, closeTx, closeUpdate, assetID, groupKey,
 		universeTap,
 	)
+
+	assertClosedChannelAssetData(t.t, local, chanPoint)
+	assertClosedChannelAssetData(t.t, remote, chanPoint)
 }
 
 // assertDefaultCoOpCloseBalance returns a default implementation of the co-op
@@ -2128,8 +2149,8 @@ func newCloseExpiryInfo(t *testing.T, node *HarnessNode) forceCloseExpiryInfo {
 		csvDelay:           mainChan.CsvDelay,
 		currentHeight:      nodeInfo.BlockHeight,
 		cltvDelays:         cltvs,
-		localAssetBalance:  assetData.Assets[0].LocalBalance,
-		remoteAssetBalance: assetData.Assets[0].RemoteBalance,
+		localAssetBalance:  assetData.LocalBalance,
+		remoteAssetBalance: assetData.RemoteBalance,
 		t:                  t,
 		node:               node,
 	}
@@ -2199,4 +2220,144 @@ func assertInvoiceState(t *testing.T, hn *HarnessNode, payAddr []byte,
 			"in state %s", hn.Name(), payAddr, expectedState)
 	}, defaultTimeout)
 	require.NoError(t, err, "timeout waiting for invoice settled state")
+}
+
+type pendingChan = lnrpc.PendingChannelsResponse_PendingChannel
+
+// assertWaitingCloseChannelAssetData asserts that the waiting close channel has
+// the expected asset data.
+func assertPendingChannelAssetData(t *testing.T, node *HarnessNode,
+	chanPoint *lnrpc.ChannelPoint, find func(string,
+		*lnrpc.PendingChannelsResponse) (*pendingChan, error)) {
+
+	ctxb := context.Background()
+
+	err := wait.NoError(func() error {
+		// Make sure we can find the closed channel in the channel
+		// database.
+		pendingChannels, err := node.PendingChannels(
+			ctxb, &lnrpc.PendingChannelsRequest{},
+		)
+		if err != nil {
+			return err
+		}
+
+		targetChanPointStr := fmt.Sprintf("%v:%v",
+			chanPoint.GetFundingTxidStr(),
+			chanPoint.GetOutputIndex())
+
+		targetChan, err := find(targetChanPointStr, pendingChannels)
+		if err != nil {
+			return err
+		}
+
+		if len(targetChan.CustomChannelData) == 0 {
+			return fmt.Errorf("pending channel %s has no "+
+				"custom channel data", targetChanPointStr)
+		}
+
+		var closeData rfqmsg.JsonAssetChannel
+		err = json.Unmarshal(targetChan.CustomChannelData, &closeData)
+		if err != nil {
+			return fmt.Errorf("error unmarshalling custom channel "+
+				"data: %v", err)
+		}
+
+		if len(closeData.FundingAssets) != 1 {
+			return fmt.Errorf("expected 1 funding asset, got %d",
+				len(closeData.FundingAssets))
+		}
+
+		return nil
+	}, defaultTimeout)
+	require.NoError(t, err, "timeout waiting for pending channel")
+}
+
+// assertPendingForceCloseChannelAssetData asserts that the pending force close
+// channel has the expected asset data.
+func assertPendingForceCloseChannelAssetData(t *testing.T, node *HarnessNode,
+	chanPoint *lnrpc.ChannelPoint) {
+
+	assertPendingChannelAssetData(
+		t, node, chanPoint, func(chanPoint string,
+			resp *lnrpc.PendingChannelsResponse) (*pendingChan,
+			error) {
+
+			if len(resp.PendingForceClosingChannels) == 0 {
+				return nil, fmt.Errorf("no pending force close " +
+					"channels found")
+			}
+
+			for _, ch := range resp.PendingForceClosingChannels {
+				if ch.Channel.ChannelPoint == chanPoint {
+					return ch.Channel, nil
+				}
+			}
+
+			return nil, fmt.Errorf("pending channel %s not found",
+				chanPoint)
+		},
+	)
+}
+
+// assertWaitingCloseChannelAssetData asserts that the waiting close channel has
+// the expected asset data.
+func assertWaitingCloseChannelAssetData(t *testing.T, node *HarnessNode,
+	chanPoint *lnrpc.ChannelPoint) {
+
+	assertPendingChannelAssetData(
+		t, node, chanPoint, func(chanPoint string,
+			resp *lnrpc.PendingChannelsResponse) (*pendingChan,
+			error) {
+
+			if len(resp.WaitingCloseChannels) == 0 {
+				return nil, fmt.Errorf("no waiting close " +
+					"channels found")
+			}
+
+			for _, ch := range resp.WaitingCloseChannels {
+				if ch.Channel.ChannelPoint == chanPoint {
+					return ch.Channel, nil
+				}
+			}
+
+			return nil, fmt.Errorf("pending channel %s not found",
+				chanPoint)
+		},
+	)
+}
+
+// assertClosedChannelAssetData asserts that the closed channel has the expected
+// asset data.
+func assertClosedChannelAssetData(t *testing.T, node *HarnessNode,
+	chanPoint *lnrpc.ChannelPoint) {
+
+	ctxb := context.Background()
+
+	// Make sure we can find the closed channel in the channel database.
+	closedChannels, err := node.ClosedChannels(
+		ctxb, &lnrpc.ClosedChannelsRequest{},
+	)
+	require.NoError(t, err)
+
+	require.NotEmpty(t, closedChannels.Channels)
+
+	targetChanPointStr := fmt.Sprintf("%v:%v",
+		chanPoint.GetFundingTxidStr(), chanPoint.GetOutputIndex())
+
+	var closedChan *lnrpc.ChannelCloseSummary
+	for _, ch := range closedChannels.Channels {
+		if ch.ChannelPoint == targetChanPointStr {
+			closedChan = ch
+			break
+		}
+	}
+	require.NotNil(t, closedChan)
+	require.NotEmpty(t, closedChan.CustomChannelData)
+
+	var closeData rfqmsg.JsonAssetChannel
+	err = json.Unmarshal(closedChan.CustomChannelData, &closeData)
+	require.NoError(t, err)
+
+	require.GreaterOrEqual(t, len(closeData.FundingAssets), 1)
 }

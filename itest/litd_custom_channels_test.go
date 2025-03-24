@@ -3278,6 +3278,9 @@ func runCustomChannelsHtlcForceClose(ctx context.Context, t *harnessTest,
 
 	t.Logf("Channel closed! Mining blocks, close_txid=%v", closeTxid)
 
+	// The channel should first be in "waiting close" until it confirms.
+	assertWaitingCloseChannelAssetData(t.t, alice, aliceChanPoint)
+
 	// Next, we'll mine a block which should start the clock ticking on the
 	// relative timeout for the Alice, and Bob.
 	//
@@ -3296,6 +3299,9 @@ func runCustomChannelsHtlcForceClose(ctx context.Context, t *harnessTest,
 	locateAssetTransfers(t.t, bobTap, *closeTxid)
 
 	t.Logf("Settling Bob's hodl invoice")
+
+	// It should then go to "pending force closed".
+	assertPendingForceCloseChannelAssetData(t.t, alice, aliceChanPoint)
 
 	// At this point, the commitment transaction has been mined, and we have
 	// 4 total HTLCs on Alice's commitment transaction:
