@@ -805,17 +805,7 @@ func sendKeySendPayment(t *testing.T, src, dst *HarnessNode,
 func createAndPayNormalInvoiceWithBtc(t *testing.T, src, dst *HarnessNode,
 	amountSat btcutil.Amount) {
 
-	ctxb := context.Background()
-	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
-	defer cancel()
-
-	expirySeconds := 10
-	invoiceResp, err := dst.AddInvoice(ctxt, &lnrpc.Invoice{
-		Value:  int64(amountSat),
-		Memo:   "normal invoice",
-		Expiry: int64(expirySeconds),
-	})
-	require.NoError(t, err)
+	invoiceResp := createNormalInvoice(t, dst, amountSat)
 
 	payInvoiceWithSatoshi(t, src, invoiceResp)
 }
