@@ -68,6 +68,7 @@ var (
 		"--protocol.custom-message=17",
 		"--accept-keysend",
 		"--debuglevel=trace,GRPC=error,BTCN=info",
+		"--height-hint-cache-query-disable",
 	}
 	litdArgsTemplateNoOracle = []string{
 		"--taproot-assets.allow-public-uni-proof-courier",
@@ -1382,15 +1383,9 @@ func testCustomChannelsForceClose(ctx context.Context, net *NetworkHarness,
 
 	t.Logf("Universe proofs located!")
 
-	time.Sleep(time.Second * 1)
-
-	// We'll mine one more block, which triggers the 1 CSV needed for Dave
-	// to sweep his output.
-	mineBlocks(t, net, 1, 0)
-
 	// We should also have a new sweep transaction in the mempool.
 	daveSweepTxid, err := waitForNTxsInMempool(
-		net.Miner.Client, 1, time.Second*5,
+		net.Miner.Client, 1, shortTimeout,
 	)
 	require.NoError(t.t, err)
 
@@ -1412,11 +1407,11 @@ func testCustomChannelsForceClose(ctx context.Context, net *NetworkHarness,
 
 	// Next, we'll mine three additional blocks to trigger the CSV delay
 	// for Charlie.
-	mineBlocks(t, net, 3, 0)
+	mineBlocks(t, net, 4, 0)
 
 	// We expect that Charlie's sweep transaction has been broadcast.
 	charlieSweepTxid, err := waitForNTxsInMempool(
-		net.Miner.Client, 1, time.Second*5,
+		net.Miner.Client, 1, shortTimeout,
 	)
 	require.NoError(t.t, err)
 
@@ -1780,7 +1775,10 @@ func testCustomChannelsLiquidityEdgeCases(ctx context.Context,
 	connectAllNodes(t.t, net, nodes)
 	fundAllNodes(t.t, net, nodes)
 
-	// Create the normal channel between Dave and Erin.
+	// Create the normal channel between Dave and Erin. We don't clean up
+	// this channel because we expect there to be in-flight HTLCs due to
+	// some of the edge cases we're testing. Waiting for those HTLCs to time
+	// out would take too long.
 	t.Logf("Opening normal channel between Dave and Erin...")
 	channelOp := openChannelAndAssert(
 		t, net, dave, erin, lntest.OpenChannelParams{
@@ -1788,7 +1786,6 @@ func testCustomChannelsLiquidityEdgeCases(ctx context.Context,
 			SatPerVByte: 5,
 		},
 	)
-	defer closeChannelAndAssert(t, net, dave, channelOp, true)
 
 	// This is the only public channel, we need everyone to be aware of it.
 	assertChannelKnown(t.t, charlie, channelOp)
@@ -2235,7 +2232,7 @@ func testCustomChannelsStrictForwarding(ctx context.Context,
 			SatPerVByte: 5,
 		},
 	)
-	defer closeChannelAndAssert(t, net, dave, channelOp, true)
+	defer closeChannelAndAssert(t, net, dave, channelOp, false)
 
 	// This is the only public channel, we need everyone to be aware of it.
 	assertChannelKnown(t.t, charlie, channelOp)
@@ -2315,11 +2312,9 @@ func testCustomChannelsStrictForwarding(ctx context.Context,
 	// Erin pays Dave with enough satoshis, but Charlie will not settle as
 	// he expects assets.
 	hops := [][]byte{dave.PubKey[:]}
-	payInvoiceWithSatoshiLastHop(
-		t.t, erin, assetInvoice, hops, withFailure(
-			lnrpc.Payment_FAILED, 0,
-		),
-	)
+	payInvoiceWithSatoshiLastHop(t.t, erin, assetInvoice, hops, withFailure(
+		lnrpc.Payment_FAILED, 0,
+	))
 
 	// Make sure the invoice hasn't been settled and there's no HTLC on the
 	// channel between Erin and Dave.
@@ -3326,9 +3321,6 @@ func runCustomChannelsHtlcForceClose(ctx context.Context, t *harnessTest,
 		walletrpc.WitnessType_TAPROOT_HTLC_ACCEPTED_REMOTE_SUCCESS,
 	)
 
-	// We'll mine an empty block to get the sweeper to tick.
-	mineBlocks(t, net, 1, 0)
-
 	bobSweepTx1, err := waitForNTxsInMempool(
 		net.Miner.Client, 1, shortTimeout,
 	)
@@ -3522,9 +3514,6 @@ func runCustomChannelsHtlcForceClose(ctx context.Context, t *harnessTest,
 		t.t, bob,
 		walletrpc.WitnessType_TAPROOT_HTLC_OFFERED_REMOTE_TIMEOUT,
 	)
-
-	// We'll mine an extra block to trigger the sweeper.
-	mineBlocks(t, net, 1, 0)
 
 	t.Logf("Confirming initial HTLC timeout txns")
 

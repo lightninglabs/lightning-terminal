@@ -274,12 +274,14 @@ service Lightning {
     }
 
     /*
-    SendPaymentSync is the synchronous non-streaming version of SendPayment.
-    This RPC is intended to be consumed by clients of the REST proxy.
-    Additionally, this RPC expects the destination's public key and the payment
-    hash (if any) to be encoded as hex strings.
+    Deprecated, use routerrpc.SendPaymentV2. SendPaymentSync is the synchronous
+    non-streaming version of SendPayment. This RPC is intended to be consumed by
+    clients of the REST proxy. Additionally, this RPC expects the destination's
+    public key and the payment hash (if any) to be encoded as hex strings.
     */
-    rpc SendPaymentSync (SendRequest) returns (SendResponse);
+    rpc SendPaymentSync (SendRequest) returns (SendResponse) {
+        option deprecated = true;
+    }
 
     /* lncli: `sendtoroute`
     Deprecated, use routerrpc.SendToRouteV2. SendToRoute is a bi-directional
@@ -293,10 +295,13 @@ service Lightning {
     }
 
     /*
-    SendToRouteSync is a synchronous version of SendToRoute. It Will block
-    until the payment either fails or succeeds.
+    Deprecated, use routerrpc.SendToRouteV2. SendToRouteSync is a synchronous
+    version of SendToRoute. It Will block until the payment either fails or
+    succeeds.
     */
-    rpc SendToRouteSync (SendToRouteRequest) returns (SendResponse);
+    rpc SendToRouteSync (SendToRouteRequest) returns (SendResponse) {
+        option deprecated = true;
+    }
 
     /* lncli: `addinvoice`
     AddInvoice attempts to add a new invoice to the invoice database. Any
@@ -643,6 +648,8 @@ message SendCustomMessageRequest {
 }
 
 message SendCustomMessageResponse {
+    // The status of the send operation.
+    string status = 1;
 }
 
 message Utxo {
@@ -755,11 +762,35 @@ message GetTransactionsRequest {
 
     // An optional filter to only include transactions relevant to an account.
     string account = 3;
+
+    /*
+    The index of a transaction that will be used in a query to determine which
+    transaction should be returned in the response.
+    */
+    uint32 index_offset = 4;
+
+    /*
+    The maximal number of transactions returned in the response to this query.
+    This value should be set to 0 to return all transactions.
+    */
+    uint32 max_transactions = 5;
 }
 
 message TransactionDetails {
     // The list of transactions relevant to the wallet.
     repeated Transaction transactions = 1;
+
+    /*
+    The index of the last item in the set of returned transactions. This can be
+    used to seek further, pagination style.
+    */
+    uint64 last_index = 2 [jstype = JS_STRING];
+
+    /*
+    The index of the last item in the set of returned transactions. This can be
+    used to seek backwards, pagination style.
+    */
+    uint64 first_index = 3 [jstype = JS_STRING];
 }
 
 message FeeLimit {
@@ -1317,6 +1348,8 @@ message ConnectPeerRequest {
     uint64 timeout = 3 [jstype = JS_STRING];
 }
 message ConnectPeerResponse {
+    // The status of the connect operation.
+    string status = 1;
 }
 
 message DisconnectPeerRequest {
@@ -1324,6 +1357,8 @@ message DisconnectPeerRequest {
     string pub_key = 1;
 }
 message DisconnectPeerResponse {
+    // The status of the disconnect operation.
+    string status = 1;
 }
 
 message HTLC {
@@ -1346,6 +1381,13 @@ message HTLC {
 
     // Index identifying the htlc on the forwarding channel.
     uint64 forwarding_htlc_index = 7 [jstype = JS_STRING];
+
+    /*
+    Whether the HTLC is locked in. An HTLC is considered locked in when the
+    remote party has sent us the `revoke_and_ack` to irrevocably commit this
+    HTLC.
+    */
+    bool locked_in = 8;
 }
 
 enum CommitmentType {
@@ -1966,8 +2008,8 @@ message GetInfoResponse {
     bool synced_to_graph = 18;
 
     /*
-    Whether the current node is connected to testnet. This field is
-    deprecated and the network field should be used instead
+    Whether the current node is connected to testnet or testnet4. This field is
+    deprecated and the network field should be used instead.
     */
     bool testnet = 10 [deprecated = true];
 
@@ -2111,9 +2153,13 @@ message CloseChannelRequest {
     // NOTE: This field is only respected if we're the initiator of the channel.
     uint64 max_fee_per_vbyte = 7 [jstype = JS_STRING];
 
-    // If true, then the rpc call will not block while it awaits a closing txid.
-    // Consequently this RPC call will not return a closing txid if this value
-    // is set.
+    // If true, then the rpc call will not block while it awaits a closing txid
+    // to be broadcasted to the mempool. To obtain the closing tx one has to
+    // listen to the stream for the particular updates. Moreover if a coop close
+    // is specified and this flag is set to true the coop closing flow will be
+    // initiated even if HTLCs are active on the channel. The channel will wait
+    // until all HTLCs are resolved and then start the coop closing process. The
+    // channel will be disabled in the meantime and will disallow any new HTLCs.
     bool no_wait = 8;
 }
 
@@ -2128,9 +2174,15 @@ message CloseStatusUpdate {
 message PendingUpdate {
     bytes txid = 1;
     uint32 output_index = 2;
+    int64 fee_per_vbyte = 3 [jstype = JS_STRING];
+    bool local_close_tx = 4;
 }
 
 message InstantUpdate {
+    // The number of pending HTLCs that are currently active on the channel.
+    // These HTLCs need to be resolved before the channel can be closed
+    // cooperatively.
+    int32 num_pending_htlcs = 1;
 }
 
 message ReadyForPsbtFunding {
@@ -3542,6 +3594,8 @@ message NetworkInfo {
 message StopRequest {
 }
 message StopResponse {
+    // The status of the stop operation.
+    string status = 1;
 }
 
 message GraphTopologySubscription {
@@ -4366,9 +4420,13 @@ message DeleteAllPaymentsRequest {
 }
 
 message DeletePaymentResponse {
+    // The status of the delete operation.
+    string status = 1;
 }
 
 message DeleteAllPaymentsResponse {
+    // The status of the delete operation.
+    string status = 1;
 }
 
 message AbandonChannelRequest {
@@ -4385,6 +4443,8 @@ message AbandonChannelRequest {
 }
 
 message AbandonChannelResponse {
+    // The status of the abandon operation.
+    string status = 1;
 }
 
 message DebugLevelRequest {
@@ -4733,12 +4793,15 @@ message RestoreChanBackupRequest {
     }
 }
 message RestoreBackupResponse {
+    // The number of channels successfully restored.
+    uint32 num_restored = 1;
 }
 
 message ChannelBackupSubscription {
 }
 
 message VerifyChanBackupResponse {
+    repeated string chan_points = 1;
 }
 
 message MacaroonPermission {

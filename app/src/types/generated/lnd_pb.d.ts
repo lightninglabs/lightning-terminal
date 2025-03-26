@@ -132,6 +132,9 @@ export namespace SendCustomMessageRequest {
 }
 
 export class SendCustomMessageResponse extends jspb.Message {
+  getStatus(): string;
+  setStatus(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): SendCustomMessageResponse.AsObject;
   static toObject(includeInstance: boolean, msg: SendCustomMessageResponse): SendCustomMessageResponse.AsObject;
@@ -144,6 +147,7 @@ export class SendCustomMessageResponse extends jspb.Message {
 
 export namespace SendCustomMessageResponse {
   export type AsObject = {
+    status: string,
   }
 }
 
@@ -309,6 +313,12 @@ export class GetTransactionsRequest extends jspb.Message {
   getAccount(): string;
   setAccount(value: string): void;
 
+  getIndexOffset(): number;
+  setIndexOffset(value: number): void;
+
+  getMaxTransactions(): number;
+  setMaxTransactions(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetTransactionsRequest.AsObject;
   static toObject(includeInstance: boolean, msg: GetTransactionsRequest): GetTransactionsRequest.AsObject;
@@ -324,6 +334,8 @@ export namespace GetTransactionsRequest {
     startHeight: number,
     endHeight: number,
     account: string,
+    indexOffset: number,
+    maxTransactions: number,
   }
 }
 
@@ -332,6 +344,12 @@ export class TransactionDetails extends jspb.Message {
   getTransactionsList(): Array<Transaction>;
   setTransactionsList(value: Array<Transaction>): void;
   addTransactions(value?: Transaction, index?: number): Transaction;
+
+  getLastIndex(): string;
+  setLastIndex(value: string): void;
+
+  getFirstIndex(): string;
+  setFirstIndex(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): TransactionDetails.AsObject;
@@ -346,6 +364,8 @@ export class TransactionDetails extends jspb.Message {
 export namespace TransactionDetails {
   export type AsObject = {
     transactionsList: Array<Transaction.AsObject>,
+    lastIndex: string,
+    firstIndex: string,
   }
 }
 
@@ -1252,6 +1272,9 @@ export namespace ConnectPeerRequest {
 }
 
 export class ConnectPeerResponse extends jspb.Message {
+  getStatus(): string;
+  setStatus(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ConnectPeerResponse.AsObject;
   static toObject(includeInstance: boolean, msg: ConnectPeerResponse): ConnectPeerResponse.AsObject;
@@ -1264,6 +1287,7 @@ export class ConnectPeerResponse extends jspb.Message {
 
 export namespace ConnectPeerResponse {
   export type AsObject = {
+    status: string,
   }
 }
 
@@ -1288,6 +1312,9 @@ export namespace DisconnectPeerRequest {
 }
 
 export class DisconnectPeerResponse extends jspb.Message {
+  getStatus(): string;
+  setStatus(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): DisconnectPeerResponse.AsObject;
   static toObject(includeInstance: boolean, msg: DisconnectPeerResponse): DisconnectPeerResponse.AsObject;
@@ -1300,6 +1327,7 @@ export class DisconnectPeerResponse extends jspb.Message {
 
 export namespace DisconnectPeerResponse {
   export type AsObject = {
+    status: string,
   }
 }
 
@@ -1327,6 +1355,9 @@ export class HTLC extends jspb.Message {
   getForwardingHtlcIndex(): string;
   setForwardingHtlcIndex(value: string): void;
 
+  getLockedIn(): boolean;
+  setLockedIn(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): HTLC.AsObject;
   static toObject(includeInstance: boolean, msg: HTLC): HTLC.AsObject;
@@ -1346,6 +1377,7 @@ export namespace HTLC {
     htlcIndex: string,
     forwardingChannel: string,
     forwardingHtlcIndex: string,
+    lockedIn: boolean,
   }
 }
 
@@ -2536,6 +2568,12 @@ export class PendingUpdate extends jspb.Message {
   getOutputIndex(): number;
   setOutputIndex(value: number): void;
 
+  getFeePerVbyte(): string;
+  setFeePerVbyte(value: string): void;
+
+  getLocalCloseTx(): boolean;
+  setLocalCloseTx(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): PendingUpdate.AsObject;
   static toObject(includeInstance: boolean, msg: PendingUpdate): PendingUpdate.AsObject;
@@ -2550,10 +2588,15 @@ export namespace PendingUpdate {
   export type AsObject = {
     txid: Uint8Array | string,
     outputIndex: number,
+    feePerVbyte: string,
+    localCloseTx: boolean,
   }
 }
 
 export class InstantUpdate extends jspb.Message {
+  getNumPendingHtlcs(): number;
+  setNumPendingHtlcs(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): InstantUpdate.AsObject;
   static toObject(includeInstance: boolean, msg: InstantUpdate): InstantUpdate.AsObject;
@@ -2566,6 +2609,7 @@ export class InstantUpdate extends jspb.Message {
 
 export namespace InstantUpdate {
   export type AsObject = {
+    numPendingHtlcs: number,
   }
 }
 
@@ -4792,6 +4836,9 @@ export namespace StopRequest {
 }
 
 export class StopResponse extends jspb.Message {
+  getStatus(): string;
+  setStatus(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StopResponse.AsObject;
   static toObject(includeInstance: boolean, msg: StopResponse): StopResponse.AsObject;
@@ -4804,6 +4851,7 @@ export class StopResponse extends jspb.Message {
 
 export namespace StopResponse {
   export type AsObject = {
+    status: string,
   }
 }
 
@@ -5950,6 +5998,9 @@ export namespace DeleteAllPaymentsRequest {
 }
 
 export class DeletePaymentResponse extends jspb.Message {
+  getStatus(): string;
+  setStatus(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): DeletePaymentResponse.AsObject;
   static toObject(includeInstance: boolean, msg: DeletePaymentResponse): DeletePaymentResponse.AsObject;
@@ -5962,10 +6013,14 @@ export class DeletePaymentResponse extends jspb.Message {
 
 export namespace DeletePaymentResponse {
   export type AsObject = {
+    status: string,
   }
 }
 
 export class DeleteAllPaymentsResponse extends jspb.Message {
+  getStatus(): string;
+  setStatus(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): DeleteAllPaymentsResponse.AsObject;
   static toObject(includeInstance: boolean, msg: DeleteAllPaymentsResponse): DeleteAllPaymentsResponse.AsObject;
@@ -5978,6 +6033,7 @@ export class DeleteAllPaymentsResponse extends jspb.Message {
 
 export namespace DeleteAllPaymentsResponse {
   export type AsObject = {
+    status: string,
   }
 }
 
@@ -6012,6 +6068,9 @@ export namespace AbandonChannelRequest {
 }
 
 export class AbandonChannelResponse extends jspb.Message {
+  getStatus(): string;
+  setStatus(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): AbandonChannelResponse.AsObject;
   static toObject(includeInstance: boolean, msg: AbandonChannelResponse): AbandonChannelResponse.AsObject;
@@ -6024,6 +6083,7 @@ export class AbandonChannelResponse extends jspb.Message {
 
 export namespace AbandonChannelResponse {
   export type AsObject = {
+    status: string,
   }
 }
 
@@ -6747,6 +6807,9 @@ export namespace RestoreChanBackupRequest {
 }
 
 export class RestoreBackupResponse extends jspb.Message {
+  getNumRestored(): number;
+  setNumRestored(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RestoreBackupResponse.AsObject;
   static toObject(includeInstance: boolean, msg: RestoreBackupResponse): RestoreBackupResponse.AsObject;
@@ -6759,6 +6822,7 @@ export class RestoreBackupResponse extends jspb.Message {
 
 export namespace RestoreBackupResponse {
   export type AsObject = {
+    numRestored: number,
   }
 }
 
@@ -6779,6 +6843,11 @@ export namespace ChannelBackupSubscription {
 }
 
 export class VerifyChanBackupResponse extends jspb.Message {
+  clearChanPointsList(): void;
+  getChanPointsList(): Array<string>;
+  setChanPointsList(value: Array<string>): void;
+  addChanPoints(value: string, index?: number): string;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): VerifyChanBackupResponse.AsObject;
   static toObject(includeInstance: boolean, msg: VerifyChanBackupResponse): VerifyChanBackupResponse.AsObject;
@@ -6791,6 +6860,7 @@ export class VerifyChanBackupResponse extends jspb.Message {
 
 export namespace VerifyChanBackupResponse {
   export type AsObject = {
+    chanPointsList: Array<string>,
   }
 }
 

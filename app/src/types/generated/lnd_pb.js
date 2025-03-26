@@ -4138,7 +4138,7 @@ if (goog.DEBUG && !COMPILED) {
  * @constructor
  */
 proto.lnrpc.VerifyChanBackupResponse = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.lnrpc.VerifyChanBackupResponse.repeatedFields_, null);
 };
 goog.inherits(proto.lnrpc.VerifyChanBackupResponse, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
@@ -5539,7 +5539,7 @@ proto.lnrpc.SendCustomMessageResponse.prototype.toObject = function(opt_includeI
  */
 proto.lnrpc.SendCustomMessageResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-
+    status: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -5576,6 +5576,10 @@ proto.lnrpc.SendCustomMessageResponse.deserializeBinaryFromReader = function(msg
     }
     var field = reader.getFieldNumber();
     switch (field) {
+    case 1:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setStatus(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -5605,6 +5609,31 @@ proto.lnrpc.SendCustomMessageResponse.prototype.serializeBinary = function() {
  */
 proto.lnrpc.SendCustomMessageResponse.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
+  f = message.getStatus();
+  if (f.length > 0) {
+    writer.writeString(
+      1,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional string status = 1;
+ * @return {string}
+ */
+proto.lnrpc.SendCustomMessageResponse.prototype.getStatus = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.lnrpc.SendCustomMessageResponse} returns this
+ */
+proto.lnrpc.SendCustomMessageResponse.prototype.setStatus = function(value) {
+  return jspb.Message.setProto3StringField(this, 1, value);
 };
 
 
@@ -6755,7 +6784,9 @@ proto.lnrpc.GetTransactionsRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
     startHeight: jspb.Message.getFieldWithDefault(msg, 1, 0),
     endHeight: jspb.Message.getFieldWithDefault(msg, 2, 0),
-    account: jspb.Message.getFieldWithDefault(msg, 3, "")
+    account: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    indexOffset: jspb.Message.getFieldWithDefault(msg, 4, 0),
+    maxTransactions: jspb.Message.getFieldWithDefault(msg, 5, 0)
   };
 
   if (includeInstance) {
@@ -6804,6 +6835,14 @@ proto.lnrpc.GetTransactionsRequest.deserializeBinaryFromReader = function(msg, r
       var value = /** @type {string} */ (reader.readString());
       msg.setAccount(value);
       break;
+    case 4:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setIndexOffset(value);
+      break;
+    case 5:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setMaxTransactions(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -6851,6 +6890,20 @@ proto.lnrpc.GetTransactionsRequest.serializeBinaryToWriter = function(message, w
   if (f.length > 0) {
     writer.writeString(
       3,
+      f
+    );
+  }
+  f = message.getIndexOffset();
+  if (f !== 0) {
+    writer.writeUint32(
+      4,
+      f
+    );
+  }
+  f = message.getMaxTransactions();
+  if (f !== 0) {
+    writer.writeUint32(
+      5,
       f
     );
   }
@@ -6911,6 +6964,42 @@ proto.lnrpc.GetTransactionsRequest.prototype.setAccount = function(value) {
 };
 
 
+/**
+ * optional uint32 index_offset = 4;
+ * @return {number}
+ */
+proto.lnrpc.GetTransactionsRequest.prototype.getIndexOffset = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 4, 0));
+};
+
+
+/**
+ * @param {number} value
+ * @return {!proto.lnrpc.GetTransactionsRequest} returns this
+ */
+proto.lnrpc.GetTransactionsRequest.prototype.setIndexOffset = function(value) {
+  return jspb.Message.setProto3IntField(this, 4, value);
+};
+
+
+/**
+ * optional uint32 max_transactions = 5;
+ * @return {number}
+ */
+proto.lnrpc.GetTransactionsRequest.prototype.getMaxTransactions = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 5, 0));
+};
+
+
+/**
+ * @param {number} value
+ * @return {!proto.lnrpc.GetTransactionsRequest} returns this
+ */
+proto.lnrpc.GetTransactionsRequest.prototype.setMaxTransactions = function(value) {
+  return jspb.Message.setProto3IntField(this, 5, value);
+};
+
+
 
 /**
  * List of repeated fields within this message type.
@@ -6951,7 +7040,9 @@ proto.lnrpc.TransactionDetails.prototype.toObject = function(opt_includeInstance
 proto.lnrpc.TransactionDetails.toObject = function(includeInstance, msg) {
   var f, obj = {
     transactionsList: jspb.Message.toObjectList(msg.getTransactionsList(),
-    proto.lnrpc.Transaction.toObject, includeInstance)
+    proto.lnrpc.Transaction.toObject, includeInstance),
+    lastIndex: jspb.Message.getFieldWithDefault(msg, 2, "0"),
+    firstIndex: jspb.Message.getFieldWithDefault(msg, 3, "0")
   };
 
   if (includeInstance) {
@@ -6993,6 +7084,14 @@ proto.lnrpc.TransactionDetails.deserializeBinaryFromReader = function(msg, reade
       reader.readMessage(value,proto.lnrpc.Transaction.deserializeBinaryFromReader);
       msg.addTransactions(value);
       break;
+    case 2:
+      var value = /** @type {string} */ (reader.readUint64String());
+      msg.setLastIndex(value);
+      break;
+    case 3:
+      var value = /** @type {string} */ (reader.readUint64String());
+      msg.setFirstIndex(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -7028,6 +7127,20 @@ proto.lnrpc.TransactionDetails.serializeBinaryToWriter = function(message, write
       1,
       f,
       proto.lnrpc.Transaction.serializeBinaryToWriter
+    );
+  }
+  f = message.getLastIndex();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
+      2,
+      f
+    );
+  }
+  f = message.getFirstIndex();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
+      3,
+      f
     );
   }
 };
@@ -7068,6 +7181,42 @@ proto.lnrpc.TransactionDetails.prototype.addTransactions = function(opt_value, o
  */
 proto.lnrpc.TransactionDetails.prototype.clearTransactionsList = function() {
   return this.setTransactionsList([]);
+};
+
+
+/**
+ * optional uint64 last_index = 2;
+ * @return {string}
+ */
+proto.lnrpc.TransactionDetails.prototype.getLastIndex = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, "0"));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.lnrpc.TransactionDetails} returns this
+ */
+proto.lnrpc.TransactionDetails.prototype.setLastIndex = function(value) {
+  return jspb.Message.setProto3StringIntField(this, 2, value);
+};
+
+
+/**
+ * optional uint64 first_index = 3;
+ * @return {string}
+ */
+proto.lnrpc.TransactionDetails.prototype.getFirstIndex = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, "0"));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.lnrpc.TransactionDetails} returns this
+ */
+proto.lnrpc.TransactionDetails.prototype.setFirstIndex = function(value) {
+  return jspb.Message.setProto3StringIntField(this, 3, value);
 };
 
 
@@ -13560,7 +13709,7 @@ proto.lnrpc.ConnectPeerResponse.prototype.toObject = function(opt_includeInstanc
  */
 proto.lnrpc.ConnectPeerResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-
+    status: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -13597,6 +13746,10 @@ proto.lnrpc.ConnectPeerResponse.deserializeBinaryFromReader = function(msg, read
     }
     var field = reader.getFieldNumber();
     switch (field) {
+    case 1:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setStatus(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -13626,6 +13779,31 @@ proto.lnrpc.ConnectPeerResponse.prototype.serializeBinary = function() {
  */
 proto.lnrpc.ConnectPeerResponse.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
+  f = message.getStatus();
+  if (f.length > 0) {
+    writer.writeString(
+      1,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional string status = 1;
+ * @return {string}
+ */
+proto.lnrpc.ConnectPeerResponse.prototype.getStatus = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.lnrpc.ConnectPeerResponse} returns this
+ */
+proto.lnrpc.ConnectPeerResponse.prototype.setStatus = function(value) {
+  return jspb.Message.setProto3StringField(this, 1, value);
 };
 
 
@@ -13791,7 +13969,7 @@ proto.lnrpc.DisconnectPeerResponse.prototype.toObject = function(opt_includeInst
  */
 proto.lnrpc.DisconnectPeerResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-
+    status: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -13828,6 +14006,10 @@ proto.lnrpc.DisconnectPeerResponse.deserializeBinaryFromReader = function(msg, r
     }
     var field = reader.getFieldNumber();
     switch (field) {
+    case 1:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setStatus(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -13857,6 +14039,31 @@ proto.lnrpc.DisconnectPeerResponse.prototype.serializeBinary = function() {
  */
 proto.lnrpc.DisconnectPeerResponse.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
+  f = message.getStatus();
+  if (f.length > 0) {
+    writer.writeString(
+      1,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional string status = 1;
+ * @return {string}
+ */
+proto.lnrpc.DisconnectPeerResponse.prototype.getStatus = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.lnrpc.DisconnectPeerResponse} returns this
+ */
+proto.lnrpc.DisconnectPeerResponse.prototype.setStatus = function(value) {
+  return jspb.Message.setProto3StringField(this, 1, value);
 };
 
 
@@ -13898,7 +14105,8 @@ proto.lnrpc.HTLC.toObject = function(includeInstance, msg) {
     expirationHeight: jspb.Message.getFieldWithDefault(msg, 4, 0),
     htlcIndex: jspb.Message.getFieldWithDefault(msg, 5, "0"),
     forwardingChannel: jspb.Message.getFieldWithDefault(msg, 6, "0"),
-    forwardingHtlcIndex: jspb.Message.getFieldWithDefault(msg, 7, "0")
+    forwardingHtlcIndex: jspb.Message.getFieldWithDefault(msg, 7, "0"),
+    lockedIn: jspb.Message.getBooleanFieldWithDefault(msg, 8, false)
   };
 
   if (includeInstance) {
@@ -13962,6 +14170,10 @@ proto.lnrpc.HTLC.deserializeBinaryFromReader = function(msg, reader) {
     case 7:
       var value = /** @type {string} */ (reader.readUint64String());
       msg.setForwardingHtlcIndex(value);
+      break;
+    case 8:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setLockedIn(value);
       break;
     default:
       reader.skipField();
@@ -14038,6 +14250,13 @@ proto.lnrpc.HTLC.serializeBinaryToWriter = function(message, writer) {
   if (parseInt(f, 10) !== 0) {
     writer.writeUint64String(
       7,
+      f
+    );
+  }
+  f = message.getLockedIn();
+  if (f) {
+    writer.writeBool(
+      8,
       f
     );
   }
@@ -14191,6 +14410,24 @@ proto.lnrpc.HTLC.prototype.getForwardingHtlcIndex = function() {
  */
 proto.lnrpc.HTLC.prototype.setForwardingHtlcIndex = function(value) {
   return jspb.Message.setProto3StringIntField(this, 7, value);
+};
+
+
+/**
+ * optional bool locked_in = 8;
+ * @return {boolean}
+ */
+proto.lnrpc.HTLC.prototype.getLockedIn = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 8, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.lnrpc.HTLC} returns this
+ */
+proto.lnrpc.HTLC.prototype.setLockedIn = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 8, value);
 };
 
 
@@ -22594,7 +22831,9 @@ proto.lnrpc.PendingUpdate.prototype.toObject = function(opt_includeInstance) {
 proto.lnrpc.PendingUpdate.toObject = function(includeInstance, msg) {
   var f, obj = {
     txid: msg.getTxid_asB64(),
-    outputIndex: jspb.Message.getFieldWithDefault(msg, 2, 0)
+    outputIndex: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    feePerVbyte: jspb.Message.getFieldWithDefault(msg, 3, "0"),
+    localCloseTx: jspb.Message.getBooleanFieldWithDefault(msg, 4, false)
   };
 
   if (includeInstance) {
@@ -22639,6 +22878,14 @@ proto.lnrpc.PendingUpdate.deserializeBinaryFromReader = function(msg, reader) {
       var value = /** @type {number} */ (reader.readUint32());
       msg.setOutputIndex(value);
       break;
+    case 3:
+      var value = /** @type {string} */ (reader.readInt64String());
+      msg.setFeePerVbyte(value);
+      break;
+    case 4:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setLocalCloseTx(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -22679,6 +22926,20 @@ proto.lnrpc.PendingUpdate.serializeBinaryToWriter = function(message, writer) {
   if (f !== 0) {
     writer.writeUint32(
       2,
+      f
+    );
+  }
+  f = message.getFeePerVbyte();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
+      3,
+      f
+    );
+  }
+  f = message.getLocalCloseTx();
+  if (f) {
+    writer.writeBool(
+      4,
       f
     );
   }
@@ -22745,6 +23006,42 @@ proto.lnrpc.PendingUpdate.prototype.setOutputIndex = function(value) {
 };
 
 
+/**
+ * optional int64 fee_per_vbyte = 3;
+ * @return {string}
+ */
+proto.lnrpc.PendingUpdate.prototype.getFeePerVbyte = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, "0"));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.lnrpc.PendingUpdate} returns this
+ */
+proto.lnrpc.PendingUpdate.prototype.setFeePerVbyte = function(value) {
+  return jspb.Message.setProto3StringIntField(this, 3, value);
+};
+
+
+/**
+ * optional bool local_close_tx = 4;
+ * @return {boolean}
+ */
+proto.lnrpc.PendingUpdate.prototype.getLocalCloseTx = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 4, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.lnrpc.PendingUpdate} returns this
+ */
+proto.lnrpc.PendingUpdate.prototype.setLocalCloseTx = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 4, value);
+};
+
+
 
 
 
@@ -22777,7 +23074,7 @@ proto.lnrpc.InstantUpdate.prototype.toObject = function(opt_includeInstance) {
  */
 proto.lnrpc.InstantUpdate.toObject = function(includeInstance, msg) {
   var f, obj = {
-
+    numPendingHtlcs: jspb.Message.getFieldWithDefault(msg, 1, 0)
   };
 
   if (includeInstance) {
@@ -22814,6 +23111,10 @@ proto.lnrpc.InstantUpdate.deserializeBinaryFromReader = function(msg, reader) {
     }
     var field = reader.getFieldNumber();
     switch (field) {
+    case 1:
+      var value = /** @type {number} */ (reader.readInt32());
+      msg.setNumPendingHtlcs(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -22843,6 +23144,31 @@ proto.lnrpc.InstantUpdate.prototype.serializeBinary = function() {
  */
 proto.lnrpc.InstantUpdate.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
+  f = message.getNumPendingHtlcs();
+  if (f !== 0) {
+    writer.writeInt32(
+      1,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional int32 num_pending_htlcs = 1;
+ * @return {number}
+ */
+proto.lnrpc.InstantUpdate.prototype.getNumPendingHtlcs = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
+};
+
+
+/**
+ * @param {number} value
+ * @return {!proto.lnrpc.InstantUpdate} returns this
+ */
+proto.lnrpc.InstantUpdate.prototype.setNumPendingHtlcs = function(value) {
+  return jspb.Message.setProto3IntField(this, 1, value);
 };
 
 
@@ -38968,7 +39294,7 @@ proto.lnrpc.StopResponse.prototype.toObject = function(opt_includeInstance) {
  */
 proto.lnrpc.StopResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-
+    status: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -39005,6 +39331,10 @@ proto.lnrpc.StopResponse.deserializeBinaryFromReader = function(msg, reader) {
     }
     var field = reader.getFieldNumber();
     switch (field) {
+    case 1:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setStatus(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -39034,6 +39364,31 @@ proto.lnrpc.StopResponse.prototype.serializeBinary = function() {
  */
 proto.lnrpc.StopResponse.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
+  f = message.getStatus();
+  if (f.length > 0) {
+    writer.writeString(
+      1,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional string status = 1;
+ * @return {string}
+ */
+proto.lnrpc.StopResponse.prototype.getStatus = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.lnrpc.StopResponse} returns this
+ */
+proto.lnrpc.StopResponse.prototype.setStatus = function(value) {
+  return jspb.Message.setProto3StringField(this, 1, value);
 };
 
 
@@ -47398,7 +47753,7 @@ proto.lnrpc.DeletePaymentResponse.prototype.toObject = function(opt_includeInsta
  */
 proto.lnrpc.DeletePaymentResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-
+    status: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -47435,6 +47790,10 @@ proto.lnrpc.DeletePaymentResponse.deserializeBinaryFromReader = function(msg, re
     }
     var field = reader.getFieldNumber();
     switch (field) {
+    case 1:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setStatus(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -47464,6 +47823,31 @@ proto.lnrpc.DeletePaymentResponse.prototype.serializeBinary = function() {
  */
 proto.lnrpc.DeletePaymentResponse.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
+  f = message.getStatus();
+  if (f.length > 0) {
+    writer.writeString(
+      1,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional string status = 1;
+ * @return {string}
+ */
+proto.lnrpc.DeletePaymentResponse.prototype.getStatus = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.lnrpc.DeletePaymentResponse} returns this
+ */
+proto.lnrpc.DeletePaymentResponse.prototype.setStatus = function(value) {
+  return jspb.Message.setProto3StringField(this, 1, value);
 };
 
 
@@ -47499,7 +47883,7 @@ proto.lnrpc.DeleteAllPaymentsResponse.prototype.toObject = function(opt_includeI
  */
 proto.lnrpc.DeleteAllPaymentsResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-
+    status: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -47536,6 +47920,10 @@ proto.lnrpc.DeleteAllPaymentsResponse.deserializeBinaryFromReader = function(msg
     }
     var field = reader.getFieldNumber();
     switch (field) {
+    case 1:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setStatus(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -47565,6 +47953,31 @@ proto.lnrpc.DeleteAllPaymentsResponse.prototype.serializeBinary = function() {
  */
 proto.lnrpc.DeleteAllPaymentsResponse.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
+  f = message.getStatus();
+  if (f.length > 0) {
+    writer.writeString(
+      1,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional string status = 1;
+ * @return {string}
+ */
+proto.lnrpc.DeleteAllPaymentsResponse.prototype.getStatus = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.lnrpc.DeleteAllPaymentsResponse} returns this
+ */
+proto.lnrpc.DeleteAllPaymentsResponse.prototype.setStatus = function(value) {
+  return jspb.Message.setProto3StringField(this, 1, value);
 };
 
 
@@ -47811,7 +48224,7 @@ proto.lnrpc.AbandonChannelResponse.prototype.toObject = function(opt_includeInst
  */
 proto.lnrpc.AbandonChannelResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-
+    status: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -47848,6 +48261,10 @@ proto.lnrpc.AbandonChannelResponse.deserializeBinaryFromReader = function(msg, r
     }
     var field = reader.getFieldNumber();
     switch (field) {
+    case 1:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setStatus(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -47877,6 +48294,31 @@ proto.lnrpc.AbandonChannelResponse.prototype.serializeBinary = function() {
  */
 proto.lnrpc.AbandonChannelResponse.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
+  f = message.getStatus();
+  if (f.length > 0) {
+    writer.writeString(
+      1,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional string status = 1;
+ * @return {string}
+ */
+proto.lnrpc.AbandonChannelResponse.prototype.getStatus = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.lnrpc.AbandonChannelResponse} returns this
+ */
+proto.lnrpc.AbandonChannelResponse.prototype.setStatus = function(value) {
+  return jspb.Message.setProto3StringField(this, 1, value);
 };
 
 
@@ -53013,7 +53455,7 @@ proto.lnrpc.RestoreBackupResponse.prototype.toObject = function(opt_includeInsta
  */
 proto.lnrpc.RestoreBackupResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-
+    numRestored: jspb.Message.getFieldWithDefault(msg, 1, 0)
   };
 
   if (includeInstance) {
@@ -53050,6 +53492,10 @@ proto.lnrpc.RestoreBackupResponse.deserializeBinaryFromReader = function(msg, re
     }
     var field = reader.getFieldNumber();
     switch (field) {
+    case 1:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setNumRestored(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -53079,6 +53525,31 @@ proto.lnrpc.RestoreBackupResponse.prototype.serializeBinary = function() {
  */
 proto.lnrpc.RestoreBackupResponse.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
+  f = message.getNumRestored();
+  if (f !== 0) {
+    writer.writeUint32(
+      1,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional uint32 num_restored = 1;
+ * @return {number}
+ */
+proto.lnrpc.RestoreBackupResponse.prototype.getNumRestored = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
+};
+
+
+/**
+ * @param {number} value
+ * @return {!proto.lnrpc.RestoreBackupResponse} returns this
+ */
+proto.lnrpc.RestoreBackupResponse.prototype.setNumRestored = function(value) {
+  return jspb.Message.setProto3IntField(this, 1, value);
 };
 
 
@@ -53184,6 +53655,13 @@ proto.lnrpc.ChannelBackupSubscription.serializeBinaryToWriter = function(message
 
 
 
+/**
+ * List of repeated fields within this message type.
+ * @private {!Array<number>}
+ * @const
+ */
+proto.lnrpc.VerifyChanBackupResponse.repeatedFields_ = [1];
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
@@ -53215,7 +53693,7 @@ proto.lnrpc.VerifyChanBackupResponse.prototype.toObject = function(opt_includeIn
  */
 proto.lnrpc.VerifyChanBackupResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-
+    chanPointsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -53252,6 +53730,10 @@ proto.lnrpc.VerifyChanBackupResponse.deserializeBinaryFromReader = function(msg,
     }
     var field = reader.getFieldNumber();
     switch (field) {
+    case 1:
+      var value = /** @type {string} */ (reader.readString());
+      msg.addChanPoints(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -53281,6 +53763,50 @@ proto.lnrpc.VerifyChanBackupResponse.prototype.serializeBinary = function() {
  */
 proto.lnrpc.VerifyChanBackupResponse.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
+  f = message.getChanPointsList();
+  if (f.length > 0) {
+    writer.writeRepeatedString(
+      1,
+      f
+    );
+  }
+};
+
+
+/**
+ * repeated string chan_points = 1;
+ * @return {!Array<string>}
+ */
+proto.lnrpc.VerifyChanBackupResponse.prototype.getChanPointsList = function() {
+  return /** @type {!Array<string>} */ (jspb.Message.getRepeatedField(this, 1));
+};
+
+
+/**
+ * @param {!Array<string>} value
+ * @return {!proto.lnrpc.VerifyChanBackupResponse} returns this
+ */
+proto.lnrpc.VerifyChanBackupResponse.prototype.setChanPointsList = function(value) {
+  return jspb.Message.setField(this, 1, value || []);
+};
+
+
+/**
+ * @param {string} value
+ * @param {number=} opt_index
+ * @return {!proto.lnrpc.VerifyChanBackupResponse} returns this
+ */
+proto.lnrpc.VerifyChanBackupResponse.prototype.addChanPoints = function(value, opt_index) {
+  return jspb.Message.addToRepeatedField(this, 1, value, opt_index);
+};
+
+
+/**
+ * Clears the list making it empty but non-null.
+ * @return {!proto.lnrpc.VerifyChanBackupResponse} returns this
+ */
+proto.lnrpc.VerifyChanBackupResponse.prototype.clearChanPointsList = function() {
+  return this.setChanPointsList([]);
 };
 
 

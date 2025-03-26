@@ -112,6 +112,7 @@ export const lndChannel: LND.Channel.AsObject = {
       htlcIndex: '0',
       forwardingChannel: '124244814004224',
       forwardingHtlcIndex: '0',
+      lockedIn: true,
     },
   ],
   csvDelay: 1802,
@@ -271,6 +272,8 @@ export const lndChannelEvent: Required<LND.ChannelEventUpdate.AsObject> = {
   pendingOpenChannel: {
     txid: '1f765f45f2a6d33837a203e3fc911915c891e9b86f9c9d91a1931b92efdedf5b',
     outputIndex: 0,
+    feePerVbyte: '123',
+    localCloseTx: false,
   },
   fullyResolvedChannel: {
     fundingTxidBytes: txIdBytes,

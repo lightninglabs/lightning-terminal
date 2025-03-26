@@ -334,8 +334,9 @@ func locateAssetTransfers(t *testing.T, tapdClient *tapClient,
 				tapdClient.node.Name(), err)
 		}
 		if len(forceCloseTransfer.Transfers) != 1 {
-			return fmt.Errorf("%v is missing force close "+
-				"transfer", tapdClient.node.Name())
+			return fmt.Errorf("%v is expecting %d transfers, has "+
+				"%d", tapdClient.node.Name(), 1,
+				len(forceCloseTransfer.Transfers))
 		}
 
 		transfer = forceCloseTransfer.Transfers[0]
