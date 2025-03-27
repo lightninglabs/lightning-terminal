@@ -122,8 +122,8 @@ func (n *NetworkHarness) ProcessErrors() <-chan error {
 // rpc clients capable of communicating with the initial seeder nodes are
 // created. Nodes are initialized with the given extra command line flags, which
 // should be formatted properly - "--arg=value".
-func (n *NetworkHarness) SetUp(t *testing.T,
-	testCase string, lndArgs []string) error {
+func (n *NetworkHarness) SetUp(t *testing.T, testCase string, lndArgs []string,
+	noAliceBob bool) error {
 
 	// Swap out grpc's default logger with our fake logger which drops the
 	// statements on the floor.
@@ -142,6 +142,11 @@ func (n *NetworkHarness) SetUp(t *testing.T,
 	// Start a mock autopilot server.
 	n.autopilotServer = mock.NewServer()
 	require.NoError(t, n.autopilotServer.Start())
+
+	// Skip early if we don't need the default Alice and Bob nodes.
+	if noAliceBob {
+		return nil
+	}
 
 	// Start the initial seeder nodes within the test network, then connect
 	// their respective RPC clients.
@@ -251,6 +256,20 @@ out:
 			return fmt.Errorf("balances not synced after deadline")
 		}
 	}
+
+	t.Cleanup(func() {
+		require.NoError(t, n.TearDown())
+		n.Stop()
+	})
+
+	n.EnsureConnected(t, n.Alice, n.Bob)
+
+	logLine := fmt.Sprintf(
+		"STARTING ============ %v ============\n", testCase,
+	)
+
+	n.Alice.AddToLog(logLine)
+	n.Bob.AddToLog(logLine)
 
 	return nil
 }
