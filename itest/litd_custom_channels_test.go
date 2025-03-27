@@ -4043,18 +4043,6 @@ func testCustomChannelsDecodeAssetInvoice(ctx context.Context,
 			"rfqrpc://%s", oracleAddr,
 	))
 
-	// For this test, Zane will be our dedicated Universe server for all
-	// parties.
-	zane, err := net.NewNode(
-		t.t, "Zane", lndArgs, false, true, litdArgs...,
-	)
-	require.NoError(t.t, err)
-
-	litdArgs = append(litdArgs, fmt.Sprintf(
-		"--taproot-assets.proofcourieraddr=%s://%s",
-		proof.UniverseRpcCourierType, zane.Cfg.LitAddr(),
-	))
-
 	// We'll just make a single node here, as this doesn't actually rely on
 	// a set of active channels.
 	alice, err := net.NewNode(
