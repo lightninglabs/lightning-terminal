@@ -70,6 +70,9 @@ var (
 	)
 )
 
+// Option is a function for updating a node's configuration.
+type Option func(config *LitNodeConfig)
+
 type LitNodeConfig struct {
 	*node.BaseNodeConfig
 
