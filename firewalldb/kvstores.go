@@ -107,60 +107,26 @@ type RulesDB interface {
 func (db *DB) GetKVStores(rule string, groupID session.ID,
 	feature string) KVStores {
 
-	return &kvStores{
-		db:          db.DB,
-		ruleName:    rule,
-		groupID:     groupID,
-		featureName: feature,
+	return &kvdbExecutor[KVStoreTx]{
+		db: db.DB,
+		wrapTx: func(tx *bbolt.Tx) KVStoreTx {
+			return &kvStoreTx{
+				boltTx: tx,
+				kvStores: &kvStores{
+					ruleName:    rule,
+					groupID:     groupID,
+					featureName: feature,
+				},
+			}
+		},
 	}
 }
 
 // kvStores implements the rules.KVStores interface.
 type kvStores struct {
-	db          *bbolt.DB
 	ruleName    string
 	groupID     session.ID
 	featureName string
-}
-
-// Update opens a database read/write transaction and executes the function f
-// with the transaction passed as a parameter. After f exits, if f did not
-// error, the transaction is committed. Otherwise, if f did error, the
-// transaction is rolled back. If the rollback fails, the original error
-// returned by f is still returned. If the commit fails, the commit error is
-// returned.
-//
-// NOTE: this is part of the KVStores interface.
-func (s *kvStores) Update(ctx context.Context, fn func(ctx context.Context,
-	tx KVStoreTx) error) error {
-
-	return s.db.Update(func(tx *bbolt.Tx) error {
-		boltTx := &kvStoreTx{
-			boltTx:   tx,
-			kvStores: s,
-		}
-
-		return fn(ctx, boltTx)
-	})
-}
-
-// View opens a database read transaction and executes the function f with the
-// transaction passed as a parameter. After f exits, the transaction is rolled
-// back. If f errors, its error is returned, not a rollback error (if any
-// occur).
-//
-// NOTE: this is part of the KVStores interface.
-func (s *kvStores) View(ctx context.Context, fn func(ctx context.Context,
-	tx KVStoreTx) error) error {
-
-	return s.db.View(func(tx *bbolt.Tx) error {
-		boltTx := &kvStoreTx{
-			boltTx:   tx,
-			kvStores: s,
-		}
-
-		return fn(ctx, boltTx)
-	})
 }
 
 // getBucketFunc defines the signature of the bucket creation/fetching function

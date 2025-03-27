@@ -1,6 +1,7 @@
 package firewalldb
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -9,6 +10,9 @@ import (
 
 // TestPrivacyMapStorage tests the privacy mapper CRUD logic.
 func TestPrivacyMapStorage(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
 	tmpDir := t.TempDir()
 	db, err := NewDB(tmpDir, "test.db", nil)
 	require.NoError(t, err)
@@ -18,25 +22,25 @@ func TestPrivacyMapStorage(t *testing.T) {
 
 	pdb1 := db.PrivacyDB([4]byte{1, 1, 1, 1})
 
-	_ = pdb1.Update(func(tx PrivacyMapTx) error {
-		_, err = tx.RealToPseudo("real")
+	_ = pdb1.Update(ctx, func(ctx context.Context, tx PrivacyMapTx) error {
+		_, err = tx.RealToPseudo(ctx, "real")
 		require.ErrorIs(t, err, ErrNoSuchKeyFound)
 
-		_, err = tx.PseudoToReal("pseudo")
+		_, err = tx.PseudoToReal(ctx, "pseudo")
 		require.ErrorIs(t, err, ErrNoSuchKeyFound)
 
-		err = tx.NewPair("real", "pseudo")
+		err = tx.NewPair(ctx, "real", "pseudo")
 		require.NoError(t, err)
 
-		pseudo, err := tx.RealToPseudo("real")
+		pseudo, err := tx.RealToPseudo(ctx, "real")
 		require.NoError(t, err)
 		require.Equal(t, "pseudo", pseudo)
 
-		real, err := tx.PseudoToReal("pseudo")
+		real, err := tx.PseudoToReal(ctx, "pseudo")
 		require.NoError(t, err)
 		require.Equal(t, "real", real)
 
-		pairs, err := tx.FetchAllPairs()
+		pairs, err := tx.FetchAllPairs(ctx)
 		require.NoError(t, err)
 
 		require.EqualValues(t, pairs.pairs, map[string]string{
@@ -48,25 +52,25 @@ func TestPrivacyMapStorage(t *testing.T) {
 
 	pdb2 := db.PrivacyDB([4]byte{2, 2, 2, 2})
 
-	_ = pdb2.Update(func(tx PrivacyMapTx) error {
-		_, err = tx.RealToPseudo("real")
+	_ = pdb2.Update(ctx, func(ctx context.Context, tx PrivacyMapTx) error {
+		_, err = tx.RealToPseudo(ctx, "real")
 		require.ErrorIs(t, err, ErrNoSuchKeyFound)
 
-		_, err = tx.PseudoToReal("pseudo")
+		_, err = tx.PseudoToReal(ctx, "pseudo")
 		require.ErrorIs(t, err, ErrNoSuchKeyFound)
 
-		err = tx.NewPair("real 2", "pseudo 2")
+		err = tx.NewPair(ctx, "real 2", "pseudo 2")
 		require.NoError(t, err)
 
-		pseudo, err := tx.RealToPseudo("real 2")
+		pseudo, err := tx.RealToPseudo(ctx, "real 2")
 		require.NoError(t, err)
 		require.Equal(t, "pseudo 2", pseudo)
 
-		real, err := tx.PseudoToReal("pseudo 2")
+		real, err := tx.PseudoToReal(ctx, "pseudo 2")
 		require.NoError(t, err)
 		require.Equal(t, "real 2", real)
 
-		pairs, err := tx.FetchAllPairs()
+		pairs, err := tx.FetchAllPairs(ctx)
 		require.NoError(t, err)
 
 		require.EqualValues(t, pairs.pairs, map[string]string{
@@ -78,41 +82,41 @@ func TestPrivacyMapStorage(t *testing.T) {
 
 	pdb3 := db.PrivacyDB([4]byte{3, 3, 3, 3})
 
-	_ = pdb3.Update(func(tx PrivacyMapTx) error {
+	_ = pdb3.Update(ctx, func(ctx context.Context, tx PrivacyMapTx) error {
 		// Check that calling FetchAllPairs returns an empty map if
 		// nothing exists in the DB yet.
-		m, err := tx.FetchAllPairs()
+		m, err := tx.FetchAllPairs(ctx)
 		require.NoError(t, err)
 		require.Empty(t, m.pairs)
 
 		// Add a new pair.
-		err = tx.NewPair("real 1", "pseudo 1")
+		err = tx.NewPair(ctx, "real 1", "pseudo 1")
 		require.NoError(t, err)
 
 		// Try to add a new pair that has the same real value as the
 		// first pair. This should fail.
-		err = tx.NewPair("real 1", "pseudo 2")
+		err = tx.NewPair(ctx, "real 1", "pseudo 2")
 		require.ErrorContains(t, err, "an entry already exists for "+
 			"real value")
 
 		// Try to add a new pair that has the same pseudo value as the
 		// first pair. This should fail.
-		err = tx.NewPair("real 2", "pseudo 1")
+		err = tx.NewPair(ctx, "real 2", "pseudo 1")
 		require.ErrorContains(t, err, "an entry already exists for "+
 			"pseudo value")
 
 		// Add a few more pairs.
-		err = tx.NewPair("real 2", "pseudo 2")
+		err = tx.NewPair(ctx, "real 2", "pseudo 2")
 		require.NoError(t, err)
 
-		err = tx.NewPair("real 3", "pseudo 3")
+		err = tx.NewPair(ctx, "real 3", "pseudo 3")
 		require.NoError(t, err)
 
-		err = tx.NewPair("real 4", "pseudo 4")
+		err = tx.NewPair(ctx, "real 4", "pseudo 4")
 		require.NoError(t, err)
 
 		// Check that FetchAllPairs correctly returns all the pairs.
-		pairs, err := tx.FetchAllPairs()
+		pairs, err := tx.FetchAllPairs(ctx)
 		require.NoError(t, err)
 
 		require.EqualValues(t, pairs.pairs, map[string]string{
@@ -180,6 +184,9 @@ func TestPrivacyMapStorage(t *testing.T) {
 // provide atomic access to the db. If anything fails in the middle of an
 // `Update` function, then all the changes prior should be rolled back.
 func TestPrivacyMapTxs(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
 	tmpDir := t.TempDir()
 	db, err := NewDB(tmpDir, "test.db", nil)
 	require.NoError(t, err)
@@ -191,13 +198,15 @@ func TestPrivacyMapTxs(t *testing.T) {
 
 	// Test that if an action fails midway through the transaction, then
 	// it is rolled back.
-	err = pdb1.Update(func(tx PrivacyMapTx) error {
-		err := tx.NewPair("real", "pseudo")
+	err = pdb1.Update(ctx, func(ctx context.Context,
+		tx PrivacyMapTx) error {
+
+		err := tx.NewPair(ctx, "real", "pseudo")
 		if err != nil {
 			return err
 		}
 
-		p, err := tx.RealToPseudo("real")
+		p, err := tx.RealToPseudo(ctx, "real")
 		if err != nil {
 			return err
 		}
@@ -208,8 +217,8 @@ func TestPrivacyMapTxs(t *testing.T) {
 	})
 	require.Error(t, err)
 
-	err = pdb1.View(func(tx PrivacyMapTx) error {
-		_, err := tx.RealToPseudo("real")
+	err = pdb1.View(ctx, func(ctx context.Context, tx PrivacyMapTx) error {
+		_, err := tx.RealToPseudo(ctx, "real")
 		return err
 	})
 	require.ErrorIs(t, err, ErrNoSuchKeyFound)

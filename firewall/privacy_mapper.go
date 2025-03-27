@@ -325,17 +325,19 @@ func handleGetInfoResponse(db firewalldb.PrivacyMapDB,
 	flags session.PrivacyFlags) func(ctx context.Context,
 	r *lnrpc.GetInfoResponse) (proto.Message, error) {
 
-	return func(_ context.Context, r *lnrpc.GetInfoResponse) (
+	return func(ctx context.Context, r *lnrpc.GetInfoResponse) (
 		proto.Message, error) {
 
 		// We hide the pubkey unless it is disabled.
 		pseudoPubKey := r.IdentityPubkey
 		if !flags.Contains(session.ClearPubkeys) {
-			err := db.Update(
-				func(tx firewalldb.PrivacyMapTx) error {
+			err := db.Update(ctx,
+				func(ctx context.Context,
+					tx firewalldb.PrivacyMapTx) error {
+
 					var err error
-					pseudoPubKey, err = firewalldb.HideString(
-						tx, r.IdentityPubkey,
+					pseudoPubKey, err = firewalldb.HideString( //nolint:lll
+						ctx, tx, r.IdentityPubkey,
 					)
 
 					return err
@@ -377,14 +379,16 @@ func handleFwdHistoryResponse(db firewalldb.PrivacyMapDB,
 	randIntn func(int) (int, error)) func(ctx context.Context,
 	r *lnrpc.ForwardingHistoryResponse) (proto.Message, error) {
 
-	return func(_ context.Context, r *lnrpc.ForwardingHistoryResponse) (
+	return func(ctx context.Context, r *lnrpc.ForwardingHistoryResponse) (
 		proto.Message, error) {
 
 		fwdEvents := make(
 			[]*lnrpc.ForwardingEvent, len(r.ForwardingEvents),
 		)
 
-		err := db.Update(func(tx firewalldb.PrivacyMapTx) error {
+		err := db.Update(ctx, func(ctx context.Context,
+			tx firewalldb.PrivacyMapTx) error {
+
 			for i, fe := range r.ForwardingEvents {
 				var err error
 
@@ -393,14 +397,14 @@ func handleFwdHistoryResponse(db firewalldb.PrivacyMapDB,
 				if !flags.Contains(session.ClearChanIDs) {
 					// Deterministically hide channel ids.
 					chanIn, err = firewalldb.HideUint64(
-						tx, chanIn,
+						ctx, tx, chanIn,
 					)
 					if err != nil {
 						return err
 					}
 
 					chanOut, err = firewalldb.HideUint64(
-						tx, chanOut,
+						ctx, tx, chanOut,
 					)
 					if err != nil {
 						return err
@@ -487,14 +491,16 @@ func handleFeeReportResponse(db firewalldb.PrivacyMapDB,
 
 		chanFees := make([]*lnrpc.ChannelFeeReport, len(r.ChannelFees))
 
-		err := db.Update(func(tx firewalldb.PrivacyMapTx) error {
+		err := db.Update(ctx, func(ctx context.Context,
+			tx firewalldb.PrivacyMapTx) error {
+
 			var err error
 
 			for i, c := range r.ChannelFees {
 				chanID := c.ChanId
 				if !flags.Contains(session.ClearChanIDs) {
 					chanID, err = firewalldb.HideUint64(
-						tx, chanID,
+						ctx, tx, chanID,
 					)
 					if err != nil {
 						return err
@@ -504,7 +510,7 @@ func handleFeeReportResponse(db firewalldb.PrivacyMapDB,
 				chanPoint := c.ChannelPoint
 				if !flags.Contains(session.ClearChanIDs) {
 					chanPoint, err = firewalldb.HideChanPointStr(
-						tx, chanPoint,
+						ctx, tx, chanPoint,
 					)
 					if err != nil {
 						return err
@@ -550,8 +556,10 @@ func handleListChannelsRequest(db firewalldb.PrivacyMapDB,
 			return r, nil
 		}
 
-		err := db.View(func(tx firewalldb.PrivacyMapTx) error {
-			peer, err := firewalldb.RevealBytes(tx, r.Peer)
+		err := db.View(ctx, func(ctx context.Context,
+			tx firewalldb.PrivacyMapTx) error {
+
+			peer, err := firewalldb.RevealBytes(ctx, tx, r.Peer)
 			if err != nil {
 				return err
 			}
@@ -572,7 +580,7 @@ func handleListChannelsResponse(db firewalldb.PrivacyMapDB,
 	randIntn func(int) (int, error)) func(ctx context.Context,
 	r *lnrpc.ListChannelsResponse) (proto.Message, error) {
 
-	return func(_ context.Context, r *lnrpc.ListChannelsResponse) (
+	return func(ctx context.Context, r *lnrpc.ListChannelsResponse) (
 		proto.Message, error) {
 
 		hidePubkeys := !flags.Contains(session.ClearPubkeys)
@@ -580,7 +588,9 @@ func handleListChannelsResponse(db firewalldb.PrivacyMapDB,
 
 		channels := make([]*lnrpc.Channel, len(r.Channels))
 
-		err := db.Update(func(tx firewalldb.PrivacyMapTx) error {
+		err := db.Update(ctx, func(ctx context.Context,
+			tx firewalldb.PrivacyMapTx) error {
+
 			for i, c := range r.Channels {
 				var err error
 
@@ -589,7 +599,7 @@ func handleListChannelsResponse(db firewalldb.PrivacyMapDB,
 				remotePub := c.RemotePubkey
 				if hidePubkeys {
 					remotePub, err = firewalldb.HideString(
-						tx, c.RemotePubkey,
+						ctx, tx, c.RemotePubkey,
 					)
 					if err != nil {
 						return err
@@ -600,14 +610,14 @@ func handleListChannelsResponse(db firewalldb.PrivacyMapDB,
 				chanID := c.ChanId
 				if hideChanIds {
 					chanPoint, err = firewalldb.HideChanPointStr(
-						tx, c.ChannelPoint,
+						ctx, tx, c.ChannelPoint,
 					)
 					if err != nil {
 						return err
 					}
 
 					chanID, err = firewalldb.HideUint64(
-						tx, c.ChanId,
+						ctx, tx, c.ChanId,
 					)
 					if err != nil {
 						return err
@@ -745,7 +755,7 @@ func handleUpdatePolicyRequest(db firewalldb.PrivacyMapDB,
 	flags session.PrivacyFlags) func(ctx context.Context,
 	r *lnrpc.PolicyUpdateRequest) (proto.Message, error) {
 
-	return func(_ context.Context, r *lnrpc.PolicyUpdateRequest) (
+	return func(ctx context.Context, r *lnrpc.PolicyUpdateRequest) (
 		proto.Message, error) {
 
 		chanPoint := r.GetChanPoint()
@@ -764,10 +774,12 @@ func handleUpdatePolicyRequest(db firewalldb.PrivacyMapDB,
 		newTxid := txid.String()
 		newIndex := chanPoint.GetOutputIndex()
 		if !flags.Contains(session.ClearChanIDs) {
-			err = db.View(func(tx firewalldb.PrivacyMapTx) error {
+			err = db.View(ctx, func(ctx context.Context,
+				tx firewalldb.PrivacyMapTx) error {
+
 				var err error
-				newTxid, newIndex, err = firewalldb.RevealChanPoint(
-					tx, newTxid, newIndex,
+				newTxid, newIndex, err = firewalldb.RevealChanPoint( //nolint:lll
+					ctx, tx, newTxid, newIndex,
 				)
 				return err
 			})
@@ -793,7 +805,7 @@ func handleUpdatePolicyResponse(db firewalldb.PrivacyMapDB,
 	flags session.PrivacyFlags) func(ctx context.Context,
 	r *lnrpc.PolicyUpdateResponse) (proto.Message, error) {
 
-	return func(_ context.Context, r *lnrpc.PolicyUpdateResponse) (
+	return func(ctx context.Context, r *lnrpc.PolicyUpdateResponse) (
 		proto.Message, error) {
 
 		if flags.Contains(session.ClearChanIDs) {
@@ -804,7 +816,9 @@ func handleUpdatePolicyResponse(db firewalldb.PrivacyMapDB,
 			[]*lnrpc.FailedUpdate, len(r.FailedUpdates),
 		)
 
-		err := db.Update(func(tx firewalldb.PrivacyMapTx) error {
+		err := db.Update(ctx, func(ctx context.Context,
+			tx firewalldb.PrivacyMapTx) error {
+
 			for i, u := range r.FailedUpdates {
 				failedUpdates[i] = &lnrpc.FailedUpdate{
 					Reason:      u.Reason,
@@ -816,7 +830,7 @@ func handleUpdatePolicyResponse(db firewalldb.PrivacyMapDB,
 				}
 
 				txid, index, err := firewalldb.HideChanPoint(
-					tx, u.Outpoint.TxidStr,
+					ctx, tx, u.Outpoint.TxidStr,
 					u.Outpoint.OutputIndex,
 				)
 				if err != nil {
@@ -926,7 +940,7 @@ func handleClosedChannelsResponse(db firewalldb.PrivacyMapDB,
 	randIntn func(int) (int, error)) func(ctx context.Context,
 	r *lnrpc.ClosedChannelsResponse) (proto.Message, error) {
 
-	return func(_ context.Context, r *lnrpc.ClosedChannelsResponse) (
+	return func(ctx context.Context, r *lnrpc.ClosedChannelsResponse) (
 		proto.Message, error) {
 
 		closedChannels := make(
@@ -934,14 +948,16 @@ func handleClosedChannelsResponse(db firewalldb.PrivacyMapDB,
 			len(r.Channels),
 		)
 
-		err := db.Update(func(tx firewalldb.PrivacyMapTx) error {
+		err := db.Update(ctx, func(ctx context.Context,
+			tx firewalldb.PrivacyMapTx) error {
+
 			for i, c := range r.Channels {
 				var err error
 
 				remotePub := c.RemotePubkey
 				if !flags.Contains(session.ClearPubkeys) {
 					remotePub, err = firewalldb.HideString(
-						tx, remotePub,
+						ctx, tx, remotePub,
 					)
 					if err != nil {
 						return err
@@ -969,7 +985,7 @@ func handleClosedChannelsResponse(db firewalldb.PrivacyMapDB,
 				channelPoint := c.ChannelPoint
 				if !flags.Contains(session.ClearChanIDs) {
 					channelPoint, err = firewalldb.HideChanPointStr(
-						tx, c.ChannelPoint,
+						ctx, tx, c.ChannelPoint,
 					)
 					if err != nil {
 						return err
@@ -979,7 +995,7 @@ func handleClosedChannelsResponse(db firewalldb.PrivacyMapDB,
 				chanID := c.ChanId
 				if !flags.Contains(session.ClearChanIDs) {
 					chanID, err = firewalldb.HideUint64(
-						tx, c.ChanId,
+						ctx, tx, c.ChanId,
 					)
 					if err != nil {
 						return err
@@ -989,7 +1005,7 @@ func handleClosedChannelsResponse(db firewalldb.PrivacyMapDB,
 				closingTxid := c.ClosingTxHash
 				if !flags.Contains(session.ClearClosingTxIds) {
 					closingTxid, err = firewalldb.HideString(
-						tx, c.ClosingTxHash,
+						ctx, tx, c.ClosingTxHash,
 					)
 					if err != nil {
 						return err
@@ -1036,7 +1052,8 @@ func handleClosedChannelsResponse(db firewalldb.PrivacyMapDB,
 
 // obfuscatePendingChannel is a helper to obfuscate the fields of a pending
 // channel.
-func obfuscatePendingChannel(c *lnrpc.PendingChannelsResponse_PendingChannel,
+func obfuscatePendingChannel(ctx context.Context,
+	c *lnrpc.PendingChannelsResponse_PendingChannel,
 	tx firewalldb.PrivacyMapTx, randIntn func(int) (int, error),
 	flags session.PrivacyFlags) (
 	*lnrpc.PendingChannelsResponse_PendingChannel, error) {
@@ -1046,7 +1063,7 @@ func obfuscatePendingChannel(c *lnrpc.PendingChannelsResponse_PendingChannel,
 	remotePub := c.RemoteNodePub
 	if !flags.Contains(session.ClearPubkeys) {
 		remotePub, err = firewalldb.HideString(
-			tx, remotePub,
+			ctx, tx, remotePub,
 		)
 		if err != nil {
 			return nil, err
@@ -1083,7 +1100,7 @@ func obfuscatePendingChannel(c *lnrpc.PendingChannelsResponse_PendingChannel,
 	chanPoint := c.ChannelPoint
 	if !flags.Contains(session.ClearChanIDs) {
 		chanPoint, err = firewalldb.HideChanPointStr(
-			tx, c.ChannelPoint,
+			ctx, tx, c.ChannelPoint,
 		)
 		if err != nil {
 			return nil, err
@@ -1117,7 +1134,7 @@ func handlePendingChannelsResponse(db firewalldb.PrivacyMapDB,
 	randIntn func(int) (int, error)) func(ctx context.Context,
 	r *lnrpc.PendingChannelsResponse) (proto.Message, error) {
 
-	return func(_ context.Context, r *lnrpc.PendingChannelsResponse) (
+	return func(ctx context.Context, r *lnrpc.PendingChannelsResponse) (
 		proto.Message, error) {
 
 		pendingOpens := make(
@@ -1140,12 +1157,14 @@ func handlePendingChannelsResponse(db firewalldb.PrivacyMapDB,
 			len(r.WaitingCloseChannels),
 		)
 
-		err := db.Update(func(tx firewalldb.PrivacyMapTx) error {
+		err := db.Update(ctx, func(ctx context.Context,
+			tx firewalldb.PrivacyMapTx) error {
+
 			for i, c := range r.PendingOpenChannels {
 				var err error
 
 				pendingChannel, err := obfuscatePendingChannel(
-					c.Channel, tx, randIntn, flags,
+					ctx, c.Channel, tx, randIntn, flags,
 				)
 				if err != nil {
 					return err
@@ -1169,7 +1188,7 @@ func handlePendingChannelsResponse(db firewalldb.PrivacyMapDB,
 				var err error
 
 				pendingChannel, err := obfuscatePendingChannel(
-					c.Channel, tx, randIntn, flags,
+					ctx, c.Channel, tx, randIntn, flags,
 				)
 				if err != nil {
 					return err
@@ -1177,8 +1196,8 @@ func handlePendingChannelsResponse(db firewalldb.PrivacyMapDB,
 
 				closingTxid := c.ClosingTxid
 				if !flags.Contains(session.ClearClosingTxIds) {
-					closingTxid, err = firewalldb.HideString(
-						tx, c.ClosingTxid,
+					closingTxid, err = firewalldb.HideString( //nolint:lll
+						ctx, tx, c.ClosingTxid,
 					)
 					if err != nil {
 						return err
@@ -1198,7 +1217,7 @@ func handlePendingChannelsResponse(db firewalldb.PrivacyMapDB,
 				var err error
 
 				pendingChannel, err := obfuscatePendingChannel(
-					c.Channel, tx, randIntn, flags,
+					ctx, c.Channel, tx, randIntn, flags,
 				)
 				if err != nil {
 					return err
@@ -1207,7 +1226,7 @@ func handlePendingChannelsResponse(db firewalldb.PrivacyMapDB,
 				closingTxid := c.ClosingTxid
 				if !flags.Contains(session.ClearClosingTxIds) {
 					closingTxid, err = firewalldb.HideString(
-						tx, c.ClosingTxid,
+						ctx, tx, c.ClosingTxid,
 					)
 					if err != nil {
 						return err
@@ -1259,7 +1278,7 @@ func handlePendingChannelsResponse(db firewalldb.PrivacyMapDB,
 				var err error
 
 				pendingChannel, err := obfuscatePendingChannel(
-					c.Channel, tx, randIntn, flags,
+					ctx, c.Channel, tx, randIntn, flags,
 				)
 				if err != nil {
 					return err
@@ -1279,7 +1298,7 @@ func handlePendingChannelsResponse(db firewalldb.PrivacyMapDB,
 				closingTxid := c.ClosingTxid
 				if !flags.Contains(session.ClearClosingTxIds) {
 					closingTxid, err = firewalldb.HideString(
-						tx, closingTxid,
+						ctx, tx, closingTxid,
 					)
 					if err != nil {
 						return err
@@ -1296,7 +1315,7 @@ func handlePendingChannelsResponse(db firewalldb.PrivacyMapDB,
 					) {
 
 					closingTxHex, err = firewalldb.HideString(
-						tx, closingTxHex,
+						ctx, tx, closingTxHex,
 					)
 					if err != nil {
 						return err
@@ -1343,12 +1362,14 @@ func handleBatchOpenChannelRequest(db firewalldb.PrivacyMapDB,
 	flags session.PrivacyFlags) func(ctx context.Context,
 	r *lnrpc.BatchOpenChannelRequest) (proto.Message, error) {
 
-	return func(_ context.Context, r *lnrpc.BatchOpenChannelRequest) (
+	return func(ctx context.Context, r *lnrpc.BatchOpenChannelRequest) (
 		proto.Message, error) {
 
 		var reqs = make([]*lnrpc.BatchOpenChannel, len(r.Channels))
 
-		err := db.View(func(tx firewalldb.PrivacyMapTx) error {
+		err := db.View(ctx, func(ctx context.Context,
+			tx firewalldb.PrivacyMapTx) error {
+
 			for i, c := range r.Channels {
 				var err error
 
@@ -1359,7 +1380,7 @@ func handleBatchOpenChannelRequest(db firewalldb.PrivacyMapDB,
 				nodePubkey := c.NodePubkey
 				if !flags.Contains(session.ClearPubkeys) {
 					nodePubkey, err = firewalldb.RevealBytes(
-						tx, c.NodePubkey,
+						ctx, tx, c.NodePubkey,
 					)
 					if err != nil {
 						return err
@@ -1414,12 +1435,14 @@ func handleBatchOpenChannelResponse(db firewalldb.PrivacyMapDB,
 	flags session.PrivacyFlags) func(ctx context.Context,
 	r *lnrpc.BatchOpenChannelResponse) (proto.Message, error) {
 
-	return func(_ context.Context, r *lnrpc.BatchOpenChannelResponse) (
+	return func(ctx context.Context, r *lnrpc.BatchOpenChannelResponse) (
 		proto.Message, error) {
 
 		resps := make([]*lnrpc.PendingUpdate, len(r.PendingChannels))
 
-		err := db.Update(func(tx firewalldb.PrivacyMapTx) error {
+		err := db.Update(ctx, func(ctx context.Context,
+			tx firewalldb.PrivacyMapTx) error {
+
 			for i, p := range r.PendingChannels {
 				var (
 					txIdBytes   = p.Txid
@@ -1432,8 +1455,9 @@ func handleBatchOpenChannelResponse(db firewalldb.PrivacyMapDB,
 						return err
 					}
 
-					txID, outIdx, err := firewalldb.HideChanPoint(
-						tx, txId.String(), p.OutputIndex,
+					txID, outIdx, err := firewalldb.HideChanPoint( //nolint:lll
+						ctx, tx, txId.String(),
+						p.OutputIndex,
 					)
 					if err != nil {
 						return err
@@ -1471,14 +1495,15 @@ func handleChannelOpenRequest(db firewalldb.PrivacyMapDB,
 	flags session.PrivacyFlags) func(ctx context.Context,
 	r *lnrpc.OpenChannelRequest) (proto.Message, error) {
 
-	return func(_ context.Context, r *lnrpc.OpenChannelRequest) (
+	return func(ctx context.Context, r *lnrpc.OpenChannelRequest) (
 		proto.Message, error) {
 
 		var nodePubkey []byte
 
-		err := db.View(func(tx firewalldb.PrivacyMapTx) error {
-			var err error
+		err := db.View(ctx, func(ctx context.Context,
+			tx firewalldb.PrivacyMapTx) error {
 
+			var err error
 			// We use the byte slice representation of the
 			// pubkey and fall back to the hex string if present.
 			nodePubkey = r.NodePubkey
@@ -1493,7 +1518,7 @@ func handleChannelOpenRequest(db firewalldb.PrivacyMapDB,
 
 			if !flags.Contains(session.ClearPubkeys) {
 				nodePubkey, err = firewalldb.RevealBytes(
-					tx, nodePubkey,
+					ctx, tx, nodePubkey,
 				)
 				if err != nil {
 					return err
@@ -1548,7 +1573,7 @@ func handleChannelOpenResponse(db firewalldb.PrivacyMapDB,
 	flags session.PrivacyFlags) func(ctx context.Context,
 	r *lnrpc.ChannelPoint) (proto.Message, error) {
 
-	return func(_ context.Context, r *lnrpc.ChannelPoint) (
+	return func(ctx context.Context, r *lnrpc.ChannelPoint) (
 		proto.Message, error) {
 
 		var (
@@ -1556,7 +1581,9 @@ func handleChannelOpenResponse(db firewalldb.PrivacyMapDB,
 			index uint32
 		)
 
-		err := db.Update(func(tx firewalldb.PrivacyMapTx) error {
+		err := db.Update(ctx, func(ctx context.Context,
+			tx firewalldb.PrivacyMapTx) error {
+
 			var err error
 
 			txid = r.GetFundingTxidStr()
@@ -1575,7 +1602,7 @@ func handleChannelOpenResponse(db firewalldb.PrivacyMapDB,
 
 			if !flags.Contains(session.ClearChanIDs) {
 				txid, index, err = firewalldb.HideChanPoint(
-					tx, txid, index,
+					ctx, tx, txid, index,
 				)
 				if err != nil {
 					return err
@@ -1622,12 +1649,14 @@ func handleConnectPeerRequest(db firewalldb.PrivacyMapDB,
 	flags session.PrivacyFlags) func(ctx context.Context,
 	r *lnrpc.ConnectPeerRequest) (proto.Message, error) {
 
-	return func(_ context.Context, r *lnrpc.ConnectPeerRequest) (
+	return func(ctx context.Context, r *lnrpc.ConnectPeerRequest) (
 		proto.Message, error) {
 
 		var addr *lnrpc.LightningAddress
 
-		err := db.View(func(tx firewalldb.PrivacyMapTx) error {
+		err := db.View(ctx, func(ctx context.Context,
+			tx firewalldb.PrivacyMapTx) error {
+
 			var err error
 
 			// Note, this only works if the pubkey alias was
@@ -1636,7 +1665,7 @@ func handleConnectPeerRequest(db firewalldb.PrivacyMapDB,
 			pubkey := r.Addr.Pubkey
 			if !flags.Contains(session.ClearPubkeys) {
 				pubkey, err = firewalldb.RevealString(
-					tx, r.Addr.Pubkey,
+					ctx, tx, r.Addr.Pubkey,
 				)
 				if err != nil {
 					return err
@@ -1646,7 +1675,7 @@ func handleConnectPeerRequest(db firewalldb.PrivacyMapDB,
 			host := r.Addr.Host
 			if !flags.Contains(session.ClearNetworkAddresses) {
 				host, err = firewalldb.RevealString(
-					tx, r.Addr.Host,
+					ctx, tx, r.Addr.Host,
 				)
 				if err != nil {
 					return err
