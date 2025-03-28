@@ -28,6 +28,14 @@ var (
 			Entity: "account",
 			Action: "write",
 		}},
+		"/litrpc.Accounts/CreditAccount": {{
+			Entity: "account",
+			Action: "write",
+		}},
+		"/litrpc.Accounts/DebitAccount": {{
+			Entity: "account",
+			Action: "write",
+		}},
 		"/litrpc.Accounts/ListAccounts": {{
 			Entity: "account",
 			Action: "read",
