@@ -2096,7 +2096,7 @@ func testCustomChannelsLiquidityEdgeCases(ctx context.Context,
 
 	// Now Fabia creates the normal invoice.
 	invoiceResp = createAssetInvoice(
-		t.t, erin, fabia, 10_000, assetID,
+		t.t, erin, fabia, 0, assetID, withMsatAmount(170_000_000),
 	)
 
 	// Now Charlie pays the invoice, again by using the manually specified
