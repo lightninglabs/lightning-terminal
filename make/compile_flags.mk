@@ -1,1 +1,1 @@
-COMPILE_TAGS = autopilotrpc signrpc walletrpc chainrpc invoicesrpc watchtowerrpc neutrinorpc peersrpc
+COMPILE_TAGS = autopilotrpc signrpc walletrpc chainrpc invoicesrpc watchtowerrpc neutrinorpc peersrpc kvdb_postgres kvdb_etcd kvdb_sqlite
