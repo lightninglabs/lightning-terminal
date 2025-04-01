@@ -3096,6 +3096,14 @@ func testCustomChannelsHtlcForceClose(ctxb context.Context, net *NetworkHarness,
 	t *harnessTest) {
 
 	runCustomChannelsHtlcForceClose(ctxb, t, net, false)
+}
+
+// testCustomChannelsHtlcForceCloseMpp tests that we can force close a channel
+// with HTLCs in both directions and that the HTLC outputs are correctly
+// swept, using MPP.
+func testCustomChannelsHtlcForceCloseMpp(ctxb context.Context,
+	net *NetworkHarness, t *harnessTest) {
+
 	runCustomChannelsHtlcForceClose(ctxb, t, net, true)
 }
 
@@ -3257,6 +3265,7 @@ func runCustomChannelsHtlcForceClose(ctx context.Context, t *harnessTest,
 		numAdditionalShards := assetInvoiceAmt / assetsPerMPPShard
 		numHtlcs += numAdditionalShards * 2
 	}
+	t.Logf("Asserting both Alice and Bob have %d HTLCs...", numHtlcs)
 	assertNumHtlcs(t.t, alice, numHtlcs)
 	assertNumHtlcs(t.t, bob, numHtlcs)
 
@@ -3522,6 +3531,13 @@ func runCustomChannelsHtlcForceClose(ctx context.Context, t *harnessTest,
 	)
 
 	t.Logf("Confirming initial HTLC timeout txns")
+
+	timeoutSweeps, err := waitForNTxsInMempool(
+		net.Miner.Client, 2, shortTimeout,
+	)
+	require.NoError(t.t, err)
+
+	t.Logf("Asserting balance on sweeps: %v", timeoutSweeps)
 
 	// Finally, we'll mine a single block to confirm them.
 	mineBlocks(t, net, 1, 2)
