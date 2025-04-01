@@ -34,6 +34,14 @@ type AccountsClient interface {
 	// litcli: `accounts update`
 	// UpdateAccount updates an existing account in the account database.
 	UpdateAccount(ctx context.Context, in *UpdateAccountRequest, opts ...grpc.CallOption) (*Account, error)
+	// litcli: `accounts update credit`
+	// CreditAccount increases the balance of an existing account in the account
+	// database.
+	CreditAccount(ctx context.Context, in *CreditAccountRequest, opts ...grpc.CallOption) (*CreditAccountResponse, error)
+	// litcli: `accounts update debit`
+	// DebitAccount decreases the balance of an existing account in the account
+	// database.
+	DebitAccount(ctx context.Context, in *DebitAccountRequest, opts ...grpc.CallOption) (*DebitAccountResponse, error)
 	// litcli: `accounts list`
 	// ListAccounts returns all accounts that are currently stored in the account
 	// database.
@@ -66,6 +74,24 @@ func (c *accountsClient) CreateAccount(ctx context.Context, in *CreateAccountReq
 func (c *accountsClient) UpdateAccount(ctx context.Context, in *UpdateAccountRequest, opts ...grpc.CallOption) (*Account, error) {
 	out := new(Account)
 	err := c.cc.Invoke(ctx, "/litrpc.Accounts/UpdateAccount", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountsClient) CreditAccount(ctx context.Context, in *CreditAccountRequest, opts ...grpc.CallOption) (*CreditAccountResponse, error) {
+	out := new(CreditAccountResponse)
+	err := c.cc.Invoke(ctx, "/litrpc.Accounts/CreditAccount", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountsClient) DebitAccount(ctx context.Context, in *DebitAccountRequest, opts ...grpc.CallOption) (*DebitAccountResponse, error) {
+	out := new(DebitAccountResponse)
+	err := c.cc.Invoke(ctx, "/litrpc.Accounts/DebitAccount", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -119,6 +145,14 @@ type AccountsServer interface {
 	// litcli: `accounts update`
 	// UpdateAccount updates an existing account in the account database.
 	UpdateAccount(context.Context, *UpdateAccountRequest) (*Account, error)
+	// litcli: `accounts update credit`
+	// CreditAccount increases the balance of an existing account in the account
+	// database.
+	CreditAccount(context.Context, *CreditAccountRequest) (*CreditAccountResponse, error)
+	// litcli: `accounts update debit`
+	// DebitAccount decreases the balance of an existing account in the account
+	// database.
+	DebitAccount(context.Context, *DebitAccountRequest) (*DebitAccountResponse, error)
 	// litcli: `accounts list`
 	// ListAccounts returns all accounts that are currently stored in the account
 	// database.
@@ -141,6 +175,12 @@ func (UnimplementedAccountsServer) CreateAccount(context.Context, *CreateAccount
 }
 func (UnimplementedAccountsServer) UpdateAccount(context.Context, *UpdateAccountRequest) (*Account, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateAccount not implemented")
+}
+func (UnimplementedAccountsServer) CreditAccount(context.Context, *CreditAccountRequest) (*CreditAccountResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreditAccount not implemented")
+}
+func (UnimplementedAccountsServer) DebitAccount(context.Context, *DebitAccountRequest) (*DebitAccountResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DebitAccount not implemented")
 }
 func (UnimplementedAccountsServer) ListAccounts(context.Context, *ListAccountsRequest) (*ListAccountsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListAccounts not implemented")
@@ -196,6 +236,42 @@ func _Accounts_UpdateAccount_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AccountsServer).UpdateAccount(ctx, req.(*UpdateAccountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Accounts_CreditAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreditAccountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountsServer).CreditAccount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/litrpc.Accounts/CreditAccount",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountsServer).CreditAccount(ctx, req.(*CreditAccountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Accounts_DebitAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DebitAccountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountsServer).DebitAccount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/litrpc.Accounts/DebitAccount",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountsServer).DebitAccount(ctx, req.(*DebitAccountRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -268,6 +344,14 @@ var Accounts_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateAccount",
 			Handler:    _Accounts_UpdateAccount_Handler,
+		},
+		{
+			MethodName: "CreditAccount",
+			Handler:    _Accounts_CreditAccount_Handler,
+		},
+		{
+			MethodName: "DebitAccount",
+			Handler:    _Accounts_DebitAccount_Handler,
 		},
 		{
 			MethodName: "ListAccounts",

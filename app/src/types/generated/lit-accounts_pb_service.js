@@ -28,6 +28,24 @@ Accounts.UpdateAccount = {
   responseType: lit_accounts_pb.Account
 };
 
+Accounts.CreditAccount = {
+  methodName: "CreditAccount",
+  service: Accounts,
+  requestStream: false,
+  responseStream: false,
+  requestType: lit_accounts_pb.CreditAccountRequest,
+  responseType: lit_accounts_pb.CreditAccountResponse
+};
+
+Accounts.DebitAccount = {
+  methodName: "DebitAccount",
+  service: Accounts,
+  requestStream: false,
+  responseStream: false,
+  requestType: lit_accounts_pb.DebitAccountRequest,
+  responseType: lit_accounts_pb.DebitAccountResponse
+};
+
 Accounts.ListAccounts = {
   methodName: "ListAccounts",
   service: Accounts,
@@ -98,6 +116,68 @@ AccountsClient.prototype.updateAccount = function updateAccount(requestMessage, 
     callback = arguments[1];
   }
   var client = grpc.unary(Accounts.UpdateAccount, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+AccountsClient.prototype.creditAccount = function creditAccount(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(Accounts.CreditAccount, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+AccountsClient.prototype.debitAccount = function debitAccount(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(Accounts.DebitAccount, {
     request: requestMessage,
     host: this.serviceHost,
     metadata: metadata,

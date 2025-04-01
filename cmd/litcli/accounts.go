@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -159,9 +160,10 @@ var updateAccountCommand = cli.Command{
 		},
 		cli.Int64Flag{
 			Name: "new_balance",
-			Usage: "The new balance of the account; -1 means do " +
-				"not update the balance.",
-			Value: -1,
+			Usage: "(deprecated) The new balance of the account; " +
+				"-1 means do not update the balance.",
+			Value:  -1,
+			Hidden: true,
 		},
 		cli.Int64Flag{
 			Name: "new_expiration_date",
@@ -173,6 +175,10 @@ var updateAccountCommand = cli.Command{
 		},
 	},
 	Action: updateAccount,
+	Subcommands: []cli.Command{
+		creditCommand,
+		debitCommand,
+	},
 }
 
 func updateAccount(cli *cli.Context) error {
@@ -229,6 +235,125 @@ func updateAccount(cli *cli.Context) error {
 	}
 
 	printRespJSON(resp)
+	return nil
+}
+
+var creditCommand = cli.Command{
+	Name:      "credit",
+	ShortName: "c",
+	Usage:     "Increase an account's balance by the given amount.",
+	ArgsUsage: "[id | label] amount",
+	Description: "Increases an existing off-chain account's balance by " +
+		"the given amount.",
+	Flags: []cli.Flag{
+		cli.StringFlag{
+			Name:  idName,
+			Usage: "The ID of the account to credit.",
+		},
+		cli.StringFlag{
+			Name:  labelName,
+			Usage: "(optional) The unique label of the account.",
+		},
+		cli.Uint64Flag{
+			Name:  "amount",
+			Usage: "The amount to credit the account.",
+		},
+	},
+	Action: creditBalance,
+}
+
+func creditBalance(cli *cli.Context) error {
+	return updateBalance(cli, true)
+}
+
+var debitCommand = cli.Command{
+	Name:      "debit",
+	ShortName: "d",
+	Usage:     "Decrease an account's balance by the given amount.",
+	ArgsUsage: "[id | label] amount",
+	Description: "Decreases an existing off-chain account's balance by " +
+		"the given amount.",
+	Flags: []cli.Flag{
+		cli.StringFlag{
+			Name:  idName,
+			Usage: "The ID of the account to debit.",
+		},
+		cli.StringFlag{
+			Name:  labelName,
+			Usage: "(optional) The unique label of the account.",
+		},
+		cli.Uint64Flag{
+			Name:  "amount",
+			Usage: "The amount to debit the account.",
+		},
+	},
+	Action: debitBalance,
+}
+
+func debitBalance(cli *cli.Context) error {
+	return updateBalance(cli, false)
+}
+
+func updateBalance(cli *cli.Context, add bool) error {
+	ctx := getContext()
+	clientConn, cleanup, err := connectClient(cli, false)
+	if err != nil {
+		return err
+	}
+	defer cleanup()
+	client := litrpc.NewAccountsClient(clientConn)
+
+	account, args, err := parseAccountIdentifier(cli)
+	if err != nil {
+		return err
+	}
+
+	if (!cli.IsSet("amount") && len(args) != 1) ||
+		(cli.IsSet("amount") && len(args) != 0) {
+
+		return errors.New("invalid number of arguments")
+	}
+
+	var amount uint64
+	switch {
+	case cli.IsSet("amount"):
+		amount = cli.Uint64("amount")
+	case args.Present():
+		amount, err = strconv.ParseUint(args.First(), 10, 64)
+		if err != nil {
+			return fmt.Errorf("unable to decode amount %v", err)
+		}
+		args = args.Tail()
+	default:
+		return errors.New("must set a value for amount")
+	}
+
+	if add {
+		req := &litrpc.CreditAccountRequest{
+			Account: account,
+			Amount:  amount,
+		}
+
+		resp, err := client.CreditAccount(ctx, req)
+		if err != nil {
+			return err
+		}
+
+		printRespJSON(resp)
+	} else {
+		req := &litrpc.DebitAccountRequest{
+			Account: account,
+			Amount:  amount,
+		}
+
+		resp, err := client.DebitAccount(ctx, req)
+		if err != nil {
+			return err
+		}
+
+		printRespJSON(resp)
+	}
+
 	return nil
 }
 
@@ -346,6 +471,39 @@ func removeAccount(cli *cli.Context) error {
 	}
 	_, err = client.RemoveAccount(ctx, req)
 	return err
+}
+
+// parseAccountIdentifier parses either the id or label from the command line,
+// and returns the account identifier.
+func parseAccountIdentifier(ctx *cli.Context) (
+	*litrpc.AccountIdentifier, cli.Args, error) {
+
+	id, label, args, err := parseIDOrLabel(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if id == "" && label == "" {
+		return nil, nil, fmt.Errorf("id argument missing")
+	}
+
+	if id != "" {
+		identifier := &litrpc.AccountIdentifier{
+			Identifier: &litrpc.AccountIdentifier_Id{
+				Id: id,
+			},
+		}
+
+		return identifier, args, nil
+	} else {
+		identifier := &litrpc.AccountIdentifier{
+			Identifier: &litrpc.AccountIdentifier_Label{
+				Label: label,
+			},
+		}
+
+		return identifier, args, nil
+	}
 }
 
 // parseIDOrLabel parses either the id or label from the command line.
