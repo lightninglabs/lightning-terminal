@@ -223,8 +223,6 @@ type LightningTerminal struct {
 
 	stores *stores
 
-	firewallDB *firewalldb.BoltDB
-
 	restHandler http.Handler
 	restCancel  func()
 }
@@ -240,6 +238,9 @@ func New() *LightningTerminal {
 type stores struct {
 	accounts accounts.Store
 	sessions session.Store
+
+	firewall     *firewalldb.DB
+	firewallBolt *firewalldb.BoltDB
 
 	// close is a callback that can be used to close all the stores in the
 	// stores struct.
@@ -436,6 +437,10 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 		return fmt.Errorf("could not create stores: %v", err)
 	}
 
+	if err := g.stores.firewall.Start(ctx); err != nil {
+		return fmt.Errorf("could not start firewall DB: %v", err)
+	}
+
 	g.accountService, err = accounts.NewService(
 		g.stores.accounts, accountServiceErrCallback,
 	)
@@ -456,13 +461,6 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 	)
 
 	g.ruleMgrs = rules.NewRuleManagerSet()
-
-	g.firewallDB, err = firewalldb.NewBoltDB(
-		networkDir, firewalldb.DBFilename, g.stores.sessions,
-	)
-	if err != nil {
-		return fmt.Errorf("error creating firewall DB: %v", err)
-	}
 
 	if !g.cfg.Autopilot.Disable {
 		if g.cfg.Autopilot.Address == "" &&
@@ -517,10 +515,10 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 		superMacBaker:           superMacBaker,
 		firstConnectionDeadline: g.cfg.FirstLNCConnDeadline,
 		permMgr:                 g.permsMgr,
-		actionsDB:               g.firewallDB,
+		actionsDB:               g.stores.firewallBolt,
 		autopilot:               g.autopilotClient,
 		ruleMgrs:                g.ruleMgrs,
-		privMap:                 g.firewallDB.PrivacyDB,
+		privMap:                 g.stores.firewallBolt.PrivacyDB,
 	})
 	if err != nil {
 		return fmt.Errorf("could not create new session rpc "+
@@ -1079,14 +1077,14 @@ func (g *LightningTerminal) startInternalSubServers(ctx context.Context,
 	}
 
 	requestLogger, err := firewall.NewRequestLogger(
-		g.cfg.Firewall.RequestLogger, g.firewallDB,
+		g.cfg.Firewall.RequestLogger, g.stores.firewallBolt,
 	)
 	if err != nil {
 		return fmt.Errorf("error creating new request logger")
 	}
 
 	privacyMapper := firewall.NewPrivacyMapper(
-		g.firewallDB.PrivacyDB, firewall.CryptoRandIntn,
+		g.stores.firewallBolt.PrivacyDB, firewall.CryptoRandIntn,
 		g.stores.sessions,
 	)
 
@@ -1098,7 +1096,8 @@ func (g *LightningTerminal) startInternalSubServers(ctx context.Context,
 
 	if !g.cfg.Autopilot.Disable {
 		ruleEnforcer := firewall.NewRuleEnforcer(
-			g.firewallDB, g.firewallDB, g.stores.sessions,
+			g.stores.firewall, g.stores.firewallBolt,
+			g.stores.sessions,
 			g.autopilotClient.ListFeaturePerms,
 			g.permsMgr, g.lndClient.NodePubkey,
 			g.lndClient.Router,
@@ -1108,7 +1107,7 @@ func (g *LightningTerminal) startInternalSubServers(ctx context.Context,
 					reqID, firewalldb.ActionStateError,
 					reason,
 				)
-			}, g.firewallDB.PrivacyDB,
+			}, g.stores.firewallBolt.PrivacyDB,
 		)
 
 		mw = append(mw, ruleEnforcer)
@@ -1443,13 +1442,6 @@ func (g *LightningTerminal) shutdownSubServers() error {
 		g.middleware.Stop()
 	}
 
-	if g.firewallDB != nil {
-		if err := g.firewallDB.Close(); err != nil {
-			log.Errorf("Error closing rules DB: %v", err)
-			returnErr = err
-		}
-	}
-
 	if g.ruleMgrs != nil {
 		if err := g.ruleMgrs.Stop(); err != nil {
 			log.Errorf("Error stopping rule manager set: %v", err)
@@ -1458,6 +1450,11 @@ func (g *LightningTerminal) shutdownSubServers() error {
 	}
 
 	if g.stores != nil {
+		if err := g.stores.firewall.Stop(); err != nil {
+			log.Errorf("Error stoppint firewall DB: %v", err)
+			returnErr = err
+		}
+
 		err = g.stores.close()
 		if err != nil {
 			log.Errorf("Error closing stores: %v", err)

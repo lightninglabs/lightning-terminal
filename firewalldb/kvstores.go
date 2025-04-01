@@ -100,6 +100,8 @@ type KVStore interface {
 
 // RulesDB can be used to initialise a new rules.KVStores.
 type RulesDB interface {
+	// GetKVStores constructs a new rules.KVStores in a namespace defined
+	// by the rule name, group ID and feature name.
 	GetKVStores(rule string, groupID session.ID, feature string) KVStores
 }
 

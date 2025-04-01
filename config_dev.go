@@ -3,10 +3,12 @@
 package terminal
 
 import (
+	"fmt"
 	"path/filepath"
 
 	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/db"
+	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/clock"
 )
@@ -87,7 +89,7 @@ func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
 		networkDir = filepath.Join(cfg.LitDir, cfg.Network)
 		acctStore  accounts.Store
 		sessStore  session.Store
-		closeFn    func() error
+		closeFns   = make(map[string]func() error)
 	)
 
 	switch cfg.DatabaseBackend {
@@ -106,7 +108,7 @@ func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
 
 		acctStore = accounts.NewSQLStore(sqlStore.BaseDB, clock)
 		sessStore = session.NewSQLStore(sqlStore.BaseDB, clock)
-		closeFn = sqlStore.BaseDB.Close
+		closeFns["sqlite"] = sqlStore.BaseDB.Close
 
 	case DatabaseBackendPostgres:
 		sqlStore, err := db.NewPostgresStore(cfg.Postgres)
@@ -116,7 +118,7 @@ func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
 
 		acctStore = accounts.NewSQLStore(sqlStore.BaseDB, clock)
 		sessStore = session.NewSQLStore(sqlStore.BaseDB, clock)
-		closeFn = sqlStore.BaseDB.Close
+		closeFns["postgres"] = sqlStore.BaseDB.Close
 
 	default:
 		accountStore, err := accounts.NewBoltStore(
@@ -126,6 +128,7 @@ func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
 		if err != nil {
 			return nil, err
 		}
+		closeFns["bbolt-accounts"] = accountStore.Close
 
 		sessionStore, err := session.NewDB(
 			networkDir, session.DBFilename, clock, accountStore,
@@ -133,28 +136,38 @@ func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
 		if err != nil {
 			return nil, err
 		}
+		closeFns["bbolt-sessions"] = sessionStore.Close
 
 		acctStore = accountStore
 		sessStore = sessionStore
-		closeFn = func() error {
-			var returnErr error
-			err = accountStore.Close()
-			if err != nil {
-				returnErr = err
-			}
+	}
 
-			err = sessionStore.Close()
-			if err != nil {
-				returnErr = err
+	firewallBoltDB, err := firewalldb.NewBoltDB(
+		networkDir, firewalldb.DBFilename, sessStore,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error creating firewall BoltDB: %v",
+			err)
+	}
+	closeFns["bbolt-firewalldb"] = firewallBoltDB.Close
+
+	return &stores{
+		accounts:     acctStore,
+		sessions:     sessStore,
+		firewall:     firewalldb.NewDB(firewallBoltDB),
+		firewallBolt: firewallBoltDB,
+		close: func() error {
+			var returnErr error
+			for storeName, fn := range closeFns {
+				err := fn()
+				if err != nil {
+					log.Errorf("error closing %s store: %v",
+						storeName, err)
+					returnErr = err
+				}
 			}
 
 			return returnErr
-		}
-	}
-
-	return &stores{
-		accounts: acctStore,
-		sessions: sessStore,
-		close:    closeFn,
+		},
 	}, nil
 }
