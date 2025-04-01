@@ -14,7 +14,7 @@ func TestPrivacyMapStorage(t *testing.T) {
 	ctx := context.Background()
 
 	tmpDir := t.TempDir()
-	db, err := NewDB(tmpDir, "test.db", nil)
+	db, err := NewBoltDB(tmpDir, "test.db", nil)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
@@ -188,7 +188,7 @@ func TestPrivacyMapTxs(t *testing.T) {
 	ctx := context.Background()
 
 	tmpDir := t.TempDir()
-	db, err := NewDB(tmpDir, "test.db", nil)
+	db, err := NewBoltDB(tmpDir, "test.db", nil)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()

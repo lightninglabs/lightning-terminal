@@ -18,7 +18,7 @@ func TestKVStoreTxs(t *testing.T) {
 	ctx := context.Background()
 	tmpDir := t.TempDir()
 
-	db, err := NewDB(tmpDir, "test.db", nil)
+	db, err := NewBoltDB(tmpDir, "test.db", nil)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
@@ -86,7 +86,7 @@ func testTempAndPermStores(t *testing.T, featureSpecificStore bool) {
 		featureName = "auto-fees"
 	}
 
-	db, err := NewDB(tmpDir, "test.db", nil)
+	db, err := NewBoltDB(tmpDir, "test.db", nil)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
@@ -134,7 +134,7 @@ func testTempAndPermStores(t *testing.T, featureSpecificStore bool) {
 	require.NoError(t, db.Close())
 
 	// Restart it.
-	db, err = NewDB(tmpDir, "test.db", nil)
+	db, err = NewBoltDB(tmpDir, "test.db", nil)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
@@ -168,7 +168,7 @@ func TestKVStoreNameSpaces(t *testing.T) {
 	ctx := context.Background()
 	tmpDir := t.TempDir()
 
-	db, err := NewDB(tmpDir, "test.db", nil)
+	db, err := NewBoltDB(tmpDir, "test.db", nil)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()

@@ -104,7 +104,7 @@ type RulesDB interface {
 }
 
 // GetKVStores constructs a new rules.KVStores backed by a bbolt db.
-func (db *DB) GetKVStores(rule string, groupID session.ID,
+func (db *BoltDB) GetKVStores(rule string, groupID session.ID,
 	feature string) KVStores {
 
 	return &kvdbExecutor[KVStoreTx]{

@@ -223,7 +223,7 @@ type LightningTerminal struct {
 
 	stores *stores
 
-	firewallDB *firewalldb.DB
+	firewallDB *firewalldb.BoltDB
 
 	restHandler http.Handler
 	restCancel  func()
@@ -457,7 +457,7 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 
 	g.ruleMgrs = rules.NewRuleManagerSet()
 
-	g.firewallDB, err = firewalldb.NewDB(
+	g.firewallDB, err = firewalldb.NewBoltDB(
 		networkDir, firewalldb.DBFilename, g.stores.sessions,
 	)
 	if err != nil {

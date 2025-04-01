@@ -43,7 +43,7 @@ var (
 func TestActionStorage(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	db, err := NewDB(tmpDir, "test.db", nil)
+	db, err := NewBoltDB(tmpDir, "test.db", nil)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
@@ -151,7 +151,7 @@ func TestActionStorage(t *testing.T) {
 func TestListActions(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	db, err := NewDB(tmpDir, "test.db", nil)
+	db, err := NewBoltDB(tmpDir, "test.db", nil)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
@@ -353,7 +353,7 @@ func TestListGroupActions(t *testing.T) {
 	index.AddPair(sessionID1, group1)
 	index.AddPair(sessionID2, group1)
 
-	db, err := NewDB(t.TempDir(), "test.db", index)
+	db, err := NewBoltDB(t.TempDir(), "test.db", index)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()

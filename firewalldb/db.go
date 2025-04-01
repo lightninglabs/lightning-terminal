@@ -37,15 +37,18 @@ var (
 	ErrNoSuchKeyFound = fmt.Errorf("no such key found")
 )
 
-// DB is a bolt-backed persistent store.
-type DB struct {
+// BoltDB is a bolt-backed persistent store.
+type BoltDB struct {
 	*bbolt.DB
 
 	sessionIDIndex SessionDB
 }
 
-// NewDB creates a new bolt database that can be found at the given directory.
-func NewDB(dir, fileName string, sessionIDIndex SessionDB) (*DB, error) {
+// NewBoltDB creates a new bolt database that can be found at the given
+// directory.
+func NewBoltDB(dir, fileName string, sessionIDIndex SessionDB) (*BoltDB,
+	error) {
+
 	firstInit := false
 	path := filepath.Join(dir, fileName)
 
@@ -68,7 +71,7 @@ func NewDB(dir, fileName string, sessionIDIndex SessionDB) (*DB, error) {
 		return nil, err
 	}
 
-	return &DB{
+	return &BoltDB{
 		DB:             db,
 		sessionIDIndex: sessionIDIndex,
 	}, nil

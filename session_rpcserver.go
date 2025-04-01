@@ -63,7 +63,7 @@ type sessionRpcServerConfig struct {
 	superMacBaker           litmac.Baker
 	firstConnectionDeadline time.Duration
 	permMgr                 *perms.Manager
-	actionsDB               *firewalldb.DB
+	actionsDB               *firewalldb.BoltDB
 	autopilot               autopilotserver.Autopilot
 	ruleMgrs                rules.ManagerSet
 	privMap                 firewalldb.NewPrivacyMapDB
