@@ -39,7 +39,7 @@ func (db *DB) Start(ctx context.Context) error {
 		db.cancel = fn.Some(cancel)
 	})
 
-	return nil
+	return db.DeleteTempKVStores(ctx)
 }
 
 // Stop stops the firewall database operations.

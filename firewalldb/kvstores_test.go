@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/lightninglabs/lightning-terminal/session"
@@ -86,15 +85,21 @@ func testTempAndPermStores(t *testing.T, featureSpecificStore bool) {
 		featureName = "auto-fees"
 	}
 
-	db, err := NewBoltDB(tmpDir, "test.db", nil)
+	store, err := NewBoltDB(tmpDir, "test.db", nil)
 	require.NoError(t, err)
 	t.Cleanup(func() {
-		_ = db.Close()
+		_ = store.Close()
 	})
+	db := NewDB(store)
+	require.NoError(t, db.Start(ctx))
 
-	store := db.GetKVStores("test-rule", [4]byte{1, 1, 1, 1}, featureName)
+	kvstores := db.GetKVStores(
+		"test-rule", [4]byte{1, 1, 1, 1}, featureName,
+	)
 
-	err = store.Update(ctx, func(ctx context.Context, tx KVStoreTx) error {
+	err = kvstores.Update(ctx, func(ctx context.Context,
+		tx KVStoreTx) error {
+
 		// Set an item in the temp store.
 		err := tx.LocalTemp().Set(ctx, "test", []byte{4, 3, 2})
 		if err != nil {
@@ -112,7 +117,7 @@ func testTempAndPermStores(t *testing.T, featureSpecificStore bool) {
 		v1 []byte
 		v2 []byte
 	)
-	err = store.View(ctx, func(ctx context.Context, tx KVStoreTx) error {
+	err = kvstores.View(ctx, func(ctx context.Context, tx KVStoreTx) error {
 		b, err := tx.LocalTemp().Get(ctx, "test")
 		if err != nil {
 			return err
@@ -130,21 +135,19 @@ func testTempAndPermStores(t *testing.T, featureSpecificStore bool) {
 	require.True(t, bytes.Equal(v1, []byte{4, 3, 2}))
 	require.True(t, bytes.Equal(v2, []byte{6, 5, 4}))
 
-	// Close the db.
-	require.NoError(t, db.Close())
-
-	// Restart it.
-	db, err = NewBoltDB(tmpDir, "test.db", nil)
-	require.NoError(t, err)
+	// Re-init the DB.
+	require.NoError(t, db.Stop())
+	db = NewDB(store)
+	require.NoError(t, db.Start(ctx))
 	t.Cleanup(func() {
-		_ = db.Close()
-		_ = os.RemoveAll(tmpDir)
+		require.NoError(t, db.Stop())
 	})
-	store = db.GetKVStores("test-rule", [4]byte{1, 1, 1, 1}, featureName)
+
+	kvstores = db.GetKVStores("test-rule", [4]byte{1, 1, 1, 1}, featureName)
 
 	// The temp store should no longer have the stored value but the perm
 	// store should .
-	err = store.View(ctx, func(ctx context.Context, tx KVStoreTx) error {
+	err = kvstores.View(ctx, func(ctx context.Context, tx KVStoreTx) error {
 		b, err := tx.LocalTemp().Get(ctx, "test")
 		if err != nil {
 			return err

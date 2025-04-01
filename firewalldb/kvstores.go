@@ -2,6 +2,7 @@ package firewalldb
 
 import (
 	"context"
+	"errors"
 
 	"github.com/lightninglabs/lightning-terminal/session"
 	"go.etcd.io/bbolt"
@@ -103,6 +104,9 @@ type RulesDB interface {
 	// GetKVStores constructs a new rules.KVStores in a namespace defined
 	// by the rule name, group ID and feature name.
 	GetKVStores(rule string, groupID session.ID, feature string) KVStores
+
+	// DeleteTempKVStores deletes all temporary kv stores.
+	DeleteTempKVStores(ctx context.Context) error
 }
 
 // GetKVStores constructs a new rules.KVStores backed by a bbolt db.
@@ -122,6 +126,25 @@ func (db *BoltDB) GetKVStores(rule string, groupID session.ID,
 			}
 		},
 	}
+}
+
+// DeleteTempKVStores deletes all kv-stores in the temporary namespace.
+func (db *BoltDB) DeleteTempKVStores(_ context.Context) error {
+	return db.Update(func(tx *bbolt.Tx) error {
+		rulesBucket, err := tx.CreateBucketIfNotExists(rulesBucketKey)
+		if err != nil {
+			return err
+		}
+
+		// Delete everything under the "temp" key if such a bucket
+		// exists.
+		err = rulesBucket.DeleteBucket(tempBucketKey)
+		if err != nil && !errors.Is(err, bbolt.ErrBucketNotFound) {
+			return err
+		}
+
+		return nil
+	})
 }
 
 // kvStores implements the rules.KVStores interface.
