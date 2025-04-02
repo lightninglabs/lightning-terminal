@@ -1087,6 +1087,7 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 
 type invoiceConfig struct {
 	errSubStr string
+	msats     lnwire.MilliSatoshi
 }
 
 func defaultInvoiceConfig() *invoiceConfig {
@@ -1100,6 +1101,12 @@ type invoiceOpt func(*invoiceConfig)
 func withInvoiceErrSubStr(errSubStr string) invoiceOpt {
 	return func(c *invoiceConfig) {
 		c.errSubStr = errSubStr
+	}
+}
+
+func withMsatAmount(amt uint64) invoiceOpt {
+	return func(c *invoiceConfig) {
+		c.msats = lnwire.MilliSatoshi(amt)
 	}
 }
 
@@ -1131,7 +1138,8 @@ func createAssetInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 		InvoiceRequest: &lnrpc.Invoice{
 			Memo: fmt.Sprintf("this is an asset invoice over "+
 				"%d units", assetAmount),
-			Expiry: timeoutSeconds,
+			Expiry:    timeoutSeconds,
+			ValueMsat: int64(cfg.msats),
 		},
 	})
 	if cfg.errSubStr != "" {
@@ -1153,11 +1161,20 @@ func createAssetInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 
 	t.Logf("Got quote for %v asset units per BTC", rate)
 
-	assetUnits := rfqmath.NewBigIntFixedPoint(assetAmount, 0)
-	numMSats := rfqmath.UnitsToMilliSatoshi(assetUnits, *rate)
-	mSatPerUnit := float64(decodedInvoice.NumMsat) / float64(assetAmount)
+	var mSatPerUnit float64
 
-	require.EqualValues(t, numMSats, decodedInvoice.NumMsat)
+	if cfg.msats > 0 {
+		require.EqualValues(t, decodedInvoice.NumMsat, cfg.msats)
+		units := rfqmath.MilliSatoshiToUnits(cfg.msats, *rate)
+
+		mSatPerUnit = float64(cfg.msats) / float64(units.ToUint64())
+	} else {
+		assetUnits := rfqmath.NewBigIntFixedPoint(assetAmount, 0)
+		numMSats := rfqmath.UnitsToMilliSatoshi(assetUnits, *rate)
+		mSatPerUnit = float64(decodedInvoice.NumMsat) / float64(assetAmount)
+
+		require.EqualValues(t, numMSats, decodedInvoice.NumMsat)
+	}
 
 	t.Logf("Got quote for %d mSats at %3f msat/unit from peer %x with "+
 		"SCID %d", decodedInvoice.NumMsat, mSatPerUnit,
@@ -1319,7 +1336,7 @@ func createAssetHodlInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 
 	require.EqualValues(t, uint64(numMSats), uint64(decodedInvoice.NumMsat))
 
-	t.Logf("Got quote for %d sats at %v msat/unit from peer %x with SCID "+
+	t.Logf("Got quote for %d msats at %v msat/unit from peer %x with SCID "+
 		"%d", decodedInvoice.NumMsat, mSatPerUnit, dstRfqPeer.PubKey[:],
 		resp.AcceptedBuyQuote.Scid)
 
