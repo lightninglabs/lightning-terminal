@@ -3,6 +3,7 @@ package itest
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"fmt"
 	"math"
 	"math/big"
@@ -12,6 +13,7 @@ import (
 	"github.com/btcsuite/btcd/btcec/v2/schnorr"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/btcsuite/btcd/wire"
 	"github.com/lightninglabs/taproot-assets/asset"
 	"github.com/lightninglabs/taproot-assets/itest"
 	"github.com/lightninglabs/taproot-assets/proof"
@@ -3096,6 +3098,14 @@ func testCustomChannelsHtlcForceClose(ctxb context.Context, net *NetworkHarness,
 	t *harnessTest) {
 
 	runCustomChannelsHtlcForceClose(ctxb, t, net, false)
+}
+
+// testCustomChannelsHtlcForceCloseMpp tests that we can force close a channel
+// with HTLCs in both directions and that the HTLC outputs are correctly
+// swept, using MPP.
+func testCustomChannelsHtlcForceCloseMpp(ctxb context.Context,
+	net *NetworkHarness, t *harnessTest) {
+
 	runCustomChannelsHtlcForceClose(ctxb, t, net, true)
 }
 
@@ -3253,10 +3263,11 @@ func runCustomChannelsHtlcForceClose(ctx context.Context, t *harnessTest,
 	// At this point, both sides should have 4 (or +4 with MPP) HTLCs
 	// active.
 	numHtlcs := 4
+	numAdditionalShards := assetInvoiceAmt / assetsPerMPPShard
 	if mpp {
-		numAdditionalShards := assetInvoiceAmt / assetsPerMPPShard
 		numHtlcs += numAdditionalShards * 2
 	}
+	t.Logf("Asserting both Alice and Bob have %d HTLCs...", numHtlcs)
 	assertNumHtlcs(t.t, alice, numHtlcs)
 	assertNumHtlcs(t.t, bob, numHtlcs)
 
@@ -3278,6 +3289,9 @@ func runCustomChannelsHtlcForceClose(ctx context.Context, t *harnessTest,
 
 	t.Logf("Channel closed! Mining blocks, close_txid=%v", closeTxid)
 
+	// The channel should first be in "waiting close" until it confirms.
+	assertWaitingCloseChannelAssetData(t.t, alice, aliceChanPoint)
+
 	// Next, we'll mine a block which should start the clock ticking on the
 	// relative timeout for the Alice, and Bob.
 	//
@@ -3296,6 +3310,9 @@ func runCustomChannelsHtlcForceClose(ctx context.Context, t *harnessTest,
 	locateAssetTransfers(t.t, bobTap, *closeTxid)
 
 	t.Logf("Settling Bob's hodl invoice")
+
+	// It should then go to "pending force closed".
+	assertPendingForceCloseChannelAssetData(t.t, alice, aliceChanPoint)
 
 	// At this point, the commitment transaction has been mined, and we have
 	// 4 total HTLCs on Alice's commitment transaction:
@@ -3506,6 +3523,10 @@ func runCustomChannelsHtlcForceClose(ctx context.Context, t *harnessTest,
 
 	// We'll wait for both Alice and Bob to present their respective sweeps
 	// to the sweeper.
+	numTimeoutHTLCs := 1
+	if mpp {
+		numTimeoutHTLCs += numAdditionalShards
+	}
 	assertSweepExists(
 		t.t, alice,
 		walletrpc.WitnessType_TAPROOT_HTLC_LOCAL_OFFERED_TIMEOUT,
@@ -3517,8 +3538,67 @@ func runCustomChannelsHtlcForceClose(ctx context.Context, t *harnessTest,
 
 	t.Logf("Confirming initial HTLC timeout txns")
 
+	timeoutSweeps, err := waitForNTxsInMempool(
+		net.Miner.Client, 2, shortTimeout,
+	)
+	require.NoError(t.t, err)
+
+	t.Logf("Asserting balance on sweeps: %v", timeoutSweeps)
+
 	// Finally, we'll mine a single block to confirm them.
 	mineBlocks(t, net, 1, 2)
+
+	// Make sure Bob swept all his HTLCs.
+	bobSweeps, err := bob.WalletKitClient.ListSweeps(
+		ctx, &walletrpc.ListSweepsRequest{
+			Verbose: true,
+		},
+	)
+	require.NoError(t.t, err)
+
+	var bobSweepTx *wire.MsgTx
+	for _, sweep := range bobSweeps.GetTransactionDetails().Transactions {
+		for _, tx := range timeoutSweeps {
+			if sweep.TxHash == tx.String() {
+				txBytes, err := hex.DecodeString(sweep.RawTxHex)
+				require.NoError(t.t, err)
+
+				bobSweepTx = &wire.MsgTx{}
+				err = bobSweepTx.Deserialize(
+					bytes.NewReader(txBytes),
+				)
+				require.NoError(t.t, err)
+			}
+		}
+	}
+	require.NotNil(t.t, bobSweepTx, "Bob's sweep transaction not found")
+
+	// There's always an extra input that pays for the fees. So we can only
+	// count the remainder as HTLC inputs.
+	numSweptHTLCs := len(bobSweepTx.TxIn) - 1
+
+	// If we didn't yet sweep all HTLCs, then we need to wait for another
+	// sweep.
+	if numSweptHTLCs < numTimeoutHTLCs {
+		assertSweepExists(
+			t.t, bob,
+			// nolint: lll
+			walletrpc.WitnessType_TAPROOT_HTLC_OFFERED_REMOTE_TIMEOUT,
+		)
+
+		t.Logf("Confirming additional HTLC timeout sweep txns")
+
+		additionalTimeoutSweeps, err := waitForNTxsInMempool(
+			net.Miner.Client, 1, shortTimeout,
+		)
+		require.NoError(t.t, err)
+
+		t.Logf("Asserting balance on additional timeout sweeps: %v",
+			additionalTimeoutSweeps)
+
+		// Finally, we'll mine a single block to confirm them.
+		mineBlocks(t, net, 1, 1)
+	}
 
 	// At this point, Bob's balance should be incremented by an additional
 	// HTLC value.

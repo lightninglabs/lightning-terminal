@@ -53,6 +53,10 @@ var allTestCases = []*testCase{
 		test: testCustomChannelsHtlcForceClose,
 	},
 	{
+		name: "test custom channels htlc force close MPP",
+		test: testCustomChannelsHtlcForceCloseMpp,
+	},
+	{
 		name: "test custom channels balance consistency",
 		test: testCustomChannelsBalanceConsistency,
 	},
