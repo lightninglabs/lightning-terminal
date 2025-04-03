@@ -117,7 +117,9 @@ type Action struct {
 }
 
 // AddAction serialises and adds an Action to the DB under the given sessionID.
-func (db *DB) AddAction(sessionID session.ID, action *Action) (uint64, error) {
+func (db *BoltDB) AddAction(sessionID session.ID, action *Action) (uint64,
+	error) {
+
 	var buf bytes.Buffer
 	if err := SerializeAction(&buf, action); err != nil {
 		return 0, err
@@ -231,7 +233,7 @@ func getAction(actionsBkt *bbolt.Bucket, al *ActionLocator) (*Action, error) {
 
 // SetActionState finds the action specified by the ActionLocator and sets its
 // state to the given state.
-func (db *DB) SetActionState(al *ActionLocator, state ActionState,
+func (db *BoltDB) SetActionState(al *ActionLocator, state ActionState,
 	errorReason string) error {
 
 	if errorReason != "" && state != ActionStateError {
@@ -293,7 +295,7 @@ type ListActionsFilterFn func(a *Action, reversed bool) (bool, bool)
 // The indexOffset and maxNum params can be used to control the number of
 // actions returned. The return values are the list of actions, the last index
 // and the total count (iff query.CountTotal is set).
-func (db *DB) ListActions(filterFn ListActionsFilterFn,
+func (db *BoltDB) ListActions(filterFn ListActionsFilterFn,
 	query *ListActionsQuery) ([]*Action, uint64, uint64, error) {
 
 	var (
@@ -345,7 +347,7 @@ func (db *DB) ListActions(filterFn ListActionsFilterFn,
 
 // ListSessionActions returns a list of the given session's Actions that pass
 // the filterFn requirements.
-func (db *DB) ListSessionActions(sessionID session.ID,
+func (db *BoltDB) ListSessionActions(sessionID session.ID,
 	filterFn ListActionsFilterFn, query *ListActionsQuery) ([]*Action,
 	uint64, uint64, error) {
 
@@ -391,7 +393,7 @@ func (db *DB) ListSessionActions(sessionID session.ID,
 // pass the filterFn requirements.
 //
 // TODO: update to allow for pagination.
-func (db *DB) ListGroupActions(ctx context.Context, groupID session.ID,
+func (db *BoltDB) ListGroupActions(ctx context.Context, groupID session.ID,
 	filterFn ListActionsFilterFn) ([]*Action, error) {
 
 	if filterFn == nil {
@@ -589,7 +591,7 @@ type ActionReadDBGetter interface {
 }
 
 // GetActionsReadDB is a method on DB that constructs an ActionsReadDB.
-func (db *DB) GetActionsReadDB(groupID session.ID,
+func (db *BoltDB) GetActionsReadDB(groupID session.ID,
 	featureName string) ActionsReadDB {
 
 	return &allActionsReadDB{
@@ -601,7 +603,7 @@ func (db *DB) GetActionsReadDB(groupID session.ID,
 
 // allActionsReadDb is an implementation of the ActionsReadDB.
 type allActionsReadDB struct {
-	db          *DB
+	db          *BoltDB
 	groupID     session.ID
 	featureName string
 }
