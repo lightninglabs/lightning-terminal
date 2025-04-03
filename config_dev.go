@@ -87,9 +87,9 @@ func defaultDevConfig() *DevConfig {
 func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
 	var (
 		networkDir = filepath.Join(cfg.LitDir, cfg.Network)
-		acctStore  accounts.Store
-		sessStore  session.Store
-		closeFns   = make(map[string]func() error)
+		stores     = &stores{
+			closeFns: make(map[string]func() error),
+		}
 	)
 
 	switch cfg.DatabaseBackend {
@@ -98,27 +98,33 @@ func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
 		// the directory where we will store the database file exists.
 		err := makeDirectories(networkDir)
 		if err != nil {
-			return nil, err
+			return stores, err
 		}
 
 		sqlStore, err := db.NewSqliteStore(cfg.Sqlite)
 		if err != nil {
-			return nil, err
+			return stores, err
 		}
 
-		acctStore = accounts.NewSQLStore(sqlStore.BaseDB, clock)
-		sessStore = session.NewSQLStore(sqlStore.BaseDB, clock)
-		closeFns["sqlite"] = sqlStore.BaseDB.Close
+		acctStore := accounts.NewSQLStore(sqlStore.BaseDB, clock)
+		sessStore := session.NewSQLStore(sqlStore.BaseDB, clock)
+
+		stores.accounts = acctStore
+		stores.sessions = sessStore
+		stores.closeFns["sqlite"] = sqlStore.BaseDB.Close
 
 	case DatabaseBackendPostgres:
 		sqlStore, err := db.NewPostgresStore(cfg.Postgres)
 		if err != nil {
-			return nil, err
+			return stores, err
 		}
 
-		acctStore = accounts.NewSQLStore(sqlStore.BaseDB, clock)
-		sessStore = session.NewSQLStore(sqlStore.BaseDB, clock)
-		closeFns["postgres"] = sqlStore.BaseDB.Close
+		acctStore := accounts.NewSQLStore(sqlStore.BaseDB, clock)
+		sessStore := session.NewSQLStore(sqlStore.BaseDB, clock)
+
+		stores.accounts = acctStore
+		stores.sessions = sessStore
+		stores.closeFns["postgres"] = sqlStore.BaseDB.Close
 
 	default:
 		accountStore, err := accounts.NewBoltStore(
@@ -126,48 +132,34 @@ func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
 			clock,
 		)
 		if err != nil {
-			return nil, err
+			return stores, err
 		}
-		closeFns["bbolt-accounts"] = accountStore.Close
+
+		stores.accounts = accountStore
+		stores.closeFns["bbolt-accounts"] = accountStore.Close
 
 		sessionStore, err := session.NewDB(
 			networkDir, session.DBFilename, clock, accountStore,
 		)
 		if err != nil {
-			return nil, err
+			return stores, err
 		}
-		closeFns["bbolt-sessions"] = sessionStore.Close
 
-		acctStore = accountStore
-		sessStore = sessionStore
+		stores.sessions = sessionStore
+		stores.closeFns["bbolt-sessions"] = sessionStore.Close
 	}
 
 	firewallBoltDB, err := firewalldb.NewBoltDB(
-		networkDir, firewalldb.DBFilename, sessStore,
+		networkDir, firewalldb.DBFilename, stores.sessions,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error creating firewall BoltDB: %v",
+		return stores, fmt.Errorf("error creating firewall BoltDB: %v",
 			err)
 	}
-	closeFns["bbolt-firewalldb"] = firewallBoltDB.Close
 
-	return &stores{
-		accounts:     acctStore,
-		sessions:     sessStore,
-		firewall:     firewalldb.NewDB(firewallBoltDB),
-		firewallBolt: firewallBoltDB,
-		close: func() error {
-			var returnErr error
-			for storeName, fn := range closeFns {
-				err := fn()
-				if err != nil {
-					log.Errorf("error closing %s store: %v",
-						storeName, err)
-					returnErr = err
-				}
-			}
+	stores.firewall = firewalldb.NewDB(firewallBoltDB)
+	stores.firewallBolt = firewallBoltDB
+	stores.closeFns["bbolt-firewalldb"] = firewallBoltDB.Close
 
-			return returnErr
-		},
-	}, nil
+	return stores, nil
 }

@@ -242,9 +242,25 @@ type stores struct {
 	firewall     *firewalldb.DB
 	firewallBolt *firewalldb.BoltDB
 
-	// close is a callback that can be used to close all the stores in the
-	// stores struct.
-	close func() error
+	// closeFns holds various callbacks that can be used to close any open
+	// stores in the stores struct.
+	closeFns map[string]func() error
+}
+
+// close closes all open stores in the stores struct. It returns an error if
+// any of the stores could not be closed.
+func (s *stores) close() error {
+	var returnErr error
+	for storeName, closeFn := range s.closeFns {
+		err := closeFn()
+		if err != nil {
+			log.Errorf("error closing %s store: %v",
+				storeName, err)
+			returnErr = err
+		}
+	}
+
+	return returnErr
 }
 
 // Run starts everything and then blocks until either the application is shut
@@ -1450,9 +1466,13 @@ func (g *LightningTerminal) shutdownSubServers() error {
 	}
 
 	if g.stores != nil {
-		if err := g.stores.firewall.Stop(); err != nil {
-			log.Errorf("Error stoppint firewall DB: %v", err)
-			returnErr = err
+		if g.stores.firewall != nil {
+			if err := g.stores.firewall.Stop(); err != nil {
+				log.Errorf("Error stoppint firewall DB: %v",
+					err)
+
+				returnErr = err
+			}
 		}
 
 		err = g.stores.close()

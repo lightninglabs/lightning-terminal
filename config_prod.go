@@ -32,55 +32,38 @@ func (c *DevConfig) Validate(_, _ string) error {
 func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
 	networkDir := filepath.Join(cfg.LitDir, cfg.Network)
 
+	stores := &stores{
+		closeFns: make(map[string]func() error),
+	}
+
 	acctStore, err := accounts.NewBoltStore(
 		filepath.Dir(cfg.MacaroonPath), accounts.DBFilename, clock,
 	)
 	if err != nil {
-		return nil, err
+		return stores, err
 	}
+	stores.accounts = acctStore
+	stores.closeFns["accounts"] = acctStore.Close
 
 	sessStore, err := session.NewDB(
 		networkDir, session.DBFilename, clock, acctStore,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error creating session BoltStore: %v",
-			err)
+		return stores, fmt.Errorf("error creating session BoltStore: "+
+			"%v", err)
 	}
+	stores.sessions = sessStore
+	stores.closeFns["sessions"] = sessStore.Close
 
 	firewallDB, err := firewalldb.NewBoltDB(
 		networkDir, firewalldb.DBFilename, sessStore,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error creating firewall DB: %v", err)
+		return stores, fmt.Errorf("error creating firewall DB: %v", err)
 	}
+	stores.firewallBolt = firewallDB
+	stores.firewall = firewalldb.NewDB(firewallDB)
+	stores.closeFns["firewall"] = firewallDB.Close
 
-	return &stores{
-		accounts:     acctStore,
-		sessions:     sessStore,
-		firewallBolt: firewallDB,
-		firewall:     firewalldb.NewDB(firewallDB),
-		close: func() error {
-			var returnErr error
-			if err := acctStore.Close(); err != nil {
-				returnErr = fmt.Errorf("error closing "+
-					"account store: %v", err)
-
-				log.Error(returnErr.Error())
-			}
-			if err := sessStore.Close(); err != nil {
-				returnErr = fmt.Errorf("error closing "+
-					"session store: %v", err)
-
-				log.Error(returnErr.Error())
-			}
-			if err := firewallDB.Close(); err != nil {
-				returnErr = fmt.Errorf("error closing "+
-					"firewall DB: %v", err)
-
-				log.Error(returnErr.Error())
-			}
-
-			return returnErr
-		},
-	}, nil
+	return stores, nil
 }
