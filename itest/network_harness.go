@@ -122,8 +122,8 @@ func (n *NetworkHarness) ProcessErrors() <-chan error {
 // rpc clients capable of communicating with the initial seeder nodes are
 // created. Nodes are initialized with the given extra command line flags, which
 // should be formatted properly - "--arg=value".
-func (n *NetworkHarness) SetUp(t *testing.T,
-	testCase string, lndArgs []string) error {
+func (n *NetworkHarness) SetUp(t *testing.T, testCase string, lndArgs []string,
+	noAliceBob bool) error {
 
 	// Swap out grpc's default logger with our fake logger which drops the
 	// statements on the floor.
@@ -142,6 +142,11 @@ func (n *NetworkHarness) SetUp(t *testing.T,
 	// Start a mock autopilot server.
 	n.autopilotServer = mock.NewServer()
 	require.NoError(t, n.autopilotServer.Start())
+
+	// Skip early if we don't need the default Alice and Bob nodes.
+	if noAliceBob {
+		return nil
+	}
 
 	// Start the initial seeder nodes within the test network, then connect
 	// their respective RPC clients.
@@ -252,6 +257,20 @@ out:
 		}
 	}
 
+	t.Cleanup(func() {
+		require.NoError(t, n.TearDown())
+		n.Stop()
+	})
+
+	n.EnsureConnected(t, n.Alice, n.Bob)
+
+	logLine := fmt.Sprintf(
+		"STARTING ============ %v ============\n", testCase,
+	)
+
+	n.Alice.AddToLog(logLine)
+	n.Bob.AddToLog(logLine)
+
 	return nil
 }
 
@@ -300,13 +319,28 @@ func (n *NetworkHarness) NewNode(t *testing.T, name string, extraArgs []string,
 	)
 }
 
+// NewNodeWithPort initializes a new HarnessNode with a custom litd port.
+func (n *NetworkHarness) NewNodeWithPort(t *testing.T, name string,
+	extraArgs []string, remoteMode bool, wait bool, litPort int,
+	additionalLitArgs ...string) (*HarnessNode, error) {
+
+	allLitArgs := append(n.litArgs(), additionalLitArgs...)
+
+	return n.newNode(
+		t, name, extraArgs, allLitArgs, false, remoteMode, nil, wait,
+		false, func(config *LitNodeConfig) {
+			config.LitPort = litPort
+		},
+	)
+}
+
 // newNode initializes a new HarnessNode, supporting the ability to initialize a
 // wallet with or without a seed. If hasSeed is false, the returned harness node
 // can be used immediately. Otherwise, the node will require an additional
 // initialization phase where the wallet is either created or restored.
 func (n *NetworkHarness) newNode(t *testing.T, name string, extraArgs,
 	litArgs []string, hasSeed, remoteMode bool, password []byte, wait,
-	skipUnlock bool, opts ...node.Option) (*HarnessNode, error) {
+	skipUnlock bool, opts ...Option) (*HarnessNode, error) {
 
 	baseCfg := &node.BaseNodeConfig{
 		Name:              name,
@@ -318,14 +352,14 @@ func (n *NetworkHarness) newNode(t *testing.T, name string, extraArgs,
 		SkipUnlock:        skipUnlock,
 		FeeURL:            n.feeService.URL(),
 	}
-	for _, opt := range opts {
-		opt(baseCfg)
-	}
 	cfg := &LitNodeConfig{
 		BaseNodeConfig: baseCfg,
 		HasSeed:        hasSeed,
 		LitArgs:        litArgs,
 		RemoteMode:     remoteMode,
+	}
+	for _, opt := range opts {
+		opt(cfg)
 	}
 
 	node, err := NewNode(t, cfg, n.LNDHarness)

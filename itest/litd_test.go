@@ -1,7 +1,6 @@
 package itest
 
 import (
-	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -42,8 +41,6 @@ func TestLightningTerminal(t *testing.T) {
 
 	// Run the subset of the test cases selected in this tranche.
 	for _, testCase := range allTestCases {
-		testCase := testCase
-
 		success := t.Run(testCase.name, func(t1 *testing.T) {
 			cleanTestCaseName := strings.ReplaceAll(
 				testCase.name, " ", "_",
@@ -79,24 +76,9 @@ func TestLightningTerminal(t *testing.T) {
 
 			err = litdHarness.SetUp(
 				t1, cleanTestCaseName, aliceBobArgs,
+				testCase.noAliceBob,
 			)
 			require.NoError(t1, err, "harness setup failed")
-			t1.Cleanup(func() {
-				require.NoError(t1, litdHarness.TearDown())
-				litdHarness.Stop()
-			})
-
-			litdHarness.EnsureConnected(
-				t1, litdHarness.Alice, litdHarness.Bob,
-			)
-
-			logLine := fmt.Sprintf(
-				"STARTING ============ %v ============\n",
-				testCase.name,
-			)
-
-			litdHarness.Alice.AddToLog(logLine)
-			litdHarness.Bob.AddToLog(logLine)
 
 			// Create a separate harness test for the testcase to
 			// avoid overwriting the external harness test that is
