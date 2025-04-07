@@ -60,7 +60,8 @@ func (db *BoltDB) GetKVStores(rule string, groupID session.ID,
 		db: db.DB,
 		wrapTx: func(tx *bbolt.Tx) KVStoreTx {
 			return &kvStoreTx{
-				boltTx: tx,
+				boltTx:   tx,
+				sessions: db.sessionIDIndex,
 				kvStores: &kvStores{
 					ruleName:    rule,
 					groupID:     groupID,
@@ -109,6 +110,7 @@ type getBucketFunc func(tx *bbolt.Tx, create bool) (*bbolt.Bucket, error)
 type kvStoreTx struct {
 	boltTx    *bbolt.Tx
 	getBucket getBucketFunc
+	sessions  session.IDToGroupIndex
 
 	*kvStores
 }
@@ -120,6 +122,7 @@ func (s *kvStoreTx) Global() KVStore {
 	return &kvStoreTx{
 		kvStores:  s.kvStores,
 		boltTx:    s.boltTx,
+		sessions:  s.sessions,
 		getBucket: getGlobalRuleBucket(true, s.ruleName),
 	}
 }
@@ -138,6 +141,7 @@ func (s *kvStoreTx) Local() KVStore {
 	return &kvStoreTx{
 		kvStores:  s.kvStores,
 		boltTx:    s.boltTx,
+		sessions:  s.sessions,
 		getBucket: fn,
 	}
 }
@@ -150,6 +154,7 @@ func (s *kvStoreTx) GlobalTemp() KVStore {
 	return &kvStoreTx{
 		kvStores:  s.kvStores,
 		boltTx:    s.boltTx,
+		sessions:  s.sessions,
 		getBucket: getGlobalRuleBucket(false, s.ruleName),
 	}
 }
@@ -167,6 +172,7 @@ func (s *kvStoreTx) LocalTemp() KVStore {
 	return &kvStoreTx{
 		kvStores:  s.kvStores,
 		boltTx:    s.boltTx,
+		sessions:  s.sessions,
 		getBucket: fn,
 	}
 }
@@ -294,6 +300,19 @@ func (s *kvStoreTx) getSessionRuleBucket(perm bool) getBucketFunc {
 		}
 
 		if create {
+			// NOTE: for a bbolt backend, the context is in any case
+			// dropped behind the GetSessionIDs call. So passing in
+			// a new context here is not a problem.
+			ctx := context.Background()
+
+			// If create is true, we expect this to be an existing
+			// session. So we check that now and return an error
+			// accordingly if the session does not exist.
+			_, err := s.sessions.GetSessionIDs(ctx, s.groupID)
+			if err != nil {
+				return nil, err
+			}
+
 			sessBucket, err := ruleBucket.CreateBucketIfNotExists(
 				sessKVStoreBucketKey,
 			)
