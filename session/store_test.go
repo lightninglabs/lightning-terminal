@@ -32,6 +32,14 @@ func TestBasicSessionStore(t *testing.T) {
 	_, err := db.GetSession(ctx, ID{1, 3, 4, 4})
 	require.ErrorIs(t, err, ErrSessionNotFound)
 
+	// Do the same for other "Get" type methods to assert that the correct
+	// errors are returned.
+	_, err = db.GetGroupID(ctx, ID{1, 2, 3, 4})
+	require.ErrorIs(t, err, ErrSessionNotFound)
+
+	_, err = db.GetSessionIDs(ctx, ID{1, 2, 3, 4})
+	require.ErrorIs(t, err, ErrUnknownGroup)
+
 	// Reserve a session. This should succeed.
 	s1, err := reserveSession(db, "session 1")
 	require.NoError(t, err)
@@ -182,7 +190,7 @@ func TestBasicSessionStore(t *testing.T) {
 	require.Empty(t, sessions)
 
 	_, err = db.GetGroupID(ctx, s4.ID)
-	require.ErrorIs(t, err, ErrUnknownGroup)
+	require.ErrorIs(t, err, ErrSessionNotFound)
 
 	// Only session 1 should remain in this group.
 	sessIDs, err = db.GetSessionIDs(ctx, s4.GroupID)
