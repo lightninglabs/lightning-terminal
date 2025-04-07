@@ -116,11 +116,11 @@ type kvStoreTx struct {
 // Global gives the caller access to the global kv store of the rule.
 //
 // NOTE: this is part of the rules.KVStoreTx interface.
-func (tx *kvStoreTx) Global() KVStore {
+func (s *kvStoreTx) Global() KVStore {
 	return &kvStoreTx{
-		kvStores:  tx.kvStores,
-		boltTx:    tx.boltTx,
-		getBucket: getGlobalRuleBucket(true, tx.ruleName),
+		kvStores:  s.kvStores,
+		boltTx:    s.boltTx,
+		getBucket: getGlobalRuleBucket(true, s.ruleName),
 	}
 }
 
@@ -129,17 +129,17 @@ func (tx *kvStoreTx) Global() KVStore {
 // how the kv store was initialised.
 //
 // NOTE: this is part of the KVStoreTx interface.
-func (tx *kvStoreTx) Local() KVStore {
-	fn := getSessionRuleBucket(true, tx.ruleName, tx.groupID)
-	if tx.featureName != "" {
+func (s *kvStoreTx) Local() KVStore {
+	fn := getSessionRuleBucket(true, s.ruleName, s.groupID)
+	if s.featureName != "" {
 		fn = getSessionFeatureRuleBucket(
-			true, tx.ruleName, tx.groupID, tx.featureName,
+			true, s.ruleName, s.groupID, s.featureName,
 		)
 	}
 
 	return &kvStoreTx{
-		kvStores:  tx.kvStores,
-		boltTx:    tx.boltTx,
+		kvStores:  s.kvStores,
+		boltTx:    s.boltTx,
 		getBucket: fn,
 	}
 }
@@ -148,11 +148,11 @@ func (tx *kvStoreTx) Local() KVStore {
 // rule.
 //
 // NOTE: this is part of the KVStoreTx interface.
-func (tx *kvStoreTx) GlobalTemp() KVStore {
+func (s *kvStoreTx) GlobalTemp() KVStore {
 	return &kvStoreTx{
-		kvStores:  tx.kvStores,
-		boltTx:    tx.boltTx,
-		getBucket: getGlobalRuleBucket(false, tx.ruleName),
+		kvStores:  s.kvStores,
+		boltTx:    s.boltTx,
+		getBucket: getGlobalRuleBucket(false, s.ruleName),
 	}
 }
 
@@ -160,17 +160,17 @@ func (tx *kvStoreTx) GlobalTemp() KVStore {
 // rule.
 //
 // NOTE: this is part of the KVStoreTx interface.
-func (tx *kvStoreTx) LocalTemp() KVStore {
-	fn := getSessionRuleBucket(false, tx.ruleName, tx.groupID)
-	if tx.featureName != "" {
+func (s *kvStoreTx) LocalTemp() KVStore {
+	fn := getSessionRuleBucket(false, s.ruleName, s.groupID)
+	if s.featureName != "" {
 		fn = getSessionFeatureRuleBucket(
-			false, tx.ruleName, tx.groupID, tx.featureName,
+			false, s.ruleName, s.groupID, s.featureName,
 		)
 	}
 
 	return &kvStoreTx{
-		kvStores:  tx.kvStores,
-		boltTx:    tx.boltTx,
+		kvStores:  s.kvStores,
+		boltTx:    s.boltTx,
 		getBucket: fn,
 	}
 }
@@ -179,8 +179,8 @@ func (tx *kvStoreTx) LocalTemp() KVStore {
 // If no value is found, nil is returned.
 //
 // NOTE: this is part of the KVStore interface.
-func (tx *kvStoreTx) Get(_ context.Context, key string) ([]byte, error) {
-	bucket, err := tx.getBucket(tx.boltTx, false)
+func (s *kvStoreTx) Get(_ context.Context, key string) ([]byte, error) {
+	bucket, err := s.getBucket(s.boltTx, false)
 	if err != nil {
 		return nil, err
 	}
@@ -194,8 +194,8 @@ func (tx *kvStoreTx) Get(_ context.Context, key string) ([]byte, error) {
 // Set sets the given key-value pair in the underlying kv store.
 //
 // NOTE: this is part of the KVStore interface.
-func (tx *kvStoreTx) Set(_ context.Context, key string, value []byte) error {
-	bucket, err := tx.getBucket(tx.boltTx, true)
+func (s *kvStoreTx) Set(_ context.Context, key string, value []byte) error {
+	bucket, err := s.getBucket(s.boltTx, true)
 	if err != nil {
 		return err
 	}
@@ -206,8 +206,8 @@ func (tx *kvStoreTx) Set(_ context.Context, key string, value []byte) error {
 // Del deletes the value under the given key in the underlying kv store.
 //
 // NOTE: this is part of the .KVStore interface.
-func (tx *kvStoreTx) Del(_ context.Context, key string) error {
-	bucket, err := tx.getBucket(tx.boltTx, false)
+func (s *kvStoreTx) Del(_ context.Context, key string) error {
+	bucket, err := s.getBucket(s.boltTx, false)
 	if err != nil {
 		return err
 	}
