@@ -593,7 +593,7 @@ func (s *SQLStore) GetGroupID(ctx context.Context, sessionID ID) (ID, error) {
 		// Get the session using the legacy Alias.
 		sess, err := db.GetSessionByAlias(ctx, sessionID[:])
 		if errors.Is(err, sql.ErrNoRows) {
-			return ErrUnknownGroup
+			return ErrSessionNotFound
 		} else if err != nil {
 			return err
 		}

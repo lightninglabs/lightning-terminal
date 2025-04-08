@@ -637,7 +637,7 @@ func (db *BoltStore) GetGroupID(_ context.Context, sessionID ID) (ID, error) {
 		sessionIDBkt := idIndex.Bucket(sessionID[:])
 		if sessionIDBkt == nil {
 			return fmt.Errorf("%w: no index entry for session "+
-				"ID: %x", ErrUnknownGroup, sessionID)
+				"ID: %x", ErrSessionNotFound, sessionID)
 		}
 
 		groupIDBytes := sessionIDBkt.Get(groupIDKey)
@@ -696,7 +696,7 @@ func getSessionIDs(sessionBkt *bbolt.Bucket, groupID ID) ([]ID, error) {
 
 	groupIDBkt := groupIndexBkt.Bucket(groupID[:])
 	if groupIDBkt == nil {
-		return nil, fmt.Errorf("no sessions for group ID %v",
+		return nil, fmt.Errorf("%w: group ID %v", ErrUnknownGroup,
 			groupID)
 	}
 
