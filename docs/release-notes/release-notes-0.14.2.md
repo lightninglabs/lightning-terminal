@@ -42,6 +42,15 @@
   instead, to update an account's balance. The flag will no longer be
   supported in Lightning Terminal `v0.16.0-alpha`.
 
+* [The `litrpc.Proxy` endpoints are now exposed over
+  LNC](https://github.com/lightninglabs/lightning-terminal/pull/1033).  
+  Note that this also exposes the `stop` and `bakesupermacaroon` endpoints over
+  LNC. If this is not desired, it is recommended to fine-tune the macaroon
+  created for the LNC session. Specifically, remove the `proxy:write`
+  permission to disable access to the `stop` endpoint, and the
+  `supermacaroon:write` permission to disable access to the
+  `bakesupermacaroon` endpoint.
+
 ## Integrated Binary Updates
 
 ### LND

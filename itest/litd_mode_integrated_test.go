@@ -358,7 +358,7 @@ var (
 		macaroonFn:        litMacaroonFn,
 		requestFn:         proxyRequestFn,
 		successPattern:    "\"version\":",
-		allowedThroughLNC: false,
+		allowedThroughLNC: true,
 		grpcWebURI:        "/litrpc.Proxy/GetInfo",
 		restWebURI:        "/v1/proxy/info",
 		litOnly:           true,
