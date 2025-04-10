@@ -2163,6 +2163,33 @@ func testCustomChannelsLiquidityEdgeCases(ctx context.Context,
 	)
 
 	logBalance(t.t, nodes, assetID, "after small manual rfq")
+
+	// Edge case: Fabia creates an invoice which Erin cannot satisfy with
+	// his side of asset liquidity. This tests that Erin will not try to
+	// add an HTLC with more asset units than what his local balance is,
+	// eventually leading to a healthy payment failure. To validate that the
+	// channel is still healthy, we follow-up with a smaller invoice payment
+	// which is meant to succeed.
+	invoiceResp = createAssetInvoice(
+		t.t, erin, fabia, 125_000, assetID,
+	)
+
+	payInvoiceWithAssets(
+		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID,
+		withSmallShards(),
+		withFailure(lnrpc.Payment_FAILED, failureTimeout),
+	)
+
+	invoiceResp = createAssetInvoice(
+		t.t, erin, fabia, 25_000, assetID,
+	)
+
+	payInvoiceWithAssets(
+		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID,
+		withSmallShards(),
+	)
+
+	logBalance(t.t, nodes, assetID, "after safe HTLC failure")
 }
 
 // testCustomChannelsStrictForwarding is a test that tests the strict forwarding
