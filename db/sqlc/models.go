@@ -37,6 +37,26 @@ type AccountPayment struct {
 	FullAmountMsat int64
 }
 
+type Feature struct {
+	ID   int64
+	Name string
+}
+
+type Kvstore struct {
+	ID        int64
+	Perm      bool
+	RuleID    int64
+	SessionID sql.NullInt64
+	FeatureID sql.NullInt64
+	EntryKey  string
+	Value     []byte
+}
+
+type Rule struct {
+	ID   int64
+	Name string
+}
+
 type Session struct {
 	ID              int64
 	Alias           []byte
