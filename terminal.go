@@ -238,6 +238,7 @@ func New() *LightningTerminal {
 type stores struct {
 	accounts accounts.Store
 	sessions session.Store
+	rules    firewalldb.RulesDB
 
 	firewall     *firewalldb.DB
 	firewallBolt *firewalldb.BoltDB
@@ -1112,7 +1113,7 @@ func (g *LightningTerminal) startInternalSubServers(ctx context.Context,
 
 	if !g.cfg.Autopilot.Disable {
 		ruleEnforcer := firewall.NewRuleEnforcer(
-			g.stores.firewall, g.stores.firewallBolt,
+			g.stores.rules, g.stores.firewallBolt,
 			g.stores.sessions,
 			g.autopilotClient.ListFeaturePerms,
 			g.permsMgr, g.lndClient.NodePubkey,

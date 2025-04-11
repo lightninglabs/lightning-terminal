@@ -35,7 +35,7 @@ const (
 
 	actions-bucket -> actions -> <session-id> -> <action-index> -> serialised action
 
-		       -> actions-index -> <id> -> {sessionID:action-index}
+		       -> actions-index -> <id> -> {groupID:action-index}
 */
 
 var (
@@ -116,7 +116,7 @@ type Action struct {
 	ErrorReason string
 }
 
-// AddAction serialises and adds an Action to the DB under the given sessionID.
+// AddAction serialises and adds an Action to the DB under the given groupID.
 func (db *BoltDB) AddAction(sessionID session.ID, action *Action) (uint64,
 	error) {
 
