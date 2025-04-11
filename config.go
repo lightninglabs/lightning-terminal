@@ -367,7 +367,7 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 	appName := filepath.Base(os.Args[0])
 	appName = strings.TrimSuffix(appName, filepath.Ext(appName))
 	if preCfg.ShowVersion {
-		fmt.Println(appName, "version", Version())
+		fmt.Println(appName, "version", RichVersion())
 		os.Exit(0)
 	}
 	if preCfg.Lnd.ShowVersion {

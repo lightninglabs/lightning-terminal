@@ -298,7 +298,7 @@ func (g *LightningTerminal) Run(ctx context.Context) error {
 	g.defaultImplCfg = g.cfg.Lnd.ImplementationConfig(shutdownInterceptor)
 
 	// Show version at startup.
-	log.Infof("LiT version: %s", Version())
+	log.Infof("LiT version: %s", RichVersion())
 
 	// This concurrent error queue can be used by every component that can
 	// raise runtime errors. Using a queue will prevent us from blocking on
@@ -2010,7 +2010,7 @@ func (g *LightningTerminal) showStartupInfo(ctx context.Context) error {
 		" Web interface           %s  			           \n" +
 		"----------------------------------------------------------\n"
 	fmt.Printf(str, info.mode, info.status, info.alias, info.version,
-		Version(), webInterfaceString)
+		RichVersion(), webInterfaceString)
 
 	return nil
 }
