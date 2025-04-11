@@ -10,6 +10,7 @@ import (
 // SQLQueries is a subset of the sqlc.Queries interface that can be used to
 // interact with various firewalldb tables.
 type SQLQueries interface {
+	SQLKVStoreQueries
 }
 
 // BatchedSQLQueries is a version of the SQLQueries that's capable of batched
@@ -29,6 +30,10 @@ type SQLDB struct {
 	// BaseDB represents the underlying database connection.
 	*db.BaseDB
 }
+
+// A compile-time assertion to ensure that SQLDB implements the RulesDB
+// interface.
+var _ RulesDB = (*SQLDB)(nil)
 
 // NewSQLDB creates a new SQLStore instance given an open SQLQueries
 // storage backend.
