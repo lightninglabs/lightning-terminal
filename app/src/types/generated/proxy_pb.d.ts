@@ -99,6 +99,9 @@ export class GetInfoResponse extends jspb.Message {
   getVersion(): string;
   setVersion(value: string): void;
 
+  getCommitHash(): string;
+  setCommitHash(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetInfoResponse.AsObject;
   static toObject(includeInstance: boolean, msg: GetInfoResponse): GetInfoResponse.AsObject;
@@ -112,6 +115,7 @@ export class GetInfoResponse extends jspb.Message {
 export namespace GetInfoResponse {
   export type AsObject = {
     version: string,
+    commitHash: string,
   }
 }
 

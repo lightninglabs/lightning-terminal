@@ -16,6 +16,7 @@ GOIMPORTS_BIN := $(GO_BIN)/gosimports
 
 COMMIT := $(shell git describe --abbrev=40 --dirty --tags)
 COMMIT_HASH := $(shell git rev-parse HEAD)
+DIRTY := $(shell git diff-index --quiet HEAD -- || echo -dirty)
 PUBLIC_URL := 
 
 # GO_VERSION is the Go version used for the release build, docker files, and
@@ -69,6 +70,8 @@ make_ldflags = $(2) -X $(LND_PKG)/build.Commit=lightning-terminal-$(COMMIT) \
 	-X $(LND_PKG)/build.RawTags=$(shell echo $(1) | sed -e 's/ /,/g') \
 	-X $(PKG).appFilesPrefix=$(PUBLIC_URL) \
 	-X $(PKG).Commit=$(COMMIT) \
+	-X $(PKG).CommitHash=$(COMMIT_HASH) \
+	-X $(PKG).Dirty=$(DIRTY) \
 	-X $(LOOP_PKG).Commit=$(LOOP_COMMIT) \
 	-X $(POOL_PKG).Commit=$(POOL_COMMIT) \
 	-X $(TAP_PKG).Commit=$(TAP_COMMIT)

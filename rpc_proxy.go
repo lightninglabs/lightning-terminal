@@ -240,7 +240,8 @@ func (p *rpcProxy) GetInfo(_ context.Context, _ *litrpc.GetInfoRequest) (
 	*litrpc.GetInfoResponse, error) {
 
 	return &litrpc.GetInfoResponse{
-		Version: Version(),
+		Version:    Version(),
+		CommitHash: CommitHash + Dirty,
 	}, nil
 }
 

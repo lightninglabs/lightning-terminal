@@ -781,7 +781,8 @@ proto.litrpc.GetInfoResponse.prototype.toObject = function(opt_includeInstance) 
  */
 proto.litrpc.GetInfoResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    version: jspb.Message.getFieldWithDefault(msg, 1, "")
+    version: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    commitHash: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -822,6 +823,10 @@ proto.litrpc.GetInfoResponse.deserializeBinaryFromReader = function(msg, reader)
       var value = /** @type {string} */ (reader.readString());
       msg.setVersion(value);
       break;
+    case 2:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setCommitHash(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -858,6 +863,13 @@ proto.litrpc.GetInfoResponse.serializeBinaryToWriter = function(message, writer)
       f
     );
   }
+  f = message.getCommitHash();
+  if (f.length > 0) {
+    writer.writeString(
+      2,
+      f
+    );
+  }
 };
 
 
@@ -876,6 +888,24 @@ proto.litrpc.GetInfoResponse.prototype.getVersion = function() {
  */
 proto.litrpc.GetInfoResponse.prototype.setVersion = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
+};
+
+
+/**
+ * optional string commit_hash = 2;
+ * @return {string}
+ */
+proto.litrpc.GetInfoResponse.prototype.getCommitHash = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.litrpc.GetInfoResponse} returns this
+ */
+proto.litrpc.GetInfoResponse.prototype.setCommitHash = function(value) {
+  return jspb.Message.setProto3StringField(this, 2, value);
 };
 
 
