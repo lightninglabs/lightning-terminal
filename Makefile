@@ -305,6 +305,7 @@ clean: clean-itest
 	$(RM) ./litcli-debug
 	$(RM) ./litd-debug
 	$(RM) coverage.txt
+	$(RM) -r ./vendor
 
 sqlc:
 	@$(call print, "Generating sql models and queries in Go")
