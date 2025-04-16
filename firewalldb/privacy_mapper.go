@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math/big"
 	"strconv"
@@ -12,6 +13,20 @@ import (
 	"sync"
 
 	"github.com/lightninglabs/lightning-terminal/session"
+)
+
+var (
+	// ErrDuplicateRealValue is returned when an attempt is made to insert
+	// a new real-pseudo pair into the db, but the real value already exists
+	// in the db.
+	ErrDuplicateRealValue = errors.New("an entry with the given real " +
+		"value already exists")
+
+	// ErrDuplicatePseudoValue is returned when an attempt is made to
+	// insert a new real-pseudo pair into the db, but the pseudo value
+	// already exists in the db.
+	ErrDuplicatePseudoValue = errors.New("an entry with the given pseudo " +
+		"value already exists")
 )
 
 // NewPrivacyMapDB is a function type that takes a group ID and uses it to

@@ -96,14 +96,12 @@ func TestPrivacyMapStorage(t *testing.T) {
 		// Try to add a new pair that has the same real value as the
 		// first pair. This should fail.
 		err = tx.NewPair(ctx, "real 1", "pseudo 2")
-		require.ErrorContains(t, err, "an entry already exists for "+
-			"real value")
+		require.ErrorIs(t, err, ErrDuplicateRealValue)
 
 		// Try to add a new pair that has the same pseudo value as the
 		// first pair. This should fail.
 		err = tx.NewPair(ctx, "real 2", "pseudo 1")
-		require.ErrorContains(t, err, "an entry already exists for "+
-			"pseudo value")
+		require.ErrorIs(t, err, ErrDuplicatePseudoValue)
 
 		// Add a few more pairs.
 		err = tx.NewPair(ctx, "real 2", "pseudo 2")
