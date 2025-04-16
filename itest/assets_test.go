@@ -1144,7 +1144,7 @@ func createAssetInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 		AssetAmount: assetAmount,
 		PeerPubkey:  dstRfqPeer.PubKey[:],
 		InvoiceRequest: &lnrpc.Invoice{
-			Memo: fmt.Sprintf("this is an asset invoice over "+
+			Memo: fmt.Sprintf("this is an asset invoice for "+
 				"%d units", assetAmount),
 			Expiry: timeoutSeconds,
 		},
@@ -1291,7 +1291,7 @@ func createAssetHodlInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 	timeoutSeconds := int64(rfq.DefaultInvoiceExpiry.Seconds())
 
 	t.Logf("Asking peer %x for quote to buy assets to receive for "+
-		"invoice over %d units; waiting up to %ds",
+		"invoice for %d units; waiting up to %ds",
 		dstRfqPeer.PubKey[:], assetAmount, timeoutSeconds)
 
 	dstTapd := newTapClient(t, dst)
@@ -1309,7 +1309,7 @@ func createAssetHodlInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 		AssetAmount: assetAmount,
 		PeerPubkey:  dstRfqPeer.PubKey[:],
 		InvoiceRequest: &lnrpc.Invoice{
-			Memo: fmt.Sprintf("this is an asset invoice over "+
+			Memo: fmt.Sprintf("this is an asset invoice for "+
 				"%d units", assetAmount),
 			Expiry: timeoutSeconds,
 		},
