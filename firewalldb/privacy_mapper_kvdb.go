@@ -35,24 +35,17 @@ func (db *BoltDB) PrivacyDB(groupID session.ID) PrivacyMapDB {
 		db: db.DB,
 		wrapTx: func(tx *bbolt.Tx) PrivacyMapTx {
 			return &privacyMapTx{
-				boltTx: tx,
-				privacyMapDB: &privacyMapDB{
-					groupID: groupID,
-				},
+				boltTx:  tx,
+				groupID: groupID,
 			}
 		},
 	}
 }
 
-// privacyMapDB is an implementation of PrivacyMapDB.
-type privacyMapDB struct {
-	groupID session.ID
-}
-
 // privacyMapTx is an implementation of PrivacyMapTx.
 type privacyMapTx struct {
-	*privacyMapDB
-	boltTx *bbolt.Tx
+	groupID session.ID
+	boltTx  *bbolt.Tx
 }
 
 // NewPair inserts a new real-pseudo pair into the db.
