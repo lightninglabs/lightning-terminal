@@ -24,6 +24,8 @@ type SQLPrivacyPairQueries interface {
 
 // PrivacyDB constructs a PrivacyMapDB that will be indexed under the given
 // group ID key.
+//
+// NOTE: this is part of the PrivacyMapper interface.
 func (s *SQLDB) PrivacyDB(groupID session.ID) PrivacyMapDB {
 	return &sqlExecutor[PrivacyMapTx]{
 		db: s.db,

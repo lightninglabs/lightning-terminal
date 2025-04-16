@@ -534,7 +534,7 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 		actionsDB:               g.stores.firewallBolt,
 		autopilot:               g.autopilotClient,
 		ruleMgrs:                g.ruleMgrs,
-		privMap:                 g.stores.firewallBolt.PrivacyDB,
+		privMap:                 g.stores.firewall.PrivacyDB,
 	})
 	if err != nil {
 		return fmt.Errorf("could not create new session rpc "+
@@ -1100,7 +1100,7 @@ func (g *LightningTerminal) startInternalSubServers(ctx context.Context,
 	}
 
 	privacyMapper := firewall.NewPrivacyMapper(
-		g.stores.firewallBolt.PrivacyDB, firewall.CryptoRandIntn,
+		g.stores.firewall.PrivacyDB, firewall.CryptoRandIntn,
 		g.stores.sessions,
 	)
 
@@ -1123,7 +1123,7 @@ func (g *LightningTerminal) startInternalSubServers(ctx context.Context,
 					reqID, firewalldb.ActionStateError,
 					reason,
 				)
-			}, g.stores.firewallBolt.PrivacyDB,
+			}, g.stores.firewall.PrivacyDB,
 		)
 
 		mw = append(mw, ruleEnforcer)
