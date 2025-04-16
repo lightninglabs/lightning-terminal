@@ -23,7 +23,6 @@ import (
 	"github.com/lightninglabs/taproot-assets/taprpc/mintrpc"
 	oraclerpc "github.com/lightninglabs/taproot-assets/taprpc/priceoraclerpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/rfqrpc"
-	"github.com/lightninglabs/taproot-assets/taprpc/tapchannelrpc"
 	tchrpc "github.com/lightninglabs/taproot-assets/taprpc/tapchannelrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/universerpc"
 	"github.com/lightninglabs/taproot-assets/tapscript"
@@ -4035,7 +4034,7 @@ func testCustomChannelsDecodeAssetInvoice(ctx context.Context,
 	// Now that we have our payment request, we'll call into the new decode
 	// asset pay req call.
 	decodeResp, err := aliceTap.DecodeAssetPayReq(
-		ctx, &tapchannelrpc.AssetPayReq{
+		ctx, &tchrpc.AssetPayReq{
 			AssetId:      assetID,
 			PayReqString: payReq,
 		},
