@@ -1977,8 +1977,7 @@ func testCustomChannelsLiquidityEdgeCases(ctx context.Context,
 	// channels, where the total asset value is less than the default anchor
 	// amount of 354 sats.
 	createAssetInvoice(t.t, dave, charlie, 1, assetID, withInvoiceErrSubStr(
-		"cannot create invoice over 1 asset units, as the minimal "+
-			"transportable amount",
+		"1 asset units, as the minimal transportable amount",
 	))
 
 	logBalance(t.t, nodes, assetID, "after small payment (asset "+
