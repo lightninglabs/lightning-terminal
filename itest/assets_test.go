@@ -2292,6 +2292,34 @@ func macFromBytes(macBytes []byte) (grpc.DialOption, error) {
 	return grpc.WithPerRPCCredentials(cred), nil
 }
 
+func assertMinNumHtlcs(t *testing.T, node *HarnessNode, expected int) {
+	t.Helper()
+
+	ctxb := context.Background()
+
+	err := wait.NoError(func() error {
+		listChansRequest := &lnrpc.ListChannelsRequest{}
+		listChansResp, err := node.ListChannels(ctxb, listChansRequest)
+		if err != nil {
+			return err
+		}
+
+		var numHtlcs int
+		for _, channel := range listChansResp.Channels {
+			numHtlcs += len(channel.PendingHtlcs)
+		}
+
+		if numHtlcs < expected {
+			return fmt.Errorf("expected %v HTLCs, got %v, %v",
+				expected, numHtlcs,
+				toProtoJSON(t, listChansResp))
+		}
+
+		return nil
+	}, defaultTimeout)
+	require.NoError(t, err)
+}
+
 func assertNumHtlcs(t *testing.T, node *HarnessNode, expected int) {
 	t.Helper()
 
