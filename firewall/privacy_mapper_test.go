@@ -902,7 +902,7 @@ func TestPrivacyMapper(t *testing.T) {
 
 			// randIntn is used for deterministic testing.
 			randIntn := func(n int) (int, error) { return 100, nil }
-			p := NewPrivacyMapper(db.NewSessionDB, randIntn, pd)
+			p := NewPrivacyMapper(db, randIntn, pd)
 
 			rawMsg, err := proto.Marshal(test.msg)
 			require.NoError(t, err)
@@ -978,7 +978,7 @@ func TestPrivacyMapper(t *testing.T) {
 		rawMsg, err := proto.Marshal(msg)
 		require.NoError(t, err)
 
-		p := NewPrivacyMapper(db.NewSessionDB, CryptoRandIntn, pd)
+		p := NewPrivacyMapper(db, CryptoRandIntn, pd)
 		require.NoError(t, err)
 
 		// We test the independent outgoing amount (incoming amount
@@ -1071,7 +1071,7 @@ func newMockDB(t *testing.T, preloadRealToPseudo map[string]string,
 	sessID session.ID) mockDB {
 
 	db := mockDB{privDB: make(map[string]*mockPrivacyMapDB)}
-	sessDB := db.NewSessionDB(sessID)
+	sessDB := db.PrivacyDB(sessID)
 
 	_ = sessDB.Update(context.Background(), func(ctx context.Context,
 		tx firewalldb.PrivacyMapTx) error {
@@ -1085,14 +1085,14 @@ func newMockDB(t *testing.T, preloadRealToPseudo map[string]string,
 	return db
 }
 
-func (m mockDB) NewSessionDB(sessionID session.ID) firewalldb.PrivacyMapDB {
-	db, ok := m.privDB[string(sessionID[:])]
+func (m mockDB) PrivacyDB(groupID session.ID) firewalldb.PrivacyMapDB {
+	db, ok := m.privDB[string(groupID[:])]
 	if ok {
 		return db
 	}
 
 	newDB := newMockPrivacyMapDB()
-	m.privDB[string(sessionID[:])] = newDB
+	m.privDB[string(groupID[:])] = newDB
 
 	return newDB
 }

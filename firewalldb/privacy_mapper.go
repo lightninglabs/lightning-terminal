@@ -11,8 +11,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-
-	"github.com/lightninglabs/lightning-terminal/session"
 )
 
 var (
@@ -28,10 +26,6 @@ var (
 	ErrDuplicatePseudoValue = errors.New("an entry with the given pseudo " +
 		"value already exists")
 )
-
-// NewPrivacyMapDB is a function type that takes a group ID and uses it to
-// construct a new PrivacyMapDB.
-type NewPrivacyMapDB func(groupID session.ID) PrivacyMapDB
 
 // PrivacyMapDB provides an Update and View method that will allow the caller
 // to perform atomic read and write transactions defined by PrivacyMapTx on the
