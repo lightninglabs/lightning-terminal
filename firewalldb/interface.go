@@ -100,3 +100,27 @@ type PrivacyMapper interface {
 	// given group ID key.
 	PrivacyDB(groupID session.ID) PrivacyMapDB
 }
+
+// ActionDB is an interface that abstracts the database operations needed for
+// the Action persistence and querying.
+type ActionDB interface {
+	// AddAction persists the given action to the database.
+	AddAction(action *Action) (uint64, error)
+
+	// SetActionState finds the action specified by the ActionLocator and
+	// sets its state to the given state.
+	SetActionState(al *ActionLocator, state ActionState,
+		errReason string) error
+
+	// ListActions returns a list of Actions that pass the filterFn
+	// requirements. The query IndexOffset and MaxNum params can be used to
+	// control the number of actions returned. The return values are the
+	// list of actions, the last index and the total count (iff
+	// query.CountTotal is set).
+	ListActions(ctx context.Context, query *ListActionsQuery,
+		options ...ListActionOption) ([]*Action, uint64, uint64, error)
+
+	// GetActionsReadDB produces an ActionReadDB using the given group ID
+	// and feature name.
+	GetActionsReadDB(groupID session.ID, featureName string) ActionsReadDB
+}
