@@ -53,7 +53,7 @@ type RequestLogger struct {
 	// be used to find the corresponding action. This is used so that
 	// requests and responses can be easily linked. The mu mutex must be
 	// used when accessing this map.
-	reqIDToAction map[uint64]*firewalldb.ActionLocator
+	reqIDToAction map[uint64]firewalldb.ActionLocator
 	mu            sync.Mutex
 }
 
@@ -105,7 +105,7 @@ func NewRequestLogger(cfg *RequestLoggerConfig,
 	return &RequestLogger{
 		shouldLogAction: shouldLogAction,
 		actionsDB:       actionsDB,
-		reqIDToAction:   make(map[uint64]*firewalldb.ActionLocator),
+		reqIDToAction:   make(map[uint64]firewalldb.ActionLocator),
 	}, nil
 }
 
@@ -223,16 +223,13 @@ func (r *RequestLogger) addNewAction(ctx context.Context, ri *RequestInfo,
 		}
 	}
 
-	id, err := r.actionsDB.AddAction(ctx, action)
+	locator, err := r.actionsDB.AddAction(ctx, action)
 	if err != nil {
 		return err
 	}
 
 	r.mu.Lock()
-	r.reqIDToAction[ri.RequestID] = &firewalldb.ActionLocator{
-		SessionID: sessionID,
-		ActionID:  id,
-	}
+	r.reqIDToAction[ri.RequestID] = locator
 	r.mu.Unlock()
 
 	return nil

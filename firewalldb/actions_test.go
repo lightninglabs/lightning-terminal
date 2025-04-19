@@ -66,13 +66,11 @@ func TestActionStorage(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, actions, 0)
 
-	id, err := db.AddAction(ctx, action1)
+	_, err = db.AddAction(ctx, action1)
 	require.NoError(t, err)
-	require.Equal(t, uint64(1), id)
 
-	id, err = db.AddAction(ctx, action2)
+	locator2, err := db.AddAction(ctx, action2)
 	require.NoError(t, err)
-	require.Equal(t, uint64(1), id)
 
 	actions, _, _, err = db.ListActions(
 		ctx, nil,
@@ -91,12 +89,7 @@ func TestActionStorage(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, actions, 0)
 
-	err = db.SetActionState(
-		ctx, &ActionLocator{
-			SessionID: sessionID2,
-			ActionID:  uint64(1),
-		}, ActionStateDone, "",
-	)
+	err = db.SetActionState(ctx, locator2, ActionStateDone, "")
 	require.NoError(t, err)
 
 	actions, _, _, err = db.ListActions(
@@ -109,9 +102,8 @@ func TestActionStorage(t *testing.T) {
 	action2.State = ActionStateDone
 	require.Equal(t, action2, actions[0])
 
-	id, err = db.AddAction(ctx, action1)
+	_, err = db.AddAction(ctx, action1)
 	require.NoError(t, err)
-	require.Equal(t, uint64(2), id)
 
 	// Check that providing no session id and no filter function returns
 	// all the actions.
@@ -124,21 +116,11 @@ func TestActionStorage(t *testing.T) {
 	require.Len(t, actions, 3)
 
 	// Try set an error reason for a non Errored state.
-	err = db.SetActionState(
-		ctx, &ActionLocator{
-			SessionID: sessionID2,
-			ActionID:  uint64(1),
-		}, ActionStateDone, "hello",
-	)
+	err = db.SetActionState(ctx, locator2, ActionStateDone, "hello")
 	require.Error(t, err)
 
 	// Now try move the action to errored with a reason.
-	err = db.SetActionState(
-		ctx, &ActionLocator{
-			SessionID: sessionID2,
-			ActionID:  uint64(1),
-		}, ActionStateError, "fail whale",
-	)
+	err = db.SetActionState(ctx, locator2, ActionStateError, "fail whale")
 	require.NoError(t, err)
 
 	actions, _, _, err = db.ListActions(

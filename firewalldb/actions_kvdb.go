@@ -53,13 +53,15 @@ var (
 )
 
 // AddAction serialises and adds an Action to the DB under the given sessionID.
-func (db *BoltDB) AddAction(_ context.Context, action *Action) (uint64, error) {
+func (db *BoltDB) AddAction(_ context.Context, action *Action) (ActionLocator,
+	error) {
+
 	var buf bytes.Buffer
 	if err := SerializeAction(&buf, action); err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	var id uint64
+	var locator kvdbActionLocator
 	err := db.DB.Update(func(tx *bbolt.Tx) error {
 		mainActionsBucket, err := getBucket(tx, actionsBucketKey)
 		if err != nil {
@@ -82,7 +84,6 @@ func (db *BoltDB) AddAction(_ context.Context, action *Action) (uint64, error) {
 		if err != nil {
 			return err
 		}
-		id = nextActionIndex
 
 		var actionIndex [8]byte
 		byteOrder.PutUint64(actionIndex[:], nextActionIndex)
@@ -101,9 +102,9 @@ func (db *BoltDB) AddAction(_ context.Context, action *Action) (uint64, error) {
 			return err
 		}
 
-		locator := ActionLocator{
-			SessionID: action.SessionID,
-			ActionID:  nextActionIndex,
+		locator = kvdbActionLocator{
+			sessionID: action.SessionID,
+			actionID:  nextActionIndex,
 		}
 
 		var buf bytes.Buffer
@@ -117,13 +118,25 @@ func (db *BoltDB) AddAction(_ context.Context, action *Action) (uint64, error) {
 		return actionsIndexBucket.Put(seqNoBytes[:], buf.Bytes())
 	})
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	return id, nil
+	return &locator, nil
 }
 
-func putAction(tx *bbolt.Tx, al *ActionLocator, a *Action) error {
+// kvdbActionLocator helps us find an action in a KVDB database.
+type kvdbActionLocator struct {
+	sessionID session.ID
+	actionID  uint64
+}
+
+// A compile-time check to ensure kvdbActionLocator implements the ActionLocator
+// interface.
+var _ ActionLocator = (*kvdbActionLocator)(nil)
+
+func (al *kvdbActionLocator) isActionLocator() {}
+
+func putAction(tx *bbolt.Tx, al *kvdbActionLocator, a *Action) error {
 	var buf bytes.Buffer
 	if err := SerializeAction(&buf, a); err != nil {
 		return err
@@ -139,40 +152,47 @@ func putAction(tx *bbolt.Tx, al *ActionLocator, a *Action) error {
 		return ErrNoSuchKeyFound
 	}
 
-	sessBucket := actionsBucket.Bucket(al.SessionID[:])
+	sessBucket := actionsBucket.Bucket(al.sessionID[:])
 	if sessBucket == nil {
 		return fmt.Errorf("session bucket for session ID %x does not "+
-			"exist", al.SessionID)
+			"exist", al.sessionID)
 	}
 
 	var id [8]byte
-	binary.BigEndian.PutUint64(id[:], al.ActionID)
+	binary.BigEndian.PutUint64(id[:], al.actionID)
 
 	return sessBucket.Put(id[:], buf.Bytes())
 }
 
-func getAction(actionsBkt *bbolt.Bucket, al *ActionLocator) (*Action, error) {
-	sessBucket := actionsBkt.Bucket(al.SessionID[:])
+func getAction(actionsBkt *bbolt.Bucket, al *kvdbActionLocator) (*Action,
+	error) {
+
+	sessBucket := actionsBkt.Bucket(al.sessionID[:])
 	if sessBucket == nil {
 		return nil, fmt.Errorf("session bucket for session ID "+
-			"%x does not exist", al.SessionID)
+			"%x does not exist", al.sessionID)
 	}
 
 	var id [8]byte
-	binary.BigEndian.PutUint64(id[:], al.ActionID)
+	binary.BigEndian.PutUint64(id[:], al.actionID)
 
 	actionBytes := sessBucket.Get(id[:])
-	return DeserializeAction(bytes.NewReader(actionBytes), al.SessionID)
+	return DeserializeAction(bytes.NewReader(actionBytes), al.sessionID)
 }
 
 // SetActionState finds the action specified by the ActionLocator and sets its
 // state to the given state.
-func (db *BoltDB) SetActionState(_ context.Context, al *ActionLocator,
+func (db *BoltDB) SetActionState(_ context.Context, al ActionLocator,
 	state ActionState, errorReason string) error {
 
 	if errorReason != "" && state != ActionStateError {
 		return fmt.Errorf("error reason should only be set for " +
 			"ActionStateError")
+	}
+
+	locator, ok := al.(*kvdbActionLocator)
+	if !ok {
+		return fmt.Errorf("expected kvdbActionLocator, got %T", al)
 	}
 
 	return db.DB.Update(func(tx *bbolt.Tx) error {
@@ -186,7 +206,7 @@ func (db *BoltDB) SetActionState(_ context.Context, al *ActionLocator,
 			return ErrNoSuchKeyFound
 		}
 
-		action, err := getAction(actionsBucket, al)
+		action, err := getAction(actionsBucket, locator)
 		if err != nil {
 			return err
 		}
@@ -194,7 +214,7 @@ func (db *BoltDB) SetActionState(_ context.Context, al *ActionLocator,
 		action.State = state
 		action.ErrorReason = errorReason
 
-		return putAction(tx, al, action)
+		return putAction(tx, locator, action)
 	})
 }
 
@@ -540,14 +560,14 @@ func DeserializeAction(r io.Reader, sessionID session.ID) (*Action, error) {
 
 // serializeActionLocator binary serializes the given ActionLocator to the
 // writer using the tlv format.
-func serializeActionLocator(w io.Writer, al *ActionLocator) error {
+func serializeActionLocator(w io.Writer, al *kvdbActionLocator) error {
 	if al == nil {
 		return fmt.Errorf("action locator cannot be nil")
 	}
 
 	var (
-		sessionID = al.SessionID[:]
-		actionID  = al.ActionID
+		sessionID = al.sessionID[:]
+		actionID  = al.actionID
 	)
 
 	tlvRecords := []tlv.Record{
@@ -565,7 +585,7 @@ func serializeActionLocator(w io.Writer, al *ActionLocator) error {
 
 // deserializeActionLocator deserializes an ActionLocator from the given reader,
 // expecting the data to be encoded in the tlv format.
-func deserializeActionLocator(r io.Reader) (*ActionLocator, error) {
+func deserializeActionLocator(r io.Reader) (*kvdbActionLocator, error) {
 	var (
 		sessionID []byte
 		actionID  uint64
@@ -588,8 +608,8 @@ func deserializeActionLocator(r io.Reader) (*ActionLocator, error) {
 		return nil, err
 	}
 
-	return &ActionLocator{
-		SessionID: id,
-		ActionID:  actionID,
+	return &kvdbActionLocator{
+		sessionID: id,
+		actionID:  actionID,
 	}, nil
 }
