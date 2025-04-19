@@ -94,7 +94,7 @@ type ListActionsQuery struct {
 // ActionsWriteDB is an abstraction over the Actions DB that will allow a
 // caller to add new actions as well as change the values of an existing action.
 type ActionsWriteDB interface {
-	AddAction(sessionID session.ID, action *Action) (uint64, error)
+	AddAction(action *Action) (uint64, error)
 	SetActionState(al *ActionLocator, state ActionState,
 		errReason string) error
 }

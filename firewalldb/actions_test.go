@@ -67,11 +67,11 @@ func TestActionStorage(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, actions, 0)
 
-	id, err := db.AddAction(sessionID1, action1)
+	id, err := db.AddAction(action1)
 	require.NoError(t, err)
 	require.Equal(t, uint64(1), id)
 
-	id, err = db.AddAction(sessionID2, action2)
+	id, err = db.AddAction(action2)
 	require.NoError(t, err)
 	require.Equal(t, uint64(1), id)
 
@@ -104,7 +104,7 @@ func TestActionStorage(t *testing.T) {
 	action2.State = ActionStateDone
 	require.Equal(t, action2, actions[0])
 
-	id, err = db.AddAction(sessionID1, action1)
+	id, err = db.AddAction(action1)
 	require.NoError(t, err)
 	require.Equal(t, uint64(2), id)
 
@@ -176,7 +176,7 @@ func TestListActions(t *testing.T) {
 			State:              ActionStateDone,
 		}
 
-		_, err := db.AddAction(sessionID, action)
+		_, err := db.AddAction(action)
 		require.NoError(t, err)
 	}
 
@@ -365,7 +365,7 @@ func TestListGroupActions(t *testing.T) {
 	require.Empty(t, al)
 
 	// Add an action under session 1.
-	_, err = db.AddAction(sessionID1, action1)
+	_, err = db.AddAction(action1)
 	require.NoError(t, err)
 
 	// There should now be one action in the group.
@@ -375,7 +375,7 @@ func TestListGroupActions(t *testing.T) {
 	require.Equal(t, sessionID1, al[0].SessionID)
 
 	// Add an action under session 2.
-	_, err = db.AddAction(sessionID2, action2)
+	_, err = db.AddAction(action2)
 	require.NoError(t, err)
 
 	// There should now be actions in the group.

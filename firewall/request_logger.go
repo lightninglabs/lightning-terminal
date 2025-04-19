@@ -194,6 +194,7 @@ func (r *RequestLogger) addNewAction(ri *RequestInfo,
 	}
 
 	action := &firewalldb.Action{
+		SessionID:   sessionID,
 		RPCMethod:   ri.URI,
 		AttemptedAt: time.Now(),
 		State:       firewalldb.ActionStateInit,
@@ -222,7 +223,7 @@ func (r *RequestLogger) addNewAction(ri *RequestInfo,
 		}
 	}
 
-	id, err := r.actionsDB.AddAction(sessionID, action)
+	id, err := r.actionsDB.AddAction(action)
 	if err != nil {
 		return err
 	}
