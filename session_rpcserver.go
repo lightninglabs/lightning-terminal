@@ -668,69 +668,6 @@ func (s *sessionRpcServer) ListActions(ctx context.Context,
 		req.MaxNumActions = 100
 	}
 
-	// Build a filter function based on the request values.
-	filterFn := func(a *firewalldb.Action, reversed bool) (bool, bool) {
-		timeStamp := uint64(a.AttemptedAt.Unix())
-		if req.EndTimestamp != 0 {
-			// If actions are being considered in order and the
-			// timestamp of this action exceeds the given end
-			// timestamp, then there is no need to continue
-			// traversing.
-			if !reversed && timeStamp > req.EndTimestamp {
-				return false, false
-			}
-
-			// If the actions are in reverse order and the timestamp
-			// comes after the end timestamp, then the actions is
-			// not included but the search can continue.
-			if reversed && timeStamp > req.EndTimestamp {
-				return false, true
-			}
-		}
-
-		if req.StartTimestamp != 0 {
-			// If actions are being considered in order and the
-			// timestamp of this action comes before the given start
-			// timestamp, then the action is not included but the
-			// search can continue.
-			if !reversed && timeStamp < req.StartTimestamp {
-				return false, true
-			}
-
-			// If the actions are in reverse order and the timestamp
-			// comes before the start timestamp, then there is no
-			// need to continue traversing.
-			if reversed && timeStamp < req.StartTimestamp {
-				return false, false
-			}
-		}
-
-		if req.FeatureName != "" && a.FeatureName != req.FeatureName {
-			return false, true
-		}
-
-		if req.ActorName != "" && a.ActorName != req.ActorName {
-			return false, true
-		}
-
-		if req.MethodName != "" && a.RPCMethod != req.MethodName {
-			return false, true
-		}
-
-		if req.State != 0 {
-			s, err := marshalActionState(a.State)
-			if err != nil {
-				return false, true
-			}
-
-			if s != req.State {
-				return false, true
-			}
-		}
-
-		return true, true
-	}
-
 	query := &firewalldb.ListActionsQuery{
 		IndexOffset: req.IndexOffset,
 		MaxNum:      req.MaxNumActions,
@@ -738,43 +675,55 @@ func (s *sessionRpcServer) ListActions(ctx context.Context,
 		CountAll:    req.CountTotal,
 	}
 
+	state, err := unmarshalActionState(req.State)
+	if err != nil {
+		return nil, err
+	}
+
 	var (
-		db         = s.cfg.actionsDB
-		actions    []*firewalldb.Action
-		lastIndex  uint64
-		totalCount uint64
-		err        error
+		listOptions = []firewalldb.ListActionOption{
+			firewalldb.WithActionFeatureName(req.FeatureName),
+			firewalldb.WithActionActorName(req.ActorName),
+			firewalldb.WithActionMethodName(req.MethodName),
+			firewalldb.WithActionState(state),
+		}
+		addOption = func(opt firewalldb.ListActionOption) {
+			listOptions = append(listOptions, opt)
+		}
 	)
 	if req.SessionId != nil {
 		sessionID, err := session.IDFromBytes(req.SessionId)
 		if err != nil {
 			return nil, err
 		}
-
-		actions, lastIndex, totalCount, err = db.ListSessionActions(
-			sessionID, filterFn, query,
-		)
-		if err != nil {
-			return nil, err
-		}
+		addOption(firewalldb.WithActionSessionID(sessionID))
 	} else if req.GroupId != nil {
 		groupID, err := session.IDFromBytes(req.GroupId)
 		if err != nil {
 			return nil, err
 		}
-
-		actions, err = db.ListGroupActions(ctx, groupID, filterFn)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		actions, lastIndex, totalCount, err = db.ListActions(
-			filterFn, query,
-		)
-		if err != nil {
-			return nil, err
-		}
+		addOption(firewalldb.WithActionGroupID(groupID))
 	}
+
+	if req.EndTimestamp != 0 {
+		addOption(firewalldb.WithActionEndTime(
+			time.Unix(int64(req.EndTimestamp), 0)),
+		)
+	}
+
+	if req.StartTimestamp != 0 {
+		addOption(firewalldb.WithActionStartTime(
+			time.Unix(int64(req.StartTimestamp), 0)),
+		)
+	}
+
+	actions, lastIndex, totalCount, err := s.cfg.actionsDB.ListActions(
+		ctx, query, listOptions...,
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	resp := make([]*litrpc.Action, len(actions))
 	for i, a := range actions {
 		state, err := marshalActionState(a.State)
@@ -1660,6 +1609,23 @@ func marshalActionState(state firewalldb.ActionState) (litrpc.ActionState,
 		return litrpc.ActionState_STATE_DONE, nil
 	case firewalldb.ActionStateError:
 		return litrpc.ActionState_STATE_ERROR, nil
+	default:
+		return 0, fmt.Errorf("unknown state <%d>", state)
+	}
+}
+
+func unmarshalActionState(state litrpc.ActionState) (firewalldb.ActionState,
+	error) {
+
+	switch state {
+	case litrpc.ActionState_STATE_UNKNOWN:
+		return firewalldb.ActionStateUnknown, nil
+	case litrpc.ActionState_STATE_PENDING:
+		return firewalldb.ActionStateInit, nil
+	case litrpc.ActionState_STATE_DONE:
+		return firewalldb.ActionStateDone, nil
+	case litrpc.ActionState_STATE_ERROR:
+		return firewalldb.ActionStateError, nil
 	default:
 		return 0, fmt.Errorf("unknown state <%d>", state)
 	}

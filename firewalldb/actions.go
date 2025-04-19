@@ -72,7 +72,7 @@ type Action struct {
 }
 
 // ListActionsQuery can be used to tweak the query to ListActions and
-// ListSessionActions.
+// listSessionActions.
 type ListActionsQuery struct {
 	// IndexOffset is index of the action to inspect.
 	IndexOffset uint64
@@ -89,6 +89,93 @@ type ListActionsQuery struct {
 	// satisfy the query should be counted and returned. Note that this will
 	// make the query slower.
 	CountAll bool
+}
+
+// listActionsOptions holds the options that can be used to filter the actions
+// that are returned by the ListActions method.
+type listActionOptions struct {
+	sessionID   session.ID
+	groupID     session.ID
+	featureName string
+	actorName   string
+	methodName  string
+	state       ActionState
+	endTime     time.Time
+	startTime   time.Time
+}
+
+// newListActionOptions creates a new listActionOptions instance with default
+// query values.
+func newListActionOptions() *listActionOptions {
+	return &listActionOptions{}
+}
+
+// ListActionOption is a functional option that can be used to tweak the
+// behaviour of the ListActions method.
+type ListActionOption func(*listActionOptions)
+
+// WithActionSessionID is a ListActionOption that can be used to select all
+// Actions performed under the given session ID.
+func WithActionSessionID(sessionID session.ID) ListActionOption {
+	return func(o *listActionOptions) {
+		o.sessionID = sessionID
+	}
+}
+
+// WithActionGroupID is a ListActionOption that can be used to select all
+// Actions performed under the give group ID.
+func WithActionGroupID(groupID session.ID) ListActionOption {
+	return func(o *listActionOptions) {
+		o.groupID = groupID
+	}
+}
+
+// WithActionStartTime is a ListActionOption that can be used to select all
+// Actions that were attempted after the given time.
+func WithActionStartTime(startTime time.Time) ListActionOption {
+	return func(o *listActionOptions) {
+		o.startTime = startTime
+	}
+}
+
+// WithActionEndTime is a ListActionOption that can be used to select all
+// Actions that were attempted before the given time.
+func WithActionEndTime(endTime time.Time) ListActionOption {
+	return func(o *listActionOptions) {
+		o.endTime = endTime
+	}
+}
+
+// WithActionFeatureName is a ListActionOption that can be used to select all
+// Actions that were performed by the given feature.
+func WithActionFeatureName(featureName string) ListActionOption {
+	return func(o *listActionOptions) {
+		o.featureName = featureName
+	}
+}
+
+// WithActionActorName is a ListActionOption that can be used to select all
+// Actions that were performed by the given actor.
+func WithActionActorName(actorName string) ListActionOption {
+	return func(o *listActionOptions) {
+		o.actorName = actorName
+	}
+}
+
+// WithActionMethodName is a ListActionOption that can be used to select all
+// Actions that called the given RPC method.
+func WithActionMethodName(methodName string) ListActionOption {
+	return func(o *listActionOptions) {
+		o.methodName = methodName
+	}
+}
+
+// WithActionState is a ListActionOption that can be used to select all Actions
+// that are in the given state.
+func WithActionState(state ActionState) ListActionOption {
+	return func(o *listActionOptions) {
+		o.state = state
+	}
 }
 
 // ActionsWriteDB is an abstraction over the Actions DB that will allow a
@@ -174,10 +261,10 @@ var _ ActionsListDB = (*groupActionsReadDB)(nil)
 func (s *groupActionsReadDB) ListActions(ctx context.Context) ([]*RuleAction,
 	error) {
 
-	sessionActions, err := s.db.ListGroupActions(
-		ctx, s.groupID, func(a *Action, _ bool) (bool, bool) {
-			return a.State == ActionStateDone, true
-		},
+	sessionActions, _, _, err := s.db.ListActions(
+		ctx, nil,
+		WithActionGroupID(s.groupID),
+		WithActionState(ActionStateDone),
 	)
 	if err != nil {
 		return nil, err
@@ -205,11 +292,11 @@ var _ ActionsListDB = (*groupFeatureActionsReadDB)(nil)
 func (a *groupFeatureActionsReadDB) ListActions(ctx context.Context) (
 	[]*RuleAction, error) {
 
-	featureActions, err := a.db.ListGroupActions(
-		ctx, a.groupID, func(action *Action, _ bool) (bool, bool) {
-			return action.State == ActionStateDone &&
-				action.FeatureName == a.featureName, true
-		},
+	featureActions, _, _, err := a.db.ListActions(
+		ctx, nil,
+		WithActionGroupID(a.groupID),
+		WithActionState(ActionStateDone),
+		WithActionFeatureName(a.featureName),
 	)
 	if err != nil {
 		return nil, err

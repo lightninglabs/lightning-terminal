@@ -198,19 +198,87 @@ func (db *BoltDB) SetActionState(al *ActionLocator, state ActionState,
 	})
 }
 
-// ListActionsFilterFn defines a function that can be used to determine if an
-// action should be included in a set of results or not. The reversed parameter
-// indicates if the actions are being traversed in reverse order or not.
-// The first return boolean indicates if the action should be included or not
-// and the second one indicates if the iteration should be stopped or not.
-type ListActionsFilterFn func(a *Action, reversed bool) (bool, bool)
+// ListActions returns a list of Actions. The query IndexOffset and MaxNum
+// params can be used to control the number of actions returned.
+// ListActionOptions may be used to filter on specific Action values. The return
+// values are the list of actions, the last index and the total count (iff
+// query.CountTotal is set).
+func (db *BoltDB) ListActions(ctx context.Context, query *ListActionsQuery,
+	options ...ListActionOption) ([]*Action, uint64, uint64, error) {
 
-// ListActions returns a list of Actions that pass the filterFn requirements.
-// The indexOffset and maxNum params can be used to control the number of
-// actions returned. The return values are the list of actions, the last index
-// and the total count (iff query.CountTotal is set).
-func (db *BoltDB) ListActions(filterFn ListActionsFilterFn,
-	query *ListActionsQuery) ([]*Action, uint64, uint64, error) {
+	opts := newListActionOptions()
+	for _, o := range options {
+		o(opts)
+	}
+
+	filterFn := func(a *Action, reversed bool) (bool, bool) {
+		timeStamp := a.AttemptedAt
+		if !opts.endTime.IsZero() {
+			// If actions are being considered in order and the
+			// timestamp of this action exceeds the given end
+			// timestamp, then there is no need to continue
+			// traversing.
+			if !reversed && timeStamp.After(opts.endTime) {
+				return false, false
+			}
+
+			// If the actions are in reverse order and the timestamp
+			// comes after the end timestamp, then the actions is
+			// not included but the search can continue.
+			if reversed && timeStamp.After(opts.endTime) {
+				return false, true
+			}
+		}
+
+		if !opts.startTime.IsZero() {
+			// If actions are being considered in order and the
+			// timestamp of this action comes before the given start
+			// timestamp, then the action is not included but the
+			// search can continue.
+			if !reversed && timeStamp.Before(opts.startTime) {
+				return false, true
+			}
+
+			// If the actions are in reverse order and the timestamp
+			// comes before the start timestamp, then there is no
+			// need to continue traversing.
+			if reversed && timeStamp.Before(opts.startTime) {
+				return false, false
+			}
+		}
+
+		if opts.featureName != "" && a.FeatureName != opts.featureName {
+			return false, true
+		}
+
+		if opts.actorName != "" && a.ActorName != opts.actorName {
+			return false, true
+		}
+
+		if opts.methodName != "" && a.RPCMethod != opts.methodName {
+			return false, true
+		}
+
+		if opts.state != ActionStateUnknown && a.State != opts.state {
+			return false, true
+		}
+
+		return true, true
+	}
+
+	if opts.sessionID != session.EmptyID {
+		return db.listSessionActions(
+			opts.sessionID, filterFn, query,
+		)
+	}
+	if opts.groupID != session.EmptyID {
+		actions, err := db.listGroupActions(ctx, opts.groupID, filterFn)
+		if err != nil {
+			return nil, 0, 0, err
+		}
+
+		return actions, 0, uint64(len(actions)), nil
+	}
 
 	var (
 		actions    []*Action
@@ -242,7 +310,6 @@ func (db *BoltDB) ListActions(filterFn ListActionsFilterFn,
 			if err != nil {
 				return nil, err
 			}
-
 			return getAction(actionsBucket, locator)
 		}
 
@@ -255,14 +322,20 @@ func (db *BoltDB) ListActions(filterFn ListActionsFilterFn,
 	if err != nil {
 		return nil, 0, 0, err
 	}
-
 	return actions, lastIndex, totalCount, nil
 }
 
-// ListSessionActions returns a list of the given session's Actions that pass
+// listActionsFilterFn defines a function that can be used to determine if an
+// action should be included in a set of results or not. The reversed parameter
+// indicates if the actions are being traversed in reverse order or not.
+// The first return boolean indicates if the action should be included or not
+// and the second one indicates if the iteration should be continued or not.
+type listActionsFilterFn func(a *Action, reversed bool) (bool, bool)
+
+// listSessionActions returns a list of the given session's Actions that pass
 // the filterFn requirements.
-func (db *BoltDB) ListSessionActions(sessionID session.ID,
-	filterFn ListActionsFilterFn, query *ListActionsQuery) ([]*Action,
+func (db *BoltDB) listSessionActions(sessionID session.ID,
+	filterFn listActionsFilterFn, query *ListActionsQuery) ([]*Action,
 	uint64, uint64, error) {
 
 	var (
@@ -303,12 +376,12 @@ func (db *BoltDB) ListSessionActions(sessionID session.ID,
 	return actions, lastIndex, totalCount, nil
 }
 
-// ListGroupActions returns a list of the given session group's Actions that
+// listGroupActions returns a list of the given session group's Actions that
 // pass the filterFn requirements.
 //
 // TODO: update to allow for pagination.
-func (db *BoltDB) ListGroupActions(ctx context.Context, groupID session.ID,
-	filterFn ListActionsFilterFn) ([]*Action, error) {
+func (db *BoltDB) listGroupActions(ctx context.Context, groupID session.ID,
+	filterFn listActionsFilterFn) ([]*Action, error) {
 
 	if filterFn == nil {
 		filterFn = func(a *Action, reversed bool) (bool, bool) {

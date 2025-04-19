@@ -14,6 +14,9 @@ import (
 	"gopkg.in/macaroon.v2"
 )
 
+// EmptyID is an empty session ID.
+var EmptyID ID
+
 // Type represents the type of session.
 type Type uint8
 
