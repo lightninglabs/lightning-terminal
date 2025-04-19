@@ -216,7 +216,7 @@ type mockRateLimitCfg struct {
 
 var _ rateLimitConfig = (*mockRateLimitCfg)(nil)
 
-func (m *mockRateLimitCfg) GetActionsDB() firewalldb.ActionsDB {
+func (m *mockRateLimitCfg) GetActionsDB() firewalldb.ActionsListDB {
 	return m.db
 }
 
@@ -233,7 +233,7 @@ type mockActionsDB struct {
 	actions []*firewalldb.RuleAction
 }
 
-var _ firewalldb.ActionsDB = (*mockActionsDB)(nil)
+var _ firewalldb.ActionsListDB = (*mockActionsDB)(nil)
 
 func (m *mockActionsDB) addAction(uri string, timestamp time.Time) {
 	m.actions = append(m.actions, &firewalldb.RuleAction{

@@ -109,10 +109,10 @@ type RuleAction struct {
 	PerformedAt time.Time
 }
 
-// ActionsDB represents a DB backend that contains Action entries that can
+// ActionsListDB represents a DB backend that contains Action entries that can
 // be queried. It allows us to abstract away the details of the data storage
 // method.
-type ActionsDB interface {
+type ActionsListDB interface {
 	// ListActions returns a  list of past Action items.
 	ListActions(ctx context.Context) ([]*RuleAction, error)
 }
@@ -120,8 +120,8 @@ type ActionsDB interface {
 // ActionsReadDB is an abstraction gives a caller access to either a group
 // specific or group and feature specific rules.ActionDB.
 type ActionsReadDB interface {
-	GroupActionsDB() ActionsDB
-	GroupFeatureActionsDB() ActionsDB
+	GroupActionsDB() ActionsListDB
+	GroupFeatureActionsDB() ActionsListDB
 }
 
 // ActionReadDBGetter represents a function that can be used to construct
@@ -150,25 +150,25 @@ type allActionsReadDB struct {
 
 var _ ActionsReadDB = (*allActionsReadDB)(nil)
 
-// GroupActionsDB returns a rules.ActionsDB that will give the caller access
+// GroupActionsDB returns a rules.ActionsListDB that will give the caller access
 // to all of a groups Actions.
-func (a *allActionsReadDB) GroupActionsDB() ActionsDB {
+func (a *allActionsReadDB) GroupActionsDB() ActionsListDB {
 	return &groupActionsReadDB{a}
 }
 
-// GroupFeatureActionsDB returns a rules.ActionsDB that will give the caller
+// GroupFeatureActionsDB returns a rules.ActionsListDB that will give the caller
 // access to only a specific features Actions in a specific group.
-func (a *allActionsReadDB) GroupFeatureActionsDB() ActionsDB {
+func (a *allActionsReadDB) GroupFeatureActionsDB() ActionsListDB {
 	return &groupFeatureActionsReadDB{a}
 }
 
-// groupActionsReadDB is an implementation of the rules.ActionsDB that will
+// groupActionsReadDB is an implementation of the rules.ActionsListDB that will
 // provide read access to all the Actions of a particular group.
 type groupActionsReadDB struct {
 	*allActionsReadDB
 }
 
-var _ ActionsDB = (*groupActionsReadDB)(nil)
+var _ ActionsListDB = (*groupActionsReadDB)(nil)
 
 // ListActions will return all the Actions for a particular group.
 func (s *groupActionsReadDB) ListActions(ctx context.Context) ([]*RuleAction,
@@ -191,14 +191,14 @@ func (s *groupActionsReadDB) ListActions(ctx context.Context) ([]*RuleAction,
 	return actions, nil
 }
 
-// groupFeatureActionsReadDB is an implementation of the rules.ActionsDB that
+// groupFeatureActionsReadDB is an implementation of the rules.ActionsListDB that
 // will provide read access to all the Actions of a feature within a particular
 // group.
 type groupFeatureActionsReadDB struct {
 	*allActionsReadDB
 }
 
-var _ ActionsDB = (*groupFeatureActionsReadDB)(nil)
+var _ ActionsListDB = (*groupFeatureActionsReadDB)(nil)
 
 // ListActions will return all the Actions for a particular group that were
 // executed by a particular feature.

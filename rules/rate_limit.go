@@ -87,7 +87,7 @@ func (r *RateLimitMgr) EmptyValue() Values {
 // rateLimitConfig is the config required by RateLimitMgr. It can be derived
 // from the main rules Config struct.
 type rateLimitConfig interface {
-	GetActionsDB() firewalldb.ActionsDB
+	GetActionsDB() firewalldb.ActionsListDB
 	GetMethodPerms() func(string) ([]bakery.Op, bool)
 }
 

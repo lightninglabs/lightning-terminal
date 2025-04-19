@@ -39,7 +39,7 @@ var (
 	}
 )
 
-// TestActionStorage tests that the ActionsDB CRUD logic.
+// TestActionStorage tests that the ActionsListDB CRUD logic.
 func TestActionStorage(t *testing.T) {
 	tmpDir := t.TempDir()
 
