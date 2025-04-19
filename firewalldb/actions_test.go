@@ -66,11 +66,11 @@ func TestActionStorage(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, actions, 0)
 
-	id, err := db.AddAction(action1)
+	id, err := db.AddAction(ctx, action1)
 	require.NoError(t, err)
 	require.Equal(t, uint64(1), id)
 
-	id, err = db.AddAction(action2)
+	id, err = db.AddAction(ctx, action2)
 	require.NoError(t, err)
 	require.Equal(t, uint64(1), id)
 
@@ -92,7 +92,7 @@ func TestActionStorage(t *testing.T) {
 	require.Len(t, actions, 0)
 
 	err = db.SetActionState(
-		&ActionLocator{
+		ctx, &ActionLocator{
 			SessionID: sessionID2,
 			ActionID:  uint64(1),
 		}, ActionStateDone, "",
@@ -109,7 +109,7 @@ func TestActionStorage(t *testing.T) {
 	action2.State = ActionStateDone
 	require.Equal(t, action2, actions[0])
 
-	id, err = db.AddAction(action1)
+	id, err = db.AddAction(ctx, action1)
 	require.NoError(t, err)
 	require.Equal(t, uint64(2), id)
 
@@ -125,7 +125,7 @@ func TestActionStorage(t *testing.T) {
 
 	// Try set an error reason for a non Errored state.
 	err = db.SetActionState(
-		&ActionLocator{
+		ctx, &ActionLocator{
 			SessionID: sessionID2,
 			ActionID:  uint64(1),
 		}, ActionStateDone, "hello",
@@ -134,7 +134,7 @@ func TestActionStorage(t *testing.T) {
 
 	// Now try move the action to errored with a reason.
 	err = db.SetActionState(
-		&ActionLocator{
+		ctx, &ActionLocator{
 			SessionID: sessionID2,
 			ActionID:  uint64(1),
 		}, ActionStateError, "fail whale",
@@ -184,7 +184,7 @@ func TestListActions(t *testing.T) {
 			State:              ActionStateDone,
 		}
 
-		_, err := db.AddAction(action)
+		_, err := db.AddAction(ctx, action)
 		require.NoError(t, err)
 	}
 
@@ -373,7 +373,7 @@ func TestListGroupActions(t *testing.T) {
 	require.Empty(t, al)
 
 	// Add an action under session 1.
-	_, err = db.AddAction(action1)
+	_, err = db.AddAction(ctx, action1)
 	require.NoError(t, err)
 
 	// There should now be one action in the group.
@@ -383,7 +383,7 @@ func TestListGroupActions(t *testing.T) {
 	require.Equal(t, sessionID1, al[0].SessionID)
 
 	// Add an action under session 2.
-	_, err = db.AddAction(action2)
+	_, err = db.AddAction(ctx, action2)
 	require.NoError(t, err)
 
 	// There should now be actions in the group.

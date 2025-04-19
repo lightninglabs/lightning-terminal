@@ -128,7 +128,7 @@ func (r *RequestLogger) CustomCaveatName() string {
 
 // Intercept processes an RPC middleware interception request and returns the
 // interception result which either accepts or rejects the intercepted message.
-func (r *RequestLogger) Intercept(_ context.Context,
+func (r *RequestLogger) Intercept(ctx context.Context,
 	req *lnrpc.RPCMiddlewareRequest) (*lnrpc.RPCMiddlewareResponse, error) {
 
 	ri, err := NewInfoFromRequest(req)
@@ -156,7 +156,7 @@ func (r *RequestLogger) Intercept(_ context.Context,
 
 	// Parse incoming requests and act on them.
 	case MWRequestTypeRequest:
-		return mid.RPCErr(req, r.addNewAction(ri, withPayloadData))
+		return mid.RPCErr(req, r.addNewAction(ctx, ri, withPayloadData))
 
 	// Parse and possibly manipulate outgoing responses.
 	case MWRequestTypeResponse:
@@ -170,7 +170,7 @@ func (r *RequestLogger) Intercept(_ context.Context,
 		}
 
 		return mid.RPCErr(
-			req, r.MarkAction(ri.RequestID, state, errReason),
+			req, r.MarkAction(ctx, ri.RequestID, state, errReason),
 		)
 
 	default:
@@ -179,7 +179,7 @@ func (r *RequestLogger) Intercept(_ context.Context,
 }
 
 // addNewAction persists the new action to the db.
-func (r *RequestLogger) addNewAction(ri *RequestInfo,
+func (r *RequestLogger) addNewAction(ctx context.Context, ri *RequestInfo,
 	withPayloadData bool) error {
 
 	// If no macaroon is provided, then an empty 4-byte array is used as the
@@ -223,7 +223,7 @@ func (r *RequestLogger) addNewAction(ri *RequestInfo,
 		}
 	}
 
-	id, err := r.actionsDB.AddAction(action)
+	id, err := r.actionsDB.AddAction(ctx, action)
 	if err != nil {
 		return err
 	}
@@ -240,7 +240,7 @@ func (r *RequestLogger) addNewAction(ri *RequestInfo,
 
 // MarkAction can be used to set the state of an action identified by the given
 // requestID.
-func (r *RequestLogger) MarkAction(reqID uint64,
+func (r *RequestLogger) MarkAction(ctx context.Context, reqID uint64,
 	state firewalldb.ActionState, errReason string) error {
 
 	r.mu.Lock()
@@ -252,5 +252,5 @@ func (r *RequestLogger) MarkAction(reqID uint64,
 	}
 	delete(r.reqIDToAction, reqID)
 
-	return r.actionsDB.SetActionState(actionLocator, state, errReason)
+	return r.actionsDB.SetActionState(ctx, actionLocator, state, errReason)
 }

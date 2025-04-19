@@ -105,12 +105,12 @@ type PrivacyMapper interface {
 // the Action persistence and querying.
 type ActionDB interface {
 	// AddAction persists the given action to the database.
-	AddAction(action *Action) (uint64, error)
+	AddAction(ctx context.Context, action *Action) (uint64, error)
 
 	// SetActionState finds the action specified by the ActionLocator and
 	// sets its state to the given state.
-	SetActionState(al *ActionLocator, state ActionState,
-		errReason string) error
+	SetActionState(ctx context.Context, al *ActionLocator,
+		state ActionState, errReason string) error
 
 	// ListActions returns a list of Actions that pass the filterFn
 	// requirements. The query IndexOffset and MaxNum params can be used to

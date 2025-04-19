@@ -181,9 +181,9 @@ func WithActionState(state ActionState) ListActionOption {
 // ActionsWriteDB is an abstraction over the Actions DB that will allow a
 // caller to add new actions as well as change the values of an existing action.
 type ActionsWriteDB interface {
-	AddAction(action *Action) (uint64, error)
-	SetActionState(al *ActionLocator, state ActionState,
-		errReason string) error
+	AddAction(ctx context.Context, action *Action) (uint64, error)
+	SetActionState(ctx context.Context, al *ActionLocator,
+		state ActionState, errReason string) error
 }
 
 // RuleAction represents a method call that was performed at a certain time at
