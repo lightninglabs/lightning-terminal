@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/lnrpc"
+	"google.golang.org/grpc/metadata"
 	"gopkg.in/macaroon.v2"
 )
 
@@ -38,11 +40,19 @@ type RequestInfo struct {
 	MetaInfo        *InterceptMetaInfo
 	Rules           *InterceptRules
 	WithPrivacy     bool
+	MDPairs         metadata.MD
 }
 
 // NewInfoFromRequest parses the given RPC middleware interception request and
 // returns a RequestInfo struct.
 func NewInfoFromRequest(req *lnrpc.RPCMiddlewareRequest) (*RequestInfo, error) {
+	md := make(metadata.MD)
+	for k, vs := range req.MetadataPairs {
+		for _, v := range vs.Values {
+			md.Append(k, v)
+		}
+	}
+
 	var ri *RequestInfo
 	switch t := req.InterceptType.(type) {
 	case *lnrpc.RPCMiddlewareRequest_StreamAuth:
@@ -50,6 +60,7 @@ func NewInfoFromRequest(req *lnrpc.RPCMiddlewareRequest) (*RequestInfo, error) {
 			MWRequestType: MWRequestTypeStreamAuth,
 			URI:           t.StreamAuth.MethodFullUri,
 			Streaming:     true,
+			MDPairs:       md,
 		}
 
 	case *lnrpc.RPCMiddlewareRequest_Request:
@@ -60,6 +71,7 @@ func NewInfoFromRequest(req *lnrpc.RPCMiddlewareRequest) (*RequestInfo, error) {
 			IsError:         t.Request.IsError,
 			Serialized:      t.Request.Serialized,
 			Streaming:       t.Request.StreamRpc,
+			MDPairs:         md,
 		}
 
 	case *lnrpc.RPCMiddlewareRequest_Response:
@@ -70,6 +82,7 @@ func NewInfoFromRequest(req *lnrpc.RPCMiddlewareRequest) (*RequestInfo, error) {
 			IsError:         t.Response.IsError,
 			Serialized:      t.Response.Serialized,
 			Streaming:       t.Response.StreamRpc,
+			MDPairs:         md,
 		}
 
 	default:
@@ -133,4 +146,36 @@ func (ri *RequestInfo) String() string {
 		ri.MsgID, ri.RequestID, ri.MWRequestType, ri.URI,
 		ri.GRPCMessageType, ri.Streaming, strings.Join(ri.Caveats, ","),
 		ri.MetaInfo, ri.Rules)
+}
+
+func (ri *RequestInfo) extractSessionID() (session.ID, bool, error) {
+	// First prize is to extract the session ID from the MD pairs.
+	id, ok, err := session.FromGrpcMD(ri.MDPairs)
+	if err != nil {
+		return id, ok, err
+	} else if ok {
+		return id, ok, nil
+	}
+
+	// TODO(elle): This is a temporary workaround to support older versions
+	// of LND that don't attach metadata pairs to the request.
+	// We should remove this once we have bumped our minimum compatible
+	// LND version to one that always attaches metadata pairs.
+	// This is because the macaroon root key ID is not a reliable way of
+	// extracting the session ID since the macaroon root key ID may also
+	// be the first 4 bytes of an account ID and so collisions are possible
+	// here.
+
+	// Otherwise, fall back to extracting the session ID from the macaroon.
+	if ri.Macaroon == nil {
+		return session.ID{}, false, nil
+	}
+
+	id, err = session.IDFromMacaroon(ri.Macaroon)
+	if err != nil {
+		return session.ID{}, false, fmt.Errorf("could not extract "+
+			"ID from macaroon: %w", err)
+	}
+
+	return id, true, nil
 }
