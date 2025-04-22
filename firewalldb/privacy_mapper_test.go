@@ -17,17 +17,13 @@ func TestPrivacyMapStorage(t *testing.T) {
 	ctx := context.Background()
 
 	sessions := session.NewTestDB(t, clock.NewDefaultClock())
-	db, err := NewBoltDB(t.TempDir(), "test.db", sessions)
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		_ = db.Close()
-	})
+	db := NewTestDBWithSessions(t, sessions)
 
 	// First up, let's test that the correct error is returned if an
 	// attempt is made to write to a privacy map that is not linked to
 	// an existing session group.
 	pdb := db.PrivacyDB(session.ID{1, 2, 3, 4})
-	err = pdb.Update(ctx,
+	err := pdb.Update(ctx,
 		func(ctx context.Context, tx PrivacyMapTx) error {
 			_, err := tx.RealToPseudo(ctx, "real")
 			require.ErrorIs(t, err, session.ErrUnknownGroup)
@@ -54,7 +50,7 @@ func TestPrivacyMapStorage(t *testing.T) {
 	pdb1 := db.PrivacyDB(sess.GroupID)
 
 	_ = pdb1.Update(ctx, func(ctx context.Context, tx PrivacyMapTx) error {
-		_, err = tx.RealToPseudo(ctx, "real")
+		_, err := tx.RealToPseudo(ctx, "real")
 		require.ErrorIs(t, err, ErrNoSuchKeyFound)
 
 		_, err = tx.PseudoToReal(ctx, "pseudo")
@@ -89,7 +85,7 @@ func TestPrivacyMapStorage(t *testing.T) {
 	pdb2 := db.PrivacyDB(sess2.GroupID)
 
 	_ = pdb2.Update(ctx, func(ctx context.Context, tx PrivacyMapTx) error {
-		_, err = tx.RealToPseudo(ctx, "real")
+		_, err := tx.RealToPseudo(ctx, "real")
 		require.ErrorIs(t, err, ErrNoSuchKeyFound)
 
 		_, err = tx.PseudoToReal(ctx, "pseudo")
@@ -227,11 +223,7 @@ func TestPrivacyMapTxs(t *testing.T) {
 	ctx := context.Background()
 
 	sessions := session.NewTestDB(t, clock.NewDefaultClock())
-	db, err := NewBoltDB(t.TempDir(), "test.db", sessions)
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		_ = db.Close()
-	})
+	db := NewTestDBWithSessions(t, sessions)
 
 	sess, err := sessions.NewSession(
 		ctx, "test", session.TypeAutopilot, time.Unix(1000, 0), "",

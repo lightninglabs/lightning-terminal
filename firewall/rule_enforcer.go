@@ -33,7 +33,7 @@ type RuleEnforcer struct {
 	actionsDB         firewalldb.ActionReadDBGetter
 	sessionDB         firewalldb.SessionDB
 	markActionErrored func(reqID uint64, reason string) error
-	newPrivMap        firewalldb.NewPrivacyMapDB
+	privMapDB         firewalldb.PrivacyMapper
 
 	permsMgr        *perms.Manager
 	getFeaturePerms featurePerms
@@ -64,7 +64,7 @@ func NewRuleEnforcer(ruleDB firewalldb.RulesDB,
 	lndClient lndclient.LightningClient, lndConnID string,
 	ruleMgrs rules.ManagerSet,
 	markActionErrored func(reqID uint64, reason string) error,
-	privMap firewalldb.NewPrivacyMapDB) *RuleEnforcer {
+	privMap firewalldb.PrivacyMapper) *RuleEnforcer {
 
 	return &RuleEnforcer{
 		ruleDB:            ruleDB,
@@ -76,7 +76,7 @@ func NewRuleEnforcer(ruleDB firewalldb.RulesDB,
 		lndClient:         lndClient,
 		ruleMgrs:          ruleMgrs,
 		markActionErrored: markActionErrored,
-		newPrivMap:        privMap,
+		privMapDB:         privMap,
 		sessionDB:         sessionIDIndex,
 		lndConnID:         lndConnID,
 	}
@@ -392,7 +392,7 @@ func (r *RuleEnforcer) initRule(ctx context.Context, reqID uint64, name string,
 	}
 
 	if privacy {
-		privMap := r.newPrivMap(session.GroupID)
+		privMap := r.privMapDB.PrivacyDB(session.GroupID)
 
 		ruleValues, err = ruleValues.PseudoToReal(
 			ctx, privMap, session.PrivacyFlags,

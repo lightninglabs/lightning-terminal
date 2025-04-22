@@ -66,7 +66,7 @@ type sessionRpcServerConfig struct {
 	actionsDB               *firewalldb.BoltDB
 	autopilot               autopilotserver.Autopilot
 	ruleMgrs                rules.ManagerSet
-	privMap                 firewalldb.NewPrivacyMapDB
+	privMap                 firewalldb.PrivacyMapper
 }
 
 // newSessionRPCServer creates a new sessionRpcServer using the passed config.
@@ -628,7 +628,7 @@ func (s *sessionRpcServer) PrivacyMapConversion(ctx context.Context,
 	}
 
 	var res string
-	privMap := s.cfg.privMap(groupID)
+	privMap := s.cfg.privMap.PrivacyDB(groupID)
 	err = privMap.View(ctx, func(ctx context.Context,
 		tx firewalldb.PrivacyMapTx) error {
 
@@ -900,7 +900,7 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 		linkedGroupID = &groupID
 		linkedGroupSession = groupSess
 
-		privDB := s.cfg.privMap(groupID)
+		privDB := s.cfg.privMap.PrivacyDB(groupID)
 		err = privDB.View(ctx, func(ctx context.Context,
 			tx firewalldb.PrivacyMapTx) error {
 
@@ -1225,7 +1225,7 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 	}
 
 	// Register all the privacy map pairs for this session ID.
-	privDB := s.cfg.privMap(sess.GroupID)
+	privDB := s.cfg.privMap.PrivacyDB(sess.GroupID)
 	err = privDB.Update(ctx, func(ctx context.Context,
 		tx firewalldb.PrivacyMapTx) error {
 
@@ -1487,7 +1487,7 @@ func (s *sessionRpcServer) marshalRPCSession(ctx context.Context,
 					}
 
 					if sess.WithPrivacyMapper {
-						db := s.cfg.privMap(
+						db := s.cfg.privMap.PrivacyDB(
 							sess.GroupID,
 						)
 						val, err = val.PseudoToReal(

@@ -11,6 +11,7 @@ import (
 // interact with various firewalldb tables.
 type SQLQueries interface {
 	SQLKVStoreQueries
+	SQLPrivacyPairQueries
 }
 
 // BatchedSQLQueries is a version of the SQLQueries that's capable of batched

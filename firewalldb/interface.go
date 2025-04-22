@@ -92,3 +92,11 @@ type RulesDB interface {
 	// DeleteTempKVStores deletes all temporary kv stores.
 	DeleteTempKVStores(ctx context.Context) error
 }
+
+// PrivacyMapper is an interface that abstracts access to the privacy mapper
+// database.
+type PrivacyMapper interface {
+	// PrivacyDB constructs a PrivacyMapDB that will be indexed under the
+	// given group ID key.
+	PrivacyDB(groupID session.ID) PrivacyMapDB
+}

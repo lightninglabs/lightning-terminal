@@ -30,6 +30,8 @@ var (
 
 // PrivacyDB constructs a PrivacyMapDB that will be indexed under the given
 // group ID key.
+//
+// NOTE: this is part of the PrivacyMapper interface.
 func (db *BoltDB) PrivacyDB(groupID session.ID) PrivacyMapDB {
 	return &kvdbExecutor[PrivacyMapTx]{
 		db: db.DB,
