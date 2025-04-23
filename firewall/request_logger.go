@@ -182,15 +182,30 @@ func (r *RequestLogger) Intercept(_ context.Context,
 func (r *RequestLogger) addNewAction(ri *RequestInfo,
 	withPayloadData bool) error {
 
-	// If no macaroon is provided, then an empty 4-byte array is used as the
-	// session ID. Otherwise, the macaroon is used to derive a session ID.
-	var sessionID [4]byte
-	if ri.Macaroon != nil {
-		var err error
-		sessionID, err = session.IDFromMacaroon(ri.Macaroon)
-		if err != nil {
-			return fmt.Errorf("could not extract ID from macaroon")
-		}
+	// NOTE: Here is where we determine if we are linking the action to a
+	// known session OR a known account OR both. Right now (to not change
+	// behaviour from before): we give preference to a linked session.
+	// The original behaviour here was to purely use the macaroon's
+	// root key ID (4 bytes) to extract the "session ID". BUT if this
+	// action was triggered by an account call (that is not coupled to a
+	// session), then the "session ID" we are extracting here is actually
+	// the first 4 bytes of the account ID.
+	//
+	// What we actually need to do is:
+	// 1) only use the ctx/metadata to extract the session ID.
+	// 2) use the macaroon caveat to extract the account ID.
+	// With the above complete, we will be able to link an action to:
+	//    a session OR an account OR both OR none.
+	//
+	// Given the above info, it is also clear that the name "session ID"
+	// here is misleading as it is not necessarily the session ID. It could
+	// be: a session ID, an account ID or None. So it is more like a
+	// "macaroon identifier".
+	var sessionID session.ID
+	if sessID, ok, err := ri.extractSessionID(); err != nil {
+		return fmt.Errorf("could not extract session ID: %v", err)
+	} else if ok {
+		sessionID = sessID
 	}
 
 	action := &firewalldb.Action{

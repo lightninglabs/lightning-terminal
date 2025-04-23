@@ -106,9 +106,11 @@ func (p *PrivacyMapper) Intercept(ctx context.Context,
 			"interception request: %v", err)
 	}
 
-	sessionID, err := session.IDFromMacaroon(ri.Macaroon)
+	sessionID, ok, err := ri.extractSessionID()
 	if err != nil {
-		return nil, fmt.Errorf("could not extract ID from macaroon")
+		return nil, fmt.Errorf("could not extract session ID: %v", err)
+	} else if !ok {
+		return nil, fmt.Errorf("no session ID found in request")
 	}
 
 	log.Tracef("PrivacyMapper: Intercepting %v", ri)

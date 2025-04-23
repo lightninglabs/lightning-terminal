@@ -26,6 +26,7 @@ import (
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/macaroons"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 	"gopkg.in/macaroon-bakery.v2/bakery/checkers"
 	"gopkg.in/macaroon.v2"
@@ -77,10 +78,24 @@ func newSessionRPCServer(cfg *sessionRpcServerConfig) (*sessionRpcServer,
 	// actual mailbox server that spins up the Terminal Connect server
 	// interface.
 	server := session.NewServer(
-		func(opts ...grpc.ServerOption) *grpc.Server {
-			allOpts := append(cfg.grpcOptions, opts...)
+		func(id session.ID, opts ...grpc.ServerOption) *grpc.Server {
+			allOpts := []grpc.ServerOption{
+				grpc.StreamInterceptor(
+					addSessionIDToStreamCtx(id),
+				),
+				grpc.ChainUnaryInterceptor(
+					addSessionIDToUnaryCtx(id),
+				),
+			}
+
+			allOpts = append(allOpts, cfg.grpcOptions...)
+			allOpts = append(allOpts, opts...)
+
+			// Construct the gRPC server with the options.
 			grpcServer := grpc.NewServer(allOpts...)
 
+			// Register various grpc servers with the LNC session
+			// server.
 			cfg.registerGrpcServers(grpcServer)
 
 			return grpcServer
@@ -92,6 +107,47 @@ func newSessionRPCServer(cfg *sessionRpcServerConfig) (*sessionRpcServer,
 		sessionServer: server,
 		quit:          make(chan struct{}),
 	}, nil
+}
+
+type wrappedServerStream struct {
+	grpc.ServerStream
+	ctx context.Context
+}
+
+func (w *wrappedServerStream) Context() context.Context {
+	return w.ctx
+}
+
+func addSessionIDToStreamCtx(id session.ID) grpc.StreamServerInterceptor {
+	return func(srv interface{}, ss grpc.ServerStream,
+		info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+
+		md, _ := metadata.FromIncomingContext(ss.Context())
+		mdCopy := md.Copy()
+		session.AddToGrpcMD(mdCopy, id)
+
+		// Wrap the original stream with our custom context.
+		wrapped := &wrappedServerStream{
+			ServerStream: ss,
+			ctx: metadata.NewIncomingContext(
+				ss.Context(), mdCopy,
+			),
+		}
+
+		return handler(srv, wrapped)
+	}
+}
+
+func addSessionIDToUnaryCtx(id session.ID) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo,
+		handler grpc.UnaryHandler) (resp any, err error) {
+
+		md, _ := metadata.FromIncomingContext(ctx)
+		mdCopy := md.Copy()
+		session.AddToGrpcMD(mdCopy, id)
+
+		return handler(metadata.NewIncomingContext(ctx, mdCopy), req)
+	}
 }
 
 // start all the components necessary for the sessionRpcServer to start serving
