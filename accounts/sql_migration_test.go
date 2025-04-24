@@ -3,6 +3,7 @@ package accounts
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"testing"
 	"time"
 
@@ -11,8 +12,11 @@ import (
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
+	"github.com/lightningnetwork/lnd/lnwire"
 	"github.com/lightningnetwork/lnd/sqldb"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/rand"
+	"pgregory.net/rapid"
 )
 
 // TestAccountStoreMigration tests the migration of account store from a bolt
@@ -283,6 +287,16 @@ func TestAccountStoreMigration(t *testing.T) {
 				require.False(t, known)
 			},
 		},
+		{
+			name:            "randomized accounts",
+			expectLastIndex: true,
+			populateDB:      randomizeAccounts,
+		},
+		{
+			name:            "rapid randomized accounts",
+			expectLastIndex: true,
+			populateDB:      rapidRandomizeAccounts,
+		},
 	}
 
 	for _, test := range tests {
@@ -343,4 +357,229 @@ func TestAccountStoreMigration(t *testing.T) {
 			)
 		})
 	}
+}
+
+// randomizeAccounts adds 10 randomized accounts to the kvStore, each with
+// 50-1000 invoices and payments. The accounts are randomized in terms of
+// balance, expiry, number of invoices and payments, and payment status.
+func randomizeAccounts(t *testing.T, kvStore *BoltStore) {
+	ctx := context.Background()
+
+	var (
+		// numberOfAccounts is set to 10 to add enough accounts to get
+		// enough variation between number of invoices and payments, but
+		// kept low enough for the test not take too long to run, as the
+		// test time increases drastically by the number of accounts we
+		// migrate.
+		numberOfAccounts        = 10
+		invoiceCounter   uint64 = 0
+	)
+
+	for i := 0; i < numberOfAccounts; i++ {
+		label := fmt.Sprintf("account%d", i)
+
+		// Generate a random balance between 1,000 and 100,000,000.
+		balance := lnwire.MilliSatoshi(
+			rand.Int63n(100000000-1000) + 1000,
+		)
+
+		// Generate a random expiry between 10 and 10,000 minutes.
+		expiry := time.Now().Add(
+			time.Minute * time.Duration(rand.Intn(10000-10)+10),
+		)
+
+		acct, err := kvStore.NewAccount(ctx, balance, expiry, label)
+		require.NoError(t, err)
+
+		// Add between 50 and 1000 invoices for the account.
+		numberOfInvoices := rand.Intn(1000-50) + 50
+		for j := 0; j < numberOfInvoices; j++ {
+			invoiceCounter++
+
+			var rHash lntypes.Hash
+			_, err := rand.Read(rHash[:])
+			require.NoError(t, err)
+
+			err = kvStore.AddAccountInvoice(ctx, acct.ID, rHash)
+			require.NoError(t, err)
+
+			err = kvStore.StoreLastIndexes(ctx, invoiceCounter, 0)
+			require.NoError(t, err)
+		}
+
+		// Add between 50 and 1000 payments for the account.
+		numberOfPayments := rand.Intn(1000-50) + 50
+		for j := 0; j < numberOfPayments; j++ {
+			var rHash lntypes.Hash
+			_, err := rand.Read(rHash[:])
+			require.NoError(t, err)
+
+			// Generate a random payment amount from 1,000 to
+			// 100,000,000.
+			amt := lnwire.MilliSatoshi(
+				rand.Int63n(100000000-1000) + 1000,
+			)
+
+			// Ensure that we get an almost equal amount of
+			// different payment statuses for the payments.
+			status := paymentStatus(j)
+
+			known, err := kvStore.UpsertAccountPayment(
+				ctx, acct.ID, rHash, amt, status,
+			)
+			require.NoError(t, err)
+			require.False(t, known)
+		}
+	}
+}
+
+// rapidRandomizeAccounts is a rapid test that generates randomized
+// accounts using rapid, invoices and payments, and inserts them into the
+// kvStore. Each account is generated with a random balance, expiry, label,
+// and a random number of 20-100 invoices and payments. The invoices and
+// payments are also generated with random hashes and amounts.
+func rapidRandomizeAccounts(t *testing.T, kvStore *BoltStore) {
+	invoiceCounter := uint64(0)
+
+	ctx := context.Background()
+
+	rapid.Check(t, func(t *rapid.T) {
+		// Generate the randomized account for this check run.
+		acct := makeAccountGen().Draw(t, "account")
+
+		// Then proceed to insert the account with its invoices and
+		// payments into the db
+		newAcct, err := kvStore.NewAccount(
+			ctx, acct.balance, acct.expiry, acct.label,
+		)
+		require.NoError(t, err)
+
+		for _, invoiceHash := range acct.invoices {
+			invoiceCounter++
+
+			err := kvStore.AddAccountInvoice(
+				ctx, newAcct.ID, invoiceHash,
+			)
+			require.NoError(t, err)
+
+			err = kvStore.StoreLastIndexes(ctx, invoiceCounter, 0)
+			require.NoError(t, err)
+		}
+
+		for _, pmt := range acct.payments {
+			// Note that as rapid can generate multiple payments
+			// of the same values, we cannot be sure that the
+			// payment is unknown.
+			_, err := kvStore.UpsertAccountPayment(
+				ctx, newAcct.ID, pmt.hash, pmt.amt, pmt.status,
+			)
+			require.NoError(t, err)
+		}
+	})
+}
+
+// makeAccountGen returns a rapid generator that generates accounts, with
+// random labels, balances, expiry times, and between 20-100 randomly generated
+// invoices and payments. The invoices and payments are also generated with
+// random hashes and amounts.
+func makeAccountGen() *rapid.Generator[account] {
+	return rapid.Custom(func(t *rapid.T) account {
+		// As the store has a unique constraint for inserting labels,
+		// we don't use rapid to generate it, and instead use
+		// sufficiently large random number as the account suffix to
+		// avoid collisions.
+		label := fmt.Sprintf("account:%d", rand.Int63())
+
+		balance := lnwire.MilliSatoshi(
+			rapid.Int64Range(1000, 100000000).Draw(
+				t, fmt.Sprintf("balance_%s", label),
+			),
+		)
+
+		expiry := time.Now().Add(
+			time.Duration(
+				rapid.IntRange(10, 10000).Draw(
+					t, fmt.Sprintf("expiry_%s", label),
+				),
+			) * time.Minute,
+		)
+
+		// Generate the random invoices
+		numInvoices := rapid.IntRange(20, 100).Draw(
+			t, fmt.Sprintf("numInvoices_%s", label),
+		)
+		invoices := make([]lntypes.Hash, numInvoices)
+		for i := range invoices {
+			invoices[i] = randomHash(
+				t, fmt.Sprintf("invoiceHash_%s_%d", label, i),
+			)
+		}
+
+		// Generate the random payments
+		numPayments := rapid.IntRange(20, 100).Draw(
+			t, fmt.Sprintf("numPayments_%s", label),
+		)
+		payments := make([]payment, numPayments)
+		for i := range payments {
+			hashName := fmt.Sprintf("paymentHash_%s_%d", label, i)
+			amtName := fmt.Sprintf("amt_%s_%d", label, i)
+
+			payments[i] = payment{
+				hash: randomHash(t, hashName),
+				amt: lnwire.MilliSatoshi(
+					rapid.Int64Range(1000, 100000000).Draw(
+						t, amtName,
+					),
+				),
+				status: paymentStatus(i),
+			}
+		}
+
+		return account{
+			label:    label,
+			balance:  balance,
+			expiry:   expiry,
+			invoices: invoices,
+			payments: payments,
+		}
+	})
+}
+
+// randomHash generates a random hash of 32 bytes. It uses rapid to generate
+// the random bytes, and then copies them into a lntypes.Hash struct.
+func randomHash(t *rapid.T, name string) lntypes.Hash {
+	hashBytes := rapid.SliceOfN(rapid.Byte(), 32, 32).Draw(t, name)
+	var hash lntypes.Hash
+	copy(hash[:], hashBytes)
+	return hash
+}
+
+// paymentStatus returns a payment status based on the given index by taking
+// the index modulo 4. This ensures an approximately equal distribution of
+// different payment statuses across payments.
+func paymentStatus(i int) lnrpc.Payment_PaymentStatus {
+	switch i % 4 {
+	case 0:
+		return lnrpc.Payment_SUCCEEDED
+	case 1:
+		return lnrpc.Payment_IN_FLIGHT
+	case 2:
+		return lnrpc.Payment_UNKNOWN
+	default:
+		return lnrpc.Payment_FAILED
+	}
+}
+
+type account struct {
+	label    string
+	balance  lnwire.MilliSatoshi
+	expiry   time.Time
+	invoices []lntypes.Hash
+	payments []payment
+}
+
+type payment struct {
+	hash   lntypes.Hash
+	amt    lnwire.MilliSatoshi
+	status lnrpc.Payment_PaymentStatus
 }
