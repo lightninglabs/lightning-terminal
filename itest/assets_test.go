@@ -2320,6 +2320,112 @@ func assertMinNumHtlcs(t *testing.T, node *HarnessNode, expected int) {
 	require.NoError(t, err)
 }
 
+type subscribeEventsClient = routerrpc.Router_SubscribeHtlcEventsClient
+
+type htlcEventConfig struct {
+	timeout           time.Duration
+	numEvents         int
+	withLinkFailure   bool
+	withFailureDetail routerrpc.FailureDetail
+}
+
+func defaultHtlcEventConfig() *htlcEventConfig {
+	return &htlcEventConfig{
+		timeout: defaultTimeout,
+	}
+}
+
+type htlcEventOpt func(*htlcEventConfig)
+
+func withTimeout(timeout time.Duration) htlcEventOpt {
+	return func(config *htlcEventConfig) {
+		config.timeout = timeout
+	}
+}
+
+func withNumEvents(numEvents int) htlcEventOpt {
+	return func(config *htlcEventConfig) {
+		config.numEvents = numEvents
+	}
+}
+
+func withLinkFailure(detail routerrpc.FailureDetail) htlcEventOpt {
+	return func(config *htlcEventConfig) {
+		config.withLinkFailure = true
+		config.withFailureDetail = detail
+	}
+}
+
+func assertHtlcEvents(t *testing.T, c subscribeEventsClient,
+	opts ...htlcEventOpt) {
+
+	t.Helper()
+
+	cfg := defaultHtlcEventConfig()
+	for _, opt := range opts {
+		opt(cfg)
+	}
+
+	timeout := time.After(cfg.timeout)
+	events := make(chan *routerrpc.HtlcEvent)
+
+	go func() {
+		defer close(events)
+
+		for {
+			evt, err := c.Recv()
+			if err != nil {
+				t.Logf("Received HTLC event error: %v", err)
+				return
+			}
+
+			select {
+			case events <- evt:
+			case <-timeout:
+				t.Logf("Htlc event receive timeout")
+				return
+			}
+		}
+	}()
+
+	var numEvents int
+	for {
+		type linkFailEvent = *routerrpc.HtlcEvent_LinkFailEvent
+
+		select {
+		case evt, ok := <-events:
+			if !ok {
+				t.Fatalf("Htlc event stream closed")
+				return
+			}
+
+			if cfg.withLinkFailure {
+				linkEvent, ok := evt.Event.(linkFailEvent)
+				if !ok {
+					// We only count link failure events.
+					continue
+				}
+
+				if linkEvent.LinkFailEvent.FailureDetail !=
+					cfg.withFailureDetail {
+
+					continue
+				}
+			}
+
+			numEvents++
+
+			if numEvents == cfg.numEvents {
+				return
+			}
+
+		case <-timeout:
+			t.Fatalf("Htlc event receive timeout")
+			return
+		}
+	}
+}
+
 func assertNumHtlcs(t *testing.T, node *HarnessNode, expected int) {
 	t.Helper()
 
