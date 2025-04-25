@@ -2892,6 +2892,144 @@ func testCustomChannelsLiquidityEdgeCasesGroup(ctx context.Context,
 	testCustomChannelsLiquidityEdgeCasesCore(ctx, net, t, true)
 }
 
+// testCustomChannelsMultiRFQReceive tests that a node creating an invoice with
+// multiple RFQ quotes can actually guide the payer into using multiple private
+// taproot asset channels to pay the invoice.
+func testCustomChannelsMultiRFQReceive(ctx context.Context, net *NetworkHarness,
+	t *harnessTest) {
+
+	lndArgs := slices.Clone(lndArgsTemplate)
+	litdArgs := slices.Clone(litdArgsTemplate)
+
+	charlie, err := net.NewNode(
+		t.t, "Charlie", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	litdArgs = append(litdArgs, fmt.Sprintf(
+		"--taproot-assets.proofcourieraddr=%s://%s",
+		proof.UniverseRpcCourierType, charlie.Cfg.LitAddr(),
+	))
+
+	dave, err := net.NewNode(t.t, "Dave", lndArgs, false, true, litdArgs...)
+	require.NoError(t.t, err)
+	erin, err := net.NewNode(t.t, "Erin", lndArgs, false, true, litdArgs...)
+	require.NoError(t.t, err)
+	fabia, err := net.NewNode(
+		t.t, "Fabia", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+	yara, err := net.NewNode(
+		t.t, "Yara", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	nodes := []*HarnessNode{charlie, dave, erin, fabia, yara}
+	connectAllNodes(t.t, net, nodes)
+	fundAllNodes(t.t, net, nodes)
+
+	// Let's create the tap clients.
+	charlieTap := newTapClient(t.t, charlie)
+	daveTap := newTapClient(t.t, dave)
+	erinTap := newTapClient(t.t, erin)
+	fabiaTap := newTapClient(t.t, fabia)
+	yaraTap := newTapClient(t.t, yara)
+
+	assetReq := itest.CopyRequest(&mintrpc.MintAssetRequest{
+		Asset: itestAsset,
+	})
+
+	assetReq.Asset.NewGroupedAsset = true
+
+	// Mint an asset on Charlie and sync all nodes to Charlie as the
+	// universe.
+	mintedAssets := itest.MintAssetsConfirmBatch(
+		t.t, t.lndHarness.Miner.Client, charlieTap,
+		[]*mintrpc.MintAssetRequest{assetReq},
+	)
+	cents := mintedAssets[0]
+	assetID := cents.AssetGenesis.AssetId
+	groupID := cents.GetAssetGroup().GetTweakedGroupKey()
+
+	syncUniverses(t.t, charlieTap, dave, erin, fabia, yara)
+
+	multiRfqNodes := multiRfqNodes{
+		charlie: itestNode{
+			Lnd:  charlie,
+			Tapd: charlieTap,
+		},
+		dave: itestNode{
+			Lnd:  dave,
+			Tapd: daveTap,
+		},
+		erin: itestNode{
+			Lnd:  erin,
+			Tapd: erinTap,
+		},
+		fabia: itestNode{
+			Lnd:  fabia,
+			Tapd: fabiaTap,
+		},
+		yara: itestNode{
+			Lnd:  yara,
+			Tapd: yaraTap,
+		},
+		universeTap: charlieTap,
+	}
+
+	createTestMultiRFQAssetNetwork(
+		t, net, multiRfqNodes, cents, 10_000, 10_000, 10_000,
+	)
+
+	logBalance(t.t, nodes, assetID, "before multi-rfq receive")
+
+	hodlInv := createAssetHodlInvoice(t.t, nil, fabia, 20_000, assetID)
+
+	payInvoiceWithSatoshi(
+		t.t, charlie, &lnrpc.AddInvoiceResponse{
+			PaymentRequest: hodlInv.payReq,
+		},
+		withGroupKey(groupID),
+		withFailure(lnrpc.Payment_IN_FLIGHT, failureNone),
+	)
+
+	logBalance(t.t, nodes, assetID, "after inflight multi-rfq")
+
+	// Assert that some HTLCs are present from Fabia's point of view.
+	assertMinNumHtlcs(t.t, fabia, 1)
+
+	// Assert that Charlie also has at least one outgoing HTLC as a sanity
+	// check.
+	assertMinNumHtlcs(t.t, charlie, 1)
+
+	// Now let's cancel the invoice and assert that all inbound channels
+	// have cleared their HTLCs.
+	payHash := hodlInv.preimage.Hash()
+	_, err = fabia.InvoicesClient.CancelInvoice(
+		ctx, &invoicesrpc.CancelInvoiceMsg{
+			PaymentHash: payHash[:],
+		},
+	)
+	require.NoError(t.t, err)
+
+	assertNumHtlcs(t.t, dave, 0)
+	assertNumHtlcs(t.t, erin, 0)
+	assertNumHtlcs(t.t, yara, 0)
+
+	logBalance(t.t, nodes, assetID, "after cancelled hodl")
+
+	// Now let's create a normal invoice that will be settled once all the
+	// HTLCs have been received. This is only possible because the payer
+	// uses multiple bolt11 hop hints to reach the destination.
+	invoiceResp := createAssetInvoice(t.t, nil, fabia, 15_000, assetID)
+
+	payInvoiceWithSatoshi(
+		t.t, charlie, invoiceResp, withGroupKey(groupID),
+	)
+
+	logBalance(t.t, nodes, assetID, "after multi-rfq receive")
+}
+
 // testCustomChannelsStrictForwarding is a test that tests the strict forwarding
 // behavior of a node when it comes to paying asset invoices with assets and
 // BTC invoices with satoshis.
