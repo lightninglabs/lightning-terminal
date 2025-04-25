@@ -2561,7 +2561,7 @@ func testCustomChannelsLiquidityEdgeCasesCore(ctx context.Context,
 	// amount of 354 sats.
 	createAssetInvoice(
 		t.t, dave, charlie, 1, assetID, withInvoiceErrSubStr(
-			"1 asset units, as the minimal transportable amount",
+			"could not create any quotes for the invoice",
 		),
 		withInvGroupKey(groupID),
 	)
