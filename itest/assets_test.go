@@ -1388,7 +1388,7 @@ func sendKeySendPayment(t *testing.T, src, dst *HarnessNode,
 	stream, err := src.RouterClient.SendPaymentV2(ctxt, req)
 	require.NoError(t, err)
 
-	result, err := getFinalPaymentResult(stream)
+	result, err := getPaymentResult(stream, false)
 	require.NoError(t, err)
 	require.Equal(t, lnrpc.Payment_SUCCEEDED, result.Status)
 }
@@ -1448,6 +1448,12 @@ func payPayReqWithSatoshi(t *testing.T, payer *HarnessNode, payReq string,
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
 	defer cancel()
 
+	shardSize := uint64(0)
+
+	if cfg.smallShards {
+		shardSize = 80_000_000
+	}
+
 	sendReq := &routerrpc.SendPaymentRequest{
 		PaymentRequest:   payReq,
 		TimeoutSeconds:   int32(PaymentTimeout.Seconds()),
@@ -1455,6 +1461,7 @@ func payPayReqWithSatoshi(t *testing.T, payer *HarnessNode, payReq string,
 		MaxParts:         cfg.maxShards,
 		OutgoingChanIds:  cfg.outgoingChanIDs,
 		AllowSelfPayment: cfg.allowSelfPayment,
+		MaxShardSizeMsat: shardSize,
 	}
 
 	if cfg.smallShards {
@@ -1464,17 +1471,9 @@ func payPayReqWithSatoshi(t *testing.T, payer *HarnessNode, payReq string,
 	stream, err := payer.RouterClient.SendPaymentV2(ctxt, sendReq)
 	require.NoError(t, err)
 
-	if cfg.payStatus == lnrpc.Payment_IN_FLIGHT {
-		t.Logf("Waiting for initial stream response...")
-		result, err := stream.Recv()
-		require.NoError(t, err)
-
-		require.Equal(t, cfg.payStatus, result.Status)
-
-		return
-	}
-
-	result, err := getFinalPaymentResult(stream)
+	result, err := getPaymentResult(
+		stream, cfg.payStatus == lnrpc.Payment_IN_FLIGHT,
+	)
 	if cfg.errSubStr != "" {
 		require.ErrorContains(t, err, cfg.errSubStr)
 	} else {
