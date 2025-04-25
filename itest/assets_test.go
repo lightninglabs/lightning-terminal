@@ -1760,16 +1760,21 @@ func createAssetInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 
 	timeoutSeconds := int64(rfq.DefaultInvoiceExpiry.Seconds())
 
-	t.Logf("Asking peer %x for quote to buy assets to receive for "+
-		"invoice over %d units; waiting up to %ds",
-		dstRfqPeer.PubKey[:], assetAmount, timeoutSeconds)
+	var peerPubKey []byte
+	if dstRfqPeer != nil {
+		peerPubKey = dstRfqPeer.PubKey[:]
+
+		t.Logf("Asking peer %x for quote to buy assets to receive for "+
+			"invoice over %d units; waiting up to %ds",
+			dstRfqPeer.PubKey[:], assetAmount, timeoutSeconds)
+	}
 
 	dstTapd := newTapClient(t, dst)
 
 	request := &tchrpc.AddInvoiceRequest{
 		GroupKey:    cfg.groupKey,
 		AssetAmount: assetAmount,
-		PeerPubkey:  dstRfqPeer.PubKey[:],
+		PeerPubkey:  peerPubKey,
 		InvoiceRequest: &lnrpc.Invoice{
 			Memo: fmt.Sprintf("this is an asset invoice for "+
 				"%d units", assetAmount),
@@ -1824,7 +1829,7 @@ func createAssetInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 
 	t.Logf("Got quote for %d mSats at %3f msat/unit from peer %x with "+
 		"SCID %d", decodedInvoice.NumMsat, mSatPerUnit,
-		dstRfqPeer.PubKey[:], resp.AcceptedBuyQuote.Scid)
+		resp.AcceptedBuyQuote.Peer, resp.AcceptedBuyQuote.Scid)
 
 	return resp.InvoiceResult
 }
@@ -1958,9 +1963,15 @@ func createAssetHodlInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 
 	timeoutSeconds := int64(rfq.DefaultInvoiceExpiry.Seconds())
 
+	var rfqPeer []byte
+
+	if dstRfqPeer != nil {
+		rfqPeer = dstRfqPeer.PubKey[:]
+	}
+
 	t.Logf("Asking peer %x for quote to buy assets to receive for "+
 		"invoice for %d units; waiting up to %ds",
-		dstRfqPeer.PubKey[:], assetAmount, timeoutSeconds)
+		rfqPeer, assetAmount, timeoutSeconds)
 
 	dstTapd := newTapClient(t, dst)
 
@@ -1973,7 +1984,7 @@ func createAssetHodlInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 	payHash := preimage.Hash()
 	request := &tchrpc.AddInvoiceRequest{
 		AssetAmount: assetAmount,
-		PeerPubkey:  dstRfqPeer.PubKey[:],
+		PeerPubkey:  rfqPeer,
 		InvoiceRequest: &lnrpc.Invoice{
 			Memo: fmt.Sprintf("this is an asset invoice for "+
 				"%d units", assetAmount),
@@ -2011,7 +2022,7 @@ func createAssetHodlInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 	require.EqualValues(t, uint64(numMSats), uint64(decodedInvoice.NumMsat))
 
 	t.Logf("Got quote for %d msat at %v msat/unit from peer %x with SCID "+
-		"%d", decodedInvoice.NumMsat, mSatPerUnit, dstRfqPeer.PubKey[:],
+		"%d", decodedInvoice.NumMsat, mSatPerUnit, rfqPeer,
 		resp.AcceptedBuyQuote.Scid)
 
 	return assetHodlInvoice{
