@@ -416,13 +416,13 @@ func payNode(invoiceCtx, paymentCtx context.Context, t *harnessTest,
 	stream, err := from.SendPaymentV2(paymentCtx, sendReq)
 	require.NoError(t.t, err)
 
-	result, err := getFinalPaymentResult(stream)
+	result, err := getPaymentResult(stream, false)
 	require.NoError(t.t, err)
 	require.Equal(t.t, result.Status, lnrpc.Payment_SUCCEEDED)
 }
 
-func getFinalPaymentResult(stream routerrpc.Router_SendPaymentV2Client) (
-	*lnrpc.Payment, error) {
+func getPaymentResult(stream routerrpc.Router_SendPaymentV2Client,
+	isHodl bool) (*lnrpc.Payment, error) {
 
 	for {
 		payment, err := stream.Recv()
@@ -430,7 +430,14 @@ func getFinalPaymentResult(stream routerrpc.Router_SendPaymentV2Client) (
 			return nil, err
 		}
 
-		if payment.Status != lnrpc.Payment_IN_FLIGHT {
+		// If this is a hodl payment, then we'll return the first
+		// expected response. Otherwise, we'll wait until the in flight
+		// clears to we can observe the other payment states.
+		switch {
+		case isHodl:
+			return payment, nil
+
+		case payment.Status != lnrpc.Payment_IN_FLIGHT:
 			return payment, nil
 		}
 	}
