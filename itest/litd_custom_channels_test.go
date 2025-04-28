@@ -419,19 +419,27 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	require.NoError(t.t, t.lndHarness.AssertNodeKnown(fabia, erin))
 	require.NoError(t.t, t.lndHarness.AssertNodeKnown(charlie, erin))
 
-	// Print initial channel balances.
-	logBalance(t.t, nodes, assetID, "initial")
-
 	// ------------
-	// Test case 1: Send a direct keysend payment from Charlie to Dave,
-	// sending the whole balance.
+	// Test case 1: Send a direct asset keysend payment from Charlie to Dave,
+	// sending the whole asset balance.
+	//
+	// Charlie  --[assets]-->  Dave
+	//
 	// ------------
 	keySendAmount := charlieFundingAmount
+
+	// Print initial channel balances.
+	printExpectedRoute(t.t, []*HarnessNode{charlie, dave}, uint64(0),
+						keySendAmount, assetID, "initial")
+
 	sendAssetKeySendPayment(
 		t.t, charlie, dave, charlieFundingAmount, assetID,
 		fn.None[int64](),
 	)
-	logBalance(t.t, nodes, assetID, "after keysend")
+
+	// Print channel balances after sending.
+	printExpectedRoute(t.t, []*HarnessNode{charlie, dave}, uint64(0),
+						uint64(0), assetID, "after keysend")
 
 	charlieAssetBalance -= keySendAmount
 	daveAssetBalance += keySendAmount
@@ -443,11 +451,29 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	invoiceResp := createAssetInvoice(
 		t.t, dave, charlie, charlieInvoiceAmount, assetID,
 	)
+
+	
+	// Now that we have our payment request, we'll see how many assets are
+	// to be sent from dave's perspective
+	daveTapd := newTapClient(t.t, dave)
+	decodeResp, err := daveTapd.DecodeAssetPayReq(
+		ctx, &tapchannelrpc.AssetPayReq{
+			AssetId:      assetID,
+			PayReqString: invoiceResp.PaymentRequest,
+		},
+	)
+
+	// Print initial channel balances.
+	printExpectedRoute(t.t, []*HarnessNode{dave, charlie}, uint64(0),
+						decodeResp.AssetAmount, assetID, "initial")
+
 	payInvoiceWithAssets(
 		t.t, dave, charlie, invoiceResp.PaymentRequest, assetID,
 		withSmallShards(),
 	)
-	logBalance(t.t, nodes, assetID, "after invoice back")
+	// Print channel balances after sending.
+	printExpectedRoute(t.t, []*HarnessNode{dave, charlie}, uint64(0),
+						uint64(0), assetID, "after invoice back")
 
 	// Make sure the invoice on the receiver side and the payment on the
 	// sender side show the individual HTLCs that arrived for it and that
@@ -471,7 +497,7 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	sendKeySendPayment(t.t, charlie, dave, 2000)
 	logBalance(t.t, nodes, assetID, "after BTC only keysend")
 
-	// Let's keysend the rest of the balance back to Charlie.
+	// Let's keysend the rest of the asset balance back to Charlie.
 	sendAssetKeySendPayment(
 		t.t, dave, charlie, charlieFundingAmount-charlieInvoiceAmount,
 		assetID, fn.None[int64](),
@@ -482,9 +508,20 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	daveAssetBalance -= charlieFundingAmount - charlieInvoiceAmount
 
 	// ------------
-	// Test case 2: Pay a normal invoice from Dave by Charlie, making it
-	// a direct channel invoice payment with no RFQ SCID present in the
-	// invoice.
+	// Test case 2: Pay a normal sats invoice from Dave by
+	// Charlie using an asset,
+	// making it a direct channel invoice payment with no RFQ SCID present in
+	// the invoice. This case should fail because Charlie can't choose
+	// to send something that dave is not expecting. More details about this
+	// scenario are discussed in
+	// https://github.com/lightninglabs/taproot-assets/issues/1421#issuecomment-2707614141
+	// In contrast, in test case 3.5 we have the opposite scenario where
+	// an asset invoice is used and Charlie must pay with assets and not have
+	// a choice (and that case is also supposed to fail because Charlie tries to
+	// pay with sats instead).
+	//
+	// Charlie  --[assets]-->  Dave
+	//
 	// ------------
 	createAndPayNormalInvoice(
 		t.t, charlie, dave, dave, 20_000, assetID, withSmallShards(),
@@ -494,6 +531,7 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 
 	// We should also be able to do a multi-hop BTC only payment, paying an
 	// invoice from Erin by Charlie.
+	// Charlie  --[assets]-->  Dave  --[sats]-->  Erin
 	createAndPayNormalInvoiceWithBtc(t.t, charlie, erin, 2000)
 	logBalance(t.t, nodes, assetID, "after BTC only invoice")
 
@@ -501,6 +539,9 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	// Test case 3: Pay an asset invoice from Dave by Charlie, making it
 	// a direct channel invoice payment with an RFQ SCID present in the
 	// invoice.
+	//
+	// Charlie  --[assets]-->  Dave
+	//
 	// ------------
 	const daveInvoiceAssetAmount = 2_000
 	invoiceResp = createAssetInvoice(
@@ -516,10 +557,22 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	daveAssetBalance += daveInvoiceAssetAmount
 
 	// ------------
-	// Test case 3.5: Pay an asset invoice from Dave by Charlie with normal
+	// Test case 3.5: Pay an asset invoice with an RFQ SCID present from Dave
+	// by Charlie with normal
 	// satoshi payment flow. We expect that payment to fail, since it's a
 	// direct channel payment and the invoice is for assets, not sats. So
 	// without a conversion, it is rejected by the receiver.
+	// Normally, sats is the standard and we can always pay a taproot assets
+	// invoice with sats, but this special case where it is a direct channel
+	// payment,  the fact that Dave requested specifically to receive a
+	// taproot asset from Charlie, that must be honored because Charlie did
+	// an RFQ with Dave when that invoice was created agreeing that when it
+	// was paid that Dave would receive taproot asset instead of sats.
+	// More information about this scenario is discussed in
+	// https://github.com/lightninglabs/taproot-assets/issues/1430
+	//
+	// Charlie  --[assets]-->  Dave
+	//
 	// ------------
 	invoiceResp = createAssetInvoice(
 		t.t, charlie, dave, daveInvoiceAssetAmount, assetID,
@@ -535,7 +588,11 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	// as the invoice payment failed.
 
 	// ------------
-	// Test case 4: Pay a normal invoice from Erin by Charlie.
+	// Test case 4: Pay a normal sats invoice from Erin by Charlie
+	// using an asset.
+	//
+	// Charlie  --[assets]-->  Dave  --[sats]-->  Erin
+	//
 	// ------------
 	paidAssetAmount := createAndPayNormalInvoice(
 		t.t, charlie, dave, erin, 20_000, assetID, withSmallShards(),
@@ -547,7 +604,10 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 
 	// ------------
 	// Test case 5: Create an asset invoice on Fabia and pay it from
-	// Charlie.
+	// Charlie using an asset.
+	//
+	// Charlie  --[assets]-->  Dave  --[sats]-->  Erin  --[assets]-->  Fabia
+	//
 	// ------------
 	const fabiaInvoiceAssetAmount1 = 1000
 	invoiceResp = createAssetInvoice(
@@ -568,7 +628,13 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	// Test case 6: Create an asset invoice on Fabia and pay it with just
 	// BTC from Dave, making sure it ends up being a multipart payment (we
 	// set the maximum shard size to 80k sat and 15k asset units will be
-	// more than a single shard).
+	// more than a single shard). The purpose here is to force testing of multi
+	// part payments so that we can do so with a simple network instead of
+	// building a more complicated one that actually needs multi part paymemts
+	// in order to get the payment to successfully route.
+	//
+	//                         Dave  --[sats]-->  Erin  --[assets]-->  Fabia
+	//
 	// ------------
 	const fabiaInvoiceAssetAmount2 = 15_000
 	invoiceResp = createAssetInvoice(
@@ -584,7 +650,11 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	// Test case 7: Create an asset invoice on Fabia and pay it with assets
 	// from Charlie, making sure it ends up being a multipart payment as
 	// well, with the high amount of asset units to send and the hard coded
-	// 80k sat max shard size.
+	// 80k sat max shard size. Again, as in test case 6 above, we are doing
+	// this here to test multi part payments in a simpler way.
+	//
+	// Charlie  --[assets]-->  Dave  --[sats]-->  Erin  --[assets]-->  Fabia
+	//
 	// ------------
 	const fabiaInvoiceAssetAmount3 = 10_000
 	invoiceResp = createAssetInvoice(
@@ -604,6 +674,15 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	// ------------
 	// Test case 8: An invoice payment over two channels that are both asset
 	// channels.
+	//
+	// Charlie  --[assets]-->  Dave
+	//                          |
+	//                          |
+	//                       [assets]
+	//                          |
+	//                          v
+	//                        Yara
+	//
 	// ------------
 	logBalance(t.t, nodes, assetID, "before asset-to-asset")
 
@@ -611,18 +690,31 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	invoiceResp = createAssetInvoice(
 		t.t, dave, yara, yaraInvoiceAssetAmount1, assetID,
 	)
+	
+	// Print initial channel balances.
+	printExpectedRoute(t.t, []*HarnessNode{charlie, dave, yara}, uint64(0),
+							yaraInvoiceAssetAmount1, assetID,
+							"before asset-to-asset")
+	
 	payInvoiceWithAssets(
 		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID,
 		withSmallShards(),
 	)
 	logBalance(t.t, nodes, assetID, "after asset-to-asset")
 
+	// Print channel balances after sending.
+	printExpectedRoute(t.t, []*HarnessNode{charlie, dave, yara}, uint64(0),
+						uint64(0), assetID, "after asset-to-asset")
+
 	charlieAssetBalance -= yaraInvoiceAssetAmount1
 	yaraAssetBalance += yaraInvoiceAssetAmount1
 
 	// ------------
-	// Test case 8: Now we'll close each of the channels, starting with the
+	// Test case 9: Now we'll close each of the channels, starting with the
 	// Charlie -> Dave custom channel.
+	//
+	// Charlie  --[assets]-->  Dave
+	//
 	// ------------
 	t.Logf("Closing Charlie -> Dave channel")
 	closeAssetChannelAndAssert(
@@ -1059,7 +1151,7 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 	yaraAssetBalance += yaraInvoiceAssetAmount1
 
 	// ------------
-	// Test case 8: Now we'll close each of the channels, starting with the
+	// Test case 9: Now we'll close each of the channels, starting with the
 	// Charlie -> Dave custom channel.
 	// ------------
 	t.Logf("Closing Charlie -> Dave channel")
@@ -2990,8 +3082,8 @@ func testCustomChannelsOraclePricing(ctx context.Context, net *NetworkHarness,
 	const charlieInvoiceAmount = 104_081_638
 	require.EqualValues(t.t, charlieInvoiceAmount, numUnits)
 
-	// The default routing fees are 1ppm + 1msat per hop, and we have 2
-	// hops in total.
+	// The default routing fees are 1ppm + 1msat per hop, and we have 3
+	// hops in total, but only 1 hop where routing fees are collected in sats.
 	charliePaidMSat := addRoutingFee(addRoutingFee(lnwire.MilliSatoshi(
 		decodedInvoice.NumMsat,
 	)))
