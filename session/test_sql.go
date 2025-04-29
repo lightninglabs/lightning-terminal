@@ -11,7 +11,7 @@ import (
 )
 
 func NewTestDBWithAccounts(t *testing.T, clock clock.Clock,
-	acctStore accounts.Store) *SQLStore {
+	acctStore accounts.Store) Store {
 
 	accounts, ok := acctStore.(*accounts.SQLStore)
 	require.True(t, ok)
