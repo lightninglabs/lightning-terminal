@@ -1773,6 +1773,11 @@ export class ChannelCloseSummary extends jspb.Message {
   getZeroConfConfirmedScid(): string;
   setZeroConfConfirmedScid(value: string): void;
 
+  getCustomChannelData(): Uint8Array | string;
+  getCustomChannelData_asU8(): Uint8Array;
+  getCustomChannelData_asB64(): string;
+  setCustomChannelData(value: Uint8Array | string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ChannelCloseSummary.AsObject;
   static toObject(includeInstance: boolean, msg: ChannelCloseSummary): ChannelCloseSummary.AsObject;
@@ -1800,6 +1805,7 @@ export namespace ChannelCloseSummary {
     resolutionsList: Array<Resolution.AsObject>,
     aliasScidsList: Array<string>,
     zeroConfConfirmedScid: string,
+    customChannelData: Uint8Array | string,
   }
 
   export interface ClosureTypeMap {
@@ -7376,6 +7382,8 @@ export class RPCMiddlewareRequest extends jspb.Message {
   getMsgId(): string;
   setMsgId(value: string): void;
 
+  getMetadataPairsMap(): jspb.Map<string, MetadataValues>;
+  clearMetadataPairsMap(): void;
   getInterceptTypeCase(): RPCMiddlewareRequest.InterceptTypeCase;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RPCMiddlewareRequest.AsObject;
@@ -7397,6 +7405,7 @@ export namespace RPCMiddlewareRequest {
     response?: RPCMessage.AsObject,
     regComplete: boolean,
     msgId: string,
+    metadataPairsMap: Array<[string, MetadataValues.AsObject]>,
   }
 
   export enum InterceptTypeCase {
@@ -7405,6 +7414,28 @@ export namespace RPCMiddlewareRequest {
     REQUEST = 5,
     RESPONSE = 6,
     REG_COMPLETE = 8,
+  }
+}
+
+export class MetadataValues extends jspb.Message {
+  clearValuesList(): void;
+  getValuesList(): Array<string>;
+  setValuesList(value: Array<string>): void;
+  addValues(value: string, index?: number): string;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): MetadataValues.AsObject;
+  static toObject(includeInstance: boolean, msg: MetadataValues): MetadataValues.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: MetadataValues, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): MetadataValues;
+  static deserializeBinaryFromReader(message: MetadataValues, reader: jspb.BinaryReader): MetadataValues;
+}
+
+export namespace MetadataValues {
+  export type AsObject = {
+    valuesList: Array<string>,
   }
 }
 

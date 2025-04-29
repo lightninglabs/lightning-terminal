@@ -336,6 +336,19 @@ message LoopOutRequest {
     as the timeout for the payment.
     */
     uint32 payment_timeout = 19;
+
+    /*
+    The optional asset information to use for the swap. If set, the swap will
+    be paid in the specified asset using the provided edge node. An Asset client
+    must be connected to the loop client to use this feature.
+    */
+    AssetLoopOutRequest asset_info = 20;
+
+    /*
+    The optional RFQ information to use for the swap. If set, the swap will
+    use the provided RFQs to pay for the swap invoice.
+    */
+    AssetRfqInfo asset_rfq_info = 21;
 }
 
 /*
@@ -539,6 +552,9 @@ message SwapStatus {
 
     // An optional label given to the swap on creation.
     string label = 15;
+
+    // If the swap was an asset swap, the asset information will be returned.
+    AssetLoopOutInfo asset_info = 19;
 }
 
 enum SwapType {
@@ -659,6 +675,9 @@ enum FailureReason {
 message ListSwapsRequest {
     // Optional filter to only return swaps that match the filter.
     ListSwapsFilter list_swap_filter = 1;
+
+    // Set a maximum number of swaps to return in the response.
+    uint64 max_swaps = 2 [jstype = JS_STRING];
 }
 
 message ListSwapsFilter {
@@ -685,6 +704,12 @@ message ListSwapsFilter {
 
     // If specified on creation, the last hop of the swap.
     bytes loop_in_last_hop = 5;
+
+    // If specified, only returns asset swaps.
+    bool asset_swap_only = 6;
+
+    // If specified, returns swaps initiated after this Unix (ns) timestamp.
+    int64 start_timestamp_ns = 7 [jstype = JS_STRING];
 }
 
 message ListSwapsResponse {
@@ -692,6 +717,9 @@ message ListSwapsResponse {
     The list of all currently known swaps and their status.
     */
     repeated SwapStatus swaps = 1;
+
+    // Timestamp to use for paging start_timestamp_ns.
+    int64 next_start_time = 2 [jstype = JS_STRING];
 }
 
 message SwapInfoRequest {
@@ -793,6 +821,12 @@ message QuoteRequest {
     the same time.
     */
     repeated string deposit_outpoints = 8;
+
+    /*
+    The optional asset information to use for the swap. If set, the quote will
+    be returned in the specified asset.
+    */
+    AssetLoopOutRequest asset_info = 9;
 }
 
 message InQuoteResponse {
@@ -856,6 +890,12 @@ message OutQuoteResponse {
     The confirmation target to be used for the sweep of the on-chain HTLC.
     */
     int32 conf_target = 6;
+
+    /*
+    If the request was for an asset swap, the quote will return the rfq ids
+    that will be used to pay for the swap and prepay invoices.
+    */
+    AssetRfqInfo asset_rfq_info = 7;
 }
 
 message ProbeRequest {
@@ -1014,6 +1054,11 @@ message GetInfoResponse {
     Statistics about loop ins.
      */
     LoopStats loop_in_stats = 8;
+
+    /*
+    The git commit hash of the loopd binary.
+     */
+    string commit_hash = 9;
 }
 
 message GetLiquidityParamsRequest {
@@ -1176,6 +1221,29 @@ message LiquidityParameters {
     The address type of the account specified in the account field.
     */
     AddressType account_addr_type = 24;
+
+    /*
+    A map of asset parameters to use for swaps. The key is the asset id and the
+    value is the parameters to use for swaps in that asset.
+    */
+    map<string, EasyAssetAutoloopParams> easy_asset_params = 25;
+}
+
+message EasyAssetAutoloopParams {
+    /*
+    Set to true to enable easy autoloop for this asset. If set the client will
+    automatically dispatch swaps in order to meet the configured local balance
+    target size. Currently only loop out is supported, meaning that easy
+    autoloop can only reduce the funds that are held as balance in channels.
+    */
+    bool enabled = 1;
+
+    /*
+    The local balance target size, expressed in the asset's base units. This is
+    used by easy autoloop to determine how much liquidity should be maintained
+    in channels.
+    */
+    uint64 local_target_asset_amt = 2 [jstype = JS_STRING];
 }
 
 enum LiquidityRuleType {
@@ -1592,6 +1660,15 @@ message WithdrawDepositsRequest {
     The fee rate in sat/vbyte to use for the withdrawal transaction.
     */
     int64 sat_per_vbyte = 4 [jstype = JS_STRING];
+
+    /*
+    The amount in satoshis that should be withdrawn from the selected deposits.
+    If there is change, it will be sent back to the static address. The fees for
+    the transaction are taken from the change output. If the change is below
+    the dust limit, there won't be a change output and the dust goes towards
+    fees.
+    */
+    int64 amount = 5 [jstype = JS_STRING];
 }
 
 message WithdrawDepositsResponse {
@@ -1601,9 +1678,9 @@ message WithdrawDepositsResponse {
     string withdrawal_tx_hash = 1;
 
     /*
-    The pkscript of the withdrawal transaction.
+    The destination address of the withdrawal transaction.
     */
-    string pk_script = 2;
+    string address = 2;
 }
 
 message OutPoint {
@@ -1999,4 +2076,118 @@ message StaticAddressLoopInResponse {
     side and the client can retry the swap with different parameters.
     */
     uint32 payment_timeout_seconds = 11;
+}
+
+message AssetLoopOutRequest {
+    /*
+    The asset id to use to pay for the swap invoice. If set an
+    asset client is needed to set to be able to pay the invoice.
+    */
+    bytes asset_id = 1;
+
+    /*
+    The node identity public key of the peer to ask for a quote for sending out
+    the assets and converting them to satoshis. This must be specified if
+    an asset id is set.
+    */
+    bytes asset_edge_node = 2;
+
+    /*
+    An optional maximum multiplier for the rfq rate. If not set, the default
+    will be 1.1. This means if we request a loop out quote for 1 BTC, the off
+    chain cost will be at most 1.1 BTC.
+    */
+    double max_limit_multiplier = 3;
+
+    /*
+    An optional expiry unix timestamp for when the rfq quote should expire.
+    */
+    int64 expiry = 4 [jstype = JS_STRING];
+}
+
+message AssetRfqInfo {
+    /*
+    The Prepay RFQ ID to use to pay for the prepay invoice.
+    */
+    bytes prepay_rfq_id = 1;
+
+    /*
+    The maximum asset amt we'll pay for the prepay payment. This includes the
+    max limit multiplier that was set in the request.
+    */
+    uint64 max_prepay_asset_amt = 2 [jstype = JS_STRING];
+
+    /*
+    The asset to BTC conversion rate for the prepay invoice.
+    */
+    FixedPoint prepay_asset_rate = 6;
+
+    /*
+    The Swap RFQ ID to use to pay for the swap invoice.
+    */
+    bytes swap_rfq_id = 3;
+
+    /*
+    The maximum asset amt we'll pay for the swap payment. This includes the
+    max limit multiplier that was set in the request.
+    */
+    uint64 max_swap_asset_amt = 4 [jstype = JS_STRING];
+
+    /*
+    The asset to BTC conversion rate for the swap invoice.
+    */
+    FixedPoint swap_asset_rate = 7;
+
+    /*
+    The name of the asset to swap.
+    */
+    string asset_name = 5;
+}
+
+// FixedPoint is a scaled integer representation of a fractional number.
+//
+// This type consists of two integer fields: a coefficient and a scale.
+// Using this format enables precise and consistent representation of fractional
+// numbers while avoiding floating-point data types, which are prone to
+// precision errors.
+//
+// The relationship between the fractional representation and its fixed-point
+// representation is expressed as:
+// ```
+// V = F_c / (10^F_s)
+// ```
+// where:
+//
+// * `V` is the fractional value.
+//
+// * `F_c` is the coefficient component of the fixed-point representation. It is
+//    the scaled-up fractional value represented as an integer.
+//
+// * `F_s` is the scale component. It is an integer specifying how
+//   many decimal places `F_c` should be divided by to obtain the fractional
+//   representation.
+message FixedPoint {
+    // The coefficient is the fractional value scaled-up as an integer. This
+    // integer is represented as a string as it may be too large to fit in a
+    // uint64.
+    string coefficient = 1;
+
+    // The scale is the component that determines how many decimal places
+    // the coefficient should be divided by to obtain the fractional value.
+    uint32 scale = 2;
+}
+
+message AssetLoopOutInfo {
+    /*
+    The asset id that was used to pay for the swap invoice.
+    */
+    string asset_id = 1;
+    /*
+    The human readable name of the asset.
+    */
+    string asset_name = 2;
+    /*
+    The total asset offchain cost of the swap.
+    */
+    uint64 asset_cost_offchain = 3 [jstype = JS_STRING];
 }

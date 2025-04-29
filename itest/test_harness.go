@@ -126,7 +126,9 @@ func getLitdBinary() string {
 
 type testCase struct {
 	name string
-	test func(ctx context.Context, net *NetworkHarness, t *harnessTest)
+	test func(ctx context.Context, net *NetworkHarness,
+		t *harnessTest)
+	noAliceBob bool
 }
 
 // waitForNTxsInMempool polls until finding the desired number of transactions

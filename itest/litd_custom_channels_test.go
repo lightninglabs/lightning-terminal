@@ -3,7 +3,6 @@ package itest
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
 	"fmt"
 	"math"
 	"math/big"
@@ -14,7 +13,6 @@ import (
 	"github.com/btcsuite/btcd/btcec/v2/schnorr"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/btcsuite/btcd/wire"
 	"github.com/lightninglabs/taproot-assets/asset"
 	"github.com/lightninglabs/taproot-assets/itest"
 	"github.com/lightninglabs/taproot-assets/proof"
@@ -30,10 +28,9 @@ import (
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/invoicesrpc"
-	"github.com/lightningnetwork/lnd/lnrpc/walletrpc"
 	"github.com/lightningnetwork/lnd/lntest"
+	"github.com/lightningnetwork/lnd/lntest/node"
 	"github.com/lightningnetwork/lnd/lntest/port"
-	"github.com/lightningnetwork/lnd/lntest/wait"
 	"github.com/lightningnetwork/lnd/lnwallet/chainfee"
 	"github.com/lightningnetwork/lnd/lnwire"
 	"github.com/stretchr/testify/require"
@@ -109,18 +106,13 @@ func testCustomChannelsLarge(_ context.Context, net *NetworkHarness,
 	lndArgs := slices.Clone(lndArgsTemplate)
 	litdArgs := slices.Clone(litdArgsTemplate)
 
-	// Explicitly set the proof courier as Zane (now has no other role
-	// other than proof shuffling), otherwise a hashmail courier will be
-	// used. For the funding transaction, we're just posting it and don't
-	// expect a true receiver.
-	zane, err := net.NewNode(
-		t.t, "Zane", lndArgs, false, true, litdArgs...,
-	)
-	require.NoError(t.t, err)
-
+	// We use Charlie as the proof courier. But in order for Charlie to also
+	// use itself, we need to define its port upfront.
+	charliePort := port.NextAvailablePort()
 	litdArgs = append(litdArgs, fmt.Sprintf(
 		"--taproot-assets.proofcourieraddr=%s://%s",
-		proof.UniverseRpcCourierType, zane.Cfg.LitAddr(),
+		proof.UniverseRpcCourierType,
+		fmt.Sprintf(node.ListenerFormat, charliePort),
 	))
 
 	// The topology we are going for looks like the following:
@@ -139,8 +131,8 @@ func testCustomChannelsLarge(_ context.Context, net *NetworkHarness,
 	// with tapd included. We also need specific flags to be enabled, so we
 	// create 5 completely new nodes, ignoring the two default nodes that
 	// are created by the harness.
-	charlie, err := net.NewNode(
-		t.t, "Charlie", lndArgs, false, true, litdArgs...,
+	charlie, err := net.NewNodeWithPort(
+		t.t, "Charlie", lndArgs, false, true, charliePort, litdArgs...,
 	)
 	require.NoError(t.t, err)
 
@@ -175,7 +167,7 @@ func testCustomChannelsLarge(_ context.Context, net *NetworkHarness,
 	assertChannelKnown(t.t, charlie, channelOp)
 	assertChannelKnown(t.t, fabia, channelOp)
 
-	universeTap := newTapClient(t.t, zane)
+	universeTap := newTapClient(t.t, charlie)
 	charlieTap := newTapClient(t.t, charlie)
 	daveTap := newTapClient(t.t, dave)
 	erinTap := newTapClient(t.t, erin)
@@ -283,7 +275,7 @@ func testCustomChannelsLarge(_ context.Context, net *NetworkHarness,
 	// balance is on the non-initiator (recipient) side.
 	t.Logf("Closing Charlie -> Dave channel")
 	closeAssetChannelAndAssert(
-		t, net, charlie, dave, chanPointCD, assetID, nil,
+		t, net, charlie, dave, chanPointCD, [][]byte{assetID}, nil,
 		universeTap, initiatorZeroAssetBalanceCoOpBalanceCheck,
 	)
 }
@@ -296,18 +288,13 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	lndArgs := slices.Clone(lndArgsTemplate)
 	litdArgs := slices.Clone(litdArgsTemplate)
 
-	// Explicitly set the proof courier as Zane (now has no other role
-	// other than proof shuffling), otherwise a hashmail courier will be
-	// used. For the funding transaction, we're just posting it and don't
-	// expect a true receiver.
-	zane, err := net.NewNode(
-		t.t, "Zane", lndArgs, false, true, litdArgs...,
-	)
-	require.NoError(t.t, err)
-
+	// We use Charlie as the proof courier. But in order for Charlie to also
+	// use itself, we need to define its port upfront.
+	charliePort := port.NextAvailablePort()
 	litdArgs = append(litdArgs, fmt.Sprintf(
 		"--taproot-assets.proofcourieraddr=%s://%s",
-		proof.UniverseRpcCourierType, zane.Cfg.LitAddr(),
+		proof.UniverseRpcCourierType,
+		fmt.Sprintf(node.ListenerFormat, charliePort),
 	))
 
 	// The topology we are going for looks like the following:
@@ -326,8 +313,8 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	// with tapd included. We also need specific flags to be enabled, so we
 	// create 5 completely new nodes, ignoring the two default nodes that
 	// are created by the harness.
-	charlie, err := net.NewNode(
-		t.t, "Charlie", lndArgs, false, true, litdArgs...,
+	charlie, err := net.NewNodeWithPort(
+		t.t, "Charlie", lndArgs, false, true, charliePort, litdArgs...,
 	)
 	require.NoError(t.t, err)
 
@@ -339,9 +326,7 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 		t.t, "Fabia", lndArgs, false, true, litdArgs...,
 	)
 	require.NoError(t.t, err)
-	yara, err := net.NewNode(
-		t.t, "Yara", lndArgs, false, true, litdArgs...,
-	)
+	yara, err := net.NewNode(t.t, "Yara", lndArgs, false, true, litdArgs...)
 	require.NoError(t.t, err)
 
 	nodes := []*HarnessNode{charlie, dave, erin, fabia, yara}
@@ -362,7 +347,7 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	assertChannelKnown(t.t, charlie, channelOp)
 	assertChannelKnown(t.t, fabia, channelOp)
 
-	universeTap := newTapClient(t.t, zane)
+	universeTap := newTapClient(t.t, charlie)
 	charlieTap := newTapClient(t.t, charlie)
 	daveTap := newTapClient(t.t, dave)
 	erinTap := newTapClient(t.t, erin)
@@ -626,19 +611,19 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	// ------------
 	t.Logf("Closing Charlie -> Dave channel")
 	closeAssetChannelAndAssert(
-		t, net, charlie, dave, chanPointCD, assetID, nil,
+		t, net, charlie, dave, chanPointCD, [][]byte{assetID}, nil,
 		universeTap, assertDefaultCoOpCloseBalance(true, true),
 	)
 
 	t.Logf("Closing Dave -> Yara channel, close initiated by Yara")
 	closeAssetChannelAndAssert(
-		t, net, yara, dave, chanPointDY, assetID, nil,
+		t, net, yara, dave, chanPointDY, [][]byte{assetID}, nil,
 		universeTap, assertDefaultCoOpCloseBalance(false, true),
 	)
 
 	t.Logf("Closing Erin -> Fabia channel")
 	closeAssetChannelAndAssert(
-		t, net, erin, fabia, chanPointEF, assetID, nil,
+		t, net, erin, fabia, chanPointEF, [][]byte{assetID}, nil,
 		universeTap, assertDefaultCoOpCloseBalance(true, true),
 	)
 
@@ -679,7 +664,9 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 		t.t, universeTap, assetID, nil, fundingScriptTreeBytes,
 		fmt.Sprintf("%v:%v", fundRespCD.Txid, fundRespCD.OutputIndex),
 	)
-	assertAssetChan(t.t, charlie, dave, fundingAmount, cents)
+	assertAssetChan(
+		t.t, charlie, dave, fundingAmount, []*taprpc.Asset{cents},
+	)
 
 	// And let's just close the channel again.
 	chanPointCD = &lnrpc.ChannelPoint{
@@ -691,7 +678,7 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 
 	t.Logf("Closing Charlie -> Dave channel")
 	closeAssetChannelAndAssert(
-		t, net, charlie, dave, chanPointCD, assetID, nil,
+		t, net, charlie, dave, chanPointCD, [][]byte{assetID}, nil,
 		universeTap, assertDefaultCoOpCloseBalance(false, false),
 	)
 
@@ -761,18 +748,13 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 	lndArgs := slices.Clone(lndArgsTemplate)
 	litdArgs := slices.Clone(litdArgsTemplate)
 
-	// Explicitly set the proof courier as Zane (now has no other role
-	// other than proof shuffling), otherwise a hashmail courier will be
-	// used. For the funding transaction, we're just posting it and don't
-	// expect a true receiver.
-	zane, err := net.NewNode(
-		t.t, "Zane", lndArgs, false, true, litdArgs...,
-	)
-	require.NoError(t.t, err)
-
+	// We use Charlie as the proof courier. But in order for Charlie to also
+	// use itself, we need to define its port upfront.
+	charliePort := port.NextAvailablePort()
 	litdArgs = append(litdArgs, fmt.Sprintf(
 		"--taproot-assets.proofcourieraddr=%s://%s",
-		proof.UniverseRpcCourierType, zane.Cfg.LitAddr(),
+		proof.UniverseRpcCourierType,
+		fmt.Sprintf(node.ListenerFormat, charliePort),
 	))
 
 	// The topology we are going for looks like the following:
@@ -791,8 +773,8 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 	// with tapd included. We also need specific flags to be enabled, so we
 	// create 5 completely new nodes, ignoring the two default nodes that
 	// are created by the harness.
-	charlie, err := net.NewNode(
-		t.t, "Charlie", lndArgs, false, true, litdArgs...,
+	charlie, err := net.NewNodeWithPort(
+		t.t, "Charlie", lndArgs, false, true, charliePort, litdArgs...,
 	)
 	require.NoError(t.t, err)
 
@@ -827,7 +809,7 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 	assertChannelKnown(t.t, charlie, channelOp)
 	assertChannelKnown(t.t, fabia, channelOp)
 
-	universeTap := newTapClient(t.t, zane)
+	universeTap := newTapClient(t.t, charlie)
 	charlieTap := newTapClient(t.t, charlie)
 	daveTap := newTapClient(t.t, dave)
 	erinTap := newTapClient(t.t, erin)
@@ -1064,19 +1046,19 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 	// ------------
 	t.Logf("Closing Charlie -> Dave channel")
 	closeAssetChannelAndAssert(
-		t, net, charlie, dave, chanPointCD, assetID, groupID,
+		t, net, charlie, dave, chanPointCD, [][]byte{assetID}, groupID,
 		universeTap, assertDefaultCoOpCloseBalance(true, true),
 	)
 
 	t.Logf("Closing Dave -> Yara channel, close initiated by Yara")
 	closeAssetChannelAndAssert(
-		t, net, yara, dave, chanPointDY, assetID, groupID,
+		t, net, yara, dave, chanPointDY, [][]byte{assetID}, groupID,
 		universeTap, assertDefaultCoOpCloseBalance(false, true),
 	)
 
 	t.Logf("Closing Erin -> Fabia channel")
 	closeAssetChannelAndAssert(
-		t, net, erin, fabia, chanPointEF, assetID, groupID,
+		t, net, erin, fabia, chanPointEF, [][]byte{assetID}, groupID,
 		universeTap, assertDefaultCoOpCloseBalance(true, true),
 	)
 
@@ -1118,7 +1100,9 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 		t.t, universeTap, nil, groupID, fundingScriptTreeBytes,
 		fmt.Sprintf("%v:%v", fundRespCD.Txid, fundRespCD.OutputIndex),
 	)
-	assertAssetChan(t.t, charlie, dave, fundingAmount, cents)
+	assertAssetChan(
+		t.t, charlie, dave, fundingAmount, []*taprpc.Asset{cents},
+	)
 
 	// And let's just close the channel again.
 	chanPointCD = &lnrpc.ChannelPoint{
@@ -1130,7 +1114,7 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 
 	t.Logf("Closing Charlie -> Dave channel")
 	closeAssetChannelAndAssert(
-		t, net, charlie, dave, chanPointCD, assetID, groupID,
+		t, net, charlie, dave, chanPointCD, [][]byte{assetID}, groupID,
 		universeTap, assertDefaultCoOpCloseBalance(false, false),
 	)
 
@@ -1153,6 +1137,546 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 	assertAssetBalance(t.t, daveTap, assetID, daveAssetBalance)
 	assertAssetBalance(t.t, erinTap, assetID, erinAssetBalance)
 	assertAssetBalance(t.t, fabiaTap, assetID, fabiaAssetBalance)
+}
+
+// testCustomChannelsGroupTranchesForceClose tests that we can successfully open
+// a custom channel with multiple pieces of a grouped asset. We then test that
+// we can successfully co-op and force close such channels and sweep the
+// remaining channel balances.
+func testCustomChannelsGroupTranchesForceClose(ctx context.Context,
+	net *NetworkHarness, t *harnessTest) {
+
+	lndArgs := slices.Clone(lndArgsTemplate)
+	litdArgs := slices.Clone(litdArgsTemplate)
+
+	// We use Charlie as the proof courier. But in order for Charlie to also
+	// use itself, we need to define its port upfront.
+	charliePort := port.NextAvailablePort()
+	litdArgs = append(litdArgs, fmt.Sprintf(
+		"--taproot-assets.proofcourieraddr=%s://%s",
+		proof.UniverseRpcCourierType,
+		fmt.Sprintf(node.ListenerFormat, charliePort),
+	))
+
+	// The topology we are going for looks like the following:
+	//
+	// Charlie  --[assets]-->  Dave  --[sats]-->  Erin  --[assets]-->  Fabia
+	//
+	// With [assets] being a custom channel and [sats] being a normal, BTC
+	// only channel.
+	charlie, err := net.NewNodeWithPort(
+		t.t, "Charlie", lndArgs, false, true, charliePort, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	dave, err := net.NewNode(t.t, "Dave", lndArgs, false, true, litdArgs...)
+	require.NoError(t.t, err)
+	erin, err := net.NewNode(t.t, "Erin", lndArgs, false, true, litdArgs...)
+	require.NoError(t.t, err)
+	fabia, err := net.NewNode(
+		t.t, "Fabia", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	nodes := []*HarnessNode{charlie, dave, erin, fabia}
+	connectAllNodes(t.t, net, nodes)
+	fundAllNodes(t.t, net, nodes)
+
+	// Create the normal channel between Dave and Erin.
+	t.Logf("Opening normal channel between Dave and Erin...")
+	channelOp := openChannelAndAssert(
+		t, net, dave, erin, lntest.OpenChannelParams{
+			Amt:         5_000_000,
+			SatPerVByte: 5,
+		},
+	)
+	defer closeChannelAndAssert(t, net, dave, channelOp, false)
+
+	// This is the only public channel, we need everyone to be aware of it.
+	assertChannelKnown(t.t, charlie, channelOp)
+	assertChannelKnown(t.t, fabia, channelOp)
+
+	universeTap := newTapClient(t.t, charlie)
+	charlieTap := newTapClient(t.t, charlie)
+	daveTap := newTapClient(t.t, dave)
+	erinTap := newTapClient(t.t, erin)
+	fabiaTap := newTapClient(t.t, fabia)
+
+	groupAssetReq := itest.CopyRequest(&mintrpc.MintAssetRequest{
+		Asset: itestAsset,
+	})
+	groupAssetReq.Asset.NewGroupedAsset = true
+
+	// Mint the asset tranches 1 and 2 on Charlie and sync all nodes to
+	// Charlie as the universe.
+	mintedAssetsT1 := itest.MintAssetsConfirmBatch(
+		t.t, t.lndHarness.Miner.Client, charlieTap,
+		[]*mintrpc.MintAssetRequest{groupAssetReq},
+	)
+	centsT1 := mintedAssetsT1[0]
+	assetID1 := centsT1.AssetGenesis.AssetId
+	groupKey := centsT1.GetAssetGroup().GetTweakedGroupKey()
+
+	groupAssetReq = itest.CopyRequest(&mintrpc.MintAssetRequest{
+		Asset: itestAsset,
+	})
+	groupAssetReq.Asset.GroupedAsset = true
+	groupAssetReq.Asset.GroupKey = groupKey
+	groupAssetReq.Asset.Name = "itest-asset-cents-tranche-2"
+
+	mintedAssetsT2 := itest.MintAssetsConfirmBatch(
+		t.t, t.lndHarness.Miner.Client, charlieTap,
+		[]*mintrpc.MintAssetRequest{groupAssetReq},
+	)
+	centsT2 := mintedAssetsT2[0]
+	assetID2 := centsT2.AssetGenesis.AssetId
+
+	t.Logf("Minted lightning cents tranche 1 (%x) and 2 (%x) for group "+
+		"key %x, syncing universes...", assetID1, assetID2, groupKey)
+	syncUniverses(t.t, charlieTap, dave, erin, fabia)
+	t.Logf("Universes synced between all nodes, distributing assets...")
+
+	chanPointCD, chanPointEF := createTestAssetNetworkGroupKey(
+		ctx, t, net, charlieTap, daveTap, erinTap, fabiaTap,
+		universeTap, []*taprpc.Asset{centsT1, centsT2},
+		fundingAmount, fundingAmount, DefaultPushSat,
+	)
+
+	t.Logf("Created channels %v and %v", chanPointCD, chanPointEF)
+
+	// We now send some assets over the channels to test the functionality.
+	// Print initial channel balances.
+	groupIDs := [][]byte{assetID1, assetID2}
+	logBalanceGroup(t.t, nodes, groupIDs, "initial")
+
+	// ------------
+	// Test case 1: Send a few direct keysend payments from Charlie to Dave.
+	// We want to send at least 30k assets, so we use up one channel
+	// internal tranche of assets and should at least once have an HTLC
+	// that transports assets from two tranches.
+	// ------------
+	const (
+		keySendAmount  = 5000
+		numSends       = 6
+		totalFirstSend = keySendAmount * numSends
+	)
+	for i := 0; i < numSends; i++ {
+		sendAssetKeySendPayment(
+			t.t, charlie, dave, keySendAmount, nil,
+			fn.None[int64](), withGroupKey(groupKey),
+		)
+	}
+	logBalanceGroup(t.t, nodes, groupIDs, "after keysend Charlie->Dave")
+
+	// ------------
+	// Test case 2: Send a few direct keysend payments from Erin to Fabia.
+	// ------------
+	for i := 0; i < numSends; i++ {
+		sendAssetKeySendPayment(
+			t.t, erin, fabia, keySendAmount, nil,
+			fn.None[int64](), withGroupKey(groupKey),
+		)
+	}
+	logBalanceGroup(t.t, nodes, groupIDs, "after keysend Erin->Fabia")
+
+	// ------------
+	// Test case 3: Co-op close the channel between Charlie and Dave.
+	// ------------
+	t.Logf("Closing Charlie -> Dave channel")
+	closeAssetChannelAndAssert(
+		t, net, charlie, dave, chanPointCD,
+		[][]byte{assetID1, assetID2}, groupKey, universeTap,
+		// TODO(guggero): replace this with
+		// assertDefaultCoOpCloseBalance(true, true) once we have the
+		// ability to check the custom data in the closed channel list.
+		noOpCoOpCloseBalanceCheck,
+	)
+
+	assertSpendableBalance(
+		t.t, charlieTap, nil, groupKey, fundingAmount-totalFirstSend+2,
+	)
+	assertSpendableBalance(t.t, daveTap, nil, groupKey, totalFirstSend)
+
+	// ------------
+	// Test case 4: Force close the channel between Erin and Fabia.
+	// ------------
+	_, closeTxid, err := net.CloseChannel(erin, chanPointEF, true)
+	require.NoError(t.t, err)
+
+	t.Logf("Channel force closed! Mining blocks, close_txid=%v", closeTxid)
+
+	// Next, we'll mine a block to confirm the force close.
+	mineBlocks(t, net, 1, 1)
+
+	// At this point, we should have the force close transaction in the set
+	// of transfers for both nodes.
+	forceCloseTransfer := findForceCloseTransfer(
+		t.t, erinTap, fabiaTap, closeTxid,
+	)
+	t.Logf("Force close transfer: %v", toProtoJSON(t.t, forceCloseTransfer))
+
+	// Now that we have the transfer on disk, we'll also assert that the
+	// universe also has proof for both the relevant transfer outputs.
+	for _, transfer := range forceCloseTransfer.Transfers {
+		for _, transferOut := range transfer.Outputs {
+			assertUniverseProofExists(
+				t.t, universeTap, transferOut.AssetId, groupKey,
+				transferOut.ScriptKey,
+				transferOut.Anchor.Outpoint,
+			)
+		}
+	}
+
+	t.Logf("Universe proofs located!")
+
+	// We should also have a new sweep transaction in the mempool.
+	fabiaSweepTxid, err := waitForNTxsInMempool(
+		net.Miner.Client, 1, shortTimeout,
+	)
+	require.NoError(t.t, err)
+
+	t.Logf("Fabia sweep txid: %v", fabiaSweepTxid)
+
+	mineBlocks(t, net, 1, 1)
+
+	// Fabia should have her sweep output confirmed now, and the assets
+	// should be back in her on-chain wallet and spendable.
+	assertSpendableBalance(t.t, fabiaTap, nil, groupKey, totalFirstSend)
+
+	// Next, we'll mine three additional blocks to trigger the CSV delay
+	// for Erin.
+	mineBlocks(t, net, 4, 0)
+
+	// We expect that Erin's sweep transaction has been broadcast.
+	erinSweepTxid, err := waitForNTxsInMempool(
+		net.Miner.Client, 1, shortTimeout,
+	)
+	require.NoError(t.t, err)
+
+	t.Logf("Erin sweep txid: %v", erinSweepTxid)
+
+	// Now we'll mine a block to confirm Erin's sweep transaction.
+	mineBlocks(t, net, 1, 1)
+
+	// Charlie should now have an asset transfer for his sweep transaction.
+	erinSweepTransfer := locateAssetTransfers(
+		t.t, erinTap, *erinSweepTxid[0],
+	)
+
+	t.Logf("Erin sweep transfer: %v", toProtoJSON(t.t, erinSweepTransfer))
+
+	assertSpendableBalance(
+		t.t, erinTap, nil, groupKey, fundingAmount-totalFirstSend,
+	)
+}
+
+// testCustomChannelsGroupTranchesHtlcForceClose tests that we can successfully
+// open a custom channel with multiple pieces of a grouped asset, then force
+// close it while having pending HTLCs. We then test that we can successfully
+// sweep all balances from those HTLCs.
+func testCustomChannelsGroupTranchesHtlcForceClose(ctx context.Context,
+	net *NetworkHarness, t *harnessTest) {
+
+	lndArgs := slices.Clone(lndArgsTemplate)
+	litdArgs := slices.Clone(litdArgsTemplate)
+
+	// We use Charlie as the proof courier. But in order for Charlie to also
+	// use itself, we need to define its port upfront.
+	charliePort := port.NextAvailablePort()
+	litdArgs = append(litdArgs, fmt.Sprintf(
+		"--taproot-assets.proofcourieraddr=%s://%s",
+		proof.UniverseRpcCourierType,
+		fmt.Sprintf(node.ListenerFormat, charliePort),
+	))
+
+	// The topology we are going for looks like the following:
+	//
+	// Charlie  --[assets]-->  Dave  --[sats]-->  Erin  --[assets]-->  Fabia
+	//
+	// With [assets] being a custom channel and [sats] being a normal, BTC
+	// only channel.
+	charlie, err := net.NewNodeWithPort(
+		t.t, "Charlie", lndArgs, false, true, charliePort, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	dave, err := net.NewNode(t.t, "Dave", lndArgs, false, true, litdArgs...)
+	require.NoError(t.t, err)
+	erin, err := net.NewNode(t.t, "Erin", lndArgs, false, true, litdArgs...)
+	require.NoError(t.t, err)
+	fabia, err := net.NewNode(
+		t.t, "Fabia", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	nodes := []*HarnessNode{charlie, dave, erin, fabia}
+	connectAllNodes(t.t, net, nodes)
+	fundAllNodes(t.t, net, nodes)
+
+	// Create the normal channel between Dave and Erin.
+	t.Logf("Opening normal channel between Dave and Erin...")
+	channelOp := openChannelAndAssert(
+		t, net, dave, erin, lntest.OpenChannelParams{
+			Amt:         5_000_000,
+			SatPerVByte: 5,
+		},
+	)
+	defer closeChannelAndAssert(t, net, dave, channelOp, false)
+
+	// This is the only public channel, we need everyone to be aware of it.
+	assertChannelKnown(t.t, charlie, channelOp)
+	assertChannelKnown(t.t, fabia, channelOp)
+
+	universeTap := newTapClient(t.t, charlie)
+	charlieTap := newTapClient(t.t, charlie)
+	daveTap := newTapClient(t.t, dave)
+	erinTap := newTapClient(t.t, erin)
+	fabiaTap := newTapClient(t.t, fabia)
+
+	groupAssetReq := itest.CopyRequest(&mintrpc.MintAssetRequest{
+		Asset: itestAsset,
+	})
+	groupAssetReq.Asset.NewGroupedAsset = true
+
+	// Mint the asset tranches 1 and 2 on Charlie and sync all nodes to
+	// Charlie as the universe.
+	mintedAssetsT1 := itest.MintAssetsConfirmBatch(
+		t.t, t.lndHarness.Miner.Client, charlieTap,
+		[]*mintrpc.MintAssetRequest{groupAssetReq},
+	)
+	centsT1 := mintedAssetsT1[0]
+	assetID1 := centsT1.AssetGenesis.AssetId
+	groupKey := centsT1.GetAssetGroup().GetTweakedGroupKey()
+
+	groupAssetReq = itest.CopyRequest(&mintrpc.MintAssetRequest{
+		Asset: itestAsset,
+	})
+	groupAssetReq.Asset.GroupedAsset = true
+	groupAssetReq.Asset.GroupKey = groupKey
+	groupAssetReq.Asset.Name = "itest-asset-cents-tranche-2"
+
+	mintedAssetsT2 := itest.MintAssetsConfirmBatch(
+		t.t, t.lndHarness.Miner.Client, charlieTap,
+		[]*mintrpc.MintAssetRequest{groupAssetReq},
+	)
+	centsT2 := mintedAssetsT2[0]
+	assetID2 := centsT2.AssetGenesis.AssetId
+
+	t.Logf("Minted lightning cents tranche 1 (%x) and 2 (%x) for group "+
+		"key %x, syncing universes...", assetID1, assetID2, groupKey)
+	syncUniverses(t.t, charlieTap, dave, erin, fabia)
+	t.Logf("Universes synced between all nodes, distributing assets...")
+
+	chanPointCD, chanPointEF := createTestAssetNetworkGroupKey(
+		ctx, t, net, charlieTap, daveTap, erinTap, fabiaTap,
+		universeTap, []*taprpc.Asset{centsT1, centsT2},
+		fundingAmount, fundingAmount, DefaultPushSat,
+	)
+
+	t.Logf("Created channels %v and %v", chanPointCD, chanPointEF)
+
+	// We now send some assets over the channels to test the functionality.
+	// Print initial channel balances.
+	groupIDs := [][]byte{assetID1, assetID2}
+	logBalanceGroup(t.t, nodes, groupIDs, "initial")
+
+	// First, we'll send over some funds from Charlie to Dave, as we want
+	// Dave to be able to extend HTLCs in the other direction.
+	const (
+		numPayments   = 10
+		keySendAmount = 2_500
+	)
+	for i := 0; i < numPayments; i++ {
+		sendAssetKeySendPayment(
+			t.t, charlie, dave, keySendAmount, nil,
+			fn.None[int64](), withGroupKey(groupKey),
+		)
+	}
+
+	// Now that both parties have some funds, we'll move onto the main test.
+	//
+	// We'll make 2 hodl invoice for each peer, so 4 total. From Charlie's
+	// PoV, he'll have 6 outgoing HTLCs, and two incoming HTLCs.
+	var (
+		daveHodlInvoices    []assetHodlInvoice
+		charlieHodlInvoices []assetHodlInvoice
+
+		// The default oracle rate is 17_180 mSat/asset unit, so 10_000
+		// will be equal to 171_800_000 mSat. When we use the mpp bool
+		// for the smallShards param of payInvoiceWithAssets, that
+		// means we'll split the payment into shards of 80_000_000 mSat
+		// max. So we'll get three shards per payment.
+		assetInvoiceAmt   = 10_000
+		assetsPerMPPShard = 4656
+	)
+	for i := 0; i < 2; i++ {
+		daveHodlInvoices = append(
+			daveHodlInvoices, createAssetHodlInvoice(
+				t.t, charlie, dave, uint64(assetInvoiceAmt),
+				nil, withInvGroupKey(groupKey),
+			),
+		)
+		charlieHodlInvoices = append(
+			charlieHodlInvoices, createAssetHodlInvoice(
+				t.t, dave, charlie, uint64(assetInvoiceAmt),
+				nil, withInvGroupKey(groupKey),
+			),
+		)
+	}
+
+	// Now we'll have both Dave and Charlie pay each other's invoices. We
+	// only care that they're in flight at this point, as they won't be
+	// settled yet.
+	baseOpts := []payOpt{
+		withGroupKey(groupKey),
+		withFailure(
+			lnrpc.Payment_IN_FLIGHT,
+			lnrpc.PaymentFailureReason_FAILURE_REASON_NONE,
+		),
+	}
+	for _, charlieInvoice := range charlieHodlInvoices {
+		// For this direction, we also want to enforce MPP.
+		opts := append(slices.Clone(baseOpts), withSmallShards())
+		payInvoiceWithAssets(
+			t.t, dave, charlie, charlieInvoice.payReq, nil, opts...,
+		)
+	}
+	for _, daveInvoice := range daveHodlInvoices {
+		payInvoiceWithAssets(
+			t.t, charlie, dave, daveInvoice.payReq, nil,
+			baseOpts...,
+		)
+	}
+
+	// Make sure we can sweep all the HTLCs.
+	const charlieStartAmount = 2
+	charlieExpectedBalance, _ := assertForceCloseSweeps(
+		ctx, net, t, charlie, dave, chanPointCD, charlieStartAmount,
+		assetInvoiceAmt, assetsPerMPPShard, nil, groupKey,
+		charlieHodlInvoices, daveHodlInvoices, true,
+	)
+
+	// Finally, we'll assert that Charlie's balance has been incremented by
+	// the timeout value.
+	charlieExpectedBalance += uint64(assetInvoiceAmt - 1)
+	t.Logf("Expecting Charlie's balance to be %d", charlieExpectedBalance)
+	assertSpendableBalance(
+		t.t, charlieTap, nil, groupKey, charlieExpectedBalance,
+	)
+
+	t.Logf("Sending all settled funds to Fabia")
+
+	// As a final sanity check, both Charlie and Dave should be able to send
+	// their entire balances to Fabia, our 3rd party.
+	//
+	// We'll make two addrs for Fabia, one for Charlie, and one for Dave.
+	charlieSpendableBalanceAsset1, err := spendableBalance(
+		charlieTap, assetID1, nil,
+	)
+	require.NoError(t.t, err)
+	charlieSpendableBalanceAsset2, err := spendableBalance(
+		charlieTap, assetID2, nil,
+	)
+	require.NoError(t.t, err)
+
+	t.Logf("Charlie's spendable balance asset 1: %d, asset 2: %d",
+		charlieSpendableBalanceAsset1, charlieSpendableBalanceAsset2)
+
+	fabiaCourierAddr := fmt.Sprintf(
+		"%s://%s", proof.UniverseRpcCourierType,
+		fabiaTap.node.Cfg.LitAddr(),
+	)
+	charlieAddr1, err := fabiaTap.NewAddr(ctx, &taprpc.NewAddrRequest{
+		Amt:              charlieSpendableBalanceAsset1,
+		AssetId:          assetID1,
+		ProofCourierAddr: fabiaCourierAddr,
+	})
+	require.NoError(t.t, err)
+	charlieAddr2, err := fabiaTap.NewAddr(ctx, &taprpc.NewAddrRequest{
+		Amt:              charlieSpendableBalanceAsset2,
+		AssetId:          assetID2,
+		ProofCourierAddr: fabiaCourierAddr,
+	})
+	require.NoError(t.t, err)
+
+	daveSpendableBalanceAsset1, err := spendableBalance(
+		daveTap, assetID1, nil,
+	)
+	require.NoError(t.t, err)
+	daveSpendableBalanceAsset2, err := spendableBalance(
+		daveTap, assetID2, nil,
+	)
+	require.NoError(t.t, err)
+
+	t.Logf("Daves's spendable balance asset 1: %d, asset 2: %d",
+		daveSpendableBalanceAsset1, daveSpendableBalanceAsset2)
+
+	daveAddr1, err := fabiaTap.NewAddr(ctx, &taprpc.NewAddrRequest{
+		Amt:              daveSpendableBalanceAsset1,
+		AssetId:          assetID1,
+		ProofCourierAddr: fabiaCourierAddr,
+	})
+	require.NoError(t.t, err)
+	daveAddr2, err := fabiaTap.NewAddr(ctx, &taprpc.NewAddrRequest{
+		Amt:              daveSpendableBalanceAsset2,
+		AssetId:          assetID2,
+		ProofCourierAddr: fabiaCourierAddr,
+	})
+	require.NoError(t.t, err)
+
+	_, err = charlieTap.SendAsset(ctx, &taprpc.SendAssetRequest{
+		TapAddrs: []string{charlieAddr1.Encoded},
+	})
+	require.NoError(t.t, err)
+	mineBlocks(t, net, 1, 1)
+
+	itest.AssertNonInteractiveRecvComplete(t.t, fabiaTap, 1)
+
+	ctxb := context.Background()
+	charlieAssets, err := charlieTap.ListAssets(
+		ctxb, &taprpc.ListAssetRequest{
+			IncludeSpent: true,
+		},
+	)
+	require.NoError(t.t, err)
+	charlieTransfers, err := charlieTap.ListTransfers(
+		ctxb, &taprpc.ListTransfersRequest{},
+	)
+	require.NoError(t.t, err)
+
+	t.Logf("Charlie's assets: %v", toProtoJSON(t.t, charlieAssets))
+	t.Logf("Charlie's transfers: %v", toProtoJSON(t.t, charlieTransfers))
+
+	_, err = charlieTap.SendAsset(ctx, &taprpc.SendAssetRequest{
+		TapAddrs: []string{charlieAddr2.Encoded},
+	})
+	require.NoError(t.t, err)
+	mineBlocks(t, net, 1, 1)
+
+	itest.AssertNonInteractiveRecvComplete(t.t, fabiaTap, 2)
+
+	_, err = daveTap.SendAsset(ctx, &taprpc.SendAssetRequest{
+		TapAddrs: []string{daveAddr1.Encoded},
+	})
+	require.NoError(t.t, err)
+	mineBlocks(t, net, 1, 1)
+
+	itest.AssertNonInteractiveRecvComplete(t.t, fabiaTap, 3)
+
+	_, err = daveTap.SendAsset(ctx, &taprpc.SendAssetRequest{
+		TapAddrs: []string{daveAddr2.Encoded},
+	})
+	require.NoError(t.t, err)
+	mineBlocks(t, net, 1, 1)
+
+	itest.AssertNonInteractiveRecvComplete(t.t, fabiaTap, 4)
+
+	// Fabia's balance should now be the sum of Charlie's and Dave's
+	// balances.
+	fabiaExpectedBalance := uint64(50_002)
+	assertSpendableBalance(
+		t.t, fabiaTap, nil, groupKey, fabiaExpectedBalance,
+	)
 }
 
 // testCustomChannelsForceClose tests a force close scenario after both parties
@@ -1292,7 +1816,9 @@ func testCustomChannelsForceClose(ctx context.Context, net *NetworkHarness,
 	)
 
 	// Make sure the channel shows the correct asset information.
-	assertAssetChan(t.t, charlie, dave, fundingAmount, cents)
+	assertAssetChan(
+		t.t, charlie, dave, fundingAmount, []*taprpc.Asset{cents},
+	)
 
 	// Before we start sending out payments, let's make sure each node can
 	// see the other one in the graph and has all required features.
@@ -1347,40 +1873,9 @@ func testCustomChannelsForceClose(ctx context.Context, net *NetworkHarness,
 
 	// At this point, we should have the force close transaction in the set
 	// of transfers for both nodes.
-	var forceCloseTransfer *taprpc.ListTransfersResponse
-	fErr := wait.NoError(func() error {
-		forceCloseTransfer, err = charlieTap.ListTransfers(
-			ctx, &taprpc.ListTransfersRequest{
-				AnchorTxid: closeTxid.String(),
-			},
-		)
-		if err != nil {
-			return fmt.Errorf("unable to list charlie transfers: "+
-				"%w", err)
-		}
-		if len(forceCloseTransfer.Transfers) != 1 {
-			return fmt.Errorf("charlie is missing force close " +
-				"transfer")
-		}
-
-		forceCloseTransfer2, err := daveTap.ListTransfers(
-			ctx, &taprpc.ListTransfersRequest{
-				AnchorTxid: closeTxid.String(),
-			},
-		)
-		if err != nil {
-			return fmt.Errorf("unable to list dave transfers: %w",
-				err)
-		}
-		if len(forceCloseTransfer2.Transfers) != 1 {
-			return fmt.Errorf("dave is missing force close " +
-				"transfer")
-		}
-
-		return nil
-	}, defaultTimeout)
-	require.NoError(t.t, fErr)
-
+	forceCloseTransfer := findForceCloseTransfer(
+		t.t, charlieTap, daveTap, closeTxid,
+	)
 	t.Logf("Force close transfer: %v", toProtoJSON(t.t, forceCloseTransfer))
 
 	// Now that we have the transfer on disk, we'll also assert that the
@@ -1518,20 +2013,13 @@ func testCustomChannelsBreach(ctx context.Context, net *NetworkHarness,
 	lndArgs := slices.Clone(lndArgsTemplate)
 	litdArgs := slices.Clone(litdArgsTemplate)
 
-	// Explicitly set the proof courier as Zane (now has no other role
-	// other than proof shuffling), otherwise a hashmail courier will be
-	// used. For the funding transaction, we're just posting it and don't
-	// expect a true receiver.
-	zane, err := net.NewNode(
-		t.t, "Zane", lndArgs, false, true, litdArgs...,
-	)
-	require.NoError(t.t, err)
-
-	// For our litd args, make sure that they all seen Zane as the main
-	// Universe server.
+	// We use Charlie as the proof courier. But in order for Charlie to also
+	// use itself, we need to define its port upfront.
+	charliePort := port.NextAvailablePort()
 	litdArgs = append(litdArgs, fmt.Sprintf(
 		"--taproot-assets.proofcourieraddr=%s://%s",
-		proof.UniverseRpcCourierType, zane.Cfg.LitAddr(),
+		proof.UniverseRpcCourierType,
+		fmt.Sprintf(node.ListenerFormat, charliePort),
 	))
 
 	// Charlie will be the breached party. We set --nolisten to ensure Dave
@@ -1545,8 +2033,9 @@ func testCustomChannelsBreach(ctx context.Context, net *NetworkHarness,
 
 	// For this simple test, we'll just have Carol -> Dave as an assets
 	// channel.
-	charlie, err := net.NewNode(
-		t.t, "Charlie", charlieFlags, false, true, litdArgs...,
+	charlie, err := net.NewNodeWithPort(
+		t.t, "Charlie", charlieFlags, false, true, charliePort,
+		litdArgs...,
 	)
 	require.NoError(t.t, err)
 
@@ -1558,7 +2047,7 @@ func testCustomChannelsBreach(ctx context.Context, net *NetworkHarness,
 	connectAllNodes(t.t, net, nodes)
 	fundAllNodes(t.t, net, nodes)
 
-	universeTap := newTapClient(t.t, zane)
+	universeTap := newTapClient(t.t, charlie)
 	charlieTap := newTapClient(t.t, charlie)
 	daveTap := newTapClient(t.t, dave)
 
@@ -1626,7 +2115,9 @@ func testCustomChannelsBreach(ctx context.Context, net *NetworkHarness,
 	)
 
 	// Make sure the channel shows the correct asset information.
-	assertAssetChan(t.t, charlie, dave, fundingAmount, cents)
+	assertAssetChan(
+		t.t, charlie, dave, fundingAmount, []*taprpc.Asset{cents},
+	)
 
 	// Before we start sending out payments, let's make sure each node can
 	// see the other one in the graph and has all required features.
@@ -1740,18 +2231,13 @@ func testCustomChannelsLiquidtyEdgeCasesCore(ctx context.Context,
 	lndArgs := slices.Clone(lndArgsTemplate)
 	litdArgs := slices.Clone(litdArgsTemplate)
 
-	// Explicitly set the proof courier as Zane (now has no other role
-	// other than proof shuffling), otherwise a hashmail courier will be
-	// used. For the funding transaction, we're just posting it and don't
-	// expect a true receiver.
-	zane, err := net.NewNode(
-		t.t, "Zane", lndArgs, false, true, litdArgs...,
-	)
-	require.NoError(t.t, err)
-
+	// We use Charlie as the proof courier. But in order for Charlie to also
+	// use itself, we need to define its port upfront.
+	charliePort := port.NextAvailablePort()
 	litdArgs = append(litdArgs, fmt.Sprintf(
 		"--taproot-assets.proofcourieraddr=%s://%s",
-		proof.UniverseRpcCourierType, zane.Cfg.LitAddr(),
+		proof.UniverseRpcCourierType,
+		fmt.Sprintf(node.ListenerFormat, charliePort),
 	))
 
 	// The topology we are going for looks like the following:
@@ -1770,8 +2256,8 @@ func testCustomChannelsLiquidtyEdgeCasesCore(ctx context.Context,
 	// with tapd included. We also need specific flags to be enabled, so we
 	// create 5 completely new nodes, ignoring the two default nodes that
 	// are created by the harness.
-	charlie, err := net.NewNode(
-		t.t, "Charlie", lndArgs, false, true, litdArgs...,
+	charlie, err := net.NewNodeWithPort(
+		t.t, "Charlie", lndArgs, false, true, charliePort, litdArgs...,
 	)
 	require.NoError(t.t, err)
 
@@ -1808,7 +2294,7 @@ func testCustomChannelsLiquidtyEdgeCasesCore(ctx context.Context,
 	assertChannelKnown(t.t, charlie, channelOp)
 	assertChannelKnown(t.t, fabia, channelOp)
 
-	universeTap := newTapClient(t.t, zane)
+	universeTap := newTapClient(t.t, charlie)
 	charlieTap := newTapClient(t.t, charlie)
 	daveTap := newTapClient(t.t, dave)
 	erinTap := newTapClient(t.t, erin)
@@ -2268,18 +2754,13 @@ func testCustomChannelsStrictForwarding(ctx context.Context,
 	lndArgs := slices.Clone(lndArgsTemplate)
 	litdArgs := slices.Clone(litdArgsTemplate)
 
-	// Explicitly set the proof courier as Zane (now has no other role
-	// other than proof shuffling), otherwise a hashmail courier will be
-	// used. For the funding transaction, we're just posting it and don't
-	// expect a true receiver.
-	zane, err := net.NewNode(
-		t.t, "Zane", lndArgs, false, true, litdArgs...,
-	)
-	require.NoError(t.t, err)
-
+	// We use Charlie as the proof courier. But in order for Charlie to also
+	// use itself, we need to define its port upfront.
+	charliePort := port.NextAvailablePort()
 	litdArgs = append(litdArgs, fmt.Sprintf(
 		"--taproot-assets.proofcourieraddr=%s://%s",
-		proof.UniverseRpcCourierType, zane.Cfg.LitAddr(),
+		proof.UniverseRpcCourierType,
+		fmt.Sprintf(node.ListenerFormat, charliePort),
 	))
 
 	// The topology we are going for looks like the following:
@@ -2298,8 +2779,8 @@ func testCustomChannelsStrictForwarding(ctx context.Context,
 	// with tapd included. We also need specific flags to be enabled, so we
 	// create 5 completely new nodes, ignoring the two default nodes that
 	// are created by the harness.
-	charlie, err := net.NewNode(
-		t.t, "Charlie", lndArgs, false, true, litdArgs...,
+	charlie, err := net.NewNodeWithPort(
+		t.t, "Charlie", lndArgs, false, true, charliePort, litdArgs...,
 	)
 	require.NoError(t.t, err)
 
@@ -2334,7 +2815,7 @@ func testCustomChannelsStrictForwarding(ctx context.Context,
 	assertChannelKnown(t.t, charlie, channelOp)
 	assertChannelKnown(t.t, fabia, channelOp)
 
-	universeTap := newTapClient(t.t, zane)
+	universeTap := newTapClient(t.t, charlie)
 	charlieTap := newTapClient(t.t, charlie)
 	daveTap := newTapClient(t.t, dave)
 	erinTap := newTapClient(t.t, erin)
@@ -2480,22 +2961,17 @@ func testCustomChannelsBalanceConsistency(ctx context.Context,
 	lndArgs := slices.Clone(lndArgsTemplate)
 	litdArgs := slices.Clone(litdArgsTemplate)
 
-	// Explicitly set the proof courier as Zane (now has no other role
-	// other than proof shuffling), otherwise a hashmail courier will be
-	// used. For the funding transaction, we're just posting it and don't
-	// expect a true receiver.
-	zane, err := net.NewNode(
-		t.t, "Zane", lndArgs, false, true, litdArgs...,
-	)
-	require.NoError(t.t, err)
-
+	// We use Charlie as the proof courier. But in order for Charlie to also
+	// use itself, we need to define its port upfront.
+	charliePort := port.NextAvailablePort()
 	litdArgs = append(litdArgs, fmt.Sprintf(
 		"--taproot-assets.proofcourieraddr=%s://%s",
-		proof.UniverseRpcCourierType, zane.Cfg.LitAddr(),
+		proof.UniverseRpcCourierType,
+		fmt.Sprintf(node.ListenerFormat, charliePort),
 	))
 
-	charlie, err := net.NewNode(
-		t.t, "Charlie", lndArgs, false, true, litdArgs...,
+	charlie, err := net.NewNodeWithPort(
+		t.t, "Charlie", lndArgs, false, true, charliePort, litdArgs...,
 	)
 	require.NoError(t.t, err)
 	dave, err := net.NewNode(t.t, "Dave", lndArgs, false, true, litdArgs...)
@@ -2507,7 +2983,7 @@ func testCustomChannelsBalanceConsistency(ctx context.Context,
 
 	charlieTap := newTapClient(t.t, charlie)
 	daveTap := newTapClient(t.t, dave)
-	universeTap := newTapClient(t.t, zane)
+	universeTap := newTapClient(t.t, charlie)
 
 	// Mint an asset on Charlie and sync Dave to Charlie as the universe.
 	mintedAssets := itest.MintAssetsConfirmBatch(
@@ -2603,7 +3079,8 @@ func testCustomChannelsBalanceConsistency(ctx context.Context,
 
 	// Make sure the channel shows the correct asset information.
 	assertAssetChan(
-		t.t, charlieTap.node, daveTap.node, charlieBalance, cents,
+		t.t, charlieTap.node, daveTap.node, charlieBalance,
+		[]*taprpc.Asset{cents},
 	)
 
 	logBalance(t.t, nodes, assetID, "initial")
@@ -2679,18 +3156,17 @@ func testCustomChannelsSingleAssetMultiInput(ctx context.Context,
 	lndArgs := slices.Clone(lndArgsTemplate)
 	litdArgs := slices.Clone(litdArgsTemplate)
 
-	zane, err := net.NewNode(
-		t.t, "Zane", lndArgs, false, true, litdArgs...,
-	)
-	require.NoError(t.t, err)
-
+	// We use Charlie as the proof courier. But in order for Charlie to also
+	// use itself, we need to define its port upfront.
+	charliePort := port.NextAvailablePort()
 	litdArgs = append(litdArgs, fmt.Sprintf(
 		"--taproot-assets.proofcourieraddr=%s://%s",
-		proof.UniverseRpcCourierType, zane.Cfg.LitAddr(),
+		proof.UniverseRpcCourierType,
+		fmt.Sprintf(node.ListenerFormat, charliePort),
 	))
 
-	charlie, err := net.NewNode(
-		t.t, "Charlie", lndArgs, false, true, litdArgs...,
+	charlie, err := net.NewNodeWithPort(
+		t.t, "Charlie", lndArgs, false, true, charliePort, litdArgs...,
 	)
 	require.NoError(t.t, err)
 	dave, err := net.NewNode(t.t, "Dave", lndArgs, false, true, litdArgs...)
@@ -2786,7 +3262,8 @@ func testCustomChannelsSingleAssetMultiInput(ctx context.Context,
 
 	// Make sure the channel shows the correct asset information.
 	assertAssetChan(
-		t.t, charlieTap.node, daveTap.node, 2*halfCentsAmount, cents,
+		t.t, charlieTap.node, daveTap.node, 2*halfCentsAmount,
+		[]*taprpc.Asset{cents},
 	)
 }
 
@@ -2825,18 +3302,13 @@ func testCustomChannelsOraclePricing(ctx context.Context, net *NetworkHarness,
 			"rfqrpc://%s", oracleAddr,
 	))
 
-	// Explicitly set the proof courier as Zane (now has no other role
-	// other than proof shuffling), otherwise a hashmail courier will be
-	// used. For the funding transaction, we're just posting it and don't
-	// expect a true receiver.
-	zane, err := net.NewNode(
-		t.t, "Zane", lndArgs, false, true, litdArgs...,
-	)
-	require.NoError(t.t, err)
-
+	// We use Charlie as the proof courier. But in order for Charlie to also
+	// use itself, we need to define its port upfront.
+	charliePort := port.NextAvailablePort()
 	litdArgs = append(litdArgs, fmt.Sprintf(
 		"--taproot-assets.proofcourieraddr=%s://%s",
-		proof.UniverseRpcCourierType, zane.Cfg.LitAddr(),
+		proof.UniverseRpcCourierType,
+		fmt.Sprintf(node.ListenerFormat, charliePort),
 	))
 
 	// The topology we are going for looks like the following:
@@ -2855,8 +3327,8 @@ func testCustomChannelsOraclePricing(ctx context.Context, net *NetworkHarness,
 	// with tapd included. We also need specific flags to be enabled, so we
 	// create 5 completely new nodes, ignoring the two default nodes that
 	// are created by the harness.
-	charlie, err := net.NewNode(
-		t.t, "Charlie", lndArgs, false, true, litdArgs...,
+	charlie, err := net.NewNodeWithPort(
+		t.t, "Charlie", lndArgs, false, true, charliePort, litdArgs...,
 	)
 	require.NoError(t.t, err)
 
@@ -2892,7 +3364,7 @@ func testCustomChannelsOraclePricing(ctx context.Context, net *NetworkHarness,
 	assertChannelKnown(t.t, charlie, chanPointDE)
 	assertChannelKnown(t.t, fabia, chanPointDE)
 
-	universeTap := newTapClient(t.t, zane)
+	universeTap := newTapClient(t.t, charlie)
 	charlieTap := newTapClient(t.t, charlie)
 	daveTap := newTapClient(t.t, dave)
 	erinTap := newTapClient(t.t, erin)
@@ -3086,20 +3558,20 @@ func testCustomChannelsOraclePricing(ctx context.Context, net *NetworkHarness,
 
 	t.Logf("Closing Charlie -> Dave channel")
 	closeAssetChannelAndAssert(
-		t, net, charlie, dave, chanPointCD, assetID, nil, universeTap,
-		noOpCoOpCloseBalanceCheck,
+		t, net, charlie, dave, chanPointCD, [][]byte{assetID}, nil,
+		universeTap, noOpCoOpCloseBalanceCheck,
 	)
 
 	t.Logf("Closing Dave -> Yara channel, close initiated by Yara")
 	closeAssetChannelAndAssert(
-		t, net, yara, dave, chanPointDY, assetID, nil, universeTap,
-		noOpCoOpCloseBalanceCheck,
+		t, net, yara, dave, chanPointDY, [][]byte{assetID}, nil,
+		universeTap, noOpCoOpCloseBalanceCheck,
 	)
 
 	t.Logf("Closing Erin -> Fabia channel")
 	closeAssetChannelAndAssert(
-		t, net, erin, fabia, chanPointEF, assetID, nil, universeTap,
-		noOpCoOpCloseBalanceCheck,
+		t, net, erin, fabia, chanPointEF, [][]byte{assetID}, nil,
+		universeTap, noOpCoOpCloseBalanceCheck,
 	)
 }
 
@@ -3111,18 +3583,17 @@ func testCustomChannelsFee(ctx context.Context, net *NetworkHarness,
 	lndArgs := slices.Clone(lndArgsTemplate)
 	litdArgs := slices.Clone(litdArgsTemplate)
 
-	zane, err := net.NewNode(
-		t.t, "Zane", lndArgs, false, true, litdArgs...,
-	)
-	require.NoError(t.t, err)
-
+	// We use Charlie as the proof courier. But in order for Charlie to also
+	// use itself, we need to define its port upfront.
+	charliePort := port.NextAvailablePort()
 	litdArgs = append(litdArgs, fmt.Sprintf(
 		"--taproot-assets.proofcourieraddr=%s://%s",
-		proof.UniverseRpcCourierType, zane.Cfg.LitAddr(),
+		proof.UniverseRpcCourierType,
+		fmt.Sprintf(node.ListenerFormat, charliePort),
 	))
 
-	charlie, err := net.NewNode(
-		t.t, "Charlie", lndArgs, false, true, litdArgs...,
+	charlie, err := net.NewNodeWithPort(
+		t.t, "Charlie", lndArgs, false, true, charliePort, litdArgs...,
 	)
 	require.NoError(t.t, err)
 	dave, err := net.NewNode(t.t, "Dave", lndArgs, false, true, litdArgs...)
@@ -3273,6 +3744,14 @@ func runCustomChannelsHtlcForceClose(ctx context.Context, t *harnessTest,
 		},
 	)
 	require.NoError(t.t, err)
+
+	aliceChanPoint := &lnrpc.ChannelPoint{
+		OutputIndex: uint32(assetFundResp.OutputIndex),
+		FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
+			FundingTxidStr: assetFundResp.Txid,
+		},
+	}
+
 	t.Logf("Funded channel between Alice and Bob: %v", assetFundResp)
 
 	// With the channel open, mine a block to confirm it.
@@ -3355,404 +3834,20 @@ func runCustomChannelsHtlcForceClose(ctx context.Context, t *harnessTest,
 		)
 	}
 
-	// At this point, both sides should have 4 (or +4 with MPP) HTLCs
-	// active.
-	numHtlcs := 4
-	numAdditionalShards := assetInvoiceAmt / assetsPerMPPShard
-	if mpp {
-		numHtlcs += numAdditionalShards * 2
-	}
-	t.Logf("Asserting both Alice and Bob have %d HTLCs...", numHtlcs)
-	assertNumHtlcs(t.t, alice, numHtlcs)
-	assertNumHtlcs(t.t, bob, numHtlcs)
-
-	// Before we force close, we'll grab the current height, the CSV delay
-	// needed, and also the absolute timeout of the set of active HTLCs.
-	closeExpiryInfo := newCloseExpiryInfo(t.t, alice)
-
-	// With all of the HTLCs established, we'll now force close the channel
-	// with Alice.
-	t.Logf("Force close by Alice w/ HTLCs...")
-	aliceChanPoint := &lnrpc.ChannelPoint{
-		OutputIndex: uint32(assetFundResp.OutputIndex),
-		FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
-			FundingTxidStr: assetFundResp.Txid,
-		},
-	}
-	_, closeTxid, err := net.CloseChannel(alice, aliceChanPoint, true)
-	require.NoError(t.t, err)
-
-	t.Logf("Channel closed! Mining blocks, close_txid=%v", closeTxid)
-
-	// The channel should first be in "waiting close" until it confirms.
-	assertWaitingCloseChannelAssetData(t.t, alice, aliceChanPoint)
-
-	// Next, we'll mine a block which should start the clock ticking on the
-	// relative timeout for the Alice, and Bob.
-	//
-	// After this next block, both of them can start to sweep.
-	//
-	// For Alice, she'll go to the second level, revealing her preimage in
-	// the process. She'll then need to wait for the relative timeout to
-	// expire before she can sweep her output.
-	//
-	// For Bob, since the remote party (Alice) closed, he can try to sweep
-	// right away after initial confirmation.
-	mineBlocks(t, net, 1, 1)
-
-	// After force closing, Bob should now have a transfer that tracks the
-	// force closed commitment transaction.
-	locateAssetTransfers(t.t, bobTap, *closeTxid)
-
-	t.Logf("Settling Bob's hodl invoice")
-
-	// It should then go to "pending force closed".
-	assertPendingForceCloseChannelAssetData(t.t, alice, aliceChanPoint)
-
-	// At this point, the commitment transaction has been mined, and we have
-	// 4 total HTLCs on Alice's commitment transaction:
-	//
-	//  * 2x outgoing HTLCs from Alice to Bob
-	//  * 2x incoming HTLCs from Bob to Alice (+2 with MPP)
-	//
-	// We'll leave half the HTLCs timeout, while pulling the other half.
-	// To start, we'll signal Bob to settle one of his incoming HTLCs on
-	// Alice's commitment transaction. For him, this is a remote success
-	// spend, so there's no CSV delay other than the 1 CSV (carve out), and
-	// he can spend directly from the commitment transaction.
-	_, err = bob.InvoicesClient.SettleInvoice(
-		ctx, &invoicesrpc.SettleInvoiceMsg{
-			Preimage: bobHodlInvoices[0].preimage[:],
-		},
+	// Make sure we can sweep all the HTLCs.
+	aliceExpectedBalance, bobExpectedBalance := assertForceCloseSweeps(
+		ctx, net, t, alice, bob, aliceChanPoint,
+		itestAsset.Amount-fundingAmount, assetInvoiceAmt,
+		assetsPerMPPShard, assetID, nil, aliceHodlInvoices,
+		bobHodlInvoices, mpp,
 	)
-	require.NoError(t.t, err)
-
-	// We'll pause here for Bob to extend the sweep request to the sweeper.
-	assertSweepExists(
-		t.t, bob,
-		walletrpc.WitnessType_TAPROOT_HTLC_ACCEPTED_REMOTE_SUCCESS,
-	)
-
-	bobSweepTx1, err := waitForNTxsInMempool(
-		net.Miner.Client, 1, shortTimeout,
-	)
-	require.NoError(t.t, err)
-
-	// Next, we'll mine an additional block, this should allow Bob to sweep
-	// both his commitment output, and the incoming HTLC that we just
-	// settled above.
-	mineBlocks(t, net, 1, 1)
-
-	// At this point, we should have the next sweep transaction in the
-	// mempool: Bob's incoming HTLC sweep directly off the commitment
-	// transaction.
-	bobSweepTx2, err := waitForNTxsInMempool(
-		net.Miner.Client, 1, shortTimeout,
-	)
-	require.NoError(t.t, err)
-
-	// We'll now mine the next block, which should confirm Bob's HTLC sweep
-	// transaction.
-	mineBlocks(t, net, 1, 1)
-
-	bobSweepTransfer1 := locateAssetTransfers(t.t, bobTap, *bobSweepTx1[0])
-	bobSweepTransfer2 := locateAssetTransfers(t.t, bobTap, *bobSweepTx2[0])
-	t.Logf("Bob's sweep transfer 1: %v",
-		toProtoJSON(t.t, bobSweepTransfer1))
-	t.Logf("Bob's sweep transfer 2: %v",
-		toProtoJSON(t.t, bobSweepTransfer2))
-
-	t.Logf("Confirming Bob's remote HTLC success sweep")
-
-	// Bob's balance should now reflect that he's gained the value of the
-	// HTLC, in addition to his settled balance. We need to subtract 1 from
-	// the final balance due to the rounding down of the asset amount during
-	// RFQ conversion.
-	bobExpectedBalance := closeExpiryInfo.remoteAssetBalance +
-		uint64(assetInvoiceAmt-1)
-	t.Logf("Expecting Bob's balance to be %d", bobExpectedBalance)
-	assertSpendableBalance(t.t, bobTap, assetID, bobExpectedBalance)
-
-	// With Bob's HTLC settled, we'll now have Alice do the same. For her,
-	// it'll be a 2nd level sweep, which requires an extra transaction.
-	//
-	// Before, we do that though, enough blocks have passed so Alice can now
-	// sweep her to-local output. So we'll mine an extra block, then assert
-	// that she's swept everything properly. With the way the sweeper works,
-	// we need to mine one extra block before the sweeper picks things up.
-	mineBlocks(t, net, 1, 0)
-
-	aliceSweepTx1, err := waitForNTxsInMempool(
-		net.Miner.Client, 1, shortTimeout,
-	)
-	require.NoError(t.t, err)
-
-	mineBlocks(t, net, 1, 1)
-
-	aliceSweepTransfer1 := locateAssetTransfers(
-		t.t, aliceTap, *aliceSweepTx1[0],
-	)
-	t.Logf("Alice's sweep transfer 1: %v",
-		toProtoJSON(t.t, aliceSweepTransfer1))
-
-	t.Logf("Confirming Alice's to-local sweep")
-
-	// With this extra block mined, Alice's settled balance should be the
-	// starting balance, minus the 2 HTLCs, plus her settled balance.
-	aliceExpectedBalance := itestAsset.Amount - fundingAmount
-	aliceExpectedBalance += closeExpiryInfo.localAssetBalance
-	assertSpendableBalance(
-		t.t, aliceTap, assetID, aliceExpectedBalance,
-	)
-
-	t.Logf("Settling Alice's hodl invoice")
-
-	// With her commitment output swept above, we'll now settle one of
-	// Alice's incoming HTLCs.
-	_, err = alice.InvoicesClient.SettleInvoice(
-		ctx, &invoicesrpc.SettleInvoiceMsg{
-			Preimage: aliceHodlInvoices[0].preimage[:],
-		},
-	)
-	require.NoError(t.t, err)
-
-	// We'll pause here for Alice to extend the sweep request to the
-	// sweeper.
-	assertSweepExists(
-		t.t, alice,
-		walletrpc.WitnessType_TAPROOT_HTLC_ACCEPTED_LOCAL_SUCCESS,
-	)
-
-	// We'll now mine a block, which should trigger Alice's broadcast of the
-	// second level sweep transaction.
-	sweepBlocks := mineBlocks(t, net, 1, 0)
-
-	// If the block mined above didn't also mine our sweep, then we'll mine
-	// one final block which will confirm Alice's sweep transaction.
-	if len(sweepBlocks[0].Transactions) == 1 {
-		sweepTx, err := waitForNTxsInMempool(
-			net.Miner.Client, 1, shortTimeout,
-		)
-		require.NoError(t.t, err)
-
-		// With the sweep transaction in the mempool, we'll mine a block
-		// to confirm the sweep.
-		mineBlocks(t, net, 1, 1)
-
-		aliceSweepTransfer := locateAssetTransfers(
-			t.t, aliceTap, *sweepTx[0],
-		)
-		t.Logf("Alice's first-level sweep transfer: %v",
-			toProtoJSON(t.t, aliceSweepTransfer))
-	} else {
-		sweepTx := sweepBlocks[0].Transactions[1]
-		aliceSweepTransfer := locateAssetTransfers(
-			t.t, aliceTap, sweepTx.TxHash(),
-		)
-		t.Logf("Alice's first-level sweep transfer: %v",
-			toProtoJSON(t.t, aliceSweepTransfer))
-	}
-
-	t.Logf("Confirming Alice's second level remote HTLC success sweep")
-
-	// Next, we'll mine enough blocks to trigger the CSV expiry so Alice can
-	// sweep the HTLC into her wallet.
-	mineBlocks(t, net, closeExpiryInfo.csvDelay, 0)
-
-	// We'll pause here and wait until the sweeper recognizes that we've
-	// offered the second level sweep transaction.
-	assertSweepExists(
-		t.t, alice,
-		//nolint: lll
-		walletrpc.WitnessType_TAPROOT_HTLC_ACCEPTED_SUCCESS_SECOND_LEVEL,
-	)
-
-	t.Logf("Confirming Alice's local HTLC success sweep")
-
-	// Now that we know the sweep was offered, we'll mine an extra block to
-	// actually trigger a sweeper broadcast. Due to an internal block race
-	// condition, the sweep transaction may have already been
-	// published+mined. If so, we don't need to mine the extra block.
-	sweepBlocks = mineBlocks(t, net, 1, 0)
-
-	// If the block mined above didn't also mine our sweep, then we'll mine
-	// one final block which will confirm Alice's sweep transaction.
-	if len(sweepBlocks[0].Transactions) == 1 {
-		sweepTx, err := waitForNTxsInMempool(
-			net.Miner.Client, 1, shortTimeout,
-		)
-		require.NoError(t.t, err)
-
-		mineBlocks(t, net, 1, 1)
-
-		aliceSweepTransfer := locateAssetTransfers(
-			t.t, aliceTap, *sweepTx[0],
-		)
-		t.Logf("Alice's second-level sweep transfer: %v",
-			toProtoJSON(t.t, aliceSweepTransfer))
-	} else {
-		sweepTx := sweepBlocks[0].Transactions[1]
-		aliceSweepTransfer := locateAssetTransfers(
-			t.t, aliceTap, sweepTx.TxHash(),
-		)
-		t.Logf("Alice's second-level sweep transfer: %v",
-			toProtoJSON(t.t, aliceSweepTransfer))
-	}
-
-	// With the sweep transaction confirmed, Alice's balance should have
-	// incremented by the amt of the HTLC.
-	aliceExpectedBalance += uint64(assetInvoiceAmt - 1)
-	assertSpendableBalance(
-		t.t, aliceTap, assetID, aliceExpectedBalance,
-	)
-
-	t.Logf("Mining enough blocks to time out the remaining HTLCs")
-
-	// At this point, we've swept two HTLCs: one from the remote commit, and
-	// one via the second layer. We'll now mine the remaining amount of
-	// blocks to time out the HTLCs.
-	blockToMine := closeExpiryInfo.blockTillExpiry(
-		aliceHodlInvoices[1].preimage.Hash(),
-	)
-	mineBlocks(t, net, blockToMine, 0)
-
-	// We'll wait for both Alice and Bob to present their respective sweeps
-	// to the sweeper.
-	numTimeoutHTLCs := 1
-	if mpp {
-		numTimeoutHTLCs += numAdditionalShards
-	}
-	assertSweepExists(
-		t.t, alice,
-		walletrpc.WitnessType_TAPROOT_HTLC_LOCAL_OFFERED_TIMEOUT,
-	)
-	assertSweepExists(
-		t.t, bob,
-		walletrpc.WitnessType_TAPROOT_HTLC_OFFERED_REMOTE_TIMEOUT,
-	)
-
-	t.Logf("Confirming initial HTLC timeout txns")
-
-	timeoutSweeps, err := waitForNTxsInMempool(
-		net.Miner.Client, 2, shortTimeout,
-	)
-	require.NoError(t.t, err)
-
-	t.Logf("Asserting balance on sweeps: %v", timeoutSweeps)
-
-	// Finally, we'll mine a single block to confirm them.
-	mineBlocks(t, net, 1, 2)
-
-	// Make sure Bob swept all his HTLCs.
-	bobSweeps, err := bob.WalletKitClient.ListSweeps(
-		ctx, &walletrpc.ListSweepsRequest{
-			Verbose: true,
-		},
-	)
-	require.NoError(t.t, err)
-
-	var bobSweepTx *wire.MsgTx
-	for _, sweep := range bobSweeps.GetTransactionDetails().Transactions {
-		for _, tx := range timeoutSweeps {
-			if sweep.TxHash == tx.String() {
-				txBytes, err := hex.DecodeString(sweep.RawTxHex)
-				require.NoError(t.t, err)
-
-				bobSweepTx = &wire.MsgTx{}
-				err = bobSweepTx.Deserialize(
-					bytes.NewReader(txBytes),
-				)
-				require.NoError(t.t, err)
-			}
-		}
-	}
-	require.NotNil(t.t, bobSweepTx, "Bob's sweep transaction not found")
-
-	// There's always an extra input that pays for the fees. So we can only
-	// count the remainder as HTLC inputs.
-	numSweptHTLCs := len(bobSweepTx.TxIn) - 1
-
-	// If we didn't yet sweep all HTLCs, then we need to wait for another
-	// sweep.
-	if numSweptHTLCs < numTimeoutHTLCs {
-		assertSweepExists(
-			t.t, bob,
-			// nolint: lll
-			walletrpc.WitnessType_TAPROOT_HTLC_OFFERED_REMOTE_TIMEOUT,
-		)
-
-		t.Logf("Confirming additional HTLC timeout sweep txns")
-
-		additionalTimeoutSweeps, err := waitForNTxsInMempool(
-			net.Miner.Client, 1, shortTimeout,
-		)
-		require.NoError(t.t, err)
-
-		t.Logf("Asserting balance on additional timeout sweeps: %v",
-			additionalTimeoutSweeps)
-
-		// Finally, we'll mine a single block to confirm them.
-		mineBlocks(t, net, 1, 1)
-	}
-
-	// At this point, Bob's balance should be incremented by an additional
-	// HTLC value.
-	bobExpectedBalance += uint64(assetInvoiceAmt - 1)
-	assertSpendableBalance(
-		t.t, bobTap, assetID, bobExpectedBalance,
-	)
-
-	t.Logf("Mining extra blocks for Alice's CSV to expire on 2nd level txn")
-
-	// Next, we'll mine 4 additional blocks to Alice's CSV delay expires for
-	// the second level timeout output.
-	mineBlocks(t, net, closeExpiryInfo.csvDelay, 0)
-
-	// Wait for Alice to extend the second level output to the sweeper
-	// before we mine the next block to the sweeper.
-	assertSweepExists(
-		t.t, alice,
-		walletrpc.WitnessType_TAPROOT_HTLC_OFFERED_TIMEOUT_SECOND_LEVEL,
-	)
-
-	t.Logf("Confirming Alice's final timeout sweep")
-
-	// With the way the sweeper works, we'll now need to mine an extra block
-	// to trigger the sweep.
-	sweepBlocks = mineBlocks(t, net, 1, 0)
-
-	// If the block mined above didn't also mine our sweep, then we'll mine
-	// one final block which will confirm Alice's sweep transaction.
-	if len(sweepBlocks[0].Transactions) == 1 {
-		sweepTx, err := waitForNTxsInMempool(
-			net.Miner.Client, 1, shortTimeout,
-		)
-		require.NoError(t.t, err)
-
-		// We'll mine one final block which will confirm Alice's sweep
-		// transaction.
-		mineBlocks(t, net, 1, 1)
-
-		aliceSweepTransfer := locateAssetTransfers(
-			t.t, aliceTap, *sweepTx[0],
-		)
-		t.Logf("Alice's final timeout sweep transfer: %v",
-			toProtoJSON(t.t, aliceSweepTransfer))
-	} else {
-		sweepTx := sweepBlocks[0].Transactions[1]
-		aliceSweepTransfer := locateAssetTransfers(
-			t.t, aliceTap, sweepTx.TxHash(),
-		)
-		t.Logf("Alice's final timeout sweep transfer: %v",
-			toProtoJSON(t.t, aliceSweepTransfer))
-	}
 
 	// Finally, we'll assert that Alice's balance has been incremented by
 	// the timeout value.
 	aliceExpectedBalance += uint64(assetInvoiceAmt - 1)
 	t.Logf("Expecting Alice's balance to be %d", aliceExpectedBalance)
 	assertSpendableBalance(
-		t.t, aliceTap, assetID, aliceExpectedBalance,
+		t.t, aliceTap, assetID, nil, aliceExpectedBalance,
 	)
 
 	t.Logf("Sending all settled funds to Zane")
@@ -3800,7 +3895,7 @@ func runCustomChannelsHtlcForceClose(ctx context.Context, t *harnessTest,
 	// Zane's balance should now be the sum of Alice's and Bob's balances.
 	zaneExpectedBalance := aliceExpectedBalance + bobExpectedBalance
 	assertSpendableBalance(
-		t.t, zaneTap, assetID, zaneExpectedBalance,
+		t.t, zaneTap, assetID, nil, zaneExpectedBalance,
 	)
 }
 
@@ -3813,18 +3908,13 @@ func testCustomChannelsForwardBandwidth(ctx context.Context,
 	lndArgs := slices.Clone(lndArgsTemplate)
 	litdArgs := slices.Clone(litdArgsTemplate)
 
-	// Explicitly set the proof courier as Zane (now has no other role
-	// other than proof shuffling), otherwise a hashmail courier will be
-	// used. For the funding transaction, we're just posting it and don't
-	// expect a true receiver.
-	zane, err := net.NewNode(
-		t.t, "Zane", lndArgs, false, true, litdArgs...,
-	)
-	require.NoError(t.t, err)
-
+	// We use Charlie as the proof courier. But in order for Charlie to also
+	// use itself, we need to define its port upfront.
+	charliePort := port.NextAvailablePort()
 	litdArgs = append(litdArgs, fmt.Sprintf(
 		"--taproot-assets.proofcourieraddr=%s://%s",
-		proof.UniverseRpcCourierType, zane.Cfg.LitAddr(),
+		proof.UniverseRpcCourierType,
+		fmt.Sprintf(node.ListenerFormat, charliePort),
 	))
 
 	// The topology we are going for looks like the following:
@@ -3843,8 +3933,8 @@ func testCustomChannelsForwardBandwidth(ctx context.Context,
 	// with tapd included. We also need specific flags to be enabled, so we
 	// create 5 completely new nodes, ignoring the two default nodes that
 	// are created by the harness.
-	charlie, err := net.NewNode(
-		t.t, "Charlie", lndArgs, false, true, litdArgs...,
+	charlie, err := net.NewNodeWithPort(
+		t.t, "Charlie", lndArgs, false, true, charliePort, litdArgs...,
 	)
 	require.NoError(t.t, err)
 
@@ -3879,7 +3969,7 @@ func testCustomChannelsForwardBandwidth(ctx context.Context,
 	assertChannelKnown(t.t, charlie, channelOp)
 	assertChannelKnown(t.t, fabia, channelOp)
 
-	universeTap := newTapClient(t.t, zane)
+	universeTap := newTapClient(t.t, charlie)
 	charlieTap := newTapClient(t.t, charlie)
 	daveTap := newTapClient(t.t, dave)
 	erinTap := newTapClient(t.t, erin)
@@ -4019,7 +4109,7 @@ func testCustomChannelsForwardBandwidth(ctx context.Context,
 	// Finally, we close the channel between Erin and Fabia to make sure
 	// everything is settled correctly.
 	closeAssetChannelAndAssert(
-		t, net, erin, fabia, chanPointEF, assetID, nil,
+		t, net, erin, fabia, chanPointEF, [][]byte{assetID}, nil,
 		universeTap, noOpCoOpCloseBalanceCheck,
 	)
 }
@@ -4041,18 +4131,6 @@ func testCustomChannelsDecodeAssetInvoice(ctx context.Context,
 	litdArgs = append(litdArgs, fmt.Sprintf(
 		"--taproot-assets.experimental.rfq.priceoracleaddress="+
 			"rfqrpc://%s", oracleAddr,
-	))
-
-	// For this test, Zane will be our dedicated Universe server for all
-	// parties.
-	zane, err := net.NewNode(
-		t.t, "Zane", lndArgs, false, true, litdArgs...,
-	)
-	require.NoError(t.t, err)
-
-	litdArgs = append(litdArgs, fmt.Sprintf(
-		"--taproot-assets.proofcourieraddr=%s://%s",
-		proof.UniverseRpcCourierType, zane.Cfg.LitAddr(),
 	))
 
 	// We'll just make a single node here, as this doesn't actually rely on

@@ -55,13 +55,22 @@
 
 ### LND
 
+* Updated [`lnd` to 
+  `v0.19.0-beta.rc2`](https://github.com/lightninglabs/lightning-terminal/pull/987).
+
 ### Loop
+
+* Updated [Loop to
+  `v0.30.0-beta`](https://github.com/lightninglabs/lightning-terminal/pull/987).
 
 ### Pool
 
 ### Faraday
 
 ### Taproot Assets
+
+* Updated [`tapd` to
+  `v0.5.2`](https://github.com/lightninglabs/lightning-terminal/pull/987).
 
 # Contributors (Alphabetical Order)
 

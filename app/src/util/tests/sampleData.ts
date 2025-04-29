@@ -258,6 +258,7 @@ export const lndChannelEvent: Required<LND.ChannelEventUpdate.AsObject> = {
     resolutionsList: [],
     aliasScidsList: [],
     zeroConfConfirmedScid: '',
+    customChannelData: '',
   },
   activeChannel: {
     fundingTxidBytes: txIdBytes,
@@ -360,6 +361,7 @@ export const loopListSwaps: LOOP.ListSwapsResponse.AsObject = {
     outgoingChanSetList: ['123456789'],
     htlcAddressP2tr: '',
   })),
+  nextStartTime: '',
 };
 
 export const loopOutTerms: LOOP.OutTermsResponse.AsObject = {

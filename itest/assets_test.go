@@ -17,6 +17,8 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/davecgh/go-spew/spew"
+	taprootassets "github.com/lightninglabs/taproot-assets"
+	"github.com/lightninglabs/taproot-assets/asset"
 	tapfn "github.com/lightninglabs/taproot-assets/fn"
 	"github.com/lightninglabs/taproot-assets/itest"
 	"github.com/lightninglabs/taproot-assets/proof"
@@ -36,6 +38,7 @@ import (
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/invoicesrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
+	"github.com/lightningnetwork/lnd/lnrpc/walletrpc"
 	"github.com/lightningnetwork/lnd/lntest/rpc"
 	"github.com/lightningnetwork/lnd/lntest/wait"
 	"github.com/lightningnetwork/lnd/lntypes"
@@ -258,14 +261,15 @@ func createTestAssetNetwork(t *harnessTest, net *NetworkHarness, charlieTap,
 	// Make sure the channel shows the correct asset information.
 	assertAssetChan(
 		t.t, charlieTap.node, daveTap.node, charlieFundingAmount,
-		mintedAsset,
+		[]*taprpc.Asset{mintedAsset},
 	)
 	assertAssetChan(
-		t.t, daveTap.node, yaraTap.node, daveFundingAmount, mintedAsset,
+		t.t, daveTap.node, yaraTap.node, daveFundingAmount,
+		[]*taprpc.Asset{mintedAsset},
 	)
 	assertAssetChan(
 		t.t, erinTap.node, fabiaTap.node, erinFundingAmount,
-		mintedAsset,
+		[]*taprpc.Asset{mintedAsset},
 	)
 
 	chanPointCD := &lnrpc.ChannelPoint{
@@ -288,6 +292,281 @@ func createTestAssetNetwork(t *harnessTest, net *NetworkHarness, charlieTap,
 	}
 
 	return chanPointCD, chanPointDY, chanPointEF
+}
+
+// createTestAssetNetworkGroupKey sets up a test network with Charlie, Dave,
+// Erin and Fabia and creates asset channels between Charlie->Dave and
+// Erin-Fabia in a way that there are two equally sized asset pieces for each
+// minted asset (currently limited to exactly two assets). The channels are then
+// confirmed and balances asserted.
+func createTestAssetNetworkGroupKey(ctx context.Context, t *harnessTest,
+	net *NetworkHarness, charlieTap, daveTap, erinTap, fabiaTap,
+	universeTap *tapClient, mintedAssets []*taprpc.Asset,
+	charlieFundingAmount, erinFundingAmount uint64,
+	pushSat int64) (*lnrpc.ChannelPoint, *lnrpc.ChannelPoint) {
+
+	var groupKey []byte
+	for _, mintedAsset := range mintedAssets {
+		require.NotNil(t.t, mintedAsset.AssetGroup)
+
+		if groupKey == nil {
+			groupKey = mintedAsset.AssetGroup.TweakedGroupKey
+
+			continue
+		}
+
+		require.Equal(
+			t.t, groupKey, mintedAsset.AssetGroup.TweakedGroupKey,
+		)
+	}
+
+	// We first do a transfer to Charlie by itself, so we get the correct
+	// asset pieces that we want for the channel funding.
+	sendAssetsAndAssert(
+		ctx, t, charlieTap, charlieTap, universeTap, mintedAssets[0],
+		charlieFundingAmount/2, 0, 1, 0,
+	)
+	sendAssetsAndAssert(
+		ctx, t, charlieTap, charlieTap, universeTap, mintedAssets[1],
+		charlieFundingAmount/2, 1, 2, 0,
+	)
+
+	// We need to send some assets to Erin, so he can fund an asset channel
+	// with Fabia.
+	sendAssetsAndAssert(
+		ctx, t, erinTap, charlieTap, universeTap, mintedAssets[0],
+		erinFundingAmount/2, 2, 1, charlieFundingAmount/2,
+	)
+	sendAssetsAndAssert(
+		ctx, t, erinTap, charlieTap, universeTap, mintedAssets[1],
+		erinFundingAmount/2, 3, 2, charlieFundingAmount/2,
+	)
+
+	// Then we burn everything but a single asset piece. We do this to make
+	// sure that the channel funding code will select the correct asset
+	// UTXOs during the channel funding. Otherwise, it's super hard to
+	// predict what exactly goes into the channel funding transaction. And
+	// this way it's also easier to assert overall balances.
+	assetID1 := mintedAssets[0].AssetGenesis.AssetId
+	assetID2 := mintedAssets[1].AssetGenesis.AssetId
+	burnAmount1 := mintedAssets[0].Amount - charlieFundingAmount/2 -
+		erinFundingAmount/2 - 1
+	_, err := charlieTap.BurnAsset(ctx, &taprpc.BurnAssetRequest{
+		Asset: &taprpc.BurnAssetRequest_AssetId{
+			AssetId: assetID1,
+		},
+		AmountToBurn:     burnAmount1,
+		ConfirmationText: taprootassets.AssetBurnConfirmationText,
+	})
+	require.NoError(t.t, err)
+
+	mineBlocks(t, net, 1, 1)
+
+	burnAmount2 := mintedAssets[1].Amount - charlieFundingAmount/2 -
+		erinFundingAmount/2 - 1
+	_, err = charlieTap.BurnAsset(ctx, &taprpc.BurnAssetRequest{
+		Asset: &taprpc.BurnAssetRequest_AssetId{
+			AssetId: assetID2,
+		},
+		AmountToBurn:     burnAmount2,
+		ConfirmationText: taprootassets.AssetBurnConfirmationText,
+	})
+	require.NoError(t.t, err)
+
+	mineBlocks(t, net, 1, 1)
+
+	t.Logf("Opening asset channels...")
+
+	// The first channel we create has a push amount, so Charlie can receive
+	// payments immediately and not run into the channel reserve issue.
+	fundRespCD, err := charlieTap.FundChannel(
+		ctx, &tchrpc.FundChannelRequest{
+			AssetAmount:        charlieFundingAmount,
+			GroupKey:           groupKey,
+			PeerPubkey:         daveTap.node.PubKey[:],
+			FeeRateSatPerVbyte: 5,
+			PushSat:            pushSat,
+		},
+	)
+	require.NoError(t.t, err)
+	t.Logf("Funded channel between Charlie and Dave: %v", fundRespCD)
+
+	fundRespEF, err := erinTap.FundChannel(
+		ctx, &tchrpc.FundChannelRequest{
+			AssetAmount:        erinFundingAmount,
+			GroupKey:           groupKey,
+			PeerPubkey:         fabiaTap.node.PubKey[:],
+			FeeRateSatPerVbyte: 5,
+			PushSat:            pushSat,
+		},
+	)
+	require.NoError(t.t, err)
+	t.Logf("Funded channel between Erin and Fabia: %v", fundRespEF)
+
+	// Make sure the pending channel shows up in the list and has the
+	// custom records set as JSON.
+	assertPendingChannels(
+		t.t, charlieTap.node, mintedAssets[0], 1,
+		charlieFundingAmount/2, 0,
+	)
+	assertPendingChannels(
+		t.t, charlieTap.node, mintedAssets[1], 1,
+		charlieFundingAmount/2, 0,
+	)
+	assertPendingChannels(
+		t.t, erinTap.node, mintedAssets[0], 1, erinFundingAmount/2, 0,
+	)
+	assertPendingChannels(
+		t.t, erinTap.node, mintedAssets[1], 1, erinFundingAmount/2, 0,
+	)
+
+	// Now that we've looked at the pending channels, let's actually confirm
+	// all three of them.
+	mineBlocks(t, net, 6, 2)
+
+	var id1, id2 asset.ID
+	copy(id1[:], assetID1)
+	copy(id2[:], assetID2)
+
+	fundingTree1, err := tapscript.NewChannelFundingScriptTreeUniqueID(
+		id1,
+	)
+	require.NoError(t.t, err)
+	fundingScriptKey1 := fundingTree1.TaprootKey
+	fundingScriptTreeBytes1 := fundingScriptKey1.SerializeCompressed()
+
+	fundingTree2, err := tapscript.NewChannelFundingScriptTreeUniqueID(
+		id2,
+	)
+	require.NoError(t.t, err)
+	fundingScriptKey2 := fundingTree2.TaprootKey
+	fundingScriptTreeBytes2 := fundingScriptKey2.SerializeCompressed()
+
+	// TODO(guggero): Those asset balances should be 1, 1, 0, 0
+	// respectively, but because we now have unique script keys, we need
+	// https://github.com/lightninglabs/taproot-assets/pull/1198 first.
+	assertAssetBalance(t.t, charlieTap, assetID1, 25001)
+	assertAssetBalance(t.t, charlieTap, assetID2, 25001)
+	assertAssetBalance(t.t, erinTap, assetID1, 25000)
+	assertAssetBalance(t.t, erinTap, assetID2, 25000)
+
+	// There should be two asset pieces for Charlie for both asset IDs, one
+	// in the channel and one with a single unit from the burn.
+	assertNumAssetOutputs(t.t, charlieTap, assetID1, 2)
+	assertNumAssetOutputs(t.t, charlieTap, assetID2, 2)
+	assertAssetExists(
+		t.t, charlieTap, assetID1, charlieFundingAmount/2,
+		fundingScriptKey1, false, true, true,
+	)
+	assertAssetExists(
+		t.t, charlieTap, assetID1, 1, nil, true, false, false,
+	)
+	assertAssetExists(
+		t.t, charlieTap, assetID2, charlieFundingAmount/2,
+		fundingScriptKey2, false, true, true,
+	)
+	assertAssetExists(
+		t.t, charlieTap, assetID2, 1, nil, true, false, false,
+	)
+
+	// Erin should just have one output for each asset ID, the one in the
+	// channel.
+	assertNumAssetOutputs(t.t, erinTap, assetID1, 1)
+	assertNumAssetOutputs(t.t, erinTap, assetID2, 1)
+	assertAssetExists(
+		t.t, erinTap, assetID1, erinFundingAmount/2, fundingScriptKey1,
+		false, true, true,
+	)
+	assertAssetExists(
+		t.t, erinTap, assetID2, erinFundingAmount/2, fundingScriptKey2,
+		false, true, true,
+	)
+
+	// Assert that the proofs for both channels has been uploaded to the
+	// designated Universe server.
+	assertUniverseProofExists(
+		t.t, universeTap, assetID1, groupKey, fundingScriptTreeBytes1,
+		fmt.Sprintf("%v:%v", fundRespCD.Txid, fundRespCD.OutputIndex),
+	)
+	assertUniverseProofExists(
+		t.t, universeTap, assetID2, groupKey, fundingScriptTreeBytes2,
+		fmt.Sprintf("%v:%v", fundRespCD.Txid, fundRespCD.OutputIndex),
+	)
+	assertUniverseProofExists(
+		t.t, universeTap, assetID1, groupKey, fundingScriptTreeBytes1,
+		fmt.Sprintf("%v:%v", fundRespEF.Txid, fundRespEF.OutputIndex),
+	)
+	assertUniverseProofExists(
+		t.t, universeTap, assetID2, groupKey, fundingScriptTreeBytes2,
+		fmt.Sprintf("%v:%v", fundRespEF.Txid, fundRespEF.OutputIndex),
+	)
+
+	// Make sure the channel shows the correct asset information.
+	assertAssetChan(
+		t.t, charlieTap.node, daveTap.node, charlieFundingAmount,
+		mintedAssets,
+	)
+	assertAssetChan(
+		t.t, erinTap.node, fabiaTap.node, erinFundingAmount,
+		mintedAssets,
+	)
+
+	chanPointCD := &lnrpc.ChannelPoint{
+		OutputIndex: uint32(fundRespCD.OutputIndex),
+		FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
+			FundingTxidStr: fundRespCD.Txid,
+		},
+	}
+	chanPointEF := &lnrpc.ChannelPoint{
+		OutputIndex: uint32(fundRespEF.OutputIndex),
+		FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
+			FundingTxidStr: fundRespEF.Txid,
+		},
+	}
+
+	return chanPointCD, chanPointEF
+}
+
+// sendAssetsAndAssert sends the given amount of assets to the recipient and
+// asserts that the transfer was successful. It also checks that the asset
+// balance of the sender and recipient is as expected.
+func sendAssetsAndAssert(ctx context.Context, t *harnessTest,
+	recipient, sender, universe *tapClient, mintedAsset *taprpc.Asset,
+	assetSendAmount uint64, idx, numTransfers int,
+	previousSentAmount uint64) {
+
+	assetID := mintedAsset.AssetGenesis.AssetId
+	recipientAddr, err := recipient.NewAddr(ctx, &taprpc.NewAddrRequest{
+		Amt:     assetSendAmount,
+		AssetId: assetID,
+		ProofCourierAddr: fmt.Sprintf(
+			"%s://%s", proof.UniverseRpcCourierType,
+			universe.node.Cfg.LitAddr(),
+		),
+	})
+	require.NoError(t.t, err)
+
+	t.Logf("Sending %v asset units to %s...", assetSendAmount,
+		recipient.node.Cfg.Name)
+
+	// We assume that we sent the same size in a previous send.
+	totalSent := assetSendAmount + previousSentAmount
+
+	// Send the assets to recipient.
+	itest.AssertAddrCreated(
+		t.t, recipient, mintedAsset, recipientAddr,
+	)
+	sendResp, err := sender.SendAsset(ctx, &taprpc.SendAssetRequest{
+		TapAddrs: []string{recipientAddr.Encoded},
+	})
+	require.NoError(t.t, err)
+	itest.ConfirmAndAssertOutboundTransfer(
+		t.t, t.lndHarness.Miner.Client, sender, sendResp,
+		assetID,
+		[]uint64{mintedAsset.Amount - totalSent, assetSendAmount},
+		idx, idx+1,
+	)
+	itest.AssertNonInteractiveRecvComplete(t.t, recipient, numTransfers)
 }
 
 func assertNumAssetUTXOs(t *testing.T, tapdClient *tapClient,
@@ -390,8 +669,8 @@ func syncUniverses(t *testing.T, universe *tapClient, nodes ...*HarnessNode) {
 func assertUniverseProofExists(t *testing.T, universe *tapClient,
 	assetID, groupKey, scriptKey []byte, outpoint string) *taprpc.Asset {
 
-	t.Logf("Asserting proof outpoint=%v, script_key=%x", outpoint,
-		scriptKey)
+	t.Logf("Asserting proof outpoint=%v, script_key=%x, asset_id=%x, "+
+		"group_key=%x", outpoint, scriptKey, assetID, groupKey)
 
 	req := &universerpc.UniverseKey{
 		Id: &universerpc.ID{
@@ -473,7 +752,7 @@ func assertPendingChannels(t *testing.T, node *HarnessNode,
 		pendingChan.Channel.CustomChannelData, &pendingJSON,
 	)
 	require.NoError(t, err)
-	require.Len(t, pendingJSON.FundingAssets, 1)
+	require.GreaterOrEqual(t, len(pendingJSON.FundingAssets), 1)
 
 	require.NotZero(t, pendingJSON.Capacity)
 
@@ -494,9 +773,7 @@ func assertPendingChannels(t *testing.T, node *HarnessNode,
 	// Check the balance of the pending channel.
 	assetID := mintedAsset.AssetGenesis.AssetId
 	pendingLocalBalance, pendingRemoteBalance, _, _ :=
-		getAssetChannelBalance(
-			t, node, assetID, true,
-		)
+		getAssetChannelBalance(t, node, [][]byte{assetID}, true)
 	require.EqualValues(t, localSum, pendingLocalBalance)
 	require.EqualValues(t, remoteSum, pendingRemoteBalance)
 }
@@ -517,7 +794,7 @@ func haveFundingAsset(assetChannel *rfqmsg.JsonAssetChannel,
 }
 
 func assertAssetChan(t *testing.T, src, dst *HarnessNode, fundingAmount uint64,
-	mintedAsset *taprpc.Asset) {
+	channelAssets []*taprpc.Asset) {
 
 	err := wait.NoError(func() error {
 		a, err := getChannelCustomData(src, dst)
@@ -525,10 +802,12 @@ func assertAssetChan(t *testing.T, src, dst *HarnessNode, fundingAmount uint64,
 			return err
 		}
 
-		assetID := mintedAsset.AssetGenesis.AssetId
-		if !haveFundingAsset(a, assetID) {
-			return fmt.Errorf("expected asset ID %x, to "+
-				"be in channel", assetID)
+		for _, channelAsset := range channelAssets {
+			assetID := channelAsset.AssetGenesis.AssetId
+			if !haveFundingAsset(a, assetID) {
+				return fmt.Errorf("expected asset ID %x, to "+
+					"be in channel", assetID)
+			}
 		}
 
 		if a.Capacity != fundingAmount {
@@ -538,10 +817,12 @@ func assertAssetChan(t *testing.T, src, dst *HarnessNode, fundingAmount uint64,
 
 		// Check the decimal display of the channel funding blob. If no
 		// explicit value was set, we assume and expect the value of 0.
+		// We only need to check the first funding asset, since we
+		// enforce them to be the same.
 		var expectedDecimalDisplay uint8
-		if mintedAsset.DecimalDisplay != nil {
+		if channelAssets[0].DecimalDisplay != nil {
 			expectedDecimalDisplay = uint8(
-				mintedAsset.DecimalDisplay.DecimalDisplay,
+				channelAssets[0].DecimalDisplay.DecimalDisplay,
 			)
 		}
 
@@ -629,15 +910,15 @@ func getChannelCustomData(src, dst *HarnessNode) (*rfqmsg.JsonAssetChannel,
 			err)
 	}
 
-	if len(assetData.FundingAssets) != 1 {
-		return nil, fmt.Errorf("expected 1 asset, got %d",
+	if len(assetData.FundingAssets) == 0 {
+		return nil, fmt.Errorf("expected at least 1 asset, got %d",
 			len(assetData.FundingAssets))
 	}
 
 	return &assetData, nil
 }
 
-func getAssetChannelBalance(t *testing.T, node *HarnessNode, assetID []byte,
+func getAssetChannelBalance(t *testing.T, node *HarnessNode, assetIDs [][]byte,
 	pending bool) (uint64, uint64, uint64, uint64) {
 
 	ctxb := context.Background()
@@ -649,18 +930,34 @@ func getAssetChannelBalance(t *testing.T, node *HarnessNode, assetID []byte,
 	)
 	require.NoError(t, err)
 
+	// In case there are no channels, the custom channel data will just be
+	// empty. Which means the total asset balance is zero.
+	if len(balance.CustomChannelData) == 0 {
+		return 0, 0, 0, 0
+	}
+
 	var assetBalance rfqmsg.JsonAssetChannelBalances
 	err = json.Unmarshal(balance.CustomChannelData, &assetBalance)
-	require.NoError(t, err)
+	require.NoErrorf(t, err, "json: '%x'", balance.CustomChannelData)
 
 	balances := assetBalance.OpenChannels
 	if pending {
 		balances = assetBalance.PendingChannels
 	}
 
+	idMatch := func(assetIDString string) bool {
+		for _, groupedID := range assetIDs {
+			if assetIDString == hex.EncodeToString(groupedID) {
+				return true
+			}
+		}
+
+		return false
+	}
+
 	var localSum, remoteSum uint64
 	for assetIDString := range balances {
-		if assetIDString != hex.EncodeToString(assetID) {
+		if !idMatch(assetIDString) {
 			continue
 		}
 
@@ -741,12 +1038,6 @@ func sendAssetKeySendPayment(t *testing.T, src, dst *HarnessNode, amt uint64,
 		opt(cfg)
 	}
 
-	// Nullify assetID if group key is set. RPC methods won't accept both so
-	// let's prioritize the group key if set.
-	if len(cfg.groupKey) > 0 {
-		assetID = nil
-	}
-
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
 	defer cancel()
@@ -773,12 +1064,20 @@ func sendAssetKeySendPayment(t *testing.T, src, dst *HarnessNode, amt uint64,
 		TimeoutSeconds:    int32(PaymentTimeout.Seconds()),
 	}
 
-	stream, err := srcTapd.SendPayment(ctxt, &tchrpc.SendPaymentRequest{
-		AssetId:        assetID,
+	request := &tchrpc.SendPaymentRequest{
 		AssetAmount:    amt,
-		GroupKey:       cfg.groupKey,
 		PaymentRequest: sendReq,
-	})
+	}
+
+	switch {
+	case len(cfg.groupKey) > 0:
+		request.GroupKey = cfg.groupKey
+
+	default:
+		request.AssetId = assetID
+	}
+
+	stream, err := srcTapd.SendPayment(ctxt, request)
 	require.NoError(t, err)
 
 	result, err := getAssetPaymentResult(stream, false)
@@ -964,12 +1263,6 @@ func defaultPayConfig() *payConfig {
 
 type payOpt func(*payConfig)
 
-func withGroupKey(groupKey []byte) payOpt {
-	return func(c *payConfig) {
-		c.groupKey = groupKey
-	}
-}
-
 func withSmallShards() payOpt {
 	return func(c *payConfig) {
 		c.smallShards = true
@@ -1015,6 +1308,12 @@ func withAllowOverpay() payOpt {
 	}
 }
 
+func withGroupKey(groupKey []byte) payOpt {
+	return func(c *payConfig) {
+		c.groupKey = groupKey
+	}
+}
+
 func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 	payReq string, assetID []byte,
 	opts ...payOpt) (uint64, rfqmath.BigIntFixedPoint) {
@@ -1022,12 +1321,6 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 	cfg := defaultPayConfig()
 	for _, opt := range opts {
 		opt(cfg)
-	}
-
-	// Nullify assetID if group key is set. RPC methods won't accept both so
-	// let's prioritize the group key if set.
-	if len(cfg.groupKey) > 0 {
-		assetID = []byte{}
 	}
 
 	ctxb := context.Background()
@@ -1058,14 +1351,22 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 		copy(rfqBytes, i[:])
 	})
 
-	stream, err := payerTapd.SendPayment(ctxt, &tchrpc.SendPaymentRequest{
-		AssetId:        assetID,
+	request := &tchrpc.SendPaymentRequest{
 		PeerPubkey:     rfqPeer.PubKey[:],
-		GroupKey:       cfg.groupKey,
 		PaymentRequest: sendReq,
 		RfqId:          rfqBytes,
 		AllowOverpay:   cfg.allowOverpay,
-	})
+	}
+
+	switch {
+	case len(cfg.groupKey) > 0:
+		request.GroupKey = cfg.groupKey
+
+	default:
+		request.AssetId = assetID
+	}
+
+	stream, err := payerTapd.SendPayment(ctxt, request)
 	require.NoError(t, err)
 
 	// If an error is returned by the RPC method (meaning the stream itself
@@ -1155,12 +1456,6 @@ func createAssetInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 		opt(cfg)
 	}
 
-	// Nullify assetID if group key is set. RPC methods won't accept both so
-	// let's prioritize the group key if set.
-	if len(cfg.groupKey) > 0 {
-		assetID = []byte{}
-	}
-
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
 	defer cancel()
@@ -1173,8 +1468,7 @@ func createAssetInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 
 	dstTapd := newTapClient(t, dst)
 
-	resp, err := dstTapd.AddInvoice(ctxt, &tchrpc.AddInvoiceRequest{
-		AssetId:     assetID,
+	request := &tchrpc.AddInvoiceRequest{
 		GroupKey:    cfg.groupKey,
 		AssetAmount: assetAmount,
 		PeerPubkey:  dstRfqPeer.PubKey[:],
@@ -1183,7 +1477,17 @@ func createAssetInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 				"%d units", assetAmount),
 			Expiry: timeoutSeconds,
 		},
-	})
+	}
+
+	switch {
+	case len(cfg.groupKey) > 0:
+		request.GroupKey = cfg.groupKey
+
+	default:
+		request.AssetId = assetID
+	}
+
+	resp, err := dstTapd.AddInvoice(ctxt, request)
 	if cfg.errSubStr != "" {
 		require.ErrorContains(t, err, cfg.errSubStr)
 
@@ -1339,12 +1643,6 @@ func createAssetHodlInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 		opt(cfg)
 	}
 
-	// Nullify assetID if group key is set. RPC methods won't accept both so
-	// let's prioritize the group key if set.
-	if len(cfg.groupKey) > 0 {
-		assetID = []byte{}
-	}
-
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
 	defer cancel()
@@ -1364,10 +1662,7 @@ func createAssetHodlInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 	require.NoError(t, err)
 
 	payHash := preimage.Hash()
-
-	resp, err := dstTapd.AddInvoice(ctxt, &tchrpc.AddInvoiceRequest{
-		AssetId:     assetID,
-		GroupKey:    cfg.groupKey,
+	request := &tchrpc.AddInvoiceRequest{
 		AssetAmount: assetAmount,
 		PeerPubkey:  dstRfqPeer.PubKey[:],
 		InvoiceRequest: &lnrpc.Invoice{
@@ -1378,7 +1673,17 @@ func createAssetHodlInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 		HodlInvoice: &tchrpc.HodlInvoice{
 			PaymentHash: payHash[:],
 		},
-	})
+	}
+
+	switch {
+	case len(cfg.groupKey) > 0:
+		request.GroupKey = cfg.groupKey
+
+	default:
+		request.AssetId = assetID
+	}
+
+	resp, err := dstTapd.AddInvoice(ctxt, request)
 	require.NoError(t, err)
 
 	decodedInvoice, err := dst.DecodePayReq(ctxt, &lnrpc.PayReqString{
@@ -1396,7 +1701,7 @@ func createAssetHodlInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 
 	require.EqualValues(t, uint64(numMSats), uint64(decodedInvoice.NumMsat))
 
-	t.Logf("Got quote for %d sats at %v msat/unit from peer %x with SCID "+
+	t.Logf("Got quote for %d msat at %v msat/unit from peer %x with SCID "+
 		"%d", decodedInvoice.NumMsat, mSatPerUnit, dstRfqPeer.PubKey[:],
 		resp.AcceptedBuyQuote.Scid)
 
@@ -1428,12 +1733,12 @@ func waitForSendEvent(t *testing.T,
 // transaction.
 type coOpCloseBalanceCheck func(t *testing.T, local, remote *HarnessNode,
 	closeTx *wire.MsgTx, closeUpdate *lnrpc.ChannelCloseUpdate,
-	assetID, groupKey []byte, universeTap *tapClient)
+	assetIDs [][]byte, groupKey []byte, universeTap *tapClient)
 
 // noOpCoOpCloseBalanceCheck is a no-op implementation of the co-op close
 // balance check that can be used in tests.
 func noOpCoOpCloseBalanceCheck(_ *testing.T, _, _ *HarnessNode, _ *wire.MsgTx,
-	_ *lnrpc.ChannelCloseUpdate, _, _ []byte, _ *tapClient) {
+	_ *lnrpc.ChannelCloseUpdate, _ [][]byte, _ []byte, _ *tapClient) {
 
 	// This is a no-op function.
 }
@@ -1442,7 +1747,7 @@ func noOpCoOpCloseBalanceCheck(_ *testing.T, _, _ *HarnessNode, _ *wire.MsgTx,
 // node and asserts the final balances of the closing transaction.
 func closeAssetChannelAndAssert(t *harnessTest, net *NetworkHarness,
 	local, remote *HarnessNode, chanPoint *lnrpc.ChannelPoint,
-	assetID, groupKey []byte, universeTap *tapClient,
+	assetIDs [][]byte, groupKey []byte, universeTap *tapClient,
 	balanceCheck coOpCloseBalanceCheck) {
 
 	t.t.Helper()
@@ -1482,7 +1787,7 @@ func closeAssetChannelAndAssert(t *harnessTest, net *NetworkHarness,
 
 	// Check the final balance of the closing transaction.
 	balanceCheck(
-		t.t, local, remote, closeTx, closeUpdate, assetID, groupKey,
+		t.t, local, remote, closeTx, closeUpdate, assetIDs, groupKey,
 		universeTap,
 	)
 
@@ -1499,10 +1804,10 @@ func assertDefaultCoOpCloseBalance(remoteBtcBalance,
 
 	return func(t *testing.T, local, remote *HarnessNode,
 		closeTx *wire.MsgTx, closeUpdate *lnrpc.ChannelCloseUpdate,
-		assetID, groupKey []byte, universeTap *tapClient) {
+		assetIDs [][]byte, groupKey []byte, universeTap *tapClient) {
 
 		defaultCoOpCloseBalanceCheck(
-			t, local, remote, closeTx, closeUpdate, assetID,
+			t, local, remote, closeTx, closeUpdate, assetIDs,
 			groupKey, universeTap, remoteBtcBalance,
 			remoteAssetBalance,
 		)
@@ -1515,8 +1820,8 @@ func assertDefaultCoOpCloseBalance(remoteBtcBalance,
 // with the boolean variables.
 func defaultCoOpCloseBalanceCheck(t *testing.T, local, remote *HarnessNode,
 	closeTx *wire.MsgTx, closeUpdate *lnrpc.ChannelCloseUpdate,
-	assetID, groupKey []byte, universeTap *tapClient, remoteBtcBalance,
-	remoteAssetBalance bool) {
+	assetIDs [][]byte, groupKey []byte, universeTap *tapClient,
+	remoteBtcBalance, remoteAssetBalance bool) {
 
 	// With the channel closed, we'll now assert that the co-op close
 	// transaction was inserted into the local universe.
@@ -1623,11 +1928,15 @@ func defaultCoOpCloseBalanceCheck(t *testing.T, local, remote *HarnessNode,
 	)
 	require.NoError(t, err)
 
+	assetIDStrings := fn.Map(hex.EncodeToString, assetIDs)
 	for assetIDStr, scriptKeyStr := range localAssetCloseOut.ScriptKeys {
 		scriptKeyBytes, err := hex.DecodeString(scriptKeyStr)
 		require.NoError(t, err)
 
-		require.Equal(t, hex.EncodeToString(assetID), assetIDStr)
+		require.Contains(t, assetIDStrings, assetIDStr)
+
+		assetID, err := hex.DecodeString(assetIDStr)
+		require.NoError(t, err)
 
 		a := assertUniverseProofExists(
 			t, universeTap, assetID, groupKey, scriptKeyBytes,
@@ -1665,7 +1974,10 @@ func defaultCoOpCloseBalanceCheck(t *testing.T, local, remote *HarnessNode,
 		scriptKeyBytes, err := hex.DecodeString(scriptKeyStr)
 		require.NoError(t, err)
 
-		require.Equal(t, hex.EncodeToString(assetID), assetIDStr)
+		require.Contains(t, assetIDStrings, assetIDStr)
+
+		assetID, err := hex.DecodeString(assetIDStr)
+		require.NoError(t, err)
 
 		a := assertUniverseProofExists(
 			t, universeTap, assetID, groupKey, scriptKeyBytes,
@@ -1687,8 +1999,8 @@ func defaultCoOpCloseBalanceCheck(t *testing.T, local, remote *HarnessNode,
 // function that can be used when the initiator has a zero asset balance.
 func initiatorZeroAssetBalanceCoOpBalanceCheck(t *testing.T, _,
 	remote *HarnessNode, closeTx *wire.MsgTx,
-	closeUpdate *lnrpc.ChannelCloseUpdate, assetID, groupKey []byte,
-	universeTap *tapClient) {
+	closeUpdate *lnrpc.ChannelCloseUpdate, assetIDs [][]byte,
+	groupKey []byte, universeTap *tapClient) {
 
 	// With the channel closed, we'll now assert that the co-op close
 	// transaction was inserted into the local universe.
@@ -1734,11 +2046,15 @@ func initiatorZeroAssetBalanceCoOpBalanceCheck(t *testing.T, _,
 	)
 	require.NoError(t, err)
 
+	assetIDStrings := fn.Map(hex.EncodeToString, assetIDs)
 	for assetIDStr, scriptKeyStr := range remoteAssetCloseOut.ScriptKeys {
 		scriptKeyBytes, err := hex.DecodeString(scriptKeyStr)
 		require.NoError(t, err)
 
-		require.Equal(t, hex.EncodeToString(assetID), assetIDStr)
+		require.Contains(t, assetIDStrings, assetIDStr)
+
+		assetID, err := hex.DecodeString(assetIDStr)
+		require.NoError(t, err)
 
 		a := assertUniverseProofExists(
 			t, universeTap, assetID, groupKey, scriptKeyBytes,
@@ -1881,11 +2197,14 @@ func assertAssetBalance(t *testing.T, client *tapClient, assetID []byte,
 		},
 	}
 
+	var lastBalances *taprpc.ListBalancesResponse
 	err := wait.NoError(func() error {
 		assetIDBalances, err := client.ListBalances(ctxt, req)
 		if err != nil {
 			return err
 		}
+
+		lastBalances = assetIDBalances
 
 		assetIDFound := false
 		for _, balance := range assetIDBalances.AssetBalances {
@@ -1907,11 +2226,16 @@ func assertAssetBalance(t *testing.T, client *tapClient, assetID []byte,
 		return nil
 	}, shortTimeout)
 	if err != nil {
-		r, err2 := client.ListAssets(ctxb, &taprpc.ListAssetRequest{})
+		listAssetsResp, err2 := client.ListAssets(
+			ctxb, &taprpc.ListAssetRequest{},
+		)
 		require.NoError(t, err2)
 
-		t.Logf("Failed to assert expected balance of %d, current "+
-			"assets: %v", expectedBalance, toProtoJSON(t, r))
+		t.Logf("Failed to assert expected balance of %d for asset ID "+
+			"%x: %v", expectedBalance, assetID, err)
+
+		t.Logf("Last balances: %v", toProtoJSON(t, lastBalances))
+		t.Logf("Current assets: %v", toProtoJSON(t, listAssetsResp))
 
 		utxos, err3 := client.ListUtxos(
 			ctxb, &taprpc.ListUtxosRequest{},
@@ -1924,40 +2248,57 @@ func assertAssetBalance(t *testing.T, client *tapClient, assetID []byte,
 	}
 }
 
-// assertSpendableBalance differs from assertAssetBalance in that it asserts
-// that the entire balance is spendable. We consider something spendable if we
-// have a local script key for it.
-func assertSpendableBalance(t *testing.T, client *tapClient, assetID []byte,
-	expectedBalance uint64) {
-
-	t.Helper()
+func spendableBalance(client *tapClient, assetID,
+	groupKey []byte) (uint64, error) {
 
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, shortTimeout)
 	defer cancel()
 
-	err := wait.NoError(func() error {
-		utxos, err := client.ListUtxos(ctxt, &taprpc.ListUtxosRequest{})
-		if err != nil {
-			return err
+	utxos, err := client.ListUtxos(ctxt, &taprpc.ListUtxosRequest{})
+	if err != nil {
+		return 0, err
+	}
+
+	assets := tapfn.FlatMap(
+		maps.Values(utxos.ManagedUtxos),
+		func(utxo *taprpc.ManagedUtxo) []*taprpc.Asset {
+			return utxo.Assets
+		},
+	)
+
+	relevantAssets := fn.Filter(func(utxo *taprpc.Asset) bool {
+		if len(groupKey) > 0 {
+			return bytes.Equal(
+				utxo.AssetGroup.TweakedGroupKey, groupKey,
+			)
 		}
 
-		assets := tapfn.FlatMap(
-			maps.Values(utxos.ManagedUtxos),
-			func(utxo *taprpc.ManagedUtxo) []*taprpc.Asset {
-				return utxo.Assets
-			},
-		)
+		return bytes.Equal(utxo.AssetGenesis.AssetId, assetID)
+	}, assets)
 
-		relevantAssets := fn.Filter(func(utxo *taprpc.Asset) bool {
-			return bytes.Equal(utxo.AssetGenesis.AssetId, assetID)
-		}, assets)
+	var assetSum uint64
+	for _, a := range relevantAssets {
+		if a.ScriptKeyIsLocal {
+			assetSum += a.Amount
+		}
+	}
 
-		var assetSum uint64
-		for _, asset := range relevantAssets {
-			if asset.ScriptKeyIsLocal {
-				assetSum += asset.Amount
-			}
+	return assetSum, nil
+}
+
+// assertSpendableBalance differs from assertAssetBalance in that it asserts
+// that the entire balance is spendable. We consider something spendable if we
+// have a local script key for it.
+func assertSpendableBalance(t *testing.T, client *tapClient, assetID,
+	groupKey []byte, expectedBalance uint64) {
+
+	t.Helper()
+
+	err := wait.NoError(func() error {
+		assetSum, err := spendableBalance(client, assetID, groupKey)
+		if err != nil {
+			return err
 		}
 
 		if assetSum != expectedBalance {
@@ -1968,16 +2309,19 @@ func assertSpendableBalance(t *testing.T, client *tapClient, assetID []byte,
 		return nil
 	}, shortTimeout)
 	if err != nil {
-		r, err2 := client.ListAssets(ctxb, &taprpc.ListAssetRequest{})
+		ctxb := context.Background()
+		listResp, err2 := client.ListAssets(
+			ctxb, &taprpc.ListAssetRequest{},
+		)
 		require.NoError(t, err2)
 
 		t.Logf("Failed to assert expected balance of %d, current "+
-			"assets: %v", expectedBalance, toProtoJSON(t, r))
+			"assets: %v", expectedBalance, toProtoJSON(t, listResp))
 
-		utxos, err3 := client.ListUtxos(
+		utxos, err2 := client.ListUtxos(
 			ctxb, &taprpc.ListUtxosRequest{},
 		)
-		require.NoError(t, err3)
+		require.NoError(t, err2)
 
 		t.Logf("Current UTXOs: %v", toProtoJSON(t, utxos))
 
@@ -2091,8 +2435,27 @@ func logBalance(t *testing.T, nodes []*HarnessNode, assetID []byte,
 	time.Sleep(time.Millisecond * 250)
 
 	for _, node := range nodes {
-		local, remote, localSat, remoteSat :=
-			getAssetChannelBalance(t, node, assetID, false)
+		local, remote, localSat, remoteSat := getAssetChannelBalance(
+			t, node, [][]byte{assetID}, false,
+		)
+
+		t.Logf("%-7s balance: local=%-9d remote=%-9d, localSat=%-9d, "+
+			"remoteSat=%-9d (%v)", node.Cfg.Name, local, remote,
+			localSat, remoteSat, occasion)
+	}
+}
+
+func logBalanceGroup(t *testing.T, nodes []*HarnessNode, assetIDs [][]byte,
+	occasion string) {
+
+	t.Helper()
+
+	time.Sleep(time.Millisecond * 250)
+
+	for _, node := range nodes {
+		local, remote, localSat, remoteSat := getAssetChannelBalance(
+			t, node, assetIDs, false,
+		)
 
 		t.Logf("%-7s balance: local=%-9d remote=%-9d, localSat=%-9d, "+
 			"remoteSat=%-9d (%v)", node.Cfg.Name, local, remote,
@@ -2325,9 +2688,9 @@ func assertPendingChannelAssetData(t *testing.T, node *HarnessNode,
 				"data: %v", err)
 		}
 
-		if len(closeData.FundingAssets) != 1 {
-			return fmt.Errorf("expected 1 funding asset, got %d",
-				len(closeData.FundingAssets))
+		if len(closeData.FundingAssets) == 0 {
+			return fmt.Errorf("expected at least 1 funding asset, "+
+				"got %d", len(closeData.FundingAssets))
 		}
 
 		return nil
@@ -2422,4 +2785,450 @@ func assertClosedChannelAssetData(t *testing.T, node *HarnessNode,
 	require.NoError(t, err)
 
 	require.GreaterOrEqual(t, len(closeData.FundingAssets), 1)
+}
+
+func findForceCloseTransfer(t *testing.T, node1, node2 *tapClient,
+	closeTxid *chainhash.Hash) *taprpc.ListTransfersResponse {
+
+	var (
+		ctxb   = context.Background()
+		result *taprpc.ListTransfersResponse
+		err    error
+	)
+	fErr := wait.NoError(func() error {
+		result, err = node1.ListTransfers(
+			ctxb, &taprpc.ListTransfersRequest{
+				AnchorTxid: closeTxid.String(),
+			},
+		)
+		if err != nil {
+			return fmt.Errorf("unable to list node1 transfers: %w",
+				err)
+		}
+		if len(result.Transfers) != 1 {
+			return fmt.Errorf("node1 is missing force close " +
+				"transfer")
+		}
+
+		forceCloseTransfer2, err := node2.ListTransfers(
+			ctxb, &taprpc.ListTransfersRequest{
+				AnchorTxid: closeTxid.String(),
+			},
+		)
+		if err != nil {
+			return fmt.Errorf("unable to list node2 transfers: %w",
+				err)
+		}
+		if len(forceCloseTransfer2.Transfers) != 1 {
+			return fmt.Errorf("node2 is missing force close " +
+				"transfer")
+		}
+
+		return nil
+	}, defaultTimeout)
+	require.NoError(t, fErr)
+
+	return result
+}
+
+// assertForceCloseSweeps asserts that the force close sweeps are initiated
+// correctly.
+func assertForceCloseSweeps(ctx context.Context, net *NetworkHarness,
+	t *harnessTest, alice, bob *HarnessNode, chanPoint *lnrpc.ChannelPoint,
+	aliceStartAmount uint64, assetInvoiceAmt, assetsPerMPPShard int,
+	assetID, groupKey []byte, aliceHodlInvoices,
+	bobHodlInvoices []assetHodlInvoice, mpp bool) (uint64, uint64) {
+
+	aliceTap := newTapClient(t.t, alice)
+	bobTap := newTapClient(t.t, bob)
+
+	// At this point, both sides should have 4 (or +4 with MPP) HTLCs
+	// active.
+	numHtlcs := 4
+	numAdditionalShards := assetInvoiceAmt / assetsPerMPPShard
+	if mpp {
+		numHtlcs += numAdditionalShards * 2
+	}
+	t.Logf("Asserting both Alice and Bob have %d HTLCs...", numHtlcs)
+	assertNumHtlcs(t.t, alice, numHtlcs)
+	assertNumHtlcs(t.t, bob, numHtlcs)
+
+	// Before we force close, we'll grab the current height, the CSV delay
+	// needed, and also the absolute timeout of the set of active HTLCs.
+	closeExpiryInfo := newCloseExpiryInfo(t.t, alice)
+
+	// With all of the HTLCs established, we'll now force close the channel
+	// with Alice.
+	t.Logf("Force close by Alice w/ HTLCs...")
+	_, closeTxid, err := net.CloseChannel(alice, chanPoint, true)
+	require.NoError(t.t, err)
+
+	t.Logf("Channel closed! Mining blocks, close_txid=%v", closeTxid)
+
+	// The channel should first be in "waiting close" until it confirms.
+	assertWaitingCloseChannelAssetData(t.t, alice, chanPoint)
+
+	// Next, we'll mine a block which should start the clock ticking on the
+	// relative timeout for the Alice, and Bob.
+	//
+	// After this next block, both of them can start to sweep.
+	//
+	// For Alice, she'll go to the second level, revealing her preimage in
+	// the process. She'll then need to wait for the relative timeout to
+	// expire before she can sweep her output.
+	//
+	// For Bob, since the remote party (Alice) closed, he can try to sweep
+	// right away after initial confirmation.
+	mineBlocks(t, net, 1, 1)
+
+	// After force closing, Bob should now have a transfer that tracks the
+	// force closed commitment transaction.
+	locateAssetTransfers(t.t, bobTap, *closeTxid)
+
+	t.Logf("Settling Bob's hodl invoice")
+
+	// It should then go to "pending force closed".
+	assertPendingForceCloseChannelAssetData(t.t, alice, chanPoint)
+
+	// At this point, the commitment transaction has been mined, and we have
+	// 4 total HTLCs on Alice's commitment transaction:
+	//
+	//  * 2x outgoing HTLCs from Alice to Bob
+	//  * 2x incoming HTLCs from Bob to Alice (+2 with MPP)
+	//
+	// We'll leave half the HTLCs timeout, while pulling the other half.
+	// To start, we'll signal Bob to settle one of his incoming HTLCs on
+	// Alice's commitment transaction. For him, this is a remote success
+	// spend, so there's no CSV delay other than the 1 CSV (carve out), and
+	// he can spend directly from the commitment transaction.
+	_, err = bob.InvoicesClient.SettleInvoice(
+		ctx, &invoicesrpc.SettleInvoiceMsg{
+			Preimage: bobHodlInvoices[0].preimage[:],
+		},
+	)
+	require.NoError(t.t, err)
+
+	// We'll pause here for Bob to extend the sweep request to the sweeper.
+	assertSweepExists(
+		t.t, bob,
+		walletrpc.WitnessType_TAPROOT_HTLC_ACCEPTED_REMOTE_SUCCESS,
+	)
+
+	bobSweepTx1, err := waitForNTxsInMempool(
+		net.Miner.Client, 1, shortTimeout,
+	)
+	require.NoError(t.t, err)
+
+	// Next, we'll mine an additional block, this should allow Bob to sweep
+	// both his commitment output, and the incoming HTLC that we just
+	// settled above.
+	mineBlocks(t, net, 1, 1)
+
+	// At this point, we should have the next sweep transaction in the
+	// mempool: Bob's incoming HTLC sweep directly off the commitment
+	// transaction.
+	bobSweepTx2, err := waitForNTxsInMempool(
+		net.Miner.Client, 1, shortTimeout,
+	)
+	require.NoError(t.t, err)
+
+	// We'll now mine the next block, which should confirm Bob's HTLC sweep
+	// transaction.
+	mineBlocks(t, net, 1, 1)
+
+	bobSweepTransfer1 := locateAssetTransfers(t.t, bobTap, *bobSweepTx1[0])
+	bobSweepTransfer2 := locateAssetTransfers(t.t, bobTap, *bobSweepTx2[0])
+	t.Logf("Bob's sweep transfer 1: %v",
+		toProtoJSON(t.t, bobSweepTransfer1))
+	t.Logf("Bob's sweep transfer 2: %v",
+		toProtoJSON(t.t, bobSweepTransfer2))
+
+	t.Logf("Confirming Bob's remote HTLC success sweep")
+
+	// Bob's balance should now reflect that he's gained the value of the
+	// HTLC, in addition to his settled balance. We need to subtract 1 from
+	// the final balance due to the rounding down of the asset amount during
+	// RFQ conversion.
+	bobExpectedBalance := closeExpiryInfo.remoteAssetBalance +
+		uint64(assetInvoiceAmt-1)
+	t.Logf("Expecting Bob's balance to be %d", bobExpectedBalance)
+	assertSpendableBalance(
+		t.t, bobTap, assetID, groupKey, bobExpectedBalance,
+	)
+
+	// With Bob's HTLC settled, we'll now have Alice do the same. For her,
+	// it'll be a 2nd level sweep, which requires an extra transaction.
+	//
+	// Before, we do that though, enough blocks have passed so Alice can now
+	// sweep her to-local output. So we'll mine an extra block, then assert
+	// that she's swept everything properly. With the way the sweeper works,
+	// we need to mine one extra block before the sweeper picks things up.
+	mineBlocks(t, net, 1, 0)
+
+	aliceSweepTx1, err := waitForNTxsInMempool(
+		net.Miner.Client, 1, shortTimeout,
+	)
+	require.NoError(t.t, err)
+
+	mineBlocks(t, net, 1, 1)
+
+	aliceSweepTransfer1 := locateAssetTransfers(
+		t.t, aliceTap, *aliceSweepTx1[0],
+	)
+	t.Logf("Alice's sweep transfer 1: %v",
+		toProtoJSON(t.t, aliceSweepTransfer1))
+
+	t.Logf("Confirming Alice's to-local sweep")
+
+	// With this extra block mined, Alice's settled balance should be the
+	// starting balance, minus the 2 HTLCs, plus her settled balance.
+	aliceExpectedBalance := aliceStartAmount
+	aliceExpectedBalance += closeExpiryInfo.localAssetBalance
+	assertSpendableBalance(
+		t.t, aliceTap, assetID, groupKey, aliceExpectedBalance,
+	)
+
+	t.Logf("Settling Alice's hodl invoice")
+
+	// With her commitment output swept above, we'll now settle one of
+	// Alice's incoming HTLCs.
+	_, err = alice.InvoicesClient.SettleInvoice(
+		ctx, &invoicesrpc.SettleInvoiceMsg{
+			Preimage: aliceHodlInvoices[0].preimage[:],
+		},
+	)
+	require.NoError(t.t, err)
+
+	// We'll pause here for Alice to extend the sweep request to the
+	// sweeper.
+	assertSweepExists(
+		t.t, alice,
+		walletrpc.WitnessType_TAPROOT_HTLC_ACCEPTED_LOCAL_SUCCESS,
+	)
+
+	// We'll now mine a block, which should trigger Alice's broadcast of the
+	// second level sweep transaction.
+	sweepBlocks := mineBlocks(t, net, 1, 0)
+
+	// If the block mined above didn't also mine our sweep, then we'll mine
+	// one final block which will confirm Alice's sweep transaction.
+	if len(sweepBlocks[0].Transactions) == 1 {
+		sweepTx, err := waitForNTxsInMempool(
+			net.Miner.Client, 1, shortTimeout,
+		)
+		require.NoError(t.t, err)
+
+		// With the sweep transaction in the mempool, we'll mine a block
+		// to confirm the sweep.
+		mineBlocks(t, net, 1, 1)
+
+		aliceSweepTransfer := locateAssetTransfers(
+			t.t, aliceTap, *sweepTx[0],
+		)
+		t.Logf("Alice's first-level sweep transfer: %v",
+			toProtoJSON(t.t, aliceSweepTransfer))
+	} else {
+		sweepTx := sweepBlocks[0].Transactions[1]
+		aliceSweepTransfer := locateAssetTransfers(
+			t.t, aliceTap, sweepTx.TxHash(),
+		)
+		t.Logf("Alice's first-level sweep transfer: %v",
+			toProtoJSON(t.t, aliceSweepTransfer))
+	}
+
+	t.Logf("Confirming Alice's second level remote HTLC success sweep")
+
+	// Next, we'll mine enough blocks to trigger the CSV expiry so Alice can
+	// sweep the HTLC into her wallet.
+	mineBlocks(t, net, closeExpiryInfo.csvDelay, 0)
+
+	// We'll pause here and wait until the sweeper recognizes that we've
+	// offered the second level sweep transaction.
+	assertSweepExists(
+		t.t, alice,
+		//nolint: lll
+		walletrpc.WitnessType_TAPROOT_HTLC_ACCEPTED_SUCCESS_SECOND_LEVEL,
+	)
+
+	t.Logf("Confirming Alice's local HTLC success sweep")
+
+	// Now that we know the sweep was offered, we'll mine an extra block to
+	// actually trigger a sweeper broadcast. Due to an internal block race
+	// condition, the sweep transaction may have already been
+	// published+mined. If so, we don't need to mine the extra block.
+	sweepBlocks = mineBlocks(t, net, 1, 0)
+
+	// If the block mined above didn't also mine our sweep, then we'll mine
+	// one final block which will confirm Alice's sweep transaction.
+	if len(sweepBlocks[0].Transactions) == 1 {
+		sweepTx, err := waitForNTxsInMempool(
+			net.Miner.Client, 1, shortTimeout,
+		)
+		require.NoError(t.t, err)
+
+		mineBlocks(t, net, 1, 1)
+
+		aliceSweepTransfer := locateAssetTransfers(
+			t.t, aliceTap, *sweepTx[0],
+		)
+		t.Logf("Alice's second-level sweep transfer: %v",
+			toProtoJSON(t.t, aliceSweepTransfer))
+	} else {
+		sweepTx := sweepBlocks[0].Transactions[1]
+		aliceSweepTransfer := locateAssetTransfers(
+			t.t, aliceTap, sweepTx.TxHash(),
+		)
+		t.Logf("Alice's second-level sweep transfer: %v",
+			toProtoJSON(t.t, aliceSweepTransfer))
+	}
+
+	// With the sweep transaction confirmed, Alice's balance should have
+	// incremented by the amt of the HTLC.
+	aliceExpectedBalance += uint64(assetInvoiceAmt - 1)
+	assertSpendableBalance(
+		t.t, aliceTap, assetID, groupKey, aliceExpectedBalance,
+	)
+
+	t.Logf("Mining enough blocks to time out the remaining HTLCs")
+
+	// At this point, we've swept two HTLCs: one from the remote commit, and
+	// one via the second layer. We'll now mine the remaining amount of
+	// blocks to time out the HTLCs.
+	blockToMine := closeExpiryInfo.blockTillExpiry(
+		aliceHodlInvoices[1].preimage.Hash(),
+	)
+	mineBlocks(t, net, blockToMine, 0)
+
+	// We'll wait for both Alice and Bob to present their respective sweeps
+	// to the sweeper.
+	numTimeoutHTLCs := 1
+	if mpp {
+		numTimeoutHTLCs += numAdditionalShards
+	}
+	assertSweepExists(
+		t.t, alice,
+		walletrpc.WitnessType_TAPROOT_HTLC_LOCAL_OFFERED_TIMEOUT,
+	)
+	assertSweepExists(
+		t.t, bob,
+		walletrpc.WitnessType_TAPROOT_HTLC_OFFERED_REMOTE_TIMEOUT,
+	)
+
+	t.Logf("Confirming initial HTLC timeout txns")
+
+	timeoutSweeps, err := waitForNTxsInMempool(
+		net.Miner.Client, 2, shortTimeout,
+	)
+	require.NoError(t.t, err)
+
+	t.Logf("Asserting balance on sweeps: %v", timeoutSweeps)
+
+	// Finally, we'll mine a single block to confirm them.
+	mineBlocks(t, net, 1, 2)
+
+	// Make sure Bob swept all his HTLCs.
+	bobSweeps, err := bob.WalletKitClient.ListSweeps(
+		ctx, &walletrpc.ListSweepsRequest{
+			Verbose: true,
+		},
+	)
+	require.NoError(t.t, err)
+
+	var bobSweepTx *wire.MsgTx
+	for _, sweep := range bobSweeps.GetTransactionDetails().Transactions {
+		for _, tx := range timeoutSweeps {
+			if sweep.TxHash == tx.String() {
+				txBytes, err := hex.DecodeString(sweep.RawTxHex)
+				require.NoError(t.t, err)
+
+				bobSweepTx = &wire.MsgTx{}
+				err = bobSweepTx.Deserialize(
+					bytes.NewReader(txBytes),
+				)
+				require.NoError(t.t, err)
+			}
+		}
+	}
+	require.NotNil(t.t, bobSweepTx, "Bob's sweep transaction not found")
+
+	// There's always an extra input that pays for the fees. So we can only
+	// count the remainder as HTLC inputs.
+	numSweptHTLCs := len(bobSweepTx.TxIn) - 1
+
+	// If we didn't yet sweep all HTLCs, then we need to wait for another
+	// sweep.
+	if numSweptHTLCs < numTimeoutHTLCs {
+		assertSweepExists(
+			t.t, bob,
+			// nolint: lll
+			walletrpc.WitnessType_TAPROOT_HTLC_OFFERED_REMOTE_TIMEOUT,
+		)
+
+		t.Logf("Confirming additional HTLC timeout sweep txns")
+
+		additionalTimeoutSweeps, err := waitForNTxsInMempool(
+			net.Miner.Client, 1, shortTimeout,
+		)
+		require.NoError(t.t, err)
+
+		t.Logf("Asserting balance on additional timeout sweeps: %v",
+			additionalTimeoutSweeps)
+
+		// Finally, we'll mine a single block to confirm them.
+		mineBlocks(t, net, 1, 1)
+	}
+
+	// At this point, Bob's balance should be incremented by an additional
+	// HTLC value.
+	bobExpectedBalance += uint64(assetInvoiceAmt - 1)
+	assertSpendableBalance(
+		t.t, bobTap, assetID, groupKey, bobExpectedBalance,
+	)
+
+	t.Logf("Mining extra blocks for Alice's CSV to expire on 2nd level txn")
+
+	// Next, we'll mine 4 additional blocks to Alice's CSV delay expires for
+	// the second level timeout output.
+	mineBlocks(t, net, closeExpiryInfo.csvDelay, 0)
+
+	// Wait for Alice to extend the second level output to the sweeper
+	// before we mine the next block to the sweeper.
+	assertSweepExists(
+		t.t, alice,
+		walletrpc.WitnessType_TAPROOT_HTLC_OFFERED_TIMEOUT_SECOND_LEVEL,
+	)
+
+	t.Logf("Confirming Alice's final timeout sweep")
+
+	// With the way the sweeper works, we'll now need to mine an extra block
+	// to trigger the sweep.
+	sweepBlocks = mineBlocks(t, net, 1, 0)
+
+	// If the block mined above didn't also mine our sweep, then we'll mine
+	// one final block which will confirm Alice's sweep transaction.
+	if len(sweepBlocks[0].Transactions) == 1 {
+		sweepTx, err := waitForNTxsInMempool(
+			net.Miner.Client, 1, shortTimeout,
+		)
+		require.NoError(t.t, err)
+
+		// We'll mine one final block which will confirm Alice's sweep
+		// transaction.
+		mineBlocks(t, net, 1, 1)
+
+		aliceSweepTransfer := locateAssetTransfers(
+			t.t, aliceTap, *sweepTx[0],
+		)
+		t.Logf("Alice's final timeout sweep transfer: %v",
+			toProtoJSON(t.t, aliceSweepTransfer))
+	} else {
+		sweepTx := sweepBlocks[0].Transactions[1]
+		aliceSweepTransfer := locateAssetTransfers(
+			t.t, aliceTap, sweepTx.TxHash(),
+		)
+		t.Logf("Alice's final timeout sweep transfer: %v",
+			toProtoJSON(t.t, aliceSweepTransfer))
+	}
+
+	return aliceExpectedBalance, bobExpectedBalance
 }
