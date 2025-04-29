@@ -745,9 +745,12 @@ func unmarshalSession(ctx context.Context, db SQLQueries,
 
 	var macRecipe *MacaroonRecipe
 	if perms != nil || caveats != nil {
-		macRecipe = &MacaroonRecipe{
-			Permissions: unmarshalMacPerms(perms),
-			Caveats:     unmarshalMacCaveats(caveats),
+		macRecipe = &MacaroonRecipe{}
+		if perms != nil {
+			macRecipe.Permissions = unmarshalMacPerms(perms)
+		}
+		if caveats != nil {
+			macRecipe.Caveats = unmarshalMacCaveats(caveats)
 		}
 	}
 
