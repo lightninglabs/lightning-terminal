@@ -11,14 +11,14 @@ import (
 )
 
 // NewTestDB is a helper function that creates an BBolt database for testing.
-func NewTestDB(t *testing.T, clock clock.Clock) *BoltStore {
+func NewTestDB(t *testing.T, clock clock.Clock) Store {
 	return NewTestDBFromPath(t, t.TempDir(), clock)
 }
 
 // NewTestDBFromPath is a helper function that creates a new BoltStore with a
 // connection to an existing BBolt database for testing.
 func NewTestDBFromPath(t *testing.T, dbPath string,
-	clock clock.Clock) *BoltStore {
+	clock clock.Clock) Store {
 
 	acctStore := accounts.NewTestDB(t, clock)
 
@@ -28,13 +28,13 @@ func NewTestDBFromPath(t *testing.T, dbPath string,
 // NewTestDBWithAccounts creates a new test session Store with access to an
 // existing accounts DB.
 func NewTestDBWithAccounts(t *testing.T, clock clock.Clock,
-	acctStore accounts.Store) *BoltStore {
+	acctStore accounts.Store) Store {
 
 	return newDBFromPathWithAccounts(t, clock, t.TempDir(), acctStore)
 }
 
 func newDBFromPathWithAccounts(t *testing.T, clock clock.Clock, dbPath string,
-	acctStore accounts.Store) *BoltStore {
+	acctStore accounts.Store) Store {
 
 	store, err := NewDB(dbPath, DBFilename, clock, acctStore)
 	require.NoError(t, err)
