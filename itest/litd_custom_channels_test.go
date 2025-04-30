@@ -3746,6 +3746,10 @@ func testCustomChannelsFee(ctx context.Context, net *NetworkHarness,
 	errSpecifyFeerate := "fee rate must be specified"
 	require.ErrorContains(t.t, err, errSpecifyFeerate)
 
+	net.feeService.SetMinRelayFeerate(
+		chainfee.SatPerVByte(2).FeePerKVByte(),
+	)
+
 	// Fund a channel with a fee rate that is too low.
 	tooLowFeeRate := uint32(1)
 	tooLowFeeRateAmount := chainfee.SatPerVByte(tooLowFeeRate)
