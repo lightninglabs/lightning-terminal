@@ -4324,12 +4324,10 @@ func testCustomChannelsDecodeAssetInvoice(ctx context.Context,
 
 	// Now that we have our payment request, we'll call into the new decode
 	// asset pay req call.
-	decodeResp, err := aliceTap.DecodeAssetPayReq(
-		ctx, &tchrpc.AssetPayReq{
-			AssetId:      assetID,
-			PayReqString: payReq,
-		},
-	)
+	decodeResp, err := aliceTap.DecodeAssetPayReq(ctx, &tchrpc.AssetPayReq{
+		AssetId:      assetID,
+		PayReqString: payReq,
+	})
 	require.NoError(t.t, err)
 
 	// The decimal display information, genesis, and asset group information
@@ -4344,6 +4342,20 @@ func testCustomChannelsDecodeAssetInvoice(ctx context.Context,
 	// display 6 that's 100 billion asset units.
 	const expectedUnits = 100_000_000_000
 	require.Equal(t.t, int64(expectedUnits), int64(decodeResp.AssetAmount))
+
+	// We do the same call again, but this time using the group key for the
+	// decoding query.
+	decodeResp2, err := aliceTap.DecodeAssetPayReq(ctx, &tchrpc.AssetPayReq{
+		GroupKey:     usdAsset.AssetGroup.TweakedGroupKey,
+		PayReqString: payReq,
+	})
+	require.NoError(t.t, err)
+
+	require.Equal(t.t, decodeResp.AssetAmount, decodeResp2.AssetAmount)
+	require.Equal(t.t, decodeResp.AssetGroup, decodeResp2.AssetGroup)
+	require.Equal(
+		t.t, decodeResp.DecimalDisplay, decodeResp2.DecimalDisplay,
+	)
 }
 
 // testCustomChannelsSelfPayment tests that circular self-payments can be made
