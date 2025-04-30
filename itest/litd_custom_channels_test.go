@@ -635,11 +635,22 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	erinAssetBalance += 4
 	fabiaAssetBalance -= 4
 	yaraAssetBalance -= 1
-	assertAssetBalance(t.t, charlieTap, assetID, charlieAssetBalance)
-	assertAssetBalance(t.t, daveTap, assetID, daveAssetBalance)
-	assertAssetBalance(t.t, erinTap, assetID, erinAssetBalance)
-	assertAssetBalance(t.t, fabiaTap, assetID, fabiaAssetBalance)
-	assertAssetBalance(t.t, yaraTap, assetID, yaraAssetBalance)
+	itest.AssertBalances(
+		t.t, charlieTap, charlieAssetBalance,
+		itest.WithAssetID(assetID),
+	)
+	itest.AssertBalances(
+		t.t, daveTap, daveAssetBalance, itest.WithAssetID(assetID),
+	)
+	itest.AssertBalances(
+		t.t, erinTap, erinAssetBalance, itest.WithAssetID(assetID),
+	)
+	itest.AssertBalances(
+		t.t, fabiaTap, fabiaAssetBalance, itest.WithAssetID(assetID),
+	)
+	itest.AssertBalances(
+		t.t, yaraTap, yaraAssetBalance, itest.WithAssetID(assetID),
+	)
 
 	// ------------
 	// Test case 10: We now open a new asset channel and close it again, to
@@ -683,61 +694,56 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	)
 
 	// Charlie should still have four asset pieces, two with the same size.
-	assertNumAssetOutputs(t.t, charlieTap, assetID, 2)
-	assertAssetExists(
-		t.t, charlieTap, assetID, charlieAssetBalance-fundingAmount,
-		nil, true, false, false,
-	)
-	assertAssetExists(
-		t.t, charlieTap, assetID, fundingAmount, nil, true, true,
-		false,
+	itest.AssertBalances(
+		t.t, charlieTap, charlieAssetBalance,
+		itest.WithAssetID(assetID), itest.WithNumUtxos(2),
+		itest.WithScriptKeyType(asset.ScriptKeyBip86),
 	)
 
 	// Dave should have two outputs, one from the initial channel with Yara
 	// and one from the remaining amount of the channel with Charlie.
-	assertNumAssetOutputs(t.t, daveTap, assetID, 2)
-	daveFirstChannelRemainder := daveFundingAmount -
-		yaraInvoiceAssetAmount1 + 1
-	assertAssetExists(
-		t.t, daveTap, assetID, daveFirstChannelRemainder, nil, true,
-		true, false,
-	)
-	assertAssetExists(
-		t.t, daveTap, assetID,
-		daveAssetBalance-daveFirstChannelRemainder, nil, true, true,
-		false,
+	itest.AssertBalances(
+		t.t, daveTap, daveAssetBalance, itest.WithAssetID(assetID),
+		itest.WithNumUtxos(2),
+		itest.WithScriptKeyType(asset.ScriptKeyBip86),
 	)
 
 	// Fabia and Yara should all have a single output each, just what was
 	// left over from the initial channel.
-	assertNumAssetOutputs(t.t, fabiaTap, assetID, 1)
-	assertAssetExists(
-		t.t, fabiaTap, assetID, fabiaAssetBalance, nil, true, true,
-		false,
+	itest.AssertBalances(
+		t.t, fabiaTap, fabiaAssetBalance, itest.WithAssetID(assetID),
+		itest.WithNumUtxos(1),
+		itest.WithScriptKeyType(asset.ScriptKeyBip86),
 	)
-	assertNumAssetOutputs(t.t, yaraTap, assetID, 1)
-	assertAssetExists(
-		t.t, yaraTap, assetID, yaraAssetBalance, nil, true, true, false,
+	itest.AssertBalances(
+		t.t, yaraTap, yaraAssetBalance, itest.WithAssetID(assetID),
+		itest.WithNumUtxos(1),
+		itest.WithScriptKeyType(asset.ScriptKeyBip86),
 	)
 
 	// Erin didn't use all of his assets when opening the channel, so he
 	// should have two outputs, the change from the channel opening and the
 	// remaining amount after closing the channel.
-	assertNumAssetOutputs(t.t, erinTap, assetID, 2)
-	erinChange := startAmount - erinFundingAmount
-	assertAssetExists(
-		t.t, erinTap, assetID, erinAssetBalance-erinChange, nil, true,
-		true, false,
-	)
-	assertAssetExists(
-		t.t, erinTap, assetID, erinChange, nil, true, false, false,
+	itest.AssertBalances(
+		t.t, erinTap, erinAssetBalance, itest.WithAssetID(assetID),
+		itest.WithNumUtxos(2),
+		itest.WithScriptKeyType(asset.ScriptKeyBip86),
 	)
 
 	// The asset balances should still remain unchanged.
-	assertAssetBalance(t.t, charlieTap, assetID, charlieAssetBalance)
-	assertAssetBalance(t.t, daveTap, assetID, daveAssetBalance)
-	assertAssetBalance(t.t, erinTap, assetID, erinAssetBalance)
-	assertAssetBalance(t.t, fabiaTap, assetID, fabiaAssetBalance)
+	itest.AssertBalances(
+		t.t, charlieTap, charlieAssetBalance,
+		itest.WithAssetID(assetID),
+	)
+	itest.AssertBalances(
+		t.t, daveTap, daveAssetBalance, itest.WithAssetID(assetID),
+	)
+	itest.AssertBalances(
+		t.t, erinTap, erinAssetBalance, itest.WithAssetID(assetID),
+	)
+	itest.AssertBalances(
+		t.t, fabiaTap, fabiaAssetBalance, itest.WithAssetID(assetID),
+	)
 }
 
 // testCustomChannelsGroupedAsset tests that we can create a network with custom
@@ -1071,11 +1077,22 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 	erinAssetBalance += 4
 	fabiaAssetBalance -= 4
 	yaraAssetBalance -= 1
-	assertAssetBalance(t.t, charlieTap, assetID, charlieAssetBalance)
-	assertAssetBalance(t.t, daveTap, assetID, daveAssetBalance)
-	assertAssetBalance(t.t, erinTap, assetID, erinAssetBalance)
-	assertAssetBalance(t.t, fabiaTap, assetID, fabiaAssetBalance)
-	assertAssetBalance(t.t, yaraTap, assetID, yaraAssetBalance)
+	itest.AssertBalances(
+		t.t, charlieTap, charlieAssetBalance,
+		itest.WithAssetID(assetID),
+	)
+	itest.AssertBalances(
+		t.t, daveTap, daveAssetBalance, itest.WithAssetID(assetID),
+	)
+	itest.AssertBalances(
+		t.t, erinTap, erinAssetBalance, itest.WithAssetID(assetID),
+	)
+	itest.AssertBalances(
+		t.t, fabiaTap, fabiaAssetBalance, itest.WithAssetID(assetID),
+	)
+	itest.AssertBalances(
+		t.t, yaraTap, yaraAssetBalance, itest.WithAssetID(assetID),
+	)
 
 	// ------------
 	// Test case 10: We now open a new asset channel and close it again, to
@@ -1118,25 +1135,27 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 		universeTap, assertDefaultCoOpCloseBalance(false, false),
 	)
 
-	// Charlie should still have four asset pieces, two with the same size.
-	assertAssetExists(
-		t.t, charlieTap, assetID, charlieAssetBalance-fundingAmount,
-		nil, true, false, false,
-	)
-	assertAssetExists(
-		t.t, charlieTap, assetID, fundingAmount, nil, true, true,
-		false,
-	)
-
 	// Charlie should have asset outputs: the leftover change from the
 	// channel funding, and the new close output.
-	assertNumAssetOutputs(t.t, charlieTap, assetID, 2)
+	itest.AssertBalances(
+		t.t, charlieTap, charlieAssetBalance,
+		itest.WithAssetID(assetID), itest.WithNumUtxos(2),
+	)
 
 	// The asset balances should still remain unchanged.
-	assertAssetBalance(t.t, charlieTap, assetID, charlieAssetBalance)
-	assertAssetBalance(t.t, daveTap, assetID, daveAssetBalance)
-	assertAssetBalance(t.t, erinTap, assetID, erinAssetBalance)
-	assertAssetBalance(t.t, fabiaTap, assetID, fabiaAssetBalance)
+	itest.AssertBalances(
+		t.t, charlieTap, charlieAssetBalance,
+		itest.WithAssetID(assetID),
+	)
+	itest.AssertBalances(
+		t.t, daveTap, daveAssetBalance, itest.WithAssetID(assetID),
+	)
+	itest.AssertBalances(
+		t.t, erinTap, erinAssetBalance, itest.WithAssetID(assetID),
+	)
+	itest.AssertBalances(
+		t.t, fabiaTap, fabiaAssetBalance, itest.WithAssetID(assetID),
+	)
 }
 
 // testCustomChannelsGroupTranchesForceClose tests that we can successfully open
@@ -1799,8 +1818,9 @@ func testCustomChannelsForceClose(ctx context.Context, net *NetworkHarness,
 
 	// Charlie's balance should reflect that the funding asset is now
 	// excluded from balance reporting by tapd.
-	assertAssetBalance(
-		t.t, charlieTap, assetID, itestAsset.Amount-fundingAmount,
+	itest.AssertBalances(
+		t.t, charlieTap, itestAsset.Amount-fundingAmount,
+		itest.WithAssetID(assetID),
 	)
 
 	// Make sure that Charlie properly uploaded funding proof to the
@@ -1941,13 +1961,14 @@ func testCustomChannelsForceClose(ctx context.Context, net *NetworkHarness,
 	// Both sides should now reflect their updated asset balances.
 	daveBalance := uint64(numPayments * keySendAmount)
 	charlieBalance := itestAsset.Amount - daveBalance
-	assertAssetBalance(t.t, daveTap, assetID, daveBalance)
-	assertAssetBalance(t.t, charlieTap, assetID, charlieBalance)
-
-	// Dave should have a single managed UTXO that shows he has a new asset
-	// UTXO he can use.
-	assertNumAssetUTXOs(t.t, daveTap, 1)
-	assertNumAssetUTXOs(t.t, charlieTap, 2)
+	itest.AssertBalances(
+		t.t, daveTap, daveBalance, itest.WithAssetID(assetID),
+		itest.WithNumUtxos(1),
+	)
+	itest.AssertBalances(
+		t.t, charlieTap, charlieBalance, itest.WithAssetID(assetID),
+		itest.WithNumUtxos(2),
+	)
 
 	// We'll make sure Dave can spend his asset UTXO by sending it all but
 	// one unit to Zane (the universe).
@@ -2098,8 +2119,9 @@ func testCustomChannelsBreach(ctx context.Context, net *NetworkHarness,
 
 	// Charlie's balance should reflect that the funding asset is now
 	// excluded from balance reporting by tapd.
-	assertAssetBalance(
-		t.t, charlieTap, assetID, itestAsset.Amount-fundingAmount,
+	itest.AssertBalances(
+		t.t, charlieTap, itestAsset.Amount-fundingAmount,
+		itest.WithAssetID(assetID), itest.WithNumUtxos(1),
 	)
 
 	// Make sure that Charlie properly uploaded funding proof to the
@@ -2209,15 +2231,12 @@ func testCustomChannelsBreach(ctx context.Context, net *NetworkHarness,
 	// Charlie's balance should now be the same as before the breach
 	// attempt: the amount he minted at the very start.
 	charlieBalance := itestAsset.Amount
-	assertAssetBalance(t.t, charlieTap, assetID, charlieBalance)
+	itest.AssertBalances(
+		t.t, charlieTap, charlieBalance, itest.WithAssetID(assetID),
+		itest.WithNumUtxos(3),
+	)
 
 	t.Logf("Charlie balance after breach: %d", charlieBalance)
-
-	// Charlie should now have 2 total UTXOs: the change from the funding
-	// output, and now the sweep output from the justice transaction.
-	charlieUTXOs := assertNumAssetUTXOs(t.t, charlieTap, 2)
-
-	t.Logf("Charlie UTXOs after breach: %v", toProtoJSON(t.t, charlieUTXOs))
 }
 
 // testCustomChannelsLiquidtyEdgeCasesCore is the core logic of the liquidity
@@ -3008,25 +3027,22 @@ func testCustomChannelsBalanceConsistency(ctx context.Context,
 	charlieBalance := cents.Amount
 
 	// Charlie should have a single balance output with the full balance.
-	assertAssetBalance(t.t, charlieTap, assetID, cents.Amount)
+	itest.AssertBalances(
+		t.t, charlieTap, cents.Amount, itest.WithAssetID(assetID),
+		itest.WithNumUtxos(1),
+	)
 
 	// The script key should be local to charlie, and the script key should
 	// be known. It is after all the asset he just minted himself.
-	scriptKeyLocal := true
-	scriptKeyKnown := false
-	scriptKeyHasScriptPath := false
-
-	scriptKey, err := schnorr.ParsePubKey(cents.ScriptKey[1:])
-	require.NoError(t.t, err)
-	assertAssetExists(
-		t.t, charlieTap, assetID, charlieBalance,
-		scriptKey, scriptKeyLocal, scriptKeyKnown,
-		scriptKeyHasScriptPath,
+	itest.AssertBalances(
+		t.t, charlieTap, cents.Amount, itest.WithAssetID(assetID),
+		itest.WithNumUtxos(1), itest.WithScriptKey(cents.ScriptKey),
+		itest.WithScriptKeyType(asset.ScriptKeyBip86),
 	)
 
 	fundingScriptTree := tapscript.NewChannelFundingScriptTree()
 	fundingScriptKey := fundingScriptTree.TaprootKey
-	fundingScriptTreeBytes := fundingScriptKey.SerializeCompressed()
+	fundingScriptKeyBytes := fundingScriptKey.SerializeCompressed()
 
 	fundRespCD, err := charlieTap.FundChannel(
 		ctx, &tchrpc.FundChannelRequest{
@@ -3052,28 +3068,22 @@ func testCustomChannelsBalanceConsistency(ctx context.Context,
 	// Tapd should not report any balance for Charlie, since the asset is
 	// used in a funding transaction. It should also not report any balance
 	// for Dave. All those balances are reported through channel balances.
-	assertAssetBalance(t.t, charlieTap, assetID, 0)
-	assertAssetBalance(t.t, daveTap, assetID, 0)
+	itest.AssertBalances(t.t, charlieTap, 0, itest.WithAssetID(assetID))
+	itest.AssertBalances(t.t, daveTap, 0, itest.WithAssetID(assetID))
 
 	// There should only be a single asset piece for Charlie, the one in the
 	// channel.
-	assertNumAssetOutputs(t.t, charlieTap, assetID, 1)
-
-	// The script key should now not be local anymore, since he funded a
-	// channel with it. Charlie does still know the script key though.
-	scriptKeyLocal = false
-	scriptKeyKnown = true
-	scriptKeyHasScriptPath = true
-	assertAssetExists(
-		t.t, charlieTap, assetID, charlieBalance,
-		fundingScriptKey, scriptKeyLocal, scriptKeyKnown,
-		scriptKeyHasScriptPath,
+	itest.AssertBalances(
+		t.t, charlieTap, charlieBalance, itest.WithAssetID(assetID),
+		itest.WithNumUtxos(1),
+		itest.WithScriptKeyType(asset.ScriptKeyScriptPathChannel),
+		itest.WithScriptKey(fundingScriptKeyBytes),
 	)
 
 	// Assert that the proofs for both channels has been uploaded to the
 	// designated Universe server.
 	assertUniverseProofExists(
-		t.t, universeTap, assetID, groupKey, fundingScriptTreeBytes,
+		t.t, universeTap, assetID, groupKey, fundingScriptKeyBytes,
 		fmt.Sprintf("%v:%v", fundRespCD.Txid, fundRespCD.OutputIndex),
 	)
 
@@ -3095,8 +3105,8 @@ func testCustomChannelsBalanceConsistency(ctx context.Context,
 
 	// Tapd should still not report balances for Charlie and Dave, since
 	// they are still locked up in the funding transaction.
-	assertAssetBalance(t.t, charlieTap, assetID, 0)
-	assertAssetBalance(t.t, daveTap, assetID, 0)
+	itest.AssertBalances(t.t, charlieTap, 0, itest.WithAssetID(assetID))
+	itest.AssertBalances(t.t, daveTap, 0, itest.WithAssetID(assetID))
 
 	// Send 10k sats from Charlie to Dave. Dave needs the sats to be able to
 	// send assets.
@@ -3111,8 +3121,8 @@ func testCustomChannelsBalanceConsistency(ctx context.Context,
 
 	// Tapd should still not report balances for Charlie and Dave, since
 	// they are still locked up in the funding transaction.
-	assertAssetBalance(t.t, charlieTap, assetID, 0)
-	assertAssetBalance(t.t, daveTap, assetID, 0)
+	itest.AssertBalances(t.t, charlieTap, 0, itest.WithAssetID(assetID))
+	itest.AssertBalances(t.t, daveTap, 0, itest.WithAssetID(assetID))
 
 	// We will now close the channel.
 	t.Logf("Close the channel between Charlie and Dave...")
@@ -3127,25 +3137,16 @@ func testCustomChannelsBalanceConsistency(ctx context.Context,
 
 	// Charlie should have a single balance output with the balance 250 less
 	// than the total amount minted.
-	assertAssetBalance(t.t, charlieTap, assetID, charlieBalance-250)
-	assertAssetBalance(t.t, daveTap, assetID, 250)
-
-	// The script key should now be local to both Charlie and Dave, since
-	// the channel was closed.
-	scriptKeyLocal = true
-	scriptKeyKnown = true
-	scriptKeyHasScriptPath = false
-	assertAssetExists(
-		t.t, charlieTap, assetID, charlieBalance-250,
-		nil, scriptKeyLocal, scriptKeyKnown, scriptKeyHasScriptPath,
+	itest.AssertBalances(
+		t.t, charlieTap, charlieBalance-250, itest.WithAssetID(assetID),
+		itest.WithNumUtxos(1),
+		itest.WithScriptKeyType(asset.ScriptKeyBip86),
 	)
-	assertAssetExists(
-		t.t, daveTap, assetID, 250,
-		nil, scriptKeyLocal, scriptKeyKnown, scriptKeyHasScriptPath,
+	itest.AssertBalances(
+		t.t, daveTap, 250, itest.WithAssetID(assetID),
+		itest.WithNumUtxos(1),
+		itest.WithScriptKeyType(asset.ScriptKeyBip86),
 	)
-
-	assertNumAssetOutputs(t.t, charlieTap, assetID, 1)
-	assertNumAssetOutputs(t.t, daveTap, assetID, 1)
 }
 
 // testCustomChannelsSingleAssetMultiInput tests whether it is possible to fund
@@ -3197,7 +3198,11 @@ func testCustomChannelsSingleAssetMultiInput(ctx context.Context,
 	t.Logf("Universes synced between all nodes, distributing assets...")
 
 	// Charlie should have two balance outputs with the full balance.
-	assertAssetBalance(t.t, charlieTap, assetID, cents.Amount)
+	itest.AssertBalances(
+		t.t, charlieTap, cents.Amount, itest.WithAssetID(assetID),
+		itest.WithNumUtxos(1),
+		itest.WithScriptKeyType(asset.ScriptKeyBip86),
+	)
 
 	// Send assets to Dave so he can fund a channel.
 	halfCentsAmount := cents.Amount / 2
@@ -3257,8 +3262,8 @@ func testCustomChannelsSingleAssetMultiInput(ctx context.Context,
 	// Tapd should not report any balance for Charlie, since the asset is
 	// used in a funding transaction. It should also not report any balance
 	// for Dave. All those balances are reported through channel balances.
-	assertAssetBalance(t.t, charlieTap, assetID, 0)
-	assertAssetBalance(t.t, daveTap, assetID, 0)
+	itest.AssertBalances(t.t, charlieTap, 0, itest.WithAssetID(assetID))
+	itest.AssertBalances(t.t, daveTap, 0, itest.WithAssetID(assetID))
 
 	// Make sure the channel shows the correct asset information.
 	assertAssetChan(
