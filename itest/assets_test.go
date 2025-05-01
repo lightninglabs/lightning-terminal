@@ -11,8 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec/v2"
-	"github.com/btcsuite/btcd/btcec/v2/schnorr"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
@@ -87,7 +85,7 @@ func createTestAssetNetwork(t *harnessTest, net *NetworkHarness, charlieTap,
 
 	fundingScriptTree := tapscript.NewChannelFundingScriptTree()
 	fundingScriptKey := fundingScriptTree.TaprootKey
-	fundingScriptTreeBytes := fundingScriptKey.SerializeCompressed()
+	fundingScriptKeyBytes := fundingScriptKey.SerializeCompressed()
 
 	// We need to send some assets to Dave, so he can fund an asset channel
 	// with Yara.
@@ -207,54 +205,52 @@ func createTestAssetNetwork(t *harnessTest, net *NetworkHarness, charlieTap,
 	daveAssetBalance := assetSendAmount - daveFundingAmount
 	erinAssetBalance := assetSendAmount - erinFundingAmount
 
+	// Assert that we see the funding outputs in the wallet.
+	itest.AssertBalances(
+		t.t, charlieTap, charlieFundingAmount,
+		itest.WithAssetID(assetID),
+		itest.WithScriptKeyType(asset.ScriptKeyScriptPathChannel),
+		itest.WithNumUtxos(1),
+		itest.WithScriptKey(fundingScriptKeyBytes),
+	)
+	itest.AssertBalances(
+		t.t, daveTap, daveFundingAmount, itest.WithAssetID(assetID),
+		itest.WithScriptKeyType(asset.ScriptKeyScriptPathChannel),
+		itest.WithNumUtxos(1),
+		itest.WithScriptKey(fundingScriptKeyBytes),
+	)
+	itest.AssertBalances(
+		t.t, erinTap, erinFundingAmount, itest.WithAssetID(assetID),
+		itest.WithScriptKeyType(asset.ScriptKeyScriptPathChannel),
+		itest.WithNumUtxos(1),
+		itest.WithScriptKey(fundingScriptKeyBytes),
+	)
+
 	// After opening the channels, the asset balance of the funding nodes
-	// should have been decreased with the funding amount. The asset with
-	// the funding output was imported into the asset DB but are kept out of
-	// the balance reporting by tapd.
-	assertAssetBalance(t.t, charlieTap, assetID, charlieAssetBalance)
-	assertAssetBalance(t.t, daveTap, assetID, daveAssetBalance)
-	assertAssetBalance(t.t, erinTap, assetID, erinAssetBalance)
-
-	// There should only be a single asset piece for Charlie, the one in the
-	// channel.
-	assertNumAssetOutputs(t.t, charlieTap, assetID, 1)
-	assertAssetExists(
-		t.t, charlieTap, assetID, charlieFundingAmount,
-		fundingScriptKey, false, true, true,
+	// should have been decreased with the funding amount.
+	itest.AssertBalances(
+		t.t, charlieTap, charlieAssetBalance,
+		itest.WithAssetID(assetID),
 	)
-
-	// Dave should just have one asset piece, since we used the full amount
-	// for the channel opening.
-	assertNumAssetOutputs(t.t, daveTap, assetID, 1)
-	assertAssetExists(
-		t.t, daveTap, assetID, daveFundingAmount, fundingScriptKey,
-		false, true, true,
+	itest.AssertBalances(
+		t.t, daveTap, daveAssetBalance, itest.WithAssetID(assetID),
 	)
-
-	// Erin should just have two equally sized asset pieces, the change and
-	// the funding transaction.
-	assertNumAssetOutputs(t.t, erinTap, assetID, 2)
-	assertAssetExists(
-		t.t, erinTap, assetID, assetSendAmount-erinFundingAmount, nil,
-		true, false, false,
-	)
-	assertAssetExists(
-		t.t, erinTap, assetID, erinFundingAmount, fundingScriptKey,
-		false, true, true,
+	itest.AssertBalances(
+		t.t, erinTap, erinAssetBalance, itest.WithAssetID(assetID),
 	)
 
 	// Assert that the proofs for both channels has been uploaded to the
 	// designated Universe server.
 	assertUniverseProofExists(
-		t.t, universeTap, assetID, groupKey, fundingScriptTreeBytes,
+		t.t, universeTap, assetID, groupKey, fundingScriptKeyBytes,
 		fmt.Sprintf("%v:%v", fundRespCD.Txid, fundRespCD.OutputIndex),
 	)
 	assertUniverseProofExists(
-		t.t, universeTap, assetID, groupKey, fundingScriptTreeBytes,
+		t.t, universeTap, assetID, groupKey, fundingScriptKeyBytes,
 		fmt.Sprintf("%v:%v", fundRespDY.Txid, fundRespDY.OutputIndex),
 	)
 	assertUniverseProofExists(
-		t.t, universeTap, assetID, groupKey, fundingScriptTreeBytes,
+		t.t, universeTap, assetID, groupKey, fundingScriptKeyBytes,
 		fmt.Sprintf("%v:%v", fundRespEF.Txid, fundRespEF.OutputIndex),
 	)
 
@@ -433,71 +429,74 @@ func createTestAssetNetworkGroupKey(ctx context.Context, t *harnessTest,
 	)
 	require.NoError(t.t, err)
 	fundingScriptKey1 := fundingTree1.TaprootKey
-	fundingScriptTreeBytes1 := fundingScriptKey1.SerializeCompressed()
+	fundingScriptKeyBytes1 := fundingScriptKey1.SerializeCompressed()
 
 	fundingTree2, err := tapscript.NewChannelFundingScriptTreeUniqueID(
 		id2,
 	)
 	require.NoError(t.t, err)
 	fundingScriptKey2 := fundingTree2.TaprootKey
-	fundingScriptTreeBytes2 := fundingScriptKey2.SerializeCompressed()
+	fundingScriptKeyBytes2 := fundingScriptKey2.SerializeCompressed()
 
-	// TODO(guggero): Those asset balances should be 1, 1, 0, 0
-	// respectively, but because we now have unique script keys, we need
-	// https://github.com/lightninglabs/taproot-assets/pull/1198 first.
-	assertAssetBalance(t.t, charlieTap, assetID1, 25001)
-	assertAssetBalance(t.t, charlieTap, assetID2, 25001)
-	assertAssetBalance(t.t, erinTap, assetID1, 25000)
-	assertAssetBalance(t.t, erinTap, assetID2, 25000)
+	// We expect the funding outputs to be in the wallet.
+	itest.AssertBalances(
+		t.t, charlieTap, charlieFundingAmount/2,
+		itest.WithAssetID(assetID1),
+		itest.WithScriptKeyType(asset.ScriptKeyScriptPathChannel),
+		itest.WithNumUtxos(1),
+		itest.WithScriptKey(fundingScriptKeyBytes1),
+	)
+	itest.AssertBalances(
+		t.t, charlieTap, charlieFundingAmount/2,
+		itest.WithAssetID(assetID2),
+		itest.WithScriptKeyType(asset.ScriptKeyScriptPathChannel),
+		itest.WithNumUtxos(1),
+		itest.WithScriptKey(fundingScriptKeyBytes2),
+	)
+	itest.AssertBalances(
+		t.t, erinTap, erinFundingAmount/2, itest.WithAssetID(assetID1),
+		itest.WithScriptKeyType(asset.ScriptKeyScriptPathChannel),
+		itest.WithNumUtxos(1),
+		itest.WithScriptKey(fundingScriptKeyBytes1),
+	)
+	itest.AssertBalances(
+		t.t, erinTap, erinFundingAmount/2, itest.WithAssetID(assetID2),
+		itest.WithScriptKeyType(asset.ScriptKeyScriptPathChannel),
+		itest.WithNumUtxos(1),
+		itest.WithScriptKey(fundingScriptKeyBytes2),
+	)
 
-	// There should be two asset pieces for Charlie for both asset IDs, one
-	// in the channel and one with a single unit from the burn.
-	assertNumAssetOutputs(t.t, charlieTap, assetID1, 2)
-	assertNumAssetOutputs(t.t, charlieTap, assetID2, 2)
-	assertAssetExists(
-		t.t, charlieTap, assetID1, charlieFundingAmount/2,
-		fundingScriptKey1, false, true, true,
+	// There should be no directly spendable asset balance remaining, except
+	// for the 1 asset left over from the burn on Charlie.
+	itest.AssertBalances(
+		t.t, charlieTap, 1, itest.WithAssetID(assetID1),
+		itest.WithNumUtxos(1),
 	)
-	assertAssetExists(
-		t.t, charlieTap, assetID1, 1, nil, true, false, false,
-	)
-	assertAssetExists(
-		t.t, charlieTap, assetID2, charlieFundingAmount/2,
-		fundingScriptKey2, false, true, true,
-	)
-	assertAssetExists(
-		t.t, charlieTap, assetID2, 1, nil, true, false, false,
+	itest.AssertBalances(
+		t.t, charlieTap, 1, itest.WithAssetID(assetID2),
+		itest.WithNumUtxos(1),
 	)
 
-	// Erin should just have one output for each asset ID, the one in the
-	// channel.
-	assertNumAssetOutputs(t.t, erinTap, assetID1, 1)
-	assertNumAssetOutputs(t.t, erinTap, assetID2, 1)
-	assertAssetExists(
-		t.t, erinTap, assetID1, erinFundingAmount/2, fundingScriptKey1,
-		false, true, true,
-	)
-	assertAssetExists(
-		t.t, erinTap, assetID2, erinFundingAmount/2, fundingScriptKey2,
-		false, true, true,
-	)
+	// Erin only has the funding output for the channel with Fabia.
+	itest.AssertBalances(t.t, erinTap, 0, itest.WithAssetID(assetID1))
+	itest.AssertBalances(t.t, erinTap, 0, itest.WithAssetID(assetID1))
 
 	// Assert that the proofs for both channels has been uploaded to the
 	// designated Universe server.
 	assertUniverseProofExists(
-		t.t, universeTap, assetID1, groupKey, fundingScriptTreeBytes1,
+		t.t, universeTap, assetID1, groupKey, fundingScriptKeyBytes1,
 		fmt.Sprintf("%v:%v", fundRespCD.Txid, fundRespCD.OutputIndex),
 	)
 	assertUniverseProofExists(
-		t.t, universeTap, assetID2, groupKey, fundingScriptTreeBytes2,
+		t.t, universeTap, assetID2, groupKey, fundingScriptKeyBytes2,
 		fmt.Sprintf("%v:%v", fundRespCD.Txid, fundRespCD.OutputIndex),
 	)
 	assertUniverseProofExists(
-		t.t, universeTap, assetID1, groupKey, fundingScriptTreeBytes1,
+		t.t, universeTap, assetID1, groupKey, fundingScriptKeyBytes1,
 		fmt.Sprintf("%v:%v", fundRespEF.Txid, fundRespEF.OutputIndex),
 	)
 	assertUniverseProofExists(
-		t.t, universeTap, assetID2, groupKey, fundingScriptTreeBytes2,
+		t.t, universeTap, assetID2, groupKey, fundingScriptKeyBytes2,
 		fmt.Sprintf("%v:%v", fundRespEF.Txid, fundRespEF.OutputIndex),
 	)
 
@@ -567,34 +566,6 @@ func sendAssetsAndAssert(ctx context.Context, t *harnessTest,
 		idx, idx+1,
 	)
 	itest.AssertNonInteractiveRecvComplete(t.t, recipient, numTransfers)
-}
-
-func assertNumAssetUTXOs(t *testing.T, tapdClient *tapClient,
-	numUTXOs int) *taprpc.ListUtxosResponse {
-
-	ctxb := context.Background()
-
-	var clientUTXOs *taprpc.ListUtxosResponse
-	err := wait.NoError(func() error {
-		var err error
-		clientUTXOs, err = tapdClient.ListUtxos(
-			ctxb, &taprpc.ListUtxosRequest{},
-		)
-		if err != nil {
-			return err
-		}
-
-		if len(clientUTXOs.ManagedUtxos) != numUTXOs {
-			return fmt.Errorf("expected %v UTXO, got %d", numUTXOs,
-				len(clientUTXOs.ManagedUtxos))
-		}
-
-		return nil
-	}, defaultTimeout)
-	require.NoErrorf(t, err, "failed to assert UTXOs: %v, last state: %v",
-		err, clientUTXOs)
-
-	return clientUTXOs
 }
 
 func locateAssetTransfers(t *testing.T, tapdClient *tapClient,
@@ -1944,12 +1915,10 @@ func defaultCoOpCloseBalanceCheck(t *testing.T, local, remote *HarnessNode,
 		)
 
 		localTapd := newTapClient(t, local)
-
-		scriptKey, err := btcec.ParsePubKey(scriptKeyBytes)
-		require.NoError(t, err)
-		assertAssetExists(
-			t, localTapd, assetID, a.Amount, scriptKey, true,
-			true, false,
+		itest.AssertBalances(
+			t, localTapd, a.Amount, itest.WithAssetID(assetID),
+			itest.WithScriptKeyType(asset.ScriptKeyBip86),
+			itest.WithScriptKey(scriptKeyBytes),
 		)
 	}
 
@@ -1985,12 +1954,10 @@ func defaultCoOpCloseBalanceCheck(t *testing.T, local, remote *HarnessNode,
 		)
 
 		remoteTapd := newTapClient(t, remote)
-
-		scriptKey, err := btcec.ParsePubKey(scriptKeyBytes)
-		require.NoError(t, err)
-		assertAssetExists(
-			t, remoteTapd, assetID, a.Amount, scriptKey, true,
-			true, false,
+		itest.AssertBalances(
+			t, remoteTapd, a.Amount, itest.WithAssetID(assetID),
+			itest.WithScriptKeyType(asset.ScriptKeyBip86),
+			itest.WithScriptKey(scriptKeyBytes),
 		)
 	}
 }
@@ -2062,12 +2029,10 @@ func initiatorZeroAssetBalanceCoOpBalanceCheck(t *testing.T, _,
 		)
 
 		remoteTapd := newTapClient(t, remote)
-
-		scriptKey, err := btcec.ParsePubKey(scriptKeyBytes)
-		require.NoError(t, err)
-		assertAssetExists(
-			t, remoteTapd, assetID, a.Amount, scriptKey, true,
-			true, false,
+		itest.AssertBalances(
+			t, remoteTapd, a.Amount, itest.WithAssetID(assetID),
+			itest.WithScriptKeyType(asset.ScriptKeyBip86),
+			itest.WithScriptKey(scriptKeyBytes),
 		)
 	}
 }
@@ -2182,72 +2147,6 @@ func connectRPCWithMac(ctx context.Context, hostPort, tlsCertPath,
 	return grpc.DialContext(ctx, hostPort, opts...)
 }
 
-func assertAssetBalance(t *testing.T, client *tapClient, assetID []byte,
-	expectedBalance uint64) {
-
-	t.Helper()
-
-	ctxb := context.Background()
-	ctxt, cancel := context.WithTimeout(ctxb, shortTimeout)
-	defer cancel()
-
-	req := &taprpc.ListBalancesRequest{
-		GroupBy: &taprpc.ListBalancesRequest_AssetId{
-			AssetId: true,
-		},
-	}
-
-	var lastBalances *taprpc.ListBalancesResponse
-	err := wait.NoError(func() error {
-		assetIDBalances, err := client.ListBalances(ctxt, req)
-		if err != nil {
-			return err
-		}
-
-		lastBalances = assetIDBalances
-
-		assetIDFound := false
-		for _, balance := range assetIDBalances.AssetBalances {
-			if !bytes.Equal(balance.AssetGenesis.AssetId, assetID) {
-				continue
-			}
-
-			assetIDFound = true
-			if expectedBalance != balance.Balance {
-				return fmt.Errorf("expected balance %d, got %d",
-					expectedBalance, balance.Balance)
-			}
-		}
-
-		if expectedBalance > 0 && !assetIDFound {
-			return fmt.Errorf("expected balance %d, got 0",
-				expectedBalance)
-		}
-		return nil
-	}, shortTimeout)
-	if err != nil {
-		listAssetsResp, err2 := client.ListAssets(
-			ctxb, &taprpc.ListAssetRequest{},
-		)
-		require.NoError(t, err2)
-
-		t.Logf("Failed to assert expected balance of %d for asset ID "+
-			"%x: %v", expectedBalance, assetID, err)
-
-		t.Logf("Last balances: %v", toProtoJSON(t, lastBalances))
-		t.Logf("Current assets: %v", toProtoJSON(t, listAssetsResp))
-
-		utxos, err3 := client.ListUtxos(
-			ctxb, &taprpc.ListUtxosRequest{},
-		)
-		require.NoError(t, err3)
-
-		t.Logf("Current UTXOs: %v", toProtoJSON(t, utxos))
-
-		t.Fatalf("Failed to assert balance: %v", err)
-	}
-}
-
 func spendableBalance(client *tapClient, assetID,
 	groupKey []byte) (uint64, error) {
 
@@ -2327,104 +2226,6 @@ func assertSpendableBalance(t *testing.T, client *tapClient, assetID,
 
 		t.Fatalf("Failed to assert balance: %v", err)
 	}
-}
-
-func assertNumAssetOutputs(t *testing.T, client *tapClient, assetID []byte,
-	numPieces int) {
-
-	ctxb := context.Background()
-	ctxt, cancel := context.WithTimeout(ctxb, shortTimeout)
-	defer cancel()
-
-	resp, err := client.ListAssets(ctxt, &taprpc.ListAssetRequest{
-		IncludeLeased: true,
-	})
-	require.NoError(t, err)
-
-	var outputs []*taprpc.Asset
-	for _, a := range resp.Assets {
-		if !bytes.Equal(a.AssetGenesis.AssetId, assetID) {
-			continue
-		}
-
-		outputs = append(outputs, a)
-	}
-
-	require.Len(t, outputs, numPieces)
-}
-
-func assertAssetExists(t *testing.T, client *tapClient, assetID []byte,
-	amount uint64, scriptKey *btcec.PublicKey, scriptKeyLocal,
-	scriptKeyKnown, scriptKeyHasScript bool) *taprpc.Asset {
-
-	t.Helper()
-
-	var a *taprpc.Asset
-	err := wait.NoError(func() error {
-		var err error
-		a, err = assetExists(
-			t, client, assetID, amount, scriptKey, scriptKeyLocal,
-			scriptKeyKnown, scriptKeyHasScript,
-		)
-		return err
-	}, shortTimeout)
-	require.NoError(t, err)
-
-	return a
-}
-
-func assetExists(t *testing.T, client *tapClient, assetID []byte,
-	amount uint64, scriptKey *btcec.PublicKey, scriptKeyLocal,
-	scriptKeyKnown, scriptKeyHasScript bool) (*taprpc.Asset, error) {
-
-	ctxb := context.Background()
-	ctxt, cancel := context.WithTimeout(ctxb, shortTimeout)
-	defer cancel()
-
-	resp, err := client.ListAssets(ctxt, &taprpc.ListAssetRequest{
-		IncludeLeased: true,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	for _, a := range resp.Assets {
-		if !bytes.Equal(a.AssetGenesis.AssetId, assetID) {
-			continue
-		}
-
-		if amount != a.Amount {
-			continue
-		}
-
-		if scriptKey != nil {
-			xOnlyKey, _ := schnorr.ParsePubKey(
-				schnorr.SerializePubKey(scriptKey),
-			)
-			xOnlyKeyBytes := xOnlyKey.SerializeCompressed()
-			if !bytes.Equal(xOnlyKeyBytes, a.ScriptKey) {
-				continue
-			}
-		}
-
-		if scriptKeyLocal != a.ScriptKeyIsLocal {
-			continue
-		}
-
-		if scriptKeyKnown != a.ScriptKeyDeclaredKnown {
-			continue
-		}
-
-		if scriptKeyHasScript != a.ScriptKeyHasScriptPath {
-			continue
-		}
-
-		// Success, we have found the asset we're looking for.
-		return a, nil
-	}
-
-	return nil, fmt.Errorf("asset with given criteria (amount=%d) not "+
-		"found in list, got: %v", amount, toProtoJSON(t, resp))
 }
 
 func logBalance(t *testing.T, nodes []*HarnessNode, assetID []byte,
