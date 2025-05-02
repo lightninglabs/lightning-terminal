@@ -1,8 +1,8 @@
 package itest
 
 import (
-	"bytes"
 	"context"
+	"crypto/rand"
 	"fmt"
 	"math"
 	"math/big"
@@ -28,9 +28,11 @@ import (
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/invoicesrpc"
+	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
 	"github.com/lightningnetwork/lnd/lntest"
 	"github.com/lightningnetwork/lnd/lntest/node"
 	"github.com/lightningnetwork/lnd/lntest/port"
+	"github.com/lightningnetwork/lnd/lntypes"
 	"github.com/lightningnetwork/lnd/lnwallet/chainfee"
 	"github.com/lightningnetwork/lnd/lnwire"
 	"github.com/stretchr/testify/require"
@@ -632,8 +634,8 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	// to rounding errors that happened when sending multiple shards with
 	// MPP, we need to do some slight adjustments.
 	charlieAssetBalance += 1
-	erinAssetBalance += 4
-	fabiaAssetBalance -= 4
+	erinAssetBalance += 3
+	fabiaAssetBalance -= 3
 	yaraAssetBalance -= 1
 	itest.AssertBalances(
 		t.t, charlieTap, charlieAssetBalance,
@@ -1074,8 +1076,8 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 	// MPP, we need to do some slight adjustments.
 	charlieAssetBalance += 2
 	daveAssetBalance -= 1
-	erinAssetBalance += 4
-	fabiaAssetBalance -= 4
+	erinAssetBalance += 3
+	fabiaAssetBalance -= 3
 	yaraAssetBalance -= 1
 	itest.AssertBalances(
 		t.t, charlieTap, charlieAssetBalance,
@@ -2239,12 +2241,12 @@ func testCustomChannelsBreach(ctx context.Context, net *NetworkHarness,
 	t.Logf("Charlie balance after breach: %d", charlieBalance)
 }
 
-// testCustomChannelsLiquidtyEdgeCasesCore is the core logic of the liquidity
+// testCustomChannelsLiquidityEdgeCasesCore is the core logic of the liquidity
 // edge cases. This test goes through certain scenarios that expose edge cases
 // and behaviors that proved to be buggy in the past and have been directly
 // addressed. It accepts an extra parameter which dictates whether it should use
 // group keys or asset IDs.
-func testCustomChannelsLiquidtyEdgeCasesCore(ctx context.Context,
+func testCustomChannelsLiquidityEdgeCasesCore(ctx context.Context,
 	net *NetworkHarness, t *harnessTest, groupMode bool) {
 
 	lndArgs := slices.Clone(lndArgsTemplate)
@@ -2719,29 +2721,128 @@ func testCustomChannelsLiquidtyEdgeCasesCore(ctx context.Context,
 
 	// We now manually add the invoice in order to inject the above,
 	// manually generated, quote.
-	iResp, err := charlie.AddInvoice(ctx, &lnrpc.Invoice{
-		Memo:       "",
-		Value:      200_000,
-		RPreimage:  bytes.Repeat([]byte{11}, 32),
-		CltvExpiry: 60,
-		RouteHints: []*lnrpc.RouteHint{{
-			HopHints: []*lnrpc.HopHint{{
-				NodeId: dave.PubKeyStr,
-				ChanId: quote.AcceptedQuote.Scid,
+	hint := &lnrpc.HopHint{
+		NodeId:                    dave.PubKeyStr,
+		ChanId:                    quote.AcceptedQuote.Scid,
+		CltvExpiryDelta:           80,
+		FeeBaseMsat:               1000,
+		FeeProportionalMillionths: 1,
+	}
+	var preimage lntypes.Preimage
+	_, _ = rand.Read(preimage[:])
+	payHash = preimage.Hash()
+	iResp, err := charlie.AddHoldInvoice(
+		ctx, &invoicesrpc.AddHoldInvoiceRequest{
+			Memo:  "",
+			Value: 200_000,
+			Hash:  payHash[:],
+			RouteHints: []*lnrpc.RouteHint{{
+				HopHints: []*lnrpc.HopHint{hint},
 			}},
-		}},
-	})
+		},
+	)
+	require.NoError(t.t, err)
+
+	htlcStream, err := dave.RouterClient.SubscribeHtlcEvents(
+		ctx, &routerrpc.SubscribeHtlcEventsRequest{},
+	)
 	require.NoError(t.t, err)
 
 	// Now Erin tries to pay the invoice. Since rfq quote cannot satisfy the
 	// total amount of the invoice this payment will fail.
-	payInvoiceWithSatoshi(
-		t.t, erin, iResp, withPayErrSubStr("context deadline exceeded"),
-		withFailure(lnrpc.Payment_FAILED, failureNone),
-		withGroupKey(groupID),
+	payPayReqWithSatoshi(
+		t.t, erin, iResp.PaymentRequest,
+		withFailure(lnrpc.Payment_IN_FLIGHT, failureNone),
+		withGroupKey(groupID), withMaxShards(4),
 	)
 
+	t.Logf("Asserting number of HTLCs on each node...")
+	assertMinNumHtlcs(t.t, dave, 2)
+
+	t.Logf("Asserting HTLC events on Dave...")
+	assertHtlcEvents(
+		t.t, htlcStream, withNumEvents(1), withForwardFailure(),
+	)
+
+	_, err = charlie.InvoicesClient.CancelInvoice(
+		ctx, &invoicesrpc.CancelInvoiceMsg{
+			PaymentHash: payHash[:],
+		},
+	)
+	require.NoError(t.t, err)
+
+	assertNumHtlcs(t.t, dave, 0)
+
 	logBalance(t.t, nodes, assetID, "after small manual rfq")
+
+	_ = htlcStream.CloseSend()
+	_, _ = erin.RouterClient.ResetMissionControl(
+		context.Background(), &routerrpc.ResetMissionControlRequest{},
+	)
+
+	// Edge case: Fabia creates an invoice which Erin cannot satisfy with
+	// his side of asset liquidity. This tests that Erin will not try to
+	// add an HTLC with more asset units than what his local balance is. To
+	// validate that the channel is still healthy, we follow up with a
+	// smaller invoice payment which is meant to succeed.
+
+	// We now create a hodl invoice on Fabia, for 125k assets.
+	hodlInv = createAssetHodlInvoice(t.t, erin, fabia, 125_000, assetID)
+
+	htlcStream, err = erin.RouterClient.SubscribeHtlcEvents(
+		ctx, &routerrpc.SubscribeHtlcEventsRequest{},
+	)
+	require.NoError(t.t, err)
+
+	// Charlie tries to pay, this is not meant to succeed, as Erin does not
+	// have enough assets to forward to Fabia.
+	payInvoiceWithAssets(
+		t.t, charlie, dave, hodlInv.payReq, assetID,
+		withFailure(lnrpc.Payment_IN_FLIGHT, failureNone),
+	)
+
+	// Let's check that at least 2 HTLCs were added on the Erin->Fabia link,
+	// which means that Erin would have an extra incoming HTLC for each
+	// outgoing one. So we expect a minimum of 4 HTLCs present on Erin.
+	assertMinNumHtlcs(t.t, erin, 4)
+
+	// We also want to make sure that at least one failure occurred that
+	// hinted at the problem (not enough assets to forward).
+	assertHtlcEvents(
+		t.t, htlcStream, withNumEvents(1),
+		withLinkFailure(routerrpc.FailureDetail_INSUFFICIENT_BALANCE),
+	)
+
+	logBalance(t.t, nodes, assetID, "with min 4 present HTLCs")
+
+	// Now Fabia cancels the invoice, this is meant to cancel back any
+	// locked in HTLCs and reset Erin's local balance back to its original
+	// value.
+	payHash = hodlInv.preimage.Hash()
+	_, err = fabia.InvoicesClient.CancelInvoice(
+		ctx, &invoicesrpc.CancelInvoiceMsg{
+			PaymentHash: payHash[:],
+		},
+	)
+	require.NoError(t.t, err)
+
+	// Let's assert that Erin cancelled all his HTLCs.
+	assertNumHtlcs(t.t, erin, 0)
+
+	logBalance(t.t, nodes, assetID, "after hodl cancel & 0 present HTLCs")
+
+	// Now let's create a smaller invoice and pay it, to validate that the
+	// channel is still healthy.
+	invoiceResp = createAssetInvoice(t.t, erin, fabia, 50_000, assetID)
+
+	_, _ = charlie.RouterClient.ResetMissionControl(
+		context.Background(), &routerrpc.ResetMissionControlRequest{},
+	)
+	payInvoiceWithAssets(
+		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID,
+	)
+
+	logBalance(t.t, nodes, assetID, "after safe asset htlc failure")
 }
 
 // testCustomChannelsLiquidityEdgeCases is a test that runs through some
@@ -2751,7 +2852,7 @@ func testCustomChannelsLiquidityEdgeCases(ctx context.Context,
 
 	// Run liquidity edge cases and only use single asset IDs for invoices
 	// and payments.
-	testCustomChannelsLiquidtyEdgeCasesCore(ctx, net, t, false)
+	testCustomChannelsLiquidityEdgeCasesCore(ctx, net, t, false)
 }
 
 // testCustomChannelsLiquidityEdgeCasesGroup is a test that runs through some
@@ -2761,7 +2862,7 @@ func testCustomChannelsLiquidityEdgeCasesGroup(ctx context.Context,
 
 	// Run liquidity edge cases and only use group keys for invoices and
 	// payments.
-	testCustomChannelsLiquidtyEdgeCasesCore(ctx, net, t, true)
+	testCustomChannelsLiquidityEdgeCasesCore(ctx, net, t, true)
 }
 
 // testCustomChannelsStrictForwarding is a test that tests the strict forwarding
@@ -4090,14 +4191,18 @@ func testCustomChannelsForwardBandwidth(ctx context.Context,
 
 	// We now manually add the invoice in order to inject the above,
 	// manually generated, quote.
+	hopHint := &lnrpc.HopHint{
+		NodeId:                    erin.PubKeyStr,
+		ChanId:                    quote.AcceptedQuote.Scid,
+		CltvExpiryDelta:           80,
+		FeeBaseMsat:               1000,
+		FeeProportionalMillionths: 1,
+	}
 	invoiceResp2, err := fabia.AddInvoice(ctx, &lnrpc.Invoice{
 		Memo:      "too small invoice",
 		ValueMsat: int64(oneUnitMilliSat - 1),
 		RouteHints: []*lnrpc.RouteHint{{
-			HopHints: []*lnrpc.HopHint{{
-				NodeId: erin.PubKeyStr,
-				ChanId: quote.AcceptedQuote.Scid,
-			}},
+			HopHints: []*lnrpc.HopHint{hopHint},
 		}},
 	})
 	require.NoError(t.t, err)
