@@ -1106,8 +1106,8 @@ github.com/lightninglabs/taproot-assets/taprpc v1.0.1 h1:aSlCWdJkagx9xa8DqK/pzHY
 github.com/lightninglabs/taproot-assets/taprpc v1.0.1/go.mod h1:Ccq0t2GsXzOtC8qF0U1ux/yTF5HcBbVrhCb0tb/jObM=
 github.com/lightningnetwork/lightning-onion v1.2.1-0.20240712235311-98bd56499dfb h1:yfM05S8DXKhuCBp5qSMZdtSwvJ+GFzl94KbXMNB1JDY=
 github.com/lightningnetwork/lightning-onion v1.2.1-0.20240712235311-98bd56499dfb/go.mod h1:c0kvRShutpj3l6B9WtTsNTBUtjSmjZXbJd9ZBRQOSKI=
-github.com/lightningnetwork/lnd v0.19.0-beta.rc2.0.20250423092132-a35ace7371af h1:+t8N7kmI7YVu7Hzv8pPiMVCTjnSRi/qOxbAkXa5rn+0=
-github.com/lightningnetwork/lnd v0.19.0-beta.rc2.0.20250423092132-a35ace7371af/go.mod h1:nCkZ6G6twxDKn31117M0BNfN5JSAmJVAHNTwYrn31BQ=
+github.com/lightningnetwork/lnd v0.19.0-beta.rc3 h1:XWMlyZvBrp69AnQqrshLOOPZjOl4hFWR1RD4ceCXt9k=
+github.com/lightningnetwork/lnd v0.19.0-beta.rc3/go.mod h1:bASjjAiZsoEtHFo0imi5m4z/8m9afdIpu+Wz7rUXink=
 github.com/lightningnetwork/lnd/clock v1.1.1 h1:OfR3/zcJd2RhH0RU+zX/77c0ZiOnIMsDIBjgjWdZgA0=
 github.com/lightningnetwork/lnd/clock v1.1.1/go.mod h1:mGnAhPyjYZQJmebS7aevElXKTFDuO+uNFFfMXK1W8xQ=
 github.com/lightningnetwork/lnd/fn/v2 v2.0.8 h1:r2SLz7gZYQPVc3IZhU82M66guz3Zk2oY+Rlj9QN5S3g=
