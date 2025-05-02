@@ -983,6 +983,14 @@ func assertChannelSatBalance(t *testing.T, node *HarnessNode,
 func assertChannelAssetBalance(t *testing.T, node *HarnessNode,
 	chanPoint *lnrpc.ChannelPoint, local, remote uint64) {
 
+	assertChannelAssetBalanceWithDelta(
+		t, node, chanPoint, local, remote, 1,
+	)
+}
+
+func assertChannelAssetBalanceWithDelta(t *testing.T, node *HarnessNode,
+	chanPoint *lnrpc.ChannelPoint, local, remote uint64, delta float64) {
+
 	targetChan := fetchChannel(t, node, chanPoint)
 
 	var assetBalance rfqmsg.JsonAssetChannel
@@ -991,8 +999,8 @@ func assertChannelAssetBalance(t *testing.T, node *HarnessNode,
 
 	require.Len(t, assetBalance.FundingAssets, 1)
 
-	require.InDelta(t, local, assetBalance.LocalBalance, 1)
-	require.InDelta(t, remote, assetBalance.RemoteBalance, 1)
+	require.InDelta(t, local, assetBalance.LocalBalance, delta)
+	require.InDelta(t, remote, assetBalance.RemoteBalance, delta)
 }
 
 // addRoutingFee adds the default routing fee (1 part per million fee rate plus
@@ -1152,10 +1160,12 @@ func payPayReqWithSatoshi(t *testing.T, payer *HarnessNode, payReq string,
 	defer cancel()
 
 	sendReq := &routerrpc.SendPaymentRequest{
-		PaymentRequest: payReq,
-		TimeoutSeconds: int32(PaymentTimeout.Seconds()),
-		FeeLimitMsat:   1_000_000,
-		MaxParts:       cfg.maxShards,
+		PaymentRequest:   payReq,
+		TimeoutSeconds:   int32(PaymentTimeout.Seconds()),
+		FeeLimitMsat:     1_000_000,
+		MaxParts:         cfg.maxShards,
+		OutgoingChanIds:  cfg.outgoingChanIDs,
+		AllowSelfPayment: cfg.allowSelfPayment,
 	}
 
 	if cfg.smallShards {
@@ -1243,6 +1253,8 @@ type payConfig struct {
 	failureReason     lnrpc.PaymentFailureReason
 	rfq               fn.Option[rfqmsg.ID]
 	groupKey          []byte
+	outgoingChanIDs   []uint64
+	allowSelfPayment  bool
 }
 
 func defaultPayConfig() *payConfig {
@@ -1311,6 +1323,18 @@ func withAllowOverpay() payOpt {
 func withGroupKey(groupKey []byte) payOpt {
 	return func(c *payConfig) {
 		c.groupKey = groupKey
+	}
+}
+
+func withOutgoingChanIDs(ids []uint64) payOpt {
+	return func(c *payConfig) {
+		c.outgoingChanIDs = ids
+	}
+}
+
+func withAllowSelfPayment() payOpt {
+	return func(c *payConfig) {
+		c.allowSelfPayment = true
 	}
 }
 
