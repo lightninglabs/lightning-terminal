@@ -416,12 +416,12 @@ func payNode(invoiceCtx, paymentCtx context.Context, t *harnessTest,
 	stream, err := from.SendPaymentV2(paymentCtx, sendReq)
 	require.NoError(t.t, err)
 
-	result, err := getPaymentResult(stream)
+	result, err := getFinalPaymentResult(stream)
 	require.NoError(t.t, err)
 	require.Equal(t.t, result.Status, lnrpc.Payment_SUCCEEDED)
 }
 
-func getPaymentResult(stream routerrpc.Router_SendPaymentV2Client) (
+func getFinalPaymentResult(stream routerrpc.Router_SendPaymentV2Client) (
 	*lnrpc.Payment, error) {
 
 	for {

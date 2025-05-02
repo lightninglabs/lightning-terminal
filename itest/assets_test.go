@@ -1033,6 +1033,7 @@ func sendAssetKeySendPayment(t *testing.T, src, dst *HarnessNode, amt uint64,
 		DestCustomRecords: customRecords,
 		PaymentHash:       hash[:],
 		TimeoutSeconds:    int32(PaymentTimeout.Seconds()),
+		MaxParts:          cfg.maxShards,
 	}
 
 	request := &tchrpc.SendPaymentRequest{
@@ -1090,7 +1091,7 @@ func sendKeySendPayment(t *testing.T, src, dst *HarnessNode,
 	stream, err := src.RouterClient.SendPaymentV2(ctxt, req)
 	require.NoError(t, err)
 
-	result, err := getPaymentResult(stream)
+	result, err := getFinalPaymentResult(stream)
 	require.NoError(t, err)
 	require.Equal(t, lnrpc.Payment_SUCCEEDED, result.Status)
 }
@@ -1135,6 +1136,12 @@ func createAndPayNormalInvoice(t *testing.T, src, rfqPeer, dst *HarnessNode,
 func payInvoiceWithSatoshi(t *testing.T, payer *HarnessNode,
 	invoice *lnrpc.AddInvoiceResponse, opts ...payOpt) {
 
+	payPayReqWithSatoshi(t, payer, invoice.PaymentRequest, opts...)
+}
+
+func payPayReqWithSatoshi(t *testing.T, payer *HarnessNode, payReq string,
+	opts ...payOpt) {
+
 	cfg := defaultPayConfig()
 	for _, opt := range opts {
 		opt(cfg)
@@ -1145,15 +1152,30 @@ func payInvoiceWithSatoshi(t *testing.T, payer *HarnessNode,
 	defer cancel()
 
 	sendReq := &routerrpc.SendPaymentRequest{
-		PaymentRequest:   invoice.PaymentRequest,
-		TimeoutSeconds:   int32(PaymentTimeout.Seconds()),
-		MaxShardSizeMsat: 80_000_000,
-		FeeLimitMsat:     1_000_000,
+		PaymentRequest: payReq,
+		TimeoutSeconds: int32(PaymentTimeout.Seconds()),
+		FeeLimitMsat:   1_000_000,
+		MaxParts:       cfg.maxShards,
 	}
+
+	if cfg.smallShards {
+		sendReq.MaxShardSizeMsat = 80_000_000
+	}
+
 	stream, err := payer.RouterClient.SendPaymentV2(ctxt, sendReq)
 	require.NoError(t, err)
 
-	result, err := getPaymentResult(stream)
+	if cfg.payStatus == lnrpc.Payment_IN_FLIGHT {
+		t.Logf("Waiting for initial stream response...")
+		result, err := stream.Recv()
+		require.NoError(t, err)
+
+		require.Equal(t, cfg.payStatus, result.Status)
+
+		return
+	}
+
+	result, err := getFinalPaymentResult(stream)
 	if cfg.errSubStr != "" {
 		require.ErrorContains(t, err, cfg.errSubStr)
 	} else {
@@ -1212,6 +1234,7 @@ func payInvoiceWithSatoshiLastHop(t *testing.T, payer *HarnessNode,
 
 type payConfig struct {
 	smallShards       bool
+	maxShards         uint32
 	errSubStr         string
 	allowOverpay      bool
 	feeLimit          lnwire.MilliSatoshi
@@ -1237,6 +1260,12 @@ type payOpt func(*payConfig)
 func withSmallShards() payOpt {
 	return func(c *payConfig) {
 		c.smallShards = true
+	}
+}
+
+func withMaxShards(maxShards uint32) payOpt {
+	return func(c *payConfig) {
+		c.maxShards = maxShards
 	}
 }
 
@@ -1310,6 +1339,7 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 		TimeoutSeconds:    int32(PaymentTimeout.Seconds()),
 		FeeLimitMsat:      int64(cfg.feeLimit),
 		DestCustomRecords: cfg.destCustomRecords,
+		MaxParts:          cfg.maxShards,
 	}
 
 	if cfg.smallShards {
@@ -1394,8 +1424,9 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 }
 
 type invoiceConfig struct {
-	errSubStr string
-	groupKey  []byte
+	errSubStr  string
+	groupKey   []byte
+	routeHints []*lnrpc.RouteHint
 }
 
 func defaultInvoiceConfig() *invoiceConfig {
@@ -2323,10 +2354,11 @@ func assertMinNumHtlcs(t *testing.T, node *HarnessNode, expected int) {
 type subscribeEventsClient = routerrpc.Router_SubscribeHtlcEventsClient
 
 type htlcEventConfig struct {
-	timeout           time.Duration
-	numEvents         int
-	withLinkFailure   bool
-	withFailureDetail routerrpc.FailureDetail
+	timeout            time.Duration
+	numEvents          int
+	withLinkFailure    bool
+	withForwardFailure bool
+	withFailureDetail  routerrpc.FailureDetail
 }
 
 func defaultHtlcEventConfig() *htlcEventConfig {
@@ -2353,6 +2385,12 @@ func withLinkFailure(detail routerrpc.FailureDetail) htlcEventOpt {
 	return func(config *htlcEventConfig) {
 		config.withLinkFailure = true
 		config.withFailureDetail = detail
+	}
+}
+
+func withForwardFailure() htlcEventOpt {
+	return func(config *htlcEventConfig) {
+		config.withForwardFailure = true
 	}
 }
 
@@ -2390,7 +2428,10 @@ func assertHtlcEvents(t *testing.T, c subscribeEventsClient,
 
 	var numEvents int
 	for {
-		type linkFailEvent = *routerrpc.HtlcEvent_LinkFailEvent
+		type (
+			linkFailEvent    = *routerrpc.HtlcEvent_LinkFailEvent
+			forwardFailEvent = *routerrpc.HtlcEvent_ForwardFailEvent
+		)
 
 		select {
 		case evt, ok := <-events:
@@ -2409,6 +2450,14 @@ func assertHtlcEvents(t *testing.T, c subscribeEventsClient,
 				if linkEvent.LinkFailEvent.FailureDetail !=
 					cfg.withFailureDetail {
 
+					continue
+				}
+			}
+
+			if cfg.withForwardFailure {
+				_, ok := evt.Event.(forwardFailEvent)
+				if !ok {
+					// We only count link failure events.
 					continue
 				}
 			}
