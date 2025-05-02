@@ -21,6 +21,7 @@ require (
 	github.com/lightninglabs/lightning-node-connect v0.3.3-alpha.0.20250306111457-cad4234830cc
 	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.2
 	github.com/lightninglabs/lightning-terminal/litrpc v1.0.1
+	github.com/lightninglabs/lightning-terminal/perms v1.0.0
 	github.com/lightninglabs/lndclient v0.19.0-4
 	github.com/lightninglabs/loop v0.31.0-beta.0.20250502080242-8ef7584f9f56
 	github.com/lightninglabs/loop/looprpc v1.0.7
@@ -230,6 +231,7 @@ require (
 replace (
 	github.com/lightninglabs/lightning-terminal/autopilotserverrpc => ./autopilotserverrpc
 	github.com/lightninglabs/lightning-terminal/litrpc => ./litrpc
+	github.com/lightninglabs/lightning-terminal/perms => ./perms
 )
 
 // We want to format raw bytes as hex instead of base64. The forked version
