@@ -12,8 +12,8 @@ import (
 	"github.com/lightninglabs/taproot-assets/asset"
 	"github.com/lightninglabs/taproot-assets/rfq"
 	"github.com/lightninglabs/taproot-assets/rfqmath"
+	"github.com/lightninglabs/taproot-assets/rpcutils"
 	"github.com/lightninglabs/taproot-assets/taprpc"
-	"github.com/lightninglabs/taproot-assets/taprpc/rfqrpc"
 	tchrpc "github.com/lightninglabs/taproot-assets/taprpc/tapchannelrpc"
 	"github.com/lightningnetwork/lnd/cmd/commands"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -218,7 +218,7 @@ func (w *resultStreamWrapper) Recv() (*lnrpc.Payment, error) {
 	case *tchrpc.SendPaymentResponse_AcceptedSellOrder:
 		quote := r.AcceptedSellOrder
 		rpcRate := quote.BidAssetRate
-		rate, err := rfqrpc.UnmarshalFixedPoint(rpcRate)
+		rate, err := rpcutils.UnmarshalRfqFixedPoint(rpcRate)
 		if err != nil {
 			return nil, fmt.Errorf("unable to unmarshal fixed "+
 				"point: %w", err)

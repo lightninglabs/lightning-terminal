@@ -7,7 +7,6 @@ import (
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightninglabs/loop"
 	"github.com/lightninglabs/loop/loopd"
-	"github.com/lightninglabs/loop/loopd/perms"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/lightninglabs/taproot-assets/fn"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -127,7 +126,7 @@ func (l *loopSubServer) MacPath() string {
 //
 // NOTE: this is part of the SubServer interface.
 func (l *loopSubServer) Permissions() map[string][]bakery.Op {
-	return perms.RequiredPermissions
+	return looprpc.RequiredPermissions
 }
 
 // WhiteListedURLs returns a map of all the sub-server's URLs that can be

@@ -23,6 +23,7 @@ import (
 	"github.com/lightninglabs/taproot-assets/rfq"
 	"github.com/lightninglabs/taproot-assets/rfqmath"
 	"github.com/lightninglabs/taproot-assets/rfqmsg"
+	"github.com/lightninglabs/taproot-assets/rpcutils"
 	"github.com/lightninglabs/taproot-assets/tapfreighter"
 	"github.com/lightninglabs/taproot-assets/taprpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/assetwalletrpc"
@@ -1396,7 +1397,7 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 		require.Equal(t, peerPubKey, rfqPeer.PubKeyStr)
 
 		rpcRate := acceptedQuote.BidAssetRate
-		rate, err := rfqrpc.UnmarshalFixedPoint(rpcRate)
+		rate, err := rpcutils.UnmarshalRfqFixedPoint(rpcRate)
 		require.NoError(t, err)
 
 		rateVal = *rate
@@ -1504,7 +1505,7 @@ func createAssetInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 	require.NoError(t, err)
 
 	rpcRate := resp.AcceptedBuyQuote.AskAssetRate
-	rate, err := rfqrpc.UnmarshalFixedPoint(rpcRate)
+	rate, err := rpcutils.UnmarshalRfqFixedPoint(rpcRate)
 	require.NoError(t, err)
 
 	t.Logf("Got quote for %v asset units per BTC", rate)
@@ -1694,7 +1695,7 @@ func createAssetHodlInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 	require.NoError(t, err)
 
 	rpcRate := resp.AcceptedBuyQuote.AskAssetRate
-	rate, err := rfqrpc.UnmarshalFixedPoint(rpcRate)
+	rate, err := rpcutils.UnmarshalRfqFixedPoint(rpcRate)
 	require.NoError(t, err)
 
 	assetUnits := rfqmath.NewBigIntFixedPoint(assetAmount, 0)

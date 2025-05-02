@@ -18,6 +18,7 @@ import (
 	"github.com/lightninglabs/taproot-assets/proof"
 	"github.com/lightninglabs/taproot-assets/rfqmath"
 	"github.com/lightninglabs/taproot-assets/rfqmsg"
+	"github.com/lightninglabs/taproot-assets/rpcutils"
 	"github.com/lightninglabs/taproot-assets/taprpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/mintrpc"
 	oraclerpc "github.com/lightninglabs/taproot-assets/taprpc/priceoraclerpc"
@@ -4173,7 +4174,7 @@ func testCustomChannelsForwardBandwidth(ctx context.Context,
 
 	// We calculate the milli-satoshi amount one below the equivalent of a
 	// single asset unit.
-	rate, err := oraclerpc.UnmarshalFixedPoint(&oraclerpc.FixedPoint{
+	rate, err := rpcutils.UnmarshalFixedPoint(&oraclerpc.FixedPoint{
 		Coefficient: quote.AcceptedQuote.AskAssetRate.Coefficient,
 		Scale:       quote.AcceptedQuote.AskAssetRate.Scale,
 	})
