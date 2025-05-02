@@ -10,7 +10,6 @@ import (
 	tap "github.com/lightninglabs/taproot-assets"
 	"github.com/lightninglabs/taproot-assets/address"
 	"github.com/lightninglabs/taproot-assets/fn"
-	"github.com/lightninglabs/taproot-assets/perms"
 	"github.com/lightninglabs/taproot-assets/tapcfg"
 	"github.com/lightninglabs/taproot-assets/taprpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/assetwalletrpc"
@@ -224,7 +223,7 @@ func (t *taprootAssetsSubServer) MacPath() string {
 //
 // NOTE: this is part of the SubServer interface.
 func (t *taprootAssetsSubServer) Permissions() map[string][]bakery.Op {
-	return perms.RequiredPermissions
+	return taprpc.RequiredPermissions
 }
 
 // WhiteListedURLs returns a map of all the sub-server's URLs that can be
@@ -248,7 +247,7 @@ func (t *taprootAssetsSubServer) WhiteListedURLs() map[string]struct{} {
 		string(tap.UniversePublicAccessStatusWrite),
 	)
 
-	return perms.MacaroonWhitelist(
+	return taprpc.MacaroonWhitelist(
 		publicUniRead || t.remote, publicUniWrite || t.remote,
 		t.cfg.RpcConf.AllowPublicUniProofCourier || t.remote,
 		t.cfg.RpcConf.AllowPublicStats || t.remote,

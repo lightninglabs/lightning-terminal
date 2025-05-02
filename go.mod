@@ -22,13 +22,14 @@ require (
 	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.2
 	github.com/lightninglabs/lightning-terminal/litrpc v1.0.1
 	github.com/lightninglabs/lndclient v0.19.0-4
-	github.com/lightninglabs/loop v0.31.0-beta.0.20250425065236-7e81916829d9
-	github.com/lightninglabs/loop/looprpc v1.0.6
-	github.com/lightninglabs/loop/swapserverrpc v1.0.13
+	github.com/lightninglabs/loop v0.31.0-beta.0.20250502080242-8ef7584f9f56
+	github.com/lightninglabs/loop/looprpc v1.0.7
+	github.com/lightninglabs/loop/swapserverrpc v1.0.14
 	github.com/lightninglabs/pool v0.6.5-beta.0.20250305125211-4e860ec4e77f
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.3-0.20250305125211-4e860ec4e77f
 	github.com/lightninglabs/pool/poolrpc v1.0.1-0.20250305125211-4e860ec4e77f
-	github.com/lightninglabs/taproot-assets v0.5.2-0.20250501125658-7b383050ae89
+	github.com/lightninglabs/taproot-assets v0.5.2-0.20250502070549-52257227c8f8
+	github.com/lightninglabs/taproot-assets/taprpc v1.0.1
 	github.com/lightningnetwork/lnd v0.19.0-beta.rc3
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/clock v1.1.1
@@ -49,7 +50,7 @@ require (
 	golang.org/x/sync v0.12.0
 	google.golang.org/grpc v1.65.0
 	google.golang.org/protobuf v1.34.2
-	gopkg.in/macaroon-bakery.v2 v2.1.0
+	gopkg.in/macaroon-bakery.v2 v2.3.0
 	gopkg.in/macaroon.v2 v2.1.0
 	modernc.org/sqlite v1.34.5
 )
@@ -97,6 +98,7 @@ require (
 	github.com/fortytw2/leaktest v1.3.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/go-macaroon-bakery/macaroonpb v1.0.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/goccy/go-yaml v1.15.23 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
@@ -130,7 +132,6 @@ require (
 	github.com/jonboulle/clockwork v0.2.2 // indirect
 	github.com/jrick/logrotate v1.1.2 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/juju/loggo v1.0.0 // indirect
 	github.com/kkdai/bstream v1.0.0 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
