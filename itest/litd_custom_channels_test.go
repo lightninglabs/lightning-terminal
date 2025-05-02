@@ -1308,10 +1308,7 @@ func testCustomChannelsGroupTranchesForceClose(ctx context.Context,
 	closeAssetChannelAndAssert(
 		t, net, charlie, dave, chanPointCD,
 		[][]byte{assetID1, assetID2}, groupKey, universeTap,
-		// TODO(guggero): replace this with
-		// assertDefaultCoOpCloseBalance(true, true) once we have the
-		// ability to check the custom data in the closed channel list.
-		noOpCoOpCloseBalanceCheck,
+		assertDefaultCoOpCloseBalance(true, true),
 	)
 
 	assertSpendableBalance(
