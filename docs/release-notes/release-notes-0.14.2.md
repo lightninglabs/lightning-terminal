@@ -27,6 +27,10 @@
   state](https://github.com/lightninglabs/lightning-terminal/pull/985) instead
   of the Revoked state if it is in fact being revoked due to the session expiry
   being reached.
+* Merge package `litclient` into `litrpc` to [reduce the number of Lightning
+  Node Connect import dependencies.](https://github.com/lightninglabs/lightning-terminal/pull/1057)
+* Convert package `perms` into a module to [reduce the number of Lightning
+  Node Connect import dependencies.](https://github.com/lightninglabs/lightning-terminal/pull/1057)
 
 ## RPC Updates
 
