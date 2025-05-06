@@ -1,10 +1,9 @@
-package litclient
+package litrpc
 
 import (
 	"context"
 
 	"github.com/lightninglabs/faraday/frdrpc"
-	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/lightninglabs/pool/poolrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc"
@@ -49,12 +48,12 @@ var Registrations = []StubPackageRegistration{
 	looprpc.RegisterSwapClientJSONCallbacks,
 	poolrpc.RegisterTraderJSONCallbacks,
 	frdrpc.RegisterFaradayServerJSONCallbacks,
-	litrpc.RegisterSessionsJSONCallbacks,
-	litrpc.RegisterAccountsJSONCallbacks,
-	litrpc.RegisterAutopilotJSONCallbacks,
-	litrpc.RegisterFirewallJSONCallbacks,
-	litrpc.RegisterStatusJSONCallbacks,
-	litrpc.RegisterProxyJSONCallbacks,
+	RegisterSessionsJSONCallbacks,
+	RegisterAccountsJSONCallbacks,
+	RegisterAutopilotJSONCallbacks,
+	RegisterFirewallJSONCallbacks,
+	RegisterStatusJSONCallbacks,
+	RegisterProxyJSONCallbacks,
 	taprpc.RegisterTaprootAssetsJSONCallbacks,
 	assetwalletrpc.RegisterAssetWalletJSONCallbacks,
 	universerpc.RegisterUniverseJSONCallbacks,
