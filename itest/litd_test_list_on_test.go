@@ -5,23 +5,23 @@ package itest
 
 var allTestCases = []*testCase{
 	{
-		name: "integrated mode",
+		name: "terminal integrated mode",
 		test: testModeIntegrated,
 	},
 	{
-		name: "remote mode",
+		name: "terminal remote mode",
 		test: testModeRemote,
 	},
 	{
-		name: "stateless init mode",
+		name: "terminal stateless init mode",
 		test: testStatelessInitMode,
 	},
 	{
-		name: "firewall rules",
+		name: "terminal firewall rules",
 		test: testFirewallRules,
 	},
 	{
-		name: "large http header",
+		name: "terminal large http header",
 		test: testLargeHttpHeader,
 	},
 	{
