@@ -506,8 +506,8 @@ github.com/lightninglabs/pool/poolrpc v1.0.1-0.20250305125211-4e860ec4e77f h1:5p
 github.com/lightninglabs/pool/poolrpc v1.0.1-0.20250305125211-4e860ec4e77f/go.mod h1:lGs2hSVZ+GFpdv3btaIl9icG5/gz7BBRfvmD2iqqNl0=
 github.com/lightninglabs/protobuf-go-hex-display v1.34.2-hex-display h1:w7FM5LH9Z6CpKxl13mS48idsu6F+cEZf0lkyiV+Dq9g=
 github.com/lightninglabs/protobuf-go-hex-display v1.34.2-hex-display/go.mod h1:qYOHts0dSfpeUzUFpOMr/WGzszTmLH+DiWniOlNbLDw=
-github.com/lightninglabs/taproot-assets v0.5.2-0.20250502070549-52257227c8f8 h1:kYAHGZTfIXgH9wQHml5B916GlS0pe6tcNsroqzabSxI=
-github.com/lightninglabs/taproot-assets v0.5.2-0.20250502070549-52257227c8f8/go.mod h1:OdeFcj2bnJf6aaYjBB5c8KdNI3aDaEMQpsSu2EqvMlw=
+github.com/lightninglabs/taproot-assets v0.5.2-0.20250506181734-e63f1a4f4597 h1:2gdwdH9HAPWnHk/1gnU7g1imofiw56KAEuLVBmMeoyQ=
+github.com/lightninglabs/taproot-assets v0.5.2-0.20250506181734-e63f1a4f4597/go.mod h1:OdeFcj2bnJf6aaYjBB5c8KdNI3aDaEMQpsSu2EqvMlw=
 github.com/lightninglabs/taproot-assets/taprpc v1.0.1 h1:aSlCWdJkagx9xa8DqK/pzHYCtY7PokU6wASse3dWayc=
 github.com/lightninglabs/taproot-assets/taprpc v1.0.1/go.mod h1:Ccq0t2GsXzOtC8qF0U1ux/yTF5HcBbVrhCb0tb/jObM=
 github.com/lightningnetwork/lightning-onion v1.2.1-0.20240712235311-98bd56499dfb h1:yfM05S8DXKhuCBp5qSMZdtSwvJ+GFzl94KbXMNB1JDY=
