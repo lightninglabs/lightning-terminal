@@ -16,7 +16,7 @@ type Config interface {
 
 	// GetActionsDB can be used by rules to list any past actions that were
 	// made for the specific session or feature.
-	GetActionsDB() firewalldb.ActionsDB
+	GetActionsDB() firewalldb.ActionsListDB
 
 	// GetMethodPerms returns a map that contains URIs and the permissions
 	// required to use them.
@@ -48,7 +48,7 @@ type ConfigImpl struct {
 
 	// ActionsDB can be used by rules to list any past actions that were
 	// made for the specific session or feature.
-	ActionsDB firewalldb.ActionsDB
+	ActionsDB firewalldb.ActionsListDB
 
 	// MethodPerms is a function that can be used to fetch the permissions
 	// required for a URI.
@@ -76,7 +76,7 @@ func (c *ConfigImpl) GetStores() firewalldb.KVStores {
 }
 
 // GetActionsDB returns the list of past actions.
-func (c *ConfigImpl) GetActionsDB() firewalldb.ActionsDB {
+func (c *ConfigImpl) GetActionsDB() firewalldb.ActionsListDB {
 	return c.ActionsDB
 }
 
