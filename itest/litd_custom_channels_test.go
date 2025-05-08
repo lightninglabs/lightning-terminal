@@ -2679,10 +2679,13 @@ func testCustomChannelsLiquidityEdgeCasesCore(ctx context.Context,
 	assertNumHtlcs(t.t, erin, 0)
 	assertNumHtlcs(t.t, fabia, 0)
 
-	// Now Fabia creates the normal invoice.
+	// Now Fabia creates another invoice. We also use a fixed msat value for
+	// the invoice. Since our itest oracle evaluates every asset to about
+	// 17.1 sats, this invoice should be a bit below 10k assets, so roughly
+	// the same volume as the previous invoice we just cancelled.
 	invoiceResp = createAssetInvoice(
-		t.t, erin, fabia, 10_000, assetID,
-		withInvGroupKey(groupID),
+		t.t, erin, fabia, 0, assetID, withInvGroupKey(groupID),
+		withMsatAmount(170_000_000),
 	)
 
 	// Now Charlie pays the invoice, again by using the manually specified
