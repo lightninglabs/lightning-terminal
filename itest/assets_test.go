@@ -1844,6 +1844,10 @@ func defaultCoOpCloseBalanceCheck(t *testing.T, local, remote *HarnessNode,
 	assetIDs [][]byte, groupKey []byte, universeTap *tapClient,
 	remoteBtcBalance, remoteAssetBalance bool) {
 
+	ctxb := context.Background()
+	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
+	defer cancel()
+
 	// With the channel closed, we'll now assert that the co-op close
 	// transaction was inserted into the local universe.
 	//
@@ -1941,10 +1945,34 @@ func defaultCoOpCloseBalanceCheck(t *testing.T, local, remote *HarnessNode,
 		closeTx.TxOut[localAssetIndex].PkScript,
 	)
 
+	// Because we don't exactly know what asset IDs made it into the close
+	// transaction, we need to fetch the closed channel to find that out.
+	closedChans, err := local.ClosedChannels(
+		ctxt, &lnrpc.ClosedChannelsRequest{
+			Cooperative: true,
+		},
+	)
+	require.NoError(t, err)
+	require.NotEmpty(t, closedChans.Channels)
+
+	var closedJsonChannel *rfqmsg.JsonAssetChannel
+	for _, closedChan := range closedChans.Channels {
+		if closedChan.ClosingTxHash == closeTx.TxHash().String() {
+			closedJsonChannel = &rfqmsg.JsonAssetChannel{}
+			err = json.Unmarshal(
+				closedChan.CustomChannelData, closedJsonChannel,
+			)
+			require.NoError(t, err)
+
+			break
+		}
+	}
+	require.NotNil(t, closedJsonChannel)
+
 	// We now verify the arrival of the local balance asset proof at the
 	// universe server.
 	var localAssetCloseOut rfqmsg.JsonCloseOutput
-	err := json.Unmarshal(
+	err = json.Unmarshal(
 		localCloseOut.CustomChannelData, &localAssetCloseOut,
 	)
 	require.NoError(t, err)
@@ -1955,6 +1983,19 @@ func defaultCoOpCloseBalanceCheck(t *testing.T, local, remote *HarnessNode,
 		require.NoError(t, err)
 
 		require.Contains(t, assetIDStrings, assetIDStr)
+
+		// We only check for a proof if an asset of that asset ID was
+		// actually in the close output, which might not always be the
+		// case in grouped asset channels.
+		localAssetIDs := fn.NewSet[string](fn.Map(
+			func(t rfqmsg.JsonAssetTranche) string {
+				return t.AssetID
+			},
+			closedJsonChannel.LocalAssets,
+		)...)
+		if !localAssetIDs.Contains(assetIDStr) {
+			continue
+		}
 
 		assetID, err := hex.DecodeString(assetIDStr)
 		require.NoError(t, err)
@@ -1994,6 +2035,19 @@ func defaultCoOpCloseBalanceCheck(t *testing.T, local, remote *HarnessNode,
 		require.NoError(t, err)
 
 		require.Contains(t, assetIDStrings, assetIDStr)
+
+		// We only check for a proof if an asset of that asset ID was
+		// actually in the close output, which might not always be the
+		// case in grouped asset channels.
+		remoteAssetIDs := fn.NewSet[string](fn.Map(
+			func(t rfqmsg.JsonAssetTranche) string {
+				return t.AssetID
+			},
+			closedJsonChannel.RemoteAssets,
+		)...)
+		if !remoteAssetIDs.Contains(assetIDStr) {
+			continue
+		}
 
 		assetID, err := hex.DecodeString(assetIDStr)
 		require.NoError(t, err)
