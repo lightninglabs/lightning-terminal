@@ -114,4 +114,8 @@ var allTestCases = []*testCase{
 		test:       testCustomChannelsDecodeAssetInvoice,
 		noAliceBob: true,
 	},
+	{
+		name: "test custom channels self-payment",
+		test: testCustomChannelsSelfPayment,
+	},
 }

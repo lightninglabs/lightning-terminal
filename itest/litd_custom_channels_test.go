@@ -7,6 +7,7 @@ import (
 	"math"
 	"math/big"
 	"slices"
+	"strconv"
 	"time"
 
 	"github.com/btcsuite/btcd/btcec/v2"
@@ -4339,4 +4340,180 @@ func testCustomChannelsDecodeAssetInvoice(ctx context.Context,
 	// display 6 that's 100 billion asset units.
 	const expectedUnits = 100_000_000_000
 	require.Equal(t.t, int64(expectedUnits), int64(decodeResp.AssetAmount))
+}
+
+// testCustomChannelsSelfPayment tests that circular self-payments can be made
+// to re-balance between BTC and assets.
+func testCustomChannelsSelfPayment(ctx context.Context, net *NetworkHarness,
+	t *harnessTest) {
+
+	lndArgs := slices.Clone(lndArgsTemplate)
+	litdArgs := slices.Clone(litdArgsTemplate)
+
+	// We use Alice as the proof courier. But in order for Alice to also
+	// use itself, we need to define its port upfront.
+	alicePort := port.NextAvailablePort()
+	litdArgs = append(litdArgs, fmt.Sprintf(
+		"--taproot-assets.proofcourieraddr=%s://%s",
+		proof.UniverseRpcCourierType,
+		fmt.Sprintf(node.ListenerFormat, alicePort),
+	))
+
+	// Next, we'll make Alice and Bob, who will be the main nodes under
+	// test.
+	alice, err := net.NewNodeWithPort(
+		t.t, "Alice", lndArgs, false, true, alicePort, litdArgs...,
+	)
+	require.NoError(t.t, err)
+	bob, err := net.NewNode(
+		t.t, "Bob", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	// Now we'll connect all nodes, and also fund them with some coins.
+	nodes := []*HarnessNode{alice, bob}
+	connectAllNodes(t.t, net, nodes)
+	fundAllNodes(t.t, net, nodes)
+
+	aliceTap := newTapClient(t.t, alice)
+
+	// Next, we'll mint an asset for Alice, who will be the node that opens
+	// the channel outbound.
+	mintedAssets := itest.MintAssetsConfirmBatch(
+		t.t, t.lndHarness.Miner.Client, aliceTap,
+		[]*mintrpc.MintAssetRequest{
+			{
+				Asset: itestAsset,
+			},
+		},
+	)
+	cents := mintedAssets[0]
+	assetID := cents.AssetGenesis.AssetId
+
+	t.Logf("Minted %d lightning cents, syncing universes...", cents.Amount)
+	syncUniverses(t.t, aliceTap, bob)
+	t.Logf("Universes synced between all nodes, distributing assets...")
+
+	// With the assets created, and synced -- we'll now open the channel
+	// between Alice and Bob.
+	t.Logf("Opening asset channel...")
+	assetFundResp, err := aliceTap.FundChannel(
+		ctx, &tchrpc.FundChannelRequest{
+			AssetAmount:        fundingAmount,
+			AssetId:            assetID,
+			PeerPubkey:         bob.PubKey[:],
+			FeeRateSatPerVbyte: 5,
+		},
+	)
+	require.NoError(t.t, err)
+	t.Logf("Funded asset channel between Alice and Bob: %v", assetFundResp)
+
+	assetChanPoint := &lnrpc.ChannelPoint{
+		OutputIndex: uint32(assetFundResp.OutputIndex),
+		FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
+			FundingTxidStr: assetFundResp.Txid,
+		},
+	}
+
+	// With the channel open, mine a block to confirm it.
+	mineBlocks(t, net, 6, 1)
+
+	// Before we start sending out payments, let's make sure each node can
+	// see the other one in the graph and has all required features.
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(alice, bob))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(bob, alice))
+
+	t.Logf("Opening normal channel between Alice and Bob...")
+	satChanPoint := openChannelAndAssert(
+		t, net, alice, bob, lntest.OpenChannelParams{
+			Amt:         10_000_000,
+			SatPerVByte: 5,
+		},
+	)
+	defer closeChannelAndAssert(t, net, alice, satChanPoint, false)
+
+	satChan := fetchChannel(t.t, alice, satChanPoint)
+	satChanSCID := satChan.ChanId
+
+	t.Logf("Alice pubkey: %x", alice.PubKey[:])
+	t.Logf("Bob   pubkey: %x", bob.PubKey[:])
+	t.Logf("Outgoing channel SCID: %d", satChanSCID)
+	logBalance(t.t, nodes, assetID, "initial")
+
+	t.Logf("Key sending 15k assets from Alice to Bob...")
+	const (
+		assetKeySendAmount = 15_000
+		numInvoicePayments = 10
+		assetInvoiceAmount = 1_234
+		btcKeySendAmount   = 200_000
+		btcReserveAmount   = 2000
+		btcHtlcCost        = numInvoicePayments * 354
+	)
+	sendAssetKeySendPayment(
+		t.t, alice, bob, assetKeySendAmount, assetID,
+		fn.Some[int64](btcReserveAmount+btcHtlcCost),
+	)
+
+	// We also send 200k sats from Alice to Bob, to make sure the BTC
+	// channel has liquidity in both directions.
+	sendKeySendPayment(t.t, alice, bob, btcKeySendAmount)
+	logBalance(t.t, nodes, assetID, "after keysend")
+
+	// We now do a series of small payments. They should all succeed and the
+	// balances should be updated accordingly.
+	aliceAssetBalance := uint64(fundingAmount - assetKeySendAmount)
+	bobAssetBalance := uint64(assetKeySendAmount)
+	for i := 0; i < numInvoicePayments; i++ {
+		// The BTC balance of Alice before we start the payment. We
+		// expect that to go down by at least the invoice amount.
+		btcBalanceAliceBefore := fetchChannel(
+			t.t, alice, satChanPoint,
+		).LocalBalance
+
+		invoiceResp := createAssetInvoice(
+			t.t, bob, alice, assetInvoiceAmount, assetID,
+		)
+		payInvoiceWithSatoshi(
+			t.t, alice, invoiceResp, withOutgoingChanIDs(
+				[]uint64{satChanSCID},
+			), withAllowSelfPayment(),
+		)
+
+		logBalance(
+			t.t, nodes, assetID,
+			"after paying invoice "+strconv.Itoa(i),
+		)
+
+		// The accumulated delta from the rounding of multiple sends.
+		// We basically allow the balance to be off by one unit for each
+		// payment.
+		delta := float64(i + 1)
+
+		// We now expect the channel balance to have decreased in the
+		// BTC channel and increased in the assets channel.
+		assertChannelAssetBalanceWithDelta(
+			t.t, alice, assetChanPoint,
+			aliceAssetBalance+assetInvoiceAmount,
+			bobAssetBalance-assetInvoiceAmount, delta,
+		)
+		aliceAssetBalance += assetInvoiceAmount
+		bobAssetBalance -= assetInvoiceAmount
+
+		btcBalanceAliceAfter := fetchChannel(
+			t.t, alice, satChanPoint,
+		).LocalBalance
+
+		// The difference between the two balances should be at least
+		// the invoice amount.
+		decodedInvoice, err := alice.DecodePayReq(
+			context.Background(), &lnrpc.PayReqString{
+				PayReq: invoiceResp.PaymentRequest,
+			},
+		)
+		require.NoError(t.t, err)
+		require.GreaterOrEqual(
+			t.t, btcBalanceAliceBefore-btcBalanceAliceAfter,
+			decodedInvoice.NumSatoshis,
+		)
+	}
 }
