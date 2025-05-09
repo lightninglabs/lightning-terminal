@@ -16,7 +16,7 @@ type actionPaginator struct {
 
 	// filterFn is the filter function which we are using to determine which
 	// actions should be included in the return list.
-	filterFn ListActionsFilterFn
+	filterFn listActionsFilterFn
 
 	// readAction is a closure which we use to read an action from the db
 	// given a key value pair.
@@ -32,7 +32,7 @@ type actionPaginator struct {
 // cfg.CountAll is set).
 func paginateActions(cfg *ListActionsQuery, c kvdb.RCursor,
 	readAction func(k, v []byte) (*Action, error),
-	filterFn ListActionsFilterFn) ([]*Action, uint64, uint64, error) {
+	filterFn listActionsFilterFn) ([]*Action, uint64, uint64, error) {
 
 	if cfg == nil {
 		cfg = &ListActionsQuery{}
