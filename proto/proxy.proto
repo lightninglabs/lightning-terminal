@@ -52,6 +52,16 @@ message GetInfoRequest {
 }
 
 message GetInfoResponse {
-    // The version of the LiTd software that the node is running.
+    // The application version of the LiTd software running on the node,
+    // following the Semantic Versioning 2.0.0 specification
+    // (http://semver.org/).
     string version = 1;
+
+    // The Git tag that the LiTd binary build was based on. If the build was
+    // not based on a clean tagged commit, this field will contain the most
+    // recent tag suffixed by the commit hash, and/or a "-dirty" suffix.
+    string tag = 2;
+
+    // The Git commit hash the LiTd binary build was based on.
+    string commit_hash = 3;
 }

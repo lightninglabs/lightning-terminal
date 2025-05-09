@@ -135,7 +135,15 @@
       "properties": {
         "version": {
           "type": "string",
-          "description": "The version of the LiTd software that the node is running."
+          "description": "The application version of the LiTd software running on the node,\nfollowing the Semantic Versioning 2.0.0 specification\n(http://semver.org/)."
+        },
+        "tag": {
+          "type": "string",
+          "description": "The Git tag that the LiTd binary build was based on. If the build was\nnot based on a clean tagged commit, this field will contain the most\nrecent tag suffixed by the commit hash, and/or a \"-dirty\" suffix."
+        },
+        "commit_hash": {
+          "type": "string",
+          "description": "The Git commit hash the LiTd binary build was based on."
         }
       }
     },

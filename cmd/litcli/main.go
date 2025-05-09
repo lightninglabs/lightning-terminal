@@ -73,7 +73,7 @@ var (
 func main() {
 	app := cli.NewApp()
 
-	app.Version = terminal.Version()
+	app.Version = terminal.RichVersion()
 	app.Name = "litcli"
 	app.Usage = "control plane for your Lightning Terminal (lit) daemon"
 	app.Flags = []cli.Flag{

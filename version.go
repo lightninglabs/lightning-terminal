@@ -11,9 +11,16 @@ import (
 	"strings"
 )
 
-// Commit stores the current commit hash of this build, this should be set
-// using the -ldflags during compilation.
+// Commit stores the current git tag of this build, when the build is based on
+// a tagged commit. If the build is based on an untagged commit or is a dirty
+// build, the Commit field stores the most recent tag suffixed by the commit
+// hash, and/or "-dirty". This should be set using the -ldflags during
+// compilation.
 var Commit string
+
+// GitCommitHash stores the current git commit hash of this build. This should
+// be set using the -ldflags during compilation.
+var GitCommitHash string
 
 // semanticAlphabet
 const semanticAlphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-."
@@ -33,6 +40,31 @@ const (
 // Version returns the application version as a properly formed string per the
 // semantic versioning 2.0.0 spec (http://semver.org/).
 func Version() string {
+	return semanticVersion()
+}
+
+// RichVersion returns the application version as a properly formed string
+// per the semantic versioning 2.0.0 spec (http://semver.org/), the git tag and
+// commit hash it was built on.
+func RichVersion() string {
+	// Append git tag and commit hash of current build to version.
+	return fmt.Sprintf(
+		"%s tag=%s commit=%s", semanticVersion(), Commit, GitCommitHash,
+	)
+}
+
+// CommitHash returns the git commit hash of the current build.
+func CommitHash() string {
+	return GitCommitHash
+}
+
+// CommitTag returns the git tag of the current build.
+func CommitTag() string {
+	return Commit
+}
+
+// semanticVersion returns the SemVer part of the version.
+func semanticVersion() string {
 	// Start with the major, minor, and patch versions.
 	version := fmt.Sprintf("%d.%d.%d", appMajor, appMinor, appPatch)
 
@@ -44,9 +76,6 @@ func Version() string {
 	if preRelease != "" {
 		version = fmt.Sprintf("%s-%s", version, preRelease)
 	}
-
-	// Append commit hash of current build to version.
-	version = fmt.Sprintf("%s commit=%s", version, Commit)
 
 	return version
 }

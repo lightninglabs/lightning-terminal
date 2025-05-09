@@ -55,6 +55,18 @@
   `supermacaroon:write` permission to disable access to the
   `bakesupermacaroon` endpoint.
 
+* [A `tag` and a `commit_hash` field has been added to the `GetInfo`
+  response](https://github.com/lightninglabs/lightning-terminal/pull/1034).
+  The `tag` field will be set to the Git tag that the LiT release binary build
+  was based on. If the build was not based on a clean tagged commit, this field
+  will contain the most recent tag suffixed by the commit hash, and/or a
+  "-dirty" suffix.
+  The `commit_hash` field will contain the full commit hash of the commit that
+  LiT release binary build was based on.
+  The contents of the `version` field in the `GetInfo` response has also been
+  updated to only include the semantic version number of the LiT release,
+  following the semantic versioning 2.0.0 spec (http://semver.org/).
+
 ## Integrated Binary Updates
 
 ### LND
