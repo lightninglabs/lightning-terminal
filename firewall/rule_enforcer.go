@@ -32,8 +32,9 @@ type RuleEnforcer struct {
 	ruleDB            firewalldb.RulesDB
 	actionsDB         firewalldb.ActionReadDBGetter
 	sessionDB         firewalldb.SessionDB
-	markActionErrored func(reqID uint64, reason string) error
-	privMapDB         firewalldb.PrivacyMapper
+	markActionErrored func(ctx context.Context, reqID uint64,
+		reason string) error
+	privMapDB firewalldb.PrivacyMapper
 
 	permsMgr        *perms.Manager
 	getFeaturePerms featurePerms
@@ -63,7 +64,8 @@ func NewRuleEnforcer(ruleDB firewalldb.RulesDB,
 	routerClient lndclient.RouterClient,
 	lndClient lndclient.LightningClient, lndConnID string,
 	ruleMgrs rules.ManagerSet,
-	markActionErrored func(reqID uint64, reason string) error,
+	markActionErrored func(ctx context.Context, reqID uint64,
+		reason string) error,
 	privMap firewalldb.PrivacyMapper) *RuleEnforcer {
 
 	return &RuleEnforcer{
@@ -164,7 +166,9 @@ func (r *RuleEnforcer) Intercept(ctx context.Context,
 
 		replacement, err := r.handleRequest(ctx, ri)
 		if err != nil {
-			dbErr := r.markActionErrored(ri.RequestID, err.Error())
+			dbErr := r.markActionErrored(
+				ctx, ri.RequestID, err.Error(),
+			)
 			if dbErr != nil {
 				log.Error("could not mark action for "+
 					"request ID %d as Errored: %v",

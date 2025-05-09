@@ -66,13 +66,11 @@ func TestActionStorage(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, actions, 0)
 
-	id, err := db.AddAction(action1)
+	_, err = db.AddAction(ctx, action1)
 	require.NoError(t, err)
-	require.Equal(t, uint64(1), id)
 
-	id, err = db.AddAction(action2)
+	locator2, err := db.AddAction(ctx, action2)
 	require.NoError(t, err)
-	require.Equal(t, uint64(1), id)
 
 	actions, _, _, err = db.ListActions(
 		ctx, nil,
@@ -81,7 +79,7 @@ func TestActionStorage(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.Len(t, actions, 1)
-	require.Equal(t, action1, actions[0])
+	assertEqualActions(t, action1, actions[0])
 
 	actions, _, _, err = db.ListActions(
 		ctx, nil,
@@ -91,12 +89,7 @@ func TestActionStorage(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, actions, 0)
 
-	err = db.SetActionState(
-		&ActionLocator{
-			SessionID: sessionID2,
-			ActionID:  uint64(1),
-		}, ActionStateDone, "",
-	)
+	err = db.SetActionState(ctx, locator2, ActionStateDone, "")
 	require.NoError(t, err)
 
 	actions, _, _, err = db.ListActions(
@@ -107,11 +100,10 @@ func TestActionStorage(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, actions, 1)
 	action2.State = ActionStateDone
-	require.Equal(t, action2, actions[0])
+	assertEqualActions(t, action2, actions[0])
 
-	id, err = db.AddAction(action1)
+	_, err = db.AddAction(ctx, action1)
 	require.NoError(t, err)
-	require.Equal(t, uint64(2), id)
 
 	// Check that providing no session id and no filter function returns
 	// all the actions.
@@ -124,21 +116,11 @@ func TestActionStorage(t *testing.T) {
 	require.Len(t, actions, 3)
 
 	// Try set an error reason for a non Errored state.
-	err = db.SetActionState(
-		&ActionLocator{
-			SessionID: sessionID2,
-			ActionID:  uint64(1),
-		}, ActionStateDone, "hello",
-	)
+	err = db.SetActionState(ctx, locator2, ActionStateDone, "hello")
 	require.Error(t, err)
 
 	// Now try move the action to errored with a reason.
-	err = db.SetActionState(
-		&ActionLocator{
-			SessionID: sessionID2,
-			ActionID:  uint64(1),
-		}, ActionStateError, "fail whale",
-	)
+	err = db.SetActionState(ctx, locator2, ActionStateError, "fail whale")
 	require.NoError(t, err)
 
 	actions, _, _, err = db.ListActions(
@@ -150,7 +132,7 @@ func TestActionStorage(t *testing.T) {
 	require.Len(t, actions, 1)
 	action2.State = ActionStateError
 	action2.ErrorReason = "fail whale"
-	require.Equal(t, action2, actions[0])
+	assertEqualActions(t, action2, actions[0])
 }
 
 // TestListActions tests some ListAction options.
@@ -184,7 +166,7 @@ func TestListActions(t *testing.T) {
 			State:              ActionStateDone,
 		}
 
-		_, err := db.AddAction(action)
+		_, err := db.AddAction(ctx, action)
 		require.NoError(t, err)
 	}
 
@@ -373,7 +355,7 @@ func TestListGroupActions(t *testing.T) {
 	require.Empty(t, al)
 
 	// Add an action under session 1.
-	_, err = db.AddAction(action1)
+	_, err = db.AddAction(ctx, action1)
 	require.NoError(t, err)
 
 	// There should now be one action in the group.
@@ -383,7 +365,7 @@ func TestListGroupActions(t *testing.T) {
 	require.Equal(t, sessionID1, al[0].SessionID)
 
 	// Add an action under session 2.
-	_, err = db.AddAction(action2)
+	_, err = db.AddAction(ctx, action2)
 	require.NoError(t, err)
 
 	// There should now be actions in the group.
@@ -392,4 +374,18 @@ func TestListGroupActions(t *testing.T) {
 	require.Len(t, al, 2)
 	require.Equal(t, sessionID1, al[0].SessionID)
 	require.Equal(t, sessionID2, al[1].SessionID)
+}
+
+func assertEqualActions(t *testing.T, expected, got *Action) {
+	expectedAttemptedAt := expected.AttemptedAt
+	actualAttemptedAt := got.AttemptedAt
+
+	expected.AttemptedAt = time.Time{}
+	got.AttemptedAt = time.Time{}
+
+	require.Equal(t, expected, got)
+	require.Equal(t, expectedAttemptedAt.Unix(), actualAttemptedAt.Unix())
+
+	expected.AttemptedAt = expectedAttemptedAt
+	got.AttemptedAt = actualAttemptedAt
 }
