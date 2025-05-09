@@ -7,9 +7,16 @@ RUN apk add --no-cache --update git
 # Copy in the local repository to build from.
 COPY . /go/src/github.com/lightninglabs/lightning-terminal
 
+# Set to 1 to enable this option and skip build of the web UI.
+ARG NO_UI
+
 RUN cd /go/src/github.com/lightninglabs/lightning-terminal/app \
-  && yarn install \
-  && yarn build
+  && if [ "$NO_UI" -eq "1" ]; then \
+    echo "skipping UI build";\
+  else \
+    yarn install \
+    && yarn build; \
+  fi
 
 # The first stage is already done and all static assets should now be generated
 # in the app/build sub directory.
@@ -28,6 +35,9 @@ ENV GODEBUG netdns=cgo
 # queries that can be used to define a version.
 ARG TAPROOT_ASSETS_VERSION
 
+# Need to restate this since running in a new container from above.
+ARG NO_UI
+
 # Install dependencies and install/build lightning-terminal.
 RUN apk add --no-cache --update alpine-sdk make \
   && cd /go/src/github.com/lightninglabs/lightning-terminal \
@@ -36,8 +46,13 @@ RUN apk add --no-cache --update alpine-sdk make \
     go get -v github.com/lightninglabs/taproot-assets@$TAPROOT_ASSETS_VERSION \
     && go mod tidy; \
   fi \
-  && make go-install \
-  && make go-install-cli
+  && if [ "$NO_UI" -eq "1" ]; then \
+    make go-install-noui \
+    && make go-install-cli-noui; \
+  else \
+    make go-install \
+    && make go-install-cli; \
+  fi
 
 # Start a new, final image to reduce size.
 FROM alpine:3.20.3@sha256:beefdbd8a1da6d2915566fde36db9db0b524eb737fc57cd1367effd16dc0d06d as final
