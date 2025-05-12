@@ -182,19 +182,20 @@ func (r *RequestLogger) addNewAction(ctx context.Context, ri *RequestInfo,
 	withPayloadData bool) error {
 
 	// If no macaroon is provided, then an empty 4-byte array is used as the
-	// session ID. Otherwise, the macaroon is used to derive a session ID.
-	var sessionID [4]byte
+	// macaroon ID. Otherwise, the last 4 bytes of the macaroon's root key
+	// ID are used.
+	var macaroonID [4]byte
 	if ri.Macaroon != nil {
 		var err error
-		sessionID, err = session.IDFromMacaroon(ri.Macaroon)
+		macaroonID, err = session.IDFromMacaroon(ri.Macaroon)
 		if err != nil {
 			return fmt.Errorf("could not extract ID from macaroon")
 		}
 	}
 
 	actionReq := &firewalldb.AddActionReq{
-		SessionID: sessionID,
-		RPCMethod: ri.URI,
+		MacaroonIdentifier: macaroonID,
+		RPCMethod:          ri.URI,
 	}
 
 	if withPayloadData {

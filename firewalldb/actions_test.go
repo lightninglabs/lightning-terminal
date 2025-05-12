@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/lightningnetwork/lnd/clock"
+	"github.com/lightningnetwork/lnd/fn"
 	"github.com/stretchr/testify/require"
 )
 
@@ -18,7 +19,8 @@ var (
 	sessionID2 = intToSessionID(2)
 
 	action1Req = &AddActionReq{
-		SessionID:          sessionID1,
+		SessionID:          fn.Some(sessionID1),
+		MacaroonIdentifier: sessionID1,
 		ActorName:          "Autopilot",
 		FeatureName:        "auto-fees",
 		Trigger:            "fee too low",
@@ -35,13 +37,14 @@ var (
 	}
 
 	action2Req = &AddActionReq{
-		SessionID:     sessionID2,
-		ActorName:     "Autopilot",
-		FeatureName:   "rebalancer",
-		Trigger:       "channels not balanced",
-		Intent:        "balance",
-		RPCMethod:     "SendToRoute",
-		RPCParamsJson: []byte("hops, amount"),
+		SessionID:          fn.Some(sessionID2),
+		MacaroonIdentifier: sessionID2,
+		ActorName:          "Autopilot",
+		FeatureName:        "rebalancer",
+		Trigger:            "channels not balanced",
+		Intent:             "balance",
+		RPCMethod:          "SendToRoute",
+		RPCParamsJson:      []byte("hops, amount"),
 	}
 
 	action2 = &Action{
@@ -171,7 +174,7 @@ func TestListActions(t *testing.T) {
 		actionIds++
 
 		actionReq := &AddActionReq{
-			SessionID:          sessionID,
+			MacaroonIdentifier: sessionID,
 			ActorName:          "Autopilot",
 			FeatureName:        fmt.Sprintf("%d", actionIds),
 			Trigger:            "fee too low",
@@ -194,7 +197,7 @@ func TestListActions(t *testing.T) {
 		require.Len(t, dbActions, len(al))
 		for i, a := range al {
 			require.EqualValues(
-				t, a.sessionID, dbActions[i].SessionID,
+				t, a.sessionID, dbActions[i].MacaroonIdentifier,
 			)
 			require.Equal(t, a.actionID, dbActions[i].FeatureName)
 		}

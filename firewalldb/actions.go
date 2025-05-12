@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/lightninglabs/lightning-terminal/session"
+	"github.com/lightningnetwork/lnd/fn"
 )
 
 // ActionState represents the state of an action.
@@ -32,10 +33,17 @@ const (
 // It contains all the information that is needed to create a new Action in the
 // ActionStateInit State.
 type AddActionReq struct {
-	// SessionID is the ID of the session that this action belongs to.
-	// Note that this is not serialized on persistence since the action is
-	// already stored under a bucket identified by the session ID.
-	SessionID session.ID
+	// MacaroonIdentifier is a 4 byte identifier created from the last 4
+	// bytes of the root key ID of the macaroon used to perform the action.
+	MacaroonIdentifier [4]byte
+
+	// SessionID holds the optional session ID of the session that this
+	// action was performed with.
+	//
+	// NOTE: for our BoltDB impl, this is not persisted in any way, and we
+	// populate it by casting the macaroon ID to a session.ID and so is not
+	// guaranteed to be linked to an existing session.
+	SessionID fn.Option[session.ID]
 
 	// ActorName is the name of the entity who performed the Action.
 	ActorName string

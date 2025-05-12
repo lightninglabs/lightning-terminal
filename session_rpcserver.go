@@ -731,8 +731,13 @@ func (s *sessionRpcServer) ListActions(ctx context.Context,
 			return nil, err
 		}
 
+		var sessionID session.ID
+		a.SessionID.WhenSome(func(id session.ID) {
+			sessionID = id
+		})
+
 		resp[i] = &litrpc.Action{
-			SessionId:          a.SessionID[:],
+			SessionId:          sessionID[:],
 			ActorName:          a.ActorName,
 			FeatureName:        a.FeatureName,
 			Trigger:            a.Trigger,

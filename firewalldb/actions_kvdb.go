@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/lightninglabs/lightning-terminal/session"
+	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/tlv"
 	"go.etcd.io/bbolt"
 )
@@ -80,7 +81,7 @@ func (db *BoltDB) AddAction(_ context.Context,
 		}
 
 		sessBucket, err := actionsBucket.CreateBucketIfNotExists(
-			action.SessionID[:],
+			action.MacaroonIdentifier[:],
 		)
 		if err != nil {
 			return err
@@ -109,7 +110,7 @@ func (db *BoltDB) AddAction(_ context.Context,
 		}
 
 		locator = kvdbActionLocator{
-			sessionID: action.SessionID,
+			sessionID: action.MacaroonIdentifier,
 			actionID:  nextActionIndex,
 		}
 
@@ -549,7 +550,8 @@ func DeserializeAction(r io.Reader, sessionID session.ID) (*Action, error) {
 		return nil, err
 	}
 
-	action.SessionID = sessionID
+	action.MacaroonIdentifier = sessionID
+	action.SessionID = fn.Some(sessionID)
 	action.ActorName = string(actor)
 	action.FeatureName = string(featureName)
 	action.Trigger = string(trigger)
