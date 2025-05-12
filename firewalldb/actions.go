@@ -181,9 +181,9 @@ func WithActionState(state ActionState) ListActionOption {
 // ActionsWriteDB is an abstraction over the Actions DB that will allow a
 // caller to add new actions as well as change the values of an existing action.
 type ActionsWriteDB interface {
-	AddAction(action *Action) (uint64, error)
-	SetActionState(al *ActionLocator, state ActionState,
-		errReason string) error
+	AddAction(ctx context.Context, action *Action) (ActionLocator, error)
+	SetActionState(ctx context.Context, al ActionLocator,
+		state ActionState, errReason string) error
 }
 
 // RuleAction represents a method call that was performed at a certain time at
@@ -230,7 +230,7 @@ func (db *BoltDB) GetActionsReadDB(groupID session.ID,
 
 // allActionsReadDb is an implementation of the ActionsReadDB.
 type allActionsReadDB struct {
-	db          *BoltDB
+	db          ActionDB
 	groupID     session.ID
 	featureName string
 }
@@ -318,7 +318,6 @@ func actionToRulesAction(a *Action) *RuleAction {
 }
 
 // ActionLocator helps us find an action in the database.
-type ActionLocator struct {
-	SessionID session.ID
-	ActionID  uint64
+type ActionLocator interface {
+	isActionLocator()
 }
