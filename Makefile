@@ -148,14 +148,21 @@ go-install-noui:
 	$(GOINSTALL) -tags="litd_no_ui $(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" $(PKG)/cmd/litd
 	$(GOINSTALL) -tags="litd_no_ui $(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" $(PKG)/cmd/litcli
 
-go-install-cli:
+go-install-cli-nolit:
 	@$(call print, "Installing all CLI binaries.")
 	$(GOINSTALL) -trimpath -tags="$(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" github.com/lightningnetwork/lnd/cmd/lncli
 	$(GOINSTALL) -trimpath -ldflags "$(LDFLAGS)" github.com/lightninglabs/loop/cmd/loop
 	$(GOINSTALL) -trimpath github.com/lightninglabs/faraday/cmd/frcli
 	$(GOINSTALL) -trimpath -ldflags "$(LDFLAGS)" github.com/lightninglabs/pool/cmd/pool
 	$(GOINSTALL) -trimpath -ldflags "$(LDFLAGS)" github.com/lightninglabs/taproot-assets/cmd/tapcli
+
+go-install-cli: go-install-cli-nolit
+	@$(call print, "Installing litcli binary.")
 	$(GOINSTALL) -trimpath -tags="$(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" $(PKG)/cmd/litcli
+
+go-install-cli-noui: go-install-cli-nolit
+	@$(call print, "Installing litcli binary without UI.")
+	$(GOINSTALL) -trimpath -tags="litd_no_ui $(LND_RELEASE_TAGS)" -ldflags "$(LDFLAGS)" $(PKG)/cmd/litcli
 
 app-build: yarn-install
 	@$(call print, "Building production app.")
