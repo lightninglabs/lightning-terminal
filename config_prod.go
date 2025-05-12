@@ -56,7 +56,7 @@ func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
 	stores.closeFns["sessions"] = sessStore.Close
 
 	firewallDB, err := firewalldb.NewBoltDB(
-		networkDir, firewalldb.DBFilename, sessStore,
+		networkDir, firewalldb.DBFilename, sessStore, clock,
 	)
 	if err != nil {
 		return stores, fmt.Errorf("error creating firewall DB: %v", err)

@@ -108,7 +108,7 @@ func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
 
 		acctStore := accounts.NewSQLStore(sqlStore.BaseDB, clock)
 		sessStore := session.NewSQLStore(sqlStore.BaseDB, clock)
-		firewallStore := firewalldb.NewSQLDB(sqlStore.BaseDB)
+		firewallStore := firewalldb.NewSQLDB(sqlStore.BaseDB, clock)
 
 		stores.accounts = acctStore
 		stores.sessions = sessStore
@@ -123,7 +123,7 @@ func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
 
 		acctStore := accounts.NewSQLStore(sqlStore.BaseDB, clock)
 		sessStore := session.NewSQLStore(sqlStore.BaseDB, clock)
-		firewallStore := firewalldb.NewSQLDB(sqlStore.BaseDB)
+		firewallStore := firewalldb.NewSQLDB(sqlStore.BaseDB, clock)
 
 		stores.accounts = acctStore
 		stores.sessions = sessStore
@@ -154,7 +154,7 @@ func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
 	}
 
 	firewallBoltDB, err := firewalldb.NewBoltDB(
-		networkDir, firewalldb.DBFilename, stores.sessions,
+		networkDir, firewalldb.DBFilename, stores.sessions, clock,
 	)
 	if err != nil {
 		return stores, fmt.Errorf("error creating firewall BoltDB: %v",

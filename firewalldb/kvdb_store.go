@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/lightningnetwork/lnd/clock"
 	"go.etcd.io/bbolt"
 )
 
@@ -37,13 +38,15 @@ var (
 type BoltDB struct {
 	*bbolt.DB
 
+	clock clock.Clock
+
 	sessionIDIndex SessionDB
 }
 
 // NewBoltDB creates a new bolt database that can be found at the given
 // directory.
-func NewBoltDB(dir, fileName string, sessionIDIndex SessionDB) (*BoltDB,
-	error) {
+func NewBoltDB(dir, fileName string, sessionIDIndex SessionDB,
+	clock clock.Clock) (*BoltDB, error) {
 
 	firstInit := false
 	path := filepath.Join(dir, fileName)
@@ -70,6 +73,7 @@ func NewBoltDB(dir, fileName string, sessionIDIndex SessionDB) (*BoltDB,
 	return &BoltDB{
 		DB:             db,
 		sessionIDIndex: sessionIDIndex,
+		clock:          clock,
 	}, nil
 }
 

@@ -15,9 +15,10 @@ import (
 func TestPrivacyMapStorage(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
+	clock := clock.NewDefaultClock()
 
-	sessions := session.NewTestDB(t, clock.NewDefaultClock())
-	db := NewTestDBWithSessions(t, sessions)
+	sessions := session.NewTestDB(t, clock)
+	db := NewTestDBWithSessions(t, sessions, clock)
 
 	// First up, let's test that the correct error is returned if an
 	// attempt is made to write to a privacy map that is not linked to
@@ -221,9 +222,10 @@ func TestPrivacyMapStorage(t *testing.T) {
 func TestPrivacyMapTxs(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
+	clock := clock.NewDefaultClock()
 
-	sessions := session.NewTestDB(t, clock.NewDefaultClock())
-	db := NewTestDBWithSessions(t, sessions)
+	sessions := session.NewTestDB(t, clock)
+	db := NewTestDBWithSessions(t, sessions, clock)
 
 	sess, err := sessions.NewSession(
 		ctx, "test", session.TypeAutopilot, time.Unix(1000, 0), "",

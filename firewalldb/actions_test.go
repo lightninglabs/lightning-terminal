@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lightningnetwork/lnd/clock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -44,7 +45,7 @@ func TestActionStorage(t *testing.T) {
 	tmpDir := t.TempDir()
 	ctx := context.Background()
 
-	db, err := NewBoltDB(tmpDir, "test.db", nil)
+	db, err := NewBoltDB(tmpDir, "test.db", nil, clock.NewDefaultClock())
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
@@ -141,7 +142,7 @@ func TestListActions(t *testing.T) {
 	tmpDir := t.TempDir()
 	ctx := context.Background()
 
-	db, err := NewBoltDB(tmpDir, "test.db", nil)
+	db, err := NewBoltDB(tmpDir, "test.db", nil, clock.NewDefaultClock())
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
@@ -343,7 +344,9 @@ func TestListGroupActions(t *testing.T) {
 	index.AddPair(sessionID1, group1)
 	index.AddPair(sessionID2, group1)
 
-	db, err := NewBoltDB(t.TempDir(), "test.db", index)
+	db, err := NewBoltDB(
+		t.TempDir(), "test.db", index, clock.NewDefaultClock(),
+	)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
