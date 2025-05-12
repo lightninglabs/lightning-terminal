@@ -11,10 +11,13 @@ import (
 )
 
 var (
+	testTime1 = time.Unix(32100, 0)
+	testTime2 = time.Unix(12300, 0)
+
 	sessionID1 = intToSessionID(1)
 	sessionID2 = intToSessionID(2)
 
-	action1 = &Action{
+	action1Req = &AddActionReq{
 		SessionID:          sessionID1,
 		ActorName:          "Autopilot",
 		FeatureName:        "auto-fees",
@@ -23,11 +26,15 @@ var (
 		StructuredJsonData: "{\"something\":\"nothing\"}",
 		RPCMethod:          "UpdateChanPolicy",
 		RPCParamsJson:      []byte("new fee"),
-		AttemptedAt:        time.Unix(32100, 0),
-		State:              ActionStateDone,
 	}
 
-	action2 = &Action{
+	action1 = &Action{
+		AddActionReq: *action1Req,
+		AttemptedAt:  testTime1,
+		State:        ActionStateDone,
+	}
+
+	action2Req = &AddActionReq{
 		SessionID:     sessionID2,
 		ActorName:     "Autopilot",
 		FeatureName:   "rebalancer",
@@ -35,17 +42,21 @@ var (
 		Intent:        "balance",
 		RPCMethod:     "SendToRoute",
 		RPCParamsJson: []byte("hops, amount"),
-		AttemptedAt:   time.Unix(12300, 0),
-		State:         ActionStateInit,
+	}
+
+	action2 = &Action{
+		AddActionReq: *action2Req,
+		AttemptedAt:  testTime2,
+		State:        ActionStateInit,
 	}
 )
 
 // TestActionStorage tests that the ActionsListDB CRUD logic.
 func TestActionStorage(t *testing.T) {
-	tmpDir := t.TempDir()
 	ctx := context.Background()
+	clock := clock.NewTestClock(testTime1)
 
-	db, err := NewBoltDB(tmpDir, "test.db", nil, clock.NewDefaultClock())
+	db, err := NewBoltDB(t.TempDir(), "test.db", nil, clock)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
@@ -67,10 +78,14 @@ func TestActionStorage(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, actions, 0)
 
-	_, err = db.AddAction(ctx, action1)
+	locator1, err := db.AddAction(ctx, action1Req)
+	require.NoError(t, err)
+	err = db.SetActionState(ctx, locator1, ActionStateDone, "")
 	require.NoError(t, err)
 
-	locator2, err := db.AddAction(ctx, action2)
+	clock.SetTime(testTime2)
+
+	locator2, err := db.AddAction(ctx, action2Req)
 	require.NoError(t, err)
 
 	actions, _, _, err = db.ListActions(
@@ -103,7 +118,7 @@ func TestActionStorage(t *testing.T) {
 	action2.State = ActionStateDone
 	assertEqualActions(t, action2, actions[0])
 
-	_, err = db.AddAction(ctx, action1)
+	_, err = db.AddAction(ctx, action1Req)
 	require.NoError(t, err)
 
 	// Check that providing no session id and no filter function returns
@@ -154,7 +169,8 @@ func TestListActions(t *testing.T) {
 	actionIds := 0
 	addAction := func(sessionID [4]byte) {
 		actionIds++
-		action := &Action{
+
+		actionReq := &AddActionReq{
 			SessionID:          sessionID,
 			ActorName:          "Autopilot",
 			FeatureName:        fmt.Sprintf("%d", actionIds),
@@ -163,11 +179,9 @@ func TestListActions(t *testing.T) {
 			StructuredJsonData: "{\"something\":\"nothing\"}",
 			RPCMethod:          "UpdateChanPolicy",
 			RPCParamsJson:      []byte("new fee"),
-			AttemptedAt:        time.Unix(32100, 0),
-			State:              ActionStateDone,
 		}
 
-		_, err := db.AddAction(ctx, action)
+		_, err := db.AddAction(ctx, actionReq)
 		require.NoError(t, err)
 	}
 
@@ -358,7 +372,7 @@ func TestListGroupActions(t *testing.T) {
 	require.Empty(t, al)
 
 	// Add an action under session 1.
-	_, err = db.AddAction(ctx, action1)
+	_, err = db.AddAction(ctx, action1Req)
 	require.NoError(t, err)
 
 	// There should now be one action in the group.
@@ -368,7 +382,7 @@ func TestListGroupActions(t *testing.T) {
 	require.Equal(t, sessionID1, al[0].SessionID)
 
 	// Add an action under session 2.
-	_, err = db.AddAction(ctx, action2)
+	_, err = db.AddAction(ctx, action2Req)
 	require.NoError(t, err)
 
 	// There should now be actions in the group.

@@ -53,8 +53,14 @@ var (
 )
 
 // AddAction serialises and adds an Action to the DB under the given sessionID.
-func (db *BoltDB) AddAction(_ context.Context, action *Action) (ActionLocator,
-	error) {
+func (db *BoltDB) AddAction(_ context.Context,
+	req *AddActionReq) (ActionLocator, error) {
+
+	action := &Action{
+		AddActionReq: *req,
+		AttemptedAt:  db.clock.Now().UTC(),
+		State:        ActionStateInit,
+	}
 
 	var buf bytes.Buffer
 	if err := SerializeAction(&buf, action); err != nil {
