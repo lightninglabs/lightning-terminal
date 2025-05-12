@@ -350,6 +350,7 @@ func TestListActions(t *testing.T) {
 func TestListGroupActions(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
+	clock := clock.NewTestClock(testTime1)
 
 	group1 := intToSessionID(0)
 
@@ -358,9 +359,7 @@ func TestListGroupActions(t *testing.T) {
 	index.AddPair(sessionID1, group1)
 	index.AddPair(sessionID2, group1)
 
-	db, err := NewBoltDB(
-		t.TempDir(), "test.db", index, clock.NewDefaultClock(),
-	)
+	db, err := NewBoltDB(t.TempDir(), "test.db", index, clock)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
@@ -372,14 +371,18 @@ func TestListGroupActions(t *testing.T) {
 	require.Empty(t, al)
 
 	// Add an action under session 1.
-	_, err = db.AddAction(ctx, action1Req)
+	locator1, err := db.AddAction(ctx, action1Req)
+	require.NoError(t, err)
+	err = db.SetActionState(ctx, locator1, ActionStateDone, "")
 	require.NoError(t, err)
 
 	// There should now be one action in the group.
 	al, _, _, err = db.ListActions(ctx, nil, WithActionGroupID(group1))
 	require.NoError(t, err)
 	require.Len(t, al, 1)
-	require.Equal(t, sessionID1, al[0].SessionID)
+	assertEqualActions(t, action1, al[0])
+
+	clock.SetTime(testTime2)
 
 	// Add an action under session 2.
 	_, err = db.AddAction(ctx, action2Req)
@@ -389,8 +392,8 @@ func TestListGroupActions(t *testing.T) {
 	al, _, _, err = db.ListActions(ctx, nil, WithActionGroupID(group1))
 	require.NoError(t, err)
 	require.Len(t, al, 2)
-	require.Equal(t, sessionID1, al[0].SessionID)
-	require.Equal(t, sessionID2, al[1].SessionID)
+	assertEqualActions(t, action1, al[0])
+	assertEqualActions(t, action2, al[1])
 }
 
 func assertEqualActions(t *testing.T, expected, got *Action) {
