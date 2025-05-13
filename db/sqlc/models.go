@@ -37,6 +37,23 @@ type AccountPayment struct {
 	FullAmountMsat int64
 }
 
+type Action struct {
+	ID                 int64
+	SessionID          sql.NullInt64
+	AccountID          sql.NullInt64
+	MacaroonIdentifier []byte
+	ActorName          sql.NullString
+	FeatureName        sql.NullString
+	Trigger            sql.NullString
+	Intent             sql.NullString
+	StructuredJsonData sql.NullString
+	RpcMethod          string
+	RpcParamsJson      []byte
+	CreatedAt          time.Time
+	State              int16
+	ErrorReason        sql.NullString
+}
+
 type Feature struct {
 	ID   int64
 	Name string
