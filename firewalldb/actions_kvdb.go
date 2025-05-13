@@ -9,6 +9,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/tlv"
@@ -64,6 +65,17 @@ func (db *BoltDB) AddAction(ctx context.Context,
 	var err error
 	req.SessionID.WhenSome(func(id session.ID) {
 		_, err = db.sessionIDIndex.GetSession(ctx, id)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// If the new action links to an account, the account must exist.
+	// For the bbolt impl of the store, this is our best effort attempt
+	// at ensuring each action links to an account. If the account is
+	// deleted later on, however, then the action will still exist.
+	req.AccountID.WhenSome(func(id accounts.AccountID) {
+		_, err = db.accountsDB.Account(ctx, id)
 	})
 	if err != nil {
 		return nil, err

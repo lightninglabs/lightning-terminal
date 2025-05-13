@@ -5,7 +5,6 @@ package firewalldb
 import (
 	"testing"
 
-	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/clock"
 	"github.com/stretchr/testify/require"
 )
@@ -18,21 +17,21 @@ func NewTestDB(t *testing.T, clock clock.Clock) *BoltDB {
 // NewTestDBFromPath is a helper function that creates a new BoltStore with a
 // connection to an existing BBolt database for testing.
 func NewTestDBFromPath(t *testing.T, dbPath string, clock clock.Clock) *BoltDB {
-	return newDBFromPathWithSessions(t, dbPath, nil, clock)
+	return newDBFromPathWithSessions(t, dbPath, nil, nil, clock)
 }
 
 // NewTestDBWithSessions creates a new test BoltDB Store with access to an
 // existing sessions DB.
-func NewTestDBWithSessions(t *testing.T, sessStore session.Store,
+func NewTestDBWithSessions(t *testing.T, sessStore SessionDB,
 	clock clock.Clock) *BoltDB {
 
-	return newDBFromPathWithSessions(t, t.TempDir(), sessStore, clock)
+	return newDBFromPathWithSessions(t, t.TempDir(), sessStore, nil, clock)
 }
 
 func newDBFromPathWithSessions(t *testing.T, dbPath string,
-	sessStore session.Store, clock clock.Clock) *BoltDB {
+	sessStore SessionDB, acctStore AccountsDB, clock clock.Clock) *BoltDB {
 
-	store, err := NewBoltDB(dbPath, DBFilename, sessStore, clock)
+	store, err := NewBoltDB(dbPath, DBFilename, sessStore, acctStore, clock)
 	require.NoError(t, err)
 
 	t.Cleanup(func() {
