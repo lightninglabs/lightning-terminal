@@ -5,7 +5,9 @@ package firewalldb
 import (
 	"testing"
 
+	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightningnetwork/lnd/clock"
+	"github.com/lightningnetwork/lnd/fn"
 	"github.com/stretchr/testify/require"
 )
 
@@ -28,6 +30,16 @@ func NewTestDBWithSessions(t *testing.T, sessStore SessionDB,
 	return newDBFromPathWithSessions(t, t.TempDir(), sessStore, nil, clock)
 }
 
+// NewTestDBWithSessionsAndAccounts creates a new test BoltDB Store with access
+// to an existing sessions DB and accounts DB.
+func NewTestDBWithSessionsAndAccounts(t *testing.T, sessStore SessionDB,
+	acctStore AccountsDB, clock clock.Clock) *BoltDB {
+
+	return newDBFromPathWithSessions(
+		t, t.TempDir(), sessStore, acctStore, clock,
+	)
+}
+
 func newDBFromPathWithSessions(t *testing.T, dbPath string,
 	sessStore SessionDB, acctStore AccountsDB, clock clock.Clock) *BoltDB {
 
@@ -39,4 +51,12 @@ func newDBFromPathWithSessions(t *testing.T, dbPath string,
 	})
 
 	return store
+}
+
+func assertEqualActions(t *testing.T, expected, got *Action) {
+	// Accounts are not explicitly linked in our bbolt DB implementation.
+	got.AccountID = expected.AccountID
+	require.Equal(t, expected, got)
+
+	got.AccountID = fn.None[accounts.AccountID]()
 }

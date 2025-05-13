@@ -24,18 +24,17 @@ func TestActionStorage(t *testing.T) {
 
 	ctx := context.Background()
 	clock := clock.NewTestClock(testTime1)
-	sessDB := session.NewTestDB(t, clock)
 	accountsDB := accounts.NewTestDB(t, clock)
+	sessDB := session.NewTestDBWithAccounts(t, clock, accountsDB)
 
-	db, err := NewBoltDB(t.TempDir(), "test.db", sessDB, accountsDB, clock)
-	require.NoError(t, err)
+	db := NewTestDBWithSessionsAndAccounts(t, sessDB, accountsDB, clock)
 	t.Cleanup(func() {
 		_ = db.Close()
 	})
 
 	// Assert that attempting to add an action for a session that does not
 	// exist returns an error.
-	_, err = db.AddAction(ctx, &AddActionReq{
+	_, err := db.AddAction(ctx, &AddActionReq{
 		SessionID: fn.Some(session.ID{1, 2, 3, 4}),
 	})
 	require.ErrorIs(t, err, session.ErrSessionNotFound)
@@ -194,13 +193,11 @@ func TestActionStorage(t *testing.T) {
 func TestListActions(t *testing.T) {
 	t.Parallel()
 
-	tmpDir := t.TempDir()
 	ctx := context.Background()
 	clock := clock.NewDefaultClock()
 	sessDB := session.NewTestDB(t, clock)
 
-	db, err := NewBoltDB(tmpDir, "test.db", sessDB, nil, clock)
-	require.NoError(t, err)
+	db := NewTestDBWithSessions(t, sessDB, clock)
 	t.Cleanup(func() {
 		_ = db.Close()
 	})
@@ -468,8 +465,7 @@ func TestListGroupActions(t *testing.T) {
 		State:        ActionStateInit,
 	}
 
-	db, err := NewBoltDB(t.TempDir(), "test.db", sessDB, nil, clock)
-	require.NoError(t, err)
+	db := NewTestDBWithSessions(t, sessDB, clock)
 	t.Cleanup(func() {
 		_ = db.Close()
 	})
@@ -513,23 +509,4 @@ func TestListGroupActions(t *testing.T) {
 	require.Len(t, al, 2)
 	assertEqualActions(t, action2, al[0])
 	assertEqualActions(t, action1, al[1])
-}
-
-func assertEqualActions(t *testing.T, expected, got *Action) {
-	// Accounts are not explicitly linked in our bbolt DB implementation.
-	got.AccountID = expected.AccountID
-
-	expectedAttemptedAt := expected.AttemptedAt
-	actualAttemptedAt := got.AttemptedAt
-
-	expected.AttemptedAt = time.Time{}
-	got.AttemptedAt = time.Time{}
-
-	require.Equal(t, expected, got)
-	require.Equal(t, expectedAttemptedAt.Unix(), actualAttemptedAt.Unix())
-
-	expected.AttemptedAt = expectedAttemptedAt
-	got.AttemptedAt = actualAttemptedAt
-
-	got.AccountID = fn.None[accounts.AccountID]()
 }
