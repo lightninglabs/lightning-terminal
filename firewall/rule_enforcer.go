@@ -237,9 +237,11 @@ func (r *RuleEnforcer) Intercept(ctx context.Context,
 func (r *RuleEnforcer) handleRequest(ctx context.Context,
 	ri *RequestInfo) (proto.Message, error) {
 
-	sessionID, err := session.IDFromMacaroon(ri.Macaroon)
+	sessionID, err := ri.SessionID.UnwrapOrErr(
+		fmt.Errorf("no session ID found in request info"),
+	)
 	if err != nil {
-		return nil, fmt.Errorf("could not extract ID from macaroon")
+		return nil, err
 	}
 
 	rules, err := r.collectEnforcers(ctx, ri, sessionID)
