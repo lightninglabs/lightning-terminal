@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/fn"
@@ -24,8 +25,9 @@ func TestActionStorage(t *testing.T) {
 	ctx := context.Background()
 	clock := clock.NewTestClock(testTime1)
 	sessDB := session.NewTestDB(t, clock)
+	accountsDB := accounts.NewTestDB(t, clock)
 
-	db, err := NewBoltDB(t.TempDir(), "test.db", sessDB, clock)
+	db, err := NewBoltDB(t.TempDir(), "test.db", sessDB, accountsDB, clock)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
@@ -37,6 +39,13 @@ func TestActionStorage(t *testing.T) {
 		SessionID: fn.Some(session.ID{1, 2, 3, 4}),
 	})
 	require.ErrorIs(t, err, session.ErrSessionNotFound)
+
+	// Assert that attempting to add an action that links to an account
+	// that does not exist returns an error.
+	_, err = db.AddAction(ctx, &AddActionReq{
+		AccountID: fn.Some(accounts.AccountID{1, 2, 3, 4}),
+	})
+	require.ErrorIs(t, err, accounts.ErrAccNotFound)
 
 	// Add two sessions to the session DB so that we can reference them.
 	sess1, err := sessDB.NewSession(
@@ -51,8 +60,13 @@ func TestActionStorage(t *testing.T) {
 	)
 	require.NoError(t, err)
 
+	// Add an account that we can link to as well.
+	acct1, err := accountsDB.NewAccount(ctx, 0, time.Time{}, "foo")
+	require.NoError(t, err)
+
 	action1Req := &AddActionReq{
 		SessionID:          fn.Some(sess1.ID),
+		AccountID:          fn.Some(acct1.ID),
 		MacaroonIdentifier: sess1.ID,
 		ActorName:          "Autopilot",
 		FeatureName:        "auto-fees",
@@ -185,7 +199,7 @@ func TestListActions(t *testing.T) {
 	clock := clock.NewDefaultClock()
 	sessDB := session.NewTestDB(t, clock)
 
-	db, err := NewBoltDB(tmpDir, "test.db", sessDB, clock)
+	db, err := NewBoltDB(tmpDir, "test.db", sessDB, nil, clock)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
@@ -452,7 +466,7 @@ func TestListGroupActions(t *testing.T) {
 		State:        ActionStateInit,
 	}
 
-	db, err := NewBoltDB(t.TempDir(), "test.db", sessDB, clock)
+	db, err := NewBoltDB(t.TempDir(), "test.db", sessDB, nil, clock)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
@@ -490,6 +504,9 @@ func TestListGroupActions(t *testing.T) {
 }
 
 func assertEqualActions(t *testing.T, expected, got *Action) {
+	// Accounts are not explicitly linked in our bbolt DB implementation.
+	got.AccountID = expected.AccountID
+
 	expectedAttemptedAt := expected.AttemptedAt
 	actualAttemptedAt := got.AttemptedAt
 
@@ -501,4 +518,6 @@ func assertEqualActions(t *testing.T, expected, got *Action) {
 
 	expected.AttemptedAt = expectedAttemptedAt
 	got.AttemptedAt = actualAttemptedAt
+
+	got.AccountID = fn.None[accounts.AccountID]()
 }
