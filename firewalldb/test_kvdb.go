@@ -28,6 +28,14 @@ func NewTestDBWithSessions(t *testing.T, sessStore SessionDB,
 	return newDBFromPathWithSessions(t, t.TempDir(), sessStore, nil, clock)
 }
 
+func NewTestDBWithSessionsAndAccounts(t *testing.T, sessStore SessionDB,
+	acctStore AccountsDB, clock clock.Clock) *BoltDB {
+
+	return newDBFromPathWithSessions(
+		t, t.TempDir(), sessStore, acctStore, clock,
+	)
+}
+
 func newDBFromPathWithSessions(t *testing.T, dbPath string,
 	sessStore SessionDB, acctStore AccountsDB, clock clock.Clock) *BoltDB {
 
@@ -39,4 +47,10 @@ func newDBFromPathWithSessions(t *testing.T, dbPath string,
 	})
 
 	return store
+}
+
+func assertEqualActions(t *testing.T, expected, got *Action) {
+	// Accounts are not explicitly linked in our bbolt DB implementation.
+	got.AccountID = expected.AccountID
+	require.Equal(t, expected, got)
 }
