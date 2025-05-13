@@ -19,6 +19,7 @@ var (
 type firewallDBs interface {
 	RulesDB
 	PrivacyMapper
+	ActionDB
 }
 
 // DB manages the firewall rules database.
