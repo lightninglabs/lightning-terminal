@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/stretchr/testify/require"
@@ -22,17 +23,37 @@ func TestActionStorage(t *testing.T) {
 
 	ctx := context.Background()
 	clock := clock.NewTestClock(testTime1)
+	sessDB := session.NewTestDB(t, clock)
 
-	db, err := NewBoltDB(t.TempDir(), "test.db", nil, clock)
+	db, err := NewBoltDB(t.TempDir(), "test.db", sessDB, clock)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
 	})
 
-	sessionID1 := intToSessionID(1)
+	// Assert that attempting to add an action for a session that does not
+	// exist returns an error.
+	_, err = db.AddAction(ctx, &AddActionReq{
+		SessionID: fn.Some(session.ID{1, 2, 3, 4}),
+	})
+	require.ErrorIs(t, err, session.ErrSessionNotFound)
+
+	// Add two sessions to the session DB so that we can reference them.
+	sess1, err := sessDB.NewSession(
+		ctx, "sess 1", session.TypeAutopilot, time.Unix(1000, 0),
+		"something",
+	)
+	require.NoError(t, err)
+
+	sess2, err := sessDB.NewSession(
+		ctx, "sess 2", session.TypeAutopilot, time.Unix(1000, 0),
+		"something",
+	)
+	require.NoError(t, err)
+
 	action1Req := &AddActionReq{
-		SessionID:          fn.Some(sessionID1),
-		MacaroonIdentifier: sessionID1,
+		SessionID:          fn.Some(sess1.ID),
+		MacaroonIdentifier: sess1.ID,
 		ActorName:          "Autopilot",
 		FeatureName:        "auto-fees",
 		Trigger:            "fee too low",
@@ -48,10 +69,9 @@ func TestActionStorage(t *testing.T) {
 		State:        ActionStateDone,
 	}
 
-	sessionID2 := intToSessionID(2)
 	action2Req := &AddActionReq{
-		SessionID:          fn.Some(sessionID2),
-		MacaroonIdentifier: sessionID2,
+		SessionID:          fn.Some(sess2.ID),
+		MacaroonIdentifier: sess2.ID,
 		ActorName:          "Autopilot",
 		FeatureName:        "rebalancer",
 		Trigger:            "channels not balanced",
@@ -68,7 +88,7 @@ func TestActionStorage(t *testing.T) {
 
 	actions, _, _, err := db.ListActions(
 		ctx, nil,
-		WithActionSessionID(sessionID1),
+		WithActionSessionID(sess1.ID),
 		WithActionState(ActionStateDone),
 	)
 	require.NoError(t, err)
@@ -76,7 +96,7 @@ func TestActionStorage(t *testing.T) {
 
 	actions, _, _, err = db.ListActions(
 		ctx, nil,
-		WithActionSessionID(sessionID2),
+		WithActionSessionID(sess2.ID),
 		WithActionState(ActionStateDone),
 	)
 	require.NoError(t, err)
@@ -94,7 +114,7 @@ func TestActionStorage(t *testing.T) {
 
 	actions, _, _, err = db.ListActions(
 		ctx, nil,
-		WithActionSessionID(sessionID1),
+		WithActionSessionID(sess1.ID),
 		WithActionState(ActionStateDone),
 	)
 	require.NoError(t, err)
@@ -103,7 +123,7 @@ func TestActionStorage(t *testing.T) {
 
 	actions, _, _, err = db.ListActions(
 		ctx, nil,
-		WithActionSessionID(sessionID2),
+		WithActionSessionID(sess2.ID),
 		WithActionState(ActionStateDone),
 	)
 	require.NoError(t, err)
@@ -114,7 +134,7 @@ func TestActionStorage(t *testing.T) {
 
 	actions, _, _, err = db.ListActions(
 		ctx, nil,
-		WithActionSessionID(sessionID2),
+		WithActionSessionID(sess2.ID),
 		WithActionState(ActionStateDone),
 	)
 	require.NoError(t, err)
@@ -145,7 +165,7 @@ func TestActionStorage(t *testing.T) {
 
 	actions, _, _, err = db.ListActions(
 		ctx, nil,
-		WithActionSessionID(sessionID2),
+		WithActionSessionID(sess2.ID),
 		WithActionState(ActionStateError),
 	)
 	require.NoError(t, err)
@@ -162,15 +182,27 @@ func TestListActions(t *testing.T) {
 
 	tmpDir := t.TempDir()
 	ctx := context.Background()
+	clock := clock.NewDefaultClock()
+	sessDB := session.NewTestDB(t, clock)
 
-	db, err := NewBoltDB(tmpDir, "test.db", nil, clock.NewDefaultClock())
+	db, err := NewBoltDB(tmpDir, "test.db", sessDB, clock)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
 	})
 
-	sessionID1 := [4]byte{1, 1, 1, 1}
-	sessionID2 := [4]byte{2, 2, 2, 2}
+	// Add 2 sessions that we can reference.
+	sess1, err := sessDB.NewSession(
+		ctx, "sess 1", session.TypeAutopilot, time.Unix(1000, 0),
+		"something",
+	)
+	require.NoError(t, err)
+
+	sess2, err := sessDB.NewSession(
+		ctx, "sess 2", session.TypeAutopilot, time.Unix(1000, 0),
+		"nothing",
+	)
+	require.NoError(t, err)
 
 	actionIds := 0
 	addAction := func(sessionID [4]byte) {
@@ -206,11 +238,11 @@ func TestListActions(t *testing.T) {
 		}
 	}
 
-	addAction(sessionID1)
-	addAction(sessionID1)
-	addAction(sessionID1)
-	addAction(sessionID1)
-	addAction(sessionID2)
+	addAction(sess1.ID)
+	addAction(sess1.ID)
+	addAction(sess1.ID)
+	addAction(sess1.ID)
+	addAction(sess2.ID)
 
 	actions, lastIndex, totalCount, err := db.ListActions(ctx, nil)
 	require.NoError(t, err)
@@ -218,11 +250,11 @@ func TestListActions(t *testing.T) {
 	require.EqualValues(t, 5, lastIndex)
 	require.EqualValues(t, 0, totalCount)
 	assertActions(actions, []*action{
-		{sessionID1, "1"},
-		{sessionID1, "2"},
-		{sessionID1, "3"},
-		{sessionID1, "4"},
-		{sessionID2, "5"},
+		{sess1.ID, "1"},
+		{sess1.ID, "2"},
+		{sess1.ID, "3"},
+		{sess1.ID, "4"},
+		{sess2.ID, "5"},
 	})
 
 	query := &ListActionsQuery{
@@ -235,11 +267,11 @@ func TestListActions(t *testing.T) {
 	require.EqualValues(t, 1, lastIndex)
 	require.EqualValues(t, 0, totalCount)
 	assertActions(actions, []*action{
-		{sessionID2, "5"},
-		{sessionID1, "4"},
-		{sessionID1, "3"},
-		{sessionID1, "2"},
-		{sessionID1, "1"},
+		{sess2.ID, "5"},
+		{sess1.ID, "4"},
+		{sess1.ID, "3"},
+		{sess1.ID, "2"},
+		{sess1.ID, "1"},
 	})
 
 	actions, lastIndex, totalCount, err = db.ListActions(
@@ -252,11 +284,11 @@ func TestListActions(t *testing.T) {
 	require.EqualValues(t, 5, lastIndex)
 	require.EqualValues(t, 5, totalCount)
 	assertActions(actions, []*action{
-		{sessionID1, "1"},
-		{sessionID1, "2"},
-		{sessionID1, "3"},
-		{sessionID1, "4"},
-		{sessionID2, "5"},
+		{sess1.ID, "1"},
+		{sess1.ID, "2"},
+		{sess1.ID, "3"},
+		{sess1.ID, "4"},
+		{sess2.ID, "5"},
 	})
 
 	actions, lastIndex, totalCount, err = db.ListActions(
@@ -270,18 +302,18 @@ func TestListActions(t *testing.T) {
 	require.EqualValues(t, 1, lastIndex)
 	require.EqualValues(t, 5, totalCount)
 	assertActions(actions, []*action{
-		{sessionID2, "5"},
-		{sessionID1, "4"},
-		{sessionID1, "3"},
-		{sessionID1, "2"},
-		{sessionID1, "1"},
+		{sess2.ID, "5"},
+		{sess1.ID, "4"},
+		{sess1.ID, "3"},
+		{sess1.ID, "2"},
+		{sess1.ID, "1"},
 	})
 
-	addAction(sessionID2)
-	addAction(sessionID2)
-	addAction(sessionID1)
-	addAction(sessionID1)
-	addAction(sessionID2)
+	addAction(sess2.ID)
+	addAction(sess2.ID)
+	addAction(sess1.ID)
+	addAction(sess1.ID)
+	addAction(sess2.ID)
 
 	actions, lastIndex, totalCount, err = db.ListActions(ctx, nil)
 	require.NoError(t, err)
@@ -289,16 +321,16 @@ func TestListActions(t *testing.T) {
 	require.EqualValues(t, 10, lastIndex)
 	require.EqualValues(t, 0, totalCount)
 	assertActions(actions, []*action{
-		{sessionID1, "1"},
-		{sessionID1, "2"},
-		{sessionID1, "3"},
-		{sessionID1, "4"},
-		{sessionID2, "5"},
-		{sessionID2, "6"},
-		{sessionID2, "7"},
-		{sessionID1, "8"},
-		{sessionID1, "9"},
-		{sessionID2, "10"},
+		{sess1.ID, "1"},
+		{sess1.ID, "2"},
+		{sess1.ID, "3"},
+		{sess1.ID, "4"},
+		{sess2.ID, "5"},
+		{sess2.ID, "6"},
+		{sess2.ID, "7"},
+		{sess1.ID, "8"},
+		{sess1.ID, "9"},
+		{sess2.ID, "10"},
 	})
 
 	actions, lastIndex, totalCount, err = db.ListActions(
@@ -312,9 +344,9 @@ func TestListActions(t *testing.T) {
 	require.EqualValues(t, 3, lastIndex)
 	require.EqualValues(t, 10, totalCount)
 	assertActions(actions, []*action{
-		{sessionID1, "1"},
-		{sessionID1, "2"},
-		{sessionID1, "3"},
+		{sess1.ID, "1"},
+		{sess1.ID, "2"},
+		{sess1.ID, "3"},
 	})
 
 	actions, lastIndex, totalCount, err = db.ListActions(
@@ -328,9 +360,9 @@ func TestListActions(t *testing.T) {
 	require.EqualValues(t, 6, lastIndex)
 	require.EqualValues(t, 0, totalCount)
 	assertActions(actions, []*action{
-		{sessionID1, "4"},
-		{sessionID2, "5"},
-		{sessionID2, "6"},
+		{sess1.ID, "4"},
+		{sess2.ID, "5"},
+		{sess2.ID, "6"},
 	})
 
 	actions, lastIndex, totalCount, err = db.ListActions(
@@ -345,9 +377,9 @@ func TestListActions(t *testing.T) {
 	require.EqualValues(t, 6, lastIndex)
 	require.EqualValues(t, 10, totalCount)
 	assertActions(actions, []*action{
-		{sessionID1, "4"},
-		{sessionID2, "5"},
-		{sessionID2, "6"},
+		{sess1.ID, "4"},
+		{sess2.ID, "5"},
+		{sess2.ID, "6"},
 	})
 }
 
@@ -358,12 +390,36 @@ func TestListGroupActions(t *testing.T) {
 	ctx := context.Background()
 	clock := clock.NewTestClock(testTime1)
 
-	group1 := intToSessionID(0)
+	sessDB := session.NewTestDB(t, clock)
 
-	sessionID1 := intToSessionID(1)
+	// Create two sessions both linked to session 1's group.
+	sess1, err := sessDB.NewSession(
+		ctx, "sess 1", session.TypeAutopilot, time.Unix(1000, 0),
+		"something",
+	)
+	require.NoError(t, err)
+
+	// We'll first need to revoke session 1 before we can link another
+	// session to the group.
+	require.NoError(
+		t, sessDB.ShiftState(ctx, sess1.ID, session.StateCreated),
+	)
+	require.NoError(
+		t, sessDB.ShiftState(ctx, sess1.ID, session.StateRevoked),
+	)
+
+	group1 := sess1.GroupID
+
+	// Create session 2 and link it to the same group as session 1.
+	sess2, err := sessDB.NewSession(
+		ctx, "sess 2", session.TypeAutopilot, time.Unix(1000, 0),
+		"something", session.WithLinkedGroupID(&group1),
+	)
+	require.NoError(t, err)
+
 	action1Req := &AddActionReq{
-		SessionID:          fn.Some(sessionID1),
-		MacaroonIdentifier: sessionID1,
+		SessionID:          fn.Some(sess1.ID),
+		MacaroonIdentifier: sess1.ID,
 		ActorName:          "Autopilot",
 		FeatureName:        "auto-fees",
 		Trigger:            "fee too low",
@@ -379,10 +435,9 @@ func TestListGroupActions(t *testing.T) {
 		State:        ActionStateDone,
 	}
 
-	sessionID2 := intToSessionID(2)
 	action2Req := &AddActionReq{
-		SessionID:          fn.Some(sessionID2),
-		MacaroonIdentifier: sessionID2,
+		SessionID:          fn.Some(sess2.ID),
+		MacaroonIdentifier: sess2.ID,
 		ActorName:          "Autopilot",
 		FeatureName:        "rebalancer",
 		Trigger:            "channels not balanced",
@@ -397,12 +452,7 @@ func TestListGroupActions(t *testing.T) {
 		State:        ActionStateInit,
 	}
 
-	// Link session 1 and session 2 to group 1.
-	index := NewMockSessionDB()
-	index.AddPair(sessionID1, group1)
-	index.AddPair(sessionID2, group1)
-
-	db, err := NewBoltDB(t.TempDir(), "test.db", index, clock)
+	db, err := NewBoltDB(t.TempDir(), "test.db", sessDB, clock)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
