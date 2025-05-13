@@ -54,8 +54,20 @@ var (
 )
 
 // AddAction serialises and adds an Action to the DB under the given sessionID.
-func (db *BoltDB) AddAction(_ context.Context,
+func (db *BoltDB) AddAction(ctx context.Context,
 	req *AddActionReq) (ActionLocator, error) {
+
+	// If the new action links to a session, the session must exist.
+	// For the bbolt impl of the store, this is our best effort attempt
+	// at ensuring each action links to a session. If the session is
+	// deleted later on, however, then the action will still exist.
+	var err error
+	req.SessionID.WhenSome(func(id session.ID) {
+		_, err = db.sessionIDIndex.GetSession(ctx, id)
+	})
+	if err != nil {
+		return nil, err
+	}
 
 	action := &Action{
 		AddActionReq: *req,
@@ -69,7 +81,7 @@ func (db *BoltDB) AddAction(_ context.Context,
 	}
 
 	var locator kvdbActionLocator
-	err := db.DB.Update(func(tx *bbolt.Tx) error {
+	err = db.DB.Update(func(tx *bbolt.Tx) error {
 		mainActionsBucket, err := getBucket(tx, actionsBucketKey)
 		if err != nil {
 			return err
