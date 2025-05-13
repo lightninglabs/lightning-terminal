@@ -14,11 +14,23 @@ import (
 var (
 	testTime1 = time.Unix(32100, 0)
 	testTime2 = time.Unix(12300, 0)
+)
 
-	sessionID1 = intToSessionID(1)
-	sessionID2 = intToSessionID(2)
+// TestActionStorage tests that the ActionsListDB CRUD logic.
+func TestActionStorage(t *testing.T) {
+	t.Parallel()
 
-	action1Req = &AddActionReq{
+	ctx := context.Background()
+	clock := clock.NewTestClock(testTime1)
+
+	db, err := NewBoltDB(t.TempDir(), "test.db", nil, clock)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_ = db.Close()
+	})
+
+	sessionID1 := intToSessionID(1)
+	action1Req := &AddActionReq{
 		SessionID:          fn.Some(sessionID1),
 		MacaroonIdentifier: sessionID1,
 		ActorName:          "Autopilot",
@@ -30,13 +42,14 @@ var (
 		RPCParamsJson:      []byte("new fee"),
 	}
 
-	action1 = &Action{
+	action1 := &Action{
 		AddActionReq: *action1Req,
 		AttemptedAt:  testTime1,
 		State:        ActionStateDone,
 	}
 
-	action2Req = &AddActionReq{
+	sessionID2 := intToSessionID(2)
+	action2Req := &AddActionReq{
 		SessionID:          fn.Some(sessionID2),
 		MacaroonIdentifier: sessionID2,
 		ActorName:          "Autopilot",
@@ -47,23 +60,11 @@ var (
 		RPCParamsJson:      []byte("hops, amount"),
 	}
 
-	action2 = &Action{
+	action2 := &Action{
 		AddActionReq: *action2Req,
 		AttemptedAt:  testTime2,
 		State:        ActionStateInit,
 	}
-)
-
-// TestActionStorage tests that the ActionsListDB CRUD logic.
-func TestActionStorage(t *testing.T) {
-	ctx := context.Background()
-	clock := clock.NewTestClock(testTime1)
-
-	db, err := NewBoltDB(t.TempDir(), "test.db", nil, clock)
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		_ = db.Close()
-	})
 
 	actions, _, _, err := db.ListActions(
 		ctx, nil,
@@ -157,6 +158,8 @@ func TestActionStorage(t *testing.T) {
 // TestListActions tests some ListAction options.
 // TODO(elle): cover more test cases here.
 func TestListActions(t *testing.T) {
+	t.Parallel()
+
 	tmpDir := t.TempDir()
 	ctx := context.Background()
 
@@ -356,6 +359,43 @@ func TestListGroupActions(t *testing.T) {
 	clock := clock.NewTestClock(testTime1)
 
 	group1 := intToSessionID(0)
+
+	sessionID1 := intToSessionID(1)
+	action1Req := &AddActionReq{
+		SessionID:          fn.Some(sessionID1),
+		MacaroonIdentifier: sessionID1,
+		ActorName:          "Autopilot",
+		FeatureName:        "auto-fees",
+		Trigger:            "fee too low",
+		Intent:             "increase fee",
+		StructuredJsonData: "{\"something\":\"nothing\"}",
+		RPCMethod:          "UpdateChanPolicy",
+		RPCParamsJson:      []byte("new fee"),
+	}
+
+	action1 := &Action{
+		AddActionReq: *action1Req,
+		AttemptedAt:  testTime1,
+		State:        ActionStateDone,
+	}
+
+	sessionID2 := intToSessionID(2)
+	action2Req := &AddActionReq{
+		SessionID:          fn.Some(sessionID2),
+		MacaroonIdentifier: sessionID2,
+		ActorName:          "Autopilot",
+		FeatureName:        "rebalancer",
+		Trigger:            "channels not balanced",
+		Intent:             "balance",
+		RPCMethod:          "SendToRoute",
+		RPCParamsJson:      []byte("hops, amount"),
+	}
+
+	action2 := &Action{
+		AddActionReq: *action2Req,
+		AttemptedAt:  testTime2,
+		State:        ActionStateInit,
+	}
 
 	// Link session 1 and session 2 to group 1.
 	index := NewMockSessionDB()
