@@ -209,6 +209,12 @@ message Action {
     The ID of the session under which the action was performed.
     */
     bytes session_id = 11;
+
+    /*
+    The 4 byte identifier of the macaroon that was used to perform the action.
+    This is derived from the last 4 bytes of the macaroon's root key ID.
+    */
+    bytes macaroon_identifier = 12;
 }
 
 enum ActionState {

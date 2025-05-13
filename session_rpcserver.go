@@ -738,6 +738,7 @@ func (s *sessionRpcServer) ListActions(ctx context.Context,
 
 		resp[i] = &litrpc.Action{
 			SessionId:          sessionID[:],
+			MacaroonIdentifier: a.MacaroonIdentifier[:],
 			ActorName:          a.ActorName,
 			FeatureName:        a.FeatureName,
 			Trigger:            a.Trigger,

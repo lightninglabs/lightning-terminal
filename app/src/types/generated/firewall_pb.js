@@ -1303,7 +1303,8 @@ proto.litrpc.Action.toObject = function(includeInstance, msg) {
     timestamp: jspb.Message.getFieldWithDefault(msg, 8, "0"),
     state: jspb.Message.getFieldWithDefault(msg, 9, 0),
     errorReason: jspb.Message.getFieldWithDefault(msg, 10, ""),
-    sessionId: msg.getSessionId_asB64()
+    sessionId: msg.getSessionId_asB64(),
+    macaroonIdentifier: msg.getMacaroonIdentifier_asB64()
   };
 
   if (includeInstance) {
@@ -1383,6 +1384,10 @@ proto.litrpc.Action.deserializeBinaryFromReader = function(msg, reader) {
     case 11:
       var value = /** @type {!Uint8Array} */ (reader.readBytes());
       msg.setSessionId(value);
+      break;
+    case 12:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setMacaroonIdentifier(value);
       break;
     default:
       reader.skipField();
@@ -1487,6 +1492,13 @@ proto.litrpc.Action.serializeBinaryToWriter = function(message, writer) {
   if (f.length > 0) {
     writer.writeBytes(
       11,
+      f
+    );
+  }
+  f = message.getMacaroonIdentifier_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      12,
       f
     );
   }
@@ -1712,6 +1724,48 @@ proto.litrpc.Action.prototype.getSessionId_asU8 = function() {
  */
 proto.litrpc.Action.prototype.setSessionId = function(value) {
   return jspb.Message.setProto3BytesField(this, 11, value);
+};
+
+
+/**
+ * optional bytes macaroon_identifier = 12;
+ * @return {!(string|Uint8Array)}
+ */
+proto.litrpc.Action.prototype.getMacaroonIdentifier = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 12, ""));
+};
+
+
+/**
+ * optional bytes macaroon_identifier = 12;
+ * This is a type-conversion wrapper around `getMacaroonIdentifier()`
+ * @return {string}
+ */
+proto.litrpc.Action.prototype.getMacaroonIdentifier_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getMacaroonIdentifier()));
+};
+
+
+/**
+ * optional bytes macaroon_identifier = 12;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getMacaroonIdentifier()`
+ * @return {!Uint8Array}
+ */
+proto.litrpc.Action.prototype.getMacaroonIdentifier_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getMacaroonIdentifier()));
+};
+
+
+/**
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.litrpc.Action} returns this
+ */
+proto.litrpc.Action.prototype.setMacaroonIdentifier = function(value) {
+  return jspb.Message.setProto3BytesField(this, 12, value);
 };
 
 
