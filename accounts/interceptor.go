@@ -81,7 +81,7 @@ func (s *InterceptorService) Intercept(ctx context.Context,
 		return mid.RPCErrString(req, "error parsing macaroon: %v", err)
 	}
 
-	acctID, err := accountFromMacaroon(mac)
+	acctID, err := IDFromCaveats(mac.Caveats())
 	if err != nil {
 		return mid.RPCErrString(
 			req, "error parsing account from macaroon: %v", err,
@@ -91,15 +91,17 @@ func (s *InterceptorService) Intercept(ctx context.Context,
 	// No account lock in the macaroon, something's weird. The interceptor
 	// wouldn't have been triggered if there was no caveat, so we do expect
 	// a macaroon here.
-	if acctID == nil {
-		return mid.RPCErrString(req, "expected account ID in "+
-			"macaroon caveat")
+	accountID, err := acctID.UnwrapOrErr(
+		fmt.Errorf("expected account ID in macaroon caveat"),
+	)
+	if err != nil {
+		return mid.RPCErr(req, err)
 	}
 
-	acct, err := s.Account(ctx, *acctID)
+	acct, err := s.Account(ctx, accountID)
 	if err != nil {
 		return mid.RPCErrString(
-			req, "error getting account %x: %v", acctID[:], err,
+			req, "error getting account %x: %v", accountID[:], err,
 		)
 	}
 
@@ -206,27 +208,6 @@ func parseRPCMessage(msg *lnrpc.RPCMessage) (proto.Message, error) {
 	}
 
 	return parsedMsg, nil
-}
-
-// accountFromMacaroon attempts to extract an account ID from the custom account
-// caveat in the macaroon.
-func accountFromMacaroon(mac *macaroon.Macaroon) (*AccountID, error) {
-	if mac == nil {
-		return nil, nil
-	}
-
-	// Extract the account caveat from the macaroon.
-	accountID, err := IDFromCaveats(mac.Caveats())
-	if err != nil {
-		return nil, err
-	}
-
-	var id *AccountID
-	accountID.WhenSome(func(aID AccountID) {
-		id = &aID
-	})
-
-	return id, nil
 }
 
 // CaveatFromID creates a custom caveat that can be used to bind a macaroon to
