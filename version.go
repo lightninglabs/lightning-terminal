@@ -48,12 +48,13 @@ func Version() string {
 }
 
 // RichVersion returns the application version as a properly formed string
-// per the semantic versioning 2.0.0 spec (http://semver.org/), the git tag it
-// was built on.
+// per the semantic versioning 2.0.0 spec (http://semver.org/), the git tag and
+// commit hash it was built on.
 func RichVersion() string {
-	// Append git tag of current build to version.
+	// Append git tag and commit hash of current build to version.
 	return fmt.Sprintf(
-		"%s commit=%s", semanticVersion(), Commit,
+		"%s commit=%s commit_hash=%s", semanticVersion(), Commit,
+		CommitHash,
 	)
 }
 
