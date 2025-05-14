@@ -1302,6 +1302,31 @@ func testCustomChannelsGroupTranchesForceClose(ctx context.Context,
 	}
 	logBalanceGroup(t.t, nodes, groupIDs, "after keysend Erin->Fabia")
 
+	// We also assert that in a grouped channel with multiple grouped asset
+	// UTXOs we get a proper error if we try to do payments or create
+	// invoices while using a single asset ID.
+	sendAssetKeySendPayment(
+		t.t, erin, fabia, keySendAmount, assetID1, fn.None[int64](),
+		withPayErrSubStr(
+			"make sure to use group key for grouped asset channels",
+		),
+	)
+	createAssetInvoice(
+		t.t, charlie, dave, 100, assetID1, withInvoiceErrSubStr(
+			"make sure to use group key for grouped asset channels",
+		),
+	)
+	invoiceResp := createAssetInvoice(
+		t.t, charlie, dave, keySendAmount, nil,
+		withInvGroupKey(groupKey),
+	)
+	payInvoiceWithAssets(
+		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID1,
+		withPayErrSubStr(
+			"make sure to use group key for grouped asset channels",
+		),
+	)
+
 	// ------------
 	// Test case 3: Co-op close the channel between Charlie and Dave.
 	// ------------
