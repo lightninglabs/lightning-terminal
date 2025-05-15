@@ -75,6 +75,9 @@
 
 * Updated [`tapd` to
   `v0.5.2`](https://github.com/lightninglabs/lightning-terminal/pull/987).
+* All Taproot Asset Channel related commands (`litcli ln ...`) can now [use
+  a new `--group_key` flag to interact with grouped asset
+  channels](https://github.com/lightninglabs/lightning-terminal/pull/1052).
 
 # Contributors (Alphabetical Order)
 
