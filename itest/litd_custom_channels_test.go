@@ -1302,6 +1302,31 @@ func testCustomChannelsGroupTranchesForceClose(ctx context.Context,
 	}
 	logBalanceGroup(t.t, nodes, groupIDs, "after keysend Erin->Fabia")
 
+	// We also assert that in a grouped channel with multiple grouped asset
+	// UTXOs we get a proper error if we try to do payments or create
+	// invoices while using a single asset ID.
+	sendAssetKeySendPayment(
+		t.t, erin, fabia, keySendAmount, assetID1, fn.None[int64](),
+		withPayErrSubStr(
+			"make sure to use group key for grouped asset channels",
+		),
+	)
+	createAssetInvoice(
+		t.t, charlie, dave, 100, assetID1, withInvoiceErrSubStr(
+			"make sure to use group key for grouped asset channels",
+		),
+	)
+	invoiceResp := createAssetInvoice(
+		t.t, charlie, dave, keySendAmount, nil,
+		withInvGroupKey(groupKey),
+	)
+	payInvoiceWithAssets(
+		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID1,
+		withPayErrSubStr(
+			"make sure to use group key for grouped asset channels",
+		),
+	)
+
 	// ------------
 	// Test case 3: Co-op close the channel between Charlie and Dave.
 	// ------------
@@ -3746,6 +3771,10 @@ func testCustomChannelsFee(ctx context.Context, net *NetworkHarness,
 	errSpecifyFeerate := "fee rate must be specified"
 	require.ErrorContains(t.t, err, errSpecifyFeerate)
 
+	net.feeService.SetMinRelayFeerate(
+		chainfee.SatPerVByte(2).FeePerKVByte(),
+	)
+
 	// Fund a channel with a fee rate that is too low.
 	tooLowFeeRate := uint32(1)
 	tooLowFeeRateAmount := chainfee.SatPerVByte(tooLowFeeRate)
@@ -4320,12 +4349,10 @@ func testCustomChannelsDecodeAssetInvoice(ctx context.Context,
 
 	// Now that we have our payment request, we'll call into the new decode
 	// asset pay req call.
-	decodeResp, err := aliceTap.DecodeAssetPayReq(
-		ctx, &tchrpc.AssetPayReq{
-			AssetId:      assetID,
-			PayReqString: payReq,
-		},
-	)
+	decodeResp, err := aliceTap.DecodeAssetPayReq(ctx, &tchrpc.AssetPayReq{
+		AssetId:      assetID,
+		PayReqString: payReq,
+	})
 	require.NoError(t.t, err)
 
 	// The decimal display information, genesis, and asset group information
@@ -4340,6 +4367,20 @@ func testCustomChannelsDecodeAssetInvoice(ctx context.Context,
 	// display 6 that's 100 billion asset units.
 	const expectedUnits = 100_000_000_000
 	require.Equal(t.t, int64(expectedUnits), int64(decodeResp.AssetAmount))
+
+	// We do the same call again, but this time using the group key for the
+	// decoding query.
+	decodeResp2, err := aliceTap.DecodeAssetPayReq(ctx, &tchrpc.AssetPayReq{
+		GroupKey:     usdAsset.AssetGroup.TweakedGroupKey,
+		PayReqString: payReq,
+	})
+	require.NoError(t.t, err)
+
+	require.Equal(t.t, decodeResp.AssetAmount, decodeResp2.AssetAmount)
+	require.Equal(t.t, decodeResp.AssetGroup, decodeResp2.AssetGroup)
+	require.Equal(
+		t.t, decodeResp.DecimalDisplay, decodeResp2.DecimalDisplay,
+	)
 }
 
 // testCustomChannelsSelfPayment tests that circular self-payments can be made

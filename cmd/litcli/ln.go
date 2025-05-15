@@ -7,9 +7,8 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"strconv"
+	"time"
 
-	"github.com/lightninglabs/taproot-assets/asset"
 	"github.com/lightninglabs/taproot-assets/rfq"
 	"github.com/lightninglabs/taproot-assets/rfqmath"
 	"github.com/lightninglabs/taproot-assets/rpcutils"
@@ -35,8 +34,9 @@ const (
 
 var lnCommands = []cli.Command{
 	{
-		Name:     "ln",
-		Usage:    "Interact with the Lightning Network.",
+		Name: "ln",
+		Usage: "Interact with Taproot Assets on the Lightning " +
+			"Network.",
 		Category: "Taproot Assets on LN",
 		Subcommands: []cli.Command{
 			fundChannelCommand,
@@ -83,8 +83,16 @@ var fundChannelCommand = cli.Command{
 				"channel.",
 		},
 		cli.StringFlag{
-			Name:  "asset_id",
-			Usage: "The asset ID to commit to the channel.",
+			Name: "asset_id",
+			Usage: "The asset ID to commit to the channel; " +
+				"cannot be used at the same time as " +
+				"--group_key",
+		},
+		cli.StringFlag{
+			Name: "group_key",
+			Usage: "The group key to use for selecting assets to " +
+				"commit to the channel; cannot be used at " +
+				"the same time as --asset_id",
 		},
 	},
 	Action: fundChannel,
@@ -106,9 +114,9 @@ func fundChannel(c *cli.Context) error {
 		return fmt.Errorf("error fetching assets: %w", err)
 	}
 
-	assetIDBytes, err := hex.DecodeString(c.String("asset_id"))
+	assetIDBytes, groupKeyBytes, err := parseAssetIdentifier(c)
 	if err != nil {
-		return fmt.Errorf("error hex decoding asset ID: %w", err)
+		return fmt.Errorf("unable to parse asset identifier: %w", err)
 	}
 
 	requestedAmount := c.Uint64("asset_amount")
@@ -125,7 +133,21 @@ func fundChannel(c *cli.Context) error {
 	assetFound := false
 	totalAmount := uint64(0)
 	for _, rpcAsset := range assets.Assets {
-		if !bytes.Equal(rpcAsset.AssetGenesis.AssetId, assetIDBytes) {
+		if len(assetIDBytes) > 0 && !bytes.Equal(
+			rpcAsset.AssetGenesis.AssetId, assetIDBytes,
+		) {
+
+			continue
+		}
+
+		if len(groupKeyBytes) > 0 && rpcAsset.AssetGroup == nil {
+			continue
+		}
+
+		if len(groupKeyBytes) > 0 && !bytes.Equal(
+			rpcAsset.AssetGroup.TweakedGroupKey, groupKeyBytes,
+		) {
+
 			continue
 		}
 
@@ -149,6 +171,7 @@ func fundChannel(c *cli.Context) error {
 		ctx, &tchrpc.FundChannelRequest{
 			AssetAmount:        requestedAmount,
 			AssetId:            assetIDBytes,
+			GroupKey:           groupKeyBytes,
 			PeerPubkey:         nodePubBytes,
 			FeeRateSatPerVbyte: uint32(c.Uint64("sat_per_vbyte")),
 			PushSat:            c.Int64("push_amt"),
@@ -167,7 +190,15 @@ var (
 	assetIDFlag = cli.StringFlag{
 		Name: "asset_id",
 		Usage: "the asset ID of the asset to use when sending " +
-			"payments with assets",
+			"payments with assets; cannot be used at the same " +
+			"time as --group_key",
+	}
+
+	groupKeyFlag = cli.StringFlag{
+		Name: "group_key",
+		Usage: "the group key of the asset to use when sending " +
+			"payments with assets; cannot be used at the same " +
+			"time as --asset_id",
 	}
 
 	assetAmountFlag = cli.Uint64Flag{
@@ -280,20 +311,94 @@ func (w *resultStreamWrapper) Recv() (*lnrpc.Payment, error) {
 var sendPaymentCommand = cli.Command{
 	Name:     "sendpayment",
 	Category: commands.SendPaymentCommand.Category,
-	Usage: "Send a payment over Lightning, potentially using a " +
-		"mulit-asset channel as the first hop",
-	Description: commands.SendPaymentCommand.Description + `
-	To send an multi-asset LN payment to a single hop, the --asset_id=X
-	argument should be used.
+	Usage: "Send a keysend payment to a direct peer over Lightning, " +
+		"potentially using a multi-asset channel.",
+	Description: `
+	Send a keysend asset payment over the Lightning Network. A keysend
+	payment is an invoice-less payment that is sent to a node using its
+	public key, specified by the --dest argument.
 
-	Note that this will only work in concert with the --keysend argument.
+	Asset keysend payments are only supported to be sent to direct peers.
+	Multi-hop asset payments must be sent using invoices and the
+	corresponding 'ln payinvoice' subcommand.
+
+	To send a multi-asset LN keysend payment, the --asset_id=X or
+	--group_key=X argument can be used to specify the asset to use.
+
+	Note that this command will only work with the --keysend argument set.
 	`,
-	ArgsUsage: commands.SendPaymentCommand.ArgsUsage + " --asset_id=X " +
-		"--asset_amount=Y [--rfq_peer_pubkey=Z]",
-	Flags: append(
-		commands.SendPaymentCommand.Flags, assetIDFlag, assetAmountFlag,
-		rfqPeerPubKeyFlag, allowOverpayFlag,
-	),
+	ArgsUsage: "--keysend --dest=N [--asset_id=X | --group_key=X] " +
+		"--asset_amount=Y [--rfq_peer_pubkey=Z] [--allow_overpay]",
+	Flags: []cli.Flag{
+		cli.BoolFlag{
+			Name: "keysend",
+			Usage: "will generate a pre-image and encode it in " +
+				"the sphinx packet, a dest must be set",
+		},
+		cli.StringFlag{
+			Name: "dest, d",
+			Usage: "the compressed identity pubkey of the " +
+				"payment recipient",
+		},
+		assetIDFlag, groupKeyFlag,
+		assetAmountFlag, rfqPeerPubKeyFlag, allowOverpayFlag,
+		cli.Int64Flag{
+			Name:  "amt, a",
+			Usage: "number of satoshis to send",
+		},
+		cli.Int64Flag{
+			Name: "final_cltv_delta",
+			Usage: "the number of blocks the last hop has to " +
+				"reveal the preimage",
+		},
+		cli.StringFlag{
+			Name:  "pay_addr",
+			Usage: "the payment address of the generated invoice",
+		},
+		cli.DurationFlag{
+			Name: "timeout",
+			Usage: "the maximum amount of time we should spend " +
+				"trying to fulfill the payment, failing " +
+				"after the timeout has elapsed",
+			Value: time.Second * 60,
+		},
+		cli.Int64SliceFlag{
+			Name: "outgoing_chan_id",
+			Usage: "short channel id of the outgoing channel to " +
+				"use for the first hop of the payment; can " +
+				"be specified multiple times in the same " +
+				"command",
+			Value: &cli.Int64Slice{},
+		},
+		cli.BoolFlag{
+			Name:  "force, f",
+			Usage: "will skip payment request confirmation",
+		},
+		cli.UintFlag{
+			Name: "max_parts",
+			Usage: "the maximum number of partial payments that " +
+				"may be used",
+			Value: routerrpc.DefaultMaxParts,
+		},
+		cli.UintFlag{
+			Name: "max_shard_size_sat",
+			Usage: "the largest payment split that should be " +
+				"attempted if payment splitting is required " +
+				"to attempt a payment, specified in satoshis",
+		},
+		cli.UintFlag{
+			Name: "max_shard_size_msat",
+			Usage: "the largest payment split that should be " +
+				"attempted if payment splitting is required " +
+				"to attempt a payment, specified in " +
+				"milli-satoshis",
+		},
+		cli.BoolFlag{
+			Name: "amp",
+			Usage: "if set to true, then AMP will be used to " +
+				"complete the payment",
+		},
+	},
 	Action: sendPayment,
 }
 
@@ -322,18 +427,15 @@ func sendPayment(cliCtx *cli.Context) error {
 	defer cleanup()
 
 	switch {
-	case !cliCtx.IsSet(assetIDFlag.Name):
-		return fmt.Errorf("the --asset_id flag must be set")
 	case !cliCtx.IsSet("keysend"):
 		return fmt.Errorf("the --keysend flag must be set")
 	case !cliCtx.IsSet(assetAmountFlag.Name):
 		return fmt.Errorf("--asset_amount must be set")
 	}
 
-	assetIDStr := cliCtx.String(assetIDFlag.Name)
-	assetIDBytes, err := hex.DecodeString(assetIDStr)
+	assetIDBytes, groupKeyBytes, err := parseAssetIdentifier(cliCtx)
 	if err != nil {
-		return fmt.Errorf("unable to decode assetID: %v", err)
+		return fmt.Errorf("unable to parse asset identifier: %w", err)
 	}
 
 	assetAmountToSend := cliCtx.Uint64(assetAmountFlag.Name)
@@ -352,7 +454,7 @@ func sendPayment(cliCtx *cli.Context) error {
 	case cliCtx.IsSet("dest"):
 		destNode, err = hex.DecodeString(cliCtx.String("dest"))
 	default:
-		return fmt.Errorf("destination txid argument missing")
+		return fmt.Errorf("destination node pubkey argument missing")
 	}
 	if err != nil {
 		return err
@@ -363,7 +465,9 @@ func sendPayment(cliCtx *cli.Context) error {
 			"is instead: %v", len(destNode))
 	}
 
-	rfqPeerKey, err := hex.DecodeString(cliCtx.String(rfqPeerPubKeyFlag.Name))
+	rfqPeerKey, err := hex.DecodeString(
+		cliCtx.String(rfqPeerPubKeyFlag.Name),
+	)
 	if err != nil {
 		return fmt.Errorf("unable to decode RFQ peer public key: "+
 			"%w", err)
@@ -376,11 +480,6 @@ func sendPayment(cliCtx *cli.Context) error {
 		Dest:              destNode,
 		Amt:               int64(rfqmath.DefaultOnChainHtlcSat),
 		DestCustomRecords: make(map[uint64][]byte),
-	}
-
-	if cliCtx.IsSet("payment_hash") {
-		return errors.New("cannot set payment hash when using " +
-			"keysend")
 	}
 
 	// Read out the custom preimage for the keysend payment.
@@ -411,8 +510,11 @@ func sendPayment(cliCtx *cli.Context) error {
 
 			stream, err := tchrpcClient.SendPayment(
 				ctx, &tchrpc.SendPaymentRequest{
-					AssetId:        assetIDBytes,
-					AssetAmount:    assetAmountToSend,
+					AssetId:  assetIDBytes,
+					GroupKey: groupKeyBytes,
+					AssetAmount: cliCtx.Uint64(
+						assetAmountFlag.Name,
+					),
 					PeerPubkey:     rfqPeerKey,
 					PaymentRequest: req,
 					AllowOverpay:   allowOverpay,
@@ -432,22 +534,23 @@ func sendPayment(cliCtx *cli.Context) error {
 var payInvoiceCommand = cli.Command{
 	Name:     "payinvoice",
 	Category: "Payments",
-	Usage:    "Pay an invoice over lightning using an asset.",
+	Usage: "Pay an invoice over Lightning, potentially using a " +
+		"multi-asset channel as the first hop.",
 	Description: `
 	This command attempts to pay an invoice using an asset channel as the
-	source of the payment. The asset ID of the channel must be specified
-	using the --asset_id flag.
+	source of the payment. The asset of the channel must be specified using
+	the --asset_id or --group_key flag.
 	`,
-	ArgsUsage: "pay_req --asset_id=X",
-	Flags: append(commands.PaymentFlags(),
+	ArgsUsage: "pay_req [--asset_id=X | --group_key=X] " +
+		"[--rfq_peer_pubkey=y] [--allow_overpay]",
+	Flags: append(
+		commands.PaymentFlags(),
+		assetIDFlag, groupKeyFlag, rfqPeerPubKeyFlag, allowOverpayFlag,
 		cli.Int64Flag{
 			Name: "amt",
 			Usage: "(optional) number of satoshis to fulfill the " +
 				"invoice",
 		},
-		assetIDFlag,
-		rfqPeerPubKeyFlag,
-		allowOverpayFlag,
 	),
 	Action: payInvoice,
 }
@@ -486,15 +589,9 @@ func payInvoice(cli *cli.Context) error {
 		return err
 	}
 
-	if !cli.IsSet(assetIDFlag.Name) {
-		return fmt.Errorf("the --asset_id flag must be set")
-	}
-
-	assetIDStr := cli.String(assetIDFlag.Name)
-
-	assetIDBytes, err := hex.DecodeString(assetIDStr)
+	assetIDBytes, groupKeyBytes, err := parseAssetIdentifier(cli)
 	if err != nil {
-		return fmt.Errorf("unable to decode assetID: %v", err)
+		return fmt.Errorf("unable to parse asset identifier: %w", err)
 	}
 
 	rfqPeerKey, err := hex.DecodeString(cli.String(rfqPeerPubKeyFlag.Name))
@@ -521,6 +618,7 @@ func payInvoice(cli *cli.Context) error {
 			stream, err := tchrpcClient.SendPayment(
 				ctx, &tchrpc.SendPaymentRequest{
 					AssetId:        assetIDBytes,
+					GroupKey:       groupKeyBytes,
 					PeerPubkey:     rfqPeerKey,
 					PaymentRequest: req,
 					AllowOverpay:   allowOverpay,
@@ -546,12 +644,19 @@ var addInvoiceCommand = cli.Command{
 	Add a new invoice, expressing intent for a future payment, received in
 	Taproot Assets.
 	`,
-	ArgsUsage: "asset_id asset_amount",
+	ArgsUsage: "[--asset_id=X | --group_key=X] --asset_amount=Y " +
+		"[--rfq_peer_pubkey=Z] ",
 	Flags: append(
 		commands.AddInvoiceCommand.Flags,
 		cli.StringFlag{
-			Name:  "asset_id",
-			Usage: "the asset ID of the asset to receive",
+			Name: "asset_id",
+			Usage: "the asset ID of the asset to receive; cannot " +
+				"be used at the same time as --group_key",
+		},
+		cli.StringFlag{
+			Name: "group_key",
+			Usage: "the group key of the asset to receive; " +
+				"cannot be used at the same time as --asset_id",
 		},
 		cli.Uint64Flag{
 			Name:  "asset_amount",
@@ -570,36 +675,15 @@ var addInvoiceCommand = cli.Command{
 }
 
 func addInvoice(cli *cli.Context) error {
-	args := cli.Args()
 	ctx := getContext()
 
-	var assetIDStr string
-	switch {
-	case cli.IsSet("asset_id"):
-		assetIDStr = cli.String("asset_id")
-	case args.Present():
-		assetIDStr = args.First()
-		args = args.Tail()
-	default:
-		return fmt.Errorf("asset_id argument missing")
-	}
-
 	var (
-		assetAmount uint64
+		assetAmount = cli.Uint64("asset_amount")
 		preimage    []byte
 		descHash    []byte
 		err         error
 	)
-	switch {
-	case cli.IsSet("asset_amount"):
-		assetAmount = cli.Uint64("asset_amount")
-	case args.Present():
-		assetAmount, err = strconv.ParseUint(args.First(), 10, 64)
-		if err != nil {
-			return fmt.Errorf("unable to parse asset amount %w",
-				err)
-		}
-	default:
+	if assetAmount == 0 {
 		return fmt.Errorf("asset_amount argument missing")
 	}
 
@@ -620,13 +704,10 @@ func addInvoice(cli *cli.Context) error {
 		expirySeconds = cli.Int64("expiry")
 	}
 
-	assetIDBytes, err := hex.DecodeString(assetIDStr)
+	assetIDBytes, groupKeyBytes, err := parseAssetIdentifier(cli)
 	if err != nil {
-		return fmt.Errorf("unable to decode assetID: %v", err)
+		return fmt.Errorf("unable to parse asset identifier: %w", err)
 	}
-
-	var assetID asset.ID
-	copy(assetID[:], assetIDBytes)
 
 	rfqPeerKey, err := hex.DecodeString(cli.String(rfqPeerPubKeyFlag.Name))
 	if err != nil {
@@ -643,6 +724,7 @@ func addInvoice(cli *cli.Context) error {
 	channelsClient := tchrpc.NewTaprootAssetChannelsClient(tapdConn)
 	resp, err := channelsClient.AddInvoice(ctx, &tchrpc.AddInvoiceRequest{
 		AssetId:     assetIDBytes,
+		GroupKey:    groupKeyBytes,
 		AssetAmount: assetAmount,
 		PeerPubkey:  rfqPeerKey,
 		InvoiceRequest: &lnrpc.Invoice{
@@ -668,23 +750,23 @@ var decodeAssetInvoiceCommand = cli.Command{
 	Name:     "decodeassetinvoice",
 	Category: "Payments",
 	Usage: "Decodes an LN invoice and displays the invoice's amount in " +
-		"asset units specified by an asset ID",
+		"asset units specified by an asset ID or group key.",
 	Description: `
 	This command can be used to display the information encoded in an
 	invoice.
-	Given a chosen asset_id, the invoice's amount expressed in units of the
-	asset will be displayed.
+	Given a chosen asset_id or group_key, the invoice's amount expressed in
+	units of the asset will be displayed.
 	
 	Other information such as the decimal display of an asset, and the asset
 	group information (if applicable) are also shown.
 	`,
-	ArgsUsage: "--pay_req=X --asset_id=X",
+	ArgsUsage: "--pay_req=X [--asset_id=X | --group_key=X]",
 	Flags: []cli.Flag{
 		cli.StringFlag{
 			Name:  "pay_req",
 			Usage: "a zpay32 encoded payment request to fulfill",
 		},
-		assetIDFlag,
+		assetIDFlag, groupKeyFlag,
 	},
 	Action: decodeAssetInvoice,
 }
@@ -692,19 +774,15 @@ var decodeAssetInvoiceCommand = cli.Command{
 func decodeAssetInvoice(cli *cli.Context) error {
 	ctx := getContext()
 
-	switch {
-	case !cli.IsSet("pay_req"):
+	if !cli.IsSet("pay_req") {
 		return fmt.Errorf("pay_req argument missing")
-	case !cli.IsSet(assetIDFlag.Name):
-		return fmt.Errorf("the --asset_id flag must be set")
 	}
 
 	payReq := cli.String("pay_req")
 
-	assetIDStr := cli.String(assetIDFlag.Name)
-	assetIDBytes, err := hex.DecodeString(assetIDStr)
+	assetIDBytes, groupKeyBytes, err := parseAssetIdentifier(cli)
 	if err != nil {
-		return fmt.Errorf("unable to decode assetID: %v", err)
+		return fmt.Errorf("unable to parse asset identifier: %w", err)
 	}
 
 	tapdConn, cleanup, err := connectSuperMacClient(ctx, cli)
@@ -716,6 +794,7 @@ func decodeAssetInvoice(cli *cli.Context) error {
 	channelsClient := tchrpc.NewTaprootAssetChannelsClient(tapdConn)
 	resp, err := channelsClient.DecodeAssetPayReq(ctx, &tchrpc.AssetPayReq{
 		AssetId:      assetIDBytes,
+		GroupKey:     groupKeyBytes,
 		PayReqString: payReq,
 	})
 	if err != nil {
@@ -725,4 +804,41 @@ func decodeAssetInvoice(cli *cli.Context) error {
 	printRespJSON(resp)
 
 	return nil
+}
+
+// parseAssetIdentifier parses either the asset ID or group key from the command
+// line arguments.
+func parseAssetIdentifier(cli *cli.Context) ([]byte, []byte, error) {
+	if !cli.IsSet(assetIDFlag.Name) && !cli.IsSet(groupKeyFlag.Name) {
+		return nil, nil, fmt.Errorf("either the --asset_id or " +
+			"--group_key flag must be set")
+	}
+
+	var (
+		assetIDBytes  []byte
+		groupKeyBytes []byte
+		err           error
+	)
+	if cli.IsSet("asset_id") {
+		assetIDBytes, err = hex.DecodeString(cli.String("asset_id"))
+		if err != nil {
+			return nil, nil, fmt.Errorf("error hex decoding asset "+
+				"ID: %w", err)
+		}
+	}
+
+	if cli.IsSet("group_key") {
+		groupKeyBytes, err = hex.DecodeString(cli.String("group_key"))
+		if err != nil {
+			return nil, nil, fmt.Errorf("error hex decoding group "+
+				"key: %w", err)
+		}
+	}
+
+	if len(assetIDBytes) > 0 && len(groupKeyBytes) > 0 {
+		return nil, nil, fmt.Errorf("only one of --asset_id and " +
+			"--group_key can be set")
+	}
+
+	return assetIDBytes, groupKeyBytes, nil
 }

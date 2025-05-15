@@ -1061,6 +1061,16 @@ func sendAssetKeySendPayment(t *testing.T, src, dst *HarnessNode, amt uint64,
 	stream, err := srcTapd.SendPayment(ctxt, request)
 	require.NoError(t, err)
 
+	// If an error is returned by the RPC method (meaning the stream itself
+	// was established, no network or auth error), we expect the error to be
+	// returned on the first read on the stream.
+	if cfg.errSubStr != "" {
+		_, err := stream.Recv()
+		require.ErrorContains(t, err, cfg.errSubStr)
+
+		return
+	}
+
 	result, err := getAssetPaymentResult(stream, false)
 	require.NoError(t, err)
 	if result.Status == lnrpc.Payment_FAILED {

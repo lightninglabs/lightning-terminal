@@ -115,7 +115,8 @@ var allTestCases = []*testCase{
 		noAliceBob: true,
 	},
 	{
-		name: "test custom channels self-payment",
-		test: testCustomChannelsSelfPayment,
+		name:       "custom channels self-payment",
+		test:       testCustomChannelsSelfPayment,
+		noAliceBob: true,
 	},
 }
