@@ -194,6 +194,8 @@ func (r *RequestLogger) addNewAction(ctx context.Context, ri *RequestInfo,
 	}
 
 	actionReq := &firewalldb.AddActionReq{
+		SessionID:          ri.SessionID,
+		AccountID:          ri.AccountID,
 		MacaroonIdentifier: macaroonID,
 		RPCMethod:          ri.URI,
 	}

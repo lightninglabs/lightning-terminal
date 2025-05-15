@@ -4,7 +4,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/lightninglabs/lightning-terminal/accounts"
+	"github.com/lightninglabs/lightning-terminal/session"
+	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/lnrpc"
+	"google.golang.org/grpc/metadata"
 	"gopkg.in/macaroon.v2"
 )
 
@@ -25,6 +29,8 @@ const (
 // RequestInfo stores the parsed representation of an incoming RPC middleware
 // request.
 type RequestInfo struct {
+	SessionID       fn.Option[session.ID]
+	AccountID       fn.Option[accounts.AccountID]
 	MsgID           uint64
 	RequestID       uint64
 	MWRequestType   string
@@ -76,8 +82,22 @@ func NewInfoFromRequest(req *lnrpc.RPCMiddlewareRequest) (*RequestInfo, error) {
 		return nil, fmt.Errorf("invalid request type: %T", t)
 	}
 
+	md := make(metadata.MD)
+	for k, vs := range req.MetadataPairs {
+		for _, v := range vs.Values {
+			md.Append(k, v)
+		}
+	}
+
+	sessionID, err := session.FromGRPCMetadata(md)
+	if err != nil {
+		return nil, fmt.Errorf("error extracting session ID "+
+			"from request: %v", err)
+	}
+
 	ri.MsgID = req.MsgId
 	ri.RequestID = req.RequestId
+	ri.SessionID = sessionID
 
 	// If there is no macaroon in the request, then there is nothing left
 	// to parse.
@@ -120,6 +140,12 @@ func NewInfoFromRequest(req *lnrpc.RPCMiddlewareRequest) (*RequestInfo, error) {
 		if IsPrivacyCaveat(ri.Caveats[idx]) {
 			ri.WithPrivacy = true
 		}
+	}
+
+	ri.AccountID, err = accounts.IDFromCaveats(ri.Macaroon.Caveats())
+	if err != nil {
+		return nil, fmt.Errorf("error extracting account ID "+
+			"from macaroon: %v", err)
 	}
 
 	return ri, nil

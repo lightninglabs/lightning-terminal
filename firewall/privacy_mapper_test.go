@@ -13,6 +13,7 @@ import (
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/rpcperms"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 	"gopkg.in/macaroon.v2"
@@ -907,6 +908,9 @@ func TestPrivacyMapper(t *testing.T) {
 			rawMsg, err := proto.Marshal(test.msg)
 			require.NoError(t, err)
 
+			md := make(metadata.MD)
+			session.AddToGRPCMetadata(md, sessionID)
+
 			interceptReq := &rpcperms.InterceptionRequest{
 				Type:            test.msgType,
 				Macaroon:        mac,
@@ -916,6 +920,7 @@ func TestPrivacyMapper(t *testing.T) {
 				ProtoTypeName: string(
 					proto.MessageName(test.msg),
 				),
+				CtxMetadataPairs: md,
 			}
 
 			mwReq, err := interceptReq.ToRPC(1, 2)
@@ -1006,6 +1011,9 @@ func TestPrivacyMapper(t *testing.T) {
 		amounts := make([]uint64, numSamples)
 		timestamps := make([]uint64, numSamples)
 
+		md := make(metadata.MD)
+		session.AddToGRPCMetadata(md, sessionID)
+
 		for i := 0; i < numSamples; i++ {
 			interceptReq := &rpcperms.InterceptionRequest{
 				Type:            rpcperms.TypeResponse,
@@ -1016,6 +1024,7 @@ func TestPrivacyMapper(t *testing.T) {
 				ProtoTypeName: string(
 					proto.MessageName(msg),
 				),
+				CtxMetadataPairs: md,
 			}
 
 			mwReq, err := interceptReq.ToRPC(1, 2)

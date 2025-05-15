@@ -11,6 +11,7 @@ import (
 
 type Querier interface {
 	AddAccountInvoice(ctx context.Context, arg AddAccountInvoiceParams) error
+	CountActions(ctx context.Context, arg CountActionsParams) (int64, error)
 	DeleteAccount(ctx context.Context, id int64) error
 	DeleteAccountPayment(ctx context.Context, arg DeleteAccountPaymentParams) error
 	DeleteAllTempKVStores(ctx context.Context) error
@@ -46,6 +47,7 @@ type Querier interface {
 	GetSessionPrivacyFlags(ctx context.Context, sessionID int64) ([]SessionPrivacyFlag, error)
 	GetSessionsInGroup(ctx context.Context, groupID sql.NullInt64) ([]Session, error)
 	InsertAccount(ctx context.Context, arg InsertAccountParams) (int64, error)
+	InsertAction(ctx context.Context, arg InsertActionParams) (int64, error)
 	InsertKVStoreRecord(ctx context.Context, arg InsertKVStoreRecordParams) error
 	InsertPrivacyPair(ctx context.Context, arg InsertPrivacyPairParams) error
 	InsertSession(ctx context.Context, arg InsertSessionParams) (int64, error)
@@ -55,11 +57,14 @@ type Querier interface {
 	InsertSessionPrivacyFlag(ctx context.Context, arg InsertSessionPrivacyFlagParams) error
 	ListAccountInvoices(ctx context.Context, accountID int64) ([]AccountInvoice, error)
 	ListAccountPayments(ctx context.Context, accountID int64) ([]AccountPayment, error)
+	ListActions(ctx context.Context, arg ListActionsParams) ([]Action, error)
+	ListActionsPaginated(ctx context.Context, arg ListActionsPaginatedParams) ([]Action, error)
 	ListAllAccounts(ctx context.Context) ([]Account, error)
 	ListSessions(ctx context.Context) ([]Session, error)
 	ListSessionsByState(ctx context.Context, state int16) ([]Session, error)
 	ListSessionsByType(ctx context.Context, type_ int16) ([]Session, error)
 	SetAccountIndex(ctx context.Context, arg SetAccountIndexParams) error
+	SetActionState(ctx context.Context, arg SetActionStateParams) error
 	SetSessionGroupID(ctx context.Context, arg SetSessionGroupIDParams) error
 	SetSessionRemotePublicKey(ctx context.Context, arg SetSessionRemotePublicKeyParams) error
 	SetSessionRevokedAt(ctx context.Context, arg SetSessionRevokedAtParams) error
