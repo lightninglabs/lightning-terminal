@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
@@ -183,21 +182,20 @@ func (r *RequestLogger) addNewAction(ctx context.Context, ri *RequestInfo,
 	withPayloadData bool) error {
 
 	// If no macaroon is provided, then an empty 4-byte array is used as the
-	// session ID. Otherwise, the macaroon is used to derive a session ID.
-	var sessionID [4]byte
+	// macaroon ID. Otherwise, the last 4 bytes of the macaroon's root key
+	// ID are used.
+	var macaroonID [4]byte
 	if ri.Macaroon != nil {
 		var err error
-		sessionID, err = session.IDFromMacaroon(ri.Macaroon)
+		macaroonID, err = session.IDFromMacaroon(ri.Macaroon)
 		if err != nil {
 			return fmt.Errorf("could not extract ID from macaroon")
 		}
 	}
 
-	action := &firewalldb.Action{
-		SessionID:   sessionID,
-		RPCMethod:   ri.URI,
-		AttemptedAt: time.Now(),
-		State:       firewalldb.ActionStateInit,
+	actionReq := &firewalldb.AddActionReq{
+		MacaroonIdentifier: macaroonID,
+		RPCMethod:          ri.URI,
 	}
 
 	if withPayloadData {
@@ -211,19 +209,19 @@ func (r *RequestLogger) addNewAction(ctx context.Context, ri *RequestInfo,
 			return fmt.Errorf("unable to decode response: %v", err)
 		}
 
-		action.RPCParamsJson = jsonBytes
+		actionReq.RPCParamsJson = jsonBytes
 
 		meta := ri.MetaInfo
 		if meta != nil {
-			action.ActorName = meta.ActorName
-			action.FeatureName = meta.Feature
-			action.Trigger = meta.Trigger
-			action.Intent = meta.Intent
-			action.StructuredJsonData = meta.StructuredJsonData
+			actionReq.ActorName = meta.ActorName
+			actionReq.FeatureName = meta.Feature
+			actionReq.Trigger = meta.Trigger
+			actionReq.Intent = meta.Intent
+			actionReq.StructuredJsonData = meta.StructuredJsonData
 		}
 	}
 
-	locator, err := r.actionsDB.AddAction(ctx, action)
+	locator, err := r.actionsDB.AddAction(ctx, actionReq)
 	if err != nil {
 		return err
 	}

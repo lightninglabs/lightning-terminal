@@ -19,7 +19,7 @@ func TestKVStoreTxs(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	db := NewTestDB(t)
+	db := NewTestDB(t, clock.NewDefaultClock())
 	store := db.GetKVStores("AutoFees", [4]byte{1, 1, 1, 1}, "auto-fees")
 
 	// Test that if an action fails midway through the transaction, then
@@ -79,14 +79,15 @@ func TestTempAndPermStores(t *testing.T) {
 // session level KV stores.
 func testTempAndPermStores(t *testing.T, featureSpecificStore bool) {
 	ctx := context.Background()
+	clock := clock.NewDefaultClock()
 
 	var featureName string
 	if featureSpecificStore {
 		featureName = "auto-fees"
 	}
 
-	sessions := session.NewTestDB(t, clock.NewDefaultClock())
-	store := NewTestDBWithSessions(t, sessions)
+	sessions := session.NewTestDB(t, clock)
+	store := NewTestDBWithSessions(t, sessions, clock)
 	db := NewDB(store)
 	require.NoError(t, db.Start(ctx))
 
@@ -172,9 +173,10 @@ func testTempAndPermStores(t *testing.T, featureSpecificStore bool) {
 func TestKVStoreNameSpaces(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
+	clock := clock.NewDefaultClock()
 
-	sessions := session.NewTestDB(t, clock.NewDefaultClock())
-	db := NewTestDBWithSessions(t, sessions)
+	sessions := session.NewTestDB(t, clock)
+	db := NewTestDBWithSessions(t, sessions, clock)
 
 	// Create 2 sessions that we can reference.
 	sess1, err := sessions.NewSession(
@@ -397,9 +399,10 @@ func TestKVStoreNameSpaces(t *testing.T) {
 func TestKVStoreSessionCoupling(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
+	clock := clock.NewDefaultClock()
 
-	sessions := session.NewTestDB(t, clock.NewDefaultClock())
-	db := NewTestDBWithSessions(t, sessions)
+	sessions := session.NewTestDB(t, clock)
+	db := NewTestDBWithSessions(t, sessions, clock)
 
 	// Get a kvstore namespaced by a session ID for a session that does
 	// not exist.

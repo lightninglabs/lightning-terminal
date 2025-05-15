@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/lightninglabs/lightning-terminal/session"
+	"github.com/lightningnetwork/lnd/fn"
 )
 
 // ActionState represents the state of an action.
@@ -28,12 +29,21 @@ const (
 	ActionStateError ActionState = 3
 )
 
-// Action represents an RPC call made through the firewall.
-type Action struct {
-	// SessionID is the ID of the session that this action belongs to.
-	// Note that this is not serialized on persistence since the action is
-	// already stored under a bucket identified by the session ID.
-	SessionID session.ID
+// AddActionReq is the request that is used to add a new Action to the database.
+// It contains all the information that is needed to create a new Action in the
+// ActionStateInit State.
+type AddActionReq struct {
+	// MacaroonIdentifier is a 4 byte identifier created from the last 4
+	// bytes of the root key ID of the macaroon used to perform the action.
+	MacaroonIdentifier [4]byte
+
+	// SessionID holds the optional session ID of the session that this
+	// action was performed with.
+	//
+	// NOTE: for our BoltDB impl, this is not persisted in any way, and we
+	// populate it by casting the macaroon ID to a session.ID and so is not
+	// guaranteed to be linked to an existing session.
+	SessionID fn.Option[session.ID]
 
 	// ActorName is the name of the entity who performed the Action.
 	ActorName string
@@ -59,6 +69,11 @@ type Action struct {
 
 	// RPCParams is the method parameters of the request in JSON form.
 	RPCParamsJson []byte
+}
+
+// Action represents an RPC call made through the firewall.
+type Action struct {
+	AddActionReq
 
 	// AttemptedAt is the time at which this action was created.
 	AttemptedAt time.Time
@@ -181,7 +196,7 @@ func WithActionState(state ActionState) ListActionOption {
 // ActionsWriteDB is an abstraction over the Actions DB that will allow a
 // caller to add new actions as well as change the values of an existing action.
 type ActionsWriteDB interface {
-	AddAction(ctx context.Context, action *Action) (ActionLocator, error)
+	AddAction(ctx context.Context, req *AddActionReq) (ActionLocator, error)
 	SetActionState(ctx context.Context, al ActionLocator,
 		state ActionState, errReason string) error
 }

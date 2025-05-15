@@ -104,8 +104,8 @@ type PrivacyMapper interface {
 // ActionDB is an interface that abstracts the database operations needed for
 // the Action persistence and querying.
 type ActionDB interface {
-	// AddAction persists the given action to the database.
-	AddAction(ctx context.Context, action *Action) (ActionLocator, error)
+	// AddAction persists a new action to the database.
+	AddAction(ctx context.Context, req *AddActionReq) (ActionLocator, error)
 
 	// SetActionState finds the action specified by the ActionLocator and
 	// sets its state to the given state.

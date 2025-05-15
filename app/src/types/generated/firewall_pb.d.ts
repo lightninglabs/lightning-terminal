@@ -193,6 +193,11 @@ export class Action extends jspb.Message {
   getSessionId_asB64(): string;
   setSessionId(value: Uint8Array | string): void;
 
+  getMacaroonIdentifier(): Uint8Array | string;
+  getMacaroonIdentifier_asU8(): Uint8Array;
+  getMacaroonIdentifier_asB64(): string;
+  setMacaroonIdentifier(value: Uint8Array | string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Action.AsObject;
   static toObject(includeInstance: boolean, msg: Action): Action.AsObject;
@@ -216,6 +221,7 @@ export namespace Action {
     state: ActionStateMap[keyof ActionStateMap],
     errorReason: string,
     sessionId: Uint8Array | string,
+    macaroonIdentifier: Uint8Array | string,
   }
 }
 

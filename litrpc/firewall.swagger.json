@@ -132,6 +132,11 @@
           "type": "string",
           "format": "byte",
           "description": "The ID of the session under which the action was performed."
+        },
+        "macaroon_identifier": {
+          "type": "string",
+          "format": "byte",
+          "description": "The 4 byte identifier of the macaroon that was used to perform the action.\nThis is derived from the last 4 bytes of the macaroon's root key ID."
         }
       }
     },

@@ -6,14 +6,17 @@ import (
 	"testing"
 
 	"github.com/lightninglabs/lightning-terminal/session"
+	"github.com/lightningnetwork/lnd/clock"
 	"github.com/stretchr/testify/require"
 )
 
 // NewTestDBWithSessions creates a new test SQLDB Store with access to an
 // existing sessions DB.
-func NewTestDBWithSessions(t *testing.T, sessionStore session.Store) *SQLDB {
+func NewTestDBWithSessions(t *testing.T, sessionStore session.Store,
+	clock clock.Clock) *SQLDB {
+
 	sessions, ok := sessionStore.(*session.SQLStore)
 	require.True(t, ok)
 
-	return NewSQLDB(sessions.BaseDB)
+	return NewSQLDB(sessions.BaseDB, clock)
 }

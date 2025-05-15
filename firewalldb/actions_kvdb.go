@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/lightninglabs/lightning-terminal/session"
+	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/tlv"
 	"go.etcd.io/bbolt"
 )
@@ -53,8 +54,14 @@ var (
 )
 
 // AddAction serialises and adds an Action to the DB under the given sessionID.
-func (db *BoltDB) AddAction(_ context.Context, action *Action) (ActionLocator,
-	error) {
+func (db *BoltDB) AddAction(_ context.Context,
+	req *AddActionReq) (ActionLocator, error) {
+
+	action := &Action{
+		AddActionReq: *req,
+		AttemptedAt:  db.clock.Now().UTC(),
+		State:        ActionStateInit,
+	}
 
 	var buf bytes.Buffer
 	if err := SerializeAction(&buf, action); err != nil {
@@ -74,7 +81,7 @@ func (db *BoltDB) AddAction(_ context.Context, action *Action) (ActionLocator,
 		}
 
 		sessBucket, err := actionsBucket.CreateBucketIfNotExists(
-			action.SessionID[:],
+			action.MacaroonIdentifier[:],
 		)
 		if err != nil {
 			return err
@@ -103,7 +110,7 @@ func (db *BoltDB) AddAction(_ context.Context, action *Action) (ActionLocator,
 		}
 
 		locator = kvdbActionLocator{
-			sessionID: action.SessionID,
+			sessionID: action.MacaroonIdentifier,
 			actionID:  nextActionIndex,
 		}
 
@@ -543,7 +550,8 @@ func DeserializeAction(r io.Reader, sessionID session.ID) (*Action, error) {
 		return nil, err
 	}
 
-	action.SessionID = sessionID
+	action.MacaroonIdentifier = sessionID
+	action.SessionID = fn.Some(sessionID)
 	action.ActorName = string(actor)
 	action.FeatureName = string(featureName)
 	action.Trigger = string(trigger)

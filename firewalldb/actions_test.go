@@ -6,15 +6,33 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lightningnetwork/lnd/clock"
+	"github.com/lightningnetwork/lnd/fn"
 	"github.com/stretchr/testify/require"
 )
 
 var (
-	sessionID1 = intToSessionID(1)
-	sessionID2 = intToSessionID(2)
+	testTime1 = time.Unix(32100, 0)
+	testTime2 = time.Unix(12300, 0)
+)
 
-	action1 = &Action{
-		SessionID:          sessionID1,
+// TestActionStorage tests that the ActionsListDB CRUD logic.
+func TestActionStorage(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	clock := clock.NewTestClock(testTime1)
+
+	db, err := NewBoltDB(t.TempDir(), "test.db", nil, clock)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_ = db.Close()
+	})
+
+	sessionID1 := intToSessionID(1)
+	action1Req := &AddActionReq{
+		SessionID:          fn.Some(sessionID1),
+		MacaroonIdentifier: sessionID1,
 		ActorName:          "Autopilot",
 		FeatureName:        "auto-fees",
 		Trigger:            "fee too low",
@@ -22,33 +40,31 @@ var (
 		StructuredJsonData: "{\"something\":\"nothing\"}",
 		RPCMethod:          "UpdateChanPolicy",
 		RPCParamsJson:      []byte("new fee"),
-		AttemptedAt:        time.Unix(32100, 0),
-		State:              ActionStateDone,
 	}
 
-	action2 = &Action{
-		SessionID:     sessionID2,
-		ActorName:     "Autopilot",
-		FeatureName:   "rebalancer",
-		Trigger:       "channels not balanced",
-		Intent:        "balance",
-		RPCMethod:     "SendToRoute",
-		RPCParamsJson: []byte("hops, amount"),
-		AttemptedAt:   time.Unix(12300, 0),
-		State:         ActionStateInit,
+	action1 := &Action{
+		AddActionReq: *action1Req,
+		AttemptedAt:  testTime1,
+		State:        ActionStateDone,
 	}
-)
 
-// TestActionStorage tests that the ActionsListDB CRUD logic.
-func TestActionStorage(t *testing.T) {
-	tmpDir := t.TempDir()
-	ctx := context.Background()
+	sessionID2 := intToSessionID(2)
+	action2Req := &AddActionReq{
+		SessionID:          fn.Some(sessionID2),
+		MacaroonIdentifier: sessionID2,
+		ActorName:          "Autopilot",
+		FeatureName:        "rebalancer",
+		Trigger:            "channels not balanced",
+		Intent:             "balance",
+		RPCMethod:          "SendToRoute",
+		RPCParamsJson:      []byte("hops, amount"),
+	}
 
-	db, err := NewBoltDB(tmpDir, "test.db", nil)
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		_ = db.Close()
-	})
+	action2 := &Action{
+		AddActionReq: *action2Req,
+		AttemptedAt:  testTime2,
+		State:        ActionStateInit,
+	}
 
 	actions, _, _, err := db.ListActions(
 		ctx, nil,
@@ -66,10 +82,14 @@ func TestActionStorage(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, actions, 0)
 
-	_, err = db.AddAction(ctx, action1)
+	locator1, err := db.AddAction(ctx, action1Req)
+	require.NoError(t, err)
+	err = db.SetActionState(ctx, locator1, ActionStateDone, "")
 	require.NoError(t, err)
 
-	locator2, err := db.AddAction(ctx, action2)
+	clock.SetTime(testTime2)
+
+	locator2, err := db.AddAction(ctx, action2Req)
 	require.NoError(t, err)
 
 	actions, _, _, err = db.ListActions(
@@ -102,7 +122,7 @@ func TestActionStorage(t *testing.T) {
 	action2.State = ActionStateDone
 	assertEqualActions(t, action2, actions[0])
 
-	_, err = db.AddAction(ctx, action1)
+	_, err = db.AddAction(ctx, action1Req)
 	require.NoError(t, err)
 
 	// Check that providing no session id and no filter function returns
@@ -138,10 +158,12 @@ func TestActionStorage(t *testing.T) {
 // TestListActions tests some ListAction options.
 // TODO(elle): cover more test cases here.
 func TestListActions(t *testing.T) {
+	t.Parallel()
+
 	tmpDir := t.TempDir()
 	ctx := context.Background()
 
-	db, err := NewBoltDB(tmpDir, "test.db", nil)
+	db, err := NewBoltDB(tmpDir, "test.db", nil, clock.NewDefaultClock())
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
@@ -153,8 +175,9 @@ func TestListActions(t *testing.T) {
 	actionIds := 0
 	addAction := func(sessionID [4]byte) {
 		actionIds++
-		action := &Action{
-			SessionID:          sessionID,
+
+		actionReq := &AddActionReq{
+			MacaroonIdentifier: sessionID,
 			ActorName:          "Autopilot",
 			FeatureName:        fmt.Sprintf("%d", actionIds),
 			Trigger:            "fee too low",
@@ -162,11 +185,9 @@ func TestListActions(t *testing.T) {
 			StructuredJsonData: "{\"something\":\"nothing\"}",
 			RPCMethod:          "UpdateChanPolicy",
 			RPCParamsJson:      []byte("new fee"),
-			AttemptedAt:        time.Unix(32100, 0),
-			State:              ActionStateDone,
 		}
 
-		_, err := db.AddAction(ctx, action)
+		_, err := db.AddAction(ctx, actionReq)
 		require.NoError(t, err)
 	}
 
@@ -179,7 +200,7 @@ func TestListActions(t *testing.T) {
 		require.Len(t, dbActions, len(al))
 		for i, a := range al {
 			require.EqualValues(
-				t, a.sessionID, dbActions[i].SessionID,
+				t, a.sessionID, dbActions[i].MacaroonIdentifier,
 			)
 			require.Equal(t, a.actionID, dbActions[i].FeatureName)
 		}
@@ -335,15 +356,53 @@ func TestListActions(t *testing.T) {
 func TestListGroupActions(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
+	clock := clock.NewTestClock(testTime1)
 
 	group1 := intToSessionID(0)
+
+	sessionID1 := intToSessionID(1)
+	action1Req := &AddActionReq{
+		SessionID:          fn.Some(sessionID1),
+		MacaroonIdentifier: sessionID1,
+		ActorName:          "Autopilot",
+		FeatureName:        "auto-fees",
+		Trigger:            "fee too low",
+		Intent:             "increase fee",
+		StructuredJsonData: "{\"something\":\"nothing\"}",
+		RPCMethod:          "UpdateChanPolicy",
+		RPCParamsJson:      []byte("new fee"),
+	}
+
+	action1 := &Action{
+		AddActionReq: *action1Req,
+		AttemptedAt:  testTime1,
+		State:        ActionStateDone,
+	}
+
+	sessionID2 := intToSessionID(2)
+	action2Req := &AddActionReq{
+		SessionID:          fn.Some(sessionID2),
+		MacaroonIdentifier: sessionID2,
+		ActorName:          "Autopilot",
+		FeatureName:        "rebalancer",
+		Trigger:            "channels not balanced",
+		Intent:             "balance",
+		RPCMethod:          "SendToRoute",
+		RPCParamsJson:      []byte("hops, amount"),
+	}
+
+	action2 := &Action{
+		AddActionReq: *action2Req,
+		AttemptedAt:  testTime2,
+		State:        ActionStateInit,
+	}
 
 	// Link session 1 and session 2 to group 1.
 	index := NewMockSessionDB()
 	index.AddPair(sessionID1, group1)
 	index.AddPair(sessionID2, group1)
 
-	db, err := NewBoltDB(t.TempDir(), "test.db", index)
+	db, err := NewBoltDB(t.TempDir(), "test.db", index, clock)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
@@ -355,25 +414,29 @@ func TestListGroupActions(t *testing.T) {
 	require.Empty(t, al)
 
 	// Add an action under session 1.
-	_, err = db.AddAction(ctx, action1)
+	locator1, err := db.AddAction(ctx, action1Req)
+	require.NoError(t, err)
+	err = db.SetActionState(ctx, locator1, ActionStateDone, "")
 	require.NoError(t, err)
 
 	// There should now be one action in the group.
 	al, _, _, err = db.ListActions(ctx, nil, WithActionGroupID(group1))
 	require.NoError(t, err)
 	require.Len(t, al, 1)
-	require.Equal(t, sessionID1, al[0].SessionID)
+	assertEqualActions(t, action1, al[0])
+
+	clock.SetTime(testTime2)
 
 	// Add an action under session 2.
-	_, err = db.AddAction(ctx, action2)
+	_, err = db.AddAction(ctx, action2Req)
 	require.NoError(t, err)
 
 	// There should now be actions in the group.
 	al, _, _, err = db.ListActions(ctx, nil, WithActionGroupID(group1))
 	require.NoError(t, err)
 	require.Len(t, al, 2)
-	require.Equal(t, sessionID1, al[0].SessionID)
-	require.Equal(t, sessionID2, al[1].SessionID)
+	assertEqualActions(t, action1, al[0])
+	assertEqualActions(t, action2, al[1])
 }
 
 func assertEqualActions(t *testing.T, expected, got *Action) {
