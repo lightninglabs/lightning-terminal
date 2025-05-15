@@ -639,20 +639,20 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	erinAssetBalance += 3
 	fabiaAssetBalance -= 3
 	yaraAssetBalance -= 1
-	itest.AssertBalances(
+	assertBalance(
 		t.t, charlieTap, charlieAssetBalance,
 		itest.WithAssetID(assetID),
 	)
-	itest.AssertBalances(
+	assertBalance(
 		t.t, daveTap, daveAssetBalance, itest.WithAssetID(assetID),
 	)
-	itest.AssertBalances(
+	assertBalance(
 		t.t, erinTap, erinAssetBalance, itest.WithAssetID(assetID),
 	)
-	itest.AssertBalances(
+	assertBalance(
 		t.t, fabiaTap, fabiaAssetBalance, itest.WithAssetID(assetID),
 	)
-	itest.AssertBalances(
+	assertBalance(
 		t.t, yaraTap, yaraAssetBalance, itest.WithAssetID(assetID),
 	)
 
@@ -698,7 +698,7 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	)
 
 	// Charlie should still have four asset pieces, two with the same size.
-	itest.AssertBalances(
+	assertBalance(
 		t.t, charlieTap, charlieAssetBalance,
 		itest.WithAssetID(assetID), itest.WithNumUtxos(2),
 		itest.WithScriptKeyType(asset.ScriptKeyBip86),
@@ -706,7 +706,7 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 
 	// Dave should have two outputs, one from the initial channel with Yara
 	// and one from the remaining amount of the channel with Charlie.
-	itest.AssertBalances(
+	assertBalance(
 		t.t, daveTap, daveAssetBalance, itest.WithAssetID(assetID),
 		itest.WithNumUtxos(2),
 		itest.WithScriptKeyType(asset.ScriptKeyBip86),
@@ -714,12 +714,12 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 
 	// Fabia and Yara should all have a single output each, just what was
 	// left over from the initial channel.
-	itest.AssertBalances(
+	assertBalance(
 		t.t, fabiaTap, fabiaAssetBalance, itest.WithAssetID(assetID),
 		itest.WithNumUtxos(1),
 		itest.WithScriptKeyType(asset.ScriptKeyBip86),
 	)
-	itest.AssertBalances(
+	assertBalance(
 		t.t, yaraTap, yaraAssetBalance, itest.WithAssetID(assetID),
 		itest.WithNumUtxos(1),
 		itest.WithScriptKeyType(asset.ScriptKeyBip86),
@@ -728,24 +728,24 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	// Erin didn't use all of his assets when opening the channel, so he
 	// should have two outputs, the change from the channel opening and the
 	// remaining amount after closing the channel.
-	itest.AssertBalances(
+	assertBalance(
 		t.t, erinTap, erinAssetBalance, itest.WithAssetID(assetID),
 		itest.WithNumUtxos(2),
 		itest.WithScriptKeyType(asset.ScriptKeyBip86),
 	)
 
 	// The asset balances should still remain unchanged.
-	itest.AssertBalances(
+	assertBalance(
 		t.t, charlieTap, charlieAssetBalance,
 		itest.WithAssetID(assetID),
 	)
-	itest.AssertBalances(
+	assertBalance(
 		t.t, daveTap, daveAssetBalance, itest.WithAssetID(assetID),
 	)
-	itest.AssertBalances(
+	assertBalance(
 		t.t, erinTap, erinAssetBalance, itest.WithAssetID(assetID),
 	)
-	itest.AssertBalances(
+	assertBalance(
 		t.t, fabiaTap, fabiaAssetBalance, itest.WithAssetID(assetID),
 	)
 }

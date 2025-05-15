@@ -24,6 +24,12 @@ PUBLIC_URL :=
 # versions are checked against this version.
 GO_VERSION = 1.23.6
 
+# LITD_COMPAT_VERSIONS is a space-separated list of litd versions that are
+# installed before running the integration tests which include backward
+# compatibility tests. The list of versions must be in sync with any version
+# used in the backwardCompat map in itest/litd_test_list_on_test.go.
+LITD_COMPAT_VERSIONS = v0.14.1-alpha
+
 LOOP_COMMIT := $(shell cat go.mod | \
 		grep $(LOOP_PKG) | \
 		head -n1 | \
@@ -233,7 +239,11 @@ build-itest:
 	CGO_ENABLED=0 $(GOBUILD) -tags="$(ITEST_TAGS)" -o itest/btcd-itest -ldflags "$(ITEST_LDFLAGS)" $(BTCD_PKG)
 	CGO_ENABLED=0 $(GOBUILD) -tags="$(ITEST_TAGS)" -o itest/lnd-itest -ldflags "$(ITEST_LDFLAGS)" $(LND_PKG)/cmd/lnd
 
-itest-only: build-itest
+install-backward-compat-versions:
+	@$(call print, "Installing old versions of litd for backward compatibility tests.")
+	scripts/install-backward-compat-versions.sh '$(LITD_COMPAT_VERSIONS)'
+
+run-itest-only:
 	@$(call print, "Building itest binary.")
 	CGO_ENABLED=0 $(GOBUILD) -tags="$(ITEST_TAGS)" -o itest/litd-itest -ldflags "$(ITEST_LDFLAGS)" $(PKG)/cmd/litd
 	CGO_ENABLED=0 $(GOTEST) -v ./itest -tags="$(DEV_TAGS) $(ITEST_TAGS)" -c -o itest/itest.test
@@ -242,7 +252,11 @@ itest-only: build-itest
 	rm -rf itest/*.log itest/.logs*; date
 	scripts/itest_part.sh $(ITEST_FLAGS)
 
+itest-only: build-itest install-backward-compat-versions run-itest-only
+
 itest: app-build build-itest itest-only
+
+itest-no-backward-compat: app-build build-itest build-itest run-itest-only
 
 # =============
 # FLAKE HUNTING

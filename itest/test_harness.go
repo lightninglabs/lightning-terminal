@@ -129,6 +129,12 @@ type testCase struct {
 	test func(ctx context.Context, net *NetworkHarness,
 		t *harnessTest)
 	noAliceBob bool
+
+	// backwardCompat is a map of node names to the version they are going
+	// to be downgraded to during the specific test. Make sure to update the
+	// LITD_COMPAT_VERSIONS variable in the Makefile to include all versions
+	// used for any backward compatibility tests.
+	backwardCompat map[string]string
 }
 
 // waitForNTxsInMempool polls until finding the desired number of transactions

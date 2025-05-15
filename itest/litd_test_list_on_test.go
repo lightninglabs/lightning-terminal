@@ -30,6 +30,15 @@ var allTestCases = []*testCase{
 		noAliceBob: true,
 	},
 	{
+		name:       "custom channels backward compatibility",
+		test:       testCustomChannels,
+		noAliceBob: true,
+		backwardCompat: map[string]string{
+			"Dave":  "v0.14.1-alpha",
+			"Fabia": "v0.14.1-alpha",
+		},
+	},
+	{
 		name:       "custom channels large",
 		test:       testCustomChannelsLarge,
 		noAliceBob: true,

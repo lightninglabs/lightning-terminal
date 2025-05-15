@@ -279,11 +279,11 @@ jobs:
       matrix:
         include:
           - name: bbolt
-            args: itest icase=terminal dbbackend=bbolt
+            args: itest-no-backward-compat icase=terminal dbbackend=bbolt
           - name: sqlite
-            args: itest icase=terminal dbbackend=sqlite
+            args: itest-no-backward-compat icase=terminal dbbackend=sqlite
           - name: postgres
-            args: itest icase=terminal dbbackend=postgres
+            args: itest-no-backward-compat icase=terminal dbbackend=postgres
           - name: custom-channels
             args: itest-only icase=custom_channels
             
