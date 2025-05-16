@@ -9,11 +9,12 @@ litcli-debug
 .DS_Store
 
 itest/btcd-itest
-itest/litd-itest
+itest/litd-itest*
 itest/lnd-itest
 itest/itest.test
 itest/.logs
 itest/*.log
+itest/backward-compat
 
 vendor
 *.idea

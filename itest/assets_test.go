@@ -207,20 +207,20 @@ func createTestAssetNetwork(t *harnessTest, net *NetworkHarness, charlieTap,
 	erinAssetBalance := assetSendAmount - erinFundingAmount
 
 	// Assert that we see the funding outputs in the wallet.
-	itest.AssertBalances(
+	assertBalance(
 		t.t, charlieTap, charlieFundingAmount,
 		itest.WithAssetID(assetID),
 		itest.WithScriptKeyType(asset.ScriptKeyScriptPathChannel),
 		itest.WithNumUtxos(1),
 		itest.WithScriptKey(fundingScriptKeyBytes),
 	)
-	itest.AssertBalances(
+	assertBalance(
 		t.t, daveTap, daveFundingAmount, itest.WithAssetID(assetID),
 		itest.WithScriptKeyType(asset.ScriptKeyScriptPathChannel),
 		itest.WithNumUtxos(1),
 		itest.WithScriptKey(fundingScriptKeyBytes),
 	)
-	itest.AssertBalances(
+	assertBalance(
 		t.t, erinTap, erinFundingAmount, itest.WithAssetID(assetID),
 		itest.WithScriptKeyType(asset.ScriptKeyScriptPathChannel),
 		itest.WithNumUtxos(1),
@@ -229,14 +229,13 @@ func createTestAssetNetwork(t *harnessTest, net *NetworkHarness, charlieTap,
 
 	// After opening the channels, the asset balance of the funding nodes
 	// should have been decreased with the funding amount.
-	itest.AssertBalances(
-		t.t, charlieTap, charlieAssetBalance,
-		itest.WithAssetID(assetID),
+	assertBalance(
+		t.t, charlieTap, charlieAssetBalance, itest.WithAssetID(assetID),
 	)
-	itest.AssertBalances(
+	assertBalance(
 		t.t, daveTap, daveAssetBalance, itest.WithAssetID(assetID),
 	)
-	itest.AssertBalances(
+	assertBalance(
 		t.t, erinTap, erinAssetBalance, itest.WithAssetID(assetID),
 	)
 
@@ -527,6 +526,18 @@ func createTestAssetNetworkGroupKey(ctx context.Context, t *harnessTest,
 	return chanPointCD, chanPointEF
 }
 
+// assertBalance is a thin wrapper around itest.AssertBalances that skips the
+// balance check for old versions during the backward compatibility test.
+func assertBalance(t *testing.T, client *tapClient, balance uint64,
+	opts ...itest.BalanceOption) {
+
+	if client.node.Cfg.SkipBalanceChecks {
+		return
+	}
+
+	itest.AssertBalances(t, client, balance, opts...)
+}
+
 // sendAssetsAndAssert sends the given amount of assets to the recipient and
 // asserts that the transfer was successful. It also checks that the asset
 // balance of the sender and recipient is as expected.
@@ -718,6 +729,12 @@ func assertPendingChannels(t *testing.T, node *HarnessNode,
 	require.NoError(t, err)
 	require.Len(t, pendingChannelsResp.PendingOpenChannels, numChannels)
 
+	// For older versions (during the backward compatibility test), if the
+	// channel custom data is in the old format, we can't do further checks.
+	if node.Cfg.OldChannelFormat {
+		return
+	}
+
 	pendingChan := pendingChannelsResp.PendingOpenChannels[0]
 	var pendingJSON rfqmsg.JsonAssetChannel
 	err = json.Unmarshal(
@@ -767,6 +784,12 @@ func haveFundingAsset(assetChannel *rfqmsg.JsonAssetChannel,
 
 func assertAssetChan(t *testing.T, src, dst *HarnessNode, fundingAmount uint64,
 	channelAssets []*taprpc.Asset) {
+
+	if src.Cfg.OldChannelFormat {
+		t.Logf("Skipping asset channel check for %s->%s, old format",
+			src.Cfg.Name, dst.Cfg.Name)
+		return
+	}
 
 	err := wait.NoError(func() error {
 		a, err := getChannelCustomData(src, dst)
@@ -1822,8 +1845,12 @@ func closeAssetChannelAndAssert(t *harnessTest, net *NetworkHarness,
 	)
 	require.NoError(t.t, err)
 
-	assertWaitingCloseChannelAssetData(t.t, local, chanPoint)
-	assertWaitingCloseChannelAssetData(t.t, remote, chanPoint)
+	if !local.Cfg.OldChannelFormat {
+		assertWaitingCloseChannelAssetData(t.t, local, chanPoint)
+	}
+	if !remote.Cfg.OldChannelFormat {
+		assertWaitingCloseChannelAssetData(t.t, remote, chanPoint)
+	}
 
 	mineBlocks(t, net, 1, 1)
 
@@ -1846,8 +1873,12 @@ func closeAssetChannelAndAssert(t *harnessTest, net *NetworkHarness,
 		universeTap,
 	)
 
-	assertClosedChannelAssetData(t.t, local, chanPoint)
-	assertClosedChannelAssetData(t.t, remote, chanPoint)
+	if !local.Cfg.OldChannelFormat {
+		assertClosedChannelAssetData(t.t, local, chanPoint)
+	}
+	if !remote.Cfg.OldChannelFormat {
+		assertClosedChannelAssetData(t.t, remote, chanPoint)
+	}
 }
 
 // assertDefaultCoOpCloseBalance returns a default implementation of the co-op

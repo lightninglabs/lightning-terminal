@@ -69,6 +69,11 @@ type NetworkHarness struct {
 	Alice *HarnessNode
 	Bob   *HarnessNode
 
+	// backwardCompat is a map of node names to the version of litd that
+	// should be used for them. If the map is empty, then the latest/current
+	// version will be used for all nodes.
+	backwardCompat map[string]string
+
 	// Channel for transmitting stderr output from failed lightning node
 	// to main process.
 	lndErrorChan chan error
@@ -78,19 +83,20 @@ type NetworkHarness struct {
 
 // NewNetworkHarness creates a new network test harness.
 func NewNetworkHarness(lndHarness *lntest.HarnessTest, b node.BackendConfig,
-	litdBinary string, feeService lntest.WebFeeService) (*NetworkHarness,
-	error) {
+	litdBinary string, feeService lntest.WebFeeService,
+	backwardCompat map[string]string) (*NetworkHarness, error) {
 
 	n := NetworkHarness{
-		activeNodes:  make(map[int]*HarnessNode),
-		nodesByPub:   make(map[string]*HarnessNode),
-		lndErrorChan: make(chan error),
-		netParams:    lndHarness.Miner().ActiveNet,
-		Miner:        lndHarness.Miner(),
-		LNDHarness:   lndHarness,
-		BackendCfg:   b,
-		litdBinary:   litdBinary,
-		feeService:   feeService,
+		activeNodes:    make(map[int]*HarnessNode),
+		nodesByPub:     make(map[string]*HarnessNode),
+		lndErrorChan:   make(chan error),
+		netParams:      lndHarness.Miner().ActiveNet,
+		Miner:          lndHarness.Miner(),
+		LNDHarness:     lndHarness,
+		BackendCfg:     b,
+		litdBinary:     litdBinary,
+		feeService:     feeService,
+		backwardCompat: backwardCompat,
 	}
 	return &n, nil
 }
@@ -373,7 +379,7 @@ func (n *NetworkHarness) newNode(t *testing.T, name string, extraArgs,
 	n.activeNodes[node.NodeID] = node
 	n.mtx.Unlock()
 
-	err = node.Start(n.litdBinary, n.lndErrorChan, wait)
+	err = node.Start(n.litdBinary, n.backwardCompat, n.lndErrorChan, wait)
 	if err != nil {
 		return nil, err
 	}
@@ -767,7 +773,10 @@ func (n *NetworkHarness) RestartNodeNoUnlock(node *HarnessNode,
 		}
 	}
 
-	return node.Start(n.litdBinary, n.lndErrorChan, wait, litArgOpts...)
+	return node.Start(
+		n.litdBinary, n.backwardCompat, n.lndErrorChan, wait,
+		litArgOpts...,
+	)
 }
 
 // SuspendNode stops the given node and returns a callback that can be used to
@@ -778,7 +787,9 @@ func (n *NetworkHarness) SuspendNode(node *HarnessNode) (func() error, error) {
 	}
 
 	restart := func() error {
-		return node.Start(n.litdBinary, n.lndErrorChan, true)
+		return node.Start(
+			n.litdBinary, n.backwardCompat, n.lndErrorChan, true,
+		)
 	}
 
 	return restart, nil

@@ -68,6 +68,26 @@ var (
 		"litdbbackend", terminal.DatabaseBackendBbolt, "Set the "+
 			"database backend to use when starting a LiT daemon.",
 	)
+
+	// backwardCompatFlagOverride is a map of LiT versions to a map of
+	// config file flags that need to be overwritten or added for the target
+	// version to work. If a flag in the map is empty, it means it will be
+	// removed from the config file of that version.
+	backwardCompatFlagOverride = map[string]map[string]string{
+		"v0.14.1-alpha": {
+			"databasebackend":            "",
+			"lnd.logging.no-commit-hash": "",
+		},
+	}
+
+	// backwardCompatConfigOverride is a map of LiT versions to a map of
+	// config file overriding functions.
+	backwardCompatConfigOverride = map[string]func(*LitNodeConfig){
+		"v0.14.1-alpha": func(cfg *LitNodeConfig) {
+			cfg.OldChannelFormat = true
+			cfg.SkipBalanceChecks = true
+		},
+	}
 )
 
 // Option is a function for updating a node's configuration.
@@ -102,6 +122,14 @@ type LitNodeConfig struct {
 
 	LitPort     int
 	LitRESTPort int
+
+	// OldChannelFormat is a flag for turning off certain checks for old
+	// versions of litd during the backward compatibility test.
+	OldChannelFormat bool
+
+	// SkipBalanceChecks is a flag for turning off certain checks for old
+	// versions of litd during the backward compatibility test.
+	SkipBalanceChecks bool
 
 	// backupDBDir is the path where a database backup is stored, if any.
 	backupDBDir string
@@ -616,16 +644,59 @@ func renameFile(fromFileName, toFileName string) {
 	}
 }
 
+// overrideFlagsAndBinary is a helper function that checks if the passed node
+// name needs a version downgrade and if so, it will return the new binary
+// name and the new arguments.
+func (hn *HarnessNode) overrideFlagsAndBinary(backwardCompat map[string]string,
+	binary string, args []LitArgOption) (string, []LitArgOption) {
+
+	if backwardCompat == nil {
+		return binary, args
+	}
+
+	downgradeVersion, ok := backwardCompat[hn.Cfg.Name]
+	if !ok {
+		return binary, args
+	}
+
+	newBinary := fmt.Sprintf("%s-%s", binary, downgradeVersion)
+
+	flagOverride, ok := backwardCompatFlagOverride[downgradeVersion]
+	if !ok {
+		return newBinary, args
+	}
+
+	for k, v := range flagOverride {
+		if v == "" {
+			args = append(args, WithoutLitArg(k))
+		} else {
+			args = append(args, WithLitArg(k, v))
+		}
+	}
+
+	cfgOverride, ok := backwardCompatConfigOverride[downgradeVersion]
+	if ok && cfgOverride != nil {
+		cfgOverride(hn.Cfg)
+	}
+
+	return newBinary, args
+}
+
 // Start launches a new process running lnd. Additionally, the PID of the
 // launched process is saved in order to possibly kill the process forcibly
 // later.
 //
 // This may not clean up properly if an error is returned, so the caller should
 // call shutdown() regardless of the return value.
-func (hn *HarnessNode) Start(litdBinary string, litdError chan<- error,
+func (hn *HarnessNode) Start(litdBinary string,
+	backwardCompat map[string]string, litdError chan<- error,
 	waitForStart bool, litArgOpts ...LitArgOption) error {
 
 	hn.quit = make(chan struct{})
+
+	litdBinary, litArgOpts = hn.overrideFlagsAndBinary(
+		backwardCompat, litdBinary, litArgOpts,
+	)
 
 	args := hn.Cfg.GenArgs(litArgOpts...)
 	hn.cmd = exec.Command(litdBinary, args...)
