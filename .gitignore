@@ -15,6 +15,9 @@ itest/itest.test
 itest/.logs
 itest/*.log
 
+# Failed rapid test runs
+accounts/testdata/rapid/*
+
 vendor
 *.idea
 *.run
