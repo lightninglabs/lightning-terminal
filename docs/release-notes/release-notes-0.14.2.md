@@ -93,6 +93,8 @@
 * All Taproot Asset Channel related commands (`litcli ln ...`) can now [use
   a new `--group_key` flag to interact with grouped asset
   channels](https://github.com/lightninglabs/lightning-terminal/pull/1052).
+* The `litcli ln addinvoice` command now supports adding an invoice with a fixed
+  sat/msat amount.
 
 # Contributors (Alphabetical Order)
 
