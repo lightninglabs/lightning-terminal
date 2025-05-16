@@ -26,6 +26,7 @@ import (
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/macaroons"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 	"gopkg.in/macaroon-bakery.v2/bakery/checkers"
 	"gopkg.in/macaroon.v2"
@@ -77,10 +78,23 @@ func newSessionRPCServer(cfg *sessionRpcServerConfig) (*sessionRpcServer,
 	// actual mailbox server that spins up the Terminal Connect server
 	// interface.
 	server := session.NewServer(
-		func(opts ...grpc.ServerOption) *grpc.Server {
-			allOpts := append(cfg.grpcOptions, opts...)
+		func(id session.ID, opts ...grpc.ServerOption) *grpc.Server {
+			// Add the session ID injector interceptors first so
+			// that the session ID is available in the context of
+			// all interceptors that come after.
+			allOpts := []grpc.ServerOption{
+				addSessionIDToStreamCtx(id),
+				addSessionIDToUnaryCtx(id),
+			}
+
+			allOpts = append(allOpts, cfg.grpcOptions...)
+			allOpts = append(allOpts, opts...)
+
+			// Construct the gRPC server with the options.
 			grpcServer := grpc.NewServer(allOpts...)
 
+			// Register various grpc servers with the LNC session
+			// server.
 			cfg.registerGrpcServers(grpcServer)
 
 			return grpcServer
@@ -92,6 +106,62 @@ func newSessionRPCServer(cfg *sessionRpcServerConfig) (*sessionRpcServer,
 		sessionServer: server,
 		quit:          make(chan struct{}),
 	}, nil
+}
+
+// wrappedServerStream is a wrapper around the grpc.ServerStream that allows us
+// to set a custom context. This is needed since the stream handler function
+// doesn't take a context as an argument, but rather has a Context method on the
+// handler itself. So we use this custom wrapper to override this method.
+type wrappedServerStream struct {
+	grpc.ServerStream
+	ctx context.Context
+}
+
+// Context returns the context of the stream.
+//
+// NOTE: This implements the grpc.ServerStream Context method.
+func (w *wrappedServerStream) Context() context.Context {
+	return w.ctx
+}
+
+// addSessionIDToStreamCtx is a gRPC stream interceptor that adds the given
+// session ID to the context of the stream. This allows us to access the
+// session ID later on for any gRPC calls made through this stream.
+func addSessionIDToStreamCtx(id session.ID) grpc.ServerOption {
+	return grpc.StreamInterceptor(func(srv any, ss grpc.ServerStream,
+		info *grpc.StreamServerInfo,
+		handler grpc.StreamHandler) error {
+
+		md, _ := metadata.FromIncomingContext(ss.Context())
+		mdCopy := md.Copy()
+		session.AddToGRPCMetadata(mdCopy, id)
+
+		// Wrap the original stream with our custom context.
+		wrapped := &wrappedServerStream{
+			ServerStream: ss,
+			ctx: metadata.NewIncomingContext(
+				ss.Context(), mdCopy,
+			),
+		}
+
+		return handler(srv, wrapped)
+	})
+}
+
+// addSessionIDToUnaryCtx is a gRPC unary interceptor that adds the given
+// session ID to the context of the unary call. This allows us to access the
+// session ID later on for any gRPC calls made through this context.
+func addSessionIDToUnaryCtx(id session.ID) grpc.ServerOption {
+	return grpc.UnaryInterceptor(func(ctx context.Context, req any,
+		info *grpc.UnaryServerInfo,
+		handler grpc.UnaryHandler) (resp any, err error) {
+
+		md, _ := metadata.FromIncomingContext(ctx)
+		mdCopy := md.Copy()
+		session.AddToGRPCMetadata(mdCopy, id)
+
+		return handler(metadata.NewIncomingContext(ctx, mdCopy), req)
+	})
 }
 
 // start all the components necessary for the sessionRpcServer to start serving

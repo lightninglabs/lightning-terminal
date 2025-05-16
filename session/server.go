@@ -18,7 +18,8 @@ import (
 
 type sessionID [33]byte
 
-type GRPCServerCreator func(opts ...grpc.ServerOption) *grpc.Server
+type GRPCServerCreator func(sessionID ID,
+	opts ...grpc.ServerOption) *grpc.Server
 
 type mailboxSession struct {
 	server *grpc.Server
@@ -70,7 +71,7 @@ func (m *mailboxSession) start(session *Session,
 	}
 
 	noiseConn := mailbox.NewNoiseGrpcConn(keys)
-	m.server = serverCreator(grpc.Creds(noiseConn))
+	m.server = serverCreator(session.ID, grpc.Creds(noiseConn))
 
 	m.wg.Add(1)
 	go m.run(mailboxServer)
