@@ -659,8 +659,14 @@ var addInvoiceCommand = cli.Command{
 				"cannot be used at the same time as --asset_id",
 		},
 		cli.Uint64Flag{
-			Name:  "asset_amount",
-			Usage: "the amount of assets to receive",
+			Name: "asset_amount",
+			Usage: "the amount of assets to receive, mutually " +
+				"exclusive to msat_amount",
+		},
+		cli.Uint64Flag{
+			Name: "msat_amount",
+			Usage: "the amount of msats to receive, mutually " +
+				"exclusive to asset_amount",
 		},
 		cli.StringFlag{
 			Name: "rfq_peer_pubkey",
@@ -679,12 +685,23 @@ func addInvoice(cli *cli.Context) error {
 
 	var (
 		assetAmount = cli.Uint64("asset_amount")
+		msatAmount  = cli.Int64("amt_msat")
+		satAmount   = cli.Int64("amt")
 		preimage    []byte
 		descHash    []byte
 		err         error
 	)
-	if assetAmount == 0 {
-		return fmt.Errorf("asset_amount argument missing")
+	if assetAmount == 0 && msatAmount == 0 && satAmount == 0 {
+		return fmt.Errorf("must set asset amount or sat/msat amount")
+	}
+
+	if assetAmount != 0 && (msatAmount != 0 || satAmount != 0) {
+		return fmt.Errorf("must only set one of asset amount or " +
+			"sat/msat amount")
+	}
+
+	if msatAmount != 0 && satAmount != 0 {
+		return fmt.Errorf("must only set one of amt or amt_msat")
 	}
 
 	if cli.IsSet("preimage") {
@@ -731,6 +748,8 @@ func addInvoice(cli *cli.Context) error {
 			Memo:            cli.String("memo"),
 			RPreimage:       preimage,
 			DescriptionHash: descHash,
+			Value:           satAmount,
+			ValueMsat:       msatAmount,
 			FallbackAddr:    cli.String("fallback_addr"),
 			Expiry:          expirySeconds,
 			Private:         cli.Bool("private"),
