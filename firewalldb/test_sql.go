@@ -16,8 +16,7 @@ import (
 // NewTestDBWithSessions creates a new test SQLDB Store with access to an
 // existing sessions DB.
 func NewTestDBWithSessions(t *testing.T, sessionStore session.Store,
-	clock clock.Clock) *SQLDB {
-
+	clock clock.Clock) FirewallDBs {
 	sessions, ok := sessionStore.(*session.SQLStore)
 	require.True(t, ok)
 
@@ -27,7 +26,7 @@ func NewTestDBWithSessions(t *testing.T, sessionStore session.Store,
 // NewTestDBWithSessionsAndAccounts creates a new test SQLDB Store with access
 // to an existing sessions DB and accounts DB.
 func NewTestDBWithSessionsAndAccounts(t *testing.T, sessionStore SessionDB,
-	acctStore AccountsDB, clock clock.Clock) *SQLDB {
+	acctStore AccountsDB, clock clock.Clock) FirewallDBs {
 
 	sessions, ok := sessionStore.(*session.SQLStore)
 	require.True(t, ok)
