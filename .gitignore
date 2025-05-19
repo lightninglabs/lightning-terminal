@@ -16,6 +16,9 @@ itest/.logs
 itest/*.log
 itest/backward-compat
 
+# Failed rapid test runs
+accounts/testdata/rapid/*
+
 vendor
 *.idea
 *.run

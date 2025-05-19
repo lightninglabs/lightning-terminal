@@ -261,6 +261,7 @@ func (q *Queries) ListAccountPayments(ctx context.Context, accountID int64) ([]A
 const listAllAccounts = `-- name: ListAllAccounts :many
 SELECT id, alias, label, type, initial_balance_msat, current_balance_msat, last_updated, expiration
 FROM accounts
+ORDER BY id
 `
 
 func (q *Queries) ListAllAccounts(ctx context.Context) ([]Account, error) {

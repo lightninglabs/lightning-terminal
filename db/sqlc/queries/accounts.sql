@@ -62,7 +62,8 @@ WHERE id = $1;
 
 -- name: ListAllAccounts :many
 SELECT *
-FROM accounts;
+FROM accounts
+ORDER BY id;
 
 -- name: ListAccountPayments :many
 SELECT *
