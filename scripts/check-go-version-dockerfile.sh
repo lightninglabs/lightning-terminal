@@ -34,6 +34,7 @@ exception_list=(
     # Exclude the tools Dockerfile as otherwise the linter may need to be
     # considered every time the Go version is updated.
     "./tools/Dockerfile"
+    "./itest/backward-compat"
 )
 
 # is_exception checks if a file is in the exception list.
@@ -41,6 +42,13 @@ is_exception() {
     local file="$1"
     for exception in "${exception_list[@]}"; do
         if [ "$file" == "$exception" ]; then
+            return 0
+        fi
+
+        # Check if the file is inside an excluded directory.
+        # The trailing slash ensures that similarly named directories
+        # (e.g., ./itest/backward-compat_other) are not mistakenly excluded.
+        if [[ "$file/" == "$exclude"* ]]; then
             return 0
         fi
     done
