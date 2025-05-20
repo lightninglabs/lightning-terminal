@@ -28,6 +28,10 @@ VALUES ($1, $2, $3, $4, $5, $6);
 DELETE FROM kvstores
 WHERE perm = false;
 
+-- name: ListAllKVStoresRecords :many
+SELECT *
+FROM kvstores;
+
 -- name: GetGlobalKVStoreRecord :one
 SELECT value
 FROM kvstores
