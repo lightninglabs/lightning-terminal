@@ -257,6 +257,42 @@ func (q *Queries) InsertKVStoreRecord(ctx context.Context, arg InsertKVStoreReco
 	return err
 }
 
+const listAllKVStoresRecords = `-- name: ListAllKVStoresRecords :many
+SELECT id, perm, rule_id, session_id, feature_id, entry_key, value
+FROM kvstores
+`
+
+func (q *Queries) ListAllKVStoresRecords(ctx context.Context) ([]Kvstore, error) {
+	rows, err := q.db.QueryContext(ctx, listAllKVStoresRecords)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Kvstore
+	for rows.Next() {
+		var i Kvstore
+		if err := rows.Scan(
+			&i.ID,
+			&i.Perm,
+			&i.RuleID,
+			&i.SessionID,
+			&i.FeatureID,
+			&i.EntryKey,
+			&i.Value,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateFeatureKVStoreRecord = `-- name: UpdateFeatureKVStoreRecord :exec
 UPDATE kvstores
 SET value = $1
