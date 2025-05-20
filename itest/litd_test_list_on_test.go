@@ -128,4 +128,9 @@ var allTestCases = []*testCase{
 		test:       testCustomChannelsSelfPayment,
 		noAliceBob: true,
 	},
+	{
+		name:       "custom channels multi rfq",
+		test:       testCustomChannelsMultiRFQReceive,
+		noAliceBob: true,
+	},
 }

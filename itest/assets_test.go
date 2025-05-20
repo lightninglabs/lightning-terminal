@@ -38,6 +38,7 @@ import (
 	"github.com/lightningnetwork/lnd/lnrpc/invoicesrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/walletrpc"
+	"github.com/lightningnetwork/lnd/lntest"
 	"github.com/lightningnetwork/lnd/lntest/rpc"
 	"github.com/lightningnetwork/lnd/lntest/wait"
 	"github.com/lightningnetwork/lnd/lntypes"
@@ -65,6 +66,260 @@ var (
 	failureTimeout          = lnrpc.PaymentFailureReason_FAILURE_REASON_TIMEOUT
 	failureNone             = lnrpc.PaymentFailureReason_FAILURE_REASON_NONE
 )
+
+// itestNode is a wrapper around a lnd/tapd node.
+type itestNode struct {
+	Lnd  *HarnessNode
+	Tapd *tapClient
+}
+
+// multiRfqNodes contains all the itest nodes that are required to set up the
+// multi RFQ network topology.
+type multiRfqNodes struct {
+	charlie, dave, erin, fabia, yara itestNode
+	universeTap                      *tapClient
+}
+
+// createTestMultiRFQAssetNetwork creates a lightning network topology which
+// consists of both bitcoin and asset channels. It focuses on the property of
+// having multiple channels available on both the sender and receiver side.
+//
+// The topology we are going for looks like the following:
+//
+//	  /---[sats]--> Erin --[assets]--\
+//	 /                                \
+//	/                                  \
+//
+// Charlie  -----[sats]-->  Dave  --[assets]---->Fabia
+//
+//	\                                  /
+//	 \                                /
+//	  \---[sats]--> Yara --[assets]--/
+func createTestMultiRFQAssetNetwork(t *harnessTest, net *NetworkHarness,
+	nodes multiRfqNodes, mintedAsset *taprpc.Asset, assetSendAmount,
+	fundingAmount uint64, pushSat int64) (*lnrpc.ChannelPoint,
+	*lnrpc.ChannelPoint, *lnrpc.ChannelPoint) {
+
+	charlie, charlieTap := nodes.charlie.Lnd, nodes.charlie.Tapd
+	dave, daveTap := nodes.dave.Lnd, nodes.dave.Tapd
+	erin, erinTap := nodes.erin.Lnd, nodes.erin.Tapd
+	_, fabiaTap := nodes.fabia.Lnd, nodes.fabia.Tapd
+	yara, yaraTap := nodes.yara.Lnd, nodes.yara.Tapd
+	universeTap := nodes.universeTap
+
+	// Let's open the normal sats channels between Charlie and the routing
+	// peers.
+	_ = openChannelAndAssert(
+		t, net, charlie, erin, lntest.OpenChannelParams{
+			Amt:         10_000_000,
+			SatPerVByte: 5,
+		},
+	)
+
+	_ = openChannelAndAssert(
+		t, net, charlie, dave, lntest.OpenChannelParams{
+			Amt:         10_000_000,
+			SatPerVByte: 5,
+		},
+	)
+
+	_ = openChannelAndAssert(
+		t, net, charlie, yara, lntest.OpenChannelParams{
+			Amt:         10_000_000,
+			SatPerVByte: 5,
+		},
+	)
+
+	ctxb := context.Background()
+	assetID := mintedAsset.AssetGenesis.AssetId
+	var groupKey []byte
+	if mintedAsset.AssetGroup != nil {
+		groupKey = mintedAsset.AssetGroup.TweakedGroupKey
+	}
+
+	fundingScriptTree := tapscript.NewChannelFundingScriptTree()
+	fundingScriptKey := fundingScriptTree.TaprootKey
+	fundingScriptTreeBytes := fundingScriptKey.SerializeCompressed()
+
+	// We need to send some assets to Dave, so he can fund an asset channel
+	// with Fabia.
+	daveAddr, err := daveTap.NewAddr(ctxb, &taprpc.NewAddrRequest{
+		Amt:     assetSendAmount,
+		AssetId: assetID,
+		ProofCourierAddr: fmt.Sprintf(
+			"%s://%s", proof.UniverseRpcCourierType,
+			charlieTap.node.Cfg.LitAddr(),
+		),
+	})
+	require.NoError(t.t, err)
+
+	t.Logf("Sending %v asset units to Dave...", assetSendAmount)
+
+	// Send the assets to Dave.
+	itest.AssertAddrCreated(t.t, daveTap, mintedAsset, daveAddr)
+	sendResp, err := charlieTap.SendAsset(ctxb, &taprpc.SendAssetRequest{
+		TapAddrs: []string{daveAddr.Encoded},
+	})
+	require.NoError(t.t, err)
+	itest.ConfirmAndAssertOutboundTransfer(
+		t.t, t.lndHarness.Miner.Client, charlieTap, sendResp, assetID,
+		[]uint64{mintedAsset.Amount - assetSendAmount, assetSendAmount},
+		0, 1,
+	)
+	itest.AssertNonInteractiveRecvComplete(t.t, daveTap, 1)
+
+	// We need to send some assets to Erin, so he can fund an asset channel
+	// with Fabia.
+	erinAddr, err := erinTap.NewAddr(ctxb, &taprpc.NewAddrRequest{
+		Amt:     assetSendAmount,
+		AssetId: assetID,
+		ProofCourierAddr: fmt.Sprintf(
+			"%s://%s", proof.UniverseRpcCourierType,
+			charlieTap.node.Cfg.LitAddr(),
+		),
+	})
+	require.NoError(t.t, err)
+
+	t.Logf("Sending %v asset units to Erin...", assetSendAmount)
+
+	// Send the assets to Erin.
+	itest.AssertAddrCreated(t.t, erinTap, mintedAsset, erinAddr)
+	sendResp, err = charlieTap.SendAsset(ctxb, &taprpc.SendAssetRequest{
+		TapAddrs: []string{erinAddr.Encoded},
+	})
+	require.NoError(t.t, err)
+	itest.ConfirmAndAssertOutboundTransfer(
+		t.t, t.lndHarness.Miner.Client, charlieTap, sendResp, assetID,
+		[]uint64{
+			mintedAsset.Amount - 2*assetSendAmount, assetSendAmount,
+		}, 1, 2,
+	)
+	itest.AssertNonInteractiveRecvComplete(t.t, erinTap, 1)
+
+	// We need to send some assets to Yara, so he can fund an asset channel
+	// with Fabia.
+	yaraAddr, err := yaraTap.NewAddr(ctxb, &taprpc.NewAddrRequest{
+		Amt:     assetSendAmount,
+		AssetId: assetID,
+		ProofCourierAddr: fmt.Sprintf(
+			"%s://%s", proof.UniverseRpcCourierType,
+			charlieTap.node.Cfg.LitAddr(),
+		),
+	})
+	require.NoError(t.t, err)
+
+	t.Logf("Sending %v asset units to Yara...", assetSendAmount)
+
+	// Send the assets to Yara.
+	itest.AssertAddrCreated(t.t, yaraTap, mintedAsset, yaraAddr)
+	sendResp, err = charlieTap.SendAsset(ctxb, &taprpc.SendAssetRequest{
+		TapAddrs: []string{yaraAddr.Encoded},
+	})
+	require.NoError(t.t, err)
+	itest.ConfirmAndAssertOutboundTransfer(
+		t.t, t.lndHarness.Miner.Client, charlieTap, sendResp, assetID,
+		[]uint64{
+			mintedAsset.Amount - 3*assetSendAmount, assetSendAmount,
+		}, 2, 3,
+	)
+	itest.AssertNonInteractiveRecvComplete(t.t, yaraTap, 1)
+
+	// We fund the Dave->Fabia channel.
+	fundRespDF, err := daveTap.FundChannel(
+		ctxb, &tchrpc.FundChannelRequest{
+			AssetAmount:        fundingAmount,
+			AssetId:            assetID,
+			PeerPubkey:         fabiaTap.node.PubKey[:],
+			FeeRateSatPerVbyte: 5,
+			PushSat:            pushSat,
+		},
+	)
+	require.NoError(t.t, err)
+	t.Logf("Funded channel between Dave and Fabia: %v", fundRespDF)
+
+	// We fund the Erin->Fabia channel.
+	fundRespEF, err := erinTap.FundChannel(
+		ctxb, &tchrpc.FundChannelRequest{
+			AssetAmount:        fundingAmount,
+			AssetId:            assetID,
+			PeerPubkey:         fabiaTap.node.PubKey[:],
+			FeeRateSatPerVbyte: 5,
+			PushSat:            pushSat,
+		},
+	)
+	require.NoError(t.t, err)
+	t.Logf("Funded channel between Erin and Fabia: %v", fundRespEF)
+
+	// We fund the Yara->Fabia channel.
+	fundRespYF, err := yaraTap.FundChannel(
+		ctxb, &tchrpc.FundChannelRequest{
+			AssetAmount:        fundingAmount,
+			AssetId:            assetID,
+			PeerPubkey:         fabiaTap.node.PubKey[:],
+			FeeRateSatPerVbyte: 5,
+			PushSat:            pushSat,
+		},
+	)
+	require.NoError(t.t, err)
+	t.Logf("Funded channel between Yara and Fabia: %v", fundRespYF)
+
+	// Make sure the pending channel shows up in the list and has the
+	// custom records set as JSON.
+	assertPendingChannels(
+		t.t, daveTap.node, mintedAsset, 1, fundingAmount, 0,
+	)
+	assertPendingChannels(
+		t.t, erinTap.node, mintedAsset, 1, fundingAmount, 0,
+	)
+	assertPendingChannels(
+		t.t, yaraTap.node, mintedAsset, 1, fundingAmount, 0,
+	)
+
+	// Now that we've looked at the pending channels, let's actually confirm
+	// all three of them.
+	mineBlocks(t, net, 6, 3)
+
+	// We'll be tracking the expected asset balances throughout the test, so
+	// we can assert it after each action.
+	charlieAssetBalance := mintedAsset.Amount - 3*assetSendAmount
+	daveAssetBalance := assetSendAmount - fundingAmount
+	erinAssetBalance := assetSendAmount - fundingAmount
+	yaraAssetBalance := assetSendAmount - fundingAmount
+
+	itest.AssertBalances(
+		t.t, charlieTap, charlieAssetBalance,
+		itest.WithAssetID(assetID), itest.WithNumUtxos(1),
+	)
+
+	itest.AssertBalances(
+		t.t, daveTap, daveAssetBalance, itest.WithAssetID(assetID),
+	)
+
+	itest.AssertBalances(
+		t.t, erinTap, erinAssetBalance, itest.WithAssetID(assetID),
+	)
+
+	itest.AssertBalances(
+		t.t, yaraTap, yaraAssetBalance, itest.WithAssetID(assetID),
+	)
+
+	// Assert that the proofs for both channels has been uploaded to the
+	// designated Universe server.
+	assertUniverseProofExists(
+		t.t, universeTap, assetID, groupKey, fundingScriptTreeBytes,
+		fmt.Sprintf("%v:%v", fundRespDF.Txid, fundRespDF.OutputIndex),
+	)
+	assertUniverseProofExists(
+		t.t, universeTap, assetID, groupKey, fundingScriptTreeBytes,
+		fmt.Sprintf("%v:%v", fundRespEF.Txid, fundRespEF.OutputIndex),
+	)
+	assertUniverseProofExists(
+		t.t, universeTap, assetID, groupKey, fundingScriptTreeBytes,
+		fmt.Sprintf("%v:%v", fundRespYF.Txid, fundRespYF.OutputIndex),
+	)
+
+	return nil, nil, nil
+}
 
 // createTestAssetNetwork sends asset funds from Charlie to Dave and Erin, so
 // they can fund asset channels with Yara and Fabia, respectively. So the asset
@@ -1133,7 +1388,7 @@ func sendKeySendPayment(t *testing.T, src, dst *HarnessNode,
 	stream, err := src.RouterClient.SendPaymentV2(ctxt, req)
 	require.NoError(t, err)
 
-	result, err := getFinalPaymentResult(stream)
+	result, err := getPaymentResult(stream, false)
 	require.NoError(t, err)
 	require.Equal(t, lnrpc.Payment_SUCCEEDED, result.Status)
 }
@@ -1193,6 +1448,12 @@ func payPayReqWithSatoshi(t *testing.T, payer *HarnessNode, payReq string,
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
 	defer cancel()
 
+	shardSize := uint64(0)
+
+	if cfg.smallShards {
+		shardSize = 80_000_000
+	}
+
 	sendReq := &routerrpc.SendPaymentRequest{
 		PaymentRequest:   payReq,
 		TimeoutSeconds:   int32(PaymentTimeout.Seconds()),
@@ -1200,6 +1461,7 @@ func payPayReqWithSatoshi(t *testing.T, payer *HarnessNode, payReq string,
 		MaxParts:         cfg.maxShards,
 		OutgoingChanIds:  cfg.outgoingChanIDs,
 		AllowSelfPayment: cfg.allowSelfPayment,
+		MaxShardSizeMsat: shardSize,
 	}
 
 	if cfg.smallShards {
@@ -1209,17 +1471,9 @@ func payPayReqWithSatoshi(t *testing.T, payer *HarnessNode, payReq string,
 	stream, err := payer.RouterClient.SendPaymentV2(ctxt, sendReq)
 	require.NoError(t, err)
 
-	if cfg.payStatus == lnrpc.Payment_IN_FLIGHT {
-		t.Logf("Waiting for initial stream response...")
-		result, err := stream.Recv()
-		require.NoError(t, err)
-
-		require.Equal(t, cfg.payStatus, result.Status)
-
-		return
-	}
-
-	result, err := getFinalPaymentResult(stream)
+	result, err := getPaymentResult(
+		stream, cfg.payStatus == lnrpc.Payment_IN_FLIGHT,
+	)
 	if cfg.errSubStr != "" {
 		require.ErrorContains(t, err, cfg.errSubStr)
 	} else {
@@ -1529,16 +1783,21 @@ func createAssetInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 
 	timeoutSeconds := int64(rfq.DefaultInvoiceExpiry.Seconds())
 
-	t.Logf("Asking peer %x for quote to buy assets to receive for "+
-		"invoice over %d units; waiting up to %ds",
-		dstRfqPeer.PubKey[:], assetAmount, timeoutSeconds)
+	var peerPubKey []byte
+	if dstRfqPeer != nil {
+		peerPubKey = dstRfqPeer.PubKey[:]
+
+		t.Logf("Asking peer %x for quote to buy assets to receive for "+
+			"invoice over %d units; waiting up to %ds",
+			dstRfqPeer.PubKey[:], assetAmount, timeoutSeconds)
+	}
 
 	dstTapd := newTapClient(t, dst)
 
 	request := &tchrpc.AddInvoiceRequest{
 		GroupKey:    cfg.groupKey,
 		AssetAmount: assetAmount,
-		PeerPubkey:  dstRfqPeer.PubKey[:],
+		PeerPubkey:  peerPubKey,
 		InvoiceRequest: &lnrpc.Invoice{
 			Memo: fmt.Sprintf("this is an asset invoice for "+
 				"%d units", assetAmount),
@@ -1593,7 +1852,7 @@ func createAssetInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 
 	t.Logf("Got quote for %d mSats at %3f msat/unit from peer %x with "+
 		"SCID %d", decodedInvoice.NumMsat, mSatPerUnit,
-		dstRfqPeer.PubKey[:], resp.AcceptedBuyQuote.Scid)
+		resp.AcceptedBuyQuote.Peer, resp.AcceptedBuyQuote.Scid)
 
 	return resp.InvoiceResult
 }
@@ -1727,9 +1986,15 @@ func createAssetHodlInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 
 	timeoutSeconds := int64(rfq.DefaultInvoiceExpiry.Seconds())
 
+	var rfqPeer []byte
+
+	if dstRfqPeer != nil {
+		rfqPeer = dstRfqPeer.PubKey[:]
+	}
+
 	t.Logf("Asking peer %x for quote to buy assets to receive for "+
 		"invoice for %d units; waiting up to %ds",
-		dstRfqPeer.PubKey[:], assetAmount, timeoutSeconds)
+		rfqPeer, assetAmount, timeoutSeconds)
 
 	dstTapd := newTapClient(t, dst)
 
@@ -1742,7 +2007,7 @@ func createAssetHodlInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 	payHash := preimage.Hash()
 	request := &tchrpc.AddInvoiceRequest{
 		AssetAmount: assetAmount,
-		PeerPubkey:  dstRfqPeer.PubKey[:],
+		PeerPubkey:  rfqPeer,
 		InvoiceRequest: &lnrpc.Invoice{
 			Memo: fmt.Sprintf("this is an asset invoice for "+
 				"%d units", assetAmount),
@@ -1780,7 +2045,7 @@ func createAssetHodlInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 	require.EqualValues(t, uint64(numMSats), uint64(decodedInvoice.NumMsat))
 
 	t.Logf("Got quote for %d msat at %v msat/unit from peer %x with SCID "+
-		"%d", decodedInvoice.NumMsat, mSatPerUnit, dstRfqPeer.PubKey[:],
+		"%d", decodedInvoice.NumMsat, mSatPerUnit, rfqPeer,
 		resp.AcceptedBuyQuote.Scid)
 
 	return assetHodlInvoice{
