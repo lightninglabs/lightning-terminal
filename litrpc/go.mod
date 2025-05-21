@@ -7,8 +7,8 @@ require (
 	github.com/lightninglabs/faraday/frdrpc v1.0.0
 	github.com/lightninglabs/loop/looprpc v1.0.0
 	github.com/lightninglabs/pool/poolrpc v1.0.0
-	github.com/lightninglabs/taproot-assets/taprpc v1.0.1
-	github.com/lightningnetwork/lnd v0.19.0-beta.rc3
+	github.com/lightninglabs/taproot-assets/taprpc v1.0.4
+	github.com/lightningnetwork/lnd v0.19.0-beta.rc5
 	google.golang.org/grpc v1.65.0
 	google.golang.org/protobuf v1.34.2
 )
@@ -104,7 +104,7 @@ require (
 	github.com/lightningnetwork/lnd/queue v1.1.1 // indirect
 	github.com/lightningnetwork/lnd/sqldb v1.0.9 // indirect
 	github.com/lightningnetwork/lnd/ticker v1.1.1 // indirect
-	github.com/lightningnetwork/lnd/tlv v1.3.0 // indirect
+	github.com/lightningnetwork/lnd/tlv v1.3.1 // indirect
 	github.com/lightningnetwork/lnd/tor v1.1.6 // indirect
 	github.com/ltcsuite/ltcd v0.0.0-20190101042124-f37f8bf35796 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect

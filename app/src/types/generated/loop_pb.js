@@ -975,7 +975,7 @@ if (goog.DEBUG && !COMPILED) {
  * @constructor
  */
 proto.looprpc.InstantOutQuoteRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.looprpc.InstantOutQuoteRequest.repeatedFields_, null);
 };
 goog.inherits(proto.looprpc.InstantOutQuoteRequest, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
@@ -8564,7 +8564,8 @@ proto.looprpc.LiquidityParameters.toObject = function(includeInstance, msg) {
     easyAutoloopLocalTargetSat: jspb.Message.getFieldWithDefault(msg, 22, "0"),
     account: jspb.Message.getFieldWithDefault(msg, 23, ""),
     accountAddrType: jspb.Message.getFieldWithDefault(msg, 24, 0),
-    easyAssetParamsMap: (f = msg.getEasyAssetParamsMap()) ? f.toObject(includeInstance, proto.looprpc.EasyAssetAutoloopParams.toObject) : []
+    easyAssetParamsMap: (f = msg.getEasyAssetParamsMap()) ? f.toObject(includeInstance, proto.looprpc.EasyAssetAutoloopParams.toObject) : [],
+    fastSwapPublication: jspb.Message.getBooleanFieldWithDefault(msg, 26, false)
   };
 
   if (includeInstance) {
@@ -8703,6 +8704,10 @@ proto.looprpc.LiquidityParameters.deserializeBinaryFromReader = function(msg, re
       reader.readMessage(value, function(message, reader) {
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.looprpc.EasyAssetAutoloopParams.deserializeBinaryFromReader, "", new proto.looprpc.EasyAssetAutoloopParams());
          });
+      break;
+    case 26:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setFastSwapPublication(value);
       break;
     default:
       reader.skipField();
@@ -8905,6 +8910,13 @@ proto.looprpc.LiquidityParameters.serializeBinaryToWriter = function(message, wr
   f = message.getEasyAssetParamsMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(25, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.looprpc.EasyAssetAutoloopParams.serializeBinaryToWriter);
+  }
+  f = message.getFastSwapPublication();
+  if (f) {
+    writer.writeBool(
+      26,
+      f
+    );
   }
 };
 
@@ -9381,6 +9393,24 @@ proto.looprpc.LiquidityParameters.prototype.getEasyAssetParamsMap = function(opt
 proto.looprpc.LiquidityParameters.prototype.clearEasyAssetParamsMap = function() {
   this.getEasyAssetParamsMap().clear();
   return this;
+};
+
+
+/**
+ * optional bool fast_swap_publication = 26;
+ * @return {boolean}
+ */
+proto.looprpc.LiquidityParameters.prototype.getFastSwapPublication = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 26, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.looprpc.LiquidityParameters} returns this
+ */
+proto.looprpc.LiquidityParameters.prototype.setFastSwapPublication = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 26, value);
 };
 
 
@@ -12007,6 +12037,13 @@ proto.looprpc.InstantOutResponse.prototype.setState = function(value) {
 
 
 
+/**
+ * List of repeated fields within this message type.
+ * @private {!Array<number>}
+ * @const
+ */
+proto.looprpc.InstantOutQuoteRequest.repeatedFields_ = [3];
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
@@ -12039,7 +12076,8 @@ proto.looprpc.InstantOutQuoteRequest.prototype.toObject = function(opt_includeIn
 proto.looprpc.InstantOutQuoteRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
     amt: jspb.Message.getFieldWithDefault(msg, 1, "0"),
-    numReservations: jspb.Message.getFieldWithDefault(msg, 2, 0)
+    numReservations: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    reservationIdsList: msg.getReservationIdsList_asB64()
   };
 
   if (includeInstance) {
@@ -12084,6 +12122,10 @@ proto.looprpc.InstantOutQuoteRequest.deserializeBinaryFromReader = function(msg,
       var value = /** @type {number} */ (reader.readInt32());
       msg.setNumReservations(value);
       break;
+    case 3:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.addReservationIds(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -12127,6 +12169,13 @@ proto.looprpc.InstantOutQuoteRequest.serializeBinaryToWriter = function(message,
       f
     );
   }
+  f = message.getReservationIdsList_asU8();
+  if (f.length > 0) {
+    writer.writeRepeatedBytes(
+      3,
+      f
+    );
+  }
 };
 
 
@@ -12163,6 +12212,67 @@ proto.looprpc.InstantOutQuoteRequest.prototype.getNumReservations = function() {
  */
 proto.looprpc.InstantOutQuoteRequest.prototype.setNumReservations = function(value) {
   return jspb.Message.setProto3IntField(this, 2, value);
+};
+
+
+/**
+ * repeated bytes reservation_ids = 3;
+ * @return {!(Array<!Uint8Array>|Array<string>)}
+ */
+proto.looprpc.InstantOutQuoteRequest.prototype.getReservationIdsList = function() {
+  return /** @type {!(Array<!Uint8Array>|Array<string>)} */ (jspb.Message.getRepeatedField(this, 3));
+};
+
+
+/**
+ * repeated bytes reservation_ids = 3;
+ * This is a type-conversion wrapper around `getReservationIdsList()`
+ * @return {!Array<string>}
+ */
+proto.looprpc.InstantOutQuoteRequest.prototype.getReservationIdsList_asB64 = function() {
+  return /** @type {!Array<string>} */ (jspb.Message.bytesListAsB64(
+      this.getReservationIdsList()));
+};
+
+
+/**
+ * repeated bytes reservation_ids = 3;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getReservationIdsList()`
+ * @return {!Array<!Uint8Array>}
+ */
+proto.looprpc.InstantOutQuoteRequest.prototype.getReservationIdsList_asU8 = function() {
+  return /** @type {!Array<!Uint8Array>} */ (jspb.Message.bytesListAsU8(
+      this.getReservationIdsList()));
+};
+
+
+/**
+ * @param {!(Array<!Uint8Array>|Array<string>)} value
+ * @return {!proto.looprpc.InstantOutQuoteRequest} returns this
+ */
+proto.looprpc.InstantOutQuoteRequest.prototype.setReservationIdsList = function(value) {
+  return jspb.Message.setField(this, 3, value || []);
+};
+
+
+/**
+ * @param {!(string|Uint8Array)} value
+ * @param {number=} opt_index
+ * @return {!proto.looprpc.InstantOutQuoteRequest} returns this
+ */
+proto.looprpc.InstantOutQuoteRequest.prototype.addReservationIds = function(value, opt_index) {
+  return jspb.Message.addToRepeatedField(this, 3, value, opt_index);
+};
+
+
+/**
+ * Clears the list making it empty but non-null.
+ * @return {!proto.looprpc.InstantOutQuoteRequest} returns this
+ */
+proto.looprpc.InstantOutQuoteRequest.prototype.clearReservationIdsList = function() {
+  return this.setReservationIdsList([]);
 };
 
 
