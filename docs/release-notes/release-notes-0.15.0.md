@@ -75,12 +75,12 @@
 ### LND
 
 * Updated [`lnd` to 
-  `v0.19.0-beta.rc2`](https://github.com/lightninglabs/lightning-terminal/pull/987).
+  `v0.19.0-beta`](https://github.com/lightninglabs/lightning-terminal/pull/1077).
 
 ### Loop
 
 * Updated [Loop to
-  `v0.30.0-beta`](https://github.com/lightninglabs/lightning-terminal/pull/987).
+  `v0.31.1-beta`](https://github.com/lightninglabs/lightning-terminal/pull/1077).
 
 ### Pool
 
@@ -89,7 +89,7 @@
 ### Taproot Assets
 
 * Updated [`tapd` to
-  `v0.5.2`](https://github.com/lightninglabs/lightning-terminal/pull/987).
+  `v0.6.0-rc2`](https://github.com/lightninglabs/lightning-terminal/pull/1077).
 * All Taproot Asset Channel related commands (`litcli ln ...`) can now [use
   a new `--group_key` flag to interact with grouped asset
   channels](https://github.com/lightninglabs/lightning-terminal/pull/1052).
@@ -99,4 +99,8 @@
 # Contributors (Alphabetical Order)
 
 * Elle Mouton
+* ffranr
+* George Tsagkarelis
+* Oliver Gugger
 * Viktor
+* ZZiigguurraatt
