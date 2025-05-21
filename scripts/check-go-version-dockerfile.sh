@@ -48,7 +48,7 @@ is_exception() {
         # Check if the file is inside an excluded directory.
         # The trailing slash ensures that similarly named directories
         # (e.g., ./itest/backward-compat_other) are not mistakenly excluded.
-        if [[ "$file/" == "$exclude"* ]]; then
+        if [[ "$file/" == "$exception"* ]]; then
             return 0
         fi
     done
