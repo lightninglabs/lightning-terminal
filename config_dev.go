@@ -154,7 +154,8 @@ func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
 	}
 
 	firewallBoltDB, err := firewalldb.NewBoltDB(
-		networkDir, firewalldb.DBFilename, stores.sessions, clock,
+		networkDir, firewalldb.DBFilename, stores.sessions,
+		stores.accounts, clock,
 	)
 	if err != nil {
 		return stores, fmt.Errorf("error creating firewall BoltDB: %v",

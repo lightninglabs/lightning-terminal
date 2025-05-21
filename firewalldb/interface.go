@@ -3,6 +3,7 @@ package firewalldb
 import (
 	"context"
 
+	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/session"
 )
 
@@ -13,6 +14,15 @@ type SessionDB interface {
 
 	// GetSession returns the session for a specific id.
 	GetSession(context.Context, session.ID) (*session.Session, error)
+}
+
+// AccountsDB is an interface that abstracts the database operations needed
+// firewalldb to be able to query the accounts database.
+type AccountsDB interface {
+	// Account fetches the Account with the given id from the accounts
+	// database.
+	Account(ctx context.Context,
+		id accounts.AccountID) (*accounts.OffChainBalanceAccount, error)
 }
 
 // DBExecutor provides an Update and View method that will allow the caller

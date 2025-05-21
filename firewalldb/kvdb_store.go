@@ -41,12 +41,13 @@ type BoltDB struct {
 	clock clock.Clock
 
 	sessionIDIndex SessionDB
+	accountsDB     AccountsDB
 }
 
 // NewBoltDB creates a new bolt database that can be found at the given
 // directory.
 func NewBoltDB(dir, fileName string, sessionIDIndex SessionDB,
-	clock clock.Clock) (*BoltDB, error) {
+	accountsDB AccountsDB, clock clock.Clock) (*BoltDB, error) {
 
 	firstInit := false
 	path := filepath.Join(dir, fileName)
@@ -73,6 +74,7 @@ func NewBoltDB(dir, fileName string, sessionIDIndex SessionDB,
 	return &BoltDB{
 		DB:             db,
 		sessionIDIndex: sessionIDIndex,
+		accountsDB:     accountsDB,
 		clock:          clock,
 	}, nil
 }

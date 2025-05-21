@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -29,6 +30,7 @@ const (
 // request.
 type RequestInfo struct {
 	SessionID       fn.Option[session.ID]
+	AccountID       fn.Option[accounts.AccountID]
 	MsgID           uint64
 	RequestID       uint64
 	MWRequestType   string
@@ -138,6 +140,12 @@ func NewInfoFromRequest(req *lnrpc.RPCMiddlewareRequest) (*RequestInfo, error) {
 		if IsPrivacyCaveat(ri.Caveats[idx]) {
 			ri.WithPrivacy = true
 		}
+	}
+
+	ri.AccountID, err = accounts.IDFromCaveats(ri.Macaroon.Caveats())
+	if err != nil {
+		return nil, fmt.Errorf("error extracting account ID "+
+			"from macaroon: %v", err)
 	}
 
 	return ri, nil

@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/fn"
 )
@@ -44,6 +45,13 @@ type AddActionReq struct {
 	// populate it by casting the macaroon ID to a session.ID and so is not
 	// guaranteed to be linked to an existing session.
 	SessionID fn.Option[session.ID]
+
+	// AccountID holds the optional account ID of the account that this
+	// action was performed on.
+	//
+	// NOTE: for our BoltDB impl, this is not persisted in any way, and we
+	// do not populate it on reading from disk.
+	AccountID fn.Option[accounts.AccountID]
 
 	// ActorName is the name of the entity who performed the Action.
 	ActorName string
