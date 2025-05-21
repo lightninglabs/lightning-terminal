@@ -247,4 +247,4 @@ replace github.com/golang-migrate/migrate/v4 => github.com/lightninglabs/migrate
 
 replace github.com/lightningnetwork/lnd => github.com/lightningnetwork/lnd v0.19.0-beta
 
-go 1.23.6
+go 1.23.9
