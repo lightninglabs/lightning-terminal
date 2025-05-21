@@ -1047,6 +1047,9 @@ export class LiquidityParameters extends jspb.Message {
 
   getEasyAssetParamsMap(): jspb.Map<string, EasyAssetAutoloopParams>;
   clearEasyAssetParamsMap(): void;
+  getFastSwapPublication(): boolean;
+  setFastSwapPublication(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LiquidityParameters.AsObject;
   static toObject(includeInstance: boolean, msg: LiquidityParameters): LiquidityParameters.AsObject;
@@ -1084,6 +1087,7 @@ export namespace LiquidityParameters {
     account: string,
     accountAddrType: AddressTypeMap[keyof AddressTypeMap],
     easyAssetParamsMap: Array<[string, EasyAssetAutoloopParams.AsObject]>,
+    fastSwapPublication: boolean,
   }
 }
 
@@ -1464,6 +1468,13 @@ export class InstantOutQuoteRequest extends jspb.Message {
   getNumReservations(): number;
   setNumReservations(value: number): void;
 
+  clearReservationIdsList(): void;
+  getReservationIdsList(): Array<Uint8Array | string>;
+  getReservationIdsList_asU8(): Array<Uint8Array>;
+  getReservationIdsList_asB64(): Array<string>;
+  setReservationIdsList(value: Array<Uint8Array | string>): void;
+  addReservationIds(value: Uint8Array | string, index?: number): Uint8Array | string;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): InstantOutQuoteRequest.AsObject;
   static toObject(includeInstance: boolean, msg: InstantOutQuoteRequest): InstantOutQuoteRequest.AsObject;
@@ -1478,6 +1489,7 @@ export namespace InstantOutQuoteRequest {
   export type AsObject = {
     amt: string,
     numReservations: number,
+    reservationIdsList: Array<Uint8Array | string>,
   }
 }
 

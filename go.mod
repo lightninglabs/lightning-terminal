@@ -22,23 +22,23 @@ require (
 	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.2
 	github.com/lightninglabs/lightning-terminal/litrpc v1.0.1
 	github.com/lightninglabs/lightning-terminal/perms v1.0.0
-	github.com/lightninglabs/lndclient v0.19.0-4
-	github.com/lightninglabs/loop v0.31.0-beta.0.20250502080242-8ef7584f9f56
+	github.com/lightninglabs/lndclient v0.19.0-5
+	github.com/lightninglabs/loop v0.31.1-beta
 	github.com/lightninglabs/loop/looprpc v1.0.7
 	github.com/lightninglabs/loop/swapserverrpc v1.0.14
 	github.com/lightninglabs/pool v0.6.5-beta.0.20250305125211-4e860ec4e77f
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.3-0.20250305125211-4e860ec4e77f
-	github.com/lightninglabs/pool/poolrpc v1.0.1-0.20250305125211-4e860ec4e77f
-	github.com/lightninglabs/taproot-assets v0.6.0-rc1.0.20250520102102-f6baa2c6f739
-	github.com/lightninglabs/taproot-assets/taprpc v1.0.3
-	github.com/lightningnetwork/lnd v0.19.0-beta.rc3
+	github.com/lightninglabs/pool/poolrpc v1.0.1
+	github.com/lightninglabs/taproot-assets v0.6.0-rc2
+	github.com/lightninglabs/taproot-assets/taprpc v1.0.4
+	github.com/lightningnetwork/lnd v0.19.0-beta.rc5
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/clock v1.1.1
 	github.com/lightningnetwork/lnd/fn v1.2.3
 	github.com/lightningnetwork/lnd/fn/v2 v2.0.8
 	github.com/lightningnetwork/lnd/kvdb v1.4.16
 	github.com/lightningnetwork/lnd/sqldb v1.0.9
-	github.com/lightningnetwork/lnd/tlv v1.3.0
+	github.com/lightningnetwork/lnd/tlv v1.3.1
 	github.com/lightningnetwork/lnd/tor v1.1.6
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
 	github.com/mwitkow/grpc-proxy v0.0.0-20230212185441-f345521cb9c9
@@ -245,4 +245,6 @@ replace google.golang.org/protobuf => github.com/lightninglabs/protobuf-go-hex-d
 // automatically, so we need to add it manually.
 replace github.com/golang-migrate/migrate/v4 => github.com/lightninglabs/migrate/v4 v4.18.2-9023d66a-fork-pr-2
 
-go 1.23.6
+replace github.com/lightningnetwork/lnd => github.com/lightningnetwork/lnd v0.19.0-beta
+
+go 1.23.9

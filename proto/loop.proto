@@ -1227,6 +1227,14 @@ message LiquidityParameters {
     value is the parameters to use for swaps in that asset.
     */
     map<string, EasyAssetAutoloopParams> easy_asset_params = 25;
+
+    /*
+     * Set to true to enable fast swap publication. If set, the server will
+     * publish the HTLC immediately after receiving the swap request. This
+     * setting has direct implications on the swap fees, as fast swaps may
+     * not be able to be batched with other swaps.
+     */
+    bool fast_swap_publication = 26;
 }
 
 message EasyAssetAutoloopParams {
@@ -1524,9 +1532,15 @@ message InstantOutQuoteRequest {
     uint64 amt = 1 [jstype = JS_STRING];
 
     /*
+    Deprecated: use 'reservation_ids' instead.
     The amount of reservations to use for the swap.
     */
-    int32 num_reservations = 2;
+    int32 num_reservations = 2 [deprecated = true];
+
+    /*
+    The reservations to use for the swap.
+    */
+    repeated bytes reservation_ids = 3;
 }
 
 message InstantOutQuoteResponse {
