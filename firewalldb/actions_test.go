@@ -161,7 +161,7 @@ func TestActionStorage(t *testing.T) {
 
 	// Check that providing no session id and no filter function returns
 	// all the actions.
-	actions, _, _, err = db.ListActions(nil, &ListActionsQuery{
+	actions, _, _, err = db.ListActions(ctx, &ListActionsQuery{
 		IndexOffset: 0,
 		MaxNum:      100,
 		Reversed:    false,
