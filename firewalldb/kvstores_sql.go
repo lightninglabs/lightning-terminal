@@ -17,6 +17,7 @@ import (
 // to interact with the session table.
 type SQLSessionQueries interface {
 	GetSessionIDByAlias(ctx context.Context, legacyID []byte) (int64, error)
+	GetAliasBySessionID(ctx context.Context, id int64) ([]byte, error)
 }
 
 // SQLKVStoreQueries is a subset of the sqlc.Queries interface that can be
