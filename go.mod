@@ -1,11 +1,13 @@
 module github.com/lightninglabs/lightning-terminal
 
+go 1.23.9
+
 require (
 	github.com/btcsuite/btcd v0.24.3-0.20250318170759-4f4ea81776d6
 	github.com/btcsuite/btcd/btcec/v2 v2.3.4
 	github.com/btcsuite/btcd/btcutil v1.1.5
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0
-	github.com/btcsuite/btclog/v2 v2.0.1-0.20250110154127-3ae4bf1cb318
+	github.com/btcsuite/btclog/v2 v2.0.1-0.20250602222548-9967d19bb084
 	github.com/btcsuite/btcwallet/walletdb v1.5.1
 	github.com/davecgh/go-spew v1.1.1
 	github.com/go-errors/errors v1.0.1
@@ -16,22 +18,23 @@ require (
 	github.com/jackc/pgerrcode v0.0.0-20240316143900-6e2875d9b438
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/lib/pq v1.10.9
-	github.com/lightninglabs/faraday v0.2.14-alpha.0.20250305102803-f668619b351e
-	github.com/lightninglabs/faraday/frdrpc v1.0.0
-	github.com/lightninglabs/lightning-node-connect v0.3.3-alpha.0.20250306111457-cad4234830cc
-	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.2
-	github.com/lightninglabs/lightning-terminal/litrpc v1.0.1
-	github.com/lightninglabs/lightning-terminal/perms v1.0.0
-	github.com/lightninglabs/lndclient v0.19.0-5
-	github.com/lightninglabs/loop v0.31.1-beta
+	github.com/lightninglabs/faraday v0.2.16-alpha
+	github.com/lightninglabs/faraday/frdrpc v1.0.1
+	github.com/lightninglabs/lightning-node-connect/gbn v1.0.1
+	github.com/lightninglabs/lightning-node-connect/mailbox v1.0.1
+	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.3
+	github.com/lightninglabs/lightning-terminal/litrpc v1.0.2
+	github.com/lightninglabs/lightning-terminal/perms v1.0.1
+	github.com/lightninglabs/lndclient v0.19.0-7
+	github.com/lightninglabs/loop v0.31.1-beta.0.20250527112532-ca8610e68e18
 	github.com/lightninglabs/loop/looprpc v1.0.7
 	github.com/lightninglabs/loop/swapserverrpc v1.0.14
-	github.com/lightninglabs/pool v0.6.5-beta.0.20250305125211-4e860ec4e77f
-	github.com/lightninglabs/pool/auctioneerrpc v1.1.3-0.20250305125211-4e860ec4e77f
+	github.com/lightninglabs/pool v0.6.6-beta
+	github.com/lightninglabs/pool/auctioneerrpc v1.1.3
 	github.com/lightninglabs/pool/poolrpc v1.0.1
-	github.com/lightninglabs/taproot-assets v0.6.0-rc2
-	github.com/lightninglabs/taproot-assets/taprpc v1.0.5-0.20250526115916-1ac1deab2f9b
-	github.com/lightningnetwork/lnd v0.19.0-beta.rc5
+	github.com/lightninglabs/taproot-assets v0.6.0-rc3
+	github.com/lightninglabs/taproot-assets/taprpc v1.0.6
+	github.com/lightningnetwork/lnd v0.19.1-beta.rc1
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/clock v1.1.1
 	github.com/lightningnetwork/lnd/fn v1.2.3
@@ -73,7 +76,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/btcsuite/btcd/btcutil/psbt v1.1.10 // indirect
 	github.com/btcsuite/btclog v0.0.0-20241003133417-09c4e92e319c // indirect
-	github.com/btcsuite/btcwallet v0.16.13 // indirect
+	github.com/btcsuite/btcwallet v0.16.14 // indirect
 	github.com/btcsuite/btcwallet/wallet/txauthor v1.3.5 // indirect
 	github.com/btcsuite/btcwallet/wallet/txrules v1.2.2 // indirect
 	github.com/btcsuite/btcwallet/wallet/txsizes v1.2.5 // indirect
@@ -140,9 +143,9 @@ require (
 	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
 	github.com/libdns/libdns v0.2.1 // indirect
-	github.com/lightninglabs/aperture v0.3.8-beta.0.20250305101039-2eead0180691 // indirect
+	github.com/lightninglabs/aperture v0.3.13-beta // indirect
 	github.com/lightninglabs/gozmq v0.0.0-20191113021534-d20a764486bf // indirect
-	github.com/lightninglabs/lightning-node-connect/hashmailrpc v1.0.2 // indirect
+	github.com/lightninglabs/lightning-node-connect/hashmailrpc v1.0.3 // indirect
 	github.com/lightninglabs/neutrino v0.16.1 // indirect
 	github.com/lightninglabs/neutrino/cache v1.1.2 // indirect
 	github.com/lightningnetwork/lightning-onion v1.2.1-0.20240712235311-98bd56499dfb // indirect
@@ -244,7 +247,3 @@ replace google.golang.org/protobuf => github.com/lightninglabs/protobuf-go-hex-d
 // it is a replace in the tapd repository, it doesn't get propagated here
 // automatically, so we need to add it manually.
 replace github.com/golang-migrate/migrate/v4 => github.com/lightninglabs/migrate/v4 v4.18.2-9023d66a-fork-pr-2
-
-replace github.com/lightningnetwork/lnd => github.com/lightningnetwork/lnd v0.19.0-beta
-
-go 1.23.9
