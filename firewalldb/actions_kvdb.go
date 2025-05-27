@@ -58,6 +58,13 @@ var (
 func (db *BoltDB) AddAction(ctx context.Context,
 	req *AddActionReq) (ActionLocator, error) {
 
+	// If no macaroon is provided, then an empty 4-byte array is used as the
+	// macaroon ID.
+	var macaroonID [4]byte
+	req.MacaroonIdentifier.WhenSome(func(id [4]byte) {
+		macaroonID = id
+	})
+
 	// If the new action links to a session, the session must exist.
 	// For the bbolt impl of the store, this is our best effort attempt
 	// at ensuring each action links to a session. If the session is
@@ -105,7 +112,7 @@ func (db *BoltDB) AddAction(ctx context.Context,
 		}
 
 		sessBucket, err := actionsBucket.CreateBucketIfNotExists(
-			action.MacaroonIdentifier[:],
+			macaroonID[:],
 		)
 		if err != nil {
 			return err
@@ -134,7 +141,7 @@ func (db *BoltDB) AddAction(ctx context.Context,
 		}
 
 		locator = kvdbActionLocator{
-			sessionID: action.MacaroonIdentifier,
+			sessionID: macaroonID,
 			actionID:  nextActionIndex,
 		}
 
@@ -574,7 +581,7 @@ func DeserializeAction(r io.Reader, sessionID session.ID) (*Action, error) {
 		return nil, err
 	}
 
-	action.MacaroonIdentifier = sessionID
+	action.MacaroonIdentifier = fn.Some([4]byte(sessionID))
 	action.SessionID = fn.Some(sessionID)
 	action.ActorName = string(actor)
 	action.FeatureName = string(featureName)

@@ -67,7 +67,7 @@ func TestActionStorage(t *testing.T) {
 	action1Req := &AddActionReq{
 		SessionID:          fn.Some(sess1.ID),
 		AccountID:          fn.Some(acct1.ID),
-		MacaroonIdentifier: sess1.ID,
+		MacaroonIdentifier: fn.Some([4]byte(sess1.ID)),
 		ActorName:          "Autopilot",
 		FeatureName:        "auto-fees",
 		Trigger:            "fee too low",
@@ -85,7 +85,7 @@ func TestActionStorage(t *testing.T) {
 
 	action2Req := &AddActionReq{
 		SessionID:          fn.Some(sess2.ID),
-		MacaroonIdentifier: sess2.ID,
+		MacaroonIdentifier: fn.Some([4]byte(sess2.ID)),
 		ActorName:          "Autopilot",
 		FeatureName:        "rebalancer",
 		Trigger:            "channels not balanced",
@@ -223,7 +223,7 @@ func TestListActions(t *testing.T) {
 		actionIds++
 
 		actionReq := &AddActionReq{
-			MacaroonIdentifier: sessionID,
+			MacaroonIdentifier: fn.Some(sessionID),
 			ActorName:          "Autopilot",
 			FeatureName:        fmt.Sprintf("%d", actionIds),
 			Trigger:            "fee too low",
@@ -245,9 +245,11 @@ func TestListActions(t *testing.T) {
 	assertActions := func(dbActions []*Action, al []*action) {
 		require.Len(t, dbActions, len(al))
 		for i, a := range al {
-			require.EqualValues(
-				t, a.sessionID, dbActions[i].MacaroonIdentifier,
+			mID, err := dbActions[i].MacaroonIdentifier.UnwrapOrErr(
+				fmt.Errorf("macaroon identifier is none"),
 			)
+			require.NoError(t, err)
+			require.EqualValues(t, a.sessionID, mID)
 			require.Equal(t, a.actionID, dbActions[i].FeatureName)
 		}
 	}
@@ -433,7 +435,7 @@ func TestListGroupActions(t *testing.T) {
 
 	action1Req := &AddActionReq{
 		SessionID:          fn.Some(sess1.ID),
-		MacaroonIdentifier: sess1.ID,
+		MacaroonIdentifier: fn.Some([4]byte(sess1.ID)),
 		ActorName:          "Autopilot",
 		FeatureName:        "auto-fees",
 		Trigger:            "fee too low",
@@ -451,7 +453,7 @@ func TestListGroupActions(t *testing.T) {
 
 	action2Req := &AddActionReq{
 		SessionID:          fn.Some(sess2.ID),
-		MacaroonIdentifier: sess2.ID,
+		MacaroonIdentifier: fn.Some([4]byte(sess2.ID)),
 		ActorName:          "Autopilot",
 		FeatureName:        "rebalancer",
 		Trigger:            "channels not balanced",

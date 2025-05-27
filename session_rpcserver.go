@@ -806,9 +806,14 @@ func (s *sessionRpcServer) ListActions(ctx context.Context,
 			sessionID = id
 		})
 
+		var macID [4]byte
+		a.MacaroonIdentifier.WhenSome(func(id [4]byte) {
+			macID = id
+		})
+
 		resp[i] = &litrpc.Action{
 			SessionId:          sessionID[:],
-			MacaroonIdentifier: a.MacaroonIdentifier[:],
+			MacaroonIdentifier: macID[:],
 			ActorName:          a.ActorName,
 			FeatureName:        a.FeatureName,
 			Trigger:            a.Trigger,

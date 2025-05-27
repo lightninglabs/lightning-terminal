@@ -36,7 +36,8 @@ const (
 type AddActionReq struct {
 	// MacaroonIdentifier is a 4 byte identifier created from the last 4
 	// bytes of the root key ID of the macaroon used to perform the action.
-	MacaroonIdentifier [4]byte
+	// If no macaroon was used for the action, then this will not be set.
+	MacaroonIdentifier fn.Option[[4]byte]
 
 	// SessionID holds the optional session ID of the session that this
 	// action was performed with.
