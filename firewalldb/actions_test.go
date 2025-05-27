@@ -497,12 +497,22 @@ func TestListGroupActions(t *testing.T) {
 	_, err = db.AddAction(ctx, action2Req)
 	require.NoError(t, err)
 
-	// There should now be actions in the group.
+	// There should now be two actions in the group.
 	al, _, _, err = db.ListActions(ctx, nil, WithActionGroupID(group1))
 	require.NoError(t, err)
 	require.Len(t, al, 2)
 	assertEqualActions(t, action1, al[0])
 	assertEqualActions(t, action2, al[1])
+
+	// Try the reversed query too.
+	al, _, _, err = db.ListActions(
+		ctx, &ListActionsQuery{Reversed: true},
+		WithActionGroupID(group1),
+	)
+	require.NoError(t, err)
+	require.Len(t, al, 2)
+	assertEqualActions(t, action2, al[0])
+	assertEqualActions(t, action1, al[1])
 }
 
 func assertEqualActions(t *testing.T, expected, got *Action) {
