@@ -14,8 +14,8 @@ import (
 )
 
 var (
-	testTime1 = time.Unix(32100, 0)
-	testTime2 = time.Unix(12300, 0)
+	testTime1 = time.Unix(12300, 0)
+	testTime2 = time.Unix(32100, 0)
 )
 
 // TestActionStorage tests that the ActionsListDB CRUD logic.
