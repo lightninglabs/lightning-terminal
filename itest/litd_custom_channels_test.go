@@ -1289,9 +1289,10 @@ func testCustomChannelsGroupTranchesForceClose(ctx context.Context,
 	// that transports assets from two tranches.
 	// ------------
 	const (
-		keySendAmount  = 5000
-		numSends       = 6
-		totalFirstSend = keySendAmount * numSends
+		keySendAmount    = 5000
+		keySendSatAmount = 5000
+		numSends         = 6
+		totalFirstSend   = keySendAmount * numSends
 	)
 	for i := 0; i < numSends; i++ {
 		sendAssetKeySendPayment(
@@ -1299,6 +1300,12 @@ func testCustomChannelsGroupTranchesForceClose(ctx context.Context,
 			fn.None[int64](), withGroupKey(groupKey),
 		)
 	}
+
+	// With noop HTLCs implemented the sats balance of Dave will only
+	// increase up to the reserve amount. Let's make a direct non-asset
+	// keysend to make sure the sats balance is also enough.
+	sendKeySendPayment(t.t, charlie, dave, keySendSatAmount)
+
 	logBalanceGroup(t.t, nodes, groupIDs, "after keysend Charlie->Dave")
 
 	// ------------
@@ -1538,8 +1545,9 @@ func testCustomChannelsGroupTranchesHtlcForceClose(ctx context.Context,
 	// First, we'll send over some funds from Charlie to Dave, as we want
 	// Dave to be able to extend HTLCs in the other direction.
 	const (
-		numPayments   = 10
-		keySendAmount = 2_500
+		numPayments      = 10
+		keySendAmount    = 2_500
+		keySendSatAmount = 5000
 	)
 	for i := 0; i < numPayments; i++ {
 		sendAssetKeySendPayment(
@@ -1547,6 +1555,11 @@ func testCustomChannelsGroupTranchesHtlcForceClose(ctx context.Context,
 			fn.None[int64](), withGroupKey(groupKey),
 		)
 	}
+
+	// With noop HTLCs implemented the sats balance of Dave will only
+	// increase up to the reserve amount. Let's make a direct non-asset
+	// keysend to make sure the sats balance is also enough.
+	sendKeySendPayment(t.t, charlie, dave, keySendSatAmount)
 
 	// Now that both parties have some funds, we'll move onto the main test.
 	//
@@ -4219,15 +4232,23 @@ func runCustomChannelsHtlcForceClose(ctx context.Context, t *harnessTest,
 	// First, we'll send over some funds from Alice to Bob, as we want Bob
 	// to be able to extend HTLCs in the other direction.
 	const (
-		numPayments   = 10
-		keySendAmount = 2_500
+		numPayments        = 10
+		keySendAssetAmount = 2_500
+		keySendSatAmount   = 5_000
 	)
 	for i := 0; i < numPayments; i++ {
 		sendAssetKeySendPayment(
-			t.t, alice, bob, keySendAmount, assetID,
+			t.t, alice, bob, keySendAssetAmount, assetID,
 			fn.None[int64](),
 		)
 	}
+
+	// With noop HTLCs implemented the sats balance of Bob will only
+	// increase up to the reserve amount. Let's make a direct non-asset
+	// keysend to make sure the sats balance is also enough.
+	sendKeySendPayment(t.t, alice, bob, keySendSatAmount)
+
+	logBalance(t.t, nodes, assetID, "after keysends to Bob")
 
 	// Now that both parties have some funds, we'll move onto the main test.
 	//
