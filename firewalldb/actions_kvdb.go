@@ -58,6 +58,13 @@ var (
 func (db *BoltDB) AddAction(ctx context.Context,
 	req *AddActionReq) (ActionLocator, error) {
 
+	// If no macaroon is provided, then an empty 4-byte array is used as the
+	// macaroon ID.
+	var macaroonID [4]byte
+	req.MacaroonIdentifier.WhenSome(func(id [4]byte) {
+		macaroonID = id
+	})
+
 	// If the new action links to a session, the session must exist.
 	// For the bbolt impl of the store, this is our best effort attempt
 	// at ensuring each action links to a session. If the session is
@@ -105,7 +112,7 @@ func (db *BoltDB) AddAction(ctx context.Context,
 		}
 
 		sessBucket, err := actionsBucket.CreateBucketIfNotExists(
-			action.MacaroonIdentifier[:],
+			macaroonID[:],
 		)
 		if err != nil {
 			return err
@@ -134,7 +141,7 @@ func (db *BoltDB) AddAction(ctx context.Context,
 		}
 
 		locator = kvdbActionLocator{
-			sessionID: action.MacaroonIdentifier,
+			sessionID: macaroonID,
 			actionID:  nextActionIndex,
 		}
 
@@ -323,7 +330,13 @@ func (db *BoltDB) ListActions(ctx context.Context, query *ListActionsQuery,
 		)
 	}
 	if opts.groupID != session.EmptyID {
-		actions, err := db.listGroupActions(ctx, opts.groupID, filterFn)
+		var reversed bool
+		if query != nil {
+			reversed = query.Reversed
+		}
+		actions, err := db.listGroupActions(
+			ctx, opts.groupID, filterFn, reversed,
+		)
 		if err != nil {
 			return nil, 0, 0, err
 		}
@@ -432,11 +445,11 @@ func (db *BoltDB) listSessionActions(sessionID session.ID,
 //
 // TODO: update to allow for pagination.
 func (db *BoltDB) listGroupActions(ctx context.Context, groupID session.ID,
-	filterFn listActionsFilterFn) ([]*Action, error) {
+	filterFn listActionsFilterFn, reversed bool) ([]*Action, error) {
 
 	if filterFn == nil {
 		filterFn = func(a *Action, reversed bool) (bool, bool) {
-			return true, true
+			return true, reversed
 		}
 	}
 
@@ -475,9 +488,18 @@ func (db *BoltDB) listGroupActions(ctx context.Context, groupID session.ID,
 					return err
 				}
 
-				include, cont := filterFn(action, false)
+				include, cont := filterFn(action, reversed)
 				if include {
-					actions = append(actions, action)
+					if !reversed {
+						actions = append(
+							actions, action,
+						)
+					} else {
+						actions = append(
+							[]*Action{action},
+							actions...,
+						)
+					}
 				}
 
 				if !cont {
@@ -574,7 +596,7 @@ func DeserializeAction(r io.Reader, sessionID session.ID) (*Action, error) {
 		return nil, err
 	}
 
-	action.MacaroonIdentifier = sessionID
+	action.MacaroonIdentifier = fn.Some([4]byte(sessionID))
 	action.SessionID = fn.Some(sessionID)
 	action.ActorName = string(actor)
 	action.FeatureName = string(featureName)

@@ -9,6 +9,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
 	"github.com/lightninglabs/lightning-terminal/session"
+	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/macaroons"
 )
@@ -181,16 +182,15 @@ func (r *RequestLogger) Intercept(ctx context.Context,
 func (r *RequestLogger) addNewAction(ctx context.Context, ri *RequestInfo,
 	withPayloadData bool) error {
 
-	// If no macaroon is provided, then an empty 4-byte array is used as the
-	// macaroon ID. Otherwise, the last 4 bytes of the macaroon's root key
-	// ID are used.
-	var macaroonID [4]byte
+	var macaroonID fn.Option[[4]byte]
 	if ri.Macaroon != nil {
 		var err error
-		macaroonID, err = session.IDFromMacaroon(ri.Macaroon)
+		macID, err := session.IDFromMacaroon(ri.Macaroon)
 		if err != nil {
 			return fmt.Errorf("could not extract ID from macaroon")
 		}
+
+		macaroonID = fn.Some([4]byte(macID))
 	}
 
 	actionReq := &firewalldb.AddActionReq{
