@@ -134,3 +134,10 @@ type ActionDB interface {
 	// and feature name.
 	GetActionsReadDB(groupID session.ID, featureName string) ActionsReadDB
 }
+
+// FirewallDBs is an interface that groups the RulesDB and PrivacyMapper
+// interfaces.
+type FirewallDBs interface {
+	RulesDB
+	PrivacyMapper
+}
