@@ -329,5 +329,8 @@ type Store interface {
 	// "dest" state.
 	ShiftState(ctx context.Context, id ID, dest State) error
 
+	// Close closes the underlying store.
+	Close() error
+
 	IDToGroupIndex
 }
