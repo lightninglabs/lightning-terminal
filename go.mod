@@ -22,14 +22,14 @@ require (
 	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.2
 	github.com/lightninglabs/lightning-terminal/litrpc v1.0.1
 	github.com/lightninglabs/lightning-terminal/perms v1.0.0
-	github.com/lightninglabs/lndclient v0.19.0-5
+	github.com/lightninglabs/lndclient v0.19.0-7
 	github.com/lightninglabs/loop v0.31.1-beta
 	github.com/lightninglabs/loop/looprpc v1.0.7
 	github.com/lightninglabs/loop/swapserverrpc v1.0.14
 	github.com/lightninglabs/pool v0.6.5-beta.0.20250305125211-4e860ec4e77f
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.3-0.20250305125211-4e860ec4e77f
 	github.com/lightninglabs/pool/poolrpc v1.0.1
-	github.com/lightninglabs/taproot-assets v0.6.0-rc2
+	github.com/lightninglabs/taproot-assets v0.6.0-rc2.0.20250527142222-f6a1db8325ca
 	github.com/lightninglabs/taproot-assets/taprpc v1.0.4
 	github.com/lightningnetwork/lnd v0.19.0-beta.rc5
 	github.com/lightningnetwork/lnd/cert v1.2.2
@@ -140,9 +140,9 @@ require (
 	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
 	github.com/libdns/libdns v0.2.1 // indirect
-	github.com/lightninglabs/aperture v0.3.8-beta.0.20250305101039-2eead0180691 // indirect
+	github.com/lightninglabs/aperture v0.3.13-beta // indirect
 	github.com/lightninglabs/gozmq v0.0.0-20191113021534-d20a764486bf // indirect
-	github.com/lightninglabs/lightning-node-connect/hashmailrpc v1.0.2 // indirect
+	github.com/lightninglabs/lightning-node-connect/hashmailrpc v1.0.3 // indirect
 	github.com/lightninglabs/neutrino v0.16.1 // indirect
 	github.com/lightninglabs/neutrino/cache v1.1.2 // indirect
 	github.com/lightningnetwork/lightning-onion v1.2.1-0.20240712235311-98bd56499dfb // indirect
@@ -245,6 +245,6 @@ replace google.golang.org/protobuf => github.com/lightninglabs/protobuf-go-hex-d
 // automatically, so we need to add it manually.
 replace github.com/golang-migrate/migrate/v4 => github.com/lightninglabs/migrate/v4 v4.18.2-9023d66a-fork-pr-2
 
-replace github.com/lightningnetwork/lnd => github.com/lightningnetwork/lnd v0.19.0-beta
+replace github.com/lightningnetwork/lnd => github.com/GeorgeTsagk/lnd v0.0.0-20250528114240-b3831da95470
 
 go 1.23.9
