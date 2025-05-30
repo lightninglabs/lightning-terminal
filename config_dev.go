@@ -151,23 +151,19 @@ func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
 
 		stores.sessions = sessionStore
 		stores.closeFns["bbolt-sessions"] = sessionStore.Close
-	}
 
-	firewallBoltDB, err := firewalldb.NewBoltDB(
-		networkDir, firewalldb.DBFilename, stores.sessions,
-		stores.accounts, clock,
-	)
-	if err != nil {
-		return stores, fmt.Errorf("error creating firewall BoltDB: %v",
-			err)
-	}
+		firewallBoltDB, err := firewalldb.NewBoltDB(
+			networkDir, firewalldb.DBFilename, stores.sessions,
+			stores.accounts, clock,
+		)
+		if err != nil {
+			return stores, fmt.Errorf("error creating firewall "+
+				"BoltDB: %v", err)
+		}
 
-	if stores.firewall == nil {
 		stores.firewall = firewalldb.NewDB(firewallBoltDB)
+		stores.closeFns["bbolt-firewalldb"] = firewallBoltDB.Close
 	}
-
-	stores.firewallBolt = firewallBoltDB
-	stores.closeFns["bbolt-firewalldb"] = firewallBoltDB.Close
 
 	return stores, nil
 }

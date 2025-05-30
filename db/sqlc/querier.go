@@ -46,6 +46,7 @@ type Querier interface {
 	GetSessionPrivacyFlags(ctx context.Context, sessionID int64) ([]SessionPrivacyFlag, error)
 	GetSessionsInGroup(ctx context.Context, groupID sql.NullInt64) ([]Session, error)
 	InsertAccount(ctx context.Context, arg InsertAccountParams) (int64, error)
+	InsertAction(ctx context.Context, arg InsertActionParams) (int64, error)
 	InsertKVStoreRecord(ctx context.Context, arg InsertKVStoreRecordParams) error
 	InsertPrivacyPair(ctx context.Context, arg InsertPrivacyPairParams) error
 	InsertSession(ctx context.Context, arg InsertSessionParams) (int64, error)
@@ -60,6 +61,7 @@ type Querier interface {
 	ListSessionsByState(ctx context.Context, state int16) ([]Session, error)
 	ListSessionsByType(ctx context.Context, type_ int16) ([]Session, error)
 	SetAccountIndex(ctx context.Context, arg SetAccountIndexParams) error
+	SetActionState(ctx context.Context, arg SetActionStateParams) error
 	SetSessionGroupID(ctx context.Context, arg SetSessionGroupIDParams) error
 	SetSessionRemotePublicKey(ctx context.Context, arg SetSessionRemotePublicKeyParams) error
 	SetSessionRevokedAt(ctx context.Context, arg SetSessionRevokedAtParams) error

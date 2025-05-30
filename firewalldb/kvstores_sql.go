@@ -13,12 +13,6 @@ import (
 	"github.com/lightningnetwork/lnd/fn"
 )
 
-// SQLSessionQueries is a subset of the sqlc.Queries interface that can be used
-// to interact with the session table.
-type SQLSessionQueries interface {
-	GetSessionIDByAlias(ctx context.Context, legacyID []byte) (int64, error)
-}
-
 // SQLKVStoreQueries is a subset of the sqlc.Queries interface that can be
 // used to interact with the kvstore tables.
 //

@@ -8,11 +8,19 @@ import (
 	"github.com/lightningnetwork/lnd/clock"
 )
 
+// SQLSessionQueries is a subset of the sqlc.Queries interface that can be used
+// to interact with the session table.
+type SQLSessionQueries interface {
+	GetSessionIDByAlias(ctx context.Context, legacyID []byte) (int64, error)
+	GetAliasBySessionID(ctx context.Context, id int64) ([]byte, error)
+}
+
 // SQLQueries is a subset of the sqlc.Queries interface that can be used to
 // interact with various firewalldb tables.
 type SQLQueries interface {
 	SQLKVStoreQueries
 	SQLPrivacyPairQueries
+	SQLActionQueries
 }
 
 // BatchedSQLQueries is a version of the SQLQueries that's capable of batched
@@ -38,6 +46,10 @@ type SQLDB struct {
 // A compile-time assertion to ensure that SQLDB implements the RulesDB
 // interface.
 var _ RulesDB = (*SQLDB)(nil)
+
+// A compile-time assertion to ensure that SQLDB implements the ActionsDB
+// interface.
+var _ ActionDB = (*SQLDB)(nil)
 
 // NewSQLDB creates a new SQLStore instance given an open SQLQueries
 // storage backend.
