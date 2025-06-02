@@ -283,11 +283,23 @@ func DeserializeSession(r io.Reader) (*Session, error) {
 	// any) is linked implicitly via the macaroon recipe caveat. So we
 	// need to extract it from there.
 	if session.MacaroonRecipe != nil {
-		session.AccountID, err = accounts.IDFromCaveats(
-			session.MacaroonRecipe.Caveats,
-		)
-		if err != nil {
-			return nil, err
+		caveats := session.MacaroonRecipe.Caveats
+		perms := session.MacaroonRecipe.Permissions
+
+		// If there are no caveats or permissions, we set the
+		// MacaroonRecipe to nil. This ensures that different store
+		// implementations exhibit consistent behavior in this scenario.
+		if len(caveats) == 0 && len(perms) == 0 {
+			session.MacaroonRecipe = nil
+		} else {
+			// If there are caveats, we attempt to extract the
+			// AccountID if one exists.
+			session.AccountID, err = accounts.IDFromCaveats(
+				session.MacaroonRecipe.Caveats,
+			)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -470,6 +482,16 @@ func macaroonRecipeDecoder(r io.Reader, val interface{}, buf *[8]byte,
 		err = tlvStream.Decode(&innerTlvReader)
 		if err != nil {
 			return err
+		}
+
+		// If either the permissions or caveats are nil, initialize them
+		// to empty slices. This ensures that different store
+		// implementations exhibit consistent behavior in this scenario.
+		if perms == nil {
+			perms = make([]bakery.Op, 0)
+		}
+		if caveats == nil {
+			caveats = make([]macaroon.Caveat, 0)
 		}
 
 		*v = MacaroonRecipe{
