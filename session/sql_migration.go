@@ -111,7 +111,6 @@ func migrateSessionsToSQLAndValidate(ctx context.Context,
 
 		overrideSessionTimeZone(kvSession)
 		overrideSessionTimeZone(migratedSession)
-		overrideMacaroonRecipe(kvSession, migratedSession)
 
 		if !reflect.DeepEqual(kvSession, migratedSession) {
 			diff := difflib.UnifiedDiff{
@@ -327,35 +326,5 @@ func overrideSessionTimeZone(session *Session) {
 
 	if !session.RevokedAt.IsZero() {
 		session.RevokedAt = fixTime(session.RevokedAt)
-	}
-}
-
-// overrideMacaroonRecipe overrides the MacaroonRecipe for the SQL session in a
-// certain scenario:
-// In the bbolt store, a session can have a non-nil macaroon struct, despite
-// both the permissions and caveats being nil. There is no way to represent this
-// in the SQL store, as the macaroon permissions and caveats are separate
-// tables. Therefore, in the scenario where a MacaroonRecipe exists for the
-// bbolt version, but both the permissions and caveats are nil, we override the
-// MacaroonRecipe for the SQL version and set it to a MacaroonRecipe with
-// nil permissions and caveats. This is needed to ensure that the deep equals
-// check in the migration validation does not fail in this scenario.
-// Additionally, if either the permissions or caveats aren't set, for the
-// MacaroonRecipe, that is represented as empty array in the SQL store, but
-// as nil in the bbolt store. Therefore, we also override the permissions
-// or caveats to nil for the migrated session in that scenario, so that the
-// deep equals check does not fail in this scenario either.
-func overrideMacaroonRecipe(kvSession *Session, migratedSession *Session) {
-	if kvSession.MacaroonRecipe != nil {
-		kvPerms := kvSession.MacaroonRecipe.Permissions
-		kvCaveats := kvSession.MacaroonRecipe.Caveats
-
-		if kvPerms == nil && kvCaveats == nil {
-			migratedSession.MacaroonRecipe = &MacaroonRecipe{}
-		} else if kvPerms == nil {
-			migratedSession.MacaroonRecipe.Permissions = nil
-		} else if kvCaveats == nil {
-			migratedSession.MacaroonRecipe.Caveats = nil
-		}
 	}
 }

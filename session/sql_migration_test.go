@@ -73,12 +73,6 @@ func TestSessionsStoreMigration(t *testing.T) {
 			)
 			require.NoError(t, err)
 
-			// Since the SQL store can't represent a session with
-			// a non-nil MacaroonRecipe, but with nil caveats and
-			// perms, we need to override the macaroon recipe if the
-			// kvSession has such a recipe stored.
-			overrideMacaroonRecipe(kvSession, sqlSession)
-
 			assertEqualSessions(t, kvSession, sqlSession)
 		}
 
