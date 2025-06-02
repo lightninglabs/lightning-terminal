@@ -62,7 +62,6 @@ func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
 	if err != nil {
 		return stores, fmt.Errorf("error creating firewall DB: %v", err)
 	}
-	stores.firewallBolt = firewallDB
 	stores.firewall = firewalldb.NewDB(firewallDB)
 	stores.closeFns["firewall"] = firewallDB.Close
 
