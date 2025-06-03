@@ -141,4 +141,7 @@ type FirewallDBs interface {
 	RulesDB
 	PrivacyMapper
 	ActionDB
+
+	// Close closes the underlying store.
+	Close() error
 }
