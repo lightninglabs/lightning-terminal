@@ -133,4 +133,9 @@ var allTestCases = []*testCase{
 		test:       testCustomChannelsMultiRFQReceive,
 		noAliceBob: true,
 	},
+	{
+		name:       "custom channels multi channel pathfinding",
+		test:       testCustomChannelsMultiChannelPathfinding,
+		noAliceBob: true,
+	},
 }
