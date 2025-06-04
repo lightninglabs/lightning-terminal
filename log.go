@@ -21,6 +21,7 @@ import (
 	"github.com/lightningnetwork/lnd"
 	"github.com/lightningnetwork/lnd/build"
 	"github.com/lightningnetwork/lnd/signal"
+	"github.com/lightningnetwork/lnd/sqldb/v2"
 	"google.golang.org/grpc/grpclog"
 )
 
@@ -91,6 +92,7 @@ func SetupLoggers(root *build.SubLoggerManager, intercept signal.Interceptor) {
 		root, subservers.Subsystem, intercept, subservers.UseLogger,
 	)
 	lnd.AddSubLogger(root, db.Subsystem, intercept, db.UseLogger)
+	lnd.AddSubLogger(root, sqldb.Subsystem, intercept, sqldb.UseLogger)
 
 	// Add daemon loggers to lnd's root logger.
 	faraday.SetupLoggers(root, intercept)
