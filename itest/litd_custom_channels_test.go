@@ -4611,6 +4611,8 @@ func testCustomChannelsSelfPayment(ctx context.Context, net *NetworkHarness,
 	)
 	defer closeChannelAndAssert(t, net, alice, satChanPoint, false)
 
+	assetChan := fetchChannel(t.t, alice, assetChanPoint)
+	assetChanSCID := assetChan.ChanId
 	satChan := fetchChannel(t.t, alice, satChanPoint)
 	satChanSCID := satChan.ChanId
 
@@ -4624,6 +4626,7 @@ func testCustomChannelsSelfPayment(ctx context.Context, net *NetworkHarness,
 		assetKeySendAmount = 15_000
 		numInvoicePayments = 10
 		assetInvoiceAmount = 1_234
+		btcInvoiceAmount   = 10_000
 		btcKeySendAmount   = 200_000
 		btcReserveAmount   = 2000
 		btcHtlcCost        = numInvoicePayments * 354
@@ -4692,6 +4695,77 @@ func testCustomChannelsSelfPayment(ctx context.Context, net *NetworkHarness,
 		require.NoError(t.t, err)
 		require.GreaterOrEqual(
 			t.t, btcBalanceAliceBefore-btcBalanceAliceAfter,
+			decodedInvoice.NumSatoshis,
+		)
+	}
+
+	// We now do the opposite: We create a satoshi invoice on Alice and
+	// attempt to pay it with assets.
+	aliceAssetBalance, bobAssetBalance = channelAssetBalance(
+		t.t, alice, assetChanPoint,
+	)
+	for i := 0; i < numInvoicePayments; i++ {
+		// The BTC balance of Alice before we start the payment. We
+		// expect that to go down by at least the invoice amount.
+		btcBalanceAliceBefore := fetchChannel(
+			t.t, alice, satChanPoint,
+		).LocalBalance
+
+		hopHint := &lnrpc.HopHint{
+			NodeId:                    bob.PubKeyStr,
+			ChanId:                    satChan.PeerScidAlias,
+			CltvExpiryDelta:           80,
+			FeeBaseMsat:               1000,
+			FeeProportionalMillionths: 1,
+		}
+		invoiceResp := createNormalInvoice(
+			t.t, alice, btcInvoiceAmount, withRouteHints(
+				[]*lnrpc.RouteHint{{
+					HopHints: []*lnrpc.HopHint{hopHint},
+				}},
+			),
+		)
+		sentUnits, _ := payInvoiceWithAssets(
+			t.t, alice, bob, invoiceResp.PaymentRequest, assetID,
+			withAllowSelfPayment(), withOutgoingChanIDs(
+				[]uint64{assetChanSCID},
+			),
+		)
+
+		logBalance(
+			t.t, nodes, assetID,
+			"after paying sat invoice "+strconv.Itoa(i),
+		)
+
+		// The accumulated delta from the rounding of multiple sends.
+		// We basically allow the balance to be off by one unit for each
+		// payment.
+		delta := float64(i + 1)
+
+		// We now expect the channel balance to have increased in the
+		// BTC channel and decreased in the assets channel.
+		assertChannelAssetBalanceWithDelta(
+			t.t, alice, assetChanPoint,
+			aliceAssetBalance-sentUnits,
+			bobAssetBalance+sentUnits, delta,
+		)
+		aliceAssetBalance -= sentUnits
+		bobAssetBalance += sentUnits
+
+		btcBalanceAliceAfter := fetchChannel(
+			t.t, alice, satChanPoint,
+		).LocalBalance
+
+		// The difference between the two balances should be at least
+		// the invoice amount.
+		decodedInvoice, err := alice.DecodePayReq(
+			context.Background(), &lnrpc.PayReqString{
+				PayReq: invoiceResp.PaymentRequest,
+			},
+		)
+		require.NoError(t.t, err)
+		require.GreaterOrEqual(
+			t.t, btcBalanceAliceAfter-btcBalanceAliceBefore,
 			decodedInvoice.NumSatoshis,
 		)
 	}

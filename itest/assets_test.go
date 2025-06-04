@@ -1282,6 +1282,20 @@ func assertChannelAssetBalanceWithDelta(t *testing.T, node *HarnessNode,
 	require.InDelta(t, remote, assetBalance.RemoteBalance, delta)
 }
 
+func channelAssetBalance(t *testing.T, node *HarnessNode,
+	chanPoint *lnrpc.ChannelPoint) (uint64, uint64) {
+
+	targetChan := fetchChannel(t, node, chanPoint)
+
+	var assetBalance rfqmsg.JsonAssetChannel
+	err := json.Unmarshal(targetChan.CustomChannelData, &assetBalance)
+	require.NoError(t, err)
+
+	require.GreaterOrEqual(t, len(assetBalance.FundingAssets), 1)
+
+	return assetBalance.LocalBalance, assetBalance.RemoteBalance
+}
+
 // addRoutingFee adds the default routing fee (1 part per million fee rate plus
 // 1000 milli-satoshi base fee) to the given milli-satoshi amount.
 func addRoutingFee(amt lnwire.MilliSatoshi) lnwire.MilliSatoshi {
@@ -1321,6 +1335,8 @@ func sendAssetKeySendPayment(t *testing.T, src, dst *HarnessNode, amt uint64,
 		PaymentHash:       hash[:],
 		TimeoutSeconds:    int32(PaymentTimeout.Seconds()),
 		MaxParts:          cfg.maxShards,
+		OutgoingChanIds:   cfg.outgoingChanIDs,
+		AllowSelfPayment:  cfg.allowSelfPayment,
 	}
 
 	request := &tchrpc.SendPaymentRequest{
@@ -1402,7 +1418,13 @@ func createAndPayNormalInvoiceWithBtc(t *testing.T, src, dst *HarnessNode,
 }
 
 func createNormalInvoice(t *testing.T, dst *HarnessNode,
-	amountSat btcutil.Amount) *lnrpc.AddInvoiceResponse {
+	amountSat btcutil.Amount,
+	opts ...invoiceOpt) *lnrpc.AddInvoiceResponse {
+
+	cfg := defaultInvoiceConfig()
+	for _, opt := range opts {
+		opt(cfg)
+	}
 
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
@@ -1410,9 +1432,10 @@ func createNormalInvoice(t *testing.T, dst *HarnessNode,
 
 	expirySeconds := 10
 	invoiceResp, err := dst.AddInvoice(ctxt, &lnrpc.Invoice{
-		Value:  int64(amountSat),
-		Memo:   "normal invoice",
-		Expiry: int64(expirySeconds),
+		Value:      int64(amountSat),
+		Memo:       "normal invoice",
+		Expiry:     int64(expirySeconds),
+		RouteHints: cfg.routeHints,
 	})
 	require.NoError(t, err)
 
@@ -1448,12 +1471,6 @@ func payPayReqWithSatoshi(t *testing.T, payer *HarnessNode, payReq string,
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
 	defer cancel()
 
-	shardSize := uint64(0)
-
-	if cfg.smallShards {
-		shardSize = 80_000_000
-	}
-
 	sendReq := &routerrpc.SendPaymentRequest{
 		PaymentRequest:   payReq,
 		TimeoutSeconds:   int32(PaymentTimeout.Seconds()),
@@ -1461,7 +1478,6 @@ func payPayReqWithSatoshi(t *testing.T, payer *HarnessNode, payReq string,
 		MaxParts:         cfg.maxShards,
 		OutgoingChanIds:  cfg.outgoingChanIDs,
 		AllowSelfPayment: cfg.allowSelfPayment,
-		MaxShardSizeMsat: shardSize,
 	}
 
 	if cfg.smallShards {
@@ -1652,6 +1668,8 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 		FeeLimitMsat:      int64(cfg.feeLimit),
 		DestCustomRecords: cfg.destCustomRecords,
 		MaxParts:          cfg.maxShards,
+		OutgoingChanIds:   cfg.outgoingChanIDs,
+		AllowSelfPayment:  cfg.allowSelfPayment,
 	}
 
 	if cfg.smallShards {
@@ -1768,6 +1786,12 @@ func withMsatAmount(amt uint64) invoiceOpt {
 	}
 }
 
+func withRouteHints(hints []*lnrpc.RouteHint) invoiceOpt {
+	return func(c *invoiceConfig) {
+		c.routeHints = hints
+	}
+}
+
 func createAssetInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 	assetAmount uint64, assetID []byte,
 	opts ...invoiceOpt) *lnrpc.AddInvoiceResponse {
@@ -1795,14 +1819,14 @@ func createAssetInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 	dstTapd := newTapClient(t, dst)
 
 	request := &tchrpc.AddInvoiceRequest{
-		GroupKey:    cfg.groupKey,
 		AssetAmount: assetAmount,
 		PeerPubkey:  peerPubKey,
 		InvoiceRequest: &lnrpc.Invoice{
 			Memo: fmt.Sprintf("this is an asset invoice for "+
 				"%d units", assetAmount),
-			Expiry:    timeoutSeconds,
-			ValueMsat: int64(cfg.msats),
+			Expiry:     timeoutSeconds,
+			ValueMsat:  int64(cfg.msats),
+			RouteHints: cfg.routeHints,
 		},
 	}
 
