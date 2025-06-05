@@ -138,4 +138,13 @@ var allTestCases = []*testCase{
 		test:       testCustomChannelsMultiChannelPathfinding,
 		noAliceBob: true,
 	},
+	{
+		name: "custom channels self-payment backward " +
+			"compatibility",
+		test:       testCustomChannelsSelfPayment,
+		noAliceBob: true,
+		backwardCompat: map[string]string{
+			"Alice": "v0.14.1-alpha",
+		},
+	},
 }
