@@ -153,6 +153,15 @@ func buildSession(id ID, localPrivKey *btcec.PrivateKey, label string, typ Type,
 		groupID = *opts.linkedGroupID
 	}
 
+	if opts.macaroonRecipe != nil {
+		perms := opts.macaroonRecipe.Permissions
+		caveats := opts.macaroonRecipe.Caveats
+
+		if len(perms) == 0 && len(caveats) == 0 {
+			opts.macaroonRecipe = nil
+		}
+	}
+
 	sess := &Session{
 		ID:                id,
 		Label:             label,
@@ -328,6 +337,9 @@ type Store interface {
 	// ShiftState updates the state of the session with the given ID to the
 	// "dest" state.
 	ShiftState(ctx context.Context, id ID, dest State) error
+
+	// Close closes the underlying store.
+	Close() error
 
 	IDToGroupIndex
 }
