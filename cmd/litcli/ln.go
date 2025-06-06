@@ -374,6 +374,18 @@ var sendPaymentCommand = cli.Command{
 			Name:  "force, f",
 			Usage: "will skip payment request confirmation",
 		},
+		cli.BoolFlag{
+			Name:  "allow_self_payment",
+			Usage: "allow sending a circular payment to self",
+		},
+		cli.StringFlag{
+			Name: "data",
+			Usage: "attach custom data to the payment. The " +
+				"required format is: <record_id>=<hex_value>," +
+				"<record_id>=<hex_value>,.. For example: " +
+				"--data 3438382=0a21ff. Custom record ids " +
+				"start from 65536.",
+		},
 		cli.UintFlag{
 			Name: "max_parts",
 			Usage: "the maximum number of partial payments that " +

@@ -6,7 +6,6 @@ import (
 	restProxy "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightninglabs/pool"
-	"github.com/lightninglabs/pool/perms"
 	"github.com/lightninglabs/pool/poolrpc"
 	"github.com/lightninglabs/taproot-assets/fn"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -117,7 +116,7 @@ func (p *poolSubServer) MacPath() string {
 //
 // NOTE: this is part of the SubServer interface.
 func (p *poolSubServer) Permissions() map[string][]bakery.Op {
-	return perms.RequiredPermissions
+	return poolrpc.RequiredPermissions
 }
 
 // WhiteListedURLs returns a map of all the sub-server's URLs that can be

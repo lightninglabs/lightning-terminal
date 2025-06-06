@@ -984,18 +984,12 @@ func assertPendingChannels(t *testing.T, node *HarnessNode,
 	require.NoError(t, err)
 	require.Len(t, pendingChannelsResp.PendingOpenChannels, numChannels)
 
-	// For older versions (during the backward compatibility test), if the
-	// channel custom data is in the old format, we can't do further checks.
-	if node.Cfg.OldChannelFormat {
-		return
-	}
-
 	pendingChan := pendingChannelsResp.PendingOpenChannels[0]
-	var pendingJSON rfqmsg.JsonAssetChannel
-	err = json.Unmarshal(
-		pendingChan.Channel.CustomChannelData, &pendingJSON,
+	pendingJSON, err := parseChannelData(
+		node, pendingChan.Channel.CustomChannelData,
 	)
 	require.NoError(t, err)
+
 	require.GreaterOrEqual(t, len(pendingJSON.FundingAssets), 1)
 
 	require.NotZero(t, pendingJSON.Capacity)
@@ -1039,12 +1033,6 @@ func haveFundingAsset(assetChannel *rfqmsg.JsonAssetChannel,
 
 func assertAssetChan(t *testing.T, src, dst *HarnessNode, fundingAmount uint64,
 	channelAssets []*taprpc.Asset) {
-
-	if src.Cfg.OldChannelFormat {
-		t.Logf("Skipping asset channel check for %s->%s, old format",
-			src.Cfg.Name, dst.Cfg.Name)
-		return
-	}
 
 	err := wait.NoError(func() error {
 		a, err := getChannelCustomData(src, dst)
@@ -1153,8 +1141,7 @@ func getChannelCustomData(src, dst *HarnessNode) (*rfqmsg.JsonAssetChannel,
 
 	targetChan := assetChannels[0]
 
-	var assetData rfqmsg.JsonAssetChannel
-	err = json.Unmarshal(targetChan.CustomChannelData, &assetData)
+	assetData, err := parseChannelData(src, targetChan.CustomChannelData)
 	if err != nil {
 		return nil, fmt.Errorf("unable to unmarshal asset data: %w",
 			err)
@@ -1165,7 +1152,7 @@ func getChannelCustomData(src, dst *HarnessNode) (*rfqmsg.JsonAssetChannel,
 			len(assetData.FundingAssets))
 	}
 
-	return &assetData, nil
+	return assetData, nil
 }
 
 func getAssetChannelBalance(t *testing.T, node *HarnessNode, assetIDs [][]byte,
@@ -1272,14 +1259,30 @@ func assertChannelAssetBalanceWithDelta(t *testing.T, node *HarnessNode,
 
 	targetChan := fetchChannel(t, node, chanPoint)
 
-	var assetBalance rfqmsg.JsonAssetChannel
-	err := json.Unmarshal(targetChan.CustomChannelData, &assetBalance)
+	assetBalance, err := parseChannelData(
+		node, targetChan.CustomChannelData,
+	)
 	require.NoError(t, err)
 
 	require.Len(t, assetBalance.FundingAssets, 1)
 
 	require.InDelta(t, local, assetBalance.LocalBalance, delta)
 	require.InDelta(t, remote, assetBalance.RemoteBalance, delta)
+}
+
+func channelAssetBalance(t *testing.T, node *HarnessNode,
+	chanPoint *lnrpc.ChannelPoint) (uint64, uint64) {
+
+	targetChan := fetchChannel(t, node, chanPoint)
+
+	assetBalance, err := parseChannelData(
+		node, targetChan.CustomChannelData,
+	)
+	require.NoError(t, err)
+
+	require.GreaterOrEqual(t, len(assetBalance.FundingAssets), 1)
+
+	return assetBalance.LocalBalance, assetBalance.RemoteBalance
 }
 
 // addRoutingFee adds the default routing fee (1 part per million fee rate plus
@@ -1321,6 +1324,8 @@ func sendAssetKeySendPayment(t *testing.T, src, dst *HarnessNode, amt uint64,
 		PaymentHash:       hash[:],
 		TimeoutSeconds:    int32(PaymentTimeout.Seconds()),
 		MaxParts:          cfg.maxShards,
+		OutgoingChanIds:   cfg.outgoingChanIDs,
+		AllowSelfPayment:  cfg.allowSelfPayment,
 	}
 
 	request := &tchrpc.SendPaymentRequest{
@@ -1402,7 +1407,13 @@ func createAndPayNormalInvoiceWithBtc(t *testing.T, src, dst *HarnessNode,
 }
 
 func createNormalInvoice(t *testing.T, dst *HarnessNode,
-	amountSat btcutil.Amount) *lnrpc.AddInvoiceResponse {
+	amountSat btcutil.Amount,
+	opts ...invoiceOpt) *lnrpc.AddInvoiceResponse {
+
+	cfg := defaultInvoiceConfig()
+	for _, opt := range opts {
+		opt(cfg)
+	}
 
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
@@ -1410,9 +1421,10 @@ func createNormalInvoice(t *testing.T, dst *HarnessNode,
 
 	expirySeconds := 10
 	invoiceResp, err := dst.AddInvoice(ctxt, &lnrpc.Invoice{
-		Value:  int64(amountSat),
-		Memo:   "normal invoice",
-		Expiry: int64(expirySeconds),
+		Value:      int64(amountSat),
+		Memo:       "normal invoice",
+		Expiry:     int64(expirySeconds),
+		RouteHints: cfg.routeHints,
 	})
 	require.NoError(t, err)
 
@@ -1448,12 +1460,6 @@ func payPayReqWithSatoshi(t *testing.T, payer *HarnessNode, payReq string,
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
 	defer cancel()
 
-	shardSize := uint64(0)
-
-	if cfg.smallShards {
-		shardSize = 80_000_000
-	}
-
 	sendReq := &routerrpc.SendPaymentRequest{
 		PaymentRequest:   payReq,
 		TimeoutSeconds:   int32(PaymentTimeout.Seconds()),
@@ -1461,7 +1467,6 @@ func payPayReqWithSatoshi(t *testing.T, payer *HarnessNode, payReq string,
 		MaxParts:         cfg.maxShards,
 		OutgoingChanIds:  cfg.outgoingChanIDs,
 		AllowSelfPayment: cfg.allowSelfPayment,
-		MaxShardSizeMsat: shardSize,
 	}
 
 	if cfg.smallShards {
@@ -1652,6 +1657,8 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 		FeeLimitMsat:      int64(cfg.feeLimit),
 		DestCustomRecords: cfg.destCustomRecords,
 		MaxParts:          cfg.maxShards,
+		OutgoingChanIds:   cfg.outgoingChanIDs,
+		AllowSelfPayment:  cfg.allowSelfPayment,
 	}
 
 	if cfg.smallShards {
@@ -1768,6 +1775,12 @@ func withMsatAmount(amt uint64) invoiceOpt {
 	}
 }
 
+func withRouteHints(hints []*lnrpc.RouteHint) invoiceOpt {
+	return func(c *invoiceConfig) {
+		c.routeHints = hints
+	}
+}
+
 func createAssetInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 	assetAmount uint64, assetID []byte,
 	opts ...invoiceOpt) *lnrpc.AddInvoiceResponse {
@@ -1795,14 +1808,14 @@ func createAssetInvoice(t *testing.T, dstRfqPeer, dst *HarnessNode,
 	dstTapd := newTapClient(t, dst)
 
 	request := &tchrpc.AddInvoiceRequest{
-		GroupKey:    cfg.groupKey,
 		AssetAmount: assetAmount,
 		PeerPubkey:  peerPubKey,
 		InvoiceRequest: &lnrpc.Invoice{
 			Memo: fmt.Sprintf("this is an asset invoice for "+
 				"%d units", assetAmount),
-			Expiry:    timeoutSeconds,
-			ValueMsat: int64(cfg.msats),
+			Expiry:     timeoutSeconds,
+			ValueMsat:  int64(cfg.msats),
+			RouteHints: cfg.routeHints,
 		},
 	}
 
@@ -2288,9 +2301,8 @@ func defaultCoOpCloseBalanceCheck(t *testing.T, local, remote *HarnessNode,
 	var closedJsonChannel *rfqmsg.JsonAssetChannel
 	for _, closedChan := range closedChans.Channels {
 		if closedChan.ClosingTxHash == closeTx.TxHash().String() {
-			closedJsonChannel = &rfqmsg.JsonAssetChannel{}
-			err = json.Unmarshal(
-				closedChan.CustomChannelData, closedJsonChannel,
+			closedJsonChannel, err = parseChannelData(
+				local, closedChan.CustomChannelData,
 			)
 			require.NoError(t, err)
 
@@ -2953,8 +2965,7 @@ func newCloseExpiryInfo(t *testing.T, node *HarnessNode) forceCloseExpiryInfo {
 		cltvs[payHash] = htlc.ExpirationHeight
 	}
 
-	var assetData rfqmsg.JsonAssetChannel
-	err = json.Unmarshal(mainChan.CustomChannelData, &assetData)
+	assetData, err := parseChannelData(node, mainChan.CustomChannelData)
 	require.NoError(t, err)
 
 	return forceCloseExpiryInfo{
@@ -3068,8 +3079,9 @@ func assertPendingChannelAssetData(t *testing.T, node *HarnessNode,
 				"custom channel data", targetChanPointStr)
 		}
 
-		var closeData rfqmsg.JsonAssetChannel
-		err = json.Unmarshal(targetChan.CustomChannelData, &closeData)
+		closeData, err := parseChannelData(
+			node, targetChan.CustomChannelData,
+		)
 		if err != nil {
 			return fmt.Errorf("error unmarshalling custom channel "+
 				"data: %v", err)
@@ -3167,8 +3179,7 @@ func assertClosedChannelAssetData(t *testing.T, node *HarnessNode,
 	require.NotNil(t, closedChan)
 	require.NotEmpty(t, closedChan.CustomChannelData)
 
-	var closeData rfqmsg.JsonAssetChannel
-	err = json.Unmarshal(closedChan.CustomChannelData, &closeData)
+	closeData, err := parseChannelData(node, closedChan.CustomChannelData)
 	require.NoError(t, err)
 
 	require.GreaterOrEqual(t, len(closeData.FundingAssets), 1)
@@ -3618,4 +3629,54 @@ func assertForceCloseSweeps(ctx context.Context, net *NetworkHarness,
 	}
 
 	return aliceExpectedBalance, bobExpectedBalance
+}
+
+// oldJsonAssetChanInfo is a struct that represents the old channel information
+// of a single asset within a channel, as it looked for litd v0.14.1 and before.
+type oldJsonAssetChanInfo struct {
+	AssetInfo     rfqmsg.JsonAssetUtxo `json:"asset_utxo"`
+	Capacity      uint64               `json:"capacity"`
+	LocalBalance  uint64               `json:"local_balance"`
+	RemoteBalance uint64               `json:"remote_balance"`
+}
+
+// oldJsonAssetChannel is a struct that represents the old channel information
+// of all assets within a channel, as it looked for litd v0.14.1 and before.
+type oldJsonAssetChannel struct {
+	Assets []oldJsonAssetChanInfo `json:"assets"`
+}
+
+// parseChannelData parses the given channel data into a rfqmsg.JsonAssetChannel
+// struct. It can deal with the old (litd v0.14.1 and before) and new (litd
+// v0.15.0 and after) channel data formats.
+func parseChannelData(node *HarnessNode,
+	data []byte) (*rfqmsg.JsonAssetChannel, error) {
+
+	var closeData rfqmsg.JsonAssetChannel
+	if node.Cfg.OldChannelFormat {
+		var oldData oldJsonAssetChannel
+		err := json.Unmarshal(data, &oldData)
+		if err != nil {
+			return nil, fmt.Errorf("error unmarshalling old "+
+				"channel data: %w", err)
+		}
+
+		oldAsset := oldData.Assets[0]
+		closeData.FundingAssets = []rfqmsg.JsonAssetUtxo{
+			oldAsset.AssetInfo,
+		}
+		closeData.Capacity = oldAsset.Capacity
+		closeData.LocalBalance = oldAsset.LocalBalance
+		closeData.RemoteBalance = oldAsset.RemoteBalance
+
+		return &closeData, nil
+	}
+
+	err := json.Unmarshal(data, &closeData)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling channel data: %w",
+			err)
+	}
+
+	return &closeData, nil
 }

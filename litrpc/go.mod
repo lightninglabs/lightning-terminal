@@ -7,8 +7,8 @@ require (
 	github.com/lightninglabs/faraday/frdrpc v1.0.0
 	github.com/lightninglabs/loop/looprpc v1.0.0
 	github.com/lightninglabs/pool/poolrpc v1.0.0
-	github.com/lightninglabs/taproot-assets/taprpc v1.0.4
-	github.com/lightningnetwork/lnd v0.19.0-beta.rc5
+	github.com/lightninglabs/taproot-assets/taprpc v1.0.5-0.20250526115916-1ac1deab2f9b
+	github.com/lightningnetwork/lnd v0.19.0-beta
 	google.golang.org/grpc v1.65.0
 	google.golang.org/protobuf v1.34.2
 )
