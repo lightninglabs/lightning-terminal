@@ -344,7 +344,7 @@ func TestAccountStoreMigration(t *testing.T) {
 			err = txEx.ExecTx(ctx, &opts,
 				func(tx SQLQueries) error {
 					return MigrateAccountStoreToSQL(
-						ctx, kvStore, tx,
+						ctx, kvStore.db, tx,
 					)
 				},
 			)
