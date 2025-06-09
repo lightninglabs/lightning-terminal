@@ -39,9 +39,6 @@ func TestAccountStoreMigration(t *testing.T) {
 		*db.TransactionExecutor[SQLQueries]) {
 
 		testDBStore := NewTestDB(t, clock)
-		t.Cleanup(func() {
-			require.NoError(t, testDBStore.Close())
-		})
 
 		store, ok := testDBStore.(*SQLStore)
 		require.True(t, ok)
