@@ -300,7 +300,7 @@ func TestAccountStoreMigration(t *testing.T) {
 			)
 			require.NoError(t, err)
 			t.Cleanup(func() {
-				require.NoError(t, kvStore.db.Close())
+				require.NoError(t, kvStore.DB.Close())
 			})
 
 			// Populate the kv store.
@@ -335,7 +335,7 @@ func TestAccountStoreMigration(t *testing.T) {
 				ctx, sqldb.WriteTxOpt(),
 				func(tx *sqlcmig6.Queries) error {
 					return MigrateAccountStoreToSQL(
-						ctx, kvStore.db, tx,
+						ctx, kvStore.DB, tx,
 					)
 				}, sqldb.NoOpReset,
 			)
@@ -439,7 +439,7 @@ func rapidRandomizeAccounts(t *testing.T, kvStore *BoltStore) {
 		acct := makeAccountGen().Draw(t, "account")
 
 		// Then proceed to insert the account with its invoices and
-		// payments into the db
+		// payments into the DB
 		newAcct, err := kvStore.NewAccount(
 			ctx, acct.balance, acct.expiry, acct.label,
 		)
