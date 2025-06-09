@@ -28,7 +28,7 @@ func NewTestDBFromPath(t *testing.T, dbPath string,
 	require.NoError(t, err)
 
 	t.Cleanup(func() {
-		require.NoError(t, store.db.Close())
+		require.NoError(t, store.DB.Close())
 	})
 
 	return store
