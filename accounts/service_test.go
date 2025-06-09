@@ -246,7 +246,7 @@ func TestAccountService(t *testing.T) {
 
 			// Ensure that the service was started successfully and
 			// still running though, despite the closing of the
-			// db store.
+			// DB store.
 			require.True(t, s.IsRunning())
 
 			// Now let's send the invoice update, which should fail.
