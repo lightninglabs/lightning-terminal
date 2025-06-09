@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/lightninglabs/lightning-terminal/accounts"
+	"github.com/lightninglabs/lightning-terminal/db"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/clock"
 	"github.com/stretchr/testify/require"
@@ -20,7 +21,7 @@ func NewTestDBWithSessions(t *testing.T, sessionStore session.Store,
 	sessions, ok := sessionStore.(*session.SQLStore)
 	require.True(t, ok)
 
-	return NewSQLDB(sessions.BaseDB, clock)
+	return createStore(t, sessions.BaseDB, clock)
 }
 
 // NewTestDBWithSessionsAndAccounts creates a new test SQLDB Store with access
@@ -36,7 +37,7 @@ func NewTestDBWithSessionsAndAccounts(t *testing.T, sessionStore SessionDB,
 
 	require.Equal(t, accounts.BaseDB, sessions.BaseDB)
 
-	return NewSQLDB(sessions.BaseDB, clock)
+	return createStore(t, sessions.BaseDB, clock)
 }
 
 func assertEqualActions(t *testing.T, expected, got *Action) {
@@ -51,4 +52,15 @@ func assertEqualActions(t *testing.T, expected, got *Action) {
 
 	expected.AttemptedAt = expectedAttemptedAt
 	got.AttemptedAt = actualAttemptedAt
+}
+
+// createStore is a helper function that creates a new SQLDB and ensure that
+// it is closed when during the test cleanup.
+func createStore(t *testing.T, sqlDB *db.BaseDB, clock clock.Clock) *SQLDB {
+	store := NewSQLDB(sqlDB, clock)
+	t.Cleanup(func() {
+		require.NoError(t, store.Close())
+	})
+
+	return store
 }
