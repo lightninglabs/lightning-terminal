@@ -28,9 +28,6 @@ func TestActionStorage(t *testing.T) {
 	sessDB := session.NewTestDBWithAccounts(t, clock, accountsDB)
 
 	db := NewTestDBWithSessionsAndAccounts(t, sessDB, accountsDB, clock)
-	t.Cleanup(func() {
-		_ = db.Close()
-	})
 
 	// Assert that attempting to add an action for a session that does not
 	// exist returns an error.
@@ -198,9 +195,6 @@ func TestListActions(t *testing.T) {
 	sessDB := session.NewTestDB(t, clock)
 
 	db := NewTestDBWithSessions(t, sessDB, clock)
-	t.Cleanup(func() {
-		_ = db.Close()
-	})
 
 	// Add 2 sessions that we can reference.
 	sess1, err := sessDB.NewSession(
@@ -466,9 +460,6 @@ func TestListGroupActions(t *testing.T) {
 	}
 
 	db := NewTestDBWithSessions(t, sessDB, clock)
-	t.Cleanup(func() {
-		_ = db.Close()
-	})
 
 	// There should not be any actions in group 1 yet.
 	al, _, _, err := db.ListActions(ctx, nil, WithActionGroupID(group1))
