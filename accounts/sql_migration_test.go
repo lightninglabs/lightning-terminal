@@ -39,9 +39,6 @@ func TestAccountStoreMigration(t *testing.T) {
 		*db.TransactionExecutor[SQLQueries]) {
 
 		testDBStore := NewTestDB(t, clock)
-		t.Cleanup(func() {
-			require.NoError(t, testDBStore.Close())
-		})
 
 		store, ok := testDBStore.(*SQLStore)
 		require.True(t, ok)
@@ -344,7 +341,7 @@ func TestAccountStoreMigration(t *testing.T) {
 			err = txEx.ExecTx(ctx, &opts,
 				func(tx SQLQueries) error {
 					return MigrateAccountStoreToSQL(
-						ctx, kvStore, tx,
+						ctx, kvStore.db, tx,
 					)
 				},
 			)
