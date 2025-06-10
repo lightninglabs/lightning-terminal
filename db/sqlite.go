@@ -11,6 +11,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	sqlite_migrate "github.com/golang-migrate/migrate/v4/database/sqlite"
 	"github.com/lightninglabs/lightning-terminal/db/sqlc"
+	"github.com/lightningnetwork/lnd/sqldb/v2"
 	"github.com/stretchr/testify/require"
 	_ "modernc.org/sqlite" // Register relevant drivers.
 )
@@ -132,7 +133,7 @@ func NewSqliteStore(cfg *SqliteConfig) (*SqliteStore, error) {
 	db.SetMaxIdleConns(defaultMaxConns)
 	db.SetConnMaxLifetime(defaultConnMaxLifetime)
 
-	queries := sqlc.NewSqlite(db)
+	queries := sqlc.NewForType(db, sqldb.BackendTypeSqlite)
 	s := &SqliteStore{
 		cfg: cfg,
 		BaseDB: &BaseDB{
@@ -140,16 +141,7 @@ func NewSqliteStore(cfg *SqliteConfig) (*SqliteStore, error) {
 			Queries: queries,
 		},
 	}
-
-	// Now that the database is open, populate the database with our set of
-	// schemas based on our embedded in-memory file system.
-	if !cfg.SkipMigrations {
-		if err := s.ExecuteMigrations(s.backupAndMigrate); err != nil {
-			return nil, fmt.Errorf("error executing migrations: "+
-				"%w", err)
-		}
-	}
-
+	
 	return s, nil
 }
 

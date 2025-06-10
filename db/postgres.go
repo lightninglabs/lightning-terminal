@@ -9,6 +9,7 @@ import (
 	postgres_migrate "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/lightninglabs/lightning-terminal/db/sqlc"
+	"github.com/lightningnetwork/lnd/sqldb/v2"
 	"github.com/stretchr/testify/require"
 )
 
@@ -119,22 +120,13 @@ func NewPostgresStore(cfg *PostgresConfig) (*PostgresStore, error) {
 	rawDb.SetConnMaxLifetime(connMaxLifetime)
 	rawDb.SetConnMaxIdleTime(connMaxIdleTime)
 
-	queries := sqlc.NewPostgres(rawDb)
+	queries := sqlc.NewForType(rawDb, sqldb.BackendTypePostgres)
 	s := &PostgresStore{
 		cfg: cfg,
 		BaseDB: &BaseDB{
 			DB:      rawDb,
 			Queries: queries,
 		},
-	}
-
-	// Now that the database is open, populate the database with our set of
-	// schemas based on our embedded in-memory file system.
-	if !cfg.SkipMigrations {
-		if err := s.ExecuteMigrations(TargetLatest); err != nil {
-			return nil, fmt.Errorf("error executing migrations: "+
-				"%w", err)
-		}
 	}
 
 	return s, nil
@@ -166,20 +158,17 @@ func (s *PostgresStore) ExecuteMigrations(target MigrationTarget,
 
 // NewTestPostgresDB is a helper function that creates a Postgres database for
 // testing.
-func NewTestPostgresDB(t *testing.T) *PostgresStore {
+func NewTestPostgresDB(t *testing.T) *sqldb.PostgresStore {
 	t.Helper()
 
 	t.Logf("Creating new Postgres DB for testing")
 
-	sqlFixture := NewTestPgFixture(t, DefaultPostgresFixtureLifetime, true)
-	store, err := NewPostgresStore(sqlFixture.GetConfig())
-	require.NoError(t, err)
-
+	sqlFixture := sqldb.NewTestPgFixture(t, DefaultPostgresFixtureLifetime)
 	t.Cleanup(func() {
 		sqlFixture.TearDown(t)
 	})
 
-	return store
+	return sqldb.NewTestPostgresDB(t, sqlFixture, LitdMigrationStreams)
 }
 
 // NewTestPostgresDBWithVersion is a helper function that creates a Postgres
