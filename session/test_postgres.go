@@ -15,14 +15,14 @@ import (
 var ErrDBClosed = errors.New("database is closed")
 
 // NewTestDB is a helper function that creates an SQLStore database for testing.
-func NewTestDB(t *testing.T, clock clock.Clock) *SQLStore {
-	return NewSQLStore(db.NewTestPostgresDB(t).BaseDB, clock)
+func NewTestDB(t *testing.T, clock clock.Clock) Store {
+	return createStore(t, db.NewTestPostgresDB(t).BaseDB, clock)
 }
 
 // NewTestDBFromPath is a helper function that creates a new SQLStore with a
 // connection to an existing postgres database for testing.
 func NewTestDBFromPath(t *testing.T, dbPath string,
-	clock clock.Clock) *SQLStore {
+	clock clock.Clock) Store {
 
-	return NewSQLStore(db.NewTestPostgresDB(t).BaseDB, clock)
+	return createStore(t, db.NewTestPostgresDB(t).BaseDB, clock)
 }
