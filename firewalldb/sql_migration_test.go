@@ -210,23 +210,23 @@ func TestFirewallDBMigration(t *testing.T) {
 			},
 		},
 		{
-			name:       "global records",
+			name:       "global kv records",
 			populateDB: globalRecords,
 		},
 		{
-			name:       "session specific records",
+			name:       "session specific kv records",
 			populateDB: sessionSpecificRecords,
 		},
 		{
-			name:       "feature specific records",
+			name:       "feature specific kv records",
 			populateDB: featureSpecificRecords,
 		},
 		{
-			name:       "records at all levels",
+			name:       "records at all kv levels",
 			populateDB: recordsAtAllLevels,
 		},
 		{
-			name:       "random records",
+			name:       "random kv records",
 			populateDB: randomKVRecords,
 		},
 	}
