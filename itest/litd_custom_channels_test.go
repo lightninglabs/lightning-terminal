@@ -2389,7 +2389,7 @@ func testCustomChannelsLiquidityEdgeCasesCore(ctx context.Context,
 	)
 	charlieFundingAmount := cents.Amount - uint64(2*400_000)
 
-	_, _, _ = createTestAssetNetwork(
+	_, _, chanPointEF := createTestAssetNetwork(
 		t, net, charlieTap, daveTap, erinTap, fabiaTap, yaraTap,
 		universeTap, cents, 400_000, charlieFundingAmount,
 		daveFundingAmount, erinFundingAmount, 0,
@@ -2406,6 +2406,37 @@ func testCustomChannelsLiquidityEdgeCasesCore(ctx context.Context,
 	require.NoError(t.t, t.lndHarness.AssertNodeKnown(charlie, erin))
 
 	logBalance(t.t, nodes, assetID, "initial")
+
+	// Edge case: We send a single satoshi keysend payment from Dave to
+	// Fabia. Which will make it so that Fabia's balance in the channel
+	// between Erin and her is 1 satoshi, which is below the dust limit.
+	// This is only allowed while Fabia doesn't have any assets on her side
+	// yet.
+	erinFabiaChan := fetchChannel(t.t, fabia, chanPointEF)
+	hinEF := &lnrpc.HopHint{
+		NodeId:                    erin.PubKeyStr,
+		ChanId:                    erinFabiaChan.PeerScidAlias,
+		CltvExpiryDelta:           80,
+		FeeBaseMsat:               1000,
+		FeeProportionalMillionths: 1,
+	}
+	sendKeySendPayment(
+		t.t, dave, fabia, 1, withPayRouteHints([]*lnrpc.RouteHint{{
+			HopHints: []*lnrpc.HopHint{hinEF},
+		}}),
+	)
+	logBalance(t.t, nodes, assetID, "after single sat keysend")
+
+	// We make sure that a single sat keysend payment is not allowed when
+	// it carries assets.
+	sendAssetKeySendPayment(
+		t.t, erin, fabia, 123, assetID, fn.Some[int64](1),
+		withPayErrSubStr(
+			fmt.Sprintf("keysend payment satoshi amount must be "+
+				"greater than or equal to %d satoshis",
+				rfqmath.DefaultOnChainHtlcSat),
+		),
+	)
 
 	// Normal case.
 	// Send 50 assets from Charlie to Dave.
