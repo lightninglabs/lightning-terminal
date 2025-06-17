@@ -34,6 +34,11 @@ var (
 	testEntryValue = []byte{1, 2, 3}
 )
 
+// expectedResult represents the expected result of a migration test.
+type expectedResult struct {
+	kvEntries []*kvEntry
+}
+
 // TestFirewallDBMigration tests the migration of firewalldb from a bolt
 // backend to a SQL database. Note that this test does not attempt to be a
 // complete migration test.
@@ -72,10 +77,10 @@ func TestFirewallDBMigration(t *testing.T) {
 		return store, genericExecutor
 	}
 
-	// The assertMigrationResults function will currently assert that
+	// The assertKvStoreMigrationResults function will currently assert that
 	// the migrated kv stores entries in the SQLDB match the original kv
 	// stores entries in the BoltDB.
-	assertMigrationResults := func(t *testing.T, sqlStore *SQLDB,
+	assertKvStoreMigrationResults := func(t *testing.T, sqlStore *SQLDB,
 		kvEntries []*kvEntry) {
 
 		var (
@@ -213,6 +218,17 @@ func TestFirewallDBMigration(t *testing.T) {
 		}
 	}
 
+	// The assertMigrationResults function will currently assert that
+	// the migrated kv stores records in the SQLDB match the original kv
+	// stores records in the BoltDB.
+	assertMigrationResults := func(t *testing.T, sqlStore *SQLDB,
+		expRes *expectedResult) {
+
+		// Assert that the kv store migration results match the expected
+		// results.
+		assertKvStoreMigrationResults(t, sqlStore, expRes.kvEntries)
+	}
+
 	// The tests slice contains all the tests that we will run for the
 	// migration of the firewalldb from a BoltDB to a SQLDB.
 	// Note that the tests currently only test the migration of the KV
@@ -221,16 +237,20 @@ func TestFirewallDBMigration(t *testing.T) {
 	tests := []struct {
 		name       string
 		populateDB func(t *testing.T, ctx context.Context,
-			boltDB *BoltDB, sessionStore session.Store) []*kvEntry
+			boltDB *BoltDB, sessionStore session.Store) *expectedResult
 	}{
 		{
 			name: "empty",
 			populateDB: func(t *testing.T, ctx context.Context,
 				boltDB *BoltDB,
-				sessionStore session.Store) []*kvEntry {
+				sessionStore session.Store) *expectedResult {
 
-				// Don't populate the DB.
-				return make([]*kvEntry, 0)
+				// Don't populate the DB, and return empty kv
+				// records and privacy pairs.
+
+				return &expectedResult{
+					kvEntries: []*kvEntry{},
+				}
 			},
 		},
 		{
@@ -314,7 +334,7 @@ func TestFirewallDBMigration(t *testing.T) {
 // globalEntries populates the kv store with one global entry for the temp
 // store, and one for the perm store.
 func globalEntries(t *testing.T, ctx context.Context, boltDB *BoltDB,
-	_ session.Store) []*kvEntry {
+	_ session.Store) *expectedResult {
 
 	return insertTempAndPermEntry(
 		t, ctx, boltDB, testRuleName, fn.None[[]byte](),
@@ -326,7 +346,7 @@ func globalEntries(t *testing.T, ctx context.Context, boltDB *BoltDB,
 // entry for the local temp store, and one session specific entry for the perm
 // local store.
 func sessionSpecificEntries(t *testing.T, ctx context.Context, boltDB *BoltDB,
-	sessionStore session.Store) []*kvEntry {
+	sessionStore session.Store) *expectedResult {
 
 	groupAlias := getNewSessionAlias(t, ctx, sessionStore)
 
@@ -340,7 +360,7 @@ func sessionSpecificEntries(t *testing.T, ctx context.Context, boltDB *BoltDB,
 // entry for the local temp store, and one feature specific entry for the perm
 // local store.
 func featureSpecificEntries(t *testing.T, ctx context.Context, boltDB *BoltDB,
-	sessionStore session.Store) []*kvEntry {
+	sessionStore session.Store) *expectedResult {
 
 	groupAlias := getNewSessionAlias(t, ctx, sessionStore)
 
@@ -358,11 +378,11 @@ func featureSpecificEntries(t *testing.T, ctx context.Context, boltDB *BoltDB,
 // any entries when the entry set is more complex than just a single entry at
 // each level.
 func allEntryCombinations(t *testing.T, ctx context.Context, boltDB *BoltDB,
-	sessionStore session.Store) []*kvEntry {
+	sessionStore session.Store) *expectedResult {
 
 	var result []*kvEntry
-	add := func(entry []*kvEntry) {
-		result = append(result, entry...)
+	add := func(entry *expectedResult) {
+		result = append(result, entry.kvEntries...)
 	}
 
 	// First lets create standard entries at all levels, which represents
@@ -446,7 +466,9 @@ func allEntryCombinations(t *testing.T, ctx context.Context, boltDB *BoltDB,
 		fn.Some(testFeatureName), testEntryKey4, emptyValue,
 	))
 
-	return result
+	return &expectedResult{
+		kvEntries: result,
+	}
 }
 
 func getNewSessionAlias(t *testing.T, ctx context.Context,
@@ -467,7 +489,7 @@ func getNewSessionAlias(t *testing.T, ctx context.Context,
 func insertTempAndPermEntry(t *testing.T, ctx context.Context,
 	boltDB *BoltDB, ruleName string, groupAlias fn.Option[[]byte],
 	featureNameOpt fn.Option[string], entryKey string,
-	entryValue []byte) []*kvEntry {
+	entryValue []byte) *expectedResult {
 
 	tempKvEntry := &kvEntry{
 		ruleName:    ruleName,
@@ -491,7 +513,9 @@ func insertTempAndPermEntry(t *testing.T, ctx context.Context,
 
 	insertKvEntry(t, ctx, boltDB, permKvEntry)
 
-	return []*kvEntry{tempKvEntry, permKvEntry}
+	return &expectedResult{
+		kvEntries: []*kvEntry{tempKvEntry, permKvEntry},
+	}
 }
 
 // insertKvEntry populates the kv store with passed entry, and asserts that the
@@ -540,7 +564,7 @@ func insertKvEntry(t *testing.T, ctx context.Context,
 // across all possible combinations of different levels of entries in the kv
 // store. All values and different bucket names are randomly generated.
 func randomKVEntries(t *testing.T, ctx context.Context,
-	boltDB *BoltDB, sessionStore session.Store) []*kvEntry {
+	boltDB *BoltDB, sessionStore session.Store) *expectedResult {
 
 	var (
 		// We set the number of entries to insert to 1000, as that
@@ -651,7 +675,9 @@ func randomKVEntries(t *testing.T, ctx context.Context,
 		insertedEntries = append(insertedEntries, entry)
 	}
 
-	return insertedEntries
+	return &expectedResult{
+		kvEntries: insertedEntries,
+	}
 }
 
 // randomString generates a random string of the passed length n.
