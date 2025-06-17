@@ -37,6 +37,7 @@ var (
 // expectedResult represents the expected result of a migration test.
 type expectedResult struct {
 	kvEntries fn.Option[[]*kvEntry]
+	privPairs fn.Option[privacyPairs]
 }
 
 // TestFirewallDBMigration tests the migration of firewalldb from a bolt
@@ -218,9 +219,32 @@ func TestFirewallDBMigration(t *testing.T) {
 		}
 	}
 
+	assertPrivacyMapperMigrationResults := func(t *testing.T,
+		sqlStore *SQLDB, privPairs privacyPairs) {
+
+		for groupID, groupPairs := range privPairs {
+			storePairs, err := sqlStore.GetAllPrivacyPairs(
+				ctx, groupID,
+			)
+			require.NoError(t, err)
+			require.Len(t, storePairs, len(groupPairs))
+
+			for _, storePair := range storePairs {
+				// Assert that the store pair is in the
+				// original pairs.
+				pseudo, ok := groupPairs[storePair.RealVal]
+				require.True(t, ok)
+
+				// Assert that the pseudo value matches
+				// the one in the store.
+				require.Equal(t, pseudo, storePair.PseudoVal)
+			}
+		}
+	}
+
 	// The assertMigrationResults function will currently assert that
-	// the migrated kv stores records in the SQLDB match the original kv
-	// stores records in the BoltDB.
+	// the migrated kv stores records and privacy pairs in the SQLDB match
+	// the original entries in the BoltDB.
 	assertMigrationResults := func(t *testing.T, sqlStore *SQLDB,
 		expRes *expectedResult) {
 
@@ -229,6 +253,13 @@ func TestFirewallDBMigration(t *testing.T) {
 		// the expected results.
 		expRes.kvEntries.WhenSome(func(kvEntries []*kvEntry) {
 			assertKvStoreMigrationResults(t, sqlStore, kvEntries)
+		})
+
+		// If the expected result contains privacy pairs, then we
+		// assert that the privacy mapper migration results match
+		// the expected results.
+		expRes.privPairs.WhenSome(func(pairs privacyPairs) {
+			assertPrivacyMapperMigrationResults(t, sqlStore, pairs)
 		})
 	}
 
@@ -251,10 +282,13 @@ func TestFirewallDBMigration(t *testing.T) {
 				// Don't populate the DB, and return empty kv
 				// records and privacy pairs.
 
+				pairsRes := make(privacyPairs)
+
 				return &expectedResult{
 					kvEntries: fn.Some(
 						[]*kvEntry{},
 					),
+					privPairs: fn.Some(pairsRes),
 				}
 			},
 		},
@@ -277,6 +311,22 @@ func TestFirewallDBMigration(t *testing.T) {
 		{
 			name:       "random kv entries",
 			populateDB: randomKVEntries,
+		},
+		{
+			name:       "one session and privacy pair",
+			populateDB: oneSessionAndPrivPair,
+		},
+		{
+			name:       "multiple sessions with one privacy pair",
+			populateDB: multiSessionsOnePrivPairs,
+		},
+		{
+			name:       "multiple privacy pairs",
+			populateDB: multipleSessionsAndPrivacyPairs,
+		},
+		{
+			name:       "random privacy pairs",
+			populateDB: randomPrivacyPairs,
 		},
 	}
 
@@ -471,6 +521,7 @@ func allEntryCombinations(t *testing.T, ctx context.Context, boltDB *BoltDB,
 
 	return &expectedResult{
 		kvEntries: fn.Some(result),
+		privPairs: fn.None[privacyPairs](),
 	}
 }
 
@@ -518,6 +569,8 @@ func insertTempAndPermEntry(t *testing.T, ctx context.Context,
 
 	return &expectedResult{
 		kvEntries: fn.Some([]*kvEntry{tempKvEntry, permKvEntry}),
+		// No privacy pairs are inserted in this test.
+		privPairs: fn.None[privacyPairs](),
 	}
 }
 
@@ -680,6 +733,136 @@ func randomKVEntries(t *testing.T, ctx context.Context,
 
 	return &expectedResult{
 		kvEntries: fn.Some(insertedEntries),
+		// No privacy pairs are inserted in this test.
+		privPairs: fn.None[privacyPairs](),
+	}
+}
+
+// multiSessionsOnePrivPairs inserts 1 session with 1 privacy pair into the
+// boltDB.
+func oneSessionAndPrivPair(t *testing.T, ctx context.Context,
+	boltDB *BoltDB, sessionStore session.Store) *expectedResult {
+
+	return createPrivacyPairs(t, ctx, boltDB, sessionStore, 1, 1)
+}
+
+// multiSessionsOnePrivPairs inserts 1 session with 10 privacy pairs into the
+// boltDB.
+func multiSessionsOnePrivPairs(t *testing.T, ctx context.Context,
+	boltDB *BoltDB, sessionStore session.Store) *expectedResult {
+
+	return createPrivacyPairs(t, ctx, boltDB, sessionStore, 1, 10)
+}
+
+// multipleSessionsAndPrivacyPairs inserts 5 sessions with 10 privacy pairs
+// per session into the boltDB.
+func multipleSessionsAndPrivacyPairs(t *testing.T, ctx context.Context,
+	boltDB *BoltDB, sessionStore session.Store) *expectedResult {
+
+	return createPrivacyPairs(t, ctx, boltDB, sessionStore, 5, 10)
+}
+
+// createPrivacyPairs is a helper function that creates a number of sessions
+// with a number of privacy pairs per session. It returns an expectedResult
+// struct that contains the expected privacy pairs and no kv records.
+func createPrivacyPairs(t *testing.T, ctx context.Context,
+	boltDB *BoltDB, sessionStore session.Store, numSessions int,
+	numPairsPerSession int) *expectedResult {
+
+	pairs := make(privacyPairs)
+
+	sessSQLStore, ok := sessionStore.(*session.SQLStore)
+	require.True(t, ok)
+
+	for i := 0; i < numSessions; i++ {
+		sess, err := sessionStore.NewSession(
+			ctx, fmt.Sprintf("session-%d", i),
+			session.Type(uint8(rand.Intn(5))),
+			time.Unix(1000, 0), randomString(rand.Intn(10)+1),
+		)
+		require.NoError(t, err)
+
+		groupID := sess.GroupID
+		sqlGroupID, err := sessSQLStore.GetSessionIDByAlias(
+			ctx, groupID[:],
+		)
+		require.NoError(t, err)
+
+		groupPairs := make(map[string]string)
+
+		for j := 0; j < numPairsPerSession; j++ {
+			realKey := fmt.Sprintf("real-%d-%d", i, j)
+			pseudoKey := fmt.Sprintf("pseudo-%d-%d", i, j)
+
+			f := func(ctx context.Context, tx PrivacyMapTx) error {
+				return tx.NewPair(ctx, realKey, pseudoKey)
+			}
+
+			err := boltDB.PrivacyDB(groupID).Update(ctx, f)
+			require.NoError(t, err)
+
+			groupPairs[realKey] = pseudoKey
+		}
+
+		pairs[sqlGroupID] = groupPairs
+	}
+
+	return &expectedResult{
+		kvEntries: fn.None[[]*kvEntry](),
+		privPairs: fn.Some(pairs),
+	}
+}
+
+// randomPrivacyPairs creates a random number of privacy pairs to 10 sessions.
+func randomPrivacyPairs(t *testing.T, ctx context.Context,
+	boltDB *BoltDB, sessionStore session.Store) *expectedResult {
+
+	numSessions := 10
+	maxPairsPerSession := 20
+	pairs := make(privacyPairs)
+
+	sessSQLStore, ok := sessionStore.(*session.SQLStore)
+	require.True(t, ok)
+
+	for i := 0; i < numSessions; i++ {
+		sess, err := sessionStore.NewSession(
+			ctx, fmt.Sprintf("rand-session-%d", i),
+			session.Type(uint8(rand.Intn(5))),
+			time.Unix(1000, 0), randomString(rand.Intn(10)+1),
+		)
+		require.NoError(t, err)
+
+		groupID := sess.GroupID
+		sqlGroupID, err := sessSQLStore.GetSessionIDByAlias(
+			ctx, groupID[:],
+		)
+		require.NoError(t, err)
+
+		numPairs := rand.Intn(maxPairsPerSession) + 1
+		groupPairs := make(map[string]string)
+
+		for j := 0; j < numPairs; j++ {
+			realKey := fmt.Sprintf("real-%s",
+				randomString(rand.Intn(10)+5))
+			pseudoKey := fmt.Sprintf("pseudo-%s",
+				randomString(rand.Intn(10)+5))
+
+			f := func(ctx context.Context, tx PrivacyMapTx) error {
+				return tx.NewPair(ctx, realKey, pseudoKey)
+			}
+
+			err := boltDB.PrivacyDB(groupID).Update(ctx, f)
+			require.NoError(t, err)
+
+			groupPairs[realKey] = pseudoKey
+		}
+
+		pairs[sqlGroupID] = groupPairs
+	}
+
+	return &expectedResult{
+		kvEntries: fn.None[[]*kvEntry](),
+		privPairs: fn.Some(pairs),
 	}
 }
 
