@@ -2389,7 +2389,7 @@ func testCustomChannelsLiquidityEdgeCasesCore(ctx context.Context,
 	)
 	charlieFundingAmount := cents.Amount - uint64(2*400_000)
 
-	_, _, _ = createTestAssetNetwork(
+	_, _, chanPointEF := createTestAssetNetwork(
 		t, net, charlieTap, daveTap, erinTap, fabiaTap, yaraTap,
 		universeTap, cents, 400_000, charlieFundingAmount,
 		daveFundingAmount, erinFundingAmount, 0,
@@ -2406,6 +2406,37 @@ func testCustomChannelsLiquidityEdgeCasesCore(ctx context.Context,
 	require.NoError(t.t, t.lndHarness.AssertNodeKnown(charlie, erin))
 
 	logBalance(t.t, nodes, assetID, "initial")
+
+	// Edge case: We send a single satoshi keysend payment from Dave to
+	// Fabia. Which will make it so that Fabia's balance in the channel
+	// between Erin and her is 1 satoshi, which is below the dust limit.
+	// This is only allowed while Fabia doesn't have any assets on her side
+	// yet.
+	erinFabiaChan := fetchChannel(t.t, fabia, chanPointEF)
+	hinEF := &lnrpc.HopHint{
+		NodeId:                    erin.PubKeyStr,
+		ChanId:                    erinFabiaChan.PeerScidAlias,
+		CltvExpiryDelta:           80,
+		FeeBaseMsat:               1000,
+		FeeProportionalMillionths: 1,
+	}
+	sendKeySendPayment(
+		t.t, dave, fabia, 1, withPayRouteHints([]*lnrpc.RouteHint{{
+			HopHints: []*lnrpc.HopHint{hinEF},
+		}}),
+	)
+	logBalance(t.t, nodes, assetID, "after single sat keysend")
+
+	// We make sure that a single sat keysend payment is not allowed when
+	// it carries assets.
+	sendAssetKeySendPayment(
+		t.t, erin, fabia, 123, assetID, fn.Some[int64](1),
+		withPayErrSubStr(
+			fmt.Sprintf("keysend payment satoshi amount must be "+
+				"greater than or equal to %d satoshis",
+				rfqmath.DefaultOnChainHtlcSat),
+		),
+	)
 
 	// Normal case.
 	// Send 50 assets from Charlie to Dave.
@@ -2870,6 +2901,54 @@ func testCustomChannelsLiquidityEdgeCasesCore(ctx context.Context,
 	)
 
 	logBalance(t.t, nodes, assetID, "after safe asset htlc failure")
+
+	// Another test case: Make sure an asset invoice contains the correct
+	// channel policy. We expect it to be the policy for the direction from
+	// edge node to receiver node. To test this, we first set two different
+	// policies on the channel between Erin and Fabia.
+	resp, err := erin.UpdateChannelPolicy(ctx, &lnrpc.PolicyUpdateRequest{
+		Scope: &lnrpc.PolicyUpdateRequest_ChanPoint{
+			ChanPoint: chanPointEF,
+		},
+		BaseFeeMsat:   31337,
+		FeeRatePpm:    443322,
+		TimeLockDelta: 19,
+	})
+	require.NoError(t.t, err)
+	require.Empty(t.t, resp.FailedUpdates)
+
+	resp, err = fabia.UpdateChannelPolicy(ctx, &lnrpc.PolicyUpdateRequest{
+		Scope: &lnrpc.PolicyUpdateRequest_ChanPoint{
+			ChanPoint: chanPointEF,
+		},
+		BaseFeeMsat:   42069,
+		FeeRatePpm:    223344,
+		TimeLockDelta: 18,
+	})
+	require.NoError(t.t, err)
+	require.Empty(t.t, resp.FailedUpdates)
+
+	// We now create an invoice on Fabia and expect Erin's policy to be used
+	// in the invoice.
+	invoiceResp = createAssetInvoice(t.t, erin, fabia, 1_000, assetID)
+	req, err := erin.DecodePayReq(ctx, &lnrpc.PayReqString{
+		PayReq: invoiceResp.PaymentRequest,
+	})
+	require.NoError(t.t, err)
+
+	require.Len(t.t, req.RouteHints, 1)
+	require.Len(t.t, req.RouteHints[0].HopHints, 1)
+	invoiceHint := req.RouteHints[0].HopHints[0]
+	require.Equal(t.t, erin.PubKeyStr, invoiceHint.NodeId)
+	require.EqualValues(t.t, 31337, invoiceHint.FeeBaseMsat)
+	require.EqualValues(t.t, 443322, invoiceHint.FeeProportionalMillionths)
+	require.EqualValues(t.t, 19, invoiceHint.CltvExpiryDelta)
+
+	// Now we pay the invoice and expect the same policy with very expensive
+	// fees to be used.
+	payInvoiceWithSatoshi(
+		t.t, dave, invoiceResp, withFeeLimit(100_000_000),
+	)
 }
 
 // testCustomChannelsLiquidityEdgeCases is a test that runs through some

@@ -1364,7 +1364,12 @@ func sendAssetKeySendPayment(t *testing.T, src, dst *HarnessNode, amt uint64,
 }
 
 func sendKeySendPayment(t *testing.T, src, dst *HarnessNode,
-	amt btcutil.Amount) {
+	amt btcutil.Amount, opts ...payOpt) {
+
+	cfg := defaultPayConfig()
+	for _, opt := range opts {
+		opt(cfg)
+	}
 
 	ctxb := context.Background()
 	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
@@ -1382,12 +1387,21 @@ func sendKeySendPayment(t *testing.T, src, dst *HarnessNode,
 	customRecords := make(map[uint64][]byte)
 	customRecords[record.KeySendType] = preimage[:]
 
+	for key, value := range cfg.destCustomRecords {
+		customRecords[key] = value
+	}
+
 	req := &routerrpc.SendPaymentRequest{
 		Dest:              dst.PubKey[:],
 		Amt:               int64(amt),
 		DestCustomRecords: customRecords,
 		PaymentHash:       hash[:],
 		TimeoutSeconds:    int32(PaymentTimeout.Seconds()),
+		FeeLimitMsat:      int64(cfg.feeLimit),
+		MaxParts:          cfg.maxShards,
+		OutgoingChanIds:   cfg.outgoingChanIDs,
+		AllowSelfPayment:  cfg.allowSelfPayment,
+		RouteHints:        cfg.routeHints,
 	}
 
 	stream, err := src.RouterClient.SendPaymentV2(ctxt, req)
@@ -1463,7 +1477,7 @@ func payPayReqWithSatoshi(t *testing.T, payer *HarnessNode, payReq string,
 	sendReq := &routerrpc.SendPaymentRequest{
 		PaymentRequest:   payReq,
 		TimeoutSeconds:   int32(PaymentTimeout.Seconds()),
-		FeeLimitMsat:     1_000_000,
+		FeeLimitMsat:     int64(cfg.feeLimit),
 		MaxParts:         cfg.maxShards,
 		OutgoingChanIds:  cfg.outgoingChanIDs,
 		AllowSelfPayment: cfg.allowSelfPayment,
@@ -1548,6 +1562,7 @@ type payConfig struct {
 	groupKey          []byte
 	outgoingChanIDs   []uint64
 	allowSelfPayment  bool
+	routeHints        []*lnrpc.RouteHint
 }
 
 func defaultPayConfig() *payConfig {
@@ -1628,6 +1643,12 @@ func withOutgoingChanIDs(ids []uint64) payOpt {
 func withAllowSelfPayment() payOpt {
 	return func(c *payConfig) {
 		c.allowSelfPayment = true
+	}
+}
+
+func withPayRouteHints(hints []*lnrpc.RouteHint) payOpt {
+	return func(c *payConfig) {
+		c.routeHints = hints
 	}
 }
 
