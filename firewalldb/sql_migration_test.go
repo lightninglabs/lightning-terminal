@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/lightningnetwork/lnd/fn"
 	"testing"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/db/sqlc"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/clock"
+	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/sqldb"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/rand"
@@ -27,6 +27,10 @@ type kvStoreRecord struct {
 	GroupID     *session.ID
 	FeatureName fn.Option[string] // Set if the record is feature specific
 	Value       []byte
+}
+
+type expectedResult struct {
+	kvRecords fn.Option[[]kvStoreRecord]
 }
 
 // TestFirewallDBMigration tests the migration of firewalldb from a bolt
@@ -67,10 +71,7 @@ func TestFirewallDBMigration(t *testing.T) {
 		return store, genericExecutor
 	}
 
-	// The assertMigrationResults function will currently assert that
-	// the migrated kv stores records in the SQLDB match the original kv
-	// stores records in the BoltDB.
-	assertMigrationResults := func(t *testing.T, sqlStore *SQLDB,
+	assertKvStoreMigrationResults := func(t *testing.T, sqlStore *SQLDB,
 		kvRecords []kvStoreRecord) {
 
 		var (
@@ -188,6 +189,20 @@ func TestFirewallDBMigration(t *testing.T) {
 		}
 	}
 
+	// The assertMigrationResults function will currently assert that
+	// the migrated kv stores records in the SQLDB match the original kv
+	// stores records in the BoltDB.
+	assertMigrationResults := func(t *testing.T, sqlStore *SQLDB,
+		expRes *expectedResult) {
+
+		// If the expected result contains kv records, then we
+		// assert that the kv store migration results match
+		// the expected results.
+		expRes.kvRecords.WhenSome(func(kvRecords []kvStoreRecord) {
+			assertKvStoreMigrationResults(t, sqlStore, kvRecords)
+		})
+	}
+
 	// The tests slice contains all the tests that we will run for the
 	// migration of the firewalldb from a BoltDB to a SQLDB.
 	// Note that the tests currently only test the migration of the KV
@@ -197,16 +212,22 @@ func TestFirewallDBMigration(t *testing.T) {
 		name       string
 		populateDB func(t *testing.T, ctx context.Context,
 			boltDB *BoltDB,
-			sessionStore session.Store) []kvStoreRecord
+			sessionStore session.Store) *expectedResult
 	}{
 		{
 			name: "empty",
 			populateDB: func(t *testing.T, ctx context.Context,
 				boltDB *BoltDB,
-				sessionStore session.Store) []kvStoreRecord {
+				sessionStore session.Store) *expectedResult {
 
-				// Don't populate the DB.
-				return make([]kvStoreRecord, 0)
+				// Don't populate the DB, and return empty kv
+				// records and privacy pairs.
+
+				return &expectedResult{
+					kvRecords: fn.Some(
+						[]kvStoreRecord{},
+					),
+				}
 			},
 		},
 		{
@@ -291,7 +312,7 @@ func TestFirewallDBMigration(t *testing.T) {
 // globalRecords populates the kv store with one global record for the temp
 // store, and one for the perm store.
 func globalRecords(t *testing.T, ctx context.Context,
-	boltDB *BoltDB, sessionStore session.Store) []kvStoreRecord {
+	boltDB *BoltDB, sessionStore session.Store) *expectedResult {
 
 	return insertTestKVRecords(
 		t, ctx, boltDB, sessionStore, true, fn.None[string](),
@@ -302,7 +323,7 @@ func globalRecords(t *testing.T, ctx context.Context,
 // record for the local temp store, and one session specific record for the perm
 // local store.
 func sessionSpecificRecords(t *testing.T, ctx context.Context,
-	boltDB *BoltDB, sessionStore session.Store) []kvStoreRecord {
+	boltDB *BoltDB, sessionStore session.Store) *expectedResult {
 
 	return insertTestKVRecords(
 		t, ctx, boltDB, sessionStore, false, fn.None[string](),
@@ -313,7 +334,7 @@ func sessionSpecificRecords(t *testing.T, ctx context.Context,
 // record for the local temp store, and one feature specific record for the perm
 // local store.
 func featureSpecificRecords(t *testing.T, ctx context.Context,
-	boltDB *BoltDB, sessionStore session.Store) []kvStoreRecord {
+	boltDB *BoltDB, sessionStore session.Store) *expectedResult {
 
 	return insertTestKVRecords(
 		t, ctx, boltDB, sessionStore, false, fn.Some("test-feature"),
@@ -324,13 +345,25 @@ func featureSpecificRecords(t *testing.T, ctx context.Context,
 // by utilizing all the other helper functions that populates the kvstores at
 // different levels.
 func recordsAtAllLevels(t *testing.T, ctx context.Context,
-	boltDB *BoltDB, sessionStore session.Store) []kvStoreRecord {
+	boltDB *BoltDB, sessionStore session.Store) *expectedResult {
 
-	gRecords := globalRecords(t, ctx, boltDB, sessionStore)
-	sRecords := sessionSpecificRecords(t, ctx, boltDB, sessionStore)
-	fRecords := featureSpecificRecords(t, ctx, boltDB, sessionStore)
+	gRecords := globalRecords(
+		t, ctx, boltDB, sessionStore,
+	).kvRecords.UnwrapOrFail(t)
 
-	return append(gRecords, append(sRecords, fRecords...)...)
+	sRecords := sessionSpecificRecords(
+		t, ctx, boltDB, sessionStore,
+	).kvRecords.UnwrapOrFail(t)
+
+	fRecords := featureSpecificRecords(
+		t, ctx, boltDB, sessionStore,
+	).kvRecords.UnwrapOrFail(t)
+
+	allRecords := append(gRecords, append(sRecords, fRecords...)...)
+
+	return &expectedResult{
+		kvRecords: fn.Some(allRecords),
+	}
 }
 
 // insertTestKVRecords populates the kv store with one record for the local temp
@@ -341,7 +374,7 @@ func recordsAtAllLevels(t *testing.T, ctx context.Context,
 // ruleName, entryKey and entryVal.
 func insertTestKVRecords(t *testing.T, ctx context.Context,
 	boltDB *BoltDB, sessionStore session.Store, global bool,
-	featureNameOpt fn.Option[string]) []kvStoreRecord {
+	featureNameOpt fn.Option[string]) *expectedResult {
 
 	var (
 		ruleName = "test-rule"
@@ -380,7 +413,9 @@ func insertTestKVRecords(t *testing.T, ctx context.Context,
 
 	insertKvRecord(t, ctx, boltDB, permKvRecord)
 
-	return []kvStoreRecord{tempKvRecord, permKvRecord}
+	return &expectedResult{
+		kvRecords: fn.Some([]kvStoreRecord{tempKvRecord, permKvRecord}),
+	}
 }
 
 // insertTestKVRecords populates the kv store with passed record, and asserts
@@ -431,7 +466,7 @@ func insertKvRecord(t *testing.T, ctx context.Context,
 // across all possible combinations of different levels of records in the kv
 // store. All values and different bucket names are randomly generated.
 func randomKVRecords(t *testing.T, ctx context.Context,
-	boltDB *BoltDB, sessionStore session.Store) []kvStoreRecord {
+	boltDB *BoltDB, sessionStore session.Store) *expectedResult {
 
 	var (
 		// We set the number of records to insert to 1000, as that
@@ -522,7 +557,9 @@ func randomKVRecords(t *testing.T, ctx context.Context,
 		insertedRecords = append(insertedRecords, kvEntry)
 	}
 
-	return insertedRecords
+	return &expectedResult{
+		kvRecords: fn.Some(insertedRecords),
+	}
 }
 
 // randomString generates a random string of the passed length n.
