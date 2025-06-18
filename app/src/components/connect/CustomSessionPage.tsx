@@ -1,20 +1,20 @@
 import React, { FormEvent, useCallback } from 'react';
+import { Collapse } from 'react-collapse';
 import { observer } from 'mobx-react-lite';
 import styled from '@emotion/styled';
-import { useStore } from 'store';
 import { usePrefixedTranslation } from 'hooks';
-import { Collapse } from 'react-collapse';
-import { Column, Row, ChevronUp, ChevronDown } from 'components/base';
-import { Paragraph, Small, Label } from 'components/common/v2/Text';
-import OverlayFormWrap from 'components/common/OverlayFormWrap';
+import { useStore } from 'store';
+import { PermissionTypeValues } from 'store/views/addSessionView';
+import { ChevronDown, ChevronUp, Column, Row } from 'components/base';
+import FormDate from 'components/common/FormDate';
 import FormField from 'components/common/FormField';
 import FormInput from 'components/common/FormInput';
 import FormInputNumber from 'components/common/FormInputNumber';
 import FormSelect from 'components/common/FormSelect';
-import FormDate from 'components/common/FormDate';
+import OverlayFormWrap from 'components/common/OverlayFormWrap';
 import FormSwitch from 'components/common/v2/FormSwitch';
+import { Label, Paragraph, Small } from 'components/common/v2/Text';
 import PurpleButton from './PurpleButton';
-import { PermissionTypeValues } from 'store/views/addSessionView';
 
 const Styled = {
   Wrapper: styled.div`
@@ -101,7 +101,7 @@ const CustomSessionPage: React.FC = () => {
 
   const handleBack = useCallback(() => {
     addSessionView.cancel();
-    appView.goTo('/connect');
+    appView.goToConnect();
   }, [appView]);
 
   const handleSubmit = useCallback(async (event: FormEvent<HTMLFormElement>) => {
