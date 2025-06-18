@@ -15,6 +15,9 @@
 
 ### Bug Fixes
 
+* [Fixed navigation issues](https://github.com/lightninglabs/lightning-terminal/pull/1093) 
+  when creating a custom Lightning Node Connect session via the UI.
+
 ### Functional Changes/Additions
 
 * [`litcli`: global flags to allow overrides via environment 
