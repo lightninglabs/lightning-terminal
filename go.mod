@@ -26,15 +26,15 @@ require (
 	github.com/lightninglabs/lightning-terminal/litrpc v1.0.2
 	github.com/lightninglabs/lightning-terminal/perms v1.0.1
 	github.com/lightninglabs/lndclient v0.19.0-7
-	github.com/lightninglabs/loop v0.31.1-beta.0.20250527112532-ca8610e68e18
-	github.com/lightninglabs/loop/looprpc v1.0.7
-	github.com/lightninglabs/loop/swapserverrpc v1.0.14
+	github.com/lightninglabs/loop v0.31.2-beta
+	github.com/lightninglabs/loop/looprpc v1.0.8
+	github.com/lightninglabs/loop/swapserverrpc v1.0.15
 	github.com/lightninglabs/pool v0.6.6-beta
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.3
 	github.com/lightninglabs/pool/poolrpc v1.0.1
 	github.com/lightninglabs/taproot-assets v0.6.0
 	github.com/lightninglabs/taproot-assets/taprpc v1.0.7
-	github.com/lightningnetwork/lnd v0.19.1-beta.rc1
+	github.com/lightningnetwork/lnd v0.19.1-beta
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/clock v1.1.1
 	github.com/lightningnetwork/lnd/fn v1.2.3
