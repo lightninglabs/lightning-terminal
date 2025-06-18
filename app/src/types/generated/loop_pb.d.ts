@@ -1861,6 +1861,44 @@ export namespace ListStaticAddressDepositsResponse {
   }
 }
 
+export class ListStaticAddressWithdrawalRequest extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListStaticAddressWithdrawalRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: ListStaticAddressWithdrawalRequest): ListStaticAddressWithdrawalRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ListStaticAddressWithdrawalRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListStaticAddressWithdrawalRequest;
+  static deserializeBinaryFromReader(message: ListStaticAddressWithdrawalRequest, reader: jspb.BinaryReader): ListStaticAddressWithdrawalRequest;
+}
+
+export namespace ListStaticAddressWithdrawalRequest {
+  export type AsObject = {
+  }
+}
+
+export class ListStaticAddressWithdrawalResponse extends jspb.Message {
+  clearWithdrawalsList(): void;
+  getWithdrawalsList(): Array<StaticAddressWithdrawal>;
+  setWithdrawalsList(value: Array<StaticAddressWithdrawal>): void;
+  addWithdrawals(value?: StaticAddressWithdrawal, index?: number): StaticAddressWithdrawal;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListStaticAddressWithdrawalResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: ListStaticAddressWithdrawalResponse): ListStaticAddressWithdrawalResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ListStaticAddressWithdrawalResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListStaticAddressWithdrawalResponse;
+  static deserializeBinaryFromReader(message: ListStaticAddressWithdrawalResponse, reader: jspb.BinaryReader): ListStaticAddressWithdrawalResponse;
+}
+
+export namespace ListStaticAddressWithdrawalResponse {
+  export type AsObject = {
+    withdrawalsList: Array<StaticAddressWithdrawal.AsObject>,
+  }
+}
+
 export class ListStaticAddressSwapsRequest extends jspb.Message {
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ListStaticAddressSwapsRequest.AsObject;
@@ -2006,6 +2044,48 @@ export namespace Deposit {
     value: string,
     confirmationHeight: string,
     blocksUntilExpiry: string,
+  }
+}
+
+export class StaticAddressWithdrawal extends jspb.Message {
+  getTxId(): string;
+  setTxId(value: string): void;
+
+  clearDepositsList(): void;
+  getDepositsList(): Array<Deposit>;
+  setDepositsList(value: Array<Deposit>): void;
+  addDeposits(value?: Deposit, index?: number): Deposit;
+
+  getTotalDepositAmountSatoshis(): string;
+  setTotalDepositAmountSatoshis(value: string): void;
+
+  getWithdrawnAmountSatoshis(): string;
+  setWithdrawnAmountSatoshis(value: string): void;
+
+  getChangeAmountSatoshis(): string;
+  setChangeAmountSatoshis(value: string): void;
+
+  getConfirmationHeight(): number;
+  setConfirmationHeight(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): StaticAddressWithdrawal.AsObject;
+  static toObject(includeInstance: boolean, msg: StaticAddressWithdrawal): StaticAddressWithdrawal.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: StaticAddressWithdrawal, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StaticAddressWithdrawal;
+  static deserializeBinaryFromReader(message: StaticAddressWithdrawal, reader: jspb.BinaryReader): StaticAddressWithdrawal;
+}
+
+export namespace StaticAddressWithdrawal {
+  export type AsObject = {
+    txId: string,
+    depositsList: Array<Deposit.AsObject>,
+    totalDepositAmountSatoshis: string,
+    withdrawnAmountSatoshis: string,
+    changeAmountSatoshis: string,
+    confirmationHeight: number,
   }
 }
 

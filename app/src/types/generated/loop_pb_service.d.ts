@@ -238,6 +238,15 @@ type SwapClientListStaticAddressDeposits = {
   readonly responseType: typeof loop_pb.ListStaticAddressDepositsResponse;
 };
 
+type SwapClientListStaticAddressWithdrawals = {
+  readonly methodName: string;
+  readonly service: typeof SwapClient;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof loop_pb.ListStaticAddressWithdrawalRequest;
+  readonly responseType: typeof loop_pb.ListStaticAddressWithdrawalResponse;
+};
+
 type SwapClientListStaticAddressSwaps = {
   readonly methodName: string;
   readonly service: typeof SwapClient;
@@ -293,6 +302,7 @@ export class SwapClient {
   static readonly ListUnspentDeposits: SwapClientListUnspentDeposits;
   static readonly WithdrawDeposits: SwapClientWithdrawDeposits;
   static readonly ListStaticAddressDeposits: SwapClientListStaticAddressDeposits;
+  static readonly ListStaticAddressWithdrawals: SwapClientListStaticAddressWithdrawals;
   static readonly ListStaticAddressSwaps: SwapClientListStaticAddressSwaps;
   static readonly GetStaticAddressSummary: SwapClientGetStaticAddressSummary;
   static readonly StaticAddressLoopIn: SwapClientStaticAddressLoopIn;
@@ -555,6 +565,15 @@ export class SwapClientClient {
   listStaticAddressDeposits(
     requestMessage: loop_pb.ListStaticAddressDepositsRequest,
     callback: (error: ServiceError|null, responseMessage: loop_pb.ListStaticAddressDepositsResponse|null) => void
+  ): UnaryResponse;
+  listStaticAddressWithdrawals(
+    requestMessage: loop_pb.ListStaticAddressWithdrawalRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.ListStaticAddressWithdrawalResponse|null) => void
+  ): UnaryResponse;
+  listStaticAddressWithdrawals(
+    requestMessage: loop_pb.ListStaticAddressWithdrawalRequest,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.ListStaticAddressWithdrawalResponse|null) => void
   ): UnaryResponse;
   listStaticAddressSwaps(
     requestMessage: loop_pb.ListStaticAddressSwapsRequest,

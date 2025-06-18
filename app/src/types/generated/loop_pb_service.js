@@ -244,6 +244,15 @@ SwapClient.ListStaticAddressDeposits = {
   responseType: loop_pb.ListStaticAddressDepositsResponse
 };
 
+SwapClient.ListStaticAddressWithdrawals = {
+  methodName: "ListStaticAddressWithdrawals",
+  service: SwapClient,
+  requestStream: false,
+  responseStream: false,
+  requestType: loop_pb.ListStaticAddressWithdrawalRequest,
+  responseType: loop_pb.ListStaticAddressWithdrawalResponse
+};
+
 SwapClient.ListStaticAddressSwaps = {
   methodName: "ListStaticAddressSwaps",
   service: SwapClient,
@@ -1066,6 +1075,37 @@ SwapClientClient.prototype.listStaticAddressDeposits = function listStaticAddres
     callback = arguments[1];
   }
   var client = grpc.unary(SwapClient.ListStaticAddressDeposits, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+SwapClientClient.prototype.listStaticAddressWithdrawals = function listStaticAddressWithdrawals(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(SwapClient.ListStaticAddressWithdrawals, {
     request: requestMessage,
     host: this.serviceHost,
     metadata: metadata,
