@@ -92,6 +92,13 @@ export default class AppView {
     this._store.log.info('Go to the Connect page');
   }
 
+  /** Change to the Connect Custom page */
+  goToConnectCustom() {
+    this.goTo(`${PUBLIC_URL}/connect/custom`);
+    this._store.settingsStore.autoCollapseSidebar();
+    this._store.log.info('Go to the Connect Custom page');
+  }
+
   /** Toggle displaying of the Processing Loops section */
   toggleProcessingSwaps() {
     this.processingSwapsVisible = !this.processingSwapsVisible;

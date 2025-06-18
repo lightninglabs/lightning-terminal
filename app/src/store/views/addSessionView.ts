@@ -1,7 +1,7 @@
 import { makeAutoObservable, observable } from 'mobx';
-import { Store } from 'store';
 import * as LIT from 'types/generated/lit-sessions_pb';
 import { MAX_DATE, PermissionUriMap } from 'util/constants';
+import { Store } from 'store';
 
 export enum PermissionTypeValues {
   Admin = 'admin',
@@ -216,8 +216,7 @@ export default class AddSessionView {
 
   async handleSubmit() {
     if (this.permissionType === PermissionTypeValues.Custom) {
-      this._store.settingsStore.sidebarVisible = false;
-      this._store.router.push('/connect/custom');
+      this._store.appView.goToConnectCustom();
     } else {
       const session = await this._store.sessionStore.addSession(
         this.label,
@@ -264,7 +263,7 @@ export default class AddSessionView {
 
     if (session) {
       this.cancel();
-      this._store.router.push('/connect');
+      this._store.appView.goToConnect();
     }
   }
 
