@@ -78,12 +78,12 @@
 ### LND
 
 * Updated [`lnd` to 
-  `v0.19.1-beta.rc1`](https://github.com/lightninglabs/lightning-terminal/pull/1082).
+  `v0.19.1-beta`](https://github.com/lightninglabs/lightning-terminal/pull/1094).
 
 ### Loop
 
 * Updated [Loop to
-  `v0.31.1-beta`](https://github.com/lightninglabs/lightning-terminal/pull/1077).
+  `v0.31.2-beta`](https://github.com/lightninglabs/lightning-terminal/pull/1094).
 
 ### Pool
 
