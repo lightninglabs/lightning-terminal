@@ -1355,7 +1355,7 @@ func sendAssetKeySendPayment(t *testing.T, src, dst *HarnessNode, amt uint64,
 		return
 	}
 
-	result, err := getAssetPaymentResult(stream, false)
+	result, _, err := getAssetPaymentResult(t, stream, false)
 	require.NoError(t, err)
 	if result.Status == lnrpc.Payment_FAILED {
 		t.Logf("Failure reason: %v", result.FailureReason)
@@ -1719,7 +1719,13 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 	// was established, no network or auth error), we expect the error to be
 	// returned on the first read on the stream.
 	if cfg.errSubStr != "" {
-		_, err := stream.Recv()
+		msg, err := stream.Recv()
+
+		// On errors we still get an empty set of RFQs as a response.
+		if msg.GetAcceptedSellOrders() != nil {
+			_, err = stream.Recv()
+		}
+
 		require.ErrorContains(t, err, cfg.errSubStr)
 
 		return 0, rfqmath.BigIntFixedPoint{}
@@ -1729,38 +1735,17 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 		numUnits uint64
 		rateVal  rfqmath.FixedPoint[rfqmath.BigInt]
 	)
-	if cfg.rfq.IsNone() {
-		// We want to receive the accepted quote message first, so we
-		// know how many assets we're going to pay.
-		quoteMsg, err := stream.Recv()
-		require.NoError(t, err)
-		acceptedQuote := quoteMsg.GetAcceptedSellOrder()
-		require.NotNil(t, acceptedQuote)
 
-		rpcRate := acceptedQuote.BidAssetRate
-		rate, err := rpcutils.UnmarshalRfqFixedPoint(rpcRate)
-		require.NoError(t, err)
-
-		rateVal = *rate
-
-		t.Logf("Got quote for %v asset units per BTC", rate)
-
-		amountMsat := lnwire.MilliSatoshi(decodedInvoice.NumMsat)
-		milliSatsFP := rfqmath.MilliSatoshiToUnits(amountMsat, *rate)
-		numUnits = milliSatsFP.ScaleTo(0).ToUint64()
-		msatPerUnit := float64(decodedInvoice.NumMsat) /
-			float64(numUnits)
-		t.Logf("Got quote for %v asset units at %3f msat/unit from "+
-			"peer %s with SCID %d", numUnits, msatPerUnit,
-			peerPubKey, acceptedQuote.Scid)
-	}
-
-	result, err := getAssetPaymentResult(
-		stream, cfg.payStatus == lnrpc.Payment_IN_FLIGHT,
+	result, rateVal, err := getAssetPaymentResult(
+		t, stream, cfg.payStatus == lnrpc.Payment_IN_FLIGHT,
 	)
 	require.NoError(t, err)
 	require.Equal(t, cfg.payStatus, result.Status)
 	require.Equal(t, cfg.failureReason, result.FailureReason)
+
+	amountMsat := lnwire.MilliSatoshi(decodedInvoice.NumMsat)
+	milliSatsFP := rfqmath.MilliSatoshiToUnits(amountMsat, rateVal)
+	numUnits = milliSatsFP.ScaleTo(0).ToUint64()
 
 	return numUnits, rateVal
 }

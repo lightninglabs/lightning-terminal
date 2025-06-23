@@ -10,6 +10,8 @@ import (
 
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
+	"github.com/lightninglabs/taproot-assets/rfqmath"
+	"github.com/lightninglabs/taproot-assets/rpcutils"
 	"github.com/lightninglabs/taproot-assets/taprpc/tapchannelrpc"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
@@ -443,9 +445,10 @@ func getPaymentResult(stream routerrpc.Router_SendPaymentV2Client,
 	}
 }
 
-func getAssetPaymentResult(
+func getAssetPaymentResult(t *testing.T,
 	s tapchannelrpc.TaprootAssetChannels_SendPaymentClient,
-	isHodl bool) (*lnrpc.Payment, error) {
+	isHodl bool) (*lnrpc.Payment, rfqmath.FixedPoint[rfqmath.BigInt],
+	error) {
 
 	// No idea why it makes a difference whether we wait before calling
 	// s.Recv() or not, but it does. Without the sleep, the test will fail
@@ -453,22 +456,53 @@ func getAssetPaymentResult(
 	// Probably something weird within lnd itself.
 	time.Sleep(time.Second)
 
+	var rateVal rfqmath.FixedPoint[rfqmath.BigInt]
+
 	for {
 		msg, err := s.Recv()
 		if err != nil {
-			return nil, err
+			return nil, rateVal, err
 		}
 
 		// Ignore RFQ quote acceptance messages read from the send
 		// payment stream, as they are not relevant.
 		quote := msg.GetAcceptedSellOrder()
 		if quote != nil {
+			rpcRate := quote.BidAssetRate
+			rate, err := rpcutils.UnmarshalRfqFixedPoint(rpcRate)
+			require.NoError(t, err)
+
+			rateVal = *rate
+
+			t.Logf("Got quote for %v asset units per BTC from "+
+				"peer %v", rate, quote.Peer)
+			continue
+		}
+
+		// Ignore the new RFQ array message from the stream, it is also
+		// not relevant.
+		quotes := msg.GetAcceptedSellOrders()
+		if quotes != nil {
+			for _, quote := range quotes.AcceptedSellOrders {
+				rpcRate := quote.BidAssetRate
+				rate, err := rpcutils.UnmarshalRfqFixedPoint(
+					rpcRate,
+				)
+				require.NoError(t, err)
+
+				rateVal = *rate
+
+				t.Logf("Got quote for %v asset units per BTC "+
+					"from peer %v", rate, quote.Peer)
+			}
+
 			continue
 		}
 
 		payment := msg.GetPaymentResult()
 		if payment == nil {
-			return nil, fmt.Errorf("unexpected message: %v", msg)
+			return nil, rateVal,
+				fmt.Errorf("unexpected message: %v", msg)
 		}
 
 		// If this is a hodl payment, then we'll return the first
@@ -476,10 +510,10 @@ func getAssetPaymentResult(
 		// clears to we can observe the other payment states.
 		switch {
 		case isHodl:
-			return payment, nil
+			return payment, rateVal, nil
 
 		case payment.Status != lnrpc.Payment_IN_FLIGHT:
-			return payment, nil
+			return payment, rateVal, nil
 		}
 	}
 }

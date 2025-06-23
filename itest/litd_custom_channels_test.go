@@ -2613,9 +2613,9 @@ func testCustomChannelsLiquidityEdgeCasesCore(ctx context.Context,
 
 	payInvoiceWithAssets(
 		t.t, charlie, dave, btcInvoiceResp.PaymentRequest, assetID,
-		withFeeLimit(2_000), withPayErrSubStr(
-			"rejecting payment of 20000 mSAT",
-		), withGroupKey(groupID),
+		withFeeLimit(2_000), withGroupKey(groupID), withPayErrSubStr(
+			"failed to acquire any quotes",
+		),
 	)
 
 	// When we override the uneconomical payment, it should succeed.
@@ -2640,7 +2640,7 @@ func testCustomChannelsLiquidityEdgeCasesCore(ctx context.Context,
 	payInvoiceWithAssets(
 		t.t, charlie, dave, btcInvoiceResp.PaymentRequest, assetID,
 		withFeeLimit(1_000), withAllowOverpay(), withPayErrSubStr(
-			"rejecting payment of 2000 mSAT",
+			"failed to acquire any quotes",
 		), withGroupKey(groupID),
 	)
 
@@ -2971,10 +2971,11 @@ func testCustomChannelsLiquidityEdgeCasesGroup(ctx context.Context,
 	testCustomChannelsLiquidityEdgeCasesCore(ctx, net, t, true)
 }
 
-// testCustomChannelsMultiRFQReceive tests that a node creating an invoice with
-// multiple RFQ quotes can actually guide the payer into using multiple private
-// taproot asset channels to pay the invoice.
-func testCustomChannelsMultiRFQReceive(ctx context.Context, net *NetworkHarness,
+// testCustomChannelsMultiRFQ tests that sending and receiving payments works
+// when using the multi-rfq features of tapd. This means that liquidity across
+// multiple channels and peers can be used to send out a payment, or receive to
+// an invoice.
+func testCustomChannelsMultiRFQ(ctx context.Context, net *NetworkHarness,
 	t *harnessTest) {
 
 	lndArgs := slices.Clone(lndArgsTemplate)
@@ -3068,7 +3069,6 @@ func testCustomChannelsMultiRFQReceive(ctx context.Context, net *NetworkHarness,
 		t.t, charlie, &lnrpc.AddInvoiceResponse{
 			PaymentRequest: hodlInv.payReq,
 		},
-		withGroupKey(groupID),
 		withFailure(lnrpc.Payment_IN_FLIGHT, failureNone),
 	)
 
@@ -3100,13 +3100,88 @@ func testCustomChannelsMultiRFQReceive(ctx context.Context, net *NetworkHarness,
 	// Now let's create a normal invoice that will be settled once all the
 	// HTLCs have been received. This is only possible because the payer
 	// uses multiple bolt11 hop hints to reach the destination.
-	invoiceResp := createAssetInvoice(t.t, nil, fabia, 15_000, assetID)
+	invoiceResp := createAssetInvoice(
+		t.t, nil, fabia, 15_000, nil, withInvGroupKey(groupID),
+	)
 
 	payInvoiceWithSatoshi(
-		t.t, charlie, invoiceResp, withGroupKey(groupID),
+		t.t, charlie, invoiceResp,
 	)
 
 	logBalance(t.t, nodes, assetID, "after multi-rfq receive")
+
+	// Now we'll test that sending with multiple rfq quotes works.
+
+	// Let's start by providing some liquidity to Charlie's peers, in order
+	// for them to be able to push some amount if Fabia picks them as part
+	// of the route.
+	sendKeySendPayment(t.t, charlie, erin, 800_000)
+	sendKeySendPayment(t.t, charlie, dave, 800_000)
+	sendKeySendPayment(t.t, charlie, yara, 800_000)
+
+	// Let's ask for the rough equivalent of ~15k assets. Fabia, who's going
+	// to pay the invoice, only has parts of assets that are less than 10k
+	// in channels with one of the 3 intermediate peers. The only way to
+	// pay this invoice is by splitting the payment across multiple peers by
+	// using multiple RFQ quotes.
+	invAmt := int64(15_000 * 17)
+
+	iResp, err := charlie.AddHoldInvoice(
+		ctx, &invoicesrpc.AddHoldInvoiceRequest{
+			Memo:  "",
+			Value: invAmt,
+			Hash:  payHash[:],
+		},
+	)
+	require.NoError(t.t, err)
+
+	payReq := iResp.PaymentRequest
+
+	payInvoiceWithAssets(
+		t.t, fabia, nil, payReq, assetID,
+		withFailure(lnrpc.Payment_IN_FLIGHT, failureNone),
+	)
+
+	assertMinNumHtlcs(t.t, charlie, 2)
+	assertMinNumHtlcs(t.t, fabia, 2)
+
+	logBalance(t.t, nodes, assetID, "multi-rfq send in-flight")
+
+	_, err = charlie.SettleInvoice(ctx, &invoicesrpc.SettleInvoiceMsg{
+		Preimage: hodlInv.preimage[:],
+	})
+	require.NoError(t.t, err)
+
+	assertNumHtlcs(t.t, charlie, 0)
+	assertNumHtlcs(t.t, fabia, 0)
+
+	logBalance(t.t, nodes, assetID, "after multi-rfq send")
+
+	// Let's make another round-trip involving multi-rfq functionality.
+	// Let's have Fabia receive another large payment and send it back
+	// again, this time with a greater amount.
+	invoiceResp = createAssetInvoice(t.t, nil, fabia, 25_000, assetID)
+
+	payInvoiceWithSatoshi(
+		t.t, charlie, invoiceResp,
+	)
+
+	logBalance(t.t, nodes, assetID, "after multi-rfq receive (2nd)")
+
+	// Let's bump up the invoice amount a bit, to roughly ~22k assets.
+	invAmt = 22_000 * 17
+	inv, err := charlie.AddInvoice(ctx, &lnrpc.Invoice{
+		Value: invAmt,
+	})
+	require.NoError(t.t, err)
+
+	payReq = inv.PaymentRequest
+
+	payInvoiceWithAssets(
+		t.t, fabia, nil, payReq, nil, withGroupKey(groupID),
+	)
+
+	logBalance(t.t, nodes, assetID, "after multi-rfq send (2nd)")
 }
 
 // testCustomChannelsStrictForwarding is a test that tests the strict forwarding
