@@ -130,7 +130,7 @@ var allTestCases = []*testCase{
 	},
 	{
 		name:       "custom channels multi rfq",
-		test:       testCustomChannelsMultiRFQReceive,
+		test:       testCustomChannelsMultiRFQ,
 		noAliceBob: true,
 	},
 	{
