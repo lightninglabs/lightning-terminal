@@ -27,6 +27,7 @@ import (
 	"github.com/lightninglabs/taproot-assets/tapfreighter"
 	"github.com/lightninglabs/taproot-assets/taprpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/assetwalletrpc"
+	"github.com/lightninglabs/taproot-assets/taprpc/authmailboxrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/mintrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/rfqrpc"
 	tchrpc "github.com/lightninglabs/taproot-assets/taprpc/tapchannelrpc"
@@ -2548,6 +2549,7 @@ type tapClient struct {
 	rfqrpc.RfqClient
 	tchrpc.TaprootAssetChannelsClient
 	universerpc.UniverseClient
+	authmailboxrpc.MailboxClient
 }
 
 func newTapClient(t *testing.T, node *HarnessNode) *tapClient {
@@ -2578,6 +2580,7 @@ func newTapClient(t *testing.T, node *HarnessNode) *tapClient {
 	rfqClient := rfqrpc.NewRfqClient(rawConn)
 	tchClient := tchrpc.NewTaprootAssetChannelsClient(rawConn)
 	universeClient := universerpc.NewUniverseClient(rawConn)
+	mboxClient := authmailboxrpc.NewMailboxClient(rawConn)
 
 	return &tapClient{
 		node:                       node,
@@ -2588,6 +2591,7 @@ func newTapClient(t *testing.T, node *HarnessNode) *tapClient {
 		RfqClient:                  rfqClient,
 		TaprootAssetChannelsClient: tchClient,
 		UniverseClient:             universeClient,
+		MailboxClient:              mboxClient,
 	}
 }
 
