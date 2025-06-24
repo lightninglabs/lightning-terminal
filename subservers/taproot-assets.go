@@ -12,11 +12,6 @@ import (
 	"github.com/lightninglabs/taproot-assets/fn"
 	"github.com/lightninglabs/taproot-assets/tapcfg"
 	"github.com/lightninglabs/taproot-assets/taprpc"
-	"github.com/lightninglabs/taproot-assets/taprpc/assetwalletrpc"
-	"github.com/lightninglabs/taproot-assets/taprpc/mintrpc"
-	"github.com/lightninglabs/taproot-assets/taprpc/rfqrpc"
-	tchrpc "github.com/lightninglabs/taproot-assets/taprpc/tapchannelrpc"
-	"github.com/lightninglabs/taproot-assets/taprpc/universerpc"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"google.golang.org/grpc"
 	"gopkg.in/macaroon-bakery.v2/bakery"
@@ -57,7 +52,7 @@ func NewTaprootAssetsSubServer(network string, cfg *tapcfg.Config,
 	chainCfg := address.ParamsForChain(network)
 
 	return &taprootAssetsSubServer{
-		Server:    tap.NewServer(&chainCfg, nil),
+		Server:    tap.NewServer(&chainCfg),
 		cfg:       cfg,
 		remoteCfg: remoteCfg,
 		remote:    remote,
@@ -126,12 +121,7 @@ func (t *taprootAssetsSubServer) Start(_ lnrpc.LightningClient,
 func (t *taprootAssetsSubServer) RegisterGrpcService(
 	registrar grpc.ServiceRegistrar) {
 
-	taprpc.RegisterTaprootAssetsServer(registrar, t)
-	mintrpc.RegisterMintServer(registrar, t)
-	assetwalletrpc.RegisterAssetWalletServer(registrar, t)
-	rfqrpc.RegisterRfqServer(registrar, t)
-	tchrpc.RegisterTaprootAssetChannelsServer(registrar, t)
-	universerpc.RegisterUniverseServer(registrar, t)
+	t.Server.RegisterGrpcService(registrar)
 }
 
 // RegisterRestService registers the sub-server's REST handlers with the given
@@ -142,58 +132,7 @@ func (t *taprootAssetsSubServer) RegisterRestService(ctx context.Context,
 	mux *restProxy.ServeMux, endpoint string,
 	dialOpts []grpc.DialOption) error {
 
-	err := taprpc.RegisterTaprootAssetsHandlerFromEndpoint(
-		ctx, mux, endpoint, dialOpts,
-	)
-	if err != nil {
-		return err
-	}
-
-	err = mintrpc.RegisterMintHandlerFromEndpoint(
-		ctx, mux, endpoint, dialOpts,
-	)
-	if err != nil {
-		return err
-	}
-
-	err = assetwalletrpc.RegisterAssetWalletHandlerFromEndpoint(
-		ctx, mux, endpoint, dialOpts,
-	)
-	if err != nil {
-		return err
-	}
-
-	err = rfqrpc.RegisterRfqHandlerFromEndpoint(
-		ctx, mux, endpoint, dialOpts,
-	)
-	if err != nil {
-		return err
-	}
-
-	err = tchrpc.RegisterTaprootAssetChannelsHandlerFromEndpoint(
-		ctx, mux, endpoint, dialOpts,
-	)
-	if err != nil {
-		return err
-	}
-
-	err = rfqrpc.RegisterRfqHandlerFromEndpoint(
-		ctx, mux, endpoint, dialOpts,
-	)
-	if err != nil {
-		return err
-	}
-
-	err = tchrpc.RegisterTaprootAssetChannelsHandlerFromEndpoint(
-		ctx, mux, endpoint, dialOpts,
-	)
-	if err != nil {
-		return err
-	}
-
-	err = universerpc.RegisterUniverseHandlerFromEndpoint(
-		ctx, mux, endpoint, dialOpts,
-	)
+	err := t.Server.RegisterRestService(ctx, mux, endpoint, dialOpts)
 	if err != nil {
 		return err
 	}
