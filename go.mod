@@ -25,23 +25,23 @@ require (
 	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.3
 	github.com/lightninglabs/lightning-terminal/litrpc v1.0.2
 	github.com/lightninglabs/lightning-terminal/perms v1.0.1
-	github.com/lightninglabs/lndclient v0.19.0-7
+	github.com/lightninglabs/lndclient v0.19.0-9
 	github.com/lightninglabs/loop v0.31.2-beta
 	github.com/lightninglabs/loop/looprpc v1.0.8
 	github.com/lightninglabs/loop/swapserverrpc v1.0.15
 	github.com/lightninglabs/pool v0.6.6-beta
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.3
 	github.com/lightninglabs/pool/poolrpc v1.0.1
-	github.com/lightninglabs/taproot-assets v0.6.0
-	github.com/lightninglabs/taproot-assets/taprpc v1.0.7
-	github.com/lightningnetwork/lnd v0.19.1-beta
+	github.com/lightninglabs/taproot-assets v0.6.1-0.20250711162444-8d28f0bceebe
+	github.com/lightninglabs/taproot-assets/taprpc v1.0.8-0.20250711162444-8d28f0bceebe
+	github.com/lightningnetwork/lnd v0.19.2-beta.rc2
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/clock v1.1.1
 	github.com/lightningnetwork/lnd/fn v1.2.3
 	github.com/lightningnetwork/lnd/fn/v2 v2.0.8
 	github.com/lightningnetwork/lnd/kvdb v1.4.16
-	github.com/lightningnetwork/lnd/sqldb v1.0.9
-	github.com/lightningnetwork/lnd/tlv v1.3.1
+	github.com/lightningnetwork/lnd/sqldb v1.0.11-0.20250623231731-45c15646c68b
+	github.com/lightningnetwork/lnd/tlv v1.3.2
 	github.com/lightningnetwork/lnd/tor v1.1.6
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
 	github.com/mwitkow/grpc-proxy v0.0.0-20230212185441-f345521cb9c9

@@ -337,8 +337,8 @@ func TestAccountStoreMigration(t *testing.T) {
 			}
 
 			// Perform the migration.
-			var opts sqldb.MigrationTxOptions
-			err = txEx.ExecTx(ctx, &opts,
+			err = txEx.ExecTx(
+				ctx, sqldb.WriteTxOpt(),
 				func(tx SQLQueries) error {
 					return MigrateAccountStoreToSQL(
 						ctx, kvStore.db, tx,

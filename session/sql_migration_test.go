@@ -369,9 +369,9 @@ func TestSessionsStoreMigration(t *testing.T) {
 			// migration.
 			sqlStore, txEx := makeSQLDB(t, accountStore)
 
-			var opts sqldb.MigrationTxOptions
 			err = txEx.ExecTx(
-				ctx, &opts, func(tx SQLQueries) error {
+				ctx, sqldb.WriteTxOpt(),
+				func(tx SQLQueries) error {
 					return MigrateSessionStoreToSQL(
 						ctx, kvStore.DB, tx,
 					)
