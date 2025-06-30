@@ -25,7 +25,7 @@ DELETE FROM kvstores
 WHERE entry_key = $1
   AND rule_id = $2
   AND perm = $3
-  AND session_id = $4
+  AND group_id = $4
   AND feature_id = $5
 `
 
@@ -33,7 +33,7 @@ type DeleteFeatureKVStoreRecordParams struct {
 	Key       string
 	RuleID    int64
 	Perm      bool
-	SessionID sql.NullInt64
+	GroupID   sql.NullInt64
 	FeatureID sql.NullInt64
 }
 
@@ -42,7 +42,7 @@ func (q *Queries) DeleteFeatureKVStoreRecord(ctx context.Context, arg DeleteFeat
 		arg.Key,
 		arg.RuleID,
 		arg.Perm,
-		arg.SessionID,
+		arg.GroupID,
 		arg.FeatureID,
 	)
 	return err
@@ -53,7 +53,7 @@ DELETE FROM kvstores
 WHERE entry_key = $1
   AND rule_id = $2
   AND perm = $3
-  AND session_id IS NULL
+  AND group_id IS NULL
   AND feature_id IS NULL
 `
 
@@ -68,28 +68,28 @@ func (q *Queries) DeleteGlobalKVStoreRecord(ctx context.Context, arg DeleteGloba
 	return err
 }
 
-const deleteSessionKVStoreRecord = `-- name: DeleteSessionKVStoreRecord :exec
+const deleteGroupKVStoreRecord = `-- name: DeleteGroupKVStoreRecord :exec
 DELETE FROM kvstores
 WHERE entry_key = $1
   AND rule_id = $2
   AND perm = $3
-  AND session_id = $4
+  AND group_id = $4
   AND feature_id IS NULL
 `
 
-type DeleteSessionKVStoreRecordParams struct {
-	Key       string
-	RuleID    int64
-	Perm      bool
-	SessionID sql.NullInt64
+type DeleteGroupKVStoreRecordParams struct {
+	Key     string
+	RuleID  int64
+	Perm    bool
+	GroupID sql.NullInt64
 }
 
-func (q *Queries) DeleteSessionKVStoreRecord(ctx context.Context, arg DeleteSessionKVStoreRecordParams) error {
-	_, err := q.db.ExecContext(ctx, deleteSessionKVStoreRecord,
+func (q *Queries) DeleteGroupKVStoreRecord(ctx context.Context, arg DeleteGroupKVStoreRecordParams) error {
+	_, err := q.db.ExecContext(ctx, deleteGroupKVStoreRecord,
 		arg.Key,
 		arg.RuleID,
 		arg.Perm,
-		arg.SessionID,
+		arg.GroupID,
 	)
 	return err
 }
@@ -113,7 +113,7 @@ FROM kvstores
 WHERE entry_key = $1
   AND rule_id = $2
   AND perm = $3
-  AND session_id = $4
+  AND group_id = $4
   AND feature_id = $5
 `
 
@@ -121,7 +121,7 @@ type GetFeatureKVStoreRecordParams struct {
 	Key       string
 	RuleID    int64
 	Perm      bool
-	SessionID sql.NullInt64
+	GroupID   sql.NullInt64
 	FeatureID sql.NullInt64
 }
 
@@ -130,7 +130,7 @@ func (q *Queries) GetFeatureKVStoreRecord(ctx context.Context, arg GetFeatureKVS
 		arg.Key,
 		arg.RuleID,
 		arg.Perm,
-		arg.SessionID,
+		arg.GroupID,
 		arg.FeatureID,
 	)
 	var value []byte
@@ -144,7 +144,7 @@ FROM kvstores
 WHERE entry_key = $1
   AND rule_id = $2
   AND perm = $3
-  AND session_id IS NULL
+  AND group_id IS NULL
   AND feature_id IS NULL
 `
 
@@ -156,6 +156,35 @@ type GetGlobalKVStoreRecordParams struct {
 
 func (q *Queries) GetGlobalKVStoreRecord(ctx context.Context, arg GetGlobalKVStoreRecordParams) ([]byte, error) {
 	row := q.db.QueryRowContext(ctx, getGlobalKVStoreRecord, arg.Key, arg.RuleID, arg.Perm)
+	var value []byte
+	err := row.Scan(&value)
+	return value, err
+}
+
+const getGroupKVStoreRecord = `-- name: GetGroupKVStoreRecord :one
+SELECT value
+FROM kvstores
+WHERE entry_key = $1
+  AND rule_id = $2
+  AND perm = $3
+  AND group_id = $4
+  AND feature_id IS NULL
+`
+
+type GetGroupKVStoreRecordParams struct {
+	Key     string
+	RuleID  int64
+	Perm    bool
+	GroupID sql.NullInt64
+}
+
+func (q *Queries) GetGroupKVStoreRecord(ctx context.Context, arg GetGroupKVStoreRecordParams) ([]byte, error) {
+	row := q.db.QueryRowContext(ctx, getGroupKVStoreRecord,
+		arg.Key,
+		arg.RuleID,
+		arg.Perm,
+		arg.GroupID,
+	)
 	var value []byte
 	err := row.Scan(&value)
 	return value, err
@@ -202,44 +231,15 @@ func (q *Queries) GetRuleID(ctx context.Context, name string) (int64, error) {
 	return id, err
 }
 
-const getSessionKVStoreRecord = `-- name: GetSessionKVStoreRecord :one
-SELECT value
-FROM kvstores
-WHERE entry_key = $1
-  AND rule_id = $2
-  AND perm = $3
-  AND session_id = $4
-  AND feature_id IS NULL
-`
-
-type GetSessionKVStoreRecordParams struct {
-	Key       string
-	RuleID    int64
-	Perm      bool
-	SessionID sql.NullInt64
-}
-
-func (q *Queries) GetSessionKVStoreRecord(ctx context.Context, arg GetSessionKVStoreRecordParams) ([]byte, error) {
-	row := q.db.QueryRowContext(ctx, getSessionKVStoreRecord,
-		arg.Key,
-		arg.RuleID,
-		arg.Perm,
-		arg.SessionID,
-	)
-	var value []byte
-	err := row.Scan(&value)
-	return value, err
-}
-
 const insertKVStoreRecord = `-- name: InsertKVStoreRecord :exec
-INSERT INTO kvstores (perm, rule_id, session_id, feature_id, entry_key, value)
+INSERT INTO kvstores (perm, rule_id, group_id, feature_id, entry_key, value)
 VALUES ($1, $2, $3, $4, $5, $6)
 `
 
 type InsertKVStoreRecordParams struct {
 	Perm      bool
 	RuleID    int64
-	SessionID sql.NullInt64
+	GroupID   sql.NullInt64
 	FeatureID sql.NullInt64
 	EntryKey  string
 	Value     []byte
@@ -249,7 +249,7 @@ func (q *Queries) InsertKVStoreRecord(ctx context.Context, arg InsertKVStoreReco
 	_, err := q.db.ExecContext(ctx, insertKVStoreRecord,
 		arg.Perm,
 		arg.RuleID,
-		arg.SessionID,
+		arg.GroupID,
 		arg.FeatureID,
 		arg.EntryKey,
 		arg.Value,
@@ -258,7 +258,7 @@ func (q *Queries) InsertKVStoreRecord(ctx context.Context, arg InsertKVStoreReco
 }
 
 const listAllKVStoresRecords = `-- name: ListAllKVStoresRecords :many
-SELECT id, perm, rule_id, session_id, feature_id, entry_key, value
+SELECT id, perm, rule_id, group_id, feature_id, entry_key, value
 FROM kvstores
 `
 
@@ -275,7 +275,7 @@ func (q *Queries) ListAllKVStoresRecords(ctx context.Context) ([]Kvstore, error)
 			&i.ID,
 			&i.Perm,
 			&i.RuleID,
-			&i.SessionID,
+			&i.GroupID,
 			&i.FeatureID,
 			&i.EntryKey,
 			&i.Value,
@@ -299,7 +299,7 @@ SET value = $1
 WHERE entry_key = $2
   AND rule_id = $3
   AND perm = $4
-  AND session_id = $5
+  AND group_id = $5
   AND feature_id = $6
 `
 
@@ -308,7 +308,7 @@ type UpdateFeatureKVStoreRecordParams struct {
 	Key       string
 	RuleID    int64
 	Perm      bool
-	SessionID sql.NullInt64
+	GroupID   sql.NullInt64
 	FeatureID sql.NullInt64
 }
 
@@ -318,7 +318,7 @@ func (q *Queries) UpdateFeatureKVStoreRecord(ctx context.Context, arg UpdateFeat
 		arg.Key,
 		arg.RuleID,
 		arg.Perm,
-		arg.SessionID,
+		arg.GroupID,
 		arg.FeatureID,
 	)
 	return err
@@ -330,7 +330,7 @@ SET value = $1
 WHERE entry_key = $2
   AND rule_id = $3
   AND perm = $4
-  AND session_id IS NULL
+  AND group_id IS NULL
   AND feature_id IS NULL
 `
 
@@ -351,31 +351,31 @@ func (q *Queries) UpdateGlobalKVStoreRecord(ctx context.Context, arg UpdateGloba
 	return err
 }
 
-const updateSessionKVStoreRecord = `-- name: UpdateSessionKVStoreRecord :exec
+const updateGroupKVStoreRecord = `-- name: UpdateGroupKVStoreRecord :exec
 UPDATE kvstores
 SET value = $1
 WHERE entry_key = $2
   AND rule_id = $3
   AND perm = $4
-  AND session_id = $5
+  AND group_id = $5
   AND feature_id IS NULL
 `
 
-type UpdateSessionKVStoreRecordParams struct {
-	Value     []byte
-	Key       string
-	RuleID    int64
-	Perm      bool
-	SessionID sql.NullInt64
+type UpdateGroupKVStoreRecordParams struct {
+	Value   []byte
+	Key     string
+	RuleID  int64
+	Perm    bool
+	GroupID sql.NullInt64
 }
 
-func (q *Queries) UpdateSessionKVStoreRecord(ctx context.Context, arg UpdateSessionKVStoreRecordParams) error {
-	_, err := q.db.ExecContext(ctx, updateSessionKVStoreRecord,
+func (q *Queries) UpdateGroupKVStoreRecord(ctx context.Context, arg UpdateGroupKVStoreRecordParams) error {
+	_, err := q.db.ExecContext(ctx, updateGroupKVStoreRecord,
 		arg.Value,
 		arg.Key,
 		arg.RuleID,
 		arg.Perm,
-		arg.SessionID,
+		arg.GroupID,
 	)
 	return err
 }
