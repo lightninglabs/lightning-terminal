@@ -1178,8 +1178,6 @@ github.com/lightninglabs/taproot-assets/taprpc v1.0.9-0.20250707134122-39f9105f0
 github.com/lightninglabs/taproot-assets/taprpc v1.0.9-0.20250707134122-39f9105f06c0/go.mod h1:c8gTEcKEUoUPVChgZNwqTL1hss7UWa5FDeObr8WBzQk=
 github.com/lightningnetwork/lightning-onion v1.2.1-0.20240712235311-98bd56499dfb h1:yfM05S8DXKhuCBp5qSMZdtSwvJ+GFzl94KbXMNB1JDY=
 github.com/lightningnetwork/lightning-onion v1.2.1-0.20240712235311-98bd56499dfb/go.mod h1:c0kvRShutpj3l6B9WtTsNTBUtjSmjZXbJd9ZBRQOSKI=
-github.com/lightningnetwork/lnd v0.19.2-beta.rc1.0.20250707132940-103b24e7ff44 h1:bKmdCZEeEnviOpNjTl2itJPciLUA1IHebDVzO7ksRWY=
-github.com/lightningnetwork/lnd v0.19.2-beta.rc1.0.20250707132940-103b24e7ff44/go.mod h1:+yKUfIGKKYRHGewgzQ6xi0S26DIfBiMv1zCdB3m6YxA=
 github.com/lightningnetwork/lnd/cert v1.2.2 h1:71YK6hogeJtxSxw2teq3eGeuy4rHGKcFf0d0Uy4qBjI=
 github.com/lightningnetwork/lnd/cert v1.2.2/go.mod h1:jQmFn/Ez4zhDgq2hnYSw8r35bqGVxViXhX6Cd7HXM6U=
 github.com/lightningnetwork/lnd/clock v1.1.1 h1:OfR3/zcJd2RhH0RU+zX/77c0ZiOnIMsDIBjgjWdZgA0=
@@ -1408,6 +1406,8 @@ github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5t
 github.com/zeebo/assert v1.3.0/go.mod h1:Pq9JiuJQpG8JLJdtkwrJESF0Foym2/D9XMU5ciN/wJ0=
 github.com/zeebo/xxh3 v1.0.2/go.mod h1:5NWz9Sef7zIDm2JHfFlcQvNekmcEl9ekUZQQKCYaDcA=
 github.com/zenazn/goji v0.9.0/go.mod h1:7S9M489iMyHBNxwZnk9/EHS098H4/F6TATF2mIxtB1Q=
+github.com/ziggie1984/lnd v0.19.0-beta.rc2.0.20250707230224-ee9063237d49 h1:jn138FGEkEVwV8wPHD0N0EsdVTBy2FMxaDFHUN2KJtg=
+github.com/ziggie1984/lnd v0.19.0-beta.rc2.0.20250707230224-ee9063237d49/go.mod h1:+yKUfIGKKYRHGewgzQ6xi0S26DIfBiMv1zCdB3m6YxA=
 gitlab.com/yawning/bsaes.git v0.0.0-20190805113838-0a714cd429ec h1:FpfFs4EhNehiVfzQttTuxanPIT43FtkkCFypIod8LHo=
 gitlab.com/yawning/bsaes.git v0.0.0-20190805113838-0a714cd429ec/go.mod h1:BZ1RAoRPbCxum9Grlv5aeksu2H8BiKehBYooU2LFiOQ=
 go.etcd.io/bbolt v1.3.11 h1:yGEzV1wPz2yVCLsD8ZAiGHhHVlczyC9d1rP43/VCRJ0=
