@@ -16,7 +16,7 @@ type Querier interface {
 	DeleteAllTempKVStores(ctx context.Context) error
 	DeleteFeatureKVStoreRecord(ctx context.Context, arg DeleteFeatureKVStoreRecordParams) error
 	DeleteGlobalKVStoreRecord(ctx context.Context, arg DeleteGlobalKVStoreRecordParams) error
-	DeleteSessionKVStoreRecord(ctx context.Context, arg DeleteSessionKVStoreRecordParams) error
+	DeleteGroupKVStoreRecord(ctx context.Context, arg DeleteGroupKVStoreRecordParams) error
 	DeleteSessionsWithState(ctx context.Context, state int16) error
 	GetAccount(ctx context.Context, id int64) (Account, error)
 	GetAccountByLabel(ctx context.Context, label sql.NullString) (Account, error)
@@ -29,6 +29,7 @@ type Querier interface {
 	GetFeatureID(ctx context.Context, name string) (int64, error)
 	GetFeatureKVStoreRecord(ctx context.Context, arg GetFeatureKVStoreRecordParams) ([]byte, error)
 	GetGlobalKVStoreRecord(ctx context.Context, arg GetGlobalKVStoreRecordParams) ([]byte, error)
+	GetGroupKVStoreRecord(ctx context.Context, arg GetGroupKVStoreRecordParams) ([]byte, error)
 	GetOrInsertFeatureID(ctx context.Context, name string) (int64, error)
 	GetOrInsertRuleID(ctx context.Context, name string) (int64, error)
 	GetPseudoForReal(ctx context.Context, arg GetPseudoForRealParams) (string, error)
@@ -40,7 +41,6 @@ type Querier interface {
 	GetSessionByLocalPublicKey(ctx context.Context, localPublicKey []byte) (Session, error)
 	GetSessionFeatureConfigs(ctx context.Context, sessionID int64) ([]SessionFeatureConfig, error)
 	GetSessionIDByAlias(ctx context.Context, alias []byte) (int64, error)
-	GetSessionKVStoreRecord(ctx context.Context, arg GetSessionKVStoreRecordParams) ([]byte, error)
 	GetSessionMacaroonCaveats(ctx context.Context, sessionID int64) ([]SessionMacaroonCaveat, error)
 	GetSessionMacaroonPermissions(ctx context.Context, sessionID int64) ([]SessionMacaroonPermission, error)
 	GetSessionPrivacyFlags(ctx context.Context, sessionID int64) ([]SessionPrivacyFlag, error)
@@ -71,7 +71,7 @@ type Querier interface {
 	UpdateAccountLastUpdate(ctx context.Context, arg UpdateAccountLastUpdateParams) (int64, error)
 	UpdateFeatureKVStoreRecord(ctx context.Context, arg UpdateFeatureKVStoreRecordParams) error
 	UpdateGlobalKVStoreRecord(ctx context.Context, arg UpdateGlobalKVStoreRecordParams) error
-	UpdateSessionKVStoreRecord(ctx context.Context, arg UpdateSessionKVStoreRecordParams) error
+	UpdateGroupKVStoreRecord(ctx context.Context, arg UpdateGroupKVStoreRecordParams) error
 	UpdateSessionState(ctx context.Context, arg UpdateSessionStateParams) error
 	UpsertAccountPayment(ctx context.Context, arg UpsertAccountPaymentParams) error
 }
