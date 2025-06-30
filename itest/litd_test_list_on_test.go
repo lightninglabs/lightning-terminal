@@ -132,6 +132,9 @@ var allTestCases = []*testCase{
 		name:       "custom channels multi rfq",
 		test:       testCustomChannelsMultiRFQ,
 		noAliceBob: true,
+		backwardCompat: map[string]string{
+			"Yara": "v0.15.0-alpha",
+		},
 	},
 	{
 		name:       "custom channels multi channel pathfinding",
