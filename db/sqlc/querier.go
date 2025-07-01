@@ -16,7 +16,7 @@ type Querier interface {
 	DeleteAllTempKVStores(ctx context.Context) error
 	DeleteFeatureKVStoreRecord(ctx context.Context, arg DeleteFeatureKVStoreRecordParams) error
 	DeleteGlobalKVStoreRecord(ctx context.Context, arg DeleteGlobalKVStoreRecordParams) error
-	DeleteSessionKVStoreRecord(ctx context.Context, arg DeleteSessionKVStoreRecordParams) error
+	DeleteSessionGroupKVStoreRecord(ctx context.Context, arg DeleteSessionGroupKVStoreRecordParams) error
 	DeleteSessionsWithState(ctx context.Context, state int16) error
 	GetAccount(ctx context.Context, id int64) (Account, error)
 	GetAccountByLabel(ctx context.Context, label sql.NullString) (Account, error)
@@ -39,8 +39,8 @@ type Querier interface {
 	GetSessionByID(ctx context.Context, id int64) (Session, error)
 	GetSessionByLocalPublicKey(ctx context.Context, localPublicKey []byte) (Session, error)
 	GetSessionFeatureConfigs(ctx context.Context, sessionID int64) ([]SessionFeatureConfig, error)
+	GetSessionGroupKVStoreRecord(ctx context.Context, arg GetSessionGroupKVStoreRecordParams) ([]byte, error)
 	GetSessionIDByAlias(ctx context.Context, alias []byte) (int64, error)
-	GetSessionKVStoreRecord(ctx context.Context, arg GetSessionKVStoreRecordParams) ([]byte, error)
 	GetSessionMacaroonCaveats(ctx context.Context, sessionID int64) ([]SessionMacaroonCaveat, error)
 	GetSessionMacaroonPermissions(ctx context.Context, sessionID int64) ([]SessionMacaroonPermission, error)
 	GetSessionPrivacyFlags(ctx context.Context, sessionID int64) ([]SessionPrivacyFlag, error)
@@ -57,6 +57,7 @@ type Querier interface {
 	ListAccountInvoices(ctx context.Context, accountID int64) ([]AccountInvoice, error)
 	ListAccountPayments(ctx context.Context, accountID int64) ([]AccountPayment, error)
 	ListAllAccounts(ctx context.Context) ([]Account, error)
+	ListAllKVStoresRecords(ctx context.Context) ([]Kvstore, error)
 	ListSessions(ctx context.Context) ([]Session, error)
 	ListSessionsByState(ctx context.Context, state int16) ([]Session, error)
 	ListSessionsByType(ctx context.Context, type_ int16) ([]Session, error)
@@ -70,7 +71,7 @@ type Querier interface {
 	UpdateAccountLastUpdate(ctx context.Context, arg UpdateAccountLastUpdateParams) (int64, error)
 	UpdateFeatureKVStoreRecord(ctx context.Context, arg UpdateFeatureKVStoreRecordParams) error
 	UpdateGlobalKVStoreRecord(ctx context.Context, arg UpdateGlobalKVStoreRecordParams) error
-	UpdateSessionKVStoreRecord(ctx context.Context, arg UpdateSessionKVStoreRecordParams) error
+	UpdateSessionGroupKVStoreRecord(ctx context.Context, arg UpdateSessionGroupKVStoreRecordParams) error
 	UpdateSessionState(ctx context.Context, arg UpdateSessionStateParams) error
 	UpsertAccountPayment(ctx context.Context, arg UpsertAccountPaymentParams) error
 }

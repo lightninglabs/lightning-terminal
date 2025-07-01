@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS features (
 CREATE UNIQUE INDEX IF NOT EXISTS features_name_idx ON features (name);
 
 -- kvstores houses key-value pairs under various namespaces determined
--- by the rule name, session ID, and feature name.
+-- by the rule name, group ID, and feature name.
 CREATE TABLE IF NOT EXISTS kvstores (
     -- The auto incrementing primary key.
     id INTEGER PRIMARY KEY,
@@ -35,15 +35,15 @@ CREATE TABLE IF NOT EXISTS kvstores (
     -- kv_store.
     rule_id BIGINT REFERENCES rules(id) NOT NULL,
 
-    -- The session ID that this kv_store belongs to.
-    -- If this is set, then this kv_store is a session-specific
+    -- The group ID that this kv_store belongs to.
+    -- If this is set, then this kv_store is a session-group specific
     -- kv_store for the given rule.
-    session_id BIGINT REFERENCES sessions(id) ON DELETE CASCADE,
+    group_id BIGINT REFERENCES sessions(id) ON DELETE CASCADE,
 
     -- The feature name that this kv_store belongs to.
     -- If this is set, then this kv_store is a feature-specific
-    -- kvstore under the given session ID and rule name.
-    -- If this is set, then session_id must also be set.
+    -- kvstore under the given group ID and rule name.
+    -- If this is set, then group_id must also be set.
     feature_id BIGINT REFERENCES features(id),
 
     -- The key of the entry.
@@ -54,4 +54,4 @@ CREATE TABLE IF NOT EXISTS kvstores (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS kvstores_lookup_idx
-    ON kvstores (entry_key, rule_id, perm, session_id, feature_id);
+    ON kvstores (entry_key, rule_id, perm, group_id, feature_id);
