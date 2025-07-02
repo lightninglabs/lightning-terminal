@@ -25,23 +25,23 @@ require (
 	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.3
 	github.com/lightninglabs/lightning-terminal/litrpc v1.0.2
 	github.com/lightninglabs/lightning-terminal/perms v1.0.1
-	github.com/lightninglabs/lndclient v0.19.0-7
+	github.com/lightninglabs/lndclient v0.19.0-9
 	github.com/lightninglabs/loop v0.31.2-beta
 	github.com/lightninglabs/loop/looprpc v1.0.8
 	github.com/lightninglabs/loop/swapserverrpc v1.0.15
 	github.com/lightninglabs/pool v0.6.6-beta
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.3
 	github.com/lightninglabs/pool/poolrpc v1.0.1
-	github.com/lightninglabs/taproot-assets v0.6.0
-	github.com/lightninglabs/taproot-assets/taprpc v1.0.7
-	github.com/lightningnetwork/lnd v0.19.1-beta
+	github.com/lightninglabs/taproot-assets v0.6.1-0.20250702120050-d963c73f266a
+	github.com/lightninglabs/taproot-assets/taprpc v1.0.9-0.20250702120050-d963c73f266a
+	github.com/lightningnetwork/lnd v0.19.1-beta.rc1.0.20250623232057-b48e2763a798
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/clock v1.1.1
 	github.com/lightningnetwork/lnd/fn v1.2.3
 	github.com/lightningnetwork/lnd/fn/v2 v2.0.8
 	github.com/lightningnetwork/lnd/kvdb v1.4.16
-	github.com/lightningnetwork/lnd/sqldb v1.0.9
-	github.com/lightningnetwork/lnd/tlv v1.3.1
+	github.com/lightningnetwork/lnd/sqldb v1.0.10
+	github.com/lightningnetwork/lnd/tlv v1.3.2
 	github.com/lightningnetwork/lnd/tor v1.1.6
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
 	github.com/mwitkow/grpc-proxy v0.0.0-20230212185441-f345521cb9c9
@@ -148,7 +148,7 @@ require (
 	github.com/lightninglabs/lightning-node-connect/hashmailrpc v1.0.3 // indirect
 	github.com/lightninglabs/neutrino v0.16.1 // indirect
 	github.com/lightninglabs/neutrino/cache v1.1.2 // indirect
-	github.com/lightningnetwork/lightning-onion v1.2.1-0.20240712235311-98bd56499dfb // indirect
+	github.com/lightningnetwork/lightning-onion v1.2.1-0.20240815225420-8b40adf04ab9 // indirect
 	github.com/lightningnetwork/lnd/healthcheck v1.2.6 // indirect
 	github.com/lightningnetwork/lnd/queue v1.1.1 // indirect
 	github.com/lightningnetwork/lnd/ticker v1.1.1 // indirect
@@ -247,3 +247,7 @@ replace google.golang.org/protobuf => github.com/lightninglabs/protobuf-go-hex-d
 // it is a replace in the tapd repository, it doesn't get propagated here
 // automatically, so we need to add it manually.
 replace github.com/golang-migrate/migrate/v4 => github.com/lightninglabs/migrate/v4 v4.18.2-9023d66a-fork-pr-2
+
+replace github.com/lightningnetwork/lnd => github.com/GeorgeTsagk/lnd v0.0.0-20250702112743-e6c948cdf8f4
+
+replace github.com/lightningnetwork/lnd/sqldb => github.com/GeorgeTsagk/lnd/sqldb v0.0.0-20250702112743-e6c948cdf8f4
