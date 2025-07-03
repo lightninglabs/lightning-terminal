@@ -57,6 +57,7 @@ type Querier interface {
 	ListAccountInvoices(ctx context.Context, accountID int64) ([]AccountInvoice, error)
 	ListAccountPayments(ctx context.Context, accountID int64) ([]AccountPayment, error)
 	ListAllAccounts(ctx context.Context) ([]Account, error)
+	ListAllKVStoresRecords(ctx context.Context) ([]Kvstore, error)
 	ListSessions(ctx context.Context) ([]Session, error)
 	ListSessionsByState(ctx context.Context, state int16) ([]Session, error)
 	ListSessionsByType(ctx context.Context, type_ int16) ([]Session, error)
