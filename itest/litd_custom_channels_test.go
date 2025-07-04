@@ -94,6 +94,16 @@ var (
 			"not_use_on_mainnet",
 		"--taproot-assets.experimental.rfq.mockoracleassetsperbtc=" +
 			"5820600",
+		"--taproot-assets.experimental.rfq.acceptpricedeviationppm=50000",
+	}...)
+
+	litdArgsTemplateDiffOracle = append(litdArgsTemplateNoOracle, []string{
+		"--taproot-assets.experimental.rfq.priceoracleaddress=" +
+			"use_mock_price_oracle_service_promise_to_" +
+			"not_use_on_mainnet",
+		"--taproot-assets.experimental.rfq.mockoracleassetsperbtc=" +
+			"8820600",
+		"--taproot-assets.experimental.rfq.acceptpricedeviationppm=50000",
 	}...)
 )
 
@@ -2980,6 +2990,7 @@ func testCustomChannelsMultiRFQ(ctx context.Context, net *NetworkHarness,
 
 	lndArgs := slices.Clone(lndArgsTemplate)
 	litdArgs := slices.Clone(litdArgsTemplate)
+	litdArgsDiffOracle := slices.Clone(litdArgsTemplateDiffOracle)
 
 	charlie, err := net.NewNode(
 		t.t, "Charlie", lndArgs, false, true, litdArgs...,
@@ -2987,6 +2998,11 @@ func testCustomChannelsMultiRFQ(ctx context.Context, net *NetworkHarness,
 	require.NoError(t.t, err)
 
 	litdArgs = append(litdArgs, fmt.Sprintf(
+		"--taproot-assets.proofcourieraddr=%s://%s",
+		proof.UniverseRpcCourierType, charlie.Cfg.LitAddr(),
+	))
+
+	litdArgsDiffOracle = append(litdArgsDiffOracle, fmt.Sprintf(
 		"--taproot-assets.proofcourieraddr=%s://%s",
 		proof.UniverseRpcCourierType, charlie.Cfg.LitAddr(),
 	))
@@ -3003,8 +3019,12 @@ func testCustomChannelsMultiRFQ(ctx context.Context, net *NetworkHarness,
 		t.t, "Yara", lndArgs, false, true, litdArgs...,
 	)
 	require.NoError(t.t, err)
+	george, err := net.NewNode(
+		t.t, "George", lndArgs, false, true, litdArgsDiffOracle...,
+	)
+	require.NoError(t.t, err)
 
-	nodes := []*HarnessNode{charlie, dave, erin, fabia, yara}
+	nodes := []*HarnessNode{charlie, dave, erin, fabia, yara, george}
 	connectAllNodes(t.t, net, nodes)
 	fundAllNodes(t.t, net, nodes)
 
@@ -3014,6 +3034,7 @@ func testCustomChannelsMultiRFQ(ctx context.Context, net *NetworkHarness,
 	erinTap := newTapClient(t.t, erin)
 	fabiaTap := newTapClient(t.t, fabia)
 	yaraTap := newTapClient(t.t, yara)
+	georgeTap := newTapClient(t.t, george)
 
 	assetReq := itest.CopyRequest(&mintrpc.MintAssetRequest{
 		Asset: itestAsset,
@@ -3031,7 +3052,7 @@ func testCustomChannelsMultiRFQ(ctx context.Context, net *NetworkHarness,
 	assetID := cents.AssetGenesis.AssetId
 	groupID := cents.GetAssetGroup().GetTweakedGroupKey()
 
-	syncUniverses(t.t, charlieTap, dave, erin, fabia, yara)
+	syncUniverses(t.t, charlieTap, dave, erin, fabia, yara, george)
 
 	multiRfqNodes := multiRfqNodes{
 		charlie: itestNode{
@@ -3053,6 +3074,10 @@ func testCustomChannelsMultiRFQ(ctx context.Context, net *NetworkHarness,
 		yara: itestNode{
 			Lnd:  yara,
 			Tapd: yaraTap,
+		},
+		george: itestNode{
+			Lnd:  george,
+			Tapd: georgeTap,
 		},
 		universeTap: charlieTap,
 	}
