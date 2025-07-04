@@ -77,25 +77,32 @@ type itestNode struct {
 // multiRfqNodes contains all the itest nodes that are required to set up the
 // multi RFQ network topology.
 type multiRfqNodes struct {
-	charlie, dave, erin, fabia, yara itestNode
-	universeTap                      *tapClient
+	charlie, dave, erin, fabia, yara, george itestNode
+	universeTap                              *tapClient
 }
 
 // createTestMultiRFQAssetNetwork creates a lightning network topology which
 // consists of both bitcoin and asset channels. It focuses on the property of
 // having multiple channels available on both the sender and receiver side.
+// The George node is using a way different oracle that provides asset rates
+// that fall outside of the configured tolerance bounds, leading to RFQ
+// negotiation failures.
 //
 // The topology we are going for looks like the following:
 //
-//	  /---[sats]--> Erin --[assets]--\
-//	 /                                \
-//	/                                  \
+//	   /---[sats]--> Erin --[assets]--\
+//	  /                                \
+//	 /                                  \
+//	/                                    \
 //
-// Charlie  -----[sats]-->  Dave  --[assets]---->Fabia
+// Charlie  -----[sats]--> Dave --[assets]--> Fabia
 //
-//	\                                  /
-//	 \                                /
-//	  \---[sats]--> Yara --[assets]--/
+//	\                                     / /
+//	 \                                   / /
+//	  \---[sats]--> Yara --[assets]-----/ /
+//	   \                                 /
+//	    \                               /
+//	     \--[sats]-> George --[assets]-/
 func createTestMultiRFQAssetNetwork(t *harnessTest, net *NetworkHarness,
 	nodes multiRfqNodes, mintedAsset *taprpc.Asset, assetSendAmount,
 	fundingAmount uint64, pushSat int64) (*lnrpc.ChannelPoint,
@@ -106,6 +113,7 @@ func createTestMultiRFQAssetNetwork(t *harnessTest, net *NetworkHarness,
 	erin, erinTap := nodes.erin.Lnd, nodes.erin.Tapd
 	_, fabiaTap := nodes.fabia.Lnd, nodes.fabia.Tapd
 	yara, yaraTap := nodes.yara.Lnd, nodes.yara.Tapd
+	george, georgeTap := nodes.george.Lnd, nodes.george.Tapd
 	universeTap := nodes.universeTap
 
 	// Let's open the normal sats channels between Charlie and the routing
@@ -126,6 +134,13 @@ func createTestMultiRFQAssetNetwork(t *harnessTest, net *NetworkHarness,
 
 	_ = openChannelAndAssert(
 		t, net, charlie, yara, lntest.OpenChannelParams{
+			Amt:         10_000_000,
+			SatPerVByte: 5,
+		},
+	)
+
+	_ = openChannelAndAssert(
+		t, net, charlie, george, lntest.OpenChannelParams{
 			Amt:         10_000_000,
 			SatPerVByte: 5,
 		},
@@ -225,6 +240,34 @@ func createTestMultiRFQAssetNetwork(t *harnessTest, net *NetworkHarness,
 	)
 	itest.AssertNonInteractiveRecvComplete(t.t, yaraTap, 1)
 
+	// We need to send some assets to George, so he can fund an asset
+	// channel with Fabia.
+	georgeAddr, err := georgeTap.NewAddr(ctxb, &taprpc.NewAddrRequest{
+		Amt:     assetSendAmount,
+		AssetId: assetID,
+		ProofCourierAddr: fmt.Sprintf(
+			"%s://%s", proof.UniverseRpcCourierType,
+			charlieTap.node.Cfg.LitAddr(),
+		),
+	})
+	require.NoError(t.t, err)
+
+	t.Logf("Sending %v asset units to George...", assetSendAmount)
+
+	// Send the assets to George.
+	itest.AssertAddrCreated(t.t, georgeTap, mintedAsset, georgeAddr)
+	sendResp, err = charlieTap.SendAsset(ctxb, &taprpc.SendAssetRequest{
+		TapAddrs: []string{georgeAddr.Encoded},
+	})
+	require.NoError(t.t, err)
+	itest.ConfirmAndAssertOutboundTransfer(
+		t.t, t.lndHarness.Miner.Client, charlieTap, sendResp, assetID,
+		[]uint64{
+			mintedAsset.Amount - 4*assetSendAmount, assetSendAmount,
+		}, 3, 4,
+	)
+	itest.AssertNonInteractiveRecvComplete(t.t, georgeTap, 1)
+
 	// We fund the Dave->Fabia channel.
 	fundRespDF, err := daveTap.FundChannel(
 		ctxb, &tchrpc.FundChannelRequest{
@@ -264,6 +307,19 @@ func createTestMultiRFQAssetNetwork(t *harnessTest, net *NetworkHarness,
 	require.NoError(t.t, err)
 	t.Logf("Funded channel between Yara and Fabia: %v", fundRespYF)
 
+	// We fund the George->Fabia channel.
+	fundRespGF, err := georgeTap.FundChannel(
+		ctxb, &tchrpc.FundChannelRequest{
+			AssetAmount:        fundingAmount,
+			AssetId:            assetID,
+			PeerPubkey:         fabiaTap.node.PubKey[:],
+			FeeRateSatPerVbyte: 5,
+			PushSat:            pushSat,
+		},
+	)
+	require.NoError(t.t, err)
+	t.Logf("Funded channel between George and Fabia: %v", fundRespGF)
+
 	// Make sure the pending channel shows up in the list and has the
 	// custom records set as JSON.
 	assertPendingChannels(
@@ -275,17 +331,21 @@ func createTestMultiRFQAssetNetwork(t *harnessTest, net *NetworkHarness,
 	assertPendingChannels(
 		t.t, yaraTap.node, mintedAsset, 1, fundingAmount, 0,
 	)
+	assertPendingChannels(
+		t.t, georgeTap.node, mintedAsset, 1, fundingAmount, 0,
+	)
 
 	// Now that we've looked at the pending channels, let's actually confirm
 	// all three of them.
-	mineBlocks(t, net, 6, 3)
+	mineBlocks(t, net, 6, 4)
 
 	// We'll be tracking the expected asset balances throughout the test, so
 	// we can assert it after each action.
-	charlieAssetBalance := mintedAsset.Amount - 3*assetSendAmount
+	charlieAssetBalance := mintedAsset.Amount - 4*assetSendAmount
 	daveAssetBalance := assetSendAmount - fundingAmount
 	erinAssetBalance := assetSendAmount - fundingAmount
 	yaraAssetBalance := assetSendAmount - fundingAmount
+	georgeAssetBalance := assetSendAmount - fundingAmount
 
 	itest.AssertBalances(
 		t.t, charlieTap, charlieAssetBalance,
@@ -304,6 +364,10 @@ func createTestMultiRFQAssetNetwork(t *harnessTest, net *NetworkHarness,
 		t.t, yaraTap, yaraAssetBalance, itest.WithAssetID(assetID),
 	)
 
+	itest.AssertBalances(
+		t.t, georgeTap, georgeAssetBalance, itest.WithAssetID(assetID),
+	)
+
 	// Assert that the proofs for both channels has been uploaded to the
 	// designated Universe server.
 	assertUniverseProofExists(
@@ -317,6 +381,10 @@ func createTestMultiRFQAssetNetwork(t *harnessTest, net *NetworkHarness,
 	assertUniverseProofExists(
 		t.t, universeTap, assetID, groupKey, fundingScriptTreeBytes,
 		fmt.Sprintf("%v:%v", fundRespYF.Txid, fundRespYF.OutputIndex),
+	)
+	assertUniverseProofExists(
+		t.t, universeTap, assetID, groupKey, fundingScriptTreeBytes,
+		fmt.Sprintf("%v:%v", fundRespGF.Txid, fundRespGF.OutputIndex),
 	)
 
 	return nil, nil, nil
