@@ -27,6 +27,7 @@ import (
 	"github.com/lightninglabs/taproot-assets/tapfreighter"
 	"github.com/lightninglabs/taproot-assets/taprpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/assetwalletrpc"
+	"github.com/lightninglabs/taproot-assets/taprpc/authmailboxrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/mintrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/rfqrpc"
 	tchrpc "github.com/lightninglabs/taproot-assets/taprpc/tapchannelrpc"
@@ -2216,7 +2217,7 @@ func defaultCoOpCloseBalanceCheck(t *testing.T, local, remote *HarnessNode,
 	// transaction was inserted into the local universe.
 	//
 	// We expect that at most four outputs exist: one for the local asset
-	// output, one for the remote asset output, one for the remote BTC
+	// output, one for the remote asset output, one for the local BTC
 	// channel balance and one for the remote BTC channel balance.
 	//
 	// Those outputs are only present if the respective party has a
@@ -2548,6 +2549,7 @@ type tapClient struct {
 	rfqrpc.RfqClient
 	tchrpc.TaprootAssetChannelsClient
 	universerpc.UniverseClient
+	authmailboxrpc.MailboxClient
 }
 
 func newTapClient(t *testing.T, node *HarnessNode) *tapClient {
