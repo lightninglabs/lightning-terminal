@@ -11,6 +11,7 @@ import (
 
 	"github.com/lightninglabs/lightning-terminal/db"
 	"github.com/lightninglabs/lightning-terminal/db/sqlc"
+	"github.com/lightninglabs/lightning-terminal/db/sqlcmig6"
 	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -56,6 +57,33 @@ type SQLQueries interface {
 	GetAccountInvoice(ctx context.Context, arg sqlc.GetAccountInvoiceParams) (sqlc.AccountInvoice, error)
 }
 
+// SQLMig6Queries is a subset of the sqlcmig6.Queries interface that can be used
+// to interact with accounts related tables.
+//
+//nolint:lll
+type SQLMig6Queries interface {
+	sqldb.BaseQuerier
+
+	AddAccountInvoice(ctx context.Context, arg sqlcmig6.AddAccountInvoiceParams) error
+	DeleteAccount(ctx context.Context, id int64) error
+	DeleteAccountPayment(ctx context.Context, arg sqlcmig6.DeleteAccountPaymentParams) error
+	GetAccount(ctx context.Context, id int64) (sqlcmig6.Account, error)
+	GetAccountByLabel(ctx context.Context, label sql.NullString) (sqlcmig6.Account, error)
+	GetAccountIDByAlias(ctx context.Context, alias int64) (int64, error)
+	GetAccountIndex(ctx context.Context, name string) (int64, error)
+	GetAccountPayment(ctx context.Context, arg sqlcmig6.GetAccountPaymentParams) (sqlcmig6.AccountPayment, error)
+	InsertAccount(ctx context.Context, arg sqlcmig6.InsertAccountParams) (int64, error)
+	ListAccountInvoices(ctx context.Context, id int64) ([]sqlcmig6.AccountInvoice, error)
+	ListAccountPayments(ctx context.Context, id int64) ([]sqlcmig6.AccountPayment, error)
+	ListAllAccounts(ctx context.Context) ([]sqlcmig6.Account, error)
+	SetAccountIndex(ctx context.Context, arg sqlcmig6.SetAccountIndexParams) error
+	UpdateAccountBalance(ctx context.Context, arg sqlcmig6.UpdateAccountBalanceParams) (int64, error)
+	UpdateAccountExpiry(ctx context.Context, arg sqlcmig6.UpdateAccountExpiryParams) (int64, error)
+	UpdateAccountLastUpdate(ctx context.Context, arg sqlcmig6.UpdateAccountLastUpdateParams) (int64, error)
+	UpsertAccountPayment(ctx context.Context, arg sqlcmig6.UpsertAccountPaymentParams) error
+	GetAccountInvoice(ctx context.Context, arg sqlcmig6.GetAccountInvoiceParams) (sqlcmig6.AccountInvoice, error)
+}
+
 // BatchedSQLQueries combines the SQLQueries interface with the BatchedTx
 // interface, allowing for multiple queries to be executed in single SQL
 // transaction.
@@ -94,6 +122,26 @@ func NewSQLQueriesExecutor(baseDB *sqldb.BaseDB,
 	return &SQLQueriesExecutor[SQLQueries]{
 		TransactionExecutor: executor,
 		SQLQueries:          queries,
+	}
+}
+
+type SQLMig6QueriesExecutor[T sqldb.BaseQuerier] struct {
+	*sqldb.TransactionExecutor[T]
+
+	SQLMig6Queries
+}
+
+func NewSQLMig6QueriesExecutor(baseDB *sqldb.BaseDB,
+	queries *sqlcmig6.Queries) *SQLMig6QueriesExecutor[SQLMig6Queries] {
+
+	executor := sqldb.NewTransactionExecutor(
+		baseDB, func(tx *sql.Tx) SQLMig6Queries {
+			return queries.WithTx(tx)
+		},
+	)
+	return &SQLMig6QueriesExecutor[SQLMig6Queries]{
+		TransactionExecutor: executor,
+		SQLMig6Queries:      queries,
 	}
 }
 
