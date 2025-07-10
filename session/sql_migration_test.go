@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/lightninglabs/lightning-terminal/accounts"
-	"github.com/lightninglabs/lightning-terminal/db/sqlc"
+	"github.com/lightninglabs/lightning-terminal/db/sqlcmig6"
 	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/lnwire"
 	"github.com/lightningnetwork/lnd/macaroons"
@@ -37,7 +37,7 @@ func TestSessionsStoreMigration(t *testing.T) {
 	}
 
 	makeSQLDB := func(t *testing.T, acctStore accounts.Store) (*SQLStore,
-		*SQLQueriesExecutor[SQLQueries]) {
+		*SQLMig6QueriesExecutor[SQLMig6Queries]) {
 
 		// Create a sql store with a linked account store.
 		testDBStore := NewTestDBWithAccounts(t, clock, acctStore)
@@ -47,9 +47,9 @@ func TestSessionsStoreMigration(t *testing.T) {
 
 		baseDB := store.BaseDB
 
-		queries := sqlc.NewForType(baseDB, baseDB.BackendType)
+		queries := sqlcmig6.NewForType(baseDB, baseDB.BackendType)
 
-		return store, NewSQLQueriesExecutor(baseDB, queries)
+		return store, NewSQLMig6QueriesExecutor(baseDB, queries)
 	}
 
 	// assertMigrationResults asserts that the sql store contains the
@@ -366,7 +366,7 @@ func TestSessionsStoreMigration(t *testing.T) {
 
 			var opts sqldb.MigrationTxOptions
 			err = txEx.ExecTx(
-				ctx, &opts, func(tx SQLQueries) error {
+				ctx, &opts, func(tx SQLMig6Queries) error {
 					return MigrateSessionStoreToSQL(
 						ctx, kvStore.DB, tx,
 					)
