@@ -12,6 +12,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/db"
 	"github.com/lightninglabs/lightning-terminal/db/sqlc"
+	"github.com/lightninglabs/lightning-terminal/db/sqlcmig6"
 	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/sqldb/v2"
@@ -50,6 +51,39 @@ type SQLQueries interface {
 	DeleteSessionsWithState(ctx context.Context, state int16) error
 	GetAccountIDByAlias(ctx context.Context, alias int64) (int64, error)
 	GetAccount(ctx context.Context, id int64) (sqlc.Account, error)
+}
+
+// SQLMig6Queries is a subset of the sqlcmig6.Queries interface that can be used to
+// interact with session related tables.
+type SQLMig6Queries interface {
+	sqldb.BaseQuerier
+
+	GetAliasBySessionID(ctx context.Context, id int64) ([]byte, error)
+	GetSessionByID(ctx context.Context, id int64) (sqlcmig6.Session, error)
+	GetSessionsInGroup(ctx context.Context, groupID sql.NullInt64) ([]sqlcmig6.Session, error)
+	GetSessionAliasesInGroup(ctx context.Context, groupID sql.NullInt64) ([][]byte, error)
+	GetSessionByAlias(ctx context.Context, legacyID []byte) (sqlcmig6.Session, error)
+	GetSessionByLocalPublicKey(ctx context.Context, localPublicKey []byte) (sqlcmig6.Session, error)
+	GetSessionFeatureConfigs(ctx context.Context, sessionID int64) ([]sqlcmig6.SessionFeatureConfig, error)
+	GetSessionMacaroonCaveats(ctx context.Context, sessionID int64) ([]sqlcmig6.SessionMacaroonCaveat, error)
+	GetSessionIDByAlias(ctx context.Context, legacyID []byte) (int64, error)
+	GetSessionMacaroonPermissions(ctx context.Context, sessionID int64) ([]sqlcmig6.SessionMacaroonPermission, error)
+	GetSessionPrivacyFlags(ctx context.Context, sessionID int64) ([]sqlcmig6.SessionPrivacyFlag, error)
+	InsertSessionFeatureConfig(ctx context.Context, arg sqlcmig6.InsertSessionFeatureConfigParams) error
+	SetSessionRevokedAt(ctx context.Context, arg sqlcmig6.SetSessionRevokedAtParams) error
+	InsertSessionMacaroonCaveat(ctx context.Context, arg sqlcmig6.InsertSessionMacaroonCaveatParams) error
+	InsertSessionMacaroonPermission(ctx context.Context, arg sqlcmig6.InsertSessionMacaroonPermissionParams) error
+	InsertSessionPrivacyFlag(ctx context.Context, arg sqlcmig6.InsertSessionPrivacyFlagParams) error
+	InsertSession(ctx context.Context, arg sqlcmig6.InsertSessionParams) (int64, error)
+	ListSessions(ctx context.Context) ([]sqlcmig6.Session, error)
+	ListSessionsByType(ctx context.Context, sessionType int16) ([]sqlcmig6.Session, error)
+	ListSessionsByState(ctx context.Context, state int16) ([]sqlcmig6.Session, error)
+	SetSessionRemotePublicKey(ctx context.Context, arg sqlcmig6.SetSessionRemotePublicKeyParams) error
+	SetSessionGroupID(ctx context.Context, arg sqlcmig6.SetSessionGroupIDParams) error
+	UpdateSessionState(ctx context.Context, arg sqlcmig6.UpdateSessionStateParams) error
+	DeleteSessionsWithState(ctx context.Context, state int16) error
+	GetAccountIDByAlias(ctx context.Context, alias int64) (int64, error)
+	GetAccount(ctx context.Context, id int64) (sqlcmig6.Account, error)
 }
 
 var _ Store = (*SQLStore)(nil)
@@ -92,6 +126,26 @@ func NewSQLQueriesExecutor(baseDB *sqldb.BaseDB,
 	return &SQLQueriesExecutor[SQLQueries]{
 		TransactionExecutor: executor,
 		SQLQueries:          queries,
+	}
+}
+
+type SQLMig6QueriesExecutor[T sqldb.BaseQuerier] struct {
+	*sqldb.TransactionExecutor[T]
+
+	SQLMig6Queries
+}
+
+func NewSQLMig6QueriesExecutor(baseDB *sqldb.BaseDB,
+	queries *sqlcmig6.Queries) *SQLMig6QueriesExecutor[SQLMig6Queries] {
+
+	executor := sqldb.NewTransactionExecutor(
+		baseDB, func(tx *sql.Tx) SQLMig6Queries {
+			return queries.WithTx(tx)
+		},
+	)
+	return &SQLMig6QueriesExecutor[SQLMig6Queries]{
+		TransactionExecutor: executor,
+		SQLMig6Queries:      queries,
 	}
 }
 
