@@ -30,6 +30,7 @@ type SQLKVStoreQueries interface {
 	UpdateGlobalKVStoreRecord(ctx context.Context, arg sqlc.UpdateGlobalKVStoreRecordParams) error
 	UpdateGroupKVStoreRecord(ctx context.Context, arg sqlc.UpdateGroupKVStoreRecordParams) error
 	InsertKVStoreRecord(ctx context.Context, arg sqlc.InsertKVStoreRecordParams) error
+	ListAllKVStoresRecords(ctx context.Context) ([]sqlc.Kvstore, error)
 	DeleteAllTempKVStores(ctx context.Context) error
 	GetOrInsertFeatureID(ctx context.Context, name string) (int64, error)
 	GetOrInsertRuleID(ctx context.Context, name string) (int64, error)
