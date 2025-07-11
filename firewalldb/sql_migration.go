@@ -13,7 +13,7 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/lightninglabs/lightning-terminal/accounts"
-	"github.com/lightninglabs/lightning-terminal/db/sqlc"
+	"github.com/lightninglabs/lightning-terminal/db/sqlcmig6"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/sqldb"
@@ -88,11 +88,11 @@ type privacyPairs = map[int64]map[string]string
 // NOTE: As sessions may contain linked sessions and accounts, the sessions and
 // accounts sql migration MUST be run prior to this migration.
 func MigrateFirewallDBToSQL(ctx context.Context, kvStore *bbolt.DB,
-	sqlTx SQLQueries, queries *sqlc.Queries, macRootKeyIDs [][]byte) error {
+	sqlTx *sqlcmig6.Queries, macRootKeyIDs [][]byte) error {
 
 	log.Infof("Starting migration of the rules DB to SQL")
 
-	sessions, err := queries.ListSessions(ctx)
+	sessions, err := sqlTx.ListSessions(ctx)
 	if err != nil {
 		return fmt.Errorf("listing sessions failed: %w", err)
 	}
@@ -113,7 +113,7 @@ func MigrateFirewallDBToSQL(ctx context.Context, kvStore *bbolt.DB,
 	}
 
 	err = migrateActionsToSQL(
-		ctx, kvStore, sqlTx, queries, macRootKeyIDs, sessionMap,
+		ctx, kvStore, sqlTx, macRootKeyIDs, sessionMap,
 	)
 	if err != nil {
 		return err
@@ -128,7 +128,7 @@ func MigrateFirewallDBToSQL(ctx context.Context, kvStore *bbolt.DB,
 // database to the SQL database. The function also asserts that the
 // migrated values match the original values in the KV store.
 func migrateKVStoresDBToSQL(ctx context.Context, kvStore *bbolt.DB,
-	sqlTx SQLQueries, sessMap map[[4]byte]sqlc.Session) error {
+	sqlTx *sqlcmig6.Queries, sessMap map[[4]byte]sqlcmig6.Session) error {
 
 	log.Infof("Starting migration of the KV stores to SQL")
 
@@ -196,7 +196,7 @@ func migrateKVStoresDBToSQL(ctx context.Context, kvStore *bbolt.DB,
 // designed to iterate over all buckets and values that exist in the KV store.
 // That ensures that we find all stores and values that exist in the KV store,
 // and can be sure that the kv store actually follows the expected structure.
-func collectAllPairs(sessMap map[[4]byte]sqlc.Session,
+func collectAllPairs(sessMap map[[4]byte]sqlcmig6.Session,
 	tx *bbolt.Tx) ([]*kvEntry, error) {
 
 	var entries []*kvEntry
@@ -248,7 +248,7 @@ func collectAllPairs(sessMap map[[4]byte]sqlc.Session,
 
 // collectRulePairs processes a single rule bucket, which should contain the
 // global and session-kv-store key buckets.
-func collectRulePairs(sessMap map[[4]byte]sqlc.Session, bkt *bbolt.Bucket,
+func collectRulePairs(sessMap map[[4]byte]sqlcmig6.Session, bkt *bbolt.Bucket,
 	perm bool, rule string) ([]*kvEntry, error) {
 
 	var params []*kvEntry
@@ -411,15 +411,16 @@ func collectKVPairs(bkt *bbolt.Bucket, errorOnBuckets, perm bool,
 }
 
 // insertPair inserts a single key-value pair into the SQL database.
-func insertPair(ctx context.Context, tx SQLQueries,
-	sessMap map[[4]byte]sqlc.Session, entry *kvEntry) (*sqlKvEntry, error) {
+func insertPair(ctx context.Context, tx *sqlcmig6.Queries,
+	sessMap map[[4]byte]sqlcmig6.Session,
+	entry *kvEntry) (*sqlKvEntry, error) {
 
 	ruleID, err := tx.GetOrInsertRuleID(ctx, entry.ruleName)
 	if err != nil {
 		return nil, err
 	}
 
-	p := sqlc.InsertKVStoreRecordParams{
+	p := sqlcmig6.InsertKVStoreRecordParams{
 		Perm:     entry.perm,
 		RuleID:   ruleID,
 		EntryKey: entry.key,
@@ -475,13 +476,13 @@ func insertPair(ctx context.Context, tx SQLQueries,
 
 // getSQLValue retrieves the key value for the given kvEntry from the SQL
 // database.
-func getSQLValue(ctx context.Context, tx SQLQueries,
+func getSQLValue(ctx context.Context, tx *sqlcmig6.Queries,
 	entry *sqlKvEntry) ([]byte, error) {
 
 	switch {
 	case entry.featureID.Valid && entry.groupID.Valid:
 		return tx.GetFeatureKVStoreRecord(
-			ctx, sqlc.GetFeatureKVStoreRecordParams{
+			ctx, sqlcmig6.GetFeatureKVStoreRecordParams{
 				Perm:      entry.perm,
 				RuleID:    entry.ruleID,
 				GroupID:   entry.groupID,
@@ -491,7 +492,7 @@ func getSQLValue(ctx context.Context, tx SQLQueries,
 		)
 	case entry.groupID.Valid:
 		return tx.GetGroupKVStoreRecord(
-			ctx, sqlc.GetGroupKVStoreRecordParams{
+			ctx, sqlcmig6.GetGroupKVStoreRecordParams{
 				Perm:    entry.perm,
 				RuleID:  entry.ruleID,
 				GroupID: entry.groupID,
@@ -500,7 +501,7 @@ func getSQLValue(ctx context.Context, tx SQLQueries,
 		)
 	case !entry.featureID.Valid && !entry.groupID.Valid:
 		return tx.GetGlobalKVStoreRecord(
-			ctx, sqlc.GetGlobalKVStoreRecordParams{
+			ctx, sqlcmig6.GetGlobalKVStoreRecordParams{
 				Perm:   entry.perm,
 				RuleID: entry.ruleID,
 				Key:    entry.key,
@@ -549,7 +550,7 @@ func verifyBktKeys(bkt *bbolt.Bucket, errorOnKeyValues bool,
 // from the KV database to the SQL database. The function also asserts that the
 // migrated values match the original values in the privacy mapper store.
 func migratePrivacyMapperDBToSQL(ctx context.Context, kvStore *bbolt.DB,
-	sqlTx SQLQueries, sessMap map[[4]byte]sqlc.Session) error {
+	sqlTx *sqlcmig6.Queries, sessMap map[[4]byte]sqlcmig6.Session) error {
 
 	log.Infof("Starting migration of the privacy mapper store to SQL")
 
@@ -584,7 +585,7 @@ func migratePrivacyMapperDBToSQL(ctx context.Context, kvStore *bbolt.DB,
 
 // collectPrivacyPairs collects all privacy pairs from the KV store.
 func collectPrivacyPairs(kvStore *bbolt.DB,
-	sessMap map[[4]byte]sqlc.Session) (privacyPairs, error) {
+	sessMap map[[4]byte]sqlcmig6.Session) (privacyPairs, error) {
 
 	groupPairs := make(privacyPairs)
 
@@ -728,7 +729,7 @@ func collectPairs(pairsBucket *bbolt.Bucket) (map[string]string, error) {
 }
 
 // insertPrivacyPairs inserts the collected privacy pairs into the SQL database.
-func insertPrivacyPairs(ctx context.Context, sqlTx SQLQueries,
+func insertPrivacyPairs(ctx context.Context, sqlTx *sqlcmig6.Queries,
 	pairs privacyPairs) error {
 
 	for groupId, groupPairs := range pairs {
@@ -747,12 +748,12 @@ func insertPrivacyPairs(ctx context.Context, sqlTx SQLQueries,
 // an error if a duplicate pair is found. The function takes a map of real
 // to pseudo values, where the key is the real value and the value is the
 // corresponding pseudo value.
-func insertGroupPairs(ctx context.Context, sqlTx SQLQueries, groupID int64,
-	pairs map[string]string) error {
+func insertGroupPairs(ctx context.Context, sqlTx *sqlcmig6.Queries,
+	groupID int64, pairs map[string]string) error {
 
 	for realVal, pseudoVal := range pairs {
 		err := sqlTx.InsertPrivacyPair(
-			ctx, sqlc.InsertPrivacyPairParams{
+			ctx, sqlcmig6.InsertPrivacyPairParams{
 				GroupID:   groupID,
 				RealVal:   realVal,
 				PseudoVal: pseudoVal,
@@ -769,7 +770,7 @@ func insertGroupPairs(ctx context.Context, sqlTx SQLQueries, groupID int64,
 
 // validatePrivacyPairsMigration validates that the migrated privacy pairs
 // match the original values in the KV store.
-func validatePrivacyPairsMigration(ctx context.Context, sqlTx SQLQueries,
+func validatePrivacyPairsMigration(ctx context.Context, sqlTx *sqlcmig6.Queries,
 	pairs privacyPairs) error {
 
 	for groupId, groupPairs := range pairs {
@@ -790,12 +791,12 @@ func validatePrivacyPairsMigration(ctx context.Context, sqlTx SQLQueries,
 // for each real value, the pseudo value in the SQL database matches the
 // original pseudo value, and vice versa. If any mismatch is found, it returns
 // an error indicating the mismatch.
-func validateGroupPairsMigration(ctx context.Context, sqlTx SQLQueries,
+func validateGroupPairsMigration(ctx context.Context, sqlTx *sqlcmig6.Queries,
 	groupID int64, pairs map[string]string) error {
 
 	for realVal, pseudoVal := range pairs {
 		resPseudoVal, err := sqlTx.GetPseudoForReal(
-			ctx, sqlc.GetPseudoForRealParams{
+			ctx, sqlcmig6.GetPseudoForRealParams{
 				GroupID: groupID,
 				RealVal: realVal,
 			},
@@ -815,7 +816,7 @@ func validateGroupPairsMigration(ctx context.Context, sqlTx SQLQueries,
 		}
 
 		resRealVal, err := sqlTx.GetRealForPseudo(
-			ctx, sqlc.GetRealForPseudoParams{
+			ctx, sqlcmig6.GetRealForPseudoParams{
 				GroupID:   groupID,
 				PseudoVal: pseudoVal,
 			},
@@ -842,15 +843,15 @@ func validateGroupPairsMigration(ctx context.Context, sqlTx SQLQueries,
 // database to the SQL database. The function also asserts that the migrated
 // values match the original values in the actions store.
 func migrateActionsToSQL(ctx context.Context, kvStore *bbolt.DB,
-	sqlTx SQLQueries, queries *sqlc.Queries, macRootKeyIDs [][]byte,
-	sessMap map[[4]byte]sqlc.Session) error {
+	sqlTx *sqlcmig6.Queries, macRootKeyIDs [][]byte,
+	sessMap map[[4]byte]sqlcmig6.Session) error {
 
 	log.Infof("Starting migration of the actions store to SQL")
 
 	// Start by fetching all accounts and sessions, and map them by their
 	// IDs. This will allow us to quickly look up any account(s) and/or
 	// session that match a specific action's macaroon identifier.
-	accts, err := queries.ListAllAccounts(ctx)
+	accts, err := sqlTx.ListAllAccounts(ctx)
 	if err != nil {
 		return fmt.Errorf("listing accounts failed: %w", err)
 	}
@@ -967,8 +968,8 @@ func migrateActionsToSQL(ctx context.Context, kvStore *bbolt.DB,
 				// validate that the action was correctly
 				// migrated.
 				err = migrateActionToSQL(
-					ctx, sqlTx, queries, acctsMap, sessMap,
-					action, macRootKeyID,
+					ctx, sqlTx, acctsMap, sessMap, action,
+					macRootKeyID,
 				)
 				if err != nil {
 					return fmt.Errorf("migrating action "+
@@ -991,15 +992,15 @@ func migrateActionsToSQL(ctx context.Context, kvStore *bbolt.DB,
 
 // migrateActionToSQL migrates a single action to the SQL database, and
 // validates that the action was correctly migrated.
-func migrateActionToSQL(ctx context.Context, sqlTx SQLQueries,
-	queries *sqlc.Queries, acctsMap map[[4]byte][]sqlc.Account,
-	sessMap map[[4]byte]sqlc.Session, action *Action,
+func migrateActionToSQL(ctx context.Context, sqlTx *sqlcmig6.Queries,
+	acctsMap map[[4]byte][]sqlcmig6.Account,
+	sessMap map[[4]byte]sqlcmig6.Session, action *Action,
 	macRootKeyID []byte) error {
 
 	var (
 		macIDSuffix  [4]byte
 		err          error
-		insertParams sqlc.InsertActionParams
+		insertParams sqlcmig6.InsertActionParams
 	)
 
 	// Extract the last 4 bytes of the macaroon root key ID suffix, to find
@@ -1027,7 +1028,7 @@ func migrateActionToSQL(ctx context.Context, sqlTx SQLQueries,
 	case hasAccounts && hasSessions:
 		// Alternative (3) above.
 		insertParams, err = paramsFromBothSessionAndAccounts(
-			ctx, queries, action, actAccounts, actSession,
+			ctx, sqlTx, action, actAccounts, actSession,
 			macRootKeyID,
 		)
 	case hasSessions:
@@ -1038,7 +1039,7 @@ func migrateActionToSQL(ctx context.Context, sqlTx SQLQueries,
 	case hasAccounts:
 		// Alternative (2) above.
 		insertParams, err = paramsFromAccounts(
-			ctx, queries, action, actAccounts, macRootKeyID)
+			ctx, sqlTx, action, actAccounts, macRootKeyID)
 	default:
 		// Alternative (4) above.
 		insertParams = paramsFromAction(action, macRootKeyID)
@@ -1058,7 +1059,7 @@ func migrateActionToSQL(ctx context.Context, sqlTx SQLQueries,
 
 	// Finally, validate that the action was correctly migrated.
 	return validateMigratedAction(
-		ctx, sqlTx, queries, action, insertParams, migratedActionID,
+		ctx, sqlTx, action, insertParams, migratedActionID,
 	)
 }
 
@@ -1066,9 +1067,9 @@ func migrateActionToSQL(ctx context.Context, sqlTx SQLQueries,
 // matches the original action in the KV DB. The function takes the original
 // action, the insert params used to insert the action into the SQL DB,
 // and the ID of the migrated action in the SQL DB.
-func validateMigratedAction(ctx context.Context, sqlTx SQLQueries,
-	queries *sqlc.Queries, kvAction *Action,
-	insertParams sqlc.InsertActionParams, migratedActionID int64) error {
+func validateMigratedAction(ctx context.Context, sqlTx *sqlcmig6.Queries,
+	kvAction *Action, insertParams sqlcmig6.InsertActionParams,
+	migratedActionID int64) error {
 
 	// First, fetch the action back from the SQL DB.
 	migAction, err := getAndMarshalAction(ctx, sqlTx, migratedActionID)
@@ -1093,7 +1094,7 @@ func validateMigratedAction(ctx context.Context, sqlTx SQLQueries,
 	// fields were set to. This is required in order to make the KVDB and
 	// SQL actions comparable.
 	if insertParams.SessionID.Valid {
-		sess, err := queries.GetSessionByID(
+		sess, err := sqlTx.GetSessionByID(
 			ctx, insertParams.SessionID.Int64,
 		)
 		if err != nil {
@@ -1105,7 +1106,7 @@ func validateMigratedAction(ctx context.Context, sqlTx SQLQueries,
 	}
 
 	if insertParams.AccountID.Valid {
-		acct, err := queries.GetAccount(
+		acct, err := sqlTx.GetAccount(
 			ctx, insertParams.AccountID.Int64,
 		)
 		if err != nil {
@@ -1169,18 +1170,18 @@ func validateMigratedAction(ctx context.Context, sqlTx SQLQueries,
 // to the potential linked account with the earliest expiry (where accounts
 // that do not expire is seen as the earliest).
 func paramsFromBothSessionAndAccounts(ctx context.Context,
-	queries *sqlc.Queries, action *Action, actAccts []sqlc.Account,
-	sess sqlc.Session, macRootKeyID []byte) (sqlc.InsertActionParams,
-	error) {
+	sqlTx *sqlcmig6.Queries, action *Action,
+	actAccts []sqlcmig6.Account, sess sqlcmig6.Session,
+	macRootKeyID []byte) (sqlcmig6.InsertActionParams, error) {
 
 	// Check if the potential linked session and account(s) could actually
 	// be responsible for the action, or if they should be filtered out.
 	sessOpt := getMatchingSessionForAction(action, sess)
 	acctOpt, err := getMatchingAccountForAction(
-		ctx, queries, action, actAccts,
+		ctx, sqlTx, action, actAccts,
 	)
 	if err != nil {
-		return sqlc.InsertActionParams{}, err
+		return sqlcmig6.InsertActionParams{}, err
 	}
 
 	switch {
@@ -1192,7 +1193,7 @@ func paramsFromBothSessionAndAccounts(ctx context.Context,
 		// If the session was filtered out, but we still have an
 		// account, we link the action to the account.
 		return paramsFromAccounts(
-			ctx, queries, action, actAccts, macRootKeyID,
+			ctx, sqlTx, action, actAccts, macRootKeyID,
 		)
 	case sessOpt.IsSome():
 		return paramsFromSession(action, sess, macRootKeyID)
@@ -1206,14 +1207,14 @@ func paramsFromBothSessionAndAccounts(ctx context.Context,
 // paramsFromSession returns the insert params for an action linked to a
 // session. If the session is not a match for the action, the action will not be
 // linked to the session.
-func paramsFromSession(action *Action, actSess sqlc.Session,
-	macRootKeyID []byte) (sqlc.InsertActionParams, error) {
+func paramsFromSession(action *Action, actSess sqlcmig6.Session,
+	macRootKeyID []byte) (sqlcmig6.InsertActionParams, error) {
 
 	sessOpt := getMatchingSessionForAction(action, actSess)
 
 	params := paramsFromAction(action, macRootKeyID)
 
-	sessOpt.WhenSome(func(sess sqlc.Session) {
+	sessOpt.WhenSome(func(sess sqlcmig6.Session) {
 		params.SessionID = sqldb.SQLInt64(sess.ID)
 		params.AccountID = sess.AccountID
 	})
@@ -1224,20 +1225,20 @@ func paramsFromSession(action *Action, actSess sqlc.Session,
 // paramsFromAccounts returns the insert params for an action linked to an
 // account. If no matching account is found for the action, the action will not
 // be linked to any account.
-func paramsFromAccounts(ctx context.Context, queries *sqlc.Queries,
-	action *Action, actAccts []sqlc.Account,
-	macRootKeyID []byte) (sqlc.InsertActionParams, error) {
+func paramsFromAccounts(ctx context.Context, sqlTx *sqlcmig6.Queries,
+	action *Action, actAccts []sqlcmig6.Account,
+	macRootKeyID []byte) (sqlcmig6.InsertActionParams, error) {
 
 	acctOpt, err := getMatchingAccountForAction(
-		ctx, queries, action, actAccts,
+		ctx, sqlTx, action, actAccts,
 	)
 	if err != nil {
-		return sqlc.InsertActionParams{}, err
+		return sqlcmig6.InsertActionParams{}, err
 	}
 
 	params := paramsFromAction(action, macRootKeyID)
 
-	acctOpt.WhenSome(func(acct sqlc.Account) {
+	acctOpt.WhenSome(func(acct sqlcmig6.Account) {
 		params.AccountID = sqldb.SQLInt64(acct.ID)
 	})
 
@@ -1247,9 +1248,9 @@ func paramsFromAccounts(ctx context.Context, queries *sqlc.Queries,
 // paramsFromAction returns the insert params for an action that is not linked
 // to any account or session.
 func paramsFromAction(action *Action,
-	macRootKeyID []byte) sqlc.InsertActionParams {
+	macRootKeyID []byte) sqlcmig6.InsertActionParams {
 
-	return sqlc.InsertActionParams{
+	return sqlcmig6.InsertActionParams{
 		MacaroonIdentifier: macRootKeyID,
 		ActorName:          sqldb.SQLStr(action.ActorName),
 		FeatureName:        sqldb.SQLStr(action.FeatureName),
@@ -1268,7 +1269,7 @@ func paramsFromAction(action *Action,
 // could actually be responsible for the action, or if it should be filtered
 // out.
 func getMatchingSessionForAction(action *Action,
-	sess sqlc.Session) fn.Option[sqlc.Session] {
+	sess sqlcmig6.Session) fn.Option[sqlcmig6.Session] {
 
 	attempted := action.AttemptedAt
 
@@ -1278,15 +1279,15 @@ func getMatchingSessionForAction(action *Action,
 
 	// Exclude the session if it was revoked before the attempted at time.
 	if sess.RevokedAt.Valid && sess.RevokedAt.Time.Before(attempted) {
-		return fn.None[sqlc.Session]()
+		return fn.None[sqlcmig6.Session]()
 	}
 	// Exclude the session if it was created after the attempt at time.
 	if sess.CreatedAt.After(attempted) {
-		return fn.None[sqlc.Session]()
+		return fn.None[sqlcmig6.Session]()
 	}
 	// Exclude the session if it expired before the attempt at time.
 	if sess.Expiry.Before(attempted) {
-		return fn.None[sqlc.Session]()
+		return fn.None[sqlcmig6.Session]()
 	}
 
 	// If we reach this point, the session is a potential match for
@@ -1302,8 +1303,8 @@ func getMatchingSessionForAction(action *Action,
 // reasoning that such accounts were more likely to have existed at the time of
 // the action, as we have no way of tracking when the account was created.
 func getMatchingAccountForAction(ctx context.Context,
-	queries *sqlc.Queries, action *Action,
-	actAccts []sqlc.Account) (fn.Option[sqlc.Account], error) {
+	sqlTx *sqlcmig6.Queries, action *Action,
+	actAccts []sqlcmig6.Account) (fn.Option[sqlcmig6.Account], error) {
 
 	// sendMethods is the RPC methods that trigger payments to be added an
 	// account. We use this to filter out accounts that have no payments
@@ -1320,28 +1321,30 @@ func getMatchingAccountForAction(ctx context.Context,
 	// We cannot have an ActorName set for an action if the action was
 	// triggered by an account.
 	if action.ActorName != "" {
-		return fn.None[sqlc.Account](), nil
+		return fn.None[sqlcmig6.Account](), nil
 	}
 
 	attempted := action.AttemptedAt
 
 	// 1) Do some initial filtering of the accounts.
-	filtered := make([]sqlc.Account, 0, len(actAccts))
+	filtered := make([]sqlcmig6.Account, 0, len(actAccts))
 	for _, a := range actAccts {
 		// Exclude the account if it expired before the attempt at time.
 		if !a.Expiration.IsZero() && a.Expiration.Before(attempted) {
 			continue
 		}
 
-		invoices, err := queries.ListAccountInvoices(ctx, a.ID)
+		invoices, err := sqlTx.ListAccountInvoices(ctx, a.ID)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
-			return fn.None[sqlc.Account](), fmt.Errorf("listing "+
-				"invoices for account %d failed: %w", a.ID, err)
+			return fn.None[sqlcmig6.Account](), fmt.Errorf(
+				"listing invoices for account %d failed: %w",
+				a.ID, err)
 		}
-		payments, err := queries.ListAccountPayments(ctx, a.ID)
+		payments, err := sqlTx.ListAccountPayments(ctx, a.ID)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
-			return fn.None[sqlc.Account](), fmt.Errorf("listing "+
-				"payments for account %d failed: %w", a.ID, err)
+			return fn.None[sqlcmig6.Account](), fmt.Errorf(
+				"listing payments for account %d failed: %w",
+				a.ID, err)
 		}
 
 		// Exclude the account if the action is triggered by creating
@@ -1366,7 +1369,7 @@ func getMatchingAccountForAction(ctx context.Context,
 	// 2) If no accounts remain after filtering, no potential linked account
 	//    for the action was found.
 	if len(filtered) == 0 {
-		return fn.None[sqlc.Account](), nil
+		return fn.None[sqlcmig6.Account](), nil
 	}
 
 	// 3) If multiple accounts remain after filtering, we pick the one with
@@ -1400,8 +1403,8 @@ func getMatchingAccountForAction(ctx context.Context,
 
 // getAndMarshalAction fetches an action by its ID from the SQL DB, and marshals
 // it into the Action struct.
-func getAndMarshalAction(ctx context.Context, sqlTx SQLQueries, id int64) (
-	*Action, error) {
+func getAndMarshalAction(ctx context.Context, sqlTx *sqlcmig6.Queries,
+	id int64) (*Action, error) {
 
 	// First, fetch the action back from the SQL DB.
 	dbAction, err := sqlTx.GetAction(ctx, id)
@@ -1414,9 +1417,9 @@ func getAndMarshalAction(ctx context.Context, sqlTx SQLQueries, id int64) (
 	return marshalDBAction(ctx, sqlTx, dbAction)
 }
 
-// marshalDBAction marshals a sqlc.Action into the Action struct.
-func marshalDBAction(ctx context.Context, sqlTx SQLQueries,
-	dbAction sqlc.Action) (*Action, error) {
+// marshalDBAction marshals a sqlcmig6.Action into the Action struct.
+func marshalDBAction(ctx context.Context, sqlTx *sqlcmig6.Queries,
+	dbAction sqlcmig6.Action) (*Action, error) {
 
 	var legacySessID fn.Option[session.ID]
 	if dbAction.SessionID.Valid {
@@ -1517,8 +1520,10 @@ func mapMacIds(macRootKeyIDs [][]byte) (map[[4]byte][]byte, error) {
 // on the macaroon identifier (which is the last 4 bytes of the root key ID).
 // The function returns a map where the key is the 4 byte account prefix, and
 // the value is a list of accounts that match that prefix.
-func mapAccounts(accts []sqlc.Account) (map[[4]byte][]sqlc.Account, error) {
-	acctMap := make(map[[4]byte][]sqlc.Account)
+func mapAccounts(accts []sqlcmig6.Account) (map[[4]byte][]sqlcmig6.Account,
+	error) {
+
+	acctMap := make(map[[4]byte][]sqlcmig6.Account)
 
 	for _, acct := range accts {
 		aliasBytes := make([]byte, 8)
@@ -1532,7 +1537,7 @@ func mapAccounts(accts []sqlc.Account) (map[[4]byte][]sqlc.Account, error) {
 		if acctList, ok := acctMap[acctPrefix]; ok {
 			acctMap[acctPrefix] = append(acctList, acct)
 		} else {
-			acctMap[acctPrefix] = []sqlc.Account{acct}
+			acctMap[acctPrefix] = []sqlcmig6.Account{acct}
 		}
 	}
 
@@ -1544,8 +1549,10 @@ func mapAccounts(accts []sqlc.Account) (map[[4]byte][]sqlc.Account, error) {
 // identifier (which is the last 4 bytes of the root key ID).
 // The function returns a map where the key is the 4 byte Alias, and the
 // value is the corresponding session.
-func mapSessions(sessions []sqlc.Session) (map[[4]byte]sqlc.Session, error) {
-	sessMap := make(map[[4]byte]sqlc.Session)
+func mapSessions(sessions []sqlcmig6.Session) (map[[4]byte]sqlcmig6.Session,
+	error) {
+
+	sessMap := make(map[[4]byte]sqlcmig6.Session)
 
 	for _, sess := range sessions {
 		if len(sess.Alias) != 4 {
