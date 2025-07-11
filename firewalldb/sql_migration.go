@@ -6,8 +6,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-
-	"github.com/lightninglabs/lightning-terminal/db/sqlc"
+	"github.com/lightninglabs/lightning-terminal/db/sqlcmig6"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/sqldb"
 	"go.etcd.io/bbolt"
@@ -80,7 +79,7 @@ type privacyPairs = map[int64]map[string]string
 // NOTE: As sessions may contain linked sessions and accounts, the sessions and
 // accounts sql migration MUST be run prior to this migration.
 func MigrateFirewallDBToSQL(ctx context.Context, kvStore *bbolt.DB,
-	sqlTx SQLQueries) error {
+	sqlTx *sqlcmig6.Queries) error {
 
 	log.Infof("Starting migration of the rules DB to SQL")
 
@@ -105,7 +104,7 @@ func MigrateFirewallDBToSQL(ctx context.Context, kvStore *bbolt.DB,
 // database to the SQL database. The function also asserts that the
 // migrated values match the original values in the KV store.
 func migrateKVStoresDBToSQL(ctx context.Context, kvStore *bbolt.DB,
-	sqlTx SQLQueries) error {
+	sqlTx *sqlcmig6.Queries) error {
 
 	log.Infof("Starting migration of the KV stores to SQL")
 
@@ -367,7 +366,7 @@ func collectKVPairs(bkt *bbolt.Bucket, errorOnBuckets, perm bool,
 }
 
 // insertPair inserts a single key-value pair into the SQL database.
-func insertPair(ctx context.Context, tx SQLQueries,
+func insertPair(ctx context.Context, tx *sqlcmig6.Queries,
 	entry *kvEntry) (*sqlKvEntry, error) {
 
 	ruleID, err := tx.GetOrInsertRuleID(ctx, entry.ruleName)
@@ -375,7 +374,7 @@ func insertPair(ctx context.Context, tx SQLQueries,
 		return nil, err
 	}
 
-	p := sqlc.InsertKVStoreRecordParams{
+	p := sqlcmig6.InsertKVStoreRecordParams{
 		Perm:     entry.perm,
 		RuleID:   ruleID,
 		EntryKey: entry.key,
@@ -427,13 +426,13 @@ func insertPair(ctx context.Context, tx SQLQueries,
 
 // getSQLValue retrieves the key value for the given kvEntry from the SQL
 // database.
-func getSQLValue(ctx context.Context, tx SQLQueries,
+func getSQLValue(ctx context.Context, tx *sqlcmig6.Queries,
 	entry *sqlKvEntry) ([]byte, error) {
 
 	switch {
 	case entry.featureID.Valid && entry.groupID.Valid:
 		return tx.GetFeatureKVStoreRecord(
-			ctx, sqlc.GetFeatureKVStoreRecordParams{
+			ctx, sqlcmig6.GetFeatureKVStoreRecordParams{
 				Perm:      entry.perm,
 				RuleID:    entry.ruleID,
 				GroupID:   entry.groupID,
@@ -443,7 +442,7 @@ func getSQLValue(ctx context.Context, tx SQLQueries,
 		)
 	case entry.groupID.Valid:
 		return tx.GetGroupKVStoreRecord(
-			ctx, sqlc.GetGroupKVStoreRecordParams{
+			ctx, sqlcmig6.GetGroupKVStoreRecordParams{
 				Perm:    entry.perm,
 				RuleID:  entry.ruleID,
 				GroupID: entry.groupID,
@@ -452,7 +451,7 @@ func getSQLValue(ctx context.Context, tx SQLQueries,
 		)
 	case !entry.featureID.Valid && !entry.groupID.Valid:
 		return tx.GetGlobalKVStoreRecord(
-			ctx, sqlc.GetGlobalKVStoreRecordParams{
+			ctx, sqlcmig6.GetGlobalKVStoreRecordParams{
 				Perm:   entry.perm,
 				RuleID: entry.ruleID,
 				Key:    entry.key,
@@ -501,7 +500,7 @@ func verifyBktKeys(bkt *bbolt.Bucket, errorOnKeyValues bool,
 // from the KV database to the SQL database. The function also asserts that the
 // migrated values match the original values in the privacy mapper store.
 func migratePrivacyMapperDBToSQL(ctx context.Context, kvStore *bbolt.DB,
-	sqlTx SQLQueries) error {
+	sqlTx *sqlcmig6.Queries) error {
 
 	log.Infof("Starting migration of the privacy mapper store to SQL")
 
@@ -536,7 +535,7 @@ func migratePrivacyMapperDBToSQL(ctx context.Context, kvStore *bbolt.DB,
 
 // collectPrivacyPairs collects all privacy pairs from the KV store.
 func collectPrivacyPairs(ctx context.Context, kvStore *bbolt.DB,
-	sqlTx SQLQueries) (privacyPairs, error) {
+	sqlTx *sqlcmig6.Queries) (privacyPairs, error) {
 
 	groupPairs := make(privacyPairs)
 
@@ -665,7 +664,7 @@ func collectPairs(pairsBucket *bbolt.Bucket) (map[string]string, error) {
 }
 
 // insertPrivacyPairs inserts the collected privacy pairs into the SQL database.
-func insertPrivacyPairs(ctx context.Context, sqlTx SQLQueries,
+func insertPrivacyPairs(ctx context.Context, sqlTx *sqlcmig6.Queries,
 	pairs privacyPairs) error {
 
 	for groupId, groupPairs := range pairs {
@@ -684,12 +683,12 @@ func insertPrivacyPairs(ctx context.Context, sqlTx SQLQueries,
 // an error if a duplicate pair is found. The function takes a map of real
 // to pseudo values, where the key is the real value and the value is the
 // corresponding pseudo value.
-func insertGroupPairs(ctx context.Context, sqlTx SQLQueries, groupID int64,
-	pairs map[string]string) error {
+func insertGroupPairs(ctx context.Context, sqlTx *sqlcmig6.Queries,
+	groupID int64, pairs map[string]string) error {
 
 	for realVal, pseudoVal := range pairs {
 		err := sqlTx.InsertPrivacyPair(
-			ctx, sqlc.InsertPrivacyPairParams{
+			ctx, sqlcmig6.InsertPrivacyPairParams{
 				GroupID:   groupID,
 				RealVal:   realVal,
 				PseudoVal: pseudoVal,
@@ -706,7 +705,7 @@ func insertGroupPairs(ctx context.Context, sqlTx SQLQueries, groupID int64,
 
 // validatePrivacyPairsMigration validates that the migrated privacy pairs
 // match the original values in the KV store.
-func validatePrivacyPairsMigration(ctx context.Context, sqlTx SQLQueries,
+func validatePrivacyPairsMigration(ctx context.Context, sqlTx *sqlcmig6.Queries,
 	pairs privacyPairs) error {
 
 	for groupId, groupPairs := range pairs {
@@ -727,12 +726,12 @@ func validatePrivacyPairsMigration(ctx context.Context, sqlTx SQLQueries,
 // for each real value, the pseudo value in the SQL database matches the
 // original pseudo value, and vice versa. If any mismatch is found, it returns
 // an error indicating the mismatch.
-func validateGroupPairsMigration(ctx context.Context, sqlTx SQLQueries,
+func validateGroupPairsMigration(ctx context.Context, sqlTx *sqlcmig6.Queries,
 	groupID int64, pairs map[string]string) error {
 
 	for realVal, pseudoVal := range pairs {
 		resPseudoVal, err := sqlTx.GetPseudoForReal(
-			ctx, sqlc.GetPseudoForRealParams{
+			ctx, sqlcmig6.GetPseudoForRealParams{
 				GroupID: groupID,
 				RealVal: realVal,
 			},
@@ -752,7 +751,7 @@ func validateGroupPairsMigration(ctx context.Context, sqlTx SQLQueries,
 		}
 
 		resRealVal, err := sqlTx.GetRealForPseudo(
-			ctx, sqlc.GetRealForPseudoParams{
+			ctx, sqlcmig6.GetRealForPseudoParams{
 				GroupID:   groupID,
 				PseudoVal: pseudoVal,
 			},

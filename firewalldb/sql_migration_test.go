@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/lightninglabs/lightning-terminal/accounts"
-	"github.com/lightninglabs/lightning-terminal/db/sqlc"
+	"github.com/lightninglabs/lightning-terminal/db/sqlcmig6"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/fn"
@@ -56,26 +56,26 @@ func TestFirewallDBMigration(t *testing.T) {
 		t.Skipf("Skipping Firewall DB migration test for kvdb build")
 	}
 
-	makeSQLDB := func(t *testing.T, sessionsStore session.Store) (*SQLDB,
-		*SQLQueriesExecutor[SQLQueries]) {
+	makeSQLDB := func(t *testing.T, sStore session.Store) (*SQLDB,
+		*sqlcmig6.TxExecutor[*sqlcmig6.Queries]) {
 
-		testDBStore := NewTestDBWithSessions(t, sessionsStore, clock)
+		testDBStore := NewTestDBWithSessions(t, sStore, clock)
 
 		store, ok := testDBStore.(*SQLDB)
 		require.True(t, ok)
 
 		baseDB := store.BaseDB
 
-		queries := sqlc.NewForType(baseDB, baseDB.BackendType)
+		queries := sqlcmig6.NewForType(baseDB, baseDB.BackendType)
 
-		return store, NewSQLQueriesExecutor(baseDB, queries)
+		return store, sqlcmig6.NewTxExecutor(baseDB, queries)
 	}
 
 	// The assertKvStoreMigrationResults function will currently assert that
 	// the migrated kv stores entries in the SQLDB match the original kv
 	// stores entries in the BoltDB.
-	assertKvStoreMigrationResults := func(t *testing.T, store *sqlc.Queries,
-		kvEntries []*kvEntry) {
+	assertKvStoreMigrationResults := func(t *testing.T,
+		store *sqlcmig6.Queries, kvEntries []*kvEntry) {
 
 		var (
 			ruleIDs    = make(map[string]int64)
@@ -145,7 +145,7 @@ func TestFirewallDBMigration(t *testing.T) {
 			if entry.groupAlias.IsNone() {
 				sqlVal, err := store.GetGlobalKVStoreRecord(
 					ctx,
-					sqlc.GetGlobalKVStoreRecordParams{
+					sqlcmig6.GetGlobalKVStoreRecordParams{
 						Key:    entry.key,
 						Perm:   entry.perm,
 						RuleID: ruleID,
@@ -163,7 +163,7 @@ func TestFirewallDBMigration(t *testing.T) {
 
 				v, err := store.GetGroupKVStoreRecord(
 					ctx,
-					sqlc.GetGroupKVStoreRecordParams{
+					sqlcmig6.GetGroupKVStoreRecordParams{
 						Key:    entry.key,
 						Perm:   entry.perm,
 						RuleID: ruleID,
@@ -188,7 +188,7 @@ func TestFirewallDBMigration(t *testing.T) {
 
 				sqlVal, err := store.GetFeatureKVStoreRecord(
 					ctx,
-					sqlc.GetFeatureKVStoreRecordParams{
+					sqlcmig6.GetFeatureKVStoreRecordParams{
 						Key:    entry.key,
 						Perm:   entry.perm,
 						RuleID: ruleID,
@@ -217,7 +217,7 @@ func TestFirewallDBMigration(t *testing.T) {
 	// BoltDB. It also asserts that the SQL DB does not contain any other
 	// privacy pairs than the expected ones.
 	assertPrivacyMapperMigrationResults := func(t *testing.T,
-		sqlStore *sqlc.Queries, privPairs privacyPairs) {
+		sqlStore *sqlcmig6.Queries, privPairs privacyPairs) {
 
 		var totalExpectedPairs, totalPairs int
 
@@ -269,7 +269,7 @@ func TestFirewallDBMigration(t *testing.T) {
 	// The assertMigrationResults asserts that the migrated entries in the
 	// firewall SQLDB match the expected results which should represent the
 	// original entries in the BoltDB.
-	assertMigrationResults := func(t *testing.T, sqlStore *sqlc.Queries,
+	assertMigrationResults := func(t *testing.T, sqlStore *sqlcmig6.Queries,
 		expRes *expectedResult) {
 
 		// Assert that the kv store migration results match the expected
@@ -388,7 +388,7 @@ func TestFirewallDBMigration(t *testing.T) {
 
 			// Perform the migration.
 			err = txEx.ExecTx(ctx, sqldb.WriteTxOpt(),
-				func(tx SQLQueries) error {
+				func(tx *sqlcmig6.Queries) error {
 					return MigrateFirewallDBToSQL(
 						ctx, firewallStore.DB, tx,
 					)
@@ -397,7 +397,7 @@ func TestFirewallDBMigration(t *testing.T) {
 			require.NoError(t, err)
 
 			// Assert migration results.
-			queries := sqlc.NewForType(
+			queries := sqlcmig6.NewForType(
 				sqlStore, sqlStore.BackendType,
 			)
 			assertMigrationResults(t, queries, entries)
@@ -795,7 +795,7 @@ func createPrivacyPairs(t *testing.T, ctx context.Context,
 	sessSQLStore, ok := sessionStore.(*session.SQLStore)
 	require.True(t, ok)
 
-	queries := sqlc.NewForType(sessSQLStore, sessSQLStore.BackendType)
+	queries := sqlcmig6.NewForType(sessSQLStore, sessSQLStore.BackendType)
 
 	for i := range numSessions {
 		sess, err := sessionStore.NewSession(
@@ -850,7 +850,7 @@ func randomPrivacyPairs(t *testing.T, ctx context.Context,
 	sessSQLStore, ok := sessionStore.(*session.SQLStore)
 	require.True(t, ok)
 
-	queries := sqlc.NewForType(sessSQLStore, sessSQLStore.BackendType)
+	queries := sqlcmig6.NewForType(sessSQLStore, sessSQLStore.BackendType)
 
 	for i := range numSessions {
 		sess, err := sessionStore.NewSession(
