@@ -447,7 +447,7 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 		return fmt.Errorf("could not create network directory: %v", err)
 	}
 
-	g.stores, err = NewStores(g.cfg, clock.NewDefaultClock())
+	g.stores, err = NewStores(ctx, g.cfg, clock.NewDefaultClock())
 	if err != nil {
 		return fmt.Errorf("could not create stores: %v", err)
 	}

@@ -5,7 +5,7 @@ package firewalldb
 import (
 	"testing"
 
-	"github.com/lightninglabs/lightning-terminal/db/migrationstreams"
+	"github.com/lightninglabs/lightning-terminal/db"
 	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/sqldb/v2"
 )
@@ -14,7 +14,7 @@ import (
 func NewTestDB(t *testing.T, clock clock.Clock) FirewallDBs {
 	return createStore(
 		t,
-		sqldb.NewTestSqliteDB(t, migrationstreams.LitdMigrationStreams).BaseDB,
+		sqldb.NewTestSqliteDB(t, db.MakeTestMigrationStreams()).BaseDB,
 		clock,
 	)
 }
@@ -25,7 +25,7 @@ func NewTestDBFromPath(t *testing.T, dbPath string,
 	clock clock.Clock) FirewallDBs {
 
 	tDb := sqldb.NewTestSqliteDBFromPath(
-		t, dbPath, migrationstreams.LitdMigrationStreams,
+		t, dbPath, db.MakeTestMigrationStreams(),
 	)
 
 	return createStore(t, tDb.BaseDB, clock)

@@ -3,6 +3,7 @@
 package terminal
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 
@@ -29,7 +30,9 @@ func (c *DevConfig) Validate(_, _ string) error {
 
 // NewStores creates a new instance of the stores struct using the default Bolt
 // backend since in production, this is currently the only backend supported.
-func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
+func NewStores(_ context.Context, cfg *Config,
+	clock clock.Clock) (*stores, error) {
+
 	networkDir := filepath.Join(cfg.LitDir, cfg.Network)
 
 	stores := &stores{

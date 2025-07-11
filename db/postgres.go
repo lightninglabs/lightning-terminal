@@ -8,7 +8,6 @@ import (
 
 	postgres_migrate "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-	"github.com/lightninglabs/lightning-terminal/db/migrationstreams"
 	"github.com/lightninglabs/lightning-terminal/db/sqlc"
 	"github.com/lightningnetwork/lnd/sqldb/v2"
 	"github.com/stretchr/testify/require"
@@ -170,7 +169,7 @@ func NewTestPostgresDB(t *testing.T) *sqldb.PostgresStore {
 	})
 
 	return sqldb.NewTestPostgresDB(
-		t, sqlFixture, migrationstreams.LitdMigrationStreams,
+		t, sqlFixture, MakeTestMigrationStreams(),
 	)
 }
 

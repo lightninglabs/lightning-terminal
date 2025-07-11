@@ -6,7 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/lightninglabs/lightning-terminal/db/migrationstreams"
+	"github.com/lightninglabs/lightning-terminal/db"
 	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/sqldb/v2"
 )
@@ -19,7 +19,7 @@ var ErrDBClosed = errors.New("database is closed")
 func NewTestDB(t *testing.T, clock clock.Clock) Store {
 	return createStore(
 		t,
-		sqldb.NewTestSqliteDB(t, migrationstreams.LitdMigrationStreams).BaseDB,
+		sqldb.NewTestSqliteDB(t, db.MakeTestMigrationStreams()).BaseDB,
 		clock,
 	)
 }
@@ -30,7 +30,7 @@ func NewTestDBFromPath(t *testing.T, dbPath string,
 	clock clock.Clock) Store {
 
 	tDb := sqldb.NewTestSqliteDBFromPath(
-		t, dbPath, migrationstreams.LitdMigrationStreams,
+		t, dbPath, db.MakeTestMigrationStreams(),
 	)
 
 	return createStore(t, tDb.BaseDB, clock)
