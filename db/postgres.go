@@ -8,6 +8,7 @@ import (
 
 	postgres_migrate "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/lightninglabs/lightning-terminal/db/migrationstreams"
 	"github.com/lightninglabs/lightning-terminal/db/sqlc"
 	"github.com/lightningnetwork/lnd/sqldb/v2"
 	"github.com/stretchr/testify/require"
@@ -149,7 +150,7 @@ func (s *PostgresStore) ExecuteMigrations(target MigrationTarget,
 		return fmt.Errorf("error creating postgres migration: %w", err)
 	}
 
-	postgresFS := newReplacerFS(sqlSchemas, postgresSchemaReplacements)
+	postgresFS := newReplacerFS(SqlSchemas, postgresSchemaReplacements)
 	return applyMigrations(
 		postgresFS, driver, "sqlc/migrations", s.cfg.DBName, target,
 		opts,
@@ -168,7 +169,9 @@ func NewTestPostgresDB(t *testing.T) *sqldb.PostgresStore {
 		sqlFixture.TearDown(t)
 	})
 
-	return sqldb.NewTestPostgresDB(t, sqlFixture, LitdMigrationStreams)
+	return sqldb.NewTestPostgresDB(
+		t, sqlFixture, migrationstreams.LitdMigrationStreams,
+	)
 }
 
 // NewTestPostgresDBWithVersion is a helper function that creates a Postgres

@@ -120,7 +120,7 @@ func applyMigrations(fs fs.FS, driver database.Driver, path, dbName string,
 	targetVersion MigrationTarget, opts *migrateOptions) error {
 
 	// With the migrate instance open, we'll create a new migration source
-	// using the embedded file system stored in sqlSchemas. The library
+	// using the embedded file system stored in SqlSchemas. The library
 	// we're using can't handle a raw file system interface, so we wrap it
 	// in this intermediate layer.
 	migrateFileServer, err := httpfs.New(http.FS(fs), path)

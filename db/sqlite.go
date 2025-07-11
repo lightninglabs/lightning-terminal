@@ -235,7 +235,7 @@ func (s *SqliteStore) ExecuteMigrations(target MigrationTarget,
 		return fmt.Errorf("error creating sqlite migration: %w", err)
 	}
 
-	sqliteFS := newReplacerFS(sqlSchemas, sqliteSchemaReplacements)
+	sqliteFS := newReplacerFS(SqlSchemas, sqliteSchemaReplacements)
 	return applyMigrations(
 		sqliteFS, driver, "sqlc/migrations", "sqlite", target, opts,
 	)
