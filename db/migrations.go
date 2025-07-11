@@ -17,6 +17,9 @@ const (
 
 // MakeTestMigrationStreams creates the migration streams for the unit test
 // environment.
+//
+// NOTE: This function is not located in the migrationstreams package to avoid
+// cyclic dependencies.
 func MakeTestMigrationStreams() []sqldb.MigrationStream {
 	migStream := sqldb.MigrationStream{
 		TrackingTableName: pgx.DefaultMigrationsTable,
