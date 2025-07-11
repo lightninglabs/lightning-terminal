@@ -8,6 +8,7 @@ import (
 
 	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/db"
+	"github.com/lightninglabs/lightning-terminal/db/migrationstreams"
 	"github.com/lightninglabs/lightning-terminal/db/sqlc"
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	"github.com/lightninglabs/lightning-terminal/session"
@@ -113,7 +114,7 @@ func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
 
 		if !cfg.Sqlite.SkipMigrations {
 			err = sqldb.ApplyAllMigrations(
-				sqlStore, db.LitdMigrationStreams,
+				sqlStore, migrationstreams.LitdMigrationStreams,
 			)
 			if err != nil {
 				return stores, fmt.Errorf("error applying "+
@@ -155,7 +156,7 @@ func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
 
 		if !cfg.Postgres.SkipMigrations {
 			err = sqldb.ApplyAllMigrations(
-				sqlStore, db.LitdMigrationStreams,
+				sqlStore, migrationstreams.LitdMigrationStreams,
 			)
 			if err != nil {
 				return stores, fmt.Errorf("error applying "+
