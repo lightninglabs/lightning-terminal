@@ -76,61 +76,62 @@ in remote mode (meaning that `lnd-mode=remote` is set). It shows the
 (LiT). The bundled version will always come with the correct,
 [compatible versioning](#daemon-versions-packaged-with-lit).
 
-| LiT               | LND          |
-|-------------------|--------------|
-| **v0.15.0-alpha** | v0.19.0-beta |
-| **v0.14.1-alpha** | v0.18.5-beta |
-| **v0.14.0-alpha** | v0.18.4-beta |
-| **v0.13.6-alpha** | v0.17.1-beta |
-| **v0.13.5-alpha** | v0.17.1-beta |
-| **v0.13.4-alpha** | v0.17.1-beta |
-| **v0.13.3-alpha** | v0.17.1-beta |
-| **v0.13.2-alpha** | v0.17.0-beta |
-| **v0.13.1-alpha** | v0.17.0-beta |
-| **v0.13.0-alpha** | v0.17.0-beta |
-| **v0.12.5-alpha** | v0.17.0-beta |
-| **v0.12.4-alpha** | v0.17.0-beta |
-| **v0.12.3-alpha** | v0.16.0-beta |
-| **v0.12.2-alpha** | v0.16.0-beta |
-| **v0.12.1-alpha** | v0.16.0-beta |
-| **v0.12.0-alpha** | v0.16.0-beta |
-| **v0.11.0-alpha** | v0.16.0-beta |
-| **v0.10.5-alpha** | v0.16.0-beta |
-| **v0.10.4-alpha** | v0.16.0-beta |
-| **v0.10.2-alpha** | v0.16.0-beta |
-| **v0.10.1-alpha** | v0.16.0-beta |
-| **v0.10.0-alpha** | v0.16.0-beta |
-| **v0.9.2-alpha**  | v0.16.0-beta |
-| **v0.9.1-alpha**  | v0.16.0-beta |
-| **v0.9.0-alpha**  | v0.16.0-beta |
-| **v0.8.6-alpha**  | v0.15.4-beta |
-| **v0.8.5-alpha**  | v0.15.4-beta |
-| **v0.8.4-alpha**  | v0.15.1-beta |
-| **v0.8.3-alpha**  | v0.15.1-beta |
-| **v0.8.2-alpha**  | v0.15.1-beta |
-| **v0.8.1-alpha**  | v0.15.1-beta |
-| **v0.8.0-alpha**  | v0.15.1-beta |
-| **v0.7.1-alpha**  | v0.14.3-beta |
-| **v0.7.0-alpha**  | v0.14.3-beta |
-| **v0.6.7-alpha**  | v0.13.3-beta |
-| **v0.6.6-alpha**  | v0.13.3-beta |
-| **v0.6.5-alpha**  | v0.13.3-beta |
-| **v0.6.4-alpha**  | v0.13.3-beta |
-| **v0.6.3-alpha**  | v0.13.3-beta |
-| **v0.6.2-alpha**  | v0.13.3-beta |
-| **v0.6.1-alpha**  | v0.13.3-beta |
-| **v0.6.0-alpha**  | v0.13.3-beta |
-| **v0.5.2-alpha**  | v0.12.0-beta |
-| **v0.5.1-alpha**  | v0.12.0-beta |
-| **v0.5.0-alpha**  | v0.12.0-beta |
-| **v0.4.1-alpha**  | v0.11.1-beta |
-| **v0.4.0-alpha**  | v0.11.1-beta |
-| **v0.3.4-alpha**  | v0.11.1-beta | 
-| **v0.3.3-alpha**  | v0.11.1-beta | 
-| **v0.3.2-alpha**  | v0.11.1-beta | 
-| **v0.3.1-alpha**  | v0.11.1-beta |
-| **v0.3.0-alpha**  | v0.11.1-beta |
-| **v0.2.0-alpha**  | v0.11.0-beta |
+| LiT                   | LND          |
+|-----------------------|--------------|
+| **v0.15.1-alpha.rc1** | v0.19.0-beta |
+| **v0.15.0-alpha**     | v0.19.0-beta |
+| **v0.14.1-alpha**     | v0.18.5-beta |
+| **v0.14.0-alpha**     | v0.18.4-beta |
+| **v0.13.6-alpha**     | v0.17.1-beta |
+| **v0.13.5-alpha**     | v0.17.1-beta |
+| **v0.13.4-alpha**     | v0.17.1-beta |
+| **v0.13.3-alpha**     | v0.17.1-beta |
+| **v0.13.2-alpha**     | v0.17.0-beta |
+| **v0.13.1-alpha**     | v0.17.0-beta |
+| **v0.13.0-alpha**     | v0.17.0-beta |
+| **v0.12.5-alpha**     | v0.17.0-beta |
+| **v0.12.4-alpha**     | v0.17.0-beta |
+| **v0.12.3-alpha**     | v0.16.0-beta |
+| **v0.12.2-alpha**     | v0.16.0-beta |
+| **v0.12.1-alpha**     | v0.16.0-beta |
+| **v0.12.0-alpha**     | v0.16.0-beta |
+| **v0.11.0-alpha**     | v0.16.0-beta |
+| **v0.10.5-alpha**     | v0.16.0-beta |
+| **v0.10.4-alpha**     | v0.16.0-beta |
+| **v0.10.2-alpha**     | v0.16.0-beta |
+| **v0.10.1-alpha**     | v0.16.0-beta |
+| **v0.10.0-alpha**     | v0.16.0-beta |
+| **v0.9.2-alpha**      | v0.16.0-beta |
+| **v0.9.1-alpha**      | v0.16.0-beta |
+| **v0.9.0-alpha**      | v0.16.0-beta |
+| **v0.8.6-alpha**      | v0.15.4-beta |
+| **v0.8.5-alpha**      | v0.15.4-beta |
+| **v0.8.4-alpha**      | v0.15.1-beta |
+| **v0.8.3-alpha**      | v0.15.1-beta |
+| **v0.8.2-alpha**      | v0.15.1-beta |
+| **v0.8.1-alpha**      | v0.15.1-beta |
+| **v0.8.0-alpha**      | v0.15.1-beta |
+| **v0.7.1-alpha**      | v0.14.3-beta |
+| **v0.7.0-alpha**      | v0.14.3-beta |
+| **v0.6.7-alpha**      | v0.13.3-beta |
+| **v0.6.6-alpha**      | v0.13.3-beta |
+| **v0.6.5-alpha**      | v0.13.3-beta |
+| **v0.6.4-alpha**      | v0.13.3-beta |
+| **v0.6.3-alpha**      | v0.13.3-beta |
+| **v0.6.2-alpha**      | v0.13.3-beta |
+| **v0.6.1-alpha**      | v0.13.3-beta |
+| **v0.6.0-alpha**      | v0.13.3-beta |
+| **v0.5.2-alpha**      | v0.12.0-beta |
+| **v0.5.1-alpha**      | v0.12.0-beta |
+| **v0.5.0-alpha**      | v0.12.0-beta |
+| **v0.4.1-alpha**      | v0.11.1-beta |
+| **v0.4.0-alpha**      | v0.11.1-beta |
+| **v0.3.4-alpha**      | v0.11.1-beta | 
+| **v0.3.3-alpha**      | v0.11.1-beta | 
+| **v0.3.2-alpha**      | v0.11.1-beta | 
+| **v0.3.1-alpha**      | v0.11.1-beta |
+| **v0.3.0-alpha**      | v0.11.1-beta |
+| **v0.2.0-alpha**      | v0.11.0-beta |
 
 LiT offers two main operating modes, one in which [`lnd` is running inside the
 LiT process (called "lnd integrated mode", set by `lnd-mode=integrated` config
@@ -168,60 +169,61 @@ will be added in the future.
 
 ## Daemon Versions packaged with LiT
 
-| LiT               | LND          | Loop         | Faraday       | Pool         | Taproot Assets |
-|-------------------|--------------|--------------|---------------|--------------|----------------|
-| **v0.15.0-alpha** | v0.19.1-beta | v0.31.2-beta | v0.2.16-alpha | v0.6.6-beta  | v0.6.0-alpha   |
-| **v0.14.1-alpha** | v0.18.5-beta | v0.29.0-beta | v0.2.14-alpha | v0.6.5-beta  | v0.5.1-alpha   |
-| **v0.14.0-alpha** | v0.18.4-beta | v0.29.0-beta | v0.2.13-alpha | v0.6.5-beta  | v0.5.0-alpha   |
-| **v0.13.6-alpha** | v0.18.3-beta | v0.28.8-beta | v0.2.13-alpha | v0.6.5-beta  | v0.4.1-alpha   |
-| **v0.13.5-alpha** | v0.18.3-beta | v0.28.8-beta | v0.2.13-alpha | v0.6.5-beta  | v0.4.1-alpha   |
-| **v0.13.4-alpha** | v0.18.3-beta | v0.28.7-beta | v0.2.13-alpha | v0.6.5-beta  | v0.4.1-alpha   |
-| **v0.13.3-alpha** | v0.18.2-beta | v0.28.6-beta | v0.2.13-alpha | v0.6.5-beta  | v0.4.1-alpha   |
-| **v0.13.2-alpha** | v0.18.2-beta | v0.28.5-beta | v0.2.13-alpha | v0.6.5-beta  | v0.3.3-alpha   |
-| **v0.13.1-alpha** | v0.18.1-beta | v0.28.5-beta | v0.2.13-alpha | v0.6.5-beta  | v0.3.3-alpha   |
-| **v0.13.0-alpha** | v0.18.0-beta | v0.28.5-beta | v0.2.13-alpha | v0.6.5-beta  | v0.3.3-alpha   |
-| **v0.12.5-alpha** | v0.17.5-beta | v0.28.1-beta | v0.2.13-alpha | v0.6.4-beta  | v0.3.3-alpha   |
-| **v0.12.4-alpha** | v0.17.4-beta | v0.28.0-beta | v0.2.13-alpha | v0.6.4-beta  | v0.3.3-alpha   |
-| **v0.12.3-alpha** | v0.17.4-beta | v0.27.0-beta | v0.2.11-alpha | v0.6.4-beta  | v0.3.3-alpha   |
-| **v0.12.2-alpha** | v0.17.3-beta | v0.26.6-beta | v0.2.11-alpha | v0.6.4-beta  | v0.3.2-alpha   |
-| **v0.12.1-alpha** | v0.17.1-beta | v0.26.5-beta | v0.2.11-alpha | v0.6.4-beta  | v0.3.1-alpha   |
-| **v0.12.0-alpha** | v0.17.0-beta | v0.26.4-beta | v0.2.11-alpha | v0.6.4-beta  | v0.3.0-alpha   |
-| **v0.11.0-alpha** | v0.17.0-beta | v0.26.3-beta | v0.2.11-alpha | v0.6.4-beta  | v0.2.3-alpha   |
-| **v0.10.5-alpha** | v0.16.4-beta | v0.26.2-beta | v0.2.11-alpha | v0.6.4-beta  | v0.2.3-alpha   |
-| **v0.10.4-alpha** | v0.16.4-beta | v0.25.2-beta | v0.2.11-alpha | v0.6.4-beta  | v0.2.3-alpha   |
-| **v0.10.2-alpha** | v0.16.4-beta | v0.25.2-beta | v0.2.11-alpha | v0.6.4-beta  | v0.2.2-alpha   |
-| **v0.10.1-alpha** | v0.16.3-beta | v0.24.1-beta | v0.2.11-alpha | v0.6.4-beta  | v0.2.0-alpha   |
-| **v0.10.0-alpha** | v0.16.2-beta | v0.23.0-beta | v0.2.11-alpha | v0.6.2-beta  | v0.2.0-alpha   |
-| **v0.9.2-alpha**  | v0.16.2-beta | v0.23.0-beta | v0.2.11-alpha | v0.6.2-beta  | n/a            |
-| **v0.9.1-alpha**  | v0.16.1-beta | v0.23.0-beta | v0.2.11-alpha | v0.6.2-beta  | n/a            |
-| **v0.9.0-alpha**  | v0.16.0-beta | v0.22.0-beta | v0.2.10-alpha | v0.6.2-beta  | n/a            |
-| **v0.8.6-alpha**  | v0.15.5-beta | v0.21.0-beta | v0.2.9-alpha  | v0.6.1-beta  | n/a            |
-| **v0.8.5-alpha**  | v0.15.5-beta | v0.20.2-beta | v0.2.9-alpha  | v0.6.1-beta  | n/a            |
-| **v0.8.4-alpha**  | v0.15.5-beta | v0.20.1-beta | v0.2.9-alpha  | v0.5.8-alpha | n/a            |
-| **v0.8.3-alpha**  | v0.15.4-beta | v0.20.1-beta | v0.2.8-alpha  | v0.5.8-alpha | n/a            |
-| **v0.8.2-alpha**  | v0.15.3-beta | v0.20.1-beta | v0.2.8-alpha  | v0.5.8-alpha | n/a            |
-| **v0.8.1-alpha**  | v0.15.2-beta | v0.20.1-beta | v0.2.8-alpha  | v0.5.8-alpha | n/a            |
-| **v0.8.0-alpha**  | v0.15.1-beta | v0.20.1-beta | v0.2.8-alpha  | v0.5.8-alpha | n/a            |
-| **v0.7.1-alpha**  | v0.15.0-beta | v0.19.1-beta | v0.2.8-alpha  | v0.5.7-alpha | n/a            |
-| **v0.7.0-alpha**  | v0.15.0-beta | v0.19.1-beta | v0.2.8-alpha  | v0.5.7-alpha | n/a            |
-| **v0.6.7-alpha**  | v0.14.3-beta | v0.18.0-beta | v0.2.7-alpha  | v0.5.6-alpha | n/a            |
-| **v0.6.6-alpha**  | v0.14.3-beta | v0.18.0-beta | v0.2.7-alpha  | v0.5.6-alpha | n/a            |
-| **v0.6.5-alpha**  | v0.14.2-beta | v0.15.1-beta | v0.2.7-alpha  | v0.5.5-alpha | n/a            |
-| **v0.6.4-alpha**  | v0.14.2-beta | v0.15.1-beta | v0.2.7-alpha  | v0.5.4-alpha | n/a            |
-| **v0.6.3-alpha**  | v0.14.2-beta | v0.15.1-beta | v0.2.7-alpha  | v0.5.4-alpha | n/a            |
-| **v0.6.2-alpha**  | v0.14.1-beta | v0.15.1-beta | v0.2.7-alpha  | v0.5.4-alpha | n/a            |
-| **v0.6.1-alpha**  | v0.14.1-beta | v0.15.1-beta | v0.2.7-alpha  | v0.5.2-alpha | n/a            |
-| **v0.5.3-alpha**  | v0.13.3-beta | v0.14.1-beta | v0.2.6-alpha  | v0.5.0-alpha | n/a            |
-| **v0.5.2-alpha**  | v0.13.3-beta | v0.14.1-beta | v0.2.6-alpha  | v0.5.0-alpha | n/a            |
-| **v0.5.1-alpha**  | v0.13.0-beta | v0.14.1-beta | v0.2.6-alpha  | v0.5.0-alpha | n/a            |
-| **v0.5.0-alpha**  | v0.13.0-beta | v0.14.1-beta | v0.2.6-alpha  | v0.5.0-alpha | n/a            |
-| **v0.4.1-alpha**  | v0.12.1-beta | v0.11.4-beta | v0.2.3-alpha  | v0.4.4-alpha | n/a            |
-| **v0.4.0-alpha**  | v0.12.0-beta | v0.11.2-beta | v0.2.3-alpha  | v0.4.3-alpha | n/a            |
-| **v0.3.4-alpha**  | v0.11.1-beta | v0.11.2-beta | v0.2.2-alpha  | v0.3.4-alpha | n/a            |
-| **v0.3.3-alpha**  | v0.11.1-beta | v0.11.2-beta | v0.2.2-alpha  | v0.3.4-alpha | n/a            |
-| **v0.3.2-alpha**  | v0.11.1-beta | v0.11.1-beta | v0.2.2-alpha  | v0.3.4-alpha | n/a            |
-| **v0.3.1-alpha**  | v0.11.1-beta | v0.11.1-beta | v0.2.2-alpha  | v0.3.3-alpha | n/a            |
-| **v0.3.0-alpha**  | v0.11.1-beta | v0.11.0-beta | v0.2.2-alpha  | v0.3.2-alpha | n/a            |
-| **v0.2.0-alpha**  | v0.11.1-beta | v0.10.0-beta | v0.2.1-alpha  | n/a          | n/a            |
-| **v0.1.1-alpha**  | v0.11.0-beta | v0.8.1-beta  | v0.2.0-alpha  | n/a          | n/a            |
-| **v0.1.0-alpha**  | v0.10.3-beta | v0.6.5-beta  | v0.2.0-alpha  | n/a          | n/a            |
+| LiT                   | LND              | Loop         | Faraday       | Pool         | Taproot Assets |
+|-----------------------|------------------|--------------|---------------|--------------|----------------|
+| **v0.15.1-alpha.rc1** | v0.19.2-beta.rc2 | v0.31.2-beta | v0.2.16-alpha | v0.6.6-beta  | v0.6.0-alpha   |
+| **v0.15.0-alpha**     | v0.19.1-beta     | v0.31.2-beta | v0.2.16-alpha | v0.6.6-beta  | v0.6.0-alpha   |
+| **v0.14.1-alpha**     | v0.18.5-beta     | v0.29.0-beta | v0.2.14-alpha | v0.6.5-beta  | v0.5.1-alpha   |
+| **v0.14.0-alpha**     | v0.18.4-beta     | v0.29.0-beta | v0.2.13-alpha | v0.6.5-beta  | v0.5.0-alpha   |
+| **v0.13.6-alpha**     | v0.18.3-beta     | v0.28.8-beta | v0.2.13-alpha | v0.6.5-beta  | v0.4.1-alpha   |
+| **v0.13.5-alpha**     | v0.18.3-beta     | v0.28.8-beta | v0.2.13-alpha | v0.6.5-beta  | v0.4.1-alpha   |
+| **v0.13.4-alpha**     | v0.18.3-beta     | v0.28.7-beta | v0.2.13-alpha | v0.6.5-beta  | v0.4.1-alpha   |
+| **v0.13.3-alpha**     | v0.18.2-beta     | v0.28.6-beta | v0.2.13-alpha | v0.6.5-beta  | v0.4.1-alpha   |
+| **v0.13.2-alpha**     | v0.18.2-beta     | v0.28.5-beta | v0.2.13-alpha | v0.6.5-beta  | v0.3.3-alpha   |
+| **v0.13.1-alpha**     | v0.18.1-beta     | v0.28.5-beta | v0.2.13-alpha | v0.6.5-beta  | v0.3.3-alpha   |
+| **v0.13.0-alpha**     | v0.18.0-beta     | v0.28.5-beta | v0.2.13-alpha | v0.6.5-beta  | v0.3.3-alpha   |
+| **v0.12.5-alpha**     | v0.17.5-beta     | v0.28.1-beta | v0.2.13-alpha | v0.6.4-beta  | v0.3.3-alpha   |
+| **v0.12.4-alpha**     | v0.17.4-beta     | v0.28.0-beta | v0.2.13-alpha | v0.6.4-beta  | v0.3.3-alpha   |
+| **v0.12.3-alpha**     | v0.17.4-beta     | v0.27.0-beta | v0.2.11-alpha | v0.6.4-beta  | v0.3.3-alpha   |
+| **v0.12.2-alpha**     | v0.17.3-beta     | v0.26.6-beta | v0.2.11-alpha | v0.6.4-beta  | v0.3.2-alpha   |
+| **v0.12.1-alpha**     | v0.17.1-beta     | v0.26.5-beta | v0.2.11-alpha | v0.6.4-beta  | v0.3.1-alpha   |
+| **v0.12.0-alpha**     | v0.17.0-beta     | v0.26.4-beta | v0.2.11-alpha | v0.6.4-beta  | v0.3.0-alpha   |
+| **v0.11.0-alpha**     | v0.17.0-beta     | v0.26.3-beta | v0.2.11-alpha | v0.6.4-beta  | v0.2.3-alpha   |
+| **v0.10.5-alpha**     | v0.16.4-beta     | v0.26.2-beta | v0.2.11-alpha | v0.6.4-beta  | v0.2.3-alpha   |
+| **v0.10.4-alpha**     | v0.16.4-beta     | v0.25.2-beta | v0.2.11-alpha | v0.6.4-beta  | v0.2.3-alpha   |
+| **v0.10.2-alpha**     | v0.16.4-beta     | v0.25.2-beta | v0.2.11-alpha | v0.6.4-beta  | v0.2.2-alpha   |
+| **v0.10.1-alpha**     | v0.16.3-beta     | v0.24.1-beta | v0.2.11-alpha | v0.6.4-beta  | v0.2.0-alpha   |
+| **v0.10.0-alpha**     | v0.16.2-beta     | v0.23.0-beta | v0.2.11-alpha | v0.6.2-beta  | v0.2.0-alpha   |
+| **v0.9.2-alpha**      | v0.16.2-beta     | v0.23.0-beta | v0.2.11-alpha | v0.6.2-beta  | n/a            |
+| **v0.9.1-alpha**      | v0.16.1-beta     | v0.23.0-beta | v0.2.11-alpha | v0.6.2-beta  | n/a            |
+| **v0.9.0-alpha**      | v0.16.0-beta     | v0.22.0-beta | v0.2.10-alpha | v0.6.2-beta  | n/a            |
+| **v0.8.6-alpha**      | v0.15.5-beta     | v0.21.0-beta | v0.2.9-alpha  | v0.6.1-beta  | n/a            |
+| **v0.8.5-alpha**      | v0.15.5-beta     | v0.20.2-beta | v0.2.9-alpha  | v0.6.1-beta  | n/a            |
+| **v0.8.4-alpha**      | v0.15.5-beta     | v0.20.1-beta | v0.2.9-alpha  | v0.5.8-alpha | n/a            |
+| **v0.8.3-alpha**      | v0.15.4-beta     | v0.20.1-beta | v0.2.8-alpha  | v0.5.8-alpha | n/a            |
+| **v0.8.2-alpha**      | v0.15.3-beta     | v0.20.1-beta | v0.2.8-alpha  | v0.5.8-alpha | n/a            |
+| **v0.8.1-alpha**      | v0.15.2-beta     | v0.20.1-beta | v0.2.8-alpha  | v0.5.8-alpha | n/a            |
+| **v0.8.0-alpha**      | v0.15.1-beta     | v0.20.1-beta | v0.2.8-alpha  | v0.5.8-alpha | n/a            |
+| **v0.7.1-alpha**      | v0.15.0-beta     | v0.19.1-beta | v0.2.8-alpha  | v0.5.7-alpha | n/a            |
+| **v0.7.0-alpha**      | v0.15.0-beta     | v0.19.1-beta | v0.2.8-alpha  | v0.5.7-alpha | n/a            |
+| **v0.6.7-alpha**      | v0.14.3-beta     | v0.18.0-beta | v0.2.7-alpha  | v0.5.6-alpha | n/a            |
+| **v0.6.6-alpha**      | v0.14.3-beta     | v0.18.0-beta | v0.2.7-alpha  | v0.5.6-alpha | n/a            |
+| **v0.6.5-alpha**      | v0.14.2-beta     | v0.15.1-beta | v0.2.7-alpha  | v0.5.5-alpha | n/a            |
+| **v0.6.4-alpha**      | v0.14.2-beta     | v0.15.1-beta | v0.2.7-alpha  | v0.5.4-alpha | n/a            |
+| **v0.6.3-alpha**      | v0.14.2-beta     | v0.15.1-beta | v0.2.7-alpha  | v0.5.4-alpha | n/a            |
+| **v0.6.2-alpha**      | v0.14.1-beta     | v0.15.1-beta | v0.2.7-alpha  | v0.5.4-alpha | n/a            |
+| **v0.6.1-alpha**      | v0.14.1-beta     | v0.15.1-beta | v0.2.7-alpha  | v0.5.2-alpha | n/a            |
+| **v0.5.3-alpha**      | v0.13.3-beta     | v0.14.1-beta | v0.2.6-alpha  | v0.5.0-alpha | n/a            |
+| **v0.5.2-alpha**      | v0.13.3-beta     | v0.14.1-beta | v0.2.6-alpha  | v0.5.0-alpha | n/a            |
+| **v0.5.1-alpha**      | v0.13.0-beta     | v0.14.1-beta | v0.2.6-alpha  | v0.5.0-alpha | n/a            |
+| **v0.5.0-alpha**      | v0.13.0-beta     | v0.14.1-beta | v0.2.6-alpha  | v0.5.0-alpha | n/a            |
+| **v0.4.1-alpha**      | v0.12.1-beta     | v0.11.4-beta | v0.2.3-alpha  | v0.4.4-alpha | n/a            |
+| **v0.4.0-alpha**      | v0.12.0-beta     | v0.11.2-beta | v0.2.3-alpha  | v0.4.3-alpha | n/a            |
+| **v0.3.4-alpha**      | v0.11.1-beta     | v0.11.2-beta | v0.2.2-alpha  | v0.3.4-alpha | n/a            |
+| **v0.3.3-alpha**      | v0.11.1-beta     | v0.11.2-beta | v0.2.2-alpha  | v0.3.4-alpha | n/a            |
+| **v0.3.2-alpha**      | v0.11.1-beta     | v0.11.1-beta | v0.2.2-alpha  | v0.3.4-alpha | n/a            |
+| **v0.3.1-alpha**      | v0.11.1-beta     | v0.11.1-beta | v0.2.2-alpha  | v0.3.3-alpha | n/a            |
+| **v0.3.0-alpha**      | v0.11.1-beta     | v0.11.0-beta | v0.2.2-alpha  | v0.3.2-alpha | n/a            |
+| **v0.2.0-alpha**      | v0.11.1-beta     | v0.10.0-beta | v0.2.1-alpha  | n/a          | n/a            |
+| **v0.1.1-alpha**      | v0.11.0-beta     | v0.8.1-beta  | v0.2.0-alpha  | n/a          | n/a            |
+| **v0.1.0-alpha**      | v0.10.3-beta     | v0.6.5-beta  | v0.2.0-alpha  | n/a          | n/a            |
