@@ -23,6 +23,15 @@ const (
 	//
 	// NOTE: This MUST be updated when a new migration is added.
 	LatestMigrationVersion = 5
+
+	// LatestDevMigrationVersion is the latest dev migration version of the
+	// database. This is used to implement downgrade protection for the
+	// daemon. This represents the latest number used in the migrations_dev
+	// directory.
+	//
+	// NOTE: This MUST be updated when a migration is added or removed, from
+	// the migrations_dev directory.
+	LatestDevMigrationVersion = 1
 )
 
 // MigrationTarget is a functional option that can be passed to applyMigrations
