@@ -6,6 +6,7 @@ import (
 
 	"github.com/lightninglabs/lightning-terminal/db"
 	"github.com/lightninglabs/lightning-terminal/db/sqlc"
+	"github.com/lightninglabs/lightning-terminal/db/sqlcmig6"
 	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/sqldb/v2"
 )
@@ -25,6 +26,16 @@ type SQLQueries interface {
 	SQLKVStoreQueries
 	SQLPrivacyPairQueries
 	SQLActionQueries
+}
+
+// SQLMig6Queries is a subset of the sqlcmig6.Queries interface that can be used
+// to interact with various firewalldb tables.
+type SQLMig6Queries interface {
+	sqldb.BaseQuerier
+
+	SQLMig6KVStoreQueries
+	SQLMig6PrivacyPairQueries
+	SQLMig6ActionQueries
 }
 
 // BatchedSQLQueries combines the SQLQueries interface with the BatchedTx
@@ -65,6 +76,26 @@ func NewSQLQueriesExecutor(baseDB *sqldb.BaseDB,
 	return &SQLQueriesExecutor[SQLQueries]{
 		TransactionExecutor: executor,
 		SQLQueries:          queries,
+	}
+}
+
+type SQLMig6QueriesExecutor[T sqldb.BaseQuerier] struct {
+	*sqldb.TransactionExecutor[T]
+
+	SQLMig6Queries
+}
+
+func NewSQLMig6QueriesExecutor(baseDB *sqldb.BaseDB,
+	queries *sqlcmig6.Queries) *SQLMig6QueriesExecutor[SQLMig6Queries] {
+
+	executor := sqldb.NewTransactionExecutor(
+		baseDB, func(tx *sql.Tx) SQLMig6Queries {
+			return queries.WithTx(tx)
+		},
+	)
+	return &SQLMig6QueriesExecutor[SQLMig6Queries]{
+		TransactionExecutor: executor,
+		SQLMig6Queries:      queries,
 	}
 }
 

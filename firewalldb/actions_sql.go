@@ -10,6 +10,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/db"
 	"github.com/lightninglabs/lightning-terminal/db/sqlc"
+	"github.com/lightninglabs/lightning-terminal/db/sqlcmig6"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/sqldb/v2"
@@ -19,6 +20,13 @@ import (
 // to interact with the accounts table.
 type SQLAccountQueries interface {
 	GetAccount(ctx context.Context, id int64) (sqlc.Account, error)
+	GetAccountIDByAlias(ctx context.Context, alias int64) (int64, error)
+}
+
+// SQLMig6AccountQueries is a subset of the sqlcmig6.Queries interface that can
+// be used to interact with the accounts table.
+type SQLMig6AccountQueries interface {
+	GetAccount(ctx context.Context, id int64) (sqlcmig6.Account, error)
 	GetAccountIDByAlias(ctx context.Context, alias int64) (int64, error)
 }
 
@@ -34,6 +42,20 @@ type SQLActionQueries interface {
 	SetActionState(ctx context.Context, arg sqlc.SetActionStateParams) error
 	ListActions(ctx context.Context, arg sqlc.ListActionsParams) ([]sqlc.Action, error)
 	CountActions(ctx context.Context, arg sqlc.ActionQueryParams) (int64, error)
+}
+
+// SQLMig6ActionQueries is a subset of the sqlcmig6.Queries interface that can
+// be used to interact with action related tables.
+//
+//nolint:lll
+type SQLMig6ActionQueries interface {
+	SQLSessionQueries
+	SQLMig6AccountQueries
+
+	InsertAction(ctx context.Context, arg sqlcmig6.InsertActionParams) (int64, error)
+	SetActionState(ctx context.Context, arg sqlcmig6.SetActionStateParams) error
+	ListActions(ctx context.Context, arg sqlcmig6.ListActionsParams) ([]sqlcmig6.Action, error)
+	CountActions(ctx context.Context, arg sqlcmig6.ActionQueryParams) (int64, error)
 }
 
 // sqlActionLocator helps us find an action in the SQL DB.

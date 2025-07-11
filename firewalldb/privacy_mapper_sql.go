@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"github.com/lightninglabs/lightning-terminal/db/sqlc"
+	"github.com/lightninglabs/lightning-terminal/db/sqlcmig6"
 	"github.com/lightninglabs/lightning-terminal/session"
 )
 
@@ -20,6 +21,19 @@ type SQLPrivacyPairQueries interface {
 	GetAllPrivacyPairs(ctx context.Context, groupID int64) ([]sqlc.GetAllPrivacyPairsRow, error)
 	GetPseudoForReal(ctx context.Context, arg sqlc.GetPseudoForRealParams) (string, error)
 	GetRealForPseudo(ctx context.Context, arg sqlc.GetRealForPseudoParams) (string, error)
+}
+
+// SQLMig6PrivacyPairQueries is a subset of the sqlcmig6.Queries interface that
+// can be used to interact with the privacy map table.
+//
+//nolint:lll
+type SQLMig6PrivacyPairQueries interface {
+	SQLSessionQueries
+
+	InsertPrivacyPair(ctx context.Context, arg sqlcmig6.InsertPrivacyPairParams) error
+	GetAllPrivacyPairs(ctx context.Context, groupID int64) ([]sqlcmig6.GetAllPrivacyPairsRow, error)
+	GetPseudoForReal(ctx context.Context, arg sqlcmig6.GetPseudoForRealParams) (string, error)
+	GetRealForPseudo(ctx context.Context, arg sqlcmig6.GetRealForPseudoParams) (string, error)
 }
 
 // PrivacyDB constructs a PrivacyMapDB that will be indexed under the given
