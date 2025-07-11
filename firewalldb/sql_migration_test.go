@@ -52,8 +52,8 @@ func TestFirewallDBMigration(t *testing.T) {
 		t.Skipf("Skipping Firewall DB migration test for kvdb build")
 	}
 
-	makeSQLDB := func(t *testing.T, sessionsStore session.Store) (*SQLDB,
-		*SQLQueriesExecutor[SQLQueries]) {
+	makeSQLDB := func(t *testing.T,
+		sessionsStore session.Store) *SQLQueriesExecutor[SQLQueries] {
 
 		testDBStore := NewTestDBWithSessions(t, sessionsStore, clock)
 
@@ -64,13 +64,13 @@ func TestFirewallDBMigration(t *testing.T) {
 
 		queries := sqlc.NewForType(baseDB, baseDB.BackendType)
 
-		return store, NewSQLQueriesExecutor(baseDB, queries)
+		return NewSQLQueriesExecutor(baseDB, queries)
 	}
 
 	// The assertMigrationResults function will currently assert that
 	// the migrated kv stores entries in the SQLDB match the original kv
 	// stores entries in the BoltDB.
-	assertMigrationResults := func(t *testing.T, store *SQLDB,
+	assertMigrationResults := func(t *testing.T, store SQLQueries,
 		kvEntries []*kvEntry) {
 
 		var (
@@ -83,9 +83,7 @@ func TestFirewallDBMigration(t *testing.T) {
 		getRuleID := func(ruleName string) int64 {
 			ruleID, ok := ruleIDs[ruleName]
 			if !ok {
-				ruleID, err = store.db.GetRuleID(
-					ctx, ruleName,
-				)
+				ruleID, err = store.GetRuleID(ctx, ruleName)
 				require.NoError(t, err)
 
 				ruleIDs[ruleName] = ruleID
@@ -97,7 +95,7 @@ func TestFirewallDBMigration(t *testing.T) {
 		getGroupID := func(groupAlias []byte) int64 {
 			groupID, ok := groupIDs[string(groupAlias)]
 			if !ok {
-				groupID, err = store.db.GetSessionIDByAlias(
+				groupID, err = store.GetSessionIDByAlias(
 					ctx, groupAlias,
 				)
 				require.NoError(t, err)
@@ -111,7 +109,7 @@ func TestFirewallDBMigration(t *testing.T) {
 		getFeatureID := func(featureName string) int64 {
 			featureID, ok := featureIDs[featureName]
 			if !ok {
-				featureID, err = store.db.GetFeatureID(
+				featureID, err = store.GetFeatureID(
 					ctx, featureName,
 				)
 				require.NoError(t, err)
@@ -125,7 +123,7 @@ func TestFirewallDBMigration(t *testing.T) {
 		// First we extract all migrated kv entries from the SQLDB,
 		// in order to be able to compare them to the original kv
 		// entries, to ensure that the migration was successful.
-		sqlKvEntries, err := store.db.ListAllKVStoresRecords(ctx)
+		sqlKvEntries, err := store.ListAllKVStoresRecords(ctx)
 		require.NoError(t, err)
 		require.Equal(t, len(kvEntries), len(sqlKvEntries))
 
@@ -141,7 +139,7 @@ func TestFirewallDBMigration(t *testing.T) {
 			ruleID := getRuleID(entry.ruleName)
 
 			if entry.groupAlias.IsNone() {
-				sqlVal, err := store.db.GetGlobalKVStoreRecord(
+				sqlVal, err := store.GetGlobalKVStoreRecord(
 					ctx,
 					sqlc.GetGlobalKVStoreRecordParams{
 						Key:    entry.key,
@@ -159,7 +157,7 @@ func TestFirewallDBMigration(t *testing.T) {
 				groupAlias := entry.groupAlias.UnwrapOrFail(t)
 				groupID := getGroupID(groupAlias[:])
 
-				v, err := store.db.GetGroupKVStoreRecord(
+				v, err := store.GetGroupKVStoreRecord(
 					ctx,
 					sqlc.GetGroupKVStoreRecordParams{
 						Key:    entry.key,
@@ -184,7 +182,7 @@ func TestFirewallDBMigration(t *testing.T) {
 					entry.featureName.UnwrapOrFail(t),
 				)
 
-				sqlVal, err := store.db.GetFeatureKVStoreRecord(
+				sqlVal, err := store.GetFeatureKVStoreRecord(
 					ctx,
 					sqlc.GetFeatureKVStoreRecordParams{
 						Key:    entry.key,
@@ -290,21 +288,26 @@ func TestFirewallDBMigration(t *testing.T) {
 
 			// Create the SQL store that we will migrate the data
 			// to.
-			sqlStore, txEx := makeSQLDB(t, sessionsStore)
+			txEx := makeSQLDB(t, sessionsStore)
 
 			// Perform the migration.
 			var opts sqldb.MigrationTxOptions
 			err = txEx.ExecTx(ctx, &opts,
 				func(tx SQLQueries) error {
-					return MigrateFirewallDBToSQL(
+					err = MigrateFirewallDBToSQL(
 						ctx, firewallStore.DB, tx,
 					)
+					if err != nil {
+						return err
+					}
+
+					// Assert migration results.
+					assertMigrationResults(t, tx, entries)
+
+					return nil
 				}, sqldb.NoOpReset,
 			)
 			require.NoError(t, err)
-
-			// Assert migration results.
-			assertMigrationResults(t, sqlStore, entries)
 		})
 	}
 }
