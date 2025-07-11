@@ -147,7 +147,7 @@ func TestFirewallDBMigration(t *testing.T) {
 	// The assertKvStoreMigrationResults function will currently assert that
 	// the migrated kv stores entries in the SQLDB match the original kv
 	// stores entries in the BoltDB.
-	assertKvStoreMigrationResults := func(t *testing.T, sqlStore *SQLDB,
+	assertKvStoreMigrationResults := func(t *testing.T, store *SQLDB,
 		kvEntries []*kvEntry) {
 
 		var (
@@ -160,7 +160,7 @@ func TestFirewallDBMigration(t *testing.T) {
 		getRuleID := func(ruleName string) int64 {
 			ruleID, ok := ruleIDs[ruleName]
 			if !ok {
-				ruleID, err = sqlStore.GetRuleID(ctx, ruleName)
+				ruleID, err = store.GetRuleID(ctx, ruleName)
 				require.NoError(t, err)
 
 				ruleIDs[ruleName] = ruleID
@@ -172,7 +172,7 @@ func TestFirewallDBMigration(t *testing.T) {
 		getGroupID := func(groupAlias []byte) int64 {
 			groupID, ok := groupIDs[string(groupAlias)]
 			if !ok {
-				groupID, err = sqlStore.GetSessionIDByAlias(
+				groupID, err = store.GetSessionIDByAlias(
 					ctx, groupAlias,
 				)
 				require.NoError(t, err)
@@ -186,7 +186,7 @@ func TestFirewallDBMigration(t *testing.T) {
 		getFeatureID := func(featureName string) int64 {
 			featureID, ok := featureIDs[featureName]
 			if !ok {
-				featureID, err = sqlStore.GetFeatureID(
+				featureID, err = store.GetFeatureID(
 					ctx, featureName,
 				)
 				require.NoError(t, err)
@@ -200,7 +200,7 @@ func TestFirewallDBMigration(t *testing.T) {
 		// First we extract all migrated kv entries from the SQLDB,
 		// in order to be able to compare them to the original kv
 		// entries, to ensure that the migration was successful.
-		sqlKvEntries, err := sqlStore.ListAllKVStoresRecords(ctx)
+		sqlKvEntries, err := store.ListAllKVStoresRecords(ctx)
 		require.NoError(t, err)
 		require.Equal(t, len(kvEntries), len(sqlKvEntries))
 
@@ -216,7 +216,7 @@ func TestFirewallDBMigration(t *testing.T) {
 			ruleID := getRuleID(entry.ruleName)
 
 			if entry.groupAlias.IsNone() {
-				sqlVal, err := sqlStore.GetGlobalKVStoreRecord(
+				sqlVal, err := store.GetGlobalKVStoreRecord(
 					ctx,
 					sqlc.GetGlobalKVStoreRecordParams{
 						Key:    entry.key,
@@ -234,7 +234,7 @@ func TestFirewallDBMigration(t *testing.T) {
 				groupAlias := entry.groupAlias.UnwrapOrFail(t)
 				groupID := getGroupID(groupAlias[:])
 
-				v, err := sqlStore.GetGroupKVStoreRecord(
+				v, err := store.GetGroupKVStoreRecord(
 					ctx,
 					sqlc.GetGroupKVStoreRecordParams{
 						Key:    entry.key,
@@ -259,7 +259,7 @@ func TestFirewallDBMigration(t *testing.T) {
 					entry.featureName.UnwrapOrFail(t),
 				)
 
-				sqlVal, err := sqlStore.GetFeatureKVStoreRecord(
+				sqlVal, err := store.GetFeatureKVStoreRecord(
 					ctx,
 					sqlc.GetFeatureKVStoreRecordParams{
 						Key:    entry.key,
