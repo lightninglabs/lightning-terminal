@@ -5,7 +5,7 @@ set -e
 # restore_files is a function to restore original schema files.
 restore_files() {
 	echo "Restoring SQLite bigint patch..."
-	for file in db/sqlc/migrations/*.up.sql.bak; do
+	for file in db/sqlc/{migrations,migrations_dev}/*.up.sql.bak; do
 		mv "$file" "${file%.bak}"
 	done
 }
@@ -30,7 +30,7 @@ GOMODCACHE=$(go env GOMODCACHE)
 # source schema SQL files to use "BIGINT PRIMARY KEY" instead of "INTEGER
 # PRIMARY KEY".
 echo "Applying SQLite bigint patch..."
-for file in db/sqlc/migrations/*.up.sql; do
+for file in db/sqlc/{migrations,migrations_dev}/*.up.sql; do
 	echo "Patching $file"
 	sed -i.bak -E 's/INTEGER PRIMARY KEY/BIGINT PRIMARY KEY/g' "$file"
 done
