@@ -130,8 +130,11 @@ var allTestCases = []*testCase{
 	},
 	{
 		name:       "custom channels multi rfq",
-		test:       testCustomChannelsMultiRFQReceive,
+		test:       testCustomChannelsMultiRFQ,
 		noAliceBob: true,
+		backwardCompat: map[string]string{
+			"Yara": "v0.15.0-alpha",
+		},
 	},
 	{
 		name:       "custom channels multi channel pathfinding",
