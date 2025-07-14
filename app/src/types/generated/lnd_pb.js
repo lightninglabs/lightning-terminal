@@ -51610,7 +51610,9 @@ proto.lnrpc.ForwardingEvent.toObject = function(includeInstance, msg) {
     amtOutMsat: jspb.Message.getFieldWithDefault(msg, 10, "0"),
     timestampNs: jspb.Message.getFieldWithDefault(msg, 11, "0"),
     peerAliasIn: jspb.Message.getFieldWithDefault(msg, 12, ""),
-    peerAliasOut: jspb.Message.getFieldWithDefault(msg, 13, "")
+    peerAliasOut: jspb.Message.getFieldWithDefault(msg, 13, ""),
+    incomingHtlcId: jspb.Message.getFieldWithDefault(msg, 14, 0),
+    outgoingHtlcId: jspb.Message.getFieldWithDefault(msg, 15, 0)
   };
 
   if (includeInstance) {
@@ -51694,6 +51696,14 @@ proto.lnrpc.ForwardingEvent.deserializeBinaryFromReader = function(msg, reader) 
     case 13:
       var value = /** @type {string} */ (reader.readString());
       msg.setPeerAliasOut(value);
+      break;
+    case 14:
+      var value = /** @type {number} */ (reader.readUint64());
+      msg.setIncomingHtlcId(value);
+      break;
+    case 15:
+      var value = /** @type {number} */ (reader.readUint64());
+      msg.setOutgoingHtlcId(value);
       break;
     default:
       reader.skipField();
@@ -51805,6 +51815,20 @@ proto.lnrpc.ForwardingEvent.serializeBinaryToWriter = function(message, writer) 
   if (f.length > 0) {
     writer.writeString(
       13,
+      f
+    );
+  }
+  f = /** @type {number} */ (jspb.Message.getField(message, 14));
+  if (f != null) {
+    writer.writeUint64(
+      14,
+      f
+    );
+  }
+  f = /** @type {number} */ (jspb.Message.getField(message, 15));
+  if (f != null) {
+    writer.writeUint64(
+      15,
       f
     );
   }
@@ -52024,6 +52048,78 @@ proto.lnrpc.ForwardingEvent.prototype.getPeerAliasOut = function() {
  */
 proto.lnrpc.ForwardingEvent.prototype.setPeerAliasOut = function(value) {
   return jspb.Message.setProto3StringField(this, 13, value);
+};
+
+
+/**
+ * optional uint64 incoming_htlc_id = 14;
+ * @return {number}
+ */
+proto.lnrpc.ForwardingEvent.prototype.getIncomingHtlcId = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 14, 0));
+};
+
+
+/**
+ * @param {number} value
+ * @return {!proto.lnrpc.ForwardingEvent} returns this
+ */
+proto.lnrpc.ForwardingEvent.prototype.setIncomingHtlcId = function(value) {
+  return jspb.Message.setField(this, 14, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.lnrpc.ForwardingEvent} returns this
+ */
+proto.lnrpc.ForwardingEvent.prototype.clearIncomingHtlcId = function() {
+  return jspb.Message.setField(this, 14, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.lnrpc.ForwardingEvent.prototype.hasIncomingHtlcId = function() {
+  return jspb.Message.getField(this, 14) != null;
+};
+
+
+/**
+ * optional uint64 outgoing_htlc_id = 15;
+ * @return {number}
+ */
+proto.lnrpc.ForwardingEvent.prototype.getOutgoingHtlcId = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 15, 0));
+};
+
+
+/**
+ * @param {number} value
+ * @return {!proto.lnrpc.ForwardingEvent} returns this
+ */
+proto.lnrpc.ForwardingEvent.prototype.setOutgoingHtlcId = function(value) {
+  return jspb.Message.setField(this, 15, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.lnrpc.ForwardingEvent} returns this
+ */
+proto.lnrpc.ForwardingEvent.prototype.clearOutgoingHtlcId = function() {
+  return jspb.Message.setField(this, 15, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.lnrpc.ForwardingEvent.prototype.hasOutgoingHtlcId = function() {
+  return jspb.Message.getField(this, 15) != null;
 };
 
 
