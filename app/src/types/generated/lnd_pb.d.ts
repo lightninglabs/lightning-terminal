@@ -6578,6 +6578,16 @@ export class ForwardingEvent extends jspb.Message {
   getPeerAliasOut(): string;
   setPeerAliasOut(value: string): void;
 
+  hasIncomingHtlcId(): boolean;
+  clearIncomingHtlcId(): void;
+  getIncomingHtlcId(): number;
+  setIncomingHtlcId(value: number): void;
+
+  hasOutgoingHtlcId(): boolean;
+  clearOutgoingHtlcId(): void;
+  getOutgoingHtlcId(): number;
+  setOutgoingHtlcId(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ForwardingEvent.AsObject;
   static toObject(includeInstance: boolean, msg: ForwardingEvent): ForwardingEvent.AsObject;
@@ -6602,6 +6612,8 @@ export namespace ForwardingEvent {
     timestampNs: string,
     peerAliasIn: string,
     peerAliasOut: string,
+    incomingHtlcId: number,
+    outgoingHtlcId: number,
   }
 }
 
