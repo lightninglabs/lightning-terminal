@@ -281,6 +281,11 @@ export const lndChannelEvent: Required<LND.ChannelEventUpdate.AsObject> = {
     fundingTxidStr: '',
     outputIndex: outIndex,
   },
+  channelFundingTimeout: {
+    fundingTxidBytes: txIdBytes,
+    fundingTxidStr: '',
+    outputIndex: outIndex,
+  },
 };
 
 export const lndTransaction: LND.Transaction.AsObject = {

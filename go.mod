@@ -25,16 +25,16 @@ require (
 	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.3
 	github.com/lightninglabs/lightning-terminal/litrpc v1.0.2
 	github.com/lightninglabs/lightning-terminal/perms v1.0.1
-	github.com/lightninglabs/lndclient v0.19.0-9
+	github.com/lightninglabs/lndclient v0.19.0-12
 	github.com/lightninglabs/loop v0.31.2-beta
 	github.com/lightninglabs/loop/looprpc v1.0.8
 	github.com/lightninglabs/loop/swapserverrpc v1.0.15
 	github.com/lightninglabs/pool v0.6.6-beta
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.3
 	github.com/lightninglabs/pool/poolrpc v1.0.1
-	github.com/lightninglabs/taproot-assets v0.6.1-0.20250711162444-8d28f0bceebe
-	github.com/lightninglabs/taproot-assets/taprpc v1.0.8-0.20250711162444-8d28f0bceebe
-	github.com/lightningnetwork/lnd v0.19.2-beta.rc2
+	github.com/lightninglabs/taproot-assets v0.6.1
+	github.com/lightninglabs/taproot-assets/taprpc v1.0.8-0.20250716163904-2ef55ba74036
+	github.com/lightningnetwork/lnd v0.19.2-beta
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/clock v1.1.1
 	github.com/lightningnetwork/lnd/fn v1.2.3
@@ -247,3 +247,7 @@ replace google.golang.org/protobuf => github.com/lightninglabs/protobuf-go-hex-d
 // it is a replace in the tapd repository, it doesn't get propagated here
 // automatically, so we need to add it manually.
 replace github.com/golang-migrate/migrate/v4 => github.com/lightninglabs/migrate/v4 v4.18.2-9023d66a-fork-pr-2
+
+// tapd wants v0.19.0-12, but loop can't handle that yet. So we'll just use the
+// previous version for now.
+replace github.com/lightninglabs/lndclient => github.com/lightninglabs/lndclient v0.19.0-11

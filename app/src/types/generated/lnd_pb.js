@@ -31214,7 +31214,7 @@ proto.lnrpc.ChannelEventSubscription.serializeBinaryToWriter = function(message,
  * @private {!Array<!Array<number>>}
  * @const
  */
-proto.lnrpc.ChannelEventUpdate.oneofGroups_ = [[1,2,3,4,6,7]];
+proto.lnrpc.ChannelEventUpdate.oneofGroups_ = [[1,2,3,4,6,7,8]];
 
 /**
  * @enum {number}
@@ -31226,7 +31226,8 @@ proto.lnrpc.ChannelEventUpdate.ChannelCase = {
   ACTIVE_CHANNEL: 3,
   INACTIVE_CHANNEL: 4,
   PENDING_OPEN_CHANNEL: 6,
-  FULLY_RESOLVED_CHANNEL: 7
+  FULLY_RESOLVED_CHANNEL: 7,
+  CHANNEL_FUNDING_TIMEOUT: 8
 };
 
 /**
@@ -31273,6 +31274,7 @@ proto.lnrpc.ChannelEventUpdate.toObject = function(includeInstance, msg) {
     inactiveChannel: (f = msg.getInactiveChannel()) && proto.lnrpc.ChannelPoint.toObject(includeInstance, f),
     pendingOpenChannel: (f = msg.getPendingOpenChannel()) && proto.lnrpc.PendingUpdate.toObject(includeInstance, f),
     fullyResolvedChannel: (f = msg.getFullyResolvedChannel()) && proto.lnrpc.ChannelPoint.toObject(includeInstance, f),
+    channelFundingTimeout: (f = msg.getChannelFundingTimeout()) && proto.lnrpc.ChannelPoint.toObject(includeInstance, f),
     type: jspb.Message.getFieldWithDefault(msg, 5, 0)
   };
 
@@ -31339,6 +31341,11 @@ proto.lnrpc.ChannelEventUpdate.deserializeBinaryFromReader = function(msg, reade
       var value = new proto.lnrpc.ChannelPoint;
       reader.readMessage(value,proto.lnrpc.ChannelPoint.deserializeBinaryFromReader);
       msg.setFullyResolvedChannel(value);
+      break;
+    case 8:
+      var value = new proto.lnrpc.ChannelPoint;
+      reader.readMessage(value,proto.lnrpc.ChannelPoint.deserializeBinaryFromReader);
+      msg.setChannelFundingTimeout(value);
       break;
     case 5:
       var value = /** @type {!proto.lnrpc.ChannelEventUpdate.UpdateType} */ (reader.readEnum());
@@ -31421,6 +31428,14 @@ proto.lnrpc.ChannelEventUpdate.serializeBinaryToWriter = function(message, write
       proto.lnrpc.ChannelPoint.serializeBinaryToWriter
     );
   }
+  f = message.getChannelFundingTimeout();
+  if (f != null) {
+    writer.writeMessage(
+      8,
+      f,
+      proto.lnrpc.ChannelPoint.serializeBinaryToWriter
+    );
+  }
   f = message.getType();
   if (f !== 0.0) {
     writer.writeEnum(
@@ -31440,7 +31455,8 @@ proto.lnrpc.ChannelEventUpdate.UpdateType = {
   ACTIVE_CHANNEL: 2,
   INACTIVE_CHANNEL: 3,
   PENDING_OPEN_CHANNEL: 4,
-  FULLY_RESOLVED_CHANNEL: 5
+  FULLY_RESOLVED_CHANNEL: 5,
+  CHANNEL_FUNDING_TIMEOUT: 6
 };
 
 /**
@@ -31662,6 +31678,43 @@ proto.lnrpc.ChannelEventUpdate.prototype.clearFullyResolvedChannel = function() 
  */
 proto.lnrpc.ChannelEventUpdate.prototype.hasFullyResolvedChannel = function() {
   return jspb.Message.getField(this, 7) != null;
+};
+
+
+/**
+ * optional ChannelPoint channel_funding_timeout = 8;
+ * @return {?proto.lnrpc.ChannelPoint}
+ */
+proto.lnrpc.ChannelEventUpdate.prototype.getChannelFundingTimeout = function() {
+  return /** @type{?proto.lnrpc.ChannelPoint} */ (
+    jspb.Message.getWrapperField(this, proto.lnrpc.ChannelPoint, 8));
+};
+
+
+/**
+ * @param {?proto.lnrpc.ChannelPoint|undefined} value
+ * @return {!proto.lnrpc.ChannelEventUpdate} returns this
+*/
+proto.lnrpc.ChannelEventUpdate.prototype.setChannelFundingTimeout = function(value) {
+  return jspb.Message.setOneofWrapperField(this, 8, proto.lnrpc.ChannelEventUpdate.oneofGroups_[0], value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.lnrpc.ChannelEventUpdate} returns this
+ */
+proto.lnrpc.ChannelEventUpdate.prototype.clearChannelFundingTimeout = function() {
+  return this.setChannelFundingTimeout(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.lnrpc.ChannelEventUpdate.prototype.hasChannelFundingTimeout = function() {
+  return jspb.Message.getField(this, 8) != null;
 };
 
 
