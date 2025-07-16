@@ -3752,6 +3752,11 @@ export class ChannelEventUpdate extends jspb.Message {
   getFullyResolvedChannel(): ChannelPoint | undefined;
   setFullyResolvedChannel(value?: ChannelPoint): void;
 
+  hasChannelFundingTimeout(): boolean;
+  clearChannelFundingTimeout(): void;
+  getChannelFundingTimeout(): ChannelPoint | undefined;
+  setChannelFundingTimeout(value?: ChannelPoint): void;
+
   getType(): ChannelEventUpdate.UpdateTypeMap[keyof ChannelEventUpdate.UpdateTypeMap];
   setType(value: ChannelEventUpdate.UpdateTypeMap[keyof ChannelEventUpdate.UpdateTypeMap]): void;
 
@@ -3774,6 +3779,7 @@ export namespace ChannelEventUpdate {
     inactiveChannel?: ChannelPoint.AsObject,
     pendingOpenChannel?: PendingUpdate.AsObject,
     fullyResolvedChannel?: ChannelPoint.AsObject,
+    channelFundingTimeout?: ChannelPoint.AsObject,
     type: ChannelEventUpdate.UpdateTypeMap[keyof ChannelEventUpdate.UpdateTypeMap],
   }
 
@@ -3784,6 +3790,7 @@ export namespace ChannelEventUpdate {
     INACTIVE_CHANNEL: 3;
     PENDING_OPEN_CHANNEL: 4;
     FULLY_RESOLVED_CHANNEL: 5;
+    CHANNEL_FUNDING_TIMEOUT: 6;
   }
 
   export const UpdateType: UpdateTypeMap;
@@ -3796,6 +3803,7 @@ export namespace ChannelEventUpdate {
     INACTIVE_CHANNEL = 4,
     PENDING_OPEN_CHANNEL = 6,
     FULLY_RESOLVED_CHANNEL = 7,
+    CHANNEL_FUNDING_TIMEOUT = 8,
   }
 }
 
