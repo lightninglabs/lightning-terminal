@@ -14,29 +14,21 @@ var (
 	ErrNoSuchKeyFound = fmt.Errorf("no such key found")
 )
 
-// firewallDBs is an interface that groups the RulesDB and PrivacyMapper
-// interfaces.
-type firewallDBs interface {
-	RulesDB
-	PrivacyMapper
-	ActionDB
-}
-
 // DB manages the firewall rules database.
 type DB struct {
 	started sync.Once
 	stopped sync.Once
 
-	firewallDBs
+	FirewallDBs
 
 	cancel fn.Option[context.CancelFunc]
 }
 
 // NewDB creates a new firewall database. For now, it only contains the
 // underlying rules' and privacy mapper databases.
-func NewDB(dbs firewallDBs) *DB {
+func NewDB(dbs FirewallDBs) *DB {
 	return &DB{
-		firewallDBs: dbs,
+		FirewallDBs: dbs,
 	}
 }
 

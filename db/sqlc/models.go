@@ -63,7 +63,7 @@ type Kvstore struct {
 	ID        int64
 	Perm      bool
 	RuleID    int64
-	SessionID sql.NullInt64
+	GroupID   sql.NullInt64
 	FeatureID sql.NullInt64
 	EntryKey  string
 	Value     []byte

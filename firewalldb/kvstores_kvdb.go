@@ -16,13 +16,13 @@ the temporary store changes instead of just keeping an in-memory store is that
 we can then guarantee atomicity if changes are made to both the permanent and
 temporary stores.
 
-rules -> perm -> rule-name -> global   -> {k:v}
-              -> sessions -> group ID  -> session-kv-store  -> {k:v}
-			               -> feature-kv-stores -> feature-name -> {k:v}
+"rules" -> "perm" -> <rule-name> -> "global" -> {k:v}
+				 -> "session-kv-store" -> <group-ID> -> {k:v}
+								     -> "feature-kv-stores" -> <feature-name> -> {k:v}
 
-      -> temp -> rule-name -> global   -> {k:v}
-	      -> sessions -> group ID  -> session-kv-store  -> {k:v}
-				       -> feature-kv-stores -> feature-name -> {k:v}
+        -> "temp" -> <rule-name> -> "global" -> {k:v}
+			   	 -> "session-kv-store" -> <group-ID> -> {k:v}
+					       			     -> "feature-kv-stores" -> <feature-name> -> {k:v}
 */
 
 var (
