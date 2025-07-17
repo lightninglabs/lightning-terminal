@@ -30,12 +30,13 @@ COPY --from=nodejsbuilder /go/src/github.com/lightninglabs/lightning-terminal /g
 # queries required to connect to linked containers succeed.
 ENV GODEBUG netdns=cgo
 
-# Allow forcing a specific lnd and taproot-assets version through a build
-# argument.
+# Allow forcing a specific lnd, taproot-assets, and taprpc version through a
+# build argument.
 # Please see https://go.dev/ref/mod#version-queries for the types of
 # queries that can be used to define a version.
 ARG LND_VERSION
 ARG TAPROOT_ASSETS_VERSION
+ARG TAPRPC_VERSION
 
 # Need to restate this since running in a new container from above.
 ARG NO_UI
@@ -51,6 +52,11 @@ RUN apk add --no-cache --update alpine-sdk make \
   # If a custom taproot-assets version is supplied, force it now.
   && if [ -n "$TAPROOT_ASSETS_VERSION" ]; then \
     go get -v github.com/lightninglabs/taproot-assets@$TAPROOT_ASSETS_VERSION \
+    && go mod tidy; \
+  fi \
+  # If a custom taprpc version is supplied, force it now.
+  && if [ -n "$TAPRPC_VERSION" ]; then \
+    go get -v github.com/lightninglabs/taproot-assets/taprpc@$TAPRPC_VERSION \
     && go mod tidy; \
   fi \
   && if [ "$NO_UI" -eq "1" ]; then \
