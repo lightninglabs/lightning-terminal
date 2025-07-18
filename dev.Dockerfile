@@ -30,13 +30,35 @@ COPY --from=nodejsbuilder /go/src/github.com/lightninglabs/lightning-terminal /g
 # queries required to connect to linked containers succeed.
 ENV GODEBUG netdns=cgo
 
-# Allow forcing a specific lnd, taproot-assets, and taprpc version through a
-# build argument.
+# Allow forcing a specific lnd, taproot-assets, taprpc, and/or loop repo so that
+# commits referenced by LND_VERSION, TAPROOT_ASSETS_VERSION, TAPRPC_VERSION, and
+# LOOP_VERSION don't have to exist in the default repository. If any of these
+# build arguments are not defined, the build continues using the default
+# repository for that module. NOTE: If these arguments ARE defined then the
+# corresponding `_VERSION` argument MUST also be defined, otherwise the build
+# continues using the default repository defined for that module.
+ARG LND_REPO
+ARG TAPROOT_ASSETS_REPO
+ARG TAPRPC_REPO
+ARG LOOP_REPO
+
+# Allow forcing a specific lnd, taproot-assets, taprpc, and/or loop version
+# through a build argument.
 # Please see https://go.dev/ref/mod#version-queries for the types of
 # queries that can be used to define a version.
+# If any of these build arguments are not defined then build uses the version
+# already defined in go.mod and go.sum for that module.
+# Note: If the corresponding `_REPO` argument is not defined, `go get` will
+# be used along with `go mod tidy`, which sometimes may change the version you
+# are trying to use because some other module requires the same requirement
+# but of a different version. A trick to overcome this is to also use the
+# `_REPO` argument and just put in the default repository for that module and
+# that will cause a `go mod edit -replace=` to be used instead which won't have
+# this issue.
 ARG LND_VERSION
 ARG TAPROOT_ASSETS_VERSION
 ARG TAPRPC_VERSION
+ARG LOOP_VERSION
 
 # Need to restate this since running in a new container from above.
 ARG NO_UI
@@ -46,17 +68,42 @@ RUN apk add --no-cache --update alpine-sdk make \
   && cd /go/src/github.com/lightninglabs/lightning-terminal \
   # If a custom lnd version is supplied, force it now.
   && if [ -n "$LND_VERSION" ]; then \
-    go get -v github.com/lightningnetwork/lnd@$LND_VERSION \
+    # If a custom lnd repo is supplied, force it now.
+    if [ -n "$LND_REPO" ]; then \
+      go mod edit -replace=github.com/lightningnetwork/lnd=$LND_REPO@$LND_VERSION; \
+    else \
+      go get -v github.com/lightningnetwork/lnd@$LND_VERSION; \
+    fi \
     && go mod tidy; \
   fi \
   # If a custom taproot-assets version is supplied, force it now.
   && if [ -n "$TAPROOT_ASSETS_VERSION" ]; then \
-    go get -v github.com/lightninglabs/taproot-assets@$TAPROOT_ASSETS_VERSION \
+    # If a custom taproot-assets repo is supplied, force it now.
+    if [ -n "$TAPROOT_ASSETS_REPO" ]; then \
+      go mod edit -replace=github.com/lightninglabs/taproot-assets=$TAPROOT_ASSETS_REPO@$TAPROOT_ASSETS_VERSION; \
+    else \
+      go get -v github.com/lightninglabs/taproot-assets@$TAPROOT_ASSETS_VERSION; \
+    fi \
     && go mod tidy; \
   fi \
   # If a custom taprpc version is supplied, force it now.
   && if [ -n "$TAPRPC_VERSION" ]; then \
-    go get -v github.com/lightninglabs/taproot-assets/taprpc@$TAPRPC_VERSION \
+    # If a custom taprpc repo is supplied, force it now.
+    if [ -n "$TAPRPC_REPO" ]; then \
+      go mod edit -replace=github.com/lightninglabs/taproot-assets/taprpc=$TAPRPC_REPO@$TAPRPC_VERSION; \
+    else \
+      go get -v github.com/lightninglabs/taproot-assets/taprpc@$TAPRPC_VERSION; \
+    fi \
+    && go mod tidy; \
+  fi \
+  # If a custom loop version is supplied, force it now.
+  && if [ -n "$LOOP_VERSION" ]; then \
+    # If a custom loop repo is supplied, force it now.
+    if [ -n "$LOOP_REPO" ]; then \
+      go mod edit -replace=github.com/lightninglabs/loop=$LOOP_REPO@$LOOP_VERSION; \
+    else \
+      go get -v github.com/lightninglabs/loop@$LOOP_VERSION; \
+    fi \
     && go mod tidy; \
   fi \
   && if [ "$NO_UI" -eq "1" ]; then \
