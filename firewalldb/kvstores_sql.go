@@ -22,13 +22,13 @@ type SQLKVStoreQueries interface {
 
 	DeleteFeatureKVStoreRecord(ctx context.Context, arg sqlc.DeleteFeatureKVStoreRecordParams) error
 	DeleteGlobalKVStoreRecord(ctx context.Context, arg sqlc.DeleteGlobalKVStoreRecordParams) error
-	DeleteSessionKVStoreRecord(ctx context.Context, arg sqlc.DeleteSessionKVStoreRecordParams) error
+	DeleteGroupKVStoreRecord(ctx context.Context, arg sqlc.DeleteGroupKVStoreRecordParams) error
 	GetFeatureKVStoreRecord(ctx context.Context, arg sqlc.GetFeatureKVStoreRecordParams) ([]byte, error)
 	GetGlobalKVStoreRecord(ctx context.Context, arg sqlc.GetGlobalKVStoreRecordParams) ([]byte, error)
-	GetSessionKVStoreRecord(ctx context.Context, arg sqlc.GetSessionKVStoreRecordParams) ([]byte, error)
+	GetGroupKVStoreRecord(ctx context.Context, arg sqlc.GetGroupKVStoreRecordParams) ([]byte, error)
 	UpdateFeatureKVStoreRecord(ctx context.Context, arg sqlc.UpdateFeatureKVStoreRecordParams) error
 	UpdateGlobalKVStoreRecord(ctx context.Context, arg sqlc.UpdateGlobalKVStoreRecordParams) error
-	UpdateSessionKVStoreRecord(ctx context.Context, arg sqlc.UpdateSessionKVStoreRecordParams) error
+	UpdateGroupKVStoreRecord(ctx context.Context, arg sqlc.UpdateGroupKVStoreRecordParams) error
 	InsertKVStoreRecord(ctx context.Context, arg sqlc.InsertKVStoreRecordParams) error
 	DeleteAllTempKVStores(ctx context.Context) error
 	GetOrInsertFeatureID(ctx context.Context, name string) (int64, error)
@@ -198,7 +198,7 @@ func (s *sqlKVStore) Get(ctx context.Context, key string) ([]byte, error) {
 //
 // NOTE: part of the KVStore interface.
 func (s *sqlKVStore) Set(ctx context.Context, key string, value []byte) error {
-	ruleID, sessionID, featureID, err := s.genNamespaceFields(ctx, false)
+	ruleID, groupID, featureID, err := s.genNamespaceFields(ctx, false)
 	if err != nil {
 		return err
 	}
@@ -219,7 +219,7 @@ func (s *sqlKVStore) Set(ctx context.Context, key string, value []byte) error {
 				Value:     value,
 				Perm:      s.params.perm,
 				RuleID:    ruleID,
-				SessionID: sessionID,
+				GroupID:   groupID,
 				FeatureID: featureID,
 			},
 		)
@@ -233,26 +233,26 @@ func (s *sqlKVStore) Set(ctx context.Context, key string, value []byte) error {
 
 	// Otherwise, the key exists but the value needs to be updated.
 	switch {
-	case sessionID.Valid && featureID.Valid:
+	case groupID.Valid && featureID.Valid:
 		return s.queries.UpdateFeatureKVStoreRecord(
 			ctx, sqlc.UpdateFeatureKVStoreRecordParams{
 				Key:       key,
 				Value:     value,
 				Perm:      s.params.perm,
-				SessionID: sessionID,
+				GroupID:   groupID,
 				RuleID:    ruleID,
 				FeatureID: featureID,
 			},
 		)
 
-	case sessionID.Valid:
-		return s.queries.UpdateSessionKVStoreRecord(
-			ctx, sqlc.UpdateSessionKVStoreRecordParams{
-				Key:       key,
-				Value:     value,
-				Perm:      s.params.perm,
-				SessionID: sessionID,
-				RuleID:    ruleID,
+	case groupID.Valid:
+		return s.queries.UpdateGroupKVStoreRecord(
+			ctx, sqlc.UpdateGroupKVStoreRecordParams{
+				Key:     key,
+				Value:   value,
+				Perm:    s.params.perm,
+				GroupID: groupID,
+				RuleID:  ruleID,
 			},
 		)
 
@@ -278,7 +278,7 @@ func (s *sqlKVStore) Del(ctx context.Context, key string) error {
 	// Note: we pass in true here for "read-only" since because this is a
 	// Delete, if the record does not exist, we don't need to create one.
 	// But no need to error out if it doesn't exist.
-	ruleID, sessionID, featureID, err := s.genNamespaceFields(ctx, true)
+	ruleID, groupID, featureID, err := s.genNamespaceFields(ctx, true)
 	if errors.Is(err, sql.ErrNoRows) ||
 		errors.Is(err, session.ErrUnknownGroup) {
 
@@ -288,24 +288,24 @@ func (s *sqlKVStore) Del(ctx context.Context, key string) error {
 	}
 
 	switch {
-	case sessionID.Valid && featureID.Valid:
+	case groupID.Valid && featureID.Valid:
 		return s.queries.DeleteFeatureKVStoreRecord(
 			ctx, sqlc.DeleteFeatureKVStoreRecordParams{
 				Key:       key,
 				Perm:      s.params.perm,
-				SessionID: sessionID,
+				GroupID:   groupID,
 				RuleID:    ruleID,
 				FeatureID: featureID,
 			},
 		)
 
-	case sessionID.Valid:
-		return s.queries.DeleteSessionKVStoreRecord(
-			ctx, sqlc.DeleteSessionKVStoreRecordParams{
-				Key:       key,
-				Perm:      s.params.perm,
-				SessionID: sessionID,
-				RuleID:    ruleID,
+	case groupID.Valid:
+		return s.queries.DeleteGroupKVStoreRecord(
+			ctx, sqlc.DeleteGroupKVStoreRecordParams{
+				Key:     key,
+				Perm:    s.params.perm,
+				GroupID: groupID,
+				RuleID:  ruleID,
 			},
 		)
 
@@ -326,30 +326,30 @@ func (s *sqlKVStore) Del(ctx context.Context, key string) error {
 // get fetches the value under the given key from the underlying kv store given
 // the namespace fields.
 func (s *sqlKVStore) get(ctx context.Context, key string) ([]byte, error) {
-	ruleID, sessionID, featureID, err := s.genNamespaceFields(ctx, true)
+	ruleID, groupID, featureID, err := s.genNamespaceFields(ctx, true)
 	if err != nil {
 		return nil, err
 	}
 
 	switch {
-	case sessionID.Valid && featureID.Valid:
+	case groupID.Valid && featureID.Valid:
 		return s.queries.GetFeatureKVStoreRecord(
 			ctx, sqlc.GetFeatureKVStoreRecordParams{
 				Key:       key,
 				Perm:      s.params.perm,
-				SessionID: sessionID,
+				GroupID:   groupID,
 				RuleID:    ruleID,
 				FeatureID: featureID,
 			},
 		)
 
-	case sessionID.Valid:
-		return s.queries.GetSessionKVStoreRecord(
-			ctx, sqlc.GetSessionKVStoreRecordParams{
-				Key:       key,
-				Perm:      s.params.perm,
-				SessionID: sessionID,
-				RuleID:    ruleID,
+	case groupID.Valid:
+		return s.queries.GetGroupKVStoreRecord(
+			ctx, sqlc.GetGroupKVStoreRecordParams{
+				Key:     key,
+				Perm:    s.params.perm,
+				GroupID: groupID,
+				RuleID:  ruleID,
 			},
 		)
 
@@ -373,7 +373,7 @@ func (s *sqlKVStore) genNamespaceFields(ctx context.Context,
 	readOnly bool) (int64, sql.NullInt64, sql.NullInt64, error) {
 
 	var (
-		sessionID sql.NullInt64
+		groupID   sql.NullInt64
 		featureID sql.NullInt64
 		ruleID    int64
 		err       error
@@ -382,8 +382,8 @@ func (s *sqlKVStore) genNamespaceFields(ctx context.Context,
 	// If a group ID is specified, then we first check that this group ID
 	// is a known session alias.
 	s.params.groupID.WhenSome(func(id session.ID) {
-		var groupID int64
-		groupID, err = s.queries.GetSessionIDByAlias(ctx, id[:])
+		var dbGroupID int64
+		dbGroupID, err = s.queries.GetSessionIDByAlias(ctx, id[:])
 		if errors.Is(err, sql.ErrNoRows) {
 			err = session.ErrUnknownGroup
 
@@ -392,20 +392,20 @@ func (s *sqlKVStore) genNamespaceFields(ctx context.Context,
 			return
 		}
 
-		sessionID = sql.NullInt64{
-			Int64: groupID,
+		groupID = sql.NullInt64{
+			Int64: dbGroupID,
 			Valid: true,
 		}
 	})
 	if err != nil {
-		return ruleID, sessionID, featureID, err
+		return ruleID, groupID, featureID, err
 	}
 
 	// We only insert a new rule name into the DB if this is a write call.
 	if readOnly {
 		ruleID, err = s.queries.GetRuleID(ctx, s.params.ruleName)
 		if err != nil {
-			return 0, sessionID, featureID,
+			return 0, groupID, featureID,
 				fmt.Errorf("unable to get rule ID: %w", err)
 		}
 	} else {
@@ -413,7 +413,7 @@ func (s *sqlKVStore) genNamespaceFields(ctx context.Context,
 			ctx, s.params.ruleName,
 		)
 		if err != nil {
-			return 0, sessionID, featureID,
+			return 0, groupID, featureID,
 				fmt.Errorf("unable to get or insert rule "+
 					"ID: %w", err)
 		}
@@ -441,5 +441,5 @@ func (s *sqlKVStore) genNamespaceFields(ctx context.Context,
 		}
 	})
 
-	return ruleID, sessionID, featureID, err
+	return ruleID, groupID, featureID, err
 }

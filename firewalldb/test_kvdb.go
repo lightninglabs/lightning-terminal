@@ -6,34 +6,37 @@ import (
 	"testing"
 
 	"github.com/lightninglabs/lightning-terminal/accounts"
+	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/stretchr/testify/require"
 )
 
 // NewTestDB is a helper function that creates an BBolt database for testing.
-func NewTestDB(t *testing.T, clock clock.Clock) *BoltDB {
+func NewTestDB(t *testing.T, clock clock.Clock) FirewallDBs {
 	return NewTestDBFromPath(t, t.TempDir(), clock)
 }
 
 // NewTestDBFromPath is a helper function that creates a new BoltStore with a
 // connection to an existing BBolt database for testing.
-func NewTestDBFromPath(t *testing.T, dbPath string, clock clock.Clock) *BoltDB {
+func NewTestDBFromPath(t *testing.T, dbPath string,
+	clock clock.Clock) FirewallDBs {
+
 	return newDBFromPathWithSessions(t, dbPath, nil, nil, clock)
 }
 
 // NewTestDBWithSessions creates a new test BoltDB Store with access to an
 // existing sessions DB.
-func NewTestDBWithSessions(t *testing.T, sessStore SessionDB,
-	clock clock.Clock) *BoltDB {
+func NewTestDBWithSessions(t *testing.T, sessStore session.Store,
+	clock clock.Clock) FirewallDBs {
 
 	return newDBFromPathWithSessions(t, t.TempDir(), sessStore, nil, clock)
 }
 
 // NewTestDBWithSessionsAndAccounts creates a new test BoltDB Store with access
 // to an existing sessions DB and accounts DB.
-func NewTestDBWithSessionsAndAccounts(t *testing.T, sessStore SessionDB,
-	acctStore AccountsDB, clock clock.Clock) *BoltDB {
+func NewTestDBWithSessionsAndAccounts(t *testing.T, sessStore session.Store,
+	acctStore AccountsDB, clock clock.Clock) FirewallDBs {
 
 	return newDBFromPathWithSessions(
 		t, t.TempDir(), sessStore, acctStore, clock,
@@ -41,7 +44,8 @@ func NewTestDBWithSessionsAndAccounts(t *testing.T, sessStore SessionDB,
 }
 
 func newDBFromPathWithSessions(t *testing.T, dbPath string,
-	sessStore SessionDB, acctStore AccountsDB, clock clock.Clock) *BoltDB {
+	sessStore session.Store, acctStore AccountsDB,
+	clock clock.Clock) FirewallDBs {
 
 	store, err := NewBoltDB(dbPath, DBFilename, sessStore, acctStore, clock)
 	require.NoError(t, err)
