@@ -13,6 +13,7 @@ import (
 	"github.com/lightninglabs/taproot-assets/tapcfg"
 	"github.com/lightninglabs/taproot-assets/taprpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/assetwalletrpc"
+	"github.com/lightninglabs/taproot-assets/taprpc/authmailboxrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/mintrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/rfqrpc"
 	tchrpc "github.com/lightninglabs/taproot-assets/taprpc/tapchannelrpc"
@@ -132,6 +133,7 @@ func (t *taprootAssetsSubServer) RegisterGrpcService(
 	rfqrpc.RegisterRfqServer(registrar, t)
 	tchrpc.RegisterTaprootAssetChannelsServer(registrar, t)
 	universerpc.RegisterUniverseServer(registrar, t)
+	authmailboxrpc.RegisterMailboxServer(registrar, t)
 }
 
 // RegisterRestService registers the sub-server's REST handlers with the given
@@ -192,6 +194,13 @@ func (t *taprootAssetsSubServer) RegisterRestService(ctx context.Context,
 	}
 
 	err = universerpc.RegisterUniverseHandlerFromEndpoint(
+		ctx, mux, endpoint, dialOpts,
+	)
+	if err != nil {
+		return err
+	}
+
+	err = authmailboxrpc.RegisterMailboxHandlerFromEndpoint(
 		ctx, mux, endpoint, dialOpts,
 	)
 	if err != nil {
