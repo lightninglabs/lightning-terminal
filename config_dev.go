@@ -134,7 +134,9 @@ func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
 		acctStore := accounts.NewSQLStore(
 			sqlStore.BaseDB, queries, clock,
 		)
-		sessStore := session.NewSQLStore(legacySqlStore.BaseDB, clock)
+		sessStore := session.NewSQLStore(
+			sqlStore.BaseDB, queries, clock,
+		)
 		firewallStore := firewalldb.NewSQLDB(
 			legacySqlStore.BaseDB, clock,
 		)
@@ -181,7 +183,9 @@ func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
 		acctStore := accounts.NewSQLStore(
 			sqlStore.BaseDB, queries, clock,
 		)
-		sessStore := session.NewSQLStore(legacySqlStore.BaseDB, clock)
+		sessStore := session.NewSQLStore(
+			sqlStore.BaseDB, queries, clock,
+		)
 		firewallStore := firewalldb.NewSQLDB(
 			legacySqlStore.BaseDB, clock,
 		)

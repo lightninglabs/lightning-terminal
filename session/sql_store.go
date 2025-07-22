@@ -14,6 +14,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/db/sqlc"
 	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/fn"
+	"github.com/lightningnetwork/lnd/sqldb/v2"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 	"gopkg.in/macaroon.v2"
 )
@@ -23,6 +24,8 @@ import (
 //
 // nolint:ll
 type SQLQueries interface {
+	sqldb.BaseQuerier
+
 	GetAliasBySessionID(ctx context.Context, id int64) ([]byte, error)
 	GetSessionByID(ctx context.Context, id int64) (sqlc.Session, error)
 	GetSessionsInGroup(ctx context.Context, groupID sql.NullInt64) ([]sqlc.Session, error)
@@ -54,12 +57,13 @@ type SQLQueries interface {
 
 var _ Store = (*SQLStore)(nil)
 
-// BatchedSQLQueries is a version of the SQLQueries that's capable of batched
-// database operations.
+// BatchedSQLQueries combines the SQLQueries interface with the BatchedTx
+// interface, allowing for multiple queries to be executed in single SQL
+// transaction.
 type BatchedSQLQueries interface {
 	SQLQueries
 
-	db.BatchedTx[SQLQueries]
+	sqldb.BatchedTx[SQLQueries]
 }
 
 // SQLStore represents a storage backend.
@@ -69,19 +73,37 @@ type SQLStore struct {
 	db BatchedSQLQueries
 
 	// BaseDB represents the underlying database connection.
-	*db.BaseDB
+	*sqldb.BaseDB
 
 	clock clock.Clock
 }
 
-// NewSQLStore creates a new SQLStore instance given an open BatchedSQLQueries
-// storage backend.
-func NewSQLStore(sqlDB *db.BaseDB, clock clock.Clock) *SQLStore {
-	executor := db.NewTransactionExecutor(
-		sqlDB, func(tx *sql.Tx) SQLQueries {
-			return sqlDB.WithTx(tx)
+type SQLQueriesExecutor[T sqldb.BaseQuerier] struct {
+	*sqldb.TransactionExecutor[T]
+
+	SQLQueries
+}
+
+func NewSQLQueriesExecutor(baseDB *sqldb.BaseDB,
+	queries *sqlc.Queries) *SQLQueriesExecutor[SQLQueries] {
+
+	executor := sqldb.NewTransactionExecutor(
+		baseDB, func(tx *sql.Tx) SQLQueries {
+			return queries.WithTx(tx)
 		},
 	)
+	return &SQLQueriesExecutor[SQLQueries]{
+		TransactionExecutor: executor,
+		SQLQueries:          queries,
+	}
+}
+
+// NewSQLStore creates a new SQLStore instance given an open BatchedSQLQueries
+// storage backend.
+func NewSQLStore(sqlDB *sqldb.BaseDB, queries *sqlc.Queries,
+	clock clock.Clock) *SQLStore {
+
+	executor := NewSQLQueriesExecutor(sqlDB, queries)
 
 	return &SQLStore{
 		db:     executor,
@@ -288,7 +310,7 @@ func (s *SQLStore) NewSession(ctx context.Context, label string, typ Type,
 		}
 
 		return nil
-	})
+	}, sqldb.NoOpReset)
 	if err != nil {
 		mappedSQLErr := db.MapSQLError(err)
 		var uniqueConstraintErr *db.ErrSqlUniqueConstraintViolation
@@ -332,7 +354,7 @@ func (s *SQLStore) ListSessionsByType(ctx context.Context, t Type) ([]*Session,
 		}
 
 		return nil
-	})
+	}, sqldb.NoOpReset)
 
 	return sessions, err
 }
@@ -365,7 +387,7 @@ func (s *SQLStore) ListSessionsByState(ctx context.Context, state State) (
 		}
 
 		return nil
-	})
+	}, sqldb.NoOpReset)
 
 	return sessions, err
 }
@@ -424,7 +446,7 @@ func (s *SQLStore) ShiftState(ctx context.Context, alias ID, dest State) error {
 				State: int16(dest),
 			},
 		)
-	})
+	}, sqldb.NoOpReset)
 }
 
 // DeleteReservedSessions deletes all sessions that are in the StateReserved
@@ -435,7 +457,7 @@ func (s *SQLStore) DeleteReservedSessions(ctx context.Context) error {
 	var writeTxOpts db.QueriesTxOptions
 	return s.db.ExecTx(ctx, &writeTxOpts, func(db SQLQueries) error {
 		return db.DeleteSessionsWithState(ctx, int16(StateReserved))
-	})
+	}, sqldb.NoOpReset)
 }
 
 // DeleteReservedSession removes a given session that is in the reserved state
@@ -459,7 +481,7 @@ func (s *SQLStore) DeleteReservedSession(ctx context.Context, id ID) error {
 		}
 
 		return db.DeleteSession(ctx, session.ID)
-	})
+	}, sqldb.NoOpReset)
 }
 
 // GetSessionByLocalPub fetches the session with the given local pub key.
@@ -489,7 +511,7 @@ func (s *SQLStore) GetSessionByLocalPub(ctx context.Context,
 		}
 
 		return nil
-	})
+	}, sqldb.NoOpReset)
 	if err != nil {
 		return nil, err
 	}
@@ -522,7 +544,7 @@ func (s *SQLStore) ListAllSessions(ctx context.Context) ([]*Session, error) {
 		}
 
 		return nil
-	})
+	}, sqldb.NoOpReset)
 
 	return sessions, err
 }
@@ -552,7 +574,7 @@ func (s *SQLStore) UpdateSessionRemotePubKey(ctx context.Context, alias ID,
 				RemotePublicKey: remoteKey,
 			},
 		)
-	})
+	}, sqldb.NoOpReset)
 }
 
 // getSqlUnusedAliasAndKeyPair can be used to generate a new, unused, local
@@ -607,7 +629,7 @@ func (s *SQLStore) GetSession(ctx context.Context, alias ID) (*Session, error) {
 		}
 
 		return nil
-	})
+	}, sqldb.NoOpReset)
 
 	return sess, err
 }
@@ -649,7 +671,7 @@ func (s *SQLStore) GetGroupID(ctx context.Context, sessionID ID) (ID, error) {
 		legacyGroupID, err = IDFromBytes(legacyGroupIDB)
 
 		return err
-	})
+	}, sqldb.NoOpReset)
 	if err != nil {
 		return ID{}, err
 	}
@@ -698,7 +720,7 @@ func (s *SQLStore) GetSessionIDs(ctx context.Context, legacyGroupID ID) ([]ID,
 		}
 
 		return nil
-	})
+	}, sqldb.NoOpReset)
 	if err != nil {
 		return nil, err
 	}
