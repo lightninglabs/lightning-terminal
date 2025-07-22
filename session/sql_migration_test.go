@@ -2,17 +2,16 @@ package session
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/lightninglabs/lightning-terminal/accounts"
-	"github.com/lightninglabs/lightning-terminal/db"
+	"github.com/lightninglabs/lightning-terminal/db/sqlc"
 	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/lnwire"
 	"github.com/lightningnetwork/lnd/macaroons"
-	"github.com/lightningnetwork/lnd/sqldb"
+	"github.com/lightningnetwork/lnd/sqldb/v2"
 	"github.com/stretchr/testify/require"
 	"go.etcd.io/bbolt"
 	"golang.org/x/exp/rand"
@@ -38,7 +37,7 @@ func TestSessionsStoreMigration(t *testing.T) {
 	}
 
 	makeSQLDB := func(t *testing.T, acctStore accounts.Store) (*SQLStore,
-		*db.TransactionExecutor[SQLQueries]) {
+		*sqlQueriesExecutor[SQLQueries]) {
 
 		// Create a sql store with a linked account store.
 		testDBStore := NewTestDBWithAccounts(t, clock, acctStore)
@@ -48,13 +47,9 @@ func TestSessionsStoreMigration(t *testing.T) {
 
 		baseDB := store.BaseDB
 
-		genericExecutor := db.NewTransactionExecutor(
-			baseDB, func(tx *sql.Tx) SQLQueries {
-				return baseDB.WithTx(tx)
-			},
-		)
+		queries := sqlc.NewForType(baseDB, baseDB.BackendType)
 
-		return store, genericExecutor
+		return store, newSQLQueriesExecutor(baseDB, queries)
 	}
 
 	// assertMigrationResults asserts that the sql store contains the
@@ -597,7 +592,7 @@ func TestSessionsStoreMigration(t *testing.T) {
 					return MigrateSessionStoreToSQL(
 						ctx, kvStore.DB, tx,
 					)
-				},
+				}, sqldb.NoOpReset,
 			)
 			require.NoError(t, err)
 
