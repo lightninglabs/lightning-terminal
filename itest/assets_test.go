@@ -27,6 +27,7 @@ import (
 	"github.com/lightninglabs/taproot-assets/tapfreighter"
 	"github.com/lightninglabs/taproot-assets/taprpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/assetwalletrpc"
+	"github.com/lightninglabs/taproot-assets/taprpc/authmailboxrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/mintrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/rfqrpc"
 	tchrpc "github.com/lightninglabs/taproot-assets/taprpc/tapchannelrpc"
@@ -2548,6 +2549,7 @@ type tapClient struct {
 	rfqrpc.RfqClient
 	tchrpc.TaprootAssetChannelsClient
 	universerpc.UniverseClient
+	authmailboxrpc.MailboxClient
 }
 
 func newTapClient(t *testing.T, node *HarnessNode) *tapClient {
