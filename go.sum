@@ -1152,8 +1152,8 @@ github.com/lightninglabs/lightning-node-connect/mailbox v1.0.1 h1:RWmohykp3n/DTM
 github.com/lightninglabs/lightning-node-connect/mailbox v1.0.1/go.mod h1:NYtNexZE9gO1eOeegTxmIW9fqanl7eZ9cOrE9yewSAk=
 github.com/lightninglabs/lndclient v0.19.0-12 h1:aSIKfnvnHKiyFWppUGHJG5fn8VoF5WG5Lx958ksLmqs=
 github.com/lightninglabs/lndclient v0.19.0-12/go.mod h1:cicoJY1AwZuRVXGD8Knp50TRT7TGBmw1k37uPQsGQiw=
-github.com/lightninglabs/loop v0.31.2-beta.0.20250724051925-36c5d6cee7d3 h1:N+p1pdmVG9STFZ0PIc+qzJ2einOyNzFy6KEjPmT7HAY=
-github.com/lightninglabs/loop v0.31.2-beta.0.20250724051925-36c5d6cee7d3/go.mod h1:7DLIgIyg0Z9uQAjEUr0qNQ3v3IFPCDsJxIttHOxhcvA=
+github.com/lightninglabs/loop v0.31.2-beta.0.20250730111713-3b0f6e84dc14 h1:PA/bTHYZ/leIoky3mFgbD4h9FV1lamzS+bw45GLd4l8=
+github.com/lightninglabs/loop v0.31.2-beta.0.20250730111713-3b0f6e84dc14/go.mod h1:ukAfrXOf5OqpJORSYLjsyFzOGgIASyC2Qbstsl0ZvWw=
 github.com/lightninglabs/loop/looprpc v1.0.8 h1:OFmJNLjem6fLuH1YUO+3G6QA1wmjAd0zyhvdHONOBDs=
 github.com/lightninglabs/loop/looprpc v1.0.8/go.mod h1:c7WykKQZ3PspCMVvv2kr9o4l3bgJBEBVv0SOoBOjPOw=
 github.com/lightninglabs/loop/swapserverrpc v1.0.15 h1:vEZBF65Lv0T7MPydCRxHSIlEJzHBkZ4I8FtSD6OJK88=
@@ -1172,10 +1172,10 @@ github.com/lightninglabs/pool/poolrpc v1.0.1 h1:XbNx28TYwEj/PVsnnF9TnveVCMCYfS1v
 github.com/lightninglabs/pool/poolrpc v1.0.1/go.mod h1:836icifg/SBnZbiae0v3jeRRzCrT6LWo32SqCS/JiGk=
 github.com/lightninglabs/protobuf-go-hex-display v1.34.2-hex-display h1:w7FM5LH9Z6CpKxl13mS48idsu6F+cEZf0lkyiV+Dq9g=
 github.com/lightninglabs/protobuf-go-hex-display v1.34.2-hex-display/go.mod h1:qYOHts0dSfpeUzUFpOMr/WGzszTmLH+DiWniOlNbLDw=
-github.com/lightninglabs/taproot-assets v0.6.1-0.20250725201706-0e736bb0d7b1 h1:lm/PJTGwTPk7kRInRdGiUbaKqpNQlV+9OTXpBUiFb9E=
-github.com/lightninglabs/taproot-assets v0.6.1-0.20250725201706-0e736bb0d7b1/go.mod h1:mIgx0p/GkMZeEjEm91vYQsH41YQBAgJl7TP6JcT+wgs=
-github.com/lightninglabs/taproot-assets/taprpc v1.0.10-0.20250725201706-0e736bb0d7b1 h1:V9x07euSL3wR9JxPUOhrsAVmC6pg4o3y7N5GsHLVoP0=
-github.com/lightninglabs/taproot-assets/taprpc v1.0.10-0.20250725201706-0e736bb0d7b1/go.mod h1:c8gTEcKEUoUPVChgZNwqTL1hss7UWa5FDeObr8WBzQk=
+github.com/lightninglabs/taproot-assets v0.6.1-0.20250729190616-3f323918a96e h1:wlaM8dTlpCQ0uNj0TBskBDeNTTDessxiXiakYDB4RFo=
+github.com/lightninglabs/taproot-assets v0.6.1-0.20250729190616-3f323918a96e/go.mod h1:mIgx0p/GkMZeEjEm91vYQsH41YQBAgJl7TP6JcT+wgs=
+github.com/lightninglabs/taproot-assets/taprpc v1.0.10-0.20250729190616-3f323918a96e h1:MnXspinwkd6VhV8G9I+TdSak05UitfYyNBCQhTIIr0g=
+github.com/lightninglabs/taproot-assets/taprpc v1.0.10-0.20250729190616-3f323918a96e/go.mod h1:c8gTEcKEUoUPVChgZNwqTL1hss7UWa5FDeObr8WBzQk=
 github.com/lightningnetwork/lightning-onion v1.2.1-0.20240712235311-98bd56499dfb h1:yfM05S8DXKhuCBp5qSMZdtSwvJ+GFzl94KbXMNB1JDY=
 github.com/lightningnetwork/lightning-onion v1.2.1-0.20240712235311-98bd56499dfb/go.mod h1:c0kvRShutpj3l6B9WtTsNTBUtjSmjZXbJd9ZBRQOSKI=
 github.com/lightningnetwork/lnd v0.19.3-beta h1:sBOIn+0ZIkvEJh05VPJRSOOhWbJn2EoGtyUAaq/Fgk8=
@@ -1184,8 +1184,8 @@ github.com/lightningnetwork/lnd/cert v1.2.2 h1:71YK6hogeJtxSxw2teq3eGeuy4rHGKcFf
 github.com/lightningnetwork/lnd/cert v1.2.2/go.mod h1:jQmFn/Ez4zhDgq2hnYSw8r35bqGVxViXhX6Cd7HXM6U=
 github.com/lightningnetwork/lnd/clock v1.1.1 h1:OfR3/zcJd2RhH0RU+zX/77c0ZiOnIMsDIBjgjWdZgA0=
 github.com/lightningnetwork/lnd/clock v1.1.1/go.mod h1:mGnAhPyjYZQJmebS7aevElXKTFDuO+uNFFfMXK1W8xQ=
-github.com/lightningnetwork/lnd/fn v1.2.3 h1:Q1OrgNSgQynVheBNa16CsKVov1JI5N2AR6G07x9Mles=
-github.com/lightningnetwork/lnd/fn v1.2.3/go.mod h1:SyFohpVrARPKH3XVAJZlXdVe+IwMYc4OMAvrDY32kw0=
+github.com/lightningnetwork/lnd/fn v1.2.5 h1:pGMz0BDUxrhvOtShD4FIysdVy+ulfFAnFvTKjZO5Pp8=
+github.com/lightningnetwork/lnd/fn v1.2.5/go.mod h1:SyFohpVrARPKH3XVAJZlXdVe+IwMYc4OMAvrDY32kw0=
 github.com/lightningnetwork/lnd/fn/v2 v2.0.8 h1:r2SLz7gZYQPVc3IZhU82M66guz3Zk2oY+Rlj9QN5S3g=
 github.com/lightningnetwork/lnd/fn/v2 v2.0.8/go.mod h1:TOzwrhjB/Azw1V7aa8t21ufcQmdsQOQMDtxVOQWNl8s=
 github.com/lightningnetwork/lnd/healthcheck v1.2.6 h1:1sWhqr93GdkWy4+6U7JxBfcyZIE78MhIHTJZfPx7qqI=
