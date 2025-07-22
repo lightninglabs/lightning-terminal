@@ -538,8 +538,6 @@ func TestFirewallDBMigration(t *testing.T) {
 			// the sql version of the kv stores that we'll create
 			// in test, without also needing to migrate it.
 			accountStore := accounts.NewTestDB(t, clock)
-			acctSQLStore, ok := accountStore.(*accounts.SQLStore)
-			require.True(t, ok)
 
 			sessionsStore := session.NewTestDBWithAccounts(
 				t, clock, accountStore,
@@ -573,9 +571,12 @@ func TestFirewallDBMigration(t *testing.T) {
 			// Perform the migration.
 			err = txEx.ExecTx(ctx, sqldb.WriteTxOpt(),
 				func(tx SQLQueries) error {
+					qs, ok := tx.(*sqlc.Queries)
+					require.True(t, ok)
+
 					return MigrateFirewallDBToSQL(
-						ctx, firewallStore.DB, tx,
-						acctSQLStore, sessSQLStore,
+						ctx, firewallStore.DB, tx, qs,
+						sessSQLStore,
 						rootKeyStore.getAllRootKeys(),
 					)
 				},
@@ -1557,6 +1558,8 @@ func actionWithMultipleAccounts(t *testing.T, ctx context.Context,
 	acctSqlStore, ok := acctStore.(*accounts.SQLStore)
 	require.True(t, ok)
 
+	queries := sqlc.NewForType(acctSqlStore, acctSqlStore.BackendType)
+
 	// To ensure that the two accounts do collide, we modify the alias
 	// of the second account to match the first 4 bytes of acct1's ID.
 	var newAcctAlias [8]byte
@@ -1567,7 +1570,7 @@ func actionWithMultipleAccounts(t *testing.T, ctx context.Context,
 	acctAlias, err := newAcct2ID.ToInt64()
 	require.NoError(t, err)
 
-	_, err = acctSqlStore.UpdateAccountAliasForTests(
+	_, err = queries.UpdateAccountAliasForTests(
 		ctx, sqlc.UpdateAccountAliasForTestsParams{
 			Alias: acctAlias,
 			ID:    acctID2,
@@ -1610,6 +1613,8 @@ func actionWithSessionAndAccount(t *testing.T, ctx context.Context,
 	acctSqlStore, ok := acctStore.(*accounts.SQLStore)
 	require.True(t, ok)
 
+	queries := sqlc.NewForType(acctSqlStore, acctSqlStore.BackendType)
+
 	// Modify the first 4 bytes of the account alias to match the session
 	// ID, to ensure that they collide.
 	var newAcctAlias [8]byte
@@ -1619,7 +1624,7 @@ func actionWithSessionAndAccount(t *testing.T, ctx context.Context,
 	acctAlias, err := accounts.AccountID(newAcctAlias).ToInt64()
 	require.NoError(t, err)
 
-	_, err = acctSqlStore.UpdateAccountAliasForTests(
+	_, err = queries.UpdateAccountAliasForTests(
 		ctx, sqlc.UpdateAccountAliasForTestsParams{
 			Alias: acctAlias,
 			ID:    acctID,
@@ -1676,6 +1681,8 @@ func actionWithSessionWithLinkedAccountAndAccount(t *testing.T,
 	acctSqlStore, ok := acctStore.(*accounts.SQLStore)
 	require.True(t, ok)
 
+	queries := sqlc.NewForType(acctSqlStore, acctSqlStore.BackendType)
+
 	// Modify the first 4 bytes of the second account alias to match the
 	// session ID, to ensure that they collide.
 	var newAcct2Alias [8]byte
@@ -1685,7 +1692,7 @@ func actionWithSessionWithLinkedAccountAndAccount(t *testing.T,
 	acctAlias, err := accounts.AccountID(newAcct2Alias).ToInt64()
 	require.NoError(t, err)
 
-	_, err = acctSqlStore.UpdateAccountAliasForTests(
+	_, err = queries.UpdateAccountAliasForTests(
 		ctx, sqlc.UpdateAccountAliasForTestsParams{
 			Alias: acctAlias,
 			ID:    acct2ID,
@@ -1733,6 +1740,8 @@ func randomActions(t *testing.T, ctx context.Context, boltDB *BoltDB,
 	numActions := 1000
 	acctSqlStore, ok := acctStore.(*accounts.SQLStore)
 	require.True(t, ok)
+
+	queries := sqlc.NewForType(acctSqlStore, acctSqlStore.BackendType)
 
 	for i := 0; i < numActions; i++ {
 		rJson, err := randomJSON(rand.Intn(20))
@@ -1866,7 +1875,7 @@ func randomActions(t *testing.T, ctx context.Context, boltDB *BoltDB,
 					require.NoError(t, err)
 
 					// nolint:ll
-					_, err = acctSqlStore.UpdateAccountAliasForTests(
+					_, err = queries.UpdateAccountAliasForTests(
 						ctx, sqlc.UpdateAccountAliasForTestsParams{
 							Alias: acctAlias,
 							ID:    acctID,
@@ -2059,10 +2068,12 @@ func testAccountWithExpiry(t *testing.T, ctx context.Context,
 	acctSqlStore, ok := acctStore.(*accounts.SQLStore)
 	require.True(t, ok)
 
+	queries := sqlc.NewForType(acctSqlStore, acctSqlStore.BackendType)
+
 	aliasInt, err := acct.ID.ToInt64()
 	require.NoError(t, err)
 
-	acctSqlID, err := acctSqlStore.GetAccountIDByAlias(ctx, aliasInt)
+	acctSqlID, err := queries.GetAccountIDByAlias(ctx, aliasInt)
 	require.NoError(t, err)
 
 	return acct, acctSqlID
@@ -2107,10 +2118,12 @@ func testSessionWithAccount(t *testing.T, ctx context.Context,
 	acctSqlStore, ok := acctStore.(*accounts.SQLStore)
 	require.True(t, ok)
 
+	queries := sqlc.NewForType(acctSqlStore, acctSqlStore.BackendType)
+
 	aliasInt, err := acct.ID.ToInt64()
 	require.NoError(t, err)
 
-	acctSqlID, err := acctSqlStore.GetAccountIDByAlias(ctx, aliasInt)
+	acctSqlID, err := queries.GetAccountIDByAlias(ctx, aliasInt)
 	require.NoError(t, err)
 
 	return sess, acct, acctSqlID
