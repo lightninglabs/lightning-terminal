@@ -12,7 +12,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/db/sqlc"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/fn"
-	"github.com/lightningnetwork/lnd/sqldb"
+	"github.com/lightningnetwork/lnd/sqldb/v2"
 )
 
 // SQLAccountQueries is a subset of the sqlc.Queries interface that can be used
@@ -167,7 +167,7 @@ func (s *SQLDB) AddAction(ctx context.Context,
 		}
 
 		return nil
-	})
+	}, sqldb.NoOpReset)
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +202,7 @@ func (s *SQLDB) SetActionState(ctx context.Context, al ActionLocator,
 				Valid:  errReason != "",
 			},
 		})
-	})
+	}, sqldb.NoOpReset)
 }
 
 // ListActions returns a list of Actions. The query IndexOffset and MaxNum
@@ -350,7 +350,7 @@ func (s *SQLDB) ListActions(ctx context.Context,
 		}
 
 		return nil
-	})
+	}, sqldb.NoOpReset)
 
 	return actions, lastIndex, uint64(totalCount), err
 }
