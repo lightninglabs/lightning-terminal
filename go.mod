@@ -26,18 +26,18 @@ require (
 	github.com/lightninglabs/lightning-terminal/litrpc v1.0.2
 	github.com/lightninglabs/lightning-terminal/perms v1.0.1
 	github.com/lightninglabs/lndclient v0.19.0-12
-	github.com/lightninglabs/loop v0.31.2-beta.0.20250724051925-36c5d6cee7d3
+	github.com/lightninglabs/loop v0.31.2-beta.0.20250730111713-3b0f6e84dc14
 	github.com/lightninglabs/loop/looprpc v1.0.8
 	github.com/lightninglabs/loop/swapserverrpc v1.0.15
 	github.com/lightninglabs/pool v0.6.6-beta
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.3
 	github.com/lightninglabs/pool/poolrpc v1.0.1
-	github.com/lightninglabs/taproot-assets v0.6.1
-	github.com/lightninglabs/taproot-assets/taprpc v1.0.10-0.20250725201706-0e736bb0d7b1
+	github.com/lightninglabs/taproot-assets v0.6.1-0.20250729190616-3f323918a96e
+	github.com/lightninglabs/taproot-assets/taprpc v1.0.10-0.20250729190616-3f323918a96e
 	github.com/lightningnetwork/lnd v0.19.3-beta.rc1
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/clock v1.1.1
-	github.com/lightningnetwork/lnd/fn v1.2.3
+	github.com/lightningnetwork/lnd/fn v1.2.5
 	github.com/lightningnetwork/lnd/fn/v2 v2.0.8
 	github.com/lightningnetwork/lnd/kvdb v1.4.16
 	github.com/lightningnetwork/lnd/sqldb v1.0.11-0.20250623231731-45c15646c68b
@@ -247,5 +247,3 @@ replace google.golang.org/protobuf => github.com/lightninglabs/protobuf-go-hex-d
 // it is a replace in the tapd repository, it doesn't get propagated here
 // automatically, so we need to add it manually.
 replace github.com/golang-migrate/migrate/v4 => github.com/lightninglabs/migrate/v4 v4.18.2-9023d66a-fork-pr-2
-
-replace github.com/lightninglabs/taproot-assets => github.com/lightninglabs/taproot-assets v0.6.1-0.20250725201706-0e736bb0d7b1
