@@ -16,7 +16,7 @@ var ErrDBClosed = errors.New("database is closed")
 
 // NewTestDB is a helper function that creates an SQLStore database for testing.
 func NewTestDB(t *testing.T, clock clock.Clock) Store {
-	return createStore(t, db.NewTestPostgresV2DB(t).BaseDB, clock)
+	return createStore(t, db.NewTestPostgresDB(t).BaseDB, clock)
 }
 
 // NewTestDBFromPath is a helper function that creates a new SQLStore with a
@@ -24,5 +24,5 @@ func NewTestDB(t *testing.T, clock clock.Clock) Store {
 func NewTestDBFromPath(t *testing.T, dbPath string,
 	clock clock.Clock) Store {
 
-	return createStore(t, db.NewTestPostgresV2DB(t).BaseDB, clock)
+	return createStore(t, db.NewTestPostgresDB(t).BaseDB, clock)
 }

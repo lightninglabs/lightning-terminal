@@ -56,9 +56,9 @@ func (s *PostgresConfig) DSN(hidePassword bool) string {
 		s.DBName, sslMode)
 }
 
-// NewTestPostgresV2DB is a helper function that creates a Postgres database for
-// testing, using the sqldb v2 package's definition of the PostgresStore.
-func NewTestPostgresV2DB(t *testing.T) *sqldb.PostgresStore {
+// NewTestPostgresDB is a helper function that creates a Postgres database for
+// testing.
+func NewTestPostgresDB(t *testing.T) *sqldb.PostgresStore {
 	t.Helper()
 
 	t.Logf("Creating new Postgres DB for testing")
