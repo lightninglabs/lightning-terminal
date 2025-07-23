@@ -26,16 +26,6 @@ func (q *Queries) Backend() sqldb.BackendType {
 	return wtx.backendType
 }
 
-// NewSqlite creates a new Queries instance for a SQLite database.
-func NewSqlite(db DBTX) *Queries {
-	return &Queries{db: &wrappedTX{db, sqldb.BackendTypeSqlite}}
-}
-
-// NewPostgres creates a new Queries instance for a Postgres database.
-func NewPostgres(db DBTX) *Queries {
-	return &Queries{db: &wrappedTX{db, sqldb.BackendTypePostgres}}
-}
-
 // NewForType creates a new Queries instance for the given database type.
 func NewForType(db DBTX, typ sqldb.BackendType) *Queries {
 	return &Queries{db: &wrappedTX{db, typ}}
