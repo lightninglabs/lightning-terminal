@@ -42,9 +42,6 @@ type expectedResult struct {
 // TestFirewallDBMigration tests the migration of firewalldb from a bolt
 // backend to a SQL database. Note that this test does not attempt to be a
 // complete migration test.
-// This test only tests the migration of the KV stores currently, but will
-// be extended in the future to also test the migration of the privacy mapper
-// and the actions store in the future.
 func TestFirewallDBMigration(t *testing.T) {
 	t.Parallel()
 
@@ -218,9 +215,9 @@ func TestFirewallDBMigration(t *testing.T) {
 		}
 	}
 
-	// The assertMigrationResults function will currently assert that
-	// the migrated kv stores records in the SQLDB match the original kv
-	// stores records in the BoltDB.
+	// The assertMigrationResults asserts that the migrated entries in the
+	// firewall SQLDB match the expected results which should represent the
+	// original entries in the BoltDB.
 	assertMigrationResults := func(t *testing.T, sqlStore *SQLDB,
 		expRes *expectedResult) {
 
@@ -231,9 +228,6 @@ func TestFirewallDBMigration(t *testing.T) {
 
 	// The tests slice contains all the tests that we will run for the
 	// migration of the firewalldb from a BoltDB to a SQLDB.
-	// Note that the tests currently only test the migration of the KV
-	// stores, but will be extended in the future to also test the migration
-	// of the privacy mapper and the actions store.
 	tests := []struct {
 		name       string
 		populateDB func(t *testing.T, ctx context.Context,

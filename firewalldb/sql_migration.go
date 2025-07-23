@@ -72,9 +72,6 @@ func (e *kvEntry) namespacedKey() string {
 // transaction to ensure that all rows in the stores are migrated or none at
 // all.
 //
-// Note that this migration currently only migrates the kvstores, but will be
-// extended in the future to also migrate the privacy mapper and action stores.
-//
 // NOTE: As sessions may contain linked sessions and accounts, the sessions and
 // accounts sql migration MUST be run prior to this migration.
 func MigrateFirewallDBToSQL(ctx context.Context, kvStore *bbolt.DB,
