@@ -2,21 +2,8 @@ package sqlc
 
 import (
 	"context"
-)
 
-// BackendType is an enum that represents the type of database backend we're
-// using.
-type BackendType uint8
-
-const (
-	// BackendTypeUnknown indicates we're using an unknown backend.
-	BackendTypeUnknown BackendType = iota
-
-	// BackendTypeSqlite indicates we're using a SQLite backend.
-	BackendTypeSqlite
-
-	// BackendTypePostgres indicates we're using a Postgres backend.
-	BackendTypePostgres
+	"github.com/lightningnetwork/lnd/sqldb/v2"
 )
 
 // wrappedTX is a wrapper around a DBTX that also stores the database backend
@@ -24,16 +11,16 @@ const (
 type wrappedTX struct {
 	DBTX
 
-	backendType BackendType
+	backendType sqldb.BackendType
 }
 
 // Backend returns the type of database backend we're using.
-func (q *Queries) Backend() BackendType {
+func (q *Queries) Backend() sqldb.BackendType {
 	wtx, ok := q.db.(*wrappedTX)
 	if !ok {
 		// Shouldn't happen unless a new database backend type is added
 		// but not initialized correctly.
-		return BackendTypeUnknown
+		return sqldb.BackendTypeUnknown
 	}
 
 	return wtx.backendType
@@ -41,12 +28,12 @@ func (q *Queries) Backend() BackendType {
 
 // NewSqlite creates a new Queries instance for a SQLite database.
 func NewSqlite(db DBTX) *Queries {
-	return &Queries{db: &wrappedTX{db, BackendTypeSqlite}}
+	return &Queries{db: &wrappedTX{db, sqldb.BackendTypeSqlite}}
 }
 
 // NewPostgres creates a new Queries instance for a Postgres database.
 func NewPostgres(db DBTX) *Queries {
-	return &Queries{db: &wrappedTX{db, BackendTypePostgres}}
+	return &Queries{db: &wrappedTX{db, sqldb.BackendTypePostgres}}
 }
 
 // CustomQueries defines a set of custom queries that we define in addition
@@ -62,5 +49,5 @@ type CustomQueries interface {
 		arg ListActionsParams) ([]Action, error)
 
 	// Backend returns the type of the database backend used.
-	Backend() BackendType
+	Backend() sqldb.BackendType
 }

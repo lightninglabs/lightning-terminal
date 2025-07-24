@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/lightninglabs/lightning-terminal/db/sqlc"
+	"github.com/lightningnetwork/lnd/sqldb/v2"
 )
 
 var (
@@ -56,7 +57,7 @@ type BatchedTx[Q any] interface {
 		txBody func(Q) error) error
 
 	// Backend returns the type of the database backend used.
-	Backend() sqlc.BackendType
+	Backend() sqldb.BackendType
 }
 
 // Tx represents a database transaction that can be committed or rolled back.
@@ -277,7 +278,7 @@ func (t *TransactionExecutor[Q]) ExecTx(ctx context.Context,
 }
 
 // Backend returns the type of the database backend used.
-func (t *TransactionExecutor[Q]) Backend() sqlc.BackendType {
+func (t *TransactionExecutor[Q]) Backend() sqldb.BackendType {
 	return t.BatchedQuerier.Backend()
 }
 
@@ -301,7 +302,7 @@ func (s *BaseDB) BeginTx(ctx context.Context, opts TxOptions) (*sql.Tx, error) {
 }
 
 // Backend returns the type of the database backend used.
-func (s *BaseDB) Backend() sqlc.BackendType {
+func (s *BaseDB) Backend() sqldb.BackendType {
 	return s.Queries.Backend()
 }
 
