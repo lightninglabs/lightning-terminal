@@ -3,6 +3,7 @@
 package terminal
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 
@@ -87,7 +88,9 @@ func defaultDevConfig() *DevConfig {
 }
 
 // NewStores creates a new stores instance based on the chosen database backend.
-func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
+func NewStores(ctx context.Context, cfg *Config,
+	clock clock.Clock) (*stores, error) {
+
 	var (
 		networkDir = filepath.Join(cfg.LitDir, cfg.Network)
 		stores     = &stores{
@@ -114,7 +117,10 @@ func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
 
 		if !cfg.Sqlite.SkipMigrations {
 			err = sqldb.ApplyAllMigrations(
-				sqlStore, migrationstreams.LitdMigrationStreams,
+				sqlStore,
+				migrationstreams.MakeMigrationStreams(
+					ctx, cfg.MacaroonPath, clock,
+				),
 			)
 			if err != nil {
 				return stores, fmt.Errorf("error applying "+
@@ -156,7 +162,10 @@ func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
 
 		if !cfg.Postgres.SkipMigrations {
 			err = sqldb.ApplyAllMigrations(
-				sqlStore, migrationstreams.LitdMigrationStreams,
+				sqlStore,
+				migrationstreams.MakeMigrationStreams(
+					ctx, cfg.MacaroonPath, clock,
+				),
 			)
 			if err != nil {
 				return stores, fmt.Errorf("error applying "+
