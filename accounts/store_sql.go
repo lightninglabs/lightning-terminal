@@ -11,11 +11,13 @@ import (
 
 	"github.com/lightninglabs/lightning-terminal/db"
 	"github.com/lightninglabs/lightning-terminal/db/sqlc"
+	"github.com/lightninglabs/lightning-terminal/db/sqlcmig6"
 	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
 	"github.com/lightningnetwork/lnd/lnwire"
+	"github.com/lightningnetwork/lnd/sqldb/v2"
 )
 
 const (
@@ -33,6 +35,8 @@ const (
 //
 //nolint:lll
 type SQLQueries interface {
+	sqldb.BaseQuerier
+
 	AddAccountInvoice(ctx context.Context, arg sqlc.AddAccountInvoiceParams) error
 	DeleteAccount(ctx context.Context, id int64) error
 	DeleteAccountPayment(ctx context.Context, arg sqlc.DeleteAccountPaymentParams) error
@@ -53,12 +57,40 @@ type SQLQueries interface {
 	GetAccountInvoice(ctx context.Context, arg sqlc.GetAccountInvoiceParams) (sqlc.AccountInvoice, error)
 }
 
-// BatchedSQLQueries is a version of the SQLQueries that's capable
-// of batched database operations.
+// SQLMig6Queries is a subset of the sqlcmig6.Queries interface that can be used
+// to interact with accounts related tables.
+//
+//nolint:lll
+type SQLMig6Queries interface {
+	sqldb.BaseQuerier
+
+	AddAccountInvoice(ctx context.Context, arg sqlcmig6.AddAccountInvoiceParams) error
+	DeleteAccount(ctx context.Context, id int64) error
+	DeleteAccountPayment(ctx context.Context, arg sqlcmig6.DeleteAccountPaymentParams) error
+	GetAccount(ctx context.Context, id int64) (sqlcmig6.Account, error)
+	GetAccountByLabel(ctx context.Context, label sql.NullString) (sqlcmig6.Account, error)
+	GetAccountIDByAlias(ctx context.Context, alias int64) (int64, error)
+	GetAccountIndex(ctx context.Context, name string) (int64, error)
+	GetAccountPayment(ctx context.Context, arg sqlcmig6.GetAccountPaymentParams) (sqlcmig6.AccountPayment, error)
+	InsertAccount(ctx context.Context, arg sqlcmig6.InsertAccountParams) (int64, error)
+	ListAccountInvoices(ctx context.Context, id int64) ([]sqlcmig6.AccountInvoice, error)
+	ListAccountPayments(ctx context.Context, id int64) ([]sqlcmig6.AccountPayment, error)
+	ListAllAccounts(ctx context.Context) ([]sqlcmig6.Account, error)
+	SetAccountIndex(ctx context.Context, arg sqlcmig6.SetAccountIndexParams) error
+	UpdateAccountBalance(ctx context.Context, arg sqlcmig6.UpdateAccountBalanceParams) (int64, error)
+	UpdateAccountExpiry(ctx context.Context, arg sqlcmig6.UpdateAccountExpiryParams) (int64, error)
+	UpdateAccountLastUpdate(ctx context.Context, arg sqlcmig6.UpdateAccountLastUpdateParams) (int64, error)
+	UpsertAccountPayment(ctx context.Context, arg sqlcmig6.UpsertAccountPaymentParams) error
+	GetAccountInvoice(ctx context.Context, arg sqlcmig6.GetAccountInvoiceParams) (sqlcmig6.AccountInvoice, error)
+}
+
+// BatchedSQLQueries combines the SQLQueries interface with the BatchedTx
+// interface, allowing for multiple queries to be executed in single SQL
+// transaction.
 type BatchedSQLQueries interface {
 	SQLQueries
 
-	db.BatchedTx[SQLQueries]
+	sqldb.BatchedTx[SQLQueries]
 }
 
 // SQLStore represents a storage backend.
@@ -68,19 +100,57 @@ type SQLStore struct {
 	db BatchedSQLQueries
 
 	// BaseDB represents the underlying database connection.
-	*db.BaseDB
+	*sqldb.BaseDB
 
 	clock clock.Clock
 }
 
-// NewSQLStore creates a new SQLStore instance given an open BatchedSQLQueries
-// storage backend.
-func NewSQLStore(sqlDB *db.BaseDB, clock clock.Clock) *SQLStore {
-	executor := db.NewTransactionExecutor(
-		sqlDB, func(tx *sql.Tx) SQLQueries {
-			return sqlDB.WithTx(tx)
+type SQLQueriesExecutor[T sqldb.BaseQuerier] struct {
+	*sqldb.TransactionExecutor[T]
+
+	SQLQueries
+}
+
+func NewSQLQueriesExecutor(baseDB *sqldb.BaseDB,
+	queries *sqlc.Queries) *SQLQueriesExecutor[SQLQueries] {
+
+	executor := sqldb.NewTransactionExecutor(
+		baseDB, func(tx *sql.Tx) SQLQueries {
+			return queries.WithTx(tx)
 		},
 	)
+	return &SQLQueriesExecutor[SQLQueries]{
+		TransactionExecutor: executor,
+		SQLQueries:          queries,
+	}
+}
+
+type SQLMig6QueriesExecutor[T sqldb.BaseQuerier] struct {
+	*sqldb.TransactionExecutor[T]
+
+	SQLMig6Queries
+}
+
+func NewSQLMig6QueriesExecutor(baseDB *sqldb.BaseDB,
+	queries *sqlcmig6.Queries) *SQLMig6QueriesExecutor[SQLMig6Queries] {
+
+	executor := sqldb.NewTransactionExecutor(
+		baseDB, func(tx *sql.Tx) SQLMig6Queries {
+			return queries.WithTx(tx)
+		},
+	)
+	return &SQLMig6QueriesExecutor[SQLMig6Queries]{
+		TransactionExecutor: executor,
+		SQLMig6Queries:      queries,
+	}
+}
+
+// NewSQLStore creates a new SQLStore instance given an open BatchedSQLQueries
+// storage backend.
+func NewSQLStore(sqlDB *sqldb.BaseDB, queries *sqlc.Queries,
+	clock clock.Clock) *SQLStore {
+
+	executor := NewSQLQueriesExecutor(sqlDB, queries)
 
 	return &SQLStore{
 		db:     executor,
@@ -157,7 +227,7 @@ func (s *SQLStore) NewAccount(ctx context.Context, balance lnwire.MilliSatoshi,
 		}
 
 		return nil
-	})
+	}, sqldb.NoOpReset)
 	if err != nil {
 		return nil, err
 	}
@@ -299,7 +369,7 @@ func (s *SQLStore) AddAccountInvoice(ctx context.Context, alias AccountID,
 		}
 
 		return s.markAccountUpdated(ctx, db, acctID)
-	})
+	}, sqldb.NoOpReset)
 }
 
 func getAccountIDByAlias(ctx context.Context, db SQLQueries, alias AccountID) (
@@ -377,7 +447,7 @@ func (s *SQLStore) UpdateAccountBalanceAndExpiry(ctx context.Context,
 		}
 
 		return s.markAccountUpdated(ctx, db, id)
-	})
+	}, sqldb.NoOpReset)
 }
 
 // CreditAccount increases the balance of the account with the given alias by
@@ -412,7 +482,7 @@ func (s *SQLStore) CreditAccount(ctx context.Context, alias AccountID,
 		}
 
 		return s.markAccountUpdated(ctx, db, id)
-	})
+	}, sqldb.NoOpReset)
 }
 
 // DebitAccount decreases the balance of the account with the given alias by the
@@ -453,7 +523,7 @@ func (s *SQLStore) DebitAccount(ctx context.Context, alias AccountID,
 		}
 
 		return s.markAccountUpdated(ctx, db, id)
-	})
+	}, sqldb.NoOpReset)
 }
 
 // Account retrieves an account from the SQL store and un-marshals it. If the
@@ -475,7 +545,7 @@ func (s *SQLStore) Account(ctx context.Context, alias AccountID) (
 
 		account, err = getAndMarshalAccount(ctx, db, id)
 		return err
-	})
+	}, sqldb.NoOpReset)
 
 	return account, err
 }
@@ -507,7 +577,7 @@ func (s *SQLStore) Accounts(ctx context.Context) ([]*OffChainBalanceAccount,
 		}
 
 		return nil
-	})
+	}, sqldb.NoOpReset)
 
 	return accounts, err
 }
@@ -524,7 +594,7 @@ func (s *SQLStore) RemoveAccount(ctx context.Context, alias AccountID) error {
 		}
 
 		return db.DeleteAccount(ctx, id)
-	})
+	}, sqldb.NoOpReset)
 }
 
 // UpsertAccountPayment updates or inserts a payment entry for the given
@@ -634,7 +704,7 @@ func (s *SQLStore) UpsertAccountPayment(ctx context.Context, alias AccountID,
 		}
 
 		return s.markAccountUpdated(ctx, db, id)
-	})
+	}, sqldb.NoOpReset)
 }
 
 // DeleteAccountPayment removes a payment entry from the account with the given
@@ -677,7 +747,7 @@ func (s *SQLStore) DeleteAccountPayment(ctx context.Context, alias AccountID,
 		}
 
 		return s.markAccountUpdated(ctx, db, id)
-	})
+	}, sqldb.NoOpReset)
 }
 
 // LastIndexes returns the last invoice add and settle index or
@@ -704,7 +774,7 @@ func (s *SQLStore) LastIndexes(ctx context.Context) (uint64, uint64, error) {
 		}
 
 		return err
-	})
+	}, sqldb.NoOpReset)
 
 	return uint64(addIndex), uint64(settleIndex), err
 }
@@ -729,7 +799,7 @@ func (s *SQLStore) StoreLastIndexes(ctx context.Context, addIndex,
 			Name:  settleIndexName,
 			Value: int64(settleIndex),
 		})
-	})
+	}, sqldb.NoOpReset)
 }
 
 // Close closes the underlying store.

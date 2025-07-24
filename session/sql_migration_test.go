@@ -2,17 +2,16 @@ package session
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/lightninglabs/lightning-terminal/accounts"
-	"github.com/lightninglabs/lightning-terminal/db"
+	"github.com/lightninglabs/lightning-terminal/db/sqlcmig6"
 	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/lnwire"
 	"github.com/lightningnetwork/lnd/macaroons"
-	"github.com/lightningnetwork/lnd/sqldb"
+	"github.com/lightningnetwork/lnd/sqldb/v2"
 	"github.com/stretchr/testify/require"
 	"go.etcd.io/bbolt"
 	"golang.org/x/exp/rand"
@@ -38,7 +37,7 @@ func TestSessionsStoreMigration(t *testing.T) {
 	}
 
 	makeSQLDB := func(t *testing.T, acctStore accounts.Store) (*SQLStore,
-		*db.TransactionExecutor[SQLQueries]) {
+		*SQLMig6QueriesExecutor[SQLMig6Queries]) {
 
 		// Create a sql store with a linked account store.
 		testDBStore := NewTestDBWithAccounts(t, clock, acctStore)
@@ -48,13 +47,9 @@ func TestSessionsStoreMigration(t *testing.T) {
 
 		baseDB := store.BaseDB
 
-		genericExecutor := db.NewTransactionExecutor(
-			baseDB, func(tx *sql.Tx) SQLQueries {
-				return baseDB.WithTx(tx)
-			},
-		)
+		queries := sqlcmig6.NewForType(baseDB, baseDB.BackendType)
 
-		return store, genericExecutor
+		return store, NewSQLMig6QueriesExecutor(baseDB, queries)
 	}
 
 	// assertMigrationResults asserts that the sql store contains the
@@ -369,13 +364,16 @@ func TestSessionsStoreMigration(t *testing.T) {
 			// migration.
 			sqlStore, txEx := makeSQLDB(t, accountStore)
 
+			// TODO(viktor): remove sqldb.MigrationTxOptions once
+			// sqldb v2 is based on the latest version of lnd/sqldb.
+			var opts sqldb.MigrationTxOptions
 			err = txEx.ExecTx(
-				ctx, sqldb.WriteTxOpt(),
-				func(tx SQLQueries) error {
+				ctx, &opts,
+				func(tx SQLMig6Queries) error {
 					return MigrateSessionStoreToSQL(
 						ctx, kvStore.DB, tx,
 					)
-				},
+				}, sqldb.NoOpReset,
 			)
 			require.NoError(t, err)
 

@@ -1,4 +1,4 @@
-package sqlc
+package sqlcmig6
 
 import (
 	"context"
