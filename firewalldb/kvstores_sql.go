@@ -9,8 +9,10 @@ import (
 
 	"github.com/lightninglabs/lightning-terminal/db"
 	"github.com/lightninglabs/lightning-terminal/db/sqlc"
+	"github.com/lightninglabs/lightning-terminal/db/sqlcmig6"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/fn"
+	"github.com/lightningnetwork/lnd/sqldb/v2"
 )
 
 // SQLKVStoreQueries is a subset of the sqlc.Queries interface that can be
@@ -30,6 +32,32 @@ type SQLKVStoreQueries interface {
 	UpdateGlobalKVStoreRecord(ctx context.Context, arg sqlc.UpdateGlobalKVStoreRecordParams) error
 	UpdateGroupKVStoreRecord(ctx context.Context, arg sqlc.UpdateGroupKVStoreRecordParams) error
 	InsertKVStoreRecord(ctx context.Context, arg sqlc.InsertKVStoreRecordParams) error
+	ListAllKVStoresRecords(ctx context.Context) ([]sqlc.Kvstore, error)
+	DeleteAllTempKVStores(ctx context.Context) error
+	GetOrInsertFeatureID(ctx context.Context, name string) (int64, error)
+	GetOrInsertRuleID(ctx context.Context, name string) (int64, error)
+	GetFeatureID(ctx context.Context, name string) (int64, error)
+	GetRuleID(ctx context.Context, name string) (int64, error)
+}
+
+// SQLMig6KVStoreQueries is a subset of the sqlcmig6.Queries interface that can
+// be used to interact with the kvstore tables.
+//
+//nolint:lll
+type SQLMig6KVStoreQueries interface {
+	SQLSessionQueries
+
+	DeleteFeatureKVStoreRecord(ctx context.Context, arg sqlcmig6.DeleteFeatureKVStoreRecordParams) error
+	DeleteGlobalKVStoreRecord(ctx context.Context, arg sqlcmig6.DeleteGlobalKVStoreRecordParams) error
+	DeleteGroupKVStoreRecord(ctx context.Context, arg sqlcmig6.DeleteGroupKVStoreRecordParams) error
+	GetFeatureKVStoreRecord(ctx context.Context, arg sqlcmig6.GetFeatureKVStoreRecordParams) ([]byte, error)
+	GetGlobalKVStoreRecord(ctx context.Context, arg sqlcmig6.GetGlobalKVStoreRecordParams) ([]byte, error)
+	GetGroupKVStoreRecord(ctx context.Context, arg sqlcmig6.GetGroupKVStoreRecordParams) ([]byte, error)
+	UpdateFeatureKVStoreRecord(ctx context.Context, arg sqlcmig6.UpdateFeatureKVStoreRecordParams) error
+	UpdateGlobalKVStoreRecord(ctx context.Context, arg sqlcmig6.UpdateGlobalKVStoreRecordParams) error
+	UpdateGroupKVStoreRecord(ctx context.Context, arg sqlcmig6.UpdateGroupKVStoreRecordParams) error
+	InsertKVStoreRecord(ctx context.Context, arg sqlcmig6.InsertKVStoreRecordParams) error
+	ListAllKVStoresRecords(ctx context.Context) ([]sqlcmig6.Kvstore, error)
 	DeleteAllTempKVStores(ctx context.Context) error
 	GetOrInsertFeatureID(ctx context.Context, name string) (int64, error)
 	GetOrInsertRuleID(ctx context.Context, name string) (int64, error)
@@ -45,7 +73,7 @@ func (s *SQLDB) DeleteTempKVStores(ctx context.Context) error {
 
 	return s.db.ExecTx(ctx, &writeTxOpts, func(tx SQLQueries) error {
 		return tx.DeleteAllTempKVStores(ctx)
-	})
+	}, sqldb.NoOpReset)
 }
 
 // GetKVStores constructs a new rules.KVStores in a namespace defined by the

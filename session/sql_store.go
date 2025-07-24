@@ -12,8 +12,10 @@ import (
 	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/db"
 	"github.com/lightninglabs/lightning-terminal/db/sqlc"
+	"github.com/lightninglabs/lightning-terminal/db/sqlcmig6"
 	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/fn"
+	"github.com/lightningnetwork/lnd/sqldb/v2"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 	"gopkg.in/macaroon.v2"
 )
@@ -21,6 +23,8 @@ import (
 // SQLQueries is a subset of the sqlc.Queries interface that can be used to
 // interact with session related tables.
 type SQLQueries interface {
+	sqldb.BaseQuerier
+
 	GetAliasBySessionID(ctx context.Context, id int64) ([]byte, error)
 	GetSessionByID(ctx context.Context, id int64) (sqlc.Session, error)
 	GetSessionsInGroup(ctx context.Context, groupID sql.NullInt64) ([]sqlc.Session, error)
@@ -49,14 +53,48 @@ type SQLQueries interface {
 	GetAccount(ctx context.Context, id int64) (sqlc.Account, error)
 }
 
+// SQLMig6Queries is a subset of the sqlcmig6.Queries interface that can be used to
+// interact with session related tables.
+type SQLMig6Queries interface {
+	sqldb.BaseQuerier
+
+	GetAliasBySessionID(ctx context.Context, id int64) ([]byte, error)
+	GetSessionByID(ctx context.Context, id int64) (sqlcmig6.Session, error)
+	GetSessionsInGroup(ctx context.Context, groupID sql.NullInt64) ([]sqlcmig6.Session, error)
+	GetSessionAliasesInGroup(ctx context.Context, groupID sql.NullInt64) ([][]byte, error)
+	GetSessionByAlias(ctx context.Context, legacyID []byte) (sqlcmig6.Session, error)
+	GetSessionByLocalPublicKey(ctx context.Context, localPublicKey []byte) (sqlcmig6.Session, error)
+	GetSessionFeatureConfigs(ctx context.Context, sessionID int64) ([]sqlcmig6.SessionFeatureConfig, error)
+	GetSessionMacaroonCaveats(ctx context.Context, sessionID int64) ([]sqlcmig6.SessionMacaroonCaveat, error)
+	GetSessionIDByAlias(ctx context.Context, legacyID []byte) (int64, error)
+	GetSessionMacaroonPermissions(ctx context.Context, sessionID int64) ([]sqlcmig6.SessionMacaroonPermission, error)
+	GetSessionPrivacyFlags(ctx context.Context, sessionID int64) ([]sqlcmig6.SessionPrivacyFlag, error)
+	InsertSessionFeatureConfig(ctx context.Context, arg sqlcmig6.InsertSessionFeatureConfigParams) error
+	SetSessionRevokedAt(ctx context.Context, arg sqlcmig6.SetSessionRevokedAtParams) error
+	InsertSessionMacaroonCaveat(ctx context.Context, arg sqlcmig6.InsertSessionMacaroonCaveatParams) error
+	InsertSessionMacaroonPermission(ctx context.Context, arg sqlcmig6.InsertSessionMacaroonPermissionParams) error
+	InsertSessionPrivacyFlag(ctx context.Context, arg sqlcmig6.InsertSessionPrivacyFlagParams) error
+	InsertSession(ctx context.Context, arg sqlcmig6.InsertSessionParams) (int64, error)
+	ListSessions(ctx context.Context) ([]sqlcmig6.Session, error)
+	ListSessionsByType(ctx context.Context, sessionType int16) ([]sqlcmig6.Session, error)
+	ListSessionsByState(ctx context.Context, state int16) ([]sqlcmig6.Session, error)
+	SetSessionRemotePublicKey(ctx context.Context, arg sqlcmig6.SetSessionRemotePublicKeyParams) error
+	SetSessionGroupID(ctx context.Context, arg sqlcmig6.SetSessionGroupIDParams) error
+	UpdateSessionState(ctx context.Context, arg sqlcmig6.UpdateSessionStateParams) error
+	DeleteSessionsWithState(ctx context.Context, state int16) error
+	GetAccountIDByAlias(ctx context.Context, alias int64) (int64, error)
+	GetAccount(ctx context.Context, id int64) (sqlcmig6.Account, error)
+}
+
 var _ Store = (*SQLStore)(nil)
 
-// BatchedSQLQueries is a version of the SQLQueries that's capable of batched
-// database operations.
+// BatchedSQLQueries combines the SQLQueries interface with the BatchedTx
+// interface, allowing for multiple queries to be executed in single SQL
+// transaction.
 type BatchedSQLQueries interface {
 	SQLQueries
 
-	db.BatchedTx[SQLQueries]
+	sqldb.BatchedTx[SQLQueries]
 }
 
 // SQLStore represents a storage backend.
@@ -66,19 +104,57 @@ type SQLStore struct {
 	db BatchedSQLQueries
 
 	// BaseDB represents the underlying database connection.
-	*db.BaseDB
+	*sqldb.BaseDB
 
 	clock clock.Clock
 }
 
-// NewSQLStore creates a new SQLStore instance given an open BatchedSQLQueries
-// storage backend.
-func NewSQLStore(sqlDB *db.BaseDB, clock clock.Clock) *SQLStore {
-	executor := db.NewTransactionExecutor(
-		sqlDB, func(tx *sql.Tx) SQLQueries {
-			return sqlDB.WithTx(tx)
+type SQLQueriesExecutor[T sqldb.BaseQuerier] struct {
+	*sqldb.TransactionExecutor[T]
+
+	SQLQueries
+}
+
+func NewSQLQueriesExecutor(baseDB *sqldb.BaseDB,
+	queries *sqlc.Queries) *SQLQueriesExecutor[SQLQueries] {
+
+	executor := sqldb.NewTransactionExecutor(
+		baseDB, func(tx *sql.Tx) SQLQueries {
+			return queries.WithTx(tx)
 		},
 	)
+	return &SQLQueriesExecutor[SQLQueries]{
+		TransactionExecutor: executor,
+		SQLQueries:          queries,
+	}
+}
+
+type SQLMig6QueriesExecutor[T sqldb.BaseQuerier] struct {
+	*sqldb.TransactionExecutor[T]
+
+	SQLMig6Queries
+}
+
+func NewSQLMig6QueriesExecutor(baseDB *sqldb.BaseDB,
+	queries *sqlcmig6.Queries) *SQLMig6QueriesExecutor[SQLMig6Queries] {
+
+	executor := sqldb.NewTransactionExecutor(
+		baseDB, func(tx *sql.Tx) SQLMig6Queries {
+			return queries.WithTx(tx)
+		},
+	)
+	return &SQLMig6QueriesExecutor[SQLMig6Queries]{
+		TransactionExecutor: executor,
+		SQLMig6Queries:      queries,
+	}
+}
+
+// NewSQLStore creates a new SQLStore instance given an open BatchedSQLQueries
+// storage backend.
+func NewSQLStore(sqlDB *sqldb.BaseDB, queries *sqlc.Queries,
+	clock clock.Clock) *SQLStore {
+
+	executor := NewSQLQueriesExecutor(sqlDB, queries)
 
 	return &SQLStore{
 		db:     executor,
@@ -281,7 +357,7 @@ func (s *SQLStore) NewSession(ctx context.Context, label string, typ Type,
 		}
 
 		return nil
-	})
+	}, sqldb.NoOpReset)
 	if err != nil {
 		mappedSQLErr := db.MapSQLError(err)
 		var uniqueConstraintErr *db.ErrSqlUniqueConstraintViolation
@@ -325,7 +401,7 @@ func (s *SQLStore) ListSessionsByType(ctx context.Context, t Type) ([]*Session,
 		}
 
 		return nil
-	})
+	}, sqldb.NoOpReset)
 
 	return sessions, err
 }
@@ -358,7 +434,7 @@ func (s *SQLStore) ListSessionsByState(ctx context.Context, state State) (
 		}
 
 		return nil
-	})
+	}, sqldb.NoOpReset)
 
 	return sessions, err
 }
@@ -417,7 +493,7 @@ func (s *SQLStore) ShiftState(ctx context.Context, alias ID, dest State) error {
 				State: int16(dest),
 			},
 		)
-	})
+	}, sqldb.NoOpReset)
 }
 
 // DeleteReservedSessions deletes all sessions that are in the StateReserved
@@ -428,7 +504,7 @@ func (s *SQLStore) DeleteReservedSessions(ctx context.Context) error {
 	var writeTxOpts db.QueriesTxOptions
 	return s.db.ExecTx(ctx, &writeTxOpts, func(db SQLQueries) error {
 		return db.DeleteSessionsWithState(ctx, int16(StateReserved))
-	})
+	}, sqldb.NoOpReset)
 }
 
 // GetSessionByLocalPub fetches the session with the given local pub key.
@@ -458,7 +534,7 @@ func (s *SQLStore) GetSessionByLocalPub(ctx context.Context,
 		}
 
 		return nil
-	})
+	}, sqldb.NoOpReset)
 	if err != nil {
 		return nil, err
 	}
@@ -491,7 +567,7 @@ func (s *SQLStore) ListAllSessions(ctx context.Context) ([]*Session, error) {
 		}
 
 		return nil
-	})
+	}, sqldb.NoOpReset)
 
 	return sessions, err
 }
@@ -521,7 +597,7 @@ func (s *SQLStore) UpdateSessionRemotePubKey(ctx context.Context, alias ID,
 				RemotePublicKey: remoteKey,
 			},
 		)
-	})
+	}, sqldb.NoOpReset)
 }
 
 // getSqlUnusedAliasAndKeyPair can be used to generate a new, unused, local
@@ -576,7 +652,7 @@ func (s *SQLStore) GetSession(ctx context.Context, alias ID) (*Session, error) {
 		}
 
 		return nil
-	})
+	}, sqldb.NoOpReset)
 
 	return sess, err
 }
@@ -617,7 +693,7 @@ func (s *SQLStore) GetGroupID(ctx context.Context, sessionID ID) (ID, error) {
 		legacyGroupID, err = IDFromBytes(legacyGroupIDB)
 
 		return err
-	})
+	}, sqldb.NoOpReset)
 	if err != nil {
 		return ID{}, err
 	}
@@ -666,7 +742,7 @@ func (s *SQLStore) GetSessionIDs(ctx context.Context, legacyGroupID ID) ([]ID,
 		}
 
 		return nil
-	})
+	}, sqldb.NoOpReset)
 	if err != nil {
 		return nil, err
 	}
