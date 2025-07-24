@@ -10,7 +10,7 @@ var (
 	LitdMigrationStream = sqldb.MigrationStream{
 		MigrateTableName: pgx.DefaultMigrationsTable,
 		SQLFileDirectory: "sqlc/migrations",
-		Schemas:          sqlSchemas,
+		Schemas:          SqlSchemas,
 
 		// LatestMigrationVersion is the latest migration version of the
 		// database.  This is used to implement downgrade protection for
