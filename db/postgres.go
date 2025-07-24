@@ -68,5 +68,5 @@ func NewTestPostgresDB(t *testing.T) *sqldb.PostgresStore {
 		sqlFixture.TearDown(t)
 	})
 
-	return sqldb.NewTestPostgresDB(t, sqlFixture, LitdMigrationStreams)
+	return sqldb.NewTestPostgresDB(t, sqlFixture, MakeTestMigrationStreams())
 }
