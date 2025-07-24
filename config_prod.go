@@ -3,6 +3,7 @@
 package terminal
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/clock"
+	"github.com/lightningnetwork/lnd/lnrpc"
 )
 
 // DevConfig is an empty shell struct that allows us to build without the dev
@@ -29,7 +31,9 @@ func (c *DevConfig) Validate(_, _ string) error {
 
 // NewStores creates a new instance of the stores struct using the default Bolt
 // backend since in production, this is currently the only backend supported.
-func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
+func NewStores(_ context.Context, cfg *Config,
+	_ lnrpc.LightningClient, clock clock.Clock) (*stores, error) {
+
 	networkDir := filepath.Join(cfg.LitDir, cfg.Network)
 
 	stores := &stores{

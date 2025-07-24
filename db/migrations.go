@@ -28,7 +28,8 @@ const (
 // environment.
 //
 // NOTE: This function is not located in the migrationstreams package to avoid
-// cyclic dependencies.
+// cyclic dependencies. This test migration stream does not run the kvdb to sql
+// migration, as we already have separate unit tests which tests the migration.
 func MakeTestMigrationStreams() []sqldb.MigrationStream {
 	migStream := sqldb.MigrationStream{
 		TrackingTableName: pgx.DefaultMigrationsTable,
