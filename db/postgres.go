@@ -9,6 +9,7 @@ import (
 	postgres_migrate "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/lightninglabs/lightning-terminal/db/sqlc"
+	"github.com/lightningnetwork/lnd/sqldb/v2"
 	"github.com/stretchr/testify/require"
 )
 
@@ -164,8 +165,26 @@ func (s *PostgresStore) ExecuteMigrations(target MigrationTarget,
 	)
 }
 
+// NewTestPostgresV2DB is a helper function that creates a Postgres database for
+// testing, using the sqldb v2 package's definition of the PostgresStore.
+func NewTestPostgresV2DB(t *testing.T) *sqldb.PostgresStore {
+	t.Helper()
+
+	t.Logf("Creating new Postgres DB for testing")
+
+	sqlFixture := sqldb.NewTestPgFixture(t, DefaultPostgresFixtureLifetime)
+	t.Cleanup(func() {
+		sqlFixture.TearDown(t)
+	})
+
+	return sqldb.NewTestPostgresDB(t, sqlFixture, LitdMigrationStreams)
+}
+
 // NewTestPostgresDB is a helper function that creates a Postgres database for
-// testing.
+// testing, using the litd db package's definition of the PostgresStore.
+//
+// TODO(viktor): remove this once the sqldb v2 package is implemented in
+// all of litd's packages.
 func NewTestPostgresDB(t *testing.T) *PostgresStore {
 	t.Helper()
 
