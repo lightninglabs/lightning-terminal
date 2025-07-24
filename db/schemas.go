@@ -6,4 +6,4 @@ import (
 )
 
 //go:embed sqlc/migrations/*.*.sql
-var sqlSchemas embed.FS
+var SqlSchemas embed.FS
