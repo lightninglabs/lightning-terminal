@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"testing"
@@ -16,24 +17,45 @@ import (
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/fn"
+	"github.com/lightningnetwork/lnd/macaroons"
 	"github.com/lightningnetwork/lnd/sqldb"
 	"github.com/stretchr/testify/require"
+	"go.etcd.io/bbolt"
 	"golang.org/x/exp/rand"
+	"gopkg.in/macaroon-bakery.v2/bakery/checkers"
+	"gopkg.in/macaroon.v2"
 )
 
 const (
-	testRuleName     = "test-rule"
-	testRuleName2    = "test-rule-2"
-	testFeatureName  = "test-feature"
-	testFeatureName2 = "test-feature-2"
-	testEntryKey     = "test-entry-key"
-	testEntryKey2    = "test-entry-key-2"
-	testEntryKey3    = "test-entry-key-3"
-	testEntryKey4    = "test-entry-key-4"
+	testRuleName           = "test-rule"
+	testRuleName2          = "test-rule-2"
+	testFeatureName        = "test-feature"
+	testFeatureName2       = "test-feature-2"
+	testEntryKey           = "test-entry-key"
+	testEntryKey2          = "test-entry-key-2"
+	testEntryKey3          = "test-entry-key-3"
+	testEntryKey4          = "test-entry-key-4"
+	testSessionName        = "test-session"
+	testServerAddress      = "foo.bar.baz:1234"
+	testActorName          = "test-actor"
+	testTrigger            = "test-trigger"
+	testIntent             = "test-intent"
+	testStructuredJsonData = "{\"test\":\"data\"}"
+	testRPCMethod          = "Test.Method"
+	testRPCParamsJson      = "{\"test\":\"data\"}"
 )
 
 var (
 	testEntryValue = []byte{1, 2, 3}
+	testActionReq  = AddActionReq{
+		ActorName:          "",
+		FeatureName:        testFeatureName,
+		Trigger:            testTrigger,
+		Intent:             testIntent,
+		StructuredJsonData: testStructuredJsonData,
+		RPCMethod:          testRPCMethod,
+		RPCParamsJson:      []byte(testRPCParamsJson),
+	}
 )
 
 // rootKeyMockStore is a mock implementation of a macaroon service store that
@@ -317,6 +339,33 @@ func TestFirewallDBMigration(t *testing.T) {
 		require.Equal(t, totalExpectedPairs, totalPairs)
 	}
 
+	// assertActionsMigrationResults asserts that the migrated actions in
+	// the SQLDB match the original expected actions. It also asserts that
+	// the SQL DB does not contain any other actions than the expected ones.
+	assertActionsMigrationResults := func(t *testing.T, sqlStore *SQLDB,
+		expectedActions []*Action) {
+
+		// First assert that the SQLDB contains the expected number of
+		// actions.
+		dbActions, _, _, err := sqlStore.ListActions(
+			ctx, &ListActionsQuery{},
+		)
+		require.NoError(t, err)
+
+		require.Equal(t, len(expectedActions), len(dbActions))
+		if len(expectedActions) == 0 {
+			return
+		}
+
+		// Then assert that the actions in the SQLDB match the
+		// expected actions.
+		for i, migratedAction := range dbActions {
+			expAction := expectedActions[i]
+
+			assertEqualActions(t, expAction, migratedAction)
+		}
+	}
+
 	// The assertMigrationResults asserts that the migrated entries in the
 	// firewall SQLDB match the expected results which should represent the
 	// original entries in the BoltDB.
@@ -332,6 +381,8 @@ func TestFirewallDBMigration(t *testing.T) {
 		assertPrivacyMapperMigrationResults(
 			t, sqlStore, expRes.privPairs,
 		)
+
+		assertActionsMigrationResults(t, sqlStore, expRes.actions)
 	}
 
 	// The tests slice contains all the tests that we will run for the
@@ -396,6 +447,46 @@ func TestFirewallDBMigration(t *testing.T) {
 			populateDB: randomPrivacyPairs,
 		},
 		{
+			name:       "action with no session or account",
+			populateDB: actionNoSessionOrAccount,
+		},
+		{
+			name:       "action with session but no account",
+			populateDB: actionWithSessionNoAccount,
+		},
+		{
+			name:       "action with filtered session",
+			populateDB: actionsWithFilteredSession,
+		},
+		{
+			name:       "action with session with linked account",
+			populateDB: actionWithSessionWithLinkedAccount,
+		},
+		{
+			name:       "action with account",
+			populateDB: actionWithAccount,
+		},
+		{
+			name:       "actions with filtered account",
+			populateDB: actionsWithFilteredAccount,
+		},
+		{
+			name:       "action with multiple accounts",
+			populateDB: actionWithMultipleAccounts,
+		},
+		{
+			name:       "action with session and account",
+			populateDB: actionWithSessionAndAccount,
+		},
+		{
+			name:       "action with session with linked account and account",
+			populateDB: actionWithSessionWithLinkedAccountAndAccount,
+		},
+		{
+			name:       "random actions",
+			populateDB: randomActions,
+		},
+		{
 			name:       "random firewalldb entries",
 			populateDB: randomFirewallDBEntries,
 		},
@@ -417,9 +508,14 @@ func TestFirewallDBMigration(t *testing.T) {
 			// the sql version of the kv stores that we'll create
 			// in test, without also needing to migrate it.
 			accountStore := accounts.NewTestDB(t, clock)
+			acctSQLStore, ok := accountStore.(*accounts.SQLStore)
+			require.True(t, ok)
+
 			sessionsStore := session.NewTestDBWithAccounts(
 				t, clock, accountStore,
 			)
+			sessSQLStore, ok := sessionsStore.(*session.SQLStore)
+			require.True(t, ok)
 
 			// Create a new firewall store to populate with test
 			// data.
@@ -449,6 +545,8 @@ func TestFirewallDBMigration(t *testing.T) {
 				func(tx SQLQueries) error {
 					return MigrateFirewallDBToSQL(
 						ctx, firewallStore.DB, tx,
+						acctSQLStore, sessSQLStore,
+						rootKeyStore.getAllRootKeys(),
 					)
 				},
 			)
@@ -963,11 +1061,667 @@ func randomPrivacyPairs(t *testing.T, ctx context.Context,
 	}
 }
 
+// actionNoSessionOrAccount adds an action which is not linked to any session or
+// account.
+func actionNoSessionOrAccount(t *testing.T, ctx context.Context,
+	boltDB *BoltDB, _ session.Store, _ accounts.Store,
+	rStore *rootKeyMockStore) *expectedResult {
+
+	// As the action is not linked to any session, we add a random root
+	// key which we use as the macaroon identifier for the action.
+	// This simulates how similar actions would have been created in
+	// production.
+	rootKey := rStore.addRandomRootKey()
+
+	actionReq := testActionReq
+	actionReq.MacaroonRootKeyID = fn.Some(rootKey)
+	actionReq.SessionID = fn.None[session.ID]()
+	actionReq.AccountID = fn.None[accounts.AccountID]()
+
+	action := addAction(t, ctx, boltDB, &actionReq)
+
+	return &expectedResult{
+		kvEntries: []*kvEntry{},
+		privPairs: make(privacyPairs),
+		actions:   []*Action{action},
+	}
+}
+
+// actionWithSessionNoAccount adds an action which is linked a session but no
+// account.
+func actionWithSessionNoAccount(t *testing.T, ctx context.Context,
+	boltDB *BoltDB, sessStore session.Store, _ accounts.Store,
+	rStore *rootKeyMockStore) *expectedResult {
+
+	// Create the session that we will link the action to.
+	sess := testSession(t, ctx, sessStore)
+
+	// To simulate that the action was created with a macaroon identifier
+	// that matches the session ID prefix, we add a root key with an ID
+	// that matches the session ID prefix.
+	rootKey := rStore.addRootKeyFromIDSuffix(sess.ID)
+
+	actionReq := testActionReq
+	actionReq.MacaroonRootKeyID = fn.Some(rootKey)
+	// Link the action to the session, but no account.
+	actionReq.SessionID = fn.Some(sess.ID)
+	actionReq.AccountID = fn.None[accounts.AccountID]()
+
+	action := addAction(t, ctx, boltDB, &actionReq)
+
+	return &expectedResult{
+		kvEntries: []*kvEntry{},
+		privPairs: make(privacyPairs),
+		actions:   []*Action{action},
+	}
+}
+
+// actionsWithFilteredSession adds actions where a matching session ID do exist,
+// but where that session wasn't active at the time of the action event and
+// therefore couldn't have been linked to the action. Such sessions are filtered
+// out during the migration.
+func actionsWithFilteredSession(t *testing.T, ctx context.Context,
+	boltDB *BoltDB, sessStore session.Store, _ accounts.Store,
+	rStore *rootKeyMockStore) *expectedResult {
+
+	var actions []*Action
+
+	// addActionFromReq is a helper function that adds an action from the
+	// passed request, and appends the added action to the actions slice.
+	addActionFromReq := func(req AddActionReq) {
+		actions = append(actions, addAction(t, ctx, boltDB, &req))
+	}
+
+	// First, we add an already expired session, as this should be filtered
+	// out during the action migration.
+	sess1 := testSessionWithExpiry(
+		t, ctx, sessStore, time.Now().Add(-time.Hour),
+	)
+
+	// Ensure that the root key ID that's used during the action creation
+	// does match the session ID prefix, to simulate that a collision did
+	// occur with for the root key ID with an already existing session.
+	rootKey1 := rStore.addRootKeyFromIDSuffix(sess1.ID)
+
+	actionReq1 := testActionReq
+	actionReq1.MacaroonRootKeyID = fn.Some(rootKey1)
+	// However, as the session wasn't active at the time of the action
+	// creation, we don't link the session as the action wasn't linked to
+	// the session when it was created.
+	actionReq1.SessionID = fn.None[session.ID]()
+	actionReq1.AccountID = fn.None[accounts.AccountID]()
+
+	addActionFromReq(actionReq1)
+
+	// Next, we add a session that was revoked at the time of the action,
+	// and therefore couldn't be the intended session for the action.
+	sess2 := testSession(t, ctx, sessStore)
+
+	// Revoke the session.
+	err := sessStore.ShiftState(ctx, sess2.ID, session.StateCreated)
+	require.NoError(t, err)
+	err = sessStore.ShiftState(ctx, sess2.ID, session.StateRevoked)
+	require.NoError(t, err)
+
+	rootKey2 := rStore.addRootKeyFromIDSuffix(sess2.ID)
+	actionReq2 := testActionReq
+	actionReq2.MacaroonRootKeyID = fn.Some(rootKey2)
+	actionReq2.SessionID = fn.None[session.ID]()
+	actionReq2.AccountID = fn.None[accounts.AccountID]()
+
+	addActionFromReq(actionReq2)
+
+	return &expectedResult{
+		kvEntries: []*kvEntry{},
+		privPairs: make(privacyPairs),
+		actions:   actions,
+	}
+}
+
+// actionWithSessionWithLinkedAccount adds an action which is linked a session
+// where the action itself is linked to an account.
+func actionWithSessionWithLinkedAccount(t *testing.T, ctx context.Context,
+	boltDB *BoltDB, sessStore session.Store, acctStore accounts.Store,
+	rStore *rootKeyMockStore) *expectedResult {
+
+	// Add a session with a linked account.
+	sess, acct, _ := testSessionWithAccount(
+		t, ctx, sessStore, acctStore,
+	)
+
+	rootKey := rStore.addRootKeyFromIDSuffix(sess.ID)
+	_ = rStore.addRootKeyFromAcctID(acct.ID)
+
+	actionReq := testActionReq
+	actionReq.MacaroonRootKeyID = fn.Some(rootKey)
+	// As the session the action is linked to does have a linked account,
+	// we also link the action to the account.
+	actionReq.SessionID = fn.Some(sess.ID)
+	actionReq.AccountID = fn.Some(acct.ID)
+
+	action := addAction(t, ctx, boltDB, &actionReq)
+
+	return &expectedResult{
+		kvEntries: []*kvEntry{},
+		privPairs: make(privacyPairs),
+		actions:   []*Action{action},
+	}
+}
+
+// actionWithAccount adds an action which is linked an account but no session.
+func actionWithAccount(t *testing.T, ctx context.Context,
+	boltDB *BoltDB, _ session.Store, acctStore accounts.Store,
+	rStore *rootKeyMockStore) *expectedResult {
+
+	// Create the account that we will link the action to.
+	acct, _ := testAccount(t, ctx, acctStore)
+
+	// In production, the root key of the macaroon used when an account
+	// event triggers an action creation, will start with the first 4 bytes
+	// of the account ID. We therefore simulate that here by adding a root
+	// key with an ID that matches the account ID prefix.
+	rootKey := rStore.addRootKeyFromAcctID(acct.ID)
+
+	actionReq := testActionReq
+	actionReq.MacaroonRootKeyID = fn.Some(rootKey)
+	// Link the action to the account, but no session.
+	actionReq.SessionID = fn.None[session.ID]()
+	actionReq.AccountID = fn.Some(acct.ID)
+
+	action := addAction(t, ctx, boltDB, &actionReq)
+
+	return &expectedResult{
+		kvEntries: []*kvEntry{},
+		privPairs: make(privacyPairs),
+		actions:   []*Action{action},
+	}
+}
+
+// actionsWithFilteredAccount adds actions with a session ID that does match an
+// account, but where that account couldn't have been the account triggered the
+// action creation. Such accounts are filtered out during the migration, and
+// are not linked to the migrated action.
+func actionsWithFilteredAccount(t *testing.T, ctx context.Context,
+	boltDB *BoltDB, _ session.Store, acctStore accounts.Store,
+	rStore *rootKeyMockStore) *expectedResult {
+
+	var actions []*Action
+
+	// addActionFromReq is a helper function that adds an action from the
+	// passed request, and appends the added action to the actions slice.
+	addActionFromReq := func(req AddActionReq) {
+		actions = append(actions, addAction(t, ctx, boltDB, &req))
+	}
+
+	// First, we add an already expired account, as this should be filtered
+	// out during the action migration.
+	acct1, _ := testAccountWithExpiry(
+		t, ctx, acctStore, time.Now().Add(-time.Hour),
+	)
+
+	// Ensure that the root key ID that's used during the action creation
+	// does match the account ID prefix, to simulate that a collision did
+	// occur with for the root key ID with an already existing session.
+	rootKey1 := rStore.addRootKeyFromAcctID(acct1.ID)
+
+	actionReq1 := testActionReq
+	actionReq1.MacaroonRootKeyID = fn.Some(rootKey1)
+	actionReq1.SessionID = fn.None[session.ID]()
+	// The action doesn't link to any account, as the action wasn't intended
+	// for the account when it was created.
+	actionReq1.AccountID = fn.None[accounts.AccountID]()
+
+	addActionFromReq(actionReq1)
+
+	// Next, we add an account that was active at the time of the action,
+	// but where the action itself had an actor set. This should not be
+	// possible if the action was triggered by an account event, and the
+	// account should therefore be filtered out during the migration.
+	acct2, _ := testAccount(t, ctx, acctStore)
+
+	rootKey2 := rStore.addRootKeyFromAcctID(acct2.ID)
+
+	actionReq2 := testActionReq
+	actionReq2.ActorName = testActorName
+	actionReq2.MacaroonRootKeyID = fn.Some(rootKey2)
+	actionReq2.SessionID = fn.None[session.ID]()
+	actionReq2.AccountID = fn.None[accounts.AccountID]()
+
+	addActionFromReq(actionReq2)
+
+	// Lastly, if an action is connected to an RPC endpoint which is either
+	// a payment or creation of an invoice, but the account that collides
+	// action's macaroon identifier doesn't have any payments or invoices,
+	// that account couldn't have been the trigger for the action.
+	acct3, _ := testAccount(t, ctx, acctStore)
+
+	rootKey3 := rStore.addRootKeyFromAcctID(acct3.ID)
+
+	actionReq3 := testActionReq
+	actionReq3.RPCMethod = "/routerrpc.Router/SendPaymentV2"
+	actionReq3.MacaroonRootKeyID = fn.Some(rootKey3)
+	actionReq3.SessionID = fn.None[session.ID]()
+	actionReq3.AccountID = fn.None[accounts.AccountID]()
+
+	addActionFromReq(actionReq3)
+
+	acct4, _ := testAccount(t, ctx, acctStore)
+
+	rootKey4 := rStore.addRootKeyFromAcctID(acct4.ID)
+
+	actionReq4 := testActionReq
+	actionReq4.RPCMethod = "/lnrpc.Lightning/AddInvoice"
+	actionReq4.MacaroonRootKeyID = fn.Some(rootKey4)
+	actionReq4.SessionID = fn.None[session.ID]()
+	actionReq4.AccountID = fn.None[accounts.AccountID]()
+
+	addActionFromReq(actionReq4)
+
+	return &expectedResult{
+		kvEntries: []*kvEntry{},
+		privPairs: make(privacyPairs),
+		actions:   actions,
+	}
+}
+
+// actionWithMultipleAccounts adds an action where the short macaroon RootKeyID
+// collides with multiple different accounts. This test ensures that only one of
+// the accounts gets linked, given the filtration rules that are applied during
+// the migration.
+func actionWithMultipleAccounts(t *testing.T, ctx context.Context,
+	boltDB *BoltDB, _ session.Store, acctStore accounts.Store,
+	rStore *rootKeyMockStore) *expectedResult {
+
+	// Create two accounts with colliding prefixes, which expires at
+	// different times.
+	acct1, _ := testAccountWithExpiry(
+		t, ctx, acctStore, time.Now().Add(time.Hour*48),
+	)
+	_, acctID2 := testAccountWithExpiry(
+		t, ctx, acctStore, time.Now().Add(time.Hour*24),
+	)
+
+	acctSqlStore, ok := acctStore.(*accounts.SQLStore)
+	require.True(t, ok)
+
+	// To ensure that the two accounts do collide, we modify the alias
+	// of the second account to match the first 4 bytes of acct1's ID.
+	var newAcctAlias [8]byte
+	copy(newAcctAlias[:4], acct1.ID[:4])
+	copy(newAcctAlias[4:], randomBytes(4))
+
+	newAcct2ID := accounts.AccountID(newAcctAlias)
+	acctAlias, err := newAcct2ID.ToInt64()
+	require.NoError(t, err)
+
+	_, err = acctSqlStore.UpdateAccountAliasForTests(
+		ctx, sqlc.UpdateAccountAliasForTestsParams{
+			Alias: acctAlias,
+			ID:    acctID2,
+		},
+	)
+	require.NoError(t, err)
+
+	// Mock the root keys for both accounts.
+	_ = rStore.addRootKeyFromAcctID(acct1.ID)
+	rootKey := rStore.addRootKeyFromAcctID(newAcct2ID)
+
+	actionReq := testActionReq
+	actionReq.MacaroonRootKeyID = fn.Some(rootKey)
+	actionReq.SessionID = fn.None[session.ID]()
+	// When two colliding accounts exist, the account with the earliest
+	// expiry should be linked to the action. In our case, that's acct2.
+	actionReq.AccountID = fn.Some(newAcct2ID)
+
+	action := addAction(t, ctx, boltDB, &actionReq)
+
+	return &expectedResult{
+		kvEntries: []*kvEntry{},
+		privPairs: make(privacyPairs),
+		actions:   []*Action{action},
+	}
+}
+
+// actionWithSessionAndAccount adds an action where both a session and an
+// account exist with IDs that collide with the action's macaroon RootKeyID.
+// This test ensures that the action is linked to the session, since sessions
+// take precedence over accounts during the migration.
+func actionWithSessionAndAccount(t *testing.T, ctx context.Context,
+	boltDB *BoltDB, sessStore session.Store, acctStore accounts.Store,
+	rStore *rootKeyMockStore) *expectedResult {
+
+	// Create a session and an account that will collide.
+	sess := testSession(t, ctx, sessStore)
+	_, acctID := testAccount(t, ctx, acctStore)
+
+	acctSqlStore, ok := acctStore.(*accounts.SQLStore)
+	require.True(t, ok)
+
+	// Modify the first 4 bytes of the account alias to match the session
+	// ID, to ensure that they collide.
+	var newAcctAlias [8]byte
+	copy(newAcctAlias[:4], sess.ID[:])
+	copy(newAcctAlias[4:], randomBytes(4))
+
+	acctAlias, err := accounts.AccountID(newAcctAlias).ToInt64()
+	require.NoError(t, err)
+
+	_, err = acctSqlStore.UpdateAccountAliasForTests(
+		ctx, sqlc.UpdateAccountAliasForTestsParams{
+			Alias: acctAlias,
+			ID:    acctID,
+		},
+	)
+	require.NoError(t, err)
+
+	// Note that we set add the "session's" root key ID after we have added
+	// the root key for newAcctAlias. During the migration, if two or more
+	// root keys exist that have a colliding 4 byte short ID, the last added
+	// root key will be chosen, as it's not possible to determine which root
+	// key was actually used when creating the action. I.e. if the root key
+	// ID for newAcctAlias was added last, that root key would be chosen
+	// during the migration. This doesn't change if the action gets linked
+	// to the session or the account though, but just for extra correctness
+	// we ensure that the session's root key is added last and is therefore
+	// used.
+	_ = rStore.addRootKeyFromAcctID(newAcctAlias)
+	rootKey := rStore.addRootKeyFromIDSuffix(sess.ID)
+
+	actionReq := testActionReq
+	actionReq.MacaroonRootKeyID = fn.Some(rootKey)
+	// As the session takes precedence over the account, we expect the
+	// action to be linked to the session only.
+	actionReq.SessionID = fn.Some(sess.ID)
+	actionReq.AccountID = fn.None[accounts.AccountID]()
+
+	action := addAction(t, ctx, boltDB, &actionReq)
+
+	return &expectedResult{
+		kvEntries: []*kvEntry{},
+		privPairs: make(privacyPairs),
+		actions:   []*Action{action},
+	}
+}
+
+// actionWithSessionWithLinkedAccountAndAccount adds an action linked to a
+// session (that is itself linked to an account) and where another account
+// collides with the action's MacRootKeyID.
+// In this scenario, the session should take precedence over the separate
+// existing account. As that session do link to a separate account, the action
+// should therefore be linked to that session and that session's account.
+func actionWithSessionWithLinkedAccountAndAccount(t *testing.T,
+	ctx context.Context, boltDB *BoltDB, sessStore session.Store,
+	acctStore accounts.Store, rStore *rootKeyMockStore) *expectedResult {
+
+	// Create a session with a linked account.
+	sess, acct1, _ := testSessionWithAccount(
+		t, ctx, sessStore, acctStore,
+	)
+	// Also create another account that will collide with the action.
+	_, acct2ID := testAccount(t, ctx, acctStore)
+
+	acctSqlStore, ok := acctStore.(*accounts.SQLStore)
+	require.True(t, ok)
+
+	// Modify the first 4 bytes of the second account alias to match the
+	// session ID, to ensure that they collide.
+	var newAcct2Alias [8]byte
+	copy(newAcct2Alias[:4], sess.ID[:])
+	copy(newAcct2Alias[4:], randomBytes(4))
+
+	acctAlias, err := accounts.AccountID(newAcct2Alias).ToInt64()
+	require.NoError(t, err)
+
+	_, err = acctSqlStore.UpdateAccountAliasForTests(
+		ctx, sqlc.UpdateAccountAliasForTestsParams{
+			Alias: acctAlias,
+			ID:    acct2ID,
+		},
+	)
+	require.NoError(t, err)
+
+	// Note that we set add the "session's" root key ID after we have added
+	// the root key for newAcct2Alias. During the migration, if two or more
+	// root keys exist that have a colliding 4 byte short ID, the last added
+	// root key will be chosen, as it's not possible to determine which root
+	// key was actually used when creating the action. I.e. if the root key
+	// ID for newAcct2Alias was added last, that root key would be chosen
+	// during the migration. This doesn't change if the action gets linked
+	// to the session or the account though, but just for extra correctness
+	// we ensure that the session's root key is added last and is therefore
+	// used.
+	_ = rStore.addRootKeyFromAcctID(acct1.ID)
+	_ = rStore.addRootKeyFromAcctID(newAcct2Alias)
+	rootKey := rStore.addRootKeyFromIDSuffix(sess.ID)
+
+	actionReq := testActionReq
+	actionReq.MacaroonRootKeyID = fn.Some(rootKey)
+	// Link the action to the session and the session's linked account, as
+	// the session takes precedence over acct2.
+	actionReq.SessionID = fn.Some(sess.ID)
+	actionReq.AccountID = fn.Some(acct1.ID)
+
+	action := addAction(t, ctx, boltDB, &actionReq)
+
+	return &expectedResult{
+		kvEntries: []*kvEntry{},
+		privPairs: make(privacyPairs),
+		actions:   []*Action{action},
+	}
+}
+
+// randomActions creates 1000 actions, which properties are random.
+func randomActions(t *testing.T, ctx context.Context, boltDB *BoltDB,
+	sessStore session.Store, acctStore accounts.Store,
+	rStore *rootKeyMockStore) *expectedResult {
+
+	var actions []*Action
+
+	numActions := 1000
+	acctSqlStore, ok := acctStore.(*accounts.SQLStore)
+	require.True(t, ok)
+
+	for i := 0; i < numActions; i++ {
+		rJson, err := randomJSON(rand.Intn(20))
+		require.NoError(t, err)
+
+		actionReq := AddActionReq{
+			ActorName:          "",
+			FeatureName:        randomString(rand.Intn(20)),
+			Trigger:            randomString(rand.Intn(20)),
+			Intent:             randomString(rand.Intn(20)),
+			StructuredJsonData: rJson,
+			RPCMethod:          randomRPCMethod(),
+			RPCParamsJson:      []byte(rJson),
+			MacaroonRootKeyID:  fn.None[uint64](),
+			SessionID:          fn.None[session.ID](),
+			AccountID:          fn.None[accounts.AccountID](),
+		}
+
+		// 1) 50% of the time, we create a session that may be linked to
+		//    the action.
+		if rand.Intn(2) == 0 {
+			switch rand.Intn(3) {
+			// In 1/3 of the cases, we create a session and no
+			// account that is linked to the action.
+			case 0:
+				sess := testSession(t, ctx, sessStore)
+
+				rootKey := rStore.addRootKeyFromIDSuffix(
+					sess.ID,
+				)
+				actionReq.MacaroonRootKeyID = fn.Some(rootKey)
+				actionReq.SessionID = fn.Some(sess.ID)
+
+				// In 50% of these cases, we also set an actor
+				// name to simulate how an action triggered by
+				// the autopilot would look like in production.
+				if rand.Intn(2) == 0 {
+					actionReq.ActorName = randomString(
+						rand.Intn(10) + 1,
+					)
+				}
+
+			// In 1/3 of the cases, we create a session which will
+			// be filtered out during the migration, and therefore
+			// not be linked to the action.
+			case 1:
+				sess := randFilteredSession(t, ctx, sessStore)
+
+				// We still set the actionReq.MacaroonIdentifier
+				// to simulate that the action was created
+				// to simulate a collision with the session ID,
+				// but we don't set the actionReq.SessionID as
+				// action wasn't actually linked to the session.
+				actionReq.MacaroonRootKeyID = fn.Some(
+					rStore.addRootKeyFromIDSuffix(sess.ID),
+				)
+
+			// In 1/3 of the cases, we create a session with a
+			// linked account, and link both to the action.
+			case 2:
+				sess, acct, _ := testSessionWithAccount(
+					t, ctx, sessStore, acctStore,
+				)
+
+				actionReq.MacaroonRootKeyID = fn.Some(
+					rStore.addRootKeyFromIDSuffix(sess.ID),
+				)
+				_ = rStore.addRootKeyFromAcctID(acct.ID)
+
+				actionReq.SessionID = fn.Some(sess.ID)
+				actionReq.AccountID = fn.Some(acct.ID)
+			}
+		}
+
+		// 2) 50% of the time, we create one or more accounts that may
+		//    be linked to the action.
+		if rand.Intn(2) == 0 {
+			for i := 1; i <= rand.Intn(5)+1; i++ {
+				var (
+					acct   *accounts.OffChainBalanceAccount
+					acctID int64
+
+					// To ensure that the earliest expired
+					// account created in the loop is the
+					// one that may be linked to the action,
+					// this new account expires later than
+					// any previously created account in the
+					// loop. The account will not be linked
+					// if another account has already been
+					// linked to the action.
+					expiry = time.Now().Add(
+						time.Hour * time.Duration(i*24),
+					)
+				)
+
+				// In 50% of the cases, we create an expired
+				// account that will be filtered out during the
+				// migration though.
+				expired := rand.Intn(2) == 0
+				if expired {
+					expiry = time.Now().Add(-time.Hour)
+				}
+
+				acct, acctID = testAccountWithExpiry(
+					t, ctx, acctStore, expiry,
+				)
+
+				// If the action doesn't already have a
+				// MacaroonIdentifier set, we set it to a root
+				// key that matches the account ID.
+				if actionReq.MacaroonRootKeyID.IsNone() {
+					actionReq.MacaroonRootKeyID = fn.Some(
+						rStore.addRootKeyFromAcctID(
+							acct.ID,
+						),
+					)
+				} else {
+					// Else we modify the account ID so
+					// that it collides with the existing
+					// actionReq.MacaroonIdentifier.
+					rootKey := actionReq.MacaroonId()
+
+					var newAcctAlias [8]byte
+					copy(newAcctAlias[:4], rootKey[:])
+					copy(newAcctAlias[4:], randomBytes(4))
+
+					newAcctID := accounts.AccountID(
+						newAcctAlias,
+					)
+					acctAlias, err := newAcctID.ToInt64()
+					require.NoError(t, err)
+
+					_, err = acctSqlStore.UpdateAccountAliasForTests(
+						ctx, sqlc.UpdateAccountAliasForTestsParams{
+							Alias: acctAlias,
+							ID:    acctID,
+						},
+					)
+					require.NoError(t, err)
+
+					acct.ID = newAcctID
+				}
+
+				// We link the account to the action if it isn't
+				// expired, and when neither a session nor an
+				// account already been set for the action. When
+				// session has been set, the session takes
+				// precedence over accounts, so we don't link
+				// the account. If an account has already been
+				// set, it will expire earlier than this current
+				// account, and therefore has precedence.
+				if actionReq.SessionID.IsNone() && !expired &&
+					actionReq.AccountID.IsNone() {
+
+					actionReq.AccountID = fn.Some(acct.ID)
+				}
+			}
+
+			// In 25% of the cases, we modify the actionReq to
+			// simulate that the action was created in a way that
+			// makes it impossible to have been triggered by an
+			// account event, and therefore the account(s) should
+			// be filtered out.
+			// Note that we only do this if no session is set, as
+			// if the session did have a linked account, that
+			// session will have precedence and link the action to
+			// its account. Such an action must therefore have been
+			// triggered by an account event, and filtering out the
+			// account in that scenario doesn't make sense.
+			if actionReq.SessionID.IsNone() && rand.Intn(4) == 0 {
+				actionReq = randAcctFilteringReq(actionReq)
+			}
+		}
+
+		// 3) If the action doesn't have a MacaroonIdentifier yet, that
+		//    means no session or account was created for the action.
+		//    In that scenario, we create a random root key to use as
+		//    the MacaroonIdentifier, to simulate an action that was
+		//    created without any session or account linked to it.
+		if actionReq.MacaroonRootKeyID.IsNone() {
+			actionReq.MacaroonRootKeyID = fn.Some(
+				rStore.addRandomRootKey(),
+			)
+		}
+
+		// 4) Set the actions session and account IDs to match what we
+		//    expect the migrated action to look like.
+		action := addAction(t, ctx, boltDB, &actionReq)
+
+		// Append the action to the list of expected actions.
+		actions = append(actions, action)
+	}
+
+	return &expectedResult{
+		kvEntries: []*kvEntry{},
+		privPairs: make(privacyPairs),
+		actions:   actions,
+	}
+}
+
 // randomFirewallDBEntries populates the firewalldb with random entries for all
 // types entries that are currently supported in the firewalldb.
-//
-// TODO(viktor): Extend this function to also populate it with random action
-// entries, once the actions migration has been implemented.
 func randomFirewallDBEntries(t *testing.T, ctx context.Context,
 	boltDB *BoltDB, sessionStore session.Store, acctStore accounts.Store,
 	rStore *rootKeyMockStore) *expectedResult {
@@ -978,12 +1732,222 @@ func randomFirewallDBEntries(t *testing.T, ctx context.Context,
 	privPairs := randomPrivacyPairs(
 		t, ctx, boltDB, sessionStore, acctStore, rStore,
 	)
+	actions := randomActions(
+		t, ctx, boltDB, sessionStore, acctStore, rStore,
+	)
 
 	return &expectedResult{
 		kvEntries: kvEntries.kvEntries,
 		privPairs: privPairs.privPairs,
-		actions:   []*Action{},
+		actions:   actions.actions,
 	}
+}
+
+// addAction is a helper function that adds an action to the boltDB from a
+// passed AddActionReq. The function returns the added action, but with all the
+// fields set that we expect the migrated action to have, i.e. with the full
+// MacaroonRootKeyID set, and with the SessionID and AccountID set to the values
+// they are expected to be set to after the boltDB action has been migrated to
+// SQL.
+func addAction(t *testing.T, ctx context.Context, boltDB *BoltDB,
+	actionReq *AddActionReq) *Action {
+
+	// We add one second to the clock prior to adding the action, just to
+	// ensure that the action timestamp is always after the creation time
+	// of a session or account that it might be linked to.
+	boltDB.clock = clock.NewTestClock(boltDB.clock.Now().Add(time.Second))
+
+	aLocator, err := boltDB.AddAction(ctx, actionReq)
+	require.NoError(t, err)
+
+	locator, ok := aLocator.(*kvdbActionLocator)
+	require.True(t, ok)
+
+	// Fetch the action that was just added, so that we can return it.
+	var action *Action
+	err = boltDB.View(func(tx *bbolt.Tx) error {
+		mainActionsBucket, err := getBucket(tx, actionsBucketKey)
+		require.NoError(t, err)
+
+		actionsBucket := mainActionsBucket.Bucket(actionsKey)
+		require.NotNil(t, actionsBucket)
+
+		action, err = getAction(actionsBucket, locator)
+		require.NoError(t, err)
+
+		return nil
+	})
+	require.NoError(t, err)
+
+	// Since the values for the MacaroonRootKeyID, SessionID and AccountID
+	// do differ between boltDB actions and SQL actions, we set them here to
+	// what we expect them to be after the migration.
+	action.SessionID = actionReq.SessionID
+	action.AccountID = actionReq.AccountID
+	action.MacaroonRootKeyID = actionReq.MacaroonRootKeyID
+
+	return action
+}
+
+// testSession is a helper function that creates and returns a new admin
+// macaroon session with a 1 hour expiration.
+func testSession(t *testing.T, ctx context.Context,
+	sessStore session.Store) *session.Session {
+
+	return testSessionWithExpiry(
+		t, ctx, sessStore, time.Now().Add(time.Hour*24),
+	)
+}
+
+// testSessionWithExpiry is a helper function that creates and returns a new
+// admin macaroon session with the specified expiry time.
+func testSessionWithExpiry(t *testing.T, ctx context.Context,
+	sessStore session.Store, expiry time.Time) *session.Session {
+
+	sess, err := sessStore.NewSession(
+		ctx, testSessionName, session.TypeMacaroonAdmin, expiry,
+		testServerAddress,
+	)
+	require.NoError(t, err)
+
+	return sess
+}
+
+// testAccount is a helper function that creates and returns a new account
+// with a 1 hour expiration. The returned int64 is the SQL ID of the account.
+func testAccount(t *testing.T, ctx context.Context,
+	acctStore accounts.Store) (*accounts.OffChainBalanceAccount, int64) {
+
+	return testAccountWithExpiry(
+		t, ctx, acctStore, time.Now().Add(time.Hour*24),
+	)
+}
+
+// testAccountWithExpiry is a helper function that creates and returns a new
+// account with the specified expiry time. The returned int64 is the SQL ID of
+// the account.
+func testAccountWithExpiry(t *testing.T, ctx context.Context,
+	acctStore accounts.Store,
+	expiry time.Time) (*accounts.OffChainBalanceAccount, int64) {
+
+	acct, err := acctStore.NewAccount(ctx, 1234, expiry, "")
+	require.NoError(t, err)
+
+	acctSqlStore, ok := acctStore.(*accounts.SQLStore)
+	require.True(t, ok)
+
+	aliasInt, err := acct.ID.ToInt64()
+	require.NoError(t, err)
+
+	acctSqlID, err := acctSqlStore.GetAccountIDByAlias(ctx, aliasInt)
+	require.NoError(t, err)
+
+	return acct, acctSqlID
+}
+
+// testSessionWithAccount is a helper function that creates and returns a new
+// admin macaroon session with a 1 hour expiry that is linked to a newly created
+// account with a 1 hour expiration. The returned int64 is the SQL ID of the
+// account.
+func testSessionWithAccount(t *testing.T, ctx context.Context,
+	sessStore session.Store, acctStore accounts.Store) (*session.Session,
+	*accounts.OffChainBalanceAccount, int64) {
+
+	acct, err := acctStore.NewAccount(
+		ctx, 1234, time.Now().Add(time.Hour*24), "",
+	)
+	require.NoError(t, err)
+	require.False(t, acct.HasExpired())
+
+	accountCaveat := checkers.Condition(
+		macaroons.CondLndCustom,
+		fmt.Sprintf("%s %x",
+			accounts.CondAccount,
+			acct.ID[:],
+		),
+	)
+
+	sessCaveats := []macaroon.Caveat{
+		{
+			Id: []byte(accountCaveat),
+		},
+	}
+
+	sess, err := sessStore.NewSession(
+		ctx, testSessionName, session.TypeMacaroonAccount,
+		time.Now().Add(time.Hour), testServerAddress,
+		session.WithAccount(acct.ID),
+		session.WithMacaroonRecipe(sessCaveats, nil),
+	)
+	require.NoError(t, err)
+
+	acctSqlStore, ok := acctStore.(*accounts.SQLStore)
+	require.True(t, ok)
+
+	aliasInt, err := acct.ID.ToInt64()
+	require.NoError(t, err)
+
+	acctSqlID, err := acctSqlStore.GetAccountIDByAlias(ctx, aliasInt)
+	require.NoError(t, err)
+
+	return sess, acct, acctSqlID
+}
+
+// randFilteredSession creates and returns a session that will be filtered out
+// during the actions migration. The exact reason why the session will be
+// filtered out is random.
+func randFilteredSession(t *testing.T, ctx context.Context,
+	sessStore session.Store) *session.Session {
+
+	if rand.Intn(2) == 0 {
+		// Expired session.
+		return testSessionWithExpiry(
+			t, ctx, sessStore, time.Now().Add(-time.Hour),
+		)
+	} else {
+		// Revoked session.
+		sess := testSession(t, ctx, sessStore)
+
+		err := sessStore.ShiftState(ctx, sess.ID, session.StateCreated)
+		require.NoError(t, err)
+		err = sessStore.ShiftState(ctx, sess.ID, session.StateRevoked)
+		require.NoError(t, err)
+
+		return sess
+	}
+}
+
+// randAcctFilteringReq randomly modifies the passed AddActionReq to ensure that
+// any account that collides with the action's MacaroonIdentifier will be
+// filtered out during the migration. The AddActionReq is also modified to
+// remove any previously set AccountID, as the action should not be linked to
+// any account after the modification.
+// The function returns the modified AddActionReq.
+func randAcctFilteringReq(currentReq AddActionReq) AddActionReq {
+	newReq := currentReq
+
+	switch rand.Intn(8) {
+	case 0:
+		newReq.ActorName = randomString(rand.Intn(10) + 1)
+	case 1:
+		newReq.RPCMethod = "/lnrpc.Lightning/AddInvoice"
+	case 2:
+		newReq.RPCMethod = "/lnrpc.Lightning/SendPayment"
+	case 3:
+		newReq.RPCMethod = "/lnrpc.Lightning/SendPaymentSync"
+	case 4:
+		newReq.RPCMethod = "/routerrpc.Router/SendPaymentV2"
+	case 5:
+		newReq.RPCMethod = "/lnrpc.Lightning/SendToRoute"
+	case 6:
+		newReq.RPCMethod = "/lnrpc.Lightning/SendToRouteSync"
+	case 7:
+		newReq.RPCMethod = "/routerrpc.Router/SendToRouteV2"
+	}
+
+	newReq.AccountID = fn.None[accounts.AccountID]()
+
+	return newReq
 }
 
 // randomString generates a random string of the passed length n.
@@ -1004,4 +1968,46 @@ func randomBytes(n int) []byte {
 		b[i] = byte(rand.Intn(256)) // Random int between 0-255, then cast to byte
 	}
 	return b
+}
+
+// RandomJSON generates a JSON string with n random key/value pairs.
+// Keys are random strings like "key1", "key2"...
+// Values are random ints, floats, or strings.
+func randomJSON(n int) (string, error) {
+	obj := make(map[string]any, n)
+	for i := 0; i < n; i++ {
+		key := fmt.Sprintf("key%d", i+1)
+
+		// Randomly choose a type for the value
+		switch rand.Intn(3) {
+		case 0:
+			// random int
+			obj[key] = rand.Intn(1000)
+		case 1:
+			// random float
+			obj[key] = rand.Float64() * 100
+		case 2:
+			// random string
+			obj[key] = fmt.Sprintf("val%d", rand.Intn(10000))
+		}
+	}
+
+	bytes, err := json.MarshalIndent(obj, "", "  ")
+	if err != nil {
+		return "", err
+	}
+	return string(bytes), nil
+}
+
+// randomRPCMethod mocks a random RPC method string with 1 to 5 segments, where
+// each segment is a random string of 1 to 10 characters, and where a dot
+// separates segments.
+func randomRPCMethod() string {
+	method := randomString(rand.Intn(10) + 1)
+	segments := rand.Intn(5)
+	for i := 0; i < segments; i++ {
+		method += "." + randomString(rand.Intn(10)+1)
+	}
+
+	return method
 }
