@@ -4,13 +4,20 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"encoding/binary"
 	"errors"
 	"fmt"
-
+	"github.com/davecgh/go-spew/spew"
+	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/db/sqlc"
+	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/sqldb"
+	"github.com/pmezard/go-difflib/difflib"
 	"go.etcd.io/bbolt"
+	"reflect"
+	"sort"
+	"time"
 )
 
 // kvEntry represents a single KV entry inserted into the BoltDB.
@@ -80,7 +87,8 @@ type privacyPairs = map[int64]map[string]string
 // NOTE: As sessions may contain linked sessions and accounts, the sessions and
 // accounts sql migration MUST be run prior to this migration.
 func MigrateFirewallDBToSQL(ctx context.Context, kvStore *bbolt.DB,
-	sqlTx SQLQueries) error {
+	sqlTx SQLQueries, sessionDB session.SQLQueries,
+	accountDB accounts.SQLQueries, macRootKeyIDs [][]byte) error {
 
 	log.Infof("Starting migration of the rules DB to SQL")
 
@@ -94,9 +102,14 @@ func MigrateFirewallDBToSQL(ctx context.Context, kvStore *bbolt.DB,
 		return err
 	}
 
-	log.Infof("The rules DB has been migrated from KV to SQL.")
+	err = migrateActionsToSQL(
+		ctx, kvStore, sqlTx, sessionDB, accountDB, macRootKeyIDs,
+	)
+	if err != nil {
+		return err
+	}
 
-	// TODO(viktor): Add migration for the action stores.
+	log.Infof("The rules DB has been migrated from KV to SQL.")
 
 	return nil
 }
@@ -773,4 +786,746 @@ func validateGroupPairsMigration(ctx context.Context, sqlTx SQLQueries,
 	}
 
 	return nil
+}
+
+// migrateActionsToSQL runs the migration of the actions store from the KV
+// database to the SQL database. The function also asserts that the migrated
+// values match the original values in the actions store.
+func migrateActionsToSQL(ctx context.Context, kvStore *bbolt.DB,
+	sqlTx SQLQueries, sessionDB session.SQLQueries,
+	accountsDB accounts.SQLQueries, macRootKeyIDs [][]byte) error {
+
+	log.Infof("Starting migration of the actions store to SQL")
+
+	// Start by fetching all accounts and sessions, and map them by their
+	// IDs. This will allow us to quickly look up any account(s) and/or
+	// session that match a specific action's macaroon identifier.
+	accts, err := accountsDB.ListAllAccounts(ctx)
+	if err != nil {
+		return fmt.Errorf("listing accounts failed: %w", err)
+	}
+
+	acctsMap, err := mapAccounts(accts)
+	if err != nil {
+		return fmt.Errorf("mapping accounts failed: %w", err)
+	}
+
+	sessions, err := sessionDB.ListSessions(ctx)
+	if err != nil {
+		return fmt.Errorf("listing sessions failed: %w", err)
+	}
+
+	sessionMap, err := mapSessions(sessions)
+	if err != nil {
+		return fmt.Errorf("mapping sessions failed: %w", err)
+	}
+
+	// Next, we'll map the macaroon root key IDs by their 4 byte prefix,
+	// to make it easy to look up the full root key ID for each action
+	// based on the macaroon identifier (which is the first 4 bytes of the
+	// root key ID).
+	macMap, err := mapMacIds(macRootKeyIDs)
+	if err != nil {
+		return fmt.Errorf("mapping macaroon root key IDs failed: %w",
+			err)
+	}
+
+	// Iterate over and migrate all actions in the KVDB. Note that this
+	// function migrates each action while iterating over them, instead
+	// of first collecting all actions and storing them in memory before
+	// migrating them (which is common for other migrations). This is
+	// because in comparison to other stores, the actions store may contain
+	// a large number of entries.
+	err = kvStore.View(func(tx *bbolt.Tx) error {
+		actionsBucket := tx.Bucket(actionsBucketKey)
+		if actionsBucket == nil {
+			return fmt.Errorf("actions bucket not found")
+		}
+
+		sessionsBucket := actionsBucket.Bucket(actionsKey)
+		if sessionsBucket == nil {
+			return fmt.Errorf("actions->sessions bucket not found")
+		}
+
+		// Iterate over session ID buckets (i.e. what we should name
+		// macaroon IDs)
+		return sessionsBucket.ForEach(func(macID []byte, v []byte) error {
+			if v != nil {
+				return fmt.Errorf("expected only sub-buckets " +
+					"in sessions bucket")
+			}
+
+			sessBucket := sessionsBucket.Bucket(macID)
+			if sessBucket == nil {
+				return fmt.Errorf("session bucket for %x not "+
+					"found", macID)
+			}
+
+			// fetch the full macaroon root key ID based on the
+			// macaroon identifier for the action (the first 4 bytes
+			// of the root key ID).
+			var macIDArr [4]byte
+			copy(macIDArr[:], macID)
+
+			macRootKeyID, ok := macMap[macIDArr]
+			if !ok {
+				// If we don't have a mapping for this macaroon
+				// ID, this could mean that the user has deleted
+				// the lnd macaroon db, but not the litd
+				// firewalldb.
+				// As there is no way to recover the full
+				// macaroonRootKeyID at this point, we backfill
+				// the rest of the bytes with zeroes.
+				log.Warnf("No macaroon root key ID found for "+
+					"macaroon ID %x, using zeroes for "+
+					"the rest of the bytes", macID)
+
+				macRootKeyID = make([]byte, 8)
+				copy(macRootKeyID, macIDArr[:])
+			}
+
+			// Iterate over actions inside each session
+			return sessBucket.ForEach(func(actionID,
+				actionBytes []byte) error {
+
+				if actionBytes == nil {
+					return fmt.Errorf("unexpected nested "+
+						"bucket under session %x",
+						macID)
+				}
+
+				sessionID, err := session.IDFromBytes(macID)
+				if err != nil {
+					// Should be unreachable, as the macID
+					// should always be 4 bytes long.
+					return fmt.Errorf("invalid session ID "+
+						"format %x: %v", macID, err)
+				}
+
+				action, err := DeserializeAction(
+					bytes.NewReader(actionBytes), sessionID,
+				)
+				if err != nil {
+					return fmt.Errorf("unable to "+
+						"deserialize action in "+
+						"session %x: %w", macID, err)
+				}
+
+				log.Infof("Migrated Action: Macaroon ID: %x, "+
+					"ActionID: %x, Actor: %s, Feature: %s",
+					macID, actionID, action.ActorName,
+					action.FeatureName)
+
+				// Now proceed to migrate the action, and also
+				// validate that the action was correctly
+				// migrated.
+				err = migrateActionToSQL(
+					ctx, sqlTx, sessionDB, accountsDB,
+					acctsMap, sessionMap, action,
+					macRootKeyID,
+				)
+				if err != nil {
+					return fmt.Errorf("migrating action "+
+						"to SQL failed: %w", err)
+				}
+
+				return nil
+			})
+		})
+	})
+	if err != nil {
+		return fmt.Errorf("iterating over actions failed: %w", err)
+	}
+
+	log.Infof("Finished iterating actions in KV store (no persistence yet).")
+
+	return nil
+}
+
+// migrateActionToSQL migrates a single action to the SQL database, and
+// validates that the action was correctly migrated.
+func migrateActionToSQL(ctx context.Context, sqlTx SQLQueries,
+	sessionDB session.SQLQueries, accountsDB accounts.SQLQueries,
+	acctsMap map[[4]byte][]sqlc.Account, sessMap map[[4]byte]sqlc.Session,
+	action *Action, macRootKeyID []byte) error {
+
+	macId, err := action.MacaroonIdentifier.UnwrapOrErr(
+		fmt.Errorf("no macaroon identifier set for action during" +
+			"migration of action to SQL"),
+	)
+	if err != nil {
+		// Should be unreachable, as the DeserializeAction function in
+		// actions_kvdb only has a fn.Some path for the
+		// MacaroonIdentifier, whenever the function doesn't error.
+		return err
+	}
+
+	// Find any potential linked account(s) and/or session for the action.
+	actAccounts, hasAccounts := acctsMap[macId]
+	actSession, hasSessions := sessMap[macId]
+
+	var insertParams sqlc.InsertActionParams
+
+	// Based on if we found any potential linked account(s) and/or
+	// session, link the action to them in the SQL DB.
+	// The logic is as follows:
+	// 1) If we only find potential linked account(s), the action
+	//    is linked the account with the latest expiry (where accounts that
+	//    do not expire is seen as the latest).
+	// 2) If we only find a potential linked session, the action
+	//    is linked to the session.
+	// 3) If we find both potential linked account(s) and session,
+	//    the session is prioritized, and the action is linked
+	//    to the session.
+	// 4) If we don't find any potential linked account(s) or session,
+	//    the action is not linked to any account or session.
+	switch {
+	case hasAccounts && hasSessions:
+		// Alternative (3) above.
+		insertParams, err = paramsFromBothSessionAndAccounts(
+			ctx, accountsDB, action, actAccounts, actSession,
+			macRootKeyID,
+		)
+	case hasSessions:
+		// Alternative (1) above.
+		insertParams, err = paramsFromSession(
+			action, actSession, macRootKeyID,
+		)
+	case hasAccounts:
+		// Alternative (2) above.
+		insertParams, err = paramsFromAccounts(
+			ctx, accountsDB, action, actAccounts, macRootKeyID)
+	default:
+		// Alternative (4) above.
+		insertParams = paramsFromAction(action, macRootKeyID)
+	}
+	if err != nil {
+		return fmt.Errorf("getting insert params failed: %w", err)
+	}
+
+	// With the insert params ready, we can now insert the action
+	// into the SQL DB.
+	migratedActionID, err := sqlTx.InsertAction(ctx, insertParams)
+	if err != nil {
+		return fmt.Errorf(
+			"inserting action into SQL DB failed: %w", err,
+		)
+	}
+
+	// Finally, validate that the action was correctly migrated.
+	return validateMigratedAction(
+		ctx, sqlTx, sessionDB, action, insertParams, migratedActionID,
+	)
+}
+
+// validateMigratedAction validates that the migrated action in the SQL DB
+// matches the original action in the KV DB. The function takes the original
+// action, the insert params used to insert the action into the SQL DB,
+// and the ID of the migrated action in the SQL DB.
+func validateMigratedAction(ctx context.Context, sqlTx SQLQueries,
+	sessionDB session.SQLQueries, kvAction *Action,
+	insertParams sqlc.InsertActionParams, migratedActionID int64) error {
+
+	// First, fetch the action back from the SQL DB.
+	migAction, err := getAndMarshalAction(ctx, sqlTx, migratedActionID)
+	if err != nil {
+		return fmt.Errorf("fetching migrated action with id %d from "+
+			"SQL DB failed: %w", migratedActionID, err)
+	}
+
+	// Before we compare the two actions, we need to override the
+	// time zone in the action.
+	overrideActionTimeZone(kvAction)
+	overrideActionTimeZone(migAction)
+
+	var (
+		overriddenSessID = fn.None[session.ID]()
+		overriddenAcctID = fn.None[accounts.AccountID]()
+	)
+
+	// As the original KVDB action does not persist session and account
+	// references correctly, we need to override them to the expected
+	// session and account IDs based on what the inserted SQL action's
+	// fields were set to. This is required in order to make the KVDB and
+	// SQL actions comparable.
+	if insertParams.SessionID.Valid {
+		sess, err := sessionDB.GetSessionByID(
+			ctx, insertParams.SessionID.Int64,
+		)
+		if err != nil {
+			return fmt.Errorf("unable to get session with id %d: %w",
+				insertParams.SessionID.Int64, err)
+		}
+
+		overriddenSessID = fn.Some(session.ID(sess.Alias))
+	}
+
+	if insertParams.AccountID.Valid {
+		acct, err := sessionDB.GetAccount(
+			ctx, insertParams.AccountID.Int64,
+		)
+		if err != nil {
+			return fmt.Errorf("unable to get account with id %d: %w",
+				insertParams.AccountID.Int64, err)
+		}
+
+		acctAlias, err := accounts.AccountIDFromInt64(acct.Alias)
+		if err != nil {
+			return fmt.Errorf("unable to get convert int64 "+
+				"account alias to []byte form: %w", err)
+
+		}
+
+		overriddenAcctID = fn.Some(acctAlias)
+	}
+
+	overrideActionSessionAndAccount(
+		kvAction, overriddenSessID, overriddenAcctID,
+	)
+
+	// Now that we have overridden the fields that are expected to differ
+	// between the original KVDB action and the migrated SQL action, we can
+	// compare the two actions to ensure that they match.
+	if !reflect.DeepEqual(kvAction, migAction) {
+		diff := difflib.UnifiedDiff{
+			A: difflib.SplitLines(
+				spew.Sdump(kvAction),
+			),
+			B: difflib.SplitLines(
+				spew.Sdump(migAction),
+			),
+			FromFile: "Expected",
+			FromDate: "",
+			ToFile:   "Actual",
+			ToDate:   "",
+			Context:  3,
+		}
+		diffText, _ := difflib.GetUnifiedDiffString(diff)
+
+		return fmt.Errorf("migrated action does not match original "+
+			"action: \n%v", diffText)
+	}
+
+	return nil
+}
+
+// paramsFromBothSessionAndAccounts handles cases where both potential
+// account(s) and session responsible for the action exists. In this case,
+// we prioritize linking the action to the session. If the potential linked
+// session is not a match for the action, we fall back to linking the action
+// to the potential linked account with the latest expiry (where accounts
+// that do not expire is seen as the latest).
+func paramsFromBothSessionAndAccounts(ctx context.Context,
+	accountsDB accounts.SQLQueries, action *Action, actAccts []sqlc.Account,
+	sess sqlc.Session, macRootKeyID []byte) (sqlc.InsertActionParams,
+	error) {
+
+	// Check if the potential linked session and account(s) could actually
+	// be responsible for the action, or if they should be filtered out.
+	sessOpt := getMatchingSessionForAction(action, sess)
+	acctOpt, err := getMatchingAccountForAction(
+		ctx, accountsDB, action, actAccts,
+	)
+	if err != nil {
+		return sqlc.InsertActionParams{}, err
+	}
+
+	switch {
+	case acctOpt.IsSome() && sessOpt.IsSome():
+		// If we find both a potential linked account and session, we
+		// prio linking the session to the action.
+		return paramsFromSession(action, sess, macRootKeyID)
+	case acctOpt.IsSome():
+		// If the session was filtered out but we still have an account,
+		// we link the action to the account.
+		return paramsFromAccounts(
+			ctx, accountsDB, action, actAccts, macRootKeyID,
+		)
+	case sessOpt.IsSome():
+		return paramsFromSession(action, sess, macRootKeyID)
+	default:
+		// If no potential linked account or session were found after
+		// filtering, we won't link the action to any of them.
+		return paramsFromAction(action, macRootKeyID), nil
+	}
+}
+
+// paramsFromSession returns the insert params for an action linked to a
+// session. If the session is not a match for the action, the action will not be
+// linked to the session.
+func paramsFromSession(action *Action, actSess sqlc.Session,
+	macRootKeyID []byte) (sqlc.InsertActionParams, error) {
+
+	sessOpt := getMatchingSessionForAction(action, actSess)
+
+	params := paramsFromAction(action, macRootKeyID)
+
+	sessOpt.WhenSome(func(sess sqlc.Session) {
+		params.SessionID = sqldb.SQLInt64(sess.ID)
+		params.AccountID = sess.AccountID
+	})
+
+	return params, nil
+}
+
+// paramsFromAccounts returns the insert params for an action linked to an
+// account. If no matching account is found for the action, the action will not
+// be linked to any account.
+func paramsFromAccounts(ctx context.Context, accountsDB accounts.SQLQueries,
+	action *Action, actAccts []sqlc.Account,
+	macRootKeyID []byte) (sqlc.InsertActionParams, error) {
+
+	acctOpt, err := getMatchingAccountForAction(
+		ctx, accountsDB, action, actAccts,
+	)
+	if err != nil {
+		return sqlc.InsertActionParams{}, err
+	}
+
+	params := paramsFromAction(action, macRootKeyID)
+
+	acctOpt.WhenSome(func(acct sqlc.Account) {
+		params.AccountID = sqldb.SQLInt64(acct.ID)
+	})
+
+	return params, nil
+}
+
+// paramsFromAction returns the insert params for an action that is not linked
+// to any account or session.
+func paramsFromAction(action *Action,
+	macRootKeyID []byte) sqlc.InsertActionParams {
+
+	return sqlc.InsertActionParams{
+		MacaroonIdentifier: macRootKeyID,
+		ActorName:          sqldb.SQLStr(action.ActorName),
+		FeatureName:        sqldb.SQLStr(action.FeatureName),
+		ActionTrigger:      sqldb.SQLStr(action.Trigger),
+		Intent:             sqldb.SQLStr(action.Intent),
+		StructuredJsonData: []byte(action.StructuredJsonData),
+		RpcMethod:          action.RPCMethod,
+		RpcParamsJson:      action.RPCParamsJson,
+		CreatedAt:          action.AttemptedAt,
+		ActionState:        int16(action.State),
+		ErrorReason:        sqldb.SQLStr(action.ErrorReason),
+	}
+}
+
+// getMatchingSessionForAction checks if the potential linked session
+// could actually be responsible for the action, or if it should be filtered
+// out.
+func getMatchingSessionForAction(action *Action,
+	sess sqlc.Session) fn.Option[sqlc.Session] {
+
+	attempted := action.AttemptedAt
+
+	// We filter of the session if the session could not have been
+	// responsible for the action, based on the action's attempted
+	// timestamp.
+
+	// Exclude if revoked before the attempt time
+	if sess.RevokedAt.Valid && sess.RevokedAt.Time.Before(attempted) {
+		return fn.None[sqlc.Session]()
+	}
+	// Exclude if created after the attempt time
+	if sess.CreatedAt.After(attempted) {
+		return fn.None[sqlc.Session]()
+	}
+	// Exclude if expired before the attempt time
+	if sess.Expiry.Before(attempted) {
+		return fn.None[sqlc.Session]()
+	}
+
+	// If we reach this point, the session is a potential match for
+	// the action.
+	return fn.Some(sess)
+}
+
+// getMatchingAccountForAction checks if any of the potential linked account(s)
+// could actually be responsible for the action, or if they should be
+// filtered out. If multiple accounts remain after filtering, we pick the one
+// with the latest expiration, but where non expiring accounts are picked first.
+func getMatchingAccountForAction(ctx context.Context,
+	accountsDB accounts.SQLQueries, action *Action,
+	actAccts []sqlc.Account) (fn.Option[sqlc.Account], error) {
+
+	// We cannot have an ActorName set for an action if the action was
+	// triggered by an account.
+	if action.ActorName != "" {
+		return fn.None[sqlc.Account](), nil
+	}
+
+	attempted := action.AttemptedAt
+
+	// 1) Do some initial filtering of the accounts
+	filtered := make([]sqlc.Account, 0, len(actAccts))
+	for _, a := range actAccts {
+		// Exclude if expired before the attempt time
+		if a.Expiration.Before(attempted) && !a.Expiration.IsZero() {
+			continue
+		}
+
+		invoices, err := accountsDB.ListAccountInvoices(ctx, a.ID)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return fn.None[sqlc.Account](), fmt.Errorf("listing "+
+				"invoices for account %d failed: %w", a.ID, err)
+		}
+		payments, err := accountsDB.ListAccountPayments(ctx, a.ID)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return fn.None[sqlc.Account](), fmt.Errorf("listing "+
+				"payments for account %d failed: %w", a.ID, err)
+		}
+
+		if action.RPCMethod == "/lnrpc.Lightning/AddInvoice" {
+			if len(invoices) == 0 {
+				continue
+			}
+		}
+
+		// TODO: Could be more methods
+		if action.RPCMethod == "/routerrpc.Router/SendPaymentV2" {
+			if len(payments) == 0 {
+				continue
+			}
+		}
+
+		// TODO: we can also grab all of the account's payments
+		// and invoices from lnd and determine if any of them are
+		// directly linkable to the action. If we find a match,
+		// we can be confident that this action belongs to that
+		// account.
+		// This will require that we pass the basic lnd client
+		// to the migration function, and will not work for all
+		// actions related to the account, so may add more
+		// complexity than it's worth.
+
+		filtered = append(filtered, a)
+	}
+
+	// 2) If no accounts remain after filtering, no potential linked account
+	// for the action was found.
+	if len(filtered) == 0 {
+		return fn.None[sqlc.Account](), nil
+	}
+
+	// 3) If multiple accounts remain after filtering, we pick the one with
+	// the latest expiration, but where non expiring accounts are picked
+	// first.
+	if len(filtered) > 1 {
+		sort.Slice(filtered, func(i, j int) bool {
+			zeroI := filtered[i].Expiration.IsZero()
+			zeroJ := filtered[j].Expiration.IsZero()
+
+			// If one is zero and the other is not, zero comes first
+			if zeroI && !zeroJ {
+				return true
+			}
+			if zeroJ && !zeroI {
+				return false
+			}
+
+			// Both are zero or both are non-zero
+			// If both are non-zero, latest expiration first
+			return filtered[i].Expiration.After(
+				filtered[j].Expiration,
+			)
+		})
+	}
+
+	// 4) Return the first account of the filtered list, which has been
+	// ordered if multiple accounts remain.
+	return fn.Some(filtered[0]), nil
+}
+
+// getAndMarshalAction fetches an action by its ID from the SQL DB, and
+// marshals it into the Action struct.
+func getAndMarshalAction(ctx context.Context, sqlTx SQLQueries, id int64) (
+	*Action, error) {
+
+	// First, fetch the action back from the SQL DB.
+	dbAction, err := sqlTx.GetAction(ctx, id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, errors.New("action not found")
+	} else if err != nil {
+		return nil, err
+	}
+
+	return marshalDBAction(ctx, sqlTx, dbAction)
+}
+
+// marshalDBAction marshals a sqlc.Action into the Action struct.
+func marshalDBAction(ctx context.Context, sqlTx SQLQueries,
+	dbAction sqlc.Action) (*Action, error) {
+
+	var legacySessID fn.Option[session.ID]
+	if dbAction.SessionID.Valid {
+		legacySessIDB, err := sqlTx.GetAliasBySessionID(
+			ctx, dbAction.SessionID.Int64,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get legacy "+
+				"session ID for session ID %d: %w",
+				dbAction.SessionID.Int64, err)
+		}
+
+		sessID, err := session.IDFromBytes(legacySessIDB)
+		if err != nil {
+			return nil, err
+		}
+
+		legacySessID = fn.Some(sessID)
+	}
+
+	var legacyAcctID fn.Option[accounts.AccountID]
+	if dbAction.AccountID.Valid {
+		acct, err := sqlTx.GetAccount(ctx, dbAction.AccountID.Int64)
+		if err != nil {
+			return nil, err
+		}
+
+		acctID, err := accounts.AccountIDFromInt64(acct.Alias)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get account ID: %w",
+				err)
+		}
+
+		legacyAcctID = fn.Some(acctID)
+	}
+
+	var macID fn.Option[[4]byte]
+	if len(dbAction.MacaroonIdentifier) > 0 {
+		macID = fn.Some([4]byte(dbAction.MacaroonIdentifier))
+	}
+
+	return &Action{
+		AddActionReq: AddActionReq{
+			MacaroonIdentifier: macID,
+			AccountID:          legacyAcctID,
+			SessionID:          legacySessID,
+			ActorName:          dbAction.ActorName.String,
+			FeatureName:        dbAction.FeatureName.String,
+			Trigger:            dbAction.ActionTrigger.String,
+			Intent:             dbAction.Intent.String,
+			StructuredJsonData: string(dbAction.StructuredJsonData),
+			RPCMethod:          dbAction.RpcMethod,
+			RPCParamsJson:      dbAction.RpcParamsJson,
+		},
+		AttemptedAt: dbAction.CreatedAt,
+		State:       ActionState(dbAction.ActionState),
+		ErrorReason: dbAction.ErrorReason.String,
+	}, nil
+}
+
+// mapMacIds maps the macaroon root key IDs by their 4 byte prefix, to make it
+// easy to look up the full root key ID for each action based on the macaroon
+// identifier (which is the first 4 bytes of the root key ID).
+// The function returns a map where the key is the 4 byte prefix, and the
+// value is the full root key ID.
+func mapMacIds(macRootKeyIDs [][]byte) (map[[4]byte][]byte, error) {
+	// Start by converting the macRootKeyIDs to a map that let's us map the
+	// macaroon the 4 byte identifiers to the full uint64 RootKeyID.
+	macMap := make(map[[4]byte][]byte)
+
+	for _, id := range macRootKeyIDs {
+		if len(id) < 4 {
+			return nil, fmt.Errorf("expected rootKeyID to be at "+
+				"least 4 bytes long, got %d bytes", len(id))
+		}
+
+		var rootKeyShortID [4]byte
+		copy(rootKeyShortID[:], id[len(id)-4:]) // last 4 bytes
+
+		// NOTE: If we already have an entry for this rootKeyShortID,
+		// we overwrite it with the new RootKeyID, as we can't determine
+		// which one is the correct one.
+		macMap[rootKeyShortID] = id
+	}
+
+	return macMap, nil
+}
+
+// mapAccounts maps the accounts by the 4 byte prefix of their Alias, to make
+// it easy to look up any potential linked account(s) for each action based
+// on the macaroon identifier (which is the first 4 bytes of the root key ID).
+// The function returns a map where the key is the 4 byte prefix, and the
+// value is a list of accounts that match that prefix.
+func mapAccounts(accts []sqlc.Account) (map[[4]byte][]sqlc.Account, error) {
+	acctMap := make(map[[4]byte][]sqlc.Account)
+
+	for _, acct := range accts {
+		aliasBytes := make([]byte, 8)
+
+		// Convert the int64 account Alias to bytes (big-endian)
+		binary.BigEndian.PutUint64(aliasBytes, uint64(acct.Alias))
+
+		var acctPrefix [4]byte
+		copy(acctPrefix[:], aliasBytes[:4])
+
+		if acctList, ok := acctMap[acctPrefix]; ok {
+			acctMap[acctPrefix] = append(acctList, acct)
+		} else {
+			acctMap[acctPrefix] = []sqlc.Account{acct}
+		}
+	}
+
+	return acctMap, nil
+}
+
+// mapSessions maps the sessions by their 4 byte Alias, to make it easy to
+// look up any potential linked session for each action based on the macaroon
+// identifier (which is the first 4 bytes of the root key ID).
+// The function returns a map where the key is the 4 byte Alias, and the
+// value is the corresponding session.
+func mapSessions(sessions []sqlc.Session) (map[[4]byte]sqlc.Session, error) {
+	sessMap := make(map[[4]byte]sqlc.Session)
+
+	for _, sess := range sessions {
+		if len(sess.Alias) != 4 {
+			return nil, fmt.Errorf("session alias must be 4 "+""+
+				"bytes, got %d bytes", len(sess.Alias))
+		}
+
+		var sessAlias [4]byte
+		copy(sessAlias[:], sess.Alias[:4])
+
+		if _, ok := sessMap[sessAlias]; ok {
+			// NOTE: This should be unreachable, as we shouldn't
+			// have multiple sessions with the same Alias, as the
+			// sessions store has already been migrated to SQL here,
+			// and the session's table has a UNIQUE constraint on
+			// the Alias column.
+			return nil, fmt.Errorf("should'nt have multiple "+
+				"sessions with the same alias %x", sessAlias)
+		} else {
+			sessMap[sessAlias] = sess
+		}
+	}
+
+	return sessMap, nil
+}
+
+// overrideActionTimeZone overrides the time zone of the action to the local
+// time zone and chops off the nanosecond part for comparison. This is needed
+// because KV database stores times as-is which as an unwanted side effect would
+// fail migration due to time comparison expecting both the original and
+// migrated actions to be in the same local time zone and in microsecond
+// precision. Note that PostgresSQL stores times in microsecond precision while
+// SQLite can store times in nanosecond precision if using TEXT storage class.
+func overrideActionTimeZone(action *Action) {
+	fixTime := func(t time.Time) time.Time {
+		return t.In(time.Local).Truncate(time.Microsecond)
+	}
+
+	if !action.AttemptedAt.IsZero() {
+		action.AttemptedAt = fixTime(action.AttemptedAt)
+	}
+}
+
+// overrideActionSessionAndAccount overrides the session and account IDs of the
+// action to the provided values.
+func overrideActionSessionAndAccount(action *Action,
+	sessID fn.Option[session.ID], acctID fn.Option[accounts.AccountID]) {
+
+	action.SessionID = sessID
+	action.AccountID = acctID
 }
