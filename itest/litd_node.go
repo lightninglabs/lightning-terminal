@@ -289,6 +289,8 @@ func (cfg *LitNodeConfig) defaultLitdArgs() *litArgs {
 	switch cfg.NetParams {
 	case &chaincfg.TestNet3Params:
 		args["network"] = "testnet"
+	case &chaincfg.TestNet4Params:
+		args["network"] = "testnet4"
 	case &chaincfg.SimNetParams:
 		args["network"] = "simnet"
 	case &chaincfg.RegressionNetParams:

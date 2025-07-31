@@ -178,9 +178,9 @@ type Config struct {
 
 	// Network is the Bitcoin network we're running on. This will be parsed
 	// before the configuration is loaded and will set the correct flag on
-	// `lnd.bitcoin.mainnet|testnet|regtest|signet` and also for the other
-	// daemons. That way only one global network flag is needed.
-	Network string `long:"network" description:"The network the UI and all its components run on" choice:"regtest" choice:"testnet" choice:"mainnet" choice:"simnet" choice:"signet"`
+	// `lnd.bitcoin.mainnet|testnet|testnet4|regtest|signet` and also for
+	// the other daemons. That way only one global network flag is needed.
+	Network string `long:"network" description:"The network the UI and all its components run on" choice:"regtest" choice:"testnet" choice:"testnet4" choice:"mainnet" choice:"simnet" choice:"signet"`
 
 	Remote *subservers.RemoteConfig `group:"Remote mode options (use when lnd-mode=remote)" namespace:"remote"`
 
@@ -809,6 +809,9 @@ func setNetwork(cfg *Config) error {
 
 	case "testnet", "testnet3":
 		cfg.Lnd.Bitcoin.TestNet3 = true
+
+	case "testnet4":
+		cfg.Lnd.Bitcoin.TestNet4 = true
 
 	case "regtest":
 		cfg.Lnd.Bitcoin.RegTest = true
