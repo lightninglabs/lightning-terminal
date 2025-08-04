@@ -2959,6 +2959,42 @@ func testCustomChannelsLiquidityEdgeCasesCore(ctx context.Context,
 	payInvoiceWithSatoshi(
 		t.t, dave, invoiceResp, withFeeLimit(100_000_000),
 	)
+
+	logBalance(t.t, nodes, assetID, "after policy checks")
+
+	resBuy, err := daveTap.RfqClient.AddAssetBuyOrder(
+		ctx, &rfqrpc.AddAssetBuyOrderRequest{
+			AssetSpecifier: &assetSpecifier,
+			AssetMaxAmt:    1_000,
+			Expiry:         uint64(inOneHour.Unix()),
+			PeerPubKey:     charlie.PubKey[:],
+			TimeoutSeconds: 100,
+		},
+	)
+	require.NoError(t.t, err)
+
+	scid := resBuy.GetAcceptedQuote().Scid
+
+	invResp := createAssetInvoice(
+		t.t, charlie, dave, 1_000, assetID,
+		withInvGroupKey(groupID), withRouteHints([]*lnrpc.RouteHint{
+			{
+				HopHints: []*lnrpc.HopHint{
+					{
+						NodeId: charlie.PubKeyStr,
+						ChanId: scid,
+					},
+				},
+			},
+		}),
+	)
+
+	payInvoiceWithAssets(
+		t.t, charlie, dave, invResp.PaymentRequest, assetID,
+		withGroupKey(groupID),
+	)
+
+	logBalance(t.t, nodes, assetID, "after invoice with route hints")
 }
 
 // testCustomChannelsLiquidityEdgeCases is a test that runs through some
