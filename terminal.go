@@ -716,19 +716,20 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 		}
 	}
 
-	// Set up all the LND clients required by LiT.
-	err = g.setUpLNDClients(ctx, lndQuit)
+	// Since we are now connected to LND, we can now set up a basic LND
+	// client. Note this doesn't require LND to be synced, but can still be
+	// used to fetch info from LND such as its macaroons. Therefore, it's ok
+	// set it up prior to setting up the stores and starting the other RPC
+	// servers, as the setup will be fast.
+	err = g.setupBasicLNDClient(ctx, lndQuit)
 	if err != nil {
 		g.statusMgr.SetErrored(
-			subservers.LND, "could not set up LND clients: %v", err,
+			subservers.LND,
+			"could not to set up a basic LND client: %v", err,
 		)
 
 		return fmt.Errorf("could not start LND")
 	}
-
-	// Mark that lnd is now completely running after connecting the
-	// lnd clients.
-	g.statusMgr.SetRunning(subservers.LND)
 
 	g.stores, err = NewStores(g.cfg, clock.NewDefaultClock())
 	if err != nil {
@@ -750,6 +751,22 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 		return fmt.Errorf("could not create new session rpc "+
 			"server: %v", err)
 	}
+
+	// Set up a full LND client. With this, we now have all LND clients
+	// needed for LiT to be fully started.
+	err = g.setupFullLNDClient(ctx, lndQuit)
+	if err != nil {
+		g.statusMgr.SetErrored(
+			subservers.LND,
+			"could not to set up a full LND client: %v", err,
+		)
+
+		return fmt.Errorf("could not start LND")
+	}
+
+	// Mark that lnd is now completely running after connecting the
+	// lnd clients.
+	g.statusMgr.SetRunning(subservers.LND)
 
 	// Both connection types are ready now, let's start our sub-servers if
 	// they should be started locally as an integrated service.
@@ -797,13 +814,35 @@ func (g *LightningTerminal) basicLNDClient() (lnrpc.LightningClient, error) {
 	return g.basicClient, nil
 }
 
-// setUpLNDClients sets up the various LND clients required by LiT.
-func (g *LightningTerminal) setUpLNDClients(ctx context.Context,
+// checkRunning checks if we should continue running for the duration of the
+// defaultStartupTimeout, or else returns an error indicating why a shut-down is
+// needed.
+func (g *LightningTerminal) checkRunning(ctx context.Context,
+	lndQuit chan struct{}) error {
+
+	select {
+	case err := <-g.errQueue.ChanOut():
+		return fmt.Errorf("error from subsystem: %v", err)
+
+	case <-lndQuit:
+		return fmt.Errorf("LND has stopped")
+
+	case <-ctx.Done():
+		return ctx.Err()
+
+	case <-time.After(g.cfg.LndConnectInterval):
+		return nil
+	}
+}
+
+// setupBasicLNDClient sets up a basic LND client that can be used to connect to
+// LND without requiring LND to be fully synced. Since this client is only a
+// basic client, not all of LNDs functionality is available through it.
+func (g *LightningTerminal) setupBasicLNDClient(ctx context.Context,
 	lndQuit chan struct{}) error {
 
 	var (
 		err           error
-		insecure      bool
 		clientOptions []lndclient.BasicClientOption
 	)
 
@@ -818,36 +857,13 @@ func (g *LightningTerminal) setUpLNDClients(ctx context.Context,
 	// If we're in integrated mode, we can retrieve the macaroon string
 	// from lnd directly, rather than grabbing it from disk.
 	if g.cfg.LndMode == ModeIntegrated {
-		// Set to true in integrated mode, since we will not require tls
-		// when communicating with lnd via a bufconn.
-		insecure = true
 		clientOptions = append(clientOptions, lndclient.Insecure())
-	}
-
-	// checkRunning checks if we should continue running for the duration of
-	// the defaultStartupTimeout, or else returns an error indicating why
-	// a shut-down is needed.
-	checkRunning := func() error {
-		select {
-		case err := <-g.errQueue.ChanOut():
-			return fmt.Errorf("error from subsystem: %v", err)
-
-		case <-lndQuit:
-			return fmt.Errorf("LND has stopped")
-
-		case <-ctx.Done():
-			return ctx.Err()
-
-		case <-time.After(g.cfg.LndConnectInterval):
-			return nil
-		}
 	}
 
 	// The main RPC listener of lnd might need some time to start, it could
 	// be that we run into a connection refused a few times. We use the
 	// basic client connection to find out if the RPC server is started yet
-	// because that doesn't do anything else than just connect. We'll check
-	// if lnd is also ready to be used in the next step.
+	// because that doesn't do anything else than just connect.
 	log.Infof("Connecting basic lnd client")
 
 	for {
@@ -869,7 +885,7 @@ func (g *LightningTerminal) setUpLNDClients(ctx context.Context,
 			"Error when setting up basic LND Client: %v", err,
 		)
 
-		err = checkRunning()
+		err = g.checkRunning(ctx, lndQuit)
 		if err != nil {
 			return err
 		}
@@ -892,12 +908,34 @@ func (g *LightningTerminal) setUpLNDClients(ctx context.Context,
 		g.cfg.statelessInitMode = macService.StatelessInit
 	}
 
-	// Now we know that the connection itself is ready. But we also need to
-	// wait for two things: The chain notifier to be ready and the lnd
-	// wallet being fully synced to its chain backend. The chain notifier
-	// will always be ready first so if we instruct the lndclient to wait
-	// for the wallet sync, we should be fully ready to start all our
-	// subservers. This will just block until lnd signals readiness.
+	return nil
+}
+
+// setupFullLNDClient connects a up a full LND client to LND. Note that the
+// setup of this client will block until LND is fully synced and unlocked.
+func (g *LightningTerminal) setupFullLNDClient(ctx context.Context,
+	lndQuit chan struct{}) error {
+
+	var (
+		err      error
+		insecure bool
+	)
+
+	host, network, tlsPath, macPath, macData := g.cfg.lndConnectParams()
+
+	if g.cfg.LndMode == ModeIntegrated {
+		// Ssince we will not require tls when communicating with lnd
+		// via a bufconn in integrated mode, we set the insecure flag
+		// to true.
+		insecure = true
+	}
+
+	// When setting up a full LND client, we we need to wait for two things:
+	// The chain notifier to be ready and the lnd wallet being fully synced
+	// to its chain backend. The chain notifier will always be ready first
+	// so if we instruct the lndclient to wait for the wallet sync, we
+	// should be fully ready to start all our subservers. This will just
+	// block until lnd signals readiness.
 	log.Infof("Connecting full lnd client")
 	for {
 		g.lndClient, err = lndclient.NewLndServices(
@@ -930,7 +968,7 @@ func (g *LightningTerminal) setUpLNDClients(ctx context.Context,
 			err,
 		)
 
-		err = checkRunning()
+		err = g.checkRunning(ctx, lndQuit)
 		if err != nil {
 			return err
 		}
