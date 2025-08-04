@@ -1,6 +1,6 @@
 run:
   # timeout for analysis
-  timeout: 4m
+  timeout: 10m
   
   build-tags:
     - autopilotrpc
