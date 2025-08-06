@@ -3,6 +3,7 @@ package accounts
 import (
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"time"
 
@@ -16,6 +17,13 @@ import (
 	"gopkg.in/macaroon.v2"
 )
 
+var (
+	// ErrServerNotActive indicates that the server has started but hasn't
+	// fully finished the startup process.
+	ErrServerNotActive = errors.New("accounts server is still in the " +
+		"process of starting")
+)
+
 // RPCServer is the main server that implements the Accounts gRPC service.
 type RPCServer struct {
 	litrpc.UnimplementedAccountsServer
@@ -26,13 +34,17 @@ type RPCServer struct {
 }
 
 // NewRPCServer returns a new RPC server for the given service.
-func NewRPCServer(service *InterceptorService,
-	superMacBaker litmac.Baker) *RPCServer {
+func NewRPCServer() *RPCServer {
+	return &RPCServer{}
+}
 
-	return &RPCServer{
-		service:       service,
-		superMacBaker: superMacBaker,
-	}
+// Start adds the necessary dependencies for the RPCServer to be able to process
+// requests, and starts the RPCServer.
+func (s *RPCServer) Start(service *InterceptorService,
+	superMacBaker litmac.Baker) {
+
+	s.service = service
+	s.superMacBaker = superMacBaker
 }
 
 // CreateAccount adds an entry to the account database. This entry represents
