@@ -463,14 +463,6 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 		return fmt.Errorf("error creating account service: %v", err)
 	}
 
-	superMacBaker := func(ctx context.Context, rootKeyID uint64,
-		perms []bakery.Op, caveats []macaroon.Caveat) (string, error) {
-
-		return litmac.BakeSuperMacaroon(
-			ctx, g.basicClient, rootKeyID, perms, caveats,
-		)
-	}
-
 	// We create a reference to the `accountRpcServer` here before starting
 	// it and prior to setting up the LND connection. This is because when
 	// the LND connection is set up for an integrated LND instance, LND will
@@ -512,39 +504,11 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 		}
 	}
 
-	g.sessionRpcServer, err = newSessionRPCServer(&sessionRpcServerConfig{
-		db:        g.stores.sessions,
-		basicAuth: g.rpcProxy.basicAuth,
-		grpcOptions: []grpc.ServerOption{
-			grpc.CustomCodec(grpcProxy.Codec()), // nolint: staticcheck,
-			grpc.ChainStreamInterceptor(
-				g.rpcProxy.StreamServerInterceptor,
-			),
-			grpc.ChainUnaryInterceptor(
-				g.rpcProxy.UnaryServerInterceptor,
-			),
-			grpc.UnknownServiceHandler(
-				grpcProxy.TransparentHandler(
-					// Don't allow calls to litrpc.
-					g.rpcProxy.makeDirector(false),
-				),
-			),
-		},
-		registerGrpcServers: func(server *grpc.Server) {
-			g.registerSubDaemonGrpcServers(server, true)
-		},
-		superMacBaker:           superMacBaker,
-		firstConnectionDeadline: g.cfg.FirstLNCConnDeadline,
-		permMgr:                 g.permsMgr,
-		actionsDB:               g.stores.firewall,
-		autopilot:               g.autopilotClient,
-		ruleMgrs:                g.ruleMgrs,
-		privMap:                 g.stores.firewall,
-	})
-	if err != nil {
-		return fmt.Errorf("could not create new session rpc "+
-			"server: %v", err)
-	}
+	// Similar to the init of the `accountRpcServer` reference above, we
+	// create a reference to the `sessionRpcServer` here before setting up
+	// the LND connection. See the comment above for the `accountRpcServer`
+	// to understand why this is necessary.
+	g.sessionRpcServer = newSessionRPCServer()
 
 	// Call the "real" main in a nested manner so the defers will properly
 	// be executed in the case of a graceful shutdown.
@@ -1063,7 +1027,38 @@ func (g *LightningTerminal) startInternalSubServers(ctx context.Context,
 	}
 
 	log.Infof("Starting LiT session server")
-	if err = g.sessionRpcServer.start(ctx); err != nil {
+
+	sessionCfg := &sessionRpcServerConfig{
+		db:        g.stores.sessions,
+		basicAuth: g.rpcProxy.basicAuth,
+		grpcOptions: []grpc.ServerOption{
+			grpc.CustomCodec(grpcProxy.Codec()), // nolint: staticcheck,
+			grpc.ChainStreamInterceptor(
+				g.rpcProxy.StreamServerInterceptor,
+			),
+			grpc.ChainUnaryInterceptor(
+				g.rpcProxy.UnaryServerInterceptor,
+			),
+			grpc.UnknownServiceHandler(
+				grpcProxy.TransparentHandler(
+					// Don't allow calls to litrpc.
+					g.rpcProxy.makeDirector(false),
+				),
+			),
+		},
+		registerGrpcServers: func(server *grpc.Server) {
+			g.registerSubDaemonGrpcServers(server, true)
+		},
+		superMacBaker:           superMacBaker,
+		firstConnectionDeadline: g.cfg.FirstLNCConnDeadline,
+		permMgr:                 g.permsMgr,
+		actionsDB:               g.stores.firewall,
+		autopilot:               g.autopilotClient,
+		ruleMgrs:                g.ruleMgrs,
+		privMap:                 g.stores.firewall,
+	}
+
+	if err = g.sessionRpcServer.start(ctx, sessionCfg); err != nil {
 		return err
 	}
 	g.sessionRpcServerStarted = true

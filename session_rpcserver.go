@@ -40,6 +40,13 @@ import (
 // other special cases.
 const readOnlyAction = "***readonly***"
 
+var (
+	// ErrServerNotActive indicates that the server has started but hasn't
+	// fully finished the startup process.
+	ErrServerNotActive = errors.New("session server is still in the " +
+		"process of starting")
+)
+
 // sessionRpcServer is the gRPC server for the Session RPC interface.
 type sessionRpcServer struct {
 	litrpc.UnimplementedSessionsServer
@@ -70,42 +77,11 @@ type sessionRpcServerConfig struct {
 	privMap                 firewalldb.PrivacyMapper
 }
 
-// newSessionRPCServer creates a new sessionRpcServer using the passed config.
-func newSessionRPCServer(cfg *sessionRpcServerConfig) (*sessionRpcServer,
-	error) {
-
-	// Create the gRPC server that handles adding/removing sessions and the
-	// actual mailbox server that spins up the Terminal Connect server
-	// interface.
-	server := session.NewServer(
-		func(id session.ID, opts ...grpc.ServerOption) *grpc.Server {
-			// Add the session ID injector interceptors first so
-			// that the session ID is available in the context of
-			// all interceptors that come after.
-			allOpts := []grpc.ServerOption{
-				addSessionIDToStreamCtx(id),
-				addSessionIDToUnaryCtx(id),
-			}
-
-			allOpts = append(allOpts, cfg.grpcOptions...)
-			allOpts = append(allOpts, opts...)
-
-			// Construct the gRPC server with the options.
-			grpcServer := grpc.NewServer(allOpts...)
-
-			// Register various grpc servers with the LNC session
-			// server.
-			cfg.registerGrpcServers(grpcServer)
-
-			return grpcServer
-		},
-	)
-
+// newSessionRPCServer creates a new sessionRpcServer.
+func newSessionRPCServer() *sessionRpcServer {
 	return &sessionRpcServer{
-		cfg:           cfg,
-		sessionServer: server,
-		quit:          make(chan struct{}),
-	}, nil
+		quit: make(chan struct{}),
+	}
 }
 
 // wrappedServerStream is a wrapper around the grpc.ServerStream that allows us
@@ -164,9 +140,42 @@ func addSessionIDToUnaryCtx(id session.ID) grpc.ServerOption {
 	})
 }
 
-// start all the components necessary for the sessionRpcServer to start serving
-// requests. This includes resuming all non-revoked sessions.
-func (s *sessionRpcServer) start(ctx context.Context) error {
+// start starts a new sessionRpcServer using the passed config, and adds all
+// components necessary for the sessionRpcServer to start serving requests. This
+// includes resuming all non-revoked sessions.
+func (s *sessionRpcServer) start(ctx context.Context,
+	cfg *sessionRpcServerConfig) error {
+
+	// Create the gRPC server that handles adding/removing sessions and the
+	// actual mailbox server that spins up the Terminal Connect server
+	// interface.
+	server := session.NewServer(
+		func(id session.ID, opts ...grpc.ServerOption) *grpc.Server {
+			// Add the session ID injector interceptors first so
+			// that the session ID is available in the context of
+			// all interceptors that come after.
+			allOpts := []grpc.ServerOption{
+				addSessionIDToStreamCtx(id),
+				addSessionIDToUnaryCtx(id),
+			}
+
+			allOpts = append(allOpts, cfg.grpcOptions...)
+			allOpts = append(allOpts, opts...)
+
+			// Construct the gRPC server with the options.
+			grpcServer := grpc.NewServer(allOpts...)
+
+			// Register various grpc servers with the LNC session
+			// server.
+			cfg.registerGrpcServers(grpcServer)
+
+			return grpcServer
+		},
+	)
+
+	s.cfg = cfg
+	s.sessionServer = server
+
 	// Delete all sessions in the Reserved state.
 	err := s.cfg.db.DeleteReservedSessions(ctx)
 	if err != nil {
@@ -255,7 +264,9 @@ func (s *sessionRpcServer) start(ctx context.Context) error {
 func (s *sessionRpcServer) stop() error {
 	var returnErr error
 	s.stopOnce.Do(func() {
-		s.sessionServer.Stop()
+		if s.sessionServer != nil {
+			s.sessionServer.Stop()
+		}
 
 		close(s.quit)
 		s.wg.Wait()
