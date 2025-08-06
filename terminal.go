@@ -447,22 +447,6 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 		return fmt.Errorf("could not create network directory: %v", err)
 	}
 
-	g.stores, err = NewStores(g.cfg, clock.NewDefaultClock())
-	if err != nil {
-		return fmt.Errorf("could not create stores: %v", err)
-	}
-
-	if err := g.stores.firewall.Start(ctx); err != nil {
-		return fmt.Errorf("could not start firewall DB: %v", err)
-	}
-
-	g.accountService, err = accounts.NewService(
-		g.stores.accounts, accountServiceErrCallback,
-	)
-	if err != nil {
-		return fmt.Errorf("error creating account service: %v", err)
-	}
-
 	// We create a reference to the `accountRpcServer` here before starting
 	// it and prior to setting up the LND connection. This is because when
 	// the LND connection is set up for an integrated LND instance, LND will
@@ -745,6 +729,27 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 	// Mark that lnd is now completely running after connecting the
 	// lnd clients.
 	g.statusMgr.SetRunning(subservers.LND)
+
+	g.stores, err = NewStores(g.cfg, clock.NewDefaultClock())
+	if err != nil {
+		return fmt.Errorf("could not create stores: %v", err)
+	}
+
+	if err := g.stores.firewall.Start(ctx); err != nil {
+		return fmt.Errorf("could not start firewall DB: %v", err)
+	}
+
+	g.accountService, err = accounts.NewService(
+		g.stores.accounts, accountServiceErrCallback,
+	)
+	if err != nil {
+		return fmt.Errorf("error creating account service: %v", err)
+	}
+
+	if err != nil {
+		return fmt.Errorf("could not create new session rpc "+
+			"server: %v", err)
+	}
 
 	// Both connection types are ready now, let's start our sub-servers if
 	// they should be started locally as an integrated service.
