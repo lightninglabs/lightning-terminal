@@ -471,9 +471,15 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 		)
 	}
 
-	g.accountRpcServer = accounts.NewRPCServer(
-		g.accountService, superMacBaker,
-	)
+	// We create a reference to the `accountRpcServer` here before starting
+	// it and prior to setting up the LND connection. This is because when
+	// the LND connection is set up for an integrated LND instance, LND will
+	// call litd's `RegisterGrpcSubserver` function during the setup of the
+	// connection.
+	// That function calls `registerSubDaemonGrpcServers` which requires
+	// that the `accountRpcServer` pointer exist, to not nil pointer panic
+	// when requests get passed to the server.
+	g.accountRpcServer = accounts.NewRPCServer()
 
 	g.ruleMgrs = rules.NewRuleManagerSet()
 
@@ -1027,6 +1033,18 @@ func (g *LightningTerminal) startInternalSubServers(ctx context.Context,
 		return fmt.Errorf("could not start macaroon service: %v", err)
 	}
 	g.macaroonServiceStarted = true
+
+	superMacBaker := func(ctx context.Context, rootKeyID uint64,
+		perms []bakery.Op, caveats []macaroon.Caveat) (string, error) {
+
+		return litmac.BakeSuperMacaroon(
+			ctx, g.basicClient, rootKeyID, perms, caveats,
+		)
+	}
+
+	log.Infof("Starting LiT accounts server")
+
+	g.accountRpcServer.Start(g.accountService, superMacBaker)
 
 	if !g.cfg.Autopilot.Disable {
 		withLndVersion := func(cfg *autopilotserver.Config) {
