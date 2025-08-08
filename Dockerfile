@@ -32,7 +32,7 @@ RUN apk add --no-cache --update alpine-sdk \
 
 # The first stage is already done and all static assets should now be generated
 # in the app/build sub directory.
-FROM golang:1.23.9-alpine3.20@sha256:96917b18cf0bf6dc54f726696eb526fe6e6a1ab45e43d4a292aae11f3d503ffe as golangbuilder
+FROM golang:1.23.12-alpine3.22@sha256:383395b794dffa5b53012a212365d40c8e37109a626ca30d6151c8348d380b5f as golangbuilder
 
 # Instead of checking out from git again, we just copy the whole working
 # directory of the previous stage that includes the generated static assets.
@@ -50,7 +50,7 @@ RUN apk add --no-cache --update alpine-sdk \
   && make go-install-cli
 
 # Start a new, final image to reduce size.
-FROM alpine:3.20.3@sha256:beefdbd8a1da6d2915566fde36db9db0b524eb737fc57cd1367effd16dc0d06d as final
+FROM alpine:3.22.1@sha256:4bcff63911fcb4448bd4fdacec207030997caf25e9bea4045fa6c8c44de311d1 as final
 
 # Define a root volume for data persistence.
 VOLUME /root/.lnd
