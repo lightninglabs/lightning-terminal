@@ -29,6 +29,9 @@
 
 ### LND
 
+* Updated [`lnd` to
+  `v0.19.3-beta.rc1`](https://github.com/lightninglabs/lightning-terminal/pull/1130).
+
 ### Loop
 
 ### Pool
