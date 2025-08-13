@@ -597,6 +597,9 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 		go func() {
 			defer g.wg.Done()
 
+			// Note that LND will call litd's RegisterGrpcSubserver
+			// function during the execution of this, as `g` is
+			// referenced in the passed `implCfg`
 			err := lnd.Main(g.cfg.Lnd, lisCfg, implCfg, interceptor)
 			if e, ok := err.(*flags.Error); err != nil &&
 				(!ok || e.Type != flags.ErrHelp) {
