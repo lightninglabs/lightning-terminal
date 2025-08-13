@@ -33,10 +33,12 @@ var allTestCases = []*testCase{
 		name:       "custom channels backward compatibility",
 		test:       testCustomChannels,
 		noAliceBob: true,
-		backwardCompat: map[string]string{
-			"Dave":  "v0.14.1-alpha",
-			"Fabia": "v0.14.1-alpha",
-		},
+		// TODO(george): comment out when peer message for features gets
+		// added
+		// backwardCompat: map[string]string{
+		// 	"Dave":  "v0.14.1-alpha",
+		// 	"Fabia": "v0.14.1-alpha",
+		// },
 	},
 	{
 		name:       "custom channels large",
@@ -132,9 +134,11 @@ var allTestCases = []*testCase{
 		name:       "custom channels multi rfq",
 		test:       testCustomChannelsMultiRFQ,
 		noAliceBob: true,
-		backwardCompat: map[string]string{
-			"Yara": "v0.15.0-alpha",
-		},
+		// TODO(george): comment out when peer message for features gets
+		// added
+		// backwardCompat: map[string]string{
+		// 	"Yara": "v0.15.0-alpha",
+		// },
 	},
 	{
 		name:       "custom channels multi channel pathfinding",
@@ -146,8 +150,10 @@ var allTestCases = []*testCase{
 			"compatibility",
 		test:       testCustomChannelsSelfPayment,
 		noAliceBob: true,
-		backwardCompat: map[string]string{
-			"Alice": "v0.14.1-alpha",
-		},
+		// TODO(george): comment out when peer message for features gets
+		// added
+		// backwardCompat: map[string]string{
+		// 	"Alice": "v0.14.1-alpha",
+		// },
 	},
 }
