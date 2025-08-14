@@ -30,9 +30,9 @@ var (
 	// caveatPrefix is the prefix that is used for custom caveats that are
 	// used by the account system. This prefix is used to identify the
 	// custom caveat and extract the condition (the AccountID) from it.
-	caveatPrefix = []byte(fmt.Sprintf(
+	caveatPrefix = fmt.Appendf(nil,
 		"%s %s ", macaroons.CondLndCustom, CondAccount,
-	))
+	)
 )
 
 // Name returns the name of the interceptor.

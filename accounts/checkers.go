@@ -494,7 +494,6 @@ func filterInvoices(ctx context.Context,
 	// after filtering.
 	var filteredInvoices []*lnrpc.Invoice
 	for _, invoice := range t.Invoices {
-		invoice := invoice
 
 		hash, err := lntypes.MakeHash(invoice.RHash)
 		if err != nil {
@@ -523,7 +522,6 @@ func filterPayments(ctx context.Context,
 	// after filtering.
 	var filteredPayments []*lnrpc.Payment
 	for _, payment := range t.Payments {
-		payment := payment
 
 		hash, err := lntypes.MakeHashFromStr(payment.PaymentHash)
 		if err != nil {
@@ -549,10 +547,7 @@ func checkSend(ctx context.Context, chainParams *chaincfg.Params,
 		return err
 	}
 
-	sendAmt := lnwire.NewMSatFromSatoshis(btcutil.Amount(amt))
-	if lnwire.MilliSatoshi(amtMsat) > sendAmt {
-		sendAmt = lnwire.MilliSatoshi(amtMsat)
-	}
+	sendAmt := max(lnwire.MilliSatoshi(amtMsat), lnwire.NewMSatFromSatoshis(btcutil.Amount(amt)))
 
 	// We require that a payment hash is set, which we either read from the
 	// payment hash from the invoice or from the request.
@@ -697,10 +692,9 @@ func checkSendToRoute(ctx context.Context, service Service, paymentHash []byte,
 		return fmt.Errorf("invalid route")
 	}
 
-	sendAmt := lnwire.NewMSatFromSatoshis(btcutil.Amount(route.TotalAmt)) // nolint
-	if lnwire.MilliSatoshi(route.TotalAmtMsat) > sendAmt {
-		sendAmt = lnwire.MilliSatoshi(route.TotalAmtMsat)
-	}
+	sendAmt := max(
+		// nolint
+		lnwire.MilliSatoshi(route.TotalAmtMsat), lnwire.NewMSatFromSatoshis(btcutil.Amount(route.TotalAmt)))
 
 	log.Tracef("Handling send request for payment with hash: %s and "+
 		"amount: %d", hash, sendAmt)
@@ -709,10 +703,9 @@ func checkSendToRoute(ctx context.Context, service Service, paymentHash []byte,
 	// not every single satoshi of an account can be used up. But it
 	// prevents an account from going into a negative balance if we only
 	// check for the amount to send but then later debit the full amount.
-	fee := lnwire.NewMSatFromSatoshis(btcutil.Amount(route.TotalFees)) // nolint
-	if lnwire.MilliSatoshi(route.TotalFeesMsat) > fee {
-		fee = lnwire.MilliSatoshi(route.TotalFeesMsat)
-	}
+	fee := max(
+		// nolint
+		lnwire.MilliSatoshi(route.TotalFeesMsat), lnwire.NewMSatFromSatoshis(btcutil.Amount(route.TotalFees)))
 	sendAmt += fee
 
 	err = service.CheckBalance(ctx, acct.ID, sendAmt)

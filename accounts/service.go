@@ -116,16 +116,13 @@ func (s *InterceptorService) Start(ctx context.Context,
 			"accounts: %w", err)
 	}
 	for _, acct := range existingAccounts {
-		acct := acct
 		for invoice := range acct.Invoices {
-			invoice := invoice
 			s.invoiceToAccount[invoice] = acct.ID
 		}
 
 		// Let's also resume tracking payments that have a last recorded
 		// state of being in-flight.
 		for hash, entry := range acct.Payments {
-			entry := entry
 			if !successState(entry.Status) {
 				err := s.TrackPayment(
 					ctx, acct.ID, hash, entry.FullAmount,

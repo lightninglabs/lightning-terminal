@@ -223,7 +223,6 @@ func (s *RPCServer) ListAccounts(ctx context.Context,
 	// Map the response into the proper response type and return it.
 	rpcAccounts := make([]*litrpc.Account, len(accts))
 	for i, acct := range accts {
-		acct := acct
 
 		rpcAccounts[i] = marshalAccount(acct)
 	}
