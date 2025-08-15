@@ -7,11 +7,15 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"sort"
 	"time"
 
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/lightninglabs/lightning-node-connect/mailbox"
 	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/db/sqlc"
+	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/sqldb"
 	"github.com/pmezard/go-difflib/difflib"
 	"go.etcd.io/bbolt"
@@ -23,6 +27,85 @@ var (
 	ErrMigrationMismatch = fmt.Errorf("migrated session does not match " +
 		"original session")
 )
+
+// featureConfigEntry is a variant of a single session feature config, which
+// can be inserted into an array to be compared deterministically.
+type featureConfigEntry struct {
+	featureName string
+	config      []byte
+}
+
+// deterministicSession is a variant of the Session struct without any struct
+// methods, which represents the map in the Session as a list, so that it can be
+// deterministically sorted for comparison during the kvdb to SQL migration.
+type deterministicSession struct {
+	ID                ID
+	Label             string
+	State             State
+	Type              Type
+	Expiry            time.Time
+	CreatedAt         time.Time
+	RevokedAt         time.Time
+	ServerAddr        string
+	DevServer         bool
+	MacaroonRootKey   uint64
+	MacaroonRecipe    *MacaroonRecipe
+	PairingSecret     [mailbox.NumPassphraseEntropyBytes]byte
+	LocalPrivateKey   *btcec.PrivateKey
+	LocalPublicKey    *btcec.PublicKey
+	RemotePublicKey   *btcec.PublicKey
+	FeatureConfig     []*featureConfigEntry
+	WithPrivacyMapper bool
+	PrivacyFlags      PrivacyFlags
+
+	// GroupID is the Session ID of the very first Session in the linked
+	// group of sessions. If this is the very first session in the group
+	// then this will be the same as ID.
+	GroupID ID
+
+	// AccountID is an optional account that the session has been linked to.
+	AccountID fn.Option[accounts.AccountID]
+}
+
+// newDeterministicSession creates a deterministicSession from a Session struct.
+// This is used to compare the session in a deterministic way during the
+// migration from the KV database to the SQL database.
+func newDeterministicSession(sess *Session) *deterministicSession {
+	sessFC := *sess.FeatureConfig
+	featuresConfig := make([]*featureConfigEntry, len(sessFC))
+
+	i := 0
+	for featureName, config := range sessFC {
+		featuresConfig[i] = &featureConfigEntry{
+			featureName: featureName,
+			config:      config,
+		}
+
+		i++
+	}
+
+	return &deterministicSession{
+		ID:                sess.ID,
+		Label:             sess.Label,
+		State:             sess.State,
+		Type:              sess.Type,
+		Expiry:            sess.Expiry,
+		CreatedAt:         sess.CreatedAt,
+		RevokedAt:         sess.RevokedAt,
+		ServerAddr:        sess.ServerAddr,
+		DevServer:         sess.DevServer,
+		MacaroonRootKey:   sess.MacaroonRootKey,
+		PairingSecret:     sess.PairingSecret,
+		LocalPrivateKey:   sess.LocalPrivateKey,
+		LocalPublicKey:    sess.LocalPublicKey,
+		RemotePublicKey:   sess.RemotePublicKey,
+		GroupID:           sess.GroupID,
+		AccountID:         sess.AccountID,
+		PrivacyFlags:      sess.PrivacyFlags,
+		MacaroonRecipe:    sess.MacaroonRecipe,
+		WithPrivacyMapper: sess.WithPrivacyMapper,
+	}
+}
 
 // MigrateSessionStoreToSQL runs the migration of all sessions from the KV
 // database to the SQL database. The migration is done in a single transaction
@@ -148,13 +231,16 @@ func migrateSessionsToSQLAndValidate(ctx context.Context,
 		overrideSessionTimeZone(migratedSession)
 		overrideMacaroonRecipe(kvSession, migratedSession)
 
-		if !reflect.DeepEqual(kvSession, migratedSession) {
+		dKvSession := newDeterministicSession(kvSession)
+		dMigratedSession := newDeterministicSession(migratedSession)
+
+		if !reflect.DeepEqual(dKvSession, dMigratedSession) {
 			diff := difflib.UnifiedDiff{
 				A: difflib.SplitLines(
-					spew.Sdump(kvSession),
+					spew.Sdump(dKvSession),
 				),
 				B: difflib.SplitLines(
-					spew.Sdump(migratedSession),
+					spew.Sdump(dMigratedSession),
 				),
 				FromFile: "Expected",
 				FromDate: "",
@@ -165,7 +251,7 @@ func migrateSessionsToSQLAndValidate(ctx context.Context,
 			diffText, _ := difflib.GetUnifiedDiffString(diff)
 
 			return fmt.Errorf("%w: %v.\n%v", ErrMigrationMismatch,
-				kvSession.ID, diffText)
+				dKvSession.ID, diffText)
 		}
 	}
 
@@ -380,17 +466,69 @@ func overrideSessionTimeZone(session *Session) {
 // as nil in the bbolt store. Therefore, we also override the permissions
 // or caveats to nil for the migrated session in that scenario, so that the
 // deep equals check does not fail in this scenario either.
+//
+// Additionally, we sort the caveats & permissions of both the kv and sql
+// sessions by their ID, so that they are always comparable in a deterministic
+// way with deep equals.
 func overrideMacaroonRecipe(kvSession *Session, migratedSession *Session) {
 	if kvSession.MacaroonRecipe != nil {
 		kvPerms := kvSession.MacaroonRecipe.Permissions
 		kvCaveats := kvSession.MacaroonRecipe.Caveats
 
+		// If the kvSession has a MacaroonRecipe with nil set for any
+		// of the fields, we need to override the migratedSession
+		// MacaroonRecipe to match that.
 		if kvPerms == nil && kvCaveats == nil {
 			migratedSession.MacaroonRecipe = &MacaroonRecipe{}
 		} else if kvPerms == nil {
 			migratedSession.MacaroonRecipe.Permissions = nil
 		} else if kvCaveats == nil {
 			migratedSession.MacaroonRecipe.Caveats = nil
+		}
+
+		sqlCaveats := migratedSession.MacaroonRecipe.Caveats
+		sqlPerms := migratedSession.MacaroonRecipe.Permissions
+
+		// If there have been caveats set for the MacaroonRecipe,
+		// the order of the postgres db caveats will in very rare cases
+		// differ from the kv store caveats. Therefore, we sort
+		// both the kv and sql caveats by their ID, so that we can
+		// compare them in a deterministic way.
+		if kvCaveats != nil {
+			sort.Slice(kvCaveats, func(i, j int) bool {
+				return bytes.Compare(
+					kvCaveats[i].Id, kvCaveats[j].Id,
+				) < 0
+			})
+
+			sort.Slice(sqlCaveats, func(i, j int) bool {
+				return bytes.Compare(
+					sqlCaveats[i].Id, sqlCaveats[j].Id,
+				) < 0
+			})
+		}
+
+		// Similarly, we sort the macaroon permissions for both the kv
+		// and sql sessions, so that we can compare them in a
+		// deterministic way.
+		if kvPerms != nil {
+			sort.Slice(kvPerms, func(i, j int) bool {
+				if kvPerms[i].Entity == kvPerms[j].Entity {
+					return kvPerms[i].Action <
+						kvPerms[j].Action
+				}
+
+				return kvPerms[i].Entity < kvPerms[j].Entity
+			})
+
+			sort.Slice(sqlPerms, func(i, j int) bool {
+				if sqlPerms[i].Entity == sqlPerms[j].Entity {
+					return sqlPerms[i].Action <
+						sqlPerms[j].Action
+				}
+
+				return sqlPerms[i].Entity < sqlPerms[j].Entity
+			})
 		}
 	}
 }
