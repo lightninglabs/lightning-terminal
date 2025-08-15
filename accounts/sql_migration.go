@@ -6,13 +6,16 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/lightningnetwork/lnd/lntypes"
 	"math"
 	"reflect"
+	"sort"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/lightninglabs/lightning-terminal/db/sqlc"
 	"github.com/lightningnetwork/lnd/kvdb"
+	"github.com/lightningnetwork/lnd/lnwire"
 	"github.com/pmezard/go-difflib/difflib"
 )
 
@@ -22,6 +25,110 @@ var (
 	ErrMigrationMismatch = fmt.Errorf("migrated account does not match " +
 		"original account")
 )
+
+// deterministicPayment is a variant of a single account PaymentEntry, which
+// can be inserted into an array to be compared deterministically.
+type deterministicPayment struct {
+	paymentHash  lntypes.Hash
+	paymentEntry *PaymentEntry
+}
+
+// deterministicAccount is a variant of the OffChainBalanceAccount struct
+// without any struct methods, which represents the maps in the
+// OffChainBalanceAccount as lists, so that they can be deterministically sorted
+// for comparison during the kvdb to SQL migration.
+type deterministicAccount struct {
+	// ID is the randomly generated account identifier.
+	ID AccountID
+
+	// Type is the account type.
+	Type AccountType
+
+	// InitialBalance stores the initial balance in millisatoshis and is
+	// never updated.
+	InitialBalance lnwire.MilliSatoshi
+
+	// CurrentBalance is the currently available balance of the account
+	// in millisatoshis that is updated every time an invoice is paid. This
+	// value can be negative (for example if the fees for a payment are
+	// larger than the estimate made when checking the balance and the
+	// account is close to zero value).
+	CurrentBalance int64
+
+	// LastUpdate keeps track of the last time the balance of the account
+	// was updated.
+	LastUpdate time.Time
+
+	// ExpirationDate is a specific date in the future after which the
+	// account is marked as expired. Can be set to zero for accounts that
+	// never expire.
+	ExpirationDate time.Time
+
+	// Invoices is a list of all invoices that are associated with the
+	// account.
+	Invoices []lntypes.Hash
+
+	// Payments is a list of all payments that are associated with the
+	// account and the last status we were aware of.
+	Payments []*deterministicPayment
+
+	// Label is an optional label that can be set for the account. If it is
+	// not empty then it must be unique.
+	Label string
+}
+
+// newDeterministicAccount creates a new deterministic account from the
+// an OffChainBalanceAccount.
+func newDeterministicAccount(
+	acct *OffChainBalanceAccount) *deterministicAccount {
+
+	invoices := make([]lntypes.Hash, len(acct.Invoices))
+	payments := make([]*deterministicPayment, len(acct.Payments))
+
+	// First let's populate the invoices and payments slices with the
+	// invoices and payments from the account.
+	i := 0
+	for hash := range acct.Invoices {
+		invoices[i] = hash
+		i++
+	}
+
+	i = 0
+	for hash, paymentEntry := range acct.Payments {
+		payments[i] = &deterministicPayment{
+			paymentHash:  hash,
+			paymentEntry: paymentEntry,
+		}
+
+		i++
+	}
+
+	// Next, let's sort the invoices and payments slices by their hashes to
+	// ensure deterministic ordering.
+	sort.Slice(invoices, func(i, j int) bool {
+		return bytes.Compare(
+			invoices[i][:], invoices[j][:],
+		) < 0
+	})
+
+	sort.Slice(payments, func(i, j int) bool {
+		return bytes.Compare(
+			payments[i].paymentHash[:], payments[j].paymentHash[:],
+		) < 0
+	})
+
+	return &deterministicAccount{
+		ID:             acct.ID,
+		Type:           acct.Type,
+		InitialBalance: acct.InitialBalance,
+		CurrentBalance: acct.CurrentBalance,
+		LastUpdate:     acct.LastUpdate.UTC(),
+		Label:          acct.Label,
+		Invoices:       invoices,
+		Payments:       payments,
+		ExpirationDate: acct.ExpirationDate.UTC(),
+	}
+}
 
 // MigrateAccountStoreToSQL runs the migration of all accounts and indices from
 // the KV database to the SQL database. The migration is done in a single
@@ -79,13 +186,16 @@ func migrateAccountsToSQL(ctx context.Context, kvStore kvdb.Backend,
 		overrideAccountTimeZone(kvAccount)
 		overrideAccountTimeZone(migratedAccount)
 
-		if !reflect.DeepEqual(kvAccount, migratedAccount) {
+		dKvAccount := newDeterministicAccount(kvAccount)
+		dMigratedAccount := newDeterministicAccount(migratedAccount)
+
+		if !reflect.DeepEqual(dKvAccount, dMigratedAccount) {
 			diff := difflib.UnifiedDiff{
 				A: difflib.SplitLines(
-					spew.Sdump(kvAccount),
+					spew.Sdump(dKvAccount),
 				),
 				B: difflib.SplitLines(
-					spew.Sdump(migratedAccount),
+					spew.Sdump(dMigratedAccount),
 				),
 				FromFile: "Expected",
 				FromDate: "",
@@ -96,7 +206,7 @@ func migrateAccountsToSQL(ctx context.Context, kvStore kvdb.Backend,
 			diffText, _ := difflib.GetUnifiedDiffString(diff)
 
 			return fmt.Errorf("%w: %v.\n%v", ErrMigrationMismatch,
-				kvAccount.ID, diffText)
+				dKvAccount.ID, diffText)
 		}
 	}
 
