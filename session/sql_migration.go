@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"sort"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
@@ -380,17 +381,69 @@ func overrideSessionTimeZone(session *Session) {
 // as nil in the bbolt store. Therefore, we also override the permissions
 // or caveats to nil for the migrated session in that scenario, so that the
 // deep equals check does not fail in this scenario either.
+//
+// Additionally, we sort the caveats & permissions of both the kv and sql
+// sessions by their ID, so that they are always comparable in a deterministic
+// way with deep equals.
 func overrideMacaroonRecipe(kvSession *Session, migratedSession *Session) {
 	if kvSession.MacaroonRecipe != nil {
 		kvPerms := kvSession.MacaroonRecipe.Permissions
 		kvCaveats := kvSession.MacaroonRecipe.Caveats
 
+		// If the kvSession has a MacaroonRecipe with nil set for any
+		// of the fields, we need to override the migratedSession
+		// MacaroonRecipe to match that.
 		if kvPerms == nil && kvCaveats == nil {
 			migratedSession.MacaroonRecipe = &MacaroonRecipe{}
 		} else if kvPerms == nil {
 			migratedSession.MacaroonRecipe.Permissions = nil
 		} else if kvCaveats == nil {
 			migratedSession.MacaroonRecipe.Caveats = nil
+		}
+
+		sqlCaveats := migratedSession.MacaroonRecipe.Caveats
+		sqlPerms := migratedSession.MacaroonRecipe.Permissions
+
+		// If there have been caveats set for the MacaroonRecipe,
+		// the order of the postgres db caveats will in very rare cases
+		// differ from the kv store caveats. Therefore, we sort
+		// both the kv and sql caveats by their ID, so that we can
+		// compare them in a deterministic way.
+		if kvCaveats != nil {
+			sort.Slice(kvCaveats, func(i, j int) bool {
+				return bytes.Compare(
+					kvCaveats[i].Id, kvCaveats[j].Id,
+				) < 0
+			})
+
+			sort.Slice(sqlCaveats, func(i, j int) bool {
+				return bytes.Compare(
+					sqlCaveats[i].Id, sqlCaveats[j].Id,
+				) < 0
+			})
+		}
+
+		// Similarly, we sort the macaroon permissions for both the kv
+		// and sql sessions, so that we can compare them in a
+		// deterministic way.
+		if kvPerms != nil {
+			sort.Slice(kvPerms, func(i, j int) bool {
+				if kvPerms[i].Entity == kvPerms[j].Entity {
+					return kvPerms[i].Action <
+						kvPerms[j].Action
+				}
+
+				return kvPerms[i].Entity < kvPerms[j].Entity
+			})
+
+			sort.Slice(sqlPerms, func(i, j int) bool {
+				if sqlPerms[i].Entity == sqlPerms[j].Entity {
+					return sqlPerms[i].Action <
+						sqlPerms[j].Action
+				}
+
+				return sqlPerms[i].Entity < sqlPerms[j].Entity
+			})
 		}
 	}
 }
