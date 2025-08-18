@@ -270,12 +270,8 @@ out:
 
 	n.EnsureConnected(t, n.Alice, n.Bob)
 
-	logLine := fmt.Sprintf(
-		"STARTING ============ %v ============\n", testCase,
-	)
-
-	n.Alice.AddToLog(logLine)
-	n.Bob.AddToLog(logLine)
+	n.Alice.AddToLog("STARTING ============ %v ============\n", testCase)
+	n.Bob.AddToLog("STARTING ============ %v ============\n", testCase)
 
 	return nil
 }
