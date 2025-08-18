@@ -10,12 +10,12 @@ import (
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/lightninglabs/lndclient"
-	"github.com/lightningnetwork/lnd/channeldb"
 	"github.com/lightningnetwork/lnd/fn"
 	invpkg "github.com/lightningnetwork/lnd/invoices"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
 	"github.com/lightningnetwork/lnd/lnwire"
+	paymentsdb "github.com/lightningnetwork/lnd/payments/db"
 )
 
 // Config holds the configuration options for the accounts service.
@@ -739,7 +739,7 @@ func (s *InterceptorService) TrackPayment(ctx context.Context, id AccountID,
 				// startup, to make sure we don't miss any
 				// payments.
 				if errors.Is(
-					err, channeldb.ErrPaymentNotInitiated,
+					err, paymentsdb.ErrPaymentNotInitiated,
 				) {
 
 					log.Debugf("Payment %v not initiated, "+
