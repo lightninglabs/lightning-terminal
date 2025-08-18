@@ -353,6 +353,115 @@ func TestSessionsStoreMigration(t *testing.T) {
 			},
 		},
 		{
+			name: "multiple sessions with the same ID",
+			populateDB: func(t *testing.T, store *BoltStore,
+				_ accounts.Store) []*Session {
+
+				// We first add one session which has no other
+				// session with same ID, to test that this is
+				// correctly migrated, and included in the
+				// migration result.
+				sess1, err := store.NewSession(
+					ctx, "session1", TypeMacaroonAdmin,
+					time.Unix(1000, 0), "",
+				)
+				require.NoError(t, err)
+
+				sess2, err := store.NewSession(
+					ctx, "session2", TypeMacaroonAdmin,
+					time.Unix(1000, 0), "",
+				)
+				require.NoError(t, err)
+
+				// Then add two sessions with the same ID, to
+				// test that only the latest session is included
+				// in the migration result.
+				sess3, err := store.NewSession(
+					ctx, "session3", TypeMacaroonAdmin,
+					time.Unix(1000, 0), "",
+				)
+				require.NoError(t, err)
+
+				// During the addition of the session linking
+				// functionality, logic was added in the
+				// NewSession function to ensure we can't create
+				// multiple sessions with the same ID. Therefore
+				// we need to manually override the ID of
+				// the second session to match the first
+				// session, to simulate such a scenario that
+				// could occur prior to the addition of that
+				// logic.
+				// We also need to update the CreatedAt time
+				// as the execution of this function is too
+				// fast for the CreatedAt time of sess2 and
+				// sess3 to differ.
+				err = updateSessionIDAndCreatedAt(
+					store, sess3.ID, sess2.MacaroonRootKey,
+					sess2.CreatedAt.Add(time.Minute),
+				)
+				require.NoError(t, err)
+
+				// Finally, we add three sessions with the same
+				// ID, to test we can handle more than two
+				// sessions with the same ID.
+				sess4, err := store.NewSession(
+					ctx, "session4", TypeMacaroonAdmin,
+					time.Unix(1000, 0), "",
+				)
+				require.NoError(t, err)
+
+				sess5, err := store.NewSession(
+					ctx, "session5", TypeMacaroonAdmin,
+					time.Unix(1000, 0), "",
+				)
+				require.NoError(t, err)
+
+				sess6, err := store.NewSession(
+					ctx, "session6", TypeMacaroonAdmin,
+					time.Unix(1000, 0), "",
+				)
+				require.NoError(t, err)
+
+				err = updateSessionIDAndCreatedAt(
+					store, sess5.ID, sess4.MacaroonRootKey,
+					sess4.CreatedAt.Add(time.Minute),
+				)
+				require.NoError(t, err)
+
+				err = updateSessionIDAndCreatedAt(
+					store, sess6.ID, sess4.MacaroonRootKey,
+					sess4.CreatedAt.Add(time.Minute*2),
+				)
+				require.NoError(t, err)
+
+				// Now fetch the updated sessions from the kv
+				// store, so that we are sure that the new IDs
+				// have really been persisted in the DB.
+				kvSessions := getBoltStoreSessions(t, store)
+				require.Len(t, kvSessions, 6)
+
+				getSessionByName := func(name string) *Session {
+					for _, session := range kvSessions {
+						if session.Label == name {
+							return session
+						}
+					}
+
+					t.Fatalf("session %s not found", name)
+					return nil
+				}
+
+				// When multiple sessions with the same ID
+				// exist, we expect only the session with the
+				// latest creation time to be migrated.
+				return []*Session{
+					getSessionByName(sess1.Label),
+					getSessionByName(sess3.Label),
+					getSessionByName(sess6.Label),
+				}
+			},
+		},
+		{
 			name:       "randomized sessions",
 			populateDB: randomizedSessions,
 		},
@@ -801,5 +910,46 @@ func shiftStateUnsafe(db *BoltStore, id ID, dest State) error {
 		}
 
 		return putSession(sessionBucket, session)
+	})
+}
+
+// updateSessionIDAndCreatedAt can be used to update the ID, the GroupID,
+// the MacaroonRootKey and the CreatedAt time a session in the BoltStore.
+//
+// NOTE: this function should only be used for testing purposes. Also note that
+// we pass the macaroon root key to set the new session ID, as the
+// DeserializeSession function derives the session ID from the
+// session.MacaroonRootKey.
+func updateSessionIDAndCreatedAt(db *BoltStore, oldID ID, newIdRootKey uint64,
+	newCreatedAt time.Time) error {
+
+	newId := IDFromMacRootKeyID(newIdRootKey)
+
+	if oldID == newId {
+		return fmt.Errorf("can't update session ID to the same ID: %s",
+			oldID)
+	}
+
+	return db.Update(func(tx *bbolt.Tx) error {
+		// Get the main session bucket.
+		sessionBkt, err := getBucket(tx, sessionBucketKey)
+		if err != nil {
+			return err
+		}
+
+		// Look up the session using the old ID.
+		sess, err := getSessionByID(sessionBkt, oldID)
+		if err != nil {
+			return err
+		}
+
+		// Update the session.
+		sess.ID = newId
+		sess.GroupID = newId
+		sess.MacaroonRootKey = newIdRootKey
+		sess.CreatedAt = newCreatedAt
+
+		// Write it back under the same key (local pubkey).
+		return putSession(sessionBkt, sess)
 	})
 }
