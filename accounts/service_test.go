@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/lightninglabs/lndclient"
-	"github.com/lightningnetwork/lnd/channeldb"
 	"github.com/lightningnetwork/lnd/clock"
 	invpkg "github.com/lightningnetwork/lnd/invoices"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
+	paymentsdb "github.com/lightningnetwork/lnd/payments/db"
 	"github.com/stretchr/testify/require"
 )
 
@@ -585,7 +585,7 @@ func TestAccountService(t *testing.T) {
 			require.ErrorIs(t, err, ErrAccBalanceInsufficient)
 
 			// Now signal that the payment was non-initiated.
-			r.paymentErrChan <- channeldb.ErrPaymentNotInitiated
+			r.paymentErrChan <- paymentsdb.ErrPaymentNotInitiated
 
 			// Once the error is handled in the service.TrackPayment
 			// goroutine, and therefore free up the 2000 in-flight
