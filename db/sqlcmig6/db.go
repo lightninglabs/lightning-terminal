@@ -3,6 +3,7 @@ package sqlcmig6
 import (
 	"context"
 	"database/sql"
+	"github.com/lightningnetwork/lnd/sqldb/v2"
 )
 
 type DBTX interface {
@@ -23,5 +24,25 @@ type Queries struct {
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	return &Queries{
 		db: tx,
+	}
+}
+
+type TxExecutor[T sqldb.BaseQuerier] struct {
+	*sqldb.TransactionExecutor[T]
+
+	*Queries
+}
+
+func NewTxExecutor(baseDB *sqldb.BaseDB,
+	queries *Queries) *TxExecutor[*Queries] {
+
+	executor := sqldb.NewTransactionExecutor(
+		baseDB, func(tx *sql.Tx) *Queries {
+			return queries.WithTx(tx)
+		},
+	)
+	return &TxExecutor[*Queries]{
+		TransactionExecutor: executor,
+		Queries:             queries,
 	}
 }
