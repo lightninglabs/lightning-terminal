@@ -652,7 +652,10 @@ func renameFile(fromFileName, toFileName string) {
 func (hn *HarnessNode) overrideFlagsAndBinary(backwardCompat map[string]string,
 	binary string, args []LitArgOption) (string, []LitArgOption) {
 
-	if backwardCompat == nil {
+	noopArg := WithLitArg("taproot-assets.channel.noop-htlcs", "")
+
+	if _, ok := backwardCompat[hn.Name()]; !ok {
+		args = append(args, noopArg)
 		return binary, args
 	}
 
