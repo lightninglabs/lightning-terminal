@@ -61,3 +61,7 @@ issues:
         - unused
         - deadcode
         - varcheck
+  exclude:
+    # Ignore the issue of having a non-constant string argument in a print
+    # statement.
+    - "non-constant format string"
