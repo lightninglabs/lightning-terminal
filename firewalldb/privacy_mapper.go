@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"maps"
 	"math/big"
 	"strconv"
 	"strings"
@@ -340,9 +341,7 @@ func (p *PrivacyMapPairs) Add(pairs map[string]string) error {
 	}
 
 	// In our second pass, we can add the new pairs to our set.
-	for realStr, pseudoStr := range pairs {
-		p.pairs[realStr] = pseudoStr
-	}
+	maps.Copy(p.pairs, pairs)
 
 	return nil
 }
