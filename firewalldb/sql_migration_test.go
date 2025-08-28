@@ -74,7 +74,7 @@ func TestFirewallDBMigration(t *testing.T) {
 	// The assertKvStoreMigrationResults function will currently assert that
 	// the migrated kv stores entries in the SQLDB match the original kv
 	// stores entries in the BoltDB.
-	assertKvStoreMigrationResults := func(t *testing.T, store *SQLDB,
+	assertKvStoreMigrationResults := func(t *testing.T, store *sqlc.Queries,
 		kvEntries []*kvEntry) {
 
 		var (
@@ -87,9 +87,7 @@ func TestFirewallDBMigration(t *testing.T) {
 		getRuleID := func(ruleName string) int64 {
 			ruleID, ok := ruleIDs[ruleName]
 			if !ok {
-				ruleID, err = store.db.GetRuleID(
-					ctx, ruleName,
-				)
+				ruleID, err = store.GetRuleID(ctx, ruleName)
 				require.NoError(t, err)
 
 				ruleIDs[ruleName] = ruleID
@@ -101,7 +99,7 @@ func TestFirewallDBMigration(t *testing.T) {
 		getGroupID := func(groupAlias []byte) int64 {
 			groupID, ok := groupIDs[string(groupAlias)]
 			if !ok {
-				groupID, err = store.db.GetSessionIDByAlias(
+				groupID, err = store.GetSessionIDByAlias(
 					ctx, groupAlias,
 				)
 				require.NoError(t, err)
@@ -115,7 +113,7 @@ func TestFirewallDBMigration(t *testing.T) {
 		getFeatureID := func(featureName string) int64 {
 			featureID, ok := featureIDs[featureName]
 			if !ok {
-				featureID, err = store.db.GetFeatureID(
+				featureID, err = store.GetFeatureID(
 					ctx, featureName,
 				)
 				require.NoError(t, err)
@@ -126,10 +124,10 @@ func TestFirewallDBMigration(t *testing.T) {
 			return featureID
 		}
 
-		// First we extract all migrated kv entries from the SQLDB,
+		// First we extract all migrated kv entries from the store,
 		// in order to be able to compare them to the original kv
 		// entries, to ensure that the migration was successful.
-		sqlKvEntries, err := store.db.ListAllKVStoresRecords(ctx)
+		sqlKvEntries, err := store.ListAllKVStoresRecords(ctx)
 		require.NoError(t, err)
 		require.Equal(t, len(kvEntries), len(sqlKvEntries))
 
@@ -145,7 +143,7 @@ func TestFirewallDBMigration(t *testing.T) {
 			ruleID := getRuleID(entry.ruleName)
 
 			if entry.groupAlias.IsNone() {
-				sqlVal, err := store.db.GetGlobalKVStoreRecord(
+				sqlVal, err := store.GetGlobalKVStoreRecord(
 					ctx,
 					sqlc.GetGlobalKVStoreRecordParams{
 						Key:    entry.key,
@@ -163,7 +161,7 @@ func TestFirewallDBMigration(t *testing.T) {
 				groupAlias := entry.groupAlias.UnwrapOrFail(t)
 				groupID := getGroupID(groupAlias[:])
 
-				v, err := store.db.GetGroupKVStoreRecord(
+				v, err := store.GetGroupKVStoreRecord(
 					ctx,
 					sqlc.GetGroupKVStoreRecordParams{
 						Key:    entry.key,
@@ -188,7 +186,7 @@ func TestFirewallDBMigration(t *testing.T) {
 					entry.featureName.UnwrapOrFail(t),
 				)
 
-				sqlVal, err := store.db.GetFeatureKVStoreRecord(
+				sqlVal, err := store.GetFeatureKVStoreRecord(
 					ctx,
 					sqlc.GetFeatureKVStoreRecordParams{
 						Key:    entry.key,
@@ -219,14 +217,14 @@ func TestFirewallDBMigration(t *testing.T) {
 	// BoltDB. It also asserts that the SQL DB does not contain any other
 	// privacy pairs than the expected ones.
 	assertPrivacyMapperMigrationResults := func(t *testing.T,
-		sqlStore *SQLDB, privPairs privacyPairs) {
+		sqlStore *sqlc.Queries, privPairs privacyPairs) {
 
 		var totalExpectedPairs, totalPairs int
 
 		// First assert that the SQLDB contains the expected privacy
 		// pairs.
 		for groupID, groupPairs := range privPairs {
-			storePairs, err := sqlStore.db.GetAllPrivacyPairs(
+			storePairs, err := sqlStore.GetAllPrivacyPairs(
 				ctx, groupID,
 			)
 			require.NoError(t, err)
@@ -246,14 +244,13 @@ func TestFirewallDBMigration(t *testing.T) {
 			}
 		}
 
-		// Then assert that SQLDB doesn't contain any other privacy
+		// Then assert that store doesn't contain any other privacy
 		// pairs than the expected ones.
-		queries := sqlc.NewForType(sqlStore, sqlStore.BackendType)
-		sessions, err := queries.ListSessions(ctx)
+		sessions, err := sqlStore.ListSessions(ctx)
 		require.NoError(t, err)
 
 		for _, dbSession := range sessions {
-			sessionPairs, err := sqlStore.db.GetAllPrivacyPairs(
+			sessionPairs, err := sqlStore.GetAllPrivacyPairs(
 				ctx, dbSession.ID,
 			)
 			if errors.Is(err, sql.ErrNoRows) {
@@ -272,7 +269,7 @@ func TestFirewallDBMigration(t *testing.T) {
 	// The assertMigrationResults asserts that the migrated entries in the
 	// firewall SQLDB match the expected results which should represent the
 	// original entries in the BoltDB.
-	assertMigrationResults := func(t *testing.T, sqlStore *SQLDB,
+	assertMigrationResults := func(t *testing.T, sqlStore *sqlc.Queries,
 		expRes *expectedResult) {
 
 		// Assert that the kv store migration results match the expected
@@ -400,7 +397,10 @@ func TestFirewallDBMigration(t *testing.T) {
 			require.NoError(t, err)
 
 			// Assert migration results.
-			assertMigrationResults(t, sqlStore, entries)
+			queries := sqlc.NewForType(
+				sqlStore, sqlStore.BackendType,
+			)
+			assertMigrationResults(t, queries, entries)
 		})
 	}
 }
