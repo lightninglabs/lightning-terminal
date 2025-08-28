@@ -54,6 +54,7 @@ func RPCErr(req *lnrpc.RPCMiddlewareRequest,
 	err error) (*lnrpc.RPCMiddlewareResponse, error) {
 
 	if err != nil {
+		//nolint:govet
 		return RPCErrString(req, err.Error())
 	}
 

@@ -431,6 +431,7 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 	var err error
 
 	accountServiceErrCallback := func(err error) {
+		//nolint:govet
 		g.statusMgr.SetErrored(
 			subservers.ACCOUNTS,
 			err.Error(),
@@ -605,6 +606,7 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 					"lnd: %v", err)
 				log.Errorf(errStr)
 
+				//nolint:govet
 				g.statusMgr.SetErrored(subservers.LND, errStr)
 				g.errQueue.ChanIn() <- err
 
@@ -1079,6 +1081,7 @@ func (g *LightningTerminal) startInternalSubServers(ctx context.Context,
 			log.Errorf("error starting account service: %v, "+
 				"disabling account service", err)
 
+			//nolint:govet
 			g.statusMgr.SetErrored(subservers.ACCOUNTS, err.Error())
 
 			closeAccountService()

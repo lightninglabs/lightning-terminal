@@ -119,12 +119,14 @@ func (s *Manager) StartIntegratedServers(lndClient lnrpc.LightningClient,
 		err := ss.startIntegrated(
 			lndClient, lndGrpc, withMacaroonService,
 			func(err error) {
+				//nolint:govet
 				s.statusServer.SetErrored(
 					ss.Name(), err.Error(),
 				)
 			},
 		)
 		if err != nil {
+			//nolint:govet
 			s.statusServer.SetErrored(ss.Name(), err.Error())
 			continue
 		}
@@ -146,6 +148,7 @@ func (s *Manager) ConnectRemoteSubServers() {
 
 		err := ss.connectRemote()
 		if err != nil {
+			//nolint:govet
 			s.statusServer.SetErrored(ss.Name(), err.Error())
 			continue
 		}
