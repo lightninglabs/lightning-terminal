@@ -124,8 +124,8 @@ func TestFirewallDBMigration(t *testing.T) {
 		t.Skipf("Skipping Firewall DB migration test for kvdb build")
 	}
 
-	makeSQLDB := func(t *testing.T, sStore session.Store) (*SQLDB,
-		*sqlcmig6.TxExecutor[*sqlcmig6.Queries]) {
+	makeSQLDB := func(t *testing.T,
+		sStore session.Store) *sqlcmig6.TxExecutor[*sqlcmig6.Queries] {
 
 		testDBStore := NewTestDBWithSessions(t, sStore, clock)
 
@@ -136,7 +136,7 @@ func TestFirewallDBMigration(t *testing.T) {
 
 		queries := sqlcmig6.NewForType(baseDB, baseDB.BackendType)
 
-		return store, sqlcmig6.NewTxExecutor(baseDB, queries)
+		return sqlcmig6.NewTxExecutor(baseDB, queries)
 	}
 
 	// The assertKvStoreMigrationResults function will currently assert that
@@ -567,24 +567,26 @@ func TestFirewallDBMigration(t *testing.T) {
 
 			// Create the SQL store that we will migrate the data
 			// to.
-			sqlStore, txEx := makeSQLDB(t, sessionsStore)
+			txEx := makeSQLDB(t, sessionsStore)
 
 			// Perform the migration.
 			err = txEx.ExecTx(ctx, sqldb.WriteTxOpt(),
 				func(tx *sqlcmig6.Queries) error {
-					return MigrateFirewallDBToSQL(
+					err = MigrateFirewallDBToSQL(
 						ctx, firewallStore.DB, tx,
 						rootKeyStore.getAllRootKeys(),
 					)
+					if err != nil {
+						return err
+					}
+
+					// Assert migration results.
+					assertMigrationResults(t, tx, entries)
+
+					return nil
 				}, sqldb.NoOpReset,
 			)
 			require.NoError(t, err)
-
-			// Assert migration results.
-			queries := sqlcmig6.NewForType(
-				sqlStore, sqlStore.BackendType,
-			)
-			assertMigrationResults(t, queries, entries)
 		})
 	}
 }
