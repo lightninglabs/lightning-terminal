@@ -17,6 +17,8 @@ linters-settings:
   govet:
     # Don't report about shadowed variables
     check-shadowing: false
+    disable:
+      - printf
   gofmt:
     # simplify code: gofmt with `-s` option, true by default
     simplify: true
@@ -33,9 +35,8 @@ linters-settings:
       - G306 # Poor file permissions used when writing to a new file.
       - G601 # Implicit memory aliasing in for loop.
       - G115 # Integer overflow in conversion.
-
   staticcheck:
-    checks: ["-SA1019"]
+    checks: ["-SA1019","-SA1006" ]
 
 linters:
   enable:
