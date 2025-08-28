@@ -11,6 +11,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/db/sqlc"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/fn"
+	"github.com/lightningnetwork/lnd/sqldb/v2"
 )
 
 // SQLKVStoreQueries is a subset of the sqlc.Queries interface that can be
@@ -30,6 +31,7 @@ type SQLKVStoreQueries interface {
 	UpdateGlobalKVStoreRecord(ctx context.Context, arg sqlc.UpdateGlobalKVStoreRecordParams) error
 	UpdateGroupKVStoreRecord(ctx context.Context, arg sqlc.UpdateGroupKVStoreRecordParams) error
 	InsertKVStoreRecord(ctx context.Context, arg sqlc.InsertKVStoreRecordParams) error
+	ListAllKVStoresRecords(ctx context.Context) ([]sqlc.Kvstore, error)
 	DeleteAllTempKVStores(ctx context.Context) error
 	GetOrInsertFeatureID(ctx context.Context, name string) (int64, error)
 	GetOrInsertRuleID(ctx context.Context, name string) (int64, error)
@@ -45,7 +47,7 @@ func (s *SQLDB) DeleteTempKVStores(ctx context.Context) error {
 
 	return s.db.ExecTx(ctx, &writeTxOpts, func(tx SQLQueries) error {
 		return tx.DeleteAllTempKVStores(ctx)
-	})
+	}, sqldb.NoOpReset)
 }
 
 // GetKVStores constructs a new rules.KVStores in a namespace defined by the

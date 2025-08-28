@@ -1,4 +1,4 @@
-package sqlc
+package sqlcmig6
 
 import (
 	"context"
@@ -46,3 +46,5 @@ type CustomQueries interface {
 	// Backend returns the type of the database backend used.
 	Backend() sqldb.BackendType
 }
+
+var _ CustomQueries = (*Queries)(nil)
