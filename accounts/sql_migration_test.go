@@ -2,18 +2,17 @@ package accounts
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"testing"
 	"time"
 
-	"github.com/lightninglabs/lightning-terminal/db"
+	"github.com/lightninglabs/lightning-terminal/db/sqlcmig6"
 	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
 	"github.com/lightningnetwork/lnd/lnwire"
-	"github.com/lightningnetwork/lnd/sqldb"
+	"github.com/lightningnetwork/lnd/sqldb/v2"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/rand"
 	"pgregory.net/rapid"
@@ -36,7 +35,7 @@ func TestAccountStoreMigration(t *testing.T) {
 	}
 
 	makeSQLDB := func(t *testing.T) (*SQLStore,
-		*db.TransactionExecutor[SQLQueries]) {
+		*sqlcmig6.TxExecutor[*sqlcmig6.Queries]) {
 
 		testDBStore := NewTestDB(t, clock)
 
@@ -45,13 +44,9 @@ func TestAccountStoreMigration(t *testing.T) {
 
 		baseDB := store.BaseDB
 
-		genericExecutor := db.NewTransactionExecutor(
-			baseDB, func(tx *sql.Tx) SQLQueries {
-				return baseDB.WithTx(tx)
-			},
-		)
+		queries := sqlcmig6.NewForType(baseDB, baseDB.BackendType)
 
-		return store, genericExecutor
+		return store, sqlcmig6.NewTxExecutor(baseDB, queries)
 	}
 
 	assertMigrationResults := func(t *testing.T, sqlStore *SQLStore,
@@ -339,11 +334,11 @@ func TestAccountStoreMigration(t *testing.T) {
 			// Perform the migration.
 			err = txEx.ExecTx(
 				ctx, sqldb.WriteTxOpt(),
-				func(tx SQLQueries) error {
+				func(tx *sqlcmig6.Queries) error {
 					return MigrateAccountStoreToSQL(
 						ctx, kvStore.db, tx,
 					)
-				},
+				}, sqldb.NoOpReset,
 			)
 			require.NoError(t, err)
 
