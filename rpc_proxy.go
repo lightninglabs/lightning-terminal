@@ -364,6 +364,7 @@ func (p *rpcProxy) makeDirector(allowLitRPC bool) func(ctx context.Context,
 		// gRPC server.
 		handled, conn, err := p.subServerMgr.GetRemoteConn(requestURI)
 		if err != nil {
+			//nolint:govet
 			return outCtx, nil, status.Errorf(
 				codes.Unavailable, err.Error(),
 			)
