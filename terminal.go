@@ -1414,6 +1414,9 @@ func (g *LightningTerminal) buildAuxComponents(
 		AuxContractResolver: fn.Some[lnwallet.AuxContractResolver](
 			tapd,
 		),
+		AuxChannelNegotiator: fn.Some[lnwallet.AuxChannelNegotiator](
+			tapd,
+		),
 	}, nil
 }
 
