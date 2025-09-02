@@ -91,32 +91,35 @@ func TestSessionsStoreMigration(t *testing.T) {
 		populateDB func(
 			t *testing.T, kvStore *BoltStore,
 			accountStore accounts.Store,
-		)
+		) []*Session
 	}{
 		{
 			name: "empty",
 			populateDB: func(t *testing.T, store *BoltStore,
-				_ accounts.Store) {
+				_ accounts.Store) []*Session {
 
 				// Don't populate the DB.
+				return []*Session{}
 			},
 		},
 		{
 			name: "one session no options",
 			populateDB: func(t *testing.T, store *BoltStore,
-				_ accounts.Store) {
+				_ accounts.Store) []*Session {
 
 				_, err := store.NewSession(
 					ctx, "test", TypeMacaroonAdmin,
 					time.Unix(1000, 0), "",
 				)
 				require.NoError(t, err)
+
+				return getBoltStoreSessions(t, store)
 			},
 		},
 		{
 			name: "multiple sessions no options",
 			populateDB: func(t *testing.T, store *BoltStore,
-				_ accounts.Store) {
+				_ accounts.Store) []*Session {
 
 				_, err := store.NewSession(
 					ctx, "session1", TypeMacaroonAdmin,
@@ -135,12 +138,14 @@ func TestSessionsStoreMigration(t *testing.T) {
 					time.Unix(1000, 0), "",
 				)
 				require.NoError(t, err)
+
+				return getBoltStoreSessions(t, store)
 			},
 		},
 		{
 			name: "one session with one privacy flag",
 			populateDB: func(t *testing.T, store *BoltStore,
-				_ accounts.Store) {
+				_ accounts.Store) []*Session {
 
 				_, err := store.NewSession(
 					ctx, "test", TypeMacaroonAdmin,
@@ -148,12 +153,14 @@ func TestSessionsStoreMigration(t *testing.T) {
 					WithPrivacy(PrivacyFlags{ClearPubkeys}),
 				)
 				require.NoError(t, err)
+
+				return getBoltStoreSessions(t, store)
 			},
 		},
 		{
 			name: "one session with multiple privacy flags",
 			populateDB: func(t *testing.T, store *BoltStore,
-				_ accounts.Store) {
+				_ accounts.Store) []*Session {
 
 				_, err := store.NewSession(
 					ctx, "test", TypeMacaroonAdmin,
@@ -164,12 +171,14 @@ func TestSessionsStoreMigration(t *testing.T) {
 					}),
 				)
 				require.NoError(t, err)
+
+				return getBoltStoreSessions(t, store)
 			},
 		},
 		{
 			name: "one session with a feature config",
 			populateDB: func(t *testing.T, store *BoltStore,
-				_ accounts.Store) {
+				_ accounts.Store) []*Session {
 
 				featureConfig := map[string][]byte{
 					"AutoFees":      {1, 2, 3, 4},
@@ -182,12 +191,14 @@ func TestSessionsStoreMigration(t *testing.T) {
 					WithFeatureConfig(featureConfig),
 				)
 				require.NoError(t, err)
+
+				return getBoltStoreSessions(t, store)
 			},
 		},
 		{
 			name: "one session with dev server",
 			populateDB: func(t *testing.T, store *BoltStore,
-				_ accounts.Store) {
+				_ accounts.Store) []*Session {
 
 				_, err := store.NewSession(
 					ctx, "test", TypeMacaroonAdmin,
@@ -195,12 +206,14 @@ func TestSessionsStoreMigration(t *testing.T) {
 					WithDevServer(),
 				)
 				require.NoError(t, err)
+
+				return getBoltStoreSessions(t, store)
 			},
 		},
 		{
 			name: "one session with macaroon recipe",
 			populateDB: func(t *testing.T, store *BoltStore,
-				_ accounts.Store) {
+				_ accounts.Store) []*Session {
 
 				// this test uses caveats & perms from the
 				// tlv_test.go
@@ -210,12 +223,14 @@ func TestSessionsStoreMigration(t *testing.T) {
 					WithMacaroonRecipe(caveats, perms),
 				)
 				require.NoError(t, err)
+
+				return getBoltStoreSessions(t, store)
 			},
 		},
 		{
 			name: "one session with macaroon recipe nil caveats",
 			populateDB: func(t *testing.T, store *BoltStore,
-				_ accounts.Store) {
+				_ accounts.Store) []*Session {
 
 				// this test uses perms from the tlv_test.go
 				_, err := store.NewSession(
@@ -224,12 +239,14 @@ func TestSessionsStoreMigration(t *testing.T) {
 					WithMacaroonRecipe(nil, perms),
 				)
 				require.NoError(t, err)
+
+				return getBoltStoreSessions(t, store)
 			},
 		},
 		{
 			name: "one session with macaroon recipe nil perms",
 			populateDB: func(t *testing.T, store *BoltStore,
-				_ accounts.Store) {
+				_ accounts.Store) []*Session {
 
 				// this test uses caveats from the tlv_test.go
 				_, err := store.NewSession(
@@ -238,12 +255,14 @@ func TestSessionsStoreMigration(t *testing.T) {
 					WithMacaroonRecipe(caveats, nil),
 				)
 				require.NoError(t, err)
+
+				return getBoltStoreSessions(t, store)
 			},
 		},
 		{
 			name: "macaroon recipe with nil perms and caveats",
 			populateDB: func(t *testing.T, store *BoltStore,
-				_ accounts.Store) {
+				_ accounts.Store) []*Session {
 
 				_, err := store.NewSession(
 					ctx, "test", TypeMacaroonAdmin,
@@ -251,12 +270,14 @@ func TestSessionsStoreMigration(t *testing.T) {
 					WithMacaroonRecipe(nil, nil),
 				)
 				require.NoError(t, err)
+
+				return getBoltStoreSessions(t, store)
 			},
 		},
 		{
 			name: "one session with a linked account",
 			populateDB: func(t *testing.T, store *BoltStore,
-				acctStore accounts.Store) {
+				acctStore accounts.Store) []*Session {
 
 				// Create an account with balance
 				acct, err := acctStore.NewAccount(
@@ -289,12 +310,14 @@ func TestSessionsStoreMigration(t *testing.T) {
 					WithMacaroonRecipe(sessCaveats, nil),
 				)
 				require.NoError(t, err)
+
+				return getBoltStoreSessions(t, store)
 			},
 		},
 		{
 			name: "linked session",
 			populateDB: func(t *testing.T, store *BoltStore,
-				_ accounts.Store) {
+				_ accounts.Store) []*Session {
 
 				// First create the initial session for the
 				// group.
@@ -325,6 +348,117 @@ func TestSessionsStoreMigration(t *testing.T) {
 					WithLinkedGroupID(&sess1.ID),
 				)
 				require.NoError(t, err)
+
+				return getBoltStoreSessions(t, store)
+			},
+		},
+		{
+			name: "multiple sessions with the same ID",
+			populateDB: func(t *testing.T, store *BoltStore,
+				_ accounts.Store) []*Session {
+
+				// We first add one session which has no other
+				// session with same ID, to test that this is
+				// correctly migrated, and included in the
+				// migration result.
+				sess1, err := store.NewSession(
+					ctx, "session1", TypeMacaroonAdmin,
+					time.Unix(1000, 0), "",
+				)
+				require.NoError(t, err)
+
+				sess2, err := store.NewSession(
+					ctx, "session2", TypeMacaroonAdmin,
+					time.Unix(1000, 0), "",
+				)
+				require.NoError(t, err)
+
+				// Then add two sessions with the same ID, to
+				// test that only the latest session is included
+				// in the migration result.
+				sess3, err := store.NewSession(
+					ctx, "session3", TypeMacaroonAdmin,
+					time.Unix(1000, 0), "",
+				)
+				require.NoError(t, err)
+
+				// During the addition of the session linking
+				// functionality, logic was added in the
+				// NewSession function to ensure we can't create
+				// multiple sessions with the same ID. Therefore
+				// we need to manually override the ID of
+				// the second session to match the first
+				// session, to simulate such a scenario that
+				// could occur prior to the addition of that
+				// logic.
+				// We also need to update the CreatedAt time
+				// as the execution of this function is too
+				// fast for the CreatedAt time of sess2 and
+				// sess3 to differ.
+				err = updateSessionIDAndCreatedAt(
+					store, sess3.ID, sess2.MacaroonRootKey,
+					sess2.CreatedAt.Add(time.Minute),
+				)
+				require.NoError(t, err)
+
+				// Finally, we add three sessions with the same
+				// ID, to test we can handle more than two
+				// sessions with the same ID.
+				sess4, err := store.NewSession(
+					ctx, "session4", TypeMacaroonAdmin,
+					time.Unix(1000, 0), "",
+				)
+				require.NoError(t, err)
+
+				sess5, err := store.NewSession(
+					ctx, "session5", TypeMacaroonAdmin,
+					time.Unix(1000, 0), "",
+				)
+				require.NoError(t, err)
+
+				sess6, err := store.NewSession(
+					ctx, "session6", TypeMacaroonAdmin,
+					time.Unix(1000, 0), "",
+				)
+				require.NoError(t, err)
+
+				err = updateSessionIDAndCreatedAt(
+					store, sess5.ID, sess4.MacaroonRootKey,
+					sess4.CreatedAt.Add(time.Minute),
+				)
+				require.NoError(t, err)
+
+				err = updateSessionIDAndCreatedAt(
+					store, sess6.ID, sess4.MacaroonRootKey,
+					sess4.CreatedAt.Add(time.Minute*2),
+				)
+				require.NoError(t, err)
+
+				// Now fetch the updated sessions from the kv
+				// store, so that we are sure that the new IDs
+				// have really been persisted in the DB.
+				kvSessions := getBoltStoreSessions(t, store)
+				require.Len(t, kvSessions, 6)
+
+				getSessionByName := func(name string) *Session {
+					for _, session := range kvSessions {
+						if session.Label == name {
+							return session
+						}
+					}
+
+					t.Fatalf("session %s not found", name)
+					return nil
+				}
+
+				// When multiple sessions with the same ID
+				// exist, we expect only the session with the
+				// latest creation time to be migrated.
+				return []*Session{
+					getSessionByName(sess1.Label),
+					getSessionByName(sess3.Label),
+					getSessionByName(sess6.Label),
+				}
 			},
 		},
 		{
@@ -355,15 +489,7 @@ func TestSessionsStoreMigration(t *testing.T) {
 
 			// populate the kvStore with the test data, in
 			// preparation for the test.
-			test.populateDB(t, kvStore, accountStore)
-
-			// Before we migrate the sessions, we fetch all sessions
-			// from the kv store, to ensure that the migration
-			// function doesn't mutate the bbolt store sessions.
-			// We can then compare them to the sql sessions after
-			// the migration has been executed.
-			kvSessions, err := kvStore.ListAllSessions(ctx)
-			require.NoError(t, err)
+			kvSessions := test.populateDB(t, kvStore, accountStore)
 
 			// Proceed to create the sql store and execute the
 			// migration.
@@ -392,7 +518,7 @@ func TestSessionsStoreMigration(t *testing.T) {
 // them will contain up to 10 linked sessions. The rest of the session will have
 // the rest of the session options randomized.
 func randomizedSessions(t *testing.T, kvStore *BoltStore,
-	accountsStore accounts.Store) {
+	accountsStore accounts.Store) []*Session {
 
 	ctx := context.Background()
 
@@ -547,6 +673,8 @@ func randomizedSessions(t *testing.T, kvStore *BoltStore,
 		err = shiftStateUnsafe(kvStore, activeSess.ID, lastState(i))
 		require.NoError(t, err)
 	}
+
+	return getBoltStoreSessions(t, kvStore)
 }
 
 // macaroonType returns a macaroon type based on the given index by taking the
@@ -741,6 +869,16 @@ func randomString(n int) string {
 	return string(b)
 }
 
+// getBoltStoreSessions is a helper function that fetches all sessions
+// from the kv store, while already asserting that there no error occurs
+// when retrieving the sessions.
+func getBoltStoreSessions(t *testing.T, db *BoltStore) []*Session {
+	kvSessions, err := getBBoltSessions(db.DB)
+	require.NoError(t, err)
+
+	return kvSessions
+}
+
 // shiftStateUnsafe updates the state of the session with the given ID to the
 // "dest" state, without checking if the state transition is legal.
 //
@@ -772,5 +910,46 @@ func shiftStateUnsafe(db *BoltStore, id ID, dest State) error {
 		}
 
 		return putSession(sessionBucket, session)
+	})
+}
+
+// updateSessionIDAndCreatedAt can be used to update the ID, the GroupID,
+// the MacaroonRootKey and the CreatedAt time a session in the BoltStore.
+//
+// NOTE: this function should only be used for testing purposes. Also note that
+// we pass the macaroon root key to set the new session ID, as the
+// DeserializeSession function derives the session ID from the
+// session.MacaroonRootKey.
+func updateSessionIDAndCreatedAt(db *BoltStore, oldID ID, newIdRootKey uint64,
+	newCreatedAt time.Time) error {
+
+	newId := IDFromMacRootKeyID(newIdRootKey)
+
+	if oldID == newId {
+		return fmt.Errorf("can't update session ID to the same ID: %s",
+			oldID)
+	}
+
+	return db.Update(func(tx *bbolt.Tx) error {
+		// Get the main session bucket.
+		sessionBkt, err := getBucket(tx, sessionBucketKey)
+		if err != nil {
+			return err
+		}
+
+		// Look up the session using the old ID.
+		sess, err := getSessionByID(sessionBkt, oldID)
+		if err != nil {
+			return err
+		}
+
+		// Update the session.
+		sess.ID = newId
+		sess.GroupID = newId
+		sess.MacaroonRootKey = newIdRootKey
+		sess.CreatedAt = newCreatedAt
+
+		// Write it back under the same key (local pubkey).
+		return putSession(sessionBkt, sess)
 	})
 }
