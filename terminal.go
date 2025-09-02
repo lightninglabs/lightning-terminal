@@ -447,33 +447,15 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 		return fmt.Errorf("could not create network directory: %v", err)
 	}
 
-	g.stores, err = NewStores(g.cfg, clock.NewDefaultClock())
-	if err != nil {
-		return fmt.Errorf("could not create stores: %v", err)
-	}
-
-	if err := g.stores.firewall.Start(ctx); err != nil {
-		return fmt.Errorf("could not start firewall DB: %v", err)
-	}
-
-	g.accountService, err = accounts.NewService(
-		g.stores.accounts, accountServiceErrCallback,
-	)
-	if err != nil {
-		return fmt.Errorf("error creating account service: %v", err)
-	}
-
-	superMacBaker := func(ctx context.Context, rootKeyID uint64,
-		perms []bakery.Op, caveats []macaroon.Caveat) (string, error) {
-
-		return litmac.BakeSuperMacaroon(
-			ctx, g.basicClient, rootKeyID, perms, caveats,
-		)
-	}
-
-	g.accountRpcServer = accounts.NewRPCServer(
-		g.accountService, superMacBaker,
-	)
+	// We create a reference to the `accountRpcServer` here before starting
+	// it and prior to setting up the LND connection. This is because when
+	// the LND connection is set up for an integrated LND instance, LND will
+	// call litd's `RegisterGrpcSubserver` function during the setup of the
+	// connection.
+	// That function calls `registerSubDaemonGrpcServers` which requires
+	// that the `accountRpcServer` pointer exist, to not nil pointer panic
+	// when requests get passed to the server.
+	g.accountRpcServer = accounts.NewRPCServer()
 
 	g.ruleMgrs = rules.NewRuleManagerSet()
 
@@ -506,39 +488,11 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 		}
 	}
 
-	g.sessionRpcServer, err = newSessionRPCServer(&sessionRpcServerConfig{
-		db:        g.stores.sessions,
-		basicAuth: g.rpcProxy.basicAuth,
-		grpcOptions: []grpc.ServerOption{
-			grpc.CustomCodec(grpcProxy.Codec()), // nolint: staticcheck,
-			grpc.ChainStreamInterceptor(
-				g.rpcProxy.StreamServerInterceptor,
-			),
-			grpc.ChainUnaryInterceptor(
-				g.rpcProxy.UnaryServerInterceptor,
-			),
-			grpc.UnknownServiceHandler(
-				grpcProxy.TransparentHandler(
-					// Don't allow calls to litrpc.
-					g.rpcProxy.makeDirector(false),
-				),
-			),
-		},
-		registerGrpcServers: func(server *grpc.Server) {
-			g.registerSubDaemonGrpcServers(server, true)
-		},
-		superMacBaker:           superMacBaker,
-		firstConnectionDeadline: g.cfg.FirstLNCConnDeadline,
-		permMgr:                 g.permsMgr,
-		actionsDB:               g.stores.firewall,
-		autopilot:               g.autopilotClient,
-		ruleMgrs:                g.ruleMgrs,
-		privMap:                 g.stores.firewall,
-	})
-	if err != nil {
-		return fmt.Errorf("could not create new session rpc "+
-			"server: %v", err)
-	}
+	// Similar to the init of the `accountRpcServer` reference above, we
+	// create a reference to the `sessionRpcServer` here before setting up
+	// the LND connection. See the comment above for the `accountRpcServer`
+	// to understand why this is necessary.
+	g.sessionRpcServer = newSessionRPCServer()
 
 	// Call the "real" main in a nested manner so the defers will properly
 	// be executed in the case of a graceful shutdown.
@@ -597,6 +551,9 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 		go func() {
 			defer g.wg.Done()
 
+			// Note that LND will call litd's RegisterGrpcSubserver
+			// function during the execution of this, as `g` is
+			// referenced in the passed `implCfg`
 			err := lnd.Main(g.cfg.Lnd, lisCfg, implCfg, interceptor)
 			if e, ok := err.(*flags.Error); err != nil &&
 				(!ok || e.Type != flags.ErrHelp) {
@@ -759,11 +716,49 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 		}
 	}
 
-	// Set up all the LND clients required by LiT.
-	err = g.setUpLNDClients(ctx, lndQuit)
+	// Since we are now connected to LND, we can now set up a basic LND
+	// client. Note this doesn't require LND to be synced, but can still be
+	// used to fetch info from LND such as its macaroons. Therefore, it's ok
+	// set it up prior to setting up the stores and starting the other RPC
+	// servers, as the setup will be fast.
+	err = g.setupBasicLNDClient(ctx, lndQuit)
 	if err != nil {
 		g.statusMgr.SetErrored(
-			subservers.LND, "could not set up LND clients: %v", err,
+			subservers.LND,
+			"could not to set up a basic LND client: %v", err,
+		)
+
+		return fmt.Errorf("could not start LND")
+	}
+
+	g.stores, err = NewStores(g.cfg, clock.NewDefaultClock())
+	if err != nil {
+		return fmt.Errorf("could not create stores: %v", err)
+	}
+
+	if err := g.stores.firewall.Start(ctx); err != nil {
+		return fmt.Errorf("could not start firewall DB: %v", err)
+	}
+
+	g.accountService, err = accounts.NewService(
+		g.stores.accounts, accountServiceErrCallback,
+	)
+	if err != nil {
+		return fmt.Errorf("error creating account service: %v", err)
+	}
+
+	if err != nil {
+		return fmt.Errorf("could not create new session rpc "+
+			"server: %v", err)
+	}
+
+	// Set up a full LND client. With this, we now have all LND clients
+	// needed for LiT to be fully started.
+	err = g.setupFullLNDClient(ctx, lndQuit)
+	if err != nil {
+		g.statusMgr.SetErrored(
+			subservers.LND,
+			"could not to set up a full LND client: %v", err,
 		)
 
 		return fmt.Errorf("could not start LND")
@@ -819,13 +814,35 @@ func (g *LightningTerminal) basicLNDClient() (lnrpc.LightningClient, error) {
 	return g.basicClient, nil
 }
 
-// setUpLNDClients sets up the various LND clients required by LiT.
-func (g *LightningTerminal) setUpLNDClients(ctx context.Context,
+// checkRunning checks if we should continue running for the duration of the
+// defaultStartupTimeout, or else returns an error indicating why a shut-down is
+// needed.
+func (g *LightningTerminal) checkRunning(ctx context.Context,
+	lndQuit chan struct{}) error {
+
+	select {
+	case err := <-g.errQueue.ChanOut():
+		return fmt.Errorf("error from subsystem: %v", err)
+
+	case <-lndQuit:
+		return fmt.Errorf("LND has stopped")
+
+	case <-ctx.Done():
+		return ctx.Err()
+
+	case <-time.After(g.cfg.LndConnectInterval):
+		return nil
+	}
+}
+
+// setupBasicLNDClient sets up a basic LND client that can be used to connect to
+// LND without requiring LND to be fully synced. Since this client is only a
+// basic client, not all of LNDs functionality is available through it.
+func (g *LightningTerminal) setupBasicLNDClient(ctx context.Context,
 	lndQuit chan struct{}) error {
 
 	var (
 		err           error
-		insecure      bool
 		clientOptions []lndclient.BasicClientOption
 	)
 
@@ -840,36 +857,13 @@ func (g *LightningTerminal) setUpLNDClients(ctx context.Context,
 	// If we're in integrated mode, we can retrieve the macaroon string
 	// from lnd directly, rather than grabbing it from disk.
 	if g.cfg.LndMode == ModeIntegrated {
-		// Set to true in integrated mode, since we will not require tls
-		// when communicating with lnd via a bufconn.
-		insecure = true
 		clientOptions = append(clientOptions, lndclient.Insecure())
-	}
-
-	// checkRunning checks if we should continue running for the duration of
-	// the defaultStartupTimeout, or else returns an error indicating why
-	// a shut-down is needed.
-	checkRunning := func() error {
-		select {
-		case err := <-g.errQueue.ChanOut():
-			return fmt.Errorf("error from subsystem: %v", err)
-
-		case <-lndQuit:
-			return fmt.Errorf("LND has stopped")
-
-		case <-ctx.Done():
-			return ctx.Err()
-
-		case <-time.After(g.cfg.LndConnectInterval):
-			return nil
-		}
 	}
 
 	// The main RPC listener of lnd might need some time to start, it could
 	// be that we run into a connection refused a few times. We use the
 	// basic client connection to find out if the RPC server is started yet
-	// because that doesn't do anything else than just connect. We'll check
-	// if lnd is also ready to be used in the next step.
+	// because that doesn't do anything else than just connect.
 	log.Infof("Connecting basic lnd client")
 
 	for {
@@ -891,7 +885,7 @@ func (g *LightningTerminal) setUpLNDClients(ctx context.Context,
 			"Error when setting up basic LND Client: %v", err,
 		)
 
-		err = checkRunning()
+		err = g.checkRunning(ctx, lndQuit)
 		if err != nil {
 			return err
 		}
@@ -914,12 +908,34 @@ func (g *LightningTerminal) setUpLNDClients(ctx context.Context,
 		g.cfg.statelessInitMode = macService.StatelessInit
 	}
 
-	// Now we know that the connection itself is ready. But we also need to
-	// wait for two things: The chain notifier to be ready and the lnd
-	// wallet being fully synced to its chain backend. The chain notifier
-	// will always be ready first so if we instruct the lndclient to wait
-	// for the wallet sync, we should be fully ready to start all our
-	// subservers. This will just block until lnd signals readiness.
+	return nil
+}
+
+// setupFullLNDClient connects a up a full LND client to LND. Note that the
+// setup of this client will block until LND is fully synced and unlocked.
+func (g *LightningTerminal) setupFullLNDClient(ctx context.Context,
+	lndQuit chan struct{}) error {
+
+	var (
+		err      error
+		insecure bool
+	)
+
+	host, network, tlsPath, macPath, macData := g.cfg.lndConnectParams()
+
+	if g.cfg.LndMode == ModeIntegrated {
+		// Ssince we will not require tls when communicating with lnd
+		// via a bufconn in integrated mode, we set the insecure flag
+		// to true.
+		insecure = true
+	}
+
+	// When setting up a full LND client, we we need to wait for two things:
+	// The chain notifier to be ready and the lnd wallet being fully synced
+	// to its chain backend. The chain notifier will always be ready first
+	// so if we instruct the lndclient to wait for the wallet sync, we
+	// should be fully ready to start all our subservers. This will just
+	// block until lnd signals readiness.
 	log.Infof("Connecting full lnd client")
 	for {
 		g.lndClient, err = lndclient.NewLndServices(
@@ -952,7 +968,7 @@ func (g *LightningTerminal) setUpLNDClients(ctx context.Context,
 			err,
 		)
 
-		err = checkRunning()
+		err = g.checkRunning(ctx, lndQuit)
 		if err != nil {
 			return err
 		}
@@ -1025,6 +1041,18 @@ func (g *LightningTerminal) startInternalSubServers(ctx context.Context,
 	}
 	g.macaroonServiceStarted = true
 
+	superMacBaker := func(ctx context.Context, rootKeyID uint64,
+		perms []bakery.Op, caveats []macaroon.Caveat) (string, error) {
+
+		return litmac.BakeSuperMacaroon(
+			ctx, g.basicClient, rootKeyID, perms, caveats,
+		)
+	}
+
+	log.Infof("Starting LiT accounts server")
+
+	g.accountRpcServer.Start(g.accountService, superMacBaker)
+
 	if !g.cfg.Autopilot.Disable {
 		withLndVersion := func(cfg *autopilotserver.Config) {
 			cfg.LndVersion = autopilotserver.Version{
@@ -1042,7 +1070,38 @@ func (g *LightningTerminal) startInternalSubServers(ctx context.Context,
 	}
 
 	log.Infof("Starting LiT session server")
-	if err = g.sessionRpcServer.start(ctx); err != nil {
+
+	sessionCfg := &sessionRpcServerConfig{
+		db:        g.stores.sessions,
+		basicAuth: g.rpcProxy.basicAuth,
+		grpcOptions: []grpc.ServerOption{
+			grpc.CustomCodec(grpcProxy.Codec()), // nolint: staticcheck,
+			grpc.ChainStreamInterceptor(
+				g.rpcProxy.StreamServerInterceptor,
+			),
+			grpc.ChainUnaryInterceptor(
+				g.rpcProxy.UnaryServerInterceptor,
+			),
+			grpc.UnknownServiceHandler(
+				grpcProxy.TransparentHandler(
+					// Don't allow calls to litrpc.
+					g.rpcProxy.makeDirector(false),
+				),
+			),
+		},
+		registerGrpcServers: func(server *grpc.Server) {
+			g.registerSubDaemonGrpcServers(server, true)
+		},
+		superMacBaker:           superMacBaker,
+		firstConnectionDeadline: g.cfg.FirstLNCConnDeadline,
+		permMgr:                 g.permsMgr,
+		actionsDB:               g.stores.firewall,
+		autopilot:               g.autopilotClient,
+		ruleMgrs:                g.ruleMgrs,
+		privMap:                 g.stores.firewall,
+	}
+
+	if err = g.sessionRpcServer.start(ctx, sessionCfg); err != nil {
 		return err
 	}
 	g.sessionRpcServerStarted = true
