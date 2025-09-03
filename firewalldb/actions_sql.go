@@ -35,6 +35,7 @@ type SQLActionQueries interface {
 	SetActionState(ctx context.Context, arg sqlc.SetActionStateParams) error
 	ListActions(ctx context.Context, arg sqlc.ListActionsParams) ([]sqlc.Action, error)
 	CountActions(ctx context.Context, arg sqlc.ActionQueryParams) (int64, error)
+	GetAction(ctx context.Context, id int64) (sqlc.Action, error)
 }
 
 // sqlActionLocator helps us find an action in the SQL DB.
