@@ -24,6 +24,7 @@ type Querier interface {
 	GetAccountIndex(ctx context.Context, name string) (int64, error)
 	GetAccountInvoice(ctx context.Context, arg GetAccountInvoiceParams) (AccountInvoice, error)
 	GetAccountPayment(ctx context.Context, arg GetAccountPaymentParams) (AccountPayment, error)
+	GetAction(ctx context.Context, id int64) (Action, error)
 	GetAliasBySessionID(ctx context.Context, id int64) ([]byte, error)
 	GetAllPrivacyPairs(ctx context.Context, groupID int64) ([]GetAllPrivacyPairsRow, error)
 	GetFeatureID(ctx context.Context, name string) (int64, error)
