@@ -39,6 +39,7 @@ var (
 type expectedResult struct {
 	kvEntries []*kvEntry
 	privPairs privacyPairs
+	actions   []*Action
 }
 
 // TestFirewallDBMigration tests the migration of firewalldb from a bolt
@@ -306,6 +307,7 @@ func TestFirewallDBMigration(t *testing.T) {
 				return &expectedResult{
 					kvEntries: []*kvEntry{},
 					privPairs: make(privacyPairs),
+					actions:   []*Action{},
 				}
 			},
 		},
@@ -545,6 +547,7 @@ func allEntryCombinations(t *testing.T, ctx context.Context, boltDB *BoltDB,
 	return &expectedResult{
 		kvEntries: result,
 		privPairs: make(privacyPairs),
+		actions:   []*Action{},
 	}
 }
 
@@ -594,6 +597,7 @@ func insertTempAndPermEntry(t *testing.T, ctx context.Context,
 		kvEntries: []*kvEntry{tempKvEntry, permKvEntry},
 		// No privacy pairs are inserted in this test.
 		privPairs: make(privacyPairs),
+		actions:   []*Action{},
 	}
 }
 
@@ -758,6 +762,7 @@ func randomKVEntries(t *testing.T, ctx context.Context,
 		kvEntries: insertedEntries,
 		// No privacy pairs are inserted in this test.
 		privPairs: make(privacyPairs),
+		actions:   []*Action{},
 	}
 }
 
@@ -836,6 +841,7 @@ func createPrivacyPairs(t *testing.T, ctx context.Context,
 	return &expectedResult{
 		kvEntries: []*kvEntry{},
 		privPairs: pairs,
+		actions:   []*Action{},
 	}
 }
 
@@ -889,6 +895,7 @@ func randomPrivacyPairs(t *testing.T, ctx context.Context,
 	return &expectedResult{
 		kvEntries: []*kvEntry{},
 		privPairs: pairs,
+		actions:   []*Action{},
 	}
 }
 
@@ -906,6 +913,7 @@ func randomFirewallDBEntries(t *testing.T, ctx context.Context,
 	return &expectedResult{
 		kvEntries: kvEntries.kvEntries,
 		privPairs: privPairs.privPairs,
+		actions:   []*Action{},
 	}
 }
 
