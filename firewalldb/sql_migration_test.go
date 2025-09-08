@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"testing"
@@ -34,6 +35,50 @@ const (
 var (
 	testEntryValue = []byte{1, 2, 3}
 )
+
+// rootKeyMockStore is a mock implementation of a macaroon service store that
+// can be used to generate mock root keys for testing.
+type rootKeyMockStore struct {
+	// rootKeys is a slice of all root keys that have been added to the
+	// store.
+	rootKeys [][]byte
+}
+
+// addRootKeyFromIDSuffix adds a new root key to the store, using the passed
+// 4 byte suffix. The function generates a root key that ends with the 4 byte
+// suffix, prefixed by 4 random bytes.
+func (r *rootKeyMockStore) addRootKeyFromIDSuffix(suffix [4]byte) uint64 {
+	// As a real root key is 8 bytes, we need to generate a random 4 byte
+	// prefix to prepend to the passed 4 byte suffix.
+	rootKey := append(randomBytes(4), suffix[:]...)
+	r.rootKeys = append(r.rootKeys, rootKey)
+
+	return binary.BigEndian.Uint64(rootKey[:])
+}
+
+// addRootKeyFromAcctID adds a new root key to the store, using the first 4
+// bytes of the passed account ID as the suffix for the root key, prefixed by 4
+// random bytes.
+func (r *rootKeyMockStore) addRootKeyFromAcctID(id accounts.AccountID) uint64 {
+	var acctPrefix [4]byte
+	copy(acctPrefix[:], id[:4])
+
+	return r.addRootKeyFromIDSuffix(acctPrefix)
+}
+
+// addRandomRootKey adds a new random root key to the store, and returns the
+// root key ID as an uint64.
+func (r *rootKeyMockStore) addRandomRootKey() uint64 {
+	rootKey := randomBytes(8)
+	r.rootKeys = append(r.rootKeys, rootKey)
+
+	return binary.BigEndian.Uint64(rootKey[:])
+}
+
+// getAllRootKeys returns all root keys that have been added to the store.
+func (r *rootKeyMockStore) getAllRootKeys() [][]byte {
+	return r.rootKeys
+}
 
 // expectedResult represents the expected result of a migration test.
 type expectedResult struct {
@@ -294,13 +339,16 @@ func TestFirewallDBMigration(t *testing.T) {
 	tests := []struct {
 		name       string
 		populateDB func(t *testing.T, ctx context.Context,
-			boltDB *BoltDB, sessionStore session.Store) *expectedResult
+			boltDB *BoltDB, sessionStore session.Store,
+			accountsStore accounts.Store,
+			rKeyStore *rootKeyMockStore) *expectedResult
 	}{
 		{
 			name: "empty",
 			populateDB: func(t *testing.T, ctx context.Context,
-				boltDB *BoltDB,
-				sessionStore session.Store) *expectedResult {
+				boltDB *BoltDB, sessionStore session.Store,
+				accountsStore accounts.Store,
+				rKeyStore *rootKeyMockStore) *expectedResult {
 
 				// Don't populate the DB, and return empty kv
 				// records and privacy pairs.
@@ -384,9 +432,12 @@ func TestFirewallDBMigration(t *testing.T) {
 				require.NoError(t, firewallStore.Close())
 			})
 
+			rootKeyStore := &rootKeyMockStore{}
+
 			// Populate the kv store.
 			entries := test.populateDB(
 				t, ctx, firewallStore, sessionsStore,
+				accountStore, rootKeyStore,
 			)
 
 			// Create the SQL store that we will migrate the data
@@ -412,7 +463,8 @@ func TestFirewallDBMigration(t *testing.T) {
 // globalEntries populates the kv store with one global entry for the temp
 // store, and one for the perm store.
 func globalEntries(t *testing.T, ctx context.Context, boltDB *BoltDB,
-	_ session.Store) *expectedResult {
+	_ session.Store, _ accounts.Store,
+	_ *rootKeyMockStore) *expectedResult {
 
 	return insertTempAndPermEntry(
 		t, ctx, boltDB, testRuleName, fn.None[[]byte](),
@@ -424,7 +476,8 @@ func globalEntries(t *testing.T, ctx context.Context, boltDB *BoltDB,
 // entry for the local temp store, and one session specific entry for the perm
 // local store.
 func sessionSpecificEntries(t *testing.T, ctx context.Context, boltDB *BoltDB,
-	sessionStore session.Store) *expectedResult {
+	sessionStore session.Store, _ accounts.Store,
+	_ *rootKeyMockStore) *expectedResult {
 
 	groupAlias := getNewSessionAlias(t, ctx, sessionStore)
 
@@ -438,7 +491,8 @@ func sessionSpecificEntries(t *testing.T, ctx context.Context, boltDB *BoltDB,
 // entry for the local temp store, and one feature specific entry for the perm
 // local store.
 func featureSpecificEntries(t *testing.T, ctx context.Context, boltDB *BoltDB,
-	sessionStore session.Store) *expectedResult {
+	sessionStore session.Store, _ accounts.Store,
+	_ *rootKeyMockStore) *expectedResult {
 
 	groupAlias := getNewSessionAlias(t, ctx, sessionStore)
 
@@ -456,7 +510,8 @@ func featureSpecificEntries(t *testing.T, ctx context.Context, boltDB *BoltDB,
 // any entries when the entry set is more complex than just a single entry at
 // each level.
 func allEntryCombinations(t *testing.T, ctx context.Context, boltDB *BoltDB,
-	sessionStore session.Store) *expectedResult {
+	sessionStore session.Store, acctStore accounts.Store,
+	rStore *rootKeyMockStore) *expectedResult {
 
 	var result []*kvEntry
 	add := func(entry *expectedResult) {
@@ -465,9 +520,13 @@ func allEntryCombinations(t *testing.T, ctx context.Context, boltDB *BoltDB,
 
 	// First lets create standard entries at all levels, which represents
 	// the entries added by other tests.
-	add(globalEntries(t, ctx, boltDB, sessionStore))
-	add(sessionSpecificEntries(t, ctx, boltDB, sessionStore))
-	add(featureSpecificEntries(t, ctx, boltDB, sessionStore))
+	add(globalEntries(t, ctx, boltDB, sessionStore, acctStore, rStore))
+	add(sessionSpecificEntries(
+		t, ctx, boltDB, sessionStore, acctStore, rStore,
+	))
+	add(featureSpecificEntries(
+		t, ctx, boltDB, sessionStore, acctStore, rStore,
+	))
 
 	groupAlias := getNewSessionAlias(t, ctx, sessionStore)
 
@@ -647,7 +706,8 @@ func insertKvEntry(t *testing.T, ctx context.Context,
 // across all possible combinations of different levels of entries in the kv
 // store. All values and different bucket names are randomly generated.
 func randomKVEntries(t *testing.T, ctx context.Context,
-	boltDB *BoltDB, sessionStore session.Store) *expectedResult {
+	boltDB *BoltDB, sessionStore session.Store, _ accounts.Store,
+	_ *rootKeyMockStore) *expectedResult {
 
 	var (
 		// We set the number of entries to insert to 1000, as that
@@ -769,7 +829,8 @@ func randomKVEntries(t *testing.T, ctx context.Context,
 // oneSessionAndPrivPair inserts 1 session with 1 privacy pair into the
 // boltDB.
 func oneSessionAndPrivPair(t *testing.T, ctx context.Context,
-	boltDB *BoltDB, sessionStore session.Store) *expectedResult {
+	boltDB *BoltDB, sessionStore session.Store, _ accounts.Store,
+	_ *rootKeyMockStore) *expectedResult {
 
 	return createPrivacyPairs(t, ctx, boltDB, sessionStore, 1, 1)
 }
@@ -777,7 +838,8 @@ func oneSessionAndPrivPair(t *testing.T, ctx context.Context,
 // oneSessionsMultiplePrivPairs inserts 1 session with 10 privacy pairs into the
 // boltDB.
 func oneSessionsMultiplePrivPairs(t *testing.T, ctx context.Context,
-	boltDB *BoltDB, sessionStore session.Store) *expectedResult {
+	boltDB *BoltDB, sessionStore session.Store, _ accounts.Store,
+	_ *rootKeyMockStore) *expectedResult {
 
 	return createPrivacyPairs(t, ctx, boltDB, sessionStore, 1, 10)
 }
@@ -785,7 +847,8 @@ func oneSessionsMultiplePrivPairs(t *testing.T, ctx context.Context,
 // multipleSessionsAndPrivacyPairs inserts 5 sessions with 10 privacy pairs
 // per session into the boltDB.
 func multipleSessionsAndPrivacyPairs(t *testing.T, ctx context.Context,
-	boltDB *BoltDB, sessionStore session.Store) *expectedResult {
+	boltDB *BoltDB, sessionStore session.Store, _ accounts.Store,
+	_ *rootKeyMockStore) *expectedResult {
 
 	return createPrivacyPairs(t, ctx, boltDB, sessionStore, 5, 10)
 }
@@ -847,7 +910,8 @@ func createPrivacyPairs(t *testing.T, ctx context.Context,
 
 // randomPrivacyPairs creates a random number of privacy pairs to 10 sessions.
 func randomPrivacyPairs(t *testing.T, ctx context.Context,
-	boltDB *BoltDB, sessionStore session.Store) *expectedResult {
+	boltDB *BoltDB, sessionStore session.Store, _ accounts.Store,
+	_ *rootKeyMockStore) *expectedResult {
 
 	numSessions := 10
 	maxPairsPerSession := 20
@@ -905,10 +969,15 @@ func randomPrivacyPairs(t *testing.T, ctx context.Context,
 // TODO(viktor): Extend this function to also populate it with random action
 // entries, once the actions migration has been implemented.
 func randomFirewallDBEntries(t *testing.T, ctx context.Context,
-	boltDB *BoltDB, sessionStore session.Store) *expectedResult {
+	boltDB *BoltDB, sessionStore session.Store, acctStore accounts.Store,
+	rStore *rootKeyMockStore) *expectedResult {
 
-	kvEntries := randomKVEntries(t, ctx, boltDB, sessionStore)
-	privPairs := randomPrivacyPairs(t, ctx, boltDB, sessionStore)
+	kvEntries := randomKVEntries(
+		t, ctx, boltDB, sessionStore, acctStore, rStore,
+	)
+	privPairs := randomPrivacyPairs(
+		t, ctx, boltDB, sessionStore, acctStore, rStore,
+	)
 
 	return &expectedResult{
 		kvEntries: kvEntries.kvEntries,
@@ -926,4 +995,13 @@ func randomString(n int) string {
 		b[i] = letterBytes[rand.Intn(len(letterBytes))]
 	}
 	return string(b)
+}
+
+// randomBytes generates a random byte array of the passed length n.
+func randomBytes(n int) []byte {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = byte(rand.Intn(256)) // Random int between 0-255, then cast to byte
+	}
+	return b
 }
