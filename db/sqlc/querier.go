@@ -67,6 +67,8 @@ type Querier interface {
 	SetSessionGroupID(ctx context.Context, arg SetSessionGroupIDParams) error
 	SetSessionRemotePublicKey(ctx context.Context, arg SetSessionRemotePublicKeyParams) error
 	SetSessionRevokedAt(ctx context.Context, arg SetSessionRevokedAtParams) error
+	// NOTE: This query is only intended for testing purposes.
+	UpdateAccountAliasForTests(ctx context.Context, arg UpdateAccountAliasForTestsParams) (int64, error)
 	UpdateAccountBalance(ctx context.Context, arg UpdateAccountBalanceParams) (int64, error)
 	UpdateAccountExpiry(ctx context.Context, arg UpdateAccountExpiryParams) (int64, error)
 	UpdateAccountLastUpdate(ctx context.Context, arg UpdateAccountLastUpdateParams) (int64, error)
