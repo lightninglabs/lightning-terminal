@@ -777,11 +777,62 @@ func (n *NetworkHarness) RestartNodeNoUnlock(node *HarnessNode,
 	)
 }
 
+// suspendCfg contains any configurations related to suspending a node. This may
+// change the way the node starts up again.
+type suspendCfg struct {
+	upgrade   bool
+	downgrade string
+}
+
+// SuspendOption is a functional option that may change the suspend
+// configuration.
+type SuspendOption func(cfg *suspendCfg)
+
+// WithUpgrade is a functional option which indicates that the node should be
+// upgraded to the latest version of LiT.
+func WithUpgrade() SuspendOption {
+	return func(cfg *suspendCfg) {
+		cfg.upgrade = true
+	}
+}
+
+// WithDowngrade is a functional option which indicates that the node should be
+// downgraded to the defined LiT version.
+func WithDowngrade(version string) SuspendOption {
+	return func(cfg *suspendCfg) {
+		cfg.downgrade = version
+	}
+}
+
 // SuspendNode stops the given node and returns a callback that can be used to
-// start it again.
-func (n *NetworkHarness) SuspendNode(node *HarnessNode) (func() error, error) {
+// start it again. If the upgrade flag is set then any backwards compatibility
+// version that the node was running previously will be eliminated, forcing it
+// to use the current (latest) build.
+func (n *NetworkHarness) SuspendNode(node *HarnessNode,
+	opts ...SuspendOption) (func() error, error) {
+
 	if err := node.Stop(); err != nil {
 		return nil, err
+	}
+
+	cfg := &suspendCfg{}
+
+	for _, opt := range opts {
+		opt(cfg)
+	}
+
+	// If the upgrade flag was set, delete any entry from the backwards
+	// compatibility map. This will force the node to use the latest build
+	// of LiT.
+	if cfg.upgrade {
+		delete(n.backwardCompat, node.Name())
+	}
+
+	// If a downgrade version was defined, update the backwards
+	// compatibility entry with that version for this LiT node. This will
+	// force the node to start up using the defined version.
+	if cfg.downgrade != "" {
+		n.backwardCompat[node.Name()] = cfg.downgrade
 	}
 
 	restart := func() error {
@@ -822,8 +873,10 @@ func (n *NetworkHarness) StopNode(node *HarnessNode) error {
 }
 
 // StopAndBackupDB backs up the database of the target node.
-func (n *NetworkHarness) StopAndBackupDB(node *HarnessNode) error {
-	restart, err := n.SuspendNode(node)
+func (n *NetworkHarness) StopAndBackupDB(node *HarnessNode,
+	opts ...SuspendOption) error {
+
+	restart, err := n.SuspendNode(node, opts...)
 	if err != nil {
 		return err
 	}
@@ -847,8 +900,10 @@ func (n *NetworkHarness) StopAndBackupDB(node *HarnessNode) error {
 
 // StopAndRestoreDB stops the target node, restores the database from a backup
 // and starts the node again.
-func (n *NetworkHarness) StopAndRestoreDB(node *HarnessNode) error {
-	restart, err := n.SuspendNode(node)
+func (n *NetworkHarness) StopAndRestoreDB(node *HarnessNode,
+	opts ...SuspendOption) error {
+
+	restart, err := n.SuspendNode(node, opts...)
 	if err != nil {
 		return err
 	}
