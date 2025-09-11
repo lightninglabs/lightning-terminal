@@ -1,6 +1,6 @@
 module github.com/lightninglabs/lightning-terminal/perms
 
-go 1.23.12
+go 1.24.6
 
 require (
 	github.com/btcsuite/btcd v0.24.3-0.20250318170759-4f4ea81776d6

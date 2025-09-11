@@ -22,7 +22,7 @@ PUBLIC_URL :=
 # GO_VERSION is the Go version used for the release build, docker files, and
 # GitHub Actions. This is the reference version for the project. All other Go
 # versions are checked against this version.
-GO_VERSION = 1.23.12
+GO_VERSION = 1.24.6
 
 # LITD_COMPAT_VERSIONS is a space-separated list of litd versions that are
 # installed before running the integration tests which include backward
@@ -246,7 +246,7 @@ install-backward-compat-versions:
 run-itest-only:
 	@$(call print, "Building itest binary.")
 	CGO_ENABLED=0 $(GOBUILD) -tags="$(ITEST_TAGS)" -o itest/litd-itest -ldflags "$(ITEST_LDFLAGS)" $(PKG)/cmd/litd
-	CGO_ENABLED=0 $(GOTEST) -v ./itest -tags="$(DEV_TAGS) $(ITEST_TAGS)" -c -o itest/itest.test
+	CGO_ENABLED=0 $(GOTEST) -v $(ITEST_TEST_FLAGS) ./itest -tags="$(DEV_TAGS) $(ITEST_TAGS)" -c -o itest/itest.test
 
 	@$(call print, "Running integration tests.")
 	rm -rf itest/*.log itest/.logs*; date
