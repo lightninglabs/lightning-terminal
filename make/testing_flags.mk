@@ -1,6 +1,7 @@
 include make/compile_flags.mk
 
-TEST_FLAGS =
+TEST_FLAGS = -vet=off
+ITEST_TEST_FLAGS = $(TEST_FLAGS)
 DEV_TAGS = dev
 
 # Define the integration test.run filter if the icase argument was provided.
