@@ -7,6 +7,7 @@ import (
 
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/clock"
+	"github.com/lightningnetwork/lnd/fn"
 	"github.com/stretchr/testify/require"
 )
 
@@ -59,7 +60,14 @@ func assertEqualActions(t *testing.T, expected, got *Action) {
 	// Accounts are not explicitly linked in our bbolt DB implementation.
 	actualAccountID := got.AccountID
 	got.AccountID = expected.AccountID
+
+	// As the kvdb implementation doesn't store the Macaroon Root Key ID,
+	// we clear the expected value before comparison, and restore it after.
+	expectedMacRootKey := expected.MacaroonRootKeyID
+	expected.MacaroonRootKeyID = fn.None[uint64]()
+
 	require.Equal(t, expected, got)
 
 	got.AccountID = actualAccountID
+	expected.MacaroonRootKeyID = expectedMacRootKey
 }
