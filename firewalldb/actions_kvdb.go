@@ -596,7 +596,13 @@ func DeserializeAction(r io.Reader, sessionID session.ID) (*Action, error) {
 		return nil, err
 	}
 
+	// Since the kvdb only persists 4 bytes for the macaroon root key ID, we
+	// first cast it to a uint32, and then to a uint64, effectively padding
+	// the first 4 bytes with zeroes.
+	rootKeyID := uint64(binary.BigEndian.Uint32(sessionID[:]))
+
 	action.MacaroonIdentifier = fn.Some([4]byte(sessionID))
+	action.MacaroonRootKeyID = fn.Some(rootKeyID)
 	action.SessionID = fn.Some(sessionID)
 	action.ActorName = string(actor)
 	action.FeatureName = string(featureName)

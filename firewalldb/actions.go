@@ -39,6 +39,15 @@ type AddActionReq struct {
 	// If no macaroon was used for the action, then this will not be set.
 	MacaroonIdentifier fn.Option[[4]byte]
 
+	// MacaroonRootKeyID is the uint64 / full 8 bytes of the root key ID of
+	// the macaroon used to perform the action.
+	// If no macaroon was used for the action, then this will not be set.
+	//
+	// NOTE: for our BoltDB impl, only the lower 32 bits / last 4 bytes of
+	// this uint64 are stored. When read back, the upper 32 bits / first 4
+	// bytes are zeroed.
+	MacaroonRootKeyID fn.Option[uint64]
+
 	// SessionID holds the optional session ID of the session that this
 	// action was performed with.
 	//
