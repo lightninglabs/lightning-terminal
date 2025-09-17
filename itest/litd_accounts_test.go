@@ -445,10 +445,24 @@ func getPaymentResult(stream routerrpc.Router_SendPaymentV2Client,
 	}
 }
 
+// TapPaymentResult encapsulates all the information related to the outcome of
+// a tap asset payment. It may also contain an error, in which case the rest of
+// the values should be ignored, even if set.
+type TapPaymentResult struct {
+	// lndResult contains the lnd part of the payment result.
+	lndResult *lnrpc.Payment
+
+	// assetRate contains the asset rate that was used to convert the assets
+	// to sats.
+	assetRate rfqmath.FixedPoint[rfqmath.BigInt]
+
+	// err contains the returned error from the payment.
+	err error
+}
+
 func getAssetPaymentResult(t *testing.T,
 	s tapchannelrpc.TaprootAssetChannels_SendPaymentClient,
-	isHodl bool) (*lnrpc.Payment, rfqmath.FixedPoint[rfqmath.BigInt],
-	error) {
+	isHodl bool) TapPaymentResult {
 
 	// No idea why it makes a difference whether we wait before calling
 	// s.Recv() or not, but it does. Without the sleep, the test will fail
@@ -461,7 +475,11 @@ func getAssetPaymentResult(t *testing.T,
 	for {
 		msg, err := s.Recv()
 		if err != nil {
-			return nil, rateVal, err
+			return TapPaymentResult{
+				lndResult: nil,
+				assetRate: rateVal,
+				err:       err,
+			}
 		}
 
 		// Ignore RFQ quote acceptance messages read from the send
@@ -501,8 +519,18 @@ func getAssetPaymentResult(t *testing.T,
 
 		payment := msg.GetPaymentResult()
 		if payment == nil {
-			return nil, rateVal,
-				fmt.Errorf("unexpected message: %v", msg)
+			err := fmt.Errorf("unexpected message: %v", msg)
+			return TapPaymentResult{
+				lndResult: nil,
+				assetRate: rateVal,
+				err:       err,
+			}
+		}
+
+		result := TapPaymentResult{
+			lndResult: payment,
+			assetRate: rateVal,
+			err:       nil,
 		}
 
 		// If this is a hodl payment, then we'll return the first
@@ -510,10 +538,10 @@ func getAssetPaymentResult(t *testing.T,
 		// clears to we can observe the other payment states.
 		switch {
 		case isHodl:
-			return payment, rateVal, nil
+			return result
 
 		case payment.Status != lnrpc.Payment_IN_FLIGHT:
-			return payment, rateVal, nil
+			return result
 		}
 	}
 }
