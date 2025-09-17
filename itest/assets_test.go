@@ -1423,13 +1423,15 @@ func sendAssetKeySendPayment(t *testing.T, src, dst *HarnessNode, amt uint64,
 		return
 	}
 
-	result, _, err := getAssetPaymentResult(t, stream, false)
+	tapPayment, err := getAssetPaymentResult(t, stream, false)
 	require.NoError(t, err)
-	if result.Status == lnrpc.Payment_FAILED {
-		t.Logf("Failure reason: %v", result.FailureReason)
+
+	payment := tapPayment.lndPayment
+	if payment.Status == lnrpc.Payment_FAILED {
+		t.Logf("Failure reason: %v", payment.FailureReason)
 	}
-	require.Equal(t, cfg.payStatus, result.Status)
-	require.Equal(t, cfg.failureReason, result.FailureReason)
+	require.Equal(t, cfg.payStatus, payment.Status)
+	require.Equal(t, cfg.failureReason, payment.FailureReason)
 }
 
 func sendKeySendPayment(t *testing.T, src, dst *HarnessNode,
@@ -1755,12 +1757,13 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 		sendReq.MaxShardSizeMsat = 80_000_000
 	}
 
-	var rfqBytes, peerPubKey []byte
+	var rfqBytes []byte
 	cfg.rfq.WhenSome(func(i rfqmsg.ID) {
 		rfqBytes = make([]byte, len(i[:]))
 		copy(rfqBytes, i[:])
 	})
 
+	var peerPubKey []byte
 	if rfqPeer != nil {
 		peerPubKey = rfqPeer.PubKey[:]
 	}
@@ -1785,7 +1788,7 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 
 	// If an error is returned by the RPC method (meaning the stream itself
 	// was established, no network or auth error), we expect the error to be
-	// returned on the first read on the stream.
+	// returned on the stream.
 	if cfg.errSubStr != "" {
 		msg, err := stream.Recv()
 
@@ -1804,14 +1807,18 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 		rateVal  rfqmath.FixedPoint[rfqmath.BigInt]
 	)
 
-	result, rateVal, err := getAssetPaymentResult(
+	tapPayment, err := getAssetPaymentResult(
 		t, stream, cfg.payStatus == lnrpc.Payment_IN_FLIGHT,
 	)
 	require.NoError(t, err)
-	require.Equal(t, cfg.payStatus, result.Status)
-	require.Equal(t, cfg.failureReason, result.FailureReason)
+
+	payment := tapPayment.lndPayment
+	require.Equal(t, cfg.payStatus, payment.Status)
+	require.Equal(t, cfg.failureReason, payment.FailureReason)
 
 	amountMsat := lnwire.MilliSatoshi(decodedInvoice.NumMsat)
+
+	rateVal = tapPayment.assetRate
 	milliSatsFP := rfqmath.MilliSatoshiToUnits(amountMsat, rateVal)
 	numUnits = milliSatsFP.ScaleTo(0).ToUint64()
 
