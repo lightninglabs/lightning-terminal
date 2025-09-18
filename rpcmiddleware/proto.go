@@ -76,8 +76,12 @@ func RPCErrString(req *lnrpc.RPCMiddlewareRequest, format string,
 		},
 	}
 
+	if len(args) > 0 {
+		format = fmt.Sprintf(format, args...)
+	}
+
 	if format != "" {
-		feedback.Error = fmt.Sprintf(format, args...)
+		feedback.Error = format
 	}
 
 	return resp, nil

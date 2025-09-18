@@ -431,10 +431,7 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 	var err error
 
 	accountServiceErrCallback := func(err error) {
-		g.statusMgr.SetErrored(
-			subservers.ACCOUNTS,
-			err.Error(),
-		)
+		g.statusMgr.SetErrored(subservers.ACCOUNTS, err.Error())
 
 		log.Errorf("Error thrown in the accounts service, keeping "+
 			"litd running: %v", err,
