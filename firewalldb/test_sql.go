@@ -10,6 +10,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/db"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/clock"
+	"github.com/lightningnetwork/lnd/fn"
 	"github.com/stretchr/testify/require"
 )
 
@@ -46,11 +47,20 @@ func assertEqualActions(t *testing.T, expected, got *Action) {
 	expected.AttemptedAt = time.Time{}
 	got.AttemptedAt = time.Time{}
 
+	// As the kvdb implementation doesn't store the Macaroon Root Key ID,
+	// we don't yet expose this for the sql version, until the kvdb version
+	// has been deprecated and removed. Therefore, we ignore this field in
+	// our comparison here, and clear the expected value before comparison,
+	// and restore it after.
+	expectedMacRootKey := expected.MacaroonRootKeyID
+	expected.MacaroonRootKeyID = fn.None[uint64]()
+
 	require.Equal(t, expected, got)
 	require.Equal(t, expectedAttemptedAt.Unix(), actualAttemptedAt.Unix())
 
 	expected.AttemptedAt = expectedAttemptedAt
 	got.AttemptedAt = actualAttemptedAt
+	expected.MacaroonRootKeyID = expectedMacRootKey
 }
 
 // createStore is a helper function that creates a new SQLDB and ensure that

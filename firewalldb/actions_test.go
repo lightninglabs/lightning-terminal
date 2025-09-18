@@ -2,6 +2,7 @@ package firewalldb
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
 	"testing"
 	"time"
@@ -60,10 +61,13 @@ func TestActionStorage(t *testing.T) {
 	acct1, err := accountsDB.NewAccount(ctx, 0, time.Time{}, "foo")
 	require.NoError(t, err)
 
+	sess1RootKeyID := macIDToRootKeyID(sess1.ID)
+
 	action1Req := &AddActionReq{
 		SessionID:          fn.Some(sess1.ID),
 		AccountID:          fn.Some(acct1.ID),
 		MacaroonIdentifier: fn.Some([4]byte(sess1.ID)),
+		MacaroonRootKeyID:  fn.Some(sess1RootKeyID),
 		ActorName:          "Autopilot",
 		FeatureName:        "auto-fees",
 		Trigger:            "fee too low",
@@ -79,9 +83,12 @@ func TestActionStorage(t *testing.T) {
 		State:        ActionStateDone,
 	}
 
+	sess2RootKeyID := macIDToRootKeyID(sess2.ID)
+
 	action2Req := &AddActionReq{
 		SessionID:          fn.Some(sess2.ID),
 		MacaroonIdentifier: fn.Some([4]byte(sess2.ID)),
+		MacaroonRootKeyID:  fn.Some(sess2RootKeyID),
 		ActorName:          "Autopilot",
 		FeatureName:        "rebalancer",
 		Trigger:            "channels not balanced",
@@ -213,8 +220,11 @@ func TestListActions(t *testing.T) {
 	addAction := func(sessionID [4]byte) {
 		actionIds++
 
+		sessRootKeyID := macIDToRootKeyID(sessionID)
+
 		actionReq := &AddActionReq{
 			MacaroonIdentifier: fn.Some(sessionID),
+			MacaroonRootKeyID:  fn.Some(sessRootKeyID),
 			ActorName:          "Autopilot",
 			FeatureName:        fmt.Sprintf("%d", actionIds),
 			Trigger:            "fee too low",
@@ -424,9 +434,12 @@ func TestListGroupActions(t *testing.T) {
 	)
 	require.NoError(t, err)
 
+	sess1RootKeyID := macIDToRootKeyID(sess1.ID)
+
 	action1Req := &AddActionReq{
 		SessionID:          fn.Some(sess1.ID),
 		MacaroonIdentifier: fn.Some([4]byte(sess1.ID)),
+		MacaroonRootKeyID:  fn.Some(sess1RootKeyID),
 		ActorName:          "Autopilot",
 		FeatureName:        "auto-fees",
 		Trigger:            "fee too low",
@@ -442,9 +455,12 @@ func TestListGroupActions(t *testing.T) {
 		State:        ActionStateDone,
 	}
 
+	sess2RootKeyID := macIDToRootKeyID(sess2.ID)
+
 	action2Req := &AddActionReq{
 		SessionID:          fn.Some(sess2.ID),
 		MacaroonIdentifier: fn.Some([4]byte(sess2.ID)),
+		MacaroonRootKeyID:  fn.Some(sess2RootKeyID),
 		ActorName:          "Autopilot",
 		FeatureName:        "rebalancer",
 		Trigger:            "channels not balanced",
@@ -500,4 +516,15 @@ func TestListGroupActions(t *testing.T) {
 	require.Len(t, al, 2)
 	assertEqualActions(t, action2, al[0])
 	assertEqualActions(t, action1, al[1])
+}
+
+// macIDToRootKeyID is a helper function for tests that converts a 4 byte
+// macaroon ID to a full macaroon root key ID by padding it to 8 bytes.
+// Note that the first 4 bytes of the returned root key ID will be zeros,
+// followed by the 4 bytes passed in.
+func macIDToRootKeyID(macID [4]byte) uint64 {
+	rootKeyIDBytes := make([]byte, 8)
+	copy(rootKeyIDBytes[4:], macID[:])
+
+	return binary.BigEndian.Uint64(rootKeyIDBytes)
 }
