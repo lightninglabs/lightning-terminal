@@ -41,6 +41,10 @@ ARG TAPRPC_VERSION
 # Need to restate this since running in a new container from above.
 ARG NO_UI
 
+# Allow defining the CGO_ENABLED variable so we can build binaries
+# that will work in a different type of container.
+ARG CGO_ENABLED
+
 # Install dependencies and install/build lightning-terminal.
 RUN apk add --no-cache --update alpine-sdk make \
   && cd /go/src/github.com/lightninglabs/lightning-terminal \
