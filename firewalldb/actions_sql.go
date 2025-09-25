@@ -3,6 +3,7 @@ package firewalldb
 import (
 	"context"
 	"database/sql"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"math"
@@ -34,6 +35,7 @@ type SQLActionQueries interface {
 	SetActionState(ctx context.Context, arg sqlc.SetActionStateParams) error
 	ListActions(ctx context.Context, arg sqlc.ListActionsParams) ([]sqlc.Action, error)
 	CountActions(ctx context.Context, arg sqlc.ActionQueryParams) (int64, error)
+	GetAction(ctx context.Context, id int64) (sqlc.Action, error)
 }
 
 // sqlActionLocator helps us find an action in the SQL DB.
@@ -140,8 +142,11 @@ func (s *SQLDB) AddAction(ctx context.Context,
 		}
 
 		var macID []byte
-		req.MacaroonIdentifier.WhenSome(func(id [4]byte) {
-			macID = id[:]
+		req.MacaroonRootKeyID.WhenSome(func(rootKeyID uint64) {
+			rootKeyBytes := make([]byte, 8)
+			binary.BigEndian.PutUint64(rootKeyBytes[:], rootKeyID)
+
+			macID = rootKeyBytes
 		})
 
 		id, err := db.InsertAction(ctx, sqlc.InsertActionParams{
@@ -393,9 +398,17 @@ func unmarshalAction(ctx context.Context, db SQLActionQueries,
 		legacyAcctID = fn.Some(acctID)
 	}
 
+	// While we store the full 8 byte macaroon root key ID in the sql
+	// actions DB, the kvdb version only stored the last 4 bytes. So
+	// we'll only return that here to maintain compatibility with any
+	// existing callers.
+	//
+	// TODO(viktor): Remove this when we no longer need to be compatible
+	// with the kvdb version.
 	var macID fn.Option[[4]byte]
-	if len(dbAction.MacaroonIdentifier) > 0 {
-		macID = fn.Some([4]byte(dbAction.MacaroonIdentifier))
+	if len(dbAction.MacaroonIdentifier) >= 4 {
+		dbMacID := dbAction.MacaroonIdentifier
+		macID = fn.Some([4]byte(dbMacID[len(dbMacID)-4:]))
 	}
 
 	return &Action{

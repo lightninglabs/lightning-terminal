@@ -24,6 +24,7 @@ type Querier interface {
 	GetAccountIndex(ctx context.Context, name string) (int64, error)
 	GetAccountInvoice(ctx context.Context, arg GetAccountInvoiceParams) (AccountInvoice, error)
 	GetAccountPayment(ctx context.Context, arg GetAccountPaymentParams) (AccountPayment, error)
+	GetAction(ctx context.Context, id int64) (Action, error)
 	GetAliasBySessionID(ctx context.Context, id int64) ([]byte, error)
 	GetAllPrivacyPairs(ctx context.Context, groupID int64) ([]GetAllPrivacyPairsRow, error)
 	GetFeatureID(ctx context.Context, name string) (int64, error)
@@ -66,6 +67,8 @@ type Querier interface {
 	SetSessionGroupID(ctx context.Context, arg SetSessionGroupIDParams) error
 	SetSessionRemotePublicKey(ctx context.Context, arg SetSessionRemotePublicKeyParams) error
 	SetSessionRevokedAt(ctx context.Context, arg SetSessionRevokedAtParams) error
+	// NOTE: This query is only intended for testing purposes.
+	UpdateAccountAliasForTests(ctx context.Context, arg UpdateAccountAliasForTestsParams) (int64, error)
 	UpdateAccountBalance(ctx context.Context, arg UpdateAccountBalanceParams) (int64, error)
 	UpdateAccountExpiry(ctx context.Context, arg UpdateAccountExpiryParams) (int64, error)
 	UpdateAccountLastUpdate(ctx context.Context, arg UpdateAccountLastUpdateParams) (int64, error)

@@ -13,3 +13,9 @@ UPDATE actions
 SET action_state = $1,
     error_reason = $2
 WHERE id = $3;
+
+
+-- name: GetAction :one
+SELECT *
+FROM actions
+WHERE id = $1;
