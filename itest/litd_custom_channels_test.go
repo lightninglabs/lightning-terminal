@@ -14,6 +14,7 @@ import (
 	"github.com/btcsuite/btcd/btcec/v2/schnorr"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/btcsuite/btcd/wire"
 	"github.com/lightninglabs/taproot-assets/asset"
 	"github.com/lightninglabs/taproot-assets/itest"
 	"github.com/lightninglabs/taproot-assets/proof"
@@ -2300,6 +2301,318 @@ func testCustomChannelsBreach(ctx context.Context, net *NetworkHarness,
 	)
 
 	t.Logf("Charlie balance after breach: %d", charlieBalance)
+}
+
+// testCustomChannelsV1Upgrade tests the upgrade path of a taproot assets
+// channel. It upgrades one of the peers to a version that utilizes feature bits
+// and new features over the channel, testing that backwards compatibility is
+// maintained along the way. We also introduce a channel breach, right at the
+// point before we switched over to the new features, to test that sweeping is
+// done properly.
+func testCustomChannelsV1Upgrade(ctx context.Context, net *NetworkHarness,
+	t *harnessTest) {
+
+	lndArgs := slices.Clone(lndArgsTemplate)
+	litdArgs := slices.Clone(litdArgsTemplate)
+
+	zane, err := net.NewNode(
+		t.t, "Zane", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	litdArgs = append(litdArgs, fmt.Sprintf(
+		"--taproot-assets.proofcourieraddr=%s://%s",
+		proof.UniverseRpcCourierType, zane.Cfg.LitAddr(),
+	))
+
+	davePort := port.NextAvailablePort()
+	daveFlags := append(
+		slices.Clone(lndArgs), "--nolisten", "--minbackoff=1h",
+	)
+
+	// For this simple test, we'll just have Charlie -> Dave as an assets
+	// channel.
+	dave, err := net.NewNodeWithPort(
+		t.t, "Dave", daveFlags, false, true, davePort,
+		litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	charlie, err := net.NewNode(t.t, "Charlie", lndArgs, false, true, litdArgs...)
+	require.NoError(t.t, err)
+
+	// Next we'll connect all the nodes and also fund them with some coins.
+	nodes := []*HarnessNode{dave, charlie}
+	connectAllNodes(t.t, net, nodes)
+	fundAllNodes(t.t, net, nodes)
+
+	universeTap := newTapClient(t.t, zane)
+	charlieTap := newTapClient(t.t, charlie)
+	daveTap := newTapClient(t.t, dave)
+
+	// Now we'll make an asset for Charlie that we'll use in the test to
+	// open a channel.
+	mintedAssets := itest.MintAssetsConfirmBatch(
+		t.t, t.lndHarness.Miner.Client, charlieTap,
+		[]*mintrpc.MintAssetRequest{
+			{
+				Asset: itestAsset,
+			},
+		},
+	)
+	cents := mintedAssets[0]
+	assetID := cents.AssetGenesis.AssetId
+
+	t.Logf("Minted %d itest asset cents, syncing universes...",
+		cents.Amount)
+
+	syncUniverses(t.t, charlieTap, dave)
+	t.Logf("Universes synced between all nodes, distributing assets...")
+
+	// Next we can open an asset channel from Charlie -> Dave, then kick
+	// off the main scenario.
+	t.Logf("Opening asset channels...")
+	assetFundResp, err := charlieTap.FundChannel(
+		ctx, &tchrpc.FundChannelRequest{
+			AssetAmount:        fundingAmount,
+			AssetId:            assetID,
+			PeerPubkey:         dave.PubKey[:],
+			FeeRateSatPerVbyte: 5,
+		},
+	)
+	require.NoError(t.t, err)
+	t.Logf("Funded channel between Charlie and Dave: %v", assetFundResp)
+
+	// With the channel open, mine 6 blocks to confirm it.
+	mineBlocks(t, net, 6, 1)
+
+	// A transfer for the funding transaction should be found in Charlie's
+	// DB.
+	fundingTxid, err := chainhash.NewHashFromStr(assetFundResp.Txid)
+	require.NoError(t.t, err)
+	assetFundingTransfer := locateAssetTransfers(
+		t.t, charlieTap, *fundingTxid,
+	)
+
+	t.Logf("Channel funding transfer: %v",
+		toProtoJSON(t.t, assetFundingTransfer))
+
+	// Charlie's balance should reflect that the funding asset is now
+	// excluded from balance reporting by tapd.
+	itest.AssertBalances(
+		t.t, charlieTap, itestAsset.Amount-fundingAmount,
+		itest.WithAssetID(assetID), itest.WithNumUtxos(1),
+	)
+
+	// Make sure that Charlie properly uploaded funding proof to the
+	// Universe server.
+	fundingScriptTree := tapscript.NewChannelFundingScriptTree()
+	fundingScriptKey := fundingScriptTree.TaprootKey
+	fundingScriptTreeBytes := fundingScriptKey.SerializeCompressed()
+	assertUniverseProofExists(
+		t.t, universeTap, assetID, nil, fundingScriptTreeBytes,
+		fmt.Sprintf(
+			"%v:%v", assetFundResp.Txid, assetFundResp.OutputIndex,
+		),
+	)
+
+	// Make sure the channel shows the correct asset information.
+	assertAssetChan(
+		t.t, charlie, dave, fundingAmount, []*taprpc.Asset{cents},
+	)
+
+	// Before we start sending out payments, let's make sure each node can
+	// see the other one in the graph and has all required features.
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(charlie, dave))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(dave, charlie))
+
+	logBalance(t.t, nodes, assetID, "start")
+
+	// Let's dispatch 5 asset & 5 keysend payments from Charlie to Dave. At
+	// this point Charlie is running the old version of LiT.
+	for range 5 {
+		sendAssetKeySendPayment(
+			t.t, charlie, dave, 50, assetID, fn.None[int64](),
+		)
+		sendKeySendPayment(t.t, charlie, dave, 1_000)
+	}
+
+	logBalance(t.t, nodes, assetID, "before upgrade")
+
+	// Let's assert that Charlie & Dave actually run different versions of
+	// taproot-assets. We expect Dave to be running the latest version,
+	// while Charlie is running an older version (v0.15.0).
+	daveInfo, err := daveTap.GetInfo(ctx, &taprpc.GetInfoRequest{})
+	require.NoError(t.t, err)
+
+	charlieInfo, err := charlieTap.GetInfo(ctx, &taprpc.GetInfoRequest{})
+	require.NoError(t.t, err)
+
+	require.NotEqual(t.t, daveInfo.Version, charlieInfo.Version)
+
+	res, err := charlie.ChannelBalance(ctx, &lnrpc.ChannelBalanceRequest{})
+	require.NoError(t.t, err)
+
+	charlieSatsBefore := res.LocalBalance
+
+	// Now we'll restart Charlie and assert that he upgraded. We also back
+	// up the DB at this point, in order to induce a breach later right at
+	// the switching point before upgrading the channel. We will verify that
+	// the breach transaction will be swept by the right party.
+	require.NoError(t.t, net.StopAndBackupDB(charlie, WithUpgrade()))
+	connectAllNodes(t.t, net, nodes)
+
+	charlieInfo, err = charlieTap.GetInfo(ctx, &taprpc.GetInfoRequest{})
+	require.NoError(t.t, err)
+
+	// Dave and Charlie should both be running the same version (latest).
+	require.Equal(t.t, daveInfo.Version, charlieInfo.Version)
+
+	// Let's send another 5 asset and keysend payments from Charlie to Dave.
+	// Charlie is now on the latest version of LiT and the channel upgraded.
+	for range 5 {
+		sendAssetKeySendPayment(
+			t.t, charlie, dave, 50, assetID, fn.None[int64](),
+		)
+	}
+
+	res, err = charlie.ChannelBalance(ctx, &lnrpc.ChannelBalanceRequest{})
+	require.NoError(t.t, err)
+
+	charlieSatsAfter := res.LocalBalance
+
+	// Because of no-op HTLCs, the satoshi balance of Charlie should not
+	// have shifted while sending the asset payments.
+	require.Equal(t.t, charlieSatsBefore, charlieSatsAfter)
+
+	logBalance(t.t, nodes, assetID, "after upgrade")
+
+	// Now let's restart Charlie and restore the DB to the previous snapshot
+	// which corresponds to a previous (invalid) and unupgraded channel
+	// state.
+	require.NoError(t.t, net.StopAndRestoreDB(charlie))
+
+	// With Charlie restored, we'll now execute the force close.
+	t.Logf("Force close by Charlie to breach...")
+	charlieChanPoint := &lnrpc.ChannelPoint{
+		OutputIndex: uint32(assetFundResp.OutputIndex),
+		FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
+			FundingTxidStr: assetFundResp.Txid,
+		},
+	}
+	_, breachTxid, err := net.CloseChannel(charlie, charlieChanPoint, true)
+	require.NoError(t.t, err)
+
+	t.Logf("Channel closed! Mining blocks, close_txid=%v", breachTxid)
+
+	// Next, we'll mine a block to confirm the breach transaction.
+	mineBlocks(t, net, 1, 1)
+
+	// We should be able to find the transfer of the breach for both
+	// parties.
+	charlieBreachTransfer := locateAssetTransfers(
+		t.t, charlieTap, *breachTxid,
+	)
+	daveBreachTransfer := locateAssetTransfers(
+		t.t, daveTap, *breachTxid,
+	)
+
+	t.Logf("Charlie breach transfer: %v",
+		toProtoJSON(t.t, charlieBreachTransfer))
+	t.Logf("Dave breach transfer: %v",
+		toProtoJSON(t.t, daveBreachTransfer))
+
+	require.Len(t.t, charlieBreachTransfer.Outputs, 2)
+	assetOutput := charlieBreachTransfer.Outputs[0]
+	assertUniverseProofExists(
+		t.t, universeTap, assetID, nil, assetOutput.ScriptKey,
+		assetOutput.Anchor.Outpoint,
+	)
+
+	op, err := wire.NewOutPointFromString(assetOutput.Anchor.Outpoint)
+	require.NoError(t.t, err)
+
+	// We'll manually export the proof of the breach transfer, in order to
+	// verify that it indeed did not use STXO proofs.
+	proofResp, err := daveTap.ExportProof(ctx, &taprpc.ExportProofRequest{
+		AssetId:   assetID,
+		ScriptKey: assetOutput.ScriptKey,
+		Outpoint: &taprpc.OutPoint{
+			Txid:        op.Hash[:],
+			OutputIndex: op.Index,
+		},
+	})
+	require.NoError(t.t, err)
+
+	proofFile, err := proof.DecodeFile(proofResp.RawProofFile)
+	require.NoError(t.t, err)
+	require.Equal(t.t, proofFile.NumProofs(), 3)
+	latestProof, err := proofFile.LastProof()
+	require.NoError(t.t, err)
+
+	// This proof should not contain the STXO exclusion proofs, since the
+	// breach occured right before the channel upgraded.
+	stxoProofs := latestProof.ExclusionProofs[0].CommitmentProof.STXOProofs
+	require.Nil(t.t, stxoProofs)
+
+	// With the breach transaction mined, Dave should now have a transaction
+	// in the mempool sweeping *both* commitment outputs.
+	daveJusticeTxid, err := waitForNTxsInMempool(
+		net.Miner.Client, 1, time.Second*5,
+	)
+	require.NoError(t.t, err)
+
+	t.Logf("Dave justice txid: %v", daveJusticeTxid)
+
+	// Next, we'll mine a block to confirm Dave's justice transaction.
+	mineBlocks(t, net, 1, 1)
+
+	// Dave should now have a transfer for his justice transaction.
+	daveJusticeTransfer := locateAssetTransfers(
+		t.t, daveTap, *daveJusticeTxid[0],
+	)
+
+	t.Logf("Dave justice transfer: %v",
+		toProtoJSON(t.t, daveJusticeTransfer))
+
+	// Dave should claim all of the asset balance that was put into the
+	// channel.
+	daveBalance := uint64(fundingAmount)
+
+	itest.AssertBalances(
+		t.t, daveTap, daveBalance, itest.WithAssetID(assetID),
+		itest.WithNumUtxos(2),
+	)
+
+	t.Logf("Dave balance after breach: %d", daveBalance)
+
+	require.Len(t.t, daveJusticeTransfer.Outputs, 2)
+	assetOutput = daveJusticeTransfer.Outputs[0]
+	op, err = wire.NewOutPointFromString(assetOutput.Anchor.Outpoint)
+	require.NoError(t.t, err)
+
+	// We'll now also export the proof for the justice transaction. Here we
+	// expect to find STXO proofs, as the sweeping party is an upgraded node
+	// that supports it.
+	proofResp, err = daveTap.ExportProof(ctx, &taprpc.ExportProofRequest{
+		AssetId:   assetID,
+		ScriptKey: assetOutput.ScriptKey,
+		Outpoint: &taprpc.OutPoint{
+			Txid:        op.Hash[:],
+			OutputIndex: op.Index,
+		},
+	})
+	require.NoError(t.t, err)
+
+	proofFile, err = proof.DecodeFile(proofResp.RawProofFile)
+	require.NoError(t.t, err)
+	require.Equal(t.t, 4, proofFile.NumProofs())
+	latestProof, err = proofFile.LastProof()
+	require.NoError(t.t, err)
+
+	// This proof should contain the STXO exclusion proofs
+	stxoProofs = latestProof.InclusionProof.CommitmentProof.STXOProofs
+	require.NotNil(t.t, stxoProofs)
 }
 
 // testCustomChannelsLiquidityEdgeCasesCore is the core logic of the liquidity
