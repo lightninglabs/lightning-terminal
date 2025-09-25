@@ -445,10 +445,21 @@ func getPaymentResult(stream routerrpc.Router_SendPaymentV2Client,
 	}
 }
 
+// TapPayment encapsulates all the information related to the outcome of a tap
+// asset payment. It contains the outcome of the LND payment and also the asset
+// rate that was used to swap the assets to satoshis.
+type TapPayment struct {
+	// lndPayment contains the lnd part of the payment result.
+	lndPayment *lnrpc.Payment
+
+	// assetRate contains the asset rate that was used to convert the assets
+	// to sats.
+	assetRate rfqmath.FixedPoint[rfqmath.BigInt]
+}
+
 func getAssetPaymentResult(t *testing.T,
 	s tapchannelrpc.TaprootAssetChannels_SendPaymentClient,
-	isHodl bool) (*lnrpc.Payment, rfqmath.FixedPoint[rfqmath.BigInt],
-	error) {
+	isHodl bool) (*TapPayment, error) {
 
 	// No idea why it makes a difference whether we wait before calling
 	// s.Recv() or not, but it does. Without the sleep, the test will fail
@@ -461,7 +472,7 @@ func getAssetPaymentResult(t *testing.T,
 	for {
 		msg, err := s.Recv()
 		if err != nil {
-			return nil, rateVal, err
+			return nil, err
 		}
 
 		// Ignore RFQ quote acceptance messages read from the send
@@ -501,8 +512,13 @@ func getAssetPaymentResult(t *testing.T,
 
 		payment := msg.GetPaymentResult()
 		if payment == nil {
-			return nil, rateVal,
-				fmt.Errorf("unexpected message: %v", msg)
+			err := fmt.Errorf("unexpected message: %v", msg)
+			return nil, err
+		}
+
+		result := &TapPayment{
+			lndPayment: payment,
+			assetRate:  rateVal,
 		}
 
 		// If this is a hodl payment, then we'll return the first
@@ -510,10 +526,10 @@ func getAssetPaymentResult(t *testing.T,
 		// clears to we can observe the other payment states.
 		switch {
 		case isHodl:
-			return payment, rateVal, nil
+			return result, nil
 
 		case payment.Status != lnrpc.Payment_IN_FLIGHT:
-			return payment, rateVal, nil
+			return result, nil
 		}
 	}
 }
