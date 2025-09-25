@@ -2278,7 +2278,7 @@ func defaultCoOpCloseBalanceCheck(t *testing.T, local, remote *HarnessNode,
 	// transaction was inserted into the local universe.
 	//
 	// We expect that at most four outputs exist: one for the local asset
-	// output, one for the remote asset output, one for the remote BTC
+	// output, one for the remote asset output, one for the local BTC
 	// channel balance and one for the remote BTC channel balance.
 	//
 	// Those outputs are only present if the respective party has a
