@@ -150,4 +150,12 @@ var allTestCases = []*testCase{
 			"Alice": "v0.14.1-alpha",
 		},
 	},
+	{
+		name:       "custom channels v1 upgrade",
+		test:       testCustomChannelsV1Upgrade,
+		noAliceBob: true,
+		backwardCompat: map[string]string{
+			"Charlie": "v0.15.0-alpha",
+		},
+	},
 }
