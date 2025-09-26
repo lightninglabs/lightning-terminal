@@ -76,6 +76,11 @@ func TestSessionsStoreMigration(t *testing.T) {
 			// kvSession has such a recipe stored.
 			overrideMacaroonRecipe(kvSession, sqlSession)
 
+			// We also need to override the account ID if the
+			// kvSession has an account ID set, while the SQL
+			// session doesn't.
+			overrideRemovedAccount(kvSession, sqlSession)
+
 			assertEqualSessions(t, kvSession, sqlSession)
 		}
 
@@ -309,6 +314,51 @@ func TestSessionsStoreMigration(t *testing.T) {
 					WithAccount(acct.ID),
 					WithMacaroonRecipe(sessCaveats, nil),
 				)
+				require.NoError(t, err)
+
+				return getBoltStoreSessions(t, store)
+			},
+		},
+		{
+			name: "one session with a deleted linked account",
+			populateDB: func(t *testing.T, store *BoltStore,
+				acctStore accounts.Store) []*Session {
+
+				// Create an account with balance
+				acct, err := acctStore.NewAccount(
+					ctx, 1234, time.Now().Add(time.Hour),
+					"",
+				)
+				require.NoError(t, err)
+				require.False(t, acct.HasExpired())
+
+				// For now, we manually add the account caveat
+				// for bbolt compatibility.
+				accountCaveat := checkers.Condition(
+					macaroons.CondLndCustom,
+					fmt.Sprintf("%s %x",
+						accounts.CondAccount,
+						acct.ID[:],
+					),
+				)
+
+				sessCaveats := []macaroon.Caveat{
+					{
+						Id: []byte(accountCaveat),
+					},
+				}
+
+				_, err = store.NewSession(
+					ctx, "test", TypeMacaroonAccount,
+					time.Unix(1000, 0), "",
+					WithAccount(acct.ID),
+					WithMacaroonRecipe(sessCaveats, nil),
+				)
+				require.NoError(t, err)
+
+				// Now delete the account, which represents
+				// that the user ran "litcli accounts remove".
+				err = acctStore.RemoveAccount(ctx, acct.ID)
 				require.NoError(t, err)
 
 				return getBoltStoreSessions(t, store)
@@ -663,6 +713,16 @@ func randomizedSessions(t *testing.T, kvStore *BoltStore,
 				require.NoError(t, err)
 			}
 		}
+
+		// When an account is set, we also remove the account in 50% of
+		// the cases. This simulates that the user ran "litcli accounts
+		// remove" after creating the session.
+		activeSess.AccountID.WhenSome(func(id accounts.AccountID) {
+			if rand.Intn(2) == 0 {
+				err = accountsStore.RemoveAccount(ctx, id)
+			}
+		})
+		require.NoError(t, err)
 
 		// Finally, we shift the active session to a random state.
 		// As the state we set may be a state that's no longer set
