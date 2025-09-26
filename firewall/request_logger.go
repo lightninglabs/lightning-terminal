@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
+	litmac "github.com/lightninglabs/lightning-terminal/macaroons"
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/fn"
@@ -182,14 +183,25 @@ func (r *RequestLogger) Intercept(ctx context.Context,
 func (r *RequestLogger) addNewAction(ctx context.Context, ri *RequestInfo,
 	withPayloadData bool) error {
 
-	var macaroonID fn.Option[[4]byte]
+	var (
+		rootKeyID  fn.Option[uint64]
+		macaroonID fn.Option[[4]byte]
+	)
+
 	if ri.Macaroon != nil {
 		var err error
-		macID, err := session.IDFromMacaroon(ri.Macaroon)
+
+		fullRootKeyID, err := litmac.RootKeyIDFromMacaroon(
+			ri.Macaroon,
+		)
 		if err != nil {
-			return fmt.Errorf("could not extract ID from macaroon")
+			return fmt.Errorf("could not extract root key ID from "+
+				"macaroon: %w", err)
 		}
 
+		macID := session.IDFromMacRootKeyID(fullRootKeyID)
+
+		rootKeyID = fn.Some(fullRootKeyID)
 		macaroonID = fn.Some([4]byte(macID))
 	}
 
@@ -197,6 +209,7 @@ func (r *RequestLogger) addNewAction(ctx context.Context, ri *RequestInfo,
 		SessionID:          ri.SessionID,
 		AccountID:          ri.AccountID,
 		MacaroonIdentifier: macaroonID,
+		MacaroonRootKeyID:  rootKeyID,
 		RPCMethod:          ri.URI,
 	}
 
