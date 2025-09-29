@@ -13,6 +13,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/db/sqlc"
+	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/sqldb"
 	"github.com/pmezard/go-difflib/difflib"
 	"go.etcd.io/bbolt"
@@ -196,6 +197,7 @@ func migrateSessionsToSQLAndValidate(ctx context.Context,
 		overrideSessionTimeZone(kvSession)
 		overrideSessionTimeZone(migratedSession)
 		overrideMacaroonRecipe(kvSession, migratedSession)
+		overrideRemovedAccount(kvSession, migratedSession)
 
 		if !reflect.DeepEqual(kvSession, migratedSession) {
 			diff := difflib.UnifiedDiff{
@@ -245,7 +247,17 @@ func migrateSingleSessionToSQL(ctx context.Context,
 		var acctDBID int64
 		acctDBID, err = tx.GetAccountIDByAlias(ctx, acctAlias)
 		if errors.Is(err, sql.ErrNoRows) {
-			err = accounts.ErrAccNotFound
+			// If we can't find the account in the SQL store, it
+			// most likely means that the user deleted the account
+			// with the "litcli accounts remove" command after the
+			// session was created. We therefore can't link the
+			// SQL session to the account, and we therefore just
+			// leave the acctID as sql.Null
+			log.Warnf("Unable to find account %v in SQL store, "+
+				"skipping linking session %x to account",
+				acctAlias, session.ID)
+			err = nil
+
 			return
 		} else if err != nil {
 			return
@@ -494,4 +506,27 @@ func overrideMacaroonRecipe(kvSession *Session, migratedSession *Session) {
 			})
 		}
 	}
+}
+
+// overrideRemovedAccount modifies the kvSession to remove the account ID if the
+// migrated session does not have an account ID, while the kvSession has one.
+// This happens when the account was not found in the SQL store during the
+// migration, which can occur if the account was deleted after the session
+// was created.
+func overrideRemovedAccount(kvSession *Session, migratedSession *Session) {
+	kvSession.AccountID = fn.ElimOption(
+		migratedSession.AccountID,
+
+		// If the migrated session does not have a linked account, we
+		// also remove it from the kv session.
+		func() fn.Option[accounts.AccountID] {
+			return fn.None[accounts.AccountID]()
+		},
+
+		// If the migrated session has a linked account, we keep the
+		// account on the kv session.
+		func(id accounts.AccountID) fn.Option[accounts.AccountID] {
+			return kvSession.AccountID
+		},
+	)
 }
