@@ -400,20 +400,15 @@ func unmarshalAction(ctx context.Context, db SQLActionQueries,
 	// Note that we export the full 8 byte macaroon root key ID in the sql
 	// actions DB, while the kvdb version persists and exports stored the
 	// last 4 bytes only.
-	var macID fn.Option[[4]byte]
 	var macRootKeyID fn.Option[uint64]
-	if len(dbAction.MacaroonIdentifier) >= 4 {
-		dbMacID := dbAction.MacaroonIdentifier
-		macID = fn.Some([4]byte(dbMacID[len(dbMacID)-4:]))
-
-		if len(dbAction.MacaroonIdentifier) >= 8 {
-			macRootKeyID = fn.Some(binary.BigEndian.Uint64(dbMacID))
-		}
+	if len(dbAction.MacaroonIdentifier) >= 8 {
+		macRootKeyID = fn.Some(
+			binary.BigEndian.Uint64(dbAction.MacaroonIdentifier),
+		)
 	}
 
 	return &Action{
 		AddActionReq: AddActionReq{
-			MacaroonIdentifier: macID,
 			MacaroonRootKeyID:  macRootKeyID,
 			AccountID:          legacyAcctID,
 			SessionID:          legacySessID,

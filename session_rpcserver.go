@@ -818,8 +818,8 @@ func (s *sessionRpcServer) ListActions(ctx context.Context,
 		})
 
 		var macID [4]byte
-		a.MacaroonIdentifier.WhenSome(func(id [4]byte) {
-			macID = id
+		a.MacaroonRootKeyID.WhenSome(func(rootID uint64) {
+			macID = session.IDFromMacRootKeyID(rootID)
 		})
 
 		resp[i] = &litrpc.Action{

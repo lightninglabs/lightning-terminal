@@ -66,7 +66,6 @@ func TestActionStorage(t *testing.T) {
 	action1Req := &AddActionReq{
 		SessionID:          fn.Some(sess1.ID),
 		AccountID:          fn.Some(acct1.ID),
-		MacaroonIdentifier: fn.Some([4]byte(sess1.ID)),
 		MacaroonRootKeyID:  fn.Some(sess1RootKeyID),
 		ActorName:          "Autopilot",
 		FeatureName:        "auto-fees",
@@ -86,15 +85,14 @@ func TestActionStorage(t *testing.T) {
 	sess2RootKeyID := litmac.NewSuperMacaroonRootKeyID(sess2.ID)
 
 	action2Req := &AddActionReq{
-		SessionID:          fn.Some(sess2.ID),
-		MacaroonIdentifier: fn.Some([4]byte(sess2.ID)),
-		MacaroonRootKeyID:  fn.Some(sess2RootKeyID),
-		ActorName:          "Autopilot",
-		FeatureName:        "rebalancer",
-		Trigger:            "channels not balanced",
-		Intent:             "balance",
-		RPCMethod:          "SendToRoute",
-		RPCParamsJson:      []byte("hops, amount"),
+		SessionID:         fn.Some(sess2.ID),
+		MacaroonRootKeyID: fn.Some(sess2RootKeyID),
+		ActorName:         "Autopilot",
+		FeatureName:       "rebalancer",
+		Trigger:           "channels not balanced",
+		Intent:            "balance",
+		RPCMethod:         "SendToRoute",
+		RPCParamsJson:     []byte("hops, amount"),
 	}
 
 	action2 := &Action{
@@ -223,7 +221,6 @@ func TestListActions(t *testing.T) {
 		sessRootKeyID := litmac.NewSuperMacaroonRootKeyID(sessionID)
 
 		actionReq := &AddActionReq{
-			MacaroonIdentifier: fn.Some(sessionID),
 			MacaroonRootKeyID:  fn.Some(sessRootKeyID),
 			ActorName:          "Autopilot",
 			FeatureName:        fmt.Sprintf("%d", actionIds),
@@ -246,11 +243,13 @@ func TestListActions(t *testing.T) {
 	assertActions := func(dbActions []*Action, al []*action) {
 		require.Len(t, dbActions, len(al))
 		for i, a := range al {
-			mID, err := dbActions[i].MacaroonIdentifier.UnwrapOrErr(
-				fmt.Errorf("macaroon identifier is none"),
+			rID, err := dbActions[i].MacaroonRootKeyID.UnwrapOrErr(
+				fmt.Errorf("macaroon root key is none"),
 			)
 			require.NoError(t, err)
-			require.EqualValues(t, a.sessionID, mID)
+			require.EqualValues(
+				t, a.sessionID, session.IDFromMacRootKeyID(rID),
+			)
 			require.Equal(t, a.actionID, dbActions[i].FeatureName)
 		}
 	}
@@ -438,7 +437,6 @@ func TestListGroupActions(t *testing.T) {
 
 	action1Req := &AddActionReq{
 		SessionID:          fn.Some(sess1.ID),
-		MacaroonIdentifier: fn.Some([4]byte(sess1.ID)),
 		MacaroonRootKeyID:  fn.Some(sess1RootKeyID),
 		ActorName:          "Autopilot",
 		FeatureName:        "auto-fees",
@@ -458,15 +456,14 @@ func TestListGroupActions(t *testing.T) {
 	sess2RootKeyID := litmac.NewSuperMacaroonRootKeyID(sess2.ID)
 
 	action2Req := &AddActionReq{
-		SessionID:          fn.Some(sess2.ID),
-		MacaroonIdentifier: fn.Some([4]byte(sess2.ID)),
-		MacaroonRootKeyID:  fn.Some(sess2RootKeyID),
-		ActorName:          "Autopilot",
-		FeatureName:        "rebalancer",
-		Trigger:            "channels not balanced",
-		Intent:             "balance",
-		RPCMethod:          "SendToRoute",
-		RPCParamsJson:      []byte("hops, amount"),
+		SessionID:         fn.Some(sess2.ID),
+		MacaroonRootKeyID: fn.Some(sess2RootKeyID),
+		ActorName:         "Autopilot",
+		FeatureName:       "rebalancer",
+		Trigger:           "channels not balanced",
+		Intent:            "balance",
+		RPCMethod:         "SendToRoute",
+		RPCParamsJson:     []byte("hops, amount"),
 	}
 
 	action2 := &Action{

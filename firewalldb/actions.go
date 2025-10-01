@@ -34,11 +34,6 @@ const (
 // It contains all the information that is needed to create a new Action in the
 // ActionStateInit State.
 type AddActionReq struct {
-	// MacaroonIdentifier is a 4 byte identifier created from the last 4
-	// bytes of the root key ID of the macaroon used to perform the action.
-	// If no macaroon was used for the action, then this will not be set.
-	MacaroonIdentifier fn.Option[[4]byte]
-
 	// MacaroonRootKeyID is the uint64 / full 8 bytes of the root key ID of
 	// the macaroon used to perform the action.
 	// If no macaroon was used for the action, then this will not be set.
@@ -52,8 +47,8 @@ type AddActionReq struct {
 	// action was performed with.
 	//
 	// NOTE: for our BoltDB impl, this is not persisted in any way, and we
-	// populate it by casting the macaroon ID to a session.ID and so is not
-	// guaranteed to be linked to an existing session.
+	// populate it by casting the MacaroonRootKeyID to a session.ID and so
+	// is not guaranteed to be linked to an existing session.
 	SessionID fn.Option[session.ID]
 
 	// AccountID holds the optional account ID of the account that this

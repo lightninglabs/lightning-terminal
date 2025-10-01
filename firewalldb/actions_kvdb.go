@@ -59,10 +59,11 @@ func (db *BoltDB) AddAction(ctx context.Context,
 	req *AddActionReq) (ActionLocator, error) {
 
 	// If no macaroon is provided, then an empty 4-byte array is used as the
-	// macaroon ID.
+	// macaroon ID. Note that the kvdb implementation only stores the last
+	// 4 bytes of the macaroon root key ID.
 	var macaroonID [4]byte
-	req.MacaroonIdentifier.WhenSome(func(id [4]byte) {
-		macaroonID = id
+	req.MacaroonRootKeyID.WhenSome(func(rootID uint64) {
+		macaroonID = session.IDFromMacRootKeyID(rootID)
 	})
 
 	// If the new action links to a session, the session must exist.
@@ -601,7 +602,6 @@ func DeserializeAction(r io.Reader, sessionID session.ID) (*Action, error) {
 	// the first 4 bytes with zeroes.
 	rootKeyID := uint64(binary.BigEndian.Uint32(sessionID[:]))
 
-	action.MacaroonIdentifier = fn.Some([4]byte(sessionID))
 	action.MacaroonRootKeyID = fn.Some(rootKeyID)
 	action.SessionID = fn.Some(sessionID)
 	action.ActorName = string(actor)

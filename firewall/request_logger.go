@@ -9,7 +9,6 @@ import (
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	litmac "github.com/lightninglabs/lightning-terminal/macaroons"
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
-	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/macaroons"
@@ -184,8 +183,7 @@ func (r *RequestLogger) addNewAction(ctx context.Context, ri *RequestInfo,
 	withPayloadData bool) error {
 
 	var (
-		rootKeyID  fn.Option[uint64]
-		macaroonID fn.Option[[4]byte]
+		rootKeyID fn.Option[uint64]
 	)
 
 	if ri.Macaroon != nil {
@@ -198,19 +196,14 @@ func (r *RequestLogger) addNewAction(ctx context.Context, ri *RequestInfo,
 			return fmt.Errorf("could not extract root key ID from "+
 				"macaroon: %w", err)
 		}
-
-		macID := session.IDFromMacRootKeyID(fullRootKeyID)
-
 		rootKeyID = fn.Some(fullRootKeyID)
-		macaroonID = fn.Some([4]byte(macID))
 	}
 
 	actionReq := &firewalldb.AddActionReq{
-		SessionID:          ri.SessionID,
-		AccountID:          ri.AccountID,
-		MacaroonIdentifier: macaroonID,
-		MacaroonRootKeyID:  rootKeyID,
-		RPCMethod:          ri.URI,
+		SessionID:         ri.SessionID,
+		AccountID:         ri.AccountID,
+		MacaroonRootKeyID: rootKeyID,
+		RPCMethod:         ri.URI,
 	}
 
 	if withPayloadData {
