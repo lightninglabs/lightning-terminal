@@ -78,9 +78,9 @@ in remote mode (meaning that `lnd-mode=remote` is set). It shows the
 
 | LiT               | LND          |
 |-------------------|--------------|
-| **v0.15.2-alpha** | v0.19.0-beta |
-| **v0.15.1-alpha** | v0.19.0-beta |
-| **v0.15.0-alpha** | v0.19.0-beta |
+| **v0.15.2-alpha** | v0.19.3-beta |
+| **v0.15.1-alpha** | v0.19.2-beta |
+| **v0.15.0-alpha** | v0.19.1-beta |
 | **v0.14.1-alpha** | v0.18.5-beta |
 | **v0.14.0-alpha** | v0.18.4-beta |
 | **v0.13.6-alpha** | v0.17.1-beta |
