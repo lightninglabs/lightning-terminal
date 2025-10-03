@@ -243,12 +243,8 @@ func TestListActions(t *testing.T) {
 	assertActions := func(dbActions []*Action, al []*action) {
 		require.Len(t, dbActions, len(al))
 		for i, a := range al {
-			rID, err := dbActions[i].MacaroonRootKeyID.UnwrapOrErr(
-				fmt.Errorf("macaroon root key is none"),
-			)
-			require.NoError(t, err)
 			require.EqualValues(
-				t, a.sessionID, session.IDFromMacRootKeyID(rID),
+				t, a.sessionID, dbActions[i].MacaroonId(),
 			)
 			require.Equal(t, a.actionID, dbActions[i].FeatureName)
 		}

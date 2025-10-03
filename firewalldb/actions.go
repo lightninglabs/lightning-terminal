@@ -84,6 +84,18 @@ type AddActionReq struct {
 	RPCParamsJson []byte
 }
 
+// MacaroonId returns the 4 byte macaroon ID that is derived from the
+// MacaroonRootKeyID. If the MacaroonRootKeyID is not set, then this will return
+// an empty 4 byte array.
+func (a *AddActionReq) MacaroonId() [4]byte {
+	var macID [4]byte
+	a.MacaroonRootKeyID.WhenSome(func(rootID uint64) {
+		macID = session.IDFromMacRootKeyID(rootID)
+	})
+
+	return macID
+}
+
 // Action represents an RPC call made through the firewall.
 type Action struct {
 	AddActionReq

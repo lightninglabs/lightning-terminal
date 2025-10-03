@@ -61,10 +61,7 @@ func (db *BoltDB) AddAction(ctx context.Context,
 	// If no macaroon is provided, then an empty 4-byte array is used as the
 	// macaroon ID. Note that the kvdb implementation only stores the last
 	// 4 bytes of the macaroon root key ID.
-	var macaroonID [4]byte
-	req.MacaroonRootKeyID.WhenSome(func(rootID uint64) {
-		macaroonID = session.IDFromMacRootKeyID(rootID)
-	})
+	macaroonID := req.MacaroonId()
 
 	// If the new action links to a session, the session must exist.
 	// For the bbolt impl of the store, this is our best effort attempt
