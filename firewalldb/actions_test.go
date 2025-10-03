@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/lightninglabs/lightning-terminal/accounts"
+	litmac "github.com/lightninglabs/lightning-terminal/macaroons"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/fn"
@@ -60,10 +61,12 @@ func TestActionStorage(t *testing.T) {
 	acct1, err := accountsDB.NewAccount(ctx, 0, time.Time{}, "foo")
 	require.NoError(t, err)
 
+	sess1RootKeyID := litmac.NewSuperMacaroonRootKeyID(sess1.ID)
+
 	action1Req := &AddActionReq{
 		SessionID:          fn.Some(sess1.ID),
 		AccountID:          fn.Some(acct1.ID),
-		MacaroonIdentifier: fn.Some([4]byte(sess1.ID)),
+		MacaroonRootKeyID:  fn.Some(sess1RootKeyID),
 		ActorName:          "Autopilot",
 		FeatureName:        "auto-fees",
 		Trigger:            "fee too low",
@@ -79,15 +82,17 @@ func TestActionStorage(t *testing.T) {
 		State:        ActionStateDone,
 	}
 
+	sess2RootKeyID := litmac.NewSuperMacaroonRootKeyID(sess2.ID)
+
 	action2Req := &AddActionReq{
-		SessionID:          fn.Some(sess2.ID),
-		MacaroonIdentifier: fn.Some([4]byte(sess2.ID)),
-		ActorName:          "Autopilot",
-		FeatureName:        "rebalancer",
-		Trigger:            "channels not balanced",
-		Intent:             "balance",
-		RPCMethod:          "SendToRoute",
-		RPCParamsJson:      []byte("hops, amount"),
+		SessionID:         fn.Some(sess2.ID),
+		MacaroonRootKeyID: fn.Some(sess2RootKeyID),
+		ActorName:         "Autopilot",
+		FeatureName:       "rebalancer",
+		Trigger:           "channels not balanced",
+		Intent:            "balance",
+		RPCMethod:         "SendToRoute",
+		RPCParamsJson:     []byte("hops, amount"),
 	}
 
 	action2 := &Action{
@@ -213,8 +218,10 @@ func TestListActions(t *testing.T) {
 	addAction := func(sessionID [4]byte) {
 		actionIds++
 
+		sessRootKeyID := litmac.NewSuperMacaroonRootKeyID(sessionID)
+
 		actionReq := &AddActionReq{
-			MacaroonIdentifier: fn.Some(sessionID),
+			MacaroonRootKeyID:  fn.Some(sessRootKeyID),
 			ActorName:          "Autopilot",
 			FeatureName:        fmt.Sprintf("%d", actionIds),
 			Trigger:            "fee too low",
@@ -236,11 +243,9 @@ func TestListActions(t *testing.T) {
 	assertActions := func(dbActions []*Action, al []*action) {
 		require.Len(t, dbActions, len(al))
 		for i, a := range al {
-			mID, err := dbActions[i].MacaroonIdentifier.UnwrapOrErr(
-				fmt.Errorf("macaroon identifier is none"),
+			require.EqualValues(
+				t, a.sessionID, dbActions[i].MacaroonId(),
 			)
-			require.NoError(t, err)
-			require.EqualValues(t, a.sessionID, mID)
 			require.Equal(t, a.actionID, dbActions[i].FeatureName)
 		}
 	}
@@ -424,9 +429,11 @@ func TestListGroupActions(t *testing.T) {
 	)
 	require.NoError(t, err)
 
+	sess1RootKeyID := litmac.NewSuperMacaroonRootKeyID(sess1.ID)
+
 	action1Req := &AddActionReq{
 		SessionID:          fn.Some(sess1.ID),
-		MacaroonIdentifier: fn.Some([4]byte(sess1.ID)),
+		MacaroonRootKeyID:  fn.Some(sess1RootKeyID),
 		ActorName:          "Autopilot",
 		FeatureName:        "auto-fees",
 		Trigger:            "fee too low",
@@ -442,15 +449,17 @@ func TestListGroupActions(t *testing.T) {
 		State:        ActionStateDone,
 	}
 
+	sess2RootKeyID := litmac.NewSuperMacaroonRootKeyID(sess2.ID)
+
 	action2Req := &AddActionReq{
-		SessionID:          fn.Some(sess2.ID),
-		MacaroonIdentifier: fn.Some([4]byte(sess2.ID)),
-		ActorName:          "Autopilot",
-		FeatureName:        "rebalancer",
-		Trigger:            "channels not balanced",
-		Intent:             "balance",
-		RPCMethod:          "SendToRoute",
-		RPCParamsJson:      []byte("hops, amount"),
+		SessionID:         fn.Some(sess2.ID),
+		MacaroonRootKeyID: fn.Some(sess2RootKeyID),
+		ActorName:         "Autopilot",
+		FeatureName:       "rebalancer",
+		Trigger:           "channels not balanced",
+		Intent:            "balance",
+		RPCMethod:         "SendToRoute",
+		RPCParamsJson:     []byte("hops, amount"),
 	}
 
 	action2 := &Action{

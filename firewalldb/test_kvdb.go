@@ -3,9 +3,9 @@
 package firewalldb
 
 import (
+	"encoding/binary"
 	"testing"
 
-	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/fn"
@@ -59,8 +59,25 @@ func newDBFromPathWithSessions(t *testing.T, dbPath string,
 
 func assertEqualActions(t *testing.T, expected, got *Action) {
 	// Accounts are not explicitly linked in our bbolt DB implementation.
+	actualAccountID := got.AccountID
 	got.AccountID = expected.AccountID
-	require.Equal(t, expected, got)
 
-	got.AccountID = fn.None[accounts.AccountID]()
+	// As the kvdb implementation only stores the last 4 bytes Macaroon Root
+	// Key ID, we pad it with 4 zero bytes when comparing.
+	expectedMacRootKey := expected.MacaroonRootKeyID
+
+	expectedMacRootKey.WhenSome(func(rootID uint64) {
+		// Remove the 4 byte prefix of the actual Macaroon Root Key ID.
+		sessID := session.IDFromMacRootKeyID(rootID)
+
+		// Recreate the full 8 byte Macaroon Root Key ID (represented as
+		// a uint64) by padding the first 4 bytes with zeroes.
+		expected.MacaroonRootKeyID = fn.Some(
+			uint64(binary.BigEndian.Uint32(sessID[:])),
+		)
+	})
+
+	require.Equal(t, expected, got)
+	got.AccountID = actualAccountID
+	expected.MacaroonRootKeyID = expectedMacRootKey
 }

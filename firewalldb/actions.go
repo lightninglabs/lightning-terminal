@@ -34,17 +34,21 @@ const (
 // It contains all the information that is needed to create a new Action in the
 // ActionStateInit State.
 type AddActionReq struct {
-	// MacaroonIdentifier is a 4 byte identifier created from the last 4
-	// bytes of the root key ID of the macaroon used to perform the action.
+	// MacaroonRootKeyID is the uint64 / full 8 bytes of the root key ID of
+	// the macaroon used to perform the action.
 	// If no macaroon was used for the action, then this will not be set.
-	MacaroonIdentifier fn.Option[[4]byte]
+	//
+	// NOTE: for our BoltDB impl, only the lower 32 bits / last 4 bytes of
+	// this uint64 are stored. When read back, the upper 32 bits / first 4
+	// bytes are zeroed.
+	MacaroonRootKeyID fn.Option[uint64]
 
 	// SessionID holds the optional session ID of the session that this
 	// action was performed with.
 	//
 	// NOTE: for our BoltDB impl, this is not persisted in any way, and we
-	// populate it by casting the macaroon ID to a session.ID and so is not
-	// guaranteed to be linked to an existing session.
+	// populate it by casting the MacaroonRootKeyID to a session.ID and so
+	// is not guaranteed to be linked to an existing session.
 	SessionID fn.Option[session.ID]
 
 	// AccountID holds the optional account ID of the account that this
@@ -78,6 +82,18 @@ type AddActionReq struct {
 
 	// RPCParams is the method parameters of the request in JSON form.
 	RPCParamsJson []byte
+}
+
+// MacaroonId returns the 4 byte macaroon ID that is derived from the
+// MacaroonRootKeyID. If the MacaroonRootKeyID is not set, then this will return
+// an empty 4 byte array.
+func (a *AddActionReq) MacaroonId() [4]byte {
+	var macID [4]byte
+	a.MacaroonRootKeyID.WhenSome(func(rootID uint64) {
+		macID = session.IDFromMacRootKeyID(rootID)
+	})
+
+	return macID
 }
 
 // Action represents an RPC call made through the firewall.

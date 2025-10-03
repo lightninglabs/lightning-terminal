@@ -3,6 +3,7 @@ package firewalldb
 import (
 	"context"
 	"database/sql"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"math"
@@ -140,8 +141,11 @@ func (s *SQLDB) AddAction(ctx context.Context,
 		}
 
 		var macID []byte
-		req.MacaroonIdentifier.WhenSome(func(id [4]byte) {
-			macID = id[:]
+		req.MacaroonRootKeyID.WhenSome(func(rootKeyID uint64) {
+			rootKeyBytes := make([]byte, 8)
+			binary.BigEndian.PutUint64(rootKeyBytes[:], rootKeyID)
+
+			macID = rootKeyBytes
 		})
 
 		id, err := db.InsertAction(ctx, sqlc.InsertActionParams{
@@ -393,14 +397,19 @@ func unmarshalAction(ctx context.Context, db SQLActionQueries,
 		legacyAcctID = fn.Some(acctID)
 	}
 
-	var macID fn.Option[[4]byte]
-	if len(dbAction.MacaroonIdentifier) > 0 {
-		macID = fn.Some([4]byte(dbAction.MacaroonIdentifier))
+	// Note that we export the full 8 byte macaroon root key ID in the sql
+	// actions DB, while the kvdb version persists and exports stored the
+	// last 4 bytes only.
+	var macRootKeyID fn.Option[uint64]
+	if len(dbAction.MacaroonIdentifier) >= 8 {
+		macRootKeyID = fn.Some(
+			binary.BigEndian.Uint64(dbAction.MacaroonIdentifier),
+		)
 	}
 
 	return &Action{
 		AddActionReq: AddActionReq{
-			MacaroonIdentifier: macID,
+			MacaroonRootKeyID:  macRootKeyID,
 			AccountID:          legacyAcctID,
 			SessionID:          legacySessID,
 			ActorName:          dbAction.ActorName.String,
