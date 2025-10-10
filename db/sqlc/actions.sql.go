@@ -11,6 +11,34 @@ import (
 	"time"
 )
 
+const getAction = `-- name: GetAction :one
+SELECT id, session_id, account_id, macaroon_identifier, actor_name, feature_name, action_trigger, intent, structured_json_data, rpc_method, rpc_params_json, created_at, action_state, error_reason
+FROM actions
+WHERE id = $1
+`
+
+func (q *Queries) GetAction(ctx context.Context, id int64) (Action, error) {
+	row := q.db.QueryRowContext(ctx, getAction, id)
+	var i Action
+	err := row.Scan(
+		&i.ID,
+		&i.SessionID,
+		&i.AccountID,
+		&i.MacaroonIdentifier,
+		&i.ActorName,
+		&i.FeatureName,
+		&i.ActionTrigger,
+		&i.Intent,
+		&i.StructuredJsonData,
+		&i.RpcMethod,
+		&i.RpcParamsJson,
+		&i.CreatedAt,
+		&i.ActionState,
+		&i.ErrorReason,
+	)
+	return i, err
+}
+
 const insertAction = `-- name: InsertAction :one
 INSERT INTO actions (
     session_id, account_id, macaroon_identifier, actor_name, feature_name, action_trigger,
