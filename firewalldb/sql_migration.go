@@ -93,18 +93,29 @@ func MigrateFirewallDBToSQL(ctx context.Context, kvStore *bbolt.DB,
 
 	log.Infof("Starting migration of the rules DB to SQL")
 
-	err := migrateKVStoresDBToSQL(ctx, kvStore, sqlTx)
+	sessions, err := sessionDB.ListSessions(ctx)
+	if err != nil {
+		return fmt.Errorf("listing sessions failed: %w", err)
+	}
+
+	sessionMap, err := mapSessions(sessions)
+	if err != nil {
+		return fmt.Errorf("mapping sessions failed: %w", err)
+	}
+
+	err = migrateKVStoresDBToSQL(ctx, kvStore, sqlTx, sessionMap)
 	if err != nil {
 		return err
 	}
 
-	err = migratePrivacyMapperDBToSQL(ctx, kvStore, sqlTx)
+	err = migratePrivacyMapperDBToSQL(ctx, kvStore, sqlTx, sessionMap)
 	if err != nil {
 		return err
 	}
 
 	err = migrateActionsToSQL(
 		ctx, kvStore, sqlTx, sessionDB, accountDB, macRootKeyIDs,
+		sessionMap,
 	)
 	if err != nil {
 		return err
@@ -119,7 +130,7 @@ func MigrateFirewallDBToSQL(ctx context.Context, kvStore *bbolt.DB,
 // database to the SQL database. The function also asserts that the
 // migrated values match the original values in the KV store.
 func migrateKVStoresDBToSQL(ctx context.Context, kvStore *bbolt.DB,
-	sqlTx SQLQueries) error {
+	sqlTx SQLQueries, sessMap map[[4]byte]sqlc.Session) error {
 
 	log.Infof("Starting migration of the KV stores to SQL")
 
@@ -139,7 +150,7 @@ func migrateKVStoresDBToSQL(ctx context.Context, kvStore *bbolt.DB,
 
 	// 2) Insert all collected key-value pairs into the SQL database.
 	for _, entry := range pairs {
-		insertedPair, err := insertPair(ctx, sqlTx, entry)
+		insertedPair, err := insertPair(ctx, sqlTx, sessMap, entry)
 		if err != nil {
 			return fmt.Errorf("inserting kv pair %v failed: %w",
 				entry.key, err)
@@ -382,7 +393,7 @@ func collectKVPairs(bkt *bbolt.Bucket, errorOnBuckets, perm bool,
 
 // insertPair inserts a single key-value pair into the SQL database.
 func insertPair(ctx context.Context, tx SQLQueries,
-	entry *kvEntry) (*sqlKvEntry, error) {
+	sessMap map[[4]byte]sqlc.Session, entry *kvEntry) (*sqlKvEntry, error) {
 
 	ruleID, err := tx.GetOrInsertRuleID(ctx, entry.ruleName)
 	if err != nil {
@@ -397,15 +408,16 @@ func insertPair(ctx context.Context, tx SQLQueries,
 	}
 
 	entry.groupAlias.WhenSome(func(alias []byte) {
-		var groupID int64
-		groupID, err = tx.GetSessionIDByAlias(ctx, alias)
-		if err != nil {
-			err = fmt.Errorf("getting group id by alias %x "+
-				"failed: %w", alias, err)
-			return
+		var groupAlias [4]byte
+		copy(groupAlias[:], alias)
+
+		sess, ok := sessMap[groupAlias]
+		if !ok {
+			err = fmt.Errorf("session group %x not found in map",
+				alias)
 		}
 
-		p.GroupID = sqldb.SQLInt64(groupID)
+		p.GroupID = sess.GroupID
 	})
 	if err != nil {
 		return nil, err
@@ -515,12 +527,12 @@ func verifyBktKeys(bkt *bbolt.Bucket, errorOnKeyValues bool,
 // from the KV database to the SQL database. The function also asserts that the
 // migrated values match the original values in the privacy mapper store.
 func migratePrivacyMapperDBToSQL(ctx context.Context, kvStore *bbolt.DB,
-	sqlTx SQLQueries) error {
+	sqlTx SQLQueries, sessMap map[[4]byte]sqlc.Session) error {
 
 	log.Infof("Starting migration of the privacy mapper store to SQL")
 
 	// 1) Collect all privacy pairs from the KV store.
-	privPairs, err := collectPrivacyPairs(ctx, kvStore, sqlTx)
+	privPairs, err := collectPrivacyPairs(kvStore, sessMap)
 	if err != nil {
 		return fmt.Errorf("error migrating privacy mapper store: %w",
 			err)
@@ -549,8 +561,8 @@ func migratePrivacyMapperDBToSQL(ctx context.Context, kvStore *bbolt.DB,
 }
 
 // collectPrivacyPairs collects all privacy pairs from the KV store.
-func collectPrivacyPairs(ctx context.Context, kvStore *bbolt.DB,
-	sqlTx SQLQueries) (privacyPairs, error) {
+func collectPrivacyPairs(kvStore *bbolt.DB,
+	sessMap map[[4]byte]sqlc.Session) (privacyPairs, error) {
 
 	groupPairs := make(privacyPairs)
 
@@ -576,24 +588,28 @@ func collectPrivacyPairs(ctx context.Context, kvStore *bbolt.DB,
 					"%s not found", groupId)
 			}
 
-			groupSqlId, err := sqlTx.GetSessionIDByAlias(
-				ctx, groupId,
-			)
-			if errors.Is(err, sql.ErrNoRows) {
+			var groupAlias [4]byte
+			copy(groupAlias[:], groupId)
+
+			sess, ok := sessMap[groupAlias]
+			if !ok {
 				return fmt.Errorf("session with group id %x "+
 					"not found in sql db", groupId)
-			} else if err != nil {
-				return err
+			}
+
+			if !sess.GroupID.Valid {
+				return fmt.Errorf("session group id for "+
+					"session %d is not set ", sess.ID)
 			}
 
 			groupRealToPseudoPairs, err := collectGroupPairs(gBkt)
 			if err != nil {
 				return fmt.Errorf("processing group bkt "+
 					"for group id %s (sqlID %d) failed: %w",
-					groupId, groupSqlId, err)
+					groupId, sess.GroupID.Int64, err)
 			}
 
-			groupPairs[groupSqlId] = groupRealToPseudoPairs
+			groupPairs[sess.GroupID.Int64] = groupRealToPseudoPairs
 
 			return nil
 		})
@@ -794,7 +810,8 @@ func validateGroupPairsMigration(ctx context.Context, sqlTx SQLQueries,
 // values match the original values in the actions store.
 func migrateActionsToSQL(ctx context.Context, kvStore *bbolt.DB,
 	sqlTx SQLQueries, sessionDB session.SQLQueries,
-	accountsDB accounts.SQLQueries, macRootKeyIDs [][]byte) error {
+	accountsDB accounts.SQLQueries, macRootKeyIDs [][]byte,
+	sessMap map[[4]byte]sqlc.Session) error {
 
 	log.Infof("Starting migration of the actions store to SQL")
 
@@ -809,16 +826,6 @@ func migrateActionsToSQL(ctx context.Context, kvStore *bbolt.DB,
 	acctsMap, err := mapAccounts(accts)
 	if err != nil {
 		return fmt.Errorf("mapping accounts failed: %w", err)
-	}
-
-	sessions, err := sessionDB.ListSessions(ctx)
-	if err != nil {
-		return fmt.Errorf("listing sessions failed: %w", err)
-	}
-
-	sessionMap, err := mapSessions(sessions)
-	if err != nil {
-		return fmt.Errorf("mapping sessions failed: %w", err)
 	}
 
 	// Next, as the kvdb actions only have their last 4 bytes set for the
@@ -927,8 +934,7 @@ func migrateActionsToSQL(ctx context.Context, kvStore *bbolt.DB,
 				// migrated.
 				err = migrateActionToSQL(
 					ctx, sqlTx, sessionDB, accountsDB,
-					acctsMap, sessionMap, action,
-					macRootKeyID,
+					acctsMap, sessMap, action, macRootKeyID,
 				)
 				if err != nil {
 					return fmt.Errorf("migrating action "+
