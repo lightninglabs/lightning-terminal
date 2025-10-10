@@ -617,8 +617,19 @@ func collectPrivacyPairs(kvStore *bbolt.DB,
 
 			sess, ok := sessMap[groupAlias]
 			if !ok {
-				return fmt.Errorf("session with group id %x "+
-					"not found in sql db", groupId)
+				// If we can't find the session group in the SQL
+				// db, that indicates that the session was never
+				// migrated from KVDB. This likely means that
+				// the user deleted their session.db file, but
+				// kept the rules.db file. As the privacy pairs
+				// are useless when the session no longer
+				// exists, we can just skip the migration of the
+				// privacy pairs for this group.
+				log.Warnf("Skipping migration of privacy "+
+					"pairs for session group %x, as the "+
+					"session group was not found", groupId)
+
+				return nil
 			}
 
 			if !sess.GroupID.Valid {

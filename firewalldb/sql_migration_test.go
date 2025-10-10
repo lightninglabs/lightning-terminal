@@ -459,6 +459,14 @@ func TestFirewallDBMigration(t *testing.T) {
 			populateDB: multipleSessionsAndPrivacyPairs,
 		},
 		{
+			name:       "deleted session with privacy pair",
+			populateDB: deletedSessionWithPrivPair,
+		},
+		{
+			name:       "deleted and existing sessions with privacy pairs",
+			populateDB: deletedAndExistingSessionsWithPrivPairs,
+		},
+		{
 			name:       "random privacy pairs",
 			populateDB: randomPrivacyPairs,
 		},
@@ -1056,6 +1064,53 @@ func oneSessionAndPrivPair(t *testing.T, ctx context.Context,
 	boltDB *BoltDB, sessionStore session.Store, _ accounts.Store,
 	_ *rootKeyMockStore) *expectedResult {
 
+	return createPrivacyPairs(t, ctx, boltDB, sessionStore, 1, 1)
+}
+
+// deletedSessionWithPrivPair inserts 1 session with a linked 1 privacy pair
+// into the boltDB, and then deletes the session from the sessions store, to
+// simulate the case where a session has been deleted, but the privacy pairs
+// still exist. This can happen if the user deletes their session db but not
+// their firewall db.
+func deletedSessionWithPrivPair(t *testing.T, ctx context.Context,
+	boltDB *BoltDB, sessionStore session.Store, _ accounts.Store,
+	_ *rootKeyMockStore) *expectedResult {
+
+	_ = createPrivacyPairs(t, ctx, boltDB, sessionStore, 1, 1)
+
+	// Now we delete the session that the privacy pair was linked to.
+	err := sessionStore.DeleteReservedSessions(ctx)
+	require.NoError(t, err)
+
+	return &expectedResult{
+		kvEntries: []*kvEntry{},
+		// Since the session the privacy pair was linked to has been
+		// deleted, we expect no privacy pairs to be migrated.
+		privPairs: make(privacyPairs),
+		actions:   []*Action{},
+	}
+}
+
+// deletedAndExistingSessionsWithPrivPairs generates 2 different privacy pairs,
+// each linked to a different sessions. However, one of the sessions is deleted
+// prior to the migration, to test that only one of the privacy pairs should be
+// migrated, while the other one should be ignored since its session has been
+// deleted.
+func deletedAndExistingSessionsWithPrivPairs(t *testing.T, ctx context.Context,
+	boltDB *BoltDB, sessionStore session.Store, _ accounts.Store,
+	_ *rootKeyMockStore) *expectedResult {
+
+	// First generate one privacy pair linked to a session that will be
+	// deleted.
+	_ = createPrivacyPairs(t, ctx, boltDB, sessionStore, 1, 1)
+
+	// Delete the linked session.
+	err := sessionStore.DeleteReservedSessions(ctx)
+	require.NoError(t, err)
+
+	// Now generate another privacy pair linked to a session that won't be
+	// deleted prior to the migration. Therefore, this privacy pair should
+	// be migrated.
 	return createPrivacyPairs(t, ctx, boltDB, sessionStore, 1, 1)
 }
 
