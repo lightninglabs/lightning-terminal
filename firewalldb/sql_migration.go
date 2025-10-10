@@ -139,7 +139,7 @@ func migrateKVStoresDBToSQL(ctx context.Context, kvStore *bbolt.DB,
 	// 1) Collect all key-value pairs from the KV store.
 	err := kvStore.View(func(tx *bbolt.Tx) error {
 		var err error
-		pairs, err = collectAllPairs(tx)
+		pairs, err = collectAllPairs(sessMap, tx)
 		return err
 	})
 	if err != nil {
@@ -198,7 +198,9 @@ func migrateKVStoresDBToSQL(ctx context.Context, kvStore *bbolt.DB,
 // designed to iterate over all buckets and values that exist in the KV store.
 // That ensures that we find all stores and values that exist in the KV store,
 // and can be sure that the kv store actually follows the expected structure.
-func collectAllPairs(tx *bbolt.Tx) ([]*kvEntry, error) {
+func collectAllPairs(sessMap map[[4]byte]sqlc.Session,
+	tx *bbolt.Tx) ([]*kvEntry, error) {
+
 	var entries []*kvEntry
 	for _, perm := range []bool{true, false} {
 		mainBucket, err := getMainBucket(tx, false, perm)
@@ -228,7 +230,7 @@ func collectAllPairs(tx *bbolt.Tx) ([]*kvEntry, error) {
 			}
 
 			pairs, err := collectRulePairs(
-				ruleBucket, perm, string(rule),
+				sessMap, ruleBucket, perm, string(rule),
 			)
 			if err != nil {
 				return err
@@ -248,8 +250,8 @@ func collectAllPairs(tx *bbolt.Tx) ([]*kvEntry, error) {
 
 // collectRulePairs processes a single rule bucket, which should contain the
 // global and session-kv-store key buckets.
-func collectRulePairs(bkt *bbolt.Bucket, perm bool, rule string) ([]*kvEntry,
-	error) {
+func collectRulePairs(sessMap map[[4]byte]sqlc.Session, bkt *bbolt.Bucket,
+	perm bool, rule string) ([]*kvEntry, error) {
 
 	var params []*kvEntry
 
@@ -279,6 +281,25 @@ func collectRulePairs(bkt *bbolt.Bucket, perm bool, rule string) ([]*kvEntry,
 			if v != nil {
 				return fmt.Errorf("expected only buckets "+
 					"under %s bucket", sessKVStoreBucketKey)
+			}
+
+			var alias [4]byte
+			copy(alias[:], groupAlias)
+			if _, ok := sessMap[alias]; !ok {
+				// If we can't find the session group in the
+				// SQL db, that indicates that the session was
+				// never migrated from KVDB. This likely means
+				// that the user deleted their session.db file,
+				// but kept the rules.db file. As the KV entries
+				// are useless when the session no longer
+				// exists, we can just skip the migration of the
+				// KV entries for this group.
+				log.Warnf("Skipping migration of KV store "+
+					"entries for session group %x, as the "+
+					"session group was not found",
+					groupAlias)
+
+				return nil
 			}
 
 			groupBucket := sessBkt.Bucket(groupAlias)
@@ -413,6 +434,9 @@ func insertPair(ctx context.Context, tx SQLQueries,
 
 		sess, ok := sessMap[groupAlias]
 		if !ok {
+			// This should be unreachable, as we check for the
+			// existence of the session group when collecting
+			// the kv pairs.
 			err = fmt.Errorf("session group %x not found in map",
 				alias)
 		}

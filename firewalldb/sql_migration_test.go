@@ -419,8 +419,24 @@ func TestFirewallDBMigration(t *testing.T) {
 			populateDB: sessionSpecificEntries,
 		},
 		{
+			name:       "session specific kv entries deleted session",
+			populateDB: sessionSpecificEntriesDeletedSession,
+		},
+		{
+			name:       "session specific kv entries deleted and existing sessions",
+			populateDB: sessionSpecificEntriesDeletedAndExistingSessions,
+		},
+		{
 			name:       "feature specific kv entries",
 			populateDB: featureSpecificEntries,
+		},
+		{
+			name:       "feature specific kv entries deleted session",
+			populateDB: featureSpecificEntriesDeletedSession,
+		},
+		{
+			name:       "feature specific kv entries deleted and existing sessions",
+			populateDB: featureSpecificEntriesDeletedAndExistingSessions,
 		},
 		{
 			name:       "all kv entry combinations",
@@ -585,6 +601,61 @@ func sessionSpecificEntries(t *testing.T, ctx context.Context, boltDB *BoltDB,
 	)
 }
 
+// sessionSpecificEntriesDeletedSession populates the kv store with one session
+// specific entry for the local temp store, and one session specific entry for
+// the perm local store. Once populated, the session that the entries are linked
+// to is deleted. When migrating, we therefore expect that the kv entries linked
+// to the deleted session are not migrated.
+func sessionSpecificEntriesDeletedSession(t *testing.T, ctx context.Context,
+	boltDB *BoltDB, sessionStore session.Store, _ accounts.Store,
+	_ *rootKeyMockStore) *expectedResult {
+
+	groupAlias := getNewSessionAlias(t, ctx, sessionStore)
+
+	_ = insertTempAndPermEntry(
+		t, ctx, boltDB, testRuleName, groupAlias, fn.None[string](),
+		testEntryKey, testEntryValue,
+	)
+
+	err := sessionStore.DeleteReservedSessions(ctx)
+	require.NoError(t, err)
+
+	return &expectedResult{
+		// Since the session the kx entries were linked to has been
+		// deleted, we expect no kv entries to be migrated.
+		kvEntries: []*kvEntry{},
+		privPairs: make(privacyPairs),
+		actions:   []*Action{},
+	}
+}
+
+// sessionSpecificEntriesDeletedAndExistingSessions populates the kv store with
+// two sessions and their corresponding kv entries.
+// One of the sessions is deleted prior to the migration though, and therefore
+// the migration should only migrate the kv entries linked to the still existing
+// session.
+func sessionSpecificEntriesDeletedAndExistingSessions(t *testing.T,
+	ctx context.Context, boltDB *BoltDB, sessionStore session.Store,
+	_ accounts.Store, _ *rootKeyMockStore) *expectedResult {
+
+	groupAlias1 := getNewSessionAlias(t, ctx, sessionStore)
+
+	_ = insertTempAndPermEntry(
+		t, ctx, boltDB, testRuleName, groupAlias1, fn.None[string](),
+		testEntryKey, testEntryValue,
+	)
+
+	err := sessionStore.DeleteReservedSessions(ctx)
+	require.NoError(t, err)
+
+	groupAlias2 := getNewSessionAlias(t, ctx, sessionStore)
+
+	return insertTempAndPermEntry(
+		t, ctx, boltDB, testRuleName2, groupAlias2, fn.None[string](),
+		testEntryKey2, testEntryValue,
+	)
+}
+
 // featureSpecificEntries populates the kv store with one feature specific
 // entry for the local temp store, and one feature specific entry for the perm
 // local store.
@@ -597,6 +668,61 @@ func featureSpecificEntries(t *testing.T, ctx context.Context, boltDB *BoltDB,
 	return insertTempAndPermEntry(
 		t, ctx, boltDB, testRuleName, groupAlias,
 		fn.Some(testFeatureName), testEntryKey, testEntryValue,
+	)
+}
+
+// featureSpecificEntriesDeletedSession populates the kv store with one feature
+// specific entry for the local temp store, and one feature specific entry for
+// the perm local store. Once populated, the session that the entries are linked
+// to is deleted. When migrating, we therefore expect that the kv entries linked
+// to the deleted session are not migrated.
+func featureSpecificEntriesDeletedSession(t *testing.T, ctx context.Context,
+	boltDB *BoltDB, sessionStore session.Store, _ accounts.Store,
+	_ *rootKeyMockStore) *expectedResult {
+
+	groupAlias := getNewSessionAlias(t, ctx, sessionStore)
+
+	_ = insertTempAndPermEntry(
+		t, ctx, boltDB, testRuleName, groupAlias,
+		fn.Some(testFeatureName), testEntryKey, testEntryValue,
+	)
+
+	err := sessionStore.DeleteReservedSessions(ctx)
+	require.NoError(t, err)
+
+	return &expectedResult{
+		// Since the session the kv entries were linked to has been
+		// deleted, we expect no kv entries to be migrated.
+		kvEntries: []*kvEntry{},
+		privPairs: make(privacyPairs),
+		actions:   []*Action{},
+	}
+}
+
+// featureSpecificEntriesDeletedAndExistingSessions populates the kv store with
+// two sessions and their corresponding feature specific kv entries.
+// One of the sessions is deleted prior to the migration though, and therefore
+// the migration should only migrate the kv entries linked to the still existing
+// session.
+func featureSpecificEntriesDeletedAndExistingSessions(t *testing.T,
+	ctx context.Context, boltDB *BoltDB, sessionStore session.Store,
+	_ accounts.Store, _ *rootKeyMockStore) *expectedResult {
+
+	groupAlias1 := getNewSessionAlias(t, ctx, sessionStore)
+
+	_ = insertTempAndPermEntry(
+		t, ctx, boltDB, testRuleName, groupAlias1,
+		fn.Some(testFeatureName), testEntryKey, testEntryValue,
+	)
+
+	err := sessionStore.DeleteReservedSessions(ctx)
+	require.NoError(t, err)
+
+	groupAlias2 := getNewSessionAlias(t, ctx, sessionStore)
+
+	return insertTempAndPermEntry(
+		t, ctx, boltDB, testRuleName2, groupAlias2,
+		fn.Some(testFeatureName2), testEntryKey2, testEntryValue,
 	)
 }
 
