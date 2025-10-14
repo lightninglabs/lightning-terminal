@@ -419,8 +419,24 @@ func TestFirewallDBMigration(t *testing.T) {
 			populateDB: sessionSpecificEntries,
 		},
 		{
+			name:       "session specific kv entries deleted session",
+			populateDB: sessionSpecificEntriesDeletedSession,
+		},
+		{
+			name:       "session specific kv entries deleted and existing sessions",
+			populateDB: sessionSpecificEntriesDeletedAndExistingSessions,
+		},
+		{
 			name:       "feature specific kv entries",
 			populateDB: featureSpecificEntries,
+		},
+		{
+			name:       "feature specific kv entries deleted session",
+			populateDB: featureSpecificEntriesDeletedSession,
+		},
+		{
+			name:       "feature specific kv entries deleted and existing sessions",
+			populateDB: featureSpecificEntriesDeletedAndExistingSessions,
 		},
 		{
 			name:       "all kv entry combinations",
@@ -441,6 +457,14 @@ func TestFirewallDBMigration(t *testing.T) {
 		{
 			name:       "multiple sessions and privacy pairs",
 			populateDB: multipleSessionsAndPrivacyPairs,
+		},
+		{
+			name:       "deleted session with privacy pair",
+			populateDB: deletedSessionWithPrivPair,
+		},
+		{
+			name:       "deleted and existing sessions with privacy pairs",
+			populateDB: deletedAndExistingSessionsWithPrivPairs,
 		},
 		{
 			name:       "random privacy pairs",
@@ -585,6 +609,61 @@ func sessionSpecificEntries(t *testing.T, ctx context.Context, boltDB *BoltDB,
 	)
 }
 
+// sessionSpecificEntriesDeletedSession populates the kv store with one session
+// specific entry for the local temp store, and one session specific entry for
+// the perm local store. Once populated, the session that the entries are linked
+// to is deleted. When migrating, we therefore expect that the kv entries linked
+// to the deleted session are not migrated.
+func sessionSpecificEntriesDeletedSession(t *testing.T, ctx context.Context,
+	boltDB *BoltDB, sessionStore session.Store, _ accounts.Store,
+	_ *rootKeyMockStore) *expectedResult {
+
+	groupAlias := getNewSessionAlias(t, ctx, sessionStore)
+
+	_ = insertTempAndPermEntry(
+		t, ctx, boltDB, testRuleName, groupAlias, fn.None[string](),
+		testEntryKey, testEntryValue,
+	)
+
+	err := sessionStore.DeleteReservedSessions(ctx)
+	require.NoError(t, err)
+
+	return &expectedResult{
+		// Since the session the kx entries were linked to has been
+		// deleted, we expect no kv entries to be migrated.
+		kvEntries: []*kvEntry{},
+		privPairs: make(privacyPairs),
+		actions:   []*Action{},
+	}
+}
+
+// sessionSpecificEntriesDeletedAndExistingSessions populates the kv store with
+// two sessions and their corresponding kv entries.
+// One of the sessions is deleted prior to the migration though, and therefore
+// the migration should only migrate the kv entries linked to the still existing
+// session.
+func sessionSpecificEntriesDeletedAndExistingSessions(t *testing.T,
+	ctx context.Context, boltDB *BoltDB, sessionStore session.Store,
+	_ accounts.Store, _ *rootKeyMockStore) *expectedResult {
+
+	groupAlias1 := getNewSessionAlias(t, ctx, sessionStore)
+
+	_ = insertTempAndPermEntry(
+		t, ctx, boltDB, testRuleName, groupAlias1, fn.None[string](),
+		testEntryKey, testEntryValue,
+	)
+
+	err := sessionStore.DeleteReservedSessions(ctx)
+	require.NoError(t, err)
+
+	groupAlias2 := getNewSessionAlias(t, ctx, sessionStore)
+
+	return insertTempAndPermEntry(
+		t, ctx, boltDB, testRuleName2, groupAlias2, fn.None[string](),
+		testEntryKey2, testEntryValue,
+	)
+}
+
 // featureSpecificEntries populates the kv store with one feature specific
 // entry for the local temp store, and one feature specific entry for the perm
 // local store.
@@ -597,6 +676,61 @@ func featureSpecificEntries(t *testing.T, ctx context.Context, boltDB *BoltDB,
 	return insertTempAndPermEntry(
 		t, ctx, boltDB, testRuleName, groupAlias,
 		fn.Some(testFeatureName), testEntryKey, testEntryValue,
+	)
+}
+
+// featureSpecificEntriesDeletedSession populates the kv store with one feature
+// specific entry for the local temp store, and one feature specific entry for
+// the perm local store. Once populated, the session that the entries are linked
+// to is deleted. When migrating, we therefore expect that the kv entries linked
+// to the deleted session are not migrated.
+func featureSpecificEntriesDeletedSession(t *testing.T, ctx context.Context,
+	boltDB *BoltDB, sessionStore session.Store, _ accounts.Store,
+	_ *rootKeyMockStore) *expectedResult {
+
+	groupAlias := getNewSessionAlias(t, ctx, sessionStore)
+
+	_ = insertTempAndPermEntry(
+		t, ctx, boltDB, testRuleName, groupAlias,
+		fn.Some(testFeatureName), testEntryKey, testEntryValue,
+	)
+
+	err := sessionStore.DeleteReservedSessions(ctx)
+	require.NoError(t, err)
+
+	return &expectedResult{
+		// Since the session the kv entries were linked to has been
+		// deleted, we expect no kv entries to be migrated.
+		kvEntries: []*kvEntry{},
+		privPairs: make(privacyPairs),
+		actions:   []*Action{},
+	}
+}
+
+// featureSpecificEntriesDeletedAndExistingSessions populates the kv store with
+// two sessions and their corresponding feature specific kv entries.
+// One of the sessions is deleted prior to the migration though, and therefore
+// the migration should only migrate the kv entries linked to the still existing
+// session.
+func featureSpecificEntriesDeletedAndExistingSessions(t *testing.T,
+	ctx context.Context, boltDB *BoltDB, sessionStore session.Store,
+	_ accounts.Store, _ *rootKeyMockStore) *expectedResult {
+
+	groupAlias1 := getNewSessionAlias(t, ctx, sessionStore)
+
+	_ = insertTempAndPermEntry(
+		t, ctx, boltDB, testRuleName, groupAlias1,
+		fn.Some(testFeatureName), testEntryKey, testEntryValue,
+	)
+
+	err := sessionStore.DeleteReservedSessions(ctx)
+	require.NoError(t, err)
+
+	groupAlias2 := getNewSessionAlias(t, ctx, sessionStore)
+
+	return insertTempAndPermEntry(
+		t, ctx, boltDB, testRuleName2, groupAlias2,
+		fn.Some(testFeatureName2), testEntryKey2, testEntryValue,
 	)
 }
 
@@ -930,6 +1064,53 @@ func oneSessionAndPrivPair(t *testing.T, ctx context.Context,
 	boltDB *BoltDB, sessionStore session.Store, _ accounts.Store,
 	_ *rootKeyMockStore) *expectedResult {
 
+	return createPrivacyPairs(t, ctx, boltDB, sessionStore, 1, 1)
+}
+
+// deletedSessionWithPrivPair inserts 1 session with a linked 1 privacy pair
+// into the boltDB, and then deletes the session from the sessions store, to
+// simulate the case where a session has been deleted, but the privacy pairs
+// still exist. This can happen if the user deletes their session db but not
+// their firewall db.
+func deletedSessionWithPrivPair(t *testing.T, ctx context.Context,
+	boltDB *BoltDB, sessionStore session.Store, _ accounts.Store,
+	_ *rootKeyMockStore) *expectedResult {
+
+	_ = createPrivacyPairs(t, ctx, boltDB, sessionStore, 1, 1)
+
+	// Now we delete the session that the privacy pair was linked to.
+	err := sessionStore.DeleteReservedSessions(ctx)
+	require.NoError(t, err)
+
+	return &expectedResult{
+		kvEntries: []*kvEntry{},
+		// Since the session the privacy pair was linked to has been
+		// deleted, we expect no privacy pairs to be migrated.
+		privPairs: make(privacyPairs),
+		actions:   []*Action{},
+	}
+}
+
+// deletedAndExistingSessionsWithPrivPairs generates 2 different privacy pairs,
+// each linked to a different sessions. However, one of the sessions is deleted
+// prior to the migration, to test that only one of the privacy pairs should be
+// migrated, while the other one should be ignored since its session has been
+// deleted.
+func deletedAndExistingSessionsWithPrivPairs(t *testing.T, ctx context.Context,
+	boltDB *BoltDB, sessionStore session.Store, _ accounts.Store,
+	_ *rootKeyMockStore) *expectedResult {
+
+	// First generate one privacy pair linked to a session that will be
+	// deleted.
+	_ = createPrivacyPairs(t, ctx, boltDB, sessionStore, 1, 1)
+
+	// Delete the linked session.
+	err := sessionStore.DeleteReservedSessions(ctx)
+	require.NoError(t, err)
+
+	// Now generate another privacy pair linked to a session that won't be
+	// deleted prior to the migration. Therefore, this privacy pair should
+	// be migrated.
 	return createPrivacyPairs(t, ctx, boltDB, sessionStore, 1, 1)
 }
 
