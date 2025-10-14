@@ -3766,7 +3766,7 @@ func testCustomChannelsOraclePricing(ctx context.Context, net *NetworkHarness,
 	}
 
 	const decimalDisplay = 6
-	itestAsset = &mintrpc.MintAsset{
+	tcAsset := &mintrpc.MintAsset{
 		AssetType: taprpc.AssetType_NORMAL,
 		Name:      "USD",
 		AssetMeta: usdMetaData,
@@ -3862,7 +3862,7 @@ func testCustomChannelsOraclePricing(ctx context.Context, net *NetworkHarness,
 		t.t, t.lndHarness.Miner.Client, charlieTap,
 		[]*mintrpc.MintAssetRequest{
 			{
-				Asset: itestAsset,
+				Asset: tcAsset,
 			},
 		},
 	)
@@ -4648,7 +4648,7 @@ func testCustomChannelsDecodeAssetInvoice(ctx context.Context,
 	}
 
 	const decimalDisplay = 6
-	itestAsset = &mintrpc.MintAsset{
+	tcAsset := &mintrpc.MintAsset{
 		AssetType: taprpc.AssetType_NORMAL,
 		Name:      "USD",
 		AssetMeta: usdMetaData,
@@ -4664,7 +4664,7 @@ func testCustomChannelsDecodeAssetInvoice(ctx context.Context,
 		t.t, t.lndHarness.Miner.Client, aliceTap,
 		[]*mintrpc.MintAssetRequest{
 			{
-				Asset: itestAsset,
+				Asset: tcAsset,
 			},
 		},
 	)
