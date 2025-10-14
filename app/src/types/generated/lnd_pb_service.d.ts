@@ -337,6 +337,15 @@ type LightningSubscribeInvoices = {
   readonly responseType: typeof lnd_pb.Invoice;
 };
 
+type LightningDeleteCanceledInvoice = {
+  readonly methodName: string;
+  readonly service: typeof Lightning;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof lnd_pb.DelCanceledInvoiceReq;
+  readonly responseType: typeof lnd_pb.DelCanceledInvoiceResp;
+};
+
 type LightningDecodePayReq = {
   readonly methodName: string;
   readonly service: typeof Lightning;
@@ -655,6 +664,7 @@ export class Lightning {
   static readonly ListInvoices: LightningListInvoices;
   static readonly LookupInvoice: LightningLookupInvoice;
   static readonly SubscribeInvoices: LightningSubscribeInvoices;
+  static readonly DeleteCanceledInvoice: LightningDeleteCanceledInvoice;
   static readonly DecodePayReq: LightningDecodePayReq;
   static readonly ListPayments: LightningListPayments;
   static readonly DeletePayment: LightningDeletePayment;
@@ -981,6 +991,15 @@ export class LightningClient {
     callback: (error: ServiceError|null, responseMessage: lnd_pb.Invoice|null) => void
   ): UnaryResponse;
   subscribeInvoices(requestMessage: lnd_pb.InvoiceSubscription, metadata?: grpc.Metadata): ResponseStream<lnd_pb.Invoice>;
+  deleteCanceledInvoice(
+    requestMessage: lnd_pb.DelCanceledInvoiceReq,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: lnd_pb.DelCanceledInvoiceResp|null) => void
+  ): UnaryResponse;
+  deleteCanceledInvoice(
+    requestMessage: lnd_pb.DelCanceledInvoiceReq,
+    callback: (error: ServiceError|null, responseMessage: lnd_pb.DelCanceledInvoiceResp|null) => void
+  ): UnaryResponse;
   decodePayReq(
     requestMessage: lnd_pb.PayReqString,
     metadata: grpc.Metadata,
