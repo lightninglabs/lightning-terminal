@@ -190,6 +190,8 @@ export const lndPendingChannels: LND.PendingChannelsResponse.AsObject = {
       commitWeight: '552',
       feePerKw: '12500',
       fundingExpiryBlocks: 100,
+      confirmationsUntilActive: 0,
+      confirmationHeight: 0,
     },
   ],
   pendingClosingChannelsList: [
@@ -339,6 +341,12 @@ export const lndGetChanInfo: Required<LND.ChannelEdge.AsObject> = {
     customRecordsMap: [],
   },
   customRecordsMap: [],
+  authProof: {
+    nodeSig1: '',
+    bitcoinSig1: '',
+    nodeSig2: '',
+    bitcoinSig2: '',
+  },
 };
 
 //

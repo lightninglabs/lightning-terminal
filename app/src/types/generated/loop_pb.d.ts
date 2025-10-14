@@ -566,6 +566,9 @@ export class QuoteRequest extends jspb.Message {
   getAssetInfo(): AssetLoopOutRequest | undefined;
   setAssetInfo(value?: AssetLoopOutRequest): void;
 
+  getAutoSelectDeposits(): boolean;
+  setAutoSelectDeposits(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): QuoteRequest.AsObject;
   static toObject(includeInstance: boolean, msg: QuoteRequest): QuoteRequest.AsObject;
@@ -587,6 +590,7 @@ export namespace QuoteRequest {
     pb_private: boolean,
     depositOutpointsList: Array<string>,
     assetInfo?: AssetLoopOutRequest.AsObject,
+    autoSelectDeposits: boolean,
   }
 }
 
@@ -2026,6 +2030,11 @@ export class Deposit extends jspb.Message {
   getBlocksUntilExpiry(): string;
   setBlocksUntilExpiry(value: string): void;
 
+  getSwapHash(): Uint8Array | string;
+  getSwapHash_asU8(): Uint8Array;
+  getSwapHash_asB64(): string;
+  setSwapHash(value: Uint8Array | string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Deposit.AsObject;
   static toObject(includeInstance: boolean, msg: Deposit): Deposit.AsObject;
@@ -2044,6 +2053,7 @@ export namespace Deposit {
     value: string,
     confirmationHeight: string,
     blocksUntilExpiry: string,
+    swapHash: Uint8Array | string,
   }
 }
 
@@ -2109,6 +2119,11 @@ export class StaticAddressLoopInSwap extends jspb.Message {
   getPaymentRequestAmountSatoshis(): string;
   setPaymentRequestAmountSatoshis(value: string): void;
 
+  clearDepositsList(): void;
+  getDepositsList(): Array<Deposit>;
+  setDepositsList(value: Array<Deposit>): void;
+  addDeposits(value?: Deposit, index?: number): Deposit;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StaticAddressLoopInSwap.AsObject;
   static toObject(includeInstance: boolean, msg: StaticAddressLoopInSwap): StaticAddressLoopInSwap.AsObject;
@@ -2126,6 +2141,7 @@ export namespace StaticAddressLoopInSwap {
     state: StaticAddressLoopInSwapStateMap[keyof StaticAddressLoopInSwapStateMap],
     swapAmountSatoshis: string,
     paymentRequestAmountSatoshis: string,
+    depositsList: Array<Deposit.AsObject>,
   }
 }
 
@@ -2160,6 +2176,9 @@ export class StaticAddressLoopInRequest extends jspb.Message {
   getPaymentTimeoutSeconds(): number;
   setPaymentTimeoutSeconds(value: number): void;
 
+  getAmount(): string;
+  setAmount(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StaticAddressLoopInRequest.AsObject;
   static toObject(includeInstance: boolean, msg: StaticAddressLoopInRequest): StaticAddressLoopInRequest.AsObject;
@@ -2180,6 +2199,7 @@ export namespace StaticAddressLoopInRequest {
     routeHintsList: Array<swapserverrpc_common_pb.RouteHint.AsObject>,
     pb_private: boolean,
     paymentTimeoutSeconds: number,
+    amount: string,
   }
 }
 
