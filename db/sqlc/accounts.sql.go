@@ -313,26 +313,6 @@ func (q *Queries) SetAccountIndex(ctx context.Context, arg SetAccountIndexParams
 	return err
 }
 
-const updateAccountAliasForTests = `-- name: UpdateAccountAliasForTests :one
-UPDATE accounts
-SET alias = $1
-WHERE id = $2
-    RETURNING id
-`
-
-type UpdateAccountAliasForTestsParams struct {
-	Alias int64
-	ID    int64
-}
-
-// NOTE: This query is only intended for testing purposes.
-func (q *Queries) UpdateAccountAliasForTests(ctx context.Context, arg UpdateAccountAliasForTestsParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, updateAccountAliasForTests, arg.Alias, arg.ID)
-	var id int64
-	err := row.Scan(&id)
-	return id, err
-}
-
 const updateAccountBalance = `-- name: UpdateAccountBalance :one
 UPDATE accounts
 SET current_balance_msat = $1
