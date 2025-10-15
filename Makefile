@@ -28,7 +28,7 @@ GO_VERSION = 1.24.6
 # installed before running the integration tests which include backward
 # compatibility tests. The list of versions must be in sync with any version
 # used in the backwardCompat map in itest/litd_test_list_on_test.go.
-LITD_COMPAT_VERSIONS = v0.14.1-alpha
+LITD_COMPAT_VERSIONS = v0.14.1-alpha v0.15.0-alpha
 
 LOOP_COMMIT := $(shell cat go.mod | \
 		grep $(LOOP_PKG) | \

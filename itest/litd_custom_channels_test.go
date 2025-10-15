@@ -14,6 +14,7 @@ import (
 	"github.com/btcsuite/btcd/btcec/v2/schnorr"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/btcsuite/btcd/wire"
 	"github.com/lightninglabs/taproot-assets/asset"
 	"github.com/lightninglabs/taproot-assets/itest"
 	"github.com/lightninglabs/taproot-assets/proof"
@@ -94,6 +95,16 @@ var (
 			"not_use_on_mainnet",
 		"--taproot-assets.experimental.rfq.mockoracleassetsperbtc=" +
 			"5820600",
+		"--taproot-assets.experimental.rfq.acceptpricedeviationppm=50000",
+	}...)
+
+	litdArgsTemplateDiffOracle = append(litdArgsTemplateNoOracle, []string{
+		"--taproot-assets.experimental.rfq.priceoracleaddress=" +
+			"use_mock_price_oracle_service_promise_to_" +
+			"not_use_on_mainnet",
+		"--taproot-assets.experimental.rfq.mockoracleassetsperbtc=" +
+			"8820600",
+		"--taproot-assets.experimental.rfq.acceptpricedeviationppm=50000",
 	}...)
 )
 
@@ -538,6 +549,13 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	// Test case 5: Create an asset invoice on Fabia and pay it from
 	// Charlie.
 	// ------------
+
+	// First send some sats from Erin to Fabia, for Fabia to have some
+	// minimal sats liquidity on her end.
+	sendKeySendPayment(t.t, erin, fabia, 5000)
+
+	logBalance(t.t, nodes, assetID, "after erin->fabia sats keysend")
+
 	const fabiaInvoiceAssetAmount1 = 1000
 	invoiceResp = createAssetInvoice(
 		t.t, erin, fabia, fabiaInvoiceAssetAmount1, assetID,
@@ -977,6 +995,13 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 	// Test case 5: Create an asset invoice on Fabia and pay it from
 	// Charlie.
 	// ------------
+
+	// First send some sats from Erin to Fabia, for Fabia to have some
+	// minimal sats liquidity on her end.
+	sendKeySendPayment(t.t, erin, fabia, 5000)
+
+	logBalance(t.t, nodes, assetID, "after erin->fabia sats keysend")
+
 	const fabiaInvoiceAssetAmount1 = 1000
 	invoiceResp = createAssetInvoice(
 		t.t, erin, fabia, fabiaInvoiceAssetAmount1, nil,
@@ -1279,9 +1304,10 @@ func testCustomChannelsGroupTranchesForceClose(ctx context.Context,
 	// that transports assets from two tranches.
 	// ------------
 	const (
-		keySendAmount  = 5000
-		numSends       = 6
-		totalFirstSend = keySendAmount * numSends
+		keySendAmount    = 5000
+		keySendSatAmount = 5000
+		numSends         = 6
+		totalFirstSend   = keySendAmount * numSends
 	)
 	for i := 0; i < numSends; i++ {
 		sendAssetKeySendPayment(
@@ -1289,6 +1315,12 @@ func testCustomChannelsGroupTranchesForceClose(ctx context.Context,
 			fn.None[int64](), withGroupKey(groupKey),
 		)
 	}
+
+	// With noop HTLCs implemented the sats balance of Dave will only
+	// increase up to the reserve amount. Let's make a direct non-asset
+	// keysend to make sure the sats balance is also enough.
+	sendKeySendPayment(t.t, charlie, dave, keySendSatAmount)
+
 	logBalanceGroup(t.t, nodes, groupIDs, "after keysend Charlie->Dave")
 
 	// ------------
@@ -1528,8 +1560,9 @@ func testCustomChannelsGroupTranchesHtlcForceClose(ctx context.Context,
 	// First, we'll send over some funds from Charlie to Dave, as we want
 	// Dave to be able to extend HTLCs in the other direction.
 	const (
-		numPayments   = 10
-		keySendAmount = 2_500
+		numPayments      = 10
+		keySendAmount    = 2_500
+		keySendSatAmount = 5_000
 	)
 	for i := 0; i < numPayments; i++ {
 		sendAssetKeySendPayment(
@@ -1537,6 +1570,11 @@ func testCustomChannelsGroupTranchesHtlcForceClose(ctx context.Context,
 			fn.None[int64](), withGroupKey(groupKey),
 		)
 	}
+
+	// With noop HTLCs implemented the sats balance of Dave will only
+	// increase up to the reserve amount. Let's make a direct non-asset
+	// keysend to make sure the sats balance is also enough.
+	sendKeySendPayment(t.t, charlie, dave, keySendSatAmount)
 
 	// Now that both parties have some funds, we'll move onto the main test.
 	//
@@ -2265,6 +2303,318 @@ func testCustomChannelsBreach(ctx context.Context, net *NetworkHarness,
 	t.Logf("Charlie balance after breach: %d", charlieBalance)
 }
 
+// testCustomChannelsV1Upgrade tests the upgrade path of a taproot assets
+// channel. It upgrades one of the peers to a version that utilizes feature bits
+// and new features over the channel, testing that backwards compatibility is
+// maintained along the way. We also introduce a channel breach, right at the
+// point before we switched over to the new features, to test that sweeping is
+// done properly.
+func testCustomChannelsV1Upgrade(ctx context.Context, net *NetworkHarness,
+	t *harnessTest) {
+
+	lndArgs := slices.Clone(lndArgsTemplate)
+	litdArgs := slices.Clone(litdArgsTemplate)
+
+	zane, err := net.NewNode(
+		t.t, "Zane", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	litdArgs = append(litdArgs, fmt.Sprintf(
+		"--taproot-assets.proofcourieraddr=%s://%s",
+		proof.UniverseRpcCourierType, zane.Cfg.LitAddr(),
+	))
+
+	davePort := port.NextAvailablePort()
+	daveFlags := append(
+		slices.Clone(lndArgs), "--nolisten", "--minbackoff=1h",
+	)
+
+	// For this simple test, we'll just have Charlie -> Dave as an assets
+	// channel.
+	dave, err := net.NewNodeWithPort(
+		t.t, "Dave", daveFlags, false, true, davePort,
+		litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	charlie, err := net.NewNode(t.t, "Charlie", lndArgs, false, true, litdArgs...)
+	require.NoError(t.t, err)
+
+	// Next we'll connect all the nodes and also fund them with some coins.
+	nodes := []*HarnessNode{dave, charlie}
+	connectAllNodes(t.t, net, nodes)
+	fundAllNodes(t.t, net, nodes)
+
+	universeTap := newTapClient(t.t, zane)
+	charlieTap := newTapClient(t.t, charlie)
+	daveTap := newTapClient(t.t, dave)
+
+	// Now we'll make an asset for Charlie that we'll use in the test to
+	// open a channel.
+	mintedAssets := itest.MintAssetsConfirmBatch(
+		t.t, t.lndHarness.Miner.Client, charlieTap,
+		[]*mintrpc.MintAssetRequest{
+			{
+				Asset: itestAsset,
+			},
+		},
+	)
+	cents := mintedAssets[0]
+	assetID := cents.AssetGenesis.AssetId
+
+	t.Logf("Minted %d itest asset cents, syncing universes...",
+		cents.Amount)
+
+	syncUniverses(t.t, charlieTap, dave)
+	t.Logf("Universes synced between all nodes, distributing assets...")
+
+	// Next we can open an asset channel from Charlie -> Dave, then kick
+	// off the main scenario.
+	t.Logf("Opening asset channels...")
+	assetFundResp, err := charlieTap.FundChannel(
+		ctx, &tchrpc.FundChannelRequest{
+			AssetAmount:        fundingAmount,
+			AssetId:            assetID,
+			PeerPubkey:         dave.PubKey[:],
+			FeeRateSatPerVbyte: 5,
+		},
+	)
+	require.NoError(t.t, err)
+	t.Logf("Funded channel between Charlie and Dave: %v", assetFundResp)
+
+	// With the channel open, mine 6 blocks to confirm it.
+	mineBlocks(t, net, 6, 1)
+
+	// A transfer for the funding transaction should be found in Charlie's
+	// DB.
+	fundingTxid, err := chainhash.NewHashFromStr(assetFundResp.Txid)
+	require.NoError(t.t, err)
+	assetFundingTransfer := locateAssetTransfers(
+		t.t, charlieTap, *fundingTxid,
+	)
+
+	t.Logf("Channel funding transfer: %v",
+		toProtoJSON(t.t, assetFundingTransfer))
+
+	// Charlie's balance should reflect that the funding asset is now
+	// excluded from balance reporting by tapd.
+	itest.AssertBalances(
+		t.t, charlieTap, itestAsset.Amount-fundingAmount,
+		itest.WithAssetID(assetID), itest.WithNumUtxos(1),
+	)
+
+	// Make sure that Charlie properly uploaded funding proof to the
+	// Universe server.
+	fundingScriptTree := tapscript.NewChannelFundingScriptTree()
+	fundingScriptKey := fundingScriptTree.TaprootKey
+	fundingScriptTreeBytes := fundingScriptKey.SerializeCompressed()
+	assertUniverseProofExists(
+		t.t, universeTap, assetID, nil, fundingScriptTreeBytes,
+		fmt.Sprintf(
+			"%v:%v", assetFundResp.Txid, assetFundResp.OutputIndex,
+		),
+	)
+
+	// Make sure the channel shows the correct asset information.
+	assertAssetChan(
+		t.t, charlie, dave, fundingAmount, []*taprpc.Asset{cents},
+	)
+
+	// Before we start sending out payments, let's make sure each node can
+	// see the other one in the graph and has all required features.
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(charlie, dave))
+	require.NoError(t.t, t.lndHarness.AssertNodeKnown(dave, charlie))
+
+	logBalance(t.t, nodes, assetID, "start")
+
+	// Let's dispatch 5 asset & 5 keysend payments from Charlie to Dave. At
+	// this point Charlie is running the old version of LiT.
+	for range 5 {
+		sendAssetKeySendPayment(
+			t.t, charlie, dave, 50, assetID, fn.None[int64](),
+		)
+		sendKeySendPayment(t.t, charlie, dave, 1_000)
+	}
+
+	logBalance(t.t, nodes, assetID, "before upgrade")
+
+	// Let's assert that Charlie & Dave actually run different versions of
+	// taproot-assets. We expect Dave to be running the latest version,
+	// while Charlie is running an older version (v0.15.0).
+	daveInfo, err := daveTap.GetInfo(ctx, &taprpc.GetInfoRequest{})
+	require.NoError(t.t, err)
+
+	charlieInfo, err := charlieTap.GetInfo(ctx, &taprpc.GetInfoRequest{})
+	require.NoError(t.t, err)
+
+	require.NotEqual(t.t, daveInfo.Version, charlieInfo.Version)
+
+	res, err := charlie.ChannelBalance(ctx, &lnrpc.ChannelBalanceRequest{})
+	require.NoError(t.t, err)
+
+	charlieSatsBefore := res.LocalBalance
+
+	// Now we'll restart Charlie and assert that he upgraded. We also back
+	// up the DB at this point, in order to induce a breach later right at
+	// the switching point before upgrading the channel. We will verify that
+	// the breach transaction will be swept by the right party.
+	require.NoError(t.t, net.StopAndBackupDB(charlie, WithUpgrade()))
+	connectAllNodes(t.t, net, nodes)
+
+	charlieInfo, err = charlieTap.GetInfo(ctx, &taprpc.GetInfoRequest{})
+	require.NoError(t.t, err)
+
+	// Dave and Charlie should both be running the same version (latest).
+	require.Equal(t.t, daveInfo.Version, charlieInfo.Version)
+
+	// Let's send another 5 asset and keysend payments from Charlie to Dave.
+	// Charlie is now on the latest version of LiT and the channel upgraded.
+	for range 5 {
+		sendAssetKeySendPayment(
+			t.t, charlie, dave, 50, assetID, fn.None[int64](),
+		)
+	}
+
+	res, err = charlie.ChannelBalance(ctx, &lnrpc.ChannelBalanceRequest{})
+	require.NoError(t.t, err)
+
+	charlieSatsAfter := res.LocalBalance
+
+	// Because of no-op HTLCs, the satoshi balance of Charlie should not
+	// have shifted while sending the asset payments.
+	require.Equal(t.t, charlieSatsBefore, charlieSatsAfter)
+
+	logBalance(t.t, nodes, assetID, "after upgrade")
+
+	// Now let's restart Charlie and restore the DB to the previous snapshot
+	// which corresponds to a previous (invalid) and unupgraded channel
+	// state.
+	require.NoError(t.t, net.StopAndRestoreDB(charlie))
+
+	// With Charlie restored, we'll now execute the force close.
+	t.Logf("Force close by Charlie to breach...")
+	charlieChanPoint := &lnrpc.ChannelPoint{
+		OutputIndex: uint32(assetFundResp.OutputIndex),
+		FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
+			FundingTxidStr: assetFundResp.Txid,
+		},
+	}
+	_, breachTxid, err := net.CloseChannel(charlie, charlieChanPoint, true)
+	require.NoError(t.t, err)
+
+	t.Logf("Channel closed! Mining blocks, close_txid=%v", breachTxid)
+
+	// Next, we'll mine a block to confirm the breach transaction.
+	mineBlocks(t, net, 1, 1)
+
+	// We should be able to find the transfer of the breach for both
+	// parties.
+	charlieBreachTransfer := locateAssetTransfers(
+		t.t, charlieTap, *breachTxid,
+	)
+	daveBreachTransfer := locateAssetTransfers(
+		t.t, daveTap, *breachTxid,
+	)
+
+	t.Logf("Charlie breach transfer: %v",
+		toProtoJSON(t.t, charlieBreachTransfer))
+	t.Logf("Dave breach transfer: %v",
+		toProtoJSON(t.t, daveBreachTransfer))
+
+	require.Len(t.t, charlieBreachTransfer.Outputs, 2)
+	assetOutput := charlieBreachTransfer.Outputs[0]
+	assertUniverseProofExists(
+		t.t, universeTap, assetID, nil, assetOutput.ScriptKey,
+		assetOutput.Anchor.Outpoint,
+	)
+
+	op, err := wire.NewOutPointFromString(assetOutput.Anchor.Outpoint)
+	require.NoError(t.t, err)
+
+	// We'll manually export the proof of the breach transfer, in order to
+	// verify that it indeed did not use STXO proofs.
+	proofResp, err := daveTap.ExportProof(ctx, &taprpc.ExportProofRequest{
+		AssetId:   assetID,
+		ScriptKey: assetOutput.ScriptKey,
+		Outpoint: &taprpc.OutPoint{
+			Txid:        op.Hash[:],
+			OutputIndex: op.Index,
+		},
+	})
+	require.NoError(t.t, err)
+
+	proofFile, err := proof.DecodeFile(proofResp.RawProofFile)
+	require.NoError(t.t, err)
+	require.Equal(t.t, proofFile.NumProofs(), 3)
+	latestProof, err := proofFile.LastProof()
+	require.NoError(t.t, err)
+
+	// This proof should not contain the STXO exclusion proofs, since the
+	// breach occured right before the channel upgraded.
+	stxoProofs := latestProof.ExclusionProofs[0].CommitmentProof.STXOProofs
+	require.Nil(t.t, stxoProofs)
+
+	// With the breach transaction mined, Dave should now have a transaction
+	// in the mempool sweeping *both* commitment outputs.
+	daveJusticeTxid, err := waitForNTxsInMempool(
+		net.Miner.Client, 1, time.Second*5,
+	)
+	require.NoError(t.t, err)
+
+	t.Logf("Dave justice txid: %v", daveJusticeTxid)
+
+	// Next, we'll mine a block to confirm Dave's justice transaction.
+	mineBlocks(t, net, 1, 1)
+
+	// Dave should now have a transfer for his justice transaction.
+	daveJusticeTransfer := locateAssetTransfers(
+		t.t, daveTap, *daveJusticeTxid[0],
+	)
+
+	t.Logf("Dave justice transfer: %v",
+		toProtoJSON(t.t, daveJusticeTransfer))
+
+	// Dave should claim all of the asset balance that was put into the
+	// channel.
+	daveBalance := uint64(fundingAmount)
+
+	itest.AssertBalances(
+		t.t, daveTap, daveBalance, itest.WithAssetID(assetID),
+		itest.WithNumUtxos(2),
+	)
+
+	t.Logf("Dave balance after breach: %d", daveBalance)
+
+	require.Len(t.t, daveJusticeTransfer.Outputs, 2)
+	assetOutput = daveJusticeTransfer.Outputs[0]
+	op, err = wire.NewOutPointFromString(assetOutput.Anchor.Outpoint)
+	require.NoError(t.t, err)
+
+	// We'll now also export the proof for the justice transaction. Here we
+	// expect to find STXO proofs, as the sweeping party is an upgraded node
+	// that supports it.
+	proofResp, err = daveTap.ExportProof(ctx, &taprpc.ExportProofRequest{
+		AssetId:   assetID,
+		ScriptKey: assetOutput.ScriptKey,
+		Outpoint: &taprpc.OutPoint{
+			Txid:        op.Hash[:],
+			OutputIndex: op.Index,
+		},
+	})
+	require.NoError(t.t, err)
+
+	proofFile, err = proof.DecodeFile(proofResp.RawProofFile)
+	require.NoError(t.t, err)
+	require.Equal(t.t, 4, proofFile.NumProofs())
+	latestProof, err = proofFile.LastProof()
+	require.NoError(t.t, err)
+
+	// This proof should contain the STXO exclusion proofs
+	stxoProofs = latestProof.InclusionProof.CommitmentProof.STXOProofs
+	require.NotNil(t.t, stxoProofs)
+}
+
 // testCustomChannelsLiquidityEdgeCasesCore is the core logic of the liquidity
 // edge cases. This test goes through certain scenarios that expose edge cases
 // and behaviors that proved to be buggy in the past and have been directly
@@ -2613,9 +2963,9 @@ func testCustomChannelsLiquidityEdgeCasesCore(ctx context.Context,
 
 	payInvoiceWithAssets(
 		t.t, charlie, dave, btcInvoiceResp.PaymentRequest, assetID,
-		withFeeLimit(2_000), withPayErrSubStr(
-			"rejecting payment of 20000 mSAT",
-		), withGroupKey(groupID),
+		withFeeLimit(2_000), withGroupKey(groupID), withPayErrSubStr(
+			"failed to acquire any quotes",
+		),
 	)
 
 	// When we override the uneconomical payment, it should succeed.
@@ -2640,7 +2990,7 @@ func testCustomChannelsLiquidityEdgeCasesCore(ctx context.Context,
 	payInvoiceWithAssets(
 		t.t, charlie, dave, btcInvoiceResp.PaymentRequest, assetID,
 		withFeeLimit(1_000), withAllowOverpay(), withPayErrSubStr(
-			"rejecting payment of 2000 mSAT",
+			"failed to acquire any quotes",
 		), withGroupKey(groupID),
 	)
 
@@ -2949,6 +3299,42 @@ func testCustomChannelsLiquidityEdgeCasesCore(ctx context.Context,
 	payInvoiceWithSatoshi(
 		t.t, dave, invoiceResp, withFeeLimit(100_000_000),
 	)
+
+	logBalance(t.t, nodes, assetID, "after policy checks")
+
+	resBuy, err := daveTap.RfqClient.AddAssetBuyOrder(
+		ctx, &rfqrpc.AddAssetBuyOrderRequest{
+			AssetSpecifier: &assetSpecifier,
+			AssetMaxAmt:    1_000,
+			Expiry:         uint64(inOneHour.Unix()),
+			PeerPubKey:     charlie.PubKey[:],
+			TimeoutSeconds: 100,
+		},
+	)
+	require.NoError(t.t, err)
+
+	scid := resBuy.GetAcceptedQuote().Scid
+
+	invResp := createAssetInvoice(
+		t.t, charlie, dave, 1_000, assetID,
+		withInvGroupKey(groupID), withRouteHints([]*lnrpc.RouteHint{
+			{
+				HopHints: []*lnrpc.HopHint{
+					{
+						NodeId: charlie.PubKeyStr,
+						ChanId: scid,
+					},
+				},
+			},
+		}),
+	)
+
+	payInvoiceWithAssets(
+		t.t, charlie, dave, invResp.PaymentRequest, assetID,
+		withGroupKey(groupID),
+	)
+
+	logBalance(t.t, nodes, assetID, "after invoice with route hints")
 }
 
 // testCustomChannelsLiquidityEdgeCases is a test that runs through some
@@ -2971,14 +3357,16 @@ func testCustomChannelsLiquidityEdgeCasesGroup(ctx context.Context,
 	testCustomChannelsLiquidityEdgeCasesCore(ctx, net, t, true)
 }
 
-// testCustomChannelsMultiRFQReceive tests that a node creating an invoice with
-// multiple RFQ quotes can actually guide the payer into using multiple private
-// taproot asset channels to pay the invoice.
-func testCustomChannelsMultiRFQReceive(ctx context.Context, net *NetworkHarness,
+// testCustomChannelsMultiRFQ tests that sending and receiving payments works
+// when using the multi-rfq features of tapd. This means that liquidity across
+// multiple channels and peers can be used to send out a payment, or receive to
+// an invoice.
+func testCustomChannelsMultiRFQ(ctx context.Context, net *NetworkHarness,
 	t *harnessTest) {
 
 	lndArgs := slices.Clone(lndArgsTemplate)
 	litdArgs := slices.Clone(litdArgsTemplate)
+	litdArgsDiffOracle := slices.Clone(litdArgsTemplateDiffOracle)
 
 	charlie, err := net.NewNode(
 		t.t, "Charlie", lndArgs, false, true, litdArgs...,
@@ -2986,6 +3374,11 @@ func testCustomChannelsMultiRFQReceive(ctx context.Context, net *NetworkHarness,
 	require.NoError(t.t, err)
 
 	litdArgs = append(litdArgs, fmt.Sprintf(
+		"--taproot-assets.proofcourieraddr=%s://%s",
+		proof.UniverseRpcCourierType, charlie.Cfg.LitAddr(),
+	))
+
+	litdArgsDiffOracle = append(litdArgsDiffOracle, fmt.Sprintf(
 		"--taproot-assets.proofcourieraddr=%s://%s",
 		proof.UniverseRpcCourierType, charlie.Cfg.LitAddr(),
 	))
@@ -3002,8 +3395,12 @@ func testCustomChannelsMultiRFQReceive(ctx context.Context, net *NetworkHarness,
 		t.t, "Yara", lndArgs, false, true, litdArgs...,
 	)
 	require.NoError(t.t, err)
+	george, err := net.NewNode(
+		t.t, "George", lndArgs, false, true, litdArgsDiffOracle...,
+	)
+	require.NoError(t.t, err)
 
-	nodes := []*HarnessNode{charlie, dave, erin, fabia, yara}
+	nodes := []*HarnessNode{charlie, dave, erin, fabia, yara, george}
 	connectAllNodes(t.t, net, nodes)
 	fundAllNodes(t.t, net, nodes)
 
@@ -3013,6 +3410,7 @@ func testCustomChannelsMultiRFQReceive(ctx context.Context, net *NetworkHarness,
 	erinTap := newTapClient(t.t, erin)
 	fabiaTap := newTapClient(t.t, fabia)
 	yaraTap := newTapClient(t.t, yara)
+	georgeTap := newTapClient(t.t, george)
 
 	assetReq := itest.CopyRequest(&mintrpc.MintAssetRequest{
 		Asset: itestAsset,
@@ -3030,7 +3428,7 @@ func testCustomChannelsMultiRFQReceive(ctx context.Context, net *NetworkHarness,
 	assetID := cents.AssetGenesis.AssetId
 	groupID := cents.GetAssetGroup().GetTweakedGroupKey()
 
-	syncUniverses(t.t, charlieTap, dave, erin, fabia, yara)
+	syncUniverses(t.t, charlieTap, dave, erin, fabia, yara, george)
 
 	multiRfqNodes := multiRfqNodes{
 		charlie: itestNode{
@@ -3053,6 +3451,10 @@ func testCustomChannelsMultiRFQReceive(ctx context.Context, net *NetworkHarness,
 			Lnd:  yara,
 			Tapd: yaraTap,
 		},
+		george: itestNode{
+			Lnd:  george,
+			Tapd: georgeTap,
+		},
 		universeTap: charlieTap,
 	}
 
@@ -3068,7 +3470,6 @@ func testCustomChannelsMultiRFQReceive(ctx context.Context, net *NetworkHarness,
 		t.t, charlie, &lnrpc.AddInvoiceResponse{
 			PaymentRequest: hodlInv.payReq,
 		},
-		withGroupKey(groupID),
 		withFailure(lnrpc.Payment_IN_FLIGHT, failureNone),
 	)
 
@@ -3100,13 +3501,88 @@ func testCustomChannelsMultiRFQReceive(ctx context.Context, net *NetworkHarness,
 	// Now let's create a normal invoice that will be settled once all the
 	// HTLCs have been received. This is only possible because the payer
 	// uses multiple bolt11 hop hints to reach the destination.
-	invoiceResp := createAssetInvoice(t.t, nil, fabia, 15_000, assetID)
+	invoiceResp := createAssetInvoice(
+		t.t, nil, fabia, 15_000, nil, withInvGroupKey(groupID),
+	)
 
 	payInvoiceWithSatoshi(
-		t.t, charlie, invoiceResp, withGroupKey(groupID),
+		t.t, charlie, invoiceResp,
 	)
 
 	logBalance(t.t, nodes, assetID, "after multi-rfq receive")
+
+	// Now we'll test that sending with multiple rfq quotes works.
+
+	// Let's start by providing some liquidity to Charlie's peers, in order
+	// for them to be able to push some amount if Fabia picks them as part
+	// of the route.
+	sendKeySendPayment(t.t, charlie, erin, 800_000)
+	sendKeySendPayment(t.t, charlie, dave, 800_000)
+	sendKeySendPayment(t.t, charlie, yara, 800_000)
+
+	// Let's ask for the rough equivalent of ~15k assets. Fabia, who's going
+	// to pay the invoice, only has parts of assets that are less than 10k
+	// in channels with one of the 3 intermediate peers. The only way to
+	// pay this invoice is by splitting the payment across multiple peers by
+	// using multiple RFQ quotes.
+	invAmt := int64(15_000 * 17)
+
+	iResp, err := charlie.AddHoldInvoice(
+		ctx, &invoicesrpc.AddHoldInvoiceRequest{
+			Memo:  "",
+			Value: invAmt,
+			Hash:  payHash[:],
+		},
+	)
+	require.NoError(t.t, err)
+
+	payReq := iResp.PaymentRequest
+
+	payInvoiceWithAssets(
+		t.t, fabia, nil, payReq, assetID,
+		withFailure(lnrpc.Payment_IN_FLIGHT, failureNone),
+	)
+
+	assertMinNumHtlcs(t.t, charlie, 2)
+	assertMinNumHtlcs(t.t, fabia, 2)
+
+	logBalance(t.t, nodes, assetID, "multi-rfq send in-flight")
+
+	_, err = charlie.SettleInvoice(ctx, &invoicesrpc.SettleInvoiceMsg{
+		Preimage: hodlInv.preimage[:],
+	})
+	require.NoError(t.t, err)
+
+	assertNumHtlcs(t.t, charlie, 0)
+	assertNumHtlcs(t.t, fabia, 0)
+
+	logBalance(t.t, nodes, assetID, "after multi-rfq send")
+
+	// Let's make another round-trip involving multi-rfq functionality.
+	// Let's have Fabia receive another large payment and send it back
+	// again, this time with a greater amount.
+	invoiceResp = createAssetInvoice(t.t, nil, fabia, 25_000, assetID)
+
+	payInvoiceWithSatoshi(
+		t.t, charlie, invoiceResp,
+	)
+
+	logBalance(t.t, nodes, assetID, "after multi-rfq receive (2nd)")
+
+	// Let's bump up the invoice amount a bit, to roughly ~22k assets.
+	invAmt = 22_000 * 17
+	inv, err := charlie.AddInvoice(ctx, &lnrpc.Invoice{
+		Value: invAmt,
+	})
+	require.NoError(t.t, err)
+
+	payReq = inv.PaymentRequest
+
+	payInvoiceWithAssets(
+		t.t, fabia, nil, payReq, nil, withGroupKey(groupID),
+	)
+
+	logBalance(t.t, nodes, assetID, "after multi-rfq send (2nd)")
 }
 
 // testCustomChannelsStrictForwarding is a test that tests the strict forwarding
@@ -3630,7 +4106,7 @@ func testCustomChannelsOraclePricing(ctx context.Context, net *NetworkHarness,
 	}
 
 	const decimalDisplay = 6
-	itestAsset = &mintrpc.MintAsset{
+	tcAsset := &mintrpc.MintAsset{
 		AssetType: taprpc.AssetType_NORMAL,
 		Name:      "USD",
 		AssetMeta: usdMetaData,
@@ -3726,7 +4202,7 @@ func testCustomChannelsOraclePricing(ctx context.Context, net *NetworkHarness,
 		t.t, t.lndHarness.Miner.Client, charlieTap,
 		[]*mintrpc.MintAssetRequest{
 			{
-				Asset: itestAsset,
+				Asset: tcAsset,
 			},
 		},
 	)
@@ -4119,15 +4595,23 @@ func runCustomChannelsHtlcForceClose(ctx context.Context, t *harnessTest,
 	// First, we'll send over some funds from Alice to Bob, as we want Bob
 	// to be able to extend HTLCs in the other direction.
 	const (
-		numPayments   = 10
-		keySendAmount = 2_500
+		numPayments        = 10
+		keySendAssetAmount = 2_500
+		keySendSatAmount   = 5_000
 	)
 	for i := 0; i < numPayments; i++ {
 		sendAssetKeySendPayment(
-			t.t, alice, bob, keySendAmount, assetID,
+			t.t, alice, bob, keySendAssetAmount, assetID,
 			fn.None[int64](),
 		)
 	}
+
+	// With noop HTLCs implemented the sats balance of Bob will only
+	// increase up to the reserve amount. Let's make a direct non-asset
+	// keysend to make sure the sats balance is also enough.
+	sendKeySendPayment(t.t, alice, bob, keySendSatAmount)
+
+	logBalance(t.t, nodes, assetID, "after keysends to Bob")
 
 	// Now that both parties have some funds, we'll move onto the main test.
 	//
@@ -4512,7 +4996,7 @@ func testCustomChannelsDecodeAssetInvoice(ctx context.Context,
 	}
 
 	const decimalDisplay = 6
-	itestAsset = &mintrpc.MintAsset{
+	tcAsset := &mintrpc.MintAsset{
 		AssetType: taprpc.AssetType_NORMAL,
 		Name:      "USD",
 		AssetMeta: usdMetaData,
@@ -4528,7 +5012,7 @@ func testCustomChannelsDecodeAssetInvoice(ctx context.Context,
 		t.t, t.lndHarness.Miner.Client, aliceTap,
 		[]*mintrpc.MintAssetRequest{
 			{
-				Asset: itestAsset,
+				Asset: tcAsset,
 			},
 		},
 	)

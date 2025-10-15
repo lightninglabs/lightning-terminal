@@ -10,6 +10,8 @@ import (
 
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
+	"github.com/lightninglabs/taproot-assets/rfqmath"
+	"github.com/lightninglabs/taproot-assets/rpcutils"
 	"github.com/lightninglabs/taproot-assets/taprpc/tapchannelrpc"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
@@ -443,15 +445,29 @@ func getPaymentResult(stream routerrpc.Router_SendPaymentV2Client,
 	}
 }
 
-func getAssetPaymentResult(
+// TapPayment encapsulates all the information related to the outcome of a tap
+// asset payment. It contains the outcome of the LND payment and also the asset
+// rate that was used to swap the assets to satoshis.
+type TapPayment struct {
+	// lndPayment contains the lnd part of the payment result.
+	lndPayment *lnrpc.Payment
+
+	// assetRate contains the asset rate that was used to convert the assets
+	// to sats.
+	assetRate rfqmath.FixedPoint[rfqmath.BigInt]
+}
+
+func getAssetPaymentResult(t *testing.T,
 	s tapchannelrpc.TaprootAssetChannels_SendPaymentClient,
-	isHodl bool) (*lnrpc.Payment, error) {
+	isHodl bool) (*TapPayment, error) {
 
 	// No idea why it makes a difference whether we wait before calling
 	// s.Recv() or not, but it does. Without the sleep, the test will fail
 	// with "insufficient local balance"... ¯\_(ツ)_/¯
 	// Probably something weird within lnd itself.
 	time.Sleep(time.Second)
+
+	var rateVal rfqmath.FixedPoint[rfqmath.BigInt]
 
 	for {
 		msg, err := s.Recv()
@@ -463,12 +479,46 @@ func getAssetPaymentResult(
 		// payment stream, as they are not relevant.
 		quote := msg.GetAcceptedSellOrder()
 		if quote != nil {
+			rpcRate := quote.BidAssetRate
+			rate, err := rpcutils.UnmarshalRfqFixedPoint(rpcRate)
+			require.NoError(t, err)
+
+			rateVal = *rate
+
+			t.Logf("Got quote for %v asset units per BTC from "+
+				"peer %v", rate, quote.Peer)
+			continue
+		}
+
+		// Ignore the new RFQ array message from the stream, it is also
+		// not relevant.
+		quotes := msg.GetAcceptedSellOrders()
+		if quotes != nil {
+			for _, quote := range quotes.AcceptedSellOrders {
+				rpcRate := quote.BidAssetRate
+				rate, err := rpcutils.UnmarshalRfqFixedPoint(
+					rpcRate,
+				)
+				require.NoError(t, err)
+
+				rateVal = *rate
+
+				t.Logf("Got quote for %v asset units per BTC "+
+					"from peer %v", rate, quote.Peer)
+			}
+
 			continue
 		}
 
 		payment := msg.GetPaymentResult()
 		if payment == nil {
-			return nil, fmt.Errorf("unexpected message: %v", msg)
+			err := fmt.Errorf("unexpected message: %v", msg)
+			return nil, err
+		}
+
+		result := &TapPayment{
+			lndPayment: payment,
+			assetRate:  rateVal,
 		}
 
 		// If this is a hodl payment, then we'll return the first
@@ -476,10 +526,10 @@ func getAssetPaymentResult(
 		// clears to we can observe the other payment states.
 		switch {
 		case isHodl:
-			return payment, nil
+			return result, nil
 
 		case payment.Status != lnrpc.Payment_IN_FLIGHT:
-			return payment, nil
+			return result, nil
 		}
 	}
 }

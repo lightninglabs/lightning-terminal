@@ -27,6 +27,7 @@ import (
 	"github.com/lightninglabs/taproot-assets/tapfreighter"
 	"github.com/lightninglabs/taproot-assets/taprpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/assetwalletrpc"
+	"github.com/lightninglabs/taproot-assets/taprpc/authmailboxrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/mintrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc/rfqrpc"
 	tchrpc "github.com/lightninglabs/taproot-assets/taprpc/tapchannelrpc"
@@ -76,25 +77,32 @@ type itestNode struct {
 // multiRfqNodes contains all the itest nodes that are required to set up the
 // multi RFQ network topology.
 type multiRfqNodes struct {
-	charlie, dave, erin, fabia, yara itestNode
-	universeTap                      *tapClient
+	charlie, dave, erin, fabia, yara, george itestNode
+	universeTap                              *tapClient
 }
 
 // createTestMultiRFQAssetNetwork creates a lightning network topology which
 // consists of both bitcoin and asset channels. It focuses on the property of
 // having multiple channels available on both the sender and receiver side.
+// The George node is using a way different oracle that provides asset rates
+// that fall outside of the configured tolerance bounds, leading to RFQ
+// negotiation failures.
 //
 // The topology we are going for looks like the following:
 //
-//	  /---[sats]--> Erin --[assets]--\
-//	 /                                \
-//	/                                  \
+//	   /---[sats]--> Erin --[assets]--\
+//	  /                                \
+//	 /                                  \
+//	/                                    \
 //
-// Charlie  -----[sats]-->  Dave  --[assets]---->Fabia
+// Charlie  -----[sats]--> Dave --[assets]--> Fabia
 //
-//	\                                  /
-//	 \                                /
-//	  \---[sats]--> Yara --[assets]--/
+//	\                                     / /
+//	 \                                   / /
+//	  \---[sats]--> Yara --[assets]-----/ /
+//	   \                                 /
+//	    \                               /
+//	     \--[sats]-> George --[assets]-/
 func createTestMultiRFQAssetNetwork(t *harnessTest, net *NetworkHarness,
 	nodes multiRfqNodes, mintedAsset *taprpc.Asset, assetSendAmount,
 	fundingAmount uint64, pushSat int64) (*lnrpc.ChannelPoint,
@@ -105,6 +113,7 @@ func createTestMultiRFQAssetNetwork(t *harnessTest, net *NetworkHarness,
 	erin, erinTap := nodes.erin.Lnd, nodes.erin.Tapd
 	_, fabiaTap := nodes.fabia.Lnd, nodes.fabia.Tapd
 	yara, yaraTap := nodes.yara.Lnd, nodes.yara.Tapd
+	george, georgeTap := nodes.george.Lnd, nodes.george.Tapd
 	universeTap := nodes.universeTap
 
 	// Let's open the normal sats channels between Charlie and the routing
@@ -125,6 +134,13 @@ func createTestMultiRFQAssetNetwork(t *harnessTest, net *NetworkHarness,
 
 	_ = openChannelAndAssert(
 		t, net, charlie, yara, lntest.OpenChannelParams{
+			Amt:         10_000_000,
+			SatPerVByte: 5,
+		},
+	)
+
+	_ = openChannelAndAssert(
+		t, net, charlie, george, lntest.OpenChannelParams{
 			Amt:         10_000_000,
 			SatPerVByte: 5,
 		},
@@ -224,6 +240,34 @@ func createTestMultiRFQAssetNetwork(t *harnessTest, net *NetworkHarness,
 	)
 	itest.AssertNonInteractiveRecvComplete(t.t, yaraTap, 1)
 
+	// We need to send some assets to George, so he can fund an asset
+	// channel with Fabia.
+	georgeAddr, err := georgeTap.NewAddr(ctxb, &taprpc.NewAddrRequest{
+		Amt:     assetSendAmount,
+		AssetId: assetID,
+		ProofCourierAddr: fmt.Sprintf(
+			"%s://%s", proof.UniverseRpcCourierType,
+			charlieTap.node.Cfg.LitAddr(),
+		),
+	})
+	require.NoError(t.t, err)
+
+	t.Logf("Sending %v asset units to George...", assetSendAmount)
+
+	// Send the assets to George.
+	itest.AssertAddrCreated(t.t, georgeTap, mintedAsset, georgeAddr)
+	sendResp, err = charlieTap.SendAsset(ctxb, &taprpc.SendAssetRequest{
+		TapAddrs: []string{georgeAddr.Encoded},
+	})
+	require.NoError(t.t, err)
+	itest.ConfirmAndAssertOutboundTransfer(
+		t.t, t.lndHarness.Miner.Client, charlieTap, sendResp, assetID,
+		[]uint64{
+			mintedAsset.Amount - 4*assetSendAmount, assetSendAmount,
+		}, 3, 4,
+	)
+	itest.AssertNonInteractiveRecvComplete(t.t, georgeTap, 1)
+
 	// We fund the Dave->Fabia channel.
 	fundRespDF, err := daveTap.FundChannel(
 		ctxb, &tchrpc.FundChannelRequest{
@@ -263,6 +307,19 @@ func createTestMultiRFQAssetNetwork(t *harnessTest, net *NetworkHarness,
 	require.NoError(t.t, err)
 	t.Logf("Funded channel between Yara and Fabia: %v", fundRespYF)
 
+	// We fund the George->Fabia channel.
+	fundRespGF, err := georgeTap.FundChannel(
+		ctxb, &tchrpc.FundChannelRequest{
+			AssetAmount:        fundingAmount,
+			AssetId:            assetID,
+			PeerPubkey:         fabiaTap.node.PubKey[:],
+			FeeRateSatPerVbyte: 5,
+			PushSat:            pushSat,
+		},
+	)
+	require.NoError(t.t, err)
+	t.Logf("Funded channel between George and Fabia: %v", fundRespGF)
+
 	// Make sure the pending channel shows up in the list and has the
 	// custom records set as JSON.
 	assertPendingChannels(
@@ -274,17 +331,21 @@ func createTestMultiRFQAssetNetwork(t *harnessTest, net *NetworkHarness,
 	assertPendingChannels(
 		t.t, yaraTap.node, mintedAsset, 1, fundingAmount, 0,
 	)
+	assertPendingChannels(
+		t.t, georgeTap.node, mintedAsset, 1, fundingAmount, 0,
+	)
 
 	// Now that we've looked at the pending channels, let's actually confirm
 	// all three of them.
-	mineBlocks(t, net, 6, 3)
+	mineBlocks(t, net, 6, 4)
 
 	// We'll be tracking the expected asset balances throughout the test, so
 	// we can assert it after each action.
-	charlieAssetBalance := mintedAsset.Amount - 3*assetSendAmount
+	charlieAssetBalance := mintedAsset.Amount - 4*assetSendAmount
 	daveAssetBalance := assetSendAmount - fundingAmount
 	erinAssetBalance := assetSendAmount - fundingAmount
 	yaraAssetBalance := assetSendAmount - fundingAmount
+	georgeAssetBalance := assetSendAmount - fundingAmount
 
 	itest.AssertBalances(
 		t.t, charlieTap, charlieAssetBalance,
@@ -303,6 +364,10 @@ func createTestMultiRFQAssetNetwork(t *harnessTest, net *NetworkHarness,
 		t.t, yaraTap, yaraAssetBalance, itest.WithAssetID(assetID),
 	)
 
+	itest.AssertBalances(
+		t.t, georgeTap, georgeAssetBalance, itest.WithAssetID(assetID),
+	)
+
 	// Assert that the proofs for both channels has been uploaded to the
 	// designated Universe server.
 	assertUniverseProofExists(
@@ -316,6 +381,10 @@ func createTestMultiRFQAssetNetwork(t *harnessTest, net *NetworkHarness,
 	assertUniverseProofExists(
 		t.t, universeTap, assetID, groupKey, fundingScriptTreeBytes,
 		fmt.Sprintf("%v:%v", fundRespYF.Txid, fundRespYF.OutputIndex),
+	)
+	assertUniverseProofExists(
+		t.t, universeTap, assetID, groupKey, fundingScriptTreeBytes,
+		fmt.Sprintf("%v:%v", fundRespGF.Txid, fundRespGF.OutputIndex),
 	)
 
 	return nil, nil, nil
@@ -1354,13 +1423,15 @@ func sendAssetKeySendPayment(t *testing.T, src, dst *HarnessNode, amt uint64,
 		return
 	}
 
-	result, err := getAssetPaymentResult(stream, false)
+	tapPayment, err := getAssetPaymentResult(t, stream, false)
 	require.NoError(t, err)
-	if result.Status == lnrpc.Payment_FAILED {
-		t.Logf("Failure reason: %v", result.FailureReason)
+
+	payment := tapPayment.lndPayment
+	if payment.Status == lnrpc.Payment_FAILED {
+		t.Logf("Failure reason: %v", payment.FailureReason)
 	}
-	require.Equal(t, cfg.payStatus, result.Status)
-	require.Equal(t, cfg.failureReason, result.FailureReason)
+	require.Equal(t, cfg.payStatus, payment.Status)
+	require.Equal(t, cfg.failureReason, payment.FailureReason)
 }
 
 func sendKeySendPayment(t *testing.T, src, dst *HarnessNode,
@@ -1692,8 +1763,13 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 		copy(rfqBytes, i[:])
 	})
 
+	var peerPubKey []byte
+	if rfqPeer != nil {
+		peerPubKey = rfqPeer.PubKey[:]
+	}
+
 	request := &tchrpc.SendPaymentRequest{
-		PeerPubkey:     rfqPeer.PubKey[:],
+		PeerPubkey:     peerPubKey,
 		PaymentRequest: sendReq,
 		RfqId:          rfqBytes,
 		AllowOverpay:   cfg.allowOverpay,
@@ -1712,9 +1788,15 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 
 	// If an error is returned by the RPC method (meaning the stream itself
 	// was established, no network or auth error), we expect the error to be
-	// returned on the first read on the stream.
+	// returned on the stream.
 	if cfg.errSubStr != "" {
-		_, err := stream.Recv()
+		msg, err := stream.Recv()
+
+		// On errors we still get an empty set of RFQs as a response.
+		if msg.GetAcceptedSellOrders() != nil {
+			_, err = stream.Recv()
+		}
+
 		require.ErrorContains(t, err, cfg.errSubStr)
 
 		return 0, rfqmath.BigIntFixedPoint{}
@@ -1724,41 +1806,21 @@ func payInvoiceWithAssets(t *testing.T, payer, rfqPeer *HarnessNode,
 		numUnits uint64
 		rateVal  rfqmath.FixedPoint[rfqmath.BigInt]
 	)
-	if cfg.rfq.IsNone() {
-		// We want to receive the accepted quote message first, so we
-		// know how many assets we're going to pay.
-		quoteMsg, err := stream.Recv()
-		require.NoError(t, err)
-		acceptedQuote := quoteMsg.GetAcceptedSellOrder()
-		require.NotNil(t, acceptedQuote)
 
-		peerPubKey := acceptedQuote.Peer
-		require.Equal(t, peerPubKey, rfqPeer.PubKeyStr)
-
-		rpcRate := acceptedQuote.BidAssetRate
-		rate, err := rpcutils.UnmarshalRfqFixedPoint(rpcRate)
-		require.NoError(t, err)
-
-		rateVal = *rate
-
-		t.Logf("Got quote for %v asset units per BTC", rate)
-
-		amountMsat := lnwire.MilliSatoshi(decodedInvoice.NumMsat)
-		milliSatsFP := rfqmath.MilliSatoshiToUnits(amountMsat, *rate)
-		numUnits = milliSatsFP.ScaleTo(0).ToUint64()
-		msatPerUnit := float64(decodedInvoice.NumMsat) /
-			float64(numUnits)
-		t.Logf("Got quote for %v asset units at %3f msat/unit from "+
-			"peer %s with SCID %d", numUnits, msatPerUnit,
-			peerPubKey, acceptedQuote.Scid)
-	}
-
-	result, err := getAssetPaymentResult(
-		stream, cfg.payStatus == lnrpc.Payment_IN_FLIGHT,
+	tapPayment, err := getAssetPaymentResult(
+		t, stream, cfg.payStatus == lnrpc.Payment_IN_FLIGHT,
 	)
 	require.NoError(t, err)
-	require.Equal(t, cfg.payStatus, result.Status)
-	require.Equal(t, cfg.failureReason, result.FailureReason)
+
+	payment := tapPayment.lndPayment
+	require.Equal(t, cfg.payStatus, payment.Status)
+	require.Equal(t, cfg.failureReason, payment.FailureReason)
+
+	amountMsat := lnwire.MilliSatoshi(decodedInvoice.NumMsat)
+
+	rateVal = tapPayment.assetRate
+	milliSatsFP := rfqmath.MilliSatoshiToUnits(amountMsat, rateVal)
+	numUnits = milliSatsFP.ScaleTo(0).ToUint64()
 
 	return numUnits, rateVal
 }
@@ -2216,7 +2278,7 @@ func defaultCoOpCloseBalanceCheck(t *testing.T, local, remote *HarnessNode,
 	// transaction was inserted into the local universe.
 	//
 	// We expect that at most four outputs exist: one for the local asset
-	// output, one for the remote asset output, one for the remote BTC
+	// output, one for the remote asset output, one for the local BTC
 	// channel balance and one for the remote BTC channel balance.
 	//
 	// Those outputs are only present if the respective party has a
@@ -2548,6 +2610,7 @@ type tapClient struct {
 	rfqrpc.RfqClient
 	tchrpc.TaprootAssetChannelsClient
 	universerpc.UniverseClient
+	authmailboxrpc.MailboxClient
 }
 
 func newTapClient(t *testing.T, node *HarnessNode) *tapClient {
@@ -2578,6 +2641,7 @@ func newTapClient(t *testing.T, node *HarnessNode) *tapClient {
 	rfqClient := rfqrpc.NewRfqClient(rawConn)
 	tchClient := tchrpc.NewTaprootAssetChannelsClient(rawConn)
 	universeClient := universerpc.NewUniverseClient(rawConn)
+	mboxClient := authmailboxrpc.NewMailboxClient(rawConn)
 
 	return &tapClient{
 		node:                       node,
@@ -2588,6 +2652,7 @@ func newTapClient(t *testing.T, node *HarnessNode) *tapClient {
 		RfqClient:                  rfqClient,
 		TaprootAssetChannelsClient: tchClient,
 		UniverseClient:             universeClient,
+		MailboxClient:              mboxClient,
 	}
 }
 

@@ -130,8 +130,11 @@ var allTestCases = []*testCase{
 	},
 	{
 		name:       "custom channels multi rfq",
-		test:       testCustomChannelsMultiRFQReceive,
+		test:       testCustomChannelsMultiRFQ,
 		noAliceBob: true,
+		backwardCompat: map[string]string{
+			"Yara": "v0.15.0-alpha",
+		},
 	},
 	{
 		name:       "custom channels multi channel pathfinding",
@@ -145,6 +148,14 @@ var allTestCases = []*testCase{
 		noAliceBob: true,
 		backwardCompat: map[string]string{
 			"Alice": "v0.14.1-alpha",
+		},
+	},
+	{
+		name:       "custom channels v1 upgrade",
+		test:       testCustomChannelsV1Upgrade,
+		noAliceBob: true,
+		backwardCompat: map[string]string{
+			"Charlie": "v0.15.0-alpha",
 		},
 	},
 }

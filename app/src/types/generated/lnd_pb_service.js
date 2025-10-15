@@ -343,6 +343,15 @@ Lightning.SubscribeInvoices = {
   responseType: lnd_pb.Invoice
 };
 
+Lightning.DeleteCanceledInvoice = {
+  methodName: "DeleteCanceledInvoice",
+  service: Lightning,
+  requestStream: false,
+  responseStream: false,
+  requestType: lnd_pb.DelCanceledInvoiceReq,
+  responseType: lnd_pb.DelCanceledInvoiceResp
+};
+
 Lightning.DecodePayReq = {
   methodName: "DecodePayReq",
   service: Lightning,
@@ -1861,6 +1870,37 @@ LightningClient.prototype.subscribeInvoices = function subscribeInvoices(request
     },
     cancel: function () {
       listeners = null;
+      client.close();
+    }
+  };
+};
+
+LightningClient.prototype.deleteCanceledInvoice = function deleteCanceledInvoice(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(Lightning.DeleteCanceledInvoice, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
       client.close();
     }
   };
