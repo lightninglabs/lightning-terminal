@@ -9,6 +9,9 @@ import (
 	"github.com/lightningnetwork/lnd/clock"
 )
 
+// isSqlite is true if the test_db_sqlite build flag is set.
+var isSqlite = false
+
 // NewTestDB is a helper function that creates an BBolt database for testing.
 func NewTestDB(t *testing.T, clock clock.Clock) FirewallDBs {
 	return createStore(t, db.NewTestPostgresDB(t).BaseDB, clock)
