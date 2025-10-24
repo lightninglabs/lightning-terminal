@@ -1,6 +1,6 @@
 module github.com/lightninglabs/lightning-terminal/litrpc
 
-go 1.24.6
+go 1.24.9
 
 require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.22.0
