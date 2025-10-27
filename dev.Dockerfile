@@ -70,7 +70,13 @@ ARG NO_UI
 ARG CGO_ENABLED=1
 
 # Install dependencies and install/build lightning-terminal.
-RUN apk add --no-cache --update alpine-sdk make \
+# Note: When using `docker build`, setting the environmental variable
+# `DOCKER_BUILDKIT=1` is required to enable
+# [BuildKit](https://docs.docker.com/build/buildkit)
+# so that the cache mounts can be used.
+RUN --mount=type=cache,target=/go/pkg/mod \
+  --mount=type=cache,target=/root/.cache/go-build \
+  apk add --no-cache --update alpine-sdk make \
   && cd /go/src/github.com/lightninglabs/lightning-terminal \
   # If a custom lnd version is supplied, force it now.
   && if [ -n "$LND_VERSION" ]; then \
