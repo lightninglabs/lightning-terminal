@@ -198,6 +198,7 @@ func migrateSessionsToSQLAndValidate(ctx context.Context,
 		overrideSessionTimeZone(migratedSession)
 		overrideMacaroonRecipe(kvSession, migratedSession)
 		overrideRemovedAccount(kvSession, migratedSession)
+		overrideFeatureConfig(kvSession, migratedSession)
 
 		if !reflect.DeepEqual(kvSession, migratedSession) {
 			diff := difflib.UnifiedDiff{
@@ -529,4 +530,31 @@ func overrideRemovedAccount(kvSession *Session, migratedSession *Session) {
 			return kvSession.AccountID
 		},
 	)
+}
+
+// overrideFeatureConfig overrides a specific feature's config for the SQL
+// session in a certain scenario:
+//
+// In the bbolt store, an empty config for a feature is represented as an empty
+// array, while in for the SQL store, the same config is represented as nil.
+// Therefore, in the scenario where a specific feature has an empty config, we
+// override the SQL FeatureConfig for that feature to also be set to an empty
+// array. This is needed to ensure that the deep equals check in the migration
+// validation does not fail in this scenario.
+func overrideFeatureConfig(kvSession *Session, mSession *Session) {
+	// If the FeatureConfig hasn't been set, we can return early.
+	if mSession.FeatureConfig == nil {
+		return
+	}
+	migratedConf := *mSession.FeatureConfig
+
+	if kvSession.FeatureConfig != nil && mSession.FeatureConfig != nil {
+		for featureName, config := range *kvSession.FeatureConfig {
+			// If the config is empty for the feature, we override
+			// the SQL version.
+			if len(config) == 0 {
+				migratedConf[featureName] = make([]byte, 0)
+			}
+		}
+	}
 }
