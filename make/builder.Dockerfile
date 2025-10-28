@@ -1,4 +1,4 @@
-FROM golang:1.24.6-bookworm@sha256:ab1d1823abb55a9504d2e3e003b75b36dbeb1cbcc4c92593d85a84ee46becc6c
+FROM golang:1.24.9-bookworm@sha256:e400aebe4e96e1d52b510fb7a82c417d9377f595f0160eb1bd979d441711d20c
 
 MAINTAINER Olaoluwa Osuntokun <laolu@lightning.engineering>
 
