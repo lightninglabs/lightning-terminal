@@ -17,6 +17,18 @@
 
 ### Functional Changes/Additions
 
+* `dev.Dockerfile` now uses 
+  [cache mounts](https://docs.docker.com/build/cache/optimize/#use-cache-mounts)
+  to cache the `GOMODCACHE` and `GOCACHE` directories so that dependencies don't
+  need to be re-downloaded and re-built every time the image is re-created.
+  As a result of this change, `dev.Dockerfile` now requires
+  [BuildKit](https://docs.docker.com/build/buildkit) to build. When using
+  `docker build`, this can be enabled by setting the environmental variable
+  `DOCKER_BUILDKIT=1`. BuildKit also does not unnecessarily rebuild images when
+  the build context is a remote git repository because COPY layers are more
+  smartly compared to cache.
+
+
 ### Technical and Architectural Updates
 
 ## RPC Updates
