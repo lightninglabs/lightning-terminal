@@ -569,6 +569,9 @@ export class QuoteRequest extends jspb.Message {
   getAutoSelectDeposits(): boolean;
   setAutoSelectDeposits(value: boolean): void;
 
+  getFast(): boolean;
+  setFast(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): QuoteRequest.AsObject;
   static toObject(includeInstance: boolean, msg: QuoteRequest): QuoteRequest.AsObject;
@@ -591,6 +594,7 @@ export namespace QuoteRequest {
     depositOutpointsList: Array<string>,
     assetInfo?: AssetLoopOutRequest.AsObject,
     autoSelectDeposits: boolean,
+    fast: boolean,
   }
 }
 
@@ -606,6 +610,9 @@ export class InQuoteResponse extends jspb.Message {
 
   getConfTarget(): number;
   setConfTarget(value: number): void;
+
+  getQuotedAmt(): string;
+  setQuotedAmt(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): InQuoteResponse.AsObject;
@@ -623,6 +630,7 @@ export namespace InQuoteResponse {
     htlcPublishFeeSat: string,
     cltvDelta: number,
     confTarget: number,
+    quotedAmt: string,
   }
 }
 
@@ -2179,6 +2187,9 @@ export class StaticAddressLoopInRequest extends jspb.Message {
   getAmount(): string;
   setAmount(value: string): void;
 
+  getFast(): boolean;
+  setFast(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StaticAddressLoopInRequest.AsObject;
   static toObject(includeInstance: boolean, msg: StaticAddressLoopInRequest): StaticAddressLoopInRequest.AsObject;
@@ -2200,6 +2211,7 @@ export namespace StaticAddressLoopInRequest {
     pb_private: boolean,
     paymentTimeoutSeconds: number,
     amount: string,
+    fast: boolean,
   }
 }
 
@@ -2239,6 +2251,20 @@ export class StaticAddressLoopInResponse extends jspb.Message {
   getPaymentTimeoutSeconds(): number;
   setPaymentTimeoutSeconds(value: number): void;
 
+  clearUsedDepositsList(): void;
+  getUsedDepositsList(): Array<Deposit>;
+  setUsedDepositsList(value: Array<Deposit>): void;
+  addUsedDeposits(value?: Deposit, index?: number): Deposit;
+
+  getSwapAmount(): string;
+  setSwapAmount(value: string): void;
+
+  getChange(): string;
+  setChange(value: string): void;
+
+  getFast(): boolean;
+  setFast(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StaticAddressLoopInResponse.AsObject;
   static toObject(includeInstance: boolean, msg: StaticAddressLoopInResponse): StaticAddressLoopInResponse.AsObject;
@@ -2262,6 +2288,10 @@ export namespace StaticAddressLoopInResponse {
     label: string,
     initiator: string,
     paymentTimeoutSeconds: number,
+    usedDepositsList: Array<Deposit.AsObject>,
+    swapAmount: string,
+    change: string,
+    fast: boolean,
   }
 }
 
