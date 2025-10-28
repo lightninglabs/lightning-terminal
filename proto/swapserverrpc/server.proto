@@ -294,6 +294,10 @@ message ServerLoopInQuoteRequest {
     // service fee. This is to cover for the increased on-chain fee the server
     // has to pay when the sweeping transaction is broadcast.
     uint32 num_static_address_deposits = 7;
+
+    // If set, request the server to use fast publication behavior. Note that
+    // this falg is only available for static address loop ins.
+    bool fast = 8;
 }
 
 message ServerLoopInQuoteResponse {

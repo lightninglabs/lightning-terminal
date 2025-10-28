@@ -351,6 +351,9 @@ export class ServerLoopInQuoteRequest extends jspb.Message {
   getNumStaticAddressDeposits(): number;
   setNumStaticAddressDeposits(value: number): void;
 
+  getFast(): boolean;
+  setFast(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServerLoopInQuoteRequest.AsObject;
   static toObject(includeInstance: boolean, msg: ServerLoopInQuoteRequest): ServerLoopInQuoteRequest.AsObject;
@@ -370,6 +373,7 @@ export namespace ServerLoopInQuoteRequest {
     protocolVersion: ProtocolVersionMap[keyof ProtocolVersionMap],
     userAgent: string,
     numStaticAddressDeposits: number,
+    fast: boolean,
   }
 }
 
