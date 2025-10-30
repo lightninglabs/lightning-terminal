@@ -210,9 +210,8 @@ var (
 	rfqPeerPubKeyFlag = cli.StringFlag{
 		Name: "rfq_peer_pubkey",
 		Usage: "(optional) the public key of the peer to ask for a " +
-			"quote when converting from assets to sats; must be " +
-			"set if there are multiple channels with the same " +
-			"asset ID present",
+			"quote when converting from assets to sats; if left " +
+			"unset then rfq peers will be picked automatically",
 	}
 
 	allowOverpayFlag = cli.BoolFlag{
