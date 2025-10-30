@@ -81,6 +81,10 @@ func TestSessionsStoreMigration(t *testing.T) {
 			// session doesn't.
 			overrideRemovedAccount(kvSession, sqlSession)
 
+			// Finally, we also need to override specific feature's
+			// config if they are empty.
+			overrideFeatureConfig(kvSession, sqlSession)
+
 			assertEqualSessions(t, kvSession, sqlSession)
 		}
 
@@ -188,6 +192,48 @@ func TestSessionsStoreMigration(t *testing.T) {
 				featureConfig := map[string][]byte{
 					"AutoFees":      {1, 2, 3, 4},
 					"AutoSomething": {4, 3, 4, 5, 6, 6},
+				}
+
+				_, err := store.NewSession(
+					ctx, "test", TypeMacaroonAdmin,
+					time.Unix(1000, 0), "",
+					WithFeatureConfig(featureConfig),
+				)
+				require.NoError(t, err)
+
+				return getBoltStoreSessions(t, store)
+			},
+		},
+		{
+			name: "one session with a feature config with empty",
+			populateDB: func(t *testing.T, store *BoltStore,
+				_ accounts.Store) []*Session {
+
+				// Set a feature config, which has an empty
+				// entry for a specific feature.
+				featureConfig := map[string][]byte{
+					"AutoFees": {},
+				}
+
+				_, err := store.NewSession(
+					ctx, "test", TypeMacaroonAdmin,
+					time.Unix(1000, 0), "",
+					WithFeatureConfig(featureConfig),
+				)
+				require.NoError(t, err)
+
+				return getBoltStoreSessions(t, store)
+			},
+		},
+		{
+			name: "one session with a feature config with nil",
+			populateDB: func(t *testing.T, store *BoltStore,
+				_ accounts.Store) []*Session {
+
+				// Set a feature config, which has a nil entry
+				// for a specific feature.
+				featureConfig := map[string][]byte{
+					"AutoFees": nil,
 				}
 
 				_, err := store.NewSession(
@@ -801,9 +847,18 @@ func randomPrivacyFlags() PrivacyFlags {
 func randomFeatureConfig() FeaturesConfig {
 	featureConfig := make(FeaturesConfig)
 	for i := range rand.Intn(10) {
-		featureName := fmt.Sprintf("feature%d", i)
-		featureValue := []byte{byte(rand.Int31())}
-		featureConfig[featureName] = featureValue
+		var (
+			featureName = fmt.Sprintf("feature%d", i)
+			configValue []byte
+		)
+
+		// For the vast majority of the features, we set a value for the
+		// feature's config. But in 1/5 of the cases, we set an empty
+		// config.
+		if rand.Intn(5) != 0 {
+			configValue = []byte{byte(rand.Int31())}
+		}
+		featureConfig[featureName] = configValue
 	}
 
 	return featureConfig
