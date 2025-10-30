@@ -845,6 +845,13 @@ message QuoteRequest {
     This option only pertains to loop in swaps.
     */
     bool auto_select_deposits = 10;
+
+    /*
+    If set to true the server will immediately publish the swap in exchange for
+    a higher fee. This can be useful if the client expects change from a swap.
+    Note that this feature is only available for static address loop in swaps.
+    */
+    bool fast = 11;
 }
 
 message InQuoteResponse {
@@ -874,6 +881,13 @@ message InQuoteResponse {
     The confirmation target to be used to publish the on-chain HTLC.
     */
     int32 conf_target = 6;
+
+    /*
+    If the quote request was for a static address loop in and only contained
+    deposit outpoints the quote response will return the total amount of the
+    selected deposits.
+    */
+    int64 quoted_amt = 7 [jstype = JS_STRING];
 }
 
 message OutQuoteResponse {
@@ -2116,6 +2130,9 @@ message StaticAddressLoopInRequest {
     canceled to allow the user to safe on transaction fees.
     */
     int64 amount = 9 [jstype = JS_STRING];
+
+    // If set, request the server to use fast publication behavior.
+    bool fast = 10;
 }
 
 message StaticAddressLoopInResponse {
@@ -2180,6 +2197,28 @@ message StaticAddressLoopInResponse {
     side and the client can retry the swap with different parameters.
     */
     uint32 payment_timeout_seconds = 11;
+
+    /*
+    The deposits that are used for this swap.
+    */
+    repeated Deposit used_deposits = 12;
+
+    /*
+    The amount that is being swapped (may be less than total deposit value if
+    change is returned).
+    */
+    uint64 swap_amount = 13 [jstype = JS_STRING];
+
+    /*
+    The change amount that will be returned to the static address.
+    */
+    int64 change = 14 [jstype = JS_STRING];
+
+    /*
+    If set, indicates that the server was requested to use fast publication
+    behavior.
+    */
+    bool fast = 15;
 }
 
 message AssetLoopOutRequest {

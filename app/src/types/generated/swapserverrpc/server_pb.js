@@ -3201,7 +3201,8 @@ proto.looprpc.ServerLoopInQuoteRequest.toObject = function(includeInstance, msg)
     swapserverrpc_common_pb.RouteHint.toObject, includeInstance),
     protocolVersion: jspb.Message.getFieldWithDefault(msg, 2, 0),
     userAgent: jspb.Message.getFieldWithDefault(msg, 6, ""),
-    numStaticAddressDeposits: jspb.Message.getFieldWithDefault(msg, 7, 0)
+    numStaticAddressDeposits: jspb.Message.getFieldWithDefault(msg, 7, 0),
+    fast: jspb.Message.getBooleanFieldWithDefault(msg, 8, false)
   };
 
   if (includeInstance) {
@@ -3266,6 +3267,10 @@ proto.looprpc.ServerLoopInQuoteRequest.deserializeBinaryFromReader = function(ms
     case 7:
       var value = /** @type {number} */ (reader.readUint32());
       msg.setNumStaticAddressDeposits(value);
+      break;
+    case 8:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setFast(value);
       break;
     default:
       reader.skipField();
@@ -3343,6 +3348,13 @@ proto.looprpc.ServerLoopInQuoteRequest.serializeBinaryToWriter = function(messag
   if (f !== 0) {
     writer.writeUint32(
       7,
+      f
+    );
+  }
+  f = message.getFast();
+  if (f) {
+    writer.writeBool(
+      8,
       f
     );
   }
@@ -3540,6 +3552,24 @@ proto.looprpc.ServerLoopInQuoteRequest.prototype.getNumStaticAddressDeposits = f
  */
 proto.looprpc.ServerLoopInQuoteRequest.prototype.setNumStaticAddressDeposits = function(value) {
   return jspb.Message.setProto3IntField(this, 7, value);
+};
+
+
+/**
+ * optional bool fast = 8;
+ * @return {boolean}
+ */
+proto.looprpc.ServerLoopInQuoteRequest.prototype.getFast = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 8, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.looprpc.ServerLoopInQuoteRequest} returns this
+ */
+proto.looprpc.ServerLoopInQuoteRequest.prototype.setFast = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 8, value);
 };
 
 
