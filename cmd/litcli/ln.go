@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/lightninglabs/taproot-assets/rfqmath"
 	"github.com/lightninglabs/taproot-assets/rpcutils"
 	"github.com/lightninglabs/taproot-assets/taprpc"
+	"github.com/lightninglabs/taproot-assets/taprpc/rfqrpc"
 	tchrpc "github.com/lightninglabs/taproot-assets/taprpc/tapchannelrpc"
 	"github.com/lightningnetwork/lnd/cmd/commands"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -210,9 +210,8 @@ var (
 	rfqPeerPubKeyFlag = cli.StringFlag{
 		Name: "rfq_peer_pubkey",
 		Usage: "(optional) the public key of the peer to ask for a " +
-			"quote when converting from assets to sats; must be " +
-			"set if there are multiple channels with the same " +
-			"asset ID present",
+			"quote when converting from assets to sats; if left " +
+			"unset then rfq peers will be picked automatically",
 	}
 
 	allowOverpayFlag = cli.BoolFlag{
@@ -237,48 +236,21 @@ type resultStreamWrapper struct {
 //
 // NOTE: This method is part of the PaymentResultStream interface.
 func (w *resultStreamWrapper) Recv() (*lnrpc.Payment, error) {
-	resp, err := w.stream.Recv()
-	if err != nil {
-		return nil, err
-	}
-
-	res := resp.Result
-	switch r := res.(type) {
-	// The very first response might be an accepted sell order, which we
-	// just print out.
-	case *tchrpc.SendPaymentResponse_AcceptedSellOrder:
-		quote := r.AcceptedSellOrder
+	// printQuote unmarshals and prints an accepted quote.
+	printQuote := func(quote *rfqrpc.PeerAcceptedSellQuote) error {
 		rpcRate := quote.BidAssetRate
 		rate, err := rpcutils.UnmarshalRfqFixedPoint(rpcRate)
 		if err != nil {
-			return nil, fmt.Errorf("unable to unmarshal fixed "+
-				"point: %w", err)
+			return fmt.Errorf("unable to unmarshal fixed point: %w",
+				err)
 		}
 
 		amountMsat := lnwire.MilliSatoshi(w.amountMsat)
 		milliSatsFP := rfqmath.MilliSatoshiToUnits(amountMsat, *rate)
 		numUnits := milliSatsFP.ScaleTo(0).ToUint64()
 
-		// If the calculated number of units is 0 then the asset rate
-		// was not sufficient to represent the value of this payment.
 		if numUnits == 0 {
-			// We will calculate the minimum amount that can be
-			// effectively sent with this asset by calculating the
-			// value of a single asset unit, based on the provided
-			// asset rate.
-
-			// We create the single unit.
-			unit := rfqmath.FixedPointFromUint64[rfqmath.BigInt](
-				1, 0,
-			)
-
-			// We derive the minimum amount.
-			minAmt := rfqmath.UnitsToMilliSatoshi(unit, *rate)
-
-			// We return the error to the user.
-			return nil, fmt.Errorf("smallest payment with asset "+
-				"rate %v is %v, cannot send %v",
-				rate.ToUint64(), minAmt, amountMsat)
+			return nil
 		}
 
 		msatPerUnit := uint64(w.amountMsat) / numUnits
@@ -287,24 +259,55 @@ func (w *resultStreamWrapper) Recv() (*lnrpc.Payment, error) {
 			"peer %s with SCID %d\n", numUnits, msatPerUnit,
 			quote.Peer, quote.Scid)
 
-		resp, err = w.stream.Recv()
+		return nil
+	}
+
+	// A boolean to indicate whether the first quote was printed via the
+	// legacy single-rfq response field.
+	legacyFirstPrint := false
+
+	for {
+		resp, err := w.stream.Recv()
 		if err != nil {
 			return nil, err
 		}
 
-		if resp == nil || resp.Result == nil ||
-			resp.GetPaymentResult() == nil {
+		res := resp.Result
 
-			return nil, errors.New("unexpected nil result")
+		switch r := res.(type) {
+		case *tchrpc.SendPaymentResponse_AcceptedSellOrder:
+			err := printQuote(r.AcceptedSellOrder)
+			if err != nil {
+				return nil, err
+			}
+
+			legacyFirstPrint = true
+
+		case *tchrpc.SendPaymentResponse_AcceptedSellOrders:
+			quotes := r.AcceptedSellOrders.AcceptedSellOrders
+
+			for _, quote := range quotes {
+				// If the first item was returned via the legacy
+				// field then skip printing it again here. This
+				// skip only applies to the first element.
+				if legacyFirstPrint {
+					legacyFirstPrint = false
+					continue
+				}
+
+				err := printQuote(quote)
+				if err != nil {
+					return nil, err
+				}
+			}
+
+		case *tchrpc.SendPaymentResponse_PaymentResult:
+			return r.PaymentResult, nil
+
+		default:
+			return nil, fmt.Errorf("unexpected response type: %T",
+				r)
 		}
-
-		return resp.GetPaymentResult(), nil
-
-	case *tchrpc.SendPaymentResponse_PaymentResult:
-		return r.PaymentResult, nil
-
-	default:
-		return nil, fmt.Errorf("unexpected response type: %T", r)
 	}
 }
 

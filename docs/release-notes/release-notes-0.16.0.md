@@ -20,6 +20,11 @@
 ### Technical and Architectural Updates
 
 ## RPC Updates
+- [Updated litcli](https://github.com/lightninglabs/lightning-terminal/pull/1125)
+to support sending an asset payment without specifying a single peer. This will
+use the new multi-rfq feature of taproot-assets which will automatically pick
+the rfq peers for you. The field `rfq_peer_pubkey` is now optional for both
+adding invoices and sending payments.
 
 ## Integrated Binary Updates
 
