@@ -78,6 +78,7 @@ in remote mode (meaning that `lnd-mode=remote` is set). It shows the
 
 | LiT               | LND          |
 |-------------------|--------------|
+| **v0.15.3-alpha** | v0.19.0-beta |
 | **v0.15.2-alpha** | v0.19.0-beta |
 | **v0.15.1-alpha** | v0.19.0-beta |
 | **v0.15.0-alpha** | v0.19.0-beta |
@@ -172,6 +173,7 @@ will be added in the future.
 
 | LiT               | LND          | Loop         | Faraday       | Pool         | Taproot Assets |
 |-------------------|--------------|--------------|---------------|--------------|----------------|
+| **v0.15.3-alpha** | v0.19.3-beta | v0.31.5-beta | v0.2.16-alpha | v0.6.6-beta  | v0.6.1-alpha   |
 | **v0.15.2-alpha** | v0.19.3-beta | v0.31.2-beta | v0.2.16-alpha | v0.6.6-beta  | v0.6.1-alpha   |
 | **v0.15.1-alpha** | v0.19.2-beta | v0.31.2-beta | v0.2.16-alpha | v0.6.6-beta  | v0.6.1-alpha   |
 | **v0.15.0-alpha** | v0.19.1-beta | v0.31.2-beta | v0.2.16-alpha | v0.6.6-beta  | v0.6.0-alpha   |
