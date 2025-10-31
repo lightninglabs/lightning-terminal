@@ -826,8 +826,8 @@ github.com/go-pdf/fpdf v0.6.0/go.mod h1:HzcnA+A23uwogo0tp9yU+l3V+KXhiESpt1PMayhO
 github.com/go-sql-driver/mysql v1.6.0 h1:BCTh4TKNUYmOmMUcQ3IipzF5prigylS7XXjEkfCHuOE=
 github.com/go-sql-driver/mysql v1.6.0/go.mod h1:DCzpHaOWr8IXmIStZouvnhqoel9Qv2LBy8hT2VhHyBg=
 github.com/go-stack/stack v1.8.0/go.mod h1:v0f6uXyyMGvRgIKkXu+yp6POWl0qKG85gN/melR3HDY=
-github.com/go-viper/mapstructure/v2 v2.3.0 h1:27XbWsHIqhbdR5TIC911OfYvgSaW93HM+dX7970Q7jk=
-github.com/go-viper/mapstructure/v2 v2.3.0/go.mod h1:oJDH3BJKyqBA2TXFhDsKDGDTlndYOZ6rGS0BRZIxGhM=
+github.com/go-viper/mapstructure/v2 v2.4.0 h1:EBsztssimR/CONLSZZ04E8qAkxNYq4Qp9LvH92wZUgs=
+github.com/go-viper/mapstructure/v2 v2.4.0/go.mod h1:oJDH3BJKyqBA2TXFhDsKDGDTlndYOZ6rGS0BRZIxGhM=
 github.com/goccy/go-json v0.9.11/go.mod h1:6MelG93GURQebXPDq3khkgXZkazVtN9CRI+MGFi0w8I=
 github.com/godbus/dbus/v5 v5.0.4/go.mod h1:xhWf0FNVPg57R7Z0UbKHbJfkEywrmjJnf7w5xrFpKfA=
 github.com/gofrs/uuid v4.0.0+incompatible/go.mod h1:b2aQJv3Z4Fp6yNu3cdSllBxTCLRxnplIgP/c0N/04lM=
@@ -1084,8 +1084,8 @@ github.com/lightninglabs/faraday/frdrpc v1.0.1 h1:3YlP9UwT0bmT468oAdn4dxwsaJBI4Q
 github.com/lightninglabs/faraday/frdrpc v1.0.1/go.mod h1:ot1R/RGzk61d3qCrZPL36jI5ziGmKbvvE7UQKsJKuvk=
 github.com/lightninglabs/gozmq v0.0.0-20191113021534-d20a764486bf h1:HZKvJUHlcXI/f/O0Avg7t8sqkPo78HFzjmeYFl6DPnc=
 github.com/lightninglabs/gozmq v0.0.0-20191113021534-d20a764486bf/go.mod h1:vxmQPeIQxPf6Jf9rM8R+B4rKBqLA2AjttNxkFBL2Plk=
-github.com/lightninglabs/loop/looprpc v1.0.8 h1:OFmJNLjem6fLuH1YUO+3G6QA1wmjAd0zyhvdHONOBDs=
-github.com/lightninglabs/loop/looprpc v1.0.8/go.mod h1:c7WykKQZ3PspCMVvv2kr9o4l3bgJBEBVv0SOoBOjPOw=
+github.com/lightninglabs/loop/looprpc v1.0.11 h1:YCz67k5GSm3EKMCRBfis034Pd3R0+vPPHgfNwQqjpaE=
+github.com/lightninglabs/loop/looprpc v1.0.11/go.mod h1:m2B9bg8Cus1TVbXD3RffKVmGS3lpV2Zl1yu5x3wcQYk=
 github.com/lightninglabs/loop/swapserverrpc v1.0.13 h1:Qf4L8QBJKzhKRcC8dpvfrrBEXJMF3+XbpomAHEJsRDY=
 github.com/lightninglabs/loop/swapserverrpc v1.0.13/go.mod h1:Ml3gMwe/iTRLvu1QGGZzXcr0DYSa9sJGwKPktLaWtwE=
 github.com/lightninglabs/neutrino v0.16.1 h1:5Kz4ToxncEVkpKC6fwUjXKtFKJhuxlG3sBB3MdJTJjs=

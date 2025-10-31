@@ -34,7 +34,7 @@ const semanticAlphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqr
 const (
 	appMajor uint = 0
 	appMinor uint = 15
-	appPatch uint = 2
+	appPatch uint = 3
 
 	// appPreRelease MUST only contain characters from semanticAlphabet per
 	// the semantic versioning spec.

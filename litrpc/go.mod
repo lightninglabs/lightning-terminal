@@ -5,7 +5,7 @@ go 1.23.12
 require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.22.0
 	github.com/lightninglabs/faraday/frdrpc v1.0.1
-	github.com/lightninglabs/loop/looprpc v1.0.8
+	github.com/lightninglabs/loop/looprpc v1.0.11
 	github.com/lightninglabs/pool/poolrpc v1.0.1
 	github.com/lightninglabs/taproot-assets/taprpc v1.0.8-0.20250716163904-2ef55ba74036
 	github.com/lightningnetwork/lnd v0.19.3-beta
@@ -56,7 +56,7 @@ require (
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-macaroon-bakery/macaroonpb v1.0.0 // indirect
-	github.com/go-viper/mapstructure/v2 v2.3.0 // indirect
+	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
 	github.com/golang-migrate/migrate/v4 v4.17.0 // indirect

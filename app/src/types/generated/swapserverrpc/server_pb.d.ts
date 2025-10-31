@@ -351,6 +351,9 @@ export class ServerLoopInQuoteRequest extends jspb.Message {
   getNumStaticAddressDeposits(): number;
   setNumStaticAddressDeposits(value: number): void;
 
+  getFast(): boolean;
+  setFast(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServerLoopInQuoteRequest.AsObject;
   static toObject(includeInstance: boolean, msg: ServerLoopInQuoteRequest): ServerLoopInQuoteRequest.AsObject;
@@ -370,6 +373,7 @@ export namespace ServerLoopInQuoteRequest {
     protocolVersion: ProtocolVersionMap[keyof ProtocolVersionMap],
     userAgent: string,
     numStaticAddressDeposits: number,
+    fast: boolean,
   }
 }
 
@@ -1052,6 +1056,9 @@ export namespace FetchL402Response {
 }
 
 export class SubscribeNotificationsRequest extends jspb.Message {
+  getVersion(): SubscribeNotificationsRequest.ListenerVersionMap[keyof SubscribeNotificationsRequest.ListenerVersionMap];
+  setVersion(value: SubscribeNotificationsRequest.ListenerVersionMap[keyof SubscribeNotificationsRequest.ListenerVersionMap]): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): SubscribeNotificationsRequest.AsObject;
   static toObject(includeInstance: boolean, msg: SubscribeNotificationsRequest): SubscribeNotificationsRequest.AsObject;
@@ -1064,7 +1071,15 @@ export class SubscribeNotificationsRequest extends jspb.Message {
 
 export namespace SubscribeNotificationsRequest {
   export type AsObject = {
+    version: SubscribeNotificationsRequest.ListenerVersionMap[keyof SubscribeNotificationsRequest.ListenerVersionMap],
   }
+
+  export interface ListenerVersionMap {
+    LEGACY: 0;
+    V1: 1;
+  }
+
+  export const ListenerVersion: ListenerVersionMap;
 }
 
 export class SubscribeNotificationsResponse extends jspb.Message {
@@ -1077,6 +1092,11 @@ export class SubscribeNotificationsResponse extends jspb.Message {
   clearStaticLoopInSweep(): void;
   getStaticLoopInSweep(): ServerStaticLoopInSweepNotification | undefined;
   setStaticLoopInSweep(value?: ServerStaticLoopInSweepNotification): void;
+
+  hasUnfinishedSwap(): boolean;
+  clearUnfinishedSwap(): void;
+  getUnfinishedSwap(): ServerUnfinishedSwapNotification | undefined;
+  setUnfinishedSwap(value?: ServerUnfinishedSwapNotification): void;
 
   getNotificationCase(): SubscribeNotificationsResponse.NotificationCase;
   serializeBinary(): Uint8Array;
@@ -1093,12 +1113,14 @@ export namespace SubscribeNotificationsResponse {
   export type AsObject = {
     reservationNotification?: swapserverrpc_reservation_pb.ServerReservationNotification.AsObject,
     staticLoopInSweep?: ServerStaticLoopInSweepNotification.AsObject,
+    unfinishedSwap?: ServerUnfinishedSwapNotification.AsObject,
   }
 
   export enum NotificationCase {
     NOTIFICATION_NOT_SET = 0,
     RESERVATION_NOTIFICATION = 1,
     STATIC_LOOP_IN_SWEEP = 2,
+    UNFINISHED_SWAP = 3,
   }
 }
 
@@ -1136,6 +1158,32 @@ export namespace ServerStaticLoopInSweepNotification {
     swapHash: Uint8Array | string,
     depositToNoncesMap: Array<[string, Uint8Array | string]>,
     prevoutInfoList: Array<PrevoutInfo.AsObject>,
+  }
+}
+
+export class ServerUnfinishedSwapNotification extends jspb.Message {
+  getSwapHash(): Uint8Array | string;
+  getSwapHash_asU8(): Uint8Array;
+  getSwapHash_asB64(): string;
+  setSwapHash(value: Uint8Array | string): void;
+
+  getIsLoopIn(): boolean;
+  setIsLoopIn(value: boolean): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ServerUnfinishedSwapNotification.AsObject;
+  static toObject(includeInstance: boolean, msg: ServerUnfinishedSwapNotification): ServerUnfinishedSwapNotification.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ServerUnfinishedSwapNotification, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ServerUnfinishedSwapNotification;
+  static deserializeBinaryFromReader(message: ServerUnfinishedSwapNotification, reader: jspb.BinaryReader): ServerUnfinishedSwapNotification;
+}
+
+export namespace ServerUnfinishedSwapNotification {
+  export type AsObject = {
+    swapHash: Uint8Array | string,
+    isLoopIn: boolean,
   }
 }
 

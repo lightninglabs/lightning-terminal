@@ -775,7 +775,10 @@ message OutTermsResponse {
 
 message QuoteRequest {
     /*
-    The amount to swap in satoshis.
+    The amount to swap in satoshis. In the loop-in case this can either be taken
+    from the connected lnd wallet or coin-selected from static address deposits.
+    This is controlled by the select_deposits flag. If deposit_outpoints are
+    specified, the coins are taken out of that.
     */
     int64 amt = 1 [jstype = JS_STRING];
 
@@ -823,8 +826,9 @@ message QuoteRequest {
 
     /*
     Static address deposit outpoints that will be quoted for. This option only
-    pertains to loop in swaps. Either this or the amt parameter can be set at
-    the same time.
+    pertains to loop in swaps. If the amt field is set as well the respective
+    partial amount will be swapped. Cannot be used in conjunction with
+    auto_select_deposits.
     */
     repeated string deposit_outpoints = 8;
 
@@ -833,6 +837,21 @@ message QuoteRequest {
     be returned in the specified asset.
     */
     AssetLoopOutRequest asset_info = 9;
+
+    /*
+    In the legacy loop-in case this field must be set to false.
+    If set to true, the swap amount will be automatically selected from the
+    static address deposits. If set to true, deposit_outpoints must be empty.
+    This option only pertains to loop in swaps.
+    */
+    bool auto_select_deposits = 10;
+
+    /*
+    If set to true the server will immediately publish the swap in exchange for
+    a higher fee. This can be useful if the client expects change from a swap.
+    Note that this feature is only available for static address loop in swaps.
+    */
+    bool fast = 11;
 }
 
 message InQuoteResponse {
@@ -862,6 +881,13 @@ message InQuoteResponse {
     The confirmation target to be used to publish the on-chain HTLC.
     */
     int32 conf_target = 6;
+
+    /*
+    If the quote request was for a static address loop in and only contained
+    deposit outpoints the quote response will return the total amount of the
+    selected deposits.
+    */
+    int64 quoted_amt = 7 [jstype = JS_STRING];
 }
 
 message OutQuoteResponse {
@@ -1910,6 +1936,12 @@ message Deposit {
     loop-in swap anymore.
     */
     int64 blocks_until_expiry = 6 [jstype = JS_STRING];
+
+    /*
+    The swap hash of the swap that this deposit is part of. This field is only
+    set if the deposit is part of a loop-in swap.
+    */
+    bytes swap_hash = 7;
 }
 
 message StaticAddressWithdrawal {
@@ -1971,6 +2003,11 @@ message StaticAddressLoopInSwap {
     fees.
     */
     int64 payment_request_amount_satoshis = 5 [jstype = JS_STRING];
+
+    /*
+    The deposits that were used for this swap.
+    */
+    repeated Deposit deposits = 6;
 }
 
 enum StaticAddressLoopInSwapState {
@@ -2078,6 +2115,24 @@ message StaticAddressLoopInRequest {
     side and the client can retry the swap with different parameters.
     */
     uint32 payment_timeout_seconds = 8;
+
+    /*
+    The optional swap amount the client is attempting to swap. It can be
+    provided in combination with the outpoints or separately. If provided with
+    outpoints the client takes out this amount from the sum of provided
+    outpoints and sends the change back to the static address. If the amount is
+    provided without outpoints, the client will select deposits automatically.
+    The coin selection strategy is simplified by sorting all available deposits
+    in descending order by amount, and equal amounts in ascending order of
+    blocks until expiry, and then selecting the largest deposits first until the
+    amount is reached. The change will be sent back to the static address. If a
+    subset of outpoints suffice to cover the specified amount the swap will be
+    canceled to allow the user to safe on transaction fees.
+    */
+    int64 amount = 9 [jstype = JS_STRING];
+
+    // If set, request the server to use fast publication behavior.
+    bool fast = 10;
 }
 
 message StaticAddressLoopInResponse {
@@ -2142,6 +2197,28 @@ message StaticAddressLoopInResponse {
     side and the client can retry the swap with different parameters.
     */
     uint32 payment_timeout_seconds = 11;
+
+    /*
+    The deposits that are used for this swap.
+    */
+    repeated Deposit used_deposits = 12;
+
+    /*
+    The amount that is being swapped (may be less than total deposit value if
+    change is returned).
+    */
+    uint64 swap_amount = 13 [jstype = JS_STRING];
+
+    /*
+    The change amount that will be returned to the static address.
+    */
+    int64 change = 14 [jstype = JS_STRING];
+
+    /*
+    If set, indicates that the server was requested to use fast publication
+    behavior.
+    */
+    bool fast = 15;
 }
 
 message AssetLoopOutRequest {

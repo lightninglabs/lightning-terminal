@@ -1503,7 +1503,7 @@ if (goog.DEBUG && !COMPILED) {
  * @constructor
  */
 proto.looprpc.StaticAddressLoopInResponse = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.looprpc.StaticAddressLoopInResponse.repeatedFields_, null);
 };
 goog.inherits(proto.looprpc.StaticAddressLoopInResponse, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
@@ -5461,7 +5461,9 @@ proto.looprpc.QuoteRequest.toObject = function(includeInstance, msg) {
     swapserverrpc_common_pb.RouteHint.toObject, includeInstance),
     pb_private: jspb.Message.getBooleanFieldWithDefault(msg, 7, false),
     depositOutpointsList: (f = jspb.Message.getRepeatedField(msg, 8)) == null ? undefined : f,
-    assetInfo: (f = msg.getAssetInfo()) && proto.looprpc.AssetLoopOutRequest.toObject(includeInstance, f)
+    assetInfo: (f = msg.getAssetInfo()) && proto.looprpc.AssetLoopOutRequest.toObject(includeInstance, f),
+    autoSelectDeposits: jspb.Message.getBooleanFieldWithDefault(msg, 10, false),
+    fast: jspb.Message.getBooleanFieldWithDefault(msg, 11, false)
   };
 
   if (includeInstance) {
@@ -5535,6 +5537,14 @@ proto.looprpc.QuoteRequest.deserializeBinaryFromReader = function(msg, reader) {
       var value = new proto.looprpc.AssetLoopOutRequest;
       reader.readMessage(value,proto.looprpc.AssetLoopOutRequest.deserializeBinaryFromReader);
       msg.setAssetInfo(value);
+      break;
+    case 10:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setAutoSelectDeposits(value);
+      break;
+    case 11:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setFast(value);
       break;
     default:
       reader.skipField();
@@ -5628,6 +5638,20 @@ proto.looprpc.QuoteRequest.serializeBinaryToWriter = function(message, writer) {
       9,
       f,
       proto.looprpc.AssetLoopOutRequest.serializeBinaryToWriter
+    );
+  }
+  f = message.getAutoSelectDeposits();
+  if (f) {
+    writer.writeBool(
+      10,
+      f
+    );
+  }
+  f = message.getFast();
+  if (f) {
+    writer.writeBool(
+      11,
+      f
     );
   }
 };
@@ -5877,6 +5901,42 @@ proto.looprpc.QuoteRequest.prototype.hasAssetInfo = function() {
 };
 
 
+/**
+ * optional bool auto_select_deposits = 10;
+ * @return {boolean}
+ */
+proto.looprpc.QuoteRequest.prototype.getAutoSelectDeposits = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 10, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.looprpc.QuoteRequest} returns this
+ */
+proto.looprpc.QuoteRequest.prototype.setAutoSelectDeposits = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 10, value);
+};
+
+
+/**
+ * optional bool fast = 11;
+ * @return {boolean}
+ */
+proto.looprpc.QuoteRequest.prototype.getFast = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 11, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.looprpc.QuoteRequest} returns this
+ */
+proto.looprpc.QuoteRequest.prototype.setFast = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 11, value);
+};
+
+
 
 
 
@@ -5912,7 +5972,8 @@ proto.looprpc.InQuoteResponse.toObject = function(includeInstance, msg) {
     swapFeeSat: jspb.Message.getFieldWithDefault(msg, 1, "0"),
     htlcPublishFeeSat: jspb.Message.getFieldWithDefault(msg, 3, "0"),
     cltvDelta: jspb.Message.getFieldWithDefault(msg, 5, 0),
-    confTarget: jspb.Message.getFieldWithDefault(msg, 6, 0)
+    confTarget: jspb.Message.getFieldWithDefault(msg, 6, 0),
+    quotedAmt: jspb.Message.getFieldWithDefault(msg, 7, "0")
   };
 
   if (includeInstance) {
@@ -5964,6 +6025,10 @@ proto.looprpc.InQuoteResponse.deserializeBinaryFromReader = function(msg, reader
     case 6:
       var value = /** @type {number} */ (reader.readInt32());
       msg.setConfTarget(value);
+      break;
+    case 7:
+      var value = /** @type {string} */ (reader.readInt64String());
+      msg.setQuotedAmt(value);
       break;
     default:
       reader.skipField();
@@ -6019,6 +6084,13 @@ proto.looprpc.InQuoteResponse.serializeBinaryToWriter = function(message, writer
   if (f !== 0) {
     writer.writeInt32(
       6,
+      f
+    );
+  }
+  f = message.getQuotedAmt();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
+      7,
       f
     );
   }
@@ -6094,6 +6166,24 @@ proto.looprpc.InQuoteResponse.prototype.getConfTarget = function() {
  */
 proto.looprpc.InQuoteResponse.prototype.setConfTarget = function(value) {
   return jspb.Message.setProto3IntField(this, 6, value);
+};
+
+
+/**
+ * optional int64 quoted_amt = 7;
+ * @return {string}
+ */
+proto.looprpc.InQuoteResponse.prototype.getQuotedAmt = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 7, "0"));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.looprpc.InQuoteResponse} returns this
+ */
+proto.looprpc.InQuoteResponse.prototype.setQuotedAmt = function(value) {
+  return jspb.Message.setProto3StringIntField(this, 7, value);
 };
 
 
@@ -15971,7 +16061,8 @@ proto.looprpc.Deposit.toObject = function(includeInstance, msg) {
     outpoint: jspb.Message.getFieldWithDefault(msg, 3, ""),
     value: jspb.Message.getFieldWithDefault(msg, 4, "0"),
     confirmationHeight: jspb.Message.getFieldWithDefault(msg, 5, "0"),
-    blocksUntilExpiry: jspb.Message.getFieldWithDefault(msg, 6, "0")
+    blocksUntilExpiry: jspb.Message.getFieldWithDefault(msg, 6, "0"),
+    swapHash: msg.getSwapHash_asB64()
   };
 
   if (includeInstance) {
@@ -16031,6 +16122,10 @@ proto.looprpc.Deposit.deserializeBinaryFromReader = function(msg, reader) {
     case 6:
       var value = /** @type {string} */ (reader.readInt64String());
       msg.setBlocksUntilExpiry(value);
+      break;
+    case 7:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setSwapHash(value);
       break;
     default:
       reader.skipField();
@@ -16100,6 +16195,13 @@ proto.looprpc.Deposit.serializeBinaryToWriter = function(message, writer) {
   if (parseInt(f, 10) !== 0) {
     writer.writeInt64String(
       6,
+      f
+    );
+  }
+  f = message.getSwapHash_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      7,
       f
     );
   }
@@ -16235,6 +16337,48 @@ proto.looprpc.Deposit.prototype.getBlocksUntilExpiry = function() {
  */
 proto.looprpc.Deposit.prototype.setBlocksUntilExpiry = function(value) {
   return jspb.Message.setProto3StringIntField(this, 6, value);
+};
+
+
+/**
+ * optional bytes swap_hash = 7;
+ * @return {!(string|Uint8Array)}
+ */
+proto.looprpc.Deposit.prototype.getSwapHash = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 7, ""));
+};
+
+
+/**
+ * optional bytes swap_hash = 7;
+ * This is a type-conversion wrapper around `getSwapHash()`
+ * @return {string}
+ */
+proto.looprpc.Deposit.prototype.getSwapHash_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getSwapHash()));
+};
+
+
+/**
+ * optional bytes swap_hash = 7;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getSwapHash()`
+ * @return {!Uint8Array}
+ */
+proto.looprpc.Deposit.prototype.getSwapHash_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getSwapHash()));
+};
+
+
+/**
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.looprpc.Deposit} returns this
+ */
+proto.looprpc.Deposit.prototype.setSwapHash = function(value) {
+  return jspb.Message.setProto3BytesField(this, 7, value);
 };
 
 
@@ -16554,7 +16698,7 @@ proto.looprpc.StaticAddressWithdrawal.prototype.setConfirmationHeight = function
  * @private {!Array<number>}
  * @const
  */
-proto.looprpc.StaticAddressLoopInSwap.repeatedFields_ = [2];
+proto.looprpc.StaticAddressLoopInSwap.repeatedFields_ = [2,6];
 
 
 
@@ -16591,7 +16735,9 @@ proto.looprpc.StaticAddressLoopInSwap.toObject = function(includeInstance, msg) 
     depositOutpointsList: (f = jspb.Message.getRepeatedField(msg, 2)) == null ? undefined : f,
     state: jspb.Message.getFieldWithDefault(msg, 3, 0),
     swapAmountSatoshis: jspb.Message.getFieldWithDefault(msg, 4, "0"),
-    paymentRequestAmountSatoshis: jspb.Message.getFieldWithDefault(msg, 5, "0")
+    paymentRequestAmountSatoshis: jspb.Message.getFieldWithDefault(msg, 5, "0"),
+    depositsList: jspb.Message.toObjectList(msg.getDepositsList(),
+    proto.looprpc.Deposit.toObject, includeInstance)
   };
 
   if (includeInstance) {
@@ -16647,6 +16793,11 @@ proto.looprpc.StaticAddressLoopInSwap.deserializeBinaryFromReader = function(msg
     case 5:
       var value = /** @type {string} */ (reader.readInt64String());
       msg.setPaymentRequestAmountSatoshis(value);
+      break;
+    case 6:
+      var value = new proto.looprpc.Deposit;
+      reader.readMessage(value,proto.looprpc.Deposit.deserializeBinaryFromReader);
+      msg.addDeposits(value);
       break;
     default:
       reader.skipField();
@@ -16710,6 +16861,14 @@ proto.looprpc.StaticAddressLoopInSwap.serializeBinaryToWriter = function(message
     writer.writeInt64String(
       5,
       f
+    );
+  }
+  f = message.getDepositsList();
+  if (f.length > 0) {
+    writer.writeRepeatedMessage(
+      6,
+      f,
+      proto.looprpc.Deposit.serializeBinaryToWriter
     );
   }
 };
@@ -16848,6 +17007,44 @@ proto.looprpc.StaticAddressLoopInSwap.prototype.setPaymentRequestAmountSatoshis 
 };
 
 
+/**
+ * repeated Deposit deposits = 6;
+ * @return {!Array<!proto.looprpc.Deposit>}
+ */
+proto.looprpc.StaticAddressLoopInSwap.prototype.getDepositsList = function() {
+  return /** @type{!Array<!proto.looprpc.Deposit>} */ (
+    jspb.Message.getRepeatedWrapperField(this, proto.looprpc.Deposit, 6));
+};
+
+
+/**
+ * @param {!Array<!proto.looprpc.Deposit>} value
+ * @return {!proto.looprpc.StaticAddressLoopInSwap} returns this
+*/
+proto.looprpc.StaticAddressLoopInSwap.prototype.setDepositsList = function(value) {
+  return jspb.Message.setRepeatedWrapperField(this, 6, value);
+};
+
+
+/**
+ * @param {!proto.looprpc.Deposit=} opt_value
+ * @param {number=} opt_index
+ * @return {!proto.looprpc.Deposit}
+ */
+proto.looprpc.StaticAddressLoopInSwap.prototype.addDeposits = function(opt_value, opt_index) {
+  return jspb.Message.addToRepeatedWrapperField(this, 6, opt_value, proto.looprpc.Deposit, opt_index);
+};
+
+
+/**
+ * Clears the list making it empty but non-null.
+ * @return {!proto.looprpc.StaticAddressLoopInSwap} returns this
+ */
+proto.looprpc.StaticAddressLoopInSwap.prototype.clearDepositsList = function() {
+  return this.setDepositsList([]);
+};
+
+
 
 /**
  * List of repeated fields within this message type.
@@ -16895,7 +17092,9 @@ proto.looprpc.StaticAddressLoopInRequest.toObject = function(includeInstance, ms
     routeHintsList: jspb.Message.toObjectList(msg.getRouteHintsList(),
     swapserverrpc_common_pb.RouteHint.toObject, includeInstance),
     pb_private: jspb.Message.getBooleanFieldWithDefault(msg, 7, false),
-    paymentTimeoutSeconds: jspb.Message.getFieldWithDefault(msg, 8, 0)
+    paymentTimeoutSeconds: jspb.Message.getFieldWithDefault(msg, 8, 0),
+    amount: jspb.Message.getFieldWithDefault(msg, 9, "0"),
+    fast: jspb.Message.getBooleanFieldWithDefault(msg, 10, false)
   };
 
   if (includeInstance) {
@@ -16964,6 +17163,14 @@ proto.looprpc.StaticAddressLoopInRequest.deserializeBinaryFromReader = function(
     case 8:
       var value = /** @type {number} */ (reader.readUint32());
       msg.setPaymentTimeoutSeconds(value);
+      break;
+    case 9:
+      var value = /** @type {string} */ (reader.readInt64String());
+      msg.setAmount(value);
+      break;
+    case 10:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setFast(value);
       break;
     default:
       reader.skipField();
@@ -17048,6 +17255,20 @@ proto.looprpc.StaticAddressLoopInRequest.serializeBinaryToWriter = function(mess
   if (f !== 0) {
     writer.writeUint32(
       8,
+      f
+    );
+  }
+  f = message.getAmount();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
+      9,
+      f
+    );
+  }
+  f = message.getFast();
+  if (f) {
+    writer.writeBool(
+      10,
       f
     );
   }
@@ -17261,6 +17482,49 @@ proto.looprpc.StaticAddressLoopInRequest.prototype.setPaymentTimeoutSeconds = fu
 };
 
 
+/**
+ * optional int64 amount = 9;
+ * @return {string}
+ */
+proto.looprpc.StaticAddressLoopInRequest.prototype.getAmount = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 9, "0"));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.looprpc.StaticAddressLoopInRequest} returns this
+ */
+proto.looprpc.StaticAddressLoopInRequest.prototype.setAmount = function(value) {
+  return jspb.Message.setProto3StringIntField(this, 9, value);
+};
+
+
+/**
+ * optional bool fast = 10;
+ * @return {boolean}
+ */
+proto.looprpc.StaticAddressLoopInRequest.prototype.getFast = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 10, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.looprpc.StaticAddressLoopInRequest} returns this
+ */
+proto.looprpc.StaticAddressLoopInRequest.prototype.setFast = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 10, value);
+};
+
+
+
+/**
+ * List of repeated fields within this message type.
+ * @private {!Array<number>}
+ * @const
+ */
+proto.looprpc.StaticAddressLoopInResponse.repeatedFields_ = [12];
 
 
 
@@ -17303,7 +17567,12 @@ proto.looprpc.StaticAddressLoopInResponse.toObject = function(includeInstance, m
     protocolVersion: jspb.Message.getFieldWithDefault(msg, 8, ""),
     label: jspb.Message.getFieldWithDefault(msg, 9, ""),
     initiator: jspb.Message.getFieldWithDefault(msg, 10, ""),
-    paymentTimeoutSeconds: jspb.Message.getFieldWithDefault(msg, 11, 0)
+    paymentTimeoutSeconds: jspb.Message.getFieldWithDefault(msg, 11, 0),
+    usedDepositsList: jspb.Message.toObjectList(msg.getUsedDepositsList(),
+    proto.looprpc.Deposit.toObject, includeInstance),
+    swapAmount: jspb.Message.getFieldWithDefault(msg, 13, "0"),
+    change: jspb.Message.getFieldWithDefault(msg, 14, "0"),
+    fast: jspb.Message.getBooleanFieldWithDefault(msg, 15, false)
   };
 
   if (includeInstance) {
@@ -17383,6 +17652,23 @@ proto.looprpc.StaticAddressLoopInResponse.deserializeBinaryFromReader = function
     case 11:
       var value = /** @type {number} */ (reader.readUint32());
       msg.setPaymentTimeoutSeconds(value);
+      break;
+    case 12:
+      var value = new proto.looprpc.Deposit;
+      reader.readMessage(value,proto.looprpc.Deposit.deserializeBinaryFromReader);
+      msg.addUsedDeposits(value);
+      break;
+    case 13:
+      var value = /** @type {string} */ (reader.readUint64String());
+      msg.setSwapAmount(value);
+      break;
+    case 14:
+      var value = /** @type {string} */ (reader.readInt64String());
+      msg.setChange(value);
+      break;
+    case 15:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setFast(value);
       break;
     default:
       reader.skipField();
@@ -17487,6 +17773,35 @@ proto.looprpc.StaticAddressLoopInResponse.serializeBinaryToWriter = function(mes
   if (f !== 0) {
     writer.writeUint32(
       11,
+      f
+    );
+  }
+  f = message.getUsedDepositsList();
+  if (f.length > 0) {
+    writer.writeRepeatedMessage(
+      12,
+      f,
+      proto.looprpc.Deposit.serializeBinaryToWriter
+    );
+  }
+  f = message.getSwapAmount();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeUint64String(
+      13,
+      f
+    );
+  }
+  f = message.getChange();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
+      14,
+      f
+    );
+  }
+  f = message.getFast();
+  if (f) {
+    writer.writeBool(
+      15,
       f
     );
   }
@@ -17712,6 +18027,98 @@ proto.looprpc.StaticAddressLoopInResponse.prototype.getPaymentTimeoutSeconds = f
  */
 proto.looprpc.StaticAddressLoopInResponse.prototype.setPaymentTimeoutSeconds = function(value) {
   return jspb.Message.setProto3IntField(this, 11, value);
+};
+
+
+/**
+ * repeated Deposit used_deposits = 12;
+ * @return {!Array<!proto.looprpc.Deposit>}
+ */
+proto.looprpc.StaticAddressLoopInResponse.prototype.getUsedDepositsList = function() {
+  return /** @type{!Array<!proto.looprpc.Deposit>} */ (
+    jspb.Message.getRepeatedWrapperField(this, proto.looprpc.Deposit, 12));
+};
+
+
+/**
+ * @param {!Array<!proto.looprpc.Deposit>} value
+ * @return {!proto.looprpc.StaticAddressLoopInResponse} returns this
+*/
+proto.looprpc.StaticAddressLoopInResponse.prototype.setUsedDepositsList = function(value) {
+  return jspb.Message.setRepeatedWrapperField(this, 12, value);
+};
+
+
+/**
+ * @param {!proto.looprpc.Deposit=} opt_value
+ * @param {number=} opt_index
+ * @return {!proto.looprpc.Deposit}
+ */
+proto.looprpc.StaticAddressLoopInResponse.prototype.addUsedDeposits = function(opt_value, opt_index) {
+  return jspb.Message.addToRepeatedWrapperField(this, 12, opt_value, proto.looprpc.Deposit, opt_index);
+};
+
+
+/**
+ * Clears the list making it empty but non-null.
+ * @return {!proto.looprpc.StaticAddressLoopInResponse} returns this
+ */
+proto.looprpc.StaticAddressLoopInResponse.prototype.clearUsedDepositsList = function() {
+  return this.setUsedDepositsList([]);
+};
+
+
+/**
+ * optional uint64 swap_amount = 13;
+ * @return {string}
+ */
+proto.looprpc.StaticAddressLoopInResponse.prototype.getSwapAmount = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 13, "0"));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.looprpc.StaticAddressLoopInResponse} returns this
+ */
+proto.looprpc.StaticAddressLoopInResponse.prototype.setSwapAmount = function(value) {
+  return jspb.Message.setProto3StringIntField(this, 13, value);
+};
+
+
+/**
+ * optional int64 change = 14;
+ * @return {string}
+ */
+proto.looprpc.StaticAddressLoopInResponse.prototype.getChange = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 14, "0"));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.looprpc.StaticAddressLoopInResponse} returns this
+ */
+proto.looprpc.StaticAddressLoopInResponse.prototype.setChange = function(value) {
+  return jspb.Message.setProto3StringIntField(this, 14, value);
+};
+
+
+/**
+ * optional bool fast = 15;
+ * @return {boolean}
+ */
+proto.looprpc.StaticAddressLoopInResponse.prototype.getFast = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 15, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.looprpc.StaticAddressLoopInResponse} returns this
+ */
+proto.looprpc.StaticAddressLoopInResponse.prototype.setFast = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 15, value);
 };
 
 
