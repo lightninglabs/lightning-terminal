@@ -1084,8 +1084,8 @@ github.com/lightninglabs/faraday/frdrpc v1.0.1 h1:3YlP9UwT0bmT468oAdn4dxwsaJBI4Q
 github.com/lightninglabs/faraday/frdrpc v1.0.1/go.mod h1:ot1R/RGzk61d3qCrZPL36jI5ziGmKbvvE7UQKsJKuvk=
 github.com/lightninglabs/gozmq v0.0.0-20191113021534-d20a764486bf h1:HZKvJUHlcXI/f/O0Avg7t8sqkPo78HFzjmeYFl6DPnc=
 github.com/lightninglabs/gozmq v0.0.0-20191113021534-d20a764486bf/go.mod h1:vxmQPeIQxPf6Jf9rM8R+B4rKBqLA2AjttNxkFBL2Plk=
-github.com/lightninglabs/loop/looprpc v1.0.8 h1:OFmJNLjem6fLuH1YUO+3G6QA1wmjAd0zyhvdHONOBDs=
-github.com/lightninglabs/loop/looprpc v1.0.8/go.mod h1:c7WykKQZ3PspCMVvv2kr9o4l3bgJBEBVv0SOoBOjPOw=
+github.com/lightninglabs/loop/looprpc v1.0.11 h1:YCz67k5GSm3EKMCRBfis034Pd3R0+vPPHgfNwQqjpaE=
+github.com/lightninglabs/loop/looprpc v1.0.11/go.mod h1:m2B9bg8Cus1TVbXD3RffKVmGS3lpV2Zl1yu5x3wcQYk=
 github.com/lightninglabs/loop/swapserverrpc v1.0.13 h1:Qf4L8QBJKzhKRcC8dpvfrrBEXJMF3+XbpomAHEJsRDY=
 github.com/lightninglabs/loop/swapserverrpc v1.0.13/go.mod h1:Ml3gMwe/iTRLvu1QGGZzXcr0DYSa9sJGwKPktLaWtwE=
 github.com/lightninglabs/neutrino v0.16.1 h1:5Kz4ToxncEVkpKC6fwUjXKtFKJhuxlG3sBB3MdJTJjs=
