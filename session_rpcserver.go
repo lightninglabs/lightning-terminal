@@ -1278,6 +1278,23 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 		privacyFlags.Serialize(),
 	)
 	if err != nil {
+		// If we tried to link to a previous session, we delete the
+		// newly created session in the case of errors to avoid having
+		// non-revoked sessions lying around.
+		if len(req.LinkedGroupId) != 0 {
+			log.Infof("Session registration with autopilot " +
+				"server failed, deleting the newly created " +
+				"session")
+
+			deleteErr := s.cfg.db.DeleteReservedSession(
+				ctx, sess.ID,
+			)
+			if deleteErr != nil {
+				log.Errorf("Error deleting session after "+
+					"failed linking attempt: %v", deleteErr)
+			}
+		}
+
 		return nil, fmt.Errorf("error registering session with "+
 			"autopilot server: %v", err)
 	}
