@@ -17,6 +17,7 @@ type Querier interface {
 	DeleteFeatureKVStoreRecord(ctx context.Context, arg DeleteFeatureKVStoreRecordParams) error
 	DeleteGlobalKVStoreRecord(ctx context.Context, arg DeleteGlobalKVStoreRecordParams) error
 	DeleteGroupKVStoreRecord(ctx context.Context, arg DeleteGroupKVStoreRecordParams) error
+	DeleteSession(ctx context.Context, id int64) error
 	DeleteSessionsWithState(ctx context.Context, state int16) error
 	GetAccount(ctx context.Context, id int64) (Account, error)
 	GetAccountByLabel(ctx context.Context, label sql.NullString) (Account, error)
