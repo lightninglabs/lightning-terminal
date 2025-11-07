@@ -325,6 +325,10 @@ type Store interface {
 	// StateReserved state.
 	DeleteReservedSessions(ctx context.Context) error
 
+	// DeleteReservedSession deletes the session with the given ID if it is
+	// in the StateReserved state.
+	DeleteReservedSession(ctx context.Context, id ID) error
+
 	// ShiftState updates the state of the session with the given ID to the
 	// "dest" state.
 	ShiftState(ctx context.Context, id ID, dest State) error
