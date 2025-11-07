@@ -156,6 +156,10 @@ func TestBasicSessionStore(t *testing.T) {
 	// of the sessions are reserved.
 	require.NoError(t, db.DeleteReservedSessions(ctx))
 
+	// Explicitly trying to delete session 1 should fail as it's not
+	// reserved.
+	require.Error(t, db.DeleteReservedSession(ctx, s1.ID))
+
 	sessions, err = db.ListSessionsByState(ctx, StateReserved)
 	require.NoError(t, err)
 	require.Empty(t, sessions)
@@ -190,6 +194,28 @@ func TestBasicSessionStore(t *testing.T) {
 	require.Empty(t, sessions)
 
 	_, err = db.GetGroupID(ctx, s4.ID)
+	require.ErrorIs(t, err, ErrSessionNotFound)
+
+	// Reserve a new session and link it to session 1.
+	s5, err := reserveSession(
+		db, "session 5", withLinkedGroupID(&session1.GroupID),
+	)
+	require.NoError(t, err)
+	sessions, err = db.ListSessionsByState(ctx, StateReserved)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(sessions))
+	assertEqualSessions(t, s5, sessions[0])
+
+	// Now delete the reserved session by its ID and show that it is no
+	// longer in the database and no longer in the group ID/session ID
+	// index.
+	require.NoError(t, db.DeleteReservedSession(ctx, s5.ID))
+
+	sessions, err = db.ListSessionsByState(ctx, StateReserved)
+	require.NoError(t, err)
+	require.Empty(t, sessions)
+
+	_, err = db.GetGroupID(ctx, s5.ID)
 	require.ErrorIs(t, err, ErrSessionNotFound)
 
 	// Only session 1 should remain in this group.
