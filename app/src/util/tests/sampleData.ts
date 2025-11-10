@@ -403,6 +403,7 @@ export const loopInQuote: LOOP.InQuoteResponse.AsObject = {
   htlcPublishFeeSat: '7387',
   swapFeeSat: '83',
   confTarget: 6,
+  quotedAmt: '250000',
 };
 
 export const loopSwapResponse: LOOP.SwapResponse.AsObject = {

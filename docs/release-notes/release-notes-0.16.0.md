@@ -39,12 +39,21 @@ and also added coverage to verify support for channel versioning:
 
 ### LND
 
+* Updated [`lnd` to
+  `v0.20.0-beta.rc2`](https://github.com/lightninglabs/lightning-terminal/pull/1163).
+
 ### Loop
+
+* Updated [`loop` to
+  `v0.31.5-beta`](https://github.com/lightninglabs/lightning-terminal/pull/1163).
 
 ### Pool
 
 ### Faraday
 
 ### Taproot Assets
+
+* Updated [`taproot-assets` to
+  `v0.7.0-rc2`](https://github.com/lightninglabs/lightning-terminal/pull/1163).
 
 # Contributors (Alphabetical Order)

@@ -25,20 +25,20 @@ require (
 	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.3
 	github.com/lightninglabs/lightning-terminal/litrpc v1.0.2
 	github.com/lightninglabs/lightning-terminal/perms v1.0.1
-	github.com/lightninglabs/lndclient v0.20.0-1
-	github.com/lightninglabs/loop v0.31.3-beta.0.20251014011913-03de0a8ed734
-	github.com/lightninglabs/loop/looprpc v1.0.10-0.20251009095951-719355211f63
-	github.com/lightninglabs/loop/swapserverrpc v1.0.17-0.20251009095951-719355211f63
+	github.com/lightninglabs/lndclient v0.20.0-3
+	github.com/lightninglabs/loop v0.31.5-beta-lnd0.20
+	github.com/lightninglabs/loop/looprpc v1.0.11
+	github.com/lightninglabs/loop/swapserverrpc v1.0.18
 	github.com/lightninglabs/pool v0.6.6-beta
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.3
 	github.com/lightninglabs/pool/poolrpc v1.0.1
-	github.com/lightninglabs/taproot-assets v0.7.0-rc1.0.20251014100421-92189161aa7a
-	github.com/lightninglabs/taproot-assets/taprpc v1.0.10-0.20251014100421-92189161aa7a
-	github.com/lightningnetwork/lnd v0.20.0-beta.rc1
+	github.com/lightninglabs/taproot-assets v0.7.0-rc2
+	github.com/lightninglabs/taproot-assets/taprpc v1.0.10
+	github.com/lightningnetwork/lnd v0.20.0-beta.rc2
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/clock v1.1.1
 	github.com/lightningnetwork/lnd/fn v1.2.5
-	github.com/lightningnetwork/lnd/fn/v2 v2.0.8
+	github.com/lightningnetwork/lnd/fn/v2 v2.0.9
 	github.com/lightningnetwork/lnd/kvdb v1.4.16
 	github.com/lightningnetwork/lnd/sqldb v1.0.11
 	github.com/lightningnetwork/lnd/tlv v1.3.2

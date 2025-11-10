@@ -294,6 +294,10 @@ message ServerLoopInQuoteRequest {
     // service fee. This is to cover for the increased on-chain fee the server
     // has to pay when the sweeping transaction is broadcast.
     uint32 num_static_address_deposits = 7;
+
+    // If set, request the server to use fast publication behavior. Note that
+    // this falg is only available for static address loop ins.
+    bool fast = 8;
 }
 
 message ServerLoopInQuoteResponse {
@@ -660,6 +664,12 @@ message FetchL402Response {
 
 // SubscribeNotificationsRequest is a request to subscribe to notifications.
 message SubscribeNotificationsRequest {
+    enum ListenerVersion {
+        LEGACY = 0;
+        V1 = 1;
+    }
+
+    ListenerVersion version = 1;
 }
 
 // SubscribeNotificationsResponse is a response to a
@@ -668,6 +678,7 @@ message SubscribeNotificationsResponse {
     oneof notification {
         ServerReservationNotification reservation_notification = 1;
         ServerStaticLoopInSweepNotification static_loop_in_sweep = 2;
+        ServerUnfinishedSwapNotification unfinished_swap = 3;
     }
 }
 
@@ -686,4 +697,15 @@ message ServerStaticLoopInSweepNotification {
 
     // The prevout information of the sweep txn.
     repeated PrevoutInfo prevout_info = 4;
+}
+
+// ServerUnfinishedSwapNotification notifies the client about an unfinished
+// swap that needs attention. This is useful in client data loss scenarios to
+// help the client recover the swap.
+message ServerUnfinishedSwapNotification {
+    // The swap hash of the unfinished swap.
+    bytes swap_hash = 1;
+
+    // Whether the swap is a loop in or loop out.
+    bool is_loop_in = 2;
 }
