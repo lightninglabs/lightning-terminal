@@ -945,12 +945,14 @@ func (g *LightningTerminal) setupFullLNDClient(ctx context.Context,
 				CustomMacaroonHex: hex.EncodeToString(
 					macData,
 				),
-				BlockUntilChainSynced: true,
-				BlockUntilUnlocked:    true,
 				CallerCtx:             ctx,
 				CheckVersion:          minimalCompatibleVersion,
 				RPCTimeout:            g.cfg.LndRPCTimeout,
 				ChainSyncPollInterval: g.cfg.LndConnectInterval,
+
+				BlockUntilChainSynced:   true,
+				BlockUntilUnlocked:      true,
+				BlockUntilChainNotifier: true,
 			},
 		)
 		if err == nil {
