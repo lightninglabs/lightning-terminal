@@ -2,13 +2,15 @@ module github.com/lightninglabs/lightning-terminal/litrpc
 
 go 1.24.9
 
+replace github.com/lightninglabs/loop/looprpc => github.com/ffranr/loop/looprpc v0.0.0-20251113214526-b8d6583d1830
+
 require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.22.0
 	github.com/lightninglabs/faraday/frdrpc v1.0.1
 	github.com/lightninglabs/loop/looprpc v1.0.11
 	github.com/lightninglabs/pool/poolrpc v1.0.1
-	github.com/lightninglabs/taproot-assets/taprpc v1.0.10
-	github.com/lightningnetwork/lnd v0.20.0-beta.rc2
+	github.com/lightninglabs/taproot-assets/taprpc v1.0.11-0.20251113142520-4139ffc9487d
+	github.com/lightningnetwork/lnd v0.20.0-beta
 	google.golang.org/grpc v1.65.0
 	google.golang.org/protobuf v1.34.2
 )
