@@ -139,6 +139,15 @@ type SwapClientGetInfo = {
   readonly responseType: typeof loop_pb.GetInfoResponse;
 };
 
+type SwapClientStopDaemon = {
+  readonly methodName: string;
+  readonly service: typeof SwapClient;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof loop_pb.StopDaemonRequest;
+  readonly responseType: typeof loop_pb.StopDaemonResponse;
+};
+
 type SwapClientGetLiquidityParams = {
   readonly methodName: string;
   readonly service: typeof SwapClient;
@@ -291,6 +300,7 @@ export class SwapClient {
   static readonly GetLsatTokens: SwapClientGetLsatTokens;
   static readonly FetchL402Token: SwapClientFetchL402Token;
   static readonly GetInfo: SwapClientGetInfo;
+  static readonly StopDaemon: SwapClientStopDaemon;
   static readonly GetLiquidityParams: SwapClientGetLiquidityParams;
   static readonly SetLiquidityParams: SwapClientSetLiquidityParams;
   static readonly SuggestSwaps: SwapClientSuggestSwaps;
@@ -466,6 +476,15 @@ export class SwapClientClient {
   getInfo(
     requestMessage: loop_pb.GetInfoRequest,
     callback: (error: ServiceError|null, responseMessage: loop_pb.GetInfoResponse|null) => void
+  ): UnaryResponse;
+  stopDaemon(
+    requestMessage: loop_pb.StopDaemonRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.StopDaemonResponse|null) => void
+  ): UnaryResponse;
+  stopDaemon(
+    requestMessage: loop_pb.StopDaemonRequest,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.StopDaemonResponse|null) => void
   ): UnaryResponse;
   getLiquidityParams(
     requestMessage: loop_pb.GetLiquidityParamsRequest,

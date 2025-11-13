@@ -26,15 +26,15 @@ require (
 	github.com/lightninglabs/lightning-terminal/litrpc v1.0.2
 	github.com/lightninglabs/lightning-terminal/perms v1.0.1
 	github.com/lightninglabs/lndclient v0.20.0-6
-	github.com/lightninglabs/loop v0.31.5-beta-lnd0.20
-	github.com/lightninglabs/loop/looprpc v1.0.11
-	github.com/lightninglabs/loop/swapserverrpc v1.0.18
+	github.com/lightninglabs/loop v0.31.6-beta
+	github.com/lightninglabs/loop/looprpc v1.0.12
+	github.com/lightninglabs/loop/swapserverrpc v1.0.19
 	github.com/lightninglabs/pool v0.6.6-beta
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.3
 	github.com/lightninglabs/pool/poolrpc v1.0.1
-	github.com/lightninglabs/taproot-assets v0.7.0-rc2
-	github.com/lightninglabs/taproot-assets/taprpc v1.0.10
-	github.com/lightningnetwork/lnd v0.20.0-beta.rc2
+	github.com/lightninglabs/taproot-assets v0.7.0
+	github.com/lightninglabs/taproot-assets/taprpc v1.0.11
+	github.com/lightningnetwork/lnd v0.20.0-beta
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/clock v1.1.1
 	github.com/lightningnetwork/lnd/fn v1.2.5
@@ -50,10 +50,10 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli v1.22.14
 	go.etcd.io/bbolt v1.4.3
-	golang.org/x/crypto v0.37.0
+	golang.org/x/crypto v0.45.0
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
-	golang.org/x/net v0.39.0
-	golang.org/x/sync v0.13.0
+	golang.org/x/net v0.47.0
+	golang.org/x/sync v0.18.0
 	google.golang.org/grpc v1.65.0
 	google.golang.org/protobuf v1.36.5
 	gopkg.in/macaroon-bakery.v2 v2.3.0
@@ -185,7 +185,7 @@ require (
 	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7 // indirect
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20201229170055-e5319fda7802 // indirect
 	github.com/tv42/zbase32 v0.0.0-20160707012821-501572607d02 // indirect
-	github.com/urfave/cli-docs/v3 v3.1.0 // indirect
+	github.com/urfave/cli-docs/v3 v3.1.1-0.20251020101624-bec07369b4f6 // indirect
 	github.com/urfave/cli/v3 v3.4.1 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
@@ -213,12 +213,12 @@ require (
 	go.uber.org/mock v0.4.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
-	golang.org/x/mod v0.24.0 // indirect
-	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/term v0.31.0 // indirect
-	golang.org/x/text v0.24.0 // indirect
+	golang.org/x/mod v0.29.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
+	golang.org/x/term v0.37.0 // indirect
+	golang.org/x/text v0.31.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
-	golang.org/x/tools v0.31.0 // indirect
+	golang.org/x/tools v0.38.0 // indirect
 	google.golang.org/genproto v0.0.0-20240213162025-012b6fc9bca9 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240814211410-ddb44dafa142 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240814211410-ddb44dafa142 // indirect
