@@ -5,10 +5,10 @@ go 1.24.9
 require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.22.0
 	github.com/lightninglabs/faraday/frdrpc v1.0.1
-	github.com/lightninglabs/loop/looprpc v1.0.11
+	github.com/lightninglabs/loop/looprpc v1.0.12-0.20251119030535-c4d6c29fc03d
 	github.com/lightninglabs/pool/poolrpc v1.0.1
-	github.com/lightninglabs/taproot-assets/taprpc v1.0.10
-	github.com/lightningnetwork/lnd v0.20.0-beta.rc2
+	github.com/lightninglabs/taproot-assets/taprpc v1.0.11
+	github.com/lightningnetwork/lnd v0.20.0-beta
 	google.golang.org/grpc v1.65.0
 	google.golang.org/protobuf v1.34.2
 )
