@@ -784,6 +784,8 @@ github.com/felixge/httpsnoop v1.0.4 h1:NFTV2Zj1bL4mc9sqWACXbQFVBBg2W3GPvqp8/ESS2
 github.com/felixge/httpsnoop v1.0.4/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=
 github.com/fergusstrange/embedded-postgres v1.25.0 h1:sa+k2Ycrtz40eCRPOzI7Ry7TtkWXXJ+YRsxpKMDhxK0=
 github.com/fergusstrange/embedded-postgres v1.25.0/go.mod h1:t/MLs0h9ukYM6FSt99R7InCHs1nW0ordoVCcnzmpTYw=
+github.com/ffranr/loop/looprpc v0.0.0-20251113214526-b8d6583d1830 h1:PDeDlQ66UHXs5yaYoFNScKzpJ+rBp4lCWPWgAhirf9g=
+github.com/ffranr/loop/looprpc v0.0.0-20251113214526-b8d6583d1830/go.mod h1:98DiKwW71FNchh8YplBly1tBPNOma8mnrcaNrUaeR38=
 github.com/fogleman/gg v1.2.1-0.20190220221249-0403632d5b90/go.mod h1:R/bRT+9gY/C5z7JzPU0zXsXHKM4/ayA+zqcVNZzPa1k=
 github.com/fogleman/gg v1.3.0/go.mod h1:R/bRT+9gY/C5z7JzPU0zXsXHKM4/ayA+zqcVNZzPa1k=
 github.com/frankban/quicktest v1.0.0/go.mod h1:R98jIehRai+d1/3Hv2//jOVCTJhW1VBavT6B6CuGq2k=
@@ -1088,8 +1090,6 @@ github.com/lightninglabs/faraday/frdrpc v1.0.1 h1:3YlP9UwT0bmT468oAdn4dxwsaJBI4Q
 github.com/lightninglabs/faraday/frdrpc v1.0.1/go.mod h1:ot1R/RGzk61d3qCrZPL36jI5ziGmKbvvE7UQKsJKuvk=
 github.com/lightninglabs/gozmq v0.0.0-20191113021534-d20a764486bf h1:HZKvJUHlcXI/f/O0Avg7t8sqkPo78HFzjmeYFl6DPnc=
 github.com/lightninglabs/gozmq v0.0.0-20191113021534-d20a764486bf/go.mod h1:vxmQPeIQxPf6Jf9rM8R+B4rKBqLA2AjttNxkFBL2Plk=
-github.com/lightninglabs/loop/looprpc v1.0.11 h1:YCz67k5GSm3EKMCRBfis034Pd3R0+vPPHgfNwQqjpaE=
-github.com/lightninglabs/loop/looprpc v1.0.11/go.mod h1:m2B9bg8Cus1TVbXD3RffKVmGS3lpV2Zl1yu5x3wcQYk=
 github.com/lightninglabs/loop/swapserverrpc v1.0.13 h1:Qf4L8QBJKzhKRcC8dpvfrrBEXJMF3+XbpomAHEJsRDY=
 github.com/lightninglabs/loop/swapserverrpc v1.0.13/go.mod h1:Ml3gMwe/iTRLvu1QGGZzXcr0DYSa9sJGwKPktLaWtwE=
 github.com/lightninglabs/neutrino v0.16.1 h1:5Kz4ToxncEVkpKC6fwUjXKtFKJhuxlG3sBB3MdJTJjs=
@@ -1102,12 +1102,12 @@ github.com/lightninglabs/pool/poolrpc v1.0.1 h1:XbNx28TYwEj/PVsnnF9TnveVCMCYfS1v
 github.com/lightninglabs/pool/poolrpc v1.0.1/go.mod h1:836icifg/SBnZbiae0v3jeRRzCrT6LWo32SqCS/JiGk=
 github.com/lightninglabs/protobuf-go-hex-display v1.34.2-hex-display h1:w7FM5LH9Z6CpKxl13mS48idsu6F+cEZf0lkyiV+Dq9g=
 github.com/lightninglabs/protobuf-go-hex-display v1.34.2-hex-display/go.mod h1:qYOHts0dSfpeUzUFpOMr/WGzszTmLH+DiWniOlNbLDw=
-github.com/lightninglabs/taproot-assets/taprpc v1.0.10 h1:F88dKn9X/Ik1onpf60Q6XDdBl7UQ85gXJL6e8JIk2Fc=
-github.com/lightninglabs/taproot-assets/taprpc v1.0.10/go.mod h1:ufuKxkMNdfRnv4IcnLw7ken69DcCUxO79WSpC8mIvdM=
+github.com/lightninglabs/taproot-assets/taprpc v1.0.11-0.20251113142520-4139ffc9487d h1:nN0cT64MDQSxB4Pq4oIPqObEg9OGwvOVMlOsuEdEVWA=
+github.com/lightninglabs/taproot-assets/taprpc v1.0.11-0.20251113142520-4139ffc9487d/go.mod h1:DZn+0c9/PHEKisJLSqNdyH3BVJmwl8mFLe04y++/FlI=
 github.com/lightningnetwork/lightning-onion v1.2.1-0.20240815225420-8b40adf04ab9 h1:6D3LrdagJweLLdFm1JNodZsBk6iU4TTsBBFLQ4yiXfI=
 github.com/lightningnetwork/lightning-onion v1.2.1-0.20240815225420-8b40adf04ab9/go.mod h1:EDqJ3MuZIbMq0QI1czTIKDJ/GS8S14RXPwapHw8cw6w=
-github.com/lightningnetwork/lnd v0.20.0-beta.rc2 h1:5ZbjqhqZCGeJPG+7S1NMB4LIa3pXx2JH9wfyq5Gl2aY=
-github.com/lightningnetwork/lnd v0.20.0-beta.rc2/go.mod h1:iypbY+dTgHmC+HOu5kW8JwnyA13Jzicb/aF5JMkwoWo=
+github.com/lightningnetwork/lnd v0.20.0-beta h1:ML+jgJ3UKDGJdUf0m73ZeR/szJKWVtHxpQP+yFC79b8=
+github.com/lightningnetwork/lnd v0.20.0-beta/go.mod h1:8hc55AnE3mMSJ/UAEJZgmhgNCcH0yWaPg0olpxhhp4M=
 github.com/lightningnetwork/lnd/clock v1.1.1 h1:OfR3/zcJd2RhH0RU+zX/77c0ZiOnIMsDIBjgjWdZgA0=
 github.com/lightningnetwork/lnd/clock v1.1.1/go.mod h1:mGnAhPyjYZQJmebS7aevElXKTFDuO+uNFFfMXK1W8xQ=
 github.com/lightningnetwork/lnd/fn/v2 v2.0.9 h1:ZytG4ltPac/sCyg1EJDn10RGzPIDJeyennUMRdOw7Y8=
