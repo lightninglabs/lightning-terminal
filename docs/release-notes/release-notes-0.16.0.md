@@ -39,13 +39,13 @@ and also added coverage to verify support for channel versioning:
 
 ### LND
 
-* Updated [`lnd` to
-  `v0.20.0-beta.rc2`](https://github.com/lightninglabs/lightning-terminal/pull/1163).
+* [PR](https://github.com/lightninglabs/lightning-terminal/pull/1173): Bump:
+  `lnd@v0.20.0-beta`.
 
 ### Loop
 
-* Updated [`loop` to
-  `v0.31.5-beta`](https://github.com/lightninglabs/lightning-terminal/pull/1163).
+* [PR](https://github.com/lightninglabs/lightning-terminal/pull/1173): Bump:
+  `loop@v0.31.6-beta`, `loop/looprpc@v1.0.12`, `loop/swapserverrpc v1.0.19`.
 
 ### Pool
 
@@ -53,7 +53,7 @@ and also added coverage to verify support for channel versioning:
 
 ### Taproot Assets
 
-* Updated [`taproot-assets` to
-  `v0.7.0-rc2`](https://github.com/lightninglabs/lightning-terminal/pull/1163).
+* [PR](https://github.com/lightninglabs/lightning-terminal/pull/1173): Bump:
+  `taproot-assets@v0.7.0`, `taproot-assets/taprpc@v1.0.11`.
 
 # Contributors (Alphabetical Order)
