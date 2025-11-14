@@ -956,6 +956,16 @@ func (g *LightningTerminal) setupFullLNDClient(ctx context.Context,
 		if err == nil {
 			log.Infof("Full lnd client connected")
 
+			log.Infof("Waiting for chain notifier to become available")
+			err = waitForChainNotifierReady(
+				ctx, g.lndClient.ChainNotifier,
+			)
+			if err != nil {
+				return fmt.Errorf("waiting for chain notifier: %w",
+					err)
+			}
+			log.Infof("Chain notifier ready")
+
 			break
 		}
 
