@@ -475,6 +475,10 @@ func TestFirewallDBMigration(t *testing.T) {
 			populateDB: actionNoSessionOrAccount,
 		},
 		{
+			name:       "action with empty RPCParamsJson",
+			populateDB: actionEmptyRPCParamsJson,
+		},
+		{
 			name:       "action with session but no account",
 			populateDB: actionWithSessionNoAccount,
 		},
@@ -1268,6 +1272,32 @@ func actionNoSessionOrAccount(t *testing.T, ctx context.Context,
 	}
 }
 
+// actionEmptyRPCParamsJson adds an action which has no RPCParamsJson set.
+func actionEmptyRPCParamsJson(t *testing.T, ctx context.Context,
+	boltDB *BoltDB, _ session.Store, _ accounts.Store,
+	rStore *rootKeyMockStore) *expectedResult {
+
+	// As the action is not linked to any session, we add a random root
+	// key which we use as the macaroon identifier for the action.
+	// This simulates how similar actions would have been created in
+	// production.
+	rootKey := rStore.addRandomRootKey()
+
+	actionReq := testActionReq
+	actionReq.MacaroonRootKeyID = fn.Some(rootKey)
+	actionReq.SessionID = fn.None[session.ID]()
+	actionReq.AccountID = fn.None[accounts.AccountID]()
+	actionReq.RPCParamsJson = []byte{}
+
+	action := addAction(t, ctx, boltDB, &actionReq)
+
+	return &expectedResult{
+		kvEntries: []*kvEntry{},
+		privPairs: make(privacyPairs),
+		actions:   []*Action{action},
+	}
+}
+
 // actionWithSessionNoAccount adds an action which is linked a session but no
 // account.
 func actionWithSessionNoAccount(t *testing.T, ctx context.Context,
@@ -1967,6 +1997,15 @@ func addAction(t *testing.T, ctx context.Context, boltDB *BoltDB,
 	action.AccountID = actionReq.AccountID
 	action.MacaroonRootKeyID = actionReq.MacaroonRootKeyID
 
+	// In case the actionReq's RPCParamsJson wasn't set, we need to set the
+	// expected action's RPCParamsJson to nil for Sqlite tests as that's
+	// how such RPCParamsJson are represented in the Sqlite database, which
+	// the returned expected action should reflect. Note that for Postgres
+	// dbs, this param is stored as an empty array and not nil.
+	if len(actionReq.RPCParamsJson) == 0 && isSqlite {
+		action.RPCParamsJson = nil
+	}
+
 	return action
 }
 
@@ -2155,6 +2194,11 @@ func randomBytes(n int) []byte {
 // Keys are random strings like "key1", "key2"...
 // Values are random ints, floats, or strings.
 func randomJSON(n int) (string, error) {
+	// When 0 pairs are requested, we can return immediately.
+	if n <= 0 {
+		return "", nil
+	}
+
 	obj := make(map[string]any, n)
 	for i := 0; i < n; i++ {
 		key := fmt.Sprintf("key%d", i+1)

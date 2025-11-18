@@ -1131,6 +1131,11 @@ func validateMigratedAction(ctx context.Context, sqlTx SQLQueries,
 	// the SQL action has the full 8 bytes set.
 	overrideMacRootKeyID(migAction)
 
+	// If there are no RPCParamsJson set for the actions, that's represented
+	// differently in KVDB vs SQL. We therefore override the RPCParamsJson
+	// so that both actions represent them in the same way.
+	overrideRPCParamsJson(kvAction, migAction)
+
 	// Now that we have overridden the fields that are expected to differ
 	// between the original KVDB action and the migrated SQL action, we can
 	// compare the two actions to ensure that they match.
@@ -1605,4 +1610,15 @@ func overrideMacRootKeyID(action *Action) {
 
 		action.MacaroonRootKeyID = fn.Some(last32)
 	})
+}
+
+// overrideRPCParamsJson overrides the SQL action's RPCParamsJson in case they
+// are empty for the kvAction. In the SQL DB, empty RPCParamsJson are
+// represented as nil, while they are represented as an empty array in the
+// KVDB version. Therefore, this function overrides the SQL action's
+// RPCParamsJson to an empty array if they are nil.
+func overrideRPCParamsJson(kvAction *Action, sqlAction *Action) {
+	if len(kvAction.RPCParamsJson) == 0 && sqlAction.RPCParamsJson == nil {
+		sqlAction.RPCParamsJson = []byte{}
+	}
 }
