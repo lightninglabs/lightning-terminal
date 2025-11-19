@@ -35,7 +35,12 @@ and also added coverage to verify support for channel versioning:
     - https://github.com/lightninglabs/lightning-terminal/pull/1106
     - https://github.com/lightninglabs/lightning-terminal/pull/1097
     - https://github.com/lightninglabs/lightning-terminal/pull/1138
- 
+
+- [LND is now built with the `monitoring` tag enabled](https://github.com/lightninglabs/lightning-terminal/pull/1167)
+  which has been the default
+  in standalone LND release builds since
+  https://github.com/lightningnetwork/lnd/commit/8491d0da433c23051b723f4c018e2f041df548c8
+  .
 
 ### LND
 
