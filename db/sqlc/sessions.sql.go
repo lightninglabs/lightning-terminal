@@ -11,6 +11,16 @@ import (
 	"time"
 )
 
+const deleteSession = `-- name: DeleteSession :exec
+DELETE FROM sessions
+WHERE id = $1
+`
+
+func (q *Queries) DeleteSession(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, deleteSession, id)
+	return err
+}
+
 const deleteSessionsWithState = `-- name: DeleteSessionsWithState :exec
 DELETE FROM sessions
 WHERE state = $1

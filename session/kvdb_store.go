@@ -442,7 +442,10 @@ func (db *BoltStore) DeleteReservedSessions(_ context.Context) error {
 			return err
 		}
 
-		return sessionBucket.ForEach(func(k, v []byte) error {
+		// We create a copy of the sessions to delete so that we are
+		// not iterating and modifying the bucket at the same time.
+		var sessionsToDelete []*Session
+		err = sessionBucket.ForEach(func(k, v []byte) error {
 			// We'll also get buckets here, skip those (identified
 			// by nil value).
 			if v == nil {
@@ -458,69 +461,120 @@ func (db *BoltStore) DeleteReservedSessions(_ context.Context) error {
 				return nil
 			}
 
-			err = sessionBucket.Delete(k)
-			if err != nil {
-				return err
-			}
+			sessionsToDelete = append(sessionsToDelete, session)
 
-			idIndexBkt := sessionBucket.Bucket(idIndexKey)
-			if idIndexBkt == nil {
-				return ErrDBInitErr
-			}
-
-			// Delete the entire session ID bucket.
-			err = idIndexBkt.DeleteBucket(session.ID[:])
-			if err != nil {
-				return err
-			}
-
-			groupIdIndexBkt := sessionBucket.Bucket(groupIDIndexKey)
-			if groupIdIndexBkt == nil {
-				return ErrDBInitErr
-			}
-
-			groupBkt := groupIdIndexBkt.Bucket(session.GroupID[:])
-			if groupBkt == nil {
-				return ErrDBInitErr
-			}
-
-			sessionIDsBkt := groupBkt.Bucket(sessionIDKey)
-			if sessionIDsBkt == nil {
-				return ErrDBInitErr
-			}
-
-			var (
-				seqKey      []byte
-				numSessions int
-			)
-			err = sessionIDsBkt.ForEach(func(k, v []byte) error {
-				numSessions++
-
-				if !bytes.Equal(v, session.ID[:]) {
-					return nil
-				}
-
-				seqKey = k
-
-				return nil
-			})
-			if err != nil {
-				return err
-			}
-
-			if numSessions == 0 {
-				return fmt.Errorf("no sessions found for "+
-					"group ID %x", session.GroupID)
-			}
-
-			if numSessions == 1 {
-				// Delete the whole group bucket.
-				return groupBkt.DeleteBucket(sessionIDKey)
-			}
-
-			// Else, delete just the session ID entry.
-			return sessionIDsBkt.Delete(seqKey)
+			return nil
 		})
+		if err != nil {
+			return err
+		}
+
+		for _, session := range sessionsToDelete {
+			if err := deleteSession(sessionBucket,
+				session); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+}
+
+// deleteSession deletes all the parts of a session from the database. This
+// assumes that the session has already been fetched from the db.
+func deleteSession(sessionBucket *bbolt.Bucket, session *Session) error {
+	sessionKey := getSessionKey(session)
+	err := sessionBucket.Delete(sessionKey)
+	if err != nil {
+		return err
+	}
+
+	idIndexBkt := sessionBucket.Bucket(idIndexKey)
+	if idIndexBkt == nil {
+		return ErrDBInitErr
+	}
+
+	// Delete the entire session ID bucket.
+	err = idIndexBkt.DeleteBucket(session.ID[:])
+	if err != nil {
+		return err
+	}
+
+	groupIdIndexBkt := sessionBucket.Bucket(groupIDIndexKey)
+	if groupIdIndexBkt == nil {
+		return ErrDBInitErr
+	}
+
+	groupBkt := groupIdIndexBkt.Bucket(session.GroupID[:])
+	if groupBkt == nil {
+		return ErrDBInitErr
+	}
+
+	sessionIDsBkt := groupBkt.Bucket(sessionIDKey)
+	if sessionIDsBkt == nil {
+		return ErrDBInitErr
+	}
+
+	var (
+		seqKey      []byte
+		numSessions int
+	)
+	err = sessionIDsBkt.ForEach(func(k, v []byte) error {
+		numSessions++
+
+		if !bytes.Equal(v, session.ID[:]) {
+			return nil
+		}
+
+		seqKey = k
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	if numSessions == 0 {
+		return fmt.Errorf("no sessions found for "+
+			"group ID %x", session.GroupID)
+	}
+
+	if numSessions == 1 {
+		// If this is the last session in the group, we can delete the
+		// whole group bucket.
+		return groupIdIndexBkt.DeleteBucket(session.GroupID[:])
+	}
+
+	// Else, delete just the session ID entry from the group.
+	return sessionIDsBkt.Delete(seqKey)
+}
+
+// DeleteReservedSession removes a given session that is in the reserved state
+// from the database.
+//
+// NOTE: This is part of the Store interface.
+func (db *BoltStore) DeleteReservedSession(_ context.Context, id ID) error {
+	return db.Update(func(tx *bbolt.Tx) error {
+		sessionBucket, err := getBucket(tx, sessionBucketKey)
+		if err != nil {
+			return err
+		}
+
+		// We'll first get the session to make sure it's actually in the
+		// reserved state before deleting. This gives us a slightly
+		// better error message than just trying to delete and getting a
+		// "not found" if the session was in another state.
+		session, err := getSessionByID(sessionBucket, id)
+		if err != nil {
+			return err
+		}
+
+		if session.State != StateReserved {
+			return fmt.Errorf("session not in reserved state, is "+
+				"%v", session.State)
+		}
+
+		return deleteSession(sessionBucket, session)
 	})
 }
 

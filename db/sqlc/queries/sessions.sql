@@ -18,6 +18,10 @@ WHERE id = $2;
 DELETE FROM sessions
 WHERE state = $1;
 
+-- name: DeleteSession :exec
+DELETE FROM sessions
+WHERE id = $1;
+
 -- name: GetSessionByLocalPublicKey :one
 SELECT * FROM sessions
 WHERE local_public_key = $1;
