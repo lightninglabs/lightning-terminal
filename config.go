@@ -15,8 +15,6 @@ import (
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/jessevdk/go-flags"
 	"github.com/lightninglabs/faraday"
-	"github.com/lightninglabs/faraday/chain"
-	"github.com/lightninglabs/faraday/frdrpcserver"
 	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/autopilotserver"
 	"github.com/lightninglabs/lightning-terminal/firewall"
@@ -215,10 +213,6 @@ type Config struct {
 
 	Accounts *accounts.Config `group:"Accounts options" namespace:"accounts"`
 
-	// faradayRpcConfig is a subset of faraday's full configuration that is
-	// passed into faraday's RPC server.
-	faradayRpcConfig *frdrpcserver.Config
-
 	// lndRemote is a convenience bool variable that is parsed from the
 	// LndMode string variable on startup.
 	lndRemote     bool
@@ -334,7 +328,6 @@ func defaultConfig() *Config {
 		ConfigFile:           defaultConfigFile,
 		FaradayMode:          defaultFaradayMode,
 		Faraday:              &faradayDefaultConfig,
-		faradayRpcConfig:     &frdrpcserver.Config{},
 		LoopMode:             defaultLoopMode,
 		Loop:                 &loopDefaultConfig,
 		PoolMode:             defaultPoolMode,
@@ -557,22 +550,6 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 			defaultFaradayCfg.TLSCertPath {
 
 			cfg.Remote.Faraday.TLSCertPath = cfg.Faraday.TLSCertPath
-		}
-	}
-
-	// If the client chose to connect to a bitcoin client, get one now.
-	if !cfg.faradayRemote {
-		cfg.faradayRpcConfig.FaradayDir = cfg.Faraday.FaradayDir
-		cfg.faradayRpcConfig.MacaroonPath = cfg.Faraday.MacaroonPath
-
-		if cfg.Faraday.ChainConn {
-			cfg.faradayRpcConfig.BitcoinClient, err =
-				chain.NewBitcoinClient(
-					cfg.Faraday.Bitcoin,
-				)
-			if err != nil {
-				return nil, err
-			}
 		}
 	}
 
