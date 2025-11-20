@@ -1930,8 +1930,8 @@ func (g *LightningTerminal) validateSuperMacaroon(ctx context.Context,
 func (g *LightningTerminal) initSubServers() error {
 	err := g.subServerMgr.AddServer(
 		subservers.NewFaradaySubServer(
-			g.cfg.Faraday, g.cfg.faradayRpcConfig,
-			g.cfg.Remote.Faraday, g.cfg.faradayRemote,
+			g.cfg.Faraday, g.cfg.Remote.Faraday,
+			g.cfg.faradayRemote,
 		), g.cfg.FaradayMode != ModeDisable,
 	)
 	if err != nil {
