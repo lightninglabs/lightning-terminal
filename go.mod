@@ -259,3 +259,7 @@ replace nhooyr.io/websocket => github.com/coder/websocket v1.8.7
 replace github.com/lightninglabs/taproot-assets/taprpc => github.com/lightninglabs/taproot-assets/taprpc v1.0.12-0.20260223100136-c6e45b478517
 
 replace github.com/lightningnetwork/lnd => github.com/lightningnetwork/lnd v0.20.0-beta.rc4.0.20260223110936-dd65ba2b0106
+
+replace github.com/lightninglabs/faraday => github.com/bitromortac/faraday v0.0.0-20260312171713-aa53e72a92d4
+
+replace github.com/lightninglabs/faraday/frdrpc => github.com/bitromortac/faraday/frdrpc v0.0.0-20260312171713-aa53e72a92d4
