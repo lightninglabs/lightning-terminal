@@ -1,5 +1,4 @@
 //go:build deps
-// +build deps
 
 package terminal
 
