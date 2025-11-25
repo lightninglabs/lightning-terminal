@@ -50,6 +50,10 @@ var (
 		AssetType: taprpc.AssetType_NORMAL,
 		Name:      "itest-asset-cents",
 		AssetMeta: dummyMetaData,
+
+		// Note: Amount must be large enough to satisfy `daveFundingAmount`,
+		// `erinFundingAmount`, and `charlieFundingAmount` defined below in each
+		// test case.
 		Amount:    1_000_000,
 	}
 
@@ -206,15 +210,23 @@ func testCustomChannelsLarge(_ context.Context, net *NetworkHarness,
 	syncUniverses(t.t, charlieTap, dave, erin, fabia, yara)
 	t.Logf("Universes synced between all nodes, distributing assets...")
 
+	// Define the sizes of each channel that is opened.
+	// Note: Dave needs to have the larger channel size.
 	const (
 		daveFundingAmount = uint64(400_000)
 		erinFundingAmount = uint64(200_000)
 	)
-	charlieFundingAmount := cents.Amount - uint64(2*400_000)
+
+	// Give Dave and Erin both the same amount of on chain funds even though
+	// Erin won't use it all.
+	const assetSendAmount = daveFundingAmount
+
+	// Charlie uses the rest of the funds that are minted in his channel
+	charlieFundingAmount := cents.Amount - 2*assetSendAmount
 
 	chanPointCD, _, _ := createTestAssetNetwork(
 		t, net, charlieTap, daveTap, erinTap, fabiaTap, yaraTap,
-		universeTap, cents, 400_000, charlieFundingAmount,
+		universeTap, cents, assetSendAmount, charlieFundingAmount,
 		daveFundingAmount, erinFundingAmount, DefaultPushSat,
 	)
 
@@ -389,15 +401,23 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	syncUniverses(t.t, charlieTap, dave, erin, fabia, yara)
 	t.Logf("Universes synced between all nodes, distributing assets...")
 
+	// Define the sizes of each channel that is opened.
+	// Note: Dave needs to have the larger channel size.
 	const (
 		daveFundingAmount = uint64(startAmount)
 		erinFundingAmount = uint64(fundingAmount)
 	)
-	charlieFundingAmount := cents.Amount - 2*startAmount
+
+	// Give Dave and Erin both the same amount of on chain funds even though
+	// Erin won't use it all.
+	const assetSendAmount = daveFundingAmount
+
+	// Charlie uses the rest of the funds that are minted in his channel
+	charlieFundingAmount := cents.Amount - 2*assetSendAmount
 
 	chanPointCD, chanPointDY, chanPointEF := createTestAssetNetwork(
 		t, net, charlieTap, daveTap, erinTap, fabiaTap, yaraTap,
-		universeTap, cents, startAmount, charlieFundingAmount,
+		universeTap, cents, assetSendAmount, charlieFundingAmount,
 		daveFundingAmount, erinFundingAmount, DefaultPushSat,
 	)
 
@@ -869,15 +889,23 @@ func testCustomChannelsGroupedAsset(ctx context.Context, net *NetworkHarness,
 	syncUniverses(t.t, charlieTap, dave, erin, fabia, yara)
 	t.Logf("Universes synced between all nodes, distributing assets...")
 
+	// Define the sizes of each channel that is opened.
+	// Note: Dave needs to have the larger channel size.
 	const (
 		daveFundingAmount = uint64(startAmount)
 		erinFundingAmount = uint64(fundingAmount)
 	)
-	charlieFundingAmount := cents.Amount - 2*startAmount
+
+	// Give Dave and Erin both the same amount of on chain funds even though
+	// Erin won't use it all.
+	const assetSendAmount = daveFundingAmount
+
+	// Charlie uses the rest of the funds that are minted in his channel
+	charlieFundingAmount := cents.Amount - 2*assetSendAmount
 
 	chanPointCD, chanPointDY, chanPointEF := createTestAssetNetwork(
 		t, net, charlieTap, daveTap, erinTap, fabiaTap, yaraTap,
-		universeTap, cents, startAmount, charlieFundingAmount,
+		universeTap, cents, assetSendAmount, charlieFundingAmount,
 		daveFundingAmount, erinFundingAmount, DefaultPushSat,
 	)
 
@@ -2733,15 +2761,23 @@ func testCustomChannelsLiquidityEdgeCasesCore(ctx context.Context,
 	syncUniverses(t.t, charlieTap, dave, erin, fabia, yara)
 	t.Logf("Universes synced between all nodes, distributing assets...")
 
+	// Define the sizes of each channel that is opened.
+	// Note: Dave needs to have the larger channel size.
 	const (
 		daveFundingAmount = uint64(400_000)
 		erinFundingAmount = uint64(200_000)
 	)
-	charlieFundingAmount := cents.Amount - uint64(2*400_000)
+
+	// Give Dave and Erin both the same amount of on chain funds even though
+	// Erin won't use it all.
+	const assetSendAmount = daveFundingAmount
+
+	// Charlie uses the rest of the funds that are minted in his channel
+	charlieFundingAmount := cents.Amount - 2*assetSendAmount
 
 	_, _, chanPointEF := createTestAssetNetwork(
 		t, net, charlieTap, daveTap, erinTap, fabiaTap, yaraTap,
-		universeTap, cents, 400_000, charlieFundingAmount,
+		universeTap, cents, assetSendAmount, charlieFundingAmount,
 		daveFundingAmount, erinFundingAmount, 0,
 	)
 
@@ -3679,15 +3715,23 @@ func testCustomChannelsStrictForwarding(ctx context.Context,
 	syncUniverses(t.t, charlieTap, dave, erin, fabia, yara)
 	t.Logf("Universes synced between all nodes, distributing assets...")
 
+	// Define the sizes of each channel that is opened.
+	// Note: Dave needs to have the larger channel size.
 	const (
 		daveFundingAmount = uint64(400_000)
 		erinFundingAmount = uint64(200_000)
 	)
-	charlieFundingAmount := cents.Amount - uint64(2*400_000)
+
+	// Give Dave and Erin both the same amount of on chain funds even though
+	// Erin won't use it all.
+	const assetSendAmount = daveFundingAmount
+
+	// Charlie uses the rest of the funds that are minted in his channel
+	charlieFundingAmount := cents.Amount - 2*assetSendAmount
 
 	_, _, _ = createTestAssetNetwork(
 		t, net, charlieTap, daveTap, erinTap, fabiaTap, yaraTap,
-		universeTap, cents, 400_000, charlieFundingAmount,
+		universeTap, cents, assetSendAmount, charlieFundingAmount,
 		daveFundingAmount, erinFundingAmount, 0,
 	)
 
@@ -4239,16 +4283,26 @@ func testCustomChannelsOraclePricing(ctx context.Context, net *NetworkHarness,
 	syncUniverses(t.t, charlieTap, dave, erin, fabia, yara)
 	t.Logf("Universes synced between all nodes, distributing assets...")
 
+
+
+
+	// Define the sizes of each channel that is opened.
+	// Note: Dave needs to have the larger channel size.
 	const (
-		sendAmount        = uint64(400_000_000)
 		daveFundingAmount = uint64(400_000_000)
 		erinFundingAmount = uint64(200_000_000)
 	)
-	charlieFundingAmount := usdAsset.Amount - 2*sendAmount
+
+	// Give Dave and Erin both the same amount of on chain funds even though
+	// Erin won't use it all.
+	const assetSendAmount = daveFundingAmount
+
+	// Charlie uses the rest of the funds that are minted in his channel
+	charlieFundingAmount := usdAsset.Amount - 2*assetSendAmount
 
 	chanPointCD, chanPointDY, chanPointEF := createTestAssetNetwork(
 		t, net, charlieTap, daveTap, erinTap, fabiaTap, yaraTap,
-		universeTap, usdAsset, sendAmount, charlieFundingAmount,
+		universeTap, usdAsset, assetSendAmount, charlieFundingAmount,
 		daveFundingAmount, erinFundingAmount, 0,
 	)
 
@@ -4831,15 +4885,23 @@ func testCustomChannelsForwardBandwidth(ctx context.Context,
 	syncUniverses(t.t, charlieTap, dave, erin, fabia, yara)
 	t.Logf("Universes synced between all nodes, distributing assets...")
 
+	// Define the sizes of each channel that is opened.
+	// Note: Dave needs to have the larger channel size.
 	const (
 		daveFundingAmount = uint64(400_000)
 		erinFundingAmount = uint64(200_000)
 	)
-	charlieFundingAmount := cents.Amount - uint64(2*400_000)
+
+	// Give Dave and Erin both the same amount of on chain funds even though
+	// Erin won't use it all.
+	const assetSendAmount = daveFundingAmount
+
+	// Charlie uses the rest of the funds that are minted in his channel
+	charlieFundingAmount := cents.Amount - 2*assetSendAmount
 
 	_, _, chanPointEF := createTestAssetNetwork(
 		t, net, charlieTap, daveTap, erinTap, fabiaTap, yaraTap,
-		universeTap, cents, 400_000, charlieFundingAmount,
+		universeTap, cents, assetSendAmount, charlieFundingAmount,
 		daveFundingAmount, erinFundingAmount, 0,
 	)
 
