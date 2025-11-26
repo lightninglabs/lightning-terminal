@@ -4,6 +4,38 @@
 import * as jspb from "google-protobuf";
 import * as swapserverrpc_common_pb from "./swapserverrpc/common_pb";
 
+export class StopDaemonRequest extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): StopDaemonRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: StopDaemonRequest): StopDaemonRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: StopDaemonRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StopDaemonRequest;
+  static deserializeBinaryFromReader(message: StopDaemonRequest, reader: jspb.BinaryReader): StopDaemonRequest;
+}
+
+export namespace StopDaemonRequest {
+  export type AsObject = {
+  }
+}
+
+export class StopDaemonResponse extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): StopDaemonResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: StopDaemonResponse): StopDaemonResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: StopDaemonResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StopDaemonResponse;
+  static deserializeBinaryFromReader(message: StopDaemonResponse, reader: jspb.BinaryReader): StopDaemonResponse;
+}
+
+export namespace StopDaemonResponse {
+  export type AsObject = {
+  }
+}
+
 export class LoopOutRequest extends jspb.Message {
   getAmt(): string;
   setAmt(value: string): void;
@@ -1062,6 +1094,13 @@ export class LiquidityParameters extends jspb.Message {
   getFastSwapPublication(): boolean;
   setFastSwapPublication(value: boolean): void;
 
+  clearEasyAutoloopExcludedPeersList(): void;
+  getEasyAutoloopExcludedPeersList(): Array<Uint8Array | string>;
+  getEasyAutoloopExcludedPeersList_asU8(): Array<Uint8Array>;
+  getEasyAutoloopExcludedPeersList_asB64(): Array<string>;
+  setEasyAutoloopExcludedPeersList(value: Array<Uint8Array | string>): void;
+  addEasyAutoloopExcludedPeers(value: Uint8Array | string, index?: number): Uint8Array | string;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LiquidityParameters.AsObject;
   static toObject(includeInstance: boolean, msg: LiquidityParameters): LiquidityParameters.AsObject;
@@ -1100,6 +1139,7 @@ export namespace LiquidityParameters {
     accountAddrType: AddressTypeMap[keyof AddressTypeMap],
     easyAssetParamsMap: Array<[string, EasyAssetAutoloopParams.AsObject]>,
     fastSwapPublication: boolean,
+    easyAutoloopExcludedPeersList: Array<Uint8Array | string>,
   }
 }
 

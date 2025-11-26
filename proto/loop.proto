@@ -100,6 +100,11 @@ service SwapClient {
     */
     rpc GetInfo (GetInfoRequest) returns (GetInfoResponse);
 
+    /* loop: `stop`
+    StopDaemon instructs the daemon to shut down gracefully.
+    */
+    rpc StopDaemon (StopDaemonRequest) returns (StopDaemonResponse);
+
     /* loop: `getparams`
     GetLiquidityParams gets the parameters that the daemon's liquidity manager
     is currently configured with. This may be nil if nothing is configured.
@@ -200,6 +205,12 @@ service SwapClient {
     */
     rpc StaticAddressLoopIn (StaticAddressLoopInRequest)
         returns (StaticAddressLoopInResponse);
+}
+
+message StopDaemonRequest {
+}
+
+message StopDaemonResponse {
 }
 
 message LoopOutRequest {
@@ -1269,6 +1280,13 @@ message LiquidityParameters {
      * not be able to be batched with other swaps.
      */
     bool fast_swap_publication = 26;
+
+    /*
+    A list of peers (their public keys) that should be excluded from the easy
+    autoloop run. If set, channels connected to these peers won't be
+    considered for easy autoloop swaps.
+    */
+    repeated bytes easy_autoloop_excluded_peers = 27;
 }
 
 message EasyAssetAutoloopParams {

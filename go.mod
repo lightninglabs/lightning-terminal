@@ -26,15 +26,15 @@ require (
 	github.com/lightninglabs/lightning-terminal/litrpc v1.0.2
 	github.com/lightninglabs/lightning-terminal/perms v1.0.1
 	github.com/lightninglabs/lndclient v0.20.0-6
-	github.com/lightninglabs/loop v0.31.5-beta-lnd0.20
-	github.com/lightninglabs/loop/looprpc v1.0.11
-	github.com/lightninglabs/loop/swapserverrpc v1.0.18
+	github.com/lightninglabs/loop v0.31.6-beta
+	github.com/lightninglabs/loop/looprpc v1.0.12
+	github.com/lightninglabs/loop/swapserverrpc v1.0.19
 	github.com/lightninglabs/pool v0.6.6-beta
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.3
 	github.com/lightninglabs/pool/poolrpc v1.0.1
-	github.com/lightninglabs/taproot-assets v0.7.0-rc2
-	github.com/lightninglabs/taproot-assets/taprpc v1.0.10
-	github.com/lightningnetwork/lnd v0.20.0-beta.rc2
+	github.com/lightninglabs/taproot-assets v0.7.0
+	github.com/lightninglabs/taproot-assets/taprpc v1.0.11
+	github.com/lightningnetwork/lnd v0.20.0-beta
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/clock v1.1.1
 	github.com/lightningnetwork/lnd/fn v1.2.5
@@ -185,7 +185,7 @@ require (
 	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7 // indirect
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20201229170055-e5319fda7802 // indirect
 	github.com/tv42/zbase32 v0.0.0-20160707012821-501572607d02 // indirect
-	github.com/urfave/cli-docs/v3 v3.1.0 // indirect
+	github.com/urfave/cli-docs/v3 v3.1.1-0.20251020101624-bec07369b4f6 // indirect
 	github.com/urfave/cli/v3 v3.4.1 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
