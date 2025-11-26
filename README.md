@@ -154,15 +154,15 @@ The following table shows the supported combinations:
 | `faraday-mode=integrated`              | X                     | X                 |
 | `loop-mode=integrated`                 | X                     | X                 |
 | `pool-mode=integrated`                 | X                     | X                 |
-| `taproot-assets-mode=integrated`        | X                     | X                 |
+| `taproot-assets-mode=integrated`       | X                     | X                 |
 | `faraday-mode=remote`                  |                       | X                 |
 | `loop-mode=remote`                     |                       | X                 |
 | `pool-mode=remote`                     |                       | X                 |
-| `taproot-assets-mode=remote`            |                       | X                 |
+| `taproot-assets-mode=remote`           |                       | X                 |
 | `faraday-mode=disable`                 | X                     | X                 |
 | `loop-mode=disable`                    | X                     | X                 |
 | `pool-mode=disable`                    | X                     | X                 |
-| `taproot-assets-mode=disable`           | X                     | X                 |
+| `taproot-assets-mode=disable`          | X                     | X                 |
 | `lnd` running in "stateless init" mode | X                     |                   |
 
 NOTE: Taproot Assets **Channel** functionality is only available when both `lnd`
