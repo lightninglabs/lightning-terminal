@@ -45,6 +45,7 @@ type SQLQueries interface {
 	SetSessionGroupID(ctx context.Context, arg sqlc.SetSessionGroupIDParams) error
 	UpdateSessionState(ctx context.Context, arg sqlc.UpdateSessionStateParams) error
 	DeleteSessionsWithState(ctx context.Context, state int16) error
+	DeleteSession(ctx context.Context, id int64) error
 	GetAccountIDByAlias(ctx context.Context, alias int64) (int64, error)
 	GetAccount(ctx context.Context, id int64) (sqlc.Account, error)
 }
@@ -428,6 +429,30 @@ func (s *SQLStore) DeleteReservedSessions(ctx context.Context) error {
 	var writeTxOpts db.QueriesTxOptions
 	return s.db.ExecTx(ctx, &writeTxOpts, func(db SQLQueries) error {
 		return db.DeleteSessionsWithState(ctx, int16(StateReserved))
+	})
+}
+
+// DeleteReservedSession removes a given session that is in the reserved state
+// from the database.
+//
+// NOTE: This is part of the Store interface.
+func (s *SQLStore) DeleteReservedSession(ctx context.Context, id ID) error {
+	var writeTxOpts db.QueriesTxOptions
+	return s.db.ExecTx(ctx, &writeTxOpts, func(db SQLQueries) error {
+		session, err := db.GetSessionByAlias(ctx, id[:])
+		if errors.Is(err, sql.ErrNoRows) {
+			return fmt.Errorf("%w: unable to get session: %w",
+				ErrSessionNotFound, err)
+		} else if err != nil {
+			return fmt.Errorf("unable to get session: %w", err)
+		}
+
+		if State(session.State) != StateReserved {
+			return fmt.Errorf("session not in reserved state, is "+
+				"%v", State(session.State))
+		}
+
+		return db.DeleteSession(ctx, session.ID)
 	})
 }
 
