@@ -405,6 +405,31 @@ func (g *LightningTerminal) Run(ctx context.Context) error {
 		g.statusMgr.SetErrored(
 			subservers.LIT, "could not start Lit: %v", startErr,
 		)
+
+		// Stop lnd promptly to avoid it continuing to run after a
+		// failed startup (for example, calling into failed
+		// sub-servers).
+		if client, err := g.basicLNDClient(); err == nil {
+			stopCtx, cancel := context.WithTimeout(
+				ctx, 5*time.Second,
+			)
+			defer cancel()
+
+			_, err := client.StopDaemon(
+				stopCtx, &lnrpc.StopRequest{},
+			)
+			if err != nil {
+				log.Warnf("Error stopping lnd after failed "+
+					"start: %v", err)
+			}
+		}
+
+		if err := g.shutdownSubServers(); err != nil {
+			log.Errorf("Error shutting down after failed start: %v",
+				err)
+		}
+
+		return startErr
 	}
 
 	// Now block until we receive an error or the main shutdown
@@ -422,11 +447,10 @@ func (g *LightningTerminal) Run(ctx context.Context) error {
 	return startErr
 }
 
-// start attempts to start all the various components of Litd. Only Litd and
-// LND errors are considered fatal and will result in an error being returned.
-// If any of the sub-servers managed by the subServerMgr error while starting
-// up, these are considered non-fatal and will not result in an error being
-// returned.
+// start attempts to start all the various components of Litd. LND errors and
+// critical integrated sub-server failures are fatal and will result in an
+// error being returned. Non-critical sub-server startup failures are recorded
+// in the status manager but do not stop startup.
 func (g *LightningTerminal) start(ctx context.Context) error {
 	var err error
 
@@ -769,9 +793,13 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 	// Both connection types are ready now, let's start our sub-servers if
 	// they should be started locally as an integrated service.
 	createDefaultMacaroons := !g.cfg.statelessInitMode
-	g.subServerMgr.StartIntegratedServers(
+	err = g.subServerMgr.StartIntegratedServers(
 		g.basicClient, g.lndClient, createDefaultMacaroons,
 	)
+	if err != nil {
+		return fmt.Errorf("could not start integrated sub-servers: %w",
+			err)
+	}
 
 	err = g.startInternalSubServers(ctx, !g.cfg.statelessInitMode)
 	if err != nil {
