@@ -18,6 +18,14 @@
 
 ### Functional Changes/Additions
 
+* [PR](https://github.com/lightninglabs/lightning-terminal/pull/1183): LiT now
+  fails fast if a critical integrated sub-server cannot start. The critical set
+  currently includes only tapd; other integrated sub-servers can fail to start
+  without blocking LiT, and their errors are recorded in status.
+* Integrated-mode sub-servers now start deterministically: critical integrated
+  services are launched first, followed by the remaining services in
+  alphabetical order to keep startup ordering stable across runs.
+
 ### Technical and Architectural Updates
 
 ## RPC Updates
