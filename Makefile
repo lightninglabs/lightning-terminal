@@ -258,9 +258,9 @@ run-itest-only:
 
 itest-only: build-itest install-backward-compat-versions run-itest-only
 
-itest: app-build build-itest itest-only
+itest: app-build itest-only
 
-itest-no-backward-compat: app-build build-itest build-itest run-itest-only
+itest-no-backward-compat: app-build build-itest run-itest-only
 
 itest-parallel: app-build build-itest install-backward-compat-versions build-itest-binary
 	@$(call print, "Running integration tests in parallel.")
