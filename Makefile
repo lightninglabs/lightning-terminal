@@ -239,6 +239,10 @@ build-itest:
 	CGO_ENABLED=0 $(GOBUILD) -tags="$(ITEST_TAGS)" -o itest/btcd-itest -ldflags "$(ITEST_LDFLAGS)" $(BTCD_PKG)
 	CGO_ENABLED=0 $(GOBUILD) -tags="$(ITEST_TAGS)" -o itest/lnd-itest -ldflags "$(ITEST_LDFLAGS)" $(LND_PKG)/cmd/lnd
 
+build-itest-binary:
+	@$(call print, "Building itest binary.")
+	CGO_ENABLED=0 $(GOTEST) -v ./itest -tags="$(DEV_TAGS) $(ITEST_TAGS)" -c -o itest/itest.test
+
 install-backward-compat-versions:
 	@$(call print, "Installing old versions of litd for backward compatibility tests.")
 	scripts/install-backward-compat-versions.sh '$(LITD_COMPAT_VERSIONS)'
@@ -254,9 +258,19 @@ run-itest-only:
 
 itest-only: build-itest install-backward-compat-versions run-itest-only
 
-itest: app-build build-itest itest-only
+itest: app-build itest-only
 
-itest-no-backward-compat: app-build build-itest build-itest run-itest-only
+itest-no-backward-compat: app-build build-itest run-itest-only
+
+itest-parallel: app-build build-itest install-backward-compat-versions build-itest-binary
+	@$(call print, "Running integration tests in parallel.")
+	rm -rf itest/*.log itest/.logs*; date
+	scripts/itest_parallel.sh $(ITEST_PARALLELISM) $(NUM_ITEST_TRANCHES) $(SHUFFLE_SEED) $(TEST_FLAGS) $(ITEST_FLAGS)
+
+itest-parallel-no-backward-compat: app-build build-itest build-itest-binary
+	@$(call print, "Running integration tests in parallel (no backward compat binaries).")
+	rm -rf itest/*.log itest/.logs*; date
+	scripts/itest_parallel.sh $(ITEST_PARALLELISM) $(NUM_ITEST_TRANCHES) $(SHUFFLE_SEED) $(TEST_FLAGS) $(ITEST_FLAGS)
 
 # =============
 # FLAKE HUNTING
@@ -349,5 +363,6 @@ flakehunter-unit:
 .PHONY: default all yarn-install build install go-build go-build-noui \
 	go-install go-install-noui go-install-cli app-build release go-release \
 	docker-release docker-tools scratch check unit unit-cover unit-race \
-	clean-itest build-itest itest-only itest flake-unit fmt lint mod mod-check \
-	list rpc protos protos-check rpc-js-compile clean
+	clean-itest build-itest build-itest-binary itest-only itest \
+	itest-parallel itest-parallel-no-backward-compat flake-unit fmt lint \
+	mod mod-check list rpc protos protos-check rpc-js-compile clean

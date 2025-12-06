@@ -279,13 +279,13 @@ jobs:
       matrix:
         include:
           - name: bbolt
-            args: itest-no-backward-compat icase=terminal dbbackend=bbolt
+            args: itest-parallel-no-backward-compat icase=terminal dbbackend=bbolt tranches=4
           - name: sqlite
-            args: itest-no-backward-compat icase=terminal dbbackend=sqlite
+            args: itest-parallel-no-backward-compat icase=terminal dbbackend=sqlite tranches=4
           - name: postgres
-            args: itest-no-backward-compat icase=terminal dbbackend=postgres
+            args: itest-parallel-no-backward-compat icase=terminal dbbackend=postgres tranches=4
           - name: custom-channels
-            args: itest-only icase=custom_channels
+            args: itest-parallel icase=custom_channels tranches=4
             
     steps:
       - name: git checkout
