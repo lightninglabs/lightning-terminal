@@ -3527,6 +3527,12 @@ func testCustomChannelsMultiRFQ(ctx context.Context, net *NetworkHarness,
 	// using multiple RFQ quotes.
 	invAmt := int64(15_000 * 17)
 
+	var preimage lntypes.Preimage
+	_, err = rand.Read(preimage[:])
+	require.NoError(t.t, err)
+
+	payHash = preimage.Hash()
+
 	iResp, err := charlie.AddHoldInvoice(
 		ctx, &invoicesrpc.AddHoldInvoiceRequest{
 			Memo:  "",
@@ -3549,7 +3555,7 @@ func testCustomChannelsMultiRFQ(ctx context.Context, net *NetworkHarness,
 	logBalance(t.t, nodes, assetID, "multi-rfq send in-flight")
 
 	_, err = charlie.SettleInvoice(ctx, &invoicesrpc.SettleInvoiceMsg{
-		Preimage: hodlInv.preimage[:],
+		Preimage: preimage[:],
 	})
 	require.NoError(t.t, err)
 
