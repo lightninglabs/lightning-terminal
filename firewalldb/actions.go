@@ -131,7 +131,7 @@ type ListActionsQuery struct {
 	CountAll bool
 }
 
-// listActionsOptions holds the options that can be used to filter the actions
+// listActionOptions holds the options that can be used to filter the actions
 // that are returned by the ListActions method.
 type listActionOptions struct {
 	sessionID   session.ID
@@ -268,7 +268,7 @@ func (db *BoltDB) GetActionsReadDB(groupID session.ID,
 	}
 }
 
-// allActionsReadDb is an implementation of the ActionsReadDB.
+// allActionsReadDB is an implementation of the ActionsReadDB.
 type allActionsReadDB struct {
 	db          ActionDB
 	groupID     session.ID

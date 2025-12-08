@@ -55,7 +55,7 @@ var (
 	ErrMigrationDowngrade = errors.New("database downgrade detected")
 )
 
-// migrationOption is a functional option that can be passed to migrate related
+// migrateOptions is a functional option that can be passed to migrate related
 // methods to modify their behavior.
 type migrateOptions struct {
 	latestVersion fn.Option[uint]
