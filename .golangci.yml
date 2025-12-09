@@ -14,6 +14,17 @@ run:
     - dev
 
 linters-settings:
+  custom:
+    ll:
+      type: "module"
+      description: "Custom lll linter with 'S' log line exclusion."
+      settings:
+        # Max line length, lines longer will be reported.
+        line-length: 80
+        # Tab width in spaces.
+        tab-width: 8
+        # The regex that we will use to detect the start of an `S` log line.
+        log-regex: "^\\s*.*(L|l)og\\.(Info|Debug|Trace|Warn|Error|Critical)S\\("
   govet:
     # Don't report about shadowed variables
     check-shadowing: false
@@ -39,7 +50,7 @@ linters-settings:
 
 linters:
   enable:
-    - lll
+    - ll
     - gofmt
     - tagliatelle
     - whitespace

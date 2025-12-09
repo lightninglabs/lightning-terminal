@@ -11,7 +11,9 @@ RUN cd /tmp \
   && mkdir -p /tmp/build/.cache \
   && mkdir -p /tmp/build/.modcache \
   && cd /tmp/tools \
-  && go install -trimpath github.com/golangci/golangci-lint/cmd/golangci-lint \
+  && CGO_ENABLED=0 go install -trimpath github.com/golangci/golangci-lint/cmd/golangci-lint \
+  && CGO_ENABLED=0 golangci-lint custom \
+  && mv ./custom-gcl /usr/local/bin/custom-gcl \
   && chmod -R 777 /tmp/build/ 
 
 WORKDIR /build
