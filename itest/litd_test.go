@@ -1,6 +1,9 @@
 package itest
 
 import (
+	"flag"
+	"fmt"
+	"math/rand"
 	"os"
 	"strings"
 	"testing"
@@ -10,6 +13,44 @@ import (
 	"github.com/lightningnetwork/lnd/lntest"
 	"github.com/lightningnetwork/lnd/lnwallet/chainfee"
 	"github.com/stretchr/testify/require"
+)
+
+const (
+	// defaultSplitTranches is the default number of tranches to divide the
+	// test suite into when no override is provided.
+	defaultSplitTranches uint = 1
+
+	// defaultRunTranche is the default tranche index to execute when no
+	// explicit tranche is selected.
+	defaultRunTranche uint = 0
+)
+
+var (
+	// testCasesSplitTranches is the number of tranches the test cases
+	// should be split into. By default this is set to 1, so no splitting
+	// happens. If this value is increased, then the -runtranche flag must
+	// be specified as well to indicate which part should be run in the
+	// current invocation.
+	testCasesSplitTranches = flag.Uint(
+		"splittranches", defaultSplitTranches,
+		"split the test cases in this many tranches and run the "+
+			"tranche at 0-based index specified by the "+
+			"-runtranche flag",
+	)
+
+	// shuffleSeedFlag enables deterministic shuffling of test cases to
+	// balance workload across tranches.
+	shuffleSeedFlag = flag.Uint64(
+		"shuffleseed", 0, "if set, shuffles the test cases using this "+
+			"as the source of randomness",
+	)
+
+	// testCasesRunTranche selects which tranche (0-based) to execute.
+	testCasesRunTranche = flag.Uint(
+		"runtranche", defaultRunTranche,
+		"run the tranche of the split test cases with the given "+
+			"(0-based) index",
+	)
 )
 
 // TestLightningTerminal performs a series of integration tests amongst a
@@ -39,9 +80,18 @@ func TestLightningTerminal(t *testing.T) {
 		"--rpcmiddleware.enable",
 	}
 
+	testCases, trancheIndex, trancheOffset := selectTestTranche()
+	totalTestCases := len(allTestCases)
+
 	// Run the subset of the test cases selected in this tranche.
-	for _, testCase := range allTestCases {
-		success := t.Run(testCase.name, func(t1 *testing.T) {
+	for idx, testCase := range testCases {
+		testOrdinal := int(trancheOffset) + idx + 1
+		testName := fmt.Sprintf(
+			"tranche%02d/%02d-of-%d/%s", int(trancheIndex),
+			testOrdinal, totalTestCases, testCase.name,
+		)
+
+		success := t.Run(testName, func(t1 *testing.T) {
 			cleanTestCaseName := strings.ReplaceAll(
 				testCase.name, " ", "_",
 			)
@@ -105,6 +155,79 @@ func TestLightningTerminal(t *testing.T) {
 			break
 		}
 	}
+}
+
+// maybeShuffleTestCases shuffles the test cases if the flag `shuffleseed` is
+// set and not 0. This is used by parallel test runs to even out the work
+// across tranches.
+func maybeShuffleTestCases() {
+	// Exit if not set or set to 0.
+	if shuffleSeedFlag == nil || *shuffleSeedFlag == 0 {
+		return
+	}
+
+	// Init the seed and shuffle the test cases.
+	// #nosec G404 -- This is not for cryptographic purposes.
+	r := rand.New(rand.NewSource(int64(*shuffleSeedFlag)))
+	r.Shuffle(len(allTestCases), func(i, j int) {
+		allTestCases[i], allTestCases[j] =
+			allTestCases[j], allTestCases[i]
+	})
+}
+
+// createIndices divides the number of test cases into pairs of indices that
+// specify the start and end of a tranche.
+func createIndices(numCases, numTranches uint) [][2]uint {
+	base := numCases / numTranches
+	remainder := numCases % numTranches
+
+	indices := make([][2]uint, numTranches)
+	start := uint(0)
+
+	for i := uint(0); i < numTranches; i++ {
+		end := start + base
+		if i < remainder {
+			end++
+		}
+		indices[i] = [2]uint{start, end}
+		start = end
+	}
+
+	return indices
+}
+
+// selectTestTranche returns the sub slice of the test cases that should be run
+// as the current split tranche as well as the index and slice offset of the
+// tranche.
+func selectTestTranche() ([]*testCase, uint, uint) {
+	numTranches := defaultSplitTranches
+	if testCasesSplitTranches != nil {
+		numTranches = *testCasesSplitTranches
+	}
+	runTranche := defaultRunTranche
+	if testCasesRunTranche != nil {
+		runTranche = *testCasesRunTranche
+	}
+
+	// There's a special flake-hunt mode where we run the same test multiple
+	// times in parallel. In that case the tranche index is equal to the
+	// thread ID, but we need to actually run all tests for the regex
+	// selection to work.
+	threadID := runTranche
+	if numTranches == 1 {
+		runTranche = 0
+	}
+
+	// Shuffle the test cases if the `shuffleseed` flag is set.
+	maybeShuffleTestCases()
+
+	numCases := uint(len(allTestCases))
+	indices := createIndices(numCases, numTranches)
+	index := indices[runTranche]
+	trancheOffset, trancheEnd := index[0], index[1]
+
+	return allTestCases[trancheOffset:trancheEnd], threadID,
+		trancheOffset
 }
 
 func init() {

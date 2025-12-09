@@ -3,6 +3,26 @@ include make/compile_flags.mk
 TEST_FLAGS =
 DEV_TAGS = dev
 
+NUM_ITEST_TRANCHES = 8
+ITEST_PARALLELISM = $(NUM_ITEST_TRANCHES)
+SHUFFLE_SEED = 0
+
+# Scale the number of parallel running itest tranches.
+ifneq ($(tranches),)
+NUM_ITEST_TRANCHES = $(tranches)
+ITEST_PARALLELISM = $(NUM_ITEST_TRANCHES)
+endif
+
+# Give the ability to run the same tranche multiple times at the same time.
+ifneq ($(parallel),)
+ITEST_PARALLELISM = $(parallel)
+endif
+
+# Set the seed for shuffling the test cases.
+ifneq ($(shuffleseed),)
+SHUFFLE_SEED = $(shuffleseed)
+endif
+
 # Define the integration test.run filter if the icase argument was provided.
 ifneq ($(icase),)
 ITEST_FLAGS += -test.run="TestLightningTerminal/$(icase)"
