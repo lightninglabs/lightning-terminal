@@ -22,6 +22,8 @@ var (
 	// information about sessions. These sessions are indexed by their
 	// public key.
 	//
+	// nolint:ll
+	//
 	// The session bucket has the following structure:
 	// session -> <key>        -> <serialised session>
 	//	   -> id-index     -> <session-id> -> key -> <session key>

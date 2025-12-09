@@ -976,6 +976,7 @@ func testChannelOpening(net *NetworkHarness, ht *harnessTest, t *testing.T) {
 	net.autopilotServer.SetFeatures(map[string]*mock.Feature{
 		"OpenChannels": {
 			Description: "open channels while you sleep!",
+			// nolint:ll
 			Rules: map[string]*mock.RuleRanges{
 				rules.OnChainBudgetName:    onChainBudgetRule,
 				rules.ChanConstraintName:   chanConstraintsRule,
@@ -1028,6 +1029,7 @@ func testChannelOpening(net *NetworkHarness, ht *harnessTest, t *testing.T) {
 			MailboxServerAddr: mailboxServerAddr,
 			Features: map[string]*litrpc.FeatureConfig{
 				"OpenChannels": {
+					// nolint:ll
 					Rules: &litrpc.RulesMap{
 						Rules: map[string]*litrpc.RuleValue{
 							rules.ChanConstraintName: {
@@ -1292,6 +1294,7 @@ func testChannelOpening(net *NetworkHarness, ht *harnessTest, t *testing.T) {
 			MailboxServerAddr: mailboxServerAddr,
 			Features: map[string]*litrpc.FeatureConfig{
 				"OpenChannels": {
+					// nolint:ll
 					Rules: &litrpc.RulesMap{
 						Rules: map[string]*litrpc.RuleValue{
 							rules.OnChainBudgetName: {
@@ -1474,6 +1477,7 @@ func testRateLimitAndPrivacyMapper(net *NetworkHarness, t *harnessTest) {
 				time.Now().Add(5 * time.Minute).Unix(),
 			),
 			MailboxServerAddr: mailboxServerAddr,
+			// nolint:ll
 			Features: map[string]*litrpc.FeatureConfig{
 				"HealthCheck": {
 					Rules: &litrpc.RulesMap{
@@ -1700,6 +1704,7 @@ func testHistoryLimitRule(net *NetworkHarness, t *harnessTest) {
 				time.Now().Add(5 * time.Minute).Unix(),
 			),
 			MailboxServerAddr: mailboxServerAddr,
+			// nolint:ll
 			Features: map[string]*litrpc.FeatureConfig{
 				"AutoFees": {
 					Rules: &litrpc.RulesMap{
@@ -1820,6 +1825,7 @@ func testChanPolicyBoundsRule(net *NetworkHarness, t *harnessTest) {
 	net.autopilotServer.SetFeatures(map[string]*mock.Feature{
 		"AutoFees": {
 			Description: "manages your channel fees",
+			// nolint:ll
 			Rules: map[string]*mock.RuleRanges{
 				rules.ChanPolicyBoundsName: chanPolicyBoundsRule,
 			},
@@ -1857,6 +1863,7 @@ func testChanPolicyBoundsRule(net *NetworkHarness, t *harnessTest) {
 			Features: map[string]*litrpc.FeatureConfig{
 				"AutoFees": {
 					Rules: &litrpc.RulesMap{
+						// nolint:ll
 						Rules: map[string]*litrpc.RuleValue{
 							rules.ChanPolicyBoundsName: {
 								Value: policyBounds,
@@ -2117,6 +2124,7 @@ func testPeerAndChannelRestrictRules(net *NetworkHarness, t *harnessTest) {
 			MailboxServerAddr: mailboxServerAddr,
 			Features: map[string]*litrpc.FeatureConfig{
 				"AutoFees": {
+					// nolint:ll
 					Rules: &litrpc.RulesMap{
 						Rules: map[string]*litrpc.RuleValue{
 							rules.PeersRestrictName: {
@@ -2385,24 +2393,23 @@ func testLargeHttpHeader(ctx context.Context, net *NetworkHarness,
 	// Add a new Autopilot session that subscribes to a "Test", feature.
 	// This call is expected to also result in Litd registering this session
 	// with the mock autopilot server.
-	sessResp, err := litClient.AddAutopilotSession(
-		ctxm, &litrpc.AddAutopilotSessionRequest{
-			Label: "integration-test",
-			ExpiryTimestampSeconds: uint64(
-				time.Now().Add(5 * time.Minute).Unix(),
-			),
-			MailboxServerAddr: mailboxServerAddr,
-			Features: map[string]*litrpc.FeatureConfig{
-				"TestFeature": {
-					Rules: &litrpc.RulesMap{
-						Rules: map[string]*litrpc.RuleValue{},
-					},
+	req := litrpc.AddAutopilotSessionRequest{
+		Label: "integration-test",
+		ExpiryTimestampSeconds: uint64(
+			time.Now().Add(5 * time.Minute).Unix(),
+		),
+		MailboxServerAddr: mailboxServerAddr,
+		Features: map[string]*litrpc.FeatureConfig{
+			"TestFeature": {
+				Rules: &litrpc.RulesMap{
+					Rules: map[string]*litrpc.RuleValue{},
 				},
 			},
-			// Switch the privacy mapper off for simplicity’s sake.
-			NoPrivacyMapper: true,
 		},
-	)
+		// Switch the privacy mapper off for simplicity’s sake.
+		NoPrivacyMapper: true,
+	}
+	sessResp, err := litClient.AddAutopilotSession(ctxm, &req)
 	require.NoError(t.t, err)
 
 	// We now connect to the mailbox from the PoV of the autopilot server.
@@ -2525,7 +2532,9 @@ func connectMailboxWithRemoteKey(ctx context.Context,
 
 	transportConn, err := mailbox.NewGrpcClient(
 		ctx, mailboxServerAddr, connData,
-		grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})),
+		grpc.WithTransportCredentials(
+			credentials.NewTLS(&tls.Config{}),
+		),
 	)
 	if err != nil {
 		return nil, nil, err

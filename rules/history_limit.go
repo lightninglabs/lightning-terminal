@@ -240,8 +240,8 @@ func (h *HistoryLimit) ToProto() *litrpc.RuleValue {
 	}
 }
 
-// GetStartDate is a helper function that determines the start date of the values
-// given if a start date is set or a max duration is given.
+// GetStartDate is a helper function that determines the start date of the
+// values given if a start date is set or a max duration is given.
 func (h *HistoryLimit) GetStartDate() time.Time {
 	startDate := h.StartDate
 	if h.StartDate.IsZero() {

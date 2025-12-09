@@ -47,7 +47,7 @@ var (
 // SqliteConfig holds all the config arguments needed to interact with our
 // sqlite DB.
 //
-// nolint: lll
+// nolint:ll
 type SqliteConfig struct {
 	// SkipMigrations if true, then all the tables will be created on start
 	// up if they don't already exist.

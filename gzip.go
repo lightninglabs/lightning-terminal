@@ -21,7 +21,10 @@ func (w gzipResponseWriter) Write(b []byte) (int, error) {
 func makeGzipHandler(handler http.HandlerFunc) http.HandlerFunc {
 	return func(resp http.ResponseWriter, req *http.Request) {
 		// Check if the client can accept the gzip encoding.
-		if !strings.Contains(req.Header.Get("Accept-Encoding"), "gzip") {
+		isGzipEncoding := strings.Contains(
+			req.Header.Get("Accept-Encoding"), "gzip",
+		)
+		if !isGzipEncoding {
 			// The client cannot accept it, so return the output
 			// uncompressed.
 			handler(resp, req)
@@ -31,6 +34,9 @@ func makeGzipHandler(handler http.HandlerFunc) http.HandlerFunc {
 		resp.Header().Set("Content-Encoding", "gzip")
 		gzipWriter := gzip.NewWriter(resp)
 		defer gzipWriter.Close()
-		handler(gzipResponseWriter{Writer: gzipWriter, ResponseWriter: resp}, req)
+		gzipRespWriter := gzipResponseWriter{
+			Writer: gzipWriter, ResponseWriter: resp,
+		}
+		handler(gzipRespWriter, req)
 	}
 }

@@ -318,9 +318,9 @@ func (s *groupActionsReadDB) ListActions(ctx context.Context) ([]*RuleAction,
 	return actions, nil
 }
 
-// groupFeatureActionsReadDB is an implementation of the rules.ActionsListDB that
-// will provide read access to all the Actions of a feature within a particular
-// group.
+// groupFeatureActionsReadDB is an implementation of the rules.ActionsListDB
+// that will provide read access to all the Actions of a feature within a
+// particular group.
 type groupFeatureActionsReadDB struct {
 	*allActionsReadDB
 }

@@ -212,8 +212,8 @@ func (c *ChannelRestrictEnforcer) HandleRequest(ctx context.Context, uri string,
 // rpcmiddleware.RoundTripCheckers.
 //
 // NOTE: this is part of the Enforcer interface.
-func (c *ChannelRestrictEnforcer) HandleResponse(ctx context.Context, uri string,
-	msg proto.Message) (proto.Message, error) {
+func (c *ChannelRestrictEnforcer) HandleResponse(ctx context.Context,
+	uri string, msg proto.Message) (proto.Message, error) {
 
 	checkers := c.checkers()
 	if checkers == nil {

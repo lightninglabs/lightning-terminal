@@ -26,7 +26,7 @@ type SQLAccountQueries interface {
 // SQLActionQueries is a subset of the sqlc.Queries interface that can be used
 // to interact with action related tables.
 //
-//nolint:lll
+//nolint:ll
 type SQLActionQueries interface {
 	SQLSessionQueries
 	SQLAccountQueries

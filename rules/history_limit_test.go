@@ -76,7 +76,8 @@ func TestHistoryLimitCheckers(t *testing.T) {
 	require.NoError(t, err)
 
 	// The ForwardingHistory request has a StartTime parameter. The request
-	// should be allowed if the parameter is ok given the HistoryLimit values.
+	// should be allowed if the parameter is ok given the HistoryLimit
+	// values.
 	_, err = values.HandleRequest(
 		ctx, "/lnrpc.Lightning/ForwardingHistory",
 		&lnrpc.ForwardingHistoryRequest{
@@ -87,7 +88,8 @@ func TestHistoryLimitCheckers(t *testing.T) {
 
 	// And it should be denied if it violates the values.
 	// The ForwardingHistory request has a StartTime parameter. The request
-	// should be allowed if the parameter is ok given the HistoryLimit values.
+	// should be allowed if the parameter is ok given the HistoryLimit
+	// values.
 	_, err = values.HandleRequest(
 		ctx, "/lnrpc.Lightning/ForwardingHistory",
 		&lnrpc.ForwardingHistoryRequest{
@@ -99,9 +101,9 @@ func TestHistoryLimitCheckers(t *testing.T) {
 	require.Error(t, err)
 
 	// The ListInvoices function does not have a StartTime parameter and
-	// so the HistoryLimit values needs to alter the _response_ of this query
-	// instead to only include the invoices created after the HistoryLimit
-	// start date.
+	// so the HistoryLimit values needs to alter the _response_ of this
+	// query instead to only include the invoices created after the
+	// HistoryLimit start date.
 	invoices := []*lnrpc.Invoice{
 		{CreationDate: time.Now().Unix()},
 		{CreationDate: time.Now().Add(-time.Hour * 5).Unix()},

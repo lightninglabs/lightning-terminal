@@ -53,7 +53,8 @@ var listActionsCommand = cli.Command{
 			Name: "state",
 			Usage: "The action state to filter on. If not set, " +
 				"then actions of any state will be returned. " +
-				"Options include: 'pending', 'done' and 'error'.",
+				"Options include: 'pending', 'done' and " +
+				"'error'.",
 		},
 		cli.Uint64Flag{
 			Name: "index_offset",

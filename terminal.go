@@ -534,6 +534,7 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 			auxComponents = *components
 		}
 
+		// nolint:ll
 		implCfg := &lnd.ImplementationCfg{
 			GrpcRegistrar:       g,
 			RestRegistrar:       g,
@@ -1074,7 +1075,8 @@ func (g *LightningTerminal) startInternalSubServers(ctx context.Context,
 		db:        g.stores.sessions,
 		basicAuth: g.rpcProxy.basicAuth,
 		grpcOptions: []grpc.ServerOption{
-			grpc.CustomCodec(grpcProxy.Codec()), // nolint: staticcheck,
+			// nolint:staticcheck,
+			grpc.CustomCodec(grpcProxy.Codec()),
 			grpc.ChainStreamInterceptor(
 				g.rpcProxy.StreamServerInterceptor,
 			),
@@ -2060,6 +2062,7 @@ func (g *LightningTerminal) showStartupInfo(ctx context.Context) error {
 		webInterfaceString = "disabled"
 	}
 
+	// nolint:ll
 	str := "" +
 		"----------------------------------------------------------\n" +
 		" Lightning Terminal (LiT) by Lightning Labs               \n" +

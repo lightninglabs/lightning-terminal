@@ -387,6 +387,8 @@ func TestFirewallDBMigration(t *testing.T) {
 
 	// The tests slice contains all the tests that we will run for the
 	// migration of the firewalldb from a BoltDB to a SQLDB.
+	//
+	// nolint:ll
 	tests := []struct {
 		name       string
 		populateDB func(t *testing.T, ctx context.Context,
@@ -1863,6 +1865,7 @@ func randomActions(t *testing.T, ctx context.Context, boltDB *BoltDB,
 					acctAlias, err := newAcctID.ToInt64()
 					require.NoError(t, err)
 
+					// nolint:ll
 					_, err = acctSqlStore.UpdateAccountAliasForTests(
 						ctx, sqlc.UpdateAccountAliasForTestsParams{
 							Alias: acctAlias,
@@ -2185,7 +2188,8 @@ func randomString(n int) string {
 func randomBytes(n int) []byte {
 	b := make([]byte, n)
 	for i := range b {
-		b[i] = byte(rand.Intn(256)) // Random int between 0-255, then cast to byte
+		// Random int between 0-255, then cast to byte.
+		b[i] = byte(rand.Intn(256))
 	}
 	return b
 }

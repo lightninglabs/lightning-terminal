@@ -222,6 +222,7 @@ func (p *actionPaginator) queryCountAll() ([]*Action, uint64, uint64, error) {
 
 		totalCount++
 
+		// nolint:ll
 		if p.cfg.IndexOffset != 0 &&
 			binary.BigEndian.Uint64(indexKey) == p.cfg.IndexOffset+1 {
 

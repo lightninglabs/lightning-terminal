@@ -12,7 +12,7 @@ import (
 // SQLPrivacyPairQueries is a subset of the sqlc.Queries interface that can be
 // used to interact with the privacy map table.
 //
-//nolint:lll
+//nolint:ll
 type SQLPrivacyPairQueries interface {
 	SQLSessionQueries
 

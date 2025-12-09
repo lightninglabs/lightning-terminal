@@ -261,9 +261,8 @@ func DeserializeSession(r io.Reader) (*Session, error) {
 	}
 
 	if t, ok := parsedTypes[typeLocalPrivateKey]; ok && t == nil {
-		session.LocalPrivateKey, session.LocalPublicKey = btcec.PrivKeyFromBytes(
-			privateKey,
-		)
+		session.LocalPrivateKey, session.LocalPublicKey =
+			btcec.PrivKeyFromBytes(privateKey)
 	}
 
 	if t, ok := parsedTypes[typeFeaturesConfig]; ok && t == nil {

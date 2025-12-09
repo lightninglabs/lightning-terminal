@@ -13,6 +13,8 @@ var (
 	// information about sessions. These sessions are indexed by their
 	// public key.
 	//
+	// nolint:ll
+	//
 	// The session bucket has the following structure:
 	// session -> <key>       -> <serialised session>
 	//	   -> id-index    -> <session-id> -> key   -> <session key>
@@ -54,7 +56,8 @@ var (
 )
 
 // MigrateSessionIDToGroupIndex back-fills the session ID to group index so that
-// it has an entry for all sessions that the session store is currently aware of.
+// it has an entry for all sessions that the session store is currently aware
+// of.
 func MigrateSessionIDToGroupIndex(tx *bbolt.Tx) error {
 	sessionBucket := tx.Bucket(sessionBucketKey)
 	if sessionBucket == nil {

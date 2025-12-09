@@ -39,7 +39,7 @@ var defaultSqliteDatabasePath = filepath.Join(
 // features not yet available in production. Since our itests are built with
 // the dev tag, we can test these features in our itests.
 //
-// nolint:lll
+// nolint:ll
 type DevConfig struct {
 	// DatabaseBackend is the database backend we will use for storing all
 	// account related data. While this feature is still in development, we

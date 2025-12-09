@@ -255,7 +255,8 @@ func (o *OnChainBudgetEnforcer) checkers() map[string]mid.RoundTripChecker {
 		"/lnrpc.Lightning/ListChannels": mid.NewResponseRewriter(
 			&lnrpc.ListChannelsRequest{},
 			&lnrpc.ListChannelsResponse{},
-			func(ctx context.Context, r *lnrpc.ListChannelsResponse) (
+			func(ctx context.Context,
+				r *lnrpc.ListChannelsResponse) (
 				proto.Message, error) {
 
 				// We remove any potentially added memos for
@@ -271,7 +272,8 @@ func (o *OnChainBudgetEnforcer) checkers() map[string]mid.RoundTripChecker {
 		"/lnrpc.Lightning/PendingChannels": mid.NewResponseRewriter(
 			&lnrpc.PendingChannelsRequest{},
 			&lnrpc.PendingChannelsResponse{},
-			func(ctx context.Context, r *lnrpc.PendingChannelsResponse) (
+			func(ctx context.Context,
+				r *lnrpc.PendingChannelsResponse) (
 				proto.Message, error) {
 
 				// We remove any potentially added memos for
@@ -288,6 +290,7 @@ func (o *OnChainBudgetEnforcer) checkers() map[string]mid.RoundTripChecker {
 					)
 				}
 
+				// nolint:ll
 				for _, c := range r.PendingForceClosingChannels {
 					c.Channel.Memo = removeReqId(
 						c.Channel.Memo,

@@ -637,7 +637,8 @@ func (hn *HarnessNode) InvoiceMacPath() string {
 	return hn.Cfg.InvoiceMacPath
 }
 
-// renameFile is a helper to rename (log) files created during integration tests.
+// renameFile is a helper to rename (log) files created during integration
+// tests.
 func renameFile(fromFileName, toFileName string) {
 	err := os.Rename(fromFileName, toFileName)
 	if err != nil {
@@ -807,8 +808,8 @@ func (hn *HarnessNode) Start(litdBinary string,
 		return nil
 	}
 
-	// Since Stop uses the LightningClient to stop the node, if we fail to get a
-	// connected client, we have to kill the process.
+	// Since Stop uses the LightningClient to stop the node, if we fail to
+	// get a connected client, we have to kill the process.
 	useMacaroons := !hn.Cfg.HasSeed
 	conn, err := hn.ConnectRPC(useMacaroons)
 	if err != nil {
@@ -1273,7 +1274,10 @@ func (hn *HarnessNode) initLightningClient(conn *grpc.ClientConn) error {
 	// Set the harness node's pubkey to what the node claims in GetInfo.
 	// Since the RPC might not be immediately active, we wrap the call in a
 	// wait.NoError.
-	if err := wait.NoError(hn.FetchNodeInfo, lntest.DefaultTimeout); err != nil {
+	err := wait.NoError(
+		hn.FetchNodeInfo, lntest.DefaultTimeout,
+	)
+	if err != nil {
 		return err
 	}
 
@@ -1331,7 +1335,8 @@ func (hn *HarnessNode) ReadMacaroon(macPath string, timeout time.Duration) (
 	err := wait.NoError(func() error {
 		macBytes, err := ioutil.ReadFile(macPath)
 		if err != nil {
-			return fmt.Errorf("error reading macaroon file: %v", err)
+			return fmt.Errorf("error reading macaroon file: %v",
+				err)
 		}
 
 		newMac := &macaroon.Macaroon{}
@@ -1432,7 +1437,8 @@ func (hn *HarnessNode) cleanup() error {
 	if hn.backupDbDir != "" {
 		err := os.RemoveAll(hn.backupDbDir)
 		if err != nil {
-			return fmt.Errorf("unable to remove backup dir: %v", err)
+			return fmt.Errorf("unable to remove backup dir: %v",
+				err)
 		}
 	}
 
@@ -1461,7 +1467,9 @@ func (hn *HarnessNode) Stop() error {
 				return nil
 
 			// Try again if a recovery/rescan is in progress.
-			case strings.Contains(err.Error(), "recovery in progress"):
+			case strings.Contains(
+				err.Error(), "recovery in progress",
+			):
 				return err
 
 			default:
@@ -1506,9 +1514,10 @@ func (hn *HarnessNode) Stop() error {
 	// Close any attempts at further grpc connections.
 	if hn.conn != nil {
 		err := hn.conn.Close()
-		if err != nil &&
-			!strings.Contains(err.Error(), "connection is closing") {
-
+		isConnClosingErr := strings.Contains(
+			err.Error(), "connection is closing",
+		)
+		if err != nil && !isConnClosingErr {
 			return fmt.Errorf("error attempting to stop grpc "+
 				"client: %v", err)
 		}
@@ -1803,7 +1812,9 @@ func (hn *HarnessNode) WaitForBlockchainSync(ctx context.Context) error {
 
 // WaitForBalance waits until the node sees the expected confirmed/unconfirmed
 // balance within their wallet.
-func (hn *HarnessNode) WaitForBalance(expectedBalance btcutil.Amount, confirmed bool) error {
+func (hn *HarnessNode) WaitForBalance(expectedBalance btcutil.Amount,
+	confirmed bool) error {
+
 	ctx := context.Background()
 	req := &lnrpc.WalletBalanceRequest{}
 
@@ -1815,18 +1826,23 @@ func (hn *HarnessNode) WaitForBalance(expectedBalance btcutil.Amount, confirmed 
 		}
 
 		if confirmed {
-			lastBalance = btcutil.Amount(balance.ConfirmedBalance)
-			return btcutil.Amount(balance.ConfirmedBalance) == expectedBalance
+			balanceAmt := btcutil.Amount(
+				balance.ConfirmedBalance,
+			)
+			lastBalance = balanceAmt
+			return balanceAmt == expectedBalance
 		}
 
-		lastBalance = btcutil.Amount(balance.UnconfirmedBalance)
-		return btcutil.Amount(balance.UnconfirmedBalance) == expectedBalance
+		balanceAmt := btcutil.Amount(balance.UnconfirmedBalance)
+		lastBalance = balanceAmt
+		return balanceAmt == expectedBalance
 	}
 
 	err := wait.Predicate(doesBalanceMatch, lntest.DefaultTimeout)
 	if err != nil {
 		return fmt.Errorf("balances not synced after deadline: "+
-			"expected %v, only have %v", expectedBalance, lastBalance)
+			"expected %v, only have %v", expectedBalance,
+			lastBalance)
 	}
 
 	return nil

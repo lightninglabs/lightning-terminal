@@ -121,17 +121,16 @@ func addSession(cli *cli.Context) error {
 	sessionExpiry := time.Now().Add(sessionLength).Unix()
 
 	ctx := getContext()
-	resp, err := client.AddSession(
-		ctx, &litrpc.AddSessionRequest{
-			Label:                     cli.String("label"),
-			SessionType:               sessType,
-			ExpiryTimestampSeconds:    uint64(sessionExpiry),
-			MailboxServerAddr:         cli.String("mailboxserveraddr"),
-			DevServer:                 cli.Bool("devserver"),
-			MacaroonCustomPermissions: macPerms,
-			AccountId:                 cli.String("account_id"),
-		},
-	)
+	req := litrpc.AddSessionRequest{
+		Label:                     cli.String("label"),
+		SessionType:               sessType,
+		ExpiryTimestampSeconds:    uint64(sessionExpiry),
+		MailboxServerAddr:         cli.String("mailboxserveraddr"),
+		DevServer:                 cli.Bool("devserver"),
+		MacaroonCustomPermissions: macPerms,
+		AccountId:                 cli.String("account_id"),
+	}
+	resp, err := client.AddSession(ctx, &req)
 	if err != nil {
 		return err
 	}
