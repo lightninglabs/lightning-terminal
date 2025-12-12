@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"strings"
 	"sync"
 	"time"
 
@@ -104,12 +105,15 @@ func (s *Manager) GetServer(name string) (SubServer, bool) {
 }
 
 // StartIntegratedServers starts all the manager's sub-servers that should be
-// started in integrated mode.
+// started in integrated mode. An error is returned if any integrated sub-server
+// fails to start.
 func (s *Manager) StartIntegratedServers(lndClient lnrpc.LightningClient,
-	lndGrpc *lndclient.GrpcLndServices, withMacaroonService bool) {
+	lndGrpc *lndclient.GrpcLndServices, withMacaroonService bool) error {
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	var errs []string
 
 	for _, ss := range s.servers {
 		if ss.Remote() {
@@ -126,11 +130,19 @@ func (s *Manager) StartIntegratedServers(lndClient lnrpc.LightningClient,
 		)
 		if err != nil {
 			s.statusServer.SetErrored(ss.Name(), err.Error())
+			errs = append(errs, fmt.Sprintf("%s: %v", ss.Name(), err))
 			continue
 		}
 
 		s.statusServer.SetRunning(ss.Name())
 	}
+
+	if len(errs) > 0 {
+		return fmt.Errorf("failed starting integrated sub-server(s): %s",
+			strings.Join(errs, "; "))
+	}
+
+	return nil
 }
 
 // ConnectRemoteSubServers creates connections to all the manager's sub-servers

@@ -769,9 +769,12 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 	// Both connection types are ready now, let's start our sub-servers if
 	// they should be started locally as an integrated service.
 	createDefaultMacaroons := !g.cfg.statelessInitMode
-	g.subServerMgr.StartIntegratedServers(
+	err = g.subServerMgr.StartIntegratedServers(
 		g.basicClient, g.lndClient, createDefaultMacaroons,
 	)
+	if err != nil {
+		return fmt.Errorf("could not start integrated sub-servers: %w", err)
+	}
 
 	err = g.startInternalSubServers(ctx, !g.cfg.statelessInitMode)
 	if err != nil {
