@@ -180,8 +180,8 @@ func TestRateLimitCheckRequest(t *testing.T) {
 	// Now we add a more recent write action to the DB.
 	db.addAction("write-uri", time.Now())
 
-	// Since the rate limit values only allows one write action per 24 hours,
-	// a request for another write action should not be allowed.
+	// Since the rate limit values only allows one write action per 24
+	// hours, a request for another write action should not be allowed.
 	_, err = enf.HandleRequest(ctx, "write-uri", nil)
 	require.Error(t, err)
 
@@ -227,8 +227,8 @@ func (m *mockRateLimitCfg) GetMethodPerms() func(string) ([]bakery.Op, bool) {
 	}
 }
 
-// mockActionsDB is used to mock the action's db backend used by the RateLimitMgr
-// values.
+// mockActionsDB is used to mock the action's db backend used by the
+// RateLimitMgr values.
 type mockActionsDB struct {
 	actions []*firewalldb.RuleAction
 }

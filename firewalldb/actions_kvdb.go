@@ -32,6 +32,7 @@ const (
 	typeLocatorActionID  tlv.Type = 2
 )
 
+// nolint:ll
 /*
 	The Actions are stored in the following structure in the KV db:
 

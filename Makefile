@@ -304,7 +304,7 @@ check-go-version: check-go-version-dockerfile check-go-version-yaml
 
 lint: check-go-version docker-tools
 	@$(call print, "Linting source.")
-	$(DOCKER_TOOLS) golangci-lint run -v $(LINT_WORKERS)
+	$(DOCKER_TOOLS) custom-gcl run -v $(LINT_WORKERS)
 
 mod:
 	@$(call print, "Tidying modules.")

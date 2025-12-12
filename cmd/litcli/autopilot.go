@@ -131,11 +131,11 @@ var addAutopilotSessionCmd = cli.Command{
 		},
 		cli.StringFlag{
 			Name: "privacy-flags",
-			Usage: "String representation of privacy flags to set " +
-				"for the session. Each individual flag will " +
-				"remove privacy from certain aspects of " +
-				"messages transmitted to autopilot. " +
-				"The strongest privacy is on by " +
+			Usage: "String representation of privacy flags " +
+				"to set for the session. Each individual " +
+				"flag will remove privacy from certain " +
+				"aspects of messages transmitted to " +
+				"autopilot. The strongest privacy is on by " +
 				"default and an empty string means full " +
 				"privacy. Some features may not be able to " +
 				"run correctly with full privacy, see the " +

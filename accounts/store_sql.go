@@ -31,7 +31,7 @@ const (
 // SQLQueries is a subset of the sqlc.Queries interface that can be used
 // to interact with accounts related tables.
 //
-//nolint:lll
+//nolint:ll
 type SQLQueries interface {
 	AddAccountInvoice(ctx context.Context, arg sqlc.AddAccountInvoiceParams) error
 	DeleteAccount(ctx context.Context, id int64) error

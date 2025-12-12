@@ -5,7 +5,7 @@ import "github.com/lightningnetwork/lnd/build"
 // RemoteConfig holds the configuration parameters that are needed when running
 // LiT in the "remote" lnd mode.
 //
-//nolint:lll
+//nolint:ll
 type RemoteConfig struct {
 	LitLogDir         string `long:"lit-logdir" description:"For lnd remote mode only: Directory to log output."`
 	LitMaxLogFiles    int    `long:"lit-maxlogfiles" description:"For lnd remote mode only: Maximum logfiles to keep (0 for no rotation). DEPRECATED: use --logging.file.max-files instead" hidden:"true"`
@@ -25,7 +25,7 @@ type RemoteConfig struct {
 // RemoteDaemonConfig holds the configuration parameters that are needed to
 // connect to a remote daemon like lnd for example.
 //
-//nolint:lll
+//nolint:ll
 type RemoteDaemonConfig struct {
 	// RPCServer is host:port that the remote daemon's RPC server is
 	// listening on.

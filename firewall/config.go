@@ -2,14 +2,14 @@ package firewall
 
 // Config holds all config options for the firewall.
 //
-//nolint:lll
+//nolint:ll
 type Config struct {
 	RequestLogger *RequestLoggerConfig `group:"request-logger" namespace:"request-logger" description:"request logger settings"`
 }
 
 // RequestLoggerConfig holds all the config options for the request logger.
 //
-//nolint:lll
+//nolint:ll
 type RequestLoggerConfig struct {
 	RequestLoggerLevel RequestLoggerLevel `long:"level" description:"Set the request logger level. Options include 'all', 'full' and 'interceptor''"`
 }

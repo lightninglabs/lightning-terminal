@@ -228,7 +228,9 @@ func mineBlocksSlow(t *harnessTest, net *NetworkHarness,
 	return blocks
 }
 
-func assertTxInBlock(t *harnessTest, block *wire.MsgBlock, txid *chainhash.Hash) {
+func assertTxInBlock(t *harnessTest, block *wire.MsgBlock,
+	txid *chainhash.Hash) {
+
 	for _, tx := range block.Transactions {
 		sha := tx.TxHash()
 		if bytes.Equal(txid[:], sha[:]) {

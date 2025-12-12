@@ -431,8 +431,8 @@ func validateRequestCheckHandler(typedHandlerType reflect.Type,
 			"with a sub type of context.Context")
 	}
 	if !typedHandlerType.In(1).ConvertibleTo(requestType) {
-		return fmt.Errorf("request handler must have second parameter " +
-			"with a sub type of proto.Message")
+		return fmt.Errorf("request handler must have second " +
+			"parameter with a sub type of proto.Message")
 	}
 	if typedHandlerType.Out(0) != errorType {
 		return fmt.Errorf("request handler must return exactly one " +
@@ -459,8 +459,8 @@ func validateMessageHandler(typedHandlerType reflect.Type,
 			"with a sub type of context.Context")
 	}
 	if !typedHandlerType.In(1).ConvertibleTo(messageType) {
-		return fmt.Errorf("message handler must have second parameter " +
-			"with a sub type of proto.Message")
+		return fmt.Errorf("message handler must have second " +
+			"parameter with a sub type of proto.Message")
 	}
 	outType0 := typedHandlerType.Out(0)
 	pmt := protoMessageType

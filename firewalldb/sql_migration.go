@@ -894,6 +894,8 @@ func migrateActionsToSQL(ctx context.Context, kvStore *bbolt.DB,
 
 		// Iterate over session ID buckets (i.e. what we should name
 		// macaroon IDs).
+		//
+		// nolint:ll
 		return sessionsBucket.ForEach(func(macID []byte, v []byte) error {
 			if v != nil {
 				return fmt.Errorf("expected only sub-buckets " +
@@ -984,7 +986,8 @@ func migrateActionsToSQL(ctx context.Context, kvStore *bbolt.DB,
 		return fmt.Errorf("iterating over actions failed: %w", err)
 	}
 
-	log.Infof("Finished iterating actions in KV store (no persistence yet).")
+	log.Infof("Finished iterating actions in KV store " +
+		"(no persistence yet).")
 
 	return nil
 }
@@ -1097,8 +1100,8 @@ func validateMigratedAction(ctx context.Context, sqlTx SQLQueries,
 			ctx, insertParams.SessionID.Int64,
 		)
 		if err != nil {
-			return fmt.Errorf("unable to get session with id %d: %w",
-				insertParams.SessionID.Int64, err)
+			return fmt.Errorf("unable to get session with id %d: "+
+				"%w", insertParams.SessionID.Int64, err)
 		}
 
 		overriddenSessID = fn.Some(session.ID(sess.Alias))
@@ -1109,8 +1112,8 @@ func validateMigratedAction(ctx context.Context, sqlTx SQLQueries,
 			ctx, insertParams.AccountID.Int64,
 		)
 		if err != nil {
-			return fmt.Errorf("unable to get account with id %d: %w",
-				insertParams.AccountID.Int64, err)
+			return fmt.Errorf("unable to get account with id %d: "+
+				"%w", insertParams.AccountID.Int64, err)
 		}
 
 		acctAlias, err := accounts.AccountIDFromInt64(acct.Alias)

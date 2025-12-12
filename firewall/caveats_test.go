@@ -25,10 +25,11 @@ const (
 // formatted as a caveat and then parsed again successfully.
 func TestInterceptMetaInfo(t *testing.T) {
 	info := &InterceptMetaInfo{
-		ActorName:          "autopilot",
-		Feature:            "re-balance",
-		Trigger:            "channel 7413345453234435345 depleted",
-		Intent:             "increase outbound liquidity by 2000000 sats",
+		ActorName: "autopilot",
+		Feature:   "re-balance",
+		Trigger:   "channel 7413345453234435345 depleted",
+		Intent: "increase outbound liquidity by 2000000 " +
+			"sats",
 		StructuredJsonData: "{}",
 	}
 
@@ -93,6 +94,7 @@ func TestParseMetaInfoCaveat(t *testing.T) {
 // caveat and then parsed again successfully.
 func TestInterceptRule(t *testing.T) {
 	rules := &InterceptRules{
+		// nolint:ll
 		FeatureRules: map[string]map[string]string{
 			"AutoFees": {
 				"first-hop-ignore-list": "03abcd...,02badb01...",

@@ -16,7 +16,7 @@ import (
 // SQLKVStoreQueries is a subset of the sqlc.Queries interface that can be
 // used to interact with the kvstore tables.
 //
-//nolint:lll
+//nolint:ll
 type SQLKVStoreQueries interface {
 	SQLSessionQueries
 

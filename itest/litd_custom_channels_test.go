@@ -89,6 +89,7 @@ var (
 		"--taproot-assets.universerpccourier.maxbackoff=600ms",
 		"--taproot-assets.custodianproofretrievaldelay=500ms",
 	}
+	// nolint:ll
 	litdArgsTemplate = append(litdArgsTemplateNoOracle, []string{
 		"--taproot-assets.experimental.rfq.priceoracleaddress=" +
 			"use_mock_price_oracle_service_promise_to_" +
@@ -98,6 +99,7 @@ var (
 		"--taproot-assets.experimental.rfq.acceptpricedeviationppm=50000",
 	}...)
 
+	// nolint:ll
 	litdArgsTemplateDiffOracle = append(litdArgsTemplateNoOracle, []string{
 		"--taproot-assets.experimental.rfq.priceoracleaddress=" +
 			"use_mock_price_oracle_service_promise_to_" +
@@ -2338,7 +2340,9 @@ func testCustomChannelsV1Upgrade(ctx context.Context, net *NetworkHarness,
 	)
 	require.NoError(t.t, err)
 
-	charlie, err := net.NewNode(t.t, "Charlie", lndArgs, false, true, litdArgs...)
+	charlie, err := net.NewNode(
+		t.t, "Charlie", lndArgs, false, true, litdArgs...,
+	)
 	require.NoError(t.t, err)
 
 	// Next we'll connect all the nodes and also fund them with some coins.

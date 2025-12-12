@@ -59,7 +59,7 @@ const (
 	DefaultPushSat int64 = 1062
 )
 
-// nolint: lll
+// nolint:ll
 var (
 	failureNoBalance        = lnrpc.PaymentFailureReason_FAILURE_REASON_INSUFFICIENT_BALANCE
 	failureNoRoute          = lnrpc.PaymentFailureReason_FAILURE_REASON_NO_ROUTE
@@ -554,7 +554,8 @@ func createTestAssetNetwork(t *harnessTest, net *NetworkHarness, charlieTap,
 	// After opening the channels, the asset balance of the funding nodes
 	// should have been decreased with the funding amount.
 	assertBalance(
-		t.t, charlieTap, charlieAssetBalance, itest.WithAssetID(assetID),
+		t.t, charlieTap, charlieAssetBalance,
+		itest.WithAssetID(assetID),
 	)
 	assertBalance(
 		t.t, daveTap, daveAssetBalance, itest.WithAssetID(assetID),
@@ -3194,8 +3195,8 @@ func assertPendingForceCloseChannelAssetData(t *testing.T, node *HarnessNode,
 			error) {
 
 			if len(resp.PendingForceClosingChannels) == 0 {
-				return nil, fmt.Errorf("no pending force close " +
-					"channels found")
+				return nil, fmt.Errorf("no pending force " +
+					"close channels found")
 			}
 
 			for _, ch := range resp.PendingForceClosingChannels {
@@ -3528,9 +3529,10 @@ func assertForceCloseSweeps(ctx context.Context, net *NetworkHarness,
 
 	// We'll pause here and wait until the sweeper recognizes that we've
 	// offered the second level sweep transaction.
+	//
+	// nolint:ll
 	assertSweepExists(
 		t.t, alice,
-		//nolint: lll
 		walletrpc.WitnessType_TAPROOT_HTLC_ACCEPTED_SUCCESS_SECOND_LEVEL,
 	)
 
@@ -3642,9 +3644,9 @@ func assertForceCloseSweeps(ctx context.Context, net *NetworkHarness,
 	// If we didn't yet sweep all HTLCs, then we need to wait for another
 	// sweep.
 	if numSweptHTLCs < numTimeoutHTLCs {
+		// nolint:ll
 		assertSweepExists(
 			t.t, bob,
-			// nolint: lll
 			walletrpc.WitnessType_TAPROOT_HTLC_OFFERED_REMOTE_TIMEOUT,
 		)
 

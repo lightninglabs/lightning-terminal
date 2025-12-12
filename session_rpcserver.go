@@ -240,7 +240,8 @@ func (s *sessionRpcServer) start(ctx context.Context,
 
 				if perm {
 					err := s.cfg.db.ShiftState(
-						ctx, sess.ID, session.StateRevoked,
+						ctx, sess.ID,
+						session.StateRevoked,
 					)
 					if err != nil {
 						log.Errorf("error revoking "+
@@ -383,9 +384,9 @@ func (s *sessionRpcServer) AddSession(ctx context.Context,
 	// No other types are currently supported.
 	default:
 		return nil, fmt.Errorf("invalid session type, only admin, " +
-			"readonly, custom and account macaroon types supported in " +
-			"LiT. Autopilot sessions must be added using " +
-			"AddAutoPilotSession method")
+			"readonly, custom and account macaroon types " +
+			"supported in LiT. Autopilot sessions must be added " +
+			"using AddAutoPilotSession method")
 	}
 
 	// Collect the de-duped permissions.
@@ -651,7 +652,8 @@ func (s *sessionRpcServer) ListSessions(ctx context.Context,
 // RevokeSession revokes a single session and also stops it if it is currently
 // active.
 func (s *sessionRpcServer) RevokeSession(ctx context.Context,
-	req *litrpc.RevokeSessionRequest) (*litrpc.RevokeSessionResponse, error) {
+	req *litrpc.RevokeSessionRequest) (*litrpc.RevokeSessionResponse,
+	error) {
 
 	pubKey, err := btcec.ParsePubKey(req.LocalPublicKey)
 	if err != nil {
@@ -1576,6 +1578,7 @@ func (s *sessionRpcServer) marshalRPCSession(ctx context.Context,
 		accountID = hex.EncodeToString(id[:])
 	})
 
+	// nolint:ll
 	return &litrpc.Session{
 		Id:                     sess.ID[:],
 		Label:                  sess.Label,

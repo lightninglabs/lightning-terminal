@@ -146,7 +146,8 @@ var updateAccountCommand = cli.Command{
 	Name:      "update",
 	ShortName: "u",
 	Usage:     "Update an existing off-chain account.",
-	ArgsUsage: "[id | label] new_balance [new_expiration_date] [--save_to=]",
+	ArgsUsage: "[id | label] new_balance [new_expiration_date] " +
+		"[--save_to=]",
 	Description: "Updates an existing off-chain account and sets " +
 		"either a new balance or new expiration date or both.",
 	Flags: []cli.Flag{

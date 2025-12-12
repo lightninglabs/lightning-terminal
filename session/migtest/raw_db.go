@@ -58,7 +58,9 @@ func dumpBucket(bucket *bbolt.Bucket) error {
 }
 
 // RestoreDB primes the database with the given data set.
-func RestoreDB(tx *bbolt.Tx, rootKey []byte, data map[string]interface{}) error {
+func RestoreDB(tx *bbolt.Tx, rootKey []byte,
+	data map[string]interface{}) error {
+
 	bucket, err := tx.CreateBucket(rootKey)
 	if err != nil {
 		return err

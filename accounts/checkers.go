@@ -110,6 +110,7 @@ func NewAccountChecker(service Service,
 		)
 	}
 
+	// nolint:ll
 	checkers := CheckerMap{
 		// Invoices:
 		"/lnrpc.Lightning/AddInvoice": mid.NewResponseRewriter(

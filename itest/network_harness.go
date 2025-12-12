@@ -44,8 +44,8 @@ type NetworkHarness struct {
 	// compiled with all required itest flags.
 	litdBinary string
 
-	// Miner is a reference to a running full node that can be used to create
-	// new blocks on the network.
+	// Miner is a reference to a running full node that can be used to
+	// create new blocks on the network.
 	Miner *miner.HarnessMiner
 
 	LNDHarness *lntest.HarnessTest
@@ -467,9 +467,11 @@ func (n *NetworkHarness) connect(ctx context.Context,
 tryconnect:
 	if _, err := a.ConnectPeer(ctx, req); err != nil {
 		// If the chain backend is still syncing, retry.
-		if strings.Contains(err.Error(), lnd.ErrServerNotActive.Error()) ||
-			strings.Contains(err.Error(), "i/o timeout") {
-
+		isNotActiveErr := strings.Contains(
+			err.Error(), lnd.ErrServerNotActive.Error(),
+		)
+		isTimeoutErr := strings.Contains(err.Error(), "i/o timeout")
+		if isNotActiveErr || isTimeoutErr {
 			select {
 			case <-time.After(100 * time.Millisecond):
 				goto tryconnect
@@ -520,7 +522,9 @@ func (n *NetworkHarness) EnsureConnected(t *testing.T, a, b *HarnessNode) {
 
 		var predErr error
 		err = wait.Predicate(func() bool {
-			ctx, cancel := context.WithTimeout(ctx, lntest.DefaultTimeout)
+			ctx, cancel := context.WithTimeout(
+				ctx, lntest.DefaultTimeout,
+			)
 			defer cancel()
 
 			err := n.connect(ctx, req, a)
@@ -748,7 +752,9 @@ func (n *NetworkHarness) RestartNode(node *HarnessNode, callback func() error,
 
 	// Give the node some time to catch up with the chain before we continue
 	// with the tests.
-	ctxc, done := context.WithTimeout(context.Background(), lntest.DefaultTimeout)
+	ctxc, done := context.WithTimeout(
+		context.Background(), lntest.DefaultTimeout,
+	)
 	defer done()
 	return node.WaitForBlockchainSync(ctxc)
 }
@@ -941,7 +947,9 @@ func (n *NetworkHarness) OpenChannel(srcNode, destNode *HarnessNode,
 	// The cancel is intentionally left out here because the returned
 	// item(open channel client) relies on the context being active. This
 	// will be fixed once we finish refactoring the NetworkHarness.
-	ctx, _ := context.WithTimeout(ctxb, wait.ChannelOpenTimeout) // nolint: govet
+	//
+	// nolint:govet
+	ctx, _ := context.WithTimeout(ctxb, wait.ChannelOpenTimeout)
 
 	// Wait until srcNode and destNode have the latest chain synced.
 	// Otherwise, we may run into a check within the funding manager that
@@ -982,17 +990,18 @@ func (n *NetworkHarness) OpenChannel(srcNode, destNode *HarnessNode,
 	chanOpen := make(chan struct{})
 	errChan := make(chan error)
 	go func() {
-		// Consume the "channel pending" update. This waits until the node
-		// notifies us that the final message in the channel funding workflow
-		// has been sent to the remote node.
+		// Consume the "channel pending" update. This waits until the
+		// node notifies us that the final message in the channel
+		// funding workflow has been sent to the remote node.
 		resp, err := respStream.Recv()
 		if err != nil {
 			errChan <- err
 			return
 		}
-		if _, ok := resp.Update.(*lnrpc.OpenStatusUpdate_ChanPending); !ok {
-			errChan <- fmt.Errorf("expected channel pending update, "+
-				"instead got %v", resp)
+		_, ok := resp.Update.(*lnrpc.OpenStatusUpdate_ChanPending)
+		if !ok {
+			errChan <- fmt.Errorf("expected channel pending "+
+				"update, instead got %v", resp)
 			return
 		}
 
@@ -1010,10 +1019,10 @@ func (n *NetworkHarness) OpenChannel(srcNode, destNode *HarnessNode,
 	}
 }
 
-// OpenPendingChannel attempts to open a channel between srcNode and destNode with the
-// passed channel funding parameters. If the passed context has a timeout, then
-// if the timeout is reached before the channel pending notification is
-// received, an error is returned.
+// OpenPendingChannel attempts to open a channel between srcNode and destNode
+// with the passed channel funding parameters. If the passed context has a
+// timeout, then if the timeout is reached before the channel pending
+// notification is received, an error is returned.
 func (n *NetworkHarness) OpenPendingChannel(srcNode, destNode *HarnessNode,
 	amt btcutil.Amount,
 	pushAmt btcutil.Amount) (*lnrpc.PendingUpdate, error) {
@@ -1046,18 +1055,19 @@ func (n *NetworkHarness) OpenPendingChannel(srcNode, destNode *HarnessNode,
 	chanPending := make(chan *lnrpc.PendingUpdate)
 	errChan := make(chan error)
 	go func() {
-		// Consume the "channel pending" update. This waits until the node
-		// notifies us that the final message in the channel funding workflow
-		// has been sent to the remote node.
+		// Consume the "channel pending" update. This waits until the
+		// node notifies us that the final message in the channel
+		// funding workflow has been sent to the remote node.
 		resp, err := respStream.Recv()
 		if err != nil {
 			errChan <- err
 			return
 		}
-		pendingResp, ok := resp.Update.(*lnrpc.OpenStatusUpdate_ChanPending)
+		pendingResp, ok :=
+			resp.Update.(*lnrpc.OpenStatusUpdate_ChanPending)
 		if !ok {
-			errChan <- fmt.Errorf("expected channel pending update, "+
-				"instead got %v", resp)
+			errChan <- fmt.Errorf("expected channel pending "+
+				"update, instead got %v", resp)
 			return
 		}
 
@@ -1080,7 +1090,8 @@ func (n *NetworkHarness) OpenPendingChannel(srcNode, destNode *HarnessNode,
 // has a timeout, then if the timeout is reached before the channel has been
 // opened, then an error is returned.
 func (n *NetworkHarness) WaitForChannelOpen(
-	openChanStream lnrpc.Lightning_OpenChannelClient) (*lnrpc.ChannelPoint, error) {
+	openChanStream lnrpc.Lightning_OpenChannelClient) (*lnrpc.ChannelPoint,
+	error) {
 
 	ctxb := context.Background()
 	ctx, cancel := context.WithTimeout(ctxb, wait.ChannelOpenTimeout)
@@ -1091,10 +1102,12 @@ func (n *NetworkHarness) WaitForChannelOpen(
 	go func() {
 		resp, err := openChanStream.Recv()
 		if err != nil {
-			errChan <- fmt.Errorf("unable to read rpc resp: %v", err)
+			errChan <- fmt.Errorf("unable to read rpc resp: %w",
+				err)
 			return
 		}
-		fundingResp, ok := resp.Update.(*lnrpc.OpenStatusUpdate_ChanOpen)
+		fundingResp, ok :=
+			resp.Update.(*lnrpc.OpenStatusUpdate_ChanOpen)
 		if !ok {
 			errChan <- fmt.Errorf("expected channel open update, "+
 				"instead got %v", resp)
@@ -1120,14 +1133,16 @@ func (n *NetworkHarness) WaitForChannelOpen(
 // has a timeout, an error is returned if that timeout is reached before the
 // channel close is pending.
 func (n *NetworkHarness) CloseChannel(lnNode *HarnessNode,
-	cp *lnrpc.ChannelPoint,
-	force bool) (lnrpc.Lightning_CloseChannelClient, *chainhash.Hash, error) {
+	cp *lnrpc.ChannelPoint, force bool) (lnrpc.Lightning_CloseChannelClient,
+	*chainhash.Hash, error) {
 
 	ctxb := context.Background()
 	// The cancel is intentionally left out here because the returned
 	// item(close channel client) relies on the context being active. This
 	// will be fixed once we finish refactoring the NetworkHarness.
-	ctx, _ := context.WithTimeout(ctxb, wait.ChannelCloseTimeout) // nolint: govet
+	//
+	// nolint: govet
+	ctx, _ := context.WithTimeout(ctxb, wait.ChannelCloseTimeout)
 
 	// Create a channel outpoint that we can use to compare to channels
 	// from the ListChannelsResponse.
@@ -1181,7 +1196,8 @@ func (n *NetworkHarness) CloseChannel(lnNode *HarnessNode,
 		}
 
 		// Next, we'll fetch the target channel in order to get the
-		// harness node that will be receiving the channel close request.
+		// harness node that will be receiving the channel close
+		// request.
 		targetChan, err := filterChannel(lnNode, chanPoint)
 		if err != nil {
 			return nil, nil, err
@@ -1198,7 +1214,9 @@ func (n *NetworkHarness) CloseChannel(lnNode *HarnessNode,
 			return nil, nil, fmt.Errorf("channel of closing " +
 				"node not active in time")
 		}
-		err = wait.Predicate(activeChanPredicate(receivingNode), timeout)
+		err = wait.Predicate(
+			activeChanPredicate(receivingNode), timeout,
+		)
 		if err != nil {
 			return nil, nil, fmt.Errorf("channel of receiving " +
 				"node not active in time")
@@ -1232,7 +1250,8 @@ func (n *NetworkHarness) CloseChannel(lnNode *HarnessNode,
 			return fmt.Errorf("unable to recv() from close "+
 				"stream: %v", err)
 		}
-		pendingClose, ok := closeResp.Update.(*lnrpc.CloseStatusUpdate_ClosePending)
+		pendingClose, ok :=
+			closeResp.Update.(*lnrpc.CloseStatusUpdate_ClosePending)
 		if !ok {
 			return fmt.Errorf("expected channel close update, "+
 				"instead got %v", pendingClose)
@@ -1317,7 +1336,8 @@ func (n *NetworkHarness) AssertChannelExists(node *HarnessNode,
 	return wait.NoError(func() error {
 		resp, err := node.ListChannels(ctx, req)
 		if err != nil {
-			return fmt.Errorf("unable fetch node's channels: %v", err)
+			return fmt.Errorf("unable fetch node's channels: %w",
+				err)
 		}
 
 		for _, channel := range resp.Channels {
@@ -1498,7 +1518,8 @@ func (n *NetworkHarness) sendCoins(amt btcutil.Amount, target *HarnessNode,
 	// the target node's unconfirmed balance reflects the expected balance
 	// and exit.
 	if !confirmed {
-		expectedBalance := btcutil.Amount(initialBalance.UnconfirmedBalance) + amt
+		expectedBalance :=
+			btcutil.Amount(initialBalance.UnconfirmedBalance) + amt
 		return target.WaitForBalance(expectedBalance, false)
 	}
 

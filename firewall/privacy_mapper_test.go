@@ -27,16 +27,20 @@ func TestPrivacyMapper(t *testing.T) {
 	}
 
 	// Define some transaction outpoints used for mapping.
+	//
+	// nolint:ll
 	clearTxID := "abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd"
 	clearTxIDReveresed, err := chainhash.NewHashFromStr(clearTxID)
 	require.NoError(t, err)
 
+	// nolint:ll
 	obfusTxID0 := "097ef666a61919ff3413b3b701eae3a5cbac08f70c0ca567806e1fa6acbfe384"
 	require.NoError(t, err)
 	obfusOut0 := uint32(2161781494)
 	obfusTxID0Reversed, err := chainhash.NewHashFromStr(obfusTxID0)
 	require.NoError(t, err)
 
+	// nolint:ll
 	obfusTxID1 := "45ec471bfccb0b7b9a8bc4008248931c59ad994903e07b54f54821ea3ef5cc5c"
 	obfusOut1 := uint32(1642614131)
 
@@ -135,6 +139,7 @@ func TestPrivacyMapper(t *testing.T) {
 		}
 	)
 
+	// nolint:ll
 	tests := []struct {
 		name                string
 		privacyFlags        session.PrivacyFlags
@@ -376,6 +381,7 @@ func TestPrivacyMapper(t *testing.T) {
 				},
 			},
 			expectedReplacement: &lnrpc.PolicyUpdateResponse{
+				// nolint:ll
 				FailedUpdates: []*lnrpc.FailedUpdate{
 					{
 						Outpoint: &lnrpc.OutPoint{
@@ -396,6 +402,7 @@ func TestPrivacyMapper(t *testing.T) {
 				UnconfirmedBalance:        1_000_000,
 				LockedBalance:             1_000_000,
 				ReservedBalanceAnchorChan: 1_000_000,
+				// nolint:ll
 				AccountBalance: map[string]*lnrpc.WalletAccountBalance{
 					"first": {
 						ConfirmedBalance:   1_000_000,
@@ -410,6 +417,7 @@ func TestPrivacyMapper(t *testing.T) {
 				UnconfirmedBalance:        950_100,
 				LockedBalance:             950_100,
 				ReservedBalanceAnchorChan: 950_100,
+				// nolint:ll
 				AccountBalance: map[string]*lnrpc.WalletAccountBalance{
 					"first": {
 						ConfirmedBalance:   950_100,
@@ -457,6 +465,7 @@ func TestPrivacyMapper(t *testing.T) {
 			uri:     "/lnrpc.Lightning/ClosedChannels",
 			msgType: rpcperms.TypeResponse,
 			msg: &lnrpc.ClosedChannelsResponse{
+				// nolint:ll
 				Channels: []*lnrpc.ChannelCloseSummary{
 					{
 						ChannelPoint: outPoint(
@@ -481,6 +490,7 @@ func TestPrivacyMapper(t *testing.T) {
 				},
 			},
 			expectedReplacement: &lnrpc.ClosedChannelsResponse{
+				// nolint:ll
 				Channels: []*lnrpc.ChannelCloseSummary{
 					{
 						ChannelPoint: outPoint(
@@ -502,6 +512,7 @@ func TestPrivacyMapper(t *testing.T) {
 			name:    "ClosedChannels Response clear",
 			uri:     "/lnrpc.Lightning/ClosedChannels",
 			msgType: rpcperms.TypeResponse,
+			// nolint:ll
 			msg: &lnrpc.ClosedChannelsResponse{
 				Channels: []*lnrpc.ChannelCloseSummary{
 					{
@@ -533,6 +544,7 @@ func TestPrivacyMapper(t *testing.T) {
 				session.ClearAmounts,
 			},
 			expectedReplacement: &lnrpc.ClosedChannelsResponse{
+				// nolint:ll
 				Channels: []*lnrpc.ChannelCloseSummary{
 					{
 						ChannelPoint: outPoint(
@@ -554,6 +566,7 @@ func TestPrivacyMapper(t *testing.T) {
 			name:    "PendingChannels Response",
 			uri:     "/lnrpc.Lightning/PendingChannels",
 			msgType: rpcperms.TypeResponse,
+			// nolint:ll
 			msg: &lnrpc.PendingChannelsResponse{
 				PendingOpenChannels: []*lnrpc.PendingChannelsResponse_PendingOpenChannel{
 					{
@@ -595,6 +608,7 @@ func TestPrivacyMapper(t *testing.T) {
 					},
 				},
 			},
+			// nolint:ll
 			expectedReplacement: &lnrpc.PendingChannelsResponse{
 				PendingOpenChannels: []*lnrpc.PendingChannelsResponse_PendingOpenChannel{
 					{
@@ -636,6 +650,7 @@ func TestPrivacyMapper(t *testing.T) {
 			uri:     "/lnrpc.Lightning/PendingChannels",
 			msgType: rpcperms.TypeResponse,
 			msg: &lnrpc.PendingChannelsResponse{
+				// nolint:ll
 				PendingOpenChannels: []*lnrpc.PendingChannelsResponse_PendingOpenChannel{
 					{
 						CommitFee: 123,
@@ -658,6 +673,7 @@ func TestPrivacyMapper(t *testing.T) {
 				session.ClearAmounts,
 				session.ClearChanIDs,
 			},
+			// nolint:ll
 			expectedReplacement: &lnrpc.PendingChannelsResponse{
 				PendingOpenChannels: []*lnrpc.PendingChannelsResponse_PendingOpenChannel{
 					{
@@ -712,15 +728,16 @@ func TestPrivacyMapper(t *testing.T) {
 			name:    "BatchOpenChannel Response",
 			uri:     "/lnrpc.Lightning/BatchOpenChannel",
 			msgType: rpcperms.TypeResponse,
+			// nolint:ll
 			msg: &lnrpc.BatchOpenChannelResponse{
 				PendingChannels: []*lnrpc.PendingUpdate{
 					{
-
 						Txid:        clearTxIDReveresed[:],
 						OutputIndex: 0,
 					},
 				},
 			},
+			// nolint:ll
 			expectedReplacement: &lnrpc.BatchOpenChannelResponse{
 				PendingChannels: []*lnrpc.PendingUpdate{
 					{
@@ -1015,6 +1032,7 @@ func TestPrivacyMapper(t *testing.T) {
 		session.AddToGRPCMetadata(md, sessionID)
 
 		for i := 0; i < numSamples; i++ {
+			// nolint:ll
 			interceptReq := &rpcperms.InterceptionRequest{
 				Type:            rpcperms.TypeResponse,
 				Macaroon:        mac,
@@ -1326,7 +1344,7 @@ func TestHideBool(t *testing.T) {
 // TestObfuscateConfig tests that we substitute substrings in the config
 // correctly.
 //
-//nolint:lll
+//nolint:ll
 func TestObfuscateConfig(t *testing.T) {
 	tests := []struct {
 		name               string

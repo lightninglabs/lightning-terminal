@@ -227,7 +227,9 @@ func PaymentEntryMapEncoder(w io.Writer, val any, buf *[8]byte) error {
 }
 
 // PaymentEntryMapDecoder decodes a map of payment entries.
-func PaymentEntryMapDecoder(r io.Reader, val any, buf *[8]byte, _ uint64) error {
+func PaymentEntryMapDecoder(r io.Reader, val any, buf *[8]byte,
+	_ uint64) error {
+
 	if typ, ok := val.(*AccountPayments); ok {
 		numItems, err := tlv.ReadVarInt(r, buf)
 		if err != nil {

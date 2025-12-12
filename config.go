@@ -146,7 +146,7 @@ var (
 // all config items of its enveloping subservers, each prefixed with their
 // daemon's short name.
 //
-//nolint:lll
+//nolint:ll
 type Config struct {
 	ShowVersion bool `long:"version" description:"Display version information and exit."`
 
@@ -284,6 +284,8 @@ func (c *Config) lndConnectParams() (string, lndclient.Network, string,
 // defaultConfig returns a configuration struct with all default values set.
 func defaultConfig() *Config {
 	defaultLogCfg := build.DefaultLogConfig()
+
+	// nolint:ll
 	return &Config{
 		HTTPSListen: defaultHTTPSListen,
 		TLSCertPath: DefaultTLSCertPath,
@@ -539,10 +541,15 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 	// the remote connection as well.
 	defaultFaradayCfg := faraday.DefaultConfig()
 	if cfg.faradayRemote && cfg.Network != DefaultNetwork {
-		if cfg.Remote.Faraday.MacaroonPath == defaultFaradayCfg.MacaroonPath {
-			cfg.Remote.Faraday.MacaroonPath = cfg.Faraday.MacaroonPath
+		if cfg.Remote.Faraday.MacaroonPath ==
+			defaultFaradayCfg.MacaroonPath {
+
+			cfg.Remote.Faraday.MacaroonPath =
+				cfg.Faraday.MacaroonPath
 		}
-		if cfg.Remote.Faraday.TLSCertPath == defaultFaradayCfg.TLSCertPath {
+		if cfg.Remote.Faraday.TLSCertPath ==
+			defaultFaradayCfg.TLSCertPath {
+
 			cfg.Remote.Faraday.TLSCertPath = cfg.Faraday.TLSCertPath
 		}
 	}
@@ -553,9 +560,10 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 		cfg.faradayRpcConfig.MacaroonPath = cfg.Faraday.MacaroonPath
 
 		if cfg.Faraday.ChainConn {
-			cfg.faradayRpcConfig.BitcoinClient, err = chain.NewBitcoinClient(
-				cfg.Faraday.Bitcoin,
-			)
+			cfg.faradayRpcConfig.BitcoinClient, err =
+				chain.NewBitcoinClient(
+					cfg.Faraday.Bitcoin,
+				)
 			if err != nil {
 				return nil, err
 			}
@@ -583,13 +591,16 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 
 	defaultTapCfg := tapcfg.DefaultConfig()
 	if cfg.tapRemote && cfg.Network != DefaultNetwork {
-		if cfg.Remote.TaprootAssets.MacaroonPath == defaultTapCfg.RpcConf.MacaroonPath {
+		if cfg.Remote.TaprootAssets.MacaroonPath ==
+			defaultTapCfg.RpcConf.MacaroonPath {
+
 			macaroonPath := cfg.TaprootAssets.RpcConf.MacaroonPath
 			cfg.Remote.TaprootAssets.MacaroonPath = macaroonPath
 		}
-		if cfg.Remote.TaprootAssets.TLSCertPath == defaultTapCfg.RpcConf.TLSCertPath {
-			tlsCertPath := cfg.TaprootAssets.RpcConf.TLSCertPath
+		if cfg.Remote.TaprootAssets.TLSCertPath ==
+			defaultTapCfg.RpcConf.TLSCertPath {
 
+			tlsCertPath := cfg.TaprootAssets.RpcConf.TLSCertPath
 			cfg.Remote.TaprootAssets.TLSCertPath = tlsCertPath
 		}
 	}

@@ -1,0 +1,4 @@
+version: v1.64.6
+plugins:
+  - module: 'github.com/lightninglabs/lightning-terminal/tools/linters'
+    path: ./linters

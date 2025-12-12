@@ -20,6 +20,8 @@ import (
 
 // SQLQueries is a subset of the sqlc.Queries interface that can be used to
 // interact with session related tables.
+//
+// nolint:ll
 type SQLQueries interface {
 	GetAliasBySessionID(ctx context.Context, id int64) ([]byte, error)
 	GetSessionByID(ctx context.Context, id int64) (sqlc.Session, error)
@@ -140,7 +142,8 @@ func (s *SQLStore) NewSession(ctx context.Context, label string, typ Type,
 			}
 		})
 		if err != nil {
-			return fmt.Errorf("unable to convert account ID: %w", err)
+			return fmt.Errorf("unable to convert account ID: %w",
+				err)
 		}
 
 		localKey := sess.LocalPublicKey.SerializeCompressed()
@@ -216,6 +219,7 @@ func (s *SQLStore) NewSession(ctx context.Context, label string, typ Type,
 		// Write mac perms and caveats.
 		if sess.MacaroonRecipe != nil {
 			for _, perm := range sess.MacaroonRecipe.Permissions {
+				// nolint:ll
 				err := db.InsertSessionMacaroonPermission(
 					ctx, sqlc.InsertSessionMacaroonPermissionParams{
 						SessionID: dbID,
@@ -230,6 +234,7 @@ func (s *SQLStore) NewSession(ctx context.Context, label string, typ Type,
 			}
 
 			for _, caveat := range sess.MacaroonRecipe.Caveats {
+				// nolint:ll
 				err := db.InsertSessionMacaroonCaveat(
 					ctx, sqlc.InsertSessionMacaroonCaveatParams{
 						SessionID: dbID,
@@ -253,6 +258,7 @@ func (s *SQLStore) NewSession(ctx context.Context, label string, typ Type,
 		// Write feature configs.
 		if sess.FeatureConfig != nil {
 			for featureName, config := range *sess.FeatureConfig {
+				// nolint:ll
 				err := db.InsertSessionFeatureConfig(
 					ctx, sqlc.InsertSessionFeatureConfigParams{
 						SessionID:   dbID,
@@ -606,7 +612,8 @@ func (s *SQLStore) GetSession(ctx context.Context, alias ID) (*Session, error) {
 	return sess, err
 }
 
-// GetGroupID will return the legacy group Alias for the given legacy session Alias.
+// GetGroupID will return the legacy group Alias for the given legacy session
+// Alias.
 //
 // NOTE: This is part of the AliasToGroupIndex interface.
 func (s *SQLStore) GetGroupID(ctx context.Context, sessionID ID) (ID, error) {
@@ -728,7 +735,8 @@ func unmarshalSession(ctx context.Context, db SQLQueries,
 
 		accountAlias, err := accounts.AccountIDFromInt64(account.Alias)
 		if err != nil {
-			return nil, fmt.Errorf("unable to get account ID: %v", err)
+			return nil, fmt.Errorf("unable to get account ID: %v",
+				err)
 		}
 		acctAlias = fn.Some(accountAlias)
 	}
@@ -837,7 +845,9 @@ func unmarshalMacPerms(dbPerms []sqlc.SessionMacaroonPermission) []bakery.Op {
 	return ops
 }
 
-func unmarshalMacCaveats(dbCaveats []sqlc.SessionMacaroonCaveat) []macaroon.Caveat {
+func unmarshalMacCaveats(
+	dbCaveats []sqlc.SessionMacaroonCaveat) []macaroon.Caveat {
+
 	caveats := make([]macaroon.Caveat, len(dbCaveats))
 	for i, dbCaveat := range dbCaveats {
 		caveats[i] = macaroon.Caveat{
@@ -850,7 +860,9 @@ func unmarshalMacCaveats(dbCaveats []sqlc.SessionMacaroonCaveat) []macaroon.Cave
 	return caveats
 }
 
-func unmarshalFeatureConfigs(dbConfigs []sqlc.SessionFeatureConfig) *FeaturesConfig {
+func unmarshalFeatureConfigs(
+	dbConfigs []sqlc.SessionFeatureConfig) *FeaturesConfig {
+
 	configs := make(FeaturesConfig, len(dbConfigs))
 	for _, dbConfig := range dbConfigs {
 		configs[dbConfig.FeatureName] = dbConfig.Config

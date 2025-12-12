@@ -8,6 +8,7 @@ import (
 	"go.etcd.io/bbolt"
 )
 
+// nolint:ll
 /*
 The KVStores are stored in the following structure in the KV db. Note that
 the `perm` and `temp` buckets are identical in structure. The only difference
@@ -347,9 +348,10 @@ func (s *kvStoreTx) getSessionFeatureRuleBucket(perm bool) getBucketFunc {
 		}
 
 		if create {
-			featureBucket, err := sessBucket.CreateBucketIfNotExists(
-				featureKVStoreBucketKey,
-			)
+			featureBucket, err :=
+				sessBucket.CreateBucketIfNotExists(
+					featureKVStoreBucketKey,
+				)
 			if err != nil {
 				return nil, err
 			}

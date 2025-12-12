@@ -27,7 +27,7 @@ var ErrVersionIncompatible = fmt.Errorf("litd version is not compatible " +
 
 // Config holds the configuration options for the autopilot server client.
 //
-//nolint:lll
+//nolint:ll
 type Config struct {
 	// Disable will disable the autopilot client.
 	Disable bool `long:"disable" description:"disable the autopilot client"`

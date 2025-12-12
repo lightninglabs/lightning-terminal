@@ -379,6 +379,7 @@ func TestAccountCheckers(t *testing.T) {
 		originalRequest: &lnrpc.PendingChannelsRequest{},
 		originalResponse: &lnrpc.PendingChannelsResponse{
 			TotalLimboBalance: 123456,
+			// nolint:ll
 			PendingOpenChannels: []*lnrpc.PendingChannelsResponse_PendingOpenChannel{
 				{},
 			},

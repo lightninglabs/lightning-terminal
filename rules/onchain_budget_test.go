@@ -380,10 +380,12 @@ func TestHandleMemoResponse(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
+	// nolint:ll
 	for _, channel := range response.(*lnrpc.ListChannelsResponse).Channels {
 		assertMemoInvariant(channel.Memo)
 	}
 
+	// nolint:ll
 	response, err = enf.HandleResponse(
 		ctx, "/lnrpc.Lightning/PendingChannels",
 		&lnrpc.PendingChannelsResponse{

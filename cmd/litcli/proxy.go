@@ -17,8 +17,8 @@ var litCommands = []cli.Command{
 		Name: "bakesupermacaroon",
 		Usage: "Bake a new super macaroon with all of LiT's active " +
 			"permissions",
-		Description: "Bake a new super macaroon with all of LiT's active " +
-			"permissions.",
+		Description: "Bake a new super macaroon with all of LiT's " +
+			"active permissions.",
 		Category: "LiT",
 		Action:   bakeSuperMacaroon,
 		Flags: []cli.Flag{
@@ -47,8 +47,8 @@ var litCommands = []cli.Command{
 		Name: "getinfo",
 		Usage: "Returns basic information related to the active " +
 			"daemon",
-		Description: "Returns basic information related to the active " +
-			"daemon.",
+		Description: "Returns basic information related to the " +
+			"active daemon.",
 		Category: "LiT",
 		Action:   getInfo,
 	},

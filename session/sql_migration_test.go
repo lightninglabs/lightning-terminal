@@ -968,7 +968,8 @@ func randomAccountOptions(ctx context.Context, t *testing.T,
 func randomBytes(n int) []byte {
 	b := make([]byte, n)
 	for i := range b {
-		b[i] = byte(rand.Intn(256)) // Random int between 0-255, then cast to byte
+		// Random int between 0-255, then cast to byte.
+		b[i] = byte(rand.Intn(256))
 	}
 	return b
 }

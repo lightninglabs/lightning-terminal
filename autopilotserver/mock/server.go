@@ -310,7 +310,8 @@ func (m *Server) GetPrivacyFlags(remoteKey *btcec.PublicKey) (
 	key := hex.EncodeToString(remoteKey.SerializeCompressed())
 	sess, ok := m.sessions[key]
 	if !ok {
-		return session.PrivacyFlags{}, fmt.Errorf("no such client found")
+		return session.PrivacyFlags{},
+			fmt.Errorf("no such client found")
 	}
 
 	privacyFlags, err := session.Deserialize(sess.privacyFlags)
@@ -436,7 +437,9 @@ func rulesToRPC(rulesMap map[string]*RuleRanges) (
 	return res, nil
 }
 
-func permissionsToRPC(ps map[string][]bakery.Op) []*autopilotserverrpc.Permissions {
+func permissionsToRPC(
+	ps map[string][]bakery.Op) []*autopilotserverrpc.Permissions {
+
 	res := make([]*autopilotserverrpc.Permissions, len(ps))
 
 	for method, ops := range ps {
