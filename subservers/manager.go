@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"sort"
 	"sync"
 	"time"
 
@@ -139,7 +140,29 @@ func (s *Manager) StartIntegratedServers(lndClient lnrpc.LightningClient,
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	// Sort for deterministic startup: critical integrated sub-servers
+	// first, then alphabetical to keep the order stable across runs.
+	servers := make([]*subServerWrapper, 0, len(s.servers))
 	for _, ss := range s.servers {
+		servers = append(servers, ss)
+	}
+
+	sort.Slice(servers, func(i, j int) bool {
+		iCritical := criticalIntegratedSubServers.Contains(
+			servers[i].Name(),
+		)
+		jCritical := criticalIntegratedSubServers.Contains(
+			servers[j].Name(),
+		)
+
+		if iCritical != jCritical {
+			return iCritical
+		}
+
+		return servers[i].Name() < servers[j].Name()
+	})
+
+	for _, ss := range servers {
 		if ss.Remote() {
 			continue
 		}
