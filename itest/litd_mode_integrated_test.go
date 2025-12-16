@@ -465,6 +465,41 @@ func testModeIntegrated(ctx context.Context, net *NetworkHarness,
 	)
 }
 
+// testCriticalTapStartupFailure ensures LiT exits quickly when a critical
+// integrated sub-server (tapd) fails to start during boot.
+func testCriticalTapStartupFailure(ctx context.Context, net *NetworkHarness,
+	t *harnessTest) {
+
+	// Force tapd to use a postgres backend with an invalid host to
+	// guarantee a startup failure in integrated mode. This config will
+	// error during tapd's startup (after wallet unlock) rather than during
+	// litd's config validation phase.
+	node, err := net.NewNode(
+		t.t, "FailFastTap", nil, false, false,
+		"--taproot-assets.databasebackend=postgres",
+		"--taproot-assets.postgres.host=tapd-postgres.invalid",
+	)
+	require.NoError(t.t, err)
+
+	defer func() {
+		_ = net.ShutdownNode(node)
+	}()
+
+	select {
+	case procErr := <-net.ProcessErrors():
+		require.ErrorContains(t.t, procErr, "tapd-postgres.invalid")
+	case <-time.After(15 * time.Second):
+		t.Fatalf("expected tapd startup failure to be reported")
+	}
+
+	// LiT should terminate promptly after the critical startup failure.
+	select {
+	case <-node.processExit:
+	case <-time.After(5 * time.Second):
+		t.Fatalf("litd did not exit after tapd startup failure")
+	}
+}
+
 // integratedTestSuite makes sure that in integrated mode all daemons work
 // correctly.
 func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
