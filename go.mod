@@ -26,7 +26,7 @@ require (
 	github.com/lightninglabs/lightning-terminal/litrpc v1.0.2
 	github.com/lightninglabs/lightning-terminal/perms v1.0.1
 	github.com/lightninglabs/lndclient v0.20.0-6
-	github.com/lightninglabs/loop v0.31.6-beta
+	github.com/lightninglabs/loop v0.31.7-beta
 	github.com/lightninglabs/loop/looprpc v1.0.12
 	github.com/lightninglabs/loop/swapserverrpc v1.0.19
 	github.com/lightninglabs/pool v0.6.6-beta
