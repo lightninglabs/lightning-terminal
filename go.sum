@@ -604,6 +604,10 @@ github.com/BurntSushi/toml v1.3.2/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbi
 github.com/BurntSushi/toml v1.4.1-0.20240526193622-a339e1f7089c h1:pxW6RcqyfI9/kWtOwnv/G+AzdKuy2ZrqINhenH4HyNs=
 github.com/BurntSushi/toml v1.4.1-0.20240526193622-a339e1f7089c/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
+github.com/GeorgeTsagk/lnd v0.0.0-20251208115937-283874d8cc19 h1:YWzaDHb2BMyFuGPG9MU/PCgJF7SrMYfnBeKR/EjcBNM=
+github.com/GeorgeTsagk/lnd v0.0.0-20251208115937-283874d8cc19/go.mod h1:ZVdQgL3xTt5FfFu6OWeHmv+/bSmCYV0z9scb3Pq6GLU=
+github.com/GeorgeTsagk/lnd/sqldb v0.0.0-20251208115937-283874d8cc19 h1:OmZno4CHzCdcy0yVBKX5f21lg4sIcQDiLxYvrnjiVu8=
+github.com/GeorgeTsagk/lnd/sqldb v0.0.0-20251208115937-283874d8cc19/go.mod h1:Ic65SUa2pJzc3sWSZqDTrWo5qdKIS1zu/blhSddF7X8=
 github.com/JohnCGriffin/overflow v0.0.0-20211019200055-46fa312c352c/go.mod h1:X0CRv0ky0k6m906ixxpzmDRLvX58TFUKS2eePweuyxk=
 github.com/Masterminds/semver/v3 v3.1.1/go.mod h1:VPu/7SZ7ePZ3QOrcuXROw5FAcLl4a0cBrbBpGY/8hQs=
 github.com/Masterminds/semver/v3 v3.3.0 h1:B8LGeaivUe71a5qox1ICM/JLl0NqZSW5CHyL+hmvYS0=
@@ -1166,8 +1170,8 @@ github.com/lightninglabs/migrate/v4 v4.18.2-9023d66a-fork-pr-2 h1:eFjp1dIB2BhhQp
 github.com/lightninglabs/migrate/v4 v4.18.2-9023d66a-fork-pr-2/go.mod h1:99BKpIi6ruaaXRM1A77eqZ+FWPQ3cfRa+ZVy5bmWMaY=
 github.com/lightninglabs/neutrino v0.16.1 h1:5Kz4ToxncEVkpKC6fwUjXKtFKJhuxlG3sBB3MdJTJjs=
 github.com/lightninglabs/neutrino v0.16.1/go.mod h1:L+5UAccpUdyM7yDgmQySgixf7xmwBgJtOfs/IP26jCs=
-github.com/lightninglabs/neutrino/cache v1.1.2 h1:C9DY/DAPaPxbFC+xNNEI/z1SJY9GS3shmlu5hIQ798g=
-github.com/lightninglabs/neutrino/cache v1.1.2/go.mod h1:XJNcgdOw1LQnanGjw8Vj44CvguYA25IMKjWFZczwZuo=
+github.com/lightninglabs/neutrino/cache v1.1.3 h1:rgnabC41W+XaPuBTQrdeFjFCCAVKh1yctAgmb3Se9zA=
+github.com/lightninglabs/neutrino/cache v1.1.3/go.mod h1:qxkJb+pUxR5p84jl5uIGFCR4dGdFkhNUwMSxw3EUWls=
 github.com/lightninglabs/pool v0.6.6-beta h1:4b5wdsA1YslDwhOwFPeNMOUzJ56qokN3raAdKicURe4=
 github.com/lightninglabs/pool v0.6.6-beta/go.mod h1:QJ23DPEmWbj+Ne0SzzxnwVdL2MFXImSB86E+5MyUtU4=
 github.com/lightninglabs/pool/auctioneerrpc v1.1.3 h1:Di5Nf8Gll9wl6tbXsusGXj9e4yNsHvoJ0ssgoHyFXqY=
@@ -1182,8 +1186,6 @@ github.com/lightninglabs/taproot-assets/taprpc v1.0.11 h1:8P6+M3GtKEhXnB+Du3uyR5
 github.com/lightninglabs/taproot-assets/taprpc v1.0.11/go.mod h1:DZn+0c9/PHEKisJLSqNdyH3BVJmwl8mFLe04y++/FlI=
 github.com/lightningnetwork/lightning-onion v1.2.1-0.20240815225420-8b40adf04ab9 h1:6D3LrdagJweLLdFm1JNodZsBk6iU4TTsBBFLQ4yiXfI=
 github.com/lightningnetwork/lightning-onion v1.2.1-0.20240815225420-8b40adf04ab9/go.mod h1:EDqJ3MuZIbMq0QI1czTIKDJ/GS8S14RXPwapHw8cw6w=
-github.com/lightningnetwork/lnd v0.20.0-beta h1:ML+jgJ3UKDGJdUf0m73ZeR/szJKWVtHxpQP+yFC79b8=
-github.com/lightningnetwork/lnd v0.20.0-beta/go.mod h1:8hc55AnE3mMSJ/UAEJZgmhgNCcH0yWaPg0olpxhhp4M=
 github.com/lightningnetwork/lnd/cert v1.2.2 h1:71YK6hogeJtxSxw2teq3eGeuy4rHGKcFf0d0Uy4qBjI=
 github.com/lightningnetwork/lnd/cert v1.2.2/go.mod h1:jQmFn/Ez4zhDgq2hnYSw8r35bqGVxViXhX6Cd7HXM6U=
 github.com/lightningnetwork/lnd/clock v1.1.1 h1:OfR3/zcJd2RhH0RU+zX/77c0ZiOnIMsDIBjgjWdZgA0=
@@ -1198,8 +1200,6 @@ github.com/lightningnetwork/lnd/kvdb v1.4.16 h1:9BZgWdDfjmHRHLS97cz39bVuBAqMc4/p
 github.com/lightningnetwork/lnd/kvdb v1.4.16/go.mod h1:HW+bvwkxNaopkz3oIgBV6NEnV4jCEZCACFUcNg4xSjM=
 github.com/lightningnetwork/lnd/queue v1.1.1 h1:99ovBlpM9B0FRCGYJo6RSFDlt8/vOkQQZznVb18iNMI=
 github.com/lightningnetwork/lnd/queue v1.1.1/go.mod h1:7A6nC1Qrm32FHuhx/mi1cieAiBZo5O6l8IBIoQxvkz4=
-github.com/lightningnetwork/lnd/sqldb v1.0.11 h1:X8J3OvdIhJVniQG78Qsp3niErl1zdGMTPvzgiLMWOOo=
-github.com/lightningnetwork/lnd/sqldb v1.0.11/go.mod h1:oOdZ7vjmAUmI9He+aFHTunnxKVefHZAfJttZdz16hSg=
 github.com/lightningnetwork/lnd/ticker v1.1.1 h1:J/b6N2hibFtC7JLV77ULQp++QLtCwT6ijJlbdiZFbSM=
 github.com/lightningnetwork/lnd/ticker v1.1.1/go.mod h1:waPTRAAcwtu7Ji3+3k+u/xH5GHovTsCoSVpho0KDvdA=
 github.com/lightningnetwork/lnd/tlv v1.3.2 h1:MO4FCk7F4k5xPMqVZF6Nb/kOpxlwPrUQpYjmyKny5s0=

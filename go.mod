@@ -34,7 +34,7 @@ require (
 	github.com/lightninglabs/pool/poolrpc v1.0.1
 	github.com/lightninglabs/taproot-assets v0.7.0
 	github.com/lightninglabs/taproot-assets/taprpc v1.0.11
-	github.com/lightningnetwork/lnd v0.20.0-beta
+	github.com/lightningnetwork/lnd v0.20.0-beta.rc4.0.20251127014118-f8b5cb0e8918
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/clock v1.1.1
 	github.com/lightningnetwork/lnd/fn v1.2.5
@@ -147,7 +147,7 @@ require (
 	github.com/lightninglabs/gozmq v0.0.0-20191113021534-d20a764486bf // indirect
 	github.com/lightninglabs/lightning-node-connect/hashmailrpc v1.0.3 // indirect
 	github.com/lightninglabs/neutrino v0.16.1 // indirect
-	github.com/lightninglabs/neutrino/cache v1.1.2 // indirect
+	github.com/lightninglabs/neutrino/cache v1.1.3 // indirect
 	github.com/lightningnetwork/lightning-onion v1.2.1-0.20240815225420-8b40adf04ab9 // indirect
 	github.com/lightningnetwork/lnd/healthcheck v1.2.6 // indirect
 	github.com/lightningnetwork/lnd/queue v1.1.1 // indirect
@@ -249,3 +249,7 @@ replace google.golang.org/protobuf => github.com/lightninglabs/protobuf-go-hex-d
 // it is a replace in the tapd repository, it doesn't get propagated here
 // automatically, so we need to add it manually.
 replace github.com/golang-migrate/migrate/v4 => github.com/lightninglabs/migrate/v4 v4.18.2-9023d66a-fork-pr-2
+
+replace github.com/lightningnetwork/lnd => github.com/GeorgeTsagk/lnd v0.0.0-20251208115937-283874d8cc19
+
+replace github.com/lightningnetwork/lnd/sqldb => github.com/GeorgeTsagk/lnd/sqldb v0.0.0-20251208115937-283874d8cc19
