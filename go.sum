@@ -1156,8 +1156,8 @@ github.com/lightninglabs/lightning-node-connect/mailbox v1.0.1 h1:RWmohykp3n/DTM
 github.com/lightninglabs/lightning-node-connect/mailbox v1.0.1/go.mod h1:NYtNexZE9gO1eOeegTxmIW9fqanl7eZ9cOrE9yewSAk=
 github.com/lightninglabs/lndclient v0.20.0-6 h1:sh23eZkOpHxe39c4QRYwhsM7qbnJlS++dXVmcwr0BNk=
 github.com/lightninglabs/lndclient v0.20.0-6/go.mod h1:gBtIFPGmC2xIspGIv/G5+HiPSGJsFD8uIow7Oke1HFI=
-github.com/lightninglabs/loop v0.31.6-beta h1:xzR2CdZVva86eXZIFf2+e8IF3TSk36zrKwR8HDaWIFs=
-github.com/lightninglabs/loop v0.31.6-beta/go.mod h1:WbAFDNs9cYjp8RtvKge7atF+/VMSB8icwiTbLE9R2vs=
+github.com/lightninglabs/loop v0.31.7-beta h1:65Ctj7BXpzpyFrI4+eCUQmW0KcQdJKQOo1c4ksewveA=
+github.com/lightninglabs/loop v0.31.7-beta/go.mod h1:WbAFDNs9cYjp8RtvKge7atF+/VMSB8icwiTbLE9R2vs=
 github.com/lightninglabs/loop/looprpc v1.0.12 h1:seLtW+jhnrbIBQkNrfB14ORrFR050FOb4mnVnPgnptY=
 github.com/lightninglabs/loop/looprpc v1.0.12/go.mod h1:SXuPZdtIimhklu2mz7J75NDUNecGt73M+bmaLr80WN0=
 github.com/lightninglabs/loop/swapserverrpc v1.0.19 h1:unoL94DU7O6+3BTtCFGpkL3MjvawtTM13uXVaZYSJco=
