@@ -15,7 +15,6 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/davecgh/go-spew/spew"
-	taprootassets "github.com/lightninglabs/taproot-assets"
 	"github.com/lightninglabs/taproot-assets/asset"
 	tapfn "github.com/lightninglabs/taproot-assets/fn"
 	"github.com/lightninglabs/taproot-assets/itest"
@@ -23,6 +22,7 @@ import (
 	"github.com/lightninglabs/taproot-assets/rfq"
 	"github.com/lightninglabs/taproot-assets/rfqmath"
 	"github.com/lightninglabs/taproot-assets/rfqmsg"
+	"github.com/lightninglabs/taproot-assets/rpcserver"
 	"github.com/lightninglabs/taproot-assets/rpcutils"
 	"github.com/lightninglabs/taproot-assets/tapfreighter"
 	"github.com/lightninglabs/taproot-assets/taprpc"
@@ -677,7 +677,7 @@ func createTestAssetNetworkGroupKey(ctx context.Context, t *harnessTest,
 			AssetId: assetID1,
 		},
 		AmountToBurn:     burnAmount1,
-		ConfirmationText: taprootassets.AssetBurnConfirmationText,
+		ConfirmationText: rpcserver.AssetBurnConfirmationText,
 	})
 	require.NoError(t.t, err)
 
@@ -690,7 +690,7 @@ func createTestAssetNetworkGroupKey(ctx context.Context, t *harnessTest,
 			AssetId: assetID2,
 		},
 		AmountToBurn:     burnAmount2,
-		ConfirmationText: taprootassets.AssetBurnConfirmationText,
+		ConfirmationText: rpcserver.AssetBurnConfirmationText,
 	})
 	require.NoError(t.t, err)
 
