@@ -4,14 +4,14 @@ go 1.25.5
 
 require (
 	github.com/btcsuite/btcd v0.24.3-0.20250318170759-4f4ea81776d6
-	github.com/btcsuite/btcd/btcec/v2 v2.3.4
+	github.com/btcsuite/btcd/btcec/v2 v2.3.6
 	github.com/btcsuite/btcd/btcutil v1.1.5
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0
 	github.com/btcsuite/btclog/v2 v2.0.1-0.20250728225537-6090e87c6c5b
 	github.com/btcsuite/btcwallet/walletdb v1.5.1
 	github.com/davecgh/go-spew v1.1.1
 	github.com/go-errors/errors v1.0.1
-	github.com/golang-migrate/migrate/v4 v4.17.0
+	github.com/golang-migrate/migrate/v4 v4.19.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.22.0
 	github.com/improbable-eng/grpc-web v0.12.0
 	github.com/jackc/pgconn v1.14.3
@@ -25,14 +25,14 @@ require (
 	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.3
 	github.com/lightninglabs/lightning-terminal/litrpc v1.0.2
 	github.com/lightninglabs/lightning-terminal/perms v1.0.1
-	github.com/lightninglabs/lndclient v0.20.0-6
+	github.com/lightninglabs/lndclient v1.0.1-0.20260224134629-de7b65bb4c60
 	github.com/lightninglabs/loop v0.31.8-beta
 	github.com/lightninglabs/loop/looprpc v1.0.13
 	github.com/lightninglabs/loop/swapserverrpc v1.0.20
 	github.com/lightninglabs/pool v0.6.6-beta
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.3
 	github.com/lightninglabs/pool/poolrpc v1.0.1
-	github.com/lightninglabs/taproot-assets v0.7.1
+	github.com/lightninglabs/taproot-assets v0.7.1-0.20260223100136-c6e45b478517
 	github.com/lightninglabs/taproot-assets/taprpc v1.0.12
 	github.com/lightningnetwork/lnd v0.20.1-beta
 	github.com/lightningnetwork/lnd/cert v1.2.2
@@ -40,7 +40,7 @@ require (
 	github.com/lightningnetwork/lnd/fn v1.2.5
 	github.com/lightningnetwork/lnd/fn/v2 v2.0.9
 	github.com/lightningnetwork/lnd/kvdb v1.4.16
-	github.com/lightningnetwork/lnd/sqldb v1.0.12-0.20260113193010-8565d12e40b1
+	github.com/lightningnetwork/lnd/sqldb v1.0.13-0.20260223110936-dd65ba2b0106
 	github.com/lightningnetwork/lnd/tlv v1.3.2
 	github.com/lightningnetwork/lnd/tor v1.1.6
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
@@ -51,14 +51,14 @@ require (
 	github.com/urfave/cli v1.22.14
 	go.etcd.io/bbolt v1.4.3
 	golang.org/x/crypto v0.45.0
-	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
+	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b
 	golang.org/x/net v0.47.0
 	golang.org/x/sync v0.18.0
 	google.golang.org/grpc v1.65.0
 	google.golang.org/protobuf v1.36.11
 	gopkg.in/macaroon-bakery.v2 v2.3.0
 	gopkg.in/macaroon.v2 v2.1.0
-	modernc.org/sqlite v1.34.5
+	modernc.org/sqlite v1.38.2
 	pgregory.net/rapid v1.2.0
 )
 
@@ -221,14 +221,14 @@ require (
 	golang.org/x/tools v0.38.0 // indirect
 	google.golang.org/genproto v0.0.0-20240213162025-012b6fc9bca9 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240814211410-ddb44dafa142 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240814211410-ddb44dafa142 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
 	gopkg.in/errgo.v1 v1.0.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	modernc.org/libc v1.55.3 // indirect
-	modernc.org/mathutil v1.6.0 // indirect
-	modernc.org/memory v1.8.0 // indirect
+	modernc.org/libc v1.66.3 // indirect
+	modernc.org/mathutil v1.7.1 // indirect
+	modernc.org/memory v1.11.0 // indirect
 	sigs.k8s.io/yaml v1.2.0 // indirect
 )
 
@@ -251,3 +251,10 @@ replace github.com/golang-migrate/migrate/v4 => github.com/lightninglabs/migrate
 
 // The upstream nhooyr.io/websocket repository has been moved to github.com/coder/websocket.
 replace nhooyr.io/websocket => github.com/coder/websocket v1.8.7
+
+// The taprpc submodule in taproot-assets uses a replace directive that doesn't
+// propagate to consumers. We need to manually specify the version that
+// includes the portfoliopilotrpc package and aligns with the chancloser fix.
+replace github.com/lightninglabs/taproot-assets/taprpc => github.com/lightninglabs/taproot-assets/taprpc v1.0.12-0.20260223100136-c6e45b478517
+
+replace github.com/lightningnetwork/lnd => github.com/lightningnetwork/lnd v0.20.0-beta.rc4.0.20260223110936-dd65ba2b0106
