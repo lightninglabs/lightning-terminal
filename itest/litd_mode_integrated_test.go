@@ -20,6 +20,7 @@ import (
 	"github.com/lightninglabs/faraday/frdrpc"
 	"github.com/lightninglabs/lightning-node-connect/mailbox"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
+	"github.com/lightninglabs/lightning-terminal/subservers"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/lightninglabs/pool/poolrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc"
@@ -29,6 +30,7 @@ import (
 	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/walletrpc"
 	"github.com/lightningnetwork/lnd/macaroons"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
@@ -498,6 +500,135 @@ func testCriticalTapStartupFailure(ctx context.Context, net *NetworkHarness,
 	case <-time.After(5 * time.Second):
 		t.Fatalf("litd did not exit after tapd startup failure")
 	}
+}
+
+// testNonCriticalLoopStartupFailure ensures LiT continues running when a
+// non-critical integrated sub-server (loopd) fails to start during boot.
+func testNonCriticalLoopStartupFailure(ctx context.Context,
+	net *NetworkHarness, t *harnessTest) {
+
+	// Force loopd into an invalid config combination to guarantee a
+	// startup failure in integrated mode.
+	node, err := net.NewNode(
+		t.t, "NonCriticalLoop", nil, false, false,
+		"--loop.maxl402cost=1",
+		"--loop.maxlsatcost=1",
+	)
+	require.NoError(t.t, err)
+
+	stopNodeGracefully := func() error {
+		conn, err := node.ConnectRPC(true)
+		if err != nil {
+			return err
+		}
+		defer conn.Close()
+
+		stopCtx, cancel := context.WithTimeout(ctx, defaultTimeout)
+		defer cancel()
+
+		lndConn := lnrpc.NewLightningClient(conn)
+		_, err = lndConn.StopDaemon(stopCtx, &lnrpc.StopRequest{})
+		return err
+	}
+
+	defer func() {
+		t.Logf("Shutting down node: %s", node.Cfg.LitDir)
+		if err := stopNodeGracefully(); err != nil {
+			t.Logf("Graceful shutdown failed, killing node: %v",
+				err)
+			_ = net.KillNode(node)
+		}
+		select {
+		case <-node.processExit:
+		case <-time.After(5 * time.Second):
+			_ = net.KillNode(node)
+		}
+		_ = node.cleanup()
+	}()
+
+	// Wait for the TLS cert so we can connect to the status service.
+	t.Logf("Waiting for lit TLS cert to be created: %s",
+		node.Cfg.LitTLSCertPath)
+	require.Eventually(t.t, func() bool {
+		_, err := os.Stat(node.Cfg.LitTLSCertPath)
+		return err == nil
+	}, 10*time.Second, 1*time.Second,
+		"expected lit TLS cert to be created",
+	)
+
+	t.Logf("Connecting to litd service")
+	rawConn, err := connectLitRPC(
+		ctx, node.Cfg.LitAddr(), node.Cfg.LitTLSCertPath, "",
+	)
+	require.NoError(t.t, err)
+	defer rawConn.Close()
+
+	statusConn := litrpc.NewStatusClient(rawConn)
+
+	fetchStatus := func() (*litrpc.SubServerStatusResp, error) {
+		callCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+		defer cancel()
+
+		return statusConn.SubServerStatus(
+			callCtx, &litrpc.SubServerStatusReq{},
+		)
+	}
+
+	waitForStatus := func(desc string,
+		predicate func(*litrpc.SubServerStatusResp) bool) {
+
+		t.t.Helper()
+
+		var lastErr error
+		var lastResp *litrpc.SubServerStatusResp
+
+		ok := assert.Eventually(t.t, func() bool {
+			lastResp, lastErr = fetchStatus()
+			if lastErr != nil || lastResp == nil {
+				return false
+			}
+
+			return predicate(lastResp)
+		}, 20*time.Second, 200*time.Millisecond)
+		if ok {
+			return
+		}
+
+		if lastErr != nil {
+			t.t.Fatalf("%s: last error: %v", desc, lastErr)
+		}
+
+		t.t.Fatalf("%s: last status: %#v", desc, lastResp.SubServers)
+	}
+
+	t.Logf("Waiting for loop to report non-critical loop startup failure")
+	waitForStatus("expected loop startup error to be reported",
+		func(resp *litrpc.SubServerStatusResp) bool {
+			status, ok := resp.SubServers[subservers.LOOP]
+			if !ok || status.Running || status.Error == "" {
+				return false
+			}
+
+			res := strings.Contains(status.Error, "maxl402cost")
+			return res
+		},
+	)
+
+	t.Logf("Waiting for lnd to report running state")
+	waitForStatus("expected lnd to be running",
+		func(resp *litrpc.SubServerStatusResp) bool {
+			status, ok := resp.SubServers[subservers.LND]
+			return ok && status.Running
+		},
+	)
+
+	t.Logf("Waiting for litd to report running state")
+	waitForStatus("expected litd to be running",
+		func(resp *litrpc.SubServerStatusResp) bool {
+			status, ok := resp.SubServers[subservers.LIT]
+			return ok && status.Running
+		},
+	)
 }
 
 // integratedTestSuite makes sure that in integrated mode all daemons work

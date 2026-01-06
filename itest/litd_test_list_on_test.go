@@ -93,6 +93,11 @@ var allTestCases = []*testCase{
 		noAliceBob: true,
 	},
 	{
+		name:       "non-critical loop startup failure",
+		test:       testNonCriticalLoopStartupFailure,
+		noAliceBob: true,
+	},
+	{
 		name:       "custom channels balance consistency",
 		test:       testCustomChannelsBalanceConsistency,
 		noAliceBob: true,
