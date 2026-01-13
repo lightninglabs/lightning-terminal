@@ -98,6 +98,11 @@ var allTestCases = []*testCase{
 		noAliceBob: true,
 	},
 	{
+		name:       "custom channels passive assets",
+		test:       testCustomChannelsPassiveAssets,
+		noAliceBob: true,
+	},
+	{
 		name:       "custom channels oracle pricing",
 		test:       testCustomChannelsOraclePricing,
 		noAliceBob: true,
