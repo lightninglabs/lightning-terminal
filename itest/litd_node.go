@@ -1514,12 +1514,14 @@ func (hn *HarnessNode) Stop() error {
 	// Close any attempts at further grpc connections.
 	if hn.conn != nil {
 		err := hn.conn.Close()
-		isConnClosingErr := strings.Contains(
-			err.Error(), "connection is closing",
-		)
-		if err != nil && !isConnClosingErr {
-			return fmt.Errorf("error attempting to stop grpc "+
-				"client: %v", err)
+		if err != nil {
+			if !strings.Contains(
+				err.Error(), "connection is closing",
+			) {
+
+				return fmt.Errorf("error attempting to "+
+					"stop grpc client: %v", err)
+			}
 		}
 	}
 
