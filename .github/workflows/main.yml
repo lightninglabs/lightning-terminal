@@ -286,7 +286,7 @@ jobs:
             args: itest-parallel-no-backward-compat icase=terminal dbbackend=postgres tranches=4
           - name: custom-channels
             args: itest-parallel icase=custom_channels tranches=4
-            
+
     steps:
       - name: git checkout
         uses: actions/checkout@v4
@@ -302,6 +302,7 @@ jobs:
         uses: ./.github/actions/setup-go
         with:
           go-version: '${{ env.GO_VERSION }}'
+          key-prefix: itest
 
       - name: install dependencies
         working-directory: ./app

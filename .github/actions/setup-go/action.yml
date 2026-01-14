@@ -5,7 +5,7 @@ inputs:
     description: "The version of Golang to set up"
     required: true
   key-prefix:
-    description: "A prefix to use for the cache key, to separate cache entries from other workflows"
+    description: "A prefix to use for the cache key, to separate cache entries from other workflows. When provided, uses a custom cache instead of setup-go's default caching."
     required: false
 
 runs:
@@ -22,6 +22,19 @@ runs:
       uses: actions/setup-go@v5
       with:
         go-version: '${{ inputs.go-version }}'
+        cache: ${{ inputs.key-prefix == '' }}
+
+    - name: cache go (custom key)
+      if: inputs.key-prefix != ''
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: |
+          ${{ inputs.key-prefix }}-go-${{ runner.os }}-${{ runner.arch }}-${{ inputs.go-version }}-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ inputs.key-prefix }}-go-${{ runner.os }}-${{ runner.arch }}-${{ inputs.go-version }}-
 
     - name: set GOPATH
       shell: bash
