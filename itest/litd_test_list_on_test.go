@@ -131,9 +131,12 @@ var allTestCases = []*testCase{
 		name:       "custom channels multi rfq",
 		test:       testCustomChannelsMultiRFQ,
 		noAliceBob: true,
-		backwardCompat: map[string]string{
-			"Yara": "v0.15.0-alpha",
-		},
+		// NOTE: temporary disable backwards compatibility version, in
+		// order to gracefully wait for a stability fix to be included
+		// in the next LiT tag.
+		// backwardCompat: map[string]string{
+		// 	"Yara": "v0.15.0-alpha",
+		// },
 	},
 	{
 		name:       "custom channels multi channel pathfinding",
