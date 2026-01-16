@@ -249,3 +249,6 @@ replace google.golang.org/protobuf => github.com/lightninglabs/protobuf-go-hex-d
 // it is a replace in the tapd repository, it doesn't get propagated here
 // automatically, so we need to add it manually.
 replace github.com/golang-migrate/migrate/v4 => github.com/lightninglabs/migrate/v4 v4.18.2-9023d66a-fork-pr-2
+
+// The upstream nhooyr.io/websocket repository has been moved to github.com/coder/websocket.
+replace nhooyr.io/websocket => github.com/coder/websocket v1.8.7
