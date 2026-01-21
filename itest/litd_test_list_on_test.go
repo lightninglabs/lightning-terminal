@@ -27,4 +27,8 @@ var allTestCases = []*testCase{
 		name: "terminal large http header",
 		test: testLargeHttpHeader,
 	},
+	{
+		name: "kvdb to sql migration",
+		test: testKvdbSQLMigration,
+	},
 }
