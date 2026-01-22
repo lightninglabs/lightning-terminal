@@ -11,6 +11,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/db/sqlc"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/fn"
+	"github.com/lightningnetwork/lnd/sqldb/v2"
 )
 
 // SQLKVStoreQueries is a subset of the sqlc.Queries interface that can be
@@ -46,7 +47,7 @@ func (s *SQLDB) DeleteTempKVStores(ctx context.Context) error {
 
 	return s.db.ExecTx(ctx, &writeTxOpts, func(tx SQLQueries) error {
 		return tx.DeleteAllTempKVStores(ctx)
-	})
+	}, sqldb.NoOpReset)
 }
 
 // GetKVStores constructs a new rules.KVStores in a namespace defined by the
