@@ -1,6 +1,6 @@
 module github.com/lightninglabs/lightning-terminal/tools/linters
 
-go 1.24.9
+go 1.24.11
 
 require (
 	github.com/golangci/plugin-module-register v0.1.1
