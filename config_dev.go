@@ -103,13 +103,6 @@ func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
 			return stores, err
 		}
 
-		// Until we have fully added support for sqldb/v2 in all of our
-		// stores, we need to use the db packages definition of the
-		// SQLite store for the packages that still haven't added
-		// support for sqldb/v2. This is only temporary and will be
-		// removed once all stores have been updated to use sqldb/v2.
-		legacySqlStore, err := db.NewSqliteStore(cfg.Sqlite)
-
 		sqlStore, err := sqldb.NewSqliteStore(&sqldb.SqliteConfig{
 			SkipMigrations:        cfg.Sqlite.SkipMigrations,
 			SkipMigrationDbBackup: cfg.Sqlite.SkipMigrationDbBackup,
@@ -138,7 +131,7 @@ func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
 			sqlStore.BaseDB, queries, clock,
 		)
 		firewallStore := firewalldb.NewSQLDB(
-			legacySqlStore.BaseDB, clock,
+			sqlStore.BaseDB, queries, clock,
 		)
 
 		stores.accounts = acctStore
@@ -147,13 +140,6 @@ func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
 		stores.closeFns["sqlite"] = sqlStore.BaseDB.Close
 
 	case DatabaseBackendPostgres:
-		// Until we have fully added support for sqldb/v2 in all of our
-		// stores, we need to use the db packages definition of the
-		// Postgres store for the packages that still haven't added
-		// support for sqldb/v2. This is only temporary and will be
-		// removed once all stores have been updated to use sqldb/v2.
-		legacySqlStore, err := db.NewPostgresStore(cfg.Postgres)
-
 		sqlStore, err := sqldb.NewPostgresStore(&sqldb.PostgresConfig{
 			Dsn:                cfg.Postgres.DSN(false),
 			MaxOpenConnections: cfg.Postgres.MaxOpenConnections,
@@ -187,7 +173,7 @@ func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
 			sqlStore.BaseDB, queries, clock,
 		)
 		firewallStore := firewalldb.NewSQLDB(
-			legacySqlStore.BaseDB, clock,
+			sqlStore.BaseDB, queries, clock,
 		)
 
 		stores.accounts = acctStore

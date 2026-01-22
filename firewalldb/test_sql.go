@@ -6,10 +6,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lightninglabs/lightning-terminal/db/sqlc"
+
 	"github.com/lightninglabs/lightning-terminal/accounts"
-	"github.com/lightninglabs/lightning-terminal/db"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/clock"
+	"github.com/lightningnetwork/lnd/sqldb/v2"
 	"github.com/stretchr/testify/require"
 )
 
@@ -55,8 +57,10 @@ func assertEqualActions(t *testing.T, expected, got *Action) {
 
 // createStore is a helper function that creates a new SQLDB and ensure that
 // it is closed when during the test cleanup.
-func createStore(t *testing.T, sqlDB *db.BaseDB, clock clock.Clock) *SQLDB {
-	store := NewSQLDB(sqlDB, clock)
+func createStore(t *testing.T, sqlDB *sqldb.BaseDB, clock clock.Clock) *SQLDB {
+	queries := sqlc.NewForType(sqlDB, sqlDB.BackendType)
+
+	store := NewSQLDB(sqlDB, queries, clock)
 	t.Cleanup(func() {
 		require.NoError(t, store.Close())
 	})
