@@ -256,12 +256,13 @@ func (cfg *LitNodeConfig) defaultLitdArgs() *litArgs {
 			"pool.basedir":           cfg.PoolDir,
 			"taproot-assets.tapddir": cfg.TapdDir,
 			"taproot-assets-mode":    "integrated",
-			"uipassword":             cfg.UIPassword,
-			"enablerest":             "",
-			"restcors":               "*",
-			"lnd.debuglevel":         "trace,GRPC=error,PEER=info",
-			"lndconnectinterval":     "200ms",
-			"databasebackend":        cfg.DBBackend,
+			"taproot-assets.allow-public-uni-proof-courier": "",
+			"uipassword":         cfg.UIPassword,
+			"enablerest":         "",
+			"restcors":           "*",
+			"lnd.debuglevel":     "trace,GRPC=error,PEER=info",
+			"lndconnectinterval": "200ms",
+			"databasebackend":    cfg.DBBackend,
 		}
 	)
 
