@@ -268,11 +268,36 @@ jobs:
         run: make ${{ matrix.unit_type }}
 
   ########################
+  # build itest binaries (cache warming)
+  ########################
+  build-itest:
+    name: build itest binaries
+    runs-on: ubuntu-latest
+    steps:
+      - name: git checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: setup go ${{ env.GO_VERSION }}
+        uses: ./.github/actions/setup-go
+        with:
+          go-version: '${{ env.GO_VERSION }}'
+          key-prefix: itest
+
+      - name: prepare dummy static data
+        run: mkdir -p app/build; touch app/build/index.html
+
+      - name: build itest binaries
+        run: make build-itest build-itest-binary
+
+  ########################
   # integration tests
   ########################
   itest:
     name: integration test
     runs-on: ubuntu-latest
+    needs: build-itest
     strategy:
       # Allow other tests in the matrix to continue if one fails.
       fail-fast: false
