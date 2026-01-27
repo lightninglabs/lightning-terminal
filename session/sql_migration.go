@@ -10,13 +10,17 @@ import (
 	"sort"
 	"time"
 
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/lightninglabs/lightning-node-connect/mailbox"
 	"github.com/lightninglabs/lightning-terminal/accounts"
-	"github.com/lightninglabs/lightning-terminal/db/sqlc"
+	"github.com/lightninglabs/lightning-terminal/db/sqlcmig6"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/sqldb"
 	"github.com/pmezard/go-difflib/difflib"
 	"go.etcd.io/bbolt"
+	"gopkg.in/macaroon-bakery.v2/bakery"
+	"gopkg.in/macaroon.v2"
 )
 
 var (
@@ -33,7 +37,7 @@ var (
 // NOTE: As sessions may contain linked accounts, the accounts sql migration
 // MUST be run prior to this migration.
 func MigrateSessionStoreToSQL(ctx context.Context, kvStore *bbolt.DB,
-	tx SQLQueries) error {
+	tx *sqlcmig6.Queries) error {
 
 	log.Infof("Starting migration of the KV sessions store to SQL")
 
@@ -168,7 +172,7 @@ func getBBoltSessions(db *bbolt.DB) ([]*Session, error) {
 // from the KV database to the SQL database, and validates that the migrated
 // sessions match the original sessions.
 func migrateSessionsToSQLAndValidate(ctx context.Context,
-	tx SQLQueries, kvSessions []*Session) error {
+	tx *sqlcmig6.Queries, kvSessions []*Session) error {
 
 	for _, kvSession := range kvSessions {
 		err := migrateSingleSessionToSQL(ctx, tx, kvSession)
@@ -177,18 +181,9 @@ func migrateSessionsToSQLAndValidate(ctx context.Context,
 				kvSession.ID, err)
 		}
 
-		// Validate that the session was correctly migrated and matches
-		// the original session in the kv store.
-		sqlSess, err := tx.GetSessionByAlias(ctx, kvSession.ID[:])
-		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				err = ErrSessionNotFound
-			}
-			return fmt.Errorf("unable to get migrated session "+
-				"from sql store: %w", err)
-		}
-
-		migratedSession, err := unmarshalSession(ctx, tx, sqlSess)
+		migratedSession, err := getAndUnmarshalSession(
+			ctx, tx, kvSession.ID[:],
+		)
 		if err != nil {
 			return fmt.Errorf("unable to unmarshal migrated "+
 				"session: %w", err)
@@ -224,12 +219,205 @@ func migrateSessionsToSQLAndValidate(ctx context.Context,
 	return nil
 }
 
+func getAndUnmarshalSession(ctx context.Context,
+	tx *sqlcmig6.Queries, legacyID []byte) (*Session, error) {
+
+	// Validate that the session was correctly migrated and matches
+	// the original session in the kv store.
+	sqlSess, err := tx.GetSessionByAlias(ctx, legacyID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			err = ErrSessionNotFound
+		}
+
+		return nil, fmt.Errorf("unable to get migrated session "+
+			"from sql store: %w", err)
+	}
+
+	migratedSession, err := unmarshalMig6Session(ctx, tx, sqlSess)
+	if err != nil {
+		return nil, fmt.Errorf("unable to unmarshal migrated "+
+			"session: %w", err)
+	}
+
+	return migratedSession, nil
+}
+
+func unmarshalMig6Session(ctx context.Context, db *sqlcmig6.Queries,
+	dbSess sqlcmig6.Session) (*Session, error) {
+
+	var legacyGroupID ID
+	if dbSess.GroupID.Valid {
+		groupID, err := db.GetAliasBySessionID(
+			ctx, dbSess.GroupID.Int64,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get legacy group "+
+				"Alias: %v", err)
+		}
+
+		legacyGroupID, err = IDFromBytes(groupID)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get legacy Alias: %v",
+				err)
+		}
+	}
+
+	var acctAlias fn.Option[accounts.AccountID]
+	if dbSess.AccountID.Valid {
+		account, err := db.GetAccount(ctx, dbSess.AccountID.Int64)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get account: %v", err)
+		}
+
+		accountAlias, err := accounts.AccountIDFromInt64(account.Alias)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get account ID: %v", err)
+		}
+		acctAlias = fn.Some(accountAlias)
+	}
+
+	legacyID, err := IDFromBytes(dbSess.Alias)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get legacy Alias: %v", err)
+	}
+
+	var revokedAt time.Time
+	if dbSess.RevokedAt.Valid {
+		revokedAt = dbSess.RevokedAt.Time
+	}
+
+	localPriv, localPub := btcec.PrivKeyFromBytes(dbSess.LocalPrivateKey)
+
+	var remotePub *btcec.PublicKey
+	if len(dbSess.RemotePublicKey) != 0 {
+		remotePub, err = btcec.ParsePubKey(dbSess.RemotePublicKey)
+		if err != nil {
+			return nil, fmt.Errorf("unable to parse remote "+
+				"public key: %v", err)
+		}
+	}
+
+	// Get the macaroon permissions if they exist.
+	perms, err := db.GetSessionMacaroonPermissions(ctx, dbSess.ID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get macaroon "+
+			"permissions: %v", err)
+	}
+
+	// Get the macaroon caveats if they exist.
+	caveats, err := db.GetSessionMacaroonCaveats(ctx, dbSess.ID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get macaroon "+
+			"caveats: %v", err)
+	}
+
+	var macRecipe *MacaroonRecipe
+	if perms != nil || caveats != nil {
+		macRecipe = &MacaroonRecipe{
+			Permissions: unmarshalMig6MacPerms(perms),
+			Caveats:     unmarshalMig6MacCaveats(caveats),
+		}
+	}
+
+	// Get the feature configs if they exist.
+	featureConfigs, err := db.GetSessionFeatureConfigs(ctx, dbSess.ID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get feature configs: %v", err)
+	}
+
+	var featureCfgs *FeaturesConfig
+	if featureConfigs != nil {
+		featureCfgs = unmarshalMig6FeatureConfigs(featureConfigs)
+	}
+
+	// Get the privacy flags if they exist.
+	privacyFlags, err := db.GetSessionPrivacyFlags(ctx, dbSess.ID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get privacy flags: %v", err)
+	}
+
+	var privFlags PrivacyFlags
+	if privacyFlags != nil {
+		privFlags = unmarshalMig6PrivacyFlags(privacyFlags)
+	}
+
+	var pairingSecret [mailbox.NumPassphraseEntropyBytes]byte
+	copy(pairingSecret[:], dbSess.PairingSecret)
+
+	return &Session{
+		ID:                legacyID,
+		Label:             dbSess.Label,
+		State:             State(dbSess.State),
+		Type:              Type(dbSess.Type),
+		Expiry:            dbSess.Expiry,
+		CreatedAt:         dbSess.CreatedAt,
+		RevokedAt:         revokedAt,
+		ServerAddr:        dbSess.ServerAddress,
+		DevServer:         dbSess.DevServer,
+		MacaroonRootKey:   uint64(dbSess.MacaroonRootKey),
+		PairingSecret:     pairingSecret,
+		LocalPrivateKey:   localPriv,
+		LocalPublicKey:    localPub,
+		RemotePublicKey:   remotePub,
+		WithPrivacyMapper: dbSess.Privacy,
+		GroupID:           legacyGroupID,
+		PrivacyFlags:      privFlags,
+		MacaroonRecipe:    macRecipe,
+		FeatureConfig:     featureCfgs,
+		AccountID:         acctAlias,
+	}, nil
+}
+
+func unmarshalMig6MacPerms(dbPerms []sqlcmig6.SessionMacaroonPermission) []bakery.Op {
+	ops := make([]bakery.Op, len(dbPerms))
+	for i, dbPerm := range dbPerms {
+		ops[i] = bakery.Op{
+			Entity: dbPerm.Entity,
+			Action: dbPerm.Action,
+		}
+	}
+
+	return ops
+}
+
+func unmarshalMig6MacCaveats(dbCaveats []sqlcmig6.SessionMacaroonCaveat) []macaroon.Caveat {
+	caveats := make([]macaroon.Caveat, len(dbCaveats))
+	for i, dbCaveat := range dbCaveats {
+		caveats[i] = macaroon.Caveat{
+			Id:             dbCaveat.CaveatID,
+			VerificationId: dbCaveat.VerificationID,
+			Location:       dbCaveat.Location.String,
+		}
+	}
+
+	return caveats
+}
+
+func unmarshalMig6FeatureConfigs(dbConfigs []sqlcmig6.SessionFeatureConfig) *FeaturesConfig {
+	configs := make(FeaturesConfig, len(dbConfigs))
+	for _, dbConfig := range dbConfigs {
+		configs[dbConfig.FeatureName] = dbConfig.Config
+	}
+
+	return &configs
+}
+
+func unmarshalMig6PrivacyFlags(dbFlags []sqlcmig6.SessionPrivacyFlag) PrivacyFlags {
+	flags := make(PrivacyFlags, len(dbFlags))
+	for i, dbFlag := range dbFlags {
+		flags[i] = PrivacyFlag(dbFlag.Flag)
+	}
+
+	return flags
+}
+
 // migrateSingleSessionToSQL runs the migration for a single session from the
 // KV database to the SQL database. Note that if the session links to an
 // account, the linked accounts store MUST have been migrated before that
 // session is migrated.
 func migrateSingleSessionToSQL(ctx context.Context,
-	tx SQLQueries, session *Session) error {
+	tx *sqlcmig6.Queries, session *Session) error {
 
 	var (
 		acctID       sql.NullInt64
@@ -275,7 +463,7 @@ func migrateSingleSessionToSQL(ctx context.Context,
 	}
 
 	// Proceed to insert the session into the sql db.
-	sqlId, err := tx.InsertSession(ctx, sqlc.InsertSessionParams{
+	sqlId, err := tx.InsertSession(ctx, sqlcmig6.InsertSessionParams{
 		Alias:           session.ID[:],
 		Label:           session.Label,
 		State:           int16(session.State),
@@ -301,7 +489,7 @@ func migrateSingleSessionToSQL(ctx context.Context,
 	// has been created.
 	if !session.RevokedAt.IsZero() {
 		err = tx.SetSessionRevokedAt(
-			ctx, sqlc.SetSessionRevokedAtParams{
+			ctx, sqlcmig6.SetSessionRevokedAtParams{
 				ID: sqlId,
 				RevokedAt: sqldb.SQLTime(
 					session.RevokedAt.UTC(),
@@ -327,7 +515,7 @@ func migrateSingleSessionToSQL(ctx context.Context,
 	}
 
 	// Now lets set the group ID for the session.
-	err = tx.SetSessionGroupID(ctx, sqlc.SetSessionGroupIDParams{
+	err = tx.SetSessionGroupID(ctx, sqlcmig6.SetSessionGroupIDParams{
 		ID:      sqlId,
 		GroupID: sqldb.SQLInt64(groupID),
 	})
@@ -341,7 +529,7 @@ func migrateSingleSessionToSQL(ctx context.Context,
 		// We start by inserting the macaroon permissions.
 		for _, sessionPerm := range session.MacaroonRecipe.Permissions {
 			err = tx.InsertSessionMacaroonPermission(
-				ctx, sqlc.InsertSessionMacaroonPermissionParams{
+				ctx, sqlcmig6.InsertSessionMacaroonPermissionParams{
 					SessionID: sqlId,
 					Entity:    sessionPerm.Entity,
 					Action:    sessionPerm.Action,
@@ -355,7 +543,7 @@ func migrateSingleSessionToSQL(ctx context.Context,
 		// Next we insert the macaroon caveats.
 		for _, caveat := range session.MacaroonRecipe.Caveats {
 			err = tx.InsertSessionMacaroonCaveat(
-				ctx, sqlc.InsertSessionMacaroonCaveatParams{
+				ctx, sqlcmig6.InsertSessionMacaroonCaveatParams{
 					SessionID:      sqlId,
 					CaveatID:       caveat.Id,
 					VerificationID: caveat.VerificationId,
@@ -374,7 +562,7 @@ func migrateSingleSessionToSQL(ctx context.Context,
 	if session.FeatureConfig != nil {
 		for featureName, config := range *session.FeatureConfig {
 			err = tx.InsertSessionFeatureConfig(
-				ctx, sqlc.InsertSessionFeatureConfigParams{
+				ctx, sqlcmig6.InsertSessionFeatureConfigParams{
 					SessionID:   sqlId,
 					FeatureName: featureName,
 					Config:      config,
@@ -389,7 +577,7 @@ func migrateSingleSessionToSQL(ctx context.Context,
 	// Finally we insert the privacy flags.
 	for _, privacyFlag := range session.PrivacyFlags {
 		err = tx.InsertSessionPrivacyFlag(
-			ctx, sqlc.InsertSessionPrivacyFlagParams{
+			ctx, sqlcmig6.InsertSessionPrivacyFlagParams{
 				SessionID: sqlId,
 				Flag:      int32(privacyFlag),
 			},

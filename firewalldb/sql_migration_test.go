@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/lightninglabs/lightning-terminal/accounts"
-	"github.com/lightninglabs/lightning-terminal/db/sqlc"
+	"github.com/lightninglabs/lightning-terminal/db/sqlcmig6"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/fn"
@@ -124,26 +124,26 @@ func TestFirewallDBMigration(t *testing.T) {
 		t.Skipf("Skipping Firewall DB migration test for kvdb build")
 	}
 
-	makeSQLDB := func(t *testing.T, sessionsStore session.Store) (*SQLDB,
-		*SQLQueriesExecutor[SQLQueries]) {
+	makeSQLDB := func(t *testing.T,
+		sStore session.Store) *sqlcmig6.TxExecutor[*sqlcmig6.Queries] {
 
-		testDBStore := NewTestDBWithSessions(t, sessionsStore, clock)
+		testDBStore := NewTestDBWithSessions(t, sStore, clock)
 
 		store, ok := testDBStore.(*SQLDB)
 		require.True(t, ok)
 
 		baseDB := store.BaseDB
 
-		queries := sqlc.NewForType(baseDB, baseDB.BackendType)
+		queries := sqlcmig6.NewForType(baseDB, baseDB.BackendType)
 
-		return store, NewSQLQueriesExecutor(baseDB, queries)
+		return sqlcmig6.NewTxExecutor(baseDB, queries)
 	}
 
 	// The assertKvStoreMigrationResults function will currently assert that
 	// the migrated kv stores entries in the SQLDB match the original kv
 	// stores entries in the BoltDB.
-	assertKvStoreMigrationResults := func(t *testing.T, store *SQLDB,
-		kvEntries []*kvEntry) {
+	assertKvStoreMigrationResults := func(t *testing.T,
+		store *sqlcmig6.Queries, kvEntries []*kvEntry) {
 
 		var (
 			ruleIDs    = make(map[string]int64)
@@ -155,9 +155,7 @@ func TestFirewallDBMigration(t *testing.T) {
 		getRuleID := func(ruleName string) int64 {
 			ruleID, ok := ruleIDs[ruleName]
 			if !ok {
-				ruleID, err = store.db.GetRuleID(
-					ctx, ruleName,
-				)
+				ruleID, err = store.GetRuleID(ctx, ruleName)
 				require.NoError(t, err)
 
 				ruleIDs[ruleName] = ruleID
@@ -169,7 +167,7 @@ func TestFirewallDBMigration(t *testing.T) {
 		getGroupID := func(groupAlias []byte) int64 {
 			groupID, ok := groupIDs[string(groupAlias)]
 			if !ok {
-				groupID, err = store.db.GetSessionIDByAlias(
+				groupID, err = store.GetSessionIDByAlias(
 					ctx, groupAlias,
 				)
 				require.NoError(t, err)
@@ -183,7 +181,7 @@ func TestFirewallDBMigration(t *testing.T) {
 		getFeatureID := func(featureName string) int64 {
 			featureID, ok := featureIDs[featureName]
 			if !ok {
-				featureID, err = store.db.GetFeatureID(
+				featureID, err = store.GetFeatureID(
 					ctx, featureName,
 				)
 				require.NoError(t, err)
@@ -194,10 +192,10 @@ func TestFirewallDBMigration(t *testing.T) {
 			return featureID
 		}
 
-		// First we extract all migrated kv entries from the SQLDB,
+		// First we extract all migrated kv entries from the store,
 		// in order to be able to compare them to the original kv
 		// entries, to ensure that the migration was successful.
-		sqlKvEntries, err := store.db.ListAllKVStoresRecords(ctx)
+		sqlKvEntries, err := store.ListAllKVStoresRecords(ctx)
 		require.NoError(t, err)
 		require.Equal(t, len(kvEntries), len(sqlKvEntries))
 
@@ -213,9 +211,9 @@ func TestFirewallDBMigration(t *testing.T) {
 			ruleID := getRuleID(entry.ruleName)
 
 			if entry.groupAlias.IsNone() {
-				sqlVal, err := store.db.GetGlobalKVStoreRecord(
+				sqlVal, err := store.GetGlobalKVStoreRecord(
 					ctx,
-					sqlc.GetGlobalKVStoreRecordParams{
+					sqlcmig6.GetGlobalKVStoreRecordParams{
 						Key:    entry.key,
 						Perm:   entry.perm,
 						RuleID: ruleID,
@@ -231,9 +229,9 @@ func TestFirewallDBMigration(t *testing.T) {
 				groupAlias := entry.groupAlias.UnwrapOrFail(t)
 				groupID := getGroupID(groupAlias[:])
 
-				v, err := store.db.GetGroupKVStoreRecord(
+				v, err := store.GetGroupKVStoreRecord(
 					ctx,
-					sqlc.GetGroupKVStoreRecordParams{
+					sqlcmig6.GetGroupKVStoreRecordParams{
 						Key:    entry.key,
 						Perm:   entry.perm,
 						RuleID: ruleID,
@@ -256,9 +254,9 @@ func TestFirewallDBMigration(t *testing.T) {
 					entry.featureName.UnwrapOrFail(t),
 				)
 
-				sqlVal, err := store.db.GetFeatureKVStoreRecord(
+				sqlVal, err := store.GetFeatureKVStoreRecord(
 					ctx,
-					sqlc.GetFeatureKVStoreRecordParams{
+					sqlcmig6.GetFeatureKVStoreRecordParams{
 						Key:    entry.key,
 						Perm:   entry.perm,
 						RuleID: ruleID,
@@ -287,14 +285,14 @@ func TestFirewallDBMigration(t *testing.T) {
 	// BoltDB. It also asserts that the SQL DB does not contain any other
 	// privacy pairs than the expected ones.
 	assertPrivacyMapperMigrationResults := func(t *testing.T,
-		sqlStore *SQLDB, privPairs privacyPairs) {
+		sqlStore *sqlcmig6.Queries, privPairs privacyPairs) {
 
 		var totalExpectedPairs, totalPairs int
 
 		// First assert that the SQLDB contains the expected privacy
 		// pairs.
 		for groupID, groupPairs := range privPairs {
-			storePairs, err := sqlStore.db.GetAllPrivacyPairs(
+			storePairs, err := sqlStore.GetAllPrivacyPairs(
 				ctx, groupID,
 			)
 			require.NoError(t, err)
@@ -314,14 +312,13 @@ func TestFirewallDBMigration(t *testing.T) {
 			}
 		}
 
-		// Then assert that SQLDB doesn't contain any other privacy
+		// Then assert that store doesn't contain any other privacy
 		// pairs than the expected ones.
-		queries := sqlc.NewForType(sqlStore, sqlStore.BackendType)
-		sessions, err := queries.ListSessions(ctx)
+		sessions, err := sqlStore.ListSessions(ctx)
 		require.NoError(t, err)
 
 		for _, dbSession := range sessions {
-			sessionPairs, err := sqlStore.db.GetAllPrivacyPairs(
+			sessionPairs, err := sqlStore.GetAllPrivacyPairs(
 				ctx, dbSession.ID,
 			)
 			if errors.Is(err, sql.ErrNoRows) {
@@ -340,13 +337,16 @@ func TestFirewallDBMigration(t *testing.T) {
 	// assertActionsMigrationResults asserts that the migrated actions in
 	// the SQLDB match the original expected actions. It also asserts that
 	// the SQL DB does not contain any other actions than the expected ones.
-	assertActionsMigrationResults := func(t *testing.T, sqlStore *SQLDB,
-		expectedActions []*Action) {
+	assertActionsMigrationResults := func(t *testing.T,
+		sqlStore *sqlcmig6.Queries, expectedActions []*Action) {
 
 		// First assert that the SQLDB contains the expected number of
 		// actions.
-		dbActions, _, _, err := sqlStore.ListActions(
-			ctx, &ListActionsQuery{},
+		dbActions, err := sqlStore.ListActions(
+			ctx, sqlcmig6.ListActionsParams{
+				ActionQueryParams: sqlcmig6.ActionQueryParams{},
+				Reversed:          false,
+			},
 		)
 		require.NoError(t, err)
 
@@ -360,14 +360,19 @@ func TestFirewallDBMigration(t *testing.T) {
 		for i, migratedAction := range dbActions {
 			expAction := expectedActions[i]
 
-			assertEqualActions(t, expAction, migratedAction)
+			migAction, err := marshalDBAction(
+				ctx, sqlStore, migratedAction,
+			)
+			require.NoError(t, err)
+
+			assertEqualActions(t, expAction, migAction)
 		}
 	}
 
 	// The assertMigrationResults asserts that the migrated entries in the
 	// firewall SQLDB match the expected results which should represent the
 	// original entries in the BoltDB.
-	assertMigrationResults := func(t *testing.T, sqlStore *SQLDB,
+	assertMigrationResults := func(t *testing.T, sqlStore *sqlcmig6.Queries,
 		expRes *expectedResult) {
 
 		// Assert that the kv store migration results match the expected
@@ -562,24 +567,26 @@ func TestFirewallDBMigration(t *testing.T) {
 
 			// Create the SQL store that we will migrate the data
 			// to.
-			sqlStore, txEx := makeSQLDB(t, sessionsStore)
+			txEx := makeSQLDB(t, sessionsStore)
 
 			// Perform the migration.
 			err = txEx.ExecTx(ctx, sqldb.WriteTxOpt(),
-				func(tx SQLQueries) error {
-					qs, ok := tx.(*sqlc.Queries)
-					require.True(t, ok)
-
-					return MigrateFirewallDBToSQL(
-						ctx, firewallStore.DB, tx, qs,
+				func(tx *sqlcmig6.Queries) error {
+					err = MigrateFirewallDBToSQL(
+						ctx, firewallStore.DB, tx,
 						rootKeyStore.getAllRootKeys(),
 					)
+					if err != nil {
+						return err
+					}
+
+					// Assert migration results.
+					assertMigrationResults(t, tx, entries)
+
+					return nil
 				}, sqldb.NoOpReset,
 			)
 			require.NoError(t, err)
-
-			// Assert migration results.
-			assertMigrationResults(t, sqlStore, entries)
 		})
 	}
 }
@@ -1146,7 +1153,7 @@ func createPrivacyPairs(t *testing.T, ctx context.Context,
 	sessSQLStore, ok := sessionStore.(*session.SQLStore)
 	require.True(t, ok)
 
-	queries := sqlc.NewForType(sessSQLStore, sessSQLStore.BackendType)
+	queries := sqlcmig6.NewForType(sessSQLStore, sessSQLStore.BackendType)
 
 	for i := range numSessions {
 		sess, err := sessionStore.NewSession(
@@ -1203,7 +1210,7 @@ func randomPrivacyPairs(t *testing.T, ctx context.Context,
 	sessSQLStore, ok := sessionStore.(*session.SQLStore)
 	require.True(t, ok)
 
-	queries := sqlc.NewForType(sessSQLStore, sessSQLStore.BackendType)
+	queries := sqlcmig6.NewForType(sessSQLStore, sessSQLStore.BackendType)
 
 	for i := range numSessions {
 		sess, err := sessionStore.NewSession(
@@ -1557,7 +1564,7 @@ func actionWithMultipleAccounts(t *testing.T, ctx context.Context,
 	acctSqlStore, ok := acctStore.(*accounts.SQLStore)
 	require.True(t, ok)
 
-	queries := sqlc.NewForType(acctSqlStore, acctSqlStore.BackendType)
+	queries := sqlcmig6.NewForType(acctSqlStore, acctSqlStore.BackendType)
 
 	// To ensure that the two accounts do collide, we modify the alias
 	// of the second account to match the first 4 bytes of acct1's ID.
@@ -1570,7 +1577,7 @@ func actionWithMultipleAccounts(t *testing.T, ctx context.Context,
 	require.NoError(t, err)
 
 	_, err = queries.UpdateAccountAliasForTests(
-		ctx, sqlc.UpdateAccountAliasForTestsParams{
+		ctx, sqlcmig6.UpdateAccountAliasForTestsParams{
 			Alias: acctAlias,
 			ID:    acctID2,
 		},
@@ -1612,7 +1619,7 @@ func actionWithSessionAndAccount(t *testing.T, ctx context.Context,
 	acctSqlStore, ok := acctStore.(*accounts.SQLStore)
 	require.True(t, ok)
 
-	queries := sqlc.NewForType(acctSqlStore, acctSqlStore.BackendType)
+	queries := sqlcmig6.NewForType(acctSqlStore, acctSqlStore.BackendType)
 
 	// Modify the first 4 bytes of the account alias to match the session
 	// ID, to ensure that they collide.
@@ -1624,7 +1631,7 @@ func actionWithSessionAndAccount(t *testing.T, ctx context.Context,
 	require.NoError(t, err)
 
 	_, err = queries.UpdateAccountAliasForTests(
-		ctx, sqlc.UpdateAccountAliasForTestsParams{
+		ctx, sqlcmig6.UpdateAccountAliasForTestsParams{
 			Alias: acctAlias,
 			ID:    acctID,
 		},
@@ -1680,7 +1687,7 @@ func actionWithSessionWithLinkedAccountAndAccount(t *testing.T,
 	acctSqlStore, ok := acctStore.(*accounts.SQLStore)
 	require.True(t, ok)
 
-	queries := sqlc.NewForType(acctSqlStore, acctSqlStore.BackendType)
+	queries := sqlcmig6.NewForType(acctSqlStore, acctSqlStore.BackendType)
 
 	// Modify the first 4 bytes of the second account alias to match the
 	// session ID, to ensure that they collide.
@@ -1692,7 +1699,7 @@ func actionWithSessionWithLinkedAccountAndAccount(t *testing.T,
 	require.NoError(t, err)
 
 	_, err = queries.UpdateAccountAliasForTests(
-		ctx, sqlc.UpdateAccountAliasForTestsParams{
+		ctx, sqlcmig6.UpdateAccountAliasForTestsParams{
 			Alias: acctAlias,
 			ID:    acct2ID,
 		},
@@ -1740,7 +1747,7 @@ func randomActions(t *testing.T, ctx context.Context, boltDB *BoltDB,
 	acctSqlStore, ok := acctStore.(*accounts.SQLStore)
 	require.True(t, ok)
 
-	queries := sqlc.NewForType(acctSqlStore, acctSqlStore.BackendType)
+	queries := sqlcmig6.NewForType(acctSqlStore, acctSqlStore.BackendType)
 
 	for i := 0; i < numActions; i++ {
 		rJson, err := randomJSON(rand.Intn(20))
@@ -1875,7 +1882,7 @@ func randomActions(t *testing.T, ctx context.Context, boltDB *BoltDB,
 
 					// nolint:ll
 					_, err = queries.UpdateAccountAliasForTests(
-						ctx, sqlc.UpdateAccountAliasForTestsParams{
+						ctx, sqlcmig6.UpdateAccountAliasForTestsParams{
 							Alias: acctAlias,
 							ID:    acctID,
 						},
@@ -2067,7 +2074,7 @@ func testAccountWithExpiry(t *testing.T, ctx context.Context,
 	acctSqlStore, ok := acctStore.(*accounts.SQLStore)
 	require.True(t, ok)
 
-	queries := sqlc.NewForType(acctSqlStore, acctSqlStore.BackendType)
+	queries := sqlcmig6.NewForType(acctSqlStore, acctSqlStore.BackendType)
 
 	aliasInt, err := acct.ID.ToInt64()
 	require.NoError(t, err)
@@ -2117,7 +2124,7 @@ func testSessionWithAccount(t *testing.T, ctx context.Context,
 	acctSqlStore, ok := acctStore.(*accounts.SQLStore)
 	require.True(t, ok)
 
-	queries := sqlc.NewForType(acctSqlStore, acctSqlStore.BackendType)
+	queries := sqlcmig6.NewForType(acctSqlStore, acctSqlStore.BackendType)
 
 	aliasInt, err := acct.ID.ToInt64()
 	require.NoError(t, err)

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lightninglabs/lightning-terminal/db/sqlc"
+	"github.com/lightninglabs/lightning-terminal/db/sqlcmig6"
 	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -35,7 +35,7 @@ func TestAccountStoreMigration(t *testing.T) {
 	}
 
 	makeSQLDB := func(t *testing.T) (*SQLStore,
-		*SQLQueriesExecutor[SQLQueries]) {
+		*sqlcmig6.TxExecutor[*sqlcmig6.Queries]) {
 
 		testDBStore := NewTestDB(t, clock)
 
@@ -44,9 +44,9 @@ func TestAccountStoreMigration(t *testing.T) {
 
 		baseDB := store.BaseDB
 
-		queries := sqlc.NewForType(baseDB, baseDB.BackendType)
+		queries := sqlcmig6.NewForType(baseDB, baseDB.BackendType)
 
-		return store, NewSQLQueriesExecutor(baseDB, queries)
+		return store, sqlcmig6.NewTxExecutor(baseDB, queries)
 	}
 
 	assertMigrationResults := func(t *testing.T, sqlStore *SQLStore,
@@ -334,7 +334,7 @@ func TestAccountStoreMigration(t *testing.T) {
 			// Perform the migration.
 			err = txEx.ExecTx(
 				ctx, sqldb.WriteTxOpt(),
-				func(tx SQLQueries) error {
+				func(tx *sqlcmig6.Queries) error {
 					return MigrateAccountStoreToSQL(
 						ctx, kvStore.db, tx,
 					)

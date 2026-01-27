@@ -11,8 +11,11 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/lightninglabs/lightning-terminal/db/sqlc"
+	"github.com/lightninglabs/lightning-terminal/db/sqlcmig6"
 	"github.com/lightningnetwork/lnd/kvdb"
+	"github.com/lightningnetwork/lnd/lnrpc"
+	"github.com/lightningnetwork/lnd/lntypes"
+	"github.com/lightningnetwork/lnd/lnwire"
 	"github.com/pmezard/go-difflib/difflib"
 )
 
@@ -27,7 +30,7 @@ var (
 // the KV database to the SQL database. The migration is done in a single
 // transaction to ensure that all accounts are migrated or none at all.
 func MigrateAccountStoreToSQL(ctx context.Context, kvStore kvdb.Backend,
-	tx SQLQueries) error {
+	tx *sqlcmig6.Queries) error {
 
 	log.Infof("Starting migration of the KV accounts store to SQL")
 
@@ -50,7 +53,7 @@ func MigrateAccountStoreToSQL(ctx context.Context, kvStore kvdb.Backend,
 // to the SQL database. The migration is done in a single transaction to ensure
 // that all accounts are migrated or none at all.
 func migrateAccountsToSQL(ctx context.Context, kvStore kvdb.Backend,
-	tx SQLQueries) error {
+	tx *sqlcmig6.Queries) error {
 
 	log.Infof("Starting migration of accounts from KV to SQL")
 
@@ -68,7 +71,7 @@ func migrateAccountsToSQL(ctx context.Context, kvStore kvdb.Backend,
 				kvAccount.ID, err)
 		}
 
-		migratedAccount, err := getAndMarshalAccount(
+		migratedAccount, err := getAndMarshalMig6Account(
 			ctx, tx, migratedAccountID,
 		)
 		if err != nil {
@@ -151,17 +154,79 @@ func getBBoltAccounts(db kvdb.Backend) ([]*OffChainBalanceAccount, error) {
 	return accounts, nil
 }
 
+// getAndMarshalAccount retrieves the account with the given ID. If the account
+// cannot be found, then ErrAccNotFound is returned.
+func getAndMarshalMig6Account(ctx context.Context, db *sqlcmig6.Queries,
+	id int64) (*OffChainBalanceAccount, error) {
+
+	dbAcct, err := db.GetAccount(ctx, id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrAccNotFound
+	} else if err != nil {
+		return nil, err
+	}
+
+	return marshalDBMig6Account(ctx, db, dbAcct)
+}
+
+func marshalDBMig6Account(ctx context.Context, db *sqlcmig6.Queries,
+	dbAcct sqlcmig6.Account) (*OffChainBalanceAccount, error) {
+
+	alias, err := AccountIDFromInt64(dbAcct.Alias)
+	if err != nil {
+		return nil, err
+	}
+
+	account := &OffChainBalanceAccount{
+		ID:             alias,
+		Type:           AccountType(dbAcct.Type),
+		InitialBalance: lnwire.MilliSatoshi(dbAcct.InitialBalanceMsat),
+		CurrentBalance: dbAcct.CurrentBalanceMsat,
+		LastUpdate:     dbAcct.LastUpdated.UTC(),
+		ExpirationDate: dbAcct.Expiration.UTC(),
+		Invoices:       make(AccountInvoices),
+		Payments:       make(AccountPayments),
+		Label:          dbAcct.Label.String,
+	}
+
+	invoices, err := db.ListAccountInvoices(ctx, dbAcct.ID)
+	if err != nil {
+		return nil, err
+	}
+	for _, invoice := range invoices {
+		var hash lntypes.Hash
+		copy(hash[:], invoice.Hash)
+		account.Invoices[hash] = struct{}{}
+	}
+
+	payments, err := db.ListAccountPayments(ctx, dbAcct.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, payment := range payments {
+		var hash lntypes.Hash
+		copy(hash[:], payment.Hash)
+		account.Payments[hash] = &PaymentEntry{
+			Status:     lnrpc.Payment_PaymentStatus(payment.Status),
+			FullAmount: lnwire.MilliSatoshi(payment.FullAmountMsat),
+		}
+	}
+
+	return account, nil
+}
+
 // migrateSingleAccountToSQL runs the migration for a single account from the
 // KV database to the SQL database.
 func migrateSingleAccountToSQL(ctx context.Context,
-	tx SQLQueries, account *OffChainBalanceAccount) (int64, error) {
+	tx *sqlcmig6.Queries, account *OffChainBalanceAccount) (int64, error) {
 
 	accountAlias, err := account.ID.ToInt64()
 	if err != nil {
 		return 0, err
 	}
 
-	insertAccountParams := sqlc.InsertAccountParams{
+	insertAccountParams := sqlcmig6.InsertAccountParams{
 		Type:               int16(account.Type),
 		InitialBalanceMsat: int64(account.InitialBalance),
 		CurrentBalanceMsat: account.CurrentBalance,
@@ -180,7 +245,7 @@ func migrateSingleAccountToSQL(ctx context.Context,
 	}
 
 	for hash := range account.Invoices {
-		addInvoiceParams := sqlc.AddAccountInvoiceParams{
+		addInvoiceParams := sqlcmig6.AddAccountInvoiceParams{
 			AccountID: sqlId,
 			Hash:      hash[:],
 		}
@@ -192,7 +257,7 @@ func migrateSingleAccountToSQL(ctx context.Context,
 	}
 
 	for hash, paymentEntry := range account.Payments {
-		upsertPaymentParams := sqlc.UpsertAccountPaymentParams{
+		upsertPaymentParams := sqlcmig6.UpsertAccountPaymentParams{
 			AccountID:      sqlId,
 			Hash:           hash[:],
 			Status:         int16(paymentEntry.Status),
@@ -211,7 +276,7 @@ func migrateSingleAccountToSQL(ctx context.Context,
 // migrateAccountsIndicesToSQL runs the migration for the account indices from
 // the KV database to the SQL database.
 func migrateAccountsIndicesToSQL(ctx context.Context, kvStore kvdb.Backend,
-	tx SQLQueries) error {
+	tx *sqlcmig6.Queries) error {
 
 	log.Infof("Starting migration of accounts indices from KV to SQL")
 
@@ -233,7 +298,7 @@ func migrateAccountsIndicesToSQL(ctx context.Context, kvStore kvdb.Backend,
 			settleIndexName, settleIndex)
 	}
 
-	setAddIndexParams := sqlc.SetAccountIndexParams{
+	setAddIndexParams := sqlcmig6.SetAccountIndexParams{
 		Name:  addIndexName,
 		Value: int64(addIndex),
 	}
@@ -243,7 +308,7 @@ func migrateAccountsIndicesToSQL(ctx context.Context, kvStore kvdb.Backend,
 		return err
 	}
 
-	setSettleIndexParams := sqlc.SetAccountIndexParams{
+	setSettleIndexParams := sqlcmig6.SetAccountIndexParams{
 		Name:  settleIndexName,
 		Value: int64(settleIndex),
 	}
