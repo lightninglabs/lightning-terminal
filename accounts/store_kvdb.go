@@ -24,7 +24,7 @@ import (
 const (
 	// DBFilename is the filename within the data directory which contains
 	// the macaroon stores.
-	DBFilename = "accounts.db"
+	DBFilename = "accounts.DB"
 
 	// dbPathPermission is the default permission the account database
 	// directory is created with (if it does not exist).
@@ -60,7 +60,7 @@ var (
 
 // BoltStore wraps the bolt DB that stores all accounts and their balances.
 type BoltStore struct {
-	db    kvdb.Backend
+	DB    kvdb.Backend
 	clock clock.Clock
 }
 
@@ -101,7 +101,7 @@ func NewBoltStore(dir, fileName string, clock clock.Clock) (*BoltStore, error) {
 
 	// Return the DB wrapped in a BoltStore object.
 	return &BoltStore{
-		db:    db,
+		DB:    db,
 		clock: clock,
 	}, nil
 }
@@ -110,7 +110,7 @@ func NewBoltStore(dir, fileName string, clock clock.Clock) (*BoltStore, error) {
 //
 // NOTE: This is part of the Store interface.
 func (s *BoltStore) Close() error {
-	return s.db.Close()
+	return s.DB.Close()
 }
 
 // NewAccount creates a new OffChainBalanceAccount with the given balance and a
@@ -162,7 +162,7 @@ func (s *BoltStore) NewAccount(ctx context.Context, balance lnwire.MilliSatoshi,
 
 	// Try storing the account in the account database, so we can keep track
 	// of its balance.
-	err := s.db.Update(func(tx walletdb.ReadWriteTx) error {
+	err := s.DB.Update(func(tx walletdb.ReadWriteTx) error {
 		bucket := tx.ReadWriteBucket(accountBucketName)
 		if bucket == nil {
 			return ErrAccountBucketNotFound
@@ -364,7 +364,7 @@ func (s *BoltStore) DeleteAccountPayment(_ context.Context, id AccountID,
 func (s *BoltStore) updateAccount(id AccountID,
 	updateFn func(*OffChainBalanceAccount) error) error {
 
-	return s.db.Update(func(tx kvdb.RwTx) error {
+	return s.DB.Update(func(tx kvdb.RwTx) error {
 		bucket := tx.ReadWriteBucket(accountBucketName)
 		if bucket == nil {
 			return ErrAccountBucketNotFound
@@ -451,7 +451,7 @@ func (s *BoltStore) Account(_ context.Context, id AccountID) (
 	// Try looking up and reading the account by its ID from the local
 	// bolt DB.
 	var accountBinary []byte
-	err := s.db.View(func(tx kvdb.RTx) error {
+	err := s.DB.View(func(tx kvdb.RTx) error {
 		bucket := tx.ReadBucket(accountBucketName)
 		if bucket == nil {
 			return ErrAccountBucketNotFound
@@ -487,7 +487,7 @@ func (s *BoltStore) Accounts(_ context.Context) ([]*OffChainBalanceAccount,
 	error) {
 
 	var accounts []*OffChainBalanceAccount
-	err := s.db.View(func(tx kvdb.RTx) error {
+	err := s.DB.View(func(tx kvdb.RTx) error {
 		// This function will be called in the ForEach and receive
 		// the key and value of each account in the DB. The key, which
 		// is also the ID is not used because it is also marshaled into
@@ -531,7 +531,7 @@ func (s *BoltStore) Accounts(_ context.Context) ([]*OffChainBalanceAccount,
 //
 // NOTE: This is part of the Store interface.
 func (s *BoltStore) RemoveAccount(_ context.Context, id AccountID) error {
-	return s.db.Update(func(tx kvdb.RwTx) error {
+	return s.DB.Update(func(tx kvdb.RwTx) error {
 		bucket := tx.ReadWriteBucket(accountBucketName)
 		if bucket == nil {
 			return ErrAccountBucketNotFound
@@ -554,7 +554,7 @@ func (s *BoltStore) LastIndexes(_ context.Context) (uint64, uint64, error) {
 	var (
 		addValue, settleValue []byte
 	)
-	err := s.db.View(func(tx kvdb.RTx) error {
+	err := s.DB.View(func(tx kvdb.RTx) error {
 		bucket := tx.ReadBucket(accountBucketName)
 		if bucket == nil {
 			return ErrAccountBucketNotFound
@@ -592,7 +592,7 @@ func (s *BoltStore) StoreLastIndexes(_ context.Context, addIndex,
 	byteOrder.PutUint64(addValue, addIndex)
 	byteOrder.PutUint64(settleValue, settleIndex)
 
-	return s.db.Update(func(tx kvdb.RwTx) error {
+	return s.DB.Update(func(tx kvdb.RwTx) error {
 		bucket := tx.ReadWriteBucket(accountBucketName)
 		if bucket == nil {
 			return ErrAccountBucketNotFound

@@ -16,7 +16,8 @@ var isSqlite = true
 // NewTestDB is a helper function that creates an BBolt database for testing.
 func NewTestDB(t *testing.T, clock clock.Clock) FirewallDBs {
 	return createStore(
-		t, sqldb.NewTestSqliteDB(t, db.LitdMigrationStreams).BaseDB,
+		t,
+		sqldb.NewTestSqliteDB(t, db.MakeTestMigrationStreams()).BaseDB,
 		clock,
 	)
 }
@@ -26,7 +27,9 @@ func NewTestDB(t *testing.T, clock clock.Clock) FirewallDBs {
 func NewTestDBFromPath(t *testing.T, dbPath string,
 	clock clock.Clock) FirewallDBs {
 
-	tDb := sqldb.NewTestSqliteDBFromPath(t, dbPath, db.LitdMigrationStreams)
+	tDb := sqldb.NewTestSqliteDBFromPath(
+		t, dbPath, db.MakeTestMigrationStreams(),
+	)
 
 	return createStore(t, tDb.BaseDB, clock)
 }
