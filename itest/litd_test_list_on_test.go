@@ -24,6 +24,10 @@ var allTestCases = []*testCase{
 		test: testLargeHttpHeader,
 	},
 	{
+		name: "kvdb to sql migration",
+		test: testKvdbSQLMigration,
+	},
+	{
 		name:       "custom channels",
 		test:       testCustomChannels,
 		noAliceBob: true,
