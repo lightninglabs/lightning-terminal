@@ -91,6 +91,7 @@ var (
 	}
 	// nolint:ll
 	litdArgsTemplate = append(litdArgsTemplateNoOracle, []string{
+		"--taproot-assets.experimental.rfq.priceoracletlsinsecure",
 		"--taproot-assets.experimental.rfq.priceoracleaddress=" +
 			"use_mock_price_oracle_service_promise_to_" +
 			"not_use_on_mainnet",
@@ -101,6 +102,7 @@ var (
 
 	// nolint:ll
 	litdArgsTemplateDiffOracle = append(litdArgsTemplateNoOracle, []string{
+		"--taproot-assets.experimental.rfq.priceoracletlsinsecure",
 		"--taproot-assets.experimental.rfq.priceoracleaddress=" +
 			"use_mock_price_oracle_service_promise_to_" +
 			"not_use_on_mainnet",
@@ -4127,10 +4129,12 @@ func testCustomChannelsOraclePricing(ctx context.Context, net *NetworkHarness,
 
 	lndArgs := slices.Clone(lndArgsTemplate)
 	litdArgs := slices.Clone(litdArgsTemplateNoOracle)
-	litdArgs = append(litdArgs, fmt.Sprintf(
-		"--taproot-assets.experimental.rfq.priceoracleaddress="+
-			"rfqrpc://%s", oracleAddr,
-	))
+	litdArgs = append(litdArgs,
+		"--taproot-assets.experimental.rfq.priceoracletlsinsecure",
+		fmt.Sprintf(
+			"--taproot-assets.experimental.rfq.priceoracleaddress="+
+				"rfqrpc://%s", oracleAddr,
+		))
 
 	// We use Charlie as the proof courier. But in order for Charlie to also
 	// use itself, we need to define its port upfront.
@@ -4974,10 +4978,12 @@ func testCustomChannelsDecodeAssetInvoice(ctx context.Context,
 
 	lndArgs := slices.Clone(lndArgsTemplate)
 	litdArgs := slices.Clone(litdArgsTemplateNoOracle)
-	litdArgs = append(litdArgs, fmt.Sprintf(
-		"--taproot-assets.experimental.rfq.priceoracleaddress="+
-			"rfqrpc://%s", oracleAddr,
-	))
+	litdArgs = append(litdArgs,
+		"--taproot-assets.experimental.rfq.priceoracletlsinsecure",
+		fmt.Sprintf(
+			"--taproot-assets.experimental.rfq.priceoracleaddress="+
+				"rfqrpc://%s", oracleAddr,
+		))
 
 	// We'll just make a single node here, as this doesn't actually rely on
 	// a set of active channels.
