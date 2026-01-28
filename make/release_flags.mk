@@ -1,7 +1,7 @@
 include make/compile_flags.mk
 
 # Create a globally-consistent, build-input identifier.
-VERSION_TAG = $(shell git describe --abbrev=40 --broken --tags --always)
+VERSION_TAG = $(shell git describe --abbrev=40 --broken --tags --always --match 'v*')
 VERSION_CHECK = @$(call print, "Building master with date version tag")
 
 DOCKER_RELEASE_HELPER = docker run \
