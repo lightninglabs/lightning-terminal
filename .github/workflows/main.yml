@@ -339,7 +339,13 @@ jobs:
       - name: Zip log files on failure
         if: ${{ failure() }}
         timeout-minutes: 5
-        run: 7z a logs-itest-${{ matrix.name }}.zip itest/**/*.log
+        # Note that we move the itest logs into a "logs" folder not prefixed by
+        # a dot character (.) to ensure that they dir doesn't appear as a
+        # hidden folder when being downloaded.
+        run: |
+          mkdir -p itest/logs
+          cp -R itest/.logs/. itest/logs/
+          7z a logs-itest-${{ matrix.name }}.zip itest/logs itest/*.log
 
       - name: Upload log files on failure
         uses: actions/upload-artifact@v4
