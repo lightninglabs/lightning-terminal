@@ -38,7 +38,14 @@ type ChannelRestrictMgr struct {
 	// chanPointToID is a map from channel point to channel ID's for our
 	// known set of channels.
 	chanPointToID map[string]uint64
-	mu            sync.Mutex
+
+	// checkedIDs tracks channel IDs that we have already attempted to find
+	// in LND's list of open channels but were not present.
+	checkedIDs map[uint64]bool
+
+	// mu is a mutex used to protect the maps and other state in the manager
+	// from concurrent access.
+	mu sync.Mutex
 }
 
 // NewChannelRestrictMgr constructs a new instance of a ChannelRestrictMgr.
@@ -46,6 +53,7 @@ func NewChannelRestrictMgr() *ChannelRestrictMgr {
 	return &ChannelRestrictMgr{
 		chanIDToPoint: make(map[uint64]string),
 		chanPointToID: make(map[string]uint64),
+		checkedIDs:    make(map[uint64]bool),
 	}
 }
 
@@ -72,10 +80,13 @@ func (c *ChannelRestrictMgr) NewEnforcer(ctx context.Context, cfg Config,
 	chanMap := make(map[uint64]bool, len(channels.DenyList))
 	for _, chanID := range channels.DenyList {
 		chanMap[chanID] = true
-		err := c.maybeUpdateChannelMaps(ctx, cfg, chanID)
-		if err != nil {
-			return nil, err
-		}
+	}
+
+	// We'll attempt to update our internal channel maps for any IDs in our
+	// deny list that we don't already know about and haven't checked yet.
+	err := c.maybeUpdateChannelMaps(ctx, cfg, channels.DenyList)
+	if err != nil {
+		return nil, err
 	}
 
 	return &ChannelRestrictEnforcer{
@@ -118,17 +129,26 @@ func (c *ChannelRestrictMgr) EmptyValue() Values {
 }
 
 // maybeUpdateChannelMaps updates the ChannelRestrictMgrs set of known channels
-// iff the channel given by the caller is not found in the current map set.
+// iff any of the channels given by the caller are not found in the current
+// map set and have not been checked previously.
 func (c *ChannelRestrictMgr) maybeUpdateChannelMaps(ctx context.Context,
-	cfg Config, chanID uint64) error {
+	cfg Config, chanIDs []uint64) error {
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	// If we already know of this channel, we don't need to go update our
-	// maps.
-	_, ok := c.chanIDToPoint[chanID]
-	if ok {
+	var needsSync bool
+	for _, id := range chanIDs {
+		_, known := c.chanIDToPoint[id]
+		if !known && !c.checkedIDs[id] {
+			needsSync = true
+			break
+		}
+	}
+
+	// If we already know about all these channels or have checked them,
+	// then we don't need to do anything.
+	if !needsSync {
 		return nil
 	}
 
@@ -139,39 +159,59 @@ func (c *ChannelRestrictMgr) maybeUpdateChannelMaps(ctx context.Context,
 		return err
 	}
 
-	var (
-		found bool
-		point string
-		id    uint64
-	)
-
-	// Update our set of maps and also make sure that the channel specified
-	// by the caller is valid given our set of open channels.
+	// Update our set of maps with all currently open channels.
 	for _, channel := range chans {
-		point = channel.ChannelPoint
-		id = channel.ChannelID
-
-		c.chanPointToID[point] = id
-		c.chanIDToPoint[id] = point
-
-		if id == chanID {
-			found = true
-		}
+		c.chanPointToID[channel.ChannelPoint] = channel.ChannelID
+		c.chanIDToPoint[channel.ChannelID] = channel.ChannelPoint
 	}
 
-	if !found {
-		return fmt.Errorf("invalid channel ID")
+	// For every ID we were looking for, if it's still not in our known
+	// maps, we mark it as checked so we don't trigger another sync for it.
+	for _, id := range chanIDs {
+		if _, ok := c.chanIDToPoint[id]; !ok {
+			c.checkedIDs[id] = true
+		}
 	}
 
 	return nil
 }
 
-func (c *ChannelRestrictMgr) getChannelID(point string) (uint64, bool) {
+// getChannelIDWithRetryCheck performs an atomic lookup of a channel point
+// while also determining whether the caller should retry their request to allow
+// for channel mapping resynchronization. When a channel point is not found in
+// our known mappings, we must decide whether to allow the operation or request
+// a retry. If any entries in the deny list remain unmapped to channel points,
+// we cannot be certain whether the unknown channel is restricted, so we signal
+// for a retry to trigger a fresh synchronization with the node's current
+// channel state.
+func (c *ChannelRestrictMgr) getChannelIDWithRetryCheck(point string,
+	denyList []uint64) (id uint64, found bool, shouldRetry bool) {
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	id, ok := c.chanPointToID[point]
-	return id, ok
+	// First, check if we know this channel point.
+	id, found = c.chanPointToID[point]
+	if found {
+		return id, true, false
+	}
+
+	// Channel not found. Check if we have any unmapped deny list entries.
+	// If we do, we can't be sure whether this unknown channel is
+	// restricted or not, so we must trigger a retry to refresh our
+	// mappings.
+	for _, restrictedID := range denyList {
+		if _, mapped := c.chanIDToPoint[restrictedID]; !mapped {
+			// We have unmapped restrictions - clear the negative
+			// cache to force a fresh sync on retry.
+			c.checkedIDs = make(map[uint64]bool)
+			return 0, false, true
+		}
+	}
+
+	// Channel not found, but all deny list entries are mapped, so this
+	// unknown channel is definitely not in our restriction list.
+	return 0, false, false
 }
 
 // ChannelRestrictEnforcer enforces requests and responses against a
@@ -278,8 +318,23 @@ func (c *ChannelRestrictEnforcer) checkers() map[string]mid.RoundTripChecker {
 					"%s:%d", txid.String(), index,
 				)
 
-				id, ok := c.mgr.getChannelID(point)
-				if !ok {
+				// Atomically check if we know this channel and
+				// whether we need to retry.
+				id, found, shouldRetry := c.mgr.
+					getChannelIDWithRetryCheck(
+						point, c.DenyList,
+					)
+
+				if shouldRetry {
+					return fmt.Errorf("unknown channel " +
+						"point, please retry the " +
+						"request")
+				}
+
+				if !found {
+					// Channel is unknown but all deny list
+					// entries are mapped, so this channel
+					// is definitely not restricted.
 					return nil
 				}
 
