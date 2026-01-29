@@ -88,12 +88,11 @@ type privacyPairs = map[int64]map[string]string
 // NOTE: As sessions may contain linked sessions and accounts, the sessions and
 // accounts sql migration MUST be run prior to this migration.
 func MigrateFirewallDBToSQL(ctx context.Context, kvStore *bbolt.DB,
-	sqlTx SQLQueries, sessionDB session.SQLQueries,
-	accountDB accounts.SQLQueries, macRootKeyIDs [][]byte) error {
+	sqlTx SQLQueries, queries *sqlc.Queries, macRootKeyIDs [][]byte) error {
 
 	log.Infof("Starting migration of the rules DB to SQL")
 
-	sessions, err := sessionDB.ListSessions(ctx)
+	sessions, err := queries.ListSessions(ctx)
 	if err != nil {
 		return fmt.Errorf("listing sessions failed: %w", err)
 	}
@@ -114,8 +113,7 @@ func MigrateFirewallDBToSQL(ctx context.Context, kvStore *bbolt.DB,
 	}
 
 	err = migrateActionsToSQL(
-		ctx, kvStore, sqlTx, sessionDB, accountDB, macRootKeyIDs,
-		sessionMap,
+		ctx, kvStore, sqlTx, queries, macRootKeyIDs, sessionMap,
 	)
 	if err != nil {
 		return err
@@ -844,8 +842,7 @@ func validateGroupPairsMigration(ctx context.Context, sqlTx SQLQueries,
 // database to the SQL database. The function also asserts that the migrated
 // values match the original values in the actions store.
 func migrateActionsToSQL(ctx context.Context, kvStore *bbolt.DB,
-	sqlTx SQLQueries, sessionDB session.SQLQueries,
-	accountsDB accounts.SQLQueries, macRootKeyIDs [][]byte,
+	sqlTx SQLQueries, queries *sqlc.Queries, macRootKeyIDs [][]byte,
 	sessMap map[[4]byte]sqlc.Session) error {
 
 	log.Infof("Starting migration of the actions store to SQL")
@@ -853,7 +850,7 @@ func migrateActionsToSQL(ctx context.Context, kvStore *bbolt.DB,
 	// Start by fetching all accounts and sessions, and map them by their
 	// IDs. This will allow us to quickly look up any account(s) and/or
 	// session that match a specific action's macaroon identifier.
-	accts, err := accountsDB.ListAllAccounts(ctx)
+	accts, err := queries.ListAllAccounts(ctx)
 	if err != nil {
 		return fmt.Errorf("listing accounts failed: %w", err)
 	}
@@ -970,8 +967,8 @@ func migrateActionsToSQL(ctx context.Context, kvStore *bbolt.DB,
 				// validate that the action was correctly
 				// migrated.
 				err = migrateActionToSQL(
-					ctx, sqlTx, sessionDB, accountsDB,
-					acctsMap, sessMap, action, macRootKeyID,
+					ctx, sqlTx, queries, acctsMap, sessMap,
+					action, macRootKeyID,
 				)
 				if err != nil {
 					return fmt.Errorf("migrating action "+
@@ -995,9 +992,9 @@ func migrateActionsToSQL(ctx context.Context, kvStore *bbolt.DB,
 // migrateActionToSQL migrates a single action to the SQL database, and
 // validates that the action was correctly migrated.
 func migrateActionToSQL(ctx context.Context, sqlTx SQLQueries,
-	sessionDB session.SQLQueries, accountsDB accounts.SQLQueries,
-	acctsMap map[[4]byte][]sqlc.Account, sessMap map[[4]byte]sqlc.Session,
-	action *Action, macRootKeyID []byte) error {
+	queries *sqlc.Queries, acctsMap map[[4]byte][]sqlc.Account,
+	sessMap map[[4]byte]sqlc.Session, action *Action,
+	macRootKeyID []byte) error {
 
 	var (
 		macIDSuffix  [4]byte
@@ -1030,7 +1027,7 @@ func migrateActionToSQL(ctx context.Context, sqlTx SQLQueries,
 	case hasAccounts && hasSessions:
 		// Alternative (3) above.
 		insertParams, err = paramsFromBothSessionAndAccounts(
-			ctx, accountsDB, action, actAccounts, actSession,
+			ctx, queries, action, actAccounts, actSession,
 			macRootKeyID,
 		)
 	case hasSessions:
@@ -1041,7 +1038,7 @@ func migrateActionToSQL(ctx context.Context, sqlTx SQLQueries,
 	case hasAccounts:
 		// Alternative (2) above.
 		insertParams, err = paramsFromAccounts(
-			ctx, accountsDB, action, actAccounts, macRootKeyID)
+			ctx, queries, action, actAccounts, macRootKeyID)
 	default:
 		// Alternative (4) above.
 		insertParams = paramsFromAction(action, macRootKeyID)
@@ -1061,7 +1058,7 @@ func migrateActionToSQL(ctx context.Context, sqlTx SQLQueries,
 
 	// Finally, validate that the action was correctly migrated.
 	return validateMigratedAction(
-		ctx, sqlTx, sessionDB, action, insertParams, migratedActionID,
+		ctx, sqlTx, queries, action, insertParams, migratedActionID,
 	)
 }
 
@@ -1070,7 +1067,7 @@ func migrateActionToSQL(ctx context.Context, sqlTx SQLQueries,
 // action, the insert params used to insert the action into the SQL DB,
 // and the ID of the migrated action in the SQL DB.
 func validateMigratedAction(ctx context.Context, sqlTx SQLQueries,
-	sessionDB session.SQLQueries, kvAction *Action,
+	queries *sqlc.Queries, kvAction *Action,
 	insertParams sqlc.InsertActionParams, migratedActionID int64) error {
 
 	// First, fetch the action back from the SQL DB.
@@ -1096,7 +1093,7 @@ func validateMigratedAction(ctx context.Context, sqlTx SQLQueries,
 	// fields were set to. This is required in order to make the KVDB and
 	// SQL actions comparable.
 	if insertParams.SessionID.Valid {
-		sess, err := sessionDB.GetSessionByID(
+		sess, err := queries.GetSessionByID(
 			ctx, insertParams.SessionID.Int64,
 		)
 		if err != nil {
@@ -1108,7 +1105,7 @@ func validateMigratedAction(ctx context.Context, sqlTx SQLQueries,
 	}
 
 	if insertParams.AccountID.Valid {
-		acct, err := sessionDB.GetAccount(
+		acct, err := queries.GetAccount(
 			ctx, insertParams.AccountID.Int64,
 		)
 		if err != nil {
@@ -1172,7 +1169,7 @@ func validateMigratedAction(ctx context.Context, sqlTx SQLQueries,
 // to the potential linked account with the earliest expiry (where accounts
 // that do not expire is seen as the earliest).
 func paramsFromBothSessionAndAccounts(ctx context.Context,
-	accountsDB accounts.SQLQueries, action *Action, actAccts []sqlc.Account,
+	queries *sqlc.Queries, action *Action, actAccts []sqlc.Account,
 	sess sqlc.Session, macRootKeyID []byte) (sqlc.InsertActionParams,
 	error) {
 
@@ -1180,7 +1177,7 @@ func paramsFromBothSessionAndAccounts(ctx context.Context,
 	// be responsible for the action, or if they should be filtered out.
 	sessOpt := getMatchingSessionForAction(action, sess)
 	acctOpt, err := getMatchingAccountForAction(
-		ctx, accountsDB, action, actAccts,
+		ctx, queries, action, actAccts,
 	)
 	if err != nil {
 		return sqlc.InsertActionParams{}, err
@@ -1195,7 +1192,7 @@ func paramsFromBothSessionAndAccounts(ctx context.Context,
 		// If the session was filtered out, but we still have an
 		// account, we link the action to the account.
 		return paramsFromAccounts(
-			ctx, accountsDB, action, actAccts, macRootKeyID,
+			ctx, queries, action, actAccts, macRootKeyID,
 		)
 	case sessOpt.IsSome():
 		return paramsFromSession(action, sess, macRootKeyID)
@@ -1227,12 +1224,12 @@ func paramsFromSession(action *Action, actSess sqlc.Session,
 // paramsFromAccounts returns the insert params for an action linked to an
 // account. If no matching account is found for the action, the action will not
 // be linked to any account.
-func paramsFromAccounts(ctx context.Context, accountsDB accounts.SQLQueries,
+func paramsFromAccounts(ctx context.Context, queries *sqlc.Queries,
 	action *Action, actAccts []sqlc.Account,
 	macRootKeyID []byte) (sqlc.InsertActionParams, error) {
 
 	acctOpt, err := getMatchingAccountForAction(
-		ctx, accountsDB, action, actAccts,
+		ctx, queries, action, actAccts,
 	)
 	if err != nil {
 		return sqlc.InsertActionParams{}, err
@@ -1305,7 +1302,7 @@ func getMatchingSessionForAction(action *Action,
 // reasoning that such accounts were more likely to have existed at the time of
 // the action, as we have no way of tracking when the account was created.
 func getMatchingAccountForAction(ctx context.Context,
-	accountsDB accounts.SQLQueries, action *Action,
+	queries *sqlc.Queries, action *Action,
 	actAccts []sqlc.Account) (fn.Option[sqlc.Account], error) {
 
 	// sendMethods is the RPC methods that trigger payments to be added an
@@ -1336,12 +1333,12 @@ func getMatchingAccountForAction(ctx context.Context,
 			continue
 		}
 
-		invoices, err := accountsDB.ListAccountInvoices(ctx, a.ID)
+		invoices, err := queries.ListAccountInvoices(ctx, a.ID)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return fn.None[sqlc.Account](), fmt.Errorf("listing "+
 				"invoices for account %d failed: %w", a.ID, err)
 		}
-		payments, err := accountsDB.ListAccountPayments(ctx, a.ID)
+		payments, err := queries.ListAccountPayments(ctx, a.ID)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return fn.None[sqlc.Account](), fmt.Errorf("listing "+
 				"payments for account %d failed: %w", a.ID, err)

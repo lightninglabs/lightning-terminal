@@ -5,7 +5,9 @@ import (
 	"database/sql"
 
 	"github.com/lightninglabs/lightning-terminal/db"
+	"github.com/lightninglabs/lightning-terminal/db/sqlc"
 	"github.com/lightningnetwork/lnd/clock"
+	"github.com/lightningnetwork/lnd/sqldb/v2"
 )
 
 // SQLSessionQueries is a subset of the sqlc.Queries interface that can be used
@@ -18,17 +20,20 @@ type SQLSessionQueries interface {
 // SQLQueries is a subset of the sqlc.Queries interface that can be used to
 // interact with various firewalldb tables.
 type SQLQueries interface {
+	sqldb.BaseQuerier
+
 	SQLKVStoreQueries
 	SQLPrivacyPairQueries
 	SQLActionQueries
 }
 
-// BatchedSQLQueries is a version of the SQLQueries that's capable of batched
-// database operations.
+// BatchedSQLQueries combines the SQLQueries interface with the BatchedTx
+// interface, allowing for multiple queries to be executed in single SQL
+// transaction.
 type BatchedSQLQueries interface {
 	SQLQueries
 
-	db.BatchedTx[SQLQueries]
+	sqldb.BatchedTx[SQLQueries]
 }
 
 // SQLDB represents a storage backend.
@@ -38,9 +43,29 @@ type SQLDB struct {
 	db BatchedSQLQueries
 
 	// BaseDB represents the underlying database connection.
-	*db.BaseDB
+	*sqldb.BaseDB
 
 	clock clock.Clock
+}
+
+type sqlQueriesExecutor[T sqldb.BaseQuerier] struct {
+	*sqldb.TransactionExecutor[T]
+
+	SQLQueries
+}
+
+func newSQLQueriesExecutor(baseDB *sqldb.BaseDB,
+	queries *sqlc.Queries) *sqlQueriesExecutor[SQLQueries] {
+
+	executor := sqldb.NewTransactionExecutor(
+		baseDB, func(tx *sql.Tx) SQLQueries {
+			return queries.WithTx(tx)
+		},
+	)
+	return &sqlQueriesExecutor[SQLQueries]{
+		TransactionExecutor: executor,
+		SQLQueries:          queries,
+	}
 }
 
 // A compile-time assertion to ensure that SQLDB implements the RulesDB
@@ -53,12 +78,10 @@ var _ ActionDB = (*SQLDB)(nil)
 
 // NewSQLDB creates a new SQLStore instance given an open SQLQueries
 // storage backend.
-func NewSQLDB(sqlDB *db.BaseDB, clock clock.Clock) *SQLDB {
-	executor := db.NewTransactionExecutor(
-		sqlDB, func(tx *sql.Tx) SQLQueries {
-			return sqlDB.WithTx(tx)
-		},
-	)
+func NewSQLDB(sqlDB *sqldb.BaseDB, queries *sqlc.Queries,
+	clock clock.Clock) *SQLDB {
+
+	executor := newSQLQueriesExecutor(sqlDB, queries)
 
 	return &SQLDB{
 		db:     executor,
@@ -88,7 +111,7 @@ func (e *sqlExecutor[T]) Update(ctx context.Context,
 	var txOpts db.QueriesTxOptions
 	return e.db.ExecTx(ctx, &txOpts, func(queries SQLQueries) error {
 		return fn(ctx, e.wrapTx(queries))
-	})
+	}, sqldb.NoOpReset)
 }
 
 // View opens a database read transaction and executes the function f with the
@@ -104,5 +127,5 @@ func (e *sqlExecutor[T]) View(ctx context.Context,
 
 	return e.db.ExecTx(ctx, &txOpts, func(queries SQLQueries) error {
 		return fn(ctx, e.wrapTx(queries))
-	})
+	}, sqldb.NoOpReset)
 }

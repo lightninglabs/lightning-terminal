@@ -1,6 +1,6 @@
 module github.com/lightninglabs/lightning-terminal
 
-go 1.24.9
+go 1.24.11
 
 require (
 	github.com/btcsuite/btcd v0.24.3-0.20250318170759-4f4ea81776d6
@@ -11,7 +11,7 @@ require (
 	github.com/btcsuite/btcwallet/walletdb v1.5.1
 	github.com/davecgh/go-spew v1.1.1
 	github.com/go-errors/errors v1.0.1
-	github.com/golang-migrate/migrate/v4 v4.17.0
+	github.com/golang-migrate/migrate/v4 v4.19.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.22.0
 	github.com/improbable-eng/grpc-web v0.12.0
 	github.com/jackc/pgconn v1.14.3
@@ -20,8 +20,8 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/lightninglabs/faraday v0.2.16-alpha
 	github.com/lightninglabs/faraday/frdrpc v1.0.1
-	github.com/lightninglabs/lightning-node-connect/gbn v1.0.1
-	github.com/lightninglabs/lightning-node-connect/mailbox v1.0.1
+	github.com/lightninglabs/lightning-node-connect/gbn v1.0.2-0.20250610182311-2f1d46ef18b7
+	github.com/lightninglabs/lightning-node-connect/mailbox v1.0.2-0.20250610182311-2f1d46ef18b7
 	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.3
 	github.com/lightninglabs/lightning-terminal/litrpc v1.0.2
 	github.com/lightninglabs/lightning-terminal/perms v1.0.1
@@ -32,15 +32,16 @@ require (
 	github.com/lightninglabs/pool v0.6.6-beta
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.3
 	github.com/lightninglabs/pool/poolrpc v1.0.1
-	github.com/lightninglabs/taproot-assets v0.7.0
-	github.com/lightninglabs/taproot-assets/taprpc v1.0.11
-	github.com/lightningnetwork/lnd v0.20.0-beta
+	github.com/lightninglabs/taproot-assets v0.7.1-0.20260127120359-89b1ea3a7888
+	github.com/lightninglabs/taproot-assets/taprpc v1.0.12-0.20260121192339-ac2ec3419cec
+	github.com/lightningnetwork/lnd v0.20.0-beta.rc4.0.20251127014118-f8b5cb0e8918
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/clock v1.1.1
 	github.com/lightningnetwork/lnd/fn v1.2.5
 	github.com/lightningnetwork/lnd/fn/v2 v2.0.9
 	github.com/lightningnetwork/lnd/kvdb v1.4.16
 	github.com/lightningnetwork/lnd/sqldb v1.0.11
+	github.com/lightningnetwork/lnd/sqldb/v2 v2.0.0-00010101000000-000000000000
 	github.com/lightningnetwork/lnd/tlv v1.3.2
 	github.com/lightningnetwork/lnd/tor v1.1.6
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
@@ -51,14 +52,14 @@ require (
 	github.com/urfave/cli v1.22.14
 	go.etcd.io/bbolt v1.4.3
 	golang.org/x/crypto v0.45.0
-	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
+	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b
 	golang.org/x/net v0.47.0
 	golang.org/x/sync v0.18.0
 	google.golang.org/grpc v1.65.0
 	google.golang.org/protobuf v1.36.5
 	gopkg.in/macaroon-bakery.v2 v2.3.0
 	gopkg.in/macaroon.v2 v2.1.0
-	modernc.org/sqlite v1.34.5
+	modernc.org/sqlite v1.38.2
 	pgregory.net/rapid v1.2.0
 )
 
@@ -87,6 +88,7 @@ require (
 	github.com/caddyserver/certmagic v0.17.2 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/coder/websocket v1.8.13 // indirect
 	github.com/containerd/continuity v0.3.0 // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf // indirect
@@ -97,7 +99,7 @@ require (
 	github.com/decred/dcrd/lru v1.1.2 // indirect
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/docker/cli v28.1.1+incompatible // indirect
-	github.com/docker/docker v28.1.1+incompatible // indirect
+	github.com/docker/docker v28.3.3+incompatible // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
@@ -143,11 +145,11 @@ require (
 	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
 	github.com/libdns/libdns v0.2.1 // indirect
-	github.com/lightninglabs/aperture v0.3.13-beta // indirect
+	github.com/lightninglabs/aperture v0.4.0 // indirect
 	github.com/lightninglabs/gozmq v0.0.0-20191113021534-d20a764486bf // indirect
-	github.com/lightninglabs/lightning-node-connect/hashmailrpc v1.0.3 // indirect
+	github.com/lightninglabs/lightning-node-connect/hashmailrpc v1.0.4-0.20250610182311-2f1d46ef18b7 // indirect
 	github.com/lightninglabs/neutrino v0.16.1 // indirect
-	github.com/lightninglabs/neutrino/cache v1.1.2 // indirect
+	github.com/lightninglabs/neutrino/cache v1.1.3 // indirect
 	github.com/lightningnetwork/lightning-onion v1.2.1-0.20240815225420-8b40adf04ab9 // indirect
 	github.com/lightningnetwork/lnd/healthcheck v1.2.6 // indirect
 	github.com/lightningnetwork/lnd/queue v1.1.1 // indirect
@@ -221,15 +223,14 @@ require (
 	golang.org/x/tools v0.38.0 // indirect
 	google.golang.org/genproto v0.0.0-20240213162025-012b6fc9bca9 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240814211410-ddb44dafa142 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240814211410-ddb44dafa142 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
 	gopkg.in/errgo.v1 v1.0.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	modernc.org/libc v1.55.3 // indirect
-	modernc.org/mathutil v1.6.0 // indirect
-	modernc.org/memory v1.8.0 // indirect
-	nhooyr.io/websocket v1.8.7 // indirect
+	modernc.org/libc v1.66.3 // indirect
+	modernc.org/mathutil v1.7.1 // indirect
+	modernc.org/memory v1.11.0 // indirect
 	sigs.k8s.io/yaml v1.2.0 // indirect
 )
 
@@ -248,7 +249,11 @@ replace google.golang.org/protobuf => github.com/lightninglabs/protobuf-go-hex-d
 // functionality that did not yet make it into the upstream repository. Because
 // it is a replace in the tapd repository, it doesn't get propagated here
 // automatically, so we need to add it manually.
-replace github.com/golang-migrate/migrate/v4 => github.com/lightninglabs/migrate/v4 v4.18.2-9023d66a-fork-pr-2
+replace github.com/golang-migrate/migrate/v4 => github.com/lightninglabs/migrate/v4 v4.18.2-9023d66a-fork-pr-2.0.20251211093704-71c1eef09789
 
 // The upstream nhooyr.io/websocket repository has been moved to github.com/coder/websocket.
 replace nhooyr.io/websocket => github.com/coder/websocket v1.8.7
+
+// TODO: Remove these replace directives after the sqldb/v2 module is
+// published.
+replace github.com/lightningnetwork/lnd/sqldb/v2 => github.com/ViktorT-11/lnd/sqldb/v2 v2.0.0-20260123000653-a803b19d1e1e
