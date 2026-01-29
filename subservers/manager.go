@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"sort"
 	"sync"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/perms"
 	"github.com/lightninglabs/lightning-terminal/status"
 	"github.com/lightninglabs/lndclient"
+	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/lncfg"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	grpcProxy "github.com/mwitkow/grpc-proxy/proxy"
@@ -29,7 +31,33 @@ var (
 	// defaultConnectTimeout is the default timeout for connecting to the
 	// backend.
 	defaultConnectTimeout = 15 * time.Second
+
+	// criticalIntegratedSubServers lists integrated sub-servers that must
+	// succeed during startup. Failures from these sub-servers are surfaced
+	// to LiT and abort the startup sequence.
+	criticalIntegratedSubServers = fn.NewSet[string](TAP)
 )
+
+// CriticalIntegratedSubServerError signals a startup failure for a critical
+// integrated sub-server.
+type CriticalIntegratedSubServerError struct {
+	// Name is the sub-server name that failed to start.
+	Name string
+
+	// Err is the underlying startup error.
+	Err error
+}
+
+// Error returns the formatted error string.
+func (e *CriticalIntegratedSubServerError) Error() string {
+	return fmt.Sprintf("critical integrated sub-server failed to "+
+		"start (subserver=%s): %v", e.Name, e.Err)
+}
+
+// Unwrap returns the underlying error.
+func (e *CriticalIntegratedSubServerError) Unwrap() error {
+	return e.Err
+}
 
 // Manager manages a set of subServer objects.
 type Manager struct {
@@ -104,14 +132,37 @@ func (s *Manager) GetServer(name string) (SubServer, bool) {
 }
 
 // StartIntegratedServers starts all the manager's sub-servers that should be
-// started in integrated mode.
+// started in integrated mode. An error is returned if any critical integrated
+// sub-server fails to start.
 func (s *Manager) StartIntegratedServers(lndClient lnrpc.LightningClient,
-	lndGrpc *lndclient.GrpcLndServices, withMacaroonService bool) {
+	lndGrpc *lndclient.GrpcLndServices, withMacaroonService bool) error {
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	// Sort for deterministic startup: critical integrated sub-servers
+	// first, then alphabetical to keep the order stable across runs.
+	servers := make([]*subServerWrapper, 0, len(s.servers))
 	for _, ss := range s.servers {
+		servers = append(servers, ss)
+	}
+
+	sort.Slice(servers, func(i, j int) bool {
+		iCritical := criticalIntegratedSubServers.Contains(
+			servers[i].Name(),
+		)
+		jCritical := criticalIntegratedSubServers.Contains(
+			servers[j].Name(),
+		)
+
+		if iCritical != jCritical {
+			return iCritical
+		}
+
+		return servers[i].Name() < servers[j].Name()
+	})
+
+	for _, ss := range servers {
 		if ss.Remote() {
 			continue
 		}
@@ -126,11 +177,21 @@ func (s *Manager) StartIntegratedServers(lndClient lnrpc.LightningClient,
 		)
 		if err != nil {
 			s.statusServer.SetErrored(ss.Name(), err.Error())
+
+			if criticalIntegratedSubServers.Contains(ss.Name()) {
+				return &CriticalIntegratedSubServerError{
+					Name: ss.Name(),
+					Err:  err,
+				}
+			}
+
 			continue
 		}
 
 		s.statusServer.SetRunning(ss.Name())
 	}
+
+	return nil
 }
 
 // ConnectRemoteSubServers creates connections to all the manager's sub-servers
