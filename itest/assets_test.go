@@ -2063,6 +2063,43 @@ func assertPaymentHtlcAssets(t *testing.T, node *HarnessNode, payHash []byte,
 	require.InDelta(t, assetAmount, totalAssetAmount, 1)
 }
 
+func waitForForwardingEvent(t *testing.T, client *tapClient,
+	req *rfqrpc.ForwardingHistoryRequest,
+	match func(*rfqrpc.ForwardingEvent) bool) (
+	*rfqrpc.ForwardingHistoryResponse, *rfqrpc.ForwardingEvent) {
+
+	t.Helper()
+
+	var (
+		resp    *rfqrpc.ForwardingHistoryResponse
+		matched *rfqrpc.ForwardingEvent
+	)
+
+	err := wait.NoError(func() error {
+		ctxb := context.Background()
+		ctxt, cancel := context.WithTimeout(ctxb, shortTimeout)
+		defer cancel()
+
+		var err error
+		resp, err = client.ForwardingHistory(ctxt, req)
+		if err != nil {
+			return err
+		}
+
+		for _, fwd := range resp.Forwards {
+			if match(fwd) {
+				matched = fwd
+				return nil
+			}
+		}
+
+		return fmt.Errorf("no matching forwarding events")
+	}, defaultTimeout)
+	require.NoError(t, err)
+
+	return resp, matched
+}
+
 type assetHodlInvoice struct {
 	preimage lntypes.Preimage
 	payReq   string
