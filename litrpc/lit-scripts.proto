@@ -1,0 +1,529 @@
+syntax = "proto3";
+
+package litrpc;
+
+option go_package = "github.com/lightninglabs/lightning-terminal/litrpc";
+
+import "lit-sessions.proto";
+
+// Scripts provides a Starlark scripting system for automating LND operations.
+// Scripts can access LND and subdaemon RPCs using native macaroon permissions.
+service Scripts {
+    /* litcli: `scripts create`
+    CreateScript creates a new script with the specified permissions.
+    A macaroon will be baked with the given permissions for the script to use.
+    */
+    rpc CreateScript (CreateScriptRequest) returns (CreateScriptResponse);
+
+    /* litcli: `scripts update`
+    UpdateScript updates an existing script's source code or configuration.
+    */
+    rpc UpdateScript (UpdateScriptRequest) returns (UpdateScriptResponse);
+
+    /* litcli: `scripts delete`
+    DeleteScript removes a script from the system. Running scripts will be
+    stopped first.
+    */
+    rpc DeleteScript (DeleteScriptRequest) returns (DeleteScriptResponse);
+
+    /* litcli: `scripts get`
+    GetScript retrieves a script by name.
+    */
+    rpc GetScript (GetScriptRequest) returns (GetScriptResponse);
+
+    /* litcli: `scripts list`
+    ListScripts returns all scripts in the system.
+    */
+    rpc ListScripts (ListScriptsRequest) returns (ListScriptsResponse);
+
+    /* litcli: `scripts start`
+    StartScript begins execution of a script. For long-running scripts, this
+    will start the script in the background with any configured subscriptions.
+    */
+    rpc StartScript (StartScriptRequest) returns (StartScriptResponse);
+
+    /* litcli: `scripts stop`
+    StopScript stops a running script.
+    */
+    rpc StopScript (StopScriptRequest) returns (StopScriptResponse);
+
+    /* litcli: `scripts running`
+    ListRunningScripts returns all currently running scripts.
+    */
+    rpc ListRunningScripts (ListRunningScriptsRequest)
+        returns (ListRunningScriptsResponse);
+
+    /* litcli: `scripts validate`
+    ValidateScript checks the syntax of a script without creating it.
+    */
+    rpc ValidateScript (ValidateScriptRequest) returns (ValidateScriptResponse);
+
+    /* litcli: `scripts history`
+    GetExecutionHistory returns the execution history for a script.
+    */
+    rpc GetExecutionHistory (GetExecutionHistoryRequest)
+        returns (GetExecutionHistoryResponse);
+
+    /* litcli: `scripts kv get`
+    KVGet retrieves a value from the script KV store.
+    */
+    rpc KVGet (KVGetRequest) returns (KVGetResponse);
+
+    /* litcli: `scripts kv put`
+    KVPut stores a value in the script KV store.
+    */
+    rpc KVPut (KVPutRequest) returns (KVPutResponse);
+
+    /* litcli: `scripts kv delete`
+    KVDelete removes a value from the script KV store.
+    */
+    rpc KVDelete (KVDeleteRequest) returns (KVDeleteResponse);
+
+    /* litcli: `scripts kv list`
+    KVList returns all keys in a bucket, optionally filtered by prefix.
+    */
+    rpc KVList (KVListRequest) returns (KVListResponse);
+}
+
+// Script represents a Starlark script with its configuration.
+message Script {
+    /*
+    The unique name of the script.
+    */
+    string name = 1;
+
+    /*
+    An optional description of what the script does.
+    */
+    string description = 2;
+
+    /*
+    The Starlark source code.
+    */
+    string source = 3;
+
+    /*
+    The permissions that were used to bake the script's macaroon.
+    */
+    repeated MacaroonPermission permissions = 4;
+
+    /*
+    Timeout in seconds for script execution. 0 means no timeout (for
+    long-running scripts that use subscriptions).
+    */
+    uint32 timeout_secs = 5;
+
+    /*
+    Maximum memory in bytes the script can use.
+    */
+    uint64 max_memory_bytes = 6 [jstype = JS_STRING];
+
+    /*
+    URL patterns that the script is allowed to access via http_get.
+    Supports glob patterns like "https://api.example.com/".
+    */
+    repeated string allowed_urls = 7;
+
+    /*
+    KV bucket names the script can access in addition to its own default
+    bucket (which has the same name as the script).
+    */
+    repeated string allowed_buckets = 8;
+
+    /*
+    Unix timestamp when the script was created.
+    */
+    uint64 created_at = 9 [jstype = JS_STRING];
+
+    /*
+    Unix timestamp when the script was last updated.
+    */
+    uint64 updated_at = 10 [jstype = JS_STRING];
+
+    /*
+    Whether the script is currently running.
+    */
+    bool is_running = 11;
+}
+
+// CreateScriptRequest is used to create a new script.
+message CreateScriptRequest {
+    /*
+    The unique name for the script.
+    */
+    string name = 1;
+
+    /*
+    An optional description of what the script does.
+    */
+    string description = 2;
+
+    /*
+    The Starlark source code.
+    */
+    string source = 3;
+
+    /*
+    The permissions to bake into the script's macaroon. These determine what
+    RPCs the script can call.
+    */
+    repeated MacaroonPermission permissions = 4;
+
+    /*
+    Timeout in seconds for script execution. 0 means no timeout.
+    */
+    uint32 timeout_secs = 5;
+
+    /*
+    Maximum memory in bytes the script can use. Defaults to 100MB if not set.
+    */
+    uint64 max_memory_bytes = 6 [jstype = JS_STRING];
+
+    /*
+    URL patterns that the script is allowed to access via http_get.
+    */
+    repeated string allowed_urls = 7;
+
+    /*
+    KV bucket names the script can access beyond its own default bucket.
+    */
+    repeated string allowed_buckets = 8;
+}
+
+message CreateScriptResponse {
+    /*
+    The created script.
+    */
+    Script script = 1;
+}
+
+message UpdateScriptRequest {
+    /*
+    The name of the script to update.
+    */
+    string name = 1;
+
+    /*
+    The new description. If empty, the existing description is kept.
+    */
+    string description = 2;
+
+    /*
+    The new source code. If empty, the existing source is kept.
+    */
+    string source = 3;
+
+    /*
+    New permissions. If empty, existing permissions are kept.
+    Note: Changing permissions will bake a new macaroon.
+    */
+    repeated MacaroonPermission permissions = 4;
+
+    /*
+    New timeout. Set to 0 to indicate no timeout.
+    */
+    uint32 timeout_secs = 5;
+
+    /*
+    New memory limit. Set to 0 to keep existing limit.
+    */
+    uint64 max_memory_bytes = 6 [jstype = JS_STRING];
+
+    /*
+    New URL allowlist. Set to replace existing list.
+    */
+    repeated string allowed_urls = 7;
+
+    /*
+    New bucket allowlist. Set to replace existing list.
+    */
+    repeated string allowed_buckets = 8;
+}
+
+message UpdateScriptResponse {
+    /*
+    The updated script.
+    */
+    Script script = 1;
+}
+
+message DeleteScriptRequest {
+    /*
+    The name of the script to delete.
+    */
+    string name = 1;
+
+    /*
+    If true, also delete the script's KV bucket data.
+    */
+    bool delete_kv_data = 2;
+}
+
+message DeleteScriptResponse {
+}
+
+message GetScriptRequest {
+    /*
+    The name of the script to retrieve.
+    */
+    string name = 1;
+}
+
+message GetScriptResponse {
+    /*
+    The requested script.
+    */
+    Script script = 1;
+}
+
+message ListScriptsRequest {
+}
+
+message ListScriptsResponse {
+    /*
+    All scripts in the system.
+    */
+    repeated Script scripts = 1;
+}
+
+message StartScriptRequest {
+    /*
+    The name of the script to start.
+    */
+    string name = 1;
+
+    /*
+    Optional JSON-encoded arguments to pass to the script's main function.
+    These will be passed as keyword arguments.
+    */
+    string args_json = 2;
+}
+
+message StartScriptResponse {
+    /*
+    The execution ID for this run.
+    */
+    uint64 execution_id = 1 [jstype = JS_STRING];
+
+    /*
+    For short-running scripts (with timeout), the result is returned directly.
+    For long-running scripts, this will be empty and status can be checked via
+    ListRunningScripts.
+    */
+    string result_json = 2;
+}
+
+message StopScriptRequest {
+    /*
+    The name of the script to stop.
+    */
+    string name = 1;
+}
+
+message StopScriptResponse {
+}
+
+message ListRunningScriptsRequest {
+}
+
+message ListRunningScriptsResponse {
+    /*
+    Currently running scripts.
+    */
+    repeated RunningScript running_scripts = 1;
+}
+
+message RunningScript {
+    /*
+    The script name.
+    */
+    string name = 1;
+
+    /*
+    The execution ID.
+    */
+    uint64 execution_id = 2 [jstype = JS_STRING];
+
+    /*
+    Unix timestamp when execution started.
+    */
+    uint64 started_at = 3 [jstype = JS_STRING];
+}
+
+message ValidateScriptRequest {
+    /*
+    The Starlark source code to validate.
+    */
+    string source = 1;
+}
+
+message ValidateScriptResponse {
+    /*
+    Whether the script is valid.
+    */
+    bool valid = 1;
+
+    /*
+    If not valid, the error message.
+    */
+    string error = 2;
+
+    /*
+    List of warnings (non-fatal issues).
+    */
+    repeated string warnings = 3;
+}
+
+message GetExecutionHistoryRequest {
+    /*
+    The script name to get history for. If empty, returns history for all
+    scripts.
+    */
+    string name = 1;
+
+    /*
+    Maximum number of executions to return.
+    */
+    uint32 limit = 2;
+
+    /*
+    Offset for pagination.
+    */
+    uint32 offset = 3;
+}
+
+message GetExecutionHistoryResponse {
+    /*
+    The execution history.
+    */
+    repeated ScriptExecution executions = 1;
+}
+
+// ScriptExecution represents a single execution of a script.
+message ScriptExecution {
+    /*
+    The execution ID.
+    */
+    uint64 id = 1 [jstype = JS_STRING];
+
+    /*
+    The name of the script that was executed.
+    */
+    string script_name = 2;
+
+    /*
+    Unix timestamp when execution started.
+    */
+    uint64 started_at = 3 [jstype = JS_STRING];
+
+    /*
+    Unix timestamp when execution ended. 0 if still running.
+    */
+    uint64 ended_at = 4 [jstype = JS_STRING];
+
+    /*
+    The execution state: 'running', 'completed', 'failed', 'stopped'.
+    */
+    string state = 5;
+
+    /*
+    JSON-encoded result if completed successfully.
+    */
+    string result_json = 6;
+
+    /*
+    Error message if the execution failed.
+    */
+    string error_message = 7;
+
+    /*
+    Duration in milliseconds.
+    */
+    uint64 duration_ms = 8 [jstype = JS_STRING];
+}
+
+// KVGetRequest retrieves a value from the KV store.
+message KVGetRequest {
+    /*
+    The key to retrieve.
+    */
+    string key = 1;
+
+    /*
+    The bucket to retrieve from. Defaults to the caller's script name bucket
+    if not specified.
+    */
+    string bucket = 2;
+}
+
+message KVGetResponse {
+    /*
+    The value, if found.
+    */
+    bytes value = 1;
+
+    /*
+    Whether the key was found.
+    */
+    bool found = 2;
+}
+
+// KVPutRequest stores a value in the KV store.
+message KVPutRequest {
+    /*
+    The key to store.
+    */
+    string key = 1;
+
+    /*
+    The value to store.
+    */
+    bytes value = 2;
+
+    /*
+    The bucket to store in. Defaults to the caller's script name bucket
+    if not specified.
+    */
+    string bucket = 3;
+}
+
+message KVPutResponse {
+}
+
+// KVDeleteRequest removes a value from the KV store.
+message KVDeleteRequest {
+    /*
+    The key to delete.
+    */
+    string key = 1;
+
+    /*
+    The bucket to delete from. Defaults to the caller's script name bucket
+    if not specified.
+    */
+    string bucket = 2;
+}
+
+message KVDeleteResponse {
+}
+
+// KVListRequest lists keys in a bucket.
+message KVListRequest {
+    /*
+    Optional prefix to filter keys by.
+    */
+    string prefix = 1;
+
+    /*
+    The bucket to list from. Defaults to the caller's script name bucket
+    if not specified.
+    */
+    string bucket = 2;
+}
+
+message KVListResponse {
+    /*
+    The keys in the bucket that match the prefix.
+    */
+    repeated string keys = 1;
+}

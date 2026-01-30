@@ -1,0 +1,45 @@
+type: google.api.Service
+config_version: 3
+
+http:
+  rules:
+
+    # Scripts CRUD
+    - selector: litrpc.Scripts.CreateScript
+      post: "/v1/scripts"
+      body: "*"
+    - selector: litrpc.Scripts.UpdateScript
+      put: "/v1/scripts/{name}"
+      body: "*"
+    - selector: litrpc.Scripts.DeleteScript
+      delete: "/v1/scripts/{name}"
+    - selector: litrpc.Scripts.GetScript
+      get: "/v1/scripts/{name}"
+    - selector: litrpc.Scripts.ListScripts
+      get: "/v1/scripts"
+
+    # Script execution
+    - selector: litrpc.Scripts.StartScript
+      post: "/v1/scripts/{name}/start"
+      body: "*"
+    - selector: litrpc.Scripts.StopScript
+      post: "/v1/scripts/{name}/stop"
+      body: "*"
+    - selector: litrpc.Scripts.ListRunningScripts
+      get: "/v1/scripts/running"
+    - selector: litrpc.Scripts.ValidateScript
+      post: "/v1/scripts/validate"
+      body: "*"
+    - selector: litrpc.Scripts.GetExecutionHistory
+      get: "/v1/scripts/history"
+
+    # KV Store
+    - selector: litrpc.Scripts.KVGet
+      get: "/v1/scripts/kv/{bucket}/{key}"
+    - selector: litrpc.Scripts.KVPut
+      put: "/v1/scripts/kv/{bucket}/{key}"
+      body: "*"
+    - selector: litrpc.Scripts.KVDelete
+      delete: "/v1/scripts/kv/{bucket}/{key}"
+    - selector: litrpc.Scripts.KVList
+      get: "/v1/scripts/kv/{bucket}"

@@ -29,6 +29,7 @@ import (
 	litmac "github.com/lightninglabs/lightning-terminal/macaroons"
 	"github.com/lightninglabs/lightning-terminal/perms"
 	"github.com/lightninglabs/lightning-terminal/queue"
+	"github.com/lightninglabs/lightning-terminal/scripting"
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
 	"github.com/lightninglabs/lightning-terminal/rules"
 	"github.com/lightninglabs/lightning-terminal/session"
@@ -221,6 +222,9 @@ type LightningTerminal struct {
 
 	accountRpcServer *accounts.RPCServer
 
+	scriptManager   *scripting.Manager
+	scriptRpcServer *scripting.RPCServer
+
 	stores *stores
 
 	restHandler http.Handler
@@ -238,6 +242,7 @@ func New() *LightningTerminal {
 type stores struct {
 	accounts accounts.Store
 	sessions session.Store
+	scripts  scripting.Store
 
 	firewall *firewalldb.DB
 
@@ -1053,6 +1058,19 @@ func (g *LightningTerminal) startInternalSubServers(ctx context.Context,
 
 	g.accountRpcServer.Start(g.accountService, superMacBaker)
 
+	// Initialize the scripts service with an in-memory KV store.
+	// TODO: Replace with persistent storage when BoltDB/SQL store is ready.
+	log.Infof("Starting LiT scripts server")
+	scriptKVStore := scripting.NewInMemoryKVStore()
+	macBaker := scripting.NewLndMacaroonBaker(g.basicClient)
+	g.scriptManager = scripting.NewManager(
+		nil, // Store will be set when persistent storage is implemented
+		scriptKVStore,
+		macBaker,
+		nil, // RPC caller not yet implemented
+	)
+	g.scriptRpcServer = scripting.NewRPCServer(g.scriptManager, scriptKVStore)
+
 	if !g.cfg.Autopilot.Disable {
 		withLndVersion := func(cfg *autopilotserver.Config) {
 			cfg.LndVersion = autopilotserver.Version{
@@ -1252,6 +1270,11 @@ func (g *LightningTerminal) registerSubDaemonGrpcServers(server *grpc.Server,
 
 	if !g.cfg.Autopilot.Disable {
 		litrpc.RegisterAutopilotServer(server, g.sessionRpcServer)
+	}
+
+	// Register the scripts server if available.
+	if g.scriptRpcServer != nil {
+		litrpc.RegisterScriptsServer(server, g.scriptRpcServer)
 	}
 }
 
@@ -1492,6 +1515,10 @@ func (g *LightningTerminal) shutdownSubServers() error {
 
 	if g.autopilotClient != nil {
 		g.autopilotClient.Stop()
+	}
+
+	if g.scriptManager != nil {
+		g.scriptManager.Stop()
 	}
 
 	if g.sessionRpcServerStarted {
