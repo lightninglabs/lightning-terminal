@@ -3266,7 +3266,7 @@ func testCustomChannelsLiquidityEdgeCasesCore(ctx context.Context,
 		},
 		BaseFeeMsat:   31337,
 		FeeRatePpm:    443322,
-		TimeLockDelta: 19,
+		TimeLockDelta: 25,
 	})
 	require.NoError(t.t, err)
 	require.Empty(t.t, resp.FailedUpdates)
@@ -3277,7 +3277,7 @@ func testCustomChannelsLiquidityEdgeCasesCore(ctx context.Context,
 		},
 		BaseFeeMsat:   42069,
 		FeeRatePpm:    223344,
-		TimeLockDelta: 18,
+		TimeLockDelta: 24,
 	})
 	require.NoError(t.t, err)
 	require.Empty(t.t, resp.FailedUpdates)
