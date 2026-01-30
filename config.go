@@ -438,6 +438,12 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 		cfg.Lnd.RPCMiddleware.Enable = true
 	}
 
+	if !cfg.Autopilot.Disable && cfg.Firewall.RequestLogger.Disable {
+		return nil, fmt.Errorf("firewall.request-logger.disable " +
+			"cannot be set to true, without also setting " +
+			"autopilot.disable to true")
+	}
+
 	// We want to make sure the users don't shoot themselves in the foot by
 	// using a too low value for the lnd RPC timeout.
 	if cfg.LndRPCTimeout < minimumRPCTimeout {

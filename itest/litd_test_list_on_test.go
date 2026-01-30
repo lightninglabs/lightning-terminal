@@ -20,6 +20,10 @@ var allTestCases = []*testCase{
 		test: testFirewallRules,
 	},
 	{
+		name: "terminal request logger disable",
+		test: testRequestLoggerDisable,
+	},
+	{
 		name: "terminal large http header",
 		test: testLargeHttpHeader,
 	},

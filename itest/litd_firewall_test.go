@@ -243,6 +243,146 @@ func testFirewallRules(ctx context.Context, net *NetworkHarness,
 	})
 }
 
+// testRequestLoggerDisable verifies that disabling the request logger only
+// works when the autopilot client is also disabled, since autopilot depends on
+// action logs for enforcement and auditing.
+func testRequestLoggerDisable(ctx context.Context, net *NetworkHarness,
+	t *harnessTest) {
+
+	ctx, cancel := context.WithTimeout(ctx, defaultTimeout)
+	defer cancel()
+
+	// Run 1: Request logging disabled + autopilot disabled. We make an
+	// account-caveated request and assert no actions are persisted, proving
+	// the logger is fully bypassed.
+	node, err := net.NewNode(
+		t.t, "reqlog-off", nil, false, true,
+		"--firewall.request-logger.disable",
+		"--autopilot.disable",
+	)
+	require.NoError(t.t, err)
+
+	rawConn, err := connectLitRPC(
+		ctx, node.Cfg.LitAddr(), node.Cfg.LitTLSCertPath,
+		node.Cfg.LitMacPath,
+	)
+	require.NoError(t.t, err)
+	defer rawConn.Close()
+
+	acctClient := litrpc.NewAccountsClient(rawConn)
+	acctResp, err := acctClient.CreateAccount(
+		ctx, &litrpc.CreateAccountRequest{
+			AccountBalance: 1_000,
+			Label:          "reqlog-off",
+		},
+	)
+	require.NoError(t.t, err)
+
+	lndConn, err := connectRPC(
+		ctx, node.Cfg.RPCAddr(), node.Cfg.TLSCertPath,
+	)
+	require.NoError(t.t, err)
+	defer lndConn.Close()
+
+	ctxa := macaroonContext(ctx, acctResp.Macaroon)
+	_, err = lnrpc.NewLightningClient(lndConn).GetInfo(
+		ctxa, &lnrpc.GetInfoRequest{},
+	)
+	require.NoError(t.t, err)
+
+	litFWClient := litrpc.NewFirewallClient(rawConn)
+	actions, err := litFWClient.ListActions(
+		ctx, &litrpc.ListActionsRequest{CountTotal: true},
+	)
+	require.NoError(t.t, err)
+	require.Empty(t.t, actions.Actions)
+	require.Zero(t.t, actions.TotalCount)
+
+	require.NoError(t.t, net.ShutdownNode(node))
+
+	// Run 2: Request logging enabled (default) + autopilot disabled. We
+	// repeat the exact same account-caveated request and assert actions are
+	// persisted, proving the logger is active.
+	node, err = net.NewNode(
+		t.t, "reqlog-on", nil, false, true,
+		"--autopilot.disable",
+	)
+	require.NoError(t.t, err)
+	defer func() {
+		_ = net.ShutdownNode(node)
+	}()
+
+	rawConn, err = connectLitRPC(
+		ctx, node.Cfg.LitAddr(), node.Cfg.LitTLSCertPath,
+		node.Cfg.LitMacPath,
+	)
+	require.NoError(t.t, err)
+	defer rawConn.Close()
+
+	acctClient = litrpc.NewAccountsClient(rawConn)
+	acctResp, err = acctClient.CreateAccount(
+		ctx, &litrpc.CreateAccountRequest{
+			AccountBalance: 1_000,
+			Label:          "reqlog-on",
+		},
+	)
+	require.NoError(t.t, err)
+
+	lndConn, err = connectRPC(
+		ctx, node.Cfg.RPCAddr(), node.Cfg.TLSCertPath,
+	)
+	require.NoError(t.t, err)
+	defer lndConn.Close()
+
+	litFWClient = litrpc.NewFirewallClient(rawConn)
+	before, err := litFWClient.ListActions(
+		ctx, &litrpc.ListActionsRequest{CountTotal: true},
+	)
+	require.NoError(t.t, err)
+
+	ctxa = macaroonContext(ctx, acctResp.Macaroon)
+	_, err = lnrpc.NewLightningClient(lndConn).GetInfo(
+		ctxa, &lnrpc.GetInfoRequest{},
+	)
+	require.NoError(t.t, err)
+
+	after, err := litFWClient.ListActions(
+		ctx, &litrpc.ListActionsRequest{CountTotal: true},
+	)
+	require.NoError(t.t, err)
+	require.Greater(t.t, after.TotalCount, before.TotalCount)
+
+	// Run 3: Request logging disabled + autopilot enabled. We assert
+	// startup fails during config validation with the expected error.
+	node, err = net.NewNode(
+		t.t, "reqlog-off-autopilot", nil, false, false,
+		"--firewall.request-logger.disable",
+	)
+	require.NoError(t.t, err)
+
+	select {
+	case err := <-net.ProcessErrors():
+		require.Error(t.t, err)
+		require.Contains(
+			t.t, err.Error(),
+			"firewall.request-logger.disable cannot be set to "+
+				"true, without also setting autopilot.disable "+
+				"to true",
+		)
+
+	case <-ctx.Done():
+		_ = net.ShutdownNode(node)
+		t.Fatalf("timed out waiting for expected start error")
+	}
+
+	select {
+	case <-node.processExit:
+	case <-ctx.Done():
+		_ = net.ShutdownNode(node)
+		t.Fatalf("timed out waiting for process exit")
+	}
+}
+
 // testPrivacyFlags tests that the privacy flags are enforced correctly.
 // We want to test the three privacy related interactions:
 // 1. the privacy mapper for the interception of messages
