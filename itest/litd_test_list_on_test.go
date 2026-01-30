@@ -24,6 +24,34 @@ var allTestCases = []*testCase{
 		test: testLargeHttpHeader,
 	},
 	{
+		name: "scripts basic crud",
+		test: testScriptBasicCRUD,
+	},
+	{
+		name: "scripts validation",
+		test: testScriptValidation,
+	},
+	{
+		name: "scripts execution",
+		test: testScriptExecution,
+	},
+	{
+		name: "scripts kv store",
+		test: testScriptKVStore,
+	},
+	{
+		name: "scripts lnd access",
+		test: testScriptWithLNDAccess,
+	},
+	{
+		name: "scripts builtins",
+		test: testScriptBuiltins,
+	},
+	{
+		name: "scripts kv builtins",
+		test: testScriptWithKVBuiltins,
+	},
+	{
 		name:       "custom channels",
 		test:       testCustomChannels,
 		noAliceBob: true,
