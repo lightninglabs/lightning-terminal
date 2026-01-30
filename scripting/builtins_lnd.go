@@ -5,19 +5,17 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"github.com/lightninglabs/lndclient"
 	"github.com/lightningnetwork/lnd/lnrpc"
-	"github.com/lightningnetwork/lnd/lnrpc/invoicesrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
 	"go.starlark.net/starlark"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 )
 
 // LNDClients holds all the LND RPC clients needed for script execution.
+// These are the lndclient wrappers that provide authenticated access.
 type LNDClients struct {
-	Lightning lnrpc.LightningClient
-	Router    routerrpc.RouterClient
-	Invoices  invoicesrpc.InvoicesClient
+	Lightning lndclient.LightningClient
+	Router    lndclient.RouterClient
 }
 
 // lndBuiltins provides LND RPC access to Starlark scripts.
@@ -82,14 +80,20 @@ func (e *Engine) registerLNDBuiltins(predeclared starlark.StringDict, clients *L
 	predeclared["lnd"] = lndModule.Struct()
 }
 
-// contextWithMacaroon creates a context with the script's macaroon.
-func (lb *lndBuiltins) contextWithMacaroon() context.Context {
-	ctx := lb.engine.sandbox.Context()
-	if lb.macaroon != "" {
-		md := metadata.Pairs("macaroon", lb.macaroon)
-		ctx = metadata.NewOutgoingContext(ctx, md)
-	}
-	return ctx
+// getRawLightningClient returns an authenticated context and the raw
+// Lightning client for making RPC calls.
+func (lb *lndBuiltins) getRawLightningClient() (context.Context, lnrpc.LightningClient) {
+	parentCtx := lb.engine.sandbox.Context()
+	ctx, _, client := lb.clients.Lightning.RawClientWithMacAuth(parentCtx)
+	return ctx, client
+}
+
+// getRawRouterClient returns an authenticated context and the raw
+// Router client for making RPC calls.
+func (lb *lndBuiltins) getRawRouterClient() (context.Context, routerrpc.RouterClient) {
+	parentCtx := lb.engine.sandbox.Context()
+	ctx, _, client := lb.clients.Router.RawClientWithMacAuth(parentCtx)
+	return ctx, client
 }
 
 // getInfo implements lnd.get_info().
@@ -100,23 +104,23 @@ func (lb *lndBuiltins) getInfo(thread *starlark.Thread, fn *starlark.Builtin,
 		return nil, err
 	}
 
-	ctx := lb.contextWithMacaroon()
-	resp, err := lb.clients.Lightning.GetInfo(ctx, &lnrpc.GetInfoRequest{})
+	ctx, client := lb.getRawLightningClient()
+	resp, err := client.GetInfo(ctx, &lnrpc.GetInfoRequest{})
 	if err != nil {
 		return nil, fmt.Errorf("get_info failed: %w", err)
 	}
 
 	return lb.protoToDict(map[string]any{
-		"identity_pubkey":      resp.IdentityPubkey,
-		"alias":                resp.Alias,
-		"num_active_channels":  resp.NumActiveChannels,
+		"identity_pubkey":       resp.IdentityPubkey,
+		"alias":                 resp.Alias,
+		"num_active_channels":   resp.NumActiveChannels,
 		"num_inactive_channels": resp.NumInactiveChannels,
-		"num_pending_channels": resp.NumPendingChannels,
-		"num_peers":            resp.NumPeers,
-		"block_height":         resp.BlockHeight,
-		"synced_to_chain":      resp.SyncedToChain,
-		"synced_to_graph":      resp.SyncedToGraph,
-		"version":              resp.Version,
+		"num_pending_channels":  resp.NumPendingChannels,
+		"num_peers":             resp.NumPeers,
+		"block_height":          resp.BlockHeight,
+		"synced_to_chain":       resp.SyncedToChain,
+		"synced_to_graph":       resp.SyncedToGraph,
+		"version":               resp.Version,
 	})
 }
 
@@ -131,8 +135,8 @@ func (lb *lndBuiltins) getNodeInfo(thread *starlark.Thread, fn *starlark.Builtin
 		return nil, err
 	}
 
-	ctx := lb.contextWithMacaroon()
-	resp, err := lb.clients.Lightning.GetNodeInfo(ctx, &lnrpc.NodeInfoRequest{
+	ctx, client := lb.getRawLightningClient()
+	resp, err := client.GetNodeInfo(ctx, &lnrpc.NodeInfoRequest{
 		PubKey:          pubkey,
 		IncludeChannels: includeChannels,
 	})
@@ -170,8 +174,8 @@ func (lb *lndBuiltins) listChannels(thread *starlark.Thread, fn *starlark.Builti
 		return nil, err
 	}
 
-	ctx := lb.contextWithMacaroon()
-	resp, err := lb.clients.Lightning.ListChannels(ctx, &lnrpc.ListChannelsRequest{
+	ctx, client := lb.getRawLightningClient()
+	resp, err := client.ListChannels(ctx, &lnrpc.ListChannelsRequest{
 		ActiveOnly:   activeOnly,
 		InactiveOnly: inactiveOnly,
 		PublicOnly:   publicOnly,
@@ -211,8 +215,8 @@ func (lb *lndBuiltins) channelBalance(thread *starlark.Thread, fn *starlark.Buil
 		return nil, err
 	}
 
-	ctx := lb.contextWithMacaroon()
-	resp, err := lb.clients.Lightning.ChannelBalance(ctx, &lnrpc.ChannelBalanceRequest{})
+	ctx, client := lb.getRawLightningClient()
+	resp, err := client.ChannelBalance(ctx, &lnrpc.ChannelBalanceRequest{})
 	if err != nil {
 		return nil, fmt.Errorf("channel_balance failed: %w", err)
 	}
@@ -235,8 +239,8 @@ func (lb *lndBuiltins) pendingChannels(thread *starlark.Thread, fn *starlark.Bui
 		return nil, err
 	}
 
-	ctx := lb.contextWithMacaroon()
-	resp, err := lb.clients.Lightning.PendingChannels(ctx, &lnrpc.PendingChannelsRequest{})
+	ctx, client := lb.getRawLightningClient()
+	resp, err := client.PendingChannels(ctx, &lnrpc.PendingChannelsRequest{})
 	if err != nil {
 		return nil, fmt.Errorf("pending_channels failed: %w", err)
 	}
@@ -258,8 +262,8 @@ func (lb *lndBuiltins) closedChannels(thread *starlark.Thread, fn *starlark.Buil
 		return nil, err
 	}
 
-	ctx := lb.contextWithMacaroon()
-	resp, err := lb.clients.Lightning.ClosedChannels(ctx, &lnrpc.ClosedChannelsRequest{})
+	ctx, client := lb.getRawLightningClient()
+	resp, err := client.ClosedChannels(ctx, &lnrpc.ClosedChannelsRequest{})
 	if err != nil {
 		return nil, fmt.Errorf("closed_channels failed: %w", err)
 	}
@@ -314,8 +318,8 @@ func (lb *lndBuiltins) updateChannelPolicy(thread *starlark.Thread, fn *starlark
 		req.Scope = &lnrpc.PolicyUpdateRequest_Global{Global: true}
 	}
 
-	ctx := lb.contextWithMacaroon()
-	resp, err := lb.clients.Lightning.UpdateChannelPolicy(ctx, req)
+	ctx, client := lb.getRawLightningClient()
+	resp, err := client.UpdateChannelPolicy(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("update_channel_policy failed: %w", err)
 	}
@@ -338,8 +342,8 @@ func (lb *lndBuiltins) walletBalance(thread *starlark.Thread, fn *starlark.Built
 		return nil, err
 	}
 
-	ctx := lb.contextWithMacaroon()
-	resp, err := lb.clients.Lightning.WalletBalance(ctx, &lnrpc.WalletBalanceRequest{})
+	ctx, client := lb.getRawLightningClient()
+	resp, err := client.WalletBalance(ctx, &lnrpc.WalletBalanceRequest{})
 	if err != nil {
 		return nil, fmt.Errorf("wallet_balance failed: %w", err)
 	}
@@ -366,8 +370,8 @@ func (lb *lndBuiltins) listUnspent(thread *starlark.Thread, fn *starlark.Builtin
 		maxConfs = int32Max
 	}
 
-	ctx := lb.contextWithMacaroon()
-	resp, err := lb.clients.Lightning.ListUnspent(ctx, &lnrpc.ListUnspentRequest{
+	ctx, client := lb.getRawLightningClient()
+	resp, err := client.ListUnspent(ctx, &lnrpc.ListUnspentRequest{
 		MinConfs: int32(minConfs),
 		MaxConfs: int32(maxConfs),
 	})
@@ -410,8 +414,8 @@ func (lb *lndBuiltins) newAddress(thread *starlark.Thread, fn *starlark.Builtin,
 		return nil, fmt.Errorf("unknown address type: %s", addrType)
 	}
 
-	ctx := lb.contextWithMacaroon()
-	resp, err := lb.clients.Lightning.NewAddress(ctx, &lnrpc.NewAddressRequest{
+	ctx, client := lb.getRawLightningClient()
+	resp, err := client.NewAddress(ctx, &lnrpc.NewAddressRequest{
 		Type: at,
 	})
 	if err != nil {
@@ -437,8 +441,8 @@ func (lb *lndBuiltins) sendCoins(thread *starlark.Thread, fn *starlark.Builtin,
 		return nil, err
 	}
 
-	ctx := lb.contextWithMacaroon()
-	resp, err := lb.clients.Lightning.SendCoins(ctx, &lnrpc.SendCoinsRequest{
+	ctx, client := lb.getRawLightningClient()
+	resp, err := client.SendCoins(ctx, &lnrpc.SendCoinsRequest{
 		Addr:        addr,
 		Amount:      amount,
 		SatPerVbyte: uint64(satPerVbyte),
@@ -467,8 +471,8 @@ func (lb *lndBuiltins) addInvoice(thread *starlark.Thread, fn *starlark.Builtin,
 		expiry = 3600 // 1 hour default
 	}
 
-	ctx := lb.contextWithMacaroon()
-	resp, err := lb.clients.Lightning.AddInvoice(ctx, &lnrpc.Invoice{
+	ctx, client := lb.getRawLightningClient()
+	resp, err := client.AddInvoice(ctx, &lnrpc.Invoice{
 		Memo:   memo,
 		Value:  valueSat,
 		Expiry: expiry,
@@ -499,8 +503,8 @@ func (lb *lndBuiltins) lookupInvoice(thread *starlark.Thread, fn *starlark.Built
 		return nil, fmt.Errorf("invalid r_hash: %w", err)
 	}
 
-	ctx := lb.contextWithMacaroon()
-	resp, err := lb.clients.Lightning.LookupInvoice(ctx, &lnrpc.PaymentHash{
+	ctx, client := lb.getRawLightningClient()
+	resp, err := client.LookupInvoice(ctx, &lnrpc.PaymentHash{
 		RHash: rHash,
 	})
 	if err != nil {
@@ -528,8 +532,8 @@ func (lb *lndBuiltins) listInvoices(thread *starlark.Thread, fn *starlark.Builti
 		numMaxInvoices = 100
 	}
 
-	ctx := lb.contextWithMacaroon()
-	resp, err := lb.clients.Lightning.ListInvoices(ctx, &lnrpc.ListInvoiceRequest{
+	ctx, client := lb.getRawLightningClient()
+	resp, err := client.ListInvoices(ctx, &lnrpc.ListInvoiceRequest{
 		PendingOnly:    pendingOnly,
 		IndexOffset:    uint64(indexOffset),
 		NumMaxInvoices: uint64(numMaxInvoices),
@@ -561,8 +565,8 @@ func (lb *lndBuiltins) decodePayReq(thread *starlark.Thread, fn *starlark.Builti
 		return nil, err
 	}
 
-	ctx := lb.contextWithMacaroon()
-	resp, err := lb.clients.Lightning.DecodePayReq(ctx, &lnrpc.PayReqString{
+	ctx, client := lb.getRawLightningClient()
+	resp, err := client.DecodePayReq(ctx, &lnrpc.PayReqString{
 		PayReq: payReq,
 	})
 	if err != nil {
@@ -614,8 +618,8 @@ func (lb *lndBuiltins) sendPayment(thread *starlark.Thread, fn *starlark.Builtin
 		req.Amt = amtSat
 	}
 
-	ctx := lb.contextWithMacaroon()
-	stream, err := lb.clients.Router.SendPaymentV2(ctx, req)
+	ctx, routerClient := lb.getRawRouterClient()
+	stream, err := routerClient.SendPaymentV2(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("send_payment failed: %w", err)
 	}
@@ -672,8 +676,8 @@ func (lb *lndBuiltins) listPayments(thread *starlark.Thread, fn *starlark.Builti
 		maxPayments = 100
 	}
 
-	ctx := lb.contextWithMacaroon()
-	resp, err := lb.clients.Lightning.ListPayments(ctx, &lnrpc.ListPaymentsRequest{
+	ctx, client := lb.getRawLightningClient()
+	resp, err := client.ListPayments(ctx, &lnrpc.ListPaymentsRequest{
 		IncludeIncomplete: includeIncomplete,
 		IndexOffset:       uint64(indexOffset),
 		MaxPayments:       uint64(maxPayments),
@@ -709,8 +713,8 @@ func (lb *lndBuiltins) listPeers(thread *starlark.Thread, fn *starlark.Builtin,
 		return nil, err
 	}
 
-	ctx := lb.contextWithMacaroon()
-	resp, err := lb.clients.Lightning.ListPeers(ctx, &lnrpc.ListPeersRequest{})
+	ctx, client := lb.getRawLightningClient()
+	resp, err := client.ListPeers(ctx, &lnrpc.ListPeersRequest{})
 	if err != nil {
 		return nil, fmt.Errorf("list_peers failed: %w", err)
 	}
@@ -743,8 +747,8 @@ func (lb *lndBuiltins) connectPeer(thread *starlark.Thread, fn *starlark.Builtin
 		return nil, err
 	}
 
-	ctx := lb.contextWithMacaroon()
-	_, err := lb.clients.Lightning.ConnectPeer(ctx, &lnrpc.ConnectPeerRequest{
+	ctx, client := lb.getRawLightningClient()
+	_, err := client.ConnectPeer(ctx, &lnrpc.ConnectPeerRequest{
 		Addr: &lnrpc.LightningAddress{
 			Pubkey: pubkey,
 			Host:   host,
@@ -767,8 +771,8 @@ func (lb *lndBuiltins) disconnectPeer(thread *starlark.Thread, fn *starlark.Buil
 		return nil, err
 	}
 
-	ctx := lb.contextWithMacaroon()
-	_, err := lb.clients.Lightning.DisconnectPeer(ctx, &lnrpc.DisconnectPeerRequest{
+	ctx, client := lb.getRawLightningClient()
+	_, err := client.DisconnectPeer(ctx, &lnrpc.DisconnectPeerRequest{
 		PubKey: pubkey,
 	})
 	if err != nil {
@@ -797,8 +801,8 @@ func (lb *lndBuiltins) forwardingHistory(thread *starlark.Thread, fn *starlark.B
 		numMaxEvents = 100
 	}
 
-	ctx := lb.contextWithMacaroon()
-	resp, err := lb.clients.Lightning.ForwardingHistory(ctx, &lnrpc.ForwardingHistoryRequest{
+	ctx, client := lb.getRawLightningClient()
+	resp, err := client.ForwardingHistory(ctx, &lnrpc.ForwardingHistoryRequest{
 		StartTime:    uint64(startTime),
 		EndTime:      uint64(endTime),
 		IndexOffset:  uint32(indexOffset),
@@ -843,8 +847,8 @@ func (lb *lndBuiltins) estimateFee(thread *starlark.Thread, fn *starlark.Builtin
 		targetConf = 6
 	}
 
-	ctx := lb.contextWithMacaroon()
-	resp, err := lb.clients.Lightning.EstimateFee(ctx, &lnrpc.EstimateFeeRequest{
+	ctx, client := lb.getRawLightningClient()
+	resp, err := client.EstimateFee(ctx, &lnrpc.EstimateFeeRequest{
 		AddrToAmount: map[string]int64{
 			"bcrt1qw508d6qejxtdg4y5r3zarvary0c5xw7kygt080": 10000,
 		},
@@ -891,11 +895,10 @@ func (e *Engine) SetLNDClients(clients *LNDClients) {
 	e.registerLNDBuiltins(e.predeclared, clients)
 }
 
-// NewLNDClientsFromConn creates LND clients from a gRPC connection.
-func NewLNDClientsFromConn(conn *grpc.ClientConn) *LNDClients {
+// NewLNDClientsFromServices creates LND clients from lndclient services.
+func NewLNDClientsFromServices(services *lndclient.LndServices) *LNDClients {
 	return &LNDClients{
-		Lightning: lnrpc.NewLightningClient(conn),
-		Router:    routerrpc.NewRouterClient(conn),
-		Invoices:  invoicesrpc.NewInvoicesClient(conn),
+		Lightning: services.Client,
+		Router:    services.Router,
 	}
 }

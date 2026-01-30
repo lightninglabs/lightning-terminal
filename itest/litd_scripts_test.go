@@ -15,8 +15,9 @@ import (
 )
 
 // testScriptBasicCRUD tests basic script create, read, update, delete operations.
-func testScriptBasicCRUD(t *harnessTest, net *NetworkHarness) {
-	ctx := context.Background()
+func testScriptBasicCRUD(ctx context.Context, net *NetworkHarness,
+	t *harnessTest) {
+
 	ctxt, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()
 
@@ -98,8 +99,9 @@ def main():
 }
 
 // testScriptValidation tests script syntax validation.
-func testScriptValidation(t *harnessTest, net *NetworkHarness) {
-	ctx := context.Background()
+func testScriptValidation(ctx context.Context, net *NetworkHarness,
+	t *harnessTest) {
+
 	ctxt, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()
 
@@ -148,8 +150,9 @@ def helper():
 }
 
 // testScriptExecution tests basic script execution.
-func testScriptExecution(t *harnessTest, net *NetworkHarness) {
-	ctx := context.Background()
+func testScriptExecution(ctx context.Context, net *NetworkHarness,
+	t *harnessTest) {
+
 	ctxt, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()
 
@@ -220,8 +223,9 @@ def main(x=10, y=20):
 }
 
 // testScriptKVStore tests the script KV store operations.
-func testScriptKVStore(t *harnessTest, net *NetworkHarness) {
-	ctx := context.Background()
+func testScriptKVStore(ctx context.Context, net *NetworkHarness,
+	t *harnessTest) {
+
 	ctxt, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()
 
@@ -298,8 +302,9 @@ func testScriptKVStore(t *harnessTest, net *NetworkHarness) {
 }
 
 // testScriptWithLNDAccess tests scripts that access LND RPCs.
-func testScriptWithLNDAccess(t *harnessTest, net *NetworkHarness) {
-	ctx := context.Background()
+func testScriptWithLNDAccess(ctx context.Context, net *NetworkHarness,
+	t *harnessTest) {
+
 	ctxt, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()
 
@@ -350,8 +355,9 @@ def main():
 }
 
 // testScriptBuiltins tests the built-in functions.
-func testScriptBuiltins(t *harnessTest, net *NetworkHarness) {
-	ctx := context.Background()
+func testScriptBuiltins(ctx context.Context, net *NetworkHarness,
+	t *harnessTest) {
+
 	ctxt, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()
 
@@ -411,8 +417,9 @@ def main():
 }
 
 // testScriptWithKVBuiltins tests scripts using built-in KV functions.
-func testScriptWithKVBuiltins(t *harnessTest, net *NetworkHarness) {
-	ctx := context.Background()
+func testScriptWithKVBuiltins(ctx context.Context, net *NetworkHarness,
+	t *harnessTest) {
+
 	ctxt, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()
 

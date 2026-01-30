@@ -20,10 +20,11 @@ type MacaroonBaker interface {
 
 // Manager handles script CRUD operations and macaroon management.
 type Manager struct {
-	store     Store
-	kvStore   KVStore
-	macBaker  MacaroonBaker
-	rpcCaller RPCCaller
+	store      Store
+	kvStore    KVStore
+	macBaker   MacaroonBaker
+	rpcCaller  RPCCaller
+	lndClients *LNDClients
 
 	// runners tracks currently running scripts.
 	runners   map[string]*Runner
@@ -39,6 +40,17 @@ func NewManager(store Store, kvStore KVStore, macBaker MacaroonBaker, rpcCaller 
 		rpcCaller: rpcCaller,
 		runners:   make(map[string]*Runner),
 	}
+}
+
+// SetMacaroonBaker sets the macaroon baker after initialization.
+// This is used when the baker needs to be set after LND connects.
+func (m *Manager) SetMacaroonBaker(baker MacaroonBaker) {
+	m.macBaker = baker
+}
+
+// SetLNDClients sets the LND clients for script RPC access.
+func (m *Manager) SetLNDClients(clients *LNDClients) {
+	m.lndClients = clients
 }
 
 // CreateScript creates a new script with the specified permissions.
@@ -247,7 +259,7 @@ func (m *Manager) StartScript(ctx context.Context, name string, argsJSON string)
 	}
 
 	// Create and start runner.
-	runner := NewRunner(m, script, exec.ID, m.kvStore, m.rpcCaller)
+	runner := NewRunner(m, script, exec.ID, m.kvStore, m.rpcCaller, m.lndClients)
 
 	m.runnersMu.Lock()
 	m.runners[name] = runner

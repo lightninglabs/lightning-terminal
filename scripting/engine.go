@@ -48,6 +48,9 @@ type EngineConfig struct {
 
 	// OutputCallback is called when the script produces output.
 	OutputCallback OutputCallback
+
+	// LNDClients provides access to LND RPCs.
+	LNDClients *LNDClients
 }
 
 // Engine executes Starlark scripts in a sandboxed environment.
@@ -62,6 +65,7 @@ type Engine struct {
 	kvStore        KVStore
 	rpcCaller      RPCCaller
 	outputCallback OutputCallback
+	lndClients     *LNDClients
 
 	// thread is the Starlark execution thread.
 	thread *starlark.Thread
@@ -96,6 +100,7 @@ func NewEngine(ctx context.Context, cfg EngineConfig) *Engine {
 		kvStore:              cfg.KVStore,
 		rpcCaller:            cfg.RPCCaller,
 		outputCallback:       cfg.OutputCallback,
+		lndClients:           cfg.LNDClients,
 		subscriptionHandlers: make(map[string]starlark.Callable),
 	}
 
@@ -104,6 +109,7 @@ func NewEngine(ctx context.Context, cfg EngineConfig) *Engine {
 	e.registerStandardBuiltins(e.predeclared)
 	e.registerHTTPBuiltins(e.predeclared)
 	e.registerKVBuiltins(e.predeclared)
+	e.registerLNDBuiltins(e.predeclared, cfg.LNDClients)
 
 	return e
 }

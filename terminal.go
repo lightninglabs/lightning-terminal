@@ -496,6 +496,18 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 	// to understand why this is necessary.
 	g.sessionRpcServer = newSessionRPCServer()
 
+	// Initialize the scripts service early. The full dependencies (like the
+	// macaroon baker) will be set after LND connects.
+	scriptStore := scripting.NewInMemoryStore()
+	scriptKVStore := scripting.NewInMemoryKVStore()
+	g.scriptManager = scripting.NewManager(
+		scriptStore,
+		scriptKVStore,
+		nil, // Macaroon baker will be set after LND connects
+		nil, // RPC caller not yet implemented
+	)
+	g.scriptRpcServer = scripting.NewRPCServer(g.scriptManager, scriptKVStore)
+
 	// Call the "real" main in a nested manner so the defers will properly
 	// be executed in the case of a graceful shutdown.
 	var (
@@ -1058,18 +1070,14 @@ func (g *LightningTerminal) startInternalSubServers(ctx context.Context,
 
 	g.accountRpcServer.Start(g.accountService, superMacBaker)
 
-	// Initialize the scripts service with an in-memory KV store.
-	// TODO: Replace with persistent storage when BoltDB/SQL store is ready.
+	// Set the macaroon baker and LND clients for the scripts service now
+	// that LND is connected. The script manager was initialized early
+	// before LND setup.
 	log.Infof("Starting LiT scripts server")
-	scriptKVStore := scripting.NewInMemoryKVStore()
 	macBaker := scripting.NewLndMacaroonBaker(g.basicClient)
-	g.scriptManager = scripting.NewManager(
-		nil, // Store will be set when persistent storage is implemented
-		scriptKVStore,
-		macBaker,
-		nil, // RPC caller not yet implemented
-	)
-	g.scriptRpcServer = scripting.NewRPCServer(g.scriptManager, scriptKVStore)
+	g.scriptManager.SetMacaroonBaker(macBaker)
+	lndClients := scripting.NewLNDClientsFromServices(&g.lndClient.LndServices)
+	g.scriptManager.SetLNDClients(lndClients)
 
 	if !g.cfg.Autopilot.Disable {
 		withLndVersion := func(cfg *autopilotserver.Config) {

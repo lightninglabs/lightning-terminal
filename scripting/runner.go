@@ -12,6 +12,7 @@ type Runner struct {
 	executionID int64
 	kvStore     KVStore
 	rpcCaller   RPCCaller
+	lndClients  *LNDClients
 
 	engine *Engine
 	ctx    context.Context
@@ -29,7 +30,7 @@ type ScriptOutput struct {
 }
 
 // NewRunner creates a new script runner.
-func NewRunner(manager *Manager, script *Script, executionID int64, kvStore KVStore, rpcCaller RPCCaller) *Runner {
+func NewRunner(manager *Manager, script *Script, executionID int64, kvStore KVStore, rpcCaller RPCCaller, lndClients *LNDClients) *Runner {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &Runner{
@@ -38,6 +39,7 @@ func NewRunner(manager *Manager, script *Script, executionID int64, kvStore KVSt
 		executionID: executionID,
 		kvStore:     kvStore,
 		rpcCaller:   rpcCaller,
+		lndClients:  lndClients,
 		ctx:         ctx,
 		cancel:      cancel,
 		outputs:     make([]ScriptOutput, 0),
@@ -67,8 +69,9 @@ func (r *Runner) Run(ctx context.Context, args map[string]interface{}) *Executio
 			MaxMemoryBytes: r.script.MaxMemoryBytes,
 			TimeoutSecs:    r.script.TimeoutSecs,
 		},
-		KVStore:   r.kvStore,
-		RPCCaller: r.rpcCaller,
+		KVStore:    r.kvStore,
+		RPCCaller:  r.rpcCaller,
+		LNDClients: r.lndClients,
 		OutputCallback: func(level, message string) {
 			r.mu.Lock()
 			r.outputs = append(r.outputs, ScriptOutput{

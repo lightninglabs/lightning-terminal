@@ -2,6 +2,7 @@ package scripting
 
 import (
 	"context"
+	"fmt"
 	"time"
 )
 
@@ -93,6 +94,154 @@ const (
 	StateFailed    = "failed"
 	StateStopped   = "stopped"
 )
+
+// InMemoryStore implements Store with in-memory storage.
+// This is useful for testing and development.
+type InMemoryStore struct {
+	scripts    map[string]*Script
+	executions []*ScriptExecution
+	running    map[int64]*RunningScript
+	nextID     int64
+	nextExecID int64
+}
+
+// NewInMemoryStore creates a new in-memory script store.
+func NewInMemoryStore() *InMemoryStore {
+	return &InMemoryStore{
+		scripts: make(map[string]*Script),
+		running: make(map[int64]*RunningScript),
+		nextID:  1,
+	}
+}
+
+func (s *InMemoryStore) CreateScript(ctx context.Context, script *Script) error {
+	if _, exists := s.scripts[script.Name]; exists {
+		return fmt.Errorf("script %s already exists", script.Name)
+	}
+	script.ID = s.nextID
+	s.nextID++
+	s.scripts[script.Name] = script
+	return nil
+}
+
+func (s *InMemoryStore) UpdateScript(ctx context.Context, script *Script) error {
+	if _, exists := s.scripts[script.Name]; !exists {
+		return fmt.Errorf("script %s not found", script.Name)
+	}
+	s.scripts[script.Name] = script
+	return nil
+}
+
+func (s *InMemoryStore) DeleteScript(ctx context.Context, name string) error {
+	delete(s.scripts, name)
+	return nil
+}
+
+func (s *InMemoryStore) GetScript(ctx context.Context, name string) (*Script, error) {
+	script, exists := s.scripts[name]
+	if !exists {
+		return nil, fmt.Errorf("script %s not found", name)
+	}
+	return script, nil
+}
+
+func (s *InMemoryStore) GetScriptByID(ctx context.Context, id int64) (*Script, error) {
+	for _, script := range s.scripts {
+		if script.ID == id {
+			return script, nil
+		}
+	}
+	return nil, fmt.Errorf("script with ID %d not found", id)
+}
+
+func (s *InMemoryStore) ListScripts(ctx context.Context) ([]*Script, error) {
+	result := make([]*Script, 0, len(s.scripts))
+	for _, script := range s.scripts {
+		result = append(result, script)
+	}
+	return result, nil
+}
+
+func (s *InMemoryStore) CreateExecution(ctx context.Context, exec *ScriptExecution) error {
+	s.nextExecID++
+	exec.ID = s.nextExecID
+	s.executions = append(s.executions, exec)
+	return nil
+}
+
+func (s *InMemoryStore) UpdateExecution(ctx context.Context, exec *ScriptExecution) error {
+	for i, e := range s.executions {
+		if e.ID == exec.ID {
+			s.executions[i] = exec
+			return nil
+		}
+	}
+	return fmt.Errorf("execution %d not found", exec.ID)
+}
+
+func (s *InMemoryStore) GetExecution(ctx context.Context, id int64) (*ScriptExecution, error) {
+	for _, e := range s.executions {
+		if e.ID == id {
+			return e, nil
+		}
+	}
+	return nil, fmt.Errorf("execution %d not found", id)
+}
+
+func (s *InMemoryStore) ListExecutions(ctx context.Context, scriptName string, limit, offset uint32) ([]*ScriptExecution, error) {
+	var result []*ScriptExecution
+	for _, e := range s.executions {
+		if scriptName == "" || e.ScriptName == scriptName {
+			result = append(result, e)
+		}
+	}
+	// Simple pagination
+	start := int(offset)
+	if start >= len(result) {
+		return nil, nil
+	}
+	end := start + int(limit)
+	if end > len(result) {
+		end = len(result)
+	}
+	return result[start:end], nil
+}
+
+func (s *InMemoryStore) MarkRunning(ctx context.Context, scriptID, executionID int64) error {
+	script, err := s.GetScriptByID(ctx, scriptID)
+	if err != nil {
+		return err
+	}
+	s.running[scriptID] = &RunningScript{
+		ScriptID:    scriptID,
+		ScriptName:  script.Name,
+		ExecutionID: executionID,
+		StartedAt:   time.Now(),
+	}
+	return nil
+}
+
+func (s *InMemoryStore) MarkStopped(ctx context.Context, scriptID int64) error {
+	delete(s.running, scriptID)
+	return nil
+}
+
+func (s *InMemoryStore) GetRunningScripts(ctx context.Context) ([]*RunningScript, error) {
+	result := make([]*RunningScript, 0, len(s.running))
+	for _, r := range s.running {
+		result = append(result, r)
+	}
+	return result, nil
+}
+
+func (s *InMemoryStore) IsScriptRunning(ctx context.Context, scriptID int64) (bool, error) {
+	_, exists := s.running[scriptID]
+	return exists, nil
+}
+
+func (s *InMemoryStore) Close() error {
+	return nil
+}
 
 // Store defines the interface for script storage.
 type Store interface {
