@@ -23,6 +23,10 @@
 
 ### Functional Changes/Additions
 
+* Add a `firewall.request-logger.disable` [config 
+  flag](https://github.com/lightninglabs/lightning-terminal/pull/1216) and 
+  require action logging when autopilot is enabled.
+
 ### Technical and Architectural Updates
 
 ## RPC Updates
@@ -34,7 +38,7 @@
 ### Loop
 
 * [PR](https://github.com/lightninglabs/lightning-terminal/pull/1191): Bump:
-    `loop@v0.31.7-beta`.
+  `loop@v0.31.7-beta`.
 
 ### Pool
 
@@ -45,3 +49,4 @@
 # Contributors (Alphabetical Order)
 
 * bitromortac
+* Elle Mouton
