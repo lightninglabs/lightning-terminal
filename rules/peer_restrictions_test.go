@@ -12,10 +12,12 @@ import (
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/routing/route"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
 // TestPeerRestrictCheckRequest ensures that the PeerRestrictEnforcer correctly
+
 // accepts or denys a request.
 func TestPeerRestrictCheckRequest(t *testing.T) {
 	txid1, index1, err := newTXID()
@@ -51,28 +53,31 @@ func TestPeerRestrictCheckRequest(t *testing.T) {
 
 	ctx := context.Background()
 	mgr := NewPeerRestrictMgr()
-	cfg := &mockLndClient{
-		channels: []lndclient.ChannelInfo{
-			{
-				ChannelPoint: chanPointStr1,
-				PubKeyBytes:  peerKey1,
-			},
-			{
-				ChannelPoint: chanPointStr2,
-				PubKeyBytes:  peerKey2,
-			},
-			{
-				ChannelPoint: chanPointStr3,
-				PubKeyBytes:  peerKey3,
-			},
+	cfg := &mockLndClient{}
+	cfg.On(
+		"ListChannels", mock.Anything, mock.Anything, mock.Anything,
+		mock.Anything,
+	).Return([]lndclient.ChannelInfo{
+		{
+			ChannelPoint: chanPointStr1,
+			PubKeyBytes:  peerKey1,
 		},
-	}
+		{
+			ChannelPoint: chanPointStr2,
+			PubKeyBytes:  peerKey2,
+		},
+		{
+			ChannelPoint: chanPointStr3,
+			PubKeyBytes:  peerKey3,
+		},
+	}, nil)
 
 	enf, err := mgr.NewEnforcer(ctx, cfg, &PeerRestrict{
 		DenyList: []string{
 			peerID1, peerID2,
 		},
 	})
+
 	require.NoError(t, err)
 
 	// A request for an irrelevant URI should be allowed.
@@ -198,6 +203,9 @@ func TestPeerRestrictCheckRequest(t *testing.T) {
 		ctx, "/lnrpc.Lightning/BatchOpenChannel", batchOpenReq,
 	)
 	require.NoError(t, err)
+
+	// Assert expected calls were made.
+	cfg.AssertExpectations(t)
 }
 
 // TestPeerRestrictionRealToPseudo tests that the PeerRestriction's RealToPseudo

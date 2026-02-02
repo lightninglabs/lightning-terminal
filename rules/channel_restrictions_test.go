@@ -12,6 +12,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightningnetwork/lnd/lnrpc"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -37,22 +38,25 @@ func TestChannelRestrictCheckRequest(t *testing.T) {
 
 	ctx := context.Background()
 	mgr := NewChannelRestrictMgr()
-	cfg := &mockLndClient{
-		channels: []lndclient.ChannelInfo{
-			{
-				ChannelID:    chanID1,
-				ChannelPoint: chanPointStr1,
-			},
-			{
-				ChannelID:    chanID2,
-				ChannelPoint: chanPointStr2,
-			},
-			{
-				ChannelID:    chanID3,
-				ChannelPoint: chanPointStr3,
-			},
+	cfg := &mockLndClient{}
+	cfg.On(
+		"ListChannels", mock.Anything, mock.Anything, mock.Anything,
+		mock.Anything,
+	).Return([]lndclient.ChannelInfo{
+		{
+			ChannelID:    chanID1,
+			ChannelPoint: chanPointStr1,
 		},
-	}
+		{
+			ChannelID:    chanID2,
+			ChannelPoint: chanPointStr2,
+		},
+		{
+			ChannelID:    chanID3,
+			ChannelPoint: chanPointStr3,
+		},
+	}, nil)
+
 	enf, err := mgr.NewEnforcer(ctx, cfg, &ChannelRestrict{
 		DenyList: []uint64{
 			chanID1, chanID2,
@@ -149,18 +153,23 @@ func newTXID() ([]byte, uint32, error) {
 type mockLndClient struct {
 	lndclient.LightningClient
 	Config
-
-	channels []lndclient.ChannelInfo
+	mock.Mock
 }
 
 func (m *mockLndClient) GetLndClient() lndclient.LightningClient {
 	return m
 }
 
-func (m *mockLndClient) ListChannels(_ context.Context, _, _ bool,
-	_ ...lndclient.ListChannelsOption) ([]lndclient.ChannelInfo, error) {
+func (m *mockLndClient) ListChannels(ctx context.Context, public, active bool,
+	opts ...lndclient.ListChannelsOption) ([]lndclient.ChannelInfo, error) {
 
-	return m.channels, nil
+	args := m.Called(ctx, public, active, opts)
+
+	if args.Get(0) != nil {
+		return args.Get(0).([]lndclient.ChannelInfo), args.Error(1)
+	}
+
+	return nil, args.Error(1)
 }
 
 // TestChannelRestrictRealToPseudo tests that the ChannelRestrict's RealToPseudo
@@ -291,4 +300,30 @@ func TestChannelRestrictRealToPseudo(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestChannelRestrictResilience ensures that the ChannelRestrictEnforcer is
+// resilient to missing channels during initialization.
+func TestChannelRestrictResilience(t *testing.T) {
+	var (
+		ctx = context.Background()
+		mgr = NewChannelRestrictMgr()
+	)
+
+	chanID1, _ := firewalldb.NewPseudoUint64()
+
+	// Initially, LND has no channels.
+	cfg := &mockLndClient{}
+	cfg.On(
+		"ListChannels", mock.Anything, mock.Anything, mock.Anything,
+		mock.Anything,
+	).Return([]lndclient.ChannelInfo{}, nil)
+
+	// We create an enforcer that denies chanID1 (maybe a closed channel or
+	// generally unknown). This will be fixed in a future commit.
+	_, err := mgr.NewEnforcer(ctx, cfg, &ChannelRestrict{
+		DenyList: []uint64{chanID1},
+	})
+	require.ErrorContains(t, err, "invalid channel ID")
+	cfg.AssertExpectations(t)
 }
