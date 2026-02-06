@@ -3245,24 +3245,33 @@ func assertClosedChannelAssetData(t *testing.T, node *HarnessNode,
 
 	ctxb := context.Background()
 
-	// Make sure we can find the closed channel in the channel database.
-	closedChannels, err := node.ClosedChannels(
-		ctxb, &lnrpc.ClosedChannelsRequest{},
-	)
-	require.NoError(t, err)
-
-	require.NotEmpty(t, closedChannels.Channels)
-
 	targetChanPointStr := fmt.Sprintf("%v:%v",
 		chanPoint.GetFundingTxidStr(), chanPoint.GetOutputIndex())
 
+	// Poll until the closed channel appears in the database. This is
+	// necessary because the channel arbitrator processes close events
+	// asynchronously, and the channel may not be marked as fully closed
+	// immediately after the close transaction is confirmed.
 	var closedChan *lnrpc.ChannelCloseSummary
-	for _, ch := range closedChannels.Channels {
-		if ch.ChannelPoint == targetChanPointStr {
-			closedChan = ch
-			break
+	err := wait.Predicate(func() bool {
+		closedChannels, err := node.ClosedChannels(
+			ctxb, &lnrpc.ClosedChannelsRequest{},
+		)
+		if err != nil {
+			return false
 		}
-	}
+
+		for _, ch := range closedChannels.Channels {
+			if ch.ChannelPoint == targetChanPointStr {
+				closedChan = ch
+				return true
+			}
+		}
+
+		return false
+	}, wait.DefaultTimeout)
+	require.NoError(t, err)
+
 	require.NotNil(t, closedChan)
 	require.NotEmpty(t, closedChan.CustomChannelData)
 
