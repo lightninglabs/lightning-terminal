@@ -26,6 +26,9 @@
 
 ### LND
 
+* [PR](https://github.com/lightninglabs/lightning-terminal/pull/1225): Bump:
+    `lnd@v0.21.0-beta`, `lnd/sqldb@v1.0.13`.
+
 ### Loop
 
 * [PR](https://github.com/lightninglabs/lightning-terminal/pull/1191): Bump:
@@ -36,5 +39,8 @@
 ### Faraday
 
 ### Taproot Assets
+
+* [PR](https://github.com/lightninglabs/lightning-terminal/pull/1225): Bump:
+    `taproot-assets@master`, `taproot-assets/sqltaprpcdb@master`.
 
 # Contributors (Alphabetical Order)
