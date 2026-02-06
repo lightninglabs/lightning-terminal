@@ -314,7 +314,7 @@ var (
 		isSubServer:       true,
 	}, {
 		name:              "taprpc-whitelist",
-		macaroonFn:        emptyMacaroonFn,
+		macaroonFn:        tapMacaroonFn,
 		requestFn:         tapUniverseRequestFn,
 		successPattern:    "\"runtime_id\":",
 		disabledPattern:   "unknown request",
@@ -322,7 +322,6 @@ var (
 		grpcWebURI:        "/universerpc.Universe/Info",
 		restWebURI:        "/v1/taproot-assets/universe/info",
 		canDisable:        true,
-		noAuth:            true,
 		isSubServer:       true,
 	}, {
 		name:       "litrpc-sessions",
