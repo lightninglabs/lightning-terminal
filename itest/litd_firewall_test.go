@@ -847,7 +847,7 @@ func testSessionLinking(net *NetworkHarness, t *harnessTest) {
 			Scope: &lnrpc.PolicyUpdateRequest_ChanPoint{
 				ChanPoint: chanPoint,
 			},
-			TimeLockDelta: 20,
+			TimeLockDelta: 24,
 			MaxHtlcMsat:   100000,
 		}, caveatCreds1,
 	)
@@ -939,7 +939,7 @@ func testSessionLinking(net *NetworkHarness, t *harnessTest) {
 			Scope: &lnrpc.PolicyUpdateRequest_ChanPoint{
 				ChanPoint: chanPoint,
 			},
-			TimeLockDelta: 20,
+			TimeLockDelta: 24,
 			MaxHtlcMsat:   100000,
 		}, caveatCreds1,
 	)
@@ -1591,7 +1591,7 @@ func testRateLimitAndPrivacyMapper(net *NetworkHarness, t *harnessTest) {
 			Scope: &lnrpc.PolicyUpdateRequest_ChanPoint{
 				ChanPoint: chanPoint,
 			},
-			TimeLockDelta: 20,
+			TimeLockDelta: 24,
 			MaxHtlcMsat:   100000,
 		}, caveatCreds,
 	)
@@ -1633,7 +1633,7 @@ func testRateLimitAndPrivacyMapper(net *NetworkHarness, t *harnessTest) {
 			Scope: &lnrpc.PolicyUpdateRequest_ChanPoint{
 				ChanPoint: chanPoint,
 			},
-			TimeLockDelta: 20,
+			TimeLockDelta: 24,
 			MaxHtlcMsat:   100000,
 		}, caveatCreds,
 	)
@@ -1931,7 +1931,7 @@ func testChanPolicyBoundsRule(net *NetworkHarness, t *harnessTest) {
 			Scope: &lnrpc.PolicyUpdateRequest_ChanPoint{
 				ChanPoint: chanPoint,
 			},
-			TimeLockDelta: 20,
+			TimeLockDelta: 24,
 			MaxHtlcMsat:   100000,
 		}, caveatCreds,
 	)
@@ -1946,7 +1946,7 @@ func testChanPolicyBoundsRule(net *NetworkHarness, t *harnessTest) {
 			Scope: &lnrpc.PolicyUpdateRequest_ChanPoint{
 				ChanPoint: chanPoint,
 			},
-			TimeLockDelta: 20,
+			TimeLockDelta: 24,
 			MaxHtlcMsat:   100000,
 		}, caveatCreds,
 	)
@@ -1961,7 +1961,7 @@ func testChanPolicyBoundsRule(net *NetworkHarness, t *harnessTest) {
 			Scope: &lnrpc.PolicyUpdateRequest_ChanPoint{
 				ChanPoint: chanPoint,
 			},
-			TimeLockDelta: 10,
+			TimeLockDelta: 24,
 			MaxHtlcMsat:   100000,
 		}, caveatCreds,
 	)
@@ -1976,7 +1976,7 @@ func testChanPolicyBoundsRule(net *NetworkHarness, t *harnessTest) {
 			Scope: &lnrpc.PolicyUpdateRequest_ChanPoint{
 				ChanPoint: chanPoint,
 			},
-			TimeLockDelta: 20,
+			TimeLockDelta: 24,
 			MaxHtlcMsat:   100000,
 		}, caveatCreds,
 	)
@@ -1991,7 +1991,7 @@ func testChanPolicyBoundsRule(net *NetworkHarness, t *harnessTest) {
 			Scope: &lnrpc.PolicyUpdateRequest_ChanPoint{
 				ChanPoint: chanPoint,
 			},
-			TimeLockDelta: 20,
+			TimeLockDelta: 24,
 			MaxHtlcMsat:   100000,
 		}, caveatCreds,
 	)
@@ -2212,7 +2212,7 @@ func testPeerAndChannelRestrictRules(net *NetworkHarness, t *harnessTest) {
 			Scope: &lnrpc.PolicyUpdateRequest_ChanPoint{
 				ChanPoint: chanPoint,
 			},
-			TimeLockDelta: 20,
+			TimeLockDelta: 24,
 			MaxHtlcMsat:   100000,
 		}, caveatCreds,
 	)
@@ -2252,7 +2252,7 @@ func testPeerAndChannelRestrictRules(net *NetworkHarness, t *harnessTest) {
 			Scope: &lnrpc.PolicyUpdateRequest_ChanPoint{
 				ChanPoint: chanPoint,
 			},
-			TimeLockDelta: 20,
+			TimeLockDelta: 24,
 			MaxHtlcMsat:   100000,
 		}, caveatCreds,
 	)
@@ -2292,7 +2292,7 @@ func testPeerAndChannelRestrictRules(net *NetworkHarness, t *harnessTest) {
 			Scope: &lnrpc.PolicyUpdateRequest_ChanPoint{
 				ChanPoint: chanPoint,
 			},
-			TimeLockDelta: 20,
+			TimeLockDelta: 24,
 			MaxHtlcMsat:   100000,
 		}, caveatCreds,
 	)
@@ -2329,7 +2329,7 @@ func testPeerAndChannelRestrictRules(net *NetworkHarness, t *harnessTest) {
 			Scope: &lnrpc.PolicyUpdateRequest_ChanPoint{
 				ChanPoint: chanPoint,
 			},
-			TimeLockDelta: 20,
+			TimeLockDelta: 24,
 			MaxHtlcMsat:   100000,
 		}, caveatCreds,
 	)

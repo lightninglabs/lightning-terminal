@@ -3266,7 +3266,7 @@ func testCustomChannelsLiquidityEdgeCasesCore(ctx context.Context,
 		},
 		BaseFeeMsat:   31337,
 		FeeRatePpm:    443322,
-		TimeLockDelta: 19,
+		TimeLockDelta: 25,
 	})
 	require.NoError(t.t, err)
 	require.Empty(t.t, resp.FailedUpdates)
@@ -3277,7 +3277,7 @@ func testCustomChannelsLiquidityEdgeCasesCore(ctx context.Context,
 		},
 		BaseFeeMsat:   42069,
 		FeeRatePpm:    223344,
-		TimeLockDelta: 18,
+		TimeLockDelta: 24,
 	})
 	require.NoError(t.t, err)
 	require.Empty(t.t, resp.FailedUpdates)
@@ -3296,7 +3296,7 @@ func testCustomChannelsLiquidityEdgeCasesCore(ctx context.Context,
 	require.Equal(t.t, erin.PubKeyStr, invoiceHint.NodeId)
 	require.EqualValues(t.t, 31337, invoiceHint.FeeBaseMsat)
 	require.EqualValues(t.t, 443322, invoiceHint.FeeProportionalMillionths)
-	require.EqualValues(t.t, 19, invoiceHint.CltvExpiryDelta)
+	require.EqualValues(t.t, 25, invoiceHint.CltvExpiryDelta)
 
 	// Now we pay the invoice and expect the same policy with very expensive
 	// fees to be used.
