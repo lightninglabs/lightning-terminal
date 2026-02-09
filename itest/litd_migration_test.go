@@ -6,35 +6,62 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"encoding/binary"
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strings"
+	"testing"
 	"time"
 
 	"github.com/btcsuite/btcd/btcutil"
 	terminal "github.com/lightninglabs/lightning-terminal"
 	"github.com/lightninglabs/lightning-terminal/accounts"
+	"github.com/lightninglabs/lightning-terminal/db/sqlc"
 	"github.com/lightninglabs/lightning-terminal/db/sqlcmig6"
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/clock"
+	"github.com/lightningnetwork/lnd/fn"
+	"github.com/lightningnetwork/lnd/kvdb"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntest"
 	"github.com/lightningnetwork/lnd/lntypes"
 	"github.com/lightningnetwork/lnd/lnwire"
 	"github.com/lightningnetwork/lnd/macaroons"
 	"github.com/lightningnetwork/lnd/sqldb/v2"
+	"github.com/lightningnetwork/lnd/tlv"
 	"github.com/stretchr/testify/require"
 	"go.etcd.io/bbolt"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 	"gopkg.in/macaroon-bakery.v2/bakery/checkers"
 	"gopkg.in/macaroon.v2"
+)
+
+const (
+	actionTestFeatureName          = "migration-action-feature"
+	actionTestTrigger              = "migration-action-trigger"
+	actionTestIntent               = "migration-action-intent"
+	actionTestActorName            = "migration-action-actor"
+	actionTestRPCMethod            = "Test.Method"
+	actionTestRPCParams            = "{\"test\":\"data\"}"
+	actionTestJSON                 = "{\"test\":\"data\"}"
+	accountTypeID         tlv.Type = 1
+	accountTypeType       tlv.Type = 2
+	accountInitialBalance tlv.Type = 3
+	accountCurrentBalance tlv.Type = 4
+	accountLastUpdate     tlv.Type = 5
+	accountExpirationDate tlv.Type = 6
+	accountInvoices       tlv.Type = 7
+	accountPayments       tlv.Type = 8
+	accountLabel          tlv.Type = 9
 )
 
 // testKvdbSQLMigration implements the kvdb -> SQL migration itest.
@@ -127,6 +154,12 @@ func testKvdbSQLMigration(ctx context.Context, net *NetworkHarness,
 	var sessionData sessionMigrationData
 	var fWallData firewallMigrationData
 
+	// Fetch the macRootKeyIDMap which maps macaroon suffixes to full root
+	// key IDs. Note that this is done before shutting down the node, as
+	// we need the node to be up and running to connect to it.
+	macRootKeyMap, err := macRootKeyIDMap(ctxt, t.t, migNode.Cfg)
+	require.NoError(t.t, err)
+
 	// Restart with bbolt to insert and verify migration data before
 	// triggering the sqlite migration.
 	// Note that we cannot connect directly to the bbolt backend while the
@@ -151,6 +184,7 @@ func testKvdbSQLMigration(ctx context.Context, net *NetworkHarness,
 
 			sessionData, fWallData, err = setupBBoltMigrationData(
 				ctxt, t, accountStore, dbDir, accountsData,
+				macRootKeyMap,
 			)
 			if err != nil {
 				return err
@@ -169,6 +203,11 @@ func testKvdbSQLMigration(ctx context.Context, net *NetworkHarness,
 		},
 	)
 	require.NoError(t.t, err)
+
+	// Refresh the macaroon root key map of the fWallData after the restart
+	// because lnd assigns new root key IDs, so the earlier map no longer
+	// matches migrated data.
+	updateActionMacRootKeyIDs(ctxt, t.t, migNode.Cfg, &fWallData)
 
 	// Step 4: Assert data via litcli where possible.
 	assertMigrationDataViaLitCLI(
@@ -247,9 +286,14 @@ type firewallKVMigrationData struct {
 	entries []*firewallKVEntryExpectation
 }
 
+type firewallActionMigrationData struct {
+	actions []*firewalldb.Action
+}
+
 type firewallMigrationData struct {
 	firewallKVMigrationData
 	firewallPrivacyPairMigrationData
+	firewallActionMigrationData
 }
 
 type firewallPrivacyPairMigrationData struct {
@@ -355,7 +399,8 @@ func setupAccountMigrationData(ctx context.Context, adminCtx context.Context,
 // payments, by creating a direct connection to the bbolt db.
 func setupBBoltMigrationData(ctx context.Context, t *harnessTest,
 	accountStore *accounts.BoltStore, dbDir string,
-	accountsData accountMigrationData) (sessionMigrationData,
+	accountsData accountMigrationData,
+	macRootKeyIDs map[[4]byte]uint64) (sessionMigrationData,
 	firewallMigrationData, error) {
 
 	err := setupMigrationPayments(accountStore, accountsData)
@@ -371,7 +416,7 @@ func setupBBoltMigrationData(ctx context.Context, t *harnessTest,
 	}
 
 	firewallData, err := setupFirewallMigrationData(
-		ctx, t, accountStore, dbDir,
+		ctx, t, accountStore, dbDir, macRootKeyIDs,
 	)
 	if err != nil {
 		return sessionMigrationData{}, firewallMigrationData{}, err
@@ -992,7 +1037,8 @@ func updateSessionIDAndCreatedAt(store *session.BoltStore, oldID session.ID,
 // setupFirewallMigrationData creates firewalldb fixtures for migration tests
 // that mimic firewalldb/sql_migration_test.go, excluding randomized tests.
 func setupFirewallMigrationData(ctx context.Context, t *harnessTest,
-	accountStore *accounts.BoltStore, dbDir string) (firewallMigrationData,
+	accountStore *accounts.BoltStore, dbDir string,
+	macRootKeyIDs map[[4]byte]uint64) (firewallMigrationData,
 	error) {
 
 	firewallKVData, err := setupFirewallKVMigrationData(
@@ -1009,9 +1055,17 @@ func setupFirewallMigrationData(ctx context.Context, t *harnessTest,
 		return firewallMigrationData{}, err
 	}
 
+	firewallActionData, err := setupFirewallActionMigrationData(
+		ctx, t, accountStore, dbDir, macRootKeyIDs,
+	)
+	if err != nil {
+		return firewallMigrationData{}, err
+	}
+
 	return firewallMigrationData{
 		firewallKVMigrationData:          firewallKVData,
 		firewallPrivacyPairMigrationData: firewallPrivacyData,
+		firewallActionMigrationData:      firewallActionData,
 	}, nil
 }
 
@@ -1535,6 +1589,454 @@ func setupFirewallPrivacyMapperMigrationData(ctx context.Context,
 	return data, nil
 }
 
+// setupFirewallActionMigrationData seeds firewalldb actions that are
+// validated after sqlite migration.
+func setupFirewallActionMigrationData(ctx context.Context, t *harnessTest,
+	accountStore *accounts.BoltStore, dbDir string,
+	macRootKeyIDs map[[4]byte]uint64) (firewallActionMigrationData, error) {
+
+	var (
+		testClock = clock.NewTestClock(time.Now())
+		baseTime  = testClock.Now()
+		data      = firewallActionMigrationData{
+			actions: make([]*firewalldb.Action, 0),
+		}
+	)
+
+	sessionStore, err := session.NewDB(
+		dbDir, session.DBFilename, testClock, accountStore,
+	)
+	if err != nil {
+		return data, err
+	}
+	defer sessionStore.Close()
+
+	firewallStore, err := firewalldb.NewBoltDB(
+		dbDir, firewalldb.DBFilename, sessionStore, accountStore,
+		testClock,
+	)
+	if err != nil {
+		return data, err
+	}
+	defer firewallStore.Close()
+
+	usedSuffixes := make(map[[4]byte]struct{})
+
+	registerSuffix := func(suffix [4]byte) {
+		usedSuffixes[suffix] = struct{}{}
+	}
+
+	accountSuffix := func(id accounts.AccountID) [4]byte {
+		var suffix [4]byte
+		copy(suffix[:], id[:4])
+		return suffix
+	}
+
+	nextUnusedSuffix := func() [4]byte {
+		suffix := [4]byte{0xfa, 0xce, 0x00, 0x01}
+		for i := 0; i < 255; i++ {
+			if _, ok := usedSuffixes[suffix]; !ok {
+				registerSuffix(suffix)
+				return suffix
+			}
+			suffix[3]++
+		}
+		return suffix
+	}
+
+	advanceClock := func() time.Time {
+		next := testClock.Now().Add(time.Second)
+		testClock.SetTime(next)
+		return next
+	}
+
+	actionRootKey := func(suffix [4]byte) uint64 {
+		return resolveMacRootKeyID(suffix, macRootKeyIDs)
+	}
+
+	addAction := func(req firewalldb.AddActionReq,
+		expectedSession fn.Option[session.ID],
+		expectedAccount fn.Option[accounts.AccountID]) error {
+
+		reqForStore := req
+		reqForStore.SessionID = fn.None[session.ID]()
+
+		attemptedAt := advanceClock().UTC()
+		_, err := firewallStore.AddAction(ctx, &reqForStore)
+		if err != nil {
+			return err
+		}
+
+		action := &firewalldb.Action{
+			AddActionReq: req,
+			AttemptedAt:  attemptedAt,
+			State:        firewalldb.ActionStateInit,
+		}
+		action.SessionID = expectedSession
+		action.AccountID = expectedAccount
+
+		data.actions = append(data.actions, action)
+
+		return nil
+	}
+
+	createSession := func(label string, expiry time.Time,
+		typ session.Type, opts ...session.Option) (*session.Session,
+		error) {
+
+		sess, err := sessionStore.NewSession(
+			ctx, label, typ, expiry, mailboxServerAddr, opts...,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		err = sessionStore.ShiftState(
+			ctx, sess.ID, session.StateCreated,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		registerSuffix(sess.ID)
+		return sess, nil
+	}
+
+	createAccount := func(expiry time.Time) (
+		*accounts.OffChainBalanceAccount, error) {
+
+		acct, err := accountStore.NewAccount(ctx, 1234, expiry, "")
+		if err != nil {
+			return nil, err
+		}
+
+		registerSuffix(accountSuffix(acct.ID))
+		return acct, nil
+	}
+
+	createSessionWithAccount := func(label string) (*session.Session,
+		*accounts.OffChainBalanceAccount, error) {
+
+		acct, err := createAccount(baseTime.Add(24 * time.Hour))
+		if err != nil {
+			return nil, nil, err
+		}
+
+		accountCaveat := checkers.Condition(
+			macaroons.CondLndCustom,
+			fmt.Sprintf("%s %x", accounts.CondAccount, acct.ID[:]),
+		)
+
+		caveats := []macaroon.Caveat{
+			{
+				Id: []byte(accountCaveat),
+			},
+		}
+
+		sess, err := createSession(
+			label, baseTime.Add(24*time.Hour),
+			session.TypeMacaroonAccount,
+			session.WithAccount(acct.ID),
+			session.WithMacaroonRecipe(caveats, nil),
+		)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		return sess, acct, nil
+	}
+
+	// Mimic "action with no session or account".
+	req := actionTestRequest()
+	suffix := nextUnusedSuffix()
+	req.MacaroonRootKeyID = fn.Some(actionRootKey(suffix))
+	req.SessionID = fn.None[session.ID]()
+	req.AccountID = fn.None[accounts.AccountID]()
+	err = addAction(
+		req, fn.None[session.ID](), fn.None[accounts.AccountID](),
+	)
+	if err != nil {
+		return data, err
+	}
+
+	// Mimic "action with session but no account".
+	sess, err := createSession(
+		"action-session", baseTime.Add(24*time.Hour),
+		session.TypeMacaroonAdmin,
+	)
+	if err != nil {
+		return data, err
+	}
+	req = actionTestRequest()
+	req.MacaroonRootKeyID = fn.Some(actionRootKey(sess.ID))
+	req.SessionID = fn.Some(sess.ID)
+	req.AccountID = fn.None[accounts.AccountID]()
+	err = addAction(req, fn.Some(sess.ID), fn.None[accounts.AccountID]())
+	if err != nil {
+		return data, err
+	}
+
+	// Mimic "action with filtered session".
+	expiredSess, err := createSession(
+		"action-expired-session", baseTime.Add(-time.Hour),
+		session.TypeMacaroonAdmin,
+	)
+	if err != nil {
+		return data, err
+	}
+	req = actionTestRequest()
+	req.MacaroonRootKeyID = fn.Some(actionRootKey(expiredSess.ID))
+	req.SessionID = fn.None[session.ID]()
+	req.AccountID = fn.None[accounts.AccountID]()
+	err = addAction(
+		req, fn.None[session.ID](), fn.None[accounts.AccountID](),
+	)
+	if err != nil {
+		return data, err
+	}
+
+	revokedSess, err := createSession(
+		"action-revoked-session", baseTime.Add(24*time.Hour),
+		session.TypeMacaroonAdmin,
+	)
+	if err != nil {
+		return data, err
+	}
+	err = sessionStore.ShiftState(
+		ctx, revokedSess.ID, session.StateRevoked,
+	)
+	if err != nil {
+		return data, err
+	}
+	req = actionTestRequest()
+	req.MacaroonRootKeyID = fn.Some(actionRootKey(revokedSess.ID))
+	req.SessionID = fn.None[session.ID]()
+	req.AccountID = fn.None[accounts.AccountID]()
+	err = addAction(
+		req, fn.None[session.ID](), fn.None[accounts.AccountID](),
+	)
+	if err != nil {
+		return data, err
+	}
+
+	// Mimic "action with session with linked account".
+	linkedSess, linkedAcct, err := createSessionWithAccount(
+		"action-linked-session",
+	)
+	if err != nil {
+		return data, err
+	}
+	req = actionTestRequest()
+	req.MacaroonRootKeyID = fn.Some(actionRootKey(linkedSess.ID))
+	req.SessionID = fn.Some(linkedSess.ID)
+	req.AccountID = fn.Some(linkedAcct.ID)
+	err = addAction(
+		req, fn.Some(linkedSess.ID), fn.Some(linkedAcct.ID),
+	)
+	if err != nil {
+		return data, err
+	}
+
+	// Mimic "action with account".
+	acct, err := createAccount(baseTime.Add(24 * time.Hour))
+	if err != nil {
+		return data, err
+	}
+	req = actionTestRequest()
+	req.MacaroonRootKeyID = fn.Some(actionRootKey(accountSuffix(acct.ID)))
+	req.SessionID = fn.None[session.ID]()
+	req.AccountID = fn.Some(acct.ID)
+	err = addAction(req, fn.None[session.ID](), fn.Some(acct.ID))
+	if err != nil {
+		return data, err
+	}
+
+	// Mimic "actions with filtered account".
+	expiredAcct, err := createAccount(baseTime.Add(-time.Hour))
+	if err != nil {
+		return data, err
+	}
+	req = actionTestRequest()
+	req.MacaroonRootKeyID = fn.Some(
+		actionRootKey(accountSuffix(expiredAcct.ID)),
+	)
+	req.SessionID = fn.None[session.ID]()
+	req.AccountID = fn.None[accounts.AccountID]()
+	err = addAction(
+		req, fn.None[session.ID](), fn.None[accounts.AccountID](),
+	)
+	if err != nil {
+		return data, err
+	}
+
+	activeAcct, err := createAccount(baseTime.Add(24 * time.Hour))
+	if err != nil {
+		return data, err
+	}
+	req = actionTestRequest()
+	req.ActorName = actionTestActorName
+	req.MacaroonRootKeyID = fn.Some(
+		actionRootKey(accountSuffix(activeAcct.ID)),
+	)
+	req.SessionID = fn.None[session.ID]()
+	req.AccountID = fn.None[accounts.AccountID]()
+	err = addAction(
+		req, fn.None[session.ID](), fn.None[accounts.AccountID](),
+	)
+	if err != nil {
+		return data, err
+	}
+
+	sendAcct, err := createAccount(baseTime.Add(24 * time.Hour))
+	if err != nil {
+		return data, err
+	}
+	req = actionTestRequest()
+	req.RPCMethod = "/routerrpc.Router/SendPaymentV2"
+	req.MacaroonRootKeyID = fn.Some(
+		actionRootKey(accountSuffix(sendAcct.ID)),
+	)
+	req.SessionID = fn.None[session.ID]()
+	req.AccountID = fn.None[accounts.AccountID]()
+	err = addAction(
+		req, fn.None[session.ID](), fn.None[accounts.AccountID](),
+	)
+	if err != nil {
+		return data, err
+	}
+
+	invoiceAcct, err := createAccount(baseTime.Add(24 * time.Hour))
+	if err != nil {
+		return data, err
+	}
+	req = actionTestRequest()
+	req.RPCMethod = "/lnrpc.Lightning/AddInvoice"
+	req.MacaroonRootKeyID = fn.Some(
+		actionRootKey(accountSuffix(invoiceAcct.ID)),
+	)
+	req.SessionID = fn.None[session.ID]()
+	req.AccountID = fn.None[accounts.AccountID]()
+	err = addAction(
+		req, fn.None[session.ID](), fn.None[accounts.AccountID](),
+	)
+	if err != nil {
+		return data, err
+	}
+
+	// Mimic "action with multiple accounts".
+	multiAcct1, err := createAccount(baseTime.Add(48 * time.Hour))
+	if err != nil {
+		return data, err
+	}
+	multiAcct2, err := createAccount(baseTime.Add(24 * time.Hour))
+	if err != nil {
+		return data, err
+	}
+	newAcct2ID, err := updateAccountIDForTest(
+		accountStore.DB, multiAcct2.ID, multiAcct1.ID,
+	)
+	if err != nil {
+		return data, err
+	}
+	multiAcct2.ID = newAcct2ID
+
+	req = actionTestRequest()
+	req.MacaroonRootKeyID = fn.Some(
+		actionRootKey(accountSuffix(multiAcct1.ID)),
+	)
+	req.SessionID = fn.None[session.ID]()
+	req.AccountID = fn.Some(multiAcct2.ID)
+	err = addAction(
+		req, fn.None[session.ID](), fn.Some(multiAcct2.ID),
+	)
+	if err != nil {
+		return data, err
+	}
+
+	// Mimic "action with session and account".
+	sessCollide, err := createSession(
+		"action-session-collide", baseTime.Add(24*time.Hour),
+		session.TypeMacaroonAdmin,
+	)
+	if err != nil {
+		return data, err
+	}
+	accountCollide, err := createAccount(baseTime.Add(24 * time.Hour))
+	if err != nil {
+		return data, err
+	}
+	var prefixID accounts.AccountID
+	prefixID = accounts.AccountID{}
+	copy(prefixID[:4], sessCollide.ID[:])
+	newAcctID, err := updateAccountIDForTest(
+		accountStore.DB, accountCollide.ID, prefixID,
+	)
+	if err != nil {
+		return data, err
+	}
+	accountCollide.ID = newAcctID
+	registerSuffix(accountSuffix(accountCollide.ID))
+
+	req = actionTestRequest()
+	req.MacaroonRootKeyID = fn.Some(actionRootKey(sessCollide.ID))
+	req.SessionID = fn.Some(sessCollide.ID)
+	req.AccountID = fn.None[accounts.AccountID]()
+	err = addAction(
+		req, fn.Some(sessCollide.ID),
+		fn.None[accounts.AccountID](),
+	)
+	if err != nil {
+		return data, err
+	}
+
+	// Mimic "action with session with linked account and account".
+	collideSess, linkedAcct2, err := createSessionWithAccount(
+		"action-linked-collide",
+	)
+	if err != nil {
+		return data, err
+	}
+	otherAcct, err := createAccount(baseTime.Add(24 * time.Hour))
+	if err != nil {
+		return data, err
+	}
+	prefixID = accounts.AccountID{}
+	copy(prefixID[:4], collideSess.ID[:])
+	newOtherID, err := updateAccountIDForTest(
+		accountStore.DB, otherAcct.ID, prefixID,
+	)
+	if err != nil {
+		return data, err
+	}
+	otherAcct.ID = newOtherID
+
+	req = actionTestRequest()
+	req.MacaroonRootKeyID = fn.Some(actionRootKey(collideSess.ID))
+	req.SessionID = fn.Some(collideSess.ID)
+	req.AccountID = fn.Some(linkedAcct2.ID)
+	err = addAction(
+		req, fn.Some(collideSess.ID), fn.Some(linkedAcct2.ID),
+	)
+	if err != nil {
+		return data, err
+	}
+
+	return data, nil
+}
+
+// actionTestRequest returns the baseline action request for migration tests.
+func actionTestRequest() firewalldb.AddActionReq {
+	return firewalldb.AddActionReq{
+		ActorName:          "",
+		FeatureName:        actionTestFeatureName,
+		Trigger:            actionTestTrigger,
+		Intent:             actionTestIntent,
+		StructuredJsonData: actionTestJSON,
+		RPCMethod:          actionTestRPCMethod,
+		RPCParamsJson:      []byte(actionTestRPCParams),
+	}
+}
+
 // assertMigrationDataInBBoltDB validates bbolt data before migration.
 func assertMigrationDataInBBoltDB(ctx context.Context,
 	accountStore *accounts.BoltStore, dbDir string,
@@ -1560,7 +2062,14 @@ func assertMigrationDataInBBoltDB(ctx context.Context,
 		return err
 	}
 
-	return assertFirewallPrivacyMapperMigrationDataBolt(
+	err = assertFirewallPrivacyMapperMigrationDataBolt(
+		ctx, accountStore, dbDir, firewallData,
+	)
+	if err != nil {
+		return err
+	}
+
+	return assertFirewallActionMigrationDataBolt(
 		ctx, accountStore, dbDir, firewallData,
 	)
 }
@@ -1859,6 +2368,105 @@ func assertFirewallPrivacyPairsBolt(ctx context.Context,
 	)
 }
 
+// assertFirewallActionMigrationDataBolt checks action rows in bbolt.
+func assertFirewallActionMigrationDataBolt(ctx context.Context,
+	accountStore accounts.Store, dbDir string,
+	data firewallMigrationData) error {
+
+	dbClock := clock.NewDefaultClock()
+	sessionStore, err := session.NewDB(
+		dbDir, session.DBFilename, dbClock, accountStore,
+	)
+	if err != nil {
+		return err
+	}
+	defer sessionStore.Close()
+
+	firewallStore, err := firewalldb.NewBoltDB(
+		dbDir, firewalldb.DBFilename, sessionStore,
+		accountStore, dbClock,
+	)
+	if err != nil {
+		return err
+	}
+	defer firewallStore.Close()
+
+	actions, _, _, err := firewallStore.ListActions(
+		ctx, nil,
+		firewalldb.WithActionFeatureName(actionTestFeatureName),
+	)
+	if err != nil {
+		return err
+	}
+	if len(actions) != len(data.actions) {
+		return fmt.Errorf(
+			"expected %d actions, got %d",
+			len(data.actions), len(actions),
+		)
+	}
+
+	for i, action := range actions {
+		if err := compareBoltActions(
+			data.actions[i], action,
+		); err != nil {
+			return fmt.Errorf("action %d: %w", i, err)
+		}
+	}
+
+	return nil
+}
+
+// compareBoltActions checks action fields persisted in bbolt.
+func compareBoltActions(expected *firewalldb.Action,
+	actual *firewalldb.Action) error {
+
+	if expected == nil || actual == nil {
+		return fmt.Errorf("action cannot be nil")
+	}
+
+	expectedAttempted := expected.AttemptedAt
+	actualAttempted := actual.AttemptedAt
+
+	exp := *expected
+	got := *actual
+
+	exp.AttemptedAt = time.Time{}
+	got.AttemptedAt = time.Time{}
+	exp.AccountID = fn.None[accounts.AccountID]()
+	got.AccountID = fn.None[accounts.AccountID]()
+	exp.SessionID = fn.None[session.ID]()
+	got.SessionID = fn.None[session.ID]()
+	exp.MacaroonRootKeyID = normalizeMacRootKeyID(
+		exp.MacaroonRootKeyID,
+	)
+	got.MacaroonRootKeyID = normalizeMacRootKeyID(
+		got.MacaroonRootKeyID,
+	)
+
+	if !reflect.DeepEqual(exp, got) {
+		return fmt.Errorf("action mismatch")
+	}
+
+	if expectedAttempted.Unix() != actualAttempted.Unix() {
+		return fmt.Errorf("action attempted-at mismatch")
+	}
+
+	return nil
+}
+
+// normalizeMacRootKeyID matches kvdb's truncated root key storage.
+func normalizeMacRootKeyID(id fn.Option[uint64]) fn.Option[uint64] {
+	normalized := id
+	id.WhenSome(func(rootID uint64) {
+		sessID := session.IDFromMacRootKeyID(rootID)
+		normalized = fn.Some(
+			uint64(binary.BigEndian.Uint32(sessID[:])),
+		)
+	})
+
+	return normalized
+}
+
 // assertMigrationDataViaLitCLI checks migration data using litcli commands.
 func assertMigrationDataViaLitCLI(ctx context.Context, t *harnessTest,
 	node *HarnessNode, accountsData accountMigrationData,
@@ -1873,6 +2481,14 @@ func assertMigrationDataViaLitCLI(ctx context.Context, t *harnessTest,
 	assertSessionMigrationDataFromList(t, sessionsResp, sessionData)
 
 	assertPrivacyPairsViaLitCLI(ctx, t, node, firewallData)
+
+	actionsResp, err := listActionsViaLitCLI(
+		ctx, node, len(firewallData.actions),
+	)
+	require.NoError(t.t, err)
+	assertActionMigrationDataFromList(
+		t, actionsResp, firewallData,
+	)
 }
 
 // listAccountsViaLitCLI runs `litcli accounts list` and parses the response.
@@ -1960,6 +2576,63 @@ func listSessionsViaLitCLI(ctx context.Context, node *HarnessNode) (
 	}
 
 	var resp litrpc.ListSessionsResponse
+	err = lnrpc.ProtoJSONUnmarshalOpts.Unmarshal(
+		[]byte(raw), &resp,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &resp, nil
+}
+
+// listActionsViaLitCLI runs `litcli actions` and parses the response.
+func listActionsViaLitCLI(ctx context.Context, node *HarnessNode,
+	maxActions int) (*litrpc.ListActionsResponse, error) {
+
+	litcliPath, err := exec.LookPath("litcli")
+	if err != nil {
+		return nil, fmt.Errorf("litcli not found in PATH")
+	}
+
+	args := []string{
+		"actions",
+		fmt.Sprintf("--feature=%s", actionTestFeatureName),
+		"--oldest_first",
+	}
+	if maxActions > 0 {
+		args = append(
+			args, fmt.Sprintf("--max_num_actions=%d", maxActions),
+		)
+	}
+
+	cmd := exec.CommandContext(ctx, litcliPath, args...)
+	cmd.Env = append(os.Environ(),
+		fmt.Sprintf("LITCLI_RPCSERVER=%s", node.Cfg.LitAddr()),
+		fmt.Sprintf(
+			"LITCLI_TLSCERTPATH=%s", node.Cfg.LitTLSCertPath,
+		),
+		fmt.Sprintf("LITCLI_MACAROONPATH=%s", node.Cfg.LitMacPath),
+		fmt.Sprintf(
+			"LITCLI_NETWORK=%s", node.Cfg.NetParams.Name,
+		),
+		fmt.Sprintf("LITCLI_BASEDIR=%s", node.Cfg.LitDir),
+	)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return nil, fmt.Errorf(
+			"litcli actions failed: %w: %s",
+			err, strings.TrimSpace(string(output)),
+		)
+	}
+
+	raw := strings.TrimSpace(string(output))
+	if raw == "" {
+		return nil, fmt.Errorf("litcli actions returned no data")
+	}
+
+	var resp litrpc.ListActionsResponse
 	err = lnrpc.ProtoJSONUnmarshalOpts.Unmarshal(
 		[]byte(raw), &resp,
 	)
@@ -2202,6 +2875,118 @@ func privacyMapStrViaLitCLI(ctx context.Context, node *HarnessNode,
 	return resp.Output, nil
 }
 
+// assertActionMigrationDataFromList checks actions from a list response.
+func assertActionMigrationDataFromList(t *harnessTest,
+	resp *litrpc.ListActionsResponse,
+	data firewallMigrationData) {
+
+	require.NotNil(t.t, resp)
+	require.Len(t.t, resp.Actions, len(data.actions))
+
+	for i, action := range resp.Actions {
+		err := compareActionWithRPC(data.actions[i], action)
+		require.NoErrorf(t.t, err, "action %d mismatch", i)
+	}
+}
+
+// compareActionWithRPC compares expected actions with the RPC response.
+func compareActionWithRPC(expected *firewalldb.Action,
+	actual *litrpc.Action) error {
+
+	if expected == nil || actual == nil {
+		return fmt.Errorf("action cannot be nil")
+	}
+
+	if expected.ActorName != actual.ActorName {
+		return fmt.Errorf("actor name mismatch")
+	}
+
+	if expected.FeatureName != actual.FeatureName {
+		return fmt.Errorf("feature name mismatch")
+	}
+
+	if expected.Trigger != actual.Trigger {
+		return fmt.Errorf("trigger mismatch")
+	}
+
+	if expected.Intent != actual.Intent {
+		return fmt.Errorf("intent mismatch")
+	}
+
+	if expected.StructuredJsonData != actual.StructuredJsonData {
+		return fmt.Errorf("structured json mismatch")
+	}
+
+	if expected.RPCMethod != actual.RpcMethod {
+		return fmt.Errorf("rpc method mismatch")
+	}
+
+	if string(expected.RPCParamsJson) != actual.RpcParamsJson {
+		return fmt.Errorf("rpc params mismatch")
+	}
+
+	expectedState := actionStateToRPC(expected.State)
+	if expectedState != actual.State {
+		return fmt.Errorf("state mismatch")
+	}
+
+	if expected.ErrorReason != actual.ErrorReason {
+		return fmt.Errorf("error reason mismatch")
+	}
+
+	if expected.AttemptedAt.Unix() != int64(actual.Timestamp) {
+		return fmt.Errorf("timestamp mismatch")
+	}
+
+	err := compareMacaroonIdentifier(
+		expected.MacaroonRootKeyID, actual.MacaroonIdentifier,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// actionStateToRPC maps firewall action state to the RPC enum.
+func actionStateToRPC(state firewalldb.ActionState) litrpc.ActionState {
+	switch state {
+	case firewalldb.ActionStateInit:
+		return litrpc.ActionState_STATE_PENDING
+	case firewalldb.ActionStateDone:
+		return litrpc.ActionState_STATE_DONE
+	case firewalldb.ActionStateError:
+		return litrpc.ActionState_STATE_ERROR
+	default:
+		return litrpc.ActionState_STATE_UNKNOWN
+	}
+}
+
+// compareMacaroonIdentifier matches RPC macaroon identifiers to expected IDs.
+func compareMacaroonIdentifier(expected fn.Option[uint64],
+	actual []byte) error {
+
+	if expected.IsSome() {
+		rootID := expected.UnwrapOr(0)
+		sessID := session.IDFromMacRootKeyID(rootID)
+		if !bytes.Equal(sessID[:], actual) {
+			return fmt.Errorf("macaroon identifier mismatch")
+		}
+		return nil
+	}
+
+	if len(actual) == 0 {
+		return nil
+	}
+
+	zero := make([]byte, 4)
+	if bytes.Equal(actual, zero) {
+		return nil
+	}
+
+	return fmt.Errorf("unexpected macaroon identifier")
+}
+
 // assertMigrationDataSQL connects to the SQL DB to assert the migration
 // results.
 func assertMigrationDataSQL(ctx context.Context, t *harnessTest,
@@ -2342,6 +3127,7 @@ func assertFirewallMigrationDataSQL(ctx context.Context, t *harnessTest,
 
 	assertFirewallKVMigrationDataSQL(ctx, t, node, data)
 	assertFirewallPrivacyMapperMigrationDataSQL(ctx, t, node, data)
+	assertFirewallActionMigrationDataSQL(ctx, t, node, data)
 }
 
 // assertFirewallKVMigrationDataSQL connects to the SQL DB and queries KV
@@ -2542,6 +3328,64 @@ func assertFirewallPrivacyMapperMigrationDataSQL(ctx context.Context,
 	}
 
 	require.Equal(t.t, totalExpected, totalFound)
+}
+
+// assertFirewallActionMigrationDataSQL connects to the SQL DB and queries
+// actions to assert migration results.
+func assertFirewallActionMigrationDataSQL(ctx context.Context, t *harnessTest,
+	node *HarnessNode, data firewallMigrationData) {
+
+	dbPath := filepath.Join(
+		node.Cfg.LitDir,
+		node.Cfg.NetParams.Name,
+		"litd.db",
+	)
+
+	sqlStore, err := sqldb.NewSqliteStore(
+		&sqldb.SqliteConfig{
+			SkipMigrations:        true,
+			SkipMigrationDbBackup: true,
+		}, dbPath,
+	)
+	require.NoError(t.t, err)
+	defer sqlStore.BaseDB.Close()
+
+	queries := sqlc.NewForType(
+		sqlStore.BaseDB, sqlStore.BackendType,
+	)
+	actionStore := firewalldb.NewSQLDB(
+		sqlStore.BaseDB, queries, clock.NewDefaultClock(),
+	)
+
+	actions, _, _, err := actionStore.ListActions(
+		ctx, nil,
+		firewalldb.WithActionFeatureName(actionTestFeatureName),
+	)
+	require.NoError(t.t, err)
+	require.Len(t.t, actions, len(data.actions))
+
+	for i, action := range actions {
+		assertFirewallActionsEqual(t, data.actions[i], action)
+	}
+}
+
+// assertFirewallActionsEqual compares actions while normalizing timestamps.
+func assertFirewallActionsEqual(t *harnessTest,
+	expected *firewalldb.Action, got *firewalldb.Action) {
+
+	expectedAttemptedAt := expected.AttemptedAt
+	gotAttemptedAt := got.AttemptedAt
+
+	expected.AttemptedAt = time.Time{}
+	got.AttemptedAt = time.Time{}
+
+	require.Equal(t.t, expected, got)
+	require.Equal(
+		t.t, expectedAttemptedAt.Unix(), gotAttemptedAt.Unix(),
+	)
+
+	expected.AttemptedAt = expectedAttemptedAt
+	got.AttemptedAt = gotAttemptedAt
 }
 
 // buildSessionExpectationFromSQL converts SQL rows into expectations.
@@ -2884,4 +3728,442 @@ func normalizeRemovedAccountExpectationList(t *harnessTest,
 	}
 
 	return expected
+}
+
+// resolveMacRootKeyID returns a full root key ID for the macaroon suffix.
+func resolveMacRootKeyID(suffix [4]byte,
+	macRootKeyIDs map[[4]byte]uint64) uint64 {
+
+	if rootKeyID, ok := macRootKeyIDs[suffix]; ok {
+		return rootKeyID
+	}
+
+	var rootKeyBytes [8]byte
+	copy(rootKeyBytes[4:], suffix[:])
+	return binary.BigEndian.Uint64(rootKeyBytes[:])
+}
+
+// updateAccountIDForTest rewrites a bbolt account ID to force collisions.
+func updateAccountIDForTest(db kvdb.Backend, oldID accounts.AccountID,
+	targetPrefix accounts.AccountID) (accounts.AccountID, error) {
+
+	newID, err := nextAccountIDWithPrefix(db, targetPrefix)
+	if err != nil {
+		return accounts.AccountID{}, err
+	}
+
+	err = kvdb.Update(db, func(tx kvdb.RwTx) error {
+		bucket := tx.ReadWriteBucket([]byte("accounts"))
+		if bucket == nil {
+			return fmt.Errorf("accounts bucket not found")
+		}
+
+		raw := bucket.Get(oldID[:])
+		if len(raw) == 0 {
+			return fmt.Errorf("account not found")
+		}
+
+		acct, err := deserializeAccountForTest(raw)
+		if err != nil {
+			return err
+		}
+
+		acct.ID = newID
+		encoded, err := serializeAccountForTest(acct)
+		if err != nil {
+			return err
+		}
+
+		if len(bucket.Get(newID[:])) != 0 {
+			return fmt.Errorf("new account id already exists")
+		}
+
+		if err := bucket.Put(newID[:], encoded); err != nil {
+			return err
+		}
+
+		return bucket.Delete(oldID[:])
+	}, func() {})
+	if err != nil {
+		return accounts.AccountID{}, err
+	}
+
+	return newID, nil
+}
+
+// nextAccountIDWithPrefix creates a unique account ID with a shared prefix.
+func nextAccountIDWithPrefix(db kvdb.Backend,
+	prefix accounts.AccountID) (accounts.AccountID, error) {
+
+	var newID accounts.AccountID
+	copy(newID[:4], prefix[:4])
+
+	for i := uint32(1); i < 128; i++ {
+		binary.BigEndian.PutUint32(newID[4:], i)
+		var exists bool
+		err := kvdb.View(db, func(tx kvdb.RTx) error {
+			bucket := tx.ReadBucket([]byte("accounts"))
+			if bucket == nil {
+				return fmt.Errorf("accounts bucket not found")
+			}
+			exists = len(bucket.Get(newID[:])) != 0
+			return nil
+		}, func() {})
+		if err != nil {
+			return accounts.AccountID{}, err
+		}
+		if !exists {
+			return newID, nil
+		}
+	}
+
+	return accounts.AccountID{}, fmt.Errorf("no free account id found")
+}
+
+// serializeAccountForTest encodes an account using the accounts TLV format.
+func serializeAccountForTest(account *accounts.OffChainBalanceAccount) (
+	[]byte, error) {
+
+	if account == nil {
+		return nil, fmt.Errorf("account cannot be nil")
+	}
+
+	var (
+		buf            bytes.Buffer
+		id             = account.ID[:]
+		accountType    = uint8(account.Type)
+		initialBalance = uint64(account.InitialBalance)
+		currentBalance = uint64(account.CurrentBalance)
+		lastUpdate     = uint64(account.LastUpdate.UnixNano())
+		label          = []byte(account.Label)
+	)
+
+	tlvRecords := []tlv.Record{
+		tlv.MakePrimitiveRecord(accountTypeID, &id),
+		tlv.MakePrimitiveRecord(accountTypeType, &accountType),
+		tlv.MakePrimitiveRecord(accountInitialBalance, &initialBalance),
+		tlv.MakePrimitiveRecord(accountCurrentBalance, &currentBalance),
+		tlv.MakePrimitiveRecord(accountLastUpdate, &lastUpdate),
+	}
+
+	if !account.ExpirationDate.IsZero() {
+		expiry := uint64(account.ExpirationDate.UnixNano())
+		tlvRecords = append(tlvRecords, tlv.MakePrimitiveRecord(
+			accountExpirationDate, &expiry,
+		))
+	}
+
+	tlvRecords = append(
+		tlvRecords,
+		newAccountInvoiceRecord(accountInvoices, &account.Invoices),
+		newAccountPaymentRecord(accountPayments, &account.Payments),
+		tlv.MakePrimitiveRecord(accountLabel, &label),
+	)
+
+	tlvStream, err := tlv.NewStream(tlvRecords...)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := tlvStream.Encode(&buf); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+// deserializeAccountForTest decodes an account using the accounts TLV format.
+func deserializeAccountForTest(content []byte) (
+	*accounts.OffChainBalanceAccount, error) {
+
+	var (
+		r              = bytes.NewReader(content)
+		id             []byte
+		accountType    uint8
+		initialBalance uint64
+		currentBalance uint64
+		lastUpdate     uint64
+		expirationDate uint64
+		invoices       accounts.AccountInvoices
+		payments       accounts.AccountPayments
+		label          []byte
+	)
+
+	tlvStream, err := tlv.NewStream(
+		tlv.MakePrimitiveRecord(accountTypeID, &id),
+		tlv.MakePrimitiveRecord(accountTypeType, &accountType),
+		tlv.MakePrimitiveRecord(accountInitialBalance, &initialBalance),
+		tlv.MakePrimitiveRecord(accountCurrentBalance, &currentBalance),
+		tlv.MakePrimitiveRecord(accountLastUpdate, &lastUpdate),
+		tlv.MakePrimitiveRecord(accountExpirationDate, &expirationDate),
+		newAccountInvoiceRecord(accountInvoices, &invoices),
+		newAccountPaymentRecord(accountPayments, &payments),
+		tlv.MakePrimitiveRecord(accountLabel, &label),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	parsedTypes, err := tlvStream.DecodeWithParsedTypes(r)
+	if err != nil {
+		return nil, err
+	}
+
+	account := &accounts.OffChainBalanceAccount{
+		Type:           accounts.AccountType(accountType),
+		InitialBalance: lnwire.MilliSatoshi(initialBalance),
+		CurrentBalance: int64(currentBalance),
+		LastUpdate:     time.Unix(0, int64(lastUpdate)),
+		Invoices:       invoices,
+		Payments:       payments,
+		Label:          string(label),
+	}
+	copy(account.ID[:], id)
+
+	if t, ok := parsedTypes[accountExpirationDate]; ok && t == nil {
+		account.ExpirationDate = time.Unix(0, int64(expirationDate))
+	}
+
+	return account, nil
+}
+
+// newAccountInvoiceRecord returns a TLV record for account invoices.
+func newAccountInvoiceRecord(tlvType tlv.Type,
+	invoiceMap *accounts.AccountInvoices) tlv.Record {
+
+	recordSize := func() uint64 {
+		return uint64(len(*invoiceMap) * lntypes.HashSize)
+	}
+	return tlv.MakeDynamicRecord(
+		tlvType, invoiceMap, recordSize,
+		accountInvoiceEntryMapEncoder,
+		accountInvoiceEntryMapDecoder,
+	)
+}
+
+// newAccountPaymentRecord returns a TLV record for account payments.
+func newAccountPaymentRecord(tlvType tlv.Type,
+	hashMap *accounts.AccountPayments) tlv.Record {
+
+	recordSize := func() uint64 {
+		return uint64(len(*hashMap) * (lntypes.HashSize + 1 + 8))
+	}
+	return tlv.MakeDynamicRecord(
+		tlvType, hashMap, recordSize, accountPaymentEntryMapEncoder,
+		accountPaymentEntryMapDecoder,
+	)
+}
+
+// accountPaymentEntryMapEncoder encodes account payments.
+func accountPaymentEntryMapEncoder(w io.Writer, val any,
+	buf *[8]byte) error {
+
+	if val == nil {
+		return nil
+	}
+
+	hashMap, ok := val.(*accounts.AccountPayments)
+	if !ok {
+		return fmt.Errorf("invalid payment map type: %T", val)
+	}
+
+	if err := tlv.WriteVarInt(w, uint64(len(*hashMap)), buf); err != nil {
+		return err
+	}
+
+	for hash, entry := range *hashMap {
+		item := [32]byte(hash)
+		if err := tlv.EBytes32(w, &item, buf); err != nil {
+			return err
+		}
+
+		status := []byte{byte(entry.Status)}
+		if _, err := w.Write(status); err != nil {
+			return err
+		}
+
+		err := tlv.EUint64T(w, uint64(entry.FullAmount), buf)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// accountPaymentEntryMapDecoder decodes account payments.
+func accountPaymentEntryMapDecoder(r io.Reader, val any, buf *[8]byte,
+	_ uint64) error {
+
+	if val == nil {
+		return nil
+	}
+
+	hashMap, ok := val.(*accounts.AccountPayments)
+	if !ok {
+		return fmt.Errorf("invalid payment map type: %T", val)
+	}
+
+	numItems, err := tlv.ReadVarInt(r, buf)
+	if err != nil {
+		return err
+	}
+
+	entries := make(accounts.AccountPayments, numItems)
+	for i := uint64(0); i < numItems; i++ {
+		var item [32]byte
+		if err := tlv.DBytes32(r, &item, buf, 32); err != nil {
+			return err
+		}
+
+		status := make([]byte, 1)
+		if _, err := r.Read(status); err != nil {
+			return err
+		}
+
+		var fullAmt uint64
+		if err := tlv.DUint64(r, &fullAmt, buf, 8); err != nil {
+			return err
+		}
+
+		entries[item] = &accounts.PaymentEntry{
+			Status:     lnrpc.Payment_PaymentStatus(status[0]),
+			FullAmount: lnwire.MilliSatoshi(fullAmt),
+		}
+	}
+
+	*hashMap = entries
+
+	return nil
+}
+
+// accountInvoiceEntryMapEncoder encodes account invoice hashes.
+func accountInvoiceEntryMapEncoder(w io.Writer, val any,
+	buf *[8]byte) error {
+
+	if invoiceMap, ok := val.(*accounts.AccountInvoices); ok {
+		if err := tlv.WriteVarInt(
+			w, uint64(len(*invoiceMap)), buf,
+		); err != nil {
+			return err
+		}
+
+		for hash := range *invoiceMap {
+			item := [32]byte(hash)
+			if err := tlv.EBytes32(w, &item, buf); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+
+	return tlv.NewTypeForEncodingErr(val, "*AccountInvoices")
+}
+
+// accountInvoiceEntryMapDecoder decodes account invoice hashes.
+func accountInvoiceEntryMapDecoder(r io.Reader, val any,
+	buf *[8]byte, _ uint64) error {
+
+	if invoiceMap, ok := val.(*accounts.AccountInvoices); ok {
+		numItems, err := tlv.ReadVarInt(r, buf)
+		if err != nil {
+			return err
+		}
+
+		hashes := make(accounts.AccountInvoices, numItems)
+		for i := uint64(0); i < numItems; i++ {
+			var item [32]byte
+			if err := tlv.DBytes32(r, &item, buf, 32); err != nil {
+				return err
+			}
+			hashes[item] = struct{}{}
+		}
+
+		*invoiceMap = hashes
+		return nil
+	}
+
+	return tlv.NewTypeForEncodingErr(val, "*AccountInvoices")
+}
+
+// macRootKeyIDMap returns a map of macaroon root key ID suffixes to full
+// values fetched from lnd.
+func macRootKeyIDMap(ctx context.Context, t *testing.T,
+	cfg *LitNodeConfig) (map[[4]byte]uint64, error) {
+
+	// connectRPC opens the lnd gRPC connection for macaroon root keys.
+	lndConn, err := connectRPC(
+		ctx, cfg.RPCAddr(), cfg.TLSCertPath,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer lndConn.Close()
+
+	// Get the lnd admin macaroon context from the migration node.
+	lndMacBytes := getLndMacFromFile(t, cfg)
+	lndCtx := macaroonContext(ctx, lndMacBytes)
+
+	// An LND client is used to get lnd's RootKeyIDs, needed during the
+	// action migration assertions.
+	lndClient := lnrpc.NewLightningClient(lndConn)
+
+	resp, err := lndClient.ListMacaroonIDs(
+		lndCtx, &lnrpc.ListMacaroonIDsRequest{},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	rootKeyMap := make(map[[4]byte]uint64)
+	if resp == nil {
+		return rootKeyMap, nil
+	}
+
+	for _, rootKeyID := range resp.RootKeyIds {
+		var rootKeyBytes [8]byte
+		binary.BigEndian.PutUint64(rootKeyBytes[:], rootKeyID)
+
+		var suffix [4]byte
+		copy(suffix[:], rootKeyBytes[4:])
+		rootKeyMap[suffix] = rootKeyID
+	}
+
+	return rootKeyMap, nil
+}
+
+// getLndMacFromFile reads the lnd admin macaroon for the node.
+func getLndMacFromFile(t *testing.T, cfg *LitNodeConfig) []byte {
+	macBytes, err := os.ReadFile(cfg.AdminMacPath)
+	require.NoError(t, err)
+
+	return macBytes
+}
+
+// updateActionMacRootKeyIDs refreshes action root key IDs using the latest
+// macaroon ID mapping.
+func updateActionMacRootKeyIDs(ctx context.Context, t *testing.T,
+	cfg *LitNodeConfig, data *firewallMigrationData) {
+
+	macRootKeyIDs, err := macRootKeyIDMap(ctx, t, cfg)
+	require.NoError(t, err)
+
+	for _, action := range data.actions {
+		if action == nil {
+			continue
+		}
+
+		action.MacaroonRootKeyID.WhenSome(func(rootID uint64) {
+			var rootKeyBytes [8]byte
+			binary.BigEndian.PutUint64(rootKeyBytes[:], rootID)
+
+			var suffix [4]byte
+			copy(suffix[:], rootKeyBytes[4:])
+
+			if full, ok := macRootKeyIDs[suffix]; ok {
+				action.MacaroonRootKeyID = fn.Some(full)
+			}
+		})
+	}
 }
