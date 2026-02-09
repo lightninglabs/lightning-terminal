@@ -12,6 +12,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightningnetwork/lnd/lnrpc"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -37,22 +38,25 @@ func TestChannelRestrictCheckRequest(t *testing.T) {
 
 	ctx := context.Background()
 	mgr := NewChannelRestrictMgr()
-	cfg := &mockLndClient{
-		channels: []lndclient.ChannelInfo{
-			{
-				ChannelID:    chanID1,
-				ChannelPoint: chanPointStr1,
-			},
-			{
-				ChannelID:    chanID2,
-				ChannelPoint: chanPointStr2,
-			},
-			{
-				ChannelID:    chanID3,
-				ChannelPoint: chanPointStr3,
-			},
+	cfg := &mockLndClient{}
+	cfg.On(
+		"ListChannels", mock.Anything, mock.Anything, mock.Anything,
+		mock.Anything,
+	).Return([]lndclient.ChannelInfo{
+		{
+			ChannelID:    chanID1,
+			ChannelPoint: chanPointStr1,
 		},
-	}
+		{
+			ChannelID:    chanID2,
+			ChannelPoint: chanPointStr2,
+		},
+		{
+			ChannelID:    chanID3,
+			ChannelPoint: chanPointStr3,
+		},
+	}, nil)
+
 	enf, err := mgr.NewEnforcer(ctx, cfg, &ChannelRestrict{
 		DenyList: []uint64{
 			chanID1, chanID2,
@@ -149,18 +153,23 @@ func newTXID() ([]byte, uint32, error) {
 type mockLndClient struct {
 	lndclient.LightningClient
 	Config
-
-	channels []lndclient.ChannelInfo
+	mock.Mock
 }
 
 func (m *mockLndClient) GetLndClient() lndclient.LightningClient {
 	return m
 }
 
-func (m *mockLndClient) ListChannels(_ context.Context, _, _ bool,
-	_ ...lndclient.ListChannelsOption) ([]lndclient.ChannelInfo, error) {
+func (m *mockLndClient) ListChannels(ctx context.Context, public, active bool,
+	opts ...lndclient.ListChannelsOption) ([]lndclient.ChannelInfo, error) {
 
-	return m.channels, nil
+	args := m.Called(ctx, public, active, opts)
+
+	if args.Get(0) != nil {
+		return args.Get(0).([]lndclient.ChannelInfo), args.Error(1)
+	}
+
+	return nil, args.Error(1)
 }
 
 // TestChannelRestrictRealToPseudo tests that the ChannelRestrict's RealToPseudo
@@ -291,4 +300,187 @@ func TestChannelRestrictRealToPseudo(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestChannelRestrictResilience ensures that the ChannelRestrictEnforcer is
+// resilient to missing channels during initialization.
+func TestChannelRestrictResilience(t *testing.T) {
+	var (
+		ctx = context.Background()
+		mgr = NewChannelRestrictMgr()
+	)
+
+	// Set up two channel points and IDs.
+	txid1, index1, err := newTXID()
+	require.NoError(t, err)
+	chanPointStr1 := fmt.Sprintf("%s:%d", hex.EncodeToString(txid1), index1)
+	chanID1, _ := firewalldb.NewPseudoUint64()
+	chanPoint1 := &lnrpc.ChannelPoint{
+		FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
+			FundingTxidStr: hex.EncodeToString(txid1),
+		},
+		OutputIndex: index1,
+	}
+
+	txid2, index2, err := newTXID()
+	require.NoError(t, err)
+	chanPointStr2 := fmt.Sprintf("%s:%d", hex.EncodeToString(txid2), index2)
+	chanID2, _ := firewalldb.NewPseudoUint64()
+	chanPoint2 := &lnrpc.ChannelPoint{
+		FundingTxid: &lnrpc.ChannelPoint_FundingTxidStr{
+			FundingTxidStr: hex.EncodeToString(txid2),
+		},
+		OutputIndex: index2,
+	}
+
+	// Request: A request that tries to fetch a channel point that is not
+	// known yet. We expect the manager to try to refresh the channel list
+	// again to find the missing channel. The negative cache is empty at
+	// this point. The call fails because chanPoint2 is not known yet.
+	cfg := &mockLndClient{}
+	cfg.On(
+		"ListChannels", mock.Anything, mock.Anything, mock.Anything,
+		mock.Anything,
+	).Return(
+		[]lndclient.ChannelInfo{
+			// Initially we only have chanID1 open. Somebody was
+			// able to guess chanID2 even though it's not open yet.
+			{
+				ChannelID:    chanID1,
+				ChannelPoint: chanPointStr1,
+			},
+		}, nil)
+
+	// Each time a request comes in, a new enforcer is created.
+	enf, err := mgr.NewEnforcer(ctx, cfg, &ChannelRestrict{
+		DenyList: []uint64{chanID2},
+	})
+	require.NoError(t, err)
+
+	_, err = enf.HandleRequest(
+		ctx, "/lnrpc.Lightning/UpdateChannelPolicy",
+		&lnrpc.PolicyUpdateRequest{
+			Scope: &lnrpc.PolicyUpdateRequest_ChanPoint{
+				ChanPoint: chanPoint2,
+			},
+		},
+	)
+
+	// The request fails because the manager doesn't know about the mapping
+	// of chanPoint2 to chanID2. The negative cache is reset to force a
+	// reload of the mapping on the next request.
+	require.ErrorContains(t, err, "unknown channel point, please retry "+
+		"the request")
+	cfg.AssertExpectations(t)
+
+	// Request: Another request that tries to fetch a known channel point.
+	// We expect another call to ListChannels to refresh the mapping, since
+	// the negative cache was cleared after the last failed request.
+	cfg = &mockLndClient{}
+	cfg.On(
+		"ListChannels", mock.Anything, mock.Anything, mock.Anything,
+		mock.Anything,
+	).Return(
+		[]lndclient.ChannelInfo{
+			{
+				ChannelID:    chanID1,
+				ChannelPoint: chanPointStr1,
+			},
+		}, nil)
+
+	enf, err = mgr.NewEnforcer(ctx, cfg, &ChannelRestrict{
+		DenyList: []uint64{chanID2},
+	})
+	require.NoError(t, err)
+
+	_, err = enf.HandleRequest(
+		ctx, "/lnrpc.Lightning/UpdateChannelPolicy",
+		&lnrpc.PolicyUpdateRequest{
+			Scope: &lnrpc.PolicyUpdateRequest_ChanPoint{
+				ChanPoint: chanPoint1,
+			},
+		},
+	)
+	require.NoError(t, err)
+	cfg.AssertExpectations(t)
+
+	// Request: In case we retry the request for the unknown channel, we
+	// should error again. This time we don't expect another call to
+	// ListChannels because the negative cache was not invalidated before.
+	cfg = &mockLndClient{}
+	enf, err = mgr.NewEnforcer(ctx, cfg, &ChannelRestrict{
+		DenyList: []uint64{chanID2},
+	})
+	require.NoError(t, err)
+
+	_, err = enf.HandleRequest(
+		ctx, "/lnrpc.Lightning/UpdateChannelPolicy",
+		&lnrpc.PolicyUpdateRequest{
+			Scope: &lnrpc.PolicyUpdateRequest_ChanPoint{
+				ChanPoint: chanPoint2,
+			},
+		},
+	)
+
+	// The call errors, which invalidates the negative cache again.
+	require.ErrorContains(t, err, "unknown channel point, please retry "+
+		"the request")
+	cfg.AssertExpectations(t)
+
+	// We simulate the channel getting confirmed.
+	cfg = &mockLndClient{}
+	cfg.On(
+		"ListChannels", mock.Anything, mock.Anything, mock.Anything,
+		mock.Anything,
+	).Return(
+		[]lndclient.ChannelInfo{
+			{
+				ChannelID:    chanID1,
+				ChannelPoint: chanPointStr1,
+			},
+			{
+				ChannelID:    chanID2,
+				ChannelPoint: chanPointStr2,
+			},
+		}, nil)
+
+	// Request: Now the channel is known and in the deny list. The manager
+	// resyncs the channel list again and should now know about chanID2
+	// mapping to chanPoint2.
+	enf, err = mgr.NewEnforcer(ctx, cfg, &ChannelRestrict{
+		DenyList: []uint64{chanID2},
+	})
+	require.NoError(t, err)
+
+	// The request gets blocked.
+	_, err = enf.HandleRequest(
+		ctx, "/lnrpc.Lightning/UpdateChannelPolicy",
+		&lnrpc.PolicyUpdateRequest{
+			Scope: &lnrpc.PolicyUpdateRequest_ChanPoint{
+				ChanPoint: chanPoint2,
+			},
+		},
+	)
+	require.ErrorContains(t, err, "illegal action on channel in channel "+
+		"restriction list")
+	cfg.AssertExpectations(t)
+
+	// Request: Request to a channel not in the deny list. It should be
+	// allowed, without fetching the channel list again.
+	cfg = &mockLndClient{}
+	enf, err = mgr.NewEnforcer(ctx, cfg, &ChannelRestrict{
+		DenyList: []uint64{chanID2},
+	})
+	require.NoError(t, err)
+
+	_, err = enf.HandleRequest(
+		ctx, "/lnrpc.Lightning/UpdateChannelPolicy",
+		&lnrpc.PolicyUpdateRequest{
+			Scope: &lnrpc.PolicyUpdateRequest_ChanPoint{
+				ChanPoint: chanPoint1,
+			},
+		},
+	)
+	require.NoError(t, err)
+	cfg.AssertExpectations(t)
 }

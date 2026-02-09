@@ -16,6 +16,11 @@
 
 ### Bug Fixes
 
+* [Improve channel restriction
+  resilience](https://github.com/lightninglabs/lightning-terminal/pull/1215):
+  The channel restriction rule no longer fails to initialize when restricted
+  channels are closed.
+
 ### Functional Changes/Additions
 
 ### Technical and Architectural Updates
@@ -38,3 +43,5 @@
 ### Taproot Assets
 
 # Contributors (Alphabetical Order)
+
+* bitromortac
