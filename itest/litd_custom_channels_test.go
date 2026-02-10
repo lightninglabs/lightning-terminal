@@ -3268,7 +3268,7 @@ func testCustomChannelsLiquidityEdgeCasesCore(ctx context.Context,
 		},
 		BaseFeeMsat:   31337,
 		FeeRatePpm:    443322,
-		TimeLockDelta: 19,
+		TimeLockDelta: 25,
 	})
 	require.NoError(t.t, err)
 	require.Empty(t.t, resp.FailedUpdates)
@@ -3279,7 +3279,7 @@ func testCustomChannelsLiquidityEdgeCasesCore(ctx context.Context,
 		},
 		BaseFeeMsat:   42069,
 		FeeRatePpm:    223344,
-		TimeLockDelta: 18,
+		TimeLockDelta: 24,
 	})
 	require.NoError(t.t, err)
 	require.Empty(t.t, resp.FailedUpdates)
@@ -3298,7 +3298,7 @@ func testCustomChannelsLiquidityEdgeCasesCore(ctx context.Context,
 	require.Equal(t.t, erin.PubKeyStr, invoiceHint.NodeId)
 	require.EqualValues(t.t, 31337, invoiceHint.FeeBaseMsat)
 	require.EqualValues(t.t, 443322, invoiceHint.FeeProportionalMillionths)
-	require.EqualValues(t.t, 19, invoiceHint.CltvExpiryDelta)
+	require.EqualValues(t.t, 25, invoiceHint.CltvExpiryDelta)
 
 	// Now we pay the invoice and expect the same policy with very expensive
 	// fees to be used.
@@ -3533,6 +3533,12 @@ func testCustomChannelsMultiRFQ(ctx context.Context, net *NetworkHarness,
 	// using multiple RFQ quotes.
 	invAmt := int64(15_000 * 17)
 
+	var preimage lntypes.Preimage
+	_, err = rand.Read(preimage[:])
+	require.NoError(t.t, err)
+
+	payHash = preimage.Hash()
+
 	iResp, err := charlie.AddHoldInvoice(
 		ctx, &invoicesrpc.AddHoldInvoiceRequest{
 			Memo:  "",
@@ -3555,7 +3561,7 @@ func testCustomChannelsMultiRFQ(ctx context.Context, net *NetworkHarness,
 	logBalance(t.t, nodes, assetID, "multi-rfq send in-flight")
 
 	_, err = charlie.SettleInvoice(ctx, &invoicesrpc.SettleInvoiceMsg{
-		Preimage: hodlInv.preimage[:],
+		Preimage: preimage[:],
 	})
 	require.NoError(t.t, err)
 
