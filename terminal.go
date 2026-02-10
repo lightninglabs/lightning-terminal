@@ -29,6 +29,7 @@ import (
 	litmac "github.com/lightninglabs/lightning-terminal/macaroons"
 	"github.com/lightninglabs/lightning-terminal/perms"
 	"github.com/lightninglabs/lightning-terminal/queue"
+	"github.com/lightninglabs/lightning-terminal/scripting"
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
 	"github.com/lightninglabs/lightning-terminal/rules"
 	"github.com/lightninglabs/lightning-terminal/session"
@@ -221,6 +222,9 @@ type LightningTerminal struct {
 
 	accountRpcServer *accounts.RPCServer
 
+	scriptManager   *scripting.Manager
+	scriptRpcServer *scripting.RPCServer
+
 	stores *stores
 
 	restHandler http.Handler
@@ -238,6 +242,7 @@ func New() *LightningTerminal {
 type stores struct {
 	accounts accounts.Store
 	sessions session.Store
+	scripts  scripting.Store
 
 	firewall *firewalldb.DB
 
@@ -490,6 +495,18 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 	// the LND connection. See the comment above for the `accountRpcServer`
 	// to understand why this is necessary.
 	g.sessionRpcServer = newSessionRPCServer()
+
+	// Initialize the scripts service early. The full dependencies (like the
+	// macaroon baker) will be set after LND connects.
+	scriptStore := scripting.NewInMemoryStore()
+	scriptKVStore := scripting.NewInMemoryKVStore()
+	g.scriptManager = scripting.NewManager(
+		scriptStore,
+		scriptKVStore,
+		nil, // Macaroon baker will be set after LND connects
+		nil, // RPC caller not yet implemented
+	)
+	g.scriptRpcServer = scripting.NewRPCServer(g.scriptManager, scriptKVStore)
 
 	// Call the "real" main in a nested manner so the defers will properly
 	// be executed in the case of a graceful shutdown.
@@ -1053,6 +1070,15 @@ func (g *LightningTerminal) startInternalSubServers(ctx context.Context,
 
 	g.accountRpcServer.Start(g.accountService, superMacBaker)
 
+	// Set the macaroon baker and LND clients for the scripts service now
+	// that LND is connected. The script manager was initialized early
+	// before LND setup.
+	log.Infof("Starting LiT scripts server")
+	macBaker := scripting.NewLndMacaroonBaker(g.basicClient)
+	g.scriptManager.SetMacaroonBaker(macBaker)
+	lndClients := scripting.NewLNDClientsFromServices(&g.lndClient.LndServices)
+	g.scriptManager.SetLNDClients(lndClients)
+
 	if !g.cfg.Autopilot.Disable {
 		withLndVersion := func(cfg *autopilotserver.Config) {
 			cfg.LndVersion = autopilotserver.Version{
@@ -1252,6 +1278,11 @@ func (g *LightningTerminal) registerSubDaemonGrpcServers(server *grpc.Server,
 
 	if !g.cfg.Autopilot.Disable {
 		litrpc.RegisterAutopilotServer(server, g.sessionRpcServer)
+	}
+
+	// Register the scripts server if available.
+	if g.scriptRpcServer != nil {
+		litrpc.RegisterScriptsServer(server, g.scriptRpcServer)
 	}
 }
 
@@ -1492,6 +1523,10 @@ func (g *LightningTerminal) shutdownSubServers() error {
 
 	if g.autopilotClient != nil {
 		g.autopilotClient.Stop()
+	}
+
+	if g.scriptManager != nil {
+		g.scriptManager.Stop()
 	}
 
 	if g.sessionRpcServerStarted {

@@ -84,6 +84,66 @@ var (
 			Entity: "supermacaroon",
 			Action: "write",
 		}},
+
+		// Scripts service permissions.
+		"/litrpc.Scripts/CreateScript": {{
+			Entity: "scripts",
+			Action: "write",
+		}},
+		"/litrpc.Scripts/UpdateScript": {{
+			Entity: "scripts",
+			Action: "write",
+		}},
+		"/litrpc.Scripts/DeleteScript": {{
+			Entity: "scripts",
+			Action: "write",
+		}},
+		"/litrpc.Scripts/GetScript": {{
+			Entity: "scripts",
+			Action: "read",
+		}},
+		"/litrpc.Scripts/ListScripts": {{
+			Entity: "scripts",
+			Action: "read",
+		}},
+		"/litrpc.Scripts/StartScript": {{
+			Entity: "scripts",
+			Action: "execute",
+		}},
+		"/litrpc.Scripts/StopScript": {{
+			Entity: "scripts",
+			Action: "execute",
+		}},
+		"/litrpc.Scripts/ListRunningScripts": {{
+			Entity: "scripts",
+			Action: "read",
+		}},
+		"/litrpc.Scripts/ValidateScript": {{
+			Entity: "scripts",
+			Action: "read",
+		}},
+		"/litrpc.Scripts/GetExecutionHistory": {{
+			Entity: "scripts",
+			Action: "read",
+		}},
+
+		// Script KV store permissions.
+		"/litrpc.Scripts/KVGet": {{
+			Entity: "scriptkv",
+			Action: "read",
+		}},
+		"/litrpc.Scripts/KVPut": {{
+			Entity: "scriptkv",
+			Action: "write",
+		}},
+		"/litrpc.Scripts/KVDelete": {{
+			Entity: "scriptkv",
+			Action: "write",
+		}},
+		"/litrpc.Scripts/KVList": {{
+			Entity: "scriptkv",
+			Action: "read",
+		}},
 	}
 
 	// whiteListedLNDMethods is a map of all lnd RPC methods that don't

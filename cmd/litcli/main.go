@@ -116,6 +116,7 @@ func main() {
 	app.Commands = append(app.Commands, helperCommands)
 	app.Commands = append(app.Commands, statusCommands...)
 	app.Commands = append(app.Commands, lnCommands...)
+	app.Commands = append(app.Commands, scriptCommands...)
 
 	err := app.Run(os.Args)
 	if err != nil {
