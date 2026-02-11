@@ -220,6 +220,12 @@ unit-debug:
 	mkdir -p app/build && touch app/build/index.html
 	$(UNIT_DEBUG)
 
+#? unit-bench: Run benchmark tests
+unit-bench:
+	@$(call print, "Running benchmark tests.")
+	mkdir -p app/build && touch app/build/index.html
+	$(UNIT_BENCH)
+
 unit-cover: $(GOACC_BIN)
 	@$(call print, "Running unit coverage tests.")
 	$(GOACC_BIN) $(COVER_PKG)
@@ -362,7 +368,7 @@ flakehunter-unit:
 # include in the build process.
 .PHONY: default all yarn-install build install go-build go-build-noui \
 	go-install go-install-noui go-install-cli app-build release go-release \
-	docker-release docker-tools scratch check unit unit-cover unit-race \
+	docker-release docker-tools scratch check unit unit-bench unit-cover unit-race \
 	clean-itest build-itest build-itest-binary itest-only itest \
 	itest-parallel itest-parallel-no-backward-compat flake-unit fmt lint \
 	mod mod-check list rpc protos protos-check rpc-js-compile clean
