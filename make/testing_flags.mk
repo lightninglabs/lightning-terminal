@@ -72,11 +72,16 @@ UNIT_TARGETED ?= no
 ifeq ($(UNIT_TARGETED), yes)
 UNIT := $(GOTEST) -tags="$(DEV_TAGS) $(COMPILE_TAGS)" $(TEST_FLAGS) $(UNITPKG)
 UNIT_DEBUG := $(GOTEST) -v -tags="$(DEV_TAGS) $(COMPILE_TAGS)" $(TEST_FLAGS) $(UNITPKG)
+UNIT_BENCH := $(GOTEST) -tags="$(DEV_TAGS) $(COMPILE_TAGS)" \
+	-test.bench=. -test.benchmem -test.run=NONE $(UNITPKG)
 endif
 
 ifeq ($(UNIT_TARGETED), no)
 UNIT := $(GOLIST) | $(XARGS) env $(GOTEST) -tags="$(DEV_TAGS) $(COMPILE_TAGS)" $(TEST_FLAGS)
 UNIT_DEBUG := $(GOLIST) | $(XARGS) env $(GOTEST) -v -tags="$(DEV_TAGS) $(COMPILE_TAGS)" $(TEST_FLAGS)
+UNIT_BENCH := $(GOLIST) | $(XARGS) env $(GOTEST) \
+	-tags="$(DEV_TAGS) $(COMPILE_TAGS)" -test.bench=. -test.benchmem \
+	-test.run=NONE
 endif
 
 UNIT_RACE := $(UNIT) -race
