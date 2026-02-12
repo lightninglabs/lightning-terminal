@@ -4,7 +4,7 @@ go 1.24.11
 
 require (
 	github.com/btcsuite/btcd v0.24.3-0.20250318170759-4f4ea81776d6
-	github.com/lightningnetwork/lnd v0.20.0-beta
+	github.com/lightningnetwork/lnd v0.20.1-beta
 	github.com/stretchr/testify v1.10.0
 	gopkg.in/macaroon-bakery.v2 v2.3.0
 )
@@ -103,7 +103,7 @@ require (
 	github.com/lightningnetwork/lnd/healthcheck v1.2.6 // indirect
 	github.com/lightningnetwork/lnd/kvdb v1.4.16 // indirect
 	github.com/lightningnetwork/lnd/queue v1.1.1 // indirect
-	github.com/lightningnetwork/lnd/sqldb v1.0.11 // indirect
+	github.com/lightningnetwork/lnd/sqldb v1.0.12-0.20260113193010-8565d12e40b1 // indirect
 	github.com/lightningnetwork/lnd/ticker v1.1.1 // indirect
 	github.com/lightningnetwork/lnd/tlv v1.3.2 // indirect
 	github.com/lightningnetwork/lnd/tor v1.1.6 // indirect
