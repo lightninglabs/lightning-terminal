@@ -177,14 +177,8 @@ func (t *taprootAssetsSubServer) WhiteListedURLs() map[string]struct{} {
 	// If it is running in remote mode however, we just allow the request
 	// through since the remote daemon will handle blocking the call if it
 	// is not whitelisted there.
-	publicUniRead := strings.Contains(
-		t.cfg.Universe.PublicAccess,
-		string(tap.UniversePublicAccessStatusRead),
-	)
-	publicUniWrite := strings.Contains(
-		t.cfg.Universe.PublicAccess,
-		string(tap.UniversePublicAccessStatusWrite),
-	)
+	publicUniRead := strings.Contains(t.cfg.Universe.PublicAccess, "r")
+	publicUniWrite := strings.Contains(t.cfg.Universe.PublicAccess, "w")
 
 	return taprpc.MacaroonWhitelist(
 		publicUniRead || t.remote, publicUniWrite || t.remote,
