@@ -564,11 +564,43 @@ func testCustomChannels(ctx context.Context, net *NetworkHarness,
 	invoiceResp = createAssetInvoice(
 		t.t, erin, fabia, fabiaInvoiceAssetAmount1, assetID,
 	)
+	forwardTimestamp := uint64(time.Now().Unix())
 	payInvoiceWithAssets(
 		t.t, charlie, dave, invoiceResp.PaymentRequest, assetID,
 		withSmallShards(),
 	)
 	logBalance(t.t, nodes, assetID, "after invoice")
+
+	forwardReq := &rfqrpc.ForwardingHistoryRequest{
+		MinTimestamp: forwardTimestamp,
+		Peer:         fabia.PubKey[:],
+		AssetSpecifier: &rfqrpc.AssetSpecifier{
+			Id: &rfqrpc.AssetSpecifier_AssetId{
+				AssetId: assetID,
+			},
+		},
+	}
+	forwardResp, forwardEvent := waitForForwardingEvent(
+		t.t, erinTap, forwardReq,
+		func(event *rfqrpc.ForwardingEvent) bool {
+			return event.SettledAt > 0 && event.FailedAt == 0
+		},
+	)
+	require.GreaterOrEqual(t.t, forwardResp.TotalCount, int64(1))
+	require.NotNil(t.t, forwardEvent.AssetSpec)
+	require.Equal(t.t, assetID, forwardEvent.AssetSpec.Id)
+	require.NotEmpty(t.t, forwardEvent.RfqId)
+	require.Equal(t.t, rfqrpc.RfqPolicyType_RFQ_POLICY_TYPE_SALE,
+		forwardEvent.PolicyType)
+	require.Equal(t.t, fabia.PubKeyStr, forwardEvent.Peer)
+	require.GreaterOrEqual(t.t, forwardEvent.SettledAt,
+		forwardEvent.OpenedAt)
+	require.Zero(t.t, forwardEvent.FailedAt)
+	require.Greater(t.t, forwardEvent.AssetAmt, uint64(0))
+	require.Greater(t.t, forwardEvent.AmtInMsat, uint64(0))
+	require.Greater(t.t, forwardEvent.AmtOutMsat, uint64(0))
+	require.NotNil(t.t, forwardEvent.Rate)
+	require.NotEmpty(t.t, forwardEvent.Rate.Coefficient)
 
 	charlieAssetBalance -= fabiaInvoiceAssetAmount1
 	daveAssetBalance += fabiaInvoiceAssetAmount1
