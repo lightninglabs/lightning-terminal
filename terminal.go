@@ -1151,13 +1151,6 @@ func (g *LightningTerminal) startInternalSubServers(ctx context.Context,
 		closeAccountService()
 	}
 
-	requestLogger, err := firewall.NewRequestLogger(
-		g.cfg.Firewall.RequestLogger, g.stores.firewall,
-	)
-	if err != nil {
-		return fmt.Errorf("error creating new request logger")
-	}
-
 	privacyMapper := firewall.NewPrivacyMapper(
 		g.stores.firewall, firewall.CryptoRandIntn,
 		g.stores.sessions,
@@ -1166,7 +1159,35 @@ func (g *LightningTerminal) startInternalSubServers(ctx context.Context,
 	mw := []mid.RequestInterceptor{
 		privacyMapper,
 		g.accountService,
-		requestLogger,
+	}
+
+	var (
+		requestLogger     *firewall.RequestLogger
+		markActionErrored = func(context.Context, uint64,
+			string) error {
+
+			return nil
+		}
+	)
+
+	if !g.cfg.Firewall.RequestLogger.Disable {
+		requestLogger, err = firewall.NewRequestLogger(
+			g.cfg.Firewall.RequestLogger, g.stores.firewall,
+		)
+		if err != nil {
+			return fmt.Errorf("error creating new request "+
+				"logger: %w", err)
+		}
+
+		markActionErrored = func(ctx context.Context, reqID uint64,
+			reason string) error {
+
+			return requestLogger.MarkAction(
+				ctx, reqID, firewalldb.ActionStateError, reason,
+			)
+		}
+
+		mw = append(mw, requestLogger)
 	}
 
 	if !g.cfg.Autopilot.Disable {
@@ -1177,14 +1198,7 @@ func (g *LightningTerminal) startInternalSubServers(ctx context.Context,
 			g.permsMgr, g.lndClient.NodePubkey,
 			g.lndClient.Router,
 			g.lndClient.Client, g.lndConnID, g.ruleMgrs,
-			func(ctx context.Context, reqID uint64,
-				reason string) error {
-
-				return requestLogger.MarkAction(
-					ctx, reqID, firewalldb.ActionStateError,
-					reason,
-				)
-			}, g.stores.firewall,
+			markActionErrored, g.stores.firewall,
 		)
 
 		mw = append(mw, ruleEnforcer)
@@ -1533,7 +1547,7 @@ func (g *LightningTerminal) shutdownSubServers() error {
 	if g.stores != nil {
 		if g.stores.firewall != nil {
 			if err := g.stores.firewall.Stop(); err != nil {
-				log.Errorf("Error stoppint firewall DB: %v",
+				log.Errorf("Error stopping firewall DB: %v",
 					err)
 
 				returnErr = err
