@@ -26,9 +26,9 @@ require (
 	github.com/lightninglabs/lightning-terminal/litrpc v1.0.2
 	github.com/lightninglabs/lightning-terminal/perms v1.0.1
 	github.com/lightninglabs/lndclient v0.20.0-6
-	github.com/lightninglabs/loop v0.31.7-beta
-	github.com/lightninglabs/loop/looprpc v1.0.12
-	github.com/lightninglabs/loop/swapserverrpc v1.0.19
+	github.com/lightninglabs/loop v0.31.8-beta
+	github.com/lightninglabs/loop/looprpc v1.0.13
+	github.com/lightninglabs/loop/swapserverrpc v1.0.20
 	github.com/lightninglabs/pool v0.6.6-beta
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.3
 	github.com/lightninglabs/pool/poolrpc v1.0.1
@@ -55,7 +55,7 @@ require (
 	golang.org/x/net v0.47.0
 	golang.org/x/sync v0.18.0
 	google.golang.org/grpc v1.65.0
-	google.golang.org/protobuf v1.36.5
+	google.golang.org/protobuf v1.36.11
 	gopkg.in/macaroon-bakery.v2 v2.3.0
 	gopkg.in/macaroon.v2 v2.1.0
 	modernc.org/sqlite v1.34.5
