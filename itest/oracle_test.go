@@ -31,13 +31,21 @@ type oracleHarness struct {
 
 	purchasePrices map[asset.ID]rfqmath.BigIntFixedPoint
 	salePrices     map[asset.ID]rfqmath.BigIntFixedPoint
+	expiryDelay    time.Duration
 }
 
 func newOracleHarness(listenAddr string) *oracleHarness {
+	return newOracleHarnessWithExpiry(listenAddr, 5*time.Minute)
+}
+
+func newOracleHarnessWithExpiry(listenAddr string,
+	expiryDelay time.Duration) *oracleHarness {
+
 	return &oracleHarness{
 		listenAddr:     listenAddr,
 		purchasePrices: make(map[asset.ID]rfqmath.BigIntFixedPoint),
 		salePrices:     make(map[asset.ID]rfqmath.BigIntFixedPoint),
+		expiryDelay:    expiryDelay,
 	}
 }
 
@@ -130,7 +138,7 @@ func (o *oracleHarness) getAssetRates(id asset.ID,
 		return oraclerpc.AssetRates{}, err
 	}
 
-	expiry := time.Now().Add(5 * time.Minute).Unix()
+	expiry := time.Now().Add(o.expiryDelay).Unix()
 	return oraclerpc.AssetRates{
 		SubjectAssetRate: rpcSubjectAssetToBtcRate,
 		PaymentAssetRate: rpcPaymentAssetToBtcRate,
