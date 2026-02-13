@@ -468,6 +468,152 @@ export namespace ListSwapsResponse {
   }
 }
 
+export class SweepHtlcRequest extends jspb.Message {
+  getDestAddress(): string;
+  setDestAddress(value: string): void;
+
+  getSatPerVbyte(): number;
+  setSatPerVbyte(value: number): void;
+
+  getOutpoint(): string;
+  setOutpoint(value: string): void;
+
+  getPreimage(): Uint8Array | string;
+  getPreimage_asU8(): Uint8Array;
+  getPreimage_asB64(): string;
+  setPreimage(value: Uint8Array | string): void;
+
+  getPublish(): boolean;
+  setPublish(value: boolean): void;
+
+  getHtlcAddress(): string;
+  setHtlcAddress(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): SweepHtlcRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: SweepHtlcRequest): SweepHtlcRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: SweepHtlcRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): SweepHtlcRequest;
+  static deserializeBinaryFromReader(message: SweepHtlcRequest, reader: jspb.BinaryReader): SweepHtlcRequest;
+}
+
+export namespace SweepHtlcRequest {
+  export type AsObject = {
+    destAddress: string,
+    satPerVbyte: number,
+    outpoint: string,
+    preimage: Uint8Array | string,
+    publish: boolean,
+    htlcAddress: string,
+  }
+}
+
+export class SweepHtlcResponse extends jspb.Message {
+  getSweepTx(): Uint8Array | string;
+  getSweepTx_asU8(): Uint8Array;
+  getSweepTx_asB64(): string;
+  setSweepTx(value: Uint8Array | string): void;
+
+  getFeeSats(): string;
+  setFeeSats(value: string): void;
+
+  hasNotRequested(): boolean;
+  clearNotRequested(): void;
+  getNotRequested(): PublishNotRequested | undefined;
+  setNotRequested(value?: PublishNotRequested): void;
+
+  hasPublished(): boolean;
+  clearPublished(): void;
+  getPublished(): PublishSucceeded | undefined;
+  setPublished(value?: PublishSucceeded): void;
+
+  hasFailed(): boolean;
+  clearFailed(): void;
+  getFailed(): PublishFailed | undefined;
+  setFailed(value?: PublishFailed): void;
+
+  getPublishCase(): SweepHtlcResponse.PublishCase;
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): SweepHtlcResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: SweepHtlcResponse): SweepHtlcResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: SweepHtlcResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): SweepHtlcResponse;
+  static deserializeBinaryFromReader(message: SweepHtlcResponse, reader: jspb.BinaryReader): SweepHtlcResponse;
+}
+
+export namespace SweepHtlcResponse {
+  export type AsObject = {
+    sweepTx: Uint8Array | string,
+    feeSats: string,
+    notRequested?: PublishNotRequested.AsObject,
+    published?: PublishSucceeded.AsObject,
+    failed?: PublishFailed.AsObject,
+  }
+
+  export enum PublishCase {
+    PUBLISH_NOT_SET = 0,
+    NOT_REQUESTED = 3,
+    PUBLISHED = 4,
+    FAILED = 5,
+  }
+}
+
+export class PublishNotRequested extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): PublishNotRequested.AsObject;
+  static toObject(includeInstance: boolean, msg: PublishNotRequested): PublishNotRequested.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: PublishNotRequested, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): PublishNotRequested;
+  static deserializeBinaryFromReader(message: PublishNotRequested, reader: jspb.BinaryReader): PublishNotRequested;
+}
+
+export namespace PublishNotRequested {
+  export type AsObject = {
+  }
+}
+
+export class PublishSucceeded extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): PublishSucceeded.AsObject;
+  static toObject(includeInstance: boolean, msg: PublishSucceeded): PublishSucceeded.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: PublishSucceeded, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): PublishSucceeded;
+  static deserializeBinaryFromReader(message: PublishSucceeded, reader: jspb.BinaryReader): PublishSucceeded;
+}
+
+export namespace PublishSucceeded {
+  export type AsObject = {
+  }
+}
+
+export class PublishFailed extends jspb.Message {
+  getError(): string;
+  setError(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): PublishFailed.AsObject;
+  static toObject(includeInstance: boolean, msg: PublishFailed): PublishFailed.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: PublishFailed, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): PublishFailed;
+  static deserializeBinaryFromReader(message: PublishFailed, reader: jspb.BinaryReader): PublishFailed;
+}
+
+export namespace PublishFailed {
+  export type AsObject = {
+    error: string,
+  }
+}
+
 export class SwapInfoRequest extends jspb.Message {
   getId(): Uint8Array | string;
   getId_asU8(): Uint8Array;

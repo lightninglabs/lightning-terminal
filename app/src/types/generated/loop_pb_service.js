@@ -46,6 +46,15 @@ SwapClient.ListSwaps = {
   responseType: loop_pb.ListSwapsResponse
 };
 
+SwapClient.SweepHtlc = {
+  methodName: "SweepHtlc",
+  service: SwapClient,
+  requestStream: false,
+  responseStream: false,
+  requestType: loop_pb.SweepHtlcRequest,
+  responseType: loop_pb.SweepHtlcResponse
+};
+
 SwapClient.SwapInfo = {
   methodName: "SwapInfo",
   service: SwapClient,
@@ -402,6 +411,37 @@ SwapClientClient.prototype.listSwaps = function listSwaps(requestMessage, metada
     callback = arguments[1];
   }
   var client = grpc.unary(SwapClient.ListSwaps, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+SwapClientClient.prototype.sweepHtlc = function sweepHtlc(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(SwapClient.SweepHtlc, {
     request: requestMessage,
     host: this.serviceHost,
     metadata: metadata,

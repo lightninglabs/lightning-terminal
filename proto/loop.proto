@@ -38,6 +38,12 @@ service SwapClient {
     */
     rpc ListSwaps (ListSwapsRequest) returns (ListSwapsResponse);
 
+    /* loop: `sweephtlc`
+    SweepHtlc spends a swap HTLC output via the preimage (success) path using
+    the swap's known preimage or an optionally supplied one.
+    */
+    rpc SweepHtlc (SweepHtlcRequest) returns (SweepHtlcResponse);
+
     /* loop: `swapinfo`
     SwapInfo returns all known details about a single swap.
     */
@@ -737,6 +743,61 @@ message ListSwapsResponse {
 
     // Timestamp to use for paging start_timestamp_ns.
     int64 next_start_time = 2 [jstype = JS_STRING];
+}
+
+// SweepHtlcRequest instructs loopd to sweep a swap HTLC via its success path.
+message SweepHtlcRequest {
+    // Optional override for the sweep destination; defaults to a new address
+    // derived from the connected lnd wallet.
+    string dest_address = 1;
+
+    // Fee rate used for the sweep transaction in sat/vByte.
+    uint32 sat_per_vbyte = 2;
+
+    // HTLC outpoint to sweep, formatted as "txid:vout".
+    string outpoint = 3;
+
+    // Optional override for the stored swap preimage.
+    bytes preimage = 4;
+
+    // If true, publish the sweep transaction immediately.
+    bool publish = 5;
+
+    // The HTLC address whose output is being swept; used to derive the
+    // expected pkScript.
+    string htlc_address = 6;
+}
+
+// SweepHtlcResponse returns the broadcast sweep transaction.
+message SweepHtlcResponse {
+    // Raw sweep transaction bytes.
+    bytes sweep_tx = 1;
+
+    // Miner fee paid by the sweep transaction.
+    uint64 fee_sats = 2 [jstype = JS_STRING];
+
+    // Publish outcome.
+    oneof publish {
+        PublishNotRequested not_requested = 3;
+        PublishSucceeded published = 4;
+        PublishFailed failed = 5;
+    }
+}
+
+// PublishNotRequested is returned by SweepHtlc if publishing was not requested
+// in SweepHtlcRequest.
+message PublishNotRequested {
+}
+
+// PublishSucceeded is returned by SweepHtlc if publishing was requested in
+// SweepHtlcRequest and it succeeded.
+message PublishSucceeded {
+}
+
+// PublishFailed is returned by SweepHtlc if publishing was requested in
+// SweepHtlcRequest, but failed. It includes the error message.
+message PublishFailed {
+    string error = 1;
 }
 
 message SwapInfoRequest {

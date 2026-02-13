@@ -40,6 +40,15 @@ type SwapClientListSwaps = {
   readonly responseType: typeof loop_pb.ListSwapsResponse;
 };
 
+type SwapClientSweepHtlc = {
+  readonly methodName: string;
+  readonly service: typeof SwapClient;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof loop_pb.SweepHtlcRequest;
+  readonly responseType: typeof loop_pb.SweepHtlcResponse;
+};
+
 type SwapClientSwapInfo = {
   readonly methodName: string;
   readonly service: typeof SwapClient;
@@ -289,6 +298,7 @@ export class SwapClient {
   static readonly LoopIn: SwapClientLoopIn;
   static readonly Monitor: SwapClientMonitor;
   static readonly ListSwaps: SwapClientListSwaps;
+  static readonly SweepHtlc: SwapClientSweepHtlc;
   static readonly SwapInfo: SwapClientSwapInfo;
   static readonly AbandonSwap: SwapClientAbandonSwap;
   static readonly LoopOutTerms: SwapClientLoopOutTerms;
@@ -377,6 +387,15 @@ export class SwapClientClient {
   listSwaps(
     requestMessage: loop_pb.ListSwapsRequest,
     callback: (error: ServiceError|null, responseMessage: loop_pb.ListSwapsResponse|null) => void
+  ): UnaryResponse;
+  sweepHtlc(
+    requestMessage: loop_pb.SweepHtlcRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.SweepHtlcResponse|null) => void
+  ): UnaryResponse;
+  sweepHtlc(
+    requestMessage: loop_pb.SweepHtlcRequest,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.SweepHtlcResponse|null) => void
   ): UnaryResponse;
   swapInfo(
     requestMessage: loop_pb.SwapInfoRequest,
