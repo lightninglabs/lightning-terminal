@@ -52,9 +52,6 @@ type SQLQueries interface {
 	UpdateAccountBalance(ctx context.Context, arg sqlc.UpdateAccountBalanceParams) (int64, error)
 	UpdateAccountExpiry(ctx context.Context, arg sqlc.UpdateAccountExpiryParams) (int64, error)
 	UpdateAccountLastUpdate(ctx context.Context, arg sqlc.UpdateAccountLastUpdateParams) (int64, error)
-	// UpdateAccountAliasForTests is a query intended only for testing
-	// purposes, to change the account alias.
-	UpdateAccountAliasForTests(ctx context.Context, arg sqlc.UpdateAccountAliasForTestsParams) (int64, error)
 	UpsertAccountPayment(ctx context.Context, arg sqlc.UpsertAccountPaymentParams) error
 	GetAccountInvoice(ctx context.Context, arg sqlc.GetAccountInvoiceParams) (sqlc.AccountInvoice, error)
 }
