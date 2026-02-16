@@ -8,6 +8,7 @@ This document describes how to run LiT benchmarks to compare the kvdb
 The benchmark suite currently covers these stores:
 
 - `accounts`: account CRUD and payment/invoice updates.
+- `session`: session creation, lookup, and state updates.
 
 ## Running Benchmarks
 
@@ -19,6 +20,7 @@ all supported backends in that package (kvdb-bbolt and native-sqlite).
 
 ```bash
 make unit-bench pkg=accounts
+make unit-bench pkg=session
 ```
 
 ### postgres (optional)
