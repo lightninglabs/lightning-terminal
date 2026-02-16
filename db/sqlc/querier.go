@@ -58,6 +58,8 @@ type Querier interface {
 	InsertSessionPrivacyFlag(ctx context.Context, arg InsertSessionPrivacyFlagParams) error
 	ListAccountInvoices(ctx context.Context, accountID int64) ([]AccountInvoice, error)
 	ListAccountPayments(ctx context.Context, accountID int64) ([]AccountPayment, error)
+	ListAllAccountInvoices(ctx context.Context) ([]AccountInvoice, error)
+	ListAllAccountPayments(ctx context.Context) ([]AccountPayment, error)
 	ListAllAccounts(ctx context.Context) ([]Account, error)
 	ListAllKVStoresRecords(ctx context.Context) ([]Kvstore, error)
 	ListSessions(ctx context.Context) ([]Session, error)
