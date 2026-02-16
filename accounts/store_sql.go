@@ -45,6 +45,8 @@ type SQLQueries interface {
 	GetAccountIndex(ctx context.Context, name string) (int64, error)
 	GetAccountPayment(ctx context.Context, arg sqlc.GetAccountPaymentParams) (sqlc.AccountPayment, error)
 	InsertAccount(ctx context.Context, arg sqlc.InsertAccountParams) (int64, error)
+	ListAllAccountInvoices(ctx context.Context) ([]sqlc.AccountInvoice, error)
+	ListAllAccountPayments(ctx context.Context) ([]sqlc.AccountPayment, error)
 	ListAccountInvoices(ctx context.Context, id int64) ([]sqlc.AccountInvoice, error)
 	ListAccountPayments(ctx context.Context, id int64) ([]sqlc.AccountPayment, error)
 	ListAllAccounts(ctx context.Context) ([]sqlc.Account, error)
@@ -205,6 +207,23 @@ func getAndMarshalAccount(ctx context.Context, db SQLQueries, id int64) (
 func marshalDBAccount(ctx context.Context, db SQLQueries,
 	dbAcct sqlc.Account) (*OffChainBalanceAccount, error) {
 
+	invoices, err := db.ListAccountInvoices(ctx, dbAcct.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	payments, err := db.ListAccountPayments(ctx, dbAcct.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return marshalDBAccountWithLinkedData(dbAcct, invoices, payments)
+}
+
+func marshalDBAccountWithLinkedData(dbAcct sqlc.Account,
+	invoices []sqlc.AccountInvoice,
+	payments []sqlc.AccountPayment) (*OffChainBalanceAccount, error) {
+
 	alias, err := AccountIDFromInt64(dbAcct.Alias)
 	if err != nil {
 		return nil, err
@@ -222,19 +241,10 @@ func marshalDBAccount(ctx context.Context, db SQLQueries,
 		Label:          dbAcct.Label.String,
 	}
 
-	invoices, err := db.ListAccountInvoices(ctx, dbAcct.ID)
-	if err != nil {
-		return nil, err
-	}
 	for _, invoice := range invoices {
 		var hash lntypes.Hash
 		copy(hash[:], invoice.Hash)
 		account.Invoices[hash] = struct{}{}
-	}
-
-	payments, err := db.ListAccountPayments(ctx, dbAcct.ID)
-	if err != nil {
-		return nil, err
 	}
 
 	for _, payment := range payments {
@@ -518,9 +528,36 @@ func (s *SQLStore) Accounts(ctx context.Context) ([]*OffChainBalanceAccount,
 			return err
 		}
 
+		dbInvoices, err := db.ListAllAccountInvoices(ctx)
+		if err != nil {
+			return err
+		}
+
+		dbPayments, err := db.ListAllAccountPayments(ctx)
+		if err != nil {
+			return err
+		}
+
+		accountInvoices := make(map[int64][]sqlc.AccountInvoice)
+		for _, invoice := range dbInvoices {
+			accountInvoices[invoice.AccountID] = append(
+				accountInvoices[invoice.AccountID], invoice,
+			)
+		}
+
+		accountPayments := make(map[int64][]sqlc.AccountPayment)
+		for _, payment := range dbPayments {
+			accountPayments[payment.AccountID] = append(
+				accountPayments[payment.AccountID], payment,
+			)
+		}
+
 		accounts = make([]*OffChainBalanceAccount, len(dbAccounts))
 		for i, dbAccount := range dbAccounts {
-			account, err := marshalDBAccount(ctx, db, dbAccount)
+			account, err := marshalDBAccountWithLinkedData(
+				dbAccount, accountInvoices[dbAccount.ID],
+				accountPayments[dbAccount.ID],
+			)
 			if err != nil {
 				return err
 			}
