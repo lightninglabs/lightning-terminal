@@ -9,6 +9,7 @@ The benchmark suite currently covers these stores:
 
 - `accounts`: account CRUD and payment/invoice updates.
 - `session`: session creation, lookup, and state updates.
+- `firewalldb`: action insert, state update, and list queries.
 
 ## Running Benchmarks
 
@@ -21,6 +22,7 @@ all supported backends in that package (kvdb-bbolt and native-sqlite).
 ```bash
 make unit-bench pkg=accounts
 make unit-bench pkg=session
+make unit-bench pkg=firewalldb
 ```
 
 ### postgres (optional)
