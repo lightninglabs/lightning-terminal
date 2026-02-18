@@ -361,7 +361,7 @@ func (s *InterceptorService) CreditAccount(ctx context.Context,
 		return nil, ErrAccountServiceDisabled
 	}
 
-	// Credit the account in the db.
+	// Credit the account in the DB.
 	err := s.store.CreditAccount(ctx, accountID, amount)
 	if err != nil {
 		return nil, fmt.Errorf("unable to credit account: %w", err)
@@ -386,7 +386,7 @@ func (s *InterceptorService) DebitAccount(ctx context.Context,
 		return nil, ErrAccountServiceDisabled
 	}
 
-	// Debit the account in the db.
+	// Debit the account in the DB.
 	err := s.store.DebitAccount(ctx, accountID, amount)
 	if err != nil {
 		return nil, fmt.Errorf("unable to debit account: %w", err)

@@ -18,7 +18,8 @@ var ErrDBClosed = errors.New("database is closed")
 // NewTestDB is a helper function that creates an SQLStore database for testing.
 func NewTestDB(t *testing.T, clock clock.Clock) Store {
 	return createStore(
-		t, sqldb.NewTestSqliteDB(t, db.LitdMigrationStreams).BaseDB,
+		t,
+		sqldb.NewTestSqliteDB(t, db.MakeTestMigrationStreams()).BaseDB,
 		clock,
 	)
 }
@@ -28,7 +29,9 @@ func NewTestDB(t *testing.T, clock clock.Clock) Store {
 func NewTestDBFromPath(t *testing.T, dbPath string,
 	clock clock.Clock) Store {
 
-	tDb := sqldb.NewTestSqliteDBFromPath(t, dbPath, db.LitdMigrationStreams)
+	tDb := sqldb.NewTestSqliteDBFromPath(
+		t, dbPath, db.MakeTestMigrationStreams(),
+	)
 
 	return createStore(t, tDb.BaseDB, clock)
 }
