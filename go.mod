@@ -1,10 +1,10 @@
 module github.com/lightninglabs/lightning-terminal
 
-go 1.24.11
+go 1.25.5
 
 require (
 	github.com/btcsuite/btcd v0.24.3-0.20250318170759-4f4ea81776d6
-	github.com/btcsuite/btcd/btcec/v2 v2.3.4
+	github.com/btcsuite/btcd/btcec/v2 v2.3.6
 	github.com/btcsuite/btcd/btcutil v1.1.5
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0
 	github.com/btcsuite/btclog/v2 v2.0.1-0.20250728225537-6090e87c6c5b
@@ -40,7 +40,7 @@ require (
 	github.com/lightningnetwork/lnd/fn v1.2.5
 	github.com/lightningnetwork/lnd/fn/v2 v2.0.9
 	github.com/lightningnetwork/lnd/kvdb v1.4.16
-	github.com/lightningnetwork/lnd/sqldb v1.0.12-0.20260113193010-8565d12e40b1
+	github.com/lightningnetwork/lnd/sqldb v1.0.13-0.20260113150738-e26a114cdcf0
 	github.com/lightningnetwork/lnd/tlv v1.3.2
 	github.com/lightningnetwork/lnd/tor v1.1.6
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
@@ -252,3 +252,11 @@ replace github.com/golang-migrate/migrate/v4 => github.com/lightninglabs/migrate
 
 // The upstream nhooyr.io/websocket repository has been moved to github.com/coder/websocket.
 replace nhooyr.io/websocket => github.com/coder/websocket v1.8.7
+
+replace github.com/lightninglabs/taproot-assets => github.com/GeorgeTsagk/taproot-assets v0.0.0-20260216125845-2dd50064afbe
+
+replace github.com/lightninglabs/taproot-assets/taprpc => github.com/GeorgeTsagk/taproot-assets/taprpc v0.0.0-20260216125845-2dd50064afbe
+
+replace github.com/lightningnetwork/lnd/sqldb => github.com/GeorgeTsagk/lnd/sqldb v0.0.0-20260216125012-1bb47e1ca203
+
+replace github.com/lightningnetwork/lnd => github.com/GeorgeTsagk/lnd v0.0.0-20260216125012-1bb47e1ca203

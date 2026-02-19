@@ -11,6 +11,7 @@ import (
 	"github.com/lightninglabs/taproot-assets/address"
 	"github.com/lightninglabs/taproot-assets/fn"
 	"github.com/lightninglabs/taproot-assets/tapcfg"
+	"github.com/lightninglabs/taproot-assets/tapconfig"
 	"github.com/lightninglabs/taproot-assets/taprpc"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"google.golang.org/grpc"
@@ -179,11 +180,11 @@ func (t *taprootAssetsSubServer) WhiteListedURLs() map[string]struct{} {
 	// is not whitelisted there.
 	publicUniRead := strings.Contains(
 		t.cfg.Universe.PublicAccess,
-		string(tap.UniversePublicAccessStatusRead),
+		string(tapconfig.UniversePublicAccessStatusRead),
 	)
 	publicUniWrite := strings.Contains(
 		t.cfg.Universe.PublicAccess,
-		string(tap.UniversePublicAccessStatusWrite),
+		string(tapconfig.UniversePublicAccessStatusWrite),
 	)
 
 	return taprpc.MacaroonWhitelist(

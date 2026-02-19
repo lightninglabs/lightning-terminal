@@ -2230,19 +2230,107 @@ func testCustomChannelsBreach(ctx context.Context, net *NetworkHarness,
 		)
 	}
 
-	logBalance(t.t, nodes, assetID, "after keysend -- breach state")
+	logBalance(t.t, nodes, assetID, "after keysend -- balanced state")
+
+	// Now create hodl invoices on both sides to ensure HTLCs exist on the
+	// commitment we're about to backup. This will test the revoked HTLC
+	// sweep paths (TaprootHtlcOfferedRevoke and TaprootHtlcAcceptedRevoke).
+	const (
+		numHodlInvoices = 2
+		htlcAmount      = 50
+	)
+
+	var (
+		daveHodlInvoices    []assetHodlInvoice
+		charlieHodlInvoices []assetHodlInvoice
+	)
+
+	t.Logf("Creating %d hodl invoices for each peer...", numHodlInvoices)
+
+	// Create Dave's hodl invoices (Charlie will pay = outgoing HTLCs)
+	for i := 0; i < numHodlInvoices; i++ {
+		daveHodlInvoices = append(
+			daveHodlInvoices, createAssetHodlInvoice(
+				t.t, charlie, dave, htlcAmount, assetID,
+			),
+		)
+	}
+
+	// Create Charlie's hodl invoices (Dave will pay = incoming HTLCs)
+	for i := 0; i < numHodlInvoices; i++ {
+		charlieHodlInvoices = append(
+			charlieHodlInvoices, createAssetHodlInvoice(
+				t.t, dave, charlie, htlcAmount, assetID,
+			),
+		)
+	}
+
+	// Pay all invoices but don't settle (HTLCs stay in flight)
+	payOpt := withFailure(
+		lnrpc.Payment_IN_FLIGHT,
+		lnrpc.PaymentFailureReason_FAILURE_REASON_NONE,
+	)
+
+	t.Logf("Paying hodl invoices to create HTLCs on commitment...")
+
+	for _, daveInv := range daveHodlInvoices {
+		payInvoiceWithAssets(
+			t.t, charlie, dave, daveInv.payReq, assetID, payOpt,
+		)
+	}
+
+	for _, charlieInv := range charlieHodlInvoices {
+		payInvoiceWithAssets(
+			t.t, dave, charlie, charlieInv.payReq, assetID, payOpt,
+		)
+	}
+
+	// Verify HTLCs are active on both sides
+	expectedHtlcs := numHodlInvoices * 2
+	assertNumHtlcs(t.t, charlie, expectedHtlcs)
+	assertNumHtlcs(t.t, dave, expectedHtlcs)
+
+	logBalance(t.t, nodes, assetID, "after hodl invoices -- breach state")
 
 	// Now we'll create an on disk snapshot that we'll use to restore back
-	// to as our breached state.
+	// to as our breached state. This state has active HTLCs!
 	require.NoError(t.t, net.StopAndBackupDB(dave))
 	connectAllNodes(t.t, net, nodes)
 
-	// We'll send one more keysend payment now to revoke the state we were
-	// just at above.
+	// Now we'll settle all the hodl invoices to revoke the state with
+	// HTLCs. This will cause the backed-up state to become revoked, which
+	// will trigger the breach detection when Dave broadcasts it.
+	t.Logf("Settling hodl invoices to revoke breach state...")
+
+	for _, daveInv := range daveHodlInvoices {
+		_, err := dave.InvoicesClient.SettleInvoice(
+			ctx, &invoicesrpc.SettleInvoiceMsg{
+				Preimage: daveInv.preimage[:],
+			},
+		)
+		require.NoError(t.t, err)
+	}
+
+	for _, charlieInv := range charlieHodlInvoices {
+		_, err := charlie.InvoicesClient.SettleInvoice(
+			ctx, &invoicesrpc.SettleInvoiceMsg{
+				Preimage: charlieInv.preimage[:],
+			},
+		)
+		require.NoError(t.t, err)
+	}
+
+	// Send one more keysend to ensure the state with settled HTLCs is
+	// committed and the previous state (with active HTLCs) is revoked.
 	sendAssetKeySendPayment(
 		t.t, charlie, dave, keySendAmount, assetID, fn.Some(btcAmt),
 	)
-	logBalance(t.t, nodes, assetID, "after keysend -- final state")
+
+	// Wait for all HTLCs to clear
+	assertNumHtlcs(t.t, charlie, 0)
+	assertNumHtlcs(t.t, dave, 0)
+
+	logBalance(t.t, nodes, assetID, "after settling HTLCs -- final state")
 
 	// With the final state achieved, we'll now restore Dave (who will be
 	// force closing) to that old state, the breach state.
@@ -2287,6 +2375,28 @@ func testCustomChannelsBreach(ctx context.Context, net *NetworkHarness,
 
 	t.Logf("Charlie justice txid: %v", charlieJusticeTxid)
 
+	// Fetch the justice transaction to verify it sweeps both commitment
+	// outputs AND the revoked HTLCs.
+	justiceTx := t.lndHarness.Miner.GetRawTransaction(*charlieJusticeTxid[0])
+	justiceMsgTx := justiceTx.MsgTx()
+
+	// The justice transaction should sweep:
+	// - 2 commitment outputs (Charlie's local, Dave's remote)
+	// - 2 offered HTLC revocations (Charlie's outgoing HTLCs)
+	// - 2 accepted HTLC revocations (Charlie's incoming HTLCs)
+	//
+	// This verifies that our new revoked HTLC sweep implementations
+	// (TaprootHtlcOfferedRevoke and TaprootHtlcAcceptedRevoke) are working.
+	expectedInputs := 2 + (numHodlInvoices * 2)
+	require.Len(t.t, justiceMsgTx.TxIn, expectedInputs,
+		"justice tx should sweep %d inputs (2 commitments + %d HTLCs)",
+		expectedInputs, numHodlInvoices*2)
+
+	t.Logf("Justice tx has %d inputs: 2 commitment outputs + %d revoked "+
+		"HTLCs (%d offered + %d accepted)",
+		len(justiceMsgTx.TxIn), numHodlInvoices*2,
+		numHodlInvoices, numHodlInvoices)
+
 	// Next, we'll mine a block to confirm Charlie's justice transaction.
 	mineBlocks(t, net, 1, 1)
 
@@ -2298,15 +2408,35 @@ func testCustomChannelsBreach(ctx context.Context, net *NetworkHarness,
 	t.Logf("Charlie justice transfer: %v",
 		toProtoJSON(t.t, charlieJusticeTransfer))
 
-	// Charlie's balance should now be the same as before the breach
-	// attempt: the amount he minted at the very start.
-	charlieBalance := itestAsset.Amount
+	// After sweeping the breach state, Charlie should have all the asset
+	// balance. Due to the breach taking place though, it's scattered across
+	// 7 individual UTXOs.
 	itest.AssertBalances(
-		t.t, charlieTap, charlieBalance, itest.WithAssetID(assetID),
-		itest.WithNumUtxos(3),
+		t.t, charlieTap, itestAsset.Amount,
+		itest.WithAssetID(assetID), itest.WithNumUtxos(7),
 	)
 
-	t.Logf("Charlie balance after breach: %d", charlieBalance)
+	// As a final check let's make sure that Charlie can consolidate all
+	// the assets to a single UTXO. We'll create an address for that.
+	resAddr, err := charlieTap.NewAddr(ctx, &taprpc.NewAddrRequest{
+		AssetId: assetID,
+		Amt:     itestAsset.Amount,
+	})
+	require.NoError(t.t, err)
+
+	// Now we dispatch the send.
+	_, err = charlieTap.SendAsset(ctx, &taprpc.SendAssetRequest{
+		TapAddrs: []string{resAddr.Encoded},
+	})
+	require.NoError(t.t, err)
+
+	mineBlocks(t, net, 1, 1)
+
+	// The balance should all be under a single UTXO.
+	itest.AssertBalances(
+		t.t, charlieTap, itestAsset.Amount,
+		itest.WithAssetID(assetID), itest.WithNumUtxos(1),
+	)
 }
 
 // testCustomChannelsV1Upgrade tests the upgrade path of a taproot assets
