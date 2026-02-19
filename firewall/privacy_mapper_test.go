@@ -8,11 +8,14 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/lightninglabs/faraday/frdrpc"
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	"github.com/lightninglabs/lightning-terminal/session"
+	"github.com/lightninglabs/lightning-terminal/subservers"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/rpcperms"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 	"gopkg.in/macaroon-bakery.v2/bakery"
@@ -921,7 +924,8 @@ func TestPrivacyMapper(t *testing.T) {
 			// randIntn is used for deterministic testing.
 			randIntn := func(n int) (int, error) { return 100, nil }
 			p := NewPrivacyMapper(
-				db, randIntn, pd, DefaultTimeVariation,
+				db, randIntn, pd, newMockPermissionsManager(),
+				DefaultTimeVariation,
 			)
 
 			rawMsg, err := proto.Marshal(test.msg)
@@ -1003,7 +1007,8 @@ func TestPrivacyMapper(t *testing.T) {
 		require.NoError(t, err)
 
 		p := NewPrivacyMapper(
-			db, CryptoRandIntn, pd, DefaultTimeVariation,
+			db, CryptoRandIntn, pd, newMockPermissionsManager(),
+			DefaultTimeVariation,
 		)
 		require.NoError(t, err)
 
@@ -1608,4 +1613,202 @@ func variance(numbers []uint64) uint64 {
 	}
 
 	return uint64(sum)
+}
+
+// mockPermissionsManager is a mock implementation of PermissionsManager for
+// testing. It allows flexible configuration of which URIs belong to which
+// subservers.
+type mockPermissionsManager struct {
+	// uriToSubServer maps URIs to their subserver name. If a URI is not
+	// in this map, IsSubServerURI will return false.
+	uriToSubServer map[string]string
+}
+
+// newMockPermissionsManager creates a new mock with common test URIs.
+func newMockPermissionsManager() *mockPermissionsManager {
+	return &mockPermissionsManager{
+		//nolint:ll
+		uriToSubServer: map[string]string{
+			"/lnrpc.Lightning/GetInfo":            subservers.LND,
+			"/lnrpc.Lightning/ListChannels":       subservers.LND,
+			"/routerrpc.Router/SendPaymentV2":     subservers.LND,
+			"/frdrpc.FaradayServer/RevenueReport": subservers.FARADAY,
+		},
+	}
+}
+
+func (m *mockPermissionsManager) IsSubServerURI(subServer string,
+	uri string) bool {
+
+	if m.uriToSubServer == nil {
+		return false
+	}
+	return m.uriToSubServer[uri] == subServer
+}
+
+// TestUnaryInterceptor tests the UnaryInterceptor method of PrivacyMapper. This
+// test focuses on the interceptor's routing logic, fail-close behavior, and
+// session handling.
+func TestUnaryInterceptor(t *testing.T) {
+	t.Parallel()
+
+	sessionID := session.ID{1, 2, 3, 4}
+	testURI := "/frdrpc.FaradayServer/RevenueReport"
+	lndURI := "/lnrpc.Lightning/GetInfo"
+
+	tests := []struct {
+		name              string
+		setupMapper       func() *PrivacyMapper
+		setupContext      func() context.Context
+		uri               string
+		expectError       bool
+		expectErrorCode   string
+		expectPassThrough bool
+	}{
+		{
+			name: "permissions manager not initialized",
+			setupMapper: func() *PrivacyMapper {
+				return &PrivacyMapper{
+					permsMgr: nil,
+				}
+			},
+			setupContext: func() context.Context {
+				return context.Background()
+			},
+			uri:             testURI,
+			expectError:     true,
+			expectErrorCode: "Unavailable",
+		},
+		{
+			name: "LND URI passes through",
+			setupMapper: func() *PrivacyMapper {
+				return &PrivacyMapper{
+					permsMgr: newMockPermissionsManager(),
+				}
+			},
+			setupContext: func() context.Context {
+				return context.Background()
+			},
+			uri:               lndURI,
+			expectPassThrough: true,
+		},
+		{
+			name: "session DB not initialized",
+			setupMapper: func() *PrivacyMapper {
+				return &PrivacyMapper{
+					permsMgr:  newMockPermissionsManager(),
+					sessionDB: nil,
+				}
+			},
+			setupContext: func() context.Context {
+				return context.Background()
+			},
+			uri:             testURI,
+			expectError:     true,
+			expectErrorCode: "Unavailable",
+		},
+		{
+			name: "privacy DB not initialized",
+			setupMapper: func() *PrivacyMapper {
+				pd := firewalldb.NewMockSessionDB()
+				return &PrivacyMapper{
+					permsMgr:  newMockPermissionsManager(),
+					sessionDB: pd,
+					db:        nil,
+				}
+			},
+			setupContext: func() context.Context {
+				return context.Background()
+			},
+			uri:             testURI,
+			expectError:     true,
+			expectErrorCode: "Unavailable",
+		},
+		{
+			name: "no session in context blocked",
+			setupMapper: func() *PrivacyMapper {
+				pd := firewalldb.NewMockSessionDB()
+				db := newMockDB(t, nil, sessionID)
+				return &PrivacyMapper{
+					permsMgr:  newMockPermissionsManager(),
+					sessionDB: pd,
+					db:        db,
+				}
+			},
+			setupContext: func() context.Context {
+				return context.Background()
+			},
+			uri:             testURI,
+			expectError:     true,
+			expectErrorCode: "Unauthenticated",
+		},
+		{
+			name: "unsupported URI returns error (fail-close)",
+			setupMapper: func() *PrivacyMapper {
+				pd := firewalldb.NewMockSessionDB()
+				pd.AddPair(sessionID, sessionID)
+				err := pd.AddPrivacyFlags(
+					sessionID, session.PrivacyFlags{},
+				)
+				require.NoError(t, err)
+
+				db := newMockDB(t, nil, sessionID)
+				randIntn := func(n int) (int, error) {
+					return 100, nil
+				}
+				return NewPrivacyMapper(
+					db, randIntn, pd,
+					newMockPermissionsManager(),
+					DefaultTimeVariation,
+				)
+			},
+			setupContext: func() context.Context {
+				md := make(metadata.MD)
+				session.AddToGRPCMetadata(md, sessionID)
+				return metadata.NewIncomingContext(
+					context.Background(), md,
+				)
+			},
+			uri:             testURI,
+			expectError:     true,
+			expectErrorCode: "PermissionDenied",
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			mapper := tt.setupMapper()
+			ctx := tt.setupContext()
+
+			handlerCalled := false
+			mockHandler := func(ctx context.Context,
+				req any) (any, error) {
+
+				handlerCalled = true
+				return &frdrpc.RevenueReportResponse{}, nil
+			}
+
+			info := &grpc.UnaryServerInfo{FullMethod: tt.uri}
+			req := &frdrpc.RevenueReportRequest{}
+
+			interceptor := mapper.UnaryInterceptor()
+			resp, err := interceptor(
+				ctx, req, info, mockHandler,
+			)
+
+			if tt.expectError {
+				require.Error(t, err)
+				require.Contains(
+					t, err.Error(), tt.expectErrorCode,
+				)
+				require.False(t, handlerCalled)
+			} else {
+				require.NoError(t, err)
+				require.NotNil(t, resp)
+				require.True(t, handlerCalled)
+			}
+		})
+	}
 }

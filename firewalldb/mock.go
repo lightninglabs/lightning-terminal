@@ -72,7 +72,13 @@ func (m *mockSessionDB) GetSession(_ context.Context,
 		return nil, fmt.Errorf("no privacy flags found for session ID")
 	}
 
-	return &session.Session{GroupID: s, PrivacyFlags: f}, nil
+	return &session.Session{
+		GroupID:      s,
+		PrivacyFlags: f,
+		// We always set this to true to make sure the privacy mapper is
+		// on in tests.
+		WithPrivacyMapper: true,
+	}, nil
 }
 
 // AddPrivacyFlags is a helper that adds privacy flags to the mock session db.
