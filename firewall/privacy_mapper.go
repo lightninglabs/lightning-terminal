@@ -16,7 +16,12 @@ import (
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
 	"github.com/lightninglabs/lightning-terminal/session"
+	"github.com/lightninglabs/lightning-terminal/subservers"
 	"github.com/lightningnetwork/lnd/lnrpc"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -67,6 +72,15 @@ type PrivacyMapper struct {
 	randIntn      func(int) (int, error)
 	sessionDB     firewalldb.SessionDB
 	timeVariation time.Duration
+	permsMgr      PermissionsManager
+}
+
+// PermissionsManager defines the interface for checking if a URI belongs to a
+// specific sub-server.
+type PermissionsManager interface {
+	// IsSubServerURI returns true if the given URI belongs to the RPC of
+	// the named sub-server.
+	IsSubServerURI(subServer string, uri string) bool
 }
 
 // NewPrivacyMapper returns a new instance of PrivacyMapper. The time variation
@@ -74,7 +88,7 @@ type PrivacyMapper struct {
 // DefaultTimeVariation is used. The randIntn function is used to draw
 // randomness for request field obfuscation.
 func NewPrivacyMapper(newDB firewalldb.PrivacyMapper, randIntn func(int) (int,
-	error), sessionDB firewalldb.SessionDB,
+	error), sessionDB firewalldb.SessionDB, permsMgr PermissionsManager,
 	timeVariation time.Duration) *PrivacyMapper {
 
 	return &PrivacyMapper{
@@ -82,6 +96,7 @@ func NewPrivacyMapper(newDB firewalldb.PrivacyMapper, randIntn func(int) (int,
 		randIntn:      randIntn,
 		sessionDB:     sessionDB,
 		timeVariation: timeVariation,
+		permsMgr:      permsMgr,
 	}
 }
 
@@ -221,6 +236,209 @@ func (p *PrivacyMapper) Intercept(ctx context.Context,
 	default:
 		return mid.RPCErrString(req, "invalid intercept type: %v", r)
 	}
+}
+
+// resolveLNCSession runs the fail-close prelude shared by the LNC unary and
+// stream privacy interceptors. Exactly one of three states is returned:
+//   - (sess, false, nil): privacy mapping must run; sess is fully populated.
+//   - (nil,  true,  nil): caller must pass the call through unmodified
+//     (LND URI, or the session has WithPrivacyMapper=false).
+//   - (nil,  false, err): err is a gRPC status.Error to return to the client.
+func (p *PrivacyMapper) resolveLNCSession(ctx context.Context, method string) (
+	*session.Session, bool, error) {
+
+	// Fail-close: block if permissions manager isn't ready.
+	isLnd, err := p.isLndURI(method)
+	if err != nil {
+		log.ErrorS(ctx, "Permissions manager not initialized, "+
+			"blocking request", err, "method", method)
+
+		return nil, false, status.Errorf(codes.Unavailable,
+			"permissions manager not ready, please retry")
+	}
+
+	// LND URIs are exempted (they use LND's middleware chain).
+	if isLnd {
+		log.TraceS(ctx, "Skipping LNC privacy for LND URI",
+			"method", method)
+
+		return nil, true, nil
+	}
+
+	// Fail-close: block if dependencies aren't ready during startup.
+	if p.sessionDB == nil {
+		log.ErrorS(ctx, "Session DB not initialized, blocking request",
+			nil, "method", method)
+
+		return nil, false, status.Errorf(codes.Unavailable,
+			"session database not ready, please retry")
+	}
+	if p.db == nil {
+		log.ErrorS(ctx, "Privacy DB not initialized, blocking request",
+			nil, "method", method)
+
+		return nil, false, status.Errorf(codes.Unavailable,
+			"privacy database not ready, please retry")
+	}
+
+	// Fail-close: this interceptor runs on the LNC session server, so
+	// every request must carry a session ID. A missing ID is unexpected
+	// and blocked to prevent bypassing privacy mapping.
+	sessionID, err := extractSessionFromContext(ctx)
+	if err != nil {
+		log.ErrorS(ctx, "No session ID on LNC listener, "+
+			"blocking request", err, "method", method)
+
+		return nil, false, status.Errorf(codes.Unauthenticated,
+			"session ID required")
+	}
+
+	sess, err := p.sessionDB.GetSession(ctx, sessionID)
+	if err != nil {
+		log.ErrorS(ctx, "Failed to get session", err,
+			"session_id", sessionID)
+
+		return nil, false, status.Errorf(codes.Internal,
+			"failed to get session")
+	}
+
+	// Pass through if privacy is explicitly disabled for this session.
+	if !sess.WithPrivacyMapper {
+		log.TraceS(ctx, "Privacy disabled for session, passing through",
+			"session_id", sessionID, "method", method)
+
+		return nil, true, nil
+	}
+
+	return sess, false, nil
+}
+
+// UnaryInterceptor returns a gRPC unary server interceptor that applies privacy
+// mapping to LNC session requests for non-LND services. This interceptor
+// enforces fail-close behavior: blocks requests if dependencies aren't ready,
+// returns errors if no privacy checker exists for the URI.
+func (p *PrivacyMapper) UnaryInterceptor() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo,
+		handler grpc.UnaryHandler) (any, error) {
+
+		log.TraceS(ctx, "LNC privacy interceptor called",
+			"method", info.FullMethod)
+
+		sess, passThrough, err := p.resolveLNCSession(
+			ctx, info.FullMethod,
+		)
+		if err != nil {
+			return nil, err
+		}
+		if passThrough {
+			return handler(ctx, req)
+		}
+
+		log.DebugS(ctx, "Applying privacy mapping",
+			"method", info.FullMethod,
+			"session_id", sess.ID)
+
+		// Apply request mapping (pseudo→real). Fail-close: if no
+		// checker exists for the URI, this returns an error to prevent
+		// unauthorized access.
+		reqMsg, ok := req.(proto.Message)
+		if !ok {
+			return nil, status.Errorf(codes.Internal,
+				"request is not a proto.Message, "+
+					"cannot apply privacy mapping")
+		}
+
+		mappedReq, err := p.checkAndReplaceIncomingRequest(
+			ctx, info.FullMethod, reqMsg, sess,
+		)
+		if err != nil {
+			log.ErrorS(ctx, "Privacy mapping request failed", err,
+				"method", info.FullMethod,
+				"session_id", sess.ID)
+
+			return nil, status.Errorf(
+				codes.PermissionDenied,
+				"privacy mapping failed")
+		}
+
+		// Per the rpcmiddleware round-trip-checker convention, a nil
+		// mapped request means "no rewrite needed, forward the
+		// original". Same semantics on the response side and on the
+		// LND-side Intercept.
+		if mappedReq != nil {
+			req = mappedReq
+			log.DebugS(ctx, "Request privacy applied",
+				"method", info.FullMethod,
+				"session_id", sess.ID)
+		}
+
+		// Call handler with real values.
+		resp, err := handler(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+
+		// Apply response mapping (real→pseudo). Fail-close: if no
+		// checker exists for the URI, this returns an error to avoid
+		// accidental leaks.
+		respMsg, ok := resp.(proto.Message)
+		if !ok {
+			return nil, status.Errorf(codes.Internal,
+				"response is not a proto.Message, "+
+					"cannot apply privacy mapping")
+		}
+
+		mappedResp, err := p.replaceOutgoingResponse(
+			ctx, info.FullMethod, respMsg, sess,
+		)
+		if err != nil {
+			log.ErrorS(ctx, "Privacy mapping response failed", err,
+				"method", info.FullMethod,
+				"session_id", sess.ID)
+
+			return nil, status.Errorf(
+				codes.PermissionDenied,
+				"privacy mapping failed")
+		}
+
+		// Per the rpcmiddleware round-trip-checker convention, a nil
+		// mapped response means "no rewrite needed, forward the
+		// original".
+		if mappedResp != nil {
+			resp = mappedResp
+			log.DebugS(ctx, "Response privacy applied",
+				"method", info.FullMethod,
+				"session_id", sess.ID)
+		}
+
+		return resp, nil
+	}
+}
+
+// isLndURI returns true if the URI belongs to LND (uses permissions manager
+// to identify all LND services: lnrpc, routerrpc, signrpc, walletrpc, etc).
+func (p *PrivacyMapper) isLndURI(uri string) (bool, error) {
+	if p.permsMgr == nil {
+		return false, fmt.Errorf("permissions manager not initialized")
+	}
+	return p.permsMgr.IsSubServerURI(subservers.LND, uri), nil
+}
+
+// extractSessionFromContext extracts the session ID from gRPC metadata.
+func extractSessionFromContext(ctx context.Context) (session.ID, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return session.ID{}, fmt.Errorf("no metadata in context")
+	}
+
+	sessionIDOpt, err := session.FromGRPCMetadata(md)
+	if err != nil {
+		return session.ID{}, err
+	}
+
+	return sessionIDOpt.UnwrapOrErr(
+		fmt.Errorf("no session ID in metadata"),
+	)
 }
 
 // checkAndReplaceIncomingRequest inspects an incoming request and optionally

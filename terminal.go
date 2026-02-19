@@ -1071,6 +1071,24 @@ func (g *LightningTerminal) startInternalSubServers(ctx context.Context,
 
 	log.Infof("Starting LiT session server")
 
+	// Privacy mapper for LNC sessions. The unary interceptor translates
+	// pseudonymous identifiers to real values for calls to non-LND
+	// sub-daemons (Faraday, Loop, Pool, Taproot Assets); LND calls are
+	// handled separately via LND's own middleware chain
+	// (PrivacyMapper.Intercept). The stream interceptor passes through
+	// LND streams and blocks non-LND streams (fail-close until stream
+	// privacy mapping is implemented). Both run before auth/routing.
+	privacyMapper := firewall.NewPrivacyMapper(
+		g.stores.firewall, firewall.CryptoRandIntn,
+		g.stores.sessions, g.permsMgr,
+		g.cfg.PrivacyTimestampVariation,
+	)
+
+	lncUnaryInterceptors := []grpc.UnaryServerInterceptor{
+		privacyMapper.UnaryInterceptor(),
+		g.rpcProxy.UnaryServerInterceptor,
+	}
+
 	sessionCfg := &sessionRpcServerConfig{
 		db:        g.stores.sessions,
 		basicAuth: g.rpcProxy.basicAuth,
@@ -1080,9 +1098,7 @@ func (g *LightningTerminal) startInternalSubServers(ctx context.Context,
 			grpc.ChainStreamInterceptor(
 				g.rpcProxy.StreamServerInterceptor,
 			),
-			grpc.ChainUnaryInterceptor(
-				g.rpcProxy.UnaryServerInterceptor,
-			),
+			grpc.ChainUnaryInterceptor(lncUnaryInterceptors...),
 			grpc.UnknownServiceHandler(
 				grpcProxy.TransparentHandler(
 					// Don't allow calls to litrpc.
@@ -1150,11 +1166,6 @@ func (g *LightningTerminal) startInternalSubServers(ctx context.Context,
 	} else {
 		closeAccountService()
 	}
-
-	privacyMapper := firewall.NewPrivacyMapper(
-		g.stores.firewall, firewall.CryptoRandIntn,
-		g.stores.sessions, g.cfg.PrivacyTimestampVariation,
-	)
 
 	mw := []mid.RequestInterceptor{
 		privacyMapper,
