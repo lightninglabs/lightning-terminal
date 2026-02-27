@@ -8,35 +8,36 @@ import Tip from './Tip';
 const Styled = {
   Wrapper: styled.div`
     display: flex;
+    align-items: center;
     justify-content: space-between;
+    padding: 4px 0;
+    margin-bottom: 4px;
   `,
   Left: styled.span`
-    flex: 1;
-    padding-left: 16px;
-    text-align: left;
+    display: flex;
+    align-items: center;
   `,
   Center: styled.span`
     flex: 1;
-    text-align: center;
   `,
   Right: styled.span`
-    flex: 1;
-    text-align: right;
-
-    svg {
-      margin-left: 20px;
-    }
+    display: flex;
+    align-items: center;
+    gap: 8px;
   `,
   BackLink: styled.a`
-    text-transform: uppercase;
     color: ${props => props.theme.colors.offWhite};
     font-size: ${props => props.theme.sizes.xs};
+    font-weight: 500;
     cursor: pointer;
-    line-height: 36px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: opacity 0.15s;
 
     &:hover {
-      color: ${props => props.theme.colors.offWhite};
-      opacity: 80%;
+      color: ${props => props.theme.colors.white};
+      opacity: 0.8;
       text-decoration: none;
     }
   `,
