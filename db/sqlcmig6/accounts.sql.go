@@ -253,6 +253,67 @@ func (q *Queries) ListAccountPayments(ctx context.Context, accountID int64) ([]A
 	return items, nil
 }
 
+const listAllAccountInvoices = `-- name: ListAllAccountInvoices :many
+SELECT account_id, hash
+FROM account_invoices
+`
+
+func (q *Queries) ListAllAccountInvoices(ctx context.Context) ([]AccountInvoice, error) {
+	rows, err := q.db.QueryContext(ctx, listAllAccountInvoices)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AccountInvoice
+	for rows.Next() {
+		var i AccountInvoice
+		if err := rows.Scan(&i.AccountID, &i.Hash); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAllAccountPayments = `-- name: ListAllAccountPayments :many
+SELECT account_id, hash, status, full_amount_msat
+FROM account_payments
+`
+
+func (q *Queries) ListAllAccountPayments(ctx context.Context) ([]AccountPayment, error) {
+	rows, err := q.db.QueryContext(ctx, listAllAccountPayments)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AccountPayment
+	for rows.Next() {
+		var i AccountPayment
+		if err := rows.Scan(
+			&i.AccountID,
+			&i.Hash,
+			&i.Status,
+			&i.FullAmountMsat,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAllAccounts = `-- name: ListAllAccounts :many
 SELECT id, alias, label, type, initial_balance_msat, current_balance_msat, last_updated, expiration
 FROM accounts
