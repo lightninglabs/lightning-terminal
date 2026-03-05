@@ -70,10 +70,18 @@ SELECT *
 FROM account_payments
 WHERE account_id = $1;
 
+-- name: ListAllAccountPayments :many
+SELECT *
+FROM account_payments;
+
 -- name: ListAccountInvoices :many
 SELECT *
 FROM account_invoices
 WHERE account_id = $1;
+
+-- name: ListAllAccountInvoices :many
+SELECT *
+FROM account_invoices;
 
 -- name: GetAccountInvoice :one
 SELECT *

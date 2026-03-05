@@ -141,6 +141,76 @@ func TestAccountStore(t *testing.T) {
 	require.ErrorIs(t, err, ErrAccNotFound)
 }
 
+// TestAccountStoreAccountsGrouping verifies that Accounts groups invoices and
+// payments by account ID and does not leak linked data across accounts.
+func TestAccountStoreAccountsGrouping(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	store := NewTestDB(t, clock.NewTestClock(time.Now()))
+
+	accountA, err := store.NewAccount(ctx, 1_000, time.Time{}, "group-a")
+	require.NoError(t, err)
+
+	accountB, err := store.NewAccount(ctx, 2_000, time.Time{}, "group-b")
+	require.NoError(t, err)
+
+	invoiceA := lntypes.Hash{0x01, 0x02, 0x03, 0x04}
+	invoiceB := lntypes.Hash{0x0a, 0x0b, 0x0c, 0x0d}
+	err = store.AddAccountInvoice(ctx, accountA.ID, invoiceA)
+	require.NoError(t, err)
+	err = store.AddAccountInvoice(ctx, accountB.ID, invoiceB)
+	require.NoError(t, err)
+
+	paymentA := lntypes.Hash{0x11, 0x12, 0x13, 0x14}
+	paymentB := lntypes.Hash{0x1a, 0x1b, 0x1c, 0x1d}
+	_, err = store.UpsertAccountPayment(
+		ctx, accountA.ID, paymentA, lnwire.MilliSatoshi(1234),
+		lnrpc.Payment_IN_FLIGHT,
+	)
+	require.NoError(t, err)
+	_, err = store.UpsertAccountPayment(
+		ctx, accountB.ID, paymentB, lnwire.MilliSatoshi(5678),
+		lnrpc.Payment_SUCCEEDED,
+	)
+	require.NoError(t, err)
+
+	accounts, err := store.Accounts(ctx)
+	require.NoError(t, err)
+	require.Len(t, accounts, 2)
+
+	accountsByID := make(
+		map[AccountID]*OffChainBalanceAccount, len(accounts),
+	)
+	for _, account := range accounts {
+		accountsByID[account.ID] = account
+	}
+
+	accountAFromList, ok := accountsByID[accountA.ID]
+	require.True(t, ok)
+
+	accountBFromList, ok := accountsByID[accountB.ID]
+	require.True(t, ok)
+
+	require.Contains(t, accountAFromList.Invoices, invoiceA)
+	require.NotContains(t, accountAFromList.Invoices, invoiceB)
+	require.Contains(t, accountAFromList.Payments, paymentA)
+	require.NotContains(t, accountAFromList.Payments, paymentB)
+	require.Equal(
+		t, lnrpc.Payment_IN_FLIGHT,
+		accountAFromList.Payments[paymentA].Status,
+	)
+
+	require.Contains(t, accountBFromList.Invoices, invoiceB)
+	require.NotContains(t, accountBFromList.Invoices, invoiceA)
+	require.Contains(t, accountBFromList.Payments, paymentB)
+	require.NotContains(t, accountBFromList.Payments, paymentA)
+	require.Equal(
+		t, lnrpc.Payment_SUCCEEDED,
+		accountBFromList.Payments[paymentB].Status,
+	)
+}
+
 // assertEqualAccounts asserts that two accounts are equal. This helper function
 // is needed because an account contains two time.Time values that cannot be
 // compared using reflect.DeepEqual().
