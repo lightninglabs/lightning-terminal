@@ -127,6 +127,11 @@ var allTestCases = []*testCase{
 		noAliceBob: true,
 	},
 	{
+		name:       "custom channels invoice quote expiry mismatch",
+		test:       testCustomChannelsInvoiceQuoteExpiryMismatch,
+		noAliceBob: true,
+	},
+	{
 		name:       "custom channels decode payreq",
 		test:       testCustomChannelsDecodeAssetInvoice,
 		noAliceBob: true,

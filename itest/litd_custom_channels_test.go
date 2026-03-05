@@ -3978,6 +3978,130 @@ func testCustomChannelsBalanceConsistency(ctx context.Context,
 	)
 }
 
+// testCustomChannelsInvoiceQuoteExpiryMismatch ensures that we don't create
+// asset invoices that outlive their RFQ quotes. If the fix is absent, the
+// invoice can be settled with BTC after the quote expires and is cleaned up.
+func testCustomChannelsInvoiceQuoteExpiryMismatch(ctx context.Context,
+	net *NetworkHarness, t *harnessTest) {
+
+	const quoteExpiry = 15 * time.Second
+	oracleAddr := fmt.Sprintf("localhost:%d", port.NextAvailablePort())
+	oracle := newOracleHarnessWithExpiry(oracleAddr, quoteExpiry)
+	oracle.start(t.t)
+	t.t.Cleanup(oracle.stop)
+
+	lndArgs := slices.Clone(lndArgsTemplate)
+	litdArgs := slices.Clone(litdArgsTemplateNoOracle)
+	litdArgs = append(litdArgs, fmt.Sprintf(
+		"--taproot-assets.experimental.rfq.priceoracleaddress="+
+			"rfqrpc://%s", oracleAddr,
+	))
+
+	// We use Charlie as the proof courier. But in order for Charlie to also
+	// use itself, we need to define its port upfront.
+	charliePort := port.NextAvailablePort()
+	litdArgs = append(litdArgs, fmt.Sprintf(
+		"--taproot-assets.proofcourieraddr=%s://%s",
+		proof.UniverseRpcCourierType,
+		fmt.Sprintf(node.ListenerFormat, charliePort),
+	))
+
+	charlie, err := net.NewNodeWithPort(
+		t.t, "Charlie", lndArgs, false, true, charliePort, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	dave, err := net.NewNode(t.t, "Dave", lndArgs, false, true, litdArgs...)
+	require.NoError(t.t, err)
+	erin, err := net.NewNode(t.t, "Erin", lndArgs, false, true, litdArgs...)
+	require.NoError(t.t, err)
+	fabia, err := net.NewNode(
+		t.t, "Fabia", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+	yara, err := net.NewNode(
+		t.t, "Yara", lndArgs, false, true, litdArgs...,
+	)
+	require.NoError(t.t, err)
+
+	nodes := []*HarnessNode{charlie, dave, erin, fabia, yara}
+	connectAllNodes(t.t, net, nodes)
+	fundAllNodes(t.t, net, nodes)
+
+	// Create the normal channel between Erin and Dave. Erin opens so she
+	// has outgoing capacity to pay Dave.
+	t.Logf("Opening normal channel between Erin and Dave...")
+	channelOp := openChannelAndAssert(
+		t, net, erin, dave, lntest.OpenChannelParams{
+			Amt:         10_000_000,
+			SatPerVByte: 5,
+		},
+	)
+	defer closeChannelAndAssert(t, net, erin, channelOp, false)
+
+	universeTap := newTapClient(t.t, charlie)
+	charlieTap := newTapClient(t.t, charlie)
+	daveTap := newTapClient(t.t, dave)
+	erinTap := newTapClient(t.t, erin)
+	fabiaTap := newTapClient(t.t, fabia)
+	yaraTap := newTapClient(t.t, yara)
+
+	// Mint an asset on Charlie and sync all nodes to Charlie as the
+	// universe.
+	mintedAssets := itest.MintAssetsConfirmBatch(
+		t.t, t.lndHarness.Miner.Client, charlieTap,
+		[]*mintrpc.MintAssetRequest{
+			{
+				Asset: itestAsset,
+			},
+		},
+	)
+	cents := mintedAssets[0]
+	assetID := cents.AssetGenesis.AssetId
+
+	t.Logf("Minted %d lightning cents, syncing universes...", cents.Amount)
+	syncUniverses(t.t, charlieTap, dave, erin, fabia, yara)
+	t.Logf("Universes synced between all nodes, distributing assets...")
+
+	const (
+		daveFundingAmount = uint64(400_000)
+		erinFundingAmount = uint64(200_000)
+	)
+	charlieFundingAmount := cents.Amount - uint64(2*400_000)
+
+	_, _, _ = createTestAssetNetwork(
+		t, net, charlieTap, daveTap, erinTap, fabiaTap, yaraTap,
+		universeTap, cents, 400_000, charlieFundingAmount,
+		daveFundingAmount, erinFundingAmount, 0,
+	)
+
+	// Set a price in the oracle for the minted asset.
+	var id asset.ID
+	copy(id[:], assetID)
+	assetPrice := rfqmath.NewBigIntFixedPoint(100_000_00, 2)
+	oracle.setPrice(id, assetPrice, assetPrice)
+
+	// Create an asset invoice whose expiry exceeds the RFQ quote expiry.
+	ctxt, cancel := context.WithTimeout(ctx, defaultTimeout)
+	defer cancel()
+
+	invoiceExpiry := int64((2 * time.Minute).Seconds())
+	request := &tchrpc.AddInvoiceRequest{
+		AssetAmount: 40,
+		PeerPubkey:  charlie.PubKey[:],
+		InvoiceRequest: &lnrpc.Invoice{
+			Memo:   "asset invoice with long expiry",
+			Expiry: invoiceExpiry,
+		},
+		AssetId: assetID,
+	}
+
+	// Invoice creation should fail, since the quote is too short.
+	_, err = daveTap.AddInvoice(ctxt, request)
+	require.Error(t.t, err)
+	require.ErrorContains(t.t, err, "no quotes with sufficient expiry")
+}
+
 // testCustomChannelsSingleAssetMultiInput tests whether it is possible to fund
 // a channel using FundChannel that uses multiple inputs from the same asset.
 func testCustomChannelsSingleAssetMultiInput(ctx context.Context,
