@@ -10,7 +10,8 @@ import LoopHistory from './LoopHistory';
 
 const Styled = {
   TileSection: styled.section`
-    margin-top: 90px;
+    margin-top: 16px;
+    margin-bottom: 16px;
   `,
 };
 

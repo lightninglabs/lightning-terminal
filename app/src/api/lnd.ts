@@ -86,6 +86,79 @@ class LndApi extends BaseApi<LndEvents> {
   }
 
   /**
+   * call the LND `ListPayments` RPC and return the response
+   */
+  async listPayments(): Promise<LND.ListPaymentsResponse.AsObject> {
+    const req = new LND.ListPaymentsRequest();
+    req.setIncludeIncomplete(true);
+    req.setMaxPayments('100');
+    const res = await this._grpc.request(Lightning.ListPayments, req, this._meta);
+    return res.toObject();
+  }
+
+  /**
+   * call the LND `ListInvoices` RPC and return the response
+   */
+  async listInvoices(): Promise<LND.ListInvoiceResponse.AsObject> {
+    const req = new LND.ListInvoiceRequest();
+    req.setNumMaxInvoices('100');
+    req.setReversed(true);
+    const res = await this._grpc.request(Lightning.ListInvoices, req, this._meta);
+    return res.toObject();
+  }
+
+  async addInvoice(
+    amount: string,
+    memo: string,
+  ): Promise<LND.AddInvoiceResponse.AsObject> {
+    const req = new LND.Invoice();
+    req.setValue(amount);
+    req.setMemo(memo);
+    const res = await this._grpc.request(Lightning.AddInvoice, req, this._meta);
+    return res.toObject();
+  }
+
+  async decodePayReq(payReq: string): Promise<LND.PayReq.AsObject> {
+    const req = new LND.PayReqString();
+    req.setPayReq(payReq);
+    const res = await this._grpc.request(Lightning.DecodePayReq, req, this._meta);
+    return res.toObject();
+  }
+
+  async sendPaymentSync(payReq: string): Promise<LND.SendResponse.AsObject> {
+    const req = new LND.SendRequest();
+    req.setPaymentRequest(payReq);
+    const res = await this._grpc.request(Lightning.SendPaymentSync, req, this._meta);
+    return res.toObject();
+  }
+
+  async newAddress(): Promise<LND.NewAddressResponse.AsObject> {
+    const req = new LND.NewAddressRequest();
+    req.setType(0); // WITNESS_PUBKEY_HASH (native segwit)
+    const res = await this._grpc.request(Lightning.NewAddress, req, this._meta);
+    return res.toObject();
+  }
+
+  async sendCoins(addr: string, amount: string): Promise<LND.SendCoinsResponse.AsObject> {
+    const req = new LND.SendCoinsRequest();
+    req.setAddr(addr);
+    req.setAmount(amount);
+    const res = await this._grpc.request(Lightning.SendCoins, req, this._meta);
+    return res.toObject();
+  }
+
+  async openChannelSync(
+    nodePubkey: string,
+    localFundingAmount: string,
+  ): Promise<LND.ChannelPoint.AsObject> {
+    const req = new LND.OpenChannelRequest();
+    req.setNodePubkeyString(nodePubkey);
+    req.setLocalFundingAmount(localFundingAmount);
+    const res = await this._grpc.request(Lightning.OpenChannelSync, req, this._meta);
+    return res.toObject();
+  }
+
+  /**
    * Connect to the LND streaming endpoints
    */
   connectStreams() {

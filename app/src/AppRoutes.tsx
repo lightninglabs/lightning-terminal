@@ -7,6 +7,7 @@ const LazyLoopPage = React.lazy(() => import('components/loop/LoopPage'));
 const LazyHomePage = React.lazy(() => import('components/home/HomePage'));
 const LazyHistoryPage = React.lazy(() => import('components/history/HistoryPage'));
 const LazyPoolPage = React.lazy(() => import('components/pool/PoolPage'));
+const LazyExplorePage = React.lazy(() => import('components/explore/ExplorePage'));
 const LazySettingsPage = React.lazy(() => import('components/settings/SettingsPage'));
 const LazyConnectPage = React.lazy(() => import('components/connect/ConnectPage'));
 const LazyCustomSessionPage = React.lazy(
@@ -47,6 +48,14 @@ const AppRoutes: React.FC = () => {
           element={
             <Layout>
               <LazyPoolPage />
+            </Layout>
+          }
+        />
+        <Route
+          path="explore"
+          element={
+            <Layout>
+              <LazyExplorePage />
             </Layout>
           }
         />

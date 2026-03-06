@@ -9,7 +9,9 @@ import UnitSettings from './UnitSettings';
 
 const Styled = {
   Wrapper: styled.div`
-    padding: 40px 0;
+    padding: 24px 32px;
+    min-height: 100vh;
+    background: radial-gradient(ellipse at 50% 50%, #0f1218 0%, #090b10 100%);
   `,
 };
 

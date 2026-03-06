@@ -163,7 +163,9 @@ export class Store {
     await this.nodeStore.fetchInfo();
     await this.channelStore.fetchChannels();
     await this.nodeStore.fetchBalances();
-    await this.sessionStore.fetchSessions();
+    if (this.subServerStore.subServers.lit.running) {
+      await this.sessionStore.fetchSessions();
+    }
 
     if (this.swapStore.canFetchData) {
       await this.swapStore.fetchSwaps();

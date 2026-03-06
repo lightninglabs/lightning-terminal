@@ -57,10 +57,6 @@ export default class AppView {
   goToLoop() {
     this.goTo(`/loop`);
     this._store.settingsStore.autoCollapseSidebar();
-    if (!this._store.settingsStore.tourAutoShown) {
-      this.showTour();
-      this._store.settingsStore.tourAutoShown = true;
-    }
     this._store.log.info('Go to the Loop page');
   }
 
@@ -77,6 +73,13 @@ export default class AppView {
     // always collapse the sidebar to make room for the Pool sidebar
     this._store.settingsStore.sidebarVisible = false;
     this._store.log.info('Go to the Pool page');
+  }
+
+  /** Change to the Explore page */
+  goToExplore() {
+    this.goTo(`/explore`);
+    this._store.settingsStore.autoCollapseSidebar();
+    this._store.log.info('Go to the Explore page');
   }
 
   /** Change to the Settings page */

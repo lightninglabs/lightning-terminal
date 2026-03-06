@@ -54,9 +54,9 @@ const ProcessingSwaps: React.FC = () => {
         </Tip>
       </Header>
       <Content data-tour="processing-swaps">
-        {swapStore.processingSwaps.map(swap => (
-          <ProcessingSwapRow key={swap.id} swap={swap} />
-        ))}
+        {swapStore.processingSwaps.map(swap =>
+          React.createElement(ProcessingSwapRow, { key: swap.id, swap }),
+        )}
         {swapStore.processingSwaps.length === 0 && (
           <Complete>
             <ConfirmAnimation animationData={confirmJson} />
