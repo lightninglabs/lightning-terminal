@@ -21,12 +21,18 @@ const HistoryList: React.FC = () => {
       <HistoryRowHeader />
       <ListContainer>
         <AutoSizer disableHeight>
-          {({ width }) => (
+          {({ width }: { width: number }) => (
             <WindowScroller>
-              {({ height, isScrolling, onChildScroll, scrollTop, registerChild }) => (
+              {({
+                height,
+                isScrolling,
+                onChildScroll,
+                scrollTop,
+                registerChild,
+              }: any) => (
                 <Observer>
                   {() => (
-                    <div ref={ref => ref && registerChild(ref)}>
+                    <div ref={(ref: any) => ref && registerChild(ref)}>
                       <List
                         autoHeight
                         height={height}
@@ -34,12 +40,10 @@ const HistoryList: React.FC = () => {
                         onScroll={onChildScroll}
                         rowCount={swapStore.sortedSwaps.length}
                         rowHeight={ROW_HEIGHT}
-                        rowRenderer={({ index, key, style }) => (
-                          <HistoryRow
-                            key={key}
-                            style={style}
-                            swap={swapStore.sortedSwaps[index]}
-                          />
+                        rowRenderer={({ index, key, style }: any) => (
+                          <div key={key} style={style}>
+                            <HistoryRow swap={swapStore.sortedSwaps[index]} />
+                          </div>
                         )}
                         scrollTop={scrollTop}
                         width={width}

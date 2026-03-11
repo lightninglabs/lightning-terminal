@@ -6,18 +6,20 @@ interface Props {
 }
 
 const PurpleButton = styled.button<Props>`
-  font-family: ${props => props.theme.fonts.open.regular};
-  font-size: ${props => props.theme.sizes.m};
-  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
   height: auto;
   color: white;
-  background-color: #5d5fef;
-  border-width: 0;
-  border-radius: 4px;
-  padding: 14px 24px;
+  background-color: ${props => props.theme.colors.iris};
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  transition: all 0.15s ease;
+  letter-spacing: -0.01em;
 
   &:hover {
-    background-color: #3d40e7;
+    background-color: #5355d4;
   }
 
   &:focus {
@@ -27,22 +29,23 @@ const PurpleButton = styled.button<Props>`
   ${props =>
     props.secondary &&
     `
-    color: #252F4A;
-    background-color: ${props.theme.colors.white};
+    color: white;
+    background-color: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 
     &:hover {
-      opacity: 0.8;
-      background-color: ${props.theme.colors.white};
+      background-color: rgba(255, 255, 255, 0.1);
     }
   `}
 
   ${props =>
     props.tertiary &&
     `
-    background-color: #384770;
+    background-color: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
 
     &:hover {
-      background-color: #2E3A5C;
+      background-color: rgba(255, 255, 255, 0.1);
     }
   `}
 

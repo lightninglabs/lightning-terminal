@@ -23,12 +23,18 @@ const SessionList: React.FC = () => {
       <SessionRowHeader />
       <ListContainer>
         <AutoSizer disableHeight>
-          {({ width }) => (
+          {({ width }: { width: number }) => (
             <WindowScroller>
-              {({ height, isScrolling, onChildScroll, scrollTop, registerChild }) => (
+              {({
+                height,
+                isScrolling,
+                onChildScroll,
+                scrollTop,
+                registerChild,
+              }: any) => (
                 <Observer>
                   {() => (
-                    <div ref={ref => ref && registerChild(ref)}>
+                    <div ref={(ref: any) => ref && registerChild(ref)}>
                       <List
                         autoHeight
                         height={height}
@@ -36,12 +42,10 @@ const SessionList: React.FC = () => {
                         onScroll={onChildScroll}
                         rowCount={sessionStore.sortedSessions.length}
                         rowHeight={ROW_HEIGHT}
-                        rowRenderer={({ index, key, style }) => (
-                          <SessionRow
-                            key={key}
-                            style={style}
-                            session={sessionStore.sortedSessions[index]}
-                          />
+                        rowRenderer={({ index, key, style }: any) => (
+                          <div key={key} style={style}>
+                            <SessionRow session={sessionStore.sortedSessions[index]} />
+                          </div>
                         )}
                         scrollTop={scrollTop}
                         width={width}
