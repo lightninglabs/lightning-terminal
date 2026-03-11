@@ -3085,6 +3085,12 @@ func testCustomChannelsLiquidityEdgeCasesCore(ctx context.Context,
 	)
 	require.NoError(t.t, err)
 
+	// Mine a few blocks to help the HTLC failures propagate through the
+	// network. This is necessary because the payment is in-flight and the
+	// HTLCs need to fail back through multiple hops. Mining blocks helps
+	// the nodes process these failures faster.
+	mineBlocks(t, net, 6, 0)
+
 	// There should be no HTLCs present on any channel.
 	assertNumHtlcs(t.t, charlie, 0)
 	assertNumHtlcs(t.t, dave, 0)
@@ -3187,6 +3193,12 @@ func testCustomChannelsLiquidityEdgeCasesCore(ctx context.Context,
 	)
 	require.NoError(t.t, err)
 
+	// Mine a few blocks to help the HTLC failures propagate through the
+	// network. This is necessary because the payment is in-flight and the
+	// HTLCs need to fail back through multiple hops. Mining blocks helps
+	// the nodes process these failures faster.
+	mineBlocks(t, net, 6, 0)
+
 	assertNumHtlcs(t.t, dave, 0)
 
 	logBalance(t.t, nodes, assetID, "after small manual rfq")
@@ -3241,6 +3253,12 @@ func testCustomChannelsLiquidityEdgeCasesCore(ctx context.Context,
 		},
 	)
 	require.NoError(t.t, err)
+
+	// Mine a few blocks to help the HTLC failures propagate through the
+	// network. This is necessary because the payment is in-flight and the
+	// HTLCs need to fail back through multiple hops. Mining blocks helps
+	// the nodes process these failures faster.
+	mineBlocks(t, net, 6, 0)
 
 	// Let's assert that Erin cancelled all his HTLCs.
 	assertNumHtlcs(t.t, erin, 0)
