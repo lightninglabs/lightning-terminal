@@ -2623,6 +2623,33 @@ func testCustomChannelsV1Upgrade(ctx context.Context, net *NetworkHarness,
 	require.NotNil(t.t, stxoProofs)
 }
 
+// cancelInvoiceAndMineBlocks cancels an invoice and mines blocks to help
+// HTLC failures propagate through the network. This is necessary because
+// the payment is in-flight and the HTLCs need to fail back through
+// multiple hops. Mining blocks helps the nodes process these failures faster.
+func cancelInvoiceAndMineBlocks(ctx context.Context,
+	net *NetworkHarness, t *harnessTest,
+	invoicesClient invoicesrpc.InvoicesClient,
+	payHash []byte) error {
+
+	_, err := invoicesClient.CancelInvoice(
+		ctx, &invoicesrpc.CancelInvoiceMsg{
+			PaymentHash: payHash,
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	// Mine a few blocks to help the HTLC failures propagate through the
+	// network. This is necessary because the payment is in-flight and the
+	// HTLCs need to fail back through multiple hops. Mining blocks helps
+	// the nodes process these failures faster.
+	mineBlocks(t, net, 6, 0)
+
+	return nil
+}
+
 // testCustomChannelsLiquidityEdgeCasesCore is the core logic of the liquidity
 // edge cases. This test goes through certain scenarios that expose edge cases
 // and behaviors that proved to be buggy in the past and have been directly
@@ -3078,18 +3105,10 @@ func testCustomChannelsLiquidityEdgeCasesCore(ctx context.Context,
 
 	// Now let's cancel the invoice on Fabia.
 	payHash := hodlInv.preimage.Hash()
-	_, err = fabia.InvoicesClient.CancelInvoice(
-		ctx, &invoicesrpc.CancelInvoiceMsg{
-			PaymentHash: payHash[:],
-		},
+	err = cancelInvoiceAndMineBlocks(
+		ctx, net, t, fabia.InvoicesClient, payHash[:],
 	)
 	require.NoError(t.t, err)
-
-	// Mine a few blocks to help the HTLC failures propagate through the
-	// network. This is necessary because the payment is in-flight and the
-	// HTLCs need to fail back through multiple hops. Mining blocks helps
-	// the nodes process these failures faster.
-	mineBlocks(t, net, 6, 0)
 
 	// There should be no HTLCs present on any channel.
 	assertNumHtlcs(t.t, charlie, 0)
@@ -3186,18 +3205,8 @@ func testCustomChannelsLiquidityEdgeCasesCore(ctx context.Context,
 		t.t, htlcStream, withNumEvents(1), withForwardFailure(),
 	)
 
-	_, err = charlie.InvoicesClient.CancelInvoice(
-		ctx, &invoicesrpc.CancelInvoiceMsg{
-			PaymentHash: payHash[:],
-		},
-	)
+	err = cancelInvoiceAndMineBlocks(ctx, net, t, charlie.InvoicesClient, payHash[:])
 	require.NoError(t.t, err)
-
-	// Mine a few blocks to help the HTLC failures propagate through the
-	// network. This is necessary because the payment is in-flight and the
-	// HTLCs need to fail back through multiple hops. Mining blocks helps
-	// the nodes process these failures faster.
-	mineBlocks(t, net, 6, 0)
 
 	assertNumHtlcs(t.t, dave, 0)
 
@@ -3247,18 +3256,8 @@ func testCustomChannelsLiquidityEdgeCasesCore(ctx context.Context,
 	// locked in HTLCs and reset Erin's local balance back to its original
 	// value.
 	payHash = hodlInv.preimage.Hash()
-	_, err = fabia.InvoicesClient.CancelInvoice(
-		ctx, &invoicesrpc.CancelInvoiceMsg{
-			PaymentHash: payHash[:],
-		},
-	)
+	err = cancelInvoiceAndMineBlocks(ctx, net, t, fabia.InvoicesClient, payHash[:])
 	require.NoError(t.t, err)
-
-	// Mine a few blocks to help the HTLC failures propagate through the
-	// network. This is necessary because the payment is in-flight and the
-	// HTLCs need to fail back through multiple hops. Mining blocks helps
-	// the nodes process these failures faster.
-	mineBlocks(t, net, 6, 0)
 
 	// Let's assert that Erin cancelled all his HTLCs.
 	assertNumHtlcs(t.t, erin, 0)
