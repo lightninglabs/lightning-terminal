@@ -6,7 +6,6 @@ import (
 	restProxy "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lightninglabs/faraday"
 	"github.com/lightninglabs/faraday/frdrpc"
-	"github.com/lightninglabs/faraday/frdrpcserver"
 	"github.com/lightninglabs/faraday/frdrpcserver/perms"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightninglabs/taproot-assets/fn"
@@ -17,7 +16,7 @@ import (
 
 // faradaySubServer implements the SubServer interface.
 type faradaySubServer struct {
-	*frdrpcserver.RPCServer
+	*faraday.Faraday
 
 	remote    bool
 	cfg       *faraday.Config
@@ -29,11 +28,11 @@ var _ SubServer = (*faradaySubServer)(nil)
 
 // NewFaradaySubServer returns a new faraday implementation of the SubServer
 // interface.
-func NewFaradaySubServer(cfg *faraday.Config, rpcCfg *frdrpcserver.Config,
-	remoteCfg *RemoteDaemonConfig, remote bool) SubServer {
+func NewFaradaySubServer(cfg *faraday.Config, remoteCfg *RemoteDaemonConfig,
+	remote bool) SubServer {
 
 	return &faradaySubServer{
-		RPCServer: frdrpcserver.NewRPCServer(rpcCfg),
+		Faraday:   faraday.New(cfg),
 		cfg:       cfg,
 		remoteCfg: remoteCfg,
 		remote:    remote,
@@ -69,9 +68,15 @@ func (f *faradaySubServer) RemoteConfig() *RemoteDaemonConfig {
 func (f *faradaySubServer) Start(_ lnrpc.LightningClient,
 	lndGrpc *lndclient.GrpcLndServices, withMacaroonService bool) error {
 
-	return f.StartAsSubserver(
-		lndGrpc.LndServices, withMacaroonService,
-	)
+	return f.StartAsSubserver(lndGrpc, withMacaroonService)
+}
+
+// Stop stops the sub-server in integrated mode. We use StopAsSubserver to avoid
+// closing the shared lnd connection which is managed by LiT.
+//
+// NOTE: this is part of the SubServer interface.
+func (f *faradaySubServer) Stop() error {
+	return f.Faraday.StopAsSubserver()
 }
 
 // RegisterGrpcService must register the sub-server's GRPC server with the given
@@ -131,9 +136,9 @@ func (f *faradaySubServer) WhiteListedURLs() map[string]struct{} {
 // Impl returns the actual implementation of the sub-server. This might not be
 // set if the sub-server is running in remote mode.
 func (f *faradaySubServer) Impl() fn.Option[any] {
-	if f.RPCServer == nil {
+	if f.Faraday == nil {
 		return fn.None[any]()
 	}
 
-	return fn.Some[any](f.RPCServer)
+	return fn.Some[any](f.Faraday)
 }
