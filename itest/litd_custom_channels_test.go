@@ -3205,7 +3205,9 @@ func testCustomChannelsLiquidityEdgeCasesCore(ctx context.Context,
 		t.t, htlcStream, withNumEvents(1), withForwardFailure(),
 	)
 
-	err = cancelInvoiceAndMineBlocks(ctx, net, t, charlie.InvoicesClient, payHash[:])
+	err = cancelInvoiceAndMineBlocks(
+		ctx, net, t, charlie.InvoicesClient, payHash[:],
+	)
 	require.NoError(t.t, err)
 
 	assertNumHtlcs(t.t, dave, 0)
@@ -3256,7 +3258,9 @@ func testCustomChannelsLiquidityEdgeCasesCore(ctx context.Context,
 	// locked in HTLCs and reset Erin's local balance back to its original
 	// value.
 	payHash = hodlInv.preimage.Hash()
-	err = cancelInvoiceAndMineBlocks(ctx, net, t, fabia.InvoicesClient, payHash[:])
+	err = cancelInvoiceAndMineBlocks(
+		ctx, net, t, fabia.InvoicesClient, payHash[:],
+	)
 	require.NoError(t.t, err)
 
 	// Let's assert that Erin cancelled all his HTLCs.
