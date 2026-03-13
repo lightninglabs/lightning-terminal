@@ -120,8 +120,8 @@ func TestLightningTerminal(t *testing.T) {
 
 			lndSubTest := lndHarness.Subtest(t1)
 			litdHarness, err := NewNetworkHarness(
-				lndSubTest, chainBackend, binary, feeService,
-				testCase.backwardCompat,
+				lndSubTest, chainBackend, binary,
+				feeService,
 			)
 			require.NoError(t1, err)
 
