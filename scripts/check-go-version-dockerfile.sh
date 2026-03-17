@@ -34,7 +34,6 @@ exception_list=(
     # Exclude the tools Dockerfile as otherwise the linter may need to be
     # considered every time the Go version is updated.
     "./tools/Dockerfile"
-    "./itest/backward-compat"
 )
 
 # is_exception checks if a file is in the exception list.

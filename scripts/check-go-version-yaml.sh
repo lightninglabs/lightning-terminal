@@ -64,9 +64,7 @@ fi
 target_go_version="$1"
 
 # File paths to be excluded from the check.
-exception_list=(
-    "./itest/backward-compat"
-)
+exception_list=()
 
 # is_exception checks if a file is in the exception list.
 is_exception() {

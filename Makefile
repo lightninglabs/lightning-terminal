@@ -24,12 +24,6 @@ PUBLIC_URL :=
 # versions are checked against this version.
 GO_VERSION = 1.25.5
 
-# LITD_COMPAT_VERSIONS is a space-separated list of litd versions that are
-# installed before running the integration tests which include backward
-# compatibility tests. The list of versions must be in sync with any version
-# used in the backwardCompat map in itest/litd_test_list_on_test.go.
-LITD_COMPAT_VERSIONS = v0.14.1-alpha v0.15.0-alpha
-
 LOOP_COMMIT := $(shell cat go.mod | \
 		grep $(LOOP_PKG) | \
 		head -n1 | \
@@ -243,10 +237,6 @@ build-itest-binary:
 	@$(call print, "Building itest binary.")
 	CGO_ENABLED=0 $(GOTEST) -v ./itest -tags="$(DEV_TAGS) $(ITEST_TAGS)" -c -o itest/itest.test
 
-install-backward-compat-versions:
-	@$(call print, "Installing old versions of litd for backward compatibility tests.")
-	scripts/install-backward-compat-versions.sh '$(LITD_COMPAT_VERSIONS)'
-
 run-itest-only:
 	@$(call print, "Building itest binary.")
 	CGO_ENABLED=0 $(GOBUILD) -tags="$(ITEST_TAGS)" -o itest/litd-itest -ldflags "$(ITEST_LDFLAGS)" $(PKG)/cmd/litd
@@ -256,19 +246,12 @@ run-itest-only:
 	rm -rf itest/*.log itest/.logs*; date
 	scripts/itest_part.sh $(ITEST_FLAGS)
 
-itest-only: build-itest install-backward-compat-versions run-itest-only
+itest-only: build-itest run-itest-only
 
 itest: app-build itest-only
 
-itest-no-backward-compat: app-build build-itest run-itest-only
-
-itest-parallel: app-build build-itest install-backward-compat-versions build-itest-binary
+itest-parallel: app-build build-itest build-itest-binary
 	@$(call print, "Running integration tests in parallel.")
-	rm -rf itest/*.log itest/.logs*; date
-	scripts/itest_parallel.sh $(ITEST_PARALLELISM) $(NUM_ITEST_TRANCHES) $(SHUFFLE_SEED) $(TEST_FLAGS) $(ITEST_FLAGS)
-
-itest-parallel-no-backward-compat: app-build build-itest build-itest-binary
-	@$(call print, "Running integration tests in parallel (no backward compat binaries).")
 	rm -rf itest/*.log itest/.logs*; date
 	scripts/itest_parallel.sh $(ITEST_PARALLELISM) $(NUM_ITEST_TRANCHES) $(SHUFFLE_SEED) $(TEST_FLAGS) $(ITEST_FLAGS)
 
@@ -364,5 +347,5 @@ flakehunter-unit:
 	go-install go-install-noui go-install-cli app-build release go-release \
 	docker-release docker-tools scratch check unit unit-cover unit-race \
 	clean-itest build-itest build-itest-binary itest-only itest \
-	itest-parallel itest-parallel-no-backward-compat flake-unit fmt lint \
+	itest-parallel flake-unit fmt lint \
 	mod mod-check list rpc protos protos-check rpc-js-compile clean
