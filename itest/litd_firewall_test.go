@@ -2673,7 +2673,7 @@ func connectMailboxWithRemoteKey(ctx context.Context,
 	transportConn, err := mailbox.NewGrpcClient(
 		ctx, mailboxServerAddr, connData,
 		grpc.WithTransportCredentials(
-			credentials.NewTLS(&tls.Config{}),
+			session.NewMailboxTLSCredentials(&tls.Config{}),
 		),
 	)
 	if err != nil {
