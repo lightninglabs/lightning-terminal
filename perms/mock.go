@@ -50,14 +50,16 @@ func (t *mockConfig) FetchConfig(subServerName string) (interface{}, bool) {
 			},
 		}, true
 	case "AutopilotRPC":
-		return &autopilotrpc.Config{
-			Manager: &autopilot.Manager{},
-		}, true
+		cfg := &autopilotrpc.Config{}
+		setFieldIfPresent(cfg, "Manager", &autopilot.Manager{})
+
+		return cfg, true
 	case "ChainRPC":
-		return &chainrpc.Config{
-			ChainNotifier: &chainreg.NoChainBackend{},
-			Chain:         &mock.ChainIO{},
-		}, true
+		cfg := &chainrpc.Config{}
+		setFieldIfPresent(cfg, "ChainNotifier", &chainreg.NoChainBackend{})
+		setFieldIfPresent(cfg, "Chain", &mock.ChainIO{})
+
+		return cfg, true
 	case "DevRPC":
 		return &devrpc.Config{}, true
 	case "NeutrinoKitRPC":
@@ -69,17 +71,19 @@ func (t *mockConfig) FetchConfig(subServerName string) (interface{}, bool) {
 			Router: &routing.ChannelRouter{},
 		}, true
 	case "SignRPC":
-		return &signrpc.Config{
-			Signer: &mock.DummySigner{},
-		}, true
+		cfg := &signrpc.Config{}
+		setFieldIfPresent(cfg, "Signer", &mock.DummySigner{})
+
+		return cfg, true
 	case "WalletKitRPC":
-		return &walletrpc.Config{
-			FeeEstimator: &chainreg.NoChainBackend{},
-			Wallet:       &mock.WalletController{},
-			KeyRing:      &mock.SecretKeyRing{},
-			Sweeper:      &sweep.UtxoSweeper{},
-			Chain:        &mock.ChainIO{},
-		}, true
+		cfg := &walletrpc.Config{}
+		setFieldIfPresent(cfg, "FeeEstimator", &chainreg.NoChainBackend{})
+		setFieldIfPresent(cfg, "Wallet", &mock.WalletController{})
+		setFieldIfPresent(cfg, "KeyRing", &mock.SecretKeyRing{})
+		setFieldIfPresent(cfg, "Sweeper", &sweep.UtxoSweeper{})
+		setFieldIfPresent(cfg, "Chain", &mock.ChainIO{})
+
+		return cfg, true
 	case "WatchtowerRPC":
 		return &watchtowerrpc.Config{}, true
 	default:
