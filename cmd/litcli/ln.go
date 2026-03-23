@@ -1,13 +1,18 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"math"
+	"os"
+	"strings"
 	"time"
 
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/lightninglabs/taproot-assets/rfq"
 	"github.com/lightninglabs/taproot-assets/rfqmath"
 	"github.com/lightninglabs/taproot-assets/rpcutils"
@@ -18,6 +23,7 @@ import (
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
+	"github.com/lightningnetwork/lnd/lnwallet"
 	"github.com/lightningnetwork/lnd/lnwire"
 	"github.com/lightningnetwork/lnd/record"
 	"github.com/urfave/cli"
@@ -570,8 +576,8 @@ var payInvoiceCommand = cli.Command{
 	Action: payInvoice,
 }
 
-func payInvoice(cli *cli.Context) error {
-	args := cli.Args()
+func payInvoice(cliCtx *cli.Context) error {
+	args := cliCtx.Args()
 
 	// NOTE: we don't use `getContext()` here since it assigns the global
 	// signal interceptor variable which will then cause
@@ -581,15 +587,15 @@ func payInvoice(cli *cli.Context) error {
 
 	var payReq string
 	switch {
-	case cli.IsSet("pay_req"):
-		payReq = cli.String("pay_req")
+	case cliCtx.IsSet("pay_req"):
+		payReq = cliCtx.String("pay_req")
 	case args.Present():
 		payReq = args.First()
 	default:
 		return fmt.Errorf("pay_req argument missing")
 	}
 
-	superMacConn, cleanup, err := connectSuperMacClient(ctx, cli)
+	superMacConn, cleanup, err := connectSuperMacClient(ctx, cliCtx)
 	if err != nil {
 		return fmt.Errorf("unable to make rpc con: %w", err)
 	}
@@ -604,24 +610,59 @@ func payInvoice(cli *cli.Context) error {
 		return err
 	}
 
-	assetIDBytes, groupKeyBytes, err := parseAssetIdentifier(cli)
+	assetIDBytes, groupKeyBytes, err := parseAssetIdentifier(cliCtx)
 	if err != nil {
 		return fmt.Errorf("unable to parse asset identifier: %w", err)
 	}
 
-	rfqPeerKey, err := hex.DecodeString(cli.String(rfqPeerPubKeyFlag.Name))
+	rfqPeerKey, err := hex.DecodeString(
+		cliCtx.String(rfqPeerPubKeyFlag.Name),
+	)
 	if err != nil {
 		return fmt.Errorf("unable to decode RFQ peer public key: "+
 			"%w", err)
 	}
 
-	allowOverpay := cli.Bool(allowOverpayFlag.Name)
+	// If the user hasn't set --force, show an asset-aware confirmation
+	// prompt that includes the estimated asset amount and exchange rate
+	// alongside the standard payment details.
+	if !cliCtx.Bool("force") {
+		channelsClient := tchrpc.NewTaprootAssetChannelsClient(
+			superMacConn,
+		)
+		assetResp, err := channelsClient.DecodeAssetPayReq(
+			ctx, &tchrpc.AssetPayReq{
+				AssetId:      assetIDBytes,
+				GroupKey:     groupKeyBytes,
+				PayReqString: payReq,
+			},
+		)
+		if err != nil {
+			return fmt.Errorf("error decoding asset pay req: %w",
+				err)
+		}
+
+		err = confirmAssetPayReq(decodeResp, assetResp, cliCtx)
+		if err != nil {
+			return err
+		}
+
+		// Skip lnd's built-in sats-only confirmation since we
+		// already confirmed with asset info.
+		if err := cliCtx.Set("force", "true"); err != nil {
+			return fmt.Errorf("error setting force flag: %w",
+				err)
+		}
+	}
+
+	allowOverpay := cliCtx.Bool(allowOverpayFlag.Name)
 	req := &routerrpc.SendPaymentRequest{
 		PaymentRequest: commands.StripPrefix(payReq),
 	}
 
 	return commands.SendPaymentRequest(
-		cli, req, superMacConn, superMacConn, func(ctx context.Context,
+		cliCtx, req, superMacConn, superMacConn,
+		func(ctx context.Context,
 			payConn grpc.ClientConnInterface,
 			req *routerrpc.SendPaymentRequest) (
 			commands.PaymentResultStream, error) {
@@ -832,6 +873,107 @@ func decodeAssetInvoice(cli *cli.Context) error {
 	printRespJSON(resp)
 
 	return nil
+}
+
+// confirmAssetPayReq displays payment details including asset information and
+// prompts the user for confirmation before sending an asset payment.
+func confirmAssetPayReq(payReq *lnrpc.PayReq,
+	assetResp *tchrpc.AssetPayReqResponse,
+	ctx *cli.Context) error {
+
+	// Determine the amount in satoshis.
+	amt := payReq.GetNumSatoshis()
+	if ctx.IsSet("amt") {
+		amt = ctx.Int64("amt")
+	}
+
+	feeLimit := defaultFeeLimit(ctx, amt)
+
+	fmt.Printf("Payment hash: %v\n", payReq.GetPaymentHash())
+	fmt.Printf("Description: %v\n", payReq.GetDescription())
+	fmt.Printf("Amount (in satoshis): %v\n", amt)
+	fmt.Printf("Fee limit (in satoshis): %v\n", feeLimit)
+	fmt.Printf("Destination: %v\n", payReq.GetDestination())
+	fmt.Println()
+
+	// Display asset-specific information.
+	if assetResp.GenesisInfo != nil {
+		fmt.Printf("Asset name: %v\n",
+			assetResp.GenesisInfo.Name)
+		fmt.Printf("Asset ID: %x\n",
+			assetResp.GenesisInfo.AssetId)
+	}
+	if assetResp.AssetGroup != nil {
+		fmt.Printf("Group key: %x\n",
+			assetResp.AssetGroup.TweakedGroupKey)
+	}
+
+	// Format asset amount with decimal display if available.
+	assetAmt := assetResp.AssetAmount
+	dd := assetResp.DecimalDisplay
+	if dd != nil && dd.DecimalDisplay > 0 {
+		decimals := dd.DecimalDisplay
+		divisor := math.Pow10(int(decimals))
+		fmt.Printf("Estimated asset amount: %.*f (%d base units)\n",
+			decimals, float64(assetAmt)/divisor, assetAmt)
+	} else {
+		fmt.Printf("Estimated asset amount: %d\n", assetAmt)
+	}
+
+	fmt.Println()
+	fmt.Println("NOTE: Final asset amount may vary based on the " +
+		"exchange rate negotiated with the channel peer.")
+
+	confirm := promptForConfirmation("Confirm payment (yes/no): ")
+	if !confirm {
+		return fmt.Errorf("payment not confirmed")
+	}
+
+	return nil
+}
+
+// defaultFeeLimit mirrors lnd's fee limit retrieval logic so we can display
+// it in the asset-aware confirmation prompt.
+func defaultFeeLimit(ctx *cli.Context, amt int64) int64 {
+	switch {
+	case ctx.IsSet("fee_limit"):
+		return ctx.Int64("fee_limit")
+	case ctx.IsSet("fee_limit_percent"):
+		return (amt*ctx.Int64("fee_limit_percent") + 99) / 100
+	}
+
+	// If no fee limit is set, use lnd's default which is amount-dependent
+	// (100% up to 1000 sat, 5% for larger amounts).
+	amtMsat := lnwire.NewMSatFromSatoshis(btcutil.Amount(amt))
+	limitMsat := lnwallet.DefaultRoutingFeeLimitForAmount(amtMsat)
+
+	return int64(limitMsat.ToSatoshis())
+}
+
+// promptForConfirmation continuously prompts the user for the message until
+// receiving a response of "yes" or "no" and returns their answer as a bool.
+func promptForConfirmation(msg string) bool {
+	reader := bufio.NewReader(os.Stdin)
+
+	for {
+		fmt.Print(msg)
+
+		answer, err := reader.ReadString('\n')
+		if err != nil {
+			return false
+		}
+
+		answer = strings.ToLower(strings.TrimSpace(answer))
+
+		switch {
+		case answer == "yes":
+			return true
+		case answer == "no":
+			return false
+		default:
+			continue
+		}
+	}
 }
 
 // parseAssetIdentifier parses either the asset ID or group key from the command
