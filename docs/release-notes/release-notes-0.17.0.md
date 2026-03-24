@@ -24,6 +24,9 @@
   prompt before sending a payment.
 
 ### Technical and Architectural Updates
+* The Faraday subserver [is made an active
+  component](https://github.com/lightninglabs/lightning-terminal/pull/1251)
+  instead of only incorporating its RPC server.
 
 ## RPC Updates
 
@@ -41,4 +44,5 @@
 
 # Contributors (Alphabetical Order)
 
+* bitromortac
 * darioAnongba
