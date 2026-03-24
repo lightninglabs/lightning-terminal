@@ -92,6 +92,9 @@
   comma-separated lists, and mixed input.
 
 ### Technical and Architectural Updates
+* The Faraday subserver [is made an active
+  component](https://github.com/lightninglabs/lightning-terminal/pull/1251)
+  instead of only incorporating its RPC server.
 
 ## RPC Updates
 
@@ -121,6 +124,7 @@
 
 # Contributors (Alphabetical Order)
 
+* bitromortac
 * Boris Nagaev
 * Calvin Zachman
 * Cyberguru1
