@@ -1428,7 +1428,20 @@ func (hn *HarnessNode) Stop() error {
 	select {
 	case <-hn.processExit:
 	case <-time.After(lntest.DefaultTimeout * 2):
-		return fmt.Errorf("process did not exit")
+		if hn.cmd != nil && hn.cmd.Process != nil {
+			if err := hn.cmd.Process.Kill(); err != nil &&
+				!errors.Is(err, os.ErrProcessDone) {
+
+				return fmt.Errorf("process did not exit and "+
+					"could not be killed: %w", err)
+			}
+		}
+
+		select {
+		case <-hn.processExit:
+		case <-time.After(lntest.DefaultTimeout):
+			return fmt.Errorf("process did not exit")
+		}
 	}
 
 	close(hn.quit)
