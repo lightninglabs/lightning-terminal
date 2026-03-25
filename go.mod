@@ -18,8 +18,8 @@ require (
 	github.com/jackc/pgerrcode v0.0.0-20240316143900-6e2875d9b438
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/lib/pq v1.10.9
-	github.com/lightninglabs/faraday v0.2.16-alpha
-	github.com/lightninglabs/faraday/frdrpc v1.0.1
+	github.com/lightninglabs/faraday v0.2.16-alpha.0.20260324090235-875ea740e60e
+	github.com/lightninglabs/faraday/frdrpc v1.0.2-0.20260324090235-875ea740e60e
 	github.com/lightninglabs/lightning-node-connect/gbn v1.0.2-0.20250610182311-2f1d46ef18b7
 	github.com/lightninglabs/lightning-node-connect/mailbox v1.0.2-0.20250610182311-2f1d46ef18b7
 	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.3
