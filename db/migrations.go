@@ -27,7 +27,7 @@ const (
 // MakeTestMigrationSets creates the migration sets for the unit test
 // environment.
 //
-// NOTE: This function is not located in the migstreams package to avoid
+// NOTE: This function is not located in the migsets package to avoid
 // cyclic dependencies. This test migration set does not run the kvdb to sql
 // migration, as we already have separate unit tests which tests the migration.
 func MakeTestMigrationSets() []sqldb.MigrationSet {

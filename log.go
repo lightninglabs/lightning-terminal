@@ -8,7 +8,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/autopilotserver"
 	"github.com/lightninglabs/lightning-terminal/db"
-	"github.com/lightninglabs/lightning-terminal/db/migstreams"
+	"github.com/lightninglabs/lightning-terminal/db/migsets"
 	"github.com/lightninglabs/lightning-terminal/firewall"
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
@@ -94,10 +94,7 @@ func SetupLoggers(root *build.SubLoggerManager, intercept signal.Interceptor) {
 	)
 	lnd.AddSubLogger(root, db.Subsystem, intercept, db.UseLogger)
 	lnd.AddSubLogger(root, sqldb.Subsystem, intercept, sqldb.UseLogger)
-	lnd.AddSubLogger(
-		root, migstreams.Subsystem, intercept,
-		migstreams.UseLogger,
-	)
+	lnd.AddSubLogger(root, migsets.Subsystem, intercept, migsets.UseLogger)
 
 	// Add daemon loggers to lnd's root logger.
 	faraday.SetupLoggers(root, intercept)

@@ -9,7 +9,7 @@ import (
 
 	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/db"
-	"github.com/lightninglabs/lightning-terminal/db/migstreams"
+	"github.com/lightninglabs/lightning-terminal/db/migsets"
 	"github.com/lightninglabs/lightning-terminal/db/sqlc"
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	"github.com/lightninglabs/lightning-terminal/session"
@@ -119,7 +119,7 @@ func NewStores(ctx context.Context, cfg *Config,
 		if !cfg.Sqlite.SkipMigrations {
 			err = sqldb.ApplyAllMigrations(
 				sqlStore,
-				migstreams.MakeMigrationSets(
+				migsets.MakeMigrationSets(
 					ctx, basicClient, cfg.MacaroonPath,
 					clock,
 				),
@@ -165,7 +165,7 @@ func NewStores(ctx context.Context, cfg *Config,
 		if !cfg.Postgres.SkipMigrations {
 			err = sqldb.ApplyAllMigrations(
 				sqlStore,
-				migstreams.MakeMigrationSets(
+				migsets.MakeMigrationSets(
 					ctx, basicClient, cfg.MacaroonPath,
 					clock,
 				),
