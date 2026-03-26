@@ -24,14 +24,14 @@ const (
 	LatestDevMigrationVersion = 1
 )
 
-// MakeTestMigrationStreams creates the migration streams for the unit test
+// MakeTestMigrationSets creates the migration sets for the unit test
 // environment.
 //
 // NOTE: This function is not located in the migstreams package to avoid
-// cyclic dependencies. This test migration stream does not run the kvdb to sql
+// cyclic dependencies. This test migration set does not run the kvdb to sql
 // migration, as we already have separate unit tests which tests the migration.
-func MakeTestMigrationStreams() []sqldb.MigrationSet {
-	migStream := sqldb.MigrationSet{
+func MakeTestMigrationSets() []sqldb.MigrationSet {
+	migSet := sqldb.MigrationSet{
 		TrackingTableName: pgx.DefaultMigrationsTable,
 		SQLFileDirectory:  "sqlc/migrations",
 		SQLFiles:          SqlSchemas,
@@ -50,7 +50,7 @@ func MakeTestMigrationStreams() []sqldb.MigrationSet {
 		},
 	}
 
-	migStreamDev := sqldb.MigrationSet{
+	migSetDev := sqldb.MigrationSet{
 		TrackingTableName: pgx.DefaultMigrationsTable + "_dev",
 		SQLFileDirectory:  "sqlc/migrations_dev",
 		SQLFiles:          SqlSchemas,
@@ -69,5 +69,5 @@ func MakeTestMigrationStreams() []sqldb.MigrationSet {
 		},
 	}
 
-	return []sqldb.MigrationSet{migStream, migStreamDev}
+	return []sqldb.MigrationSet{migSet, migSetDev}
 }

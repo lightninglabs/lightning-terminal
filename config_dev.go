@@ -119,7 +119,7 @@ func NewStores(ctx context.Context, cfg *Config,
 		if !cfg.Sqlite.SkipMigrations {
 			err = sqldb.ApplyAllMigrations(
 				sqlStore,
-				migstreams.MakeMigrationStreams(
+				migstreams.MakeMigrationSets(
 					ctx, basicClient, cfg.MacaroonPath,
 					clock,
 				),
@@ -165,7 +165,7 @@ func NewStores(ctx context.Context, cfg *Config,
 		if !cfg.Postgres.SkipMigrations {
 			err = sqldb.ApplyAllMigrations(
 				sqlStore,
-				migstreams.MakeMigrationStreams(
+				migstreams.MakeMigrationSets(
 					ctx, basicClient, cfg.MacaroonPath,
 					clock,
 				),

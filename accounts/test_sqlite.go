@@ -19,7 +19,7 @@ var ErrDBClosed = errors.New("database is closed")
 func NewTestDB(t *testing.T, clock clock.Clock) Store {
 	return createStore(
 		t,
-		sqldb.NewTestSqliteDB(t, db.MakeTestMigrationStreams()).BaseDB,
+		sqldb.NewTestSqliteDB(t, db.MakeTestMigrationSets()).BaseDB,
 		clock,
 	)
 }
@@ -30,7 +30,7 @@ func NewTestDBFromPath(t *testing.T, dbPath string,
 	clock clock.Clock) Store {
 
 	tDb := sqldb.NewTestSqliteDBFromPath(
-		t, dbPath, db.MakeTestMigrationStreams(),
+		t, dbPath, db.MakeTestMigrationSets(),
 	)
 
 	return createStore(t, tDb.BaseDB, clock)
