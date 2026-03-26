@@ -26,10 +26,10 @@ const (
 // MakeMigrationStreams creates the migration streams for the dev environments.
 func MakeMigrationStreams(ctx context.Context,
 	basicClient lnrpc.LightningClient, macPath string,
-	clock clock.Clock) []sqldb.MigrationStream {
+	clock clock.Clock) []sqldb.MigrationSet {
 
 	// Create the prod migration stream.
-	migStream := sqldb.MigrationStream{
+	migStream := sqldb.MigrationSet{
 		TrackingTableName: pgx.DefaultMigrationsTable,
 		SQLFileDirectory:  "sqlc/migrations",
 		SQLFiles:          db.SqlSchemas,
@@ -49,7 +49,7 @@ func MakeMigrationStreams(ctx context.Context,
 	}
 
 	// Create the dev migration stream.
-	migStreamDev := sqldb.MigrationStream{
+	migStreamDev := sqldb.MigrationSet{
 		TrackingTableName: pgx.DefaultMigrationsTable + "_dev",
 		SQLFileDirectory:  "sqlc/migrations_dev",
 		SQLFiles:          db.SqlSchemas,
@@ -83,5 +83,5 @@ func MakeMigrationStreams(ctx context.Context,
 		},
 	}
 
-	return []sqldb.MigrationStream{migStream, migStreamDev}
+	return []sqldb.MigrationSet{migStream, migStreamDev}
 }
