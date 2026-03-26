@@ -69,6 +69,6 @@ func NewTestPostgresDB(t *testing.T) *sqldb.PostgresStore {
 	})
 
 	return sqldb.NewTestPostgresDB(
-		t, sqlFixture, MakeTestMigrationStreams(),
+		t, sqlFixture, MakeTestMigrationSets(),
 	)
 }

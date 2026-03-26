@@ -23,13 +23,13 @@ const (
 	KVDBtoSQLMigVersion = 1
 )
 
-// MakeMigrationStreams creates the migration streams for the dev environments.
-func MakeMigrationStreams(ctx context.Context,
+// MakeMigrationSets creates the migration sets for the dev environments.
+func MakeMigrationSets(ctx context.Context,
 	basicClient lnrpc.LightningClient, macPath string,
 	clock clock.Clock) []sqldb.MigrationSet {
 
-	// Create the prod migration stream.
-	migStream := sqldb.MigrationSet{
+	// Create the prod migration set.
+	migSet := sqldb.MigrationSet{
 		TrackingTableName: pgx.DefaultMigrationsTable,
 		SQLFileDirectory:  "sqlc/migrations",
 		SQLFiles:          db.SqlSchemas,
@@ -48,8 +48,8 @@ func MakeMigrationStreams(ctx context.Context,
 		},
 	}
 
-	// Create the dev migration stream.
-	migStreamDev := sqldb.MigrationSet{
+	// Create the dev migration set.
+	migSetDev := sqldb.MigrationSet{
 		TrackingTableName: pgx.DefaultMigrationsTable + "_dev",
 		SQLFileDirectory:  "sqlc/migrations_dev",
 		SQLFiles:          db.SqlSchemas,
@@ -83,5 +83,5 @@ func MakeMigrationStreams(ctx context.Context,
 		},
 	}
 
-	return []sqldb.MigrationSet{migStream, migStreamDev}
+	return []sqldb.MigrationSet{migSet, migSetDev}
 }

@@ -136,7 +136,7 @@ func sessionBenchBackends(b *testing.B) []sessionBenchBackend {
 					b,
 					sqldb.ApplyAllMigrations(
 						sqlStore,
-						db.MakeTestMigrationStreams(),
+						db.MakeTestMigrationSets(),
 					),
 				)
 
@@ -171,7 +171,7 @@ func sessionBenchBackends(b *testing.B) []sessionBenchBackend {
 
 				sqlStore := sqldb.NewTestPostgresDB(
 					b, fixture,
-					db.MakeTestMigrationStreams(),
+					db.MakeTestMigrationSets(),
 				)
 
 				queries := sqlc.NewForType(
