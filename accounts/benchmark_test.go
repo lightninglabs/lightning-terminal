@@ -128,7 +128,7 @@ func accountBenchBackends(b *testing.B) []accountBenchBackend {
 					b,
 					sqldb.ApplyAllMigrations(
 						sqlStore,
-						db.MakeTestMigrationStreams(),
+						db.MakeTestMigrationSets(),
 					),
 				)
 
@@ -157,7 +157,7 @@ func accountBenchBackends(b *testing.B) []accountBenchBackend {
 
 				sqlStore := sqldb.NewTestPostgresDB(
 					b, fixture,
-					db.MakeTestMigrationStreams(),
+					db.MakeTestMigrationSets(),
 				)
 
 				queries := sqlc.NewForType(
