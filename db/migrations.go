@@ -30,8 +30,8 @@ const (
 // NOTE: This function is not located in the migstreams package to avoid
 // cyclic dependencies. This test migration stream does not run the kvdb to sql
 // migration, as we already have separate unit tests which tests the migration.
-func MakeTestMigrationStreams() []sqldb.MigrationStream {
-	migStream := sqldb.MigrationStream{
+func MakeTestMigrationStreams() []sqldb.MigrationSet {
+	migStream := sqldb.MigrationSet{
 		TrackingTableName: pgx.DefaultMigrationsTable,
 		SQLFileDirectory:  "sqlc/migrations",
 		SQLFiles:          SqlSchemas,
@@ -50,7 +50,7 @@ func MakeTestMigrationStreams() []sqldb.MigrationStream {
 		},
 	}
 
-	migStreamDev := sqldb.MigrationStream{
+	migStreamDev := sqldb.MigrationSet{
 		TrackingTableName: pgx.DefaultMigrationsTable + "_dev",
 		SQLFileDirectory:  "sqlc/migrations_dev",
 		SQLFiles:          SqlSchemas,
@@ -69,5 +69,5 @@ func MakeTestMigrationStreams() []sqldb.MigrationStream {
 		},
 	}
 
-	return []sqldb.MigrationStream{migStream, migStreamDev}
+	return []sqldb.MigrationSet{migStream, migStreamDev}
 }

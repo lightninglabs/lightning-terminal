@@ -40,8 +40,7 @@ require (
 	github.com/lightningnetwork/lnd/fn v1.2.5
 	github.com/lightningnetwork/lnd/fn/v2 v2.0.9
 	github.com/lightningnetwork/lnd/kvdb v1.4.16
-	github.com/lightningnetwork/lnd/sqldb v1.0.12-0.20260113193010-8565d12e40b1
-	github.com/lightningnetwork/lnd/sqldb/v2 v2.0.0-00010101000000-000000000000
+	github.com/lightningnetwork/lnd/sqldb/v2 v2.0.0-20260326184657-f7cc56305bae
 	github.com/lightningnetwork/lnd/tlv v1.3.2
 	github.com/lightningnetwork/lnd/tor v1.1.6
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
@@ -155,6 +154,7 @@ require (
 	github.com/lightningnetwork/lightning-onion v1.2.1-0.20240815225420-8b40adf04ab9 // indirect
 	github.com/lightningnetwork/lnd/healthcheck v1.2.6 // indirect
 	github.com/lightningnetwork/lnd/queue v1.1.1 // indirect
+	github.com/lightningnetwork/lnd/sqldb v1.0.12-0.20260113193010-8565d12e40b1 // indirect
 	github.com/lightningnetwork/lnd/ticker v1.1.1 // indirect
 	github.com/ltcsuite/ltcd v0.0.0-20190101042124-f37f8bf35796 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -258,7 +258,3 @@ replace github.com/golang-migrate/migrate/v4 => github.com/lightninglabs/migrate
 
 // The upstream nhooyr.io/websocket repository has been moved to github.com/coder/websocket.
 replace nhooyr.io/websocket => github.com/coder/websocket v1.8.7
-
-// TODO: Remove these replace directives after the sqldb/v2 module is
-// published.
-replace github.com/lightningnetwork/lnd/sqldb/v2 => github.com/ViktorT-11/lnd/sqldb/v2 v2.0.0-20260123000653-a803b19d1e1e
