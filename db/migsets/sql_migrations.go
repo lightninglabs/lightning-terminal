@@ -1,6 +1,6 @@
 //go:build !dev
 
-package migstreams
+package migsets
 
 import (
 	"context"
