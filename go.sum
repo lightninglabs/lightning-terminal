@@ -617,8 +617,6 @@ github.com/NebulousLabs/go-upnp v0.0.0-20180202185039-29b680b06c82/go.mod h1:Gbu
 github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 h1:TngWCqHvy9oXAN6lEVMRuU21PR1EtLVZJmdB18Gu3Rw=
 github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5/go.mod h1:lmUJ/7eu/Q8D7ML55dXQrVaamCz2vxCfdQBasLZfHKk=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
-github.com/ViktorT-11/lnd/sqldb/v2 v2.0.0-20260123000653-a803b19d1e1e h1:wdKa4U6cRATtwbROOBMWS22CcRYAzz6ufylnOKVQYNI=
-github.com/ViktorT-11/lnd/sqldb/v2 v2.0.0-20260123000653-a803b19d1e1e/go.mod h1:9B0I8PKvawQWL6Ul26vKDRDMnw1eoUigqM2y3teI7ds=
 github.com/Yawning/aez v0.0.0-20211027044916-e49e68abd344 h1:cDVUiFo+npB0ZASqnw4q90ylaVAbnYyx0JYqK4YcGok=
 github.com/Yawning/aez v0.0.0-20211027044916-e49e68abd344/go.mod h1:9pIqrY6SXNL8vjRQE5Hd/OL5GyK/9MrGUWs87z/eFfk=
 github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da h1:KjTM2ks9d14ZYCvmHS9iAKVt9AyzRSqNU1qabPih5BY=
@@ -1186,6 +1184,8 @@ github.com/lightningnetwork/lnd/queue v1.1.1 h1:99ovBlpM9B0FRCGYJo6RSFDlt8/vOkQQ
 github.com/lightningnetwork/lnd/queue v1.1.1/go.mod h1:7A6nC1Qrm32FHuhx/mi1cieAiBZo5O6l8IBIoQxvkz4=
 github.com/lightningnetwork/lnd/sqldb v1.0.11 h1:X8J3OvdIhJVniQG78Qsp3niErl1zdGMTPvzgiLMWOOo=
 github.com/lightningnetwork/lnd/sqldb v1.0.11/go.mod h1:oOdZ7vjmAUmI9He+aFHTunnxKVefHZAfJttZdz16hSg=
+github.com/lightningnetwork/lnd/sqldb/v2 v2.0.0-20260326184657-f7cc56305bae h1:ICRuZIkXed43iuqcJaayubPTcQolttttwNZFrapdwIo=
+github.com/lightningnetwork/lnd/sqldb/v2 v2.0.0-20260326184657-f7cc56305bae/go.mod h1:T2F1Sfb0oSpZyylIEE3ijiSejaXvIExER5xEdoe5wEE=
 github.com/lightningnetwork/lnd/ticker v1.1.1 h1:J/b6N2hibFtC7JLV77ULQp++QLtCwT6ijJlbdiZFbSM=
 github.com/lightningnetwork/lnd/ticker v1.1.1/go.mod h1:waPTRAAcwtu7Ji3+3k+u/xH5GHovTsCoSVpho0KDvdA=
 github.com/lightningnetwork/lnd/tlv v1.3.2 h1:MO4FCk7F4k5xPMqVZF6Nb/kOpxlwPrUQpYjmyKny5s0=

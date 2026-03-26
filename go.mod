@@ -41,7 +41,7 @@ require (
 	github.com/lightningnetwork/lnd/fn/v2 v2.0.9
 	github.com/lightningnetwork/lnd/kvdb v1.4.16
 	github.com/lightningnetwork/lnd/sqldb v1.0.11
-	github.com/lightningnetwork/lnd/sqldb/v2 v2.0.0-00010101000000-000000000000
+	github.com/lightningnetwork/lnd/sqldb/v2 v2.0.0-20260326184657-f7cc56305bae
 	github.com/lightningnetwork/lnd/tlv v1.3.2
 	github.com/lightningnetwork/lnd/tor v1.1.6
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
@@ -253,7 +253,3 @@ replace github.com/golang-migrate/migrate/v4 => github.com/lightninglabs/migrate
 
 // The upstream nhooyr.io/websocket repository has been moved to github.com/coder/websocket.
 replace nhooyr.io/websocket => github.com/coder/websocket v1.8.7
-
-// TODO: Remove these replace directives after the sqldb/v2 module is
-// published.
-replace github.com/lightningnetwork/lnd/sqldb/v2 => github.com/ViktorT-11/lnd/sqldb/v2 v2.0.0-20260123000653-a803b19d1e1e

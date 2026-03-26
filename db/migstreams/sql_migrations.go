@@ -16,11 +16,11 @@ import (
 // MakeMigrationStreams creates the migration streams for production
 // environments.
 func MakeMigrationStreams(_ context.Context, _ lnrpc.LightningClient, _ string,
-	_ clock.Clock) []sqldb.MigrationStream {
+	_ clock.Clock) []sqldb.MigrationSet {
 
 	// migStream defines the SQL migration stream used to create
 	// and upgrade LiT's SQL schema.
-	migStream := sqldb.MigrationStream{
+	migStream := sqldb.MigrationSet{
 		TrackingTableName: pgx.DefaultMigrationsTable,
 		SQLFileDirectory:  "sqlc/migrations",
 		SQLFiles:          db.SqlSchemas,
@@ -39,5 +39,5 @@ func MakeMigrationStreams(_ context.Context, _ lnrpc.LightningClient, _ string,
 		},
 	}
 
-	return []sqldb.MigrationStream{migStream}
+	return []sqldb.MigrationSet{migStream}
 }
