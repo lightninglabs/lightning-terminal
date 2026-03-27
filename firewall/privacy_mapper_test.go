@@ -920,7 +920,9 @@ func TestPrivacyMapper(t *testing.T) {
 
 			// randIntn is used for deterministic testing.
 			randIntn := func(n int) (int, error) { return 100, nil }
-			p := NewPrivacyMapper(db, randIntn, pd)
+			p := NewPrivacyMapper(
+				db, randIntn, pd, DefaultTimeVariation,
+			)
 
 			rawMsg, err := proto.Marshal(test.msg)
 			require.NoError(t, err)
@@ -1000,7 +1002,9 @@ func TestPrivacyMapper(t *testing.T) {
 		rawMsg, err := proto.Marshal(msg)
 		require.NoError(t, err)
 
-		p := NewPrivacyMapper(db, CryptoRandIntn, pd)
+		p := NewPrivacyMapper(
+			db, CryptoRandIntn, pd, DefaultTimeVariation,
+		)
 		require.NoError(t, err)
 
 		// We test the independent outgoing amount (incoming amount
@@ -1014,7 +1018,7 @@ func TestPrivacyMapper(t *testing.T) {
 		// seconds as there can be numerical inaccuracies with the
 		// nanosecond one.
 		timestamp := msg.ForwardingEvents[0].TimestampNs / 1e9
-		timestampInterval := uint64(timeVariation) / 1e9
+		timestampInterval := uint64(p.timeVariation) / 1e9
 		minTime := timestamp - timestampInterval
 		maxTime := timestamp + timestampInterval
 

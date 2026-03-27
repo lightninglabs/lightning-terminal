@@ -282,6 +282,10 @@ type Config struct {
 	// integrated lnd mode.
 	lndAdminMacaroon []byte
 
+	// PrivacyTimestampVariation holds the default timestamp variation.
+	// This field is not configurable in production builds.
+	PrivacyTimestampVariation time.Duration
+
 	// DevConfig is a config struct that is empty if lit is built without
 	// the `dev` flag (in other words when it is build for a production
 	// environment). This allows us to have config values that are then
@@ -563,9 +567,10 @@ func defaultConfig() *Config {
 		Autopilot: &autopilotserver.Config{
 			PingCadence: time.Hour,
 		},
-		Firewall:  firewall.DefaultConfig(),
-		Accounts:  &accounts.Config{},
-		DevConfig: defaultDevConfig(),
+		Firewall:                  firewall.DefaultConfig(),
+		Accounts:                  &accounts.Config{},
+		PrivacyTimestampVariation: firewall.DefaultTimeVariation,
+		DevConfig:                 defaultDevConfig(),
 	}
 }
 
@@ -729,7 +734,7 @@ func loadAndValidateConfig(ctx context.Context,
 		return nil, err
 	}
 
-	err = cfg.DevConfig.Validate()
+	err = cfg.DevConfig.Validate(cfg)
 	if err != nil {
 		return nil, err
 	}

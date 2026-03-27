@@ -24,16 +24,19 @@ const (
 	// privacyMapperName is the name of the RequestLogger interceptor.
 	privacyMapperName = "lit-privacy-mapper"
 
-	// amountVariation and timeVariation are used to set the randomization
-	// of amounts and timestamps that are sent to the autopilot. Changing
-	// these values may lead to unintended consequences in the behavior of
-	// the autpilot.
+	// amountVariation and DefaultTimeVariation are used to set the
+	// randomization of amounts and timestamps that are sent to the
+	// autopilot. Changing these values may lead to unintended consequences
+	// in the behavior of the autpilot.
 	amountVariation = 0.05
-	timeVariation   = time.Duration(10) * time.Minute
+
+	// DefaultTimeVariation is the default timestamp obfuscation variation
+	// space. Timestamps are randomly shifted by ±DefaultTimeVariation.
+	DefaultTimeVariation = time.Duration(10) * time.Minute
 
 	// minTimeVariation and maxTimeVariation are the acceptable bounds
 	// between which timeVariation can be set.
-	minTimeVariation = time.Minute
+	minTimeVariation = time.Second
 	maxTimeVariation = time.Duration(24) * time.Hour
 
 	// min and maxChanIDLen are the lengths to consider an int to be a
@@ -60,21 +63,25 @@ var _ mid.RequestInterceptor = (*PrivacyMapper)(nil)
 // PrivacyMapper is a RequestInterceptor that maps any pseudo names in certain
 // requests to their real values and vice versa for responses.
 type PrivacyMapper struct {
-	db        firewalldb.PrivacyMapper
-	randIntn  func(int) (int, error)
-	sessionDB firewalldb.SessionDB
+	db            firewalldb.PrivacyMapper
+	randIntn      func(int) (int, error)
+	sessionDB     firewalldb.SessionDB
+	timeVariation time.Duration
 }
 
-// NewPrivacyMapper returns a new instance of PrivacyMapper. The randIntn
-// function is used to draw randomness for request field obfuscation.
-func NewPrivacyMapper(newDB firewalldb.PrivacyMapper,
-	randIntn func(int) (int, error),
-	sessionDB firewalldb.SessionDB) *PrivacyMapper {
+// NewPrivacyMapper returns a new instance of PrivacyMapper. The time variation
+// parameter specifies the variation space for timestamp obfuscation. If zero,
+// DefaultTimeVariation is used. The randIntn function is used to draw
+// randomness for request field obfuscation.
+func NewPrivacyMapper(newDB firewalldb.PrivacyMapper, randIntn func(int) (int,
+	error), sessionDB firewalldb.SessionDB,
+	timeVariation time.Duration) *PrivacyMapper {
 
 	return &PrivacyMapper{
-		db:        newDB,
-		randIntn:  randIntn,
-		sessionDB: sessionDB,
+		db:            newDB,
+		randIntn:      randIntn,
+		sessionDB:     sessionDB,
+		timeVariation: timeVariation,
 	}
 }
 
@@ -259,7 +266,9 @@ func (p *PrivacyMapper) checkers(db firewalldb.PrivacyMapDB,
 		"/lnrpc.Lightning/ForwardingHistory": mid.NewResponseRewriter(
 			&lnrpc.ForwardingHistoryRequest{},
 			&lnrpc.ForwardingHistoryResponse{},
-			handleFwdHistoryResponse(db, flags, p.randIntn),
+			handleFwdHistoryResponse(
+				db, flags, p.randIntn, p.timeVariation,
+			),
 			mid.PassThroughErrorHandler,
 		),
 		"/lnrpc.Lightning/FeeReport": mid.NewResponseRewriter(
@@ -378,8 +387,8 @@ func handleGetInfoResponse(db firewalldb.PrivacyMapDB,
 }
 
 func handleFwdHistoryResponse(db firewalldb.PrivacyMapDB,
-	flags session.PrivacyFlags,
-	randIntn func(int) (int, error)) func(ctx context.Context,
+	flags session.PrivacyFlags, randIntn func(int) (int, error),
+	timeVariation time.Duration) func(ctx context.Context,
 	r *lnrpc.ForwardingHistoryResponse) (proto.Message, error) {
 
 	return func(ctx context.Context, r *lnrpc.ForwardingHistoryResponse) (
