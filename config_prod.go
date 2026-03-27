@@ -23,7 +23,7 @@ func defaultDevConfig() *DevConfig {
 }
 
 // Validate is a no-op function during a production build.
-func (c *DevConfig) Validate(_, _ string) error {
+func (c *DevConfig) Validate(_ *Config, _, _ string) error {
 	return nil
 }
 
