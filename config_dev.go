@@ -5,9 +5,11 @@ package terminal
 import (
 	"fmt"
 	"path/filepath"
+	"time"
 
 	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/db"
+	"github.com/lightninglabs/lightning-terminal/firewall"
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/clock"
@@ -54,11 +56,21 @@ type DevConfig struct {
 
 	// Postgres holds the configuration options for a Postgres database
 	Postgres *db.PostgresConfig `group:"postgres" namespace:"postgres"`
+
+	// PrivacyTimestampVariation sets the amount of variation for timestamp
+	// obfuscation in privacy mapping. This defines how much timestamps can
+	// be randomly shifted (±variation) to protect privacy.
+	PrivacyTimestampVariation time.Duration `long:"privacy-timestamp-variation" description:"The amount of random uniform variation for timestamp obfuscation in privacy mapping (e.g., 5m for ±5 minutes)."`
 }
 
 // Validate checks that all the values set in our DevConfig are valid and uses
 // the passed parameters to override any defaults if necessary.
-func (c *DevConfig) Validate(dbDir, network string) error {
+func (c *DevConfig) Validate(cfg *Config, dbDir, network string) error {
+	// Apply development overrides.
+	if c.PrivacyTimestampVariation != 0 {
+		cfg.PrivacyTimestampVariation = c.PrivacyTimestampVariation
+	}
+
 	// We'll update the database file location if it wasn't set.
 	if c.Sqlite.DatabaseFileName == defaultSqliteDatabasePath {
 		c.Sqlite.DatabaseFileName = filepath.Join(
@@ -80,6 +92,7 @@ func defaultDevConfig() *DevConfig {
 			Port:               5432,
 			MaxOpenConnections: 10,
 		},
+		PrivacyTimestampVariation: firewall.DefaultTimeVariation,
 	}
 }
 

@@ -1153,7 +1153,7 @@ func (g *LightningTerminal) startInternalSubServers(ctx context.Context,
 
 	privacyMapper := firewall.NewPrivacyMapper(
 		g.stores.firewall, firewall.CryptoRandIntn,
-		g.stores.sessions,
+		g.stores.sessions, g.cfg.PrivacyTimestampVariation,
 	)
 
 	mw := []mid.RequestInterceptor{
