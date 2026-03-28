@@ -150,7 +150,7 @@ func (s *Manager) StartIntegratedServers(lndClient lnrpc.LightningClient,
 		if err != nil {
 			s.statusServer.SetErrored(ss.Name(), err.Error())
 
-			if s.critical[ss.Name()] {
+			if s.critical[ss.Name()] && criticalErr == nil {
 				criticalErr = fmt.Errorf("critical "+
 					"sub-server %s failed to "+
 					"start: %w", ss.Name(), err)
@@ -184,7 +184,7 @@ func (s *Manager) ConnectRemoteSubServers() error {
 		if err != nil {
 			s.statusServer.SetErrored(ss.Name(), err.Error())
 
-			if s.critical[ss.Name()] {
+			if s.critical[ss.Name()] && criticalErr == nil {
 				criticalErr = fmt.Errorf("critical "+
 					"sub-server %s failed to "+
 					"connect: %w", ss.Name(), err)
