@@ -36,7 +36,12 @@ type Manager struct {
 	servers      map[string]*subServerWrapper
 	permsMgr     *perms.Manager
 	statusServer *status.Manager
-	mu           sync.RWMutex
+
+	// critical is a set of sub-server names whose startup failure should
+	// be treated as fatal for litd.
+	critical map[string]bool
+
+	mu sync.RWMutex
 }
 
 // NewManager constructs a new Manager.
@@ -47,6 +52,7 @@ func NewManager(permsMgr *perms.Manager,
 		servers:      make(map[string]*subServerWrapper),
 		permsMgr:     permsMgr,
 		statusServer: statusServer,
+		critical:     make(map[string]bool),
 	}
 }
 
@@ -103,13 +109,30 @@ func (s *Manager) GetServer(name string) (SubServer, bool) {
 	return ss.SubServer, true
 }
 
+// SetCritical marks the given sub-server as critical. If a critical sub-server
+// fails to start, litd will treat the failure as fatal and will not continue
+// starting up. This must be called before StartIntegratedServers or
+// ConnectRemoteSubServers.
+func (s *Manager) SetCritical(name string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.critical[name] = true
+}
+
 // StartIntegratedServers starts all the manager's sub-servers that should be
-// started in integrated mode.
+// started in integrated mode. All sub-servers are attempted regardless of
+// individual failures. After all attempts, if any sub-server that has been
+// marked as critical via SetCritical failed to start, an error is returned.
+// Non-critical sub-server failures are logged but do not prevent litd from
+// continuing.
 func (s *Manager) StartIntegratedServers(lndClient lnrpc.LightningClient,
-	lndGrpc *lndclient.GrpcLndServices, withMacaroonService bool) {
+	lndGrpc *lndclient.GrpcLndServices, withMacaroonService bool) error {
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	var criticalErr error
 
 	for _, ss := range s.servers {
 		if ss.Remote() {
@@ -126,18 +149,31 @@ func (s *Manager) StartIntegratedServers(lndClient lnrpc.LightningClient,
 		)
 		if err != nil {
 			s.statusServer.SetErrored(ss.Name(), err.Error())
+
+			if s.critical[ss.Name()] {
+				criticalErr = fmt.Errorf("critical "+
+					"sub-server %s failed to "+
+					"start: %w", ss.Name(), err)
+			}
+
 			continue
 		}
 
 		s.statusServer.SetRunning(ss.Name())
 	}
+
+	return criticalErr
 }
 
 // ConnectRemoteSubServers creates connections to all the manager's sub-servers
-// that are running remotely.
-func (s *Manager) ConnectRemoteSubServers() {
+// that are running remotely. All sub-servers are attempted regardless of
+// individual failures. After all attempts, if any sub-server that has been
+// marked as critical via SetCritical failed to connect, an error is returned.
+func (s *Manager) ConnectRemoteSubServers() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	var criticalErr error
 
 	for _, ss := range s.servers {
 		if !ss.Remote() {
@@ -147,11 +183,20 @@ func (s *Manager) ConnectRemoteSubServers() {
 		err := ss.connectRemote()
 		if err != nil {
 			s.statusServer.SetErrored(ss.Name(), err.Error())
+
+			if s.critical[ss.Name()] {
+				criticalErr = fmt.Errorf("critical "+
+					"sub-server %s failed to "+
+					"connect: %w", ss.Name(), err)
+			}
+
 			continue
 		}
 
 		s.statusServer.SetRunning(ss.Name())
 	}
+
+	return criticalErr
 }
 
 // RegisterRPCServices registers all the manager's sub-servers with the given

@@ -369,6 +369,14 @@ func (g *LightningTerminal) Run(ctx context.Context) error {
 		return fmt.Errorf("could not initialise sub-servers: %w", err)
 	}
 
+	// Since lnd may call into tapd when it is enabled, tapd must be
+	// started successfully before those calls are made. We therefore
+	// mark it as a critical sub-server so that litd will fail to start
+	// if tapd fails to start.
+	if g.cfg.TaprootAssetsMode != ModeDisable {
+		g.subServerMgr.SetCritical(subservers.TAP)
+	}
+
 	// Construct the rpcProxy. It must be initialised before the main web
 	// server is started.
 	g.rpcProxy = newRpcProxy(
@@ -422,11 +430,11 @@ func (g *LightningTerminal) Run(ctx context.Context) error {
 	return startErr
 }
 
-// start attempts to start all the various components of Litd. Only Litd and
-// LND errors are considered fatal and will result in an error being returned.
-// If any of the sub-servers managed by the subServerMgr error while starting
-// up, these are considered non-fatal and will not result in an error being
-// returned.
+// start attempts to start all the various components of Litd. Litd, LND, and
+// critical sub-server errors are considered fatal and will result in an error
+// being returned. If any non-critical sub-servers managed by the subServerMgr
+// error while starting up, these are considered non-fatal and will not result
+// in an error being returned.
 func (g *LightningTerminal) start(ctx context.Context) error {
 	var err error
 
@@ -626,7 +634,10 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 
 	// Initialise any connections to sub-servers that we are running in
 	// remote mode.
-	g.subServerMgr.ConnectRemoteSubServers()
+	if err := g.subServerMgr.ConnectRemoteSubServers(); err != nil {
+		return fmt.Errorf("could not connect remote sub-servers: %w",
+			err)
+	}
 
 	// bakeSuperMac is a closure that can be used to bake a new super
 	// macaroon that contains all active permissions.
@@ -769,9 +780,13 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 	// Both connection types are ready now, let's start our sub-servers if
 	// they should be started locally as an integrated service.
 	createDefaultMacaroons := !g.cfg.statelessInitMode
-	g.subServerMgr.StartIntegratedServers(
+	err = g.subServerMgr.StartIntegratedServers(
 		g.basicClient, g.lndClient, createDefaultMacaroons,
 	)
+	if err != nil {
+		return fmt.Errorf("could not start integrated sub-servers: %w",
+			err)
+	}
 
 	err = g.startInternalSubServers(ctx, !g.cfg.statelessInitMode)
 	if err != nil {
