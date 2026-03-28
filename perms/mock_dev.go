@@ -6,8 +6,6 @@ import (
 	"net"
 
 	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/lightningnetwork/lnd/autopilot"
-	"github.com/lightningnetwork/lnd/chainreg"
 	graphdb "github.com/lightningnetwork/lnd/graph/db"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/autopilotrpc"
@@ -21,9 +19,7 @@ import (
 	"github.com/lightningnetwork/lnd/lnrpc/walletrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/watchtowerrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/wtclientrpc"
-	"github.com/lightningnetwork/lnd/lntest/mock"
 	"github.com/lightningnetwork/lnd/routing"
-	"github.com/lightningnetwork/lnd/sweep"
 )
 
 // mockConfig implements lnrpc.SubServerConfigDispatcher. It provides the
@@ -52,14 +48,9 @@ func (t *mockConfig) FetchConfig(subServerName string) (interface{}, bool) {
 			},
 		}, true
 	case "AutopilotRPC":
-		return &autopilotrpc.Config{
-			Manager: &autopilot.Manager{},
-		}, true
+		return &autopilotrpc.Config{}, true
 	case "ChainRPC":
-		return &chainrpc.Config{
-			ChainNotifier: &chainreg.NoChainBackend{},
-			Chain:         &mock.ChainIO{},
-		}, true
+		return &chainrpc.Config{}, true
 	case "DevRPC":
 		return &devrpc.Config{
 			ActiveNetParams: &chaincfg.RegressionNetParams,
@@ -74,17 +65,9 @@ func (t *mockConfig) FetchConfig(subServerName string) (interface{}, bool) {
 			Router: &routing.ChannelRouter{},
 		}, true
 	case "SignRPC":
-		return &signrpc.Config{
-			Signer: &mock.DummySigner{},
-		}, true
+		return &signrpc.Config{}, true
 	case "WalletKitRPC":
-		return &walletrpc.Config{
-			FeeEstimator: &chainreg.NoChainBackend{},
-			Wallet:       &mock.WalletController{},
-			KeyRing:      &mock.SecretKeyRing{},
-			Sweeper:      &sweep.UtxoSweeper{},
-			Chain:        &mock.ChainIO{},
-		}, true
+		return &walletrpc.Config{}, true
 	case "WatchtowerRPC":
 		return &watchtowerrpc.Config{}, true
 	default:
