@@ -4,16 +4,22 @@ package itest
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
+	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
+	_ "github.com/lib/pq"
 	terminal "github.com/lightninglabs/lightning-terminal"
 	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/db/sqlc"
 	"github.com/lightninglabs/lightning-terminal/db/sqlcmig6"
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
+	"github.com/lightninglabs/lightning-terminal/session"
+	"github.com/lightninglabs/lightning-terminal/subservers"
 	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/sqldb/v2"
 	"github.com/stretchr/testify/require"
@@ -35,14 +41,23 @@ import (
 //
 // The test is executed in different steps, and uses RPCs to seed and validate
 // migration fixtures:
-// 1. Start a node with a bbolt backend.
-// 2. Insert one account, one session and one action via RPC.
-// 3. Snapshot the inserted objects via RPC.
-// 4. Restart with the configured SQL backend to trigger migration.
-// 5. Query objects again via RPC.
-// 6. Compare the new objects to the pre-migration snapshot.
-// 7. Assert the migrated objects in SQL via direct queries, to verify that it's
-// actually the SQL database that contains the migrated objects.
+//  1. Start a node with a bbolt backend.
+//  2. Insert one account, one session and one action via RPC.
+//  3. Snapshot the inserted objects via RPC.
+//  4. Restart with the configured SQL backend to trigger migration.
+//  5. Query objects again via RPC.
+//  6. Compare the new objects to the pre-migration snapshot.
+//  7. Assert the migrated objects in SQL via direct queries, to verify that it's
+//     actually the SQL database that contains the migrated objects.
+//  8. Assert that restarting with `databasebackend=bbolt` now fails on
+//     `accounts.db`, the first deprecated kvdb file opened during startup.
+//  9. Delete the SQL database and show that SQL startup reruns the migration.
+//  10. If available, show that downgrading to an old LiT binary still fails to
+//     start against the deprecated kvdb files.
+//  11. Delete `accounts.db` and verify that bbolt startup is still blocked by
+//     the next deprecated kvdb file, `session.db`.
+//  12. Delete `session.db` and verify that bbolt startup is still blocked by
+//     the next deprecated kvdb file, `rules.db`.
 func testKvdbSQLMigration(ctx context.Context, net *NetworkHarness,
 	t *harnessTest) {
 
@@ -50,8 +65,9 @@ func testKvdbSQLMigration(ctx context.Context, net *NetworkHarness,
 		t.t.Skipf("Skipping kvdb migration test for bbolt backend")
 	}
 
-	ctxt, cancel := context.WithTimeout(ctx, defaultTimeout)
-	defer cancel()
+	newStepCtx := func() (context.Context, context.CancelFunc) {
+		return context.WithTimeout(ctx, defaultTimeout)
+	}
 
 	// Step 1: Start a node with a bbolt backend.
 	// We want to start from an explicit bbolt backend regardless of the
@@ -67,14 +83,19 @@ func testKvdbSQLMigration(ctx context.Context, net *NetworkHarness,
 	defer shutdownAndAssert(net, t, migNode)
 
 	// Setup a raw gRPC connection used to set up RPC clients.
+	ctxt, cancel := newStepCtx()
 	rawConn, err := connectRPC(
 		ctxt, migNode.Cfg.LitAddr(), migNode.Cfg.LitTLSCertPath,
 	)
 	require.NoError(t.t, err)
+	cancel()
 
 	// Get the litd admin macaroon context from the migration node.
 	macBytes := getLiTMacFromFile(t.t, migNode.Cfg)
-	ctxm := macaroonContext(ctxt, macBytes)
+	newAdminCtx := func() (context.Context, context.CancelFunc) {
+		stepCtx, cancel := newStepCtx()
+		return macaroonContext(stepCtx, macBytes), cancel
+	}
 
 	// LiT RPC clients are used to seed and assert migration fixtures.
 	accountsClient := litrpc.NewAccountsClient(rawConn)
@@ -83,16 +104,20 @@ func testKvdbSQLMigration(ctx context.Context, net *NetworkHarness,
 	firewallClient := litrpc.NewFirewallClient(rawConn)
 
 	// Step 2: Insert one account, one session and one action via RPC.
+	ctxm, cancel := newAdminCtx()
 	migrationRefs := setupMigrationData(
 		ctxm, t, accountsClient, sessionsClient, autopilotClient,
 		firewallClient,
 	)
+	cancel()
 
 	// Step 3: Query and snapshot inserted data via RPC while on bbolt.
+	ctxm, cancel = newAdminCtx()
 	beforeMigration := queryMigrationData(
 		ctxm, t, accountsClient, sessionsClient, firewallClient,
 		migrationRefs.actionMethod,
 	)
+	cancel()
 
 	// Close now so restarts can reopen stores without locks.
 	rawConn.Close()
@@ -107,11 +132,12 @@ func testKvdbSQLMigration(ctx context.Context, net *NetworkHarness,
 	require.NoError(t.t, err)
 
 	// Setup clients for the restarted node once more.
+	ctxt, cancel = newStepCtx()
 	rawConn, err = connectRPC(
 		ctxt, migNode.Cfg.LitAddr(), migNode.Cfg.LitTLSCertPath,
 	)
 	require.NoError(t.t, err)
-	defer rawConn.Close()
+	cancel()
 
 	accountsClient = litrpc.NewAccountsClient(rawConn)
 	sessionsClient = litrpc.NewSessionsClient(rawConn)
@@ -119,17 +145,100 @@ func testKvdbSQLMigration(ctx context.Context, net *NetworkHarness,
 
 	// Step 5: Query migrated data via RPC and compare with pre-migration
 	// snapshot.
+	ctxm, cancel = newAdminCtx()
 	afterMigration := queryMigrationData(
 		ctxm, t, accountsClient, sessionsClient, firewallClient,
 		migrationRefs.actionMethod,
 	)
+	cancel()
 
 	// Step 6: Ensure that the results received by RPC prior and after the
 	// migration are equal.
 	assertMigrationSnapshotsEqual(t, beforeMigration, afterMigration)
 
 	// Step 7: Assert migrated data in SQL.
+	ctxt, cancel = newStepCtx()
 	assertMinimalMigrationDataSQL(ctxt, t, migNode, migrationRefs)
+	cancel()
+
+	// Step 8: Verify that deprecated kvdb files now block bbolt startup.
+	require.NoError(t.t, migNode.Stop())
+
+	kvdbFiles := migrationKVDBFiles(migNode)
+
+	assertNodeStartFails(
+		t, net, migNode,
+		[]LitArgOption{
+			WithLitArg(
+				"databasebackend",
+				terminal.DatabaseBackendBbolt,
+			),
+			WithLitArg("firewall.request-logger.level", "all"),
+		},
+		fmt.Sprintf(
+			"%v: %v", accounts.ErrKVDBDeprecated, kvdbFiles[0].base,
+		),
+	)
+
+	// Step 9: Delete the SQL database and verify that starting with the
+	// selected SQL backend reruns the kvdb -> SQL migration successfully.
+	rerunSQLMigrationAndAssert(
+		t, net, migNode, newStepCtx, newAdminCtx, beforeMigration,
+		migrationRefs,
+	)
+
+	// Step 10: If the backward compatibility binary exists, verify that an
+	// old LiT version also fails to start once kvdb was deprecated.
+	require.NoError(t.t, migNode.Stop())
+
+	downgradeBinary := fmt.Sprintf("%s-%s", net.litdBinary, "v0.15.0-alpha")
+	if _, err := os.Stat(downgradeBinary); err == nil {
+		if net.backwardCompat == nil {
+			net.backwardCompat = make(map[string]string)
+		}
+
+		net.backwardCompat[migNode.Name()] = "v0.15.0-alpha"
+		assertNodeStartFails(
+			t, net, migNode, nil, "",
+		)
+		delete(net.backwardCompat, migNode.Name())
+	}
+
+	// Step 11: Delete the first-startup kvdb file and verify that bbolt
+	// startup is still blocked by the next deprecated file in the open
+	// order.
+	removeMigrationKVDBFile(t, kvdbFiles[0])
+	assertNodeStartFails(
+		t, net, migNode,
+		[]LitArgOption{
+			WithLitArg(
+				"databasebackend",
+				terminal.DatabaseBackendBbolt,
+			),
+			WithLitArg("firewall.request-logger.level", "all"),
+		},
+		fmt.Sprintf(
+			"%v: %v", session.ErrKVDBDeprecated, kvdbFiles[1].base,
+		),
+	)
+
+	// Step 12: Delete the second-startup kvdb file and verify that bbolt
+	// startup is still blocked by the third deprecated file.
+	removeMigrationKVDBFile(t, kvdbFiles[1])
+	assertNodeStartFails(
+		t, net, migNode,
+		[]LitArgOption{
+			WithLitArg(
+				"databasebackend",
+				terminal.DatabaseBackendBbolt,
+			),
+			WithLitArg("firewall.request-logger.level", "all"),
+		},
+		fmt.Sprintf(
+			"%v: %v", firewalldb.ErrKVDBDeprecated,
+			kvdbFiles[2].base,
+		),
+	)
 }
 
 // migrationDataRefs stores stable identifiers used to refetch and assert the
@@ -336,6 +445,87 @@ func assertMinimalMigrationDataSQL(ctx context.Context, t *harnessTest,
 	require.Equal(t.t, data.actionMethod, actions[0].RPCMethod)
 }
 
+// rerunSQLMigrationAndAssert removes the SQL database, starts litd with the
+// selected SQL backend to rerun the kvdb migration, then verifies the fixtures
+// via RPC and direct SQL queries.
+func rerunSQLMigrationAndAssert(t *harnessTest, net *NetworkHarness,
+	node *HarnessNode,
+	newStepCtx func() (context.Context, context.CancelFunc),
+	newAdminCtx func() (context.Context, context.CancelFunc),
+	beforeMigration migrationDataSnapshot, refs migrationDataRefs) {
+
+	t.t.Helper()
+
+	deleteMigrationSQLDB(t, node)
+
+	err := node.Start(
+		net.litdBinary, net.backwardCompat, net.lndErrorChan, true,
+		WithLitArg("databasebackend", *litDBBackend),
+		WithLitArg("firewall.request-logger.level", "all"),
+	)
+	require.NoError(t.t, err)
+
+	ctxt, cancel := newStepCtx()
+	rawConn, err := connectRPC(
+		ctxt, node.Cfg.LitAddr(), node.Cfg.LitTLSCertPath,
+	)
+	require.NoError(t.t, err)
+	cancel()
+	defer rawConn.Close()
+
+	accountsClient := litrpc.NewAccountsClient(rawConn)
+	sessionsClient := litrpc.NewSessionsClient(rawConn)
+	firewallClient := litrpc.NewFirewallClient(rawConn)
+
+	ctxm, cancel := newAdminCtx()
+	afterMigration := queryMigrationData(
+		ctxm, t, accountsClient, sessionsClient, firewallClient,
+		refs.actionMethod,
+	)
+	cancel()
+
+	assertMigrationSnapshotsEqual(t, beforeMigration, afterMigration)
+
+	ctxt, cancel = newStepCtx()
+	assertMinimalMigrationDataSQL(ctxt, t, node, refs)
+	cancel()
+}
+
+type migrationKVDBFile struct {
+	base string
+	path string
+}
+
+// migrationKVDBFiles returns the startup order of the deprecated kvdb files
+// when litd opens the bbolt backend: accounts, then sessions, then firewall.
+func migrationKVDBFiles(node *HarnessNode) []migrationKVDBFile {
+	networkDir := filepath.Join(node.Cfg.LitDir, node.Cfg.NetParams.Name)
+
+	return []migrationKVDBFile{
+		{
+			base: accounts.DBFilename,
+			path: filepath.Join(networkDir, accounts.DBFilename),
+		},
+		{
+			base: session.DBFilename,
+			path: filepath.Join(networkDir, session.DBFilename),
+		},
+		{
+			base: firewalldb.DBFilename,
+			path: filepath.Join(networkDir, firewalldb.DBFilename),
+		},
+	}
+}
+
+// removeMigrationKVDBFile deletes one kvdb file so the next deprecated file in
+// the bbolt startup order becomes the first blocker.
+func removeMigrationKVDBFile(t *harnessTest, file migrationKVDBFile) {
+	t.t.Helper()
+
+	err := os.Remove(file.path)
+	require.NoError(t.t, err)
+}
+
 // openMigrationSQLStore opens a SQL database handle for the backend selected
 // by the itest `-litdbbackend` flag.
 //
@@ -393,5 +583,150 @@ func openMigrationSQLStore(t *harnessTest,
 	default:
 		t.t.Fatalf("unsupported sql backend %v", *litDBBackend)
 		return nil
+	}
+}
+
+// assertNodeStartFails waits for the node startup path to complete and asserts
+// that startup fails with an error containing the expected text.
+func assertNodeStartFails(t *harnessTest, net *NetworkHarness,
+	node *HarnessNode, litArgOpts []LitArgOption, expectedErr string) {
+
+	t.t.Helper()
+
+	if expectedErr != "" {
+		err := node.Start(
+			net.litdBinary, net.backwardCompat, net.lndErrorChan,
+			false, litArgOpts...,
+		)
+		require.NoError(t.t, err)
+
+		assertLitStatusError(t, node, expectedErr)
+
+		if node.cmd != nil && node.cmd.Process != nil {
+			_ = node.cmd.Process.Kill()
+		}
+
+		waitForNodeExit(t, node)
+
+		return
+	}
+
+	err := node.Start(
+		net.litdBinary, net.backwardCompat, net.lndErrorChan, true,
+		litArgOpts...,
+	)
+	require.Error(t.t, err)
+
+	waitForNodeExit(t, node)
+}
+
+// assertLitStatusError waits for the public LiT status endpoint to report the
+// expected error string for the LiT sub-server.
+func assertLitStatusError(t *harnessTest, node *HarnessNode,
+	expectedErr string) {
+
+	t.t.Helper()
+
+	deadline := time.Now().Add(defaultTimeout)
+	var lastErr error
+
+	for time.Now().Before(deadline) {
+		ctxt, cancel := context.WithTimeout(
+			context.Background(), 2*time.Second,
+		)
+		rawConn, err := connectLitRPC(
+			ctxt, node.Cfg.LitAddr(), node.Cfg.LitTLSCertPath, "",
+		)
+		cancel()
+		if err != nil {
+			lastErr = err
+			time.Sleep(200 * time.Millisecond)
+			continue
+		}
+
+		statusClient := litrpc.NewStatusClient(rawConn)
+		ctxt, cancel = context.WithTimeout(
+			context.Background(), 2*time.Second,
+		)
+		resp, err := statusClient.SubServerStatus(
+			ctxt, &litrpc.SubServerStatusReq{},
+		)
+		cancel()
+		_ = rawConn.Close()
+		if err != nil {
+			lastErr = err
+			time.Sleep(200 * time.Millisecond)
+			continue
+		}
+
+		litStatus, ok := resp.SubServers[subservers.LIT]
+		if ok && strings.Contains(litStatus.GetError(), expectedErr) {
+			return
+		}
+
+		lastErr = fmt.Errorf(
+			"lit status error %q did not contain %q",
+			litStatus.GetError(), expectedErr,
+		)
+		time.Sleep(200 * time.Millisecond)
+	}
+
+	require.FailNowf(
+		t.t, "expected %s status failure", "%v", lastErr,
+	)
+}
+
+// waitForNodeExit waits for the node process to exit and force kills it if the
+// failed-start path leaves the process around.
+func waitForNodeExit(t *harnessTest, node *HarnessNode) {
+	t.t.Helper()
+
+	select {
+	case <-node.processExit:
+	case <-time.After(5 * time.Second):
+		if node.cmd != nil && node.cmd.Process != nil {
+			_ = node.cmd.Process.Kill()
+		}
+
+		select {
+		case <-node.processExit:
+		case <-time.After(10 * time.Second):
+			t.t.Fatalf("timed out waiting for %s process exit",
+				node.Name())
+		}
+	}
+}
+
+// deleteMigrationSQLDB removes the SQL database contents so starting LiT with
+// the SQL backend reruns the kvdb -> SQL migration.
+func deleteMigrationSQLDB(t *harnessTest, node *HarnessNode) {
+	t.t.Helper()
+
+	switch *litDBBackend {
+	case terminal.DatabaseBackendSqlite:
+		dbPath := filepath.Join(
+			node.Cfg.LitDir, node.Cfg.NetParams.Name, "litd.db",
+		)
+
+		err := os.Remove(dbPath)
+		require.NoError(t.t, err)
+
+	case terminal.DatabaseBackendPostgres:
+		pgConf := node.Cfg.PostgresConfig
+		require.NotNil(t.t, pgConf)
+
+		dbConn, err := sql.Open("postgres", pgConf.DSN(false))
+		require.NoError(t.t, err)
+		defer dbConn.Close()
+
+		_, err = dbConn.ExecContext(
+			context.Background(),
+			`DROP SCHEMA IF EXISTS public CASCADE;
+			 CREATE SCHEMA public;`,
+		)
+		require.NoError(t.t, err)
+
+	default:
+		t.t.Fatalf("unsupported sql backend %v", *litDBBackend)
 	}
 }
