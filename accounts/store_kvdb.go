@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/btcsuite/btcwallet/walletdb"
@@ -67,6 +68,21 @@ type BoltStore struct {
 // NewBoltStore creates a BoltStore instance and the corresponding bucket in the
 // bolt DB if it does not exist yet.
 func NewBoltStore(dir, fileName string, clock clock.Clock) (*BoltStore, error) {
+	return newBoltStore(dir, fileName, clock, false)
+}
+
+// NewBoltStoreForMigration opens the accounts kvdb store even if it was
+// already marked as deprecated. This is only intended for rerunning the kvdb
+// to SQL migration after the SQL database was removed or downgraded.
+func NewBoltStoreForMigration(dir, fileName string,
+	clock clock.Clock) (*BoltStore, error) {
+
+	return newBoltStore(dir, fileName, clock, true)
+}
+
+func newBoltStore(dir, fileName string, clock clock.Clock,
+	allowDeprecated bool) (*BoltStore, error) {
+
 	// Ensure that the path to the directory exists.
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		if err := os.MkdirAll(dir, dbPathPermission); err != nil {
@@ -74,6 +90,7 @@ func NewBoltStore(dir, fileName string, clock clock.Clock) (*BoltStore, error) {
 		}
 	}
 
+	dbPath := filepath.Join(dir, fileName)
 	// Open the database that we'll use to store the primary macaroon key,
 	// and all generated macaroons+caveats.
 	db, err := kvdb.GetBoltBackend(&kvdb.BoltBackendConfig{
@@ -88,6 +105,13 @@ func NewBoltStore(dir, fileName string, clock clock.Clock) (*BoltStore, error) {
 	}
 	if err != nil {
 		return nil, err
+	}
+	if !allowDeprecated {
+		err = checkKVDBDeprecated(db, dbPath)
+		if err != nil {
+			_ = db.Close()
+			return nil, err
+		}
 	}
 
 	// If the store's bucket doesn't exist, create it.
