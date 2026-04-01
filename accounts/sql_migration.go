@@ -12,6 +12,7 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/lightninglabs/lightning-terminal/db/sqlcmig6"
+	"github.com/lightninglabs/lightning-terminal/db/tombstone"
 	"github.com/lightningnetwork/lnd/kvdb"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
@@ -124,6 +125,15 @@ func getBBoltAccounts(db kvdb.Backend) ([]*OffChainBalanceAccount, error) {
 			if bytes.Equal(k, lastAddIndexKey) ||
 				bytes.Equal(k, lastSettleIndexKey) {
 
+				return nil
+			}
+
+			// Also skip the kvdb deprecation marker key. We
+			// still want to allow rerunning the kvdb -> SQL
+			// migration after the SQL database has been deleted or
+			// downgraded, even though normal bbolt startup should
+			// reject the tombstoned kvdb files.
+			if tombstone.IsMigrationTombstoneKey(k) {
 				return nil
 			}
 
