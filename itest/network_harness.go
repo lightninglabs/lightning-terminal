@@ -81,6 +81,17 @@ type NetworkHarness struct {
 	mtx sync.Mutex
 }
 
+const (
+	// processErrorBufferSize is the number of fatal process errors we
+	// buffer from litd child processes before the test harness drains them.
+	//
+	// This channel is shared by the whole NetworkHarness, not a single
+	// node, and the harness only asserts on these errors after each test
+	// case. We intentionally keep one buffered slot so the first fatal
+	// process error is preserved even if no receiver is waiting yet.
+	processErrorBufferSize = 1
+)
+
 // NewNetworkHarness creates a new network test harness.
 func NewNetworkHarness(lndHarness *lntest.HarnessTest, b node.BackendConfig,
 	litdBinary string, feeService lntest.WebFeeService,
@@ -89,7 +100,7 @@ func NewNetworkHarness(lndHarness *lntest.HarnessTest, b node.BackendConfig,
 	n := NetworkHarness{
 		activeNodes:    make(map[int]*HarnessNode),
 		nodesByPub:     make(map[string]*HarnessNode),
-		lndErrorChan:   make(chan error),
+		lndErrorChan:   make(chan error, processErrorBufferSize),
 		netParams:      lndHarness.Miner().ActiveNet,
 		Miner:          lndHarness.Miner(),
 		LNDHarness:     lndHarness,
