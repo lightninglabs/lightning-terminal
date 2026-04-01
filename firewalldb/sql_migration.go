@@ -14,6 +14,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/db/sqlcmig6"
+	"github.com/lightninglabs/lightning-terminal/db/tombstone"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/sqldb"
@@ -216,6 +217,10 @@ func collectAllPairs(sessMap map[[4]byte]sqlcmig6.Session,
 
 		// Loop over each rule-name bucket.
 		err = mainBucket.ForEach(func(rule, v []byte) error {
+			if tombstone.IsMigrationTombstoneKey(rule) {
+				return nil
+			}
+
 			if v != nil {
 				return errors.New("expected only " +
 					"buckets under main bucket")

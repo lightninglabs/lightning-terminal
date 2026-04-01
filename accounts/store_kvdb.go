@@ -9,9 +9,11 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/btcsuite/btcwallet/walletdb"
+	"github.com/lightninglabs/lightning-terminal/db/tombstone"
 	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/kvdb"
@@ -67,9 +69,44 @@ type BoltStore struct {
 // NewBoltStore creates a BoltStore instance and the corresponding bucket in the
 // bolt DB if it does not exist yet.
 func NewBoltStore(dir, fileName string, clock clock.Clock) (*BoltStore, error) {
+	return newBoltStore(dir, fileName, clock, false)
+}
+
+// NewBoltStoreForMigration opens the accounts kvdb store even if it was
+// already marked as deprecated. This is only intended for rerunning the kvdb
+// to SQL migration after the SQL database was removed or downgraded.
+func NewBoltStoreForMigration(dir, fileName string,
+	clock clock.Clock) (*BoltStore, error) {
+
+	return newBoltStore(dir, fileName, clock, true)
+}
+
+// DeprecateKVDB marks the accounts kvdb file in the given db directory as
+// deprecated after a successful SQL migration.
+func DeprecateKVDB(dbDir string) error {
+	return tombstone.DeprecateKVDB(
+		filepath.Join(dbDir, DBFilename), DefaultAccountDBTimeout,
+		accountBucketName,
+	)
+}
+
+func newBoltStore(dir, fileName string, clock clock.Clock,
+	allowDeprecated bool) (*BoltStore, error) {
+
 	// Ensure that the path to the directory exists.
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		if err := os.MkdirAll(dir, dbPathPermission); err != nil {
+			return nil, err
+		}
+	}
+
+	if !allowDeprecated {
+		dbPath := filepath.Join(dir, fileName)
+
+		err := tombstone.CheckKVDBDeprecated(
+			dbPath, accountBucketName, DefaultAccountDBTimeout,
+		)
+		if err != nil {
 			return nil, err
 		}
 	}
