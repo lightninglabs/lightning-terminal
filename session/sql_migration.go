@@ -15,6 +15,7 @@ import (
 	"github.com/lightninglabs/lightning-node-connect/mailbox"
 	"github.com/lightninglabs/lightning-terminal/accounts"
 	s6 "github.com/lightninglabs/lightning-terminal/db/sqlcmig6"
+	"github.com/lightninglabs/lightning-terminal/db/tombstone"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/sqldb/v2"
 	"github.com/pmezard/go-difflib/difflib"
@@ -151,6 +152,10 @@ func getBBoltSessions(db *bbolt.DB) ([]*Session, error) {
 			// We'll also get buckets here, skip those (identified
 			// by nil value).
 			if v == nil {
+				return nil
+			}
+
+			if tombstone.IsMigrationTombstoneKey(k) {
 				return nil
 			}
 

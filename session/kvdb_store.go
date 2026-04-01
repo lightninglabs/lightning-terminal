@@ -13,6 +13,7 @@ import (
 
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/lightninglabs/lightning-terminal/accounts"
+	"github.com/lightninglabs/lightning-terminal/db/tombstone"
 	"github.com/lightningnetwork/lnd/clock"
 	"go.etcd.io/bbolt"
 )
@@ -96,6 +97,30 @@ var _ Store = (*BoltStore)(nil)
 func NewDB(dir, fileName string, clock clock.Clock,
 	store accounts.Store) (*BoltStore, error) {
 
+	return newDB(dir, fileName, clock, store, false)
+}
+
+// NewDBForMigration opens the session kvdb store even if it was already marked
+// as deprecated. This is only intended for rerunning the kvdb to SQL migration
+// after the SQL database was removed or downgraded.
+func NewDBForMigration(dir, fileName string, clock clock.Clock,
+	store accounts.Store) (*BoltStore, error) {
+
+	return newDB(dir, fileName, clock, store, true)
+}
+
+// DeprecateKVDB marks the session kvdb file in the given db directory as
+// deprecated after a successful SQL migration.
+func DeprecateKVDB(dbDir string) error {
+	return tombstone.DeprecateKVDB(
+		filepath.Join(dbDir, DBFilename), DefaultSessionDBTimeout,
+		sessionBucketKey,
+	)
+}
+
+func newDB(dir, fileName string, clock clock.Clock, store accounts.Store,
+	allowDeprecated bool) (*BoltStore, error) {
+
 	firstInit := false
 	path := filepath.Join(dir, fileName)
 
@@ -107,6 +132,15 @@ func NewDB(dir, fileName string, clock clock.Clock,
 		firstInit = true
 	}
 
+	if !allowDeprecated {
+		err := tombstone.CheckKVDBDeprecated(
+			path, sessionBucketKey, DefaultSessionDBTimeout,
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	db, err := initDB(path, firstInit)
 	if err != nil {
 		return nil, err
@@ -114,8 +148,10 @@ func NewDB(dir, fileName string, clock clock.Clock,
 
 	// Attempt to sync the database's current version with the latest known
 	// version available.
-	if err := syncVersions(db); err != nil {
-		return nil, err
+	if !allowDeprecated {
+		if err := syncVersions(db); err != nil {
+			return nil, err
+		}
 	}
 
 	return &BoltStore{
