@@ -42,7 +42,7 @@ func MakePostStepCallbacksMig6(ctx context.Context,
 		// we use migrate.NewWithInstance() to create the migration
 		// instance from our already instantiated database backend that
 		// is also passed into this function.
-		return mig6executor.ExecTx(
+		err := mig6executor.ExecTx(
 			ctx, sqldb.WriteTxOpt(),
 			func(q6 *sqlcmig6.Queries) error {
 				log.Infof("Running post migration callback "+
@@ -54,6 +54,29 @@ func MakePostStepCallbacksMig6(ctx context.Context,
 				)
 			}, sqldb.NoOpReset,
 		)
+		if err != nil {
+			return err
+		}
+
+		// Now deprecate the kvdb database files. Note that if the
+		// deprecation function errors, we do not return the error.
+		//
+		// At this point the kvdb -> SQL data migration is already
+		// committed successfully. Returning an error here would only
+		// cause the programmatic migration to rerun on the next startup
+		// and reprocess data that is already present in SQL.
+		//
+		// We still want the failure to be highly visible because the
+		// legacy bbolt files were not tombstoned and may therefore
+		// still be opened unexpectedly.
+		err = deprecateKVDBStores(filepath.Dir(macPath))
+		if err != nil {
+			log.Criticalf("CRITICAL: kvdb -> SQL migration "+
+				"succeeded, but the legacy bbolt databases "+
+				"were not marked deprecated: %v", err)
+		}
+
+		return nil
 	}
 
 	return migrate.ProgrammaticMigrEntry{
@@ -71,7 +94,7 @@ func kvdbToSqlMigrationCallback(ctx context.Context,
 	start := time.Now()
 	log.Infof("Starting KVDB to SQL migration for all stores")
 
-	accountStore, err := accounts.NewBoltStore(
+	accountStore, err := accounts.NewBoltStoreForMigration(
 		filepath.Dir(macPath), accounts.DBFilename, clock,
 	)
 	if err != nil {
@@ -92,7 +115,7 @@ func kvdbToSqlMigrationCallback(ctx context.Context,
 			"SQL: %w", err)
 	}
 
-	sessionStore, err := session.NewDB(
+	sessionStore, err := session.NewDBForMigration(
 		filepath.Dir(macPath), session.DBFilename,
 		clock, accountStore,
 	)
@@ -114,7 +137,7 @@ func kvdbToSqlMigrationCallback(ctx context.Context,
 			"SQL: %w", err)
 	}
 
-	firewallStore, err := firewalldb.NewBoltDB(
+	firewallStore, err := firewalldb.NewBoltDBForMigration(
 		filepath.Dir(macPath), firewalldb.DBFilename,
 		sessionStore, accountStore, clock,
 	)
@@ -190,6 +213,35 @@ func kvdbToSqlMigrationCallback(ctx context.Context,
 
 	log.Infof("Succesfully migrated all KVDB stores to SQL in: %v",
 		time.Since(start))
+
+	return nil
+}
+
+// deprecateKVDBStores marks the old kvdb stores as deprecated after the SQL
+// migration committed successfully. We do this after the SQL transaction is
+// committed so a failed SQL migration cannot strand the user with an unusable
+// kvdb backend.
+func deprecateKVDBStores(dbDir string) error {
+	err := accounts.DeprecateKVDB(
+		filepath.Join(dbDir, accounts.DBFilename),
+	)
+	if err != nil {
+		return fmt.Errorf("error deprecating accounts kvdb: %w", err)
+	}
+
+	err = session.DeprecateKVDB(
+		filepath.Join(dbDir, session.DBFilename),
+	)
+	if err != nil {
+		return fmt.Errorf("error deprecating session kvdb: %w", err)
+	}
+
+	err = firewalldb.DeprecateKVDB(
+		filepath.Join(dbDir, firewalldb.DBFilename),
+	)
+	if err != nil {
+		return fmt.Errorf("error deprecating firewall kvdb: %w", err)
+	}
 
 	return nil
 }
