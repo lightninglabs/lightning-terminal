@@ -71,6 +71,34 @@ func DeprecateKVDB(path string) error {
 	})
 }
 
+// RemoveKVDBDeprecation removes the accounts kvdb deprecation marker.
+func RemoveKVDBDeprecation(path string) error {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return nil
+	}
+
+	db, err := bbolt.Open(path, dbFilePermission, &bbolt.Options{
+		Timeout: DefaultAccountDBTimeout,
+	})
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	return db.Update(func(tx *bbolt.Tx) error {
+		accountBucket := tx.Bucket(accountBucketName)
+		if accountBucket == nil {
+			return nil
+		}
+
+		if accountBucket.Bucket(deprecatedBucketKey) == nil {
+			return nil
+		}
+
+		return accountBucket.DeleteBucket(deprecatedBucketKey)
+	})
+}
+
 // CheckKVDBDeprecated returns a clear error if the accounts kvdb file was
 // marked as deprecated.
 func CheckKVDBDeprecated(path string) error {
