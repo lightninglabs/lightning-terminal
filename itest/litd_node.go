@@ -792,15 +792,21 @@ func (hn *HarnessNode) Start(litdBinary string,
 		defer hn.wg.Done()
 
 		err := hn.cmd.Wait()
-		if err != nil {
-			litdError <- fmt.Errorf("%v\n%v\n", err, errb.String())
-		}
-
 		// Signal any onlookers that this process has exited.
 		close(hn.processExit)
 
 		// Make sure log file is closed and renamed if necessary.
 		finalizeLogfile()
+
+		if err != nil {
+			select {
+			case litdError <- fmt.Errorf(
+				"%v\n%v\n", err, errb.String(),
+			):
+
+			default:
+			}
+		}
 	}()
 
 	// We may want to skip waiting for the node to come up (eg. the node
