@@ -1,4 +1,4 @@
-package migstreams
+package migsets
 
 import (
 	"github.com/btcsuite/btclog/v2"

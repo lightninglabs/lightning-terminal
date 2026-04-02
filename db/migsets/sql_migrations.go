@@ -1,6 +1,6 @@
 //go:build !dev
 
-package migstreams
+package migsets
 
 import (
 	"context"
@@ -13,14 +13,13 @@ import (
 	"github.com/lightningnetwork/lnd/sqldb/v2"
 )
 
-// MakeMigrationStreams creates the migration streams for production
-// environments.
-func MakeMigrationStreams(_ context.Context, _ lnrpc.LightningClient, _ string,
-	_ clock.Clock) []sqldb.MigrationStream {
+// MakeMigrationSets creates the migration sets for production environments.
+func MakeMigrationSets(_ context.Context, _ lnrpc.LightningClient, _ string,
+	_ clock.Clock) []sqldb.MigrationSet {
 
-	// migStream defines the SQL migration stream used to create
-	// and upgrade LiT's SQL schema.
-	migStream := sqldb.MigrationStream{
+	// migSet defines the SQL migration set used to create and upgrade LiT's
+	// SQL schema.
+	migSet := sqldb.MigrationSet{
 		TrackingTableName: pgx.DefaultMigrationsTable,
 		SQLFileDirectory:  "sqlc/migrations",
 		SQLFiles:          db.SqlSchemas,
@@ -39,5 +38,5 @@ func MakeMigrationStreams(_ context.Context, _ lnrpc.LightningClient, _ string,
 		},
 	}
 
-	return []sqldb.MigrationStream{migStream}
+	return []sqldb.MigrationSet{migSet}
 }

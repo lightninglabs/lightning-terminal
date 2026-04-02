@@ -149,7 +149,7 @@ func firewallBenchBackends(b *testing.B) []firewallBenchBackend {
 					b,
 					sqldb.ApplyAllMigrations(
 						sqlStore,
-						db.MakeTestMigrationStreams(),
+						db.MakeTestMigrationSets(),
 					),
 				)
 
@@ -191,7 +191,7 @@ func firewallBenchBackends(b *testing.B) []firewallBenchBackend {
 
 				sqlStore := sqldb.NewTestPostgresDB(
 					b, fixture,
-					db.MakeTestMigrationStreams(),
+					db.MakeTestMigrationSets(),
 				)
 
 				queries := sqlc.NewForType(
