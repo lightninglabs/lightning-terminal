@@ -4,8 +4,8 @@ go 1.25.5
 
 require (
 	github.com/btcsuite/btcd v0.24.3-0.20250318170759-4f4ea81776d6
-	github.com/btcsuite/btcd/btcec/v2 v2.3.4
-	github.com/btcsuite/btcd/btcutil v1.1.5
+	github.com/btcsuite/btcd/btcec/v2 v2.3.6
+	github.com/btcsuite/btcd/btcutil v1.1.6
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0
 	github.com/btcsuite/btclog/v2 v2.0.1-0.20250728225537-6090e87c6c5b
 	github.com/btcsuite/btcwallet/walletdb v1.5.1
@@ -16,7 +16,7 @@ require (
 	github.com/improbable-eng/grpc-web v0.12.0
 	github.com/jackc/pgconn v1.14.3
 	github.com/jackc/pgerrcode v0.0.0-20240316143900-6e2875d9b438
-	github.com/jessevdk/go-flags v1.4.0
+	github.com/jessevdk/go-flags v1.6.1
 	github.com/lib/pq v1.10.9
 	github.com/lightninglabs/faraday v0.2.16-alpha
 	github.com/lightninglabs/faraday/frdrpc v1.0.1
@@ -32,7 +32,7 @@ require (
 	github.com/lightninglabs/pool v0.6.6-beta
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.3
 	github.com/lightninglabs/pool/poolrpc v1.0.1
-	github.com/lightninglabs/taproot-assets v0.7.1
+	github.com/lightninglabs/taproot-assets v0.7.1-0.20260319113352-ece074036615
 	github.com/lightninglabs/taproot-assets/taprpc v1.0.12
 	github.com/lightningnetwork/lnd v0.20.1-beta
 	github.com/lightningnetwork/lnd/cert v1.2.2
@@ -40,7 +40,7 @@ require (
 	github.com/lightningnetwork/lnd/fn v1.2.5
 	github.com/lightningnetwork/lnd/fn/v2 v2.0.9
 	github.com/lightningnetwork/lnd/kvdb v1.4.16
-	github.com/lightningnetwork/lnd/sqldb v1.0.12-0.20260113193010-8565d12e40b1
+	github.com/lightningnetwork/lnd/sqldb v1.0.13-0.20260305102707-7c38c1ea0572
 	github.com/lightningnetwork/lnd/tlv v1.3.2
 	github.com/lightningnetwork/lnd/tor v1.1.6
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
@@ -51,10 +51,10 @@ require (
 	github.com/urfave/cli v1.22.14
 	go.etcd.io/bbolt v1.4.3
 	golang.org/x/crypto v0.45.0
-	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
+	golang.org/x/exp v0.0.0-20250811191247-51f88131bc50
 	golang.org/x/net v0.47.0
 	golang.org/x/sync v0.18.0
-	google.golang.org/grpc v1.65.0
+	google.golang.org/grpc v1.73.0
 	google.golang.org/protobuf v1.36.11
 	gopkg.in/macaroon-bakery.v2 v2.3.0
 	gopkg.in/macaroon.v2 v2.1.0
@@ -75,7 +75,7 @@ require (
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/btcsuite/btcd/btcutil/psbt v1.1.10 // indirect
-	github.com/btcsuite/btclog v0.0.0-20241003133417-09c4e92e319c // indirect
+	github.com/btcsuite/btclog v1.0.0 // indirect
 	github.com/btcsuite/btcwallet v0.16.17 // indirect
 	github.com/btcsuite/btcwallet/wallet/txauthor v1.3.5 // indirect
 	github.com/btcsuite/btcwallet/wallet/txrules v1.2.2 // indirect
@@ -92,9 +92,9 @@ require (
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
-	github.com/decred/dcrd/crypto/blake256 v1.0.1 // indirect
-	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.3.0 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
+	github.com/decred/dcrd/crypto/blake256 v1.1.0 // indirect
+	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
 	github.com/decred/dcrd/lru v1.1.2 // indirect
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/docker/cli v28.1.1+incompatible // indirect
@@ -146,9 +146,10 @@ require (
 	github.com/lightninglabs/aperture v0.4.0 // indirect
 	github.com/lightninglabs/gozmq v0.0.0-20191113021534-d20a764486bf // indirect
 	github.com/lightninglabs/lightning-node-connect/hashmailrpc v1.0.4-0.20250610182311-2f1d46ef18b7 // indirect
-	github.com/lightninglabs/neutrino v0.16.1 // indirect
+	github.com/lightninglabs/neutrino v0.16.2 // indirect
 	github.com/lightninglabs/neutrino/cache v1.1.3 // indirect
-	github.com/lightningnetwork/lightning-onion v1.2.1-0.20240815225420-8b40adf04ab9 // indirect
+	github.com/lightningnetwork/lightning-onion v1.3.0 // indirect
+	github.com/lightningnetwork/lnd/actor v0.0.3 // indirect
 	github.com/lightningnetwork/lnd/healthcheck v1.2.6 // indirect
 	github.com/lightningnetwork/lnd/queue v1.1.1 // indirect
 	github.com/lightningnetwork/lnd/ticker v1.1.1 // indirect
@@ -220,8 +221,8 @@ require (
 	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/tools v0.38.0 // indirect
 	google.golang.org/genproto v0.0.0-20240213162025-012b6fc9bca9 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240814211410-ddb44dafa142 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240814211410-ddb44dafa142 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20250324211829-b45e905df463 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250603155806-513f23925822 // indirect
 	gopkg.in/errgo.v1 v1.0.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
@@ -251,3 +252,23 @@ replace github.com/golang-migrate/migrate/v4 => github.com/lightninglabs/migrate
 
 // The upstream nhooyr.io/websocket repository has been moved to github.com/coder/websocket.
 replace nhooyr.io/websocket => github.com/coder/websocket v1.8.7
+
+// btcwallet updated the chain.Interface Start method signature from Start() error
+// to Start(context.Context) error. This replace pins the version that includes
+// this change, matching lightningnetwork/lnd@641ff68.
+replace github.com/btcsuite/btcwallet => github.com/btcsuite/btcwallet v0.16.17-0.20260213031108-70a94ea39e9c
+
+// neutrino updated ChainService.Start to match the new btcwallet interface.
+replace github.com/lightninglabs/neutrino => github.com/lightninglabs/neutrino v0.16.2
+
+// lnd updated all call sites of chain.Interface.Start and neutrino.ChainService.Start
+// to pass a context.Context, required by the updated btcwallet and neutrino above.
+replace github.com/lightningnetwork/lnd => github.com/lightningnetwork/lnd v0.20.0-beta.rc4.0.20260310221929-641ff68c0347
+
+// lnd/sqldb at the same commit as lnd above, required for compatibility.
+replace github.com/lightningnetwork/lnd/sqldb => github.com/lightningnetwork/lnd/sqldb v1.0.12-0.20260310221929-641ff68c0347
+
+// lnd/actor v0.0.5 updated Spawn to return (ActorRef, error), required by lnd@641ff68.
+replace github.com/lightningnetwork/lnd/actor => github.com/lightningnetwork/lnd/actor v0.0.5
+
+replace github.com/lightninglabs/taproot-assets/taprpc => github.com/lightninglabs/taproot-assets/taprpc v1.0.12-0.20260319113352-ece074036615
