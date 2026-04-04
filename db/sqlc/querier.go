@@ -72,6 +72,7 @@ type Querier interface {
 	UpdateAccountAliasForTests(ctx context.Context, arg UpdateAccountAliasForTestsParams) (int64, error)
 	UpdateAccountBalance(ctx context.Context, arg UpdateAccountBalanceParams) (int64, error)
 	UpdateAccountExpiry(ctx context.Context, arg UpdateAccountExpiryParams) (int64, error)
+	UpdateAccountLabel(ctx context.Context, arg UpdateAccountLabelParams) (int64, error)
 	UpdateAccountLastUpdate(ctx context.Context, arg UpdateAccountLastUpdateParams) (int64, error)
 	UpdateFeatureKVStoreRecord(ctx context.Context, arg UpdateFeatureKVStoreRecordParams) error
 	UpdateGlobalKVStoreRecord(ctx context.Context, arg UpdateGlobalKVStoreRecordParams) error
