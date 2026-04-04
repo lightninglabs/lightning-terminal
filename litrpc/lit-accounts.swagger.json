@@ -287,7 +287,11 @@
         },
         "label": {
           "type": "string",
-          "description": "The label of the account to update. If an account has no label, then the ID\nmust be used instead."
+          "description": "The label of the account to update. If an account has no label, then the ID\nmust be used instead. This field is only used to identify the account."
+        },
+        "new_label": {
+          "type": "string",
+          "description": "The new label to set for the account."
         }
       }
     },
