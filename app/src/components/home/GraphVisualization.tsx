@@ -990,7 +990,8 @@ const GraphVisualization: React.FC = observer(() => {
         const r = Math.sqrt(node.x * node.x + node.z * node.z);
         const a = Math.atan2(node.z, node.x);
         const edgeIdx = edgeLines.findIndex(e => e.data.to.id === node.id);
-        const speedVariation = 0.06 + Math.random() * 0.04;
+        const dir = nodeIdx % 2 === 0 ? 1 : -1;
+        const speedVariation = dir * (0.12 + Math.random() * 0.08);
         orbitNodes.push({
           angle: a,
           radius: r,
@@ -1085,7 +1086,7 @@ const GraphVisualization: React.FC = observer(() => {
           }
           const nx = Math.cos(orb.angle) * orb.radius;
           const nz = Math.sin(orb.angle) * orb.radius;
-          const bobY = orb.yOffset + Math.sin(t * 0.3 + orb.angle * 2) * 0.08;
+          const bobY = orb.yOffset + Math.sin(t * 0.5 + orb.angle * 2) * 0.15;
           orb.core.position.set(nx, bobY, nz);
           orb.glow.position.set(nx, bobY, nz);
           orb.hit.position.set(nx, bobY, nz);
