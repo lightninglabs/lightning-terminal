@@ -674,7 +674,6 @@ const GraphVisualization: React.FC = observer(() => {
     const group = new THREE.Group();
     scene.add(group);
 
-    // Soft ambient + subtle directional
     scene.add(new THREE.AmbientLight(0x8080a0, 0.3));
     const dl = new THREE.DirectionalLight(0xc4b5fd, 0.15);
     dl.position.set(5, 10, 8);
@@ -687,7 +686,10 @@ const GraphVisualization: React.FC = observer(() => {
     }> = [];
     const starMats: THREE.PointsMaterial[] = [];
 
-    // ---- Background starfield ----
+    // ---- Background starfield with slow drift ----
+    const starGroup = new THREE.Group();
+    scene.add(starGroup);
+
     const bgN = 2500;
     const bgArr = new Float32Array(bgN * 3);
     for (let i = 0; i < bgN; i++) {
@@ -707,7 +709,7 @@ const GraphVisualization: React.FC = observer(() => {
       opacity: 0.35,
       sizeAttenuation: true,
     });
-    scene.add(new THREE.Points(bgGeo, bgMat));
+    starGroup.add(new THREE.Points(bgGeo, bgMat));
 
     // Nearer dust for depth
     const dustN = 600;
@@ -728,8 +730,22 @@ const GraphVisualization: React.FC = observer(() => {
     });
     group.add(new THREE.Points(dustGeo, dustMat));
 
-    // ---- Constellation edges (My Node only) ----
+    // ---- Orbit data for mynode peers ----
     const isMyNode = viewMode === 'mynode';
+    interface OrbitInfo {
+      angle: number;
+      radius: number;
+      yOffset: number;
+      speed: number;
+      core: THREE.Mesh;
+      glow: THREE.Mesh;
+      hit: THREE.Mesh;
+      nodeId: string;
+      edgeIdx: number;
+    }
+    const orbitNodes: OrbitInfo[] = [];
+
+    // ---- Constellation edges (My Node only) — brighter ----
     if (isMyNode) {
       edges.forEach(edge => {
         const pts = [
@@ -738,9 +754,9 @@ const GraphVisualization: React.FC = observer(() => {
         ];
         const geo = new THREE.BufferGeometry().setFromPoints(pts);
         const mat = new THREE.LineBasicMaterial({
-          color: edge.active ? 0x7c6cc8 : 0x2a2a3a,
+          color: edge.active ? 0xa78bfa : 0x3f3f5a,
           transparent: true,
-          opacity: edge.active ? 0.1 : 0.03,
+          opacity: edge.active ? 0.45 : 0.12,
         });
         const line = new THREE.Line(geo, mat);
         group.add(line);
@@ -748,8 +764,8 @@ const GraphVisualization: React.FC = observer(() => {
       });
     }
 
-    // ---- Lightning bolt pool ----
-    const BOLT_COUNT = 10;
+    // ---- Lightning bolt pool (synced with explorer params) ----
+    const BOLT_COUNT = isMyNode ? 6 : 4;
     const BOLT_SEGS = 48;
     const bolts: Array<{
       line: THREE.Line;
@@ -786,7 +802,7 @@ const GraphVisualization: React.FC = observer(() => {
         const lMat = new THREE.LineBasicMaterial({
           vertexColors: true,
           transparent: true,
-          opacity: 1,
+          opacity: 0.35,
           blending: THREE.AdditiveBlending,
           depthWrite: false,
         });
@@ -801,10 +817,10 @@ const GraphVisualization: React.FC = observer(() => {
         gGeo.setAttribute('color', new THREE.BufferAttribute(gCol, 3));
         const gMat = new THREE.PointsMaterial({
           vertexColors: true,
-          size: 0.12,
+          size: 0.1,
           sizeAttenuation: true,
           transparent: true,
-          opacity: 0.55,
+          opacity: 0.2,
           blending: THREE.AdditiveBlending,
           depthWrite: false,
         });
@@ -825,37 +841,46 @@ const GraphVisualization: React.FC = observer(() => {
       }
     }
 
+    const getNodePos = (nodeId: string): THREE.Vector3 => {
+      const orbit = orbitNodes.find(o => o.nodeId === nodeId);
+      if (orbit) return orbit.core.position.clone();
+      const entry = nodeMeshes.get(nodeId);
+      if (entry) return entry.mesh.position.clone();
+      return new THREE.Vector3(0, 0, 0);
+    };
+
     const fireBolt = (eventDir?: 'send' | 'receive') => {
       const idle = bolts.find(b => !b.alive);
       if (!idle) return;
-      let from: NodeData;
-      let to: NodeData;
+      let fromId: string;
+      let toId: string;
       if (isMyNode && edges.length > 0) {
         const edge = edges[Math.floor(Math.random() * edges.length)];
         if (eventDir === 'send') {
-          from = edge.from;
-          to = edge.to;
+          fromId = edge.from.id;
+          toId = edge.to.id;
         } else if (eventDir === 'receive') {
-          from = edge.to;
-          to = edge.from;
+          fromId = edge.to.id;
+          toId = edge.from.id;
         } else {
           const rev = Math.random() > 0.5;
-          from = rev ? edge.to : edge.from;
-          to = rev ? edge.from : edge.to;
+          fromId = rev ? edge.to.id : edge.from.id;
+          toId = rev ? edge.from.id : edge.to.id;
         }
       } else if (nodes.length > 1) {
         const a = Math.floor(Math.random() * nodes.length);
         let b = Math.floor(Math.random() * (nodes.length - 1));
         if (b >= a) b++;
-        from = nodes[a];
-        to = nodes[b];
+        fromId = nodes[a].id;
+        toId = nodes[b].id;
       } else {
         return;
       }
-      idle.fromPos.set(from.x, from.y, from.z);
-      idle.toPos.set(to.x, to.y, to.z);
+      const fromPos = getNodePos(fromId);
+      const toPos = getNodePos(toId);
+      idle.fromPos.copy(fromPos);
+      idle.toPos.copy(toPos);
 
-      // Build jagged lightning path
       const dir = idle.toPos.clone().sub(idle.fromPos);
       const len = dir.length();
       dir.normalize();
@@ -866,31 +891,26 @@ const GraphVisualization: React.FC = observer(() => {
 
       const lAttr = idle.line.geometry.attributes.position as THREE.BufferAttribute;
       const gAttr = idle.glowPts.geometry.attributes.position as THREE.BufferAttribute;
+      const jitter = len * 0.08;
 
       for (let i = 0; i <= BOLT_SEGS; i++) {
         const u = i / BOLT_SEGS;
-        let x = idle.fromPos.x + (idle.toPos.x - idle.fromPos.x) * u;
-        let y = idle.fromPos.y + (idle.toPos.y - idle.fromPos.y) * u;
-        let z = idle.fromPos.z + (idle.toPos.z - idle.fromPos.z) * u;
+        const pt = idle.fromPos.clone().lerp(idle.toPos, u);
         if (i > 0 && i < BOLT_SEGS) {
-          const env = Math.sin(Math.PI * u);
-          const jit = len * 0.025 * env;
-          const r1 = (Math.random() - 0.5) * 2 * jit;
-          const r2 = (Math.random() - 0.5) * 2 * jit;
-          x += p1.x * r1 + p2.x * r2;
-          y += p1.y * r1 + p2.y * r2;
-          z += p1.z * r1 + p2.z * r2;
+          const j = jitter * (1 - Math.abs(u - 0.5) * 2) * 0.6;
+          pt.addScaledVector(p1, (Math.random() - 0.5) * j);
+          pt.addScaledVector(p2, (Math.random() - 0.5) * j);
         }
-        lAttr.setXYZ(i, x, y, z);
-        gAttr.setXYZ(i, x, y, z);
+        lAttr.setXYZ(i, pt.x, pt.y, pt.z);
+        gAttr.setXYZ(i, pt.x, pt.y, pt.z);
       }
       lAttr.needsUpdate = true;
       gAttr.needsUpdate = true;
 
       idle.progress = 0;
-      idle.speed = 2.2 + Math.random() * 1.5;
+      idle.speed = 0.6 + Math.random() * 0.4;
       idle.alive = true;
-      idle.targetId = to.id;
+      idle.targetId = toId;
       idle.line.visible = true;
       idle.glowPts.visible = true;
     };
@@ -903,7 +923,7 @@ const GraphVisualization: React.FC = observer(() => {
     const logMax = caps.length > 0 ? Math.log(Math.max(...caps) + 1) : 1;
     const logRange = logMax - logMin || 1;
 
-    nodes.forEach(node => {
+    nodes.forEach((node, nodeIdx) => {
       const logCap = node.capacity > 0 ? Math.log(node.capacity + 1) : 0;
       const capNorm = (logCap - logMin) / logRange;
 
@@ -945,7 +965,6 @@ const GraphVisualization: React.FC = observer(() => {
         t: 0,
       });
 
-      // Center node outer aura
       if (node.isCenter) {
         const aGeo = new THREE.SphereGeometry(starR * 7, 16, 16);
         const aMat = new THREE.MeshBasicMaterial({
@@ -958,7 +977,6 @@ const GraphVisualization: React.FC = observer(() => {
         group.add(aura);
       }
 
-      // Hit target for raycasting
       const hitR = Math.max(starR * 2.5, 0.2);
       const hitGeo = new THREE.SphereGeometry(hitR, 8, 8);
       const hitMat = new THREE.MeshBasicMaterial({ visible: false });
@@ -966,6 +984,25 @@ const GraphVisualization: React.FC = observer(() => {
       hit.position.set(node.x, node.y, node.z);
       group.add(hit);
       nodeMeshes.set(node.id, { mesh: hit, data: node });
+
+      // Track orbit info for non-center mynode peers
+      if (isMyNode && !node.isCenter) {
+        const r = Math.sqrt(node.x * node.x + node.z * node.z);
+        const a = Math.atan2(node.z, node.x);
+        const edgeIdx = edgeLines.findIndex(e => e.data.to.id === node.id);
+        const speedVariation = 0.06 + Math.random() * 0.04;
+        orbitNodes.push({
+          angle: a,
+          radius: r,
+          yOffset: node.y,
+          speed: speedVariation,
+          core,
+          glow,
+          hit,
+          nodeId: node.id,
+          edgeIdx,
+        });
+      }
     });
 
     // Raycaster
@@ -1022,96 +1059,116 @@ const GraphVisualization: React.FC = observer(() => {
 
     // ---- Animation loop ----
     const clock = new THREE.Clock();
-    let nextBoltTime = 0.5 + Math.random() * 1.5;
+    let nextBoltTime = 1.5 + Math.random() * 2.0;
     const animate = () => {
       state.animationId = requestAnimationFrame(animate);
       const dt = clock.getDelta();
       const t = clock.elapsedTime;
 
-      // Very slow drift rotation
-      if (!state.isPaused && !state.userControlled) {
-        group.rotation.y += 0.00012;
+      const shouldAnimate = !state.isPaused && !state.userControlled;
+
+      // Subtle star background drift (always moves, like homepage)
+      starGroup.rotation.y += 0.00008;
+      starGroup.rotation.x += 0.00003;
+
+      // Slow drift rotation for node group
+      if (shouldAnimate) {
+        group.rotation.y += 0.00015;
+        group.rotation.x += 0.00005;
       }
 
-      // Constellation edge gentle pulse (My Node only)
+      // Orbit peer nodes around center (mynode mode)
+      if (isMyNode) {
+        for (const orb of orbitNodes) {
+          if (shouldAnimate) {
+            orb.angle += orb.speed * dt;
+          }
+          const nx = Math.cos(orb.angle) * orb.radius;
+          const nz = Math.sin(orb.angle) * orb.radius;
+          const bobY = orb.yOffset + Math.sin(t * 0.3 + orb.angle * 2) * 0.08;
+          orb.core.position.set(nx, bobY, nz);
+          orb.glow.position.set(nx, bobY, nz);
+          orb.hit.position.set(nx, bobY, nz);
+
+          // Update the corresponding edge line to follow
+          if (orb.edgeIdx >= 0 && orb.edgeIdx < edgeLines.length) {
+            const posAttr = edgeLines[orb.edgeIdx].line.geometry.attributes
+              .position as THREE.BufferAttribute;
+            posAttr.setXYZ(1, nx, bobY, nz);
+            posAttr.needsUpdate = true;
+          }
+        }
+      }
+
+      // Channel edge gentle pulse (My Node only) — brighter base
       edgeLines.forEach(({ line, data }, idx) => {
         if (data.active) {
           const m = line.material as THREE.LineBasicMaterial;
           const ph = idx * 1.7 + data.capacity * 0.00001;
           m.opacity =
-            0.05 + Math.sin(t * 0.5 + ph) * 0.03 + Math.sin(t * 1.3 + ph * 0.3) * 0.015;
+            0.35 + Math.sin(t * 0.5 + ph) * 0.1 + Math.sin(t * 1.3 + ph * 0.3) * 0.05;
         }
       });
 
-      // Lightning bolt animations
+      // Lightning bolt animations (explorer-matched timing)
       if (bolts.length > 0) {
         if (isMyNode) {
           const ev = paymentActivityStore.dequeue();
-          if (ev) fireBolt(ev.direction);
+          if (ev) {
+            fireBolt(ev.direction);
+          } else {
+            nextBoltTime -= dt;
+            if (nextBoltTime <= 0) {
+              fireBolt();
+              nextBoltTime = 2.5 + Math.random() * 3.5;
+            }
+          }
         } else {
           nextBoltTime -= dt;
           if (nextBoltTime <= 0) {
             fireBolt();
-            nextBoltTime = 0.2 + Math.random() * 0.8;
+            nextBoltTime = 2.5 + Math.random() * 3.5;
           }
         }
 
         for (const bolt of bolts) {
           if (!bolt.alive) continue;
-          bolt.progress += dt * bolt.speed;
+          bolt.progress += bolt.speed * dt;
 
-          const done = bolt.progress >= 1.35;
-          if (done) {
+          if (bolt.progress >= 1.3) {
             bolt.alive = false;
             bolt.line.visible = false;
             bolt.glowPts.visible = false;
             continue;
           }
 
-          // Flash destination node on arrival
           if (bolt.progress >= 0.97) {
             const nf = nodeFlashes.get(bolt.targetId);
             if (nf && nf.t < 0.3) nf.t = 1.0;
           }
 
-          const front = Math.min(bolt.progress, 1.0);
-          const fadeOut =
-            bolt.progress > 1.0 ? Math.max(0, 1 - (bolt.progress - 1) / 0.35) : 1;
-
-          const lC = bolt.line.geometry.attributes.color as THREE.BufferAttribute;
-          const gC = bolt.glowPts.geometry.attributes.color as THREE.BufferAttribute;
+          // Purple-tinted bolt colors (matched to explorer)
+          const cAttr = bolt.line.geometry.attributes.color as THREE.BufferAttribute;
+          const gcAttr = bolt.glowPts.geometry.attributes.color as THREE.BufferAttribute;
 
           for (let i = 0; i <= BOLT_SEGS; i++) {
             const u = i / BOLT_SEGS;
-            let inten = 0;
-            if (u <= front + 0.03) {
-              const d = front - u;
-              if (d >= 0) {
-                const peak = Math.exp(-d * d * 120);
-                const trail = Math.exp(-d * 4) * 0.35;
-                inten = Math.max(peak, trail);
-              } else {
-                inten = Math.exp(d * d * -600) * 0.2;
-              }
-            }
-            inten *= fadeOut;
-
-            const ci = Math.min(1, inten * 1.4);
-            lC.setXYZ(i, ci, ci * 0.95, ci);
-
-            gC.setXYZ(i, 0.5 * inten, 0.35 * inten, 1.0 * inten);
+            const dist = Math.abs(u - bolt.progress);
+            const headW = 0.35;
+            const bright = Math.max(0, 1 - dist / headW);
+            const fade = Math.pow(bright, 1.5);
+            const r = 0.35 + fade * 0.2;
+            const g = 0.15 + fade * 0.15;
+            const b2 = 0.55 + fade * 0.4;
+            cAttr.setXYZ(i, r * fade, g * fade, b2 * fade);
+            gcAttr.setXYZ(i, r * fade * 0.5, g * fade * 0.5, b2 * fade * 0.5);
           }
-          lC.needsUpdate = true;
-          gC.needsUpdate = true;
-
-          const lm = bolt.line.material as THREE.LineBasicMaterial;
-          lm.opacity = fadeOut;
-          const gm = bolt.glowPts.material as THREE.PointsMaterial;
-          gm.opacity = 0.5 * fadeOut;
+          cAttr.needsUpdate = true;
+          gcAttr.needsUpdate = true;
         }
       }
 
-      // Node flash-on-receipt decay (glow only, no size change)
+      // Node flash-on-receipt decay
       nodeFlashes.forEach(nf => {
         if (nf.t > 0) {
           nf.t = Math.max(0, nf.t - dt * 2.5);
@@ -1150,7 +1207,7 @@ const GraphVisualization: React.FC = observer(() => {
     };
   }, [nodes, edges, viewMode]);
 
-  // ---- Hover ----
+  // ---- Hover — pauses orbit + group spin ----
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     const s = sceneRef.current;
     if (!s || !canvasRef.current || s.isDragging) return;
@@ -1172,6 +1229,49 @@ const GraphVisualization: React.FC = observer(() => {
         return;
       }
     }
+
+    // Check edge hover (for channel lines)
+    if (s.edgeLines.length > 0) {
+      const edgeHitThreshold = 0.15;
+      let closestEdge: EdgeData | null = null;
+      let closestDist = edgeHitThreshold;
+      for (const { line, data } of s.edgeLines) {
+        const posAttr = line.geometry.attributes.position as THREE.BufferAttribute;
+        const start = new THREE.Vector3().fromBufferAttribute(posAttr, 0);
+        const end = new THREE.Vector3().fromBufferAttribute(posAttr, 1);
+        const ray = s.raycaster.ray;
+        const lineDir = end.clone().sub(start);
+        const lineLen = lineDir.length();
+        lineDir.normalize();
+        const w0 = ray.origin.clone().sub(start);
+        const a2 = ray.direction.dot(ray.direction);
+        const b2 = ray.direction.dot(lineDir);
+        const c2 = lineDir.dot(lineDir);
+        const d2 = ray.direction.dot(w0);
+        const e2 = lineDir.dot(w0);
+        const denom = a2 * c2 - b2 * b2;
+        if (Math.abs(denom) > 0.0001) {
+          const sc = (b2 * e2 - c2 * d2) / denom;
+          const tc = Math.max(0, Math.min(lineLen, (a2 * e2 - b2 * d2) / denom));
+          if (sc > 0) {
+            const ptRay = ray.origin.clone().add(ray.direction.clone().multiplyScalar(sc));
+            const ptLine = start.clone().add(lineDir.clone().multiplyScalar(tc));
+            const dist = ptRay.distanceTo(ptLine);
+            if (dist < closestDist) {
+              closestDist = dist;
+              closestEdge = data;
+            }
+          }
+        }
+      }
+      if (closestEdge) {
+        setHoveredEdge(closestEdge);
+        setHoveredNode(null);
+        s.isPaused = true;
+        return;
+      }
+    }
+
     setHoveredNode(null);
     setHoveredEdge(null);
     if (!s.userControlled) s.isPaused = false;

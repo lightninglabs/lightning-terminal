@@ -23,33 +23,36 @@ import ProcessingSwaps from './processing/ProcessingSwaps';
 
 const Styled = {
   PageWrap: styled.div`
-    padding: 24px 32px;
+    padding: 28px 36px;
     min-height: 100vh;
-    background: radial-gradient(ellipse at 50% 50%, #0f1218 0%, #090b10 100%);
+    background: #000000;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   `,
   Header: styled.div`
     display: flex;
     align-items: center;
     justify-content: space-between;
     min-height: 40px;
-    margin-bottom: 24px;
+    margin-bottom: 28px;
   `,
   Title: styled.h2`
-    font-size: 20px;
-    font-weight: 600;
-    color: #e2e8f0;
+    font-size: 22px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
     margin: 0;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+    letter-spacing: -0.02em;
   `,
   LoopUnavailable: styled.div`
-    padding: 10px 14px;
-    border-radius: 8px;
-    background: rgba(234, 179, 8, 0.06);
-    border: 1px solid rgba(234, 179, 8, 0.15);
-    color: #94a3b8;
+    padding: 12px 16px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.4);
     font-size: 13px;
+    margin-bottom: 20px;
   `,
   TileRow: styled.div`
     display: grid;
@@ -58,32 +61,34 @@ const Styled = {
     margin-bottom: 20px;
   `,
   Tile: styled.div`
-    background: rgba(15, 10, 30, 0.5);
-    border: 1px solid rgba(139, 92, 246, 0.1);
-    border-radius: 10px;
-    padding: 16px 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px;
+    padding: 20px 24px;
   `,
   TileLabel: styled.div`
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: #64748b;
-    margin-bottom: 6px;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.3);
+    margin-bottom: 8px;
     display: flex;
     align-items: center;
     gap: 6px;
   `,
   TileValue: styled.div`
-    font-size: 22px;
-    font-weight: 600;
-    color: #e2e8f0;
+    font-size: 26px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
   `,
   BalanceBar: styled.div`
     margin-top: 10px;
-    height: 6px;
-    border-radius: 3px;
-    background: rgba(255, 255, 255, 0.06);
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.04);
     overflow: hidden;
     display: flex;
   `,
@@ -96,17 +101,18 @@ const Styled = {
   ActionRow: styled.div`
     display: flex;
     gap: 8px;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
     flex-wrap: wrap;
   `,
   ActionBtn: styled.button<{ variant?: 'primary' }>`
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 16px;
-    border-radius: 8px;
+    padding: 10px 18px;
+    border-radius: 10px;
     font-size: 13px;
     font-weight: 500;
+    font-family: inherit;
     cursor: pointer;
     transition: all 0.15s;
     border: none;
@@ -114,59 +120,59 @@ const Styled = {
     ${p =>
       p.variant === 'primary'
         ? `
-      background: rgba(139, 92, 246, 0.85);
-      color: white;
-      &:hover { background: rgba(139, 92, 246, 1); }
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+      &:hover { background: rgba(255, 255, 255, 0.14); }
     `
         : `
       background: rgba(255, 255, 255, 0.04);
-      color: rgba(255, 255, 255, 0.65);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.06);
       &:hover {
-        background: rgba(255, 255, 255, 0.08);
-        color: rgba(255, 255, 255, 0.9);
+        background: rgba(255, 255, 255, 0.07);
+        color: rgba(255, 255, 255, 0.8);
       }
     `}
   `,
   HealthNotice: styled.div<{ severity: 'warning' | 'info' }>`
     display: flex;
     align-items: flex-start;
-    gap: 10px;
-    padding: 12px 16px;
-    border-radius: 8px;
+    gap: 12px;
+    padding: 14px 18px;
+    border-radius: 12px;
     margin-bottom: 20px;
     font-size: 13px;
     line-height: 1.5;
-    color: #94a3b8;
+    color: rgba(255, 255, 255, 0.5);
 
     ${p =>
       p.severity === 'warning'
         ? `
-      background: rgba(234, 179, 8, 0.06);
-      border: 1px solid rgba(234, 179, 8, 0.15);
+      background: rgba(251, 191, 36, 0.04);
+      border: 1px solid rgba(251, 191, 36, 0.1);
     `
         : `
-      background: rgba(139, 92, 246, 0.06);
-      border: 1px solid rgba(139, 92, 246, 0.12);
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
     `}
   `,
   NoticeIcon: styled.div<{ severity: 'warning' | 'info' }>`
     flex-shrink: 0;
     margin-top: 1px;
-    color: ${p => (p.severity === 'warning' ? '#eab308' : '#a78bfa')};
+    color: ${p => (p.severity === 'warning' ? '#fbbf24' : 'rgba(255, 255, 255, 0.3)')};
   `,
   NoticeText: styled.div`
     flex: 1;
   `,
   NoticeLink: styled.span`
-    color: #a78bfa;
+    color: rgba(255, 255, 255, 0.8);
     cursor: pointer;
     font-weight: 500;
     text-decoration: underline;
-    text-decoration-color: rgba(167, 139, 250, 0.3);
+    text-decoration-color: rgba(255, 255, 255, 0.2);
     text-underline-offset: 2px;
     &:hover {
-      text-decoration-color: #a78bfa;
+      text-decoration-color: rgba(255, 255, 255, 0.5);
     }
   `,
 };
@@ -263,17 +269,18 @@ const LoopPage: React.FC = () => {
               </TileRow>
 
               <BalanceBar>
-                <BarSegment width={inPct} color="#22c55e" />
-                <BarSegment width={outPct} color="#a78bfa" />
+                <BarSegment width={inPct} color="#34d399" />
+                <BarSegment width={outPct} color="rgba(255, 255, 255, 0.3)" />
               </BalanceBar>
               <div
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
                   fontSize: '11px',
-                  color: '#475569',
-                  marginTop: '4px',
-                  marginBottom: '16px',
+                  color: 'rgba(255, 255, 255, 0.2)',
+                  marginTop: '6px',
+                  marginBottom: '18px',
+                  letterSpacing: '0.02em',
                 }}
               >
                 <span>Inbound {inPct.toFixed(0)}%</span>

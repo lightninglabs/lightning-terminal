@@ -84,44 +84,47 @@ function timeAgo(unix: number): string {
 
 const Styled = {
   Wrapper: styled.div`
-    padding: 24px 32px;
+    padding: 28px 36px;
     min-height: 100vh;
-    background: radial-gradient(ellipse at 50% 50%, #0f1218 0%, #090b10 100%);
+    background: #000000;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   `,
   Header: styled.div`
     display: flex;
     align-items: center;
     justify-content: space-between;
     min-height: 40px;
-    margin-bottom: 24px;
+    margin-bottom: 28px;
   `,
   Title: styled.h2`
-    font-size: 20px;
-    font-weight: 600;
-    color: #e2e8f0;
+    font-size: 22px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
     margin: 0;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+    letter-spacing: -0.02em;
   `,
   Stats: styled.div`
     display: flex;
-    gap: 16px;
+    gap: 10px;
   `,
   StatChip: styled.div`
-    background: rgba(139, 92, 246, 0.08);
-    border: 1px solid rgba(139, 92, 246, 0.15);
-    border-radius: 8px;
-    padding: 8px 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    padding: 10px 16px;
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 13px;
-    color: #94a3b8;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.4);
   `,
   StatVal: styled.span`
-    color: #e2e8f0;
+    color: rgba(255, 255, 255, 0.9);
     font-weight: 600;
+    font-variant-numeric: tabular-nums;
   `,
   SearchBar: styled.div`
     position: relative;
@@ -129,62 +132,69 @@ const Styled = {
   `,
   SearchIcon: styled.div`
     position: absolute;
-    left: 12px;
+    left: 14px;
     top: 50%;
     transform: translateY(-50%);
-    color: #475569;
+    color: rgba(255, 255, 255, 0.2);
   `,
   SearchInput: styled.input`
     width: 100%;
-    background: rgba(15, 10, 30, 0.6);
-    border: 1px solid rgba(139, 92, 246, 0.12);
-    border-radius: 8px;
-    padding: 10px 12px 10px 36px;
-    color: #e2e8f0;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    padding: 11px 14px 11px 38px;
+    color: rgba(255, 255, 255, 0.9);
     font-size: 13px;
+    font-family: inherit;
     outline: none;
+    transition: border-color 0.15s;
     &::placeholder {
-      color: #475569;
+      color: rgba(255, 255, 255, 0.2);
     }
     &:focus {
-      border-color: rgba(139, 92, 246, 0.35);
+      border-color: rgba(255, 255, 255, 0.12);
     }
   `,
   Tabs: styled.div`
     display: flex;
-    gap: 4px;
+    gap: 2px;
     margin-bottom: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
+    padding: 3px;
+    width: fit-content;
   `,
   Tab: styled.button<{ active: boolean }>`
-    background: ${p => (p.active ? 'rgba(139, 92, 246, 0.15)' : 'transparent')};
-    border: 1px solid ${p => (p.active ? 'rgba(139, 92, 246, 0.3)' : 'transparent')};
-    border-radius: 6px;
-    padding: 6px 14px;
-    color: ${p => (p.active ? '#a78bfa' : '#64748b')};
-    font-size: 13px;
+    background: ${p => (p.active ? 'rgba(255, 255, 255, 0.08)' : 'transparent')};
+    border: none;
+    border-radius: 8px;
+    padding: 7px 16px;
+    color: ${p => (p.active ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.3)')};
+    font-size: 12px;
     font-weight: 500;
+    font-family: inherit;
     cursor: pointer;
     transition: all 0.15s;
     &:hover {
-      color: #a78bfa;
+      color: rgba(255, 255, 255, 0.6);
     }
   `,
   Table: styled.div`
-    border: 1px solid rgba(139, 92, 246, 0.1);
-    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
     overflow: hidden;
   `,
   TableHeader: styled.div`
     display: grid;
     grid-template-columns: 40px 1fr 120px 100px 100px 100px;
-    padding: 10px 16px;
-    background: rgba(15, 10, 30, 0.5);
-    border-bottom: 1px solid rgba(139, 92, 246, 0.08);
-    font-size: 11px;
+    padding: 12px 18px;
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 10px;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #475569;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.25);
   `,
   ThCell: styled.div<{ align?: 'right'; active?: boolean }>`
     display: flex;
@@ -193,22 +203,22 @@ const Styled = {
     cursor: pointer;
     user-select: none;
     justify-content: ${p => (p.align === 'right' ? 'flex-end' : 'flex-start')};
-    color: ${p => (p.active ? '#a78bfa' : 'inherit')};
+    color: ${p => (p.active ? 'rgba(255, 255, 255, 0.6)' : 'inherit')};
     transition: color 0.15s;
     &:hover {
-      color: #a78bfa;
+      color: rgba(255, 255, 255, 0.5);
     }
   `,
   TableRow: styled.div<{ isEven: boolean }>`
     display: grid;
     grid-template-columns: 40px 1fr 120px 100px 100px 100px;
-    padding: 12px 16px;
+    padding: 14px 18px;
     align-items: center;
-    background: ${p => (p.isEven ? 'rgba(15, 10, 30, 0.3)' : 'transparent')};
-    border-bottom: 1px solid rgba(139, 92, 246, 0.05);
+    background: ${p => (p.isEven ? 'rgba(255, 255, 255, 0.015)' : 'transparent')};
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
     transition: background 0.15s;
     &:hover {
-      background: rgba(139, 92, 246, 0.05);
+      background: rgba(255, 255, 255, 0.03);
     }
     &:last-child {
       border-bottom: none;
@@ -217,35 +227,38 @@ const Styled = {
   DirectionIcon: styled.div<{ dir: 'in' | 'out' }>`
     width: 28px;
     height: 28px;
-    border-radius: 6px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: ${p =>
-      p.dir === 'in' ? 'rgba(34, 197, 94, 0.12)' : 'rgba(139, 92, 246, 0.12)'};
-    color: ${p => (p.dir === 'in' ? '#22c55e' : '#a78bfa')};
+      p.dir === 'in' ? 'rgba(52, 211, 153, 0.1)' : 'rgba(255, 255, 255, 0.05)'};
+    color: ${p => (p.dir === 'in' ? '#34d399' : 'rgba(255, 255, 255, 0.5)')};
   `,
   Memo: styled.div`
     font-size: 13px;
-    color: #e2e8f0;
+    color: rgba(255, 255, 255, 0.85);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   `,
   Hash: styled.div`
-    font-size: 11px;
-    color: #475569;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.2);
     font-family: 'SF Mono', 'Fira Code', monospace;
+    margin-top: 2px;
   `,
   Amount: styled.div<{ dir: 'in' | 'out' }>`
     font-size: 13px;
     font-weight: 600;
-    color: ${p => (p.dir === 'in' ? '#22c55e' : '#e2e8f0')};
+    font-variant-numeric: tabular-nums;
+    color: ${p => (p.dir === 'in' ? '#34d399' : 'rgba(255, 255, 255, 0.85)')};
     text-align: right;
   `,
   Fee: styled.div`
     font-size: 12px;
-    color: #64748b;
+    font-variant-numeric: tabular-nums;
+    color: rgba(255, 255, 255, 0.25);
     text-align: right;
   `,
   StatusBadge: styled.div<{ variant: string }>`
@@ -255,24 +268,25 @@ const Styled = {
     font-size: 11px;
     font-weight: 500;
     padding: 3px 8px;
-    border-radius: 4px;
+    border-radius: 6px;
     background: ${p => {
       if (p.variant === 'succeeded' || p.variant === 'settled')
-        return 'rgba(34, 197, 94, 0.1)';
+        return 'rgba(52, 211, 153, 0.08)';
       if (p.variant === 'failed' || p.variant === 'canceled')
-        return 'rgba(239, 68, 68, 0.1)';
-      return 'rgba(234, 179, 8, 0.1)';
+        return 'rgba(248, 113, 113, 0.08)';
+      return 'rgba(251, 191, 36, 0.08)';
     }};
     color: ${p => {
-      if (p.variant === 'succeeded' || p.variant === 'settled') return '#22c55e';
-      if (p.variant === 'failed' || p.variant === 'canceled') return '#ef4444';
-      return '#eab308';
+      if (p.variant === 'succeeded' || p.variant === 'settled') return '#34d399';
+      if (p.variant === 'failed' || p.variant === 'canceled') return '#f87171';
+      return '#fbbf24';
     }};
   `,
   Time: styled.div`
     font-size: 12px;
-    color: #64748b;
+    color: rgba(255, 255, 255, 0.25);
     text-align: right;
+    font-variant-numeric: tabular-nums;
   `,
   LoadingState: styled.div`
     display: flex;
@@ -280,7 +294,7 @@ const Styled = {
     align-items: center;
     justify-content: center;
     padding: 80px 0;
-    color: #64748b;
+    color: rgba(255, 255, 255, 0.3);
     gap: 12px;
   `,
   Spinner: styled(Loader2)`
@@ -297,7 +311,7 @@ const Styled = {
     align-items: center;
     justify-content: center;
     padding: 80px 0;
-    color: #475569;
+    color: rgba(255, 255, 255, 0.2);
     gap: 8px;
     font-size: 14px;
   `,
