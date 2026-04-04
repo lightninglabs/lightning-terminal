@@ -7,11 +7,21 @@ import { X, Link2, Check, Loader2, AlertCircle } from 'lucide-react';
 
 interface Props {
   onClose: () => void;
+  initialPubkey?: string;
+  initialAlias?: string;
+  /** Override the API used to open the channel (for cross-node channel opening) */
+  sourceApi?: { openChannelSync: (pubkey: string, amount: string) => Promise<any> };
 }
 
-const OpenChannelModal: React.FC<Props> = ({ onClose }) => {
+const OpenChannelModal: React.FC<Props> = ({
+  onClose,
+  initialPubkey,
+  initialAlias,
+  sourceApi,
+}) => {
   const { api } = useStore();
-  const [nodePubkey, setNodePubkey] = useState('');
+  const lndApi = sourceApi || api.lnd;
+  const [nodePubkey, setNodePubkey] = useState(initialPubkey || '');
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -23,8 +33,8 @@ const OpenChannelModal: React.FC<Props> = ({ onClose }) => {
     setLoading(true);
     setError('');
     try {
-      const res = await api.lnd.openChannelSync(nodePubkey.trim(), amount);
-      setFundingTxid(res.fundingTxidStr || '');
+      const res = await lndApi.openChannelSync(nodePubkey.trim(), amount);
+      setFundingTxid(res.fundingTxidStr || res.fundingTxid || '');
       setSuccess(true);
     } catch (err: any) {
       setError(err?.message || 'Failed to open channel');
@@ -74,11 +84,17 @@ const OpenChannelModal: React.FC<Props> = ({ onClose }) => {
           </S.ResultSection>
         ) : (
           <S.FormSection>
+            {initialAlias && (
+              <S.ConnectingTo>
+                Connecting to <strong>{initialAlias}</strong>
+              </S.ConnectingTo>
+            )}
             <S.FieldLabel>Node Public Key</S.FieldLabel>
             <S.Input
               placeholder="02abc...@host:port or just pubkey"
               value={nodePubkey}
               onChange={e => setNodePubkey(e.target.value)}
+              readOnly={!!initialPubkey}
             />
             <S.FieldLabel>Channel Size (sats)</S.FieldLabel>
             <S.Input
@@ -280,6 +296,14 @@ const S = {
     border: 1px solid rgba(239, 68, 68, 0.2);
     color: #ef4444;
     font-size: 12px;
+  `,
+  ConnectingTo: styled.div`
+    font-size: 13px;
+    color: #a78bfa;
+    margin-bottom: 12px;
+    strong {
+      color: #e2e8f0;
+    }
   `,
   Spinner: styled(Loader2)`
     animation: spin 1s linear infinite;

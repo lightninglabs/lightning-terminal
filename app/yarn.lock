@@ -2799,6 +2799,19 @@
   resolved "https://registry.yarnpkg.com/@juggle/resize-observer/-/resize-observer-3.4.0.tgz#08d6c5e20cf7e4cc02fd181c4b0c225cd31dbb60"
   integrity sha512-dfLbk+PwWvFzSxwk3n5ySL0hfBog779o8h68wK/7/APo/7cgyWp5jcXockbxdk5kFRkbeXWm4Fbi9FrdN381sA==
 
+"@lightninglabs/lnc-core@0.3.5-alpha":
+  version "0.3.5-alpha"
+  resolved "https://registry.yarnpkg.com/@lightninglabs/lnc-core/-/lnc-core-0.3.5-alpha.tgz#7874d21eeb1bd01254d96fe5e37da7f06915e810"
+  integrity sha512-20rOA3ZiPxYRCppqLBxXEgaLCoSX4B5L1GTUrvuCaZAU29Ua0Yc1sJrd/A67vNxLOxxWFPkK0jKcSem3ZaGQLQ==
+
+"@lightninglabs/lnc-web@^0.3.5-alpha":
+  version "0.3.5-alpha"
+  resolved "https://registry.yarnpkg.com/@lightninglabs/lnc-web/-/lnc-web-0.3.5-alpha.tgz#8ee9d66480811cb89d0d2d0c174bac3642069e6a"
+  integrity sha512-e0bO0GIYrIST8V+EbmLozReRC7loZ2izYGeqIyPenbbgNutmFZAQkmKflDaLoWy8S0Tw60QxX8WLnIEaRfBQoA==
+  dependencies:
+    "@lightninglabs/lnc-core" "0.3.5-alpha"
+    crypto-js "4.2.0"
+
 "@mdx-js/react@^2.1.5":
   version "2.3.0"
   resolved "https://registry.yarnpkg.com/@mdx-js/react/-/react-2.3.0.tgz#4208bd6d70f0d0831def28ef28c26149b03180b3"
@@ -6641,6 +6654,11 @@ cross-spawn@^7.0.0, cross-spawn@^7.0.1, cross-spawn@^7.0.2, cross-spawn@^7.0.3:
     path-key "^3.1.0"
     shebang-command "^2.0.0"
     which "^2.0.1"
+
+crypto-js@4.2.0:
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/crypto-js/-/crypto-js-4.2.0.tgz#4d931639ecdfd12ff80e8186dba6af2c2e856631"
+  integrity sha512-KALDyEYgpY+Rlob/iriUtjV6d5Eq+Y191A5g4UqLAi8CyGP9N1+FdVbkc1SxKc2r4YAYqG8JzO2KGL+AizD70Q==
 
 crypto-random-string@^2.0.0:
   version "2.0.0"

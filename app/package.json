@@ -4,6 +4,9 @@
   "description": "Lightning Terminal",
   "repository": "https://github.com/lightninglabs/lightning-terminal",
   "private": true,
+  "engines": {
+    "node": ">=18.x <=20.x"
+  },
   "scripts": {
     "start": "BROWSER=none react-scripts start",
     "develop": "REACT_APP_USE_SAMPLE_DATA=true yarn start",
@@ -22,6 +25,7 @@
     "@emotion/react": "11.4.0",
     "@emotion/styled": "11.3.0",
     "@improbable-eng/grpc-web": "0.14.0",
+    "@lightninglabs/lnc-web": "^0.3.5-alpha",
     "@types/react-collapse": "^5.0.1",
     "big.js": "6.1.1",
     "bootstrap": "4.6.1",

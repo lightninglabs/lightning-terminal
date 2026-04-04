@@ -31,7 +31,7 @@ const formatSats = (sats: number): string => {
 };
 
 const TransactionModal: React.FC<Props> = ({ direction, onClose }) => {
-  const { api } = useStore();
+  const { api, paymentActivityStore } = useStore();
   const [method, setMethod] = useState<Method>('lightning');
   const [step, setStep] = useState<'form' | 'result' | 'confirm'>('form');
   const [loading, setLoading] = useState(false);
@@ -133,6 +133,8 @@ const TransactionModal: React.FC<Props> = ({ direction, onClose }) => {
                 .map(b => b.toString(16).padStart(2, '0'))
                 .join('');
         setPaymentResult({ success: true, preimage });
+        const amt = decodedInvoice ? parseInt(decodedInvoice.numSatoshis, 10) || 0 : 0;
+        paymentActivityStore.onPaymentSent(amt);
       }
       setStep('result');
     } catch (err: any) {

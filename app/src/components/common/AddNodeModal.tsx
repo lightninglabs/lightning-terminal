@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import styled from '@emotion/styled';
 import { observer } from 'mobx-react-lite';
+import { useStore } from 'store';
 import {
   X,
   Plus,
@@ -11,6 +12,9 @@ import {
   HardDrive,
   Cloud,
   Globe,
+  Loader2,
+  AlertCircle,
+  Link,
 } from 'lucide-react';
 
 const PROVIDERS = [
@@ -50,32 +54,58 @@ const PROVIDERS = [
 export interface SavedNode {
   id: string;
   alias: string;
-  rpcServer: string;
-  macaroonHex: string;
-  tlsCertPath: string;
+  type: 'lnc' | 'manual';
+  rpcServer?: string;
+  macaroonHex?: string;
+  tlsCertPath?: string;
 }
 
 interface Props {
   onClose: () => void;
-  onSave: (node: SavedNode) => void;
+  onSave?: (node: SavedNode) => void;
 }
 
 const AddNodeModal: React.FC<Props> = ({ onClose, onSave }) => {
-  const [view, setView] = useState<'choose' | 'connect'>('choose');
-  const [alias, setAlias] = useState('');
+  const { nodeConnectionStore } = useStore();
+  const [view, setView] = useState<'choose' | 'lnc' | 'manual'>('choose');
+  const [label, setLabel] = useState('');
+  const [pairingPhrase, setPairingPhrase] = useState('');
+  const [lncPassword, setLncPassword] = useState('');
   const [rpcServer, setRpcServer] = useState('');
   const [macaroonHex, setMacaroonHex] = useState('');
   const [tlsCertPath, setTlsCertPath] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSave = () => {
+  const handleLncConnect = async () => {
+    if (!pairingPhrase.trim() || !lncPassword.trim()) return;
+    setLoading(true);
+    setError('');
+    try {
+      await nodeConnectionStore.addLncNode(
+        label.trim() || 'Remote Node',
+        pairingPhrase,
+        lncPassword,
+      );
+      onClose();
+    } catch (err: any) {
+      setError(err?.message || 'Failed to connect via LNC');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleManualSave = () => {
     if (!rpcServer.trim() || !macaroonHex.trim()) return;
-    onSave({
+    const node: SavedNode = {
       id: Date.now().toString(36),
-      alias: alias.trim() || rpcServer.split('.')[0],
+      alias: label.trim() || rpcServer.split('.')[0],
+      type: 'manual',
       rpcServer: rpcServer.trim(),
       macaroonHex: macaroonHex.trim(),
       tlsCertPath: tlsCertPath.trim(),
-    });
+    };
+    if (onSave) onSave(node);
     onClose();
   };
 
@@ -87,10 +117,17 @@ const AddNodeModal: React.FC<Props> = ({ onClose, onSave }) => {
           Connect Existing Node
         </S.SectionTitle>
         <S.SectionDesc>Already running a Lightning node? Connect it here.</S.SectionDesc>
-        <S.ConnectBtn onClick={() => setView('connect')}>
-          <Server size={14} />
-          Connect Remote Node
-        </S.ConnectBtn>
+        <S.ConnectBtnGroup>
+          <S.ConnectBtn onClick={() => setView('lnc')}>
+            <Link size={14} />
+            Lightning Node Connect
+            <S.MethodTag>Recommended</S.MethodTag>
+          </S.ConnectBtn>
+          <S.ConnectBtnSecondary onClick={() => setView('manual')}>
+            <Server size={14} />
+            Manual gRPC Config
+          </S.ConnectBtnSecondary>
+        </S.ConnectBtnGroup>
       </S.Section>
 
       <S.Divider>
@@ -130,15 +167,91 @@ const AddNodeModal: React.FC<Props> = ({ onClose, onSave }) => {
     </S.Content>
   );
 
-  const renderConnect = () => (
+  const renderLnc = () => (
     <S.Content>
       <S.FormSection>
-        <S.BackLink onClick={() => setView('choose')}>&larr; Back</S.BackLink>
+        <S.BackLink
+          onClick={() => {
+            setView('choose');
+            setError('');
+          }}
+        >
+          &larr; Back
+        </S.BackLink>
+
+        <S.ConnectHeader>
+          <Link size={16} />
+          Connect via Lightning Node Connect
+        </S.ConnectHeader>
+        <S.ConnectDesc>Generate a pairing phrase on your node by running:</S.ConnectDesc>
+        <S.CmdBlock>
+          litcli sessions add --type admin --label &quot;Lit App&quot;
+        </S.CmdBlock>
+
+        {error && (
+          <S.ErrorBanner>
+            <AlertCircle size={14} />
+            {error}
+          </S.ErrorBanner>
+        )}
+
+        <S.FieldLabel>Node Label</S.FieldLabel>
+        <S.Input
+          placeholder="e.g. My Voltage Node"
+          value={label}
+          onChange={e => setLabel(e.target.value)}
+        />
+        <S.FieldLabel>Pairing Phrase</S.FieldLabel>
+        <S.TextArea
+          placeholder="Paste the pairing phrase from litcli..."
+          value={pairingPhrase}
+          onChange={e => setPairingPhrase(e.target.value)}
+          rows={3}
+        />
+        <S.FieldLabel>Encryption Password</S.FieldLabel>
+        <S.Input
+          type="password"
+          placeholder="Choose a local password to encrypt credentials"
+          value={lncPassword}
+          onChange={e => setLncPassword(e.target.value)}
+        />
+        <S.Hint>
+          This password encrypts the pairing data stored in your browser. You&apos;ll need
+          it when reconnecting.
+        </S.Hint>
+        <S.SaveBtn
+          onClick={handleLncConnect}
+          disabled={loading || !pairingPhrase.trim() || !lncPassword.trim()}
+        >
+          {loading ? (
+            <>
+              <Spinner size={14} />
+              Connecting...
+            </>
+          ) : (
+            'Connect Node'
+          )}
+        </S.SaveBtn>
+      </S.FormSection>
+    </S.Content>
+  );
+
+  const renderManual = () => (
+    <S.Content>
+      <S.FormSection>
+        <S.BackLink
+          onClick={() => {
+            setView('choose');
+            setError('');
+          }}
+        >
+          &larr; Back
+        </S.BackLink>
         <S.FieldLabel>Node Name</S.FieldLabel>
         <S.Input
           placeholder="My Voltage Node"
-          value={alias}
-          onChange={e => setAlias(e.target.value)}
+          value={label}
+          onChange={e => setLabel(e.target.value)}
         />
         <S.FieldLabel>gRPC Endpoint</S.FieldLabel>
         <S.Input
@@ -161,7 +274,7 @@ const AddNodeModal: React.FC<Props> = ({ onClose, onSave }) => {
         />
         <S.Hint>Download these from your node provider&apos;s dashboard.</S.Hint>
         <S.SaveBtn
-          onClick={handleSave}
+          onClick={handleManualSave}
           disabled={!rpcServer.trim() || !macaroonHex.trim()}
         >
           Save Node
@@ -169,6 +282,17 @@ const AddNodeModal: React.FC<Props> = ({ onClose, onSave }) => {
       </S.FormSection>
     </S.Content>
   );
+
+  const renderView = () => {
+    switch (view) {
+      case 'lnc':
+        return renderLnc();
+      case 'manual':
+        return renderManual();
+      default:
+        return renderChoose();
+    }
+  };
 
   return ReactDOM.createPortal(
     <S.Backdrop onClick={onClose}>
@@ -179,7 +303,7 @@ const AddNodeModal: React.FC<Props> = ({ onClose, onSave }) => {
             <X size={18} />
           </S.CloseBtn>
         </S.Header>
-        {view === 'choose' ? renderChoose() : renderConnect()}
+        {renderView()}
       </S.Modal>
     </S.Backdrop>,
     document.body,
@@ -187,6 +311,15 @@ const AddNodeModal: React.FC<Props> = ({ onClose, onSave }) => {
 };
 
 export default observer(AddNodeModal);
+
+const Spinner = styled(Loader2)`
+  animation: spin 1s linear infinite;
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+`;
 
 const S = {
   Backdrop: styled.div`
@@ -253,6 +386,11 @@ const S = {
     margin-bottom: 12px;
     line-height: 1.4;
   `,
+  ConnectBtnGroup: styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  `,
   ConnectBtn: styled.button`
     width: 100%;
     display: flex;
@@ -272,6 +410,36 @@ const S = {
       background: rgba(139, 92, 246, 0.15);
       border-color: rgba(139, 92, 246, 0.4);
     }
+  `,
+  ConnectBtnSecondary: styled.button`
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.02);
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    &:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: rgba(255, 255, 255, 0.7);
+    }
+  `,
+  MethodTag: styled.span`
+    font-size: 9px;
+    font-weight: 600;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
   `,
   Divider: styled.div`
     display: flex;
@@ -369,6 +537,45 @@ const S = {
       color: #a78bfa;
     }
   `,
+  ConnectHeader: styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #a78bfa;
+    margin-bottom: 8px;
+  `,
+  ConnectDesc: styled.div`
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  `,
+  CmdBlock: styled.div`
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 11px;
+    color: #c4b5fd;
+    background: rgba(139, 92, 246, 0.06);
+    border: 1px solid rgba(139, 92, 246, 0.1);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 16px;
+    word-break: break-all;
+    line-height: 1.5;
+  `,
+  ErrorBanner: styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    font-size: 12px;
+  `,
   FieldLabel: styled.label`
     display: block;
     font-size: 11px;
@@ -436,6 +643,10 @@ const S = {
     font-size: 14px;
     font-weight: 500;
     cursor: ${p => (p.disabled ? 'not-allowed' : 'pointer')};
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
     transition: background 0.15s;
     &:hover:not(:disabled) {
       background: rgba(139, 92, 246, 1);

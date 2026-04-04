@@ -1,7 +1,9 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import { Buffer } from 'buffer';
+import LNC from '@lightninglabs/lnc-web';
 import { prefixTranslation } from 'util/translate';
 import { Store } from 'store';
+import LncApi from 'api/lncApi';
 
 const { l } = prefixTranslation('stores.authStore');
 
@@ -25,6 +27,9 @@ export default class AuthStore {
 
   /** the password encoded to base64 */
   credentials = '';
+
+  /** whether the current session is via LNC */
+  isLnc = false;
 
   errors = { mainErr: '', litDetail: '', lndDetail: '' };
 
@@ -131,13 +136,86 @@ export default class AuthStore {
   }
 
   async validate() {
-    // test the credentials by making an API call to getInfo
     await this._store.api.lnd.getInfo();
-    // if no error is thrown above then the credentials are valid
     this._store.log.info('authentication successful');
     runInAction(() => {
-      // setting this to true will automatically show the Loop page
       this.authenticated = true;
+    });
+  }
+
+  /**
+   * Connect via LNC pairing phrase (first time)
+   */
+  async loginWithLnc(pairingPhrase: string, password: string) {
+    this._store.log.info('attempting LNC connection');
+    if (!pairingPhrase.trim()) throw new Error('Pairing phrase is required');
+    if (!password.trim()) throw new Error('Password is required');
+
+    const lnc = new LNC({
+      pairingPhrase: pairingPhrase.trim(),
+      password,
+    });
+
+    await lnc.connect();
+    if (!lnc.isConnected) {
+      throw new Error('Failed to establish LNC connection');
+    }
+
+    const lncApi = new LncApi(lnc);
+    runInAction(() => {
+      this._store.api.lnd = lncApi as any;
+      this.isLnc = true;
+    });
+
+    try {
+      await this.validate();
+      LncApi.markPaired();
+    } catch (error) {
+      lnc.disconnect();
+      runInAction(() => {
+        this.isLnc = false;
+      });
+      throw new Error(
+        'Connected but could not verify node access. Check your pairing phrase.',
+      );
+    }
+  }
+
+  /**
+   * Reconnect via LNC using saved credentials + password
+   */
+  async reconnectLnc(password: string) {
+    this._store.log.info('attempting LNC reconnection with saved credentials');
+    if (!password.trim()) throw new Error('Password is required');
+
+    const lnc = new LNC({ password });
+
+    await lnc.connect();
+    if (!lnc.isConnected) {
+      throw new Error('Failed to reconnect via LNC');
+    }
+
+    const lncApi = new LncApi(lnc);
+    runInAction(() => {
+      this._store.api.lnd = lncApi as any;
+      this.isLnc = true;
+    });
+
+    await this.validate();
+  }
+
+  /** Disconnect LNC and clear pairing data */
+  disconnectLnc() {
+    if (this.isLnc) {
+      const api = this._store.api.lnd as any;
+      if (api?.lnc?.disconnect) {
+        api.lnc.disconnect();
+      }
+    }
+    LncApi.clearPaired();
+    runInAction(() => {
+      this.isLnc = false;
+      this.authenticated = false;
     });
   }
 
@@ -151,10 +229,8 @@ export default class AuthStore {
       this.setCredentials(creds);
       this._store.log.info('found credentials. validating');
       try {
-        // test the credentials by making an API call to getInfo
         await this.validate();
       } catch (error) {
-        // clear the credentials and swallow the error
         this.setCredentials('');
         this._store.log.error('cleared invalid credentials in sessionStorage');
       }

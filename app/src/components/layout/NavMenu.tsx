@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 import styled from '@emotion/styled';
 import { useStore } from 'store';
 import { PUBLIC_URL } from '../../config';
-import { Waypoints, Activity, ArrowLeftRight, Compass } from 'lucide-react';
+import { Waypoints, Activity, ArrowLeftRight, Zap } from 'lucide-react';
 
 const Styled = {
   Nav: styled.ul`
@@ -69,13 +69,17 @@ interface NavItemProps {
   label: string;
   icon: React.ReactNode;
   badge?: string;
+  active?: boolean;
   onClick: () => void;
 }
 
 const NavItem: React.FC<NavItemProps> = observer(
-  ({ page, label, icon, badge, onClick }) => {
+  ({ page, label, icon, badge, active, onClick }) => {
     const { router } = useStore();
-    const isActive = router.location.pathname.startsWith(`${PUBLIC_URL}/${page}`);
+    const isActive =
+      active !== undefined
+        ? active
+        : router.location.pathname.startsWith(`${PUBLIC_URL}/${page}`);
     const className = isActive ? 'active' : '';
 
     return (
@@ -94,16 +98,26 @@ const ICON_SIZE = 16;
 const ICON_STROKE = 1.5;
 
 const NavMenu: React.FC = () => {
-  const { appView } = useStore();
+  const { appView, router, nodeConnectionStore } = useStore();
+  const onHome = router.location.pathname.startsWith(`${PUBLIC_URL}/home`);
+  const myNodeLabel = nodeConnectionStore.hasMultipleConnected ? 'My Nodes' : 'My Node';
 
   const { Nav } = Styled;
   return (
     <Nav>
       <NavItem
         page="home"
-        label="Graph"
+        label="Network"
+        active={onHome && appView.graphViewMode === 'network'}
         icon={<Waypoints size={ICON_SIZE} strokeWidth={ICON_STROKE} />}
-        onClick={appView.goToHome}
+        onClick={appView.goToNetwork}
+      />
+      <NavItem
+        page="home"
+        label={myNodeLabel}
+        active={onHome && appView.graphViewMode === 'mynode'}
+        icon={<Zap size={ICON_SIZE} strokeWidth={ICON_STROKE} />}
+        onClick={appView.goToMyNode}
       />
       <NavItem
         page="history"
@@ -116,12 +130,6 @@ const NavMenu: React.FC = () => {
         label="Liquidity"
         icon={<ArrowLeftRight size={ICON_SIZE} strokeWidth={ICON_STROKE} />}
         onClick={appView.goToLoop}
-      />
-      <NavItem
-        page="explore"
-        label="Explore"
-        icon={<Compass size={ICON_SIZE} strokeWidth={ICON_STROKE} />}
-        onClick={appView.goToExplore}
       />
     </Nav>
   );

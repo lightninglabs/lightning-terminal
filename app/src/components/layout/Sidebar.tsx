@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import styled from '@emotion/styled';
 import { useStore } from 'store';
-import { BookOpen, Settings } from 'lucide-react';
+import { BookOpen, Settings, Copy, Check } from 'lucide-react';
 import NavMenu from './NavMenu';
 import NodePicker from './NodePicker';
 import OnboardingModal from '../tour/OnboardingModal';
@@ -111,12 +111,71 @@ const Styled = {
       opacity: 0.9;
     }
   `,
+  CopyNodeBtn: styled.button`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid rgba(139, 92, 246, 0.12);
+    border-radius: 8px;
+    background: rgba(139, 92, 246, 0.05);
+    color: rgba(255, 255, 255, 0.5);
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    overflow: hidden;
+
+    &:hover {
+      background: rgba(139, 92, 246, 0.1);
+      border-color: rgba(139, 92, 246, 0.25);
+      color: rgba(255, 255, 255, 0.7);
+    }
+  `,
+  CopyIcon: styled.span`
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    color: #a78bfa;
+  `,
+  PubkeyText: styled.span`
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 10px;
+    letter-spacing: 0.02em;
+  `,
 };
 
 const Sidebar: React.FC = () => {
   const { nodeStore, appView } = useStore();
   const alias = nodeStore.alias || 'My Node';
+  const pubkey = nodeStore.pubkey || '';
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyNodeId = useCallback(async () => {
+    if (!pubkey) return;
+    try {
+      await navigator.clipboard.writeText(pubkey);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // fallback
+      const el = document.createElement('textarea');
+      el.value = pubkey;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }, [pubkey]);
 
   const {
     Wrapper,
@@ -130,6 +189,9 @@ const Sidebar: React.FC = () => {
     NodeDot,
     NodeLabel,
     SettingsIcon,
+    CopyNodeBtn,
+    CopyIcon,
+    PubkeyText,
   } = Styled;
 
   return (
@@ -139,6 +201,21 @@ const Sidebar: React.FC = () => {
         <NavMenu />
       </NavSection>
       <BottomSection>
+        {pubkey && (
+          <CopyNodeBtn
+            onClick={handleCopyNodeId}
+            title="Copy your Node ID to share with peers"
+          >
+            <CopyIcon>
+              {copied ? (
+                <Check size={12} strokeWidth={2} />
+              ) : (
+                <Copy size={12} strokeWidth={1.5} />
+              )}
+            </CopyIcon>
+            <PubkeyText>{copied ? 'Copied!' : pubkey}</PubkeyText>
+          </CopyNodeBtn>
+        )}
         <OnboardingWidget onClick={() => setShowOnboarding(true)}>
           <WidgetIcon>
             <BookOpen size={14} strokeWidth={1.5} />

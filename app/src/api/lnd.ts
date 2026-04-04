@@ -7,6 +7,7 @@ import GrpcClient from './grpc';
 interface LndEvents {
   transaction: LND.Transaction.AsObject;
   channel: LND.ChannelEventUpdate.AsObject;
+  invoice: LND.Invoice.AsObject;
 }
 
 /**
@@ -71,7 +72,26 @@ class LndApi extends BaseApi<LndEvents> {
   async getNodeInfo(pubkey: string): Promise<LND.NodeInfo.AsObject> {
     const req = new LND.NodeInfoRequest();
     req.setPubKey(pubkey);
+    req.setIncludeChannels(true);
     const res = await this._grpc.request(Lightning.GetNodeInfo, req, this._meta);
+    return res.toObject();
+  }
+
+  /**
+   * call the LND `DescribeGraph` RPC and return the full network topology
+   */
+  async describeGraph(): Promise<LND.ChannelGraph.AsObject> {
+    const req = new LND.ChannelGraphRequest();
+    const res = await this._grpc.request(Lightning.DescribeGraph, req, this._meta);
+    return res.toObject();
+  }
+
+  /**
+   * call the LND `GetNetworkInfo` RPC and return aggregate stats
+   */
+  async getNetworkInfo(): Promise<LND.NetworkInfo.AsObject> {
+    const req = new LND.NetworkInfoRequest();
+    const res = await this._grpc.request(Lightning.GetNetworkInfo, req, this._meta);
     return res.toObject();
   }
 
@@ -172,6 +192,12 @@ class LndApi extends BaseApi<LndEvents> {
       Lightning.SubscribeChannelEvents,
       new LND.ChannelEventSubscription(),
       channelEvent => this.emit('channel', channelEvent.toObject()),
+      this._meta,
+    );
+    this._grpc.subscribe(
+      Lightning.SubscribeInvoices,
+      new LND.InvoiceSubscription(),
+      invoice => this.emit('invoice', invoice.toObject()),
       this._meta,
     );
   }
