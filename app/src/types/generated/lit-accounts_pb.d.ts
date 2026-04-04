@@ -176,6 +176,9 @@ export class UpdateAccountRequest extends jspb.Message {
   getLabel(): string;
   setLabel(value: string): void;
 
+  getNewLabel(): string;
+  setNewLabel(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): UpdateAccountRequest.AsObject;
   static toObject(includeInstance: boolean, msg: UpdateAccountRequest): UpdateAccountRequest.AsObject;
@@ -192,6 +195,7 @@ export namespace UpdateAccountRequest {
     accountBalance: string,
     expirationDate: string,
     label: string,
+    newLabel: string,
   }
 }
 

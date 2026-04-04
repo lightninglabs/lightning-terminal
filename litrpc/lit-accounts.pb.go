@@ -375,8 +375,10 @@ type UpdateAccountRequest struct {
 	// to never expire.
 	ExpirationDate int64 `protobuf:"varint,3,opt,name=expiration_date,json=expirationDate,proto3" json:"expiration_date,omitempty"`
 	// The label of the account to update. If an account has no label, then the ID
-	// must be used instead.
-	Label         string `protobuf:"bytes,4,opt,name=label,proto3" json:"label,omitempty"`
+	// must be used instead. This field is only used to identify the account.
+	Label string `protobuf:"bytes,4,opt,name=label,proto3" json:"label,omitempty"`
+	// The new label to set for the account.
+	NewLabel      string `protobuf:"bytes,5,opt,name=new_label,json=newLabel,proto3" json:"new_label,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -436,6 +438,13 @@ func (x *UpdateAccountRequest) GetExpirationDate() int64 {
 func (x *UpdateAccountRequest) GetLabel() string {
 	if x != nil {
 		return x.Label
+	}
+	return ""
+}
+
+func (x *UpdateAccountRequest) GetNewLabel() string {
+	if x != nil {
+		return x.NewLabel
 	}
 	return ""
 }
@@ -979,12 +988,13 @@ const file_lit_accounts_proto_rawDesc = "" +
 	"\x04hash\x18\x01 \x01(\fR\x04hash\x12\x14\n" +
 	"\x05state\x18\x02 \x01(\tR\x05state\x12\x1f\n" +
 	"\vfull_amount\x18\x03 \x01(\x03R\n" +
-	"fullAmount\"\x92\x01\n" +
+	"fullAmount\"\xaf\x01\n" +
 	"\x14UpdateAccountRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12+\n" +
 	"\x0faccount_balance\x18\x02 \x01(\x03B\x02\x18\x01R\x0eaccountBalance\x12'\n" +
 	"\x0fexpiration_date\x18\x03 \x01(\x03R\x0eexpirationDate\x12\x14\n" +
-	"\x05label\x18\x04 \x01(\tR\x05label\"c\n" +
+	"\x05label\x18\x04 \x01(\tR\x05label\x12\x1b\n" +
+	"\tnew_label\x18\x05 \x01(\tR\bnewLabel\"c\n" +
 	"\x14CreditAccountRequest\x123\n" +
 	"\aaccount\x18\x01 \x01(\v2\x19.litrpc.AccountIdentifierR\aaccount\x12\x16\n" +
 	"\x06amount\x18\x02 \x01(\x04R\x06amount\"B\n" +
