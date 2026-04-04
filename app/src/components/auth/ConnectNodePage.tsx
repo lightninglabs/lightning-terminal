@@ -18,11 +18,17 @@ import {
   ChevronDown,
   ChevronRight,
   HelpCircle,
+  Server,
 } from 'lucide-react';
 
 const fadeUp = keyframes`
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
+`;
+
+const spin = keyframes`
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 `;
 
 const S = {
@@ -430,34 +436,41 @@ const S = {
     }
   `,
   NewSessionBtn: styled.button`
+    display: flex;
+    align-items: center;
+    gap: 7px;
     background: none;
     border: none;
     color: rgba(255, 255, 255, 0.25);
     font-family: inherit;
-    font-size: 12px;
+    font-size: 13px;
     cursor: pointer;
     padding: 6px 0;
-    margin-top: 4px;
-    &:hover {
-      color: rgba(255, 255, 255, 0.5);
-    }
-  `,
-  Footer: styled.div`
-    margin-top: 12px;
-    text-align: center;
-    animation: ${fadeUp} 0.5s ease both;
-    animation-delay: 0.15s;
-  `,
-  FooterLink: styled.button`
-    background: none;
-    border: none;
-    color: rgba(255, 255, 255, 0.2);
-    font-size: 13px;
-    font-family: inherit;
-    cursor: pointer;
+    margin-top: 8px;
+    transition: color 0.15s ease;
     &:hover {
       color: rgba(255, 255, 255, 0.45);
     }
+  `,
+  FooterLink: styled.button`
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.25);
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 6px 0;
+    margin-top: 8px;
+    transition: color 0.15s ease;
+    &:hover {
+      color: rgba(255, 255, 255, 0.45);
+    }
+  `,
+  Spinner: styled(Loader2)`
+    animation: ${spin} 1s linear infinite;
   `,
 };
 
@@ -535,7 +548,7 @@ const providerHelp: {
   {
     id: 'self',
     name: 'Self-Hosted (litd)',
-    logo: '/icons/Lit.png',
+    logo: '/icons/Lit-dark.png',
     steps: null,
   },
 ];
@@ -583,13 +596,21 @@ const ConnectNodePage: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      if (hasSavedSession && !pairingPhrase.trim()) {
+      if (hasSavedSession && !showNewSession && !pairingPhrase.trim()) {
         await store.authStore.reconnectLnc(lncPassword);
       } else {
+        if (showNewSession) {
+          LncApi.clearPaired();
+        }
         await store.authStore.loginWithLnc(pairingPhrase, lncPassword);
       }
     } catch (err: any) {
-      setError(err?.message || 'Connection failed');
+      const msg = err?.message || 'Connection failed';
+      setError(msg);
+      if (msg.includes('expired') || msg.includes('Session')) {
+        setShowNewSession(true);
+        setLncPassword('');
+      }
     } finally {
       setLoading(false);
     }
@@ -675,10 +696,7 @@ const ConnectNodePage: React.FC = () => {
                   <S.Btn type="submit" disabled={loading || !lncPassword.trim()}>
                     {loading ? (
                       <>
-                        <Loader2
-                          size={16}
-                          style={{ animation: 'spin 1s linear infinite' }}
-                        />
+                        <S.Spinner size={16} />
                         Connecting...
                       </>
                     ) : (
@@ -687,7 +705,9 @@ const ConnectNodePage: React.FC = () => {
                   </S.Btn>
                 </S.Form>
                 <S.NewSessionBtn onClick={() => setShowNewSession(true)}>
+                  <Key size={13} />
                   Use a new pairing phrase instead
+                  <ChevronRight size={13} style={{ marginLeft: 2 }} />
                 </S.NewSessionBtn>
               </S.ReconnectPanel>
             ) : (
@@ -723,10 +743,7 @@ const ConnectNodePage: React.FC = () => {
                 >
                   {loading ? (
                     <>
-                      <Loader2
-                        size={16}
-                        style={{ animation: 'spin 1s linear infinite' }}
-                      />
+                      <S.Spinner size={16} />
                       Connecting...
                     </>
                   ) : (
@@ -736,15 +753,8 @@ const ConnectNodePage: React.FC = () => {
               </S.Form>
             )}
 
-            <S.SecurityNote>
-              <Shield size={12} />
-              End-to-end encrypted. No keys or credentials leave your node.
-            </S.SecurityNote>
-
             {showLncForm && (
               <>
-                <S.Divider>need a pairing phrase?</S.Divider>
-
                 <S.HelpToggle onClick={() => setHelpOpen(!helpOpen)}>
                   <HelpCircle size={13} />
                   How to get your pairing phrase
@@ -810,8 +820,8 @@ const ConnectNodePage: React.FC = () => {
                                       )}
                                     </S.SmallCopyBtn>
                                   </S.CommandBlock>
-                                  Copy the <strong>10-word pairing phrase</strong> from the
-                                  output.
+                                  Copy the <strong>10-word pairing phrase</strong> from
+                                  the output.
                                 </>
                               )}
                             </S.AccordionBody>
@@ -848,7 +858,7 @@ const ConnectNodePage: React.FC = () => {
               <S.Btn type="submit" disabled={loading || !password.trim()}>
                 {loading ? (
                   <>
-                    <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                    <S.Spinner size={16} />
                     Connecting...
                   </>
                 ) : (
@@ -862,13 +872,12 @@ const ConnectNodePage: React.FC = () => {
             </S.SecurityNote>
           </>
         )}
-      </S.Content>
-
-      <S.Footer>
         <S.FooterLink onClick={() => store.appView.goTo('/get-node')}>
-          Don&apos;t have a node? Get one &rarr;
+          <Server size={13} />
+          Don&apos;t have a node? Get one
+          <ChevronRight size={13} style={{ marginLeft: 2 }} />
         </S.FooterLink>
-      </S.Footer>
+      </S.Content>
     </S.Wrapper>
   );
 };
