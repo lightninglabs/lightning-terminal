@@ -21,11 +21,10 @@ import {
 } from 'lucide-react';
 
 const fadeUp = keyframes`
-  from { opacity: 0; transform: translateY(16px); }
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 `;
 
-// #region Styles
 const S = {
   Wrapper: styled.div`
     display: flex;
@@ -58,7 +57,7 @@ const S = {
   `,
   Header: styled.div`
     text-align: center;
-    margin-bottom: 32px;
+    margin-bottom: 28px;
     animation: ${fadeUp} 0.5s ease both;
   `,
   PageLabel: styled.div`
@@ -74,20 +73,13 @@ const S = {
     font-weight: 600;
     letter-spacing: -0.03em;
     color: #ffffff;
-    margin: 0 0 8px;
-  `,
-  Subtitle: styled.p`
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.35);
     margin: 0;
-    max-width: 420px;
-    line-height: 1.6;
   `,
   Content: styled.div`
     width: 100%;
-    max-width: 480px;
+    max-width: 460px;
     animation: ${fadeUp} 0.5s ease both;
-    animation-delay: 0.1s;
+    animation-delay: 0.08s;
   `,
   MethodToggle: styled.div`
     display: flex;
@@ -116,34 +108,11 @@ const S = {
       color: ${p => (p.active ? '#ffffff' : 'rgba(255, 255, 255, 0.5)')};
     }
   `,
-  Panel: styled.div`
-    background: rgba(18, 20, 28, 0.92);
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 16px;
-  `,
-  PanelTitle: styled.h3`
-    font-size: 15px;
-    font-weight: 600;
-    margin: 0 0 6px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: #ffffff;
-    svg {
-      color: rgba(255, 255, 255, 0.4);
-    }
-  `,
-  PanelDesc: styled.p`
-    font-size: 13px;
-    color: rgba(255, 255, 255, 0.35);
-    margin: 0 0 18px;
-    line-height: 1.6;
-  `,
   Form: styled.form`
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 12px;
+    margin-bottom: 16px;
   `,
   Label: styled.label`
     font-size: 11px;
@@ -151,7 +120,7 @@ const S = {
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: rgba(255, 255, 255, 0.3);
-    margin-bottom: -8px;
+    margin-bottom: -6px;
   `,
   Input: styled.input`
     font-family: 'Inter', sans-serif;
@@ -181,8 +150,8 @@ const S = {
     border-radius: 10px;
     padding: 12px 14px;
     width: 100%;
-    min-height: 56px;
-    resize: vertical;
+    min-height: 52px;
+    resize: none;
     transition: all 0.15s ease;
     &:focus {
       outline: none;
@@ -200,7 +169,7 @@ const S = {
     justify-content: center;
     gap: 8px;
     width: 100%;
-    height: 46px;
+    height: 44px;
     border-radius: 12px;
     font-family: inherit;
     font-size: 14px;
@@ -234,118 +203,116 @@ const S = {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin: 8px 0;
+    margin: 4px 0 8px;
     font-size: 11px;
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.12em;
-    color: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.12);
 
     &::before,
     &::after {
       content: '';
       flex: 1;
       height: 1px;
-      background: rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.05);
     }
   `,
-  HelpSection: styled.div`
-    animation: ${fadeUp} 0.5s ease both;
-    animation-delay: 0.15s;
-  `,
-  HelpHeader: styled.button`
+  HelpToggle: styled.button`
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 7px;
     background: none;
     border: none;
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.25);
     font-family: inherit;
     font-size: 13px;
-    font-weight: 500;
     cursor: pointer;
-    padding: 8px 0;
-    margin-bottom: 4px;
+    padding: 6px 0;
+    margin-bottom: 6px;
     transition: color 0.15s ease;
     &:hover {
-      color: rgba(255, 255, 255, 0.5);
+      color: rgba(255, 255, 255, 0.45);
     }
+  `,
+  HelpContent: styled.div`
+    animation: ${fadeUp} 0.3s ease both;
   `,
   AgentCard: styled.div`
     background: rgba(18, 20, 28, 0.92);
-    border-radius: 16px;
-    padding: 20px;
-    margin-bottom: 12px;
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 10px;
   `,
   AgentCardHeader: styled.div`
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 9px;
     margin-bottom: 6px;
   `,
   AgentCardIcon: styled.div`
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
     border-radius: 7px;
     background: rgba(139, 92, 246, 0.12);
     color: rgba(167, 139, 250, 0.9);
   `,
   AgentCardTitle: styled.div`
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     color: #ffffff;
   `,
   AgentCardDesc: styled.p`
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.28);
     line-height: 1.5;
-    margin: 0 0 12px;
+    margin: 0 0 10px;
   `,
   PromptBox: styled.div`
     position: relative;
     background: rgba(0, 0, 0, 0.35);
-    border: 1px solid rgba(139, 92, 246, 0.12);
+    border: 1px solid rgba(139, 92, 246, 0.1);
     border-radius: 10px;
-    padding: 14px 44px 14px 14px;
+    padding: 12px 40px 12px 12px;
   `,
   PromptText: styled.div`
     font-family: 'SF Mono', 'Fira Code', monospace;
     font-size: 11px;
-    line-height: 1.65;
-    color: rgba(255, 255, 255, 0.45);
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.4);
     white-space: pre-wrap;
     word-break: break-word;
   `,
   CopyBtn: styled.button<{ copied?: boolean }>`
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 9px;
+    right: 9px;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 7px;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
     border: none;
     background: ${p =>
       p.copied ? 'rgba(52, 211, 153, 0.15)' : 'rgba(255, 255, 255, 0.06)'};
-    color: ${p => (p.copied ? 'rgba(52, 211, 153, 0.9)' : 'rgba(255, 255, 255, 0.3)')};
+    color: ${p => (p.copied ? 'rgba(52, 211, 153, 0.9)' : 'rgba(255, 255, 255, 0.25)')};
     cursor: pointer;
     transition: all 0.15s ease;
     &:hover {
       background: ${p =>
         p.copied ? 'rgba(52, 211, 153, 0.2)' : 'rgba(255, 255, 255, 0.1)'};
-      color: ${p => (p.copied ? 'rgba(52, 211, 153, 1)' : 'rgba(255, 255, 255, 0.6)')};
+      color: ${p => (p.copied ? 'rgba(52, 211, 153, 1)' : 'rgba(255, 255, 255, 0.5)')};
     }
   `,
   AccordionGroup: styled.div`
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    margin-bottom: 12px;
+    gap: 4px;
+    margin-bottom: 8px;
   `,
   AccordionItem: styled.div`
     background: rgba(18, 20, 28, 0.92);
@@ -356,8 +323,8 @@ const S = {
     width: 100%;
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 14px 16px;
+    gap: 10px;
+    padding: 12px 14px;
     background: none;
     border: none;
     color: #ffffff;
@@ -372,54 +339,48 @@ const S = {
     }
   `,
   AccordionLogo: styled.img`
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     border-radius: 5px;
     object-fit: cover;
   `,
   AccordionName: styled.span`
     flex: 1;
+    font-size: 12px;
   `,
   AccordionChevron: styled.div<{ open?: boolean }>`
-    color: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.15);
     transform: ${p => (p.open ? 'rotate(90deg)' : 'rotate(0)')};
     transition: transform 0.15s ease;
     display: flex;
     align-items: center;
   `,
   AccordionBody: styled.div`
-    padding: 0 16px 16px;
+    padding: 0 14px 14px;
     font-size: 12px;
     line-height: 1.7;
     color: rgba(255, 255, 255, 0.35);
 
     ol {
-      padding-left: 18px;
+      padding-left: 16px;
       margin: 0;
     }
     li {
-      margin-bottom: 3px;
+      margin-bottom: 2px;
     }
     strong {
-      color: rgba(255, 255, 255, 0.6);
-    }
-    code {
-      background: rgba(0, 0, 0, 0.35);
-      padding: 1px 5px;
-      border-radius: 4px;
-      font-size: 11px;
-      color: rgba(255, 255, 255, 0.45);
+      color: rgba(255, 255, 255, 0.55);
     }
   `,
   CommandBlock: styled.div`
     position: relative;
     background: rgba(0, 0, 0, 0.4);
     border-radius: 8px;
-    padding: 10px 38px 10px 12px;
-    margin: 8px 0 10px;
+    padding: 10px 36px 10px 12px;
+    margin: 6px 0 8px;
     font-family: 'SF Mono', 'Fira Code', monospace;
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.45);
+    color: rgba(255, 255, 255, 0.4);
     line-height: 1.5;
     word-break: break-all;
     white-space: pre-wrap;
@@ -432,7 +393,7 @@ const S = {
     border: none;
     border-radius: 5px;
     padding: 4px;
-    color: rgba(255, 255, 255, 0.25);
+    color: rgba(255, 255, 255, 0.2);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -442,14 +403,47 @@ const S = {
       background: rgba(255, 255, 255, 0.1);
     }
   `,
+  SecurityNote: styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.2);
+    margin-top: 4px;
+    svg {
+      flex-shrink: 0;
+      color: rgba(255, 255, 255, 0.15);
+    }
+  `,
   ReconnectPanel: styled.div`
-    background: rgba(18, 20, 28, 0.92);
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
+  `,
+  ReconnectLabel: styled.div`
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.35);
+    margin-bottom: 12px;
+    svg {
+      color: rgba(255, 255, 255, 0.3);
+    }
+  `,
+  NewSessionBtn: styled.button`
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.25);
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 6px 0;
+    margin-top: 4px;
+    &:hover {
+      color: rgba(255, 255, 255, 0.5);
+    }
   `,
   Footer: styled.div`
-    margin-top: 8px;
+    margin-top: 12px;
     text-align: center;
     animation: ${fadeUp} 0.5s ease both;
     animation-delay: 0.15s;
@@ -457,16 +451,15 @@ const S = {
   FooterLink: styled.button`
     background: none;
     border: none;
-    color: rgba(255, 255, 255, 0.25);
+    color: rgba(255, 255, 255, 0.2);
     font-size: 13px;
     font-family: inherit;
     cursor: pointer;
     &:hover {
-      color: rgba(255, 255, 255, 0.5);
+      color: rgba(255, 255, 255, 0.45);
     }
   `,
 };
-// #endregion
 
 const CMD = 'litcli sessions add --label="Lightning Terminal Web" --type admin';
 
@@ -476,7 +469,7 @@ litcli sessions add --label="Lightning Terminal Web" --type admin
 
 Give me the 10-word pairing phrase from the output so I can connect my node.`;
 
-const providerInstructions: {
+const providerHelp: {
   id: string;
   name: string;
   logo: string;
@@ -488,9 +481,11 @@ const providerInstructions: {
     logo: '/icons/voltage.png',
     steps: (
       <ol>
-        <li>Log in to your Voltage dashboard</li>
         <li>
-          Select your node and go to <strong>Connect</strong>
+          Log in to your <strong>Voltage dashboard</strong>
+        </li>
+        <li>
+          Select your node &rarr; <strong>Connect</strong>
         </li>
         <li>
           Under Lightning Terminal, click <strong>Reveal Pairing Phrase</strong>
@@ -506,15 +501,15 @@ const providerInstructions: {
     steps: (
       <ol>
         <li>
-          Open <strong>Lightning Terminal</strong> from your Umbrel dashboard
+          Open <strong>Lightning Terminal</strong> on your Umbrel
         </li>
         <li>
-          Go to <strong>Lightning Node Connect</strong> in the settings
+          Go to <strong>Lightning Node Connect</strong> in settings
         </li>
         <li>
-          Click <strong>Create</strong> to generate a new session
+          Click <strong>Create</strong> to generate a session
         </li>
-        <li>Copy the 10-word pairing phrase</li>
+        <li>Copy the 10-word phrase</li>
       </ol>
     ),
   },
@@ -525,13 +520,13 @@ const providerInstructions: {
     steps: (
       <ol>
         <li>
-          Open <strong>Lightning Terminal</strong> on your Start9 server
+          Open <strong>Lightning Terminal</strong> on your Start9
         </li>
         <li>
           Navigate to <strong>Properties</strong>
         </li>
         <li>
-          Find the <strong>LNC Pairing Phrase</strong> field
+          Find <strong>LNC Pairing Phrase</strong>
         </li>
         <li>Copy the 10-word phrase</li>
       </ol>
@@ -549,15 +544,13 @@ const ConnectNodePage: React.FC = () => {
   const store = useStore();
 
   const [method, setMethod] = useState<'lnc' | 'password'>('lnc');
-
   const [pairingPhrase, setPairingPhrase] = useState('');
   const [lncPassword, setLncPassword] = useState('');
-
   const [password, setPassword] = useState('');
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const [showNewSession, setShowNewSession] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [openProvider, setOpenProvider] = useState<string | null>(null);
   const [copiedAgent, setCopiedAgent] = useState(false);
@@ -571,7 +564,7 @@ const ConnectNodePage: React.FC = () => {
       setCopiedAgent(true);
       setTimeout(() => setCopiedAgent(false), 2000);
     } catch {
-      // fallback
+      /* noop */
     }
   };
 
@@ -581,12 +574,8 @@ const ConnectNodePage: React.FC = () => {
       setCopiedCmd(true);
       setTimeout(() => setCopiedCmd(false), 2000);
     } catch {
-      // fallback
+      /* noop */
     }
-  };
-
-  const toggleProvider = (id: string) => {
-    setOpenProvider(prev => (prev === id ? null : id));
   };
 
   const handleLncConnect = async (e: React.FormEvent) => {
@@ -622,6 +611,8 @@ const ConnectNodePage: React.FC = () => {
 
   if (!store.initialized) return null;
 
+  const showLncForm = !hasSavedSession || showNewSession;
+
   return (
     <S.Wrapper>
       <S.Back onClick={() => store.appView.goTo('/')}>
@@ -631,9 +622,6 @@ const ConnectNodePage: React.FC = () => {
       <S.Header>
         <S.PageLabel>Connect</S.PageLabel>
         <S.Title>Connect Your Node</S.Title>
-        <S.Subtitle>
-          Securely connect to your Lightning node. Your keys never leave your node.
-        </S.Subtitle>
       </S.Header>
 
       <S.Content>
@@ -662,21 +650,16 @@ const ConnectNodePage: React.FC = () => {
 
         {method === 'lnc' && (
           <>
-            {hasSavedSession ? (
+            {hasSavedSession && !showNewSession ? (
               <S.ReconnectPanel>
-                <S.PanelTitle>
-                  <Zap size={16} />
-                  Reconnect
-                </S.PanelTitle>
-                <S.PanelDesc>
-                  You have a saved session. Enter your password to reconnect, or use a new
-                  pairing phrase below.
-                </S.PanelDesc>
+                <S.ReconnectLabel>
+                  <Zap size={13} />
+                  Saved session found — enter your password to reconnect.
+                </S.ReconnectLabel>
                 <S.Form onSubmit={handleLncConnect}>
-                  <S.Label>Password</S.Label>
                   <S.Input
                     type="password"
-                    placeholder="Enter your LNC password"
+                    placeholder="LNC password"
                     value={lncPassword}
                     onChange={e => {
                       setLncPassword(e.target.value);
@@ -703,150 +686,148 @@ const ConnectNodePage: React.FC = () => {
                     )}
                   </S.Btn>
                 </S.Form>
+                <S.NewSessionBtn onClick={() => setShowNewSession(true)}>
+                  Use a new pairing phrase instead
+                </S.NewSessionBtn>
               </S.ReconnectPanel>
             ) : (
-              <S.Panel>
-                <S.PanelTitle>
-                  <Key size={16} />
-                  Enter Pairing Phrase
-                </S.PanelTitle>
-                <S.PanelDesc>
-                  Paste your 10-word pairing phrase and choose a password to encrypt your
-                  session.
-                </S.PanelDesc>
-                <S.Form onSubmit={handleLncConnect}>
-                  <S.Label>Pairing Phrase</S.Label>
-                  <S.TextArea
-                    placeholder="Enter your 10-word pairing phrase..."
-                    value={pairingPhrase}
-                    onChange={e => {
-                      setPairingPhrase(e.target.value);
-                      setError('');
-                    }}
-                    autoFocus
-                  />
-                  <S.Label>Password</S.Label>
-                  <S.Input
-                    type="password"
-                    placeholder="Choose a password to encrypt this session"
-                    value={lncPassword}
-                    onChange={e => {
-                      setLncPassword(e.target.value);
-                      setError('');
-                    }}
-                  />
-                  {error && (
-                    <S.ErrorMsg>
-                      <AlertCircle size={14} /> {error}
-                    </S.ErrorMsg>
+              <S.Form onSubmit={handleLncConnect}>
+                <S.Label>Pairing Phrase</S.Label>
+                <S.TextArea
+                  placeholder="Enter your 10-word pairing phrase"
+                  value={pairingPhrase}
+                  onChange={e => {
+                    setPairingPhrase(e.target.value);
+                    setError('');
+                  }}
+                  autoFocus
+                />
+                <S.Label>Password</S.Label>
+                <S.Input
+                  type="password"
+                  placeholder="Choose a password to encrypt this session"
+                  value={lncPassword}
+                  onChange={e => {
+                    setLncPassword(e.target.value);
+                    setError('');
+                  }}
+                />
+                {error && (
+                  <S.ErrorMsg>
+                    <AlertCircle size={14} /> {error}
+                  </S.ErrorMsg>
+                )}
+                <S.Btn
+                  type="submit"
+                  disabled={loading || !pairingPhrase.trim() || !lncPassword.trim()}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2
+                        size={16}
+                        style={{ animation: 'spin 1s linear infinite' }}
+                      />
+                      Connecting...
+                    </>
+                  ) : (
+                    'Connect'
                   )}
-                  <S.Btn
-                    type="submit"
-                    disabled={loading || !pairingPhrase.trim() || !lncPassword.trim()}
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2
-                          size={16}
-                          style={{ animation: 'spin 1s linear infinite' }}
-                        />
-                        Connecting...
-                      </>
-                    ) : (
-                      'Connect'
-                    )}
-                  </S.Btn>
-                </S.Form>
-              </S.Panel>
+                </S.Btn>
+              </S.Form>
             )}
 
-            <S.Divider>or</S.Divider>
+            <S.SecurityNote>
+              <Shield size={12} />
+              End-to-end encrypted. No keys or credentials leave your node.
+            </S.SecurityNote>
 
-            <S.HelpSection>
-              <S.HelpHeader onClick={() => setHelpOpen(!helpOpen)}>
-                <HelpCircle size={14} />
-                Need a pairing phrase?
-                {helpOpen ? (
-                  <ChevronDown size={14} style={{ marginLeft: 'auto' }} />
-                ) : (
-                  <ChevronRight size={14} style={{ marginLeft: 'auto' }} />
+            {showLncForm && (
+              <>
+                <S.Divider>need a pairing phrase?</S.Divider>
+
+                <S.HelpToggle onClick={() => setHelpOpen(!helpOpen)}>
+                  <HelpCircle size={13} />
+                  How to get your pairing phrase
+                  {helpOpen ? (
+                    <ChevronDown size={13} style={{ marginLeft: 2 }} />
+                  ) : (
+                    <ChevronRight size={13} style={{ marginLeft: 2 }} />
+                  )}
+                </S.HelpToggle>
+
+                {helpOpen && (
+                  <S.HelpContent>
+                    <S.AgentCard>
+                      <S.AgentCardHeader>
+                        <S.AgentCardIcon>
+                          <Sparkles size={13} />
+                        </S.AgentCardIcon>
+                        <S.AgentCardTitle>Generate with your AI agent</S.AgentCardTitle>
+                      </S.AgentCardHeader>
+                      <S.AgentCardDesc>
+                        Copy this prompt into Cursor, Claude Code, or any AI agent.
+                      </S.AgentCardDesc>
+                      <S.PromptBox>
+                        <S.PromptText>{AGENT_PROMPT}</S.PromptText>
+                        <S.CopyBtn
+                          onClick={copyAgentPrompt}
+                          copied={copiedAgent}
+                          title="Copy prompt"
+                        >
+                          {copiedAgent ? <Check size={12} /> : <Copy size={12} />}
+                        </S.CopyBtn>
+                      </S.PromptBox>
+                    </S.AgentCard>
+
+                    <S.AccordionGroup>
+                      {providerHelp.map(p => (
+                        <S.AccordionItem key={p.id}>
+                          <S.AccordionHeader
+                            onClick={() =>
+                              setOpenProvider(prev => (prev === p.id ? null : p.id))
+                            }
+                          >
+                            <S.AccordionLogo src={p.logo} alt={p.name} />
+                            <S.AccordionName>{p.name}</S.AccordionName>
+                            <S.AccordionChevron open={openProvider === p.id}>
+                              <ChevronRight size={13} />
+                            </S.AccordionChevron>
+                          </S.AccordionHeader>
+                          {openProvider === p.id && (
+                            <S.AccordionBody>
+                              {p.steps ? (
+                                p.steps
+                              ) : (
+                                <>
+                                  Run this on the machine where litd is running:
+                                  <S.CommandBlock>
+                                    {CMD}
+                                    <S.SmallCopyBtn onClick={copyCommand}>
+                                      {copiedCmd ? (
+                                        <Check size={11} />
+                                      ) : (
+                                        <Copy size={11} />
+                                      )}
+                                    </S.SmallCopyBtn>
+                                  </S.CommandBlock>
+                                  Copy the <strong>10-word pairing phrase</strong> from the
+                                  output.
+                                </>
+                              )}
+                            </S.AccordionBody>
+                          )}
+                        </S.AccordionItem>
+                      ))}
+                    </S.AccordionGroup>
+                  </S.HelpContent>
                 )}
-              </S.HelpHeader>
-
-              {helpOpen && (
-                <>
-                  <S.AgentCard>
-                    <S.AgentCardHeader>
-                      <S.AgentCardIcon>
-                        <Sparkles size={14} />
-                      </S.AgentCardIcon>
-                      <S.AgentCardTitle>Generate with your AI agent</S.AgentCardTitle>
-                    </S.AgentCardHeader>
-                    <S.AgentCardDesc>
-                      Copy this prompt and paste it into your AI coding agent to generate a
-                      pairing phrase from your running node.
-                    </S.AgentCardDesc>
-                    <S.PromptBox>
-                      <S.PromptText>{AGENT_PROMPT}</S.PromptText>
-                      <S.CopyBtn
-                        onClick={copyAgentPrompt}
-                        copied={copiedAgent}
-                        title="Copy prompt"
-                      >
-                        {copiedAgent ? <Check size={13} /> : <Copy size={13} />}
-                      </S.CopyBtn>
-                    </S.PromptBox>
-                  </S.AgentCard>
-
-                  <S.AccordionGroup>
-                    {providerInstructions.map(p => (
-                      <S.AccordionItem key={p.id}>
-                        <S.AccordionHeader onClick={() => toggleProvider(p.id)}>
-                          <S.AccordionLogo src={p.logo} alt={p.name} />
-                          <S.AccordionName>{p.name}</S.AccordionName>
-                          <S.AccordionChevron open={openProvider === p.id}>
-                            <ChevronRight size={14} />
-                          </S.AccordionChevron>
-                        </S.AccordionHeader>
-                        {openProvider === p.id && (
-                          <S.AccordionBody>
-                            {p.steps ? (
-                              p.steps
-                            ) : (
-                              <>
-                                Run this command where litd is running:
-                                <S.CommandBlock>
-                                  {CMD}
-                                  <S.SmallCopyBtn onClick={copyCommand}>
-                                    {copiedCmd ? (
-                                      <Check size={12} />
-                                    ) : (
-                                      <Copy size={12} />
-                                    )}
-                                  </S.SmallCopyBtn>
-                                </S.CommandBlock>
-                                Copy the <strong>10-word pairing phrase</strong> from the
-                                output.
-                              </>
-                            )}
-                          </S.AccordionBody>
-                        )}
-                      </S.AccordionItem>
-                    ))}
-                  </S.AccordionGroup>
-                </>
-              )}
-            </S.HelpSection>
+              </>
+            )}
           </>
         )}
 
         {method === 'password' && (
-          <S.Panel>
-            <S.PanelTitle>
-              <Lock size={16} />
-              Direct Connection
-            </S.PanelTitle>
-            <S.PanelDesc>Connect directly to litd running on the same host.</S.PanelDesc>
+          <>
             <S.Form onSubmit={handlePasswordSubmit}>
               <S.Label>UI Password</S.Label>
               <S.Input
@@ -875,7 +856,11 @@ const ConnectNodePage: React.FC = () => {
                 )}
               </S.Btn>
             </S.Form>
-          </S.Panel>
+            <S.SecurityNote>
+              <Shield size={12} />
+              Direct connection to litd on the same host.
+            </S.SecurityNote>
+          </>
         )}
       </S.Content>
 
