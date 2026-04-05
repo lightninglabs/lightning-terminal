@@ -12,7 +12,6 @@ import (
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/keychain"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
 )
 
@@ -61,7 +60,9 @@ func (m *mailboxSession) start(session *Session,
 	// Start the mailbox gRPC server.
 	mailboxServer, err := mailbox.NewServer(
 		session.ServerAddr, keys, onNewStatus,
-		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
+		grpc.WithTransportCredentials(
+			NewMailboxTLSCredentials(tlsConfig),
+		),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
 			Time: 2 * time.Minute,
 		}),

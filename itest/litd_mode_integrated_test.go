@@ -20,6 +20,7 @@ import (
 	"github.com/lightninglabs/faraday/frdrpc"
 	"github.com/lightninglabs/lightning-node-connect/mailbox"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
+	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightninglabs/loop/looprpc"
 	"github.com/lightninglabs/pool/poolrpc"
 	"github.com/lightninglabs/taproot-assets/taprpc"
@@ -1359,7 +1360,7 @@ func connectMailboxWithPairingPhrase(ctx context.Context,
 	transportConn, err := mailbox.NewGrpcClient(
 		ctx, mailboxServerAddr, connData,
 		grpc.WithTransportCredentials(
-			credentials.NewTLS(&tls.Config{}),
+			session.NewMailboxTLSCredentials(&tls.Config{}),
 		),
 	)
 	if err != nil {
