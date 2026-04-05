@@ -16,6 +16,12 @@
 
 ### Bug Fixes
 
+* [Restore LNC session setup for mailbox
+  links](https://github.com/lightninglabs/lightning-terminal/pull/1254):
+  Mailbox-specific TLS transport credentials now allow mailbox links to proceed
+  without negotiated ALPN, restoring LNC session establishment and the
+  `lnc_auth` flow after the `grpc-go` `v1.67.0` upgrade.
+
 ### Functional Changes/Additions
 
 * [Show asset information on
@@ -41,4 +47,5 @@
 
 # Contributors (Alphabetical Order)
 
+* Boris Nagaev
 * darioAnongba
