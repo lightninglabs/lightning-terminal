@@ -314,16 +314,12 @@ func (s *sessionRpcServer) AddSession(ctx context.Context,
 	// the macaroons are baked correctly when creating the session.
 	case session.TypeMacaroonAdmin, session.TypeMacaroonReadonly:
 
-	// For account based sessions we just add the account ID caveat, the
-	// permissions are added dynamically when creating the session.
+	// For account based sessions we require an account ID to be set.
 	case session.TypeMacaroonAccount:
-		id, err := accounts.ParseAccountID(req.AccountId)
-		if err != nil {
-			return nil, fmt.Errorf("invalid account ID: %v", err)
+		if req.AccountId == "" {
+			return nil, fmt.Errorf("account_id must be set for " +
+				"the account session type")
 		}
-
-		caveats = append(caveats, accounts.CaveatFromID(*id))
-		accountID = fn.Some(*id)
 
 	// For the custom macaroon type, we use the custom permissions specified
 	// in the request. For the time being, the caveats list will be empty
@@ -387,6 +383,18 @@ func (s *sessionRpcServer) AddSession(ctx context.Context,
 			"readonly, custom and account macaroon types " +
 			"supported in LiT. Autopilot sessions must be added " +
 			"using AddAutoPilotSession method")
+	}
+
+	// If an account ID was provided, bind the macaroon to that account
+	// regardless of session type.
+	if req.AccountId != "" {
+		id, err := accounts.ParseAccountID(req.AccountId)
+		if err != nil {
+			return nil, fmt.Errorf("invalid account ID: %v", err)
+		}
+
+		caveats = append(caveats, accounts.CaveatFromID(*id))
+		accountID = fn.Some(*id)
 	}
 
 	// Collect the de-duped permissions.
