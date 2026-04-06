@@ -69,7 +69,7 @@ var addSessionCommand = cli.Command{
 			Usage: "The session type to be created which will " +
 				"determine the permissions a user has when " +
 				"connecting with the session; options " +
-				"include readonly|admin|account|custom.",
+				"include readonly|admin|custom.",
 			Value: "readonly",
 		},
 		cli.StringSliceFlag{
@@ -87,10 +87,8 @@ var addSessionCommand = cli.Command{
 		},
 		cli.StringFlag{
 			Name: "account_id",
-			Usage: "The account id that should be used for " +
-				"the account session. Note that this flag " +
-				"will only be used if the 'type' flag is " +
-				"set to 'account'.",
+			Usage: "An optional account ID to restrict the " +
+				"session macaroon to a specific account.",
 		},
 	},
 }
@@ -146,8 +144,6 @@ func parseSessionType(sessionType string) (litrpc.SessionType, error) {
 		return litrpc.SessionType_TYPE_MACAROON_ADMIN, nil
 	case "readonly":
 		return litrpc.SessionType_TYPE_MACAROON_READONLY, nil
-	case "account":
-		return litrpc.SessionType_TYPE_MACAROON_ACCOUNT, nil
 	case "custom":
 		return litrpc.SessionType_TYPE_MACAROON_CUSTOM, nil
 	default:
