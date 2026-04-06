@@ -481,8 +481,9 @@ func (s *sessionRpcServer) resumeSession(ctx context.Context,
 		readOnly    = sess.Type == session.TypeMacaroonReadonly
 	)
 	switch sess.Type {
-	// For the default session types we use empty caveats and permissions,
-	// the macaroons are baked correctly when creating the session.
+	// For the default session types, permissions are baked correctly when
+	// creating the session. Any stored caveats (e.g. account binding) are
+	// applied below after the switch.
 	case session.TypeMacaroonAdmin, session.TypeMacaroonReadonly:
 		permissions = s.cfg.permMgr.ActivePermissions(readOnly)
 
@@ -494,24 +495,25 @@ func (s *sessionRpcServer) resumeSession(ctx context.Context,
 				"recipe to be set")
 		}
 
-		caveats = sess.MacaroonRecipe.Caveats
 		permissions = accounts.MacaroonPermissions
 
 	// For custom session types, we use the caveats and permissions that
 	// were persisted on session creation.
 	case session.TypeMacaroonCustom, session.TypeAutopilot:
-		if sess.MacaroonRecipe == nil {
-			break
+		if sess.MacaroonRecipe != nil {
+			permissions = sess.MacaroonRecipe.Permissions
 		}
-
-		permissions = sess.MacaroonRecipe.Permissions
-		caveats = append(caveats, sess.MacaroonRecipe.Caveats...)
 
 	// No other types are currently supported.
 	default:
 		log.Debugf("Not resuming session %x with type %d", pubKeyBytes,
 			sess.Type)
 		return nil
+	}
+
+	// Apply any stored caveats (e.g. account binding) for all session types.
+	if sess.MacaroonRecipe != nil {
+		caveats = append(caveats, sess.MacaroonRecipe.Caveats...)
 	}
 
 	// Add the session expiry as a macaroon caveat.
