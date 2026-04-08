@@ -122,6 +122,26 @@ func (p *PrivacyMapper) Intercept(ctx context.Context,
 
 	log.TraceS(ctx, "PrivacyMapper: Intercepting", "info", ri)
 
+	// loadSession fetches the session for the current intercept call. It
+	// is only needed for request/non-error-response branches, so we defer
+	// the DB read until we know we'll use it. Failures are reported as a
+	// per-request rejection (mid.RPCErr) rather than a raw error, so that
+	// a transient DB hiccup does not tear down LND's middleware stream.
+	loadSession := func() (*session.Session, *lnrpc.RPCMiddlewareResponse,
+		error) {
+
+		sess, err := p.sessionDB.GetSession(ctx, sessionID)
+		if err != nil {
+			rejection, rerr := mid.RPCErr(req, fmt.Errorf(
+				"error fetching session %x: %w",
+				sessionID, err,
+			))
+			return nil, rejection, rerr
+		}
+
+		return sess, nil, nil
+	}
+
 	switch r := req.InterceptType.(type) {
 	case *lnrpc.RPCMiddlewareRequest_StreamAuth:
 		return mid.RPCErr(req, fmt.Errorf("streams unsupported"))
@@ -136,8 +156,13 @@ func (p *PrivacyMapper) Intercept(ctx context.Context,
 				err)
 		}
 
+		sess, rejection, rerr := loadSession()
+		if rerr != nil || rejection != nil {
+			return rejection, rerr
+		}
+
 		replacement, err := p.checkAndReplaceIncomingRequest(
-			ctx, r.Request.MethodFullUri, msg, sessionID,
+			ctx, r.Request.MethodFullUri, msg, sess,
 		)
 		if err != nil {
 			return mid.RPCErr(req, err)
@@ -170,8 +195,13 @@ func (p *PrivacyMapper) Intercept(ctx context.Context,
 				err)
 		}
 
+		sess, rejection, rerr := loadSession()
+		if rerr != nil || rejection != nil {
+			return rejection, rerr
+		}
+
 		replacement, err := p.replaceOutgoingResponse(
-			ctx, r.Response.MethodFullUri, msg, sessionID,
+			ctx, r.Response.MethodFullUri, msg, sess,
 		)
 		if err != nil {
 			return mid.RPCErr(req, err)
@@ -196,19 +226,14 @@ func (p *PrivacyMapper) Intercept(ctx context.Context,
 // checkAndReplaceIncomingRequest inspects an incoming request and optionally
 // modifies some of the request parameters.
 func (p *PrivacyMapper) checkAndReplaceIncomingRequest(ctx context.Context,
-	uri string, req proto.Message, sessionID session.ID) (proto.Message,
+	uri string, req proto.Message, sess *session.Session) (proto.Message,
 	error) {
 
-	session, err := p.sessionDB.GetSession(ctx, sessionID)
-	if err != nil {
-		return nil, err
-	}
-
-	db := p.db.PrivacyDB(session.GroupID)
+	db := p.db.PrivacyDB(sess.GroupID)
 
 	// If we don't have a handler for the URI, we don't allow the request
 	// to go through.
-	checker, ok := p.checkers(db, session.PrivacyFlags)[uri]
+	checker, ok := p.checkers(db, sess.PrivacyFlags)[uri]
 	if !ok {
 		return nil, ErrNotSupportedByPrivacyMapper
 	}
@@ -227,18 +252,13 @@ func (p *PrivacyMapper) checkAndReplaceIncomingRequest(ctx context.Context,
 // replaceOutgoingResponse inspects the responses before sending them out to the
 // client and replaces them if needed.
 func (p *PrivacyMapper) replaceOutgoingResponse(ctx context.Context, uri string,
-	resp proto.Message, sessionID session.ID) (proto.Message, error) {
+	resp proto.Message, sess *session.Session) (proto.Message, error) {
 
-	session, err := p.sessionDB.GetSession(ctx, sessionID)
-	if err != nil {
-		return nil, err
-	}
-
-	db := p.db.PrivacyDB(session.GroupID)
+	db := p.db.PrivacyDB(sess.GroupID)
 
 	// If we don't have a handler for the URI, we don't allow the response
 	// to go to avoid accidental leaks.
-	checker, ok := p.checkers(db, session.PrivacyFlags)[uri]
+	checker, ok := p.checkers(db, sess.PrivacyFlags)[uri]
 	if !ok {
 		return nil, ErrNotSupportedByPrivacyMapper
 	}
