@@ -1812,3 +1812,214 @@ func TestUnaryInterceptor(t *testing.T) {
 		})
 	}
 }
+
+// mockServerStream is a minimal mock of grpc.ServerStream for testing.
+type mockServerStream struct {
+	grpc.ServerStream
+	ctx context.Context
+}
+
+func (m *mockServerStream) Context() context.Context {
+	return m.ctx
+}
+
+// TestStreamServerInterceptor tests the StreamServerInterceptor method of
+// PrivacyMapper. LND streams pass through, non-LND streams pass through for
+// non-private sessions, and non-LND streams are blocked for private sessions.
+func TestStreamServerInterceptor(t *testing.T) {
+	t.Parallel()
+
+	sessionID := session.ID{1, 2, 3, 4}
+	lndURI := "/lnrpc.Lightning/SubscribeChannelEvents"
+	faradayURI := "/frdrpc.FaradayServer/SomeStream"
+
+	ctxWithSession := func() context.Context {
+		md := make(metadata.MD)
+		session.AddToGRPCMetadata(md, sessionID)
+		return metadata.NewIncomingContext(
+			context.Background(), md,
+		)
+	}
+
+	tests := []struct {
+		name              string
+		setupMapper       func() *PrivacyMapper
+		setupStream       func() grpc.ServerStream
+		uri               string
+		expectError       bool
+		expectErrorCode   string
+		expectPassThrough bool
+	}{
+		{
+			name: "permissions manager not initialized",
+			setupMapper: func() *PrivacyMapper {
+				return &PrivacyMapper{
+					permsMgr: nil,
+				}
+			},
+			setupStream: func() grpc.ServerStream {
+				return &mockServerStream{
+					ctx: context.Background(),
+				}
+			},
+			uri:             faradayURI,
+			expectError:     true,
+			expectErrorCode: "Unavailable",
+		},
+		{
+			name: "LND stream passes through",
+			setupMapper: func() *PrivacyMapper {
+				mock := newMockPermissionsManager()
+				mock.uriToSubServer[lndURI] = subservers.LND
+				return &PrivacyMapper{
+					permsMgr: mock,
+				}
+			},
+			setupStream: func() grpc.ServerStream {
+				return &mockServerStream{
+					ctx: context.Background(),
+				}
+			},
+			uri:               lndURI,
+			expectPassThrough: true,
+		},
+		{
+			name: "session DB not initialized",
+			setupMapper: func() *PrivacyMapper {
+				return &PrivacyMapper{
+					permsMgr:  newMockPermissionsManager(),
+					sessionDB: nil,
+				}
+			},
+			setupStream: func() grpc.ServerStream {
+				return &mockServerStream{
+					ctx: context.Background(),
+				}
+			},
+			uri:             faradayURI,
+			expectError:     true,
+			expectErrorCode: "Unavailable",
+		},
+		{
+			name: "privacy DB not initialized",
+			setupMapper: func() *PrivacyMapper {
+				pd := firewalldb.NewMockSessionDB()
+				return &PrivacyMapper{
+					permsMgr:  newMockPermissionsManager(),
+					sessionDB: pd,
+					db:        nil,
+				}
+			},
+			setupStream: func() grpc.ServerStream {
+				return &mockServerStream{
+					ctx: context.Background(),
+				}
+			},
+			uri:             faradayURI,
+			expectError:     true,
+			expectErrorCode: "Unavailable",
+		},
+		{
+			name: "no session in context blocked",
+			setupMapper: func() *PrivacyMapper {
+				pd := firewalldb.NewMockSessionDB()
+				db := newMockDB(t, nil, sessionID)
+				return &PrivacyMapper{
+					permsMgr:  newMockPermissionsManager(),
+					sessionDB: pd,
+					db:        db,
+				}
+			},
+			setupStream: func() grpc.ServerStream {
+				return &mockServerStream{
+					ctx: context.Background(),
+				}
+			},
+			uri:             faradayURI,
+			expectError:     true,
+			expectErrorCode: "Unauthenticated",
+		},
+		{
+			name: "non-private session passes through",
+			setupMapper: func() *PrivacyMapper {
+				pd := firewalldb.NewMockSessionDB()
+				pd.AddPair(sessionID, sessionID)
+				pd.SetWithPrivacyMapper(sessionID, false)
+				db := newMockDB(t, nil, sessionID)
+				return &PrivacyMapper{
+					permsMgr:  newMockPermissionsManager(),
+					sessionDB: pd,
+					db:        db,
+				}
+			},
+			setupStream: func() grpc.ServerStream {
+				return &mockServerStream{
+					ctx: ctxWithSession(),
+				}
+			},
+			uri:               faradayURI,
+			expectPassThrough: true,
+		},
+		{
+			name: "private session non-LND stream blocked",
+			setupMapper: func() *PrivacyMapper {
+				pd := firewalldb.NewMockSessionDB()
+				pd.AddPair(sessionID, sessionID)
+				err := pd.AddPrivacyFlags(
+					sessionID, session.PrivacyFlags{},
+				)
+				require.NoError(t, err)
+				db := newMockDB(t, nil, sessionID)
+				return &PrivacyMapper{
+					permsMgr:  newMockPermissionsManager(),
+					sessionDB: pd,
+					db:        db,
+				}
+			},
+			setupStream: func() grpc.ServerStream {
+				return &mockServerStream{
+					ctx: ctxWithSession(),
+				}
+			},
+			uri:             faradayURI,
+			expectError:     true,
+			expectErrorCode: "PermissionDenied",
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			mapper := tt.setupMapper()
+			ss := tt.setupStream()
+
+			handlerCalled := false
+			mockHandler := func(srv any,
+				stream grpc.ServerStream) error {
+
+				handlerCalled = true
+				return nil
+			}
+
+			info := &grpc.StreamServerInfo{
+				FullMethod: tt.uri,
+			}
+
+			interceptor := mapper.StreamServerInterceptor()
+			err := interceptor(nil, ss, info, mockHandler)
+
+			if tt.expectError {
+				require.Error(t, err)
+				require.Contains(
+					t, err.Error(), tt.expectErrorCode,
+				)
+				require.False(t, handlerCalled)
+			} else if tt.expectPassThrough {
+				require.NoError(t, err)
+				require.True(t, handlerCalled)
+			}
+		})
+	}
+}

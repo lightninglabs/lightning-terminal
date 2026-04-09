@@ -415,6 +415,45 @@ func (p *PrivacyMapper) UnaryInterceptor() grpc.UnaryServerInterceptor {
 	}
 }
 
+// StreamServerInterceptor returns a gRPC stream server interceptor that
+// enforces fail-close privacy for non-LND services. LND streaming RPCs are
+// passed through (they use LND's own middleware chain). Non-LND streams are
+// passed through for sessions without privacy mapping, and blocked for
+// privacy-enabled sessions because the privacy mapper does not yet support
+// stream-level request/response rewriting.
+func (p *PrivacyMapper) StreamServerInterceptor() grpc.StreamServerInterceptor {
+	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo,
+		handler grpc.StreamHandler) error {
+
+		ctx := ss.Context()
+
+		log.TraceS(ctx, "LNC privacy stream interceptor called",
+			"method", info.FullMethod)
+
+		sess, passThrough, err := p.resolveLNCSession(
+			ctx, info.FullMethod,
+		)
+		if err != nil {
+			return err
+		}
+		if passThrough {
+			return handler(srv, ss)
+		}
+
+		// Fail-close: non-LND streaming RPCs are not yet supported
+		// by the privacy mapper. Block them to prevent cleartext
+		// leaks to LNC sessions with privacy enabled.
+		log.WarnS(ctx, "Blocking non-LND stream: privacy mapping "+
+			"not supported for streams", nil,
+			"method", info.FullMethod,
+			"session_id", sess.ID)
+
+		return status.Errorf(codes.PermissionDenied,
+			"streaming RPCs for non-LND services are not "+
+				"supported with privacy mapping")
+	}
+}
+
 // isLndURI returns true if the URI belongs to LND (uses permissions manager
 // to identify all LND services: lnrpc, routerrpc, signrpc, walletrpc, etc).
 func (p *PrivacyMapper) isLndURI(uri string) (bool, error) {

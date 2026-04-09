@@ -1089,6 +1089,11 @@ func (g *LightningTerminal) startInternalSubServers(ctx context.Context,
 		g.rpcProxy.UnaryServerInterceptor,
 	}
 
+	lncStreamInterceptors := []grpc.StreamServerInterceptor{
+		privacyMapper.StreamServerInterceptor(),
+		g.rpcProxy.StreamServerInterceptor,
+	}
+
 	sessionCfg := &sessionRpcServerConfig{
 		db:        g.stores.sessions,
 		basicAuth: g.rpcProxy.basicAuth,
@@ -1096,7 +1101,7 @@ func (g *LightningTerminal) startInternalSubServers(ctx context.Context,
 			// nolint:staticcheck,
 			grpc.CustomCodec(grpcProxy.Codec()),
 			grpc.ChainStreamInterceptor(
-				g.rpcProxy.StreamServerInterceptor,
+				lncStreamInterceptors...,
 			),
 			grpc.ChainUnaryInterceptor(lncUnaryInterceptors...),
 			grpc.UnknownServiceHandler(
