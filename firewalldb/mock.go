@@ -11,6 +11,7 @@ type mockSessionDB struct {
 	sessionToGroupID  map[session.ID]session.ID
 	groupToSessionIDs map[session.ID][]session.ID
 	privacyFlags      map[session.ID]session.PrivacyFlags
+	withPrivacy       map[session.ID]bool
 }
 
 var _ SessionDB = (*mockSessionDB)(nil)
@@ -21,6 +22,7 @@ func NewMockSessionDB() *mockSessionDB {
 		sessionToGroupID:  make(map[session.ID]session.ID),
 		groupToSessionIDs: make(map[session.ID][]session.ID),
 		privacyFlags:      make(map[session.ID]session.PrivacyFlags),
+		withPrivacy:       make(map[session.ID]bool),
 	}
 }
 
@@ -67,18 +69,27 @@ func (m *mockSessionDB) GetSession(_ context.Context,
 		return nil, fmt.Errorf("no session found for session ID")
 	}
 
-	f, ok := m.privacyFlags[id]
-	if !ok {
-		return nil, fmt.Errorf("no privacy flags found for session ID")
+	f := m.privacyFlags[id]
+
+	// Default to true for backward compatibility with existing
+	// tests that don't explicitly set this.
+	privacy := true
+	if v, ok := m.withPrivacy[id]; ok {
+		privacy = v
 	}
 
 	return &session.Session{
-		GroupID:      s,
-		PrivacyFlags: f,
-		// We always set this to true to make sure the privacy mapper is
-		// on in tests.
-		WithPrivacyMapper: true,
+		GroupID:           s,
+		PrivacyFlags:      f,
+		WithPrivacyMapper: privacy,
 	}, nil
+}
+
+// SetWithPrivacyMapper sets the WithPrivacyMapper flag for a session.
+func (m *mockSessionDB) SetWithPrivacyMapper(sessionID session.ID,
+	enabled bool) {
+
+	m.withPrivacy[sessionID] = enabled
 }
 
 // AddPrivacyFlags is a helper that adds privacy flags to the mock session db.
