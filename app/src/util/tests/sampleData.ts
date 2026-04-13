@@ -1152,11 +1152,266 @@ export const litSubServerStatus: STATUS.SubServerStatusResp.AsObject = {
   ],
 };
 
+// Well-known Lightning Network nodes for realistic sample graph data
+const networkNodes: Array<{
+  pubKey: string;
+  alias: string;
+  color: string;
+  addr: string;
+}> = [
+  {
+    pubKey: '03864ef025fde8fb587d989186ce6a4a186895ee44a926bfc370e2c366597a3f8f',
+    alias: 'ACINQ',
+    color: '#49daaa',
+    addr: '34.239.230.56:9735',
+  },
+  {
+    pubKey: '035e4ff418fc8b5554c5d9eea66396c227bd3a1a07c54c2b1174b61089ecc0e952',
+    alias: 'River Financial',
+    color: '#ff6600',
+    addr: '104.196.249.140:9735',
+  },
+  {
+    pubKey: '0217890e3aad8d35bc054f43acc00084b25571e1b9d4cc',
+    alias: 'Bitfinex',
+    color: '#68b646',
+    addr: '52.50.244.44:9735',
+  },
+  {
+    pubKey: '021c97a90a411ff2b10dc2a8e32de2f29d2fa49d41bfbb5',
+    alias: 'Kraken',
+    color: '#5741d9',
+    addr: '52.13.118.208:9735',
+  },
+  {
+    pubKey: '02f1a8c87607f415c8f22c00cf8407e42ba8c0b0e78f8a',
+    alias: 'WalletOfSatoshi',
+    color: '#f5a623',
+    addr: '170.75.163.209:9735',
+  },
+  {
+    pubKey: '030c3f19d742ca294a55c00376b3b355c3c90d61c6b6fe',
+    alias: 'OpenNode',
+    color: '#3b99fc',
+    addr: '18.191.253.246:9735',
+  },
+  {
+    pubKey: '0331f80652fb840239df8dc99205792bba2e559a05469a',
+    alias: 'Fold',
+    color: '#e8912d',
+    addr: '35.238.153.25:9735',
+  },
+  {
+    pubKey: '026165850492521f4ac8abd9bd8088123446d126f648be',
+    alias: 'Blockstream Store',
+    color: '#00c3ff',
+    addr: '104.197.12.123:9735',
+  },
+  {
+    pubKey: '02ad6fb8d693dc1e4569bcedefadf5f72a931ae027dc0',
+    alias: 'CoinGate',
+    color: '#f7931a',
+    addr: '3.124.63.44:9735',
+  },
+  {
+    pubKey: '024bfaf0cabe7f874fd33ebf7c6f4e5385971fc504ef3',
+    alias: 'Muun',
+    color: '#1a74e2',
+    addr: '18.229.160.104:9735',
+  },
+  {
+    pubKey: '03abf6f44c355dec0d5aa155bdbdd6e0c8fefe318eff40',
+    alias: 'Voltage',
+    color: '#7b1af7',
+    addr: '52.7.134.156:9735',
+  },
+  {
+    pubKey: '02d96eadea3d780104449aca5c93461ce67c1564e2e11',
+    alias: 'Bitstamp',
+    color: '#15c46c',
+    addr: '99.79.25.200:9735',
+  },
+  {
+    pubKey: '0390b5d4492dc2f5318e5233ab2cebf6d48914881a33',
+    alias: 'LNBig',
+    color: '#ff9900',
+    addr: '172.81.178.189:9735',
+  },
+  {
+    pubKey: '03cde60a6323f7122d5178255766e38114b4722ede08f',
+    alias: 'Zebedee',
+    color: '#00d632',
+    addr: '3.33.236.230:9735',
+  },
+  {
+    pubKey: '0242a4ae0c5bef18048fbecf995094b74bfb0f7391eb',
+    alias: 'CashApp',
+    color: '#00d54b',
+    addr: '35.245.60.138:9735',
+  },
+  {
+    pubKey: '029ef8a77b0ac5ec5991775e2c5c3e4d23ad827717e1',
+    alias: 'OKX',
+    color: '#171717',
+    addr: '54.214.123.251:9735',
+  },
+];
+
+const selfPubkey = lndGetInfo.identityPubkey;
+
+const makeNode = (n: typeof networkNodes[number]): LND.LightningNode.AsObject => ({
+  lastUpdate: Math.floor(Date.now() / 1000) - Math.floor(Math.random() * 86400),
+  pubKey: n.pubKey,
+  alias: n.alias,
+  addressesList: [{ addr: n.addr, network: 'tcp' }],
+  color: n.color,
+  featuresMap: [
+    [0, { name: 'data-loss-protect', isRequired: true, isKnown: true }],
+    [9, { name: 'tlv-onion', isRequired: false, isKnown: true }],
+  ],
+  customRecordsMap: [],
+});
+
+const makePolicyPair = (cap: number) => ({
+  node1Policy: {
+    timeLockDelta: 40,
+    minHtlc: '1000',
+    feeBaseMsat: '1000',
+    feeRateMilliMsat: `${Math.floor(Math.random() * 500) + 1}`,
+    disabled: false,
+    maxHtlcMsat: `${cap * 1000}`,
+    lastUpdate: Math.floor(Date.now() / 1000) - Math.floor(Math.random() * 86400),
+    customRecordsMap: [] as Array<[number, Uint8Array | string]>,
+    inboundFeeBaseMsat: 0,
+    inboundFeeRateMilliMsat: 0,
+  },
+  node2Policy: {
+    timeLockDelta: 40,
+    minHtlc: '1000',
+    feeBaseMsat: '1000',
+    feeRateMilliMsat: `${Math.floor(Math.random() * 500) + 1}`,
+    disabled: false,
+    maxHtlcMsat: `${cap * 1000}`,
+    lastUpdate: Math.floor(Date.now() / 1000) - Math.floor(Math.random() * 86400),
+    customRecordsMap: [] as Array<[number, Uint8Array | string]>,
+    inboundFeeBaseMsat: 0,
+    inboundFeeRateMilliMsat: 0,
+  },
+});
+
+const sampleGraphNodes: LND.LightningNode.AsObject[] = [
+  {
+    lastUpdate: Math.floor(Date.now() / 1000),
+    pubKey: selfPubkey,
+    alias: lndGetInfo.alias,
+    addressesList: [{ addr: '127.0.0.1:9735', network: 'tcp' }],
+    color: '#cccccc',
+    featuresMap: lndGetInfo.featuresMap,
+    customRecordsMap: [],
+  },
+  ...networkNodes.map(makeNode),
+];
+
+let edgeIdCounter = 800000000000000;
+const sampleGraphEdges: LND.ChannelEdge.AsObject[] = [];
+
+// Channels from self to first 6 network nodes (matching local channels)
+for (let i = 0; i < Math.min(6, networkNodes.length); i++) {
+  const cap = 5000000 + Math.floor(Math.random() * 45000000);
+  sampleGraphEdges.push({
+    channelId: `${edgeIdCounter++}`,
+    chanPoint: `${txId}:${i + 100}`,
+    lastUpdate: Math.floor(Date.now() / 1000),
+    node1Pub: selfPubkey,
+    node2Pub: networkNodes[i].pubKey,
+    capacity: `${cap}`,
+    ...makePolicyPair(cap),
+    customRecordsMap: [],
+  });
+}
+
+// Interconnections between network nodes for realistic topology
+const interconnections: [number, number][] = [
+  [0, 1],
+  [0, 2],
+  [0, 3],
+  [0, 5],
+  [0, 8],
+  [0, 12],
+  [1, 2],
+  [1, 4],
+  [1, 6],
+  [1, 10],
+  [2, 3],
+  [2, 7],
+  [2, 11],
+  [3, 4],
+  [3, 9],
+  [3, 14],
+  [4, 5],
+  [4, 7],
+  [4, 13],
+  [5, 6],
+  [5, 9],
+  [5, 15],
+  [6, 8],
+  [6, 10],
+  [7, 9],
+  [7, 11],
+  [8, 10],
+  [8, 12],
+  [9, 11],
+  [9, 14],
+  [10, 13],
+  [10, 15],
+  [11, 12],
+  [12, 14],
+  [13, 15],
+  [14, 15],
+];
+for (const [a, b] of interconnections) {
+  const cap = 10000000 + Math.floor(Math.random() * 90000000);
+  sampleGraphEdges.push({
+    channelId: `${edgeIdCounter++}`,
+    chanPoint: `abcdef${a}${b}:0`,
+    lastUpdate: Math.floor(Date.now() / 1000) - Math.floor(Math.random() * 86400 * 7),
+    node1Pub: networkNodes[a].pubKey,
+    node2Pub: networkNodes[b].pubKey,
+    capacity: `${cap}`,
+    ...makePolicyPair(cap),
+    customRecordsMap: [],
+  });
+}
+
+export const lndDescribeGraph: LND.ChannelGraph.AsObject = {
+  nodesList: sampleGraphNodes,
+  edgesList: sampleGraphEdges,
+};
+
+export const lndGetNetworkInfo: LND.NetworkInfo.AsObject = {
+  graphDiameter: 6,
+  avgOutDegree: 4.5,
+  maxOutDegree: 12,
+  numNodes: sampleGraphNodes.length,
+  numChannels: sampleGraphEdges.length,
+  totalNetworkCapacity: `${sampleGraphEdges.reduce(
+    (s, e) => s + parseInt(e.capacity, 10),
+    0,
+  )}`,
+  avgChannelSize: 0,
+  minChannelSize: '5000000',
+  maxChannelSize: '100000000',
+  medianChannelSizeSat: '25000000',
+  numZombieChans: '0',
+};
+
 // collection of sample API responses
 export const sampleApiResponses: Record<string, any> = {
   'lnrpc.Lightning.GetInfo': lndGetInfo,
   'lnrpc.Lightning.GetNodeInfo': lndGetNodeInfo,
   'lnrpc.Lightning.GetChanInfo': lndGetChanInfo,
+  'lnrpc.Lightning.DescribeGraph': lndDescribeGraph,
+  'lnrpc.Lightning.GetNetworkInfo': lndGetNetworkInfo,
   'lnrpc.Lightning.ChannelBalance': lndChannelBalance,
   'lnrpc.Lightning.WalletBalance': lndWalletBalance,
   'lnrpc.Lightning.ListChannels': lndListChannels,

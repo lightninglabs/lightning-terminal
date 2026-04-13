@@ -9,7 +9,7 @@ import SessionList from './SessionList';
 
 const Styled = {
   Wrapper: styled.section`
-    padding-top: 80px;
+    padding: 20px 24px;
   `,
   Description: styled.div`
     margin-bottom: 32px;

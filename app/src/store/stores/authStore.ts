@@ -1,7 +1,9 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import { Buffer } from 'buffer';
+import LNC from '@lightninglabs/lnc-web';
 import { prefixTranslation } from 'util/translate';
 import { Store } from 'store';
+import LncApi from 'api/lncApi';
 
 const { l } = prefixTranslation('stores.authStore');
 
@@ -25,6 +27,9 @@ export default class AuthStore {
 
   /** the password encoded to base64 */
   credentials = '';
+
+  /** whether the current session is via LNC */
+  isLnc = false;
 
   errors = { mainErr: '', litDetail: '', lndDetail: '' };
 
@@ -131,13 +136,161 @@ export default class AuthStore {
   }
 
   async validate() {
-    // test the credentials by making an API call to getInfo
     await this._store.api.lnd.getInfo();
-    // if no error is thrown above then the credentials are valid
     this._store.log.info('authentication successful');
     runInAction(() => {
-      // setting this to true will automatically show the Loop page
       this.authenticated = true;
+    });
+  }
+
+  private _withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      const timer = setTimeout(
+        () => reject(new Error(`${label} timed out after ${ms / 1000}s`)),
+        ms,
+      );
+      promise.then(
+        v => {
+          clearTimeout(timer);
+          resolve(v);
+        },
+        e => {
+          clearTimeout(timer);
+          reject(e);
+        },
+      );
+    });
+  }
+
+  /**
+   * Connect via LNC pairing phrase (first time)
+   */
+  async loginWithLnc(pairingPhrase: string, password: string) {
+    this._store.log.info('attempting LNC connection');
+    if (!pairingPhrase.trim()) throw new Error('Pairing phrase is required');
+    if (!password.trim()) throw new Error('Password is required');
+
+    const lnc = new LNC({
+      pairingPhrase: pairingPhrase.trim(),
+      password,
+    });
+
+    try {
+      await this._withTimeout(lnc.connect(), 30_000, 'Connection');
+    } catch (err: any) {
+      const msg = err?.message || '';
+      if (msg.includes('timed out')) {
+        try {
+          lnc.disconnect();
+        } catch {
+          /* best-effort cleanup */
+        }
+        throw new Error(
+          'Connection timed out. Make sure litd is running on your node and try a fresh pairing phrase.',
+        );
+      }
+      if (
+        msg.includes('WASM') ||
+        msg.includes('proxy') ||
+        msg.includes('stream not found')
+      ) {
+        throw new Error(
+          'Could not reach your node. Make sure litd is running and the pairing phrase hasn\u2019t already been used. Generate a new one with: litcli sessions add --label="web" --type admin',
+        );
+      }
+      throw err;
+    }
+    if (!lnc.isConnected) {
+      throw new Error(
+        'Connection failed. Verify litd is running and reachable, then try a fresh pairing phrase.',
+      );
+    }
+
+    const lncApi = new LncApi(lnc);
+    runInAction(() => {
+      this._store.api.lnd = lncApi as any;
+      this.isLnc = true;
+    });
+
+    try {
+      await this._withTimeout(this.validate(), 15_000, 'Validation');
+      LncApi.markPaired();
+    } catch (error: any) {
+      lnc.disconnect();
+      runInAction(() => {
+        this.isLnc = false;
+      });
+      if (error?.message?.includes('timed out')) {
+        throw new Error(
+          'Connected to node but verification timed out. Your node may be slow to respond — try again.',
+        );
+      }
+      throw new Error(
+        'Connected but could not verify node access. Check your pairing phrase.',
+      );
+    }
+  }
+
+  /**
+   * Reconnect via LNC using saved credentials + password
+   */
+  async reconnectLnc(password: string) {
+    this._store.log.info('attempting LNC reconnection with saved credentials');
+    if (!password.trim()) throw new Error('Password is required');
+
+    const lnc = new LNC({ password });
+
+    try {
+      await this._withTimeout(lnc.connect(), 12_000, 'Reconnection');
+    } catch (err: any) {
+      try {
+        lnc.disconnect();
+      } catch {
+        /* best-effort cleanup */
+      }
+      LncApi.clearPaired();
+      const msg = err?.message || '';
+      if (
+        msg.includes('timed out') ||
+        msg.includes('stream not found') ||
+        msg.includes('WASM') ||
+        msg.includes('proxy') ||
+        msg.includes('closed network')
+      ) {
+        throw new Error(
+          'Session expired. Please connect with a new pairing phrase.',
+        );
+      }
+      throw err;
+    }
+    if (!lnc.isConnected) {
+      LncApi.clearPaired();
+      throw new Error(
+        'Session expired. Please connect with a new pairing phrase.',
+      );
+    }
+
+    const lncApi = new LncApi(lnc);
+    runInAction(() => {
+      this._store.api.lnd = lncApi as any;
+      this.isLnc = true;
+    });
+
+    await this._withTimeout(this.validate(), 15_000, 'Validation');
+  }
+
+  /** Disconnect LNC and clear pairing data */
+  disconnectLnc() {
+    if (this.isLnc) {
+      const api = this._store.api.lnd as any;
+      if (api?.lnc?.disconnect) {
+        api.lnc.disconnect();
+      }
+    }
+    LncApi.clearPaired();
+    runInAction(() => {
+      this.isLnc = false;
+      this.authenticated = false;
     });
   }
 
@@ -151,10 +304,8 @@ export default class AuthStore {
       this.setCredentials(creds);
       this._store.log.info('found credentials. validating');
       try {
-        // test the credentials by making an API call to getInfo
         await this.validate();
       } catch (error) {
-        // clear the credentials and swallow the error
         this.setCredentials('');
         this._store.log.error('cleared invalid credentials in sessionStorage');
       }

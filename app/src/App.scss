@@ -1,5 +1,7 @@
 @charset "utf-8";
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 // required bootstrap styles
 @import '../node_modules/bootstrap/scss/functions';
 @import '../node_modules/bootstrap/scss/variables';
@@ -23,68 +25,17 @@
 // react-toastify styles
 @import '../node_modules/react-toastify/dist/ReactToastify.css';
 
-@font-face {
-  font-family: 'OpenSans Light';
-  src: url('./assets/fonts/OpenSans-Light.ttf') format('truetype');
-  font-style: normal;
-  font-weight: 300;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'OpenSans Regular';
-  src: url('./assets/fonts/OpenSans-Regular.ttf') format('truetype');
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'OpenSans SemiBold';
-  src: url('./assets/fonts/OpenSans-SemiBold.ttf') format('truetype');
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'OpenSans Bold';
-  src: url('./assets/fonts/OpenSans-Bold.ttf') format('truetype');
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'OpenSans ExtraBold';
-  src: url('./assets/fonts/OpenSans-ExtraBold.ttf') format('truetype');
-  font-style: normal;
-  font-weight: 800;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'WorkSans Light';
-  src: url('./assets/fonts/WorkSans-Light.ttf') format('truetype');
-  font-style: normal;
-  font-weight: 300;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'WorkSans Medium';
-  src: url('./assets/fonts/WorkSans-Medium.ttf') format('truetype');
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'WorkSans SemiBold';
-  src: url('./assets/fonts/WorkSans-SemiBold.ttf') format('truetype');
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-}
-
 html,
 body,
 #root {
-  background-color: #252f4a;
+  background-color: #0d1017;
   width: 100%;
   min-width: 1024px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
 }
