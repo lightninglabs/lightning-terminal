@@ -146,18 +146,25 @@ var updateAccountCommand = cli.Command{
 	Name:      "update",
 	ShortName: "u",
 	Usage:     "Update an existing off-chain account.",
-	ArgsUsage: "[id | label] new_balance [new_expiration_date] " +
-		"[--save_to=]",
+	ArgsUsage: "[id | label] [new_balance] [new_expiration_date] " +
+		"[--new_label=]",
 	Description: "Updates an existing off-chain account and sets " +
-		"either a new balance or new expiration date or both.",
+		"a new balance, new expiration date or a new label.",
 	Flags: []cli.Flag{
 		cli.StringFlag{
-			Name:  idName,
-			Usage: "The ID of the account to update.",
+			Name: idName,
+			Usage: "The ID of the account to update. Either the " +
+				"ID or the label must be set.",
 		},
 		cli.StringFlag{
-			Name:  labelName,
-			Usage: "(optional) The unique label of the account.",
+			Name: labelName,
+			Usage: "(optional) The unique label of the account " +
+				"to identify it; if an account has no label, " +
+				"the ID must be used instead.",
+		},
+		cli.StringFlag{
+			Name:  "new_label",
+			Usage: "(optional) The new label of the account.",
 		},
 		cli.Int64Flag{
 			Name: "new_balance",
@@ -229,6 +236,7 @@ func updateAccount(cli *cli.Context) error {
 		Label:          label,
 		AccountBalance: newBalance,
 		ExpirationDate: expirationDate,
+		NewLabel:       cli.String("new_label"),
 	}
 	resp, err := client.UpdateAccount(ctx, req)
 	if err != nil {
