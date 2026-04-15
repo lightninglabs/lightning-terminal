@@ -128,7 +128,6 @@ func (s *BoltStore) NewAccount(ctx context.Context, balance lnwire.MilliSatoshi,
 	}
 
 	if len(label) > 0 {
-
 		accounts, err := s.Accounts(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("error checking label "+
@@ -181,13 +180,54 @@ func (s *BoltStore) NewAccount(ctx context.Context, balance lnwire.MilliSatoshi,
 	return account, nil
 }
 
-// UpdateAccountBalanceAndExpiry updates the balance and/or expiry of an
-// account.
+// UpdateAccount updates the balance and/or expiration date of an existing
+// off-chain account.
 //
 // NOTE: This is part of the Store interface.
-func (s *BoltStore) UpdateAccountBalanceAndExpiry(_ context.Context,
+func (s *BoltStore) UpdateAccount(ctx context.Context,
 	id AccountID, newBalance fn.Option[int64],
-	newExpiry fn.Option[time.Time]) error {
+	newExpiry fn.Option[time.Time],
+	newLabel fn.Option[string]) error {
+
+	// If a new label is set, we need to check for its uniqueness. Since the
+	// check requires a read transaction, we must do it before we start the
+	// update transaction.
+	var labelErr error
+	newLabel.WhenSome(func(label string) {
+		if err := checkLabel(label); err != nil {
+			labelErr = err
+			return
+		}
+
+		if len(label) > 0 {
+			accounts, err := s.Accounts(ctx)
+			if err != nil {
+				labelErr = fmt.Errorf("error checking label "+
+					"uniqueness: %w", err)
+				return
+			}
+
+			for _, other := range accounts {
+				if other.ID == id {
+					continue
+				}
+
+				if other.Label == label {
+					labelErr = fmt.Errorf(
+						"an account with the "+
+							"label '%s' "+
+							"already "+
+							"exists: %w",
+						label,
+						ErrLabelAlreadyExists)
+					return
+				}
+			}
+		}
+	})
+	if labelErr != nil {
+		return labelErr
+	}
 
 	update := func(account *OffChainBalanceAccount) error {
 		newBalance.WhenSome(func(balance int64) {
@@ -195,6 +235,9 @@ func (s *BoltStore) UpdateAccountBalanceAndExpiry(_ context.Context,
 		})
 		newExpiry.WhenSome(func(expiry time.Time) {
 			account.ExpirationDate = expiry
+		})
+		newLabel.WhenSome(func(label string) {
+			account.Label = label
 		})
 
 		return nil

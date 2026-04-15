@@ -122,8 +122,9 @@ func (s *RPCServer) CreateAccount(ctx context.Context,
 func (s *RPCServer) UpdateAccount(ctx context.Context,
 	req *litrpc.UpdateAccountRequest) (*litrpc.Account, error) {
 
-	log.Infof("[updateaccount] id=%s, label=%v, balance=%d, expiration=%d",
-		req.Id, req.Label, req.AccountBalance, req.ExpirationDate)
+	log.Infof("[updateaccount] id=%s, label=%v, balance=%d, "+
+		"expiration=%d, new_label=%v", req.Id, req.Label,
+		req.AccountBalance, req.ExpirationDate, req.NewLabel)
 
 	accountID, err := s.findAccount(ctx, req.Id, req.Label)
 	if err != nil {
@@ -133,7 +134,7 @@ func (s *RPCServer) UpdateAccount(ctx context.Context,
 	// Ask the service to update the account.
 	account, err := s.service.UpdateAccount(
 		ctx, accountID, btcutil.Amount(req.AccountBalance),
-		req.ExpirationDate,
+		req.ExpirationDate, req.NewLabel,
 	)
 	if err != nil {
 		return nil, err
