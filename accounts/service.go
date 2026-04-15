@@ -301,7 +301,8 @@ func (s *InterceptorService) NewAccount(ctx context.Context,
 // if it exists.
 func (s *InterceptorService) UpdateAccount(ctx context.Context,
 	accountID AccountID, accountBalance btcutil.Amount,
-	expirationDate int64) (*OffChainBalanceAccount, error) {
+	expirationDate int64, newLabel string) (*OffChainBalanceAccount,
+	error) {
 
 	s.Lock()
 	defer s.Unlock()
@@ -334,9 +335,17 @@ func (s *InterceptorService) UpdateAccount(ctx context.Context,
 		balance = fn.Some(int64(accountBalance) * 1000)
 	}
 
+	// If a new label was provided, wrap it in an option. An empty
+	// string is treated as "no update requested" because protobuf
+	// cannot distinguish an absent field from the zero value "".
+	var label fn.Option[string]
+	if newLabel != "" {
+		label = fn.Some(newLabel)
+	}
+
 	// Create the actual account in the macaroon account store.
-	err := s.store.UpdateAccountBalanceAndExpiry(
-		ctx, accountID, balance, expiry,
+	err := s.store.UpdateAccount(
+		ctx, accountID, balance, expiry, label,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to update account: %w", err)

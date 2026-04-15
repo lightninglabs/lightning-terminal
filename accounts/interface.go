@@ -242,11 +242,11 @@ type Store interface {
 	// Accounts retrieves all accounts from the store and un-marshals them.
 	Accounts(ctx context.Context) ([]*OffChainBalanceAccount, error)
 
-	// UpdateAccountBalanceAndExpiry updates the balance and/or expiry of an
-	// account.
-	UpdateAccountBalanceAndExpiry(ctx context.Context, id AccountID,
+	// UpdateAccount updates the balance, expiry and/or label of an account.
+	UpdateAccount(ctx context.Context, id AccountID,
 		newBalance fn.Option[int64],
-		newExpiry fn.Option[time.Time]) error
+		newExpiry fn.Option[time.Time],
+		newLabel fn.Option[string]) error
 
 	// AddAccountInvoice adds an invoice hash to an account.
 	AddAccountInvoice(ctx context.Context, id AccountID,
