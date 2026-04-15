@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/binary"
-	"encoding/hex"
 	"fmt"
 	"math"
 	"os"
@@ -123,16 +122,12 @@ func (s *BoltStore) NewAccount(ctx context.Context, balance lnwire.MilliSatoshi,
 
 	// If a label is set, it must be unique, as we use it to identify the
 	// account in some of the RPCs. It also can't be mistaken for a hex
-	// encoded account ID to avoid confusion and make it easier for the CLI
-	// to distinguish between the two.
-	if len(label) > 0 {
-		if _, err := hex.DecodeString(label); err == nil &&
-			len(label) == hex.EncodedLen(AccountIDLen) {
+	// encoded account ID.
+	if err := checkLabel(label); err != nil {
+		return nil, err
+	}
 
-			return nil, fmt.Errorf("the label '%s' is not allowed "+
-				"as it can be mistaken for an account ID",
-				label)
-		}
+	if len(label) > 0 {
 
 		accounts, err := s.Accounts(ctx)
 		if err != nil {

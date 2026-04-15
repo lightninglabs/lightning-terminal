@@ -442,3 +442,18 @@ func WithErrIfUnknown() UpsertPaymentOption {
 		o.errIfUnknown = true
 	}
 }
+
+// First, ensure that if a label is set, it can't be
+// mistaken for a hex encoded account ID.
+func checkLabel(label string) error {
+	if len(label) == hex.EncodedLen(AccountIDLen) {
+		_, err := hex.DecodeString(label)
+		if err == nil {
+			return fmt.Errorf("the label '%s'"+
+				" is not allowed as it "+
+				"can be mistaken for an account ID", label)
+		}
+	}
+
+	return nil
+}

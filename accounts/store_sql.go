@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"database/sql"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"time"
@@ -102,17 +101,13 @@ func (s *SQLStore) NewAccount(ctx context.Context, balance lnwire.MilliSatoshi,
 	error) {
 
 	// Ensure that if a label is set, it can't be mistaken for a hex
-	// encoded account ID to avoid confusion and make it easier for the CLI
-	// to distinguish between the two.
+	// encoded account ID.
+	if err := checkLabel(label); err != nil {
+		return nil, err
+	}
+
 	var labelVal sql.NullString
 	if len(label) > 0 {
-		if _, err := hex.DecodeString(label); err == nil &&
-			len(label) == hex.EncodedLen(AccountIDLen) {
-
-			return nil, fmt.Errorf("the label '%s' is not allowed "+
-				"as it can be mistaken for an account ID",
-				label)
-		}
 
 		labelVal = sql.NullString{
 			String: label,
