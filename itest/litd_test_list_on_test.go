@@ -1,4 +1,4 @@
-//go:build itest
+//go:build dev && itest
 
 package itest
 
