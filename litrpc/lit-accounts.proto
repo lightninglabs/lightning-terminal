@@ -159,9 +159,12 @@ message UpdateAccountRequest {
 
     /*
     The label of the account to update. If an account has no label, then the ID
-    must be used instead.
+    must be used instead. This field is only used to identify the account.
     */
     string label = 4;
+
+    // The new label to set for the account.
+    string new_label = 5;
 }
 
 message CreditAccountRequest {

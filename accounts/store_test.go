@@ -2,9 +2,10 @@ package accounts
 
 import (
 	"context"
-	"github.com/lightningnetwork/lnd/lnwire"
 	"testing"
 	"time"
+
+	"github.com/lightningnetwork/lnd/lnwire"
 
 	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/fn"
@@ -39,13 +40,19 @@ func TestAccountStore(t *testing.T) {
 	_, err = store.NewAccount(ctx, 123, time.Time{}, "0011223344556677")
 	require.ErrorContains(t, err, "is not allowed as it can be mistaken")
 
+	// Make sure we can create an account with an empty label.
+	acctEmpty, err := store.NewAccount(ctx, 0, time.Time{}, "")
+	require.NoError(t, err)
+	require.Empty(t, acctEmpty.Label)
+
 	now := clock.Now()
 
 	// Update all values of the account that we can modify.
 	//
 	// Update the balance and expiry.
-	err = store.UpdateAccountBalanceAndExpiry(
+	err = store.UpdateAccount(
 		ctx, acct1.ID, fn.Some(int64(-500)), fn.Some(now),
+		fn.None[string](),
 	)
 	require.NoError(t, err)
 
@@ -128,14 +135,14 @@ func TestAccountStore(t *testing.T) {
 	// Test listing and deleting accounts.
 	accounts, err := store.Accounts(ctx)
 	require.NoError(t, err)
-	require.Len(t, accounts, 1)
+	require.Len(t, accounts, 2)
 
 	err = store.RemoveAccount(ctx, acct1.ID)
 	require.NoError(t, err)
 
 	accounts, err = store.Accounts(ctx)
 	require.NoError(t, err)
-	require.Len(t, accounts, 0)
+	require.Len(t, accounts, 1)
 
 	_, err = store.Account(ctx, acct1.ID)
 	require.ErrorIs(t, err, ErrAccNotFound)
@@ -174,15 +181,15 @@ func TestAccountUpdateMethods(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	t.Run("UpdateAccountBalanceAndExpiry", func(t *testing.T) {
+	t.Run("UpdateAccount", func(t *testing.T) {
 		clock := clock.NewTestClock(time.Now())
 		store := NewTestDB(t, clock)
 
 		// Ensure that the function errors out if we try update an
 		// account that does not exist.
-		err := store.UpdateAccountBalanceAndExpiry(
+		err := store.UpdateAccount(
 			ctx, AccountID{}, fn.None[int64](),
-			fn.None[time.Time](),
+			fn.None[time.Time](), fn.None[string](),
 		)
 		require.ErrorIs(t, err, ErrAccNotFound)
 
@@ -206,16 +213,18 @@ func TestAccountUpdateMethods(t *testing.T) {
 
 		// Now, update just the balance of the account.
 		newBalance := int64(123)
-		err = store.UpdateAccountBalanceAndExpiry(
+		err = store.UpdateAccount(
 			ctx, acct.ID, fn.Some(newBalance), fn.None[time.Time](),
+			fn.None[string](),
 		)
 		require.NoError(t, err)
 		assertBalanceAndExpiry(newBalance, time.Time{})
 
 		// Now update just the expiry of the account.
 		newExpiry := clock.Now().Add(time.Hour)
-		err = store.UpdateAccountBalanceAndExpiry(
+		err = store.UpdateAccount(
 			ctx, acct.ID, fn.None[int64](), fn.Some(newExpiry),
+			fn.None[string](),
 		)
 		require.NoError(t, err)
 		assertBalanceAndExpiry(newBalance, newExpiry)
@@ -223,19 +232,107 @@ func TestAccountUpdateMethods(t *testing.T) {
 		// Update both the balance and expiry of the account.
 		newBalance = 456
 		newExpiry = clock.Now().Add(2 * time.Hour)
-		err = store.UpdateAccountBalanceAndExpiry(
+		err = store.UpdateAccount(
 			ctx, acct.ID, fn.Some(newBalance), fn.Some(newExpiry),
+			fn.None[string](),
 		)
 		require.NoError(t, err)
 		assertBalanceAndExpiry(newBalance, newExpiry)
 
 		// Finally, test an update that has no net changes to the
 		// balance or expiry.
-		err = store.UpdateAccountBalanceAndExpiry(
+		err = store.UpdateAccount(
 			ctx, acct.ID, fn.None[int64](), fn.None[time.Time](),
+			fn.None[string](),
 		)
 		require.NoError(t, err)
 		assertBalanceAndExpiry(newBalance, newExpiry)
+
+		// Test renaming the account.
+		newLabel := "bar"
+		err = store.UpdateAccount(
+			ctx, acct.ID, fn.None[int64](), fn.None[time.Time](),
+			fn.Some(newLabel),
+		)
+		require.NoError(t, err)
+
+		dbAcct, err := store.Account(ctx, acct.ID)
+		require.NoError(t, err)
+		require.Equal(t, newLabel, dbAcct.Label)
+
+		// Test updating an account with its existing label doesn't fail
+		err = store.UpdateAccount(
+			ctx, acct.ID, fn.None[int64](), fn.None[time.Time](),
+			fn.Some(newLabel),
+		)
+		require.NoError(t, err)
+		require.Equal(t, newLabel, dbAcct.Label)
+
+		// Try to rename to an existing label.
+		_, err = store.NewAccount(ctx, 0, time.Time{}, "existing")
+		require.NoError(t, err)
+
+		err = store.UpdateAccount(
+			ctx, acct.ID, fn.None[int64](), fn.None[time.Time](),
+			fn.Some("existing"),
+		)
+		require.ErrorIs(t, err, ErrLabelAlreadyExists)
+
+		// Test that passing an empty Some("") label works and clears
+		// the label.
+		err = store.UpdateAccount(
+			ctx, acct.ID, fn.None[int64](), fn.None[time.Time](),
+			fn.Some(""),
+		)
+		require.NoError(t, err)
+		dbAcct, err = store.Account(ctx, acct.ID)
+		require.NoError(t, err)
+		require.Empty(t, dbAcct.Label)
+
+		// Test that passing a None label doesn't change anything.
+		err = store.UpdateAccount(
+			ctx, acct.ID, fn.None[int64](), fn.None[time.Time](),
+			fn.Some("new-label"),
+		)
+		require.NoError(t, err)
+		err = store.UpdateAccount(
+			ctx, acct.ID, fn.None[int64](), fn.None[time.Time](),
+			fn.None[string](),
+		)
+		require.NoError(t, err)
+		dbAcct, err = store.Account(ctx, acct.ID)
+		require.NoError(t, err)
+		require.Equal(t, "new-label", dbAcct.Label)
+
+		// Test that we cannot update to a label that looks like an
+		// account ID.
+		err = store.UpdateAccount(
+			ctx, acct.ID, fn.None[int64](), fn.None[time.Time](),
+			fn.Some("0011223344556677"),
+		)
+		require.ErrorContains(t, err, "is not allowed"+
+			" as it can be mistaken")
+
+		// Test that a hex string with a different length is allowed.
+		err = store.UpdateAccount(
+			ctx, acct.ID, fn.None[int64](), fn.None[time.Time](),
+			fn.Some("00112233445566"),
+		)
+		require.NoError(t, err)
+
+		err = store.UpdateAccount(
+			ctx, acct.ID, fn.None[int64](), fn.None[time.Time](),
+			fn.Some("001122334455667788"),
+		)
+		require.NoError(t, err)
+
+		// Test that a non-hex string with the same length as an account
+		// ID is allowed.
+		err = store.UpdateAccount(
+			ctx, acct.ID, fn.None[int64](), fn.None[time.Time](),
+			fn.Some("G011223344556677"),
+		)
+		require.NoError(t, err)
 	})
 
 	t.Run("AddAccountInvoice", func(t *testing.T) {

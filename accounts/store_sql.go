@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"database/sql"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"time"
@@ -52,6 +51,7 @@ type SQLQueries interface {
 	// UpdateAccountAliasForTests is a query intended only for testing
 	// purposes, to change the account alias.
 	UpdateAccountAliasForTests(ctx context.Context, arg sqlc.UpdateAccountAliasForTestsParams) (int64, error)
+	UpdateAccountLabel(ctx context.Context, arg sqlc.UpdateAccountLabelParams) (int64, error)
 	UpsertAccountPayment(ctx context.Context, arg sqlc.UpsertAccountPaymentParams) error
 	GetAccountInvoice(ctx context.Context, arg sqlc.GetAccountInvoiceParams) (sqlc.AccountInvoice, error)
 }
@@ -102,18 +102,13 @@ func (s *SQLStore) NewAccount(ctx context.Context, balance lnwire.MilliSatoshi,
 	error) {
 
 	// Ensure that if a label is set, it can't be mistaken for a hex
-	// encoded account ID to avoid confusion and make it easier for the CLI
-	// to distinguish between the two.
+	// encoded account ID.
+	if err := checkLabel(label); err != nil {
+		return nil, err
+	}
+
 	var labelVal sql.NullString
 	if len(label) > 0 {
-		if _, err := hex.DecodeString(label); err == nil &&
-			len(label) == hex.EncodedLen(AccountIDLen) {
-
-			return nil, fmt.Errorf("the label '%s' is not allowed "+
-				"as it can be mistaken for an account ID",
-				label)
-		}
-
 		labelVal = sql.NullString{
 			String: label,
 			Valid:  true,
@@ -340,13 +335,14 @@ func (s *SQLStore) markAccountUpdated(ctx context.Context,
 	return err
 }
 
-// UpdateAccountBalanceAndExpiry updates the balance and/or expiry of an
-// account.
+// UpdateAccount updates the balance and/or expiration date of an existing
+// off-chain account.
 //
 // NOTE: This is part of the Store interface.
-func (s *SQLStore) UpdateAccountBalanceAndExpiry(ctx context.Context,
+func (s *SQLStore) UpdateAccount(ctx context.Context,
 	alias AccountID, newBalance fn.Option[int64],
-	newExpiry fn.Option[time.Time]) error {
+	newExpiry fn.Option[time.Time],
+	newLabel fn.Option[string]) error {
 
 	var writeTxOpts db.QueriesTxOptions
 	return s.db.ExecTx(ctx, &writeTxOpts, func(db SQLQueries) error {
@@ -372,6 +368,52 @@ func (s *SQLStore) UpdateAccountBalanceAndExpiry(ctx context.Context,
 				ctx, sqlc.UpdateAccountExpiryParams{
 					ID:         id,
 					Expiration: t.UTC(),
+				},
+			)
+		})
+		if err != nil {
+			return err
+		}
+
+		newLabel.WhenSome(func(label string) {
+			// First, ensure that if a label is set, it can't be
+			// mistaken for a hex encoded account ID.
+			if err = checkLabel(label); err != nil {
+				return
+			}
+
+			var labelVal sql.NullString
+			if len(label) > 0 {
+				labelVal = sql.NullString{
+					String: label,
+					Valid:  true,
+				}
+
+				// Check label uniqueness.
+				dbAcct, getErr := db.GetAccountByLabel(
+					ctx, labelVal,
+				)
+				if getErr == nil {
+					// If the label
+					// is already set for another
+					// account, then we return an error.
+					if dbAcct.ID != id {
+						err = ErrLabelAlreadyExists
+						return
+					}
+				} else if !errors.Is(getErr, sql.ErrNoRows) {
+					err = getErr
+					return
+				}
+			}
+
+			_, err = db.UpdateAccountLabel(
+				ctx, sqlc.UpdateAccountLabelParams{
+					ID: id,
+					Label: sql.NullString{
+						String: label,
+						Valid:  label != "",
+					},
 				},
 			)
 		})

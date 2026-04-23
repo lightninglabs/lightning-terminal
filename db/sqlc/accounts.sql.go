@@ -371,6 +371,25 @@ func (q *Queries) UpdateAccountExpiry(ctx context.Context, arg UpdateAccountExpi
 	return id, err
 }
 
+const updateAccountLabel = `-- name: UpdateAccountLabel :one
+UPDATE accounts
+SET label = $1
+WHERE id = $2
+RETURNING id
+`
+
+type UpdateAccountLabelParams struct {
+	Label sql.NullString
+	ID    int64
+}
+
+func (q *Queries) UpdateAccountLabel(ctx context.Context, arg UpdateAccountLabelParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, updateAccountLabel, arg.Label, arg.ID)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
 const updateAccountLastUpdate = `-- name: UpdateAccountLastUpdate :one
 UPDATE accounts
 SET last_updated = $1

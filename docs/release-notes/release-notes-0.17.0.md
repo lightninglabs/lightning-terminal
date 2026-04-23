@@ -29,6 +29,10 @@
   The `litcli ln payinvoice` command now displays an asset-aware confirmation
   prompt before sending a payment.
 
+* [Renaming off-chain accounts](https://github.com/lightninglabs/lightning-terminal/pull/1274):
+  Added the ability to rename off-chain accounts using the `litcli accounts
+  update` command with a new `--new_label` flag.
+
 ### Technical and Architectural Updates
 
 ## RPC Updates

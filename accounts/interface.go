@@ -242,11 +242,11 @@ type Store interface {
 	// Accounts retrieves all accounts from the store and un-marshals them.
 	Accounts(ctx context.Context) ([]*OffChainBalanceAccount, error)
 
-	// UpdateAccountBalanceAndExpiry updates the balance and/or expiry of an
-	// account.
-	UpdateAccountBalanceAndExpiry(ctx context.Context, id AccountID,
+	// UpdateAccount updates the balance, expiry and/or label of an account.
+	UpdateAccount(ctx context.Context, id AccountID,
 		newBalance fn.Option[int64],
-		newExpiry fn.Option[time.Time]) error
+		newExpiry fn.Option[time.Time],
+		newLabel fn.Option[string]) error
 
 	// AddAccountInvoice adds an invoice hash to an account.
 	AddAccountInvoice(ctx context.Context, id AccountID,
@@ -441,4 +441,19 @@ func WithErrIfUnknown() UpsertPaymentOption {
 	return func(o *upsertAcctPaymentOption) {
 		o.errIfUnknown = true
 	}
+}
+
+// First, ensure that if a label is set, it can't be
+// mistaken for a hex encoded account ID.
+func checkLabel(label string) error {
+	if len(label) == hex.EncodedLen(AccountIDLen) {
+		_, err := hex.DecodeString(label)
+		if err == nil {
+			return fmt.Errorf("the label '%s'"+
+				" is not allowed as it "+
+				"can be mistaken for an account ID", label)
+		}
+	}
+
+	return nil
 }
