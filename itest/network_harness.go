@@ -73,6 +73,10 @@ type NetworkHarness struct {
 	// to main process.
 	lndErrorChan chan error
 
+	// lndErrorChanClosed is set to true once lndErrorChan has been closed,
+	// guarded by mtx to prevent double-close.
+	lndErrorChanClosed bool
+
 	mtx sync.Mutex
 }
 
@@ -130,6 +134,12 @@ func (n *NetworkHarness) SetUp(t *testing.T, testCase string, lndArgs []string,
 	fakeLogger := grpclog.NewLoggerV2(io.Discard, io.Discard, io.Discard)
 	grpclog.SetLoggerV2(fakeLogger)
 	n.currentTestCase = testCase
+
+	t.Cleanup(func() {
+		tearDownErr := n.TearDown()
+		n.Stop()
+		require.NoError(t, tearDownErr)
+	})
 
 	// Start our mock Loop/Pool server first.
 	mockServerAddr := fmt.Sprintf(
@@ -257,11 +267,6 @@ out:
 		}
 	}
 
-	t.Cleanup(func() {
-		require.NoError(t, n.TearDown())
-		n.Stop()
-	})
-
 	n.EnsureConnected(t, n.Alice, n.Bob)
 
 	logLine := "STARTING ============ %v ============\n"
@@ -274,20 +279,36 @@ out:
 
 // TearDown tears down all active nodes within the test lightning network.
 func (n *NetworkHarness) TearDown() error {
+	var tearDownErr error
+
 	for _, node := range n.activeNodes {
 		if err := n.ShutdownNode(node); err != nil {
-			return err
+			if tearDownErr == nil {
+				tearDownErr = err
+			}
 		}
 	}
 
-	return nil
+	return tearDownErr
 }
 
 // Stop stops the test harness.
 func (n *NetworkHarness) Stop() {
-	close(n.lndErrorChan)
+	if n.server != nil {
+		n.server.Stop()
+	}
 
-	n.autopilotServer.Stop()
+	if n.autopilotServer != nil {
+		n.autopilotServer.Stop()
+	}
+
+	n.mtx.Lock()
+	defer n.mtx.Unlock()
+
+	if !n.lndErrorChanClosed {
+		close(n.lndErrorChan)
+		n.lndErrorChanClosed = true
+	}
 }
 
 func (n *NetworkHarness) litArgs() []string {
