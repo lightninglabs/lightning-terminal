@@ -27,6 +27,10 @@
 * The Faraday subserver [is made an active
   component](https://github.com/lightninglabs/lightning-terminal/pull/1251)
   instead of only incorporating its RPC server.
+* A gRPC interceptor [is
+  added](https://github.com/lightninglabs/lightning-terminal/pull/1271) to be
+  able to apply privacy mapping for non-LND sub-daemon requests (e.g. Faraday)
+  within LNC sessions. Non-mapped subservers calls are blocked.
 
 ## RPC Updates
 
