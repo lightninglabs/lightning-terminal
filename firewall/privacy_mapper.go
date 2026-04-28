@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	// privacyMapperName is the name of the RequestLogger interceptor.
+	// privacyMapperName is the name of the PrivacyMapper interceptor.
 	privacyMapperName = "lit-privacy-mapper"
 
 	// amountVariation and DefaultTimeVariation are used to set the
@@ -120,7 +120,7 @@ func (p *PrivacyMapper) Intercept(ctx context.Context,
 		return nil, err
 	}
 
-	log.Tracef("PrivacyMapper: Intercepting %v", ri)
+	log.TraceS(ctx, "PrivacyMapper: Intercepting", "info", ri)
 
 	switch r := req.InterceptType.(type) {
 	case *lnrpc.RPCMiddlewareRequest_StreamAuth:
