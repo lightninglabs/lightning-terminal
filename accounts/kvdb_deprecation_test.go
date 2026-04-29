@@ -11,7 +11,7 @@ import (
 )
 
 // TestKVDBDeprecation verifies that a deprecated accounts kvdb file refuses to
-// reopen.
+// reopen until the explicit marker is removed again.
 func TestKVDBDeprecation(t *testing.T) {
 	t.Parallel()
 
@@ -33,6 +33,13 @@ func TestKVDBDeprecation(t *testing.T) {
 	require.Contains(t, err.Error(), ErrKVDBDeprecated.Error())
 
 	store, err = NewBoltStoreForMigration(dbDir, DBFilename, clk)
+	require.NoError(t, err)
+	require.NoError(t, store.Close())
+
+	err = RemoveKVDBDeprecation(dbPath)
+	require.NoError(t, err)
+
+	store, err = NewBoltStore(dbDir, DBFilename, clk)
 	require.NoError(t, err)
 	require.NoError(t, store.Close())
 }

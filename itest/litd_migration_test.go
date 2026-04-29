@@ -54,9 +54,12 @@ import (
 //  9. Delete the SQL database and show that SQL startup reruns the migration.
 //  10. If available, show that downgrading to an old LiT binary still fails to
 //     start against the deprecated kvdb files.
-//  11. Delete `accounts.db` and verify that bbolt startup is still blocked by
+//  11. Show that starting with the unsafe unmark flag removes the deprecation
+//     markers so bbolt can be started again, then rerun the SQL migration so
+//     the tombstones exist again for the remaining startup-order checks.
+//  12. Delete `accounts.db` and verify that bbolt startup is still blocked by
 //     the next deprecated kvdb file, `session.db`.
-//  12. Delete `session.db` and verify that bbolt startup is still blocked by
+//  13. Delete `session.db` and verify that bbolt startup is still blocked by
 //     the next deprecated kvdb file, `rules.db`.
 func testKvdbSQLMigration(ctx context.Context, net *NetworkHarness,
 	t *harnessTest) {
@@ -204,7 +207,59 @@ func testKvdbSQLMigration(ctx context.Context, net *NetworkHarness,
 		delete(net.backwardCompat, migNode.Name())
 	}
 
-	// Step 11: Delete the first-startup kvdb file and verify that bbolt
+	// Step 11: Verify that the unsafe flag removes the kvdb tombstones and
+	// allows bbolt startup again.
+	err = migNode.Start(
+		net.litdBinary, net.backwardCompat, net.lndErrorChan, true,
+		WithLitArg("databasebackend", terminal.DatabaseBackendBbolt),
+		WithLitArg("unsafe-remove-kvdb-deprecation", ""),
+		WithLitArg("firewall.request-logger.level", "all"),
+	)
+	require.NoError(t.t, err)
+
+	ctxt, cancel = newStepCtx()
+	rawConn, err = connectRPC(
+		ctxt, migNode.Cfg.LitAddr(), migNode.Cfg.LitTLSCertPath,
+	)
+	require.NoError(t.t, err)
+	cancel()
+
+	accountsClient = litrpc.NewAccountsClient(rawConn)
+	sessionsClient = litrpc.NewSessionsClient(rawConn)
+	firewallClient = litrpc.NewFirewallClient(rawConn)
+
+	ctxm, cancel = newAdminCtx()
+	afterUnsafeUnmark := queryMigrationData(
+		ctxm, t, accountsClient, sessionsClient, firewallClient,
+		migrationRefs.actionMethod,
+	)
+	cancel()
+	assertMigrationSnapshotsEqual(t, beforeMigration, afterUnsafeUnmark)
+
+	// The unsafe flag should persistently remove the tombstones, so a
+	// subsequent plain bbolt restart must succeed as well.
+	require.NoError(t.t, rawConn.Close())
+	require.NoError(t.t, migNode.Stop())
+
+	err = migNode.Start(
+		net.litdBinary, net.backwardCompat, net.lndErrorChan, true,
+		WithLitArg("databasebackend", terminal.DatabaseBackendBbolt),
+		WithLitArg("firewall.request-logger.level", "all"),
+	)
+	require.NoError(t.t, err)
+
+	require.NoError(t.t, migNode.Stop())
+
+	// Recreate the kvdb tombstones so startup still exercises the
+	// deprecated-file checks after the unsafe unmark path above.
+	rerunSQLMigrationAndAssert(
+		t, net, migNode, newStepCtx, newAdminCtx, beforeMigration,
+		migrationRefs,
+	)
+
+	require.NoError(t.t, migNode.Stop())
+
+	// Step 12: Delete the first-startup kvdb file and verify that bbolt
 	// startup is still blocked by the next deprecated file in the open
 	// order.
 	removeMigrationKVDBFile(t, kvdbFiles[0])
@@ -222,7 +277,7 @@ func testKvdbSQLMigration(ctx context.Context, net *NetworkHarness,
 		),
 	)
 
-	// Step 12: Delete the second-startup kvdb file and verify that bbolt
+	// Step 13: Delete the second-startup kvdb file and verify that bbolt
 	// startup is still blocked by the third deprecated file.
 	removeMigrationKVDBFile(t, kvdbFiles[1])
 	assertNodeStartFails(
