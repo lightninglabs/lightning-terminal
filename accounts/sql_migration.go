@@ -127,6 +127,15 @@ func getBBoltAccounts(db kvdb.Backend) ([]*OffChainBalanceAccount, error) {
 				return nil
 			}
 
+			// Also skip the kvdb deprecation marker bucket. We
+			// still want to allow rerunning the kvdb -> SQL
+			// migration after the SQL database has been deleted or
+			// downgraded, even though normal bbolt startup should
+			// reject the tombstoned kvdb files.
+			if bytes.Equal(k, deprecatedBucketKey) {
+				return nil
+			}
+
 			// There should be no sub-buckets.
 			if v == nil {
 				return fmt.Errorf("invalid bucket structure")
