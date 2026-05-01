@@ -26,6 +26,11 @@ need to download those binaries from the
 [pool](https://github.com/lightninglabs/pool/releases), and
 [faraday](https://github.com/lightninglabs/faraday/releases) repos manually.
 
+**Note for FreeBSD users:** the `Makefile` requires GNU Make. Install it with
+`pkg install gmake` and substitute `gmake` for `make` in the commands above
+(for example, `gmake install`). The same applies to the other `make` targets
+mentioned later in this document.
+
 ## Building a docker image
 
 There are two flavors of Dockerfiles available:
